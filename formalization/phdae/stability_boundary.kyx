@@ -1,0 +1,38 @@
+ArchiveEntry "True Stability Boundary"
+
+Definitions
+  Real D = 1;
+  Real K = 1;
+End.
+
+ProgramVariables
+  Real d1;
+  Real d2;
+  Real w1;
+  Real w2;
+  Real s;
+  Real c;
+End.
+
+/* H < 4K is invariant (energy sublevel below saddle) */
+/* This gives the TRUE region of attraction */
+Problem
+  s^2 + c^2 = 1 &
+  w1^2 + w2^2 + 2*K*(1-c) < 4*K
+  ->
+  [{d1' = w1,
+    d2' = w2,
+    w1' = -D*w1 - K*s,
+    w2' = -D*w2 + K*s,
+    s'  = c*(w1 - w2),
+    c'  = -s*(w1 - w2)
+    & s^2 + c^2 = 1}]
+  w1^2 + w2^2 + 2*K*(1-c) < 4*K
+End.
+
+Tactic "Proof"
+  implyR(1);
+  dI(1)
+End.
+
+End.
