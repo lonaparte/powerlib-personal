@@ -1,0 +1,35 @@
+ArchiveEntry "Schur Complement Preserves pH: 2x2 scalar case"
+
+/*
+ * Simplest case: 2x2 system with 1 dynamic + 1 algebraic state.
+ *
+ * J = [[0, j], [-j, 0]], R = [[r1, 0], [0, r2]]
+ * M = J-R = [[-r1, j], [-j, -r2]]
+ * M22 = -r2, invertible iff r2 != 0
+ * 
+ * Schur complement: S = (-r1) - (j)(-1/r2)(-j) = -r1 - j^2/r2
+ * S = -(r1 + j^2/r2)
+ *
+ * For S to be "R_eff >= 0": -S >= 0, i.e., r1 + j^2/r2 >= 0
+ * This holds iff r1 >= 0 and r2 > 0 (which is given by R >= 0 and index 1)
+ *
+ * So pH structure IS preserved for the scalar case!
+ */
+
+ProgramVariables
+  Real j;
+  Real r1;
+  Real r2;
+End.
+
+/* R >= 0 and r2 > 0 (index 1) => Schur complement has R_eff >= 0 */
+Problem
+  r1 >= 0 & r2 > 0
+  -> r1 + j^2/r2 >= 0
+End.
+
+Tactic "Proof"
+  QE
+End.
+
+End.
