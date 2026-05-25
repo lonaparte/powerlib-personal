@@ -1,0 +1,21 @@
+ArchiveEntry "Necessity: K=0 angle frozen"
+
+ProgramVariables
+  Real s;
+  Real c;
+  Real s0;
+End.
+
+Problem
+  s0 = s
+  ->
+  [{s' = 0, c' = 0, s0' = 0}]
+  s = s0
+End.
+
+Tactic "Proof"
+  implyR(1);
+  dI(1)
+End.
+
+End.

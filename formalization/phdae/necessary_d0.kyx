@@ -1,0 +1,38 @@
+ArchiveEntry "Necessity: D=0 implies energy conservation"
+
+Definitions
+  Real K = 1;
+End.
+
+ProgramVariables
+  Real d1;
+  Real d2;
+  Real w1;
+  Real w2;
+  Real s;
+  Real c;
+  Real h0;
+End.
+
+Problem
+  s^2 + c^2 = 1 &
+  h0 = w1^2 + w2^2 + 2*K*(1-c) &
+  h0 > 0
+  ->
+  [{d1' = w1,
+    d2' = w2,
+    w1' = -K*s,
+    w2' = K*s,
+    s'  = c*(w1 - w2),
+    c'  = -s*(w1 - w2),
+    h0' = 0
+    & s^2 + c^2 = 1}]
+  w1^2 + w2^2 + 2*K*(1-c) = h0
+End.
+
+Tactic "Proof"
+  implyR(1);
+  dI(1)
+End.
+
+End.
