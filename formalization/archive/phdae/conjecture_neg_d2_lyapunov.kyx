@@ -1,0 +1,84 @@
+ArchiveEntry "Conjecture: D2<0 Local Asymptotic Stability via x'Px"
+
+/*
+ * STATUS: UNPROVED (specific instance, D1=1, D2=-3/10, K=1)
+ *
+ * Within the Routh-Hurwitz boundary (|D2| < min(D1, K/D1) = 1),
+ * the linearized system is stable. The Lyapunov equation A'P+PA=-I
+ * gives a positive definite P. V = x'Px works as a local Lyapunov
+ * function for the NONLINEAR system in a neighborhood of the origin.
+ *
+ * For D1=1, D2=-3/10, K=1:
+ *   A = [[-1, 0, -1], [0, 3/10, 1], [1, -1, 0]]
+ *   Eigenvalues: -0.441, -0.129 +/- 1.253i (all stable)
+ *
+ *   P = [[144/49, -5/7, 239/98],
+ *        [-5/7, 235/49, 95/49],
+ *        [239/98, 95/49, 597/98]]
+ *
+ *   V = (144/49)*w1^2 - (10/7)*w1*w2 + (239/49)*w1*s
+ *       + (235/49)*w2^2 + (190/49)*w2*s + (597/98)*s^2
+ *
+ * V' = -|x|^2 for the linearized system (A'P+PA=-I).
+ * For the nonlinear system, V' = -|x|^2 + correction(c-1),
+ * where the correction is O(|x|^3) near the origin.
+ *
+ * This conjecture states: V' <= 0 in {s^2+c^2=1, c>=0, V<bound}
+ * for some bound > 0.
+ *
+ * The key step that differs from the all-passive case:
+ * D2 < 0 means H itself is NOT a Lyapunov function. We must use
+ * the non-pH Lyapunov function x'Px, losing the algebraic simplicity.
+ *
+ * Difficulty: QE must handle degree-4 polynomials with the s^2+c^2=1
+ * constraint and irrational-looking (but rational) P entries.
+ */
+
+Definitions
+  Real D1 = 1;
+  Real D2 = -(3/10);
+  Real K  = 1;
+End.
+
+ProgramVariables
+  Real d1;
+  Real d2;
+  Real w1;
+  Real w2;
+  Real s;
+  Real c;
+  Real t;
+  Real v0;
+End.
+
+Problem
+  \forall target (target > 0 & target < 1/100 ->
+    (s^2 + c^2 = 1 & c > 0 &
+     v0 = (144*w1^2 - 70*w1*w2 + 239*w1*s + 235*w2^2 + 190*w2*s)/49 + (597*s^2)/98 &
+     v0 > 0 & v0 < 1/10 & t = 0
+     ->
+     [{d1' = w1,
+       d2' = w2,
+       w1' = -D1*w1 - K*s,
+       w2' = -D2*w2 + K*s,
+       s'  = c*(w1 - w2),
+       c'  = -s*(w1 - w2),
+       t'  = 1,
+       v0' = 0
+       & s^2 + c^2 = 1 & c >= 0 &
+         (144*w1^2 - 70*w1*w2 + 239*w1*s + 235*w2^2 + 190*w2*s)/49 + (597*s^2)/98 >= target}]
+     t < 100*v0/target))
+End.
+
+/* No Tactic — this is an open conjecture.
+ *
+ * Proof approach (untested):
+ *   dC("V <= v0 - t*target/100", 1);
+ *   <( dW(1); QE, dI(1) )
+ *
+ * The dI step needs V' <= -target/100 in the evolution domain.
+ * This requires QE to verify a degree-4 polynomial inequality
+ * on the manifold s^2+c^2=1 with c>=0.
+ */
+
+End.

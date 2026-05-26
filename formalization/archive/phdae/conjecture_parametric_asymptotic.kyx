@@ -1,0 +1,55 @@
+ArchiveEntry "Conjecture: General Parametric Asymptotic Stability"
+
+/*
+ * STATUS: UNPROVED
+ *
+ * Proved instances:
+ *   - K=D1=D2=1, a=1/4, C=12 (asymptotic_closed.kyx)
+ *   - D1=1, D2=5, K=2, a=1/4, C=48 (parametric_asymptotic.kyx)
+ *
+ * This conjecture states the general version: for ALL D1,D2,K > 0,
+ * there exist a modified Hamiltonian parameter a > 0 and a time
+ * bound constant C > 0 such that V decays to any target level.
+ *
+ * Difficulty: existsR for a and C requires an explicit witness
+ * as a function of D1,D2,K. The QE check for V' <= -target/C
+ * involves polynomial inequalities in 6+ symbolic parameters.
+ */
+
+ProgramVariables
+  Real d1;
+  Real d2;
+  Real w1;
+  Real w2;
+  Real s;
+  Real c;
+  Real t;
+  Real v0;
+End.
+
+Problem
+  \forall D1 \forall D2 \forall K (D1 > 0 & D2 > 0 & K > 0 ->
+    \forall target (target > 0 & target < 1/2 ->
+      \exists a \exists C (a > 0 & C > 0 &
+        \forall d1 \forall d2 \forall w1 \forall w2 \forall s \forall c
+        \forall t \forall v0 (
+          s^2 + c^2 = 1 & c > 0 &
+          v0 = w1^2 + w2^2 + 2*K*(1-c) + a*(w1-w2)*s &
+          v0 > 0 & v0 < 1 & t = 0
+          ->
+          [{d1' = w1,
+            d2' = w2,
+            w1' = -D1*w1 - K*s,
+            w2' = -D2*w2 + K*s,
+            s'  = c*(w1 - w2),
+            c'  = -s*(w1 - w2),
+            t'  = 1,
+            v0' = 0
+            & s^2 + c^2 = 1 & c >= 0 &
+              w1^2 + w2^2 + 2*K*(1-c) + a*(w1-w2)*s >= target}]
+          t < C*v0/target))))
+End.
+
+/* No Tactic — this is an open conjecture. */
+
+End.

@@ -1,0 +1,79 @@
+ArchiveEntry "Conjecture: pH-Structured Lyapunov Function for D2<0"
+
+/*
+ * STATUS: OPEN PROBLEM (the core research question)
+ *
+ * For D2 < 0 within the Routh boundary, the system IS locally
+ * asymptotically stable, but:
+ *   - H is not a Lyapunov function (Hdot = -2D1*w1^2 + 2|D2|*w2^2, indefinite)
+ *   - V = H + a*(w1-w2)*s fails (numerically verified for all tested a)
+ *   - V = x'Px works locally but doesn't use pH structure
+ *
+ * This conjecture asks: does there exist a Lyapunov function V
+ * that COMBINES pH structure (Hdot expression) with a correction
+ * term that makes V' negative definite?
+ *
+ * One possible form: V = H + f(w1,w2,s,c) where f is chosen so that
+ * V' = Hdot + f' = -2D1*w1^2 + 2|D2|*w2^2 + f' < 0.
+ * The correction f must make f' < -2|D2|*w2^2 without
+ * introducing terms that overwhelm -2D1*w1^2.
+ *
+ * Instance: D1=1, D2=-3/10, K=1.
+ * Need f such that: f' < -3/5*w2^2 while |f'| << 2*w1^2.
+ *
+ * Approach 1 (failed): f = a*(w1-w2)*s with any constant a.
+ * Approach 2 (untried): f involves higher-order terms in s,c.
+ * Approach 3 (untried): f = g(w2,s) designed to cancel +3/5*w2^2.
+ * Approach 4 (untried): Zames-Falb multiplier reinterpretation as
+ *   modified energy function.
+ *
+ * This is stated as an existence conjecture: does such V exist?
+ * If proved, it bridges pH theory and classical Lyapunov for non-passive systems.
+ * If disproved, it means pH structure is fundamentally limited to passive systems.
+ */
+
+Definitions
+  Real D1 = 1;
+  Real D2 = -(3/10);
+  Real K  = 1;
+End.
+
+ProgramVariables
+  Real d1;
+  Real d2;
+  Real w1;
+  Real w2;
+  Real s;
+  Real c;
+End.
+
+Problem
+  /* Does there exist a,b,g1,g2,g3 such that
+   * V = H + a*(w1-w2)*s + b*w2*s + g1*w2^2*s^2 + g2*w1*w2*s + g3*s^2*(1-c)
+   * is a Lyapunov function in {c > 1/2}?
+   *
+   * This is one parametric family; the true answer may need a different form.
+   */
+  \exists a \exists b (
+    \forall w1 \forall w2 \forall s \forall c (
+      s^2 + c^2 = 1 & c >= 1/2 &
+      w1^2 + w2^2 + s^2 > 0
+      ->
+      /* V' < 0 condition, expanded: */
+      -2*D1*w1^2 - 2*D2*w2^2
+      + a*(-D1*w1 + D2*w2 - 2*K*s)*s + a*c*(w1-w2)^2
+      + b*(-D2*w2 + K*s)*s + b*w2*c*(w1-w2)
+      < 0))
+End.
+
+/* No Tactic — this is an open research problem.
+ *
+ * If QE returns "proved" for some specific (a,b), we have found
+ * a pH-based Lyapunov function for D2 < 0. This would be a
+ * novel theoretical result.
+ *
+ * If QE returns "unproved" for all tested (a,b), expand the
+ * parametric family or prove impossibility.
+ */
+
+End.

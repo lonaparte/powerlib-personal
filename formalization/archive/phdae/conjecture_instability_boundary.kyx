@@ -1,0 +1,54 @@
+ArchiveEntry "Conjecture: Instability Beyond Routh-Hurwitz Boundary"
+
+/*
+ * STATUS: UNPROVED
+ *
+ * When |D2| > min(D1, K/D1), the linearized system has an eigenvalue
+ * with positive real part. This should imply local instability:
+ * trajectories starting arbitrarily close to the equilibrium can grow.
+ *
+ * In dL, instability is expressed using the diamond modality <{ODE}>:
+ * there EXISTS a trajectory reaching a state far from the origin.
+ *
+ * The Routh-Hurwitz condition (from the characteristic polynomial
+ * s^3 + (D1+D2)s^2 + (D1*D2+2K)s + K*(D1+D2)):
+ *   D1+D2 > 0  AND  D1*D2+K > 0
+ * When either fails, the system is linearly unstable.
+ *
+ * This conjecture formalizes: if D1*D2+K <= 0 (Routh condition 2 fails),
+ * then there exist initial conditions near the origin whose trajectory
+ * has H growing beyond any bound.
+ *
+ * Note: diamond proofs in KeYmaera X typically use dG (differential ghost)
+ * to construct an explicit witness trajectory. This is non-trivial.
+ */
+
+ProgramVariables
+  Real d1;
+  Real d2;
+  Real w1;
+  Real w2;
+  Real s;
+  Real c;
+End.
+
+Problem
+  \forall D1 \forall D2 \forall K (
+    D1 > 0 & K > 0 & D2 < 0 & D1*D2 + K <= 0
+    ->
+    \forall eps (eps > 0 ->
+      \exists d1 \exists d2 \exists w1 \exists w2 \exists s \exists c (
+        s^2 + c^2 = 1 &
+        w1^2 + w2^2 + 2*K*(1-c) < eps &
+        <{d1' = w1,
+          d2' = w2,
+          w1' = -D1*w1 - K*s,
+          w2' = -D2*w2 + K*s,
+          s'  = c*(w1 - w2),
+          c'  = -s*(w1 - w2)}>
+        w1^2 + w2^2 + 2*K*(1-c) > 2*eps)))
+End.
+
+/* No Tactic — this is an open conjecture. */
+
+End.
