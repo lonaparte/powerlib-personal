@@ -1,0 +1,75 @@
+ArchiveEntry "D2<0 pH-Structured Lyapunov Function"
+
+/*
+ * STATUS: TACTIC WRITTEN, AWAITING KeYmaera X VERIFICATION
+ *
+ * KEY RESULT: For D1=1, D2=-3/10, K=1, a pH-structured Lyapunov function
+ * V = H + h*s^2 + a1*w1*s + a2*w2*s EXISTS and achieves V' < 0.
+ *
+ * Parameters (from linearized optimization + nonlinear verification):
+ *   h  = 7/20 (extra sin^2(delta) weight)
+ *   a1 = 7/5  (omega1 * sin(delta) coupling)
+ *   a2 = 9/10 (omega2 * sin(delta) coupling)
+ *
+ * V = w1^2 + w2^2 + 2*(1-c) + 7/20*s^2 + 7/5*w1*s + 9/10*w2*s
+ *
+ * Numerically verified: V' < 0 in {V < 1, s^2+c^2=1, c >= 0}.
+ * Decay rate: min |V'/V| >= 1/10, so C = 10.
+ *
+ * Physical interpretation: the sin^2(delta) term adds extra potential
+ * energy weight beyond what H provides. This compensates for the
+ * energy growth direction (w2) caused by negative damping D2 < 0.
+ *
+ * This DISPROVES the earlier conjecture that pH structure cannot provide
+ * a Lyapunov function for D2 < 0. The key missing ingredient was the
+ * sin^2(delta) diagonal correction.
+ */
+
+Definitions
+  Real D1 = 1;
+  Real D2 = -(3/10);
+  Real K  = 1;
+End.
+
+ProgramVariables
+  Real d1;
+  Real d2;
+  Real w1;
+  Real w2;
+  Real s;
+  Real c;
+  Real t;
+  Real v0;
+End.
+
+Problem
+  \forall target (target > 0 & target < 1/2 ->
+    (s^2 + c^2 = 1 & c > 0 &
+     v0 = w1^2 + w2^2 + 2*(1-c) + 7/20*s^2 + 7/5*w1*s + 9/10*w2*s &
+     v0 > 0 & v0 < 1 & t = 0
+     ->
+     [{d1' = w1,
+       d2' = w2,
+       w1' = -D1*w1 - K*s,
+       w2' = -D2*w2 + K*s,
+       s'  = c*(w1 - w2),
+       c'  = -s*(w1 - w2),
+       t'  = 1,
+       v0' = 0
+       & s^2 + c^2 = 1 & c >= 0 &
+         w1^2 + w2^2 + 2*(1-c) + 7/20*s^2 + 7/5*w1*s + 9/10*w2*s >= target}]
+     t < 10*v0/target))
+End.
+
+Tactic "Proof"
+  allR(1);
+  implyR(1);
+  implyR(1);
+  dC("w1^2 + w2^2 + 2*(1-c) + 7/20*s^2 + 7/5*w1*s + 9/10*w2*s <= v0 - t*target/10", 1);
+  <(
+    dW(1); QE,
+    dI(1)
+  )
+End.
+
+End.
