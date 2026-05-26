@@ -10,7 +10,7 @@
 
 ### 系统
 
-$$\dot{\delta} = \omega_1 - \omega_2, \quad \dot{\omega}_1 = -D_1\omega_1 - \tfrac{K}{2}\sin\delta, \quad \dot{\omega}_2 = -D_2\omega_2 + \tfrac{K}{2}\sin\delta$$
+$$\dot{\delta} = \omega_1 - \omega_2, \quad \dot{\omega}_1 = -D_1\omega_1 - K\sin\delta, \quad \dot{\omega}_2 = -D_2\omega_2 + K\sin\delta$$
 
 这是消去代数变量后的约化 ODE，不是 DAE。
 
@@ -22,14 +22,16 @@ KeYmaera X 中用辅助变量 s = sinδ, c = cosδ，附加不变量 s²+c²=1�
 
 ### 1. pH 结构使能量平衡中 sin 项精确抵消
 
-$$\dot{H} = -D_1\omega_1^2 - D_2\omega_2^2$$
+$$\dot{H} = -2D_1\omega_1^2 - 2D_2\omega_2^2$$
+
+（因子 2 来自 H 的定义：H = ω₁²+ω₂²+2K(1−cosδ)，不含 1/2 系数。若用物理惯例 H_phys = (1/2)(ω₁²+ω₂²)+K(1−cosδ) = H/2，则 Ḣ_phys = −D₁ω₁²−D₂ω₂²。）
 
 **验证方式**：
 
-- **代数等式**：Lean 4 直接证明 ∇H·(J−R)∇H = −(R₁₁x₁²+R₂₂x₂²)（`PHEnergyBalance.lean`）。这是对 2×2 整数矩阵的精确代数恒等式。
+- **代数等式**：Lean 4 直接证明 ∇H_phys·(J−R)∇H_phys = −(R₁₁x₁²+R₂₂x₂²)（`PHEnergyBalance.lean`，对应 H_phys 惯例）。
 - **动力学后果**：KeYmaera X 证明 H 的任意亚水平集沿 ODE 正不变（`parametric.kyx`，符号参数 J₁,J₂,D₁,D₂,K > 0）。dI 策略成功要求 Ḣ ≤ 0，而 Ḣ ≤ 0 在 D₁,D₂ > 0 时等价于 sin 项精确抵消。
 
-注意：KeYmaera X 验证的是 Ḣ ≤ 0（不等式），不是 Ḣ = −D₁ω₁²−D₂ω₂²（等式）。等式由 Lean 4 证明覆盖。两者互补：Lean 证等式，KeYmaera X 证沿 ODE 轨迹的不变性。
+注意：KeYmaera X 验证的是 Ḣ ≤ 0（不等式），不是 Ḣ = −2D₁ω₁²−2D₂ω₂²（等式）。等式本质上是代数恒等式（Lean 4 证明覆盖）。两者互补。
 
 ### 2. D₁ > 0, D₂ > 0 时的 Lyapunov 稳定性
 
@@ -101,7 +103,7 @@ K=0 时无耦合恢复力。守恒量 u = D₁D₂(d₁−d₂)+D₂ω₁−D₁
 
 ### 6. D₂ < 0 时 H 不是 Lyapunov 函数
 
-Ḣ = −D₁ω₁² + |D₂|ω₂² 在 ω₂ 方向正定。解析显然（非形式化）。
+Ḣ = −2D₁ω₁² + 2|D₂|ω₂² 在 ω₂ 方向正定。解析显然（非形式化）。
 V = H + α(ω₁−ω₂)sinδ 形式的修正也不行（数值验证，所有测试的 α 和 D₂ 值均失败）。
 
 ### 7. D₂ < 0 时局部 Lyapunov 函数存在（但不来自 pH）
@@ -119,15 +121,15 @@ D₂ 趋近临界值时稳定域收缩到零。
 
 ### 8. 小信号稳定性边界
 
-$$|D_2| < \min\!\left(D_1,\; \frac{K}{2D_1}\right)$$
+$$|D_2| < \min\!\left(D_1,\; \frac{K}{D_1}\right)$$
 
-由 Routh-Hurwitz 解析推导（**手工推导，非形式化**），12 组 (D₁, K) 参数值数值验证全部吻合。
+由 Routh-Hurwitz 解析推导（**手工推导，非形式化**），12 组 (D₁, K) 参数值数值验证全部吻合。注意此边界对应耦合系数 K（与 .kyx 文件一致），不是 K/2。
 
 ---
 
 ## 核心未解问题
 
-D₂ < 0 时，pH 结构给出 Ḣ = −D₁ω₁² + |D₂|ω₂²（有用的代数信息），但不能直接用于稳定性证明。经典 Lyapunov（x'Px）可以局部使用但不利用 pH 结构。
+D₂ < 0 时，pH 结构给出 Ḣ = −2D₁ω₁² + 2|D₂|ω₂²（有用的代数信息），但不能直接用于稳定性证明。经典 Lyapunov（x'Px）可以局部使用但不利用 pH 结构。
 
 **这两者之间有没有桥梁？**
 
