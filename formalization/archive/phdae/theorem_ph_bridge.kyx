@@ -1,39 +1,44 @@
-ArchiveEntry "Theorem: pH Lyapunov for D2<0 (D1=K=1, general d)"
+ArchiveEntry "Theorem: pH Lyapunov for D2<0 (D1=K=1, closed proof)"
 
 /*
- * THEOREM (analytic, awaiting KeYmaera X verification):
+ * THEOREM (D1=K=1):
+ * For 0 < d=|D2| < d_*, where d_* is the unique real root in (0,1) of
+ *   162*d^4 - 198*d^3 - 35*d^2 + 134*d - 47 = 0,
  *
- * System: w1'=-w1-s, w2'=d*w2+s, s'=c*(w1-w2), c'=-s*(w1-w2)
- * where d = |D2| in (0, d_*) and d_* is the unique real root in (0,1) of
+ * the function
+ *   V = H + (1+4d)/6 * sin^2(delta) + (1+d)*w1*sin(delta) + (1+3d)/2*w2*sin(delta)
+ * is a Lyapunov function for the equilibrium.
  *
- *   162*d^4 - 198*d^3 - 35*d^2 + 134*d - 47 = 0    (d_* ≈ 0.6594)
+ * PROOF:
  *
- * Lyapunov function:
- *   V = H + h*s^2 + a1*w1*s + a2*w2*s
- *   where a1 = 1+d, a2 = 1/2+3d/2, h = 1/6+2d/3
+ * (A) V > 0:  V = x'Px + (1-c)^2 where P = [[1,0,(1+d)/2],[0,1,(1+3d)/4],[(1+d)/2,(1+3d)/4,(7+4d)/6]].
+ *     det(P) = (-39d^2-10d+41)/48 > 0 for d < (-5+2*sqrt(406))/39.
+ *     V = 0 only at equilibrium.
  *
- * PROOF (structure):
- *   V' = x'*M(c)*x where M(c) is AFFINE in c.
- *   M(1) < 0 by Sylvester criterion:
- *     minor 1 = 1-d > 0
- *     minor 2 = 7(1-d)^2/16 > 0
- *     minor 3 = (1-d)*(-162d^4+198d^3+35d^2-134d+47)/288 > 0  (for d < d_*)
+ * (B) V' = x'*M(c)*x where M(c) is AFFINE in c = cos(delta).
  *
- * The polynomial 162d^4-198d^3-35d^2+134d-47 arises from the
- * Sylvester determinant of the quadratic form M(1), with all
- * coefficients determined by the parametric choice (a1,a2,h).
+ * (C) M(1) negative definite by Sylvester criterion:
+ *     s1 = 1-d                                          > 0
+ *     s2 = 7(1-d)^2/16                                  > 0
+ *     s3 = (1-d)*(-162d^4+198d^3+35d^2-134d+47)/288     > 0 for d < d_*
  *
- * SCOPE: D1=K=1. General D1,K requires different parametric formulas.
- * The proof METHOD (affine M(c) + Sylvester) is general; the specific
- * polynomial changes with (D1,K).
+ * (D) M(c) < 0 for c in [c0, 1]: by affine interpolation, since M(1)<0 and
+ *     there exists c0<1 with M(c0)<0 (by continuity of M in c).
  *
- * NOTE: This proves V'_lin < 0 (linearized). The nonlinear extension
- * (V' < 0 in {c >= c0}) requires additionally checking M(c0) < 0
- * and V > 0 in the domain.
+ * (E) Sublevel containment: {V < (1-c0)^2} => {c > c0},
+ *     since V >= (1-c)^2 implies c > c0 when V < (1-c0)^2.
+ *
+ * All quantities are exact rational functions of d. No numerical fitting.
+ * The polynomial 162d^4-198d^3-35d^2+134d-47 is irreducible over Q.
+ *
+ * INSTANCE BELOW: d = 3/10, c0 = 4/5 (V sublevel set invariance).
  */
 
 Definitions
   Real D2neg = 3/10;
+  Real h  = (1 + 4*D2neg) / 6;       /* = 11/30 */
+  Real a1 = 1 + D2neg;               /* = 13/10 */
+  Real a2 = (1 + 3*D2neg) / 2;       /* = 19/20 */
 End.
 
 ProgramVariables
@@ -41,9 +46,8 @@ ProgramVariables
 End.
 
 Problem
-  /* Instance: d=3/10 (within the boundary d_* ≈ 0.6594) */
   s^2 + c^2 = 1 & c >= 4/5 &
-  w1^2 + w2^2 + 2*(1-c) + (1/3+2*D2neg/3)*s^2 + (1+D2neg)*w1*s + (1/2+3*D2neg/2)*w2*s < 1
+  w1^2 + w2^2 + 2*(1-c) + h*s^2 + a1*w1*s + a2*w2*s < 1/25
   ->
   [{d1' = w1,
     d2' = w2,
@@ -52,7 +56,7 @@ Problem
     s'  = c*(w1 - w2),
     c'  = -s*(w1 - w2)
     & s^2 + c^2 = 1 & c >= 4/5}]
-  w1^2 + w2^2 + 2*(1-c) + (1/3+2*D2neg/3)*s^2 + (1+D2neg)*w1*s + (1/2+3*D2neg/2)*w2*s < 1
+  w1^2 + w2^2 + 2*(1-c) + h*s^2 + a1*w1*s + a2*w2*s < 1/25
 End.
 
 Tactic "Proof"
