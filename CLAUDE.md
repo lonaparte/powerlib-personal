@@ -2,13 +2,9 @@
 
 ## System Convention
 
-All .kyx files and Summary.md use the same convention:
-- System: ω₁' = -D₁ω₁ - K·sinδ, ω₂' = -D₂ω₂ + K·sinδ (coupling K, not K/2)
-- Hamiltonian: H = ω₁² + ω₂² + 2K(1-cosδ) (no 1/2 coefficient)
-- Energy balance: Ḣ = -2D₁ω₁² - 2D₂ω₂² (factor 2 from H definition)
-- Physical convention H_phys = H/2 gives Ḣ_phys = -D₁ω₁² - D₂ω₂²
+All conventions (variables, equations, parameters, encodings) are defined in `formalization/Conventions.md`. That file is the single source of truth for notation.
 
-Do NOT introduce alternative conventions. If a formula doesn't match the above, it's wrong.
+Do NOT introduce alternative conventions. When writing a new .kyx file or updating Summary.md, check Conventions.md first. If a formula doesn't match, it's wrong. If a new convention is needed, update Conventions.md first.
 
 ## Formal Statement as Single Source of Truth
 
@@ -44,6 +40,7 @@ This is a DEFAULT requirement — do not wait for the user to ask.
 
 ## Key Files
 
+- `formalization/Conventions.md` — All notation, variable naming, parameter definitions, encoding conventions. Update this first when introducing new symbols.
 - `formalization/Summary.md` — Index of all proved results and formalized conjectures. References .kyx files as authoritative source.
 - `formalization/archive/phdae/*.kyx` — All KeYmaera X proofs (with Tactic) and conjectures (without Tactic).
 - `formalization/archive/phdae/*.lean` — Lean 4 algebraic proofs.
