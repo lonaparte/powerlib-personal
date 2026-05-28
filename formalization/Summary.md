@@ -87,6 +87,43 @@ K=0 时无耦合恢复力。守恒量 u = D₁D₂(d₁−d₂)+D₂ω₁−D₁
 
 ---
 
+## 单机系统（SMIB）：完整的大信号分析
+
+两机系统消去公共模态后，单机对无穷大母线（SMIB）是最基础的暂态稳定性对象。控制方式为**下垂/等效阻尼**（droop / effective damping）：δ′=ω, ω′=Pm−Dω−Ksinδ（阻尼力矩 −Dω 来自下垂控制或等效阻尼，不是同步机的精确电磁阻尼）。全部**大信号、非线性、不做线性化假设**，能参数化的全参数化。
+
+H = ω²+2K(1−cosδ)（与两机同惯例，不含 1/2）。
+
+### S1. 保守情形 D=0：能量精确守恒
+
+∀K>0，Ḣ=0，H(t)=H(0)（`smib_conservative.kyx`，符号 K，dI）。无阻尼时轨迹沿等能量线运动。
+
+### S2. 正阻尼 D>0：Lyapunov 稳定 + 稳定域
+
+- **亚水平集不变**：∀D,K>0，{ω²+2K(1−cosδ)<1} 正不变（`smib_passive_lyapunov.kyx`，符号 D,K，dI）。
+- **稳定域 H<4K**：∀D,K>0，{H<4K} 正不变（`smib_region_4K.kyx`，符号 D,K，dI）。H=4K 是 δ=π 鞍点（分离线）的能量水平。
+
+### S3. 正阻尼 D>0：渐近稳定
+
+- **实例 D=K=1**：修正 Lyapunov V=H+(1/2)ωsinδ 在 {cosδ≥0} 内 V̇<0，有限时间 t<3V₀/target 收敛（`smib_asymptotic.kyx`，dC+dI）。大信号轨迹级 dL 证明。
+- **参数化代数条件**：∀D,K>0, c∈[0,1]，取 a=DK/(K+D²)，负定/正定条件 DKc−2D(K+D²)<0、7D²/4+K(2−c)>0、K(K+D²)²−D²K²/4>0 全部成立（`smib_asymptotic_parametric.kyx`，QE）。**注意：这只证明了修正 Lyapunov 函数的（半）负定性代数条件，不是轨迹级 dL 证明**——一般参数的轨迹级证明仍受 existsR witness 瓶颈限制（与两机 C1 同源）。
+
+### S4. 负阻尼 D<0：能量严格增长（不稳定）
+
+∀D<0,K>0，当 ω≠0 时 Ḣ=−2Dω²>0，H(t)≥H(0)（`smib_negdamping_unstable.kyx`，符号 D,K，dI）。单机无被动伙伴可耦合，能量单调注入，原点不可能被任何能量论证镇定——大信号下真实不稳定。（这是大信号能量证书；Chetaev 二次型 x′Qx 只是其局部线性化版本，因"不做线性化"要求未单独形式化。）
+
+### S5. 带载（Pm≠0）：大信号能量不变 + 平衡点渐近稳定
+
+- **大信号不变量**：∀D,K, |Pm| 任意，修正能量 V=ω²+2K(1−cosδ)−2Pmδ 满足 V̇=−2Dω²（Pm 项在 Lie 导数中精确抵消），D≥0 时亚水平集不变（`smib_tilted_largesignal.kyx`，dI）。
+- **带载平衡点渐近稳定**：|Pm|<K 时存在稳定平衡 δ_s（sinδ_s=Pm/K），有效同步系数 Ke=√(K²−Pm²)=Kcosδ_s>0。移轴后结构与无载 SMIB 同（K→Ke）。∀D>0, Ke>0 平衡点渐近稳定（`smib_loaded_equilibrium.kyx`，QE）。**同 S3 参数化版：证明的是 (D,Ke) 参数化的负定/正定代数条件，非轨迹级 dL 证明**。
+
+### S6. 失步（Pm>K）：频率发散
+
+无阻尼 D=0 且 Pm>K 时 sinδ=Pm/K 无解，无平衡点。∀K>0,Pm>K，ω−(Pm−K)t 非减，故 ω(t)≥ω₀+(Pm−K)t→+∞（`smib_loss_of_synchronism.kyx`，符号 K,Pm，dC+dW+QE+dI）。大信号、精确非线性的失步证明。
+
+**单机小结**：保守(S1)/欠阻尼稳定(S2,S3)/负阻尼不稳定(S4)/带载平衡(S5)/失步(S6) 覆盖了 SMIB 全部定性区域。轨迹级大信号 dL 证明：S1,S2,S4,S6 全参数符号化；S3,S5 渐近稳定为实例级轨迹证明 + 参数化代数条件（轨迹级一般化受 existsR witness 限制）。
+
+---
+
 ## 已排除的假问题
 
 | 声称的问题 | 排除原因 |
@@ -191,6 +228,20 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 | **pH Lyapunov for D₂<0** | `theorem_ph_bridge.kyx` | D₁=K=1, d=3/10 | dI（核心结果） |
 | **(2D₁+3d)²<16K 代数基础** | `det_factorization.kyx` | 符号 D₁,K | QE |
 | **sin²δ 修正不可或缺** | `impossibility_ph_linear.kyx` | d=3/10 | QE（Sylvester 析取） |
+
+### ✅ 单机 SMIB 机器已验证 PROVED（9 个）
+
+| 结论 | 文件 | 参数范围 | 策略 |
+|------|------|---------|------|
+| D=0 能量守恒 | `smib_conservative.kyx` | 符号 K | dI |
+| D>0 亚水平集不变 | `smib_passive_lyapunov.kyx` | 符号 D,K | dI |
+| D>0 稳定域 H<4K | `smib_region_4K.kyx` | 符号 D,K | dI |
+| D=K=1 渐近稳定（轨迹级） | `smib_asymptotic.kyx` | D=K=1 | dC + dI |
+| 渐近稳定代数条件（仅代数） | `smib_asymptotic_parametric.kyx` | 符号 D,K,c | QE |
+| D<0 能量增长（不稳定） | `smib_negdamping_unstable.kyx` | 符号 D<0,K | dI |
+| Pm≠0 大信号能量不变 | `smib_tilted_largesignal.kyx` | 符号 D,K,Pm | dI |
+| 带载平衡渐近稳定（仅代数） | `smib_loaded_equilibrium.kyx` | 符号 D,Ke | QE |
+| Pm>K 失步发散（轨迹级） | `smib_loss_of_synchronism.kyx` | 符号 K,Pm | dC+dW+QE+dI |
 
 ### ⚠️ Tactic 已写但 QE 超时（NOT 机器验证，4 个）
 
