@@ -1,5 +1,10 @@
 ArchiveEntry "Gap (PARAMETRIC in d): no 3-param pH function for d in [9/10,1)"
 
+/* KeYmaera X STATUS: NOT machine-verified. QE timed out (>360s) on this
+ * forall-in-d formulation (4 variables, intrinsically thin gap margin
+ * ~-3e-6). The single-instance version (gap_no_ph_lyapunov.kyx, d=19/20) IS verified. The d-band
+ * boundary is an algebraic number, so a clean forall-d QE is out of reach. */
+
 /*
  * PARAMETRIC version of #4 (no fixed d).
  * 3-parameter pH family V = H + h*sin^2 + a1*w1*s + a2*w2*s, D1=K=1, D2=-d.

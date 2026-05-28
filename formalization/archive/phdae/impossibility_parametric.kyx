@@ -1,5 +1,10 @@
 ArchiveEntry "Impossibility (PARAMETRIC in d): 2-param pH family fails for d in [1/4,1)"
 
+/* KeYmaera X STATUS: NOT machine-verified. QE threw a resource exception on this
+ * forall-in-d formulation (3 variables, intrinsically thin gap margin
+ * ~-4e-3). The single-instance version (impossibility_ph_linear.kyx, d=3/10) IS verified. The d-band
+ * boundary is an algebraic number, so a clean forall-d QE is out of reach. */
+
 /*
  * PARAMETRIC version of #2 (no fixed d).
  * 2-parameter family V = H + a*(w1-w2)*s + b*w2*s (NO sin^2), D1=K=1, D2=-d.
