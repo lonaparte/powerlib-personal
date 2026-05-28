@@ -1,13 +1,22 @@
 ArchiveEntry "Theorem: pH Lyapunov for D2<0 (D1=K=1, closed proof)"
 
 /*
- * THEOREM (D1=K=1):
+ * THEOREM (D1=K=1), SUFFICIENT CONDITION (not tight):
  * For 0 < d=|D2| < d_*, where d_* is the unique real root in (0,1) of
- *   162*d^4 - 198*d^3 - 35*d^2 + 134*d - 47 = 0,
+ *   162*d^4 - 198*d^3 - 35*d^2 + 134*d - 47 = 0  (d_* ~ 0.6594),
  *
  * the function
  *   V = H + (1+4d)/6 * sin^2(delta) + (1+d)*w1*sin(delta) + (1+3d)/2*w2*sin(delta)
  * is a Lyapunov function for the equilibrium.
+ *
+ * IMPORTANT — this is a SUFFICIENT condition, NOT the tight pH boundary.
+ * The parametrization a1=1+d, a2=(1+3d)/2 was chosen for clean algebra
+ * (diagonals proportional to (1-d)). Optimizing a1,a2,h JOINTLY extends
+ * the pH capability to d ~ 0.89 (89% of the Routh boundary, which is d<1).
+ * The general formula (2*D1+3d)^2 < 16*K is likewise a sufficient condition,
+ * NOT tight. The tight pH boundary (supremum over all corrections) has no
+ * known clean closed form; it is determined by feasibility of the LMI
+ * M(1) < 0 over the 3-parameter family.
  *
  * PROOF:
  *

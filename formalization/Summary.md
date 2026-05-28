@@ -124,12 +124,18 @@ D₁=1, D₂=−3/10, K=1 的具体实例。V = x'Px（精确有理数 P 矩阵�
 这是 D₂<0 时用非 pH 方法的局部稳定性证明。
 瓶颈：QE 需要处理 s²+c²=1 约束下的 4 次多项式不等式。
 
-### C4. pH 结构的 Lyapunov 函数存在性（`conjecture_ph_bridge.kyx`）
+### C4. pH 结构的 Lyapunov 函数存在性 —— 已解决（YES）
 
-**核心研究问题**。D₁=1, D₂=−3/10, K=1：∃a,b 使得 V = H + a(ω₁−ω₂)s + b·ω₂·s 在 {c≥1/2} 域内 V̇ < 0。
+**核心研究问题，已解决**。D₂<0 时存在 pH 结构的 Lyapunov 函数：
 
-如果存在：pH 结构可以推广到非全无源系统。
-如果不存在：pH 结构在 D₂<0 时本质上无法提供 Lyapunov 函数。
+$$V = H + h\sin^2\delta + a_1\omega_1\sin\delta + a_2\omega_2\sin\delta$$
+
+- **sin²δ 项不可或缺**：仅交叉项的 2 参数族 V = H+a(ω₁−ω₂)s+b·ω₂·s 可证不行（`impossibility_ph_linear.kyx`，纯 QE 证明）。
+- **加上 sin²δ 后存在**：`theorem_ph_bridge.kyx`（D₁=K=1 实例，dI 证明）。
+- **充分条件**（非紧）：参数化 a₁=D₁+d, a₂=(D₁+3d)/2 + 最优 h 给出 (2D₁+3d)²<16K。
+- **真实 pH 边界**：联合优化 a₁,a₂,h 可达 ~89% Routh 边界（D₁=K=1），无已知闭式。
+
+**重要修正**：早期声称的"边界"(2D₁+3d)²<16K 和 d*=1/5 都是特定参数化的**充分条件**，不是 pH 方法的紧边界。紧边界由 LMI M(1)<0 在 3 参数族上的可行性决定，覆盖 Routh 边界的 85-100%（依赖 D₁,K）。
 
 ### 未形式化的结论（仅数值/解析）
 
@@ -174,7 +180,14 @@ D₁=1, D₂=−3/10, K=1 的具体实例。V = x'Px（精确有理数 P 矩阵�
 | C1. 一般参数渐近稳定 | `conjecture_parametric_asymptotic.kyx` | existsR 需参数化 witness |
 | C2. Routh 边界外不稳定 | `conjecture_instability_boundary.kyx` | 菱形模态需 dG 构造逃逸轨迹 |
 | C3. D₂<0 局部 x'Px 稳定 | `conjecture_neg_d2_lyapunov.kyx` | QE 处理 4 次多项式 + s²+c²=1 |
-| C4. pH 结构 Lyapunov 函数 | `conjecture_ph_bridge.kyx` | 核心研究问题：是否存在 |
+
+### pH 桥梁结果（C4 已解决）
+
+| 结论 | 文件 | 说明 |
+|------|------|------|
+| sin²δ 修正不可或缺 | `impossibility_ph_linear.kyx` | 2 参数族不可能（QE） |
+| pH Lyapunov 函数存在 | `theorem_ph_bridge.kyx` | D₁=K=1，dI（充分条件 (2D₁+3d)²<16K，非紧） |
+| 三机推广 | `theorem_3machine.kyx` | 线形拓扑，反对称修正，d*=1/5（充分，非紧；真实 ~38%） |
 
 ---
 
