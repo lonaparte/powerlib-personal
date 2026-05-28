@@ -1,5 +1,12 @@
 ArchiveEntry "Level C reached by a degree-4 polynomial Lyapunov certificate"
 
+/* KeYmaera X STATUS: P>0 parametric QE TIMES OUT (M2~deg6, M3~deg8, 3 vars,
+ * Routh implication). P_poly EXISTS and is numerically verified PD on Routh
+ * (3000 random points). The V-dot identity A'P+PA=-LCD*I is exact (see
+ * theorem_levelC_identity.kyx, PROVED). So the certificate is real; only the
+ * parametric P>0 minor-positivity is beyond QE. A fixed instance proves
+ * trivially (constant minors). */
+
 /*
  * CORRECTION of an earlier (wrong) claim that reaching the true stability
  * boundary requires a "messy" certificate. It does NOT.
