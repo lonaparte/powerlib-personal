@@ -130,16 +130,21 @@ D₁=1, D₂=−3/10, K=1 的具体实例。V = x'Px（精确有理数 P 矩阵�
 
 $$V = H + h\sin^2\delta + a_1\omega_1\sin\delta + a_2\omega_2\sin\delta$$
 
-- **sin²δ 项不可或缺**：仅交叉项的 2 参数族 V = H+a(ω₁−ω₂)s+b·ω₂·s 可证不行（`impossibility_ph_linear.kyx`，纯 QE 证明）。
-- **加上 sin²δ 后存在**：`theorem_ph_bridge.kyx`（D₁=K=1 实例，dI 证明）。
-**三边界结构**（D₁=K=1，d=|D₂|，已严格论证）：
+- **加上 sin²δ 后存在**：参数化证明 `theorem_ph_parametric.kyx`（∀D₁,K,d，M(1)≺0）+ 实例 `theorem_ph_bridge.kyx`（d=3/10 的非线性 dI）。
+- **sin²δ 项何时必需**：参数化后发现是 **d 相关的**，不是普适的（见下表）。
 
-| 范围 | 含义 | 状态 |
-|------|------|------|
-| d < 0.67 | (2D₁+3d)²<16K，干净 pH Lyapunov，V 良态 | **已证** `theorem_ph_bridge.kyx` |
-| d < d_LMI | 3 参数 pH 族 M(1)<0 可行，但 V 趋于退化（P_min→0.04） | LMI 可行性极限 |
-| d < 1.0 | Routh 边界，系统实际稳定，一般 x'Qx 可行但非 pH 结构 | A 矩阵 Hurwitz |
-| d ≥ 1.0 | 系统不稳定 | — |
+**四带参数化结构**（D₁=K=1，d=|D₂|，符号推导）：
+
+| 范围 | 修正需求 | 状态 |
+|------|---------|------|
+| d < 0.225 | 2 参数族（**无 sin²**）即可 | 数值（d_thresh≈0.225 由 minor 边界定） |
+| 0.225 < d < d_LMI | **需 sin²**（3 参数）；2 参数族可证不行 | `impossibility_ph_linear.kyx`（d=3/10 实例 ✅） |
+| d_LMI < d < 1.0 | 间隙：连 3 参数也不行，须用非 pH 的 x'Qx | `gap_no_ph_lyapunov.kyx`（d=19/20 实例 ✅） |
+| d ≥ 1.0 | 系统不稳定 | Routh |
+
+sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"的说法是基于 d=3/10 单点，参数化暴露了它的 d 依赖性。
+
+**充分条件 (2D₁+3d)²<16K 的参数化证明**：`theorem_ph_parametric.kyx` + `det_factorization.kyx`，∀D₁,K,d，三个 Sylvester 子式 D₁−d、7(D₁−d)²/16、7(D₁−d)³(16K−(2D₁+3d)²)/512 全部闭式。
 
 **d_LMI = 0.88988155**（代数数）。严格刻画：3 参数族上最优的 M=A'P+PA 恰好变成**秩 1 负半定**（特征值 [−0.22, 0, 0]）的 d 值。秩 1 条件（4 个多项式方程）消去 (a₁,a₂,h) 后得到 d 的多项式，d_LMI 是其根。秩 1 求解（0.88988155）与 λ_max 优化（0.88988157）吻合到 7 位。
 
