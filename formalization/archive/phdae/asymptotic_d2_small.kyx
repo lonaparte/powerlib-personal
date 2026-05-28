@@ -1,5 +1,10 @@
 ArchiveEntry "Asymptotic Stability D1=1 D2=1/10 K=1"
 
+/* KeYmaera X STATUS: Tactic written, Lie-derivative algebra verified,
+ * but QE TIMES OUT (>350s). NOT machine-verified. High polynomial degree
+ * or messy rational coefficients overwhelm Z3/CAD. Numerically validated;
+ * awaiting stronger QE strategy or problem decomposition. */
+
 /*
  * STATUS: TACTIC WRITTEN, AWAITING KeYmaera X VERIFICATION
  *

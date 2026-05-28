@@ -166,39 +166,53 @@ $$V = H + h\sin^2\delta + a_1\omega_1\sin\delta + a_2\omega_2\sin\delta$$
 
 ---
 
-## 文件索引
+## 文件索引（KeYmaera X 5.1.2 实跑结果）
 
-### 已证明（有 Tactic，KeYmaera X 通过）
+### ✅ 机器已验证 PROVED（13 个）
 
 | 结论 | 文件 | 参数范围 | 策略 |
 |------|------|---------|------|
-| 1. Ḣ ≤ 0 | `parametric.kyx` | 符号 J,D,K > 0 | dI |
-| 1. 代数等式 | `PHEnergyBalance.lean` | 2×2 整数矩阵 | ring-style |
-| 2. 亚水平集不变 | `parametric.kyx` | 符号 J,D,K > 0 | dI |
-| 2. ∀ε∃δ (H 度量) | `lyapunov_nonlinear.kyx` | K=D=1 | existsR + dI |
-| 2. ∀ε∃δ (分量) | `lyapunov_complete.kyx` | K=D=1 | existsR + dC + dI |
-| 3. 渐近稳定 | `asymptotic_closed.kyx` + aux_*.kyx | K=D=1 | dC + dI + QE |
-| 3. 渐近稳定 | `parametric_asymptotic.kyx` | D₁=1,D₂=5,K=2 | dC + dI + QE |
-| 4. H<4K 不变 | `stability_boundary.kyx` | D=K=1 | dI |
-| 5. D=0 必要 | `necessary_d0.kyx` | 符号 K > 0 | dI |
-| 5. D<0 必要 | `necessary_dneg.kyx` | 符号 D < 0, K > 0 | dI |
-| 5. K=0 必要 | `necessary_k0.kyx` | 符号 D₁,D₂ > 0 | dC + dW + QE |
+| Ḣ ≤ 0 / 亚水平集不变 | `parametric.kyx` | 符号 J,D,K > 0 | dI |
+| 代数等式 ∇H'(J-R)∇H | `PHEnergyBalance.lean` | 2×2 整数矩阵 | ring-style |
+| ∀ε∃δ (H 度量) | `lyapunov_nonlinear.kyx` | K=D=1 | existsR + dI |
+| ∀ε∃δ (分量) | `lyapunov_complete.kyx` | K=D=1 | existsR + dC + dI |
+| 非线性渐近稳定 | `asymptotic_closed.kyx` | K=D=1 | dC + dI + QE |
+| 异构渐近稳定 | `parametric_asymptotic.kyx` | D₁=1,D₂=5,K=2 | dC + dI + QE |
+| H<4K 不变 | `stability_boundary.kyx` | D=K=1 | dI |
+| 基本非线性稳定 | `two_machine_nonlinear.kyx` | K=D=1 | dI |
+| D=0 必要 | `necessary_d0.kyx` | 符号 K > 0 | dI |
+| D<0 必要 | `necessary_dneg.kyx` | 符号 D < 0, K > 0 | dI |
+| K=0 必要 | `necessary_k0.kyx` | 符号 D₁,D₂ > 0 | dC + dW + QE |
+| **pH Lyapunov for D₂<0** | `theorem_ph_bridge.kyx` | D₁=K=1, d=3/10 | dI（核心结果） |
+| **(2D₁+3d)²<16K 代数基础** | `det_factorization.kyx` | 符号 D₁,K | QE |
+| **sin²δ 修正不可或缺** | `impossibility_ph_linear.kyx` | d=3/10 | QE（Sylvester 析取） |
 
-### 猜想（有 Problem 无 Tactic）
+### ⚠️ Tactic 已写但 QE 超时（NOT 机器验证，4 个）
+
+| 结论 | 文件 | 超时原因 |
+|------|------|---------|
+| 三机 pH Lyapunov | `theorem_3machine.kyx` | 5×5 dI，9 变量，QE >350s |
+| D₂<0 局部 x'Px 渐近稳定 | `conjecture_neg_d2_lyapunov.kyx` | 4 次多项式 + s²+c²=1，QE >350s |
+| 弱阻尼渐近稳定 (D₂=1/10) | `asymptotic_d2_small.kyx` | 脏有理数 a=1/14，QE >200s |
+| 弱耦合渐近稳定 (K=1/10) | `asymptotic_weak_coupling.kyx` | 脏有理数，QE >200s |
+
+这些的 Lie 导数代数已手工+数值核验，但 KeYmaera X 的 QE（基于 Z3/CAD）跑不完。
+
+### 仍是猜想（有 Problem 无 Tactic）
 
 | 猜想 | 文件 | 核心困难 |
 |------|------|---------|
 | C1. 一般参数渐近稳定 | `conjecture_parametric_asymptotic.kyx` | existsR 需参数化 witness |
 | C2. Routh 边界外不稳定 | `conjecture_instability_boundary.kyx` | 菱形模态需 dG 构造逃逸轨迹 |
-| C3. D₂<0 局部 x'Px 稳定 | `conjecture_neg_d2_lyapunov.kyx` | QE 处理 4 次多项式 + s²+c²=1 |
 
-### pH 桥梁结果（C4 已解决）
+### 关键认知：QE 可处理性
 
-| 结论 | 文件 | 说明 |
-|------|------|------|
-| sin²δ 修正不可或缺 | `impossibility_ph_linear.kyx` | 2 参数族不可能（QE） |
-| pH Lyapunov 函数存在 | `theorem_ph_bridge.kyx` | D₁=K=1，dI（充分条件 (2D₁+3d)²<16K，非紧） |
-| 三机推广 | `theorem_3machine.kyx` | 线形拓扑，反对称修正，d*=1/5（充分，非紧；真实 ~38%） |
+**低次多项式 dI 秒过；高次/大矩阵/脏有理数/量词交替超时。**
+- theorem_ph_bridge（degree-2/3 dI）：344ms ✓
+- impossibility 原 ∀∃ 形式：超时 → 重写为纯 ∀ Sylvester 析取：通过 ✓
+- 三机 5×5 dI、x'Px degree-4：超时 ✗
+
+教训：形式化成功与否高度依赖**问题的代数复杂度和表述方式**，不只是命题真假。
 
 ---
 

@@ -1,5 +1,10 @@
 ArchiveEntry "Theorem: 3-Machine pH Lyapunov (line, D1=D3=K=1)"
 
+/* KeYmaera X STATUS: Tactic written, Lie-derivative algebra verified,
+ * but QE TIMES OUT (>350s). NOT machine-verified. High polynomial degree
+ * or messy rational coefficients overwhelm Z3/CAD. Numerically validated;
+ * awaiting stronger QE strategy or problem decomposition. */
+
 /*
  * 3-machine line: 1--2--3, D1=D3=K=1, D2=-d.
  *

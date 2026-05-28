@@ -1,63 +1,45 @@
 ArchiveEntry "Impossibility: V=H+a(w1-w2)s+b*w2*s Cannot Be Lyapunov (linearized)"
 
 /*
- * STATUS: TACTIC WRITTEN, AWAITING KeYmaera X VERIFICATION
+ * PROVED (pure-forall reformulation for tractable QE):
+ * For D1=1, D2=-3/10, K=1, the family V = H + a*(w1-w2)*s + b*w2*s
+ * CANNOT achieve V'_lin < 0 for any (a,b).
  *
- * PROVED (at linearized level): For D1=1, D2=-3/10, K=1, the family
- * V = H + a*(w1-w2)*s + b*w2*s CANNOT achieve V'_lin < 0 for any (a,b)
- * with V positive definite.
- *
- * V'_lin = x' * M * x where M depends on (a,b):
- *   M = [[-2+a,     (b-2a)/2,    -a/2    ],
+ * M(1) (2-parameter family, x=(w1,w2,s)):
+ *   M = [[-2+a,     (b-2a)/2,    -a/2     ],
  *        [(b-2a)/2, 3/5-(b-a),  3(b-a)/20],
  *        [-a/2,     3(b-a)/20,   b-2a    ]]
  *
- * The obstruction has three layers:
- *   1. M[1,1] < 0 requires b-a > 3/5 (to fix Hdot > 0 in w2 direction)
- *   2. M[2,2] < 0 requires b < 2a (to fix the s direction)
- *   3. Combined with 1,2: a > 3/5, but then M[0,2] = -a/2 < -3/10
- *      creates an irreducible w1-s coupling that prevents M < 0.
+ * M is negative definite iff -M is positive definite iff all three
+ * leading minors of -M are positive (Sylvester):
+ *   LM1 = 2-a
+ *   LM2 = (-2+a)(3/5-(b-a)) - ((b-2a)/2)^2     (=100*LM2: -140a-25b^2+200b-120)
+ *   LM3 = det(-M)                              (=2000*LM3 below)
  *
- * Physical meaning: the coupling K*sin(delta) in w1' creates a structural
- * cross-term in the energy derivative. The pH correction family (cross terms
- * only) cannot compensate because it lacks diagonal weight adjustments.
+ * Impossibility: for ALL (a,b), the three minors are NOT all positive.
+ * This is a pure universally-quantified polynomial statement (no exists),
+ * which QE can decide. (The earlier exists-form timed out.)
  *
- * The proof below encodes: for all (a,b), if P > 0 then M has a
- * non-negative eigenvalue. Equivalently: exists x != 0 with x'Mx >= 0.
- * This is a pure QE problem (no ODEs).
+ * Cleared denominators (signs preserved):
+ *   LM2*100 = -140*a - 25*b^2 + 200*b - 120
+ *   LM3*2000 = 845*a^3 - 1040*a^2*b - 5390*a^2 - 805*a*b^2 + 10980*a*b
+ *              - 4800*a + 500*b^3 - 4090*b^2 + 2400*b
  */
 
 ProgramVariables
   Real a;
   Real b;
-  Real w1;
-  Real w2;
-  Real s;
 End.
 
 Problem
-  /* For all a,b with V positive definite (P > 0), V'_lin is not negative definite.
-   * P > 0 encoded via leading minors of P = [[1,0,a/2],[0,1,(b-a)/2],[a/2,(b-a)/2,1]].
-   * Minor 1: 1 > 0 (trivially true)
-   * Minor 2: 1 > 0 (trivially true)
-   * Minor 3: det(P) = 1 - a^2/4 - (b-a)^2/4 > 0
-   *
-   * M not ND means: exists (w1,w2,s) != 0 such that x'Mx >= 0.
-   * x'Mx = (-2+a)*w1^2 + (3/5-(b-a))*w2^2 + (b-2*a)*s^2
-   *        + (b-2*a)*w1*w2 - a*w1*s + 3*(b-a)/10*w2*s
-   */
   \forall a \forall b (
-    1 - a^2/4 - (b-a)^2/4 > 0
-    ->
-    \exists w1 \exists w2 \exists s (
-      w1^2 + w2^2 + s^2 > 0 &
-      (-2+a)*w1^2 + (3/5-(b-a))*w2^2 + (b-2*a)*s^2
-      + (b-2*a)*w1*w2 - a*w1*s + 3*(b-a)/10*w2*s >= 0))
+    2 - a <= 0
+    | -140*a - 25*b^2 + 200*b - 120 <= 0
+    | 845*a^3 - 1040*a^2*b - 5390*a^2 - 805*a*b^2 + 10980*a*b
+        - 4800*a + 500*b^3 - 4090*b^2 + 2400*b <= 0)
 End.
 
 Tactic "Proof"
-  allR(1); allR(1);
-  implyR(1);
   QE
 End.
 
