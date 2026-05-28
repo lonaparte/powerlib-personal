@@ -9,7 +9,7 @@ ArchiveEntry "Theorem: pH Lyapunov for D2<0 (D1=K=1, closed proof)"
  *   V = H + (1+4d)/6 * sin^2(delta) + (1+d)*w1*sin(delta) + (1+3d)/2*w2*sin(delta)
  * is a Lyapunov function for the equilibrium.
  *
- * IMPORTANT — this is a SUFFICIENT condition, NOT the tight pH boundary.
+ * IMPORTANT - this is a SUFFICIENT condition, NOT the tight pH boundary.
  * The parametrization a1=1+d, a2=(1+3d)/2 was chosen for clean algebra
  * (diagonals proportional to (1-d)). Optimizing a1,a2,h JOINTLY extends
  * the pH capability to d ~ 0.89 (89% of the Routh boundary, which is d<1).

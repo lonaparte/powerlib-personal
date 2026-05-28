@@ -49,6 +49,6 @@ Problem
         w1^2 + w2^2 + 2*K*(1-c) > 2*eps)))
 End.
 
-/* No Tactic — this is an open conjecture. */
+/* No Tactic - this is an open conjecture. */
 
 End.

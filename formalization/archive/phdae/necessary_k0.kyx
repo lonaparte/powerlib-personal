@@ -37,7 +37,7 @@ End.
 Tactic "Proof"
   allR(1); allR(1);
   implyR(1); implyR(1);
-  dC("D1*D2*(d1-d2) + D2*w1 - D1*w2 = u0", 1);
+  dC("D1*D2*(d1-d2) + D2*w1 - D1*w2 != 0", 1);
   <(
     dW(1); QE,
     dI(1)

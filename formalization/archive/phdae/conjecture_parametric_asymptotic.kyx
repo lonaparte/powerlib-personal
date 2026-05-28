@@ -50,6 +50,6 @@ Problem
           t < C*v0/target))))
 End.
 
-/* No Tactic — this is an open conjecture. */
+/* No Tactic - this is an open conjecture. */
 
 End.
