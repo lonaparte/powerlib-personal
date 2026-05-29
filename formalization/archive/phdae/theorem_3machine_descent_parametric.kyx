@@ -6,9 +6,13 @@ ArchiveEntry "3-Machine pH D2<0: LARGE-SIGNAL descent V-dot<=0, PARAMETRIC in d 
  * constant h=1/5). KEY: V' is MULTILINEAR in (c1,c2) (degree<=1 in each), so on
  * the large-signal box c1,c2 in [4/5,1] its maximum over (c1,c2) is at a VERTEX.
  * Hence V'<=0 on the whole box  <=>  V'<=0 at the 4 corners (c1,c2) in {4/5,1}^2.
- * This file proves all 4 corner quadratic forms (in w1,w2,w3,s1,s2) are negative
- * semidefinite for ALL d in (0, 3/20], by pure universal QE -> V'<=0 on the
- * entire large-signal domain c1,c2 in [4/5,1], parametric in d.
+ * WHAT THIS FILE MACHINE-VERIFIES (the Problem below): all 4 corner quadratic
+ * forms (in w1,w2,w3,s1,s2) are negative semidefinite for ALL d in (0, 3/20] --
+ * a pure universal QE. The multilinear-vertex argument above (V' is affine in
+ * each of c1,c2, so its maximum over the box is attained at a vertex) THEN gives
+ * V'<=0 on the entire large-signal domain c1,c2 in [4/5,1], parametric in d.
+ * That last implication is the one-line reasoning above, NOT a separate KeYmaera
+ * X step (the box-itself QE times out -- see theorem_3machine_invariant_parametric).
  * (Corner (1,1) is binding; NSD holds up to d~0.19, the linearized d<1/5 boundary.
  * Cross-validated: sympy V' multilinear in c1,c2; numpy corner eigenvalues <0.)
  */
