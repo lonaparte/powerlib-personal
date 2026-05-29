@@ -1,0 +1,46 @@
+ArchiveEntry "Exact Boundary: Conservative System (parametric in K)"
+
+/*
+ * Parametric companion to exact_boundary_conservative.kyx (which fixed K=1).
+ * Conservative two-machine system (D1=D2=0): w1' = -K*s, w2' = +K*s.
+ * CLAIM: the Hamiltonian H = w1^2 + w2^2 + 2K(1-c) is EXACTLY conserved
+ * (H(t) = H(0) = h0) for ALL K>0.
+ * Mechanism: dH/dt = 0 (sin coupling cancels, no damping).
+ * Cross-validated (sympy): H' = 0 exactly.
+ */
+
+ProgramVariables
+  Real d1;
+  Real d2;
+  Real w1;
+  Real w2;
+  Real s;
+  Real c;
+  Real h0;
+End.
+
+Problem
+  \forall K (
+    K > 0 &
+    s^2 + c^2 = 1 &
+    h0 = w1^2 + w2^2 + 2*K*(1-c)
+    ->
+    [{d1' = w1,
+      d2' = w2,
+      w1' = -K*s,
+      w2' = K*s,
+      s'  = c*(w1 - w2),
+      c'  = -s*(w1 - w2),
+      h0' = 0
+      & s^2 + c^2 = 1}]
+    w1^2 + w2^2 + 2*K*(1-c) = h0
+  )
+End.
+
+Tactic "Proof"
+  allR(1);
+  implyR(1);
+  dI(1)
+End.
+
+End.
