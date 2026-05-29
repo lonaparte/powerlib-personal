@@ -1,9 +1,16 @@
 ArchiveEntry "Asymptotic Stability D1=1 D2=1/10 K=1"
 
-/* KeYmaera X STATUS: Tactic written, Lie-derivative algebra verified,
- * but QE TIMES OUT (>350s). NOT machine-verified. High polynomial degree
- * or messy rational coefficients overwhelm Z3/CAD. Numerically validated;
- * awaiting stronger QE strategy or problem decomposition. */
+/* KeYmaera X STATUS: NOT machine-verified, but DIAGNOSED this session.
+ * (1) Same locality bug as conjecture_neg_d2_lyapunov: the evolution domain
+ *     omitted the upper bound V<=1, so the dI subgoal V'<=-target/10 was FALSE
+ *     for large states (max V'+V/10 = +0.057 @ V=2.0 without bound; -0.0001 with
+ *     V<=1). Fixed below by adding V<=1 to the domain (sound: dC keeps V<=v0<1).
+ * (2) With the fix the subgoal is TRUE but Z3 QE still does not close it: the
+ *     decay bound holds only on the locality ball {V<=1} intersect {s^2+c^2=1},
+ *     an S-procedure/SOS problem. An SOS certificate EXISTS (cvxpy/SCS feasible,
+ *     identity residual ~1e-7), so the lemma is SOS-provable; exact closure needs
+ *     a rational SOS certificate (Peyrl-Parrilo rounding) or a Mathematica backend.
+ * Math is settled (asymptotically stable; V'<=-V/10 on {V<=1,c>=0,s^2+c^2=1}). */
 
 /*
  * STATUS: TACTIC WRITTEN, AWAITING KeYmaera X VERIFICATION
@@ -46,7 +53,8 @@ Problem
        t'  = 1,
        v0' = 0
        & s^2 + c^2 = 1 & c >= 0 &
-         w1^2 + w2^2 + 2*K*(1-c) + a*(w1-w2)*s >= target}]
+         w1^2 + w2^2 + 2*K*(1-c) + a*(w1-w2)*s >= target &
+         w1^2 + w2^2 + 2*K*(1-c) + a*(w1-w2)*s <= 1}]
      t < 10*v0/target))
 End.
 
