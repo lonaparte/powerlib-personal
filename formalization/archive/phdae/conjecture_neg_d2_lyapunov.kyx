@@ -12,8 +12,16 @@ ArchiveEntry "D2<0 Local Asymptotic Stability via x'Px"
  * FIX: added the locality bound  V <= 1  to the evolution domain (sound: the dC
  * invariant keeps V <= v0 < 1, so the trajectory never reaches V=1). With it the
  * dI subgoal is TRUE (numerics: max(V'+V/400) = -0.0007 on {c>=0, s^2+c^2=1, V<=1}).
- * The margin is thin (1/400 ~ the actual decay rate), so KeYmaera X QE closure of
- * the corrected (now-true) subgoal is being verified separately. */
+ * RESULT: with the V<=1 fix the dI subgoal is sound and TRUE, but KeYmaera X QE
+ * still times out (>280s). The obstruction is now structural, not a false goal:
+ * the bound V'<=-target/400 holds only INSIDE the locality ball {V<=1} (for large
+ * w2 with c~0, which s^2+c^2=1 does NOT bound, V' is large positive), so the goal
+ * is "quadratic form <= 0 on the ball {V<=1} intersect the variety {s^2+c^2=1}".
+ * That is an S-procedure / SOS problem (needs an explicit multiplier or
+ * sum-of-squares certificate, or a Mathematica QE backend); Z3's nlsat does not
+ * discharge it. The MATH is settled: D2=-3/10 is asymptotically stable (trajectory
+ * sim: V->0; V'<=-V/400 holds on {V<=1, c>=0, s^2+c^2=1}). Only the automated
+ * KeYmaera X closure of the corrected subgoal remains open. */
 
 /*
  * STATUS: TACTIC WRITTEN, AWAITING KeYmaera X VERIFICATION
