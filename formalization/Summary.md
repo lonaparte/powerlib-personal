@@ -246,7 +246,7 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 | 带载平衡渐近稳定（仅代数） | `smib_loaded_equilibrium.kyx` | 符号 D,Ke | QE |
 | Pm>K 失步发散（轨迹级） | `smib_loss_of_synchronism.kyx` | 符号 K,Pm | dC+dW+QE+dI |
 
-### ✅ 参数化补全（本轮新增，9 个，全部 PROVED）
+### ✅ 参数化补全（本轮新增，10 个，全部 PROVED）
 
 > 系统核实"固定实例 vs 参数化"状态后，将以下原本固定数值参数的已证结论推广为符号参数。
 > 每个均经 KeYmaera X 5.1.2（Z3 后端）实跑 PROVED + sympy 精确 Lie 导数核验 + scipy 数值交叉验证（每个 ≥3 组参数）。
@@ -262,12 +262,15 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 | H>4K 蕴含动能>0 | `exact_necessary_parametric.kyx` | 符号 K>0 | exact_necessary (K=1) | QE |
 | ∀ε∃δ Lyapunov（H 度量） | `lyapunov_nonlinear_parametric.kyx` | 符号 D1,D2,K>0 | lyapunov_nonlinear (D=K=1) | existsR(δ=ε)+dI |
 | ∀ε∃δ Lyapunov（单机） | `lyapunov_real_parametric.kyx` | 符号 D>0 | lyapunov_real (D=1) | existsR(δ=ε)+dI |
+| 分量式稳定（能量分量<ε） | `component_stability_parametric.kyx` | 符号 D1,D2,K>0 | component_stability (D=K=1) | dC+dW+QE / dI |
 
 **关键观察**：
 - ∀ε∃δ 的 **H 度量**版本 witness δ=ε **与参数无关**（因 Ḣ≤0，H 不增），故能干净参数化；
   而**分量**版本 `lyapunov_complete.kyx` 的 δ 依赖 K（δ=ε/(2+2K)），这正是它难以参数化的原因。
 - Z3 后端无法 populate 有理式规范化派生引理（divideRat / ratForm* 等），符号惯量 J 的除法（K/J）类证明在本容器不可行；
   遵循 Conventions.md sec.4 将 J 归一化为 1，仅参数化阻尼/耦合 D、K。
+- 参数化暴露并修正了一处隐含错误：`component_stability` 原结论 `1-c<ε` 仅在 K≥1/2 成立（由 H<ε 只能得 2K(1-c)<ε，即 1-c<ε/(2K)，K<1/2 时超过 ε）。
+  参数化版本改用与参数无关的**能量分量**界 `2K(1-c)<ε`（数值在 K=0.3 处确认原结论会被违反）。
 
 **审计结论（23 个固定实例文件的去向）**：
 - **已参数化**：上表 9 个。
