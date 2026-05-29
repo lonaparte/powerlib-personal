@@ -246,6 +246,36 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 | 带载平衡渐近稳定（仅代数） | `smib_loaded_equilibrium.kyx` | 符号 D,Ke | QE |
 | Pm>K 失步发散（轨迹级） | `smib_loss_of_synchronism.kyx` | 符号 K,Pm | dC+dW+QE+dI |
 
+### ✅ 参数化补全（本轮新增，9 个，全部 PROVED）
+
+> 系统核实"固定实例 vs 参数化"状态后，将以下原本固定数值参数的已证结论推广为符号参数。
+> 每个均经 KeYmaera X 5.1.2（Z3 后端）实跑 PROVED + sympy 精确 Lie 导数核验 + scipy 数值交叉验证（每个 ≥3 组参数）。
+
+| 结论 | 新文件 | 参数范围 | 原固定实例 | 策略 |
+|------|--------|---------|-----------|------|
+| H<4K 亚水平集不变 | `stability_boundary_parametric.kyx` | 符号 D,K>0 | stability_boundary (D=K=1) | dI |
+| 单机能量亚水平集不变 | `damped_oscillator_parametric.kyx` | 符号 K,D>0（Jn=1） | damped_oscillator (K=Jn=D=1) | dC+dW+QE / dI |
+| D=0 能量精确守恒 | `exact_boundary_conservative_parametric.kyx` | 符号 K>0 | exact_boundary_conservative (K=1) | dI |
+| LaSalle：偏离 ω 轴能量下降 | `lasalle_step2_parametric.kyx` | 符号 D1,D2,K>0 | lasalle_step2 (D1=D2=K=1) | dI |
+| pH 能量平衡恒等式 h=H | `strict_dissipation_parametric.kyx` | 符号 D1,D2,K>0（J=1） | strict_dissipation (全 1) | dI |
+| 鞍点截面失稳符号 | `saddle_instability_parametric.kyx` | 符号 D,K>0 | saddle_instability (D=K=1) | QE |
+| H>4K 蕴含动能>0 | `exact_necessary_parametric.kyx` | 符号 K>0 | exact_necessary (K=1) | QE |
+| ∀ε∃δ Lyapunov（H 度量） | `lyapunov_nonlinear_parametric.kyx` | 符号 D1,D2,K>0 | lyapunov_nonlinear (D=K=1) | existsR(δ=ε)+dI |
+| ∀ε∃δ Lyapunov（单机） | `lyapunov_real_parametric.kyx` | 符号 D>0 | lyapunov_real (D=1) | existsR(δ=ε)+dI |
+
+**关键观察**：
+- ∀ε∃δ 的 **H 度量**版本 witness δ=ε **与参数无关**（因 Ḣ≤0，H 不增），故能干净参数化；
+  而**分量**版本 `lyapunov_complete.kyx` 的 δ 依赖 K（δ=ε/(2+2K)），这正是它难以参数化的原因。
+- Z3 后端无法 populate 有理式规范化派生引理（divideRat / ratForm* 等），符号惯量 J 的除法（K/J）类证明在本容器不可行；
+  遵循 Conventions.md sec.4 将 J 归一化为 1，仅参数化阻尼/耦合 D、K。
+
+**审计结论（23 个固定实例文件的去向）**：
+- **已参数化**：上表 9 个。
+- **被 `parametric.kyx`（∀J,D,K>0）涵盖**，无需单独参数化：`dae_constraint.kyx`、`two_machine_nonlinear.kyx`（均为同一亚水平集不变性的实例）。
+- **已有专门参数化伙伴**：`theorem_ph_bridge.kyx`↔`theorem_ph_bridge_parametric.kyx`、`smib_asymptotic.kyx`↔`smib_asymptotic_parametric.kyx`、`theorem_3machine.kyx`↔`theorem_3machine_linear.kyx`。
+- **仍为实例级**（existsR 需参数依赖 witness，或高次/脏有理 QE 超时）：`asymptotic_d2_small.kyx`、`asymptotic_weak_coupling.kyx`、`parametric_asymptotic.kyx`、`lyapunov_complete.kyx`（分量 δ 依赖 K）、`conjecture_neg_d2_lyapunov.kyx`（见下"超时"节）。
+- **线性化子系统**（`two_machine.kyx` 线性版、`dae_three_node.kyx`、`lyapunov_two_machine.kyx`）：可平凡参数化但研究价值低，暂留实例。
+
 ### ⚠️ Tactic 已写但 QE 超时（NOT 机器验证，4 个）
 
 | 结论 | 文件 | 超时原因 |
