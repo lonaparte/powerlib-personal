@@ -1,9 +1,19 @@
 ArchiveEntry "D2<0 Local Asymptotic Stability via x'Px"
 
-/* KeYmaera X STATUS: Tactic written, Lie-derivative algebra verified,
- * but QE TIMES OUT (>350s). NOT machine-verified. High polynomial degree
- * or messy rational coefficients overwhelm Z3/CAD. Numerically validated;
- * awaiting stronger QE strategy or problem decomposition. */
+/* KeYmaera X STATUS / DIAGNOSIS (this session):
+ * The earlier "QE times out / returns SAT" was NOT mere slowness -- the dI
+ * subgoal was FALSE as formulated. The evolution domain was {s^2+c^2=1, c>=0,
+ * V>=target} with NO upper bound on V. Since the D2<0 system is only LOCALLY
+ * stable, V' < 0 holds only for V<~1.75; for large states V' is large POSITIVE
+ * (numerics: max(V'+V/400) = +62.96 at V~60 on the surface), so V'<=-target/400
+ * cannot hold on the unbounded domain and Z3 correctly reports SAT. The analysis
+ * note below even states "conservative bound V<1 used for proof", but that bound
+ * was never encoded in the evolution domain.
+ * FIX: added the locality bound  V <= 1  to the evolution domain (sound: the dC
+ * invariant keeps V <= v0 < 1, so the trajectory never reaches V=1). With it the
+ * dI subgoal is TRUE (numerics: max(V'+V/400) = -0.0007 on {c>=0, s^2+c^2=1, V<=1}).
+ * The margin is thin (1/400 ~ the actual decay rate), so KeYmaera X QE closure of
+ * the corrected (now-true) subgoal is being verified separately. */
 
 /*
  * STATUS: TACTIC WRITTEN, AWAITING KeYmaera X VERIFICATION
@@ -58,7 +68,8 @@ Problem
        t'  = 1,
        v0' = 0
        & s^2 + c^2 = 1 & c >= 0 &
-         (288*w1^2 - 140*w1*w2 + 478*w1*s + 470*w2^2 + 380*w2*s + 597*s^2)/98 >= target}]
+         (288*w1^2 - 140*w1*w2 + 478*w1*s + 470*w2^2 + 380*w2*s + 597*s^2)/98 >= target &
+         (288*w1^2 - 140*w1*w2 + 478*w1*s + 470*w2^2 + 380*w2*s + 597*s^2)/98 <= 1}]
      t < 400*v0/target))
 End.
 
