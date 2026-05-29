@@ -283,16 +283,28 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 - **仍为实例级**：`asymptotic_d2_small.kyx`、`asymptotic_weak_coupling.kyx`、`parametric_asymptotic.kyx`（三者为有限时间渐近稳定 dC+dI，modified-Hamiltonian 系数 a 与时间界 C 需参数化 witness —— 即开放问题 C1）；`conjecture_neg_d2_lyapunov.kyx`（D₂<0 局部 x'Px，degree-4 Lie 导数 QE 在 Z3 后端实跑返回 SAT、产物 0 字节未闭合 —— 见"超时"节）。
 - **线性化子系统**（`two_machine.kyx` 线性版、`dae_three_node.kyx`、`lyapunov_two_machine.kyx`）：可平凡参数化但研究价值低，暂留实例。
 
-### ⚠️ Tactic 已写但 QE 超时（NOT 机器验证，4 个）
+### 全量复验（本会话，KeYmaera X 5.1.2 + Z3）
 
-| 结论 | 文件 | 超时原因 |
+对全部 55 个两机文件做了全量实跑复验（产物写 /tmp，不改动仓库 `.kyp`）。结论：
+
+- **47 个 PROVED**（fresh `\qed`）：45 个秒过 + `parametric_asymptotic`（qe≈124s，重但可证）+ 修复后的 `exact_necessary`。45 个已提交产物全部有效（0 空壳）。
+- **修复 2 个空壳/偏差文件**：`impossibility_ph_linear`（之前提交的 `.kyp` 是 0 字节空壳 → 补真证明）；`exact_necessary`（bare `QE` 未展开 `K=1` 定义而 deviate → 改 `expandAllDefs; QE`）。
+- **8 个未闭合**（下两节）。
+
+### ⚠️ Tactic 已写但 KeYmaera X 未闭合（NOT 机器验证，6 个）
+
+| 结论 | 文件 | 未闭合原因（Z3 实测） |
 |------|------|---------|
-| 三机 pH Lyapunov | `theorem_3machine.kyx` | 5×5 dI，9 变量，QE >350s |
-| D₂<0 局部 x'Px 渐近稳定 | `conjecture_neg_d2_lyapunov.kyx` | 4 次多项式 + s²+c²=1，QE >350s |
-| 弱阻尼渐近稳定 (D₂=1/10) | `asymptotic_d2_small.kyx` | 脏有理数 a=1/14，QE >200s |
-| 弱耦合渐近稳定 (K=1/10) | `asymptotic_weak_coupling.kyx` | 脏有理数，QE >200s |
+| D₂<0 局部 x'Px 渐近稳定 | `conjecture_neg_d2_lyapunov.kyx` | 4 次多项式 + s²+c²=1，QE 返回 SAT（130s/600s 均未果） |
+| 弱阻尼渐近稳定 (D₂=1/10) | `asymptotic_d2_small.kyx` | 脏有理数 a=1/14，QE 超时 |
+| 弱耦合渐近稳定 (K=1/10) | `asymptotic_weak_coupling.kyx` | 脏有理数，QE 超时 |
+| pH gap 参数化 (∀d) | `gap_parametric.kyx` | 薄裕度 ∀d QE 超时 |
+| Level C 多项式正定 | `theorem_levelC_polynomial.kyx` | 度 6/8 子式 + 3 参数，QE 超时 |
+| sin² 必需性参数化 (∀b,d) | `impossibility_parametric.kyx` | 量词交替 + 薄裕度，QE 未闭合 |
 
-这些的 Lie 导数代数已手工+数值核验，但 KeYmaera X 的 QE（基于 Z3/CAD）跑不完。
+（另：三机 `theorem_3machine.kyx` 同属未闭合，5×5 dI / 9 变量 QE 超时 —— 非两机，单列。）
+
+这些的 Lie 导数代数已手工+数值核验为真，仅 KeYmaera X 的 QE（Z3/CAD）在本后端跑不完。
 
 ### 仍是猜想（有 Problem 无 Tactic）
 
