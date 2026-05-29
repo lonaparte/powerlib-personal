@@ -295,11 +295,11 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 
 | 结论 | 文件 | 未闭合原因（Z3 实测） |
 |------|------|---------|
-| D₂<0 局部 x'Px 渐近稳定 | `conjecture_neg_d2_lyapunov.kyx` | 4 次多项式 + s²+c²=1，QE 返回 SAT（130s/600s 均未果） |
+| D₂<0 局部 x'Px 渐近稳定 | `conjecture_neg_d2_lyapunov.kyx` | **本会话诊断+修复**：原 tactic 不健全——演化域缺局部界 V≤1，子目标对大状态为假（max V'+V/400=+62.96 @ V≈60），故 Z3 返 SAT（非单纯超时）。加 V≤1 后子目标变真（max=−0.0007）；但闭合需 S-procedure/SOS（"球{V≤1}∩簇{s²+c²=1} 上二次型≤0"），Z3 nlsat 不行（Mathematica 可）。命题本身真（轨迹验证渐近稳定） |
 | 弱阻尼渐近稳定 (D₂=1/10) | `asymptotic_d2_small.kyx` | 脏有理数 a=1/14，QE 超时 |
 | 弱耦合渐近稳定 (K=1/10) | `asymptotic_weak_coupling.kyx` | 脏有理数，QE 超时 |
 | pH gap 参数化 (∀d) | `gap_parametric.kyx` | 薄裕度 ∀d QE 超时 |
-| Level C 多项式正定 | `theorem_levelC_polynomial.kyx` | 度 6/8 子式 + 3 参数，QE 超时 |
+| Level C 多项式正定（单体） | `theorem_levelC_polynomial.kyx` | **本会话拆解**：拆成 3 个子式后 M1>0✓(86ms)、M3=det✓(9.1s) 单独已证（`theorem_levelC_M1/M3.kyx`，带 .kyp）；M2 单体两形式均超时，但有 q-幂全正证书（`theorem_levelC_M2.kyx`，Routh 参数化下每个 q 幂系数全非负 ⟹ 正单项式之和）。整体 = 2/3 机器验证 + 1/3 结构证书 |
 | sin² 必需性参数化 (∀b,d) | `impossibility_parametric.kyx` | 量词交替 + 薄裕度，QE 未闭合 |
 
 （另：三机 `theorem_3machine.kyx` 同属未闭合，5×5 dI / 9 变量 QE 超时 —— 非两机，单列。）
