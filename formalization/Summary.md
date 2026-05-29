@@ -283,6 +283,20 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 - **仍为实例级**：`asymptotic_d2_small.kyx`、`asymptotic_weak_coupling.kyx`、`parametric_asymptotic.kyx`（三者为有限时间渐近稳定 dC+dI，modified-Hamiltonian 系数 a 与时间界 C 需参数化 witness —— 即开放问题 C1）；`conjecture_neg_d2_lyapunov.kyx`（D₂<0 局部 x'Px，degree-4 Lie 导数 QE 在 Z3 后端实跑返回 SAT、产物 0 字节未闭合 —— 见"超时"节）。
 - **线性化子系统**（`two_machine.kyx` 线性版、`dae_three_node.kyx`、`lyapunov_two_machine.kyx`）：可平凡参数化但研究价值低，暂留实例。
 
+### ✅ 三机系统（线性拓扑 1-2-3，本会话补齐）
+
+> 接手时三机只有 `theorem_3machine_linear`（线性化 pH，d<1/5）+ `theorem_3machine`（非线性实例，超时未验证）。补齐了两机有、三机缺的基础栈：
+
+| 结论 | 文件 | 参数 | 状态 |
+|------|------|------|------|
+| 全无源亚水平集不变 | `parametric_3machine` | ∀D1,D2,D3,K>0 | ✅ dI (287ms) |
+| ∀ε∃δ Lyapunov（H 度量，witness δ=ε） | `lyapunov_nonlinear_3machine` | ∀D1,D2,D3,K>0 | ✅ existsR+dI (405ms) |
+| D=0 能量精确守恒 | `conservative_3machine` | ∀K>0 | ✅ dI (275ms) |
+| **D₂<0 中间机大信号下降 V̇≤0** | `theorem_3machine_descent_parametric` | ∀d∈(0,3/20] | ✅ QE 4 顶点 (1.8s) |
+| D₂<0 中间机大信号亚水平集不变 | `theorem_3machine_invariant_parametric` | ∀d∈(0,3/20] | ❌ slab dI 超时（7 变量双余弦 box QE）；数学成立、descent 已证 |
+
+**关键**：能量结构 Ḣ=−2ΣDᵢwᵢ²（sin 在线性拓扑上同样精确抵消）→ 全无源基础栈与两机持平。D₂<0 推进到**大信号下降参数化**（V̇ 关于 (c1,c2) 多线性 → box 上极值在 4 顶点；两机 2 端点论证的推广）。唯一没拿下的是**大信号不变性**：slab 把它约化到 box descent，但三机 box QE 是 7 变量双余弦，Z3 超时（两机同款 5 变量单余弦 0.58s 就过）——维数墙又高一层。
+
 ### 全量复验（本会话，KeYmaera X 5.1.2 + Z3）
 
 对全部 55 个两机文件做了全量实跑复验（产物写 /tmp，不改动仓库 `.kyp`）。结论：
