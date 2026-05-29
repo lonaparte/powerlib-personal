@@ -1,0 +1,42 @@
+ArchiveEntry "3-Machine pH D2<0: box descent V-dot<=0 on c1,c2 in [4/5,1] (decomposition documented; NOT machine-closed)"
+
+/*
+ * GOAL: V' <= 0 on the large-signal box c1,c2 in [4/5,1] for ALL d in (0,3/20]
+ * (the multilinear step that theorem_3machine_descent_parametric leaves as prose).
+ * This statement is TRUE (sympy/numpy: V' multilinear in c1,c2; all 4 corner forms
+ * NSD for d in (0,3/20]). It DECOMPOSES cleanly into proven subproblems:
+ *   - bilinear interpolation identity  V' = sum_ij w_ij(c1,c2) V'(corner_ij)
+ *       (sympy residual = 0, exact);
+ *   - 4 corner quadratic forms <= 0  (theorem_3machine_descent_parametric, PROVED);
+ *   - barycentric weights w_ij >= 0 on the box (trivial);
+ *   - abstract sign assembly: nonneg-weighted sum of nonpositives <= 0
+ *       (lemma_sign_assembly.kyx, PROVED).
+ *
+ * KeYmaera X STATUS: NOT machine-closed. The assembly was built (cut the abstract
+ * lemma, instantiate via allL with the explicit w_ij and V'(corner_ij), modus
+ * ponens, split the premise into 9 separate QEs). It PARSES and RUNS (all the
+ * positional/branch plumbing is correct), but TIMES OUT (>250s) on ONE leaf: the
+ * interpolation identity in FACTORED-PRODUCT form, V' = w_aa*V'_aa + ..., forces
+ * Z3 to expand the four w_ij*V'_ij products (8 variables, degree ~5) -- the SAME
+ * products that make the monolithic box QE blow up. The decomposition RELOCATES
+ * Z3's difficulty into the identity-verification; it does not remove the products.
+ * (Proof that it is purely a Z3-QE-normalization limit, not math: the identity in
+ * PRE-EXPANDED form proves in 107ms -- see the standalone test. A ring/Groebner
+ * normalization tactic, or a Mathematica QE backend, would close it. Z3 alone won't.)
+ *
+ * So: this missing 3-machine result IS reducible to fully-proven subproblems; the
+ * only gap is Z3 normalizing the product identity, the same backend wall hit
+ * throughout (SOS/Mathematica territory).
+ */
+
+ProgramVariables
+  Real w1; Real w2; Real w3; Real s1; Real s2; Real c1; Real c2; Real d;
+End.
+
+Problem
+  \forall d \forall w1 \forall w2 \forall w3 \forall s1 \forall s2 \forall c1 \forall c2 (
+    ( 0 < d & d <= 3/20 & 4/5 <= c1 & c1 <= 1 & 4/5 <= c2 & c2 <= 1 )
+    -> (c1*d*w1^2 - c1*d*w1*w2/4 - 3*c1*d*w2^2/4 + 2*c1*s1*w1/5 - 2*c1*s1*w2/5 + c1*w1^2 - 3*c1*w1*w2/4 - c1*w2^2/4 - 3*c2*d*w2^2/4 - c2*d*w2*w3/4 + c2*d*w3^2 + 2*c2*s2*w2/5 - 2*c2*s2*w3/5 - c2*w2^2/4 - 3*c2*w2*w3/4 + c2*w3^2 + 3*d^2*s1*w2/4 - 3*d^2*s2*w2/4 - d*s1^2/4 - 3*d*s1*s2/2 - d*s1*w1 + d*s1*w2/4 - d*s2^2/4 - d*s2*w2/4 + d*s2*w3 + 2*d*w2^2 - 3*s1^2/4 - s1*s2/2 - s1*w1 - 3*s2^2/4 + s2*w3 - 2*w1^2 - 2*w3^2) <= 0 )
+End.
+
+End.
