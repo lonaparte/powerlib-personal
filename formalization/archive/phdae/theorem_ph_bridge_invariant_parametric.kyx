@@ -1,0 +1,70 @@
+ArchiveEntry "pH Lyapunov for D2<0: LARGE-SIGNAL sublevel INVARIANCE, PARAMETRIC in d"
+
+/*
+ * THE MISSING QUADRANT of the D2<0 pH bridge -- now closed, PARAMETRIC in d.
+ *
+ * theorem_ph_bridge.kyx proves large-signal sublevel-set invariance only at the
+ * FIXED instance d=|D2|=3/10. theorem_ph_bridge_parametric.kyx proves the
+ * large-signal DESCENT V'<=0 for all d in (0,2/5] but not the box. This file
+ * proves the SUBLEVEL SET {V < 1/25} is positively invariant on the large-signal
+ * domain c in [4/5,1], for ALL d in (0,2/5], with d a SYMBOLIC parameter.
+ *
+ * System (D1=K=1, machine 2 negative damping D2=-d): w1'=-w1-s, w2'=d*w2+s,
+ *   s'=c(w1-w2), c'=-s(w1-w2).  pH-structured V (same closed forms in d):
+ *   V = w1^2 + w2^2 + 2(1-c) + ((1+4d)/6) s^2 + (1+d) w1 s + ((1+3d)/2) w2 s.
+ *
+ * PROOF-ENGINEERING NOTE (why this closes when the naive dI times out):
+ * The naive formulation keeps the circle EQUALITY s^2+c^2=1 in the evolution
+ * domain. The resulting differential-invariant QE is then a 5-variable problem
+ * (d,w1,w2,s,c) over an algebraic VARIETY, which Z3/CAD cannot discharge
+ * (confirmed: > 8 min, no result). KEY OBSERVATION (sympy/numpy): the descent
+ * V' = M0(w1,w2,s) + c*M1(w1,w2,s) is AFFINE in c, and V'<=0 holds for ALL
+ * (w1,w2,s) on the SLAB c in [4/5,1] -- it does NOT need s^2+c^2=1 (worst-case
+ * max eigenvalue of the (w1,w2,s) form over the slab x d in (0,2/5] is -1.9e-2).
+ * Since the dynamics conserve s^2+c^2 (d/dt(s^2+c^2)=0), every physical
+ * (on-circle) trajectory with c>=4/5 stays on the circle and lies in the slab.
+ * So we take the evolution domain to be the SLAB {c>=4/5 & c<=1} (box, no
+ * equality). The dI obligation becomes the box-only QE
+ *     (4/5<=c<=1 & 0<d<=2/5) -> V' <= 0,
+ * which Z3 closes. This statement is STRONGER than (and implies) the on-circle
+ * theorem_ph_bridge invariance; s^2+c^2=1 is asserted in the precondition to fix
+ * the physical initial condition.  bound 1/25 = (1-4/5)^2; V>=(1-c)^2 (P pos.def.
+ * for d in (0,2/5]) gives the containment {V<1/25} => {c>4/5}.
+ *
+ * Cross-validated (sympy): V' affine in c; endpoint forms match theorem_ph_bridge_
+ * parametric exactly; slab descent NSD for all d in (0,2/5] (numpy eigenvalues).
+ */
+
+ProgramVariables
+  Real d1;
+  Real d2;
+  Real w1;
+  Real w2;
+  Real s;
+  Real c;
+End.
+
+Problem
+  \forall d (
+    0 < d & d <= 2/5 &
+    s^2 + c^2 = 1 & c >= 4/5 &
+    w1^2 + w2^2 + 2*(1-c) + ((1+4*d)/6)*s^2 + (1+d)*w1*s + ((1+3*d)/2)*w2*s < 1/25
+    ->
+    [{d1' = w1,
+      d2' = w2,
+      w1' = -w1 - s,
+      w2' = d*w2 + s,
+      s'  = c*(w1 - w2),
+      c'  = -s*(w1 - w2)
+      & c >= 4/5 & c <= 1}]
+    w1^2 + w2^2 + 2*(1-c) + ((1+4*d)/6)*s^2 + (1+d)*w1*s + ((1+3*d)/2)*w2*s < 1/25
+  )
+End.
+
+Tactic "Proof"
+  allR(1);
+  implyR(1);
+  dI(1)
+End.
+
+End.
