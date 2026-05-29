@@ -1,11 +1,21 @@
 ArchiveEntry "Level C reached by a degree-4 polynomial Lyapunov certificate"
 
-/* KeYmaera X STATUS: P>0 parametric QE TIMES OUT (M2~deg6, M3~deg8, 3 vars,
- * Routh implication). P_poly EXISTS and is numerically verified PD on Routh
- * (3000 random points). The V-dot identity A'P+PA=-LCD*I is exact (see
- * theorem_levelC_identity.kyx, PROVED). So the certificate is real; only the
- * parametric P>0 minor-positivity is beyond QE. A fixed instance proves
- * trivially (constant minors). */
+/* KeYmaera X STATUS: the MONOLITHIC P>0 QE (M1&M2&M3 together) TIMES OUT and is
+ * NOT closed here. But DECOMPOSING into the three leading-minor sub-lemmas cracks
+ * most of it (the user-suggested sub-proposition approach):
+ *   - theorem_levelC_M1.kyx : M1>0  PROVED standalone (86ms).
+ *   - theorem_levelC_M3.kyx : M3=det P_poly>0  PROVED standalone (9.1s) -- the
+ *       deg-8 determinant closes when split out, though it times out when bundled.
+ *   - theorem_levelC_M2.kyx : M2>0  the lone holdout; QE times out in both
+ *       (D1,b,K) and Routh-substituted forms, but M2>0 on Routh is RIGOROUSLY
+ *       true by a sum-of-positive-monomials certificate (Routh-parametrized
+ *       D1=b+p,K=D1*b+q: every q-power coefficient of M2 has all-nonnegative
+ *       (b,p)-coefficients; see that file).
+ * So Sylvester PD of P_poly on Routh is established: M1,M3 machine-verified +
+ * M2 by an exact structural argument. P_poly numerically PD on Routh (3000 pts);
+ * V-dot identity A'P+PA=-LCD*I is exact (theorem_levelC_identity.kyx, PROVED).
+ * This monolithic file is kept for the full statement; the proof lives in the
+ * three M1/M2/M3 sub-lemmas. */
 
 /*
  * CORRECTION of an earlier (wrong) claim that reaching the true stability
