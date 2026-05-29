@@ -246,7 +246,7 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 | 带载平衡渐近稳定（仅代数） | `smib_loaded_equilibrium.kyx` | 符号 D,Ke | QE |
 | Pm>K 失步发散（轨迹级） | `smib_loss_of_synchronism.kyx` | 符号 K,Pm | dC+dW+QE+dI |
 
-### ✅ 参数化补全（本轮新增，10 个，全部 PROVED）
+### ✅ 参数化补全（本轮新增，11 个，全部 PROVED）
 
 > 系统核实"固定实例 vs 参数化"状态后，将以下原本固定数值参数的已证结论推广为符号参数。
 > 每个均经 KeYmaera X 5.1.2（Z3 后端）实跑 PROVED + sympy 精确 Lie 导数核验 + scipy 数值交叉验证（每个 ≥3 组参数）。
@@ -263,10 +263,11 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 | ∀ε∃δ Lyapunov（H 度量） | `lyapunov_nonlinear_parametric.kyx` | 符号 D1,D2,K>0 | lyapunov_nonlinear (D=K=1) | existsR(δ=ε)+dI |
 | ∀ε∃δ Lyapunov（单机） | `lyapunov_real_parametric.kyx` | 符号 D>0 | lyapunov_real (D=1) | existsR(δ=ε)+dI |
 | 分量式稳定（能量分量<ε） | `component_stability_parametric.kyx` | 符号 D1,D2,K>0 | component_stability (D=K=1) | dC+dW+QE / dI |
+| ∀ε∃δ Lyapunov（分量，witness δ=ε/(2K+2)） | `lyapunov_complete_parametric.kyx` | 符号 D1,D2,K>0 | lyapunov_complete (D=K=1) | existsR(项)+dC+dW+QE/dI |
 
 **关键观察**：
-- ∀ε∃δ 的 **H 度量**版本 witness δ=ε **与参数无关**（因 Ḣ≤0，H 不增），故能干净参数化；
-  而**分量**版本 `lyapunov_complete.kyx` 的 δ 依赖 K（δ=ε/(2+2K)），这正是它难以参数化的原因。
+- ∀ε∃δ 的 **H 度量**版本 witness δ=ε **与参数无关**（因 Ḣ≤0，H 不增）；
+  **分量**版本 witness δ=ε/(2K+2) **依赖 K**，但可作为符号项直接喂给 `existsR`，故同样参数化（`lyapunov_complete_parametric.kyx`，witness 算术经 sympy 精确核验 sup H=ε）。
 - Z3 后端无法 populate 有理式规范化派生引理（divideRat / ratForm* 等），符号惯量 J 的除法（K/J）类证明在本容器不可行；
   遵循 Conventions.md sec.4 将 J 归一化为 1，仅参数化阻尼/耦合 D、K。
 - 参数化暴露并修正了一处隐含错误：`component_stability` 原结论 `1-c<ε` 仅在 K≥1/2 成立（由 H<ε 只能得 2K(1-c)<ε，即 1-c<ε/(2K)，K<1/2 时超过 ε）。
@@ -276,7 +277,7 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 - **已参数化**：上表 9 个。
 - **被 `parametric.kyx`（∀J,D,K>0）涵盖**，无需单独参数化：`dae_constraint.kyx`、`two_machine_nonlinear.kyx`（均为同一亚水平集不变性的实例）。
 - **已有专门参数化伙伴**：`theorem_ph_bridge.kyx`↔`theorem_ph_bridge_parametric.kyx`、`smib_asymptotic.kyx`↔`smib_asymptotic_parametric.kyx`、`theorem_3machine.kyx`↔`theorem_3machine_linear.kyx`。
-- **仍为实例级**（existsR 需参数依赖 witness，或高次/脏有理 QE 超时）：`asymptotic_d2_small.kyx`、`asymptotic_weak_coupling.kyx`、`parametric_asymptotic.kyx`、`lyapunov_complete.kyx`（分量 δ 依赖 K）、`conjecture_neg_d2_lyapunov.kyx`（见下"超时"节）。
+- **仍为实例级**：`asymptotic_d2_small.kyx`、`asymptotic_weak_coupling.kyx`、`parametric_asymptotic.kyx`（三者为有限时间渐近稳定 dC+dI，modified-Hamiltonian 系数 a 与时间界 C 需参数化 witness —— 即开放问题 C1）；`conjecture_neg_d2_lyapunov.kyx`（D₂<0 局部 x'Px，degree-4 Lie 导数 QE 在 Z3 后端实跑返回 SAT、产物 0 字节未闭合 —— 见"超时"节）。
 - **线性化子系统**（`two_machine.kyx` 线性版、`dae_three_node.kyx`、`lyapunov_two_machine.kyx`）：可平凡参数化但研究价值低，暂留实例。
 
 ### ⚠️ Tactic 已写但 QE 超时（NOT 机器验证，4 个）
