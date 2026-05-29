@@ -23,7 +23,7 @@ Problem
 End.
 
 Tactic "Proof"
-  QE
+  expandAllDefs; QE
 End.
 
 End.
