@@ -1,0 +1,43 @@
+ArchiveEntry "4-Machine DIAMOND (K4 minus bond 1-2): passive sublevel invariance {H<1}, parametric in D1..D4,K"
+
+/*
+ * 4-machine DIAMOND (K4 minus bond 1-2) topology (5 bonds). Passive sublevel {H<1} positively
+ * invariant for ALL D1..D4,K>0. SAME one-line dI as chain/ring -- confirms the
+ * passive stack is topology-INDEPENDENT on this graph too (dH/dt=-2 sum Di wi^2<=0,
+ * sin couplings cancel for any antisymmetric incidence). H = sum wi^2 + sum 2K(1-cj).
+ */
+
+ProgramVariables
+  Real da; Real db; Real dc; Real dd;
+  Real w1; Real w2; Real w3; Real w4;
+  Real s1; Real c1; Real s2; Real c2; Real s3; Real c3; Real s4; Real c4; Real s5; Real c5;
+End.
+
+Problem
+  \forall D1 \forall D2 \forall D3 \forall D4 \forall K (
+    D1 > 0 & D2 > 0 & D3 > 0 & D4 > 0 & K > 0 &
+    s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1 & s4^2 + c4^2 = 1 & s5^2 + c5^2 = 1 &
+    w1^2 + w2^2 + w3^2 + w4^2 + 2*K*(1-c1) + 2*K*(1-c2) + 2*K*(1-c3) + 2*K*(1-c4) + 2*K*(1-c5) < 1
+    ->
+    [{da' = w1, db' = w2, dc' = w3, dd' = w4,
+      w1' = -D1*w1 - K*s1 - K*s2,
+      w2' = -D2*w2 - K*s3 - K*s4,
+      w3' = -D3*w3 + K*s1 + K*s3 - K*s5,
+      w4' = -D4*w4 + K*s2 + K*s4 + K*s5,
+      s1' = c1*(w1 - w3), c1' = -s1*(w1 - w3),
+      s2' = c2*(w1 - w4), c2' = -s2*(w1 - w4),
+      s3' = c3*(w2 - w3), c3' = -s3*(w2 - w3),
+      s4' = c4*(w2 - w4), c4' = -s4*(w2 - w4),
+      s5' = c5*(w3 - w4), c5' = -s5*(w3 - w4)
+      & s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1 & s4^2 + c4^2 = 1 & s5^2 + c5^2 = 1}]
+    w1^2 + w2^2 + w3^2 + w4^2 + 2*K*(1-c1) + 2*K*(1-c2) + 2*K*(1-c3) + 2*K*(1-c4) + 2*K*(1-c5) < 1
+  )
+End.
+
+Tactic "Proof"
+  allR(1); allR(1); allR(1); allR(1); allR(1);
+  implyR(1);
+  dI(1)
+End.
+
+End.
