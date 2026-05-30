@@ -285,7 +285,7 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 
 ### ✅ 三机系统（线性拓扑 1-2-3，本会话补齐）
 
-> 接手时三机只有 `theorem_3machine_linear`（线性化 pH，d<1/5）+ `theorem_3machine`（非线性实例，超时未验证）。补齐了两机有、三机缺的基础栈 + 失稳/必要性栈。**当前：13 个机器验证 (qed=1)，3 个开放（全部撞 Z3/SOS 后端墙）。**
+> 接手时三机只有 `theorem_3machine_linear`（线性化 pH，d<1/5）+ `theorem_3machine`（非线性实例，超时未验证）。补齐了两机有、三机缺的基础栈 + 失稳/必要性栈 + 环拓扑。**当前：15 个机器验证 (qed=1)，3 个开放（全部撞 Z3/SOS 后端墙）。** 链/环对照见下文四机节同款（三机环：`parametric_3machine_ring` ✅、`stability_boundary_3machine_ring` {H<8K} ✅，三角环最低鞍点 8K vs 链 4K）。
 
 | 结论 | 文件 | 参数 | 状态 |
 |------|------|------|------|
@@ -295,9 +295,10 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 | 稳定域 {H<4K} 不变（吸引域） | `stability_boundary_3machine` | ∀D1,D2,D3,K>0 | ✅ dI (312ms) |
 | 能量平衡恒等式 h=H | `strict_dissipation_3machine` | ∀D1,D2,D3,K>0 | ✅ dI (276ms) |
 | ∀ε∃δ Lyapunov（分量，δ=ε/(4K+3)） | `lyapunov_complete_3machine` | ∀D1,D2,D3,K>0 | ✅ 除法消去 witness + 5 路 andR 拆分 QE (235ms)；负对照通过 |
-| 失稳/必要性：D=0 越垒集 {H>4K} 正不变 | `saddle_instability_3machine` | ∀K>0 | ✅ **本会话新增** dI (283ms)；负对照(D>0)通过 |
-| 失稳/必要性：K=0 ⟹ 相对频率守恒、无同步 | `necessary_k0_3machine` | (D=K=0) | ✅ **本会话新增** dI (192ms) |
-| 失稳/必要性：D₁,D₂,D₃<0 ⟹ 能量单调增、不可能渐近稳定 | `necessary_dneg_3machine` | ∀D₁,D₂,D₃<0,K>0 | ✅ **本会话新增** dI (309ms)；负对照(D>0)通过 |
+| 失稳/必要性：D=0 越垒集 {H>4K} 正不变（能量势垒） | `saddle_instability_3machine` | ∀K>0 | ✅ dI；负对照(D>0)通过 |
+| 失稳/必要性：δ₁≈π 处耦合力失稳（局部鞍点力符号） | `saddle_force_3machine` | ∀D₁,K>0 | ✅ **本会话新增** QE（与能垒版互补） |
+| 失稳/必要性：K=0(带阻尼) ⟹ 永不达平衡、无同步 | `necessary_k0_3machine` | ∀D₁,D₂,D₃>0 | ✅ **本会话升级为强版**（守恒量 u₀≠0 + dC/dW/dI，镜像两机原版） |
+| 失稳/必要性：D₁,D₂,D₃<0 ⟹ 能量单调增、不可能渐近稳定 | `necessary_dneg_3machine` | ∀D₁,D₂,D₃<0,K>0 | ✅ **本会话新增** dI；负对照(D>0)通过 |
 | D₂<0 大信号下降 V̇≤0（仅 4 顶点 NSD） | `theorem_3machine_descent_parametric` | ∀d∈(0,3/20] | ✅ QE 4 顶点 (1.8s) |
 | **D₂<0 大信号 box descent V̇≤0（整盒 c₁,c₂∈[4/5,1]）** | `theorem_3machine_boxdescent` | ∀d∈(0,3/20] | ✅ **本会话攻克**：抽象符号装配（V̇=4顶点凸组合）(114ms)；负对照通过 |
 | D₂<0 大信号亚水平集不变 {V<1/25} | `theorem_3machine_invariant_parametric` | ∀d∈(0,3/20] | ❌ box descent 已证，但全 ODE 的 dI 装配 Z3 超时（5 种 tactic 均撞积式展开墙）；无有效 .kyp |
@@ -308,20 +309,30 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 
 **失稳/必要性栈（本会话补缺口）**：覆盖扫描发现两机有一整类 `necessary_*` / `saddle_*` 定理，三机一个都没有。补齐了能干净 dI/QE 的三条（均 qed=1、各带正阻尼负对照且负对照正确失败）：`saddle_instability_3machine`（D=0 越垒集 {H>4K} 正不变，与稳定域 {H<4K} 对偶）、`necessary_k0_3machine`（K=0 ⟹ 相对频率 w₁−w₂、w₂−w₃ 守恒，K>0 为同步必要条件）、`necessary_dneg_3machine`（全负阻尼 ⟹ H≥h₀ 能量单调增 ⟹ 不可能渐近稳定，∀D₁,D₂,D₃<0,K>0）。**未补** `necessary_d0` 类比：其诚实内容是能量守恒，已由 `conservative_3machine` 覆盖；一个朴素的"{动能>0} 不变"写法是**假命题**（动能在保守系统里振荡），KeYmaera X 正确拒绝，已弃而非硬凑。
 
-### ✅ 四机系统：拓扑相关性对照实验（本会话，链 vs 环，6 个全 qed=1）
+### ✅ 四机系统：补全三机基础栈 + 拓扑相关性对照实验（本会话，10 PROVED + 1 conjecture）
 
-> 为分清"哪些结论与拓扑有关"，把系统扩到四机，并**在两种拓扑上证同一条定理再对比**：链 1-2-3-4（3 条键）与环 1-2-3-4-1（4 条键 + 环流约束）。
+> 为分清"哪些结论与拓扑有关"，把系统扩到四机：(a) 把三机能干净 dL 移植的命题全部补到四机链；(b) **在两种拓扑上证同一条定理再对比**——链 1-2-3-4（3 条键）与环 1-2-3-4-1（4 条键 + 环流约束）。
 
-| 结论 | 链文件 | 环文件 | 拓扑依赖 |
-|------|--------|--------|----------|
-| 被动不变集 {H<1} | `parametric_4machine` ✅ | `parametric_4machine_ring` ✅ | **无关**：同一行 dI，环只多一条键项 |
-| D=0 能量守恒 | `conservative_4machine` ✅ | （同理） | **无关** |
-| ∀ε∃δ Lyapunov | `lyapunov_nonlinear_4machine` ✅ | （同理） | **无关** |
-| 稳定域亚水平集不变 | `stability_boundary_4machine` {H<4K} ✅ | `stability_boundary_4machine_ring` {H<8K} ✅ | 见下方诚实标注 |
+| 结论 | 文件 | 状态 |
+|------|------|------|
+| 被动不变集 {H<1}（链） | `parametric_4machine` | ✅ dI |
+| 被动不变集 {H<1}（环） | `parametric_4machine_ring` | ✅ dI（与链同一行，环多一条键项） |
+| D=0 能量守恒 | `conservative_4machine` | ✅ dI |
+| ∀ε∃δ Lyapunov（H 度量） | `lyapunov_nonlinear_4machine` | ✅ existsR+dI |
+| 能量平衡恒等式 h=H | `strict_dissipation_4machine` | ✅ dI |
+| 稳定域（链） | `stability_boundary_4machine` {H<4K} | ✅ dI（阈值见诚实标注） |
+| 稳定域（环） | `stability_boundary_4machine_ring` {H<8K} | ✅ dI（环最低鞍点 8K，数值） |
+| 失稳：D=0 越垒集 {H>4K} | `saddle_instability_4machine` | ✅ dI |
+| 失稳：鞍点力符号 | `saddle_force_4machine` | ✅ QE |
+| 必要性：K=0(带阻尼) 永不平衡 | `necessary_k0_4machine` | ✅ dC/dW/dI（强版） |
+| 必要性：全负阻尼能量增 | `necessary_dneg_4machine` | ✅ dI |
+| **分量 ∀ε∃δ Lyapunov** | `lyapunov_complete_4machine` | ❌ **conjecture**：14 变量 QE，OOM(-Xmx4g)/超时(-Xmx10g,600s)；数学对(witness δ=eps/(6K+4)，sympy 确认)，无有效 .kyp |
 
 **结论分档**：
-- **与拓扑无关（被动栈）**：链和环用**完全相同的一行 dI** 都闭合，因为 Ḣ=−2ΣDᵢwᵢ² 对任意反对称耦合都成立（sin 总抵消）。链+环这一对是拓扑无关性的直接实证。
-- **与拓扑有关（D₂<0 非被动 Lyapunov 设计）**：`theorem_3machine_boxdescent` 的可分仿射性（无 c₁c₂ 交叉项）是**链拓扑指纹**——环上首尾键耦合 ⟹ 出现交叉项 ⟹ 4 顶点凸组合失效。这类需为每种拓扑重设计，未扩四机。
+- **与拓扑无关（被动栈 + 必要性/失稳）**：链和环用**完全相同的一行 dI** 都闭合，因为 Ḣ=−2ΣDᵢwᵢ² 对任意反对称耦合都成立（sin 总抵消）。链+环这一对（被动不变集 + 稳定域）是拓扑无关性的直接实证；三机也补了环对照（见三机节）。
+- **与拓扑相关（仅数值阈值）**：稳定域 {H<c} 的 dI 对任意 c 成立（形式上拓扑无关），但能垒值是数值的：链 4K vs 环 8K（环流约束禁"单键到 π"，fsolve 实测）。
+- **与拓扑强相关（D₂<0 非被动 Lyapunov 设计）**：`theorem_3machine_boxdescent` 的可分仿射性（无 c₁c₂ 交叉项）是**链拓扑指纹**——环上首尾键耦合 ⟹ 出现交叉项 ⟹ 4 顶点凸组合失效。这类需为每种拓扑重设计，未扩四机（有据，非遗漏）。
+- **唯一被动栈缺口**：四机分量 ε-δ（`lyapunov_complete_4machine`）——三机(10 变量)能过，四机(14 变量)撞 QE 维度墙。本会话做了 3 次有原则的攻坚（全 hide 圆约束 / 选择性 hide / 加资源），诊断确认每个分量都真需要全部圆约束（`w_i²≤H` 依赖 cⱼ≤1），故 hide 破坏正确性——纯维度墙，维持 conjecture。
 
 ### ⚠️ 复验检查与诚实性修正（本会话末，重要）
 
