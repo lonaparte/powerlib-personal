@@ -285,7 +285,7 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 
 ### ✅ 三机系统（线性拓扑 1-2-3，本会话补齐）
 
-> 接手时三机只有 `theorem_3machine_linear`（线性化 pH，d<1/5）+ `theorem_3machine`（非线性实例，超时未验证）。补齐了两机有、三机缺的基础栈：
+> 接手时三机只有 `theorem_3machine_linear`（线性化 pH，d<1/5）+ `theorem_3machine`（非线性实例，超时未验证）。补齐了两机有、三机缺的基础栈 + 失稳/必要性栈。**当前：13 个机器验证 (qed=1)，3 个开放（全部撞 Z3/SOS 后端墙）。**
 
 | 结论 | 文件 | 参数 | 状态 |
 |------|------|------|------|
@@ -295,6 +295,9 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 | 稳定域 {H<4K} 不变（吸引域） | `stability_boundary_3machine` | ∀D1,D2,D3,K>0 | ✅ dI (312ms) |
 | 能量平衡恒等式 h=H | `strict_dissipation_3machine` | ∀D1,D2,D3,K>0 | ✅ dI (276ms) |
 | ∀ε∃δ Lyapunov（分量，δ=ε/(4K+3)） | `lyapunov_complete_3machine` | ∀D1,D2,D3,K>0 | ✅ 除法消去 witness + 5 路 andR 拆分 QE (235ms)；负对照通过 |
+| 失稳/必要性：D=0 越垒集 {H>4K} 正不变 | `saddle_instability_3machine` | ∀K>0 | ✅ **本会话新增** dI (283ms)；负对照(D>0)通过 |
+| 失稳/必要性：K=0 ⟹ 相对频率守恒、无同步 | `necessary_k0_3machine` | (D=K=0) | ✅ **本会话新增** dI (192ms) |
+| 失稳/必要性：D₁,D₂,D₃<0 ⟹ 能量单调增、不可能渐近稳定 | `necessary_dneg_3machine` | ∀D₁,D₂,D₃<0,K>0 | ✅ **本会话新增** dI (309ms)；负对照(D>0)通过 |
 | D₂<0 大信号下降 V̇≤0（仅 4 顶点 NSD） | `theorem_3machine_descent_parametric` | ∀d∈(0,3/20] | ✅ QE 4 顶点 (1.8s) |
 | **D₂<0 大信号 box descent V̇≤0（整盒 c₁,c₂∈[4/5,1]）** | `theorem_3machine_boxdescent` | ∀d∈(0,3/20] | ✅ **本会话攻克**：抽象符号装配（V̇=4顶点凸组合）(114ms)；负对照通过 |
 | D₂<0 大信号亚水平集不变 {V<1/25} | `theorem_3machine_invariant_parametric` | ∀d∈(0,3/20] | ❌ box descent 已证，但全 ODE 的 dI 装配 Z3 超时（5 种 tactic 均撞积式展开墙）；无有效 .kyp |
@@ -302,6 +305,8 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 | 渐近稳定（有限时间离开 {V≥target}） | `asymptotic_3machine` | D=K=1 | ❌ strict-decay 需 SOS 证书（与两机 asymptotic_closed 同墙）；无有效 .kyp |
 
 **关键**：能量结构 Ḣ=−2ΣDᵢwᵢ²（sin 在线性拓扑上同样精确抵消）→ 全无源基础栈与两机持平。**D₂<0 这一侧本会话推进到 box descent 已机器验证**（`theorem_3machine_boxdescent`，qed=1）：核心观察是 V̇ 关于 (c₁,c₂) **可分仿射**（coeff(c₁c₂)=0，sympy 验证），故整盒上 V̇ 恰为 4 顶点值的**凸组合**（插值恒等式残差=0、权重和=1 均机器验证）；4 顶点 NSD 已证（descent 文件）；用**抽象符号装配引理**把 V̇ 作为"非负权×非正值之和"的见证（`lemma_sign_assembly`），Z3 只需逐项校验小目标，绕开使整盒 QE **爆内存**的 c·二次式乘积展开（已确认：即便把 4 顶点作为假设直接喂给整盒 QE 仍 OOM）。**仍未闭合**的是把 box descent 接到**全 10 变量 ODE 的 dI 不变性**：dIRule;chase 后与 box descent 桥接时 Z3 仍需把 chase 出的大多项式与 V̇ 归一化对消，撞同一堵积式展开墙（本会话试了 bare dI / dIRule+QE / chase+装配 / cut 全称 / cut 具体 五种结构，全超时或 OOM）。换 Mathematica/SOS 后端可破；如实记为开放项。`asymptotic_3machine` 的 strict-decay 是 Positivstellensatz/SOS 问题，与两机 `asymptotic_closed` 同墙。
+
+**失稳/必要性栈（本会话补缺口）**：覆盖扫描发现两机有一整类 `necessary_*` / `saddle_*` 定理，三机一个都没有。补齐了能干净 dI/QE 的三条（均 qed=1、各带正阻尼负对照且负对照正确失败）：`saddle_instability_3machine`（D=0 越垒集 {H>4K} 正不变，与稳定域 {H<4K} 对偶）、`necessary_k0_3machine`（K=0 ⟹ 相对频率 w₁−w₂、w₂−w₃ 守恒，K>0 为同步必要条件）、`necessary_dneg_3machine`（全负阻尼 ⟹ H≥h₀ 能量单调增 ⟹ 不可能渐近稳定，∀D₁,D₂,D₃<0,K>0）。**未补** `necessary_d0` 类比：其诚实内容是能量守恒，已由 `conservative_3machine` 覆盖；一个朴素的"{动能>0} 不变"写法是**假命题**（动能在保守系统里振荡），KeYmaera X 正确拒绝，已弃而非硬凑。
 
 ### 全量复验（本会话，KeYmaera X 5.1.2 + Z3）
 
