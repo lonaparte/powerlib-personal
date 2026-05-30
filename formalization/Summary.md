@@ -295,10 +295,13 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 | 稳定域 {H<4K} 不变（吸引域） | `stability_boundary_3machine` | ∀D1,D2,D3,K>0 | ✅ dI (312ms) |
 | 能量平衡恒等式 h=H | `strict_dissipation_3machine` | ∀D1,D2,D3,K>0 | ✅ dI (276ms) |
 | ∀ε∃δ Lyapunov（分量，δ=ε/(4K+3)） | `lyapunov_complete_3machine` | ∀D1,D2,D3,K>0 | ✅ 除法消去 witness + 5 路 andR 拆分 QE (235ms)；负对照通过 |
-| **D₂<0 中间机大信号下降 V̇≤0** | `theorem_3machine_descent_parametric` | ∀d∈(0,3/20] | ✅ QE 4 顶点 (1.8s) |
-| D₂<0 中间机大信号亚水平集不变 | `theorem_3machine_invariant_parametric` | ∀d∈(0,3/20] | ❌ slab dI 超时（7 变量双余弦 box QE）；数学成立、descent 已证 |
+| D₂<0 大信号下降 V̇≤0（仅 4 顶点 NSD） | `theorem_3machine_descent_parametric` | ∀d∈(0,3/20] | ✅ QE 4 顶点 (1.8s) |
+| **D₂<0 大信号 box descent V̇≤0（整盒 c₁,c₂∈[4/5,1]）** | `theorem_3machine_boxdescent` | ∀d∈(0,3/20] | ✅ **本会话攻克**：抽象符号装配（V̇=4顶点凸组合）(114ms)；负对照通过 |
+| D₂<0 大信号亚水平集不变 {V<1/25} | `theorem_3machine_invariant_parametric` | ∀d∈(0,3/20] | ❌ box descent 已证，但全 ODE 的 dI 装配 Z3 超时（5 种 tactic 均撞积式展开墙）；无有效 .kyp |
+| 非线性实例 {V<1/25} 不变 (D₁=D₃=K=1, D₂=−3/20) | `theorem_3machine` | d=3/20 | ❌ 同上（全 ODE dI 超时）；无有效 .kyp |
+| 渐近稳定（有限时间离开 {V≥target}） | `asymptotic_3machine` | D=K=1 | ❌ strict-decay 需 SOS 证书（与两机 asymptotic_closed 同墙）；无有效 .kyp |
 
-**关键**：能量结构 Ḣ=−2ΣDᵢwᵢ²（sin 在线性拓扑上同样精确抵消）→ 全无源基础栈与两机持平。D₂<0 推进到**大信号下降参数化**（V̇ 关于 (c1,c2) 多线性 → box 上极值在 4 顶点；两机 2 端点论证的推广）。唯一没拿下的是**大信号不变性**：slab 把它约化到 box descent，但三机 box QE 是 7 变量双余弦，Z3 超时（两机同款 5 变量单余弦 0.58s 就过）——维数墙又高一层。
+**关键**：能量结构 Ḣ=−2ΣDᵢwᵢ²（sin 在线性拓扑上同样精确抵消）→ 全无源基础栈与两机持平。**D₂<0 这一侧本会话推进到 box descent 已机器验证**（`theorem_3machine_boxdescent`，qed=1）：核心观察是 V̇ 关于 (c₁,c₂) **可分仿射**（coeff(c₁c₂)=0，sympy 验证），故整盒上 V̇ 恰为 4 顶点值的**凸组合**（插值恒等式残差=0、权重和=1 均机器验证）；4 顶点 NSD 已证（descent 文件）；用**抽象符号装配引理**把 V̇ 作为"非负权×非正值之和"的见证（`lemma_sign_assembly`），Z3 只需逐项校验小目标，绕开使整盒 QE **爆内存**的 c·二次式乘积展开（已确认：即便把 4 顶点作为假设直接喂给整盒 QE 仍 OOM）。**仍未闭合**的是把 box descent 接到**全 10 变量 ODE 的 dI 不变性**：dIRule;chase 后与 box descent 桥接时 Z3 仍需把 chase 出的大多项式与 V̇ 归一化对消，撞同一堵积式展开墙（本会话试了 bare dI / dIRule+QE / chase+装配 / cut 全称 / cut 具体 五种结构，全超时或 OOM）。换 Mathematica/SOS 后端可破；如实记为开放项。`asymptotic_3machine` 的 strict-decay 是 Positivstellensatz/SOS 问题，与两机 `asymptotic_closed` 同墙。
 
 ### 全量复验（本会话，KeYmaera X 5.1.2 + Z3）
 
