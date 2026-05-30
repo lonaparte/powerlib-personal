@@ -1,2 +1,9 @@
 /*.kyx.kyp
 /*.kyp
+
+# Claude Code agent worktrees (ephemeral, in-use; never commit)
+.claude/
+
+# Python caches
+__pycache__/
+*.pyc
