@@ -1,21 +1,29 @@
 ArchiveEntry "3-Machine component-wise eps-delta Lyapunov stability (parametric in D1,D2,D3,K)"
 
 /*
- * KeYmaera X STATUS: NOT machine-verified. The dC + dW/QE/dI assembly TIMES OUT
- * (9-variable; the 5-component dW/QE is much heavier than the 2-machine analog).
- * The MATH is sound: witness delta=eps/(4K+3) is exact (sympy: sup H = eps), and
- * the component bounds are numerically validated (hold incl. K=0.25). Filed as a
- * documented open item (no valid .kyp). [Earlier this file was committed with a
- * stale qed=0 .kyp under parallel-job contention; corrected here.]
- *
- * 3-machine analog of lyapunov_complete_parametric. Component-wise eps-delta
- * stability of the passive line, ALL D1,D2,D3,K>0. Witness delta = eps/(4K+3):
+ * KeYmaera X STATUS: PROVED (qed=1). 3-machine analog of
+ * lyapunov_complete_parametric. Component-wise eps-delta stability of the
+ * passive line, ALL D1,D2,D3,K>0. Witness delta = eps/(4K+3):
  * from the box {w_i^2<delta (i=1,2,3), 1-c_j<delta (j=1,2)} the energy is
  *   H = w1^2+w2^2+w3^2+2K(1-c1)+2K(1-c2) < 3*delta + 4K*delta = (4K+3)*delta = eps,
  * H is invariant (dH/dt<=0), so each nonnegative energy component stays < eps.
  * Conclusion uses the parameter-correct energy components 2K(1-c_j)<eps (the
  * "1-c_j<eps" form is only valid for K>=1/2; cf. component_stability_parametric).
- * Witness arithmetic checked exactly (sympy: sup H = eps).
+ *
+ * Proof technique (two ingredients, both essential under the Z3-only backend):
+ *  1. DIVISION-FREE witness. Instead of existsR("eps/(4K+3)") -- which injects a
+ *     quotient into every downstream QE, and Z3's division axioms are crippled
+ *     here (19 derived-axiom failures) -- we cut an existential
+ *       \exists xd (xd>0 & (4K+3)*xd = eps)
+ *     and instantiate delta:=xd. Every heavy QE then sees only the LINEAR
+ *     relation (4K+3)*xd=eps, no "/".
+ *  2. SPLIT post-condition. The monolithic 5-conjunction dW;QE times out (>240s);
+ *     andR-splitting into five single-inequality QEs closes instantly (each is
+ *     w_i^2 <= H < eps or 2K(1-c_j) <= H < eps, near-linear given H<eps).
+ * The dC invariant H<eps is discharged by dI (Lie derivative of eps-H equals
+ * 2(D1 w1^2+D2 w2^2+D3 w3^2) >= 0, i.e. H non-increasing). Negative control:
+ * replacing the witness with the too-small (2K+1)*xd=eps makes the proof FAIL
+ * (energy<eps no longer holds on the box), confirming non-vacuity. Prove ~0.3s.
  */
 
 ProgramVariables
@@ -52,17 +60,36 @@ Tactic "Proof"
   implyR(1);
   allR(1);
   implyR(1);
-  existsR("eps/(4*K+3)", 1);
-  andR(1);
+  cut("\exists xd (xd > 0 & (4*K+3)*xd = eps)");
   <(
-    QE,
-    allR(1); allR(1); allR(1); allR(1); allR(1); allR(1); allR(1); allR(1); allR(1); allR(1);
-    implyR(1);
-    dC("w1^2 + w2^2 + w3^2 + 2*K*(1-c1) + 2*K*(1-c2) < eps", 1);
+    existsL('Llast);
+    andL('Llast);
+    existsR("xd", 1);
+    andR(1);
     <(
-      dW(1); QE,
-      dI(1)
-    )
+      id,
+      allR(1); allR(1); allR(1); allR(1); allR(1); allR(1); allR(1); allR(1); allR(1); allR(1);
+      implyR(1);
+      dC("w1^2 + w2^2 + w3^2 + 2*K*(1-c1) + 2*K*(1-c2) < eps", 1);
+      <(
+        dW(1);
+        andR(1); <(
+          QE,
+          andR(1); <(
+            QE,
+            andR(1); <(
+              QE,
+              andR(1); <(
+                QE,
+                QE
+              )
+            )
+          )
+        ),
+        dI(1)
+      )
+    ),
+    hideR(1); QE
   )
 End.
 
