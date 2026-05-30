@@ -1,6 +1,13 @@
 ArchiveEntry "3-Machine component-wise eps-delta Lyapunov stability (parametric in D1,D2,D3,K)"
 
 /*
+ * KeYmaera X STATUS: NOT machine-verified. The dC + dW/QE/dI assembly TIMES OUT
+ * (9-variable; the 5-component dW/QE is much heavier than the 2-machine analog).
+ * The MATH is sound: witness delta=eps/(4K+3) is exact (sympy: sup H = eps), and
+ * the component bounds are numerically validated (hold incl. K=0.25). Filed as a
+ * documented open item (no valid .kyp). [Earlier this file was committed with a
+ * stale qed=0 .kyp under parallel-job contention; corrected here.]
+ *
  * 3-machine analog of lyapunov_complete_parametric. Component-wise eps-delta
  * stability of the passive line, ALL D1,D2,D3,K>0. Witness delta = eps/(4K+3):
  * from the box {w_i^2<delta (i=1,2,3), 1-c_j<delta (j=1,2)} the energy is
