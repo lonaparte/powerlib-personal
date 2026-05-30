@@ -1,0 +1,46 @@
+ArchiveEntry "4-Machine RING (1-2-3-4-1): passive sublevel invariance {H<1}, parametric in D1..D4,K"
+
+/*
+ * RING topology 1-2-3-4-1 (four bonds 1-2, 2-3, 3-4, 4-1). SAME theorem and SAME
+ * one-line dI as parametric_4machine.kyx (chain) -- this PAIR is the experiment
+ * demonstrating the passive stack is TOPOLOGY-INDEPENDENT: machine 1 now also
+ * couples to machine 4 (bond 4-1, variables s4,c4), giving a 4th potential term,
+ * yet dH/dt = -2(D1 w1^2+...+D4 w4^2) <= 0 still holds because the extra sin
+ * coupling (+K s4 into machine 1, -K s4 into machine 4) cancels exactly against
+ * the 2K(1-c4) potential derivative. H gains the 4th bond:
+ * H = w1^2+w2^2+w3^2+w4^2 + 2K(1-c1)+2K(1-c2)+2K(1-c3)+2K(1-c4).
+ */
+
+ProgramVariables
+  Real da; Real db; Real dc; Real dd;
+  Real w1; Real w2; Real w3; Real w4;
+  Real s1; Real c1; Real s2; Real c2; Real s3; Real c3; Real s4; Real c4;
+End.
+
+Problem
+  \forall D1 \forall D2 \forall D3 \forall D4 \forall K (
+    D1 > 0 & D2 > 0 & D3 > 0 & D4 > 0 & K > 0 &
+    s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1 & s4^2 + c4^2 = 1 &
+    w1^2 + w2^2 + w3^2 + w4^2 + 2*K*(1-c1) + 2*K*(1-c2) + 2*K*(1-c3) + 2*K*(1-c4) < 1
+    ->
+    [{da' = w1, db' = w2, dc' = w3, dd' = w4,
+      w1' = -D1*w1 - K*s1 + K*s4,
+      w2' = -D2*w2 + K*s1 - K*s2,
+      w3' = -D3*w3 + K*s2 - K*s3,
+      w4' = -D4*w4 + K*s3 - K*s4,
+      s1' = c1*(w1 - w2), c1' = -s1*(w1 - w2),
+      s2' = c2*(w2 - w3), c2' = -s2*(w2 - w3),
+      s3' = c3*(w3 - w4), c3' = -s3*(w3 - w4),
+      s4' = c4*(w4 - w1), c4' = -s4*(w4 - w1)
+      & s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1 & s4^2 + c4^2 = 1}]
+    w1^2 + w2^2 + w3^2 + w4^2 + 2*K*(1-c1) + 2*K*(1-c2) + 2*K*(1-c3) + 2*K*(1-c4) < 1
+  )
+End.
+
+Tactic "Proof"
+  allR(1); allR(1); allR(1); allR(1); allR(1);
+  implyR(1);
+  dI(1)
+End.
+
+End.

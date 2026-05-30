@@ -1,0 +1,48 @@
+ArchiveEntry "4-Machine CHAIN stability region {H<4K} invariant, parametric in D1..D4,K"
+
+/*
+ * 4-machine chain analog of stability_boundary_3machine. The sublevel set
+ * {H < 4K} is positively invariant for ALL D1..D4,K>0.
+ * H = w1^2+w2^2+w3^2+w4^2 + 2K(1-c1)+2K(1-c2)+2K(1-c3).
+ *
+ * TOPOLOGY-DEPENDENT (barrier value): 4K is the lowest escape saddle = ONE bond
+ * pushed to pi (potential 2K(1-cos pi)=4K), the other bonds at 0. A chain has 3
+ * bonds, each a 4K-high weak point, so the guaranteed region barrier is
+ * min over bonds = 4K -- same NUMBER as 2- and 3-machine, but its derivation is
+ * the chain saddle structure. (A ring would carry a loop-flow constraint that can
+ * change which saddle is lowest; the barrier expression is topology-specific even
+ * when this instance evaluates to 4K.)
+ */
+
+ProgramVariables
+  Real da; Real db; Real dc; Real dd;
+  Real w1; Real w2; Real w3; Real w4;
+  Real s1; Real c1; Real s2; Real c2; Real s3; Real c3;
+End.
+
+Problem
+  \forall D1 \forall D2 \forall D3 \forall D4 \forall K (
+    D1 > 0 & D2 > 0 & D3 > 0 & D4 > 0 & K > 0 &
+    s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1 &
+    w1^2 + w2^2 + w3^2 + w4^2 + 2*K*(1-c1) + 2*K*(1-c2) + 2*K*(1-c3) < 4*K
+    ->
+    [{da' = w1, db' = w2, dc' = w3, dd' = w4,
+      w1' = -D1*w1 - K*s1,
+      w2' = -D2*w2 + K*s1 - K*s2,
+      w3' = -D3*w3 + K*s2 - K*s3,
+      w4' = -D4*w4 + K*s3,
+      s1' = c1*(w1 - w2), c1' = -s1*(w1 - w2),
+      s2' = c2*(w2 - w3), c2' = -s2*(w2 - w3),
+      s3' = c3*(w3 - w4), c3' = -s3*(w3 - w4)
+      & s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1}]
+    w1^2 + w2^2 + w3^2 + w4^2 + 2*K*(1-c1) + 2*K*(1-c2) + 2*K*(1-c3) < 4*K
+  )
+End.
+
+Tactic "Proof"
+  allR(1); allR(1); allR(1); allR(1); allR(1);
+  implyR(1);
+  dI(1)
+End.
+
+End.
