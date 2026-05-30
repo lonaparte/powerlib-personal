@@ -1,0 +1,29 @@
+ArchiveEntry "4-Machine saddle force-sign: near delta1=pi the coupling-1 torque is destabilizing"
+
+/*
+ * 4-machine analog of saddle_instability_parametric / saddle_force_3machine.
+ * Pure algebra (no ODE): on the section w1=0 near the saddle (c1 < -1/2, i.e.
+ * coupling-1 angle delta1 near pi), the torque on machine 1 is destabilizing:
+ *   for ALL D1>0, K>0:  (c1 < -1/2 & s1 != 0 & w1 = 0) -> (-D1*w1 - K*s1)*s1 < 0.
+ * With w1=0 this is -K*s1^2 < 0, true iff K>0 and s1 != 0. Local-instability
+ * companion to saddle_instability_4machine (energy-barrier form). Topology-
+ * independent (a single-bond local statement).
+ */
+
+ProgramVariables
+  Real w1; Real s1; Real c1;
+End.
+
+Problem
+  \forall D1 \forall K (
+    D1 > 0 & K > 0 & s1^2 + c1^2 = 1 & c1 < -1/2 & s1 != 0 & w1 = 0
+    ->
+    (-D1*w1 - K*s1)*s1 < 0
+  )
+End.
+
+Tactic "Proof"
+  QE
+End.
+
+End.
