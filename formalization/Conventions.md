@@ -160,3 +160,69 @@ Routh 判据给出稳定充要条件：
 合并：**|D₂| < min(D₁, K/D₁)**。
 
 注意：此边界对应耦合系数 K（本项目约定）。若使用 K/2 耦合约定，边界变为 |D₂| < min(D₁, K/(2D₁))。
+
+---
+
+## 12. GFL 跟网变流器 10 状态模型（PLL 具体动态）
+
+§4 中 D₂<0 是"PLL 等效负阻尼"的抽象。本节给出其**具体控制器结构**：一个含 PLL、LC 滤波、电流环、经 RL 电网接刚性母线的跟网变流器。数值脚本见 `numerical/`。
+
+### 12.1 状态变量（10 维）
+
+| 变量 | 含义 |
+|------|------|
+| `i_d`, `i_q` | 变流器侧电流 dq |
+| `v_cd`, `v_cq` | 滤波电容电压 dq |
+| `i_gd`, `i_gq` | 电网侧电流 dq |
+| `xdc`, `xqc` | 电流 PI 控制器积分态 |
+| `eta` | PLL 积分态 |
+| `th` | PLL 相位（相对额定的角度误差） |
+
+dq 坐标随 PLL 旋转：`wpll = wn + Kp·v_cq + Ki·eta`（PLL 锁 v_cq→0）。
+
+### 12.2 固定装置参数（归一化标幺前的取值）
+
+`Cf=1e-4, Lf=1e-3, Rf=0.1`（LC 滤波 + 阻尼）；`Kpi=1.26, Kii=126`（电流环 PI）；`Kad=2`（有源阻尼）；`idr=80, iqr=0`（电流指令 A）。
+`wn=2π·50`；`Vg=380·√(2/3)`。
+
+### 12.3 方程（ẋ = f(x)）
+
+```
+i_d'  = (Kpi*(idr-i_d) + Kii*xdc - Kad*(i_d-i_gd) - Rf*i_d)/Lf
+i_q'  = (Kpi*(iqr-i_q) + Kii*xqc - Kad*(i_q-i_gq) - Rf*i_q)/Lf
+v_cd' = (i_d-i_gd)/Cf + wpll*v_cq
+v_cq' = (i_q-i_gq)/Cf - wpll*v_cd
+i_gd' = (v_cd - Vg*cos(th) - Rg*i_gd + wpll*Lg*i_gq)/Lg
+i_gq' = (v_cq + Vg*sin(th) - Rg*i_gq - wpll*Lg*i_gd)/Lg
+xdc'  = idr - i_d
+xqc'  = iqr - i_q
+eta'  = v_cq
+th'   = Kp*v_cq + Ki*eta            (= wpll - wn)
+```
+
+### 12.4 控制与电网参数
+
+| 参数 | 含义 | 名义值 |
+|------|------|--------|
+| `Kp` (=Kp_pll) | PLL 比例增益 | 0.30 |
+| `Ki` (=Ki_pll) | PLL 积分增益 | 150 |
+| `SCR` | 短路比（电网强度，**分岔参数**） | 临界 SCR_H≈0.9051 |
+| `X/R` | 电网阻抗角 | 10 |
+
+电网阻抗由 (SCR, X/R) 决定：`|Zg| = 380²/(1e5·SCR)`，`Rg = |Zg|/√(1+(X/R)²)`，`Lg = |Zg|·(X/R)/(√(1+(X/R)²)·wn)`。SCR 越小 = 电网越弱 = |Zg| 越大。
+
+### 12.5 平衡点
+
+`i_d=idr, i_q=iqr, v_cq=0, i_gd=idr, eta=0`；`i_gq=iqr-wn·Cf·vcd`；`xdc=Rf·idr/Kii`；`xqc=(Kad·(iqr-i_gq)+Rf·iqr)/Kii`。
+设 `al=1-wn²·Lg·Cf, be=Rg·wn·Cf, K1=Rg·idr-wn·Lg·iqr, K2=Rg·iqr+wn·Lg·idr`，则
+`cos(th)=(al·vcd-K1)/Vg`，`sin(th)=(K2-be·vcd)/Vg`，`vcd` 由 `cos²+sin²=1` 化出的二次方程 `(al²+be²)vcd² - 2(al·K1+be·K2)vcd + (K1²+K2²-Vg²)=0` 取正根。判别式<0 ⇒ 无平衡点（电压崩溃 / saddle-node）。
+
+### 12.6 分岔分析量
+
+- **A** = f 在平衡点的 Jacobian（10×10）。线性稳定 ⇔ max Re(eig A) < 0。
+- **弱网 Hopf**：固定其余参数、减小 SCR（电网变弱），一对共轭特征值在 SCR=SCR_H 处穿过虚轴；`ω=Im(λ)`（名义下 f_osc≈40Hz）。
+- **第一 Lyapunov 系数 l₁**（Kuznetsov 投影公式，在 Hopf 点）：
+  - `l₁>0` ⇒ **subcritical（硬失稳，危险）**；`l₁<0` ⇒ **supercritical（软失稳）**；`l₁=0` ⇒ **Bautin 点**。
+  - **l₁ 的符号是坐标不变量（物理量）；量级依赖归一化约定**（平衡 vs 非平衡坐标差 ~100×），不可跨脚本比大小。
+- **Bautin 曲线** `Kp*(Ki)`：控制平面内 l₁=0 的边界，硬↔软分界（见 `numerical/bautin.py`）。
+
