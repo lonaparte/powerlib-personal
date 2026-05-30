@@ -1,0 +1,28 @@
+ArchiveEntry "3-Machine necessity of coupling: K=0, D=0 => no synchronization (relative freqs conserved)"
+
+/*
+ * 3-machine analog of necessary_k0. With zero coupling (K=0) and zero damping,
+ * each machine is fully decoupled (wi' = 0), so the relative frequencies
+ * w1-w2 and w2-w3 are individually conserved: no synchronizing torque exists,
+ * the machines never pull into a common frequency. Certifies K>0 is necessary
+ * for synchronization. (Both relative-frequency invariants in one statement.)
+ */
+
+ProgramVariables
+  Real da; Real db; Real dc;
+  Real w1; Real w2; Real w3;
+  Real p; Real q;
+End.
+
+Problem
+  w1 - w2 = p & w2 - w3 = q
+  ->
+  [{da' = w1, db' = w2, dc' = w3, w1' = 0, w2' = 0, w3' = 0}]
+  (w1 - w2 = p & w2 - w3 = q)
+End.
+
+Tactic "Proof"
+  implyR(1); dI(1)
+End.
+
+End.
