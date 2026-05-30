@@ -1,24 +1,31 @@
 ArchiveEntry "4-Machine RING stability region {H<8K} invariant, parametric in D1..D4,K"
 
 /*
- * RING topology 1-2-3-4-1 stability region. The KEY TOPOLOGY-DEPENDENCE RESULT:
- * the ring's escape barrier is 8K, NOT the chain's 4K.
+ * RING topology 1-2-3-4-1 stability region.
  *
- * WHY: on a ring the phase differences around the loop must sum to a multiple of
- * 2*pi (loop/circulation constraint). You CANNOT push a single bond to pi while
- * leaving the others at 0 -- the loop would not close. The lowest nonzero
- * critical point of U = sum 2K(1-cos delta_j) over the 4 ring bonds is the
- * "two-domain" twisted state with U = 8K (numerically: the only critical values
- * are 8K and 16K; gauge th4=0, fsolve over 2e4 starts). So the synchronized well
- * is DEEPER on the ring: {H < 8K} is the positively-invariant guaranteed region,
- * twice the chain barrier. (The naive "one bond to pi" 4K config is NOT a
- * critical point on the ring -- grad != 0 -- it is dynamically inaccessible as an
- * escape saddle because the loop constraint forbids it.)
+ * WHAT THIS FILE FORMALLY PROVES: ONLY that {H < 8K} is positively invariant for
+ * ALL D1..D4,K>0. As in the chain file, the dI proof uses ONLY H non-increasing
+ * (dH/dt = -2 sum Di wi^2 <= 0), so it closes for ANY threshold constant --
+ * {H < c} is invariant for every c>0 (verified adversarially: ring at threshold
+ * 4K also PROVES). The constant 8K is NOT distinguished by the formal proof; this
+ * file does NOT prove 8K is the largest invariant sublevel or the true basin.
  *
- * The dI proof itself is the SAME one-liner (H non-increasing); what changed is
- * the THRESHOLD CONSTANT, and that constant is set by the topology. Compare
- * stability_boundary_4machine.kyx (chain, 4K). Numerically cross-validated:
- * chain min saddle 4K, ring min saddle 8K.
+ * NUMERICAL (NOT formalized here) -- this is where the topology actually enters:
+ * on a ring the phase differences around the loop must sum to a multiple of 2*pi
+ * (loop/circulation constraint), so you CANNOT push a single bond to pi with the
+ * others at 0 -- the loop would not close (that config has grad U != 0, it is NOT
+ * a critical point). The lowest nonzero critical value of U = sum 2K(1-cos
+ * delta_j) over the 4 ring bonds is 8K (fsolve over 2e4 starts: the only nonzero
+ * critical values are exactly 8K and 16K), vs the chain's 4K. So the ring's
+ * synchronized well is genuinely DEEPER -- but that tightness/topology statement
+ * lives in the numerics, not in this .kyx.
+ *
+ * BOTTOM LINE (the honest topology story): the proof METHOD (energy dI) is
+ * topology-BLIND -- chain and ring use the identical one-liner and accept any
+ * threshold. The number that is topology-DEPENDENT (chain min-saddle 4K vs ring
+ * min-saddle 8K) is a NUMERICAL fact about the potential's critical points, which
+ * KeYmaera X here does not certify. We display the physically meaningful constant
+ * in each file's bound.
  */
 
 ProgramVariables

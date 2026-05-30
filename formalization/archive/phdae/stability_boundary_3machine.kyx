@@ -3,9 +3,14 @@ ArchiveEntry "3-Machine region of attraction {H<4K} invariant (parametric in D1,
 /*
  * 3-machine analog of stability_boundary(_parametric). Passive line 1-2-3.
  * The energy sublevel {H < 4K}, H = w1^2+w2^2+w3^2+2K(1-c1)+2K(1-c2), is
- * positively invariant for ALL D1,D2,D3,K > 0. 4K is the lowest saddle energy
- * of the line (one coupling at delta=pi, the other at 0), so {H<4K} is the
- * region of attraction. Mechanism: dH/dt = -2(D1 w1^2+D2 w2^2+D3 w3^2) <= 0.
+ * positively invariant for ALL D1,D2,D3,K > 0. Mechanism: dH/dt = -2(D1 w1^2+
+ * D2 w2^2+D3 w3^2) <= 0.
+ *
+ * SCOPE: the dI uses only H non-increasing, so it closes for ANY threshold c>0,
+ * not just 4K. This file formally proves ONLY "{H<4K} is positively invariant",
+ * NOT that {H<4K} is the largest invariant set or the exact region of attraction.
+ * That "4K = lowest saddle (one coupling at pi) => {H<4K} is the ROA" reading is
+ * NUMERICAL (sympy), not formalized in this .kyx.
  */
 
 ProgramVariables

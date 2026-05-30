@@ -3,16 +3,20 @@ ArchiveEntry "3-Machine saddle instability (D=0): above-barrier set {H>4K} is in
 /*
  * Necessity / instability side, 3-machine analog of saddle_instability_parametric.
  * With zero damping (D1=D2=D3=0) the Hamiltonian H = sum wi^2 + 2K(1-c1) + 2K(1-c2)
- * is conserved (conservative_3machine). Hence the COMPLEMENT of the stability
- * region, {H > 4K}, is positively invariant: a trajectory that starts above the
- * lowest escape barrier (one bond pushed toward pi, energy 4K) can never return
- * into the synchronized well {H < 4K}. This certifies that points above the
- * barrier do not get attracted to the in-phase equilibrium -- the large-signal
- * instability statement dual to stability_boundary_3machine.
+ * is conserved (conservative_3machine). The superlevel set {H > 4K} is positively
+ * invariant.
  *
- * Proof: H is conserved (H'=0 under D=0), so (H-4K)'=0>=0, dI closes {H>4K}.
- * Cross-check: same energy as stability_boundary_3machine; 4K = saddle barrier
- * (one bond at pi), numerically verified earlier.
+ * WHAT THIS FORMALLY PROVES: ONLY that {H > 4K} is invariant. The proof uses ONLY
+ * H conserved (H'=0, so (H-4K)'=0>=0, dI closes), so it holds for ANY threshold c
+ * -- {H > c} is invariant for every c (under conservation, EVERY level set is
+ * invariant). So 4K is NOT distinguished by the formal proof; this file does NOT
+ * prove that 4K is the escape barrier, nor that trajectories above it "cannot
+ * return" for any dynamical reason beyond plain conservation.
+ *
+ * NUMERICAL (NOT formalized here): 4K is the lowest escape saddle (one bond at pi);
+ * paired with stability_boundary_3machine's {H<4K} this reads as "4K separates the
+ * synchronized well from escape", but that tightness claim is numerical, not in
+ * this .kyx. Formally this is "conserved H => superlevel set invariant".
  */
 
 ProgramVariables

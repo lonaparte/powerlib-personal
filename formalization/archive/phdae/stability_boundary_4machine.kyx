@@ -5,13 +5,22 @@ ArchiveEntry "4-Machine CHAIN stability region {H<4K} invariant, parametric in D
  * {H < 4K} is positively invariant for ALL D1..D4,K>0.
  * H = w1^2+w2^2+w3^2+w4^2 + 2K(1-c1)+2K(1-c2)+2K(1-c3).
  *
- * TOPOLOGY-DEPENDENT (barrier value): 4K is the lowest escape saddle = ONE bond
- * pushed to pi (potential 2K(1-cos pi)=4K), the other bonds at 0. A chain has 3
- * bonds, each a 4K-high weak point, so the guaranteed region barrier is
- * min over bonds = 4K -- same NUMBER as 2- and 3-machine, but its derivation is
- * the chain saddle structure. (A ring would carry a loop-flow constraint that can
- * change which saddle is lowest; the barrier expression is topology-specific even
- * when this instance evaluates to 4K.)
+ * WHAT THIS FILE FORMALLY PROVES (read carefully):
+ * ONLY that {H < 4K} is positively invariant. The dI proof uses ONLY that H is
+ * non-increasing (dH/dt = -2 sum Di wi^2 <= 0), so the SAME proof closes for ANY
+ * threshold constant -- {H < c} is invariant for every c>0. (Verified
+ * adversarially: chain at threshold 8K also PROVES.) So the constant 4K here is
+ * NOT distinguished by the formal proof; this file does NOT prove 4K is the
+ * largest invariant sublevel, nor that it is the true basin/escape boundary.
+ *
+ * NUMERICAL (NOT formalized here): 4K is the lowest escape saddle of the chain
+ * potential = one bond at pi, others at 0 (sympy: chain min nonzero critical
+ * value = 4K). That min-saddle reading IS topology-dependent (cf.
+ * stability_boundary_4machine_ring: ring min saddle = 8K, because the loop
+ * constraint forbids the one-bond-to-pi config). But that tightness/topology
+ * claim lives in the numerics, not in this .kyx. The .kyx is a topology-blind
+ * "some sublevel set is invariant" theorem; we CHOSE the physically meaningful
+ * constant to display.
  */
 
 ProgramVariables
