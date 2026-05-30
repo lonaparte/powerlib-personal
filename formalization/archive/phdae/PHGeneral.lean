@@ -37,6 +37,33 @@
   three faces of one theorem.
 
   ======================================================================
+  THE REAL BOUNDARY: SIGN-UNIFORM vs SIGN-MIXED damping (not "passive or not")
+  ======================================================================
+  A common but WRONG summary is "only the passive case generalizes". The sharp
+  line is whether the damping signs are UNIFORM, because the rate is the single
+  sum  -Σᵢ Dᵢ gᵢ²:
+    * SIGN-UNIFORM D (all Dᵢ ≥ 0, OR all = 0, OR all Dᵢ ≤ 0):
+        the sum is definitely-signed, H itself is a uniform certificate, and the
+        result GENERALIZES to every dimension and topology. The three theorems
+        above are exactly these three cases. NOTE the third one, `pH_antipassive`
+        (all Dᵢ ≤ 0), is NON-passive yet still generalizes — so "non-passive
+        cannot be generalized" is false; the all-negative instability statement
+        is just the passive proof with the sign flipped, same certificate H.
+    * SIGN-MIXED D (some Dᵢ < 0 while others > 0, e.g. the D₂<0 middle machine
+        with D₁,D₃,… > 0): the rate sum  -Σᵢ Dᵢ gᵢ²  is INDEFINITE, so H is no
+        longer a certificate. Stability there needs an AUGMENTED Lyapunov
+        V = H + (cross terms) whose coefficients depend on the topology and on
+        the parameter values (this is precisely theorem_3machine_linear /
+        _descent / _boxdescent in the .kyx corpus). There is NO
+        dimension- or topology-independent certificate of the present kind, and
+        it is genuinely NOT provable by the framework of this file. That is the
+        real "cannot generalize" boundary — sign-MIXED, not "non-passive".
+
+  In one line:  uniform-sign damping ⟹ H works ⟹ generalizes (proved below,
+  all three signs);  mixed-sign damping ⟹ H fails ⟹ needs a bespoke V ⟹ does
+  not generalize (out of scope here, and chain- or parameter-specific in corpus).
+
+  ======================================================================
   MACHINE-CHECK STATUS  (verified, not just asserted)
   ======================================================================
   COMPILED AND CHECKED in this session with Lean 4.14.0
@@ -226,6 +253,15 @@ theorem pH_antipassive {α : Type} (l : List α) (J : α → α → Int) (D : α
     (hJ : ∀ i j, J i j = - J j i) (hD : ∀ i, D i ≤ 0) :
     0 ≤ (l.map (fun i => (l.map (fun j => g i * J i j * g j)).sum)).sum - diagSum l D g := by
   rw [pH_rate l J D g hJ]; have := diagSum_nonpos l D g hD; omega
+
+-- NOTE on the SIGN-MIXED case (some Dᵢ < 0, others > 0): there is deliberately
+-- NO theorem here. `pH_rate` still holds (J always cancels), but the rate
+-- `-diagSum l D g = -Σᵢ Dᵢ gᵢ²` is then INDEFINITE — `diagSum` is neither
+-- ≥0 nor ≤0 in general — so H gives no sign conclusion and no analogue of
+-- pH_passive/_antipassive exists. That case (e.g. D₂<0 middle machine) requires
+-- a bespoke augmented Lyapunov V = H + cross-terms with topology/parameter-
+-- dependent coefficients; it is the .kyx "B-class" (theorem_3machine_linear /
+-- _descent / _boxdescent) and is genuinely outside this uniform framework.
 
 -- ====================================================================
 -- Non-vacuity + concrete instantiation (the corpus' topologies are skew)
