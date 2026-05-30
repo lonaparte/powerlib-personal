@@ -295,6 +295,7 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 | 稳定域 {H<4K} 不变（吸引域） | `stability_boundary_3machine` | ∀D1,D2,D3,K>0 | ✅ dI (312ms) |
 | 能量平衡恒等式 h=H | `strict_dissipation_3machine` | ∀D1,D2,D3,K>0 | ✅ dI (276ms) |
 | ∀ε∃δ Lyapunov（分量，δ=ε/(4K+3)） | `lyapunov_complete_3machine` | ∀D1,D2,D3,K>0 | ✅ existsR+dC+dW/QE/dI (405ms) |
+| 渐近稳定（修正 Lyapunov，C=40） | `asymptotic_3machine` | D=K=1（9 变量 dC+dI） | ✅ (实例级轨迹证明) |
 | **D₂<0 中间机大信号下降 V̇≤0** | `theorem_3machine_descent_parametric` | ∀d∈(0,3/20] | ✅ QE 4 顶点 (1.8s) |
 | D₂<0 中间机大信号亚水平集不变 | `theorem_3machine_invariant_parametric` | ∀d∈(0,3/20] | ❌ slab dI 超时（7 变量双余弦 box QE）；数学成立、descent 已证 |
 
