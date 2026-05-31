@@ -4,6 +4,40 @@
 
 ---
 
+## GFL-VSC 慢频率模式（Lean 4 + Mathlib，机器已验证）
+
+> 功率锁定跟网变流器（GFL-VSC）的慢频率模式形式化。完整说明见 [`gfl/README.md`](gfl/README.md)；
+> 源在 `gfl/GFL/*.lean`，公理审计见 `gfl/GFL/Audit.lean`，数值交叉验证见 `gfl/validate.py`。
+
+**结论**：电流控制、功率锁定的 GFL-VSC，其慢频率（电网频率）模式是**纯实数衰减模**，特征值
+`−D/(2H)`；当且仅当显式存在角度→功率耦合 `Ks` 且 `β·Ks > b²/4`（`β:=wn/(2H)`）时才转为振荡。
+裸 GFL 因 Power Lock（引理 0）强制同步系数 `K=0`（即 `Ks=0`），其频率模式只衰减、永不振荡。
+
+**机器已验证（`lake build`，无 `sorry`，公理仅 `[propext, Classical.choice, Quot.sound]`）**：
+
+| 结论 | Lean 名 | 文件 |
+|------|---------|------|
+| 引理 0（Power Lock，命门，纯代数）`e_P=0 ⟹ i_d=P_ref/(1.5Vg)` | `powerLock` | `gfl/GFL/Model.lean` |
+| 推论 0a `i_d*` 恒定 ⟹ `K=0` | `syncCoeff_zero` | `gfl/GFL/Model.lean` |
+| 定理 A（Variant U 零特征值，`e₉` 左特征向量，`det=0`） | `variantU_zero_eigenvalue` | `gfl/GFL/TheoremA.lean` |
+| 定理 B（约化系统**精确** `dw'=−b·dw`，`λ_slow=−D/(2H)`） | `reduced_exact` | `gfl/GFL/TheoremB.lean` |
+| 定理 B（全系统 Schur 项 `ρᵀA⁻¹c=κK=0` 精确） | `schur_term_zero` | `gfl/GFL/TheoremB.lean` |
+| 定理 C（伴随矩阵特征多项式 `λ²+bλ+βKs`） | `charpoly_eq` | `gfl/GFL/TheoremC.lean` |
+| 定理 C1（`Ks=0` ⟹ 根 `{0,−b}` 全实） | `thmC_Ks_zero` | `gfl/GFL/TheoremC.lean` |
+| 定理 C2（`Ks>0` ⟹ `−b/2±iω`，振荡 ⟺ `βKs>b²/4`，`ω_osc=√(βKs−b²/4)`） | `thmC_onset` | `gfl/GFL/TheoremC.lean` |
+
+**三个命门的诚实处理**：(1) 引理 0 先证、纯代数；(2) 定理 B 区分"约化精确 / 全系统 O(ε²)"——只证
+约化场精确 `−b·dw` 与 O(1) Schur 项精确为 0，**不**声称全 9×9 系统精确 `−D/(2H)`；(3) 定理 C 用
+`β:=wn/(2H)` 与题设一致。建模忠实性：内场 `F_inner` 抽象承载（只用到 `F7=e_P`），§6 雅可比块结构按
+题目"by inspection"给定为前提，定理 B 的 `A·v=−c`（IFT 微分）与 `v₀=0`（推论 0a）为前提，其余全部从
+头证明。`validate.py` 在**完整 §3–§4 非线性 9 态模型**上独立复现 §9 全部数值锚点（`i_d*=80` 恒定、
+Variant U 恰一个零特征值、`λ_slow≈−D/2H`、Schur 项 `2.9e-19`、定理 C 起振频率 `0.089/0.199/0.399/0.892 Hz`）。
+
+> 注：本节是 Lean 代数/谱证明（与下文 pH-DAE 的 KeYmaera X 动力学证明互补、彼此独立）。Mathlib olean
+> 缓存在本环境不可达，故 Mathlib 由源码编译（toolchain `v4.31.0-rc1`，依赖 pin 在 `lake-manifest.json`）。
+
+---
+
 ## 做了什么
 
 对两机非线性系统（sin 耦合、droop 阻尼）用 KeYmaera X 和数值分析做了完整的稳定性探索。
