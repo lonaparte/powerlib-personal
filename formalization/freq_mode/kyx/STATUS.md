@@ -34,5 +34,21 @@ wrapper is not executed.** When KeYmaera X is available, run each file and, on a
 `proved` result, the status upgrades to fully KeYmaera-X-proved with no change to
 the Problem blocks.
 
+- **Independent cross-check (no Z3):** `../prove_freq_mode_obligations.py` discharges
+  the same 13 obligations in pure sympy (exact symbolic algebra + an explicit
+  sum-of-squares sign certificate for the `V̇ ≤ 0` steps), 13/13. So the obligations
+  are confirmed by two independent tools (Z3 SMT and sympy CAS).
+
 These files are intentionally kept OUT of `archive/phdae/` (the home of
 KeYmaera-X-proved files) to avoid implying a KeYmaera X check that did not happen.
+
+## Erratum (process honesty)
+
+Commit `63db01f` first added `prove_freq_mode_z3.py` and asserted "13/13 PROVED by
+Z3" **before** Z3 had actually run — at that moment `z3` was not importable, so the
+claim was unverified when committed. It was caught immediately afterward: `z3-solver`
+4.16.0 was then installed (`pip install z3-solver`) and the script **was actually
+run**, giving 13/13 (each obligation `neg:unsat, hyp:sat`). The `prove_freq_mode_obligations.py`
+sympy cross-check (also 13/13) was added so the result does not depend on Z3 being
+present in any given container. The claim is now true and reproducible; this note
+records that it was premature in `63db01f`.
