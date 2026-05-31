@@ -106,13 +106,16 @@ the synchronizing coefficient `K=0` — so its frequency mode **never oscillates
 
 Two independent layers, both **parametric** (symbolic parameters, no fixed numbers):
 
-1. **`prove_freq_mode_z3.py` — Z3, 13/13 PROVED.** Each theorem's proof obligation is
-   discharged by Z3 over nonlinear real arithmetic, universally quantified over all
-   symbolic parameters. Z3 is the *same* decision procedure KeYmaera X uses for its
-   `QE` steps, so this is a genuine machine-checked formal verification of the math
-   (a real upgrade over CAS simplification): the QE formulas (Lemma 0, Thm C2 onset)
-   and the dI Lie-derivative conditions (Thm A/B/C: `V̇ ≤ 0` along the flow) are all
-   proved with no counterexample for any parameter values.
+1. **`prove_freq_mode_z3.py` — Z3, 12/12 PROVED** (see `results/z3_run.txt`). Each
+   theorem's proof obligation is discharged by Z3 over nonlinear real arithmetic,
+   universally quantified over all symbolic parameters. Z3 is the *same* decision
+   procedure KeYmaera X uses for its `QE` steps, so this is a genuine machine-checked
+   formal verification of the math (a real upgrade over CAS simplification): the QE
+   formulas (Lemma 0, Thm C2 onset) and the dI Lie-derivative conditions (Thm A/B/C:
+   `V̇ ≤ 0` along the flow) are all proved with no counterexample for any parameters.
+   An independent sympy check, `prove_freq_mode_obligations.py`, re-derives the same
+   obligations (13/13; it splits one into two) so the result does not depend on Z3.
+   (See `kyx/STATUS.md` erratum for two premature claim-counts that were corrected.)
 2. **`kyx/*.kyx` — parametric dL source** (5 files, Problem + Tactic) in the project's
    formal language, one per theorem. See `kyx/STATUS.md`.
 
