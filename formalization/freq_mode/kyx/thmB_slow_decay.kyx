@@ -1,0 +1,31 @@
+ArchiveEntry "Theorem B: reduced slow mode decays at rate -D/(2H)"
+
+/* On the slow manifold (inner block at quasi-steady state, F_inner = 0), the
+ * Power Lock makes P_meas(z*(dw)) == P_ref, so the swing-anchored frequency
+ * equation collapses to the first-order linear decay
+ *      dw' = kappa*(P_ref - P_meas) - b*dw = -b*dw,    b := D/(2H) > 0.
+ * The eigenvalue is exactly lambda_slow = -b = -D/(2H): purely real, no imaginary
+ * part, time constant 2H/D.
+ *
+ * Formalized as Lyapunov stability of the reduced ODE with V = dw^2:
+ *   V' = 2*dw*dw' = -2*b*dw^2 <= 0  for b > 0  (the dI obligation).
+ * Parametric in b > 0.  Lie-derivative obligation cross-checked by Z3
+ * ("ThmB(i)/(iii)") and the rate identity -b = -D/(2H) by Z3 ("ThmB(ii)").
+ *
+ * NOTE (hazard 2): this is the REDUCED-model statement, which is EXACT.  The full
+ * 9x9 slow eigenvalue equals -b only to O(b^2) (the O(1) Schur term rho^T A^{-1} c
+ * = kappa*K = 0 vanishes by Power Lock, but higher-order terms remain).  This file
+ * does NOT claim the full 9x9 system decays at exactly -D/(2H).
+ */
+
+Problem
+  b > 0 & dw^2 <= s0
+  ->
+  [
+    { dw' = -b*dw }
+  ] (dw^2 <= s0)
+End.
+
+Tactic "reduced slow-mode decay by dI"
+  implyR(1) ; dI(1)
+End.

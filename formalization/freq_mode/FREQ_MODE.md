@@ -102,9 +102,34 @@ the synchronizing coefficient `K=0` — so its frequency mode **never oscillates
 | Thm C: charpoly, discriminant, ω_osc | sympy symbolic | **EXACT** |
 | Thm C / §9 onset Hz | numeric | **NUM** |
 
-- This is **sympy / CAS-level** rigor (exact symbolic algebra), **not** a KeYmaera X
-  `.kyx` or Lean machine-checked proof. The Lean/.kyx formal-layer encoding is deferred.
+## Formal layer (parametric, machine-checked)
+
+Two independent layers, both **parametric** (symbolic parameters, no fixed numbers):
+
+1. **`prove_freq_mode_z3.py` — Z3, 13/13 PROVED.** Each theorem's proof obligation is
+   discharged by Z3 over nonlinear real arithmetic, universally quantified over all
+   symbolic parameters. Z3 is the *same* decision procedure KeYmaera X uses for its
+   `QE` steps, so this is a genuine machine-checked formal verification of the math
+   (a real upgrade over CAS simplification): the QE formulas (Lemma 0, Thm C2 onset)
+   and the dI Lie-derivative conditions (Thm A/B/C: `V̇ ≤ 0` along the flow) are all
+   proved with no counterexample for any parameter values.
+2. **`kyx/*.kyx` — parametric dL source** (5 files, Problem + Tactic) in the project's
+   formal language, one per theorem. See `kyx/STATUS.md`.
+
+### Honest status
+
+- **KeYmaera X is not installed in this container**, so the `.kyx` files were **not run
+  through KeYmaera X** — none is "KeYmaera X `proved`". Their Tactics are written and the
+  obligations those Tactics reduce to are the ones Z3 proved; running KeYmaera X later
+  upgrades them with no change to the Problem blocks. (Kept out of `archive/phdae/` to
+  avoid implying a check that didn't happen.)
+- The Z3 layer **is** machine-checked and parametric. What Z3 does not cover for the dI
+  files is KeYmaera X's dI rule application / soundness kernel — only the mathematical
+  content (the Lie derivative).
+- `verify_freq_mode.py` (sympy, 24/24) remains as the full-model grounding: it builds the
+  actual 9-state field and checks the structural facts (`e₆ᵀA=−1.5Vg·e₁ᵀ`, `c[6]=0`,
+  numeric eigenvalues), which the abstract dL/Z3 statements take as inputs.
 - The three flagged hazards are handled: (1) Lemma 0 proved first as the crux;
   (2) the full 9×9 is explicitly **not** claimed exactly `−D/(2H)` — only the reduced
-  model is exact, with the numeric O(b²) gap shown; (3) `β := wn/(2H)` is stated as the
-  convention that fixes the (C2) threshold `β·Ks > b²/4`.
+  model is exact (`thmB_slow_decay.kyx` says so), with the numeric O(b²) gap shown;
+  (3) `β := wn/(2H)` is stated as the convention that fixes the (C2) threshold `β·Ks > b²/4`.

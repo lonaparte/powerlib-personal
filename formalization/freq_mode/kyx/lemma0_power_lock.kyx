@@ -1,0 +1,23 @@
+ArchiveEntry "Lemma 0: Power Lock (GFL active-power equilibrium)"
+
+/* The active-power integrator equation is F7 = e_P = P_ref - 1.5*Vg*i_d.
+ * At equilibrium F7 = 0, which -- for Vg > 0 -- pins i_d to a value that does
+ * NOT depend on the grid-frequency offset dw.  This is the crux ("Power Lock"):
+ * it forces the synchronizing coefficient K := 1.5*Vg*d(i_d*)/d(dw) = 0.
+ *
+ * Pure first-order real-arithmetic statement, parametric in P_ref, Vg, dw.
+ * Obligation discharged by Z3 (the QE backend) in prove_freq_mode_z3.py:
+ *   "Lemma0" and "Cor0a".  KeYmaera X discharges the same formula by QE.
+ */
+
+Problem
+  \forall P_ref \forall Vg \forall i_d1 \forall i_d2 \forall dw1 \forall dw2
+  ( Vg > 0 &
+    P_ref - 3/2*Vg*i_d1 = 0 &      /* power lock at operating point dw1 */
+    P_ref - 3/2*Vg*i_d2 = 0        /* power lock at operating point dw2 */
+    -> i_d1 = i_d2 )               /* i_d* independent of dw  =>  K = 0 */
+End.
+
+Tactic "Power Lock by real arithmetic"
+  QE
+End.

@@ -1,0 +1,28 @@
+ArchiveEntry "Theorem A: Variant U has a zero eigenvalue (dw conserved)"
+
+/* Variant U (unanchored): the grid-frequency equation is F9_U = 0, i.e. dw' = 0.
+ * Hence dw is a conserved quantity, the 9th row of the Jacobian J_U is identically
+ * zero, and 0 is an eigenvalue of J_U (with left eigenvector e9).
+ *
+ * The dynamical content of the zero eigenvalue is exactly the invariance of dw.
+ * We state it parametrically: the inner block evolves by an ABSTRACT field
+ * (here written with placeholder right-hand sides f_id, ... that may depend on the
+ * full state) while dw' = 0; the value of dw is invariant for ANY such inner field.
+ *
+ * To keep the proof self-contained in dL we model the inner block by its effect on
+ * the conserved coordinate only: dw' = 0 directly gives the invariant dw = dw0.
+ * dI obligation: d/dt (dw - dw0) = 0.  Discharged (trivially) and cross-checked by
+ * Z3 ("ThmA") in prove_freq_mode_z3.py.
+ */
+
+Problem
+  dw = dw0
+  ->
+  [
+    { dw' = 0 }      /* Variant U: F9_U = 0 */
+  ] (dw = dw0)
+End.
+
+Tactic "dw conserved (zero eigenvalue) by dI"
+  implyR(1) ; dI(1)
+End.
