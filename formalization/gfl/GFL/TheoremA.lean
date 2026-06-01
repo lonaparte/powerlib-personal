@@ -11,6 +11,7 @@
   together with `e₉ ≠ 0` (the eigenvector is genuine).
 -/
 import GFL.Model
+import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 
 namespace GFL
 
@@ -69,5 +70,12 @@ is invertible — confirming the zero eigenvalue of `J_U` is simple (multiplicit
 theorem variantU_zero_cofactor_ne (A : Matrix (Fin 8) (Fin 8) ℝ) (hA : IsUnit A.det) :
     (A - (0 : ℝ) • 1).det ≠ 0 := by
   simpa using hA.ne_zero
+
+/-- **Theorem A — explicit right eigenvector.**  From `det J_U = 0` there is a *nonzero*
+`v` with `J_U · v = 0`: a genuine right eigenvector for eigenvalue `0` (the standard
+"`0 ∈ spec`" via a nontrivial kernel, complementing the left eigenvector `e₉`). -/
+theorem variantU_zero_right_eigenvector (J : Matrix (Fin 9) (Fin 9) ℝ)
+    (hbot : ∀ j, J 8 j = 0) : ∃ v : Fin 9 → ℝ, v ≠ 0 ∧ J *ᵥ v = 0 :=
+  Matrix.exists_mulVec_eq_zero_iff.mpr (det_eq_zero_of_row_eq_zero 8 hbot)
 
 end GFL

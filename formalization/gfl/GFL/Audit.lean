@@ -29,3 +29,5 @@ open GFL
 #print axioms branch_iD_tangent_zero     -- v₀ = 0 (i_d-tangent)
 #print axioms branch_linearization       -- IFT linearisation  A·v = −c
 #print axioms schur_term_zero_of_branch  -- Thm B Schur term, derived from the C¹ branch
+#print axioms variantU_zero_right_eigenvector
+#print axioms thmC_roots_exhaustive

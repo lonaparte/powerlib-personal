@@ -92,4 +92,34 @@ theorem thmC_onset (b s ω : ℝ) (hω : ω ^ 2 = s - b ^ 2 / 4) (hωnn : 0 ≤ 
       simp at hω
       linarith [hω, hlt]
 
+/-- **Theorem C2 — exhaustiveness / reverse direction.**
+With `ω ≥ 0`, `ω² = β·Ks − b²/4` (so `β·Ks ≥ b²/4`): the characteristic polynomial factors,
+so its roots are **exactly** `{−b/2 + iω, −b/2 − iω}` — there are no others.  Consequently a
+root is non-real (oscillatory) **iff** `β·Ks > b²/4`, proven in *both* directions (this gives
+the reverse `complex root ⟹ discriminant < 0`, not only the forward construction). -/
+theorem thmC_roots_exhaustive (b s ω : ℝ) (hω : ω ^ 2 = s - b ^ 2 / 4) (z : ℂ) :
+    cp b s z = 0 ↔
+      z = (-b / 2 : ℝ) + (ω : ℂ) * Complex.I ∨ z = (-b / 2 : ℝ) + ((-ω : ℝ) : ℂ) * Complex.I := by
+  have hωC : (ω : ℂ) ^ 2 = (s : ℂ) - (b : ℂ) ^ 2 / 4 := by exact_mod_cast hω
+  -- sum and product of the two roots
+  have hsum : ((-b / 2 : ℝ) + (ω : ℂ) * Complex.I) + ((-b / 2 : ℝ) + ((-ω : ℝ) : ℂ) * Complex.I)
+      = -(b : ℂ) := by push_cast; ring
+  have hprod : ((-b / 2 : ℝ) + (ω : ℂ) * Complex.I) * ((-b / 2 : ℝ) + ((-ω : ℝ) : ℂ) * Complex.I)
+      = (s : ℂ) := by
+    push_cast
+    linear_combination (-(ω : ℂ) ^ 2) * Complex.I_sq + hωC
+  -- the monic quadratic factors as (z − r₊)(z − r₋)
+  have key : cp b s z
+      = (z - ((-b / 2 : ℝ) + (ω : ℂ) * Complex.I)) *
+        (z - ((-b / 2 : ℝ) + ((-ω : ℝ) : ℂ) * Complex.I)) := by
+    have expand :
+        (z - ((-b / 2 : ℝ) + (ω : ℂ) * Complex.I)) *
+          (z - ((-b / 2 : ℝ) + ((-ω : ℝ) : ℂ) * Complex.I))
+        = z ^ 2
+          - (((-b / 2 : ℝ) + (ω : ℂ) * Complex.I) + ((-b / 2 : ℝ) + ((-ω : ℝ) : ℂ) * Complex.I)) * z
+          + ((-b / 2 : ℝ) + (ω : ℂ) * Complex.I) * ((-b / 2 : ℝ) + ((-ω : ℝ) : ℂ) * Complex.I) := by
+      ring
+    rw [cp, expand, hsum, hprod]; ring
+  rw [key, mul_eq_zero, sub_eq_zero, sub_eq_zero]
+
 end GFL
