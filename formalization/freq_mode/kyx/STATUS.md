@@ -1,29 +1,36 @@
 # Formal status of the freq_mode .kyx files
 
-Five parametric dL files encode the slow-frequency-mode theorems:
+Two tiers, **all proved by KeYmaera X 5.1.2** (verbatim `PROVED` lines in
+`../results/keymaerax_proof_log.txt`). All files are **parametric** (symbolic
+P_ref, Vg, b, β, Ks, D, H; no fixed numbers).
 
-| file | theorem | dL form | obligation |
-|------|---------|---------|-----------|
-| `lemma0_power_lock.kyx` | Lemma 0 + Cor 0a (K=0) | `\forall ... ->` real formula | QE |
-| `thmA_dw_conserved.kyx` | Thm A (zero eigenvalue) | `[{dw'=0}] dw=dw0` | dI |
-| `thmB_slow_decay.kyx` | Thm B (reduced λ=−D/2H) | `[{dw'=-b*dw}] dw^2<=s0` | dI |
-| `thmC_stability.kyx` | Thm C stability | `[{δ'=dw,dw'=-b dw-βKs δ}] V<=v0` | dI |
-| `thmC_oscillation_threshold.kyx` | Thm C2 onset | `\forall ...` equivalence | QE |
+## Tier 2 — STRENGTHENED formalizations (the real theorem content)
 
-All files are **parametric** (symbolic P_ref, Vg, b, β, Ks, D, H; no fixed numbers).
+After self-review found the Tier-1 files proved only weak *shadows* of the
+theorems (a 1-state toy for A, a bare `dw'=-b dw` for B, an inequality rearrange
+for C2), these stronger files were written and proved:
 
-## Status — MACHINE-CHECKED BY KeYmaera X 5.1.2
+| file | what it now actually proves | entries | KeYmaera X |
+|------|-----------------------------|---------|-----------|
+| `thmA_full_conserved.kyx` | dw conserved in a **coupled multi-state** system (inner states id,iq,th driven by dw via the real `c=i_q e1−i_d e2−e6` structure) + left-null-direction fact | 2 | **proved** |
+| `thmB_powerlock_rate.kyx` | the **actual swing law** `dw'=κ(Pref−Pmeas)−b dw` with `Pmeas=3/2 Vg id` collapses to decay **on the power-lock manifold** `3/2 Vg id=Pref`; rate `=−D/(2H)` via `2Hb=D`; K=0 | 3 | **proved** |
+| `thmC2_spectral.kyx` | **characteristic polynomial** `λ²+bλ+βKs`; **no real root** when `4βKs>b²` (genuine oscillation); `2Re=−b` from trace; discriminant dichotomy; `Ks=0` spectrum `{0,−b}` | 5 | **proved** |
 
-All five files are **proved by KeYmaera X 5.1.2** (Z3 4.16.0 backend). The verbatim
-`PROVED ...` lines are in `../results/keymaerax_proof_log.txt`:
+These are the honest formalizations of Theorems A, B, C2. **10 entries, all proved.**
 
-| file | tactic | KeYmaera X | steps |
-|------|--------|-----------|-------|
-| `lemma0_power_lock.kyx` | QE | **proved** | 103 |
-| `thmA_dw_conserved.kyx` | dI | **proved** | 66 |
-| `thmB_slow_decay.kyx` | dI | **proved** | 167 |
-| `thmC_stability.kyx` | dI | **proved** | 289 |
-| `thmC_oscillation_threshold.kyx` | QE | **proved** | 81 |
+## Tier 1 — original files (correct but weaker; kept for the dI cores)
+
+| file | theorem | dL form | KeYmaera X | steps |
+|------|---------|---------|-----------|-------|
+| `lemma0_power_lock.kyx` | Lemma 0 + Cor 0a (K=0) | `\forall` real formula | **proved** | 103 |
+| `thmA_dw_conserved.kyx` | Thm A core (1-state) | `[{dw'=0}] dw=dw0` | **proved** | 66 |
+| `thmB_slow_decay.kyx` | Thm B core (bare decay) | `[{dw'=-b*dw}] dw²≤s0` | **proved** | 167 |
+| `thmC_stability.kyx` | Thm C Lyapunov stability | `[{δ'=dw,dw'=-b dw-βKs δ}] V≤v0` | **proved** | 289 |
+| `thmC_oscillation_threshold.kyx` | Thm C2 onset (inequality) | `\forall` equivalence | **proved** | 81 |
+
+`lemma0` and `thmC_stability` are faithful as-is; `thmA_dw_conserved`,
+`thmB_slow_decay`, `thmC_oscillation_threshold` are the *weak shadows* superseded
+by the Tier-2 files above.
 
 This is the repo's `proved` standard: each is a `.kyx` with Problem + Tactic that
 KeYmaera X reports `proved`.
@@ -34,6 +41,11 @@ KeYmaera X reports `proved`.
   axioms ("QE with Z3 gives SAT" on `1/x*y=y/x`) and runs with restricted
   functionality on division. The Problem blocks are written **division-free** so the
   Z3 backend closes them; with Mathematica the same files would prove a fortiori.
+- **Use KeYmaera X's BUNDLED z3 (v4.8.9), not an external one.** Proving must be run
+  as `-tool z3` *without* `-z3path` to an external binary. Forcing an external z3
+  4.16.0 via `-z3path` makes the startup lemma-derivation **hang indefinitely**
+  (incompatible with this KeYmaera X build); the bundled z3 proves every entry in
+  milliseconds. All `proved` results here use the bundled z3.
 - **Identifiers carry no underscores** (`Pref`=P_ref, `id`=i_d): KeYmaera X's parser
   rejects `P_ref`-style names. The math is unchanged.
 - **Reduced vs full (hazard 2):** `thmB` proves the REDUCED slow mode λ=−D/(2H)
@@ -74,6 +86,12 @@ errors were all of the form "claimed before verifying", recorded here not hidden
    output and stale JVMs causing contention. Resolved by running one isolated JVM and
    reading the actual `PROVED` lines (now in `../results/keymaerax_proof_log.txt`).
 
-**Final verified state:** KeYmaera X 5.1.2 reports `proved` for all five .kyx
-(division-free, Z3 backend); Z3-direct 12/12 (`../results/z3_run.txt`); sympy 13/13;
-sympy full-model 24/24.
+5. While strengthening, the strengthened C2 first used `b^2/4` (division), which
+   **hung** the prover; and all runs hung until I found the cause was forcing an
+   external z3 4.16.0 via `-z3path`. Fixed by (a) division-free rephrasing
+   (`4βKs>b²`) and (b) using KeYmaera X's bundled z3. Both recorded above.
+
+**Final verified state:** KeYmaera X 5.1.2 (bundled z3 v4.8.9) reports `proved` for
+**all 10 .kyx entries** — 5 Tier-1 + 5 Tier-2 strengthened — verbatim in
+`../results/keymaerax_proof_log.txt`. Corroborated by Z3-direct 12/12
+(`../results/z3_run.txt`), sympy 13/13, sympy full-9-state model 24/24.

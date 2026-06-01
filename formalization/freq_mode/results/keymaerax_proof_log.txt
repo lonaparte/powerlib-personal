@@ -27,3 +27,23 @@ To reproduce (KeYmaera X jar + Z3 on PATH):
     java -Xss20M -da -jar keymaerax.jar -launch \
       -prove formalization/freq_mode/kyx/$f.kyx -tool z3 -z3path $(which z3)
   done
+
+============================================================
+STRENGTHENED THEOREMS — KeYmaera X 5.1.2, bundled z3 v4.8.9 (default)
+Run: Mon Jun  1 22:13:40 UTC 2026
+NOTE: must use KeYmaera X's bundled z3 (no -z3path); forcing external
+      z3 4.16.0 hangs lemma derivation.
+============================================================
+--- thmA_full_conserved.kyx (coupled multi-state) ---
+PROVED Theorem A (full): dw conserved in the coupled multi-state GFL (Variant U): tactic=dw conserved under full coupling by dI,tacticsize=2,budget=0[s],duration=119[ms],qe=5[ms],rcf=0,steps=91
+PROVED Theorem A (full): the conserved dw is a nontrivial left-null direction: tactic=zero row by QE,tacticsize=1,budget=0[s],duration=60[ms],qe=59[ms],rcf=0,steps=85
+--- thmB_powerlock_rate.kyx (power-lock manifold + rate) ---
+PROVED Theorem B (power-lock): on the locked manifold the swing law IS dw'=-b*dw: tactic=power-locked decay by dI,tacticsize=2,budget=0[s],duration=233[ms],qe=101[ms],rcf=0,steps=301
+PROVED Theorem B (power-lock): the decay rate equals -D/(2H), exactly: tactic=rate = -D/(2H) by QE,tacticsize=1,budget=0[s],duration=32[ms],qe=31[ms],rcf=0,steps=90
+PROVED Theorem B (power-lock): the synchronizing/Schur term vanishes (K=0): tactic=K=0 by QE,tacticsize=1,budget=0[s],duration=37[ms],qe=37[ms],rcf=0,steps=145
+--- thmC2_spectral.kyx (characteristic polynomial / spectrum) ---
+PROVED Theorem C2 (spectral): characteristic polynomial identity: tactic=charpoly identity by QE,tacticsize=1,budget=0[s],duration=6[ms],qe=3[ms],rcf=0,steps=0
+PROVED Theorem C2 (spectral): above threshold there is NO real eigenvalue: tactic=no real root by QE,tacticsize=1,budget=0[s],duration=44[ms],qe=43[ms],rcf=0,steps=97
+PROVED Theorem C2 (spectral): twice the real part of the pair is -b: tactic=real part by QE,tacticsize=1,budget=0[s],duration=33[ms],qe=33[ms],rcf=0,steps=117
+PROVED Theorem C2 (spectral): discriminant sign dichotomy: tactic=discriminant sign by QE,tacticsize=1,budget=0[s],duration=27[ms],qe=27[ms],rcf=0,steps=65
+PROVED Theorem C2 (spectral): Ks=0 gives the real spectrum {0,-b}: tactic=Ks=0 real spectrum by QE,tacticsize=1,budget=0[s],duration=24[ms],qe=24[ms],rcf=0,steps=45
