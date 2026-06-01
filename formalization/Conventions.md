@@ -226,3 +226,129 @@ th'   = Kp*v_cq + Ki*eta            (= wpll - wn)
   - **l₁ 的符号是坐标不变量（物理量）；量级依赖归一化约定**（平衡 vs 非平衡坐标差 ~100×），不可跨脚本比大小。
 - **Bautin 曲线** `Kp*(Ki)`：控制平面内 l₁=0 的边界，硬↔软分界（见 `numerical/bautin.py`）。
 
+---
+
+## 13. 功率锁定 GFL-VSC 的 9 状态频率模式模型（freq_mode）
+
+§12 的模型分析弱网 Hopf 分岔。本节是**另一个、独立的** GFL-VSC 模型：带**外环功率控制 + 摆动方程惯量**的电流控制变流器，研究其**慢频率模式**（grid-frequency mode）的特征值。`formalization/freq_mode/` 的全部 .kyx 证书以本节为单一真源。
+
+所有量为实数。`e_k` = 标准基向量，`I_n` = n×n 单位阵。平衡点 = 向量场的零点；Jacobian = 在平衡点的一阶偏导矩阵。
+
+### 13.1 状态（9 维）
+
+`y = (i_d, i_q, ξ_dc, ξ_qc, η, θ_e, ξ_P, ξ_Q, dw) ∈ ℝ⁹`。
+
+- 内部块 `z := (i_d, i_q, ξ_dc, ξ_qc, η, θ_e, ξ_P, ξ_Q) ∈ ℝ⁸`（坐标 1…8）
+- 频率坐标 `dw ∈ ℝ`（坐标 9）= 电网频率偏移 `dw = wg − wn`
+- 简写 `c := cos(θ_e)`, `s := sin(θ_e)`, `wg := wn + dw`
+
+| 变量 | 含义 |
+|------|------|
+| `i_d, i_q` | 电流 dq |
+| `ξ_dc, ξ_qc` | 电流环 PI 积分态 |
+| `η` | PLL 积分态 |
+| `θ_e` | PLL 相位误差 |
+| `ξ_P, ξ_Q` | 有功/无功外环 PI 积分态 |
+| `dw` | 电网频率偏移 |
+
+### 13.2 参数（假设）
+
+- (P1) `Lf, Lg, Rf, Rg > 0`；`Ltot := Lf+Lg`，`Rtot := Rf+Rg`，`g := (Lf·Rg − Rf·Lg)/Ltot`（实，符号不限）
+- (P2) `wn > 0`, `Vg > 0`
+- (P3) `Kpi, Kii > 0`（电流环）；`Kp_pll, Ki_pll > 0`（PLL）；`Kp_P, Ki_P, Kp_Q, Ki_Q > 0`（外环）；设定点 `P_ref, Q_ref ∈ ℝ`，`P_ref > 0`
+- (P4) 摆动：`H > 0`（惯量），`D > 0`（阻尼），`Sn > 0`；`κ := wn/(2·H·Sn) > 0`，`b := D/(2·H) > 0`
+
+### 13.3 代数定义（显式）
+
+```
+P_meas  := 1.5·Vg·i_d
+Q_meas  := −1.5·Vg·i_q
+e_P     := P_ref − P_meas
+e_Q     := Q_ref − Q_meas
+i_d_ref := Kp_P·e_P + Ki_P·ξ_P
+i_q_ref := −(Kp_Q·e_Q + Ki_Q·ξ_Q)
+i_dc    := c·i_d − s·i_q
+i_qc    := s·i_d + c·i_q
+e_d     := i_d_ref − i_dc
+e_q     := i_q_ref − i_qc
+K_d     := Kpi·e_d + Kii·ξ_dc − wn·Lf·i_qc + (Lf/Ltot)·c·Vg + g·i_dc
+K_q     := Kpi·e_q + Kii·ξ_qc + wn·Lf·i_dc + (Lf/Ltot)·s·Vg + g·i_qc
+u_dc    := (Ltot/Lf)·K_d
+u_qc    := (Ltot/Lf)·K_q
+u_d     := c·u_dc + s·u_qc
+u_q     := −s·u_dc + c·u_qc
+v_d     := (Lg/Ltot)·u_d + (Lf/Ltot)·Vg + g·i_d
+v_q     := (Lg/Ltot)·u_q + g·i_q
+v_cqc   := s·v_d + c·v_q
+```
+
+### 13.4 向量场
+
+内部块 `F_inner : ℝ⁹ → ℝ⁸`：
+
+```
+F1 = (u_d − Vg − Rtot·i_d + Ltot·wg·i_q)/Ltot    = d(i_d)/dt
+F2 = (u_q       − Rtot·i_q − Ltot·wg·i_d)/Ltot    = d(i_q)/dt
+F3 = e_d                                          = d(ξ_dc)/dt
+F4 = e_q                                          = d(ξ_qc)/dt
+F5 = v_cqc                                        = d(η)/dt
+F6 = −Kp_pll·v_cqc − Ki_pll·η − dw                = d(θ_e)/dt
+F7 = e_P                                          = d(ξ_P)/dt
+F8 = e_Q                                          = d(ξ_Q)/dt
+```
+
+**结构事实**（§13.4–13.3 按定义可查）：`dw` 只通过 `∂F1/∂dw = i_q`、`∂F2/∂dw = −i_d`、`∂F6/∂dw = −1` 进入 `F_inner`，其余 `∂Fk/∂dw = 0 (k∈{3,4,5,7,8})`。即
+`c := ∂F_inner/∂dw = i_q·e₁ − i_d·e₂ − e₆ ∈ ℝ⁸`。
+
+两个变体的第 9 式：
+- **Variant U（未锚定）**：`F9_U := 0`，场 `f_U(y) := (F_inner(y), 0)`
+- **Variant S（摆动锚定）**：`F9_S := κ·e_P − b·dw`，场 `f_S(y) := (F_inner(y), F9_S)`
+
+适定性假设：(W1) 平衡点 `y*` 存在；(W2) 内部 Jacobian `A := ∂F_inner/∂z(y*) ∈ ℝ⁸ˣ⁸` 可逆（关心情形下 Hurwitz）；(W3) Variant U 有 C¹ 平衡分支 `d ↦ z*(d)`，`F_inner(z*(d), d) ≡ 0`。
+
+### 13.5 Lemma 0（功率锁定）+ 推论
+
+- **Lemma 0**：任一平衡点处 `e_P = 0`（因 `F7 = e_P = 0`），故 `P_meas = P_ref`，`i_d = P_ref/(1.5·Vg)`。
+- **Cor 0a（同步系数为零）**：沿 `z*(d)`，`i_d*(d) = P_ref/(1.5·Vg)` 与 `d` 无关，故
+  `K := d/dd[P_meas(z*(d))] = 1.5·Vg·d(i_d*)/dd = 0`（精确）。
+- **Cor 0b**：`e_Q=0 ⟹ i_q=−Q_ref/(1.5·Vg)`；`e_d=e_q=0`；`v_cqc=0`；`F6=0 ⟹ η=−dw/Ki_pll`；Variant S 下 `F9_S=0 ∧ e_P=0 ⟹ b·dw=0 ⟹ dw*=0`。
+
+### 13.6 Jacobian 块结构（在 y*）
+
+```
+J = [ A    c  ]      A ∈ ℝ⁸ˣ⁸,  c ∈ ℝ⁸,  ρ ∈ ℝ⁸,  j99 ∈ ℝ
+    [ ρᵀ   j99 ]
+```
+
+`A := ∂F_inner/∂z`，`c := ∂F_inner/∂dw = i_q*·e₁ − i_d*·e₂ − e₆`，`ρᵀ := ∂F9/∂z`，`j99 := ∂F9/∂dw`。
+- Variant U：`ρᵀ = 0ᵀ`，`j99 = 0`
+- Variant S：`ρᵀ = −1.5·κ·Vg·e₁ᵀ`，`j99 = −b`
+
+**行-7 关键事实**（功率锁定的矩阵形式）：`e₆ᵀA = ∂F7/∂z = −1.5·Vg·e₁ᵀ`，`c[6] = ∂F7/∂dw = 0`。
+
+### 13.7 定理（freq_mode 证书所证）
+
+- **Thm A（Variant U 零特征值）**：`e₉ᵀJ_U = 0ᵀ`，故 `0 ∈ spec(J_U)`，`e₉` 左特征向量。
+- **Thm B（Variant S 慢特征值）**：约化（慢流形 `F_inner=0`）动力学 `dw' = κ(P_ref − P_meas(z*(dw))) − b·dw = −b·dw`（因 Cor 0a：P_meas≡P_ref），故 `λ_slow = −b = −D/(2H)`（约化模型精确）。全系统 Schur：`λ = j99 − ρᵀ(A−λI)⁻¹c`，O(1) 项 `ρᵀA⁻¹c = κ·K = 0`，故 `λ_slow = −b + O(b²)`（全 9×9 仅 O(b²)，约化才精确）。
+- **Thm C（振荡需角→功率耦合）**：增广角状态 `δ'=dw`、恢复项 `−β·Ks·δ`（`β := wn/(2H) > 0`），约化 `(δ,dw)` 子系统特征多项式 `λ² + b·λ + β·Ks`：
+  - (C1) `Ks=0 ⟹` 特征值 `{0, −b}`（实，回收 Thm A/B）
+  - (C2) `Ks>0 ⟹ λ = (−b ± √(b²−4βKs))/2`；复（振荡）当且仅当 `β·Ks > b²/4`，实部 `−b/2`，`ω_osc = √(β·Ks − b²/4)`
+
+### 13.8 数值锚点（SCR=1 工况；H=5, D=1, fn=50）
+
+- `i_d* = 79.9307179224` A，对 `dw∈{0,5,20,50,100}` 十位一致 ⟹ `K=0`（Lemma 0/Cor 0a）
+- Variant U：20 个工况各恰好一个零特征值（机器精度）（Thm A）
+- Variant S：`λ_slow = −0.099968` vs `−D/(2H)=−0.1`（差 3.2e−5，FD-Jacobian 噪声 + O(b²)）；Schur 项 `ρᵀA⁻¹c = 2.9e−19`（Thm B）
+- `−D/(2H)` 跨 `(H,D)∈{(2,.5),(5,.5),(5,1),(5,2),(10,1),(3,.3),(8,4)}` 均 `≤1e−4`
+- Thm C 起振：`Ks=0 → {0,−b}` 实；`Ks∈{0.01,0.05,0.2,1} → 0.089,0.199,0.399,0.892 Hz`，匹配 `ω_osc/2π`（`β=wn/(2H)`）
+
+### 13.9 dL 编码约定（重要 — KeYmaera X 证书与本节的差异）
+
+`freq_mode/kyx/*.kyx` 在 KeYmaera X 中证明时遵循以下编码约定，与上面数学形式有**有意的差异**，必须知道：
+
+1. **标识符无下划线**：KeYmaera X 解析器拒绝 `P_ref`、`i_d` 这类"下划线+字母"名。证书中用 `Pref`=P_ref，`id`=i_d，`iq`=i_q，`Kppll`=Kp_pll，`Kipll`=Ki_pll 等。
+2. **无除法**：KeYmaera X 的 Z3 后端在除法上失败（`1/x*y=y/x` 返 SAT）。所有 Problem 写成乘法形式：`b=D/(2H)` 编码为 `2*H*b=D`；`βKs>b²/4` 编码为 `4βKs>b²`；`Re=−b/2` 编码为 `2r=−b`。
+3. **矩阵事实标量化**：dL 不是线性代数库，无矩阵/特征向量/求逆原生对象。`e₉ᵀJ_U=0`、`ρᵀA⁻¹c=0` 等在 .kyx 中编码为它们**归约到的标量代数恒等式**（如把"`A·u=c` 第 7 分量读数 `(−1.5Vg)·U1=c6`"作为前提）。这些前提**本身**（完整 9×9 Jacobian 的第 7 行 = −1.5Vg·e₁ᵀ 等）在 `freq_mode/verify_freq_mode.py`（sympy 构造完整符号 Jacobian）验证，**不在 dL 内**。
+4. **必须用 KeYmaera X 自带的 z3**（bundled v4.8.9），不要用 `-z3path` 指向外部 z3——外部 z3 4.16.0 会让启动期公理推导无限挂起。
+5. **约化 vs 全系统**：Thm B 的 .kyx 证的是**约化模型**精确 `−D/(2H)` 与 leading-order；全 9×9 的 O(b²) 修正只在 sympy 数值确认，未声称严格精确。
+
