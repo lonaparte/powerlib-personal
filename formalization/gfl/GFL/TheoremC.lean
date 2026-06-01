@@ -122,4 +122,25 @@ theorem thmC_roots_exhaustive (b s ω : ℝ) (hω : ω ^ 2 = s - b ^ 2 / 4) (z :
     rw [cp, expand, hsum, hprod]; ring
   rw [key, mul_eq_zero, sub_eq_zero, sub_eq_zero]
 
+/-- **Theorem C2 — overdamped (real-root) case `β·Ks ≤ b²/4`.**
+With `μ ≥ 0`, `μ² = b²/4 − β·Ks`: the characteristic polynomial factors over the reals,
+its roots are **exactly** the two real numbers `−b/2 ± μ`, and in particular both roots are
+real (`im = 0`) — no oscillation.  Together with `thmC_roots_exhaustive` this covers the
+full discriminant trichotomy. -/
+theorem thmC_real_roots (b s μ : ℝ) (hμ : μ ^ 2 = b ^ 2 / 4 - s) (z : ℂ) :
+    cp b s z = 0 ↔ z = ((-b / 2 + μ : ℝ) : ℂ) ∨ z = ((-b / 2 - μ : ℝ) : ℂ) := by
+  have hμC : (μ : ℂ) ^ 2 = (b : ℂ) ^ 2 / 4 - (s : ℂ) := by exact_mod_cast hμ
+  have hsum : (((-b / 2 + μ : ℝ)) : ℂ) + (((-b / 2 - μ : ℝ)) : ℂ) = -(b : ℂ) := by
+    push_cast; ring
+  have hprod : (((-b / 2 + μ : ℝ)) : ℂ) * (((-b / 2 - μ : ℝ)) : ℂ) = (s : ℂ) := by
+    push_cast; linear_combination -hμC
+  have key : cp b s z
+      = (z - (((-b / 2 + μ : ℝ)) : ℂ)) * (z - (((-b / 2 - μ : ℝ)) : ℂ)) := by
+    have expand :
+        (z - (((-b / 2 + μ : ℝ)) : ℂ)) * (z - (((-b / 2 - μ : ℝ)) : ℂ))
+        = z ^ 2 - ((((-b / 2 + μ : ℝ)) : ℂ) + (((-b / 2 - μ : ℝ)) : ℂ)) * z
+          + (((-b / 2 + μ : ℝ)) : ℂ) * (((-b / 2 - μ : ℝ)) : ℂ) := by ring
+    rw [cp, expand, hsum, hprod]; ring
+  rw [key, mul_eq_zero, sub_eq_zero, sub_eq_zero]
+
 end GFL

@@ -31,3 +31,8 @@ open GFL
 #print axioms schur_term_zero_of_branch  -- Thm B Schur term, derived from the C¹ branch
 #print axioms variantU_zero_right_eigenvector
 #print axioms thmC_roots_exhaustive
+-- C2 overdamped (real-root) case + full discriminant coverage
+#print axioms thmC_real_roots
+-- W3 derived from the implicit function theorem (W2 + smoothness)
+#print axioms branch_of_ift
+#print axioms branch_linearization_of_ift

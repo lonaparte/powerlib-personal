@@ -33,14 +33,19 @@
 | `i_d` 切向量为零 `v₀=0` | `branch_iD_tangent_zero` | `gfl/GFL/Calculus.lean` |
 | IFT 线性化 `A·v=−c`（对 `F_inner(z*(d),d)=0` 链式求导） | `branch_linearization` | `gfl/GFL/Calculus.lean` |
 | 定理 B Schur 项从 C¹ 分支推出 `ρᵀA⁻¹c=0` | `schur_term_zero_of_branch` | `gfl/GFL/Calculus.lean` |
+| 定理 A 显式右特征向量 `det=0 ⟹ ∃v≠0, J·v=0` | `variantU_zero_right_eigenvector` | `gfl/GFL/TheoremA.lean` |
+| 定理 C2 反向/穷尽 `βKs≥b²/4`：根恰为 `−b/2±iω`（复根⟹判别式<0） | `thmC_roots_exhaustive` | `gfl/GFL/TheoremC.lean` |
+| 定理 C2 过阻尼实根 `βKs≤b²/4`：根恰为 `−b/2±μ`（全实，不振荡） | `thmC_real_roots` | `gfl/GFL/TheoremC.lean` |
+| **W3 由隐函数定理推出**（分支存在 + C¹ + `A·v=−c`） | `branch_of_ift` / `branch_linearization_of_ift` | `gfl/GFL/Calculus.lean` |
 
 **三个命门的诚实处理**：(1) 引理 0 先证、纯代数；(2) 定理 B 区分"约化精确 / 全系统 O(ε²)"——只证
 约化场精确 `−b·dw` 与 O(1) Schur 项精确为 0，**不**声称全 9×9 系统精确 `−D/(2H)`；(3) 定理 C 用
 `β:=wn/(2H)` 与题设一致。建模忠实性：内场 `F_inner` 抽象承载（只用到 `F7=e_P`），§6 雅可比块结构按
-题目"by inspection"给定为前提；定理 B 的 `A·v=−c`（IFT 微分）与 `v₀=0`（推论 0a）现已用 Mathlib 分析塔
-**从微分结构证出**（`branch_linearization`/`branch_iD_tangent_zero`/`schur_term_zero_of_branch`，链式法则），
-不再是前提。唯一未形式化的是全系统 `λ=−b+O(b²)` 的渐近界（摄动论，超出范围；`variantS_schur_det` 与
-`schur_term_zero` 是其严格替代）。`validate.py` 在**完整 §3–§4 非线性 9 态模型**上独立复现 §9 全部数值锚点（`i_d*=80` 恒定、
+题目"by inspection"给定为前提；**W3（平衡分支 C¹ 存在）已用 Mathlib 隐函数定理从 W2（∂F/∂z 可逆）+ 光滑性
+推出**（`branch_of_ift`/`branch_linearization_of_ift`），不再是黑箱公理——分支存在、可微、`A·v=−c` 全部 IFT 给出。
+唯一两处未机器形式化：(i) §3–§4 的 `cos/sin` 具体转写并证其 C¹/∂F/∂z 可逆（即字面模型满足 IFT 前件；内场抽象承载，
+字面模型靠 `validate.py` 数值核验）；(ii) 全系统 `λ=−b+O(b²)` 渐近界（摄动论；`variantS_schur_det`+`schur_term_zero` 是严格替代）。
+`validate.py` 在**完整 §3–§4 非线性 9 态模型**上独立复现 §9 全部数值锚点（`i_d*=80` 恒定、
 Variant U 恰一个零特征值、`λ_slow≈−D/2H`、Schur 项 `2.9e-19`、定理 C 起振频率 `0.089/0.199/0.399/0.892 Hz`）。
 
 > 注：本节是 Lean 代数/谱证明（与下文 pH-DAE 的 KeYmaera X 动力学证明互补、彼此独立）。Mathlib olean

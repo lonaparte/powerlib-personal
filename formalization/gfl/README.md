@@ -28,6 +28,11 @@ never oscillates — it only decays.
 | **`i_d`-tangent vanishes** | `GFL.branch_iD_tangent_zero` | `Calculus.lean` | If `z*` is differentiable with derivative `v` and its `i_d`-coordinate is constant, then `v₀ = 0`. |
 | **IFT linearisation** (`A·v = −c`) | `GFL.branch_linearization` | `Calculus.lean` | Differentiating `F_inner(z*(d),d) = 0` (chain rule) gives `A·v + c = 0`. |
 | **Thm B Schur term from C¹ branch** | `GFL.schur_term_zero_of_branch` | `Calculus.lean` | `ρᵀ A⁻¹ c = 0` derived from the differentiable branch (W3) alone — no `A·v=−c`/`v₀=0` left as hypotheses. |
+| **Thm A explicit right eigenvector** | `GFL.variantU_zero_right_eigenvector` | `TheoremA.lean` | `det J_U = 0 ⟹ ∃ v ≠ 0, J_U·v = 0` (nontrivial kernel / right eigenvector for 0). |
+| **Thm C2 reverse / exhaustiveness** | `GFL.thmC_roots_exhaustive` | `TheoremC.lean` | `β·Ks ≥ b²/4`: `cp z = 0 ↔ z ∈ {−b/2±iω}` (roots are *exactly* these; gives complex root ⟹ disc < 0). |
+| **Thm C2 overdamped (real roots)** | `GFL.thmC_real_roots` | `TheoremC.lean` | `β·Ks ≤ b²/4`: `cp z = 0 ↔ z ∈ {−b/2±μ}` (`μ²=b²/4−βKs`), both real — no oscillation. |
+| **W3 from IFT** (branch exists, C¹) | `GFL.branch_of_ift` | `Calculus.lean` | If `F` is `C¹` near `(d₀,z₀)` with `∂F/∂z` invertible and `F d₀ z₀ = 0`, then a branch `z*` exists with `F d (z* d)=0` near `d₀`, `z* d₀=z₀`, and `z*` differentiable with `(∂F/∂z)·v = −∂F/∂dw`. |
+| **W3 from IFT** (matrix `A·v = −c`) | `GFL.branch_linearization_of_ift` | `Calculus.lean` | Same, specialised to `∂F/∂z = A`, `∂F/∂dw = c`: yields the C¹ branch with `A·v = −c` — so W3 and `A·v=−c` follow from W2 + smoothness, not assumed. |
 
 `β := wn/(2H)`, `b := D/(2H)`, `κ := wn/(2·H·Sn)` are the §1/§4/§7 constants
 (`Params.beta/.b/.kappa`, with positivity proved).
@@ -100,16 +105,29 @@ exactly `−D/(2H)`; it is `−b + O(b²)` (the O(1) Schur term is proved zero, 
 characteristic equation `λ = j99 − ρᵀ(A−λI)⁻¹c` retains a higher-order correction — see
 `variantS_schur_det`).
 
-Also proved, using Mathlib's analysis tower (`Calculus.lean`): (i) Cor 0a as a *literal*
-derivative `deriv(P_meas∘z*) = 0` (`syncCoeff_deriv_zero`); (ii) the implicit-function-theorem
-linearisation `A·(dz*/ddw) = −c` (`branch_linearization`, by differentiating the branch identity
-with the chain rule) together with `v₀ = 0` (`branch_iD_tangent_zero`) — so the two facts that
-`schur_term_zero` took as hypotheses are now *derived* from the C¹ branch structure W3
-(`schur_term_zero_of_branch`).
+Also proved, using Mathlib's analysis tower (`Calculus.lean`):
 
-Still **not** formalised: the `O(b²)` asymptotic bound on the full-system slow eigenvalue
-(a perturbation-theory statement, beyond the scope here; the exact Schur identity
-`variantS_schur_det` and the vanishing O(1) term `schur_term_zero` are the rigorous substitutes).
+* **W3 is derived, not assumed.** `branch_of_ift` / `branch_linearization_of_ift` invoke
+  Mathlib's implicit function theorem (`implicitFunctionOfBivariate`): if the inner field `F`
+  is `C¹` near the equilibrium and `∂F/∂z` is invertible (**W2**), then the equilibrium branch
+  `z*(d)` **exists**, is `C¹`, and its tangent satisfies `A·v = −c`. So the branch existence /
+  smoothness / linearisation that earlier results took as hypotheses now follow from W2 +
+  smoothness. Theorem B is thus conditional only on `F` being `C¹` (a regularity assumption),
+  not on W3 as an opaque axiom.
+* Corollary 0a as a *literal* derivative `deriv(P_meas∘z*) = 0` (`syncCoeff_deriv_zero`); the
+  chain-rule linearisation `A·v = −c` (`branch_linearization`) and `v₀ = 0`
+  (`branch_iD_tangent_zero`), combined in `schur_term_zero_of_branch`.
+* Theorem C2 in **both** directions and over the whole discriminant range: `thmC_roots_exhaustive`
+  (`βKs ≥ b²/4`, roots are *exactly* `−b/2±iω`, giving complex root ⟹ disc < 0) and `thmC_real_roots`
+  (`βKs ≤ b²/4`, two real roots).
+* The explicit right eigenvector for Theorem A (`variantU_zero_right_eigenvector`).
+
+Genuinely **not** formalised (honest boundaries): (i) the *concrete* §3–§4 transcription of `F`
+with `cos/sin` and a proof that **it** is `C¹` with invertible `∂F/∂z` — i.e. that the literal
+model satisfies `branch_of_ift`'s hypotheses (the field is carried abstractly; the literal model
+is validated numerically by `validate.py`, not symbolically in Lean); (ii) the `O(b²)` asymptotic
+on the full-system slow eigenvalue (a perturbation statement — the exact Schur identity
+`variantS_schur_det` and `schur_term_zero` are its rigorous substitutes).
 
 ## Numerical cross-validation (`validate.py`)
 

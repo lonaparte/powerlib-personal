@@ -17,10 +17,12 @@ import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Prod
+import Mathlib.Analysis.Calculus.ImplicitFunction.Bivariate
 
 namespace GFL
 
-open Matrix
+open Matrix Filter
+open scoped Topology
 
 /-- **Corollary 0a as a literal derivative.**  The synchronising coefficient
 `K := d/dd[P_meas(z*(d))]` is exactly `0`, because that map is the constant function
@@ -94,5 +96,64 @@ theorem schur_term_zero_of_branch (p : Params)
   schur_term_zero p A hA c v
     (branch_linearization z v d₀ A c L hz hΦ hL hbranch)
     (branch_iD_tangent_zero z v d₀ hz hconst) ρ hρ
+
+/-! ### W3 from W2: the equilibrium branch is produced by the implicit function theorem
+
+The inner field is written here in `(d, z)` order, `F : ℝ → (Fin 8 → ℝ) → (Fin 8 → ℝ)`,
+`F d z`.  Given that `F` has continuous partial derivatives near the equilibrium `(d₀, z₀)`
+(`F C¹`), with the partial in `z` (the inner Jacobian `f₂ d₀ z₀ = A`) **invertible** (W2),
+Mathlib's implicit function theorem produces the C¹ branch — so W3 is *derived*, not assumed. -/
+
+/-- **W3 via the implicit function theorem (existence + C¹ branch + linearisation).**
+If `F` is `C¹` near `(d₀, z₀)` (continuous partials `f₁ = ∂F/∂d`, `f₂ = ∂F/∂z`), the inner
+Jacobian `f₂ d₀ z₀` is invertible (W2), and `(d₀, z₀)` is an equilibrium (`F d₀ z₀ = 0`),
+then there is a branch `z*` with `F d (z* d) = 0` near `d₀`, `z* d₀ = z₀`, and `z*` is
+differentiable at `d₀` with tangent `v` satisfying `(f₂ d₀ z₀) v = −(f₁ d₀ z₀ 1)`
+(the IFT linearisation `A·v = −c`). -/
+theorem branch_of_ift
+    {F : ℝ → (Fin 8 → ℝ) → (Fin 8 → ℝ)}
+    {f₁ : ℝ → (Fin 8 → ℝ) → (ℝ →L[ℝ] (Fin 8 → ℝ))}
+    {f₂ : ℝ → (Fin 8 → ℝ) → ((Fin 8 → ℝ) →L[ℝ] (Fin 8 → ℝ))}
+    {d₀ : ℝ} {z₀ : Fin 8 → ℝ}
+    (df₁ : ∀ᶠ v in 𝓝 (d₀, z₀), HasFDerivAt (F · v.2) (f₁ v.1 v.2) v.1)
+    (df₂ : ∀ᶠ v in 𝓝 (d₀, z₀), HasFDerivAt (F v.1 ·) (f₂ v.1 v.2) v.2)
+    (cf₁ : ContinuousAt (↿f₁) (d₀, z₀)) (cf₂ : ContinuousAt (↿f₂) (d₀, z₀))
+    (if₂ : (f₂ d₀ z₀).IsInvertible) (heq : F d₀ z₀ = 0) :
+    ∃ z : ℝ → (Fin 8 → ℝ),
+      (∀ᶠ d in 𝓝 d₀, F d (z d) = 0) ∧ z d₀ = z₀ ∧
+      ∃ v : Fin 8 → ℝ, HasDerivAt z v d₀ ∧ (f₂ d₀ z₀) v = -(f₁ d₀ z₀ 1) := by
+  refine ⟨implicitFunctionOfBivariate df₁ df₂ cf₁ cf₂ if₂, ?_, ?_, ?_⟩
+  · -- branch: F d (z* d) = 0 near d₀
+    have h := eventually_apply_implicitFunctionOfBivariate df₁ df₂ cf₁ cf₂ if₂
+    simpa [heq] using h
+  · -- z* d₀ = z₀
+    have h := (eventually_apply_eq_iff_implicitFunctionOfBivariate df₁ df₂ cf₁ cf₂ if₂).self_of_nhds
+    simpa using h.mp rfl
+  · -- tangent v with (f₂ d₀ z₀) v = -(f₁ d₀ z₀ 1)
+    refine ⟨(-(f₂ d₀ z₀).inverse ∘L f₁ d₀ z₀) 1, ?_, ?_⟩
+    · exact (hasStrictFDerivAt_implicitFunctionOfBivariate df₁ df₂ cf₁ cf₂ if₂).hasFDerivAt.hasDerivAt
+    · simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.neg_apply, map_neg]
+      rw [if₂.self_apply_inverse]
+
+/-- **Theorem B, unconditional modulo `F`'s smoothness.**  Specialising `branch_of_ift` to
+the case where the inner Jacobian acts as the matrix `A` (`f₂ d₀ z₀ w = A·w`) and the
+`dw`-partial direction is `c` (`f₁ d₀ z₀ 1 = c`): the IFT yields a C¹ branch whose tangent
+`v` satisfies `A·v = −c` — exactly the hypothesis that `branch_linearization`/`schur_term_zero`
+previously assumed.  Thus W3 (and `A·v = −c`) follow from W2 + smoothness. -/
+theorem branch_linearization_of_ift
+    {F : ℝ → (Fin 8 → ℝ) → (Fin 8 → ℝ)}
+    {f₁ : ℝ → (Fin 8 → ℝ) → (ℝ →L[ℝ] (Fin 8 → ℝ))}
+    {f₂ : ℝ → (Fin 8 → ℝ) → ((Fin 8 → ℝ) →L[ℝ] (Fin 8 → ℝ))}
+    {d₀ : ℝ} {z₀ : Fin 8 → ℝ} {A : Matrix (Fin 8) (Fin 8) ℝ} {c : Fin 8 → ℝ}
+    (df₁ : ∀ᶠ v in 𝓝 (d₀, z₀), HasFDerivAt (F · v.2) (f₁ v.1 v.2) v.1)
+    (df₂ : ∀ᶠ v in 𝓝 (d₀, z₀), HasFDerivAt (F v.1 ·) (f₂ v.1 v.2) v.2)
+    (cf₁ : ContinuousAt (↿f₁) (d₀, z₀)) (cf₂ : ContinuousAt (↿f₂) (d₀, z₀))
+    (if₂ : (f₂ d₀ z₀).IsInvertible) (heq : F d₀ z₀ = 0)
+    (hf₂ : ∀ w, (f₂ d₀ z₀) w = A *ᵥ w) (hf₁ : f₁ d₀ z₀ 1 = c) :
+    ∃ z : ℝ → (Fin 8 → ℝ),
+      (∀ᶠ d in 𝓝 d₀, F d (z d) = 0) ∧ z d₀ = z₀ ∧
+      ∃ v : Fin 8 → ℝ, HasDerivAt z v d₀ ∧ A *ᵥ v = -c := by
+  obtain ⟨z, hz0, hzd, v, hv, hAv⟩ := branch_of_ift df₁ df₂ cf₁ cf₂ if₂ heq
+  exact ⟨z, hz0, hzd, v, hv, by rw [← hf₂, hAv, hf₁]⟩
 
 end GFL
