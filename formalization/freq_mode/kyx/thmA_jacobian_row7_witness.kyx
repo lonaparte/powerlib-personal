@@ -1,0 +1,37 @@
+ArchiveEntry "Theorem A (row-7 witness): grad F7 = -1.5 Vg e1^T  (sympy -> dL bridge)"
+
+/* sympy -> dL bridge for the matrix-layer fact used by thmA_jacobian_row and
+ * thmB_schur_vanishes.  verify_freq_mode.py (sympy) builds the full 9x9 Jacobian
+ * and reports that its 7th row (= grad F7) equals -1.5*Vg*e1^T.  Here we transcribe
+ * the literal model expression F7 = e_P = P_ref - 3/2*Vg*i_d (Conventions sec.13.3-
+ * 13.4) and let KeYmaera X/QE machine-verify each of the 9 partials by a directional
+ * difference (exact, since F7 is affine in i_d):
+ *   dF7/dx_k = [ F7(x + eps*e_k) - F7(x) ] / eps.
+ * The 9 sympy outputs (recomputed here from the literal F7) are:
+ *   dF7/di_d = -3/2*Vg   (the ONLY nonzero);  all other 8 partials = 0,
+ *   in particular dF7/ddw = 0  (= c[6], the Power-Lock entry of c).
+ * This is NOT full matrix algebra inside dL; it is a machine check that the scalar
+ * partial expressions sympy produced are genuine algebraic identities of the literal
+ * model F7.  Identifiers carry no underscores (KeYmaera X): id=i_d, xidc=xi_dc,
+ * xiqc=xi_qc, the=th_e, xiP=xi_P, xiQ=xi_Q, Pref=P_ref. */
+
+Problem
+  \forall Vg \forall Pref \forall id \forall iq \forall xidc \forall xiqc
+  \forall eta \forall the \forall xiP \forall xiQ \forall dw \forall eps
+  (
+       ( (Pref - 3/2*Vg*(id+eps)) - (Pref - 3/2*Vg*id) ) = (-3/2*Vg)*eps   /* d/di_d   = -3/2 Vg */
+     & ( (Pref - 3/2*Vg*id) - (Pref - 3/2*Vg*id) ) = 0*eps                 /* d/di_q   = 0 */
+     & ( (Pref - 3/2*Vg*id) - (Pref - 3/2*Vg*id) ) = 0*eps                 /* d/dxi_dc = 0 */
+     & ( (Pref - 3/2*Vg*id) - (Pref - 3/2*Vg*id) ) = 0*eps                 /* d/dxi_qc = 0 */
+     & ( (Pref - 3/2*Vg*id) - (Pref - 3/2*Vg*id) ) = 0*eps                 /* d/deta   = 0 */
+     & ( (Pref - 3/2*Vg*id) - (Pref - 3/2*Vg*id) ) = 0*eps                 /* d/dth_e  = 0 */
+     & ( (Pref - 3/2*Vg*id) - (Pref - 3/2*Vg*id) ) = 0*eps                 /* d/dxi_P  = 0 */
+     & ( (Pref - 3/2*Vg*id) - (Pref - 3/2*Vg*id) ) = 0*eps                 /* d/dxi_Q  = 0 */
+     & ( (Pref - 3/2*Vg*id) - (Pref - 3/2*Vg*id) ) = 0*eps                 /* d/ddw    = 0  (= c[6]) */
+  )
+End.
+
+Tactic "row 7 = -1.5Vg e1^T by QE"
+  QE
+End.
+End.

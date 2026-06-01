@@ -67,3 +67,20 @@ PROVED Theorem A (Jacobian): Variant-S 9th row is rho^T = -1.5 kappa Vg * e1^T: 
 PROVED Theorem B (Schur): the O(1) Schur term rho^T A^{-1} c vanishes: tactic=Schur term vanishes by QE,tacticsize=1,budget=0[s],duration=62[ms],qe=60[ms],rcf=0,steps=102
 PROVED Theorem B (Schur): row-7 identity e6^T A = -1.5 Vg e1^T is consistent and forces e1^T u = 0: tactic=e1^T u = 0 by QE,tacticsize=1,budget=0[s],duration=33[ms],qe=31[ms],rcf=0,steps=69
 PROVED Theorem B (Schur): hence lambda_slow = j99 = -b to leading order: tactic=leading-order slow eigenvalue by QE,tacticsize=1,budget=0[s],duration=33[ms],qe=33[ms],rcf=0,steps=64
+
+============================================================
+P0/P1 GAP-CLOSURE ENTRIES — KeYmaera X 5.1.2, bundled z3 (default)
+Run: Mon Jun  1 23:17:21 UTC 2026
+============================================================
+--- thmB_schur_at_neg_b.kyx (P0-1: Schur term at -b is O(b)) ---
+PROVED Theorem B (Schur at -b): the Schur term at mu=-b is O(b): tactic=Schur term at -b is O(b) by QE,tacticsize=1,budget=0[s],duration=81[ms],qe=80[ms],rcf=0,steps=159
+--- thmB_eigenvalue_at_negb_correction.kyx (P0-2: eigenvalue correction O(b^2), squared-form) ---
+PROVED Theorem B (eigenvalue correction): the leading correction at -b is O(b): tactic=leading correction is O(b),tacticsize=1,budget=0[s],duration=49[ms],qe=48[ms],rcf=0,steps=103
+--- thmA_jacobian_row7_witness.kyx (P0-3: sympy->dL row-7 = -1.5Vg e1^T) ---
+PROVED Theorem A (row-7 witness): grad F7 = -1.5 Vg e1^T  (sympy -> dL bridge): tactic=row 7 = -1.5Vg e1^T by QE,tacticsize=1,budget=0[s],duration=53[ms],qe=50[ms],rcf=0,steps=93
+--- thmA_trig_identities.kyx (P1: cos/sin as abstract c,s with c^2+s^2=1) ---
+PROVED Trig (1): Pythagorean identity is consistent (c^2+s^2=1 assumed): tactic=pythagorean satisfiable by QE,tacticsize=1,budget=0[s],duration=24[ms],qe=23[ms],rcf=0,steps=5
+PROVED Trig (2): inverse rotation recovers u_dc:  c*u_d - s*u_q = u_dc: tactic=recover u_dc by QE,tacticsize=1,budget=0[s],duration=33[ms],qe=33[ms],rcf=0,steps=93
+PROVED Trig (3): inverse rotation recovers u_qc:  s*u_d + c*u_q = u_qc: tactic=recover u_qc by QE,tacticsize=1,budget=0[s],duration=24[ms],qe=24[ms],rcf=0,steps=93
+PROVED Trig (4): current rotation roundtrip:  c*i_dc + s*i_qc = i_d: tactic=current roundtrip i_d by QE,tacticsize=1,budget=0[s],duration=26[ms],qe=25[ms],rcf=0,steps=93
+PROVED Trig (5): current rotation roundtrip:  -s*i_dc + c*i_qc = i_q: tactic=current roundtrip i_q by QE,tacticsize=1,budget=0[s],duration=30[ms],qe=30[ms],rcf=0,steps=93

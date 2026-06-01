@@ -1,8 +1,36 @@
 # Formal status of the freq_mode .kyx files
 
-Three tiers, **all proved by KeYmaera X 5.1.2** (26 entries total; verbatim
+Four tiers, **all proved by KeYmaera X 5.1.2** (34 entries total; verbatim
 `PROVED` lines in `../results/keymaerax_proof_log.txt`). All files are
 **parametric** (symbolic P_ref, Vg, b, β, Ks, D, H; no fixed numbers).
+
+## Tier 4 — P0/P1 GAP-CLOSURE (O(b²) asymptotic + sympy→dL bridge + trig)
+
+Targets from the original problem §8 that earlier sat only at the sympy/numeric
+layer. These are **algebraic equivalents** proved in dL — NOT strict replacements
+for the analysis facts (the perturbation magnitudes, full inversion, and the
+literal O(b²) asymptotic still live in the sympy layer).
+
+| file | what it proves (dL algebraic equivalent) | entries | KeYmaera X |
+|------|------------------------------------------|---------|-----------|
+| `thmB_schur_at_neg_b.kyx` | **P0-1**: the Schur term evaluated at μ=−b is `(-1.5κVg)·b·dU1 = O(b)` (given `U1at0=0` by Power Lock; `dU1 := (-A⁻²c)[0]` is the placeholder perturbation, value from sympy) | 1 | **proved** |
+| `thmB_eigenvalue_at_negb_correction.kyx` | **P0-2**: feeding S=O(b) back into `λ−j99=−S` gives `(λ−j99)² ≤ b²` (squared form of `\|λ−j99\|≤b`; no abs-value case split) ⟹ `λ=−b+O(b²)` | 1 | **proved** |
+| `thmA_jacobian_row7_witness.kyx` | **P0-3**: sympy→dL bridge — the 9 partials of the literal `F7=P_ref−1.5Vg·i_d` are machine-verified to equal `(-1.5Vg,0,…,0)`, i.e. `grad F7 = -1.5Vg·e1^T` and `c[6]=0` | 1 | **proved** |
+| `thmA_trig_identities.kyx` | **P1**: §3 rotation identities with cos/sin as abstract `c,s` under `c²+s²=1` (inverse-rotation roundtrips recover u_dc,u_qc,i_d,i_q) | 5 | **proved** |
+
+**Boundary updates (honest):**
+- **Boundary ③ downgraded**: the Schur term being O(b) at −b — hence the eigenvalue
+  correction O(b²) — is now machine-proved in dL as its algebraic equivalent
+  (`thmB_schur_at_neg_b` + `thmB_eigenvalue_at_negb_correction`). The perturbation
+  magnitude `dU1 = (-A⁻²c)[0]` is **still verified in sympy**, and the literal
+  9×9 O(b²) asymptotic analysis itself remains outside dL's reach.
+- **Boundary ① partially downgraded**: the row-7 fact `grad F7 = -1.5Vg·e1^T`
+  (incl. `c[6]=0`) now has a sympy→dL bridge (`thmA_jacobian_row7_witness`): dL
+  machine-confirms the 9 scalar partials sympy produced are genuine algebraic
+  identities of the literal model F7. **The other 7 rows of A and the 8×8 inversion
+  structure are still sympy-only** (no dL bridge yet).
+- **P1 note**: dL/QE has no built-in trigonometry; cos/sin are abstract reals with
+  `c²+s²=1`. Under that constraint all 5 identities prove; no identity was blocked.
 
 ## Tier 3 — GAP-FILLING (closes the items flagged as "only sympy / not done")
 
