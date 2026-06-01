@@ -36,4 +36,38 @@ theorem variantU_zero_eigenvalue (J : Matrix (Fin 9) (Fin 9) ℝ)
     rw [Pi.single_eq_same] at h8
     exact one_ne_zero h8
 
+/-! ### Theorem A strengthened: the zero eigenvalue is simple (exactly one) -/
+
+/-- The Variant-U Jacobian as a block matrix (§6): `[[A, c], [0, 0]]` over `Fin 8 ⊕ Unit`. -/
+def JUblock (A : Matrix (Fin 8) (Fin 8) ℝ) (c : Fin 8 → ℝ) :
+    Matrix (Fin 8 ⊕ Unit) (Fin 8 ⊕ Unit) ℝ :=
+  Matrix.fromBlocks A (fun i _ => c i) 0 0
+
+/-- **Theorem A, strengthened (§7 + §9 anchor "exactly one zero eigenvalue").**
+The characteristic determinant factorises as
+
+    `det(J_U − μ·I) = (−μ) · det(A − μ·I)`.
+
+The factor `(−μ)` is a *simple* zero, and `det(A − 0·I) = det A ≠ 0` whenever `A` is
+invertible (W2), so `μ = 0` is a root of multiplicity exactly one: the unanchored
+Jacobian has **exactly one** zero eigenvalue. -/
+theorem variantU_charpoly_factor
+    (A : Matrix (Fin 8) (Fin 8) ℝ) (c : Fin 8 → ℝ) (μ : ℝ) :
+    (JUblock A c - μ • 1).det = (-μ) * (A - μ • 1).det := by
+  have hM : JUblock A c - μ • (1 : Matrix (Fin 8 ⊕ Unit) (Fin 8 ⊕ Unit) ℝ)
+      = Matrix.fromBlocks (A - μ • 1) (fun i _ => c i) 0 (-(μ • 1)) := by
+    ext i j
+    rcases i with i | i <;> rcases j with j | j <;>
+      simp [JUblock, Matrix.sub_apply, Matrix.smul_apply, Matrix.one_apply, Matrix.neg_apply]
+  rw [hM, Matrix.det_fromBlocks_zero₂₁]
+  have hu : (-(μ • (1 : Matrix Unit Unit ℝ))).det = -μ := by
+    rw [Matrix.det_unique]; simp
+  rw [hu]; ring
+
+/-- At `μ = 0` the cofactor `det(A − 0·I) = det A`, which is nonzero exactly when `A`
+is invertible — confirming the zero eigenvalue of `J_U` is simple (multiplicity one). -/
+theorem variantU_zero_cofactor_ne (A : Matrix (Fin 8) (Fin 8) ℝ) (hA : IsUnit A.det) :
+    (A - (0 : ℝ) • 1).det ≠ 0 := by
+  simpa using hA.ne_zero
+
 end GFL

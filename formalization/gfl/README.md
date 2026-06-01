@@ -14,9 +14,13 @@ never oscillates — it only decays.
 |---|---|---|---|
 | **Lemma 0** (Power Lock, the crux) | `GFL.powerLock` | `Model.lean` | At any inner equilibrium `e_P = 0`, hence `P_meas = P_ref` and `i_d = P_ref/(1.5·Vg)`. |
 | **Corollary 0a** (`K = 0`) | `GFL.syncCoeff_zero` | `Model.lean` | Along any equilibrium branch `z*(d)`, `i_d*` is pinned and `P_meas(z*(d)) ≡ P_ref` (so the synchronising coefficient `K = dP_meas*/dd = 0`). |
+| **Corollary 0b** (remaining relations) | `GFL.equilib_relations` | `Model.lean` | At any inner equilibrium: `i_q = −Q_ref/(1.5·Vg)`, `e_d = e_q = 0`, `v_cqc = 0`, `η = −dw/Ki_pll`. |
+| **Corollary 0b**, Variant S (`dw* = 0`) | `GFL.variantS_dw_zero` | `Model.lean` | At a swing-anchored equilibrium `dw* = 0` (`F9_S = 0` with `e_P = 0` ⟹ `b·dw = 0`). |
 | **Theorem A** (zero eigenvalue, Variant U) | `GFL.variantU_zero_eigenvalue` | `TheoremA.lean` | If the Jacobian's last row is zero (Variant U, §6) then `e₉ᵀ J_U = 0ᵀ`, `det J_U = 0`, and `e₉ ≠ 0` — i.e. `0 ∈ spec(J_U)` with `e₉` a (genuine) left eigenvector. |
+| **Theorem A**, simple zero (exactly one) | `GFL.variantU_charpoly_factor` | `TheoremA.lean` | `det(J_U − μ·I) = (−μ)·det(A − μ·I)`; the `(−μ)` factor is a *simple* zero and `det(A−0·I) = det A ≠ 0` (A invertible), so `J_U` has **exactly one** zero eigenvalue. |
 | **Theorem B**, reduced (exact) | `GFL.reduced_exact` | `TheoremB.lean` | The reduced slow-manifold field is **exactly** `dw' = −b·dw`, and `b = D/(2H)`; so `λ_slow = −b = −D/(2H)` exactly. |
 | **Theorem B**, full-system Schur term | `GFL.schur_term_zero` | `TheoremB.lean` | The O(1) Schur term vanishes exactly: `ρᵀ A⁻¹ c = κ·K = 0`. |
+| **Theorem B**, full-system Schur determinant | `GFL.variantS_schur_det` | `TheoremB.lean` | `det(J_S − μ·I) = det(A − μ·I)·((j99 − μ) − ρᵀ(A − μ·I)⁻¹c)` (for `A−μI` invertible) — the eigenvalue equation `λ = j99 − ρᵀ(A−λI)⁻¹c`. |
 | **Theorem C**, companion char. poly | `GFL.charpoly_eq` | `TheoremC.lean` | `det(λI − M) = λ² + b·λ + β·Ks` for the `(δ,dw)` companion matrix `M = !![0,1; −β·Ks, −b]`. |
 | **Theorem C** (C1), `Ks = 0` | `GFL.thmC_Ks_zero` | `TheoremC.lean` | Roots are exactly `{0, −b}`, both real. |
 | **Theorem C** (C2), `Ks > 0` | `GFL.thmC_onset` | `TheoremC.lean` | Roots `−b/2 ± i·ω` (`ω ≥ 0`, `ω² = β·Ks − b²/4`); real part `−b/2`, natural frequency `ω_osc = ω = √(β·Ks − b²/4)`; non-real (oscillatory) **iff** `b²/4 < β·Ks`. |
@@ -78,6 +82,25 @@ In short: the genuinely load-bearing content — Lemma 0, the constancy of `i_d*
 `reducedField ≡ −b·dw`, `ρᵀA⁻¹c = 0`, the Variant-U spectral facts, and the Theorem C
 root structure — is all proved from first principles; the inputs left as hypotheses are
 precisely the §5–§6 items the problem presents as given.
+
+### Scope: what is and isn't formalized
+
+Fully proved (machine-checked, no `sorry`): Lemma 0, Cor 0a, **Cor 0b** (`equilib_relations`,
+`variantS_dw_zero`), Theorem A including the **simplicity** of the zero eigenvalue
+(`variantU_charpoly_factor`: `det(J_U−μI) = −μ·det(A−μI)`, so exactly one zero eigenvalue when
+`A` is invertible), Theorem B reduced-exact and the **full-system Schur determinant identity**
+(`variantS_schur_det`), and Theorem C (C1, C2, companion char. poly).
+
+Deliberately **not** claimed (false at full strength): the full 9×9 slow eigenvalue is *not*
+exactly `−D/(2H)`; it is `−b + O(b²)` (the O(1) Schur term is proved zero, but the exact
+characteristic equation `λ = j99 − ρᵀ(A−λI)⁻¹c` retains a higher-order correction — see
+`variantS_schur_det`).
+
+Left as standard hypotheses (would require Mathlib's analysis/`deriv` tower, which is beside the
+algebraic/spectral content): (i) Cor 0a stated with a literal derivative `deriv(P_meas∘z*) = 0`
+(here proved as "the composite is the constant function `P_ref`"); (ii) the implicit-function-
+theorem linearisation `A·(dz*/ddw) = −c` (used as the hypothesis `A·v = −c` in `schur_term_zero`);
+(iii) the `O(b²)` asymptotic bound on the full-system slow eigenvalue.
 
 ## Numerical cross-validation (`validate.py`)
 

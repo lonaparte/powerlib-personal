@@ -19,9 +19,13 @@
 |------|---------|------|
 | 引理 0（Power Lock，命门，纯代数）`e_P=0 ⟹ i_d=P_ref/(1.5Vg)` | `powerLock` | `gfl/GFL/Model.lean` |
 | 推论 0a `i_d*` 恒定 ⟹ `K=0` | `syncCoeff_zero` | `gfl/GFL/Model.lean` |
+| 推论 0b 其余平衡关系 `i_q=−Q_ref/(1.5Vg)`、`e_d=e_q=0`、`v_cqc=0`、`η=−dw/Ki_pll` | `equilib_relations` | `gfl/GFL/Model.lean` |
+| 推论 0b Variant S `dw*=0` | `variantS_dw_zero` | `gfl/GFL/Model.lean` |
 | 定理 A（Variant U 零特征值，`e₉` 左特征向量，`det=0`） | `variantU_zero_eigenvalue` | `gfl/GFL/TheoremA.lean` |
+| 定理 A 零特征值**单重**（`det(J_U−μI)=−μ·det(A−μI)`，恰一个零特征值） | `variantU_charpoly_factor` | `gfl/GFL/TheoremA.lean` |
 | 定理 B（约化系统**精确** `dw'=−b·dw`，`λ_slow=−D/(2H)`） | `reduced_exact` | `gfl/GFL/TheoremB.lean` |
 | 定理 B（全系统 Schur 项 `ρᵀA⁻¹c=κK=0` 精确） | `schur_term_zero` | `gfl/GFL/TheoremB.lean` |
+| 定理 B 全系统 Schur 行列式 `det(J_S−μI)=det(A−μI)·((j99−μ)−ρᵀ(A−μI)⁻¹c)` | `variantS_schur_det` | `gfl/GFL/TheoremB.lean` |
 | 定理 C（伴随矩阵特征多项式 `λ²+bλ+βKs`） | `charpoly_eq` | `gfl/GFL/TheoremC.lean` |
 | 定理 C1（`Ks=0` ⟹ 根 `{0,−b}` 全实） | `thmC_Ks_zero` | `gfl/GFL/TheoremC.lean` |
 | 定理 C2（`Ks>0` ⟹ `−b/2±iω`，振荡 ⟺ `βKs>b²/4`，`ω_osc=√(βKs−b²/4)`） | `thmC_onset` | `gfl/GFL/TheoremC.lean` |

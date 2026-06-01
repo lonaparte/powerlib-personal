@@ -61,4 +61,39 @@ theorem schur_term_zero (p : Params)
   rw [hinv, hρ, dotProduct_neg, smul_dotProduct, single_dotProduct, hv0]
   simp
 
+/-! ### Theorem B, full-system Schur determinant identity (§7 "full-system form") -/
+
+/-- The Variant-S Jacobian as a block matrix (§6): `[[A, c], [ρᵀ, j99]]` over `Fin 8 ⊕ Unit`
+(the off-diagonal blocks are the constant column `c` and constant row `ρ`). -/
+def JSblock (A : Matrix (Fin 8) (Fin 8) ℝ) (c ρ : Fin 8 → ℝ) (j99 : ℝ) :
+    Matrix (Fin 8 ⊕ Unit) (Fin 8 ⊕ Unit) ℝ :=
+  Matrix.fromBlocks A (Matrix.replicateCol Unit c) (Matrix.replicateRow Unit ρ) (fun _ _ => j99)
+
+/-- **Theorem B, full-system Schur determinant identity (§7).**
+Whenever `A − μ·I` is invertible,
+
+    `det(J_S − μ·I) = det(A − μ·I) · ((j99 − μ) − ρᵀ (A − μ·I)⁻¹ c)`.
+
+Hence (for `μ` not an eigenvalue of `A`) `μ ∈ spec(J_S)` iff `μ = j99 − ρᵀ(A−μI)⁻¹c`
+— the full-system slow-mode equation `λ = j99 − ρᵀ(A−λI)⁻¹c`.  Its O(1) term is
+`ρᵀA⁻¹c = 0` (`schur_term_zero`), so the leading value is `j99 = −b`. -/
+theorem variantS_schur_det
+    (A : Matrix (Fin 8) (Fin 8) ℝ) (c ρ : Fin 8 → ℝ) (j99 μ : ℝ)
+    (hA : IsUnit (A - μ • 1).det) :
+    (JSblock A c ρ j99 - μ • 1).det
+      = (A - μ • 1).det * ((j99 - μ) - ρ ⬝ᵥ ((A - μ • 1)⁻¹ *ᵥ c)) := by
+  letI : Invertible (A - μ • 1) := (A - μ • 1).invertibleOfIsUnitDet hA
+  -- subtract the scalar block-by-block
+  have hM : JSblock A c ρ j99 - μ • (1 : Matrix (Fin 8 ⊕ Unit) (Fin 8 ⊕ Unit) ℝ)
+      = Matrix.fromBlocks (A - μ • 1) (Matrix.replicateCol Unit c) (Matrix.replicateRow Unit ρ)
+          (fun _ _ => j99 - μ) := by
+    ext i j
+    rcases i with i | i <;> rcases j with j | j <;>
+      simp [JSblock, Matrix.sub_apply, Matrix.smul_apply, Matrix.one_apply,
+        Matrix.replicateCol_apply, Matrix.replicateRow_apply]
+  rw [hM, Matrix.det_fromBlocks₁₁]
+  congr 1
+  rw [Matrix.det_unique, Matrix.sub_apply, Matrix.invOf_eq_nonsing_inv, Matrix.mul_assoc,
+      ← Matrix.replicateCol_mulVec, Matrix.replicateRow_mul_replicateCol_apply]
+
 end GFL
