@@ -29,12 +29,18 @@
 | 定理 C（伴随矩阵特征多项式 `λ²+bλ+βKs`） | `charpoly_eq` | `gfl/GFL/TheoremC.lean` |
 | 定理 C1（`Ks=0` ⟹ 根 `{0,−b}` 全实） | `thmC_Ks_zero` | `gfl/GFL/TheoremC.lean` |
 | 定理 C2（`Ks>0` ⟹ `−b/2±iω`，振荡 ⟺ `βKs>b²/4`，`ω_osc=√(βKs−b²/4)`） | `thmC_onset` | `gfl/GFL/TheoremC.lean` |
+| 推论 0a 导数版 `deriv(P_meas∘z*)=0` | `syncCoeff_deriv_zero` | `gfl/GFL/Calculus.lean` |
+| `i_d` 切向量为零 `v₀=0` | `branch_iD_tangent_zero` | `gfl/GFL/Calculus.lean` |
+| IFT 线性化 `A·v=−c`（对 `F_inner(z*(d),d)=0` 链式求导） | `branch_linearization` | `gfl/GFL/Calculus.lean` |
+| 定理 B Schur 项从 C¹ 分支推出 `ρᵀA⁻¹c=0` | `schur_term_zero_of_branch` | `gfl/GFL/Calculus.lean` |
 
 **三个命门的诚实处理**：(1) 引理 0 先证、纯代数；(2) 定理 B 区分"约化精确 / 全系统 O(ε²)"——只证
 约化场精确 `−b·dw` 与 O(1) Schur 项精确为 0，**不**声称全 9×9 系统精确 `−D/(2H)`；(3) 定理 C 用
 `β:=wn/(2H)` 与题设一致。建模忠实性：内场 `F_inner` 抽象承载（只用到 `F7=e_P`），§6 雅可比块结构按
-题目"by inspection"给定为前提，定理 B 的 `A·v=−c`（IFT 微分）与 `v₀=0`（推论 0a）为前提，其余全部从
-头证明。`validate.py` 在**完整 §3–§4 非线性 9 态模型**上独立复现 §9 全部数值锚点（`i_d*=80` 恒定、
+题目"by inspection"给定为前提；定理 B 的 `A·v=−c`（IFT 微分）与 `v₀=0`（推论 0a）现已用 Mathlib 分析塔
+**从微分结构证出**（`branch_linearization`/`branch_iD_tangent_zero`/`schur_term_zero_of_branch`，链式法则），
+不再是前提。唯一未形式化的是全系统 `λ=−b+O(b²)` 的渐近界（摄动论，超出范围；`variantS_schur_det` 与
+`schur_term_zero` 是其严格替代）。`validate.py` 在**完整 §3–§4 非线性 9 态模型**上独立复现 §9 全部数值锚点（`i_d*=80` 恒定、
 Variant U 恰一个零特征值、`λ_slow≈−D/2H`、Schur 项 `2.9e-19`、定理 C 起振频率 `0.089/0.199/0.399/0.892 Hz`）。
 
 > 注：本节是 Lean 代数/谱证明（与下文 pH-DAE 的 KeYmaera X 动力学证明互补、彼此独立）。Mathlib olean

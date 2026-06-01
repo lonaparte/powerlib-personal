@@ -24,6 +24,10 @@ never oscillates — it only decays.
 | **Theorem C**, companion char. poly | `GFL.charpoly_eq` | `TheoremC.lean` | `det(λI − M) = λ² + b·λ + β·Ks` for the `(δ,dw)` companion matrix `M = !![0,1; −β·Ks, −b]`. |
 | **Theorem C** (C1), `Ks = 0` | `GFL.thmC_Ks_zero` | `TheoremC.lean` | Roots are exactly `{0, −b}`, both real. |
 | **Theorem C** (C2), `Ks > 0` | `GFL.thmC_onset` | `TheoremC.lean` | Roots `−b/2 ± i·ω` (`ω ≥ 0`, `ω² = β·Ks − b²/4`); real part `−b/2`, natural frequency `ω_osc = ω = √(β·Ks − b²/4)`; non-real (oscillatory) **iff** `b²/4 < β·Ks`. |
+| **Cor 0a, derivative form** | `GFL.syncCoeff_deriv_zero` | `Calculus.lean` | `deriv(fun d ↦ P_meas(z*(d))) = 0` (literal derivative; uses the analysis tower). |
+| **`i_d`-tangent vanishes** | `GFL.branch_iD_tangent_zero` | `Calculus.lean` | If `z*` is differentiable with derivative `v` and its `i_d`-coordinate is constant, then `v₀ = 0`. |
+| **IFT linearisation** (`A·v = −c`) | `GFL.branch_linearization` | `Calculus.lean` | Differentiating `F_inner(z*(d),d) = 0` (chain rule) gives `A·v + c = 0`. |
+| **Thm B Schur term from C¹ branch** | `GFL.schur_term_zero_of_branch` | `Calculus.lean` | `ρᵀ A⁻¹ c = 0` derived from the differentiable branch (W3) alone — no `A·v=−c`/`v₀=0` left as hypotheses. |
 
 `β := wn/(2H)`, `b := D/(2H)`, `κ := wn/(2·H·Sn)` are the §1/§4/§7 constants
 (`Params.beta/.b/.kappa`, with positivity proved).
@@ -96,11 +100,16 @@ exactly `−D/(2H)`; it is `−b + O(b²)` (the O(1) Schur term is proved zero, 
 characteristic equation `λ = j99 − ρᵀ(A−λI)⁻¹c` retains a higher-order correction — see
 `variantS_schur_det`).
 
-Left as standard hypotheses (would require Mathlib's analysis/`deriv` tower, which is beside the
-algebraic/spectral content): (i) Cor 0a stated with a literal derivative `deriv(P_meas∘z*) = 0`
-(here proved as "the composite is the constant function `P_ref`"); (ii) the implicit-function-
-theorem linearisation `A·(dz*/ddw) = −c` (used as the hypothesis `A·v = −c` in `schur_term_zero`);
-(iii) the `O(b²)` asymptotic bound on the full-system slow eigenvalue.
+Also proved, using Mathlib's analysis tower (`Calculus.lean`): (i) Cor 0a as a *literal*
+derivative `deriv(P_meas∘z*) = 0` (`syncCoeff_deriv_zero`); (ii) the implicit-function-theorem
+linearisation `A·(dz*/ddw) = −c` (`branch_linearization`, by differentiating the branch identity
+with the chain rule) together with `v₀ = 0` (`branch_iD_tangent_zero`) — so the two facts that
+`schur_term_zero` took as hypotheses are now *derived* from the C¹ branch structure W3
+(`schur_term_zero_of_branch`).
+
+Still **not** formalised: the `O(b²)` asymptotic bound on the full-system slow eigenvalue
+(a perturbation-theory statement, beyond the scope here; the exact Schur identity
+`variantS_schur_det` and the vanishing O(1) term `schur_term_zero` are the rigorous substitutes).
 
 ## Numerical cross-validation (`validate.py`)
 
@@ -126,9 +135,13 @@ compiled from source against the pinned toolchain.
 
 ```bash
 cd formalization/gfl
-lake build GFL            # builds Model + TheoremA/B/C
-lake build GFL.Audit      # prints the #print axioms integrity report
+lake build GFL            # Model + TheoremA/B/C + Calculus (Calculus pulls the analysis tower)
+lake build GFL.Audit      # prints the #print axioms integrity report (16 results, all clean)
 ```
+
+The algebraic/spectral core (`Model`, `TheoremA/B/C`) needs only the linear-algebra + complex
+towers; `Calculus.lean` additionally compiles Mathlib's analysis tower (`Analysis.Calculus.*`),
+which is the bulk of a from-source build here (the olean cache is unreachable).
 
 * Toolchain: `leanprover/lean4:v4.31.0-rc1` (`lean-toolchain`).
 * Mathlib: pinned to tag `v4.31.0-rc1` (`lakefile.toml`, `lake-manifest.json`).
@@ -140,11 +153,12 @@ lake build GFL.Audit      # prints the #print axioms integrity report
 lakefile.toml          package + mathlib dependency (pinned)
 lean-toolchain         leanprover/lean4:v4.31.0-rc1
 lake-manifest.json     pinned dependency revisions
-GFL.lean               root: imports the four modules below
-GFL/Model.lean         §1–§5: Params, power algebra, Lemma 0, Cor 0a
-GFL/TheoremA.lean      §7 A: zero eigenvalue (Variant U)
-GFL/TheoremB.lean      §7 B: slow eigenvalue −D/(2H) (reduced exact + Schur term 0)
+GFL.lean               root: imports the five modules below
+GFL/Model.lean         §1–§5: Params, power algebra, Lemma 0, Cor 0a/0b
+GFL/TheoremA.lean      §7 A: zero eigenvalue (Variant U) + simple-zero factorisation
+GFL/TheoremB.lean      §7 B: slow eigenvalue −D/(2H) (reduced exact + Schur term 0 + full Schur det)
 GFL/TheoremC.lean      §7 C: oscillation onset (charpoly, C1, C2)
-GFL/Audit.lean         #print axioms integrity report
+GFL/Calculus.lean      calculus completions (Cor 0a deriv, IFT linearisation) — uses analysis tower
+GFL/Audit.lean         #print axioms integrity report (16 results)
 validate.py            numerical cross-validation of the §3–§4 model vs the §9 anchors
 ```

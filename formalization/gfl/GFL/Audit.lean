@@ -8,6 +8,7 @@ import GFL.Model
 import GFL.TheoremA
 import GFL.TheoremB
 import GFL.TheoremC
+import GFL.Calculus
 
 open GFL
 
@@ -23,3 +24,8 @@ open GFL
 #print axioms charpoly_eq                -- Theorem C (companion char. poly)
 #print axioms thmC_Ks_zero               -- Theorem C, (C1)
 #print axioms thmC_onset                 -- Theorem C, (C2)
+-- calculus completions (use Mathlib's analysis tower)
+#print axioms syncCoeff_deriv_zero       -- Cor 0a as a literal derivative
+#print axioms branch_iD_tangent_zero     -- v₀ = 0 (i_d-tangent)
+#print axioms branch_linearization       -- IFT linearisation  A·v = −c
+#print axioms schur_term_zero_of_branch  -- Thm B Schur term, derived from the C¹ branch

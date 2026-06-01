@@ -12,3 +12,4 @@ import GFL.Model
 import GFL.TheoremA
 import GFL.TheoremB
 import GFL.TheoremC
+import GFL.Calculus
