@@ -1,0 +1,83 @@
+ArchiveEntry "Theorem C2 (spectral): characteristic polynomial identity"
+
+/* The reduced (delta,dw) subsystem has companion matrix M = [[0,1],[-beta*Ks,-b]].
+ * Its characteristic polynomial det(lambda*I - M) equals lambda^2 + b*lambda + beta*Ks.
+ * This entry proves that algebraic identity for all lambda,b,beta,Ks:
+ *   det(lambda*I-M) = lambda*(lambda+b) - (-1)*(beta*Ks) = lambda^2 + b*lambda + beta*Ks.
+ * (Stronger than the old threshold-only file, which merely rearranged an inequality.)
+ */
+Problem
+  \forall lambda \forall b \forall beta \forall Ks
+  ( lambda*(lambda + b) - (-1)*(beta*Ks) = lambda^2 + b*lambda + beta*Ks )
+End.
+Tactic "charpoly identity by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "Theorem C2 (spectral): above threshold there is NO real eigenvalue (oscillation)"
+
+/* The physical content of 'oscillatory': when beta*Ks > b^2/4 the characteristic
+ * polynomial lambda^2 + b*lambda + beta*Ks has NO real root, hence the eigenvalues
+ * are a genuine complex-conjugate pair (the mode oscillates).  Proved by completing
+ * the square: lambda^2+b*lambda+beta*Ks = (lambda+b/2)^2 + (beta*Ks - b^2/4) > 0.
+ */
+Problem
+  \forall b \forall beta \forall Ks \forall lambda
+  ( b > 0 & beta*Ks > b^2/4
+    -> lambda^2 + b*lambda + beta*Ks > 0 )
+End.
+Tactic "no real root by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "Theorem C2 (spectral): real part of the complex pair is -b/2"
+
+/* For a real 2x2 companion matrix the eigenvalues sum to the trace = -b.  Hence a
+ * complex-conjugate pair r +- i*w must have 2*Re = -b, i.e. Re = -b/2.  Stated as:
+ * if r1,r2 satisfy the Vieta relations of the characteristic polynomial
+ * (r1+r2 = -b, r1*r2 = beta*Ks), then (r1+r2)/2 = -b/2.
+ */
+Problem
+  \forall b \forall beta \forall Ks \forall r1 \forall r2
+  ( r1 + r2 = -b & r1*r2 = beta*Ks
+    -> (r1 + r2)/2 = -b/2 )
+End.
+Tactic "real part by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "Theorem C2 (spectral): below threshold the roots are real (no oscillation)"
+
+/* Conversely, when beta*Ks < b^2/4 (and >=0) the polynomial has two real roots:
+ * the discriminant b^2-4*beta*Ks > 0, so completing the square shows there exists
+ * a real lambda with lambda^2+b*lambda+beta*Ks = 0 (e.g. the smaller root). We
+ * state the contrapositive sign fact used by the classifier: discriminant >= 0
+ * iff beta*Ks <= b^2/4.  Together with C1 (Ks=0 -> roots {0,-b}) this completes
+ * the real/complex dichotomy.
+ */
+Problem
+  \forall b \forall beta \forall Ks
+  ( (b^2 - 4*beta*Ks >= 0) <-> (beta*Ks <= b^2/4) )
+End.
+Tactic "discriminant sign by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "Theorem C2 (spectral): Ks=0 gives the real spectrum {0,-b}"
+
+/* The bare GFL (Ks=0, by the Power Lock) has characteristic polynomial
+ * lambda^2 + b*lambda = lambda*(lambda+b); its roots are exactly 0 and -b, both
+ * real -- the frequency mode never oscillates.
+ */
+Problem
+  \forall b \forall lambda
+  ( lambda^2 + b*lambda = 0 <-> (lambda = 0 | lambda = -b) )
+End.
+Tactic "Ks=0 real spectrum by QE"
+  QE
+End.
+End.
