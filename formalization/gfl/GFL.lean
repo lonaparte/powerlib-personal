@@ -13,3 +13,5 @@ import GFL.TheoremA
 import GFL.TheoremB
 import GFL.TheoremC
 import GFL.Calculus
+import GFL.AsymptoticB
+import GFL.LiteralModel

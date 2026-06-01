@@ -37,6 +37,10 @@
 | 定理 C2 反向/穷尽 `βKs≥b²/4`：根恰为 `−b/2±iω`（复根⟹判别式<0） | `thmC_roots_exhaustive` | `gfl/GFL/TheoremC.lean` |
 | 定理 C2 过阻尼实根 `βKs≤b²/4`：根恰为 `−b/2±μ`（全实，不振荡） | `thmC_real_roots` | `gfl/GFL/TheoremC.lean` |
 | **W3 由隐函数定理推出**（分支存在 + C¹ + `A·v=−c`） | `branch_of_ift` / `branch_linearization_of_ift` | `gfl/GFL/Calculus.lean` |
+| 定理 B O(b²) **部分**：预解恒等式 + `schur_term_at_neg_b`（`∃K,=−b·K`）+ `κ=(wn/SnD)b` + 精确 b² 恒等式 `schur_term_b_sq` | `resolvent_id`/`schur_term_at_neg_b`/`kappa_eq_const_mul_b`/`schur_term_b_sq` | `gfl/GFL/AsymptoticB.lean` |
+| 字面 §3–§4 模型 **部分**：完整转写 + InnerField 实例（comp3..8 全证） | `F_inner_literal`/`litInnerField` | `gfl/GFL/LiteralModel.lean` |
+
+> O(b²) 一致界、本征值存在、字面模型 C¹/∂F-z 可逆 **未证**（blocked），清单见 `gfl/BLOCKERS.md`。
 
 **三个命门的诚实处理**：(1) 引理 0 先证、纯代数；(2) 定理 B 区分"约化精确 / 全系统 O(ε²)"——只证
 约化场精确 `−b·dw` 与 O(1) Schur 项精确为 0，**不**声称全 9×9 系统精确 `−D/(2H)`；(3) 定理 C 用

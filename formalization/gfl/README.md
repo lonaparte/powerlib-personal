@@ -122,12 +122,20 @@ Also proved, using Mathlib's analysis tower (`Calculus.lean`):
   (`βKs ≤ b²/4`, two real roots).
 * The explicit right eigenvector for Theorem A (`variantU_zero_right_eigenvector`).
 
-Genuinely **not** formalised (honest boundaries): (i) the *concrete* §3–§4 transcription of `F`
-with `cos/sin` and a proof that **it** is `C¹` with invertible `∂F/∂z` — i.e. that the literal
-model satisfies `branch_of_ift`'s hypotheses (the field is carried abstractly; the literal model
-is validated numerically by `validate.py`, not symbolically in Lean); (ii) the `O(b²)` asymptotic
-on the full-system slow eigenvalue (a perturbation statement — the exact Schur identity
-`variantS_schur_det` and `schur_term_zero` are its rigorous substitutes).
+Genuinely **not** formalised (honest boundaries — partial progress; see `BLOCKERS.md`):
+
+* **Theorem B O(b²) — partial** (`AsymptoticB.lean`): the *b² structure* is now machine-checked.
+  `resolvent_id`, `schur_term_at_neg_b` (`∃K, ρᵀ(A+bI)⁻¹c = −b·K`), `kappa_eq_const_mul_b`
+  (`κ = (wn/(Sn·D))·b`), and the **exact identity** `schur_term_b_sq`
+  (`ρᵀ(A+bI)⁻¹c = (3/2)(wn/(Sn·D))Vg · b² · [(A+bI)⁻¹A⁻¹c]₀`) are proved. NOT proved: a uniform
+  `|·| ≤ C·b²` bound (needs matrix operator-norm / Neumann inverse bound) and the eigenvalue
+  existence `|λ_slow−(−b)| ≤ C·b²` (Rouché/Kato absent from Mathlib; contraction route blocked on
+  the same norm bounds).
+* **Literal §3–§4 model — partial** (`LiteralModel.lean`): `F_inner_literal` transcribes §3–§4
+  verbatim and `litInnerField : InnerField p` is proved (the literal model satisfies the abstract
+  interface, so every theorem applies to it). NOT proved: `F_inner_literal` is `C¹` and `∂F/∂z`
+  is invertible at the equilibrium (the latter = a symbolic 8×8 `det ≠ 0`; `∂F/∂z` invertible is
+  hypothesis W2, confirmed numerically by `validate.py`).
 
 ## Numerical cross-validation (`validate.py`)
 

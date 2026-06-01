@@ -9,6 +9,8 @@ import GFL.TheoremA
 import GFL.TheoremB
 import GFL.TheoremC
 import GFL.Calculus
+import GFL.AsymptoticB
+import GFL.LiteralModel
 
 open GFL
 
@@ -36,3 +38,10 @@ open GFL
 -- W3 derived from the implicit function theorem (W2 + smoothness)
 #print axioms branch_of_ift
 #print axioms branch_linearization_of_ift
+-- P0 (Theorem B O(b²)) partial: algebraic core
+#print axioms resolvent_id
+#print axioms schur_term_at_neg_b
+#print axioms kappa_eq_const_mul_b
+#print axioms schur_term_b_sq
+-- P1 (literal model) partial: InnerField instance
+#print axioms litInnerField
