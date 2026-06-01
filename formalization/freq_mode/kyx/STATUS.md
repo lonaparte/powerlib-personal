@@ -12,51 +12,68 @@ Five parametric dL files encode the slow-frequency-mode theorems:
 
 All files are **parametric** (symbolic P_ref, Vg, b, β, Ks, D, H; no fixed numbers).
 
-## Honest status — what is and isn't machine-checked
+## Status — MACHINE-CHECKED BY KeYmaera X 5.1.2
 
-- **KeYmaera X is NOT installed in this container** (only a JDK; no keymaerax jar).
-  So these files were **not run through KeYmaera X**; none is "KeYmaera X `proved`"
-  in the sense of the repo convention. The Tactic blocks are written (so the files
-  are complete, runnable artifacts) but **unverified by KeYmaera X here**.
+All five files are **proved by KeYmaera X 5.1.2** (Z3 4.16.0 backend). The verbatim
+`PROVED ...` lines are in `../results/keymaerax_proof_log.txt`:
 
-- **The proof obligations ARE machine-checked — by Z3** (`../prove_freq_mode_z3.py`,
-  **12/12** proved, parametric; see `../results/z3_run.txt`). Z3 is the *same*
-  nonlinear-real-arithmetic decision procedure KeYmaera X uses for its `QE` steps.
-  Specifically:
-  - For the QE files (`lemma0`, `thmC_oscillation_threshold`): Z3 decides the exact
-    first-order real formula that `QE` would discharge.
-  - For the dI files (`thmA`, `thmB`, `thmC_stability`): Z3 discharges the exact
-    **Lie-derivative obligation** that `dI` reduces the box-modality goal to
-    (`d/dt V <= 0` along the flow). What Z3 does NOT cover is KeYmaera X's own dI
-    rule application and soundness kernel — only the mathematical content.
+| file | tactic | KeYmaera X | steps |
+|------|--------|-----------|-------|
+| `lemma0_power_lock.kyx` | QE | **proved** | 103 |
+| `thmA_dw_conserved.kyx` | dI | **proved** | 66 |
+| `thmB_slow_decay.kyx` | dI | **proved** | 167 |
+| `thmC_stability.kyx` | dI | **proved** | 289 |
+| `thmC_oscillation_threshold.kyx` | QE | **proved** | 81 |
 
-So: **the mathematics is machine-checked and parametric (Z3); the KeYmaera X
-wrapper is not executed.** When KeYmaera X is available, run each file and, on a
-`proved` result, the status upgrades to fully KeYmaera-X-proved with no change to
-the Problem blocks.
+This is the repo's `proved` standard: each is a `.kyx` with Problem + Tactic that
+KeYmaera X reports `proved`.
+
+### Caveats (honest)
+
+- **Backend is Z3, not Mathematica.** KeYmaera X+Z3 cannot derive 19 division/power
+  axioms ("QE with Z3 gives SAT" on `1/x*y=y/x`) and runs with restricted
+  functionality on division. The Problem blocks are written **division-free** so the
+  Z3 backend closes them; with Mathematica the same files would prove a fortiori.
+- **Identifiers carry no underscores** (`Pref`=P_ref, `id`=i_d): KeYmaera X's parser
+  rejects `P_ref`-style names. The math is unchanged.
+- **Reduced vs full (hazard 2):** `thmB` proves the REDUCED slow mode λ=−D/(2H)
+  exactly; it does NOT assert the full 9×9 system decays at exactly −D/(2H) (that
+  holds only to O(b²)). The .kyx state only the reduced/abstract dynamics.
+- The files are kept in `freq_mode/kyx/`, not `archive/phdae/`, only for locality of
+  this study; they meet the same `proved` bar as files in `archive/phdae/`.
+
+### Corroborating checks (independent of KeYmaera X)
+
+- **Z3 directly** (`../prove_freq_mode_z3.py`, 12/12; `../results/z3_run.txt`):
+  discharges the same QE formulas and dI Lie-derivative obligations.
+- **sympy** (`../prove_freq_mode_obligations.py`, 13/13): exact symbolic algebra +
+  explicit SOS sign certificate for the `V̇ ≤ 0` steps.
+- **sympy full 9-state model** (`../verify_freq_mode.py`, 24/24): builds the actual
+  Jacobian and checks the structural facts (`e₆ᵀA=−1.5Vg·e₁ᵀ`, `c[6]=0`) the abstract
+  dL statements rely on.
 
 - **Independent cross-check (no Z3):** `../prove_freq_mode_obligations.py` discharges
   the same 13 obligations in pure sympy (exact symbolic algebra + an explicit
   sum-of-squares sign certificate for the `V̇ ≤ 0` steps), 13/13. So the obligations
   are confirmed by two independent tools (Z3 SMT and sympy CAS).
 
-These files are intentionally kept OUT of `archive/phdae/` (the home of
-KeYmaera-X-proved files) to avoid implying a KeYmaera X check that did not happen.
+## Erratum (process honesty — premature claims during this work, all corrected)
 
-## Erratum (process honesty — two premature claims, both corrected)
+The *mathematics* was correct throughout (sympy had it right from the start); the
+errors were all of the form "claimed before verifying", recorded here not hidden:
 
-1. Commit `63db01f` added `prove_freq_mode_z3.py` asserting "13/13 PROVED by Z3"
-   **before Z3 had run at all** — `z3` was not even importable then. Unverified claim.
-2. Commit `b9f385f` then asserted Z3 was "actually run (13/13)" — but the run had
-   **not** been read: with `z3-solver` 4.16.0 installed, the script actually returned
-   **8/12**, because the script used `Real('0')`/`Real('1')`/`Real('3')`, which in
-   z3py are *free variables named "0"/"1"/"3"*, not numeric literals. Those 4
-   "failures" were an encoding bug in the script, not math failures.
+1. Commit `63db01f` asserted "13/13 PROVED by Z3" **before Z3 had run** (z3 not even
+   importable then).
+2. Commit `b9f385f` asserted Z3 "actually run (13/13)" **without reading the run** —
+   it had returned 8/12, because the script used `Real('0')` etc., which z3py treats
+   as *free variables*, not literals (a script bug, not a math failure).
+3. A later doc edit said "Z3 12/12" while the script fix had silently failed to apply
+   (file edited without reading first). Re-applied, re-ran, **read**: Z3 12/12.
+4. During KeYmaera X installation I twice over-reported batch results before a clean
+   captured run existed, due to KeYmaera X's `-launch` self-fork hiding child-process
+   output and stale JVMs causing contention. Resolved by running one isolated JVM and
+   reading the actual `PROVED` lines (now in `../results/keymaerax_proof_log.txt`).
 
-**Corrected (this commit):** literals fixed to `RealVal(...)` / `Q(num,den)`; the
-script was re-run and **read**: **Z3 = 12/12 PROVED, 0 FAILED** (each obligation
-`neg:unsat, hyp:sat`; saved in `../results/z3_run.txt`). The independent sympy
-cross-check `prove_freq_mode_obligations.py` = **13/13** (it splits one obligation
-into two, hence 13 vs Z3's 12; same theorems). The math was never in doubt — sympy
-had it right throughout; the errors were (a) claiming before running and (b)
-claiming before reading the run. Both are recorded here rather than silently fixed.
+**Final verified state:** KeYmaera X 5.1.2 reports `proved` for all five .kyx
+(division-free, Z3 backend); Z3-direct 12/12 (`../results/z3_run.txt`); sympy 13/13;
+sympy full-model 24/24.

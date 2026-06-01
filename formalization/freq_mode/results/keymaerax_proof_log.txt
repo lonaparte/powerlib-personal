@@ -1,0 +1,29 @@
+KeYmaera X 5.1.2 machine-checked proof log
+Backend: Z3 4.16.0 (real-arithmetic / QE).  Mathematica NOT used (unavailable).
+Session: 2026-06-01.  Files proved: formalization/freq_mode/kyx/*.kyx
+
+NOTE on the Z3 backend: at startup KeYmaera X warns it cannot derive 19
+division/power DerivedAxioms with Z3 ("QE with Z3 gives SAT" on 1/x*y=y/x), i.e.
+it runs with "restricted functionality" on division.  The Problem blocks here are
+written division-free precisely so the Z3 backend closes them; this is why each
+proof succeeds despite that warning.
+
+Verbatim PROVED lines emitted by KeYmaera X (-prove ... -tool z3):
+
+PROVED Lemma 0: Power Lock (GFL active-power equilibrium): tactic=Power Lock by real arithmetic,tacticsize=1,duration=65[ms],qe=50[ms],rcf=0,steps=103
+PROVED Theorem A: Variant U has a zero eigenvalue (dw conserved): tactic=dw conserved by dI,tacticsize=2,budget=600[s],duration=121[ms],qe=36[ms],rcf=0,steps=66
+PROVED Theorem B: reduced slow mode decays (V=dw^2 nonincreasing): tactic=reduced slow-mode decay by dI,tacticsize=2,budget=600[s],duration=146[ms],qe=55[ms],rcf=0,steps=167
+PROVED Theorem C: angle-coupled slow subsystem is Lyapunov stable: tactic=Lyapunov stability by dI,tacticsize=2,budget=600[s],duration=179[ms],qe=78[ms],rcf=0,steps=289
+PROVED Theorem C2: oscillation threshold beta*Ks > b^2/4: tactic=oscillation threshold by real arithmetic,tacticsize=1,budget=600[s],duration=61[ms],qe=60[ms],rcf=0,steps=81
+
+All five ArchiveEntries report `proved`.  The lemma0/thmA/thmB lines were also
+reproduced on the exact repo files (with comment headers) in run repo_final.txt;
+thmC_stability and thmC_oscillation_threshold were proved on Problem/Tactic that
+are byte-identical (verified by `diff` ignoring comments) to the repo files.
+
+To reproduce (KeYmaera X jar + Z3 on PATH):
+  for f in lemma0_power_lock thmA_dw_conserved thmB_slow_decay \
+           thmC_stability thmC_oscillation_threshold; do
+    java -Xss20M -da -jar keymaerax.jar -launch \
+      -prove formalization/freq_mode/kyx/$f.kyx -tool z3 -z3path $(which z3)
+  done

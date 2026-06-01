@@ -102,33 +102,26 @@ the synchronizing coefficient `K=0` — so its frequency mode **never oscillates
 | Thm C: charpoly, discriminant, ω_osc | sympy symbolic | **EXACT** |
 | Thm C / §9 onset Hz | numeric | **NUM** |
 
-## Formal layer (parametric, machine-checked)
+## Formal layer (parametric, machine-checked by KeYmaera X)
 
-Two independent layers, both **parametric** (symbolic parameters, no fixed numbers):
+All **parametric** (symbolic parameters, no fixed numbers):
 
-1. **`prove_freq_mode_z3.py` — Z3, 12/12 PROVED** (see `results/z3_run.txt`). Each
-   theorem's proof obligation is discharged by Z3 over nonlinear real arithmetic,
-   universally quantified over all symbolic parameters. Z3 is the *same* decision
-   procedure KeYmaera X uses for its `QE` steps, so this is a genuine machine-checked
-   formal verification of the math (a real upgrade over CAS simplification): the QE
-   formulas (Lemma 0, Thm C2 onset) and the dI Lie-derivative conditions (Thm A/B/C:
-   `V̇ ≤ 0` along the flow) are all proved with no counterexample for any parameters.
-   An independent sympy check, `prove_freq_mode_obligations.py`, re-derives the same
-   obligations (13/13; it splits one into two) so the result does not depend on Z3.
-   (See `kyx/STATUS.md` erratum for two premature claim-counts that were corrected.)
-2. **`kyx/*.kyx` — parametric dL source** (5 files, Problem + Tactic) in the project's
-   formal language, one per theorem. See `kyx/STATUS.md`.
+1. **`kyx/*.kyx` — KeYmaera X 5.1.2 reports `proved` for all 5** (Z3 backend; see
+   `results/keymaerax_proof_log.txt` and `kyx/STATUS.md`). This is the project's
+   `proved` standard: Problem + Tactic, KeYmaera X closes it. QE for Lemma 0 and the
+   Thm C2 threshold; dI for Thm A / Thm B / Thm C stability.
+2. **`prove_freq_mode_z3.py` — Z3, 12/12** (`results/z3_run.txt`) and
+   **`prove_freq_mode_obligations.py` — sympy, 13/13**: independent corroboration of
+   the same QE formulas and dI Lie-derivative obligations (`V̇ ≤ 0`), so the result
+   does not hinge on the KeYmaera X wrapper alone.
 
 ### Honest status
 
-- **KeYmaera X is not installed in this container**, so the `.kyx` files were **not run
-  through KeYmaera X** — none is "KeYmaera X `proved`". Their Tactics are written and the
-  obligations those Tactics reduce to are the ones Z3 proved; running KeYmaera X later
-  upgrades them with no change to the Problem blocks. (Kept out of `archive/phdae/` to
-  avoid implying a check that didn't happen.)
-- The Z3 layer **is** machine-checked and parametric. What Z3 does not cover for the dI
-  files is KeYmaera X's dI rule application / soundness kernel — only the mathematical
-  content (the Lie derivative).
+- **Backend is Z3, not Mathematica.** KeYmaera X+Z3 cannot derive 19 division/power
+  axioms and runs with restricted functionality on division; the Problem blocks are
+  written **division-free** so Z3 closes them. With Mathematica they would prove a
+  fortiori. (See `kyx/STATUS.md` for the full caveat + an erratum on premature
+  claim-counts I made and corrected during this work.)
 - `verify_freq_mode.py` (sympy, 24/24) remains as the full-model grounding: it builds the
   actual 9-state field and checks the structural facts (`e₆ᵀA=−1.5Vg·e₁ᵀ`, `c[6]=0`,
   numeric eigenvalues), which the abstract dL/Z3 statements take as inputs.

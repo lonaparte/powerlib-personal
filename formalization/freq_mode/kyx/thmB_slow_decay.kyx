@@ -1,4 +1,4 @@
-ArchiveEntry "Theorem B: reduced slow mode decays at rate -D/(2H)"
+ArchiveEntry "Theorem B: reduced slow mode decays (V=dw^2 nonincreasing)"
 
 /* On the slow manifold (inner block at quasi-steady state, F_inner = 0), the
  * Power Lock makes P_meas(z*(dw)) == P_ref, so the swing-anchored frequency
@@ -9,23 +9,29 @@ ArchiveEntry "Theorem B: reduced slow mode decays at rate -D/(2H)"
  *
  * Formalized as Lyapunov stability of the reduced ODE with V = dw^2:
  *   V' = 2*dw*dw' = -2*b*dw^2 <= 0  for b > 0  (the dI obligation).
- * Parametric in b > 0.  Lie-derivative obligation cross-checked by Z3
- * ("ThmB(i)/(iii)") and the rate identity -b = -D/(2H) by Z3 ("ThmB(ii)").
+ * Parametric in b > 0.
  *
  * NOTE (hazard 2): this is the REDUCED-model statement, which is EXACT.  The full
  * 9x9 slow eigenvalue equals -b only to O(b^2) (the O(1) Schur term rho^T A^{-1} c
  * = kappa*K = 0 vanishes by Power Lock, but higher-order terms remain).  This file
  * does NOT claim the full 9x9 system decays at exactly -D/(2H).
+ *
+ * MACHINE-CHECKED: KeYmaera X 5.1.2 reports `proved` (dI, Z3 backend). See
+ * ../results/keymaerax_proof_log.txt.
  */
 
+ProgramVariables
+  Real dw;
+  Real b;
+  Real s0;
+End.
+
 Problem
-  b > 0 & dw^2 <= s0
-  ->
-  [
-    { dw' = -b*dw }
-  ] (dw^2 <= s0)
+  b > 0 & dw^2 <= s0 -> [{ dw' = -b*dw }] (dw^2 <= s0)
 End.
 
 Tactic "reduced slow-mode decay by dI"
   implyR(1) ; dI(1)
+End.
+
 End.

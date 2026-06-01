@@ -12,8 +12,8 @@ ArchiveEntry "Theorem C2: oscillation threshold beta*Ks > b^2/4"
  * eigenvalues {0,-b}, both real -- the frequency mode never oscillates.
  *
  * Pure first-order real-arithmetic equivalence, parametric in b, beta, Ks.
- * Discharged by Z3 ("ThmC(C2 onset)") in prove_freq_mode_z3.py; KeYmaera X
- * discharges the same formula by QE.
+ * MACHINE-CHECKED: KeYmaera X 5.1.2 reports `proved` (QE, Z3 backend). See
+ * ../results/keymaerax_proof_log.txt.
  */
 
 Problem
@@ -24,4 +24,6 @@ End.
 
 Tactic "oscillation threshold by real arithmetic"
   QE
+End.
+
 End.
