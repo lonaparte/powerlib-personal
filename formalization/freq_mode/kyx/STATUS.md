@@ -1,8 +1,27 @@
 # Formal status of the freq_mode .kyx files
 
-Two tiers, **all proved by KeYmaera X 5.1.2** (verbatim `PROVED` lines in
-`../results/keymaerax_proof_log.txt`). All files are **parametric** (symbolic
-P_ref, Vg, b, β, Ks, D, H; no fixed numbers).
+Three tiers, **all proved by KeYmaera X 5.1.2** (26 entries total; verbatim
+`PROVED` lines in `../results/keymaerax_proof_log.txt`). All files are
+**parametric** (symbolic P_ref, Vg, b, β, Ks, D, H; no fixed numbers).
+
+## Tier 3 — GAP-FILLING (closes the items flagged as "only sympy / not done")
+
+A second self-review listed what was proved only at the sympy/numeric layer, or
+not at all. These files bring those into KeYmaera X:
+
+| file | closes which gap | entries | KeYmaera X |
+|------|------------------|---------|-----------|
+| `thmA_jacobian_row.kyx` | the **9×9 matrix** statement `e9^T J_U = 0^T` (zero covector / left eigenvector), and the Variant-S row `rho^T = -1.5 kappa Vg e1^T` — was sympy-only | 2 | **proved** |
+| `thmB_schur_vanishes.kyx` | the **8×8 Schur** term `rho^T A^{-1} c = kappa*K = 0` (via the `e6^T A` row trick, no inversion) + leading-order `lambda_slow = -b` — was sympy-only | 3 | **proved** |
+| `thmC2_complete.kyx` | the **other half** of the C2 iff (`real root EXISTS <-> 4βKs<=b²`) and the **frequency** `omega^2 = βKs - b²/4` — was missing | 3 | **proved** |
+| `cor0b_equilibrium.kyx` | **Corollary 0b** (`i_q=-Q_ref/1.5Vg`; `Ki_pll*eta=-dw`; Variant S `dw*=0`) — was not done | 3 | **proved** |
+
+Remaining honest caveat: the matrix facts are encoded as the **scalar algebraic
+identities the rows/Schur reading reduce to** (e.g. component-7 of `A u = c` with
+`e6^T A = -1.5 Vg e1^T`), not as a literal 9×9 symbolic matrix object — dL/QE is
+not a linear-algebra package. The full symbolic Jacobian itself is built and
+checked in `../verify_freq_mode.py` (24/24); these entries prove the consequences
+that the eigenvalue/Schur claims rest on.
 
 ## Tier 2 — STRENGTHENED formalizations (the real theorem content)
 

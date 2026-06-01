@@ -47,3 +47,23 @@ PROVED Theorem C2 (spectral): above threshold there is NO real eigenvalue: tacti
 PROVED Theorem C2 (spectral): twice the real part of the pair is -b: tactic=real part by QE,tacticsize=1,budget=0[s],duration=33[ms],qe=33[ms],rcf=0,steps=117
 PROVED Theorem C2 (spectral): discriminant sign dichotomy: tactic=discriminant sign by QE,tacticsize=1,budget=0[s],duration=27[ms],qe=27[ms],rcf=0,steps=65
 PROVED Theorem C2 (spectral): Ks=0 gives the real spectrum {0,-b}: tactic=Ks=0 real spectrum by QE,tacticsize=1,budget=0[s],duration=24[ms],qe=24[ms],rcf=0,steps=45
+
+============================================================
+GAP-FILLING ENTRIES — KeYmaera X 5.1.2, bundled z3 (default)
+Run: Mon Jun  1 22:25:39 UTC 2026
+============================================================
+--- thmC2_complete.kyx (iff other half + frequency omega) ---
+PROVED Theorem C2 (complete): below threshold a real eigenvalue EXISTS: tactic=real root witness by QE,tacticsize=1,budget=0[s],duration=65[ms],qe=63[ms],rcf=0,steps=129
+PROVED Theorem C2 (complete): full dichotomy real-root EXISTS  <->  4 beta Ks <= b^2: tactic=iff dichotomy by QE,tacticsize=1,budget=0[s],duration=36[ms],qe=34[ms],rcf=0,steps=77
+PROVED Theorem C2 (complete): natural frequency omega^2 = beta Ks - b^2/4: tactic=frequency by QE,tacticsize=1,budget=0[s],duration=35[ms],qe=35[ms],rcf=0,steps=117
+--- cor0b_equilibrium.kyx (remaining equilibrium relations) ---
+PROVED Corollary 0b: reactive-power lock fixes i_q = -Q_ref/(1.5 Vg): tactic=reactive lock by QE,tacticsize=1,budget=0[s],duration=57[ms],qe=55[ms],rcf=0,steps=101
+PROVED Corollary 0b: PLL integrator equilibrium  Ki_pll*eta = -dw: tactic=PLL integrator eq by QE,tacticsize=1,budget=0[s],duration=43[ms],qe=43[ms],rcf=0,steps=105
+PROVED Corollary 0b: Variant S forces dw* = 0 at equilibrium: tactic=dw*=0 by QE,tacticsize=1,budget=0[s],duration=30[ms],qe=30[ms],rcf=0,steps=89
+--- thmA_jacobian_row.kyx (9th row = zero covector; rho^T structure) ---
+PROVED Theorem A (Jacobian): 9th row of J_U is the zero covector: tactic=zero row annihilates all directions by QE,tacticsize=1,budget=0[s],duration=95[ms],qe=92[ms],rcf=0,steps=302
+PROVED Theorem A (Jacobian): Variant-S 9th row is rho^T = -1.5 kappa Vg * e1^T: tactic=row structure by QE,tacticsize=1,budget=0[s],duration=61[ms],qe=61[ms],rcf=0,steps=145
+--- thmB_schur_vanishes.kyx (rho^T A^{-1} c = kappa*K = 0, no inversion) ---
+PROVED Theorem B (Schur): the O(1) Schur term rho^T A^{-1} c vanishes: tactic=Schur term vanishes by QE,tacticsize=1,budget=0[s],duration=62[ms],qe=60[ms],rcf=0,steps=102
+PROVED Theorem B (Schur): row-7 identity e6^T A = -1.5 Vg e1^T is consistent and forces e1^T u = 0: tactic=e1^T u = 0 by QE,tacticsize=1,budget=0[s],duration=33[ms],qe=31[ms],rcf=0,steps=69
+PROVED Theorem B (Schur): hence lambda_slow = j99 = -b to leading order: tactic=leading-order slow eigenvalue by QE,tacticsize=1,budget=0[s],duration=33[ms],qe=33[ms],rcf=0,steps=64
