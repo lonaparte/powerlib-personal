@@ -8,11 +8,14 @@
 >   vcd 平衡二次的**鞍结 disc=0**(系数全真),`kyx/R2real_fold.kyx`(5 条全 proved)+ 3 组数值验证
 >   (`numerical/R2real_validate.py`,与 sweep.py 的 `pv()` 崩溃边界逐点吻合)。真 fold 在 SCR\*≈0.370,
 >   比 PLL Hopf(SCR_H≈0.905)更深。旧经典 `|M|=Vg` 降为对照。
-> - **R3 — 经典摆(未改)**:swing 核 `δ'=dw, dw'=−b·dw−K·sinδ+Pm` **不在任何提交模型里**(§12 无
->   swing/惯量,§13 有 swing 但无 sinδ/角态)。是 textbook 同步机摆方程。真 GFL 的 10D 非线性吸引域
->   是另一个更难的问题(见"仍未做到");现 R3 仅作经典摆参照。
+> - **R3 — 真版已存在,经典版降对照**:swing 核 `δ'=dw, dw'=−b·dw−K·sinδ+Pm` **不在任何提交模型里**
+>   (§12 无 swing/惯量,§13 有 swing 但无 sinδ/角态)。真模型的"裕度 vs PLL 阻尼"已严格做对:
+>   线性裕度 SCR_H(Kp) **U 型有最优**(Kp≈0.45),临界性在 **Bautin 点 Kp\*≈0.40 变号**(硬↔软),
+>   严格 interval 版在 `numerical/bautin_cert/`(Kp\*∈[0.400,0.408]),bridge `numerical/R3real_check.py`。
+>   经典摆 R3a/R3_basin/R3note 降为对照(且经典版说裕度单调,真模型是 U 型,形状都不同)。
 >
-> 真 GFL 的弱网**失稳**(非 fold)在 `numerical/`、`freq_mode/`(PLL 模 Hopf,SCR_H≈0.905,l₁)。
+> 真 GFL 的弱网**失稳**(非 fold)在 `numerical/`、`freq_mode/`、`bautin_cert/`(PLL 模 Hopf,
+> SCR_H≈0.905,l₁ 符号/Bautin)。真 R2 鞍结(更深弱网,SCR≈0.370)在 `kyx/R2real_fold.kyx`。
 
 ## 状态总览(审计 + 改对后)
 
@@ -22,10 +25,11 @@
 | `kyx/R2real_fold.kyx` | 5 | **proved** | ✅ **真模型** sweep.py 鞍结 fold disc=0(系数全真,3 组数值验证) |
 | `kyx/R2_fold.kyx` | 4 | proved | 经典摆对照;\|M\|=Vg 非真 fold(降级) |
 | `kyx/R2_sigma2_symbolic.kyx` | 2 | proved | 经典摆 Σ₂ 闭式(对照,scope=Wu 边界) |
-| `kyx/R3a_energy_barrier.kyx` | 3 | proved | 经典摆能量屏障 Vdot=−b·dw²(2D 核) |
-| `kyx/R3_basin.kyx` | 4 | proved | 经典摆吸引域:不变性/鞍点排除/单调/阈值 |
-| `kyx/R3note_decoupling.kyx` | 3 | proved | l₁(局部)vs 鞍点裕度(全局)解耦;非 vacuous |
-| **proved 合计** | **21** | | R2real(5,真模型)+ 经典摆对照(16) |
+| **R3 真版** → `numerical/bautin_cert/` | — | interval-sound | ✅ **真模型** §12 Hopf 临界性:Bautin Kp\*∈[0.400,0.408](硬↔软);裕度 U 型 |
+| `kyx/R3a_energy_barrier.kyx` | 3 | proved | 经典摆能量屏障 Vdot=−b·dw²(对照,2D 核) |
+| `kyx/R3_basin.kyx` | 4 | proved | 经典摆吸引域(对照);**注**真裕度 U 型非单调 |
+| `kyx/R3note_decoupling.kyx` | 3 | proved | 经典摆 l₁ vs 鞍点裕度解耦(对照);真模型 l₁ 是硬/软判据 |
+| **proved 合计** | **21** | | R2real(5,真模型)+ 经典摆对照(16);R3 真版在 bautin_cert(interval) |
 
 复现:`cd kyx && java -jar <keymaerax.jar> -prove <file>.kyx -tool z3`
 (**必须用 KeYmaera X 自带 z3,不要 `-z3path` 外部 z3** — 外部会挂启动期公理推导);
@@ -100,24 +104,33 @@ fold 的 d 轴项与 LC 电容项(数值上 d 轴 Cterm≈300 比 M 还大,不�
 q 轴量 K2),但 `|M|=Vg` 只是真 fold 在 Cterm=0 的退化特例。**保留作经典对照,不作 GFL 结论**;
 真 GFL 的 fold 以上面 R2-real 为准。
 
-## R3 — 同步吸引域 vs PLL 阻尼
+## R3 — 同步裕度 vs PLL 阻尼
 
-- **⚠️ 模型审计(2026.06):** R3 的 swing 核 `δ'=dw, dw'=−b·dw−K·sinδ+Pm` **不在任何提交模型里**。
-  §12/`sweep.py` 是 stiff-bus 电流控制 GFL,**无 swing 方程、无 H/D 惯量、无 sinδ 同步力矩**;
-  §13/freq_mode 有 swing(`F9_S=κ·e_P−b·dw`,b=D/2H)但**无 sinδ、无角状态 δ**(§13.7 Thm C 才增广
-  角态,且是线性 `−βKs·δ` 不是 `−K·sinδ`)。所以 R3 是**经典同步机摆方程(textbook pendulum)**,
-  与 R2 同源(同一个经典摆),**不是仓库的 GFL**。证书数学正确,但 scope = 经典摆,非 §12/§13。
-- **R3-pre(边界类型)**:(经典摆上)吸引域边界 = 鞍点稳定流形(数值 V_saddle=63 ≫ c*),
-  不是极限环、不是同宿。
-- **R3a(屏障证书)**:用**倾斜摆能量** `V=½dw²+K(cosδ*−cosδ)−Pm(δ−δ*)`,实算
-  **Vdot=−b·dw² 精确**(误差 7e-17);LaSalle ⟹ {V<c*} 内估吸引域,c*=V(saddle)。
-  这是精确多项式-三角恒等式,**不需要 SOS 求解器**,直接 QE 证。`R3a_energy_barrier.kyx`(3)。
-- **R3b(单调性)**:c*(PLL 阻尼) 数值单调递增(0.05→2.41 … 0.40→5.18);
-  阈值面 Σ₃={c*=0}。`R3_basin.kyx`(4)。
-- **R3-note(否定结论)**:**sign l₁ 不是失同步判据**。数值开集:固定控制 Kp=0.8,Ki=150
-  (l₁<0,Bautin 读法"安全"),SCR=0.40、id_ref∈{120,160} 时 **l₁<0 且 |M|/Vg>1**
-  (已过 fold,全局失同步)。l₁ 管局部 Hopf(Σ₁),失同步管 fold(Σ₂),代数独立。
-  `R3note_l1_not_criterion.kyx`(2)。
+### ✅ R3-real(真模型答案,已存在且严格)—— `numerical/bautin_cert/` + `freq_mode/`
+
+真模型(§12 10 状态 GFL)的弱网失稳是 **PLL 模 Hopf**,"裕度 vs PLL 阻尼"有两个真答案,均出自
+已验证的 sweep.py 管线(bridge:`numerical/R3real_check.py`):
+
+1. **线性裕度 SCR_H(Kp) 是 U 型(非单调)**:Kp 0.10→1.40 时 SCR_H 1.96→谷底 0.79(Kp≈0.45)→1.34,
+   **有内部最优 PLL 增益**让弱网裕度最大。经典 R3b 说的"c*(ζ) 单调"形状就是错的——真裕度有最优点。
+2. **临界性(硬/软)在 Bautin 点变号**:l₁ 沿 Hopf locus 在 **Kp\*≈0.40** 变号(subcritical/硬/危险
+   ↔ supercritical/软)。**严格 interval-sound 版本已在 `numerical/bautin_cert/`**(区间 Kp\*∈[0.400,0.408],
+   真 10 状态 §12 模型,Krawczyk/Rump 验证)。`R3real_check.py` 的 float Kp\*≈0.405 与之一致。
+
+最优 PLL 增益(≈0.45)恰在 Bautin 点(≈0.40)附近——真模型的物理结论。**R3 的真版以 bautin_cert/
+(临界性,严格)+ freq_mode/(Hopf 结构,§13 17/17)为准。**
+
+### 经典对照(scope = textbook 倾斜摆,非 §12/§13 GFL)—— `kyx/R3a_*`、`R3_basin.kyx`、`R3note_*`
+
+swing 核 `δ'=dw, dw'=−b·dw−K·sinδ+Pm` **不在任何提交模型里**(§12 无 swing/惯量/sinδ;§13 有 swing
+但无 sinδ/角态,§13.7 Thm C 增广的是线性 `−βKs·δ`)。与 R2 经典版同源(同一个摆)。下列证书数学正确
+但 **scope 是经典摆**,降为对照:
+- **R3a**:倾斜摆能量 `V=½dw²+K(cosδ*−cosδ)−Pm(δ−δ*)`,`Vdot=−b·dw²` 精确(误差 7e-17),
+  LaSalle {V<c*} 内估。`R3a_energy_barrier.kyx`(3)。
+- **R3b**:经典摆 c*(阻尼) 单调。`R3_basin.kyx`(4)。**注**:真模型裕度是 U 型,非单调——见上。
+- **R3-note**:经典摆里 sign l₁ 非失同步判据(失同步由鞍点裕度管)。`R3note_decoupling.kyx`(3)。
+  **注**:此结论是关于经典摆的"鞍结失同步";真模型的主失稳是 Hopf,那里 l₁ 符号恰恰**是**硬/软
+  判据(Bautin,见 bautin_cert/)——两者是不同机制,不矛盾,但 R3note 答的是错模型的问题。
 
 ## 诚实边界(务必知道)
 
