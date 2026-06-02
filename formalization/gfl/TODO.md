@@ -20,9 +20,9 @@ Status legend: ✅ done · 🟡 partial (backbone proved) · ⬜ not started.
   dropped `#print axioms` line. Currently `PASS: 49/49`.
 - ✅ **A5** `BLOCKERS.md` rewritten to be precise (named missing lemmas / nearest counterparts /
   effort); B1/B2 reclassified here.
-- ⬜ **A3-full** wire `variantU_lastrow_fderiv_zero` into a literal Variant-U Jacobian so that
-  `variantU_zero_eigenvalue`'s `hbot` is discharged on the concrete model end-to-end (needs a matrix
-  Jacobian definition tying row `i` to `∂Fᵢ`).
+- ✅ **A3-full** `jacobianMatrix G y₀ i j := fderiv ℝ (G · i) y₀ (Pi.single j 1)` and
+  `variantU_jacobian_zero_eigenvalue`: `hbot` is discharged on the *concrete* Variant-U Jacobian
+  matrix end-to-end (`variantU_jacobian_lastrow_zero` proves row 8 = 0 from `F9_U ≡ 0`).
 
 ## P2 (interface → literal model) — review §A2/§A3 + §D
 
@@ -38,30 +38,30 @@ Status legend: ✅ done · 🟡 partial (backbone proved) · ⬜ not started.
 - 📝 **D5** Audit report now flags `def`s (`litInnerField`, `variantUField`, `slowModeH`) distinctly
   from theorems.
 
-## P0 (Theorem B complete: `λ_slow = −b + O(b²)` for the full 9×9) — review §C  🟡
+## P0 (Theorem B complete: `λ_slow = −b + O(b²)` for the full 9×9) — review §C  🟢 (mostly done)
 
 **Conceded:** this is a scalar root problem, NOT matrix perturbation. Define
 `h(μ) := (j99 − μ) − ρᵀ(A − μI)⁻¹c` (`GFL.slowModeH`). For `μ ∉ spec(A)`,
 `det(J_S − μI) = det(A − μI)·h(μ)`, so `μ ∈ spec(J_S) ⟺ h(μ) = 0`.
 
-Backbone **already proved** in `GFL/SlowModeScalar.lean`:
+Proved in `GFL/SlowModeScalar.lean` (all `[propext, Classical.choice, Quot.sound]`):
 - ✅ `slowMode_det_factor`, `slowMode_det_zero_iff` — eigenvalue ⟺ scalar zero `h(μ)=0`.
 - ✅ `eigenvalue_of_slowMode_zero` — a zero of `h` *is* a genuine eigenvalue of `J_S`.
-- ✅ `slowModeH_at_neg_b` — `h(−b) = −(3/2)(wn/(Sn·D))·Vg·b²·[(A+bI)⁻¹A⁻¹c]₀`, i.e. the residual of
-  the leading guess `−b` is **exactly `O(b²)`** (matrix-free).
+- ✅ `slowModeH_at_neg_b` — `h(−b) = −(3/2)(wn/(Sn·D))·Vg·b²·[(A+bI)⁻¹A⁻¹c]₀`, the residual of the
+  leading guess `−b` is **exactly `O(b²)`** (matrix-free).
+- ✅ **T1 done** `resolvent_continuousAt` (`μ ↦ (A−μI)⁻¹` continuous via `inv_def` +
+  `Continuous.matrix_det/adjugate` + `ContinuousAt.inv₀` — **no operator norm**) and
+  `slowModeH_hasDerivAt` (`h` differentiable, `h'(ν) = −1 − ρᵀ(A−νI)⁻²c`, via the resolvent identity
+  `resolvent_sub` as the exact difference quotient + `hasDerivAt_iff_tendsto_slope`).
+- ✅ **existence done (modulo a transparent hypothesis)** `exists_eigenvalue_of_slowMode_sign_change`:
+  a sign change of `h` on `[a,b]` (with `A−μI` invertible there) ⟹ `J_S` has a genuine eigenvalue in
+  `[a,b]` (IVT + the bridge).
 
-Remaining steps (all with named Mathlib support — workload, not blockers):
-- ⬜ **T1** `h` is `C¹` in `μ` near `−b`. `μ ↦ A − μI` is affine (smooth); `μ ↦ (A−μI)⁻¹` is
-  differentiable via **`fderiv_inverse`** (`Mathlib/Analysis/Calculus/FDeriv/Mul.lean`, for `Ring.inverse`
-  in the finite-dim normed algebra of matrices); `ρᵀ(·)c` is a continuous linear functional.
-- ⬜ **T2** `[(A+bI)⁻¹A⁻¹c]₀` is bounded as `b → 0` — continuity of matrix inversion at the unit `A`
-  (**`Topology/Algebra/Group/Matrix.lean`**, inversion continuous via the adjugate); upgrades `O(b²)`
-  from "explicit `b²` factor" to a genuine `|h(−b)| ≤ C·b²`.
-- ⬜ **T3** `h'(−b) = −1 + ρᵀ(A+bI)⁻²c = −1 + O(b) ≠ 0` for small `b` (since `‖ρ‖ ∝ b`).
-- ⬜ **T4** scalar root near `−b`: **`HasStrictDerivAt.localInverse` / `to_localInverse`**
-  (`Mathlib/Analysis/Calculus/InverseFunctionTheorem/Deriv.lean`), or `intermediate_value` on `h`.
-- ⬜ **T5** the root is an eigenvalue — `eigenvalue_of_slowMode_zero` ✅ (already done).
-- ⬜ **T6** bound `|μ* + b| ≤ C·b²` via MVT `μ* − (−b) = −h(−b)/h'(ξ)`, T2 numerator + T3 denominator.
+Remaining (one genuine quantitative estimate, no Mathlib gap):
+- ⬜ **T6** discharge the sign-change hypothesis with an explicit `O(b²)` margin: show `h(−b)` and
+  `h(−b ± C·b²)` have opposite signs, using `slowModeH_at_neg_b` (numerator `O(b²)`) and a lower bound
+  `|h'| ≥ 1/2` near `−b` (from `slowModeH_hasDerivAt`, needs `|ρᵀ(A−μI)⁻²c| ≤ 1/2`, i.e. one scalar
+  bound — `‖ρ‖ = O(b)` and `(A−μI)⁻²` continuous). This upgrades existence to `|λ_slow + b| ≤ C·b²`.
 - 📝 needs `−b ∉ spec(A)` (i.e. `IsUnit (A + bI).det`) — already a hypothesis (`hB`); under `A`
   Hurwitz it is automatic, to be made explicit (review §D2).
 

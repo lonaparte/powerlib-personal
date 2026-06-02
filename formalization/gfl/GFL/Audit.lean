@@ -55,8 +55,12 @@ open GFL
 #print axioms variantUField              -- [def] Variant-U field (inner field + F9_U ≡ 0)
 #print axioms variantUField_last         -- F9_U component ≡ 0
 #print axioms variantU_lastrow_fderiv_zero -- ∂(F9_U)/∂y = 0  ⟹  zero Jacobian last row (hbot)
+#print axioms jacobianMatrix             -- [def] Jacobian matrix (i,j) = ∂Gᵢ/∂yⱼ
+#print axioms variantU_jacobian_lastrow_zero -- concrete Variant-U Jacobian: last row = 0
+#print axioms variantU_jacobian_zero_eigenvalue -- A3 end-to-end: hbot discharged on the matrix
 -- P0 (Theorem B O(b²)) partial: algebraic core
 #print axioms resolvent_id
+#print axioms resolvent_sub              -- resolvent (second) identity = exact difference quotient
 #print axioms schur_term_at_neg_b
 #print axioms kappa_eq_const_mul_b
 #print axioms schur_term_b_sq
@@ -66,6 +70,9 @@ open GFL
 #print axioms slowMode_det_zero_iff      -- μ∉spec(A) ⟹ (det(J_S−μI)=0 ↔ h(μ)=0)
 #print axioms eigenvalue_of_slowMode_zero -- h(μ)=0 ⟹ μ is a genuine eigenvalue of J_S
 #print axioms slowModeH_at_neg_b         -- h(−b) = O(b²) exactly (matrix-free residual)
+#print axioms resolvent_continuousAt     -- C/T1: μ ↦ (A−μI)⁻¹ continuous (no operator norm needed)
+#print axioms slowModeH_hasDerivAt       -- C/T1: h differentiable, h' = −1 − ρᵀ(A−νI)⁻²c
+#print axioms exists_eigenvalue_of_slowMode_sign_change -- C: sign change of h ⟹ genuine eigenvalue
 -- P1 (literal model) partial: InnerField instance + interface-landing evidence (A2)
 #print axioms litInnerField              -- [def] the literal model IS an InnerField
 #print axioms litF_errD_eq               -- F3 = e_d (explicit §3 form)

@@ -12,6 +12,7 @@
     * `schur_term_zero_of_branch` : combines them — `ρᵀ A⁻¹ c = 0` follows from the
                                   differentiable (C¹) branch structure W3 alone.
 -/
+import GFL.TheoremA
 import GFL.TheoremB
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Prod
@@ -181,5 +182,33 @@ theorem variantU_lastrow_fderiv_zero (F : (Fin 9 → ℝ) → (Fin 8 → ℝ)) (
   have he : (fun y => variantUField F y (Fin.last 8)) = fun _ => (0 : ℝ) :=
     funext (variantUField_last F)
   rw [he]; exact hasFDerivAt_const 0 y₀
+
+/-- The Jacobian matrix of a vector field `G : (Fin 9 → ℝ) → (Fin 9 → ℝ)` at `y₀`:
+entry `(i,j)` is the partial derivative `∂Gᵢ/∂yⱼ` (`= fderiv` of the `i`-th component applied to
+the `j`-th coordinate direction). -/
+noncomputable def jacobianMatrix (G : (Fin 9 → ℝ) → (Fin 9 → ℝ)) (y₀ : Fin 9 → ℝ) :
+    Matrix (Fin 9) (Fin 9) ℝ :=
+  fun i j => fderiv ℝ (fun y => G y i) y₀ (Pi.single j 1)
+
+/-- **A3 end-to-end.**  Every entry of the last row of the *concrete* Variant-U Jacobian is `0`:
+the swing component `F9_U ≡ 0` has zero gradient, so `∂(F9_U)/∂yⱼ = 0`. -/
+theorem variantU_jacobian_lastrow_zero (F : (Fin 9 → ℝ) → (Fin 8 → ℝ)) (y₀ : Fin 9 → ℝ)
+    (j : Fin 9) : jacobianMatrix (variantUField F) y₀ 8 j = 0 := by
+  have hconst : (fun y => variantUField F y (8 : Fin 9)) = fun _ => (0 : ℝ) := by
+    funext y
+    have h8 : (8 : Fin 9) = Fin.last 8 := rfl
+    rw [h8]; exact variantUField_last F y
+  show fderiv ℝ (fun y => variantUField F y (8 : Fin 9)) y₀ (Pi.single j 1) = 0
+  rw [hconst]; simp
+
+/-- **A3 end-to-end — `hbot` discharged on the concrete Jacobian.**  `variantU_zero_eigenvalue`
+applies directly to the actual Variant-U Jacobian matrix: `0 ∈ spec`, `det = 0`, with `e₉` a
+nonzero left eigenvector.  `hbot` is no longer an input — it is produced by
+`variantU_jacobian_lastrow_zero`. -/
+theorem variantU_jacobian_zero_eigenvalue (F : (Fin 9 → ℝ) → (Fin 8 → ℝ)) (y₀ : Fin 9 → ℝ) :
+    (Pi.single (8 : Fin 9) (1 : ℝ) : Fin 9 → ℝ) ᵥ* jacobianMatrix (variantUField F) y₀ = 0 ∧
+    (jacobianMatrix (variantUField F) y₀).det = 0 ∧
+    (Pi.single (8 : Fin 9) (1 : ℝ) : Fin 9 → ℝ) ≠ 0 :=
+  variantU_zero_eigenvalue _ (variantU_jacobian_lastrow_zero F y₀)
 
 end GFL

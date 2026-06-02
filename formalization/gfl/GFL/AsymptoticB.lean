@@ -45,6 +45,22 @@ theorem resolvent_id (A : Matrix n n ℝ) (b : ℝ)
         rw [Matrix.sub_mul, Matrix.smul_mul, Matrix.one_mul],
       add_sub_cancel_right, Matrix.mul_nonsing_inv A hA]
 
+/-- **Resolvent (second) identity — exact difference.**  For `A − μI` and `A − νI` both invertible,
+`(A − μI)⁻¹ − (A − νI)⁻¹ = (μ − ν) • ((A − μI)⁻¹ * (A − νI)⁻¹)`.  This is the exact difference
+quotient underlying `d/dμ (A − μI)⁻¹ = (A − μI)⁻²` (the slope is the RHS over `(μ−ν)`). -/
+theorem resolvent_sub (A : Matrix n n ℝ) (μ ν : ℝ)
+    (hμ : IsUnit (A - μ • 1).det) (hν : IsUnit (A - ν • 1).det) :
+    (A - μ • (1 : Matrix n n ℝ))⁻¹ - (A - ν • 1)⁻¹
+      = (μ - ν) • ((A - μ • 1)⁻¹ * (A - ν • 1)⁻¹) := by
+  have hdiff : (A - ν • (1 : Matrix n n ℝ)) - (A - μ • 1) = (μ - ν) • 1 := by
+    rw [sub_sub_sub_cancel_left, sub_smul]
+  have key : (A - μ • (1 : Matrix n n ℝ))⁻¹ * ((A - ν • 1) - (A - μ • 1)) * (A - ν • 1)⁻¹
+      = (A - μ • 1)⁻¹ - (A - ν • 1)⁻¹ := by
+    rw [Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_assoc,
+        Matrix.mul_nonsing_inv (A - ν • 1) hν, Matrix.mul_one,
+        Matrix.nonsing_inv_mul (A - μ • 1) hμ, Matrix.one_mul]
+  rw [← key, hdiff, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one]
+
 /-- Resolvent identity applied to a vector `c`. -/
 theorem resolvent_mulVec (A : Matrix n n ℝ) (b : ℝ)
     (hA : IsUnit A.det) (hB : IsUnit (A + b • 1).det) (c : n → ℝ) :
