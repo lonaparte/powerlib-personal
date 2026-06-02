@@ -1,0 +1,38 @@
+KeYmaera X Prover 5.1.2
+Use option -help for usage and license information
+WARNING: Encountered 19 errors when trying to populate DerivedAxioms database. Unable to derive:
+timesDivInverse
+powNegOne
+powerLemma
+timesPowersBoth
+powerEven
+powerOdd
+divideNumber
+divideRat
+divideNeg
+normalizeCoeff0
+powerDivideEven
+powerDivideOdd
+ratFormAdd
+ratFormMinus
+ratFormDivide
+ratFormTimes
+ratFormNeg
+taylorModelPowerEven
+taylorModelPowerOdd
+
+Timed out while trying to derive lemmas. Continuing with restricted functionality!
+DETAILS: QE with Z3 gives SAT. Cannot reduce the following formula to True:
+\forall y \forall x 1/x*y=y/x
+
+Run with -debug for more details.
+Proving entries from 1 files
+Proving /home/user/metapower-personal/formalization/freq_boundary/kyx/fh_hopf_signature.kyx#F-H deg2 (foundational Hopf condition tr=0 & det>0 => pure imaginary pair) ...
+Done /home/user/metapower-personal/formalization/freq_boundary/kyx/fh_hopf_signature.kyx#F-H deg2 (foundational Hopf condition tr=0 & det>0 => pure imaginary pair) (proved)
+Proving /home/user/metapower-personal/formalization/freq_boundary/kyx/fh_hopf_signature.kyx#F-H deg4 Lienard-Chipart Hopf signature (Delta_3=0 => pure imaginary pair) ...
+Done /home/user/metapower-personal/formalization/freq_boundary/kyx/fh_hopf_signature.kyx#F-H deg4 Lienard-Chipart Hopf signature (Delta_3=0 => pure imaginary pair) (proved)
+Proving /home/user/metapower-personal/formalization/freq_boundary/kyx/fh_hopf_signature.kyx#F-H deg4 frequency positivity (omega^2 = a3/a1 > 0 at the boundary) ...
+Done /home/user/metapower-personal/formalization/freq_boundary/kyx/fh_hopf_signature.kyx#F-H deg4 frequency positivity (omega^2 = a3/a1 > 0 at the boundary) (proved)
+PROVED F-H deg2 (foundational Hopf condition tr=0 & det>0 => pure imaginary pair): tactic=deg2 Hopf by QE,tacticsize=1,budget=0[s],duration=53[ms],qe=51[ms],rcf=0,steps=59
+PROVED F-H deg4 Lienard-Chipart Hopf signature (Delta_3=0 => pure imaginary pair): tactic=deg4 Lienard-Chipart Hopf signature by QE,tacticsize=1,budget=0[s],duration=58[ms],qe=58[ms],rcf=0,steps=129
+PROVED F-H deg4 frequency positivity (omega^2 = a3/a1 > 0 at the boundary): tactic=frequency positive by QE,tacticsize=1,budget=0[s],duration=28[ms],qe=28[ms],rcf=0,steps=81
