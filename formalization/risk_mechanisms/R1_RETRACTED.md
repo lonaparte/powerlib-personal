@@ -32,6 +32,40 @@ reduction (dq mirror symmetry → 4×4 complex `A_c`, whose charpoly is degree-4
 fully-symbol-computable) is a promising angle — but it must be applied to the **real**
 `A_c` derived from `sweep.py`, not to a reinvented matrix.
 
+## Update: tested on the real model -- the R1 mechanism does NOT exist here
+
+Per the "真做" follow-up, the electrical block was extracted PROPERLY from the real
+`sweep.py` field (full 10×10 Jacobian `Afun` at the equilibrium, rows/cols 0..7 = the
+PLL-frozen electrical block A_e), and checked numerically.  Findings:
+
+1. **dq mirror symmetry is BROKEN at the loaded equilibrium** (v_cd≠0, v_cq=0), so the
+   space-vector 8→4 complex reduction does NOT apply to the real A_e (max deviation
+   from rotation form ≈ 94, not ~0).  The clean angle works only on the *fabricated*
+   symmetric matrix; on the real model it is invalid.
+
+2. **The real electrical block A_e never loses stability.** As the grid weakens
+   (SCR 2.0 → 0.70, Lg up), the full 10-state system crosses maxRe=0 at SCR≈0.905
+   (the known weak-grid Hopf), but A_e stays firmly Hurwitz throughout (maxRe ≈ −100,
+   never approaches 0):
+
+   | SCR | maxRe(full 10D) | maxRe(electrical 8D) |
+   |-----|-----------------|----------------------|
+   | 1.00 | −10.10 | −108.55 |
+   | 0.91 | −0.66  | −108.85 |
+   | 0.90 | +0.69  | −106.88 |
+   | 0.70 | +48.34 | −67.18  |
+
+   So the weak-grid instability is a **PLL / coupling mode that requires the PLL states**
+   (eta, th) -- it is NOT an electrical onset.  R1's central premise ("a weak-grid
+   electrical mode crosses the imaginary axis; one may study A_e alone") is **false for
+   this model**.
+
+**Conclusion:** R1 is not just a fabrication to be redone -- once tested on the real
+model, the mechanism it posits does not occur.  The genuine weak-grid instability
+(SCR_H≈0.905) is the PLL-mode Hopf already studied in `../numerical/` and
+`../freq_mode/` (the l₁ / subcriticality line).  R1 is withdrawn for good; there is no
+"electrical onset Σ₁" to certify for this GFL-VSC.
+
 ## What still stands (unaffected by this retraction)
 
 R2 (fold Σ₂ + closed form), R3a (energy barrier, 2D core), R3_basin, R3note_decoupling
