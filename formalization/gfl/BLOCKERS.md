@@ -54,9 +54,12 @@ They are undone **work** with a Mathlib-supported path, tracked in `TODO.md`:
   for the scalar root; matrix-inverse continuity for the qualitative `O(b²)`). Backbone proved in
   `GFL/SlowModeScalar.lean`.
 - **P1 literal-model `C¹`** (`df₁/df₂/cf₁/cf₂` of `branch_of_ift`): `cos, sin, +, −, ×, /` are all
-  `ContDiff`; needs `LitParams` positivity (`Lf ≠ 0`, `Lf+Lg ≠ 0`) and `fun_prop`. `TODO.md §P1-C¹`.
-- **P1 `∂F/∂z` invertibility** (W2): a concrete 8×8 real determinant `≠ 0`; block-triangular symbolic
-  factorisation (current-loop / PLL / outer-loop). Not a missing lemma — a long `det` computation.
-  `TODO.md §P1-inv`.
+  `ContDiff`; needs `LitParams` positivity (`Lf ≠ 0`, `Lf+Lg ≠ 0`) and `fun_prop`. `TODO.md §P1-lit`.
+- **P1 `∂F/∂z` invertibility** (W2): a concrete 8×8 real determinant `≠ 0`. The literal inner Jacobian
+  is **densely coupled** — `cos θ_e*`, `sin θ_e*` couple the current loop `(i_d,i_q,ξ_dc,ξ_qc)` to the
+  PLL `(η,θ_e)`, so it is *not* cleanly block-triangular; the determinant is a multi-hundred-line
+  symbolic expansion. Not a missing Mathlib lemma — a large hand computation, **not attempted** (doing
+  it by hand risks sign/factor errors that would defeat the point). Numerically `np.linalg.solve(A,c)`
+  in `validate.py` succeeds, so `A` is nonsingular at the tested points. `TODO.md §P1-lit`.
 - **R2c** (literal LCL §3–§4 → the single-harmonic sync map `G = A sinθ + B cosθ + D`): symbolic
   elimination + limit, pure algebra. `TODO.md §B-R2c`.

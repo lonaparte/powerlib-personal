@@ -38,6 +38,16 @@ Status legend: ✅ done · 🟡 partial (backbone proved) · ⬜ not started.
 - 📝 **D5** Audit report now flags `def`s (`litInnerField`, `variantUField`, `slowModeH`) distinctly
   from theorems.
 
+## P1-lit (discharge W2 / C¹ on the concrete literal model) — review §A2 follow-on  ⬜
+
+- ⬜ **P1-C¹** `ContDiff ℝ 1 (F_inner_literal p q)` for the `df₁/df₂/cf₁/cf₂` hypotheses of
+  `branch_of_ift`: `cos, sin, +, −, ×, /` are `ContDiff`; needs `LitParams` positivity
+  (`Lf ≠ 0`, `Lf+Lg ≠ 0`) and `fun_prop`. Tractable, not started.
+- ⬜ **P1-inv** `∂(F_inner_literal)/∂z` invertible at the equilibrium (W2). Densely coupled 8×8
+  (`cosθ_e*/sinθ_e*` couple current-loop ↔ PLL — *not* cleanly block-triangular), so it is a
+  multi-hundred-line symbolic determinant. **Not attempted** (hand computation would risk
+  sign/factor errors); numerically nonsingular (`validate.py` solve succeeds). See `BLOCKERS.md`.
+
 ## P0 (Theorem B complete: `λ_slow = −b + O(b²)` for the full 9×9) — review §C  🟢 (mostly done)
 
 **Conceded:** this is a scalar root problem, NOT matrix perturbation. Define
@@ -65,12 +75,16 @@ Remaining (one genuine quantitative estimate, no Mathlib gap):
 - 📝 needs `−b ∉ spec(A)` (i.e. `IsUnit (A + bI).det`) — already a hypothesis (`hB`); under `A`
   Hurwitz it is automatic, to be made explicit (review §D2).
 
-## P3 (R2 lands on the actual GFL-VSC) — review §B1  ⬜
+## P3 (R2 lands on the actual GFL-VSC) — review §B1  ⬜ — BLOCKED ON MODEL INPUT
 
-- ⬜ **B-R2c** derive `G(θ) = A sinθ + B cosθ + D` from the literal LCL §3–§4 field in the
-  ideal-source / first-harmonic limit (`Cf → 0`, `Kpi, Kii → ∞`). Symbolic elimination (CAS) +
-  `linear_combination`/`polyrith` in Lean. Pure algebra — no Mathlib gap. Then `sync_loss_of_bias_gt_amp`
-  / `sync_equilibrium_of_amp_ge` apply to the concrete converter, not an abstract `G`.
+- ⬜ **B-R2c** derive `G(θ) = A sinθ + B cosθ + D` from the literal field in the ideal-source /
+  first-harmonic limit. **Genuinely not doable from what is formalized today** (NOT a Mathlib or
+  effort issue): `LitParams`/`F_inner_literal` carry the LCL *inductor* parameters `Lf,Lg,Rf,Rg` but
+  **no capacitor `Cf`**, so R2c's "ideal-source limit `Cf → 0`" is *not expressible* in the current
+  model. R2c first requires adding the §2 LCL capacitor dynamics (the `Cf`/`v_C` states), then a
+  quasi-steady-state reduction `v_cqc(θ_e)` (slave the fast states at fixed `θ_e`) and its first
+  harmonic. The §2 capacitor equations are the missing input; until they are formalized R2a/R2b stay
+  on the abstract `G`. (Honest: not started, and cannot be without the §2 spec.)
 
 ## P4 (already folded into P0 above) — review §C
 

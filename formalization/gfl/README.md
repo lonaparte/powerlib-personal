@@ -139,7 +139,9 @@ Genuinely **not** formalised (honest boundaries — partial progress; see `BLOCK
   verbatim and `litInnerField : InnerField p` is proved (the literal model satisfies the abstract
   interface, so every theorem applies to it). NOT proved: `F_inner_literal` is `C¹` and `∂F/∂z`
   is invertible at the equilibrium (the latter = a symbolic 8×8 `det ≠ 0`; `∂F/∂z` invertible is
-  hypothesis W2, confirmed numerically by `validate.py`).
+  hypothesis W2 — `validate.py`'s Theorem-B step solves `A x = c` with the inner block via
+  `np.linalg.solve`, which succeeds, so `A` is numerically nonsingular, but the symbolic determinant
+  is not proved; see `TODO.md`/`BLOCKERS.md`).
 
 ## Numerical cross-validation (`validate.py`)
 
