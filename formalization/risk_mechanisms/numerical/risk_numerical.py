@@ -1,7 +1,11 @@
 """
-risk_numerical.py -- numerical computations underpinning the R1/R2/R3 certificates.
+risk_numerical.py -- numerical computations underpinning the R2/R3 certificates.
 All results are SANITY/witness numerics; the load-bearing claims are the KeYmaera X
 certificates in ../kyx/.  Reproduces the figures cited in README.md.
+
+NOTE: R1 has been RETRACTED (see ../R1_RETRACTED.md) -- its 8x8 A_e was a fabricated
+matrix, not a real repo model -- so the former r1() routine and its hand-built Ae_num
+are removed here.  R1 numerics will return only when derived from the real sweep.py model.
 
 Run:  python3 risk_numerical.py        (needs numpy, sympy, scipy)
 The l1 parts additionally import the validated pipeline in
@@ -9,40 +13,6 @@ The l1 parts additionally import the validated pipeline in
 """
 import numpy as np, math, sys, os
 import scipy.linalg as sla
-
-# ---------------------------------------------------------------------------
-# R1: electrical onset Sigma_1 = {Delta_7(g)=0}, omega0 vs omega_LCL, transversality
-# ---------------------------------------------------------------------------
-def Ae_num(gv):
-    """8-state PLL-frozen electrical Jacobian, g=1/Lg (representative LCL+current loop)."""
-    A=np.zeros((8,8))
-    A[0,0]=-2.1/0.001; A[0,2]=-1000; A[0,4]=2000; A[0,6]=126000
-    A[1,1]=-2.1/0.001; A[1,3]=-1000; A[1,5]=2000; A[1,7]=126000
-    A[2,0]=1e4; A[2,4]=-1e4; A[2,3]=314
-    A[3,1]=1e4; A[3,5]=-1e4; A[3,2]=-314
-    A[4,2]=gv; A[4,4]=-0.05*gv; A[4,5]=314
-    A[5,3]=gv; A[5,5]=-0.05*gv; A[5,4]=-314
-    A[6,0]=-1.26; A[7,1]=-1.26
-    return A
-
-def r1():
-    print("="*70); print("R1  electrical onset Sigma_1"); print("="*70)
-    # onset roots of Delta_7(g): found symbolically (deg-13); here verify the two crossings
-    for gv in [10.128111641, 206.551223968]:
-        ev=np.linalg.eigvals(Ae_num(gv))
-        print("  g*=%.4f Lg*=%.5f H : rightmost eigs=%s  maxRe=%.2e"
-              % (gv, 1/gv, np.round(ev[np.argsort(-ev.real)][:2],4), ev.real.max()))
-    # physical (subsynchronous) onset g*=206.55:
-    gv=206.551223968; ev=np.linalg.eigvals(Ae_num(gv))
-    rc=[e for e in ev if abs(e.real)<0.5 and abs(e.imag)>1]
-    w0=abs(rc[0].imag); Lg=1/gv
-    wLCL=math.sqrt((0.001+Lg)/(0.001*Lg*1e-4))
-    print("  onset Lg*=%.5f: omega0=%.2f (%.2f Hz) vs omega_LCL=%.2f (%.2f Hz) -> omega0 != omega_LCL"
-          % (Lg, w0, w0/2/math.pi, wLCL, wLCL/2/math.pi))
-    # transversality dMaxRe/dLg at onset
-    def maxre(g): return np.linalg.eigvals(Ae_num(g)).real.max()
-    h=1e-6; L0=1/gv; dRe=(maxre(1/(L0+h))-maxre(1/(L0-h)))/(2*h)
-    print("  dMaxRe/dLg at onset = %+.1f  (>0 => weak grid pushes pair into RHP)" % dRe)
 
 # ---------------------------------------------------------------------------
 # R2: fold Sigma_2 = {|M|=Vg}, M=id_ref*wn*Lg+iq_ref*Rg (symbolic closed form)
@@ -125,4 +95,4 @@ def r3note():
               % (SCR,idref,l1s,ratio,ratio>1,tag))
 
 if __name__=="__main__":
-    r1(); print(); r2(); print(); r3a(); print(); r3b(); print(); r3note()
+    r2(); print(); r3a(); print(); r3b(); print(); r3note()
