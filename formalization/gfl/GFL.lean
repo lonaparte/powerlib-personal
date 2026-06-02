@@ -15,3 +15,4 @@ import GFL.TheoremC
 import GFL.Calculus
 import GFL.AsymptoticB
 import GFL.LiteralModel
+import GFL.LossOfSync

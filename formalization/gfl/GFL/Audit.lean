@@ -11,6 +11,7 @@ import GFL.TheoremC
 import GFL.Calculus
 import GFL.AsymptoticB
 import GFL.LiteralModel
+import GFL.LossOfSync
 
 open GFL
 
@@ -45,3 +46,7 @@ open GFL
 #print axioms schur_term_b_sq
 -- P1 (literal model) partial: InnerField instance
 #print axioms litInnerField
+-- R2b: loss of synchronism when the synchronous equilibrium disappears
+#print axioms loss_of_sync_core
+#print axioms exists_margin_of_no_zero
+#print axioms loss_of_sync

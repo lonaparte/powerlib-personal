@@ -185,6 +185,23 @@ GFL/TheoremA.lean      §7 A: zero eigenvalue (Variant U) + simple-zero factoris
 GFL/TheoremB.lean      §7 B: slow eigenvalue −D/(2H) (reduced exact + Schur term 0 + full Schur det)
 GFL/TheoremC.lean      §7 C: oscillation onset (charpoly, C1, C2)
 GFL/Calculus.lean      calculus completions (Cor 0a deriv, IFT linearisation) — uses analysis tower
-GFL/Audit.lean         #print axioms integrity report (16 results)
+GFL/AsymptoticB.lean   Theorem B O(b²): resolvent identity, schur_term_at_neg_b, exact b² identity (partial)
+GFL/LiteralModel.lean  literal §3–§4 model + InnerField instance (partial; see BLOCKERS.md)
+GFL/LossOfSync.lean    R2b (weak-grid risk problem): no synchronous equilibrium ⟹ loss of synchronism
+GFL/Audit.lean         #print axioms integrity report (29 results)
 validate.py            numerical cross-validation of the §3–§4 model vs the §9 anchors
+
+## R2b — loss of synchronism (weak-grid risk problem R1/R2/R3)
+
+`LossOfSync.lean` proves the one part of the separate R1/R2/R3 weak-grid risk problem that is
+machine-checkable today (per the feasibility analysis: R1 needs Routh–Hurwitz, R3 needs ODE-Lyapunov/
+SOS — both absent from Mathlib). The result is **R2b** and is deliberately *model-agnostic* (which is
+exactly why it holds "independent of any local modal damping"):
+
+* `loss_of_sync_core` — if the PLL integrator obeys `η' = G(θ_e)` and `G ≥ m > 0`, then
+  `η(t) ≥ η(0) + m·t`, so `η` is unbounded (mean-value theorem).
+* `exists_margin_of_no_zero` — a continuous, `T`-periodic `G` with no zero and positive somewhere
+  has a positive lower bound `m` (IVT for sign-definiteness + extreme-value theorem on one period).
+* `loss_of_sync` — combining: no synchronous equilibrium (`G = v_cqc` has no zero, i.e. `p` is
+  beyond the fold manifold Σ₂) ⟹ `η` unbounded ⟹ the converter cannot synchronise.
 ```

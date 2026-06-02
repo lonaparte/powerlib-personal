@@ -42,6 +42,10 @@
 
 > O(b²) 一致界、本征值存在、字面模型 C¹/∂F-z 可逆 **未证**（blocked），清单见 `gfl/BLOCKERS.md`。
 
+| 弱网风险问题 **R2b**：无同步平衡 ⟹ 失同步（模型无关核心 + 周期 no-zero⟹正下界 + 合成） | `loss_of_sync_core`/`exists_margin_of_no_zero`/`loss_of_sync` | `gfl/GFL/LossOfSync.lean` |
+
+> R1/R2/R3 可行性评估：**R2b 现已机器证明**（这一条模型无关、用 MVT）；R1（Routh–Hurwitz）、R3（ODE-Lyapunov/SOS）所需基础设施 Mathlib 当前都没有，未做。
+
 **三个命门的诚实处理**：(1) 引理 0 先证、纯代数；(2) 定理 B 区分"约化精确 / 全系统 O(ε²)"——只证
 约化场精确 `−b·dw` 与 O(1) Schur 项精确为 0，**不**声称全 9×9 系统精确 `−D/(2H)`；(3) 定理 C 用
 `β:=wn/(2H)` 与题设一致。建模忠实性：内场 `F_inner` 抽象承载（只用到 `F7=e_P`），§6 雅可比块结构按
