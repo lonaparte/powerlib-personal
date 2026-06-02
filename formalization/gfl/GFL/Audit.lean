@@ -12,6 +12,7 @@ import GFL.Calculus
 import GFL.AsymptoticB
 import GFL.LiteralModel
 import GFL.LossOfSync
+import GFL.SyncEquilibrium
 
 open GFL
 
@@ -50,3 +51,8 @@ open GFL
 #print axioms loss_of_sync_core
 #print axioms exists_margin_of_no_zero
 #print axioms loss_of_sync
+-- R2a: saddle-node of the sync map (single-harmonic) + link to R2b
+#print axioms amplitude_bound
+#print axioms sync_pos_of_bias_gt_amp
+#print axioms sync_loss_of_bias_gt_amp
+#print axioms sync_equilibrium_of_amp_ge

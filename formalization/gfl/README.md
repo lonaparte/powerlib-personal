@@ -188,7 +188,8 @@ GFL/Calculus.lean      calculus completions (Cor 0a deriv, IFT linearisation) �
 GFL/AsymptoticB.lean   Theorem B O(b²): resolvent identity, schur_term_at_neg_b, exact b² identity (partial)
 GFL/LiteralModel.lean  literal §3–§4 model + InnerField instance (partial; see BLOCKERS.md)
 GFL/LossOfSync.lean    R2b (weak-grid risk problem): no synchronous equilibrium ⟹ loss of synchronism
-GFL/Audit.lean         #print axioms integrity report (29 results)
+GFL/SyncEquilibrium.lean R2a (weak-grid risk problem): saddle-node of the sync map + link to R2b
+GFL/Audit.lean         #print axioms integrity report (34 results)
 validate.py            numerical cross-validation of the §3–§4 model vs the §9 anchors
 
 ## R2b — loss of synchronism (weak-grid risk problem R1/R2/R3)
@@ -204,4 +205,17 @@ exactly why it holds "independent of any local modal damping"):
   has a positive lower bound `m` (IVT for sign-definiteness + extreme-value theorem on one period).
 * `loss_of_sync` — combining: no synchronous equilibrium (`G = v_cqc` has no zero, i.e. `p` is
   beyond the fold manifold Σ₂) ⟹ `η` unbounded ⟹ the converter cannot synchronise.
+
+`SyncEquilibrium.lean` proves **R2a** for the single-harmonic reduction of the sync map
+`G(θ) = A·sin θ + B·cos θ + D` (ideal-source / first-harmonic regime; the finite-`Cf`
+second-harmonic correction is the un-done extension):
+
+* `amplitude_bound` — `(A·sin θ + B·cos θ)² ≤ A²+B²` (amplitude `= √(A²+B²)`).
+* `sync_pos_of_bias_gt_amp` / `sync_loss_of_bias_gt_amp` — bias beyond amplitude
+  (`A²+B² < D²`, i.e. `p` beyond Σ₂) ⟹ `G > 0` everywhere (no equilibrium) ⟹ (via `loss_of_sync`)
+  loss of synchronism. Fully parametric in `A,B,D`.
+* `sync_equilibrium_of_amp_ge` — amplitude `≥` bias (`D² ≤ A²+B²`) ⟹ an equilibrium exists.
+
+Together: **a synchronous equilibrium exists iff `D² ≤ A²+B²`**, so the fold manifold is
+exactly `Σ₂ = {D² = A²+B²}` (bias = amplitude) — the parametric saddle-node boundary.
 ```

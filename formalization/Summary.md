@@ -43,8 +43,9 @@
 > O(b²) 一致界、本征值存在、字面模型 C¹/∂F-z 可逆 **未证**（blocked），清单见 `gfl/BLOCKERS.md`。
 
 | 弱网风险问题 **R2b**：无同步平衡 ⟹ 失同步（模型无关核心 + 周期 no-zero⟹正下界 + 合成） | `loss_of_sync_core`/`exists_margin_of_no_zero`/`loss_of_sync` | `gfl/GFL/LossOfSync.lean` |
+| 弱网风险问题 **R2a**：同步映射鞍结（单谐波 `A sinθ+B cosθ+D`）+ 接 R2b。**平衡存在 ⟺ `D²≤A²+B²`**，故折叠面 `Σ₂={D²=A²+B²}` | `amplitude_bound`/`sync_pos_of_bias_gt_amp`/`sync_loss_of_bias_gt_amp`/`sync_equilibrium_of_amp_ge` | `gfl/GFL/SyncEquilibrium.lean` |
 
-> R1/R2/R3 可行性评估：**R2b 现已机器证明**（这一条模型无关、用 MVT）；R1（Routh–Hurwitz）、R3（ODE-Lyapunov/SOS）所需基础设施 Mathlib 当前都没有，未做。
+> R1/R2/R3 可行性评估:**R2a、R2b 现已机器证明**(模型无关 + 单谐波;用 MVT/IVT/Complex.arg)。R2c(`Cf→0` 退化到 Wu 边界)与有限-`Cf` 二次谐波未做。R1(Routh–Hurwitz)、R3(ODE-Lyapunov/SOS)所需基础设施 Mathlib 当前都没有,未做。
 
 **三个命门的诚实处理**：(1) 引理 0 先证、纯代数；(2) 定理 B 区分"约化精确 / 全系统 O(ε²)"——只证
 约化场精确 `−b·dw` 与 O(1) Schur 项精确为 0，**不**声称全 9×9 系统精确 `−D/(2H)`；(3) 定理 C 用
