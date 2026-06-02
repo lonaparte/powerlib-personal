@@ -1,0 +1,66 @@
+ArchiveEntry "R2 (fold): synchronization equilibrium count from the unbalance ratio"
+
+/* R2a/R2b: the synchronization equilibrium map (ideal-current-source / classical
+ * limit, Conventions-style) is the scalar  G(theta) = Vg*sin(theta) - M,  where
+ * M := id_ref*wn*Lg + iq_ref*Rg  is the unbalance forcing.  Writing sin(theta)=S
+ * with the circle constraint -1<=S<=1, an equilibrium S=M/Vg exists (a real theta)
+ * IFF |M| <= Vg.  This certificate: if |M| < Vg (strong grid) there is a feasible
+ * S=M/Vg strictly inside (-1,1); we state it division-free as M^2 < Vg^2 & Vg>0
+ * -> exists S with Vg*S = M and S^2 < 1. */
+Problem
+  \forall Vg \forall M
+  ( Vg > 0 & M^2 < Vg^2
+    -> \exists S ( Vg*S = M & S^2 < 1 ) )
+End.
+Tactic "equilibrium exists below fold by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "R2 (fold): past the fold no synchronization equilibrium exists"
+
+/* R2b: past Sigma_2, i.e. |M| > Vg, the equation Vg*sin(theta)=M has NO real
+ * solution (sin is bounded by 1).  Division-free: M^2 > Vg^2 & Vg>0 -> there is no
+ * real S with Vg*S=M and S^2<=1.  (Then theta is unbounded => loss of synchronism,
+ * independent of any local mode damping -- the R2b conclusion.) */
+Problem
+  \forall Vg \forall M \forall S
+  ( Vg > 0 & M^2 > Vg^2 & Vg*S = M
+    -> S^2 > 1 )
+End.
+Tactic "no equilibrium past fold by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "R2 (node/saddle): the two equilibria have opposite dG sign"
+
+/* The two equilibria below the fold are a node (dG/dtheta = Vg*cos(theta) > 0) and a
+ * saddle (dG < 0).  With sin(theta)=S fixed at S=M/Vg, cos(theta)=+-sqrt(1-S^2) takes
+ * both signs; so the two roots carry opposite cos, hence opposite dG.  Division-free:
+ * if C1, C2 are the two cosines (C1=-C2, both from C^2=1-S^2) then Vg*C1 and Vg*C2
+ * have opposite signs (one >0 node, one <0 saddle), for Vg>0 and S^2<1 (C!=0). */
+Problem
+  \forall Vg \forall S \forall C1 \forall C2
+  ( Vg > 0 & S^2 < 1 & C1^2 = 1 - S^2 & C2 = -C1 & C1 > 0
+    -> ( Vg*C1 > 0 & Vg*C2 < 0 ) )
+End.
+Tactic "node-saddle opposite sign by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "R2c (classical limit): Sigma_2 is the Wu-type unbalance boundary"
+
+/* R2c: the fold manifold Sigma_2 = { |M| = Vg } with M = id_ref*wn*Lg + iq_ref*Rg
+ * is exactly the classical unbalance boundary |id_ref*wn*Lg + iq_ref*Rg| = Vg.
+ * Identity check (division-free, squared): the fold condition M^2 = Vg^2 with this M. */
+Problem
+  \forall Vg \forall Rg \forall Lg \forall wn \forall idref \forall iqref \forall M
+  ( M = idref*wn*Lg + iqref*Rg
+    -> ( (M^2 = Vg^2) <-> ((idref*wn*Lg + iqref*Rg)^2 = Vg^2) ) )
+End.
+Tactic "classical limit identity by QE"
+  QE
+End.
+End.

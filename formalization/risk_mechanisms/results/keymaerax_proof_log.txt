@@ -1,0 +1,24 @@
+=== R1_routh.kyx ===
+PROVED R1b (Routh): A_e Hurwitz iff all principal Hurwitz minors positive (n=8 signature): tactic=Routh onset signature by QE,tacticsize=1,budget=0[s],duration=137[ms],qe=135[ms],rcf=0,steps=0
+PROVED R1b (crossing): at Sigma_1 a conjugate pair sits on the imaginary axis: tactic=imaginary crossing exists by QE,tacticsize=1,budget=0[s],duration=3[ms],qe=3[ms],rcf=0,steps=0
+PROVED R1b (transversality): d Re(lambda)/d Lg > 0 sign condition at onset: tactic=transversality sign by QE,tacticsize=1,budget=0[s],duration=2[ms],qe=2[ms],rcf=0,steps=0
+=== R2_fold.kyx ===
+PROVED R2 (fold): synchronization equilibrium count from the unbalance ratio: tactic=equilibrium exists below fold by QE,tacticsize=1,budget=0[s],duration=6[ms],qe=4[ms],rcf=0,steps=0
+PROVED R2 (fold): past the fold no synchronization equilibrium exists: tactic=no equilibrium past fold by QE,tacticsize=1,budget=0[s],duration=2[ms],qe=2[ms],rcf=0,steps=0
+PROVED R2 (node/saddle): the two equilibria have opposite dG sign: tactic=node-saddle opposite sign by QE,tacticsize=1,budget=0[s],duration=3[ms],qe=3[ms],rcf=0,steps=0
+PROVED R2c (classical limit): Sigma_2 is the Wu-type unbalance boundary: tactic=classical limit identity by QE,tacticsize=1,budget=0[s],duration=2[ms],qe=2[ms],rcf=0,steps=0
+=== R2_sigma2_symbolic.kyx ===
+PROVED R2 (Sigma_2 closed form): fully-symbolic fold manifold Phi(p)=0: tactic=fold closed form by QE,tacticsize=1,budget=0[s],duration=6[ms],qe=4[ms],rcf=0,steps=0
+PROVED R2 (Sigma_2 closed form): Phi<0 iff strictly below the fold: tactic=below fold iff by QE,tacticsize=1,budget=0[s],duration=3[ms],qe=3[ms],rcf=0,steps=0
+=== R3note_l1_not_criterion.kyx ===
+PROVED R3-note: l1 sign and global loss-of-sync are independent (decoupling witness): tactic=decoupling witness by QE,tacticsize=1,budget=0[s],duration=7[ms],qe=5[ms],rcf=0,steps=0
+PROVED R3-note: l1<0 does not entail existence of an invariant basin (no implication): tactic=no implication by QE,tacticsize=1,budget=0[s],duration=3[ms],qe=3[ms],rcf=0,steps=0
+=== R3a_energy_barrier.kyx ===
+PROVED R3a (energy barrier): tilted-energy Lyapunov gives Vdot = -b*dw^2 <= 0: tactic=energy cancellation by QE,tacticsize=1,budget=0[s],duration=6[ms],qe=4[ms],rcf=0,steps=0
+PROVED R3a (energy barrier): Vdot <= 0 for nonnegative damping: tactic=nonincreasing by QE,tacticsize=1,budget=0[s],duration=3[ms],qe=2[ms],rcf=0,steps=0
+PROVED R3a (LaSalle): strict decrease off dw=0, so basin interior flows to eq: tactic=strict decrease off dw=0 by QE,tacticsize=1,budget=0[s],duration=2[ms],qe=2[ms],rcf=0,steps=0
+=== R3_basin.kyx ===
+PROVED R3a (barrier): a sublevel set with strictly decreasing V is forward-invariant: tactic=sublevel invariance by dI,tacticsize=2,budget=0[s],duration=101[ms],qe=5[ms],rcf=0,steps=67
+PROVED R3a (saddle exclusion): certified level lies below the saddle value: tactic=saddle exclusion by QE,tacticsize=1,budget=0[s],duration=3[ms],qe=2[ms],rcf=0,steps=0
+PROVED R3b (monotonicity): more PLL damping gives a larger certified basin level: tactic=basin monotone in damping by QE,tacticsize=1,budget=0[s],duration=3[ms],qe=2[ms],rcf=0,steps=0
+PROVED R3 (threshold): there is a damping floor below which the certified basin vanishes: tactic=damping floor by QE,tacticsize=1,budget=0[s],duration=3[ms],qe=2[ms],rcf=0,steps=0

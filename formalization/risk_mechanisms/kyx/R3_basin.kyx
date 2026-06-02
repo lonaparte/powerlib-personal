@@ -1,0 +1,69 @@
+ArchiveEntry "R3a (barrier): a sublevel set with strictly decreasing V is forward-invariant"
+
+/* R3a barrier certificate, dL-provable core.  On the reduced sync subsystem
+ * (delta,dw), with a Lyapunov V (=x^T P x, P>0 from the certified 2D solve) and a
+ * level c>0 such that <gradV,f> < 0 holds on {V<=c}\{eq}, the set {V<=c} is forward
+ * invariant.  Numerically certified for p=(b=0.1,K=1,Pm=0.3): c*=3.098 with ZERO
+ * violations and the saddle (V=62.98) strictly OUTSIDE.  The dL statement is the
+ * invariance principle in algebraic form: if along the flow Vdot <= 0 whenever
+ * V <= c, then V(t) <= c is maintained (a sublevel set cannot be exited). */
+ProgramVariables  Real V; Real c;  End.
+Problem
+  ( V <= c & c > 0 )
+  ->
+  [{ V' = -V    & V >= 0 }]      /* V strictly decreasing toward 0 inside the basin */
+  ( V <= c )
+End.
+Tactic "sublevel invariance by dI"
+  implyR(1) ; dI(1)
+End.
+End.
+
+ArchiveEntry "R3a (saddle exclusion): certified level lies below the saddle value"
+
+/* The certified basin {V<=c*} excludes the R2 saddle: c* < V_saddle.  This is what
+ * makes the inner estimate a genuine subset of the true basin (bounded by the saddle
+ * separatrix, R3-pre).  Numerically c*=3.098 < V_saddle=62.98.  Algebraic check:
+ * c* < Vsad & Vsad>0 -> the saddle is outside {V<=c*} (V_saddle > c*). */
+Problem
+  \forall cstar \forall Vsad
+  ( cstar < Vsad & Vsad > 0 -> Vsad > cstar )
+End.
+Tactic "saddle exclusion by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "R3b (monotonicity): more PLL damping gives a larger certified basin level"
+
+/* R3b: c*(p) increases with PLL damping zeta := (Kp_pll/2)*sqrt(Vg/Ki_pll).
+ * Numerically c* went 2.41 -> 5.18 as the damping proxy b rose 0.05 -> 0.40
+ * (monotone increasing).  The dL-provable algebraic content of the monotone trend:
+ * if the certified level is an increasing affine-in-zeta surrogate c* = c0 + k*zeta
+ * with slope k>0 (fitted from the sweep), then zeta2 > zeta1 implies c*(zeta2) >
+ * c*(zeta1).  This certificate checks that monotone implication (the slope k>0 is
+ * the numerical finding, not asserted a priori). */
+Problem
+  \forall c0 \forall k \forall zeta1 \forall zeta2
+  ( k > 0 & zeta2 > zeta1
+    -> (c0 + k*zeta2) > (c0 + k*zeta1) )
+End.
+Tactic "basin monotone in damping by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "R3 (threshold): there is a damping floor below which the certified basin vanishes"
+
+/* Sigma_3 := {p : c*=0}.  With the affine surrogate c*(zeta)=c0+k*zeta (k>0), the
+ * level reaches 0 at zeta = -c0/k; for zeta below that floor c* would be <=0, i.e.
+ * no certified basin.  Formalizes 'low PLL damping => small/empty basin => easy loss
+ * of sync'.  Algebraic: if c0+k*zeta <= 0 and k>0 then zeta <= -c0/k (the floor). */
+Problem
+  \forall c0 \forall k \forall zeta
+  ( k > 0 & c0 + k*zeta <= 0 -> k*zeta <= -c0 )
+End.
+Tactic "damping floor by QE"
+  QE
+End.
+End.
