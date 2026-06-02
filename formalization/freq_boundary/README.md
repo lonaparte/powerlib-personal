@@ -72,18 +72,24 @@ PLL 增益子空间 (Kp_pll, Ki_pll) 上 Σ_H **能写成显式关系**,因为�
 线性 `ρ=19.3·δ−0.012`(小截距 ⟹ 法形成立);(B) 任务模型 **Bautin 点 Kp\*≈0.43**(l₁ 在 Kp=0.40→0.45
 变号:+4.6e-7→−9.8e-7),Σ_fold 由此发出。
 
-**诚实 scope**:这把 Σ_fold 的**折叠结构**参数化证清(法形坐标 (μ,l₁,l₂),Bautin 邻域有效);
-物理参数 p→(μ,l₁,l₂) 的映射是中心流形约化(数值/区间),**l₂≠0(非退化)未算**(与 bautin_cert
-同一诚实省略)。即:**分岔骨架已形式化证明,系数是数值层**——这正是奇点理论刻画这类边界的标准方式。
+### ✅ F2 非退化 + 实际折叠定位(`ffold_l2_branch.py` + `ffold_locate.py`)—— 本轮补上
+- **l₂≠0(Bautin 非退化)已算**:从极限环分支曲率拟合 `μ=−l₁ρ−l₂ρ²`(只用有界环点,滤掉逃逸):
+  Kp=0.50 得 **l₂=+34.2**(l₁=−28.3,resid 2e-3),Kp=0.55 得 **l₂=+35.8**——**l₂>0 非退化**。
+  l₂ 的**符号对幅值变量线性缩放不变**(`l₂→l₂/α⁴`),故符号(=非退化)是良定义的(|l₂| 同 |l₁| 是约定量)。
+  **这补上了 bautin_cert 留的 Bautin 非退化缺口**(数值层;严格 5 阶法形 l₂ 区间仍是更重的一步)。
+- **实际环折叠 Σ_fold 已定位**:Kp=0.50 扫 SCR,稳定环到 SCR=0.7866(μ=4.24)仍在,到 SCR=0.7766
+  (μ=8.53)**逃逸(θ_e 漂移 ~9000 = 失同步)**。⟹ Σ_fold 在 μ∈[4.24,8.53]。
+- **交叉验证**:小幅法形拟合预测的折叠 **μ_fold=l₁²/4l₂=5.86 恰落在实测逃逸窗 [4.24,8.53] 内**。
+  即:已证的法形折叠结构 + 数值系数 → 预测折叠位置,直接积分确认 → **F2 在任务模型上兑现且自洽**。
 
 ### 诚实:仍未做到(明示)
-- **l₁<0 的 interval-sound 化**(把"锚"升到计算机辅助证明档):方法就是 `../numerical/bautin_cert/`
-  那套(Krawczyk 验证特征对 + 区间张量 + Neumann 区间解),已在 sweep.py 上跑过;**搬到本任务模型未做**。
-  现 l₁<0 是 float(符号稳健),非区间证。
-- **F2 的物理坐标精确 Σ_fold + l₂**:法形结构已证;但 l₂(非退化)、以及把折叠面映回 (Kp,SCR) 物理平面
-  (需沿分支 validated continuation 找实际环折叠),**未做**,open。
-- 周期轨本身未 Newton 精化(闭合误差 ‖P(x0)−x0‖≈3.3e-3;平凡乘子 1.0002 即反映此),
-  但**最大非平凡 |μ|=0.881 对此稳健**,结论不变。
+- **interval-sound 的 l₁<0 / l₂(把数值升到计算机辅助证明档)**:bautin_cert 那套
+  (Krawczyk 特征对 + 区间张量)在 sweep.py 上成立,但**搬到任务模型受阻于其平衡点无闭式**
+  (§12/sweep.py 有 vcd 二次闭式,任务模型平衡是超越方程、数值解),需额外**区间 Newton 包平衡点**一层。
+  现 l₁<0、l₂>0 由**两条独立数值方法**(Kuznetsov 投影 + 分支曲率)一致确立,符号稳健,但非区间证。
+- **F2 折叠面映回全 (Kp,SCR) 物理平面**:单点已定位(Kp=0.50: μ_fold≈5.86);整条 Σ_fold 曲线需沿
+  分支 validated continuation,**未做**。
+- 周期轨未 Newton 精化(闭合 ≈3.3e-3);**最大非平凡 |μ|=0.881 对此稳健**,结论不变。
 
 ### 可证子块 F3(代数,R2/Σ₂ 同型;`kyx/ffold_f3_drift.kyx`,2 条 proved)
 - **F3a**:角平衡 `θ' = M − Vg·sin θ`,过 fold 后 `|M|>Vg`(用 `s²≤1` 编码 sin)⟹ `M−Vg·s>0` 处处成立
@@ -102,7 +108,9 @@ PLL 增益子空间 (Kp_pll, Ki_pll) 上 Σ_H **能写成显式关系**,因为�
 | F-fold F1(稳定极限环存在)小幅端 | ✅ l₁=−2.09e-6<0 超临界 + Hopf 定理(`ffold_l1_anchor.py`);l₁ 区间化未做 |
 | F-fold F1 有限幅(Floquet \|μ\|<1) | ✅ 数值:max 非平凡 \|μ\|=0.881<1(`ffold_cycle.py`) |
 | F-fold F2 折叠**结构**(法形鞍结) | ✅ KeYmaera X proved(`ffold_cyclefold_normalform.kyx`,5;R2 同型);法形成立+Bautin Kp*≈0.43 已核对 |
-| F-fold F2 物理坐标 Σ_fold + l₂ | ❌ 中心流形系数映射 + l₂ + 环 continuation;未做,open |
+| F-fold F2 非退化 l₂≠0(Bautin) | ✅ 数值:l₂=+34.2(Kp=.50)/+35.8(Kp=.55),符号不变量(`ffold_l2_branch.py`);区间 l₂ 未做 |
+| F-fold F2 实际折叠定位 + 失同步 | ✅ 数值:Σ_fold μ∈[4.24,8.53],预测 μ_fold=5.86 落其中;过后 θ_e 漂移~9000(`ffold_locate.py`) |
+| F-fold F2 整条 Σ_fold(全 Kp,SCR) | ❌ 需沿分支 validated continuation;单点已定位,整条未做 |
 | F-fold F3(无平衡 ⟹ 漂移 + 边界) | ✅ KeYmaera X proved(`ffold_f3_drift.kyx`,2) |
 
 - F-H 是线性边界:**卡在 CAS 规模 + 不可低阶约化,不卡数学**;签名机制已证,真模型已核对。
@@ -120,6 +128,8 @@ PLL 增益子空间 (Kp_pll, Ki_pll) 上 Σ_H **能写成显式关系**,因为�
 - `ffold_cycle.py` — F1 有限幅:Poincaré 定轨 + Floquet 乘子(max 非平凡 \|μ\|=0.881<1)。
 - `ffold_l1_anchor.py` — F1 小幅锚:Hopf 第一 Lyapunov 系数 l₁=−2.09e-6<0(超临界)。
 - `ffold_normalform.py` — F2 对象闸门:法形成立(幅值²~μ 线性)+ Bautin 点 Kp*≈0.43。
+- `ffold_l2_branch.py` — F2 非退化:分支曲率拟合 l₂>0(Bautin 非退化,补 bautin_cert 缺口)。
+- `ffold_locate.py` — F2 实际折叠:Σ_fold 定位(μ_fold≈5.86)+ 过后失同步(θ_e 漂移)。
 - `kyx/fh_hopf_signature.kyx` — Hopf 签名机制(deg-2、deg-4 LC),3 条 proved。
 - `kyx/ffold_cyclefold_normalform.kyx` — F2 环折叠法形鞍结(R2 同型),5 条 proved。
 - `kyx/ffold_f3_drift.kyx` — F-fold F3 代数子块,2 条 proved。
