@@ -29,6 +29,7 @@ import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.Topology.Instances.Matrix
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Topology.Order.IntermediateValue
 
 namespace GFL
@@ -179,6 +180,79 @@ theorem exists_eigenvalue_of_slowMode_sign_change
     · obtain ⟨μ, hm, hv⟩ := intermediate_value_Icc hab hcont (Set.mem_Icc.mpr h); exact ⟨μ, hm, hv⟩
     · obtain ⟨μ, hm, hv⟩ := intermediate_value_Icc' hab hcont (Set.mem_Icc.mpr h); exact ⟨μ, hm, hv⟩
   -- the zero is an eigenvalue of J_S
+  obtain ⟨v, hv0, hvk⟩ :=
+    eigenvalue_of_slowMode_zero A c ρ j99 μ (isUnit_iff_ne_zero.mpr (hinv μ hμmem)) hμ0
+  exact ⟨μ, hμmem, v, hv0, hvk⟩
+
+/-! ### C, step T6 — the quantitative `O(b²)` bound (replaces the sign-change with a derivative bound)
+
+The only quantitative input the existence needs is a **derivative lower bound** `h' ≤ −m < 0` on an
+interval (nondegeneracy of the slow mode), NOT an operator-norm estimate.  Given that, the
+mean-value theorem turns the small residual `|h(ν₀)|` into a sign change over `[ν₀−δ, ν₀+δ]` with
+`δ = |h(ν₀)|/m`, so a root sits within `δ` of `ν₀`.  Taking `ν₀ = −b`, `|h(−b)| = O(b²)`
+(`slowModeH_at_neg_b`) gives `|λ_slow + b| ≤ O(b²)/m`. -/
+
+/-- **Quantitative root from a derivative bound (general, no operator norm).**  If `h` is
+differentiable on `[ν₀−δ, ν₀+δ]` with `h' ≤ −m < 0` there, and `|h ν₀| ≤ m·δ`, then `h` has a zero
+`μ*` with `|μ* − ν₀| ≤ δ`.  (MVT bounds `h(ν₀∓δ)` away from `h ν₀` by `m·δ ≥ |h ν₀|`, forcing a sign
+change; IVT gives the root.) -/
+theorem exists_root_of_deriv_le (h h' : ℝ → ℝ) (ν₀ δ m : ℝ) (hm : 0 < m)
+    (hderiv : ∀ μ ∈ Set.Icc (ν₀ - δ) (ν₀ + δ), HasDerivAt h (h' μ) μ)
+    (hbd : ∀ μ ∈ Set.Icc (ν₀ - δ) (ν₀ + δ), h' μ ≤ -m)
+    (hmδ : |h ν₀| ≤ m * δ) :
+    ∃ μ ∈ Set.Icc (ν₀ - δ) (ν₀ + δ), h μ = 0 := by
+  have h0 : 0 ≤ m * δ := le_trans (abs_nonneg _) hmδ
+  have hδ : 0 ≤ δ := by
+    by_contra hc
+    nlinarith [mul_pos hm (neg_pos.mpr (not_le.mp hc))]
+  have habs := abs_le.mp hmδ
+  have hcont : ContinuousOn h (Set.Icc (ν₀ - δ) (ν₀ + δ)) := fun μ hμ =>
+    (hderiv μ hμ).continuousAt.continuousWithinAt
+  rcases eq_or_lt_of_le hδ with hδ0 | hδ0
+  · -- δ = 0: |h ν₀| ≤ 0 ⟹ h ν₀ = 0
+    refine ⟨ν₀, by simp [← hδ0], abs_nonpos_iff.mp ?_⟩
+    rw [← hδ0] at hmδ; simpa using hmδ
+  · -- δ > 0: sign change at the endpoints, then IVT
+    have hden : ν₀ - (ν₀ - δ) = δ := by ring
+    have hden' : ν₀ + δ - ν₀ = δ := by ring
+    have hleft : 0 ≤ h (ν₀ - δ) := by
+      obtain ⟨ξ, hξmem, hξ⟩ := exists_hasDerivAt_eq_slope h h' (by linarith : ν₀ - δ < ν₀)
+        (hcont.mono (Set.Icc_subset_Icc le_rfl (by linarith)))
+        (fun x hx => hderiv x ⟨le_of_lt hx.1, by linarith [hx.2]⟩)
+      rw [hden] at hξ
+      have hbξ : h' ξ ≤ -m := hbd ξ ⟨by linarith [hξmem.1], by linarith [hξmem.2]⟩
+      rw [hξ] at hbξ
+      have := (div_le_iff₀ hδ0).mp hbξ
+      linarith [habs.1]
+    have hright : h (ν₀ + δ) ≤ 0 := by
+      obtain ⟨ξ, hξmem, hξ⟩ := exists_hasDerivAt_eq_slope h h' (by linarith : ν₀ < ν₀ + δ)
+        (hcont.mono (Set.Icc_subset_Icc (by linarith) le_rfl))
+        (fun x hx => hderiv x ⟨by linarith [hx.1], le_of_lt hx.2⟩)
+      rw [hden'] at hξ
+      have hbξ : h' ξ ≤ -m := hbd ξ ⟨by linarith [hξmem.1], by linarith [hξmem.2]⟩
+      rw [hξ] at hbξ
+      have := (div_le_iff₀ hδ0).mp hbξ
+      linarith [habs.2]
+    obtain ⟨μ, hμmem, hμ0⟩ :=
+      intermediate_value_Icc' (by linarith : ν₀ - δ ≤ ν₀ + δ) hcont ⟨hright, hleft⟩
+    exact ⟨μ, hμmem, hμ0⟩
+
+/-- **C / T6 — the slow eigenvalue exists within `O(b²)` of `−b` (quantitative, no operator norm).**
+If `A − μI` is invertible on `[−b−δ, −b+δ]`, the slow-mode derivative is `≤ −m < 0` there
+(nondegeneracy of the slow mode — a clean named hypothesis, replacing any operator-norm estimate),
+and `|h(−b)| ≤ m·δ`, then `J_S` has a genuine eigenvalue `μ*` with `|μ* + b| ≤ δ`.  Since
+`|h(−b)| = O(b²)` (`slowModeH_at_neg_b`), `δ` may be taken `O(b²)/m`, so `|λ_slow + b| ≤ O(b²)/m`. -/
+theorem exists_eigenvalue_near_neg_b (A : Matrix (Fin 8) (Fin 8) ℝ) (c ρ : Fin 8 → ℝ) (j99 b δ m : ℝ)
+    (hm : 0 < m)
+    (hinv : ∀ μ ∈ Set.Icc (-b - δ) (-b + δ), (A - μ • 1).det ≠ 0)
+    (hbd : ∀ μ ∈ Set.Icc (-b - δ) (-b + δ),
+      -1 - ρ ⬝ᵥ ((A - μ • 1)⁻¹ *ᵥ ((A - μ • 1)⁻¹ *ᵥ c)) ≤ -m)
+    (hmδ : |slowModeH A c ρ j99 (-b)| ≤ m * δ) :
+    ∃ μ ∈ Set.Icc (-b - δ) (-b + δ), ∃ v : (Fin 8 ⊕ Unit) → ℝ, v ≠ 0 ∧
+      JSblock A c ρ j99 *ᵥ v = μ • v := by
+  obtain ⟨μ, hμmem, hμ0⟩ := exists_root_of_deriv_le (fun μ => slowModeH A c ρ j99 μ)
+    (fun μ => -1 - ρ ⬝ᵥ ((A - μ • 1)⁻¹ *ᵥ ((A - μ • 1)⁻¹ *ᵥ c))) (-b) δ m hm
+    (fun μ hμ => slowModeH_hasDerivAt A c ρ j99 μ (hinv μ hμ)) hbd hmδ
   obtain ⟨v, hv0, hvk⟩ :=
     eigenvalue_of_slowMode_zero A c ρ j99 μ (isUnit_iff_ne_zero.mpr (hinv μ hμmem)) hμ0
   exact ⟨μ, hμmem, v, hv0, hvk⟩

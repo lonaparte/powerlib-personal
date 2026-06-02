@@ -73,6 +73,8 @@ open GFL
 #print axioms resolvent_continuousAt     -- C/T1: μ ↦ (A−μI)⁻¹ continuous (no operator norm needed)
 #print axioms slowModeH_hasDerivAt       -- C/T1: h differentiable, h' = −1 − ρᵀ(A−νI)⁻²c
 #print axioms exists_eigenvalue_of_slowMode_sign_change -- C: sign change of h ⟹ genuine eigenvalue
+#print axioms exists_root_of_deriv_le    -- C/T6: deriv ≤ −m + |h ν₀| ≤ m·δ ⟹ root within δ (MVT+IVT)
+#print axioms exists_eigenvalue_near_neg_b -- C/T6: |λ_slow + b| ≤ δ = O(b²)/m (quantitative bound)
 -- P1 (literal model) partial: InnerField instance + interface-landing evidence (A2)
 #print axioms litInnerField              -- [def] the literal model IS an InnerField
 #print axioms litF_errD_eq               -- F3 = e_d (explicit §3 form)

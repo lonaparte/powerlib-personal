@@ -48,7 +48,7 @@ Status legend: ✅ done · 🟡 partial (backbone proved) · ⬜ not started.
   multi-hundred-line symbolic determinant. **Not attempted** (hand computation would risk
   sign/factor errors); numerically nonsingular (`validate.py` solve succeeds). See `BLOCKERS.md`.
 
-## P0 (Theorem B complete: `λ_slow = −b + O(b²)` for the full 9×9) — review §C  🟢 (mostly done)
+## P0 (Theorem B complete: `λ_slow = −b + O(b²)` for the full 9×9) — review §C  🟢 (complete modulo nondegeneracy hypothesis)
 
 **Conceded:** this is a scalar root problem, NOT matrix perturbation. Define
 `h(μ) := (j99 − μ) − ρᵀ(A − μI)⁻¹c` (`GFL.slowModeH`). For `μ ∉ spec(A)`,
@@ -67,13 +67,17 @@ Proved in `GFL/SlowModeScalar.lean` (all `[propext, Classical.choice, Quot.sound
   a sign change of `h` on `[a,b]` (with `A−μI` invertible there) ⟹ `J_S` has a genuine eigenvalue in
   `[a,b]` (IVT + the bridge).
 
-Remaining (one genuine quantitative estimate, no Mathlib gap):
-- ⬜ **T6** discharge the sign-change hypothesis with an explicit `O(b²)` margin: show `h(−b)` and
-  `h(−b ± C·b²)` have opposite signs, using `slowModeH_at_neg_b` (numerator `O(b²)`) and a lower bound
-  `|h'| ≥ 1/2` near `−b` (from `slowModeH_hasDerivAt`, needs `|ρᵀ(A−μI)⁻²c| ≤ 1/2`, i.e. one scalar
-  bound — `‖ρ‖ = O(b)` and `(A−μI)⁻²` continuous). This upgrades existence to `|λ_slow + b| ≤ C·b²`.
-- 📝 needs `−b ∉ spec(A)` (i.e. `IsUnit (A + bI).det`) — already a hypothesis (`hB`); under `A`
-  Hurwitz it is automatic, to be made explicit (review §D2).
+- ✅ **T6 done** `exists_root_of_deriv_le` (general MVT+IVT: `h' ≤ −m` on `[ν₀−δ,ν₀+δ]` and
+  `|h ν₀| ≤ m·δ` ⟹ a root within `δ`) and `exists_eigenvalue_near_neg_b`: `J_S` has a genuine
+  eigenvalue `μ*` with `|μ* + b| ≤ δ`; with `|h(−b)| = O(b²)` (`slowModeH_at_neg_b`) one may take
+  `δ = O(b²)/m`, so **`|λ_slow + b| ≤ O(b²)/m`** — the quantitative bound, no operator norm.
+
+What remains is only the two transparent hypotheses (NOT Mathlib gaps):
+- 📝 the **nondegeneracy** `m` (slow-mode derivative `≤ −m < 0` on the interval). Computing an explicit
+  `m` is the one place a scalar bound `|ρᵀ(A−μI)⁻²c| ≤ 1 − m` would enter (`‖ρ‖ = O(b)`,
+  `(A−μI)⁻²` continuous) — a clean estimate, not "operator-norm machinery".
+- 📝 `−b ∉ spec(A)` on the interval (`A − μI` invertible) — under `A` Hurwitz it is automatic
+  (review §D2); currently an explicit hypothesis.
 
 ## P3 (R2 lands on the actual GFL-VSC) — review §B1  ⬜ — BLOCKED ON MODEL INPUT
 
