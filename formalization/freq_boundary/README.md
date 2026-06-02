@@ -50,10 +50,22 @@ PLL 增益子空间 (Kp_pll, Ki_pll) 上 Σ_H **能写成显式关系**,因为�
 
 **真正的失同步充要边界**,过 Σ_H 后稳定/不稳定极限环互相靠近、在 μ_F=+1 合并消失。
 
-### 诚实:完整形式化超出当前证明器
-- F1(稳定极限环存在,|μ_F|<1)、F2(两环折叠合并,T 有界)需周期解 + 中心流形 + Floquet 理论,
-  Mathlib/KeYmaera X **没有**这套库。**deductive 证不出**;现实可达是 validated numerics(interval
-  continuation + 区间 Floquet,CAPD 思路)——本轮**未做**,明示为 open。
+### ✅ F1(稳定极限环存在,过 Σ_H)—— 两档已做(`ffold_cycle.py` + `ffold_l1_anchor.py`)
+真模型(Kp_pll=0.50,该处 Hopf **超临界**)上,过 Σ_H 确有轨道稳定极限环,两个独立证据:
+- **临界性锚(小幅严格根据)**:Hopf 第一 Lyapunov 系数 **l₁=−2.09e-6<0**(Kuznetsov 投影,
+  解析 Jacobian 的 FD 张量;**符号对 FD 步长稳健**:h=2e-3/1e-3/5e-4 均 −2.09e-6)。l₁<0 ⟹ 超临界 ⟹
+  **由 Hopf 分岔定理,Σ_H 刚过处存在小幅轨道稳定极限环**。这是 F1 小幅端的严格根据。
+- **有限幅数值(Floquet)**:在 SCR=0.7866(过 Σ_H,SCR_H=0.7966)定位周期轨(Poincaré 截面,
+  T=23.4 ms=42.7 Hz),算单值矩阵的 **Floquet 乘子**:平凡乘子≈1.0002(流向),**最大非平凡 |μ|=0.881<1**,
+  其余快模 ≈0 ⟹ **轨道稳定**。F1 在有限幅端成立(数值)。
+
+### 诚实:仍未做到(明示)
+- **l₁<0 的 interval-sound 化**(把"锚"升到计算机辅助证明档):方法就是 `../numerical/bautin_cert/`
+  那套(Krawczyk 验证特征对 + 区间张量 + Neumann 区间解),已在 sweep.py 上跑过;**搬到本任务模型未做**。
+  现 l₁<0 是 float(符号稳健),非区间证。
+- **F2(两环折叠 μ_F=+1,T 有界)**:需沿分支 validated continuation + 区间 Floquet 到 μ=+1。**未做**,open。
+- 周期轨本身未 Newton 精化(闭合误差 ‖P(x0)−x0‖≈3.3e-3;平凡乘子 1.0002 即反映此),
+  但**最大非平凡 |μ|=0.881 对此稳健**,结论不变。
 
 ### 可证子块 F3(代数,R2/Σ₂ 同型;`kyx/ffold_f3_drift.kyx`,2 条 proved)
 - **F3a**:角平衡 `θ' = M − Vg·sin θ`,过 fold 后 `|M|>Vg`(用 `s²≤1` 编码 sin)⟹ `M−Vg·s>0` 处处成立
@@ -69,17 +81,25 @@ PLL 增益子空间 (Kp_pll, Ki_pll) 上 Σ_H **能写成显式关系**,因为�
 | F-H 低阶约化是否存在 | ❌ 否(`fh_reduce.py`,高维模)——故无低阶符号 Σ_H |
 | F-H Hopf 签名机制(degree-4 LC) | ✅ KeYmaera X proved(`fh_hopf_signature.kyx`,3) |
 | F-H 全 10D 符号 Δ_9(p) | ❌ CAS 爆 + 不可约化(明示) |
-| F-fold F1/F2(极限环存在 + 折叠) | ❌ 超出证明器(需 Floquet/中心流形);validated-numerics 未做 |
+| F-fold F1(稳定极限环存在)小幅端 | ✅ l₁=−2.09e-6<0 超临界 + Hopf 定理(`ffold_l1_anchor.py`);l₁ 区间化未做 |
+| F-fold F1 有限幅(Floquet \|μ\|<1) | ✅ 数值:max 非平凡 \|μ\|=0.881<1(`ffold_cycle.py`) |
+| F-fold F2(两环折叠 μ_F=+1) | ❌ 需 validated continuation 到 μ=+1;未做,open |
 | F-fold F3(无平衡 ⟹ 漂移 + 边界) | ✅ KeYmaera X proved(`ffold_f3_drift.kyx`,2) |
 
 - F-H 是线性边界:**卡在 CAS 规模 + 不可低阶约化,不卡数学**;签名机制已证,真模型已核对。
-- F-fold 是非线性全局边界:**真失同步充要条件**,完整形式化超出现状;可证子块 F3 已拿下。
+- F-fold 是非线性全局边界:**真失同步充要条件**。F1(稳定极限环存在)已做(l₁<0 超临界锚 +
+  Floquet \|μ\|=0.881<1);F3 代数子块 KeYmaera X 已证;F2(环折叠)与 l₁ 区间化仍 open。
 - l₁/super-sub **不**作失同步判据(旁证,未入命题)。数值只核对,不进任何命题。
 
 ## 文件
 - `fh_gate.py` — 对象闸门:任务 RHS 转录 + 谱 vs sweep.py(SCR_H 0.950 vs 0.905)。
 - `fh_hurwitz.py` — Σ_H 的 Liénard–Chipart 签名 + H1/H2/H3 真模型验证。
 - `fh_reduce.py` — 低阶约化测试(2D/4D 均**复现不出** Hopf 的负结果)。
+- `kyx/fh_hopf_signature.kyx` — Hopf 签名机制(deg-2、deg-4 LC),3 条 proved。
+- `fh_sigmaH_pll.py` — 子空间显式 Σ_H(Kp_pll, Ki_pll):仿射系数 + 边界曲线 + sign chart。
+- `fh_model_sym.py` — 任务 RHS 的 SymPy 版 + 解析 Jacobian(lambdify,供积分加速)。
+- `ffold_cycle.py` — F1 有限幅:Poincaré 定轨 + Floquet 乘子(max 非平凡 \|μ\|=0.881<1)。
+- `ffold_l1_anchor.py` — F1 小幅锚:Hopf 第一 Lyapunov 系数 l₁=−2.09e-6<0(超临界)。
 - `kyx/fh_hopf_signature.kyx` — Hopf 签名机制(deg-2、deg-4 LC),3 条 proved。
 - `kyx/ffold_f3_drift.kyx` — F-fold F3 代数子块,2 条 proved。
 
