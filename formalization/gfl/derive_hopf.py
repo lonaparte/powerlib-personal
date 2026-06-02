@@ -1,27 +1,25 @@
 #!/usr/bin/env python3
 """
-(A) Parametric symbolic derivation toward the GFL-VSC F-H (Hopf) surface Σ_H.
+(A) Parametric symbolic derivation toward the GFL-VSC F-H (Hopf) surface Σ_H (sympy, CAS).
+Fully symbolic in p and θ_e* (C=cosθ_e*, S=sinθ_e*).  Not a Lean certificate.
 
-This is a CAS derivation (sympy), fully symbolic in the parameters p and θ_e* (kept as C=cosθ_e*,
-S=sinθ_e*).  It is NOT a Lean certificate; it complements the machine-verified deg-2/deg-3
-Routh–Hurwitz / Hopf blocks in `GFL/HopfFold.lean`.
+CORRECTION (vs an earlier run): the full 10×10 characteristic polynomial is NOT a wall — that was an
+algorithm-choice error (berkowitz determinant).  `J.charpoly` (Faddeev–LeVerrier, fraction-free)
+computes it in ~3.6 s with COMPACT coefficients.
 
-FINDINGS (run this file to reproduce):
-  * J(x;p) and the trace a₁ = −tr J compute instantly:
-        a₁ = Kp_pll·v_cdc + 2(K_ad+Kpi)/Lf + 2 Rg/Lg + 2 Rf/Lf            (v_cdc := C·v_cd − S·v_cq)
-  * Schur block structure (controller block of λI−J, states ξ_dc,ξ_qc,η,θ_e):
-        det(Mkk) = λ² · ( λ² + (Kp_pll·v_cdc)·λ + (Ki_pll·v_cdc) )
-    The PLL factor  λ² + (Kp_pll·v_cdc)·λ + (Ki_pll·v_cdc)  is EXACTLY the `s²+a₁s+a₂` form proved in
-    Lean (`hopf_deg2`, `stable_deg2_of_pos`):  a₁ = Kp_pll·v_cdc, a₂ = Ki_pll·v_cdc.  Hence the PLL
-    Hopf onset is  v_cdc = 0  (marginal), stable iff v_cdc > 0, onset frequency ω = √(Ki_pll·v_cdc).
-  * the 6×6 electrical block det computes (~0.1 s).
-  * THE WALL: the full 10×10 char poly det(λI−J) (and its Schur assembly det(Mkk)·det(Schur_E),
-    whose cancellation to a polynomial) does NOT complete in this environment (>8 min, killed).
-    So the fully-coupled Σ_H (Δ₉=0) is beyond sympy's practical limit here without a hand
-    Schur/Gröbner reduction — matching the problem's "CAS 规模" note.  The block factor above and the
-    deg-2/3 Lean certificates are the parametric results that DO land.
+WHAT COMPUTES (run this file):
+  * general char poly a_k(x;p,C,S) via J.charpoly — 3.6 s, coeff op-counts
+        [1, 37, 388, 1288, 3509, 6630, 10221, 11739, 8893, 3113, 529].
+  * equilibrium x*(p,C,S) in closed form (i_d,i_q = rotation of refs; electrical & integrator states
+    by linear solve; η*=0), and the implicit-angle constraint
+        g(p,C,S) := v_cqc(x*) = 0      (a clean rational function — defines θ_e*).
+WHERE THE COST NOW LIVES (the genuine remaining work, = the problem's "(p,θ_e*) 有理函数 + 消元"):
+  * substituting x*(p,C,S) into the char poly coeffs blows them up (a_5 ~1.8e5, a_6 ~2.7e5 ops);
+  * so the closed-form Σ_H = {Δ₉(p,θ_e*)=0} needs a Gröbner/resultant elimination, which is the large
+    step — but the determinant obstruction is gone.  The deg-2/3 Lean blocks (`GFL/HopfFold.lean`)
+    discharge the Schur-reduced low-degree factors.
 """
-import sympy as sp, time
+import sympy as sp, time, pickle
 t0 = time.time()
 def log(m): print(f"[{time.time()-t0:6.1f}s] {m}", flush=True)
 
@@ -48,16 +46,21 @@ f = sp.Matrix([
 J = f.jacobian(X)
 C, S = sp.symbols('C S', real=True)
 J = J.subs([(sp.cos(th), C), (sp.sin(th), S)])
-log("J(x;p) computed (θ_e-derivatives correct, then cos/sin → C,S)")
-
-a1 = sp.expand(-sum(J[k, k] for k in range(10))).subs(S**2, 1 - C**2)
-log(f"a1 = -trace(J) = {a1}")
-
 lam = sp.symbols('lam')
-M = lam*sp.eye(10) - J
-K = [6, 7, 8, 9]
-Mkk = sp.Matrix([[M[r, cc] for cc in K] for r in K])
-log(f"controller block factor det(Mkk) = {sp.factor(Mkk.det())}")
-log("  → PLL factor λ²+(Kp_pll·v_cdc)λ+(Ki_pll·v_cdc): the Lean deg-2 block (hopf_deg2).")
 
-log("full 10×10 det(λI−J): NOT attempted here — times out (>8 min). See module docstring.")
+cp = J.charpoly(lam)                       # Faddeev–LeVerrier — the working method
+co = cp.all_coeffs()
+log(f"general char poly a_k(x;p,C,S): op-counts {[sp.count_ops(x) for x in co]}")
+
+# closed-form equilibrium x*(p,C,S):
+ids = C*id_ref + S*iq_ref;  iqs = C*iq_ref - S*id_ref
+vcd_s, vcq_s, igd_s, igq_s = list(sp.linsolve(
+    [f[k].subs([(i_d, ids), (i_q, iqs)]) for k in [2, 3, 4, 5]], [v_cd, v_cq, i_gd, i_gq]))[0]
+base = [(i_d, ids), (i_q, iqs), (v_cd, vcd_s), (v_cq, vcq_s), (i_gd, igd_s), (i_gq, igq_s), (eta, 0)]
+xstar = list(sp.linsolve([f[0].subs(base), f[1].subs(base)], [xi_dc, xi_qc]))[0]
+g = sp.simplify(S*vcd_s + C*vcq_s)
+log(f"implicit-angle constraint  g(p,C,S) = v_cqc* = {g}")
+log("(g = 0 defines θ_e*; with C²+S²=1.  a_1 = −trace is the first Hurwitz coeff.)")
+print("\na_1 = -trace(J) (general) =", sp.factor(co[1]))
+pickle.dump({'coeffs': [str(x) for x in co], 'g': str(g)}, open('/tmp/gfl_charpoly.pkl', 'wb'))
+log("saved general char poly + θ_e* constraint to /tmp/gfl_charpoly.pkl")

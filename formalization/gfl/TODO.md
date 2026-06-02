@@ -120,9 +120,13 @@ Two-pronged: (B) Lean machine-verified building blocks + (A) sympy parametric de
   - `a₁ = −tr J = Kp_pll·v_cdc + 2(K_ad+Kpi)/Lf + 2Rg/Lg + 2Rf/Lf` (`v_cdc := cosθ_e*·v_cd − sinθ_e*·v_cq`).
   - controller Schur block `det(Mkk) = λ²·(λ² + (Kp_pll·v_cdc)·λ + (Ki_pll·v_cdc))`; the PLL factor is
     exactly the Lean deg-2 block ⟹ **PLL Hopf onset `v_cdc=0`, stable iff `v_cdc>0`, `ω=√(Ki_pll·v_cdc)`**.
-  - 6×6 electrical block det tractable (~0.1 s).
-- ❌ **the wall (demonstrated, not asserted):** the full 10×10 `det(λI−J)` / the Schur assembly's
-  rational→polynomial cancellation does **not** complete in this environment (>8 min, killed thrice).
-  So the fully-coupled `Σ_H` (`Δ₉(p,θ_e*)=0`) needs a hand Schur/Gröbner reduction or a stronger CAS —
-  matching the problem's "CAS 规模" note.  `Σ_fold` (Floquet/limit-cycle fold) stays out entirely
-  (theory absent from provers); only its F3 algebraic slice is done.
+  - **full 10×10 char poly: COMPUTES in ~3.6 s** via `J.charpoly` (Faddeev–LeVerrier), compact coeffs
+    op-counts `[1,37,388,1288,3509,6630,10221,11739,8893,3113,529]`.  (CORRECTION: an earlier run
+    called this a "wall" — that was an algorithm-choice error, `berkowitz` determinant; it is NOT a wall.)
+  - closed-form equilibrium `x*(p,C,S)` + implicit-angle constraint `g(p,C,S) := v_cqc(x*) = 0`.
+- 🟡 **where the cost now lives (the genuine remaining step, not the determinant):** substituting
+  `x*(p,C,S)` into the char-poly coeffs blows them up (a₅~1.8e5, a₆~2.7e5 ops); so the closed-form
+  `Σ_H = {Δ₉(p,θ_e*)=0}` still needs a Gröbner/resultant elimination (the problem's "(p,θ_e*) 有理函数
+  + 消元" step) — large, but the determinant obstruction is removed.
+- ❌ **`Σ_fold`** (Floquet/limit-cycle fold) stays out entirely (theory absent from provers); only its
+  F3 algebraic slice is proved.
