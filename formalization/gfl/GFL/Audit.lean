@@ -20,6 +20,7 @@ import GFL.LiteralJacobian
 import GFL.LossOfSync
 import GFL.SyncEquilibrium
 import GFL.SlowModeScalar
+import GFL.HopfFold
 
 open GFL
 
@@ -98,3 +99,9 @@ open GFL
 #print axioms sync_pos_of_bias_gt_amp
 #print axioms sync_loss_of_bias_gt_amp
 #print axioms sync_equilibrium_of_amp_ge
+-- F-fold sub-block (F3, algebraic) + F-H deg-2 building blocks (weak-grid Hopf/fold boundaries)
+#print axioms angle_fold_tangency        -- F-fold: saddle-node tangency at D²=A²+B² (G=0 ∧ G'=0)
+#print axioms sync_window_equilibrium    -- F-fold: equilibrium exists within the sync window
+#print axioms F3_drift_beyond_fold       -- F3: beyond the fold ⟹ unbounded angle drift (loss of sync)
+#print axioms stable_deg2_of_pos         -- F-H: deg-2 Routh–Hurwitz (a₁,a₂>0 ⟹ Hurwitz)
+#print axioms hopf_deg2                  -- F-H: deg-2 Hopf onset (pure-imaginary pair ⟺ a₁=0, ω=√a₂)
