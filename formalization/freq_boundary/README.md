@@ -59,11 +59,29 @@ PLL 增益子空间 (Kp_pll, Ki_pll) 上 Σ_H **能写成显式关系**,因为�
   T=23.4 ms=42.7 Hz),算单值矩阵的 **Floquet 乘子**:平凡乘子≈1.0002(流向),**最大非平凡 |μ|=0.881<1**,
   其余快模 ≈0 ⟹ **轨道稳定**。F1 在有限幅端成立(数值)。
 
+### ✅ F2(环折叠 Σ_fold)—— 参数化形式化(法形提升;`kyx/ffold_cyclefold_normalform.kyx`,5 条 proved)
+把 F2 抬到 **Hopf 法形**:环折叠 = 幅值方程 `g(ρ)=l₂ρ²+l₁ρ+μ=0`(ρ=r²)的**二次鞍结**,与
+`R2real_fold.kyx`(判别式 fold)**结构完全相同**,因而可参数化 QE 证:
+- **折叠**:disc=l₁²−4l₂μ=0 时 ρ\*=−l₁/(2l₂) 是重根(两环合并);
+- **折叠下方**:disc>0 两条不同极限环(稳+不稳,正是要合并的一对);
+- **折叠上方**:l₂>0∧disc<0 ⟹ g>0 处处 ⟹ 无极限环(振荡支消失);
+- **物理性**:ρ\*>0 ⟺ l₁·l₂<0(经典 sub/super + Bautin 配置);
+- **Bautin 组织中心**:l₁=0 处折叠面与 Σ_H 相交(Σ_fold 从 Bautin 点发出,切于 Σ_H)。
+
+**对象闸门**(`ffold_normalform.py`,确认任务模型真服从此法形,非假设):(A) 幅值² 对 μ-代理
+线性 `ρ=19.3·δ−0.012`(小截距 ⟹ 法形成立);(B) 任务模型 **Bautin 点 Kp\*≈0.43**(l₁ 在 Kp=0.40→0.45
+变号:+4.6e-7→−9.8e-7),Σ_fold 由此发出。
+
+**诚实 scope**:这把 Σ_fold 的**折叠结构**参数化证清(法形坐标 (μ,l₁,l₂),Bautin 邻域有效);
+物理参数 p→(μ,l₁,l₂) 的映射是中心流形约化(数值/区间),**l₂≠0(非退化)未算**(与 bautin_cert
+同一诚实省略)。即:**分岔骨架已形式化证明,系数是数值层**——这正是奇点理论刻画这类边界的标准方式。
+
 ### 诚实:仍未做到(明示)
 - **l₁<0 的 interval-sound 化**(把"锚"升到计算机辅助证明档):方法就是 `../numerical/bautin_cert/`
   那套(Krawczyk 验证特征对 + 区间张量 + Neumann 区间解),已在 sweep.py 上跑过;**搬到本任务模型未做**。
   现 l₁<0 是 float(符号稳健),非区间证。
-- **F2(两环折叠 μ_F=+1,T 有界)**:需沿分支 validated continuation + 区间 Floquet 到 μ=+1。**未做**,open。
+- **F2 的物理坐标精确 Σ_fold + l₂**:法形结构已证;但 l₂(非退化)、以及把折叠面映回 (Kp,SCR) 物理平面
+  (需沿分支 validated continuation 找实际环折叠),**未做**,open。
 - 周期轨本身未 Newton 精化(闭合误差 ‖P(x0)−x0‖≈3.3e-3;平凡乘子 1.0002 即反映此),
   但**最大非平凡 |μ|=0.881 对此稳健**,结论不变。
 
@@ -83,7 +101,8 @@ PLL 增益子空间 (Kp_pll, Ki_pll) 上 Σ_H **能写成显式关系**,因为�
 | F-H 全 10D 符号 Δ_9(p) | ❌ CAS 爆 + 不可约化(明示) |
 | F-fold F1(稳定极限环存在)小幅端 | ✅ l₁=−2.09e-6<0 超临界 + Hopf 定理(`ffold_l1_anchor.py`);l₁ 区间化未做 |
 | F-fold F1 有限幅(Floquet \|μ\|<1) | ✅ 数值:max 非平凡 \|μ\|=0.881<1(`ffold_cycle.py`) |
-| F-fold F2(两环折叠 μ_F=+1) | ❌ 需 validated continuation 到 μ=+1;未做,open |
+| F-fold F2 折叠**结构**(法形鞍结) | ✅ KeYmaera X proved(`ffold_cyclefold_normalform.kyx`,5;R2 同型);法形成立+Bautin Kp*≈0.43 已核对 |
+| F-fold F2 物理坐标 Σ_fold + l₂ | ❌ 中心流形系数映射 + l₂ + 环 continuation;未做,open |
 | F-fold F3(无平衡 ⟹ 漂移 + 边界) | ✅ KeYmaera X proved(`ffold_f3_drift.kyx`,2) |
 
 - F-H 是线性边界:**卡在 CAS 规模 + 不可低阶约化,不卡数学**;签名机制已证,真模型已核对。
@@ -100,7 +119,9 @@ PLL 增益子空间 (Kp_pll, Ki_pll) 上 Σ_H **能写成显式关系**,因为�
 - `fh_model_sym.py` — 任务 RHS 的 SymPy 版 + 解析 Jacobian(lambdify,供积分加速)。
 - `ffold_cycle.py` — F1 有限幅:Poincaré 定轨 + Floquet 乘子(max 非平凡 \|μ\|=0.881<1)。
 - `ffold_l1_anchor.py` — F1 小幅锚:Hopf 第一 Lyapunov 系数 l₁=−2.09e-6<0(超临界)。
+- `ffold_normalform.py` — F2 对象闸门:法形成立(幅值²~μ 线性)+ Bautin 点 Kp*≈0.43。
 - `kyx/fh_hopf_signature.kyx` — Hopf 签名机制(deg-2、deg-4 LC),3 条 proved。
+- `kyx/ffold_cyclefold_normalform.kyx` — F2 环折叠法形鞍结(R2 同型),5 条 proved。
 - `kyx/ffold_f3_drift.kyx` — F-fold F3 代数子块,2 条 proved。
 
 复现:`python3 fh_gate.py; python3 fh_hurwitz.py; python3 fh_reduce.py`;
