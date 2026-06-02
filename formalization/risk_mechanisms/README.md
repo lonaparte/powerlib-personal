@@ -1,32 +1,31 @@
-# 风险机制的参数化证书(经典摆模型;非仓库 GFL —— 见模型审计)
+# 风险机制的参数化证书(R2 已改对锚定真模型;R1 撤回;R3 标经典摆)
 
-> **重要(2026.06 模型审计,按 R1 同标准把 R1/R2/R3 全查了一遍):**
-> 这些证书数学上正确、KeYmaera X 全 proved,但它们证的对象**不是仓库的 GFL 模型**
-> (§12/`sweep.py` 或 §13/freq_mode),而是**经典摆 / 单轴同步模型**。逐条 scope:
+> **2026.06 模型审计 + 改对(按 R1 同标准把 R1/R2/R3 全查了一遍,并把能改对的改对):**
 >
 > - **R1 — 撤回**:8×8 电气 A_e 是手编矩阵;且经真模型检验,弱网失稳是 PLL 模、无电气 onset。
->   见 `R1_RETRACTED.md` + `numerical/R1_real_model_test.py`。**机制不存在,永久撤回。**
-> - **R2 — 真假各半**:变量 `M=id_ref·wn·Lg+iq_ref·Rg` 确等于真模型 §12 平衡的 K2(可追溯);
->   **但 fold `|M|=Vg` 不是真模型 fold**(真 fold = vcd 二次判别式,含 LC/d 轴项,d 轴项 Cterm≈300
->   比 M 还大不可略)。R2 实为**经典摆/Wu 边界**,非 §12 GFL 的精确失平衡条件。
-> - **R3 — 经典摆**:swing 核 `δ'=dw, dw'=−b·dw−K·sinδ+Pm` **不在任何提交模型里**(§12 无 swing,
->   §13 有 swing 但无 sinδ/角态)。是 textbook 同步机摆方程,与 R2 同源。
+>   见 `R1_RETRACTED.md` + `numerical/R1_real_model_test.py`。**机制不存在,无可改,永久撤回。**
+> - **R2 — ✅ 已改对**:经典 `|M|=Vg` 不是真 fold。**已在真模型 sweep.py 上重做**:真失平衡是
+>   vcd 平衡二次的**鞍结 disc=0**(系数全真),`kyx/R2real_fold.kyx`(5 条全 proved)+ 3 组数值验证
+>   (`numerical/R2real_validate.py`,与 sweep.py 的 `pv()` 崩溃边界逐点吻合)。真 fold 在 SCR\*≈0.370,
+>   比 PLL Hopf(SCR_H≈0.905)更深。旧经典 `|M|=Vg` 降为对照。
+> - **R3 — 经典摆(未改)**:swing 核 `δ'=dw, dw'=−b·dw−K·sinδ+Pm` **不在任何提交模型里**(§12 无
+>   swing/惯量,§13 有 swing 但无 sinδ/角态)。是 textbook 同步机摆方程。真 GFL 的 10D 非线性吸引域
+>   是另一个更难的问题(见"仍未做到");现 R3 仅作经典摆参照。
 >
-> **结论**:R2/R3 的 16 条 proved 是**经典电力系统摆模型上的正确参数化结果**,可作教学/
-> 对照锚点;但**不能当作仓库 GFL-VSC 模型的结论**。真 GFL 的弱网失稳在 `numerical/`、
-> `freq_mode/`(PLL 模 Hopf,SCR_H≈0.905,l₁/subcriticality)。审计脚本见 `numerical/`。
+> 真 GFL 的弱网**失稳**(非 fold)在 `numerical/`、`freq_mode/`(PLL 模 Hopf,SCR_H≈0.905,l₁)。
 
-## 状态总览(模型审计后)
+## 状态总览(审计 + 改对后)
 
-| 文件 | entry | KeYmaera X | scope(审计结论) |
+| 文件 | entry | KeYmaera X | scope |
 |------|-------|-----------|------|
 | `R1_RETRACTED.md` | — | **撤回** | 手编模型 + 真模型检验机制不存在 |
-| `kyx/R2_fold.kyx` | 4 | proved | 经典摆 fold;M 可追溯真模型,但 \|M\|=Vg 非真 fold |
-| `kyx/R2_sigma2_symbolic.kyx` | 2 | proved | 经典摆 Σ₂ 全符号闭式(数学真,scope=Wu 边界) |
+| `kyx/R2real_fold.kyx` | 5 | **proved** | ✅ **真模型** sweep.py 鞍结 fold disc=0(系数全真,3 组数值验证) |
+| `kyx/R2_fold.kyx` | 4 | proved | 经典摆对照;\|M\|=Vg 非真 fold(降级) |
+| `kyx/R2_sigma2_symbolic.kyx` | 2 | proved | 经典摆 Σ₂ 闭式(对照,scope=Wu 边界) |
 | `kyx/R3a_energy_barrier.kyx` | 3 | proved | 经典摆能量屏障 Vdot=−b·dw²(2D 核) |
 | `kyx/R3_basin.kyx` | 4 | proved | 经典摆吸引域:不变性/鞍点排除/单调/阈值 |
 | `kyx/R3note_decoupling.kyx` | 3 | proved | l₁(局部)vs 鞍点裕度(全局)解耦;非 vacuous |
-| **proved 合计** | **16** | | **全部 scope = 经典摆模型,非仓库 GFL** |
+| **proved 合计** | **21** | | R2real(5,真模型)+ 经典摆对照(16) |
 
 复现:`cd kyx && java -jar <keymaerax.jar> -prove <file>.kyx -tool z3`
 (**必须用 KeYmaera X 自带 z3,不要 `-z3path` 外部 z3** — 外部会挂启动期公理推导);
@@ -77,16 +76,29 @@
 
 ## R2 — 同步平衡消失(鞍结/折叠)
 
-- **机制**:不平衡力矩 M=id_ref·wn·Lg+iq_ref·Rg 超过 Vg ⟹ 无同步平衡 ⟹ θ 无界失同步。
-- **Σ₂ 全符号闭式**:`Φ(p) = Lg²·id_ref²·wn² + 2·Lg·Rg·id_ref·iq_ref·wn + Rg²·iq_ref² − Vg²`,
-  Φ<0 两平衡(node+saddle),Φ>0 零平衡。
-- **⚠️ 模型审计(2026.06,与 R1 同标准自查):** `M=id_ref·wn·Lg+iq_ref·Rg` **确实**等于真模型
-  `sweep.py`(§12)平衡里的 `K2`(q 轴 grid 方程,`R1_real_model_test` 同源验证)——这一半是真的。
-  **但 fold 形式 `|M|=Vg` 不是真模型的失同步边界**:真模型(§12.5)失平衡是 **vcd 二次方程判别式
-  `a1²−4a2a0<0`**(含 LC/d 轴项 al,be,K1),不是 `|M|=Vg`。数值上真 `Cterm`(d 轴)≈300,
-  比 M(60–230)还大,**不可略**。所以 R2 是**经典单轴摆模型(stiff-bus pendulum)**,非 §12 GFL 的精确 fold。
-  证书内部自洽、命题为真,但**它证的是经典摆模型,不是仓库的 GFL 模型**——这点之前没标清,现补。
-- **证书** `R2_fold.kyx`(4)+ `R2_sigma2_symbolic.kyx`(2):数学正确,scope = 经典摆/Wu 边界。
+### ✅ R2-real(已改对,锚定真模型 sweep.py / §12)—— `kyx/R2real_fold.kyx`(5,全 proved)
+
+真模型的失平衡机制是 **vcd 平衡二次方程的鞍结(电压崩溃)**,不是经典 `|M|=Vg`。从 sweep.py
+平衡 `cos²+sin²=1` 推出真二次 `a2·vcd²+a1·vcd+a0=0`,**系数全是真系数**:
+- `a2 = (1−wn²·Lg·Cf)² + (Rg·wn·Cf)²`(=al²+be²),`a1 = −2·Rg·idr`,`a0 = Lg²·idr²·wn² + Rg²·idr² − Vg²`
+- 真 fold = 判别式 `disc = a1²−4·a2·a0 = 0`
+
+证书 5 条(KeYmaera X 全 proved):(1) a2>0 是真二次;(2) **disc=0 ⟹ 重根**(鞍结点);
+(3) **disc>0 ⟹ 两不同平衡**(node+saddle,witness s²=disc);(4) **disc<0 ⟹ 处处>0 无平衡**(崩溃,
+即 `pv()` 返回 None 的分支);(5) **绑定**:抽象 disc = 真物理 fold 多项式 disc(wn,Vg,Rg,Lg,Cf,idr)。
+
+- **定位**:真 fold 在 **SCR\*≈0.370**(Lg\*≈0.0124 H),真鞍结(两 vcd 平衡合并:间距 459→16→0)。
+- **与 PLL Hopf 的关系**:弱网先在 **SCR_H≈0.905** 撞 PLL 模 Hopf(失稳),更深到 SCR\*≈0.370 才撞
+  鞍结。两机制都真实存在于 sweep.py,**PLL Hopf 先发生 = binding constraint**,真 R2 鞍结是二级机制。
+- **数值验证**(`numerical/R2real_validate.py`,3 组参数):disc 符号精确对应真平衡数,残差 ~1e-11,
+  且**与 sweep.py 自带 `pv()` 的 None 边界逐点吻合**。fold 随载荷物理移动(idr=120 → SCR\*=0.555)。
+
+### 经典对照(scope = textbook 单摆,非 §12 GFL)—— `kyx/R2_fold.kyx`、`R2_sigma2_symbolic.kyx`
+
+`Φ(p)=M²−Vg²`,`M=id_ref·wn·Lg+iq_ref·Rg`。数学正确,但这是**经典单轴摆 / Wu 边界**:它丢了真
+fold 的 d 轴项与 LC 电容项(数值上 d 轴 Cterm≈300 比 M 还大,不可略)。`M` 本身可追溯(=真平衡的
+q 轴量 K2),但 `|M|=Vg` 只是真 fold 在 Cterm=0 的退化特例。**保留作经典对照,不作 GFL 结论**;
+真 GFL 的 fold 以上面 R2-real 为准。
 
 ## R3 — 同步吸引域 vs PLL 阻尼
 
