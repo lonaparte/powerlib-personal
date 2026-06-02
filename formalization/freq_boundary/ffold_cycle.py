@@ -63,27 +63,20 @@ def monodromy(x0,T,Rg,Lg):
 
 if __name__=="__main__":
     SCRh=hopf_SCR(); print("task model Hopf at Kp=0.50: SCR_H=%.4f"%SCRh)
-    # cycle amplitude just past Sigma_H (robust; report what settles)
-    print("\nlimit-cycle amplitude past Sigma_H (settled, th_e peak-to-peak):")
-    print("  delta=SCR_H-SCR    th_e p2p amplitude   period T")
-    for d in [0.005,0.010,0.015]:
-        r=find_orbit(SCRh-d)
-        if r is None: print("  %.3f              (no settled cycle / diverged)"%d); continue
-        x0,T,c,Rg,Lg,f,Jf=r
-        s=solve_ivp(f,[0,T],x0,method='Radau',jac=Jf,rtol=1e-9,atol=1e-11,dense_output=True)
-        amp=np.ptp(s.sol(np.linspace(0,T,4000))[9])
-        print("  %.3f              %.4f               %.5f s"%(d,amp,T))
-    # Floquet at a representative point past Sigma_H
-    SCR=SCRh-0.01; r=find_orbit(SCR); assert r is not None, "no cycle at SCR=%.4f"%SCR
+    # Floquet at a representative point past Sigma_H (delta=0.01, settles cleanly)
+    SCR=SCRh-0.01; r=find_orbit(SCR, settle=6.0); assert r is not None, "no cycle at SCR=%.4f"%SCR
     x0,T,c,Rg,Lg,f,Jf=r
+    s=solve_ivp(f,[0,T],x0,method='Radau',jac=Jf,rtol=1e-9,atol=1e-11,dense_output=True)
+    print("  settled limit cycle: th_e p2p amplitude=%.4f rad, period T=%.5f s"%(np.ptp(s.sol(np.linspace(0,T,2000))[9]),T))
     M,xret=monodromy(x0,T,Rg,Lg)
     mu=np.linalg.eigvals(M); mu=mu[np.argsort(-np.abs(mu))]
     print("\nF1 at SCR=%.4f (past Sigma_H), period T=%.5f s (%.2f Hz):"%(SCR,T,1/T))
     print("  return error ||P(x0)-x0|| = %.2e (orbit closure)"%np.linalg.norm(xret-x0))
     print("  Floquet multipliers |mu| (sorted):")
     for m in mu: print("     |mu|=%.5f   mu=%.4f%+.4fj"%(abs(m),m.real,m.imag))
-    triv=mu[np.argmin(np.abs(np.abs(mu)-1.0))]
-    nontriv_max=max(abs(m) for m in mu if m is not triv)
-    print("  trivial multiplier ~1: |mu|=%.5f ; max NONTRIVIAL |mu|=%.5f"%(abs(triv),nontriv_max))
-    print("  => %s (all nontrivial |mu|<1 => orbitally STABLE limit cycle: F1 holds)"
+    triv_idx=int(np.argmin(np.abs(np.abs(mu)-1.0)))     # trivial multiplier ~1 (flow direction)
+    nontriv=np.delete(mu,triv_idx)
+    nontriv_max=float(np.max(np.abs(nontriv)))
+    print("  trivial multiplier ~1: |mu|=%.5f ; max NONTRIVIAL |mu|=%.5f"%(abs(mu[triv_idx]),nontriv_max))
+    print("  => %s (max nontrivial |mu|<1 => orbitally STABLE limit cycle: F1 holds)"
           %("STABLE" if nontriv_max<1 else "NOT stable"))
