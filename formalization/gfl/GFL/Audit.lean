@@ -103,5 +103,7 @@ open GFL
 #print axioms angle_fold_tangency        -- F-fold: saddle-node tangency at D²=A²+B² (G=0 ∧ G'=0)
 #print axioms sync_window_equilibrium    -- F-fold: equilibrium exists within the sync window
 #print axioms F3_drift_beyond_fold       -- F3: beyond the fold ⟹ unbounded angle drift (loss of sync)
-#print axioms stable_deg2_of_pos         -- F-H: deg-2 Routh–Hurwitz (a₁,a₂>0 ⟹ Hurwitz)
+#print axioms stable_deg2_of_pos         -- F-H: deg-2 Routh–Hurwitz (a₁,a₂>0 ⟹ Hurwitz) [= PLL block]
 #print axioms hopf_deg2                  -- F-H: deg-2 Hopf onset (pure-imaginary pair ⟺ a₁=0, ω=√a₂)
+#print axioms stable_deg3_of_pos         -- F-H: deg-3 Routh–Hurwitz (a₁,a₂,a₃>0 ∧ a₁a₂>a₃ ⟹ Hurwitz)
+#print axioms hopf_deg3                  -- F-H: deg-3 Hopf onset (pure-imaginary pair ⟺ a₃=a₁a₂, ω=√a₂)

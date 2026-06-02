@@ -20,6 +20,10 @@ namespace GFL
 
 open Real
 
+-- the cofactor/`simp only` extractions below share lemma lists across `congrArg re/im` calls; the
+-- unused-arg style linter conflicts with that and would fail the build (proofs are unaffected).
+set_option linter.unusedSimpArgs false
+
 /-! ### F-fold sub-block (F3, algebraic): the angle map `G(θ) = A·sinθ + B·cosθ + D`
 
 `A,B` are the in-phase / quadrature voltage-projection amplitudes and `D` the bias (grid-impedance
@@ -81,7 +85,12 @@ theorem F3_drift_beyond_fold (A B D : ℝ) (hD : 0 < D) (hbeyond : A ^ 2 + B ^ 2
 
 The current-loop and PLL blocks of `J(p)` are 2×2; their characteristic factors are real quadratics.
 For these, Routh–Hurwitz is `a₁>0 ∧ a₂>0` (stability) and the Hopf-onset (pure-imaginary pair) is the
-marginal `a₁ = 0` with frequency `ω = √a₂`.  Both are proved completely below. -/
+marginal `a₁ = 0` with frequency `ω = √a₂`.  Both are proved completely below.
+
+The sympy Schur derivation (`derive_hopf.py`, parametric) gives the controller block factor
+`det(Mkk) = λ²·(λ² + (Kp_pll·v_cdc)·λ + (Ki_pll·v_cdc))`, `v_cdc := cosθ_e*·v_cd − sinθ_e*·v_cq`.
+Its PLL factor is exactly `s²+a₁s+a₂` with `a₁ = Kp_pll·v_cdc`, `a₂ = Ki_pll·v_cdc`, so `hopf_deg2` /
+`stable_deg2_of_pos` give the PLL Hopf onset `v_cdc = 0` and stability `v_cdc > 0` directly. -/
 
 /-- **Routh–Hurwitz, degree 2 (sufficiency).**  If `a₁>0` and `a₂>0` then every root of
 `s² + a₁ s + a₂` has strictly negative real part (the 2×2 block is Hurwitz). -/
@@ -130,5 +139,74 @@ theorem hopf_deg2 (a₁ a₂ : ℝ) (h₂ : 0 < a₂) :
       nlinarith [hsq]
     · simp [pow_two, Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.I_re, Complex.I_im,
         Complex.ofReal_re, Complex.ofReal_im]
+
+/-! ### F-H deg-3 block (cubic factor `s³ + a₁s² + a₂s + a₃`)
+
+For a 3×3 Schur block the characteristic factor is a real cubic.  Routh–Hurwitz here is
+`a₁,a₂,a₃ > 0 ∧ a₁a₂ > a₃` (Hurwitz minor `Δ₂ = a₁a₂ − a₃ > 0`); the Hopf onset is the marginal
+`a₁a₂ = a₃` with frequency `ω = √a₂`.  Both proved completely (parametric in the coefficients). -/
+
+/-- **Routh–Hurwitz, degree 3 (sufficiency).**  If `a₁,a₂,a₃ > 0` and `a₁a₂ > a₃` then every root of
+`s³ + a₁s² + a₂s + a₃` has strictly negative real part. -/
+theorem stable_deg3_of_pos (a₁ a₂ a₃ : ℝ) (h₁ : 0 < a₁) (h₂ : 0 < a₂) (h₃ : 0 < a₃)
+    (hRH : a₃ < a₁ * a₂) (z : ℂ)
+    (hz : z ^ 3 + (a₁ : ℂ) * z ^ 2 + (a₂ : ℂ) * z + (a₃ : ℂ) = 0) : z.re < 0 := by
+  have hre : z.re ^ 3 - 3 * z.re * z.im ^ 2 + a₁ * (z.re ^ 2 - z.im ^ 2) + a₂ * z.re + a₃ = 0 := by
+    have h := congrArg Complex.re hz
+    simp only [Complex.add_re, Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
+      pow_succ, pow_zero, Complex.one_re, Complex.one_im, one_mul, Complex.zero_re] at h
+    linear_combination h
+  have him : z.im * (3 * z.re ^ 2 - z.im ^ 2 + 2 * a₁ * z.re + a₂) = 0 := by
+    have h := congrArg Complex.im hz
+    simp only [Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
+      pow_succ, pow_zero, Complex.one_re, Complex.one_im, one_mul, Complex.zero_im] at h
+    linear_combination h
+  by_contra hpos
+  rw [not_lt] at hpos
+  rcases mul_eq_zero.mp him with hy0 | hcond
+  · rw [hy0] at hre
+    nlinarith [hre, hpos, h₁, h₂, h₃, mul_nonneg (mul_nonneg hpos hpos) hpos,
+      mul_nonneg h₁.le (mul_nonneg hpos hpos), mul_nonneg h₂.le hpos]
+  · have hy2 : z.im ^ 2 = 3 * z.re ^ 2 + 2 * a₁ * z.re + a₂ := by linarith [hcond]
+    rw [hy2] at hre
+    nlinarith [hre, hpos, h₁, h₂, hRH, mul_nonneg (mul_nonneg hpos hpos) hpos,
+      mul_nonneg h₁.le (mul_nonneg hpos hpos), mul_nonneg h₂.le hpos,
+      mul_nonneg (mul_nonneg h₁.le h₁.le) hpos]
+
+/-- **Hopf onset, degree 3 (marginal).**  For `a₁,a₂ > 0`, the cubic `s³ + a₁s² + a₂s + a₃` has a
+pure-imaginary root iff the Hurwitz minor vanishes, `a₃ = a₁a₂`; onset frequency `ω = √a₂`
+(`χ(iω) = (a₃ − a₁ω²) + iω(a₂ − ω²)`). -/
+theorem hopf_deg3 (a₁ a₂ a₃ : ℝ) (h₂ : 0 < a₂) :
+    (∃ ω : ℝ, 0 < ω ∧ ((ω : ℂ) * Complex.I) ^ 3 + (a₁ : ℂ) * ((ω : ℂ) * Complex.I) ^ 2
+        + (a₂ : ℂ) * ((ω : ℂ) * Complex.I) + (a₃ : ℂ) = 0) ↔ a₃ = a₁ * a₂ := by
+  constructor
+  · rintro ⟨ω, hω, hroot⟩
+    have hre : a₃ - a₁ * ω ^ 2 = 0 := by
+      have h := congrArg Complex.re hroot
+      simp only [Complex.add_re, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
+        Complex.ofReal_im, Complex.I_re, Complex.I_im, pow_succ, pow_zero, Complex.one_re,
+        Complex.one_im, one_mul, Complex.zero_re] at h
+      linear_combination h
+    have him : ω * (a₂ - ω ^ 2) = 0 := by
+      have h := congrArg Complex.im hroot
+      simp only [Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
+        Complex.ofReal_im, Complex.I_re, Complex.I_im, pow_succ, pow_zero, Complex.one_re,
+        Complex.one_im, one_mul, Complex.zero_im] at h
+      linear_combination h
+    have hω2 : ω ^ 2 = a₂ := by
+      rcases mul_eq_zero.mp him with h | h
+      · exact absurd h (ne_of_gt hω)
+      · linarith
+    rw [hω2] at hre; linarith
+  · intro hcrit
+    refine ⟨Real.sqrt a₂, Real.sqrt_pos.mpr h₂, ?_⟩
+    have hsq : ((Real.sqrt a₂ : ℝ) : ℂ) ^ 2 = (a₂ : ℂ) := by
+      rw [← Complex.ofReal_pow, Real.sq_sqrt h₂.le]
+    have e2 : ((Real.sqrt a₂ : ℂ) * Complex.I) ^ 2 = -(a₂ : ℂ) := by
+      rw [mul_pow, Complex.I_sq, hsq]; ring
+    have e3 : ((Real.sqrt a₂ : ℂ) * Complex.I) ^ 3
+        = -(a₂ : ℂ) * ((Real.sqrt a₂ : ℂ) * Complex.I) := by rw [pow_succ, e2]
+    have hc : (a₃ : ℂ) = (a₁ : ℂ) * (a₂ : ℂ) := by exact_mod_cast hcrit
+    rw [e3, e2, hc]; ring
 
 end GFL

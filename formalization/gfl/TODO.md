@@ -107,3 +107,22 @@ Theorem B tight bound = P0 T1–T6.
   literal `l₁(p)` defined (after P1). SOS not required — one counter-example suffices.
 - ⬜ **R1** parametric weak-grid stability via Routh–Hurwitz — gated on `BLOCKERS.md §G1`.
 - ⬜ **R3** general nonlinear-stability claims — gated on `BLOCKERS.md §G2`.
+
+## F-H / F-fold (10-D weak-grid boundaries) — saturation outcome
+
+Two-pronged: (B) Lean machine-verified building blocks + (A) sympy parametric derivation.
+
+- ✅ **(B) Lean, machine-verified, parametric** (`GFL/HopfFold.lean`):
+  - deg-2: `stable_deg2_of_pos`, `hopf_deg2` (= the PLL block, see below).
+  - deg-3: `stable_deg3_of_pos` (`a₁,a₂,a₃>0 ∧ a₁a₂>a₃ ⟹ Hurwitz`), `hopf_deg3` (onset `a₃=a₁a₂`, `ω=√a₂`).
+  - F-fold/F3: `angle_fold_tangency`, `sync_window_equilibrium`, `F3_drift_beyond_fold`.
+- ✅ **(A) sympy parametric derivation** (`derive_hopf.py`, CAS — not a Lean certificate):
+  - `a₁ = −tr J = Kp_pll·v_cdc + 2(K_ad+Kpi)/Lf + 2Rg/Lg + 2Rf/Lf` (`v_cdc := cosθ_e*·v_cd − sinθ_e*·v_cq`).
+  - controller Schur block `det(Mkk) = λ²·(λ² + (Kp_pll·v_cdc)·λ + (Ki_pll·v_cdc))`; the PLL factor is
+    exactly the Lean deg-2 block ⟹ **PLL Hopf onset `v_cdc=0`, stable iff `v_cdc>0`, `ω=√(Ki_pll·v_cdc)`**.
+  - 6×6 electrical block det tractable (~0.1 s).
+- ❌ **the wall (demonstrated, not asserted):** the full 10×10 `det(λI−J)` / the Schur assembly's
+  rational→polynomial cancellation does **not** complete in this environment (>8 min, killed thrice).
+  So the fully-coupled `Σ_H` (`Δ₉(p,θ_e*)=0`) needs a hand Schur/Gröbner reduction or a stronger CAS —
+  matching the problem's "CAS 规模" note.  `Σ_fold` (Floquet/limit-cycle fold) stays out entirely
+  (theory absent from provers); only its F3 algebraic slice is done.
