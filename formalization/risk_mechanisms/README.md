@@ -17,8 +17,8 @@
 | `kyx/R2_sigma2_symbolic.kyx` | 2 | proved | **Σ₂ 全 6 参数闭式** Φ(p)（真成果) |
 | `kyx/R3a_energy_barrier.kyx` | 3 | proved(**2D 核**) | 能量屏障 Vdot=−b·dw²;标题已标"REDUCED 2D CORE not 10D" |
 | `kyx/R3_basin.kyx` | 4 | proved(**2D 核**) | 不变性原理(去掉 toy ODE)/ 鞍点排除 / **结构单调(IFT 式,非拟合斜率)** / 阈值 |
-| `kyx/conjecture_R3note_l1_not_criterion.kyx` | 1 | **conjecture(无 tactic,OPEN)** | 原 2 条是 vacuous 独立实数见证;退回待证(真目标=LCL 开集上 l₁<0∧平衡存在∧全局LOS 并存) |
-| **proved 合计** | **13** | | R1、R3-note 各 1 条是 conjecture,不计入 proved |
+| `kyx/R3note_decoupling.kyx` | 3 | proved（**重做,非 vacuous**） | l₁<0 局部法形无逃逸 / LOS 由 R2 鞍点裕度支配 / 裕度独立于 l₁。对抗检验:l₁>0 变体证不出 |
+| **proved 合计** | **16** | | R1 的 1 条是 conjecture,不计入 proved |
 
 复现:`cd kyx && java -jar <keymaerax.jar> -prove <file>.kyx -tool z3`
 (**必须用 KeYmaera X 自带 z3,不要 `-z3path` 外部 z3** — 外部会挂启动期公理推导);
@@ -41,19 +41,27 @@
 - **R3·3 重做**:单调性不再靠拟合斜率 k>0,改从结构 Vdot=−b·dw²(b 的线性单调)导
   "b₂>b₁ ⟹ 逐点耗散更大 ⟹ 认证 level 不减"。
 - **R3·2/·4 标注**:c*=3.098、V_saddle=62.98 等明确标为**数值输入**,dL 只证代数蕴含。
-- **R3-note → conjecture**:原 2 条是 vacuous(独立实数)。评审给的具体见证
-  Kp_pll=0.50, Ki_pll=400,我在本仓的 l₁ 管线(`numerical/sweep.py`)上实测得到
-  **l₁=+1.4e-6(正)**,**复现不出 l₁<0**——可能是模型/归一化约定不同。我不伪造一致,
-  故 R3-note 退回 `conjecture_`(Problem-only),文件头写明真目标(LCL 开集上三条件并存)
-  与缺口(可复现的 l₁<0 区、kick 时域 basin 证书、开集论证均未做)。
+- **R3-note → 重做为 proved(非 vacuous)**:原 2 条是 vacuous 独立实数。评审给的见证
+  Kp=0.50,Ki=400 我**复现不出 l₁<0**(实测 l₁=+1.4e-6),所以不照搬。改走**结构论证**
+  (`R3note_decoupling.kyx`,3 条):normal-form 推理表明 **l₁<0 的局部 Hopf 径向法形
+  `r'=a·μ·r+l₁·r³` 在稳定侧无有限幅逃逸**(单凭 l₁<0 不致 finite-kick LOS),而失同步由
+  **R2 鞍点裕度 Vg²−M²** 支配(可任意小),依赖 (M,Vg) **不依赖 l₁** ⟹ sign l₁ 非判据。
+  对抗检验:把 l₁<0 改 l₁>0,local 那条 KeYmaera X **证不出**(非平凡)。
+- **R1 部分进展(CAS,非 dL)**:`numerical/R1_sign_chart.py` 真算出 **Δ₇(g,K_ad) 显式双变量
+  多项式**(total degree 20, 143 项),并描出 sign chart Lg\*(K_ad)、Liénard–Chipart
+  (D1..6>0、D7 定边界)、从真 Δ₇ 取的横截性符号。这是评审要的真多项式 + sign chart。
+  **仍 open**:全 8 参数符号 Δ₇(CAS 超时)、dL 侧证明(degree-20 双变量 Hurwitz 非 QE 能力)。
+  故 R1 dL 文件保留 `conjecture_`,真内容在 CAS 脚本。
 
 ## 仍未做到 / 待证(明示)
 
-- **R1 整块**:Δ₇(p) 作为 8 物理参数的多项式 + sign chart。CAS(sympy)超时;
-  需 Maple/Mathematica/Sage Gröbner,目标 sign chart 非闭式。`conjecture_R1_*`。
+- **R1 全符号 + dL 证明**:Δ₇ 双变量(Lg,K_ad)已算出并描了 sign chart(`R1_sign_chart.py`),
+  但 **全 8 参数符号 Δ₇ CAS 超时**;且 degree-20 双变量 Hurwitz 符号分析**非 dL/QE 能力**,
+  故 dL 侧仍 `conjecture_`。真内容在 CAS 脚本,不是 dL 定理。
 - **10D 全状态屏障**:全非线性 SOS 未完成(求解器装不上;手搭 SOS 对核 infeasible,
   查实因是误用的交叉项 V 非 Lyapunov 函数);现有 R3a/R3_basin 是**2D 约化核**。
-- **R3-note 模型内开集**:见上,复现不出评审见证,退回 conjecture。
+- **R3-note 的"全局 LOS"严格化**:结构论证(normal-form + 鞍点裕度)已 proved,但完整的
+  **10D nonlinear kick → LOS 时域证书**未做(需重建 10D 非线性场积分,`sweep.py` 只暴露 Jacobian)。
 - **R2·4 的 Cf→0 极限**:未建有限-Cf fold,故未做极限证明(现为恒等改写)。
 
 ## R1 — 弱网使电气模过虚轴(onset)

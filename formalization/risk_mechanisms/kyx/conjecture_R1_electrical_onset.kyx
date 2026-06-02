@@ -18,10 +18,20 @@
  *   (iii) d Re(lambda)/d Lg > 0 along Sigma_1, via the spectral-perturbation identity
  *         Re[dlambda/dLg] = Re[ w^H (dA_e/dLg) v / (w^H v) ] with dA_e/dLg expanded
  *         SYMBOLICALLY (no injected numbers).
- * CAS (sympy) times out on the full symbolic determinant; the realistic deliverable
- * is a parametric SIGN CHART on the (Lg,Cf,K_ad) face via Maple/Mathematica/Sage
- * Groebner, NOT a closed form.  NUMERICAL evidence only (risk_numerical.py): deg-13
- * Delta_7(g), Re=0 crossing, omega0=12Hz != omega_LCL=553Hz, dRe/dLg=+644.
+ * PARTIAL PROGRESS (numerical/R1_sign_chart.py, a CAS result -- NOT a dL proof):
+ *   - Delta_7 is now computed as an EXPLICIT BIVARIATE polynomial Delta_7(g,K_ad),
+ *     g=1/Lg: total degree 20, 143 monomials, deg_g=13, deg_Kad=11.
+ *   - SIGN CHART traced: Sigma_1 = {Delta_7=0} as Lg*(K_ad).  Bare LCL (K_ad=0) has
+ *     NO positive root => stable for all Lg (no onset); K_ad>0 creates two onset
+ *     branches and pushes the weak-grid Lg* outward (0.089 -> 0.100 H as K_ad 0.5->4).
+ *   - Lienard-Chipart confirmed numerically: D1..D6 > 0 throughout, Delta_7 governs
+ *     the boundary (D7 flips +/- exactly where maxRe crosses 0 at Lg*=0.0987).
+ *   - Transversality from the REAL Delta_7(g) (no injected number): dDelta7/dLg sign
+ *     is +1 at the weak root Lg*=0.0987 and -1 at the strong root Lg*=0.00484.
+ * STILL OPEN: a FULLY-symbolic Delta_7 in all 8 params (CAS times out -- the ceiling);
+ *   and the dL-side proof (degree-20 bivariate Hurwitz sign analysis is exactly what
+ *   dL/QE cannot do).  So the R1 content lives in the CAS script; the dL file stays a
+ *   conjecture.
  *
  * This file is a Problem-only CONJECTURE placeholder (no Tactic): it does NOT claim a
  * proof.  Per project convention, filename is prefixed `conjecture_`.  The Problem
