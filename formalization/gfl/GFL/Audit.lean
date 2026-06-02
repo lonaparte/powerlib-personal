@@ -16,6 +16,7 @@ import GFL.TheoremC
 import GFL.Calculus
 import GFL.AsymptoticB
 import GFL.LiteralModel
+import GFL.LiteralJacobian
 import GFL.LossOfSync
 import GFL.SyncEquilibrium
 import GFL.SlowModeScalar
@@ -83,6 +84,11 @@ open GFL
 #print axioms litF_F6_eq                 -- F6 = −Kp_pll·v_cqc − Ki_pll·η − dw (v_cqc = F5)
 #print axioms litF_eP_eq                 -- F7 = e_P (Power-Lock equation)
 #print axioms litF_eQ_eq                 -- F8 = e_Q
+-- P1-inv (PARTIAL): the sparse e_P/e_Q rows of the literal ∂F/∂z (the reduction angle's core)
+#print axioms innerFieldZ                -- [def] inner field as a function of z (dw fixed)
+#print axioms innerJac                   -- [def] the literal inner Jacobian ∂F/∂z
+#print axioms innerJac_eP_row            -- ∂(e_P)/∂zⱼ = −1.5·Vg·[j=0]  (single nonzero entry)
+#print axioms innerJac_eQ_row            -- ∂(e_Q)/∂zⱼ =  1.5·Vg·[j=1]  (single nonzero entry)
 -- R2b: loss of synchronism when the synchronous equilibrium disappears
 #print axioms loss_of_sync_core
 #print axioms exists_margin_of_no_zero

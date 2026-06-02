@@ -15,6 +15,7 @@ import GFL.TheoremC
 import GFL.Calculus
 import GFL.AsymptoticB
 import GFL.LiteralModel
+import GFL.LiteralJacobian
 import GFL.LossOfSync
 import GFL.SyncEquilibrium
 import GFL.SlowModeScalar

@@ -45,10 +45,14 @@ Status legend: ✅ done · 🟡 partial (backbone proved) · ⬜ not started.
   every division is by a constant filter parameter, which is smooth regardless of sign. (Remaining for
   full `branch_of_ift` wiring: re-express the `(d, z)` split of coordinate 8 = `dw` to match the
   theorem's `F : ℝ → (Fin 8 → ℝ) → …` shape — mechanical.)
-- ⬜ **P1-inv** `∂(F_inner_literal)/∂z` invertible at the equilibrium (W2). Densely coupled 8×8
-  (`cosθ_e*/sinθ_e*` couple current-loop ↔ PLL — *not* cleanly block-triangular), so it is a
-  multi-hundred-line symbolic determinant. **Not attempted** (hand computation would risk
-  sign/factor errors); numerically nonsingular (`validate.py` solve succeeds). See `BLOCKERS.md`.
+- 🟡 **P1-inv** `∂(F_inner_literal)/∂z` invertible at the equilibrium (W2). **Reduction angle
+  partially realized** (`GFL/LiteralJacobian.lean`): the `e_P`, `e_Q` rows are machine-proven sparse
+  (`innerJac_eP_row`: `∂e_P/∂zⱼ = −1.5·Vg·[j=0]`; `innerJac_eQ_row`: `∂e_Q/∂zⱼ = 1.5·Vg·[j=1]`), so
+  a block/cofactor step gives `det(∂F/∂z) = ±(1.5·Vg)²·det(M₆)`. **Still open:** (i) formalize that
+  cofactor reduction (permute rows 6,7 to a block, `det_fromBlocks_zero₁₂`); (ii) `det(M₆) ≠ 0` for
+  the densely-coupled 6×6 controller/PLL block (`cosθ_e*/sinθ_e*` couple current-loop ↔ PLL) — a
+  multi-hundred-line symbolic determinant, **not** hand-done (error risk). Numerically nonsingular
+  (`validate.py` solve succeeds). The sparse-row part is the genuine, completed slice.
 
 ## P0 (Theorem B complete: `λ_slow = −b + O(b²)` for the full 9×9) — review §C  🟢 (complete modulo nondegeneracy hypothesis)
 
