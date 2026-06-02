@@ -1,28 +1,32 @@
-# GFL-VSC 风险机制的参数化证书(R2 / R3;R1 已撤回)
+# 风险机制的参数化证书(经典摆模型;非仓库 GFL —— 见模型审计)
 
-> 失稳机制的参数化分析:**R2** 同步平衡消失、**R3** 同步吸引域 vs PLL 阻尼。
-> `kyx/` 是 KeYmaera X 5.1.2(自带 z3)证书,`numerical/` 是支撑数值,`results/` 是证明日志。
+> **重要(2026.06 模型审计,按 R1 同标准把 R1/R2/R3 全查了一遍):**
+> 这些证书数学上正确、KeYmaera X 全 proved,但它们证的对象**不是仓库的 GFL 模型**
+> (§12/`sweep.py` 或 §13/freq_mode),而是**经典摆 / 单轴同步模型**。逐条 scope:
 >
-> **R1 已撤回(造模型错误,见 `R1_RETRACTED.md`):** R1 的 8×8 电气子系统 A_e 是**手编的
-> 代表性矩阵**,不是仓库任何真实模型(§12/`sweep.py` 的真 LC+有源阻尼模型、§13 的 9 状态
-> 模型都不是)。在错的对象上的 sign chart 是错的工作,已删除、不占成果位。若重做,须从
-> `sweep.py` 真实 10 状态 f 冻结 PLL 导出真 A_e(空间相量 8→4 复约化是可行角度,但必须用真模型)。
+> - **R1 — 撤回**:8×8 电气 A_e 是手编矩阵;且经真模型检验,弱网失稳是 PLL 模、无电气 onset。
+>   见 `R1_RETRACTED.md` + `numerical/R1_real_model_test.py`。**机制不存在,永久撤回。**
+> - **R2 — 真假各半**:变量 `M=id_ref·wn·Lg+iq_ref·Rg` 确等于真模型 §12 平衡的 K2(可追溯);
+>   **但 fold `|M|=Vg` 不是真模型 fold**(真 fold = vcd 二次判别式,含 LC/d 轴项,d 轴项 Cterm≈300
+>   比 M 还大不可略)。R2 实为**经典摆/Wu 边界**,非 §12 GFL 的精确失平衡条件。
+> - **R3 — 经典摆**:swing 核 `δ'=dw, dw'=−b·dw−K·sinδ+Pm` **不在任何提交模型里**(§12 无 swing,
+>   §13 有 swing 但无 sinδ/角态)。是 textbook 同步机摆方程,与 R2 同源。
 >
-> **2026.06 修订(按形式化评审):** 评审正确判定原 R1 是 tautology、R3 多条把仿真数塞进
-> dL 前提或把 2D 同步核冒名 10D。已据此**撤回 R1 / 重做 / 改名 / 标 scope**。
-> 真成果是 **R2**(fold + Σ₂ 闭式);R3 明确标"约化核";R3-note 重做为非 vacuous 结构论证。
+> **结论**:R2/R3 的 16 条 proved 是**经典电力系统摆模型上的正确参数化结果**,可作教学/
+> 对照锚点;但**不能当作仓库 GFL-VSC 模型的结论**。真 GFL 的弱网失稳在 `numerical/`、
+> `freq_mode/`(PLL 模 Hopf,SCR_H≈0.905,l₁/subcriticality)。审计脚本见 `numerical/`。
 
-## 状态总览(修订后)
+## 状态总览(模型审计后)
 
-| 文件 | entry | 状态 | 内容 / scope |
-|------|-------|------|------|
-| `R1_RETRACTED.md` | — | **撤回** | 造模型错误:A_e 非真实模型,已删 .kyx 与 sign-chart 脚本 |
-| `kyx/R2_fold.kyx` | 4 | proved | fold 根计数(\|M\|≷Vg)/ **node-saddle 由 arcsin 几何导**(修订)/ Wu 恒等改写(改名) |
-| `kyx/R2_sigma2_symbolic.kyx` | 2 | proved | **Σ₂ 全 6 参数闭式** Φ(p)（真成果) |
-| `kyx/R3a_energy_barrier.kyx` | 3 | proved(**2D 核**) | 能量屏障 Vdot=−b·dw²;标题已标"REDUCED 2D CORE not 10D" |
-| `kyx/R3_basin.kyx` | 4 | proved(**2D 核**) | 不变性原理(去掉 toy ODE)/ 鞍点排除 / **结构单调(IFT 式,非拟合斜率)** / 阈值 |
-| `kyx/R3note_decoupling.kyx` | 3 | proved（**重做,非 vacuous**） | l₁<0 局部法形无逃逸 / LOS 由 R2 鞍点裕度支配 / 裕度独立于 l₁。对抗检验:l₁>0 变体证不出 |
-| **proved 合计** | **16** | | 全属 R2/R3;R1 撤回不计 |
+| 文件 | entry | KeYmaera X | scope(审计结论) |
+|------|-------|-----------|------|
+| `R1_RETRACTED.md` | — | **撤回** | 手编模型 + 真模型检验机制不存在 |
+| `kyx/R2_fold.kyx` | 4 | proved | 经典摆 fold;M 可追溯真模型,但 \|M\|=Vg 非真 fold |
+| `kyx/R2_sigma2_symbolic.kyx` | 2 | proved | 经典摆 Σ₂ 全符号闭式(数学真,scope=Wu 边界) |
+| `kyx/R3a_energy_barrier.kyx` | 3 | proved | 经典摆能量屏障 Vdot=−b·dw²(2D 核) |
+| `kyx/R3_basin.kyx` | 4 | proved | 经典摆吸引域:不变性/鞍点排除/单调/阈值 |
+| `kyx/R3note_decoupling.kyx` | 3 | proved | l₁(局部)vs 鞍点裕度(全局)解耦;非 vacuous |
+| **proved 合计** | **16** | | **全部 scope = 经典摆模型,非仓库 GFL** |
 
 复现:`cd kyx && java -jar <keymaerax.jar> -prove <file>.kyx -tool z3`
 (**必须用 KeYmaera X 自带 z3,不要 `-z3path` 外部 z3** — 外部会挂启动期公理推导);
@@ -74,14 +78,24 @@
 ## R2 — 同步平衡消失(鞍结/折叠)
 
 - **机制**:不平衡力矩 M=id_ref·wn·Lg+iq_ref·Rg 超过 Vg ⟹ 无同步平衡 ⟹ θ 无界失同步。
-- **Σ₂ 全符号闭式**(标量问题,与撤回的 R1 不同,这是真做到的):
-  `Φ(p) = Lg²·id_ref²·wn² + 2·Lg·Rg·id_ref·iq_ref·wn + Rg²·iq_ref² − Vg²`,
-  Φ<0 两平衡(node+saddle),Φ>0 零平衡;经典极限退化到 Wu 边界 |M|=Vg。
-- **证书** `R2_fold.kyx`(4)+ `R2_sigma2_symbolic.kyx`(2)。
+- **Σ₂ 全符号闭式**:`Φ(p) = Lg²·id_ref²·wn² + 2·Lg·Rg·id_ref·iq_ref·wn + Rg²·iq_ref² − Vg²`,
+  Φ<0 两平衡(node+saddle),Φ>0 零平衡。
+- **⚠️ 模型审计(2026.06,与 R1 同标准自查):** `M=id_ref·wn·Lg+iq_ref·Rg` **确实**等于真模型
+  `sweep.py`(§12)平衡里的 `K2`(q 轴 grid 方程,`R1_real_model_test` 同源验证)——这一半是真的。
+  **但 fold 形式 `|M|=Vg` 不是真模型的失同步边界**:真模型(§12.5)失平衡是 **vcd 二次方程判别式
+  `a1²−4a2a0<0`**(含 LC/d 轴项 al,be,K1),不是 `|M|=Vg`。数值上真 `Cterm`(d 轴)≈300,
+  比 M(60–230)还大,**不可略**。所以 R2 是**经典单轴摆模型(stiff-bus pendulum)**,非 §12 GFL 的精确 fold。
+  证书内部自洽、命题为真,但**它证的是经典摆模型,不是仓库的 GFL 模型**——这点之前没标清,现补。
+- **证书** `R2_fold.kyx`(4)+ `R2_sigma2_symbolic.kyx`(2):数学正确,scope = 经典摆/Wu 边界。
 
 ## R3 — 同步吸引域 vs PLL 阻尼
 
-- **R3-pre(边界类型)**:吸引域边界 = **R2 鞍点的稳定流形**(数值 V_saddle=63 ≫ c*),
+- **⚠️ 模型审计(2026.06):** R3 的 swing 核 `δ'=dw, dw'=−b·dw−K·sinδ+Pm` **不在任何提交模型里**。
+  §12/`sweep.py` 是 stiff-bus 电流控制 GFL,**无 swing 方程、无 H/D 惯量、无 sinδ 同步力矩**;
+  §13/freq_mode 有 swing(`F9_S=κ·e_P−b·dw`,b=D/2H)但**无 sinδ、无角状态 δ**(§13.7 Thm C 才增广
+  角态,且是线性 `−βKs·δ` 不是 `−K·sinδ`)。所以 R3 是**经典同步机摆方程(textbook pendulum)**,
+  与 R2 同源(同一个经典摆),**不是仓库的 GFL**。证书数学正确,但 scope = 经典摆,非 §12/§13。
+- **R3-pre(边界类型)**:(经典摆上)吸引域边界 = 鞍点稳定流形(数值 V_saddle=63 ≫ c*),
   不是极限环、不是同宿。
 - **R3a(屏障证书)**:用**倾斜摆能量** `V=½dw²+K(cosδ*−cosδ)−Pm(δ−δ*)`,实算
   **Vdot=−b·dw² 精确**(误差 7e-17);LaSalle ⟹ {V<c*} 内估吸引域,c*=V(saddle)。
