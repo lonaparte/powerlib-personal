@@ -67,10 +67,13 @@
   从不过零),而全 10D 在 SCR≈0.905 失稳 ⟹ **弱网失稳是 PLL/耦合模,不是电气 onset**。
   R1 的前提对本模型为假——**没有"电气 onset Σ₁"可证**。真弱网失稳由 `numerical/`、
   `freq_mode/` 那条 PLL-模 Hopf 线(SCR_H≈0.905、l₁)覆盖。R1 永久撤回,不是待重做。
-- **10D 全状态屏障**:全非线性 SOS 未完成(求解器装不上;手搭 SOS 对核 infeasible,
-  查实因是误用的交叉项 V 非 Lyapunov 函数);现有 R3a/R3_basin 是**2D 约化核**。
-- **R3-note 的"全局 LOS"严格化**:结构论证(normal-form + 鞍点裕度)已 proved,但完整的
-  **10D nonlinear kick → LOS 时域证书**未做(需重建 10D 非线性场积分,`sweep.py` 只暴露 Jacobian)。
+- **10D 全状态 ROA 的严格证书(SOS)仍未做到**:全非线性 SOS 求解器装不上;手搭 SOS 对核
+  infeasible(查实因是误用的交叉项 V 非 Lyapunov 函数)。**已做到的是数值内估**:`R3_roa.py`
+  积分真 10D 非线性场,给出临界功率角 Δθ_crit(SCR) 这条暂态裕度(过了对象闸门)——这是真模型上
+  的 ROA **数值切片**,不是保证内界(保证内界需 Lyapunov sublevel set,未做)。经典 R3a/R3_basin
+  仍是 2D 约化核的对照。
+- **R3-note 的"全局 LOS"严格化**:数值时域已做(`R3_roa.py` 显示 SCR→0.905⁺ 时 ROA→0、硬 Hopf
+  在线性边界前塌缩);但**严格 dL/区间时域证书**未做。
 - **R2·4 的 Cf→0 极限**:未建有限-Cf fold,故未做极限证明(现为恒等改写)。
 
 ## R1 — 撤回
@@ -117,8 +120,22 @@ q 轴量 K2),但 `|M|=Vg` 只是真 fold 在 Cterm=0 的退化特例。**保留�
    ↔ supercritical/软)。**严格 interval-sound 版本已在 `numerical/bautin_cert/`**(区间 Kp\*∈[0.400,0.408],
    真 10 状态 §12 模型,Krawczyk/Rump 验证)。`R3real_check.py` 的 float Kp\*≈0.405 与之一致。
 
-最优 PLL 增益(≈0.45)恰在 Bautin 点(≈0.40)附近——真模型的物理结论。**R3 的真版以 bautin_cert/
-(临界性,严格)+ freq_mode/(Hopf 结构,§13 17/17)为准。**
+最优 PLL 增益(≈0.45)恰在 Bautin 点(≈0.40)附近——真模型的物理结论。
+
+3. **非线性吸引域(暂态裕度)** `numerical/R3_roa.py`:**积分真 10D 非线性场**(非 Jacobian),
+   先过对象闸门(`‖f(x_eq)‖~1e-11`、`‖Jac−Amat‖/‖Amat‖~1e-18`,确认积分的就是真模型),再测稳定
+   平衡能恢复的**临界功率角 Δθ_crit**(暂态稳定/critical-clearing 类比):
+
+   | SCR | 2.0 | 1.5 | 1.2 | 1.0 | 0.95 |
+   |-----|-----|-----|-----|-----|------|
+   | Δθ_crit | 148° | 136° | 100° | 44° | ~0 |
+
+   ROA 随弱网**单调收缩**,在 Hopf(SCR_H≈0.905)处归零。SCR=0.95(仍线性稳)时已 tiny——正是 Kp=0.30
+   **subcritical(硬)Hopf**(l₁>0,见 bautin_cert)的预言:稳定侧有不稳定极限环,基域在线性边界**之前**
+   就塌缩。三条线(非线性 ROA、线性裕度 SCR_H、Bautin 临界性)互相印证。
+
+**R3 的真版以 bautin_cert/(临界性,严格)+ freq_mode/(Hopf 结构,§13 17/17)+ R3_roa.py
+(非线性暂态裕度,数值)为准。**
 
 ### 经典对照(scope = textbook 倾斜摆,非 §12/§13 GFL)—— `kyx/R3a_*`、`R3_basin.kyx`、`R3note_*`
 
