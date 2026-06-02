@@ -156,4 +156,30 @@ theorem branch_linearization_of_ift
   obtain ⟨z, hz0, hzd, v, hv, hAv⟩ := branch_of_ift df₁ df₂ cf₁ cf₂ if₂ heq
   exact ⟨z, hz0, hzd, v, hv, by rw [← hf₂, hAv, hf₁]⟩
 
+/-! ### Theorem A's `hbot` is a derived fact, not an axiom (A3)
+
+Variant U sets the swing component `F9_U := 0` (§6).  So the Variant-U field is the inner field
+with a constant `0` appended as the 9th component, and the 9th *row* of its Jacobian — the
+gradient of that 9th component — is identically zero.  That is exactly the hypothesis `hbot`
+of `variantU_zero_eigenvalue`: it is forced by the §6 model structure, not assumed. -/
+
+/-- The Variant-U field: the inner field `F` with the swing component `F9_U ≡ 0` appended. -/
+def variantUField (F : (Fin 9 → ℝ) → (Fin 8 → ℝ)) (y : Fin 9 → ℝ) : Fin 9 → ℝ :=
+  Fin.snoc (F y) 0
+
+/-- The 9th (swing) component of the Variant-U field is the constant `0`. -/
+theorem variantUField_last (F : (Fin 9 → ℝ) → (Fin 8 → ℝ)) (y : Fin 9 → ℝ) :
+    variantUField F y (Fin.last 8) = 0 := by
+  simp only [variantUField, Fin.snoc_last]
+
+/-- **`hbot` derived (A3).**  The Jacobian row of the swing component `F9_U` is identically zero:
+`∂/∂y [ (variantUField F y) (last) ] = 0`, because that component is the constant `0`.  Hence the
+last row of the Variant-U Jacobian vanishes — precisely the hypothesis `hbot` that Theorem A
+takes.  (`variantU_zero_eigenvalue` then applies with `hbot j` obtained from this zero gradient.) -/
+theorem variantU_lastrow_fderiv_zero (F : (Fin 9 → ℝ) → (Fin 8 → ℝ)) (y₀ : Fin 9 → ℝ) :
+    HasFDerivAt (fun y => variantUField F y (Fin.last 8)) (0 : (Fin 9 → ℝ) →L[ℝ] ℝ) y₀ := by
+  have he : (fun y => variantUField F y (Fin.last 8)) = fun _ => (0 : ℝ) :=
+    funext (variantUField_last F)
+  rw [he]; exact hasFDerivAt_const 0 y₀
+
 end GFL

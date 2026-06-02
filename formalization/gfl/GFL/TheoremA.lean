@@ -17,25 +17,40 @@ namespace GFL
 
 open Matrix
 
+/-- **Theorem A, part 1 — left eigenvector.**  If the Jacobian has a zero last row
+(Variant U, §6: `ρᵀ = 0ᵀ`, `j99 = 0`), then `e₉ᵀ J = 0ᵀ`: `e₉` is a left eigenvector for `0`. -/
+theorem variantU_left_eigenvector (J : Matrix (Fin 9) (Fin 9) ℝ) (hbot : ∀ j, J 8 j = 0) :
+    (Pi.single (8 : Fin 9) (1 : ℝ) : Fin 9 → ℝ) ᵥ* J = 0 := by
+  -- compute the j-th entry, `vecMul` reduces to a `dotProduct`
+  funext j
+  show (Pi.single (8 : Fin 9) (1 : ℝ) : Fin 9 → ℝ) ⬝ᵥ (fun i => J i j) = (0 : Fin 9 → ℝ) j
+  rw [single_dotProduct]
+  simp [hbot j]
+
+/-- **Theorem A, part 2 — singular Jacobian.**  A zero last row forces `det J = 0`,
+i.e. `0 ∈ spec(J)`. -/
+theorem variantU_det_zero (J : Matrix (Fin 9) (Fin 9) ℝ) (hbot : ∀ j, J 8 j = 0) :
+    J.det = 0 :=
+  det_eq_zero_of_row_eq_zero 8 hbot
+
+/-- **Theorem A, part 3 — the eigenvector is genuine.**  `e₉ ≠ 0` (its 8-component is `1`). -/
+theorem variantU_basis_nonzero :
+    (Pi.single (8 : Fin 9) (1 : ℝ) : Fin 9 → ℝ) ≠ 0 := by
+  intro h
+  have h8 : (Pi.single (8 : Fin 9) (1 : ℝ) : Fin 9 → ℝ) 8 = 0 := by rw [h]; rfl
+  rw [Pi.single_eq_same] at h8
+  exact one_ne_zero h8
+
 /-- **Theorem A — zero eigenvalue, Variant U (§7).**
 If the Jacobian has a zero last row (Variant U, §6: `ρᵀ = 0ᵀ`, `j99 = 0`), then `e₉` is
-a nonzero left eigenvector for eigenvalue `0` and `det J = 0`, i.e. `0 ∈ spec(J)`. -/
+a nonzero left eigenvector for eigenvalue `0` and `det J = 0`, i.e. `0 ∈ spec(J)`.
+(Assembled from the three single-conclusion lemmas above for finer audit granularity.) -/
 theorem variantU_zero_eigenvalue (J : Matrix (Fin 9) (Fin 9) ℝ)
     (hbot : ∀ j, J 8 j = 0) :
     (Pi.single (8 : Fin 9) (1 : ℝ) : Fin 9 → ℝ) ᵥ* J = 0 ∧
     J.det = 0 ∧
-    (Pi.single (8 : Fin 9) (1 : ℝ) : Fin 9 → ℝ) ≠ 0 := by
-  refine ⟨?_, det_eq_zero_of_row_eq_zero 8 hbot, ?_⟩
-  · -- e₉ᵀ J = 0ᵀ  : compute the j-th entry, `vecMul` reduces to a `dotProduct`
-    funext j
-    show (Pi.single (8 : Fin 9) (1 : ℝ) : Fin 9 → ℝ) ⬝ᵥ (fun i => J i j) = (0 : Fin 9 → ℝ) j
-    rw [single_dotProduct]
-    simp [hbot j]
-  · -- e₉ ≠ 0 since its 8-component is 1
-    intro h
-    have h8 : (Pi.single (8 : Fin 9) (1 : ℝ) : Fin 9 → ℝ) 8 = 0 := by rw [h]; rfl
-    rw [Pi.single_eq_same] at h8
-    exact one_ne_zero h8
+    (Pi.single (8 : Fin 9) (1 : ℝ) : Fin 9 → ℝ) ≠ 0 :=
+  ⟨variantU_left_eigenvector J hbot, variantU_det_zero J hbot, variantU_basis_nonzero⟩
 
 /-! ### Theorem A strengthened: the zero eigenvalue is simple (exactly one) -/
 

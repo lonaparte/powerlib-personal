@@ -17,3 +17,4 @@ import GFL.AsymptoticB
 import GFL.LiteralModel
 import GFL.LossOfSync
 import GFL.SyncEquilibrium
+import GFL.SlowModeScalar

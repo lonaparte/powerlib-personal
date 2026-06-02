@@ -124,13 +124,17 @@ Also proved, using Mathlib's analysis tower (`Calculus.lean`):
 
 Genuinely **not** formalised (honest boundaries — partial progress; see `BLOCKERS.md`):
 
-* **Theorem B O(b²) — partial** (`AsymptoticB.lean`): the *b² structure* is now machine-checked.
-  `resolvent_id`, `schur_term_at_neg_b` (`∃K, ρᵀ(A+bI)⁻¹c = −b·K`), `kappa_eq_const_mul_b`
-  (`κ = (wn/(Sn·D))·b`), and the **exact identity** `schur_term_b_sq`
-  (`ρᵀ(A+bI)⁻¹c = (3/2)(wn/(Sn·D))Vg · b² · [(A+bI)⁻¹A⁻¹c]₀`) are proved. NOT proved: a uniform
-  `|·| ≤ C·b²` bound (needs matrix operator-norm / Neumann inverse bound) and the eigenvalue
-  existence `|λ_slow−(−b)| ≤ C·b²` (Rouché/Kato absent from Mathlib; contraction route blocked on
-  the same norm bounds).
+* **Theorem B O(b²) — partial** (`AsymptoticB.lean` + `SlowModeScalar.lean`): the *b² structure* is
+  machine-checked. `resolvent_id`, `schur_term_at_neg_b` (`∃K, ρᵀ(A+bI)⁻¹c = −b·K`),
+  `kappa_eq_const_mul_b` (`κ = (wn/(Sn·D))·b`), and the **exact identity** `schur_term_b_sq`
+  (`ρᵀ(A+bI)⁻¹c = (3/2)(wn/(Sn·D))Vg · b² · [(A+bI)⁻¹A⁻¹c]₀`) are proved. The eigenvalue problem is
+  reframed as a **scalar** root problem (not matrix perturbation — see `BLOCKERS.md` reclassification):
+  `SlowModeScalar.lean` proves `det(J_S−μI) = det(A−μI)·h(μ)` with `h(μ) := (j99−μ)−ρᵀ(A−μI)⁻¹c`, so
+  `μ∈spec(J_S) ⟺ h(μ)=0` (`slowMode_det_zero_iff`), a scalar zero **is** a genuine eigenvalue
+  (`eigenvalue_of_slowMode_zero`), and `h(−b)` is **exactly O(b²)** (`slowModeH_at_neg_b`). NOT yet
+  proved: the existence step `∃ μ* near −b, h(μ*)=0` with `|μ*−(−b)| ≤ C·b²` — a scalar inverse
+  function theorem (`HasStrictDerivAt.localInverse`) on the `C¹` `h` (`fderiv_inverse`). Mathlib has
+  these; it is workload, tracked in `TODO.md §P0` (T1–T6), not a Mathlib blocker.
 * **Literal §3–§4 model — partial** (`LiteralModel.lean`): `F_inner_literal` transcribes §3–§4
   verbatim and `litInnerField : InnerField p` is proved (the literal model satisfies the abstract
   interface, so every theorem applies to it). NOT proved: `F_inner_literal` is `C¹` and `∂F/∂z`
@@ -162,7 +166,8 @@ compiled from source against the pinned toolchain.
 ```bash
 cd formalization/gfl
 lake build GFL            # Model + TheoremA/B/C + Calculus (Calculus pulls the analysis tower)
-lake build GFL.Audit      # prints the #print axioms integrity report (16 results, all clean)
+lake build GFL.Audit      # prints the #print axioms integrity report (49 declarations, all clean)
+./scripts/check_axioms.sh # CI gate: fails on any sorryAx / non-standard axiom / dropped audit line
 ```
 
 The algebraic/spectral core (`Model`, `TheoremA/B/C`) needs only the linear-algebra + complex
@@ -179,18 +184,23 @@ which is the bulk of a from-source build here (the olean cache is unreachable).
 lakefile.toml          package + mathlib dependency (pinned)
 lean-toolchain         leanprover/lean4:v4.31.0-rc1
 lake-manifest.json     pinned dependency revisions
-GFL.lean               root: imports the five modules below
+GFL.lean               root: imports all modules below
 GFL/Model.lean         §1–§5: Params, power algebra, Lemma 0, Cor 0a/0b
-GFL/TheoremA.lean      §7 A: zero eigenvalue (Variant U) + simple-zero factorisation
+GFL/TheoremA.lean      §7 A: zero eigenvalue (Variant U), split lemmas (D6) + simple-zero factorisation
 GFL/TheoremB.lean      §7 B: slow eigenvalue −D/(2H) (reduced exact + Schur term 0 + full Schur det)
 GFL/TheoremC.lean      §7 C: oscillation onset (charpoly, C1, C2)
-GFL/Calculus.lean      calculus completions (Cor 0a deriv, IFT linearisation) — uses analysis tower
+GFL/Calculus.lean      calculus completions (Cor 0a deriv, IFT linearisation, A3 derived hbot) — analysis tower
 GFL/AsymptoticB.lean   Theorem B O(b²): resolvent identity, schur_term_at_neg_b, exact b² identity (partial)
-GFL/LiteralModel.lean  literal §3–§4 model + InnerField instance (partial; see BLOCKERS.md)
+GFL/SlowModeScalar.lean Theorem B (path C): eigenvalue ⟺ scalar zero of h(μ); h(−b) = O(b²) (partial)
+GFL/LiteralModel.lean  literal §3–§4 model + InnerField instance + interface-landing lemmas (A2) (partial)
 GFL/LossOfSync.lean    R2b (weak-grid risk problem): no synchronous equilibrium ⟹ loss of synchronism
 GFL/SyncEquilibrium.lean R2a (weak-grid risk problem): saddle-node of the sync map + link to R2b
-GFL/Audit.lean         #print axioms integrity report (34 results)
+GFL/Audit.lean         #print axioms integrity report (49 declarations)
+scripts/check_axioms.sh CI axiom gate (A4): fails on sorryAx / non-standard axiom / dropped audit line
+BLOCKERS.md            what is genuinely absent from Mathlib (Routh–Hurwitz, ODE-Lyapunov)
+TODO.md                staged workload (review §E P1–P5), incl. Theorem B scalar-IFT plan
 validate.py            numerical cross-validation of the §3–§4 model vs the §9 anchors
+```
 
 ## R2b — loss of synchronism (weak-grid risk problem R1/R2/R3)
 
@@ -218,4 +228,3 @@ second-harmonic correction is the un-done extension):
 
 Together: **a synchronous equilibrium exists iff `D² ≤ A²+B²`**, so the fold manifold is
 exactly `Σ₂ = {D² = A²+B²}` (bias = amplitude) — the parametric saddle-node boundary.
-```

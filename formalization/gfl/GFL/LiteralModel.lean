@@ -73,6 +73,48 @@ noncomputable def litInnerField (p : Params) (q : LitParams) : InnerField p wher
   comp7 := fun y => by simp [F_inner_literal, eP, Pmeas]
   comp8 := fun y => by simp [F_inner_literal, eQ, Qmeas]
 
+/-! ### Interface-landing evidence (A2)
+
+`litInnerField` only needs to *type*-check to be accepted, which would not by itself rule out a
+wrong formula in `F_inner_literal`.  The lemmas below pin each non-trivially-named component of
+the literal field to its explicit §3–§4 closed form, machine-checked: if any transcribed formula
+were wrong, the corresponding `rfl`/`simp` proof would fail.  (`F1`, `F2` = the stator ODE and
+`v_cqc` = the PLL projection are the controller-output–dependent components, printed verbatim in
+`F_inner_literal`'s body; the active/reactive errors and the loop errors are pinned here.) -/
+
+/-- §3 d-axis current-loop error `F3 = e_d = i_d_ref − i_dc`, fully expanded
+(`i_d_ref = Kp_P·e_P + Ki_P·ξ_P`, `i_dc = cosθ_e·i_d − sinθ_e·i_q`). -/
+theorem litF_errD_eq (p : Params) (q : LitParams) (y : Fin 9 → ℝ) :
+    F_inner_literal p q y 2 =
+      (q.Kp_P * (p.P_ref - (3 / 2) * p.Vg * y 0) + q.Ki_P * y 6)
+        - (Real.cos (y 5) * y 0 - Real.sin (y 5) * y 1) := by
+  simp [F_inner_literal]
+
+/-- §3 q-axis current-loop error `F4 = e_q = i_q_ref − i_qc`, fully expanded
+(`i_q_ref = −(Kp_Q·e_Q + Ki_Q·ξ_Q)`, `i_qc = sinθ_e·i_d + cosθ_e·i_q`). -/
+theorem litF_errQ_eq (p : Params) (q : LitParams) (y : Fin 9 → ℝ) :
+    F_inner_literal p q y 3 =
+      (-(q.Kp_Q * (p.Q_ref - -(3 / 2) * p.Vg * y 1) + q.Ki_Q * y 7))
+        - (Real.sin (y 5) * y 0 + Real.cos (y 5) * y 1) := by
+  simp [F_inner_literal]
+
+/-- §4 PLL/integrator equation `F6 = −Kp_pll·v_cqc − Ki_pll·η − dw`, with `v_cqc` shown to be
+*exactly the fifth component* `F5` of the same field (internal consistency of the projection). -/
+theorem litF_F6_eq (p : Params) (q : LitParams) (y : Fin 9 → ℝ) :
+    F_inner_literal p q y 5 =
+      -p.Kp_pll * (F_inner_literal p q y 4) - p.Ki_pll * y 4 - y 8 := by
+  simp [F_inner_literal]
+
+/-- §3 active-power error `F7 = e_P = P_ref − 1.5·Vg·i_d` (the Power-Lock equation). -/
+theorem litF_eP_eq (p : Params) (q : LitParams) (y : Fin 9 → ℝ) :
+    F_inner_literal p q y 6 = p.P_ref - (3 / 2) * p.Vg * y 0 := by
+  simp [F_inner_literal]
+
+/-- §3 reactive-power error `F8 = e_Q = Q_ref − (−1.5·Vg·i_q)`. -/
+theorem litF_eQ_eq (p : Params) (q : LitParams) (y : Fin 9 → ℝ) :
+    F_inner_literal p q y 7 = p.Q_ref - -(3 / 2) * p.Vg * y 1 := by
+  simp [F_inner_literal]
+
 /-- Sanity: the Power Lock applies to the literal model (every abstract result does). -/
 example (p : Params) (q : LitParams) (y : Fin 9 → ℝ)
     (h : IsInnerEquilibrium p (litInnerField p q) y) : y 0 = p.P_ref / ((3 / 2) * p.Vg) :=
