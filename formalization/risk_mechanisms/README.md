@@ -3,22 +3,58 @@
 > 三类结构性失稳机制的参数化分析:**R1** 弱网电气模 onset、**R2** 同步平衡消失、
 > **R3** 同步吸引域 vs PLL 阻尼。`kyx/` 是 KeYmaera X 5.1.2(自带 z3)证书,
 > `numerical/` 是支撑数值,`results/` 是证明日志。
+>
+> **2026.06 修订(按形式化评审):** 评审正确判定原 R1 三条是 tautology、R3 多条把仿真数
+> 塞进 dL 前提或把 2D 同步核冒名 10D。已据此**降级/重做/改名**,见下表与"评审修订"节。
+> 真成果是 **R2**(folded 折叠 + Σ₂ 闭式);R1 退回 **conjecture(待证)**;R3 明确标"约化核"。
 
-## 状态总览
+## 状态总览(修订后)
 
-| 文件 | entry | KeYmaera X | 内容 |
-|------|-------|-----------|------|
-| `kyx/R1_routh.kyx` | 3 | proved | Σ₁ Routh onset 签名 / 虚轴穿越 / 横截性符号 |
-| `kyx/R2_fold.kyx` | 4 | proved | fold 根计数 / node-saddle / 经典极限 |
-| `kyx/R2_sigma2_symbolic.kyx` | 2 | proved | **Σ₂ 全 6 参数闭式** Φ(p) |
-| `kyx/R3note_l1_not_criterion.kyx` | 2 | proved | sign l₁ **不是**失同步判据 |
-| `kyx/R3a_energy_barrier.kyx` | 3 | proved | **能量屏障** Vdot=−b·dw²(替代 SOS) |
-| `kyx/R3_basin.kyx` | 4 | proved | 屏障不变性 / 鞍点排除 / c* 单调 / 阈值 Σ₃ |
-| **合计** | **18** | **全 proved** | |
+| 文件 | entry | 状态 | 内容 / scope |
+|------|-------|------|------|
+| `kyx/conjecture_R1_electrical_onset.kyx` | 1 | **conjecture(无 tactic,待证)** | R1 退回待证:真目标是 Δ₇(p) 多项式 sign chart,CAS 超时,未做 |
+| `kyx/R2_fold.kyx` | 4 | proved | fold 根计数(\|M\|≷Vg)/ **node-saddle 由 arcsin 几何导**(修订)/ Wu 恒等改写(改名) |
+| `kyx/R2_sigma2_symbolic.kyx` | 2 | proved | **Σ₂ 全 6 参数闭式** Φ(p)（真成果) |
+| `kyx/R3a_energy_barrier.kyx` | 3 | proved(**2D 核**) | 能量屏障 Vdot=−b·dw²;标题已标"REDUCED 2D CORE not 10D" |
+| `kyx/R3_basin.kyx` | 4 | proved(**2D 核**) | 不变性原理(去掉 toy ODE)/ 鞍点排除 / **结构单调(IFT 式,非拟合斜率)** / 阈值 |
+| `kyx/conjecture_R3note_l1_not_criterion.kyx` | 1 | **conjecture(无 tactic,OPEN)** | 原 2 条是 vacuous 独立实数见证;退回待证(真目标=LCL 开集上 l₁<0∧平衡存在∧全局LOS 并存) |
+| **proved 合计** | **13** | | R1、R3-note 各 1 条是 conjecture,不计入 proved |
 
 复现:`cd kyx && java -jar <keymaerax.jar> -prove <file>.kyx -tool z3`
 (**必须用 KeYmaera X 自带 z3,不要 `-z3path` 外部 z3** — 外部会挂启动期公理推导);
 `cd numerical && python3 risk_numerical.py`(需 numpy/sympy/scipy)。
+
+## 评审修订(逐条)
+
+- **R1 → conjecture**:原 3 条(D8=a8·D7→D8=0、∃W2=W、m·cs>0→>0)是恒等/代入,
+  把仿真数 +644 塞进前提。已退回 `conjecture_R1_electrical_onset.kyx`(Problem-only,
+  无 tactic),文件头写明真目标(Liénard–Chipart 等价、Δ₇(p) 参数面、谱微扰横截性)
+  和工具路线(Maple/Mathematica/Sage Gröbner 求 sign chart)。**不再占用 proved 名义。**
+- **R2·3 重做**:node/saddle 异号不再手取 C2=−C1,改从 θ₁=arcsin(M/Vg)、θ₂=π−θ₁ 的
+  几何(cos(π−t)=−cos t)导出。新 entry "node-saddle from geometry"。
+- **R2·4 改名**:原"经典极限"实为恒等改写(未做 Cf→0 极限,因没建有限-Cf fold)。
+  改名"identity rewrite",注释明示这是代数同一面、**非极限证明**。
+- **R3a 改 scope 标签**:标题加"REDUCED 2D CORE not 10D",注释说明 ∇V 链式法则手做、
+  10D SOS 未完成。
+- **R3·1 toy ODE 删除**:原 V'=−V 与模型无关。改为抽象不变性原理(V≤c ∧ dV≤0 → V+dV≤c),
+  真实流不变性由 R3a 的 Vdot=−b·dw² 提供。
+- **R3·3 重做**:单调性不再靠拟合斜率 k>0,改从结构 Vdot=−b·dw²(b 的线性单调)导
+  "b₂>b₁ ⟹ 逐点耗散更大 ⟹ 认证 level 不减"。
+- **R3·2/·4 标注**:c*=3.098、V_saddle=62.98 等明确标为**数值输入**,dL 只证代数蕴含。
+- **R3-note → conjecture**:原 2 条是 vacuous(独立实数)。评审给的具体见证
+  Kp_pll=0.50, Ki_pll=400,我在本仓的 l₁ 管线(`numerical/sweep.py`)上实测得到
+  **l₁=+1.4e-6(正)**,**复现不出 l₁<0**——可能是模型/归一化约定不同。我不伪造一致,
+  故 R3-note 退回 `conjecture_`(Problem-only),文件头写明真目标(LCL 开集上三条件并存)
+  与缺口(可复现的 l₁<0 区、kick 时域 basin 证书、开集论证均未做)。
+
+## 仍未做到 / 待证(明示)
+
+- **R1 整块**:Δ₇(p) 作为 8 物理参数的多项式 + sign chart。CAS(sympy)超时;
+  需 Maple/Mathematica/Sage Gröbner,目标 sign chart 非闭式。`conjecture_R1_*`。
+- **10D 全状态屏障**:全非线性 SOS 未完成(求解器装不上;手搭 SOS 对核 infeasible,
+  查实因是误用的交叉项 V 非 Lyapunov 函数);现有 R3a/R3_basin 是**2D 约化核**。
+- **R3-note 模型内开集**:见上,复现不出评审见证,退回 conjecture。
+- **R2·4 的 Cf→0 极限**:未建有限-Cf fold,故未做极限证明(现为恒等改写)。
 
 ## R1 — 弱网使电气模过虚轴(onset)
 

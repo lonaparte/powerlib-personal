@@ -1,4 +1,10 @@
-ArchiveEntry "R3a (energy barrier): tilted-energy Lyapunov gives Vdot = -b*dw^2 <= 0"
+ArchiveEntry "R3a (energy barrier, REDUCED 2D CORE not 10D): tilted-energy gives Vdot = -b*dw^2"
+
+/* SCOPE (per review): this is the REDUCED 2-state synchronization core (delta,dw),
+ * NOT the full 10D GFL-VSC.  The gradient/chain-rule step is done by hand (the
+ * algebraic cancellation below is the load-bearing identity QE checks).  A genuine
+ * 10D barrier (SOS on the full field with c^2+s^2=1 projection + block-Schur bounds)
+ * was attempted and is NOT done -- see README. */
 
 /* GENUINE R3a barrier via the TILTED PENDULUM ENERGY -- no SOS solver needed.
  * Sync core (delta,dw) with s=sin(delta), cc=cos(delta), constraint s^2+cc^2=1:

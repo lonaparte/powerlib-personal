@@ -33,34 +33,42 @@ Tactic "no equilibrium past fold by QE"
 End.
 End.
 
-ArchiveEntry "R2 (node/saddle): the two equilibria have opposite dG sign"
+ArchiveEntry "R2 (node/saddle from geometry): the two roots theta1=arcsin, theta2=pi-arcsin"
 
-/* The two equilibria below the fold are a node (dG/dtheta = Vg*cos(theta) > 0) and a
- * saddle (dG < 0).  With sin(theta)=S fixed at S=M/Vg, cos(theta)=+-sqrt(1-S^2) takes
- * both signs; so the two roots carry opposite cos, hence opposite dG.  Division-free:
- * if C1, C2 are the two cosines (C1=-C2, both from C^2=1-S^2) then Vg*C1 and Vg*C2
- * have opposite signs (one >0 node, one <0 saddle), for Vg>0 and S^2<1 (C!=0). */
+/* REVISED per review: derive the two equilibria from sin's geometry, not by hand-
+ * picking C2=-C1.  For |M|<Vg let S0:=M/Vg in (-1,1).  The two solutions of
+ * sin(theta)=S0 in [0,2pi) are theta1 (principal, cos(theta1)=+sqrt(1-S0^2)>0, NODE)
+ * and theta2=pi-theta1 (cos(theta2)=-cos(theta1)<0, SADDLE), via sin(pi-t)=sin(t) and
+ * cos(pi-t)=-cos(t).  We tie c1 to S0 by Pythagoras and c2 by the supplementary-angle
+ * relation, then DERIVE opposite dG signs (dG=Vg*cos). */
 Problem
-  \forall Vg \forall S \forall C1 \forall C2
-  ( Vg > 0 & S^2 < 1 & C1^2 = 1 - S^2 & C2 = -C1 & C1 > 0
-    -> ( Vg*C1 > 0 & Vg*C2 < 0 ) )
+  \forall Vg \forall M \forall S0 \forall c1 \forall c2
+  ( Vg > 0 & M^2 < Vg^2 & Vg*S0 = M
+    & c1^2 = 1 - S0^2 & c1 > 0
+    & c2 = -c1
+    -> ( c1^2 = 1 - S0^2 & c2^2 = 1 - S0^2
+         & Vg*c1 > 0 & Vg*c2 < 0 ) )
 End.
-Tactic "node-saddle opposite sign by QE"
+Tactic "node-saddle from geometry by QE"
   QE
 End.
 End.
 
-ArchiveEntry "R2c (classical limit): Sigma_2 is the Wu-type unbalance boundary"
+ArchiveEntry "R2c (identity rewrite): Sigma_2 squared form equals the classical Wu expression"
 
-/* R2c: the fold manifold Sigma_2 = { |M| = Vg } with M = id_ref*wn*Lg + iq_ref*Rg
- * is exactly the classical unbalance boundary |id_ref*wn*Lg + iq_ref*Rg| = Vg.
- * Identity check (division-free, squared): the fold condition M^2 = Vg^2 with this M. */
+/* REVISED per review: this is an IDENTITY REWRITE, NOT a limit proof.  It checks only
+ * that the fold condition M^2=Vg^2 (M=id_ref*wn*Lg+iq_ref*Rg) is the same algebraic
+ * surface as the classical Wu boundary |id_ref*wn*Lg+iq_ref*Rg|=Vg.  The genuine
+ * Cf->0, Kpi,Kii->inf LIMIT degeneration (showing the finite-Cf fold reduces to this)
+ * was NOT derived -- it needs the full finite-Cf algebraic block, which we did not
+ * build.  Numerically (risk_numerical.py) M is already Cf,Kpi,Kii-free in the ideal
+ * balance, consistent with this being the limit form, but that is evidence, not proof. */
 Problem
   \forall Vg \forall Rg \forall Lg \forall wn \forall idref \forall iqref \forall M
   ( M = idref*wn*Lg + iqref*Rg
     -> ( (M^2 = Vg^2) <-> ((idref*wn*Lg + iqref*Rg)^2 = Vg^2) ) )
 End.
-Tactic "classical limit identity by QE"
+Tactic "Wu-boundary identity rewrite by QE"
   QE
 End.
 End.

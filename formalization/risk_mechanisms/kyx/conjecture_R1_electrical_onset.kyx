@@ -1,0 +1,38 @@
+/* ============================================================================
+ * CONJECTURE (NOT PROVED) -- R1 electrical onset Sigma_1
+ * ============================================================================
+ * RETIRED to conjecture status per formalization review.  The previous proved
+ * "R1_routh.kyx" (3 entries) was judged TAUTOLOGICAL -- it did not capture R1:
+ *   - old R1.1 assumed "D8=a8*D7 & D7=0 -> D8=0" (substitution), NOT the
+ *     Lienard-Chipart equivalence "A_e Hurwitz <=> Delta_k(p)>0 for all k";
+ *   - old R1.2 assumed "W>0 exists -> exists W2=W" (identity), NOT existence of a
+ *     positive real root of the even part E(W)=omega0^2;
+ *   - old R1.3 assumed "dRe/dLg=m*cs, m,cs>0 -> >0", injecting the numerical
+ *     transversality value (+644) as a premise -- simulation as proof.
+ *
+ * GENUINE R1 TARGETS (open; require a CAS able to expand the 8x8 chi(s;p) and the
+ * 7th Hurwitz minor Delta_7(p) as polynomials in (Lf,Cf,Rf,Lg,Rg,K_ad,Kpi,Kii)):
+ *   (i)   A_e(p) Hurwitz  <=>  Delta_k(p)>0 for all k  (Lienard-Chipart);
+ *   (ii)  Sigma_1 := {Delta_7(p)=0, Delta_1..6>0} carries exactly one conjugate pair
+ *         on the imaginary axis;
+ *   (iii) d Re(lambda)/d Lg > 0 along Sigma_1, via the spectral-perturbation identity
+ *         Re[dlambda/dLg] = Re[ w^H (dA_e/dLg) v / (w^H v) ] with dA_e/dLg expanded
+ *         SYMBOLICALLY (no injected numbers).
+ * CAS (sympy) times out on the full symbolic determinant; the realistic deliverable
+ * is a parametric SIGN CHART on the (Lg,Cf,K_ad) face via Maple/Mathematica/Sage
+ * Groebner, NOT a closed form.  NUMERICAL evidence only (risk_numerical.py): deg-13
+ * Delta_7(g), Re=0 crossing, omega0=12Hz != omega_LCL=553Hz, dRe/dLg=+644.
+ *
+ * This file is a Problem-only CONJECTURE placeholder (no Tactic): it does NOT claim a
+ * proof.  Per project convention, filename is prefixed `conjecture_`.  The Problem
+ * below states the abstract target shape (a pair +-i*sqrt(W) on the axis); the hard
+ * content -- that A_e(p) realizes it as a function of p on Sigma_1 -- is the open task. */
+
+ArchiveEntry "conjecture_R1: electrical onset has an imaginary pair (TARGET; no tactic)"
+
+Problem
+  \forall W \forall s
+  ( W > 0 & s^2 + W = 0  ->  s^2 = -W )
+End.
+
+End.
