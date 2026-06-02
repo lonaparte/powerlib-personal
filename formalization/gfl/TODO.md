@@ -40,9 +40,11 @@ Status legend: ✅ done · 🟡 partial (backbone proved) · ⬜ not started.
 
 ## P1-lit (discharge W2 / C¹ on the concrete literal model) — review §A2 follow-on  ⬜
 
-- ⬜ **P1-C¹** `ContDiff ℝ 1 (F_inner_literal p q)` for the `df₁/df₂/cf₁/cf₂` hypotheses of
-  `branch_of_ift`: `cos, sin, +, −, ×, /` are `ContDiff`; needs `LitParams` positivity
-  (`Lf ≠ 0`, `Lf+Lg ≠ 0`) and `fun_prop`. Tractable, not started.
+- ✅ **P1-C¹ done** `F_inner_literal_contDiff : ContDiff ℝ 1 (F_inner_literal p q)` (in fact `C^∞`),
+  by `fin_cases` on the component + `simp [F_inner_literal]` + `fun_prop`. **No positivity needed** —
+  every division is by a constant filter parameter, which is smooth regardless of sign. (Remaining for
+  full `branch_of_ift` wiring: re-express the `(d, z)` split of coordinate 8 = `dw` to match the
+  theorem's `F : ℝ → (Fin 8 → ℝ) → …` shape — mechanical.)
 - ⬜ **P1-inv** `∂(F_inner_literal)/∂z` invertible at the equilibrium (W2). Densely coupled 8×8
   (`cosθ_e*/sinθ_e*` couple current-loop ↔ PLL — *not* cleanly block-triangular), so it is a
   multi-hundred-line symbolic determinant. **Not attempted** (hand computation would risk

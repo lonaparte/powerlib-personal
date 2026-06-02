@@ -75,8 +75,9 @@ open GFL
 #print axioms exists_eigenvalue_of_slowMode_sign_change -- C: sign change of h ⟹ genuine eigenvalue
 #print axioms exists_root_of_deriv_le    -- C/T6: deriv ≤ −m + |h ν₀| ≤ m·δ ⟹ root within δ (MVT+IVT)
 #print axioms exists_eigenvalue_near_neg_b -- C/T6: |λ_slow + b| ≤ δ = O(b²)/m (quantitative bound)
--- P1 (literal model) partial: InnerField instance + interface-landing evidence (A2)
+-- P1 (literal model): InnerField instance + interface-landing evidence (A2) + C¹ smoothness
 #print axioms litInnerField              -- [def] the literal model IS an InnerField
+#print axioms F_inner_literal_contDiff   -- P1-C¹: the literal §3–§4 field is C¹ (no positivity needed)
 #print axioms litF_errD_eq               -- F3 = e_d (explicit §3 form)
 #print axioms litF_errQ_eq               -- F4 = e_q (explicit §3 form)
 #print axioms litF_F6_eq                 -- F6 = −Kp_pll·v_cqc − Ki_pll·η − dw (v_cqc = F5)

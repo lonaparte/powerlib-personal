@@ -13,6 +13,7 @@
 -/
 import GFL.Model
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 namespace GFL
 
@@ -114,6 +115,17 @@ theorem litF_eP_eq (p : Params) (q : LitParams) (y : Fin 9 → ℝ) :
 theorem litF_eQ_eq (p : Params) (q : LitParams) (y : Fin 9 → ℝ) :
     F_inner_literal p q y 7 = p.Q_ref - -(3 / 2) * p.Vg * y 1 := by
   simp [F_inner_literal]
+
+/-- **P1-C¹ — the literal §3–§4 model is `C¹`** (in fact `C^∞`).  Every component of
+`F_inner_literal` is built from `cos, sin, +, −, ×` and division by the *constant* filter parameters
+(`Lf`, `Ltot = Lf+Lg`), all `ContDiff`; division by a constant is smooth regardless of its sign, so
+**no positivity hypothesis is needed**.  This discharges the smoothness side (`df₁/df₂/cf₁/cf₂`) of
+`branch_of_ift` for the concrete literal model. -/
+theorem F_inner_literal_contDiff (p : Params) (q : LitParams) :
+    ContDiff ℝ 1 (F_inner_literal p q) := by
+  rw [contDiff_pi]
+  intro i
+  fin_cases i <;> · simp [F_inner_literal]; fun_prop
 
 /-- Sanity: the Power Lock applies to the literal model (every abstract result does). -/
 example (p : Params) (q : LitParams) (y : Fin 9 → ℝ)
