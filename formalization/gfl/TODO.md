@@ -130,3 +130,22 @@ Two-pronged: (B) Lean machine-verified building blocks + (A) sympy parametric de
   + 消元" step) — large, but the determinant obstruction is removed.
 - ❌ **`Σ_fold`** (Floquet/limit-cycle fold) stays out entirely (theory absent from provers); only its
   F3 algebraic slice is proved.
+
+## L-filter 3-state Hopf (separate problem) — status
+
+- ✅ **Theorem 1** (2D PLL pendulum always stable): `pll_pendulum_charpoly` + `pll_pendulum_stable`
+  (Lean, via `stable_deg2_of_pos`).  Numerically confirmed `H' ≈ Vg > 0`.
+- ✅ **Theorem 2.c / 3** (cubic Hopf surface `Σ=A·B−C=0`, `ω=√B`, strong-grid side Hurwitz):
+  `hopf_cubic_surface` + `cubic_stable_of_surface_pos` (Lean, via `hopf_deg3`/`stable_deg3_of_pos`).
+- 🟡 **Theorem 2.b** (a Hopf exists for some Lg): instability does appear at weak grid, but the
+  numerical equilibrium-angle solve shows multiple branch artifacts — boundary not cleanly isolated.
+- ❌ **Theorem 4** (ordering `Lg_id* > Lg_iq*`): **NOT supported numerically** — i_q and i_d
+  reductions give the SAME crossing `Lg` (both keep the dominant PLL pair).  As stated, in question.
+- ❌ **Theorem 5** (`ω_H → √(Vg·Ki_pll)`): **NOT supported** — `√a₁` is the fast current mode, not
+  the slow PLL mode.
+- ❌ **Theorem 6** (`Lg_4D* ≈ Lg_iq*`): ratio ≈ 1.9, not ≈ 1.
+- model-specific symbolic facts (`H'>0` explicit, `Σ_iq/Σ_id` explicit): `H'` computes (≈3e4 ops)
+  but a full parametric sign proof is large; see `validate_lfilter.py` (numerical cross-check).
+
+Net: the STRUCTURAL theorems (1, 2.c/3) are Lean-certified; the QUANTITATIVE/ordering claims
+(4, 5, 6, clean 2.b) are NOT verified and are in question (no-bluffing).
