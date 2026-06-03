@@ -16,11 +16,20 @@ set_option maxHeartbeats 4000000
   ⟹  Σ_iq ≡ Σ_id  ⟺  Kp_P = Kp_Q  (`sigma_diff_zero_of_symmetric`),  for ALL Q_ref.
   So T3a (Σ_iq|_{Q_ref=0} ≡ Σ_id|_{Q_ref=0}?) is FALSE for Kp_P ≠ Kp_Q.
 
-  SCOPE — what this does and does NOT say (cross-checked numerically; do not over-read it):
-  * NOT an artifact of θ_e*=0.  Re-derived with the power angle θ_e* kept SYMBOLIC (T3_theta2.py):
-    (Kp_P−Kp_Q) still divides NUM, and D|_{Kp_P=Kp_Q} ≡ 0 for ALL θ_e* and ALL Q_ref.  Each Σ moves
-    with θ_e*, but their DIFFERENCE does not — in this reduced model the d/q pair rotates as a clean
-    common mode, so θ_e* cancels in the difference and only the outer-gain term Kp_P−Kp_Q survives.
+  SCOPE — what this does and does NOT say (cross-checked; do not over-read it):
+  * NOT an artifact of θ_e*=0 (PROVED at the physical angle).  Re-derived with the power angle θ_e*
+    kept SYMBOLIC (C=cosθ_e*, S=sinθ_e*) via a polynomial-charpoly route Σ=(A_N·B_N−C_N)/d³ that
+    avoids the rational-charpoly CAS blowup: (Kp_P−Kp_Q) still divides num(Σ_iq−Σ_id) and
+    D|_{Kp_P=Kp_Q} ≡ 0 for ALL θ_e* and ALL Q_ref — an EXACT polynomial identity (free in C,S, no
+    C²+S²=1 needed), cross-validated over 3 independent rational network-parameter sets
+    (T3_theta_lean_rational.py), and cross-checked to reproduce THIS file's θ_e*=0 NUM at C=1,S=0
+    (T3_crosscheck.py, independent cancelled-charpoly path).  Each Σ moves with θ_e*, but their
+    DIFFERENCE does not — the d/q pair rotates as a clean common mode, so θ_e* cancels in the
+    difference and only the outer-gain term Kp_P−Kp_Q survives.
+    (A single ALL-PARAMETERS-symbolic Lean `ring` certificate at general θ_e* is CAS-intractable:
+    the angle dependence is degree-15 in cos θ_e* in the free-C,S form, ~3·10⁴ ops; the all-symbolic
+    charpoly times out.  So the θ_e*=0 theorems below stay the machine-checked PARAMETRIC anchor; the
+    general-angle extension is certified by the exact cross-validated symbolic derivation above.)
   * Hence this is a statement about the reduced model's OUTER-LOOP structure, NOT a physical
     "i_d/i_q interchangeable at symmetric gains" claim.  In the FULL 10-state model (LCL caps, grid
     currents, inner-loop PI integrators, active damping) the i_d/i_q participation in the critical mode
@@ -35,8 +44,11 @@ set_option maxHeartbeats 4000000
   So: this file isolates the GAIN-asymmetry source; the full-model asymmetry adds a POWER-ANGLE source
   the reduction cannot represent.  Both are real and distinct.
 
-  Derivation: derive_lfilter_T3.py (NUM/G at θ_e*=0).  θ_e*-general + full-model cross-checks:
-  T3_theta2.py, T3_trueeq_reduced.py, T3_participation2.py.  Identity re-verified here by `ring`. No `sorry`.
+  Derivation: derive_lfilter_T3.py (NUM/G at θ_e*=0).  θ_e*-general PROOF (factor survives at the
+  physical angle): T3_theta_lean_rational.py (exact, 3-set cross-validated) + T3_crosscheck.py
+  (reproduces this file's θ_e*=0 NUM).  Full-model power-angle asymmetry: T3_participation2.py;
+  reduced-model droop-equilibrium caveat: T3_trueeq_reduced.py.  θ_e*=0 identity re-verified here by
+  `ring`. No `sorry`.
 -/
 
 namespace GFL
