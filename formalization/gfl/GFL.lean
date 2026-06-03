@@ -20,3 +20,4 @@ import GFL.LossOfSync
 import GFL.SyncEquilibrium
 import GFL.SlowModeScalar
 import GFL.HopfFold
+import GFL.LFilterHopf

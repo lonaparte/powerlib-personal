@@ -21,6 +21,7 @@ import GFL.LossOfSync
 import GFL.SyncEquilibrium
 import GFL.SlowModeScalar
 import GFL.HopfFold
+import GFL.LFilterHopf
 
 open GFL
 
@@ -107,3 +108,8 @@ open GFL
 #print axioms hopf_deg2                  -- F-H: deg-2 Hopf onset (pure-imaginary pair ⟺ a₁=0, ω=√a₂)
 #print axioms stable_deg3_of_pos         -- F-H: deg-3 Routh–Hurwitz (a₁,a₂,a₃>0 ∧ a₁a₂>a₃ ⟹ Hurwitz)
 #print axioms hopf_deg3                  -- F-H: deg-3 Hopf onset (pure-imaginary pair ⟺ a₃=a₁a₂, ω=√a₂)
+-- L-filter GFL 3-state reductions (separate problem): SCR_H1 boundary
+#print axioms pll_pendulum_charpoly      -- Thm 1: det(zI − pendulum) = z²+Kp·H·z+Ki·H
+#print axioms pll_pendulum_stable        -- Thm 1: 2D PLL pendulum always stable (H'>0)
+#print axioms hopf_cubic_surface         -- Thm 2.c/3: cubic Hopf surface Σ=A·B−C=0, ω=√B
+#print axioms cubic_stable_of_surface_pos -- Thm 2.c/3: strong-grid side Σ>0 ⟹ Hurwitz
