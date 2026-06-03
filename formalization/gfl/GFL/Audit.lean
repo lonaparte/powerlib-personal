@@ -23,6 +23,7 @@ import GFL.SlowModeScalar
 import GFL.HopfFold
 import GFL.LFilterHopf
 import GFL.LFilterT3
+import GFL.FoldHopf
 
 open GFL
 
@@ -117,3 +118,11 @@ open GFL
 -- L-filter T3: Σ_iq − Σ_id factors
 #print axioms sigma_diff_factor          -- T3: NUM(Σ_iq−Σ_id) = (Kp_P−Kp_Q)·G (ring)
 #print axioms sigma_diff_zero_of_symmetric -- T3: Kp_P=Kp_Q ⟹ Σ_iq≡Σ_id (all Q_ref)
+-- Fold/Hopf separation (lossless GFL, anchored): 2D fold-only vs 3D char-poly factorisation
+#print axioms fold_hopf_2D_no_isolated_hopf -- (a) 2D: pure-imag root ⟹ ω=0∧gθ=0 (fold, no Hopf)
+#print axioms fold_hopf_3D_charpoly_factor  -- (b) J13=0 ⟹ det(λI−M3q)=(λ−J11)(λ²+Kp_pll·gθ·λ+Ki_pll·gθ)
+#print axioms fold_hopf_RH_factor           -- (b) a1a2−a3 = Kp_pll·gθ·Ψ̃ (fold gθ × independent Ψ̃)
+#print axioms fold_hopf_fold_is_gθ          -- fold (det=0) ⟺ gθ=0, shared with 2D
+#print axioms fold_hopf_Psi_spurious        -- Ψ̃=a2+J11² ⟹ Ψ̃=0 gives a2≤0 (NOT a genuine Hopf)
+#print axioms fold_hopf_current_pole        -- (c) a1(3D)−a1(2D) = −J11 (current pole)
+#print axioms fold_hopf_current_pole_pos    -- (c) −J11 = Kpi·quad/(2Lf) > 0 (stabilizing)

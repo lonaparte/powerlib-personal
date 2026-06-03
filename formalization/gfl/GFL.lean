@@ -22,3 +22,4 @@ import GFL.SlowModeScalar
 import GFL.HopfFold
 import GFL.LFilterHopf
 import GFL.LFilterT3
+import GFL.FoldHopf
