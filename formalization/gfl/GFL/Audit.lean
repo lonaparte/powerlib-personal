@@ -24,6 +24,7 @@ import GFL.HopfFold
 import GFL.LFilterHopf
 import GFL.LFilterT3
 import GFL.FoldHopf
+import GFL.FoldHopfDecouple
 
 open GFL
 
@@ -126,3 +127,10 @@ open GFL
 #print axioms fold_hopf_Psi_spurious        -- Ψ̃=a2+J11² ⟹ Ψ̃=0 gives a2≤0 (NOT a genuine Hopf)
 #print axioms fold_hopf_current_pole        -- (c) a1(3D)−a1(2D) = −J11 (current pole)
 #print axioms fold_hopf_current_pole_pos    -- (c) −J11 = Kpi·quad/(2Lf) > 0 (stabilizing)
+-- Work-point decoupling: current↔PLL coupling ∝ tracking error ⟹ err=0 ⟹ 2D=3D=4D fold-only
+#print axioms decouple_J13_errform          -- T1/T1': ∂F_iq/∂θ_e = −(Kpi/Lf)(Kp_P·C·err_P − Kp_Q·S·err_Q)
+#print axioms decouple_J03_errform          -- T2: ∂F_id/∂θ_e = −(Kpi/Lf)(Kp_P·S·err_P + Kp_Q·C·err_Q)
+#print axioms decouple_J13_at_equilibrium   -- T3: err_P=err_Q=0 (true eq) ⟹ ∂F_iq/∂θ_e = 0
+#print axioms decouple_J03_at_equilibrium   -- T3: err_P=err_Q=0 (true eq) ⟹ ∂F_id/∂θ_e = 0
+#print axioms Dpll_charpoly                 -- PLL block charpoly λ²+Kp_pll·gθ·λ+Ki_pll·gθ (= 2D)
+#print axioms fold_hopf_4D_charpoly_factor  -- T4: decoupled ⟹ det(λI−M4)=det(λI−A)·(2D PLL charpoly)
