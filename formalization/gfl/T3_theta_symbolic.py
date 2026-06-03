@@ -32,7 +32,7 @@ ID=P_ref/(sp.Rational(3,2)*Vg); IQ=-Q_ref/(sp.Rational(3,2)*Vg)
 C,S=sp.symbols('C S',real=True)
 sub=[(i_d,ID),(i_q,IQ),(eta,0)]
 # entries are polynomial in C,S; rational in params.  Do NOT cancel.
-Je=sp.Matrix(4,4,lambda i,j: sp.expand(J[i,j].subs(sub).rewrite(sp.cos).subs(
+Je=sp.Matrix(4,4,lambda i,j: sp.expand(J[i,j].subs(sub).subs(
     [(sp.sin(th),S),(sp.cos(th),C)])))
 log("Je formed (all-symbolic, general θ_e*)")
 lam=sp.symbols('lam')
