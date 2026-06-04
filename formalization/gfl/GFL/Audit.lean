@@ -31,6 +31,7 @@ import GFL.ScrHopf4D
 import GFL.ScrHopfAnchor
 import GFL.ScrHopfCubic
 import GFL.ScrAxis
+import GFL.ScrHopfNumeric
 
 open GFL
 
@@ -186,3 +187,8 @@ open GFL
 #print axioms scrOfLg_strictAntiOn          -- SCR strictly decreasing in Lg (weaker grid ⟹ smaller SCR)
 #print axioms scr_hopf_of_lg_hopf           -- lift: Lg-axis sign change ⟹ Hopf at Lg*, SCR*∈(SCR Lg₁, SCR Lg₀)
 #print axioms scr_genuine_hopf_of_lg        -- +genuine: physical SCR-Hopf at SCR*>0 (hopf_deg4), parametric
+-- SCR-Hopf CONCRETE: the explicit Hopf-boundary polynomial (GFL-ish params), machine-checked root (not abstract)
+#print axioms pHopf                          -- [def] explicit deg-16 Hopf-boundary poly (eliminated, 621-digit coeffs)
+#print axioms pHopf_neg                      -- pHopf(0.1214) < 0  (norm_num on the explicit coefficients)
+#print axioms pHopf_pos                      -- 0 < pHopf(0.1215) (norm_num)
+#print axioms pHopf_hopf_root               -- ∃ Lg∈(0.1214,0.1215), pHopf(Lg)=0 (IVT) — CONCRETE Hopf boundary
