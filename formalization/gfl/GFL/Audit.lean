@@ -26,6 +26,7 @@ import GFL.LFilterT3
 import GFL.FoldHopf
 import GFL.FoldHopfDecouple
 import GFL.ScrHopf
+import GFL.ScrHopfExist
 
 open GFL
 
@@ -144,4 +145,8 @@ open GFL
 #print axioms chi3_droop_decomp             -- χ₃ = Kp·gθ·Ψ̃ + J13·J21·(Kp²gθ−Kp·J11−Ki)  (err term ∝ err_P*)
 #print axioms chi3_err_zero_recovers_foldhopf -- J13=0 ⟹ χ₃ = Kp·gθ·Ψ̃ (recovers FoldHopf, fold-bound)
 #print axioms chi2_eq                       -- χ₂ = Kp_pll·gθ (deg 2: no err term ⟹ Hopf ⟺ fold)
-#print axioms a1_current_pole_by_dimension  -- a₁(3D)−a₁(2D) = −J11 (current pole ∝Kpi/Lf enters at 3D)
+#print axioms a1_current_pole_by_dimension
+-- SCR-Hopf existence + genuineness FROM STRUCTURE (no numerics)
+#print axioms chi3_root_off_fold            -- χ₃ affine in J13 ⟹ root EXISTS off the fold (gθ≠0)
+#print axioms chi2_no_root_off_fold         -- χ₂=Kp·gθ has no err term ⟹ 2D no Hopf off fold (dimension)
+#print axioms chi3_genuine_hopf_off_fold  -- a₁(3D)−a₁(2D) = −J11 (current pole ∝Kpi/Lf enters at 3D)

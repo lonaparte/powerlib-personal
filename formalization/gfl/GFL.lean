@@ -25,3 +25,4 @@ import GFL.LFilterT3
 import GFL.FoldHopf
 import GFL.FoldHopfDecouple
 import GFL.ScrHopf
+import GFL.ScrHopfExist
