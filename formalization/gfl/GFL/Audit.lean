@@ -192,3 +192,7 @@ open GFL
 #print axioms pHopf_neg                      -- pHopf(0.1214) < 0  (norm_num on the explicit coefficients)
 #print axioms pHopf_pos                      -- 0 < pHopf(0.1215) (norm_num)
 #print axioms pHopf_hopf_root               -- ∃ Lg∈(0.1214,0.1215), pHopf(Lg)=0 (IVT) — CONCRETE Hopf boundary
+#print axioms pHopf_neg_tight               -- T5: pHopf(0.121444) < 0 (norm_num, tight)
+#print axioms pHopf_pos_tight               -- T5: 0 < pHopf(0.121445) (norm_num, tight)
+#print axioms pHopf_root_tight              -- T5: ∃ Lg∈(0.121444,0.121445), pHopf(Lg)=0 ⟹ |Lg*−0.121444|<1e-6
+#print axioms pHopf_scr_bracket             -- T5: SCR* ∈ (scrOfLg .. 0.121445, scrOfLg .. 0.121444) ≈ 0.0378 (concrete)

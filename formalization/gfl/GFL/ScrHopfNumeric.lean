@@ -27,7 +27,7 @@
   the abstract-aᵢ files lacked; the residual gap to the exact lossy 0.0346 is exact-param elimination
   (Singular), not a Lean gap.
 -/
-import GFL.ScrHopfCubic
+import GFL.ScrAxis
 
 namespace GFL
 open Polynomial Set
@@ -76,5 +76,41 @@ theorem pHopf_hopf_root : ∃ Lg ∈ Set.Ioo (1214 / 10000 : ℝ) (1215 / 10000)
   obtain ⟨Lg, hLg, hev⟩ :=
     intermediate_value_Ioo (by norm_num) pHopf.continuous.continuousOn hmem
   exact ⟨Lg, hLg, hev⟩
+
+/-! ### T5 — tight numerical anchor + concrete SCR boundary (lossless surrogate, zfac=1) -/
+
+/-- `pHopf(0.121444) < 0` — tight endpoint (`norm_num`). -/
+theorem pHopf_neg_tight : pHopf.eval (121444 / 1000000) < 0 := by
+  simp only [pHopf, eval_add, eval_mul, eval_pow, eval_C, eval_X]
+  norm_num
+
+/-- `0 < pHopf(0.121445)` — tight endpoint (`norm_num`). -/
+theorem pHopf_pos_tight : 0 < pHopf.eval (121445 / 1000000) := by
+  simp only [pHopf, eval_add, eval_mul, eval_pow, eval_C, eval_X]
+  norm_num
+
+/-- **Tight anchor (T5).**  `pHopf` has a root in `(121444/10⁶, 121445/10⁶)`, i.e. `|Lg*−0.121444| < 10⁻⁶`. -/
+theorem pHopf_root_tight :
+    ∃ Lg ∈ Set.Ioo (121444 / 1000000 : ℝ) (121445 / 1000000), pHopf.eval Lg = 0 := by
+  obtain ⟨Lg, hLg, hev⟩ :=
+    intermediate_value_Ioo (by norm_num) pHopf.continuous.continuousOn ⟨pHopf_neg_tight, pHopf_pos_tight⟩
+  exact ⟨Lg, hLg, hev⟩
+
+/-- **Concrete SCR boundary (T5).**  Lossless ⟹ X/R=∞ ⟹ impedance factor `zfac=1`, so the surrogate
+`SCR(Lg) = Vn²/(Sn·Lg·wn) = 1444/(314159·Lg)` (Vn=380, Sn=10⁵, wn=314159/1000) is strictly decreasing;
+the Hopf `SCR*` therefore lies in the explicit interval `(scrOfLg .. 0.121445, scrOfLg .. 0.121444)`
+(≈ 0.037845).  A CONCRETE SCR boundary NUMBER for the model — not abstract, not an assumed sign. -/
+theorem pHopf_scr_bracket :
+    ∃ Lg, scrOfLg 380 100000 (314159 / 1000) 1 Lg
+        ∈ Set.Ioo (scrOfLg 380 100000 (314159 / 1000) 1 (121445 / 1000000))
+                  (scrOfLg 380 100000 (314159 / 1000) 1 (121444 / 1000000))
+      ∧ pHopf.eval Lg = 0 := by
+  obtain ⟨Lg, hLg, hev⟩ := pHopf_root_tight
+  have hpos : (0 : ℝ) < Lg := lt_trans (by norm_num) hLg.1
+  have hanti := scrOfLg_strictAntiOn 380 100000 (314159 / 1000) 1
+    (by norm_num) (by norm_num) (by norm_num) (by norm_num)
+  refine ⟨Lg, ⟨?_, ?_⟩, hev⟩
+  · exact hanti (Set.mem_Ioi.mpr hpos) (Set.mem_Ioi.mpr (by norm_num)) hLg.2
+  · exact hanti (Set.mem_Ioi.mpr (by norm_num)) (Set.mem_Ioi.mpr hpos) hLg.1
 
 end GFL

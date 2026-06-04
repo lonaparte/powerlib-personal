@@ -45,7 +45,7 @@ hdr='''/-
   the abstract-aᵢ files lacked; the residual gap to the exact lossy 0.0346 is exact-param elimination
   (Singular), not a Lean gap.
 -/
-import GFL.ScrHopfCubic
+import GFL.ScrAxis
 
 namespace GFL
 open Polynomial Set
@@ -74,6 +74,36 @@ body+="    ⟨pHopf_neg, pHopf_pos⟩\n"
 body+="  obtain ⟨Lg, hLg, hev⟩ :=\n"
 body+="    intermediate_value_Ioo (by norm_num) pHopf.continuous.continuousOn hmem\n"
 body+="  exact ⟨Lg, hLg, hev⟩\n\n"
+# --- T5: tight bracket + concrete SCR boundary (lossless ⟹ zfac=1) ---
+body+="/-! ### T5 — tight numerical anchor + concrete SCR boundary (lossless surrogate, zfac=1) -/\n\n"
+body+="/-- `pHopf(0.121444) < 0` — tight endpoint (`norm_num`). -/\n"
+body+="theorem pHopf_neg_tight : pHopf.eval (121444 / 1000000) < 0 := by\n"
+body+="  simp only [pHopf, eval_add, eval_mul, eval_pow, eval_C, eval_X]\n  norm_num\n\n"
+body+="/-- `0 < pHopf(0.121445)` — tight endpoint (`norm_num`). -/\n"
+body+="theorem pHopf_pos_tight : 0 < pHopf.eval (121445 / 1000000) := by\n"
+body+="  simp only [pHopf, eval_add, eval_mul, eval_pow, eval_C, eval_X]\n  norm_num\n\n"
+body+="/-- **Tight anchor (T5).**  `pHopf` has a root in `(121444/10⁶, 121445/10⁶)`, i.e. `|Lg*−0.121444| < 10⁻⁶`. -/\n"
+body+="theorem pHopf_root_tight :\n"
+body+="    ∃ Lg ∈ Set.Ioo (121444 / 1000000 : ℝ) (121445 / 1000000), pHopf.eval Lg = 0 := by\n"
+body+="  obtain ⟨Lg, hLg, hev⟩ :=\n"
+body+="    intermediate_value_Ioo (by norm_num) pHopf.continuous.continuousOn ⟨pHopf_neg_tight, pHopf_pos_tight⟩\n"
+body+="  exact ⟨Lg, hLg, hev⟩\n\n"
+body+="/-- **Concrete SCR boundary (T5).**  Lossless ⟹ X/R=∞ ⟹ impedance factor `zfac=1`, so the surrogate\n"
+body+="`SCR(Lg) = Vn²/(Sn·Lg·wn) = 1444/(314159·Lg)` (Vn=380, Sn=10⁵, wn=314159/1000) is strictly decreasing;\n"
+body+="the Hopf `SCR*` therefore lies in the explicit interval `(scrOfLg .. 0.121445, scrOfLg .. 0.121444)`\n"
+body+="(≈ 0.037845).  A CONCRETE SCR boundary NUMBER for the model — not abstract, not an assumed sign. -/\n"
+body+="theorem pHopf_scr_bracket :\n"
+body+="    ∃ Lg, scrOfLg 380 100000 (314159 / 1000) 1 Lg\n"
+body+="        ∈ Set.Ioo (scrOfLg 380 100000 (314159 / 1000) 1 (121445 / 1000000))\n"
+body+="                  (scrOfLg 380 100000 (314159 / 1000) 1 (121444 / 1000000))\n"
+body+="      ∧ pHopf.eval Lg = 0 := by\n"
+body+="  obtain ⟨Lg, hLg, hev⟩ := pHopf_root_tight\n"
+body+="  have hpos : (0 : ℝ) < Lg := lt_trans (by norm_num) hLg.1\n"
+body+="  have hanti := scrOfLg_strictAntiOn 380 100000 (314159 / 1000) 1\n"
+body+="    (by norm_num) (by norm_num) (by norm_num) (by norm_num)\n"
+body+="  refine ⟨Lg, ⟨?_, ?_⟩, hev⟩\n"
+body+="  · exact hanti (Set.mem_Ioi.mpr hpos) (Set.mem_Ioi.mpr (by norm_num)) hLg.2\n"
+body+="  · exact hanti (Set.mem_Ioi.mpr (by norm_num)) (Set.mem_Ioi.mpr hpos) hLg.1\n\n"
 body+="end GFL\n"
 open('GFL/ScrHopfNumeric.lean','w').write(body)
 print("wrote GFL/ScrHopfNumeric.lean ; raw deg 22 (Lg^6·pHopf), pHopf deg", n, "maxdigits",
