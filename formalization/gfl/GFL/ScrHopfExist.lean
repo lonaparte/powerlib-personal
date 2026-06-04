@@ -33,6 +33,60 @@ open Matrix
 set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 
+/-! ### Deg-4 genuine-Hopf guard (excludes spurious ω²<0) -/
+
+/-- **`hopf_deg4` — genuine Hopf at deg 4.**  For `λ⁴+a₁λ³+a₂λ²+a₃λ+a₄` with `a₁>0, a₃>0`: a
+pure-imaginary pair `±iω` (ω>0) is a root ⟺ the Routh–Hurwitz Hopf condition `χ₄ = a₁a₂a₃−a₃²−a₁²a₄ =
+0`.  The crossing frequency is `ω = √(a₃/a₁) > 0` — the `a₁,a₃>0` hypotheses force `ω²=a₃/a₁>0`,
+EXCLUDING the spurious `ω²<0` case.  (Deg-4 analogue of `hopf_deg3`; the genuine, not-spurious guard.) -/
+theorem hopf_deg4 (a₁ a₂ a₃ a₄ : ℝ) (h₁ : 0 < a₁) (h₃ : 0 < a₃) :
+    (∃ ω : ℝ, 0 < ω ∧ ((ω : ℂ) * Complex.I) ^ 4 + (a₁ : ℂ) * ((ω : ℂ) * Complex.I) ^ 3
+        + (a₂ : ℂ) * ((ω : ℂ) * Complex.I) ^ 2 + (a₃ : ℂ) * ((ω : ℂ) * Complex.I) + (a₄ : ℂ) = 0)
+      ↔ a₁ * a₂ * a₃ - a₃ ^ 2 - a₁ ^ 2 * a₄ = 0 := by
+  constructor
+  · rintro ⟨ω, hω, hroot⟩
+    have hre : ω ^ 4 - a₂ * ω ^ 2 + a₄ = 0 := by
+      have h := congrArg Complex.re hroot
+      simp only [Complex.add_re, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
+        Complex.ofReal_im, Complex.I_re, Complex.I_im, pow_succ, pow_zero, Complex.one_re,
+        Complex.one_im, one_mul, Complex.zero_re, Complex.zero_im, mul_zero, mul_one,
+        zero_mul, sub_zero, zero_sub, add_zero, zero_add] at h
+      linear_combination h
+    have him : ω * (a₃ - a₁ * ω ^ 2) = 0 := by
+      have h := congrArg Complex.im hroot
+      simp only [Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
+        Complex.ofReal_im, Complex.I_re, Complex.I_im, pow_succ, pow_zero, Complex.one_re,
+        Complex.one_im, one_mul, Complex.zero_re, Complex.zero_im, mul_zero, mul_one,
+        zero_mul, sub_zero, zero_sub, add_zero, zero_add] at h
+      linear_combination h
+    have hω2 : a₁ * ω ^ 2 = a₃ := by
+      rcases mul_eq_zero.mp him with h | h
+      · exact absurd h (ne_of_gt hω)
+      · linarith
+    linear_combination -a₁ ^ 2 * hre + (a₁ * ω ^ 2 + a₃ - a₁ * a₂) * hω2
+  · intro hχ
+    have ht : (0 : ℝ) < a₃ / a₁ := div_pos h₃ h₁
+    have ha1 : a₁ ≠ 0 := ne_of_gt h₁
+    set w := Real.sqrt (a₃ / a₁) with hw
+    have hkey : a₁ * w ^ 2 = a₃ := by rw [hw, Real.sq_sqrt ht.le]; field_simp
+    refine ⟨w, Real.sqrt_pos.mpr ht, ?_⟩
+    have hre : w ^ 4 - a₂ * w ^ 2 + a₄ = 0 := by
+      have h1 : a₁ ^ 2 * (w ^ 4 - a₂ * w ^ 2 + a₄) = 0 := by
+        linear_combination (-1 : ℝ) * hχ + (2 * a₃ - a₂ * a₁ + a₁ * w ^ 2 - a₃) * hkey
+      exact (mul_eq_zero.mp h1).resolve_left (pow_ne_zero 2 ha1)
+    rw [Complex.ext_iff]
+    constructor
+    · simp only [Complex.add_re, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
+        Complex.ofReal_im, Complex.I_re, Complex.I_im, pow_succ, pow_zero, Complex.one_re,
+        Complex.one_im, one_mul, Complex.zero_re, Complex.zero_im, mul_zero, mul_one,
+        zero_mul, sub_zero, zero_sub, add_zero, zero_add]
+      linear_combination hre
+    · simp only [Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
+        Complex.ofReal_im, Complex.I_re, Complex.I_im, pow_succ, pow_zero, Complex.one_re,
+        Complex.one_im, one_mul, Complex.zero_re, Complex.zero_im, mul_zero, mul_one,
+        zero_mul, sub_zero, zero_sub, add_zero, zero_add]
+      linear_combination (-w) * hkey
+
 /-! ### Existence of the Hopf off the fold, from the affine/linear structure of χ₃ -/
 
 /-- **χ₃ has a root OFF the fold — by solving a linear equation.**  `χ₃ = Kp_pll·gθ·Ψ̃ + J13·slope` is
