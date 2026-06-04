@@ -28,3 +28,4 @@ import GFL.ScrHopf
 import GFL.ScrHopfExist
 import GFL.ScrHopf4D
 import GFL.ScrHopfAnchor
+import GFL.ScrHopfCubic

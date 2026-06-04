@@ -29,6 +29,7 @@ import GFL.ScrHopf
 import GFL.ScrHopfExist
 import GFL.ScrHopf4D
 import GFL.ScrHopfAnchor
+import GFL.ScrHopfCubic
 
 open GFL
 
@@ -173,3 +174,8 @@ open GFL
 #print axioms chi4f                          -- [def] χ₄(gθ) = a₁a₂a₃−a₃²−a₁²a₄ as a function of gθ
 #print axioms chi4_anchor_off_fold          -- (b) sign change ⟹ ∃ gθ*∈(0,g₁), χ₄(gθ*)=0 (off fold)
 #print axioms chi4_genuine_hopf_anchored    -- (b)+genuine: off-fold zero is a GENUINE Hopf (hopf_deg4)
+-- SCR-Hopf cubic: strong-grid end discharged from structure (L₃>0) — no assumed second sign point
+#print axioms chi4poly                       -- [def] χ₄(gθ) as Polynomial ℝ (C L₃·X³+C L₂·X²+C L₁·X+C L₀)
+#print axioms chi4poly_eval                  -- bridge: eval g chi4poly = chi4f g (ring)
+#print axioms chi4_anchor_leadingpos        -- L₃>0 ∧ χ₄(0)<0 ⟹ ∃ gθ*>0, χ₄(gθ*)=0 (strong end via asymptotics)
+#print axioms chi4_genuine_hopf_leadingpos  -- +genuine: that root is a GENUINE Hopf when a₁,a₃>0 on positives
