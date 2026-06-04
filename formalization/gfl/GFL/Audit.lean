@@ -25,6 +25,7 @@ import GFL.LFilterHopf
 import GFL.LFilterT3
 import GFL.FoldHopf
 import GFL.FoldHopfDecouple
+import GFL.ScrHopf
 
 open GFL
 
@@ -137,3 +138,10 @@ open GFL
 #print axioms Bpll                          -- [def] explicit PLL↔current coupling block B (assembly (b))
 #print axioms Bpll_pll_structure            -- B row 2 = −Kp_pll·(row 1) (the PLL multiplies v_cqc)
 #print axioms fold_hopf_4D_equilibrium_factor -- (a) end-to-end: err=0 ⟹ actual J4 = fromBlocks A 0 B Dpll ⟹ factors
+-- SCR-Hopf mechanism (P-only droop, err≠0): the tracking-error term that deg-2 Routh degenerates away
+#print axioms M3droop                       -- [def] 3D droop Jacobian (i_q row [J11,0,J13], J13≠0)
+#print axioms M3droop_charpoly              -- 3D droop char poly (J13·J21 = droop terms)
+#print axioms chi3_droop_decomp             -- χ₃ = Kp·gθ·Ψ̃ + J13·J21·(Kp²gθ−Kp·J11−Ki)  (err term ∝ err_P*)
+#print axioms chi3_err_zero_recovers_foldhopf -- J13=0 ⟹ χ₃ = Kp·gθ·Ψ̃ (recovers FoldHopf, fold-bound)
+#print axioms chi2_eq                       -- χ₂ = Kp_pll·gθ (deg 2: no err term ⟹ Hopf ⟺ fold)
+#print axioms a1_current_pole_by_dimension  -- a₁(3D)−a₁(2D) = −J11 (current pole ∝Kpi/Lf enters at 3D)
