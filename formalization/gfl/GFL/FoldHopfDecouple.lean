@@ -112,4 +112,52 @@ theorem fold_hopf_4D_charpoly_factor (A B : Matrix (Fin 2) (Fin 2) ℝ) (gθ Ki_
         Matrix.one_apply, smul_eq_mul]
   rw [hsplit, Matrix.det_fromBlocks_zero₁₂, Dpll_charpoly]
 
+/-! ### (a)+(b) — the ACTUAL equilibrium Jacobian is `fromBlocks A 0 B Dpll`: end-to-end grounding -/
+
+/-- **(b) The PLL↔current coupling block `B`** (rows η,θ_e × cols i_d,i_q), CAS-derived (extract_jac4.py,
+on the unit circle C²+S²=1).  Since `F_θ = −Kp_pll·v_cqc − Ki_pll·η`, `∂F_θ/∂i = −Kp_pll·∂F_η/∂i`, so
+row 2 = −Kp_pll·(row 1) — recorded for self-containment; irrelevant to the factorisation. -/
+noncomputable def Bpll (Vg Lf Lg wn Kpi Kp_Q Kp_pll C S : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
+  !![ Lg * (C * Lf * wn - Kpi * S) / Lf,
+        -Lg * (2 * C * Kpi + 3 * Kp_Q * Kpi * Vg + 2 * Lf * S * wn) / (2 * Lf);
+      -Kp_pll * (Lg * (C * Lf * wn - Kpi * S) / Lf),
+        -Kp_pll * (-Lg * (2 * C * Kpi + 3 * Kp_Q * Kpi * Vg + 2 * Lf * S * wn) / (2 * Lf)) ]
+
+/-- `B`'s PLL structure: row 2 = `−Kp_pll`·(row 1) — the θ_e-equation is `−Kp_pll`× the η-equation. -/
+theorem Bpll_pll_structure (Vg Lf Lg wn Kpi Kp_Q Kp_pll C S : ℝ) (j : Fin 2) :
+    Bpll Vg Lf Lg wn Kpi Kp_Q Kp_pll C S 1 j
+      = -Kp_pll * Bpll Vg Lf Lg wn Kpi Kp_Q Kp_pll C S 0 j := by
+  fin_cases j <;> simp [Bpll]
+
+/-- **(a) END-TO-END.**  The ACTUAL 4×4 equilibrium Jacobian's top-right block is the current rows'
+coupling to (η,θ_e): `[[∂F_id/∂η, ∂F_id/∂θ_e],[∂F_iq/∂η, ∂F_iq/∂θ_e]] = [[0, J03],[0, J13]]` — the
+η-column is 0 (the current dynamics contain no η: J02=J12=0, structural) and the θ_e-column is the
+tracking-error form (T2/T1').  At the true equilibrium (err_P = err_Q = 0) it VANISHES, so the actual
+Jacobian is exactly `fromBlocks A 0 B (Dpll gθ Ki_pll Kp_pll)` (bottom-right = the 2D PLL pendulum,
+extract_jac4.py), and its char poly factors `det(λI−J4) = det(λI−A)·(λ²+Kp_pll·gθ·λ+Ki_pll·gθ)`.
+So 2D = 3D = 4D share the SAME PLL stability — fold-only, no isolated Hopf.  (`A` = current block,
+`B` = `Bpll`; left as the model's actual blocks, irrelevant to the factor.) -/
+theorem fold_hopf_4D_equilibrium_factor
+    (A B : Matrix (Fin 2) (Fin 2) ℝ)
+    (Vg Lf Kpi Kp_P Kp_Q P_ref Q_ref C S i_d i_q gθ Ki_pll Kp_pll lam : ℝ)
+    (hP : P_ref - 3 / 2 * Vg * i_d = 0) (hQ : Q_ref + 3 / 2 * Vg * i_q = 0) :
+    (lam • (1 : Matrix (Fin 2 ⊕ Fin 2) (Fin 2 ⊕ Fin 2) ℝ) - fromBlocks A
+        !![(0 : ℝ), -(Kpi / Lf) * (Kp_P * S * (P_ref - 3 / 2 * Vg * i_d)
+              + Kp_Q * C * (Q_ref + 3 / 2 * Vg * i_q));
+           (0 : ℝ), -(Kpi / Lf) * (Kp_P * C * (P_ref - 3 / 2 * Vg * i_d)
+              - Kp_Q * S * (Q_ref + 3 / 2 * Vg * i_q))]
+        B (Dpll gθ Ki_pll Kp_pll)).det
+      = (lam • (1 : Matrix (Fin 2) (Fin 2) ℝ) - A).det
+        * (lam ^ 2 + (Kp_pll * gθ) * lam + Ki_pll * gθ) := by
+  have hTR : (!![(0 : ℝ), -(Kpi / Lf) * (Kp_P * S * (P_ref - 3 / 2 * Vg * i_d)
+                  + Kp_Q * C * (Q_ref + 3 / 2 * Vg * i_q));
+                 (0 : ℝ), -(Kpi / Lf) * (Kp_P * C * (P_ref - 3 / 2 * Vg * i_d)
+                  - Kp_Q * S * (Q_ref + 3 / 2 * Vg * i_q))]
+              : Matrix (Fin 2) (Fin 2) ℝ) = 0 := by
+    rw [hP, hQ]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  rw [hTR]
+  exact fold_hopf_4D_charpoly_factor A B gθ Ki_pll Kp_pll lam
+
 end GFL

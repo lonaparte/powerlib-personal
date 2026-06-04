@@ -134,3 +134,6 @@ open GFL
 #print axioms decouple_J03_at_equilibrium   -- T3: err_P=err_Q=0 (true eq) ⟹ ∂F_id/∂θ_e = 0
 #print axioms Dpll_charpoly                 -- PLL block charpoly λ²+Kp_pll·gθ·λ+Ki_pll·gθ (= 2D)
 #print axioms fold_hopf_4D_charpoly_factor  -- T4: decoupled ⟹ det(λI−M4)=det(λI−A)·(2D PLL charpoly)
+#print axioms Bpll                          -- [def] explicit PLL↔current coupling block B (assembly (b))
+#print axioms Bpll_pll_structure            -- B row 2 = −Kp_pll·(row 1) (the PLL multiplies v_cqc)
+#print axioms fold_hopf_4D_equilibrium_factor -- (a) end-to-end: err=0 ⟹ actual J4 = fromBlocks A 0 B Dpll ⟹ factors
