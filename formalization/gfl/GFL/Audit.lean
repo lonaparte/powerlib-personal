@@ -28,6 +28,7 @@ import GFL.FoldHopfDecouple
 import GFL.ScrHopf
 import GFL.ScrHopfExist
 import GFL.ScrHopf4D
+import GFL.ScrHopfAnchor
 
 open GFL
 
@@ -158,3 +159,17 @@ open GFL
 #print axioms chi4_droop_decomp             -- χ₄ = a₁a₂a₃−a₃²−a₁²a₄ = (fold-bound, ∝gθ) + (droop, ∝J03,J13)
 #print axioms chi4_err_zero                 -- J03=J13=0 ⟹ χ₄ = (err=0 part), recovers FoldHopf at deg 4
 #print axioms chi4_genuine_hopf             -- 4D: χ₄=0 ∧ a₁,a₃>0 ⟹ GENUINE ±iω (ω²=a₃/a₁>0), parametric
+-- SCR-Hopf anchor: (a) droop survives at fold + (b) IVT existence of the boundary OFF the fold
+#print axioms chi4_err0_at_fold             -- (a) err=0 part vanishes at gθ=0 ⟹ χ₄|_fold = droop
+#print axioms hopf_root_ivt                 -- (b) generic IVT engine (axis-agnostic): sign change ⟹ interior χ₄=0
+#print axioms chi4coeff1                     -- [def] a₁(gθ) (affine in gθ)
+#print axioms chi4coeff2                     -- [def] a₂(gθ)
+#print axioms chi4coeff3                     -- [def] a₃(gθ)
+#print axioms chi4coeff4                     -- [def] a₄(gθ)
+#print axioms chi4coeff1_continuous          -- a₁(gθ) continuous
+#print axioms chi4coeff2_continuous          -- a₂(gθ) continuous
+#print axioms chi4coeff3_continuous          -- a₃(gθ) continuous
+#print axioms chi4coeff4_continuous          -- a₄(gθ) continuous
+#print axioms chi4f                          -- [def] χ₄(gθ) = a₁a₂a₃−a₃²−a₁²a₄ as a function of gθ
+#print axioms chi4_anchor_off_fold          -- (b) sign change ⟹ ∃ gθ*∈(0,g₁), χ₄(gθ*)=0 (off fold)
+#print axioms chi4_genuine_hopf_anchored    -- (b)+genuine: off-fold zero is a GENUINE Hopf (hopf_deg4)
