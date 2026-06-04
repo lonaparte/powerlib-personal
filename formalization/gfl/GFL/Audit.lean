@@ -27,6 +27,7 @@ import GFL.FoldHopf
 import GFL.FoldHopfDecouple
 import GFL.ScrHopf
 import GFL.ScrHopfExist
+import GFL.ScrHopf4D
 
 open GFL
 
@@ -151,3 +152,9 @@ open GFL
 #print axioms chi3_root_off_fold            -- χ₃ affine in J13 ⟹ root EXISTS off the fold (gθ≠0)
 #print axioms chi2_no_root_off_fold         -- χ₂=Kp·gθ has no err term ⟹ 2D no Hopf off fold (dimension)
 #print axioms chi3_genuine_hopf_off_fold  -- a₁(3D)−a₁(2D) = −J11 (current pole ∝Kpi/Lf enters at 3D)
+-- SCR-Hopf 4D explicit decomposition (T_DIM4): χ₄ = (err=0 part ∝ gθ) + (droop term ∝ J03,J13)
+#print axioms M4droop                       -- [def] 4D droop Jacobian (extends M3droop by i_d state, J03,J13≠0)
+#print axioms M4droop_charpoly              -- GROUNDING: det(λI−M4droop)=λ⁴+a₁λ³+a₂λ²+a₃λ+a₄ (4×4 Laplace)
+#print axioms chi4_droop_decomp             -- χ₄ = a₁a₂a₃−a₃²−a₁²a₄ = (fold-bound, ∝gθ) + (droop, ∝J03,J13)
+#print axioms chi4_err_zero                 -- J03=J13=0 ⟹ χ₄ = (err=0 part), recovers FoldHopf at deg 4
+#print axioms chi4_genuine_hopf             -- 4D: χ₄=0 ∧ a₁,a₃>0 ⟹ GENUINE ±iω (ω²=a₃/a₁>0), parametric
