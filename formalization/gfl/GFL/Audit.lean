@@ -30,6 +30,7 @@ import GFL.ScrHopfExist
 import GFL.ScrHopf4D
 import GFL.ScrHopfAnchor
 import GFL.ScrHopfCubic
+import GFL.ScrAxis
 
 open GFL
 
@@ -179,3 +180,9 @@ open GFL
 #print axioms chi4poly_eval                  -- bridge: eval g chi4poly = chi4f g (ring)
 #print axioms chi4_anchor_leadingpos        -- L₃>0 ∧ χ₄(0)<0 ⟹ ∃ gθ*>0, χ₄(gθ*)=0 (strong end via asymptotics)
 #print axioms chi4_genuine_hopf_leadingpos  -- +genuine: that root is a GENUINE Hopf when a₁,a₃>0 on positives
+-- SCR-Hopf physical axis (parametric): SCR↔Lg conversion + lift Hopf existence to the physical SCR axis
+#print axioms scrOfLg                        -- [def] SCR(Lg) = Vn²/(Sn·Lg·wn·zfac), parametric
+#print axioms scrOfLg_pos                    -- SCR > 0 for positive params
+#print axioms scrOfLg_strictAntiOn          -- SCR strictly decreasing in Lg (weaker grid ⟹ smaller SCR)
+#print axioms scr_hopf_of_lg_hopf           -- lift: Lg-axis sign change ⟹ Hopf at Lg*, SCR*∈(SCR Lg₁, SCR Lg₀)
+#print axioms scr_genuine_hopf_of_lg        -- +genuine: physical SCR-Hopf at SCR*>0 (hopf_deg4), parametric
