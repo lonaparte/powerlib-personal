@@ -31,3 +31,4 @@ import GFL.ScrHopfAnchor
 import GFL.ScrHopfCubic
 import GFL.ScrAxis
 import GFL.ScrHopfNumeric
+import GFL.ScrHopf3DNumeric

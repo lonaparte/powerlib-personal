@@ -32,6 +32,7 @@ import GFL.ScrHopfAnchor
 import GFL.ScrHopfCubic
 import GFL.ScrAxis
 import GFL.ScrHopfNumeric
+import GFL.ScrHopf3DNumeric
 
 open GFL
 
@@ -196,3 +197,9 @@ open GFL
 #print axioms pHopf_pos_tight               -- T5: 0 < pHopf(0.121445) (norm_num, tight)
 #print axioms pHopf_root_tight              -- T5: ∃ Lg∈(0.121444,0.121445), pHopf(Lg)=0 ⟹ |Lg*−0.121444|<1e-6
 #print axioms pHopf_scr_bracket             -- T5: SCR* ∈ (scrOfLg .. 0.121445, scrOfLg .. 0.121444) ≈ 0.0378 (concrete)
+-- 3D (keep-i_d Schur) concrete Hopf boundary: cubic χ₃ eliminated → degree-12 p3, root ≈0.121779
+#print axioms p3                             -- [def] explicit deg-12 3D Hopf-boundary poly (464-digit coeffs)
+#print axioms p3_neg                         -- p3(0.121779) < 0 (norm_num)
+#print axioms p3_pos                         -- 0 < p3(0.121780) (norm_num)
+#print axioms p3_hopf_root                  -- ∃ Lg∈(0.121779,0.121780), p3(Lg)=0 (IVT) — concrete 3D Hopf boundary
+#print axioms p3_scr_bracket                -- 3D SCR* ∈ (scrOfLg .. 0.121780, scrOfLg .. 0.121779) ≈ 0.0377
