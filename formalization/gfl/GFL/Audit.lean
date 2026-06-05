@@ -33,6 +33,7 @@ import GFL.ScrHopfCubic
 import GFL.ScrAxis
 import GFL.ScrHopfNumeric
 import GFL.ScrHopf3DNumeric
+import GFL.ScrHopfDim
 
 open GFL
 
@@ -203,3 +204,8 @@ open GFL
 #print axioms p3_pos                         -- 0 < p3(0.121780) (norm_num)
 #print axioms p3_hopf_root                  -- ∃ Lg∈(0.121779,0.121780), p3(Lg)=0 (IVT) — concrete 3D Hopf boundary
 #print axioms p3_scr_bracket                -- 3D SCR* ∈ (scrOfLg .. 0.121780, scrOfLg .. 0.121779) ≈ 0.0377
+-- PARAMETRIC dimension-threshold (no embedded coefficients): 2D none, 3D/4D possible
+#print axioms hopf3_root_ivt                 -- cubic IVT engine: χ₃ sign change ⟹ interior root
+#print axioms scr_genuine_hopf_3D_of_lg     -- 3D parametric SCR-Hopf: χ₃ sign change + a₂>0 ⟹ genuine (hopf_deg3)
+#print axioms scr_hopf_dim_threshold        -- PUNCHLINE: 2D no isolated Hopf; 3D, 4D admit genuine SCR-Hopf
+#print axioms scr_hopf_4D_full              -- end-to-end 4D: L₃>0 ∧ χ₄(0)<0 ∧ a₁,a₃>0 ⟹ genuine Hopf at SCR>0
