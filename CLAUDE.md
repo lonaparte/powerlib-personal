@@ -42,8 +42,10 @@ This is a DEFAULT requirement — do not wait for the user to ask.
 
 - `formalization/Conventions.md` — All notation, variable naming, parameter definitions, encoding conventions. Update this first when introducing new symbols.
 - `formalization/Summary.md` — Index of all proved results and formalized conjectures. References .kyx files as authoritative source.
-- `formalization/archive/phdae/*.kyx` — All KeYmaera X proofs (with Tactic) and conjectures (without Tactic).
-- `formalization/archive/phdae/*.lean` — Lean 4 algebraic proofs.
+- `01/{smib,two_machine,three_machine,four_machine}/*.kyx` — All MACHINE-VERIFIED KeYmaera X proofs (each with Tactic + `.kyp` containing `\qed`; audited by full sequential fresh re-run, see `01/README.md`).
+- `01/lean/*.lean` — Compiled Lean 4 proofs (the dimension/topology-general pH core; no sorry).
+- `formalization/archive/phdae/*.kyx` — OPEN items (Tactic written, Z3 backend cannot close; reasons in headers) and conjectures (Problem only, no Tactic).
+- `formalization/archive/phdae/{Dynamics,PHDAE}.lean` — exploratory Lean notes (not completed proofs).
 
 ## Research Context
 

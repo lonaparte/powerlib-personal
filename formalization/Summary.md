@@ -214,6 +214,11 @@ sin² 项**只在中间带 (0.225, 0.8899) 必需**。早期"sin² 普适必需"
 
 ## 文件索引（KeYmaera X 5.1.2 实跑结果）
 
+> **文件位置(2026-06-12 迁移)**:所有**机器验证通过**(`.kyp` 含 `\qed`)的 104 个 .kyx+.kyp 已按审计流程迁至仓库根
+> `01/{smib,two_machine,three_machine,four_machine}/`,编译通过的 Lean 证明在 `01/lean/`(迁移依据与复验记录见 `01/README.md`:
+> 104/104 串行 fresh 重跑一致 + 新位置抽样重证)。**未走完流程的**(10 个 OPEN + 4 个 conjecture + 探索性 Lean)留在
+> `formalization/archive/phdae/`。下文各表中的文件名不变,仅目录前缀按此规则解读。
+
 ### ✅ 机器已验证 PROVED（14 个）
 
 | 结论 | 文件 | 参数范围 | 策略 |
