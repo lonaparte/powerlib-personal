@@ -24,15 +24,17 @@
    Lie 导数 sympy/手工导出后由本审计抽查)。
 6. **分层记录**:`formalization/Summary.md` 为注册索引;此处为审计后的"注册且通过"子集。
 
-## 收录(30 个 .kyx)
+## 收录(28 个 .kyx;见下方排除名单)
 
-Summary 注册的 33 个中:29 个常规证明 + 1 个**已证前猜想**(`conjecture_neg_d2_lyapunov.kyx`,
-按 CLAUDE.md 约定"证出后加 Tactic、文件名不变")。各文件含义见 `formalization/Summary.md` 索引。
+Summary 注册的 33 个中,扣除 2 个未证 conjecture 与 3 个重 QE 超时排除后,**28 个**本轮
+重证 `PROVED` 收入此处。各文件含义见 `formalization/Summary.md` 索引。
 
-**排除的注册证明(重 QE 超时,非证伪)**:`asymptotic_d2_small.kyx`、`asymptotic_weak_coupling.kyx`
-——历史 .kyp(2026-05)在,但本轮在本环境(4 核)重证 **300s 与 600s 均超时**(SIGTERM)。
+**排除的注册证明(重 QE 超时,非证伪;历史 .kyp 2026-05 在,本轮 300s+600s 双超时 SIGTERM)**:
+- `asymptotic_d2_small.kyx`、`asymptotic_weak_coupling.kyx`(负阻尼渐近家族)
+- `conjecture_neg_d2_lyapunov.kyx`(已证前猜想,同家族)
+
 按流程第 4 步"本轮复验"标准不收,留在 archive 并如实注记:历史证过、本环境复验未通过。
-(`theorem_3machine.kyx` 重试见提交记录。)
+`theorem_3machine.kyx`(9 状态三机)600s 重试结果见提交记录:通过则收(29),超时则同列此单。
 
 ## 未收录(留在 formalization/archive/phdae/)
 
