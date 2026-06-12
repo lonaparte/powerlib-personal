@@ -1,5 +1,11 @@
 # 风险机制的参数化证书(R2 已改对锚定真模型;R1 撤回;R3 标经典摆)
 
+> **⚠️ 已迁移:** 通过标准化验证流程(对象闸门 → 参数化 → KeYmaera X → 数值核对)的 **R2real**
+> 证书及其闸门/验证脚本(`R2real_fold.kyx`、`R2real_validate.py`、`R1_real_model_test.py`、
+> `R2R3_model_audit.py`)已移至仓库根的 **`/02/risk_mechanisms/`**。本目录仅保留**经典摆对照**
+> 证书(`R2_fold`、`R2_sigma2_symbolic`、`R3a`、`R3_basin`、`R3note`)——它们数学正确但卡在
+> 对象闸门(非仓库 GFL),不计入"遵循流程"的成果。审计与流程见 `/02/README.md`。
+>
 > **2026.06 模型审计 + 改对(按 R1 同标准把 R1/R2/R3 全查了一遍,并把能改对的改对):**
 >
 > - **R1 — 撤回**:8×8 电气 A_e 是手编矩阵;且经真模型检验,弱网失稳是 PLL 模、无电气 onset。

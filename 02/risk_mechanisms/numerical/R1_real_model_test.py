@@ -15,7 +15,7 @@ Run:  python3 R1_real_model_test.py     (run from formalization/numerical, or ad
 """
 import numpy as np, sys, os
 HERE=os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.normpath(os.path.join(HERE, "..", "..", "numerical")))
+sys.path.insert(0, os.path.normpath(os.path.join(HERE, "..", "..", "..", "formalization", "numerical")))
 from sweep import Afun, pv
 
 def J_full(SCR, XR=10, Kp=0.30, Ki=150):

@@ -15,7 +15,7 @@ Run:  python3 R2real_validate.py
 """
 import numpy as np, sys, os
 HERE=os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.normpath(os.path.join(HERE, "..", "..", "numerical")))
+sys.path.insert(0, os.path.normpath(os.path.join(HERE, "..", "..", "..", "formalization", "numerical")))
 from sweep import pv
 
 wn = 2*np.pi*50; Vg = 380*np.sqrt(2/3); Cf = 1e-4

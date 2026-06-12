@@ -9,7 +9,7 @@ Run:  python3 R2R3_model_audit.py
 """
 import numpy as np, sys, os
 HERE=os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.normpath(os.path.join(HERE, "..", "..", "numerical")))
+sys.path.insert(0, os.path.normpath(os.path.join(HERE, "..", "..", "..", "formalization", "numerical")))
 from sweep import pv
 
 idr, iqr, Cf = 80.0, 0.0, 1e-4
