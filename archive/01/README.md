@@ -1,19 +1,24 @@
 # 01 — 完整走完验证流程的全部证明（审计版）
 
+> **位置(2026-06-12 重组)**:本目录现位于 `archive/01/`;未走完流程的原始材料(约定文件、OPEN/猜想、
+> 探索性 Lean、脚本)在同级 `archive/01/archive/` 子树下。下文路径按此解读:
+> `archive/Conventions.md` = `archive/01/archive/formalization/Conventions.md`,
+> `archive/phdae/` = `archive/01/archive/formalization/archive/phdae/`。
+
 > 本目录只收**完整走完同一条形式化流程**的证明产物。
 > 进入条件(机械可查,无例外):
-> - `.kyx`:有 Problem 块(遵循 `formalization/Conventions.md`)+ 有 Tactic + 配套 `.kyx.kyp` 含 `\qed`,
+> - `.kyx`:有 Problem 块(遵循 `archive/Conventions.md`)+ 有 Tactic + 配套 `.kyx.kyp` 含 `\qed`,
 >   且在**入目录当日全部 104 个文件串行 fresh 重跑**,fresh `\qed` 与仓库 `.kyp` 逐一一致(104/104,无空壳)。
 > - `.lean`:Lean 4.14.0 实际编译 EXIT=0、无 `sorry`,`#print axioms` 仅 `[propext, Quot.sound]`。
 > - 移动后又从**新位置**抽样重证(每桶一个 + Lean 重编),确认位置无关。
 >
-> **不在本目录的**(留在 `formalization/archive/phdae/`):10 个 OPEN(有 Tactic 但 Z3 后端闭合不了,
+> **不在本目录的**(留在 `archive/phdae/`):10 个 OPEN(有 Tactic 但 Z3 后端闭合不了,
 > 文件头已注明原因)、4 个 conjecture(仅 Problem)、2 个探索性 Lean(`Dynamics.lean` 含 sorry、
 > `PHDAE.lean` 为卡点记录)。它们没有走完流程,如实分开存放。
 
 ## 流程(每个文件都经过的四层)
 
-1. **约定层**:记号/编码遵循 `formalization/Conventions.md`(sin/cos 用 s,c+圆约束 ODE 编码;H 不含 1/2)。
+1. **约定层**:记号/编码遵循 `archive/Conventions.md`(sin/cos 用 s,c+圆约束 ODE 编码;H 不含 1/2)。
 2. **实例证明层**:KeYmaera X 5.1.2(Z3 后端),`java -jar keymaerax.jar -prove FILE.kyx`;
    唯一判据 = `.kyp` 含 `\qed`;一律**串行**运行(并行会产生空壳 `.kyp`)。
 3. **交叉验证层**:sympy 精确核 Lie 导数/witness;fsolve 算能垒;负对照(故意改错的变体必须 FAIL)。
@@ -35,11 +40,11 @@
 
 ```bash
 # KeYmaera X(任一 .kyx;串行!)
-java -jar keymaerax.jar -prove 01/three_machine/parametric_3machine.kyx -out /tmp/out.kyp
+java -jar keymaerax.jar -prove archive/01/three_machine/parametric_3machine.kyx -out /tmp/out.kyp
 grep -cF '\qed' /tmp/out.kyp     # 1 = PROVED
 
 # Lean(toolchain 见 lean/lean-toolchain: leanprover/lean4:v4.14.0)
-lean 01/lean/PHGeneral.lean       # 退出码 0,#print axioms 仅 propext/Quot.sound
+lean archive/01/lean/PHGeneral.lean       # 退出码 0,#print axioms 仅 propext/Quot.sound
 ```
 
 ## 诚实标注(与文件头一致)
