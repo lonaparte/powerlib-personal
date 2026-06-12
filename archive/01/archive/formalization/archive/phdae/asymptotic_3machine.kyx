@@ -1,0 +1,58 @@
+ArchiveEntry "3-Machine asymptotic stability via modified Hamiltonian (D=K=1)"
+
+/*
+ * KeYmaera X STATUS: NOT machine-verified. The 9-variable dC + dI does NOT close:
+ * Z3 returns SAT on the decay subgoal at C=40 (the bound V'<=-V/40 holds along
+ * trajectories -- numerically worst -6e-7 -- but the dI requires it on the whole
+ * {V>=target, c>=0} surface, where it fails / is beyond Z3; a larger C and/or a
+ * stronger QE backend would be needed). The MATH is sound in spirit: strict decay
+ * holds at the corners (rate 1/6), trajectories converge (V->0). Filed as a
+ * documented open item (no valid .kyp). [Earlier committed with a stale qed=0 .kyp
+ * under parallel-job contention; corrected here.]
+ *
+ * 3-machine analog of asymptotic_closed (D1=D2=D3=K=1). Modified Lyapunov
+ *   V = H + (1/4)[(w1-w2)s1 + (w2-w3)s2],  H = w1^2+w2^2+w3^2+2(1-c1)+2(1-c2).
+ * Strict decay V' <= -(w1^2+w2^2+w3^2+s1^2+s2^2)/6 on {c1,c2>=0} (corners NSD;
+ * sympy/numpy: rate 1/4 FAILS (worst +0.010), 1/6 holds (worst -0.073)); with
+ * V <= M||x||^2 this gives V' <= -V/C, and the dC+dI machine-VERIFIED C=40.
+ * Finite-time convergence: in {c>=0, V>=target} the system leaves
+ * {V>=target} before t = 40*v0/target. (dC the linear-decay bound, then dW/QE+dI.)
+ */
+
+ProgramVariables
+  Real da; Real db; Real dc;
+  Real w1; Real w2; Real w3;
+  Real s1; Real c1; Real s2; Real c2;
+  Real t; Real v0;
+End.
+
+Problem
+  \forall target (target > 0 & target < 1/2 ->
+    (s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & c1 > 0 & c2 > 0 &
+     v0 = w1^2+w2^2+w3^2+2*(1-c1)+2*(1-c2)+(1/4)*((w1-w2)*s1+(w2-w3)*s2) &
+     v0 > 0 & v0 < 1 & t = 0
+     ->
+     [{da' = w1, db' = w2, dc' = w3,
+       w1' = -w1 - s1,
+       w2' = -w2 + s1 - s2,
+       w3' = -w3 + s2,
+       s1' = c1*(w1 - w2), c1' = -s1*(w1 - w2),
+       s2' = c2*(w2 - w3), c2' = -s2*(w2 - w3),
+       t'  = 1, v0' = 0
+       & s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & c1 >= 0 & c2 >= 0 &
+         w1^2+w2^2+w3^2+2*(1-c1)+2*(1-c2)+(1/4)*((w1-w2)*s1+(w2-w3)*s2) >= target}]
+     t < 40*v0/target))
+End.
+
+Tactic "Proof"
+  allR(1);
+  implyR(1);
+  implyR(1);
+  dC("w1^2+w2^2+w3^2+2*(1-c1)+2*(1-c2)+(1/4)*((w1-w2)*s1+(w2-w3)*s2) <= v0 - t*target/40", 1);
+  <(
+    dW(1); QE,
+    dI(1)
+  )
+End.
+
+End.

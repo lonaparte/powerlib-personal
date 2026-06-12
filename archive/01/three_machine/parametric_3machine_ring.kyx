@@ -1,0 +1,47 @@
+ArchiveEntry "3-Machine RING (triangle 1-2-3-1): passive sublevel invariance {H<1}, parametric in D1,D2,D3,K"
+
+/*
+ * RING (triangle) topology 1-2-3-1: three bonds 1-2, 2-3, 3-1. The 3-machine
+ * counterpart of parametric_4machine_ring, and the ring partner to
+ * parametric_3machine (chain/line). SAME one-line dI as the chain -- this is the
+ * 3-machine half of the topology-INDEPENDENCE demonstration: machine 1 now also
+ * couples to machine 3 (bond 3-1, variables s3,c3), adding a 3rd potential term,
+ * yet dH/dt = -2(D1 w1^2+D2 w2^2+D3 w3^2) <= 0 still holds because the extra sin
+ * coupling cancels exactly. H = w1^2+w2^2+w3^2 + 2K(1-c1)+2K(1-c2)+2K(1-c3).
+ *
+ * (Each bond carries its own s_j,c_j with s_j^2+c_j^2=1; the loop relation
+ * delta1+delta2+delta3=0 holds along trajectories from a consistent initial
+ * condition but is not needed by the energy dI.)
+ */
+
+ProgramVariables
+  Real da; Real db; Real dc;
+  Real w1; Real w2; Real w3;
+  Real s1; Real c1; Real s2; Real c2; Real s3; Real c3;
+End.
+
+Problem
+  \forall D1 \forall D2 \forall D3 \forall K (
+    D1 > 0 & D2 > 0 & D3 > 0 & K > 0 &
+    s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1 &
+    w1^2 + w2^2 + w3^2 + 2*K*(1-c1) + 2*K*(1-c2) + 2*K*(1-c3) < 1
+    ->
+    [{da' = w1, db' = w2, dc' = w3,
+      w1' = -D1*w1 - K*s1 + K*s3,
+      w2' = -D2*w2 + K*s1 - K*s2,
+      w3' = -D3*w3 + K*s2 - K*s3,
+      s1' = c1*(w1 - w2), c1' = -s1*(w1 - w2),
+      s2' = c2*(w2 - w3), c2' = -s2*(w2 - w3),
+      s3' = c3*(w3 - w1), c3' = -s3*(w3 - w1)
+      & s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1}]
+    w1^2 + w2^2 + w3^2 + 2*K*(1-c1) + 2*K*(1-c2) + 2*K*(1-c3) < 1
+  )
+End.
+
+Tactic "Proof"
+  allR(1); allR(1); allR(1); allR(1);
+  implyR(1);
+  dI(1)
+End.
+
+End.

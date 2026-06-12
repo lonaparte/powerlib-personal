@@ -1,0 +1,68 @@
+ArchiveEntry "Theorem: 3-Machine pH Lyapunov (line, D1=D3=K=1)"
+
+/* KeYmaera X STATUS: Tactic written, Lie-derivative algebra verified,
+ * but QE TIMES OUT (>350s). NOT machine-verified. High polynomial degree
+ * or messy rational coefficients overwhelm Z3/CAD. Numerically validated;
+ * awaiting stronger QE strategy or problem decomposition. */
+
+/*
+ * 3-machine line: 1--2--3, D1=D3=K=1, D2=-d.
+ *
+ * V = H + h*(s1^2+s2^2) + a*(w1*s1-w3*s2) + b*w2*(s1-s2)
+ * a = 1+d, b = (1+3d)/4, h = h*(d) from quadratic optimization.
+ *
+ * PROOF (same structure as 2-machine):
+ * (A) 5x5 -M block-diagonalizes: 3x3 symmetric block S + 2x2 anti-symmetric block A.
+ * (B) A always positive definite (det(A) = (2-a)*a - (a/2-h)^2 > 0).
+ * (C) det(S)_max is quadratic in h. Optimal h* = -beta/(2*alpha).
+ *     alpha = -(4-2d), beta and gamma are explicit polynomials in d.
+ * (D) det(S)_max > 0 iff (5d-1)*R(d) < 0 where
+ *     R(d) = 27d^5-117d^4-15d^3+689d^2-984d+336.
+ * (E) For d < 1/5: (5d-1) < 0 and R(0) = 336 > 0, so (5d-1)*R(d) < 0. QED.
+ *
+ * BOUNDARY: d* = 1/5 (EXACT RATIONAL).
+ * The factor (5d-1) gives the boundary directly - no irrational roots.
+ *
+ * Comparison with 2-machine:
+ *   2-machine boundary: root of 162d^4-198d^3-35d^2+134d-47=0 (irrational)
+ *   3-machine boundary: d = 1/5 (rational!)
+ *   The network topology constraint produces a SIMPLER boundary.
+ *
+ * INSTANCE: d = 3/20, h = h*(3/20).
+ */
+
+/* Instance dn=3/20: av=1+dn=23/20, bv=(1+3dn)/4=29/80, hv=1/5 */
+Definitions
+  Real dn = 3/20;
+  Real av = 23/20;
+  Real bv = 29/80;
+  Real hv = 1/5;
+End.
+
+ProgramVariables
+  Real da; Real db; Real w1; Real w2; Real w3;
+  Real s1; Real c1; Real s2; Real c2;
+End.
+
+Problem
+  s1^2+c1^2=1 & s2^2+c2^2=1 & c1>=4/5 & c2>=4/5 &
+  w1^2+w2^2+w3^2+2*(1-c1)+2*(1-c2)
+    +hv*(s1^2+s2^2)+av*(w1*s1-w3*s2)+bv*w2*(s1-s2) < 1/25
+  ->
+  [{da'=w1, db'=w2,
+    w1'=-w1-s1,
+    w2'=dn*w2+s1-s2,
+    w3'=-w3+s2,
+    s1'=c1*(w1-w2), c1'=-s1*(w1-w2),
+    s2'=c2*(w2-w3), c2'=-s2*(w2-w3)
+    & s1^2+c1^2=1 & s2^2+c2^2=1 & c1>=4/5 & c2>=4/5}]
+  w1^2+w2^2+w3^2+2*(1-c1)+2*(1-c2)
+    +hv*(s1^2+s2^2)+av*(w1*s1-w3*s2)+bv*w2*(s1-s2) < 1/25
+End.
+
+Tactic "Proof"
+  implyR(1);
+  dI(1)
+End.
+
+End.

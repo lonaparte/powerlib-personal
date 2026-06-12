@@ -12,6 +12,64 @@
 
 ---
 
+## GFL-VSC 慢频率模式（Lean 4 + Mathlib，机器已验证）
+
+> 功率锁定跟网变流器（GFL-VSC）的慢频率模式形式化。完整说明见 [`gfl/README.md`](gfl/README.md)；
+> 源在 `gfl/GFL/*.lean`，公理审计见 `gfl/GFL/Audit.lean`，数值交叉验证见 `gfl/validate.py`。
+
+**结论**：电流控制、功率锁定的 GFL-VSC，其慢频率（电网频率）模式是**纯实数衰减模**，特征值
+`−D/(2H)`；当且仅当显式存在角度→功率耦合 `Ks` 且 `β·Ks > b²/4`（`β:=wn/(2H)`）时才转为振荡。
+裸 GFL 因 Power Lock（引理 0）强制同步系数 `K=0`（即 `Ks=0`），其频率模式只衰减、永不振荡。
+
+**机器已验证（`lake build`，无 `sorry`，公理仅 `[propext, Classical.choice, Quot.sound]`）**：
+
+| 结论 | Lean 名 | 文件 |
+|------|---------|------|
+| 引理 0（Power Lock，命门，纯代数）`e_P=0 ⟹ i_d=P_ref/(1.5Vg)` | `powerLock` | `gfl/GFL/Model.lean` |
+| 推论 0a `i_d*` 恒定 ⟹ `K=0` | `syncCoeff_zero` | `gfl/GFL/Model.lean` |
+| 推论 0b 其余平衡关系 `i_q=−Q_ref/(1.5Vg)`、`e_d=e_q=0`、`v_cqc=0`、`η=−dw/Ki_pll` | `equilib_relations` | `gfl/GFL/Model.lean` |
+| 推论 0b Variant S `dw*=0` | `variantS_dw_zero` | `gfl/GFL/Model.lean` |
+| 定理 A（Variant U 零特征值，`e₉` 左特征向量，`det=0`） | `variantU_zero_eigenvalue` | `gfl/GFL/TheoremA.lean` |
+| 定理 A 零特征值**单重**（`det(J_U−μI)=−μ·det(A−μI)`，恰一个零特征值） | `variantU_charpoly_factor` | `gfl/GFL/TheoremA.lean` |
+| 定理 B（约化系统**精确** `dw'=−b·dw`，`λ_slow=−D/(2H)`） | `reduced_exact` | `gfl/GFL/TheoremB.lean` |
+| 定理 B（全系统 Schur 项 `ρᵀA⁻¹c=κK=0` 精确） | `schur_term_zero` | `gfl/GFL/TheoremB.lean` |
+| 定理 B 全系统 Schur 行列式 `det(J_S−μI)=det(A−μI)·((j99−μ)−ρᵀ(A−μI)⁻¹c)` | `variantS_schur_det` | `gfl/GFL/TheoremB.lean` |
+| 定理 C（伴随矩阵特征多项式 `λ²+bλ+βKs`） | `charpoly_eq` | `gfl/GFL/TheoremC.lean` |
+| 定理 C1（`Ks=0` ⟹ 根 `{0,−b}` 全实） | `thmC_Ks_zero` | `gfl/GFL/TheoremC.lean` |
+| 定理 C2（`Ks>0` ⟹ `−b/2±iω`，振荡 ⟺ `βKs>b²/4`，`ω_osc=√(βKs−b²/4)`） | `thmC_onset` | `gfl/GFL/TheoremC.lean` |
+| 推论 0a 导数版 `deriv(P_meas∘z*)=0` | `syncCoeff_deriv_zero` | `gfl/GFL/Calculus.lean` |
+| `i_d` 切向量为零 `v₀=0` | `branch_iD_tangent_zero` | `gfl/GFL/Calculus.lean` |
+| IFT 线性化 `A·v=−c`（对 `F_inner(z*(d),d)=0` 链式求导） | `branch_linearization` | `gfl/GFL/Calculus.lean` |
+| 定理 B Schur 项从 C¹ 分支推出 `ρᵀA⁻¹c=0` | `schur_term_zero_of_branch` | `gfl/GFL/Calculus.lean` |
+| 定理 A 显式右特征向量 `det=0 ⟹ ∃v≠0, J·v=0` | `variantU_zero_right_eigenvector` | `gfl/GFL/TheoremA.lean` |
+| 定理 C2 反向/穷尽 `βKs≥b²/4`：根恰为 `−b/2±iω`（复根⟹判别式<0） | `thmC_roots_exhaustive` | `gfl/GFL/TheoremC.lean` |
+| 定理 C2 过阻尼实根 `βKs≤b²/4`：根恰为 `−b/2±μ`（全实，不振荡） | `thmC_real_roots` | `gfl/GFL/TheoremC.lean` |
+| **W3 由隐函数定理推出**（分支存在 + C¹ + `A·v=−c`） | `branch_of_ift` / `branch_linearization_of_ift` | `gfl/GFL/Calculus.lean` |
+| 定理 B O(b²) **部分**：预解恒等式 + `schur_term_at_neg_b`（`∃K,=−b·K`）+ `κ=(wn/SnD)b` + 精确 b² 恒等式 `schur_term_b_sq` | `resolvent_id`/`schur_term_at_neg_b`/`kappa_eq_const_mul_b`/`schur_term_b_sq` | `gfl/GFL/AsymptoticB.lean` |
+| 字面 §3–§4 模型 **部分**：完整转写 + InnerField 实例（comp3..8 全证） | `F_inner_literal`/`litInnerField` | `gfl/GFL/LiteralModel.lean` |
+
+> O(b²) 一致界、本征值存在、字面模型 C¹/∂F-z 可逆 **未证**（blocked），清单见 `gfl/BLOCKERS.md`。
+
+| 弱网风险问题 **R2b**：无同步平衡 ⟹ 失同步（模型无关核心 + 周期 no-zero⟹正下界 + 合成） | `loss_of_sync_core`/`exists_margin_of_no_zero`/`loss_of_sync` | `gfl/GFL/LossOfSync.lean` |
+| 弱网风险问题 **R2a**：同步映射鞍结（单谐波 `A sinθ+B cosθ+D`）+ 接 R2b。**平衡存在 ⟺ `D²≤A²+B²`**，故折叠面 `Σ₂={D²=A²+B²}` | `amplitude_bound`/`sync_pos_of_bias_gt_amp`/`sync_loss_of_bias_gt_amp`/`sync_equilibrium_of_amp_ge` | `gfl/GFL/SyncEquilibrium.lean` |
+
+> R1/R2/R3 可行性评估:**R2a、R2b 现已机器证明**(模型无关 + 单谐波;用 MVT/IVT/Complex.arg)。R2c(`Cf→0` 退化到 Wu 边界)与有限-`Cf` 二次谐波未做。R1(Routh–Hurwitz)、R3(ODE-Lyapunov/SOS)所需基础设施 Mathlib 当前都没有,未做。
+
+**三个命门的诚实处理**：(1) 引理 0 先证、纯代数；(2) 定理 B 区分"约化精确 / 全系统 O(ε²)"——只证
+约化场精确 `−b·dw` 与 O(1) Schur 项精确为 0，**不**声称全 9×9 系统精确 `−D/(2H)`；(3) 定理 C 用
+`β:=wn/(2H)` 与题设一致。建模忠实性：内场 `F_inner` 抽象承载（只用到 `F7=e_P`），§6 雅可比块结构按
+题目"by inspection"给定为前提；**W3（平衡分支 C¹ 存在）已用 Mathlib 隐函数定理从 W2（∂F/∂z 可逆）+ 光滑性
+推出**（`branch_of_ift`/`branch_linearization_of_ift`），不再是黑箱公理——分支存在、可微、`A·v=−c` 全部 IFT 给出。
+唯一两处未机器形式化：(i) §3–§4 的 `cos/sin` 具体转写并证其 C¹/∂F/∂z 可逆（即字面模型满足 IFT 前件；内场抽象承载，
+字面模型靠 `validate.py` 数值核验）；(ii) 全系统 `λ=−b+O(b²)` 渐近界（摄动论；`variantS_schur_det`+`schur_term_zero` 是严格替代）。
+`validate.py` 在**完整 §3–§4 非线性 9 态模型**上独立复现 §9 全部数值锚点（`i_d*=80` 恒定、
+Variant U 恰一个零特征值、`λ_slow≈−D/2H`、Schur 项 `2.9e-19`、定理 C 起振频率 `0.089/0.199/0.399/0.892 Hz`）。
+
+> 注：本节是 Lean 代数/谱证明（与下文 pH-DAE 的 KeYmaera X 动力学证明互补、彼此独立）。Mathlib olean
+> 缓存在本环境不可达，故 Mathlib 由源码编译（toolchain `v4.31.0-rc1`，依赖 pin 在 `lake-manifest.json`）。
+
+---
+
 ## 做了什么
 
 对两机非线性系统（sin 耦合、droop 阻尼）用 KeYmaera X 和数值分析做了完整的稳定性探索。

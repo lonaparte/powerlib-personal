@@ -1,0 +1,63 @@
+ArchiveEntry "4-Machine RING stability region {H<8K} invariant, parametric in D1..D4,K"
+
+/*
+ * RING topology 1-2-3-4-1 stability region.
+ *
+ * WHAT THIS FILE FORMALLY PROVES: ONLY that {H < 8K} is positively invariant for
+ * ALL D1..D4,K>0. As in the chain file, the dI proof uses ONLY H non-increasing
+ * (dH/dt = -2 sum Di wi^2 <= 0), so it closes for ANY threshold constant --
+ * {H < c} is invariant for every c>0 (verified adversarially: ring at threshold
+ * 4K also PROVES). The constant 8K is NOT distinguished by the formal proof; this
+ * file does NOT prove 8K is the largest invariant sublevel or the true basin.
+ *
+ * NUMERICAL (NOT formalized here) -- this is where the topology actually enters:
+ * on a ring the phase differences around the loop must sum to a multiple of 2*pi
+ * (loop/circulation constraint), so you CANNOT push a single bond to pi with the
+ * others at 0 -- the loop would not close (that config has grad U != 0, it is NOT
+ * a critical point). The lowest nonzero critical value of U = sum 2K(1-cos
+ * delta_j) over the 4 ring bonds is 8K (fsolve over 2e4 starts: the only nonzero
+ * critical values are exactly 8K and 16K), vs the chain's 4K. So the ring's
+ * synchronized well is genuinely DEEPER -- but that tightness/topology statement
+ * lives in the numerics, not in this .kyx.
+ *
+ * BOTTOM LINE (the honest topology story): the proof METHOD (energy dI) is
+ * topology-BLIND -- chain and ring use the identical one-liner and accept any
+ * threshold. The number that is topology-DEPENDENT (chain min-saddle 4K vs ring
+ * min-saddle 8K) is a NUMERICAL fact about the potential's critical points, which
+ * KeYmaera X here does not certify. We display the physically meaningful constant
+ * in each file's bound.
+ */
+
+ProgramVariables
+  Real da; Real db; Real dc; Real dd;
+  Real w1; Real w2; Real w3; Real w4;
+  Real s1; Real c1; Real s2; Real c2; Real s3; Real c3; Real s4; Real c4;
+End.
+
+Problem
+  \forall D1 \forall D2 \forall D3 \forall D4 \forall K (
+    D1 > 0 & D2 > 0 & D3 > 0 & D4 > 0 & K > 0 &
+    s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1 & s4^2 + c4^2 = 1 &
+    w1^2 + w2^2 + w3^2 + w4^2 + 2*K*(1-c1) + 2*K*(1-c2) + 2*K*(1-c3) + 2*K*(1-c4) < 8*K
+    ->
+    [{da' = w1, db' = w2, dc' = w3, dd' = w4,
+      w1' = -D1*w1 - K*s1 + K*s4,
+      w2' = -D2*w2 + K*s1 - K*s2,
+      w3' = -D3*w3 + K*s2 - K*s3,
+      w4' = -D4*w4 + K*s3 - K*s4,
+      s1' = c1*(w1 - w2), c1' = -s1*(w1 - w2),
+      s2' = c2*(w2 - w3), c2' = -s2*(w2 - w3),
+      s3' = c3*(w3 - w4), c3' = -s3*(w3 - w4),
+      s4' = c4*(w4 - w1), c4' = -s4*(w4 - w1)
+      & s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1 & s4^2 + c4^2 = 1}]
+    w1^2 + w2^2 + w3^2 + w4^2 + 2*K*(1-c1) + 2*K*(1-c2) + 2*K*(1-c3) + 2*K*(1-c4) < 8*K
+  )
+End.
+
+Tactic "Proof"
+  allR(1); allR(1); allR(1); allR(1); allR(1);
+  implyR(1);
+  dI(1)
+End.
+
+End.

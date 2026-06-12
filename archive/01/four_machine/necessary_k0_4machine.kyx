@@ -1,0 +1,33 @@
+ArchiveEntry "4-Machine necessity of coupling: K=0 (damped) => never reaches equilibrium"
+
+/*
+ * 4-machine analog of necessary_k0 (STRONG, damping-on form). With zero coupling
+ * (K=0) but POSITIVE damping D1..D4>0, the conserved quantity
+ * u = D1*D2*(d1-d2) + D2*w1 - D1*w2 has u'=0, so if u(0)!=0 the state
+ * (d1-d2, w1, w2) can never all be zero -- the machines never synchronize even
+ * though frequencies decay. Same conserved-quantity instability certificate as
+ * the 2- and 3-machine versions, with damping ON. Certifies K>0 necessary for sync.
+ */
+
+ProgramVariables
+  Real d1; Real d2; Real d3; Real d4;
+  Real w1; Real w2; Real w3; Real w4;
+  Real u0;
+End.
+
+Problem
+  \forall D1 \forall D2 \forall D3 \forall D4 (D1 > 0 & D2 > 0 & D3 > 0 & D4 > 0 ->
+    (u0 = D1*D2*(d1-d2) + D2*w1 - D1*w2 & u0 != 0
+     ->
+     [{d1' = w1, d2' = w2, d3' = w3, d4' = w4,
+       w1' = -D1*w1, w2' = -D2*w2, w3' = -D3*w3, w4' = -D4*w4, u0' = 0}]
+     (d1 - d2 != 0 | w1 != 0 | w2 != 0)))
+End.
+
+Tactic "Proof"
+  allR(1); allR(1); allR(1); allR(1); implyR(1); implyR(1);
+  dC("D1*D2*(d1-d2) + D2*w1 - D1*w2 != 0", 1);
+  <( dW(1); QE, dI(1) )
+End.
+
+End.

@@ -1,0 +1,47 @@
+ArchiveEntry "Necessity: K=0 implies no asymptotic stability (general)"
+
+/*
+ * K=0: no coupling between machines. Each frequency decays independently,
+ * but the angle difference drifts to a nonzero limit.
+ *
+ * Conserved quantity: u = D1*D2*(d1-d2) + D2*w1 - D1*w2
+ * Proof: u' = D1*D2*(w1-w2) + D2*(-D1*w1) - D1*(-D2*w2) = 0
+ *
+ * If u(0) != 0, then (d1-d2, w1, w2) can never all be zero,
+ * so the system never reaches equilibrium.
+ *
+ * Physical: w1,w2 decay to 0 (D1,D2>0), so d1-d2 -> u0/(D1*D2) != 0.
+ * The angle drifts because there is no restoring force (K=0).
+ */
+
+ProgramVariables
+  Real d1;
+  Real d2;
+  Real w1;
+  Real w2;
+  Real u0;
+End.
+
+Problem
+  \forall D1 \forall D2 (D1 > 0 & D2 > 0 ->
+    (u0 = D1*D2*(d1-d2) + D2*w1 - D1*w2 & u0 != 0
+     ->
+     [{d1' = w1,
+       d2' = w2,
+       w1' = -D1*w1,
+       w2' = -D2*w2,
+       u0' = 0}]
+     (d1 - d2 != 0 | w1 != 0 | w2 != 0)))
+End.
+
+Tactic "Proof"
+  allR(1); allR(1);
+  implyR(1); implyR(1);
+  dC("D1*D2*(d1-d2) + D2*w1 - D1*w2 != 0", 1);
+  <(
+    dW(1); QE,
+    dI(1)
+  )
+End.
+
+End.

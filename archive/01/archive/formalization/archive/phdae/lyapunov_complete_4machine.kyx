@@ -1,0 +1,75 @@
+ArchiveEntry "4-Machine CHAIN component-wise eps-delta Lyapunov stability (parametric in D1..D4,K)"
+
+/*
+ * KeYmaera X STATUS: NOT machine-verified (documented conjecture, no .kyp). The
+ * 4-machine chain analog of lyapunov_complete_3machine. The MATH is sound; only
+ * the Z3-only backend cannot close it at this dimension.
+ *
+ * Component-wise eps-delta stability of the passive chain, ALL D1..D4,K>0.
+ * Witness delta = eps/(6K+4): from the box {w_i^2<delta (i=1..4), 1-c_j<delta
+ * (j=1,2,3)} the energy is
+ *   H = w1^2+w2^2+w3^2+w4^2+2K(1-c1)+2K(1-c2)+2K(1-c3)
+ *     < 4*delta + 2K*3*delta = (6K+4)*delta = eps   (sympy: sup H = eps exactly),
+ * H is invariant (dH/dt<=0), so each nonnegative energy component stays < eps.
+ *
+ * WHY OPEN HERE: the intended tactic is the SAME as the PROVED 3-machine version
+ * (division-free witness cut \exists xd (xd>0 & (6K+4)*xd=eps); dC H<eps; dW; then
+ * split the 7-conjunction post-condition into per-component QEs; dI). But the
+ * 3-machine case has 10 ODE variables and the post-split QE is light; the
+ * 4-machine case has 14 ODE variables + 3 circle constraints, and Z3 OOM-kills on
+ * the dW;QE split (EXIT 137 at -Xmx4g; EXIT 124 timeout at -Xmx10g/600s). This is
+ * the SAME high-dimension QE wall hit elsewhere -- a Mathematica/SOS backend (or a
+ * QE that doesn't carry the full 14-var context into each leaf) would close it.
+ *
+ * Everything BELOW the eps-delta layer is machine-proven for the 4-machine chain:
+ * H-metric Lyapunov (lyapunov_nonlinear_4machine), passive invariance
+ * (parametric_4machine), conservation, energy identity. Only this component-form
+ * eps-delta is left as a conjecture. Witness arithmetic checked exactly (sympy:
+ * delta=eps/(6K+4) => sup H = eps). TOPOLOGY-INDEPENDENT in principle.
+ *
+ * (Per repo convention a conjecture carries Problem only, no Tactic. The intended
+ * proof script is preserved in lyapunov_complete_3machine.kyx, which IS proved.)
+ */
+
+ProgramVariables
+  Real da; Real db; Real dc; Real dd;
+  Real w1; Real w2; Real w3; Real w4;
+  Real s1; Real c1; Real s2; Real c2; Real s3; Real c3;
+End.
+
+Problem
+  \forall D1 \forall D2 \forall D3 \forall D4 \forall K (
+    D1 > 0 & D2 > 0 & D3 > 0 & D4 > 0 & K > 0 ->
+    \forall eps (eps > 0 ->
+      \exists delta (delta > 0 &
+        \forall da \forall db \forall dc \forall dd \forall w1 \forall w2 \forall w3 \forall w4 \forall s1 \forall c1 \forall s2 \forall c2 \forall s3 \forall c3 (
+          s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1 &
+          w1^2 < delta & w2^2 < delta & w3^2 < delta & w4^2 < delta &
+          1 - c1 < delta & 1 - c2 < delta & 1 - c3 < delta
+          ->
+          [{da' = w1, db' = w2, dc' = w3, dd' = w4,
+            w1' = -D1*w1 - K*s1,
+            w2' = -D2*w2 + K*s1 - K*s2,
+            w3' = -D3*w3 + K*s2 - K*s3,
+            w4' = -D4*w4 + K*s3,
+            s1' = c1*(w1 - w2), c1' = -s1*(w1 - w2),
+            s2' = c2*(w2 - w3), c2' = -s2*(w2 - w3),
+            s3' = c3*(w3 - w4), c3' = -s3*(w3 - w4)
+            & s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1}]
+          (w1^2 < eps & w2^2 < eps & w3^2 < eps & w4^2 < eps &
+           2*K*(1-c1) < eps & 2*K*(1-c2) < eps & 2*K*(1-c3) < eps)
+        )
+      )
+    )
+  )
+End.
+
+/*
+ * No Tactic block: this is a documented conjecture (Problem only), per repo
+ * convention. The intended proof is identical to lyapunov_complete_3machine.kyx
+ * (division-free witness cut "(6*K+4)*xd = eps"; dC H<eps; dW; 7-way andR-split
+ * QE; dI) but Z3 times out / OOMs on the 14-variable post-split QE here. See the
+ * STATUS note at the top.
+ */
+
+End.

@@ -1,0 +1,50 @@
+ArchiveEntry "Level C minor M2 > 0 on Routh (sub-lemma of theorem_levelC_polynomial)"
+
+/*
+ * KeYmaera X STATUS: NOT machine-verified. Bare QE times out (>200s) in the
+ * (D1,b,K) form below AND in the Routh-substituted (b,p,q) form (>150s). M2 is
+ * the lone holdout of the 3-minor decomposition (M1 and M3=det are PROVED
+ * standalone: theorem_levelC_M1.kyx 86ms, theorem_levelC_M3.kyx 9.1s). The 2x2
+ * minor's near-cancellation structure (a difference of products) defeats Z3's
+ * nlsat even after the cancellation is removed by substitution.
+ *
+ * RIGOROUS PROOF that M2 > 0 on Routh (sum-of-positive-monomials certificate):
+ * Routh {D1>b>0, K>D1*b} is parametrized exactly by D1=b+p, K=D1*b+q, b,p,q>0.
+ * Substituted, collect M2 by powers of q:
+ *     M2 = sum_{k=0..5} c_k(b,p) * q^k,
+ * where EVERY coefficient c_k(b,p) is a polynomial in (b,p) with all-NONNEGATIVE
+ * coefficients (verified by sympy): c5:1, c4:4, c3:8, c2:11, c1:14, c0:15 terms,
+ * c0 strictly positive (its 15 coeffs are all >=1). Since b,p,q>0, every term
+ * c_k(b,p)*q^k >= 0 and c_0(b,p) > 0, hence M2 > 0. (The full substituted M2 has
+ * 53 terms, every coefficient >=1.) This is a complete proof; only Z3's general
+ * CAD/nlsat fails to exploit the manifest positivity.
+ *
+ * A KeYmaera X formalization is possible via an abstract-coefficient assembly
+ * lemma (forall C0>0,C1..C5>=0,Q>0: C0+C1*Q+...+C5*Q^5>0, trivial QE) instantiated
+ * with the c_k(b,p) (each c_k>=0 a trivial 2-variable QE), but the cross-lemma
+ * instantiation is left as future work; the math above is conclusive.
+ *
+ * Sub-lemma 2/3: M2 = P00*P11 - P01^2, second leading principal minor of P_poly.
+ */
+
+ProgramVariables
+  Real D1;
+  Real b;
+  Real K;
+End.
+
+Problem
+  \forall D1 \forall b \forall K (
+    ( D1 > 0 & b > 0 & K > 0 & D1 > b & K > D1*b )
+    ->
+    (D1^2*K^2+D1^2*K+D1^2*b^2-D1*K*b+2*K^3+K^2*b^2+2*K^2+K*b^2)
+      *(-D1*K*b+2*K^2+K*b^2+K+b^2)
+    - (D1*K^2+D1*K+D1*b^2+K^2*b)^2 > 0
+  )
+End.
+
+Tactic "Proof"
+  QE
+End.
+
+End.

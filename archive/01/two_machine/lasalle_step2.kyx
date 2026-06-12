@@ -1,0 +1,43 @@
+ArchiveEntry "LaSalle Step 2"
+
+Definitions
+  Real D1 = 1;
+  Real D2 = 1;
+  Real K  = 1;
+End.
+
+ProgramVariables
+  Real d1;
+  Real d2;
+  Real w1;
+  Real w2;
+  Real s;
+  Real c;
+  Real h0;
+End.
+
+/* H strictly decreases while w != 0 */
+/* Use frozen initial value h0 (h0' = 0) to track H < h0 */
+
+Problem
+  s^2 + c^2 = 1 &
+  h0 = w1^2 + w2^2 + 2*K*(1-c) &
+  w1^2 + w2^2 > 0
+  ->
+  [{d1' = w1,
+    d2' = w2,
+    w1' = -D1*w1 - K*s,
+    w2' = -D2*w2 + K*s,
+    s'  = c*(w1 - w2),
+    c'  = -s*(w1 - w2),
+    h0' = 0
+    & s^2 + c^2 = 1 & w1^2 + w2^2 > 0}]
+  w1^2 + w2^2 + 2*K*(1-c) <= h0
+End.
+
+Tactic "Proof"
+  implyR(1);
+  dI(1)
+End.
+
+End.

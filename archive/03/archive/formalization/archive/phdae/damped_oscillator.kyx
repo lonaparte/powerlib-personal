@@ -1,0 +1,30 @@
+ArchiveEntry "pH Damped Oscillator Stability"
+
+Definitions
+  Real K = 1;
+  Real Jn = 1;
+  Real D = 1;
+End.
+
+ProgramVariables
+  Real delta;
+  Real omega;
+End.
+
+Problem
+  K*delta^2 + Jn*omega^2 < 1
+  ->
+  [{delta' = omega, omega' = -K/Jn*delta - D/Jn*omega}]
+  K*delta^2 + Jn*omega^2 < 1
+End.
+
+Tactic "Proof"
+  implyR(1);
+  dC("K*delta^2 + Jn*omega^2 < 1", 1);
+  <(
+    dW(1); QE,
+    dI(1)
+  )
+End.
+
+End.

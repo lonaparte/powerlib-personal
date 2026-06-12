@@ -1,0 +1,48 @@
+ArchiveEntry "4-Machine CHAIN saddle instability (D=0): above-set {H>4K} is invariant"
+
+/*
+ * 4-machine chain analog of saddle_instability_3machine. With zero damping
+ * (D1=D2=D3=D4=0) the Hamiltonian H = sum wi^2 + 2K(1-c1)+2K(1-c2)+2K(1-c3) is
+ * conserved. The superlevel set {H > 4K} is positively invariant.
+ *
+ * WHAT THIS FORMALLY PROVES: ONLY that {H > 4K} is invariant. The proof uses ONLY
+ * H conserved (H'=0, dI), so it holds for ANY threshold c -- {H > c} is invariant
+ * for every c (under conservation every level set is invariant). 4K is NOT
+ * distinguished by the formal proof.
+ *
+ * NUMERICAL (NOT formalized here): 4K is the lowest chain escape saddle (one bond
+ * at pi). Paired with stability_boundary_4machine's {H<4K} this reads as the
+ * synchronized-well boundary, but that tightness claim is numerical. Formally:
+ * "conserved H => superlevel set invariant". TOPOLOGY-INDEPENDENT as a theorem.
+ */
+
+ProgramVariables
+  Real da; Real db; Real dc; Real dd;
+  Real w1; Real w2; Real w3; Real w4;
+  Real s1; Real c1; Real s2; Real c2; Real s3; Real c3;
+End.
+
+Problem
+  \forall K (
+    K > 0 &
+    s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1 &
+    w1^2 + w2^2 + w3^2 + w4^2 + 2*K*(1-c1) + 2*K*(1-c2) + 2*K*(1-c3) > 4*K
+    ->
+    [{da' = w1, db' = w2, dc' = w3, dd' = w4,
+      w1' = 0*w1 - K*s1,
+      w2' = 0*w2 + K*s1 - K*s2,
+      w3' = 0*w3 + K*s2 - K*s3,
+      w4' = 0*w4 + K*s3,
+      s1' = c1*(w1 - w2), c1' = -s1*(w1 - w2),
+      s2' = c2*(w2 - w3), c2' = -s2*(w2 - w3),
+      s3' = c3*(w3 - w4), c3' = -s3*(w3 - w4)
+      & s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1}]
+    w1^2 + w2^2 + w3^2 + w4^2 + 2*K*(1-c1) + 2*K*(1-c2) + 2*K*(1-c3) > 4*K
+  )
+End.
+
+Tactic "Proof"
+  allR(1); implyR(1); dI(1)
+End.
+
+End.

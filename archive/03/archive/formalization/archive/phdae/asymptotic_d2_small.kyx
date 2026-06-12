@@ -1,0 +1,64 @@
+ArchiveEntry "Asymptotic Stability D1=1 D2=1/10 K=1"
+
+/* KeYmaera X STATUS: Tactic written, Lie-derivative algebra verified,
+ * but QE TIMES OUT (>350s). NOT machine-verified. High polynomial degree
+ * or messy rational coefficients overwhelm Z3/CAD. Numerically validated;
+ * awaiting stronger QE strategy or problem decomposition. */
+
+/*
+ * STATUS: TACTIC WRITTEN, AWAITING KeYmaera X VERIFICATION
+ *
+ * Extends asymptotic stability to weak damping on machine 2 (D2=0.1).
+ * Modified Hamiltonian: V = H + (1/14)*(w1-w2)*s
+ * Numerically verified: max(V'/V) = -0.113, C = 10 sufficient.
+ */
+
+Definitions
+  Real D1 = 1;
+  Real D2 = 1/10;
+  Real K  = 1;
+  Real a  = 1/14;
+End.
+
+ProgramVariables
+  Real d1;
+  Real d2;
+  Real w1;
+  Real w2;
+  Real s;
+  Real c;
+  Real t;
+  Real v0;
+End.
+
+Problem
+  \forall target (target > 0 & target < 1/2 ->
+    (s^2 + c^2 = 1 & c > 0 &
+     v0 = w1^2 + w2^2 + 2*K*(1-c) + a*(w1-w2)*s &
+     v0 > 0 & v0 < 1 & t = 0
+     ->
+     [{d1' = w1,
+       d2' = w2,
+       w1' = -D1*w1 - K*s,
+       w2' = -D2*w2 + K*s,
+       s'  = c*(w1 - w2),
+       c'  = -s*(w1 - w2),
+       t'  = 1,
+       v0' = 0
+       & s^2 + c^2 = 1 & c >= 0 &
+         w1^2 + w2^2 + 2*K*(1-c) + a*(w1-w2)*s >= target}]
+     t < 10*v0/target))
+End.
+
+Tactic "Proof"
+  allR(1);
+  implyR(1);
+  implyR(1);
+  dC("w1^2 + w2^2 + 2*K*(1-c) + a*(w1-w2)*s <= v0 - t*target/10", 1);
+  <(
+    dW(1); QE,
+    dI(1)
+  )
+End.
+
+End.
