@@ -1,0 +1,51 @@
+ArchiveEntry "3-Machine RING (triangle) stability region {H<8K} invariant, parametric in D1,D2,D3,K"
+
+/*
+ * RING (triangle 1-2-3-1) stability region, 3-machine counterpart of
+ * stability_boundary_4machine_ring.
+ *
+ * WHAT THIS FORMALLY PROVES: ONLY that {H < 8K} is positively invariant for ALL
+ * D1,D2,D3,K>0. As everywhere, the dI uses ONLY H non-increasing
+ * (dH/dt = -2(D1 w1^2+D2 w2^2+D3 w3^2) <= 0), so it closes for ANY threshold c>0.
+ * The constant 8K is NOT singled out by the formal proof.
+ *
+ * NUMERICAL (NOT formalized here) -- where the topology enters: on the triangle
+ * ring the three phase differences sum to 0 (loop constraint), so a single bond
+ * cannot reach pi with the others at 0. The lowest nonzero critical value of
+ * U = sum 2K(1-cos delta_j) is 8K (fsolve over 2e4 starts: nonzero critical
+ * values are 8K and 9K), vs the 3-machine CHAIN's 4K. So the ring's synchronized
+ * well is deeper -- same loop-constraint mechanism as the 4-machine ring (whose
+ * min saddle is also 8K). Compare stability_boundary_3machine.kyx (chain, 4K).
+ */
+
+ProgramVariables
+  Real da; Real db; Real dc;
+  Real w1; Real w2; Real w3;
+  Real s1; Real c1; Real s2; Real c2; Real s3; Real c3;
+End.
+
+Problem
+  \forall D1 \forall D2 \forall D3 \forall K (
+    D1 > 0 & D2 > 0 & D3 > 0 & K > 0 &
+    s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1 &
+    w1^2 + w2^2 + w3^2 + 2*K*(1-c1) + 2*K*(1-c2) + 2*K*(1-c3) < 8*K
+    ->
+    [{da' = w1, db' = w2, dc' = w3,
+      w1' = -D1*w1 - K*s1 + K*s3,
+      w2' = -D2*w2 + K*s1 - K*s2,
+      w3' = -D3*w3 + K*s2 - K*s3,
+      s1' = c1*(w1 - w2), c1' = -s1*(w1 - w2),
+      s2' = c2*(w2 - w3), c2' = -s2*(w2 - w3),
+      s3' = c3*(w3 - w1), c3' = -s3*(w3 - w1)
+      & s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1}]
+    w1^2 + w2^2 + w3^2 + 2*K*(1-c1) + 2*K*(1-c2) + 2*K*(1-c3) < 8*K
+  )
+End.
+
+Tactic "Proof"
+  allR(1); allR(1); allR(1); allR(1);
+  implyR(1);
+  dI(1)
+End.
+
+End.

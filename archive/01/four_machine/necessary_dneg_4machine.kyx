@@ -1,0 +1,46 @@
+ArchiveEntry "4-Machine CHAIN necessity: all-negative damping => energy grows (no asymptotic stability)"
+
+/*
+ * 4-machine chain analog of necessary_dneg_3machine. If all four machines have
+ * negative damping (D1,D2,D3,D4 < 0) and K>0, the Hamiltonian H = sum wi^2 +
+ * 2K(1-c1)+2K(1-c2)+2K(1-c3) never decreases: H(t) >= H(0) whenever there is
+ * motion (sum wi^2 > 0). Hdot = -2 sum Di wi^2 >= 0 since Di<0. Energy is
+ * monotonically injected => asymptotic stability impossible. Symbolic in
+ * D1..D4<0, K>0. TOPOLOGY-INDEPENDENT (energy certificate).
+ */
+
+ProgramVariables
+  Real da; Real db; Real dc; Real dd;
+  Real w1; Real w2; Real w3; Real w4;
+  Real s1; Real c1; Real s2; Real c2; Real s3; Real c3;
+  Real h0;
+End.
+
+Problem
+  \forall D1 \forall D2 \forall D3 \forall D4 \forall K (
+    D1 < 0 & D2 < 0 & D3 < 0 & D4 < 0 & K > 0 ->
+    ( s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1 &
+      h0 = w1^2 + w2^2 + w3^2 + w4^2 + 2*K*(1-c1) + 2*K*(1-c2) + 2*K*(1-c3) &
+      w1^2 + w2^2 + w3^2 + w4^2 > 0
+      ->
+      [{da' = w1, db' = w2, dc' = w3, dd' = w4,
+        w1' = -D1*w1 - K*s1,
+        w2' = -D2*w2 + K*s1 - K*s2,
+        w3' = -D3*w3 + K*s2 - K*s3,
+        w4' = -D4*w4 + K*s3,
+        s1' = c1*(w1 - w2), c1' = -s1*(w1 - w2),
+        s2' = c2*(w2 - w3), c2' = -s2*(w2 - w3),
+        s3' = c3*(w3 - w4), c3' = -s3*(w3 - w4),
+        h0' = 0
+        & s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 & s3^2 + c3^2 = 1 & w1^2 + w2^2 + w3^2 + w4^2 > 0}]
+      w1^2 + w2^2 + w3^2 + w4^2 + 2*K*(1-c1) + 2*K*(1-c2) + 2*K*(1-c3) >= h0 )
+  )
+End.
+
+Tactic "Proof"
+  allR(1); allR(1); allR(1); allR(1); allR(1);
+  implyR(1); implyR(1);
+  dI(1)
+End.
+
+End.

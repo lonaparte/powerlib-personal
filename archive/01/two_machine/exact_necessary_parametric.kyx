@@ -1,0 +1,31 @@
+ArchiveEntry "Exact Necessary: H>4K means kinetic energy at saddle (parametric in K)"
+
+/*
+ * Parametric companion to exact_necessary.kyx (which fixed K=1).
+ * Pure algebra (no ODE). At the saddle configuration c = -1 (delta = pi),
+ * H = w1^2 + w2^2 + 2K(1-c) = w1^2 + w2^2 + 4K. Hence H > 4K forces
+ * w1^2 + w2^2 > 0: any state on the saddle with energy above 4K carries
+ * strictly positive kinetic energy. Holds for ALL K>0.
+ */
+
+ProgramVariables
+  Real w1;
+  Real w2;
+  Real s;
+  Real c;
+End.
+
+Problem
+  \forall K (
+    K > 0 & s^2 + c^2 = 1 & c = -1 &
+    w1^2 + w2^2 + 2*K*(1-c) > 4*K
+    ->
+    w1^2 + w2^2 > 0
+  )
+End.
+
+Tactic "Proof"
+  QE
+End.
+
+End.

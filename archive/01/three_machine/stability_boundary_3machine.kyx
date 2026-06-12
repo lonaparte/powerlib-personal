@@ -1,0 +1,45 @@
+ArchiveEntry "3-Machine region of attraction {H<4K} invariant (parametric in D1,D2,D3,K)"
+
+/*
+ * 3-machine analog of stability_boundary(_parametric). Passive line 1-2-3.
+ * The energy sublevel {H < 4K}, H = w1^2+w2^2+w3^2+2K(1-c1)+2K(1-c2), is
+ * positively invariant for ALL D1,D2,D3,K > 0. Mechanism: dH/dt = -2(D1 w1^2+
+ * D2 w2^2+D3 w3^2) <= 0.
+ *
+ * SCOPE: the dI uses only H non-increasing, so it closes for ANY threshold c>0,
+ * not just 4K. This file formally proves ONLY "{H<4K} is positively invariant",
+ * NOT that {H<4K} is the largest invariant set or the exact region of attraction.
+ * That "4K = lowest saddle (one coupling at pi) => {H<4K} is the ROA" reading is
+ * NUMERICAL (sympy), not formalized in this .kyx.
+ */
+
+ProgramVariables
+  Real da; Real db; Real dc;
+  Real w1; Real w2; Real w3;
+  Real s1; Real c1; Real s2; Real c2;
+End.
+
+Problem
+  \forall D1 \forall D2 \forall D3 \forall K (
+    D1 > 0 & D2 > 0 & D3 > 0 & K > 0 &
+    s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1 &
+    w1^2 + w2^2 + w3^2 + 2*K*(1-c1) + 2*K*(1-c2) < 4*K
+    ->
+    [{da' = w1, db' = w2, dc' = w3,
+      w1' = -D1*w1 - K*s1,
+      w2' = -D2*w2 + K*s1 - K*s2,
+      w3' = -D3*w3 + K*s2,
+      s1' = c1*(w1 - w2), c1' = -s1*(w1 - w2),
+      s2' = c2*(w2 - w3), c2' = -s2*(w2 - w3)
+      & s1^2 + c1^2 = 1 & s2^2 + c2^2 = 1}]
+    w1^2 + w2^2 + w3^2 + 2*K*(1-c1) + 2*K*(1-c2) < 4*K
+  )
+End.
+
+Tactic "Proof"
+  allR(1); allR(1); allR(1); allR(1);
+  implyR(1);
+  dI(1)
+End.
+
+End.

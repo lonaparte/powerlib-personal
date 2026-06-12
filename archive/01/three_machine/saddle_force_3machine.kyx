@@ -1,0 +1,32 @@
+ArchiveEntry "3-Machine saddle force-sign: near delta1=pi the coupling-1 torque is destabilizing"
+
+/*
+ * 3-machine analog of saddle_instability_parametric (the 2-machine force-sign
+ * lemma). Pure algebra (no ODE): on the omega-axis section w1=0 near the saddle
+ * (c1 < -1/2, i.e. coupling-1 angle delta1 near pi), the rotational torque on
+ * machine 1 has a destabilizing sign:
+ *   for ALL D1>0, K>0:  (c1 < -1/2 & s1 != 0 & w1 = 0) -> (-D1*w1 - K*s1)*s1 < 0.
+ * With w1=0 this is -K*s1^2 < 0, true iff K>0 and s1 != 0. This is the
+ * local-instability companion to the energy-barrier saddle_instability_3machine:
+ * it shows the equilibrium delta1=pi is a genuine saddle (force pushes away),
+ * the 3-machine line version of the classic 2-machine result.
+ */
+
+ProgramVariables
+  Real w1; Real w2; Real w3;
+  Real s1; Real c1; Real s2; Real c2;
+End.
+
+Problem
+  \forall D1 \forall K (
+    D1 > 0 & K > 0 & s1^2 + c1^2 = 1 & c1 < -1/2 & s1 != 0 & w1 = 0
+    ->
+    (-D1*w1 - K*s1)*s1 < 0
+  )
+End.
+
+Tactic "Proof"
+  QE
+End.
+
+End.
