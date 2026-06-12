@@ -1,0 +1,44 @@
+ArchiveEntry "Three-Node DAE pH System"
+
+/*
+ * Three-node system: Machine1 -- Network Node -- Machine2
+ * Algebraic constraint eliminated: dm = (d1+d2)/2
+ * Resulting ODE after DAE reduction (index-1 -> ODE)
+ *
+ * H = w1^2 + w2^2 + (1/2)*(d1-d2)^2
+ * dH/dt = -2*D1*w1^2 - 2*D2*w2^2 <= 0
+ *
+ * Note: the pH structure is PRESERVED after DAE reduction.
+ * J_reduced is still skew-symmetric, R_reduced still PSD.
+ */
+
+Definitions
+  Real D1 = 1;
+  Real D2 = 1;
+End.
+
+ProgramVariables
+  Real d1;
+  Real d2;
+  Real w1;
+  Real w2;
+End.
+
+Problem
+  \forall eps (eps > 0 &
+  w1^2 + w2^2 + (d1-d2)^2/2 < eps
+  ->
+  [{d1' = w1,
+    d2' = w2,
+    w1' = -D1*w1 - (d1-d2)/2,
+    w2' = -D2*w2 + (d1-d2)/2}]
+  w1^2 + w2^2 + (d1-d2)^2/2 < eps)
+End.
+
+Tactic "Proof"
+  allR(1);
+  implyR(1);
+  dI(1)
+End.
+
+End.

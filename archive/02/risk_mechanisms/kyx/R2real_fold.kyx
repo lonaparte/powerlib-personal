@@ -1,0 +1,95 @@
+ArchiveEntry "R2real (a2>0): the real vcd-equation is a genuine quadratic"
+
+/* CORRECTED R2 on the REAL model (sweep.py / Conventions sec.12), replacing the
+ * classical-pendulum |M|=Vg.  The real GFL loses its operating equilibrium via a
+ * SADDLE-NODE (voltage collapse) when the vcd-equilibrium quadratic loses its real
+ * roots.  Equilibrium relations (sweep.py lines 13-15, iqr=0):
+ *     cos(th) = (al*vcd - K1)/Vg,   sin(th) = (K2 - be*vcd)/Vg,
+ *     al = 1 - wn^2*Lg*Cf,  be = Rg*wn*Cf,  K1 = Rg*idr,  K2 = wn*Lg*idr.
+ * cos^2+sin^2=1  =>  a2*vcd^2 + a1*vcd + a0 = 0  with the REAL coefficients
+ *     a2 = al^2 + be^2,   a1 = -2*Rg*idr,   a0 = Lg^2*idr^2*wn^2 + Rg^2*idr^2 - Vg^2.
+ * (a1 simplifies: the Cf terms in al*K1+be*K2 cancel, leaving al*K1+be*K2 = Rg*idr.)
+ * Fold surface = discriminant disc = a1^2 - 4*a2*a0 = 0.  Located numerically at
+ * SCR*~0.370 (Lg*~0.0124 H) -- a genuine saddle-node (the two vcd equilibria merge).
+ * This is DEEPER weak-grid than the PLL-mode Hopf (SCR_H~0.905), which binds first.
+ * Unlike the retracted classical |M|=Vg, every coefficient here is the real sweep.py
+ * coefficient.  This entry: a2 = al^2+be^2 > 0 for physical params, so it is a real
+ * quadratic (not degenerate). */
+Problem
+  \forall wn \forall Rg \forall Cf \forall Lg
+  ( wn>0 & Rg>0 & Cf>0 -> (1 - wn^2*Lg*Cf)^2 + (Rg*wn*Cf)^2 > 0 )
+End.
+Tactic "a2>0 by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "R2real (fold): disc=0 gives a double root -> saddle-node"
+
+/* At the fold disc = a1^2-4*a2*a0 = 0, the quadratic a2*v^2+a1*v+a0 has a unique
+ * (double) real root v = -a1/(2*a2).  Encoded denominator-free: v satisfies
+ * 2*a2*v + a1 = 0.  This is the saddle-node point where the two equilibria coincide. */
+Problem
+  \forall a2 \forall a1 \forall a0 \forall v
+  ( a2>0 & a1^2 - 4*a2*a0 = 0 & 2*a2*v + a1 = 0
+    -> a2*v^2 + a1*v + a0 = 0 )
+End.
+Tactic "double root at fold by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "R2real (below fold): disc>0 gives two distinct equilibria"
+
+/* Strictly below the fold (disc>0), introduce s>0 with s^2 = disc.  The two roots
+ * v1 = (-a1+s)/(2*a2), v2 = (-a1-s)/(2*a2) (encoded 2*a2*v1+a1-s=0, 2*a2*v2+a1+s=0)
+ * are both equilibria of the real quadratic and are DISTINCT (v1>v2 since s>0).
+ * This is the node+saddle pair of the real model, below voltage collapse. */
+Problem
+  \forall a2 \forall a1 \forall a0 \forall s \forall v1 \forall v2
+  ( a2>0 & s>0 & s^2 = a1^2 - 4*a2*a0
+    & 2*a2*v1 + a1 - s = 0 & 2*a2*v2 + a1 + s = 0
+    -> ( a2*v1^2 + a1*v1 + a0 = 0
+       & a2*v2^2 + a1*v2 + a0 = 0
+       & v1 > v2 ) )
+End.
+Tactic "two distinct roots below fold by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "R2real (past fold): disc<0 gives no equilibrium (collapse)"
+
+/* Past the fold (disc<0) with a2>0, the quadratic is strictly positive everywhere,
+ * so a2*vcd^2+a1*vcd+a0 = 0 has NO real solution: the operating equilibrium has
+ * vanished (voltage collapse).  This is exactly the branch where sweep.py's pv(.)
+ * returns None. */
+Problem
+  \forall a2 \forall a1 \forall a0 \forall vcd
+  ( a2>0 & a1^2 - 4*a2*a0 < 0 -> a2*vcd^2 + a1*vcd + a0 > 0 )
+End.
+Tactic "no real root past fold by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "R2real (binding): abstract disc equals the real physical fold polynomial"
+
+/* Ties the abstract a2,a1,a0 lemmas to the REAL physical parameters: the discriminant
+ * a1^2-4*a2*a0 with the real coefficients equals the explicit fold polynomial
+ * disc(wn,Vg,Rg,Lg,Cf,idr).  So {disc=0} above IS the real sweep.py voltage-collapse
+ * surface, not a classical-pendulum stand-in.  (iqr=0 as in sweep.py.) */
+Problem
+  \forall wn \forall Vg \forall Rg \forall Lg \forall Cf \forall idr
+  ( (-2*Rg*idr)^2
+      - 4*((1 - wn^2*Lg*Cf)^2 + (Rg*wn*Cf)^2)
+          *(Lg^2*idr^2*wn^2 + Rg^2*idr^2 - Vg^2)
+    =   -4*Cf^2*Lg^4*idr^2*wn^6 - 8*Cf^2*Lg^2*Rg^2*idr^2*wn^4
+        + 4*Cf^2*Lg^2*Vg^2*wn^4 - 4*Cf^2*Rg^4*idr^2*wn^2 + 4*Cf^2*Rg^2*Vg^2*wn^2
+        + 8*Cf*Lg^3*idr^2*wn^4 + 8*Cf*Lg*Rg^2*idr^2*wn^2 - 8*Cf*Lg*Vg^2*wn^2
+        - 4*Lg^2*idr^2*wn^2 + 4*Vg^2 )
+End.
+Tactic "real fold polynomial identity by QE"
+  QE
+End.
+End.

@@ -1,0 +1,72 @@
+ArchiveEntry "Theorem B (power-lock): on the locked manifold the swing law IS dw'=-b*dw"
+
+/* STRONGER than thmB_slow_decay.kyx (which just took dw'=-b*dw as given).
+ *
+ * Here we put in the actual swing-anchored frequency law with the measured power:
+ *     dw' = kappa*(Pref - Pmeas) - b*dw ,   Pmeas = 3/2*Vg*id .
+ * The Power Lock (Lemma 0) says that on the slow manifold the active-power loop holds
+ * its setpoint: Pmeas = Pref, equivalently 3/2*Vg*id = Pref.  We impose exactly that
+ * as the evolution-domain constraint and prove the swing law reduces to pure decay,
+ * with V = dw^2 nonincreasing.  This formalizes 'the synchronizing term drops out',
+ * i.e. the O(1) Schur term vanishes, leaving first-order decay.
+ *
+ * b is the swing damping coefficient; the rate identity b = D/(2H) is the companion
+ * entry below (kept division-free as 2*H*b = D for the Z3 backend).
+ */
+ProgramVariables
+  Real dw;
+  Real id;
+  Real Vg;
+  Real Pref;
+  Real kappa;
+  Real b;
+  Real s0;
+End.
+
+Problem
+  ( b > 0 & Vg > 0 & dw^2 <= s0 & 3/2*Vg*id = Pref )
+  ->
+  [{ dw' = kappa*(Pref - 3/2*Vg*id) - b*dw, id' = dw
+     & 3/2*Vg*id = Pref }]
+  (dw^2 <= s0)
+End.
+
+Tactic "power-locked decay by dI"
+  implyR(1) ; dI(1)
+End.
+End.
+
+ArchiveEntry "Theorem B (power-lock): the decay rate equals -D/(2H), exactly"
+
+/* On the power-locked manifold the rate is exactly b, and b is fixed by the swing
+ * inertia/damping via 2*H*b = D (i.e. b = D/(2H)).  Hence lambda_slow = -b = -D/(2H).
+ * Division-free statement (Z3 backend) :  H>0 & 2*H*b = D  ->  the rate constant
+ * r := -b satisfies 2*H*r = -D, i.e. r = -D/(2H).
+ */
+Problem
+  \forall H \forall D \forall b \forall r
+  ( H > 0 & 2*H*b = D & r = -b
+    -> 2*H*r = -D )
+End.
+Tactic "rate = -D/(2H) by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "Theorem B (power-lock): the synchronizing/Schur term vanishes (K=0)"
+
+/* The reason the swing law collapses to pure decay is that the synchronizing
+ * coefficient K vanishes: dPmeas/d(dw) along the locked branch is 0 because
+ * Pmeas = 3/2*Vg*id and id is pinned by 3/2*Vg*id = Pref (independent of dw).
+ * Two locked operating points at different dw share id, so K := 1.5*Vg*did/ddw = 0.
+ * (This is the rho^T A^{-1} c = kappa*K = 0 fact, in division-free equational form.)
+ */
+Problem
+  \forall Vg \forall Pref \forall id1 \forall id2 \forall dwa \forall dwb
+  ( Vg > 0 & 3/2*Vg*id1 = Pref & 3/2*Vg*id2 = Pref & dwa != dwb
+    -> id1 = id2 )
+End.
+Tactic "K=0 by QE"
+  QE
+End.
+End.

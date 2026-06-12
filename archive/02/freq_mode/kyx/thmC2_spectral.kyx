@@ -1,0 +1,71 @@
+ArchiveEntry "Theorem C2 (spectral): characteristic polynomial identity"
+
+/* M = [[0,1],[-beta*Ks,-b]] is the companion matrix of the reduced (delta,dw)
+ * subsystem.  det(lambda*I - M) = lambda*(lambda+b) - (-1)*(beta*Ks)
+ *                              = lambda^2 + b*lambda + beta*Ks.
+ * Division-free (Z3 backend). */
+Problem
+  \forall lambda \forall b \forall beta \forall Ks
+  ( lambda*(lambda + b) - (-1)*(beta*Ks) = lambda^2 + b*lambda + beta*Ks )
+End.
+Tactic "charpoly identity by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "Theorem C2 (spectral): above threshold there is NO real eigenvalue"
+
+/* Oscillatory <=> no real eigenvalue.  Above threshold 4*beta*Ks > b^2 the
+ * characteristic polynomial is strictly positive for every real lambda, so it has
+ * no real root and the eigenvalues are a genuine complex pair.
+ * Threshold written division-free as 4*beta*Ks > b^2 (not beta*Ks > b^2/4). */
+Problem
+  \forall b \forall beta \forall Ks \forall lambda
+  ( b > 0 & 4*beta*Ks > b^2
+    -> lambda^2 + b*lambda + beta*Ks > 0 )
+End.
+Tactic "no real root by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "Theorem C2 (spectral): twice the real part of the pair is -b"
+
+/* Eigenvalues sum to the trace = -b (Vieta on lambda^2+b*lambda+beta*Ks).  For a
+ * complex pair r +- i*w that gives 2r = -b, i.e. Re = -b/2.  Stated division-free:
+ * r1+r2 = -b  =>  2*r1 + 2*r2 = -2*b. */
+Problem
+  \forall b \forall beta \forall Ks \forall r1 \forall r2
+  ( r1 + r2 = -b & r1*r2 = beta*Ks
+    -> 2*r1 + 2*r2 = -2*b )
+End.
+Tactic "real part by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "Theorem C2 (spectral): discriminant sign dichotomy"
+
+/* Real spectrum <=> discriminant nonnegative.  Division-free:
+ * (b^2 - 4*beta*Ks >= 0)  <->  (4*beta*Ks <= b^2). */
+Problem
+  \forall b \forall beta \forall Ks
+  ( (b^2 - 4*beta*Ks >= 0) <-> (4*beta*Ks <= b^2) )
+End.
+Tactic "discriminant sign by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "Theorem C2 (spectral): Ks=0 gives the real spectrum {0,-b}"
+
+/* Bare GFL (Ks=0 by the Power Lock): characteristic polynomial lambda^2 + b*lambda
+ * = lambda*(lambda+b); roots exactly 0 and -b, both real -- never oscillates. */
+Problem
+  \forall b \forall lambda
+  ( lambda^2 + b*lambda = 0 <-> (lambda = 0 | lambda = -b) )
+End.
+Tactic "Ks=0 real spectrum by QE"
+  QE
+End.
+End.

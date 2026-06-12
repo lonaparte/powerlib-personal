@@ -1,0 +1,74 @@
+ArchiveEntry "R2 (fold): synchronization equilibrium count from the unbalance ratio"
+
+/* R2a/R2b: the synchronization equilibrium map (ideal-current-source / classical
+ * limit, Conventions-style) is the scalar  G(theta) = Vg*sin(theta) - M,  where
+ * M := id_ref*wn*Lg + iq_ref*Rg  is the unbalance forcing.  Writing sin(theta)=S
+ * with the circle constraint -1<=S<=1, an equilibrium S=M/Vg exists (a real theta)
+ * IFF |M| <= Vg.  This certificate: if |M| < Vg (strong grid) there is a feasible
+ * S=M/Vg strictly inside (-1,1); we state it division-free as M^2 < Vg^2 & Vg>0
+ * -> exists S with Vg*S = M and S^2 < 1. */
+Problem
+  \forall Vg \forall M
+  ( Vg > 0 & M^2 < Vg^2
+    -> \exists S ( Vg*S = M & S^2 < 1 ) )
+End.
+Tactic "equilibrium exists below fold by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "R2 (fold): past the fold no synchronization equilibrium exists"
+
+/* R2b: past Sigma_2, i.e. |M| > Vg, the equation Vg*sin(theta)=M has NO real
+ * solution (sin is bounded by 1).  Division-free: M^2 > Vg^2 & Vg>0 -> there is no
+ * real S with Vg*S=M and S^2<=1.  (Then theta is unbounded => loss of synchronism,
+ * independent of any local mode damping -- the R2b conclusion.) */
+Problem
+  \forall Vg \forall M \forall S
+  ( Vg > 0 & M^2 > Vg^2 & Vg*S = M
+    -> S^2 > 1 )
+End.
+Tactic "no equilibrium past fold by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "R2 (node/saddle from geometry): the two roots theta1=arcsin, theta2=pi-arcsin"
+
+/* REVISED per review: derive the two equilibria from sin's geometry, not by hand-
+ * picking C2=-C1.  For |M|<Vg let S0:=M/Vg in (-1,1).  The two solutions of
+ * sin(theta)=S0 in [0,2pi) are theta1 (principal, cos(theta1)=+sqrt(1-S0^2)>0, NODE)
+ * and theta2=pi-theta1 (cos(theta2)=-cos(theta1)<0, SADDLE), via sin(pi-t)=sin(t) and
+ * cos(pi-t)=-cos(t).  We tie c1 to S0 by Pythagoras and c2 by the supplementary-angle
+ * relation, then DERIVE opposite dG signs (dG=Vg*cos). */
+Problem
+  \forall Vg \forall M \forall S0 \forall c1 \forall c2
+  ( Vg > 0 & M^2 < Vg^2 & Vg*S0 = M
+    & c1^2 = 1 - S0^2 & c1 > 0
+    & c2 = -c1
+    -> ( c1^2 = 1 - S0^2 & c2^2 = 1 - S0^2
+         & Vg*c1 > 0 & Vg*c2 < 0 ) )
+End.
+Tactic "node-saddle from geometry by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "R2c (identity rewrite): Sigma_2 squared form equals the classical Wu expression"
+
+/* REVISED per review: this is an IDENTITY REWRITE, NOT a limit proof.  It checks only
+ * that the fold condition M^2=Vg^2 (M=id_ref*wn*Lg+iq_ref*Rg) is the same algebraic
+ * surface as the classical Wu boundary |id_ref*wn*Lg+iq_ref*Rg|=Vg.  The genuine
+ * Cf->0, Kpi,Kii->inf LIMIT degeneration (showing the finite-Cf fold reduces to this)
+ * was NOT derived -- it needs the full finite-Cf algebraic block, which we did not
+ * build.  Numerically (risk_numerical.py) M is already Cf,Kpi,Kii-free in the ideal
+ * balance, consistent with this being the limit form, but that is evidence, not proof. */
+Problem
+  \forall Vg \forall Rg \forall Lg \forall wn \forall idref \forall iqref \forall M
+  ( M = idref*wn*Lg + iqref*Rg
+    -> ( (M^2 = Vg^2) <-> ((idref*wn*Lg + iqref*Rg)^2 = Vg^2) ) )
+End.
+Tactic "Wu-boundary identity rewrite by QE"
+  QE
+End.
+End.

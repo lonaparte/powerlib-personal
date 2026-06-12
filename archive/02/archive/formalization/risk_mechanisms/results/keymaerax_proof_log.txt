@@ -1,0 +1,28 @@
+=== KeYmaera X 5.1.2 (bundled z3) proof log -- risk_mechanisms (rev2: R1 CAS progress, R3-note redone) ===
+Run: Tue Jun  2 11:56:22 UTC 2026
+
+--- R2_fold.kyx ---
+PROVED R2 (fold): synchronization equilibrium count from the unbalance ratio: tactic=equilibrium exists below fold by QE,tacticsize=1,budget=0[s],duration=128[ms],qe=126[ms],rcf=0,steps=0
+PROVED R2 (fold): past the fold no synchronization equilibrium exists: tactic=no equilibrium past fold by QE,tacticsize=1,budget=0[s],duration=3[ms],qe=3[ms],rcf=0,steps=0
+PROVED R2 (node/saddle from geometry): the two roots theta1=arcsin, theta2=pi-arcsin: tactic=node-saddle from geometry by QE,tacticsize=1,budget=0[s],duration=5[ms],qe=4[ms],rcf=0,steps=0
+PROVED R2c (identity rewrite): Sigma_2 squared form equals the classical Wu expression: tactic=Wu-boundary identity rewrite by QE,tacticsize=1,budget=0[s],duration=5[ms],qe=5[ms],rcf=0,steps=0
+--- R2_sigma2_symbolic.kyx ---
+PROVED R2 (Sigma_2 closed form): fully-symbolic fold manifold Phi(p)=0: tactic=fold closed form by QE,tacticsize=1,budget=0[s],duration=7[ms],qe=4[ms],rcf=0,steps=0
+PROVED R2 (Sigma_2 closed form): Phi<0 iff strictly below the fold: tactic=below fold iff by QE,tacticsize=1,budget=0[s],duration=3[ms],qe=3[ms],rcf=0,steps=0
+--- R3_basin.kyx ---
+PROVED R3.barrier (2D core): an abstract sublevel set with Vdot<=0 is forward-invariant: tactic=sublevel nonincrease keeps invariance by QE,tacticsize=1,budget=0[s],duration=8[ms],qe=4[ms],rcf=0,steps=0
+PROVED R3.saddle (2D core): if c < V_saddle then the saddle is outside {V<=c}: tactic=saddle exclusion by QE,tacticsize=1,budget=0[s],duration=3[ms],qe=3[ms],rcf=0,steps=0
+PROVED R3.monotone (2D core, structural): more damping => pointwise more dissipation: tactic=more damping more dissipation by QE,tacticsize=1,budget=0[s],duration=8[ms],qe=3[ms],rcf=0,steps=0
+PROVED R3.threshold (2D core): a damping floor below which the certified level is nonpositive: tactic=damping floor by QE,tacticsize=1,budget=0[s],duration=3[ms],qe=3[ms],rcf=0,steps=0
+--- R3a_energy_barrier.kyx ---
+PROVED R3a (energy barrier, REDUCED 2D CORE not 10D): tilted-energy gives Vdot = -b*dw^2: tactic=energy cancellation by QE,tacticsize=1,budget=0[s],duration=8[ms],qe=5[ms],rcf=0,steps=0
+PROVED R3a (energy barrier): Vdot <= 0 for nonnegative damping: tactic=nonincreasing by QE,tacticsize=1,budget=0[s],duration=3[ms],qe=3[ms],rcf=0,steps=0
+PROVED R3a (LaSalle): strict decrease off dw=0, so basin interior flows to eq: tactic=strict decrease off dw=0 by QE,tacticsize=1,budget=0[s],duration=4[ms],qe=3[ms],rcf=0,steps=0
+--- R3note_decoupling.kyx ---
+PROVED R3note.local: l1<0 Hopf normal form has NO finite-amplitude escape (radial): tactic=no local escape when l1<0 by QE,tacticsize=1,budget=0[s],duration=6[ms],qe=4[ms],rcf=0,steps=0
+PROVED R3note.global: loss-of-sync is governed by the R2 saddle (M near Vg), not l1: tactic=small basin coexists with l1<0 by QE,tacticsize=1,budget=0[s],duration=2[ms],qe=2[ms],rcf=0,steps=0
+PROVED R3note.conclusion: sign(l1) is not the loss-of-sync criterion (different governing quantity): tactic=margin independent of l1 by QE,tacticsize=1,budget=0[s],duration=2[ms],qe=1[ms],rcf=0,steps=0
+
+--- conjecture_R1_electrical_onset.kyx : CONJECTURE (no tactic; CAS sign-chart in numerical/R1_sign_chart.py) ---
+
+PROVED: 16 entries. CONJECTURE: 1 (R1, dL side).

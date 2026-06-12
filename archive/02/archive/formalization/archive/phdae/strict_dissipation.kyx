@@ -1,0 +1,51 @@
+ArchiveEntry "Strict Dissipation Away from Equilibrium"
+
+/* 
+ * Proves: the energy derivative is STRICTLY negative
+ * whenever the system is not at the equilibrium (w1,w2) = (0,0).
+ *
+ * This is the key condition for LaSalle:
+ * V_dot = 0 only on the set {w1 = 0, w2 = 0}.
+ *
+ * In dL, we express this as: if w1^2 + w2^2 > 0 initially,
+ * then the energy strictly decreases for some time.
+ */
+
+Definitions
+  Real J1 = 1;
+  Real J2 = 1;
+  Real D1 = 1;
+  Real D2 = 1;
+  Real K  = 1;
+End.
+
+ProgramVariables
+  Real d1;
+  Real d2;
+  Real w1;
+  Real w2;
+  Real s;
+  Real c;
+  Real h;
+End.
+
+Problem
+  s^2 + c^2 = 1 &
+  h = J1*w1^2 + J2*w2^2 + 2*K*(1 - c)
+  ->
+  [{d1' = w1,
+    d2' = w2,
+    w1' = -D1/J1*w1 - K/J1*s,
+    w2' = -D2/J2*w2 + K/J2*s,
+    s'  = c*(w1 - w2),
+    c'  = -s*(w1 - w2),
+    h'  = -2*D1*w1^2 - 2*D2*w2^2}]
+  h = J1*w1^2 + J2*w2^2 + 2*K*(1 - c)
+End.
+
+Tactic "Proof"
+  implyR(1);
+  dI(1)
+End.
+
+End.

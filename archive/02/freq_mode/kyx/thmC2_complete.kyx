@@ -1,0 +1,52 @@
+ArchiveEntry "Theorem C2 (complete): below threshold a real eigenvalue EXISTS"
+
+/* The 'only if' half of the oscillation dichotomy that the spectral file left open.
+ * When 0 <= 4*beta*Ks <= b^2 (at or below threshold) the characteristic polynomial
+ * lambda^2 + b*lambda + beta*Ks HAS a real root: exhibit the explicit smaller root
+ * r = (-b - sqrt(b^2-4*beta*Ks))/2.  To stay polynomial (Z3-friendly, no sqrt) we
+ * give a witness w >= 0 with w^2 = b^2 - 4*beta*Ks and the root r = (-b - w)/2, and
+ * prove r is a root.  Division-free form: 4*(r^2 + b*r + beta*Ks) = 0. */
+Problem
+  \forall b \forall beta \forall Ks \forall w \forall r
+  ( b > 0 & beta*Ks >= 0 & w >= 0 & w^2 = b^2 - 4*beta*Ks & 2*r = -b - w
+    -> r^2 + b*r + beta*Ks = 0 )
+End.
+Tactic "real root witness by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "Theorem C2 (complete): full dichotomy real-root EXISTS  <->  4 beta Ks <= b^2"
+
+/* Existence of a real eigenvalue is equivalent to being at/below threshold.
+ * Stated with the same nonneg discriminant witness: there is a real r with
+ * r^2+b*r+beta*Ks=0 IFF 4*beta*Ks <= b^2.  (Together with thmC2_spectral's
+ * 'no real root above threshold' this closes the iff in both directions.) */
+Problem
+  \forall b \forall beta \forall Ks
+  ( b > 0 & beta*Ks >= 0
+    -> ( (\exists r (r^2 + b*r + beta*Ks = 0)) <-> 4*beta*Ks <= b^2 ) )
+End.
+Tactic "iff dichotomy by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "Theorem C2 (complete): natural frequency omega^2 = beta Ks - b^2/4"
+
+/* The oscillation frequency.  Above threshold the complex pair is r +- i*omega with
+ * r = -b/2 and omega^2 = beta*Ks - b^2/4 > 0.  Verify that lambda = r + i*omega is a
+ * root by checking the real/imag parts of (lambda^2 + b*lambda + beta*Ks) = 0:
+ *   real:  r^2 - omega^2 + b*r + beta*Ks = 0
+ *   imag:  2*r*omega + b*omega = 0   (i.e. (2r+b)*omega = 0)
+ * with r = -b/2 (2r=-b) and omega^2 = beta*Ks - b^2/4.  Division-free:
+ * use 2r = -b and 4*omega^2 = 4*beta*Ks - b^2. */
+Problem
+  \forall b \forall beta \forall Ks \forall r \forall omega
+  ( 2*r = -b & 4*omega^2 = 4*beta*Ks - b^2
+    -> ( (r^2 - omega^2 + b*r + beta*Ks = 0) & ((2*r + b)*omega = 0) ) )
+End.
+Tactic "frequency by QE"
+  QE
+End.
+End.

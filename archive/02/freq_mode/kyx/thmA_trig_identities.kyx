@@ -1,0 +1,68 @@
+ArchiveEntry "Trig (1): Pythagorean identity is consistent (c^2+s^2=1 assumed)"
+
+/* dL/QE works over real-closed fields; cos/sin are treated as abstract reals c,s
+ * together with the constraint c^2 + s^2 = 1.  This entry records that the
+ * constraint is satisfiable (e.g. c=1,s=0), so the identities below are not vacuous.
+ * Identifiers carry no underscores (KeYmaera X): udc=u_dc, uqc=u_qc, udd=u_d,
+ * uqq=u_q, idc=i_dc, iqc=i_qc, idd=i_d, iqq=i_q. */
+Problem
+  \exists c \exists s ( c^2 + s^2 = 1 )
+End.
+Tactic "pythagorean satisfiable by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "Trig (2): inverse rotation recovers u_dc:  c*u_d - s*u_q = u_dc"
+
+/* Sec.3 forward rotation:  u_d = c*u_dc + s*u_qc ,  u_q = -s*u_dc + c*u_qc.
+ * Inverse recovers u_dc:  c*u_d - s*u_q = (c^2+s^2)*u_dc = u_dc,  using c^2+s^2=1. */
+Problem
+  \forall c \forall s \forall udc \forall uqc
+  ( c^2 + s^2 = 1
+    -> c*(c*udc + s*uqc) - s*(-s*udc + c*uqc) = udc )
+End.
+Tactic "recover u_dc by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "Trig (3): inverse rotation recovers u_qc:  s*u_d + c*u_q = u_qc"
+
+/* Companion: s*u_d + c*u_q = (s^2+c^2)*u_qc = u_qc. */
+Problem
+  \forall c \forall s \forall udc \forall uqc
+  ( c^2 + s^2 = 1
+    -> s*(c*udc + s*uqc) + c*(-s*udc + c*uqc) = uqc )
+End.
+Tactic "recover u_qc by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "Trig (4): current rotation roundtrip:  c*i_dc + s*i_qc = i_d"
+
+/* Sec.3:  i_dc = c*i_d - s*i_q ,  i_qc = s*i_d + c*i_q.  Inverse:
+ * c*i_dc + s*i_qc = (c^2+s^2)*i_d = i_d. */
+Problem
+  \forall c \forall s \forall idd \forall iqq
+  ( c^2 + s^2 = 1
+    -> c*(c*idd - s*iqq) + s*(s*idd + c*iqq) = idd )
+End.
+Tactic "current roundtrip i_d by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "Trig (5): current rotation roundtrip:  -s*i_dc + c*i_qc = i_q"
+
+/* Companion: -s*i_dc + c*i_qc = (s^2+c^2)*i_q = i_q. */
+Problem
+  \forall c \forall s \forall idd \forall iqq
+  ( c^2 + s^2 = 1
+    -> -s*(c*idd - s*iqq) + c*(s*idd + c*iqq) = iqq )
+End.
+Tactic "current roundtrip i_q by QE"
+  QE
+End.
+End.

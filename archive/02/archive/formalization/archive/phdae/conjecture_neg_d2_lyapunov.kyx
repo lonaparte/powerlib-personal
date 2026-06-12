@@ -1,0 +1,76 @@
+ArchiveEntry "D2<0 Local Asymptotic Stability via x'Px"
+
+/* KeYmaera X STATUS: Tactic written, Lie-derivative algebra verified,
+ * but QE TIMES OUT (>350s). NOT machine-verified. High polynomial degree
+ * or messy rational coefficients overwhelm Z3/CAD. Numerically validated;
+ * awaiting stronger QE strategy or problem decomposition. */
+
+/*
+ * STATUS: TACTIC WRITTEN, AWAITING KeYmaera X VERIFICATION
+ *
+ * D1=1, D2=-3/10, K=1. Within the Routh boundary (|D2|=0.3 < 1).
+ *
+ * Lyapunov equation A'P+PA=-I gives (exact rational):
+ *   P = [[144/49, -5/7, 239/98],
+ *        [-5/7, 235/49, 95/49],
+ *        [239/98, 95/49, 597/98]]
+ *   P eigenvalues: 0.936, 4.830, 8.061 (all positive)
+ *
+ * V = (288*w1^2 - 140*w1*w2 + 478*w1*s + 470*w2^2 + 380*w2*s + 597*s^2) / 98
+ *
+ * V' = -(w1^2+w2^2+s^2) + (c-1)*(478*w1+380*w2+1194*s)/98*(w1-w2)
+ *     = [linear decay] + [nonlinear correction from c != 1]
+ *
+ * Numerical verification: V' < 0 in {V < 1.75, c >= 0, s^2+c^2=1}.
+ * Conservative bound V < 1 used for proof.
+ * Decay rate: min |V'/V| >= 1/400, so C = 400.
+ */
+
+Definitions
+  Real D1 = 1;
+  Real D2 = -(3/10);
+  Real K  = 1;
+End.
+
+ProgramVariables
+  Real d1;
+  Real d2;
+  Real w1;
+  Real w2;
+  Real s;
+  Real c;
+  Real t;
+  Real v0;
+End.
+
+Problem
+  \forall target (target > 0 & target < 1/2 ->
+    (s^2 + c^2 = 1 & c > 0 &
+     v0 = (288*w1^2 - 140*w1*w2 + 478*w1*s + 470*w2^2 + 380*w2*s + 597*s^2)/98 &
+     v0 > 0 & v0 < 1 & t = 0
+     ->
+     [{d1' = w1,
+       d2' = w2,
+       w1' = -D1*w1 - K*s,
+       w2' = -D2*w2 + K*s,
+       s'  = c*(w1 - w2),
+       c'  = -s*(w1 - w2),
+       t'  = 1,
+       v0' = 0
+       & s^2 + c^2 = 1 & c >= 0 &
+         (288*w1^2 - 140*w1*w2 + 478*w1*s + 470*w2^2 + 380*w2*s + 597*s^2)/98 >= target}]
+     t < 400*v0/target))
+End.
+
+Tactic "Proof"
+  allR(1);
+  implyR(1);
+  implyR(1);
+  dC("(288*w1^2 - 140*w1*w2 + 478*w1*s + 470*w2^2 + 380*w2*s + 597*s^2)/98 <= v0 - t*target/400", 1);
+  <(
+    dW(1); QE,
+    dI(1)
+  )
+End.
+
+End.

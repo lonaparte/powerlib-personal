@@ -1,0 +1,18 @@
+ArchiveEntry "LaSalle Step 1"
+
+ProgramVariables
+  Real w1;
+  Real s;
+End.
+
+Problem
+  w1 = 0 & s > 0
+  ->
+  -w1 - s < 0
+End.
+
+Tactic "Proof"
+  QE
+End.
+
+End.

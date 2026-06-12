@@ -1,0 +1,56 @@
+ArchiveEntry "R3a (energy barrier, REDUCED 2D CORE not 10D): tilted-energy gives Vdot = -b*dw^2"
+
+/* SCOPE (per review): this is the REDUCED 2-state synchronization core (delta,dw),
+ * NOT the full 10D GFL-VSC.  The gradient/chain-rule step is done by hand (the
+ * algebraic cancellation below is the load-bearing identity QE checks).  A genuine
+ * 10D barrier (SOS on the full field with c^2+s^2=1 projection + block-Schur bounds)
+ * was attempted and is NOT done -- see README. */
+
+/* GENUINE R3a barrier via the TILTED PENDULUM ENERGY -- no SOS solver needed.
+ * Sync core (delta,dw) with s=sin(delta), cc=cos(delta), constraint s^2+cc^2=1:
+ *   delta' = dw ,  dw' = -b*dw - K*s + Pm .
+ * Tilted energy  V = 1/2*dw^2 + K*(cstar - cc) - Pm*(delta - dstar)  has, along the
+ * flow,  Vdot = dw*(-b*dw - K*s + Pm) + (K*s - Pm)*dw = -b*dw^2 <= 0  for b>=0.
+ * (Verified numerically: Vdot == -b*dw^2 to machine zero.)  Hence every sublevel set
+ * {V<=c} is forward invariant; with c < V(saddle)=1.1482 it excludes the saddle, an
+ * inner estimate of the synchronization basin (LaSalle: Vdot=0 only on dw=0).
+ *
+ * Here we machine-check the load-bearing IDENTITY Vdot = -b*dw^2 directly in dL/QE:
+ * the algebraic cancellation of the synchronizing/forcing terms.  s is sin(delta),
+ * abstract with the circle relation; the identity does not even need it.  Division-free. */
+Problem
+  \forall dw \forall b \forall K \forall s \forall Pm
+  ( /* Vdot = dw*(dw') + (K*s - Pm)*dw  with dw' = -b*dw - K*s + Pm */
+    dw*(-b*dw - K*s + Pm) + (K*s - Pm)*dw  =  -b*dw^2 )
+End.
+Tactic "energy cancellation by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "R3a (energy barrier): Vdot <= 0 for nonnegative damping"
+
+/* Consequence: with b >= 0, Vdot = -b*dw^2 <= 0, so V is nonincreasing along the
+ * flow and {V<=c} is forward invariant. */
+Problem
+  \forall dw \forall b
+  ( b >= 0  ->  -b*dw^2 <= 0 )
+End.
+Tactic "nonincreasing by QE"
+  QE
+End.
+End.
+
+ArchiveEntry "R3a (LaSalle): strict decrease off dw=0, so basin interior flows to eq"
+
+/* LaSalle refinement: Vdot = -b*dw^2 < 0 whenever dw != 0 and b > 0; the largest
+ * invariant set in {Vdot=0}={dw=0} below the saddle level is the equilibrium alone.
+ * Algebraic core: b>0 & dw!=0 -> -b*dw^2 < 0. */
+Problem
+  \forall dw \forall b
+  ( b > 0 & dw != 0  ->  -b*dw^2 < 0 )
+End.
+Tactic "strict decrease off dw=0 by QE"
+  QE
+End.
+End.

@@ -1,0 +1,79 @@
+ArchiveEntry "F-fold cycle-fold = saddle-node of the Hopf normal-form amplitude equation"
+
+/* PARAMETRIC formalization of F-fold Sigma_fold (the limit-cycle saddle-node), lifted to
+ * the Hopf NORMAL FORM -- the rigorous framework for this bifurcation.  The radial normal
+ * form  r' = r*(mu + l1*r^2 + l2*r^4)  has nonzero limit cycles at the positive roots of
+ *     g(rho) = l2*rho^2 + l1*rho + mu = 0,   rho := r^2 (amplitude squared).
+ * This is STRUCTURALLY IDENTICAL to R2real_fold.kyx (a quadratic discriminant fold), with
+ * (a2,a1,a0) = (l2,l1,mu).  So the cycle fold Sigma_fold = {disc = l1^2 - 4*l2*mu = 0}.
+ *
+ * HONEST scope: this certifies the cycle-fold STRUCTURE parametrically in the normal-form
+ * coordinates (mu, l1, l2).  The map physical-p |-> (mu,l1,l2) is the center-manifold
+ * reduction (mu = linear growth rate ~ dRe(lambda); l1 = first Lyapunov coeff, ffold_l1
+ * gives l1<0 at Kp=0.50; l2 = second Lyapunov coeff).  Those coefficients are the
+ * numerical/interval part (ffold_normalform.py); the bifurcation structure here is exact.
+ *
+ * Entry 1 (FOLD = double root): at disc=0 the two cycles coincide -- rho=-l1/(2*l2)
+ * (encoded 2*l2*rho+l1=0) is a double root of g.  (Proof: a fold of cycles.) */
+Problem
+  \forall l2 \forall l1 \forall mu \forall rho
+  ( l2 != 0 & l1^2 - 4*l2*mu = 0 & 2*l2*rho + l1 = 0
+    -> l2*rho^2 + l1*rho + mu = 0 )
+End.
+Tactic "cycle fold double root by QE" QE End.
+End.
+
+ArchiveEntry "F-fold below fold: disc>0 gives two distinct limit cycles (amplitudes)"
+
+/* Strictly below Sigma_fold (disc>0): with s>0, s^2=disc, the two amplitudes
+ * rho1,2 = (-l1 +- s)/(2*l2) are distinct roots of g -- the stable + unstable cycle pair
+ * whose merging IS the fold.  (rho>0 physicality handled in the positivity entry.) */
+Problem
+  \forall l2 \forall l1 \forall mu \forall s \forall rho1 \forall rho2
+  ( l2 != 0 & s>0 & s^2 = l1^2 - 4*l2*mu
+    & 2*l2*rho1 + l1 - s = 0 & 2*l2*rho2 + l1 + s = 0
+    -> ( l2*rho1^2 + l1*rho1 + mu = 0
+       & l2*rho2^2 + l1*rho2 + mu = 0
+       & rho1 != rho2 ) )
+End.
+Tactic "two cycles below fold by QE" QE End.
+End.
+
+ArchiveEntry "F-fold past fold: l2>0 & disc<0 => no limit cycle (amplitude eq has no root)"
+
+/* Past Sigma_fold (disc<0, l2>0): g(rho)=l2*rho^2+l1*rho+mu > 0 for ALL rho, so there is
+ * NO limit-cycle amplitude -- the oscillatory branch has vanished.  Combined with an
+ * unstable equilibrium (mu>0 side), no bounded attractor remains: loss of synchronization.
+ * (Mirror of R2real_fold "no equilibrium past fold".) */
+Problem
+  \forall l2 \forall l1 \forall mu \forall rho
+  ( l2 > 0 & l1^2 - 4*l2*mu < 0 -> l2*rho^2 + l1*rho + mu > 0 )
+End.
+Tactic "no cycle past fold by QE" QE End.
+End.
+
+ArchiveEntry "F-fold physicality: the fold amplitude rho*=-l1/(2 l2) is positive iff l1*l2<0"
+
+/* A fold of cycles is PHYSICAL only when its double amplitude rho* = -l1/(2*l2) > 0, i.e.
+ * l1 and l2 have opposite signs.  (Subcritical l1>0 with l2<0, or supercritical l1<0 with
+ * l2>0 -- the classic generalized-Hopf/Bautin configurations giving a fold.) */
+Problem
+  \forall l2 \forall l1 \forall rho
+  ( l2 != 0 & 2*l2*rho + l1 = 0 -> ( rho > 0 <-> l1*l2 < 0 ) )
+End.
+Tactic "fold amplitude positive iff opposite signs by QE" QE End.
+End.
+
+ArchiveEntry "F-fold Bautin organizing center: the cycle fold meets the Hopf at l1=0"
+
+/* The codim-2 Bautin (generalized-Hopf) point l1=0 is where Sigma_fold meets Sigma_H:
+ * on the fold (disc=0) with l1=0 the growth rate mu=0 (=Sigma_H).  So Sigma_fold emanates
+ * from the Bautin point and is tangent to Sigma_H there (mu = l1^2/(4 l2) ~ O(l1^2)).
+ * numerical/bautin_cert/ rigorously brackets this Bautin point (l1 sign change) for the
+ * sibling sweep.py model; here it is the organizing center of the certified fold. */
+Problem
+  \forall l2 \forall l1 \forall mu
+  ( l2 != 0 & l1 = 0 & l1^2 - 4*l2*mu = 0 -> mu = 0 )
+End.
+Tactic "Bautin point is where fold meets Hopf by QE" QE End.
+End.

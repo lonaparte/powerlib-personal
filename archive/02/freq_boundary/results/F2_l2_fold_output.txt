@@ -1,0 +1,40 @@
+===== L2 FIT (escapes filtered) =====
+Closing l2 / Bautin-nondegeneracy gap (task model). Branch fit mu = -l1*rho - l2*rho^2:
+
+  Kp=0.50 (SCR_H=0.7966):
+    mu (growth)   rho=amp^2      bounded cycle?
+    +1.2647       0.0477         yes
+    +2.5361       0.1019         yes
+    +4.2404       0.1963         yes
+    +6.3816       1418993.9119   NO (escaped=loss of sync)
+    +8.5312       1407081.5050   NO (escaped=loss of sync)
+    +11.9781       1387942.9676   NO (escaped=loss of sync)
+    fit (bounded points only): l1_eff=-28.3139, l2_eff=34.1810 (resid 2.2e-03)
+    => l2 sign = +  => NONDEGENERATE (l2!=0): Bautin codim-2 condition met.
+    => cycle fold predicted at rho*=0.414, mu_fold=5.8635 (l1*l2<0 => physical fold).
+
+  Kp=0.55 (SCR_H=0.7945):
+    mu (growth)   rho=amp^2      bounded cycle?
+    +1.5475       0.0330         yes
+    +3.0846       0.0672         yes
+    +5.1173       0.1152         yes
+    +7.6299       0.1807         yes
+    +10.1102       0.2573         yes
+    +14.0100       1383059.4419   NO (escaped=loss of sync)
+    fit (bounded points only): l1_eff=-48.5468, l2_eff=35.7795 (resid 2.5e-03)
+    => l2 sign = +  => NONDEGENERATE (l2!=0): Bautin codim-2 condition met.
+    => cycle fold predicted at rho*=0.678, mu_fold=16.4675 (l1*l2<0 => physical fold).
+
+  NOTE: |l2| is amplitude-normalization dependent (like |l1|); the SIGN (hence
+  nondegeneracy l2!=0) is invariant. This closes the Bautin nondegeneracy that
+  numerical/bautin_cert/ left open -- numerically; a rigorous 5th-order normal-form
+  l2 enclosure remains the (heavier) interval step.
+
+===== FOLD LOCATION =====
+Locating Sigma_fold at Kp=0.50 (SCR_H=0.7966). Sweep grid past the Hopf (SCR down = mu up):
+  SCR      mu(growth)    outcome      th_e amplitude / drift
+  0.7916   +2.1116      stable cycle           0.288
+  0.7866   +4.2404      stable cycle           0.443
+  0.7766   +8.5312      ESCAPE (loss of sync)  9053.639
+  0.7666   +12.8399      ESCAPE (loss of sync)  9269.000
+  0.7566   +17.1394      ESCAPE (loss of sync)  9321.612
