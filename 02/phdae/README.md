@@ -32,7 +32,7 @@ Summary 注册的 33 个中:29 个常规证明 + 1 个**已证前猜想**(`conje
 **排除的注册证明(重 QE 超时,非证伪)**:`asymptotic_d2_small.kyx`、`asymptotic_weak_coupling.kyx`
 ——历史 .kyp(2026-05)在,但本轮在本环境(4 核)重证 **300s 与 600s 均超时**(SIGTERM)。
 按流程第 4 步"本轮复验"标准不收,留在 archive 并如实注记:历史证过、本环境复验未通过。
-(同家族的 `conjecture_neg_d2_lyapunov.kyx` 重试见提交记录。)
+(`theorem_3machine.kyx` 重试见提交记录。)
 
 ## 未收录(留在 formalization/archive/phdae/)
 
