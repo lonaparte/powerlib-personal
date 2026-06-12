@@ -68,13 +68,42 @@ cd 02/risk_mechanisms/numerical && python3 R2real_validate.py
 cd 02/freq_boundary && python3 ffold_normalform.py && python3 ffold_locate.py
 ```
 
-合计 **15 条 KeYmaera X proved**(R2real 5 + F-H 3 + F-fold 7),全部通过 6 步流程。
+## 全分支审计(2026-06,第二轮:覆盖全部 87 个 .kyx)
 
-## 审计范围(诚实说明)
+应"只要是这个分支的东西就都审计"的要求(本仓库仅此一个分支 = 全部历史),对预存的
+82 个 .kyx 也执行了同一 6 步审计。方法与证据:
 
-本次审计**只覆盖本轮 session 产出/审查的证明**(risk_mechanisms + freq_boundary,共 9 个 .kyx)。
-其中符合流程的 4 个(15 条)收入此处,不符合的 5 个经典摆证书留在原处。
+### `phdae/`(27 个 .kyx 收录)— 原 `formalization/archive/phdae/`
+- **对象闸门**:8 个含内联 ODE 文件与 Conventions §2/§3 逐项一致(零偏差);**SMIB 模型
+  缺口修复**(补登 §14);**深度抽查**:`theorem_ph_bridge_parametric` 的两条 V̇ Lie 导数
+  sympy 独立复算**逐项恒等**;12 个含定值文件全部为声明式定点反例/定值证书(合规)。
+- **本轮重证**:27/27 `PROVED`(KeYmaera X 5.1.2 + 自带 z3,本环境)。
+- **数值交叉验证**(`phdae/numerical/validate_boundary_fast.py`,3 组参数):证书不变集
+  H<4K 三组全部严格在真盆内;分界面/(4K+8D√K)≈0.94 恒定。
+- 详见 `phdae/README.md`。
 
-**未审计**:仓库还有 **82 个预存 .kyx**(`formalization/archive/phdae/` 65、`formalization/freq_mode/kyx/`
-16、`formalization/numerical/formal_bridge/` 1),它们早于本轮 session、不是在本流程下产出的,**本次
-未逐条对照 6 步流程**。若需把它们也纳入同一审计(尤其逐个核对对象闸门),那是另一项单独工作。
+### `freq_mode/`(16 文件 / 34 条收录)— 原 `formalization/freq_mode/`
+- **对象闸门**:`verify_freq_mode.py` **24/24**(18 精确符号,对 §13 单一真源)。
+- **参数化**:STATUS.md 明示全符号(1.5 为 §13 结构常数)。
+- **本轮重证**:16/16 文件、34/34 条 `PROVED`。
+- **独立交叉路径**:`prove_freq_mode_z3.py` **12/12** 参数化义务。
+- **分层**:STATUS.md 四层,sympy/dL 边界逐条明示(模板级)。
+
+### 排除与留档(诚实清单)
+- **4 个重 QE 注册证书**(d2_small、weak_coupling、neg_d2_lyapunov、theorem_3machine):
+  历史 .kyp(2026-05)在,本环境(4 核)**300s+600s 双超时**(SIGTERM)。**超时≠证伪**;
+  按"本轮复验"标准不收,留 archive 注记,强机复验通过可补收。
+- **~26 个未注册草稿**:不属于 Summary 注册的成果集(archive 本意),留档。
+- **3 个未证 conjecture**(含 formal_bridge 1 个):猜想不是证明,留原处。
+- **4 个 Lean 工件**:本环境无 Lean 工具链,无法复验,留档待验。
+- **5 个经典摆证书**(第一轮已判):卡对象闸门,留 `formalization/risk_mechanisms/`。
+
+## 总账
+
+| 子目录 | 来源 | KeYmaera X 条目 | 状态 |
+|---|---|---|---|
+| `risk_mechanisms/` | 本 session(R2real) | 5 | 全 proved,锚 §12 真模型 |
+| `freq_boundary/` | 本 session(F-H/F-fold) | 10 | 全 proved,任务模型已闸门 |
+| `phdae/` | 2026-05 session | 27 | 全本轮重证,锚 §2/§3/§14 |
+| `freq_mode/` | 本 session 早期 | 34 | 全本轮重证,锚 §13 |
+| **合计** | | **76 条** | 全部通过 6 步流程 |

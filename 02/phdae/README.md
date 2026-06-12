@@ -24,17 +24,32 @@
    Lie 导数 sympy/手工导出后由本审计抽查)。
 6. **分层记录**:`formalization/Summary.md` 为注册索引;此处为审计后的"注册且通过"子集。
 
-## 收录(28 个 .kyx;见下方排除名单)
+## 收录(27 个 .kyx,本轮全部重证 PROVED)
 
-Summary 注册的 33 个中,扣除 2 个未证 conjecture 与 3 个重 QE 超时排除后,**28 个**本轮
+Summary 注册的 33 个中,扣除 2 个未证 conjecture 与 4 个重 QE 超时排除后,**27 个**本轮
 重证 `PROVED` 收入此处。各文件含义见 `formalization/Summary.md` 索引。
 
-**排除的注册证明(重 QE 超时,非证伪;历史 .kyp 2026-05 在,本轮 300s+600s 双超时 SIGTERM)**:
+**排除的 4 个注册证明(重 QE 超时,非证伪;历史 .kyp 2026-05 在,本轮 300s+600s 双超时 SIGTERM)**:
 - `asymptotic_d2_small.kyx`、`asymptotic_weak_coupling.kyx`(负阻尼渐近家族)
 - `conjecture_neg_d2_lyapunov.kyx`(已证前猜想,同家族)
+- `theorem_3machine.kyx`(9 状态三机,大 QE)
 
-按流程第 4 步"本轮复验"标准不收,留在 archive 并如实注记:历史证过、本环境复验未通过。
-`theorem_3machine.kyx`(9 状态三机)600s 重试结果见提交记录:通过则收(29),超时则同列此单。
+按流程第 4 步"本轮复验"标准不收,留在 archive 并如实注记:历史证过、本环境(4 核)复验未通过。
+**超时 ≠ 证伪**;在更强机器上复验通过即可补收。
+
+## 本轮数值交叉验证结果(`numerical/validate_boundary_fast.py`,3 组参数)
+
+证书约定 H = w1²+w2²+2K(1−c)(`stability_boundary.kyx`,鞍点能级 4K):
+
+| D | K | 模拟分界面 H_sep | 4K(证书不变集) | 在盆内? | 4K+8D√K | sep/pred |
+|---|---|---|---|---|---|---|
+| 0.20 | 1.0 | 5.246 | 4.0 | ✓ | 5.600 | 0.937 |
+| 0.50 | 1.0 | 7.577 | 4.0 | ✓ | 8.000 | 0.947 |
+| 0.30 | 2.0 | 10.658 | 8.0 | ✓ | 11.394 | 0.935 |
+
+(a) **证书的充分不变集 H<4K 三组全部严格落在真盆内**(dL 不变量数值健全);
+(b) 分界面/(4K+8D√K) ≈ 0.94 跨组恒定——经验阻尼扩张标度确认。
+(全网格版 `validate_boundary.py` 在本环境 >600s 未跑完,如实注记;快速版即本轮证据。)
 
 ## 未收录(留在 formalization/archive/phdae/)
 
