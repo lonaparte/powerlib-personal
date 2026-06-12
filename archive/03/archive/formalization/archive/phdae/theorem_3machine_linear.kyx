@@ -1,0 +1,52 @@
+ArchiveEntry "3-Machine linearized pH stability (symbolic d, D1=D3=K=1)"
+
+/*
+ * #5, tractable formalization: the LINEARIZED 3-machine system (line 1-2-3,
+ * D1=D3=K=1, D2=-d) has a pH-structured Lyapunov function for all d in (0,1/5).
+ *
+ * V = H + (1/5)*(s1^2+s2^2) + (1+d)*(w1*s1-w3*s2) + ((1+3d)/4)*w2*(s1-s2)
+ * (CONSTANT h=1/5; anti-symmetric correction).
+ *
+ * NOTE on range: constant h=1/5 is near-optimal only around d=3/20. The valid
+ * range for h=1/5 is d in (0, ~0.1916) (minor5 hits zero at ~0.1916), NOT all
+ * of (0,1/5). We prove the clean sub-range d in (0, 19/100). The full (0,1/5)
+ * boundary requires the d-dependent optimal h*(d), which gives messy minors.
+ *
+ * M(1,1) is the 5x5 quadratic form of V' at the equilibrium (c1=c2=1).
+ * M(1,1) < 0  iff  -M(1,1) > 0  iff  all 5 leading principal minors > 0
+ * (Sylvester). The minors are polynomials in d:
+ *   minor1 = 1-d
+ *   minor2 = (31d^2-70d+23)/64
+ *   minor3 = (-15d^3+53d^2-45d+7)/32
+ *   minor4 = (-900d^6+1500d^5+515d^4-1220d^3+5774d^2-5520d+875)/6400
+ *   minor5 = (-56250d^7+24000d^6+236825d^5-140575d^4-73120d^3
+ *             +124450d^2-77007d+10829)/160000
+ *
+ * Claim: for 0 < d < 1/5, all five numerators are positive (denominators>0).
+ * Single-variable forall-d QE; CAD handles it regardless of degree.
+ *
+ * SCOPE: this proves linearized (local) asymptotic stability of the
+ * equilibrium via the pH Lyapunov function. The full NONLINEAR sublevel
+ * invariance (dI on the 5x5 system) TIMES OUT in QE (see theorem_3machine.kyx).
+ * The boundary d=1/5 comes from minor3's factor (5d-1).
+ */
+
+ProgramVariables
+  Real d;
+End.
+
+Problem
+  \forall d ( (d > 0 & d < 19/100) ->
+    ( 1 - d > 0
+    & 31*d^2 - 70*d + 23 > 0
+    & -15*d^3 + 53*d^2 - 45*d + 7 > 0
+    & -900*d^6 + 1500*d^5 + 515*d^4 - 1220*d^3 + 5774*d^2 - 5520*d + 875 > 0
+    & -56250*d^7 + 24000*d^6 + 236825*d^5 - 140575*d^4 - 73120*d^3
+        + 124450*d^2 - 77007*d + 10829 > 0 ) )
+End.
+
+Tactic "Proof"
+  QE
+End.
+
+End.

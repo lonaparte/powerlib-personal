@@ -1,0 +1,59 @@
+ArchiveEntry "Lyapunov Stability Two Machine Linear"
+
+Definitions
+  Real D1 = 1;
+  Real D2 = 1;
+  Real K  = 2;
+End.
+
+ProgramVariables
+  Real d1;
+  Real d2;
+  Real w1;
+  Real w2;
+End.
+
+Problem
+  \forall eps (eps > 0 ->
+    \exists delta (delta > 0 &
+      \forall d1 \forall d2 \forall w1 \forall w2 (
+        w1^2 + w2^2 + (d1-d2)^2 < delta
+        ->
+        [{d1' = w1,
+          d2' = w2,
+          w1' = -D1*w1 - K*(d1-d2),
+          w2' = -D2*w2 + K*(d1-d2)}]
+        w1^2 + w2^2 + (d1-d2)^2 < eps
+      )
+    )
+  )
+End.
+
+Tactic "Proof"
+  allR(1);
+  implyR(1);
+  existsR("eps/K", 1);
+  andR(1);
+  <(
+    QE,
+    allR(1); allR(1); allR(1); allR(1);
+    implyR(1);
+    /* Cut: H(x) = w1^2+w2^2+K*(d1-d2)^2 < eps is invariant */
+    dC("w1^2 + w2^2 + K*(d1-d2)^2 < eps", 1);
+    <(
+      /* From H < eps, conclude ||x||^2 < eps (since ||x||^2 <= H when K >= 1) */
+      dW(1); QE,
+      /* Show H < eps is invariant by dI + initial condition */
+      /* Need: ||x0||^2 < eps/K => H(x0) = ||x0||^2 + (K-1)*(d1-d2)^2 */
+      /*       <= K * ||x0||^2 < K * eps/K = eps */
+      /* Then dI keeps H < eps */
+      dC("w1^2 + w2^2 + K*(d1-d2)^2 < eps", 1);
+      <(
+        dW(1); QE,
+        dI(1)
+      )
+    )
+  )
+End.
+
+End.
