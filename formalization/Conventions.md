@@ -352,3 +352,27 @@ J = [ A    c  ]      A ∈ ℝ⁸ˣ⁸,  c ∈ ℝ⁸,  ρ ∈ ℝ⁸,  j99 ∈ 
 4. **必须用 KeYmaera X 自带的 z3**（bundled v4.8.9），不要用 `-z3path` 指向外部 z3——外部 z3 4.16.0 会让启动期公理推导无限挂起。
 5. **约化 vs 全系统**：Thm B 的 .kyx 证的是**约化模型**精确 `−D/(2H)` 与 leading-order；全 9×9 的 O(b²) 修正只在 sympy 数值确认，未声称严格精确。
 
+
+## 14. SMIB 单机-无穷大母线模型（archive/phdae 的 smib_* 证书）
+
+**补注（2026.06 审计）**：smib_* 证书产出时未在本文件注册此模型，违反"新约定先进
+Conventions"；本节为修复性补登。模型从 8 个已注册 smib_*.kyx 中提取，相互一致。
+
+§3 两机系统取机 2 为无穷大母线（w2≡0, D2→∞ 极限）后的单机约化。状态
+(delta, w, s, c)，s=sin(delta)、c=cos(delta) 按 §2 编码（此处相对角速度即 w）：
+
+```
+delta' = w
+w'     = Pm - D*w - K*s     /* 满载阻尼形式 */
+s'     = c*w                /* d/dt sin(delta) = cos(delta)*w */
+c'     = -s*w
+```
+
+不变量 `s^2+c^2=1` 同 §2。子情形（各证书标题中声明）：
+- **conservative**：D=0, Pm=0（`smib_conservative.kyx`，能量守恒）
+- **无载阻尼**：Pm=0（`smib_asymptotic*.kyx`、`smib_negdamping_unstable.kyx`、
+  `smib_passive_lyapunov.kyx`）
+- **满载**：Pm≠0（`smib_loaded_equilibrium.kyx`、`smib_tilted_largesignal.kyx`、
+  `smib_loss_of_synchronism.kyx`；倾斜能量 V 与 R3a 同型）
+
+参数约定：D≥0 阻尼，K>0 同步系数，Pm 机械功率，均符号参数（定值证书须声明取值）。
