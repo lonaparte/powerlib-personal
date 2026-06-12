@@ -1,60 +1,77 @@
-# 03 — SCR-Hopf 形式化:流水线一致的证明归档
+# 03 — 分支证明审计 + 通过项归档
 
-本目录是一份**精选归档**:把 GFL-VSC 弱网 SCR-Hopf 工作中**遵循同一条五步流水线**的证明集中到一处,便于审阅与复现。
+本目录是对**整个分支 `claude/focused-ride-Uqc6p`(96 commits)**的证明内容做一遍审计,把**通过的**(= 机器验证、公理干净的 Lean 证明)集中归档。
 
-> **这些是副本**。可编译的权威源在 `formalization/gfl/`(一个 Lean 4 + Mathlib 的 lake 工程)。
-> 本目录里的 `.lean` **不单独编译**——它们依赖该 lake 工程里的引擎模块(`FoldHopf`、`ScrHopfExist`、`HopfFold` 等)。
-> 公理闸门(第 ④ 步)在 `formalization/gfl/` 上跑:`scripts/check_axioms.sh`,当前 **146/146** 通过,公理恰为 `[propext, Classical.choice, Quot.sound]`,无 `sorryAx`、无 `native_decide`。
+> **这些是副本。** 可编译的权威源在 `formalization/gfl/`(Lean 4 + Mathlib lake 工程)。
+> 这里的 `.lean` **不单独编译**(彼此 + 向引擎模块有 import 依赖);**公理闸门跑在 `formalization/gfl/` 上**:`scripts/check_axioms.sh` → 当前 **146/146**,公理恰为 `[propext, Classical.choice, Quot.sound]`,无 `sorryAx`、无 `native_decide`。工程未被改动。
+
+## 判定标准("通过"= 什么)
+
+一条 Lean 证明**通过**当且仅当:在活跃 lake 工程里、被 `#print axioms` 闸门覆盖、且恰好依赖标准三公理、无 `sorryAx`。按此:
+
+- **26 个活跃 GFL 模块全部通过** → 收入本目录。
+- **7 个 `formalization/archive/*` + `phdae/*`**(独立的、被取代的旧工程,自带 lakefile,**不在活跃闸门里**)→ **不通过**,不收(见末尾)。
+
+收进来的按**五步流水线**符合度分三层(都通过,层级只标方法严格度):
 
 ## 五步流水线
 
-1. **模型层(sympy)** —— 4D P-only GFL 的显式方程 → 平衡(F₀,F₁ 对 i_d,i_q 线性求解)→ Jacobian → 特征多项式系数 a₁…a₄ → Routh–Hurwitz Hopf 量 χₙ。单变量化用 Weierstrass `t=tan(θ_e/2)` + 结式消元。
-2. **生成器** —— `gen_*.py` / `generate_*.py` 把 CAS 产物(多项式字面量/系数)**机械转**成 Lean 源,杜绝手抄错。
-3. **Lean 4 机器证明** —— `ring`(大恒等式)、`norm_num`(整数端点符号)、`intermediate_value_Ioo`(IVT)、re/im 分解 + `linear_combination`(纯虚根)、`det_succ_row_zero`+`det_fin_three`(4×4 行列式接地)、多项式渐近(`tendsto_atTop_of_leadingCoeff_nonneg`)、`gcongr`/`positivity`(单调/正性)。
-4. **公理闸门** —— `#print axioms` 必须恰为标准三公理,无 `sorryAx`。
-5. **独立数值验证** —— `verify_*.py` 用**独立于生成路径的 numpy/scipy**(`numpy.poly` 特征多项式、`fsolve` 平衡、特征值穿越)对账到 1e-6~1e-13,确认 Lean 证的代数对象就是物理 Hopf。
+① 模型(sympy 推导)② 生成器(脚本机械写 Lean,杜绝手抄)③ Lean 机器证 ④ 公理闸门 ⑤ 独立数值验证(numpy/scipy,独立于生成路径)。环境:Lean `v4.31.0-rc1` + Mathlib;sympy 1.14.0 / numpy 2.4.6 / scipy 1.17.1;**无 Singular**。
 
-环境:Lean 4 `v4.31.0-rc1` + Mathlib(同 rev);sympy 1.14.0 / numpy 2.4.6 / scipy 1.17.1。**无 Singular**(4D lossy 精确消元因此卡住——见下方 OPEN)。
+## Tier A — 完整 5/5(生成器机械写出 .lean + 独立验证)
 
-## 收录文件 × 流程符合度
+| 模块 | 内容 | 生成器 | 验证 |
+|---|---|---|---|
+| `ScrHopf4D` | M4droop 特征多项式接地 + χ₄=err0+droop(~1038 项 ring) | `gen_chi4_lean`+`generate_scrhopf4d` | `verify_chi4_numeric` |
+| `ScrHopfAnchor` | fold 处 χ₄=droop;轴无关 IVT 边界存在 + 真伪 | `generate_scrhopf_anchor` | `verify_anchor`,`verify_anchor_chain` |
+| `ScrHopfCubic` | χ₄(gθ) 三次;L₃>0 把强网端从假设变定理(渐近+IVT) | `gen_cubic_coeffs`+`generate_scrhopf_cubic` | `verify_cubic_anchor` |
+| `ScrHopfNumeric` | 具体 4D pHopf(deg-16,621 位)IVT 根,**SCR≈0.0378** | `generate_scrhopf_numeric` | `verify_hopf_elim` |
+| `ScrHopf3DNumeric` | 3D keep-i_d(Schur)p3(deg-12,464 位),**SCR≈0.0377** | `generate_scrhopf3d_numeric` | `verify_hopf_elim_3d` |
 
-| Lean(`lean/`) | 证明内容 | ① 模型 | ② 生成器 | ③ Lean | ④ 闸门 | ⑤ 验证 | 符合 |
-|---|---|---|---|---|---|---|---|
-| `ScrHopf4D` | M4droop 特征多项式接地(4×4 det)+ χ₄ = err0 + droop 分解(~1038 项 `ring`) | `gen_chi4_lean.py` | `generate_scrhopf4d.py` | ✓ | ✓ | `verify_chi4_numeric.py` | **5/5** |
-| `ScrHopfAnchor` | fold 处 χ₄=droop;轴无关 IVT 引擎:变号 ⟹ 边界在 fold 外存在 + 真伪 | gen_chi4(共用) | `generate_scrhopf_anchor.py` | ✓ | ✓ | `verify_anchor.py`,`verify_anchor_chain.py` | **5/5** |
-| `ScrHopfCubic` | χ₄(gθ) 三次多项式;首项 L₃>0 把强网端从假设变成定理(渐近 + IVT) | `gen_cubic_coeffs.py` | `generate_scrhopf_cubic.py` | ✓ | ✓ | `verify_cubic_anchor.py` | **5/5** |
-| `ScrHopfNumeric` | 具体 4D pHopf(deg-16,621 位)`norm_num`+IVT 根 ∈ (0.121444,0.121445),**SCR≈0.0378** | 消元(verify 内) | `generate_scrhopf_numeric.py` | ✓ | ✓ | `verify_hopf_elim.py` | **5/5** |
-| `ScrHopf3DNumeric` | 3D keep-i_d(Schur)p3(deg-12,464 位)根 ∈ (0.121779,0.121780),**SCR≈0.0377** | 消元(verify 内) | `generate_scrhopf3d_numeric.py` | ✓ | ✓ | `verify_hopf_elim_3d.py` | **5/5** |
-| `ScrAxis` | SCR(Lg)=Vn²/(Sn·Lg·wn·zfac) 严格递减;Hopf 抬到物理 SCR 轴,SCR*>0 真 Hopf | N/A(公式定义) | N/A(手写) | ✓ | ✓ | `verify_scr_axis.py` | 3/5 |
-| `ScrHopfDim` | 三次 IVT 引擎 + 3D 参数化 SCR-Hopf + **维度阈值 punchline**(2D 无 / 3D,4D 有)+ 端到端 4D | N/A(组装) | N/A(手写) | ✓ | ✓ | N/A(抽象见证) | 2/5 |
+## Tier B — 闸门通过 + 独立数值/CAS 交叉验证(Lean 手写或 CAS 辅助,无"机械写 .lean"那步)
 
-**严格 5/5**(完整 CAS模型→生成器→Lean→闸门→独立验证):前五个。
-**参数化核心**(手写 Lean,无 CAS/生成器——因为是抽象参数化/引擎组装,无可生成的字面量,但是机理主干、闸门通过):`ScrAxis`、`ScrHopfDim`。
+| 模块 | 内容 | 验证脚本 |
+|---|---|---|
+| `FoldHopf` | 2D 无孤立 Hopf;3D χ 因式;fold⟺gθ=0;Ψ̃ spurious | `verify_fold_hopf`,`verify_fold_hopf_b` |
+| `FoldHopfDecouple` | err=0 ⟹ J03=J13=0 ⟹ 2D=3D=4D 块上三角 fold-only | `verify_decouple` |
+| `ScrHopf` | M3droop 特征多项式 + χ₃ droop 分解 | `verify_scr_hopf` |
+| `ScrHopfExist` | `hopf_deg4` 真伪判据;χ₃ 仿射 ⟹ 根在 fold 外 | `verify_scr_params`,`verify_nonfixedpoint`,`verify_chi_locus` |
+| `ScrAxis` | SCR(Lg) 严格递减;Hopf 抬到物理 SCR 轴 | `verify_scr_axis` |
+| `LFilterHopf` / `LFilterT3` | L-filter GFL 三态:cubic Hopf 面;T3 Σ_iq−Σ_id 因式 | `validate_lfilter`,`T3_crosscheck` |
 
-## 复现
+## Tier C — 闸门通过、proved,无专属数值验证(基础/纯代数,闸门即验证)
 
-```bash
-# 模型 + 生成(以 4D 分解为例):产出 formalization/gfl/GFL/ScrHopf4D.lean
-python3 generators/gen_chi4_lean.py        # CAS: M4droop charpoly, 写 /tmp/chi4_lean.txt
-python3 generators/generate_scrhopf4d.py   # 转成 Lean 源
+`Model`(Lemma 0 Power Lock)、`TheoremA`(unanchored Jacobian 零特征值)、`TheoremB`(慢模 −b=−D/2H)、`TheoremC`(振荡起始 λ²+bλ+βKs)、`AsymptoticB`(O(b²) 界)、`Calculus`(IFT/导数补全)、`HopfFold`(deg-2/3 Routh + Hopf 起始)、`LiteralModel`/`LiteralJacobian`(literal 模型 InnerField + C¹)、`LossOfSync`、`SyncEquilibrium`(鞍结)、`SlowModeScalar`(特征值⟺标量零点)、`ScrHopfDim`(三次 IVT + 维度阈值 punchline + 端到端 4D)、`GFL`(根模块)、`Audit`(闸门本体)。
 
-# 独立数值验证(不依赖生成路径)
-python3 verify/verify_chi4_numeric.py      # numpy 对账,max err ~1e-14
-python3 verify/verify_hopf_elim.py         # 重跑消元 + 特征值交叉验证 4D Hopf 根
-python3 verify/verify_hopf_elim_3d.py      # 同上,3D keep-i_d
+这些是 pH-DAE / GFL 慢模 / L-filter 的基础结果与参数化组装,都是公理干净的机器证明;纯代数恒等式/Lean 结构证明,**闸门本身就是验证**,不需要(也没有)numpy 交叉验证那一步。
 
-# 公理闸门(在 lake 工程上)
-cd ../formalization/gfl && bash scripts/check_axioms.sh   # 期望 146/146,无 sorryAx
+## Tier D — 不通过,未收(独立旧工程)
+
+`formalization/archive/{DeepDifficulties,DifficultiesVerified,PowerSystem}.lean` 与 `archive/phdae/{Dynamics,PHDAE,PHEnergyBalance,lakefile}.lean`:独立的、被取代的早期工程(自带 lakefile),**不在活跃 lake 工程的闸门里**,故不通过、不收。
+
+## 目录结构
+
+```
+03/
+├── README.md          ← 本审计
+├── lean/      (27)     ← 26 个活跃 GFL 模块 + GFL.lean 根
+├── generators/ (25)    ← CAS 模型/推导 + 写 Lean 的生成器
+└── verify/     (16)    ← 独立 numpy/scipy 验证 + validator
 ```
 
-## 已证结论(一句话)
+## 复现 / 验证
 
-- **机理(参数化,符号参数,无嵌入数值)**:2D 无孤立 Hopf;χ₃/χ₄ 的 droop 分解(误差注入项把 Hopf 与 fold 分离);`hopf_deg{3,4}` 真伪判据(ω²=a₃/a₁>0 排除 spurious);anchor 把强网端从假设降到结构条件 L₃>0;SCR↔Lg 反单调;**维度阈值:2D 不可能、3D/4D 可能**;端到端 4D:`L₃>0 ∧ χ₄(0)<0 ∧ a₁,a₃>0 ⟹ 真 Hopf 在 SCR>0`。
-- **具体数值(lossless,GFL 有理参数代理)**:4D `SCR≈0.0378`、3D keep-i_d `SCR≈0.0377`,均 1e-6 紧锚、norm_num+IVT 机器证、独立特征值交叉验证为真 Hopf。
+```bash
+# 公理闸门(权威):
+cd ../formalization/gfl && bash scripts/check_axioms.sh    # 146/146,无 sorryAx
+# Tier A 端到端(以 4D 为例):
+python3 generators/gen_chi4_lean.py && python3 generators/generate_scrhopf4d.py   # CAS→Lean
+python3 verify/verify_hopf_elim.py                                                # 独立重跑消元+特征值
+```
 
 ## 明确 OPEN(不冒充)
 
-1. **4D lossy 的具体 SCR(≈0.0347)**:符号消元(直接/eval-interp/Cramer)在本环境全部 OOM/超时——sympy 极限,需 **Singular** oracle 系数。Lean 侧(嵌系数 + norm_num + IVT)与 lossless 同构,只差消元产出那一步。
-2. **根唯一性**:Mathlib 无 Sturm 定理,Descartes 给 11 个符号变号(无用);仅局部唯一(中值不等式)可做,未做。
-3. **无理根处 a₁,a₃>0**(严格真伪性):平衡是 Lg 的代数函数,`norm_num` 够不着代数数符号——原理墙,靠数值交叉验证背书。
-4. **T2 理想成员证书**(pHopf↔χ₄ 的 `ring` 恒等):lossy 尺度爆炸;链接靠构造 + 数值验证,不在 Lean 内。
+(1) **4D lossy 具体 SCR(≈0.0347)**:符号消元在本环境(无 Singular)全部 OOM/超时 —— Singular 领域,Lean 侧只差消元产出系数那一步。
+(2) **根唯一性**:Mathlib 无 Sturm;只有局部唯一可做,未做。
+(3) **无理根处 a₁,a₃>0**(严格真伪):平衡是 Lg 的代数函数,norm_num 够不着代数数符号 —— 靠数值交叉验证背书。
+(4) **T2 理想成员证书**:lossy 尺度爆炸;pHopf↔系统 Hopf 链接靠构造+数值,不在 Lean 内。
