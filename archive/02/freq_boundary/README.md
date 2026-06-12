@@ -44,7 +44,7 @@ PLL 增益子空间 (Kp_pll, Ki_pll) 上 Σ_H **能写成显式关系**,因为�
   **degree-4 Liénard–Chipart**:`Δ_3=0 ∧ a1,a3,a4>0 ⟹` 取 `ω²=a3/a1` 时偶部 `a1²(W²−a2W+a4)=−Δ_3=0`、
   奇部 `a3−a1W=0` 同时为零 ⟹ 纯虚对(且 ω²>0)。这与模型 Σ_H 的 `Δ_9=0` **同构**,只差阶数。
   degree-2 基础条件(tr=0∧det>0)同证。数值交叉验证 5 组随机 4 次多项式,Re~机器零 @ ω=√(a3/a1)。
-- **(可选)l₁ 旁证**:按规格**不**作失同步判据,未纳入命题。真模型 l₁/Bautin 在 `../numerical/bautin_cert/`。
+- **(可选)l₁ 旁证**:按规格**不**作失同步判据,未纳入命题。真模型 l₁/Bautin 在 `../archive/formalization/numerical/bautin_cert/`。
 
 ## 2. F-fold —— 极限环鞍结面 Σ_fold(非线性,全局)
 
@@ -95,7 +95,7 @@ PLL 增益子空间 (Kp_pll, Ki_pll) 上 Σ_H **能写成显式关系**,因为�
 - **F3a**:角平衡 `θ' = M − Vg·sin θ`,过 fold 后 `|M|>Vg`(用 `s²≤1` 编码 sin)⟹ `M−Vg·s>0` 处处成立
   ⟹ 角速度定号、无零点(无平衡)⟹ θ 单调无界漂移 = 失同步。
 - **F3b**:互补的边界刻画——同步角平衡(`M=Vg·s, s²≤1`)存在 ⟺ `M²≤Vg²`。这是角层 Σ_fold|_angle 折叠,
-  与 `../risk_mechanisms/kyx/R2_fold.kyx`、`R2real_fold.kyx`(真模型鞍结 disc=0)同族。
+  与 `(留守区)R2_fold.kyx`、`R2real_fold.kyx`(真模型鞍结 disc=0)同族。
 
 ## 3. 诚实分层(对应任务规格)
 

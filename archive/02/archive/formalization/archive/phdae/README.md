@@ -1,7 +1,7 @@
 # archive/phdae — 留档说明(2026-06 全分支审计后)
 
-通过 6 步审计流程的 **27 个 Summary 注册证书已迁至 `/02/phdae/kyx/`**(连同 .kyp 与
-`validate_boundary.py`)。审计记录与数值交叉验证见 `/02/phdae/README.md`。
+通过 6 步审计流程的 **27 个 Summary 注册证书已迁至 `/archive/02/phdae/kyx/`**(连同 .kyp 与
+`validate_boundary.py`)。审计记录与数值交叉验证见 `/archive/02/phdae/README.md`。
 
 ## 本目录现存内容及其状态
 

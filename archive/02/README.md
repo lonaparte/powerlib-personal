@@ -1,11 +1,11 @@
 # 02 — 通过标准化验证流程的形式化证明
 
 本目录只收一类内容:**完全遵循同一套验证流程**的形式化证明。这套流程是从本项目 R1
-"造模型"事故中长出来的(见 `../formalization/risk_mechanisms/R1_RETRACTED.md`),核心是
+"造模型"事故中长出来的(见 `archive/archive/formalization/risk_mechanisms/R1_RETRACTED.md`),核心是
 **先核对对象、再谈证明**,绝不让数值结果冒充形式证明。
 
 不符合的内容(数学正确但卡在第 1 步对象闸门——经典摆模型,非仓库提交的 GFL)**未收入此处**,
-仍留在 `../formalization/risk_mechanisms/`,并在那里明确标注为"经典对照"。
+仍留在 `archive/archive/formalization/risk_mechanisms/`,并在那里明确标注为"经典对照"。
 
 ## 标准化验证流程(6 步)
 
@@ -51,7 +51,7 @@
 
 ## 未收录(不符合,卡在第 1 步)
 
-留在 `../formalization/risk_mechanisms/kyx/`,标注为经典对照:
+留在 `archive/archive/formalization/risk_mechanisms/kyx/`,标注为经典对照:
 - `R2_fold.kyx`、`R2_sigma2_symbolic.kyx` — 经典单摆 fold `Φ=M²−Vg²`(非 §12 真 fold)。
 - `R3a_energy_barrier.kyx`、`R3_basin.kyx`、`R3note_decoupling.kyx` — 经典摆动方程(不在任何提交模型里)。
 
@@ -73,7 +73,7 @@ cd 02/freq_boundary && python3 ffold_normalform.py && python3 ffold_locate.py
 应"只要是这个分支的东西就都审计"的要求(本仓库仅此一个分支 = 全部历史),对预存的
 82 个 .kyx 也执行了同一 6 步审计。方法与证据:
 
-### `phdae/`(27 个 .kyx 收录)— 原 `formalization/archive/phdae/`
+### `phdae/`(27 个 .kyx 收录)— 原 `archive/formalization/archive/phdae/`
 - **对象闸门**:8 个含内联 ODE 文件与 Conventions §2/§3 逐项一致(零偏差);**SMIB 模型
   缺口修复**(补登 §14);**深度抽查**:`theorem_ph_bridge_parametric` 的两条 V̇ Lie 导数
   sympy 独立复算**逐项恒等**;12 个含定值文件全部为声明式定点反例/定值证书(合规)。
@@ -82,7 +82,7 @@ cd 02/freq_boundary && python3 ffold_normalform.py && python3 ffold_locate.py
   H<4K 三组全部严格在真盆内;分界面/(4K+8D√K)≈0.94 恒定。
 - 详见 `phdae/README.md`。
 
-### `freq_mode/`(16 文件 / 34 条收录)— 原 `formalization/freq_mode/`
+### `freq_mode/`(16 文件 / 34 条收录)— 原 `archive/formalization/freq_mode/`
 - **对象闸门**:`verify_freq_mode.py` **24/24**(18 精确符号,对 §13 单一真源)。
 - **参数化**:STATUS.md 明示全符号(1.5 为 §13 结构常数)。
 - **本轮重证**:16/16 文件、34/34 条 `PROVED`。
@@ -96,7 +96,7 @@ cd 02/freq_boundary && python3 ffold_normalform.py && python3 ffold_locate.py
 - **~26 个未注册草稿**:不属于 Summary 注册的成果集(archive 本意),留档。
 - **3 个未证 conjecture**(含 formal_bridge 1 个):猜想不是证明,留原处。
 - **4 个 Lean 工件**:本环境无 Lean 工具链,无法复验,留档待验。
-- **5 个经典摆证书**(第一轮已判):卡对象闸门,留 `formalization/risk_mechanisms/`。
+- **5 个经典摆证书**(第一轮已判):卡对象闸门,留 `archive/formalization/risk_mechanisms/`。
 
 ## 总账
 

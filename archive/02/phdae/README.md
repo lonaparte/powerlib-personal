@@ -1,6 +1,6 @@
 # 02/phdae — pH-DAE / SMIB / 两机·三机线的注册证明(通过 6 步流程审计)
 
-> 来源:`formalization/archive/phdae/`(2026-05 早期 session 产出)。本目录收其中
+> 来源:`../archive/formalization/archive/phdae/`(2026-05 早期 session 产出)。本目录收其中
 > **通过全分支审计**的部分:Summary.md 注册 ∩ 机械重证通过 ∩ 对象闸门核验。
 > 迭代草稿(未注册)、未证 conjecture、Lean 工件**留在原 archive**(见"未收录")。
 
@@ -22,12 +22,12 @@
    非 s,c 编码)模拟找分界面,交叉验证 H_crit≈4K+8D√K 边界。
 5. **结构提升**:V̇ 恒等式/Sylvester 子式/判别式等代数化是该线的固有方法(dL 证代数命题,
    Lie 导数 sympy/手工导出后由本审计抽查)。
-6. **分层记录**:`formalization/Summary.md` 为注册索引;此处为审计后的"注册且通过"子集。
+6. **分层记录**:`../archive/formalization/Summary.md` 为注册索引;此处为审计后的"注册且通过"子集。
 
 ## 收录(27 个 .kyx,本轮全部重证 PROVED)
 
 Summary 注册的 33 个中,扣除 2 个未证 conjecture 与 4 个重 QE 超时排除后,**27 个**本轮
-重证 `PROVED` 收入此处。各文件含义见 `formalization/Summary.md` 索引。
+重证 `PROVED` 收入此处。各文件含义见 `../archive/formalization/Summary.md` 索引。
 
 **排除的 4 个注册证明(重 QE 超时,非证伪;历史 .kyp 2026-05 在,本轮 300s+600s 双超时 SIGTERM)**:
 - `asymptotic_d2_small.kyx`、`asymptotic_weak_coupling.kyx`(负阻尼渐近家族)
@@ -51,7 +51,7 @@ Summary 注册的 33 个中,扣除 2 个未证 conjecture 与 4 个重 QE 超时
 (b) 分界面/(4K+8D√K) ≈ 0.94 跨组恒定——经验阻尼扩张标度确认。
 (全网格版 `validate_boundary.py` 在本环境 >600s 未跑完,如实注记;快速版即本轮证据。)
 
-## 未收录(留在 formalization/archive/phdae/)
+## 未收录(留在 ../archive/formalization/archive/phdae/)
 
 - **30 个未注册文件**:迭代草稿/被后续版本取代(archive 本意即全历史)。多数本轮也重证通过,
   但未经 Summary 注册 = 不属于项目声明的成果集,按流程第 6 步不收。

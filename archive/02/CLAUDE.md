@@ -2,7 +2,7 @@
 
 ## System Convention
 
-All conventions (variables, equations, parameters, encodings) are defined in `formalization/Conventions.md`. That file is the single source of truth for notation.
+All conventions (variables, equations, parameters, encodings) are defined in `archive/02/archive/formalization/Conventions.md`. That file is the single source of truth for notation.
 
 Do NOT introduce alternative conventions. When writing a new .kyx file or updating Summary.md, check Conventions.md first. If a formula doesn't match, it's wrong. If a new convention is needed, update Conventions.md first.
 
@@ -40,10 +40,10 @@ This is a DEFAULT requirement — do not wait for the user to ask.
 
 ## Key Files
 
-- `formalization/Conventions.md` — All notation, variable naming, parameter definitions, encoding conventions. Update this first when introducing new symbols.
-- `formalization/Summary.md` — Index of all proved results and formalized conjectures. References .kyx files as authoritative source.
-- `formalization/archive/phdae/*.kyx` — All KeYmaera X proofs (with Tactic) and conjectures (without Tactic).
-- `formalization/archive/phdae/*.lean` — Lean 4 algebraic proofs.
+- `archive/02/archive/formalization/Conventions.md` — All notation, variable naming, parameter definitions, encoding conventions. Update this first when introducing new symbols.
+- `archive/02/archive/formalization/Summary.md` — Index of all proved results and formalized conjectures. References .kyx files as authoritative source.
+- `archive/02/archive/formalization/archive/phdae/*.kyx` — All KeYmaera X proofs (with Tactic) and conjectures (without Tactic).
+- `archive/02/archive/formalization/archive/phdae/*.lean` — Lean 4 algebraic proofs.
 
 ## Research Context
 

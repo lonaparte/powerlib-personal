@@ -3,12 +3,12 @@
 > 2026.05 | 只包含经过验证的结论和诚实的未知
 >
 > **2026.06 全分支审计注**:本索引引用的 .kyx 中,通过 6 步验证流程(对象闸门→参数化→
-> KeYmaera X 本轮重证→数值交叉验证→分层记录)的证书已迁至仓库根 **`/02/`**:
-> phdae 注册证书 27 个 → `/02/phdae/kyx/`;freq_mode 16 文件/34 条 → `/02/freq_mode/kyx/`;
-> 另有本 session 产出的 R2real(5)与 F-H/F-fold(10)在 `/02/risk_mechanisms/`、
-> `/02/freq_boundary/`。4 个重 QE 注册证书本环境复验超时(非证伪),留
-> `formalization/archive/phdae/` 并注记;未注册草稿与未证 conjecture 留原处。
-> 审计总记录见 **`/02/README.md`**。
+> KeYmaera X 本轮重证→数值交叉验证→分层记录)的证书已迁至仓库根 **`/archive/02/`**:
+> phdae 注册证书 27 个 → `/archive/02/phdae/kyx/`;freq_mode 16 文件/34 条 → `/archive/02/freq_mode/kyx/`;
+> 另有本 session 产出的 R2real(5)与 F-H/F-fold(10)在 `/archive/02/risk_mechanisms/`、
+> `/archive/02/freq_boundary/`。4 个重 QE 注册证书本环境复验超时(非证伪),留
+> `archive/02/archive/formalization/archive/phdae/` 并注记;未注册草稿与未证 conjecture 留原处。
+> 审计总记录见 **`/archive/02/README.md`**。
 
 ---
 

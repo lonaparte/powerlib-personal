@@ -230,7 +230,7 @@ th'   = Kp*v_cq + Ki*eta            (= wpll - wn)
 
 ## 13. 功率锁定 GFL-VSC 的 9 状态频率模式模型（freq_mode）
 
-§12 的模型分析弱网 Hopf 分岔。本节是**另一个、独立的** GFL-VSC 模型：带**外环功率控制 + 摆动方程惯量**的电流控制变流器，研究其**慢频率模式**（grid-frequency mode）的特征值。`/02/freq_mode/`（审计后迁移,原 `formalization/freq_mode/`）的全部 .kyx 证书以本节为单一真源。
+§12 的模型分析弱网 Hopf 分岔。本节是**另一个、独立的** GFL-VSC 模型：带**外环功率控制 + 摆动方程惯量**的电流控制变流器，研究其**慢频率模式**（grid-frequency mode）的特征值。`/archive/02/freq_mode/`（审计后迁移,原 `formalization/freq_mode/`）的全部 .kyx 证书以本节为单一真源。
 
 所有量为实数。`e_k` = 标准基向量，`I_n` = n×n 单位阵。平衡点 = 向量场的零点；Jacobian = 在平衡点的一阶偏导矩阵。
 
@@ -344,11 +344,11 @@ J = [ A    c  ]      A ∈ ℝ⁸ˣ⁸,  c ∈ ℝ⁸,  ρ ∈ ℝ⁸,  j99 ∈ 
 
 ### 13.9 dL 编码约定（重要 — KeYmaera X 证书与本节的差异）
 
-`/02/freq_mode/kyx/*.kyx` 在 KeYmaera X 中证明时遵循以下编码约定，与上面数学形式有**有意的差异**，必须知道：
+`/archive/02/freq_mode/kyx/*.kyx` 在 KeYmaera X 中证明时遵循以下编码约定，与上面数学形式有**有意的差异**，必须知道：
 
 1. **标识符无下划线**：KeYmaera X 解析器拒绝 `P_ref`、`i_d` 这类"下划线+字母"名。证书中用 `Pref`=P_ref，`id`=i_d，`iq`=i_q，`Kppll`=Kp_pll，`Kipll`=Ki_pll 等。
 2. **无除法**：KeYmaera X 的 Z3 后端在除法上失败（`1/x*y=y/x` 返 SAT）。所有 Problem 写成乘法形式：`b=D/(2H)` 编码为 `2*H*b=D`；`βKs>b²/4` 编码为 `4βKs>b²`；`Re=−b/2` 编码为 `2r=−b`。
-3. **矩阵事实标量化**：dL 不是线性代数库，无矩阵/特征向量/求逆原生对象。`e₉ᵀJ_U=0`、`ρᵀA⁻¹c=0` 等在 .kyx 中编码为它们**归约到的标量代数恒等式**（如把"`A·u=c` 第 7 分量读数 `(−1.5Vg)·U1=c6`"作为前提）。这些前提**本身**（完整 9×9 Jacobian 的第 7 行 = −1.5Vg·e₁ᵀ 等）在 `/02/freq_mode/verify_freq_mode.py`（sympy 构造完整符号 Jacobian）验证，**不在 dL 内**。
+3. **矩阵事实标量化**：dL 不是线性代数库，无矩阵/特征向量/求逆原生对象。`e₉ᵀJ_U=0`、`ρᵀA⁻¹c=0` 等在 .kyx 中编码为它们**归约到的标量代数恒等式**（如把"`A·u=c` 第 7 分量读数 `(−1.5Vg)·U1=c6`"作为前提）。这些前提**本身**（完整 9×9 Jacobian 的第 7 行 = −1.5Vg·e₁ᵀ 等）在 `/archive/02/freq_mode/verify_freq_mode.py`（sympy 构造完整符号 Jacobian）验证，**不在 dL 内**。
 4. **必须用 KeYmaera X 自带的 z3**（bundled v4.8.9），不要用 `-z3path` 指向外部 z3——外部 z3 4.16.0 会让启动期公理推导无限挂起。
 5. **约化 vs 全系统**：Thm B 的 .kyx 证的是**约化模型**精确 `−D/(2H)` 与 leading-order；全 9×9 的 O(b²) 修正只在 sympy 数值确认，未声称严格精确。
 
