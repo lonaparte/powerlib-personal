@@ -1,0 +1,10 @@
+M3 Xg=0.05: alpha=0.1000 w0=50.284 eps0=1.0031e-02 (+0.12%)
+  dlam_DC=0.00018+0.00215j dlam_lad=-0.00008-0.00098j alpha_eff=0.09990
+  RESULT eps2=1.0021e-02 meas=1.0019e-02 err=+0.02%  [0s]
+M2 Xg=0.03: alpha=0.1000 w0=11.906 eps0=4.0527e-02 (-1.56%)
+  dlam_DC=0.00076+0.00349j dlam_lad=-0.00203-0.00799j alpha_eff=0.10127
+  RESULT eps2=4.1042e-02 meas=4.1171e-02 err=-0.31%  [1s]
+M5 Xg=0.15: alpha=0.1000 w0=11.665 eps0=3.5378e-02 (-1.28%)
+  dlam_DC=-0.00025-0.00275j dlam_lad=-0.00068-0.00476j alpha_eff=0.10092
+  RESULT eps2=3.5704e-02 meas=3.5836e-02 err=-0.37%  [1s]
+DONE wall=1s

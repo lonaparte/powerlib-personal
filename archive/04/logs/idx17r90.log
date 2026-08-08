@@ -1,0 +1,10 @@
+idx17: P=1.40713 w0=71.904 zg=9.8674e-02
+P1 r=0.90: rho0=0.701098 winding_ref=1
+P1 bracket: (0.008444000000000002, 0.008744000000000002) [64s]
+P1 RESULT: flip(r=0.90)=8.6627e-03  meas(r=0.90)=8.6656e-03  ratio meas/flip=1.000 err=-0.03% [101s]
+P2 fac=1.00: BOUNDED at 1200 periods [106s]
+P2 fac=1.02: VLO at 455 periods [107s]
+P2 fac=1.04: VLO at 340 periods [109s]
+P2 RESULT: escape-time fit t=T0*(fac-fc)^gamma: fc=0.9621x flip92, gamma=-0.882, T0=36.4 periods, sse=9.585e-04
+P2: eps_c(r=0.92)=6.8298e-03 vs flip92=7.0991e-03 -> criterion err=+3.94%
+DONE wall=109s
