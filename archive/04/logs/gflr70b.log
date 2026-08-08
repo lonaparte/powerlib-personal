@@ -1,0 +1,8 @@
+G1: P=1.45500 w0=32.399 Tc=0.19415 [0s]
+r=0.70 K=64: flip=4.0270e-04 (K=32: 4.0270e-4) meas=3.9789e-4 err=+1.21% [280s]
+  r=0.7 K=32: g_fib crossing (<0.08zg) at eps=1.5916e-05 = 0.040x meas g=4.31e-05 [287s]
+r=0.70 K=32 fiber: crossing=1.5916e-05 err vs meas=-96.00%
+r=0.60: MEAS=5.4360e-04 mode=VHI [450s]
+  r=0.6 K=32: g_fib crossing (<0.08zg) at eps=2.1744e-05 = 0.040x meas g=4.30e-05 [458s]
+r=0.60 K=32: flip=5.5591e-04 err=+2.26% fiber crossing=2.1744e-05 err=-96.00%
+DONE wall=616s

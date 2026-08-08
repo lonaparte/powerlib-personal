@@ -1,0 +1,23 @@
+G1 marg0.10: P=1.45500 w0=32.399 zg=9.0568e-03 dsad=1.816
+guard cycle: Tc=0.19415
+r=0.75: MEAS eps_c=3.2574e-04 mode=VHI t_esc=234p [16s]
+r=0.75: rho0_guess=2.085063 (=0.3318 of 2pi)
+r=0.75: rho(0)=2.085063 winding_ref=1 res=4.5e-12
+  r=0.75 eps=0.240x: rho=2.085514 [41s]
+  r=0.75 eps=0.490x: rho=2.086947 [65s]
+  r=0.75 eps=0.740x: rho=2.089377 [89s]
+  r=0.75 eps=0.890x: rho=2.091323 [103s]
+  r=0.75 eps=0.940x: rho=2.092055 [108s]
+  r=0.75 eps=0.990x: rho=2.092828 [113s]
+r=0.75: RESULT flip=3.2865e-04 meas=3.2574e-04 err=+0.89% [150s]
+r=0.7: MEAS eps_c=3.9789e-04 mode=VHI t_esc=209p [167s]
+r=0.7: rho0_guess=2.682796 (=0.4270 of 2pi)
+r=0.7: rho(0)=2.682796 winding_ref=1 res=5.6e-12
+  r=0.7 eps=0.240x: rho=2.683369 [195s]
+  r=0.7 eps=0.490x: rho=2.685188 [220s]
+  r=0.7 eps=0.740x: rho=2.688263 [246s]
+  r=0.7 eps=0.890x: rho=2.690716 [261s]
+  r=0.7 eps=0.940x: rho=2.691636 [266s]
+  r=0.7 eps=0.990x: rho=2.692607 [271s]
+r=0.7: RESULT flip=4.0270e-04 meas=3.9789e-04 err=+1.21% [311s]
+DONE wall=311s

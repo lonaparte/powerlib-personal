@@ -1,0 +1,9 @@
+r=0.7: eps_c(1500p)=3.97888e-04 (old 300/900p 3.9789e-04, shift -0.00%) [43s]
+r=0.7: landing above: min dist(orbit,torus)=8.95e-07 (0.000 zg) esc=True; below: 2.12e-06 (0.000 zg) esc=False [141s]
+r=0.7: contact |st-u|=6.430e-03: modal-plane part 6.430e-03, transverse 3.671e-05 (transverse fraction 0.01)
+r=0.7: SUMMARY flip=4.0270e-04 (+1.21% vs eps_c(1500p))
+r=0.6: eps_c(1500p)=5.43636e-04 (old 300/900p 5.4360e-04, shift +0.01%) [184s]
+r=0.6: landing above: min dist(orbit,torus)=3.03e-07 (0.000 zg) esc=True; below: 1.05e-06 (0.000 zg) esc=False [296s]
+r=0.6: contact |st-u|=8.290e-03: modal-plane part 8.290e-03, transverse 4.805e-05 (transverse fraction 0.01)
+r=0.6: SUMMARY flip=5.5591e-04 (+2.26% vs eps_c(1500p))
+DONE wall=296s
