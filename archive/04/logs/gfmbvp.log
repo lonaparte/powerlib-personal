@@ -1,0 +1,7 @@
+M1@Xg=0.1: dw_pred=32.8443 dw_meas=32.8125 err=+0.10%
+M2@Xg=0.05: dw_pred=9.8406 dw_meas=9.8281 err=+0.13%
+M3@Xg=0.05: dw_pred=28.9839 dw_meas=28.9688 err=+0.05%
+M1@Xg=0.05: dw_pred=12.8204 dw_meas=12.7969 err=+0.18%
+M5@Xg=0.1: dw_pred=4.9949 dw_meas=4.9922 err=+0.05%
+M2@Xg=0.03: dw_pred=6.3331 dw_meas=6.3203 err=+0.20%
+DONE wall=80s

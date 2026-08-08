@@ -1,0 +1,9 @@
+M3 Xg=0.10: no Hopf window — skip
+M4 Xg=0.10: no Hopf window — skip
+M3 Xg=0.05: alpha=0.1000 w0=50.284 |t1|=13.5 |t2|=6.8 |pi|=19.9 pred=1.0031e-02 meas=1.0019e-02 err=+0.12%
+M4 Xg=0.05: no Hopf window — skip
+M1 Xg=0.15: no Hopf window — skip
+M2 Xg=0.03: alpha=0.1000 w0=11.906 |t1|=1.3 |t2|=5.9 |pi|=4.9 pred=4.0527e-02 meas=4.1171e-02 err=-1.56%
+M1 Xg=0.20: no Hopf window — skip
+M5 Xg=0.15: alpha=0.1000 w0=11.665 |t1|=2.5 |t2|=8.1 |pi|=5.7 pred=3.5378e-02 meas=3.5836e-02 err=-1.28%
+DONE wall=18s

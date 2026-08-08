@@ -1,0 +1,19 @@
+wd=5.0 Td=1.2566 rho0=2.9691 (pi=3.1416)
+  eps=1.0000e-04 rho=2.96785 min|z|=7.780e-03
+  eps=2.4000e-04 rho=2.96183 min|z|=7.593e-03
+  eps=4.3600e-04 rho=2.94498 min|z|=7.492e-03
+  eps=7.1040e-04 rho=2.90446 min|z|=7.501e-03
+  eps=1.0946e-03 rho=2.81357 min|z|=7.432e-03
+  eps=1.4946e-03 rho=2.67819 min|z|=6.956e-03
+  eps=1.8946e-03 rho=2.51282 min|z|=6.024e-03
+  eps=2.0946e-03 rho=2.42622 min|z|=5.451e-03
+  eps=2.2346e-03 rho=2.36685 min|z|=5.031e-03
+  eps=2.3326e-03 rho=2.32676 min|z|=4.735e-03
+TERMINATED at eps=2.3326e-3 (Newton stall in resonance web).
+Record: continuation reached 2.33e-3 = 74% of the window-converged
+measured a_c (3.158e-3); rho swept 2.969->2.327 crossing the 2:5 and
+3:8 tongues; min|z| declined 7.8e-3 -> 4.7e-3 monotonically.
+Conclusion: at r=0.154 the guard-torus route is obstructed by the
+resonance web before the winding flip - consistent with the measured
+escape-band non-monotonicity at the same frequency. The crossover band
+is characterized, not formula-covered.

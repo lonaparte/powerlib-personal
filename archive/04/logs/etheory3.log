@@ -1,0 +1,6 @@
+cycle T=0.194149
+eps_bg=0.00x: pred=8.50975e-03 (fiber res 1.2e-06) meas=8.49670e-03 err=+0.15%
+eps_bg=0.30x: pred=7.99532e-03 (fiber res 1.2e-06) meas=7.99866e-03 err=-0.04%
+eps_bg=0.60x: pred=7.11357e-03 (fiber res 1.1e-06) meas=7.13684e-03 err=-0.33%
+eps_bg=0.85x: pred=6.05196e-03 (fiber res 8.9e-07) meas=6.08582e-03 err=-0.56%
+DONE wall=42s

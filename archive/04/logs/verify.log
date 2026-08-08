@@ -1,0 +1,9 @@
+A G1: eps_c(compound)=1.18654e-04 vs theta-only 1.18650e-04 diff=+0.00% first-trip=VHI [36s]
+A Xg=0.70: eps_c(compound)=4.04326e-04 vs theta-only 4.04220e-04 diff=+0.03% first-trip=VHI [70s]
+A2 G1 kappa_c(0) compound=8.5059e-03 vs theta-only 8.4967e-03 mode=VHI [78s]
+B idx17: fresh flip=7.0991e-03 (old 7.0700e-03? sweep 7.09997e-3), compound eps_true=8.6656e-3 [147s]
+C idx0 scan (x flip): 0.9:OK, 0.98:OK, 1.05:VLO, 1.2:VLO, 1.6:VLO [166s]
+D C=0.02 ws=w0/32: a_c(compound)=5.7537e-03 vs theta-only 5.7478e-3, 1D pred 7.268e-3, mode=TH [174s]
+E idx2 unforced outer: NOT bounded (events=[0, 1, 0], t_end=2.7)
+F GFM M1: dw0(compound)=32.8296 vs delta-only 32.8125 mode=DELTA [205s]
+DONE wall=205s

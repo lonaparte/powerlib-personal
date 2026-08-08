@@ -1,0 +1,12 @@
+marg=0.05: P=1.45508 alpha=0.0500 w0=32.3816 pump at 2*w0=64.7632
+    eps=2.0000e-04 max|mult|=1.00420 mult=-1.0042+0.0000j
+  RESULT D marg=0.05: tongue eps=1.0730e-04 type=PD ratio_to_basin=1.27 fate(0.9x)=cap fate(1.1x)=cap
+marg=0.1: P=1.45500 alpha=0.1000 w0=32.3988 pump at 2*w0=64.7977
+    eps=2.0000e-04 max|mult|=0.99935 mult=-0.9993+0.0000j
+    eps=4.8000e-04 max|mult|=1.01206 mult=-1.0121+0.0000j
+  RESULT D marg=0.1: tongue eps=2.1446e-04 type=PD ratio_to_basin=1.81 fate(0.9x)=cap fate(1.1x)=esc
+marg=0.2: P=1.45485 alpha=0.2000 w0=32.4321 pump at 2*w0=64.8642
+    eps=2.0000e-04 max|mult|=0.98974 mult=-0.9897+0.0000j
+    eps=4.8000e-04 max|mult|=1.00235 mult=-1.0024+0.0000j
+  RESULT D marg=0.2: tongue eps=4.2801e-04 type=PD ratio_to_basin=2.57 fate(0.9x)=cap fate(1.1x)=esc
+DONE wall=35s

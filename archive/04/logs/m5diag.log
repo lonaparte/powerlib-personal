@@ -1,0 +1,5 @@
+ph2: state d=0.8466 om=2.7369 Pf=6.2424 Qf=1.5241 (d0=0.8535)
+  kick 1.02x meas: escape_t=None delta monotone=False dmin=0.5541 om range [-4.31,5.13]
+ph3: state d=1.0878 om=0.5371 Pf=6.8756 Qf=2.3016 (d0=0.8535)
+  kick 1.02x meas: escape_t=1.0311263783835685 delta monotone=False dmin=0.5481 om range [-4.26,4.85]
+DONE 8s

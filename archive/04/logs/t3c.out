@@ -1,0 +1,12 @@
+== 高精度 P/V 阈值比 @2f_H（6 次二分,分辨率~±6%）==
+  [C1:Xg=0.7] Re=-0.246: ε_c(V)=0.00137 ε_c(P)=0.00216  P/V=1.582
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/1d9de531-4d6c-58ef-8110-d2e68526464e/scratchpad/t3c.py", line 7, in <module>
+    lam=mrc(Amat(P0,Q,V,Xg,g));fH=abs(lam.imag)/2/math.pi
+            ^^^^^^^^^^^^^^^^^
+  File "<string>", line 14, in Amat
+  File "<string>", line 11, in state
+  File "/home/user/work-sync/projects/gfl-operating-point-stability/simulation/src/gfl_operating_point_stability_sim/analysis.py", line 58, in equilibrium_angle
+    s = -4.0 * P * Xg / (3.0 * V ** 2)       # closed form, stable branch
+        ~~~~~^~~
+TypeError: unsupported operand type(s) for *: 'float' and 'NoneType'

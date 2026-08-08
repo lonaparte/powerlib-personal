@@ -1,0 +1,8 @@
+M1: P0=1.5323 alpha=0.0272 w0=21.8901 d0=0.1548 d_saddle=2.7721
+  dwc(0) = 32.8125 rad/s
+  RESULT E M1 res eps_bg=0.005: dwc=30.2188  erosion=+7.9%  (phases: 34.562, 35.312, 30.781, 30.219)
+  RESULT E M1 res eps_bg=0.010: dwc=29.2188  erosion=+11.0%  (phases: 34.312, 36.438, 30.844, 29.219)
+  RESULT E M1 res eps_bg=0.020: dwc=28.0312  erosion=+14.6%  (phases: 34.438, 37.562, 30.406, 28.031)
+  RESULT E M1 off eps_bg=0.010: dwc=32.5625  erosion=+0.8%  (phases: 32.562, 32.812, 33.062, 32.938)
+M2: no Hopf boundary — skip
+DONE wall=1836s

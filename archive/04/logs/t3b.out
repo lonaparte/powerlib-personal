@@ -1,0 +1,18 @@
+== 批B-1: 新增益组 G6/G7 @Xg=1.0 ==
+[C4:G6(kp35,ki600)] P0=0.7443 Re=-0.248 f_H=1.74Hz 泵|wC_Vv|=30
+    V@f_H(1.74Hz): ε_c≈0.00023
+    V@2f_H(3.49Hz): ε_c≈0.00247
+    V@离共振(2.70Hz): ε_c≈0.00381
+    P@2f_H(3.49Hz): ε_c≈0.00330
+[C5:G7(kp70,ki2000,kpv1.5,C.008)] 无裕度点
+== 批B-2: 裕度标度（G1@Xg=1, V@2f_H 阈值 vs 裕度）==
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/1d9de531-4d6c-58ef-8110-d2e68526464e/scratchpad/t3b.py", line 20, in <module>
+    lam=mrc(Amat(P0,0,1.0,1.0,g));fH=abs(lam.imag)/2/math.pi
+            ^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 14, in Amat
+  File "<string>", line 11, in state
+  File "/home/user/work-sync/projects/gfl-operating-point-stability/simulation/src/gfl_operating_point_stability_sim/analysis.py", line 58, in equilibrium_angle
+    s = -4.0 * P * Xg / (3.0 * V ** 2)       # closed form, stable branch
+        ~~~~~^~~
+TypeError: unsupported operand type(s) for *: 'float' and 'NoneType'

@@ -1,0 +1,12 @@
+Xg=0.35 (weak): f0=12.22Hz Re_c1=    5.8 theta=0.261 Vdc=0.965 freq_share=0.261 amp_share=0.965
+kp30ki600 (weak): f0=10.85Hz Re_c1=   15.4 theta=0.283 Vdc=0.959 freq_share=0.283 amp_share=0.959
+C=0.005 (weak): f0=14.36Hz Re_c1=   22.1 theta=0.305 Vdc=0.952 freq_share=0.305 amp_share=0.952
+Q=-0.15 (weak): f0=11.41Hz Re_c1=   11.6 theta=0.393 Vdc=0.919 freq_share=0.394 amp_share=0.919
+mix13 (trans): f0= 8.82Hz Re_c1=   16.5 theta=0.559 Vdc=0.829 freq_share=0.559 amp_share=0.829
+Q=+0.15 (strong): f0= 4.06Hz Re_c1=  105.1 theta=0.864 Vdc=0.503 freq_share=0.864 amp_share=0.503
+mix12 (strong): f0= 3.10Hz Re_c1=  288.8 theta=0.934 Vdc=0.357 freq_share=0.934 amp_share=0.357
+mix16 (strong): f0= 3.64Hz Re_c1=  249.2 theta=0.910 Vdc=0.413 freq_share=0.910 amp_share=0.414
+idx2 @1.1x flip: DIVERGED at t=16.1 (band hit, not bounded)
+idx2 locked state @0.9x flip: theta-swing=0.028 rad  Vdc-swing=0.0761 pu
+idx2 unforced outer attractor: theta-swing=1046658955409657031244748436729212854606722308445741071425156377698858790484909408387072.000 rad  Vdc-swing=2195002921655273062388986673583542196464196902601602779421409547803917110183008735617764818944.0000 pu
+DONE wall=7s

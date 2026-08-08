@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/1d9de531-4d6c-58ef-8110-d2e68526464e/scratchpad/rates.py", line 117, in <module>
+    x = equil(prq)
+        ^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/1d9de531-4d6c-58ef-8110-d2e68526464e/scratchpad/gfmlib.py", line 79, in equil
+    d = brentq(lambda x: P_of(x, pr) - P, 1e-6, df)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/dist-packages/scipy/optimize/_zeros_py.py", line 846, in brentq
+    r = _zeros._brentq(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: f(a) and f(b) must have different signs
+THEORYDONE
+R2DONE
+E2DONE
+E3DONE
+RMDONE
+VDONE

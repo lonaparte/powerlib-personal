@@ -1,0 +1,17 @@
+Xg=0.70: P=1.05092 alpha=0.1000 w0=20.290 zg=1.5688e-02
+  RESULT Xg=0.70 eps_bg=0: pred=1.4698e-02 meas=1.4743e-02 err=-0.31%
+  RESULT Xg=0.70 eps_bg=0.6x: pred=1.2162e-02 meas=1.2207e-02 err=-0.37%
+Q=+0.15: P=1.29800 alpha=0.1000 w0=25.503 zg=3.0842e-02
+  RESULT Q=+0.15 eps_bg=0: pred=3.2736e-02 meas=3.2419e-02 err=+0.98%
+  RESULT Q=+0.15 eps_bg=0.6x: pred=2.3932e-02 meas=2.3963e-02 err=-0.13%
+mix12: P=1.62071 alpha=0.1000 w0=19.451 zg=1.8610e-02
+  RESULT mix12 eps_bg=0: pred=1.7530e-02 meas=1.7553e-02 err=-0.13%
+  RESULT mix12 eps_bg=0.6x: pred=1.4456e-02 meas=1.4493e-02 err=-0.25%
+mix16: P=1.33016 alpha=0.1000 w0=22.853 zg=2.0031e-02
+  RESULT mix16 eps_bg=0: pred=2.0403e-02 meas=2.0603e-02 err=-0.97%
+  RESULT mix16 eps_bg=0.6x: pred=1.4101e-02 meas=1.4180e-02 err=-0.55%
+G1 m=0.15: P=1.45492 alpha=0.1500 w0=32.416 zg=1.1066e-02
+  flip found: eps_c=1.5300e-04
+  RESULT G1 m=0.15 eps_bg=0: pred=1.0284e-02 meas=1.0259e-02 err=+0.24%
+  RESULT G1 m=0.15 eps_bg=0.6x: pred=8.2668e-03 meas=8.3127e-03 err=-0.55%
+DONE wall=285s

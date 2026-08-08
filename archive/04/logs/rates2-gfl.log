@@ -1,0 +1,5 @@
+P=1.45500 zg=9.0568e-03 lamRe range [-3.13,7.25] |pstV| mid=9.873 |pqV| mid=177.52
+  RESULT ws=0.2: a_pred=4.2544e-04 a_meas=4.2270e-04 err=+0.6%
+  RESULT ws=1.0: a_pred=1.2685e-03 a_meas=1.2740e-03 err=-0.4%
+  RESULT ws=5.0: a_pred=2.1140e-03 a_meas=3.1630e-03 err=-33.2%
+DONE wall=38s

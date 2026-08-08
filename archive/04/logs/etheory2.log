@@ -1,0 +1,5 @@
+RESULT eps_bg=0.00x: meas=8.49670e-03 pred=8.42390e-03 err=-0.86%
+RESULT eps_bg=0.30x: meas=7.99866e-03 pred=7.87820e-03 err=-1.51%
+RESULT eps_bg=0.60x: meas=7.13684e-03 pred=6.98050e-03 err=-2.19%
+RESULT eps_bg=0.85x: meas=6.08582e-03 pred=5.92170e-03 err=-2.70%
+DONE wall=84s

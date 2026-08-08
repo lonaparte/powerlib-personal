@@ -1,0 +1,8 @@
+M1: P_H=0.9504 P0=1.5323 dP=0.5819 c1Re range [-0.0033,-0.0031]
+  RESULT ws=0.1 dip=0.5: pred=0.0059 meas=0.0060 err=-1.5%
+  RESULT ws=0.1 dip=1.5: pred=0.0177 meas=0.0179 err=-1.0%
+  RESULT ws=0.1 dip=3.0: pred=0.0416 meas=0.0416 err=-0.1%
+  RESULT ws=0.5 dip=0.5: pred=0.0299 meas=0.0299 err=-0.0%
+  RESULT ws=0.5 dip=1.5: pred=0.0896 meas=0.0897 err=-0.1%
+  RESULT ws=0.5 dip=3.0: pred=0.1847 meas=0.1847 err=+0.0%
+DONE wall=19s

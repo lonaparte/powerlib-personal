@@ -1,0 +1,17 @@
+M3@Xg=0.1: no window — skip
+M4@Xg=0.1: no window — skip
+M3@Xg=0.05: P0=8.4981 alpha=0.1000 w0=50.2839
+  dw0=28.9688
+  RESULT M3@Xg=0.05 res eps=0.010: [ph0: pred=37.537 meas=37.188 err=+0.9%]  [ph1: pred=32.310 meas=31.531 err=+2.5%]  [ph2: pred=18.554 meas=18.844 err=-1.5%]  [ph3: pred=23.602 meas=23.906 err=-1.3%]
+M4@Xg=0.05: no window — skip
+M1@Xg=0.05: P0=10.1558 alpha=0.1000 w0=22.7337
+  dw0=12.7969
+  RESULT M1@Xg=0.05 res eps=0.010: [ph0: pred=14.788 meas=14.703 err=+0.6%]  [ph1: pred=16.796 meas=16.406 err=+2.4%]  [ph2: pred=8.952 meas=8.828 err=+1.4%]  [ph3: pred=8.793 meas=8.984 err=-2.1%]
+M5@Xg=0.1: P0=6.3546 alpha=0.1000 w0=12.5864
+  dw0=4.9922
+  RESULT M5@Xg=0.1 res eps=0.010: [ph0: pred=7.150 meas=6.945 err=+2.9%]  [ph1: pred=5.370 meas=4.914 err=+9.3%]  [ph2: pred=2.255 meas=2.348 err=-4.0%]  [ph3: pred=3.774 meas=3.668 err=+2.9%]
+M1@Xg=0.15: no window — skip
+M2@Xg=0.03: P0=18.4204 alpha=0.1000 w0=11.9056
+  dw0=6.3203
+  RESULT M2@Xg=0.03 res eps=0.010: [ph0: pred=3.734 meas=3.770 err=-0.9%]  [ph1: pred=5.383 meas=5.336 err=+0.9%]  [ph2: pred=8.477 meas=8.359 err=+1.4%]  [ph3: pred=6.681 meas=6.383 err=+4.7%]
+DONE wall=2546s

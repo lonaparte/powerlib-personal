@@ -1,0 +1,12 @@
+G1 ref (strong): f0=5.16Hz |q|=(0.802,0.014,0.597,0.018) freq_share=0.802 amp_share=0.597
+  escape@1.1x eps_c: theta hits 1.2 at t=14.0s; max|dVdc| before = 2.2617 (Vdc 2%/5%/10% crossings at t=[np.float64(10.782003120794213), np.float64(13.648492057628253), np.float64(13.871792784947624)])
+Xg=0.70 (strong): f0=3.23Hz |q|=(0.951,0.014,0.309,0.015) freq_share=0.951 amp_share=0.309
+  escape@1.1x eps_c: theta hits 1.2 at t=10.6s; max|dVdc| before = 1.6299 (Vdc 2%/5%/10% crossings at t=[np.float64(9.523544774191743), np.float64(10.259904479123191), np.float64(10.519735108780104)])
+C=0.02 (strong): f0=5.05Hz |q|=(0.800,0.014,0.599,0.019) freq_share=0.800 amp_share=0.599
+  escape@1.1x eps_c: theta hits 1.2 at t=13.6s; max|dVdc| before = 1.3997 (Vdc 2%/5%/10% crossings at t=[np.float64(0.408022639530247), np.float64(8.089181806385234), np.float64(13.403100381260673)])
+V=1.06 (weak): f0=10.43Hz |q|=(0.430,0.008,0.903,0.014) freq_share=0.430 amp_share=0.903
+  bounded jump state @1.1x flip: theta-swing=48692803724578209865333865836672199686770551947079819309959956499691462738980412325888.000 rad, Vdc-swing=15897314484851199418089773865629728634591525638331388407101375771911377531164159315707222634300178432.0000 pu (2%/5%/10% crossings: t=[np.float64(0.0454257095454132), np.float64(0.09736813838416258), np.float64(0.19906566791219624)]); theta hit 1.2: no
+GFM M1: f0=3.48Hz |q|=(0.042,0.914,0.403,0.032) freq_share=0.915 |dE|-weight=0.0032 E0=0.994
+  kick escape @1.05x dw0: delta over saddle at t=0.14s; max|dE|/E0 before = 0.5723 (E 2%/5%/10% crossings t=[np.float64(0.007168186883693238), np.float64(0.01203476795014285), np.float64(0.01815518012876116)])
+  forced 1% resonant: delta-swing=0.1927 rad, om-swing=4.198, |dE|/E0-swing=0.0191
+DONE wall=22s

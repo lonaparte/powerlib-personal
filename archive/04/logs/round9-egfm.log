@@ -1,0 +1,6 @@
+M5@0.10: P0=6.3546 w0=12.586 dsad=1.5040
+  ph0: BVP pred=7.115 meas=6.945 err=+2.5%  (old energy-formula +2.9%) [18s]
+  ph1: BVP pred=5.311 meas=4.914 err=+8.1%  (old energy-formula +9.3%) [36s]
+  ph2: BVP pred=2.227 meas=2.348 err=-5.2%  (old energy-formula -4.0%) [50s]
+  ph3: BVP pred=3.614 meas=3.668 err=-1.5%  (old energy-formula +2.9%) [60s]
+DONE wall=60s

@@ -1,0 +1,21 @@
+G1: PH=1.455154 lam=0.000000+32.364031j lams=-6.0679+41.2428j
+  order 2 tensors: 7 nonzero [0s]
+  order 3 tensors: 9 nonzero [0s]
+  order 4 tensors: 11 nonzero [0s]
+  order 5 tensors: 13 nonzero [1s]
+  c1(homological)=1207.4356-444.3539j  c1(Kuznetsov)=1207.4356-444.3539j reldiff=1.13e-08
+  c2=-49587.5273-158473.8120j  C_set=Re(c2)/Re(c1)^2=-0.03401
+  alpha=0.05: kappa_pred=0.09983 kappa_meas=0.09982 err=+0.01%  (2a-only err=+0.18%)
+  alpha=0.1: kappa_pred=0.19932 kappa_meas=0.19924 err=+0.04%  (2a-only err=+0.38%)
+  alpha=0.2: kappa_pred=0.39728 kappa_meas=0.39676 err=+0.13%  (2a-only err=+0.82%)
+Xg=0.70: PH=1.051274 lam=0.000000+20.210586j lams=-24.6712+54.1843j
+  order 2 tensors: 7 nonzero [1s]
+  order 3 tensors: 9 nonzero [1s]
+  order 4 tensors: 11 nonzero [1s]
+  order 5 tensors: 13 nonzero [1s]
+  c1(homological)=407.4476-1035.1726j  c1(Kuznetsov)=407.4476-1035.1726j reldiff=8.99e-10
+  c2=41729.1315-103349.3472j  C_set=Re(c2)/Re(c1)^2=+0.25136
+  alpha=0.05: kappa_pred=0.10126 kappa_meas=0.10127 err=-0.01%  (2a-only err=-1.25%)
+  alpha=0.1: kappa_pred=0.20503 kappa_meas=0.20516 err=-0.06%  (2a-only err=-2.52%)
+  alpha=0.2: kappa_pred=0.42011 kappa_meas=0.42121 err=-0.26%  (2a-only err=-5.04%)
+DONE wall=1s

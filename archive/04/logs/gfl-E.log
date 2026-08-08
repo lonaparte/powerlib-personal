@@ -1,0 +1,6 @@
+P=1.45500 w0=32.3988 r=0.90 eps_c=1.1865e-04 guard modal radius (unforced) = 8.47e-3
+  RESULT E eps_bg=0.00x eps_c: kappa_c per phase = 8.4766e-03, 8.4766e-03, 8.4766e-03, 8.4766e-03  min=8.4766e-03
+  RESULT E eps_bg=0.30x eps_c: kappa_c per phase = 8.0078e-03, 8.2422e-03, 8.6328e-03, 8.3984e-03  min=8.0078e-03
+  RESULT E eps_bg=0.60x eps_c: kappa_c per phase = 7.1484e-03, 7.5391e-03, 8.2422e-03, 7.8516e-03  min=7.1484e-03
+  RESULT E eps_bg=0.85x eps_c: kappa_c per phase = 6.0547e-03, 6.6016e-03, 7.4609e-03, 6.9141e-03  min=6.0547e-03
+DONE wall=149s

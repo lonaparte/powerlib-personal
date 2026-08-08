@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/1d9de531-4d6c-58ef-8110-d2e68526464e/scratchpad/nf5.py", line 253, in <module>
+    run_set('G1', {}, [(0.05, 0.09982), (0.10, 0.19924), (0.20, 0.39676)])
+  File "/tmp/claude-0/-home-user/1d9de531-4d6c-58ef-8110-d2e68526464e/scratchpad/nf5.py", line 141, in run_set
+    term = {kk: vv for kk, vv in term.items()}
+                                 ^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'items'

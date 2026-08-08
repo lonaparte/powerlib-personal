@@ -1,0 +1,10 @@
+G1 marg0.10: P=1.45500 alpha=0.1000 w0=32.3988 zg=9.0568e-03
+  eps_bg=0: pred kappa_c=8.4239e-03  meas=8.4766e-03  err=-0.62%
+  eps_bg=0.30x: pred kappa_c=7.8782e-03  meas=8.0078e-03  err=-1.62%
+  eps_bg=0.60x: pred kappa_c=6.9805e-03  meas=7.1484e-03  err=-2.35%
+  eps_bg=0.85x: pred kappa_c=5.9217e-03  meas=6.0547e-03  err=-2.20%
+C=0.02 measured: kappa_c(0)=2.6611e-02 kappa_c(0.6x)=2.2510e-02
+C=0.02 marg0.10: P=1.40932 alpha=0.1000 w0=31.6995 zg=2.9485e-02
+  eps_bg=0: pred kappa_c=2.6414e-02  meas=2.6611e-02  err=-0.74%
+  eps_bg=0.60x: pred kappa_c=2.2265e-02  meas=2.2510e-02  err=-1.09%
+DONE wall=65s

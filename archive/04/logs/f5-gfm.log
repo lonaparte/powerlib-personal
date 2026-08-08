@@ -1,0 +1,17 @@
+M3@Xg=0.1: no window — skip
+M4@Xg=0.1: no window — skip
+M3@Xg=0.05: P_H=8.2133 P0=8.4981 dP=0.2849 w0=50.284
+  RESULT M3@Xg=0.05 ws=0.503 dip=1.5: pred=0.0337 meas=0.0337 err=-0.1%
+  RESULT M3@Xg=0.05 ws=0.503 dip=3.0: pred=0.0906 meas=0.0906 err=-0.0%
+M4@Xg=0.05: no window — skip
+M1@Xg=0.05: P_H=9.8608 P0=10.1558 dP=0.2950 w0=22.734
+  RESULT M1@Xg=0.05 ws=0.227 dip=1.5: pred=0.0191 meas=0.0191 err=-0.1%
+  RESULT M1@Xg=0.05 ws=0.227 dip=3.0: pred=0.0819 meas=0.0820 err=-0.1%
+M5@Xg=0.1: P_H=6.2209 P0=6.3546 dP=0.1337 w0=12.586
+  RESULT M5@Xg=0.1 ws=0.126 dip=1.5: pred=0.0156 meas=0.0156 err=-0.0%
+  RESULT M5@Xg=0.1 ws=0.126 dip=3.0: pred=0.1440 meas=0.1444 err=-0.3%
+M1@Xg=0.15: no window — skip
+M2@Xg=0.03: P_H=17.9966 P0=18.4204 dP=0.4238 w0=11.906
+  RESULT M2@Xg=0.03 ws=0.119 dip=1.5: pred=0.0104 meas=0.0104 err=-0.1%
+  RESULT M2@Xg=0.03 ws=0.119 dip=3.0: pred=0.1099 meas=0.1104 err=-0.4%
+DONE wall=49s

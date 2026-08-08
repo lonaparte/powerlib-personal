@@ -1,0 +1,7 @@
+RESULT ws=1.0 nper=3: a_c=1.2734e-03
+RESULT ws=1.0 nper=12: a_c=1.2734e-03
+RESULT ws=1.0 nper=36: a_c=1.2734e-03
+RESULT ws=5.0 nper=3: a_c=3.4684e-03
+RESULT ws=5.0 nper=12: a_c=3.1597e-03
+RESULT ws=5.0 nper=36: a_c=3.1584e-03
+DONE wall=17s

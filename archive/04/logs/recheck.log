@@ -1,0 +1,46 @@
+idx2 kp30ki600: flip=7.4097e-03 dsad=1.967
+  0.95x flip: BOUNDED th-swing=0.030 Vdc-swing=0.079 [10s]
+  1.05x flip: VDC-COLLAPSE at t=23.2s [12s]
+  1.20x flip: VDC-COLLAPSE at t=9.9s [12s]
+  1.50x flip: VDC-COLLAPSE at t=4.2s [12s]
+  2.00x flip: VDC-COLLAPSE at t=1.5s [12s]
+  2.70x flip: VDC-COLLAPSE at t=0.4s [12s]
+  3.50x flip: VDC-COLLAPSE at t=0.3s [13s]
+  RESULT idx2 kp30ki600: eps_true=7.4025e-03 = 1.00x flip mode=VDC-COLLAPSE
+idx7 C=0.005: flip=3.8224e-03 dsad=2.038
+  0.95x flip: BOUNDED th-swing=0.024 Vdc-swing=0.064 [100s]
+  1.05x flip: VDC-COLLAPSE at t=25.1s [102s]
+  1.20x flip: VDC-COLLAPSE at t=10.9s [102s]
+  1.50x flip: VDC-COLLAPSE at t=4.6s [103s]
+  2.00x flip: VDC-COLLAPSE at t=1.8s [103s]
+  2.70x flip: VDC-COLLAPSE at t=0.4s [103s]
+  3.50x flip: VDC-COLLAPSE at t=0.3s [103s]
+  RESULT idx7 C=0.005: eps_true=3.8217e-03 = 1.00x flip mode=VDC-COLLAPSE
+idx9 Q=-0.15: flip=8.1408e-03 dsad=2.146
+  0.95x flip: BOUNDED th-swing=0.044 Vdc-swing=0.086 [215s]
+  1.05x flip: VDC-COLLAPSE at t=23.8s [217s]
+  1.20x flip: VDC-COLLAPSE at t=9.7s [217s]
+  1.50x flip: VDC-COLLAPSE at t=4.1s [218s]
+  2.00x flip: VDC-COLLAPSE at t=1.4s [218s]
+  2.70x flip: VDC-COLLAPSE at t=0.4s [218s]
+  3.50x flip: VDC-COLLAPSE at t=0.3s [218s]
+  RESULT idx9 Q=-0.15: eps_true=8.1392e-03 = 1.00x flip mode=VDC-COLLAPSE
+idx11 V=1.06: flip=6.6169e-03 dsad=2.091
+  0.95x flip: BOUNDED th-swing=0.051 Vdc-swing=0.091 [315s]
+  1.05x flip: VDC-COLLAPSE at t=23.3s [316s]
+  1.20x flip: VDC-COLLAPSE at t=8.7s [316s]
+  1.50x flip: VDC-COLLAPSE at t=2.2s [316s]
+  2.00x flip: VDC-COLLAPSE at t=0.5s [316s]
+  2.70x flip: VDC-COLLAPSE at t=0.3s [316s]
+  3.50x flip: VDC-OVER at t=0.3s [316s]
+  RESULT idx11 V=1.06: eps_true=6.6157e-03 = 1.00x flip mode=VDC-COLLAPSE
+idx17 kp55ki1200Xg.40: flip=7.1000e-03 dsad=2.293
+  0.95x flip: BOUNDED th-swing=0.033 Vdc-swing=0.075 [412s]
+  1.05x flip: BOUNDED th-swing=0.037 Vdc-swing=0.084 [423s]
+  1.20x flip: BOUNDED th-swing=0.048 Vdc-swing=0.115 [434s]
+  1.50x flip: VDC-COLLAPSE at t=11.0s [434s]
+  2.00x flip: VDC-COLLAPSE at t=3.8s [435s]
+  2.70x flip: VDC-COLLAPSE at t=1.2s [435s]
+  3.50x flip: VDC-COLLAPSE at t=0.4s [435s]
+  RESULT idx17 kp55ki1200Xg.40: eps_true=8.6656e-03 = 1.22x flip mode=VDC-COLLAPSE
+DONE wall=475s

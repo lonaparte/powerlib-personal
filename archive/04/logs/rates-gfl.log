@@ -1,0 +1,6 @@
+P=1.45500 alpha=0.1000 w0=32.3988 c1=1219.1-433.2j fcoef=224.780-227.585j zg=9.0568e-03
+lam(V) range: Re [-3.048, 7.012]
+  RESULT ws=0.2: a_pred=4.0836e-04 a_meas=4.2270e-04 err=-3.4%
+  RESULT ws=1.0: a_pred=1.0892e-03 a_meas=1.2740e-03 err=-14.5%
+  RESULT ws=5.0: a_pred=1.7590e-03 a_meas=3.1630e-03 err=-44.4%
+DONE wall=28s

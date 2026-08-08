@@ -1,0 +1,11 @@
+M1@Xg=0.10: P0=1.5323 alpha=0.0272 w0=21.8901 d0=0.1548 dsad=2.7721
+  dw0(measured)=32.8125  E_esc=10.7666
+  RESULT res eps=0.005: [ph0: pred=34.531 meas=34.562 err=-0.1%]  [ph1: pred=35.397 meas=35.312 err=+0.2%]  [ph2: pred=30.842 meas=30.781 err=+0.2%]  [ph3: pred=30.160 meas=30.219 err=-0.2%]
+  RESULT res eps=0.010: [ph0: pred=34.273 meas=34.312 err=-0.1%]  [ph1: pred=36.489 meas=36.438 err=+0.1%]  [ph2: pred=30.890 meas=30.844 err=+0.1%]  [ph3: pred=29.086 meas=29.219 err=-0.5%]
+  RESULT res eps=0.020: [ph0: pred=34.275 meas=34.438 err=-0.5%]  [ph1: pred=37.741 meas=37.562 err=+0.5%]  [ph2: pred=30.562 meas=30.406 err=+0.5%]  [ph3: pred=27.813 meas=28.031 err=-0.8%]
+  RESULT off eps=0.010: [ph0: pred=32.749 meas=32.562 err=+0.6%]  [ph1: pred=32.852 meas=32.812 err=+0.1%]  [ph2: pred=32.859 meas=33.062 err=-0.6%]  [ph3: pred=32.796 meas=32.938 err=-0.4%]
+M2@Xg=0.05: P0=9.9401 alpha=0.1000 w0=11.2213 d0=0.5674 dsad=1.9307
+  dw0(measured)=9.8281  E_esc=4.8296
+  RESULT res eps=0.010: [ph0: pred=12.184 meas=12.172 err=+0.1%]  [ph1: pred=10.266 meas=10.109 err=+1.6%]  [ph2: pred=7.201 meas=7.164 err=+0.5%]  [ph3: pred=8.960 meas=8.922 err=+0.4%]
+  RESULT off eps=0.010: [ph0: pred=9.845 meas=9.984 err=-1.4%]  [ph1: pred=9.661 meas=9.547 err=+1.2%]  [ph2: pred=9.809 meas=9.672 err=+1.4%]  [ph3: pred=9.992 meas=10.109 err=-1.2%]
+DONE wall=341s

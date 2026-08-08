@@ -1,0 +1,5 @@
+ph0: forced-BVP pred=6.941 meas=6.945 err=-0.1%  (energy-formula +2.9%) [14s]
+ph1: forced-BVP pred=4.969 meas=4.914 err=+1.1%  (energy-formula +9.3%) [24s]
+ph2: forced-BVP pred=2.420 meas=2.348 err=+3.0%  (energy-formula -4.0%) [34s]
+ph3: forced-BVP pred=3.829 meas=3.668 err=+4.4%  (energy-formula +2.9%) [45s]
+DONE 45s

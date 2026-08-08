@@ -1,0 +1,11 @@
+Delta3 degree in K: 2; 2 root(s)
+K_H root 0: (D**2 - D*M*b**2*w_c - D*M*b*w_c + D*M*w_c - M**2*b**3*w_c**2 - M**2*b**2*w_c**2 - (D + M*b*w_c + M*w_c)*sqrt(D**2 + 2*D*M*b**2*w_c - 4*L*M*a + M**2*b**4*w_c**2))/(2*M)
+K_H root 1: (D**2 - D*M*b**2*w_c - D*M*b*w_c + D*M*w_c - M**2*b**3*w_c**2 - M**2*b**2*w_c**2 + (D + M*b*w_c + M*w_c)*sqrt(D**2 + 2*D*M*b**2*w_c - 4*L*M*a + M**2*b**4*w_c**2))/(2*M)
+a,L->0 limit: (D**2 - D*M*b**2*w_c - D*M*b*w_c + D*M*w_c - M**2*b**3*w_c**2 - M**2*b**2*w_c**2 + (D + M*b*w_c + M*w_c)*sqrt(D**2 + 2*D*M*b**2*w_c + M**2*b**4*w_c**2))/(2*M)   (3-state: D*(D/M+w_c))
+M1@Xg=0.1: P_H(closed-form)=0.950446 P_H(eig)=0.950446 rel=+3.17e-11
+M2@Xg=0.05: P_H(closed-form)=9.197626 P_H(eig)=9.197626 rel=+5.57e-12
+M3@Xg=0.05: P_H(closed-form)=8.213287 P_H(eig)=8.213287 rel=-1.01e-11
+M1@Xg=0.05: P_H(closed-form)=9.860778 P_H(eig)=9.860778 rel=-3.18e-11
+M5@Xg=0.1: P_H(closed-form)=6.220908 P_H(eig)=6.220908 rel=-1.11e-11
+M2@Xg=0.03: P_H(closed-form)=17.996552 P_H(eig)=17.996552 rel=+2.35e-11
+DONE wall=2s

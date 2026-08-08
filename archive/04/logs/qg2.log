@@ -1,0 +1,13 @@
+  GFM res eps=0.02: OK [11s]
+  GFM res eps=0.05: OK [21s]
+  GFM res eps=0.1: OK [32s]
+  GFM res eps=0.2: OK [43s]
+  GFM res eps=0.4: OK [53s]
+G2 GFM res: no desync up to eps=0.4 (40% V); est=0.0079
+  GFM r=0.9 eps=0.02: OK [63s]
+  GFM r=0.9 eps=0.05: OK [72s]
+  GFM r=0.9 eps=0.1: OK [81s]
+  GFM r=0.9 eps=0.2: OK [90s]
+  GFM r=0.9 eps=0.4: OK [99s]
+G2 GFM r=0.9: no desync up to eps=0.4 (40% V); est=0.6877
+DONE 99s

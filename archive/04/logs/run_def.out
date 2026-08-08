@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/1d9de531-4d6c-58ef-8110-d2e68526464e/scratchpad/gfmcases.py", line 216, in <module>
+    pr, st, P_H, alpha, w0 = b['pr'], b['st'], b['P_H'], b['alpha'], b['w0']
+                             ~^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+ALLDONE

@@ -1,0 +1,6 @@
+P=1.45500 alpha=0.1000 w0=32.3988
+a_qs (frozen Re=0 at V=1-a) = 5.51311e-05
+  RESULT F ws=0.2: a_c=4.22668e-04  a_c/a_qs=7.67  (resonant eps_c at r=0.9: 1.187e-4)
+  RESULT F ws=1.0: a_c=1.27411e-03  a_c/a_qs=23.11  (resonant eps_c at r=0.9: 1.187e-4)
+  RESULT F ws=5.0: a_c=3.16315e-03  a_c/a_qs=57.38  (resonant eps_c at r=0.9: 1.187e-4)
+DONE wall=5s

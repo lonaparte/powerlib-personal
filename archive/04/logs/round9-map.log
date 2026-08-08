@@ -1,0 +1,8 @@
+r=0.95: locked-orbit loss=('NS', 8.161919999999999e-05)  sudden-on eps_c=5.6309e-05 [18s]
+r=0.97: locked-orbit loss=('NS', 5.4727999999999995e-05)  sudden-on eps_c=3.2918e-05 [28s]
+r=0.99: locked-orbit loss=('fold', 2.18e-05)  sudden-on eps_c=1.0502e-05 [48s]
+r=1.0: locked-orbit loss=('fold', 5e-06)  sudden-on eps_c=2.2183e-06 [55s]
+r=1.01: locked-orbit loss=('NS', 2.18e-05)  sudden-on eps_c=1.1477e-05 [67s]
+r=1.03: locked-orbit loss=('NS', 5.4727999999999995e-05)  sudden-on eps_c=3.1457e-05 [86s]
+r=1.05: locked-orbit loss=('NS', 8.161919999999999e-05)  sudden-on eps_c=5.0461e-05 [102s]
+DONE wall=102s

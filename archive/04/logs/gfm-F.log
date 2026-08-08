@@ -1,0 +1,8 @@
+M2: P_H=0.9504 P0=1.5323 margin dP=0.5819 alpha=0.0272 w0=21.8901
+  RESULT F ws=0.1 dip=0.5x margin: escape=False max|om|=0.0060 max|d-d0|=0.0302
+  RESULT F ws=0.1 dip=1.5x margin: escape=False max|om|=0.0179 max|d-d0|=0.0920
+  RESULT F ws=0.1 dip=3.0x margin: escape=False max|om|=0.0416 max|d-d0|=0.1897
+  RESULT F ws=0.5 dip=0.5x margin: escape=False max|om|=0.0299 max|d-d0|=0.0307
+  RESULT F ws=0.5 dip=1.5x margin: escape=False max|om|=0.0897 max|d-d0|=0.0935
+  RESULT F ws=0.5 dip=3.0x margin: escape=False max|om|=0.1847 max|d-d0|=0.1923
+DONE wall=18s
