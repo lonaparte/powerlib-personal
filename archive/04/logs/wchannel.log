@@ -1,0 +1,10 @@
+G1 strong: P0=1.45500 w0=32.399 (5.16 Hz) zg=9.057e-03 |q|=(0.802,0.014,0.597,0.018)
+  coupling |<p,f_u>|:  V=319.9  P=138.6  Q=127.9  dw=3.927
+  TONGUE(2w0): |pi|=7.2 pred=2.7776e-02 meas=2.7797e-02 rad/s (4.424 mHz) err=-0.08% [1s]
+  SUDDEN-ON(0.9w0): eps_c=9.7468e-03 rad/s (1.551 mHz) mode=VHI  [V-channel flip 1.186e-04 pu] [46s]
+  RESULT flip(dw)=9.7323e-03 meas=9.7468e-03 err=-0.15% [146s]
+idx2 weak: P0=1.38371 w0=68.181 (10.85 Hz) zg=8.052e-02 |q|=(0.283,0.009,0.959,0.014)
+  coupling |<p,f_u>|:  V=76.9  P=53.81  Q=44.72  dw=0.7538
+  TONGUE(2w0): |pi|=0.3938 pred=5.0785e-01 meas=5.0563e-01 rad/s (80.474 mHz) err=+0.44% [147s]
+  SUDDEN-ON: no escape up to 5.050e-01 rad/s
+DONE wall=161s
