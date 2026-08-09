@@ -1,0 +1,16 @@
+=== G1 V r=0.9: P_H=1.455154
+    c1 additive 1.207436e+03-4.443539e+02j | with parametric 1.207436e+03-4.443539e+02j | Kuznetsov 1.207436e+03-4.443539e+02j
+    c_x additive 1.490290e+07-1.439573e+06j (hand 1.490290e+07-1.439573e+06j, reldiff 1.1e-08)
+    c_x FULL     1.496897e+07-1.462628e+06j   parametric share of Re: +0.44%
+    Re c2 -4.95875e+04 (add -4.95875e+04) | Re c_xx 2.77039e+09 (add 2.75156e+09) | Re c_a4 3.54710e+12 (add 3.33801e+12)  [2s]
+  alpha=0.050 measured 8.433772e-05 | additive only  +0.13% | with parametric  +0.01%  [55s]
+  alpha=0.100 measured 1.186532e-04 | additive only  +0.14% | with parametric  +0.03%  [106s]
+  alpha=0.150 measured 1.446190e-04 | additive only  +0.15% | with parametric  +0.03%  [162s]
+  alpha=0.200 measured 1.662439e-04 | additive only  +0.16% | with parametric  +0.04%  [207s]
+=== idx17 r=0.92: P_H=1.408495
+    c1 additive 8.320109e+00+2.608429e+00j | with parametric 8.320109e+00+2.608429e+00j | Kuznetsov 8.320109e+00+2.608429e+00j
+    c_x additive 4.229225e+03-2.440924e+03j (hand 4.229225e+03-2.440924e+03j, reldiff 1.3e-09)
+    c_x FULL     4.327013e+03-3.672785e+03j   parametric share of Re: +2.26%
+    Re c2 2.10903e+01 (add 2.10903e+01) | Re c_xx 3.09598e+04 (add 2.73007e+04) | Re c_a4 7.28847e+06 (add 5.54785e+06)  [209s]
+  alpha=0.080 measured 7.099026e-03 | additive only  +1.14% | with parametric  +0.12%  [419s]
+DONE wall=419s

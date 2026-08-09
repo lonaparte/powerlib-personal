@@ -1,0 +1,23 @@
+=== G1 V r=0.9: P_H=1.455154, w0=32.3640, w_p=29.1276
+    c1   = 1.207436e+03-4.443539e+02j   Kuznetsov 1.207436e+03-4.443539e+02j  reldiff 2.42e-08
+    c_x  = 1.490290e+07-1.439573e+06j   hand-derived 1.490290e+07-1.439573e+06j  reldiff 1.08e-08
+    c2   = -4.958753e+04-2.332656e+05j
+    c_xx = 2.751563e+09-1.553106e+10j   (ratio to 2 c1: +1139424.1666)
+    c_a4 = 3.338006e+12-3.837603e+13j  [1s]
+  alpha=0.050: measured 8.433762e-05   3rd order 8.635201e-05  +2.39%   5th order 7.460048e-04 +784.55%  [42s]
+           Re c_xx a^2/Re c1 = +0.0041, Re c_a4 a^4/alpha = +0.0002, kick 2nd-order correction -3.92%
+  alpha=0.100: measured 1.186533e-04   3rd order 1.228787e-04  +3.56%   5th order 1.051296e-03 +786.02%  [80s]
+           Re c_xx a^2/Re c1 = +0.0080, Re c_a4 a^4/alpha = +0.0004, kick 2nd-order correction -5.49%
+  alpha=0.150: measured 1.446188e-04   3rd order 1.511781e-04  +4.54%   5th order 1.283386e-03 +787.43%  [114s]
+           Re c_xx a^2/Re c1 = +0.0119, Re c_a4 a^4/alpha = +0.0006, kick 2nd-order correction -6.67%
+  alpha=0.200: measured 1.662438e-04   3rd order 1.752172e-04  +5.40%   5th order 1.477516e-03 +788.76%  [144s]
+           Re c_xx a^2/Re c1 = +0.0157, Re c_a4 a^4/alpha = +0.0008, kick 2nd-order correction -7.64%
+=== idx17 r=0.92: P_H=1.408495, w0=71.8586, w_p=66.1099
+    c1   = 8.320109e+00+2.608429e+00j   Kuznetsov 8.320109e+00+2.608429e+00j  reldiff 4.06e-09
+    c_x  = 4.229225e+03-2.440924e+03j   hand-derived 4.229225e+03-2.440924e+03j  reldiff 1.33e-09
+    c2   = 2.109035e+01+3.787250e+01j
+    c_xx = 2.730074e+04+4.106094e+04j   (ratio to 2 c1: +1640.6483)
+    c_a4 = 5.547854e+06+3.441263e+06j  [144s]
+  alpha=0.080: measured 7.099020e-03   3rd order 7.131990e-03  +0.46%   5th order 7.039459e-03  -0.84%  [273s]
+           Re c_xx a^2/Re c1 = +0.0413, Re c_a4 a^4/alpha = +0.0110, kick 2nd-order correction +3.88%
+DONE wall=273s
