@@ -1,0 +1,15 @@
+G1 margin 0.10: w0=32.3988 r_g=9.05683e-03
+drive: T_d=1.673180s w_s=3.75524 rad/s (w0/8.6276), T_c=0.194149s
+measured a_c = 0.9427837 rad/s  [13s]
+guard curve at a=0: ok residual 3.98e-12, rho/2pi=0.618034
+  guard curve continued to a/a_c=0.900 (rho/2pi=0.428671, residual 5.2e-12)  [527s]
+  guard curve continued to a/a_c=0.950 (rho/2pi=0.401851, residual 1.1e-11)  [591s]
+  guard curve continued to a/a_c=0.980 (rho/2pi=0.384114, residual 9.6e-10)  [651s]
+  guard curve continued to a/a_c=1.000 (rho/2pi=0.371291, residual 8.3e-12)  [686s]
+  guard curve continued to a/a_c=1.020 (rho/2pi=0.357236, residual 1.4e-10)  [762s]
+  guard curve continued to a/a_c=1.050 (rho/2pi=0.330765, residual 7.8e-10)  [914s]
+landing test: min stroboscopic distance from the launched trajectory to the guard curve, in units of r_g
+  a/a_c=0.900: min distance 0.42969 r_g at strobe step 1 of 25  [915s]
+  a/a_c=0.950: min distance 0.25428 r_g at strobe step 1 of 25  [916s]
+  a/a_c=0.980: min distance 0.15403 r_g at strobe step 1 of 25  [916s]
+  a/a_c=1.000: min distance 0.00153 r_g at strobe step 1 of 25  [917s]

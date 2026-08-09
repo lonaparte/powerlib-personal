@@ -1,0 +1,18 @@
+idx17: w0=71.9038 alpha=0.08000 r_g=9.86739e-02 T_d=0.094982s
+coarse 400-period threshold 7.2932434e-03  [29s]
+  eps=7.10070178e-03  t_esc=1322.81 periods  [35s]
+  eps=7.10216043e-03  t_esc=1194.87 periods  [41s]
+  eps=7.10361908e-03  t_esc=1115.74 periods  [47s]
+  eps=7.10726570e-03  t_esc=998.81 periods  [52s]
+  eps=7.11091232e-03  t_esc=927.01 periods  [57s]
+  eps=7.11820557e-03  t_esc=833.07 periods  [61s]
+  eps=7.12914543e-03  t_esc=742.91 periods  [65s]
+  eps=7.14737854e-03  t_esc=650.89 periods  [69s]
+  eps=7.18384476e-03  t_esc=546.87 periods  [72s]
+  eps=7.25677719e-03  t_esc=439.16 periods  [74s]
+joint fit: S=189.904 periods, C=-291.838, eps*=7.099279316e-03, rms 3.811 periods over 10 points
+  chord slopes: 181.27, 193.18, 191.71, 190.91, 193.01, 197.64, 193.09, 184.35, 173.20
+K=64 ring estimator at eps=0: 0.16408666 vs exact Floquet 0.16411260 (-0.016%)  [80s]
+lambda_u(eps*) = 0.0510747 /s at eps/eps*=1.000000 -> 1/(lambda_u T_d) = 206.136 periods  [328s]
+RESULT asymptotic escape slope 189.904 vs 1/(lambda_u T_d) 206.136: err = +8.55%
+DONE wall=328s

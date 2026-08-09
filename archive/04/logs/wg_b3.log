@@ -1,0 +1,16 @@
+G1: P0=1.45500 w0=32.3988 alpha=0.1000 r_g=9.05683e-03 d_sad=1.81636
+guard cycle: T_c=0.194149s  |mu_u|=1.03944  exponent=0.19925 /s (2 alpha=0.20000)
+drive: T_d=(8+phi) T_c=1.673180s  w_s=3.75524 rad/s (= w0/8.6276); rho/2pi at a=0 is phi=0.618034
+measured a_c (12 drive periods) = 0.94278 rad/s (150.05 mHz, phase amplitude 14.38 deg)  [4s]
+measured a_c (30 drive periods) = 0.94278 rad/s (window convergence +0.00%)  [11s]
+B3: invariant curve at a=0 Newton ok, rho/2pi=0.618034, one Newton solve took 4.7s  [16s]
+    winding at a=0: 1
+    a=0.05657 (a/a_meas=0.060) rho/2pi=0.617395 wind=1  [36s]
+    a=0.12728 (a/a_meas=0.135) rho/2pi=0.614782 wind=1  [59s]
+    a=0.20270 (a/a_meas=0.215) rho/2pi=0.609692 wind=1  [88s]
+    a=0.27812 (a/a_meas=0.295) rho/2pi=0.602065 wind=1  [113s]
+    a=0.35354 (a/a_meas=0.375) rho/2pi=0.591658 wind=1  [139s]
+    a=0.42897 (a/a_meas=0.455) rho/2pi=0.578145 wind=1  [166s]
+    a=0.50439 (a/a_meas=0.535) rho/2pi=0.561141 wind=1  [192s]
+    a=0.57981 (a/a_meas=0.615) rho/2pi=0.540240 wind=1  [223s]
+    a=0.65523 (a/a_meas=0.695) rho/2pi=0.515066 wind=1  [260s]

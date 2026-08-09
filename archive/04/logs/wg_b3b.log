@@ -1,0 +1,23 @@
+G1: P0=1.45500 w0=32.3988 alpha=0.1000 r_g=9.05683e-03 d_sad=1.81636
+guard cycle: T_c=0.194149s exponent=0.19925/s (2 alpha=0.20000)
+drive: T_d=(8+phi) T_c=1.673180s w_s=3.75524 rad/s (w0/8.6276)
+measured a_c: 12 periods 0.94278, 40 periods 0.94278 rad/s (window bias +0.000%); phase amplitude 14.38 deg  [14s]
+B3: a=0 Newton ok in 2.7s, rho/2pi=0.618034, wind=1
+    a=0.04714 (a/a_c=0.050) rho/2pi=0.617591 wind=1  [28s]
+    a=0.10371 (a/a_c=0.110) rho/2pi=0.615880 wind=1  [36s]
+    a=0.16027 (a/a_c=0.170) rho/2pi=0.612855 wind=1  [45s]
+    a=0.21684 (a/a_c=0.230) rho/2pi=0.608462 wind=1  [53s]
+    a=0.27341 (a/a_c=0.290) rho/2pi=0.602621 wind=1  [62s]
+    a=0.32997 (a/a_c=0.350) rho/2pi=0.595227 wind=1  [70s]
+    a=0.38654 (a/a_c=0.410) rho/2pi=0.586149 wind=1  [79s]
+    a=0.44311 (a/a_c=0.470) rho/2pi=0.575235 wind=1  [88s]
+    a=0.49967 (a/a_c=0.530) rho/2pi=0.562314 wind=1  [97s]
+    a=0.55624 (a/a_c=0.590) rho/2pi=0.547214 wind=1  [107s]
+    a=0.61281 (a/a_c=0.650) rho/2pi=0.529773 wind=1  [120s]
+    a=0.66937 (a/a_c=0.710) rho/2pi=0.509843 wind=1  [133s]
+    a=0.72594 (a/a_c=0.770) rho/2pi=0.487298 wind=1  [147s]
+    a=0.78251 (a/a_c=0.830) rho/2pi=0.461998 wind=1  [160s]
+    a=0.83908 (a/a_c=0.890) rho/2pi=0.433709 wind=1  [174s]
+    a=0.89564 (a/a_c=0.950) rho/2pi=0.401852 wind=0  [189s]
+RESULT winding flip a_flip=0.85714 vs measured a_c=0.94278: -9.08%
+DONE wall=304s

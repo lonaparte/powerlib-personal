@@ -1,0 +1,22 @@
+idx17: w0=71.9038 alpha=0.08000 r_g=9.86739e-02 T_d=0.094982s
+(B) threshold at a 4000-period window: eps* = 7.099022716e-03 [341s]
+    d=3.0e-05  t_esc=1748.96 periods  [350s]
+    d=1.0e-04  t_esc=1497.73 periods  [358s]
+    d=3.0e-04  t_esc=1275.83 periods  [364s]
+    d=1.0e-03  t_esc=1031.00 periods  [370s]
+    local ln-law slopes (smallest d first): 208.67, 201.98, 203.35 periods per e-fold
+(A) exact Floquet exponent at eps=0: 0.16411260 /s  (2 alpha = 0.160000)  [370s]
+    invariant curve at eps=0: K=32 ok, K=64 ok
+    ring estimator: K=32 0.163721 (-0.24%), K=64 0.164087 (-0.02%)  [376s]
+    power estimator N=  1000: 0.158055 (-3.69%)
+    power estimator N=  2000: 0.159306 (-2.93%)
+    power estimator N=  4000: 0.161987 (-1.30%)
+    power estimator N=  8000: 0.162900 (-0.74%)
+    power estimator N= 15800: 0.163435 (-0.41%)
+    power estimator, tail-averaged: 0.163529 (-0.36%)  [711s]
+    validated estimator: ring
+(C) invariant curve continued to eps/eps* = 1.00000, rho/2pi = 0.086427  [814s]
+    lambda_u(eps*) = 0.051063 /s -> 1/(lambda_u T_d) = 206.19 periods  [815s]
+(D) asymptotic escape slope 208.67 periods vs 1/(lambda_u T_d) 206.19: err = -1.19%
+    unforced surrogate 1/(2 alpha T_d) = 65.80 periods: err = -68.47%
+DONE wall=815s

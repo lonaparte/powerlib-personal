@@ -1,0 +1,28 @@
+idx17: w0=71.9038 alpha=0.08000 r_g=9.86739e-02 T_d=0.094982s 2alpha=0.16000
+(1) finite-window thresholds: eps_c(400 periods) = 7.29317582e-03 [46s]
+    eps_c(4000 periods) = 7.09902251e-03 (-2.662% vs 400)  [340s]
+    d=1.0e-04  eps=7.09973241e-03  t_esc=1497.73 periods [348s]
+    d=3.0e-04  eps=7.10115221e-03  t_esc=1275.83 periods [355s]
+    d=1.0e-03  eps=7.10612153e-03  t_esc=1031.00 periods [360s]
+    d=3.0e-03  eps=7.12031958e-03  t_esc=811.91 periods [364s]
+    d=1.0e-02  eps=7.17001273e-03  t_esc=580.90 periods [367s]
+    d=3.0e-02  eps=7.31199318e-03  t_esc=385.82 periods [370s]
+    d=1.0e-01  eps=7.80892476e-03  t_esc=210.91 periods [371s]
+    d=2.0e-01  eps=8.51882701e-03  t_esc=130.85 periods [372s]
+    d=4.0e-01  eps=9.93863151e-03  t_esc=71.01 periods [372s]
+    d=8.0e-01  eps=1.27782405e-02  t_esc=27.81 periods [372s]
+(2) 3-parameter ln-law fit: S=157.619 periods, C=-99.306, eps*=7.09946740e-03 (+0.0063% vs the 4000-period threshold), rms residual 48.939 periods
+    saddle-node form t = A d^-1/2 + B at the same eps*: rms 274.773 periods
+(3) guard cycle T_c=0.087346s, exact Floquet exponent 0.16411260 /s (2 alpha = 0.160000)
+    ring-average lam_u(0) = 0.31483709 /s, direction-field convergence 2.1e-08; vs Floquet +91.8421%  [375s]
+    eps/eps* |  rho/2pi   lam_u [1/s]   1/(lam_u T_d) [periods]
+       0.300 | 0.087331  0.309249       34.045   (conv 2e-08)  [422s]
+       0.600 | 0.087066  0.292753       35.963   (conv 2e-08)  [470s]
+       0.800 | 0.086788  0.276449       38.084   (conv 2e-08)  [499s]
+       0.900 | 0.086618  0.266989       39.434   (conv 1e-08)  [519s]
+       0.950 | 0.086525  0.261990       40.186   (conv 1e-08)  [532s]
+       0.980 | 0.086467  0.258914       40.663   (conv 1e-08)  [539s]
+       0.995 | 0.086437  0.257357       40.909   (conv 1e-08)  [545s]
+       0.999 | 0.086429  0.256940       40.976   (conv 1e-08)  [551s]
+(4) measured ln-law slope S = 157.619 periods; unforced surrogate 1/(2 alpha T_d) = 65.802
+DONE wall=551s

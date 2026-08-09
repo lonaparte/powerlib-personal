@@ -1,0 +1,7 @@
+idx17: w0=71.9038 alpha=0.08000 r_g=9.86739e-02 T_d=0.094982s
+reference drive amplitude: 400-period threshold 7.2932434e-03 [28s]
+guard curve at eps=eps_c(400): rho/2pi=0.086372, lambda_u(ring,K=64) = 0.0447761 /s -> 1/(lambda_u T_d) = 235.133 periods  [242s]
+trajectory: escapes at 399.7 periods; minimum distance to the guard curve 0.033004 r_g at strobe 6
+departure segment strobes 6..364 (359 points, distance 0.0330 -> 0.4087 r_g), max relative deviation from a pure exponential 86.81%
+lambda_u(trajectory) = 0.0734123 /s  vs  lambda_u(ring) = 0.0447761 /s : err = +63.95%
+DONE wall=247s

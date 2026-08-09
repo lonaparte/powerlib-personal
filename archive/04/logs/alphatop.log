@@ -1,0 +1,17 @@
+G1: P_H=1.455154
+margin |   P0        Re c1        Im c1     r_g
+0.050  | 1.455077  +1.2133e+03  -4.3886e+02  6.41952e-03
+0.100  | 1.455000  +1.2191e+03  -4.3316e+02  9.05683e-03
+0.150  | 1.454924  +1.2249e+03  -4.2724e+02  1.10660e-02
+0.200  | 1.454848  +1.2307e+03  -4.2110e+02  1.27480e-02
+0.220  | 1.454817  +1.2330e+03  -4.1859e+02  1.33578e-02
+0.240  | 1.409187  -4.9590e+01  -1.7818e+02     ---   
+0.260  | 1.408046  -4.7056e+01  -1.7375e+02     ---   
+0.280  | 1.406989  -4.4834e+01  -1.6980e+02     ---   
+0.300  | 1.405997  -4.2851e+01  -1.6621e+02     ---   
+degenerate (Bautin) margin alpha_deg = 0.231872 at P0=1.409680, Re c1 = -5.073e+01  [0s]
+subcritical guard exists for alpha < alpha_deg; above it the Hopf is supercritical and the A4/A5 guard object is absent
+extra sweep row at margin 0.20868 (0.9 alpha_deg): r_g=1.30166e-02 |<p,f_V>|=322.90 est=2.62039e-04
+  measured eps_c(400 periods) = 1.69689e-04  est/meas = 1.5442  eps_c/sqrt(alpha) = 3.71457e-04  [17s]
+  winding flip = 1.70044e-04  err vs measured = +0.21%  [158s]
+DONE wall=158s

@@ -1,0 +1,19 @@
+idx17: P0=1.40713 w0=71.9038 alpha=0.08000 r_g=9.86739e-02 d_sad=2.29282 T_d=0.094982s  2alpha=0.16000
+(1) eps_c (intrinsic detectors) = 7.293030e-03  [16s]
+    escape-time ln-law slope S = 81.114 drive periods (intercept -5.290); unforced surrogate 1/(2 alpha T_d) = 65.802  [20s]
+(2) guard cycle: T_c=0.087346s  multipliers |mu| = 1.0144e+00, 1.0000e+00, 1.3572e-01, 1.3572e-01
+    Floquet exponent of the guard cycle = 0.164113 /s (normal-form 2 alpha = 0.160000, dev +2.57%)
+(3) invariant curve at eps=0: Newton ok, rho/2pi = 0.087418  [21s]
+    lam_u(0) = 0.157934 /s  (curve residual 1.13e-11); vs Floquet 0.164113 (-3.765%), vs 2 alpha (-1.29%)  [52s]
+    eps/eps_c |  rho/2pi   lam_u [1/s]   1/(lam_u T_d) [periods]  resid
+        0.20 | 0.087377  0.151014         69.718          7.9e-13  [100s]
+        0.40 | 0.087253  0.136029         77.398          3.1e-12  [151s]
+        0.60 | 0.087046  0.122121         86.212          2.7e-11  [203s]
+        0.75 | 0.086834  0.093255        112.898          7.3e-14  [249s]
+        0.85 | 0.086666  0.084161        125.097          5.5e-14  [291s]
+        0.92 | 0.086535  0.061602        170.909          5.6e-12  [330s]
+        0.96 | 0.086455  0.051244        205.455          3.0e-14  [363s]
+        0.99 | 0.086393  0.045662        230.570          2.9e-14  [397s]
+(4) predicted ln-law slope 1/(lam_u T_d) = 230.570 periods vs measured S = 81.114  err = +184.25%
+    unforced surrogate 1/(2 alpha T_d) = 65.802 periods, err = -18.88%
+DONE wall=397s
