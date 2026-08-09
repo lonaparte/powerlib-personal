@@ -1,0 +1,5 @@
+G1: closed-form ramped branch 2 sqrt(alpha/Re c_x) = 1.628721e-04
+  hold   400 periods: threshold 2.036080e-04  +25.01% vs the branch  [25s]
+  hold  1600 periods: threshold 1.722225e-04  +5.74% vs the branch  [88s]
+  hold  6400 periods: threshold 1.643970e-04  +0.94% vs the branch  [285s]
+DONE wall=285s

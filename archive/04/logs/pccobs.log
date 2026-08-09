@@ -1,0 +1,17 @@
+=== G1 angle family: P0=1.45500, w0=32.399 rad/s (5.16 Hz), r_g=9.0568e-03
+    steady PCC: Vm=+0.78839  P=-1.45500  Q=+0.00000  Im=+1.23036  f=-0.00000  Vdc=+1.00000
+    threshold, switched on : measured 1.18665e-04  closed form 1.19027e-04 (+0.30%)
+    threshold, raised slowly: measured 2.03613e-04  closed form 2 sqrt(alpha/Re c_x) = 1.62872e-04 (-20.01%)   slow/sudden = 1.716  [47s]
+    PCC swing at 0.9 x sudden threshold (eps=1.0680e-04):
+        Vm 4.3115e-03 (0.547%) | P 6.7440e-03 (0.464%) | Q 6.1411e-03 | Im 8.9955e-03 (0.731%) | f 3.2146e-02 | Vdc 4.5433e-03 (0.454%)  [48s]
+    PCC swing at 0.9 x slow threshold (eps=1.8325e-04):
+        Vm 7.4726e-03 (0.948%) | P 1.1791e-02 (0.810%) | Q 1.0667e-02 | Im 1.5620e-02 (1.270%) | f 5.5945e-02 | Vdc 7.9354e-03 (0.794%)  [49s]
+=== idx2 DC family: P0=1.38371, w0=68.181 rad/s (10.85 Hz), r_g=8.0519e-02
+    steady PCC: Vm=+0.83248  P=-1.38371  Q=+0.00000  Im=+1.10810  f=-0.00000  Vdc=+1.00000
+    threshold, switched on : measured 7.49597e-03  closed form 7.53729e-03 (+0.55%)
+    threshold, raised slowly: measured 1.35032e-02  closed form 2 sqrt(alpha/Re c_x) = 9.06524e-03 (-32.87%)   slow/sudden = 1.801  [104s]
+    PCC swing at 0.9 x sudden threshold (eps=6.7464e-03):
+        Vm 1.8195e-02 (2.186%) | P 1.0794e-01 (7.800%) | Q 8.5333e-02 | Im 9.1887e-02 (8.292%) | f 2.5865e-01 | Vdc 7.1305e-02 (7.130%)  [105s]
+    PCC swing at 0.9 x slow threshold (eps=1.2153e-02):
+        Vm 3.3365e-02 (4.008%) | P 1.9961e-01 (14.426%) | Q 1.5605e-01 | Im 1.6960e-01 (15.306%) | f 4.7672e-01 | Vdc 1.3196e-01 (13.196%)  [106s]
+DONE wall=106s
