@@ -1,0 +1,8 @@
+mix16: P0=1.33016 w0=22.853
+bg=0: grid done [0s]
+  RESULT bg=0: T5 pred=2.0609e-02 meas=2.0603e-02 err=+0.03% [96s]
+bg=P: grid done [97s]
+  RESULT bg=P: T5 pred=1.7915e-02 meas=1.7916e-02 err=-0.01% [493s]
+bg=Q: grid done [494s]
+  RESULT bg=Q: T5 pred=1.7943e-02 meas=1.7938e-02 err=+0.03% [900s]
+DONE wall=900s
