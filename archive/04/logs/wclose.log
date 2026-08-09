@@ -1,0 +1,9 @@
+G1: w0=32.3988 alpha=0.1000 r_g=9.05683e-03 |<p,st_dw>|=0.12121
+criterion: int_window maxRe eig J(x_base) dt >= ln(r_g/d_entry), x_base = moving equilibrium + linear forced response
+  ws=w0/160 (0.2025 rad/s): a_c(criterion)=10.4377 meas=1.9747 err=+428.57%
+      window [0.02,0.18] s  accumulated growth=0.4428  required ln(r_g/d_entry)=0.4428  d_entry=5.817e-03 (0.642 r_g)  max mu=5.4713 [26s]
+  ws=w0/32 (1.0125 rad/s): a_c(criterion)=2.7570 meas=1.2290 err=+124.33%
+      window [0.02,0.18] s  accumulated growth=0.5565  required ln(r_g/d_entry)=0.5565  d_entry=5.192e-03 (0.573 r_g)  max mu=6.6905 [35s]
+  ws=w0/8 (4.0499 rad/s): a_c(criterion)=0.7118 meas=0.9330 err=-23.70%
+      window [0.02,0.18] s  accumulated growth=0.5496  required ln(r_g/d_entry)=0.5496  d_entry=5.227e-03 (0.577 r_g)  max mu=6.0148 [41s]
+DONE wall=41s

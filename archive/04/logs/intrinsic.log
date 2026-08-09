@@ -1,0 +1,19 @@
+idx17 set: theta*=-0.42439 d_sad=2.29282 r_g=9.8674e-02 alpha=0.0800 kappa=2alpha=0.1600 w0=71.904
+(A) detector placement, expressed in intrinsic units
+  theta at 1.00 d_sad, Vdc in [0.20,2.50] Vdc*: eps_c=7.29303e-03 (+0.000% vs first) mode=VLO [18s]
+  theta at 0.90 d_sad, Vdc in [0.30,2.00] Vdc*: eps_c=7.29132e-03 (-0.023% vs first) mode=VLO [36s]
+  theta at 1.00 d_sad, Vdc in [0.10,3.00] Vdc*: eps_c=7.29388e-03 (+0.012% vs first) mode=VLO [53s]
+  theta at 0.80 d_sad, Vdc in [0.40,1.80] Vdc*: eps_c=7.28790e-03 (-0.070% vs first) mode=VLO [71s]
+(B) escape-time law above the threshold
+  fac=1.02: t_esc=29.910s = 314.9 drive periods (VLO)
+  fac=1.05: t_esc=23.176s = 244.0 drive periods (VLO)
+  fac=1.10: t_esc=16.801s = 176.9 drive periods (VLO)
+  fac=1.20: t_esc=11.114s = 117.0 drive periods (VLO)
+  fac=1.35: t_esc=6.921s = 72.9 drive periods (VLO)
+  fac=1.55: t_esc=3.782s = 39.8 drive periods (VLO)
+  fac=1.80: t_esc=2.552s = 26.9 drive periods (VLO)
+  ln-law  t = 81.114 ln(1/d) + -5.290 : sse=3.9490e+02
+  d^-1/2  t = 49.564 d^-1/2 + -7.623 : sse=3.4660e+03
+  free power  t ~ d^(-0.671)  : sse(log)=3.2675e-01
+  predicted ln-law slope from the guard exponent: 1/kappa = 6.250 s = 65.80 periods (kappa = 2 alpha = 0.1600)
+DONE wall=74s

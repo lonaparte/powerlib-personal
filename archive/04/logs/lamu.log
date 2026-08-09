@@ -1,0 +1,6 @@
+idx17: alpha=0.0800 2alpha=0.1600 Td=0.09498s eps_c=7.2930e-03
+  at eps=7.2930e-03: mean log|mu_perp|=-0.313569 per strobe (Td=0.09498s) -> lam_u=-3.30136 1/s
+  predicted log-slope 1/lam_u = -0.303s = -3.19 drive periods
+  fitted slope from escape times = 81.114 periods -> err -103.93%
+  (unforced value 1/(2 alpha) = 65.80 periods, err -18.88%)
+DONE wall=53s
