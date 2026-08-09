@@ -1,0 +1,9 @@
+G1: P0=1.45500 w0=32.399 zg=9.0568e-03 lam=-0.10000+32.39884j c1=1219.12-433.16j
+  rate-forcing coefficient <p,st_dw> = -0.076992-0.093615j (|G|=0.121209); st_dw = e2/ki, constant
+  ws=w0/160 (0.2025 rad/s): meas=1.9747e+00 rad/s (314.3 mHz, phase amp 558.74 deg)  pred(rate-forcing)=8.2986e+00 err=+320.25% [62s]
+     rate at threshold a*ws = 3.9986e-01 rad/s^2
+  ws=w0/32 (1.0125 rad/s): meas=1.2290e+00 rad/s (195.6 mHz, phase amp 69.55 deg)  pred(rate-forcing)=1.6864e+00 err=+37.22% [84s]
+     rate at threshold a*ws = 1.2443e+00 rad/s^2
+  ws=w0/8 (4.0499 rad/s): meas=9.3297e-01 rad/s (148.5 mHz, phase amp 13.20 deg)  pred(rate-forcing)=4.3463e-01 err=-53.41% [92s]
+     rate at threshold a*ws = 3.7784e+00 rad/s^2
+DONE wall=92s
