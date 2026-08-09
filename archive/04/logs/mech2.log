@@ -1,0 +1,23 @@
+(A) idx17: r_g=9.86739e-02 (V cell has 9.06e-3), X=2.2020, cubic closed form eps_c=7.278433e-03
+    4D exact (modal readout, 400 periods) 7.294204e-03; 4D cubic Taylor 7.490114e-03  -> polynomial truncation costs +2.69%  [110s]
+    closed form vs 4D cubic Taylor: -2.83%  (this part is the a^2 expansion + the one-carrier-per-frequency truncation)
+(B) direct test of c_x on the V cell (alpha=0.10, r=0.9): lambda_u and guard radius against alpha_eff = alpha - Re c_x a^2
+    a=0: guard modal radius 1.00720 r_g, lambda_u 0.199228 (2 alpha=0.2000)  [114s]
+    eps/eps_c |  lam_u meas   2(alpha-Rec_x eps^2/4)  err    | rho_g meas/pred
+        0.30 | 0.189666    0.190387           +0.38%  | 0.9534/0.9757 (+2.34%)  [160s]
+        0.50 | 0.172623    0.173297           +0.39%  | 0.8905/0.9309 (+4.53%)  [192s]
+        0.70 | 0.147005    0.147662           +0.45%  | 0.8039/0.8592 (+6.88%)  [223s]
+        0.85 | 0.122127    0.122828           +0.57%  | 0.7205/0.7837 (+8.77%)  [248s]
+        1.00 | 0.092379    0.093187           +0.87%  | 0.6159/0.6826 (+10.82%)  [272s]
+(C) omega_g cell, w_s=3.75524: Re c_x = -3.559958e+00
+      C(q,H,Hbar)    Re = +3.901777e-02
+      B(H,g_-)       Re = +5.034058e+00
+      B(Hbar,g_+)    Re = -9.081536e+00
+      B(q,d0)        Re = +4.485027e-01
+      |<p,H>| = 1.370998e-01, |H| = 1.2490e-02, r_g = 9.0568e-03
+    a=0: guard modal radius 1.00720 r_g (Newton ok)
+     a      |Z(0)|/r_g | rho_g meas/r_g   rho_g pred/r_g  lam_u meas    2 alpha_eff
+    0.2828     0.4445  |      1.1993        1.3084    0.355522   0.342391  [666s]
+    0.5657     0.8894  |      1.3935        1.9616    0.829769   0.769563  [1105s]
+    (30 分钟处终止:0.85/1.00 a_c 两行需在 1.67 s 驱动周期上做 K=64 Newton;
+     上面两行已足以确立饱和这一结论)

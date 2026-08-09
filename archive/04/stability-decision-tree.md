@@ -192,7 +192,14 @@ $$\Big(\frac{\varepsilon|\pi|}{2}\Big)^2 > \alpha^2+\Big(\frac{\omega_p}{2}-\ome
 - 精确判据:$\varepsilon_c$ 处存在平衡点渐近于闭曲线的异宿轨道;实测着陆残差 $10^{-6}$–$10^{-8}$,误差 ≤0.01%,失谐比 0.60–0.92 全域验证。
 - 一阶判据:投影卷绕数变化;中等失谐 21/21 组 ≤0.2%;深失谐系统性偏迟(0.75/0.70/0.60 处 +0.9/+1.2/+2.3%,源于稳定流形在模式平面内超出闭曲线的横向延展),换精确判据。
 - **一阶判据的适用条件(2026-08-09 补,由 $\omega_g$ 慢带格给出)**:卷绕数是把 4D 闭曲线投影到临界模态平面后数的,是"工作点是否在稳定流形内侧"的**投影代理**。判其可用只需比较受迫不动点位移 $|x_a-x_{\rm eq}|$ 与守卫半径 $r_g$:V 通道 $0.65\,r_g$ → +0.13%;$\omega_g$ 慢带 $1.49\,r_g$ → **−9.08%**。后者换精确判据(着陆)后阈值定到 **0.02%**(最小频闪距离在 $a/a_c$=0.90/0.95/0.98/1.00 处为 $0.430/0.254/0.154/\mathbf{0.00153}\,r_g$)。参考点必须是**工作点** $x_{\rm eq}$ 而非受迫不动点 $x_a$——绕 $x_a$ 的卷绕数在两个通道 1.35 $a_c$ 内都不翻转(协议就是从 $x_{\rm eq}$ 投入)。
-- 裕度标度(5 点,$\alpha$ 0.05–0.209,同一临界模态支):判据误差 ≤0.36%;$\varepsilon_c \propto \alpha^{0.4867}$;闭式估计 $2r_g|\lambda-\mathrm{i}\omega_p|/|\langle p,f_u\rangle|$ 与实测之比恒为 **1.545 ± 0.2%**。扫描上端点是**模态交叉**(margin 0.23 附近最弱阻尼模态由 $\omega_0$=32.4 换成 53.3 rad/s,$\operatorname{Re}\ell_1$ 随之变号),不是退化 Hopf。
+- 裕度标度(5 点,$\alpha$ 0.05–0.209,同一临界模态支):判据误差 ≤0.36%。扫描上端点是**模态交叉**(margin 0.23 附近最弱阻尼模态由 $\omega_0$=32.4 换成 53.3 rad/s,$\operatorname{Re}\ell_1$ 随之变号),不是退化 Hopf。
+- **闭式阈值(双载波约化;取代原来的经验比值 1.545 与拟合指数 0.4867)**:把状态按自由模态 $\omega_0$ 与驱动 $\omega_p$ 两个载波展开,二次项经**和频 / 差频 / 直流**三条通道在三阶回到 $\omega_0$,给出交叉饱和系数
+  $$c_x=\langle p,C(q,H,\bar H)\rangle+\langle p,B(H,g_-)\rangle+\langle p,B(\bar H,g_+)\rangle+\langle p,B(q,\hat d_0)\rangle$$
+  $$g_\pm=(\mathrm i(\omega_0\pm\omega_p)I-A)^{-1}B(q,H^{(\pm)}),\quad \hat d_0=-A^{-1}B(H,\bar H),\quad H=(\mathrm i\omega_p I-A)^{-1}f_u$$
+  于是 $\dot Z=\lambda Z+c_1|Z|^2Z+c_x|a|^2Z$,$\alpha_{\rm eff}=\alpha-\operatorname{Re}c_x|a|^2$,投入踢击 $Z(0)=-(a\langle p,H\rangle+\bar a\langle p,\bar H\rangle)$,逃逸判据 $|Z(0)|>\rho_g=\sqrt{\alpha_{\rm eff}/\operatorname{Re}c_1}$,即
+  $$\varepsilon_c=\frac{r_g}{\sqrt{J^2+\operatorname{Re}c_x/(4\operatorname{Re}c_1)}},\qquad J=\frac{|\lambda||\langle p,f_u\rangle|}{|\omega_p^2+\lambda^2|},\qquad \lambda_u=2\alpha_{\rm eff}$$
+  等价地 $\varepsilon_{\rm est}/\varepsilon_c=\zeta\sqrt{1+X}$,$\zeta=2|\lambda|/|\lambda+\mathrm i\omega_p|$,$X=\operatorname{Re}c_x/(4\operatorname{Re}c_1J^2)$。**单模约化等价于强行取 $c_x=2c_1$**(即 $X=2,\zeta=1$,比值 $\sqrt3$);$H\to q,\omega_p\to\omega_0$ 时 $c_x\to2c_1$ 逐位成立。验证:V 通道四个裕度 $\varepsilon_c$ **+0.22…+0.49%**;$\lambda_u$ 在四个驱动幅值 **+0.38…+0.87%**;$\alpha$ 指数闭式 0.4915 vs 实测 0.4895;单模的 −12% = $\sqrt3/(\zeta\sqrt{1+X})=1.123$。
+- **闭式的适用域(可预判)**:展开参数 $|\operatorname{Re}c_x|a^2/\alpha$ 在阈值处须 $\lesssim1$(V 格 0.53 ✓);$\omega_g$ 慢带该值为 7.9 ✗——踢击(1.48 vs 1.49 $r_g$)与守卫被撑大的符号都对,但量值失效(实测 $\rho_g$ 饱和于 1.00→1.20→1.39,闭式给 1.00→1.31→1.96),该格判据用着陆。检验 $c_x$ 要用 $\lambda_u$ 而非 $\rho_g$:下一阶交叉项 $c_{xx}|a|^2|Z|^2Z$ 改 $\rho_g$ 但不改 $\lambda_u$(守卫处 $\mathrm d\dot\rho/\mathrm d\rho=2\alpha_{\rm eff}$ 与三次系数无关),实测 0.87% vs 10.8% 正是如此。
 - 协议纪律(实测教训):判据与测量逐组核对驱动频率;模型与实测的失稳事件判据逐字一致;测量值转录保留全精度;阈值测量须逃逸时间感知——**有限观测窗给出的阈值就是"逃逸时间 = 窗长"那一点,系统性偏高,且逐格不同**:$\alpha$ 扫描格 400 周期已收敛(+0.008%),idx17 格 400 周期偏 **+2.73%**(该格 $1/\lambda_u$ = 206 周期)。窗长必须按该格的 $1/\lambda_u$ 定。
 
 ### B3-ii(远边界:鞍点周期轨道)
@@ -358,6 +365,9 @@ $q$ 归一后各状态分量模长。相角类 → F1;直流电压类 → F2($\d
 | B3a 一阶(卷绕数) | 21 组(协议频率)+ 裕度 5 点 | ≤0.2%;裕度 0.05–0.209 全程 ≤0.36%;深失谐 +0.9→+2.3%、$\omega_g$ 慢带 −9.1% 已量化 |
 | B3a 逃逸时间律 $t_{\rm esc}=(1/\lambda_u)\ln(1/d)$ | idx17 格,$d$ 跨 1.5 个十倍 | +0.72%;沿逃逸轨迹直接量 $\lambda_u$ 再验 −0.40%($\lambda_u$ 估计器对精确 Floquet 指数定标 −0.016%) |
 | 闭式尺度层级(V 通道,3 个 $\alpha$) | 线性/单模三次/4D 三次 Taylor | +54.4% / −12.9% / **+0.14%** |
+| **B3a 闭式阈值**(双载波 + $c_x$) | V 通道 4 个裕度 | **+0.22…+0.49%**(零拟合) |
+| **$c_x$ 直接验证**($\lambda_u=2\alpha_{\rm eff}$) | 4 个驱动幅值 | **+0.38…+0.87%** |
+| 闭式在 idx17 | 1 格($r_g$ 大 11 倍) | +2.53%(五阶径向项后 +2.20%);两项误差已分别实测 |
 | B4a(GFL / GFM) | 10 点 / 6+ 点 | ±0.0–0.9% / ≤0.2% |
 | A6 / A7 暂态 | 14 点 / 6 组 | ≤1% / ≤0.2% |
 | $\kappa$(五阶) | 6 点 | ≤0.26% |

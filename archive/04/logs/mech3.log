@@ -1,0 +1,13 @@
+=== G1 V r=0.9: P_H=1.455154, c1(P_H)=1207.4356-444.3539j, c2(P_H)=-49587.5273-158473.8120j, C=Re c2/Re c1^2 = -0.03401
+  alpha=0.050: measured 8.433757e-05   (i) 8.452258e-05  +0.22%   (ii) 8.461747e-05  +0.33%   (iii) 8.463291e-05  +0.35%  [64s]
+           alpha_eff(eps_c)/alpha = 0.4667, lambda_u pred cubic 0.046672 / quintic 0.046635 (C alpha_eff = -0.0008)
+  alpha=0.100: measured 1.186533e-04   (i) 1.190266e-04  +0.31%   (ii) 1.192934e-04  +0.54%   (iii) 1.193370e-04  +0.58%  [114s]
+           alpha_eff(eps_c)/alpha = 0.4693, lambda_u pred cubic 0.093856 / quintic 0.093706 (C alpha_eff = -0.0016)
+  alpha=0.150: measured 1.446190e-04   (i) 1.452025e-04  +0.40%   (ii) 1.456895e-04  +0.74%   (iii) 1.457696e-04  +0.80%  [180s]
+           alpha_eff(eps_c)/alpha = 0.4718, lambda_u pred cubic 0.141531 / quintic 0.141190 (C alpha_eff = -0.0024)
+  alpha=0.200: measured 1.662438e-04   (i) 1.670541e-04  +0.49%   (ii) 1.677990e-04  +0.94%   (iii) 1.679224e-04  +1.01%  [232s]
+           alpha_eff(eps_c)/alpha = 0.4742, lambda_u pred cubic 0.189681 / quintic 0.189069 (C alpha_eff = -0.0032)
+=== idx17 r=0.92: P_H=1.408495, c1(P_H)=8.3201+2.6084j, c2(P_H)=21.0903+40.2432j, C=Re c2/Re c1^2 = +0.30467
+  alpha=0.080: measured 7.099018e-03   (i) 7.278433e-03  +2.53%   (ii) 7.264140e-03  +2.33%   (iii) 7.255393e-03  +2.20%  [438s]
+           alpha_eff(eps_c)/alpha = 0.3458, lambda_u pred cubic 0.055326 / quintic 0.055792 (C alpha_eff = +0.0084)
+DONE wall=438s
