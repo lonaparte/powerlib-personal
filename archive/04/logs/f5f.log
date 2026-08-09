@@ -1,0 +1,14 @@
+order-4/5 lambdas built [1s]
+Q=+0.15: grid+tensors done zg=3.0842e-02 [2s]
+  Q=+0.15 w0/32: meas=3.1040e-03  T5:+0.0% [123s]
+  Q=+0.15 w0/32: meas=3.1040e-03  T5:+0.0%  T3:-0.0% [156s]
+  Q=+0.15 final:   Q=+0.15 w0/32: meas=3.1040e-03  T5:+0.0%  T3:-0.0%
+mix16: grid+tensors done zg=2.0031e-02 [157s]
+  mix16 w0/32: meas=2.3619e-03  T5:+0.0% [320s]
+  mix16 w0/32: meas=2.3619e-03  T5:+0.0%  T3:+0.0% [375s]
+  mix16 final:   mix16 w0/32: meas=2.3619e-03  T5:+0.0%  T3:+0.0%
+G1 m=0.05: grid+tensors done zg=6.4195e-03 [377s]
+  G1 m=0.05 w0/32: meas=1.2409e-03  T5:-1.6% [428s]
+  G1 m=0.05 w0/32: meas=1.2409e-03  T5:-1.6%  T3:-1.6% [445s]
+  G1 m=0.05 final:   G1 m=0.05 w0/32: meas=1.2409e-03  T5:-1.6%  T3:-1.6%
+DONE wall=445s
