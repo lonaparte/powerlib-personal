@@ -1,0 +1,7 @@
+lambdas built [0s]
+M1: P_H=0.9504 P0=1.5323 dP=0.5819
+tensor grid done [3s]
+  ws=0.1 dip=0.5: meas(full)=0.005918 (old rounded 0.006) T5pred=0.005910 err=-0.12% [49s]
+  ws=0.1 dip=1.5: meas(full)=0.017718 (old rounded 0.0179) T5pred=0.017721 err=+0.02% [98s]
+  ws=0.1 dip=3.0: meas(full)=0.041497 (old rounded 0.0416) T5pred=0.041575 err=+0.19% [182s]
+DONE wall=182s
