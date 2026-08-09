@@ -1,0 +1,18 @@
+G1 m0.10: P0=1.45500 w0=32.399 zg=9.057e-03 |pf|V/P/Q=320/139/128
+  anchor eps_bg=0: pred=8.5098e-03 meas=8.4947e-03 err=+0.18% [5s]
+  RESULT G1 m0.10 bg=P 0.6x: pred=8.3204e-03 meas=8.3159e-03 err=+0.05% erosion=+2.1% [30s]
+  Q: flip eps_c=3.0092e-04 (guess 2.97e-04) [103s]
+  RESULT G1 m0.10 bg=Q 0.6x: pred=8.3095e-03 meas=8.3049e-03 err=+0.05% erosion=+2.2% [125s]
+Xg=0.70: P0=1.05092 w0=20.290 zg=1.569e-02 |pf|V/P/Q=81.5/42.3/40.2
+  anchor eps_bg=0: pred=1.4698e-02 meas=1.4743e-02 err=-0.31% [130s]
+  P: flip eps_c=7.8748e-04 (guess 7.80e-04) [218s]
+  RESULT Xg=0.70 bg=P 0.6x: pred=1.3485e-02 meas=1.3543e-02 err=-0.43% erosion=+8.1% [247s]
+  Q: flip eps_c=8.2402e-04 (guess 8.19e-04) [314s]
+  RESULT Xg=0.70 bg=Q 0.6x: pred=1.3473e-02 meas=1.3531e-02 err=-0.43% erosion=+8.2% [341s]
+mix16: P0=1.33016 w0=22.853 zg=2.003e-02 |pf|V/P/Q=99/41.9/39.2
+  anchor eps_bg=0: pred=2.0403e-02 meas=2.0603e-02 err=-0.97% [346s]
+  P: flip eps_c=1.0057e-03 (guess 1.20e-03) [407s]
+  RESULT mix16 bg=P 0.6x: pred=1.7561e-02 meas=1.7916e-02 err=-1.98% erosion=+13.0% [431s]
+  Q: flip eps_c=1.0757e-03 (guess 1.28e-03) [492s]
+  RESULT mix16 bg=Q 0.6x: pred=1.7625e-02 meas=1.7938e-02 err=-1.75% erosion=+12.9% [516s]
+DONE wall=516s
