@@ -1,2 +1,8 @@
 idx17: r_g=9.86739e-02 T_d=0.094982s
 eps_c(400)=7.29324341e-03, converged eps*=7.099022833e-03 (-2.663%)  [340s]
+at eps = eps*(1+3e-4): lambda_u(ring,K=64) = 0.0510147 /s -> 1/(lambda_u T_d) = 206.379 periods  [547s]
+trajectory escapes at 1275.8 periods; closest approach to the guard curve 3.786e-04 r_g at strobe 6
+  window [1e-03,1e-02] r_g: strobes 15..677 (663 pts), max deviation from a pure exponential 59.92%, lambda_u(traj) = 0.0508130 /s (-0.40% vs ring)
+  window [2e-03,3e-02] r_g: strobes 142..897 (756 pts), max deviation from a pure exponential 59.19%, lambda_u(traj) = 0.0523201 /s (+2.56% vs ring)
+  window [1e-02,1e-01] r_g: strobes 466..1093 (628 pts), max deviation from a pure exponential 66.26%, lambda_u(traj) = 0.0567055 /s (+11.16% vs ring)
+DONE wall=564s
