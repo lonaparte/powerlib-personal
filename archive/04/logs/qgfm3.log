@@ -1,0 +1,7 @@
+M3 Xg=0.05: pred(updated)=1.7908e-01 meas=1.7905e-01 err=+0.01%  exit_mult_angle=180.0deg minE@edge=0.902 [1s]
+  E-collapse ceiling eps*=1.4666e+01  meas/ceiling=0.012
+M2 Xg=0.03: pred(updated)=2.2896e+00 meas=2.2886e+00 err=+0.04%  exit_mult_angle=180.0deg minE@edge=0.822 [2s]
+  E-collapse ceiling eps*=3.1930e+01  meas/ceiling=0.072
+M5 Xg=0.15: pred(updated)=1.8127e+01 meas=1.0066e+01 err=+80.08%  exit_mult_angle=58.2deg minE@edge=-0.600 [3s]
+  E-collapse ceiling eps*=1.2296e+01  meas/ceiling=0.819
+DONE wall=3s
