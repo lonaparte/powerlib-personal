@@ -1,0 +1,8 @@
+Q=+0.15 rebuilt: zg=3.0842e-02 [27s]
+  A5 Resc=2.5zg npw=12: pred=3.1454e-03 errvs12=+1.3% [113s]
+  A5 Resc=3.0zg npw=12: pred=3.1454e-03 errvs12=+1.3% [197s]
+  A5 Resc=4.0zg npw=12: pred=3.1454e-03 errvs12=+1.3% [281s]
+  A5 Resc=5.0zg npw=12: pred=3.1454e-03 errvs12=+1.3% [364s]
+4D nper=24: meas=3.1040e-03 (nper=12: 3.1040e-03, shift +0.00%) [371s]
+A5 npw=24 Resc=5zg: pred=3.1447e-03 err vs meas24=+1.3%
+DONE wall=488s
