@@ -1,0 +1,19 @@
+GFL G1 u=P: alpha=0.1000 w0=32.399 |M1q|=0 |Bh|=722 |pi|=722 pred=2.7716e-04 meas=2.7737e-04 err=-0.08% [1s]
+GFL G1 u=Q: alpha=0.1000 w0=32.399 |M1q|=164 |Bh|=666 |pi|=591 pred=3.3837e-04 meas=3.3846e-04 err=-0.03% [2s]
+GFL Xg=0.35 u=P: alpha=0.1000 w0=76.775 |M1q|=0 |Bh|=20.8 |pi|=20.8 pred=9.6120e-03 meas=9.5981e-03 err=+0.14% [2s]
+GFL Xg=0.35 u=Q: alpha=0.1000 w0=76.775 |M1q|=36.7 |Bh|=11.1 |pi|=26.6 pred=7.5245e-03 meas=7.5265e-03 err=-0.03% [2s]
+GFL kp30ki600 u=P: alpha=0.1000 w0=68.181 |M1q|=0 |Bh|=24.1 |pi|=24.1 pred=8.2940e-03 meas=8.2376e-03 err=+0.69% [2s]
+GFL kp30ki600 u=Q: alpha=0.1000 w0=68.181 |M1q|=55 |Bh|=20 |pi|=36.6 pred=5.4707e-03 meas=5.4668e-03 err=+0.07% [3s]
+GFM M3@0.05 u=Pref: alpha=0.1000 w0=50.284 |M1q|=0 |Bh|=1.39 |pi|=1.39 pred=1.4386e-01 meas=1.4393e-01 err=-0.05% [5s]
+GFM M3@0.05 u=Qref: alpha=0.1000 w0=50.284 |M1q|=7.75 |Bh|=6.66 |pi|=1.12 pred=1.7879e-01 meas=1.7905e-01 err=-0.15% [9s]
+GFM M2@0.03 u=Pref: alpha=0.1000 w0=11.906 |M1q|=0 |Bh|=0.396 |pi|=0.396 pred=5.0563e-01 meas=5.0774e-01 err=-0.42% [10s]
+GFM M2@0.03 u=Qref: alpha=0.1000 w0=11.906 |M1q|=0.536 |Bh|=0.487 |pi|=0.093 pred=2.1500e+00 meas=2.2886e+00 err=-6.06% [13s]
+GFM M5@0.15 u=Pref: alpha=0.1000 w0=11.665 |M1q|=0 |Bh|=1.88 |pi|=1.88 pred=1.0665e-01 meas=1.0686e-01 err=-0.20% [15s]
+GFM M5@0.15 u=Qref: alpha=0.1000 w0=11.665 |M1q|=0.864 |Bh|=0.892 |pi|=0.108 pred=1.8569e+00 meas=1.0066e+01 err=-81.55% [32s]
+--- mq gating (M3@0.05, u=Qref) ---
+  mq=0.2: |f_Q|=2.625e+03 |pi|=1.119e+00 pred_eps_t=1.788e-01
+  mq=0.1: |f_Q|=1.356e+03 |pi|=8.381e-01 pred_eps_t=2.386e-01
+  mq=0.05: |f_Q|=7.124e+02 |pi|=5.543e-01 pred_eps_t=3.608e-01
+  mq=0.02: |f_Q|=3.120e+02 |pi|=2.661e-01 pred_eps_t=7.517e-01
+  mq=0.0: |f_Q|=0.000e+00 |pi|=0.000e+00 pred_eps_t=inf
+DONE wall=33s

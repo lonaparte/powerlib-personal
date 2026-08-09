@@ -1,0 +1,23 @@
+M3@0.05: P0=8.4981 P_H=8.2133 dP=0.2849 w0=50.284 alpha=0.1000 dsad=1.480
+  Pref a=0.0285 (0.1xdP): max|om|=6.0967 lin_pred=28.3170 sat_ratio=0.215 [26s]
+  Pref a=0.0855 (0.3xdP): max|om|=8.8935 lin_pred=84.9510 sat_ratio=0.105 [56s]
+  Pref a=0.2849 (1.0xdP): max|om|=13.3861 lin_pred=283.1699 sat_ratio=0.047 [88s]
+  Pref a=0.8546 (3.0xdP): max|om|=19.3761 lin_pred=849.5098 sat_ratio=0.023 [123s]
+  Pref a=2.8485 (10.0xdP): DESYNC/escape at t=0.15s [124s]
+  Qref a=0.0500 (0.05pu): max|om|=5.4128 lin_pred=19.6187 sat_ratio=0.276 [152s]
+  Qref a=0.1500 (0.15pu): max|om|=8.0180 lin_pred=58.8562 sat_ratio=0.136 [186s]
+  Qref a=0.5000 (0.5pu): max|om|=12.3830 lin_pred=196.1872 sat_ratio=0.063 [231s]
+  Qref a=1.0000 (1.0pu): max|om|=16.0450 lin_pred=392.3744 sat_ratio=0.041 [275s]
+  Qref a=2.0000 (2.0pu): max|om|=20.9782 lin_pred=784.7488 sat_ratio=0.027 [325s]
+M5@0.15: P0=4.3235 P_H=4.1402 dP=0.1834 w0=11.665 alpha=0.1000 dsad=1.708
+  Pref a=0.0183 (0.1xdP): max|om|=1.8985 lin_pred=4.5611 sat_ratio=0.416 [328s]
+  Pref a=0.0550 (0.3xdP): max|om|=2.8219 lin_pred=13.6833 sat_ratio=0.206 [330s]
+  Pref a=0.1834 (1.0xdP): max|om|=4.2477 lin_pred=45.6109 sat_ratio=0.093 [332s]
+  Pref a=0.5501 (3.0xdP): DESYNC/escape at t=0.64s [332s]
+  Pref a=1.8336 (10.0xdP): DESYNC/escape at t=0.58s [332s]
+  Qref a=0.0500 (0.05pu): max|om|=1.7234 lin_pred=3.5407 sat_ratio=0.487 [334s]
+  Qref a=0.1500 (0.15pu): max|om|=2.6120 lin_pred=10.6220 sat_ratio=0.246 [336s]
+  Qref a=0.5000 (0.5pu): max|om|=4.0040 lin_pred=35.4066 sat_ratio=0.113 [339s]
+  Qref a=1.0000 (1.0pu): DESYNC/escape at t=1.05s [339s]
+  Qref a=2.0000 (2.0pu): DESYNC/escape at t=1.01s [339s]
+DONE wall=339s

@@ -1,0 +1,8 @@
+P-GFL G1: P0=1.45500 PH=1.45515 Delta=1.5392e-04 AH=3.3863e-04 w0=32.399 zg=9.057e-03
+  ws=w0/160: 1D no escape at AH
+  ws=w0/32: 1D no escape at AH
+Q-GFL G1: alpha(Q) on |Q|<=0.4: min=-8.5696 crossing=yes alpha(0)=0.1000 alpha(+0.4)=None alpha(-0.4)=-5.296585731545518
+Q-GFM M1@0.10: P0=1.5323 w0=21.890
+  RESULT Q-GFM ws=w0/100 a=0.05: pred=0.00017 meas=0.00032 err=-46.3% [14s]
+  RESULT Q-GFM ws=w0/100 a=0.15: pred=0.00052 meas=0.00061 err=-14.6% [17s]
+DONE wall=17s
