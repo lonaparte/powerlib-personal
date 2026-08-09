@@ -1,0 +1,20 @@
+M3@0.05: P0=8.4981 w0=50.284 alpha=0.1000 |q|=(0.019,0.969,0.244,0.035)
+  coupling |<p,f_u>|: V=1518  Pref=102.6  Qref=40.5  Xg=1.702e+04  dw=25.87
+  |d(Re lam)/du|: V=8.347  Pref=0.3642  Qref=0.2842  Xg=95.92  dw=0.007284
+  TONGUE u=dw: |pi|=0.6996 pred=2.8587e-01 meas=2.8601e-01 = 45.52 mHz err=-0.05% [4s]
+  TONGUE u=Xg: |pi|=236.2 pred=8.4681e-04 meas=8.4331e-04 = 1.687% of Xg err=+0.41% [9s]
+M2@0.03: P0=18.4204 w0=11.906 alpha=0.1000 |q|=(0.050,0.596,0.719,0.354)
+  coupling |<p,f_u>|: V=221.2  Pref=8.183  Qref=3.355  Xg=4644  dw=9.866
+  |d(Re lam)/du|: V=7.356  Pref=0.2473  Qref=0.1449  Xg=161.5  dw=0.04947
+  TONGUE u=dw: |pi|=0.9452 pred=2.1160e-01 meas=2.1249e-01 = 33.82 mHz err=-0.42% [12s]
+  TONGUE u=Xg: |pi|=98.84 pred=2.0234e-03 meas=2.0230e-03 = 6.743% of Xg err=+0.02% [16s]
+  DESYNC u=dw: threshold 1.3022e+00 = 207.3 mHz (phase amp 6.2669 deg) type=DESYNC [45s]
+  DESYNC u=Xg: threshold 2.0436e-03 = 6.812% of Xg type=DESYNC [78s]
+M5@0.15: P0=4.3235 w0=11.665 alpha=0.1000 |q|=(0.081,0.950,0.222,0.204)
+  coupling |<p,f_u>|: V=142.3  Pref=26.19  Qref=7.459  Xg=692.9  dw=6.128
+  |d(Re lam)/du|: V=3.288  Pref=0.589  Qref=0.2173  Xg=16.79  dw=0.01178
+  TONGUE u=dw: |pi|=0.8758 pred=2.2836e-01 meas=2.2881e-01 = 36.42 mHz err=-0.20% [81s]
+  TONGUE u=Xg: |pi|=25.15 pred=7.9533e-03 meas=7.9923e-03 = 5.328% of Xg err=-0.49% [84s]
+  DESYNC u=dw: threshold 9.1944e-01 = 146.3 mHz (phase amp 4.5162 deg) type=DESYNC [117s]
+  DESYNC u=Xg: threshold 8.4430e-03 = 5.629% of Xg type=DESYNC [157s]
+DONE wall=157s

@@ -1,0 +1,19 @@
+G1 strong: P0=1.45500 w0=32.399 zg=9.057e-03 Psn=1.5000 (P0/Psn=0.970)
+  coupling |<p,f_u>|: V=319.9  P=138.6  Q=127.9  Xg=283.5  dw=3.927
+  |d(Re lam)/du| (frozen-spectrum motion): V=1826  P=653  Q=696.6  Xg=1830  dw=0.0001428
+  TONGUE u=Xg: |pi|=259.4 pred=7.7090e-04 meas=7.8071e-04 = 0.1561% of Xg err=-1.26% [1s]
+  TONGUE u=dw: |pi|=7.2 pred=2.7776e-02 meas=2.7797e-02 = 4.424 mHz err=-0.08% [2s]
+  SUDDEN-ON Xg: eps_c=1.3255e-04 (0.0265% of Xg) mode=VHI [45s]
+  RESULT flip(Xg)=1.3245e-04 meas=1.3255e-04 err=-0.07% [160s]
+Xg=0.35: P0=1.42944 w0=76.775 zg=1.311e-01 Psn=2.1429 (P0/Psn=0.667)
+  coupling |<p,f_u>|: V=78.52  P=53.06  Q=28.42  Xg=19.18  dw=0.364
+  |d(Re lam)/du| (frozen-spectrum motion): V=83.5  P=56.15  Q=1.899  Xg=20.26  dw=4.52e-05
+  TONGUE u=Xg: |pi|=32.62 pred=6.1319e-03 meas=6.1187e-03 = 1.7482% of Xg err=+0.22% [161s]
+  TONGUE u=dw: |pi|=0.239 pred=8.3684e-01 meas=8.3196e-01 = 132.410 mHz err=+0.59% [161s]
+idx2 weak: P0=1.38371 w0=68.181 zg=8.052e-02 Psn=1.5000 (P0/Psn=0.922)
+  coupling |<p,f_u>|: V=76.9  P=53.81  Q=44.72  Xg=26.1  dw=0.7538
+  |d(Re lam)/du| (frozen-spectrum motion): V=77.07  P=53.91  Q=9.956  Xg=9.518  dw=2.889e-05
+  TONGUE u=Xg: |pi|=39.13 pred=5.1117e-03 meas=5.1068e-03 = 1.0214% of Xg err=+0.10% [162s]
+  TONGUE u=dw: |pi|=0.3938 pred=5.0785e-01 meas=5.0563e-01 = 80.474 mHz err=+0.44% [162s]
+  SUDDEN-ON Xg: no escape to cap 1.250e-02 (2.5% of Xg)
+DONE wall=176s

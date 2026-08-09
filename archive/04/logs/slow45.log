@@ -1,0 +1,15 @@
+GFL G1: P0=1.45500 w0=32.399 Xg0=0.5 Xg_edge=0.51546 (margin 3.09%) AH=1.3917e-02
+  alpha over Xg grid: -15.9445 .. 21.8410  (crossing=yes)
+  RESULT Xg-slow ws=w0/160: pred=4.3500e-04 meas=4.3542e-04 (0.087% of Xg) err=-0.1% [156s]
+  RESULT Xg-slow ws=w0/32: pred=1.3243e-03 meas=1.3307e-03 (0.266% of Xg) err=-0.5% [193s]
+  dw structural check: x_pll enters only f[0] linearly, so the Jacobian is x_pll-independent and a constant dw shifts only x_pll* = dw/ki
+    dw=0.0: alpha=0.0999999757 w0=32.398835
+    dw=0.05: alpha=0.0999999757 w0=32.398835
+    dw=0.2: alpha=0.0999999757 w0=32.398835
+    dw=1.0: alpha=0.0999999757 w0=32.398835
+  dw-slow ws=w0/160: escape at a=2.0 rad/s (318 mHz)? True [193s]
+  dw-slow ws=w0/32: escape at a=2.0 rad/s (318 mHz)? True [193s]
+GFM M1@0.10: P0=1.5323 w0=21.890 (full linear co-moving, Xg channel)
+  RESULT GFM Xg-slow a=0.005 (5%): pred=0.002532 meas=0.002532 err=-0.00% [204s]
+  RESULT GFM Xg-slow a=0.015 (15%): pred=0.008672 meas=0.008672 err=-0.00% [214s]
+DONE wall=214s
