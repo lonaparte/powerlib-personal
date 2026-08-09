@@ -1,0 +1,10 @@
+P-GFL G1: P0=1.45500 PH=1.45515 (PH-P0=1.54e-04, cliff) AH=2.250e-02 w0=32.399
+  RESULT P-GFL ws=w0/160: pred=1.1578e-03 meas=1.1571e-03 err=+0.1% [66s]
+  RESULT P-GFL ws=w0/32: pred=3.3562e-03 meas=3.3623e-03 err=-0.2% [92s]
+Q-GFL G1: existence edge Q+=0.0344, alpha-crossing Q-=-0.0113
+  RESULT Q-GFL ws=w0/160: pred=1.1203e-03 meas=1.1208e-03 err=-0.0% [157s]
+  RESULT Q-GFL ws=w0/32: pred=3.3698e-03 meas=3.3856e-03 err=-0.5% [193s]
+Q-GFM M1@0.10: P0=1.5323 w0=21.890 (full linear co-moving)
+  RESULT Q-GFM ws=w0/100 a=0.05: pred=0.000173 meas=0.000322 err=-46.2% [197s]
+  RESULT Q-GFM ws=w0/100 a=0.15: pred=0.000520 meas=0.000608 err=-14.5% [200s]
+DONE wall=200s
