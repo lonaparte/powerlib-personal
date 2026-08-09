@@ -1,0 +1,23 @@
+M2@0.03: st_d=0.6947 sad_d=1.4997 w0=11.906
+  escape threshold T=60s 5.2639%  T=200s 5.2639%  (window shift +0.00%) [25s]
+    eps=5.0533% (0.960x): scaled closest approach=125.2877 [49s]
+    eps=5.1586% (0.980x): scaled closest approach=35.6312 [49s]
+    eps=5.2113% (0.990x): scaled closest approach=35.7300 [50s]
+    eps=5.2376% (0.995x): scaled closest approach=129.1310 [52s]
+    eps=5.2639% (1.000x): scaled closest approach=129.6763 [55s]
+    eps=5.2902% (1.005x): scaled closest approach=33.8367 [56s]
+    eps=5.3165% (1.010x): scaled closest approach=34.7972 [56s]
+    eps=5.3692% (1.020x): scaled closest approach=131.8488 [59s]
+  LANDING at 5.2902% (min approach 33.8367) vs escape 5.2639% -> agreement +0.50%
+M5@0.15: st_d=0.8283 sad_d=1.7078 w0=11.665
+  escape threshold T=60s 4.8753%  T=200s 4.8753%  (window shift +0.00%) [84s]
+    eps=4.6803% (0.960x): scaled closest approach=41.1709 [111s]
+    eps=4.7778% (0.980x): scaled closest approach=42.0977 [114s]
+    eps=4.8266% (0.990x): scaled closest approach=42.5621 [117s]
+    eps=4.8509% (0.995x): scaled closest approach=22.9648 [118s]
+    eps=4.8753% (1.000x): scaled closest approach=43.0272 [122s]
+    eps=4.8997% (1.005x): scaled closest approach=18.1244 [122s]
+    eps=4.9241% (1.010x): scaled closest approach=18.6277 [123s]
+    eps=4.9728% (1.020x): scaled closest approach=21.3222 [124s]
+  LANDING at 4.8997% (min approach 18.1244) vs escape 4.8753% -> agreement +0.50%
+DONE wall=124s

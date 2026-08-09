@@ -1,0 +1,10 @@
+M2@0.03: d0=0.6947 dsad=1.4997 margin=0.8051 w0=11.906 alpha=0.1000 |q_d|=0.0501 F1=110.5881 l1=(-0.015311149200743085-0.11060791229035573j)
+  ORBIT-TOUCHES-SADDLE at V swing 27.19%  meas=5.26%  err=+416.87% [9s]
+  leading-order estimate (2|q_d|a = margin): a_req=8.0397  eps=52.58%  err=+899.5%
+M5@0.15: d0=0.8283 dsad=1.7078 margin=0.8795 w0=11.665 alpha=0.1000 |q_d|=0.0814 F1=71.1433 l1=(-0.013926101754325213-0.22529341866632574j)
+  ORBIT-TOUCHES-SADDLE at V swing 26.69%  meas=4.88%  err=+446.83% [21s]
+  leading-order estimate (2|q_d|a = margin): a_req=5.4005  eps=50.03%  err=+925.1%
+M1@0.1: d0=0.1548 dsad=2.7721 margin=2.6173 w0=21.890 alpha=0.0272 |q_d|=0.0417 F1=30.7163 l1=(-0.003230079841866709-0.02519584837620878j)
+  no saddle touch up to eps=0.505 (max delta on orbit 0.6197 vs dsad 2.7721) [40s]
+  leading-order estimate (2|q_d|a = margin): a_req=31.3474  eps=2547.79%
+DONE wall=40s

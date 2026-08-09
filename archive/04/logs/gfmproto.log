@@ -1,0 +1,13 @@
+M2@0.03: d0=0.6947 dsad=1.4997 w0=11.906
+  A phi=0 (step +eps): threshold 5.0784% [9s]
+  A phi=pi/2 (no step): threshold 5.8694% [18s]
+  A phi=pi (step -eps): threshold 4.2956% [36s]
+  A phi=3pi/2 (no step): threshold 4.6741% [44s]
+  B: ambient-start escape first at 7.94% (|mu|max=1.7286) [58s]
+M5@0.15: d0=0.8283 dsad=1.7078 w0=11.665
+  A phi=0 (step +eps): threshold 4.8499% [73s]
+  A phi=pi/2 (no step): threshold 5.7837% [82s]
+  A phi=pi (step -eps): threshold 4.2346% [91s]
+  A phi=3pi/2 (no step): threshold 4.4412% [105s]
+  B: ambient-start escape first at 9.94% (|mu|max=3.1862) [122s]
+DONE wall=122s

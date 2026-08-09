@@ -1,0 +1,22 @@
+M2@0.03: st_d=0.6947 saddle_d=1.4997 w0=11.906 meas=0.0526
+  eps=1.05%: |mu|max(attractor)=0.8807 saddle mult=(74.8,0.00124)  max_delta(attr)=0.9322  min dist(traj, saddle orbit)=4.677e+00 [4s]
+  eps=2.63%: |mu|max(attractor)=0.8251 saddle mult=(74.5,0.00125)  max_delta(attr)=1.0292  min dist(traj, saddle orbit)=3.843e+00 [7s]
+  eps=4.21%: |mu|max(attractor)=0.7828 saddle mult=(74.1,0.00125)  max_delta(attr)=1.0933  min dist(traj, saddle orbit)=3.391e+00 [10s]
+  eps=5.00%: |mu|max(attractor)=0.7643 saddle mult=(73.8,0.00126)  max_delta(attr)=1.1198  min dist(traj, saddle orbit)=2.105e+00 [14s]
+  eps=5.26%: |mu|max(attractor)=0.7585 saddle mult=(73.7,0.00126)  max_delta(attr)=1.1281  min dist(traj, saddle orbit)=1.367e+00 [17s]
+  eps=5.52%: |mu|max(attractor)=0.7528 saddle mult=(73.6,0.00127)  max_delta(attr)=1.1361  min dist(traj, saddle orbit)=2.681e-01 [22s]
+  eps=6.31%: |mu|max(attractor)=0.7364 saddle mult=(73.2,0.00127)  max_delta(attr)=1.1587  min dist(traj, saddle orbit)=2.189e+00 [27s]
+M5@0.15: st_d=0.8283 saddle_d=1.7078 w0=11.665 meas=0.0488
+  eps=0.98%: |mu|max(attractor)=0.9195 saddle mult=(139,0.00227)  max_delta(attr)=1.0843  min dist(traj, saddle orbit)=1.540e+00 [31s]
+  eps=2.44%: |mu|max(attractor)=0.8958 saddle mult=(139,0.00228)  max_delta(attr)=1.1877  min dist(traj, saddle orbit)=1.042e+00 [35s]
+  eps=3.90%: |mu|max(attractor)=0.8771 saddle mult=(138,0.00229)  max_delta(attr)=1.2559  min dist(traj, saddle orbit)=5.263e-01 [39s]
+  eps=4.64%: |mu|max(attractor)=0.8687 saddle mult=(137,0.0023)  max_delta(attr)=1.2840  min dist(traj, saddle orbit)=7.775e-01 [43s]
+  eps=4.88%: |mu|max(attractor)=0.8661 saddle mult=(137,0.0023)  max_delta(attr)=1.2928  min dist(traj, saddle orbit)=7.523e-02 [51s]
+  eps=5.12%: |mu|max(attractor)=0.8635 saddle mult=(137,0.00231)  max_delta(attr)=1.3012  min dist(traj, saddle orbit)=3.346e-01 [54s]
+  eps=5.86%: |mu|max(attractor)=0.8559 saddle mult=(136,0.00232)  max_delta(attr)=1.3253  min dist(traj, saddle orbit)=1.695e+00 [61s]
+M1@0.1: st_d=0.1548 saddle_d=2.7721 w0=21.890 meas=None
+  eps=5.00%: |mu|max(attractor)=0.9646 saddle mult=(39,0.0091)  max_delta(attr)=0.4817  min dist(traj, saddle orbit)=5.997e+00 [71s]
+  eps=15.00%: |mu|max(attractor)=0.9391 saddle mult=(38.7,0.00917)  max_delta(attr)=0.5985  min dist(traj, saddle orbit)=5.546e+00 [82s]
+  eps=30.00%: |mu|max(attractor)=0.9235 saddle mult=(37.9,0.00939)  max_delta(attr)=0.6424  min dist(traj, saddle orbit)=5.023e+00 [92s]
+  eps=45.00%: |mu|max(attractor)=0.9262 saddle mult=(36.5,0.00979)  max_delta(attr)=0.6257  min dist(traj, saddle orbit)=4.664e+00 [101s]
+DONE wall=101s

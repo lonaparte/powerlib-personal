@@ -1,0 +1,14 @@
+M2@0.03: mq=0.05 P0=18.4204 w0=11.906 E0=0.8633 d0=0.6947 dsad=1.4997
+  res: first boundary at V swing 5.26% type=DESYNC  at edge: minE=0.5581 max|dd|=0.8051 rad; just below: minE=0.7039 max|dd|=0.4335 [14s]
+  r=0.9: first boundary at V swing 3.26% type=DESYNC  at edge: minE=0.5561 max|dd|=0.8051 rad; just below: minE=0.6740 max|dd|=0.4953 [24s]
+M1@0.1: mq=0.1 P0=1.5323 w0=21.890 E0=0.9940 d0=0.1548 dsad=2.7721
+  res: no event up to 45% V (minE=0.769, max|dd|=0.712) — immunity holds [78s]
+  r=0.9: no event up to 45% V (minE=0.748, max|dd|=1.080) — immunity holds [127s]
+M4@0.1: no Hopf window
+M5@0.15: mq=0.1 P0=4.3235 w0=11.665 E0=0.8802 d0=0.8283 dsad=1.7078
+  res: first boundary at V swing 4.88% type=DESYNC  at edge: minE=0.6551 max|dd|=0.8795 rad; just below: minE=0.7603 max|dd|=0.4648 [140s]
+  r=0.9: first boundary at V swing 3.05% type=DESYNC  at edge: minE=0.6562 max|dd|=0.8795 rad; just below: minE=0.7365 max|dd|=0.5483 [153s]
+M3@0.05: mq=0.2 P0=8.4981 w0=50.284 E0=0.9090 d0=0.4864 dsad=1.4799
+  res: first boundary at V swing 8.79% type=DESYNC  at edge: minE=0.4313 max|dd|=0.9936 rad; just below: minE=0.7095 max|dd|=0.4923 [492s]
+  r=0.9: first boundary at V swing 4.12% type=DESYNC  at edge: minE=0.4276 max|dd|=0.9936 rad; just below: minE=0.6559 max|dd|=0.5559 [698s]
+DONE wall=698s

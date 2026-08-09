@@ -1,0 +1,17 @@
+G1 strong: P0=1.45500 w0=32.399 | PCC steady: |v|=0.78839 P=-1.45500 Q=0.00000 ang(v,e)=-37.965deg i_d=-1.2304
+  network check: P_pcc(direct)=-1.45500 vs |v|V sin/Xg=0.97000 (ratio -1.5000 = 1.5 power scaling)
+  u=V @0.9eps_c=1.068e-04:  PCC |v| swing=4.3029e-03 (0.546%)  P swing=6.7299e-03 (0.463%)  Q swing=6.1261e-03  Vdc swing=4.5334e-03
+       signature (fund. amp; phase rel. drive): |v|=4.303e-03@-45.4deg  P=6.705e-03@-133.0deg  Q=6.124e-03@+9.3deg   dP/dV=1.558 dQ/dV=1.423 [2s]
+  u=P @0.9eps_c=2.512e-04:  PCC |v| swing=4.1597e-03 (0.528%)  P swing=6.3936e-03 (0.439%)  Q swing=6.0039e-03  Vdc swing=4.4497e-03
+       signature (fund. amp; phase rel. drive): |v|=4.159e-03@+117.2deg  P=6.368e-03@+32.4deg  Q=6.002e-03@+172.7deg   dP/dV=1.531 dQ/dV=1.443 [5s]
+  u=Q @0.9eps_c=2.709e-04:  PCC |v| swing=4.2021e-03 (0.533%)  P swing=6.5713e-03 (0.452%)  Q swing=6.2912e-03  Vdc swing=4.4266e-03
+       signature (fund. amp; phase rel. drive): |v|=4.202e-03@+118.8deg  P=6.548e-03@+31.2deg  Q=6.290e-03@+173.1deg   dP/dV=1.558 dQ/dV=1.497 [7s]
+idx2 weak: P0=1.38371 w0=68.181 | PCC steady: |v|=0.83248 P=-1.38371 Q=0.00000 ang(v,e)=-33.645deg i_d=-1.1081
+  network check: P_pcc(direct)=-1.38371 vs |v|V sin/Xg=0.92247 (ratio -1.5000 = 1.5 power scaling)
+  u=V @0.9eps_c=6.669e-03:  PCC |v| swing=1.7948e-02 (2.156%)  P swing=1.0632e-01 (7.683%)  Q swing=8.4107e-02  Vdc swing=7.0253e-02
+       signature (fund. amp; phase rel. drive): |v|=1.795e-02@+43.6deg  P=1.061e-01@-40.9deg  Q=8.414e-02@+131.1deg   dP/dV=5.912 dQ/dV=4.688 [12s]
+  u=P @0.9eps_c=9.770e-03:  PCC |v| swing=1.3645e-02 (1.639%)  P swing=1.1388e-01 (8.230%)  Q swing=7.9230e-02  Vdc swing=7.1113e-02
+       signature (fund. amp; phase rel. drive): |v|=1.361e-02@-133.8deg  P=1.137e-01@+132.1deg  Q=7.925e-02@-61.7deg   dP/dV=8.354 dQ/dV=5.823 [18s]
+  u=Q @0.9eps_c=1.181e-02:  PCC |v| swing=1.8277e-02 (2.195%)  P swing=1.0819e-01 (7.819%)  Q swing=7.3931e-02  Vdc swing=7.1487e-02
+       signature (fund. amp; phase rel. drive): |v|=1.828e-02@-147.3deg  P=1.080e-01@+128.1deg  Q=7.389e-02@-71.9deg   dP/dV=5.907 dQ/dV=4.041 [23s]
+DONE wall=23s

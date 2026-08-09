@@ -1,0 +1,11 @@
+M2@0.03: st_d=0.6947 sad_d=1.4997 escape_ref=5.2639%
+    eps=4.7375% (0.900x): closest approach d=2.4430e-01 at n=2, signed unstable component=-0.1230, escaped=False [179s]
+    eps=5.0007% (0.950x): closest approach d=1.7122e-01 at n=2, signed unstable component=+0.1111, escaped=False [198s]
+    eps=5.1586% (0.980x): closest approach d=1.0297e-01 at n=6, signed unstable component=-0.0029, escaped=True [198s]
+    eps=5.2376% (0.995x): closest approach d=1.0774e-01 at n=2, signed unstable component=-0.0865, escaped=False [215s]
+    eps=5.2639% (1.000x): closest approach d=1.0127e-01 at n=2, signed unstable component=+0.0818, escaped=False [233s]
+    eps=5.2902% (1.005x): closest approach d=9.5035e-02 at n=2, signed unstable component=+0.0765, escaped=True [233s]
+    eps=5.3692% (1.020x): closest approach d=7.8319e-02 at n=2, signed unstable component=+0.0555, escaped=False [251s]
+    eps=5.5271% (1.050x): closest approach d=7.1002e-01 at n=1, signed unstable component=+0.1485, escaped=True [252s]
+  signed-indicator zero crossing at 4.8758% vs escape 5.2639% -> err -7.37%
+M5@0.15: st_d=0.8283 sad_d=1.7078 escape_ref=4.8753%
