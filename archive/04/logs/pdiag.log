@@ -1,0 +1,8 @@
+P channel r=0.62: Re c_x=2.78218e+04, erosion branch 2 sqrt(alpha/Re c_x) = 3.79173e-03
+  eps=3.01960e-03 (just below measured): escaped=False [] at t=1800 ref-periods
+     state swings: th 1.5093e-02 (d_sad 1.816)  x_pll 2.2847e-04  Vdc 9.5265e-03 (0.95%)  xi 3.6672e-04
+     modal |<p,y>| max over the last 40 periods = 2.2811e-02; erosion Re c_x a^2/alpha = 0.6342
+  eps=3.14284e-03 (just above): escaped=True ['VHI'] at t=1217 ref-periods
+     state swings: th 4.9517e-01 (d_sad 1.816)  x_pll 7.4568e-03  Vdc 8.0945e-01 (80.94%)  xi 1.2889e-02
+     modal |<p,y>| max over the last 40 periods = 2.4164e+00; erosion Re c_x a^2/alpha = 0.6870
+DONE

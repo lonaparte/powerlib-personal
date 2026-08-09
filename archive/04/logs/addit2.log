@@ -1,0 +1,16 @@
+channel V: Re c_x=1.507882e+07  kick/eps=51.93910 @ -137.04 deg
+channel P: Re c_x=2.782178e+04  kick/eps=6.94796 @ +61.96 deg
+kick phase difference V-P = +161.00 deg
+single-channel sudden thresholds (closed form): V 1.19027e-04, P 1.23271e-03
+A) sudden onset -- kick adds as a phasor
+   s   |  eps_V       eps_P      | predicted   measured    err
+  1.00  | 1.18655e-04 0.00000e+00 | 1.000000   0.996877    +0.31%  [22s]
+  0.75  | 1.41714e-04 4.89228e-04 | 1.588871   1.587482    +0.09%  [46s]
+  0.50  | 1.34620e-04 1.39421e-03 | 2.265589   2.262011    +0.16%  [76s]
+  0.25  | 4.71493e-05 1.46492e-03 | 1.588871   1.584495    +0.28%  [98s]
+  0.00  | 0.00000e+00 1.23039e-03 | 1.000000   0.998119    +0.19%  [122s]
+B) slowly raised -- no kick, erosion adds as a scalar sum
+   s   |  eps_V       eps_P      | predicted   measured    err   hold
+  1.00  | 1.68864e-04 0.00000e+00 | 1.368367   1.418709    -3.55%  1600  [222s]
+  0.50  | 1.53377e-04 1.58847e-03 | 2.500469   2.577186    -2.98%  1600  [322s]
+  0.00  | 0.00000e+00 3.08122e-03 | 3.075923   2.499540   +23.06%  1600  [405s]
