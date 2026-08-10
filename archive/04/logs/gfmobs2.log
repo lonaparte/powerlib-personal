@@ -1,0 +1,27 @@
+=== M2{}: margin=3.00248 rad, lam=-0.22040+9.86340j, saddle unstable eigenvalue=6.21398
+  (A) rate = 0.220367 +1.7345e-01 a^2  ->  SUPERcritical (no local guard)
+      intercept vs -Re lam: 0.220367 vs 0.220400 (-0.015%)
+  (B) ringdown from 0.97 x margin: swing / margin  ->  half period
+      0.9700   0.85880 s
+      0.4689   0.38760 s
+      0.3938   0.37000 s
+      0.3155   0.35000 s
+      0.2829   0.34560 s
+      0.2415   0.33680 s
+      0.2213   0.33560 s
+      0.1945   0.33040 s
+      0.1799   0.33000 s
+      0.1607   0.32640 s
+      log-law fit -> separatrix at swing 2.95497 = 0.9842 x the angle margin (-1.58%); fitted 1/lam_s = 0.1314 vs 1/lam_s(saddle) = 0.1609  [4s]
+=== M5{'Pref': 0.25}: margin=3.05623 rad, lam=1.38789+21.97977j, saddle unstable eigenvalue=13.19971
+   operating point is past its Hopf point; skipped
+=== M4{}: margin=2.97085 rad, lam=-1.96326+12.77612j, saddle unstable eigenvalue=4.83861
+  (A) rate = 1.963069 -3.4210e+00 a^2  ->  SUBcritical (local guard exists)
+      intercept vs -Re lam: 1.963069 vs 1.963264 (-0.010%)
+  (B) ringdown from 0.97 x margin: swing / margin  ->  half period
+      0.9700   0.91080 s
+      0.1832   0.25320 s
+      0.1081   0.25000 s
+      0.0638   0.24640 s
+      log-law fit -> separatrix at swing 2.88201 = 0.9701 x the angle margin (-2.99%); fitted 1/lam_s = 0.0728 vs 1/lam_s(saddle) = 0.2067  [5s]
+DONE

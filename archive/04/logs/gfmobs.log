@@ -1,0 +1,29 @@
+=== M2: delta_0=0.05004, delta_sad=3.05252, angle margin=3.00248 rad; lam=-0.22040+9.86340j
+  (A) small-amplitude fit on the angle signal, 16 points:  rate = 0.220368 +1.7212e-01 a^2
+      a^2 coefficient sign = POSITIVE (subcritical: a local guard exists)
+      intercept 0.220368 vs -Re lam 0.220400 (-0.01%)
+  (B) ringdown from 0.97 x margin, 23 half-periods:
+      swing 0.4313 x margin   frequency 8.10520 rad/s
+      swing 0.3546 x margin   frequency 8.49075 rad/s
+      swing 0.2992 x margin   frequency 8.97593 rad/s
+      swing 0.2622 x margin   frequency 9.09021 rad/s
+      swing 0.2314 x margin   frequency 9.32772 rad/s
+      swing 0.2079 x margin   frequency 9.36108 rad/s
+      swing 0.1872 x margin   frequency 9.50840 rad/s
+      swing 0.1703 x margin   frequency 9.51993 rad/s
+      w^2 vs a^2 fit -> zero at swing 2.30218 = 0.7668 x the angle margin  [3s]
+=== M5: delta_0=0.05005, delta_sad=3.02090, angle margin=2.97085 rad; lam=1.38287+21.95509j
+  (A) small-amplitude fit on the angle signal, 9 points:  rate = -1.313261 +3.4832e-01 a^2
+      a^2 coefficient sign = POSITIVE (subcritical: a local guard exists)
+      intercept -1.313261 vs -Re lam -1.382868 (-5.03%)
+  (B) ringdown from 0.97 x margin, 263 half-periods:
+      swing 0.7840 x margin   frequency 10.17350 rad/s
+      swing 0.7799 x margin   frequency 9.73227 rad/s
+      swing 0.7721 x margin   frequency 10.49992 rad/s
+      swing 0.7708 x margin   frequency 10.03058 rad/s
+      swing 0.7684 x margin   frequency 10.58483 rad/s
+      swing 0.7679 x margin   frequency 10.12106 rad/s
+      swing 0.7672 x margin   frequency 10.61344 rad/s
+      swing 0.7670 x margin   frequency 10.14721 rad/s
+      w^2 vs a^2 fit -> zero at swing 2.91120 = 0.9799 x the angle margin  [22s]
+DONE

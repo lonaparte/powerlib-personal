@@ -1,0 +1,4 @@
+G1 margin 0.10: alpha=0.10000, r_g=9.05683e-03, eps_c=1.19027e-04
+  eps=0.0000e+00: 147 envelope points, fit rate = 0.100117 -1.2240e+03 a^2
+     intercept 0.100117  vs alpha_eff 0.100000  (+0.12%)
+     zero crossing 9.04417e-03  vs the swing at rho_g 9.71145e-03  (-6.87%)
