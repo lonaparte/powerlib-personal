@@ -1,0 +1,9 @@
+   eps    |    NP=320    |    NP=640    |   NP=1280
+  0.900  |           no |           no |           no
+  0.950  |           no |           no |           no
+  0.970  |           no |           no |           no
+  0.980  |           no |           no |           no
+  0.985  |       ESC@59 |       ESC@59 |       ESC@59
+  0.990  |       ESC@42 |       ESC@42 |       ESC@42
+  1.050  |        ESC@5 |        ESC@5 |        ESC@5
+DONE

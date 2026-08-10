@@ -1,0 +1,98 @@
+
+=== GFL V cell  G1 margin 0.10 r=0.90  (eps_c = 1.186532e-04, NP=1000)
+   eps/eps_c=0.9700   no escape
+   eps/eps_c=0.9730   no escape
+   eps/eps_c=0.9760   no escape
+   eps/eps_c=0.9790   no escape
+   eps/eps_c=0.9820   no escape
+   eps/eps_c=0.9850   no escape
+   eps/eps_c=0.9880   no escape
+   eps/eps_c=0.9910   no escape
+   eps/eps_c=0.9940   no escape
+   eps/eps_c=0.9970   no escape
+   eps/eps_c=1.0000   no escape
+   eps/eps_c=1.0030       219.1
+   eps/eps_c=1.0060       186.7
+   eps/eps_c=1.0090       167.8
+   eps/eps_c=1.0120       153.4
+   eps/eps_c=1.0150       143.4
+   eps/eps_c=1.0180       134.6
+   eps/eps_c=1.0210       127.5
+   eps/eps_c=1.0240       122.8
+   eps/eps_c=1.0270       116.6
+   eps/eps_c=1.0300       113.2
+   sign flips across the sweep: 0  (INTERVAL (clean))
+
+=== GFL idx17   kp55 ki1200 Xg0.40 margin 0.08 r=0.92  (eps_c = 7.099045e-03, NP=2000)
+   eps/eps_c=0.9700   no escape
+   eps/eps_c=0.9730   no escape
+   eps/eps_c=0.9760   no escape
+   eps/eps_c=0.9790   no escape
+   eps/eps_c=0.9820   no escape
+   eps/eps_c=0.9850   no escape
+   eps/eps_c=0.9880   no escape
+   eps/eps_c=0.9910   no escape
+   eps/eps_c=0.9940   no escape
+   eps/eps_c=0.9970   no escape
+   eps/eps_c=1.0000   no escape
+   eps/eps_c=1.0030       811.9
+   eps/eps_c=1.0060       674.8
+   eps/eps_c=1.0090       601.1
+   eps/eps_c=1.0120       546.9
+   eps/eps_c=1.0150       503.7
+   eps/eps_c=1.0180       476.0
+   eps/eps_c=1.0210       444.7
+   eps/eps_c=1.0240       421.7
+   eps/eps_c=1.0270       406.0
+   eps/eps_c=1.0300       385.8
+   sign flips across the sweep: 0  (INTERVAL (clean))
+
+=== GFM cell A  M2 Xg=0.5 90%  rat=0.05 (quasi-static, newly closed)  (eps_c = 1.044220e-01, NP=25)
+   eps/eps_c=0.9700   no escape
+   eps/eps_c=0.9730   no escape
+   eps/eps_c=0.9760   no escape
+   eps/eps_c=0.9790   no escape
+   eps/eps_c=0.9820   no escape
+   eps/eps_c=0.9850   no escape
+   eps/eps_c=0.9880   no escape
+   eps/eps_c=0.9910   no escape
+   eps/eps_c=0.9940   no escape
+   eps/eps_c=0.9970   no escape
+   eps/eps_c=1.0000   no escape
+   eps/eps_c=1.0030         0.6
+   eps/eps_c=1.0060         0.6
+   eps/eps_c=1.0090         0.6
+   eps/eps_c=1.0120         0.6
+   eps/eps_c=1.0150         0.6
+   eps/eps_c=1.0180         0.6
+   eps/eps_c=1.0210         0.6
+   eps/eps_c=1.0240         0.6
+   eps/eps_c=1.0270         0.6
+   eps/eps_c=1.0300         0.6
+   sign flips: 0  (INTERVAL (clean))
+
+=== GFM cell A  M2 Xg=0.5 90%  rat=0.30  (eps_c = 1.307620e-01, NP=25)
+   eps/eps_c=0.9700   no escape
+   eps/eps_c=0.9730   no escape
+   eps/eps_c=0.9760   no escape
+   eps/eps_c=0.9790   no escape
+   eps/eps_c=0.9820   no escape
+   eps/eps_c=0.9850   no escape
+   eps/eps_c=0.9880   no escape
+   eps/eps_c=0.9910   no escape
+   eps/eps_c=0.9940   no escape
+   eps/eps_c=0.9970   no escape
+   eps/eps_c=1.0000   no escape
+   eps/eps_c=1.0030         4.0
+   eps/eps_c=1.0060         2.9
+   eps/eps_c=1.0090         1.9
+   eps/eps_c=1.0120         1.9
+   eps/eps_c=1.0150         2.9
+   eps/eps_c=1.0180         1.0
+   eps/eps_c=1.0210         0.9
+   eps/eps_c=1.0240         0.9
+   eps/eps_c=1.0270         0.9
+   eps/eps_c=1.0300         0.9
+   sign flips: 0  (INTERVAL (clean))
+
+DONE

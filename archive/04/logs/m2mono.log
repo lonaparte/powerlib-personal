@@ -1,0 +1,12 @@
+M2, NP=320: is the escape set an interval in eps?
+  eps      t_esc/T_d
+  0.9800    no escape
+  0.9825         25.5
+  0.9850    no escape   <-- BOUNDARY
+  0.9875         13.9
+  0.9900         41.6
+  0.9925         13.6
+  0.9950         33.5
+  0.9975         63.6
+  1.0000         63.7
+DONE

@@ -1,0 +1,5 @@
+replay of wrapA34b's exact M2 bisection
+  NP= 160  bracket [0.9800,1.3720]  ->  eps_c = 1.1026922e+00
+  NP= 320  bracket [0.9800,1.3720]  ->  eps_c = 9.8850786e-01
+  NP= 640  bracket [0.9800,1.3720]  ->  eps_c = 9.8850786e-01
+DONE
