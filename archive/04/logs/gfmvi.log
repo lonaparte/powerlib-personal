@@ -1,0 +1,10 @@
+  i_d = V*sin(delta)/(X_g + X_v)
+  i_q = (-E + V*cos(delta))/(X_g + X_v)
+
+  Pe = E*V*sin(delta)/(X_g + X_v)
+  Qe = E*(E - V*cos(delta))/(X_g + X_v)
+
+  Pe - E V sin(d)/(Xg+Xv)      = 0
+  Qe - (E^2-E V cos d)/(Xg+Xv) = 0
+
+  => the substitution Xg -> Xg + X_v is EXACT

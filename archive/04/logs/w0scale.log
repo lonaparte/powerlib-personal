@@ -1,0 +1,9 @@
+   Xg   |    w0     |  alpha  |  d alpha (x=1000) |  d alpha * x / w0^2
+  0.35  |  76.77473 | 0.10000 |    -0.041480      |       -0.0070
+  0.45  |  67.36764 | 0.10000 |    -0.042670      |       -0.0094
+  0.50  |  32.39884 | 0.10000 |    +0.109490      |        0.1043
+  0.60  |  23.56296 | 0.10000 |    +0.017202      |        0.0310
+  0.70  |  20.29018 | 0.10000 |    +0.008516      |        0.0207
+
+  (the last column is the coefficient in d alpha = k w0^2/w_c;
+   constant => the w0^2 scaling holds, k is the cell-independent number)
