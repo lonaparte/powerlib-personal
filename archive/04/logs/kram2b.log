@@ -1,0 +1,16 @@
+=== the two halves of the 1/X correction, separately
+   X    | Zw/(D/alpha)-1 | 1/(2X) | Ib/(e^X sqrt(piD/alpha)/rho_g)-1 | 1/(2X)
+    10.0 |       0.060752 | 0.0500 |                         0.062665 | 0.0500
+    20.0 |       0.027164 | 0.0250 |                         0.027164 | 0.0250
+    40.0 |       0.013001 | 0.0125 |                         0.013001 | 0.0125
+    80.0 |       0.006371 | 0.0063 |                         0.006371 | 0.0063
+   160.0 |       0.003155 | 0.0031 |                         0.003155 | 0.0031
+
+=== the coefficient read off the exact ratio (kram2's table)
+    T_exact/T_asym - 1 = 0.9966/X + 2.015/X^2   (derived: 1/X exactly)
+    deviation of the 1/X coefficient from 1: -0.34%
+
+    1 + 1/X = sqrt(2) at X = 1/(sqrt(2)-1) = 2.4142
+    the discarded fit window was X > 1.4, mean X ~ 2.4 -- so the
+    'missing sqrt(2)' was 1 + 1/X evaluated at the X the simulation
+    could afford.  There is no missing constant.

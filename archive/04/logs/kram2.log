@@ -1,0 +1,44 @@
+parsed 7 rows of the reduced-SDE sweep from noise3.log
+
+=== (Q) against the measured reduced-SDE escape times
+  sigma      | alpha_eff |   X    | T_meas  | T_asym  | T_exact | meas/asym | meas/exact | +-2se
+  7.5579e-06 | 0.036484 |  0.187 |    19.37 |    67.74 |    19.53 |    0.2860 |     0.9921 |   2.2%
+  6.5721e-06 | 0.051973 |  0.501 |    28.75 |    39.76 |    28.70 |    0.7231 |     1.0016 |   2.4%
+  5.7835e-06 | 0.062808 |  0.945 |    42.40 |    37.35 |    42.31 |    1.1351 |     1.0022 |   2.4%
+  5.1263e-06 | 0.070780 |  1.528 |    66.75 |    46.69 |    65.54 |    1.4296 |     1.0185 |   2.8%
+  4.6005e-06 | 0.076467 |  2.215 |   106.54 |    71.33 |   106.98 |    1.4936 |     0.9958 |   3.1%
+  4.0747e-06 | 0.081538 |  3.210 |   221.98 |   150.33 |   220.06 |    1.4766 |     1.0087 |   3.3%
+  3.6147e-06 | 0.085472 |  4.482 |   553.10 |   433.08 |   586.15 |    1.2771 |     0.9436 |   5.3%
+  meas/asym : mean 1.1173, spread 108.1%   <- not a constant
+  meas/exact: mean 0.9947, spread 7.5%
+
+=== how the exact integral approaches the Kramers limit
+    (this is the entire content of the alleged sqrt(2): 1 + O(1/X))
+    X     | T_exact/T_asym | 1 - a/X fit residual
+     0.50 |        0.71960 |
+     0.75 |        0.97756 |
+     1.00 |        1.16775 |
+     1.50 |        1.39413 |
+     2.00 |        1.48525 |
+     3.00 |        1.47840 |
+     4.00 |        1.39475 |
+     6.00 |        1.24817 |
+     9.00 |        1.14333 |
+    14.00 |        1.08263 |
+    20.00 |        1.05506 |
+    30.00 |        1.03546 |
+    50.00 |        1.02073 |
+    80.00 |        1.01278 |
+    large-X fit  T_exact/T_asym = 0.99279 + +1.3180/X  (intercept must be 1 if sqrt(pi) is right)
+    the fit window that produced 'C = sqrt(2 pi)' was X > 1.4, where
+    this ratio sits on its maximum (1.4853 near X = 2.0) -- sqrt(2) = 1.4142 is that maximum,
+    not a constant, and it decays back to 1 as 1/X.
+
+=== independent SDE check of (Q) itself  (Heun, dt halved once)
+    if (Q) is right this reproduces T_exact without touching noise3's code
+    X    |   dt    | T_sim    n_esc  std/mean |  T_exact  | sim/exact
+   1.000 | 1.0e-03 |    35.65   3915    0.587 |     35.16 |    1.0139   [66s]
+   1.000 | 5.0e-04 |    35.29   3928    0.605 |     35.16 |    1.0035   [162s]
+   2.215 | 1.0e-03 |   103.55   3873    0.690 |    102.20 |    1.0132   [305s]
+   2.215 | 5.0e-04 |   103.78   3868    0.694 |    102.20 |    1.0155   [600s]
+DONE wall=600s
