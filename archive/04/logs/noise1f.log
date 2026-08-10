@@ -1,0 +1,31 @@
+G1 margin 0.10: alpha=0.100000 w0=32.39884 Re c1=1.219123e+03
+  reference: the single-tone V cell runs at erosion/alpha = 0.53 at
+  threshold and lands at +0.03%; the omega_g slow band runs at 7.9
+  and the closed form is unusable there.
+
+  cell                                | eps_meas   | kick |Z0|/eps | erosion/alpha | |err|
+  (erosion evaluated at the MEASURED threshold, so it is the actual
+   expansion parameter each cell was run at)
+  noise1b band 0.85-0.95 N=2          | 8.6846e-05 |  4.9283e+01 |        0.7697 |  0.31%
+  noise1b band 0.85-0.95 N=4          | 8.2842e-05 |  7.4242e+01 |        0.4788 |  3.08%
+  noise1b band 0.85-0.95 N=8          | 7.2434e-05 |  1.0833e+02 |        0.3296 |  3.80%
+  noise1b band 0.85-0.95 N=16         | 1.1134e-04 |  3.0612e+01 |        0.7212 |  7.59%
+  noise1b band 0.85-0.95 N=32         | 1.1438e-04 |  4.5530e+01 |        0.7239 |  2.71%
+  noise1c 0.7-0.8 s7 N=4              | 3.0099e-04 |  2.3942e+01 |        0.3248 |  0.53%
+  noise1c 0.7-0.8 s23 N=4             | 4.5494e-04 |  1.0515e+01 |        0.7510 |  2.84%
+  noise1c 0.7-0.8 s7 N=8              | 2.2199e-04 |  3.7704e+01 |        0.1707 |  2.19%
+  noise1c 0.7-0.8 s23 N=8             | 2.2216e-04 |  3.6176e+01 |        0.1707 |  1.08%
+  noise1c 0.7-0.8 s7 N=16             | 4.9518e-04 |  5.2368e+00 |        0.8439 |  3.22%
+  noise1c 0.7-0.8 s23 N=16            | 2.4393e-04 |  3.4341e+01 |        0.2034 |  3.92%
+  noise1c 0.8-0.88 s7 N=4             | 1.7628e-04 |  3.7436e+01 |        0.4162 |  2.27%
+  noise1c 0.8-0.88 s23 N=4            | 2.4396e-04 |  1.8112e+01 |        0.7902 |  1.74%
+  noise1c 0.8-0.88 s7 N=8             | 1.3723e-04 |  5.8405e+01 |        0.2451 |  1.68%
+
+  correlation of |err| with erosion/alpha: r = +0.1956
+  linear fit |err| = 1.363 * (erosion/alpha) + 1.964 %
+  erosion/alpha range across the multi-tone cells: 0.171 .. 0.844
+
+  VERDICT: no correlation.  The phase/expansion-parameter story
+  fails too; the multi-tone residual stays OPEN with beats,
+  band placement and expansion parameter all excluded.
+DONE wall=2s

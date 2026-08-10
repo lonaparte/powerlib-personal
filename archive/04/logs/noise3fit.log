@@ -1,0 +1,24 @@
+rows parsed: 4
+
+  X      | alpha_eff | Dtilde     | ln T   | Y = lnT - .5 ln D + 2 ln a_eff | std/mean
+   0.187 |  0.036484 | 1.4612e-06 |  2.964 |                        3.0602 | 0.589
+   0.501 |  0.051973 | 1.1049e-06 |  3.359 |                        4.3024 | 0.646
+   0.945 |  0.062808 | 8.5563e-07 |  3.747 |                        5.1975 | 0.668
+   1.528 |  0.070780 | 6.7222e-07 |  4.201 |                        6.0110 | 0.768
+
+  successive-interval slopes (raw ln T vs X):
+    1.257, 0.875, 0.779
+  successive-interval slopes (with the derived prefactor):
+    3.956, 2.016, 1.395
+
+  all rows:  Y = 2.1150 X + 2.9714   (Kramers requires slope 1)
+
+  the raw slope drifting DOWN through 1 while the prefactor-corrected
+  slope drifts DOWN TOWARD 1 is the signature of a sub-asymptotic
+  correction of relative size O(1/X): only the corrected one has a
+  limit to converge to.
+
+  std/mean must approach 1 (exponential first passage): X=0.19:0.59, X=0.50:0.65, X=0.94:0.67, X=1.53:0.77
+
+  erosion ignored (alpha in place of alpha_eff everywhere): slope 0.9784, rms 0.0398
+  with erosion:                                          slope 2.1150, rms 0.2532

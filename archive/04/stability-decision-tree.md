@@ -228,6 +228,17 @@ $$\Big(\frac{\varepsilon|\pi|}{2}\Big)^2 > \alpha^2+\Big(\frac{\omega_p}{2}-\ome
 ### B5(旋转数锁定)
 $\rho(\varepsilon)$ 扫过有理数集,低阶有理附近 Arnold 舌;失稳集为区间族,仅下包络 $\varepsilon_{\rm env}=\inf\{\varepsilon:\text{失稳}\}$ 确定。低阻尼参数在强迫背景下的多摆逃逸条带同属此类。
 
+### N(随机驱动:叶子由阈值换成速率)
+确定性驱动给二值阈值;随机驱动**没有阈值**——任何强度最终都越过守卫,问题变成"多久逃逸"。几何骨架原样复用,进入的是同一批量。加性白噪 $\langle u(t)u(t')\rangle=\sigma^2\delta(t-t')$:
+$$S_u=\sigma^2/\pi,\quad \tilde D=|g|^2\sigma^2/4\ (g=\langle p,f_u\rangle),\quad \Delta U=\frac{\alpha_{\rm eff}^2}{4\operatorname{Re}c_1},\quad \ln T=\frac{\Delta U}{\tilde D}+\text{const}$$
+**前因子不是常数,不能当截距**:二维旋转对称势 + 圆形势垒,径向 flux-over-population 给 $T=\sqrt{\pi\tilde D\operatorname{Re}c_1}\,\alpha_{\rm eff}^{-2}\mathrm e^{X}$,故斜率必须为 1 的量是
+$$\ln T-\tfrac12\ln\tilde D+2\ln\alpha_{\rm eff}\;=\;X+\text{const},\qquad X=\frac{\alpha_{\rm eff}^2}{\operatorname{Re}c_1|g|^2\sigma^2}$$
+(原始 $\ln T$ 对 $X$ 的分段斜率 1.257/0.875/0.779 穿过 1 继续下行;补前因子后 3.956/2.016/1.395,朝 1 单调收敛——只有后者有极限可收。)
+- **谱不能既算扩散又算侵蚀**。$\operatorname{Re}c_x(\omega)$ 是半宽 $\alpha$ 的共振,$\int\operatorname{Re}c_x\,\mathrm d\omega$ 由 $|\omega-\omega_0|\lesssim\alpha$ 支配——而正是这段谱在供给 $\tilde D$。**离共振的谱侵蚀,近共振的谱扩散**;整轴相加把共振带用了两次。扫描 $\alpha_{\rm eff}(K)=\alpha-\frac{\sigma^2}{2\pi}\int_{|\omega-\omega_0|>K\alpha}\operatorname{Re}c_x\,\mathrm d\omega$:斜率 $K=0$ 时 1.958、$K=3$ 时 1.109、$K=5$ 时 **1.025**、$K=10$ 时 0.964。过 1 在 $K\approx5$–7,**$K$ 是 $O(1)$**(以共振半宽为单位),分带就是共振本身。
+- **约化的验证与全系统的极限**。前因子 $T_0\approx42\,\text{s}\approx4/\alpha$ 使全系统被迫跑在 $X\lesssim1$,而那正是 Kramers 渐近**不**成立处($X{=}0.50$ 处 std/mean $=0.675$,速率过程应 $\to1$)。故命题一分为二:(I) 4 态系统是否服从 2D 包络 SDE——$X=0.187$ 与 $0.501$ 处 $T_{\rm full}/T_{\rm red}=2.216/2.168$,**比值恒定**(指数对,前因子差 2.2 倍,逃逸面定义不同);(II) 该 SDE 是否服从上式——便宜地推到 $X=2.2$,std/mean $0.589\to0.838$ 单调趋 1。
+- **积分器**:加性噪声下 Euler–Maruyama 不够($\mathrm dt$ 减半使 $T$ 变 90%),因为 $T$ 对 $\tilde D$ 指数敏感,离散误差被 $\mathrm e^X$ 放大;须 Heun(加性噪声下弱二阶)+ 向量化系综。
+- 诚实边界:最大 $X=2.215$,次渐近修正仍 $O(1/X)\sim0.45$,故 $K$ 读作"数个 $\alpha$"而非精确值;支持的是定性划分,不是 $K$ 的第二位有效数字。
+
 ### S(传感器条件;"判据不需要模式辨识"这一结论的前提)
 一般性证明说:边界余维 1 且法向双曲 ⇒ 约化动力学是标量的 $\dot\rho=F(\rho)$;任何由临界模态构成的观测量满足 $a=\kappa_g\rho$;而树用的两个读数对 $\kappa_g$ 不变——裕度 $a/a_B=\rho/\rho_B$(比值,$\kappa_g$ 约掉),速率 $D=-\mathrm d\ln a/\mathrm d t=-\mathrm d\ln\rho/\mathrm d t$(对数导数,$\kappa_g$ 被微分掉)。这是精确的,但它隐含两个条件,须与结论一并陈述:
 - **$\kappa_g=2|\langle w,q\rangle|\ne0$**。盲集 $\{w:\langle w,q\rangle=0\}$ 是 $\mathbb R^4$ 的实余维 2 子空间,**非空**:传感器可以是盲的,那时判据没有输入(不是精度下降,是无输入)。实用约束是盲集的邻域:噪声底 $\eta$ 下读数误差按 $\eta/\kappa_g$ 增长。实测($\kappa_g$ 从 1.627 扫到 0.0163,跨 100 倍,噪声底 $0$–$10^{-2}$):$\alpha$ 读数 +1.72% → +1.89%,**跨 100 倍 $\kappa_g$ 只差 0.17 个百分点**;共同偏差(+1.6% / +14%)来自包络提取,不来自传感器。物理状态量表现不劣于模态对齐方向($V_{dc}$ 给 +0.28% / +4.04%,优于"对齐"方向)。
@@ -404,7 +415,16 @@ $q$ 归一后各状态分量模长。相角类 → F1;直流电压类 → F2($\d
 | **侵蚀 P / Q 背景**(GFL 纤维判据,3 组 × 2 通道) | 6 点 | ≤0.43%;长踢程组 T5-kick ±0.03% |
 | **GFM 直接 V 强迫失步**(协议 A,5 组 × 2 频率,事件三分) | 5 组 | 4.2–8.8%(共振)/ 3.0–4.1%($r$=0.9);M1 免疫至 45% |
 | **GFM 受迫轨道周期倍化**(协议 B) | 2 组 | 7.11% / 7.50% |
+| **B3a 闭式三通道覆盖**(驱动符号按通道绑定) | V / P / Q,margin 0.10,$r$=0.90 | **+0.03% / +0.03% / +0.06%**(仅可加时 +0.14/+0.03/+0.56%) |
+| **投入踢击的线性性**($\vert Z_0\vert/\varepsilon$ 对 $J$) | 5 个亚阈幅值,平台残差 $2.2\times10^{-7}$ | **+0.00134%**;$\varepsilon^2$ 项实为零(外推截距仅为 $\langle p,\Phi\rangle{=}0$ 预测的 10.5%,相位差 2.00 rad) |
+| **五阶 $\lambda_u=2\alpha_{\rm eff}+2\operatorname{Re}c_2\rho_g^4$** | 4 裕度,对精确 Floquet | **+0.01/+0.04/+0.09/+0.15%**(三次极限 +0.18…+0.82%) |
+| **多音侵蚀标量和 + 相量和踢击** | 双音 5 组(含反相格) | −0.65…+0.07%;反相格阈值抬 29% 而预测 −0.21% |
+| **GFM 盆边界闭式** $\varepsilon_{\rm qs}s_0/\vert s(\omega_p)\vert$ | 4 格 × 7 频 | 准静态带 $\omega_p\le0.1\omega_0$ **−2.15…−9.10%**;共振带 0.3–0.9 −12.6…−56.8%(结构性,受迫位移达间隙的 24–82%) |
+| **GFM $\operatorname{Re}c_1$ 量级**($\rho_{\rm LC}=\sqrt{\alpha/\operatorname{Re}c_1}$,在 Hopf 点) | M2/M3/M4/M5 × 3 个 $\eta$ | **−1.21…+0.12%**;$\sqrt\alpha$ 标度 1.4139–1.4232 对 $\sqrt2$ |
+| **Kramers 支**($\ln T-\tfrac12\ln\tilde D+2\ln\alpha_{\rm eff}$ 对 $X$) | 约化 SDE 4 点,$X$ 0.19–2.22 | 斜率 1.025($K{=}5$ 分带);全系统/约化的 $T$ 比值 2.216/2.168 恒定 |
+| **传感器不变性**($\kappa_g$ 跨 100 倍) | 7 方向 × 4 噪声底 | $\alpha$ 读数跨度 0.17 个百分点;盲方向无输入 |
 | 阴性:组合共振 / 双 Hopf / GFL 折叠可达性 | — | 已检验 |
+| **开放**:多音格残差 | 14 格(音数 2–32,3 个频带,2 个相位实现) | ±1–4%(离共振),+3.8…+11.3%(带含 $\omega_0$);拍频 / 频带位置 / 展开参数三个候选已排除 |
 | 新阳性:GFM 直接 P / Q 强迫失步边界 | 2 组 | ±13–34% $P_0$ / ~1 pu |
 | $m_q$ 门控($|f_Q|\propto m_q$,$m_q{=}0$ 时 $|\pi|{=}0$) | 5 点 | 定性证实 |
 
