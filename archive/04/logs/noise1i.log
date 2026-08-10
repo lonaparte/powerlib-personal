@@ -17,3 +17,28 @@ G1 margin 0.10: alpha=0.100000  rho_g(0)=9.05683e-03
         250 | 1.117225e-04 |           |       +7.22% |        219.3  [524s]
         500 | 1.113587e-04 |  -0.3256% |       +7.57% |        283.2  [579s]
        1000 | 1.113421e-04 |  -0.0150% |       +7.59% |        289.2  [678s]
+       2000 | 1.113417e-04 |  -0.0003% |       +7.59% |        289.3  [864s]
+       4000 | 1.113421e-04 |  +0.0003% |       +7.59% |        289.2  [957s]
+
+  === 0.7-0.8   s7 N=4  (residual +0.53%)
+      predicted 3.025793e-04, slowest-tone period 0.2770 s
+       NP   | measured      | drift    | vs predicted | t_esc/T_slow at 1.002 eps_c
+        250 | 3.009975e-04 |           |       +0.53% |        137.5  [984s]
+        500 | 3.009874e-04 |  -0.0034% |       +0.53% |        138.2  [1040s]
+       1000 | 3.009884e-04 |  +0.0003% |       +0.53% |        137.8  [1072s]
+       2000 | 3.009874e-04 |  -0.0003% |       +0.53% |        138.2  [1258s]
+       4000 | 3.009884e-04 |  +0.0003% |       +0.53% |        137.8  [1331s]
+
+  === single tone 0.90 (control)
+      predicted 1.186835e-04, slowest-tone period 0.2155 s
+       NP   | measured      | drift    | vs predicted | t_esc/T_slow at 1.002 eps_c
+        250 | 1.188439e-04 |           |       -0.14% |        210.1  [1349s]
+        500 | 1.186543e-04 |  -0.1596% |       +0.02% |        239.0  [1387s]
+       1000 | 1.186532e-04 |  -0.0009% |       +0.03% |        239.3  [1460s]
+       2000 | 1.186535e-04 |  +0.0003% |       +0.03% |        239.1  [1502s]
+       4000 | 1.186532e-04 |  -0.0003% |       +0.03% |        239.3  [1796s]
+
+  read: if the multi-tone cells drift monotonically down while the
+  single-tone control stays flat, the multi-tone number is a
+  rare-event threshold and the residual is not an error in c_x.
+DONE wall=1796s

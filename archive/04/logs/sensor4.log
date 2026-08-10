@@ -1,0 +1,15 @@
+cell: alpha=0.100000  w0=32.39884  Re c1=1.219123e+03  rho_g=9.05683e-03
+second mode: decay 5.9886, freq 41.2444
+
+  synthetic signal built FROM the law being fitted, so any bias is
+  purely the extraction chain's:
+   case                         | alpha_fit    err     | -Re c1 fit    err
+   pure mode, no 2nd, no noise  | 0.101816   +1.82% | -1.45039e+03  +18.97%
+   with 2nd mode (0.30x)        | 0.102242   +2.24% | -1.49711e+03  +22.80%
+   with 2nd mode + noise 1e-3   | 0.102155   +2.16% | -1.49041e+03  +22.25%
+   with 2nd mode + noise 1e-2   | 0.101382   +1.38% | -1.43122e+03  +17.40%
+
+  sensor3 measured, on the real 4-state cell: alpha +1.6%, slope +14%
+  (common to every non-blind direction).  Compare with the rows above:
+  if they match, the bias is the extraction and the attribution holds.
+DONE wall=1s
