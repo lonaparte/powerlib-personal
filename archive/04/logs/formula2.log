@@ -1,0 +1,41 @@
+G1 margin 0.10: alpha=0.100000  Re c1=1.219123e+03
+
+=== 1. multi-tone closed form:  |Z(0)|_c = rho_g / sqrt(G)
+       G = 2 alpha_eff int_0^inf exp[-2 alpha_eff s + 2 Psi(s)] ds
+       (single tone: Psi == 0, G == 1, recovers |Z(0)| > rho_g exactly)
+  cell                    | measured   | formula    | err     |   G
+  0.85-0.95 s7  N=  2 | 8.6846e-05 | 8.7300e-05 |  +0.52% | 0.9851
+  0.85-0.95 s7  N=  4 | 8.2842e-05 | 8.3583e-05 |  +0.89% | 1.0921
+  0.85-0.95 s7  N=  8 | 7.2434e-05 | 7.1889e-05 |  -0.75% | 0.9133
+  0.85-0.95 s7  N= 16 | 1.1134e-04 | 1.1202e-04 |  +0.61% | 1.8832
+  0.85-0.95 s7  N= 32 | 1.1438e-04 | 1.1447e-04 |  +0.08% | 0.8304
+  0.7-0.8 s7  N=  4 | 3.0099e-04 | 3.0327e-04 |  +0.76% | 1.0500
+  0.7-0.8 s23 N=  4 | 4.5494e-04 | 4.6024e-04 |  +1.16% | 0.8956
+  0.7-0.8 s7  N=  8 | 2.2199e-04 | 2.2133e-04 |  -0.30% | 0.9787
+  0.7-0.8 s23 N=  8 | 2.2216e-04 | 2.2210e-04 |  -0.03% | 1.0547
+  0.7-0.8 s7  N= 16 | 4.9518e-04 | 5.0281e-04 |  +1.54% | 1.6383
+  0.7-0.8 s23 N= 16 | 2.4393e-04 | 2.4566e-04 |  +0.71% | 0.9154
+  0.8-0.88 s7  N=  4 | 1.7628e-04 | 1.7705e-04 |  +0.44% | 1.0842
+  0.8-0.88 s23 N=  4 | 2.4396e-04 | 2.4465e-04 |  +0.28% | 0.8661
+  0.8-0.88 s7  N=  8 | 1.3723e-04 | 1.3700e-04 |  -0.17% | 0.9683
+  0.8-0.88 s23 N=  8 | 1.3357e-04 | 1.3385e-04 |  +0.20% | 1.0945
+  0.8-0.88 s7  N= 16 | 2.5780e-04 | 2.5841e-04 |  +0.24% | 1.9417
+  0.8-0.88 s23 N= 16 | 1.4304e-04 | 1.4279e-04 |  -0.17% | 0.8953
+    mean |err| 0.521%   max 1.541%
+    (ODE integration gave mean 0.521%, max 1.541%; scalar comparison
+     i.e. G forced to 1 gave 2.862% / 7.590%)
+    G range across the 17 cells: 1  -- see column above
+  [262s]
+
+=== 2. Kramers PREFACTOR, which I derived and never checked
+    T = sqrt(pi Dtilde Re c1)/alpha_eff^2 * exp(X)
+    ==> Y = ln T - (1/2)ln Dtilde + 2 ln alpha_eff = X + (1/2)ln(pi Re c1)
+    predicted intercept = (1/2) ln(pi * 1219.1234) = 4.1253
+    cut   | n | slope  | intercept | intercept - predicted
+    X>0.0 | 7 | 1.2505 |    3.6496 | -0.4757  (factor 0.621)
+    X>0.9 | 5 | 1.0177 |    4.3855 | +0.2602  (factor 1.297)
+    X>1.4 | 4 | 0.9596 |    4.5892 | +0.4639  (factor 1.590)
+    X>2.0 | 3 | 0.9289 |    4.7053 | +0.5800  (factor 1.786)
+    a factor near 1 means BOTH the exponent and the prefactor are
+    parameter-free predictions, not just the exponent
+DONE wall=262s

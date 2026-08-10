@@ -1,0 +1,17 @@
+T = sqrt(pi Dtilde Re c1)/alpha_eff^2 * exp(X)
+  ==> Y := ln T - (1/2)ln Dtilde + 2 ln alpha_eff = X + (1/2)ln(pi Re c1)
+  predicted intercept = 0.5*ln(pi*1219.123) = 4.1253   (nothing fitted)
+  rows = 7
+
+   fit cut | n | slope  | intercept | intercept-pred | prefactor ratio
+   X>0.0   | 7 | 1.2505 |    3.6496 |       -0.4757 | 0.621
+   X>0.9   | 5 | 1.0177 |    4.3855 |       +0.2602 | 1.297
+   X>1.4   | 4 | 0.9596 |    4.5892 |       +0.4639 | 1.590
+   X>2.0   | 3 | 0.9289 |    4.7053 |       +0.5800 | 1.786
+
+  and with the slope CONSTRAINED to 1 (the mechanism's claim),
+  the intercept is a single number with no freedom at all:
+   X>0.0   n=7  mean(Y-X) = 4.1172  vs predicted 4.1253  -> ratio 0.992   (spread 1.653)
+   X>0.9   n=5  mean(Y-X) = 4.4292  vs predicted 4.1253  -> ratio 1.355   (spread 0.274)
+   X>1.4   n=4  mean(Y-X) = 4.4735  vs predicted 4.1253  -> ratio 1.417   (spread 0.157)
+   X>2.0   n=3  mean(Y-X) = 4.4705  vs predicted 4.1253  -> ratio 1.412   (spread 0.157)
