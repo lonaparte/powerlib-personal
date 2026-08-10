@@ -1,0 +1,17 @@
+  regulating branch (k_q<0):  tracked = continuation of the open-loop
+  critical mode; worst = whichever mode is least damped
+   k_q     tracked alpha  overlap   worst alpha   worst w0   same?
+  +0.000  +0.106161   1.0000   +0.106161    32.3882   True
+  -0.010  +0.695496   0.9999   +0.695496    32.6640   True
+  -0.050  +3.501557   0.9977   +2.600020    41.4801   False
+  -0.100  +5.828414   0.9924   +0.273160    43.2894   False
+  -0.120  +6.436569   0.9901   -0.334994    43.9713   False
+  -0.150  +7.183708   0.9865   -1.082128    44.9069   False
+  -0.180  +7.800443   0.9826   -1.698857    45.7538   False
+  -0.200  +8.160393   0.9799   -2.058803    46.2774   False
+  -0.300  -3.471039   0.9723   -3.471039    48.5308   True
+  -0.500  -5.293960   0.9623   -5.293960    51.8994   True
+  regulating-side stability limit: k_q = -0.108533, w = 43.5863, tracked-mode overlap 0.9915, is-tracked False
+  anti-regulating side (k_q>0): alpha_0/|d alpha/d k_q| = 0.001902 predicted; measured:
+  k_q,crit(+) = 0.001921   ratio to prediction 1.0100
+DONE wall=2s

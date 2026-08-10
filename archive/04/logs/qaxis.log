@@ -1,0 +1,53 @@
+models built [3s]
+
+=== 0. structure of the 8-state with an exogenous q reference
+    d(q-rows)/d(other 6 states) = Matrix([[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]])   -> all zero: True
+    d(d-rows)/d(i_q) nonzero in rows: [2]    (so the q block DRIVES the d block, one way)
+    with Q-V droop, d(q-rows)/d(other) nonzero in columns: [0, 4]   (0=th, 4=i_d)
+
+=== operating point: P_Hopf(4-state)=1.455154, P0(margin .10)=1.4550001208
+    4-state: alpha=0.100000  w0=32.39884  Re c1=1.219123e+03  zeta=0.00309
+
+=== 1. exogenous q-axis reference: 6-state (i_q frozen) vs 8-state
+    x=w_c/w0    alpha_6        alpha_8       reldiff     w0_6        w0_8       Re c1_6        Re c1_8       reldiff
+        10   0.635488164  0.635488164  0.00e+00   31.501764  31.501764   1.1669094e+03  1.1669094e+03  0.00e+00
+        30   0.169428049  0.169428049  0.00e+00   32.283988  32.283988   1.8100896e+03  1.8100896e+03  0.00e+00
+       100   0.106161345  0.106161345  0.00e+00   32.388180  32.388180   1.8865663e+03  1.8865663e+03  0.00e+00
+       300   0.100675924  0.100675924  4.59e-10   32.397644  32.397644   1.8934244e+03  1.8934244e+03  8.65e-12
+    (equilibrium residuals: 7.55e-13)
+    4-state for reference: alpha=0.100000119  w0=32.398835  Re c1=1.2191234e+03
+
+=== 2. q-axis disturbance channel: threshold with a real current loop
+    the 6-state drive is i_q itself (instant); the 8-state drive is
+    i_q*, filtered by H(s) = wc(wc+2 zc s)/(s^2+2 zc wc s+wc^2)
+    x     r=wp/w0   |H(i wp)|   eps_c(6)      eps_c(8)      ratio 8/6   1/|H|     match
+       10  0.60     1.003392    9.684037e-03  1.074750e-02  1.10982   0.99662  1.14e-01
+       10  0.90     1.007599    1.242824e-03  1.224379e-03  0.98516   0.99246  7.36e-03
+       10  1.00     1.009365    2.070961e-04  2.049164e-04  0.98947   0.99072  1.26e-03
+       30  0.60     1.000397    1.970989e-03  1.939693e-03  0.98412   0.99960  1.55e-02
+       30  0.90     1.000893    4.150835e-04  4.124584e-04  0.99368   0.99911  5.44e-03
+       30  1.00     1.001102    1.899749e-05  1.897085e-05  0.99860   0.99890  3.02e-04
+      100  0.60     1.000036    1.466733e-03  1.442578e-03  0.98353   0.99996  1.64e-02
+      100  0.90     1.000081    3.142372e-04  3.125819e-04  0.99473   0.99992  5.19e-03
+      100  1.00     1.000100    8.998776e-06  8.996217e-06  0.99972   0.99990  1.84e-04
+      300  0.60     1.000004    1.420735e-03  1.397294e-03  0.98350   1.00000  1.65e-02
+      300  0.90     1.000009    3.048049e-04  3.032278e-04  0.99483   0.99999  5.17e-03
+      300  1.00     1.000011    8.276143e-06  8.274607e-06  0.99981   0.99999  1.75e-04
+
+    control -- the V channel (no q-axis component) must give the SAME
+    threshold in 6 and 8 states:
+    x=   30  eps_c(6)=1.62455024e-04  eps_c(8)=1.62455024e-04  reldiff=3.33e-16
+    x=  300  eps_c(6)=1.19485471e-04  eps_c(8)=1.19485471e-04  reldiff=2.19e-10
+
+=== 3. Q-V droop i_q* = Q + k_q (Vref - |v_pcc|): block structure gone
+    equilibrium-preserving (Vref := |v_pcc| at the base equilibrium)
+    |v_pcc| at the base equilibrium = 0.78838588
+    k_q      alpha         w0        zeta      Re c1        2nd mode Re    residual
+      0.0  +0.1061613   32.38818  +0.00328  +1.88657e+03  -5.995428   7.5e-13
+      0.1  -3.8590289   29.24653  -0.13195  +1.15391e+03  -9.960676   7.5e-13
+      0.3  -8.9382653   22.63114  -0.39495  +3.84608e+02  -15.040212   7.5e-13
+      1.0  +31.0400737   48.82894  +0.63569  +9.99934e+02  -1145.331094   7.5e-13
+      3.0  -19.5084586  110.02538  -0.17731  -1.08839e+03  -25.680815   7.5e-13
+     10.0  -14.8483983   81.10969  -0.18307  -9.07325e+01  -20.961384   7.5e-13
+     30.0  -13.9869045   77.31331  -0.18091  -3.47049e+01  -20.096730   7.5e-13
+DONE wall=3s

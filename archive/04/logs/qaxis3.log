@@ -1,0 +1,47 @@
+extended 4-state tensors built [1s]
+
+=== (a1) control: is the extended machinery consistent?
+    P must be purely additive (it never multiplies a state);
+    V and Q must not be.
+    channel   c_x additive        c_x multiplicative   rel. change
+      V      +1.4902899e+07  +1.4968970e+07  +4.433e-03   (old machinery +1.4902899e+07, reldiff 4.9e-16)
+      P      +2.5936518e+06  +2.5936518e+06  +0.000e+00   (old machinery +2.5936518e+06, reldiff 1.5e-16)
+      Q      +2.2097093e+06  +2.2530540e+06  +1.962e-02   (old machinery +2.2097093e+06, reldiff 4.5e-16)
+
+=== (a2) does the multiplicative term close the recorded V-channel gap?
+    recorded (mech4.log): measured vs 3rd order, c_x from the Hopf point
+  G1 V r=0.9: c_x add +1.490290e+07  mult +1.496897e+07  (+0.443%)
+    alpha   measured      3rd(add)     err     3rd(mult)    err
+    0.05   8.433762e-05  8.635201e-05  +2.39%  8.624385e-05  +2.26%   (recorded 8.635201e-05)
+    0.10   1.186533e-04  1.228787e-04  +3.56%  1.227217e-04  +3.43%   (recorded 1.228787e-04)
+    0.15   1.446188e-04  1.511781e-04  +4.54%  1.509820e-04  +4.40%   (recorded 1.511781e-04)
+    0.20   1.662438e-04  1.752172e-04  +5.40%  1.749869e-04  +5.26%   (recorded 1.752172e-04)
+  idx17 r=0.92: c_x add +4.229225e+03  mult +4.327013e+03  (+2.312%)
+    alpha   measured      3rd(add)     err     3rd(mult)    err
+    0.08   7.099020e-03  7.131990e-03  +0.46%  7.077848e-03  -0.30%   (recorded 7.131990e-03)
+
+=== (b) Q-V droop: exact first-order coefficient of alpha in k_q
+    d|v_pcc|/d i_q = -0.500000 < 0  =>  negative feedback needs k_q*d|v|/di_q > 0, i.e. k_q < 0
+    lambda(0) = -0.106161+32.388180j
+    dlambda/dk_q = <p, (dA/dk_q) q> = 55.829161-29.094219j
+    => d alpha/d k_q = -55.829161   (alpha_0 = 0.106161, so alpha doubles at |k_q| = 0.00190)
+    d w0/d k_q   = -29.094219
+    check against a direct sweep (mode tracked by eigenvector overlap):
+    k_q       alpha        linear pred    w0       overlap
+    -0.002  +0.2190019  +0.2178197   32.4459  1.0000
+    -0.005  +0.3928405  +0.3853072   32.5303  1.0000
+    -0.010  +0.6954961  +0.6644530   32.6640  0.9999
+    -0.020  +1.3521916  +1.2227446   32.8909  0.9997
+    -0.050  +3.5015574  +2.8976194   32.9247  0.9977
+    -0.100  +5.8284142  +5.6890775   31.8077  0.9924
+
+=== (c) the GFM never froze i_q
+    4-state:  i_q = (V*cos(d) + mq*(Qf - Qref) - 1)/Xg
+      d i_q/d delta = -V*sin(d)/Xg
+      d i_q/d Q_f   = mq/Xg
+      -> i_q is a FUNCTION OF TWO STATES, never a parameter;
+         the q axis is dynamic in the 4-state already.
+    6-state (current loop): d i_q/dt = w_cur((V cos d - E)/Xg - i_q)
+      depends on delta and Q_f -> no block triangularity at all,
+      i.e. the GFM has no 6-vs-8 choice to make.
+DONE wall=5s
