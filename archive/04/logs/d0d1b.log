@@ -1,0 +1,20 @@
+  at the FIXED operating point P0: both complex pairs, and the pair
+  tracked from Lg=0 by eigenvector overlap
+  w_base     L_g       pair1              pair2            tracked        ovl
+  1000000000000  5.00e-13   -0.1000 +32.399j   -5.9886 +41.244j   a= +0.1000 w= 32.399  1.0000
+        314  1.59e-03  -14.8202 +46.677j   a=+14.8202 w= 46.677  0.8531
+        377  1.33e-03  -16.2470 +46.968j   a=+16.2470 w= 46.968  0.8430
+       1000  5.00e-04   +3.3689 +44.111j   -5.2416 +31.116j   a= +5.2416 w= 31.116  0.9931
+       3000  1.67e-04   -2.2813 +33.028j   -2.4830 +41.142j   a= +2.2813 w= 33.028  0.9988
+      10000  5.00e-05   -0.6246 +32.703j   -5.0745 +41.098j   a= +0.6246 w= 32.703  0.9999
+      30000  1.67e-05   -0.2629 +32.503j   -5.6966 +41.193j   a= +0.2629 w= 32.503  1.0000
+
+  Hopf point: crossing frequency (is the boundary set by the same mode?)
+   Lg=0        P_H=1.4551540  crossing w=32.3640
+        314  L_g=1.59e-03  P_H=1.2647460  -13.0851%  crossing w= 78.1840   L_g*(shift)=-2.083e-04
+       1000  L_g=5.00e-04  P_H=1.3454058  -7.5420%  crossing w= 64.7014   L_g*(shift)=-3.771e-05
+       3000  L_g=1.67e-04  P_H=1.3823315  -5.0045%  crossing w= 58.5034   L_g*(shift)=-8.341e-06
+      10000  L_g=5.00e-05  P_H=1.4037972  -3.5293%  crossing w= 54.6254   L_g*(shift)=-1.765e-06
+      30000  L_g=1.67e-05  P_H=1.4553921  +0.0164%  crossing w= 32.4171   L_g*(shift)=+2.727e-09
+     100000  L_g=5.00e-06  P_H=1.4552253  +0.0049%  crossing w= 32.3798   L_g*(shift)=+2.450e-10
+DONE
