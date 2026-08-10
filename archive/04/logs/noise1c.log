@@ -36,3 +36,6 @@ G1 margin 0.10: alpha=0.10000 w0=32.39884 Re c1=1.219123e+03
   discrete sum vs spectral integral (1/2) int Re c_x S_u dw
    N   | spacing/alpha | sum          | integral     | ratio | measured    | err
      8 |         4.678 | 3.451159e+05 | 3.372975e+05 | 1.0232 | 2.21992e-04 |  -2.19%  [2099s]
+    32 |         1.041 | 3.371234e+05 | 3.372975e+05 | 0.9995 | 4.25084e-04 |  -3.01%  [2211s]
+   128 |         0.257 | 3.371596e+05 | 3.372975e+05 | 0.9996 | 5.01778e-04 |  -1.83%  [2486s]
+DONE wall=2486s
