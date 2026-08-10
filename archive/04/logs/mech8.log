@@ -1,0 +1,9 @@
+G1 margin 0.10, r=0.90: alpha=0.10000, Re c1=1.21912e+03
+ ch | measured      | 5th additive   | 5th add+param  | cubic add-only
+ V  | 1.186532e-04 | 1.188244e-04  +0.14% | 1.186835e-04  +0.03% | 1.190266e-04  +0.31%  [48s]
+      parametric share of Re c_x = +0.44%
+ P  | 2.796510e-04 | 2.797220e-04  +0.03% | 2.797539e-04  +0.04% | 2.801806e-04  +0.19%  [94s]
+      parametric share of Re c_x = -0.02%
+ Q  | 3.014526e-04 | 3.031321e-04  +0.56% | 3.031683e-04  +0.57% | 3.036294e-04  +0.72%  [133s]
+      parametric share of Re c_x = -0.02%
+DONE
