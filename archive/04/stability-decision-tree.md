@@ -349,6 +349,7 @@ $q$ 归一后各状态分量模长。相角类 → F1;直流电压类 → F2($\d
 - **侵蚀是谱上的标量和,三次阶无交叉项**:$\alpha_{\rm eff}=\alpha-\sum_k\operatorname{Re}c_x(\omega_k)|a_k|^2$,连续谱极限 $\alpha_{\rm eff}=\alpha-\tfrac12\int\operatorname{Re}c_x(\omega)S_u(\omega)\,\mathrm d\omega$(单边 PSD)。指标 $(l_1{-}m_1,l_2{-}m_2)=(+1,-1)$ 给出 $D-\lambda=\mathrm i(\omega_1-\omega_2)\ne0$,非共振,故不生成新判别量。
 - **投入冲击是相量和**(各音共用通道方向 $f_u$,只有复分母不同):$Z(0)=\sum_k 2a_k\lambda\langle p,f_u\rangle/(\omega_k^2+\lambda^2)$。双音实测 −0.65…+0.07%;**反相格是相量和的直接证据**——同样两个音只把第二音相位翻 $\pi$,阈值抬 29%(1.044e-4 → 1.345e-4),预测 −0.21%,标量和给不出这个差别。
 - **$\operatorname{Re}c_x(\omega)$ 会变号**:$\omega\approx0.45$–$0.56\,\omega_0$ 的驱动**加固**守卫(侵蚀分配 −0.1%、−1.8%)。"任何扰动都削裕度"是错的;$\operatorname{Re}c_x$ 是半宽 $\alpha$ 的共振(峰值 $\operatorname{Re}c_x(\omega_0)=2.48\times10^{10}$ 对 $\operatorname{Re}c_x(0.9\omega_0)=1.51\times10^7$,相差 1650 倍),$|H|\sim1/|\mathrm i\omega-\lambda|$ 使然。
+- **适用条件(定量,非经验)**:每个音须 $|\omega_k-\omega_0|\gtrsim5$–$10\,\alpha$。按最近音到 $\omega_0$ 的距离重排全部多音格,误差单调:$0.65\alpha$ 处 +30.74%,$2.17\alpha$ +15.75%,$5.30\alpha$ +11.25%,$38$–$65\alpha$ ±1–4%(无系统偏向);近共振侧系统性为正。落进该带的谱分量应按**扩散**(N 支的 $\tilde D$)处理而不是按侵蚀——这与 N 支独立扫出的分带宽度 $K\approx5$–7 重合。整个战役单音格取 $r=0.90/0.92$ 而不取 $1.00$,由此获得定量理由。
 - **判决类型在随机输入下改变**:确定性驱动给的是阈值(二值),随机驱动没有阈值——任何噪声强度最终都越过守卫,问题从"是否逃逸"变成"多久逃逸"。这不是第六要素,是同一几何骨架上把叶子从阈值换成速率,几何量($\alpha_{\rm eff}$、$\rho_g$、$\operatorname{Re}c_1$)原样进入 Kramers 指数(见 §3 新增的 N 支)。
 
 ---
