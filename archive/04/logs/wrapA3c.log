@@ -1,0 +1,26 @@
+=== M1: no Hopf found in D over [1e-5, 50 D0]
+=== M2: Hopf at D = 1.548521e-01 (D0 = 0.2), w0 = 9.86668, Re lam = -1.37e-10
+    Re c1 at the Hopf point = -4.585047e-03  (supercritical)
+   eta   |     D      |  alpha    | rho_LC pred | rho_LC meas | err     | ripple | sqrt scaling
+   0.020 | 1.5176e-01 | -0.015122 | 1.816046e+00 | 1.821289e+00 |   -0.29% | 1.3e-02 |  [98s]
+   0.040 | 1.4866e-01 | -0.030244 | 2.568292e+00 | 2.583420e+00 |   -0.59% | 2.2e-02 | meas 1.4185 vs sqrt 1.4142  [195s]
+   0.080 | 1.4246e-01 | -0.060488 | 3.632153e+00 | 3.676632e+00 |   -1.21% | 4.0e-02 | meas 1.4232 vs sqrt 1.4142  [295s]
+=== M3: Hopf at D = 1.576771e-02 (D0 = 0.02), w0 = 44.52573, Re lam = +3.31e-10
+    Re c1 at the Hopf point = -1.298229e-03  (supercritical)
+   eta   |     D      |  alpha    | rho_LC pred | rho_LC meas | err     | ripple | sqrt scaling
+   0.020 | 1.5452e-02 | -0.031379 | 4.916344e+00 | 4.922227e+00 |   -0.12% | 1.3e-02 |  [883s]
+   0.040 | 1.5137e-02 | -0.062758 | 6.952762e+00 | 6.980810e+00 |   -0.40% | 2.2e-02 | meas 1.4182 vs sqrt 1.4142  [1641s]
+   0.080 | 1.4506e-02 | -0.125515 | 9.832695e+00 | 9.916727e+00 |   -0.85% | 3.9e-02 | meas 1.4206 vs sqrt 1.4142  [2174s]
+=== M4: Hopf at D = 2.705188e-01 (D0 = 0.5), w0 = 13.04193, Re lam = -5.78e-11
+    Re c1 at the Hopf point = -1.179745e-02  (supercritical)
+   eta   |     D      |  alpha    | rho_LC pred | rho_LC meas | err     | ripple | sqrt scaling
+   0.020 | 2.6511e-01 | -0.047059 | 1.997230e+00 | 1.996321e+00 |   +0.05% | 1.9e-02 |  [2229s]
+   0.040 | 2.5970e-01 | -0.094151 | 2.824997e+00 | 2.822581e+00 |   +0.09% | 3.4e-02 | meas 1.4139 vs sqrt 1.4145  [2279s]
+   0.080 | 2.4888e-01 | -0.188431 | 3.996518e+00 | 3.991589e+00 |   +0.12% | 6.1e-02 | meas 1.4142 vs sqrt 1.4147  [2329s]
+=== M5: Hopf at D = 7.692397e-02 (D0 = 0.02), w0 = 21.99177, Re lam = +2.03e-10
+    Re c1 at the Hopf point = -4.678281e-03  (supercritical)
+   eta   |     D      |  alpha    | rho_LC pred | rho_LC meas | err     | ripple | sqrt scaling
+   0.020 | 7.5385e-02 | -0.037353 | 2.825647e+00 | 2.831801e+00 |   -0.22% | 1.4e-02 |  [2440s]
+   0.040 | 7.3847e-02 | -0.074707 | 3.996102e+00 | 4.013869e+00 |   -0.44% | 2.4e-02 | meas 1.4174 vs sqrt 1.4142  [2546s]
+   0.080 | 7.0770e-02 | -0.149418 | 5.651435e+00 | 5.704861e+00 |   -0.94% | 4.3e-02 | meas 1.4213 vs sqrt 1.4142  [2651s]
+DONE wall=2651s
