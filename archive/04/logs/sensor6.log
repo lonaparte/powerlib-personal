@@ -1,0 +1,34 @@
+fixed readout (closed-form fit, tail trimmed) on the real 4-state cell
+  sensor       kappa_g     | noise | alpha err | Re c1 err
+  aligned    1.627e+00 | 0e+00 |   -0.020% |   +0.287%
+  aligned    1.627e+00 | 1e-03 |   -0.093% |   -0.383%
+  aligned    1.627e+00 | 1e-02 |   -0.764% |   -6.436%
+
+  mix f=0.30  4.882e-01 | 0e+00 |   -0.019% |   +0.330%
+  mix f=0.30  4.882e-01 | 1e-03 |   -0.094% |   -0.351%
+  mix f=0.30  4.882e-01 | 1e-02 |   -0.767% |   -6.430%
+
+  mix f=0.10  1.627e-01 | 0e+00 |   -0.020% |   +0.385%
+  mix f=0.10  1.627e-01 | 1e-03 |   -0.095% |   -0.282%
+  mix f=0.10  1.627e-01 | 1e-02 |   -0.772% |   -6.400%
+
+  mix f=0.03  4.882e-02 | 0e+00 |   -0.020% |   +0.641%
+  mix f=0.03  4.882e-02 | 1e-03 |   -0.098% |   -0.074%
+  mix f=0.03  4.882e-02 | 1e-02 |   -0.793% |   -6.352%
+
+  mix f=0.01  1.627e-02 | 0e+00 |   -0.019% |   +1.369%
+  mix f=0.01  1.627e-02 | 1e-03 |   -0.102% |   +0.618%
+  mix f=0.01  1.627e-02 | 1e-02 |   -0.852% |   -6.164%
+
+  state Vdc  1.193e+00 | 0e+00 |   -0.056% |   -0.319%
+  state Vdc  1.193e+00 | 1e-03 |   -0.086% |   -0.598%
+  state Vdc  1.193e+00 | 1e-02 |   -0.341% |   -3.000%
+
+  state th   1.604e+00 | 0e+00 |   -0.021% |   +0.189%
+  state th   1.604e+00 | 1e-03 |   -0.093% |   -0.467%
+  state th   1.604e+00 | 1e-02 |   -0.733% |   -6.229%
+
+  spread ACROSS sensors at fixed noise (the actual claim):
+   noise 0e+00: alpha spread 0.0368%   Re c1 spread 1.6817%   | common bias -0.02%, +0.41%
+   noise 1e-03: alpha spread 0.0162%   Re c1 spread 1.2191%   | common bias -0.09%, -0.22%
+   noise 1e-02: alpha spread 0.5152%   Re c1 spread 3.6499%   | common bias -0.72%, -5.86%

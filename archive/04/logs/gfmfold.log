@@ -1,0 +1,53 @@
+=== the universal constant: X' = lambda - tau^2 + X^2
+    start on the quasi-static branch X = -sqrt(tau^2 - lambda) at
+    tau = -T0 and ask whether X blows up before the equilibria return
+    lambda* = 1.000000000   (crude matching estimate was pi/2 = 1.5708)
+      start at tau=-10.0: lambda* = 1.000000000
+      start at tau=-14.0: lambda* = 1.000000000
+      start at tau=-20.0: lambda* = 1.000000000
+      start at tau=-28.0: lambda* = 1.000000000
+
+=== prediction vs measurement, zero fitted constants
+  cell             |    a       |     b      | ab      | K_pred | K_meas(0.05/0.10/0.30) | pred/meas
+  A  M2 Xg=0.5 90% | -1.5806e+01 | -2.3943e+00 | +3.784e+01 |  0.995 | 1.013/1.030/1.052 |   0.9737
+      fold at delta=1.49467, |zero eigenvalue|=5.98e-05, eps_qs=9.93899e-02, w0=2.7283  [9s]
+  B  M3 Xg=0.5 90% | -1.0973e+02 | -2.7743e+01 | +3.044e+03 |  0.516 | 0.521/0.525/0.551 |   0.9874
+      fold at delta=1.34876, |zero eigenvalue|=3.16e-04, eps_qs=9.49175e-02, w0=12.4160  [10s]
+  C  M2 Xg=0.3 75% | -2.8939e+01 | -2.7640e+00 | +7.999e+01 |  0.719 | 0.727/0.735/0.759 |   0.9829
+      fold at delta=1.47368, |zero eigenvalue|=7.03e-05, eps_qs=2.47267e-01, w0=4.5202  [11s]
+  D  M3 Xg=0.3 90% | -2.0044e+02 | -3.9323e+01 | +7.882e+03 |  0.424 | 0.427/0.422/0.368 |   0.9977
+      fold at delta=1.26421, |zero eigenvalue|=7.60e-04, eps_qs=9.05314e-02, w0=16.0073  [11s]
+
+  pred/meas across the four cells: 0.9737, 0.9874, 0.9829, 0.9977
+  mean 0.9854, spread 2.43%
+
+  read: the LINEARITY is already established from the measurements.
+  What is tested here is the COEFFICIENT -- if pred/meas is the same
+  number across cells whose a, b, eps_qs and w0 differ, the
+  normal-form scaling is right; if that number is also 1, the
+  universal constant is right too.  A common factor that is not 1
+  means the scaling holds but lambda* is being applied with the wrong
+  O(1) convention, which is a bookkeeping error, not a mechanism one.
+DONE wall=11s
+
+=== GFM quasi-static branch WITH the passage-time term
+    eps_c = eps_qs + lambda* w_p sqrt(eps_qs/(2ab)),  lambda* = 1 exactly
+  cell |  w_p/w0 | eps_uni (old) | + passage term | measured
+   A   |  0.05   |      -4.75%   |      -0.08%    | 1.04422e-01
+   A   |  0.10   |      -9.10%   |      -0.32%    | 1.09632e-01
+   A   |  0.30   |     -22.69%   |      -1.30%    | 1.30762e-01
+
+   B   |  0.05   |      -2.58%   |      -0.03%    | 9.73921e-02
+   B   |  0.10   |      -5.16%   |      -0.08%    | 9.98985e-02
+   B   |  0.30   |     -16.23%   |      -0.90%    | 1.10610e-01
+
+   C   |  0.05   |      -3.51%   |      -0.04%    | 2.56257e-01
+   C   |  0.10   |      -6.87%   |      -0.15%    | 2.65446e-01
+   C   |  0.30   |     -19.44%   |      -0.99%    | 3.03603e-01
+
+   D   |  0.05   |      -2.15%   |      -0.02%    | 9.24648e-02
+   D   |  0.10   |      -4.28%   |      +0.02%    | 9.43543e-02
+   D   |  0.30   |     -12.57%   |      +1.50%    | 1.00537e-01
+
+  max |err|:  w_p=0.05 w0: 0.08%   0.10: 0.32%   0.30: 1.50%
+  (was 4.75% / 9.10% / 22.69%)

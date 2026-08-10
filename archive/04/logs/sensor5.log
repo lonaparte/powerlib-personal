@@ -1,0 +1,37 @@
+alpha=0.100000  w0=32.39884  Re c1=1.219123e+03  rho_g=9.05683e-03
+
+=== A. sliding-log-slope stage alone, fed the EXACT rho(t)
+    (no filter, no Hilbert -- any bias here is the binning's)
+    m    | window (s) | alpha err | slope err
+     40 |     0.1939 |   -0.000% |   +0.003%
+     80 |     0.3879 |   -0.000% |   +0.011%
+    160 |     0.7757 |   -0.000% |   +0.046%
+    320 |     1.5515 |   -0.001% |   +0.187%
+    640 |     3.1029 |   -0.004% |   +0.763%
+
+=== B. filter + Hilbert envelope against the exact rho(t)
+    envelope/exact - 1 over the fit window: mean +1.115e-03, rms 2.317e-02, max |.| 2.207e-01
+    at the two ends of the window: -2.589e-03 .. -2.207e-01
+    (a DRIFT across the window is what biases the slope: it tilts the
+     apparent decay rate in a rho-dependent way)
+    linear drift of that relative error: +3.002e-04 per second, i.e. +0.300% of alpha
+
+=== C. full chain, window sweep
+    m    | window (s) | alpha err | slope err
+     40 |     0.1939 |  +13.553% | +112.929%
+     80 |     0.3879 |   +6.877% |  +59.777%
+    160 |     0.7757 |   +1.816% |  +18.970%
+    320 |     1.5515 |   -3.130% |  -24.242%
+    640 |     3.1029 |   -2.239% |  -19.576%
+
+=== D. the fix: fit the closed-form rho(t), no binning at all
+    exact rho(t)              : alpha  -0.0000%   Re c1  +0.0000%
+    filter+Hilbert envelope   : alpha  -0.4747%   Re c1  -5.0812%
+
+  and on the REAL 4-state cell, same fix, several sensors:
+    sensor        kappa_g    | sliding(m=160) a,slope | closed-form a,slope
+    aligned    1.627e+00 |   +1.72%, +14.58% |   -0.50%,  -4.30%
+    mix f=0.10  1.627e-01 |   +1.74%, +14.81% |   -0.50%,  -4.20%
+    mix f=0.01  1.627e-02 |   +1.89%, +16.91% |   -0.50%,  -3.24%
+    state Vdc  1.193e+00 |   +0.28%,  +4.04% |   -0.76%,  -7.34%
+DONE wall=2s
