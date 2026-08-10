@@ -1,0 +1,16 @@
+G1 margin 0.10: alpha=0.100000 w0=32.39884 Re c1=1.219123e+03
+  Re c_x(0.9 w0) = 1.514489e+07 (additive 1.507882e+07 + parametric +6.6071e+04)
+  alpha_eff = 0 at eps* = 1.6239109e-04   (cubic-only 2 sqrt(alpha/Re c_x) = 1.6251642e-04)
+
+  guard radius and escape rate just below eps*:
+    eps/eps* = 0.900:  alpha_eff = 1.902375e-02,  rho_g = 3.9277e-03,  lambda_u = 2 alpha_eff = 3.8047e-02,  1/lambda_u = 26.3 s
+    eps/eps* = 0.970:  alpha_eff = 5.918580e-03,  rho_g = 2.1882e-03,  lambda_u = 2 alpha_eff = 1.1837e-02,  1/lambda_u = 84.5 s
+    eps/eps* = 0.990:  alpha_eff = 1.993009e-03,  rho_g = 1.2693e-03,  lambda_u = 2 alpha_eff = 3.9860e-03,  1/lambda_u = 250.9 s
+    eps/eps* = 0.995:  alpha_eff = 9.990237e-04,  rho_g = 8.9862e-04,  lambda_u = 2 alpha_eff = 1.9980e-03,  1/lambda_u = 500.5 s
+    eps/eps* = 0.999:  alpha_eff = 2.002078e-04,  rho_g = 4.0225e-04,  lambda_u = 2 alpha_eff = 4.0042e-04,  1/lambda_u = 2497.4 s
+
+=== A. hold length varied at fixed ramp (R = 20/alpha = 200 s)
+   hold/alpha^-1 | hold (s) | measured    | vs eps*  | implied alpha_eff at threshold
+              10 |      100 | 2.059728e-04 | +26.838% | -6.1029e-02 (1/lambda_u = inf s)  [215s]
+              30 |      300 | 1.769380e-04 |  +8.958% | -1.8753e-02 (1/lambda_u = inf s)  drift -14.096%  [538s]
+             100 |     1000 | 1.663402e-04 |  +2.432% | -4.9308e-03 (1/lambda_u = inf s)  drift -5.990%  [1216s]
