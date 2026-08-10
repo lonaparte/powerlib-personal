@@ -15,11 +15,19 @@
 
 ## 对象模型
 
-- **GFL**(4 状态:θ, x_pll, Vdc, ξ):PLL(kp, ki)+ 直流电压控制(kpv, kiv, C),
+**方程全文与推导见 [`models-and-derivations.md`](./models-and-derivations.md)
+(2026-08-10 定版)**;本段只是索引。
+
+- **GFL**——**定版为 8 状态**(θ, x_pll, Vdc, ξ, i_d, γ_d, i_q, γ_q):
+  PLL(kp, ki)+ 直流电压控制(kpv, kiv, C)+ d/q 各一条二阶电流环(ζ_c, ω_c),
   电网阻抗 Xg。基准组 G1: kp=50, ki=1000, kpv=1, kiv=50, C=0.01, P=1.0, Xg=0.5。
-  权威实现 `scripts/selfhead.py`(自包含,防清空)。
+  战役主体在 4 状态(θ, x_pll, Vdc, ξ)上完成,该 4 状态是 ω_c→∞ 且 i_q 外生
+  时的精确极限,权威实现 `scripts/selfhead.py`(自包含,防清空);8 状态实现
+  `scripts/qaxis.py`。**4 状态的自治侧数据(α, ω₀, c₁)在 i_q 外生时与 8 状态
+  逐位相同(块三角定理)**,有无功/电压环时 8 状态强制。
 - **GFM**(4 状态最小 VSM:δ, ω, Pf, Qf):M, D, 无功下垂 mq, 滤波 ωc。
-  参数组 M1–M5,权威实现 `scripts/gfmlib.py`。
+  参数组 M1–M5,权威实现 `scripts/gfmlib.py`。GFM 的 i_q 本就是 (δ, Qf) 的
+  函数,无冻结项;带电流环的 6 状态见 `scripts/gfminner.py`,ε_qs 精确不变。
 
 ## 统一理论(最终形态)
 
