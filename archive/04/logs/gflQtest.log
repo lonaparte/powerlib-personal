@@ -1,0 +1,10 @@
+ margin |    P0      | alpha_4state |    Q    | w_c/w0 | d alpha (abs) | d alpha/alpha | prefactor K | K/Q
+  0.05   | 1.4550769 | 0.0500001    |   323.8 |   1000 | +0.108328     |     +216.66% |      2166.6 |  6.69
+  0.10   | 1.4550001 | 0.1000001    |   162.0 |   1000 | +0.109490     |     +109.49% |      1094.9 |  6.76
+  0.20   | 1.4548477 | 0.1999999    |    81.1 |   1000 | +0.111794     |      +55.90% |       559.0 |  6.89
+  0.40   | 1.4016615 | 0.4000000    |    68.3 |   1000 | -0.054968     |      -13.74% |      -137.4 | -2.01
+
+  read: if the shift is ABSOLUTE (d alpha roughly constant across
+  margins) then K = (d alpha/alpha) x (w_c/w0) must be proportional to
+  Q, and K/Q must be roughly constant.  If K/Q drifts, the 'amplified
+  by Q' framing is a one-point coincidence and must be withdrawn.
