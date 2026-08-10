@@ -1,0 +1,40 @@
+G1 margin 0.10: alpha=0.100000 rho_g=9.056834e-03
+parsed 17 cells
+
+  cell                 | a^4/alpha | linear kick | 2nd-order kick
+  0.85-0.95 s7  N=  2 |     0.01% |   +0.523%  |   +1.669%   [1s]
+  0.85-0.95 s7  N=  4 |     0.01% |   +0.895%  |   +3.463%   [3s]
+  0.85-0.95 s7  N=  8 |     0.01% |   -0.753%  |   -5.799%   [8s]
+  0.85-0.95 s7  N= 16 |     0.03% |   +0.614%  |   -0.324%   [54s]
+  0.85-0.95 s7  N= 32 | measurement not found, skipped
+  0.7-0.8 s7  N=  4 | measurement not found, skipped
+  0.7-0.8 s23 N=  4 | measurement not found, skipped
+  0.7-0.8 s7  N=  8 | measurement not found, skipped
+  0.7-0.8 s23 N=  8 | measurement not found, skipped
+  0.7-0.8 s7  N= 16 | measurement not found, skipped
+  0.7-0.8 s23 N= 16 | measurement not found, skipped
+  0.8-0.88 s7  N=  4 | measurement not found, skipped
+  0.8-0.88 s23 N=  4 | measurement not found, skipped
+  0.8-0.88 s7  N=  8 | measurement not found, skipped
+  0.8-0.88 s23 N=  8 | measurement not found, skipped
+  0.8-0.88 s7  N= 16 | measurement not found, skipped
+  0.8-0.88 s23 N= 16 | measurement not found, skipped
+    mean |err|  linear 0.696%  ->  2nd-order kick 2.814%
+    max  |err|  linear 0.895%  ->  5.799%
+    improved in 1/4 cells
+
+  domain of the cubic closed form, as a number:
+    cells with a^4/alpha > 1%: n=0, mean |err| nan% (2nd-order kick nan%)
+    cells with a^4/alpha < 1%: n=4, mean |err| 0.696% (2nd-order kick 2.814%)
+    corr(a^4/alpha, |err_linear|) = -0.338;  corr with 2nd-order kick = -0.701
+DONE wall=54s
+
+=== domain of the cubic closed form, from the recorded 17-cell table
+  n = 17 cells; a^4/alpha spans 0.01% .. 13.33%
+  corr(a^4/alpha, err_signed)   = +0.692
+  corr(a^4/alpha, |err|)        = +0.780
+  a^4/alpha > 1%  : n=3, mean err +1.153%, mean |err| 1.153%
+  a^4/alpha <= 1% : n=14, mean err +0.182%, mean |err| 0.385%
+  regression err(%) = +0.175 + +0.1051 x (a^4/alpha in %)
+  => the a^4 slope accounts for +1.401% at the largest cell,
+     on a floor of +0.175% that a^4 does NOT explain.

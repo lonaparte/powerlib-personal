@@ -1,0 +1,18 @@
+G1 margin 0.10: alpha=0.100000 w0=32.39884 Re c1=1.219123e+03 rho_g=9.056834e-03   lam=-0.100000+32.398835j
+  check: sum_i a_i e_i must reconstruct dx -- residual 1.09e-13
+  eigenvalues: -5.98858+41.24444j, -5.98858-41.24444j, -0.10000+32.39884j, -0.10000-32.39884j
+  resonance denominators |lam_i+lam_j-lam| min = 2.4303e+01   (zero would mean the projection does not exist)
+
+  direction        |  s_crit (4-state) |  linear    err   |  2nd order   err   | |zeta2/zeta1|-1
+  q real part       | 1.376234e-02     | 1.4670e-02   +6.60% | 1.3737e-02   -0.19% |  +0.0681   [16s]
+  q imag part       | 1.234852e-02     | 1.0625e-02  -13.96% | 1.2371e-02   +0.18% |  -0.1409   [31s]
+  state theta       | 2.309728e-03     | 2.3063e-03   -0.15% | 2.2873e-03   -0.97% |  +0.0084   [47s]
+  state Vdc         | 6.676754e-03     | 6.5355e-03   -2.12% | 6.6479e-03   -0.43% |  -0.0170   [62s]
+  state xi          | 5.335743e-05     | 5.2136e-05   -2.29% | 5.2973e-05   -0.72% |  -0.0159   [77s]
+  random dir 0      | 1.350688e-04     | 1.3241e-04   -1.97% | 1.3407e-04   -0.74% |  -0.0125   [92s]
+  random dir 1      | 5.268342e-04     | 5.1463e-04   -2.32% | 5.2277e-04   -0.77% |  -0.0157   [108s]
+  random dir 2      | 7.991641e-05     | 7.7982e-05   -2.42% | 7.9333e-05   -0.73% |  -0.0172   [124s]
+    mean |err|  linear 3.977%  ->  2nd order 0.591%
+    max  |err|  linear 13.957%  ->  2nd order 0.972%
+    improved in 7/8 directions
+DONE wall=124s
