@@ -1,0 +1,19 @@
+G1 margin 0.10: alpha=0.100000  rho_g(0)=9.05683e-03
+
+  window sweep: a sharp threshold is flat, a rare-event threshold drifts down
+
+  === 0.85-0.95 s7 N=8  (residual -3.80%)
+      predicted 6.967782e-05, slowest-tone period 0.2282 s
+       NP   | measured      | drift    | vs predicted | t_esc/T_slow at 1.002 eps_c
+        250 | 7.244575e-05 |           |       -3.82% |        169.1  [25s]
+        500 | 7.243403e-05 |  -0.0162% |       -3.81% |        170.9  [66s]
+       1000 | 7.243381e-05 |  -0.0003% |       -3.80% |        170.9  [151s]
+       2000 | 7.243403e-05 |  +0.0003% |       -3.81% |        170.9  [194s]
+       4000 | 7.243381e-05 |  -0.0003% |       -3.80% |        170.9  [494s]
+
+  === 0.85-0.95 s7 N=16 (residual +7.59%)
+      predicted 1.197927e-04, slowest-tone period 0.2282 s
+       NP   | measured      | drift    | vs predicted | t_esc/T_slow at 1.002 eps_c
+        250 | 1.117225e-04 |           |       +7.22% |        219.3  [524s]
+        500 | 1.113587e-04 |  -0.3256% |       +7.57% |        283.2  [579s]
+       1000 | 1.113421e-04 |  -0.0150% |       +7.59% |        289.2  [678s]
