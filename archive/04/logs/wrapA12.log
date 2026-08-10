@@ -1,0 +1,30 @@
+G1: P_H=1.455154, Re c2=-4.958753e+04  [1s]
+
+=== A2: lambda_u = 2 alpha_eff + 2 Re c2 rho_g^4, against exact Floquet
+ alpha  | rho_g      | exact lambda_u | 2 alpha (cubic)   | fifth order        | period
+ 0.050  | 6.4249e-03 | 0.09982328    | 0.10000024  +0.18% | 0.09983124  +0.01% | 0.194145  [2s]
+         multipliers |mu| = 1.019569, 1.000000 (second must be ~1), rho_g cubic 6.4195e-03
+ 0.100  | 9.0720e-03 | 0.19924993    | 0.20000024  +0.38% | 0.19932847  +0.04% | 0.194149  [2s]
+         multipliers |mu| = 1.039442, 1.000000 (second must be ~1), rho_g cubic 9.0568e-03
+ 0.150  | 1.1094e-02 | 0.29824131    | 0.30000009  +0.59% | 0.29849796  +0.09% | 0.194153  [2s]
+         multipliers |mu| = 1.059614, 1.000000 (second must be ~1), rho_g cubic 1.1066e-02
+ 0.200  | 1.2790e-02 | 0.39673973    | 0.39999981  +0.82% | 0.39734572  +0.15% | 0.194157  [2s]
+         multipliers |mu| = 1.080074, 1.000000 (second must be ~1), rho_g cubic 1.2748e-02
+
+=== A1: complex Z(0) measured by back-extrapolating the free part
+  <p,H+> = 7.23173e+01+6.71471e+01j, <p,H-> = 3.70301e+00+3.64552e+00j, J = 5.193910e+01
+  <p,h20>=-4.5426e+04+9.2215e+03j <p,h11>=-4.5365e+04-5.8383e+04j <p,h02>=-7.4177e+03+1.3201e+04j
+  mixed: <p,h1010>=-5.8403e+02+8.3697e+02j <p,h1001>=-1.0010e+03-1.4428e+02j <p,h0110>=9.5765e+01-8.2683e+02j <p,h0101>=-3.4889e+02+1.0504e+02j
+  rho_g = 9.07203e-03, crude eps_c ~ 1.74667e-04
+
+  eps/eps_c | measured |Z0|   arg Z0  | linear pred      | quadratic pred
+   0.20      | 1.837379e-03 -2.3935 | 1.814406e-03  -1.25% | 1.858690e-03  +1.16%   (plateau spread 2.5e-02)  [3s]
+   0.35      | 3.310656e-03 -2.3983 | 3.175211e-03  -4.09% | 3.310980e-03  +0.01%   (plateau spread 4.5e-02)  [3s]
+   0.50      | 4.960848e-03 -2.4072 | 4.536016e-03  -8.56% | 4.813392e-03  -2.97%   (plateau spread 6.5e-02)  [3s]
+   0.65      | 6.911661e-03 -2.4224 | 5.896821e-03 -14.68% | 6.366070e-03  -7.89%   (plateau spread 8.7e-02)  [3s]
+
+  |Z0| = K1 eps + K2 eps^2 :  measured K1=4.683086e+01 K2=+1.214402e+05
+                              quadratic pred K1=5.192996e+01 K2=+3.648177e+04
+  linear-only J = 5.193910e+01  (K1 must match this to the fit noise)
+  K2 ratio pred/meas = +0.3004  (1 => the <p,Phi>=0 inversion is the right projection)
+DONE wall=3s

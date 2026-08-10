@@ -1,0 +1,25 @@
+=== A3: D(rho) = alpha - Re c1 rho^2 in the coordinate z = <p, x-x_eq>
+ cell | alpha (eig) | alpha (fit) | -Re c1 (analytic) | slope (fit) | verdict
+ M1  |   -0.012170 |   -0.008828 |     +3.127187e-03 | +2.9377e-03 | analytic supercritical, sign OK  [6s]
+       w0=22.1824  Re c1=-3.127187e-03  launch radii 1.889e+00..8.685e+00  D range -0.00046..0.21037
+ M2  |    0.220400 |    0.220290 |     +4.597481e-03 | +4.4664e-03 | analytic supercritical, sign OK  [8s]
+       w0=9.8634  Re c1=-4.597481e-03  launch radii 8.499e-01..3.768e+00  D range 0.22340..0.28355
+ M3  |    0.421124 |    0.424891 |     +1.300246e-03 | +1.2347e-03 | analytic supercritical, sign OK  [17s]
+       w0=44.5236  Re c1=-1.300246e-03  launch radii 3.135e+00..1.504e+01  D range 0.43454..0.70140
+ M4  |    1.963264 |    1.963260 |     +1.223471e-02 | +2.9739e-02 | analytic supercritical, sign OK  [18s]
+       w0=12.7761  Re c1=-1.223471e-02  launch radii 2.344e-01..1.098e+00  D range 1.96500..1.99926
+ M5  |   -1.382868 |   -1.343761 |     +4.606655e-03 | +3.9175e-03 | analytic supercritical, sign OK  [20s]
+       w0=21.9551  Re c1=-4.606655e-03  launch radii 3.589e+00..1.374e+01  D range -1.31907..-0.61822
+
+=== A4a: omega_g slow cell (drive on grid frequency), a_c vs window
+  T_c=0.194149s  T_d=1.673180s  w_s=3.75524 rad/s  r_g=9.05683e-03
+  NP=  40  a_c = 0.9427847  [34s]
+  NP=  80  a_c = 0.9427847  drift +0.0000%  [59s]
+  NP= 160  a_c = 0.9427847  drift +0.0000%  [108s]
+  NP= 320  a_c = 0.9427847  drift +0.0000%  [204s]
+  NP= 640  a_c = 0.9427847  drift +0.0000%  [347s]
+
+=== A4b: idx17 (kp=55 ki=1200 Xg=0.40), margin 0.08, r=0.92
+  alpha=0.08000 w0=71.9038 r_g=9.86739e-02
+  NP= 1000  eps_c = 7.1071014e-03  [393s]
+  NP= 2000  eps_c = 7.0990448e-03  drift -0.1134%  [475s]

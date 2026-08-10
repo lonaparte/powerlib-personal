@@ -1,0 +1,29 @@
+G1 Hopf P_H=1.455154, w0_H=32.36403  [1s]
+
+--- mixed second derivatives d^2 f_i/dx_j du at the Hopf point ---
+  u=V: identically zero = False, ||.||_max = 5.91192e+03
+  u=P: identically zero = True, ||.||_max = 0.00000e+00
+  u=Q: identically zero = False, ||.||_max = 1.18238e+02
+  cos angle(V,Q) = +0.01230   (1 => parallel, so the V-bound run would only rescale)
+  cos angle(V,P) undefined: one operator is zero
+  cos angle(P,Q) undefined: one operator is zero
+
+operating point: alpha=0.10000, Re c1=1.219123e+03, w_p=29.15895
+
+--- thresholds, drive symbol bound correctly ---
+ ch | measured(1000) | 5th additive   | 5th add+param  | share  | measured(3000)  drift
+ V  | 1.186532e-04 | 1.188244e-04  +0.14% | 1.186835e-04  +0.03% |  +0.44% | 1.186534e-04  +0.00%  [89s]
+      V-bound (mech8's binding) would give 1.186835e-04  +0.03%, share +0.44%
+      Re c_x additive 1.507882e+07, parametric increment +6.607135e+04 (V-bound +6.607135e+04)
+ P  | 2.796507e-04 | 2.797220e-04  +0.03% | 2.797220e-04  +0.03% |  +0.00% | 2.796512e-04  +0.00%  [174s]
+      V-bound (mech8's binding) would give 2.797539e-04  +0.04%, share -0.02%
+      Re c_x additive 2.626435e+06, parametric increment +0.000000e+00 (V-bound -4.036454e+02)
+ Q  | 3.014532e-04 | 3.031321e-04  +0.56% | 3.016350e-04  +0.06% |  +1.90% | 3.014527e-04  -0.00%  [425s]
+      V-bound (mech8's binding) would give 3.031683e-04  +0.57%, share -0.02%
+      Re c_x additive 2.236429e+06, parametric increment +4.334475e+04 (V-bound -3.375993e+02)
+
+--- against the converged (3000-period) measurement ---
+ V: additive  +0.14%  add+param  +0.03%  (V-bound  +0.03%)
+ P: additive  +0.03%  add+param  +0.03%  (V-bound  +0.04%)
+ Q: additive  +0.56%  add+param  +0.06%  (V-bound  +0.57%)
+DONE wall=425s

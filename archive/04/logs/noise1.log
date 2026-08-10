@@ -1,0 +1,26 @@
+G1 margin 0.10: alpha=0.10000, w0=32.39884, Re c1=1.219123e+03
+  rho_g(unforced) = 9.056834e-03
+  Re c2=-4.95875e+04, Re c_xx=2.77039e+09, Re c_a4=3.54710e+12
+  parametric share of Re c_x at w_p=0.9 w0: +0.44% (applied as a multiplicative factor to every tone)
+
+=== A. two tones, sudden onset (kick = phasor sum, erosion = scalar sum)
+ case                       | measured    | predicted   | err     | kick |Z0|/eps  erosion split
+ w1=0.90 w2=0.90/phi  1:1   | 1.04438e-04 | 1.04301e-04 |  -0.13% | 6.6232e+01  100.1/-0.1  [51s]
+ w1=0.90 w2=0.90/phi  1:0.5 | 1.11292e-04 | 1.11286e-04 |  -0.01% | 5.9085e+01  100.0/-0.0  [83s]
+ w1=0.90 w2=1.30      1:1   | 1.17902e-04 | 1.17131e-04 |  -0.65% | 3.7648e+01  68.5/31.5  [129s]
+ w1=0.90 w2=0.45 (2:1) 1:1  | 1.06403e-04 | 1.06473e-04 |  +0.07% | 6.4316e+01  101.8/-1.8  [211s]
+ w1=0.90 w2=0.90/phi  antiphase | 1.34475e-04 | 1.34190e-04 |  -0.21% | 3.7649e+01  100.1/-0.1  [282s]
+
+=== B. 8-tone narrowband patch, fixed random phases, sudden onset
+ band 0.85-0.95 w0: measured 8.79164e-05 | predicted 8.60886e-05 |  -2.08%
+    erosion coefficient sum_k Re c_x(w_k) r_k^2/4 = 6.33964e+06 vs single tone at 0.9w0 3.78622e+06 (ratio 1.6744)
+    kick |Z0|/eps = 7.65059e+01 vs single tone 5.19391e+01  [340s]
+ band 0.75-1.05 w0: measured 2.33473e-05 | predicted 2.27796e-05 |  -2.43%
+    erosion coefficient sum_k Re c_x(w_k) r_k^2/4 = 1.59243e+08 vs single tone at 0.9w0 3.78622e+06 (ratio 42.0585)
+    kick |Z0|/eps = 1.65715e+02 vs single tone 5.19391e+01  [427s]
+
+=== C. same patches, slowly raised (200-period ramp): no kick, so the
+    threshold must be exactly alpha_eff = 0
+ band 0.85-0.95 w0: measured 1.32494e-04 | alpha_eff=0 gives 1.25589e-04 |  -5.21%  [482s]
+ band 0.75-1.05 w0: measured 2.67439e-05 | alpha_eff=0 gives 2.50594e-05 |  -6.30%  [545s]
+DONE wall=545s
