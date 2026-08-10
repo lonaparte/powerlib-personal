@@ -1,0 +1,5 @@
+  cell | swing-mode lambda        | damping ratio zeta = -Re/|lam| | crossover w_p/w0
+   A   | -0.94092+2.72825j | 0.3260                        | none (>=1 up to 0.90)
+   B   | -1.90701+12.41604j | 0.1518                        | 0.60-0.70
+   C   | -0.84171+4.52024j | 0.1831                        | none (min 1.048 @0.70)
+   D   | -1.85106+16.00731j | 0.1149                        | 0.50-0.60

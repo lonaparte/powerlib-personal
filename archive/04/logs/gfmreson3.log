@@ -1,0 +1,6 @@
+  cell  w_p/w0    nu      eps_c        eps_c/eps_qs   d/nu   interval nper-conv
+   D   0.40  0.1696  8.912834e-02   0.98450   -0.0914  ok     [83s]
+
+  eps_qs / w0 / ab per cell (for the Melnikov comparison):
+   D  eps_qs=9.053143e-02  w0=16.00731  ab=7.87604e+03
+DONE wall=83s
