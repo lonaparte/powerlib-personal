@@ -1,0 +1,8 @@
+=== part 1. scalar control: coefficients known exactly, C2 measured
+    xidot = a D + b xi^2 + a2 D^2 + kap xi D + b3 xi^3 + be2 xi^2 D + b4 xi^4
+    D(t) = eps cos(w t) - eps_qs,  a = b = 1, eps_qs = 0.2
+    (eps_qs small so the polynomial keeps its fold structure over the
+     whole cycle: |D| <= 2 eps_qs, so the extra terms never dominate aD)
+  extra terms              | C2_meas(nu=.02/.03/.05) | C2_pred | (1st,2nd) | diff
+  b3 = +0.40 (2nd order)   |  0.4148/ 0.4157/ 0.4175 ->  0.4130 |  0.4130 | (+0.000,+0.038) | -0.0000   [23s]
+  b3 = +0.40 (2nd order)   |  0.4148/ 0.4157/ 0.4175 ->  0.4130 |  0.4130 | (+0.000,+0.038) | -0.0000   [45s]

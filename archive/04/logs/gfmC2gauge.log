@@ -1,0 +1,14 @@
+=== part 1b. gauge invariance + all terms at once
+    xi -> xi + sigma D maps the pure fold onto a2 = b sigma^2,
+    kap = 2 b sigma.  C2 must come back 0.3750 unchanged: a2 enters at
+    FIRST order and kap only at SECOND, so this is the sharpest test
+    that the two halves of the machine are consistent.
+    xidot = a D + b xi^2 + a2 D^2 + kap xi D + b3 xi^3 + be2 xi^2 D + b4 xi^4
+    D(t) = eps cos(w t) - eps_qs,  a = b = 1, eps_qs = 0.2
+    (eps_qs small so the polynomial keeps its fold structure over the
+     whole cycle: |D| <= 2 eps_qs, so the extra terms never dominate aD)
+  extra terms              | C2_meas(nu=.02/.03/.05) | C2_pred | (1st,2nd) | diff
+  gauge: shift sigma=0.4   |  0.3433/ 0.3434/ 0.3437 ->  0.3430 |  0.3430 | (-0.024,-0.008) | +0.0000   [26s]
+  gauge: shift sigma=-0.7  |  0.2760/ 0.2754/ 0.2744 ->  0.2770 |  0.2770 | (-0.074,-0.025) | +0.0000   [62s]
+  all five, moderate       |  0.2839/ 0.2831/ 0.2817 ->  0.2854 |  0.2854 | (-0.120,+0.030) | -0.0000   [90s]
+    [90s]
