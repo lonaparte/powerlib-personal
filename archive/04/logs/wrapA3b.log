@@ -1,0 +1,18 @@
+=== (a) unstable cells: limit-cycle radius vs sqrt(alpha / Re c1)
+ cell | alpha    | Re c1      | rho_LC predicted | rho_LC measured | err
+ M1  | -0.012170 | -3.1272e-03 | 1.972702e+00     | 1.497386e+00    |  +31.74%   (ripple 6.2e-02, |z|/1 rad-scale)  [70s]
+        launch 0.3 rho_LC, settled over 360-400 natural periods
+ M5  | -1.382868 | -4.6067e-03 | 1.732597e+01     | 2.293183e+01    |  -24.45%   (ripple 5.6e-01, |z|/1 rad-scale)  [105s]
+        launch 0.3 rho_LC, settled over 360-400 natural periods
+
+=== (b) stable cells: short-window D(rho), 8 launch radii
+ M2: alpha(eig)=0.220400 alpha(fit)=0.230539 | -Re c1 = +4.59748e-03 vs slope -2.86151e-03 (-162.24%)
+      window 0.2123s (0.333 periods), rho span 7.1414e-01..5.5188e+00 (7.7x), D span 0.13938..0.22323 (38.04% of alpha)
+      rms of D about alpha - Re c1 rho^2 with the ANALYTIC c1: 1.207e-01  [106s]
+ M3: alpha(eig)=0.421124 alpha(fit)=0.340520 | -Re c1 = +1.30025e-03 vs slope +3.31667e-03 (+155.08%)
+      window 0.0470s (0.333 periods), rho span 2.3418e+00..1.9580e+01 (8.4x), D span 0.39604..1.62109 (290.90% of alpha)
+      rms of D about alpha - Re c1 rho^2 with the ANALYTIC c1: 3.988e-01  [110s]
+ M4: alpha(eig)=1.963264 alpha(fit)=1.929283 | -Re c1 = +1.22347e-02 vs slope +1.49025e-02 ( +21.80%)
+      window 0.1528s (0.311 periods), rho span 6.4609e-01..5.2557e+00 (8.1x), D span 1.95242..2.35010 (20.26% of alpha)
+      rms of D about alpha - Re c1 rho^2 with the ANALYTIC c1: 3.947e-02  [110s]
+DONE wall=110s

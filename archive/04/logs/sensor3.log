@@ -1,0 +1,73 @@
+G1 margin 0.10: alpha=0.100000 w0=32.39884 Re c1=1.219123e+03 rho_g=9.056834e-03
+  spectrum: -5.9886+41.2444j, -5.9886-41.2444j, -0.1000+32.3988j, -0.1000-32.3988j
+
+  observation direction   kappa_g = 2|<w,q>|   relative
+   aligned               1.627439e+00      1.000e+00
+   mix f=0.30             4.882316e-01      3.000e-01
+   mix f=0.10             1.627439e-01      1.000e-01
+   mix f=0.03             4.882316e-02      3.000e-02
+   mix f=0.01             1.627439e-02      1.000e-02
+   mix f=0.00             6.293809e-16      3.867e-16
+   state Vdc             1.193139e+00      7.331e-01
+   state th              1.604467e+00      9.859e-01
+
+  free decay: 6000 samples at 206.3 Hz over 29.09s, launch rho0=6.3398e-03 (0.70 rho_g), second mode at 0.30x
+  true modal amplitude falls 6.3398e-03 -> 5.5153e-04 (11.5x), so rho^2 spans 132x
+
+  sensor       noise   kappa_g     alpha_fit   err       -Re c1 fit      err
+   aligned    0e+00  1.627e+00   0.101724    +1.72%  -1.39682e+03   +14.58%
+   aligned    1e-04  1.627e+00   0.101716    +1.72%  -1.39616e+03   +14.52%
+   aligned    1e-03  1.627e+00   0.101650    +1.65%  -1.39180e+03   +14.16%
+   aligned    1e-02  1.627e+00   0.100993    +0.99%  -1.34729e+03   +10.51%
+
+   mix f=0.30  0e+00  4.882e-01   0.101728    +1.73%  -1.39763e+03   +14.64%
+   mix f=0.30  1e-04  4.882e-01   0.101720    +1.72%  -1.39688e+03   +14.58%
+   mix f=0.30  1e-03  4.882e-01   0.101656    +1.66%  -1.39273e+03   +14.24%
+   mix f=0.30  1e-02  4.882e-01   0.100995    +1.00%  -1.34799e+03   +10.57%
+
+   mix f=0.10  0e+00  1.627e-01   0.101741    +1.74%  -1.39962e+03   +14.81%
+   mix f=0.10  1e-04  1.627e-01   0.101733    +1.73%  -1.39901e+03   +14.76%
+   mix f=0.10  1e-03  1.627e-01   0.101665    +1.67%  -1.39440e+03   +14.38%
+   mix f=0.10  1e-02  1.627e-01   0.101002    +1.00%  -1.34962e+03   +10.70%
+
+   mix f=0.03  0e+00  4.882e-02   0.101780    +1.78%  -1.40622e+03   +15.35%
+   mix f=0.03  1e-04  4.882e-02   0.101771    +1.77%  -1.40552e+03   +15.29%
+   mix f=0.03  1e-03  4.882e-02   0.101702    +1.70%  -1.40078e+03   +14.90%
+   mix f=0.03  1e-02  4.882e-02   0.101020    +1.02%  -1.35466e+03   +11.12%
+
+   mix f=0.01  0e+00  1.627e-02   0.101892    +1.89%  -1.42526e+03   +16.91%
+   mix f=0.01  1e-04  1.627e-02   0.101884    +1.88%  -1.42460e+03   +16.85%
+   mix f=0.01  1e-03  1.627e-02   0.101810    +1.81%  -1.41972e+03   +16.45%
+   mix f=0.01  1e-02  1.627e-02   0.101073    +1.07%  -1.36968e+03   +12.35%
+
+   mix f=0.00  0e+00  6.294e-16   BLIND: no critical-mode content, criterion has no input
+   mix f=0.00  1e-04  6.294e-16   BLIND: no critical-mode content, criterion has no input
+   mix f=0.00  1e-03  6.294e-16   BLIND: no critical-mode content, criterion has no input
+   mix f=0.00  1e-02  6.294e-16   BLIND: no critical-mode content, criterion has no input
+
+   state Vdc  0e+00  1.193e+00   0.100280    +0.28%  -1.26833e+03    +4.04%
+   state Vdc  1e-04  1.193e+00   0.100278    +0.28%  -1.26798e+03    +4.01%
+   state Vdc  1e-03  1.193e+00   0.100256    +0.26%  -1.26448e+03    +3.72%
+   state Vdc  1e-02  1.193e+00   0.100043    +0.04%  -1.23103e+03    +0.98%
+
+   state th   0e+00  1.604e+00   0.102128    +2.13%  -1.43015e+03   +17.31%
+   state th   1e-04  1.604e+00   0.102120    +2.12%  -1.42970e+03   +17.27%
+   state th   1e-03  1.604e+00   0.102056    +2.06%  -1.42542e+03   +16.92%
+   state th   1e-02  1.604e+00   0.101419    +1.42%  -1.38444e+03   +13.56%
+
+=== the claim under test: spread ACROSS sensors at fixed noise ===
+  kappa_g varies 100x between 'aligned' and 'mix f=0.01'.  If the
+  readout is kappa_g-invariant, the spread must sit far below the
+  common bias, which is an extraction artefact shared by all.
+  noise  | alpha spread | slope spread | common bias (alpha, slope)
+  0e+00 |       1.818% |      11.649% | +1.61%, +13.95%
+  1e-04 |       1.813% |      11.646% | +1.60%, +13.90%
+  1e-03 |       1.772% |      11.627% | +1.54%, +13.54%
+  1e-02 |       1.364% |      11.443% | +0.94%, +9.97%
+
+  tolerance: the readout error grows as eta/kappa_g, so a sensor with
+  kappa_g a factor K below the best available needs a noise floor K
+  times lower to reach the same accuracy.  The blind set is measure
+  zero but its neighbourhood is not, which is the real constraint --
+  and it is a signal-to-noise constraint, not a modelling one.
+DONE wall=2s
