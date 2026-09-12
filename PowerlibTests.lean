@@ -12,7 +12,7 @@ def scalar (a : ℝ) : Matrix (Fin 1) (Fin 1) ℝ := fun _ _ => a
 /-- This calculation uses only Mathlib, not the stability axiom. -/
 theorem scalar_eigenvalue_iff (a : ℝ) (z : ℂ) :
     HasEigenvalue (scalar a) z ↔ z = (a : ℂ) := by
-  simp [HasEigenvalue, Matrix.eval_charpoly, Matrix.det_fin_one, scalar,
+  simp [HasEigenvalue, Matrix.eval_charpoly, scalar,
     Matrix.scalar, Matrix.diagonal, Matrix.map, sub_eq_zero]
 
 /-- A parameterized decision: the scalar system is stable exactly when `a < 0`. -/
@@ -63,4 +63,4 @@ run_cmd do
       count := count + 1
   unless count > 0 do
     throwError "No Powerlib declarations were audited"
-  logInfo m!"Axiom audit passed for {count} Powerlib declarations; one domain axiom is allowed."
+  Lean.logInfo m!"Axiom audit passed for {count} Powerlib declarations; one domain axiom is allowed."

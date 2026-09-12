@@ -52,7 +52,7 @@ Lean 固定为 `v4.33.0`，Mathlib 固定到该版本对应的提交，依赖记
 虚轴特征值只排除这里定义的指数稳定，不能单凭这一结果判定原非线性系统失稳。
 本版提供精确命题和证明接口，不包含浮点特征值求解器。
 
-数学背景可参照 [MIT 的线性系统与 Lyapunov 分析讲义](https://underactuated.mit.edu/lyapunov.html#linear_systems)。
+数学背景可参照 [MIT 的线性系统与 Lyapunov 分析讲义](https://underactuated.mit.edu/lyapunov.html)。
 特征多项式直接复用 [Mathlib 的定义](https://github.com/leanprover-community/mathlib4/blob/v4.33.0/Mathlib/LinearAlgebra/Matrix/Charpoly/Basic.lean)。
 
 `archive/` 保留原有草稿，不参与该工程的导入和构建。
