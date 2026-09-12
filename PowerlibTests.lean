@@ -53,7 +53,7 @@ run_cmd do
   let allowed : Array Lean.Name :=
     #[``propext, ``Classical.choice, ``Quot.sound, ``Powerlib.linear_spectral_criterion]
   let env ← Lean.getEnv
-  let mut count := 0
+  let mut count : Nat := 0
   for (name, _) in env.constants.toList do
     if (`Powerlib).isPrefixOf name then
       let axioms ← Lean.collectAxioms name

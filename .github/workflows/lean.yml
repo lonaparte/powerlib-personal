@@ -19,5 +19,16 @@ jobs:
       - uses: leanprover/lean-action@50fcf42d2e460296f1a34b402e990d1b24f8b596
         with:
           auto-config: "false"
-          build: "true"
-          use-mathlib-cache: "true"
+          build: "false"
+          use-mathlib-cache: "false"
+          use-github-cache: "false"
+      - name: Fetch required Mathlib cache
+        run: >-
+          lake exe cache get
+          Mathlib.Analysis.Calculus.Deriv.Basic
+          Mathlib.Analysis.SpecialFunctions.Exp
+          Mathlib.Data.Complex.Basic
+          Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
+          Mathlib.Tactic.NormNum
+      - name: Build core, examples, and axiom audit
+        run: lake build
