@@ -1,0 +1,23 @@
+name: Powerlib
+
+on:
+  push:
+    branches: ["codex/powerlib-small-signal-minimal"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: leanprover/lean-action@50fcf42d2e460296f1a34b402e990d1b24f8b596
+        with:
+          auto-config: "false"
+          build: "true"
+          use-mathlib-cache: "true"
