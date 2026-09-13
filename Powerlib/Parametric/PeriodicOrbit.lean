@@ -1,5 +1,6 @@
 import Mathlib.Analysis.Calculus.ImplicitContDiff
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Tactic.NormNum
 
 /-!
 # The return-map part of periodic-orbit continuation
@@ -60,8 +61,9 @@ theorem returnMap_fixedPoint_derivative {R : ℝ × E → E} {χ : ℝ → E}
   have hR' : HasFDerivAt R (fderiv ℝ R (0, x₀)) (0, χ 0) := by
     simpa only [hχ₀] using hR.hasFDerivAt
   have hd := hR'.comp_hasDerivAt 0 hpath
+  have heq : (fun ε ↦ R (ε, χ ε)) =ᶠ[𝓝 0] χ := hfix
   have hv : fderiv ℝ R (0, x₀) (1, v) = v :=
-    (hd.congr_of_eventuallyEq hfix.symm).unique hχ
+    (hd.congr_of_eventuallyEq heq.symm).unique hχ
   have hpair : ((1 : ℝ), v) = (1, (0 : E)) + (0, v) := by simp
   calc
     v = fderiv ℝ R (0, x₀) (1, v) := hv.symm

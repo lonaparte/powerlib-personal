@@ -1,6 +1,7 @@
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.Taylor
+import Mathlib.Tactic.NormNum
 
 /-!
 # Local differential identities for periodic linearization
@@ -41,6 +42,62 @@ theorem sameInput_hasDerivAt {f : E × ℝ → E} {x : ℝ → E}
     HasDerivAt (fun r ↦ f (x r, u)) (stateJacobian f (x s, u) v) s := by
   exact (stateJacobian_hasFDerivAt hf).comp_hasDerivAt s hx
 
+/-- Differentiating a directional derivative of a `C²` map gives its Hessian. -/
+theorem fderiv_directionalDerivative {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {X : F → E} {p : F}
+    (hX : ContDiffAt ℝ 2 X p) (v w : F) :
+    fderiv ℝ (fun q ↦ fderiv ℝ X q w) p v =
+      fderiv ℝ (fderiv ℝ X) p v w := by
+  have hd : DifferentiableAt ℝ (fderiv ℝ X) p :=
+    (hX.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  rw [fderiv_clm_apply hd differentiableAt_const]
+  simp
+
+/-- The parameter derivative of a `C²` family of trajectories obeys the homogeneous
+variational equation when its prescribed input is independent of that parameter.
+The first coordinate of `X` is time and the second is the trajectory parameter.
+This theorem derives the variational equation; it does not postulate it. -/
+theorem sameInput_variational_identity {f : E × ℝ → E} {X : ℝ × ℝ → E}
+    {u : ℝ → ℝ} {p : ℝ × ℝ}
+    (hX : ContDiffAt ℝ 2 X p) (hf : DifferentiableAt ℝ f (X p, u p.1))
+    (hu : DifferentiableAt ℝ u p.1)
+    (hode : ∀ᶠ q in 𝓝 p, fderiv ℝ X q (1, 0) = f (X q, u q.1)) :
+    fderiv ℝ (fun q ↦ fderiv ℝ X q (0, 1)) p (1, 0) =
+      stateJacobian f (X p, u p.1) (fderiv ℝ X p (0, 1)) := by
+  have hpath := (hX.differentiableAt (by norm_num)).hasFDerivAt.prodMk
+    (hu.hasFDerivAt.comp p hasFDerivAt_fst)
+  have hrhs := hf.hasFDerivAt.comp p hpath
+  have heq : (fun q ↦ fderiv ℝ X q (1, 0)) =ᶠ[𝓝 p]
+      (fun q ↦ f (X q, u q.1)) := hode
+  calc
+    fderiv ℝ (fun q ↦ fderiv ℝ X q (0, 1)) p (1, 0) =
+        fderiv ℝ (fderiv ℝ X) p (1, 0) (0, 1) :=
+      fderiv_directionalDerivative hX _ _
+    _ = fderiv ℝ (fderiv ℝ X) p (0, 1) (1, 0) :=
+      (hX.isSymmSndFDerivAt (by norm_num)) _ _
+    _ = fderiv ℝ (fun q ↦ fderiv ℝ X q (1, 0)) p (0, 1) :=
+      (fderiv_directionalDerivative hX _ _).symm
+    _ = fderiv ℝ (fun q ↦ f (X q, u q.1)) p (0, 1) := by
+      rw [heq.fderiv_eq (𝕜 := ℝ)]
+    _ = stateJacobian f (X p, u p.1) (fderiv ℝ X p (0, 1)) := by
+      rw [hrhs.fderiv]
+      simp
+
+/-- Time-derivative form of `sameInput_variational_identity`. -/
+theorem sameInput_variation_hasDerivAt {f : E × ℝ → E} {X : ℝ × ℝ → E}
+    {u : ℝ → ℝ} {p : ℝ × ℝ}
+    (hX : ContDiffAt ℝ 2 X p) (hf : DifferentiableAt ℝ f (X p, u p.1))
+    (hu : DifferentiableAt ℝ u p.1)
+    (hode : ∀ᶠ q in 𝓝 p, fderiv ℝ X q (1, 0) = f (X q, u q.1)) :
+    HasDerivAt (fun t ↦ fderiv ℝ X (t, p.2) (0, 1))
+      (stateJacobian f (X p, u p.1) (fderiv ℝ X p (0, 1))) p.1 := by
+  have hd : DifferentiableAt ℝ (fun q ↦ fderiv ℝ X q (0, 1)) p :=
+    ((hX.fderiv_right (m := 1) (by norm_num)).differentiableAt
+      (by norm_num)).clm_apply differentiableAt_const
+  have h := hd.hasFDerivAt.comp_hasDerivAt p.1
+    ((hasDerivAt_id p.1).prodMk (hasDerivAt_const p.1 p.2))
+  simpa only [Function.comp_apply, sameInput_variational_identity hX hf hu hode] using h
+
 /-- Three derivatives of the vector field give two derivatives of its state Jacobian. -/
 theorem stateJacobian_contDiffAt {f : E × ℝ → E} {p : E × ℝ}
     (hf : ContDiffAt ℝ 3 f p) : ContDiffAt ℝ 2 (stateJacobian f) p := by
@@ -67,9 +124,21 @@ theorem hessian_state_input_split {f : E × ℝ → E} {p : E × ℝ}
     fderiv ℝ (fderiv ℝ f) p (v, a) (w, 0) =
       stateSecond f p v w + mixedSecond f p w a := by
   have hpair : (v, a) = (v, (0 : ℝ)) + ((0 : E), a) := by simp
-  rw [hpair, map_add, ContinuousLinearMap.add_apply]
+  rw [hpair, map_add, add_apply]
   congr 1
   exact (hf.isSymmSndFDerivAt (by norm_num)) (0, a) (w, 0)
+
+/-- The operator-valued derivative used in the Taylor estimate has exactly the
+state-induced plus direct-input form when applied to a state direction. -/
+theorem fderiv_stateJacobian_apply {f : E × ℝ → E} {p : E × ℝ}
+    (hf : ContDiffAt ℝ 3 f p) (v w : E) (a : ℝ) :
+    fderiv ℝ (stateJacobian f) p (v, a) w =
+      stateSecond f p v w + mixedSecond f p w a := by
+  have hdf : DifferentiableAt ℝ (fderiv ℝ f) p :=
+    (hf.fderiv_right (m := 2) (by norm_num)).differentiableAt (by norm_num)
+  unfold stateJacobian
+  rw [fderiv_clm_comp hdf differentiableAt_const]
+  simpa using hessian_state_input_split hf v w a
 
 /-- Differentiate the applied Jacobian along arbitrary differentiable state/input paths.
 This proves the two-term modulation formula before complexification. -/
@@ -83,10 +152,7 @@ theorem stateJacobian_path_hasDerivAt_apply {f : E × ℝ → E}
     (hf.fderiv_right (m := 2) (by norm_num)).differentiableAt (by norm_num)
   have h := (hdf.hasFDerivAt.clm_apply
     (hasFDerivAt_const (w, (0 : ℝ)) (x s, u s))).comp_hasDerivAt s (hx.prodMk hu)
-  simpa only [Function.comp_apply, stateJacobian_apply,
-    ContinuousLinearMap.add_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.zero_apply, map_zero, zero_add,
-    ContinuousLinearMap.flip_apply, hessian_state_input_split hf] using h
+  simpa [Function.comp_def, hessian_state_input_split hf] using h
 
 /-- A local `C³` vector field and a `C²` parameter path yield a uniform, operator-norm
 quadratic remainder on a compact amplitude interval. The initial path derivative is
@@ -110,9 +176,7 @@ theorem stateJacobian_path_taylor {f : E × ℝ → E} {U : Set (E × ℝ)}
   obtain ⟨C, hC⟩ := exists_taylor_mean_remainder_bound (n := 1) ha.le hJ
   refine ⟨max C 0, le_max_right _ _, fun ε hε ↦ ?_⟩
   have hbound := hC ε hε
-  simp only [taylorWithinEval_succ, taylor_within_zero_eval, Nat.factorial_zero,
-    Nat.cast_one, mul_one, inv_one, Nat.cast_zero, zero_add, one_smul,
-    iteratedDerivWithin_one, sub_zero, pow_one, hdw] at hbound
+  simp [taylorWithinEval_succ, hdw] at hbound
   change ‖J ε - J 0 - ε • fderiv ℝ (stateJacobian f) (p 0) p₁‖ ≤ _
   rw [sub_sub]
   exact hbound.trans (mul_le_mul_of_nonneg_right (le_max_left C 0) (sq_nonneg ε))

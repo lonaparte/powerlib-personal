@@ -34,3 +34,13 @@ jobs:
           PY
       - name: Build core, examples, and axiom audit
         run: lake build
+      - name: Bundle dependencies for local proof checking
+        if: always()
+        run: tar --exclude=.git -czf /tmp/powerlib-dependencies.tar.gz .lake/packages
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: proof-checking-dependencies
+          path: /tmp/powerlib-dependencies.tar.gz
+          retention-days: 1
+          compression-level: 0

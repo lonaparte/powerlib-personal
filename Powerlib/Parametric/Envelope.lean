@@ -32,7 +32,7 @@ def envelopeMargin (σ Δ ε : ℝ) (g : ℂ) : ℝ :=
 theorem envelope_det (σ Δ ε : ℝ) (g : ℂ) :
     (envelopeMatrix σ Δ ε g).det = envelopeMargin σ Δ ε g := by
   simp [envelopeMatrix, Matrix.det_fin_two, envelopeMargin, Complex.normSq_apply]
-  <;> ring
+  ring
 
 /-- An evaluation formula for the actual characteristic polynomial over `ℂ`. -/
 theorem envelope_eval_charpoly (σ Δ ε : ℝ) (g z : ℂ) :
@@ -40,8 +40,7 @@ theorem envelope_eval_charpoly (σ Δ ε : ℝ) (g z : ℂ) :
       z ^ 2 + (2 * σ : ℝ) * z + (envelopeMargin σ Δ ε g : ℂ) := by
   simp [Matrix.eval_charpoly, Matrix.det_fin_two, envelopeMatrix,
     Matrix.scalar, Matrix.diagonal, Matrix.map, envelopeMargin, Complex.normSq_apply]
-  <;> push_cast
-  <;> ring
+  ring
 
 theorem envelope_eigenvalue_iff (σ Δ ε : ℝ) (g z : ℂ) :
     HasEigenvalue (envelopeMatrix σ Δ ε g) z ↔
@@ -94,7 +93,7 @@ theorem envelope_complex_coordinates (σ Δ ε : ℝ) (g c : ℂ) :
   ext i
   fin_cases i <;>
     simp [envelopeMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two,
-      Complex.mul_re, Complex.mul_im, Complex.div_re, Complex.div_im] <;> ring
+      Complex.mul_re, Complex.mul_im] <;> ring
 
 /-- At exact matching with real coupling, the two quadratures decouple. -/
 theorem envelope_matched_quadratures (σ ε r X Y : ℝ) :
@@ -112,6 +111,7 @@ theorem matched_phase_rotation (σ ε r X Y : ℝ) (u : ℂ)
         (ε : ℂ) / 2 * ((r : ℂ) * u ^ 2) * star (u * ((X : ℂ) + Complex.I * Y)) =
       u * (((-σ + ε * r / 2) * X : ℝ) +
         Complex.I * (((-σ - ε * r / 2) * Y : ℝ) : ℂ)) := by
+  simp only [Complex.star_def] at hu
   simp only [star_mul, star_add, Complex.star_def, Complex.conj_ofReal, Complex.conj_I]
   push_cast
   linear_combination ((ε : ℂ) / 2 * (r : ℂ) * u *
