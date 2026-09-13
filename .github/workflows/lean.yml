@@ -2,7 +2,7 @@ name: Powerlib
 
 on:
   push:
-    branches: ["codex/powerlib-small-signal-minimal"]
+    branches: ["codex/**"]
   pull_request:
 
 permissions:
@@ -23,12 +23,14 @@ jobs:
           use-mathlib-cache: "false"
           use-github-cache: "false"
       - name: Fetch required Mathlib cache
-        run: >-
-          lake exe cache get
-          Mathlib.Analysis.Calculus.Deriv.Basic
-          Mathlib.Analysis.SpecialFunctions.Exp
-          Mathlib.Data.Complex.Basic
-          Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
-          Mathlib.Tactic.NormNum
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+          files = list(Path("Powerlib").rglob("*.lean")) + [Path("PowerlibTests.lean")]
+          imports = sorted({line.split()[1] for path in files for line in path.read_text().splitlines()
+                            if line.startswith("import Mathlib.")})
+          subprocess.run(["lake", "exe", "cache", "get", *imports], check=True)
+          PY
       - name: Build core, examples, and axiom audit
         run: lake build
