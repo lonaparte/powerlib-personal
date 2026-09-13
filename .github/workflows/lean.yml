@@ -36,11 +36,20 @@ jobs:
         run: lake build
       - name: Bundle dependencies for local proof checking
         if: always()
-        run: tar --exclude=.git -czf /tmp/powerlib-dependencies.tar.gz .lake/packages
+        run: |
+          tar --exclude=.git -czf /tmp/powerlib-dependencies.tar.gz .lake/packages
+          split -b 400M /tmp/powerlib-dependencies.tar.gz /tmp/powerlib-dependencies.part-
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: proof-checking-dependencies
-          path: /tmp/powerlib-dependencies.tar.gz
+          name: proof-checking-dependencies-a
+          path: /tmp/powerlib-dependencies.part-aa
+          retention-days: 1
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: proof-checking-dependencies-b
+          path: /tmp/powerlib-dependencies.part-ab
           retention-days: 1
           compression-level: 0

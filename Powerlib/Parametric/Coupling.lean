@@ -1,5 +1,9 @@
 import Mathlib.Analysis.Complex.Norm
+import Mathlib.Analysis.Complex.RealDeriv
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.LinearAlgebra.Basis.Defs
+import Mathlib.Tactic.Abel
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
@@ -80,7 +84,6 @@ theorem modalResponse_resolvent (v : Basis ι ℂ E) (A : E →ₗ[ℂ] E)
   rw [eigenbasis_apply_coordinate v A eig heigen,
     modalResponse_coordinate]
   field_simp [hgap j]
-  <;> ring
 
 /-- There is no second solution of the resolvent equation. -/
 theorem modalResponse_unique (v : Basis ι ℂ E) (A : E →ₗ[ℂ] E)
@@ -188,6 +191,60 @@ theorem modalCoupling_norm_scaling (v : Basis ι ℂ E) (eig : ι → ℂ)
     div_self (norm_ne_zero_iff.mpr hα), one_mul]
 
 end Coupling
+
+section HarmonicResponse
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  [NormedSpace ℝ E] [IsScalarTower ℝ ℂ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- A resolvent solution generates an exact complex harmonic solution of the
+forced linear ODE. This does not assert existence of a nonlinear periodic orbit. -/
+theorem harmonic_forced_ode (A : E →ₗ[ℂ] E) (z b : E) (ω : ℝ)
+    (hres : (Complex.I * (ω : ℂ)) • z - A z = b) (t : ℝ) :
+    HasDerivAt (fun s : ℝ => Complex.exp ((Complex.I * (ω : ℂ)) * (s : ℂ)) • z)
+      (A (Complex.exp ((Complex.I * (ω : ℂ)) * (t : ℂ)) • z) +
+        Complex.exp ((Complex.I * (ω : ℂ)) * (t : ℂ)) • b) t := by
+  have hlin : HasDerivAt (fun s : ℂ => (Complex.I * (ω : ℂ)) * s)
+      (Complex.I * (ω : ℂ)) (t : ℂ) := by
+    simpa using (hasDerivAt_id (t : ℂ)).const_mul (Complex.I * (ω : ℂ))
+  have hexp := hlin.cexp.comp_ofReal
+  have hsum : A z + b = (Complex.I * (ω : ℂ)) • z := by
+    rw [← hres]
+    abel
+  convert hexp.smul_const z using 1
+  rw [map_smul, ← smul_add, hsum, smul_smul]
+
+/-- A continuous real projection intertwining the complex and real system
+matrices sends the harmonic solution to the corresponding real forced ODE.
+Coordinatewise real part is the intended projection for a real matrix. -/
+theorem projected_harmonic_forced_ode (A : E →ₗ[ℂ] E) (B : F →ₗ[ℝ] F)
+    (P : E →L[ℝ] F) (hintertwine : ∀ x, P (A x) = B (P x))
+    (z b : E) (ω : ℝ)
+    (hres : (Complex.I * (ω : ℂ)) • z - A z = b) (t : ℝ) :
+    HasDerivAt
+      (fun s : ℝ => P (Complex.exp ((Complex.I * (ω : ℂ)) * (s : ℂ)) • z))
+      (B (P (Complex.exp ((Complex.I * (ω : ℂ)) * (t : ℂ)) • z)) +
+        P (Complex.exp ((Complex.I * (ω : ℂ)) * (t : ℂ)) • b)) t := by
+  have h := P.hasFDerivAt.comp_hasDerivAt t (harmonic_forced_ode A z b ω hres t)
+  simpa only [map_add, hintertwine] using h
+
+/-- The constructed harmonic response has the forcing period. -/
+theorem harmonic_response_periodic (z : E) (ω : ℝ) (hω : ω ≠ 0) :
+    Function.Periodic
+      (fun s : ℝ => Complex.exp ((Complex.I * (ω : ℂ)) * (s : ℂ)) • z)
+      (2 * Real.pi / ω) := by
+  have hωc : (ω : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hω
+  have hp : (Complex.I * (ω : ℂ)) * ((2 * Real.pi / ω : ℝ) : ℂ) =
+      2 * (Real.pi : ℂ) * Complex.I := by
+    simp only [Complex.ofReal_div, Complex.ofReal_mul, Complex.ofReal_ofNat]
+    field_simp [hωc]
+    <;> ring
+  intro t
+  rw [Complex.ofReal_add, mul_add, Complex.exp_add, hp,
+    Complex.exp_two_pi_mul_I, mul_one]
+
+end HarmonicResponse
 
 /-- Frequency conversion of the conjugate component has zero relative drift
 exactly at twice the intrinsic frequency. -/

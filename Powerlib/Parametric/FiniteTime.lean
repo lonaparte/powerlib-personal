@@ -27,7 +27,7 @@ All constants on the right are independent of `ε`.  Taking `K > 0` loses no
 generality for an upper Lipschitz bound: a zero bound can be enlarged. -/
 theorem gronwallBound_slowTime
     {ε K L C D initialSize t : ℝ}
-    (hε : 0 < ε) (hK : 0 < K) (hL : 0 ≤ L)
+    (hε : 0 < ε) (hK : 0 < K) (_hL : 0 ≤ L)
     (hC : 0 ≤ C) (hD : 0 ≤ D) (hN : 0 ≤ initialSize)
     (ht : t ∈ Icc 0 (L / ε)) :
     gronwallBound (ε * D * initialSize) (ε * K)
@@ -46,8 +46,7 @@ theorem gronwallBound_slowTime
     Real.exp_le_exp.mpr htime
   have hratio : ε ^ 2 * C * initialSize / (ε * K) =
       ε * (C / K) * initialSize := by
-    field_simp [ne_of_gt hε, ne_of_gt hK]
-    <;> ring
+    field_simp [ne_of_gt hε, ne_of_gt hK]; ring
   rw [hratio]
   calc
     ε * D * initialSize * Real.exp (ε * K * t) +
@@ -118,7 +117,7 @@ one-sided energy growth is bounded. -/
 theorem energy_error_le_slowTime
     {w w' : ℝ → ℝ} {ε K L C D initialSize : ℝ}
     (hε : 0 < ε) (hK : 0 < K) (hL : 0 ≤ L)
-    (hC : 0 ≤ C) (hD : 0 ≤ D) (hN : 0 ≤ initialSize)
+    (hC : 0 ≤ C) (hD : 0 ≤ D) (_hN : 0 ≤ initialSize)
     (hw : ContinuousOn w (Icc 0 (L / ε)))
     (hw' : ∀ t ∈ Ico 0 (L / ε), HasDerivWithinAt w (w' t) (Ici t) t)
     (hinit : w 0 ≤ ε ^ 2 * D * initialSize ^ 2)
@@ -131,14 +130,16 @@ theorem energy_error_le_slowTime
   have hbound' : ∀ s ∈ Ico 0 (L / ε),
       w' s ≤ ε * K * w s + ε ^ 2 * (ε * C) * initialSize ^ 2 := by
     intro s hs
-    convert hbound s hs using 1 <;> ring
+    convert hbound s hs using 1; ring
   have hgr := le_gronwallBound_of_liminf_deriv_right_le hw
     (fun s hs _ hr => (hw' s hs).liminf_right_slope_le hr) hinit' hbound' t ht
   simp only [sub_zero] at hgr
   have hscale := gronwallBound_slowTime hε hK hL
     (mul_nonneg hε.le hC) (mul_nonneg hε.le hD) (sq_nonneg initialSize) ht
   have h := hgr.trans hscale
-  convert h using 1 <;> ring
+  calc
+    w t ≤ ε * (ε * D + (ε * C) / K) * Real.exp (K * L) * initialSize ^ 2 := h
+    _ = ε ^ 2 * (D + C / K) * Real.exp (K * L) * initialSize ^ 2 := by ring
 
 section InnerProduct
 
@@ -215,7 +216,7 @@ theorem dist_approx_exact_le_slowTime_of_oneSided
     {x y x' : ℝ → F} {v : ℝ → F → F}
     {ε K L C D initialSize : ℝ}
     (hε : 0 < ε) (hK : 0 ≤ K) (hL : 0 ≤ L)
-    (hC : 0 ≤ C) (hD : 0 ≤ D) (hN : 0 ≤ initialSize)
+    (_hC : 0 ≤ C) (_hD : 0 ≤ D) (hN : 0 ≤ initialSize)
     (hx : ContinuousOn x (Icc 0 (L / ε)))
     (hy : ContinuousOn y (Icc 0 (L / ε)))
     (hx' : ∀ t ∈ Ico 0 (L / ε), HasDerivWithinAt x (x' t) (Ici t) t)

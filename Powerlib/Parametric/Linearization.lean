@@ -50,7 +50,7 @@ theorem fderiv_directionalDerivative {F : Type*} [NormedAddCommGroup F]
       fderiv ℝ (fderiv ℝ X) p v w := by
   have hd : DifferentiableAt ℝ (fderiv ℝ X) p :=
     (hX.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  rw [fderiv_clm_apply hd differentiableAt_const]
+  rw [fderiv_clm_apply hd (differentiableAt_const w)]
   simp
 
 /-- The parameter derivative of a `C²` family of trajectories obeys the homogeneous
@@ -80,8 +80,8 @@ theorem sameInput_variational_identity {f : E × ℝ → E} {X : ℝ × ℝ → 
     _ = fderiv ℝ (fun q ↦ f (X q, u q.1)) p (0, 1) := by
       rw [heq.fderiv_eq (𝕜 := ℝ)]
     _ = stateJacobian f (X p, u p.1) (fderiv ℝ X p (0, 1)) := by
-      rw [hrhs.fderiv]
-      simp
+      simpa [Function.comp_def] using
+        congrArg (fun L : (ℝ × ℝ) →L[ℝ] E ↦ L (0, 1)) hrhs.fderiv
 
 /-- Time-derivative form of `sameInput_variational_identity`. -/
 theorem sameInput_variation_hasDerivAt {f : E × ℝ → E} {X : ℝ × ℝ → E}
@@ -93,10 +93,10 @@ theorem sameInput_variation_hasDerivAt {f : E × ℝ → E} {X : ℝ × ℝ → 
       (stateJacobian f (X p, u p.1) (fderiv ℝ X p (0, 1))) p.1 := by
   have hd : DifferentiableAt ℝ (fun q ↦ fderiv ℝ X q (0, 1)) p :=
     ((hX.fderiv_right (m := 1) (by norm_num)).differentiableAt
-      (by norm_num)).clm_apply differentiableAt_const
+      (by norm_num)).clm_apply (differentiableAt_const (0, 1))
   have h := hd.hasFDerivAt.comp_hasDerivAt p.1
     ((hasDerivAt_id p.1).prodMk (hasDerivAt_const p.1 p.2))
-  simpa only [Function.comp_apply, sameInput_variational_identity hX hf hu hode] using h
+  simpa [Function.comp_def, sameInput_variational_identity hX hf hu hode] using h
 
 /-- Three derivatives of the vector field give two derivatives of its state Jacobian. -/
 theorem stateJacobian_contDiffAt {f : E × ℝ → E} {p : E × ℝ}
@@ -137,7 +137,7 @@ theorem fderiv_stateJacobian_apply {f : E × ℝ → E} {p : E × ℝ}
   have hdf : DifferentiableAt ℝ (fderiv ℝ f) p :=
     (hf.fderiv_right (m := 2) (by norm_num)).differentiableAt (by norm_num)
   unfold stateJacobian
-  rw [fderiv_clm_comp hdf differentiableAt_const]
+  rw [fderiv_clm_comp hdf (differentiableAt_const (ContinuousLinearMap.inl ℝ E ℝ))]
   simpa using hessian_state_input_split hf v w a
 
 /-- Differentiate the applied Jacobian along arbitrary differentiable state/input paths.
@@ -178,6 +178,30 @@ theorem stateJacobian_path_taylor {f : E × ℝ → E} {U : Set (E × ℝ)}
   have hbound := hC ε hε
   simp [taylorWithinEval_succ, hdw] at hbound
   change ‖J ε - J 0 - ε • fderiv ℝ (stateJacobian f) (p 0) p₁‖ ≤ _
+  rw [sub_sub]
+  exact hbound.trans (mul_le_mul_of_nonneg_right (le_max_left C 0) (sq_nonneg ε))
+
+/-- Compactness makes the Taylor remainder uniform in a second parameter, such as
+time over one forcing period. Continuity of the second-amplitude-derivative family
+is explicit, so individual-in-time Taylor bounds are not mistaken for a uniform bound. -/
+theorem compactFamily_firstOrder_taylor {τ F : Type*} [TopologicalSpace τ]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {K : Set τ} {J : τ → ℝ → F} {J₁ : τ → F} {a : ℝ}
+    (hK : IsCompact K) (ha : 0 < a)
+    (hJ : ∀ t ∈ K, ContDiffOn ℝ 2 (J t) (Icc 0 a))
+    (hJ₁ : ∀ t ∈ K, HasDerivAt (J t) (J₁ t) 0)
+    (hJ₂ : ContinuousOn
+      (fun p : τ × ℝ ↦ iteratedDerivWithin 2 (J p.1) (Icc 0 a) p.2)
+      (K ×ˢ Icc 0 a)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ t ∈ K, ∀ ε ∈ Icc 0 a,
+      ‖J t ε - J t 0 - ε • J₁ t‖ ≤ C * ε ^ 2 := by
+  obtain ⟨C, hC⟩ := (hK.prod isCompact_Icc).exists_bound_of_continuousOn hJ₂
+  refine ⟨max C 0, le_max_right _ _, fun t ht ε hε ↦ ?_⟩
+  have hdw := (hJ₁ t ht).hasDerivWithinAt.derivWithin
+    (uniqueDiffOn_Icc ha 0 ⟨le_rfl, ha.le⟩)
+  have hbound := taylor_mean_remainder_bound (n := 1) ha.le (hJ t ht) hε
+    (fun r hr ↦ hC (t, r) ⟨ht, hr⟩)
+  simp [taylorWithinEval_succ, hdw] at hbound
   rw [sub_sub]
   exact hbound.trans (mul_le_mul_of_nonneg_right (le_max_left C 0) (sq_nonneg ε))
 

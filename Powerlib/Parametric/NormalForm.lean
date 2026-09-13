@@ -107,7 +107,7 @@ theorem pump_fourierMode_periodic (ω : ℝ) (hω : ω ≠ 0) (C : Matrix ι ι 
 uniformly for all real times. -/
 theorem norm_pump_fourierMode_entry (ω : ℝ) (C : Matrix ι ι ℂ) (t : ℝ) (j r : ι) :
     ‖fourierMode (Complex.I * (ω : ℂ)) C t j r‖ = ‖C j r‖ := by
-  simp [fourierMode, Complex.norm_exp, Complex.mul_re]
+  simp [fourierMode, Complex.norm_exp]
 
 /-- Actual real-time differentiation of a Fourier matrix entry. -/
 theorem hasDerivAt_fourierMode_entry
@@ -277,15 +277,15 @@ end VectorTrajectoryIdentity
 
 section ScaledIdentity
 
-variable {R : Type*} [Ring R] [Algebra ℂ R]
+variable {R : Type*} [Ring R] [Algebra ℝ R]
 
 /-- The unscaled remainder after a first-order coordinate change. -/
-def transformedRemainder (ε : ℂ) (H Hres S R₂ U : R) : R :=
+def transformedRemainder (ε : ℝ) (H Hres S R₂ U : R) : R :=
   U * (H * S - S * Hres + R₂ * (1 + ε • S))
 
 /-- The exact residual has a factor `ε²`; this proves the order of the
 algebraic remainder without asserting bounds on its coefficient. -/
-theorem scaled_residual_identity (ε : ℂ) (D H Hres S R₂ : R) :
+theorem scaled_residual_identity (ε : ℝ) (D H Hres S R₂ : R) :
     (D + ε • H + ε ^ 2 • R₂) * (1 + ε • S) -
         ε • (D * S - S * D + H - Hres) -
         (1 + ε • S) * (D + ε • Hres) =
@@ -296,7 +296,7 @@ theorem scaled_residual_identity (ε : ℂ) (D H Hres S R₂ : R) :
 
 /-- Exact transformed generator `D + ε Hres + ε² Rtilde`. Invertibility and
 coefficient bounds can be established separately before using this identity. -/
-theorem scaled_transformed_generator_identity (ε : ℂ) (D H Hres S R₂ U : R)
+theorem scaled_transformed_generator_identity (ε : ℝ) (D H Hres S R₂ U : R)
     (hleft : U * (1 + ε • S) = 1) :
     U * ((D + ε • H + ε ^ 2 • R₂) * (1 + ε • S) -
         ε • (D * S - S * D + H - Hres)) =
@@ -315,10 +315,10 @@ end ScaledIdentity
 
 section NormBounds
 
-variable {R : Type*} [NormedRing R] [NormedAlgebra ℂ R]
+variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R]
 
 /-- A direct bound on the coefficient of the exact quadratic residual. -/
-theorem norm_transformedRemainder_le (ε : ℂ) (H Hres S R₂ U : R) :
+theorem norm_transformedRemainder_le (ε : ℝ) (H Hres S R₂ U : R) :
     ‖transformedRemainder ε H Hres S R₂ U‖ ≤
       ‖U‖ * (‖H‖ * ‖S‖ + ‖S‖ * ‖Hres‖ + ‖R₂‖ * (‖(1 : R)‖ + ‖ε • S‖)) := by
   have hsum :
@@ -336,7 +336,7 @@ theorem norm_transformedRemainder_le (ε : ℂ) (H Hres S R₂ U : R) :
 
 /-- The smallness condition ensures an actual two-sided inverse by the
 convergent Neumann series. This is not an assumed inverse matrix. -/
-theorem exists_inverse_nearIdentity [CompleteSpace R] (ε : ℂ) (S : R)
+theorem exists_inverse_nearIdentity [CompleteSpace R] (ε : ℝ) (S : R)
     (hsmall : ‖ε • S‖ < 1) :
     ∃ U : R, U * (1 + ε • S) = 1 ∧ (1 + ε • S) * U = 1 := by
   have hneg : ‖-(ε • S)‖ < 1 := by simpa only [norm_neg] using hsmall
@@ -351,7 +351,7 @@ theorem exists_inverse_nearIdentity [CompleteSpace R] (ε : ℂ) (S : R)
 
 /-- The conventional half-unit smallness bound gives a uniform inverse bound. -/
 theorem norm_inverse_nearIdentity_le_two [NormOneClass R]
-    (ε : ℂ) (S U : R) (hleft : U * (1 + ε • S) = 1)
+    (ε : ℝ) (S U : R) (hleft : U * (1 + ε • S) = 1)
     (hsmall : ‖ε • S‖ ≤ 1 / 2) : ‖U‖ ≤ 2 := by
   have heq : U = 1 - U * (ε • S) := by
     have h := hleft

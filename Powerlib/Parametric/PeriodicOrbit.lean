@@ -1,5 +1,6 @@
 import Mathlib.Analysis.Calculus.ImplicitContDiff
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -18,11 +19,11 @@ open scoped Topology
 
 namespace Powerlib.Parametric
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- Local continuation and uniqueness of a fixed point of a `C²` parameter-dependent
 return map. The nondegeneracy hypothesis is explicitly `Dₓ R - I` invertible. -/
-theorem returnMap_fixedPoint_continuation {R : ℝ × E → E} {x₀ : E}
+theorem returnMap_fixedPoint_continuation [CompleteSpace E] {R : ℝ × E → E} {x₀ : E}
     (hR : ContDiffAt ℝ 2 R (0, x₀)) (hfix : R (0, x₀) = x₀)
     (hinv : ((fderiv ℝ R (0, x₀)).comp (ContinuousLinearMap.inr ℝ ℝ E) -
       ContinuousLinearMap.id ℝ E).IsInvertible) :
@@ -69,5 +70,23 @@ theorem returnMap_fixedPoint_derivative {R : ℝ × E → E} {χ : ℝ → E}
     v = fderiv ℝ R (0, x₀) (1, v) := hv.symm
     _ = fderiv ℝ R (0, x₀) (1, 0) + fderiv ℝ R (0, x₀) (0, v) := by
       rw [hpair, map_add]
+
+/-- For a periodic vector field, a trajectory which returns to its initial state
+is periodic. Uniqueness is obtained from a Lipschitz bound on a common state
+domain containing the trajectory. Constructing that trajectory is a separate step. -/
+theorem trajectory_periodic_of_return {v : ℝ → E → E} {x : ℝ → E}
+    {U : Set E} {K : ℝ≥0} {T : ℝ}
+    (hv : ∀ t, LipschitzOnWith K (v t) U) (hperiod : Function.Periodic v T)
+    (hx : ∀ t, HasDerivAt x (v t (x t)) t) (hxU : ∀ t, x t ∈ U)
+    (hreturn : x T = x 0) : Function.Periodic x T := by
+  have hshift : ∀ t, HasDerivAt (fun r ↦ x (r + T)) (v t (x (t + T))) t := by
+    intro t
+    simpa [Function.comp_def, hperiod t] using
+      (hx (t + T)).scomp t ((hasDerivAt_id t).add_const T)
+  have heq : (fun t ↦ x (t + T)) = x :=
+    ODE_solution_unique_univ (s := fun _ ↦ U) (t₀ := 0) hv
+      (fun t ↦ ⟨hshift t, hxU (t + T)⟩) (fun t ↦ ⟨hx t, hxU t⟩)
+      (by simpa using hreturn)
+  exact fun t ↦ congrFun heq t
 
 end Powerlib.Parametric
