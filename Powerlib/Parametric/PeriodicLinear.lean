@@ -29,8 +29,7 @@ theorem stable_modal_multiplier_ne_one {eig : ℂ} {T : ℝ}
     Complex.exp ((T : ℂ) * eig) ≠ 1 := by
   intro h
   have hn := stable_modal_multiplier_norm_lt_one heig hT
-  rw [h, norm_one] at hn
-  exact (lt_irrefl (1 : ℝ)) hn
+  simp [h, Complex.norm_def] at hn
 
 /-- The diagonal linear return map minus identity has nonzero determinant. -/
 theorem stable_diagonal_returnMap_sub_one_det_ne_zero
@@ -40,7 +39,7 @@ theorem stable_diagonal_returnMap_sub_one_det_ne_zero
   have hd : Matrix.diagonal (fun j ↦ Complex.exp ((T : ℂ) * eig j)) - 1 =
       Matrix.diagonal (fun j ↦ Complex.exp ((T : ℂ) * eig j) - 1) := by
     ext i j
-    by_cases h : i = j <;> simp [Matrix.diagonal_apply, h]
+    by_cases h : i = j <;> simp [h]
   rw [hd, Matrix.det_diagonal]
   apply Finset.prod_ne_zero_iff.mpr
   intro j _

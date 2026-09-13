@@ -1,5 +1,6 @@
 import Powerlib.SmallSignal
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Topology.Order.Compact
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
@@ -327,6 +328,60 @@ theorem amplificationIndex_threshold {σ : ℝ} (hσ : 0 < σ) (Δ ε : ℝ)
 theorem amplificationIndex_matched {σ : ℝ} (hσ : 0 < σ) (g : ℂ) :
     amplificationIndex σ 0 g = ‖g‖ / (2 * σ) := by
   simp [amplificationIndex, Real.sqrt_sq (le_of_lt hσ)]
+
+theorem amplificationIndex_pos_iff {σ : ℝ} (hσ : 0 < σ) (Δ : ℝ) (g : ℂ) :
+    0 < amplificationIndex σ Δ g ↔ g ≠ 0 := by
+  have hq : 0 < σ ^ 2 + Δ ^ 2 := by nlinarith [sq_nonneg Δ]
+  have hd : 0 < 2 * Real.sqrt (σ ^ 2 + Δ ^ 2) :=
+    mul_pos (by norm_num) (Real.sqrt_pos.mpr hq)
+  rw [amplificationIndex, div_pos_iff_of_pos_right hd, norm_pos_iff]
+
+/-- Continuity applies to frequency alone or to a source-frequency parameter
+space, provided the detuning and normalized coupling are continuous. -/
+theorem continuousOn_amplificationIndex {α : Type*} [TopologicalSpace α]
+    {σ : ℝ} (hσ : 0 < σ) {K : Set α} {Δ : α → ℝ} {g : α → ℂ}
+    (hΔ : ContinuousOn Δ K) (hg : ContinuousOn g K) :
+    ContinuousOn (fun p => amplificationIndex σ (Δ p) (g p)) K := by
+  have hden : ContinuousOn (fun p => 2 * Real.sqrt (σ ^ 2 + (Δ p) ^ 2)) K :=
+    continuousOn_const.mul ((continuousOn_const.add (hΔ.pow 2)).sqrt)
+  apply hg.norm.div hden
+  intro p _
+  have hq : 0 < σ ^ 2 + (Δ p) ^ 2 := by nlinarith [sq_nonneg (Δ p)]
+  exact ne_of_gt (mul_pos (by norm_num) (Real.sqrt_pos.mpr hq))
+
+/-- A nonempty compact admissible parameter set has an attained largest index. -/
+theorem exists_maximizing_amplificationIndex {α : Type*} [TopologicalSpace α]
+    {σ : ℝ} (hσ : 0 < σ) {K : Set α} (hK : IsCompact K) (hne : K.Nonempty)
+    {Δ : α → ℝ} {g : α → ℂ} (hΔ : ContinuousOn Δ K) (hg : ContinuousOn g K) :
+    ∃ p ∈ K, ∀ q ∈ K,
+      amplificationIndex σ (Δ q) (g q) ≤ amplificationIndex σ (Δ p) (g p) := by
+  exact hK.exists_isMaxOn hne (continuousOn_amplificationIndex hσ hΔ hg)
+
+/-- If some admissible coupling is nonzero, a maximizer has a finite threshold
+and minimizes that threshold among all nonzero-coupling parameters. Zero
+coupling is not assigned a spurious real reciprocal threshold. -/
+theorem exists_minimizing_finite_threshold {α : Type*} [TopologicalSpace α]
+    {σ : ℝ} (hσ : 0 < σ) {K : Set α} (hK : IsCompact K)
+    {Δ : α → ℝ} {g : α → ℂ} (hΔ : ContinuousOn Δ K) (hg : ContinuousOn g K)
+    (hnonzero : ∃ p ∈ K, g p ≠ 0) :
+    ∃ p ∈ K, g p ≠ 0 ∧
+      (∀ q ∈ K, amplificationIndex σ (Δ q) (g q) ≤
+        amplificationIndex σ (Δ p) (g p)) ∧
+      ∀ q ∈ K, g q ≠ 0 →
+        2 * Real.sqrt (σ ^ 2 + (Δ p) ^ 2) / ‖g p‖ ≤
+          2 * Real.sqrt (σ ^ 2 + (Δ q) ^ 2) / ‖g q‖ := by
+  obtain ⟨p₀, hp₀, hg₀⟩ := hnonzero
+  obtain ⟨p, hp, hmax⟩ := exists_maximizing_amplificationIndex hσ hK ⟨p₀, hp₀⟩ hΔ hg
+  have ha₀ : 0 < amplificationIndex σ (Δ p₀) (g p₀) :=
+    (amplificationIndex_pos_iff hσ _ _).mpr hg₀
+  have hgp : g p ≠ 0 :=
+    (amplificationIndex_pos_iff hσ _ _).mp (lt_of_lt_of_le ha₀ (hmax p₀ hp₀))
+  refine ⟨p, hp, hgp, hmax, ?_⟩
+  intro q hq hgq
+  rw [← (amplificationIndex_reciprocal hσ (Δ p) hgp).2,
+    ← (amplificationIndex_reciprocal hσ (Δ q) hgq).2]
+  exact one_div_le_one_div_of_le
+    ((amplificationIndex_pos_iff hσ _ _).mpr hgq) (hmax q hq)
 
 /-- Zero coupling has no finite spectral threshold. -/
 theorem envelope_zero_coupling_hurwitz {σ : ℝ} (hσ : 0 < σ) (Δ ε : ℝ) :

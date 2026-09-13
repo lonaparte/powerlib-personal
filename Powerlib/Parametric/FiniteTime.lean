@@ -46,7 +46,7 @@ theorem gronwallBound_slowTime
     Real.exp_le_exp.mpr htime
   have hratio : ε ^ 2 * C * initialSize / (ε * K) =
       ε * (C / K) * initialSize := by
-    field_simp [ne_of_gt hε, ne_of_gt hK]; ring
+    field_simp [ne_of_gt hε, ne_of_gt hK]
   rw [hratio]
   calc
     ε * D * initialSize * Real.exp (ε * K * t) +

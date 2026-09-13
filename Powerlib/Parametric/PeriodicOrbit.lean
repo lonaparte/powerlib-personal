@@ -15,7 +15,7 @@ separate obligations. These lemmas do not assert those ODE conclusions.
 noncomputable section
 
 open Filter
-open scoped Topology
+open scoped Topology NNReal
 
 namespace Powerlib.Parametric
 

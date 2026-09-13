@@ -227,8 +227,9 @@ theorem projected_harmonic_forced_ode (A : E →ₗ[ℂ] E) (B : F →ₗ[ℝ] F
       (B (P (Complex.exp ((Complex.I * (ω : ℂ)) * (t : ℂ)) • z)) +
         P (Complex.exp ((Complex.I * (ω : ℂ)) * (t : ℂ)) • b)) t := by
   have h := P.hasFDerivAt.comp_hasDerivAt t (harmonic_forced_ode A z b ω hres t)
-  simpa only [map_add, hintertwine] using h
+  simpa only [Function.comp_def, map_add, hintertwine] using h
 
+omit [NormedSpace ℝ E] [IsScalarTower ℝ ℂ E] in
 /-- The constructed harmonic response has the forcing period. -/
 theorem harmonic_response_periodic (z : E) (ω : ℝ) (hω : ω ≠ 0) :
     Function.Periodic
@@ -239,8 +240,8 @@ theorem harmonic_response_periodic (z : E) (ω : ℝ) (hω : ω ≠ 0) :
       2 * (Real.pi : ℂ) * Complex.I := by
     simp only [Complex.ofReal_div, Complex.ofReal_mul, Complex.ofReal_ofNat]
     field_simp [hωc]
-    <;> ring
   intro t
+  dsimp only
   rw [Complex.ofReal_add, mul_add, Complex.exp_add, hp,
     Complex.exp_two_pi_mul_I, mul_one]
 

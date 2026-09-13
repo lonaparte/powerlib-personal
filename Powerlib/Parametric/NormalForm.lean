@@ -1,4 +1,5 @@
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Topology.Instances.Matrix
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
@@ -114,9 +115,13 @@ theorem hasDerivAt_fourierMode_entry
     (β : ℂ) (C : Matrix ι ι ℂ) (j r : ι) (t : ℝ) :
     HasDerivAt (fun s : ℝ => fourierMode β C s j r)
       (β * fourierMode β C t j r) t := by
+  change HasDerivAt (fun s : ℝ => C j r * Complex.exp (β * (s : ℂ)))
+    (β * (C j r * Complex.exp (β * (t : ℂ)))) t
   have hlin : HasDerivAt (fun s : ℝ => β * (s : ℂ)) β t := by
     simpa using ((hasDerivAt_id t).ofReal_comp.const_mul β)
-  convert hlin.cexp.const_mul (C j r) using 1
+  refine (hlin.cexp.const_mul (C j r)).congr_deriv ?_
+  change C j r * (Complex.exp (β * (t : ℂ)) * β) =
+    β * (C j r * Complex.exp (β * (t : ℂ)))
   ring
 
 /-- The constructed Fourier correction solves the differential homological
@@ -169,9 +174,9 @@ theorem hasDerivAt_two_harmonic_correction_entry
       ((Matrix.diagonal lam * (S₁ t + S₂ t) -
         (S₁ t + S₂ t) * Matrix.diagonal lam + (H₁ t + H₂ t)) j r) t := by
   dsimp only
-  convert
-    (hasDerivAt_homological_entry β₁ lam C₁ removed₁ hgap₁ j r t).add
-      (hasDerivAt_homological_entry β₂ lam C₂ removed₂ hgap₂ j r t) using 1
+  refine
+    ((hasDerivAt_homological_entry β₁ lam C₁ removed₁ hgap₁ j r t).add
+      (hasDerivAt_homological_entry β₂ lam C₂ removed₂ hgap₂ j r t)).congr_deriv ?_
   simp only [mul_add, add_mul, Matrix.add_apply, Matrix.sub_apply]
   abel
 
@@ -240,10 +245,11 @@ theorem hasDerivAt_nearIdentity_mul
     HasDerivAt (fun s : ℝ => (1 + S s) * Y s)
       ((D + H + R₂) * ((1 + S t) * Y t)) t := by
   have hproduct := ((hasDerivAt_const t (1 : R)).add hS).mul hY
-  convert hproduct using 1
-  simp only [zero_add]
-  rw [← mul_assoc, ← reconstruct_generator_identity D H Hres (S t) R₂ U hright]
-  noncomm_ring
+  refine hproduct.congr_deriv ?_
+  simp only [Pi.add_apply, zero_add]
+  have hg := congrArg (fun A : R => A * Y t)
+    (reconstruct_generator_identity D H Hres (S t) R₂ U hright)
+  simpa only [add_mul, mul_assoc, add_comm] using hg
 
 end TrajectoryIdentity
 
@@ -263,7 +269,7 @@ theorem hasDerivAt_nearIdentity_apply
     HasDerivAt (fun s : ℝ => (1 + S s) (y s))
       ((D + H + R₂) ((1 + S t) (y t))) t := by
   have hproduct := ((hasDerivAt_const t (1 : E →L[ℝ] E)).add hS).clm_apply hy
-  convert hproduct using 1
+  refine hproduct.congr_deriv ?_
   simp only [zero_add]
   have hg := congrArg (fun A : E →L[ℝ] E => A (y t))
     (reconstruct_generator_identity D H Hres (S t) R₂ U hright)
@@ -271,7 +277,7 @@ theorem hasDerivAt_nearIdentity_apply
       ((D + Hres + U * (H * S t - S t * Hres + R₂ * (1 + S t))) (y t)) +
       (D * S t - S t * D + H - Hres) (y t) =
     (D + H + R₂) ((1 + S t) (y t)) at hg
-  exact hg.symm.trans (add_comm _ _)
+  exact (add_comm _ _).trans hg
 
 end VectorTrajectoryIdentity
 
@@ -311,7 +317,55 @@ theorem scaled_transformed_generator_identity (ε : ℝ) (D H Hres S R₂ U : R)
   rw [hsplit, mul_add, ← mul_assoc, hleft, one_mul, mul_smul_comm]
   rfl
 
+/-- Exact reconstruction with the physical amplitude factors displayed. -/
+theorem scaled_reconstruct_generator_identity (ε : ℝ) (D H Hres S R₂ U : R)
+    (hright : (1 + ε • S) * U = 1) :
+    (1 + ε • S) *
+        (D + ε • Hres + ε ^ 2 • transformedRemainder ε H Hres S R₂ U) +
+        ε • (D * S - S * D + H - Hres) =
+      (D + ε • H + ε ^ 2 • R₂) * (1 + ε • S) := by
+  have hres := scaled_residual_identity ε D H Hres S R₂
+  have hsplit :
+      (D + ε • H + ε ^ 2 • R₂) * (1 + ε • S) -
+          ε • (D * S - S * D + H - Hres) =
+        (1 + ε • S) * (D + ε • Hres) +
+          ε ^ 2 • (H * S - S * Hres + R₂ * (1 + ε • S)) :=
+    (sub_eq_iff_eq_add.mp hres).trans (add_comm _ _)
+  unfold transformedRemainder
+  rw [mul_add, mul_smul_comm, ← mul_assoc, hright, one_mul]
+  exact (sub_eq_iff_eq_add.mp hsplit).symm
+
 end ScaledIdentity
+
+section ScaledVectorTrajectoryIdentity
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Reconstruct an original state-vector solution from the exact transformed
+equation `D + ε Hres + ε² Rtilde`. All coefficients of the homological
+derivative are unscaled here, matching the Fourier construction. -/
+theorem hasDerivAt_scaled_nearIdentity_apply
+    (ε : ℝ) (S : ℝ → E →L[ℝ] E) (x : ℝ → E)
+    (D H Hres R₂ U : E →L[ℝ] E) (t : ℝ)
+    (hS : HasDerivAt S (D * S t - S t * D + H - Hres) t)
+    (hx : HasDerivAt x
+      ((D + ε • Hres + ε ^ 2 • transformedRemainder ε H Hres (S t) R₂ U) (x t)) t)
+    (hright : (1 + ε • S t) * U = 1) :
+    HasDerivAt (fun s : ℝ => (1 + ε • S s) (x s))
+      ((D + ε • H + ε ^ 2 • R₂) ((1 + ε • S t) (x t))) t := by
+  have hp := ((hasDerivAt_const t (1 : E →L[ℝ] E)).add
+    (hS.const_smul ε)).clm_apply hx
+  refine hp.congr_deriv ?_
+  simp only [zero_add]
+  have hg := congrArg (fun A : E →L[ℝ] E => A (x t))
+    (scaled_reconstruct_generator_identity ε D H Hres (S t) R₂ U hright)
+  change (1 + ε • S t)
+      ((D + ε • Hres + ε ^ 2 • transformedRemainder ε H Hres (S t) R₂ U) (x t)) +
+      (ε • (D * S t - S t * D + H - Hres)) (x t) =
+    (D + ε • H + ε ^ 2 • R₂) ((1 + ε • S t) (x t)) at hg
+  exact (add_comm _ _).trans hg
+
+end ScaledVectorTrajectoryIdentity
 
 section NormBounds
 

@@ -7,3 +7,6 @@ import Powerlib.Parametric.PeriodicOrbit
 import Powerlib.Parametric.PeriodicLinear
 import Powerlib.Parametric.FiniteTime
 import Powerlib.Parametric.ModalBounds
+import Powerlib.Parametric.SmoothFixedPoint
+import Powerlib.Parametric.Integration
+import Powerlib.Parametric.ModalOperator

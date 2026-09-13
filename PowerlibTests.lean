@@ -60,7 +60,11 @@ run_cmd do
       for ax in axioms do
         unless allowed.contains ax do
           throwError "{name} depends on unapproved axiom {ax}"
+      if (`Powerlib.Parametric).isPrefixOf name &&
+          name != ``Powerlib.Parametric.envelope_smallSignalStable_iff then
+        if axioms.contains ``Powerlib.linear_spectral_criterion then
+          throwError "Parametric theorem {name} unexpectedly uses the domain stability axiom"
       count := count + 1
   unless count > 0 do
     throwError "No Powerlib declarations were audited"
-  Lean.logInfo m!"Axiom audit passed for {count} Powerlib declarations; one domain axiom is allowed."
+  Lean.logInfo m!"Axiom audit passed for {count} Powerlib declarations; parametric proofs are domain-axiom-free except the explicit temporal-stability corollary."

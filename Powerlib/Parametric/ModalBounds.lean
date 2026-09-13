@@ -45,8 +45,8 @@ theorem modalDiagonal_apply (lam : ι → ℂ) (z : EuclideanSpace ℂ ι) (i : 
 /-- A scalar mode's contribution to the real energy derivative. -/
 theorem real_inner_complex_mode (a z : ℂ) :
     inner ℝ z (a * z) = a.re * (z.re ^ 2 + z.im ^ 2) := by
-  rw [real_inner_eq_re_inner ℂ]
-  simp [RCLike.inner_apply]
+  rw [Complex.inner]
+  simp only [Complex.mul_re, Complex.mul_im, Complex.conj_re, Complex.conj_im]
   ring
 
 /-- The modal diagonal is dissipative whenever every decay rate is
