@@ -2,12 +2,20 @@
 
 powerlib is a theorem library for power systems and power electronics, built on Lean 4 and Agda.
 
-Agda provides the foundation for transporting theorems between equivalent modeling systems. Lean 4 handles the main reasoning and proof work.
-
 ## Directions
 
-- **ATD (Automated Theorem Discovery):** discover new conjectures from models and existing knowledge, prove them, and add the results to the library.
 - **ATP (Automated Theorem Proving):** automatically prove given propositions, including **synthesis of certificates**.
+- **ATD (Automated Theorem Discovery):** discover new conjectures from models and existing knowledge, prove them, and add the results to the library.
+
+We are exploring a combination in which Agda serves as the foundation for
+conversions between modeling approaches, while Lean 4 supports everyday
+reasoning. We draw inspiration from mathlib and leanforcontrol.
+
+We recognize that power systems and power electronics have fewer general
+theorems than mathematics and control theory. Much of the knowledge concerns
+specific operating conditions, hardware, control methods, and their combinations.
+We see this as a good experimental setting for making ATP work at the synthesis
+level, including synthesizing certificates, and exploring the potential of ATD.
 
 ## Quick Start
 
