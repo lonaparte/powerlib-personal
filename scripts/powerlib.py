@@ -42,21 +42,21 @@ def literal(x):
 
 
 def model_source(name, resistance, inductance):
-    return f"def {name} : Powerlib.Impedance := ⟨{literal(resistance)}, ⟨{literal(inductance)}, by norm_num⟩⟩\n"
+    return f"def {name} : powerlib.Impedance := ⟨{literal(resistance)}, ⟨{literal(inductance)}, by norm_num⟩⟩\n"
 
 
 def candidate_source(resistance, inductance, p, rate):
-    return "import Powerlib\nnoncomputable section\nnamespace Candidate\n" + model_source(
+    return "import powerlib\nnoncomputable section\nnamespace Candidate\n" + model_source(
         "model", resistance, inductance) + f'''
-def certificate : Powerlib.Accepted model where
+def certificate : powerlib.Accepted model where
   p := {literal(p)}
   rate := {literal(rate)}
   p_pos := by norm_num
   rate_pos := by norm_num
   lyapunov_identity := by
-    norm_num [model, Powerlib.toStateSpace, Powerlib.Generated.convert, Powerlib.reciprocal]
+    norm_num [model, powerlib.toStateSpace, powerlib.Generated.convert, powerlib.reciprocal]
   rate_exact := by
-    norm_num [model, Powerlib.toStateSpace, Powerlib.Generated.convert, Powerlib.reciprocal]
+    norm_num [model, powerlib.toStateSpace, powerlib.Generated.convert, powerlib.reciprocal]
 end Candidate
 '''
 
@@ -64,15 +64,15 @@ end Candidate
 def admission_source(resistance, inductance, p, rate):
     # Reconstruct the target from the submitted model, independently of the candidate.
     return "namespace Admission\n" + model_source("submittedModel", resistance, inductance) + f'''
-def accepted : Powerlib.Accepted submittedModel := Candidate.certificate
+def accepted : powerlib.Accepted submittedModel := Candidate.certificate
 example : accepted.p = {literal(p)} := by norm_num [accepted, Candidate.certificate]
 example : accepted.rate = {literal(rate)} := by norm_num [accepted, Candidate.certificate]
 theorem stable : submittedModel.Stable := accepted.stable
 theorem dissipation (current : ℝ) :
-    2 * accepted.p * current * (Powerlib.toStateSpace submittedModel).field current 0 =
+    2 * accepted.p * current * (powerlib.toStateSpace submittedModel).field current 0 =
       -current ^ 2 := accepted.dissipation current
 theorem decay (initial t : ℝ) :
-    (Powerlib.response submittedModel initial t) ^ 2 =
+    (powerlib.response submittedModel initial t) ^ 2 =
       initial ^ 2 * Real.exp (-accepted.rate * t) := accepted.decay_bound initial t
 end Admission
 ''' + audit(["Admission.accepted", "Admission.stable", "Admission.dissipation", "Admission.decay"])
@@ -112,23 +112,23 @@ def atd():
         ("nonnegative", "0 ≤ m.resistance", 0),
         ("negative", "m.resistance < 0", 1),
     ]:
-        proposition = f"∀ m : Powerlib.Impedance, m.Stable ↔ {condition}"
+        proposition = f"∀ m : powerlib.Impedance, m.Stable ↔ {condition}"
         path = directory / (name + ".lean")
-        path.write_text(f'''import Powerlib
+        path.write_text(f'''import powerlib
 theorem discovered : {proposition} := by
   intro m
-  rw [Powerlib.impedance_stable_iff] <;> (constructor <;> intro h <;> linarith)
+  rw [powerlib.impedance_stable_iff] <;> (constructor <;> intro h <;> linarith)
 ''' + audit(["discovered"]))
         code, log = run(["lake", "env", "lean", path])
         path.with_suffix(".log").write_text(log)
         status = "PROVED" if code == 0 and "POWERLIB_KERNEL_OK" in log else "UNPROVED"
         if status == "UNPROVED" and counterexample is not None:
             refutation = directory / (name + "_refuted.lean")
-            refutation.write_text(f'''import Powerlib
+            refutation.write_text(f'''import powerlib
 theorem refuted : ¬ ({proposition}) := by
   intro h
   have hh := h ⟨{counterexample}, ⟨1, by norm_num⟩⟩
-  rw [Powerlib.impedance_stable_iff] at hh
+  rw [powerlib.impedance_stable_iff] at hh
   norm_num at hh
 ''' + audit(["refuted"]))
             check_lean(refutation)

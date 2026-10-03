@@ -1,12 +1,12 @@
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Tactic
-import Powerlib.Generated.Conversion
+import powerlib.Generated.Conversion
 
 /-! A canonical single-port RL family: i' = -a*i + b*v and Z(s) = R + L*s.
 The input gain and inductance are positive. Resistance may have either sign.
 This fixes the state coordinate to physical current; no hidden states are allowed. -/
 noncomputable section
-namespace Powerlib
+namespace powerlib
 
 abbrev Positive := {x : ℝ // 0 < x}
 
@@ -168,4 +168,4 @@ theorem Accepted.decay_bound {m : Impedance} (c : Accepted m) (initial t : ℝ) 
   congr 2
   ring
 
-end Powerlib
+end powerlib

@@ -43,14 +43,14 @@ as `"3/2"`; strict stability requires `R > 0`.
 Here voltage is the input, so the impedance criterion checks that zeros of `Z(s)`
 (poles of `1/Z(s)`) lie in the open left half-plane.
 
-To use the library in Lean, start with `import Powerlib`:
+To use the library in Lean, start with `import powerlib`:
 
 ```lean
-import Powerlib
+import powerlib
 
-example (m : Powerlib.Impedance) :
-    (Powerlib.toStateSpace m).Stable ↔ m.Stable :=
-  Powerlib.stability_agrees m
+example (m : powerlib.Impedance) :
+    (powerlib.toStateSpace m).Stable ↔ m.Stable :=
+  powerlib.stability_agrees m
 ```
 
 Agda checks the abstract model equivalence and theorem transport. Its executable

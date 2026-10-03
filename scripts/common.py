@@ -35,7 +35,7 @@ CORE = [
 
 
 def audit(extra=(), *, include_core=True):
-    roots = (["Powerlib." + name for name in CORE] if include_core else []) + list(extra)
+    roots = (["powerlib." + name for name in CORE] if include_core else []) + list(extra)
     names = ", ".join("`" + name for name in roots)
     return f'''
 open Lean Elab Command
