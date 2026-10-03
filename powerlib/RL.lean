@@ -1,6 +1,6 @@
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Tactic
-import powerlib.Generated.Conversion
+import powerlib.generated.Conversion
 
 /-! A canonical single-port RL family: i' = -a*i + b*v and Z(s) = R + L*s.
 The input gain and inductance are positive. Resistance may have either sign.
@@ -30,22 +30,22 @@ theorem scale_cancel (x : ℝ) (y : Positive) : (x * (reciprocal y).val) * y.val
 
 -- Both descriptions use the SAME Agda-generated executable conversion.
 def toImpedance (m : StateSpace) : Impedance :=
-  let y := Generated.convert (fun a (b : Positive) => a * b.val) reciprocal (m.decay, m.inputGain)
+  let y := generated.convert (fun a (b : Positive) => a * b.val) reciprocal (m.decay, m.inputGain)
   ⟨y.1, y.2⟩
 
 def toStateSpace (m : Impedance) : StateSpace :=
-  let y := Generated.convert (fun a (b : Positive) => a * b.val) reciprocal (m.resistance, m.inductance)
+  let y := generated.convert (fun a (b : Positive) => a * b.val) reciprocal (m.resistance, m.inductance)
   ⟨y.1, y.2⟩
 
 theorem state_roundtrip (m : StateSpace) : toStateSpace (toImpedance m) = m := by
   apply StateSpace.ext
-  · exact (by simpa [toStateSpace, toImpedance, Generated.convert, reciprocal] using
+  · exact (by simpa [toStateSpace, toImpedance, generated.convert, reciprocal] using
       scale_cancel m.decay m.inputGain)
   · exact reciprocal_involutive m.inputGain
 
 theorem impedance_roundtrip (m : Impedance) : toImpedance (toStateSpace m) = m := by
   apply Impedance.ext
-  · exact (by simpa [toStateSpace, toImpedance, Generated.convert, reciprocal] using
+  · exact (by simpa [toStateSpace, toImpedance, generated.convert, reciprocal] using
       scale_cancel m.resistance m.inductance)
   · exact reciprocal_involutive m.inductance
 
@@ -61,7 +61,7 @@ def StateSpace.field (m : StateSpace) (current voltage : ℝ) : ℝ :=
 theorem same_dynamics (m : Impedance) (current voltage : ℝ) :
     (toStateSpace m).field current voltage =
       (voltage - m.resistance * current) / m.inductance.val := by
-  dsimp [StateSpace.field, toStateSpace, Generated.convert, reciprocal]
+  dsimp [StateSpace.field, toStateSpace, generated.convert, reciprocal]
   field_simp [ne_of_gt m.inductance.property]
   ring
 
@@ -75,7 +75,7 @@ theorem same_port_relation (m : Impedance) (s current voltage : ℂ) :
       voltage = m.frequency s * current := by
   have hL : (m.inductance.val : ℂ) ≠ 0 := by
     exact_mod_cast ne_of_gt m.inductance.property
-  dsimp [toStateSpace, Generated.convert, reciprocal, Impedance.frequency]
+  dsimp [toStateSpace, generated.convert, reciprocal, Impedance.frequency]
   push_cast
   constructor
   · intro h

@@ -30,7 +30,7 @@ CORE = [
     "modelEquiv", "same_dynamics", "same_port_relation", "frequency_zero_iff",
     "impedance_stable_iff", "stability_agrees", "Accepted.stable",
     "Accepted.dissipation", "response_initial", "response_solves", "Accepted.decay_bound",
-    "Generated.convert_spec",
+    "generated.convert_spec",
 ]
 
 

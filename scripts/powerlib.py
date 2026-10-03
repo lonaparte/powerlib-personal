@@ -54,9 +54,9 @@ def certificate : powerlib.Accepted model where
   p_pos := by norm_num
   rate_pos := by norm_num
   lyapunov_identity := by
-    norm_num [model, powerlib.toStateSpace, powerlib.Generated.convert, powerlib.reciprocal]
+    norm_num [model, powerlib.toStateSpace, powerlib.generated.convert, powerlib.reciprocal]
   rate_exact := by
-    norm_num [model, powerlib.toStateSpace, powerlib.Generated.convert, powerlib.reciprocal]
+    norm_num [model, powerlib.toStateSpace, powerlib.generated.convert, powerlib.reciprocal]
 end Candidate
 '''
 

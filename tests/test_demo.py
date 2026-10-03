@@ -94,7 +94,7 @@ class KernelTests(unittest.TestCase):
     def test_no_sorry(self):
         r, l, p, rate = Fraction(2), Fraction(1), Fraction(1, 4), Fraction(4)
         source = candidate_source(r, l, p, rate).replace(
-            "norm_num [model, powerlib.toStateSpace, powerlib.Generated.convert, powerlib.reciprocal]",
+            "norm_num [model, powerlib.toStateSpace, powerlib.generated.convert, powerlib.reciprocal]",
             "sorry") + admission_source(r, l, p, rate)
         log = self.check_source("bad_sorry", source, False)
         self.assertIn("Unexpected axiom sorryAx", log)
@@ -102,7 +102,7 @@ class KernelTests(unittest.TestCase):
     def test_exported_formula(self):
         # Well-typed but wrong data must fail the independent Lean endpoint.
         source = "import Lean\n" + render([20261003, 1, 0, 1], "test") + audit(
-            ["powerlib.Generated.convert_spec"], include_core=False)
+            ["powerlib.generated.convert_spec"], include_core=False)
         self.check_source("bad_export", source, False)
 
     def test_agda_roundtrip(self):
