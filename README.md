@@ -4,7 +4,7 @@ powerlib is a theorem library for power systems and power electronics, built on 
 
 ## Directions
 
-- **ATP (Automated Theorem Proving):** automatically prove given propositions, including **synthesis of certificates**.
+- **ATP (Automated Theorem Proving):** automatically prove given propositions, especially **synthesis of certificates**.
 - **ATD (Automated Theorem Discovery):** discover new conjectures from models and existing knowledge, prove them, and add the results to the library.
 
 We are exploring a combination in which Agda serves as the foundation for
@@ -57,17 +57,3 @@ Agda checks the abstract model equivalence and theorem transport. Its executable
 conversion is exported through a small data interface; Lean independently proves
 the concrete real-number equivalence, port relation, and stability results.
 This first system covers the canonical RL family.
-
-Recheck the bridge with `python3 dependencies/bridge.py`; run the acceptance tests with
-`python3 -m unittest discover -s dependencies/tests -v`.
-
-## Layout
-
-- `theorems/`: Lean and Agda model definitions, theorems, and checked conversion
-  sources. Category directories will be added manually as the library grows.
-- `dependencies/`: ATP/ATD programs, setup and bridge programs, interface data,
-  examples, tests, and ignored local caches.
-- `archive/`: earlier private research; excluded from promotion.
-
-Repository management scripts live outside the repositories in `/app/script`.
-Agent instruction files remain local and are excluded from GitHub and promotion.
