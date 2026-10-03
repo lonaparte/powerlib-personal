@@ -3,3 +3,9 @@ __pycache__/
 *.pyo
 .claude/
 *.worktrees/
+.lake/
+.deps/
+.tools/
+results/
+*.agdai
+_build/

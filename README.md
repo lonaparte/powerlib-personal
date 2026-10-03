@@ -11,11 +11,42 @@ Agda provides the foundation for transporting theorems between equivalent modeli
 
 ## Quick Start
 
-With Lean/Elan installed, run from the repository root to check an existing theorem file:
+From the repository root, with Lean/Elan, Git, and Python 3.12+ on Linux x86_64:
 
 ```sh
-cd archive/01/lean
-lean PHGeneral.lean
+python3 scripts/setup.py
+python3 scripts/powerlib.py atp examples/rl.json
+python3 scripts/powerlib.py atd
+lake env lean examples/Use.lean
 ```
 
-Elan selects the pinned Lean version. See [archive/](archive/) for the current theorem collections and their usage instructions.
+Setup installs pinned dependencies locally and checks Agda and Lean. ATP returns
+`ACCEPTED` only after Lean verifies the synthesized certificate for the submitted
+model. ATD searches three resistance sign conditions and checks proofs or
+counterexamples. Proof files, logs, and reports are saved under `results/`.
+
+The first example is a canonical single-port RL circuit with `L > 0`:
+`i' = -(R/L)i + (1/L)v`, equivalent to `Z(s) = R + Ls`. For `R = 2`, `L = 1`,
+ATP produces `V(i) = (1/4)i^2` and the squared-current decay rate `4`.
+Edit [examples/rl.json](examples/rl.json) using integers or rational strings such
+as `"3/2"`; strict stability requires `R > 0`.
+Here voltage is the input, so the impedance criterion checks that zeros of `Z(s)`
+(poles of `1/Z(s)`) lie in the open left half-plane.
+
+To use the library in Lean, start with `import Powerlib`:
+
+```lean
+import Powerlib
+
+example (m : Powerlib.Impedance) :
+    (Powerlib.toStateSpace m).Stable ↔ m.Stable :=
+  Powerlib.stability_agrees m
+```
+
+Agda checks the abstract model equivalence and theorem transport. Its executable
+conversion is exported through a small data interface; Lean independently proves
+the concrete real-number equivalence, port relation, and stability results.
+This first system covers the canonical RL family.
+
+Recheck the bridge with `python3 scripts/bridge.py`; run the acceptance tests with
+`python3 -m unittest discover -s tests -v`.
