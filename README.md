@@ -11,7 +11,7 @@ We are exploring a combination in which Agda serves as the foundation for
 conversions between modeling approaches, while Lean 4 supports everyday
 reasoning. We draw inspiration from
 [mathlib](https://github.com/leanprover-community/mathlib4) and
-[leanforcontrol](https://github.com/AnandGokhale/LeanForControl).
+[LeanForControl](https://github.com/AnandGokhale/LeanForControl).
 
 We recognize that power systems and power electronics have fewer general
 theorems than mathematics and control theory. Much of the knowledge concerns
