@@ -9,3 +9,19 @@ __pycache__/
 results/
 *.agdai
 _build/
+build/
+dist/
+.cache/
+.pytest_cache/
+.venv/
+
+# Compiled files and temporary build metadata, including standalone Lean runs.
+*.olean
+*.ilean
+*.trace
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.log

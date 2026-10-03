@@ -1,6 +1,6 @@
-# Powerlib
+# powerlib
 
-Powerlib is a theorem library for power systems and power electronics, built on Lean 4 and Agda.
+powerlib is a theorem library for power systems and power electronics, built on Lean 4 and Agda.
 
 Agda provides the foundation for transporting theorems between equivalent modeling systems. Lean 4 handles the main reasoning and proof work.
 
