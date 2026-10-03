@@ -17,7 +17,7 @@ We recognize that power systems and power electronics have fewer general
 theorems than mathematics and control theory. Much of the knowledge concerns
 specific operating conditions, hardware, control methods, and their combinations.
 We see this as a good experimental setting for making ATP work at the synthesis
-level, including synthesizing certificates, and exploring the potential of ATD.
+level and exploring the potential of ATD.
 
 ## Quick Start
 
