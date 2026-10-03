@@ -6,9 +6,9 @@ import tempfile
 import unittest
 from fractions import Fraction
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from bridge import extract, render
-from common import ROOT, audit, check_lean, run
+from common import ROOT, DEPENDENCIES, CACHE, RESULTS, audit, check_lean, run
 from powerlib import admission_source, candidate_source, read_model
 
 
@@ -56,8 +56,8 @@ class InputTests(unittest.TestCase):
 class KernelTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        (ROOT / "results").mkdir(exist_ok=True)
-        cls.directory = tempfile.TemporaryDirectory(prefix="tests-", dir=ROOT / "results")
+        RESULTS.mkdir(exist_ok=True)
+        cls.directory = tempfile.TemporaryDirectory(prefix="tests-", dir=RESULTS)
         cls.root = Path(cls.directory.name)
 
     @classmethod
@@ -107,17 +107,17 @@ class KernelTests(unittest.TestCase):
 
     def test_agda_roundtrip(self):
         stage = self.root / "negative-agda"
-        entry = stage / "agda/powerlib/Conversion.agda"
+        entry = stage / "theorems/Conversion.agda"
         entry.parent.mkdir(parents=True)
-        source = (ROOT / "agda/powerlib/Conversion.agda").read_text()
+        source = (ROOT / "theorems/Conversion.agda").read_text()
         source = source.replace(
             "run scale reciprocal x = scale (fst x) (reciprocal (snd x)) , reciprocal (snd x)",
             "run scale reciprocal x = fst x , reciprocal (snd x)")
         entry.write_text(source)
         (stage / "powerlib.agda-lib").write_text((ROOT / "powerlib.agda-lib").read_text())
         libraries = stage / "libraries"
-        libraries.write_text(str(ROOT / ".deps/cubical/cubical.agda-lib") + "\n")
-        code, log = run([ROOT / ".tools/agda", f"--library-file={libraries}",
+        libraries.write_text(str(CACHE / "cubical/cubical.agda-lib") + "\n")
+        code, log = run([CACHE / "agda", f"--library-file={libraries}",
                          "--no-default-libraries", entry], cwd=stage)
         self.assertNotEqual(code, 0, log)
         self.assertIn("recover", log)
@@ -127,7 +127,7 @@ class KernelTests(unittest.TestCase):
         for r in [0, -1]:
             path = self.root / "unstable.json"
             path.write_text(json.dumps({"resistance": r, "inductance": 1}))
-            code, log = run([sys.executable, ROOT / "scripts/powerlib.py", "atp", path])
+            code, log = run([sys.executable, DEPENDENCIES / "powerlib.py", "atp", path])
             self.assertNotEqual(code, 0, log)
             self.assertEqual(json.loads(log)["status"], "NOT_ACCEPTED")
 

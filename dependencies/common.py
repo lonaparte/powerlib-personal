@@ -1,9 +1,13 @@
 """Shared process and kernel-audit utilities for the minimal demonstration."""
 from pathlib import Path
 import hashlib
+import os
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
+DEPENDENCIES = ROOT / "dependencies"
+CACHE = Path(os.environ.get("POWERLIB_CACHE_DIR", DEPENDENCIES / ".cache")).resolve()
+RESULTS = DEPENDENCIES / "results"
 CUBICAL_COMMIT = "b150186d2544e7efeddd31e5d14a8b9ecbb100f7"
 
 

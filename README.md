@@ -24,21 +24,21 @@ level, including synthesizing certificates, and exploring the potential of ATD.
 From the repository root, with Lean/Elan, Git, and Python 3.12+ on Linux x86_64:
 
 ```sh
-python3 scripts/setup.py
-python3 scripts/powerlib.py atp examples/rl.json
-python3 scripts/powerlib.py atd
-lake env lean examples/Use.lean
+python3 dependencies/setup.py
+python3 dependencies/powerlib.py atp dependencies/examples/rl.json
+python3 dependencies/powerlib.py atd
+lake env lean dependencies/examples/Use.lean
 ```
 
 Setup installs pinned dependencies locally and checks Agda and Lean. ATP returns
 `ACCEPTED` only after Lean verifies the synthesized certificate for the submitted
 model. ATD searches three resistance sign conditions and checks proofs or
-counterexamples. Proof files, logs, and reports are saved under `results/`.
+counterexamples. Proof files, logs, and reports are saved under `dependencies/results/`.
 
 The first example is a canonical single-port RL circuit with `L > 0`:
 `i' = -(R/L)i + (1/L)v`, equivalent to `Z(s) = R + Ls`. For `R = 2`, `L = 1`,
 ATP produces `V(i) = (1/4)i^2` and the squared-current decay rate `4`.
-Edit [examples/rl.json](examples/rl.json) using integers or rational strings such
+Edit [dependencies/examples/rl.json](dependencies/examples/rl.json) using integers or rational strings such
 as `"3/2"`; strict stability requires `R > 0`.
 Here voltage is the input, so the impedance criterion checks that zeros of `Z(s)`
 (poles of `1/Z(s)`) lie in the open left half-plane.
@@ -58,5 +58,16 @@ conversion is exported through a small data interface; Lean independently proves
 the concrete real-number equivalence, port relation, and stability results.
 This first system covers the canonical RL family.
 
-Recheck the bridge with `python3 scripts/bridge.py`; run the acceptance tests with
-`python3 -m unittest discover -s tests -v`.
+Recheck the bridge with `python3 dependencies/bridge.py`; run the acceptance tests with
+`python3 -m unittest discover -s dependencies/tests -v`.
+
+## Layout
+
+- `theorems/`: Lean and Agda model definitions, theorems, and checked conversion
+  sources. Category directories will be added manually as the library grows.
+- `dependencies/`: ATP/ATD programs, setup and bridge programs, interface data,
+  examples, tests, and ignored local caches.
+- `archive/`: earlier private research; excluded from promotion.
+
+Repository management scripts live outside the repositories in `/app/script`.
+Agent instruction files remain local and are excluded from GitHub and promotion.

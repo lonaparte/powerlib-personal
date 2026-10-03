@@ -1,5 +1,5 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
-module powerlib.Conversion where
+module theorems.Conversion where
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv

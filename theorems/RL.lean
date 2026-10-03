@@ -1,6 +1,6 @@
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Tactic
-import powerlib.generated.Conversion
+import theorems.generated.Conversion
 
 /-! A canonical single-port RL family: i' = -a*i + b*v and Z(s) = R + L*s.
 The input gain and inductance are positive. Resistance may have either sign.

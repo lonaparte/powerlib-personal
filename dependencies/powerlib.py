@@ -8,7 +8,7 @@ import re
 import sys
 import tempfile
 
-from common import ROOT, audit, check_lean, demand, digest, run
+from common import ROOT, RESULTS, audit, check_lean, demand, digest, run
 
 
 def rational(value):
@@ -79,8 +79,8 @@ end Admission
 
 
 def output_dir(kind):
-    (ROOT / "results").mkdir(exist_ok=True)
-    return Path(tempfile.mkdtemp(prefix=kind + "-", dir=ROOT / "results"))
+    RESULTS.mkdir(exist_ok=True)
+    return Path(tempfile.mkdtemp(prefix=kind + "-", dir=RESULTS))
 
 
 def atp(path):
