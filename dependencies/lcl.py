@@ -343,12 +343,14 @@ def atd():
         ("both_positive", "0 < m.first.resistance ∧ 0 < m.second.resistance", (1, 0)),
         ("nonnegative_sum", "0 ≤ m.first.resistance + m.second.resistance", (0, 0)),
     ]:
-        proposition = f"∀ m : powerlib.LCL.Circuit, m.Passive → (m.Stable ↔ {condition})"
+        proposition = ("∀ m : powerlib.LCL.Circuit, m.Passive → "
+                       f"(powerlib.LCL.AsymptoticallyStable m 0 0 0 ↔ {condition})")
         proof = directory / (name+".lean")
         proof.write_text(f'''import powerlib
 @[powerlib_domain] theorem discovered : {proposition} := by
   intro m hp
-  rw [powerlib.LCL.passive_stable_iff m hp] <;> first | rfl | tauto
+  rw [powerlib.LCL.passive_asymptoticallyStable_iff m hp (powerlib.LCL.zero_equilibrium m)]
+  first | rfl | tauto
 ''' + audit(["discovered"]))
         code, log = run(["lake", "env", "lean", proof])
         proof.with_suffix(".log").write_text(log)
@@ -361,7 +363,7 @@ def atd():
   intro h
   have hp : model.Passive := by norm_num [model, powerlib.LCL.Circuit.Passive]
   have hh := h model hp
-  rw [powerlib.LCL.passive_stable_iff model hp] at hh
+  rw [powerlib.LCL.passive_asymptoticallyStable_iff model hp (powerlib.LCL.zero_equilibrium model)] at hh
   norm_num [model, powerlib.LCL.Circuit.Damped] at hh
 ''' + audit(["refuted"]))
             check_lean(proof)

@@ -56,6 +56,11 @@ run_cmd do
       `powerlib.LCL.lossless_energy_conserved] do
     unless domains.contains name do
       throwError "Public domain theorem missing from discovery: {name}"
+  for name in #[`powerlib.lcl_asymptotically_stable_iff,
+      `powerlib.lcl_globally_exponentially_stable_iff,
+      `powerlib.LCL.passive_asymptoticallyStable, `powerlib.LCL.passive_globallyExponentiallyStable] do
+    unless domains.contains name do
+      throwError "Public semantic theorem missing from discovery: {name}"
   for name in #[`powerlib.state_roundtrip, `powerlib.LCL.circuit_roundtrip,
       `powerlib.generated.convert_spec, `powerlib.generated.convertLCL_spec,
       `powerlib.trajectory_iff_circuit] do

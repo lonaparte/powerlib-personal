@@ -10,29 +10,71 @@ def gap (a d b e k : ℝ) : ℝ := a*d*(a+d)+k*(a*b+d*e)
 def denominator (a d b e k : ℝ) : ℝ := 2*k*coupling a d b e*gap a d b e k
 
 def n11 (a d b e k : ℝ) : ℝ :=
-  a ^ 2 * d * e * k + a * d ^ 2 * b * k + a * d ^ 2 * e * k + a * d ^ 2 * k ^ 2 + a * b * e * k ^ 2 + a * e ^ 2 * k ^ 2 + a * e * k ^ 3 + d ^ 3 * b * k + d ^ 3 * k ^ 2 + d * b * k ^ 3 + d * k ^ 2 * ((b-e)^2 + b*e + e^2)
+  a ^ 2 * d * e * k + a * d ^ 2 * b * k + a * d ^ 2 * e * k + a * d ^ 2 * k ^ 2 + a * b * e * k ^ 2 +
+    a * e ^ 2 * k ^ 2 + a * e * k ^ 3 + d ^ 3 * b * k + d ^ 3 * k ^ 2 + d * b * k ^ 3 +
+    d * k ^ 2 * ((b-e)^2 + b*e + e^2)
 
 def n12 (a d b e k : ℝ) : ℝ :=
-  a ^ 2 * d ^ 2 * k + a ^ 2 * e ^ 2 * k + a ^ 2 * e * k ^ 2 + a * d ^ 3 * k - a * d * b * e * k + a * d * b * k ^ 2 + a * d * e ^ 2 * k - d ^ 2 * b * e * k
+  a ^ 2 * d ^ 2 * k + a ^ 2 * e ^ 2 * k + a ^ 2 * e * k ^ 2 + a * d ^ 3 * k - a * d * b * e * k +
+    a * d * b * k ^ 2 + a * d * e ^ 2 * k - d ^ 2 * b * e * k
 
 def n13 (a d b e k : ℝ) : ℝ :=
-  - a ^ 2 * d * k ^ 2 - a * d ^ 2 * k ^ 2 + a * b * e * k ^ 2 - a * e ^ 2 * k ^ 2 - a * e * k ^ 3 - d * b ^ 2 * k ^ 2 + d * b * e * k ^ 2 - d * b * k ^ 3
+  - a ^ 2 * d * k ^ 2 - a * d ^ 2 * k ^ 2 +
+    a * b * e * k ^ 2 - a * e ^ 2 * k ^ 2 - a * e * k ^ 3 - d * b ^ 2 * k ^ 2 +
+    d * b * e * k ^ 2 - d * b * k ^ 3
 
 def n22 (a d b e k : ℝ) : ℝ :=
-  a ^ 3 * d ^ 2 + a ^ 3 * e ^ 2 + a ^ 3 * e * k + a ^ 2 * d ^ 3 + a ^ 2 * d * b * k + a ^ 2 * d * e ^ 2 + a ^ 2 * d * e * k + a * d ^ 2 * b ^ 2 + a * d ^ 2 * b * k + a * d ^ 2 * e * k + a * b ^ 2 * e * k + a * b * e * k ^ 2 + a * e ^ 3 * k + a * e ^ 2 * k ^ 2 + d ^ 3 * b ^ 2 + d ^ 3 * b * k + d * b ^ 3 * k + d * b ^ 2 * k ^ 2 + d * b * e ^ 2 * k + d * b * e * k ^ 2
+  a ^ 3 * d ^ 2 + a ^ 3 * e ^ 2 + a ^ 3 * e * k + a ^ 2 * d ^ 3 + a ^ 2 * d * b * k +
+    a ^ 2 * d * e ^ 2 + a ^ 2 * d * e * k + a * d ^ 2 * b ^ 2 + a * d ^ 2 * b * k +
+    a * d ^ 2 * e * k + a * b ^ 2 * e * k + a * b * e * k ^ 2 + a * e ^ 3 * k + a * e ^ 2 * k ^ 2 +
+    d ^ 3 * b ^ 2 + d ^ 3 * b * k + d * b ^ 3 * k + d * b ^ 2 * k ^ 2 + d * b * e ^ 2 * k +
+    d * b * e * k ^ 2
 
 def n23 (a d b e k : ℝ) : ℝ :=
-  - a ^ 3 * d * k - a ^ 2 * d ^ 2 * k + a ^ 2 * b * e * k - a * d * b ^ 2 * k + a * d * b * e * k - a * d * e * k ^ 2 - d ^ 2 * b ^ 2 * k - d ^ 2 * b * k ^ 2
+  - a ^ 3 * d * k - a ^ 2 * d ^ 2 * k + a ^ 2 * b * e * k - a * d * b ^ 2 * k +
+    a * d * b * e * k - a * d * e * k ^ 2 - d ^ 2 * b ^ 2 * k - d ^ 2 * b * k ^ 2
 
 def n33 (a d b e k : ℝ) : ℝ :=
-  a ^ 3 * e * k + a ^ 3 * k ^ 2 + a ^ 2 * d * b * k + a ^ 2 * d * e * k + a ^ 2 * d * k ^ 2 + a * d ^ 2 * b * k + 2 * a * b ^ 2 * k ^ 2 - a * b * e * k ^ 2 + a * e ^ 2 * k ^ 2 + a * e * k ^ 3 + d * b ^ 2 * k ^ 2 + d * b * e * k ^ 2 + d * b * k ^ 3
+  a ^ 3 * e * k + a ^ 3 * k ^ 2 + a ^ 2 * d * b * k + a ^ 2 * d * e * k + a ^ 2 * d * k ^ 2 +
+    a * d ^ 2 * b * k + 2 * a * b ^ 2 * k ^ 2 - a * b * e * k ^ 2 + a * e ^ 2 * k ^ 2 +
+    a * e * k ^ 3 + d * b ^ 2 * k ^ 2 + d * b * e * k ^ 2 + d * b * k ^ 3
 
 def minorNumerator (a d b e k : ℝ) : ℝ :=
-  a ^ 4 * d ^ 3 + a ^ 4 * d * e ^ 2 + a ^ 4 * d * e * k + 2 * a ^ 3 * d ^ 4 + 2 * a ^ 3 * d ^ 2 * b * k + 2 * a ^ 3 * d ^ 2 * e ^ 2 + 2 * a ^ 3 * d ^ 2 * e * k + a ^ 3 * b * e ^ 2 * k + a ^ 3 * b * e * k ^ 2 + a ^ 2 * d ^ 5 + a ^ 2 * d ^ 3 * b ^ 2 + 4 * a ^ 2 * d ^ 3 * b * k + a ^ 2 * d ^ 3 * e ^ 2 + 3 * a ^ 2 * d ^ 3 * e * k + a ^ 2 * d ^ 3 * k ^ 2 + a ^ 2 * d * b ^ 2 * e * k + a ^ 2 * d * b ^ 2 * k ^ 2 + 2 * a ^ 2 * d * b * e ^ 2 * k + 3 * a ^ 2 * d * b * e * k ^ 2 + 2 * a ^ 2 * d * e ^ 3 * k + 3 * a ^ 2 * d * e ^ 2 * k ^ 2 + a ^ 2 * d * e * k ^ 3 + 2 * a * d ^ 4 * b ^ 2 + 4 * a * d ^ 4 * b * k + 2 * a * d ^ 4 * e * k + 2 * a * d ^ 4 * k ^ 2 + 2 * a * d ^ 2 * b ^ 3 * k + 4 * a * d ^ 2 * b ^ 2 * k ^ 2 + 3 * a * d ^ 2 * b * e ^ 2 * k + 4 * a * d ^ 2 * b * e * k ^ 2 + 2 * a * d ^ 2 * b * k ^ 3 + 2 * a * d ^ 2 * e ^ 3 * k + 5 * a * d ^ 2 * e ^ 2 * k ^ 2 + 2 * a * d ^ 2 * e * k ^ 3 + a * b ^ 3 * e * k ^ 2 + a * b ^ 2 * e ^ 2 * k ^ 2 + 2 * a * b ^ 2 * e * k ^ 3 + a * b * e ^ 3 * k ^ 2 + 2 * a * b * e ^ 2 * k ^ 3 + a * b * e * k ^ 4 + a * e ^ 4 * k ^ 2 + 2 * a * e ^ 3 * k ^ 3 + a * e ^ 2 * k ^ 4 + d ^ 5 * b ^ 2 + 2 * d ^ 5 * b * k + d ^ 5 * k ^ 2 + 4 * d ^ 3 * b ^ 2 * k ^ 2 + 2 * d ^ 3 * b * k ^ 3 + 3 * d ^ 3 * e ^ 2 * k ^ 2 + d ^ 3 * e * k ^ 3 + 2 * d * b ^ 3 * k ^ 3 + d * b ^ 2 * k ^ 4 + 2 * d * b * e ^ 2 * k ^ 3 + d * b * e * k ^ 4 + 2 * d * e ^ 3 * k ^ 3 + d ^ 3 * b * k * ((b-e)^2 + b^2 + b*e + e^2) +
+  a ^ 4 * d ^ 3 + a ^ 4 * d * e ^ 2 + a ^ 4 * d * e * k + 2 * a ^ 3 * d ^ 4 +
+    2 * a ^ 3 * d ^ 2 * b * k + 2 * a ^ 3 * d ^ 2 * e ^ 2 + 2 * a ^ 3 * d ^ 2 * e * k +
+    a ^ 3 * b * e ^ 2 * k + a ^ 3 * b * e * k ^ 2 + a ^ 2 * d ^ 5 + a ^ 2 * d ^ 3 * b ^ 2 +
+    4 * a ^ 2 * d ^ 3 * b * k + a ^ 2 * d ^ 3 * e ^ 2 + 3 * a ^ 2 * d ^ 3 * e * k +
+    a ^ 2 * d ^ 3 * k ^ 2 + a ^ 2 * d * b ^ 2 * e * k + a ^ 2 * d * b ^ 2 * k ^ 2 +
+    2 * a ^ 2 * d * b * e ^ 2 * k + 3 * a ^ 2 * d * b * e * k ^ 2 + 2 * a ^ 2 * d * e ^ 3 * k +
+    3 * a ^ 2 * d * e ^ 2 * k ^ 2 + a ^ 2 * d * e * k ^ 3 + 2 * a * d ^ 4 * b ^ 2 +
+    4 * a * d ^ 4 * b * k + 2 * a * d ^ 4 * e * k + 2 * a * d ^ 4 * k ^ 2 +
+    2 * a * d ^ 2 * b ^ 3 * k + 4 * a * d ^ 2 * b ^ 2 * k ^ 2 + 3 * a * d ^ 2 * b * e ^ 2 * k +
+    4 * a * d ^ 2 * b * e * k ^ 2 + 2 * a * d ^ 2 * b * k ^ 3 + 2 * a * d ^ 2 * e ^ 3 * k +
+    5 * a * d ^ 2 * e ^ 2 * k ^ 2 + 2 * a * d ^ 2 * e * k ^ 3 + a * b ^ 3 * e * k ^ 2 +
+    a * b ^ 2 * e ^ 2 * k ^ 2 + 2 * a * b ^ 2 * e * k ^ 3 + a * b * e ^ 3 * k ^ 2 +
+    2 * a * b * e ^ 2 * k ^ 3 + a * b * e * k ^ 4 + a * e ^ 4 * k ^ 2 + 2 * a * e ^ 3 * k ^ 3 +
+    a * e ^ 2 * k ^ 4 + d ^ 5 * b ^ 2 + 2 * d ^ 5 * b * k + d ^ 5 * k ^ 2 +
+    4 * d ^ 3 * b ^ 2 * k ^ 2 + 2 * d ^ 3 * b * k ^ 3 + 3 * d ^ 3 * e ^ 2 * k ^ 2 +
+    d ^ 3 * e * k ^ 3 + 2 * d * b ^ 3 * k ^ 3 + d * b ^ 2 * k ^ 4 + 2 * d * b * e ^ 2 * k ^ 3 +
+    d * b * e * k ^ 4 + 2 * d * e ^ 3 * k ^ 3 + d ^ 3 * b * k * ((b-e)^2 + b^2 + b*e + e^2) +
     d * k ^ 2 * ((b-e)^2 * (b^2+e^2) + b^3*e + b^2*e^2 + b*e^3 + e^4)
 
 def detNumerator (a d b e k : ℝ) : ℝ :=
-  a ^ 4 * d ^ 2 + a ^ 4 * e ^ 2 + 2 * a ^ 4 * e * k + a ^ 4 * k ^ 2 + 2 * a ^ 3 * d ^ 3 + 2 * a ^ 3 * d * b * k + 2 * a ^ 3 * d * e ^ 2 + 4 * a ^ 3 * d * e * k + 2 * a ^ 3 * d * k ^ 2 + a ^ 2 * d ^ 4 + a ^ 2 * d ^ 2 * b ^ 2 + 4 * a ^ 2 * d ^ 2 * b * k + a ^ 2 * d ^ 2 * e ^ 2 + 4 * a ^ 2 * d ^ 2 * e * k + 2 * a ^ 2 * d ^ 2 * k ^ 2 + 2 * a ^ 2 * b ^ 2 * e * k + 3 * a ^ 2 * b ^ 2 * k ^ 2 + 2 * a ^ 2 * b * e * k ^ 2 + 2 * a ^ 2 * b * k ^ 3 + 2 * a ^ 2 * e ^ 3 * k + 5 * a ^ 2 * e ^ 2 * k ^ 2 + 4 * a ^ 2 * e * k ^ 3 + 2 * a * d ^ 3 * b ^ 2 + 4 * a * d ^ 3 * b * k + 2 * a * d ^ 3 * e * k + 2 * a * d ^ 3 * k ^ 2 + 2 * a * d * b ^ 3 * k + 2 * a * d * b ^ 2 * e * k + 6 * a * d * b ^ 2 * k ^ 2 + 2 * a * d * b * e ^ 2 * k + 4 * a * d * b * e * k ^ 2 + 2 * a * d * b * k ^ 3 + 2 * a * d * e ^ 3 * k + 6 * a * d * e ^ 2 * k ^ 2 + 2 * a * d * e * k ^ 3 + d ^ 4 * b ^ 2 + 2 * d ^ 4 * b * k + d ^ 4 * k ^ 2 + 2 * d ^ 2 * b ^ 3 * k + 5 * d ^ 2 * b ^ 2 * k ^ 2 + 2 * d ^ 2 * b * e ^ 2 * k + 2 * d ^ 2 * b * e * k ^ 2 + 4 * d ^ 2 * b * k ^ 3 + 3 * d ^ 2 * e ^ 2 * k ^ 2 + 2 * d ^ 2 * e * k ^ 3 + 2 * b ^ 4 * k ^ 2 + 4 * b ^ 3 * k ^ 3 + 4 * b ^ 2 * e ^ 2 * k ^ 2 + 4 * b ^ 2 * e * k ^ 3 + 2 * b ^ 2 * k ^ 4 + 4 * b * e ^ 2 * k ^ 3 + 4 * b * e * k ^ 4 + 2 * e ^ 4 * k ^ 2 + 4 * e ^ 3 * k ^ 3 + 2 * e ^ 2 * k ^ 4 + (a-d)^2 * k^4
+  a ^ 4 * d ^ 2 + a ^ 4 * e ^ 2 + 2 * a ^ 4 * e * k + a ^ 4 * k ^ 2 + 2 * a ^ 3 * d ^ 3 +
+    2 * a ^ 3 * d * b * k + 2 * a ^ 3 * d * e ^ 2 + 4 * a ^ 3 * d * e * k + 2 * a ^ 3 * d * k ^ 2 +
+    a ^ 2 * d ^ 4 + a ^ 2 * d ^ 2 * b ^ 2 + 4 * a ^ 2 * d ^ 2 * b * k + a ^ 2 * d ^ 2 * e ^ 2 +
+    4 * a ^ 2 * d ^ 2 * e * k + 2 * a ^ 2 * d ^ 2 * k ^ 2 + 2 * a ^ 2 * b ^ 2 * e * k +
+    3 * a ^ 2 * b ^ 2 * k ^ 2 + 2 * a ^ 2 * b * e * k ^ 2 + 2 * a ^ 2 * b * k ^ 3 +
+    2 * a ^ 2 * e ^ 3 * k + 5 * a ^ 2 * e ^ 2 * k ^ 2 + 4 * a ^ 2 * e * k ^ 3 +
+    2 * a * d ^ 3 * b ^ 2 + 4 * a * d ^ 3 * b * k + 2 * a * d ^ 3 * e * k + 2 * a * d ^ 3 * k ^ 2 +
+    2 * a * d * b ^ 3 * k + 2 * a * d * b ^ 2 * e * k + 6 * a * d * b ^ 2 * k ^ 2 +
+    2 * a * d * b * e ^ 2 * k + 4 * a * d * b * e * k ^ 2 + 2 * a * d * b * k ^ 3 +
+    2 * a * d * e ^ 3 * k + 6 * a * d * e ^ 2 * k ^ 2 + 2 * a * d * e * k ^ 3 + d ^ 4 * b ^ 2 +
+    2 * d ^ 4 * b * k + d ^ 4 * k ^ 2 + 2 * d ^ 2 * b ^ 3 * k + 5 * d ^ 2 * b ^ 2 * k ^ 2 +
+    2 * d ^ 2 * b * e ^ 2 * k + 2 * d ^ 2 * b * e * k ^ 2 + 4 * d ^ 2 * b * k ^ 3 +
+    3 * d ^ 2 * e ^ 2 * k ^ 2 + 2 * d ^ 2 * e * k ^ 3 + 2 * b ^ 4 * k ^ 2 + 4 * b ^ 3 * k ^ 3 +
+    4 * b ^ 2 * e ^ 2 * k ^ 2 + 4 * b ^ 2 * e * k ^ 3 + 2 * b ^ 2 * k ^ 4 + 4 * b * e ^ 2 * k ^ 3 +
+    4 * b * e * k ^ 4 + 2 * e ^ 4 * k ^ 2 + 4 * e ^ 3 * k ^ 3 + 2 * e ^ 2 * k ^ 4 + (a-d)^2 * k^4
 
 def matrix (a d b e k : ℝ) : SymmetricMatrix :=
   let q := denominator a d b e k
@@ -72,7 +114,7 @@ set_option maxHeartbeats 4000000 in
       k * coupling a d b e * minorNumerator a d b e k / (denominator a d b e k)^2 := by
   dsimp [matrix, SymmetricMatrix.minor2]
   field_simp [hq]
-  dsimp [n11,n12,n22,coupling,gap,denominator,minorNumerator]
+  dsimp [n11,n12,n22,coupling,minorNumerator]
   ring
 
 set_option maxHeartbeats 4000000 in
@@ -83,7 +125,7 @@ set_option maxHeartbeats 4000000 in
         (denominator a d b e k)^3 := by
   dsimp [matrix, SymmetricMatrix.det]
   field_simp [hq]
-  dsimp [n11,n12,n13,n22,n23,n33,coupling,gap,denominator,detNumerator]
+  dsimp [n11,n12,n13,n22,n23,n33,coupling,gap,detNumerator]
   ring
 
 @[powerlib_foundation] theorem eq11 (a d b e k : ℝ)
@@ -181,11 +223,25 @@ def synthesize (m : Circuit) (hp : m.Passive) (hd : m.Damped) : Accepted m := by
     exact div_pos (mul_pos (mul_pos (mul_pos (pow_pos hk 2) (pow_pos hJ 2)) hG)
       (PassiveWitness.detNumerator_pos ha hd' hb he hk)) (pow_pos hq 3)
 
+@[powerlib_domain] theorem passive_asymptoticallyStable (m : Circuit) (hp : m.Passive) (hd : m.Damped)
+    {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : AsymptoticallyStable m u vg e :=
+  (synthesize m hp hd).asymptoticallyStable he
+
+@[powerlib_domain] theorem passive_globallyAsymptoticallyStable
+    (m : Circuit) (hp : m.Passive) (hd : m.Damped)
+    {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : GloballyAsymptoticallyStable m u vg e :=
+  (synthesize m hp hd).globallyAsymptoticallyStable he
+
+@[powerlib_domain] theorem passive_globallyExponentiallyStable
+    (m : Circuit) (hp : m.Passive) (hd : m.Damped)
+    {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : GloballyExponentiallyStable m u vg e :=
+  (synthesize m hp hd).globallyExponentiallyStable he
+
 @[simp, powerlib_domain] theorem passive_asymptoticallyStable_iff (m : Circuit) (hp : m.Passive)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) :
     AsymptoticallyStable m u vg e ↔ m.Damped :=
   ⟨asymptoticallyStable_requires_damping he,
-    fun hd => (synthesize m hp hd).asymptoticallyStable he⟩
+    fun hd => passive_asymptoticallyStable m hp hd he⟩
 
 @[simp, powerlib_domain] theorem passive_globallyAsymptoticallyStable_iff (m : Circuit) (hp : m.Passive)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) :

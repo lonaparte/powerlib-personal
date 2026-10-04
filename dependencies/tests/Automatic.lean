@@ -88,3 +88,15 @@ example (m : LCL.Circuit) (hp : m.Passive) (u vg : ℝ) (e : LCL.State)
 example (m : LCL.Circuit) (h1 : m.first.resistance = 0) (h2 : m.second.resistance = 0)
     (u vg : ℝ) (e : LCL.State) (he : LCL.IsEquilibrium m u vg e) :
     ¬ LCL.AsymptoticallyStable m u vg e := by powerlib_auto
+
+example (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
+    LCL.AsymptoticallyStable m 0 0 0 := by powerlib_auto
+
+example (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) (u vg : ℝ) (e : LCL.State)
+    (he : LCL.IsEquilibrium m u vg e) :
+    LCL.GloballyExponentiallyStable m u vg e := by powerlib_auto
+
+example (m : LCL.Circuit) (hp : m.Passive) (u vg : ℝ) (e : LCL.State)
+    (he : LCL.IsEquilibrium m u vg e) :
+    LCL.AsymptoticallyStable m u vg e ↔ m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0 := by
+  powerlib_auto
