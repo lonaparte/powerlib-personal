@@ -184,7 +184,7 @@ def proof_source(model, p):
             checks + "end Candidate\nnamespace Admission\n" +
             model_source("submittedModel", model) + '''
 def accepted : powerlib.LCL.Accepted submittedModel := Candidate.certificate
-theorem stable : submittedModel.Stable := accepted.stable
+theorem stable : (powerlib.LCL.toStateSpace submittedModel).Stable := accepted.stable
 theorem positive (x y z : ℝ) (hn : x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) :
     0 < powerlib.LCL.energy accepted.p x y z := accepted.positive x y z hn
 theorem dissipation (x y z : ℝ) :
@@ -209,7 +209,8 @@ def certificate_report(model, p):
             "state_order": ["converter_current", "capacitor_voltage", "grid_current"],
             "P": matrix_data(p), "Q": matrix_data(IDENTITY),
             "leading_minors": list(map(str, leading_minors(p))),
-            "status": "UNVERIFIED", "kernel_verified": False}
+            "status": "UNVERIFIED", "kernel_verified": False,
+            "maturity": "Unverified proof artifact"}
 
 
 def synthesize(model, kernel=False):
@@ -225,6 +226,8 @@ def synthesize(model, kernel=False):
         report["lean"] = verify_kernel(proof)
         report["kernel_verified"] = True
         report["status"] = "ACCEPTED"
+        report["maturity"] = "S-level"
+        report["witness_origin"] = "Automatic exact Lyapunov synthesis from witness-free model"
         report["theorems"] = ["Admission.stable", "Admission.positive", "Admission.dissipation"]
     (directory / "certificate.json").write_text(json.dumps(report, indent=2) + "\n")
     return report
@@ -267,6 +270,8 @@ def verify_saved(model, path, kernel=False):
             report["lean"] = verify_kernel(proof)
         report["kernel_verified"] = True
         report["status"] = "ACCEPTED"
+        report["maturity"] = "Certificate verification"
+        report["witness_origin"] = "Submitted certificate"
         report["theorems"] = ["Admission.stable", "Admission.positive", "Admission.dissipation"]
     return report
 
@@ -321,6 +326,8 @@ theorem refuted : ¬ ({proposition}) := by
         results.append({"conjecture": proposition, "status": status,
                         "proof": str(proof), "proof_sha256": digest(proof)})
     report = {"scope": "Finite search of three conditions in the passive canonical LCL family",
+              "maturity": "Fixed-candidate verification prototype",
+              "conjecture_generation": "Three manually enumerated conditions",
               "conversion": bridge, "results": results}
     (directory / "report.json").write_text(json.dumps(report, indent=2)+"\n")
     if [item["status"] for item in results] != ["PROVED", "REFUTED", "REFUTED"]:
@@ -334,7 +341,7 @@ def main():
     commands.add_parser("derive").add_argument("model")
     synthesis = commands.add_parser("synthesize")
     synthesis.add_argument("model")
-    synthesis.add_argument("--verify", action="store_true", help="Ask Lean to check the generated arithmetic proof")
+    synthesis.add_argument("--verify", action="store_true", help="Kernel-check the certificate and semantic theorems")
     verification = commands.add_parser("verify")
     verification.add_argument("model")
     verification.add_argument("certificate")

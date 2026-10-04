@@ -94,7 +94,9 @@ def atp(path):
                      admission_source(resistance, inductance, p, rate))
     check_lean(proof)
     report = {
-        "status": "ACCEPTED", "model": {"resistance": str(resistance), "inductance": str(inductance)},
+        "status": "ACCEPTED", "maturity": "S-level",
+        "witness_origin": "Automatic exact synthesis from witness-free model",
+        "model": {"resistance": str(resistance), "inductance": str(inductance)},
         "state_space": {"decay": str(resistance / inductance), "input_gain": str(1 / inductance)},
         "certificate": {"p": str(p), "squared_current_decay_rate": str(rate)},
         "theorem": "Admission.stable", "proof": str(proof),
@@ -137,6 +139,8 @@ theorem refuted : ¬ ({proposition}) := by
         results.append({"conjecture": proposition, "status": status,
                         "proof": str(artifact), "proof_sha256": digest(artifact)})
     report = {"scope": "Finite search of three resistance sign conditions in the canonical RL family",
+              "maturity": "Fixed-candidate verification prototype",
+              "conjecture_generation": "Three manually enumerated conditions",
               "results": results}
     (directory / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     if [item["status"] for item in results] != ["PROVED", "REFUTED", "REFUTED"]:

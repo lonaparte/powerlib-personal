@@ -48,3 +48,41 @@ example (m : powerlib.Impedance) :
     (powerlib.toStateSpace m).Stable ↔ m.Stable :=
   powerlib.stability_agrees m
 ```
+
+## Canonical LCL plant
+
+The LCL family has stationary scalar phase states `(i1, vc, i2)` and external
+terminal voltages `(u, vg)`. Its continuous-time equations are
+`L1*i1' = u - R1*i1 - vc`, `C*vc' = i1 - i2`, and
+`L2*i2' = vc - R2*i2 - vg`. Inductances and capacitance are strictly positive.
+The model includes no controller, PLL, PWM, delay, or additional grid dynamics.
+It is linear; perturbations about a constant-input equilibrium use the same
+state matrix with terminal input perturbations held at zero.
+
+Here `Stable` means all poles of the formal internal state matrix lie strictly
+in the open left half-plane. For nonnegative resistances, the public theorem
+states that this holds exactly when the two resistances are not both zero:
+
+```lean
+import powerlib
+
+#check powerlib.lcl_stable_iff
+#check powerlib.LCL.Accepted.stable
+```
+
+The Agda conversion reuses the RL branch conversion twice and converts the
+capacitor gain. Lean checks its exported endpoint, the physical equations,
+the state matrix, its characteristic polynomial, and the stability theorem.
+ATP solves the symmetric Lyapunov equations in exact rational arithmetic to
+find `P` from model parameters alone. Lean independently reconstructs the
+submitted model, checks the indexed certificate and its transitive axioms,
+and derives stability, positive energy, and strict energy dissipation.
+
+```sh
+python3 dependencies/powerlib.py atp dependencies/examples/lcl.json --family lcl
+python3 dependencies/powerlib.py atd --family lcl
+```
+
+The LCL `atd` command is also a fixed-candidate verification prototype.
+Generated model-specific proofs remain proof artifacts; the public general
+theorems are available through `import powerlib`.

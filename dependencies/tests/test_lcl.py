@@ -8,9 +8,10 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from common import RESULTS, run
+from common import ROOT, CACHE, RESULTS, audit, check_lean, run
+from lcl_bridge import render
 from lcl import (Model, certificate_fraction, certificate_report, coefficients,
-                 determinant, derive, hurwitz_checks, model_from_data, proof_source,
+                 determinant, derive, hurwitz_checks, model_from_data, model_source, proof_source,
                  state_matrix, synthesize_witness, verify_kernel, verify_saved,
                  verify_witness)
 
@@ -61,6 +62,15 @@ class DerivationTests(unittest.TestCase):
                 model_from_data(data)
         with self.assertRaises(ValueError):
             Model(1, F(1), F(1), F(1), F(0))
+
+    def test_wire_decoder_rejects_malformed_or_ill_typed_data(self):
+        valid = json.loads((ROOT / "dependencies/lcl_wire.json").read_text())
+        render(valid, "test", "test")
+        for bad in [valid[:-1], valid+[0], [20261004, 2], [20261004, 1, 99],
+                    [20261004, 1, 0, 5], [20261004, 1, 0, 2],
+                    [20261004, 1, True], [20261004, 1, -1]]:
+            with self.subTest(wire=bad), self.assertRaises(ValueError):
+                render(bad, "test", "test")
 
 
 class SynthesisTests(unittest.TestCase):
@@ -156,6 +166,51 @@ class KernelTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             verify_kernel(proof)
         self.assertIn("sorryAx", proof.with_suffix(".log").read_text())
+
+    def test_custom_axiom_cannot_pass_audit(self):
+        proof = self.write_proof(model(), synthesize_witness(model()))
+        source = proof.read_text().replace("namespace Candidate", "axiom forbidden : False\nnamespace Candidate")
+        proof.write_text(source.replace("by norm_num", "by exact False.elim forbidden"))
+        with self.assertRaises(RuntimeError):
+            verify_kernel(proof)
+        self.assertIn("Unexpected axiom forbidden", proof.with_suffix(".log").read_text())
+
+    def test_different_candidate_model_is_a_type_mismatch(self):
+        other = model(2, 0)
+        proof = self.write_proof(other, synthesize_witness(other))
+        proof.write_text(proof.read_text().replace(model_source("submittedModel", other),
+                                                  model_source("submittedModel", model())))
+        with self.assertRaises(RuntimeError):
+            verify_kernel(proof)
+        self.assertIn("type mismatch", proof.with_suffix(".log").read_text())
+
+    def test_wrong_wire_fails_lean_endpoint(self):
+        # A typed projection swap must still fail the independent endpoint contract.
+        words = json.loads((ROOT / "dependencies/lcl_wire.json").read_text())
+        words[4] = 1
+        proof = self.root / "WrongConversion.lean"
+        proof.write_text("import Lean\n"+render(words, "test", "test")+
+                         audit(["powerlib.generated.convertLCL_spec"], include_core=False))
+        with self.assertRaises(RuntimeError):
+            check_lean(proof)
+        self.assertIn("rfl", proof.with_suffix(".log").read_text())
+
+    def test_wrong_agda_conversion_fails_roundtrip(self):
+        stage = self.root / "negative-agda"
+        (stage / "theorems").mkdir(parents=True)
+        for name in ["Conversion.agda", "LCLConversion.agda"]:
+            source = (ROOT / "theorems" / name).read_text()
+            if name == "LCLConversion.agda":
+                source = source.replace("RL.run scale reciprocal (fst (fst x))", "fst (fst x)")
+            (stage / "theorems" / name).write_text(source)
+        (stage / "powerlib.agda-lib").write_text((ROOT / "powerlib.agda-lib").read_text())
+        libraries = stage / "libraries"
+        libraries.write_text(str(CACHE / "cubical/cubical.agda-lib")+"\n")
+        code, log = run([CACHE / "agda", f"--library-file={libraries}",
+                         "--no-default-libraries", stage / "theorems/LCLConversion.agda"], cwd=stage)
+        self.assertNotEqual(code, 0, log)
+        self.assertIn("recover", log)
+        self.assertNotIn("Failed to find source", log)
 
 
 if __name__ == "__main__":

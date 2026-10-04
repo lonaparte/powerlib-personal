@@ -1,5 +1,18 @@
 import powerlib
 
+#check powerlib.lcl_stable_iff
+#print axioms powerlib.lcl_stable_iff
+#print axioms powerlib.LCL.Accepted.stable
+
+-- Internal pole stability for the passive canonical three-state LCL plant.
+example (m : powerlib.LCL.Circuit) (hp : m.Passive) :
+    (powerlib.LCL.toStateSpace m).Stable ↔
+      m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0 :=
+  powerlib.lcl_stable_iff m hp
+
+example (m : powerlib.LCL.Circuit) (certificate : powerlib.LCL.Accepted m) :
+    (powerlib.LCL.toStateSpace m).Stable := certificate.stable
+
 -- Reuse stability through the equivalence between the two model descriptions.
 example (m : powerlib.Impedance) :
     (powerlib.toStateSpace m).Stable ↔ m.Stable :=

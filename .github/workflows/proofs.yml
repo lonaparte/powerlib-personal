@@ -22,7 +22,10 @@ jobs:
       - uses: leanprover/lean-action@f061402b660e0c34644504b324e830f2991d4865
         with:
           use-mathlib-cache: "true"
+          build: "false"
           test: "false"
+      - name: Build the public theorem layer
+        run: lake build
       - name: Audit project theorems
         run: lake env lean dependencies/tests/Audit.lean
       - name: Check Agda conversion and dependency pins
@@ -33,3 +36,10 @@ jobs:
         env:
           POWERLIB_LCL_KERNEL_TESTS: "1"
         run: python3 -m unittest discover -s dependencies/tests -v
+      - name: Check public theorem examples and synthesis paths
+        run: |
+          lake env lean dependencies/examples/Use.lean
+          python3 dependencies/powerlib.py atp dependencies/examples/rl.json
+          python3 dependencies/powerlib.py atp dependencies/examples/lcl.json --family lcl
+          python3 dependencies/powerlib.py atd
+          python3 dependencies/powerlib.py atd --family lcl

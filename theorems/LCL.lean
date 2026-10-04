@@ -4,8 +4,13 @@ import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 
 /-! Canonical continuous-time LCL plant with two series RL branches and an ideal
 shunt capacitor. Both terminal voltages are external inputs. No controller,
-PLL, sampling delay, or additional grid state is included. State coordinates
-are converter current, capacitor voltage, and grid current. -/
+PLL, PWM, sampling delay, or additional grid state is included. Coordinates are
+the stationary scalar phase variables (converter current, capacitor voltage,
+grid current). The plant is linear, so perturbations about any constant-input
+equilibrium satisfy the same homogeneous continuous-time dynamics. Inductances
+and capacitance are strictly positive; resistances may have either sign unless
+Passivity is assumed. Stability means all internal state-matrix poles are in
+the open left half-plane, with terminal input perturbations held at zero. -/
 noncomputable section
 namespace powerlib.LCL
 
@@ -95,6 +100,23 @@ def StateSpace.matrix (m : StateSpace) : Matrix (Fin 3) (Fin 3) ℝ :=
     ![m.capacitorGain.val, 0, -m.capacitorGain.val],
     ![0, m.second.inputGain.val, -m.second.decay]]
 
+-- The matrix is constructed from, and agrees with, the physical vector field.
+theorem StateSpace.matrix_mulVec (m : StateSpace) (x y z : ℝ) :
+    m.matrix.mulVec ![x, y, z] =
+      ![(m.field x y z 0 0).1, (m.field x y z 0 0).2.1,
+        (m.field x y z 0 0).2.2] := by
+  ext i
+  fin_cases i <;>
+    simp [StateSpace.matrix, StateSpace.field, Matrix.mulVec, dotProduct,
+      Fin.sum_univ_succ] <;> ring
+
+theorem StateSpace.perturbation (m : StateSpace) (x y z dx dy dz u vg : ℝ) :
+    let f := m.field (x + dx) (y + dy) (z + dz) u vg
+    let base := m.field x y z u vg
+    (f.1 - base.1, f.2.1 - base.2.1, f.2.2 - base.2.2) = m.field dx dy dz 0 0 := by
+  dsimp [StateSpace.field]
+  ext <;> ring
+
 def StateSpace.characteristic (m : StateSpace) (s : ℂ) : ℂ :=
   Matrix.det (s • (1 : Matrix (Fin 3) (Fin 3) ℂ) - m.matrix.map (fun r => (r : ℂ)))
 
@@ -109,6 +131,7 @@ theorem same_characteristic (m : Circuit) (s : ℂ) :
   simp [StateSpace.characteristic, StateSpace.matrix, Matrix.det_fin_three,
     toStateSpace, generated.convertLCL, powerlib.reciprocal, Circuit.frequency,
     Circuit.a3, Circuit.a2, Circuit.a1, Circuit.a0]
+  push_cast
   field_simp [hL1, hL2, hC]
   ring
 
@@ -270,8 +293,8 @@ structure Accepted (m : Circuit) where
     (toStateSpace m).second.decay*p.p23 + (toStateSpace m).second.inputGain.val*p.p33 = 0
   eq33 : -2*(toStateSpace m).capacitorGain.val*p.p23 - 2*(toStateSpace m).second.decay*p.p33 = -1
 
-theorem Accepted.stable {m : Circuit} (c : Accepted m) : m.Stable :=
-  stable_of_hurwitz m c.a2_pos c.a1_pos c.a0_pos c.gap_pos
+theorem Accepted.stable {m : Circuit} (c : Accepted m) : (toStateSpace m).Stable :=
+  (stability_agrees m).mpr (stable_of_hurwitz m c.a2_pos c.a1_pos c.a0_pos c.gap_pos)
 
 theorem Accepted.positive {m : Circuit} (c : Accepted m) (x y z : ℝ)
     (hn : x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) : 0 < energy c.p x y z :=
@@ -285,3 +308,12 @@ theorem Accepted.dissipation {m : Circuit} (c : Accepted m) (x y z : ℝ) :
     y^2*c.eq22 + 2*y*z*c.eq23 + z^2*c.eq33
 
 end powerlib.LCL
+
+namespace powerlib
+
+-- Public theorem for the passive canonical LCL plant's internal poles.
+theorem lcl_stable_iff (m : LCL.Circuit) (hp : m.Passive) :
+    (LCL.toStateSpace m).Stable ↔ m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0 :=
+  (LCL.stability_agrees m).trans (LCL.passive_stable_iff m hp)
+
+end powerlib
