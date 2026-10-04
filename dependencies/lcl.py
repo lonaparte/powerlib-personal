@@ -349,8 +349,8 @@ def atd():
         proof.write_text(f'''import powerlib
 @[powerlib_domain] theorem discovered : {proposition} := by
   intro m hp
-  rw [powerlib.LCL.passive_asymptoticallyStable_iff m hp (powerlib.LCL.zero_equilibrium m)]
-  first | rfl | tauto
+  rw [powerlib.LCL.passive_asymptoticallyStable_iff m hp (powerlib.LCL.zero_equilibrium m)] <;>
+    first | rfl | tauto
 ''' + audit(["discovered"]))
         code, log = run(["lake", "env", "lean", proof])
         proof.with_suffix(".log").write_text(log)
