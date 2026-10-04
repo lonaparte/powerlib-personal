@@ -134,13 +134,13 @@ def GloballyExponentiallyStable (m : Impedance) (v e : ℝ) : Prop :=
   ∃ C ≥ (1 : ℝ), ∃ rate > 0, ∀ i, IsTrajectory m v i → ∀ t ≥ 0,
     |i t - e| ≤ C * |i 0 - e| * Real.exp (-rate * t)
 
-@[powerlib_domain] theorem trajectory_error_exact {m : Impedance} {v e : ℝ} {i : ℝ → ℝ}
+@[powerlib_domain, aesop unsafe 80% apply] theorem trajectory_error_exact {m : Impedance} {v e : ℝ} {i : ℝ → ℝ}
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) {t : ℝ} (ht : 0 ≤ t) :
     |i t - e| = |i 0 - e| * Real.exp (-(toStateSpace m).decay * t) := by
   have h := trajectory_eq_response (trajectory_shift he hi) ht
   rw [h, response, abs_mul, abs_of_pos (Real.exp_pos _)]
 
-@[powerlib_domain] theorem trajectory_tendsto {m : Impedance} {v e : ℝ} {i : ℝ → ℝ}
+@[powerlib_domain, aesop unsafe 80% apply] theorem trajectory_tendsto {m : Impedance} {v e : ℝ} {i : ℝ → ℝ}
     (hm : m.Stable) (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) :
     Tendsto i atTop (𝓝 e) := by
   have ha : 0 < (toStateSpace m).decay := (stability_agrees m).mpr hm
@@ -153,7 +153,7 @@ def GloballyExponentiallyStable (m : Impedance) (v e : ℝ) : Prop :=
     exact (trajectory_eq_equilibriumResponse he hi ht).symm
   simpa using h.congr' heq
 
-@[powerlib_domain] theorem lyapunovStable_of_stable {m : Impedance} {v e : ℝ}
+@[powerlib_domain, aesop unsafe 80% apply] theorem lyapunovStable_of_stable {m : Impedance} {v e : ℝ}
     (hm : m.Stable) (he : IsEquilibrium m v e) : LyapunovStable m v e := by
   have ha : 0 < (toStateSpace m).decay := (stability_agrees m).mpr hm
   intro ε hε
@@ -172,7 +172,7 @@ def GloballyExponentiallyStable (m : Impedance) (v e : ℝ) : Prop :=
     (h : GloballyAsymptoticallyStable m v e) : AsymptoticallyStable m v e :=
   ⟨h.1, 1, zero_lt_one, fun i hi _ => h.2 i hi⟩
 
-@[powerlib_domain] theorem globallyExponentiallyStable_of_stable {m : Impedance} {v e : ℝ}
+@[powerlib_domain, aesop unsafe 80% apply] theorem globallyExponentiallyStable_of_stable {m : Impedance} {v e : ℝ}
     (hm : m.Stable) (he : IsEquilibrium m v e) : GloballyExponentiallyStable m v e := by
   refine ⟨1, le_rfl, (toStateSpace m).decay, (stability_agrees m).mpr hm, ?_⟩
   intro i hi t ht
@@ -204,7 +204,7 @@ def GloballyExponentiallyStable (m : Impedance) (v e : ℝ) : Prop :=
   have hm := mul_le_mul_of_nonneg_left hex hp.le
   nlinarith
 
-@[powerlib_domain] theorem asymptoticallyStable_iff_stable {m : Impedance} {v e : ℝ}
+@[simp, powerlib_domain] theorem asymptoticallyStable_iff_stable {m : Impedance} {v e : ℝ}
     (he : IsEquilibrium m v e) : AsymptoticallyStable m v e ↔ m.Stable :=
   ⟨stable_of_asymptoticallyStable he, fun hm =>
     asymptoticallyStable_of_global (globallyAsymptoticallyStable_of_stable hm he)⟩
@@ -213,7 +213,7 @@ def GloballyExponentiallyStable (m : Impedance) (v e : ℝ) : Prop :=
     (he : IsEquilibrium m v e) : AsymptoticallyStable m v e ↔ 0 < m.resistance := by
   rw [asymptoticallyStable_iff_stable he, impedance_stable_iff]
 
-@[powerlib_domain] theorem globallyAsymptoticallyStable_iff_stable {m : Impedance} {v e : ℝ}
+@[simp, powerlib_domain] theorem globallyAsymptoticallyStable_iff_stable {m : Impedance} {v e : ℝ}
     (he : IsEquilibrium m v e) : GloballyAsymptoticallyStable m v e ↔ m.Stable :=
   ⟨fun h => stable_of_asymptoticallyStable he (asymptoticallyStable_of_global h),
     fun hm => globallyAsymptoticallyStable_of_stable hm he⟩
@@ -230,7 +230,7 @@ def synthesize (m : Impedance) (hR : 0 < m.resistance) : Accepted m where
     field_simp [ne_of_gt hR, ne_of_gt m.inductance.property]
   rate_exact := rfl
 
-@[powerlib_domain] theorem accepted_exists_iff_stable (m : Impedance) : Nonempty (Accepted m) ↔ m.Stable :=
+@[simp, powerlib_domain] theorem accepted_exists_iff_stable (m : Impedance) : Nonempty (Accepted m) ↔ m.Stable :=
   ⟨fun ⟨c⟩ => c.stable, fun hm => ⟨synthesize m ((impedance_stable_iff m).mp hm)⟩⟩
 
 @[powerlib_domain] theorem Accepted.lyapunovStable {m : Impedance} (c : Accepted m) {v e : ℝ}
@@ -249,13 +249,13 @@ def synthesize (m : Impedance) (hR : 0 < m.resistance) : Accepted m where
     (he : IsEquilibrium m v e) : GloballyExponentiallyStable m v e :=
   globallyExponentiallyStable_of_stable c.stable he
 
-@[powerlib_domain] theorem Accepted.trajectory_decay {m : Impedance} (c : Accepted m) {v e : ℝ} {i : ℝ → ℝ}
+@[powerlib_domain, aesop unsafe 80% apply] theorem Accepted.trajectory_decay {m : Impedance} (c : Accepted m) {v e : ℝ} {i : ℝ → ℝ}
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) {t : ℝ} (ht : 0 ≤ t) :
     (i t - e) ^ 2 = (i 0 - e) ^ 2 * Real.exp (-(c.rate * t)) := by
   rw [trajectory_eq_response (trajectory_shift he hi) ht]
   exact c.decay_bound _ _
 
-@[powerlib_domain] theorem Accepted.energy_derivative {m : Impedance} (c : Accepted m) {v e : ℝ} {i : ℝ → ℝ}
+@[powerlib_domain, aesop unsafe 80% apply] theorem Accepted.energy_derivative {m : Impedance} (c : Accepted m) {v e : ℝ} {i : ℝ → ℝ}
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) {t : ℝ} (ht : 0 ≤ t) :
     HasDerivWithinAt (fun s => energy c.p (i s - e)) (-(i t - e) ^ 2) (Ici 0) t := by
   have h := (((trajectory_shift he hi) t ht).pow 2).const_mul c.p

@@ -1,6 +1,7 @@
 import powerlib
 
-open powerlib
+open powerlib Filter
+open scoped Topology
 
 example (m : StateSpace) : toStateSpace (toImpedance m) = m := by simp
 example (m : Impedance) : toImpedance (toStateSpace m) = m := by simp
@@ -17,6 +18,47 @@ example (m : Impedance) (initial t : ℝ) :
   aesop
 example (m : Impedance) (c : Accepted m) (initial t : ℝ) :
     (response m initial t) ^ 2 = initial ^ 2 * Real.exp (-c.rate * t) := by aesop
+
+-- Ordinary callers use the default tactic interfaces, with no supplied rule lists.
+example (m : Impedance) (e initial : ℝ) :
+    equilibriumResponse m e initial 0 = initial := by simp
+example (m : Impedance) : IsEquilibrium m 0 0 := by simp
+example (m : Impedance) (v e : ℝ) (he : IsEquilibrium m v e) :
+    AsymptoticallyStable m v e ↔ 0 < m.resistance := by simp [he]
+example (m : Impedance) (v e : ℝ) (he : IsEquilibrium m v e) :
+    GloballyAsymptoticallyStable m v e ↔ 0 < m.resistance := by simp [he]
+example (m : Impedance) (hR : 0 < m.resistance) : Nonempty (Accepted m) := by
+  simpa using hR
+
+example (m : Impedance) (c : Accepted m) : AsymptoticallyStable m 0 0 := by aesop
+example (m : Impedance) (c : Accepted m) (v e : ℝ) (he : IsEquilibrium m v e) :
+    LyapunovStable m v e ∧ GloballyAsymptoticallyStable m v e ∧
+      GloballyExponentiallyStable m v e := by aesop
+example (m : Impedance) (hR : 0 < m.resistance) (v e : ℝ)
+    (he : IsEquilibrium m v e) : GloballyExponentiallyStable m v e := by aesop
+
+-- Library search handles existence without putting a generic existential rule
+-- into the default simplifier or Aesop rule set.
+example (m : Impedance) (v e initial : ℝ) (he : IsEquilibrium m v e) :
+    ∃ i, IsTrajectory m v i ∧ i 0 = initial := by exact?
+
+example (m : Impedance) (hm : m.Stable) (v e : ℝ) (i : ℝ → ℝ)
+    (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) :
+    Tendsto i atTop (𝓝 e) := by aesop
+example (m : Impedance) (v e : ℝ) (i : ℝ → ℝ)
+    (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) (t : ℝ) (ht : 0 ≤ t) :
+    |i t - e| = |i 0 - e| * Real.exp (-(toStateSpace m).decay * t) := by aesop
+example (m : Impedance) (c : Accepted m) (v e : ℝ) (i : ℝ → ℝ)
+    (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) (t : ℝ) (ht : 0 ≤ t) :
+    (i t - e) ^ 2 = (i 0 - e) ^ 2 * Real.exp (-(c.rate * t)) := by aesop
+example (m : Impedance) (c : Accepted m) (v e : ℝ) (i : ℝ → ℝ)
+    (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) (t : ℝ) (ht : 0 ≤ t) :
+    HasDerivWithinAt (fun s => energy c.p (i s - e)) (-(i t - e) ^ 2) (Set.Ici 0) t := by
+  aesop
+
+-- Standard simplification also rejects nonpositive resistance at zero input.
+example (m : Impedance) (hR : m.resistance ≤ 0) :
+    ¬ GloballyAsymptoticallyStable m 0 0 := by simpa using hR
 
 example (m : LCL.Circuit) : LCL.toCircuit (LCL.toStateSpace m) = m := by simp
 example (m : LCL.StateSpace) : LCL.toStateSpace (LCL.toCircuit m) = m := by simp

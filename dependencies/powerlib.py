@@ -80,25 +80,25 @@ example : accepted.rate = {literal(rate)} := by norm_num [accepted, Candidate.ce
       initial ^ 2 * Real.exp (-(accepted.rate * t)) := accepted.decay_bound initial t
 @[powerlib_domain] theorem small_signal : powerlib.AsymptoticallyStable submittedModel 0 0 := by
   have certificate := accepted
-  powerlib_auto
+  aesop
 @[powerlib_domain] theorem exponential (voltage : ℝ) :
     powerlib.GloballyExponentiallyStable submittedModel voltage
       (voltage / submittedModel.resistance) := by
   have he := equilibrium voltage
   have certificate := accepted
-  powerlib_auto
+  aesop
 @[powerlib_domain] theorem global_asymptotic (voltage : ℝ) :
     powerlib.GloballyAsymptoticallyStable submittedModel voltage
       (voltage / submittedModel.resistance) := by
   have he := equilibrium voltage
   have certificate := accepted
-  powerlib_auto
+  aesop
 @[powerlib_domain] theorem all_trajectory_decay (voltage equilibrium : ℝ) (i : ℝ → ℝ)
     (he : powerlib.IsEquilibrium submittedModel voltage equilibrium)
     (hi : powerlib.IsTrajectory submittedModel voltage i) (t : ℝ) (ht : 0 ≤ t) :
     (i t - equilibrium) ^ 2 =
       (i 0 - equilibrium) ^ 2 * Real.exp (-(accepted.rate * t)) := by
-  powerlib_auto
+  aesop
 end Admission
 ''' + audit(["Admission.accepted", "Admission.stable", "Admission.equilibrium", "Admission.dissipation", "Admission.decay",
              "Admission.small_signal", "Admission.exponential", "Admission.global_asymptotic",
