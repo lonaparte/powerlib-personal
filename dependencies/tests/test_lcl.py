@@ -163,6 +163,15 @@ class KernelTests(unittest.TestCase):
             self.assertNotIn("unknown module", log)
             self.assertNotIn("object file", log)
 
+    def test_lossless_and_unstable_signed_models_fail_in_kernel(self):
+        p = synthesize_witness(model())
+        for m in [model(0, 0), model(-1, 2)]:
+            with self.subTest(model=m), self.assertRaises(RuntimeError):
+                verify_kernel(self.write_proof(m, p))
+            log = (self.root / "Certificate.log").read_text()
+            self.assertIn("unsolved goals", log)
+            self.assertNotIn("unknown module", log)
+
     def test_sorry_cannot_pass_audit(self):
         proof = self.write_proof(model(), synthesize_witness(model()))
         proof.write_text(proof.read_text().replace("by norm_num", "by sorry"))

@@ -1,2 +1,3 @@
 import theorems.RLStability
-import theorems.LCL
+import theorems.LCLSynthesis
+import theorems.LibrarySearch

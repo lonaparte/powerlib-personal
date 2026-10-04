@@ -32,7 +32,9 @@ jobs:
         run: lake env lean dependencies/tests/Audit.lean
       - name: Check native automation and theorem classification
         timeout-minutes: 5
-        run: lake env lean dependencies/tests/Automation.lean
+        run: |
+          lake env lean dependencies/tests/Automation.lean
+          lake env lean dependencies/tests/Upstream.lean
       - name: Check Agda conversion and dependency pins
         run: python3 dependencies/setup.py
       - name: Check LCL conversion

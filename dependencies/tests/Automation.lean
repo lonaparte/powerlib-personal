@@ -81,6 +81,52 @@ example (p q : LCL.SymmetricMatrix) (h11 : p.p11 = q.p11) (h12 : p.p12 = q.p12)
     (h13 : p.p13 = q.p13) (h22 : p.p22 = q.p22) (h23 : p.p23 = q.p23)
     (h33 : p.p33 = q.p33) : p = q := by ext <;> assumption
 
+-- Native library search also covers the LCL consumers added on main.
+example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
+    (he : LCL.IsEquilibrium m u vg e) :
+    LCL.GloballyExponentiallyStable m u vg e := by exact?
+
+example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
+    (he : LCL.IsEquilibrium m u vg e) :
+    LCL.GloballyAsymptoticallyStable m u vg e := by exact?
+
+example (m : LCL.Circuit) (c : LCL.Accepted m) :
+    LCL.AsymptoticallyStable m 0 0 0 := by
+  have he : LCL.IsEquilibrium m 0 0 0 := by simp
+  exact?
+
+example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (initial : LCL.State) :
+    ∃ x, LCL.IsTrajectory m u vg x ∧ x 0 = initial := by exact?
+
+example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
+    (x : ℝ → LCL.State) (he : LCL.IsEquilibrium m u vg e) (hx : LCL.IsTrajectory m u vg x) :
+    Tendsto x atTop (𝓝 e) := by exact?
+
+example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
+    (x : ℝ → LCL.State) (he : LCL.IsEquilibrium m u vg e) (hx : LCL.IsTrajectory m u vg x)
+    (t : ℝ) (ht : 0 ≤ t) :
+    HasDerivWithinAt (fun s => LCL.quadraticEnergy c.p (x s - e))
+      (-LCL.squaredSize (x t - e)) (Set.Ici 0) t := by exact?
+
+example (m : LCL.Circuit) (hp : m.Passive) (u vg : ℝ) (e : LCL.State)
+    (he : LCL.IsEquilibrium m u vg e) : LCL.LyapunovStable m u vg e := by exact?
+
+example (m : LCL.Circuit) (h1 : m.first.resistance = 0) (h2 : m.second.resistance = 0)
+    (u vg : ℝ) (e : LCL.State) (he : LCL.IsEquilibrium m u vg e) :
+    ¬ LCL.AsymptoticallyStable m u vg e := by exact?
+
+example (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
+    LCL.AsymptoticallyStable m 0 0 0 := by simpa [hp] using hd
+
+example (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) (u vg : ℝ) (e : LCL.State)
+    (he : LCL.IsEquilibrium m u vg e) :
+    LCL.GloballyExponentiallyStable m u vg e := by exact?
+
+example (m : LCL.Circuit) (hp : m.Passive) (u vg : ℝ) (e : LCL.State)
+    (he : LCL.IsEquilibrium m u vg e) :
+    LCL.AsymptoticallyStable m u vg e ↔ m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0 := by
+  exact?
+
 open Lean Elab Command
 run_cmd do
   let env ← getEnv
@@ -90,9 +136,19 @@ run_cmd do
       `powerlib.Accepted.stable, `powerlib.LCL.Accepted.stable,
       `powerlib.asymptoticallyStable_iff_resistance_pos,
       `powerlib.Accepted.globallyExponentiallyStable,
-      `powerlib.Accepted.energy_derivative] do
+      `powerlib.Accepted.energy_derivative, `powerlib.LCL.Accepted.globallyExponentiallyStable,
+      `powerlib.LCL.Accepted.globallyAsymptoticallyStable,
+      `powerlib.LCL.Accepted.energy_derivative, `powerlib.LCL.trajectory_exists,
+      `powerlib.LCL.trajectory_unique, `powerlib.LCL.passive_lyapunovStable,
+      `powerlib.LCL.lossless_not_asymptoticallyStable,
+      `powerlib.LCL.lossless_energy_conserved] do
     unless domains.contains name do
       throwError "Public domain theorem missing from discovery: {name}"
+  for name in #[`powerlib.lcl_asymptotically_stable_iff,
+      `powerlib.lcl_globally_exponentially_stable_iff,
+      `powerlib.LCL.passive_asymptoticallyStable, `powerlib.LCL.passive_globallyExponentiallyStable] do
+    unless domains.contains name do
+      throwError "Public semantic theorem missing from discovery: {name}"
   for name in #[`powerlib.state_roundtrip, `powerlib.LCL.circuit_roundtrip,
       `powerlib.generated.convert_spec, `powerlib.generated.convertLCL_spec,
       `powerlib.trajectory_iff_circuit] do
