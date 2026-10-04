@@ -58,9 +58,15 @@ def IsEquilibrium (m : Circuit) (u vg : ℝ) (e : State) : Prop :=
   have h0 := congrFun he 0
   have h1 := congrFun he 1
   have h2 := congrFun he 2
-  simp [StateSpace.vectorField, StateSpace.field] at h0 h1 h2
+  dsimp [StateSpace.vectorField, StateSpace.field] at h0 h1 h2
   ext j
-  fin_cases j <;> simp [StateSpace.vectorField, StateSpace.field] <;> linarith
+  fin_cases j
+  · dsimp [StateSpace.vectorField, StateSpace.field]
+    linear_combination h0
+  · dsimp [StateSpace.vectorField, StateSpace.field]
+    linear_combination h1
+  · dsimp [StateSpace.vectorField, StateSpace.field]
+    linear_combination h2
 
 @[powerlib_foundation] theorem trajectory_shift {m : Circuit} {u vg : ℝ} {e : State}
     {x : ℝ → State} (he : IsEquilibrium m u vg e) (hx : IsTrajectory m u vg x) :
@@ -77,9 +83,12 @@ def equilibrium (m : Circuit) (u vg : ℝ) : State :=
   dsimp [IsEquilibrium, StateSpace.vectorField]
   rw [same_dynamics]
   ext j
-  fin_cases j <;> simp [equilibrium]
-  · ring
-  · have h : (m.first.resistance + m.second.resistance) *
+  fin_cases j
+  · simp [equilibrium]
+  · simp [equilibrium]
+  · change (u - m.first.resistance * ((u - vg) / m.a0) -
+        m.second.resistance * ((u - vg) / m.a0) - vg) / m.second.inductance.val = 0
+    have h : (m.first.resistance + m.second.resistance) *
         ((u - vg) / m.a0) = u - vg := by
       simpa only [Circuit.a0] using mul_div_cancel₀ (u - vg) h0
     have hz : u - m.first.resistance * ((u - vg) / m.a0) -
@@ -90,9 +99,6 @@ def equilibrium (m : Circuit) (u vg : ℝ) : State :=
 
 @[powerlib_domain] theorem equilibrium_unique {m : Circuit} {u vg : ℝ} {e : State}
     (h0 : m.a0 ≠ 0) (he : IsEquilibrium m u vg e) : e = equilibrium m u vg := by
-  have h1 := congrFun he 0
-  have h2 := congrFun he 1
-  have h3 := congrFun he 2
   simp only [IsEquilibrium, StateSpace.vectorField, same_dynamics] at he
   have hf := he
   have hfirst : u - m.first.resistance * e 0 - e 1 = 0 := by
@@ -104,12 +110,19 @@ def equilibrium (m : Circuit) (u vg : ℝ) : State :=
   have hlast : e 1 - m.second.resistance * e 2 - vg = 0 := by
     have h := congrFun hf 2
     simpa [div_eq_zero_iff, ne_of_gt m.second.inductance.property] using h
+  have h02 : e 0 = e 2 := sub_eq_zero.mp hmiddle
+  rw [← h02] at hlast
   have hi : e 0 = (u - vg) / m.a0 := by
     apply (eq_div_iff h0).mpr
     dsimp [Circuit.a0]
-    nlinarith
+    linear_combination -hfirst -hlast
   ext j
-  fin_cases j <;> simp [equilibrium] <;> nlinarith
+  fin_cases j
+  · exact hi
+  · change e 1 = u - m.first.resistance * ((u - vg) / m.a0)
+    rw [← hi]
+    linarith
+  · exact h02.symm.trans hi
 
 def response (m : Circuit) (initial : State) (t : ℝ) : State :=
   (NormedSpace.exp ℝ (t • (toStateSpace m).operator)) initial
