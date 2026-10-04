@@ -27,7 +27,7 @@ elab "powerlib_auto" : tactic => do
   let saved ← saveState
   try
     liftMetaTactic fun goal => do
-      let remaining ← SolveByElim.processSyntax { maxDepth := 3 }
+      let remaining ← SolveByElim.processSyntax { maxDepth := 8, exfalso := false }
         false false rules.toList [] #[] [goal]
       unless remaining.isEmpty do
         throwError "Short PowerLib proof search left unsolved goals"
