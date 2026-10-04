@@ -74,8 +74,29 @@ theorem dissipation (current : ℝ) :
 theorem decay (initial t : ℝ) :
     (powerlib.response submittedModel initial t) ^ 2 =
       initial ^ 2 * Real.exp (-accepted.rate * t) := accepted.decay_bound initial t
+theorem small_signal : powerlib.AsymptoticallyStable submittedModel 0 0 := by
+  have certificate := accepted
+  powerlib_auto
+theorem exponential (voltage equilibrium : ℝ)
+    (he : powerlib.IsEquilibrium submittedModel voltage equilibrium) :
+    powerlib.GloballyExponentiallyStable submittedModel voltage equilibrium := by
+  have certificate := accepted
+  powerlib_auto
+theorem global_asymptotic (voltage equilibrium : ℝ)
+    (he : powerlib.IsEquilibrium submittedModel voltage equilibrium) :
+    powerlib.GloballyAsymptoticallyStable submittedModel voltage equilibrium := by
+  have certificate := accepted
+  powerlib_auto
+theorem all_trajectory_decay (voltage equilibrium : ℝ) (i : ℝ → ℝ)
+    (he : powerlib.IsEquilibrium submittedModel voltage equilibrium)
+    (hi : powerlib.IsTrajectory submittedModel voltage i) (t : ℝ) (ht : 0 ≤ t) :
+    (i t - equilibrium) ^ 2 =
+      (i 0 - equilibrium) ^ 2 * Real.exp (-accepted.rate * t) := by
+  powerlib_auto
 end Admission
-''' + audit(["Admission.accepted", "Admission.stable", "Admission.dissipation", "Admission.decay"])
+''' + audit(["Admission.accepted", "Admission.stable", "Admission.dissipation", "Admission.decay",
+             "Admission.small_signal", "Admission.exponential", "Admission.global_asymptotic",
+             "Admission.all_trajectory_decay"])
 
 
 def output_dir(kind):
@@ -97,7 +118,11 @@ def atp(path):
         "status": "ACCEPTED", "model": {"resistance": str(resistance), "inductance": str(inductance)},
         "state_space": {"decay": str(resistance / inductance), "input_gain": str(1 / inductance)},
         "certificate": {"p": str(p), "squared_current_decay_rate": str(rate)},
-        "theorem": "Admission.stable", "proof": str(proof.relative_to(ROOT)),
+        "theorem": "Admission.small_signal",
+        "theorems": ["Admission.stable", "Admission.small_signal", "Admission.exponential",
+                     "Admission.global_asymptotic", "Admission.all_trajectory_decay"],
+        "semantics": "All forward trajectories; epsilon-delta stability and convergence",
+        "proof": str(proof.relative_to(ROOT)),
         "proof_sha256": digest(proof), "lean": demand(["lake", "env", "lean", "--version"]).strip(),
     }
     (directory / "report.json").write_text(json.dumps(report, indent=2) + "\n")
@@ -112,12 +137,13 @@ def atd():
         ("nonnegative", "0 ≤ m.resistance", 0),
         ("negative", "m.resistance < 0", 1),
     ]:
-        proposition = f"∀ m : powerlib.Impedance, m.Stable ↔ {condition}"
+        proposition = f"∀ m : powerlib.Impedance, powerlib.AsymptoticallyStable m 0 0 ↔ {condition}"
         path = directory / (name + ".lean")
         path.write_text(f'''import powerlib
 theorem discovered : {proposition} := by
   intro m
-  rw [powerlib.impedance_stable_iff] <;> (constructor <;> intro h <;> linarith)
+  rw [powerlib.asymptoticallyStable_iff_resistance_pos (powerlib.zero_equilibrium m)]
+  <;> (constructor <;> intro h <;> linarith)
 ''' + audit(["discovered"]))
         code, log = run(["lake", "env", "lean", path])
         path.with_suffix(".log").write_text(log)
@@ -128,7 +154,7 @@ theorem discovered : {proposition} := by
 theorem refuted : ¬ ({proposition}) := by
   intro h
   have hh := h ⟨{counterexample}, ⟨1, by norm_num⟩⟩
-  rw [powerlib.impedance_stable_iff] at hh
+  rw [powerlib.asymptoticallyStable_iff_resistance_pos (powerlib.zero_equilibrium _)] at hh
   norm_num at hh
 ''' + audit(["refuted"]))
             check_lean(refutation)

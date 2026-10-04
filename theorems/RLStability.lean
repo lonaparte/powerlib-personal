@@ -62,7 +62,7 @@ theorem trajectory_eq_response {m : Impedance} {i : ℝ → ℝ}
       (((hasDerivAt_id x).const_mul a).exp.hasDerivWithinAt) using 1 <;>
       simp [StateSpace.field, a] <;> ring
   have hb := (convex_Ici (0 : ℝ)).norm_image_sub_le_of_norm_hasDerivWithin_le
-    hd (fun x _ => by simp) (show (0 : ℝ) ∈ Ici 0 from le_rfl) ht
+    (C := 0) hd (fun x _ => by simp) (show (0 : ℝ) ∈ Ici 0 by simp) ht
   have hc : i t * Real.exp (a * t) = i 0 := by
     simpa using (sub_eq_zero.mp (norm_eq_zero.mp (le_antisymm (by simpa using hb) (norm_nonneg _))))
   have hh := congrArg (fun z : ℝ => z * Real.exp (-(a * t))) hc
@@ -171,6 +171,61 @@ theorem globallyExponentiallyStable_of_stable {m : Impedance} {v e : ℝ}
   intro i hi t ht
   simp only [one_mul]
   exact (trajectory_error_exact he hi ht).le
+
+/-- A nonpositive decay coefficient prevents even local attraction. -/
+theorem stable_of_asymptoticallyStable {m : Impedance} {v e : ℝ}
+    (he : IsEquilibrium m v e) (h : AsymptoticallyStable m v e) : m.Stable := by
+  apply (stability_agrees m).mp
+  change 0 < (toStateSpace m).decay
+  by_contra hn
+  have ha : (toStateSpace m).decay ≤ 0 := le_of_not_gt hn
+  obtain ⟨δ, hδ, hlocal⟩ := h.2
+  have h0 : |equilibriumResponse m e (e + δ / 2) 0 - e| < δ := by
+    rw [equilibriumResponse_initial]
+    have hp : 0 < δ / 2 := by linarith
+    simpa [abs_of_pos hp] using (show δ / 2 < δ by linarith)
+  have hlim := hlocal (equilibriumResponse m e (e + δ / 2))
+    (equilibriumResponse_trajectory he _) h0
+  have hev : ∀ᶠ t : ℝ in atTop,
+      equilibriumResponse m e (e + δ / 2) t < e + δ / 4 :=
+    hlim.eventually (gt_mem_nhds (by linarith))
+  obtain ⟨t, ht, hb⟩ := ((eventually_ge_atTop (0 : ℝ)).and hev).exists
+  have hex : 1 ≤ Real.exp (-(toStateSpace m).decay * t) :=
+    Real.one_le_exp_iff.mpr (mul_nonneg (neg_nonneg.mpr ha) ht)
+  dsimp [equilibriumResponse, response] at hb
+  have hp : 0 < δ / 2 := by linarith
+  have hm := mul_le_mul_of_nonneg_left hex hp.le
+  nlinarith
+
+theorem asymptoticallyStable_iff_stable {m : Impedance} {v e : ℝ}
+    (he : IsEquilibrium m v e) : AsymptoticallyStable m v e ↔ m.Stable :=
+  ⟨stable_of_asymptoticallyStable he, fun hm =>
+    asymptoticallyStable_of_global (globallyAsymptoticallyStable_of_stable hm he)⟩
+
+theorem asymptoticallyStable_iff_resistance_pos {m : Impedance} {v e : ℝ}
+    (he : IsEquilibrium m v e) : AsymptoticallyStable m v e ↔ 0 < m.resistance := by
+  rw [asymptoticallyStable_iff_stable he, impedance_stable_iff]
+
+theorem globallyAsymptoticallyStable_iff_stable {m : Impedance} {v e : ℝ}
+    (he : IsEquilibrium m v e) : GloballyAsymptoticallyStable m v e ↔ m.Stable :=
+  ⟨fun h => stable_of_asymptoticallyStable he (asymptoticallyStable_of_global h),
+    fun hm => globallyAsymptoticallyStable_of_stable hm he⟩
+
+/-- A symbolic certificate constructor: synthesis does not require a supplied witness. -/
+def synthesize (m : Impedance) (hR : 0 < m.resistance) : Accepted m where
+  p := m.inductance.val / (2 * m.resistance)
+  rate := 2 * (toStateSpace m).decay
+  p_pos := div_pos m.inductance.property (mul_pos (by norm_num) hR)
+  rate_pos := mul_pos (by norm_num)
+    ((stability_agrees m).mpr ((impedance_stable_iff m).mpr hR))
+  lyapunov_identity := by
+    dsimp [toStateSpace, generated.convert, reciprocal]
+    field_simp [ne_of_gt hR, ne_of_gt m.inductance.property]
+    <;> ring
+  rate_exact := rfl
+
+theorem accepted_exists_iff_stable (m : Impedance) : Nonempty (Accepted m) ↔ m.Stable :=
+  ⟨fun ⟨c⟩ => c.stable, fun hm => ⟨synthesize m ((impedance_stable_iff m).mp hm)⟩⟩
 
 theorem Accepted.lyapunovStable {m : Impedance} (c : Accepted m) {v e : ℝ}
     (he : IsEquilibrium m v e) : LyapunovStable m v e :=

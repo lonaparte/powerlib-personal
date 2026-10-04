@@ -15,7 +15,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
+        id: dependencies
         with:
           path: |
             .lake/packages
@@ -32,10 +33,20 @@ jobs:
       - name: Check Agda, bridge and Lean library
         run: python3 dependencies/setup.py
       - name: Check public API
-        run: lake env lean dependencies/examples/Use.lean
+        run: |
+          lake env lean dependencies/examples/Use.lean
+          lake env lean dependencies/tests/Automatic.lean
       - name: Synthesize and verify certificates and conjectures
         run: |
           python3 dependencies/powerlib.py atp dependencies/examples/rl.json
           python3 dependencies/powerlib.py atd
       - name: Positive and negative kernel tests
         run: python3 -m unittest discover -s dependencies/tests -v
+      - uses: actions/cache/save@v4
+        if: always() && steps.dependencies.outputs.cache-hit != 'true'
+        with:
+          path: |
+            .lake/packages
+            dependencies/.cache
+            ${{ runner.temp }}/lean-4.19.0-linux
+          key: rl-proof-4.19.0-agda-2.8.0-v1

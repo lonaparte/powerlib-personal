@@ -29,23 +29,19 @@ def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-CORE = [
-    "reciprocal_involutive", "scale_cancel", "state_roundtrip", "impedance_roundtrip",
-    "modelEquiv", "same_dynamics", "same_port_relation", "frequency_zero_iff",
-    "impedance_stable_iff", "stability_agrees", "Accepted.stable",
-    "Accepted.dissipation", "response_initial", "response_solves", "Accepted.decay_bound",
-    "generated.convert_spec",
-]
-
-
 def audit(extra=(), *, include_core=True):
-    roots = (["powerlib." + name for name in CORE] if include_core else []) + list(extra)
-    names = ", ".join("`" + name for name in roots)
+    names = ", ".join("`" + name for name in extra)
+    core = '''
+  for (root, _) in env.constants do
+    if root.getRoot == `powerlib then
+      let (_, next) := ((Lean.CollectAxioms.collect root).run env).run state
+      state := next
+''' if include_core else ""
     return f'''
 open Lean Elab Command
 run_cmd do
   let env ← getEnv
-  let mut state : Lean.CollectAxioms.State := {{}}
+  let mut state : Lean.CollectAxioms.State := {{}}{core}
   for root in [{names}] do
     let (_, next) := ((Lean.CollectAxioms.collect root).run env).run state
     state := next
