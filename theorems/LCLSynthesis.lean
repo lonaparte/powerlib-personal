@@ -206,14 +206,20 @@ def synthesize (m : Circuit) (hp : m.Passive) (hd : m.Damped) : Accepted m := by
     positivity
   have hn := ne_of_gt hq
   have hc := passive_hurwitz m hp hd
-  refine { p := PassiveWitness.matrix a d b e k,
-    p11_pos := ?_, minor2_pos := ?_, det_pos := ?_,
-    a2_pos := hc.1, a1_pos := hc.2.1, a0_pos := hc.2.2.1, gap_pos := hc.2.2.2,
-    eq11 := PassiveWitness.eq11 a d b e k hn,
-    eq12 := PassiveWitness.eq12 a d b e k hn,
-    eq13 := PassiveWitness.eq13 a d b e k hn,
-    eq22 := PassiveWitness.eq22 a d b e k hn,
-    eq23 := PassiveWitness.eq23 a d b e k hn,
+  refine {
+    p := PassiveWitness.matrix a d b e k
+    p11_pos := ?_
+    minor2_pos := ?_
+    det_pos := ?_
+    a2_pos := hc.1
+    a1_pos := hc.2.1
+    a0_pos := hc.2.2.1
+    gap_pos := hc.2.2.2
+    eq11 := PassiveWitness.eq11 a d b e k hn
+    eq12 := PassiveWitness.eq12 a d b e k hn
+    eq13 := PassiveWitness.eq13 a d b e k hn
+    eq22 := PassiveWitness.eq22 a d b e k hn
+    eq23 := PassiveWitness.eq23 a d b e k hn
     eq33 := PassiveWitness.eq33 a d b e k hn }
   · exact div_pos (PassiveWitness.n11_pos ha hd' hb he hk had) hq
   · rw [PassiveWitness.minor_identity a d b e k hn]
@@ -260,6 +266,18 @@ def synthesize (m : Circuit) (hp : m.Passive) (hd : m.Damped) : Accepted m := by
     simp only [Circuit.Damped, not_or, not_not] at hd
     exact lossless_not_globallyExponentiallyStable hd.1 hd.2 he h
   · exact fun hd => (synthesize m hp hd).globallyExponentiallyStable he
+
+@[powerlib_domain] theorem passive_asymptoticallyStable_iff_poles (m : Circuit) (hp : m.Passive)
+    {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) :
+    AsymptoticallyStable m u vg e ↔ (toStateSpace m).Stable :=
+  (passive_asymptoticallyStable_iff m hp he).trans
+    ((stability_agrees m).trans (passive_stable_iff m hp)).symm
+
+@[powerlib_domain] theorem passive_globallyExponentiallyStable_iff_poles
+    (m : Circuit) (hp : m.Passive) {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) :
+    GloballyExponentiallyStable m u vg e ↔ (toStateSpace m).Stable :=
+  (passive_globallyExponentiallyStable_iff m hp he).trans
+    ((stability_agrees m).trans (passive_stable_iff m hp)).symm
 
 end powerlib.LCL
 
