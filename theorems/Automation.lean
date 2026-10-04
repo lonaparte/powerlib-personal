@@ -1,5 +1,5 @@
 import theorems.RLStability
-import theorems.LCL
+import theorems.LCLTrajectory
 import theorems.AutomationRules
 
 /-! Register every public theorem in the PowerLib namespace, including imported
