@@ -15,31 +15,40 @@ SNAPSHOT = ROOT / "dependencies/lti_wire.json"
 
 
 def render(words, source_hash):
-    if (len(words) > 64 or words[:2] != [20261004, 2]
+    if (len(words) > 64 or words[:2] != [20261004, 3]
             or any(type(word) is not int or word < 0 for word in words)):
         raise ValueError("Unsupported LTI field interface")
     position = 2
 
-    def expression(in_sum=False):
+    def index(environment):
+        nonlocal position
+        if position >= len(words) or words[position] >= len(environment):
+            raise ValueError("Unbound or truncated LTI coordinate")
+        result = environment[words[position]]
+        position += 1
+        return result
+
+    def expression(environment):
         nonlocal position
         if position >= len(words):
             raise ValueError("Truncated LTI expression")
         tag = words[position]
         position += 1
-        if tag == 0 and in_sum:
-            return "A i j"
-        if tag == 1 and in_sum:
-            return "x j"
-        if tag == 2 and in_sum:
-            return f"({expression(True)} * {expression(True)})"
-        if tag == 3 and not in_sum:
-            return f"∑ j, {expression(True)}"
+        if tag == 0:
+            return f"A {index(environment)} {index(environment)}"
+        if tag == 1:
+            return f"x {index(environment)}"
+        if tag == 2:
+            return f"({expression(environment)} * {expression(environment)})"
+        if tag == 3:
+            binder = f"j{len(environment) - 1}"
+            return f"(∑ {binder}, {expression((binder,) + environment)})"
         raise ValueError("Invalid LTI expression or binder scope")
 
-    body = expression()
+    body = expression(("i",))
     if position != len(words):
         raise ValueError("Trailing LTI interface data")
-    return f'''-- Generated from the normalized Agda executable field operation.
+    return f'''-- Generated from the scoped syntax executed by Agda's field operation.
 -- Agda source SHA-256: {source_hash}
 import Mathlib.Data.Matrix.Mul
 import Mathlib.Data.Real.Basic

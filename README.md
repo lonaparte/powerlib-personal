@@ -79,6 +79,15 @@ proves convergence. These named theorems are available through `import powerlib`
 and the theorem registry. Agda checks the matrix/row representation equivalence
 and executable field operation; Lean independently checks its exported endpoint.
 
+The field operation executes an intrinsically scoped syntax tree in Agda, with
+an independently checked `run-spec` contract for matrix multiplication. Wire
+version 3 preserves both matrix indices, the state index, and sum binders;
+Lean checks the decoded operation against `A.mulVec`. Mutating an index, the
+interpreter, or the executable operation is covered by kernel rejection tests.
+Every registered LTI theorem has a `simp` or `aesop` reuse example without an
+explicit theorem-name hint, and a coverage inventory detects added or missing
+registry entries. Registry discovery and actual proof search are tested separately.
+
 `ACCEPTED` means S-level for this witness-free ATP path. A supplied certificate
 checked by `lti.admit` is verification, not synthesis. Synthesis failure is
 `UNPROVED`, not a formal instability result. The Python search/termination and

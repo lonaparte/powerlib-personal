@@ -37,7 +37,7 @@ def Model.field (m : Model n) (x : State n) : State n := generated.linearField m
 @[simp, powerlib_foundation] theorem Model.zero_equilibrium (m : Model n) :
     m.field 0 = 0 := by simp [Model.field]
 
-@[powerlib_foundation] theorem Model.perturbation (m : Model n) (x dx : State n) :
+@[powerlib_foundation, aesop safe apply] theorem Model.perturbation (m : Model n) (x dx : State n) :
     m.field (x + dx) - m.field x = m.field dx := by
   simp [Model.field, Matrix.mulVec_add]
 
@@ -52,7 +52,7 @@ def sqNorm (x : State n) : ℝ := ∑ i, x i ^ 2
 def euclidean (x : State n) : PiLp 2 (fun _ : Fin n => ℝ) :=
   (WithLp.equiv 2 (State n)).symm x
 
-@[powerlib_foundation] theorem sqNorm_eq_norm_sq (x : State n) :
+@[powerlib_foundation, aesop safe apply] theorem sqNorm_eq_norm_sq (x : State n) :
     sqNorm x = ‖euclidean x‖ ^ 2 := by
   rw [PiLp.norm_sq_eq_of_L2]
   simp [sqNorm, euclidean, Real.norm_eq_abs, sq_abs]
@@ -77,7 +77,7 @@ def response (m : Model n) (initial : State n) (t : ℝ) : State n :=
     (hasDerivAt_const t initial)
   simpa [response, ContinuousLinearMap.mul_apply] using h
 
-@[powerlib_domain] theorem trajectory_exists (m : Model n) (initial : State n) :
+@[powerlib_domain, aesop safe apply] theorem trajectory_exists (m : Model n) (initial : State n) :
     ∃ x, IsTrajectory m x ∧ x 0 = initial :=
   ⟨response m initial, response_solves m initial, response_initial m initial⟩
 
@@ -99,7 +99,7 @@ structure Accepted (m : Model n) where
   upper_bound : ∀ x, energy P x ≤ upper * sqNorm x
   lyapunov : m.A.transpose * P + P * m.A = -1
 
-@[powerlib_foundation] theorem sqNorm_nonneg (x : State n) : 0 ≤ sqNorm x :=
+@[powerlib_foundation, aesop safe apply] theorem sqNorm_nonneg (x : State n) : 0 ≤ sqNorm x :=
   Finset.sum_nonneg fun i _ => sq_nonneg (x i)
 
 @[simp, powerlib_foundation] theorem sqNorm_zero : sqNorm (0 : State n) = 0 := by
@@ -116,7 +116,7 @@ structure Accepted (m : Model n) where
   · rintro rfl
     exact sqNorm_zero
 
-@[powerlib_foundation] theorem energy_derivative {m : Model n} (P : Matrix (Fin n) (Fin n) ℝ)
+@[powerlib_foundation, aesop safe apply] theorem energy_derivative {m : Model n} (P : Matrix (Fin n) (Fin n) ℝ)
     {x : ℝ → State n} (hx : IsTrajectory m x) (t : ℝ) :
     HasDerivAt (fun s => energy P (x s))
       (dotProduct (m.field (x t)) (P.mulVec (x t)) +
@@ -130,7 +130,7 @@ structure Accepted (m : Model n) where
   simpa [energy, dotProduct, Finset.sum_add_distrib] using
     (HasDerivAt.sum fun i (_ : i ∈ Finset.univ) => (hi i).mul (hp i))
 
-@[powerlib_foundation] theorem lyapunov_dissipation {m : Model n} (c : Accepted m) (x : State n) :
+@[powerlib_foundation, aesop safe apply] theorem lyapunov_dissipation {m : Model n} (c : Accepted m) (x : State n) :
     dotProduct (m.field x) (c.P.mulVec x) +
       dotProduct x (c.P.mulVec (m.field x)) = -sqNorm x := by
   calc
@@ -142,12 +142,12 @@ structure Accepted (m : Model n) where
     _ = -sqNorm x := by
       simp [energy, Matrix.neg_mulVec, sqNorm, dotProduct, pow_two]
 
-@[powerlib_domain] theorem Accepted.energy_derivative {m : Model n} (c : Accepted m)
+@[powerlib_domain, aesop safe apply] theorem Accepted.energy_derivative {m : Model n} (c : Accepted m)
     {x : ℝ → State n} (hx : IsTrajectory m x) (t : ℝ) :
     HasDerivAt (fun s => energy c.P (x s)) (-sqNorm (x t)) t := by
   simpa only [lyapunov_dissipation c] using powerlib.LTI.energy_derivative c.P hx t
 
-@[powerlib_domain] theorem Accepted.energy_decay {m : Model n} (c : Accepted m)
+@[powerlib_domain, aesop safe apply] theorem Accepted.energy_decay {m : Model n} (c : Accepted m)
     {x : ℝ → State n} (hx : IsTrajectory m x) (t : ℝ) (ht : 0 ≤ t) :
     energy c.P (x t) ≤ Real.exp (-(t / c.upper)) * energy c.P (x 0) := by
   let F := fun s => Real.exp (s / c.upper) * energy c.P (x s)
@@ -168,7 +168,7 @@ structure Accepted (m : Model n) where
   have h' := mul_le_mul_of_nonneg_left h (Real.exp_pos (-(t / c.upper))).le
   simpa [← mul_assoc, ← Real.exp_add] using h'
 
-@[powerlib_domain] theorem Accepted.decay_bound {m : Model n} (c : Accepted m)
+@[powerlib_domain, aesop safe apply] theorem Accepted.decay_bound {m : Model n} (c : Accepted m)
     {x : ℝ → State n} (hx : IsTrajectory m x) (t : ℝ) (ht : 0 ≤ t) :
     sqNorm (x t) ≤ (c.upper / c.lower) * Real.exp (-(t / c.upper)) * sqNorm (x 0) := by
   have h := (c.lower_bound (x t)).trans ((c.energy_decay hx t ht).trans
@@ -178,7 +178,7 @@ structure Accepted (m : Model n) where
       (le_div_iff₀ c.lower_pos).mpr (by simpa [mul_comm] using h)
     _ = _ := by ring
 
-@[powerlib_domain] theorem Accepted.norm_bound {m : Model n} (c : Accepted m)
+@[powerlib_domain, aesop safe apply] theorem Accepted.norm_bound {m : Model n} (c : Accepted m)
     {x : ℝ → State n} (hx : IsTrajectory m x) (t : ℝ) (ht : 0 ≤ t) :
     ‖euclidean (x t)‖ ≤ Real.sqrt (c.upper / c.lower) *
       Real.exp (-(t / c.upper) / 2) * ‖euclidean (x 0)‖ := by
@@ -207,7 +207,9 @@ structure Accepted (m : Model n) where
       (c.upper / c.lower) * Real.exp (-(t / c.upper)) * sqNorm initial := by
   simpa using c.decay_bound (response_solves m initial) t ht
 
-@[powerlib_domain] theorem Accepted.trajectory_unique {m : Model n} (c : Accepted m)
+-- A broad equality rule needs backtracking. Aesop's "unsafe" search category
+-- still produces an ordinary kernel-checked proof; it is not a proof escape.
+@[powerlib_domain, aesop unsafe 80% apply] theorem Accepted.trajectory_unique {m : Model n} (c : Accepted m)
     {x y : ℝ → State n} (hx : IsTrajectory m x) (hy : IsTrajectory m y)
     (h0 : x 0 = y 0) (t : ℝ) (ht : 0 ≤ t) : x t = y t := by
   have hd : IsTrajectory m (fun s => x s - y s) := by
@@ -218,12 +220,12 @@ structure Accepted (m : Model n) where
   simp only [h0, sub_self, sqNorm_zero, mul_zero] at h
   exact sub_eq_zero.mp ((sqNorm_eq_zero_iff _).mp (le_antisymm h (sqNorm_nonneg _)))
 
-@[powerlib_domain] theorem Accepted.response_unique {m : Model n} (c : Accepted m)
+@[powerlib_domain, aesop safe apply] theorem Accepted.response_unique {m : Model n} (c : Accepted m)
     {x : ℝ → State n} (hx : IsTrajectory m x) (t : ℝ) (ht : 0 ≤ t) :
     x t = response m (x 0) t :=
   c.trajectory_unique hx (response_solves m (x 0)) (by simp) t ht
 
-@[powerlib_domain] theorem Accepted.sqNorm_tendsto_zero {m : Model n} (c : Accepted m)
+@[powerlib_domain, aesop safe apply] theorem Accepted.sqNorm_tendsto_zero {m : Model n} (c : Accepted m)
     {x : ℝ → State n} (hx : IsTrajectory m x) :
     Filter.Tendsto (fun t => sqNorm (x t)) Filter.atTop (𝓝 0) := by
   have he : Filter.Tendsto (fun t : ℝ => Real.exp (-(t / c.upper)))

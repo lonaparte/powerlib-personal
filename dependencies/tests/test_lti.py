@@ -4,14 +4,16 @@ from fractions import Fraction as F
 import json
 import os
 from pathlib import Path
+import shutil
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import lti
 import lti_bridge
-from common import RESULTS, check_lean
+from common import RESULTS, ROOT, audit, check_lean
 
 
 class ExactSynthesis(unittest.TestCase):
@@ -39,11 +41,26 @@ class ExactSynthesis(unittest.TestCase):
             json.loads('{"A":[[-1]],"A":[[1]]}', object_pairs_hook=lti.unique_object)
 
     def test_bridge_rejects_malformed_and_scoped_data(self):
-        for words in ([20261004, 2, 0], [20261004, 2, 3, 3, 0],
-                      [20261004, 2, 3, 2, 0], [20261004, 2, 3, 2, 0, 1, 0],
-                      [20261004, 2, 3, 2, True, 1]):
+        for words in ([20261004, 2, 3, 2, 0, 1],  # legacy lossy interface
+                      [20261004, 3, 0], [20261004, 3, 1, 1],
+                      [20261004, 3, 3, 1, 2], [20261004, 3, 3, 2, 0, 1, 0],
+                      [20261004, 3, 3, 2, 0, 1, 0, 1, 0, 0],
+                      [20261004, 3, 3, 2, 0, True, 0, 1, 0],
+                      [20261004, 3, 3, 1, -1]):
             with self.assertRaises(ValueError):
                 lti_bridge.render(words, "test")
+
+    def test_bridge_retains_each_index_and_nested_binding(self):
+        good = lti_bridge.render([20261004, 3, 3, 2, 0, 1, 0, 1, 0], "test")
+        wrong_state = lti_bridge.render([20261004, 3, 3, 2, 0, 1, 0, 1, 1], "test")
+        transposed = lti_bridge.render([20261004, 3, 3, 2, 0, 0, 1, 1, 0], "test")
+        nested = lti_bridge.render([20261004, 3, 3, 3, 2, 0, 2, 1, 1, 0], "test")
+        self.assertIn("A i j0 * x j0", good)
+        self.assertIn("A i j0 * x i", wrong_state)
+        self.assertIn("A j0 i * x j0", transposed)
+        self.assertIn("A i j0 * x j1", nested)
+        self.assertNotEqual(good, wrong_state)
+        self.assertNotEqual(good, transposed)
 
 
 @unittest.skipUnless(os.environ.get("POWERLIB_LTI_KERNEL_TESTS") == "1", "enable LTI kernel controls")
@@ -72,6 +89,39 @@ class KernelAdmission(unittest.TestCase):
         b = lti.model_from_data({"A": [[-2, 0], [0, -1]]})
         with self.assertRaises(RuntimeError):
             self.check_source(lti.candidate_source(lti.synthesize(a)) + lti.admission_source(b))
+
+    def test_wrong_scoped_wire_rejected_by_lean(self):
+        for words in ([20261004, 3, 3, 2, 0, 1, 0, 1, 1],
+                      [20261004, 3, 3, 2, 0, 0, 1, 1, 0]):
+            source = "import Lean\n" + lti_bridge.render(words, "test")
+            with self.subTest(wire=words), self.assertRaises(RuntimeError):
+                self.check_source(source + audit(["powerlib.generated.linearField_spec"],
+                                                include_core=False))
+
+    def test_changed_agda_operation_rejected_before_publication(self):
+        source = (ROOT / "theorems/LTIFoundation.agda").read_text()
+        mutations = [
+            ("(stateEntry fzero))", "(stateEntry (fsuc fzero)))"),
+            ("(matrixEntry (fsuc fzero) fzero)", "(matrixEntry fzero (fsuc fzero))"),
+            ("run sum mul A x i = eval sum mul A x (λ _ → i) body",
+             "run sum mul A x i = sum (λ j → mul (A i j) (x i))"),
+            ("eval sum mul A x env (matrixEntry i j) = A (env i) (env j)",
+             "eval sum mul A x env (matrixEntry i j) = A (env j) (env i)"),
+        ]
+        for old, new in mutations:
+            with self.subTest(mutation=old), tempfile.TemporaryDirectory(dir=self.root) as directory:
+                stage = Path(directory)
+                (stage / "theorems").mkdir()
+                self.assertEqual(source.count(old), 1)
+                (stage / "theorems/LTIFoundation.agda").write_text(source.replace(old, new))
+                shutil.copy(ROOT / "powerlib.agda-lib", stage)
+                target, snapshot = stage / "Exported.lean", stage / "wire.json"
+                with patch.multiple(lti_bridge, ROOT=stage, TARGET=target, SNAPSHOT=snapshot,
+                                    RESULTS=stage / "results"):
+                    with self.assertRaisesRegex(RuntimeError, r"!=|≠"):
+                        lti_bridge.rebuild(write=True)
+                self.assertFalse(target.exists())
+                self.assertFalse(snapshot.exists())
 
     def test_tampered_identity_bounds_and_witness_rejected(self):
         a = lti.model_from_data({"A": [[-1, 10], [0, -1]]})
