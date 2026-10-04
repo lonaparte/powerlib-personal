@@ -6,8 +6,8 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 DEPENDENCIES = ROOT / "dependencies"
-CACHE = Path(os.environ.get("POWERLIB_CACHE_DIR", DEPENDENCIES / ".cache")).resolve()
-RESULTS = DEPENDENCIES / "results"
+CACHE = Path(os.environ.get("POWERLIB_CACHE_DIR", ROOT.parent / ".powerlib-local/cache")).resolve()
+RESULTS = Path(os.environ.get("POWERLIB_RESULTS_DIR", ROOT.parent / ".powerlib-local/results")).resolve()
 CUBICAL_COMMIT = "b150186d2544e7efeddd31e5d14a8b9ecbb100f7"
 
 
@@ -35,6 +35,12 @@ CORE = [
     "impedance_stable_iff", "stability_agrees", "Accepted.stable",
     "Accepted.dissipation", "response_initial", "response_solves", "Accepted.decay_bound",
     "generated.convert_spec",
+    "LCL.circuit_roundtrip", "LCL.state_roundtrip", "LCL.modelEquiv",
+    "LCL.same_dynamics", "LCL.characteristic_identity", "LCL.same_characteristic",
+    "LCL.stability_agrees", "LCL.hurwitz_gap", "LCL.cubic_hurwitz",
+    "LCL.stable_of_hurwitz", "LCL.passive_hurwitz", "LCL.passive_stable_iff",
+    "LCL.energy_positive", "LCL.Accepted.stable", "LCL.Accepted.positive",
+    "LCL.Accepted.dissipation", "generated.convertLCL_spec",
 ]
 
 

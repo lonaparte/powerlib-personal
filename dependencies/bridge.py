@@ -154,7 +154,7 @@ def rebuild(write=False):
         report = {"agda": "2.8.0", "cubical_commit": CUBICAL_COMMIT,
                   "agda_source_sha256": digest(entry), "wire": words,
                   "generated_sha256": digest(TARGET), "status": "AGDA_AND_LEAN_CHECKED"}
-        RESULTS.mkdir(exist_ok=True)
+        RESULTS.mkdir(parents=True, exist_ok=True)
         (RESULTS / "bridge.log").write_text(log + normalized)
         (RESULTS / "bridge.json").write_text(json.dumps(report, indent=2) + "\n")
     return report

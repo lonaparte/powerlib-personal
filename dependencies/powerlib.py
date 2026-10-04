@@ -79,7 +79,7 @@ end Admission
 
 
 def output_dir(kind):
-    RESULTS.mkdir(exist_ok=True)
+    RESULTS.mkdir(parents=True, exist_ok=True)
     return Path(tempfile.mkdtemp(prefix=kind + "-", dir=RESULTS))
 
 
@@ -97,7 +97,7 @@ def atp(path):
         "status": "ACCEPTED", "model": {"resistance": str(resistance), "inductance": str(inductance)},
         "state_space": {"decay": str(resistance / inductance), "input_gain": str(1 / inductance)},
         "certificate": {"p": str(p), "squared_current_decay_rate": str(rate)},
-        "theorem": "Admission.stable", "proof": str(proof.relative_to(ROOT)),
+        "theorem": "Admission.stable", "proof": str(proof),
         "proof_sha256": digest(proof), "lean": demand(["lake", "env", "lean", "--version"]).strip(),
     }
     (directory / "report.json").write_text(json.dumps(report, indent=2) + "\n")
@@ -135,7 +135,7 @@ theorem refuted : ¬ ({proposition}) := by
             status = "REFUTED"
         artifact = path if status == "PROVED" else refutation if status == "REFUTED" else path
         results.append({"conjecture": proposition, "status": status,
-                        "proof": str(artifact.relative_to(ROOT)), "proof_sha256": digest(artifact)})
+                        "proof": str(artifact), "proof_sha256": digest(artifact)})
     report = {"scope": "Finite search of three resistance sign conditions in the canonical RL family",
               "results": results}
     (directory / "report.json").write_text(json.dumps(report, indent=2) + "\n")
@@ -147,11 +147,18 @@ theorem refuted : ¬ ({proposition}) := by
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("atp", help="Synthesize and verify an RL stability certificate").add_argument("model")
-    commands.add_parser("atd", help="Search three sign conditions and verify proofs or counterexamples")
+    atp_parser = commands.add_parser("atp", help="Synthesize and verify a stability certificate")
+    atp_parser.add_argument("model")
+    atp_parser.add_argument("--family", choices=["rl", "lcl"], default="rl")
+    atd_parser = commands.add_parser("atd", help="Search conditions and verify proofs or counterexamples")
+    atd_parser.add_argument("--family", choices=["rl", "lcl"], default="rl")
     args = parser.parse_args()
     try:
-        report = atp(args.model) if args.command == "atp" else atd()
+        if args.family == "lcl":
+            import lcl
+            report = lcl.atp(args.model) if args.command == "atp" else lcl.atd()
+        else:
+            report = atp(args.model) if args.command == "atp" else atd()
     except (ValueError, OSError, RuntimeError) as error:
         print(json.dumps({"status": "NOT_ACCEPTED", "reason": str(error)}, indent=2))
         return 1

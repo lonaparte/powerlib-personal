@@ -56,7 +56,7 @@ class InputTests(unittest.TestCase):
 class KernelTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        RESULTS.mkdir(exist_ok=True)
+        RESULTS.mkdir(parents=True, exist_ok=True)
         cls.directory = tempfile.TemporaryDirectory(prefix="tests-", dir=RESULTS)
         cls.root = Path(cls.directory.name)
 
