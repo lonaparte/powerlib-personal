@@ -39,7 +39,7 @@
       "configFile": "lakefile.lean"
     },
     {
-      "url": "https://github.com/leanprover-community/mathlib4",
+      "url": "https://github.com/leanprover-community/mathlib4.git",
       "type": "git",
       "subDir": null,
       "scope": "",

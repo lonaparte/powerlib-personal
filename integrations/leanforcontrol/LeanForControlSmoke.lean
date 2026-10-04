@@ -17,7 +17,8 @@ run_cmd do
   for name in #[`powerlib.Upstream.complexification_exp, `powerlib.Upstream.exp_const_add,
       `powerlib.Upstream.contractive_block] do
     let info ← getConstInfo name
-    let some proof := info.value? | throwError "Missing upstream consumer proof: {name}"
+    let some proof := info.value? (allowOpaque := true) |
+      throwError "Missing upstream consumer proof: {name}"
     unless proof.getUsedConstants.any (fun dependency =>
         match env.getModuleIdxFor? dependency with
         | some index => env.header.moduleNames[index]!.getRoot == `LeanForControl
