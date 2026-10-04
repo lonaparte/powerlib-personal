@@ -246,3 +246,12 @@ logs, and local development support are not formal theorem dependencies. None
 belongs in `dependencies/`. Model-specific foundations and domain results belong
 in `theorems/`. A dependency interface must not imply that an incompatible
 upstream library is available through the main public import.
+
+The active published library contains formal sources, formal verification
+consumers, and pinned build configuration. Local bootstrap and orchestration
+programs, bridge exporters, untrusted synthesizers, artifact admission runners,
+their procedural regression harnesses, and their input/output artifacts stay
+in the local workspace outside the repositories. A local program's output is
+not an admitted library result. Keep its independent kernel checks and retained
+provenance when reorganizing support. Historical `archive/` content is excluded
+from the public library build, discovery, admission, and promotion.
