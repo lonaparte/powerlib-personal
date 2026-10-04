@@ -13,9 +13,11 @@ jobs:
     timeout-minutes: 30
     env:
       PYTHONDONTWRITEBYTECODE: "1"
-      POWERLIB_CACHE_DIR: ${{ runner.temp }}/powerlib-cache
-      POWERLIB_RESULTS_DIR: ${{ runner.temp }}/powerlib-results
     steps:
+      - name: Configure local build directories
+        run: |
+          echo "POWERLIB_CACHE_DIR=$RUNNER_TEMP/powerlib-cache" >> "$GITHUB_ENV"
+          echo "POWERLIB_RESULTS_DIR=$RUNNER_TEMP/powerlib-results" >> "$GITHUB_ENV"
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: leanprover/lean-action@f061402b660e0c34644504b324e830f2991d4865
         with:

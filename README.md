@@ -2,6 +2,12 @@
 
 powerlib is a theorem library for power systems and power electronics, built on Lean 4 and Agda.
 
+Agda is the foundation for structures, representation conversions, equivalences,
+and transport. Lean 4 is the public theorem layer: every admitted domain result
+must end in a kernel-checked Lean theorem. The project's requirements for models,
+semantic theorems, synthesis, admission, provenance, and result maturity are
+defined in [Rules.md](Rules.md).
+
 ## Directions
 
 - **ATP (Automated Theorem Proving):** automatically prove given propositions, especially **synthesis of certificates**.
@@ -21,7 +27,7 @@ level and exploring the potential of ATD.
 
 ## Quick Start
 
-Run ATP and ATD on the RL example:
+Run ATP and the fixed-candidate ATD prototype on the RL example:
 
 ```sh
 python3 dependencies/powerlib.py atp dependencies/examples/rl.json
@@ -29,7 +35,9 @@ python3 dependencies/powerlib.py atd
 ```
 
 For `R = 2`, `L = 1`, ATP synthesizes `V(i) = i²/4` and returns `ACCEPTED`
-after Lean verifies the certificate. ATD checks three candidate stability conditions.
+after Lean verifies the certificate and derives its model-bound theorems.
+The `atd` prototype checks three manually enumerated stability conditions; it
+does not yet generate conjectures or constitute complete theorem discovery.
 
 Use a theorem in Lean:
 
