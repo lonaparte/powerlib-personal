@@ -57,3 +57,34 @@ example (m : LCL.Circuit) (c : LCL.Accepted m) (x y z : ℝ)
 example (m : LCL.Circuit) (c : LCL.Accepted m) (x y z : ℝ) :
     let f := (LCL.toStateSpace m).field x y z 0 0
     LCL.energyDerivative c.p x y z f.1 f.2.1 f.2.2 = -(x^2+y^2+z^2) := by powerlib_auto
+
+example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
+    (he : LCL.IsEquilibrium m u vg e) :
+    LCL.GloballyExponentiallyStable m u vg e := by powerlib_auto
+
+example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
+    (he : LCL.IsEquilibrium m u vg e) :
+    LCL.GloballyAsymptoticallyStable m u vg e := by powerlib_auto
+
+example (m : LCL.Circuit) (c : LCL.Accepted m) :
+    LCL.AsymptoticallyStable m 0 0 0 := by powerlib_auto
+
+example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (initial : LCL.State) :
+    ∃ x, LCL.IsTrajectory m u vg x ∧ x 0 = initial := by powerlib_auto
+
+example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
+    (x : ℝ → LCL.State) (he : LCL.IsEquilibrium m u vg e) (hx : LCL.IsTrajectory m u vg x) :
+    Tendsto x atTop (𝓝 e) := by powerlib_auto
+
+example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
+    (x : ℝ → LCL.State) (he : LCL.IsEquilibrium m u vg e) (hx : LCL.IsTrajectory m u vg x)
+    (t : ℝ) (ht : 0 ≤ t) :
+    HasDerivWithinAt (fun s => LCL.quadraticEnergy c.p (x s - e))
+      (-LCL.squaredSize (x t - e)) (Set.Ici 0) t := by powerlib_auto
+
+example (m : LCL.Circuit) (hp : m.Passive) (u vg : ℝ) (e : LCL.State)
+    (he : LCL.IsEquilibrium m u vg e) : LCL.LyapunovStable m u vg e := by powerlib_auto
+
+example (m : LCL.Circuit) (h1 : m.first.resistance = 0) (h2 : m.second.resistance = 0)
+    (u vg : ℝ) (e : LCL.State) (he : LCL.IsEquilibrium m u vg e) :
+    ¬ LCL.AsymptoticallyStable m u vg e := by powerlib_auto

@@ -15,6 +15,11 @@ from powerlib import rational
 KEYS = ("inductance1", "inductance2", "capacitance", "resistance1", "resistance2")
 POSITIONS = ((0, 0), (0, 1), (0, 2), (1, 1), (1, 2), (2, 2))
 IDENTITY = tuple(tuple(Fraction(int(i == j)) for j in range(3)) for i in range(3))
+ADMITTED_THEOREMS = ["Admission." + name for name in (
+    "stable", "positive", "dissipation", "small_signal", "lyapunov_stable",
+    "globally_asymptotically_stable", "globally_exponentially_stable",
+    "equilibrium_exists", "trajectory_exists", "trajectory_unique",
+    "trajectory_tendsto", "energy_derivative")]
 
 
 @dataclass(frozen=True)
@@ -191,8 +196,42 @@ def accepted : powerlib.LCL.Accepted submittedModel := Candidate.certificate
     let f := (powerlib.LCL.toStateSpace submittedModel).field x y z 0 0
     powerlib.LCL.energyDerivative accepted.p x y z f.1 f.2.1 f.2.2 = -(x^2+y^2+z^2) :=
   accepted.dissipation x y z
+@[powerlib_domain] theorem small_signal :
+    powerlib.LCL.AsymptoticallyStable submittedModel 0 0 0 :=
+  accepted.asymptoticallyStable (powerlib.LCL.zero_equilibrium submittedModel)
+@[powerlib_domain] theorem lyapunov_stable (u vg : ℝ) (e : powerlib.LCL.State)
+    (he : powerlib.LCL.IsEquilibrium submittedModel u vg e) :
+    powerlib.LCL.LyapunovStable submittedModel u vg e := accepted.lyapunovStable he
+@[powerlib_domain] theorem globally_asymptotically_stable (u vg : ℝ) (e : powerlib.LCL.State)
+    (he : powerlib.LCL.IsEquilibrium submittedModel u vg e) :
+    powerlib.LCL.GloballyAsymptoticallyStable submittedModel u vg e :=
+  accepted.globallyAsymptoticallyStable he
+@[powerlib_domain] theorem globally_exponentially_stable (u vg : ℝ) (e : powerlib.LCL.State)
+    (he : powerlib.LCL.IsEquilibrium submittedModel u vg e) :
+    powerlib.LCL.GloballyExponentiallyStable submittedModel u vg e :=
+  accepted.globallyExponentiallyStable he
+@[powerlib_domain] theorem equilibrium_exists (u vg : ℝ) :
+    powerlib.LCL.IsEquilibrium submittedModel u vg (powerlib.LCL.equilibrium submittedModel u vg) :=
+  accepted.equilibrium_exists u vg
+@[powerlib_domain] theorem trajectory_exists (u vg : ℝ) (initial : powerlib.LCL.State) :
+    ∃ x, powerlib.LCL.IsTrajectory submittedModel u vg x ∧ x 0 = initial :=
+  accepted.trajectory_exists u vg initial
+@[powerlib_domain] theorem trajectory_unique (u vg : ℝ) (e : powerlib.LCL.State)
+    (x y : ℝ → powerlib.LCL.State) (he : powerlib.LCL.IsEquilibrium submittedModel u vg e)
+    (hx : powerlib.LCL.IsTrajectory submittedModel u vg x)
+    (hy : powerlib.LCL.IsTrajectory submittedModel u vg y) (h0 : x 0 = y 0) :
+    Set.EqOn x y (Set.Ici 0) := powerlib.LCL.trajectory_unique he hx hy h0
+@[powerlib_domain] theorem trajectory_tendsto (u vg : ℝ) (e : powerlib.LCL.State)
+    (x : ℝ → powerlib.LCL.State) (he : powerlib.LCL.IsEquilibrium submittedModel u vg e)
+    (hx : powerlib.LCL.IsTrajectory submittedModel u vg x) :
+    Filter.Tendsto x Filter.atTop (nhds e) := accepted.trajectory_tendsto he hx
+@[powerlib_domain] theorem energy_derivative (u vg : ℝ) (e : powerlib.LCL.State)
+    (x : ℝ → powerlib.LCL.State) (he : powerlib.LCL.IsEquilibrium submittedModel u vg e)
+    (hx : powerlib.LCL.IsTrajectory submittedModel u vg x) (t : ℝ) (ht : 0 ≤ t) :
+    HasDerivWithinAt (fun s => powerlib.LCL.quadraticEnergy accepted.p (x s - e))
+      (-powerlib.LCL.squaredSize (x t - e)) (Set.Ici 0) t := accepted.energy_derivative he hx ht
 end Admission
-''' + audit(["Admission.accepted", "Admission.stable", "Admission.positive", "Admission.dissipation"]))
+''' + audit(["Admission.accepted", *ADMITTED_THEOREMS]))
 
 
 def verify_kernel(proof):
@@ -230,7 +269,7 @@ def synthesize(model, kernel=False, directory=None):
         report["status"] = "ACCEPTED"
         report["maturity"] = "S-level"
         report["witness_origin"] = "Automatic exact Lyapunov synthesis from witness-free model"
-        report["theorems"] = ["Admission.stable", "Admission.positive", "Admission.dissipation"]
+        report["theorems"] = list(ADMITTED_THEOREMS)
     (directory / "certificate.json").write_text(json.dumps(report, indent=2) + "\n")
     return report
 
@@ -277,7 +316,7 @@ def verify_saved(model, path, kernel=False):
         report["status"] = "ACCEPTED"
         report["maturity"] = "Certificate verification"
         report["witness_origin"] = "Submitted certificate"
-        report["theorems"] = ["Admission.stable", "Admission.positive", "Admission.dissipation"]
+        report["theorems"] = list(ADMITTED_THEOREMS)
         (directory / "certificate.json").write_text(json.dumps(report, indent=2)+"\n")
     return report
 

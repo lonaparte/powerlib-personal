@@ -93,8 +93,8 @@ def equilibrium (m : Circuit) (u vg : ℝ) : State :=
       simpa only [Circuit.a0] using mul_div_cancel₀ (u - vg) h0
     have hz : u - m.first.resistance * ((u - vg) / m.a0) -
         m.second.resistance * ((u - vg) / m.a0) - vg = 0 := by
-      dsimp [Circuit.a0] at h
-      nlinarith
+      dsimp [Circuit.a0] at h ⊢
+      linear_combination -h
     rw [hz, zero_div]
 
 @[powerlib_domain] theorem equilibrium_unique {m : Circuit} {u vg : ℝ} {e : State}

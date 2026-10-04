@@ -63,6 +63,6 @@ open scoped Topology
     (fun s hs => (hw s (interior_subset hs)).mono interior_subset)
     (fun s hs => mul_nonpos_of_nonpos_of_nonneg (hb s (interior_subset hs)) (Real.exp_pos _).le)
   have h := mul_le_mul_of_nonneg_right (ha (by simp) ht ht) (Real.exp_pos (-t / β)).le
-  simpa [W, mul_assoc, ← Real.exp_add] using h
+  simpa [W, mul_assoc, ← Real.exp_add, neg_div] using h
 
 end powerlib

@@ -48,7 +48,12 @@ run_cmd do
       `powerlib.Accepted.stable, `powerlib.LCL.Accepted.stable,
       `powerlib.asymptoticallyStable_iff_resistance_pos,
       `powerlib.Accepted.globallyExponentiallyStable,
-      `powerlib.Accepted.energy_derivative] do
+      `powerlib.Accepted.energy_derivative, `powerlib.LCL.Accepted.globallyExponentiallyStable,
+      `powerlib.LCL.Accepted.globallyAsymptoticallyStable,
+      `powerlib.LCL.Accepted.energy_derivative, `powerlib.LCL.trajectory_exists,
+      `powerlib.LCL.trajectory_unique, `powerlib.LCL.passive_lyapunovStable,
+      `powerlib.LCL.lossless_not_asymptoticallyStable,
+      `powerlib.LCL.lossless_energy_conserved] do
     unless domains.contains name do
       throwError "Public domain theorem missing from discovery: {name}"
   for name in #[`powerlib.state_roundtrip, `powerlib.LCL.circuit_roundtrip,
