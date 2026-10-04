@@ -139,8 +139,8 @@ data representation of an Agda-checked executable operation. Lean independently
 checks the exported endpoint contract and its concrete instantiation.
 
 There is no assumed general translation of Agda proofs to Lean. An Agda proof
-does not authorize unconditional acceptance by Lean. The restricted wire
-approach in `dependencies/bridge.py` is the institutional pattern.
+does not authorize unconditional acceptance by Lean. A restricted versioned wire
+interface is the institutional pattern.
 
 ## 12. Exact acceptance
 
@@ -229,3 +229,20 @@ the theorem's actual hypotheses; matching prose or model names is insufficient.
 Do not describe a library as connected until a compatible pinned dependency is
 imported and direct reuse has passed kernel checks. A version mismatch requires
 a separately verified compatibility change before that dependency can be used.
+
+## 16. Formal theorem dependencies
+
+`dependencies/` is the formal interface to the upstream results PowerLib uses.
+It contains Lean import interfaces and, where necessary, kernel-checked adapters
+that directly invoke Mathlib or LeanForControl declarations. Preserve the actual
+upstream theorem, defining module, assumptions, version, and transitive axioms.
+Do not copy upstream proofs into PowerLib or replace their import with a local
+reimplementation. Dependency package sources are resolved by Lake from the
+pinned manifest; they are not vendored into this directory.
+
+Bootstrap programs, Python synthesizers, bridge exporters, admission runners,
+regression harnesses, examples, normalized wire artifacts, generated certificates,
+logs, and local development support are not formal theorem dependencies. None
+belongs in `dependencies/`. Model-specific foundations and domain results belong
+in `theorems/`. A dependency interface must not imply that an incompatible
+upstream library is available through the main public import.
