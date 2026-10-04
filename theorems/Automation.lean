@@ -12,7 +12,8 @@ run_cmd do
   let env ← getEnv
   for (name, info) in env.constants do
     if name.getRoot == `powerlib && info.isTheorem then
-      elabCommand (← `(attribute [powerlib_rule, aesop unsafe 50% apply (rule_sets := [PowerLib])]
+      modifyEnv (powerlibTheoremNames.addEntry · name)
+      elabCommand (← `(attribute [aesop unsafe 50% apply (rule_sets := [PowerLib])]
         $(mkIdent name)))
 
 -- Try short applications before general search. In particular, this preserves
@@ -21,7 +22,7 @@ open Lean Elab Tactic in
 elab "powerlib_auto" : tactic => do
   let env ← getEnv
   let mut rules : Array (TSyntax `term) := #[]
-  for name in powerlibRuleAttribute.getElements env do
+  for name in powerlibTheoremNames.getState env do
     rules := rules.push (← `(term| $(mkIdent name)))
   let saved ← saveState
   try
