@@ -37,7 +37,7 @@ elab "powerlib_auto" : tactic => do
   catch _ =>
     saved.restore
     try
-      evalTactic (← `(tactic| powerlib_search))
+      evalTactic (← `(tactic| aesop (rule_sets := [PowerLib])))
     catch _ =>
       saved.restore
-      evalTactic (← `(tactic| aesop (rule_sets := [PowerLib])))
+      evalTactic (← `(tactic| powerlib_search))

@@ -29,7 +29,8 @@ def describe (env : Environment) (name : Name) : Option TheoremEntry := do
     let moduleName := match env.getModuleIdxFor? name with
       | some index => env.header.moduleNames[index]!
       | none => env.mainModule
-    some ⟨name, moduleName, info.levelParams, info.type, Registry.kindOf? env name,
+    -- Read only this declaration's metadata while another proof is in progress.
+    some ⟨name, moduleName, info.levelParams, info.type, Registry.theoremKinds.getValue env name,
       declarationAxioms env name⟩
 
 def eligible (env : Environment) (name : Name) : Bool :=
