@@ -140,4 +140,26 @@ def physicalWeights (m : Circuit) : SymmetricMatrix :=
   simp only [Circuit.Damped, not_or, not_not] at hd
   exact lossless_not_asymptoticallyStable hd.1 hd.2 he hs
 
+@[powerlib_domain] theorem passive_equilibrium_exists {m : Circuit}
+    (hp : m.Passive) (hd : m.Damped) (u vg : ℝ) :
+    IsEquilibrium m u vg (equilibrium m u vg) :=
+  equilibrium_exists (ne_of_gt (passive_hurwitz m hp hd).2.2.1) u vg
+
+@[powerlib_domain] theorem lossless_not_globallyAsymptoticallyStable {m : Circuit}
+    (h1 : m.first.resistance = 0) (h2 : m.second.resistance = 0)
+    {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) :
+    ¬ GloballyAsymptoticallyStable m u vg e := by
+  intro h
+  exact lossless_not_asymptoticallyStable h1 h2 he
+    ⟨h.1, 1, zero_lt_one, fun x hx _ => h.2 x hx⟩
+
+@[powerlib_domain] theorem lossless_not_globallyExponentiallyStable {m : Circuit}
+    (h1 : m.first.resistance = 0) (h2 : m.second.resistance = 0)
+    {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) :
+    ¬ GloballyExponentiallyStable m u vg e := by
+  intro h
+  exact lossless_not_globallyAsymptoticallyStable h1 h2 he
+    ⟨lyapunovStable_of_globallyExponentiallyStable h,
+      fun _ hx => trajectory_tendsto_of_globallyExponentiallyStable h hx⟩
+
 end powerlib.LCL

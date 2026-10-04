@@ -69,9 +69,8 @@ def squaredSize (x : State) : ℝ := (x 0) ^ 2 + (x 1) ^ 2 + (x 2) ^ 2
   have h33 := ((hd 2).pow 2).const_mul p.p33
   have h := ((((h11.add h12).add h13).add h22).add h23).add h33
   convert h using 1
-  · rfl
-  · dsimp [energyDerivative]
-    ring
+  dsimp [energyDerivative]
+  ring
 
 @[powerlib_domain] theorem Accepted.energy_derivative {m : Circuit} (c : Accepted m)
     {u vg : ℝ} {e : State} {x : ℝ → State}
