@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Small ATP certificate synthesizer and finite ATE experiment for an RL circuit."""
+"""Small ATP certificate synthesizer and finite ATD experiment for an RL circuit."""
 import argparse
 from fractions import Fraction
 import json
@@ -104,8 +104,8 @@ def atp(path):
     return report
 
 
-def ate():
-    directory = output_dir("ate")
+def atd():
+    directory = output_dir("atd")
     results = []
     for name, condition, counterexample in [
         ("positive", "0 < m.resistance", None),
@@ -140,7 +140,7 @@ theorem refuted : ¬ ({proposition}) := by
               "results": results}
     (directory / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     if [item["status"] for item in results] != ["PROVED", "REFUTED", "REFUTED"]:
-        raise RuntimeError("The ATE experiment did not complete; see its report and logs")
+        raise RuntimeError("The ATD experiment did not complete; see its report and logs")
     return report
 
 
@@ -148,10 +148,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("atp", help="Synthesize and verify an RL stability certificate").add_argument("model")
-    commands.add_parser("ate", help="Explore three sign conditions and verify proofs or counterexamples")
+    commands.add_parser("atd", help="Search three sign conditions and verify proofs or counterexamples")
     args = parser.parse_args()
     try:
-        report = atp(args.model) if args.command == "atp" else ate()
+        report = atp(args.model) if args.command == "atp" else atd()
     except (ValueError, OSError, RuntimeError) as error:
         print(json.dumps({"status": "NOT_ACCEPTED", "reason": str(error)}, indent=2))
         return 1

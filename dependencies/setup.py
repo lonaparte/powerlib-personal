@@ -48,7 +48,7 @@ def setup():
     print("Building the Lean library", flush=True)
     print(demand(["lake", "build"], timeout=1800), end="", flush=True)
     print(demand(["lake", "env", "lean", DEPENDENCIES / "tests/Audit.lean"]), end="", flush=True)
-    print("Setup complete. Run the ATP and ATE examples from the README.")
+    print("Setup complete. Run the ATP and ATD examples from the README.")
 
 
 if __name__ == "__main__":
