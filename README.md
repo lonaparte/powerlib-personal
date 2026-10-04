@@ -24,27 +24,3 @@ theorems than mathematics and control theory. Much of the knowledge concerns
 specific operating conditions, hardware, control methods, and their combinations.
 We see this as a good experimental setting for making ATP work at the synthesis
 level and exploring the potential of ATD.
-
-## Quick Start
-
-Run ATP and the fixed-candidate ATD prototype on the RL example:
-
-```sh
-python3 dependencies/powerlib.py atp dependencies/examples/rl.json
-python3 dependencies/powerlib.py atd
-```
-
-For `R = 2`, `L = 1`, ATP synthesizes `V(i) = i²/4` and returns `ACCEPTED`
-after Lean verifies the certificate and derives its model-bound theorems.
-The `atd` prototype checks three manually enumerated stability conditions; it
-does not yet generate conjectures or constitute complete theorem discovery.
-
-Use a theorem in Lean:
-
-```lean
-import powerlib
-
-example (m : powerlib.Impedance) :
-    (powerlib.toStateSpace m).Stable ↔ m.Stable :=
-  powerlib.stability_agrees m
-```

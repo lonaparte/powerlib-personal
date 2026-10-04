@@ -4,7 +4,12 @@ open Lean Elab Command
 run_cmd do
   let env ← getEnv
   let mut state : Lean.CollectAxioms.State := {}
-  let roots := ([`powerlib.modelEquiv, `powerlib.LCL.modelEquiv] : List Name) ++ (powerlib.Registry.theoremNames env).toList
+  for (root, info) in env.constants do
+    if root.getRoot == `powerlib && !info.isUnsafe then
+      let (_, next) := ((Lean.CollectAxioms.collect root).run env).run state
+      state := next
+
+  let roots := ([] : List Name) ++ (powerlib.Registry.theoremNames env).toList
   for root in roots do
     let (_, next) := ((Lean.CollectAxioms.collect root).run env).run state
     state := next

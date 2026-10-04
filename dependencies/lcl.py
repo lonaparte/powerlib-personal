@@ -9,12 +9,17 @@ import re
 import sys
 import tempfile
 
-from common import ROOT, RESULTS, audit, check_lean, demand, digest, proof_provenance, run
+from common import ROOT, RESULTS, audit, check_lean, check_conversions, demand, digest, proof_provenance, run
 from powerlib import rational
 
 KEYS = ("inductance1", "inductance2", "capacitance", "resistance1", "resistance2")
 POSITIONS = ((0, 0), (0, 1), (0, 2), (1, 1), (1, 2), (2, 2))
 IDENTITY = tuple(tuple(Fraction(int(i == j)) for j in range(3)) for i in range(3))
+ADMITTED_THEOREMS = ["Admission." + name for name in (
+    "stable", "positive", "dissipation", "small_signal", "lyapunov_stable",
+    "globally_asymptotically_stable", "globally_exponentially_stable",
+    "equilibrium_exists", "trajectory_exists", "trajectory_unique",
+    "trajectory_tendsto", "energy_derivative")]
 
 
 @dataclass(frozen=True)
@@ -191,8 +196,42 @@ def accepted : powerlib.LCL.Accepted submittedModel := Candidate.certificate
     let f := (powerlib.LCL.toStateSpace submittedModel).field x y z 0 0
     powerlib.LCL.energyDerivative accepted.p x y z f.1 f.2.1 f.2.2 = -(x^2+y^2+z^2) :=
   accepted.dissipation x y z
+@[powerlib_domain] theorem small_signal :
+    powerlib.LCL.AsymptoticallyStable submittedModel 0 0 0 :=
+  accepted.asymptoticallyStable (powerlib.LCL.zero_equilibrium submittedModel)
+@[powerlib_domain] theorem lyapunov_stable (u vg : ℝ) (e : powerlib.LCL.State)
+    (he : powerlib.LCL.IsEquilibrium submittedModel u vg e) :
+    powerlib.LCL.LyapunovStable submittedModel u vg e := accepted.lyapunovStable he
+@[powerlib_domain] theorem globally_asymptotically_stable (u vg : ℝ) (e : powerlib.LCL.State)
+    (he : powerlib.LCL.IsEquilibrium submittedModel u vg e) :
+    powerlib.LCL.GloballyAsymptoticallyStable submittedModel u vg e :=
+  accepted.globallyAsymptoticallyStable he
+@[powerlib_domain] theorem globally_exponentially_stable (u vg : ℝ) (e : powerlib.LCL.State)
+    (he : powerlib.LCL.IsEquilibrium submittedModel u vg e) :
+    powerlib.LCL.GloballyExponentiallyStable submittedModel u vg e :=
+  accepted.globallyExponentiallyStable he
+@[powerlib_domain] theorem equilibrium_exists (u vg : ℝ) :
+    powerlib.LCL.IsEquilibrium submittedModel u vg (powerlib.LCL.equilibrium submittedModel u vg) :=
+  accepted.equilibrium_exists u vg
+@[powerlib_domain] theorem trajectory_exists (u vg : ℝ) (initial : powerlib.LCL.State) :
+    ∃ x, powerlib.LCL.IsTrajectory submittedModel u vg x ∧ x 0 = initial :=
+  accepted.trajectory_exists u vg initial
+@[powerlib_domain] theorem trajectory_unique (u vg : ℝ) (e : powerlib.LCL.State)
+    (x y : ℝ → powerlib.LCL.State) (he : powerlib.LCL.IsEquilibrium submittedModel u vg e)
+    (hx : powerlib.LCL.IsTrajectory submittedModel u vg x)
+    (hy : powerlib.LCL.IsTrajectory submittedModel u vg y) (h0 : x 0 = y 0) :
+    Set.EqOn x y (Set.Ici 0) := powerlib.LCL.trajectory_unique he hx hy h0
+@[powerlib_domain] theorem trajectory_tendsto (u vg : ℝ) (e : powerlib.LCL.State)
+    (x : ℝ → powerlib.LCL.State) (he : powerlib.LCL.IsEquilibrium submittedModel u vg e)
+    (hx : powerlib.LCL.IsTrajectory submittedModel u vg x) :
+    Filter.Tendsto x Filter.atTop (nhds e) := accepted.trajectory_tendsto he hx
+@[powerlib_domain] theorem energy_derivative (u vg : ℝ) (e : powerlib.LCL.State)
+    (x : ℝ → powerlib.LCL.State) (he : powerlib.LCL.IsEquilibrium submittedModel u vg e)
+    (hx : powerlib.LCL.IsTrajectory submittedModel u vg x) (t : ℝ) (ht : 0 ≤ t) :
+    HasDerivWithinAt (fun s => powerlib.LCL.quadraticEnergy accepted.p (x s - e))
+      (-powerlib.LCL.squaredSize (x t - e)) (Set.Ici 0) t := accepted.energy_derivative he hx ht
 end Admission
-''' + audit(["Admission.accepted", "Admission.stable", "Admission.positive", "Admission.dissipation"]))
+''' + audit(["Admission.accepted", *ADMITTED_THEOREMS]))
 
 
 def verify_kernel(proof):
@@ -213,23 +252,24 @@ def certificate_report(model, p):
             "maturity": "Unverified proof artifact"}
 
 
-def synthesize(model, kernel=False):
+def synthesize(model, kernel=False, directory=None):
     p = synthesize_witness(model)
     report = certificate_report(model, p)
     RESULTS.mkdir(parents=True, exist_ok=True)
-    directory = Path(tempfile.mkdtemp(prefix="lcl-", dir=RESULTS))
+    directory = directory or Path(tempfile.mkdtemp(prefix="lcl-", dir=RESULTS))
     proof = directory / "Certificate.lean"
     proof.write_text(proof_source(model, p))
     report["proof"] = str(proof)
     report["proof_sha256"] = digest(proof)
     if kernel:
+        check_conversions()
         report["lean"] = verify_kernel(proof)
         report["provenance"] = proof_provenance(proof)
         report["kernel_verified"] = True
         report["status"] = "ACCEPTED"
         report["maturity"] = "S-level"
         report["witness_origin"] = "Automatic exact Lyapunov synthesis from witness-free model"
-        report["theorems"] = ["Admission.stable", "Admission.positive", "Admission.dissipation"]
+        report["theorems"] = list(ADMITTED_THEOREMS)
     (directory / "certificate.json").write_text(json.dumps(report, indent=2) + "\n")
     return report
 
@@ -264,6 +304,7 @@ def verify_saved(model, path, kernel=False):
     report = certificate_report(model, p)
     # Recompute all checks and regenerate proof; trust no claimed status or proof path.
     if kernel:
+        check_conversions()
         RESULTS.mkdir(parents=True, exist_ok=True)
         directory = Path(tempfile.mkdtemp(prefix="lcl-verify-", dir=RESULTS))
         proof = directory / "Certificate.lean"
@@ -275,26 +316,25 @@ def verify_saved(model, path, kernel=False):
         report["status"] = "ACCEPTED"
         report["maturity"] = "Certificate verification"
         report["witness_origin"] = "Submitted certificate"
-        report["theorems"] = ["Admission.stable", "Admission.positive", "Admission.dissipation"]
+        report["theorems"] = list(ADMITTED_THEOREMS)
         (directory / "certificate.json").write_text(json.dumps(report, indent=2)+"\n")
     return report
 
 
 def atp(path):
-    from lcl_bridge import rebuild
-    bridge = rebuild()
-    demand(["lake", "build"], timeout=1800)
-    report = synthesize(read_model(path), kernel=True)
-    report["submitted_model_sha256"] = digest(path)
-    report["conversion"] = bridge
+    RESULTS.mkdir(parents=True, exist_ok=True)
+    directory = Path(tempfile.mkdtemp(prefix="lcl-", dir=RESULTS))
+    submitted = directory / "submitted.json"
+    submitted.write_bytes(Path(path).read_bytes())
+    report = synthesize(read_model(submitted), kernel=True, directory=directory)
+    report["submitted_model_sha256"] = digest(submitted)
+    report["conversion"] = report["provenance"]["conversions"]["lcl"]
     Path(report["proof"]).with_name("certificate.json").write_text(json.dumps(report, indent=2)+"\n")
     return report
 
 
 def atd():
-    from lcl_bridge import rebuild
-    bridge = rebuild()
-    demand(["lake", "build"], timeout=1800)
+    bridge = check_conversions()["lcl"]
     RESULTS.mkdir(parents=True, exist_ok=True)
     directory = Path(tempfile.mkdtemp(prefix="lcl-atd-", dir=RESULTS))
     results = []
@@ -303,12 +343,14 @@ def atd():
         ("both_positive", "0 < m.first.resistance ∧ 0 < m.second.resistance", (1, 0)),
         ("nonnegative_sum", "0 ≤ m.first.resistance + m.second.resistance", (0, 0)),
     ]:
-        proposition = f"∀ m : powerlib.LCL.Circuit, m.Passive → (m.Stable ↔ {condition})"
+        proposition = ("∀ m : powerlib.LCL.Circuit, m.Passive → "
+                       f"(powerlib.LCL.AsymptoticallyStable m 0 0 0 ↔ {condition})")
         proof = directory / (name+".lean")
         proof.write_text(f'''import powerlib
 @[powerlib_domain] theorem discovered : {proposition} := by
   intro m hp
-  rw [powerlib.LCL.passive_stable_iff m hp] <;> first | rfl | tauto
+  rw [powerlib.LCL.passive_asymptoticallyStable_iff m hp (powerlib.LCL.zero_equilibrium m)] <;>
+    first | rfl | tauto
 ''' + audit(["discovered"]))
         code, log = run(["lake", "env", "lean", proof])
         proof.with_suffix(".log").write_text(log)
@@ -321,13 +363,15 @@ def atd():
   intro h
   have hp : model.Passive := by norm_num [model, powerlib.LCL.Circuit.Passive]
   have hh := h model hp
-  rw [powerlib.LCL.passive_stable_iff model hp] at hh
+  rw [powerlib.LCL.passive_asymptoticallyStable_iff model hp (powerlib.LCL.zero_equilibrium model)] at hh
   norm_num [model, powerlib.LCL.Circuit.Damped] at hh
 ''' + audit(["refuted"]))
             check_lean(proof)
             status = "REFUTED"
         results.append({"conjecture": proposition, "status": status,
-                        "proof": str(proof), "proof_sha256": digest(proof)})
+                        "proof": str(proof), "proof_sha256": digest(proof),
+                        "theorem": "discovered" if status == "PROVED" else "refuted" if status == "REFUTED" else None,
+                        "provenance": proof_provenance(proof) if status != "UNPROVED" else None})
     report = {"scope": "Finite search of three conditions in the passive canonical LCL family",
               "maturity": "Fixed-candidate verification prototype",
               "conjecture_generation": "Three manually enumerated conditions",

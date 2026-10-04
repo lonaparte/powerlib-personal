@@ -3,9 +3,14 @@ name: Proof kernels
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: proof-kernels-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   kernels:
@@ -26,7 +31,8 @@ jobs:
       - name: Audit project theorems
         run: lake env lean dependencies/tests/Audit.lean
       - name: Check theorem discovery and automatic reuse
-        run: lake env lean dependencies/tests/Automation.lean
+        timeout-minutes: 5
+        run: python3 dependencies/check_automatic.py
       - name: Check Agda conversion and dependency pins
         run: python3 dependencies/setup.py
       - name: Check LCL conversion
@@ -42,6 +48,7 @@ jobs:
           python3 dependencies/powerlib.py atp dependencies/examples/lcl.json --family lcl
           python3 dependencies/powerlib.py atd
           python3 dependencies/powerlib.py atd --family lcl
+          python3 dependencies/check_evidence.py
       - name: Retain proof artifacts and kernel logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

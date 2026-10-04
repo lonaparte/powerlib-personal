@@ -144,7 +144,8 @@ def rebuild(write=False):
                             input=commands, cwd=stage)
         words = extract(normalized)
         content = render(words, digest(entry))
-        candidate = stage / "Conversion.lean"
+        RESULTS.mkdir(parents=True, exist_ok=True)
+        candidate = RESULTS / "bridge-endpoint.lean"
         candidate.write_text("import Lean\n" + content +
                              audit(["powerlib.generated.convert_spec"], include_core=False))
         check_lean(candidate)
@@ -156,7 +157,10 @@ def rebuild(write=False):
             raise RuntimeError("Generated conversion is stale; run python3 dependencies/bridge.py --write")
         report = {"agda": "2.8.0", "cubical_commit": CUBICAL_COMMIT,
                   "agda_source_sha256": digest(entry), "wire": words,
-                  "generated_sha256": digest(TARGET), "status": "AGDA_AND_LEAN_CHECKED"}
+                  "generated_sha256": digest(TARGET), "status": "AGDA_AND_LEAN_CHECKED",
+                  "interface": words[0], "interface_version": words[1],
+                  "endpoint_sha256": digest(candidate),
+                  "endpoint_log_sha256": digest(candidate.with_suffix(".log"))}
         RESULTS.mkdir(parents=True, exist_ok=True)
         (RESULTS / "bridge.log").write_text(log + normalized)
         (RESULTS / "bridge.json").write_text(json.dumps(report, indent=2) + "\n")

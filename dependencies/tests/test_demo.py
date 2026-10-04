@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from bridge import extract, render
 from common import ROOT, DEPENDENCIES, CACHE, RESULTS, audit, check_lean, run
 from powerlib import admission_source, candidate_source, read_model
+from check_automatic import check_automatic
 
 
 class InputTests(unittest.TestCase):
@@ -98,6 +99,71 @@ class KernelTests(unittest.TestCase):
             "sorry") + admission_source(r, l, p, rate)
         log = self.check_source("bad_sorry", source, False)
         self.assertIn("Unexpected axiom sorryAx", log)
+
+    def test_audit_covers_unlisted_declarations(self):
+        # A new declaration must not evade the audit by missing a manual root list.
+        for name, declaration, diagnostic in [
+            ("hidden_sorry", "theorem powerlib.hidden : False := by sorry", "sorryAx"),
+            ("hidden_axiom", "axiom powerlib.hidden : False", "powerlib.hidden"),
+        ]:
+            log = self.check_source(name, "import powerlib\n" + declaration + "\n" + audit(), False)
+            self.assertIn("Unexpected axiom " + diagnostic, log)
+
+    def test_trajectory_stability_boundary(self):
+        self.check_source("semantic_boundary", '''import powerlib
+def lossless : powerlib.Impedance := ⟨0, ⟨1, by norm_num⟩⟩
+def negativeResistance : powerlib.Impedance := ⟨-1, ⟨1, by norm_num⟩⟩
+theorem lossless_not_asymptotic : ¬ powerlib.AsymptoticallyStable lossless 0 0 := by
+  rw [powerlib.asymptoticallyStable_iff_resistance_pos (powerlib.zero_equilibrium _)]
+  norm_num [lossless]
+theorem negative_not_asymptotic : ¬ powerlib.AsymptoticallyStable negativeResistance 0 0 := by
+  rw [powerlib.asymptoticallyStable_iff_resistance_pos (powerlib.zero_equilibrium _)]
+  norm_num [negativeResistance]
+''' + audit(["lossless_not_asymptotic", "negative_not_asymptotic"]), True)
+
+    def test_automatic_public_api(self):
+        self.assertGreater(check_automatic(), 0)
+
+    def test_untagged_library_theorem_reuse(self):
+        self.check_source("untagged_reuse", '''import powerlib
+namespace ThirdPartyFixture
+inductive Contract (x : ℕ) : Prop where
+  | ofEquality : x + x = 2 * x → Contract x
+theorem untagged (x : ℕ) : Contract x := .ofEquality (by omega)
+end ThirdPartyFixture
+theorem reused (x : ℕ) : ThirdPartyFixture.Contract x := by powerlib_search
+open Lean Elab Command in
+run_cmd do
+  let info ← getConstInfo `reused
+  let some proof := info.value? | throwError "Missing consumer proof"
+  unless proof.getUsedConstants.contains `ThirdPartyFixture.untagged do
+    throwError "Search did not reuse the untagged library theorem"
+  unless (powerlib.Registry.kindOf? (← getEnv) `ThirdPartyFixture.untagged).isNone do
+    throwError "The external theorem unexpectedly needed a PowerLib tag"
+''' + audit(["reused"]), True)
+
+    def test_library_search_filters_proof_escapes(self):
+        for proof, axiom in [("by sorry", "sorryAx"), ("forbidden", "forbidden")]:
+            source = '''import powerlib
+namespace ThirdPartyFixture
+inductive Contract : Prop
+end ThirdPartyFixture
+axiom forbidden : ThirdPartyFixture.Contract
+'''
+            source += f"theorem badLibraryTheorem : ThirdPartyFixture.Contract := {proof}\n"
+            source += f'''open Lean Elab Command in
+run_cmd do
+  let env ← getEnv
+  let some entry := powerlib.Search.describe env `badLibraryTheorem |
+    throwError "The invalid theorem was absent from inspection"
+  unless entry.axioms.contains `{axiom} do
+    throwError "Missing transitive proof-escape dependency"
+  if powerlib.Search.eligible env `badLibraryTheorem then
+    throwError "An invalid theorem was eligible for proof search"
+theorem rejected : ThirdPartyFixture.Contract := by powerlib_search
+'''
+            log = self.check_source("untrusted_library", source, False)
+            self.assertIn("No kernel-admissible library theorem closed the goal", log)
 
     def test_exported_formula(self):
         # Well-typed but wrong data must fail the independent Lean endpoint.

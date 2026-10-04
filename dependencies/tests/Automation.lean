@@ -45,11 +45,25 @@ run_cmd do
   let domains := Registry.theoremNames env (some .domain)
   let foundations := Registry.theoremNames env (some .foundation)
   for name in #[`powerlib.lcl_stable_iff, `powerlib.impedance_stable_iff,
-      `powerlib.Accepted.stable, `powerlib.LCL.Accepted.stable] do
+      `powerlib.Accepted.stable, `powerlib.LCL.Accepted.stable,
+      `powerlib.asymptoticallyStable_iff_resistance_pos,
+      `powerlib.Accepted.globallyExponentiallyStable,
+      `powerlib.Accepted.energy_derivative, `powerlib.LCL.Accepted.globallyExponentiallyStable,
+      `powerlib.LCL.Accepted.globallyAsymptoticallyStable,
+      `powerlib.LCL.Accepted.energy_derivative, `powerlib.LCL.trajectory_exists,
+      `powerlib.LCL.trajectory_unique, `powerlib.LCL.passive_lyapunovStable,
+      `powerlib.LCL.lossless_not_asymptoticallyStable,
+      `powerlib.LCL.lossless_energy_conserved] do
     unless domains.contains name do
       throwError "Public domain theorem missing from discovery: {name}"
+  for name in #[`powerlib.lcl_asymptotically_stable_iff,
+      `powerlib.lcl_globally_exponentially_stable_iff,
+      `powerlib.LCL.passive_asymptoticallyStable, `powerlib.LCL.passive_globallyExponentiallyStable] do
+    unless domains.contains name do
+      throwError "Public semantic theorem missing from discovery: {name}"
   for name in #[`powerlib.state_roundtrip, `powerlib.LCL.circuit_roundtrip,
-      `powerlib.generated.convert_spec, `powerlib.generated.convertLCL_spec] do
+      `powerlib.generated.convert_spec, `powerlib.generated.convertLCL_spec,
+      `powerlib.trajectory_iff_circuit] do
     unless foundations.contains name do
       throwError "Imported foundation theorem missing from discovery: {name}"
   unless (Registry.kindOf? env `powerlib.response).isNone do

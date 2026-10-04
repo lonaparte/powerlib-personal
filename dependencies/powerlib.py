@@ -8,7 +8,7 @@ import re
 import sys
 import tempfile
 
-from common import ROOT, RESULTS, audit, check_lean, demand, digest, proof_provenance, run
+from common import ROOT, RESULTS, audit, check_lean, check_conversions, demand, digest, proof_provenance, run
 
 
 def rational(value):
@@ -74,8 +74,29 @@ example : accepted.rate = {literal(rate)} := by norm_num [accepted, Candidate.ce
 @[powerlib_domain] theorem decay (initial t : ℝ) :
     (powerlib.response submittedModel initial t) ^ 2 =
       initial ^ 2 * Real.exp (-(accepted.rate * t)) := accepted.decay_bound initial t
+@[powerlib_domain] theorem small_signal : powerlib.AsymptoticallyStable submittedModel 0 0 := by
+  have certificate := accepted
+  powerlib_auto
+@[powerlib_domain] theorem exponential (voltage equilibrium : ℝ)
+    (he : powerlib.IsEquilibrium submittedModel voltage equilibrium) :
+    powerlib.GloballyExponentiallyStable submittedModel voltage equilibrium := by
+  have certificate := accepted
+  powerlib_auto
+@[powerlib_domain] theorem global_asymptotic (voltage equilibrium : ℝ)
+    (he : powerlib.IsEquilibrium submittedModel voltage equilibrium) :
+    powerlib.GloballyAsymptoticallyStable submittedModel voltage equilibrium := by
+  have certificate := accepted
+  powerlib_auto
+@[powerlib_domain] theorem all_trajectory_decay (voltage equilibrium : ℝ) (i : ℝ → ℝ)
+    (he : powerlib.IsEquilibrium submittedModel voltage equilibrium)
+    (hi : powerlib.IsTrajectory submittedModel voltage i) (t : ℝ) (ht : 0 ≤ t) :
+    (i t - equilibrium) ^ 2 =
+      (i 0 - equilibrium) ^ 2 * Real.exp (-(accepted.rate * t)) := by
+  powerlib_auto
 end Admission
-''' + audit(["Admission.accepted", "Admission.stable", "Admission.dissipation", "Admission.decay"])
+''' + audit(["Admission.accepted", "Admission.stable", "Admission.dissipation", "Admission.decay",
+             "Admission.small_signal", "Admission.exponential", "Admission.global_asymptotic",
+             "Admission.all_trajectory_decay"])
 
 
 def output_dir(kind):
@@ -84,11 +105,14 @@ def output_dir(kind):
 
 
 def atp(path):
-    resistance, inductance = read_model(path)
+    directory = output_dir("atp")
+    submitted = directory / "submitted.json"
+    submitted.write_bytes(Path(path).read_bytes())
+    resistance, inductance = read_model(submitted)
     if resistance <= 0:
         raise ValueError("No strict stability certificate: resistance must be positive")
     p, rate = inductance / (2 * resistance), 2 * resistance / inductance
-    directory = output_dir("atp")
+    check_conversions()
     proof = directory / "Certificate.lean"
     proof.write_text(candidate_source(resistance, inductance, p, rate) +
                      admission_source(resistance, inductance, p, rate))
@@ -99,15 +123,20 @@ def atp(path):
         "model": {"resistance": str(resistance), "inductance": str(inductance)},
         "state_space": {"decay": str(resistance / inductance), "input_gain": str(1 / inductance)},
         "certificate": {"p": str(p), "squared_current_decay_rate": str(rate)},
-        "theorem": "Admission.stable", "proof": str(proof),
+        "theorem": "Admission.small_signal", "proof": str(proof),
+        "theorems": ["Admission.stable", "Admission.dissipation", "Admission.decay",
+                     "Admission.small_signal", "Admission.exponential",
+                     "Admission.global_asymptotic", "Admission.all_trajectory_decay"],
+        "semantics": "All forward RL trajectories; epsilon-delta stability and convergence",
         "proof_sha256": digest(proof), "lean": demand(["lake", "env", "lean", "--version"]).strip(),
-        "submitted_model_sha256": digest(path), "provenance": proof_provenance(proof),
+        "submitted_model_sha256": digest(submitted), "provenance": proof_provenance(proof),
     }
     (directory / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     return report
 
 
 def atd():
+    check_conversions()
     directory = output_dir("atd")
     results = []
     for name, condition, counterexample in [
@@ -115,12 +144,12 @@ def atd():
         ("nonnegative", "0 ≤ m.resistance", 0),
         ("negative", "m.resistance < 0", 1),
     ]:
-        proposition = f"∀ m : powerlib.Impedance, m.Stable ↔ {condition}"
+        proposition = f"∀ m : powerlib.Impedance, powerlib.AsymptoticallyStable m 0 0 ↔ {condition}"
         path = directory / (name + ".lean")
         path.write_text(f'''import powerlib
 @[powerlib_domain] theorem discovered : {proposition} := by
   intro m
-  rw [powerlib.impedance_stable_iff] <;> (constructor <;> intro h <;> linarith)
+  rw [powerlib.asymptoticallyStable_iff_resistance_pos (powerlib.zero_equilibrium m)] <;> (constructor <;> intro h <;> linarith)
 ''' + audit(["discovered"]))
         code, log = run(["lake", "env", "lean", path])
         path.with_suffix(".log").write_text(log)
@@ -131,14 +160,16 @@ def atd():
 @[powerlib_domain] theorem refuted : ¬ ({proposition}) := by
   intro h
   have hh := h ⟨{counterexample}, ⟨1, by norm_num⟩⟩
-  rw [powerlib.impedance_stable_iff] at hh
+  rw [powerlib.asymptoticallyStable_iff_resistance_pos (powerlib.zero_equilibrium _)] at hh
   norm_num at hh
 ''' + audit(["refuted"]))
             check_lean(refutation)
             status = "REFUTED"
         artifact = path if status == "PROVED" else refutation if status == "REFUTED" else path
         results.append({"conjecture": proposition, "status": status,
-                        "proof": str(artifact), "proof_sha256": digest(artifact)})
+                        "proof": str(artifact), "proof_sha256": digest(artifact),
+                        "theorem": "discovered" if status == "PROVED" else "refuted" if status == "REFUTED" else None,
+                        "provenance": proof_provenance(artifact) if status != "UNPROVED" else None})
     report = {"scope": "Finite search of three resistance sign conditions in the canonical RL family",
               "maturity": "Fixed-candidate verification prototype",
               "conjecture_generation": "Three manually enumerated conditions",

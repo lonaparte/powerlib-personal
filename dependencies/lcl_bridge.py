@@ -99,7 +99,7 @@ def rebuild(write=False):
         words = extract(normalized)
         source_hash, branch_hash = digest(entry), digest(stage / "theorems/Conversion.agda")
         content = render(words, source_hash, branch_hash)
-        proof = stage / "LCLConversion.lean"
+        proof = RESULTS / "lcl-bridge-endpoint.lean"
         proof.write_text("import Lean\n" + content +
                          audit(["powerlib.generated.convertLCL_spec"], include_core=False))
         check_lean(proof)
@@ -112,7 +112,10 @@ def rebuild(write=False):
         report = {"agda": "2.8.0", "cubical_commit": CUBICAL_COMMIT,
                   "agda_source_sha256": source_hash, "rl_source_sha256": branch_hash,
                   "wire": words, "generated_sha256": digest(TARGET),
-                  "status": "AGDA_AND_LEAN_CHECKED"}
+                  "status": "AGDA_AND_LEAN_CHECKED",
+                  "interface": words[0], "interface_version": words[1],
+                  "endpoint_sha256": digest(proof),
+                  "endpoint_log_sha256": digest(proof.with_suffix(".log"))}
         (RESULTS / "lcl-bridge.log").write_text(log + normalized)
         (RESULTS / "lcl-bridge.json").write_text(json.dumps(report, indent=2) + "\n")
         return report
