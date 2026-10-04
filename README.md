@@ -128,6 +128,8 @@ model, theorem names, proof and kernel-log hashes, dependency revisions and
 lockfile hash, public Lean source hashes, and both Agda conversion reports.
 Those reports bind Agda/Cubical versions, source hashes, versioned normalized
 wire data, generated Lean hashes, endpoint proofs and verification logs.
+Each proof keeps its own evidence copies, so later bridge runs cannot overwrite
+earlier provenance. CI checks the retained hashes after both families finish.
 Dependencies and conversion evidence are checked for mismatches. Generated
 certificates instantiate public theorems; they are not automatically new
 library theorems. Hashes identify evidence; Lean/Agda establish correctness.

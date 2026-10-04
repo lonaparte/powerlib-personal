@@ -48,6 +48,7 @@ jobs:
           python3 dependencies/powerlib.py atp dependencies/examples/lcl.json --family lcl
           python3 dependencies/powerlib.py atd
           python3 dependencies/powerlib.py atd --family lcl
+          python3 dependencies/check_evidence.py
       - name: Retain proof artifacts and kernel logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

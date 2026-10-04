@@ -3,6 +3,7 @@ from pathlib import Path
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -78,8 +79,27 @@ def proof_provenance(proof):
         if demand(["git", "-C", checkout, "status", "--porcelain", "--untracked-files=no"]).strip():
             raise RuntimeError(f"Dependency source has been modified: {package['name']}")
         revisions[package["name"]] = actual
+    conversions = conversion_provenance()
+    # Keep immutable per-proof copies: a later bridge run must not overwrite
+    # the logs identified by an earlier certificate's hashes.
+    evidence = Path(proof).with_name(Path(proof).stem + "-evidence")
+    evidence.mkdir(parents=True, exist_ok=True)
+    for prefix in ["bridge", "lcl-bridge"]:
+        for suffix in [".json", ".log", "-endpoint.lean", "-endpoint.log"]:
+            shutil.copyfile(RESULTS / (prefix + suffix), evidence / (prefix + suffix))
+    for path in [ROOT / "lean-toolchain", ROOT / "lake-manifest.json", ROOT / "Rules.md",
+                 ROOT / "powerlib.lean", DEPENDENCIES / "wire.json", DEPENDENCIES / "lcl_wire.json",
+                 *sorted((ROOT / "theorems").rglob("*.lean")),
+                 *sorted((ROOT / "theorems").rglob("*.agda"))]:
+        target = evidence / path.relative_to(ROOT)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(path, target)
     return {"lean": version, "dependencies": revisions,
-            "conversions": conversion_provenance(),
+            "source_commit": demand(["git", "rev-parse", "HEAD"]).strip(),
+            "conversions": conversions,
+            "evidence_directory": evidence.name,
+            "evidence_files_sha256": {str(p.relative_to(evidence)): digest(p)
+                                      for p in sorted(evidence.rglob("*")) if p.is_file()},
             "manifest_sha256": digest(ROOT / "lake-manifest.json"),
             "public_source_sha256": {"powerlib.lean": digest(ROOT / "powerlib.lean"), **{
                 str(path.relative_to(ROOT)): digest(path)
