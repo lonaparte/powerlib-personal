@@ -15,13 +15,19 @@ run_cmd do
   for (name, info) in env.constants do
     if name.getRoot == `powerlib && info.isTheorem then
       let type ← liftTermElabM <| PrettyPrinter.ppExpr info.type
-      IO.println s!"-- Source: {name}\ntheorem AutomationCheck.reuse_{count} : {type.pretty} := by powerlib_auto\n"
+      IO.println "section"
+      unless info.levelParams.isEmpty do
+        IO.println s!"universe {String.intercalate " " (info.levelParams.map toString)}"
+      IO.println s!"-- Source: {name}\ntheorem AutomationCheck.reuse_{count} : {type.pretty} := by powerlib_auto\nend\n"
       pairs := pairs.push s!"(`{name}, `AutomationCheck.reuse_{count})"
       count := count + 1
   IO.println "open Lean Elab Command in\nrun_cmd do"
   IO.println s!"  for (source, consumer) in [{String.intercalate ", " pairs.toList}] do"
   IO.println "    let original ← getConstInfo source\n    let tested ← getConstInfo consumer"
-  IO.println "    unless (← liftTermElabM <| Meta.isDefEq original.type tested.type) do"
+  IO.println "    unless original.levelParams.length == tested.levelParams.length do"
+  IO.println "      throwError \"Automatic consumer changed universe parameters: {source}\""
+  IO.println "    let testedType := tested.type.instantiateLevelParams tested.levelParams (original.levelParams.map Level.param)"
+  IO.println "    unless (← liftTermElabM <| Meta.isDefEq original.type testedType) do"
   IO.println "      throwError \"Automatic consumer changed theorem type: {source}\""
   IO.println s!"-- POWERLIB_THEOREM_COUNT {count}"
   IO.println "POWERLIB_EXPORT_END"
