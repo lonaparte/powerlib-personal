@@ -43,7 +43,7 @@ def squaredSize (x : State) : ℝ := (x 0) ^ 2 + (x 1) ^ 2 + (x 2) ^ 2
   have hn : ‖x‖ ≤ Real.sqrt (squaredSize x) := (pi_norm_le_iff_of_nonneg (Real.sqrt_nonneg _)).mpr (by
     intro j
     have hj : (x j) ^ 2 ≤ squaredSize x := by
-      fin_cases j <;> unfold squaredSize <;> nlinarith [sq_nonneg (x 0), sq_nonneg (x 1), sq_nonneg (x 2)]
+      fin_cases j <;> dsimp [squaredSize] <;> nlinarith [sq_nonneg (x 0), sq_nonneg (x 1), sq_nonneg (x 2)]
     rw [Real.norm_eq_abs]
     nlinarith [sq_abs (x j), abs_nonneg (x j), Real.sqrt_nonneg (squaredSize x)])
   nlinarith [norm_nonneg x, Real.sqrt_nonneg (squaredSize x)]
@@ -61,12 +61,13 @@ def squaredSize (x : State) : ℝ := (x 0) ^ 2 + (x 1) ^ 2 + (x 2) ^ 2
       (energyDerivative p (x t 0) (x t 1) (x t 2) (dx 0) (dx 1) (dx 2)) (Ici 0) t := by
   have hd (j : Fin 3) : HasDerivWithinAt (fun s => x s j) (dx j) (Ici 0) t := by
     exact (ContinuousLinearMap.proj j : State →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt t hx
-  have h := ((((((hd 0).pow 2).const_mul p.p11).add
-      ((((hd 0).const_mul (2 * p.p12)).mul (hd 1))).add
-      ((((hd 0).const_mul (2 * p.p13)).mul (hd 2))).add
-      (((hd 1).pow 2).const_mul p.p22)).add
-      (((hd 1).const_mul (2 * p.p23)).mul (hd 2))).add
-      (((hd 2).pow 2).const_mul p.p33)
+  have h11 := ((hd 0).pow 2).const_mul p.p11
+  have h12 := ((hd 0).const_mul (2 * p.p12)).mul (hd 1)
+  have h13 := ((hd 0).const_mul (2 * p.p13)).mul (hd 2)
+  have h22 := ((hd 1).pow 2).const_mul p.p22
+  have h23 := ((hd 1).const_mul (2 * p.p23)).mul (hd 2)
+  have h33 := ((hd 2).pow 2).const_mul p.p33
+  have h := ((((h11.add h12).add h13).add h22).add h23).add h33
   convert h using 1
   · rfl
   · dsimp [energyDerivative]
@@ -78,7 +79,7 @@ def squaredSize (x : State) : ℝ := (x 0) ^ 2 + (x 1) ^ 2 + (x 2) ^ 2
     HasDerivWithinAt (fun s => quadraticEnergy c.p (x s - e))
       (-squaredSize (x t - e)) (Ici 0) t := by
   have h := quadraticEnergy_derivative c.p ((trajectory_shift he hx) t ht)
-  simpa only [StateSpace.vectorField, c.dissipation, squaredSize] using h
+  simpa [StateSpace.vectorField, c.dissipation, squaredSize] using h
 
 @[powerlib_domain] theorem Accepted.trajectory_energy_decay {m : Circuit} (c : Accepted m)
     {α β : ℝ} (hβ : 0 < β)
@@ -136,7 +137,10 @@ def GloballyExponentiallyStable (m : Circuit) (u vg : ℝ) (e : State) : Prop :=
   have h1 := mul_le_mul_of_nonneg_right hαC
     (mul_nonneg (sq_nonneg ‖x 0 - e‖) (sq_nonneg (Real.exp (-(1 / (2 * β)) * t))))
   have hbound : 0 ≤ C * ‖x 0 - e‖ * Real.exp (-(1 / (2 * β)) * t) := by positivity
-  nlinarith [norm_nonneg (x t - e)]
+  have hsquare : α * ‖x t - e‖ ^ 2 ≤
+      α * (C * ‖x 0 - e‖ * Real.exp (-(1 / (2 * β)) * t)) ^ 2 := by
+    nlinarith only [h0, h1]
+  exact (sq_le_sq₀ (norm_nonneg (x t - e)) hbound).mp ((mul_le_mul_left hα).mp hsquare)
 
 @[powerlib_domain] theorem lyapunovStable_of_globallyExponentiallyStable
     {m : Circuit} {u vg : ℝ} {e : State} (h : GloballyExponentiallyStable m u vg e) :
@@ -161,7 +165,7 @@ def GloballyExponentiallyStable (m : Circuit) (u vg : ℝ) (e : State) : Prop :=
   have hu : Tendsto (fun t : ℝ => C * ‖x 0 - e‖ * Real.exp (-rate * t)) atTop (𝓝 0) := by
     simpa using hexp.const_mul (C * ‖x 0 - e‖)
   have hn : Tendsto (fun t => ‖x t - e‖) atTop (𝓝 0) :=
-    squeeze_zero (fun _ => norm_nonneg _) (by
+    squeeze_zero' (Eventually.of_forall (fun _ => norm_nonneg _)) (by
       filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
       exact h x hx t ht) hu
   exact tendsto_iff_norm_sub_tendsto_zero.mpr hn
@@ -184,10 +188,11 @@ def GloballyExponentiallyStable (m : Circuit) (u vg : ℝ) (e : State) : Prop :=
   ⟨c.lyapunovStable he, 1, zero_lt_one, fun _ hx _ => c.trajectory_tendsto he hx⟩
 
 @[powerlib_domain] theorem Accepted.equilibrium_exists {m : Circuit} (c : Accepted m) (u vg : ℝ) :
-    IsEquilibrium m u vg (equilibrium m u vg) := equilibrium_exists (ne_of_gt c.a0_pos) u vg
+    IsEquilibrium m u vg (equilibrium m u vg) :=
+  powerlib.LCL.equilibrium_exists (ne_of_gt c.a0_pos) u vg
 
 @[powerlib_domain] theorem Accepted.trajectory_exists {m : Circuit} (c : Accepted m)
     (u vg : ℝ) (initial : State) : ∃ x, IsTrajectory m u vg x ∧ x 0 = initial :=
-  trajectory_exists (c.equilibrium_exists u vg) initial
+  powerlib.LCL.trajectory_exists (c.equilibrium_exists u vg) initial
 
 end powerlib.LCL

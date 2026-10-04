@@ -30,7 +30,8 @@ def physicalWeights (m : Circuit) : SymmetricMatrix :=
   dsimp [StateSpace.vectorField]
   rw [same_dynamics]
   dsimp [energyDerivative, physicalWeights]
-  field_simp [ne_of_gt m.first.inductance.property, ne_of_gt m.second.inductance.property]
+  field_simp [ne_of_gt m.first.inductance.property, ne_of_gt m.second.inductance.property,
+    ne_of_gt m.capacitance.property]
   ring
 
 @[powerlib_domain] theorem passive_energy_nonincreasing {m : Circuit} (hp : m.Passive)
@@ -65,7 +66,9 @@ def physicalWeights (m : Circuit) : SymmetricMatrix :=
   have hu := (hb (x 0 - e)).2
   have hsq := mul_le_mul_of_nonneg_right hαC (sq_nonneg ‖x 0 - e‖)
   have hn : ‖x t - e‖ ≤ C * ‖x 0 - e‖ := by
-    nlinarith [norm_nonneg (x t - e), norm_nonneg (x 0 - e)]
+    have hsq' : α * ‖x t - e‖ ^ 2 ≤ α * (C * ‖x 0 - e‖) ^ 2 := by
+      nlinarith only [hl, hen, hu, hsq]
+    exact (sq_le_sq₀ (norm_nonneg _) (by positivity)).mp ((mul_le_mul_left hα).mp hsq')
   exact hn.trans_lt (by simpa [mul_comm] using (lt_div_iff₀ hC).mp h0)
 
 @[powerlib_domain] theorem lossless_energy_conserved {m : Circuit}
