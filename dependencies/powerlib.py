@@ -8,7 +8,7 @@ import re
 import sys
 import tempfile
 
-from common import ROOT, RESULTS, audit, check_lean, demand, digest, run
+from common import ROOT, RESULTS, audit, check_lean, check_conversions, demand, digest, proof_provenance, run
 
 
 def rational(value):
@@ -67,31 +67,31 @@ def admission_source(resistance, inductance, p, rate):
 def accepted : powerlib.Accepted submittedModel := Candidate.certificate
 example : accepted.p = {literal(p)} := by norm_num [accepted, Candidate.certificate]
 example : accepted.rate = {literal(rate)} := by norm_num [accepted, Candidate.certificate]
-theorem stable : submittedModel.Stable := accepted.stable
-theorem dissipation (current : ℝ) :
+@[powerlib_domain] theorem stable : submittedModel.Stable := accepted.stable
+@[powerlib_domain] theorem dissipation (current : ℝ) :
     2 * accepted.p * current * (powerlib.toStateSpace submittedModel).field current 0 =
       -current ^ 2 := accepted.dissipation current
-theorem decay (initial t : ℝ) :
+@[powerlib_domain] theorem decay (initial t : ℝ) :
     (powerlib.response submittedModel initial t) ^ 2 =
-      initial ^ 2 * Real.exp (-accepted.rate * t) := accepted.decay_bound initial t
-theorem small_signal : powerlib.AsymptoticallyStable submittedModel 0 0 := by
+      initial ^ 2 * Real.exp (-(accepted.rate * t)) := accepted.decay_bound initial t
+@[powerlib_domain] theorem small_signal : powerlib.AsymptoticallyStable submittedModel 0 0 := by
   have certificate := accepted
   powerlib_auto
-theorem exponential (voltage equilibrium : ℝ)
+@[powerlib_domain] theorem exponential (voltage equilibrium : ℝ)
     (he : powerlib.IsEquilibrium submittedModel voltage equilibrium) :
     powerlib.GloballyExponentiallyStable submittedModel voltage equilibrium := by
   have certificate := accepted
   powerlib_auto
-theorem global_asymptotic (voltage equilibrium : ℝ)
+@[powerlib_domain] theorem global_asymptotic (voltage equilibrium : ℝ)
     (he : powerlib.IsEquilibrium submittedModel voltage equilibrium) :
     powerlib.GloballyAsymptoticallyStable submittedModel voltage equilibrium := by
   have certificate := accepted
   powerlib_auto
-theorem all_trajectory_decay (voltage equilibrium : ℝ) (i : ℝ → ℝ)
+@[powerlib_domain] theorem all_trajectory_decay (voltage equilibrium : ℝ) (i : ℝ → ℝ)
     (he : powerlib.IsEquilibrium submittedModel voltage equilibrium)
     (hi : powerlib.IsTrajectory submittedModel voltage i) (t : ℝ) (ht : 0 ≤ t) :
     (i t - equilibrium) ^ 2 =
-      (i 0 - equilibrium) ^ 2 * Real.exp (-accepted.rate * t) := by
+      (i 0 - equilibrium) ^ 2 * Real.exp (-(accepted.rate * t)) := by
   powerlib_auto
 end Admission
 ''' + audit(["Admission.accepted", "Admission.stable", "Admission.dissipation", "Admission.decay",
@@ -100,36 +100,42 @@ end Admission
 
 
 def output_dir(kind):
-    RESULTS.mkdir(exist_ok=True)
+    RESULTS.mkdir(parents=True, exist_ok=True)
     return Path(tempfile.mkdtemp(prefix=kind + "-", dir=RESULTS))
 
 
 def atp(path):
-    resistance, inductance = read_model(path)
+    directory = output_dir("atp")
+    submitted = directory / "submitted.json"
+    submitted.write_bytes(Path(path).read_bytes())
+    resistance, inductance = read_model(submitted)
     if resistance <= 0:
         raise ValueError("No strict stability certificate: resistance must be positive")
     p, rate = inductance / (2 * resistance), 2 * resistance / inductance
-    directory = output_dir("atp")
+    check_conversions()
     proof = directory / "Certificate.lean"
     proof.write_text(candidate_source(resistance, inductance, p, rate) +
                      admission_source(resistance, inductance, p, rate))
     check_lean(proof)
     report = {
-        "status": "ACCEPTED", "model": {"resistance": str(resistance), "inductance": str(inductance)},
+        "status": "ACCEPTED", "maturity": "S-level",
+        "witness_origin": "Automatic exact synthesis from witness-free model",
+        "model": {"resistance": str(resistance), "inductance": str(inductance)},
         "state_space": {"decay": str(resistance / inductance), "input_gain": str(1 / inductance)},
         "certificate": {"p": str(p), "squared_current_decay_rate": str(rate)},
-        "theorem": "Admission.small_signal",
+        "theorem": "Admission.small_signal", "proof": str(proof),
         "theorems": ["Admission.stable", "Admission.small_signal", "Admission.exponential",
                      "Admission.global_asymptotic", "Admission.all_trajectory_decay"],
-        "semantics": "All forward trajectories; epsilon-delta stability and convergence",
-        "proof": str(proof.relative_to(ROOT)),
+        "semantics": "All forward RL trajectories; epsilon-delta stability and convergence",
         "proof_sha256": digest(proof), "lean": demand(["lake", "env", "lean", "--version"]).strip(),
+        "submitted_model_sha256": digest(submitted), "provenance": proof_provenance(proof),
     }
     (directory / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     return report
 
 
 def atd():
+    check_conversions()
     directory = output_dir("atd")
     results = []
     for name, condition, counterexample in [
@@ -140,10 +146,9 @@ def atd():
         proposition = f"∀ m : powerlib.Impedance, powerlib.AsymptoticallyStable m 0 0 ↔ {condition}"
         path = directory / (name + ".lean")
         path.write_text(f'''import powerlib
-theorem discovered : {proposition} := by
+@[powerlib_domain] theorem discovered : {proposition} := by
   intro m
-  rw [powerlib.asymptoticallyStable_iff_resistance_pos (powerlib.zero_equilibrium m)]
-  <;> (constructor <;> intro h <;> linarith)
+  rw [powerlib.asymptoticallyStable_iff_resistance_pos (powerlib.zero_equilibrium m)] <;> (constructor <;> intro h <;> linarith)
 ''' + audit(["discovered"]))
         code, log = run(["lake", "env", "lean", path])
         path.with_suffix(".log").write_text(log)
@@ -151,7 +156,7 @@ theorem discovered : {proposition} := by
         if status == "UNPROVED" and counterexample is not None:
             refutation = directory / (name + "_refuted.lean")
             refutation.write_text(f'''import powerlib
-theorem refuted : ¬ ({proposition}) := by
+@[powerlib_domain] theorem refuted : ¬ ({proposition}) := by
   intro h
   have hh := h ⟨{counterexample}, ⟨1, by norm_num⟩⟩
   rw [powerlib.asymptoticallyStable_iff_resistance_pos (powerlib.zero_equilibrium _)] at hh
@@ -161,8 +166,12 @@ theorem refuted : ¬ ({proposition}) := by
             status = "REFUTED"
         artifact = path if status == "PROVED" else refutation if status == "REFUTED" else path
         results.append({"conjecture": proposition, "status": status,
-                        "proof": str(artifact.relative_to(ROOT)), "proof_sha256": digest(artifact)})
+                        "proof": str(artifact), "proof_sha256": digest(artifact),
+                        "theorem": "discovered" if status == "PROVED" else "refuted" if status == "REFUTED" else None,
+                        "provenance": proof_provenance(artifact) if status != "UNPROVED" else None})
     report = {"scope": "Finite search of three resistance sign conditions in the canonical RL family",
+              "maturity": "Fixed-candidate verification prototype",
+              "conjecture_generation": "Three manually enumerated conditions",
               "results": results}
     (directory / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     if [item["status"] for item in results] != ["PROVED", "REFUTED", "REFUTED"]:
@@ -173,11 +182,18 @@ theorem refuted : ¬ ({proposition}) := by
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("atp", help="Synthesize and verify an RL stability certificate").add_argument("model")
-    commands.add_parser("atd", help="Search three sign conditions and verify proofs or counterexamples")
+    atp_parser = commands.add_parser("atp", help="Synthesize and verify a stability certificate")
+    atp_parser.add_argument("model")
+    atp_parser.add_argument("--family", choices=["rl", "lcl"], default="rl")
+    atd_parser = commands.add_parser("atd", help="Search conditions and verify proofs or counterexamples")
+    atd_parser.add_argument("--family", choices=["rl", "lcl"], default="rl")
     args = parser.parse_args()
     try:
-        report = atp(args.model) if args.command == "atp" else atd()
+        if args.family == "lcl":
+            import lcl
+            report = lcl.atp(args.model) if args.command == "atp" else lcl.atd()
+        else:
+            report = atp(args.model) if args.command == "atp" else atd()
     except (ValueError, OSError, RuntimeError) as error:
         print(json.dumps({"status": "NOT_ACCEPTED", "reason": str(error)}, indent=2))
         return 1

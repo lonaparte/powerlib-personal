@@ -57,7 +57,7 @@ class InputTests(unittest.TestCase):
 class KernelTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        RESULTS.mkdir(exist_ok=True)
+        RESULTS.mkdir(parents=True, exist_ok=True)
         cls.directory = tempfile.TemporaryDirectory(prefix="tests-", dir=RESULTS)
         cls.root = Path(cls.directory.name)
 
@@ -129,6 +129,29 @@ theorem negative_not_asymptotic : ¬ powerlib.AsymptoticallyStable negativeResis
         source = "import Lean\n" + render([20261003, 1, 0, 1], "test") + audit(
             ["powerlib.generated.convert_spec"], include_core=False)
         self.check_source("bad_export", source, False)
+
+    def test_registered_theorems_are_automatically_audited(self):
+        self.check_source("new_registered", "import powerlib\n"
+                          "@[powerlib_foundation] theorem newlyRegistered : True := True.intro\n"
+                          "open Lean Elab Command\nrun_cmd do\n"
+                          "  let env ← getEnv\n"
+                          "  unless (powerlib.Registry.theoremNames env (some .foundation)).contains `newlyRegistered do\n"
+                          "    throwError \"Current-file theorem missing from discovery\"\n"
+                          "  unless powerlib.Registry.kindOf? env `newlyRegistered == some .foundation do\n"
+                          "    throwError \"Current-file classification missing\"\n"
+                          + audit(), True)
+        for proof, expected in [("by sorry", "sorryAx"),
+                                ("False.elim forbidden", "forbidden")]:
+            source = "import powerlib\naxiom forbidden : False\n"
+            source += f"@[powerlib_domain] theorem newlyRegistered : False := {proof}\n"
+            log = self.check_source("new_untrusted", source + audit(), False)
+            self.assertIn(f"Unexpected axiom {expected}", log)
+
+    def test_discovery_tags_reject_non_theorems(self):
+        for declaration in ["axiom fake : True", "def fake : Nat := 0"]:
+            log = self.check_source("not_theorem", "import powerlib\n"
+                                    "@[powerlib_domain] " + declaration + "\n", False)
+            self.assertIn("PowerLib theorem attributes require a theorem", log)
 
     def test_agda_roundtrip(self):
         stage = self.root / "negative-agda"

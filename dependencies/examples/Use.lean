@@ -1,5 +1,18 @@
 import powerlib
 
+#check powerlib.lcl_stable_iff
+#print axioms powerlib.lcl_stable_iff
+#print axioms powerlib.LCL.Accepted.stable
+
+-- Internal pole stability for the passive canonical three-state LCL plant.
+example (m : powerlib.LCL.Circuit) (hp : m.Passive) :
+    (powerlib.LCL.toStateSpace m).Stable ↔
+      m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0 :=
+  powerlib.lcl_stable_iff m hp
+
+example (m : powerlib.LCL.Circuit) (certificate : powerlib.LCL.Accepted m) :
+    (powerlib.LCL.toStateSpace m).Stable := certificate.stable
+
 -- Reuse stability through the equivalence between the two model descriptions.
 example (m : powerlib.Impedance) :
     (powerlib.toStateSpace m).Stable ↔ m.Stable :=
@@ -15,14 +28,3 @@ example (m : powerlib.Impedance) (s current voltage : ℂ) :
         ((powerlib.toStateSpace m).inputGain.val : ℂ) * voltage ↔
       voltage = m.frequency s * current :=
   powerlib.same_port_relation m s current voltage
-
--- Importing powerlib also registers its theorems for automatic proof search.
-example (m : powerlib.Impedance) (certificate : powerlib.Accepted m) :
-    powerlib.AsymptoticallyStable m 0 0 := by
-  powerlib_auto
-
--- This is about every forward trajectory around any constant-input equilibrium.
-example (m : powerlib.Impedance) (certificate : powerlib.Accepted m)
-    (voltage equilibrium : ℝ) (he : powerlib.IsEquilibrium m voltage equilibrium) :
-    powerlib.GloballyExponentiallyStable m voltage equilibrium := by
-  powerlib_auto

@@ -2,6 +2,12 @@
 
 powerlib is a theorem library for power systems and power electronics, built on Lean 4 and Agda.
 
+Agda is the foundation for structures, representation conversions, equivalences,
+and transport. Lean 4 is the public theorem layer: every admitted domain result
+must end in a kernel-checked Lean theorem. The project's requirements for models,
+semantic theorems, synthesis, admission, provenance, and result maturity are
+defined in [Rules.md](Rules.md).
+
 ## Directions
 
 - **ATP (Automated Theorem Proving):** automatically prove given propositions, especially **synthesis of certificates**.
@@ -21,7 +27,7 @@ level and exploring the potential of ATD.
 
 ## Quick Start
 
-Run ATP and ATD on the RL example:
+Run ATP and the fixed-candidate ATD prototype on the RL example:
 
 ```sh
 python3 dependencies/powerlib.py atp dependencies/examples/rl.json
@@ -29,8 +35,9 @@ python3 dependencies/powerlib.py atd
 ```
 
 For `R = 2`, `L = 1`, ATP synthesizes `V(i) = i²/4` and returns `ACCEPTED`
-after Lean verifies the certificate and its trajectory-level consequences.
-ATD checks three candidate asymptotic-stability conditions.
+after Lean verifies the certificate and derives its model-bound theorems.
+The `atd` prototype checks three manually enumerated stability conditions; it
+does not yet generate conjectures or constitute complete theorem discovery.
 
 Use a theorem in Lean:
 
@@ -42,36 +49,56 @@ example (m : powerlib.Impedance) :
   powerlib.stability_agrees m
 ```
 
-## RL stability contract
+## Model boundaries and completed results
 
-The model is `L*i' + R*i = v`, with `L > 0`, physical current as the only
-state, and constant voltage input. For every equilibrium `R*e = v`, Lean proves:
+The RL family is `L*i' = v - R*i`, with state order `[i]`, physical scalar
+branch current in stationary coordinates (no dq transformation). Time is
+continuous, `L > 0`, and `R` is real; strict stability requires `R > 0`.
+Voltage is positive in the stated current direction and resistance opposes
+current. There is no controller or feedback interconnection, PWM, PLL, delay,
+switching, sampling, or additional state. The voltage input is held constant.
+Perturbations are around an equilibrium `R*e = v`, not a time-varying trajectory.
 
-- Forward solutions exist for every initial current and are unique on `[0, ∞)`.
-- The perturbation `i - e` obeys the exact autonomous RL equation.
-- Epsilon-delta stability plus local attraction holds if and only if `R > 0`.
-- An accepted certificate implies global asymptotic and global exponential
-  stability, for **every** forward solution, not just a selected explicit one.
-- Along every such trajectory, `V = p*(i-e)^2` has derivative `-(i-e)^2`, and
-  `(i(t)-e)^2 = (i(0)-e)^2 * exp(-rate*t)` for `t >= 0`.
+`theorems/RLStability.lean` proves forward existence and uniqueness, the exact
+perturbation equation, and epsilon-delta stability plus attraction if and only
+if `R > 0`. An accepted certificate entails global asymptotic and exponential
+stability for every forward solution, and the actual trajectory derivative
+of `V = p*(i-e)^2` is `-(i-e)^2`. Linearity makes this an exact small-signal
+result. `synthesize` also constructs certificates for symbolic real parameters.
+The ATP command accepts exact rational model parameters without a supplied
+witness and concludes `Admission.small_signal`; its achieved maturity is S-level.
 
-Because this model is linear, these conclusions cover small-signal stability
-without a linearization approximation. Time-varying input disturbances and
-nonlinear or hidden-state models are outside this contract.
+The LCL family has stationary scalar state order `[i1, vc, i2]` and external
+inputs `[u, vg]`. Its continuous-time equations fix all port signs:
+`L1*i1' = u - R1*i1 - vc`, `C*vc' = i1 - i2`,
+`L2*i2' = vc - R2*i2 - vg`. Both inductances and capacitance are positive;
+resistances are real, with nonnegativity required by passive-family theorems.
+There is no controller or feedback interconnection, PLL, PWM, delay, sampling,
+switching, or additional grid dynamics. Perturbations are about constant-input
+equilibria, with both input perturbations fixed at zero.
 
-`theorems/RLStability.lean` defines the trajectory-level predicates explicitly;
-they are not aliases for a coefficient sign. `synthesize` also constructs a
-symbolic certificate for arbitrary real parameters satisfying `R > 0`.
-The executable ATP frontend accepts exact rational parameters and synthesizes
-the witness before Lean checks it. The ATD example is a finite search over
-three predefined sign conditions, using existing library theorems; it is not
-open-ended conjecture generation.
+LCL's public `Stable` predicate concerns the formal internal state-matrix
+poles. For passive resistances it holds exactly when they are not both zero.
+ATP synthesizes a rational Lyapunov matrix and Lean derives this spectral
+stability theorem, positive energy and strict dissipation. LCL does not yet
+export RL's arbitrary-trajectory epsilon-delta and convergence theorems.
 
-## Automatic theorem reuse and verification
+```sh
+python3 dependencies/powerlib.py atp dependencies/examples/lcl.json --family lcl
+python3 dependencies/powerlib.py atd --family lcl
+```
 
-`import powerlib` imports the complete active Lean API. All public theorems in
-the `powerlib` namespace are automatically registered in the `PowerLib` Aesop
-rule set. Use `powerlib_auto` to search it without supplying theorem names:
+Both `atd` commands are fixed-candidate verification prototypes, not
+ATD-discovered results. Refutations have their own checked Lean negation
+theorems; search failure alone remains `UNPROVED`.
+
+## Public automation and admission
+
+`import powerlib` exposes both families and their named general theorems.
+`powerlib_foundation` and `powerlib_domain` classify the public results;
+`powerlib.Registry.theoremNames` discovers them. Standard `simp`, `ext` and
+`aesop` interfaces remain available. `powerlib_auto` additionally searches all
+imported `powerlib` theorems without requiring the caller to name them:
 
 ```lean
 import powerlib
@@ -79,26 +106,41 @@ import powerlib
 example (m : powerlib.Impedance) (c : powerlib.Accepted m) :
     powerlib.AsymptoticallyStable m 0 0 := by
   powerlib_auto
+
+example (m : powerlib.LCL.Circuit) (c : powerlib.LCL.Accepted m) :
+    (powerlib.LCL.toStateSpace m).Stable := by
+  powerlib_auto
 ```
 
-Proof search is not guaranteed for every possible goal: failure rejects the
-goal. New theorem modules belong before the registration step in
-`theorems/Automation.lean`. `dependencies/tests/Automatic.lean` exercises the
-public API independently, including conversions, certificate consumers and
-trajectory results, and automatically re-proves every exported theorem's type
-using `powerlib_auto` without passing the theorem name to the tactic.
+New formal modules must be imported before registration in
+`theorems/Automation.lean`. Search is bounded and can fail; it never admits an
+unproved goal. Exhaustive independent consumers check every imported theorem's
+exact type, including its universe parameters, and audit the resulting proofs.
 
-After installing Lean from `lean-toolchain`, run:
+Admission audits all safe `powerlib` declarations and all registered theorems,
+including current-file registrations outside that namespace. Only `propext`,
+`Classical.choice` and `Quot.sound` are allowed. Compiler-only unsafe executable
+implementations are excluded; every theorem and its proof dependencies are
+checked. Intentional negative fixtures must be rejected.
+
+Each accepted ATP artifact retains the original submitted JSON, normalized
+model, theorem names, proof and kernel-log hashes, dependency revisions and
+lockfile hash, public Lean source hashes, and both Agda conversion reports.
+Those reports bind Agda/Cubical versions, source hashes, versioned normalized
+wire data, generated Lean hashes, endpoint proofs and verification logs.
+Dependencies and conversion evidence are checked for mismatches. Generated
+certificates instantiate public theorems; they are not automatically new
+library theorems. Hashes identify evidence; Lean/Agda establish correctness.
+
+After installing the pinned Lean toolchain, run the complete verification:
 
 ```sh
 python3 dependencies/setup.py
+python3 dependencies/lcl_bridge.py
 python3 dependencies/check_automatic.py
-python3 -m unittest discover -s dependencies/tests -v
+POWERLIB_LCL_KERNEL_TESTS=1 python3 -m unittest discover -s dependencies/tests -v
 ```
 
-The kernel audit traverses every safe declaration in the `powerlib` namespace
-(including every theorem; compiler-only unsafe implementations are excluded),
-not a manually maintained theorem list. Only `propext`, `Classical.choice`, and
-`Quot.sound` are allowed. `sorryAx` and additional axioms are rejected; tests
-deliberately inject them and require rejection. ATP and ATD outputs are audited
-as well. Archived experiments are not part of the active imported library.
+CI also runs both ATP and both fixed-candidate commands and retains the proof
+artifacts. The formalization directory is checked to contain no Markdown.
+Archived experiments are outside the public imported library.

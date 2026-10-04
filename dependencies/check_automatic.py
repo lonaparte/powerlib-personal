@@ -5,6 +5,7 @@ from common import DEPENDENCIES, RESULTS, audit, check_lean, demand
 
 
 def check_automatic():
+    demand(["lake", "env", "lean", DEPENDENCIES / "tests/Automation.lean"])
     demand(["lake", "env", "lean", DEPENDENCIES / "tests/Automatic.lean"])
     exported = demand(["lake", "env", "lean", DEPENDENCIES / "tests/ExportTheorems.lean"])
     begin, end = "POWERLIB_EXPORT_BEGIN\n", "POWERLIB_EXPORT_END"
@@ -16,7 +17,7 @@ def check_automatic():
         raise RuntimeError("Empty or malformed theorem inventory")
     count = int(counts[0])
     roots = [f"AutomationCheck.reuse_{index}" for index in range(count)]
-    RESULTS.mkdir(exist_ok=True)
+    RESULTS.mkdir(parents=True, exist_ok=True)
     proof = RESULTS / "AutomaticConsumers.lean"
     proof.write_text(source + audit(roots))
     check_lean(proof)
