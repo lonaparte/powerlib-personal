@@ -1,4 +1,4 @@
-import theorems.RLStability
+import theorems.RLLargeSignal
 import theorems.LCL
 import theorems.AutomationRules
 

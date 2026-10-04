@@ -77,6 +77,17 @@ example : accepted.rate = {literal(rate)} := by norm_num [accepted, Candidate.ce
 @[powerlib_domain] theorem small_signal : powerlib.AsymptoticallyStable submittedModel 0 0 := by
   have certificate := accepted
   powerlib_auto
+@[powerlib_domain] theorem large_signal (voltage : ℝ) :
+    powerlib.LargeSignalStable submittedModel voltage := by
+  have certificate := accepted
+  powerlib_auto
+@[powerlib_domain] theorem large_signal_error (voltage : ℝ) (i : ℝ → ℝ)
+    (hi : powerlib.IsTrajectory submittedModel voltage i) (t : ℝ) (ht : 0 ≤ t) :
+    |i t - voltage / submittedModel.resistance| =
+      |i 0 - voltage / submittedModel.resistance| *
+        Real.exp (-(submittedModel.resistance / submittedModel.inductance.val) * t) := by
+  have certificate := accepted
+  powerlib_auto
 @[powerlib_domain] theorem exponential (voltage equilibrium : ℝ)
     (he : powerlib.IsEquilibrium submittedModel voltage equilibrium) :
     powerlib.GloballyExponentiallyStable submittedModel voltage equilibrium := by
@@ -96,7 +107,7 @@ example : accepted.rate = {literal(rate)} := by norm_num [accepted, Candidate.ce
 end Admission
 ''' + audit(["Admission.accepted", "Admission.stable", "Admission.dissipation", "Admission.decay",
              "Admission.small_signal", "Admission.exponential", "Admission.global_asymptotic",
-             "Admission.all_trajectory_decay"])
+             "Admission.all_trajectory_decay", "Admission.large_signal", "Admission.large_signal_error"])
 
 
 def output_dir(kind):
@@ -123,10 +134,13 @@ def atp(path):
         "model": {"resistance": str(resistance), "inductance": str(inductance)},
         "state_space": {"decay": str(resistance / inductance), "input_gain": str(1 / inductance)},
         "certificate": {"p": str(p), "squared_current_decay_rate": str(rate)},
-        "theorem": "Admission.small_signal", "proof": str(proof),
-        "theorems": ["Admission.stable", "Admission.small_signal", "Admission.exponential",
-                     "Admission.global_asymptotic", "Admission.all_trajectory_decay"],
-        "semantics": "All forward RL trajectories; epsilon-delta stability and convergence",
+        "theorem": "Admission.large_signal", "proof": str(proof),
+        "theorems": ["Admission.stable", "Admission.dissipation", "Admission.decay",
+                     "Admission.small_signal", "Admission.exponential",
+                     "Admission.global_asymptotic", "Admission.all_trajectory_decay",
+                     "Admission.large_signal", "Admission.large_signal_error"],
+        "semantics": "All constant voltages and all initial currents; forward existence and uniqueness, global exponential stability and global asymptotic stability",
+        "model_boundary": "Ideal scalar continuous-time RL circuit; fixed R > 0 and L > 0; constant voltage; no controller, saturation, switching or fault-on dynamics",
         "proof_sha256": digest(proof), "lean": demand(["lake", "env", "lean", "--version"]).strip(),
         "submitted_model_sha256": digest(submitted), "provenance": proof_provenance(proof),
     }
