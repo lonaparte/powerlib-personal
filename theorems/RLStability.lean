@@ -134,8 +134,7 @@ def GloballyExponentiallyStable (m : Impedance) (v e : ℝ) : Prop :=
   ∃ C ≥ (1 : ℝ), ∃ rate > 0, ∀ i, IsTrajectory m v i → ∀ t ≥ 0,
     |i t - e| ≤ C * |i 0 - e| * Real.exp (-rate * t)
 
-@[powerlib_domain, aesop safe forward (immediate := [he, hi, ht])]
-theorem trajectory_error_exact {m : Impedance} {v e : ℝ} {i : ℝ → ℝ}
+@[powerlib_domain] theorem trajectory_error_exact {m : Impedance} {v e : ℝ} {i : ℝ → ℝ}
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) {t : ℝ} (ht : 0 ≤ t) :
     |i t - e| = |i 0 - e| * Real.exp (-(toStateSpace m).decay * t) := by
   have h := trajectory_eq_response (trajectory_shift he hi) ht

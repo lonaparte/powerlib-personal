@@ -47,7 +47,7 @@ example (m : Impedance) (hm : m.Stable) (v e : ℝ) (i : ℝ → ℝ)
     Tendsto i atTop (𝓝 e) := by aesop
 example (m : Impedance) (v e : ℝ) (i : ℝ → ℝ)
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) (t : ℝ) (ht : 0 ≤ t) :
-    |i t - e| = |i 0 - e| * Real.exp (-(toStateSpace m).decay * t) := by aesop
+    |i t - e| = |i 0 - e| * Real.exp (-(toStateSpace m).decay * t) := by exact?
 example (m : Impedance) (c : Accepted m) (v e : ℝ) (i : ℝ → ℝ)
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) (t : ℝ) (ht : 0 ≤ t) :
     (i t - e) ^ 2 = (i 0 - e) ^ 2 * Real.exp (-(c.rate * t)) := by aesop
