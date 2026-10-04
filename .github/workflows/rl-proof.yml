@@ -33,10 +33,11 @@ jobs:
       - name: Check Agda, bridge and Lean library
         run: python3 dependencies/setup.py
       - name: Check public API
-        timeout-minutes: 5
-        run: |
-          lake env lean dependencies/examples/Use.lean
-          lake env lean dependencies/tests/Automatic.lean
+        timeout-minutes: 2
+        run: lake env lean dependencies/examples/Use.lean
+      - name: Check every theorem's automatic reuse
+        timeout-minutes: 3
+        run: python3 dependencies/check_automatic.py
       - name: Synthesize and verify certificates and conjectures
         run: |
           python3 dependencies/powerlib.py atp dependencies/examples/rl.json

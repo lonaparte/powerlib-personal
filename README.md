@@ -92,7 +92,7 @@ After installing Lean from `lean-toolchain`, run:
 
 ```sh
 python3 dependencies/setup.py
-lake env lean dependencies/tests/Automatic.lean
+python3 dependencies/check_automatic.py
 python3 -m unittest discover -s dependencies/tests -v
 ```
 

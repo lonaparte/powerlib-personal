@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from bridge import extract, render
 from common import ROOT, DEPENDENCIES, CACHE, RESULTS, audit, check_lean, run
 from powerlib import admission_source, candidate_source, read_model
+from check_automatic import check_automatic
 
 
 class InputTests(unittest.TestCase):
@@ -121,9 +122,7 @@ theorem negative_not_asymptotic : ¬ powerlib.AsymptoticallyStable negativeResis
 ''' + audit(["lossless_not_asymptotic", "negative_not_asymptotic"]), True)
 
     def test_automatic_public_api(self):
-        code, log = run(["lake", "env", "lean", DEPENDENCIES / "tests/Automatic.lean"])
-        self.assertEqual(code, 0, log)
-        self.assertIn("POWERLIB_AUTOMATIC_THEOREMS_OK", log)
+        self.assertGreater(check_automatic(), 0)
 
     def test_exported_formula(self):
         # Well-typed but wrong data must fail the independent Lean endpoint.
