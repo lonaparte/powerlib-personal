@@ -85,7 +85,8 @@ Proof search is not guaranteed for every possible goal: failure rejects the
 goal. New theorem modules belong before the registration step in
 `theorems/Automation.lean`. `dependencies/tests/Automatic.lean` exercises the
 public API independently, including conversions, certificate consumers and
-trajectory results.
+trajectory results, and automatically re-proves every exported theorem's type
+using `powerlib_auto` without passing the theorem name to the tactic.
 
 After installing Lean from `lean-toolchain`, run:
 

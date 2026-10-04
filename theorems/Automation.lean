@@ -15,4 +15,16 @@ run_cmd do
       elabCommand (← `(attribute [aesop unsafe 50% apply (rule_sets := [PowerLib])]
         $(mkIdent name)))
 
-macro "powerlib_auto" : tactic => `(tactic| aesop (rule_sets := [PowerLib]))
+-- Try short applications before general search. In particular, this preserves
+-- an iff goal as a whole instead of splitting it before its theorem is used.
+open Lean Elab Tactic in
+elab "powerlib_auto" : tactic => do
+  let env ← getEnv
+  let mut rules : Array (TSyntax `term) := #[]
+  for (name, info) in env.constants do
+    if name.getRoot == `powerlib && info.isTheorem then
+      rules := rules.push (← `(term| $(mkIdent name)))
+  evalTactic (← `(tactic|
+    first
+    | solve_by_elim (maxDepth := 3) [$rules,*]
+    | aesop (rule_sets := [PowerLib])))

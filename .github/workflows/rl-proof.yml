@@ -33,6 +33,7 @@ jobs:
       - name: Check Agda, bridge and Lean library
         run: python3 dependencies/setup.py
       - name: Check public API
+        timeout-minutes: 5
         run: |
           lake env lean dependencies/examples/Use.lean
           lake env lean dependencies/tests/Automatic.lean
@@ -42,6 +43,13 @@ jobs:
           python3 dependencies/powerlib.py atd
       - name: Positive and negative kernel tests
         run: python3 -m unittest discover -s dependencies/tests -v
+      - name: Preserve checked certificates and verification logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rl-kernel-evidence
+          path: dependencies/results/
+          retention-days: 30
       - uses: actions/cache/save@v4
         if: always() && steps.dependencies.outputs.cache-hit != 'true'
         with:

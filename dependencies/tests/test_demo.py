@@ -123,6 +123,7 @@ theorem negative_not_asymptotic : ¬ powerlib.AsymptoticallyStable negativeResis
     def test_automatic_public_api(self):
         code, log = run(["lake", "env", "lean", DEPENDENCIES / "tests/Automatic.lean"])
         self.assertEqual(code, 0, log)
+        self.assertIn("POWERLIB_AUTOMATIC_THEOREMS_OK", log)
 
     def test_exported_formula(self):
         # Well-typed but wrong data must fail the independent Lean endpoint.
