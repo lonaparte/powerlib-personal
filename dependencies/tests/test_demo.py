@@ -108,6 +108,12 @@ class KernelTests(unittest.TestCase):
     def test_registered_theorems_are_automatically_audited(self):
         self.check_source("new_registered", "import powerlib\n"
                           "@[powerlib_foundation] theorem newlyRegistered : True := True.intro\n"
+                          "open Lean Elab Command\nrun_cmd do\n"
+                          "  let env ← getEnv\n"
+                          "  unless (powerlib.Registry.theoremNames env (some .foundation)).contains `newlyRegistered do\n"
+                          "    throwError \"Current-file theorem missing from discovery\"\n"
+                          "  unless powerlib.Registry.kindOf? env `newlyRegistered == some .foundation do\n"
+                          "    throwError \"Current-file classification missing\"\n"
                           + audit(), True)
         for proof, expected in [("by sorry", "sorryAx"),
                                 ("False.elim forbidden", "forbidden")]:

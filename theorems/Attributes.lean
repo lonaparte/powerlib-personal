@@ -18,14 +18,19 @@ initialize theoremKinds : EnumAttributes TheoremKind ←
       | _ => throwError "PowerLib theorem attributes require a theorem: {name}")
 
 def kindOf? (env : Environment) (name : Name) : Option TheoremKind :=
-  theoremKinds.getValue env name
+  -- Join current-file attribute updates as well as reading imported metadata.
+  ((theoremKinds.ext.getState env (asyncMode := .sync)).find? name).orElse
+    (fun _ => theoremKinds.getValue env name)
 
-def theoremNames (env : Environment) (kind : Option TheoremKind := none) : Array Name :=
-  let names := env.constants.fold (fun names name _ =>
-    match kindOf? env name with
-    | none => names
-    | some actual =>
-      if kind.isNone || kind == some actual then names.push name else names) #[]
-  names.qsort Name.quickLt
+def theoremNames (env : Environment) (kind : Option TheoremKind := none) : Array Name := Id.run do
+  let add := fun (names : Array Name) (name : Name) (actual : TheoremKind) =>
+    if kind.isNone || kind == some actual then names.push name else names
+  let mut names : Array Name := #[]
+  for (name, actual) in (theoremKinds.ext.getState env (asyncMode := .sync)).toList do
+    names := add names name actual
+  for modIdx in [:env.header.moduleNames.size] do
+    for (name, actual) in theoremKinds.ext.getModuleEntries env modIdx do
+      names := add names name actual
+  return names.qsort Name.quickLt
 
 end powerlib.Registry
