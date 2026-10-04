@@ -308,8 +308,7 @@ def atd():
         proof.write_text(f'''import powerlib
 theorem discovered : {proposition} := by
   intro m hp
-  rw [powerlib.LCL.passive_stable_iff m hp]
-  first | rfl | tauto
+  rw [powerlib.LCL.passive_stable_iff m hp] <;> first | rfl | tauto
 ''' + audit(["discovered"]))
         code, log = run(["lake", "env", "lean", proof])
         proof.with_suffix(".log").write_text(log)
@@ -335,7 +334,8 @@ theorem refuted : ¬ ({proposition}) := by
               "conversion": bridge, "results": results}
     (directory / "report.json").write_text(json.dumps(report, indent=2)+"\n")
     if [item["status"] for item in results] != ["PROVED", "REFUTED", "REFUTED"]:
-        raise RuntimeError("The LCL ATD experiment did not complete")
+        details = "; ".join(f"{item['status']}: {item['proof']}" for item in results)
+        raise RuntimeError("The LCL fixed-candidate experiment did not complete: " + details)
     return report
 
 
