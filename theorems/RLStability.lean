@@ -59,8 +59,9 @@ theorem trajectory_eq_response {m : Impedance} {i : ℝ → ℝ}
       HasDerivWithinAt (fun s => i s * Real.exp (a * s)) 0 (Ici 0) x := by
     intro x hx
     convert (hi x hx).mul
-      (((hasDerivAt_id x).const_mul a).exp.hasDerivWithinAt) using 1 <;>
-      simp [StateSpace.field, a] <;> ring
+      (((hasDerivAt_id x).const_mul a).exp.hasDerivWithinAt) using 1
+    simp [StateSpace.field, a]
+    ring
   have hb := (convex_Ici (0 : ℝ)).norm_image_sub_le_of_norm_hasDerivWithin_le
     (C := 0) hd (fun x _ => by simp) (show (0 : ℝ) ∈ Ici 0 by simp) ht
   have hc : i t * Real.exp (a * t) = i 0 := by
@@ -221,7 +222,6 @@ def synthesize (m : Impedance) (hR : 0 < m.resistance) : Accepted m where
   lyapunov_identity := by
     dsimp [toStateSpace, generated.convert, reciprocal]
     field_simp [ne_of_gt hR, ne_of_gt m.inductance.property]
-    <;> ring
   rate_exact := rfl
 
 theorem accepted_exists_iff_stable (m : Impedance) : Nonempty (Accepted m) ↔ m.Stable :=

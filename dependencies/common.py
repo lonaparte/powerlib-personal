@@ -32,8 +32,8 @@ def digest(path):
 def audit(extra=(), *, include_core=True):
     names = ", ".join("`" + name for name in extra)
     core = '''
-  for (root, _) in env.constants do
-    if root.getRoot == `powerlib then
+  for (root, info) in env.constants do
+    if root.getRoot == `powerlib && !info.isUnsafe then
       let (_, next) := ((Lean.CollectAxioms.collect root).run env).run state
       state := next
 ''' if include_core else ""

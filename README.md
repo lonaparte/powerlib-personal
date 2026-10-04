@@ -95,7 +95,8 @@ lake env lean dependencies/tests/Automatic.lean
 python3 -m unittest discover -s dependencies/tests -v
 ```
 
-The kernel audit traverses every active declaration in the `powerlib` namespace,
+The kernel audit traverses every safe declaration in the `powerlib` namespace
+(including every theorem; compiler-only unsafe implementations are excluded),
 not a manually maintained theorem list. Only `propext`, `Classical.choice`, and
 `Quot.sound` are allowed. `sorryAx` and additional axioms are rejected; tests
 deliberately inject them and require rejection. ATP and ATD outputs are audited
