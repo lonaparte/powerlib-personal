@@ -7,6 +7,7 @@ from common import DEPENDENCIES, RESULTS, audit, check_lean, demand
 def check_automatic():
     demand(["lake", "env", "lean", DEPENDENCIES / "tests/Automation.lean"])
     demand(["lake", "env", "lean", DEPENDENCIES / "tests/Automatic.lean"])
+    demand(["lake", "env", "lean", DEPENDENCIES / "tests/Upstream.lean"])
     exported = demand(["lake", "env", "lean", DEPENDENCIES / "tests/ExportTheorems.lean"])
     begin, end = "POWERLIB_EXPORT_BEGIN\n", "POWERLIB_EXPORT_END"
     if exported.count(begin) != 1 or exported.count(end) != 1:

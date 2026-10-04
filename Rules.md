@@ -214,3 +214,18 @@ must themselves be stated and checked.
 Reused results remain subject to the same kernel checks, transitive axiom
 allowlist, and provenance requirements as local proofs. Pin imported
 dependencies to compatible versions and verify them in the reproducible build.
+
+Automation must search the types of actual imported Lean declarations, including
+upstream theorems without PowerLib attributes. Use the standard library-search
+index to find relevant applications from a goal, and preserve the original
+declaration name, defining module, universe parameters, assumptions, and axiom
+dependencies. PowerLib foundation/domain labels classify its own public results;
+they are not prerequisites for reusing an upstream theorem. A documentation or
+blueprint annotation does not establish a proof or a searchable semantic contract.
+
+Reject candidates whose transitive dependencies violate the axiom allowlist,
+and audit the completed proof independently. Automatic application must discharge
+the theorem's actual hypotheses; matching prose or model names is insufficient.
+Do not describe a library as connected until a compatible pinned dependency is
+imported and direct reuse has passed kernel checks. A version mismatch requires
+a separately verified compatibility change before that dependency can be used.

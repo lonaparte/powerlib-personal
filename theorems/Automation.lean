@@ -1,6 +1,7 @@
 import theorems.RLStability
 import theorems.LCLSynthesis
 import theorems.AutomationRules
+import theorems.LibrarySearch
 
 /-! Register every public theorem in the PowerLib namespace, including imported
 model-conversion theorems.  New theorem modules must be imported above this point.
@@ -35,4 +36,8 @@ elab "powerlib_auto" : tactic => do
       pure []
   catch _ =>
     saved.restore
-    evalTactic (← `(tactic| aesop (rule_sets := [PowerLib])))
+    try
+      evalTactic (← `(tactic| powerlib_search))
+    catch _ =>
+      saved.restore
+      evalTactic (← `(tactic| aesop (rule_sets := [PowerLib])))
