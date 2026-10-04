@@ -124,6 +124,7 @@ def atp(path):
                      admission_source(resistance, inductance, p, rate))
     check_lean(proof)
     report = {
+        "family": "rl", "artifact_type": "synthesis",
         "status": "ACCEPTED", "maturity": "S-level",
         "witness_origin": "Automatic exact synthesis from witness-free model",
         "model": {"resistance": str(resistance), "inductance": str(inductance)},
@@ -172,11 +173,12 @@ def atd():
             check_lean(refutation)
             status = "REFUTED"
         artifact = path if status == "PROVED" else refutation if status == "REFUTED" else path
-        results.append({"conjecture": proposition, "status": status,
+        results.append({"candidate_id": name, "conjecture": proposition, "status": status,
                         "proof": str(artifact), "proof_sha256": digest(artifact),
                         "theorem": "discovered" if status == "PROVED" else "refuted" if status == "REFUTED" else None,
                         "provenance": proof_provenance(artifact) if status != "UNPROVED" else None})
-    report = {"scope": "Finite search of three resistance sign conditions in the canonical RL family",
+    report = {"family": "rl", "artifact_type": "fixed_candidates",
+              "scope": "Finite search of three resistance sign conditions in the canonical RL family",
               "maturity": "Fixed-candidate verification prototype",
               "conjecture_generation": "Three manually enumerated conditions",
               "results": results}

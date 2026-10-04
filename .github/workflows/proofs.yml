@@ -49,6 +49,10 @@ jobs:
           python3 dependencies/powerlib.py atd
           python3 dependencies/powerlib.py atd --family lcl
           python3 dependencies/check_evidence.py
+      - name: Check retained evidence regressions
+        env:
+          POWERLIB_RETAINED_TESTS: "1"
+        run: python3 -m unittest discover -s dependencies/tests -p test_rules.py -k RetainedEvidenceTests -v
       - name: Retain proof artifacts and kernel logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

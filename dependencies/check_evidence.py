@@ -4,6 +4,11 @@ import json
 from pathlib import Path
 from common import RESULTS, digest
 
+EXPECTED_CANDIDATES = {
+    "rl": {"positive": "PROVED", "nonnegative": "REFUTED", "negative": "REFUTED"},
+    "lcl": {"not_both_zero": "PROVED", "both_positive": "REFUTED", "nonnegative_sum": "REFUTED"},
+}
+
 
 def check(proof, provenance):
     if digest(proof) != provenance["proof_sha256"]:
@@ -24,24 +29,46 @@ def check(proof, provenance):
                 raise RuntimeError(f"Conversion evidence identity changed: {family}/{key}")
 
 
-def main():
-    accepted = candidates = 0
-    for path in RESULTS.rglob("*.json"):
+def check_all(directory=RESULTS):
+    syntheses = set()
+    candidates = {family: set() for family in EXPECTED_CANDIDATES}
+    for path in directory.rglob("*.json"):
         if path.name not in {"report.json", "certificate.json"}:
             continue
         data = json.loads(path.read_text())
+        family, kind = data.get("family"), data.get("artifact_type")
         if data.get("status") == "ACCEPTED":
+            if family not in EXPECTED_CANDIDATES or kind not in {"synthesis", "certificate_verification"}:
+                raise RuntimeError(f"Missing or invalid admission classification: {path}")
             check(path.parent / Path(data["proof"]).name, data["provenance"])
             if digest(path.parent / "submitted.json") != data["submitted_model_sha256"]:
                 raise RuntimeError("Submitted input identity changed")
-            accepted += 1
-        for result in data.get("results", []):
-            if result["status"] in {"PROVED", "REFUTED"}:
+            expected_maturity = "S-level" if kind == "synthesis" else "Certificate verification"
+            if data.get("maturity") != expected_maturity:
+                raise RuntimeError(f"Admission maturity does not match its kind: {path}")
+            if kind == "synthesis":
+                syntheses.add(family)
+        if "results" in data or kind == "fixed_candidates":
+            if family not in EXPECTED_CANDIDATES or kind != "fixed_candidates":
+                raise RuntimeError(f"Missing or invalid fixed-candidate classification: {path}")
+            for result in data["results"]:
+                candidate = result.get("candidate_id")
+                expected = EXPECTED_CANDIDATES[family].get(candidate)
+                if expected is None or result.get("status") != expected:
+                    raise RuntimeError(f"Unexpected fixed-candidate result: {family}/{candidate}")
                 check(path.parent / Path(result["proof"]).name, result["provenance"])
-                candidates += 1
-    if accepted < 2 or candidates < 6:
-        raise RuntimeError("Both families' accepted ATP and fixed-candidate artifacts are required")
-    print(f"POWERLIB_RETAINED_EVIDENCE_OK: {accepted} admissions, {candidates} candidates")
+                candidates[family].add(candidate)
+    for family, expected in EXPECTED_CANDIDATES.items():
+        if family not in syntheses:
+            raise RuntimeError(f"Missing accepted synthesis: {family}")
+        missing = expected.keys() - candidates[family]
+        if missing:
+            raise RuntimeError(f"Missing fixed candidates for {family}: {', '.join(sorted(missing))}")
+
+
+def main():
+    check_all()
+    print("POWERLIB_RETAINED_EVIDENCE_OK: rl/lcl synthesis, 6 distinct fixed candidates")
 
 
 if __name__ == "__main__":

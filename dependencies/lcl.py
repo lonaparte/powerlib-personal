@@ -213,11 +213,18 @@ def certificate_report(model, p):
             "maturity": "Unverified proof artifact"}
 
 
-def synthesize(model, kernel=False, directory=None):
-    p = synthesize_witness(model)
-    report = certificate_report(model, p)
+def submitted_model(path):
     RESULTS.mkdir(parents=True, exist_ok=True)
-    directory = directory or Path(tempfile.mkdtemp(prefix="lcl-", dir=RESULTS))
+    directory = Path(tempfile.mkdtemp(prefix="lcl-", dir=RESULTS))
+    submitted = directory / "submitted.json"
+    submitted.write_bytes(Path(path).read_bytes())
+    return read_model(submitted), directory
+
+
+def save_certificate(model, p, directory, kernel, artifact_type):
+    report = certificate_report(model, p)
+    report.update(family="lcl", artifact_type=artifact_type,
+                  submitted_model_sha256=digest(directory / "submitted.json"))
     proof = directory / "Certificate.lean"
     proof.write_text(proof_source(model, p))
     report["proof"] = str(proof)
@@ -228,11 +235,20 @@ def synthesize(model, kernel=False, directory=None):
         report["provenance"] = proof_provenance(proof)
         report["kernel_verified"] = True
         report["status"] = "ACCEPTED"
-        report["maturity"] = "S-level"
-        report["witness_origin"] = "Automatic exact Lyapunov synthesis from witness-free model"
+        synthesis = artifact_type == "synthesis"
+        report["maturity"] = "S-level" if synthesis else "Certificate verification"
+        report["witness_origin"] = ("Automatic exact Lyapunov synthesis from witness-free model"
+                                    if synthesis else "Submitted certificate")
         report["theorems"] = ["Admission.stable", "Admission.positive", "Admission.dissipation"]
+        report["conversion"] = report["provenance"]["conversions"]["lcl"]
+    # Publish once, after input identity, kernel audit and provenance are complete.
     (directory / "certificate.json").write_text(json.dumps(report, indent=2) + "\n")
     return report
+
+
+def synthesize(path, kernel=False):
+    model, directory = submitted_model(path)
+    return save_certificate(model, synthesize_witness(model), directory, kernel, "synthesis")
 
 
 def certificate_fraction(value):
@@ -251,7 +267,8 @@ def certificate_matrix(rows):
     return tuple(tuple(certificate_fraction(value) for value in row) for row in rows)
 
 
-def verify_saved(model, path, kernel=False):
+def verify_saved(submission, path, kernel=False):
+    model, directory = submitted_model(submission)
     data = json.loads(Path(path).read_text(), object_pairs_hook=unique_object)
     if not isinstance(data, dict) or data.get("schema") != "powerlib.lcl.lyapunov.v1":
         raise ValueError("Unsupported certificate schema")
@@ -262,36 +279,12 @@ def verify_saved(model, path, kernel=False):
     if certificate_matrix(data.get("Q")) != IDENTITY:
         raise ValueError("This certificate schema requires Q = I")
     p = certificate_matrix(data.get("P"))
-    report = certificate_report(model, p)
     # Recompute all checks and regenerate proof; trust no claimed status or proof path.
-    if kernel:
-        check_conversions()
-        RESULTS.mkdir(parents=True, exist_ok=True)
-        directory = Path(tempfile.mkdtemp(prefix="lcl-verify-", dir=RESULTS))
-        proof = directory / "Certificate.lean"
-        proof.write_text(proof_source(model, p))
-        report["lean"] = verify_kernel(proof)
-        report["proof"] = str(proof)
-        report["provenance"] = proof_provenance(proof)
-        report["kernel_verified"] = True
-        report["status"] = "ACCEPTED"
-        report["maturity"] = "Certificate verification"
-        report["witness_origin"] = "Submitted certificate"
-        report["theorems"] = ["Admission.stable", "Admission.positive", "Admission.dissipation"]
-        (directory / "certificate.json").write_text(json.dumps(report, indent=2)+"\n")
-    return report
+    return save_certificate(model, p, directory, kernel, "certificate_verification")
 
 
 def atp(path):
-    RESULTS.mkdir(parents=True, exist_ok=True)
-    directory = Path(tempfile.mkdtemp(prefix="lcl-", dir=RESULTS))
-    submitted = directory / "submitted.json"
-    submitted.write_bytes(Path(path).read_bytes())
-    report = synthesize(read_model(submitted), kernel=True, directory=directory)
-    report["submitted_model_sha256"] = digest(submitted)
-    report["conversion"] = report["provenance"]["conversions"]["lcl"]
-    Path(report["proof"]).with_name("certificate.json").write_text(json.dumps(report, indent=2)+"\n")
-    return report
+    return synthesize(path, kernel=True)
 
 
 def atd():
@@ -327,11 +320,12 @@ def atd():
 ''' + audit(["refuted"]))
             check_lean(proof)
             status = "REFUTED"
-        results.append({"conjecture": proposition, "status": status,
+        results.append({"candidate_id": name, "conjecture": proposition, "status": status,
                         "proof": str(proof), "proof_sha256": digest(proof),
                         "theorem": "discovered" if status == "PROVED" else "refuted" if status == "REFUTED" else None,
                         "provenance": proof_provenance(proof) if status != "UNPROVED" else None})
-    report = {"scope": "Finite search of three conditions in the passive canonical LCL family",
+    report = {"family": "lcl", "artifact_type": "fixed_candidates",
+              "scope": "Finite search of three conditions in the passive canonical LCL family",
               "maturity": "Fixed-candidate verification prototype",
               "conjecture_generation": "Three manually enumerated conditions",
               "conversion": bridge, "results": results}
@@ -355,13 +349,12 @@ def main():
     verification.add_argument("--verify", action="store_true", help="Regenerate and kernel-check the proof")
     args = parser.parse_args()
     try:
-        model = read_model(args.model)
         if args.command == "derive":
-            report = derive(model)
+            report = derive(read_model(args.model))
         elif args.command == "synthesize":
-            report = synthesize(model, args.verify)
+            report = synthesize(args.model, args.verify)
         else:
-            report = verify_saved(model, args.certificate, args.verify)
+            report = verify_saved(args.model, args.certificate, args.verify)
         print(json.dumps(report, indent=2))
         return 0
     except (ValueError, OSError, RuntimeError) as error:

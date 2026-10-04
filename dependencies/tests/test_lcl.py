@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from common import ROOT, CACHE, RESULTS, audit, check_lean, run
@@ -104,12 +105,14 @@ class SynthesisTests(unittest.TestCase):
     def test_saved_certificate_is_rechecked(self):
         m = model()
         data = certificate_report(m, synthesize_witness(m))
-        with tempfile.TemporaryDirectory() as directory:
+        with tempfile.TemporaryDirectory() as directory, patch("lcl.RESULTS", Path(directory)):
             path = Path(directory) / "certificate.json"
+            submission = Path(directory) / "model.json"
+            submission.write_text(json.dumps(m.serialized()))
             forged = data | {"status": "ACCEPTED", "kernel_verified": True,
                              "proof": "untrusted-path", "leading_minors": ["1", "1", "1"]}
             path.write_text(json.dumps(forged))
-            checked = verify_saved(m, path)
+            checked = verify_saved(submission, path)
             self.assertEqual(checked["status"], "UNVERIFIED")
             self.assertFalse(checked["kernel_verified"])
             self.assertEqual(checked["leading_minors"], ["3/2", "7/2", "57/8"])
@@ -120,7 +123,7 @@ class SynthesisTests(unittest.TestCase):
                                 {"P": [["0"]*3 for _ in range(3)]}]:
                 path.write_text(json.dumps(data | replacement))
                 with self.assertRaises(ValueError):
-                    verify_saved(m, path)
+                    verify_saved(submission, path)
 
     def test_witness_entries_can_exceed_model_input_length(self):
         value = F(10**120+1, 10**121+3)
