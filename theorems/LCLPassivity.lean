@@ -81,7 +81,7 @@ def physicalWeights (m : Circuit) : SymmetricMatrix :=
     intro s hs
     simpa [h1, h2] using physicalEnergy_derivative he hx hs
   have hb := (convex_Ici (0 : ℝ)).norm_image_sub_le_of_norm_hasDerivWithin_le
-    (C := 0) hd (fun _ _ => by simp) (by simp) ht
+    (C := 0) hd (fun _ _ => by simp) (show (0 : ℝ) ∈ Ici 0 by simp) ht
   exact sub_eq_zero.mp (norm_eq_zero.mp (le_antisymm (by simpa using hb) (norm_nonneg _)))
 
 @[powerlib_domain] theorem constant_trajectory {m : Circuit} {u vg : ℝ} {e : State}
