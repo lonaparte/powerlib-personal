@@ -105,6 +105,23 @@ class KernelTests(unittest.TestCase):
             ["powerlib.generated.convert_spec"], include_core=False)
         self.check_source("bad_export", source, False)
 
+    def test_registered_theorems_are_automatically_audited(self):
+        self.check_source("new_registered", "import powerlib\n"
+                          "@[powerlib_foundation] theorem newlyRegistered : True := True.intro\n"
+                          + audit(), True)
+        for proof, expected in [("by sorry", "sorryAx"),
+                                ("False.elim forbidden", "forbidden")]:
+            source = "import powerlib\naxiom forbidden : False\n"
+            source += f"@[powerlib_domain] theorem newlyRegistered : False := {proof}\n"
+            log = self.check_source("new_untrusted", source + audit(), False)
+            self.assertIn(f"Unexpected axiom {expected}", log)
+
+    def test_discovery_tags_reject_non_theorems(self):
+        for declaration in ["axiom fake : True", "def fake : Nat := 0"]:
+            log = self.check_source("not_theorem", "import powerlib\n"
+                                    "@[powerlib_domain] " + declaration + "\n", False)
+            self.assertIn("PowerLib theorem attributes require a theorem", log)
+
     def test_agda_roundtrip(self):
         stage = self.root / "negative-agda"
         entry = stage / "theorems/Conversion.agda"

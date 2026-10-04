@@ -1,5 +1,6 @@
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Tactic
+import theorems.Attributes
 import theorems.generated.Conversion
 
 /-! A canonical single-port RL family: i' = -a*i + b*v and Z(s) = R + L*s.
@@ -12,11 +13,11 @@ abbrev Positive := {x : ℝ // 0 < x}
 
 def reciprocal (x : Positive) : Positive := ⟨x.val⁻¹, inv_pos.mpr x.property⟩
 
-theorem reciprocal_involutive (x : Positive) : reciprocal (reciprocal x) = x := by
+@[simp, powerlib_foundation] theorem reciprocal_involutive (x : Positive) : reciprocal (reciprocal x) = x := by
   apply Subtype.ext
   simp [reciprocal]
 
-theorem scale_cancel (x : ℝ) (y : Positive) : (x * (reciprocal y).val) * y.val = x := by
+@[simp, powerlib_foundation] theorem scale_cancel (x : ℝ) (y : Positive) : (x * (reciprocal y).val) * y.val = x := by
   dsimp [reciprocal]
   field_simp [ne_of_gt y.property]
 
@@ -37,13 +38,13 @@ def toStateSpace (m : Impedance) : StateSpace :=
   let y := generated.convert (fun a (b : Positive) => a * b.val) reciprocal (m.resistance, m.inductance)
   ⟨y.1, y.2⟩
 
-theorem state_roundtrip (m : StateSpace) : toStateSpace (toImpedance m) = m := by
+@[simp, powerlib_foundation] theorem state_roundtrip (m : StateSpace) : toStateSpace (toImpedance m) = m := by
   apply StateSpace.ext
   · exact (by simpa [toStateSpace, toImpedance, generated.convert, reciprocal] using
       scale_cancel m.decay m.inputGain)
   · exact reciprocal_involutive m.inputGain
 
-theorem impedance_roundtrip (m : Impedance) : toImpedance (toStateSpace m) = m := by
+@[simp, powerlib_foundation] theorem impedance_roundtrip (m : Impedance) : toImpedance (toStateSpace m) = m := by
   apply Impedance.ext
   · exact (by simpa [toStateSpace, toImpedance, generated.convert, reciprocal] using
       scale_cancel m.resistance m.inductance)
@@ -58,7 +59,7 @@ def modelEquiv : StateSpace ≃ Impedance where
 def StateSpace.field (m : StateSpace) (current voltage : ℝ) : ℝ :=
   -m.decay * current + m.inputGain.val * voltage
 
-theorem same_dynamics (m : Impedance) (current voltage : ℝ) :
+@[powerlib_foundation] theorem same_dynamics (m : Impedance) (current voltage : ℝ) :
     (toStateSpace m).field current voltage =
       (voltage - m.resistance * current) / m.inductance.val := by
   dsimp [StateSpace.field, toStateSpace, generated.convert, reciprocal]
@@ -69,7 +70,7 @@ def Impedance.frequency (m : Impedance) (s : ℂ) : ℂ :=
   (m.resistance : ℂ) + (m.inductance.val : ℂ) * s
 
 -- This equation pins the port interpretation: voltage is impedance times current.
-theorem same_port_relation (m : Impedance) (s current voltage : ℂ) :
+@[powerlib_foundation] theorem same_port_relation (m : Impedance) (s current voltage : ℂ) :
     (s + ((toStateSpace m).decay : ℂ)) * current =
         ((toStateSpace m).inputGain.val : ℂ) * voltage ↔
       voltage = m.frequency s * current := by
@@ -94,7 +95,7 @@ def StateSpace.Stable (m : StateSpace) : Prop := 0 < m.decay
 def Impedance.Stable (m : Impedance) : Prop :=
   ∀ s : ℂ, m.frequency s = 0 → s.re < 0
 
-theorem frequency_zero_iff (m : Impedance) (s : ℂ) :
+@[simp, powerlib_foundation] theorem frequency_zero_iff (m : Impedance) (s : ℂ) :
     m.frequency s = 0 ↔ s = ((-(m.resistance / m.inductance.val) : ℝ) : ℂ) := by
   have hL : (m.inductance.val : ℂ) ≠ 0 := by
     exact_mod_cast ne_of_gt m.inductance.property
@@ -110,7 +111,7 @@ theorem frequency_zero_iff (m : Impedance) (s : ℂ) :
     field_simp [hL]
     ring
 
-theorem impedance_stable_iff (m : Impedance) : m.Stable ↔ 0 < m.resistance := by
+@[simp, powerlib_domain] theorem impedance_stable_iff (m : Impedance) : m.Stable ↔ 0 < m.resistance := by
   constructor
   · intro h
     have hr := h ((-(m.resistance / m.inductance.val) : ℝ) : ℂ)
@@ -122,7 +123,7 @@ theorem impedance_stable_iff (m : Impedance) : m.Stable ↔ 0 < m.resistance := 
     simp only [Complex.ofReal_re, neg_lt_zero]
     exact div_pos h m.inductance.property
 
-theorem stability_agrees (m : Impedance) : (toStateSpace m).Stable ↔ m.Stable := by
+@[simp, powerlib_foundation] theorem stability_agrees (m : Impedance) : (toStateSpace m).Stable ↔ m.Stable := by
   rw [impedance_stable_iff]
   change 0 < m.resistance * m.inductance.val⁻¹ ↔ 0 < m.resistance
   rw [← div_eq_mul_inv]
@@ -139,12 +140,12 @@ structure Accepted (m : Impedance) where
 
 def energy (p current : ℝ) : ℝ := p * current ^ 2
 
-theorem Accepted.stable {m : Impedance} (c : Accepted m) : m.Stable := by
+@[powerlib_domain, aesop safe forward (immediate := [c])] theorem Accepted.stable {m : Impedance} (c : Accepted m) : m.Stable := by
   apply (stability_agrees m).mp
   change 0 < (toStateSpace m).decay
   nlinarith [c.p_pos, c.lyapunov_identity]
 
-theorem Accepted.dissipation {m : Impedance} (c : Accepted m) (current : ℝ) :
+@[powerlib_domain, aesop safe apply] theorem Accepted.dissipation {m : Impedance} (c : Accepted m) (current : ℝ) :
     2 * c.p * current * (toStateSpace m).field current 0 = -current ^ 2 := by
   dsimp [StateSpace.field]
   nlinarith [c.lyapunov_identity]
@@ -153,16 +154,16 @@ theorem Accepted.dissipation {m : Impedance} (c : Accepted m) (current : ℝ) :
 def response (m : Impedance) (initial t : ℝ) : ℝ :=
   initial * Real.exp (-(toStateSpace m).decay * t)
 
-theorem response_initial (m : Impedance) (initial : ℝ) : response m initial 0 = initial := by
+@[simp, powerlib_domain] theorem response_initial (m : Impedance) (initial : ℝ) : response m initial 0 = initial := by
   simp [response]
 
-theorem response_solves (m : Impedance) (initial t : ℝ) :
+@[powerlib_domain, aesop safe apply] theorem response_solves (m : Impedance) (initial t : ℝ) :
     HasDerivAt (response m initial) ((toStateSpace m).field (response m initial t) 0) t := by
   convert (((hasDerivAt_id t).const_mul (-(toStateSpace m).decay)).exp.const_mul initial) using 1
   simp [response, StateSpace.field]
   ring
 
-theorem Accepted.decay_bound {m : Impedance} (c : Accepted m) (initial t : ℝ) :
+@[powerlib_domain, aesop safe apply] theorem Accepted.decay_bound {m : Impedance} (c : Accepted m) (initial t : ℝ) :
     (response m initial t) ^ 2 = initial ^ 2 * Real.exp (-c.rate * t) := by
   rw [response, mul_pow, ← Real.exp_nat_mul, c.rate_exact]
   congr 2

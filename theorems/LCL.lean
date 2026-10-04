@@ -38,13 +38,13 @@ def toCircuit (m : StateSpace) : Circuit :=
       m.capacitorGain)
   ⟨⟨y.1.1.1, y.1.1.2⟩, ⟨y.1.2.1, y.1.2.2⟩, y.2⟩
 
-@[simp] theorem circuit_roundtrip (m : Circuit) : toCircuit (toStateSpace m) = m := by
+@[simp, powerlib_foundation] theorem circuit_roundtrip (m : Circuit) : toCircuit (toStateSpace m) = m := by
   apply Circuit.ext
   · exact powerlib.impedance_roundtrip m.first
   · exact powerlib.impedance_roundtrip m.second
   · exact powerlib.reciprocal_involutive m.capacitance
 
-@[simp] theorem state_roundtrip (m : StateSpace) : toStateSpace (toCircuit m) = m := by
+@[simp, powerlib_foundation] theorem state_roundtrip (m : StateSpace) : toStateSpace (toCircuit m) = m := by
   apply StateSpace.ext
   · exact powerlib.state_roundtrip m.first
   · exact powerlib.state_roundtrip m.second
@@ -61,7 +61,7 @@ def StateSpace.field (m : StateSpace) (i1 vc i2 u vg : ℝ) : ℝ × ℝ × ℝ 
     m.capacitorGain.val * (i1 - i2),
     m.second.inputGain.val * vc - m.second.decay * i2 - m.second.inputGain.val * vg)
 
-theorem same_dynamics (m : Circuit) (i1 vc i2 u vg : ℝ) :
+@[powerlib_foundation] theorem same_dynamics (m : Circuit) (i1 vc i2 u vg : ℝ) :
     (toStateSpace m).field i1 vc i2 u vg =
       ((u - m.first.resistance * i1 - vc) / m.first.inductance.val,
         (i1 - i2) / m.capacitance.val,
@@ -84,7 +84,7 @@ def Circuit.frequency (m : Circuit) (s : ℂ) : ℂ :=
   (m.a3 : ℂ) * s ^ 3 + (m.a2 : ℂ) * s ^ 2 + (m.a1 : ℂ) * s + (m.a0 : ℂ)
 
 -- This is the denominator of the internal three-state dynamics.
-theorem characteristic_identity (m : Circuit) (s : ℂ) :
+@[powerlib_foundation] theorem characteristic_identity (m : Circuit) (s : ℂ) :
     m.frequency s =
       ((m.first.inductance.val : ℂ) * s + (m.first.resistance : ℂ)) *
         ((m.capacitance.val : ℂ) * s *
@@ -101,7 +101,7 @@ def StateSpace.matrix (m : StateSpace) : Matrix (Fin 3) (Fin 3) ℝ :=
     ![0, m.second.inputGain.val, -m.second.decay]]
 
 -- The matrix is constructed from, and agrees with, the physical vector field.
-theorem StateSpace.matrix_mulVec (m : StateSpace) (x y z : ℝ) :
+@[powerlib_foundation] theorem StateSpace.matrix_mulVec (m : StateSpace) (x y z : ℝ) :
     m.matrix.mulVec ![x, y, z] =
       ![(m.field x y z 0 0).1, (m.field x y z 0 0).2.1,
         (m.field x y z 0 0).2.2] := by
@@ -110,7 +110,7 @@ theorem StateSpace.matrix_mulVec (m : StateSpace) (x y z : ℝ) :
     simp [StateSpace.matrix, StateSpace.field, Matrix.mulVec, dotProduct,
       Fin.sum_univ_succ] <;> ring
 
-theorem StateSpace.perturbation (m : StateSpace) (x y z dx dy dz u vg : ℝ) :
+@[powerlib_foundation] theorem StateSpace.perturbation (m : StateSpace) (x y z dx dy dz u vg : ℝ) :
     let f := m.field (x + dx) (y + dy) (z + dz) u vg
     let base := m.field x y z u vg
     (f.1 - base.1, f.2.1 - base.2.1, f.2.2 - base.2.2) = m.field dx dy dz 0 0 := by
@@ -120,7 +120,7 @@ theorem StateSpace.perturbation (m : StateSpace) (x y z dx dy dz u vg : ℝ) :
 def StateSpace.characteristic (m : StateSpace) (s : ℂ) : ℂ :=
   Matrix.det (s • (1 : Matrix (Fin 3) (Fin 3) ℂ) - m.matrix.map (fun r => (r : ℂ)))
 
-theorem same_characteristic (m : Circuit) (s : ℂ) :
+@[powerlib_foundation] theorem same_characteristic (m : Circuit) (s : ℂ) :
     (toStateSpace m).characteristic s = m.frequency s / (m.a3 : ℂ) := by
   have hL1 : (m.first.inductance.val : ℂ) ≠ 0 := by
     exact_mod_cast ne_of_gt m.first.inductance.property
@@ -138,7 +138,7 @@ theorem same_characteristic (m : Circuit) (s : ℂ) :
 def StateSpace.Stable (m : StateSpace) : Prop :=
   ∀ s : ℂ, m.characteristic s = 0 → s.re < 0
 
-theorem stability_agrees (m : Circuit) : (toStateSpace m).Stable ↔ m.Stable := by
+@[simp, powerlib_foundation] theorem stability_agrees (m : Circuit) : (toStateSpace m).Stable ↔ m.Stable := by
   have hn : (m.a3 : ℂ) ≠ 0 := by
     exact_mod_cast ne_of_gt (mul_pos (mul_pos m.first.inductance.property
       m.second.inductance.property) m.capacitance.property)
@@ -147,10 +147,10 @@ theorem stability_agrees (m : Circuit) : (toStateSpace m).Stable ↔ m.Stable :=
 
 def Circuit.Passive (m : Circuit) : Prop :=
   0 ≤ m.first.resistance ∧ 0 ≤ m.second.resistance
-def Circuit.Damped (m : Circuit) : Prop :=
+@[simp] def Circuit.Damped (m : Circuit) : Prop :=
   m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0
 
-theorem hurwitz_gap (m : Circuit) : m.a2 * m.a1 - m.a3 * m.a0 =
+@[powerlib_foundation] theorem hurwitz_gap (m : Circuit) : m.a2 * m.a1 - m.a3 * m.a0 =
     m.capacitance.val * (m.first.resistance * m.second.inductance.val ^ 2 +
       m.second.resistance * m.first.inductance.val ^ 2 +
       m.capacitance.val * m.first.resistance * m.second.resistance *
@@ -160,7 +160,7 @@ theorem hurwitz_gap (m : Circuit) : m.a2 * m.a1 - m.a3 * m.a0 =
   ring
 
 -- A direct complex-root proof of the strict cubic Hurwitz sufficient condition.
-theorem cubic_hurwitz (a3 a2 a1 a0 : ℝ) (h3 : 0 < a3) (h2 : 0 < a2)
+@[powerlib_foundation] theorem cubic_hurwitz (a3 a2 a1 a0 : ℝ) (h3 : 0 < a3) (h2 : 0 < a2)
     (h1 : 0 < a1) (h0 : 0 < a0) (hg : 0 < a2 * a1 - a3 * a0)
     (s : ℂ) (hs : (a3 : ℂ)*s^3 + (a2 : ℂ)*s^2 + (a1 : ℂ)*s + (a0 : ℂ) = 0) :
     s.re < 0 := by
@@ -186,13 +186,13 @@ theorem cubic_hurwitz (a3 a2 a1 a0 : ℝ) (h3 : 0 < a3) (h2 : 0 < a2)
         2*(a3*a1+a2^2)*s.re + (a2*a1-a3*a0) := by positivity
     linarith
 
-theorem stable_of_hurwitz (m : Circuit) (h2 : 0 < m.a2) (h1 : 0 < m.a1)
+@[powerlib_domain, aesop safe apply] theorem stable_of_hurwitz (m : Circuit) (h2 : 0 < m.a2) (h1 : 0 < m.a1)
     (h0 : 0 < m.a0) (hg : 0 < m.a2*m.a1-m.a3*m.a0) : m.Stable := by
   have h3 : 0 < m.a3 := mul_pos (mul_pos m.first.inductance.property
     m.second.inductance.property) m.capacitance.property
   exact fun s hs => cubic_hurwitz m.a3 m.a2 m.a1 m.a0 h3 h2 h1 h0 hg s hs
 
-theorem passive_hurwitz (m : Circuit) (hp : m.Passive) (hd : m.Damped) :
+@[powerlib_foundation, aesop safe apply] theorem passive_hurwitz (m : Circuit) (hp : m.Passive) (hd : m.Damped) :
     0 < m.a2 ∧ 0 < m.a1 ∧ 0 < m.a0 ∧ 0 < m.a2*m.a1-m.a3*m.a0 := by
   rcases hp with ⟨hr1, hr2⟩
   have hL1 := m.first.inductance.property
@@ -213,7 +213,7 @@ theorem passive_hurwitz (m : Circuit) (hp : m.Passive) (hd : m.Damped) :
   exact ⟨h2, h1, h0, hg⟩
 
 -- With passive resistances, strict stability is exactly "not both zero".
-theorem passive_stable_iff (m : Circuit) (hp : m.Passive) : m.Stable ↔ m.Damped := by
+@[simp, powerlib_domain] theorem passive_stable_iff (m : Circuit) (hp : m.Passive) : m.Stable ↔ m.Damped := by
   constructor
   · intro hs
     by_contra hn
@@ -227,7 +227,7 @@ theorem passive_stable_iff (m : Circuit) (hp : m.Passive) : m.Stable ↔ m.Dampe
     rcases passive_hurwitz m hp hd with ⟨h2, h1, h0, hg⟩
     exact stable_of_hurwitz m h2 h1 h0 hg
 
-structure SymmetricMatrix where
+@[ext] structure SymmetricMatrix where
   p11 : ℝ
   p12 : ℝ
   p13 : ℝ
@@ -247,7 +247,7 @@ def energyDerivative (p : SymmetricMatrix) (x y z dx dy dz : ℝ) : ℝ :=
   2*(p.p11*x+p.p12*y+p.p13*z)*dx +
     2*(p.p12*x+p.p22*y+p.p23*z)*dy + 2*(p.p13*x+p.p23*y+p.p33*z)*dz
 
-theorem energy_positive (p : SymmetricMatrix) (h1 : 0 < p.p11)
+@[powerlib_foundation, aesop safe apply] theorem energy_positive (p : SymmetricMatrix) (h1 : 0 < p.p11)
     (h2 : 0 < p.minor2) (h3 : 0 < p.det) (x y z : ℝ)
     (hn : x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) : 0 < energy p x y z := by
   have he : energy p x y z =
@@ -293,14 +293,14 @@ structure Accepted (m : Circuit) where
     (toStateSpace m).second.decay*p.p23 + (toStateSpace m).second.inputGain.val*p.p33 = 0
   eq33 : -2*(toStateSpace m).capacitorGain.val*p.p23 - 2*(toStateSpace m).second.decay*p.p33 = -1
 
-theorem Accepted.stable {m : Circuit} (c : Accepted m) : (toStateSpace m).Stable :=
+@[powerlib_domain, aesop safe forward (immediate := [c])] theorem Accepted.stable {m : Circuit} (c : Accepted m) : (toStateSpace m).Stable :=
   (stability_agrees m).mpr (stable_of_hurwitz m c.a2_pos c.a1_pos c.a0_pos c.gap_pos)
 
-theorem Accepted.positive {m : Circuit} (c : Accepted m) (x y z : ℝ)
+@[powerlib_domain, aesop safe apply] theorem Accepted.positive {m : Circuit} (c : Accepted m) (x y z : ℝ)
     (hn : x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) : 0 < energy c.p x y z :=
   energy_positive c.p c.p11_pos c.minor2_pos c.det_pos x y z hn
 
-theorem Accepted.dissipation {m : Circuit} (c : Accepted m) (x y z : ℝ) :
+@[powerlib_domain, aesop safe apply] theorem Accepted.dissipation {m : Circuit} (c : Accepted m) (x y z : ℝ) :
     let f := (toStateSpace m).field x y z 0 0
     energyDerivative c.p x y z f.1 f.2.1 f.2.2 = -(x^2+y^2+z^2) := by
   dsimp [StateSpace.field, energyDerivative]
@@ -312,7 +312,7 @@ end powerlib.LCL
 namespace powerlib
 
 -- Public theorem for the passive canonical LCL plant's internal poles.
-theorem lcl_stable_iff (m : LCL.Circuit) (hp : m.Passive) :
+@[simp, powerlib_domain] theorem lcl_stable_iff (m : LCL.Circuit) (hp : m.Passive) :
     (LCL.toStateSpace m).Stable ↔ m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0 :=
   (LCL.stability_agrees m).trans (LCL.passive_stable_iff m hp)
 

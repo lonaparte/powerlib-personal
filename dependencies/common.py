@@ -73,12 +73,14 @@ CORE = [
 def audit(extra=(), *, include_core=True):
     roots = (["powerlib." + name for name in CORE] if include_core else []) + list(extra)
     names = ", ".join("`" + name for name in roots)
+    discovered = " ++ (powerlib.Registry.theoremNames env).toList" if include_core else ""
     return f'''
 open Lean Elab Command
 run_cmd do
   let env ← getEnv
   let mut state : Lean.CollectAxioms.State := {{}}
-  for root in [{names}] do
+  let roots := ([{names}] : List Name){discovered}
+  for root in roots do
     let (_, next) := ((Lean.CollectAxioms.collect root).run env).run state
     state := next
   for ax in state.axioms do

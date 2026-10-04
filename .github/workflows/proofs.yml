@@ -25,6 +25,8 @@ jobs:
           test: "false"
       - name: Audit project theorems
         run: lake env lean dependencies/tests/Audit.lean
+      - name: Check theorem discovery and automatic reuse
+        run: lake env lean dependencies/tests/Automation.lean
       - name: Check Agda conversion and dependency pins
         run: python3 dependencies/setup.py
       - name: Check LCL conversion
