@@ -73,6 +73,6 @@ not a supplied Lyapunov coefficient, equilibrium, or convergence rate. -/
     |i t - voltage / m.resistance| =
       |i 0 - voltage / m.resistance| *
         Real.exp (-(m.resistance / m.inductance.val) * t) :=
-  large_signal_error_exact ((impedance_stable_iff m).mp c.stable) hi ht
+  powerlib.large_signal_error_exact ((impedance_stable_iff m).mp c.stable) hi ht
 
 end powerlib
