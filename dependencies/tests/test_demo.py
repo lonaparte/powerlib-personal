@@ -81,7 +81,15 @@ class KernelTests(unittest.TestCase):
         for resistance, inductance in [(Fraction(2), Fraction(1)), (Fraction(3, 2), Fraction(2, 3))]:
             p, rate = inductance / (2 * resistance), 2 * resistance / inductance
             self.check_source("valid", candidate_source(resistance, inductance, p, rate) +
-                              admission_source(resistance, inductance, p, rate), True)
+                              admission_source(resistance, inductance, p, rate) + '''
+-- Independent consumers require the actual global predicates, with no supplied equilibrium.
+theorem global_exponential (v : ℝ) :
+    powerlib.GloballyExponentiallyStable Admission.submittedModel v
+      (v / Admission.submittedModel.resistance) := Admission.exponential v
+theorem global_asymptotic (v : ℝ) :
+    powerlib.GloballyAsymptoticallyStable Admission.submittedModel v
+      (v / Admission.submittedModel.resistance) := Admission.global_asymptotic v
+''' + audit(["global_exponential", "global_asymptotic"]), True)
 
     def test_wrong_witnesses_and_model(self):
         r, l, p, rate = Fraction(2), Fraction(1), Fraction(1, 4), Fraction(4)

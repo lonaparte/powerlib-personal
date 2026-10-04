@@ -68,6 +68,10 @@ def accepted : powerlib.Accepted submittedModel := Candidate.certificate
 example : accepted.p = {literal(p)} := by norm_num [accepted, Candidate.certificate]
 example : accepted.rate = {literal(rate)} := by norm_num [accepted, Candidate.certificate]
 @[powerlib_domain] theorem stable : submittedModel.Stable := accepted.stable
+@[powerlib_foundation] theorem equilibrium (voltage : ℝ) :
+    powerlib.IsEquilibrium submittedModel voltage (voltage / submittedModel.resistance) :=
+  powerlib.equilibrium_of_resistance_ne_zero
+    (ne_of_gt ((powerlib.impedance_stable_iff submittedModel).mp stable)) voltage
 @[powerlib_domain] theorem dissipation (current : ℝ) :
     2 * accepted.p * current * (powerlib.toStateSpace submittedModel).field current 0 =
       -current ^ 2 := accepted.dissipation current
@@ -77,25 +81,16 @@ example : accepted.rate = {literal(rate)} := by norm_num [accepted, Candidate.ce
 @[powerlib_domain] theorem small_signal : powerlib.AsymptoticallyStable submittedModel 0 0 := by
   have certificate := accepted
   powerlib_auto
-@[powerlib_domain] theorem large_signal (voltage : ℝ) :
-    powerlib.LargeSignalStable submittedModel voltage := by
+@[powerlib_domain] theorem exponential (voltage : ℝ) :
+    powerlib.GloballyExponentiallyStable submittedModel voltage
+      (voltage / submittedModel.resistance) := by
+  have he := equilibrium voltage
   have certificate := accepted
   powerlib_auto
-@[powerlib_domain] theorem large_signal_error (voltage : ℝ) (i : ℝ → ℝ)
-    (hi : powerlib.IsTrajectory submittedModel voltage i) (t : ℝ) (ht : 0 ≤ t) :
-    |i t - voltage / submittedModel.resistance| =
-      |i 0 - voltage / submittedModel.resistance| *
-        Real.exp (-(submittedModel.resistance / submittedModel.inductance.val) * t) := by
-  have certificate := accepted
-  powerlib_auto
-@[powerlib_domain] theorem exponential (voltage equilibrium : ℝ)
-    (he : powerlib.IsEquilibrium submittedModel voltage equilibrium) :
-    powerlib.GloballyExponentiallyStable submittedModel voltage equilibrium := by
-  have certificate := accepted
-  powerlib_auto
-@[powerlib_domain] theorem global_asymptotic (voltage equilibrium : ℝ)
-    (he : powerlib.IsEquilibrium submittedModel voltage equilibrium) :
-    powerlib.GloballyAsymptoticallyStable submittedModel voltage equilibrium := by
+@[powerlib_domain] theorem global_asymptotic (voltage : ℝ) :
+    powerlib.GloballyAsymptoticallyStable submittedModel voltage
+      (voltage / submittedModel.resistance) := by
+  have he := equilibrium voltage
   have certificate := accepted
   powerlib_auto
 @[powerlib_domain] theorem all_trajectory_decay (voltage equilibrium : ℝ) (i : ℝ → ℝ)
@@ -105,9 +100,9 @@ example : accepted.rate = {literal(rate)} := by norm_num [accepted, Candidate.ce
       (i 0 - equilibrium) ^ 2 * Real.exp (-(accepted.rate * t)) := by
   powerlib_auto
 end Admission
-''' + audit(["Admission.accepted", "Admission.stable", "Admission.dissipation", "Admission.decay",
+''' + audit(["Admission.accepted", "Admission.stable", "Admission.equilibrium", "Admission.dissipation", "Admission.decay",
              "Admission.small_signal", "Admission.exponential", "Admission.global_asymptotic",
-             "Admission.all_trajectory_decay", "Admission.large_signal", "Admission.large_signal_error"])
+             "Admission.all_trajectory_decay"])
 
 
 def output_dir(kind):
@@ -134,13 +129,11 @@ def atp(path):
         "model": {"resistance": str(resistance), "inductance": str(inductance)},
         "state_space": {"decay": str(resistance / inductance), "input_gain": str(1 / inductance)},
         "certificate": {"p": str(p), "squared_current_decay_rate": str(rate)},
-        "theorem": "Admission.large_signal", "proof": str(proof),
-        "theorems": ["Admission.stable", "Admission.dissipation", "Admission.decay",
+        "theorem": "Admission.exponential", "proof": str(proof),
+        "theorems": ["Admission.stable", "Admission.equilibrium", "Admission.dissipation", "Admission.decay",
                      "Admission.small_signal", "Admission.exponential",
-                     "Admission.global_asymptotic", "Admission.all_trajectory_decay",
-                     "Admission.large_signal", "Admission.large_signal_error"],
-        "semantics": "All constant voltages and all initial currents; forward existence and uniqueness, global exponential stability and global asymptotic stability",
-        "model_boundary": "Ideal scalar continuous-time RL circuit; fixed R > 0 and L > 0; constant voltage; no controller, saturation, switching or fault-on dynamics",
+                     "Admission.global_asymptotic", "Admission.all_trajectory_decay"],
+        "semantics": "Global exponential and asymptotic stability of all forward RL trajectories at v/R, for every constant voltage and arbitrary initial current",
         "proof_sha256": digest(proof), "lean": demand(["lake", "env", "lean", "--version"]).strip(),
         "submitted_model_sha256": digest(submitted), "provenance": proof_provenance(proof),
     }

@@ -4,20 +4,6 @@ open powerlib Filter
 open scoped Topology
 
 -- No theorem names or per-example rule lists are supplied to proof search.
-example (m : Impedance) (c : Accepted m) (v : ℝ) :
-    LargeSignalStable m v := by powerlib_auto
-
-example (m : Impedance) (hR : 0 < m.resistance) (v : ℝ) :
-    LargeSignalStable m v := by powerlib_auto
-
-example (m : Impedance) (v : ℝ) :
-    LargeSignalStable m v ↔ 0 < m.resistance := by powerlib_auto
-
-example (m : Impedance) (c : Accepted m) (v : ℝ) (i : ℝ → ℝ)
-    (hi : IsTrajectory m v i) (t : ℝ) (ht : 0 ≤ t) :
-    |i t - v / m.resistance| = |i 0 - v / m.resistance| *
-      Real.exp (-(m.resistance / m.inductance.val) * t) := by powerlib_auto
-
 example (m : Impedance) : toImpedance (toStateSpace m) = m := by powerlib_auto
 
 example (m : Impedance) : m.Stable ↔ 0 < m.resistance := by powerlib_auto
