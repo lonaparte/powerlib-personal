@@ -141,6 +141,24 @@ class KernelAdmission(unittest.TestCase):
             with self.subTest(kind=kind), self.assertRaises(RuntimeError):
                 self.check_source(lti.candidate_source(c) + lti.admission_source(a))
 
+    def test_bridge_does_not_publish_a_rejected_lean_endpoint(self):
+        target, snapshot = self.root / "Exported.lean", self.root / "wire.json"
+        target.write_text("previous endpoint\n")
+        snapshot.write_text("previous wire\n")
+        render = lti_bridge.render
+
+        def wrong_endpoint(words, source_hash):
+            content = render(words, source_hash)
+            self.assertIn("A i j0 * x j0", content)
+            return content.replace("A i j0 * x j0", "A i j0 * x i")
+
+        with patch.multiple(lti_bridge, TARGET=target, SNAPSHOT=snapshot,
+                            RESULTS=self.root / "results", render=wrong_endpoint):
+            with self.assertRaisesRegex(RuntimeError, "Lean rejected"):
+                lti_bridge.rebuild(write=True)
+        self.assertEqual(target.read_text(), "previous endpoint\n")
+        self.assertEqual(snapshot.read_text(), "previous wire\n")
+
     def test_transitive_custom_axiom_and_sorry_rejected(self):
         a = lti.model_from_data({"A": [[-1]]})
         prefix = "import powerlib\nnamespace Candidate\n" + lti.model_source("model", a)

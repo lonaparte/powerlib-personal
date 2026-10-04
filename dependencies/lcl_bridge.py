@@ -2,13 +2,10 @@
 """Check and export the actual Agda LCL conversion using the existing RL bridge protocol."""
 import argparse
 import json
-from pathlib import Path
-import shutil
 import sys
-import tempfile
 
-from bridge import extract
-from common import ROOT, CACHE, RESULTS, CUBICAL_COMMIT, audit, check_lean, demand, digest
+from bridge import rebuild_checked
+from common import ROOT, RESULTS
 
 TARGET = ROOT / "theorems/generated/LCLConversion.lean"
 SNAPSHOT = ROOT / "dependencies/lcl_wire.json"
@@ -71,51 +68,10 @@ end powerlib.generated
 
 
 def rebuild(write=False):
-    demand(["lake", "build", "theorems.Attributes"])
-    agda, cubical = CACHE / "agda", CACHE / "cubical"
-    if demand([agda, "--numeric-version"]).strip() != "2.8.0":
-        raise RuntimeError("Expected pinned Agda 2.8.0; run dependencies/setup.py")
-    if demand(["git", "-C", cubical, "rev-parse", "HEAD"]).strip() != CUBICAL_COMMIT:
-        raise RuntimeError("Cubical commit mismatch")
-    if demand(["git", "-C", cubical, "status", "--porcelain", "--untracked-files=all"]).strip():
-        raise RuntimeError("Cubical checkout must be clean")
-    RESULTS.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="lcl-bridge-", dir=RESULTS) as directory:
-        stage = Path(directory)
-        (stage / "theorems").mkdir()
-        for name in ["Conversion.agda", "LCLConversion.agda"]:
-            shutil.copy(ROOT / "theorems" / name, stage / "theorems" / name)
-        shutil.copy(ROOT / "powerlib.agda-lib", stage)
-        libraries = stage / "libraries"
-        libraries.write_text(str(cubical / "cubical.agda-lib") + "\n")
-        entry = stage / "theorems/LCLConversion.agda"
-        flags = [agda, f"--library-file={libraries}", "--no-default-libraries"]
-        log = demand(flags + [entry], cwd=stage)
-        path = json.dumps(str(entry))
-        commands = (f'IOTCM {path} None Direct (Cmd_load {path} [])\n'
-                    f'IOTCM {path} None Direct (Cmd_compute_toplevel DefaultCompute "wire")\n')
-        normalized = demand(flags + ["--interaction-json", "--interaction-exit-on-error"],
-                            input=commands, cwd=stage)
-        words = extract(normalized)
-        source_hash, branch_hash = digest(entry), digest(stage / "theorems/Conversion.agda")
-        content = render(words, source_hash, branch_hash)
-        proof = stage / "LCLConversion.lean"
-        proof.write_text("import Lean\n" + content +
-                         audit(["powerlib.generated.convertLCL_spec"], include_core=False))
-        check_lean(proof)
-        snapshot = json.dumps(words) + "\n"
-        if write:
-            TARGET.write_text(content)
-            SNAPSHOT.write_text(snapshot)
-        elif TARGET.read_text() != content or SNAPSHOT.read_text() != snapshot:
-            raise RuntimeError("Generated LCL conversion is stale; run dependencies/lcl_bridge.py --write")
-        report = {"agda": "2.8.0", "cubical_commit": CUBICAL_COMMIT,
-                  "agda_source_sha256": source_hash, "rl_source_sha256": branch_hash,
-                  "wire": words, "generated_sha256": digest(TARGET),
-                  "status": "AGDA_AND_LEAN_CHECKED"}
-        (RESULTS / "lcl-bridge.log").write_text(log + normalized)
-        (RESULTS / "lcl-bridge.json").write_text(json.dumps(report, indent=2) + "\n")
-        return report
+    return rebuild_checked(
+        sources={"agda_source_sha256": "LCLConversion.agda", "rl_source_sha256": "Conversion.agda"},
+        render=render, theorem="powerlib.generated.convertLCL_spec", target=TARGET, snapshot=SNAPSHOT,
+        report_name="lcl-bridge", write=write, root=ROOT, results=RESULTS)
 
 
 if __name__ == "__main__":

@@ -12,6 +12,7 @@ from pathlib import Path
 import tempfile
 
 from common import RESULTS, audit, check_lean, demand, digest, proof_provenance
+from exact import SingularSystem, solve_linear as solve_exact
 from powerlib import literal
 
 
@@ -59,20 +60,10 @@ def matrix_data(a):
 
 
 def solve_linear(a, b):
-    n = len(b)
-    rows = [list(row) + [value] for row, value in zip(a, b)]
-    for j in range(n):
-        pivot = next((i for i in range(j, n) if rows[i][j]), None)
-        if pivot is None:
-            raise Unproved("Singular Lyapunov operator; no strict certificate synthesized")
-        rows[j], rows[pivot] = rows[pivot], rows[j]
-        scale = rows[j][j]
-        rows[j] = [x / scale for x in rows[j]]
-        for i in range(n):
-            if i != j:
-                scale = rows[i][j]
-                rows[i] = [x - scale*y for x, y in zip(rows[i], rows[j])]
-    return tuple(row[-1] for row in rows)
+    try:
+        return solve_exact(a, b)
+    except SingularSystem as error:
+        raise Unproved("Singular Lyapunov operator; no strict certificate synthesized") from error
 
 
 def lyapunov_product(a, p):

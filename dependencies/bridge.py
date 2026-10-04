@@ -117,7 +117,13 @@ end powerlib.generated
 '''
 
 
-def rebuild(write=False):
+def rebuild_checked(*, sources, render, theorem, target, snapshot, report_name,
+                    write=False, root=ROOT, results=RESULTS):
+    """Run both kernels before publishing; each family supplies its own contract.
+
+    sources maps provenance keys to Agda filenames, primary source first.
+    The renderer receives the normalized wire followed by those source hashes.
+    """
     demand(["lake", "build", "theorems.Attributes"])
     agda = CACHE / "agda"
     if demand([agda, "--numeric-version"]).strip() != "2.8.0":
@@ -127,14 +133,16 @@ def rebuild(write=False):
         raise RuntimeError("Cubical commit mismatch")
     if demand(["git", "-C", cubical, "status", "--porcelain", "--untracked-files=all"]).strip():
         raise RuntimeError("Cubical checkout must be clean")
-    with tempfile.TemporaryDirectory(prefix="powerlib-bridge-") as directory:
+    results.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=report_name + "-", dir=results) as directory:
         stage = Path(directory)
         (stage / "theorems").mkdir()
-        shutil.copy(ROOT / "theorems/Conversion.agda", stage / "theorems/Conversion.agda")
-        shutil.copy(ROOT / "powerlib.agda-lib", stage)
+        for name in sources.values():
+            shutil.copy(root / "theorems" / name, stage / "theorems" / name)
+        shutil.copy(root / "powerlib.agda-lib", stage)
         libraries = stage / "libraries"
         libraries.write_text(str(cubical / "cubical.agda-lib") + "\n")
-        entry = stage / "theorems/Conversion.agda"
+        entry = stage / "theorems" / sources["agda_source_sha256"]
         flags = [agda, f"--library-file={libraries}", "--no-default-libraries"]
         log = demand(flags + [entry], cwd=stage)
         path = json.dumps(str(entry))
@@ -143,24 +151,31 @@ def rebuild(write=False):
         normalized = demand(flags + ["--interaction-json", "--interaction-exit-on-error"],
                             input=commands, cwd=stage)
         words = extract(normalized)
-        content = render(words, digest(entry))
-        candidate = stage / "Conversion.lean"
+        hashes = {key: digest(stage / "theorems" / name) for key, name in sources.items()}
+        content = render(words, *hashes.values())
+        candidate = stage / (entry.stem + ".lean")
         candidate.write_text("import Lean\n" + content +
-                             audit(["powerlib.generated.convert_spec"], include_core=False))
+                             audit([theorem], include_core=False))
         check_lean(candidate)
-        snapshot = json.dumps(words) + "\n"
+        wire = json.dumps(words) + "\n"
         if write:
-            TARGET.write_text(content)
-            SNAPSHOT.write_text(snapshot)
-        elif TARGET.read_text() != content or SNAPSHOT.read_text() != snapshot:
-            raise RuntimeError("Generated conversion is stale; run python3 dependencies/bridge.py --write")
+            target.write_text(content)
+            snapshot.write_text(wire)
+        elif target.read_text() != content or snapshot.read_text() != wire:
+            raise RuntimeError(f"Generated {target.name} is stale; rerun its bridge with --write")
         report = {"agda": "2.8.0", "cubical_commit": CUBICAL_COMMIT,
-                  "agda_source_sha256": digest(entry), "wire": words,
-                  "generated_sha256": digest(TARGET), "status": "AGDA_AND_LEAN_CHECKED"}
-        RESULTS.mkdir(parents=True, exist_ok=True)
-        (RESULTS / "bridge.log").write_text(log + normalized)
-        (RESULTS / "bridge.json").write_text(json.dumps(report, indent=2) + "\n")
+                  **hashes, "wire": words,
+                  "generated_sha256": digest(target), "status": "AGDA_AND_LEAN_CHECKED"}
+        (results / (report_name + ".log")).write_text(log + normalized)
+        (results / (report_name + ".json")).write_text(json.dumps(report, indent=2) + "\n")
     return report
+
+
+def rebuild(write=False):
+    return rebuild_checked(
+        sources={"agda_source_sha256": "Conversion.agda"}, render=render,
+        theorem="powerlib.generated.convert_spec", target=TARGET, snapshot=SNAPSHOT,
+        report_name="bridge", write=write, root=ROOT, results=RESULTS)
 
 
 if __name__ == "__main__":
