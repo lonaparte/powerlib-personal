@@ -24,7 +24,14 @@ elab "powerlib_auto" : tactic => do
   for (name, info) in env.constants do
     if name.getRoot == `powerlib && info.isTheorem then
       rules := rules.push (← `(term| $(mkIdent name)))
-  evalTactic (← `(tactic|
-    first
-    | solve_by_elim (maxDepth := 3) [$rules,*]
-    | aesop (rule_sets := [PowerLib])))
+  let saved ← saveState
+  try
+    liftMetaTactic fun goal => do
+      let remaining ← SolveByElim.processSyntax { maxDepth := 3 }
+        false false rules.toList [] #[] [goal]
+      unless remaining.isEmpty do
+        throwError "Short PowerLib proof search left unsolved goals"
+      pure []
+  catch _ =>
+    saved.restore
+    evalTactic (← `(tactic| aesop (rule_sets := [PowerLib])))
