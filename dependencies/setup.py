@@ -42,11 +42,14 @@ def setup():
         raise RuntimeError("Existing Cubical checkout has the wrong commit")
     print("Fetching Mathlib cache", flush=True)
     print(demand(["lake", "exe", "cache", "get", "Mathlib.Analysis.SpecialFunctions.ExpDeriv",
-                  "Mathlib.Tactic"], timeout=1800), end="", flush=True)
+                  "Mathlib.Analysis.SpecialFunctions.Exponential",
+                  "Mathlib.Analysis.Calculus.Deriv.MeanValue",
+                  "Mathlib.Analysis.Calculus.Deriv.Prod", "Mathlib.Tactic"], timeout=1800), end="", flush=True)
     print("Checking Agda and its Lean conversion", flush=True)
     print(demand([sys.executable, DEPENDENCIES / "bridge.py"], timeout=1800), end="", flush=True)
     print("Building the Lean library", flush=True)
     print(demand(["lake", "build"], timeout=1800), end="", flush=True)
+    print(demand([sys.executable, DEPENDENCIES / "lti_bridge.py"], timeout=1800), end="", flush=True)
     print(demand(["lake", "env", "lean", DEPENDENCIES / "tests/Audit.lean"]), end="", flush=True)
     print("Setup complete. Run the ATP and ATD examples from the README.")
 

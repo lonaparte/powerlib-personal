@@ -154,12 +154,15 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     atp_parser = commands.add_parser("atp", help="Synthesize and verify a stability certificate")
     atp_parser.add_argument("model")
-    atp_parser.add_argument("--family", choices=["rl", "lcl"], default="rl")
+    atp_parser.add_argument("--family", choices=["rl", "lcl", "lti"], default="rl")
     atd_parser = commands.add_parser("atd", help="Search conditions and verify proofs or counterexamples")
     atd_parser.add_argument("--family", choices=["rl", "lcl"], default="rl")
     args = parser.parse_args()
     try:
-        if args.family == "lcl":
+        if args.family == "lti":
+            import lti
+            report = lti.atp(args.model)
+        elif args.family == "lcl":
             import lcl
             report = lcl.atp(args.model) if args.command == "atp" else lcl.atd()
         else:
@@ -168,7 +171,7 @@ def main():
         print(json.dumps({"status": "NOT_ACCEPTED", "reason": str(error)}, indent=2))
         return 1
     print(json.dumps(report, indent=2))
-    return 0
+    return 2 if report.get("status") == "UNPROVED" else 0
 
 
 if __name__ == "__main__":

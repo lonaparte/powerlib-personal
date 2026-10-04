@@ -48,3 +48,43 @@ example (m : powerlib.Impedance) :
     (powerlib.toStateSpace m).Stable ↔ m.Stable :=
   powerlib.stability_agrees m
 ```
+
+## Arbitrary-dimensional LTI stability
+
+Submit a nonempty square rational matrix, with coordinates ordered as
+`x[0], ..., x[n-1]`, for the continuous-time autonomous system `x' = A x`:
+
+```json
+{"A": [[-1, 10], [0, -1]]}
+```
+
+```sh
+python3 dependencies/powerlib.py atp dependencies/examples/lti.json --family lti
+```
+
+Use integers or exact rational strings such as `"3/2"`; floats and supplied
+witnesses are excluded from this ATP input. The exact solver finds `P` from
+`AᵀP + PA = -I` and rational bounds `0 < lower`, `0 < upper`,
+`lower‖x‖₂² ≤ xᵀPx ≤ upper‖x‖₂²`. Rational LDL decompositions produce
+sum-of-squares evidence. Lean independently checks the original submitted
+matrix, the certificate, the trajectory theorem, and all transitive axioms.
+
+The public theorem `powerlib.LTI.Accepted.exponentially_stable` is quantified
+over every finite dimension, using Mathlib's Euclidean norm. `Accepted.norm_bound`
+proves `‖x(t)‖₂ ≤ sqrt(upper/lower) exp(-t/(2 upper)) ‖x(0)‖₂` for `t ≥ 0`;
+`Accepted.decay_bound` provides the equivalent squared-norm estimate.
+`trajectory_exists` constructs a global solution; `Accepted.response_unique`
+identifies every global solution with it for `t ≥ 0`, and `Accepted.sqNorm_tendsto_zero`
+proves convergence. These named theorems are available through `import powerlib`
+and the theorem registry. Agda checks the matrix/row representation equivalence
+and executable field operation; Lean independently checks its exported endpoint.
+
+`ACCEPTED` means S-level for this witness-free ATP path. A supplied certificate
+checked by `lti.admit` is verification, not synthesis. Synthesis failure is
+`UNPROVED`, not a formal instability result. The Python search/termination and
+the converse Lyapunov theorem are not themselves claimed as Lean theorems.
+
+The matrix is the submitted model. Any controller states must already be
+included. This result does not establish a missing circuit-to-matrix derivation,
+nonlinear linearization, parameter uncertainty, switching, delays, PWM, PLL,
+or DAE reduction. Large dimensions and rational bit sizes can be expensive.

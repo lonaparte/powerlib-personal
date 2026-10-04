@@ -39,17 +39,30 @@ example (p q : LCL.SymmetricMatrix) (h11 : p.p11 = q.p11) (h12 : p.p12 = q.p12)
     (h13 : p.p13 = q.p13) (h22 : p.p22 = q.p22) (h23 : p.p23 = q.p23)
     (h33 : p.p33 = q.p33) : p = q := by ext <;> assumption
 
+example {n : ℕ} (m : LTI.Model n) (c : LTI.Accepted m) : LTI.ExponentiallyStable m := by aesop
+example {n : ℕ} (m : LTI.Model n) (initial : LTI.State n) :
+    LTI.IsTrajectory m (LTI.response m initial) := by aesop
+example {n : ℕ} (m : LTI.Model n) (initial : LTI.State n) :
+    LTI.response m initial 0 = initial := by simp
+example {n : ℕ} (m : LTI.Model n) (c : LTI.Accepted m)
+    (initial : LTI.State n) (t : ℝ) (ht : 0 ≤ t) :
+    LTI.sqNorm (LTI.response m initial t) ≤
+      (c.upper / c.lower) * Real.exp (-(t / c.upper)) * LTI.sqNorm initial := by aesop
+
 open Lean Elab Command
 run_cmd do
   let env ← getEnv
   let domains := Registry.theoremNames env (some .domain)
   let foundations := Registry.theoremNames env (some .foundation)
   for name in #[`powerlib.lcl_stable_iff, `powerlib.impedance_stable_iff,
-      `powerlib.Accepted.stable, `powerlib.LCL.Accepted.stable] do
+      `powerlib.Accepted.stable, `powerlib.LCL.Accepted.stable,
+      `powerlib.LTI.Accepted.exponentially_stable, `powerlib.LTI.trajectory_exists,
+      `powerlib.LTI.Accepted.response_unique, `powerlib.LTI.Accepted.sqNorm_tendsto_zero] do
     unless domains.contains name do
       throwError "Public domain theorem missing from discovery: {name}"
   for name in #[`powerlib.state_roundtrip, `powerlib.LCL.circuit_roundtrip,
-      `powerlib.generated.convert_spec, `powerlib.generated.convertLCL_spec] do
+      `powerlib.generated.convert_spec, `powerlib.generated.convertLCL_spec,
+      `powerlib.generated.linearField_spec, `powerlib.LTI.Model.perturbation] do
     unless foundations.contains name do
       throwError "Imported foundation theorem missing from discovery: {name}"
   unless (Registry.kindOf? env `powerlib.response).isNone do
