@@ -196,3 +196,21 @@ after model-bound admission, the semantic theorem, and the axiom audit pass.
 The current manually enumerated ATD examples are fixed-candidate verification
 prototypes. Complete ATD remains an objective until conjecture generation,
 formal proof/refutation, traceability, and library admission are all implemented.
+
+## 15. Reuse Mathlib and LeanForControl
+
+PowerLib follows the reuse principle of LeanForControl. Check Mathlib and
+LeanForControl for existing formalized results before developing new proofs.
+Directly import and apply their existing theorems whenever their assumptions
+and conclusions match the required result. Do not duplicate those proofs in
+PowerLib. Keep new formalization focused on missing results, formal models,
+and the connections needed to apply existing theorems to those models.
+
+Project-specific wrappers may provide stable public names, model-specific
+contracts, and discovery attributes while invoking the upstream theorem.
+Any additional assumptions or model conversions required for that application
+must themselves be stated and checked.
+
+Reused results remain subject to the same kernel checks, transitive axiom
+allowlist, and provenance requirements as local proofs. Pin imported
+dependencies to compatible versions and verify them in the reproducible build.
