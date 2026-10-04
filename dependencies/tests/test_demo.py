@@ -99,6 +99,31 @@ class KernelTests(unittest.TestCase):
         log = self.check_source("bad_sorry", source, False)
         self.assertIn("Unexpected axiom sorryAx", log)
 
+    def test_audit_covers_unlisted_declarations(self):
+        # A new declaration must not evade the audit by missing a manual root list.
+        for name, declaration, diagnostic in [
+            ("hidden_sorry", "theorem powerlib.hidden : False := by sorry", "sorryAx"),
+            ("hidden_axiom", "axiom powerlib.hidden : False", "powerlib.hidden"),
+        ]:
+            log = self.check_source(name, "import powerlib\n" + declaration + "\n" + audit(), False)
+            self.assertIn("Unexpected axiom " + diagnostic, log)
+
+    def test_trajectory_stability_boundary(self):
+        self.check_source("semantic_boundary", '''import powerlib
+def lossless : powerlib.Impedance := ⟨0, ⟨1, by norm_num⟩⟩
+def negativeResistance : powerlib.Impedance := ⟨-1, ⟨1, by norm_num⟩⟩
+theorem lossless_not_asymptotic : ¬ powerlib.AsymptoticallyStable lossless 0 0 := by
+  rw [powerlib.asymptoticallyStable_iff_resistance_pos (powerlib.zero_equilibrium _)]
+  norm_num [lossless]
+theorem negative_not_asymptotic : ¬ powerlib.AsymptoticallyStable negativeResistance 0 0 := by
+  rw [powerlib.asymptoticallyStable_iff_resistance_pos (powerlib.zero_equilibrium _)]
+  norm_num [negativeResistance]
+''' + audit(["lossless_not_asymptotic", "negative_not_asymptotic"]), True)
+
+    def test_automatic_public_api(self):
+        code, log = run(["lake", "env", "lean", DEPENDENCIES / "tests/Automatic.lean"])
+        self.assertEqual(code, 0, log)
+
     def test_exported_formula(self):
         # Well-typed but wrong data must fail the independent Lean endpoint.
         source = "import Lean\n" + render([20261003, 1, 0, 1], "test") + audit(

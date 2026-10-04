@@ -45,3 +45,16 @@ example (m : Impedance) (c : Accepted m) (v e : ℝ) (i : ℝ → ℝ)
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) (t : ℝ) (ht : 0 ≤ t) :
     HasDerivWithinAt (fun s => energy c.p (i s - e)) (-(i t - e) ^ 2) (Set.Ici 0) t := by
   powerlib_auto
+
+-- Exhaustive coverage: re-prove each exported theorem's type using only the
+-- registered search rule set. The theorem name is not passed to the tactic.
+open Lean Elab Command in
+run_cmd do
+  let env ← getEnv
+  let mut count := 0
+  for (name, info) in env.constants do
+    if name.getRoot == `powerlib && info.isTheorem then
+      let type ← liftTermElabM <| PrettyPrinter.delab info.type
+      elabCommand (← `(example : $type := by powerlib_auto))
+      count := count + 1
+  logInfo m!"POWERLIB_AUTOMATIC_THEOREMS_OK: {count}"

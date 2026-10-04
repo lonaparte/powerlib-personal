@@ -1,9 +1,11 @@
 import theorems.RLStability
+import theorems.AutomationRules
 
 /-! Register every public theorem in the PowerLib namespace, including imported
 model-conversion theorems.  New theorem modules must be imported above this point.
 `powerlib_auto` is proof search, not an oracle: failure never admits a goal. -/
-declare_aesop_rule_sets [PowerLib]
+-- Iff theorems are intentionally available as whole propositions too.
+set_option aesop.warn.applyIff false
 
 open Lean Elab Command in
 run_cmd do
