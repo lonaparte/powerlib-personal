@@ -10,7 +10,7 @@ import re
 import sys
 import tempfile
 
-from common import ROOT, RESULTS, audit, check_lean, demand, digest, run
+from common import ROOT, RESULTS, audit, check_lean, demand, digest, proof_provenance, run
 from powerlib import rational
 
 KEYS = ("inductance1", "inductance2", "capacitance", "resistance1", "resistance2")
@@ -224,6 +224,7 @@ def synthesize(model, kernel=False):
     report["proof_sha256"] = digest(proof)
     if kernel:
         report["lean"] = verify_kernel(proof)
+        report["provenance"] = proof_provenance(proof)
         report["kernel_verified"] = True
         report["status"] = "ACCEPTED"
         report["maturity"] = "S-level"
@@ -264,15 +265,18 @@ def verify_saved(model, path, kernel=False):
     # Recompute all checks and regenerate proof; trust no claimed status or proof path.
     if kernel:
         RESULTS.mkdir(parents=True, exist_ok=True)
-        with tempfile.TemporaryDirectory(prefix="lcl-verify-", dir=RESULTS) as directory:
-            proof = Path(directory) / "Certificate.lean"
-            proof.write_text(proof_source(model, p))
-            report["lean"] = verify_kernel(proof)
+        directory = Path(tempfile.mkdtemp(prefix="lcl-verify-", dir=RESULTS))
+        proof = directory / "Certificate.lean"
+        proof.write_text(proof_source(model, p))
+        report["lean"] = verify_kernel(proof)
+        report["proof"] = str(proof)
+        report["provenance"] = proof_provenance(proof)
         report["kernel_verified"] = True
         report["status"] = "ACCEPTED"
         report["maturity"] = "Certificate verification"
         report["witness_origin"] = "Submitted certificate"
         report["theorems"] = ["Admission.stable", "Admission.positive", "Admission.dissipation"]
+        (directory / "certificate.json").write_text(json.dumps(report, indent=2)+"\n")
     return report
 
 

@@ -8,7 +8,7 @@ import re
 import sys
 import tempfile
 
-from common import ROOT, RESULTS, audit, check_lean, demand, digest, run
+from common import ROOT, RESULTS, audit, check_lean, demand, digest, proof_provenance, run
 
 
 def rational(value):
@@ -101,6 +101,7 @@ def atp(path):
         "certificate": {"p": str(p), "squared_current_decay_rate": str(rate)},
         "theorem": "Admission.stable", "proof": str(proof),
         "proof_sha256": digest(proof), "lean": demand(["lake", "env", "lean", "--version"]).strip(),
+        "submitted_model_sha256": digest(path), "provenance": proof_provenance(proof),
     }
     (directory / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     return report

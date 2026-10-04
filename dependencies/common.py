@@ -1,6 +1,7 @@
 """Shared process and kernel-audit utilities for the minimal demonstration."""
 from pathlib import Path
 import hashlib
+import json
 import os
 import subprocess
 
@@ -27,6 +28,30 @@ def demand(args, **kwargs):
 
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def proof_provenance(proof):
+    version = demand(["lake", "env", "lean", "--version"]).strip()
+    if (ROOT / "lean-toolchain").read_text().strip() != "leanprover/lean4:v4.19.0" or "version 4.19.0" not in version:
+        raise RuntimeError("Expected pinned Lean 4.19.0")
+    manifest = json.loads((ROOT / "lake-manifest.json").read_text())
+    revisions = {}
+    for package in manifest["packages"]:
+        checkout = ROOT / manifest["packagesDir"] / package["name"]
+        actual = demand(["git", "-C", checkout, "rev-parse", "HEAD"]).strip()
+        if actual != package["rev"]:
+            raise RuntimeError(f"Dependency revision mismatch: {package['name']}")
+        if demand(["git", "-C", checkout, "status", "--porcelain", "--untracked-files=no"]).strip():
+            raise RuntimeError(f"Dependency source has been modified: {package['name']}")
+        revisions[package["name"]] = actual
+    return {"lean": version, "dependencies": revisions,
+            "manifest_sha256": digest(ROOT / "lake-manifest.json"),
+            "public_source_sha256": {
+                str(path.relative_to(ROOT)): digest(path)
+                for path in sorted((ROOT / "theorems").rglob("*.lean"))},
+            "proof_sha256": digest(proof),
+            "kernel_log_sha256": digest(Path(proof).with_suffix(".log")),
+            "axiom_allowlist": ["propext", "Classical.choice", "Quot.sound"]}
 
 
 CORE = [
