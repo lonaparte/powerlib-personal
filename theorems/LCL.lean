@@ -1,6 +1,5 @@
 import theorems.RL
 import theorems.generated.LCLConversion
-import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 
 /-! Canonical continuous-time LCL plant with two series RL branches and an ideal
 shunt capacitor. Both terminal voltages are external inputs. No controller,

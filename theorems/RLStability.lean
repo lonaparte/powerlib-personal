@@ -1,5 +1,4 @@
 import theorems.RL
-import Mathlib.Analysis.Calculus.MeanValue
 
 /-! Trajectory semantics for the canonical RL family.  Time starts at zero;
 the ODE is required only on `[0, ∞)`, including the right derivative at zero.

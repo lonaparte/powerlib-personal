@@ -45,6 +45,9 @@ def candidates : LibrarySearch.CandidateFinder := fun goal => do
 def checkProof (proof : Expr) : MetaM Unit := do
   let proof ← instantiateMVars proof
   if proof.hasMVar then throwError "Library search left unresolved proof metavariables"
+  -- Retain used local let values and dependent binder types in the audit.
+  -- Looking only at constants in an open term would miss their dependencies.
+  let proof ← mkLambdaFVars (← getLCtx).getFVars proof (usedOnly := true)
   let env ← getEnv
   let mut state : CollectAxioms.State := {}
   for name in proof.getUsedConstants do

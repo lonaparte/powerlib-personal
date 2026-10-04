@@ -56,3 +56,20 @@ jobs:
           name: proof-artifacts
           path: ${{ env.POWERLIB_RESULTS_DIR }}
           if-no-files-found: ignore
+
+  leanforcontrol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: leanprover/lean-action@f061402b660e0c34644504b324e830f2991d4865
+        with:
+          lake-package-directory: integrations/leanforcontrol
+          use-mathlib-cache: "true"
+          test: "false"
+          lint: "false"
+      - name: Check upstream reuse and rejection of unapproved axioms
+        working-directory: integrations/leanforcontrol
+        run: lake env lean LeanForControlSmoke.lean
+      - name: Verify dependency lockfiles were preserved
+        run: git diff --exit-code -- lake-manifest.json integrations/leanforcontrol/lake-manifest.json

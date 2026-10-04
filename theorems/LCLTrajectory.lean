@@ -1,8 +1,4 @@
 import theorems.LCL
-import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.LinearAlgebra.Matrix.ToLin
-import Mathlib.Analysis.SpecialFunctions.Exponential
-import Mathlib.Analysis.ODE.Gronwall
 
 /-! Forward trajectories of the ideal continuous-time three-state plant.
 State order is converter current, capacitor voltage, grid current, in stationary
