@@ -46,9 +46,9 @@ def proof_provenance(proof):
         revisions[package["name"]] = actual
     return {"lean": version, "dependencies": revisions,
             "manifest_sha256": digest(ROOT / "lake-manifest.json"),
-            "public_source_sha256": {
+            "public_source_sha256": {"powerlib.lean": digest(ROOT / "powerlib.lean"), **{
                 str(path.relative_to(ROOT)): digest(path)
-                for path in sorted((ROOT / "theorems").rglob("*.lean"))},
+                for path in sorted((ROOT / "theorems").rglob("*.lean"))}},
             "proof_sha256": digest(proof),
             "kernel_log_sha256": digest(Path(proof).with_suffix(".log")),
             "axiom_allowlist": ["propext", "Classical.choice", "Quot.sound"]}

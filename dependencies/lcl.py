@@ -4,7 +4,6 @@ import argparse
 from dataclasses import dataclass
 from fractions import Fraction
 import json
-import os
 from pathlib import Path
 import re
 import sys
@@ -148,7 +147,8 @@ def matrix_data(matrix):
 def derive(model):
     a3, a2, a1, a0 = coefficients(model)
     passive = model.r1 >= 0 and model.r2 >= 0
-    return {"scope": "Continuous-time LCL plant without a controller",
+    return {"maturity": "Note", "kernel_verified": False,
+            "scope": "Continuous-time LCL plant without a controller",
             "state_order": ["converter_current", "capacitor_voltage", "grid_current"],
             "model": model.serialized(), "A": matrix_data(state_matrix(model)),
             "coefficients": dict(zip(("a3", "a2", "a1", "a0"), map(str, (a3, a2, a1, a0)))),

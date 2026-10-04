@@ -85,4 +85,5 @@ python3 dependencies/powerlib.py atd --family lcl
 
 The LCL `atd` command is also a fixed-candidate verification prototype.
 Generated model-specific proofs remain proof artifacts; the public general
-theorems are available through `import powerlib`.
+theorems are available through `import powerlib`. CI retains proof artifacts,
+model and dependency provenance, and kernel logs for review and reproduction.
