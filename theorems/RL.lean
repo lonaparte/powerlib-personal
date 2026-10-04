@@ -140,7 +140,7 @@ structure Accepted (m : Impedance) where
 
 def energy (p current : ℝ) : ℝ := p * current ^ 2
 
-@[powerlib_domain, aesop safe forward (immediate := [c])] theorem Accepted.stable {m : Impedance} (c : Accepted m) : m.Stable := by
+@[powerlib_domain, aesop norm forward (immediate := [c])] theorem Accepted.stable {m : Impedance} (c : Accepted m) : m.Stable := by
   apply (stability_agrees m).mp
   change 0 < (toStateSpace m).decay
   nlinarith [c.p_pos, c.lyapunov_identity]
@@ -164,7 +164,7 @@ def response (m : Impedance) (initial t : ℝ) : ℝ :=
   ring
 
 @[powerlib_domain, aesop safe apply] theorem Accepted.decay_bound {m : Impedance} (c : Accepted m) (initial t : ℝ) :
-    (response m initial t) ^ 2 = initial ^ 2 * Real.exp (-c.rate * t) := by
+    (response m initial t) ^ 2 = initial ^ 2 * Real.exp (-(c.rate * t)) := by
   rw [response, mul_pow, ← Real.exp_nat_mul, c.rate_exact]
   congr 2
   ring

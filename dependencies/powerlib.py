@@ -67,13 +67,13 @@ def admission_source(resistance, inductance, p, rate):
 def accepted : powerlib.Accepted submittedModel := Candidate.certificate
 example : accepted.p = {literal(p)} := by norm_num [accepted, Candidate.certificate]
 example : accepted.rate = {literal(rate)} := by norm_num [accepted, Candidate.certificate]
-theorem stable : submittedModel.Stable := accepted.stable
-theorem dissipation (current : ℝ) :
+@[powerlib_domain] theorem stable : submittedModel.Stable := accepted.stable
+@[powerlib_domain] theorem dissipation (current : ℝ) :
     2 * accepted.p * current * (powerlib.toStateSpace submittedModel).field current 0 =
       -current ^ 2 := accepted.dissipation current
-theorem decay (initial t : ℝ) :
+@[powerlib_domain] theorem decay (initial t : ℝ) :
     (powerlib.response submittedModel initial t) ^ 2 =
-      initial ^ 2 * Real.exp (-accepted.rate * t) := accepted.decay_bound initial t
+      initial ^ 2 * Real.exp (-(accepted.rate * t)) := accepted.decay_bound initial t
 end Admission
 ''' + audit(["Admission.accepted", "Admission.stable", "Admission.dissipation", "Admission.decay"])
 
@@ -118,7 +118,7 @@ def atd():
         proposition = f"∀ m : powerlib.Impedance, m.Stable ↔ {condition}"
         path = directory / (name + ".lean")
         path.write_text(f'''import powerlib
-theorem discovered : {proposition} := by
+@[powerlib_domain] theorem discovered : {proposition} := by
   intro m
   rw [powerlib.impedance_stable_iff] <;> (constructor <;> intro h <;> linarith)
 ''' + audit(["discovered"]))
@@ -128,7 +128,7 @@ theorem discovered : {proposition} := by
         if status == "UNPROVED" and counterexample is not None:
             refutation = directory / (name + "_refuted.lean")
             refutation.write_text(f'''import powerlib
-theorem refuted : ¬ ({proposition}) := by
+@[powerlib_domain] theorem refuted : ¬ ({proposition}) := by
   intro h
   have hh := h ⟨{counterexample}, ⟨1, by norm_num⟩⟩
   rw [powerlib.impedance_stable_iff] at hh

@@ -54,20 +54,8 @@ def proof_provenance(proof):
             "axiom_allowlist": ["propext", "Classical.choice", "Quot.sound"]}
 
 
-CORE = [
-    "reciprocal_involutive", "scale_cancel", "state_roundtrip", "impedance_roundtrip",
-    "modelEquiv", "same_dynamics", "same_port_relation", "frequency_zero_iff",
-    "impedance_stable_iff", "stability_agrees", "Accepted.stable",
-    "Accepted.dissipation", "response_initial", "response_solves", "Accepted.decay_bound",
-    "generated.convert_spec",
-    "LCL.circuit_roundtrip", "LCL.state_roundtrip", "LCL.modelEquiv",
-    "LCL.same_dynamics", "LCL.StateSpace.matrix_mulVec", "LCL.StateSpace.perturbation",
-    "LCL.characteristic_identity", "LCL.same_characteristic", "lcl_stable_iff",
-    "LCL.stability_agrees", "LCL.hurwitz_gap", "LCL.cubic_hurwitz",
-    "LCL.stable_of_hurwitz", "LCL.passive_hurwitz", "LCL.passive_stable_iff",
-    "LCL.energy_positive", "LCL.Accepted.stable", "LCL.Accepted.positive",
-    "LCL.Accepted.dissipation", "generated.convertLCL_spec",
-]
+# Equivalences are data declarations; named theorems come from the registry.
+CORE = ["modelEquiv", "LCL.modelEquiv"]
 
 
 def audit(extra=(), *, include_core=True):

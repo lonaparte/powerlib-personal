@@ -293,14 +293,14 @@ structure Accepted (m : Circuit) where
     (toStateSpace m).second.decay*p.p23 + (toStateSpace m).second.inputGain.val*p.p33 = 0
   eq33 : -2*(toStateSpace m).capacitorGain.val*p.p23 - 2*(toStateSpace m).second.decay*p.p33 = -1
 
-@[powerlib_domain, aesop safe forward (immediate := [c])] theorem Accepted.stable {m : Circuit} (c : Accepted m) : (toStateSpace m).Stable :=
+@[powerlib_domain, aesop norm forward (immediate := [c])] theorem Accepted.stable {m : Circuit} (c : Accepted m) : (toStateSpace m).Stable :=
   (stability_agrees m).mpr (stable_of_hurwitz m c.a2_pos c.a1_pos c.a0_pos c.gap_pos)
 
-@[powerlib_domain, aesop safe apply] theorem Accepted.positive {m : Circuit} (c : Accepted m) (x y z : ℝ)
+@[powerlib_domain, aesop norm simp] theorem Accepted.positive {m : Circuit} (c : Accepted m) (x y z : ℝ)
     (hn : x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) : 0 < energy c.p x y z :=
   energy_positive c.p c.p11_pos c.minor2_pos c.det_pos x y z hn
 
-@[powerlib_domain, aesop safe apply] theorem Accepted.dissipation {m : Circuit} (c : Accepted m) (x y z : ℝ) :
+@[powerlib_domain, aesop norm simp] theorem Accepted.dissipation {m : Circuit} (c : Accepted m) (x y z : ℝ) :
     let f := (toStateSpace m).field x y z 0 0
     energyDerivative c.p x y z f.1 f.2.1 f.2.2 = -(x^2+y^2+z^2) := by
   dsimp [StateSpace.field, energyDerivative]

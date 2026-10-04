@@ -22,8 +22,8 @@ example (m : LCL.Circuit) : LCL.toCircuit (LCL.toStateSpace m) = m := by simp
 example (m : LCL.StateSpace) : LCL.toStateSpace (LCL.toCircuit m) = m := by simp
 example (m : LCL.Circuit) (hp : m.Passive)
     (hd : m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0) :
-    (LCL.toStateSpace m).Stable := by simpa using hd
-example (m : LCL.Circuit) (hp : m.Passive) :
+    (LCL.toStateSpace m).Stable := by simpa [hp] using hd
+example (m : LCL.Circuit) :
     (LCL.toStateSpace m).Stable ↔ m.Stable := by simp
 
 example (m : LCL.Circuit) (c : LCL.Accepted m) : (LCL.toStateSpace m).Stable := by aesop

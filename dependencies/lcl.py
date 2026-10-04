@@ -184,10 +184,10 @@ def proof_source(model, p):
             checks + "end Candidate\nnamespace Admission\n" +
             model_source("submittedModel", model) + '''
 def accepted : powerlib.LCL.Accepted submittedModel := Candidate.certificate
-theorem stable : (powerlib.LCL.toStateSpace submittedModel).Stable := accepted.stable
-theorem positive (x y z : ℝ) (hn : x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) :
+@[powerlib_domain] theorem stable : (powerlib.LCL.toStateSpace submittedModel).Stable := accepted.stable
+@[powerlib_domain] theorem positive (x y z : ℝ) (hn : x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) :
     0 < powerlib.LCL.energy accepted.p x y z := accepted.positive x y z hn
-theorem dissipation (x y z : ℝ) :
+@[powerlib_domain] theorem dissipation (x y z : ℝ) :
     let f := (powerlib.LCL.toStateSpace submittedModel).field x y z 0 0
     powerlib.LCL.energyDerivative accepted.p x y z f.1 f.2.1 f.2.2 = -(x^2+y^2+z^2) :=
   accepted.dissipation x y z
@@ -306,7 +306,7 @@ def atd():
         proposition = f"∀ m : powerlib.LCL.Circuit, m.Passive → (m.Stable ↔ {condition})"
         proof = directory / (name+".lean")
         proof.write_text(f'''import powerlib
-theorem discovered : {proposition} := by
+@[powerlib_domain] theorem discovered : {proposition} := by
   intro m hp
   rw [powerlib.LCL.passive_stable_iff m hp] <;> first | rfl | tauto
 ''' + audit(["discovered"]))
@@ -317,7 +317,7 @@ theorem discovered : {proposition} := by
             example = Model(Fraction(1), Fraction(1), Fraction(1), *map(Fraction, counterexample))
             proof = directory / (name+"_refuted.lean")
             proof.write_text("import powerlib\nnoncomputable section\n" + model_source("model", example) + f'''
-theorem refuted : ¬ ({proposition}) := by
+@[powerlib_domain] theorem refuted : ¬ ({proposition}) := by
   intro h
   have hp : model.Passive := by norm_num [model, powerlib.LCL.Circuit.Passive]
   have hh := h model hp
