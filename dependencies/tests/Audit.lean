@@ -8,7 +8,8 @@ run_cmd do
     if root.getRoot == `powerlib && !info.isUnsafe then
       let (_, next) := ((Lean.CollectAxioms.collect root).run env).run state
       state := next
-  let roots := ([`powerlib.modelEquiv, `powerlib.LCL.modelEquiv] : List Name) ++ (powerlib.Registry.theoremNames env).toList
+
+  let roots := ([] : List Name) ++ (powerlib.Registry.theoremNames env).toList
   for root in roots do
     let (_, next) := ((Lean.CollectAxioms.collect root).run env).run state
     state := next
