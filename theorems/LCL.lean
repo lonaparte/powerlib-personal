@@ -131,7 +131,6 @@ theorem same_characteristic (m : Circuit) (s : ℂ) :
   simp [StateSpace.characteristic, StateSpace.matrix, Matrix.det_fin_three,
     toStateSpace, generated.convertLCL, powerlib.reciprocal, Circuit.frequency,
     Circuit.a3, Circuit.a2, Circuit.a1, Circuit.a0]
-  simp only [Complex.ofReal_inv]
   field_simp [hL1, hL2, hC]
   ring_nf
   all_goals field_simp [hL1, hL2, hC] <;> ring
