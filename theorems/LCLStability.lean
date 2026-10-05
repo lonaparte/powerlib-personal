@@ -107,7 +107,8 @@ def GloballyExponentiallyStable (m : Circuit) (u vg : ℝ) (e : State) : Prop :=
   ∃ C ≥ (1 : ℝ), ∃ rate > 0, ∀ x, IsTrajectory m u vg x → ∀ t ≥ 0,
     ‖x t - e‖ ≤ C * ‖x 0 - e‖ * Real.exp (-rate * t)
 
-@[powerlib_domain] theorem Accepted.globallyExponentiallyStable {m : Circuit} (c : Accepted m)
+@[powerlib_domain, aesop norm forward (immediate := [c])]
+theorem Accepted.globallyExponentiallyStable {m : Circuit} (c : Accepted m)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) :
     GloballyExponentiallyStable m u vg e := by
   obtain ⟨α, hα, β, hβα, hb⟩ := c.energy_bounds

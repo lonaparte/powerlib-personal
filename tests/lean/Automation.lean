@@ -16,6 +16,14 @@ example (m : Impedance) (c : Accepted m) (i : ℝ) :
 example (m : Impedance) (initial t : ℝ) :
     HasDerivAt (response m initial) ((toStateSpace m).field (response m initial t) 0) t := by
   aesop
+
+-- Constructed solutions satisfy both the ODE and the submitted initial state.
+example (m : Impedance) (initial : ℝ) :
+    IsTrajectory m 0 (response m initial) ∧ response m initial 0 = initial := by aesop
+
+example (m : Impedance) (v e initial : ℝ) (he : IsEquilibrium m v e) :
+    IsTrajectory m v (equilibriumResponse m e initial) ∧
+      equilibriumResponse m e initial 0 = initial := by aesop
 example (m : Impedance) (c : Accepted m) (initial t : ℝ) :
     (response m initial t) ^ 2 = initial ^ 2 * Real.exp (-c.rate * t) := by aesop
 
@@ -36,6 +44,23 @@ example (m : LCL.Circuit) (c : LCL.Accepted m) (x y z : ℝ) :
 example (m : LCL.Circuit) (h2 : 0 < m.a2) (h1 : 0 < m.a1) (h0 : 0 < m.a0)
     (hg : 0 < m.a2*m.a1-m.a3*m.a0) : m.Stable := by aesop
 
+example (m : LCL.Circuit) (initial : LCL.State) :
+    LCL.IsTrajectory m 0 0 (LCL.response m initial) ∧
+      LCL.response m initial 0 = initial := by aesop
+
+example (m : LCL.Circuit) (u vg : ℝ) (e initial : LCL.State)
+    (he : LCL.IsEquilibrium m u vg e) :
+    LCL.IsTrajectory m u vg (LCL.equilibriumResponse m e initial) ∧
+      LCL.equilibriumResponse m e initial 0 = initial := by aesop
+
+-- Physical stored energy uses the plant's own positive inductances/capacitance.
+example (m : LCL.Circuit) (x : LCL.State) (hx : x ≠ 0) :
+    0 < LCL.quadraticEnergy (LCL.physicalWeights m) x := by aesop
+
+-- Passivity alone gives Lyapunov stability; no damping or certificate is supplied.
+example (m : LCL.Circuit) (hp : m.Passive) (u vg : ℝ) (e : LCL.State)
+    (he : LCL.IsEquilibrium m u vg e) : LCL.LyapunovStable m u vg e := by aesop
+
 example (p q : LCL.SymmetricMatrix) (h11 : p.p11 = q.p11) (h12 : p.p12 = q.p12)
     (h13 : p.p13 = q.p13) (h22 : p.p22 = q.p22) (h23 : p.p23 = q.p23)
     (h33 : p.p33 = q.p33) : p = q := by ext <;> assumption
@@ -55,6 +80,9 @@ example (m : Impedance) (c : Accepted m) : m.Stable := by exact?
 example (m : Impedance) (c : Accepted m) :
     AsymptoticallyStable m 0 0 := by aesop
 
+example (m : Impedance) (c : Accepted m) :
+    GloballyExponentiallyStable m 0 0 ∧ AsymptoticallyStable m 0 0 := by aesop
+
 example (m : Impedance) (c : Accepted m) (v e : ℝ) (he : IsEquilibrium m v e) :
     LyapunovStable m v e := by exact?
 
@@ -62,7 +90,7 @@ example (m : Impedance) (c : Accepted m) (v e : ℝ) (he : IsEquilibrium m v e) 
     GloballyAsymptoticallyStable m v e := by exact?
 
 example (m : Impedance) (c : Accepted m) (v e : ℝ) (he : IsEquilibrium m v e) :
-    GloballyExponentiallyStable m v e := by exact?
+    GloballyExponentiallyStable m v e := by aesop
 
 example (m : Impedance) (v e : ℝ) (he : IsEquilibrium m v e) :
     AsymptoticallyStable m v e ↔ 0 < m.resistance := by exact?
@@ -95,7 +123,7 @@ example (m : LCL.Circuit) (c : LCL.Accepted m) (x y z : ℝ) :
 
 example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) :
-    LCL.GloballyExponentiallyStable m u vg e := by exact?
+    LCL.GloballyExponentiallyStable m u vg e := by aesop
 
 example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) :
@@ -105,6 +133,9 @@ example (m : LCL.Circuit) : LCL.IsEquilibrium m 0 0 0 := by simp
 
 example (m : LCL.Circuit) (c : LCL.Accepted m) :
     LCL.AsymptoticallyStable m 0 0 0 := by aesop
+
+example (m : LCL.Circuit) (c : LCL.Accepted m) :
+    LCL.GloballyExponentiallyStable m 0 0 0 ∧ LCL.AsymptoticallyStable m 0 0 0 := by aesop
 
 example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (initial : LCL.State) :
     ∃ x, LCL.IsTrajectory m u vg x ∧ x 0 = initial := by exact?

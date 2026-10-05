@@ -51,7 +51,7 @@ def IsEquilibrium (m : Impedance) (voltage equilibrium : ℝ) : Prop :=
   dsimp [IsEquilibrium]
   field_simp
 
-@[powerlib_domain] theorem response_trajectory (m : Impedance) (initial : ℝ) :
+@[powerlib_domain, aesop safe apply] theorem response_trajectory (m : Impedance) (initial : ℝ) :
     IsTrajectory m 0 (response m initial) := by
   intro t _
   exact (response_solves m initial t).hasDerivWithinAt
@@ -87,7 +87,7 @@ def equilibriumResponse (m : Impedance) (e initial t : ℝ) : ℝ :=
     equilibriumResponse m e initial 0 = initial := by
   simp [equilibriumResponse, response_initial]
 
-@[powerlib_domain] theorem equilibriumResponse_trajectory {m : Impedance} {v e : ℝ}
+@[powerlib_domain, aesop safe apply] theorem equilibriumResponse_trajectory {m : Impedance} {v e : ℝ}
     (he : IsEquilibrium m v e) (initial : ℝ) :
     IsTrajectory m v (equilibriumResponse m e initial) := by
   intro t ht
@@ -245,7 +245,8 @@ theorem Accepted.asymptoticallyStable {m : Impedance} (c : Accepted m) {v e : �
     (he : IsEquilibrium m v e) : AsymptoticallyStable m v e :=
   asymptoticallyStable_of_global (c.globallyAsymptoticallyStable he)
 
-@[powerlib_domain] theorem Accepted.globallyExponentiallyStable {m : Impedance} (c : Accepted m) {v e : ℝ}
+@[powerlib_domain, aesop norm forward (immediate := [c])]
+theorem Accepted.globallyExponentiallyStable {m : Impedance} (c : Accepted m) {v e : ℝ}
     (he : IsEquilibrium m v e) : GloballyExponentiallyStable m v e :=
   globallyExponentiallyStable_of_stable c.stable he
 
