@@ -46,7 +46,7 @@ omit [Fintype κ] in
   intro t _
   simpa only [operator_field, system] using (response_solves m initial t).hasDerivWithinAt
 
-@[powerlib_domain] theorem trajectory_exists
+@[powerlib_domain, aesop norm forward (immediate := [m, initial])] theorem trajectory_exists
     (m : Model ι κ) (initial : State ι) :
     ∃ x, Passivity.IsTrajectory (system m) (fun _ => 0) x ∧ x 0 = initial :=
   ⟨response m initial, response_trajectory m initial, response_initial m initial⟩
@@ -74,7 +74,7 @@ omit [Fintype κ] in
     {t : ℝ} (ht : 0 ≤ t) : x t = response m (x 0) t :=
   trajectory_unique m hx (response_trajectory m (x 0)) (response_initial m (x 0)).symm ht
 
-@[powerlib_domain, aesop norm forward (immediate := [m, initial])] theorem trajectory_exists_unique (m : Model ι κ) (initial : State ι) :
+@[powerlib_domain, aesop norm -1 apply] theorem trajectory_exists_unique (m : Model ι κ) (initial : State ι) :
     ∃ x, Passivity.IsTrajectory (system m) (fun _ => 0) x ∧ x 0 = initial ∧
       ∀ y, Passivity.IsTrajectory (system m) (fun _ => 0) y → y 0 = initial →
         EqOn y x (Ici 0) := by

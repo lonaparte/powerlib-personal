@@ -82,12 +82,20 @@ jobs:
       - name: Check native automation and upstream theorem reuse
         timeout-minutes: 10
         run: |
-          lake env lean tests/lean/Automation.lean
-          lake env lean tests/lean/Upstream.lean
-          lake env lean tests/lean/NativeTheoremUse.lean
-          lake env lean tests/lean/StateSpacePassivityCases.lean
-          lake env lean tests/lean/PublicTheoremRegistry.lean
-          lake env lean tests/lean/LCLStorageSynthesis.lean
+          set -euo pipefail
+          failures=0
+          for consumer in \
+            tests/lean/Automation.lean \
+            tests/lean/Upstream.lean \
+            tests/lean/NativeTheoremUse.lean \
+            tests/lean/StateSpacePassivityCases.lean \
+            tests/lean/PublicTheoremRegistry.lean \
+            tests/lean/LCLStorageSynthesis.lean; do
+            if ! lake env lean "$consumer"; then
+              failures=$((failures + 1))
+            fi
+          done
+          test "$failures" -eq 0
       - name: Check imported and current-file theorem registration
         shell: bash
         run: |
