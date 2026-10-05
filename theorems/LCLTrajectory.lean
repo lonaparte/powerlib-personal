@@ -121,7 +121,7 @@ def equilibrium (m : Circuit) (u vg : ℝ) : State :=
   · exact h02.symm.trans hi
 
 def response (m : Circuit) (initial : State) (t : ℝ) : State :=
-  (NormedSpace.exp ℝ (t • (toStateSpace m).operator)) initial
+  (NormedSpace.exp (t • (toStateSpace m).operator)) initial
 
 @[simp, powerlib_domain] theorem response_initial (m : Circuit) (initial : State) :
     response m initial 0 = initial := by
