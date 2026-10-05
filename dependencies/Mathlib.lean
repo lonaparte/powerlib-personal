@@ -22,3 +22,5 @@ import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Tactic
 import Mathlib.Topology.MetricSpace.Bounded
 import Mathlib.Topology.Order.Compact
+import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.ODE.ExistUnique

@@ -127,7 +127,8 @@ def StateSpace.characteristic (m : StateSpace) (s : ℂ) : ℂ :=
     exact_mod_cast ne_of_gt m.second.inductance.property
   have hC : (m.capacitance.val : ℂ) ≠ 0 := by
     exact_mod_cast ne_of_gt m.capacitance.property
-  simp [StateSpace.characteristic, StateSpace.matrix, Matrix.det_fin_three,
+  simp [StateSpace.characteristic, StateSpace.matrix, Matrix.map, Matrix.of_apply,
+    Matrix.det_fin_three,
     toStateSpace, generated.convertLCL, powerlib.reciprocal, Circuit.frequency,
     Circuit.a3, Circuit.a2, Circuit.a1, Circuit.a0]
   field_simp [hL1, hL2, hC]
