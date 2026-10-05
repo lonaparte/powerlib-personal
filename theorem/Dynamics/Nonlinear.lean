@@ -1,4 +1,5 @@
 import dependencies.Mathlib
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import theorem.Dynamics.Stability
 
 /-! A nonlinear certificate instance in every finite dimension.
