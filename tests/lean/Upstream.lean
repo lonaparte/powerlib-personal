@@ -25,7 +25,7 @@ run_cmd do
   for name in #[`UpstreamConsumers.exp_positive, `UpstreamConsumers.exp_add,
       `UpstreamConsumers.exp_injective] do
     let info ← getConstInfo name
-    let some proof := info.value? | throwError "Missing consumer proof: {name}"
+    let some proof := info.value? (allowOpaque := true) | throwError "Missing consumer proof: {name}"
     unless proof.getUsedConstants.any (fun dependency =>
         match env.getModuleIdxFor? dependency with
         | some index => env.header.moduleNames[index]!.getRoot == `Mathlib

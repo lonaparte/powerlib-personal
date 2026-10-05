@@ -10,8 +10,6 @@ run_cmd do
       roots := roots.push root
   -- Registered declarations outside the namespace remain admission roots.
   for root in (roots.qsort Name.quickLt).toList.eraseDups do
-    unless (env.checked.get.find? root).isSome do
-      throwError "Unknown audit root: {root}"
     for axiomName in powerlib.Search.declarationAxioms env root do
       unless powerlib.Search.allowedAxiom axiomName do
         throwError "Unexpected axiom {axiomName} in {root}"

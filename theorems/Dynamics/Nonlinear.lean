@@ -1,5 +1,5 @@
+import dependencies.Mathlib
 import theorems.Dynamics.Stability
-import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-! A nonlinear certificate instance in every finite dimension.
 The full autonomous field is x' = -(1 + ‖x‖²) x. Its cubic growth is not bounded
@@ -45,16 +45,16 @@ def certificate (n : ℕ) : QuadraticDecayCertificate (@field n) (@energy n) 0 w
     nlinarith [sq_nonneg (‖x‖ ^ 2)]
 
 /-- Global existence and exponential stability of the full cubic field. -/
-@[powerlib_domain] theorem globallyExponentiallyStable (n : ℕ) :
+@[powerlib_domain, aesop safe apply] theorem globallyExponentiallyStable (n : ℕ) :
     GloballyExponentiallyStable (@field n) 0 :=
   (certificate n).globallyExponentiallyStable (field_smooth n)
 
-@[powerlib_domain] theorem globallyAsymptoticallyStable {n : ℕ} (hn : 0 < n) :
+@[powerlib_domain, aesop safe apply] theorem globallyAsymptoticallyStable {n : ℕ} (hn : 0 < n) :
     GloballyAsymptoticallyStable (@field n) 0 :=
   (certificate n).globallyAsymptoticallyStable hn (field_smooth n)
 
 /-- Every solution, with arbitrary initial amplitude, decays at least as e⁻ᵗ. -/
-@[powerlib_domain] theorem norm_bound {n : ℕ} {φ : ℝ → State n} {a b t : ℝ}
+@[powerlib_domain, aesop safe apply] theorem norm_bound {n : ℕ} {φ : ℝ → State n} {a b t : ℝ}
     (hφ : IsTrajectoryOn φ (@field n) a b) (ht : t ∈ Set.Icc a b) :
     ‖φ t‖ ≤ Real.exp (-(t - a)) * ‖φ a‖ := by
   simpa [certificate] using (certificate n).norm_bound hφ ht

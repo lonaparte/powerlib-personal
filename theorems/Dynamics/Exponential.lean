@@ -1,9 +1,5 @@
+import dependencies.Mathlib
 import theorems.Dynamics.Defs
-import Mathlib.Analysis.Calculus.Deriv.Comp
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import Mathlib.Data.Real.Sqrt
-import Mathlib.Tactic
 
 /-! A global Lyapunov certificate for the full nonlinear vector field.
 The finite-segment theorems apply to every solution and every initial amplitude.

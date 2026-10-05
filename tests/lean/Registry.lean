@@ -65,7 +65,7 @@ run_cmd do
         #[`RegistryFixture.envelope, `RegistryFixture.envelope_iff]),
       (`RegistryCurrent.current_application, #[`RegistryCurrent.stable])] do
     let info ← getConstInfo consumer
-    let some proof := info.value? | throwError "Missing automatic proof: {consumer}"
+    let some proof := info.value? (allowOpaque := true) | throwError "Missing automatic proof: {consumer}"
     unless sources.any proof.getUsedConstants.contains do
       throwError "Automatic search failed to reuse the discovered declaration: {consumer}"
   -- The same dynamically collected registry drives admission, so no handwritten

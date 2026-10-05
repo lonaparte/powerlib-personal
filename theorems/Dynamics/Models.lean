@@ -1,11 +1,8 @@
+import dependencies.Mathlib
 import theorems.Dynamics.Stability
 import theorems.Dynamics.LyapunovDefs
 import theorems.LCLStability
 import theorems.Lyapunov
-import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.Calculus.FDeriv.Analytic
-import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.Topology.Order.Compact
 
 /-! Full zero-input trajectory certificates for the canonical RL and ideal LCL
 plants. Coordinates are physical current for RL and `(i₁, vC, i₂)` for LCL.

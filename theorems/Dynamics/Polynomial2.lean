@@ -1,8 +1,5 @@
+import dependencies.Mathlib
 import theorems.Dynamics.Stability
-import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.Calculus.FDeriv.Mul
-import Mathlib.Data.List.Basic
-import Mathlib.Tactic
 
 /-! Kernel semantics for automatically synthesized two-state polynomial
 Lyapunov certificates. Rational polynomial data are interpreted independently
@@ -194,15 +191,15 @@ def Accepted.quadraticDecayCertificate {model : Model} (c : Accepted model) :
       -(c.rate : ℝ) * quadratic c.p00 c.p01 c.p11 (x 0) (x 1)
     linarith
 
-@[powerlib_domain] theorem Accepted.forwardComplete {model : Model} (c : Accepted model) :
+@[powerlib_domain, aesop norm forward (immediate := [c])] theorem Accepted.forwardComplete {model : Model} (c : Accepted model) :
     ForwardComplete model.field :=
   c.quadraticDecayCertificate.forwardComplete model.field_smooth
 
-@[powerlib_domain] theorem Accepted.globallyExponentiallyStable {model : Model}
+@[powerlib_domain, aesop norm forward (immediate := [c])] theorem Accepted.globallyExponentiallyStable {model : Model}
     (c : Accepted model) : GloballyExponentiallyStable model.field 0 :=
   c.quadraticDecayCertificate.globallyExponentiallyStable model.field_smooth
 
-@[powerlib_domain] theorem Accepted.globallyAsymptoticallyStable {model : Model}
+@[powerlib_domain, aesop norm forward (immediate := [c])] theorem Accepted.globallyAsymptoticallyStable {model : Model}
     (c : Accepted model) : GloballyAsymptoticallyStable model.field 0 :=
   c.quadraticDecayCertificate.globallyAsymptoticallyStable (by norm_num) model.field_smooth
 

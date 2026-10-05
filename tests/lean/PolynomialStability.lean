@@ -184,13 +184,12 @@ run_cmd do
     match env.checked.get.find? root with
     | some (.thmInfo _) => pure ()
     | _ => throwError "Polynomial stability semantic root is not a checked theorem: {root}"
-  let mut state : Lean.CollectAxioms.State := {}
+  let mut auditedAxioms : Array Name := #[]
   for root in roots do
     unless (env.checked.get.find? root).isSome do
       throwError "Unknown polynomial stability audit root: {root}"
-    let (_, next) := ((Lean.CollectAxioms.collect root).run env).run state
-    state := next
-  for axiomName in state.axioms do
+    auditedAxioms := auditedAxioms ++ powerlib.Search.declarationAxioms env root
+  for axiomName in auditedAxioms do
     unless axiomName == `propext || axiomName == `Classical.choice || axiomName == `Quot.sound do
       throwError "Unexpected polynomial stability axiom: {axiomName}"
   logInfo "POWERLIB_POLYNOMIAL_STABILITY_OK"

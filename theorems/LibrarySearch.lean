@@ -42,13 +42,7 @@ def eligible (env : Environment) (name : Name) : Bool :=
 
 def candidates : LibrarySearch.CandidateFinder := fun goal => do
   let env ← getEnv
-  -- Axiom collection traverses proof dependencies. Defer that traversal until
-  -- a candidate is tried, so a direct imported theorem does not require audits
-  -- of every less specific theorem that the index also returned.
-  return (← LibrarySearch.libSearchFindDecls goal).filter fun (name, _) =>
-    match env.find? name with
-    | some info => info.isTheorem && !info.isUnsafe
-    | none => false
+  return (← LibrarySearch.libSearchFindDecls goal).filter (fun (name, _) => eligible env name)
 
 def checkProof (proof : Expr) : MetaM Unit := do
   let proof ← instantiateMVars proof
@@ -63,12 +57,9 @@ def checkProof (proof : Expr) : MetaM Unit := do
         throwError "Library search used an unapproved axiom: {axiomName}"
 
 def solve (goal : MVarId) : MetaM Unit := do
-  let env ← getEnv
   let found ← LibrarySearch.librarySearchSymm candidates goal
   let result ← LibrarySearch.tryOnEach (fun ((target, context), (name, direction)) => do
     setMCtx context
-    unless eligible env name do
-      throwError "Library theorem uses an unapproved axiom: {name}"
     let termProof ← LibrarySearch.mkLibrarySearchLemma name direction
     let pending ← target.apply termProof { allowSynthFailures := true }
     let remaining ← LibrarySearch.solveByElim [] false pending 6

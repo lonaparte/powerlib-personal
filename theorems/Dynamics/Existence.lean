@@ -1,5 +1,4 @@
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Topology.MetricSpace.Bounded
+import dependencies.Mathlib
 import theorems.Dynamics.GlobalLipschitz
 import theorems.Dynamics.Cutoff
 

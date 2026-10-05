@@ -79,20 +79,18 @@ jobs:
           test "$(sed -n 's/^-- RL branch source SHA-256: //p' theorems/generated/LCLConversion.lean)" = "$rl_source"
       - name: Audit transitive theorem dependencies
         run: lake env lean tests/lean/Audit.lean
-      - name: Check global trajectories and nonlinear negative controls
-        run: lake env lean tests/lean/Dynamics.lean
-      - name: Synthesize polynomial certificates and prove nonlinear stability
-        timeout-minutes: 5
-        run: |
-          lake env lean tests/lean/PolynomialSearch.lean
-          lake env lean tests/lean/PolynomialStability.lean
       - name: Check native automation and upstream theorem reuse
         timeout-minutes: 5
         run: |
           lake env lean tests/lean/Automation.lean
           lake env lean tests/lean/Upstream.lean
+          lake env lean tests/lean/Dynamics.lean
           lake env lean tests/lean/API.lean
           lake env lean tests/lean/RuleReuse.lean
+          lake env lean tests/lean/PolynomialSearch.lean
+          lake env lean tests/lean/PolynomialStability.lean
+          lake env lean tests/lean/DynamicsAutomation.lean
+          lake env lean tests/lean/UpstreamDynamics.lean
       - name: Check imported and current-file theorem registration
         shell: bash
         run: |

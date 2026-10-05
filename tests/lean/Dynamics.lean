@@ -119,15 +119,14 @@ run_cmd do
     `powerlib.Tests.Dynamics.squareEnergy_lie_derivative,
     `powerlib.Tests.Dynamics.locallyStableField_rejects_global_decay_certificate,
     `powerlib.Tests.Dynamics.locallyStableField_not_globallyExponentiallyStable]
-  let mut state : Lean.CollectAxioms.State := {}
+  let mut auditedAxioms : Array Name := #[]
   for root in roots do
     match env.find? root with
     | some (.thmInfo _) => pure ()
     | some _ => throwError "Dynamics regression audit root {root} is not a theorem"
     | none => throwError "Dynamics regression audit root {root} was not found"
-    let (_, next) := ((Lean.CollectAxioms.collect root).run env).run state
-    state := next
-  for ax in state.axioms do
+    auditedAxioms := auditedAxioms ++ powerlib.Search.declarationAxioms env root
+  for ax in auditedAxioms do
     unless ax == `propext || ax == `Classical.choice || ax == `Quot.sound do
       throwError "Unexpected Dynamics regression axiom {ax}"
   logInfo "POWERLIB_DYNAMICS_OK"

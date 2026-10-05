@@ -1,6 +1,4 @@
-import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Analysis.Calculus.Deriv.Basic
-import Mathlib.Analysis.Calculus.ContDiff.Defs
+import dependencies.Mathlib
 import theorems.Attributes
 
 /-! Trajectory semantics for finite-dimensional continuous-time autonomous systems.
@@ -19,17 +17,21 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- A solution on a set of times, including the one-sided derivative at endpoints. -/
 abbrev IsIntegralCurveOn (φ : ℝ → E) (f : ℝ → E → E) (s : Set ℝ) : Prop :=
-  ∀ t ∈ s, HasDerivWithinAt φ (f t (φ t)) s t
+  _root_.IsIntegralCurveOn φ f s
 
 @[powerlib_foundation] theorem IsIntegralCurveOn.continuousOn
     {φ : ℝ → E} {f : ℝ → E → E} {s : Set ℝ} (hφ : IsIntegralCurveOn φ f s) :
     ContinuousOn φ s :=
-  fun t ht => (hφ t ht).continuousWithinAt
+  _root_.IsIntegralCurveOn.continuousOn hφ
 
 @[powerlib_foundation] theorem IsIntegralCurveOn.mono
     {φ : ℝ → E} {f : ℝ → E → E} {s u : Set ℝ}
     (hφ : IsIntegralCurveOn φ f s) (hu : u ⊆ s) : IsIntegralCurveOn φ f u :=
-  fun t ht => (hφ t (hu ht)).mono hu
+  _root_.IsIntegralCurveOn.mono hφ hu
+
+@[powerlib_foundation, simp] theorem isIntegralCurveOn_upstream_iff
+    {φ : ℝ → E} {f : ℝ → E → E} {s : Set ℝ} :
+    IsIntegralCurveOn φ f s ↔ _root_.IsIntegralCurveOn φ f s := Iff.rfl
 
 /-- A finite solution segment; finite-time escape cannot make stability vacuous. -/
 abbrev IsTrajectoryOn (φ : ℝ → E) (f : E → E) (a b : ℝ) : Prop :=

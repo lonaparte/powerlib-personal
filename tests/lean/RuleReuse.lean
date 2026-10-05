@@ -38,7 +38,7 @@ open Lean Elab Command in
 run_cmd do
   let env ← getEnv
   let info ← getConstInfo `RuleReuseChecks.concrete_relation
-  let some proof := info.value? | throwError "Missing rule-reuse proof"
+  let some proof := info.value? (allowOpaque := true) | throwError "Missing rule-reuse proof"
   unless proof.getUsedConstants.contains `RuleReuseChecks.from_model_relation do
     throwError "The numerical target did not apply the untagged rule"
   for name in #[`RuleReuseChecks.concrete_relation, `RuleReuseChecks.existence_and_decay,

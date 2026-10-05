@@ -1,7 +1,6 @@
+import dependencies.Mathlib
 import theorems.Dynamics.Exponential
 import theorems.Dynamics.Existence
-import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.Topology.MetricSpace.Bounded
 
 /-! Semantic exponential stability from a global nonlinear Lyapunov certificate.
 Quadratic energy bounds make every sublevel compact in finite dimension. Together
