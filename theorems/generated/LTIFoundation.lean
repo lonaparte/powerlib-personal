@@ -1,7 +1,6 @@
--- Generated from the scoped syntax executed by Agda's field operation.
+-- Generated from the Agda-normalized executable conversion.
 -- Agda source SHA-256: bfeda8eaf62ea856ac1e0302642f912f065f2a7b89c3abc28cb54905b16ff669
-import Mathlib.Data.Matrix.Mul
-import Mathlib.Data.Real.Basic
+import dependencies.Mathlib
 import theorems.Attributes
 
 namespace powerlib.generated

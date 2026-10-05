@@ -1,3 +1,4 @@
-import theorems.RL
-import theorems.LCL
+import theorems.RLStability
+import theorems.LCLSynthesis
+import theorems.LibrarySearch
 import theorems.LTI

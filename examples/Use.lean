@@ -1,14 +1,5 @@
 import powerlib
 
-#check powerlib.LTI.Accepted.exponentially_stable
-#check powerlib.LTI.Accepted.decay_bound
-#check powerlib.LTI.Accepted.norm_bound
-#check powerlib.LTI.trajectory_exists
-#check powerlib.LTI.Accepted.response_unique
-#check powerlib.LTI.Accepted.sqNorm_tendsto_zero
-#print axioms powerlib.LTI.Accepted.exponentially_stable
-#print axioms powerlib.LTI.Accepted.response_unique
-
 #check powerlib.lcl_stable_iff
 #print axioms powerlib.lcl_stable_iff
 #print axioms powerlib.LCL.Accepted.stable
@@ -37,3 +28,7 @@ example (m : powerlib.Impedance) (s current voltage : ℂ) :
         ((powerlib.toStateSpace m).inputGain.val : ℂ) * voltage ↔
       voltage = m.frequency s * current :=
   powerlib.same_port_relation m s current voltage
+
+#check powerlib.LTI.Accepted.exponentially_stable
+#check powerlib.LTI.trajectory_exists
+#print axioms powerlib.LTI.Accepted.exponentially_stable

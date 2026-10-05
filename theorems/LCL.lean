@@ -1,6 +1,5 @@
 import theorems.RL
 import theorems.generated.LCLConversion
-import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 
 /-! Canonical continuous-time LCL plant with two series RL branches and an ideal
 shunt capacitor. Both terminal voltages are external inputs. No controller,
@@ -186,13 +185,13 @@ def Circuit.Passive (m : Circuit) : Prop :=
         2*(a3*a1+a2^2)*s.re + (a2*a1-a3*a0) := by positivity
     linarith
 
-@[powerlib_domain, aesop safe apply] theorem stable_of_hurwitz (m : Circuit) (h2 : 0 < m.a2) (h1 : 0 < m.a1)
+@[powerlib_domain, aesop unsafe 90% apply] theorem stable_of_hurwitz (m : Circuit) (h2 : 0 < m.a2) (h1 : 0 < m.a1)
     (h0 : 0 < m.a0) (hg : 0 < m.a2*m.a1-m.a3*m.a0) : m.Stable := by
   have h3 : 0 < m.a3 := mul_pos (mul_pos m.first.inductance.property
     m.second.inductance.property) m.capacitance.property
   exact fun s hs => cubic_hurwitz m.a3 m.a2 m.a1 m.a0 h3 h2 h1 h0 hg s hs
 
-@[powerlib_foundation, aesop safe apply] theorem passive_hurwitz (m : Circuit) (hp : m.Passive) (hd : m.Damped) :
+@[powerlib_foundation, aesop unsafe 80% apply] theorem passive_hurwitz (m : Circuit) (hp : m.Passive) (hd : m.Damped) :
     0 < m.a2 ∧ 0 < m.a1 ∧ 0 < m.a0 ∧ 0 < m.a2*m.a1-m.a3*m.a0 := by
   rcases hp with ⟨hr1, hr2⟩
   have hL1 := m.first.inductance.property
@@ -247,7 +246,7 @@ def energyDerivative (p : SymmetricMatrix) (x y z dx dy dz : ℝ) : ℝ :=
   2*(p.p11*x+p.p12*y+p.p13*z)*dx +
     2*(p.p12*x+p.p22*y+p.p23*z)*dy + 2*(p.p13*x+p.p23*y+p.p33*z)*dz
 
-@[powerlib_foundation, aesop safe apply] theorem energy_positive (p : SymmetricMatrix) (h1 : 0 < p.p11)
+@[powerlib_foundation, aesop unsafe 75% apply] theorem energy_positive (p : SymmetricMatrix) (h1 : 0 < p.p11)
     (h2 : 0 < p.minor2) (h3 : 0 < p.det) (x y z : ℝ)
     (hn : x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) : 0 < energy p x y z := by
   have he : energy p x y z =

@@ -139,8 +139,8 @@ data representation of an Agda-checked executable operation. Lean independently
 checks the exported endpoint contract and its concrete instantiation.
 
 There is no assumed general translation of Agda proofs to Lean. An Agda proof
-does not authorize unconditional acceptance by Lean. The restricted wire
-approach in `dependencies/bridge.py` is the institutional pattern.
+does not authorize unconditional acceptance by Lean. A restricted versioned wire
+interface is the institutional pattern.
 
 ## 12. Exact acceptance
 
@@ -196,3 +196,62 @@ after model-bound admission, the semantic theorem, and the axiom audit pass.
 The current manually enumerated ATD examples are fixed-candidate verification
 prototypes. Complete ATD remains an objective until conjecture generation,
 formal proof/refutation, traceability, and library admission are all implemented.
+
+## 15. Reuse Mathlib and LeanForControl
+
+PowerLib follows the reuse principle of LeanForControl. Check Mathlib and
+LeanForControl for existing formalized results before developing new proofs.
+Directly import and apply their existing theorems whenever their assumptions
+and conclusions match the required result. Do not duplicate those proofs in
+PowerLib. Keep new formalization focused on missing results, formal models,
+and the connections needed to apply existing theorems to those models.
+
+Project-specific wrappers may provide stable public names, model-specific
+contracts, and discovery attributes while invoking the upstream theorem.
+Any additional assumptions or model conversions required for that application
+must themselves be stated and checked.
+
+Reused results remain subject to the same kernel checks, transitive axiom
+allowlist, and provenance requirements as local proofs. Pin imported
+dependencies to compatible versions and verify them in the reproducible build.
+
+Automation must search the types of actual imported Lean declarations, including
+upstream theorems without PowerLib attributes. Use the standard library-search
+index to find relevant applications from a goal, and preserve the original
+declaration name, defining module, universe parameters, assumptions, and axiom
+dependencies. PowerLib foundation/domain labels classify its own public results;
+they are not prerequisites for reusing an upstream theorem. A documentation or
+blueprint annotation does not establish a proof or a searchable semantic contract.
+
+Reject candidates whose transitive dependencies violate the axiom allowlist,
+and audit the completed proof independently. Automatic application must discharge
+the theorem's actual hypotheses; matching prose or model names is insufficient.
+Do not describe a library as connected until a compatible pinned dependency is
+imported and direct reuse has passed kernel checks. A version mismatch requires
+a separately verified compatibility change before that dependency can be used.
+
+## 16. Formal theorem dependencies
+
+`dependencies/` is the formal interface to the upstream results PowerLib uses.
+It contains Lean import interfaces and, where necessary, kernel-checked adapters
+that directly invoke Mathlib or LeanForControl declarations. Preserve the actual
+upstream theorem, defining module, assumptions, version, and transitive axioms.
+Do not copy upstream proofs into PowerLib or replace their import with a local
+reimplementation. Dependency package sources are resolved by Lake from the
+pinned manifest; they are not vendored into this directory.
+
+Bootstrap programs, Python synthesizers, bridge exporters, admission runners,
+regression harnesses, examples, normalized wire artifacts, generated certificates,
+logs, and local development support are not formal theorem dependencies. None
+belongs in `dependencies/`. Model-specific foundations and domain results belong
+in `theorems/`. A dependency interface must not imply that an incompatible
+upstream library is available through the main public import.
+
+The active published library contains formal sources, formal verification
+consumers, and pinned build configuration. Local bootstrap and orchestration
+programs, bridge exporters, untrusted synthesizers, artifact admission runners,
+their procedural regression harnesses, and their input/output artifacts stay
+in the local workspace outside the repositories. A local program's output is
+not an admitted library result. Keep its independent kernel checks and retained
+provenance when reorganizing support. Historical `archive/` content is excluded
+from the public library build, discovery, admission, and promotion.
