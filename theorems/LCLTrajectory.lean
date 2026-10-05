@@ -127,7 +127,7 @@ def response (m : Circuit) (initial : State) (t : ℝ) : State :=
     response m initial 0 = initial := by
   simp [response, NormedSpace.exp_zero]
 
-@[powerlib_domain] theorem response_solves (m : Circuit) (initial : State) (t : ℝ) :
+@[powerlib_domain, aesop safe apply] theorem response_solves (m : Circuit) (initial : State) (t : ℝ) :
     HasDerivAt (response m initial) ((toStateSpace m).operator (response m initial t)) t := by
   have h := (hasDerivAt_exp_smul_const' (toStateSpace m).operator t).clm_apply
     (hasDerivAt_const t initial)

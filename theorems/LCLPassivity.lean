@@ -84,7 +84,7 @@ def physicalWeights (m : Circuit) : SymmetricMatrix :=
     (C := 0) hd (fun _ _ => by simp) (show (0 : ℝ) ∈ Ici 0 by simp) ht
   exact sub_eq_zero.mp (norm_eq_zero.mp (le_antisymm (by simpa using hb) (norm_nonneg _)))
 
-@[powerlib_domain] theorem constant_trajectory {m : Circuit} {u vg : ℝ} {e : State}
+@[powerlib_domain, aesop safe apply] theorem constant_trajectory {m : Circuit} {u vg : ℝ} {e : State}
     (he : IsEquilibrium m u vg e) : IsTrajectory m u vg (fun _ => e) := by
   intro t _
   rw [he]

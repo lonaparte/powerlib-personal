@@ -48,10 +48,22 @@ example (m : LCL.Circuit) (initial : LCL.State) :
     LCL.IsTrajectory m 0 0 (LCL.response m initial) ∧
       LCL.response m initial 0 = initial := by aesop
 
+example (m : LCL.Circuit) (initial : LCL.State) (t : ℝ) :
+    HasDerivAt (LCL.response m initial)
+      ((LCL.toStateSpace m).operator (LCL.response m initial t)) t ∧
+      LCL.response m initial 0 = initial := by aesop
+
 example (m : LCL.Circuit) (u vg : ℝ) (e initial : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) :
     LCL.IsTrajectory m u vg (LCL.equilibriumResponse m e initial) ∧
       LCL.equilibriumResponse m e initial 0 = initial := by aesop
+
+-- A supplied equilibrium is itself a forward solution of the submitted model.
+example (m : LCL.Circuit) (u vg : ℝ) (e : LCL.State)
+    (he : LCL.IsEquilibrium m u vg e) :
+    LCL.IsTrajectory m u vg (fun _ => e) := by aesop
+
+example (m : LCL.Circuit) : LCL.IsTrajectory m 0 0 (fun _ => 0) := by aesop
 
 -- Physical stored energy uses the plant's own positive inductances/capacitance.
 example (m : LCL.Circuit) (x : LCL.State) (hx : x ≠ 0) :
