@@ -2,13 +2,10 @@ import powerlib
 
 namespace UpstreamConsumers
 
-@[powerlib_foundation]
 -- No upstream names or PowerLib classification attributes are supplied to search.
-theorem exp_positive (x : ℝ) : 0 < Real.exp x := by powerlib_search
-@[powerlib_foundation]
-theorem exp_add (x y : ℝ) : Real.exp (x + y) = Real.exp x * Real.exp y := by powerlib_search
-@[powerlib_foundation]
-theorem exp_injective {x y : ℝ} (h : Real.exp x = Real.exp y) : x = y := by powerlib_search
+@[powerlib_foundation] theorem exp_positive (x : ℝ) : 0 < Real.exp x := by powerlib_search
+@[powerlib_foundation] theorem exp_add (x y : ℝ) : Real.exp (x + y) = Real.exp x * Real.exp y := by powerlib_search
+@[powerlib_foundation] theorem exp_injective {x y : ℝ} (h : Real.exp x = Real.exp y) : x = y := by powerlib_search
 
 end UpstreamConsumers
 
@@ -28,7 +25,7 @@ run_cmd do
   for name in #[`UpstreamConsumers.exp_positive, `UpstreamConsumers.exp_add,
       `UpstreamConsumers.exp_injective] do
     let info ← getConstInfo name
-    let some proof := info.value? | throwError "Missing consumer proof: {name}"
+    let some proof := info.value? (allowOpaque := true) | throwError "Missing consumer proof: {name}"
     unless proof.getUsedConstants.any (fun dependency =>
         match env.getModuleIdxFor? dependency with
         | some index => env.header.moduleNames[index]!.getRoot == `Mathlib
