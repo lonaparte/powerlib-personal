@@ -17,12 +17,15 @@ numerical experiments, and Agda-only proofs are not admitted domain theorems.
 
 ## 2. Formalization directory
 
-`theorems/` contains formalization source and checked generated formalization
-source. It must not contain Markdown files. An `LCL.md` derivation belongs in
-`docs/`, `notes/`, or `archive/`, never in `theorems/`. A result not yet expressed
+The active visible source directories are `theorem/`, `example/`, and
+`dependencies/`. `theorem/` contains formalization source and checked generated
+formalization source, with no Markdown files. `example/` contains formal public
+consumers. Necessary kernel, discovery, and automatic-reuse consumers belong in
+`dependencies/tests/`; pinned integration profiles belong in
+`dependencies/integrations/`. Procedural or redundant tests and research notes
+stay in the local workspace outside the repositories. A result not yet expressed
 as a Lean theorem is a research note, regardless of its mathematical plausibility.
-Directory structure must enforce this distinction rather than relying solely
-on an explanation in the README.
+Directory structure must enforce this distinction.
 
 ## 3. Foundation results and domain results
 
@@ -233,25 +236,34 @@ a separately verified compatibility change before that dependency can be used.
 ## 16. Formal theorem dependencies
 
 `dependencies/` is the formal interface to the upstream results PowerLib uses.
-It contains Lean import interfaces and, where necessary, kernel-checked adapters
-that directly invoke Mathlib or LeanForControl declarations. Preserve the actual
-upstream theorem, defining module, assumptions, version, and transitive axioms.
-Do not copy upstream proofs into PowerLib or replace their import with a local
-reimplementation. Dependency package sources are resolved by Lake from the
-pinned manifest; they are not vendored into this directory.
+Its Lean import interfaces and kernel-checked adapters directly invoke Mathlib
+or LeanForControl declarations. Preserve the actual upstream theorem, defining
+module, assumptions, version, and transitive axioms. Do not copy upstream proofs
+into PowerLib or replace their import with a local reimplementation. Lake resolves
+dependency package sources from the pinned manifest.
+
+Necessary formal verification consumers belong in `dependencies/tests/`.
+They check the public interface, kernel and transitive axiom audit, registered
+theorem discovery, automatic reuse, or required semantic acceptance boundaries.
+Pinned formal integration profiles and their build configurations belong in
+`dependencies/integrations/`. Keep those profiles independently scoped; the main
+library must not recursively build their sources or negative fixtures. Procedural
+and redundant test support stays in the local workspace outside the repositories.
 
 Bootstrap programs, Python synthesizers, bridge exporters, admission runners,
-regression harnesses, examples, normalized wire artifacts, generated certificates,
-logs, and local development support are not formal theorem dependencies. None
-belongs in `dependencies/`. Model-specific foundations and domain results belong
-in `theorems/`. A dependency interface must not imply that an incompatible
-upstream library is available through the main public import.
+procedural regression harnesses, normalized wire artifacts, generated certificate
+artifacts, logs, and local development support do not belong in `dependencies/`
+or elsewhere in the active published library. Model-specific foundations and
+domain results belong in `theorem/`; formal public examples belong in `example/`.
+A dependency interface must not imply that an incompatible upstream library is
+available through the main public import.
 
-The active published library contains formal sources, formal verification
-consumers, and pinned build configuration. Local bootstrap and orchestration
-programs, bridge exporters, untrusted synthesizers, artifact admission runners,
-their procedural regression harnesses, and their input/output artifacts stay
-in the local workspace outside the repositories. A local program's output is
-not an admitted library result. Keep its independent kernel checks and retained
-provenance when reorganizing support. Historical `archive/` content is excluded
-from the public library build, discovery, admission, and promotion.
+The active published library contains formal sources, necessary formal
+verification consumers, and pinned build configuration. Local bootstrap and
+orchestration programs, bridge exporters, untrusted synthesizers, artifact
+admission runners, their procedural regression harnesses, and their input/output
+artifacts stay in the local workspace outside the repositories. A local program's
+output is not an admitted library result. Keep independent kernel checks and
+retained provenance when reorganizing support. Historical archive content is
+preserved in the local workspace outside the repositories and remains excluded
+from public build, discovery, admission, and promotion.
