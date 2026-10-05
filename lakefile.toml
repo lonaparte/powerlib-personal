@@ -1,7 +1,7 @@
 name = "powerlib"
 packagesDir = ".."
 version = "0.1.0"
-defaultTargets = ["powerlib"]
+defaultTargets = ["powerlib", "PowerLibTests", "PowerLibExamples"]
 
 [leanOptions]
 autoImplicit = false
@@ -23,5 +23,13 @@ globs = ["powerlib", "theorem.+", "dependencies.Mathlib", "dependencies.LeanForC
 
 [[lean_lib]]
 name = "PowerLibTests"
-roots = ["dependencies.tests.lean.RegistryFixture"]
-globs = ["dependencies.tests.lean.RegistryFixture"]
+roots = ["dependencies.tests.lean.Audit", "dependencies.tests.lean.AuthoredClassification",
+  "dependencies.tests.lean.Automation", "dependencies.tests.lean.ExportRegistry",
+  "dependencies.tests.lean.Registry", "dependencies.tests.lean.RegistryFixture",
+  "dependencies.tests.lean.Upstream"]
+globs = ["dependencies.tests.lean.+"]
+
+[[lean_lib]]
+name = "PowerLibExamples"
+roots = ["example.Use"]
+globs = ["example.+"]
