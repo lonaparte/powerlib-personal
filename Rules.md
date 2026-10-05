@@ -39,6 +39,19 @@ electronics, such as small-signal stability, impedance stability, or closed-loop
 exponential stability. They require final Lean theorems about the formalized
 system. Foundation evidence must not be presented as a domain conclusion.
 
+Every first-party, source-authored named Lean theorem must carry exactly one of
+`@[powerlib_foundation]` and `@[powerlib_domain]`. This includes private helpers,
+dependency adapters, generated endpoint contracts, and named formal consumers.
+The two classifications are mutually exclusive. Independently reviewed `simp`,
+`ext`, and Aesop attributes may coexist with either classification; classification
+alone does not register an automatic proof rule. Definitions, structures,
+anonymous examples, compiler-generated auxiliaries, and directly imported
+upstream theorems do not require these classification attributes.
+
+Admission must detect missing classifications from elaborated declaration
+provenance and collect registered theorems automatically, without a handwritten
+theorem list. Classification does not replace kernel or transitive axiom checks.
+
 ## 4. Explicit model boundaries
 
 Every domain theorem must precisely identify the system it concerns. State
@@ -222,7 +235,7 @@ Automation must search the types of actual imported Lean declarations, including
 upstream theorems without PowerLib attributes. Use the standard library-search
 index to find relevant applications from a goal, and preserve the original
 declaration name, defining module, universe parameters, assumptions, and axiom
-dependencies. PowerLib foundation/domain labels classify its own public results;
+dependencies. PowerLib foundation/domain labels classify its own named theorems;
 they are not prerequisites for reusing an upstream theorem. A documentation or
 blueprint annotation does not establish a proof or a searchable semantic contract.
 
