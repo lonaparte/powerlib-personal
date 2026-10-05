@@ -1,7 +1,7 @@
+import dependencies.Mathlib
 import theorems.LCLPassivity
 import theorems.Passivity
 import theorems.StateSpaceTrajectories
-import Mathlib.Data.Real.StarOrdered
 
 noncomputable section
 namespace powerlib.LCL

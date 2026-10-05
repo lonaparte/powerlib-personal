@@ -1,7 +1,6 @@
+import dependencies.Mathlib
 import theorems.RLStability
 import theorems.StateSpaceTrajectories
-import Mathlib.Data.Real.StarOrdered
-import Mathlib.Analysis.Calculus.Deriv.Prod
 
 noncomputable section
 namespace powerlib.RLPort

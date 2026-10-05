@@ -1,7 +1,5 @@
+import dependencies.Mathlib
 import theorems.StateSpacePassivity
-import Mathlib.LinearAlgebra.Matrix.ToLin
-import Mathlib.Analysis.SpecialFunctions.Exponential
-import Mathlib.Analysis.ODE.Gronwall
 
 noncomputable section
 namespace powerlib.StateSpacePassivity
@@ -37,13 +35,13 @@ omit [Fintype κ] in
   simp [response, NormedSpace.exp_zero]
 
 omit [Fintype κ] in
-@[powerlib_domain] theorem response_solves (m : Model ι κ) (initial : State ι) (t : ℝ) :
+@[powerlib_domain, aesop safe apply] theorem response_solves (m : Model ι κ) (initial : State ι) (t : ℝ) :
     HasDerivAt (response m initial) (operator m (response m initial t)) t := by
   have h := (hasDerivAt_exp_smul_const' (operator m) t).clm_apply
     (hasDerivAt_const t initial)
   simpa [response, ContinuousLinearMap.mul_apply] using h
 
-@[powerlib_domain] theorem response_trajectory (m : Model ι κ) (initial : State ι) :
+@[powerlib_domain, aesop safe apply] theorem response_trajectory (m : Model ι κ) (initial : State ι) :
     Passivity.IsTrajectory (system m) (fun _ => 0) (response m initial) := by
   intro t _
   simpa only [operator_field, system] using (response_solves m initial t).hasDerivWithinAt
@@ -76,7 +74,7 @@ omit [Fintype κ] in
     {t : ℝ} (ht : 0 ≤ t) : x t = response m (x 0) t :=
   trajectory_unique m hx (response_trajectory m (x 0)) (response_initial m (x 0)).symm ht
 
-@[powerlib_domain] theorem trajectory_exists_unique (m : Model ι κ) (initial : State ι) :
+@[powerlib_domain, aesop safe apply] theorem trajectory_exists_unique (m : Model ι κ) (initial : State ι) :
     ∃ x, Passivity.IsTrajectory (system m) (fun _ => 0) x ∧ x 0 = initial ∧
       ∀ y, Passivity.IsTrajectory (system m) (fun _ => 0) y → y 0 = initial →
         EqOn y x (Ici 0) := by
@@ -138,12 +136,12 @@ omit [Fintype κ] in
     (m : Model ι κ) (e initial : State ι) : equilibriumResponse m e initial 0 = initial := by
   simp [equilibriumResponse]
 
-@[powerlib_domain] theorem equilibriumResponse_trajectory {m : Model ι κ}
+@[powerlib_domain, aesop safe apply] theorem equilibriumResponse_trajectory {m : Model ι κ}
     {u : κ → ℝ} {e : State ι} (he : IsEquilibrium m u e) (initial : State ι) :
     Passivity.IsTrajectory (system m) (fun _ => u) (equilibriumResponse m e initial) :=
   trajectory_add_equilibrium he (response_trajectory m (initial - e))
 
-@[powerlib_domain, aesop unsafe apply] theorem equilibrium_trajectory_exists {m : Model ι κ}
+@[powerlib_domain, aesop norm forward (immediate := [he])] theorem equilibrium_trajectory_exists {m : Model ι κ}
     {u : κ → ℝ} {e : State ι} (he : IsEquilibrium m u e) (initial : State ι) :
     ∃ x, Passivity.IsTrajectory (system m) (fun _ => u) x ∧ x 0 = initial :=
   ⟨equilibriumResponse m e initial, equilibriumResponse_trajectory he initial,
@@ -166,7 +164,7 @@ omit [Fintype κ] in
   intro x hx h0 t ht
   exact hbound (fun r => x r - e) (trajectory_shift he hx) h0 t ht
 
-@[powerlib_domain, aesop safe apply] theorem Certificate.lyapunovStableAt [Nonempty ι]
+@[powerlib_domain] theorem Certificate.lyapunovStableAt [Nonempty ι]
     {m : Model ι κ} (c : Certificate m) {u : κ → ℝ} {e : State ι}
     (he : IsEquilibrium m u e) : LyapunovStableAt m u e :=
   lyapunovStableAt_of_zeroInput he c.lyapunovStable

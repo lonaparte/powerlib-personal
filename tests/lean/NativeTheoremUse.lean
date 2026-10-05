@@ -165,19 +165,52 @@ theorem ph_passive {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
   simpa only [gc, PortHamiltonian.system_eq, PortHamiltonian.certificate_P,
     PortHamiltonian.energy_fun_eq] using hp
 
+
+theorem ph_model_semantic_contract {ι κ : Type*} [Fintype ι] [DecidableEq ι]
+    [Fintype κ] [Nonempty ι] (m : PortHamiltonian.Model ι κ) :
+    Passivity.PassiveWithStorage (PortHamiltonian.system m) (PortHamiltonian.energy m) ∧
+      Passivity.LyapunovStable (PortHamiltonian.system m) := by aesop
+
+theorem ph_constructed_response_contract {ι κ : Type*} [Fintype ι] [DecidableEq ι]
+    [Fintype κ] (m : PortHamiltonian.Model ι κ) (initial : ι → ℝ) (t : ℝ) :
+    HasDerivAt (PortHamiltonian.response m initial)
+      (PortHamiltonian.operator m (PortHamiltonian.response m initial t)) t ∧
+      Passivity.IsTrajectory (PortHamiltonian.system m) (fun _ => 0)
+        (PortHamiltonian.response m initial) ∧
+      PortHamiltonian.response m initial 0 = initial := by aesop
+
+theorem ph_energy_and_damping {ι κ : Type*} [Fintype ι] [DecidableEq ι]
+    [Fintype κ] (m : PortHamiltonian.Model ι κ) (x : ι → ℝ) (hx : x ≠ 0) :
+    0 < PortHamiltonian.energy m x ∧ 0 ≤ PortHamiltonian.dampingPower m x := by aesop
+
+noncomputable def losslessPHModel : PortHamiltonian.Model (Fin 1) (Fin 1) where
+  J := 0
+  d := fun _ => 0
+  w := fun _ => 1
+  B := fun _ _ => 1
+  skew := by simp
+  damping_nonneg := by intro i; norm_num
+  weights_pos := by intro i; norm_num
+
+theorem concrete_lossless_ph_semantics :
+    Passivity.PassiveWithStorage (PortHamiltonian.system losslessPHModel)
+      (PortHamiltonian.energy losslessPHModel) ∧
+      Passivity.LyapunovStable (PortHamiltonian.system losslessPHModel) := by aesop
+
+theorem concrete_lossless_ph_forward_solution (initial : Fin 1 → ℝ) :
+    ∃ x, Passivity.IsTrajectory (PortHamiltonian.system losslessPHModel)
+      (fun _ => 0) x ∧ x 0 = initial := by aesop
+
 end NativeConsumers
 
 open Lean Elab Command in
 run_cmd do
   let env ← getEnv
-  let mut state : Lean.CollectAxioms.State := {}
   for (name, info) in env.constants do
     if name.getRoot == `NativeConsumers && info.isTheorem then
-      let (_, next) := ((Lean.CollectAxioms.collect name).run env).run state
-      state := next
-  for ax in state.axioms do
-    unless ax == `propext || ax == `Classical.choice || ax == `Quot.sound do
-      throwError "Unexpected native consumer axiom: {ax}"
+      for axiomName in powerlib.Search.declarationAxioms env name do
+        unless powerlib.Search.allowedAxiom axiomName do
+          throwError "Unexpected native consumer axiom: {name}: {axiomName}"
   for (consumer, source) in #[
       (`NativeConsumers.rl_port_state_space_passive,
         `powerlib.StateSpacePassivity.Certificate.passiveWithStorage),

@@ -58,7 +58,15 @@ run_cmd do
       throwError "Imported foundation theorem missing from public registry: {name}"
   unless (Registry.kindOf? env `powerlib.response).isNone do
     throwError "A definition was classified as a theorem"
-  for name in Registry.theoremNames env do
+  let all := Registry.theoremNames env
+  unless all.size == domains.size + foundations.size do
+    throwError "The public registry classification partition is incomplete"
+  unless all == all.qsort Name.quickLt && all.toList.eraseDups.length == all.size do
+    throwError "The public registry is not unique and deterministic"
+  for name in all do
+    for axiomName in Search.declarationAxioms env name do
+      unless Search.allowedAxiom axiomName do
+        throwError "Unapproved registered theorem axiom: {name}: {axiomName}"
     match env.find? name with
     | some (.thmInfo _) => pure ()
     | _ => throwError "Public registry returned a non-theorem: {name}"

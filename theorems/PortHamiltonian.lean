@@ -1,3 +1,4 @@
+import dependencies.Mathlib
 import theorems.StateSpacePassivity
 import theorems.StateSpaceTrajectories
 
@@ -143,14 +144,14 @@ omit [DecidableEq ι] [Fintype κ] in
   simpa only [energy_eq] using StateSpacePassivity.energy_smul (diagonal m.w) a x
 
 omit [DecidableEq ι] [Fintype κ] in
-@[powerlib_foundation] theorem energy_positive (m : Model ι κ) (x : State ι) (hx : x ≠ 0) :
+@[powerlib_foundation, aesop safe apply] theorem energy_positive (m : Model ι κ) (x : State ι) (hx : x ≠ 0) :
     0 < energy m x := by
   classical
   simpa only [energy_eq] using
     StateSpacePassivity.energy_positive (Matrix.PosDef.diagonal m.weights_pos) x hx
 
 omit [DecidableEq ι] [Fintype κ] in
-@[powerlib_foundation] theorem dampingPower_nonneg (m : Model ι κ) (x : State ι) :
+@[powerlib_foundation, aesop safe apply] theorem dampingPower_nonneg (m : Model ι κ) (x : State ι) :
     0 ≤ dampingPower m x :=
   Finset.sum_nonneg (fun i _ => mul_nonneg (m.damping_nonneg i) (sq_nonneg _))
 
@@ -210,7 +211,7 @@ def storage (m : Model ι κ) : Passivity.QuadraticStorage (system m) where
   homogeneous := energy_smul m
   positive := energy_positive m
 
-@[powerlib_domain] theorem passiveWithStorage (m : Model ι κ) :
+@[powerlib_domain, aesop safe apply] theorem passiveWithStorage (m : Model ι κ) :
     Passivity.PassiveWithStorage (system m) (energy m) := by
   simpa only [system_eq, certificate_P, energy_fun_eq] using (certificate m).passiveWithStorage
 
@@ -236,7 +237,7 @@ def storage (m : Model ι κ) : Passivity.QuadraticStorage (system m) where
     simpa only [system_eq] using hx
   simpa only [certificate_P, energy_eq] using (certificate m).zeroInput_energy_antitone hg
 
-@[powerlib_domain] theorem lyapunovStable [Nonempty ι] (m : Model ι κ) :
+@[powerlib_domain, aesop safe apply] theorem lyapunovStable [Nonempty ι] (m : Model ι κ) :
     Passivity.LyapunovStable (system m) := by
   simpa only [system_eq] using (certificate m).lyapunovStable
 
@@ -257,16 +258,16 @@ omit [Fintype κ] in
   StateSpacePassivity.response_initial (linearModel m) initial
 
 omit [Fintype κ] in
-@[powerlib_domain] theorem response_solves (m : Model ι κ) (initial : State ι) (t : ℝ) :
+@[powerlib_domain, aesop safe apply] theorem response_solves (m : Model ι κ) (initial : State ι) (t : ℝ) :
     HasDerivAt (response m initial) (operator m (response m initial t)) t :=
   StateSpacePassivity.response_solves (linearModel m) initial t
 
-@[powerlib_domain] theorem response_trajectory (m : Model ι κ) (initial : State ι) :
+@[powerlib_domain, aesop safe apply] theorem response_trajectory (m : Model ι κ) (initial : State ι) :
     Passivity.IsTrajectory (system m) (fun _ => 0) (response m initial) := by
   simpa only [system_eq, response] using
     StateSpacePassivity.response_trajectory (linearModel m) initial
 
-@[powerlib_domain] theorem trajectory_exists (m : Model ι κ) (initial : State ι) :
+@[powerlib_domain, aesop safe apply] theorem trajectory_exists (m : Model ι κ) (initial : State ι) :
     ∃ x, Passivity.IsTrajectory (system m) (fun _ => 0) x ∧ x 0 = initial := by
   simpa only [system_eq] using StateSpacePassivity.trajectory_exists (linearModel m) initial
 

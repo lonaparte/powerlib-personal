@@ -1,8 +1,5 @@
+import dependencies.Mathlib
 import theorems.Passivity
-import Mathlib.LinearAlgebra.Matrix.PosDef
-import Mathlib.LinearAlgebra.Matrix.ToLin
-import Mathlib.Data.Matrix.Block
-import Mathlib.Data.Real.StarOrdered
 
 noncomputable section
 namespace powerlib.StateSpacePassivity
@@ -55,7 +52,7 @@ structure Certificate (m : Model ι κ) where
     smul_eq_mul]
   ring
 
-@[powerlib_foundation] theorem energy_positive {P : Matrix ι ι ℝ} (hP : P.PosDef)
+@[powerlib_foundation, aesop unsafe 75% apply] theorem energy_positive {P : Matrix ι ι ℝ} (hP : P.PosDef)
     (x : State ι) (hx : x ≠ 0) : 0 < energy P x := by
   apply div_pos _ (by norm_num)
   simpa only [star_trivial] using hP.2 x hx
@@ -101,12 +98,12 @@ def Certificate.storage {m : Model ι κ} (c : Certificate m) :
   homogeneous := energy_smul c.P
   positive := energy_positive c.positive
 
-@[powerlib_domain, aesop safe apply] theorem Certificate.passiveWithStorage
+@[powerlib_domain, aesop norm forward (immediate := [c])] theorem Certificate.passiveWithStorage
     {m : Model ι κ} (c : Certificate m) :
     Passivity.PassiveWithStorage (system m) (energy c.P) :=
   c.storage.passiveWithStorage
 
-@[powerlib_domain] theorem Certificate.integral_passivity
+@[powerlib_domain, aesop norm forward (immediate := [c])] theorem Certificate.integral_passivity
     {m : Model ι κ} (c : Certificate m) {u : ℝ → (κ → ℝ)} {x : ℝ → State ι}
     (hx : Passivity.IsTrajectory (system m) u x) {t : ℝ} (ht : 0 ≤ t)
     (hpower : IntervalIntegrable (fun τ => Passivity.supply (system m) (x τ) (u τ))
@@ -121,7 +118,7 @@ def Certificate.storage {m : Model ι κ} (c : Certificate m) :
     AntitoneOn (fun t => energy c.P (x t)) (Ici 0) :=
   c.storage.toDissipativeStorage.zeroInput_energy_antitone hx
 
-@[powerlib_domain, aesop safe apply] theorem Certificate.lyapunovStable [Nonempty ι]
+@[powerlib_domain, aesop norm forward (immediate := [c])] theorem Certificate.lyapunovStable [Nonempty ι]
     {m : Model ι κ} (c : Certificate m) : Passivity.LyapunovStable (system m) :=
   c.storage.lyapunovStable (zero_equilibrium m)
 
@@ -259,12 +256,12 @@ def MatrixCertificate.toCertificate {m : Model ι κ} (c : MatrixCertificate m) 
   positive := c.positive
   kyp := (kypMatrix_posSemidef_iff m c.P (symmetric_of_posDef c.positive)).mp c.kyp_nonneg
 
-@[powerlib_domain, aesop safe apply] theorem MatrixCertificate.passiveWithStorage
+@[powerlib_domain, aesop norm forward (immediate := [c])] theorem MatrixCertificate.passiveWithStorage
     {m : Model ι κ} (c : MatrixCertificate m) :
     Passivity.PassiveWithStorage (system m) (energy c.P) :=
   c.toCertificate.passiveWithStorage
 
-@[powerlib_domain, aesop safe apply] theorem MatrixCertificate.lyapunovStable [Nonempty ι]
+@[powerlib_domain, aesop norm forward (immediate := [c])] theorem MatrixCertificate.lyapunovStable [Nonempty ι]
     {m : Model ι κ} (c : MatrixCertificate m) : Passivity.LyapunovStable (system m) :=
   c.toCertificate.lyapunovStable
 

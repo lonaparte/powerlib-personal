@@ -1,5 +1,5 @@
+import dependencies.Mathlib
 import theorems.Lyapunov
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 noncomputable section
 namespace powerlib.Passivity
@@ -147,7 +147,7 @@ structure QuadraticStorage (s : System E ι) extends DissipativeStorage s where
   · simp [hy, hzero]
   · exact (V.positive y hy).le
 
-@[powerlib_domain, aesop unsafe apply] theorem QuadraticStorage.passiveWithStorage
+@[powerlib_domain, aesop norm forward (immediate := [V])] theorem QuadraticStorage.passiveWithStorage
     {s : System E ι} (V : QuadraticStorage s) : PassiveWithStorage s V.energy := by
   refine ⟨V.energy_nonneg, ?_⟩
   intro u x hx t ht hpower
@@ -169,7 +169,7 @@ variable [FiniteDimensional ℝ E] [Nontrivial E]
       α * ‖y‖ ^ 2 ≤ V.energy y ∧ V.energy y ≤ β * ‖y‖ ^ 2 :=
   powerlib.quadratic_bounds V.energy V.continuous V.homogeneous V.positive
 
-@[powerlib_domain, aesop unsafe apply] theorem QuadraticStorage.lyapunovStable
+@[powerlib_domain, aesop norm forward (immediate := [V])] theorem QuadraticStorage.lyapunovStable
     {s : System E ι} (V : QuadraticStorage s) (he : IsEquilibrium s 0) :
     LyapunovStable s := by
   obtain ⟨α, hα, β, hβα, hb⟩ := V.energy_bounds

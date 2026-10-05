@@ -50,7 +50,7 @@ theorem arbitrary_dimensions_integral {ι κ : Type*} [Fintype ι] [DecidableEq 
       MeasureTheory.volume 0 t) :
     StateSpacePassivity.energy c.P (x t) - StateSpacePassivity.energy c.P (x 0) ≤
       ∫ τ in (0 : ℝ)..t, Passivity.supply (StateSpacePassivity.system m) (x τ) (u τ) := by
-  exact?
+  aesop
 
 theorem arbitrary_dimensions_forward_solution {ι κ : Type*} [Fintype ι] [DecidableEq ι]
     [Fintype κ] (m : StateSpacePassivity.Model ι κ) (initial : ι → ℝ) :
@@ -63,6 +63,48 @@ theorem arbitrary_input_uniqueness {ι κ : Type*} [Fintype ι] [DecidableEq ι]
     (hx : Passivity.IsTrajectory (StateSpacePassivity.system m) u x)
     (hy : Passivity.IsTrajectory (StateSpacePassivity.system m) u y)
     (h0 : x 0 = y 0) : Set.EqOn x y (Set.Ici 0) := by exact?
+
+
+theorem constructed_response_contract {ι κ : Type*} [Fintype ι] [DecidableEq ι]
+    [Fintype κ] (m : StateSpacePassivity.Model ι κ) (initial : ι → ℝ) (t : ℝ) :
+    HasDerivAt (StateSpacePassivity.response m initial)
+      (StateSpacePassivity.operator m (StateSpacePassivity.response m initial t)) t ∧
+      Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => 0)
+        (StateSpacePassivity.response m initial) ∧
+      StateSpacePassivity.response m initial 0 = initial := by aesop
+
+theorem constructed_equilibrium_response_contract {ι κ : Type*} [Fintype ι]
+    [DecidableEq ι] [Fintype κ] (m : StateSpacePassivity.Model ι κ)
+    (u : κ → ℝ) (e initial : ι → ℝ) (he : StateSpacePassivity.IsEquilibrium m u e) :
+    Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => u)
+      (StateSpacePassivity.equilibriumResponse m e initial) ∧
+      StateSpacePassivity.equilibriumResponse m e initial 0 = initial := by aesop
+
+theorem supplied_equilibrium_forward_solution {ι κ : Type*} [Fintype ι]
+    [DecidableEq ι] [Fintype κ] (m : StateSpacePassivity.Model ι κ)
+    (u : κ → ℝ) (e initial : ι → ℝ) (he : StateSpacePassivity.IsEquilibrium m u e) :
+    ∃ x, Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => u) x ∧
+      x 0 = initial := by aesop
+
+theorem constructed_unique_forward_solution {ι κ : Type*} [Fintype ι]
+    [DecidableEq ι] [Fintype κ] (m : StateSpacePassivity.Model ι κ) (initial : ι → ℝ) :
+    ∃ x, Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => 0) x ∧
+      x 0 = initial ∧ ∀ y,
+        Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => 0) y →
+        y 0 = initial → Set.EqOn y x (Set.Ici 0) := by aesop
+
+theorem supplied_quadratic_storage_passive {E κ : Type*} [Fintype κ]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (s : Passivity.System E κ)
+    (V : Passivity.QuadraticStorage s) : Passivity.PassiveWithStorage s V.energy := by aesop
+
+theorem supplied_quadratic_storage_stable {E κ : Type*} [Fintype κ]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [Nontrivial E]
+    (s : Passivity.System E κ) (V : Passivity.QuadraticStorage s)
+    (he : Passivity.IsEquilibrium s 0) : Passivity.LyapunovStable s := by aesop
+
+theorem supplied_positive_storage {ι : Type*} [Fintype ι]
+    (P : Matrix ι ι ℝ) (hP : P.PosDef) (x : ι → ℝ) (hx : x ≠ 0) :
+    0 < StateSpacePassivity.energy P x := by aesop
 
 def fullStorage : Matrix (Fin 2) (Fin 2) ℝ := !![2, 1; 1, 2]
 
@@ -138,6 +180,24 @@ theorem full_kyp_forward_solution (initial : Fin 2 → ℝ) :
     ∃ x, Passivity.IsTrajectory (StateSpacePassivity.system feedthroughModel)
       (fun _ => 0) x ∧ x 0 = initial := by aesop
 
+
+-- The same dimensions do not identify the submitted model.
+def mismatchedModel : StateSpacePassivity.Model (Fin 2) (Fin 1) :=
+  { feedthroughModel with D := !![-1] }
+
+theorem mismatched_model_certificate_is_rejected : True := by
+  fail_if_success
+    have forged : StateSpacePassivity.Certificate mismatchedModel := feedthroughCertificate
+  trivial
+
+theorem negative_feedthrough_has_no_certificate :
+    ¬ Nonempty (StateSpacePassivity.Certificate mismatchedModel) := by
+  rintro ⟨c⟩
+  have hkyp := c.kyp 0 ![1]
+  norm_num [StateSpacePassivity.field, StateSpacePassivity.system,
+    StateSpacePassivity.output, Passivity.supply, mismatchedModel, feedthroughModel,
+    dotProduct, mulVec, Fin.sum_univ_one, Fin.sum_univ_two] at hkyp
+
 def reversedPortModel : StateSpacePassivity.Model (Fin 1) (Fin 1) where
   A := !![0]
   B := !![1]
@@ -174,14 +234,11 @@ end StateSpacePassivityCases
 open Lean Elab Command in
 run_cmd do
   let env ← getEnv
-  let mut state : Lean.CollectAxioms.State := {}
   for (name, info) in env.constants do
     if name.getRoot == `StateSpacePassivityCases && info.isTheorem then
-      let (_, next) := ((Lean.CollectAxioms.collect name).run env).run state
-      state := next
-  for ax in state.axioms do
-    unless ax == `propext || ax == `Classical.choice || ax == `Quot.sound do
-      throwError "Unexpected generic state-space consumer axiom: {ax}"
+      for axiomName in powerlib.Search.declarationAxioms env name do
+        unless powerlib.Search.allowedAxiom axiomName do
+          throwError "Unexpected generic state-space consumer axiom: {name}: {axiomName}"
   for (consumer, source) in #[
       (`StateSpacePassivityCases.arbitrary_dimensions_passive,
         `powerlib.StateSpacePassivity.Certificate.passiveWithStorage),
