@@ -117,8 +117,7 @@ def feedthroughModel : StateSpacePassivity.Model (Fin 2) (Fin 1) where
 @[powerlib_foundation] theorem fullStorage_quadratic_positive (x : Fin 2 → ℝ) (hx : x ≠ 0) :
     0 < dotProduct x (fullStorage.mulVec x) := by
   simp only [dotProduct, mulVec, fullStorage, Fin.sum_univ_two, Matrix.of_apply,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
-    Matrix.head_cons, Matrix.head_fin_const]
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
   have hn : x 0 ≠ 0 ∨ x 1 ≠ 0 := by
     by_contra h
     push_neg at h
@@ -142,7 +141,7 @@ def feedthroughModel : StateSpacePassivity.Model (Fin 2) (Fin 1) where
       Passivity.supply (StateSpacePassivity.system feedthroughModel) x u := by
   simp [StateSpacePassivity.field, StateSpacePassivity.system, StateSpacePassivity.output,
     Passivity.supply, dotProduct, mulVec, fullStorage, feedthroughModel,
-    Fin.sum_univ_two, Fin.sum_univ_one]
+    Fin.sum_univ_two]
   nlinarith [sq_nonneg (u 0 - x 0 - x 1 / 2),
     sq_nonneg (x 0 + x 1 / 2), sq_nonneg (x 1)]
 
