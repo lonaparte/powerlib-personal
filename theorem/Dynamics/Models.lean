@@ -98,7 +98,7 @@ def stateEnergy (p : SymmetricMatrix) (x : State3) : ℝ :=
     apply contDiff_pi.mpr
     intro j
     fin_cases j <;> simp <;> fun_prop
-  convert (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 3 => ℝ)).symm.contDiff.comp hs using 1
+  convert! (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 3 => ℝ)).symm.contDiff.comp hs using 1
   funext x
   ext j
   fin_cases j <;> simp [Circuit.autonomousField, StateSpace.field]

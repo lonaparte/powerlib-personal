@@ -22,7 +22,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          invalid_dependencies=$(find dependencies -type f ! -name '*.lean' ! -path 'dependencies/integrations/leanforcontrol/lakefile.toml' ! -path 'dependencies/integrations/leanforcontrol/lake-manifest.json' ! -path 'dependencies/integrations/leanforcontrol/lean-toolchain' -print)
+          invalid_dependencies=$(find dependencies -type f ! -name '*.lean' ! -path 'dependencies/LeanForControl-4.34.1.patch' ! -path 'dependencies/integrations/leanforcontrol/lakefile.toml' ! -path 'dependencies/integrations/leanforcontrol/lake-manifest.json' ! -path 'dependencies/integrations/leanforcontrol/lean-toolchain' -print)
           test -z "$invalid_dependencies" || { printf '%s\n' "$invalid_dependencies"; exit 1; }
           nonfiles=$(find dependencies ! -type d ! -type f -print)
           test -z "$nonfiles" || { printf '%s\n' "$nonfiles"; exit 1; }
@@ -34,6 +34,23 @@ jobs:
           build: "false"
           test: "false"
           lint: "false"
+      - name: Apply and audit the exact LeanForControl compatibility diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          lfc_package="$PWD/.lake/packages/LeanForControl"
+          patch_file="$GITHUB_WORKSPACE/dependencies/LeanForControl-4.34.1.patch"
+          if [ -d "$lfc_package" ]; then
+            test "$(git -C "$lfc_package" rev-parse HEAD)" = 7507ed04d94068fe3e7d4624b3383433a861bea7
+            if git -C "$lfc_package" diff --quiet HEAD --; then
+              git -C "$lfc_package" apply --check "$patch_file"
+              git -C "$lfc_package" apply "$patch_file"
+            fi
+            git -C "$lfc_package" diff --full-index --binary HEAD -- | cmp - "$patch_file"
+            git -C "$lfc_package" diff --check
+            test -z "$(git -C "$lfc_package" ls-files --others --exclude-standard)"
+            printf '%s\n' POWERLIB_UPSTREAM_COMPATIBILITY_SOURCE_OK
+          fi
       - name: Install pinned Agda and Cubical outside the repository
         shell: bash
         run: |
@@ -196,9 +213,31 @@ jobs:
       - uses: leanprover/lean-action@f061402b660e0c34644504b324e830f2991d4865
         with:
           lake-package-directory: dependencies/integrations/leanforcontrol
+          build: "false"
           use-mathlib-cache: "true"
           test: "false"
           lint: "false"
+      - name: Apply and audit the exact LeanForControl compatibility diff
+        working-directory: dependencies/integrations/leanforcontrol
+        shell: bash
+        run: |
+          set -euo pipefail
+          lfc_package="$PWD/.lake/packages/LeanForControl"
+          patch_file="$GITHUB_WORKSPACE/dependencies/LeanForControl-4.34.1.patch"
+          if [ -d "$lfc_package" ]; then
+            test "$(git -C "$lfc_package" rev-parse HEAD)" = 7507ed04d94068fe3e7d4624b3383433a861bea7
+            if git -C "$lfc_package" diff --quiet HEAD --; then
+              git -C "$lfc_package" apply --check "$patch_file"
+              git -C "$lfc_package" apply "$patch_file"
+            fi
+            git -C "$lfc_package" diff --full-index --binary HEAD -- | cmp - "$patch_file"
+            git -C "$lfc_package" diff --check
+            test -z "$(git -C "$lfc_package" ls-files --others --exclude-standard)"
+            printf '%s\n' POWERLIB_UPSTREAM_COMPATIBILITY_SOURCE_OK
+          fi
+      - name: Build the isolated pinned LeanForControl profile
+        working-directory: dependencies/integrations/leanforcontrol
+        run: lake build
       - name: Check upstream reuse and rejection of unapproved axioms
         working-directory: dependencies/integrations/leanforcontrol
         run: lake env lean LeanForControlSmoke.lean
