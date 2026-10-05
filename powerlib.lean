@@ -3,3 +3,4 @@ import theorem.LCLSynthesis
 import theorem.LibrarySearch
 import theorem.LTI
 import theorem.Upstream.LeanForControl
+import theorem.Upstream.LCLLeanForControl
