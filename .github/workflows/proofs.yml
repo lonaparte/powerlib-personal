@@ -90,6 +90,7 @@ jobs:
           set -euo pipefail
           lake build PowerLibTests
           lake env lean dependencies/tests/lean/Registry.lean
+          lake env lean dependencies/tests/lean/AuthoredClassification.lean
           mkdir -p "$RUNNER_TEMP/powerlib-formal-artifacts"
           lake env lean dependencies/tests/lean/ExportRegistry.lean \
             | tee "$RUNNER_TEMP/powerlib-formal-artifacts/theorem-registry.log"
