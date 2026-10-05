@@ -130,7 +130,7 @@ def feedthroughModel : StateSpacePassivity.Model (Fin 2) (Fin 1) where
   · nlinarith [sq_pos_of_ne_zero h1, sq_nonneg (x 0 + x 1)]
 
 @[powerlib_foundation] theorem fullStorage_posDef : fullStorage.PosDef := by
-  refine ⟨?_, ?_⟩
+  refine Matrix.PosDef.of_dotProduct_mulVec_pos ?_ ?_
   · ext i j
     fin_cases i <;> fin_cases j <;> norm_num [Matrix.IsHermitian, Matrix.conjTranspose,
       fullStorage]
@@ -213,9 +213,9 @@ def reversedPortModel : StateSpacePassivity.Model (Fin 1) (Fin 1) where
     intro h
     have he := congrArg (fun x : Fin 1 → ℝ => x 0) h
     norm_num at he
-  have hpositive := c.positive.2 ![1] hnonzero
+  have hpositive := c.positive.dotProduct_mulVec_pos hnonzero
   have hkyp := c.kyp ![1] ![1]
-  simp [dotProduct, mulVec, Fin.sum_univ_one] at hpositive
+  simp [star_trivial, dotProduct, mulVec, Fin.sum_univ_one] at hpositive
   simp [StateSpacePassivity.field, StateSpacePassivity.system, StateSpacePassivity.output,
     Passivity.supply, reversedPortModel, dotProduct, mulVec, Fin.sum_univ_one] at hkyp
   linarith
@@ -228,8 +228,8 @@ def indefiniteStorage : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, -1]
     intro h
     have he := congrArg (fun x : Fin 2 → ℝ => x 1) h
     norm_num at he
-  have hpositive := hp.2 ![0, 1] hnonzero
-  norm_num [indefiniteStorage, dotProduct, mulVec, Fin.sum_univ_two] at hpositive
+  have hpositive := hp.dotProduct_mulVec_pos hnonzero
+  norm_num [star_trivial, indefiniteStorage, dotProduct, mulVec, Fin.sum_univ_two] at hpositive
 
 end StateSpacePassivityCases
 
