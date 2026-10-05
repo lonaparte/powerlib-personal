@@ -10,11 +10,13 @@ defined in [Rules.md](Rules.md).
 
 ## Version compatibility
 
-When toolchain or dependency versions do not match, first downgrade incompatible
-dependencies to revisions compatible with the project's current pinned Lean and
-Mathlib versions, then retry the pinned build. Check compatible older upstream
-revisions before considering a project toolchain upgrade. Keep all dependency
-pins explicit, and require the complete build and proof checks to pass together.
+When toolchain or dependency versions do not match, first adapt incompatible
+dependencies to the project's current pinned Lean and Mathlib versions and retry
+the pinned build. Check compatible older upstream revisions, or make minimal local
+compatibility changes to the dependency code, before considering a project
+toolchain upgrade. The absence of a matching historical pin does not establish
+incompatibility. Preserve upstream provenance and theorem contracts, keep all pins
+explicit, and require the complete build and proof checks to pass together.
 
 ## Directions
 
