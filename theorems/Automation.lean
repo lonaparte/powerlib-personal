@@ -20,16 +20,33 @@ run_cmd do
       elabCommand (← `(attribute [aesop unsafe 50% apply (rule_sets := [PowerLib])]
         $(mkIdent name)))
 
--- Try a theorem application and its immediate premises before indexed search.
--- A shallow first pass preserves whole iff goals and prevents an expanding
+-- Reuse complete theorem types before introducing their binders. Then try a
+-- theorem application and its immediate premises before indexed search.
+-- These shallow passes preserve whole iff goals and prevent an expanding
 -- theorem inventory from spending the heartbeat budget on blind deep search.
 open Lean Elab Tactic in
 elab "powerlib_auto" : tactic => do
   let env ← getEnv
+  let saved ← saveState
+  try
+    liftMetaTactic fun goal => goal.withContext do
+      let target ← goal.getType
+      for name in powerlibTheoremNames.getState env do
+        let candidateState ← Lean.Meta.saveState
+        try
+          let proof ← Lean.Meta.mkConstWithFreshMVarLevels name
+          unless (← Lean.Meta.isDefEq (← Lean.Meta.inferType proof) target) do
+            throwError "The complete theorem type does not match"
+          goal.assign proof
+          powerlib.Search.checkProof (Lean.mkMVar goal)
+          return []
+        catch _ => restoreState candidateState
+      throwError "No kernel-admissible complete theorem type matches"
+    return
+  catch _ => saved.restore
   let mut rules : Array (TSyntax `term) := #[]
   for name in powerlibTheoremNames.getState env do
     rules := rules.push (← `(term| $(mkIdent name)))
-  let saved ← saveState
   try
     liftMetaTactic fun goal => do
       let remaining ← SolveByElim.processSyntax { maxDepth := 2, exfalso := false }
