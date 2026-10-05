@@ -144,7 +144,7 @@ def GloballyExponentiallyStable (m : Impedance) (v e : ℝ) : Prop :=
     Tendsto i atTop (𝓝 e) := by
   have ha : 0 < (toStateSpace m).decay := (stability_agrees m).mpr hm
   have hexp : Tendsto (fun t : ℝ => Real.exp (-(toStateSpace m).decay * t)) atTop (𝓝 0) := by
-    simpa only [neg_mul] using Real.tendsto_exp_neg_atTop_nhds_zero.comp
+    simpa only [neg_mul] using! Real.tendsto_exp_neg_atTop_nhds_zero.comp
       (tendsto_id.const_mul_atTop ha)
   have h := (hexp.const_mul (i 0 - e)).const_add e
   have heq : (fun t => e + (i 0 - e) * Real.exp (-(toStateSpace m).decay * t)) =ᶠ[atTop] i := by
