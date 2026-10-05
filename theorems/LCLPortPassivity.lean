@@ -1,5 +1,7 @@
 import theorems.LCLPassivity
 import theorems.Passivity
+import theorems.StateSpaceTrajectories
+import Mathlib.Data.Real.StarOrdered
 
 /-!
 Physical terminal-port passivity of the Agda-derived ideal LCL plant.
@@ -7,6 +9,11 @@ The state order is converter current, capacitor voltage, grid current. Inputs
 are the two terminal voltages; outputs are converter current and negative grid
 current, so both port powers are counted into the plant. Inputs may vary with
 continuous time. This model has no controller, PLL, PWM, delay, or sampling.
+The circuit is an instance of the arbitrary finite-dimensional state-space
+passivity theorem. The storage certificate checks the original matrix with
+`P = diag (L₁, C, L₂)`, `-(PA + AᵀP) = diag (2R₁, 0, 2R₂)`, and `PB = Cᵀ`.
+The energy derivative, integral inequality, stability, and trajectory facts
+are applications of the general state-space results after checked conversion.
 The stability conclusion is Lyapunov stability about a constant-input
 equilibrium, including the lossless case; it does not assert attraction.
 -/
@@ -18,9 +25,99 @@ open scoped Topology
 
 abbrev PortInput := Fin 2 → ℝ
 
+/-- The state matrix is the existing Agda-converted circuit matrix. The two
+input columns and output rows retain the original terminal voltage/current
+orientation; they are not reconstructed from an accepted certificate. -/
+def terminalStateSpace (m : Circuit) :
+    powerlib.StateSpacePassivity.Model (Fin 3) (Fin 2) where
+  A := (toStateSpace m).matrix
+  B := ![![(toStateSpace m).first.inputGain.val, 0],
+    ![0, 0], ![0, -(toStateSpace m).second.inputGain.val]]
+  C := ![![1, 0, 0], ![0, 0, -1]]
+  D := 0
+
+/-- The physical inductance/capacitance matrix is computed from the circuit. -/
+def physicalStorageMatrix (m : Circuit) : Matrix (Fin 3) (Fin 3) ℝ :=
+  Matrix.diagonal ![m.first.inductance.val, m.capacitance.val,
+    m.second.inductance.val]
+
+@[powerlib_foundation] theorem terminalStateSpace_field (m : Circuit)
+    (x : State) (u : PortInput) :
+    powerlib.StateSpacePassivity.field (terminalStateSpace m) x u =
+      (toStateSpace m).vectorField (u 0) (u 1) x := by
+  ext i
+  fin_cases i <;>
+    simp [powerlib.StateSpacePassivity.field, terminalStateSpace,
+      StateSpace.matrix, StateSpace.vectorField, StateSpace.field,
+      Matrix.mulVec, dotProduct, Fin.sum_univ_succ] <;> ring
+
+@[simp, powerlib_foundation] theorem terminalStateSpace_output (m : Circuit)
+    (x : State) (u : PortInput) :
+    powerlib.StateSpacePassivity.output (terminalStateSpace m) x u = ![x 0, -x 2] := by
+  ext i
+  fin_cases i <;>
+    simp [powerlib.StateSpacePassivity.output, terminalStateSpace,
+      Matrix.mulVec, dotProduct, Fin.sum_univ_succ]
+
 def portSystem (m : Circuit) : powerlib.Passivity.System State (Fin 2) where
   field x u := (toStateSpace m).vectorField (u 0) (u 1) x
-  output x := ![x 0, -x 2]
+  output x _ := ![x 0, -x 2]
+
+@[powerlib_foundation] theorem terminalStateSpace_system (m : Circuit) :
+    powerlib.StateSpacePassivity.system (terminalStateSpace m) = portSystem m := by
+  unfold powerlib.StateSpacePassivity.system portSystem
+  congr 1
+  · funext x u
+    exact terminalStateSpace_field m x u
+  · funext x u
+    exact terminalStateSpace_output m x u
+
+@[powerlib_foundation] theorem physicalStorageMatrix_posDef (m : Circuit) :
+    (physicalStorageMatrix m).PosDef := by
+  apply Matrix.PosDef.diagonal
+  intro i
+  fin_cases i
+  · exact m.first.inductance.property
+  · exact m.capacitance.property
+  · exact m.second.inductance.property
+
+@[powerlib_foundation] theorem physicalStorageMatrix_dissipation (m : Circuit) :
+    -(physicalStorageMatrix m * (terminalStateSpace m).A +
+      (terminalStateSpace m).A.transpose * physicalStorageMatrix m) =
+      Matrix.diagonal ![2 * m.first.resistance, 0, 2 * m.second.resistance] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [physicalStorageMatrix, terminalStateSpace, StateSpace.matrix,
+      toStateSpace, generated.convertLCL, powerlib.reciprocal,
+      Matrix.mul_apply, Fin.sum_univ_succ, Matrix.diagonal] <;>
+    field_simp [ne_of_gt m.first.inductance.property,
+      ne_of_gt m.second.inductance.property, ne_of_gt m.capacitance.property] <;> ring
+
+@[powerlib_foundation] theorem physicalStorageMatrix_collocated (m : Circuit) :
+    physicalStorageMatrix m * (terminalStateSpace m).B =
+      (terminalStateSpace m).C.transpose := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [physicalStorageMatrix, terminalStateSpace,
+      toStateSpace, generated.convertLCL, powerlib.reciprocal,
+      Matrix.mul_apply, Fin.sum_univ_succ, Matrix.diagonal] <;>
+    field_simp [ne_of_gt m.first.inductance.property,
+      ne_of_gt m.second.inductance.property, ne_of_gt m.capacitance.property]
+
+/-- Checking component signs constructs a certificate for the general
+state-space theorem. No LCL-specific differential or stability proof occurs
+in this construction. -/
+def physicalStateSpaceCertificate (m : Circuit) (hp : m.Passive) :
+    powerlib.StateSpacePassivity.CollocatedCertificate (terminalStateSpace m) where
+  P := physicalStorageMatrix m
+  positive := physicalStorageMatrix_posDef m
+  dissipation := by
+    rw [physicalStorageMatrix_dissipation]
+    apply Matrix.PosSemidef.diagonal
+    intro i
+    fin_cases i <;> simp <;> linarith [hp.1, hp.2]
+  collocated := physicalStorageMatrix_collocated m
+  feedthrough := Matrix.PosSemidef.zero
 
 def IsPortTrajectory (m : Circuit) (u : ℝ → PortInput) (x : ℝ → State) : Prop :=
   ∀ t ∈ Ici (0 : ℝ),
@@ -46,12 +143,57 @@ def IsPortTrajectory (m : Circuit) (u : ℝ → PortInput) (x : ℝ → State) :
       IsTrajectory m u vg x :=
   Iff.rfl
 
+@[simp, powerlib_foundation] theorem terminalStateSpace_trajectory_iff (m : Circuit)
+    (u vg : ℝ) (x : ℝ → State) :
+    powerlib.Passivity.IsTrajectory (powerlib.StateSpacePassivity.system (terminalStateSpace m))
+      (fun _ => ![u, vg]) x ↔ IsTrajectory m u vg x := by
+  rw [terminalStateSpace_system]
+  exact portTrajectory_constant_iff m u vg x
+
+@[simp, powerlib_foundation] theorem terminalStateSpace_equilibrium_iff (m : Circuit)
+    (u vg : ℝ) (e : State) :
+    powerlib.StateSpacePassivity.IsEquilibrium (terminalStateSpace m) ![u, vg] e ↔
+      IsEquilibrium m u vg e := by
+  simp [powerlib.StateSpacePassivity.IsEquilibrium, terminalStateSpace_field,
+    IsEquilibrium]
+
+@[simp, powerlib_foundation] theorem terminalStateSpace_stability_iff (m : Circuit)
+    (u vg : ℝ) (e : State) :
+    powerlib.StateSpacePassivity.LyapunovStableAt (terminalStateSpace m) ![u, vg] e ↔
+      LyapunovStable m u vg e := by
+  simp only [powerlib.StateSpacePassivity.LyapunovStableAt, LyapunovStable,
+    terminalStateSpace_trajectory_iff]
+
 def portEnergy (m : Circuit) (x : State) : ℝ :=
   quadraticEnergy (physicalWeights m) x / 2
 
 def portEnergyRate (m : Circuit) (x : State) (u : PortInput) : ℝ :=
   u 0 * x 0 - u 1 * x 2 - m.first.resistance * (x 0) ^ 2 -
     m.second.resistance * (x 2) ^ 2
+
+@[simp, powerlib_foundation] theorem terminalStateSpace_energy (m : Circuit) (x : State) :
+    powerlib.StateSpacePassivity.energy (physicalStorageMatrix m) x = portEnergy m x := by
+  simp [powerlib.StateSpacePassivity.energy, physicalStorageMatrix,
+    portEnergy, quadraticEnergy, energy, physicalWeights,
+    Matrix.mulVec_diagonal, dotProduct, Fin.sum_univ_succ]
+  ring
+
+@[simp, powerlib_foundation] theorem terminalStateSpace_energy_function (m : Circuit) :
+    powerlib.StateSpacePassivity.energy (physicalStorageMatrix m) = portEnergy m :=
+  funext (terminalStateSpace_energy m)
+
+@[powerlib_foundation] theorem terminalStateSpace_energyRate (m : Circuit)
+    (x : State) (u : PortInput) :
+    dotProduct ((physicalStorageMatrix m).mulVec x)
+      (powerlib.StateSpacePassivity.field (terminalStateSpace m) x u) =
+      portEnergyRate m x u := by
+  rw [terminalStateSpace_field]
+  simp [physicalStorageMatrix, Matrix.mulVec_diagonal, dotProduct,
+    Fin.sum_univ_succ, StateSpace.vectorField, StateSpace.field,
+    toStateSpace, generated.convertLCL, powerlib.reciprocal, portEnergyRate]
+  field_simp [ne_of_gt m.first.inductance.property,
+    ne_of_gt m.second.inductance.property, ne_of_gt m.capacitance.property]
+  ring
 
 @[simp, powerlib_foundation] theorem port_supply (m : Circuit) (x : State) (u : PortInput) :
     powerlib.Passivity.supply (portSystem m) x u = u 0 * x 0 - u 1 * x 2 := by
@@ -63,39 +205,43 @@ def portEnergyRate (m : Circuit) (x : State) (u : PortInput) : ℝ :=
     {t : ℝ} (ht : 0 ≤ t) :
     HasDerivWithinAt (fun s => portEnergy m (x s))
       (portEnergyRate m (x t) (u t)) (Ici 0) t := by
-  have h := (quadraticEnergy_derivative (physicalWeights m) (hx t ht)).div_const 2
-  convert h using 1
-  dsimp [portEnergyRate, StateSpace.vectorField]
-  rw [same_dynamics]
-  dsimp [energyDerivative, physicalWeights]
-  field_simp [ne_of_gt m.first.inductance.property, ne_of_gt m.second.inductance.property,
-    ne_of_gt m.capacitance.property]
-  ring
+  have hsym : (physicalStorageMatrix m).transpose = physicalStorageMatrix m := by
+    simp [physicalStorageMatrix]
+  have hx' : HasDerivWithinAt x
+      (powerlib.StateSpacePassivity.field (terminalStateSpace m) (x t) (u t)) (Ici 0) t := by
+    simpa only [terminalStateSpace_field] using hx t ht
+  simpa only [terminalStateSpace_energy, terminalStateSpace_energyRate] using
+    powerlib.StateSpacePassivity.energy_derivative (physicalStorageMatrix m) hsym hx'
 
 def certifiedPortStorage {m : Circuit} (p : SymmetricMatrix)
     (hweights : p = physicalWeights m) (hp : m.Passive) :
-    powerlib.Passivity.QuadraticStorage (portSystem m) where
-  energy x := quadraticEnergy p x / 2
-  rate := portEnergyRate m
-  energyDerivative := by
-    subst p
-    intro u x hx t ht
-    exact portEnergy_derivative hx ht
-  dissipation := by
-    intro x u
-    rw [port_supply]
-    dsimp [portEnergyRate]
-    nlinarith [mul_nonneg hp.1 (sq_nonneg (x 0)),
-      mul_nonneg hp.2 (sq_nonneg (x 2))]
-  continuous := (quadraticEnergy_continuous p).div_const 2
-  homogeneous := by
-    intro a x
-    rw [quadraticEnergy_smul]
-    ring
-  positive := by
-    subst p
-    intro x hx
-    exact div_pos (physicalEnergy_positive m x hx) (by norm_num)
+    powerlib.Passivity.QuadraticStorage (portSystem m) := by
+  let V := (physicalStateSpaceCertificate m hp).toCertificate.storage
+  have he : (fun x => quadraticEnergy p x / 2) = V.energy := by
+    rw [hweights]
+    exact (terminalStateSpace_energy_function m).symm
+  exact {
+    energy := fun x => quadraticEnergy p x / 2
+    rate := V.rate
+    energyDerivative := by
+      intro u x hx t ht
+      change HasDerivWithinAt (fun s => (fun y => quadraticEnergy p y / 2) (x s)) _ _ _
+      rw [he]
+      apply V.energyDerivative (t := t) _ ht
+      simpa only [terminalStateSpace_system] using hx
+    dissipation := by
+      intro x u
+      simpa only [terminalStateSpace_system] using V.dissipation x u
+    continuous := by rw [he]; exact V.continuous
+    homogeneous := by
+      change ∀ a x, (fun y => quadraticEnergy p y / 2) (a • x) =
+        a ^ 2 * (fun y => quadraticEnergy p y / 2) x
+      rw [he]
+      exact V.homogeneous
+    positive := by
+      change ∀ x ≠ 0, 0 < (fun y => quadraticEnergy p y / 2) x
+      rw [he]
+      exact V.positive }
 
 def physicalPortStorage (m : Circuit) (hp : m.Passive) :
     powerlib.Passivity.QuadraticStorage (portSystem m) :=
@@ -119,21 +265,25 @@ def StorageAccepted.portStorage {m : Circuit} (c : StorageAccepted m) :
     powerlib.Passivity.QuadraticStorage (portSystem m) :=
   certifiedPortStorage c.p c.weights_exact c.passive
 
+def StorageAccepted.stateSpaceCertificate {m : Circuit} (c : StorageAccepted m) :
+    powerlib.StateSpacePassivity.Certificate (terminalStateSpace m) :=
+  (physicalStateSpaceCertificate m c.passive).toCertificate
+
+@[simp, powerlib_foundation] theorem StorageAccepted.stateSpaceCertificate_matrix {m : Circuit}
+    (c : StorageAccepted m) : c.stateSpaceCertificate.P = physicalStorageMatrix m := rfl
+
 @[simp, powerlib_foundation] theorem StorageAccepted.portStorage_energy {m : Circuit}
     (c : StorageAccepted m) (x : State) :
     c.portStorage.energy x = portEnergy m x := by
   simp [StorageAccepted.portStorage, certifiedPortStorage, portEnergy, c.weights_exact]
 
-@[powerlib_domain, aesop unsafe apply] theorem StorageAccepted.passiveWithStorage {m : Circuit}
+@[powerlib_domain] theorem StorageAccepted.passiveWithStorage {m : Circuit}
     (c : StorageAccepted m) :
     powerlib.Passivity.PassiveWithStorage (portSystem m) (portEnergy m) := by
-  have h := c.portStorage.passiveWithStorage
-  have he : c.portStorage.energy = portEnergy m :=
-    funext (fun x => c.portStorage_energy x)
-  rw [he] at h
-  exact h
+  simpa only [terminalStateSpace_system, StorageAccepted.stateSpaceCertificate_matrix,
+    terminalStateSpace_energy_function] using c.stateSpaceCertificate.passiveWithStorage
 
-@[powerlib_domain, aesop unsafe apply] theorem physical_passiveWithStorage {m : Circuit} (hp : m.Passive) :
+@[powerlib_domain] theorem physical_passiveWithStorage {m : Circuit} (hp : m.Passive) :
     powerlib.Passivity.PassiveWithStorage (portSystem m) (portEnergy m) :=
   (synthesizeStorage m hp).passiveWithStorage
 
@@ -141,35 +291,33 @@ def StorageAccepted.portStorage {m : Circuit} (c : StorageAccepted m) :
     powerlib.Passivity.IsEquilibrium (portSystem m) 0 :=
   zero_equilibrium m
 
-/-- Transport origin stability of the terminal-port system through the
-equilibrium-shift conversion checked for the original circuit. -/
+/-- Transport the general state-space equilibrium-shift theorem through the
+checked equality with the original circuit dynamics. -/
 @[powerlib_foundation] theorem lyapunovStable_of_portSystem {m : Circuit}
     (hs : powerlib.Passivity.LyapunovStable (portSystem m))
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) :
     LyapunovStable m u vg e := by
-  intro ε hε
-  obtain ⟨δ, hδ, hstable⟩ := hs ε hε
-  refine ⟨δ, hδ, ?_⟩
-  intro x hx h0 t ht
-  have hshift : powerlib.Passivity.IsTrajectory (portSystem m) (fun _ => 0)
-      (fun s => x s - e) := trajectory_shift he hx
-  exact hstable (fun s => x s - e) hshift h0 t ht
+  apply (terminalStateSpace_stability_iff m u vg e).mp
+  apply powerlib.StateSpacePassivity.lyapunovStableAt_of_zeroInput
+    ((terminalStateSpace_equilibrium_iff m u vg e).mpr he)
+  simpa only [terminalStateSpace_system] using hs
 
 /-- Differential physical passivity implies Lyapunov stability after the
 checked equilibrium shift. No strictly negative energy rate is required. -/
-@[powerlib_domain, aesop unsafe apply] theorem passive_lyapunovStable_via_ports {m : Circuit}
+@[powerlib_domain] theorem passive_lyapunovStable_via_ports {m : Circuit}
     (hp : m.Passive) {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) :
     LyapunovStable m u vg e :=
-  lyapunovStable_of_portSystem
-    ((physicalPortStorage m hp).lyapunovStable (port_zero_equilibrium m)) he
+  lyapunovStable_of_portSystem (by
+    simpa only [terminalStateSpace_system] using
+      (physicalStateSpaceCertificate m hp).toCertificate.lyapunovStable) he
 
-@[powerlib_domain, aesop unsafe apply] theorem StorageAccepted.lyapunovStable {m : Circuit}
+@[powerlib_domain] theorem StorageAccepted.lyapunovStable {m : Circuit}
     (c : StorageAccepted m) {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) :
     LyapunovStable m u vg e :=
-  lyapunovStable_of_portSystem
-    (c.portStorage.lyapunovStable (port_zero_equilibrium m)) he
+  lyapunovStable_of_portSystem (by
+    simpa only [terminalStateSpace_system] using c.stateSpaceCertificate.lyapunovStable) he
 
-@[powerlib_domain, aesop unsafe apply] theorem StorageAccepted.zeroInput_stable {m : Circuit}
+@[powerlib_domain] theorem StorageAccepted.zeroInput_stable {m : Circuit}
     (c : StorageAccepted m) : LyapunovStable m 0 0 0 :=
   c.lyapunovStable (zero_equilibrium m)
 
@@ -182,11 +330,15 @@ trajectories. Only the input-output power needs to be integrable. -/
     portEnergy m (x t) - portEnergy m (x 0) ≤
       ∫ s in (0 : ℝ)..t, u s 0 * x s 0 - u s 1 * x s 2 := by
   have hsupply' : IntervalIntegrable
-      (fun s => powerlib.Passivity.supply (portSystem m) (x s) (u s)) volume 0 t := by
-    simpa only [port_supply] using hsupply
-  have h := c.portStorage.integral_passivity hx ht hsupply'
-  change c.portStorage.energy (x t) - c.portStorage.energy (x 0) ≤ _ at h
-  simpa only [StorageAccepted.portStorage_energy, port_supply] using h
+      (fun s => powerlib.Passivity.supply
+        (powerlib.StateSpacePassivity.system (terminalStateSpace m)) (x s) (u s)) volume 0 t := by
+    simpa only [terminalStateSpace_system, port_supply] using hsupply
+  have hx' : powerlib.Passivity.IsTrajectory
+      (powerlib.StateSpacePassivity.system (terminalStateSpace m)) u x := by
+    simpa only [terminalStateSpace_system] using hx
+  simpa only [StorageAccepted.stateSpaceCertificate_matrix, terminalStateSpace_energy,
+    terminalStateSpace_system, port_supply] using
+    c.stateSpaceCertificate.integral_passivity hx' ht hsupply'
 
 @[powerlib_domain] theorem physical_integral_passivity {m : Circuit}
     (hp : m.Passive) {u : ℝ → PortInput} {x : ℝ → State}
@@ -199,21 +351,28 @@ trajectories. Only the input-output power needs to be integrable. -/
 @[powerlib_domain] theorem StorageAccepted.zeroInput_energy_nonincreasing {m : Circuit}
     (c : StorageAccepted m) {x : ℝ → State} (hx : IsTrajectory m 0 0 x) :
     AntitoneOn (fun t => portEnergy m (x t)) (Ici 0) := by
-  have h := c.portStorage.toDissipativeStorage.zeroInput_energy_antitone hx
-  change AntitoneOn (fun t => c.portStorage.energy (x t)) (Ici 0) at h
-  simpa only [StorageAccepted.portStorage_energy] using h
+  have hx' : powerlib.Passivity.IsTrajectory
+      (powerlib.StateSpacePassivity.system (terminalStateSpace m)) (fun _ => 0) x := by
+    rw [terminalStateSpace_system]
+    exact hx
+  simpa only [StorageAccepted.stateSpaceCertificate_matrix, terminalStateSpace_energy] using
+    c.stateSpaceCertificate.zeroInput_energy_antitone hx'
 
 /-- Forward existence is supplied by the matrix-exponential solution of the
 original plant, including lossless plants and nonunique equilibria. -/
 @[powerlib_domain] theorem StorageAccepted.trajectory_exists {m : Circuit}
     (_c : StorageAccepted m) {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e)
-    (initial : State) : ∃ x, IsTrajectory m u vg x ∧ x 0 = initial :=
-  powerlib.LCL.trajectory_exists he initial
+    (initial : State) : ∃ x, IsTrajectory m u vg x ∧ x 0 = initial := by
+  simpa only [terminalStateSpace_trajectory_iff] using
+    powerlib.StateSpacePassivity.equilibrium_trajectory_exists
+      ((terminalStateSpace_equilibrium_iff m u vg e).mpr he) initial
 
 @[powerlib_domain] theorem StorageAccepted.trajectory_unique {m : Circuit}
     (_c : StorageAccepted m) {u vg : ℝ} {e : State} {x y : ℝ → State}
-    (he : IsEquilibrium m u vg e) (hx : IsTrajectory m u vg x)
+    (_he : IsEquilibrium m u vg e) (hx : IsTrajectory m u vg x)
     (hy : IsTrajectory m u vg y) (h0 : x 0 = y 0) : EqOn x y (Ici 0) :=
-  powerlib.LCL.trajectory_unique he hx hy h0
+  powerlib.StateSpacePassivity.trajectory_unique (terminalStateSpace m)
+    ((terminalStateSpace_trajectory_iff m u vg x).mpr hx)
+    ((terminalStateSpace_trajectory_iff m u vg y).mpr hy) h0
 
 end powerlib.LCL

@@ -1,5 +1,20 @@
 import powerlib
 
+-- The same semantic theorem applies to any finite state-space model with a
+-- checked quadratic KYP certificate, regardless of the circuit family.
+example {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [Nonempty ι]
+    (m : powerlib.StateSpacePassivity.Model ι κ)
+    (c : powerlib.StateSpacePassivity.Certificate m) :
+    powerlib.Passivity.LyapunovStable (powerlib.StateSpacePassivity.system m) := by
+  aesop
+
+example {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
+    (m : powerlib.StateSpacePassivity.Model ι κ)
+    (c : powerlib.StateSpacePassivity.Certificate m) :
+    powerlib.Passivity.PassiveWithStorage (powerlib.StateSpacePassivity.system m)
+      (powerlib.StateSpacePassivity.energy c.P) := by
+  aesop
+
 #check powerlib.lcl_stable_iff
 #print axioms powerlib.lcl_stable_iff
 #print axioms powerlib.LCL.Accepted.stable

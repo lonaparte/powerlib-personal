@@ -20,12 +20,12 @@ open scoped Topology
 
 structure System (E : Type*) (ι : Type*) where
   field : E → (ι → ℝ) → E
-  output : E → (ι → ℝ)
+  output : E → (ι → ℝ) → (ι → ℝ)
 
 variable {E ι : Type*} [Fintype ι]
 
 def supply (s : System E ι) (x : E) (u : ι → ℝ) : ℝ :=
-  ∑ i, u i * s.output x i
+  ∑ i, u i * s.output x u i
 
 @[simp, powerlib_foundation] theorem supply_zero (s : System E ι) (x : E) :
     supply s x 0 = 0 := by simp [supply]

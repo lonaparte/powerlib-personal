@@ -41,8 +41,8 @@ run_cmd do
         `intervalIntegral.sub_le_integral_of_hasDeriv_right_of_le),
       (`powerlib.Passivity.DissipativeStorage.zeroInput_energy_antitone,
         `antitoneOn_of_hasDerivWithinAt_nonpos),
-      (`powerlib.PortHamiltonian.trajectory_unique, `ODE_solution_unique),
-      (`powerlib.PortHamiltonian.response_solves, `hasDerivAt_exp_smul_const')] do
+      (`powerlib.StateSpacePassivity.trajectory_unique, `ODE_solution_unique),
+      (`powerlib.StateSpacePassivity.response_solves, `hasDerivAt_exp_smul_const')] do
     let info ← getConstInfo consumer
     let some proof := info.value? | throwError "Missing passivity proof: {consumer}"
     unless proof.getUsedConstants.contains source do

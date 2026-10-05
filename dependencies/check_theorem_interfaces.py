@@ -8,6 +8,7 @@ def check_theorem_interfaces():
     checks = [
         ("PublicTheoremRegistry", "POWERLIB_PUBLIC_THEOREM_REGISTRY_OK"),
         ("NativeTheoremUse", "POWERLIB_NATIVE_THEOREM_USE_OK"),
+        ("StateSpacePassivityCases", "POWERLIB_STATE_SPACE_PASSIVITY_CASES_OK"),
         ("Upstream", "POWERLIB_UPSTREAM_REUSE_OK"),
     ]
     RESULTS.mkdir(parents=True, exist_ok=True)
