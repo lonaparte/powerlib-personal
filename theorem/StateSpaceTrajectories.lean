@@ -27,7 +27,7 @@ omit [Fintype κ] in
     (lipschitzWith_iff_norm_sub_le.mp (operator m).lipschitz x y)
 
 def response (m : Model ι κ) (initial : State ι) (t : ℝ) : State ι :=
-  (NormedSpace.exp (t • operator m)) initial
+  (NormedSpace.exp ℝ (t • operator m)) initial
 
 omit [Fintype κ] in
 @[simp, powerlib_domain] theorem response_initial (m : Model ι κ) (initial : State ι) :
@@ -39,7 +39,7 @@ omit [Fintype κ] in
     HasDerivAt (response m initial) (operator m (response m initial t)) t := by
   have h := (hasDerivAt_exp_smul_const' (operator m) t).clm_apply
     (hasDerivAt_const t initial)
-  simpa [response, ContinuousLinearMap.mul_apply] using! h
+  simpa [response, ContinuousLinearMap.mul_apply] using h
 
 @[powerlib_domain, aesop safe apply] theorem response_trajectory (m : Model ι κ) (initial : State ι) :
     Passivity.IsTrajectory (system m) (fun _ => 0) (response m initial) := by

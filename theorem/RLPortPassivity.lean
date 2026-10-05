@@ -66,6 +66,7 @@ def synthesizePassivityCertificate (m : Impedance) (hR : 0 ≤ m.resistance) :
         Fin.sum_univ_one, toState, Pi.mul_apply]
       rw [same_dynamics]
       field_simp [ne_of_gt m.inductance.property]
+      ring
     rw [hbalance]
     change _ ≤ Passivity.supply (portSystem m) x u
     rw [port_supply]

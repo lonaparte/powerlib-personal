@@ -98,7 +98,7 @@ structure QuadraticStorage (s : System E ι) extends DissipativeStorage s where
   have hsq' : α * ‖x t‖ ^ 2 ≤ α * (C * ‖x 0‖) ^ 2 := by
     nlinarith only [hl, hen, hu, hsq]
   exact (sq_le_sq₀ (norm_nonneg _) (mul_nonneg hC (norm_nonneg _))).mp
-    ((mul_le_mul_iff_right₀ hα).mp hsq')
+    ((mul_le_mul_left hα).mp hsq')
 
 @[powerlib_domain] theorem PassiveWithStorage.lyapunovStable_of_bounds
     {s : System E ι} {energy : E → ℝ} (hp : PassiveWithStorage s energy)
@@ -124,7 +124,7 @@ structure QuadraticStorage (s : System E ι) extends DissipativeStorage s where
     nlinarith only [hl, hen, hu, hsq]
   have hnorm : ‖x t‖ ≤ C * ‖x 0‖ :=
     (sq_le_sq₀ (norm_nonneg _) (mul_nonneg hC.le (norm_nonneg _))).mp
-      ((mul_le_mul_iff_right₀ hα).mp hsq')
+      ((mul_le_mul_left hα).mp hsq')
   exact hnorm.trans_lt
     (by simpa [mul_comm] using (lt_div_iff₀ hC).mp h0)
 

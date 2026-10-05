@@ -22,12 +22,12 @@ attribute [powerlib_foundation] stable
 -- or per-goal rule lists to native or audited proof search.
 universe u
 
-@[powerlib_foundation] theorem imported_application {α : Sort u} (P : α → Prop) (x : α) (h : P x) :
+theorem imported_application {α : Sort u} (P : α → Prop) (x : α) (h : P x) :
     RegistryFixture.Envelope (P x) := by powerlib_search
 
-@[powerlib_foundation] theorem imported_iff (P : Prop) : RegistryFixture.Envelope P ↔ P := by exact?
+theorem imported_iff (P : Prop) : RegistryFixture.Envelope P ↔ P := by exact?
 
-@[powerlib_domain] theorem current_application (m : powerlib.Impedance) (c : powerlib.Accepted m) :
+theorem current_application (m : powerlib.Impedance) (c : powerlib.Accepted m) :
     StableContract m := by powerlib_search
 
 end RegistryCurrent
@@ -65,7 +65,7 @@ run_cmd do
         #[`RegistryFixture.envelope, `RegistryFixture.envelope_iff]),
       (`RegistryCurrent.current_application, #[`RegistryCurrent.stable])] do
     let info ← getConstInfo consumer
-    let some proof := info.value? (allowOpaque := true) | throwError "Missing automatic proof: {consumer}"
+    let some proof := info.value? | throwError "Missing automatic proof: {consumer}"
     unless sources.any proof.getUsedConstants.contains do
       throwError "Automatic search failed to reuse the discovered declaration: {consumer}"
   -- The same dynamically collected registry drives admission, so no handwritten
