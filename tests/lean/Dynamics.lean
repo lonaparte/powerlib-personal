@@ -12,19 +12,19 @@ open powerlib.Dynamics Set Filter Topology
 -- There is a full forward trajectory through every initial state, including n = 0.
 theorem nonlinear_every_initial_state_has_global_solution (n : ℕ) (a : ℝ) (x₀ : State n) :
     ∃ φ : ℝ → State n, φ a = x₀ ∧
-      IsIntegralCurveOn φ (fun _ x => Nonlinear.field x) (Ici a) :=
+      powerlib.Dynamics.IsIntegralCurveOn φ (fun _ x => Nonlinear.field x) (Ici a) :=
   (Nonlinear.globallyExponentiallyStable n).2.1 a x₀
 
 -- This estimate applies to an arbitrary solution, time anchor, and amplitude.
 theorem nonlinear_every_finite_segment_decays {n : ℕ} {φ : ℝ → State n}
-    {a b t : ℝ} (hφ : IsTrajectoryOn φ (@Nonlinear.field n) a b) (ht : t ∈ Icc a b) :
+    {a b t : ℝ} (hφ : powerlib.Dynamics.IsTrajectoryOn φ (@Nonlinear.field n) a b) (ht : t ∈ Icc a b) :
     ‖φ t‖ ≤ Real.exp (-(t - a)) * ‖φ a‖ :=
   Nonlinear.norm_bound hφ ht
 
 -- The public GAS theorem supplies universal attraction, not a selected response.
 theorem nonlinear_every_global_trajectory_converges {n : ℕ} (hn : 0 < n)
     (a : ℝ) (φ : ℝ → State n)
-    (hφ : IsIntegralCurveOn φ (fun _ x => Nonlinear.field x) (Ici a)) :
+    (hφ : powerlib.Dynamics.IsIntegralCurveOn φ (fun _ x => Nonlinear.field x) (Ici a)) :
     Tendsto φ atTop (𝓝 (0 : State n)) :=
   (Nonlinear.globallyAsymptoticallyStable hn).2.2.2 a φ hφ
 
@@ -32,21 +32,21 @@ theorem nonlinear_every_global_trajectory_converges {n : ℕ} (hn : 0 < n)
 theorem lcl_every_initial_state_has_global_solution {m : powerlib.LCL.Circuit}
     (c : powerlib.LCL.Accepted m) (a : ℝ) (x₀ : powerlib.LCL.State3) :
     ∃ φ : ℝ → powerlib.LCL.State3, φ a = x₀ ∧
-      IsIntegralCurveOn φ (fun _ x => m.autonomousField x) (Ici a) :=
+      powerlib.Dynamics.IsIntegralCurveOn φ (fun _ x => m.autonomousField x) (Ici a) :=
   c.autonomousGloballyExponentiallyStable.2.1 a x₀
 
 theorem lcl_uniform_decay_of_every_finite_segment {m : powerlib.LCL.Circuit}
     (c : powerlib.LCL.Accepted m) :
     ∃ C rate : ℝ, 1 ≤ C ∧ 0 < rate ∧
       ∀ (a b : ℝ) (φ : ℝ → powerlib.LCL.State3),
-        IsTrajectoryOn φ m.autonomousField a b →
+        powerlib.Dynamics.IsTrajectoryOn φ m.autonomousField a b →
         ∀ t ∈ Icc a b,
           ‖φ t‖ ≤ C * Real.exp (-(rate * (t - a))) * ‖φ a‖ := by
   simpa only [sub_zero] using c.autonomousGloballyExponentiallyStable.2.2
 
 theorem lcl_every_global_trajectory_converges {m : powerlib.LCL.Circuit}
     (c : powerlib.LCL.Accepted m) (a : ℝ) (φ : ℝ → powerlib.LCL.State3)
-    (hφ : IsIntegralCurveOn φ (fun _ x => m.autonomousField x) (Ici a)) :
+    (hφ : powerlib.Dynamics.IsIntegralCurveOn φ (fun _ x => m.autonomousField x) (Ici a)) :
     Tendsto φ atTop (𝓝 (0 : powerlib.LCL.State3)) :=
   c.autonomousGloballyAsymptoticallyStable.2.2.2 a φ hφ
 
@@ -65,7 +65,7 @@ theorem squareEnergy_lie_derivative (x : ℝ) :
       2 * x * locallyStableField x := by
   have hd := ((hasDerivAt_id x).pow 2).hasFDerivAt
   change fderiv ℝ (fun y : ℝ => id y ^ 2) x (locallyStableField x) = _
-  rw [hd.fderiv]
+  erw [hd.fderiv]
   simp [ContinuousLinearMap.smulRight_apply]
   ring
 
@@ -89,7 +89,7 @@ theorem locallyStableField_not_globallyExponentiallyStable :
   have ht : 0 ≤ t := by
     apply le_of_lt
     exact div_pos (Real.log_pos (by linarith : 1 < C + 1)) hrate
-  have hφ : IsTrajectoryOn (fun _ : ℝ => (1 : ℝ)) locallyStableField 0 t := by
+  have hφ : powerlib.Dynamics.IsTrajectoryOn (fun _ : ℝ => (1 : ℝ)) locallyStableField 0 t := by
     intro s hs
     simpa [locallyStableField] using (hasDerivAt_const s (1 : ℝ)).hasDerivWithinAt
   have hbound := hdecay 0 t (fun _ => 1) hφ t ⟨ht, le_refl t⟩

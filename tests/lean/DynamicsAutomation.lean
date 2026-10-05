@@ -10,7 +10,7 @@ theorem nonlinear_asymptotic {n : ℕ} (hn : 0 < n) :
     GloballyAsymptoticallyStable (@Nonlinear.field n) 0 := by aesop
 
 theorem nonlinear_segment_bound {n : ℕ} {φ : ℝ → State n} {a b t : ℝ}
-    (hφ : IsTrajectoryOn φ (@Nonlinear.field n) a b) (ht : t ∈ Set.Icc a b) :
+    (hφ : powerlib.Dynamics.IsTrajectoryOn φ (@Nonlinear.field n) a b) (ht : t ∈ Set.Icc a b) :
     ‖φ t‖ ≤ Real.exp (-(t - a)) * ‖φ a‖ := by aesop
 
 theorem polynomial_complete {model : Polynomial2.Model} (c : Polynomial2.Accepted model) :

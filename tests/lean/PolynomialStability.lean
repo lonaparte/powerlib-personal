@@ -94,13 +94,13 @@ theorem linearHalf_semantics :
 
 theorem all_finite_trajectories_decay {model : Model} (c : Polynomial2.Accepted model)
     {φ : ℝ → State 2} {a b t : ℝ}
-    (hφ : IsTrajectoryOn φ model.field a b) (ht : t ∈ Set.Icc a b) :
+    (hφ : powerlib.Dynamics.IsTrajectoryOn φ model.field a b) (ht : t ∈ Set.Icc a b) :
     ‖φ t‖ ≤ Real.sqrt ((c.upper : ℝ) / (c.lower : ℝ)) *
       Real.exp (-((c.rate : ℝ) / 2 * (t - a))) * ‖φ a‖ := by
   simpa only [sub_zero] using c.quadraticDecayCertificate.norm_bound hφ ht
 
 theorem heldOut_all_finite_trajectories_decay {φ : ℝ → State 2} {a b t : ℝ}
-    (hφ : IsTrajectoryOn φ heldOut.field a b) (ht : t ∈ Set.Icc a b) :
+    (hφ : powerlib.Dynamics.IsTrajectoryOn φ heldOut.field a b) (ht : t ∈ Set.Icc a b) :
     ‖φ t‖ ≤ Real.sqrt ((heldOutAccepted.upper : ℝ) / (heldOutAccepted.lower : ℝ)) *
       Real.exp (-((heldOutAccepted.rate : ℝ) / 2 * (t - a))) * ‖φ a‖ :=
   all_finite_trajectories_decay heldOutAccepted hφ ht
