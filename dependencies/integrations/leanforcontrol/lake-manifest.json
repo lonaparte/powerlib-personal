@@ -1,6 +1,6 @@
 {
   "version": "1.2.0",
-  "packagesDir": ".lake/packages",
+  "packagesDir": "../../../..",
   "packages": [
     {
       "url": "https://github.com/AnandGokhale/LeanForControl.git",

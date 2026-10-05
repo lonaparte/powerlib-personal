@@ -1,4 +1,5 @@
 name = "powerlib_leanforcontrol"
+packagesDir = "../../../.."
 version = "0.1.0"
 defaultTargets = ["LeanForControlSmoke"]
 
@@ -23,8 +24,9 @@ globs = ["theorem.Attributes", "theorem.LibrarySearch"]
 
 [[lean_lib]]
 name = "PowerLibUpstream"
-roots = ["dependencies.LeanForControl"]
-globs = ["dependencies.LeanForControl"]
+srcDir = "../../.."
+roots = ["dependencies.LeanForControl", "theorem.Upstream.LeanForControl"]
+globs = ["dependencies.LeanForControl", "theorem.Upstream.LeanForControl"]
 
 [[lean_lib]]
 name = "LeanForControlSmoke"

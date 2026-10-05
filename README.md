@@ -20,18 +20,48 @@ toolchain upgrade. The absence of a matching historical pin does not establish
 incompatibility. Preserve upstream provenance and theorem contracts, keep all pins
 explicit, and require the complete build and proof checks to pass together.
 
-## Dependency locations
+## Dependencies
 
-Lake resolves the main package's Mathlib checkout at `.lake/packages/mathlib`.
-The isolated LeanForControl profile resolves its checkouts at
-`dependencies/integrations/leanforcontrol/.lake/packages/mathlib` and
-`dependencies/integrations/leanforcontrol/.lake/packages/LeanForControl`.
-When the main package requires LeanForControl, its checkout is at
-`.lake/packages/LeanForControl`. Use the revisions pinned in each package's
-`lake-manifest.json`. Lake obtains the upstream packages; no manual copying into
-`dependencies/` is required. Complete upstream sources and compiled caches remain
-ignored local dependencies. The repository contains only necessary interfaces,
-formal consumers, exact compatibility changes, and pinned build configuration.
+Mathlib and LeanForControl are imported through their upstream Lean modules.
+Lake downloads the pinned source checkouts as siblings of this repository:
+
+```text
+<parent>/
+  powerlib/
+  mathlib/
+  LeanForControl/
+```
+
+The private repository `powerlib-personal/` uses the same sibling locations.
+Complete upstream sources stay outside the repository. The import interfaces
+are `dependencies/Mathlib.lean` and `dependencies/LeanForControl.lean`; new or
+modified PowerLib theorems and their proofs belong in `theorem/`. Upstream
+proofs are reused through imports.
+
+After downloading the repository, install Elan and run from its root:
+
+```sh
+lake exe cache get
+compatibility_patch="$PWD/dependencies/LeanForControl-4.34.1.patch"
+git -C ../LeanForControl apply --check "$compatibility_patch"
+git -C ../LeanForControl apply "$compatibility_patch"
+lake build
+```
+
+Apply the compatibility diff only to the pinned clean upstream checkout. CI
+checks the original commit and exact applied diff before building. Project Lake
+configuration and dependency pins are committed; upstream sources and local
+caches are not.
+
+The isolated LeanForControl profile shares these source locations, pins, and
+search implementation. After setting up the dependencies, run its independent
+checks with:
+
+```sh
+(cd dependencies/integrations/leanforcontrol && lake exe cache get && lake build)
+```
+
+Integration profile checks do not replace the main build and admission checks.
 
 ## Directions
 

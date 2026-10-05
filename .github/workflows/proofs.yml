@@ -22,12 +22,34 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          invalid_dependencies=$(find dependencies -type d -name '.lake' -prune -o -type f ! -name '*.lean' ! -path 'dependencies/LeanForControl-4.34.1.patch' ! -path 'dependencies/integrations/leanforcontrol/lakefile.toml' ! -path 'dependencies/integrations/leanforcontrol/lake-manifest.json' ! -path 'dependencies/integrations/leanforcontrol/lean-toolchain' -print)
-          test -z "$invalid_dependencies" || { printf '%s\n' "$invalid_dependencies"; exit 1; }
-          nonfiles=$(find dependencies -type d -name '.lake' -prune -o ! -type d ! -type f -print)
-          test -z "$nonfiles" || { printf '%s\n' "$nonfiles"; exit 1; }
-          local_programs=$(git ls-files -- '*.py')
-          test -z "$local_programs" || { printf '%s\n' "$local_programs"; exit 1; }
+          python3 - <<'PYCODE'
+          import json, re, subprocess
+          from pathlib import Path
+          packages = set()
+          for manifest in ('lake-manifest.json', 'dependencies/integrations/leanforcontrol/lake-manifest.json'):
+              packages.update(package['name'].strip('«»') for package in json.loads(Path(manifest).read_text())['packages'])
+          pins = {'dependencies/integrations/leanforcontrol/' + name for name in
+                  ('lakefile.toml', 'lake-manifest.json', 'lean-toolchain')}
+          for name, namespace in (('Mathlib', 'Mathlib'), ('LeanForControl', 'LeanForControl')):
+              interface = Path('dependencies') / (name + '.lean')
+              for line in interface.read_text().splitlines():
+                  if line.strip() and not line.lstrip().startswith('--') and not re.fullmatch(
+                          r'import ' + namespace + r'(?:\.[A-Za-z0-9_]+)*', line.strip()):
+                      raise SystemExit('Dependency interface contains first-party declarations: ' + str(interface))
+          entries = subprocess.check_output(['git', 'ls-files', '--stage', '-z']).decode().split('\0')
+          for entry in filter(None, entries):
+              metadata, name = entry.split('\t', 1)
+              mode = metadata.split()[0]
+              if name.endswith('.py') or name.startswith('archive/'):
+                  raise SystemExit('Local support or archive file was tracked: ' + name)
+              if any(name.startswith(package + '/') for package in packages):
+                  raise SystemExit('Complete upstream source was tracked: ' + name)
+              if not name.startswith('dependencies/'):
+                  continue
+              if mode not in ('100644', '100755') or not (
+                      name.endswith('.lean') or name in pins or name == 'dependencies/LeanForControl-4.34.1.patch'):
+                  raise SystemExit('Nonformal dependency material was tracked: ' + name)
+          PYCODE
       - uses: leanprover/lean-action@f061402b660e0c34644504b324e830f2991d4865
         with:
           use-mathlib-cache: "true"
@@ -38,7 +60,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          lfc_package="$PWD/.lake/packages/LeanForControl"
+          lfc_package="$GITHUB_WORKSPACE/../LeanForControl"
           patch_file="$GITHUB_WORKSPACE/dependencies/LeanForControl-4.34.1.patch"
           if [ -d "$lfc_package" ]; then
             test "$(git -C "$lfc_package" rev-parse HEAD)" = 7507ed04d94068fe3e7d4624b3383433a861bea7
@@ -208,7 +230,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          lfc_package="$PWD/.lake/packages/LeanForControl"
+          lfc_package="$GITHUB_WORKSPACE/../LeanForControl"
           patch_file="$GITHUB_WORKSPACE/dependencies/LeanForControl-4.34.1.patch"
           if [ -d "$lfc_package" ]; then
             test "$(git -C "$lfc_package" rev-parse HEAD)" = 7507ed04d94068fe3e7d4624b3383433a861bea7
