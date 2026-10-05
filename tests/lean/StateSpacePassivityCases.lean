@@ -248,8 +248,6 @@ run_cmd do
         `powerlib.StateSpacePassivity.Certificate.lyapunovStable),
       (`StateSpacePassivityCases.arbitrary_dimensions_integral,
         `powerlib.StateSpacePassivity.Certificate.integral_passivity),
-      (`StateSpacePassivityCases.arbitrary_dimensions_forward_solution,
-        `powerlib.StateSpacePassivity.trajectory_exists),
       (`StateSpacePassivityCases.arbitrary_input_uniqueness,
         `powerlib.StateSpacePassivity.trajectory_unique),
       (`StateSpacePassivityCases.full_kyp_passive,
@@ -265,6 +263,9 @@ run_cmd do
     unless proof.getUsedConstants.contains source do
       throwError "Native consumer did not use the general state-space theorem {source}"
   for (consumer, sources) in #[
+      (`StateSpacePassivityCases.arbitrary_dimensions_forward_solution,
+        #[`powerlib.StateSpacePassivity.trajectory_exists,
+          `powerlib.StateSpacePassivity.trajectory_exists_unique]),
       (`StateSpacePassivityCases.arbitrary_dimensions_equilibrium_stable,
         #[`powerlib.StateSpacePassivity.Certificate.lyapunovStableAt,
           `powerlib.StateSpacePassivity.Certificate.lyapunovStable]),
