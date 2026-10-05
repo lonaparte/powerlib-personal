@@ -3,9 +3,9 @@ import powerlib
 namespace UpstreamConsumers
 
 -- No upstream names or PowerLib classification attributes are supplied to search.
-theorem exp_positive (x : ℝ) : 0 < Real.exp x := by powerlib_search
-theorem exp_add (x y : ℝ) : Real.exp (x + y) = Real.exp x * Real.exp y := by powerlib_search
-theorem exp_injective {x y : ℝ} (h : Real.exp x = Real.exp y) : x = y := by powerlib_search
+@[powerlib_foundation] theorem exp_positive (x : ℝ) : 0 < Real.exp x := by powerlib_search
+@[powerlib_foundation] theorem exp_add (x y : ℝ) : Real.exp (x + y) = Real.exp x * Real.exp y := by powerlib_search
+@[powerlib_foundation] theorem exp_injective {x y : ℝ} (h : Real.exp x = Real.exp y) : x = y := by powerlib_search
 
 end UpstreamConsumers
 
