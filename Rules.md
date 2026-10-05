@@ -249,11 +249,16 @@ a separately verified compatibility change before that dependency can be used.
 ## 16. Formal theorem dependencies
 
 `dependencies/` is the formal interface to the upstream results PowerLib uses.
-Its Lean import interfaces and kernel-checked adapters directly invoke Mathlib
-or LeanForControl declarations. Preserve the actual upstream theorem, defining
-module, assumptions, version, and transitive axioms. Do not copy upstream proofs
+Its Lean import interfaces directly import Mathlib or LeanForControl modules.
+First-party adapters, wrappers, and new or modified theorem proofs belong in
+`theorem/`; importing upstream theorems does not copy their proofs. Preserve
+the actual upstream theorem, defining module, assumptions, version, and
+transitive axioms. Do not copy upstream proofs
 into PowerLib or replace their import with a local reimplementation. Lake resolves
-dependency package sources from the pinned manifest.
+dependency package sources from the pinned manifest. Full upstream checkouts
+live beside the repository as `../mathlib/` and `../LeanForControl/`. Keep them
+outside the repository; they must not be committed or promoted. The project
+commits its portable Lake configuration and fixed dependency versions.
 
 A demonstrated upstream version mismatch may require a minimal exact
 compatibility diff in `dependencies/`. Keep the actual upstream revision pinned,

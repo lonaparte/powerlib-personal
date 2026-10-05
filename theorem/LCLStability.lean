@@ -68,7 +68,7 @@ def squaredSize (x : State) : ℝ := (x 0) ^ 2 + (x 1) ^ 2 + (x 2) ^ 2
   have h23 := ((hd 1).const_mul (2 * p.p23)).mul (hd 2)
   have h33 := ((hd 2).pow 2).const_mul p.p33
   have h := ((((h11.add h12).add h13).add h22).add h23).add h33
-  convert h using 1
+  convert! h using 1
   dsimp [energyDerivative]
   ring
 
@@ -140,7 +140,7 @@ theorem Accepted.globallyExponentiallyStable {m : Circuit} (c : Accepted m)
   have hsquare : α * ‖x t - e‖ ^ 2 ≤
       α * (C * ‖x 0 - e‖ * Real.exp (-(1 / (2 * β)) * t)) ^ 2 := by
     nlinarith only [h0, h1]
-  exact (sq_le_sq₀ (norm_nonneg (x t - e)) hbound).mp ((mul_le_mul_left hα).mp hsquare)
+  exact (sq_le_sq₀ (norm_nonneg (x t - e)) hbound).mp ((mul_le_mul_iff_right₀ hα).mp hsquare)
 
 @[powerlib_domain] theorem lyapunovStable_of_globallyExponentiallyStable
     {m : Circuit} {u vg : ℝ} {e : State} (h : GloballyExponentiallyStable m u vg e) :
@@ -160,7 +160,7 @@ theorem Accepted.globallyExponentiallyStable {m : Circuit} (c : Accepted m)
     {x : ℝ → State} (hx : IsTrajectory m u vg x) : Tendsto x atTop (𝓝 e) := by
   obtain ⟨C, _, rate, hr, h⟩ := h
   have hexp : Tendsto (fun t : ℝ => Real.exp (-rate * t)) atTop (𝓝 0) := by
-    simpa only [neg_mul] using Real.tendsto_exp_neg_atTop_nhds_zero.comp
+    simpa only [neg_mul] using! Real.tendsto_exp_neg_atTop_nhds_zero.comp
       (tendsto_id.const_mul_atTop hr)
   have hu : Tendsto (fun t : ℝ => C * ‖x 0 - e‖ * Real.exp (-rate * t)) atTop (𝓝 0) := by
     simpa using hexp.const_mul (C * ‖x 0 - e‖)

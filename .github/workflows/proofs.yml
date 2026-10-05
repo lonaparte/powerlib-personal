@@ -22,18 +22,57 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          invalid_dependencies=$(find dependencies -type f ! -name '*.lean' ! -path 'dependencies/integrations/leanforcontrol/lakefile.toml' ! -path 'dependencies/integrations/leanforcontrol/lake-manifest.json' ! -path 'dependencies/integrations/leanforcontrol/lean-toolchain' -print)
-          test -z "$invalid_dependencies" || { printf '%s\n' "$invalid_dependencies"; exit 1; }
-          nonfiles=$(find dependencies ! -type d ! -type f -print)
-          test -z "$nonfiles" || { printf '%s\n' "$nonfiles"; exit 1; }
-          local_programs=$(git ls-files -- '*.py')
-          test -z "$local_programs" || { printf '%s\n' "$local_programs"; exit 1; }
+          python3 - <<'PYCODE'
+          import json, re, subprocess
+          from pathlib import Path
+          packages = set()
+          for manifest in ('lake-manifest.json', 'dependencies/integrations/leanforcontrol/lake-manifest.json'):
+              packages.update(package['name'].strip('«»') for package in json.loads(Path(manifest).read_text())['packages'])
+          pins = {'dependencies/integrations/leanforcontrol/' + name for name in
+                  ('lakefile.toml', 'lake-manifest.json', 'lean-toolchain')}
+          for name, namespace in (('Mathlib', 'Mathlib'), ('LeanForControl', 'LeanForControl')):
+              interface = Path('dependencies') / (name + '.lean')
+              for line in interface.read_text().splitlines():
+                  if line.strip() and not line.lstrip().startswith('--') and not re.fullmatch(
+                          r'import ' + namespace + r'(?:\.[A-Za-z0-9_]+)*', line.strip()):
+                      raise SystemExit('Dependency interface contains first-party declarations: ' + str(interface))
+          entries = subprocess.check_output(['git', 'ls-files', '--stage', '-z']).decode().split('\0')
+          for entry in filter(None, entries):
+              metadata, name = entry.split('\t', 1)
+              mode = metadata.split()[0]
+              if name.endswith('.py') or name.startswith('archive/'):
+                  raise SystemExit('Local support or archive file was tracked: ' + name)
+              if any(name.startswith(package + '/') for package in packages):
+                  raise SystemExit('Complete upstream source was tracked: ' + name)
+              if not name.startswith('dependencies/'):
+                  continue
+              if mode not in ('100644', '100755') or not (
+                      name.endswith('.lean') or name in pins or name == 'dependencies/LeanForControl-4.34.1.patch'):
+                  raise SystemExit('Nonformal dependency material was tracked: ' + name)
+          PYCODE
       - uses: leanprover/lean-action@f061402b660e0c34644504b324e830f2991d4865
         with:
           use-mathlib-cache: "true"
           build: "false"
           test: "false"
           lint: "false"
+      - name: Apply and audit the exact LeanForControl compatibility diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          lfc_package="$GITHUB_WORKSPACE/../LeanForControl"
+          patch_file="$GITHUB_WORKSPACE/dependencies/LeanForControl-4.34.1.patch"
+          if [ -d "$lfc_package" ]; then
+            test "$(git -C "$lfc_package" rev-parse HEAD)" = 7507ed04d94068fe3e7d4624b3383433a861bea7
+            if git -C "$lfc_package" diff --quiet HEAD --; then
+              git -C "$lfc_package" apply --check "$patch_file"
+              git -C "$lfc_package" apply "$patch_file"
+            fi
+            git -C "$lfc_package" diff --full-index --binary HEAD -- | cmp - "$patch_file"
+            git -C "$lfc_package" diff --check
+            test -z "$(git -C "$lfc_package" ls-files --others --exclude-standard)"
+            printf '%s\n' POWERLIB_UPSTREAM_COMPATIBILITY_SOURCE_OK
+          fi
       - name: Install pinned Agda and Cubical outside the repository
         shell: bash
         run: |
@@ -52,18 +91,84 @@ jobs:
           git clone --depth 1 --branch v0.9 https://github.com/agda/cubical.git "$agda_cache/cubical"
           test "$(git -C "$agda_cache/cubical" rev-parse HEAD)" = b150186d2544e7efeddd31e5d14a8b9ecbb100f7
           printf '%s\n' "$agda_cache" >> "$GITHUB_PATH"
-      - name: Check both Agda foundations
+      - name: Check Agda foundations and actual normalized wire contracts
         shell: bash
         run: |
           set -euo pipefail
-          agda_stage="$RUNNER_TEMP/powerlib-agda-check"
-          mkdir -p "$agda_stage/theorems"
-          cp theorem/Conversion.agda theorem/LCLConversion.agda "$agda_stage/theorem/"
-          cp powerlib.agda-lib "$agda_stage/"
-          printf '%s\n' "$RUNNER_TEMP/powerlib-agda/cubical/cubical.agda-lib" > "$agda_stage/libraries"
-          cd "$agda_stage"
-          agda --library-file="$agda_stage/libraries" --no-default-libraries theorem/Conversion.agda
-          agda --library-file="$agda_stage/libraries" --no-default-libraries theorem/LCLConversion.agda
+          python3 - <<'PY'
+          import json, os, re, shutil, subprocess
+          from pathlib import Path
+          def extract(log):
+              forms = []
+              for line in log.splitlines():
+                  line = line.removeprefix("JSON> ").strip()
+                  if not line.startswith("{"):
+                      continue
+                  event = json.loads(line)
+                  info = event.get("info", {})
+                  if event.get("kind") == "Error" or info.get("kind") == "Error":
+                      raise ValueError("Agda normalization failed")
+                  if info.get("kind") == "AllGoalsWarnings" and any(
+                          info.get(key) for key in ("errors", "visibleGoals", "invisibleGoals")):
+                      raise ValueError("Agda left errors or unsolved goals")
+                  if info.get("kind") == "NormalForm":
+                      forms.append(info["expr"])
+              if len(forms) != 1:
+                  raise ValueError("Expected exactly one normalized wire")
+              text = forms[0].replace("Agda.Builtin.List.List.", "")
+              # Accept only a fully parenthesized natural-number list, never source code.
+              tokens = re.findall(r"\d+|∷|\[\]|[()]", text)
+              if re.sub(r"\d+|∷|\[\]|[()]|\s+", "", text):
+                  raise ValueError("Unexpected wire syntax")
+              position = 0
+
+              def parse_list():
+                  nonlocal position
+                  if position >= len(tokens):
+                      raise ValueError("Truncated wire list")
+                  token = tokens[position]
+                  position += 1
+                  if token == "(":
+                      values = parse_list()
+                      if position >= len(tokens) or tokens[position] != ")":
+                          raise ValueError("Unbalanced wire list")
+                      position += 1
+                      return values
+                  if token == "[]":
+                      return []
+                  if not token.isdecimal() or position >= len(tokens) or tokens[position] != "∷":
+                      raise ValueError("Expected a natural-number cons")
+                  position += 1
+                  return [int(token)] + parse_list()
+
+              values = parse_list()
+              if position != len(tokens):
+                  raise ValueError("Trailing wire syntax")
+              return values
+
+          expected = {'Conversion.agda': [20261003, 1, 2, 0, 3, 1, 3, 1], 'LCLConversion.agda': [20261004, 1, 1, 0, 0, 2, 0, 2, 2, 0, 2, 1, 0, 1, 2, 0, 3, 2, 0, 3, 2, 0, 4]}
+
+          stage = Path(os.environ['RUNNER_TEMP']) / 'powerlib-agda-check'
+          (stage / 'theorem').mkdir(parents=True, exist_ok=True)
+          for source in Path('theorem').glob('*.agda'):
+              shutil.copyfile(source, stage / 'theorem' / source.name)
+          shutil.copyfile('powerlib.agda-lib', stage / 'powerlib.agda-lib')
+          libraries = stage / 'libraries'
+          libraries.write_text(str(Path(os.environ['RUNNER_TEMP']) / 'powerlib-agda/cubical/cubical.agda-lib') + '\n')
+          flags = ['agda', f'--library-file={libraries}', '--no-default-libraries']
+          for name, words in expected.items():
+              entry = stage / 'theorem' / name
+              subprocess.run(flags + [str(entry)], cwd=stage, check=True)
+              path = json.dumps(str(entry))
+              commands = (f'IOTCM {path} None Direct (Cmd_load {path} [])\n'
+                          f'IOTCM {path} None Direct (Cmd_compute_toplevel DefaultCompute "wire")\n')
+              result = subprocess.run(flags + ['--interaction-json', '--interaction-exit-on-error'],
+                  cwd=stage, input=commands, text=True, capture_output=True, check=True)
+              print(result.stdout)
+              if extract(result.stdout) != words:
+                  raise RuntimeError('Agda executable conversion does not match the checked Lean endpoint: ' + name)
+              print('POWERLIB_AGDA_WIRE_OK: ' + name)
+          PY
       - name: Build the pinned public Lean library
         run: lake build
       - name: Verify recorded Agda source identities
@@ -117,9 +222,31 @@ jobs:
       - uses: leanprover/lean-action@f061402b660e0c34644504b324e830f2991d4865
         with:
           lake-package-directory: dependencies/integrations/leanforcontrol
+          build: "false"
           use-mathlib-cache: "true"
           test: "false"
           lint: "false"
+      - name: Apply and audit the exact LeanForControl compatibility diff
+        working-directory: dependencies/integrations/leanforcontrol
+        shell: bash
+        run: |
+          set -euo pipefail
+          lfc_package="$GITHUB_WORKSPACE/../LeanForControl"
+          patch_file="$GITHUB_WORKSPACE/dependencies/LeanForControl-4.34.1.patch"
+          if [ -d "$lfc_package" ]; then
+            test "$(git -C "$lfc_package" rev-parse HEAD)" = 7507ed04d94068fe3e7d4624b3383433a861bea7
+            if git -C "$lfc_package" diff --quiet HEAD --; then
+              git -C "$lfc_package" apply --check "$patch_file"
+              git -C "$lfc_package" apply "$patch_file"
+            fi
+            git -C "$lfc_package" diff --full-index --binary HEAD -- | cmp - "$patch_file"
+            git -C "$lfc_package" diff --check
+            test -z "$(git -C "$lfc_package" ls-files --others --exclude-standard)"
+            printf '%s\n' POWERLIB_UPSTREAM_COMPATIBILITY_SOURCE_OK
+          fi
+      - name: Build the isolated pinned LeanForControl profile
+        working-directory: dependencies/integrations/leanforcontrol
+        run: lake build
       - name: Check upstream reuse and rejection of unapproved axioms
         working-directory: dependencies/integrations/leanforcontrol
         run: lake env lean LeanForControlSmoke.lean
