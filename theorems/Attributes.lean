@@ -12,6 +12,13 @@ def TheoremKind.label : TheoremKind → String
   | .foundation => "foundation"
   | .domain => "domain"
 
+private def lookupKind? (attributes : EnumAttributes TheoremKind)
+    (env : Environment) (name : Name) : Option TheoremKind :=
+  -- After-typechecking updates may be newer than a declaration's async snapshot.
+  -- A local map lookup sees those updates without joining unfinished proofs.
+  ((attributes.ext.getState env (asyncMode := .local)).find? name).orElse
+    (fun _ => attributes.getValue env name)
+
 initialize theoremKinds : EnumAttributes TheoremKind ← do
   -- Use Lean's native metadata persistence and asynchronous declaration lookup.
   -- The validator closes over the registry only after it has been initialized.
@@ -24,18 +31,16 @@ initialize theoremKinds : EnumAttributes TheoremKind ← do
       | .thmInfo _ => pure ()
       | _ => throwError "PowerLib theorem attributes require a theorem: {name}"
       if let some attributes ← registry.get then
-        if let some previous := attributes.getValue (← getEnv) name then
+        if let some previous := lookupKind? attributes (← getEnv) name then
           unless previous == kind do
             throwError "PowerLib theorem {name} is already classified as {previous.label}")
   registry.set (some attributes)
   pure attributes
 
--- Whole-registry queries belong at command boundaries, outside a pending proof.
 def kindOf? (env : Environment) (name : Name) : Option TheoremKind :=
-  -- Join current-file attribute updates as well as reading imported metadata.
-  ((theoremKinds.ext.getState env (asyncMode := .sync)).find? name).orElse
-    (fun _ => theoremKinds.getValue env name)
+  lookupKind? theoremKinds env name
 
+-- Whole-registry queries belong at command boundaries, outside a pending proof.
 def theoremNames (env : Environment) (kind : Option TheoremKind := none) : Array Name := Id.run do
   let mut entries := theoremKinds.ext.getState env (asyncMode := .sync)
   for modIdx in [:env.header.moduleNames.size] do

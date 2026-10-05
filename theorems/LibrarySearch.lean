@@ -32,7 +32,7 @@ def describe (env : Environment) (name : Name) : Option TheoremEntry := do
       | some index => env.header.moduleNames[index]!
       | none => env.mainModule
     -- Read only this declaration's metadata while another proof is in progress.
-    some ⟨name, moduleName, info.levelParams, info.type, Registry.theoremKinds.getValue env name,
+    some ⟨name, moduleName, info.levelParams, info.type, Registry.kindOf? env name,
       declarationAxioms env name⟩
 
 def eligible (env : Environment) (name : Name) : Bool :=

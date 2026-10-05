@@ -35,6 +35,11 @@ end RegistryCurrent
 open Lean Elab Command in
 run_cmd do
   let env ← getEnv
+  -- Read current-file metadata before any whole-registry synchronization.
+  let some current := powerlib.Search.describe env `RegistryCurrent.stable |
+    throwError "A current-file tagged theorem lost its metadata"
+  unless current.kind == some .domain do
+    throwError "The current-file theorem classification changed"
   let names := powerlib.Registry.theoremNames env
   let domains := powerlib.Registry.theoremNames env (some .domain)
   let foundations := powerlib.Registry.theoremNames env (some .foundation)
@@ -55,10 +60,6 @@ run_cmd do
   unless imported.moduleName == `tests.lean.RegistryFixture &&
       imported.kind == some .foundation && imported.levelParams.length == 1 do
     throwError "Imported theorem origin, classification, or universe metadata changed"
-  let some current := powerlib.Search.describe env `RegistryCurrent.stable |
-    throwError "A current-file tagged theorem lost its metadata"
-  unless current.kind == some .domain do
-    throwError "The current-file theorem classification changed"
   for (consumer, sources) in #[
       (`RegistryCurrent.imported_application,
         #[`RegistryFixture.envelope, `RegistryFixture.envelope_iff]),
