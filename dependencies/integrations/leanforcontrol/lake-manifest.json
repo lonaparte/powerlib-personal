@@ -15,30 +15,6 @@
       "configFile": "lakefile.toml"
     },
     {
-      "url": "https://github.com/leanprover/doc-gen4",
-      "type": "git",
-      "subDir": null,
-      "scope": "",
-      "rev": "d555f83e82831466ec101c9753450e8b4ec203b4",
-      "name": "\u00abdoc-gen4\u00bb",
-      "manifestFile": "lake-manifest.json",
-      "inputRev": "main",
-      "inherited": true,
-      "configFile": "lakefile.lean"
-    },
-    {
-      "url": "https://github.com/PatrickMassot/checkdecls.git",
-      "type": "git",
-      "subDir": null,
-      "scope": "",
-      "rev": "3d425859e73fcfbef85b9638c2a91708ef4a22d4",
-      "name": "checkdecls",
-      "manifestFile": "lake-manifest.json",
-      "inputRev": null,
-      "inherited": true,
-      "configFile": "lakefile.lean"
-    },
-    {
       "url": "https://github.com/leanprover-community/mathlib4.git",
       "type": "git",
       "subDir": null,
@@ -63,18 +39,6 @@
       "configFile": "lakefile.lean"
     },
     {
-      "url": "https://github.com/leanprover/leansqlite",
-      "type": "git",
-      "subDir": null,
-      "scope": "",
-      "rev": "4f69cfe63060a8bf6e1080b610f88c7b295629bf",
-      "name": "leansqlite",
-      "manifestFile": "lake-manifest.json",
-      "inputRev": "main",
-      "inherited": true,
-      "configFile": "lakefile.lean"
-    },
-    {
       "url": "https://github.com/leanprover/lean4-cli",
       "type": "git",
       "subDir": null,
@@ -85,42 +49,6 @@
       "inputRev": "v4.34.0",
       "inherited": true,
       "configFile": "lakefile.toml"
-    },
-    {
-      "url": "https://github.com/fgdorais/lean4-unicode-basic",
-      "type": "git",
-      "subDir": null,
-      "scope": "",
-      "rev": "603cc6effaf17675bcfc45143fef38130545291d",
-      "name": "UnicodeBasic",
-      "manifestFile": "lake-manifest.json",
-      "inputRev": "main",
-      "inherited": true,
-      "configFile": "lakefile.lean"
-    },
-    {
-      "url": "https://github.com/dupuisf/BibtexQuery",
-      "type": "git",
-      "subDir": null,
-      "scope": "",
-      "rev": "5d31b64fb703c5d77f6ef4d1fb958f9bdf1ea539",
-      "name": "BibtexQuery",
-      "manifestFile": "lake-manifest.json",
-      "inputRev": "nightly-testing",
-      "inherited": true,
-      "configFile": "lakefile.toml"
-    },
-    {
-      "url": "https://github.com/acmepjz/md4lean",
-      "type": "git",
-      "subDir": null,
-      "scope": "",
-      "rev": "6a3fb240133bcb7e1a066fdc784b3fdc304e3fc5",
-      "name": "MD4Lean",
-      "manifestFile": "lake-manifest.json",
-      "inputRev": "main",
-      "inherited": true,
-      "configFile": "lakefile.lean"
     },
     {
       "url": "https://github.com/leanprover-community/plausible",
