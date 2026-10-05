@@ -71,34 +71,30 @@ example : accepted.p = {literal(p)} := by norm_num [accepted, Candidate.certific
 example : accepted.rate = {literal(rate)} := by norm_num [accepted, Candidate.certificate]
 @[powerlib_domain] theorem stable : submittedModel.Stable := accepted.stable
 @[powerlib_domain] theorem autonomous_globally_exponentially_stable :
-    powerlib.Dynamics.GloballyExponentiallyStable submittedModel.autonomousField 0 := by
-  have certificate := accepted
-  powerlib_auto
+    powerlib.Dynamics.GloballyExponentiallyStable submittedModel.autonomousField 0 :=
+  accepted.autonomousGloballyExponentiallyStable
 @[powerlib_domain] theorem dissipation (current : ℝ) :
     2 * accepted.p * current * (powerlib.toStateSpace submittedModel).field current 0 =
       -current ^ 2 := accepted.dissipation current
 @[powerlib_domain] theorem decay (initial t : ℝ) :
     (powerlib.response submittedModel initial t) ^ 2 =
       initial ^ 2 * Real.exp (-(accepted.rate * t)) := accepted.decay_bound initial t
-@[powerlib_domain] theorem small_signal : powerlib.AsymptoticallyStable submittedModel 0 0 := by
-  have certificate := accepted
-  powerlib_auto
+@[powerlib_domain] theorem small_signal : powerlib.AsymptoticallyStable submittedModel 0 0 :=
+  accepted.asymptoticallyStable (powerlib.zero_equilibrium _)
 @[powerlib_domain] theorem exponential (voltage equilibrium : ℝ)
     (he : powerlib.IsEquilibrium submittedModel voltage equilibrium) :
-    powerlib.GloballyExponentiallyStable submittedModel voltage equilibrium := by
-  have certificate := accepted
-  powerlib_auto
+    powerlib.GloballyExponentiallyStable submittedModel voltage equilibrium :=
+  accepted.globallyExponentiallyStable he
 @[powerlib_domain] theorem global_asymptotic (voltage equilibrium : ℝ)
     (he : powerlib.IsEquilibrium submittedModel voltage equilibrium) :
-    powerlib.GloballyAsymptoticallyStable submittedModel voltage equilibrium := by
-  have certificate := accepted
-  powerlib_auto
+    powerlib.GloballyAsymptoticallyStable submittedModel voltage equilibrium :=
+  accepted.globallyAsymptoticallyStable he
 @[powerlib_domain] theorem all_trajectory_decay (voltage equilibrium : ℝ) (i : ℝ → ℝ)
     (he : powerlib.IsEquilibrium submittedModel voltage equilibrium)
     (hi : powerlib.IsTrajectory submittedModel voltage i) (t : ℝ) (ht : 0 ≤ t) :
     (i t - equilibrium) ^ 2 =
-      (i 0 - equilibrium) ^ 2 * Real.exp (-(accepted.rate * t)) := by
-  powerlib_auto
+      (i 0 - equilibrium) ^ 2 * Real.exp (-(accepted.rate * t)) :=
+  accepted.trajectory_decay he hi ht
 end Admission
 ''' + audit(["Admission.accepted", "Admission.stable", "Admission.dissipation", "Admission.decay",
              "Admission.small_signal", "Admission.exponential", "Admission.global_asymptotic",
@@ -195,12 +191,15 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     atp_parser = commands.add_parser("atp", help="Synthesize and verify a stability certificate")
     atp_parser.add_argument("model")
-    atp_parser.add_argument("--family", choices=["rl", "lcl"], default="rl")
+    atp_parser.add_argument("--family", choices=["rl", "lcl", "nonlinear"], default="rl")
     atd_parser = commands.add_parser("atd", help="Search conditions and verify proofs or counterexamples")
     atd_parser.add_argument("--family", choices=["rl", "lcl"], default="rl")
     args = parser.parse_args()
     try:
-        if args.family == "lcl":
+        if args.family == "nonlinear":
+            import nonlinear
+            report = nonlinear.atp(args.model)
+        elif args.family == "lcl":
             import lcl
             report = lcl.atp(args.model) if args.command == "atp" else lcl.atd()
         else:
@@ -209,7 +208,7 @@ def main():
         print(json.dumps({"status": "NOT_ACCEPTED", "reason": str(error)}, indent=2))
         return 1
     print(json.dumps(report, indent=2))
-    return 0
+    return 1 if report.get("status") == "UNPROVED" else 0
 
 
 if __name__ == "__main__":

@@ -193,13 +193,11 @@ def proof_source(model, p):
 def accepted : powerlib.LCL.Accepted submittedModel := Candidate.certificate
 @[powerlib_domain] theorem stable : (powerlib.LCL.toStateSpace submittedModel).Stable := accepted.stable
 @[powerlib_domain] theorem autonomous_globally_exponentially_stable :
-    powerlib.Dynamics.GloballyExponentiallyStable submittedModel.autonomousField 0 := by
-  have certificate := accepted
-  powerlib_auto
+    powerlib.Dynamics.GloballyExponentiallyStable submittedModel.autonomousField 0 :=
+  accepted.autonomousGloballyExponentiallyStable
 @[powerlib_domain] theorem autonomous_globally_asymptotically_stable :
-    powerlib.Dynamics.GloballyAsymptoticallyStable submittedModel.autonomousField 0 := by
-  have certificate := accepted
-  powerlib_auto
+    powerlib.Dynamics.GloballyAsymptoticallyStable submittedModel.autonomousField 0 :=
+  accepted.autonomousGloballyAsymptoticallyStable
 @[powerlib_domain] theorem positive (x y z : ℝ) (hn : x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) :
     0 < powerlib.LCL.energy accepted.p x y z := accepted.positive x y z hn
 @[powerlib_domain] theorem dissipation (x y z : ℝ) :

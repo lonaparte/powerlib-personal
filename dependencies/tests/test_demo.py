@@ -10,7 +10,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from bridge import extract, render
 from common import ROOT, DEPENDENCIES, CACHE, RESULTS, audit, check_lean, run
 from powerlib import admission_source, candidate_source, read_model
-from check_automatic import check_automatic
 
 
 class InputTests(unittest.TestCase):
@@ -120,9 +119,6 @@ theorem negative_not_asymptotic : ¬ powerlib.AsymptoticallyStable negativeResis
   rw [powerlib.asymptoticallyStable_iff_resistance_pos (powerlib.zero_equilibrium _)]
   norm_num [negativeResistance]
 ''' + audit(["lossless_not_asymptotic", "negative_not_asymptotic"]), True)
-
-    def test_automatic_public_api(self):
-        self.assertGreater(check_automatic(), 0)
 
     def test_untagged_library_theorem_reuse(self):
         self.check_source("untagged_reuse", '''import powerlib

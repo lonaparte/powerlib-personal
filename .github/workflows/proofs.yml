@@ -30,24 +30,26 @@ jobs:
           test: "false"
       - name: Audit project theorems
         run: lake env lean dependencies/tests/Audit.lean
-      - name: Check theorem discovery and automatic reuse
-        timeout-minutes: 10
-        run: python3 dependencies/check_automatic.py
       - name: Check global trajectories and nonlinear negative controls
         run: lake env lean dependencies/tests/Dynamics.lean
       - name: Check Agda conversion and dependency pins
         run: python3 dependencies/setup.py
       - name: Check LCL conversion
         run: python3 dependencies/lcl_bridge.py
+      - name: Synthesize and prove withheld nonlinear systems without witnesses
+        timeout-minutes: 10
+        run: python3 dependencies/check_automatic.py
       - name: Check certificates and negative controls
         env:
           POWERLIB_LCL_KERNEL_TESTS: "1"
+          POWERLIB_NONLINEAR_KERNEL_TESTS: "1"
         run: python3 -m unittest discover -s dependencies/tests -v
       - name: Check public theorem examples and synthesis paths
         run: |
           lake env lean dependencies/examples/Use.lean
           python3 dependencies/powerlib.py atp dependencies/examples/rl.json
           python3 dependencies/powerlib.py atp dependencies/examples/lcl.json --family lcl
+          python3 dependencies/powerlib.py atp dependencies/examples/nonlinear.json --family nonlinear
           python3 dependencies/powerlib.py atd
           python3 dependencies/powerlib.py atd --family lcl
           python3 dependencies/check_evidence.py

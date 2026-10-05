@@ -42,6 +42,7 @@ def check(proof, provenance):
 
 def main():
     accepted = candidates = 0
+    families = set()
     for path in RESULTS.rglob("*.json"):
         if path.name not in {"report.json", "certificate.json"}:
             continue
@@ -51,12 +52,19 @@ def main():
             if digest(path.parent / "submitted.json") != data["submitted_model_sha256"]:
                 raise RuntimeError("Submitted input identity changed")
             accepted += 1
+            model = data.get("model", {})
+            if model.get("schema") == "powerlib.polynomial2.v1":
+                families.add("nonlinear")
+            elif set(model) == {"resistance", "inductance"}:
+                families.add("rl")
+            elif set(model) == {"inductance1", "inductance2", "capacitance", "resistance1", "resistance2"}:
+                families.add("lcl")
         for result in data.get("results", []):
             if result["status"] in {"PROVED", "REFUTED"}:
                 check(path.parent / Path(result["proof"]).name, result["provenance"])
                 candidates += 1
-    if accepted < 2 or candidates < 6:
-        raise RuntimeError("Both families' accepted ATP and fixed-candidate artifacts are required")
+    if families != {"rl", "lcl", "nonlinear"} or candidates < 6:
+        raise RuntimeError("RL, LCL and nonlinear accepted ATP plus fixed-candidate artifacts are required")
     print(f"POWERLIB_RETAINED_EVIDENCE_OK: {accepted} admissions, {candidates} candidates")
 
 
