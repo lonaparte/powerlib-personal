@@ -119,9 +119,9 @@ structure Accepted (m : Model n) where
       (P.mulVec (m.field (x t)) i) t := by
     intro i
     simpa only [Matrix.mulVec, dotProduct] using!
-      (HasDerivAt.sum (u := Finset.univ) fun j _ => (hi j).const_mul (P i j))
-  simpa [energy, dotProduct, Finset.sum_add_distrib] using!
-    (HasDerivAt.sum fun i (_ : i ∈ Finset.univ) => (hi i).mul (hp i))
+      (HasDerivAt.fun_sum (u := Finset.univ) fun j _ => (hi j).const_mul (P i j))
+  simpa [energy, dotProduct, Pi.mul_apply, Finset.sum_add_distrib] using!
+    (HasDerivAt.fun_sum fun i (_ : i ∈ Finset.univ) => (hi i).mul (hp i))
 
 @[powerlib_foundation, aesop safe apply] theorem lyapunov_dissipation {m : Model n} (c : Accepted m) (x : State n) :
     dotProduct (m.field x) (c.P.mulVec x) +
