@@ -264,7 +264,7 @@ omit [Fintype κ] in
 
 @[powerlib_domain, aesop safe apply] theorem response_trajectory (m : Model ι κ) (initial : State ι) :
     Passivity.IsTrajectory (system m) (fun _ => 0) (response m initial) := by
-  simpa only [system_eq, response] using
+  simpa only [system_eq, response] using!
     StateSpacePassivity.response_trajectory (linearModel m) initial
 
 @[powerlib_domain, aesop safe apply] theorem trajectory_exists (m : Model ι κ) (initial : State ι) :

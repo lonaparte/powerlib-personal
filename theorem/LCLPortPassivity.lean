@@ -68,10 +68,11 @@ def portSystem (m : Circuit) : powerlib.Passivity.System State (Fin 2) where
       (terminalStateSpace m).A.transpose * physicalStorageMatrix m) =
       Matrix.diagonal ![2 * m.first.resistance, 0, 2 * m.second.resistance] := by
   ext i j
+  simp only [physicalStorageMatrix, Matrix.neg_apply, Matrix.add_apply]
+  rw [Matrix.diagonal_mul, Matrix.mul_diagonal, Matrix.transpose_apply]
   fin_cases i <;> fin_cases j <;>
-    simp [physicalStorageMatrix, terminalStateSpace, StateSpace.matrix,
-      toStateSpace, generated.convertLCL, powerlib.reciprocal,
-      Matrix.mul_apply, Fin.sum_univ_succ, Matrix.diagonal] <;>
+    simp [terminalStateSpace, StateSpace.matrix, toStateSpace,
+      generated.convertLCL, powerlib.reciprocal, Matrix.diagonal_apply] <;>
     field_simp [ne_of_gt m.first.inductance.property,
       ne_of_gt m.second.inductance.property, ne_of_gt m.capacitance.property] <;> ring
 
@@ -79,10 +80,10 @@ def portSystem (m : Circuit) : powerlib.Passivity.System State (Fin 2) where
     physicalStorageMatrix m * (terminalStateSpace m).B =
       (terminalStateSpace m).C.transpose := by
   ext i j
+  rw [physicalStorageMatrix, Matrix.diagonal_mul, Matrix.transpose_apply]
   fin_cases i <;> fin_cases j <;>
-    simp [physicalStorageMatrix, terminalStateSpace,
-      toStateSpace, generated.convertLCL, powerlib.reciprocal,
-      Matrix.mul_apply, Fin.sum_univ_succ, Matrix.diagonal] <;>
+    simp [terminalStateSpace, toStateSpace, generated.convertLCL,
+      powerlib.reciprocal] <;>
     field_simp [ne_of_gt m.first.inductance.property,
       ne_of_gt m.second.inductance.property, ne_of_gt m.capacitance.property]
 
@@ -304,7 +305,8 @@ def StorageAccepted.stateSpaceCertificate {m : Circuit} (c : StorageAccepted m) 
     simpa only [terminalStateSpace_system, port_supply] using hsupply
   have hx' : powerlib.Passivity.IsTrajectory
       (powerlib.StateSpacePassivity.system (terminalStateSpace m)) u x := by
-    simpa only [terminalStateSpace_system] using hx
+    rw [terminalStateSpace_system]
+    exact (portTrajectory_iff_generic m u x).mp hx
   simpa only [StorageAccepted.stateSpaceCertificate_matrix, terminalStateSpace_energy,
     terminalStateSpace_system, port_supply] using
     c.stateSpaceCertificate.integral_passivity hx' ht hsupply'
