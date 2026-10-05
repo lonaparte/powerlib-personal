@@ -87,7 +87,7 @@ example (m : Impedance) (c : Accepted m) (v e : ℝ) (he : IsEquilibrium m v e) 
     LyapunovStable m v e := by exact?
 
 example (m : Impedance) (c : Accepted m) (v e : ℝ) (he : IsEquilibrium m v e) :
-    GloballyAsymptoticallyStable m v e := by exact?
+    GloballyAsymptoticallyStable m v e := by aesop
 
 example (m : Impedance) (c : Accepted m) (v e : ℝ) (he : IsEquilibrium m v e) :
     GloballyExponentiallyStable m v e := by aesop
@@ -104,12 +104,37 @@ example (m : Impedance) (hm : m.Stable) (v e : ℝ) (i : ℝ → ℝ)
 
 example (m : Impedance) (c : Accepted m) (v e : ℝ) (i : ℝ → ℝ)
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) (t : ℝ) (ht : 0 ≤ t) :
-    (i t - e) ^ 2 = (i 0 - e) ^ 2 * Real.exp (-(c.rate * t)) := by exact?
+    (i t - e) ^ 2 = (i 0 - e) ^ 2 * Real.exp (-(c.rate * t)) := by aesop
 
 example (m : Impedance) (c : Accepted m) (v e : ℝ) (i : ℝ → ℝ)
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) (t : ℝ) (ht : 0 ≤ t) :
     HasDerivWithinAt (fun s => energy c.p (i s - e)) (-(i t - e) ^ 2) (Set.Ici 0) t := by
   exact?
+
+-- Admission uses a named certificate definition, introduced as a local fact.
+namespace RLAdmissionFixture
+
+def submittedModel : Impedance := ⟨2, ⟨1, by norm_num⟩⟩
+
+noncomputable def accepted : Accepted submittedModel :=
+  synthesize submittedModel (by norm_num [submittedModel])
+
+example (voltage : ℝ)
+    (he : IsEquilibrium submittedModel voltage (voltage / submittedModel.resistance)) :
+    GloballyAsymptoticallyStable submittedModel voltage
+      (voltage / submittedModel.resistance) := by
+  have certificate := accepted
+  aesop
+
+example (voltage equilibrium : ℝ) (i : ℝ → ℝ)
+    (he : IsEquilibrium submittedModel voltage equilibrium)
+    (hi : IsTrajectory submittedModel voltage i) (t : ℝ) (ht : 0 ≤ t) :
+    (i t - equilibrium) ^ 2 =
+      (i 0 - equilibrium) ^ 2 * Real.exp (-(accepted.rate * t)) := by
+  have certificate := accepted
+  aesop
+
+end RLAdmissionFixture
 
 
 example (m : LCL.Circuit) : LCL.toCircuit (LCL.toStateSpace m) = m := by exact?
