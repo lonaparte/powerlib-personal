@@ -105,7 +105,7 @@ index d5f3a6cf5c9cd3d44f869fea689ee5857b89c656..e1c8aea9f99dd8e3c7b4b26a26f281b2
    have hcommMatrix : Commute (NormedSpace.exp A) A := (Commute.refl A).exp_left
    have hcomm : Commute (NormedSpace.exp A).toLin' A.toLin' :=
 diff --git a/LeanForControl/ODEs/ODE_properties.lean b/LeanForControl/ODEs/ODE_properties.lean
-index 7f7bdf2cb9632ef1a964a2c1be1a43a5f70bf803..7b401484160de6aa14d92ffc6cf21a95b2444744 100644
+index 7f7bdf2cb9632ef1a964a2c1be1a43a5f70bf803..88efbfec59e0f262cb18c490ec37e322788dab4f 100644
 --- a/LeanForControl/ODEs/ODE_properties.lean
 +++ b/LeanForControl/ODEs/ODE_properties.lean
 @@ -5,6 +5,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
@@ -125,16 +125,18 @@ index 7f7bdf2cb9632ef1a964a2c1be1a43a5f70bf803..7b401484160de6aa14d92ffc6cf21a95
              (hLip' s (Icc_subset_Icc_right hτ.2 hs)).dist_le_mul (u s) (v s))
        have h_tri1 := norm_sub_le ((u0 - v0) + ∫ s in a..τ, F s (u s) - F s (v s))
                                    (∫ s in a..τ, G s (v s))
-@@ -203,7 +204,7 @@ theorem continuous_dependence_ODE
+@@ -203,8 +204,9 @@ theorem continuous_dependence_ODE
        have h_int_eq : ∫ s in a..τ, L * (‖u s - v s‖ + μ / L) = (L * ∫ s in a..τ, ‖u s - v s‖)
          + μ * (τ - a) := by
          simp_rw [mul_add, mul_div_cancel₀ _ hL.ne']
 -        rw [intervalIntegral.integral_add (hv_sub2.const_mul L) intervalIntegrable_const]
 +        erw [intervalIntegral.integral_add (hv_sub2.const_mul L) intervalIntegrable_const]
          rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_const_eq]
++        simp only [Pi.sub_apply]
          ring
        linarith [hineq_base τ hτ]
-@@ -258,7 +259,6 @@ theorem continuous_dependence_ODE
+     -- ── 4. Apply Gronwall-Bellman ─────────────────────────────────────────────
+@@ -258,7 +260,6 @@ theorem continuous_dependence_ODE
      rw [uIcc_of_ge hle] at ht
      have ht' : t₀ + t₁ - t ∈ Icc t₁ t₀ := by constructor <;> linarith [ht.1, ht.2]
      have hbt := hb (t₀ + t₁ - t) ht'
