@@ -68,7 +68,7 @@ def squaredSize (x : State) : ℝ := (x 0) ^ 2 + (x 1) ^ 2 + (x 2) ^ 2
   have h23 := ((hd 1).const_mul (2 * p.p23)).mul (hd 2)
   have h33 := ((hd 2).pow 2).const_mul p.p33
   have h := ((((h11.add h12).add h13).add h22).add h23).add h33
-  convert h using 1
+  convert! h using 1
   dsimp [energyDerivative]
   ring
 

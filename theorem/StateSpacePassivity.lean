@@ -82,7 +82,7 @@ structure Certificate (m : Model ι κ) where
     (P.mulVecLin.toContinuousLinearMap).hasFDerivAt.comp_hasDerivWithinAt t hx
   have hsym : dotProduct (x t) (P.mulVec dx) = dotProduct (P.mulVec (x t)) dx := by
     rw [dotProduct_mulVec, ← mulVec_transpose, hP]
-  convert (dotProduct_derivative hx hPx).div_const 2 using 1
+  convert! (dotProduct_derivative hx hPx).div_const 2 using 1
   rw [hsym, dotProduct_comm dx (P.mulVec (x t))]
   ring
 
