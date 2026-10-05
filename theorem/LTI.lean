@@ -57,7 +57,7 @@ def IsTrajectory (m : Model n) (x : ℝ → State n) : Prop :=
   ∀ t, HasDerivAt x (m.field (x t)) t
 
 def response (m : Model n) (initial : State n) (t : ℝ) : State n :=
-  (NormedSpace.exp (t • m.operator)) initial
+  (NormedSpace.exp ℝ (t • m.operator)) initial
 
 @[simp, powerlib_domain] theorem response_initial (m : Model n) (initial : State n) :
     response m initial 0 = initial := by
@@ -68,7 +68,7 @@ def response (m : Model n) (initial : State n) (t : ℝ) : State n :=
   intro t
   have h := (hasDerivAt_exp_smul_const' m.operator t).clm_apply
     (hasDerivAt_const t initial)
-  simpa [response, ContinuousLinearMap.mul_apply] using! h
+  simpa [response, ContinuousLinearMap.mul_apply] using h
 
 @[powerlib_domain, aesop safe apply] theorem trajectory_exists (m : Model n) (initial : State n) :
     ∃ x, IsTrajectory m x ∧ x 0 = initial :=
@@ -118,10 +118,10 @@ structure Accepted (m : Model n) where
   have hp : ∀ i, HasDerivAt (fun s => P.mulVec (x s) i)
       (P.mulVec (m.field (x t)) i) t := by
     intro i
-    simpa only [Matrix.mulVec, dotProduct] using!
-      (HasDerivAt.fun_sum (u := Finset.univ) fun j _ => (hi j).const_mul (P i j))
-  simpa [energy, dotProduct, Pi.mul_apply, Finset.sum_add_distrib] using!
-    (HasDerivAt.fun_sum fun i (_ : i ∈ Finset.univ) => (hi i).mul (hp i))
+    simpa only [Matrix.mulVec, dotProduct] using
+      (HasDerivAt.sum (u := Finset.univ) fun j _ => (hi j).const_mul (P i j))
+  simpa [energy, dotProduct, Finset.sum_add_distrib] using
+    (HasDerivAt.sum fun i (_ : i ∈ Finset.univ) => (hi i).mul (hp i))
 
 @[powerlib_foundation, aesop safe apply] theorem lyapunov_dissipation {m : Model n} (c : Accepted m) (x : State n) :
     dotProduct (m.field x) (c.P.mulVec x) +
@@ -147,7 +147,7 @@ structure Accepted (m : Model n) where
   have hd : ∀ s, HasDerivAt F
       (Real.exp (s / c.upper) * (energy c.P (x s) / c.upper - sqNorm (x s))) s := by
     intro s
-    convert! (((hasDerivAt_id s).div_const c.upper).exp).mul (c.energy_derivative hx s) using 1
+    convert (((hasDerivAt_id s).div_const c.upper).exp).mul (c.energy_derivative hx s) using 1
     dsimp [F]
     ring
   have hmono : Antitone F := antitone_of_hasDerivAt_nonpos hd (by
@@ -190,7 +190,7 @@ structure Accepted (m : Model n) where
   refine ⟨Real.sqrt (c.upper / c.lower), Real.sqrt_pos.2 (div_pos c.upper_pos c.lower_pos),
     1 / (2 * c.upper), div_pos zero_lt_one (mul_pos (by norm_num) c.upper_pos), ?_⟩
   intro x hx t ht
-  convert! c.norm_bound hx t ht using 1
+  convert c.norm_bound hx t ht using 1
   congr 2
   ring_nf
 
@@ -207,7 +207,7 @@ structure Accepted (m : Model n) where
     (h0 : x 0 = y 0) (t : ℝ) (ht : 0 ≤ t) : x t = y t := by
   have hd : IsTrajectory m (fun s => x s - y s) := by
     intro s
-    simpa only [Model.field, generated.linearField_spec, Matrix.mulVec_sub] using!
+    simpa only [Model.field, generated.linearField_spec, Matrix.mulVec_sub] using
       (hx s).sub (hy s)
   have h := c.decay_bound hd t ht
   simp only [h0, sub_self, sqNorm_zero, mul_zero] at h

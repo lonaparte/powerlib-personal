@@ -51,7 +51,7 @@ open scoped Topology
   let W' := fun s => (D s + V s / β) * Real.exp (s / β)
   have hw : ∀ s ∈ Ici (0 : ℝ), HasDerivWithinAt W (W' s) (Ici 0) s := by
     intro s hs
-    convert! (hd s hs).mul (((hasDerivAt_id s).div_const β).exp.hasDerivWithinAt) using 1
+    convert (hd s hs).mul (((hasDerivAt_id s).div_const β).exp.hasDerivWithinAt) using 1
     dsimp [W, W']
     ring
   have hc : ContinuousOn W (Ici 0) := fun s hs => (hw s hs).continuousWithinAt

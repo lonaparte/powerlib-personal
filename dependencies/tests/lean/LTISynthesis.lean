@@ -12,10 +12,7 @@ def certificate : powerlib.LTI.Accepted model where
   upper := (32 / 1 : ℝ)
   lower_pos := by norm_num
   upper_pos := by norm_num
-  symmetric := by
-    ext i j
-    erw [Matrix.transpose_apply]
-    fin_cases i <;> fin_cases j <;> norm_num
+  symmetric := by ext i j; fin_cases i <;> fin_cases j <;> norm_num [Matrix.transpose_apply]
   lower_bound := by
     intro x
     have hs : 0 ≤ (1 / 4 : ℝ) * ((1 / 1 : ℝ) * x 0 + (10 / 1 : ℝ) * x 1) ^ 2 + (1 / 4 : ℝ) * ((1 / 1 : ℝ) * x 1) ^ 2 := by positivity
@@ -30,10 +27,8 @@ def certificate : powerlib.LTI.Accepted model where
       _ = _ := by norm_num [powerlib.LTI.energy, powerlib.LTI.sqNorm, Matrix.mulVec, dotProduct, Fin.sum_univ_succ, Fin.succ]; ring1!
   lyapunov := by
     ext i j
-    erw [Matrix.add_apply, Matrix.neg_apply, Matrix.mul_apply, Matrix.mul_apply]
-    simp only [Matrix.transpose_apply, Matrix.one_apply]
     fin_cases i <;> fin_cases j <;>
-      norm_num [model, Fin.sum_univ_succ]
+      norm_num [model, Matrix.mul_apply, Matrix.transpose_apply, Fin.sum_univ_succ]
 end Candidate
 namespace Admission
 def submittedModel : powerlib.LTI.Model 2 := ⟨![![(-1 / 1 : ℝ), (10 / 1 : ℝ)], ![(0 / 1 : ℝ), (-1 / 1 : ℝ)]]⟩
@@ -86,7 +81,7 @@ open powerlib
 
 def differentModel : LTI.Model 2 := ⟨![![-2, 10], ![0, -1]]⟩
 
-@[powerlib_foundation] theorem a_certificate_for_another_model_is_rejected : True := by
+theorem a_certificate_for_another_model_is_rejected : True := by
   fail_if_success
     have wrong : LTI.Accepted differentModel := Candidate.certificate
   trivial
