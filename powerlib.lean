@@ -1,3 +1,3 @@
-import theorems.RLStability
-import theorems.LCLSynthesis
-import theorems.LibrarySearch
+import theorem.RLStability
+import theorem.LCLSynthesis
+import theorem.LibrarySearch
