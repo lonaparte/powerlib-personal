@@ -78,7 +78,7 @@ private def isFirstPartySource : CommandElabM Bool := do
     return false
 
 private partial def authoredDeclarationRefs (stx : Syntax) : Array Syntax := Id.run do
-  if stx.isOfKind ``Parser.Command.declaration then
+  if stx.isOfKind ``Parser.Command.declaration || stx.isOfKind `lemma then
     if stx[1].isOfKind ``Parser.Command.«example» then
       return #[]
     -- Stop at the declaration boundary, before proof bodies or syntax quotations.
