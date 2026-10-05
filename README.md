@@ -41,15 +41,15 @@ proofs are reused through imports.
 After downloading the repository, install Elan and run from its root:
 
 ```sh
-lake exe cache get
 compatibility_patch="$PWD/dependencies/LeanForControl-4.34.1.patch"
 git -C ../LeanForControl apply --check "$compatibility_patch"
 git -C ../LeanForControl apply "$compatibility_patch"
+lake exe cache get
 lake build
 ```
 
-Apply the compatibility diff only to the pinned clean upstream checkout. CI
-checks the original commit and exact applied diff before building. Project Lake
+Apply the compatibility diff only to the pinned clean upstream checkout. Local
+admission checks verify the original commit and exact applied diff. Project Lake
 configuration and dependency pins are committed; upstream sources and local
 caches are not.
 

@@ -2,3 +2,4 @@ import theorem.RLStability
 import theorem.LCLSynthesis
 import theorem.LibrarySearch
 import theorem.Upstream.LeanForControl
+import theorem.Upstream.LCLLeanForControl

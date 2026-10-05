@@ -1,4 +1,4 @@
-import theorem.Upstream.LeanForControl
+import theorem.Upstream.LCLLeanForControl
 import LeanForControl.axioms
 
 open scoped Matrix.Norms.Frobenius

@@ -234,12 +234,14 @@ theorem passive_asymptoticallyStable (m : Circuit) (hp : m.Passive) (hd : m.Damp
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : AsymptoticallyStable m u vg e :=
   (synthesize m hp hd).asymptoticallyStable he
 
-@[powerlib_domain] theorem passive_globallyAsymptoticallyStable
+@[powerlib_domain, aesop norm forward (immediate := [hp, hd])]
+theorem passive_globallyAsymptoticallyStable
     (m : Circuit) (hp : m.Passive) (hd : m.Damped)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : GloballyAsymptoticallyStable m u vg e :=
   (synthesize m hp hd).globallyAsymptoticallyStable he
 
-@[powerlib_domain] theorem passive_globallyExponentiallyStable
+@[powerlib_domain, aesop norm forward (immediate := [hp, hd])]
+theorem passive_globallyExponentiallyStable
     (m : Circuit) (hp : m.Passive) (hd : m.Damped)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : GloballyExponentiallyStable m u vg e :=
   (synthesize m hp hd).globallyExponentiallyStable he
