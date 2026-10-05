@@ -3,16 +3,6 @@ import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.ODE.Gronwall
 
-/-!
-Actual forward trajectories of arbitrary finite-dimensional real constant
-state-space models `x' = A x + B u`, `y = C x + D u`. The zero-input solution
-exists globally for every initial state, independently of any passivity or
-stability certificate. Uniqueness covers every input signal for which the
-stated differential equation has solutions. For constant input, translation by
-an existing equilibrium identifies the ODE with the same zero-input system.
-The norm is the finite-dimensional supremum norm. No sampled, delayed,
-switching, nonlinear, or descriptor dynamics are included.
--/
 noncomputable section
 namespace powerlib.StateSpacePassivity
 open Set Filter Matrix
@@ -63,9 +53,6 @@ omit [Fintype κ] in
     ∃ x, Passivity.IsTrajectory (system m) (fun _ => 0) x ∧ x 0 = initial :=
   ⟨response m initial, response_trajectory m initial, response_initial m initial⟩
 
-/-- For any fixed input signal, two actual solutions with the same initial
-state coincide at every forward time. This needs no storage certificate and
-does not assert existence for an irregular input signal. -/
 @[powerlib_domain] theorem trajectory_unique (m : Model ι κ)
     {u : ℝ → (κ → ℝ)} {x y : ℝ → State ι}
     (hx : Passivity.IsTrajectory (system m) u x)
@@ -98,12 +85,9 @@ does not assert existence for an irregular input signal. -/
   exact trajectory_unique m hy (response_trajectory m initial)
     (h0.trans (response_initial m initial).symm)
 
-/-- Equilibrium for a specified constant input, including its affine input term. -/
 def IsEquilibrium (m : Model ι κ) (u : κ → ℝ) (e : State ι) : Prop :=
   field m e u = 0
 
-/-- Stability of an existing constant-input equilibrium, quantified over all
-actual trajectories of the original affine state equation. -/
 def LyapunovStableAt (m : Model ι κ) (u : κ → ℝ) (e : State ι) : Prop :=
   ∀ ε > 0, ∃ δ > 0, ∀ x,
     Passivity.IsTrajectory (system m) (fun _ => u) x → ‖x 0 - e‖ < δ →

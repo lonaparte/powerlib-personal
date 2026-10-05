@@ -3,15 +3,6 @@ import theorems.StateSpaceTrajectories
 import Mathlib.Data.Real.StarOrdered
 import Mathlib.Analysis.Calculus.Deriv.Prod
 
-/-!
-The original Agda-derived RL branch, instantiated in the general finite-state
-input-output theorem. The state is physical current, the input is terminal
-voltage and the output is terminal current. Inductance is positive and
-resistance is nonnegative, including an ideal lossless inductor. The continuous
-plant has no controller, delay, PWM, PLL or additional state. Storage is the
-physical magnetic energy `L*i^2/2`; stability concerns a constant-input
-equilibrium and makes no attraction claim.
--/
 noncomputable section
 namespace powerlib.RLPort
 open Set Matrix
@@ -22,8 +13,6 @@ abbrev Input := Fin 1 → ℝ
 
 def toState (current : ℝ) : State := fun _ => current
 
-/-- The coefficients come from the checked Agda conversion, rather than a
-separately submitted state matrix. -/
 def stateSpace (m : Impedance) : StateSpacePassivity.Model (Fin 1) (Fin 1) where
   A := fun _ _ => -(toStateSpace m).decay
   B := fun _ _ => (toStateSpace m).inputGain.val
@@ -65,8 +54,6 @@ def portEnergy (m : Impedance) (x : State) : ℝ :=
     Fin.sum_univ_one, mul_pow]
   ring
 
-/-- The general model-indexed certificate is constructed from physical
-parameters alone. No storage witness is supplied by the caller. -/
 def synthesizePassivityCertificate (m : Impedance) (hR : 0 ≤ m.resistance) :
     StateSpacePassivity.Certificate (stateSpace m) where
   P := storageMatrix m
@@ -147,8 +134,6 @@ def IsPortTrajectory (m : Impedance) (voltage : ℝ → ℝ) (current : ℝ → 
   rw [stateSpace_field] at hd
   exact (hasDerivWithinAt_pi.mp hd) 0
 
-/-- Existence is inherited from the general state-space matrix-exponential
-solution and transported to the original scalar circuit coordinates. -/
 @[powerlib_domain] theorem zeroInput_trajectory_exists (m : Impedance) (initial : ℝ) :
     ∃ current, powerlib.IsTrajectory m 0 current ∧ current 0 = initial := by
   obtain ⟨x, hx, h0⟩ := StateSpacePassivity.trajectory_exists (stateSpace m) (toState initial)
@@ -167,8 +152,6 @@ solution and transported to the original scalar circuit coordinates. -/
   intro t ht
   exact congrArg (fun z : State => z 0) (heq ht)
 
-/-- Integral terminal passivity follows by instantiating the common theorem,
-after the scalar-to-state coordinate conversion has been kernel checked. -/
 @[powerlib_domain] theorem integral_passivity {m : Impedance}
     (hR : 0 ≤ m.resistance) {voltage current : ℝ → ℝ}
     (hx : IsPortTrajectory m voltage current) {t : ℝ} (ht : 0 ≤ t)
@@ -192,8 +175,6 @@ after the scalar-to-state coordinate conversion has been kernel checked. -/
   rw [powerlib.equilibrium_field he]
   rfl
 
-/-- Stability transport changes only the scalar/one-coordinate representation;
-the general state-space theorem supplies the storage and equilibrium argument. -/
 @[powerlib_foundation] theorem lyapunovStable_of_genericAt
     {m : Impedance} {v e : ℝ}
     (hs : StateSpacePassivity.LyapunovStableAt (stateSpace m) (toState v) (toState e)) :

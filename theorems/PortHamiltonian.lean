@@ -1,18 +1,6 @@
 import theorems.StateSpacePassivity
 import theorems.StateSpaceTrajectories
 
-/-!
-Constant-coefficient port-Hamiltonian models are instances of the general
-state-space passivity theory. The constitutive parameters give
-`A = (J - diag d) diag w`, `C = Bᵀ diag w`, `D = 0`, and the storage matrix
-`P = diag w`. Skew interconnection, nonnegative damping, and positive energy
-weights prove the general matrix certificate; no case-specific calculus,
-stability argument, or ODE existence/uniqueness proof is needed.
-
-The model includes no nonlinear, descriptor/algebraic, sampled, delayed,
-switching, or additional controller dynamics. Stability concerns the origin
-under zero port input. Semidefinite damping does not imply strict decay.
--/
 noncomputable section
 namespace powerlib.PortHamiltonian
 open Set Filter Matrix
@@ -51,7 +39,6 @@ def dampingPower (m : Model ι κ) (x : State ι) : ℝ :=
 def stateMatrix (m : Model ι κ) : Matrix ι ι ℝ :=
   (m.J - diagonal m.d) * diagonal m.w
 
-/-- The original constitutive model, embedded without changing its state or ports. -/
 def linearModel (m : Model ι κ) : StateSpacePassivity.Model ι κ where
   A := stateMatrix m
   B := m.B
@@ -110,7 +97,6 @@ omit [Fintype κ] in
       diagonal_apply_ne _ hij, diagonal_apply_ne _ (Ne.symm hij), hs, hij, Ne.symm hij]
     ring
 
-/-- A storage certificate constructed from the original physical parameters. -/
 def collocatedCertificate (m : Model ι κ) :
     StateSpacePassivity.CollocatedCertificate (linearModel m) where
   P := diagonal m.w
@@ -210,7 +196,6 @@ omit [DecidableEq ι] [Fintype κ] in
       (Passivity.supply (system m) (x t) (u t) - dampingPower m (x t)) (Ici 0) t := by
   simpa only [system, power_balance] using energy_derivative m (hx t ht)
 
-/-- The generic storage, expressed in the original physical energy notation. -/
 def storage (m : Model ι κ) : Passivity.QuadraticStorage (system m) where
   energy := energy m
   rate := (certificate m).storage.rate

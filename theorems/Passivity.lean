@@ -1,18 +1,6 @@
 import theorems.Lyapunov
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
-/-!
-Continuous-time finite-port ODE passivity. The state field and port output belong
-to the original model; trajectories satisfy its actual differential equation on
-all forward times. A dissipative storage contract must prove the derivative of
-the storage along those trajectories, rather than assume energy monotonicity or
-stability. Integral passivity needs only integrability of the supplied power.
-
-The zero-input stability result concerns the origin in a finite-dimensional real
-normed state space. The model's zero-input equilibrium and existence of forward
-solutions are separate model obligations. Positive degree-two homogeneous storage
-gives Lyapunov stability; this result makes no convergence or strict-decay claim.
--/
 noncomputable section
 namespace powerlib.Passivity
 open Set Filter MeasureTheory
@@ -42,8 +30,6 @@ def LyapunovStable (s : System E ι) : Prop :=
   ∀ ε > 0, ∃ δ > 0, ∀ x, IsTrajectory s (fun _ => 0) x → ‖x 0‖ < δ →
     ∀ t ≥ 0, ‖x t‖ < ε
 
-/-- Standard input-output passivity with an explicit nonnegative storage and
-the integral energy inequality along every actual forward trajectory. -/
 def PassiveWithStorage (s : System E ι) (energy : E → ℝ) : Prop :=
   (∀ y, 0 ≤ energy y) ∧
     ∀ {u : ℝ → (ι → ℝ)} {x : ℝ → E}, IsTrajectory s u x →
@@ -51,8 +37,6 @@ def PassiveWithStorage (s : System E ι) (energy : E → ℝ) : Prop :=
         IntervalIntegrable (fun τ => supply s (x τ) (u τ)) volume 0 t →
           energy (x t) - energy (x 0) ≤ ∫ τ in (0 : ℝ)..t, supply s (x τ) (u τ)
 
-/-- Model-indexed differential storage contract. A semidefinite or indefinite
-energy can satisfy this structure; stability additionally needs coercivity. -/
 structure DissipativeStorage (s : System E ι) where
   energy : E → ℝ
   rate : E → (ι → ℝ) → ℝ
@@ -101,8 +85,6 @@ structure QuadraticStorage (s : System E ι) extends DissipativeStorage s where
   intro τ _
   simpa only [supply_zero] using V.dissipation (x τ) 0
 
-/-- Explicit coercivity bounds suffice for stability, allowing model-specific
-checkers to supply exact bounds without choosing extrema on a unit sphere. -/
 @[powerlib_domain] theorem DissipativeStorage.trajectory_norm_bound
     {s : System E ι} (V : DissipativeStorage s)
     {α β C : ℝ} (hα : 0 < α) (hC : 0 ≤ C) (hαC : β ≤ α * C ^ 2)
@@ -118,8 +100,6 @@ checkers to supply exact bounds without choosing extrema on a unit sphere. -/
   exact (sq_le_sq₀ (norm_nonneg _) (mul_nonneg hC (norm_nonneg _))).mp
     ((mul_le_mul_left hα).mp hsq')
 
-/-- Coercivity turns integral passivity into the semantic stability predicate.
-No differentiability or pointwise dissipation is assumed in this implication. -/
 @[powerlib_domain] theorem PassiveWithStorage.lyapunovStable_of_bounds
     {s : System E ι} {energy : E → ℝ} (hp : PassiveWithStorage s energy)
     (_he : IsEquilibrium s 0)

@@ -2,8 +2,6 @@ import theorems.Attributes
 import Lean.Meta.Tactic.LibrarySearch
 import Lean.Util.CollectAxioms
 
-/-! Verification support for inspecting actual imported declarations. This
-module is not part of the public mathematical import and defines no tactic. -/
 namespace powerlib.Search
 open Lean Meta
 
@@ -36,7 +34,6 @@ def eligible (env : Environment) (name : Name) : Bool :=
   | some entry => entry.axioms.all allowedAxiom
   | none => false
 
-/-- Use Lean's imported declaration index, without requiring PowerLib labels. -/
 def candidates : LibrarySearch.CandidateFinder := fun goal => do
   let env ← getEnv
   return (← LibrarySearch.libSearchFindDecls goal).filter

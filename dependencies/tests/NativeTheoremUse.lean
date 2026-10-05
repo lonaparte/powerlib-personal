@@ -3,8 +3,6 @@ import powerlib
 open powerlib Filter
 open scoped Topology
 
--- Representative consumers use Lean and Mathlib tactics directly.
--- No theorem names or private rule sets are supplied to native search.
 namespace NativeConsumers
 theorem rl_roundtrip (m : Impedance) : toImpedance (toStateSpace m) = m := by simp
 

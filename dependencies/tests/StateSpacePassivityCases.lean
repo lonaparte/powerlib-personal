@@ -7,8 +7,6 @@ noncomputable section
 
 namespace StateSpacePassivityCases
 
--- Native theorem search works for independent, arbitrary state and port dimensions.
--- These consumers provide neither a circuit family nor a case-specific theorem.
 theorem arbitrary_dimensions_passive {ι κ : Type*} [Fintype ι] [DecidableEq ι]
     [Fintype κ] (m : StateSpacePassivity.Model ι κ) (c : StateSpacePassivity.Certificate m) :
     Passivity.PassiveWithStorage (StateSpacePassivity.system m)
@@ -66,8 +64,6 @@ theorem arbitrary_input_uniqueness {ι κ : Type*} [Fintype ι] [DecidableEq ι]
     (hy : Passivity.IsTrajectory (StateSpacePassivity.system m) u y)
     (h0 : x 0 = y 0) : Set.EqOn x y (Set.Ici 0) := by exact?
 
--- A genuine full KYP example outside the collocated subclass. Its two-state
--- storage has off-diagonal entries, and its port has direct feedthrough.
 def fullStorage : Matrix (Fin 2) (Fin 2) ℝ := !![2, 1; 1, 2]
 
 def feedthroughModel : StateSpacePassivity.Model (Fin 2) (Fin 1) where
@@ -142,7 +138,6 @@ theorem full_kyp_forward_solution (initial : Fin 2 → ℝ) :
     ∃ x, Passivity.IsTrajectory (StateSpacePassivity.system feedthroughModel)
       (fun _ => 0) x ∧ x 0 = initial := by aesop
 
--- These are proved negations, rather than failed searches reported as refutations.
 def reversedPortModel : StateSpacePassivity.Model (Fin 1) (Fin 1) where
   A := !![0]
   B := !![1]

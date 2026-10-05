@@ -3,20 +3,6 @@ import theorems.Passivity
 import theorems.StateSpaceTrajectories
 import Mathlib.Data.Real.StarOrdered
 
-/-!
-Physical terminal-port passivity of the Agda-derived ideal LCL plant.
-The state order is converter current, capacitor voltage, grid current. Inputs
-are the two terminal voltages; outputs are converter current and negative grid
-current, so both port powers are counted into the plant. Inputs may vary with
-continuous time. This model has no controller, PLL, PWM, delay, or sampling.
-The circuit is an instance of the arbitrary finite-dimensional state-space
-passivity theorem. The storage certificate checks the original matrix with
-`P = diag (L₁, C, L₂)`, `-(PA + AᵀP) = diag (2R₁, 0, 2R₂)`, and `PB = Cᵀ`.
-The energy derivative, integral inequality, stability, and trajectory facts
-are applications of the general state-space results after checked conversion.
-The stability conclusion is Lyapunov stability about a constant-input
-equilibrium, including the lossless case; it does not assert attraction.
--/
 noncomputable section
 namespace powerlib.LCL
 open Set Filter
@@ -25,9 +11,6 @@ open scoped Topology
 
 abbrev PortInput := Fin 2 → ℝ
 
-/-- The state matrix is the existing Agda-converted circuit matrix. The two
-input columns and output rows retain the original terminal voltage/current
-orientation; they are not reconstructed from an accepted certificate. -/
 def terminalStateSpace (m : Circuit) :
     powerlib.StateSpacePassivity.Model (Fin 3) (Fin 2) where
   A := (toStateSpace m).matrix
@@ -36,7 +19,6 @@ def terminalStateSpace (m : Circuit) :
   C := ![![1, 0, 0], ![0, 0, -1]]
   D := 0
 
-/-- The physical inductance/capacitance matrix is computed from the circuit. -/
 def physicalStorageMatrix (m : Circuit) : Matrix (Fin 3) (Fin 3) ℝ :=
   Matrix.diagonal ![m.first.inductance.val, m.capacitance.val,
     m.second.inductance.val]
@@ -104,9 +86,6 @@ def portSystem (m : Circuit) : powerlib.Passivity.System State (Fin 2) where
     field_simp [ne_of_gt m.first.inductance.property,
       ne_of_gt m.second.inductance.property, ne_of_gt m.capacitance.property]
 
-/-- Checking component signs constructs a certificate for the general
-state-space theorem. No LCL-specific differential or stability proof occurs
-in this construction. -/
 def physicalStateSpaceCertificate (m : Circuit) (hp : m.Passive) :
     powerlib.StateSpacePassivity.CollocatedCertificate (terminalStateSpace m) where
   P := physicalStorageMatrix m
@@ -247,15 +226,11 @@ def physicalPortStorage (m : Circuit) (hp : m.Passive) :
     powerlib.Passivity.QuadraticStorage (portSystem m) :=
   certifiedPortStorage (physicalWeights m) rfl hp
 
-/-- Model-indexed physical-storage certificate. The physical weights are
-reconstructed from the submitted circuit, and passivity is checked anew. -/
 structure StorageAccepted (m : Circuit) where
   p : SymmetricMatrix
   weights_exact : p = physicalWeights m
   passive : m.Passive
 
-/-- Witness-free construction: only the plant and checked resistance signs
-are supplied; the physical storage matrix is computed from the plant. -/
 def synthesizeStorage (m : Circuit) (hp : m.Passive) : StorageAccepted m where
   p := physicalWeights m
   weights_exact := rfl
@@ -291,8 +266,6 @@ def StorageAccepted.stateSpaceCertificate {m : Circuit} (c : StorageAccepted m) 
     powerlib.Passivity.IsEquilibrium (portSystem m) 0 :=
   zero_equilibrium m
 
-/-- Transport the general state-space equilibrium-shift theorem through the
-checked equality with the original circuit dynamics. -/
 @[powerlib_foundation] theorem lyapunovStable_of_portSystem {m : Circuit}
     (hs : powerlib.Passivity.LyapunovStable (portSystem m))
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) :
@@ -302,8 +275,6 @@ checked equality with the original circuit dynamics. -/
     ((terminalStateSpace_equilibrium_iff m u vg e).mpr he)
   simpa only [terminalStateSpace_system] using hs
 
-/-- Differential physical passivity implies Lyapunov stability after the
-checked equilibrium shift. No strictly negative energy rate is required. -/
 @[powerlib_domain] theorem passive_lyapunovStable_via_ports {m : Circuit}
     (hp : m.Passive) {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) :
     LyapunovStable m u vg e :=
@@ -321,8 +292,6 @@ checked equilibrium shift. No strictly negative energy rate is required. -/
     (c : StorageAccepted m) : LyapunovStable m 0 0 0 :=
   c.lyapunovStable (zero_equilibrium m)
 
-/-- Integral physical terminal-port passivity for actual varying-input
-trajectories. Only the input-output power needs to be integrable. -/
 @[powerlib_domain] theorem StorageAccepted.integral_passivity {m : Circuit}
     (c : StorageAccepted m) {u : ℝ → PortInput} {x : ℝ → State}
     (hx : IsPortTrajectory m u x) {t : ℝ} (ht : 0 ≤ t)
@@ -358,8 +327,6 @@ trajectories. Only the input-output power needs to be integrable. -/
   simpa only [StorageAccepted.stateSpaceCertificate_matrix, terminalStateSpace_energy] using
     c.stateSpaceCertificate.zeroInput_energy_antitone hx'
 
-/-- Forward existence is supplied by the matrix-exponential solution of the
-original plant, including lossless plants and nonunique equilibria. -/
 @[powerlib_domain] theorem StorageAccepted.trajectory_exists {m : Circuit}
     (_c : StorageAccepted m) {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e)
     (initial : State) : ∃ x, IsTrajectory m u vg x ∧ x 0 = initial := by

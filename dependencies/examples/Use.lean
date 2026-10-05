@@ -1,7 +1,5 @@
 import powerlib
 
--- The same semantic theorem applies to any finite state-space model with a
--- checked quadratic KYP certificate, regardless of the circuit family.
 example {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [Nonempty ι]
     (m : powerlib.StateSpacePassivity.Model ι κ)
     (c : powerlib.StateSpacePassivity.Certificate m) :
@@ -44,7 +42,6 @@ example (m : powerlib.Impedance) (s current voltage : ℂ) :
       voltage = m.frequency s * current :=
   powerlib.same_port_relation m s current voltage
 
--- Physical port passivity derives trajectory stability, including lossless plants.
 example (m : powerlib.LCL.Circuit) (hp : m.Passive) (u vg : ℝ)
     (e : powerlib.LCL.State) (he : powerlib.LCL.IsEquilibrium m u vg e) :
     powerlib.LCL.LyapunovStable m u vg e :=
@@ -63,7 +60,6 @@ example (m : powerlib.LCL.Circuit) (c : powerlib.LCL.StorageAccepted m)
       ∫ s in (0 : ℝ)..t, u s 0 * x s 0 - u s 1 * x s 2 :=
   c.integral_passivity hx ht hpower
 
--- Arbitrary finite-dimensional linear pH models derive storage from their parameters.
 example {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [Nonempty ι]
     (m : powerlib.PortHamiltonian.Model ι κ) :
     powerlib.Passivity.LyapunovStable (powerlib.PortHamiltonian.system m) :=

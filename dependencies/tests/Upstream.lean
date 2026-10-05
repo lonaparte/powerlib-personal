@@ -3,7 +3,6 @@ import dependencies.TheoremInspection
 
 namespace UpstreamConsumers
 
--- Native library search receives no upstream names or PowerLib classification attributes.
 theorem exp_positive (x : ℝ) : 0 < Real.exp x := by exact?
 theorem exp_add (x y : ℝ) : Real.exp (x + y) = Real.exp x * Real.exp y := by exact?
 theorem exp_injective {x y : ℝ} (h : Real.exp x = Real.exp y) : x = y := by exact?
@@ -35,7 +34,6 @@ run_cmd do
     for ax in powerlib.Search.declarationAxioms env name do
       unless powerlib.Search.allowedAxiom ax do
         throwError "Unexpected upstream consumer axiom: {ax}"
-  -- The passivity chain consumes the actual upstream calculus declarations.
   for (consumer, source) in #[
       (`powerlib.Passivity.DissipativeStorage.integral_dissipation,
         `intervalIntegral.sub_le_integral_of_hasDeriv_right_of_le),

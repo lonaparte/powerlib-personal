@@ -4,18 +4,6 @@ import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Data.Matrix.Block
 import Mathlib.Data.Real.StarOrdered
 
-/-!
-Passivity for arbitrary real, finite-dimensional, constant-coefficient state-space
-models `x' = A x + B u`, `y = C x + D u`. State and port coordinates have independent
-finite index types. All matrices describe the original model, before any storage
-certificate is introduced. Feedthrough and noncollocated ports are permitted.
-
-The certificate is the full joint quadratic KYP inequality with a symmetric
-positive definite storage matrix; its derivative and integral passivity are proved
-along actual trajectories. The optional collocated matrix condition is only a
-sufficient construction of that general certificate. Stability concerns the
-zero-input origin of the continuous-time ODE, without any strict-decay claim.
--/
 noncomputable section
 namespace powerlib.StateSpacePassivity
 open Set Matrix
@@ -43,8 +31,6 @@ def system (m : Model ι κ) : Passivity.System (State ι) κ :=
 def energy (P : Matrix ι ι ℝ) (x : State ι) : ℝ :=
   dotProduct x (P.mulVec x) / 2
 
-/-- A model-indexed full quadratic KYP certificate. Its condition quantifies over
-all state/input pairs; it assumes neither trajectory passivity nor stability. -/
 structure Certificate (m : Model ι κ) where
   P : Matrix ι ι ℝ
   positive : P.PosDef
@@ -78,8 +64,6 @@ structure Certificate (m : Model ι κ) where
     (hP : P.PosDef) : P.transpose = P := by
   simpa only [Matrix.IsHermitian, Matrix.conjTranspose, star_trivial] using hP.1
 
-/-- Product rule for the real coordinate pairing, reusing Mathlib's derivative
-product and finite-sum rules. -/
 @[powerlib_foundation] theorem dotProduct_derivative
     {x y : ℝ → State ι} {dx dy : State ι} {t : ℝ}
     (hx : HasDerivWithinAt x dx (Ici 0) t)
@@ -141,8 +125,6 @@ def Certificate.storage {m : Model ι κ} (c : Certificate m) :
     {m : Model ι κ} (c : Certificate m) : Passivity.LyapunovStable (system m) :=
   c.storage.lyapunovStable (zero_equilibrium m)
 
-/-- A convenient sufficient matrix certificate. Semidefinite dissipation includes
-lossless systems. This is a subset of the full KYP class, not its definition. -/
 structure CollocatedCertificate (m : Model ι κ) where
   P : Matrix ι ι ℝ
   positive : P.PosDef
@@ -196,8 +178,6 @@ def CollocatedCertificate.toCertificate {m : Model ι κ} (c : CollocatedCertifi
     rw [dotProduct_add, c.port_power, dotProduct_add]
     linarith
 
-/-- The full KYP dissipation block matrix on the joint state/input coordinates.
-No collocation or zero-feedthrough equality is imposed. -/
 def kypMatrix (m : Model ι κ) (P : Matrix ι ι ℝ) : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ :=
   Matrix.fromBlocks (-(P * m.A + m.A.transpose * P)) (m.C.transpose - P * m.B)
     (m.C - m.B.transpose * P) (m.D + m.D.transpose)
@@ -268,8 +248,6 @@ omit [Fintype κ] in
     rw [hq]
     exact mul_nonneg (by norm_num) (sub_nonneg.mpr (h _ _))
 
-/-- A conventional full block-matrix KYP certificate, suitable for independent
-exact checking of an arbitrary proposed positive storage matrix. -/
 structure MatrixCertificate (m : Model ι κ) where
   P : Matrix ι ι ℝ
   positive : P.PosDef

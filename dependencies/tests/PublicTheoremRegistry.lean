@@ -3,7 +3,6 @@ import dependencies.TheoremInspection
 
 open powerlib
 
--- Public result classification is metadata, not a proof-search rule set.
 open Lean Elab Command
 run_cmd do
   let env ← getEnv
