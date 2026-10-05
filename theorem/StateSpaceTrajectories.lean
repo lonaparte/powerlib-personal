@@ -39,7 +39,7 @@ omit [Fintype κ] in
     HasDerivAt (response m initial) (operator m (response m initial t)) t := by
   have h := (hasDerivAt_exp_smul_const' (operator m) t).clm_apply
     (hasDerivAt_const t initial)
-  simpa [response, ContinuousLinearMap.mul_apply] using h
+  simpa [response, ContinuousLinearMap.mul_apply] using! h
 
 @[powerlib_domain, aesop safe apply] theorem response_trajectory (m : Model ι κ) (initial : State ι) :
     Passivity.IsTrajectory (system m) (fun _ => 0) (response m initial) := by

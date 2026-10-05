@@ -1,4 +1,5 @@
 import theorem.Attributes
+import dependencies.Mathlib
 
 namespace SourceClassificationCases
 
@@ -45,6 +46,29 @@ run_cmd do
 
 attribute [powerlib_foundation] delayed_classification
 
+
+-- Use the actual standard alias imported through the dependency interface.
+@[powerlib_foundation] lemma classified_alias (P : Prop) (h : P) : P := h
+
+private lemma delayed_alias : True := True.intro
+
+open Lean Elab Command in
+run_cmd do
+  let env ← getEnv
+  let parsed ← Parser.testParseModule env (← getFileName) (← getFileMap).source
+  let names ← powerlib.Registry.authoredTheorems parsed[1].getArgs
+  unless names.contains `SourceClassificationCases.classified_alias &&
+      names.any (fun name => privateToUserName name == `SourceClassificationCases.delayed_alias) do
+    throwError "An authored public or private lemma alias was omitted"
+  try
+    powerlib.Registry.auditAuthoredTheorems parsed[1].getArgs
+    throwError "An unclassified lemma alias was accepted"
+  catch ex =>
+    unless (← ex.toMessageData.toString).contains "SourceClassificationCases.delayed_alias" do
+      throw ex
+
+attribute [powerlib_foundation] delayed_alias
+
 -- These declarations must not be mistaken for authored named theorems.
 example (n : Nat) : n = n := rfl
 
@@ -58,7 +82,7 @@ run_cmd do
   let env ← getEnv
   let parsed ← Parser.testParseModule env (← getFileName) (← getFileMap).source
   let names ← powerlib.Registry.authoredTheorems parsed[1].getArgs
-  unless names.size == 3 do
+  unless names.size == 5 do
     throwError "Authored theorem discovery included generated, anonymous, or quoted declarations"
   unless env.find? `SourceClassificationCases.Packet.mk.injEq |>.isSome do
     throwError "The generated constructor-injectivity control is absent"

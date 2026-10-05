@@ -160,7 +160,7 @@ theorem Accepted.globallyExponentiallyStable {m : Circuit} (c : Accepted m)
     {x : ℝ → State} (hx : IsTrajectory m u vg x) : Tendsto x atTop (𝓝 e) := by
   obtain ⟨C, _, rate, hr, h⟩ := h
   have hexp : Tendsto (fun t : ℝ => Real.exp (-rate * t)) atTop (𝓝 0) := by
-    simpa only [neg_mul] using Real.tendsto_exp_neg_atTop_nhds_zero.comp
+    simpa only [neg_mul] using! Real.tendsto_exp_neg_atTop_nhds_zero.comp
       (tendsto_id.const_mul_atTop hr)
   have hu : Tendsto (fun t : ℝ => C * ‖x 0 - e‖ * Real.exp (-rate * t)) atTop (𝓝 0) := by
     simpa using hexp.const_mul (C * ‖x 0 - e‖)
