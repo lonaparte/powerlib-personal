@@ -8,4 +8,3 @@ import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Topology.Order.Compact
 import Mathlib.Tactic
-import Mathlib.Analysis.Calculus.Deriv.Pow

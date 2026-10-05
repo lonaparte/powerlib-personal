@@ -10,7 +10,8 @@ defined in [Rules.md](Rules.md).
 
 ## Version compatibility
 
-The project pins Lean 4.34.1 and Mathlib v4.34.1.
+This package pins Lean 4.19.0 and Mathlib v4.19.0.
+The isolated LeanForControl profile pins Lean and Mathlib v4.30.0-rc2.
 
 When toolchain or dependency versions do not match, first adapt incompatible
 dependencies to the project's current pinned Lean and Mathlib versions and retry

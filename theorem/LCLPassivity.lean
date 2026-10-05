@@ -26,7 +26,7 @@ def physicalWeights (m : Circuit) : SymmetricMatrix :=
       (-2 * m.first.resistance * ((x t - e) 0) ^ 2 -
         2 * m.second.resistance * ((x t - e) 2) ^ 2) (Ici 0) t := by
   have h := quadraticEnergy_derivative (physicalWeights m) ((trajectory_shift he hx) t ht)
-  convert! h using 1
+  convert h using 1
   dsimp [StateSpace.vectorField]
   rw [same_dynamics]
   dsimp [energyDerivative, physicalWeights]
@@ -68,7 +68,7 @@ def physicalWeights (m : Circuit) : SymmetricMatrix :=
   have hn : ‖x t - e‖ ≤ C * ‖x 0 - e‖ := by
     have hsq' : α * ‖x t - e‖ ^ 2 ≤ α * (C * ‖x 0 - e‖) ^ 2 := by
       nlinarith only [hl, hen, hu, hsq]
-    exact (sq_le_sq₀ (norm_nonneg _) (by positivity)).mp ((mul_le_mul_iff_right₀ hα).mp hsq')
+    exact (sq_le_sq₀ (norm_nonneg _) (by positivity)).mp ((mul_le_mul_left hα).mp hsq')
   exact hn.trans_lt (by simpa [mul_comm] using (lt_div_iff₀ hC).mp h0)
 
 @[powerlib_domain] theorem lossless_energy_conserved {m : Circuit}
