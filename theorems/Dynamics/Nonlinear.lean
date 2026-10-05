@@ -54,7 +54,7 @@ def certificate (n : ℕ) : QuadraticDecayCertificate (@field n) (@energy n) 0 w
   (certificate n).globallyAsymptoticallyStable hn (field_smooth n)
 
 /-- Every solution, with arbitrary initial amplitude, decays at least as e⁻ᵗ. -/
-@[powerlib_domain, aesop safe apply] theorem norm_bound {n : ℕ} {φ : ℝ → State n} {a b t : ℝ}
+@[powerlib_domain, aesop norm -1 forward (immediate := [hφ, ht])] theorem norm_bound {n : ℕ} {φ : ℝ → State n} {a b t : ℝ}
     (hφ : IsTrajectoryOn φ (@field n) a b) (ht : t ∈ Set.Icc a b) :
     ‖φ t‖ ≤ Real.exp (-(t - a)) * ‖φ a‖ := by
   simpa [certificate] using (certificate n).norm_bound hφ ht
