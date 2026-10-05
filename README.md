@@ -8,6 +8,18 @@ must end in a kernel-checked Lean theorem. The project's requirements for models
 semantic theorems, synthesis, admission, provenance, and result maturity are
 defined in [Rules.md](Rules.md).
 
+## Version compatibility
+
+The project pins Lean 4.34.1 and Mathlib v4.34.1.
+
+When toolchain or dependency versions do not match, first adapt incompatible
+dependencies to the project's current pinned Lean and Mathlib versions and retry
+the pinned build. Check compatible older upstream revisions, or make minimal local
+compatibility changes to the dependency code, before considering a project
+toolchain upgrade. The absence of a matching historical pin does not establish
+incompatibility. Preserve upstream provenance and theorem contracts, keep all pins
+explicit, and require the complete build and proof checks to pass together.
+
 ## Directions
 
 - **ATP (Automated Theorem Proving):** automatically prove given propositions, especially **synthesis of certificates**.
@@ -24,3 +36,5 @@ theorems than mathematics and control theory. Much of the knowledge concerns
 specific operating conditions, hardware, control methods, and their combinations.
 We see this as a good experimental setting for making ATP work at the synthesis
 level and exploring the potential of ATD.
+
+Development takes place first in the private repository with the maintainer and Codex, and is periodically synchronized to the public repository.

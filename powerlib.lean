@@ -1,7 +1,7 @@
-import theorems.RLStability
-import theorems.LCLSynthesis
-import theorems.LibrarySearch
-import theorems.Dynamics.Models
-import theorems.Dynamics.Nonlinear
-import theorems.Dynamics.Polynomial2
-import theorems.Dynamics.PolynomialTactic
+import theorem.RLStability
+import theorem.LCLSynthesis
+import theorem.LibrarySearch
+import theorem.Dynamics.Models
+import theorem.Dynamics.Nonlinear
+import theorem.Dynamics.Polynomial2
+import theorem.Dynamics.PolynomialTactic
