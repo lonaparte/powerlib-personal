@@ -83,6 +83,7 @@ jobs:
         timeout-minutes: 5
         run: |
           set -euo pipefail
+          lake build +LeanForControl.axioms
           failures=0
           for consumer in \
             tests/lean/Automation.lean \
