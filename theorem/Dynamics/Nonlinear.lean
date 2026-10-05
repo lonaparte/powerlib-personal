@@ -1,5 +1,4 @@
 import dependencies.Mathlib
-import Mathlib.Analysis.InnerProductSpace.Calculus
 import theorem.Dynamics.Stability
 
 /-! A nonlinear certificate instance in every finite dimension.
@@ -23,7 +22,7 @@ def energy {n : ℕ} (x : State n) : ℝ := ‖x‖ ^ 2
     fderiv ℝ (@energy n) x (field x) = -2 * (1 + ‖x‖ ^ 2) * ‖x‖ ^ 2 := by
   change fderiv ℝ (fun y : State n => ‖y‖ ^ 2) x (field x) = _
   rw [(hasStrictFDerivAt_norm_sq x).hasFDerivAt.fderiv]
-  simp only [smul_apply, smul_eq_mul, innerSL_apply_apply]
+  simp only [ContinuousLinearMap.smul_apply, smul_eq_mul, innerSL_apply]
   rw [field, real_inner_smul_right, real_inner_self_eq_norm_sq]
   ring
 

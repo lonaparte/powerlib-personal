@@ -3,26 +3,26 @@ import powerlib
 namespace DynamicsAutomation
 open powerlib.Dynamics
 
-@[powerlib_domain] theorem nonlinear_exponential (n : ℕ) :
+theorem nonlinear_exponential (n : ℕ) :
     GloballyExponentiallyStable (@Nonlinear.field n) 0 := by aesop
 
-@[powerlib_domain] theorem nonlinear_asymptotic {n : ℕ} (hn : 0 < n) :
+theorem nonlinear_asymptotic {n : ℕ} (hn : 0 < n) :
     GloballyAsymptoticallyStable (@Nonlinear.field n) 0 := by aesop
 
-@[powerlib_domain] theorem nonlinear_segment_bound {n : ℕ} {φ : ℝ → State n} {a b t : ℝ}
+theorem nonlinear_segment_bound {n : ℕ} {φ : ℝ → State n} {a b t : ℝ}
     (hφ : powerlib.Dynamics.IsTrajectoryOn φ (@Nonlinear.field n) a b) (ht : t ∈ Set.Icc a b) :
     ‖φ t‖ ≤ Real.exp (-(t - a)) * ‖φ a‖ := by aesop
 
-@[powerlib_domain] theorem polynomial_complete {model : Polynomial2.Model} (c : Polynomial2.Accepted model) :
+theorem polynomial_complete {model : Polynomial2.Model} (c : Polynomial2.Accepted model) :
     ForwardComplete model.field := by aesop
 
-@[powerlib_domain] theorem polynomial_exponential {model : Polynomial2.Model} (c : Polynomial2.Accepted model) :
+theorem polynomial_exponential {model : Polynomial2.Model} (c : Polynomial2.Accepted model) :
     GloballyExponentiallyStable model.field 0 := by aesop
 
-@[powerlib_domain] theorem polynomial_asymptotic {model : Polynomial2.Model} (c : Polynomial2.Accepted model) :
+theorem polynomial_asymptotic {model : Polynomial2.Model} (c : Polynomial2.Accepted model) :
     GloballyAsymptoticallyStable model.field 0 := by aesop
 
-@[powerlib_domain] theorem polynomial_complete_semantics {model : Polynomial2.Model}
+theorem polynomial_complete_semantics {model : Polynomial2.Model}
     (c : Polynomial2.Accepted model) :
     ForwardComplete model.field ∧ GloballyExponentiallyStable model.field 0 ∧
       GloballyAsymptoticallyStable model.field 0 := by aesop

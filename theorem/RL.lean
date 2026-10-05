@@ -157,7 +157,7 @@ def response (m : Impedance) (initial t : ℝ) : ℝ :=
 
 @[powerlib_domain, aesop safe apply] theorem response_solves (m : Impedance) (initial t : ℝ) :
     HasDerivAt (response m initial) ((toStateSpace m).field (response m initial t) 0) t := by
-  convert! (((hasDerivAt_id t).const_mul (-(toStateSpace m).decay)).exp.const_mul initial) using 1
+  convert (((hasDerivAt_id t).const_mul (-(toStateSpace m).decay)).exp.const_mul initial) using 1
   simp [response, StateSpace.field]
   ring
 
