@@ -22,12 +22,12 @@ attribute [powerlib_foundation] stable
 -- or per-goal rule lists to native or audited proof search.
 universe u
 
-theorem imported_application {α : Sort u} (P : α → Prop) (x : α) (h : P x) :
+@[powerlib_foundation] theorem imported_application {α : Sort u} (P : α → Prop) (x : α) (h : P x) :
     RegistryFixture.Envelope (P x) := by powerlib_search
 
-theorem imported_iff (P : Prop) : RegistryFixture.Envelope P ↔ P := by exact?
+@[powerlib_foundation] theorem imported_iff (P : Prop) : RegistryFixture.Envelope P ↔ P := by exact?
 
-theorem current_application (m : powerlib.Impedance) (c : powerlib.Accepted m) :
+@[powerlib_domain] theorem current_application (m : powerlib.Impedance) (c : powerlib.Accepted m) :
     StableContract m := by powerlib_search
 
 end RegistryCurrent
