@@ -1,5 +1,4 @@
 import theorems.RL
-import Mathlib.Analysis.Calculus.MeanValue
 
 /-! Trajectory semantics for the canonical RL family.  Time starts at zero;
 the ODE is required only on `[0, ∞)`, including the right derivative at zero.
@@ -52,7 +51,7 @@ def IsEquilibrium (m : Impedance) (voltage equilibrium : ℝ) : Prop :=
   dsimp [IsEquilibrium]
   field_simp
 
-@[powerlib_domain] theorem response_trajectory (m : Impedance) (initial : ℝ) :
+@[powerlib_domain, aesop safe apply] theorem response_trajectory (m : Impedance) (initial : ℝ) :
     IsTrajectory m 0 (response m initial) := by
   intro t _
   exact (response_solves m initial t).hasDerivWithinAt
@@ -88,7 +87,7 @@ def equilibriumResponse (m : Impedance) (e initial t : ℝ) : ℝ :=
     equilibriumResponse m e initial 0 = initial := by
   simp [equilibriumResponse, response_initial]
 
-@[powerlib_domain] theorem equilibriumResponse_trajectory {m : Impedance} {v e : ℝ}
+@[powerlib_domain, aesop safe apply] theorem equilibriumResponse_trajectory {m : Impedance} {v e : ℝ}
     (he : IsEquilibrium m v e) (initial : ℝ) :
     IsTrajectory m v (equilibriumResponse m e initial) := by
   intro t ht
@@ -164,7 +163,8 @@ def GloballyExponentiallyStable (m : Impedance) (v e : ℝ) : Prop :=
     Real.exp_le_one_iff.mpr (mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.mpr ha.le) ht)
   exact (mul_le_of_le_one_right (abs_nonneg _) hx).trans_lt h0
 
-@[powerlib_domain] theorem globallyAsymptoticallyStable_of_stable {m : Impedance} {v e : ℝ}
+@[powerlib_domain, aesop unsafe 90% apply]
+theorem globallyAsymptoticallyStable_of_stable {m : Impedance} {v e : ℝ}
     (hm : m.Stable) (he : IsEquilibrium m v e) : GloballyAsymptoticallyStable m v e :=
   ⟨lyapunovStable_of_stable hm he, fun _ hi => trajectory_tendsto hm he hi⟩
 
@@ -241,15 +241,18 @@ def synthesize (m : Impedance) (hR : 0 < m.resistance) : Accepted m where
     (he : IsEquilibrium m v e) : GloballyAsymptoticallyStable m v e :=
   globallyAsymptoticallyStable_of_stable c.stable he
 
-@[powerlib_domain] theorem Accepted.asymptoticallyStable {m : Impedance} (c : Accepted m) {v e : ℝ}
+@[powerlib_domain, aesop norm forward (immediate := [c])]
+theorem Accepted.asymptoticallyStable {m : Impedance} (c : Accepted m) {v e : ℝ}
     (he : IsEquilibrium m v e) : AsymptoticallyStable m v e :=
   asymptoticallyStable_of_global (c.globallyAsymptoticallyStable he)
 
-@[powerlib_domain] theorem Accepted.globallyExponentiallyStable {m : Impedance} (c : Accepted m) {v e : ℝ}
+@[powerlib_domain, aesop norm forward (immediate := [c])]
+theorem Accepted.globallyExponentiallyStable {m : Impedance} (c : Accepted m) {v e : ℝ}
     (he : IsEquilibrium m v e) : GloballyExponentiallyStable m v e :=
   globallyExponentiallyStable_of_stable c.stable he
 
-@[powerlib_domain] theorem Accepted.trajectory_decay {m : Impedance} (c : Accepted m) {v e : ℝ} {i : ℝ → ℝ}
+@[powerlib_domain, aesop norm forward (immediate := [c])]
+theorem Accepted.trajectory_decay {m : Impedance} (c : Accepted m) {v e : ℝ} {i : ℝ → ℝ}
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) {t : ℝ} (ht : 0 ≤ t) :
     (i t - e) ^ 2 = (i 0 - e) ^ 2 * Real.exp (-(c.rate * t)) := by
   rw [trajectory_eq_response (trajectory_shift he hi) ht]

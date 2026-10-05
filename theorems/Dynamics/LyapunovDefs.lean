@@ -2,7 +2,7 @@
 Copyright 2026 Anand Gokhale and contributors
 SPDX-License-Identifier: Apache-2.0
 Adapted for PowerLib and mathlib 4.19. Original license:
-dependencies/licenses/LeanForControl-LICENSE.
+licenses/LeanForControl-LICENSE.
 Source: AnandGokhale/LeanForControl @ 7507ed04d94068fe3e7d4624b3383433a861bea7
 LeanForControl/Stability/DefsAutonomous.lean.
 -/

@@ -1,5 +1,4 @@
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import Mathlib.Tactic
+import dependencies.Mathlib
 import theorems.Attributes
 import theorems.generated.Conversion
 

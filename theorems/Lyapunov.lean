@@ -1,8 +1,5 @@
 import theorems.Attributes
-import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.Topology.Order.Compact
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import dependencies.Mathlib
 
 noncomputable section
 namespace powerlib

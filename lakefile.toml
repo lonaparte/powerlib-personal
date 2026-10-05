@@ -12,5 +12,10 @@ rev = "v4.19.0"
 
 [[lean_lib]]
 name = "powerlib"
-roots = ["powerlib", "theorems"]
-globs = ["powerlib", "theorems.+"]
+roots = ["powerlib", "theorems", "dependencies"]
+globs = ["powerlib", "theorems.+", "dependencies.+"]
+
+[[lean_lib]]
+name = "PowerLibTests"
+roots = ["tests.lean.RegistryFixture"]
+globs = ["tests.lean.RegistryFixture"]

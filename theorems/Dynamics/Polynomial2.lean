@@ -15,9 +15,18 @@ namespace powerlib.Dynamics.Polynomial2
 
 abbrev State2 := State 2
 
+def ratLiteral (numerator : ℤ) (denominator : ℕ) : ℚ :=
+  (numerator : ℚ) / (denominator : ℚ)
+
+instance : Lean.ToExpr ℚ where
+  toExpr q := Lean.mkApp2 (Lean.mkConst ``ratLiteral)
+    (Lean.toExpr q.num) (Lean.toExpr q.den)
+  toTypeExpr := Lean.mkConst ``Rat
+
 structure Term where
   coefficient : ℚ
   powers : ℕ × ℕ
+  deriving Inhabited, BEq, DecidableEq, Lean.ToExpr
 
 abbrev Polynomial := List Term
 
@@ -28,6 +37,7 @@ def eval : Polynomial → ℝ → ℝ → ℝ
 structure Model where
   field0 : Polynomial
   field1 : Polynomial
+  deriving Inhabited, BEq, DecidableEq, Lean.ToExpr
 
 def Model.field (model : Model) (x : State2) : State2 :=
   (WithLp.equiv 2 (Fin 2 → ℝ)).symm
@@ -74,6 +84,7 @@ def lie (model : Model) (p00 p01 p11 : ℚ) (x y : ℝ) : ℝ :=
 structure WeightedSquare where
   weight : ℚ
   poly : Polynomial
+  deriving Inhabited, BEq, Lean.ToExpr
 
 def sosEval : List WeightedSquare → ℝ → ℝ → ℝ
   | [], _, _ => 0
@@ -98,6 +109,7 @@ structure Witness where
   lower_sos : List WeightedSquare
   upper_sos : List WeightedSquare
   decay_sos : List WeightedSquare
+  deriving Inhabited, BEq, Lean.ToExpr
 
 def Witness.energy (w : Witness) (x : State2) : ℝ :=
   quadratic w.p00 w.p01 w.p11 (x 0) (x 1)
