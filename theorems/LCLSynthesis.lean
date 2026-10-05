@@ -229,16 +229,17 @@ def synthesize (m : Circuit) (hp : m.Passive) (hd : m.Damped) : Accepted m := by
     exact div_pos (mul_pos (mul_pos (mul_pos (pow_pos hk 2) (pow_pos hJ 2)) hG)
       (PassiveWitness.detNumerator_pos ha hd' hb he hk)) (pow_pos hq 3)
 
-@[powerlib_domain, aesop unsafe apply] theorem passive_asymptoticallyStable (m : Circuit) (hp : m.Passive) (hd : m.Damped)
+@[powerlib_domain, aesop norm forward (immediate := [hp, hd])]
+theorem passive_asymptoticallyStable (m : Circuit) (hp : m.Passive) (hd : m.Damped)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : AsymptoticallyStable m u vg e :=
   (synthesize m hp hd).asymptoticallyStable he
 
-@[powerlib_domain, aesop unsafe apply] theorem passive_globallyAsymptoticallyStable
+@[powerlib_domain] theorem passive_globallyAsymptoticallyStable
     (m : Circuit) (hp : m.Passive) (hd : m.Damped)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : GloballyAsymptoticallyStable m u vg e :=
   (synthesize m hp hd).globallyAsymptoticallyStable he
 
-@[powerlib_domain, aesop unsafe apply] theorem passive_globallyExponentiallyStable
+@[powerlib_domain] theorem passive_globallyExponentiallyStable
     (m : Circuit) (hp : m.Passive) (hd : m.Damped)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : GloballyExponentiallyStable m u vg e :=
   (synthesize m hp hd).globallyExponentiallyStable he

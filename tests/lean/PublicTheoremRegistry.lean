@@ -1,5 +1,4 @@
 import powerlib
-import dependencies.TheoremInspection
 
 open powerlib
 

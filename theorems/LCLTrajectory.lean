@@ -1,8 +1,4 @@
 import theorems.LCL
-import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.LinearAlgebra.Matrix.ToLin
-import Mathlib.Analysis.SpecialFunctions.Exponential
-import Mathlib.Analysis.ODE.Gronwall
 
 /-! Forward trajectories of the ideal continuous-time three-state plant.
 State order is converter current, capacitor voltage, grid current, in stationary
@@ -131,13 +127,13 @@ def response (m : Circuit) (initial : State) (t : ℝ) : State :=
     response m initial 0 = initial := by
   simp [response, NormedSpace.exp_zero]
 
-@[powerlib_domain] theorem response_solves (m : Circuit) (initial : State) (t : ℝ) :
+@[powerlib_domain, aesop safe apply] theorem response_solves (m : Circuit) (initial : State) (t : ℝ) :
     HasDerivAt (response m initial) ((toStateSpace m).operator (response m initial t)) t := by
   have h := (hasDerivAt_exp_smul_const' (toStateSpace m).operator t).clm_apply
     (hasDerivAt_const t initial)
   simpa [response, ContinuousLinearMap.mul_apply] using h
 
-@[powerlib_domain] theorem response_trajectory (m : Circuit) (initial : State) :
+@[powerlib_domain, aesop safe apply] theorem response_trajectory (m : Circuit) (initial : State) :
     IsTrajectory m 0 0 (response m initial) := by
   intro t _
   simpa only [StateSpace.operator_field] using (response_solves m initial t).hasDerivWithinAt
@@ -149,7 +145,7 @@ def equilibriumResponse (m : Circuit) (e initial : State) (t : ℝ) : State :=
     equilibriumResponse m e initial 0 = initial := by
   simp [equilibriumResponse]
 
-@[powerlib_domain] theorem equilibriumResponse_trajectory {m : Circuit} {u vg : ℝ} {e : State}
+@[powerlib_domain, aesop safe apply] theorem equilibriumResponse_trajectory {m : Circuit} {u vg : ℝ} {e : State}
     (he : IsEquilibrium m u vg e) (initial : State) :
     IsTrajectory m u vg (equilibriumResponse m e initial) := by
   intro t _

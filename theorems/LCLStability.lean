@@ -107,7 +107,8 @@ def GloballyExponentiallyStable (m : Circuit) (u vg : ℝ) (e : State) : Prop :=
   ∃ C ≥ (1 : ℝ), ∃ rate > 0, ∀ x, IsTrajectory m u vg x → ∀ t ≥ 0,
     ‖x t - e‖ ≤ C * ‖x 0 - e‖ * Real.exp (-rate * t)
 
-@[powerlib_domain, aesop unsafe apply] theorem Accepted.globallyExponentiallyStable {m : Circuit} (c : Accepted m)
+@[powerlib_domain, aesop norm forward (immediate := [c])]
+theorem Accepted.globallyExponentiallyStable {m : Circuit} (c : Accepted m)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) :
     GloballyExponentiallyStable m u vg e := by
   obtain ⟨α, hα, β, hβα, hb⟩ := c.energy_bounds
@@ -169,7 +170,7 @@ def GloballyExponentiallyStable (m : Circuit) (u vg : ℝ) (e : State) : Prop :=
       exact h x hx t ht) hu
   exact tendsto_iff_norm_sub_tendsto_zero.mpr hn
 
-@[powerlib_domain, aesop unsafe apply] theorem Accepted.lyapunovStable {m : Circuit} (c : Accepted m)
+@[powerlib_domain] theorem Accepted.lyapunovStable {m : Circuit} (c : Accepted m)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : LyapunovStable m u vg e :=
   lyapunovStable_of_globallyExponentiallyStable (c.globallyExponentiallyStable he)
 
@@ -178,11 +179,12 @@ def GloballyExponentiallyStable (m : Circuit) (u vg : ℝ) (e : State) : Prop :=
     (he : IsEquilibrium m u vg e) (hx : IsTrajectory m u vg x) : Tendsto x atTop (𝓝 e) :=
   trajectory_tendsto_of_globallyExponentiallyStable (c.globallyExponentiallyStable he) hx
 
-@[powerlib_domain, aesop unsafe apply] theorem Accepted.globallyAsymptoticallyStable {m : Circuit} (c : Accepted m)
+@[powerlib_domain] theorem Accepted.globallyAsymptoticallyStable {m : Circuit} (c : Accepted m)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : GloballyAsymptoticallyStable m u vg e :=
   ⟨c.lyapunovStable he, fun _ hx => c.trajectory_tendsto he hx⟩
 
-@[powerlib_domain, aesop unsafe apply] theorem Accepted.asymptoticallyStable {m : Circuit} (c : Accepted m)
+@[powerlib_domain, aesop norm forward (immediate := [c])]
+theorem Accepted.asymptoticallyStable {m : Circuit} (c : Accepted m)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : AsymptoticallyStable m u vg e :=
   ⟨c.lyapunovStable he, 1, zero_lt_one, fun _ hx _ => c.trajectory_tendsto he hx⟩
 

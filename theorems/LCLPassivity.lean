@@ -8,7 +8,7 @@ open scoped Topology
 def physicalWeights (m : Circuit) : SymmetricMatrix :=
   ⟨m.first.inductance.val, 0, 0, m.capacitance.val, 0, m.second.inductance.val⟩
 
-@[powerlib_foundation] theorem physicalEnergy_positive (m : Circuit) (x : State) (hx : x ≠ 0) :
+@[powerlib_foundation, aesop safe apply] theorem physicalEnergy_positive (m : Circuit) (x : State) (hx : x ≠ 0) :
     0 < quadraticEnergy (physicalWeights m) x := by
   apply energy_positive
   · exact m.first.inductance.property
@@ -46,7 +46,7 @@ def physicalWeights (m : Circuit) : SymmetricMatrix :=
     (mul_nonpos_of_nonpos_of_nonneg (by nlinarith [hp.1]) (sq_nonneg _))
     (mul_nonneg (by nlinarith [hp.2]) (sq_nonneg _)))
 
-@[powerlib_domain] theorem passive_lyapunovStable {m : Circuit} (hp : m.Passive)
+@[powerlib_domain, aesop unsafe 80% apply] theorem passive_lyapunovStable {m : Circuit} (hp : m.Passive)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : LyapunovStable m u vg e := by
   obtain ⟨α, hα, β, hβα, hb⟩ := powerlib.quadratic_bounds
     (quadraticEnergy (physicalWeights m)) (quadraticEnergy_continuous _)
@@ -84,7 +84,7 @@ def physicalWeights (m : Circuit) : SymmetricMatrix :=
     (C := 0) hd (fun _ _ => by simp) (show (0 : ℝ) ∈ Ici 0 by simp) ht
   exact sub_eq_zero.mp (norm_eq_zero.mp (le_antisymm (by simpa using hb) (norm_nonneg _)))
 
-@[powerlib_domain] theorem constant_trajectory {m : Circuit} {u vg : ℝ} {e : State}
+@[powerlib_domain, aesop safe apply] theorem constant_trajectory {m : Circuit} {u vg : ℝ} {e : State}
     (he : IsEquilibrium m u vg e) : IsTrajectory m u vg (fun _ => e) := by
   intro t _
   rw [he]
