@@ -22,22 +22,16 @@ explicit, and require the complete build and proof checks to pass together.
 
 ## Dependency locations
 
-Keep complete upstream checkouts outside the repository. For a repository at
-`<workspace>/<repository>`, use these external locations with the commits pinned
-in the applicable `lake-manifest.json`:
-
-- Mathlib: `<workspace>/support/upstream/mathlib`.
-- LeanForControl: `<workspace>/support/upstream/LeanForControl`.
-
-The main package's ignored `.lake/packages` directory and the isolated profile's
-ignored `dependencies/integrations/leanforcontrol/.lake/packages` directory must
-link to `<workspace>/support/upstream`. Lake resolves imported
-modules through those links. LeanForControl is used by the isolated profile;
-install it for the main package when its manifest also requires it. Complete
-upstream sources and compiled caches are not repository files. Only necessary
-interfaces, formal consumers, exact compatibility changes, and version pins belong
-in the published project. CI stores upstream checkouts in its runner temporary
-directory.
+Lake resolves the main package's Mathlib checkout at `.lake/packages/mathlib`.
+The isolated LeanForControl profile resolves its checkouts at
+`dependencies/integrations/leanforcontrol/.lake/packages/mathlib` and
+`dependencies/integrations/leanforcontrol/.lake/packages/LeanForControl`.
+When the main package requires LeanForControl, its checkout is at
+`.lake/packages/LeanForControl`. Use the revisions pinned in each package's
+`lake-manifest.json`. Lake obtains the upstream packages; no manual copying into
+`dependencies/` is required. Complete upstream sources and compiled caches remain
+ignored local dependencies. The repository contains only necessary interfaces,
+formal consumers, exact compatibility changes, and pinned build configuration.
 
 ## Directions
 

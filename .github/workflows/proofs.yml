@@ -28,22 +28,9 @@ jobs:
           test -z "$nonfiles" || { printf '%s\n' "$nonfiles"; exit 1; }
           local_programs=$(git ls-files -- '*.py')
           test -z "$local_programs" || { printf '%s\n' "$local_programs"; exit 1; }
-      - name: Keep complete upstream packages outside the repository
-        shell: bash
-        run: |
-          set -euo pipefail
-          package_cache="${POWERLIB_EXTERNAL_PACKAGES:-$RUNNER_TEMP/powerlib-upstream}"
-          mkdir -p "$package_cache" .lake
-          if [ -L .lake/packages ]; then
-            test "$(readlink .lake/packages)" = "$package_cache"
-          else
-            test ! -e .lake/packages
-            ln -s "$package_cache" .lake/packages
-          fi
       - uses: leanprover/lean-action@f061402b660e0c34644504b324e830f2991d4865
         with:
           use-mathlib-cache: "true"
-          use-github-cache: "false"
           build: "false"
           test: "false"
           lint: "false"
@@ -209,25 +196,11 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Keep complete upstream packages outside the repository
-        working-directory: dependencies/integrations/leanforcontrol
-        shell: bash
-        run: |
-          set -euo pipefail
-          package_cache="${POWERLIB_EXTERNAL_PACKAGES:-$RUNNER_TEMP/powerlib-upstream}"
-          mkdir -p "$package_cache" .lake
-          if [ -L .lake/packages ]; then
-            test "$(readlink .lake/packages)" = "$package_cache"
-          else
-            test ! -e .lake/packages
-            ln -s "$package_cache" .lake/packages
-          fi
       - uses: leanprover/lean-action@f061402b660e0c34644504b324e830f2991d4865
         with:
           lake-package-directory: dependencies/integrations/leanforcontrol
           build: "false"
           use-mathlib-cache: "true"
-          use-github-cache: "false"
           test: "false"
           lint: "false"
       - name: Apply and audit the exact LeanForControl compatibility diff
