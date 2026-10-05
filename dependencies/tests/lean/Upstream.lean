@@ -2,13 +2,10 @@ import powerlib
 
 namespace UpstreamConsumers
 
-@[powerlib_foundation]
 -- No upstream names or PowerLib classification attributes are supplied to search.
-theorem exp_positive (x : ℝ) : 0 < Real.exp x := by powerlib_search
-@[powerlib_foundation]
-theorem exp_add (x y : ℝ) : Real.exp (x + y) = Real.exp x * Real.exp y := by powerlib_search
-@[powerlib_foundation]
-theorem exp_injective {x y : ℝ} (h : Real.exp x = Real.exp y) : x = y := by powerlib_search
+@[powerlib_foundation] theorem exp_positive (x : ℝ) : 0 < Real.exp x := by powerlib_search
+@[powerlib_foundation] theorem exp_add (x y : ℝ) : Real.exp (x + y) = Real.exp x * Real.exp y := by powerlib_search
+@[powerlib_foundation] theorem exp_injective {x y : ℝ} (h : Real.exp x = Real.exp y) : x = y := by powerlib_search
 
 end UpstreamConsumers
 
@@ -28,7 +25,7 @@ run_cmd do
   for name in #[`UpstreamConsumers.exp_positive, `UpstreamConsumers.exp_add,
       `UpstreamConsumers.exp_injective] do
     let info ← getConstInfo name
-    let some proof := info.value? | throwError "Missing consumer proof: {name}"
+    let some proof := info.value? (allowOpaque := true) | throwError "Missing consumer proof: {name}"
     unless proof.getUsedConstants.any (fun dependency =>
         match env.getModuleIdxFor? dependency with
         | some index => env.header.moduleNames[index]!.getRoot == `Mathlib
@@ -45,7 +42,7 @@ run_cmd do
       (`powerlib.StateSpacePassivity.trajectory_unique, `ODE_solution_unique),
       (`powerlib.StateSpacePassivity.response_solves, `hasDerivAt_exp_smul_const')] do
     let info ← getConstInfo consumer
-    let some proof := info.value? | throwError "Missing passivity proof: {consumer}"
+    let some proof := info.value? (allowOpaque := true) | throwError "Missing passivity proof: {consumer}"
     unless proof.getUsedConstants.contains source do
       throwError "Passivity proof did not directly reuse {source}"
     let some entry := powerlib.Search.describe env source |

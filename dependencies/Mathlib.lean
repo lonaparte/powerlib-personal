@@ -6,10 +6,12 @@ import Mathlib.Analysis.ODE.Gronwall
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Data.Matrix.Block
-import Mathlib.Data.Real.StarOrdered
+import Mathlib.Algebra.Order.Star.Real
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Tactic
 import Mathlib.Topology.Order.Compact
+import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.ODE.ExistUnique
