@@ -1,8 +1,8 @@
-import theorems.RLStability
-import theorems.LCLSynthesis
-import theorems.LibrarySearch
-import theorems.StateSpacePassivity
-import theorems.StateSpaceTrajectories
-import theorems.RLPortPassivity
-import theorems.LCLPortPassivity
-import theorems.PortHamiltonian
+import theorem.RLStability
+import theorem.LCLSynthesis
+import theorem.LibrarySearch
+import theorem.StateSpacePassivity
+import theorem.StateSpaceTrajectories
+import theorem.RLPortPassivity
+import theorem.LCLPortPassivity
+import theorem.PortHamiltonian
