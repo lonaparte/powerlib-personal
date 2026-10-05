@@ -30,6 +30,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   · have hcompact : HasCompactSupport (fun x => b x • f x) :=
       b.hasCompactSupport.smul_right
     have hsmooth : ContDiff ℝ 1 (fun x => b x • f x) := b.contDiff.smul hf
-    exact ContDiff.lipschitzWith_of_hasCompactSupport hcompact hsmooth le_rfl
+    exact ContDiff.lipschitzWith_of_hasCompactSupport hcompact hsmooth (by norm_num)
 
 end powerlib.Dynamics

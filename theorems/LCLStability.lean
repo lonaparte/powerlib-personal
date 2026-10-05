@@ -140,7 +140,7 @@ theorem Accepted.globallyExponentiallyStable {m : Circuit} (c : Accepted m)
   have hsquare : α * ‖x t - e‖ ^ 2 ≤
       α * (C * ‖x 0 - e‖ * Real.exp (-(1 / (2 * β)) * t)) ^ 2 := by
     nlinarith only [h0, h1]
-  exact (sq_le_sq₀ (norm_nonneg (x t - e)) hbound).mp ((mul_le_mul_left hα).mp hsquare)
+  exact (sq_le_sq₀ (norm_nonneg (x t - e)) hbound).mp ((mul_le_mul_iff_right₀ hα).mp hsquare)
 
 @[powerlib_domain] theorem lyapunovStable_of_globallyExponentiallyStable
     {m : Circuit} {u vg : ℝ} {e : State} (h : GloballyExponentiallyStable m u vg e) :

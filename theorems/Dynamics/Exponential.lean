@@ -92,7 +92,7 @@ variable {f : E → E} {V : E → ℝ} {equilibrium : E}
   have hsquared : ‖φ t - equilibrium‖ ^ 2 ≤
       (c.upper / c.lower) * Real.exp (-(c.rate * (t - a))) *
         ‖φ a - equilibrium‖ ^ 2 := by
-    apply (mul_le_mul_left c.lower_pos).mp
+    apply (mul_le_mul_iff_right₀ c.lower_pos).mp
     convert henergy using 1
     field_simp [ne_of_gt c.lower_pos]
     ring
