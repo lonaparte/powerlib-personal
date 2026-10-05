@@ -86,7 +86,9 @@ jobs:
           lti_source=${lti_source%% *}
           test "$(sed -n 's/^-- Agda source SHA-256: //p' theorems/generated/LTIFoundation.lean)" = "$lti_source"
       - name: Check native LTI semantic theorem reuse
-        run: lake env lean tests/lean/LTI.lean
+        run: |
+          lake env lean tests/lean/LTI.lean
+          lake env lean tests/lean/LTISynthesis.lean
       - name: Audit transitive theorem dependencies
         run: lake env lean tests/lean/Audit.lean
       - name: Check native automation and upstream theorem reuse
