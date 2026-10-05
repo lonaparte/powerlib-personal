@@ -9,18 +9,21 @@ namespace powerlib.Tests.Dynamics
 
 open powerlib.Dynamics Set Filter Topology
 
+@[powerlib_domain]
 -- There is a full forward trajectory through every initial state, including n = 0.
 theorem nonlinear_every_initial_state_has_global_solution (n : ℕ) (a : ℝ) (x₀ : State n) :
     ∃ φ : ℝ → State n, φ a = x₀ ∧
       powerlib.Dynamics.IsIntegralCurveOn φ (fun _ x => Nonlinear.field x) (Ici a) :=
   (Nonlinear.globallyExponentiallyStable n).2.1 a x₀
 
+@[powerlib_domain]
 -- This estimate applies to an arbitrary solution, time anchor, and amplitude.
 theorem nonlinear_every_finite_segment_decays {n : ℕ} {φ : ℝ → State n}
     {a b t : ℝ} (hφ : powerlib.Dynamics.IsTrajectoryOn φ (@Nonlinear.field n) a b) (ht : t ∈ Icc a b) :
     ‖φ t‖ ≤ Real.exp (-(t - a)) * ‖φ a‖ :=
   Nonlinear.norm_bound hφ ht
 
+@[powerlib_domain]
 -- The public GAS theorem supplies universal attraction, not a selected response.
 theorem nonlinear_every_global_trajectory_converges {n : ℕ} (hn : 0 < n)
     (a : ℝ) (φ : ℝ → State n)
@@ -28,6 +31,7 @@ theorem nonlinear_every_global_trajectory_converges {n : ℕ} (hn : 0 < n)
     Tendsto φ atTop (𝓝 (0 : State n)) :=
   (Nonlinear.globallyAsymptoticallyStable hn).2.2.2 a φ hφ
 
+@[powerlib_domain]
 -- Accepted LCL witnesses remain indexed by the exact original zero-input plant.
 theorem lcl_every_initial_state_has_global_solution {m : powerlib.LCL.Circuit}
     (c : powerlib.LCL.Accepted m) (a : ℝ) (x₀ : powerlib.LCL.State3) :
@@ -35,6 +39,7 @@ theorem lcl_every_initial_state_has_global_solution {m : powerlib.LCL.Circuit}
       powerlib.Dynamics.IsIntegralCurveOn φ (fun _ x => m.autonomousField x) (Ici a) :=
   c.autonomousGloballyExponentiallyStable.2.1 a x₀
 
+@[powerlib_domain]
 theorem lcl_uniform_decay_of_every_finite_segment {m : powerlib.LCL.Circuit}
     (c : powerlib.LCL.Accepted m) :
     ∃ C rate : ℝ, 1 ≤ C ∧ 0 < rate ∧
@@ -44,6 +49,7 @@ theorem lcl_uniform_decay_of_every_finite_segment {m : powerlib.LCL.Circuit}
           ‖φ t‖ ≤ C * Real.exp (-(rate * (t - a))) * ‖φ a‖ := by
   simpa only [sub_zero] using c.autonomousGloballyExponentiallyStable.2.2
 
+@[powerlib_domain]
 theorem lcl_every_global_trajectory_converges {m : powerlib.LCL.Circuit}
     (c : powerlib.LCL.Accepted m) (a : ℝ) (φ : ℝ → powerlib.LCL.State3)
     (hφ : powerlib.Dynamics.IsIntegralCurveOn φ (fun _ x => m.autonomousField x) (Ici a)) :
@@ -55,11 +61,13 @@ def locallyStableField (x : ℝ) : ℝ := -x + x ^ 3
 
 def squareEnergy (x : ℝ) : ℝ := x ^ 2
 
+@[powerlib_foundation]
 theorem locallyStableField_has_negative_linearization :
     HasDerivAt locallyStableField (-1) 0 := by
   simpa [locallyStableField] using
     (hasDerivAt_id (0 : ℝ)).neg.add ((hasDerivAt_id (0 : ℝ)).pow 3)
 
+@[powerlib_foundation]
 theorem squareEnergy_lie_derivative (x : ℝ) :
     fderiv ℝ squareEnergy x (locallyStableField x) =
       2 * x * locallyStableField x := by
@@ -69,6 +77,7 @@ theorem squareEnergy_lie_derivative (x : ℝ) :
   simp [ContinuousLinearMap.smulRight_apply]
   ring
 
+@[powerlib_domain]
 -- At x = 2 the Lie derivative is 24; no positive global decay rate can fit.
 theorem locallyStableField_rejects_global_decay_certificate :
     ¬ Nonempty (QuadraticDecayCertificate locallyStableField squareEnergy 0) := by
@@ -78,6 +87,7 @@ theorem locallyStableField_rejects_global_decay_certificate :
   norm_num [locallyStableField, squareEnergy] at hdecay
   nlinarith [c.rate_pos]
 
+@[powerlib_domain]
 -- The complete field has a nonzero constant trajectory. Thus global exponential
 -- stability itself is false, independently of the choice of energy certificate.
 theorem locallyStableField_not_globallyExponentiallyStable :

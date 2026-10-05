@@ -48,50 +48,60 @@ def linearHalfAccepted : Polynomial2.Accepted linearHalf := by polynomial_stabil
 #guard ((Polynomial2.synthesize linearHalf).map
   (fun w => w.lower_sos.isEmpty && w.upper_sos.isEmpty && w.decay_sos.isEmpty)) == some true
 
+@[powerlib_domain]
 -- Exercise direct application to each semantic goal, rather than only Accepted.
 theorem coupled_forward_complete : ForwardComplete coupled.field := by
   polynomial_stability coupled
 
+@[powerlib_domain]
 theorem heldOut_exponentially_stable : Dynamics.GloballyExponentiallyStable heldOut.field 0 := by
   polynomial_stability heldOut
 
+@[powerlib_domain]
 theorem rankOne_asymptotically_stable : Dynamics.GloballyAsymptoticallyStable rankOneCoupled.field 0 := by
   polynomial_stability rankOneCoupled
 
+@[powerlib_domain]
 theorem let_bound_model_exponentially_stable : Dynamics.GloballyExponentiallyStable heldOut.field 0 := by
   let localModel : Model := heldOut
   have h : Dynamics.GloballyExponentiallyStable localModel.field 0 := by
     polynomial_stability localModel
   exact h
 
+@[powerlib_domain]
 theorem named_field_definitions_exponentially_stable :
     Dynamics.GloballyExponentiallyStable namedFields.field 0 := by
   polynomial_stability namedFields
 
+@[powerlib_domain]
 theorem coupled_semantics :
     ForwardComplete coupled.field ∧ Dynamics.GloballyExponentiallyStable coupled.field 0 ∧
       Dynamics.GloballyAsymptoticallyStable coupled.field 0 :=
   ⟨coupledAccepted.forwardComplete, coupledAccepted.globallyExponentiallyStable,
     coupledAccepted.globallyAsymptoticallyStable⟩
 
+@[powerlib_domain]
 theorem rankOne_semantics :
     ForwardComplete rankOneCoupled.field ∧ Dynamics.GloballyExponentiallyStable rankOneCoupled.field 0 ∧
       Dynamics.GloballyAsymptoticallyStable rankOneCoupled.field 0 :=
   ⟨rankOneAccepted.forwardComplete, rankOneAccepted.globallyExponentiallyStable,
     rankOneAccepted.globallyAsymptoticallyStable⟩
 
+@[powerlib_domain]
 theorem heldOut_semantics :
     ForwardComplete heldOut.field ∧ Dynamics.GloballyExponentiallyStable heldOut.field 0 ∧
       Dynamics.GloballyAsymptoticallyStable heldOut.field 0 :=
   ⟨heldOutAccepted.forwardComplete, heldOutAccepted.globallyExponentiallyStable,
     heldOutAccepted.globallyAsymptoticallyStable⟩
 
+@[powerlib_domain]
 theorem linearHalf_semantics :
     ForwardComplete linearHalf.field ∧ Dynamics.GloballyExponentiallyStable linearHalf.field 0 ∧
       Dynamics.GloballyAsymptoticallyStable linearHalf.field 0 :=
   ⟨linearHalfAccepted.forwardComplete, linearHalfAccepted.globallyExponentiallyStable,
     linearHalfAccepted.globallyAsymptoticallyStable⟩
 
+@[powerlib_domain]
 theorem all_finite_trajectories_decay {model : Model} (c : Polynomial2.Accepted model)
     {φ : ℝ → State 2} {a b t : ℝ}
     (hφ : powerlib.Dynamics.IsTrajectoryOn φ model.field a b) (ht : t ∈ Set.Icc a b) :
@@ -99,6 +109,7 @@ theorem all_finite_trajectories_decay {model : Model} (c : Polynomial2.Accepted 
       Real.exp (-((c.rate : ℝ) / 2 * (t - a))) * ‖φ a‖ := by
   simpa only [sub_zero] using c.quadraticDecayCertificate.norm_bound hφ ht
 
+@[powerlib_domain]
 theorem heldOut_all_finite_trajectories_decay {φ : ℝ → State 2} {a b t : ℝ}
     (hφ : powerlib.Dynamics.IsTrajectoryOn φ heldOut.field a b) (ht : t ∈ Set.Icc a b) :
     ‖φ t‖ ≤ Real.sqrt ((heldOutAccepted.upper : ℝ) / (heldOutAccepted.lower : ℝ)) *
