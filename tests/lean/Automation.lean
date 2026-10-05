@@ -143,7 +143,7 @@ example (voltage equilibrium : ℝ) (i : ℝ → ℝ)
     (hi : IsTrajectory submittedModel voltage i) (t : ℝ) (ht : 0 ≤ t) :
     (i t - equilibrium) ^ 2 =
       (i 0 - equilibrium) ^ 2 * Real.exp (-(accepted.rate * t)) := by
-  have certificate := accepted
+  let certificate := accepted
   aesop
 
 end RLAdmissionFixture
