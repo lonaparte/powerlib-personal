@@ -26,7 +26,7 @@ def physicalWeights (m : Circuit) : SymmetricMatrix :=
       (-2 * m.first.resistance * ((x t - e) 0) ^ 2 -
         2 * m.second.resistance * ((x t - e) 2) ^ 2) (Ici 0) t := by
   have h := quadraticEnergy_derivative (physicalWeights m) ((trajectory_shift he hx) t ht)
-  convert h using 1
+  convert! h using 1
   dsimp [StateSpace.vectorField]
   rw [same_dynamics]
   dsimp [energyDerivative, physicalWeights]
