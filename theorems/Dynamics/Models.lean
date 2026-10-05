@@ -26,7 +26,7 @@ def Impedance.autonomousField (m : Impedance) : ℝ → ℝ :=
     fderiv ℝ (energy p) i di = 2 * p * i * di := by
   have h := (((hasDerivAt_id i).pow 2).const_mul p).hasFDerivAt
   change fderiv ℝ (fun y => p * id y ^ 2) i di = _
-  rw [h.fderiv]
+  erw [h.fderiv]
   simp [energy, ContinuousLinearMap.smulRight_apply]
   ring
 
@@ -144,7 +144,7 @@ def stateEnergy (p : SymmetricMatrix) (x : State3) : ℝ :=
   simp only [PiLp.proj_apply] at h
   unfold stateEnergy energy
   simp only [pow_two]
-  rw [h.fderiv]
+  erw [h.fderiv]
   simp [energyDerivative]
   ring
 

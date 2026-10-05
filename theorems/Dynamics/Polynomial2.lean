@@ -130,7 +130,7 @@ def Witness.energy (w : Witness) (x : State2) : ℝ :=
   simp only [PiLp.proj_apply] at h
   unfold Witness.energy quadratic
   simp only [pow_two]
-  rw [h.fderiv]
+  erw [h.fderiv]
   simp
   ring
 
