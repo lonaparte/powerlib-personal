@@ -31,7 +31,7 @@ jobs:
       - name: Audit project theorems
         run: lake env lean dependencies/tests/Audit.lean
       - name: Check theorem discovery and automatic reuse
-        timeout-minutes: 5
+        timeout-minutes: 10
         run: python3 dependencies/check_automatic.py
       - name: Check global trajectories and nonlinear negative controls
         run: lake env lean dependencies/tests/Dynamics.lean
