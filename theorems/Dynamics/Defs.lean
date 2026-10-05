@@ -29,7 +29,7 @@ abbrev IsIntegralCurveOn (φ : ℝ → E) (f : ℝ → E → E) (s : Set ℝ) : 
     (hφ : IsIntegralCurveOn φ f s) (hu : u ⊆ s) : IsIntegralCurveOn φ f u :=
   _root_.IsIntegralCurveOn.mono hφ hu
 
-@[powerlib_foundation, simp] theorem isIntegralCurveOn_upstream_iff
+@[powerlib_foundation] theorem isIntegralCurveOn_upstream_iff
     {φ : ℝ → E} {f : ℝ → E → E} {s : Set ℝ} :
     IsIntegralCurveOn φ f s ↔ _root_.IsIntegralCurveOn φ f s := Iff.rfl
 

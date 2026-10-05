@@ -38,11 +38,11 @@ local notation "ℝⁿ" => State n
     (c : ℝ) : IsCompact (SublevelSet V c) :=
   _root_.isCompact_sublevel_set V hcont hradial c
 
-@[powerlib_foundation, simp] theorem isTrajectoryOn_upstream_iff
+@[powerlib_foundation] theorem isTrajectoryOn_upstream_iff
     {φ : ℝ → ℝⁿ} {f : ℝⁿ → ℝⁿ} {a b : ℝ} :
     IsTrajectoryOn φ f a b ↔ _root_.IsTrajectoryOn φ f a b := Iff.rfl
 
-@[powerlib_foundation, simp] theorem trajectoryStability_upstream_iff
+@[powerlib_foundation] theorem trajectoryStability_upstream_iff
     {f : ℝⁿ → ℝⁿ} {equilibrium : ℝⁿ} :
     TrajectoryGloballyAsymptoticallyStable f equilibrium ↔
       _root_.GlobalAsymptoticStable f equilibrium := Iff.rfl
