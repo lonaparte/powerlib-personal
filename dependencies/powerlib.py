@@ -76,23 +76,24 @@ example : accepted.rate = {literal(rate)} := by norm_num [accepted, Candidate.ce
       initial ^ 2 * Real.exp (-(accepted.rate * t)) := accepted.decay_bound initial t
 @[powerlib_domain] theorem small_signal : powerlib.AsymptoticallyStable submittedModel 0 0 := by
   have certificate := accepted
-  powerlib_auto
+  have he : powerlib.IsEquilibrium submittedModel 0 0 := by simp
+  exact?
 @[powerlib_domain] theorem exponential (voltage equilibrium : ℝ)
     (he : powerlib.IsEquilibrium submittedModel voltage equilibrium) :
     powerlib.GloballyExponentiallyStable submittedModel voltage equilibrium := by
   have certificate := accepted
-  powerlib_auto
+  exact?
 @[powerlib_domain] theorem global_asymptotic (voltage equilibrium : ℝ)
     (he : powerlib.IsEquilibrium submittedModel voltage equilibrium) :
     powerlib.GloballyAsymptoticallyStable submittedModel voltage equilibrium := by
   have certificate := accepted
-  powerlib_auto
+  exact?
 @[powerlib_domain] theorem all_trajectory_decay (voltage equilibrium : ℝ) (i : ℝ → ℝ)
     (he : powerlib.IsEquilibrium submittedModel voltage equilibrium)
     (hi : powerlib.IsTrajectory submittedModel voltage i) (t : ℝ) (ht : 0 ≤ t) :
     (i t - equilibrium) ^ 2 =
       (i 0 - equilibrium) ^ 2 * Real.exp (-(accepted.rate * t)) := by
-  powerlib_auto
+  exact?
 end Admission
 ''' + audit(["Admission.accepted", "Admission.stable", "Admission.dissipation", "Admission.decay",
              "Admission.small_signal", "Admission.exponential", "Admission.global_asymptotic",
@@ -186,11 +187,19 @@ def main():
     atp_parser = commands.add_parser("atp", help="Synthesize and verify a stability certificate")
     atp_parser.add_argument("model")
     atp_parser.add_argument("--family", choices=["rl", "lcl"], default="rl")
+    atp_parser.add_argument("--goal", choices=["exponential-stability", "passive-stability"],
+                            default="exponential-stability",
+                            help="Choose strict decay or passivity with Lyapunov stability")
     atd_parser = commands.add_parser("atd", help="Search conditions and verify proofs or counterexamples")
     atd_parser.add_argument("--family", choices=["rl", "lcl"], default="rl")
     args = parser.parse_args()
     try:
-        if args.family == "lcl":
+        if args.command == "atp" and args.goal == "passive-stability":
+            if args.family != "lcl":
+                raise ValueError("The passive-stability goal currently supports the LCL family")
+            import passivity
+            report = passivity.atp(args.model)
+        elif args.family == "lcl":
             import lcl
             report = lcl.atp(args.model) if args.command == "atp" else lcl.atd()
         else:

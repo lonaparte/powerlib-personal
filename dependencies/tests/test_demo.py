@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from bridge import extract, render
 from common import ROOT, DEPENDENCIES, CACHE, RESULTS, audit, check_lean, run
 from powerlib import admission_source, candidate_source, read_model
-from check_automatic import check_automatic
+from check_theorem_interfaces import check_theorem_interfaces
 
 
 class InputTests(unittest.TestCase):
@@ -122,7 +122,7 @@ theorem negative_not_asymptotic : ¬ powerlib.AsymptoticallyStable negativeResis
 ''' + audit(["lossless_not_asymptotic", "negative_not_asymptotic"]), True)
 
     def test_automatic_public_api(self):
-        self.assertGreater(check_automatic(), 0)
+        self.assertGreater(check_theorem_interfaces(), 0)
 
     def test_untagged_library_theorem_reuse(self):
         self.check_source("untagged_reuse", '''import powerlib
@@ -131,7 +131,7 @@ inductive Contract (x : ℕ) : Prop where
   | ofEquality : x + x = 2 * x → Contract x
 theorem untagged (x : ℕ) : Contract x := .ofEquality (by omega)
 end ThirdPartyFixture
-theorem reused (x : ℕ) : ThirdPartyFixture.Contract x := by powerlib_search
+theorem reused (x : ℕ) : ThirdPartyFixture.Contract x := by exact?
 open Lean Elab Command in
 run_cmd do
   let info ← getConstInfo `reused
@@ -145,11 +145,13 @@ run_cmd do
     def test_library_search_filters_proof_escapes(self):
         for proof, axiom in [("by sorry", "sorryAx"), ("forbidden", "forbidden")]:
             source = '''import powerlib
+import dependencies.TheoremInspection
 namespace ThirdPartyFixture
 inductive Contract : Prop
 end ThirdPartyFixture
-axiom forbidden : ThirdPartyFixture.Contract
 '''
+            if proof == "forbidden":
+                source += "axiom forbidden : ThirdPartyFixture.Contract\n"
             source += f"theorem badLibraryTheorem : ThirdPartyFixture.Contract := {proof}\n"
             source += f'''open Lean Elab Command in
 run_cmd do
@@ -160,10 +162,28 @@ run_cmd do
     throwError "Missing transitive proof-escape dependency"
   if powerlib.Search.eligible env `badLibraryTheorem then
     throwError "An invalid theorem was eligible for proof search"
-theorem rejected : ThirdPartyFixture.Contract := by powerlib_search
-'''
+theorem rejected : ThirdPartyFixture.Contract := by exact?
+''' + audit(["rejected"])
             log = self.check_source("untrusted_library", source, False)
-            self.assertIn("No kernel-admissible library theorem closed the goal", log)
+            self.assertIn("Unexpected axiom " + axiom, log)
+
+    def test_native_aesop_proof_escapes_cannot_pass_audit(self):
+        # Native automation constructs proof terms. The independent admission
+        # audit must reject any term that depends on a disallowed axiom.
+        for proof, axiom in [("by sorry", "sorryAx"), ("forbidden", "forbidden")]:
+            source = '''import powerlib
+namespace ThirdPartyFixture
+inductive Contract : Prop
+end ThirdPartyFixture
+'''
+            if proof == "forbidden":
+                source += "axiom forbidden : ThirdPartyFixture.Contract\n"
+            source += ("@[aesop unsafe 50% apply] "
+                       f"theorem badAesopRule : ThirdPartyFixture.Contract := {proof}\n")
+            source += "theorem rejected : ThirdPartyFixture.Contract := by aesop\n"
+            source += audit(["rejected"])
+            log = self.check_source("untrusted_aesop", source, False)
+            self.assertIn("Unexpected axiom " + axiom, log)
 
     def test_exported_formula(self):
         # Well-typed but wrong data must fail the independent Lean endpoint.

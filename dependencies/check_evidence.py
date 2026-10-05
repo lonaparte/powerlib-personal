@@ -15,6 +15,11 @@ def check(proof, provenance):
         relative = Path(name)
         if relative.is_absolute() or ".." in relative.parts or digest(evidence / relative) != expected:
             raise RuntimeError(f"Retained evidence identity changed: {name}")
+    if "kernel_checked_source" in provenance:
+        source = Path(provenance["kernel_checked_source"])
+        if (source.is_absolute() or ".." in source.parts or
+                digest(evidence / source) != provenance["kernel_checked_source_sha256"]):
+            raise RuntimeError("Independently audited kernel source identity changed")
     for family, prefix in [("rl", "bridge"), ("lcl", "lcl-bridge")]:
         conversion = provenance["conversions"][family]
         for suffix, key in [(".json", "report_sha256"), (".log", "agda_log_sha256"),
@@ -25,7 +30,7 @@ def check(proof, provenance):
 
 
 def main():
-    accepted = candidates = 0
+    accepted = candidates = passive_admissions = 0
     for path in RESULTS.rglob("*.json"):
         if path.name not in {"report.json", "certificate.json"}:
             continue
@@ -35,13 +40,16 @@ def main():
             if digest(path.parent / "submitted.json") != data["submitted_model_sha256"]:
                 raise RuntimeError("Submitted input identity changed")
             accepted += 1
+            if data.get("goal") == "passive-stability" and data.get("maturity") == "S-level":
+                passive_admissions += 1
         for result in data.get("results", []):
             if result["status"] in {"PROVED", "REFUTED"}:
                 check(path.parent / Path(result["proof"]).name, result["provenance"])
                 candidates += 1
-    if accepted < 2 or candidates < 6:
-        raise RuntimeError("Both families' accepted ATP and fixed-candidate artifacts are required")
-    print(f"POWERLIB_RETAINED_EVIDENCE_OK: {accepted} admissions, {candidates} candidates")
+    if accepted < 3 or candidates < 6 or passive_admissions < 1:
+        raise RuntimeError("RL, strict LCL, passive LCL ATP and both fixed-candidate artifacts are required")
+    print(f"POWERLIB_RETAINED_EVIDENCE_OK: {accepted} admissions, "
+          f"{passive_admissions} passive admissions, {candidates} candidates")
 
 
 if __name__ == "__main__":

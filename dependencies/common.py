@@ -87,7 +87,7 @@ def proof_provenance(proof):
     for prefix in ["bridge", "lcl-bridge"]:
         for suffix in [".json", ".log", "-endpoint.lean", "-endpoint.log"]:
             shutil.copyfile(RESULTS / (prefix + suffix), evidence / (prefix + suffix))
-    for path in [ROOT / "lean-toolchain", ROOT / "lake-manifest.json", ROOT / "Rules.md",
+    for path in [ROOT / "lean-toolchain", ROOT / "lake-manifest.json", ROOT / "lakefile.toml", ROOT / "Rules.md",
                  ROOT / "powerlib.lean", DEPENDENCIES / "wire.json", DEPENDENCIES / "lcl_wire.json",
                  *sorted((ROOT / "theorems").rglob("*.lean")),
                  *sorted((ROOT / "theorems").rglob("*.agda"))]:
@@ -101,7 +101,8 @@ def proof_provenance(proof):
             "evidence_files_sha256": {str(p.relative_to(evidence)): digest(p)
                                       for p in sorted(evidence.rglob("*")) if p.is_file()},
             "manifest_sha256": digest(ROOT / "lake-manifest.json"),
-            "public_source_sha256": {"powerlib.lean": digest(ROOT / "powerlib.lean"), **{
+            "public_source_sha256": {"powerlib.lean": digest(ROOT / "powerlib.lean"),
+                                     "lakefile.toml": digest(ROOT / "lakefile.toml"), **{
                 str(path.relative_to(ROOT)): digest(path)
                 for path in sorted((ROOT / "theorems").rglob("*.lean"))}},
             "proof_sha256": digest(proof),

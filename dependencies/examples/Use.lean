@@ -28,3 +28,34 @@ example (m : powerlib.Impedance) (s current voltage : ℂ) :
         ((powerlib.toStateSpace m).inputGain.val : ℂ) * voltage ↔
       voltage = m.frequency s * current :=
   powerlib.same_port_relation m s current voltage
+
+-- Physical port passivity derives trajectory stability, including lossless plants.
+example (m : powerlib.LCL.Circuit) (hp : m.Passive) (u vg : ℝ)
+    (e : powerlib.LCL.State) (he : powerlib.LCL.IsEquilibrium m u vg e) :
+    powerlib.LCL.LyapunovStable m u vg e :=
+  powerlib.LCL.passive_lyapunovStable_via_ports hp he
+
+example (m : powerlib.LCL.Circuit) (hp : m.Passive) :
+    powerlib.LCL.LyapunovStable m 0 0 0 :=
+  (powerlib.LCL.synthesizeStorage m hp).zeroInput_stable
+
+example (m : powerlib.LCL.Circuit) (c : powerlib.LCL.StorageAccepted m)
+    (u : ℝ → powerlib.LCL.PortInput) (x : ℝ → powerlib.LCL.State)
+    (hx : powerlib.LCL.IsPortTrajectory m u x) (t : ℝ) (ht : 0 ≤ t)
+    (hpower : IntervalIntegrable
+      (fun s => u s 0 * x s 0 - u s 1 * x s 2) MeasureTheory.volume 0 t) :
+    powerlib.LCL.portEnergy m (x t) - powerlib.LCL.portEnergy m (x 0) ≤
+      ∫ s in (0 : ℝ)..t, u s 0 * x s 0 - u s 1 * x s 2 :=
+  c.integral_passivity hx ht hpower
+
+-- Arbitrary finite-dimensional linear pH models derive storage from their parameters.
+example {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [Nonempty ι]
+    (m : powerlib.PortHamiltonian.Model ι κ) :
+    powerlib.Passivity.LyapunovStable (powerlib.PortHamiltonian.system m) :=
+  powerlib.PortHamiltonian.lyapunovStable m
+
+example {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
+    (m : powerlib.PortHamiltonian.Model ι κ) (initial : powerlib.PortHamiltonian.State ι) :
+    ∃ x, powerlib.Passivity.IsTrajectory (powerlib.PortHamiltonian.system m)
+      (fun _ => 0) x ∧ x 0 = initial :=
+  powerlib.PortHamiltonian.trajectory_exists m initial

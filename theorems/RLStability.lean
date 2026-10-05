@@ -153,7 +153,7 @@ def GloballyExponentiallyStable (m : Impedance) (v e : ℝ) : Prop :=
     exact (trajectory_eq_equilibriumResponse he hi ht).symm
   simpa using h.congr' heq
 
-@[powerlib_domain] theorem lyapunovStable_of_stable {m : Impedance} {v e : ℝ}
+@[powerlib_domain, aesop unsafe apply] theorem lyapunovStable_of_stable {m : Impedance} {v e : ℝ}
     (hm : m.Stable) (he : IsEquilibrium m v e) : LyapunovStable m v e := by
   have ha : 0 < (toStateSpace m).decay := (stability_agrees m).mpr hm
   intro ε hε
@@ -164,7 +164,7 @@ def GloballyExponentiallyStable (m : Impedance) (v e : ℝ) : Prop :=
     Real.exp_le_one_iff.mpr (mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.mpr ha.le) ht)
   exact (mul_le_of_le_one_right (abs_nonneg _) hx).trans_lt h0
 
-@[powerlib_domain] theorem globallyAsymptoticallyStable_of_stable {m : Impedance} {v e : ℝ}
+@[powerlib_domain, aesop unsafe apply] theorem globallyAsymptoticallyStable_of_stable {m : Impedance} {v e : ℝ}
     (hm : m.Stable) (he : IsEquilibrium m v e) : GloballyAsymptoticallyStable m v e :=
   ⟨lyapunovStable_of_stable hm he, fun _ hi => trajectory_tendsto hm he hi⟩
 
@@ -172,7 +172,7 @@ def GloballyExponentiallyStable (m : Impedance) (v e : ℝ) : Prop :=
     (h : GloballyAsymptoticallyStable m v e) : AsymptoticallyStable m v e :=
   ⟨h.1, 1, zero_lt_one, fun i hi _ => h.2 i hi⟩
 
-@[powerlib_domain] theorem globallyExponentiallyStable_of_stable {m : Impedance} {v e : ℝ}
+@[powerlib_domain, aesop unsafe apply] theorem globallyExponentiallyStable_of_stable {m : Impedance} {v e : ℝ}
     (hm : m.Stable) (he : IsEquilibrium m v e) : GloballyExponentiallyStable m v e := by
   refine ⟨1, le_rfl, (toStateSpace m).decay, (stability_agrees m).mpr hm, ?_⟩
   intro i hi t ht
@@ -233,19 +233,19 @@ def synthesize (m : Impedance) (hR : 0 < m.resistance) : Accepted m where
 @[powerlib_domain] theorem accepted_exists_iff_stable (m : Impedance) : Nonempty (Accepted m) ↔ m.Stable :=
   ⟨fun ⟨c⟩ => c.stable, fun hm => ⟨synthesize m ((impedance_stable_iff m).mp hm)⟩⟩
 
-@[powerlib_domain] theorem Accepted.lyapunovStable {m : Impedance} (c : Accepted m) {v e : ℝ}
+@[powerlib_domain, aesop unsafe apply] theorem Accepted.lyapunovStable {m : Impedance} (c : Accepted m) {v e : ℝ}
     (he : IsEquilibrium m v e) : LyapunovStable m v e :=
   lyapunovStable_of_stable c.stable he
 
-@[powerlib_domain] theorem Accepted.globallyAsymptoticallyStable {m : Impedance} (c : Accepted m) {v e : ℝ}
+@[powerlib_domain, aesop unsafe apply] theorem Accepted.globallyAsymptoticallyStable {m : Impedance} (c : Accepted m) {v e : ℝ}
     (he : IsEquilibrium m v e) : GloballyAsymptoticallyStable m v e :=
   globallyAsymptoticallyStable_of_stable c.stable he
 
-@[powerlib_domain] theorem Accepted.asymptoticallyStable {m : Impedance} (c : Accepted m) {v e : ℝ}
+@[powerlib_domain, aesop unsafe apply] theorem Accepted.asymptoticallyStable {m : Impedance} (c : Accepted m) {v e : ℝ}
     (he : IsEquilibrium m v e) : AsymptoticallyStable m v e :=
   asymptoticallyStable_of_global (c.globallyAsymptoticallyStable he)
 
-@[powerlib_domain] theorem Accepted.globallyExponentiallyStable {m : Impedance} (c : Accepted m) {v e : ℝ}
+@[powerlib_domain, aesop unsafe apply] theorem Accepted.globallyExponentiallyStable {m : Impedance} (c : Accepted m) {v e : ℝ}
     (he : IsEquilibrium m v e) : GloballyExponentiallyStable m v e :=
   globallyExponentiallyStable_of_stable c.stable he
 

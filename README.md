@@ -24,3 +24,82 @@ theorems than mathematics and control theory. Much of the knowledge concerns
 specific operating conditions, hardware, control methods, and their combinations.
 We see this as a good experimental setting for making ATP work at the synthesis
 level and exploring the potential of ATD.
+
+## Passivity and stability
+
+`import powerlib` exposes a semantic port-system interface in
+`powerlib.Passivity`. A differential storage contract connects the original
+ODE to the derivative along its actual forward trajectories. The public
+`QuadraticStorage.passiveWithStorage` theorem establishes nonnegative storage
+and the input-output energy inequality. `PassiveWithStorage.lyapunovStable_of_bounds`
+derives epsilon-delta stability from that integral passivity and coercivity;
+`QuadraticStorage.lyapunovStable` supplies those bounds automatically for
+continuous, positive quadratic storage. The origin
+must be an equilibrium; solution existence remains an explicit model obligation.
+
+`powerlib.PortHamiltonian` instantiates this interface in arbitrary nonempty
+finite dimension for the original linear model
+`x' = (J - diag d) diag w x + B u`, with `J` skew, `w > 0`, `d >= 0`,
+and output `y = B^T diag w x`. Its `storage` is constructed from the model
+parameters. The public `passiveWithStorage` and `lyapunovStable` theorems
+establish passivity and zero-input stability, and `trajectory_exists` /
+`trajectory_unique` establish actual global forward zero-input solutions using Mathlib's
+operator exponential and ODE uniqueness theorem. This general family is a
+public Lean theorem; the S-level command below instantiates the LCL family.
+
+The LCL instance uses the checked Agda-to-Lean circuit conversion. Its state
+order is converter current, capacitor voltage, grid current; terminal inputs
+are converter and grid voltages, with outputs converter current and negative
+grid current. The storage is `(L1*i1^2 + C*vc^2 + L2*i2^2)/2`.
+`powerlib.LCL.physical_integral_passivity` handles varying terminal inputs
+with integrable supplied power. `powerlib.LCL.passive_lyapunovStable_via_ports`
+uses this storage contract to prove stability about every existing
+constant-input equilibrium. Forward existence and uniqueness are proved for
+the original circuit, including the lossless case.
+
+To automatically construct and admit a physical storage certificate from only
+the component parameters:
+
+```bash
+python3 dependencies/powerlib.py atp dependencies/examples/lcl-lossless.json --family lcl --goal passive-stability
+```
+
+This target requires nonnegative resistances and positive inductances and
+capacitance. It includes zero resistance and concludes Lyapunov stability.
+The separate default `exponential-stability` target synthesizes a strict
+Lyapunov certificate; passive LCL plants additionally need nonzero damping
+for that stronger conclusion. The model is an ideal continuous-time plant
+in stationary scalar coordinates, without a controller, PLL, PWM, or delay.
+
+Admission independently reconstructs the submitted circuit, checks the proposed
+storage matrix in Lean, audits transitive axioms, and retains the original input,
+proof, dependency pins, bridge evidence, and source hashes. Supplying an existing
+certificate through `dependencies/passivity.py verify` is reported as certificate
+verification. ATP reports S-level only after automatic construction and all kernel
+checks complete.
+
+The public import contains the mathematical model and theorem modules directly.
+Reusable facts carry native `simp`, `ext`, or Aesop attributes where appropriate;
+ordinary `simp`, `aesop`, and `exact?` can combine them with Mathlib declarations.
+There is no private proof-search tactic or bulk theorem rule set. The independent
+verification consumers in `dependencies/tests/NativeTheoremUse.lean` exercise
+these interfaces and audit their completed proof terms. Declaration inspection
+is verification support in `dependencies/TheoremInspection.lean`, outside the
+public mathematical import.
+
+```lean
+import powerlib
+
+example {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [Nonempty ι]
+    (m : powerlib.PortHamiltonian.Model ι κ) :
+    powerlib.Passivity.LyapunovStable (powerlib.PortHamiltonian.system m) := by
+  aesop
+```
+
+The analytic steps directly reuse pinned Mathlib `v4.19.0` declarations
+`antitoneOn_of_hasDerivWithinAt_nonpos` and
+`intervalIntegral.sub_le_integral_of_hasDeriv_right_of_le`; the upstream reuse
+check verifies the actual proof references and axiom dependencies. LeanForControl's
+`lyapunov_stable` was inspected at commit
+`7507ed04d94068fe3e7d4624b3383433a861bea7`, but that version requires Lean/Mathlib
+`v4.30.0-rc2` and is not an imported dependency of this `v4.19.0` build.

@@ -14,3 +14,7 @@ rev = "v4.19.0"
 name = "powerlib"
 roots = ["powerlib", "theorems"]
 globs = ["powerlib", "theorems.+"]
+
+[[lean_lib]]
+name = "TheoremInspection"
+roots = ["dependencies.TheoremInspection"]

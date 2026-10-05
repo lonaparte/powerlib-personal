@@ -32,7 +32,7 @@ jobs:
         run: lake env lean dependencies/tests/Audit.lean
       - name: Check theorem discovery and automatic reuse
         timeout-minutes: 5
-        run: python3 dependencies/check_automatic.py
+        run: python3 dependencies/check_theorem_interfaces.py
       - name: Check Agda conversion and dependency pins
         run: python3 dependencies/setup.py
       - name: Check LCL conversion
@@ -46,6 +46,7 @@ jobs:
           lake env lean dependencies/examples/Use.lean
           python3 dependencies/powerlib.py atp dependencies/examples/rl.json
           python3 dependencies/powerlib.py atp dependencies/examples/lcl.json --family lcl
+          python3 dependencies/powerlib.py atp dependencies/examples/lcl-lossless.json --family lcl --goal passive-stability
           python3 dependencies/powerlib.py atd
           python3 dependencies/powerlib.py atd --family lcl
           python3 dependencies/check_evidence.py
