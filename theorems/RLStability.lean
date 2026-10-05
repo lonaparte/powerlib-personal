@@ -240,7 +240,8 @@ def synthesize (m : Impedance) (hR : 0 < m.resistance) : Accepted m where
     (he : IsEquilibrium m v e) : GloballyAsymptoticallyStable m v e :=
   globallyAsymptoticallyStable_of_stable c.stable he
 
-@[powerlib_domain] theorem Accepted.asymptoticallyStable {m : Impedance} (c : Accepted m) {v e : ℝ}
+@[powerlib_domain, aesop norm forward (immediate := [c])]
+theorem Accepted.asymptoticallyStable {m : Impedance} (c : Accepted m) {v e : ℝ}
     (he : IsEquilibrium m v e) : AsymptoticallyStable m v e :=
   asymptoticallyStable_of_global (c.globallyAsymptoticallyStable he)
 

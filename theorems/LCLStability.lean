@@ -182,7 +182,8 @@ def GloballyExponentiallyStable (m : Circuit) (u vg : ℝ) (e : State) : Prop :=
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : GloballyAsymptoticallyStable m u vg e :=
   ⟨c.lyapunovStable he, fun _ hx => c.trajectory_tendsto he hx⟩
 
-@[powerlib_domain] theorem Accepted.asymptoticallyStable {m : Circuit} (c : Accepted m)
+@[powerlib_domain, aesop norm forward (immediate := [c])]
+theorem Accepted.asymptoticallyStable {m : Circuit} (c : Accepted m)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : AsymptoticallyStable m u vg e :=
   ⟨c.lyapunovStable he, 1, zero_lt_one, fun _ hx _ => c.trajectory_tendsto he hx⟩
 

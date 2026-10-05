@@ -48,12 +48,12 @@ example (m : Impedance) : m.Stable ↔ 0 < m.resistance := by exact?
 example (m : Impedance) :
     (toStateSpace m).Stable ↔ m.Stable := by exact?
 
-example (m : Impedance) : IsEquilibrium m 0 0 := by exact?
+example (m : Impedance) : IsEquilibrium m 0 0 := by simp
 
 example (m : Impedance) (c : Accepted m) : m.Stable := by exact?
 
 example (m : Impedance) (c : Accepted m) :
-    AsymptoticallyStable m 0 0 := by exact?
+    AsymptoticallyStable m 0 0 := by aesop
 
 example (m : Impedance) (c : Accepted m) (v e : ℝ) (he : IsEquilibrium m v e) :
     LyapunovStable m v e := by exact?
@@ -101,8 +101,10 @@ example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) :
     LCL.GloballyAsymptoticallyStable m u vg e := by exact?
 
+example (m : LCL.Circuit) : LCL.IsEquilibrium m 0 0 0 := by simp
+
 example (m : LCL.Circuit) (c : LCL.Accepted m) :
-    LCL.AsymptoticallyStable m 0 0 0 := by exact?
+    LCL.AsymptoticallyStable m 0 0 0 := by aesop
 
 example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (initial : LCL.State) :
     ∃ x, LCL.IsTrajectory m u vg x ∧ x 0 = initial := by exact?
@@ -125,7 +127,7 @@ example (m : LCL.Circuit) (h1 : m.first.resistance = 0) (h2 : m.second.resistanc
     ¬ LCL.AsymptoticallyStable m u vg e := by exact?
 
 example (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
-    LCL.AsymptoticallyStable m 0 0 0 := by exact?
+    LCL.AsymptoticallyStable m 0 0 0 := by aesop
 
 example (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) (u vg : ℝ) (e : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) :
