@@ -97,7 +97,7 @@ def linearHalfAccepted : Polynomial2.Accepted linearHalf := by polynomial_stabil
     (hφ : powerlib.Dynamics.IsTrajectoryOn φ model.field a b) (ht : t ∈ Set.Icc a b) :
     ‖φ t‖ ≤ Real.sqrt ((c.upper : ℝ) / (c.lower : ℝ)) *
       Real.exp (-((c.rate : ℝ) / 2 * (t - a))) * ‖φ a‖ := by
-  simpa only [sub_zero] using c.quadraticDecayCertificate.norm_bound hφ ht
+  simpa only [sub_zero] using! c.quadraticDecayCertificate.norm_bound hφ ht
 
 @[powerlib_domain] theorem heldOut_all_finite_trajectories_decay {φ : ℝ → State 2} {a b t : ℝ}
     (hφ : powerlib.Dynamics.IsTrajectoryOn φ heldOut.field a b) (ht : t ∈ Set.Icc a b) :

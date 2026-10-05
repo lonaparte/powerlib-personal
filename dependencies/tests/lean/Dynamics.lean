@@ -57,7 +57,7 @@ def squareEnergy (x : ℝ) : ℝ := x ^ 2
 
 @[powerlib_foundation] theorem locallyStableField_has_negative_linearization :
     HasDerivAt locallyStableField (-1) 0 := by
-  simpa [locallyStableField] using
+  simpa [locallyStableField, Pi.neg_apply, Pi.add_apply, Pi.pow_apply] using!
     (hasDerivAt_id (0 : ℝ)).neg.add ((hasDerivAt_id (0 : ℝ)).pow 3)
 
 @[powerlib_foundation] theorem squareEnergy_lie_derivative (x : ℝ) :
