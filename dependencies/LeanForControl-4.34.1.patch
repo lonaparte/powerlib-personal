@@ -154,3 +154,16 @@ index 8441ef98b323688e2b4afe9219f5034fb1576dfe..f9f6856e5830ba569dafcb7ea354741a
  import Mathlib.Analysis.ODE.Gronwall
  import LeanForControl.ODEs.ODE_properties
  import Architect
+diff --git a/LeanForControl/Stability/Autonomous.lean b/LeanForControl/Stability/Autonomous.lean
+index b070f7eb9bfd64426b25fb21ea2a246f6dd49339..8efcdae5f0fd4797001bd79c914f129ff147da52 100644
+--- a/LeanForControl/Stability/Autonomous.lean
++++ b/LeanForControl/Stability/Autonomous.lean
+@@ -126,7 +126,7 @@ lemma antitoneOn_V_add_linear
+     AntitoneOn (fun t => V (φ t) + c * t) s := by
+   have hd : ∀ t ∈ interior s, HasDerivAt (fun u => V (φ u) + c * u)
+       (fderiv ℝ V (φ t) (f (φ t)) + c) t := fun t ht => by
+-    simpa using (hasDerivAt_V_comp_integralCurveOn hV_diff hφ
++    simpa [Function.comp_def, Pi.add_apply] using! (hasDerivAt_V_comp_integralCurveOn hV_diff hφ
+       (mem_interior_iff_mem_nhds.mp ht)).add ((hasDerivAt_id t).const_mul c)
+   apply antitoneOn_of_deriv_nonpos hs
+   · exact (hV_cont.comp_continuousOn hφ.continuousOn).add
