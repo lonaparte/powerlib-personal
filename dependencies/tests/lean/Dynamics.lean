@@ -66,7 +66,7 @@ def squareEnergy (x : ℝ) : ℝ := x ^ 2
   have hd := ((hasDerivAt_id x).pow 2).hasFDerivAt
   change fderiv ℝ (fun y : ℝ => id y ^ 2) x (locallyStableField x) = _
   erw [hd.fderiv]
-  simp [ContinuousLinearMap.smulRight_apply]
+  simp
   ring
 
 -- At x = 2 the Lie derivative is 24; no positive global decay rate can fit.
