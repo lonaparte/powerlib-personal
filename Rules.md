@@ -242,6 +242,14 @@ module, assumptions, version, and transitive axioms. Do not copy upstream proofs
 into PowerLib or replace their import with a local reimplementation. Lake resolves
 dependency package sources from the pinned manifest.
 
+A demonstrated upstream version mismatch may require a minimal exact
+compatibility diff in `dependencies/`. Keep the actual upstream revision pinned,
+preserve theorem statements and direct imported theorem reuse, and audit the
+effective source diff before compiling it. Record the original pin, compatibility
+diff identity, and checked effective source identity in provenance. Do not vendor
+full upstream proofs. Kernel, semantic, automatic-reuse, rejection, and transitive
+axiom checks still apply to every reused result.
+
 Necessary formal verification consumers belong in `dependencies/tests/`.
 They check the public interface, kernel and transitive axiom audit, registered
 theorem discovery, automatic reuse, or required semantic acceptance boundaries.
@@ -251,7 +259,7 @@ library must not recursively build their sources or negative fixtures. Procedura
 and redundant test support stays in the local workspace outside the repositories.
 
 Bootstrap programs, Python synthesizers, bridge exporters, admission runners,
-procedural regression harnesses, normalized wire artifacts, generated certificate
+procedural regression harnesses, normalized wire artifacts, temporary generated certificate
 artifacts, logs, and local development support do not belong in `dependencies/`
 or elsewhere in the active published library. Model-specific foundations and
 domain results belong in `theorem/`; formal public examples belong in `example/`.
