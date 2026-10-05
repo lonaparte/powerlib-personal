@@ -20,8 +20,10 @@ def allowedAxiom (name : Name) : Bool :=
   name == `propext || name == `Classical.choice || name == `Quot.sound
 
 def declarationAxioms (env : Environment) (name : Name) : Array Name :=
-  let (_, state) := ((CollectAxioms.collect name).run env).run {}
-  state.axioms
+  -- Use Lean's public collector; its internal state differs between pinned versions.
+  let _ : MonadEnv (StateM Environment) :=
+    { getEnv := get, modifyEnv := modify }
+  ((collectAxioms (m := StateM Environment) name).run env).1
 
 def describe (env : Environment) (name : Name) : Option TheoremEntry := do
   let info ← env.find? name
@@ -30,7 +32,7 @@ def describe (env : Environment) (name : Name) : Option TheoremEntry := do
       | some index => env.header.moduleNames[index]!
       | none => env.mainModule
     -- Read only this declaration's metadata while another proof is in progress.
-    some ⟨name, moduleName, info.levelParams, info.type, Registry.theoremKinds.getValue env name,
+    some ⟨name, moduleName, info.levelParams, info.type, Registry.kindOf? env name,
       declarationAxioms env name⟩
 
 def eligible (env : Environment) (name : Name) : Bool :=
@@ -45,14 +47,14 @@ def candidates : LibrarySearch.CandidateFinder := fun goal => do
 def checkProof (proof : Expr) : MetaM Unit := do
   let proof ← instantiateMVars proof
   if proof.hasMVar then throwError "Library search left unresolved proof metavariables"
+  -- Retain used local let values and dependent binder types in the audit.
+  -- Looking only at constants in an open term would miss their dependencies.
+  let proof ← mkLambdaFVars (← getLCtx).getFVars proof (usedOnly := true)
   let env ← getEnv
-  let mut state : CollectAxioms.State := {}
   for name in proof.getUsedConstants do
-    let (_, next) := ((CollectAxioms.collect name).run env).run state
-    state := next
-  for name in state.axioms do
-    unless allowedAxiom name do
-      throwError "Library search used an unapproved axiom: {name}"
+    for axiomName in declarationAxioms env name do
+      unless allowedAxiom axiomName do
+        throwError "Library search used an unapproved axiom: {axiomName}"
 
 def solve (goal : MVarId) : MetaM Unit := do
   let found ← LibrarySearch.librarySearchSymm candidates goal
