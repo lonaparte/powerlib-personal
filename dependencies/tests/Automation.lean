@@ -39,6 +39,55 @@ example (p q : LCL.SymmetricMatrix) (h11 : p.p11 = q.p11) (h12 : p.p12 = q.p12)
     (h13 : p.p13 = q.p13) (h22 : p.p22 = q.p22) (h23 : p.p23 = q.p23)
     (h33 : p.p33 = q.p33) : p = q := by ext <;> assumption
 
+-- Aesop recovers the energy witness from the local certificate, rather than
+-- introducing an uninstantiated function V while applying a stability criterion.
+example {n : ℕ} {f : Dynamics.State n → Dynamics.State n}
+    {V : Dynamics.State n → ℝ} {equilibrium : Dynamics.State n}
+    (hn : 0 < n) (hf : ContDiff ℝ 1 f)
+    (hV : Dynamics.IsStrictLyapunovFunction f V equilibrium) :
+    Dynamics.GloballyAsymptoticallyStable f equilibrium := by aesop
+
+example {n : ℕ} {f : Dynamics.State n → Dynamics.State n}
+    {V : Dynamics.State n → ℝ} {equilibrium : Dynamics.State n}
+    (hn : 0 < n) (hf : ContDiff ℝ 1 f)
+    (hV : Dynamics.IsAsymptoticLyapunovFunction f V equilibrium) :
+    Dynamics.GloballyAsymptoticallyStable f equilibrium := by aesop
+
+example {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [CompleteSpace E]
+    {f : E → E} {V : E → ℝ} {equilibrium : E}
+    (c : Dynamics.QuadraticDecayCertificate f V equilibrium)
+    (hf : ContDiff ℝ 1 f) : Dynamics.GloballyExponentiallyStable f equilibrium := by aesop
+
+example {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [CompleteSpace E]
+    {f : E → E} {V : E → ℝ} {equilibrium : E}
+    (c : Dynamics.QuadraticDecayCertificate f V equilibrium)
+    (hf : ContDiff ℝ 1 f) : Dynamics.ForwardComplete f := by aesop
+
+example {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {f : E → E} {V : E → ℝ} {equilibrium : E}
+    (c : Dynamics.QuadraticDecayCertificate f V equilibrium)
+    (hcomplete : Dynamics.ForwardComplete f) :
+    Dynamics.GloballyExponentiallyStable f equilibrium := by aesop
+
+example {n : ℕ} {f : Dynamics.State n → Dynamics.State n}
+    {V : Dynamics.State n → ℝ} {equilibrium : Dynamics.State n}
+    (c : Dynamics.QuadraticDecayCertificate f V equilibrium)
+    (hn : 0 < n) (hf : ContDiff ℝ 1 f) :
+    Dynamics.GloballyAsymptoticallyStable f equilibrium := by aesop
+
+example (m : Impedance) (c : Accepted m) :
+    Dynamics.GloballyExponentiallyStable m.autonomousField 0 := by aesop
+
+example (m : Impedance) : Dynamics.ForwardComplete m.autonomousField := by aesop
+
+example (m : LCL.Circuit) (c : LCL.Accepted m) :
+    Dynamics.GloballyExponentiallyStable m.autonomousField 0 := by aesop
+
+example (m : LCL.Circuit) (c : LCL.Accepted m) :
+    Dynamics.GloballyAsymptoticallyStable m.autonomousField 0 := by aesop
+
 open Lean Elab Command
 run_cmd do
   let env ← getEnv
@@ -53,7 +102,13 @@ run_cmd do
       `powerlib.LCL.Accepted.energy_derivative, `powerlib.LCL.trajectory_exists,
       `powerlib.LCL.trajectory_unique, `powerlib.LCL.passive_lyapunovStable,
       `powerlib.LCL.lossless_not_asymptoticallyStable,
-      `powerlib.LCL.lossless_energy_conserved] do
+      `powerlib.LCL.lossless_energy_conserved,
+      `powerlib.Dynamics.globallyAsymptoticallyStable_of_strictLyapunov,
+      `powerlib.Dynamics.QuadraticDecayCertificate.globallyExponentiallyStable,
+      `powerlib.Accepted.autonomousGloballyExponentiallyStable,
+      `powerlib.LCL.Accepted.autonomousGloballyExponentiallyStable,
+      `powerlib.LCL.Accepted.autonomousGloballyAsymptoticallyStable,
+      `powerlib.Dynamics.Nonlinear.globallyAsymptoticallyStable] do
     unless domains.contains name do
       throwError "Public domain theorem missing from discovery: {name}"
   for name in #[`powerlib.lcl_asymptotically_stable_iff,

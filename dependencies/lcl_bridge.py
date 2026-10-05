@@ -102,7 +102,7 @@ def rebuild(write=False):
         proof = RESULTS / "lcl-bridge-endpoint.lean"
         proof.write_text("import Lean\n" + content +
                          audit(["powerlib.generated.convertLCL_spec"], include_core=False))
-        check_lean(proof)
+        check_lean(proof, build=False)
         snapshot = json.dumps(words) + "\n"
         if write:
             TARGET.write_text(content)

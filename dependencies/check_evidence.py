@@ -11,6 +11,22 @@ def check(proof, provenance):
     if digest(proof.with_suffix(".log")) != provenance["kernel_log_sha256"]:
         raise RuntimeError(f"Kernel log identity changed: {proof}")
     evidence = proof.parent / provenance["evidence_directory"]
+    checked_path = proof.with_suffix(".checked.json")
+    retained_checked = evidence / checked_path.name
+    if (digest(checked_path) != provenance["kernel_check_sha256"]
+            or digest(retained_checked) != provenance["kernel_check_sha256"]):
+        raise RuntimeError(f"Kernel-check identity changed: {proof}")
+    checked = json.loads(retained_checked.read_text())
+    if (checked.get("schema") != "powerlib.kernel-check.v1" or checked.get("build") is not True
+            or checked.get("source_snapshot", {}).get("proof_sha256") != provenance["proof_sha256"]
+            or checked.get("kernel_log_sha256") != provenance["kernel_log_sha256"]
+            or checked.get("compiled_artifacts_sha256") != provenance["compiled_artifacts_sha256"]):
+        raise RuntimeError(f"Kernel-check evidence mismatch: {proof}")
+    sources = checked["source_snapshot"]["source_files_sha256"]
+    for name, expected in sources.items():
+        relative = Path(name)
+        if relative.is_absolute() or ".." in relative.parts or digest(evidence / relative) != expected:
+            raise RuntimeError(f"Checked source identity changed: {name}")
     for name, expected in provenance["evidence_files_sha256"].items():
         relative = Path(name)
         if relative.is_absolute() or ".." in relative.parts or digest(evidence / relative) != expected:

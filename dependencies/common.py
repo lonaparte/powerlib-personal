@@ -31,6 +31,45 @@ def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def _source_snapshot(proof):
+    paths = [ROOT / "lean-toolchain", ROOT / "lakefile.toml", ROOT / "lake-manifest.json",
+             ROOT / "Rules.md", ROOT / "powerlib.lean", DEPENDENCIES / "wire.json",
+             DEPENDENCIES / "lcl_wire.json",
+             *sorted((ROOT / "theorems").rglob("*.lean")),
+             *sorted((ROOT / "theorems").rglob("*.agda")),
+             *sorted((DEPENDENCIES / "licenses").rglob("*"))]
+    return {"source_files_sha256": {str(path.relative_to(ROOT)): digest(path)
+                                    for path in paths if path.is_file()},
+            "proof_sha256": digest(proof)}
+
+
+def _compiled_snapshot():
+    artifacts = ROOT / ".lake/build/lib/lean"
+    return {str(path.relative_to(ROOT)): digest(path)
+            for path in sorted(artifacts.rglob("*.olean"))}
+
+
+def _checked_path(proof):
+    return Path(proof).with_suffix(".checked.json")
+
+
+def _checked_snapshot(proof):
+    try:
+        checked = json.loads(_checked_path(proof).read_text())
+    except (OSError, ValueError) as error:
+        raise RuntimeError("Missing or invalid kernel-check snapshot; check the proof again") from error
+    if (not isinstance(checked, dict) or checked.get("schema") != "powerlib.kernel-check.v1"
+            or checked.get("build") is not True):
+        raise RuntimeError("Proof provenance requires a completed public-library build")
+    if checked.get("source_snapshot") != _source_snapshot(proof):
+        raise RuntimeError("Public source or proof changed after kernel checking")
+    if checked.get("compiled_artifacts_sha256") != _compiled_snapshot():
+        raise RuntimeError("Compiled library changed after kernel checking")
+    if checked.get("kernel_log_sha256") != digest(Path(proof).with_suffix(".log")):
+        raise RuntimeError("Kernel log changed after kernel checking")
+    return checked
+
+
 def check_conversions():
     from bridge import rebuild
     from lcl_bridge import rebuild as rebuild_lcl
@@ -66,6 +105,9 @@ def conversion_provenance():
 
 
 def proof_provenance(proof):
+    checked = _checked_snapshot(proof)
+    checked_hash = digest(_checked_path(proof))
+    checked_sources = checked["source_snapshot"]["source_files_sha256"]
     version = demand(["lake", "env", "lean", "--version"]).strip()
     if (ROOT / "lean-toolchain").read_text().strip() != "leanprover/lean4:v4.19.0" or "version 4.19.0" not in version:
         raise RuntimeError("Expected pinned Lean 4.19.0")
@@ -84,33 +126,49 @@ def proof_provenance(proof):
     # the logs identified by an earlier certificate's hashes.
     evidence = Path(proof).with_name(Path(proof).stem + "-evidence")
     evidence.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(_checked_path(proof), evidence / _checked_path(proof).name)
     for prefix in ["bridge", "lcl-bridge"]:
         for suffix in [".json", ".log", "-endpoint.lean", "-endpoint.log"]:
             shutil.copyfile(RESULTS / (prefix + suffix), evidence / (prefix + suffix))
-    for path in [ROOT / "lean-toolchain", ROOT / "lake-manifest.json", ROOT / "Rules.md",
-                 ROOT / "powerlib.lean", DEPENDENCIES / "wire.json", DEPENDENCIES / "lcl_wire.json",
-                 *sorted((ROOT / "theorems").rglob("*.lean")),
-                 *sorted((ROOT / "theorems").rglob("*.agda"))]:
+    for name, expected_hash in checked_sources.items():
+        path = ROOT / name
         target = evidence / path.relative_to(ROOT)
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(path, target)
+        if digest(target) != expected_hash:
+            raise RuntimeError(f"Source changed while retaining evidence: {name}")
+    for family, prefix in [("rl", "bridge"), ("lcl", "lcl-bridge")]:
+        for suffix, key in [(".json", "report_sha256"), (".log", "agda_log_sha256"),
+                            ("-endpoint.lean", "endpoint_sha256"),
+                            ("-endpoint.log", "endpoint_log_sha256")]:
+            if digest(evidence / (prefix + suffix)) != conversions[family][key]:
+                raise RuntimeError(f"Conversion evidence changed while retaining it: {family}")
+    # Reject edits or another build while assembling the retained evidence.
+    if (_checked_snapshot(proof) != checked or digest(_checked_path(proof)) != checked_hash):
+        raise RuntimeError("Kernel-check snapshot changed while retaining evidence")
     return {"lean": version, "dependencies": revisions,
             "source_commit": demand(["git", "rev-parse", "HEAD"]).strip(),
             "conversions": conversions,
             "evidence_directory": evidence.name,
             "evidence_files_sha256": {str(p.relative_to(evidence)): digest(p)
                                       for p in sorted(evidence.rglob("*")) if p.is_file()},
-            "manifest_sha256": digest(ROOT / "lake-manifest.json"),
-            "public_source_sha256": {"powerlib.lean": digest(ROOT / "powerlib.lean"), **{
-                str(path.relative_to(ROOT)): digest(path)
-                for path in sorted((ROOT / "theorems").rglob("*.lean"))}},
-            "proof_sha256": digest(proof),
-            "kernel_log_sha256": digest(Path(proof).with_suffix(".log")),
+            "manifest_sha256": checked_sources["lake-manifest.json"],
+            "public_source_sha256": {name: expected_hash for name, expected_hash in checked_sources.items()
+                                     if name == "powerlib.lean" or
+                                     (name.startswith("theorems/") and name.endswith(".lean"))},
+            "proof_sha256": checked["source_snapshot"]["proof_sha256"],
+            "kernel_log_sha256": checked["kernel_log_sha256"],
+            "kernel_check_sha256": checked_hash,
+            "compiled_artifacts_sha256": checked["compiled_artifacts_sha256"],
             "axiom_allowlist": ["propext", "Classical.choice", "Quot.sound"]}
 
 
-def audit(extra=(), *, include_core=True):
-    names = ", ".join("`" + name for name in extra)
+def audit(extra=(), *, include_core=True, theorem_roots=()):
+    theorem_roots = list(theorem_roots)
+    roots = list(dict.fromkeys(list(extra) + theorem_roots))
+    names = ", ".join("`" + name for name in roots)
+    theorem_names = ", ".join("`" + name for name in theorem_roots)
+
     discovered = " ++ (powerlib.Registry.theoremNames env).toList" if include_core else ""
     core = '''
   for (root, info) in env.constants do
@@ -125,6 +183,13 @@ run_cmd do
   let mut state : Lean.CollectAxioms.State := {{}}{core}
   let roots := ([{names}] : List Name){discovered}
   for root in roots do
+    unless (env.checked.get.find? root).isSome do
+      throwError "Unknown audit root: {{root}}"
+  for root in ([{theorem_names}] : List Name) do
+    match env.checked.get.find? root with
+    | some (.thmInfo _) => pure ()
+    | _ => throwError "Expected a theorem audit root: {{root}}"
+  for root in roots do
     let (_, next) := ((Lean.CollectAxioms.collect root).run env).run state
     state := next
   for ax in state.axioms do
@@ -134,9 +199,31 @@ run_cmd do
 '''
 
 
-def check_lean(path):
+def check_lean(path, *, build=True):
+    path = Path(path)
+    checked_path = _checked_path(path)
+    # An unsuccessful recheck must not leave an earlier success usable.
+    checked_path.unlink(missing_ok=True)
+    sources = _source_snapshot(path)
+    if build:
+        code, build_log = run(["lake", "build"], timeout=1800)
+        if code:
+            path.with_suffix(".log").write_text(build_log)
+            raise RuntimeError(f"Lean library build failed before checking {path}\n{build_log}")
+    if _source_snapshot(path) != sources:
+        raise RuntimeError("Public source or proof changed during the library build")
+    compiled = _compiled_snapshot()
     code, log = run(["lake", "env", "lean", path])
-    Path(path).with_suffix(".log").write_text(log)
+    path.with_suffix(".log").write_text(log)
     if code or "POWERLIB_KERNEL_OK" not in log:
-        raise RuntimeError(f"Lean rejected {path}; see {Path(path).with_suffix('.log')}\n{log}")
+        raise RuntimeError(f"Lean rejected {path}; see {path.with_suffix('.log')}\n{log}")
+    if _source_snapshot(path) != sources:
+        raise RuntimeError("Public source or proof changed during kernel checking")
+    if _compiled_snapshot() != compiled:
+        raise RuntimeError("Compiled library changed during kernel checking")
+    checked_path.write_text(json.dumps({
+        "schema": "powerlib.kernel-check.v1", "build": build,
+        "source_snapshot": sources, "compiled_artifacts_sha256": compiled,
+        "kernel_log_sha256": digest(path.with_suffix(".log")),
+    }, indent=2) + "\n")
     return log

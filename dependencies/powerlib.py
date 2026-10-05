@@ -10,6 +10,8 @@ import tempfile
 
 from common import ROOT, RESULTS, audit, check_lean, check_conversions, demand, digest, proof_provenance, run
 
+SEMANTIC_THEOREMS = ["Admission.autonomous_globally_exponentially_stable"]
+
 
 def rational(value):
     if isinstance(value, bool) or not isinstance(value, (str, int)):
@@ -68,6 +70,10 @@ def accepted : powerlib.Accepted submittedModel := Candidate.certificate
 example : accepted.p = {literal(p)} := by norm_num [accepted, Candidate.certificate]
 example : accepted.rate = {literal(rate)} := by norm_num [accepted, Candidate.certificate]
 @[powerlib_domain] theorem stable : submittedModel.Stable := accepted.stable
+@[powerlib_domain] theorem autonomous_globally_exponentially_stable :
+    powerlib.Dynamics.GloballyExponentiallyStable submittedModel.autonomousField 0 := by
+  have certificate := accepted
+  powerlib_auto
 @[powerlib_domain] theorem dissipation (current : ℝ) :
     2 * accepted.p * current * (powerlib.toStateSpace submittedModel).field current 0 =
       -current ^ 2 := accepted.dissipation current
@@ -96,7 +102,8 @@ example : accepted.rate = {literal(rate)} := by norm_num [accepted, Candidate.ce
 end Admission
 ''' + audit(["Admission.accepted", "Admission.stable", "Admission.dissipation", "Admission.decay",
              "Admission.small_signal", "Admission.exponential", "Admission.global_asymptotic",
-             "Admission.all_trajectory_decay"])
+             "Admission.all_trajectory_decay", *SEMANTIC_THEOREMS],
+             theorem_roots=SEMANTIC_THEOREMS)
 
 
 def output_dir(kind):
@@ -126,7 +133,8 @@ def atp(path):
         "theorem": "Admission.small_signal", "proof": str(proof),
         "theorems": ["Admission.stable", "Admission.dissipation", "Admission.decay",
                      "Admission.small_signal", "Admission.exponential",
-                     "Admission.global_asymptotic", "Admission.all_trajectory_decay"],
+                     "Admission.global_asymptotic", "Admission.all_trajectory_decay", *SEMANTIC_THEOREMS],
+        "semantic_theorems": list(SEMANTIC_THEOREMS),
         "semantics": "All forward RL trajectories; epsilon-delta stability and convergence",
         "proof_sha256": digest(proof), "lean": demand(["lake", "env", "lean", "--version"]).strip(),
         "submitted_model_sha256": digest(submitted), "provenance": proof_provenance(proof),
@@ -151,9 +159,11 @@ def atd():
   intro m
   rw [powerlib.asymptoticallyStable_iff_resistance_pos (powerlib.zero_equilibrium m)] <;> (constructor <;> intro h <;> linarith)
 ''' + audit(["discovered"]))
-        code, log = run(["lake", "env", "lean", path])
-        path.with_suffix(".log").write_text(log)
-        status = "PROVED" if code == 0 and "POWERLIB_KERNEL_OK" in log else "UNPROVED"
+        try:
+            check_lean(path)
+            status = "PROVED"
+        except RuntimeError:
+            status = "UNPROVED"
         if status == "UNPROVED" and counterexample is not None:
             refutation = directory / (name + "_refuted.lean")
             refutation.write_text(f'''import powerlib

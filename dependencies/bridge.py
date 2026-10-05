@@ -148,7 +148,7 @@ def rebuild(write=False):
         candidate = RESULTS / "bridge-endpoint.lean"
         candidate.write_text("import Lean\n" + content +
                              audit(["powerlib.generated.convert_spec"], include_core=False))
-        check_lean(candidate)
+        check_lean(candidate, build=False)
         snapshot = json.dumps(words) + "\n"
         if write:
             TARGET.write_text(content)

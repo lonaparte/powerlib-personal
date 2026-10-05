@@ -100,3 +100,52 @@ example (m : LCL.Circuit) (hp : m.Passive) (u vg : ℝ) (e : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) :
     LCL.AsymptoticallyStable m u vg e ↔ m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0 := by
   powerlib_auto
+
+-- Generic and model-specific nonlinear stability is reused through the public
+-- proof-search tactic, with no theorem names or per-goal rule lists supplied.
+example {n : ℕ} {f : Dynamics.State n → Dynamics.State n}
+    {V : Dynamics.State n → ℝ} {equilibrium : Dynamics.State n}
+    (hn : 0 < n) (hf : ContDiff ℝ 1 f)
+    (hV : Dynamics.IsStrictLyapunovFunction f V equilibrium) :
+    Dynamics.GloballyAsymptoticallyStable f equilibrium := by powerlib_auto
+
+example {n : ℕ} {f : Dynamics.State n → Dynamics.State n}
+    {V : Dynamics.State n → ℝ} {equilibrium : Dynamics.State n}
+    (hn : 0 < n) (hf : ContDiff ℝ 1 f)
+    (hV : Dynamics.IsAsymptoticLyapunovFunction f V equilibrium) :
+    Dynamics.GloballyAsymptoticallyStable f equilibrium := by powerlib_auto
+
+example {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [CompleteSpace E]
+    {f : E → E} {V : E → ℝ} {equilibrium : E}
+    (c : Dynamics.QuadraticDecayCertificate f V equilibrium)
+    (hf : ContDiff ℝ 1 f) : Dynamics.GloballyExponentiallyStable f equilibrium := by powerlib_auto
+
+example {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [CompleteSpace E]
+    {f : E → E} {V : E → ℝ} {equilibrium : E}
+    (c : Dynamics.QuadraticDecayCertificate f V equilibrium)
+    (hf : ContDiff ℝ 1 f) : Dynamics.ForwardComplete f := by powerlib_auto
+
+example {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {f : E → E} {V : E → ℝ} {equilibrium : E}
+    (c : Dynamics.QuadraticDecayCertificate f V equilibrium)
+    (hcomplete : Dynamics.ForwardComplete f) :
+    Dynamics.GloballyExponentiallyStable f equilibrium := by powerlib_auto
+
+example {n : ℕ} {f : Dynamics.State n → Dynamics.State n}
+    {V : Dynamics.State n → ℝ} {equilibrium : Dynamics.State n}
+    (c : Dynamics.QuadraticDecayCertificate f V equilibrium)
+    (hn : 0 < n) (hf : ContDiff ℝ 1 f) :
+    Dynamics.GloballyAsymptoticallyStable f equilibrium := by powerlib_auto
+
+example (m : Impedance) (c : Accepted m) :
+    Dynamics.GloballyExponentiallyStable m.autonomousField 0 := by powerlib_auto
+
+example (m : Impedance) : Dynamics.ForwardComplete m.autonomousField := by powerlib_auto
+
+example (m : LCL.Circuit) (c : LCL.Accepted m) :
+    Dynamics.GloballyExponentiallyStable m.autonomousField 0 := by powerlib_auto
+
+example (m : LCL.Circuit) (c : LCL.Accepted m) :
+    Dynamics.GloballyAsymptoticallyStable m.autonomousField 0 := by powerlib_auto

@@ -1,5 +1,7 @@
 import theorems.RLStability
 import theorems.LCLSynthesis
+import theorems.Dynamics.Models
+import theorems.Dynamics.Nonlinear
 import theorems.AutomationRules
 import theorems.LibrarySearch
 
@@ -18,8 +20,9 @@ run_cmd do
       elabCommand (← `(attribute [aesop unsafe 50% apply (rule_sets := [PowerLib])]
         $(mkIdent name)))
 
--- Try short applications before general search. In particular, this preserves
--- an iff goal as a whole instead of splitting it before its theorem is used.
+-- Try a theorem application and its immediate premises before indexed search.
+-- A shallow first pass preserves whole iff goals and prevents an expanding
+-- theorem inventory from spending the heartbeat budget on blind deep search.
 open Lean Elab Tactic in
 elab "powerlib_auto" : tactic => do
   let env ← getEnv
@@ -29,7 +32,7 @@ elab "powerlib_auto" : tactic => do
   let saved ← saveState
   try
     liftMetaTactic fun goal => do
-      let remaining ← SolveByElim.processSyntax { maxDepth := 8, exfalso := false }
+      let remaining ← SolveByElim.processSyntax { maxDepth := 2, exfalso := false }
         false false rules.toList [] #[] [goal]
       unless remaining.isEmpty do
         throwError "Short PowerLib proof search left unsolved goals"
@@ -38,6 +41,8 @@ elab "powerlib_auto" : tactic => do
     saved.restore
     try
       evalTactic (← `(tactic| aesop (rule_sets := [PowerLib])))
+      unless (← getGoals).isEmpty do
+        throwError "Indexed PowerLib proof search left unsolved goals"
     catch _ =>
       saved.restore
       evalTactic (← `(tactic| powerlib_search))

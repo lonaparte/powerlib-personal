@@ -15,11 +15,13 @@ from powerlib import rational
 KEYS = ("inductance1", "inductance2", "capacitance", "resistance1", "resistance2")
 POSITIONS = ((0, 0), (0, 1), (0, 2), (1, 1), (1, 2), (2, 2))
 IDENTITY = tuple(tuple(Fraction(int(i == j)) for j in range(3)) for i in range(3))
+SEMANTIC_THEOREMS = ["Admission.autonomous_globally_exponentially_stable",
+                     "Admission.autonomous_globally_asymptotically_stable"]
 ADMITTED_THEOREMS = ["Admission." + name for name in (
     "stable", "positive", "dissipation", "small_signal", "lyapunov_stable",
     "globally_asymptotically_stable", "globally_exponentially_stable",
     "equilibrium_exists", "trajectory_exists", "trajectory_unique",
-    "trajectory_tendsto", "energy_derivative")]
+    "trajectory_tendsto", "energy_derivative")] + SEMANTIC_THEOREMS
 
 
 @dataclass(frozen=True)
@@ -190,6 +192,14 @@ def proof_source(model, p):
             model_source("submittedModel", model) + '''
 def accepted : powerlib.LCL.Accepted submittedModel := Candidate.certificate
 @[powerlib_domain] theorem stable : (powerlib.LCL.toStateSpace submittedModel).Stable := accepted.stable
+@[powerlib_domain] theorem autonomous_globally_exponentially_stable :
+    powerlib.Dynamics.GloballyExponentiallyStable submittedModel.autonomousField 0 := by
+  have certificate := accepted
+  powerlib_auto
+@[powerlib_domain] theorem autonomous_globally_asymptotically_stable :
+    powerlib.Dynamics.GloballyAsymptoticallyStable submittedModel.autonomousField 0 := by
+  have certificate := accepted
+  powerlib_auto
 @[powerlib_domain] theorem positive (x y z : ℝ) (hn : x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) :
     0 < powerlib.LCL.energy accepted.p x y z := accepted.positive x y z hn
 @[powerlib_domain] theorem dissipation (x y z : ℝ) :
@@ -231,7 +241,7 @@ def accepted : powerlib.LCL.Accepted submittedModel := Candidate.certificate
     HasDerivWithinAt (fun s => powerlib.LCL.quadraticEnergy accepted.p (x s - e))
       (-powerlib.LCL.squaredSize (x t - e)) (Set.Ici 0) t := accepted.energy_derivative he hx ht
 end Admission
-''' + audit(["Admission.accepted", *ADMITTED_THEOREMS]))
+''' + audit(["Admission.accepted", *ADMITTED_THEOREMS], theorem_roots=ADMITTED_THEOREMS))
 
 
 def verify_kernel(proof):
@@ -270,6 +280,7 @@ def synthesize(model, kernel=False, directory=None):
         report["maturity"] = "S-level"
         report["witness_origin"] = "Automatic exact Lyapunov synthesis from witness-free model"
         report["theorems"] = list(ADMITTED_THEOREMS)
+        report["semantic_theorems"] = list(SEMANTIC_THEOREMS)
     (directory / "certificate.json").write_text(json.dumps(report, indent=2) + "\n")
     return report
 
@@ -317,6 +328,7 @@ def verify_saved(model, path, kernel=False):
         report["maturity"] = "Certificate verification"
         report["witness_origin"] = "Submitted certificate"
         report["theorems"] = list(ADMITTED_THEOREMS)
+        report["semantic_theorems"] = list(SEMANTIC_THEOREMS)
         (directory / "certificate.json").write_text(json.dumps(report, indent=2)+"\n")
     return report
 
@@ -352,9 +364,11 @@ def atd():
   rw [powerlib.LCL.passive_asymptoticallyStable_iff m hp (powerlib.LCL.zero_equilibrium m)] <;>
     first | rfl | tauto
 ''' + audit(["discovered"]))
-        code, log = run(["lake", "env", "lean", proof])
-        proof.with_suffix(".log").write_text(log)
-        status = "PROVED" if code == 0 and "POWERLIB_KERNEL_OK" in log else "UNPROVED"
+        try:
+            check_lean(proof)
+            status = "PROVED"
+        except RuntimeError:
+            status = "UNPROVED"
         if status == "UNPROVED" and counterexample is not None:
             example = Model(Fraction(1), Fraction(1), Fraction(1), *map(Fraction, counterexample))
             proof = directory / (name+"_refuted.lean")

@@ -164,6 +164,24 @@ theorem rejected : ThirdPartyFixture.Contract := by powerlib_search
 '''
             log = self.check_source("untrusted_library", source, False)
             self.assertIn("No kernel-admissible library theorem closed the goal", log)
+    def test_missing_audit_root_is_rejected(self):
+        proof = self.root / "missing_semantic.lean"
+        proof.write_text("import powerlib\n" + audit(["Admission.globally_exponentially_stable"]))
+        with self.assertRaisesRegex(RuntimeError, "Unknown audit root"):
+            check_lean(proof)
+        log = proof.with_suffix(".log").read_text()
+        self.assertNotIn("POWERLIB_KERNEL_OK", log)
+
+    def test_required_semantic_root_must_be_a_theorem(self):
+        name = "Admission.globally_exponentially_stable"
+        source = ("import powerlib\n"
+                  f"def {name} : True := True.intro\n" + audit(theorem_roots=[name]))
+        log = self.check_source("semantic_definition", source, False)
+        self.assertIn("Expected a theorem audit root", log)
+        self.assertNotIn("POWERLIB_KERNEL_OK", log)
+        self.check_source("semantic_theorem", "import powerlib\n"
+                          f"theorem {name} : True := True.intro\n" +
+                          audit(theorem_roots=[name]), True)
 
     def test_exported_formula(self):
         # Well-typed but wrong data must fail the independent Lean endpoint.
