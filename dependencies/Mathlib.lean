@@ -13,3 +13,5 @@ import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Tactic
 import Mathlib.Topology.Order.Compact
+import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.ODE.ExistUnique
