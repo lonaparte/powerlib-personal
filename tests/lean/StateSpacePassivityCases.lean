@@ -178,7 +178,9 @@ theorem full_kyp_stable :
 
 theorem full_kyp_forward_solution (initial : Fin 2 → ℝ) :
     ∃ x, Passivity.IsTrajectory (StateSpacePassivity.system feedthroughModel)
-      (fun _ => 0) x ∧ x 0 = initial := by aesop
+      (fun _ => 0) x ∧ x 0 = initial := by
+  let submittedModel := feedthroughModel
+  aesop
 
 
 -- The same dimensions do not identify the submitted model.

@@ -141,7 +141,7 @@ omit [Fintype κ] in
     Passivity.IsTrajectory (system m) (fun _ => u) (equilibriumResponse m e initial) :=
   trajectory_add_equilibrium he (response_trajectory m (initial - e))
 
-@[powerlib_domain, aesop norm forward (immediate := [he, initial])] theorem equilibrium_trajectory_exists {m : Model ι κ}
+@[powerlib_domain, aesop norm forward (immediate := [m, he, initial])] theorem equilibrium_trajectory_exists {m : Model ι κ}
     {u : κ → ℝ} {e : State ι} (he : IsEquilibrium m u e) (initial : State ι) :
     ∃ x, Passivity.IsTrajectory (system m) (fun _ => u) x ∧ x 0 = initial :=
   ⟨equilibriumResponse m e initial, equilibriumResponse_trajectory he initial,
