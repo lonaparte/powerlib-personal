@@ -4,18 +4,18 @@ noncomputable section
 namespace powerlib.Tests.RLLargeSignal
 open powerlib
 
-theorem component_only (m : Impedance) (hR : 0 < m.resistance) (voltage : ℝ) :
+@[powerlib_domain] theorem component_only (m : Impedance) (hR : 0 < m.resistance) (voltage : ℝ) :
     GloballyExponentiallyStable m voltage (voltage / m.resistance) := by aesop
 
 def submittedModel : Impedance := ⟨2, ⟨1, by norm_num⟩⟩
 
-theorem concrete_component_only (voltage : ℝ) :
+@[powerlib_domain] theorem concrete_component_only (voltage : ℝ) :
     GloballyExponentiallyStable submittedModel voltage
       (voltage / submittedModel.resistance) := by
   have hR : 0 < submittedModel.resistance := by norm_num [submittedModel]
   aesop
 
-theorem all_trajectories_decay (m : Impedance) (hR : 0 < m.resistance)
+@[powerlib_domain] theorem all_trajectories_decay (m : Impedance) (hR : 0 < m.resistance)
     (voltage : ℝ) (i : ℝ → ℝ) (hi : IsTrajectory m voltage i)
     (t : ℝ) (ht : 0 ≤ t) :
     (i t - voltage / m.resistance) ^ 2 =
