@@ -169,7 +169,7 @@ variable [FiniteDimensional ℝ E] [Nontrivial E]
       α * ‖y‖ ^ 2 ≤ V.energy y ∧ V.energy y ≤ β * ‖y‖ ^ 2 :=
   powerlib.quadratic_bounds V.energy V.continuous V.homogeneous V.positive
 
-@[powerlib_domain, aesop norm forward (immediate := [V])] theorem QuadraticStorage.lyapunovStable
+@[powerlib_domain, aesop norm forward (immediate := [V, he])] theorem QuadraticStorage.lyapunovStable
     {s : System E ι} (V : QuadraticStorage s) (he : IsEquilibrium s 0) :
     LyapunovStable s := by
   obtain ⟨α, hα, β, hβα, hb⟩ := V.energy_bounds

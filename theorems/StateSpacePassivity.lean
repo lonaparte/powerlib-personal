@@ -103,7 +103,7 @@ def Certificate.storage {m : Model ι κ} (c : Certificate m) :
     Passivity.PassiveWithStorage (system m) (energy c.P) :=
   c.storage.passiveWithStorage
 
-@[powerlib_domain, aesop norm forward (immediate := [c])] theorem Certificate.integral_passivity
+@[powerlib_domain, aesop norm forward (immediate := [c, hx, ht, hpower])] theorem Certificate.integral_passivity
     {m : Model ι κ} (c : Certificate m) {u : ℝ → (κ → ℝ)} {x : ℝ → State ι}
     (hx : Passivity.IsTrajectory (system m) u x) {t : ℝ} (ht : 0 ≤ t)
     (hpower : IntervalIntegrable (fun τ => Passivity.supply (system m) (x τ) (u τ))
