@@ -5,3 +5,4 @@ import theorem.Dynamics.Models
 import theorem.Dynamics.Nonlinear
 import theorem.Dynamics.Polynomial2
 import theorem.Dynamics.PolynomialTactic
+import theorem.Upstream.LeanForControl

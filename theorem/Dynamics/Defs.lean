@@ -1,4 +1,6 @@
 import dependencies.Mathlib
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.ODE.Basic
 import theorem.Attributes
 
 /-! Trajectory semantics for finite-dimensional continuous-time autonomous systems.

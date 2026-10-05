@@ -121,15 +121,11 @@ def auditAuthoredTheorems (commands : Array Syntax) : CommandElabM Unit := do
     unless (kindOf? env name).isSome do
       throwError "Source-authored theorem {privateToUserName name} requires exactly one PowerLib classification"
 
--- The restored Lean 4.19/4.30 frontend runs command linters at end of file.
--- Audit then, after all delayed attribute commands have been elaborated.
-def classificationLinter : Linter where
-  run command := do
-    if Parser.isTerminalCommand command then
-      if ← isFirstPartySource then
-        let parsed ← Parser.testParseModule (← getEnv) (← getFileName) (← getFileMap).source
-        auditAuthoredTheorems parsed[1].getArgs
+def classificationLinter : ModuleLinter where
+  run commands := do
+    if ← isFirstPartySource then
+      auditAuthoredTheorems commands
 
-initialize addLinter classificationLinter
+initialize addModuleLinter classificationLinter
 
 end powerlib.Registry

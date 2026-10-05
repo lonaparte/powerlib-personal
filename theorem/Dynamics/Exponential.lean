@@ -58,7 +58,7 @@ variable {f : E → E} {V : E → ℝ} {equilibrium : E}
         (Real.exp (c.rate * (s - a)) * c.rate) s := by
       simpa only [id_eq, mul_one, mul_comm] using
         (((hasDerivAt_id s).sub_const a).const_mul c.rate).exp
-    convert hexp.hasDerivWithinAt.mul (c.energy_hasDerivWithinAt hφ hs) using 1
+    convert! hexp.hasDerivWithinAt.mul (c.energy_hasDerivWithinAt hφ hs) using 1
     dsimp [W, W']
     ring
   have hmono : AntitoneOn W (Icc a b) := by
@@ -93,7 +93,7 @@ variable {f : E → E} {V : E → ℝ} {equilibrium : E}
       (c.upper / c.lower) * Real.exp (-(c.rate * (t - a))) *
         ‖φ a - equilibrium‖ ^ 2 := by
     apply (mul_le_mul_iff_right₀ c.lower_pos).mp
-    convert henergy using 1
+    convert! henergy using 1
     field_simp [ne_of_gt c.lower_pos] <;> ring
   have hratio : 0 ≤ c.upper / c.lower := le_of_lt (div_pos c.upper_pos c.lower_pos)
   have hexp : Real.exp (-(c.rate / 2 * (t - a))) ^ 2 =

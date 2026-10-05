@@ -131,7 +131,7 @@ def response (m : Circuit) (initial : State) (t : ℝ) : State :=
     HasDerivAt (response m initial) ((toStateSpace m).operator (response m initial t)) t := by
   have h := (hasDerivAt_exp_smul_const' (toStateSpace m).operator t).clm_apply
     (hasDerivAt_const t initial)
-  simpa [response, ContinuousLinearMap.mul_apply] using h
+  simpa [response, ContinuousLinearMap.mul_apply] using! h
 
 @[powerlib_domain, aesop safe apply] theorem response_trajectory (m : Circuit) (initial : State) :
     IsTrajectory m 0 0 (response m initial) := by
@@ -150,7 +150,7 @@ def equilibriumResponse (m : Circuit) (e initial : State) (t : ℝ) : State :=
     IsTrajectory m u vg (equilibriumResponse m e initial) := by
   intro t _
   have h := (response_solves m (initial - e) t).const_add e
-  convert h.hasDerivWithinAt using 1
+  convert! h.hasDerivWithinAt using 1
   rw [field_shift he]
   simp [equilibriumResponse]
 
@@ -169,7 +169,7 @@ def equilibriumResponse (m : Circuit) (e initial : State) (t : ℝ) : State :=
   have hd : ∀ s ∈ Ici (0 : ℝ),
       HasDerivWithinAt (fun r => x r - y r) (A (x s - y s)) (Ici 0) s := by
     intro s hs
-    convert (hx s hs).sub (hy s hs) using 1
+    convert! (hx s hs).sub (hy s hs) using 1
     simp only [field_shift he, ← map_sub]
     congr 1
     abel

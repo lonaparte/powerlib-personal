@@ -64,7 +64,7 @@ def Accepted.quadraticDecayCertificate {m : Impedance} (c : Accepted m) :
   · simp
   · intro t ht
     have h := (response_solves m i₀ (t - a)).comp t ((hasDerivAt_id t).sub_const a)
-    simpa [Impedance.autonomousField] using h.hasDerivWithinAt
+    simpa [Impedance.autonomousField, Function.comp_def] using! h.hasDerivWithinAt
 
 /-- Accepted RL certificates prove decay of every solution from every current,
 including existence for the entire forward time ray. -/
@@ -98,7 +98,7 @@ def stateEnergy (p : SymmetricMatrix) (x : State3) : ℝ :=
     apply contDiff_pi.mpr
     intro j
     fin_cases j <;> simp <;> fun_prop
-  convert (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 3 => ℝ)).symm.contDiff.comp hs using 1
+  convert! (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 3 => ℝ)).symm.contDiff.comp hs using 1
   funext x
   ext j
   fin_cases j <;> simp [Circuit.autonomousField, StateSpace.field]

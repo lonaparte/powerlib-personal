@@ -10,8 +10,7 @@ defined in [Rules.md](Rules.md).
 
 ## Version compatibility
 
-This package pins Lean 4.30.0-rc2 and Mathlib v4.30.0-rc2.
-The isolated LeanForControl profile pins Lean and Mathlib v4.30.0-rc2.
+The project pins Lean 4.34.1 and Mathlib v4.34.1.
 
 When toolchain or dependency versions do not match, first adapt incompatible
 dependencies to the project's current pinned Lean and Mathlib versions and retry
@@ -20,6 +19,49 @@ compatibility changes to the dependency code, before considering a project
 toolchain upgrade. The absence of a matching historical pin does not establish
 incompatibility. Preserve upstream provenance and theorem contracts, keep all pins
 explicit, and require the complete build and proof checks to pass together.
+
+## Dependencies
+
+Mathlib and LeanForControl are imported through their upstream Lean modules.
+Lake downloads the pinned source checkouts as siblings of this repository:
+
+```text
+<parent>/
+  powerlib/
+  mathlib/
+  LeanForControl/
+```
+
+The private repository `powerlib-personal/` uses the same sibling locations.
+Complete upstream sources stay outside the repository. The import interfaces
+are `dependencies/Mathlib.lean` and `dependencies/LeanForControl.lean`; new or
+modified PowerLib theorems and their proofs belong in `theorem/`. Upstream
+proofs are reused through imports.
+
+After downloading the repository, install Elan and run from its root:
+
+```sh
+lake exe cache get
+compatibility_patch="$PWD/dependencies/LeanForControl-4.34.1.patch"
+git -C ../LeanForControl apply --check "$compatibility_patch"
+git -C ../LeanForControl apply "$compatibility_patch"
+lake build
+```
+
+Apply the compatibility diff only to the pinned clean upstream checkout. CI
+checks the original commit and exact applied diff before building. Project Lake
+configuration and dependency pins are committed; upstream sources and local
+caches are not.
+
+The isolated LeanForControl profile shares these source locations, pins, and
+search implementation. After setting up the dependencies, run its independent
+checks with:
+
+```sh
+(cd dependencies/integrations/leanforcontrol && lake exe cache get && lake build)
+```
+
+Integration profile checks do not replace the main build and admission checks.
 
 ## Directions
 

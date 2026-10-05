@@ -1,4 +1,5 @@
 import dependencies.Mathlib
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import theorem.Attributes
 
 /-! A nonnegative smooth cutoff converts a C¹ vector field into a globally

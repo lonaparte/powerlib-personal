@@ -1,6 +1,5 @@
 import theorem.LibrarySearch
-import LeanForControl.MatrixAlgebra.Exponential
-import LeanForControl.LinearSystems.Stability.Continuous.ExponentialStability
+import dependencies.LeanForControl
 
 open scoped Matrix.Norms.Frobenius
 
