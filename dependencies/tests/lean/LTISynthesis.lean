@@ -14,7 +14,7 @@ def certificate : powerlib.LTI.Accepted model where
   upper_pos := by norm_num
   symmetric := by
     ext i j
-    rw [Matrix.transpose_apply]
+    erw [Matrix.transpose_apply]
     fin_cases i <;> fin_cases j <;> norm_num
   lower_bound := by
     intro x
@@ -30,7 +30,7 @@ def certificate : powerlib.LTI.Accepted model where
       _ = _ := by norm_num [powerlib.LTI.energy, powerlib.LTI.sqNorm, Matrix.mulVec, dotProduct, Fin.sum_univ_succ, Fin.succ]; ring1!
   lyapunov := by
     ext i j
-    rw [Matrix.add_apply, Matrix.neg_apply, Matrix.mul_apply, Matrix.mul_apply]
+    erw [Matrix.add_apply, Matrix.neg_apply, Matrix.mul_apply, Matrix.mul_apply]
     simp only [Matrix.transpose_apply, Matrix.one_apply]
     fin_cases i <;> fin_cases j <;>
       norm_num [model, Fin.sum_univ_succ]
