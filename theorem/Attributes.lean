@@ -53,3 +53,83 @@ def theoremNames (env : Environment) (kind : Option TheoremKind := none) : Array
   return names.qsort Name.quickLt
 
 end powerlib.Registry
+
+
+namespace powerlib.Registry
+open Lean Elab Command
+
+-- Source ownership follows the canonical first-party module directories.
+-- Imported upstream declarations and downstream modules are not relabeled.
+def isFirstPartyModule (moduleName : Name) : Bool :=
+  #[`theorem, `dependencies, `example, `powerlib].contains moduleName.getRoot
+
+-- An isolated integration profile may compile its entry point under a short
+-- module name. Its actual source directory still establishes first-party scope.
+def isIntegrationSource (path : System.FilePath) : Bool :=
+  (path.components.zip path.components.tail).any fun (left, right) =>
+    left == "dependencies" && right == "integrations"
+
+private def isFirstPartySource : CommandElabM Bool := do
+  if isFirstPartyModule (← getEnv).mainModule then
+    return true
+  try
+    return isIntegrationSource (← IO.FS.realPath (← getFileName))
+  catch _ =>
+    return false
+
+private partial def authoredDeclarationRefs (stx : Syntax) : Array Syntax := Id.run do
+  if stx.isOfKind ``Parser.Command.declaration || stx.isOfKind `lemma then
+    if stx[1].isOfKind ``Parser.Command.«example» then
+      return #[]
+    -- Stop at the declaration boundary, before proof bodies or syntax quotations.
+    return #[Elab.getDeclarationSelectionRef stx[1]]
+  let mut refs := #[]
+  for child in stx.getArgs do
+    refs := refs ++ authoredDeclarationRefs child
+  return refs
+
+-- Match original parsed name tokens to actual current-module theorem constants.
+-- Generated ext/inj/eq declarations do not share both the authored name and its
+-- exact selection range. Private declarations retain their user name for this
+-- match. No declaration-name list or generated-suffix blacklist is involved.
+def authoredTheorems (commands : Array Syntax) : CommandElabM (Array Name) := do
+  let env ← getEnv
+  let mut refs : Array (Name × DeclarationRange) := #[]
+  for command in commands do
+    for ref in authoredDeclarationRefs command do
+      if ref.isIdent then
+        if let some range ← Elab.getDeclarationRange? ref then
+          refs := refs.push (ref.getId.eraseMacroScopes.replacePrefix rootNamespace .anonymous, range)
+  let mut names := #[]
+  -- Main-branch source ranges and immediate async constant kinds avoid joining
+  -- env.checked while a command or its linter is still completing.
+  let ranges := declRangeExt.getState env (asyncMode := .local)
+  for (name, declarationRanges) in ranges.toList do
+    if (env.findAsync? name (skipRealize := true)).any (·.kind == .thm) then
+      if refs.any (fun (sourceName, range) =>
+          sourceName.isSuffixOf (privateToUserName name).eraseMacroScopes &&
+            decide (range = declarationRanges.selectionRange)) then
+        names := names.push name
+  return names.qsort Name.quickLt
+
+-- This check runs at a module boundary, after later `attribute [...]` commands.
+-- The enum registry enforces exactly one classification; simp/ext/Aesop remain
+-- independent attributes and are neither required nor altered by this check.
+def auditAuthoredTheorems (commands : Array Syntax) : CommandElabM Unit := do
+  let env ← getEnv
+  for name in ← authoredTheorems commands do
+    unless (kindOf? env name).isSome do
+      throwError "Source-authored theorem {privateToUserName name} requires exactly one PowerLib classification"
+
+-- The restored Lean 4.19/4.30 frontend runs command linters at end of file.
+-- Audit then, after all delayed attribute commands have been elaborated.
+def classificationLinter : Linter where
+  run command := do
+    if Parser.isTerminalCommand command then
+      if ← isFirstPartySource then
+        let parsed ← Parser.testParseModule (← getEnv) (← getFileName) (← getFileMap).source
+        auditAuthoredTheorems parsed[1].getArgs
+
+initialize addLinter classificationLinter
+
+end powerlib.Registry

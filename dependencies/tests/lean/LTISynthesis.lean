@@ -81,6 +81,7 @@ open powerlib
 
 def differentModel : LTI.Model 2 := ⟨![![-2, 10], ![0, -1]]⟩
 
+@[powerlib_foundation]
 theorem a_certificate_for_another_model_is_rejected : True := by
   fail_if_success
     have wrong : LTI.Accepted differentModel := Candidate.certificate
