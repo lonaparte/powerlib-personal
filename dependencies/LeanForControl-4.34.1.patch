@@ -1,0 +1,115 @@
+diff --git a/LeanForControl/Analysis/Integrals.lean b/LeanForControl/Analysis/Integrals.lean
+index 3bf0ea1b6ea53f6f91ecd451e3203be560a008ef..94fc11f3ddce9a1edb0a5cc569e4013fece463aa 100644
+--- a/LeanForControl/Analysis/Integrals.lean
++++ b/LeanForControl/Analysis/Integrals.lean
+@@ -208,13 +208,13 @@ private lemma average_antitone_right {f : ℝ → ℝ} {a b₁ b₂ : ℝ}
+   -- `f b₁` is a lower bound for `f` on `[a, b₁]`, hence for the mean there.
+   have hlow : (b₁ - a) * f b₁ ≤ ∫ x in a..b₁, f x := by
+     have h := intervalIntegral.integral_mono_on (f := fun _ => f b₁) (g := f) hab.le
+-      intervalIntegral.intervalIntegrable_const (hf_int a b₁ ha hb₁)
++      _root_.intervalIntegrable_const (hf_int a b₁ ha hb₁)
+       (fun x hx => hf_anti (Set.mem_Ioi.mpr (ha.trans_le hx.1)) (Set.mem_Ioi.mpr hb₁) hx.2)
+     rwa [intervalIntegral.integral_const_eq] at h
+   -- and an upper bound for `f` on `[b₁, b₂]`.
+   have hhigh : (∫ x in b₁..b₂, f x) ≤ (b₂ - b₁) * f b₁ := by
+     have h := intervalIntegral.integral_mono_on (f := f) (g := fun _ => f b₁) hb
+-      (hf_int b₁ b₂ hb₁ hb₂) intervalIntegral.intervalIntegrable_const
++      (hf_int b₁ b₂ hb₁ hb₂) _root_.intervalIntegrable_const
+       (fun x hx => hf_anti (Set.mem_Ioi.mpr hb₁) (Set.mem_Ioi.mpr (hb₁.trans_le hx.1)) hx.1)
+     rwa [intervalIntegral.integral_const_eq] at h
+   have hsplit := intervalIntegral.integral_add_adjacent_intervals
+@@ -234,13 +234,13 @@ private lemma average_antitone_left {f : ℝ → ℝ} {a₁ a₂ b : ℝ}
+   -- `f a₂` is an upper bound for the mean on `[a₂, b]`.
+   have hhigh : (∫ x in a₂..b, f x) ≤ (b - a₂) * f a₂ := by
+     have h := intervalIntegral.integral_mono_on (f := f) (g := fun _ => f a₂) hab.le
+-      (hf_int a₂ b ha₂ hb) intervalIntegral.intervalIntegrable_const
++      (hf_int a₂ b ha₂ hb) _root_.intervalIntegrable_const
+       (fun x hx => hf_anti (Set.mem_Ioi.mpr ha₂) (Set.mem_Ioi.mpr (ha₂.trans_le hx.1)) hx.1)
+     rwa [intervalIntegral.integral_const_eq] at h
+   -- and a lower bound for `f` on `[a₁, a₂]`.
+   have hlow : (a₂ - a₁) * f a₂ ≤ ∫ x in a₁..a₂, f x := by
+     have h := intervalIntegral.integral_mono_on (f := fun _ => f a₂) (g := f) ha₁₂
+-      intervalIntegral.intervalIntegrable_const (hf_int a₁ a₂ ha ha₂)
++      _root_.intervalIntegrable_const (hf_int a₁ a₂ ha ha₂)
+       (fun x hx => hf_anti (Set.mem_Ioi.mpr (ha.trans_le hx.1)) (Set.mem_Ioi.mpr ha₂) hx.2)
+     rwa [intervalIntegral.integral_const_eq] at h
+   have hsplit := intervalIntegral.integral_add_adjacent_intervals
+@@ -310,7 +310,7 @@ lemma tendsto_integral_average_atTop_zero {f a b : ℝ → ℝ}
+     calc (∫ x in (a η)..(b η), f x)
+         ≤ ∫ _ in (a η)..(b η), f (a η) :=
+           integral_mono_on hlt.le (hf_int _ _ hη (hη.trans hlt))
+-            intervalIntegral.intervalIntegrable_const
++            _root_.intervalIntegrable_const
+             fun s hs => hf_anti hη (hη.trans_le hs.1) hs.1
+       _ = f (a η) * (b η - a η) := by
+           rw [intervalIntegral.integral_const_eq]; ring
+diff --git a/LeanForControl/MatrixAlgebra/Exponential.lean b/LeanForControl/MatrixAlgebra/Exponential.lean
+index 9128433f795955251c8975d1f6dfcb346d10a690..68912746dc011b9b89c2858848e4b5ab1554fcb4 100644
+--- a/LeanForControl/MatrixAlgebra/Exponential.lean
++++ b/LeanForControl/MatrixAlgebra/Exponential.lean
+@@ -50,7 +50,7 @@ lemma complexification_exp (A : Matrix (Fin n) (Fin n) ℝ) :
+     intro j
+     exact Complex.continuous_ofReal.comp
+       ((continuous_apply j).comp (continuous_apply i))
+-  simpa [φ] using NormedSpace.map_exp φ hφ A
++  simpa [φ] using! NormedSpace.map_exp φ hφ A
+ 
+ section FinitePolynomial
+ 
+diff --git a/LeanForControl/MatrixAlgebra/Spectrum.lean b/LeanForControl/MatrixAlgebra/Spectrum.lean
+index d5f3a6cf5c9cd3d44f869fea689ee5857b89c656..e1c8aea9f99dd8e3c7b4b26a26f281b2e6fe0cf5 100644
+--- a/LeanForControl/MatrixAlgebra/Spectrum.lean
++++ b/LeanForControl/MatrixAlgebra/Spectrum.lean
+@@ -143,10 +143,10 @@ lemma bilinear_eq_zero_on_genEigenspaces
+       let Ny := (T - ν • (1 : Module.End ℂ V)) y
+       have hxN : Nx ∈ T.genEigenspace ξ k := by
+         rw [Module.End.mem_genEigenspace_nat] at hx ⊢
+-        simpa only [Nx, pow_succ, Module.End.mul_apply] using hx
++        simpa only [Nx, LinearMap.mem_ker, pow_succ, Module.End.mul_apply] using hx
+       have hyN : Ny ∈ T.genEigenspace ν l := by
+         rw [Module.End.mem_genEigenspace_nat] at hy ⊢
+-        simpa only [Ny, pow_succ, Module.End.mul_apply] using hy
++        simpa only [Ny, LinearMap.mem_ker, pow_succ, Module.End.mul_apply] using hy
+       have hNx : B Nx y = 0 := by
+         apply ih (k + (l + 1)) (by omega) k (l + 1) rfl Nx y hxN hy
+       have hNy : B x Ny = 0 := by
+@@ -291,7 +291,7 @@ private lemma exp_mulVec_of_mulVec_eq_smul
+   have he_cont : Continuous e := by
+     exact LinearMap.continuous_of_finiteDimensional e.toAlgEquiv.toLinearMap
+   have hmap : e (NormedSpace.exp A) = NormedSpace.exp T := by
+-    simpa [T] using NormedSpace.map_exp e he_cont A
++    simpa [T] using! NormedSpace.map_exp e he_cont A
+   apply WithLp.toLp_injective 2
+   rw [← Matrix.toEuclideanCLM_toLp (NormedSpace.exp A) v]
+   change (e (NormedSpace.exp A)) (WithLp.toLp 2 v) = _
+@@ -314,7 +314,7 @@ lemma exists_eigenpair_of_mem_spectrum_exp
+     rw [Module.End.hasEigenvalue_iff_mem_spectrum, Matrix.spectrum_toLin']
+     exact hz
+   let W : Submodule ℂ (Fin n → ℂ) := Module.End.eigenspace (NormedSpace.exp A).toLin' z
+-  have hW : W ≠ ⊥ := by simpa [W] using hz'
++  have hW : W ≠ ⊥ := by simpa only [W] using Module.End.hasEigenvalue_iff.mp hz'
+   letI : Nontrivial W := Submodule.nontrivial_iff_ne_bot.mpr hW
+   have hcommMatrix : Commute (NormedSpace.exp A) A := (Commute.refl A).exp_left
+   have hcomm : Commute (NormedSpace.exp A).toLin' A.toLin' :=
+diff --git a/LeanForControl/ODEs/ODE_properties.lean b/LeanForControl/ODEs/ODE_properties.lean
+index 7f7bdf2cb9632ef1a964a2c1be1a43a5f70bf803..61a7dc5ca56002324c3765fe38bbc663705b0541 100644
+--- a/LeanForControl/ODEs/ODE_properties.lean
++++ b/LeanForControl/ODEs/ODE_properties.lean
+@@ -5,6 +5,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+ import Mathlib.Analysis.ODE.Basic
+ import Mathlib.Analysis.ODE.Gronwall
+ import Mathlib.Analysis.ODE.PicardLindelof
++import Mathlib.Analysis.ODE.ExistUnique
+ import Mathlib.Analysis.ODE.Transform
+ import Mathlib.Order.Interval.Set.UnorderedInterval
+ import LeanForControl.ODEs.GronwallBellman
+diff --git a/LeanForControl/ODEs/PicardLindelof.lean b/LeanForControl/ODEs/PicardLindelof.lean
+index 8441ef98b323688e2b4afe9219f5034fb1576dfe..f9f6856e5830ba569dafcb7ea354741ab9f812ac 100644
+--- a/LeanForControl/ODEs/PicardLindelof.lean
++++ b/LeanForControl/ODEs/PicardLindelof.lean
+@@ -1,4 +1,5 @@
+ import Mathlib.Analysis.ODE.PicardLindelof
++import Mathlib.Analysis.ODE.ExistUnique
+ import Mathlib.Analysis.ODE.Gronwall
+ import LeanForControl.ODEs.ODE_properties
+ import Architect

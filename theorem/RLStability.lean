@@ -63,7 +63,7 @@ def IsEquilibrium (m : Impedance) (voltage equilibrium : ℝ) : Prop :=
   have hd : ∀ x ∈ Ici (0 : ℝ),
       HasDerivWithinAt (fun s => i s * Real.exp (a * s)) 0 (Ici 0) x := by
     intro x hx
-    convert (hi x hx).mul
+    convert! (hi x hx).mul
       (((hasDerivAt_id x).const_mul a).exp.hasDerivWithinAt) using 1
     simp [StateSpace.field, a]
     ring
@@ -92,7 +92,7 @@ def equilibriumResponse (m : Impedance) (e initial t : ℝ) : ℝ :=
     IsTrajectory m v (equilibriumResponse m e initial) := by
   intro t ht
   have h := (response_solves m (initial - e) t).const_add e
-  convert h.hasDerivWithinAt using 1
+  convert! h.hasDerivWithinAt using 1
   rw [field_shift he]
   simp [equilibriumResponse]
 
@@ -262,7 +262,7 @@ theorem Accepted.trajectory_decay {m : Impedance} (c : Accepted m) {v e : ℝ} {
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) {t : ℝ} (ht : 0 ≤ t) :
     HasDerivWithinAt (fun s => energy c.p (i s - e)) (-(i t - e) ^ 2) (Ici 0) t := by
   have h := (((trajectory_shift he hi) t ht).pow 2).const_mul c.p
-  convert h using 1
+  convert! h using 1
   · rw [← c.dissipation (i t - e)]
     ring
 
