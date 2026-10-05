@@ -8,6 +8,14 @@ must end in a kernel-checked Lean theorem. The project's requirements for models
 semantic theorems, synthesis, admission, provenance, and result maturity are
 defined in [Rules.md](Rules.md).
 
+## Version compatibility
+
+When toolchain or dependency versions do not match, first downgrade incompatible
+dependencies to revisions compatible with the project's current pinned Lean and
+Mathlib versions, then retry the pinned build. Check compatible older upstream
+revisions before considering a project toolchain upgrade. Keep all dependency
+pins explicit, and require the complete build and proof checks to pass together.
+
 ## Directions
 
 - **ATP (Automated Theorem Proving):** automatically prove given propositions, especially **synthesis of certificates**.
