@@ -48,8 +48,8 @@ lake exe cache get
 lake build
 ```
 
-Apply the compatibility diff only to the pinned clean upstream checkout. CI
-checks the original commit and exact applied diff before building. Project Lake
+Apply the compatibility diff only to the pinned clean upstream checkout. Local
+admission checks verify the original commit and exact applied diff. Project Lake
 configuration and dependency pins are committed; upstream sources and local
 caches are not.
 
