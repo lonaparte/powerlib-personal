@@ -11,5 +11,6 @@ import theorem.Dynamics.Nonlinear
 import theorem.Dynamics.Polynomial2
 import theorem.LTI
 import theorem.Hurwitz
+import theorem.ImpedanceStability
 import theorem.Upstream.LeanForControl
 import theorem.Upstream.LCLLeanForControl

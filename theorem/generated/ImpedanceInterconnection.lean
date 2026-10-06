@@ -1,0 +1,24 @@
+-- Generated from the Agda-normalized executable conversion.
+-- Agda source SHA-256: e5b0de12e2ba553bfa68b40b4a95e61cc043a13317d2da659c1caae7dd23924f
+-- Wire 20261006 v1: [0, 0, 1, 0, 1, 0, 6, 2, 1, 0, 5, 0, 2, 3, 0, 4, 1, 1, 0, 5, 0, 3, 0, 6]
+import dependencies.Mathlib
+import theorem.Attributes
+
+namespace powerlib.generated
+
+-- Closed-loop state matrix of a source–load interconnection, blocks over source ⊕ load states.
+def closedLoopBlocks {ι₁ ι₂ κ : Type*} [Fintype κ]
+    (A₁ : Matrix ι₁ ι₁ ℝ) (B₁ : Matrix ι₁ κ ℝ) (C₁ : Matrix κ ι₁ ℝ) (D₁ : Matrix κ κ ℝ)
+    (A₂ : Matrix ι₂ ι₂ ℝ) (B₂ : Matrix ι₂ κ ℝ) (C₂ : Matrix κ ι₂ ℝ) :
+    Matrix (ι₁ ⊕ ι₂) (ι₁ ⊕ ι₂) ℝ :=
+  Matrix.fromBlocks A₁ (B₁ * C₂)
+    (-(B₂ * C₁)) (A₂ - ((B₂ * D₁) * C₂))
+
+-- Lean independently checks the endpoint, not a translation of the Agda proof.
+@[simp, powerlib_foundation] theorem closedLoopBlocks_spec {ι₁ ι₂ κ : Type*} [Fintype κ]
+    (A₁ : Matrix ι₁ ι₁ ℝ) (B₁ : Matrix ι₁ κ ℝ) (C₁ : Matrix κ ι₁ ℝ) (D₁ : Matrix κ κ ℝ)
+    (A₂ : Matrix ι₂ ι₂ ℝ) (B₂ : Matrix ι₂ κ ℝ) (C₂ : Matrix κ ι₂ ℝ) :
+    closedLoopBlocks A₁ B₁ C₁ D₁ A₂ B₂ C₂ =
+      Matrix.fromBlocks A₁ (B₁ * C₂) (-(B₂ * C₁)) (A₂ - B₂ * D₁ * C₂) := rfl
+
+end powerlib.generated

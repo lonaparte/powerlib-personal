@@ -28,20 +28,29 @@ namespace powerlib.LTI
 open Matrix Filter
 open scoped Topology
 
-variable {n : ℕ}
+variable {n : ℕ} {ι ι' : Type*} [Fintype ι] [DecidableEq ι] [Fintype ι'] [DecidableEq ι']
 
-/-- The characteristic matrix `sI - A` over `ℂ`. -/
-def characteristicMatrix (A : Matrix (Fin n) (Fin n) ℝ) (s : ℂ) : Matrix (Fin n) (Fin n) ℂ :=
-  s • (1 : Matrix (Fin n) (Fin n) ℂ) - A.map (algebraMap ℝ ℂ)
+/-- The characteristic matrix `sI - A` over `ℂ`, for any finite state index. -/
+def characteristicMatrix (A : Matrix ι ι ℝ) (s : ℂ) : Matrix ι ι ℂ :=
+  s • (1 : Matrix ι ι ℂ) - A.map (algebraMap ℝ ℂ)
 
 /-- Eigenvalue (small-signal) stability: every root of `det(sI - A)` lies in `Re s < 0`. -/
-def SpectrallyStable (A : Matrix (Fin n) (Fin n) ℝ) : Prop :=
+def SpectrallyStable (A : Matrix ι ι ℝ) : Prop :=
   ∀ s : ℂ, (characteristicMatrix A s).det = 0 → s.re < 0
 
 /-- `det(sI - A)` is Mathlib's characteristic polynomial of `A` evaluated at `s`. -/
-@[powerlib_foundation] theorem det_characteristicMatrix (A : Matrix (Fin n) (Fin n) ℝ) (s : ℂ) :
+@[powerlib_foundation] theorem det_characteristicMatrix (A : Matrix ι ι ℝ) (s : ℂ) :
     (characteristicMatrix A s).det = (A.map (algebraMap ℝ ℂ)).charpoly.eval s := by
   rw [Matrix.eval_charpoly, characteristicMatrix, Matrix.scalar_apply, Matrix.smul_one_eq_diagonal]
+
+/-- Relabelling the state coordinates does not move the characteristic roots. -/
+@[powerlib_foundation] theorem spectrallyStable_reindex (e : ι ≃ ι') (A : Matrix ι ι ℝ) :
+    SpectrallyStable (A.reindex e e) ↔ SpectrallyStable A := by
+  have h (s : ℂ) :
+      characteristicMatrix (A.reindex e e) s = (characteristicMatrix A s).reindex e e := by
+    ext i j
+    simp [characteristicMatrix, Matrix.one_apply]
+  simp only [SpectrallyStable, h, Matrix.det_reindex_self]
 
 /-! ### Layer 1: roots of the characteristic polynomial and Hurwitz matrices -/
 

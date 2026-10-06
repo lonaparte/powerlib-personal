@@ -89,8 +89,8 @@ run_cmd do
       unless entry.axioms.all powerlib.Search.allowedAxiom do
         throwError "Unexpected axiom in {name}"
       count := count + 1
-  unless count == 16 do
-    throwError "Expected 16 registered Hurwitz theorems, found {count}"
+  unless count == 17 do
+    throwError "Expected 17 registered Hurwitz theorems, found {count}"
   for name in #[`powerlib.LTI.exponentiallyStable_iff_spectrallyStable,
       `powerlib.LTI.accepted_nonempty_iff_isHurwitz,
       `powerlib.Dynamics.locallyExponentiallyStable_of_spectrallyStable_jacobian,

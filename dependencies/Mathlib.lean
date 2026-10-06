@@ -9,6 +9,7 @@ import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Data.Matrix.Block
 import Mathlib.Algebra.Order.Star.Real
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
