@@ -61,12 +61,44 @@ def accepted : powerlib.LTI.Accepted submittedModel := Candidate.certificate
     (hx : powerlib.LTI.IsTrajectory submittedModel x) :
     Filter.Tendsto (fun t => powerlib.LTI.sqNorm (x t)) Filter.atTop (nhds 0) :=
   accepted.sqNorm_tendsto_zero hx
+structure SemanticContract : Prop where
+  exponentially_stable : powerlib.LTI.ExponentiallyStable submittedModel
+  decay : ∀ (x : ℝ → powerlib.LTI.State _),
+    powerlib.LTI.IsTrajectory submittedModel x → ∀ t : ℝ, 0 ≤ t →
+      powerlib.LTI.sqNorm (x t) ≤ (accepted.upper / accepted.lower) *
+        Real.exp (-(t / accepted.upper)) * powerlib.LTI.sqNorm (x 0)
+  exists_solution : ∀ initial : powerlib.LTI.State _,
+    ∃ x, powerlib.LTI.IsTrajectory submittedModel x ∧ x 0 = initial
+  norm_decay : ∀ (x : ℝ → powerlib.LTI.State _),
+    powerlib.LTI.IsTrajectory submittedModel x → ∀ t : ℝ, 0 ≤ t →
+      ‖powerlib.LTI.euclidean (x t)‖ ≤ Real.sqrt (accepted.upper / accepted.lower) *
+        Real.exp (-(t / accepted.upper) / 2) * ‖powerlib.LTI.euclidean (x 0)‖
+  unique_solution : ∀ (x : ℝ → powerlib.LTI.State _),
+    powerlib.LTI.IsTrajectory submittedModel x → ∀ t : ℝ, 0 ≤ t →
+      x t = powerlib.LTI.response submittedModel (x 0) t
+  converges : ∀ (x : ℝ → powerlib.LTI.State _),
+    powerlib.LTI.IsTrajectory submittedModel x →
+      Filter.Tendsto (fun t => powerlib.LTI.sqNorm (x t)) Filter.atTop (nhds 0)
+
+@[powerlib_domain] theorem semanticContract : SemanticContract := {
+  exponentially_stable := Admission.exponentially_stable
+  decay := Admission.decay
+  exists_solution := Admission.exists_solution
+  norm_decay := Admission.norm_decay
+  unique_solution := Admission.unique_solution
+  converges := Admission.converges
+}
+
 end Admission
 
 open Lean Elab Command
 run_cmd do
   let env ← getEnv
-  let mut roots : Array Name := #[`Admission.accepted, `Admission.exponentially_stable, `Admission.decay, `Admission.exists_solution, `Admission.norm_decay, `Admission.unique_solution, `Admission.converges] ++ powerlib.Registry.theoremNames env
+  let registered := powerlib.Registry.theoremNames env
+  for root in registered do
+    if root.getRoot == `Admission then
+      logInfo m!"POWERLIB_ADMITTED_THEOREM {root}"
+  let mut roots : Array Name := #[`Admission.semanticContract] ++ registered
   for (root, info) in env.constants do
     if root.getRoot == `powerlib && !info.isUnsafe then
       roots := roots.push root
@@ -80,7 +112,6 @@ run_cmd do
       unless powerlib.Search.allowedAxiom ax do
         throwError "Unexpected axiom {ax}"
   logInfo "POWERLIB_KERNEL_OK"
-
 namespace LTISynthesisBinding
 open powerlib
 
