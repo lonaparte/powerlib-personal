@@ -266,4 +266,13 @@ theorem Accepted.trajectory_decay {m : Impedance} (c : Accepted m) {v e : ℝ} {
   · rw [← c.dissipation (i t - e)]
     ring
 
+@[powerlib_domain, aesop unsafe 90% apply]
+theorem rl_globally_exponentially_stable (m : Impedance)
+    (hR : 0 < m.resistance) (voltage : ℝ) :
+    GloballyExponentiallyStable m voltage (voltage / m.resistance) := by
+  let certificate := synthesize m hR
+  have he : IsEquilibrium m voltage (voltage / m.resistance) :=
+    equilibrium_of_resistance_ne_zero (ne_of_gt hR) voltage
+  aesop
+
 end powerlib
