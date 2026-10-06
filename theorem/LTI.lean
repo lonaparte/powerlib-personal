@@ -68,7 +68,7 @@ def response (m : Model n) (initial : State n) (t : ℝ) : State n :=
   intro t
   have h := (hasDerivAt_exp_smul_const' m.operator t).clm_apply
     (hasDerivAt_const t initial)
-  simpa [response, ContinuousLinearMap.mul_apply] using! h
+  simpa [response, mul_apply_eq_comp] using! h
 
 @[powerlib_domain, aesop safe apply] theorem trajectory_exists (m : Model n) (initial : State n) :
     ∃ x, IsTrajectory m x ∧ x 0 = initial :=
