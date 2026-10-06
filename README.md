@@ -21,7 +21,7 @@ specific operating conditions, hardware, control methods, and their combinations
 We see this as a good experimental setting for making ATP work at the synthesis
 level and exploring the potential of ATD.
 
-## Foundations and compatibility
+## Structure
 
 Agda supplies foundational structures and conversions; Lean 4 exposes every
 admitted domain result as a kernel-checked theorem. The project pins Lean 4.34.1
