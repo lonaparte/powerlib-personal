@@ -4,3 +4,6 @@ import LeanForControl.ODEs.PicardLindelof
 import LeanForControl.Analysis.Continuity
 import LeanForControl.MatrixAlgebra.Exponential
 import LeanForControl.LinearSystems.Stability.Continuous.ExponentialStability
+import LeanForControl.LinearSystems.Stability.Continuous.LyapunovEquation
+import LeanForControl.Stability.LyapunovIndirect.Linearization
+import LeanForControl.Stability.LyapunovIndirect.NonlinearInstability
