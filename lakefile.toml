@@ -23,11 +23,10 @@ globs = ["powerlib", "theorem.+", "dependencies.Mathlib", "dependencies.LeanForC
 
 [[lean_lib]]
 name = "PowerLibTests"
-roots = ["dependencies.tests.lean.Audit", "dependencies.tests.lean.AuthoredClassification",
-  "dependencies.tests.lean.Automation", "dependencies.tests.lean.ExportRegistry",
-  "dependencies.tests.lean.Registry", "dependencies.tests.lean.RegistryFixture",
-  "dependencies.tests.lean.Upstream"]
-globs = ["dependencies.tests.lean.+"]
+roots = ["dependencies.tests.lean.Acceptance", "dependencies.tests.lean.FormalCases",
+  "dependencies.tests.lean.LCLStorageSynthesis", "dependencies.tests.lean.LTISynthesis",
+  "dependencies.tests.lean.Metadata", "dependencies.tests.lean.NativeTheoremUse",
+  "dependencies.tests.lean.RegistryFixture"]
 
 [[lean_lib]]
 name = "PowerLibExamples"

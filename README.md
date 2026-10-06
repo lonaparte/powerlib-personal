@@ -24,8 +24,8 @@ level and exploring the potential of ATD.
 ## Structure
 
 Agda supplies foundational structures and conversions; Lean 4 exposes every
-admitted domain result as a kernel-checked theorem. The project pins Lean 4.34.1
-and Mathlib v4.34.1. Adapt dependencies to these pins with minimal,
+admitted domain result as a kernel-checked theorem. The project pins Lean 4.34.1,
+Mathlib v4.34.1, and Agda 2.8.0. Adapt dependencies to these pins with minimal,
 provenance-preserving changes, and accept them only after the complete build and
 proof checks pass. See [Rules.md](Rules.md) for the formal requirements.
 
