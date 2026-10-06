@@ -164,7 +164,7 @@ example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
 
 example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) :
-    LCL.GloballyAsymptoticallyStable m u vg e := by exact?
+    LCL.GloballyAsymptoticallyStable m u vg e := by aesop
 
 example (m : LCL.Circuit) : LCL.IsEquilibrium m 0 0 0 := by simp
 
@@ -175,11 +175,11 @@ example (m : LCL.Circuit) (c : LCL.Accepted m) :
     LCL.GloballyExponentiallyStable m 0 0 0 ∧ LCL.AsymptoticallyStable m 0 0 0 := by aesop
 
 example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (initial : LCL.State) :
-    ∃ x, LCL.IsTrajectory m u vg x ∧ x 0 = initial := by exact?
+    ∃ x, LCL.IsTrajectory m u vg x ∧ x 0 = initial := by aesop
 
 example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
     (x : ℝ → LCL.State) (he : LCL.IsEquilibrium m u vg e) (hx : LCL.IsTrajectory m u vg x) :
-    Tendsto x atTop (𝓝 e) := by exact?
+    Tendsto x atTop (𝓝 e) := by aesop
 
 example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
     (x : ℝ → LCL.State) (he : LCL.IsEquilibrium m u vg e) (hx : LCL.IsTrajectory m u vg x)
@@ -199,7 +199,36 @@ example (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
 
 example (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) (u vg : ℝ) (e : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) :
-    LCL.GloballyExponentiallyStable m u vg e := by exact?
+    LCL.GloballyExponentiallyStable m u vg e := by aesop
+
+namespace LCLAdmissionFixture
+
+def submittedModel : LCL.Circuit :=
+  ⟨⟨1, ⟨1, by norm_num⟩⟩, ⟨1, ⟨1, by norm_num⟩⟩, ⟨1, by norm_num⟩⟩
+
+noncomputable def accepted : LCL.Accepted submittedModel :=
+  LCL.synthesize submittedModel
+    (by norm_num [submittedModel, LCL.Circuit.Passive])
+    (by norm_num [submittedModel, LCL.Circuit.Damped])
+
+example : LCL.GloballyAsymptoticallyStable submittedModel 0 0 0 := by
+  have certificate := accepted
+  aesop
+
+example (initial : LCL.State) :
+    ∃ x, LCL.IsTrajectory submittedModel 0 0 x ∧ x 0 = initial := by
+  let certificate := accepted
+  aesop
+
+example (x : ℝ → LCL.State) (hx : LCL.IsTrajectory submittedModel 0 0 x)
+    (t : ℝ) (ht : 0 ≤ t) :
+    HasDerivWithinAt (fun s => LCL.quadraticEnergy accepted.p (x s))
+      (-LCL.squaredSize (x t)) (Set.Ici 0) t := by
+  let certificate := accepted
+  have he : LCL.IsEquilibrium submittedModel 0 0 0 := by simp
+  simpa using certificate.energy_derivative he hx ht
+
+end LCLAdmissionFixture
 
 example (m : LCL.Circuit) (hp : m.Passive) (u vg : ℝ) (e : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) :
@@ -220,7 +249,8 @@ run_cmd do
       `powerlib.LCL.Accepted.energy_derivative, `powerlib.LCL.trajectory_exists,
       `powerlib.LCL.trajectory_unique, `powerlib.LCL.passive_lyapunovStable,
       `powerlib.LCL.lossless_not_asymptoticallyStable,
-      `powerlib.LCL.lossless_energy_conserved] do
+      `powerlib.LCL.lossless_energy_conserved,
+      `powerlib.Upstream.lcl_upstream_contractive_block] do
     unless domains.contains name do
       throwError "Public domain theorem missing from discovery: {name}"
   for name in #[`powerlib.lcl_asymptotically_stable_iff,

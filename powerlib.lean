@@ -7,3 +7,4 @@ import theorem.RLPortPassivity
 import theorem.LCLPortPassivity
 import theorem.PortHamiltonian
 import theorem.Upstream.LeanForControl
+import theorem.Upstream.LCLLeanForControl

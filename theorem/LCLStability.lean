@@ -170,16 +170,19 @@ theorem Accepted.globallyExponentiallyStable {m : Circuit} (c : Accepted m)
       exact h x hx t ht) hu
   exact tendsto_iff_norm_sub_tendsto_zero.mpr hn
 
-@[powerlib_domain] theorem Accepted.lyapunovStable {m : Circuit} (c : Accepted m)
+@[powerlib_domain, aesop norm forward (immediate := [c])]
+theorem Accepted.lyapunovStable {m : Circuit} (c : Accepted m)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : LyapunovStable m u vg e :=
   lyapunovStable_of_globallyExponentiallyStable (c.globallyExponentiallyStable he)
 
-@[powerlib_domain] theorem Accepted.trajectory_tendsto {m : Circuit} (c : Accepted m)
+@[powerlib_domain, aesop norm forward (immediate := [c])]
+theorem Accepted.trajectory_tendsto {m : Circuit} (c : Accepted m)
     {u vg : ℝ} {e : State} {x : ℝ → State}
     (he : IsEquilibrium m u vg e) (hx : IsTrajectory m u vg x) : Tendsto x atTop (𝓝 e) :=
   trajectory_tendsto_of_globallyExponentiallyStable (c.globallyExponentiallyStable he) hx
 
-@[powerlib_domain] theorem Accepted.globallyAsymptoticallyStable {m : Circuit} (c : Accepted m)
+@[powerlib_domain, aesop norm forward (immediate := [c])]
+theorem Accepted.globallyAsymptoticallyStable {m : Circuit} (c : Accepted m)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : GloballyAsymptoticallyStable m u vg e :=
   ⟨c.lyapunovStable he, fun _ hx => c.trajectory_tendsto he hx⟩
 
@@ -188,11 +191,13 @@ theorem Accepted.asymptoticallyStable {m : Circuit} (c : Accepted m)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : AsymptoticallyStable m u vg e :=
   ⟨c.lyapunovStable he, 1, zero_lt_one, fun _ hx _ => c.trajectory_tendsto he hx⟩
 
-@[powerlib_domain] theorem Accepted.equilibrium_exists {m : Circuit} (c : Accepted m) (u vg : ℝ) :
+@[powerlib_domain, aesop norm forward (immediate := [c])]
+theorem Accepted.equilibrium_exists {m : Circuit} (c : Accepted m) (u vg : ℝ) :
     IsEquilibrium m u vg (equilibrium m u vg) :=
   powerlib.LCL.equilibrium_exists (ne_of_gt c.a0_pos) u vg
 
-@[powerlib_domain] theorem Accepted.trajectory_exists {m : Circuit} (c : Accepted m)
+@[powerlib_domain, aesop norm forward (immediate := [c])]
+theorem Accepted.trajectory_exists {m : Circuit} (c : Accepted m)
     (u vg : ℝ) (initial : State) : ∃ x, IsTrajectory m u vg x ∧ x 0 = initial :=
   powerlib.LCL.trajectory_exists (c.equilibrium_exists u vg) initial
 
