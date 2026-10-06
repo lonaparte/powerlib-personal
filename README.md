@@ -2,66 +2,7 @@
 
 powerlib is a theorem library for power systems and power electronics, built on Lean 4 and Agda.
 
-Agda is the foundation for structures, representation conversions, equivalences,
-and transport. Lean 4 is the public theorem layer: every admitted domain result
-must end in a kernel-checked Lean theorem. The project's requirements for models,
-semantic theorems, synthesis, admission, provenance, and result maturity are
-defined in [Rules.md](Rules.md).
-
-## Version compatibility
-
-The project pins Lean 4.34.1 and Mathlib v4.34.1.
-
-When toolchain or dependency versions do not match, first adapt incompatible
-dependencies to the project's current pinned Lean and Mathlib versions and retry
-the pinned build. Check compatible older upstream revisions, or make minimal local
-compatibility changes to the dependency code, before considering a project
-toolchain upgrade. The absence of a matching historical pin does not establish
-incompatibility. Preserve upstream provenance and theorem contracts, keep all pins
-explicit, and require the complete build and proof checks to pass together.
-
-## Dependencies
-
-Mathlib and LeanForControl are imported through their upstream Lean modules.
-Lake downloads the pinned source checkouts as siblings of this repository:
-
-```text
-<parent>/
-  powerlib/
-  mathlib/
-  LeanForControl/
-```
-
-The private repository `powerlib-personal/` uses the same sibling locations.
-Complete upstream sources stay outside the repository. The import interfaces
-are `dependencies/Mathlib.lean` and `dependencies/LeanForControl.lean`; new or
-modified PowerLib theorems and their proofs belong in `theorem/`. Upstream
-proofs are reused through imports.
-
-After downloading the repository, install Elan and run from its root:
-
-```sh
-compatibility_patch="$PWD/dependencies/LeanForControl-4.34.1.patch"
-git -C ../LeanForControl apply --check "$compatibility_patch"
-git -C ../LeanForControl apply "$compatibility_patch"
-lake exe cache get
-lake build
-```
-
-Apply the compatibility diff only to the pinned clean upstream checkout. Local
-admission checks verify the original commit and exact applied diff. Project Lake
-configuration and dependency pins are committed; upstream sources and local
-caches are not.
-
-The isolated LeanForControl profile shares these source locations, pins, and
-search implementation. After setting up the dependencies, run its independent
-checks with:
-
-```sh
-(cd dependencies/integrations/leanforcontrol && lake exe cache get && lake build)
-```
-
-Integration profile checks do not replace the main build and admission checks.
+Development takes place first in the private repository with the maintainer and Codex, and is periodically synchronized to the public repository.
 
 ## Directions
 
@@ -80,4 +21,41 @@ specific operating conditions, hardware, control methods, and their combinations
 We see this as a good experimental setting for making ATP work at the synthesis
 level and exploring the potential of ATD.
 
-Development takes place first in the private repository with the maintainer and Codex, and is periodically synchronized to the public repository.
+## Foundations and compatibility
+
+Agda supplies foundational structures and conversions; Lean 4 exposes every
+admitted domain result as a kernel-checked theorem. The project pins Lean 4.34.1
+and Mathlib v4.34.1. Adapt dependencies to these pins with minimal,
+provenance-preserving changes, and accept them only after the complete build and
+proof checks pass. See [Rules.md](Rules.md) for the formal requirements.
+
+## Dependencies
+
+Lake resolves pinned Mathlib and LeanForControl checkouts as siblings of the
+repository:
+
+```text
+<parent>/
+  powerlib/
+  mathlib/
+  LeanForControl/
+```
+
+The private repository uses the same layout. Its import interfaces are
+`dependencies/Mathlib.lean` and `dependencies/LeanForControl.lean`; first-party
+proofs belong in `theorem/`. Upstream sources and caches remain outside the
+repository.
+
+After installing Elan, run from the repository root:
+
+```sh
+compatibility_patch="$PWD/dependencies/LeanForControl-4.34.1.patch"
+git -C ../LeanForControl apply --check "$compatibility_patch"
+git -C ../LeanForControl apply "$compatibility_patch"
+lake exe cache get
+lake build
+(cd dependencies/integrations/leanforcontrol && lake exe cache get && lake build)
+```
+
+Apply the compatibility diff only to the pinned clean LeanForControl checkout;
+the checks verify its source identity and exact diff.
