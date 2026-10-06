@@ -27,7 +27,7 @@ def Impedance.autonomousField (m : Impedance) : ℝ → ℝ :=
   have h := (((hasDerivAt_id i).pow 2).const_mul p).hasFDerivAt
   change fderiv ℝ (fun y => p * id y ^ 2) i di = _
   erw [h.fderiv]
-  simp [energy, ContinuousLinearMap.smulRight_apply]
+  simp
   ring
 
 /-- An admitted scalar certificate yields a global nonlinear-trajectory energy

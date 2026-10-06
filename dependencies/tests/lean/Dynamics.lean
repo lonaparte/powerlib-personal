@@ -108,17 +108,10 @@ end powerlib.Tests.Dynamics
 open Lean Elab Command
 run_cmd do
   let env ← getEnv
-  let roots := #[
-    `powerlib.Tests.Dynamics.nonlinear_every_initial_state_has_global_solution,
-    `powerlib.Tests.Dynamics.nonlinear_every_finite_segment_decays,
-    `powerlib.Tests.Dynamics.nonlinear_every_global_trajectory_converges,
-    `powerlib.Tests.Dynamics.lcl_every_initial_state_has_global_solution,
-    `powerlib.Tests.Dynamics.lcl_uniform_decay_of_every_finite_segment,
-    `powerlib.Tests.Dynamics.lcl_every_global_trajectory_converges,
-    `powerlib.Tests.Dynamics.locallyStableField_has_negative_linearization,
-    `powerlib.Tests.Dynamics.squareEnergy_lie_derivative,
-    `powerlib.Tests.Dynamics.locallyStableField_rejects_global_decay_certificate,
-    `powerlib.Tests.Dynamics.locallyStableField_not_globallyExponentiallyStable]
+  let namespacePrefix := `powerlib.Tests.Dynamics
+  let roots := (powerlib.Registry.theoremNames env).filter namespacePrefix.isPrefixOf
+  if roots.isEmpty then
+    throwError "Dynamics regression discovery found no registered theorems"
   let mut auditedAxioms : Array Name := #[]
   for root in roots do
     match env.find? root with

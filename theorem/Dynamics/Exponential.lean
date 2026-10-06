@@ -94,7 +94,7 @@ variable {f : E → E} {V : E → ℝ} {equilibrium : E}
         ‖φ a - equilibrium‖ ^ 2 := by
     apply (mul_le_mul_iff_right₀ c.lower_pos).mp
     convert! henergy using 1
-    field_simp [ne_of_gt c.lower_pos] <;> ring
+    field_simp [ne_of_gt c.lower_pos]
   have hratio : 0 ≤ c.upper / c.lower := le_of_lt (div_pos c.upper_pos c.lower_pos)
   have hexp : Real.exp (-(c.rate / 2 * (t - a))) ^ 2 =
       Real.exp (-(c.rate * (t - a))) := by
