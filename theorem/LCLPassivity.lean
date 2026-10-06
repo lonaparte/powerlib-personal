@@ -107,7 +107,8 @@ def physicalWeights (m : Circuit) : SymmetricMatrix :=
     ext j
     fin_cases j <;> simp [ha, hb, hc]
 
-@[powerlib_domain] theorem lossless_not_asymptoticallyStable {m : Circuit}
+@[powerlib_domain, aesop norm forward (immediate := [h1, h2, he])]
+theorem lossless_not_asymptoticallyStable {m : Circuit}
     (h1 : m.first.resistance = 0) (h2 : m.second.resistance = 0)
     {u vg : ℝ} {e : State} (he : IsEquilibrium m u vg e) : ¬ AsymptoticallyStable m u vg e := by
   intro hs

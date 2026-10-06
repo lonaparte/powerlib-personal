@@ -85,7 +85,7 @@ def Impedance.frequency (m : Impedance) (s : ℂ) : ℂ :=
   · intro h
     rw [h]
     field_simp [hL]
-    ring_nf <;> simp
+    ring_nf
 
 def StateSpace.Stable (m : StateSpace) : Prop := 0 < m.decay
 

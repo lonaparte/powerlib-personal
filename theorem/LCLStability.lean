@@ -27,7 +27,7 @@ def squaredSize (x : State) : ℝ := (x 0) ^ 2 + (x 1) ^ 2 + (x 2) ^ 2
   constructor
   · intro hx
     by_contra h
-    push_neg at h
+    push Not at h
     apply hx
     ext j
     fin_cases j <;> simp [h.1, h.2.1, h.2.2]
@@ -72,7 +72,7 @@ def squaredSize (x : State) : ℝ := (x 0) ^ 2 + (x 1) ^ 2 + (x 2) ^ 2
   dsimp [energyDerivative]
   ring
 
-@[powerlib_domain] theorem Accepted.energy_derivative {m : Circuit} (c : Accepted m)
+@[powerlib_domain, aesop safe apply] theorem Accepted.energy_derivative {m : Circuit} (c : Accepted m)
     {u vg : ℝ} {e : State} {x : ℝ → State}
     (he : IsEquilibrium m u vg e) (hx : IsTrajectory m u vg x) {t : ℝ} (ht : 0 ≤ t) :
     HasDerivWithinAt (fun s => quadraticEnergy c.p (x s - e))

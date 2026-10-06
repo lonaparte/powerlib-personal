@@ -42,6 +42,23 @@ run_cmd do
     for ax in powerlib.Search.declarationAxioms env name do
       unless powerlib.Search.allowedAxiom ax do
         throwError "Unexpected upstream consumer axiom: {ax}"
+  for (consumer, source) in #[
+      (`powerlib.Passivity.DissipativeStorage.integral_dissipation,
+        `intervalIntegral.sub_le_integral_of_hasDeriv_right_of_le),
+      (`powerlib.Passivity.DissipativeStorage.zeroInput_energy_antitone,
+        `antitoneOn_of_hasDerivWithinAt_nonpos),
+      (`powerlib.StateSpacePassivity.trajectory_unique, `ODE_solution_unique),
+      (`powerlib.StateSpacePassivity.response_solves, `hasDerivAt_exp_smul_const')] do
+    let info ← getConstInfo consumer
+    let some proof := info.value? (allowOpaque := true) | throwError "Missing passivity proof: {consumer}"
+    unless proof.getUsedConstants.contains source do
+      throwError "Passivity proof did not directly reuse {source}"
+    let some entry := powerlib.Search.describe env source |
+      throwError "Passivity upstream theorem absent from discovery: {source}"
+    unless entry.moduleName.getRoot == `Mathlib &&
+        entry.axioms.all powerlib.Search.allowedAxiom &&
+        powerlib.Search.eligible env source do
+      throwError "Passivity upstream theorem failed provenance or axiom checks: {source}"
   let some bridgeInfo := env.find? `powerlib.Upstream.contractive_block |
     throwError "The LeanForControl contractivity bridge is missing"
   let some bridgeProof := bridgeInfo.value? (allowOpaque := true) |

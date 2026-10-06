@@ -67,7 +67,8 @@ def StateSpace.field (m : StateSpace) (i1 vc i2 u vg : ℝ) : ℝ × ℝ × ℝ 
         (vc - m.second.resistance * i2 - vg) / m.second.inductance.val) := by
   dsimp [StateSpace.field, toStateSpace, generated.convertLCL, powerlib.reciprocal]
   ext <;> field_simp [ne_of_gt m.first.inductance.property,
-    ne_of_gt m.second.inductance.property, ne_of_gt m.capacitance.property] <;> ring
+    ne_of_gt m.second.inductance.property, ne_of_gt m.capacitance.property]
+  ring
 
 def Circuit.a3 (m : Circuit) : ℝ :=
   m.first.inductance.val * m.second.inductance.val * m.capacitance.val
@@ -133,7 +134,6 @@ def StateSpace.characteristic (m : StateSpace) (s : ℂ) : ℂ :=
     Circuit.a3, Circuit.a2, Circuit.a1, Circuit.a0]
   field_simp [hL1, hL2, hC]
   ring_nf
-  all_goals field_simp [hL1, hL2, hC] <;> ring
 
 def StateSpace.Stable (m : StateSpace) : Prop :=
   ∀ s : ℂ, m.characteristic s = 0 → s.re < 0
@@ -176,7 +176,7 @@ def Circuit.Passive (m : Circuit) : Prop :=
     nlinarith [h]
   by_cases hy : s.im = 0
   · have hp : 0 < a3*s.re^3 + a2*s.re^2 + a1*s.re + a0 := by positivity
-    simp only [hy, zero_pow, mul_zero, sub_zero] at hr
+    simp only [hy] at hr
     linarith
   · have hf : a3*(3*s.re^2-s.im^2)+2*a2*s.re+a1 = 0 := (mul_eq_zero.mp hi).resolve_left hy
     have hz : 8*a3^2*s.re^3 + 8*a3*a2*s.re^2 +
@@ -222,7 +222,7 @@ def Circuit.Passive (m : Circuit) : Prop :=
     have hf : m.frequency 0 = 0 := by
       simp [Circuit.frequency, Circuit.a0, hz.1, hz.2]
     have h := hs 0 hf
-    simpa using h
+    simp at h
   · intro hd
     rcases passive_hurwitz m hp hd with ⟨h2, h1, h0, hg⟩
     exact stable_of_hurwitz m h2 h1 h0 hg

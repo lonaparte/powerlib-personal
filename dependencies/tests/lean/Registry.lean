@@ -25,7 +25,8 @@ universe u
 @[powerlib_foundation] theorem imported_application {α : Sort u} (P : α → Prop) (x : α) (h : P x) :
     RegistryFixture.Envelope (P x) := by powerlib_search
 
-@[powerlib_foundation] theorem imported_iff (P : Prop) : RegistryFixture.Envelope P ↔ P := by exact?
+@[powerlib_foundation] theorem imported_iff (P : Prop) : RegistryFixture.Envelope P ↔ P := by
+  powerlib_search
 
 @[powerlib_domain] theorem current_application (m : powerlib.Impedance) (c : powerlib.Accepted m) :
     StableContract m := by powerlib_search
