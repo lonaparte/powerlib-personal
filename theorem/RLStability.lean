@@ -139,7 +139,7 @@ def GloballyExponentiallyStable (m : Impedance) (v e : ℝ) : Prop :=
   have h := trajectory_eq_response (trajectory_shift he hi) ht
   rw [h, response, abs_mul, abs_of_pos (Real.exp_pos _)]
 
-@[powerlib_domain, aesop norm forward (immediate := [hm, he, hi])]
+@[powerlib_domain, aesop safe forward (immediate := [hm, he, hi])]
 theorem trajectory_tendsto {m : Impedance} {v e : ℝ} {i : ℝ → ℝ}
     (hm : m.Stable) (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) :
     Tendsto i atTop (𝓝 e) := by
