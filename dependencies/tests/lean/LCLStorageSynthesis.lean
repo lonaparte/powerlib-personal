@@ -48,12 +48,55 @@ def portStorage : powerlib.Passivity.QuadraticStorage (powerlib.LCL.portSystem s
     (hx : powerlib.LCL.IsTrajectory submittedModel 0 0 x) :
     AntitoneOn (fun t => powerlib.LCL.portEnergy submittedModel (x t)) (Set.Ici 0) :=
   accepted.zeroInput_energy_nonincreasing hx
+structure SemanticContract : Prop where
+  passive_with_storage :
+    powerlib.Passivity.PassiveWithStorage (powerlib.LCL.portSystem submittedModel)
+      (powerlib.LCL.portEnergy submittedModel)
+  lyapunov_stable : ∀ (u vg : ℝ) (e : powerlib.LCL.State),
+    powerlib.LCL.IsEquilibrium submittedModel u vg e →
+      powerlib.LCL.LyapunovStable submittedModel u vg e
+  zero_input_stable : powerlib.LCL.LyapunovStable submittedModel 0 0 0
+  trajectory_exists : ∀ (u vg : ℝ) (e initial : powerlib.LCL.State),
+    powerlib.LCL.IsEquilibrium submittedModel u vg e →
+      ∃ x, powerlib.LCL.IsTrajectory submittedModel u vg x ∧ x 0 = initial
+  zero_input_trajectory_exists : ∀ initial : powerlib.LCL.State,
+    ∃ x, powerlib.LCL.IsTrajectory submittedModel 0 0 x ∧ x 0 = initial
+  trajectory_unique : ∀ (u vg : ℝ) (e : powerlib.LCL.State)
+    (x y : ℝ → powerlib.LCL.State),
+    powerlib.LCL.IsEquilibrium submittedModel u vg e →
+    powerlib.LCL.IsTrajectory submittedModel u vg x →
+    powerlib.LCL.IsTrajectory submittedModel u vg y → x 0 = y 0 →
+      Set.EqOn x y (Set.Ici 0)
+  integral_passivity : ∀ (u : ℝ → powerlib.LCL.PortInput)
+    (x : ℝ → powerlib.LCL.State),
+    powerlib.LCL.IsPortTrajectory submittedModel u x → ∀ t : ℝ, 0 ≤ t →
+    IntervalIntegrable (fun s => u s 0 * x s 0 - u s 1 * x s 2) volume 0 t →
+      powerlib.LCL.portEnergy submittedModel (x t) -
+          powerlib.LCL.portEnergy submittedModel (x 0) ≤
+        ∫ s in (0 : ℝ)..t, u s 0 * x s 0 - u s 1 * x s 2
+  zero_input_energy_nonincreasing : ∀ x : ℝ → powerlib.LCL.State,
+    powerlib.LCL.IsTrajectory submittedModel 0 0 x →
+      AntitoneOn (fun t => powerlib.LCL.portEnergy submittedModel (x t)) (Set.Ici 0)
+
+def semanticContract : SemanticContract where
+  passive_with_storage := Admission.passive_with_storage
+  lyapunov_stable := Admission.lyapunov_stable
+  zero_input_stable := Admission.zero_input_stable
+  trajectory_exists := Admission.trajectory_exists
+  zero_input_trajectory_exists := Admission.zero_input_trajectory_exists
+  trajectory_unique := Admission.trajectory_unique
+  integral_passivity := Admission.integral_passivity
+  zero_input_energy_nonincreasing := Admission.zero_input_energy_nonincreasing
 end Admission
 
 open Lean Elab Command
 run_cmd do
   let env ← getEnv
-  let mut roots : Array Name := #[`Admission.accepted, `Admission.portStorage, `Admission.lyapunov_stable, `Admission.zero_input_stable, `Admission.trajectory_exists, `Admission.zero_input_trajectory_exists, `Admission.trajectory_unique, `Admission.integral_passivity, `Admission.zero_input_energy_nonincreasing, `Admission.passive_with_storage] ++ powerlib.Registry.theoremNames env
+  let registered := powerlib.Registry.theoremNames env
+  for root in registered do
+    if root.getRoot == `Admission then
+      logInfo m!"POWERLIB_ADMITTED_THEOREM {root}"
+  let mut roots : Array Name := #[`Admission.semanticContract] ++ registered
   for (root, info) in env.constants do
     if root.getRoot == `powerlib && !info.isUnsafe then
       roots := roots.push root
