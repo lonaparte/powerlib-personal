@@ -28,3 +28,7 @@ example (m : powerlib.Impedance) (s current voltage : ℂ) :
         ((powerlib.toStateSpace m).inputGain.val : ℂ) * voltage ↔
       voltage = m.frequency s * current :=
   powerlib.same_port_relation m s current voltage
+
+#check powerlib.LTI.Accepted.exponentially_stable
+#check powerlib.LTI.trajectory_exists
+#print axioms powerlib.LTI.Accepted.exponentially_stable
