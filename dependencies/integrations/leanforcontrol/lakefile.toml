@@ -17,16 +17,21 @@ git = "https://github.com/AnandGokhale/LeanForControl.git"
 rev = "7507ed04d94068fe3e7d4624b3383433a861bea7"
 
 [[lean_lib]]
-name = "PowerLibSearch"
-srcDir = "../../.."
-roots = ["theorem.Attributes", "theorem.LibrarySearch"]
-globs = ["theorem.Attributes", "theorem.LibrarySearch"]
-
-[[lean_lib]]
 name = "PowerLibUpstream"
 srcDir = "../../.."
-roots = ["dependencies.LeanForControl", "theorem.Upstream.LeanForControl"]
-globs = ["dependencies.LeanForControl", "theorem.Upstream.LeanForControl"]
+roots = ["dependencies.Mathlib", "dependencies.LeanForControl", "theorem.Upstream.LCLLeanForControl"]
+globs = [
+  "dependencies.Mathlib",
+  "dependencies.LeanForControl",
+  "theorem.Attributes",
+  "theorem.LibrarySearch",
+  "theorem.generated.Conversion",
+  "theorem.generated.LCLConversion",
+  "theorem.RL",
+  "theorem.LCL",
+  "theorem.Upstream.LeanForControl",
+  "theorem.Upstream.LCLLeanForControl",
+]
 
 [[lean_lib]]
 name = "LeanForControlSmoke"
