@@ -6,5 +6,8 @@ import theorem.StateSpaceTrajectories
 import theorem.RLPortPassivity
 import theorem.LCLPortPassivity
 import theorem.PortHamiltonian
+import theorem.Dynamics.Models
+import theorem.Dynamics.Nonlinear
+import theorem.Dynamics.Polynomial2
 import theorem.Upstream.LeanForControl
 import theorem.Upstream.LCLLeanForControl
