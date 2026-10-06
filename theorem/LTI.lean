@@ -218,7 +218,8 @@ structure Accepted (m : Model n) where
     x t = response m (x 0) t :=
   c.trajectory_unique hx (response_solves m (x 0)) (by simp) t ht
 
-@[powerlib_domain, aesop safe apply] theorem Accepted.sqNorm_tendsto_zero {m : Model n} (c : Accepted m)
+@[powerlib_domain, aesop norm forward (immediate := [c, hx])]
+theorem Accepted.sqNorm_tendsto_zero {m : Model n} (c : Accepted m)
     {x : ℝ → State n} (hx : IsTrajectory m x) :
     Filter.Tendsto (fun t => sqNorm (x t)) Filter.atTop (𝓝 0) := by
   have he : Filter.Tendsto (fun t : ℝ => Real.exp (-(t / c.upper)))
