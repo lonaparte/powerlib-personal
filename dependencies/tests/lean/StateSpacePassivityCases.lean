@@ -62,7 +62,7 @@ namespace StateSpacePassivityCases
     {x y : ℝ → (ι → ℝ)}
     (hx : Passivity.IsTrajectory (StateSpacePassivity.system m) u x)
     (hy : Passivity.IsTrajectory (StateSpacePassivity.system m) u y)
-    (h0 : x 0 = y 0) : Set.EqOn x y (Set.Ici 0) := by exact?
+    (h0 : x 0 = y 0) : Set.EqOn x y (Set.Ici 0) := by aesop
 
 
 @[powerlib_domain] theorem constructed_response_contract {ι κ : Type*} [Fintype ι] [DecidableEq ι]
@@ -120,7 +120,7 @@ def feedthroughModel : StateSpacePassivity.Model (Fin 2) (Fin 1) where
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
   have hn : x 0 ≠ 0 ∨ x 1 ≠ 0 := by
     by_contra h
-    push_neg at h
+    push Not at h
     apply hx
     ext i
     fin_cases i <;> simp_all
@@ -214,9 +214,9 @@ def reversedPortModel : StateSpacePassivity.Model (Fin 1) (Fin 1) where
     norm_num at he
   have hpositive := c.positive.dotProduct_mulVec_pos hnonzero
   have hkyp := c.kyp ![1] ![1]
-  simp [star_trivial, dotProduct, mulVec, Fin.sum_univ_one] at hpositive
+  simp [star_trivial, dotProduct, mulVec] at hpositive
   simp [StateSpacePassivity.field, StateSpacePassivity.system, StateSpacePassivity.output,
-    Passivity.supply, reversedPortModel, dotProduct, mulVec, Fin.sum_univ_one] at hkyp
+    Passivity.supply, reversedPortModel, dotProduct, mulVec] at hkyp
   linarith
 
 def indefiniteStorage : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, -1]

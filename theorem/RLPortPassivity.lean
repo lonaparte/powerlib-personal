@@ -27,19 +27,17 @@ def portSystem (m : Impedance) : Passivity.System State (Fin 1) :=
   ext j
   fin_cases j
   simp [StateSpacePassivity.field, stateSpace, Matrix.mulVec, dotProduct,
-    Fin.sum_univ_one, toState, StateSpace.field]
+    toState, StateSpace.field]
 
 @[simp, powerlib_foundation] theorem stateSpace_output (m : Impedance)
     (x : State) (u : Input) : StateSpacePassivity.output (stateSpace m) x u = x := by
   ext j
   fin_cases j
-  simp [StateSpacePassivity.output, stateSpace, Matrix.mulVec, dotProduct,
-    Fin.sum_univ_one]
+  simp [StateSpacePassivity.output, stateSpace, Matrix.mulVec, dotProduct]
 
 @[simp, powerlib_foundation] theorem port_supply (m : Impedance)
     (x : State) (u : Input) : Passivity.supply (portSystem m) x u = u 0 * x 0 := by
-  simp [Passivity.supply, portSystem, StateSpacePassivity.system,
-    Fin.sum_univ_one]
+  simp [Passivity.supply, portSystem, StateSpacePassivity.system]
 
 def storageMatrix (m : Impedance) : Matrix (Fin 1) (Fin 1) ℝ :=
   diagonal (fun _ => m.inductance.val)
@@ -49,8 +47,7 @@ def portEnergy (m : Impedance) (x : State) : ℝ :=
 
 @[simp, powerlib_foundation] theorem storage_energy (m : Impedance) (x : State) :
     StateSpacePassivity.energy (storageMatrix m) x = portEnergy m x := by
-  simp [StateSpacePassivity.energy, storageMatrix, portEnergy, dotProduct,
-    Fin.sum_univ_one, mul_pow]
+  simp [StateSpacePassivity.energy, storageMatrix, portEnergy, dotProduct]
   ring
 
 def synthesizePassivityCertificate (m : Impedance) (hR : 0 ≤ m.resistance) :
@@ -63,7 +60,7 @@ def synthesizePassivityCertificate (m : Impedance) (hR : 0 ≤ m.resistance) :
         (StateSpacePassivity.field (stateSpace m) x u) = u 0 * x 0 - m.resistance * (x 0) ^ 2 := by
       rw [stateSpace_field]
       simp only [storageMatrix, Matrix.mulVec_diagonal, dotProduct,
-        Fin.sum_univ_one, toState, Pi.mul_apply]
+        Fin.sum_univ_one, toState]
       rw [same_dynamics]
       field_simp [ne_of_gt m.inductance.property]
     rw [hbalance]

@@ -139,7 +139,7 @@ def GloballyExponentiallyStable (m : Impedance) (v e : ℝ) : Prop :=
   have h := trajectory_eq_response (trajectory_shift he hi) ht
   rw [h, response, abs_mul, abs_of_pos (Real.exp_pos _)]
 
-@[powerlib_domain] theorem trajectory_tendsto {m : Impedance} {v e : ℝ} {i : ℝ → ℝ}
+@[powerlib_domain, aesop safe apply] theorem trajectory_tendsto {m : Impedance} {v e : ℝ} {i : ℝ → ℝ}
     (hm : m.Stable) (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) :
     Tendsto i atTop (𝓝 e) := by
   have ha : 0 < (toStateSpace m).decay := (stability_agrees m).mpr hm
@@ -209,7 +209,7 @@ theorem globallyAsymptoticallyStable_of_stable {m : Impedance} {v e : ℝ}
   ⟨stable_of_asymptoticallyStable he, fun hm =>
     asymptoticallyStable_of_global (globallyAsymptoticallyStable_of_stable hm he)⟩
 
-@[powerlib_domain] theorem asymptoticallyStable_iff_resistance_pos {m : Impedance} {v e : ℝ}
+@[powerlib_domain, aesop norm simp] theorem asymptoticallyStable_iff_resistance_pos {m : Impedance} {v e : ℝ}
     (he : IsEquilibrium m v e) : AsymptoticallyStable m v e ↔ 0 < m.resistance := by
   rw [asymptoticallyStable_iff_stable he, impedance_stable_iff]
 
@@ -233,7 +233,8 @@ def synthesize (m : Impedance) (hR : 0 < m.resistance) : Accepted m where
 @[powerlib_domain] theorem accepted_exists_iff_stable (m : Impedance) : Nonempty (Accepted m) ↔ m.Stable :=
   ⟨fun ⟨c⟩ => c.stable, fun hm => ⟨synthesize m ((impedance_stable_iff m).mp hm)⟩⟩
 
-@[powerlib_domain] theorem Accepted.lyapunovStable {m : Impedance} (c : Accepted m) {v e : ℝ}
+@[powerlib_domain, aesop norm forward (immediate := [c])]
+theorem Accepted.lyapunovStable {m : Impedance} (c : Accepted m) {v e : ℝ}
     (he : IsEquilibrium m v e) : LyapunovStable m v e :=
   lyapunovStable_of_stable c.stable he
 
@@ -258,7 +259,7 @@ theorem Accepted.trajectory_decay {m : Impedance} (c : Accepted m) {v e : ℝ} {
   rw [trajectory_eq_response (trajectory_shift he hi) ht]
   exact c.decay_bound _ _
 
-@[powerlib_domain] theorem Accepted.energy_derivative {m : Impedance} (c : Accepted m) {v e : ℝ} {i : ℝ → ℝ}
+@[powerlib_domain, aesop safe apply] theorem Accepted.energy_derivative {m : Impedance} (c : Accepted m) {v e : ℝ} {i : ℝ → ℝ}
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) {t : ℝ} (ht : 0 ≤ t) :
     HasDerivWithinAt (fun s => energy c.p (i s - e)) (-(i t - e) ^ 2) (Ici 0) t := by
   have h := (((trajectory_shift he hi) t ht).pow 2).const_mul c.p

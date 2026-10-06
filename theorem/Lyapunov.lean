@@ -19,8 +19,7 @@ open scoped Topology
     obtain ⟨v, hv⟩ := exists_ne (0 : E)
     have hn : ‖v‖ ≠ 0 := norm_ne_zero_iff.mpr hv
     refine ⟨‖v‖⁻¹ • v, ?_⟩
-    simp [Metric.mem_sphere, dist_eq_norm, norm_smul, abs_of_nonneg (norm_nonneg v),
-      abs_inv, inv_mul_cancel₀ hn]
+    simp [norm_smul, inv_mul_cancel₀ hn]
   obtain ⟨v, hv, hmin⟩ := (isCompact_sphere (0 : E) 1).exists_isMinOn hne hc.continuousOn
   obtain ⟨w, hw, hmax⟩ := (isCompact_sphere (0 : E) 1).exists_isMaxOn hne hc.continuousOn
   have hvnorm : ‖v‖ = 1 := by simpa [Metric.mem_sphere, dist_eq_norm] using hv
@@ -32,8 +31,7 @@ open scoped Topology
   · have hn : ‖x‖ ≠ 0 := norm_ne_zero_iff.mpr hx
     let z := ‖x‖⁻¹ • x
     have hz : z ∈ Metric.sphere (0 : E) 1 := by
-      simp [z, Metric.mem_sphere, dist_eq_norm, norm_smul,
-        abs_of_nonneg (norm_nonneg x), abs_inv, inv_mul_cancel₀ hn]
+      simp [z, norm_smul, inv_mul_cancel₀ hn]
     have hs : ‖x‖ • z = x := by simp [z, smul_smul, hn]
     have he : V x = ‖x‖ ^ 2 * V z := by rw [← hh ‖x‖ z, hs]
     rw [he]
@@ -43,7 +41,7 @@ open scoped Topology
 
 -- A differential inequality on all forward times, including the right endpoint.
 @[powerlib_foundation] theorem exponential_bound_of_derivative
-    {V D : ℝ → ℝ} {β : ℝ} (hβ : 0 < β)
+    {V D : ℝ → ℝ} {β : ℝ} (_hβ : 0 < β)
     (hd : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt V (D t) (Ici 0) t)
     (hb : ∀ t ∈ Ici (0 : ℝ), D t + V t / β ≤ 0)
     {t : ℝ} (ht : 0 ≤ t) : V t ≤ V 0 * Real.exp (-t / β) := by

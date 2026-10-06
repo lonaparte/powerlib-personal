@@ -131,7 +131,7 @@ def response (m : Circuit) (initial : State) (t : ℝ) : State :=
     HasDerivAt (response m initial) ((toStateSpace m).operator (response m initial t)) t := by
   have h := (hasDerivAt_exp_smul_const' (toStateSpace m).operator t).clm_apply
     (hasDerivAt_const t initial)
-  simpa [response, ContinuousLinearMap.mul_apply] using! h
+  simpa [response, mul_apply_eq_comp] using! h
 
 @[powerlib_domain, aesop safe apply] theorem response_trajectory (m : Circuit) (initial : State) :
     IsTrajectory m 0 0 (response m initial) := by

@@ -18,97 +18,99 @@ namespace NativeConsumers
 @[powerlib_domain] theorem rl_certificate_asymptotic (m : Impedance) (c : Accepted m) :
     AsymptoticallyStable m 0 0 := by
   have he : IsEquilibrium m 0 0 := by simp
-  exact?
+  aesop
 
 @[powerlib_domain] theorem rl_certificate_lyapunov (m : Impedance) (c : Accepted m) (v e : ℝ) (he : IsEquilibrium m v e) :
-    LyapunovStable m v e := by exact?
+    LyapunovStable m v e := by aesop
 
 @[powerlib_domain] theorem rl_certificate_global_asymptotic (m : Impedance) (c : Accepted m) (v e : ℝ) (he : IsEquilibrium m v e) :
-    GloballyAsymptoticallyStable m v e := by exact?
+    GloballyAsymptoticallyStable m v e := by aesop
 
 @[powerlib_domain] theorem rl_certificate_exponential (m : Impedance) (c : Accepted m) (v e : ℝ) (he : IsEquilibrium m v e) :
-    GloballyExponentiallyStable m v e := by exact?
+    GloballyExponentiallyStable m v e := by aesop
 
 @[powerlib_domain] theorem rl_asymptotic_characterization (m : Impedance) (v e : ℝ) (he : IsEquilibrium m v e) :
-    AsymptoticallyStable m v e ↔ 0 < m.resistance := by exact?
+    AsymptoticallyStable m v e ↔ 0 < m.resistance := by aesop
 
 @[powerlib_domain] theorem rl_forward_existence (m : Impedance) (v e initial : ℝ) (he : IsEquilibrium m v e) :
-    ∃ i, IsTrajectory m v i ∧ i 0 = initial := by exact?
+    ∃ i, IsTrajectory m v i ∧ i 0 = initial := by aesop
 
 @[powerlib_domain] theorem rl_trajectory_convergence (m : Impedance) (hm : m.Stable) (v e : ℝ) (i : ℝ → ℝ)
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) :
-    Tendsto i atTop (𝓝 e) := by exact?
+    Tendsto i atTop (𝓝 e) := by aesop
 
 @[powerlib_domain] theorem rl_trajectory_decay (m : Impedance) (c : Accepted m) (v e : ℝ) (i : ℝ → ℝ)
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) (t : ℝ) (ht : 0 ≤ t) :
-    (i t - e) ^ 2 = (i 0 - e) ^ 2 * Real.exp (-(c.rate * t)) := by exact?
+    (i t - e) ^ 2 = (i 0 - e) ^ 2 * Real.exp (-(c.rate * t)) := by aesop
 
 @[powerlib_domain] theorem rl_energy_derivative (m : Impedance) (c : Accepted m) (v e : ℝ) (i : ℝ → ℝ)
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) (t : ℝ) (ht : 0 ≤ t) :
     HasDerivWithinAt (fun s => energy c.p (i s - e)) (-(i t - e) ^ 2) (Set.Ici 0) t := by
-  exact?
+  aesop
 
 @[powerlib_foundation] theorem lcl_roundtrip (m : LCL.Circuit) : LCL.toCircuit (LCL.toStateSpace m) = m := by simp
 @[powerlib_domain] theorem lcl_certificate_pole_stable (m : LCL.Circuit) (c : LCL.Accepted m) :
     (LCL.toStateSpace m).Stable := by aesop
 @[powerlib_domain] theorem lcl_certificate_energy_positive (m : LCL.Circuit) (c : LCL.Accepted m) (x y z : ℝ)
-    (hn : x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) : 0 < LCL.energy c.p x y z := by exact?
+    (hn : x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) : 0 < LCL.energy c.p x y z := by aesop
 @[powerlib_domain] theorem lcl_certificate_energy_derivative (m : LCL.Circuit) (c : LCL.Accepted m) (x y z : ℝ) :
     let f := (LCL.toStateSpace m).field x y z 0 0
-    LCL.energyDerivative c.p x y z f.1 f.2.1 f.2.2 = -(x^2+y^2+z^2) := by exact?
+    LCL.energyDerivative c.p x y z f.1 f.2.1 f.2.2 = -(x^2+y^2+z^2) := by aesop
 
 @[powerlib_domain] theorem lcl_certificate_exponential (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) :
-    LCL.GloballyExponentiallyStable m u vg e := by exact?
+    LCL.GloballyExponentiallyStable m u vg e := by aesop
 
 @[powerlib_domain] theorem lcl_certificate_global_asymptotic (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) :
-    LCL.GloballyAsymptoticallyStable m u vg e := by exact?
+    LCL.GloballyAsymptoticallyStable m u vg e := by aesop
 
 @[powerlib_domain] theorem lcl_certificate_asymptotic (m : LCL.Circuit) (c : LCL.Accepted m) :
     LCL.AsymptoticallyStable m 0 0 0 := by
   have he : LCL.IsEquilibrium m 0 0 0 := by simp
-  exact?
+  aesop
 
 @[powerlib_domain] theorem lcl_forward_existence (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (initial : LCL.State) :
-    ∃ x, LCL.IsTrajectory m u vg x ∧ x 0 = initial := by exact?
+    ∃ x, LCL.IsTrajectory m u vg x ∧ x 0 = initial := by aesop
 
 @[powerlib_domain] theorem lcl_trajectory_convergence (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
     (x : ℝ → LCL.State) (he : LCL.IsEquilibrium m u vg e) (hx : LCL.IsTrajectory m u vg x) :
-    Tendsto x atTop (𝓝 e) := by exact?
+    Tendsto x atTop (𝓝 e) := by aesop
 
 @[powerlib_domain] theorem lcl_shifted_energy_derivative (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
     (x : ℝ → LCL.State) (he : LCL.IsEquilibrium m u vg e) (hx : LCL.IsTrajectory m u vg x)
     (t : ℝ) (ht : 0 ≤ t) :
     HasDerivWithinAt (fun s => LCL.quadraticEnergy c.p (x s - e))
-      (-LCL.squaredSize (x t - e)) (Set.Ici 0) t := by exact?
+      (-LCL.squaredSize (x t - e)) (Set.Ici 0) t := by aesop
 
 @[powerlib_domain] theorem lcl_passive_lyapunov (m : LCL.Circuit) (hp : m.Passive) (u vg : ℝ) (e : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) : LCL.LyapunovStable m u vg e := by
   let gc := (LCL.physicalStateSpaceCertificate m hp).toCertificate
   have hg : StateSpacePassivity.IsEquilibrium (LCL.terminalStateSpace m) ![u, vg] e := by
     simpa only [LCL.terminalStateSpace_equilibrium_iff] using he
+  clear_value gc
+  clear hp
   have hs : StateSpacePassivity.LyapunovStableAt (LCL.terminalStateSpace m) ![u, vg] e := by
-    exact?
+    aesop (config := { enableSimp := false })
   simpa only [LCL.terminalStateSpace_stability_iff] using hs
 
 @[powerlib_domain] theorem lcl_lossless_not_asymptotic (m : LCL.Circuit) (h1 : m.first.resistance = 0) (h2 : m.second.resistance = 0)
     (u vg : ℝ) (e : LCL.State) (he : LCL.IsEquilibrium m u vg e) :
-    ¬ LCL.AsymptoticallyStable m u vg e := by exact?
+    ¬ LCL.AsymptoticallyStable m u vg e := by aesop
 
 @[powerlib_domain] theorem lcl_damped_asymptotic (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
     LCL.AsymptoticallyStable m 0 0 0 := by
   have he : LCL.IsEquilibrium m 0 0 0 := by simp
-  exact?
+  aesop
 
 @[powerlib_domain] theorem lcl_damped_exponential (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) (u vg : ℝ) (e : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) :
-    LCL.GloballyExponentiallyStable m u vg e := by exact?
+    LCL.GloballyExponentiallyStable m u vg e := by aesop
 
 @[powerlib_domain] theorem lcl_asymptotic_characterization (m : LCL.Circuit) (hp : m.Passive) (u vg : ℝ) (e : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) :
     LCL.AsymptoticallyStable m u vg e ↔ m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0 := by
-  exact?
+  aesop
 
 @[powerlib_domain] theorem lcl_storage_zero_stable (m : LCL.Circuit) (c : LCL.StorageAccepted m) :
     LCL.LyapunovStable m 0 0 0 := by
@@ -124,7 +126,7 @@ namespace NativeConsumers
   let gc := c.stateSpaceCertificate
   have hp : Passivity.PassiveWithStorage
       (StateSpacePassivity.system (LCL.terminalStateSpace m))
-      (StateSpacePassivity.energy gc.P) := by exact?
+      (StateSpacePassivity.energy gc.P) := by aesop
   simpa only [gc, LCL.terminalStateSpace_system, LCL.StorageAccepted.stateSpaceCertificate_matrix,
     LCL.terminalStateSpace_energy_function] using hp
 
@@ -152,7 +154,7 @@ namespace NativeConsumers
     Passivity.LyapunovStable (PortHamiltonian.system m) := by
   let gc := PortHamiltonian.certificate m
   have hs : Passivity.LyapunovStable
-      (StateSpacePassivity.system (PortHamiltonian.linearModel m)) := by exact?
+      (StateSpacePassivity.system (PortHamiltonian.linearModel m)) := by aesop
   simpa only [PortHamiltonian.system_eq] using hs
 
 @[powerlib_domain] theorem ph_passive {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
@@ -161,7 +163,7 @@ namespace NativeConsumers
   let gc := PortHamiltonian.certificate m
   have hp : Passivity.PassiveWithStorage
       (StateSpacePassivity.system (PortHamiltonian.linearModel m))
-      (StateSpacePassivity.energy gc.P) := by exact?
+      (StateSpacePassivity.energy gc.P) := by aesop
   simpa only [gc, PortHamiltonian.system_eq, PortHamiltonian.certificate_P,
     PortHamiltonian.energy_fun_eq] using hp
 

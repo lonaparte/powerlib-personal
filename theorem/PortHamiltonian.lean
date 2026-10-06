@@ -94,8 +94,7 @@ omit [Fintype κ] in
     have hJii : m.J i i = 0 := by linarith
     simp [stateMatrix, diagonal_mul, mul_diagonal, transpose_apply, hJii]
     ring
-  · simp [stateMatrix, diagonal_mul, mul_diagonal, transpose_apply,
-      diagonal_apply_ne _ hij, diagonal_apply_ne _ (Ne.symm hij), hs, hij, Ne.symm hij]
+  · simp [stateMatrix, diagonal_mul, mul_diagonal, transpose_apply, hs, hij]
     ring
 
 def collocatedCertificate (m : Model ι κ) :

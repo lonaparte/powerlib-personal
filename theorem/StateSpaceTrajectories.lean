@@ -24,7 +24,7 @@ omit [Fintype κ] in
   apply lipschitzWith_iff_norm_sub_le.mpr
   intro x y
   simpa only [field, operator_apply, add_sub_add_right_eq_sub] using
-    (lipschitzWith_iff_norm_sub_le.mp (operator m).lipschitz x y)
+    (lipschitzWith_iff_norm_sub_le.mp (operator m).lipschitzWith x y)
 
 def response (m : Model ι κ) (initial : State ι) (t : ℝ) : State ι :=
   (NormedSpace.exp (t • operator m)) initial
@@ -39,7 +39,7 @@ omit [Fintype κ] in
     HasDerivAt (response m initial) (operator m (response m initial t)) t := by
   have h := (hasDerivAt_exp_smul_const' (operator m) t).clm_apply
     (hasDerivAt_const t initial)
-  simpa [response, ContinuousLinearMap.mul_apply] using! h
+  simpa [response, mul_apply_eq_comp] using! h
 
 @[powerlib_domain, aesop safe apply] theorem response_trajectory (m : Model ι κ) (initial : State ι) :
     Passivity.IsTrajectory (system m) (fun _ => 0) (response m initial) := by
@@ -51,7 +51,8 @@ omit [Fintype κ] in
     ∃ x, Passivity.IsTrajectory (system m) (fun _ => 0) x ∧ x 0 = initial :=
   ⟨response m initial, response_trajectory m initial, response_initial m initial⟩
 
-@[powerlib_domain] theorem trajectory_unique (m : Model ι κ)
+@[powerlib_domain, aesop norm forward (immediate := [m, hx, hy, h0])]
+theorem trajectory_unique (m : Model ι κ)
     {u : ℝ → (κ → ℝ)} {x y : ℝ → State ι}
     (hx : Passivity.IsTrajectory (system m) u x)
     (hy : Passivity.IsTrajectory (system m) u y) (h0 : x 0 = y 0) :
@@ -164,7 +165,8 @@ omit [Fintype κ] in
   intro x hx h0 t ht
   exact hbound (fun r => x r - e) (trajectory_shift he hx) h0 t ht
 
-@[powerlib_domain] theorem Certificate.lyapunovStableAt [Nonempty ι]
+@[powerlib_domain, aesop norm forward (immediate := [c, he])]
+theorem Certificate.lyapunovStableAt [Nonempty ι]
     {m : Model ι κ} (c : Certificate m) {u : κ → ℝ} {e : State ι}
     (he : IsEquilibrium m u e) : LyapunovStableAt m u e :=
   lyapunovStableAt_of_zeroInput he c.lyapunovStable

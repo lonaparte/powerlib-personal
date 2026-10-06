@@ -57,6 +57,7 @@ structure Certificate (m : Model ι κ) where
   apply div_pos _ (by norm_num)
   simpa only [star_trivial] using hP.dotProduct_mulVec_pos hx
 
+omit [Fintype ι] in
 @[powerlib_foundation] theorem symmetric_of_posDef {P : Matrix ι ι ℝ}
     (hP : P.PosDef) : P.transpose = P := by
   simpa only [Matrix.conjTranspose_eq_transpose_of_trivial] using hP.isHermitian.eq
@@ -145,6 +146,7 @@ structure CollocatedCertificate (m : Model ι κ) where
     dotProduct_symmetric P hP, hA]
   ring
 
+omit [Fintype κ] in
 @[powerlib_foundation] theorem CollocatedCertificate.state_rate_nonpos
     {m : Model ι κ} (c : CollocatedCertificate m) (x : State ι) :
     dotProduct (c.P.mulVec x) (m.A.mulVec x) ≤ 0 := by

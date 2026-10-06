@@ -78,7 +78,7 @@ structure SemanticContract : Prop where
     powerlib.LCL.IsTrajectory submittedModel 0 0 x →
       AntitoneOn (fun t => powerlib.LCL.portEnergy submittedModel (x t)) (Set.Ici 0)
 
-def semanticContract : SemanticContract where
+@[powerlib_domain] theorem semanticContract : SemanticContract := {
   passive_with_storage := Admission.passive_with_storage
   lyapunov_stable := Admission.lyapunov_stable
   zero_input_stable := Admission.zero_input_stable
@@ -87,6 +87,8 @@ def semanticContract : SemanticContract where
   trajectory_unique := Admission.trajectory_unique
   integral_passivity := Admission.integral_passivity
   zero_input_energy_nonincreasing := Admission.zero_input_energy_nonincreasing
+}
+
 end Admission
 
 open Lean Elab Command

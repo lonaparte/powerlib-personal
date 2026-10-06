@@ -72,7 +72,7 @@ def portSystem (m : Circuit) : powerlib.Passivity.System State (Fin 2) where
   rw [Matrix.diagonal_mul, Matrix.mul_diagonal, Matrix.transpose_apply]
   fin_cases i <;> fin_cases j <;>
     simp [terminalStateSpace, StateSpace.matrix, toStateSpace,
-      generated.convertLCL, powerlib.reciprocal, Matrix.diagonal_apply] <;>
+      generated.convertLCL, powerlib.reciprocal] <;>
     field_simp [ne_of_gt m.first.inductance.property,
       ne_of_gt m.second.inductance.property, ne_of_gt m.capacitance.property] <;> ring
 
