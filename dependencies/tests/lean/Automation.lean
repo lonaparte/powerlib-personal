@@ -78,16 +78,16 @@ example (p q : LCL.SymmetricMatrix) (h11 : p.p11 = q.p11) (h12 : p.p12 = q.p12)
     (h33 : p.p33 = q.p33) : p = q := by ext <;> assumption
 
 -- Native library search receives goals and local hypotheses, without theorem-name hints.
-example (m : Impedance) : toImpedance (toStateSpace m) = m := by exact?
+example (m : Impedance) : toImpedance (toStateSpace m) = m := by aesop
 
-example (m : Impedance) : m.Stable ↔ 0 < m.resistance := by exact?
+example (m : Impedance) : m.Stable ↔ 0 < m.resistance := by aesop
 
 example (m : Impedance) :
-    (toStateSpace m).Stable ↔ m.Stable := by exact?
+    (toStateSpace m).Stable ↔ m.Stable := by aesop
 
 example (m : Impedance) : IsEquilibrium m 0 0 := by simp
 
-example (m : Impedance) (c : Accepted m) : m.Stable := by exact?
+example (m : Impedance) (c : Accepted m) : m.Stable := by aesop
 
 example (m : Impedance) (c : Accepted m) :
     AsymptoticallyStable m 0 0 := by aesop
@@ -96,7 +96,7 @@ example (m : Impedance) (c : Accepted m) :
     GloballyExponentiallyStable m 0 0 ∧ AsymptoticallyStable m 0 0 := by aesop
 
 example (m : Impedance) (c : Accepted m) (v e : ℝ) (he : IsEquilibrium m v e) :
-    LyapunovStable m v e := by exact?
+    LyapunovStable m v e := by aesop
 
 example (m : Impedance) (c : Accepted m) (v e : ℝ) (he : IsEquilibrium m v e) :
     GloballyAsymptoticallyStable m v e := by aesop
@@ -105,14 +105,14 @@ example (m : Impedance) (c : Accepted m) (v e : ℝ) (he : IsEquilibrium m v e) 
     GloballyExponentiallyStable m v e := by aesop
 
 example (m : Impedance) (v e : ℝ) (he : IsEquilibrium m v e) :
-    AsymptoticallyStable m v e ↔ 0 < m.resistance := by exact?
+    AsymptoticallyStable m v e ↔ 0 < m.resistance := by aesop
 
 example (m : Impedance) (v e initial : ℝ) (he : IsEquilibrium m v e) :
-    ∃ i, IsTrajectory m v i ∧ i 0 = initial := by exact?
+    ∃ i, IsTrajectory m v i ∧ i 0 = initial := by aesop
 
 example (m : Impedance) (hm : m.Stable) (v e : ℝ) (i : ℝ → ℝ)
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) :
-    Tendsto i atTop (𝓝 e) := by exact?
+    Tendsto i atTop (𝓝 e) := by aesop
 
 example (m : Impedance) (c : Accepted m) (v e : ℝ) (i : ℝ → ℝ)
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) (t : ℝ) (ht : 0 ≤ t) :
@@ -121,7 +121,7 @@ example (m : Impedance) (c : Accepted m) (v e : ℝ) (i : ℝ → ℝ)
 example (m : Impedance) (c : Accepted m) (v e : ℝ) (i : ℝ → ℝ)
     (he : IsEquilibrium m v e) (hi : IsTrajectory m v i) (t : ℝ) (ht : 0 ≤ t) :
     HasDerivWithinAt (fun s => energy c.p (i s - e)) (-(i t - e) ^ 2) (Set.Ici 0) t := by
-  exact?
+  aesop
 
 -- Admission uses a named certificate definition, introduced as a local fact.
 namespace RLAdmissionFixture
@@ -149,14 +149,14 @@ example (voltage equilibrium : ℝ) (i : ℝ → ℝ)
 end RLAdmissionFixture
 
 
-example (m : LCL.Circuit) : LCL.toCircuit (LCL.toStateSpace m) = m := by exact?
+example (m : LCL.Circuit) : LCL.toCircuit (LCL.toStateSpace m) = m := by aesop
 example (m : LCL.Circuit) (c : LCL.Accepted m) :
-    (LCL.toStateSpace m).Stable := by exact?
+    (LCL.toStateSpace m).Stable := by aesop
 example (m : LCL.Circuit) (c : LCL.Accepted m) (x y z : ℝ)
-    (hn : x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) : 0 < LCL.energy c.p x y z := by exact?
+    (hn : x ≠ 0 ∨ y ≠ 0 ∨ z ≠ 0) : 0 < LCL.energy c.p x y z := by aesop
 example (m : LCL.Circuit) (c : LCL.Accepted m) (x y z : ℝ) :
     let f := (LCL.toStateSpace m).field x y z 0 0
-    LCL.energyDerivative c.p x y z f.1 f.2.1 f.2.2 = -(x^2+y^2+z^2) := by exact?
+    LCL.energyDerivative c.p x y z f.1 f.2.1 f.2.2 = -(x^2+y^2+z^2) := by aesop
 
 example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) :
@@ -185,14 +185,14 @@ example (m : LCL.Circuit) (c : LCL.Accepted m) (u vg : ℝ) (e : LCL.State)
     (x : ℝ → LCL.State) (he : LCL.IsEquilibrium m u vg e) (hx : LCL.IsTrajectory m u vg x)
     (t : ℝ) (ht : 0 ≤ t) :
     HasDerivWithinAt (fun s => LCL.quadraticEnergy c.p (x s - e))
-      (-LCL.squaredSize (x t - e)) (Set.Ici 0) t := by exact?
+      (-LCL.squaredSize (x t - e)) (Set.Ici 0) t := by aesop
 
 example (m : LCL.Circuit) (hp : m.Passive) (u vg : ℝ) (e : LCL.State)
-    (he : LCL.IsEquilibrium m u vg e) : LCL.LyapunovStable m u vg e := by exact?
+    (he : LCL.IsEquilibrium m u vg e) : LCL.LyapunovStable m u vg e := by aesop
 
 example (m : LCL.Circuit) (h1 : m.first.resistance = 0) (h2 : m.second.resistance = 0)
     (u vg : ℝ) (e : LCL.State) (he : LCL.IsEquilibrium m u vg e) :
-    ¬ LCL.AsymptoticallyStable m u vg e := by exact?
+    ¬ LCL.AsymptoticallyStable m u vg e := by aesop
 
 example (m : LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
     LCL.AsymptoticallyStable m 0 0 0 := by aesop
@@ -233,7 +233,7 @@ end LCLAdmissionFixture
 example (m : LCL.Circuit) (hp : m.Passive) (u vg : ℝ) (e : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) :
     LCL.AsymptoticallyStable m u vg e ↔ m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0 := by
-  exact?
+  aesop
 
 open Lean Elab Command
 run_cmd do
