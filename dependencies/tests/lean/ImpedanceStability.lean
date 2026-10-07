@@ -6,6 +6,17 @@ namespace ImpedanceConsumers
 
 variable {κ : Type} [Fintype κ] [DecidableEq κ] {n₁ n₂ : ℕ}
   (ic : Interconnection (Fin n₁) (Fin n₂) κ)
+
+@[powerlib_foundation] theorem coupled_field (x₁ : Fin n₁ → ℝ) (x₂ : Fin n₂ → ℝ) :
+    ic.closedLoopModel.field (Fin.append x₁ x₂) =
+      Fin.append (ic.field x₁ x₂).1 (ic.field x₁ x₂).2 := by simp
+
+@[powerlib_foundation] theorem trajectory_equations (x₁ : ℝ → Fin n₁ → ℝ)
+    (x₂ : ℝ → Fin n₂ → ℝ) :
+    LTI.IsTrajectory ic.closedLoopModel (fun t => Fin.append (x₁ t) (x₂ t)) ↔
+      ∀ t, HasDerivAt x₁ (ic.field (x₁ t) (x₂ t)).1 t ∧
+        HasDerivAt x₂ (ic.field (x₁ t) (x₂ t)).2 t := by simp
+
 @[powerlib_domain] theorem closed_loop_stable_of_impedance
     (h₁ : LTI.ExponentiallyStable ic.sourceModel) (h₂ : LTI.ExponentiallyStable ic.loadModel)
     (h : ic.ImpedanceStable) : LTI.ExponentiallyStable ic.closedLoopModel := by aesop

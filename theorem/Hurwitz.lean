@@ -3,20 +3,6 @@ import theorem.Lyapunov
 import theorem.StateSpacePassivity
 import theorem.Dynamics.LyapunovDefs
 
-/-! Small-signal stability of finite-dimensional continuous-time systems through the roots
-of `det(sI - A)`. `SpectrallyStable A` places every root in `Re s < 0`; for a `Fin n` state it
-is LeanForControl's `IsHurwitz`. For the linear model `ẋ = A x` of `theorem.LTI` (submitted
-state order, Euclidean norm, external input perturbations zero, every solution quantified) it
-is equivalent to exponential stability and to the existence of an `LTI.Accepted`
-certificate. That certificate is LeanForControl's solution of `P A + Aᵀ P = -I`, obtained
-noncomputably: existence, not synthesis.
-
-For an autonomous `ẋ = f x` on `ℝⁿ` with a `C¹` field, the results concern linearization at
-an equilibrium `x_eq` with Jacobian `A`, not along a trajectory. A Hurwitz Jacobian gives local
-exponential stability; a root with `Re s > 0` gives instability. Roots on the imaginary axis
-with none in `Re s > 0` are decided by neither result. Delay, sampling, PWM and switching are
-excluded; controller or PLL dynamics count only as states already in `A` or `f`. -/
-
 noncomputable section
 namespace powerlib.LTI
 open Matrix Filter

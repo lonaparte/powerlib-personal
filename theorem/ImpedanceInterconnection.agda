@@ -51,8 +51,6 @@ eval ops env (mat t) = env t
 eval ops env (mul x y) = Ops.times ops (eval ops env x) (eval ops env y)
 eval ops env (neg x) = Ops.minus ops (eval ops env x)
 eval ops env (sub x y) = Ops.diff ops (eval ops env x) (eval ops env y)
--- Source: port current in, voltage drop y₁ out, terminal voltage v = -y₁.
--- Load: v in, port current out, strictly proper; blocks are over source ⊕ load states.
 body : ClosedLoop Expr
 body = closedLoop (mat A₁) (mul (mat B₁) (mat C₂)) (neg (mul (mat B₂) (mat C₁)))
                   (sub (mat A₂) (mul (mul (mat B₂) (mat D₁)) (mat C₂)))

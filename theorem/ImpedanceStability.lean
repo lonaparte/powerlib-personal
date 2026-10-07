@@ -2,25 +2,6 @@ import theorem.Hurwitz
 import theorem.StateSpacePassivity
 import theorem.generated.ImpedanceInterconnection
 
-/-! Impedance-based small-signal stability of one source–load interconnection at a single
-port, joined to state-space small-signal stability through the Agda-generated closed loop.
-Continuous-time LTI small-signal port models about an equilibrium, with arbitrary real
-matrices, finite state indices `ι₁` (source) and `ι₂` (load), and port index `κ` in the
-coordinates of the submitted models (one phase, or `Fin 2` for a dq frame).
-
-The source takes the port current `i` and returns its voltage drop:
-`ẋ₁ = A₁ x₁ + B₁ i`, `y₁ = C₁ x₁ + D₁ i`, terminal voltage `v = -y₁`. Its transfer matrix
-`Z_s` maps `i` to the drop `y₁`, not to `v`. The load takes `v` and returns `i` and is strictly
-proper: `ẋ₂ = A₂ x₂ + B₂ v`, `i = C₂ x₂`, with input admittance `Y_L`. Closed-loop states are
-source states then load states. Source references and other external inputs are held at zero.
-Delay, sampling, PWM, switching and nonlinear remainders are excluded; controller or PLL
-dynamics count only as subsystem states. The subsystem premises are the unloaded source
-(`i = 0`) and the load fed by an ideal source (`v = 0`), each small-signal stable. `transfer`
-uses Mathlib's total inverse, which is zero at an eigenvalue of `A`; under those premises no
-eigenvalue lies in `Re s ≥ 0`, where the criterion is evaluated. Every state of
-`closedLoopModel` is `Fin.append x₁ x₂`, and its solutions are exactly the solutions of the
-coupled port equations (`trajectory_iff_interconnection`). -/
-
 noncomputable section
 namespace powerlib.ImpedanceCriterion
 open Matrix
@@ -191,7 +172,7 @@ def sourceModel : LTI.Model n₁ := ⟨ic.source.A⟩
 def loadModel : LTI.Model n₂ := ⟨ic.load.A⟩
 
 omit [DecidableEq κ] in
-@[powerlib_foundation] theorem closedLoopModel_field (x₁ : Fin n₁ → ℝ) (x₂ : Fin n₂ → ℝ) :
+@[simp, powerlib_foundation] theorem closedLoopModel_field (x₁ : Fin n₁ → ℝ) (x₂ : Fin n₂ → ℝ) :
     ic.closedLoopModel.field (Fin.append x₁ x₂) =
       Fin.append (ic.field x₁ x₂).1 (ic.field x₁ x₂).2 := by
   have hsplit : Fin.append x₁ x₂ ∘ finSumFinEquiv = Sum.elim x₁ x₂ := by
@@ -205,7 +186,7 @@ omit [DecidableEq κ] in
   | right j => simp
 
 omit [DecidableEq κ] in
-@[powerlib_foundation] theorem trajectory_iff_interconnection (x₁ : ℝ → Fin n₁ → ℝ)
+@[simp, powerlib_foundation] theorem trajectory_iff_interconnection (x₁ : ℝ → Fin n₁ → ℝ)
     (x₂ : ℝ → Fin n₂ → ℝ) :
     LTI.IsTrajectory ic.closedLoopModel (fun t => Fin.append (x₁ t) (x₂ t)) ↔
       ∀ t, HasDerivAt x₁ (ic.field (x₁ t) (x₂ t)).1 t ∧
