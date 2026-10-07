@@ -33,18 +33,12 @@ example (m : powerlib.Impedance) (s current voltage : ℂ) :
 #check powerlib.LTI.trajectory_exists
 #print axioms powerlib.LTI.Accepted.exponentially_stable
 
--- Small-signal stability: the Hurwitz spectrum is exactly exponential decay of the linear
--- model, and a Hurwitz Jacobian makes a nonlinear equilibrium locally exponentially stable.
 #check powerlib.LTI.exponentiallyStable_iff_spectrallyStable
 #check powerlib.LTI.accepted_nonempty_iff_isHurwitz
 #check powerlib.Dynamics.locallyExponentiallyStable_of_spectrallyStable_jacobian
 #check powerlib.Dynamics.unstable_of_characteristic_root_re_pos
 #print axioms powerlib.LTI.exponentiallyStable_iff_isHurwitz
 
--- Impedance-based stability of a source–load interconnection: the closed loop is computed by
--- the Agda-normalized conversion, and with both subsystems stable on their own the
--- interconnected small-signal model is exponentially stable exactly when det(I + Z_s Y_L)
--- has no zero in the closed right half-plane.
 #check powerlib.ImpedanceCriterion.Interconnection.exponentiallyStable_iff_impedanceStable
 #check powerlib.ImpedanceCriterion.Interconnection.det_characteristicMatrix_closedLoop
 #check powerlib.ImpedanceCriterion.impedanceStable_without_premises_insufficient

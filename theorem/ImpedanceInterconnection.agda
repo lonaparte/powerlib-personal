@@ -8,13 +8,6 @@ open import Cubical.Foundations.Univalence
 open import Cubical.Data.Sigma
 open import Cubical.Data.Nat using (ℕ)
 open import Cubical.Data.List using (List; []; _∷_; _++_)
-
--- Impedance-side description of a source–load interconnection at one port.
--- Source: input = port current, output = voltage drop, so its transfer matrix is
--- the output impedance Z_s and the terminal voltage is v = -y₁.
--- Load: input = terminal voltage, output = port current, strictly proper, so its
--- transfer matrix is the input admittance Y_L.  Matrices are abstract here; their
--- shapes and arithmetic are supplied by the Lean endpoint.
 record PortModel (M : Type) : Type where
   constructor portModel
   field state input output feedthrough : M
@@ -28,20 +21,14 @@ record Interconnection (M : Type) : Type where
   field
     source : PortModel M
     load : StrictPortModel M
-
--- State-space description of the closed loop, in blocks over source ⊕ load states.
 record ClosedLoop (M : Type) : Type where
   constructor closedLoop
   field a₁₁ a₁₂ a₂₁ a₂₂ : M
-
--- Matrix products and signs, supplied by the target (Lean: Mathlib matrices).
 record Ops (M : Type) : Type where
   field
     times : M → M → M
     minus : M → M
     diff : M → M → M
-
--- The seven matrices the interconnection reads.
 data Tag : Type where
   A₁ B₁ C₁ D₁ A₂ B₂ C₂ : Tag
 
@@ -53,8 +40,6 @@ entry (interconnection (portModel a b c d) (strictPortModel a' b' c')) D₁ = d
 entry (interconnection (portModel a b c d) (strictPortModel a' b' c')) A₂ = a'
 entry (interconnection (portModel a b c d) (strictPortModel a' b' c')) B₂ = b'
 entry (interconnection (portModel a b c d) (strictPortModel a' b' c')) C₂ = c'
-
--- Matrix-level syntax of the closed-loop blocks.
 data Expr : Type where
   mat : Tag → Expr
   mul : Expr → Expr → Expr
@@ -66,29 +51,18 @@ eval ops env (mat t) = env t
 eval ops env (mul x y) = Ops.times ops (eval ops env x) (eval ops env y)
 eval ops env (neg x) = Ops.minus ops (eval ops env x)
 eval ops env (sub x y) = Ops.diff ops (eval ops env x) (eval ops env y)
-
--- Interconnection laws: i = y₂ = C₂ x₂ and v = -y₁ = -(C₁ x₁ + D₁ i).  Hence
--- ẋ₁ = A₁ x₁ + B₁ C₂ x₂ and ẋ₂ = -B₂ C₁ x₁ + (A₂ - B₂ D₁ C₂) x₂.
 body : ClosedLoop Expr
 body = closedLoop (mat A₁) (mul (mat B₁) (mat C₂)) (neg (mul (mat B₂) (mat C₁)))
                   (sub (mat A₂) (mul (mul (mat B₂) (mat D₁)) (mat C₂)))
-
--- The executable conversion runs the very syntax tree that is serialized below.
 toClosedLoop : {M : Type} → Ops M → Interconnection M → ClosedLoop M
 toClosedLoop ops x =
   closedLoop (eval ops (entry x) (ClosedLoop.a₁₁ body)) (eval ops (entry x) (ClosedLoop.a₁₂ body))
              (eval ops (entry x) (ClosedLoop.a₂₁ body)) (eval ops (entry x) (ClosedLoop.a₂₂ body))
-
--- Independent semantic contract for arbitrary matrices and operations.
 toClosedLoop-spec : {M : Type} (ops : Ops M) (a b c d a' b' c' : M) →
   toClosedLoop ops (interconnection (portModel a b c d) (strictPortModel a' b' c')) ≡
     closedLoop a (Ops.times ops b c') (Ops.minus ops (Ops.times ops b' c))
                (Ops.diff ops a' (Ops.times ops (Ops.times ops b' d) c'))
 toClosedLoop-spec ops a b c d a' b' c' = refl
-
--- Representation layer.  The impedance-side description is exactly a pair of
--- subsystem port models, and the closed-loop block record is exactly a 2×2 table;
--- transport along each path is the repackaging map.
 Subsystems : Type → Type
 Subsystems M = PortModel M × StrictPortModel M
 
@@ -125,8 +99,6 @@ blocksPath = ua blocksEquiv
 
 blocksTransport : {M : Type} (x : ClosedLoop M) → transport blocksPath x ≡ toTable x
 blocksTransport = uaβ blocksEquiv
-
--- Versioned wire: tag numbers, then prefix-coded blocks a₁₁ a₁₂ a₂₁ a₂₂.
 tag : Tag → ℕ
 tag A₁ = 0
 tag B₁ = 1

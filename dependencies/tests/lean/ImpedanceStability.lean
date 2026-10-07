@@ -6,8 +6,6 @@ namespace ImpedanceConsumers
 
 variable {κ : Type} [Fintype κ] [DecidableEq κ] {n₁ n₂ : ℕ}
   (ic : Interconnection (Fin n₁) (Fin n₂) κ)
-
--- Automatic reuse: neither aesop nor library search is given a theorem name.
 @[powerlib_domain] theorem closed_loop_stable_of_impedance
     (h₁ : LTI.ExponentiallyStable ic.sourceModel) (h₂ : LTI.ExponentiallyStable ic.loadModel)
     (h : ic.ImpedanceStable) : LTI.ExponentiallyStable ic.closedLoopModel := by aesop
@@ -20,8 +18,6 @@ variable {κ : Type} [Fintype κ] [DecidableEq κ] {n₁ n₂ : ℕ}
     (h₁ : LTI.SpectrallyStable ic.source.A) (h₂ : LTI.SpectrallyStable ic.load.A) :
     LTI.SpectrallyStable ic.closedLoop ↔ ic.ImpedanceStable := by
   powerlib_search
-
--- The criterion cannot drop its subsystem premises.
 @[powerlib_domain] theorem premises_needed :
     ¬ ∀ ic : Interconnection (Fin 1) (Fin 1) (Fin 1),
       ic.ImpedanceStable → LTI.SpectrallyStable ic.closedLoop := by
@@ -34,7 +30,6 @@ end ImpedanceConsumers
 open Lean Elab Command in
 run_cmd do
   let env ← getEnv
-  -- The state-space description is computed by the Agda-generated conversion.
   let some closedLoop := (env.find? `powerlib.ImpedanceCriterion.Interconnection.closedLoop).bind
       (·.value? (allowOpaque := true)) |
     throwError "The closed-loop definition is missing"
@@ -47,7 +42,6 @@ run_cmd do
   unless powerlib.Registry.kindOf? env `powerlib.generated.closedLoopBlocks_spec ==
       some .foundation do
     throwError "The generated endpoint contract lost its classification"
-  -- Every theorem of the module is classified and kernel-admissible.
   let mut count : Nat := 0
   for name in powerlib.Registry.theoremNames env do
     let some entry := powerlib.Search.describe env name |
@@ -64,7 +58,8 @@ run_cmd do
     unless powerlib.Registry.kindOf? env name == some .domain do
       throwError "Impedance domain theorem lost its classification: {name}"
   for name in #[`powerlib.ImpedanceCriterion.Interconnection.det_characteristicMatrix_closedLoop,
-      `powerlib.ImpedanceCriterion.Interconnection.closedLoop_mulVec] do
+      `powerlib.ImpedanceCriterion.Interconnection.closedLoop_mulVec,
+      `powerlib.ImpedanceCriterion.hiddenMode_transfer] do
     unless powerlib.Registry.kindOf? env name == some .foundation do
       throwError "Impedance foundation result lost its classification: {name}"
   logInfo "POWERLIB_IMPEDANCE_OK: Agda-generated closed loop; criterion ⇔ small-signal stability"

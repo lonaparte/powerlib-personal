@@ -5,8 +5,6 @@ open powerlib
 namespace HurwitzConsumers
 
 variable {n : ℕ}
-
--- Automatic reuse: neither aesop nor library search is given a theorem name.
 @[powerlib_domain] theorem linear_stable_of_hurwitz (m : LTI.Model n)
     (h : LinearSystems.IsHurwitz m.A) : LTI.ExponentiallyStable m := by aesop
 
@@ -36,9 +34,6 @@ variable {n : ℕ}
     (s : ℂ) (hroot : (LTI.characteristicMatrix A s).det = 0) (hs : 0 < s.re) :
     Dynamics.Unstable f x_eq := by
   powerlib_search
-
--- A concrete witness-free consumer: the matrix `-I₂` is Hurwitz, so its linear model is
--- exponentially stable and an exact certificate exists, with no certificate supplied.
 def damped : LTI.Model 2 := ⟨!![-1, 0; 0, -1]⟩
 
 @[powerlib_domain] theorem damped_hurwitz : LinearSystems.IsHurwitz damped.A := by
@@ -62,7 +57,6 @@ end HurwitzConsumers
 open Lean Elab Command in
 run_cmd do
   let env ← getEnv
-  -- Each adapter applies the actual upstream LeanForControl theorem.
   for (consumer, source) in #[
       (`powerlib.LTI.accepted_nonempty_of_isHurwitz,
         `LinearSystems.IsHurwitz.exists_posDef_unique_solution_continuous_lyapunov),
@@ -80,7 +74,6 @@ run_cmd do
     unless entry.moduleName.getRoot == `LeanForControl && entry.kind.isNone &&
         powerlib.Search.eligible env source do
       throwError "Upstream theorem failed provenance or axiom checks: {source}"
-  -- Every theorem of the module is classified and kernel-admissible.
   let mut count : Nat := 0
   for name in powerlib.Registry.theoremNames env do
     let some entry := powerlib.Search.describe env name |

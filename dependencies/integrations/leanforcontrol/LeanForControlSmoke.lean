@@ -1,4 +1,5 @@
 import theorem.Upstream.LCLLeanForControl
+import theorem.Hurwitz
 import LeanForControl.axioms
 
 open scoped Matrix.Norms.Frobenius
@@ -7,15 +8,24 @@ open Lean Meta Elab Command in
 run_cmd do
   let env ← getEnv
   for name in #[`MatrixAlgebra.complexification_exp, `MatrixAlgebra.exp_const_add,
-      `LinearSystems.IsHurwitz.exists_norm_exp_nat_smul_lt_one] do
+      `LinearSystems.IsHurwitz.exists_norm_exp_nat_smul_lt_one,
+      `LinearSystems.IsHurwitz.exists_posDef_unique_solution_continuous_lyapunov,
+      `hurwitz_linearization_locally_exponentially_stable,
+      `unstable_of_exists_complex_eigenvalue_re_pos] do
     let some entry := powerlib.Search.describe env name |
       throwError "LeanForControl declaration absent from discovery: {name}"
     unless entry.moduleName.getRoot == `LeanForControl && entry.kind.isNone do
       throwError "Upstream declaration lost its module or was classified locally: {name}"
     unless powerlib.Search.eligible env name do
       throwError "Axiom-admissible LeanForControl declaration was excluded: {name}"
-  for name in #[`powerlib.Upstream.complexification_exp, `powerlib.Upstream.exp_const_add,
-      `powerlib.Upstream.contractive_block] do
+  let consumers : Array (Name × powerlib.Registry.TheoremKind) := #[
+    (`powerlib.Upstream.complexification_exp, .foundation),
+    (`powerlib.Upstream.exp_const_add, .foundation),
+    (`powerlib.Upstream.contractive_block, .foundation),
+    (`powerlib.LTI.accepted_nonempty_of_isHurwitz, .domain),
+    (`powerlib.Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian, .domain),
+    (`powerlib.Dynamics.unstable_of_jacobian_eigenvalue_re_pos, .domain)]
+  for (name, kind) in consumers do
     let info ← getConstInfo name
     let some proof := info.value? (allowOpaque := true) |
       throwError "Missing upstream consumer proof: {name}"
@@ -27,8 +37,8 @@ run_cmd do
     for ax in powerlib.Search.declarationAxioms env name do
       unless powerlib.Search.allowedAxiom ax do
         throwError "Unapproved upstream consumer axiom: {name}: {ax}"
-    unless powerlib.Registry.kindOf? env name == some .foundation do
-      throwError "Upstream foundation adapter lost its classification: {name}"
+    unless powerlib.Registry.kindOf? env name == some kind do
+      throwError "Upstream consumer has the wrong classification: {name}"
   -- This is an actual proved upstream lemma with a transitive custom-axiom dependency.
   let badName := `exists_strictMono_upper_bound
   let some bad := powerlib.Search.describe env badName |
@@ -53,4 +63,4 @@ run_cmd do
     withLetDecl `borrowed info.type badProof fun borrowed => do
       unless (← observing? (powerlib.Search.checkProof borrowed)).isNone do
         throwError "A local let hid an upstream custom axiom from the proof audit"
-  logInfo "POWERLIB_LEANFORCONTROL_REUSE_OK: 3 direct consumers; custom-axiom rejection"
+  logInfo "POWERLIB_LEANFORCONTROL_REUSE_OK: 6 direct consumers; custom-axiom rejection"

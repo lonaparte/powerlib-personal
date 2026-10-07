@@ -3,26 +3,6 @@ import theorem.Lyapunov
 import theorem.StateSpacePassivity
 import theorem.Dynamics.LyapunovDefs
 
-/-! Hurwitz matrices and small-signal stability, in three layers.
-
-1. Spectrum. Every root of `det(sI - A)` has negative real part exactly when `A` is
-   Hurwitz in LeanForControl's eigenpair sense.
-2. Linear small-signal model `ẋ = A x` (`LTI.Model`, all global solutions, Euclidean norm).
-   `A` is Hurwitz exactly when the model is exponentially stable, and exactly when an exact
-   Lyapunov certificate (`LTI.Accepted`) exists. The certificate is LeanForControl's
-   positive-definite solution of `P A + Aᵀ P = -I`; the converse builds a non-decaying real
-   solution from any eigenpair with `Re μ ≥ 0`.
-3. Nonlinear autonomous system `ẋ = f x` on `ℝⁿ` with a `C¹` field and an equilibrium
-   `x_eq` whose Jacobian is `A`. A Hurwitz Jacobian gives local exponential stability; a
-   Jacobian eigenvalue with positive real part gives instability (Lyapunov's indirect
-   method, applied directly from LeanForControl).
-
-Model boundary: continuous time, finite-dimensional real state in the submitted
-coordinates, inputs fixed or the loop already closed (no delay, PWM, sampling or
-switching). Layer 3 concerns an equilibrium, not a trajectory; Jacobians with eigenvalues
-on the imaginary axis but none in the open right half-plane are decided by neither branch.
--/
-
 noncomputable section
 namespace powerlib.LTI
 open Matrix Filter
@@ -30,20 +10,16 @@ open scoped Topology
 
 variable {n : ℕ} {ι ι' : Type*} [Fintype ι] [DecidableEq ι] [Fintype ι'] [DecidableEq ι']
 
-/-- The characteristic matrix `sI - A` over `ℂ`, for any finite state index. -/
 def characteristicMatrix (A : Matrix ι ι ℝ) (s : ℂ) : Matrix ι ι ℂ :=
   s • (1 : Matrix ι ι ℂ) - A.map (algebraMap ℝ ℂ)
 
-/-- Eigenvalue (small-signal) stability: every root of `det(sI - A)` lies in `Re s < 0`. -/
 def SpectrallyStable (A : Matrix ι ι ℝ) : Prop :=
   ∀ s : ℂ, (characteristicMatrix A s).det = 0 → s.re < 0
 
-/-- `det(sI - A)` is Mathlib's characteristic polynomial of `A` evaluated at `s`. -/
 @[powerlib_foundation] theorem det_characteristicMatrix (A : Matrix ι ι ℝ) (s : ℂ) :
     (characteristicMatrix A s).det = (A.map (algebraMap ℝ ℂ)).charpoly.eval s := by
   rw [Matrix.eval_charpoly, characteristicMatrix, Matrix.scalar_apply, Matrix.smul_one_eq_diagonal]
 
-/-- Relabelling the state coordinates does not move the characteristic roots. -/
 @[powerlib_foundation] theorem spectrallyStable_reindex (e : ι ≃ ι') (A : Matrix ι ι ℝ) :
     SpectrallyStable (A.reindex e e) ↔ SpectrallyStable A := by
   have h (s : ℂ) :
@@ -51,8 +27,6 @@ def SpectrallyStable (A : Matrix ι ι ℝ) : Prop :=
     ext i j
     simp [characteristicMatrix, Matrix.one_apply]
   simp only [SpectrallyStable, h, Matrix.det_reindex_self]
-
-/-! ### Layer 1: roots of the characteristic polynomial and Hurwitz matrices -/
 
 @[powerlib_foundation] theorem spectrallyStable_iff_isHurwitz (A : Matrix (Fin n) (Fin n) ℝ) :
     SpectrallyStable A ↔ LinearSystems.IsHurwitz A := by
@@ -71,8 +45,6 @@ def SpectrallyStable (A : Matrix ι ι ℝ) : Prop :=
       rw [characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at hzero
       exact (sub_eq_zero.mp hzero).symm)
 
-/-! ### Layer 2: the linear small-signal model -/
-
 @[powerlib_foundation]
 private lemma energy_continuous (P : Matrix (Fin n) (Fin n) ℝ) : Continuous (energy P) := by
   unfold energy dotProduct Matrix.mulVec
@@ -84,13 +56,10 @@ private lemma energy_smul (P : Matrix (Fin n) (Fin n) ℝ) (a : ℝ) (x : State 
   simp only [energy, Matrix.mulVec_smul, dotProduct_smul, smul_dotProduct, smul_eq_mul]
   ring
 
-/-- A Hurwitz matrix has an exact Lyapunov certificate for the submitted model. The matrix
-`P` is LeanForControl's positive-definite solution of `P A + Aᵀ P = -I`; its quadratic
-bounds come from positivity and homogeneity. -/
 @[powerlib_domain] theorem accepted_nonempty_of_isHurwitz {m : Model n}
     (h : LinearSystems.IsHurwitz m.A) : Nonempty (Accepted m) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
-  · -- The zero-dimensional state space: every quadratic form vanishes.
+  ·
     exact ⟨⟨1, 1, 1, one_pos, one_pos, Matrix.transpose_one,
       fun x => (by simp [sqNorm, energy]), fun x => (by simp [sqNorm, energy]),
       Subsingleton.elim _ _⟩⟩
@@ -115,7 +84,6 @@ theorem exponentiallyStable_of_isHurwitz {m : Model n}
     (h : LinearSystems.IsHurwitz m.A) : ExponentiallyStable m :=
   (accepted_nonempty_of_isHurwitz h).some.exponentially_stable
 
-/-- The real and imaginary parts of the eigen-solution `t ↦ exp(μ t) v` are real solutions. -/
 @[powerlib_foundation]
 private lemma eigenmode_hasDerivAt (A : Matrix (Fin n) (Fin n) ℝ) {μ : ℂ} {v : Fin n → ℂ}
     (heig : A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v) (t : ℝ) (j : Fin n) :
@@ -143,7 +111,6 @@ private lemma isTrajectory_part (m : Model n) {μ : ℂ} {v : Fin n → ℂ}
   convert! h using 1
   simp [Model.field, generated.linearField_spec, Matrix.mulVec, dotProduct, map_sum, hpart]
 
-/-- The converse direction: an exponentially stable linear model has a Hurwitz matrix. -/
 @[powerlib_domain, aesop norm forward (immediate := [h])]
 theorem isHurwitz_of_exponentiallyStable {m : Model n}
     (h : ExponentiallyStable m) : LinearSystems.IsHurwitz m.A := by
@@ -155,13 +122,11 @@ theorem isHurwitz_of_exponentiallyStable {m : Model n}
   let y : ℝ → State n := fun t j => Complex.imCLM (Complex.exp (μ * t) * v j)
   have hx : IsTrajectory m x := isTrajectory_part m heig Complex.reCLM (by simp)
   have hy : IsTrajectory m y := isTrajectory_part m heig Complex.imCLM (by simp)
-  -- Squared exponential bounds for both real solutions.
   have hsq {w : ℝ → State n} (hw : IsTrajectory m w) {t : ℝ} (ht : 0 ≤ t) :
       sqNorm (w t) ≤ (K * Real.exp (-(r * t))) ^ 2 * sqNorm (w 0) := by
     have hb := pow_le_pow_left₀ (norm_nonneg _) (hdecay w hw t ht) 2
     rw [sqNorm_eq_norm_sq, sqNorm_eq_norm_sq]
     nlinarith [hb]
-  -- Their energies add up to `|exp(μ t)|² ∑ |v j|²`.
   let N : ℝ := ∑ j, Complex.normSq (v j)
   have hsum (t : ℝ) :
       sqNorm (x t) + sqNorm (y t) = Real.exp (μ.re * t) ^ 2 * N := by
@@ -177,7 +142,6 @@ theorem isHurwitz_of_exponentiallyStable {m : Model n}
     obtain ⟨j, hj⟩ := Function.ne_iff.mp hv
     exact Finset.sum_pos' (fun k _ => Complex.normSq_nonneg _)
       ⟨j, Finset.mem_univ _, Complex.normSq_pos.mpr hj⟩
-  -- The decay bound forces `1 ≤ (K e^{-rt})²` for every `t ≥ 0`, which fails eventually.
   have hlarge (t : ℝ) (ht : 0 ≤ t) : 1 ≤ (K * Real.exp (-(r * t))) ^ 2 := by
     have h0 := hsum 0
     simp only [mul_zero, Real.exp_zero, one_pow, one_mul] at h0
@@ -200,13 +164,10 @@ theorem isHurwitz_of_exponentiallyStable {m : Model n}
     ExponentiallyStable m ↔ LinearSystems.IsHurwitz m.A :=
   ⟨isHurwitz_of_exponentiallyStable, exponentiallyStable_of_isHurwitz⟩
 
-/-- Small-signal (eigenvalue) stability of the linear model is exactly exponential decay of
-every solution. -/
 @[powerlib_domain] theorem exponentiallyStable_iff_spectrallyStable (m : Model n) :
     ExponentiallyStable m ↔ SpectrallyStable m.A :=
   (exponentiallyStable_iff_isHurwitz m).trans (spectrallyStable_iff_isHurwitz m.A).symm
 
-/-- An exact Lyapunov certificate exists exactly for Hurwitz models. -/
 @[powerlib_domain] theorem accepted_nonempty_iff_isHurwitz (m : Model n) :
     Nonempty (Accepted m) ↔ LinearSystems.IsHurwitz m.A :=
   ⟨fun ⟨c⟩ => isHurwitz_of_exponentiallyStable c.exponentially_stable,
@@ -214,15 +175,11 @@ every solution. -/
 
 end powerlib.LTI
 
-/-! ### Layer 3: Lyapunov's indirect method for the nonlinear system -/
-
 namespace powerlib.Dynamics
 open Matrix
 
 variable {n : ℕ}
 
-/-- A `C¹` field whose Jacobian at the equilibrium is Hurwitz is locally exponentially
-stable there. -/
 @[powerlib_domain] theorem locallyExponentiallyStable_of_isHurwitz_jacobian
     {f : State n → State n} {x_eq : State n} (A : Matrix (Fin n) (Fin n) ℝ)
     (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
@@ -230,7 +187,6 @@ stable there. -/
     (hA : LinearSystems.IsHurwitz A) : LocallyExponentiallyStable f x_eq :=
   _root_.hurwitz_linearization_locally_exponentially_stable A hf heq hJac hA
 
-/-- Small-signal stability of the linearization, stated through `det(sI - A)`. -/
 @[powerlib_domain] theorem locallyExponentiallyStable_of_spectrallyStable_jacobian
     {f : State n → State n} {x_eq : State n} (A : Matrix (Fin n) (Fin n) ℝ)
     (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
@@ -239,7 +195,6 @@ stable there. -/
   locallyExponentiallyStable_of_isHurwitz_jacobian A hf heq hJac
     ((LTI.spectrallyStable_iff_isHurwitz A).mp hA)
 
-/-- A Jacobian eigenvalue in the open right half-plane makes the equilibrium unstable. -/
 @[powerlib_domain] theorem unstable_of_jacobian_eigenvalue_re_pos
     {f : State n → State n} {x_eq : State n} (A : Matrix (Fin n) (Fin n) ℝ)
     (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
@@ -249,7 +204,6 @@ stable there. -/
     Unstable f x_eq :=
   _root_.unstable_of_exists_complex_eigenvalue_re_pos A hf heq hJac hunstable
 
-/-- The instability branch stated through `det(sI - A)`. -/
 @[powerlib_domain] theorem unstable_of_characteristic_root_re_pos
     {f : State n → State n} {x_eq : State n} (A : Matrix (Fin n) (Fin n) ℝ)
     (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
