@@ -1,5 +1,241 @@
 import powerlib
+import LeanForControl.axioms
 
+-- Dynamics semantic regression cases.
+/-! Regression checks on the public API: global existence, estimates for every
+finite solution segment, attraction of every complete trajectory, and rejection
+of a locally stable field whose energy increases far from the equilibrium. -/
+
+noncomputable section
+namespace powerlib.Tests.Dynamics
+
+open powerlib.Dynamics Set Filter Topology
+
+-- There is a full forward trajectory through every initial state, including n = 0.
+@[powerlib_domain] theorem nonlinear_every_initial_state_has_global_solution (n : ℕ) (a : ℝ) (x₀ : State n) :
+    ∃ φ : ℝ → State n, φ a = x₀ ∧
+      powerlib.Dynamics.IsIntegralCurveOn φ (fun _ x => Nonlinear.field x) (Ici a) :=
+  (Nonlinear.globallyExponentiallyStable n).2.1 a x₀
+
+-- This estimate applies to an arbitrary solution, time anchor, and amplitude.
+@[powerlib_domain] theorem nonlinear_every_finite_segment_decays {n : ℕ} {φ : ℝ → State n}
+    {a b t : ℝ} (hφ : powerlib.Dynamics.IsTrajectoryOn φ (@Nonlinear.field n) a b) (ht : t ∈ Icc a b) :
+    ‖φ t‖ ≤ Real.exp (-(t - a)) * ‖φ a‖ :=
+  Nonlinear.norm_bound hφ ht
+
+-- The public GAS theorem supplies universal attraction, not a selected response.
+@[powerlib_domain] theorem nonlinear_every_global_trajectory_converges {n : ℕ} (hn : 0 < n)
+    (a : ℝ) (φ : ℝ → State n)
+    (hφ : powerlib.Dynamics.IsIntegralCurveOn φ (fun _ x => Nonlinear.field x) (Ici a)) :
+    Tendsto φ atTop (𝓝 (0 : State n)) :=
+  (Nonlinear.globallyAsymptoticallyStable hn).2.2.2 a φ hφ
+
+-- Accepted LCL witnesses remain indexed by the exact original zero-input plant.
+@[powerlib_domain] theorem lcl_every_initial_state_has_global_solution {m : powerlib.LCL.Circuit}
+    (c : powerlib.LCL.Accepted m) (a : ℝ) (x₀ : powerlib.LCL.State3) :
+    ∃ φ : ℝ → powerlib.LCL.State3, φ a = x₀ ∧
+      powerlib.Dynamics.IsIntegralCurveOn φ (fun _ x => m.autonomousField x) (Ici a) :=
+  c.autonomousGloballyExponentiallyStable.2.1 a x₀
+
+@[powerlib_domain] theorem lcl_uniform_decay_of_every_finite_segment {m : powerlib.LCL.Circuit}
+    (c : powerlib.LCL.Accepted m) :
+    ∃ C rate : ℝ, 1 ≤ C ∧ 0 < rate ∧
+      ∀ (a b : ℝ) (φ : ℝ → powerlib.LCL.State3),
+        powerlib.Dynamics.IsTrajectoryOn φ m.autonomousField a b →
+        ∀ t ∈ Icc a b,
+          ‖φ t‖ ≤ C * Real.exp (-(rate * (t - a))) * ‖φ a‖ := by
+  simpa only [sub_zero] using c.autonomousGloballyExponentiallyStable.2.2
+
+@[powerlib_domain] theorem lcl_every_global_trajectory_converges {m : powerlib.LCL.Circuit}
+    (c : powerlib.LCL.Accepted m) (a : ℝ) (φ : ℝ → powerlib.LCL.State3)
+    (hφ : powerlib.Dynamics.IsIntegralCurveOn φ (fun _ x => m.autonomousField x) (Ici a)) :
+    Tendsto φ atTop (𝓝 (0 : powerlib.LCL.State3)) :=
+  c.autonomousGloballyAsymptoticallyStable.2.2.2 a φ hφ
+
+-- A negative Jacobian at zero must not be mistaken for global stability.
+def locallyStableField (x : ℝ) : ℝ := -x + x ^ 3
+
+def squareEnergy (x : ℝ) : ℝ := x ^ 2
+
+@[powerlib_foundation] theorem locallyStableField_has_negative_linearization :
+    HasDerivAt locallyStableField (-1) 0 := by
+  simpa [locallyStableField, Pi.neg_apply, Pi.add_apply, Pi.pow_apply] using!
+    (hasDerivAt_id (0 : ℝ)).neg.add ((hasDerivAt_id (0 : ℝ)).pow 3)
+
+@[powerlib_foundation] theorem squareEnergy_lie_derivative (x : ℝ) :
+    fderiv ℝ squareEnergy x (locallyStableField x) =
+      2 * x * locallyStableField x := by
+  have hd := ((hasDerivAt_id x).pow 2).hasFDerivAt
+  change fderiv ℝ (fun y : ℝ => id y ^ 2) x (locallyStableField x) = _
+  erw [hd.fderiv]
+  simp
+  ring
+
+-- At x = 2 the Lie derivative is 24; no positive global decay rate can fit.
+@[powerlib_domain] theorem locallyStableField_rejects_global_decay_certificate :
+    ¬ Nonempty (QuadraticDecayCertificate locallyStableField squareEnergy 0) := by
+  rintro ⟨c⟩
+  have hdecay := c.dissipation 2
+  rw [squareEnergy_lie_derivative] at hdecay
+  norm_num [locallyStableField, squareEnergy] at hdecay
+  nlinarith [c.rate_pos]
+
+-- The complete field has a nonzero constant trajectory. Thus global exponential
+-- stability itself is false, independently of the choice of energy certificate.
+@[powerlib_domain] theorem locallyStableField_not_globallyExponentiallyStable :
+    ¬ powerlib.Dynamics.GloballyExponentiallyStable locallyStableField (0 : ℝ) := by
+  intro hstable
+  obtain ⟨C, rate, hC, hrate, hdecay⟩ := hstable.2.2
+  have hCpos : 0 < C + 1 := by linarith
+  let t := Real.log (C + 1) / rate
+  have ht : 0 ≤ t := by
+    apply le_of_lt
+    exact div_pos (Real.log_pos (by linarith : 1 < C + 1)) hrate
+  have hφ : powerlib.Dynamics.IsTrajectoryOn (fun _ : ℝ => (1 : ℝ)) locallyStableField 0 t := by
+    intro s hs
+    simpa [locallyStableField] using (hasDerivAt_const s (1 : ℝ)).hasDerivWithinAt
+  have hbound := hdecay 0 t (fun _ => 1) hφ t ⟨ht, le_refl t⟩
+  simp only [sub_zero, norm_one, mul_one] at hbound
+  have hrt : rate * t = Real.log (C + 1) := by
+    dsimp [t]
+    field_simp
+  rw [hrt, Real.exp_neg, Real.exp_log hCpos] at hbound
+  have hlt : C * (C + 1)⁻¹ < 1 := by
+    rw [← div_eq_mul_inv, div_lt_one hCpos]
+    linarith
+  exact (not_lt_of_ge hbound) hlt
+
+end powerlib.Tests.Dynamics
+
+open Lean Elab Command
+run_cmd do
+  let env ← getEnv
+  let namespacePrefix := `powerlib.Tests.Dynamics
+  let roots := (powerlib.Registry.theoremNames env).filter namespacePrefix.isPrefixOf
+  if roots.isEmpty then
+    throwError "Dynamics regression discovery found no registered theorems"
+  let mut auditedAxioms : Array Name := #[]
+  for root in roots do
+    match env.find? root with
+    | some (.thmInfo _) => pure ()
+    | some _ => throwError "Dynamics regression audit root {root} is not a theorem"
+    | none => throwError "Dynamics regression audit root {root} was not found"
+    auditedAxioms := auditedAxioms ++ powerlib.Search.declarationAxioms env root
+  for ax in auditedAxioms do
+    unless ax == `propext || ax == `Classical.choice || ax == `Quot.sound do
+      throwError "Unexpected Dynamics regression axiom {ax}"
+  logInfo "POWERLIB_DYNAMICS_OK"
+
+-- RL large-signal cases.
+noncomputable section
+namespace powerlib.Tests.RLLargeSignal
+open powerlib
+
+@[powerlib_domain] theorem component_only (m : Impedance) (hR : 0 < m.resistance) (voltage : ℝ) :
+    GloballyExponentiallyStable m voltage (voltage / m.resistance) := by aesop
+
+def submittedModel : Impedance := ⟨2, ⟨1, by norm_num⟩⟩
+
+@[powerlib_domain] theorem concrete_component_only (voltage : ℝ) :
+    GloballyExponentiallyStable submittedModel voltage
+      (voltage / submittedModel.resistance) := by
+  have hR : 0 < submittedModel.resistance := by norm_num [submittedModel]
+  aesop
+
+@[powerlib_domain] theorem all_trajectories_decay (m : Impedance) (hR : 0 < m.resistance)
+    (voltage : ℝ) (i : ℝ → ℝ) (hi : IsTrajectory m voltage i)
+    (t : ℝ) (ht : 0 ≤ t) :
+    (i t - voltage / m.resistance) ^ 2 =
+      (i 0 - voltage / m.resistance) ^ 2 * Real.exp (-(2 * (toStateSpace m).decay * t)) := by
+  let certificate := synthesize m hR
+  have he : IsEquilibrium m voltage (voltage / m.resistance) :=
+    equilibrium_of_resistance_ne_zero (ne_of_gt hR) voltage
+  change _ = _ * Real.exp (-(certificate.rate * t))
+  aesop
+
+end powerlib.Tests.RLLargeSignal
+
+open Lean Elab Command in
+run_cmd do
+  let env ← getEnv
+  unless powerlib.Registry.kindOf? env `powerlib.rl_globally_exponentially_stable == some .domain do
+    throwError "Component-only RL theorem missing from public discovery"
+  for name in #[`powerlib.Tests.RLLargeSignal.component_only,
+      `powerlib.Tests.RLLargeSignal.concrete_component_only,
+      `powerlib.Tests.RLLargeSignal.all_trajectories_decay] do
+    for axiomName in powerlib.Search.declarationAxioms env name do
+      unless powerlib.Search.allowedAxiom axiomName do
+        throwError "Unapproved RL large-signal consumer axiom: {name}: {axiomName}"
+  logInfo "POWERLIB_RL_LARGE_SIGNAL_OK"
+
+-- LTI automatic reuse cases.
+open powerlib
+
+example {n : ℕ} (m : LTI.Model n) (c : LTI.Accepted m) : LTI.ExponentiallyStable m := by aesop
+example {n : ℕ} (m : LTI.Model n) (initial : LTI.State n) :
+    LTI.IsTrajectory m (LTI.response m initial) := by aesop
+example {n : ℕ} (m : LTI.Model n) (initial : LTI.State n) :
+    LTI.response m initial 0 = initial := by simp
+example {n : ℕ} (m : LTI.Model n) (c : LTI.Accepted m)
+    (initial : LTI.State n) (t : ℝ) (ht : 0 ≤ t) :
+    LTI.sqNorm (LTI.response m initial t) ≤
+      (c.upper / c.lower) * Real.exp (-(t / c.upper)) * LTI.sqNorm initial := by aesop
+
+-- Every named LTI theorem has a standard automation use case. None of these
+-- proofs supplies a theorem name to aesop/simp; mere registry membership is
+-- tested separately below and is not a substitute for actual proof search.
+section LTIReuse
+variable {n : ℕ} (m : LTI.Model n) (c : LTI.Accepted m)
+  (x y : ℝ → LTI.State n) (hx : LTI.IsTrajectory m x) (hy : LTI.IsTrajectory m y)
+  (t : ℝ) (ht : 0 ≤ t) (u v : LTI.State n)
+
+example : m.field 0 = 0 := by simp
+example : m.field (u + v) - m.field u = m.field v := by aesop
+example : m.operator u = m.field u := by simp
+example : LTI.sqNorm u = ‖LTI.euclidean u‖ ^ 2 := by aesop
+example : ∃ z, LTI.IsTrajectory m z ∧ z 0 = u := by aesop
+example : 0 ≤ LTI.sqNorm u := by aesop
+example : LTI.sqNorm (0 : LTI.State n) = 0 := by simp
+example : LTI.sqNorm u = 0 ↔ u = 0 := by simp
+
+include hx in
+example (P : Matrix (Fin n) (Fin n) ℝ) :
+    HasDerivAt (fun s => LTI.energy P (x s))
+      (dotProduct (m.field (x t)) (P.mulVec (x t)) +
+       dotProduct (x t) (P.mulVec (m.field (x t)))) t := by aesop
+example : dotProduct (m.field u) (c.P.mulVec u) +
+    dotProduct u (c.P.mulVec (m.field u)) = -LTI.sqNorm u := by aesop
+include hx in
+example : HasDerivAt (fun s => LTI.energy c.P (x s)) (-LTI.sqNorm (x t)) t := by aesop
+include hx ht in
+example : LTI.energy c.P (x t) ≤ Real.exp (-(t / c.upper)) * LTI.energy c.P (x 0) := by aesop
+include hx ht in
+example : LTI.sqNorm (x t) ≤
+    (c.upper / c.lower) * Real.exp (-(t / c.upper)) * LTI.sqNorm (x 0) := by aesop
+include hx ht in
+example : ‖LTI.euclidean (x t)‖ ≤ Real.sqrt (c.upper / c.lower) *
+    Real.exp (-(t / c.upper) / 2) * ‖LTI.euclidean (x 0)‖ := by aesop
+include c hx hy ht in
+example (h0 : x 0 = y 0) : x t = y t := by aesop
+include c hx ht in
+example : x t = LTI.response m (x 0) t := by aesop
+include c hx in
+example : Filter.Tendsto (fun t => LTI.sqNorm (x t)) Filter.atTop (nhds 0) := by aesop
+example : generated.linearField m.A u = m.A.mulVec u := by simp
+end LTIReuse
+
+
+open Lean Elab Command in
+run_cmd do
+  let env ← getEnv
+  for root in powerlib.Registry.theoremNames env do
+    if root.toString.startsWith "powerlib.LTI." || root == `powerlib.generated.linearField_spec then
+      for axiomName in powerlib.Search.declarationAxioms env root do
+        unless powerlib.Search.allowedAxiom axiomName do
+          throwError "Unexpected axiom {axiomName} in {root}"
+  logInfo "POWERLIB_LTI_REUSE_OK"
+
+-- State-space passivity cases.
 open powerlib Matrix
 open scoped Topology
 
@@ -279,3 +515,52 @@ run_cmd do
     unless sources.any proof.getUsedConstants.contains do
       throwError "Matrix consumer did not use a general state-space semantic theorem: {consumer}"
   logInfo "POWERLIB_STATE_SPACE_PASSIVITY_CASES_OK"
+
+-- LeanForControl dynamics reuse audit.
+open Lean Meta Elab Command in
+run_cmd do
+  let env ← getEnv
+  let mut count := 0
+  for name in powerlib.Registry.theoremNames env do
+    let some entry := powerlib.Search.describe env name |
+      throwError "Registered theorem absent from discovery: {name}"
+    if entry.moduleName == `theorem.Dynamics.Autonomous ||
+        entry.moduleName == `theorem.Dynamics.GlobalLipschitz ||
+        name == `powerlib.Dynamics.isCompact_sublevel_set then
+      let info ← getConstInfo name
+      let some proof := info.value? (allowOpaque := true) |
+        throwError "Upstream adapter proof is unavailable: {name}"
+      unless proof.getUsedConstants.any (fun dependency =>
+          match powerlib.Search.describe env dependency with
+          | some source => source.moduleName.getRoot == `LeanForControl
+          | none => false) do
+        throwError "Adapter did not directly apply a real upstream theorem: {name}"
+      unless entry.axioms.all powerlib.Search.allowedAxiom do
+        throwError "Upstream adapter inherited an unapproved axiom: {name}"
+      count := count + 1
+  unless count == 23 do
+    throwError "Expected 23 direct upstream adapters, found {count}"
+  let badName := `exists_strictMono_upper_bound
+  let some bad := powerlib.Search.describe env badName |
+    throwError "Missing real upstream negative control"
+  unless bad.moduleName == `LeanForControl.axioms &&
+      bad.axioms.contains `exists_strictMono_upper_bound_global do
+    throwError "Negative control lost its upstream custom-axiom dependency"
+  if powerlib.Search.eligible env badName then
+    throwError "An upstream custom-axiom consequence entered search"
+  liftTermElabM do
+    let info ← getConstInfo badName
+    forallTelescope info.type fun _ goal => do
+      let raw ← LibrarySearch.libSearchFindDecls goal
+      unless raw.any (fun candidate => candidate.1 == badName) do
+        throwError "Negative control was absent from the standard search index"
+      let admissible ← powerlib.Search.candidates goal
+      if admissible.any (fun candidate => candidate.1 == badName) then
+        throwError "Search did not filter a real upstream custom-axiom consequence"
+    let badProof ← mkConstWithFreshMVarLevels badName
+    unless (← observing? (powerlib.Search.checkProof badProof)).isNone do
+      throwError "Completed-proof audit accepted a custom axiom"
+    withLetDecl `borrowed info.type badProof fun borrowed => do
+      unless (← observing? (powerlib.Search.checkProof borrowed)).isNone do
+        throwError "A local let hid an upstream custom axiom"
+  logInfo "POWERLIB_DYNAMICS_UPSTREAM_OK: 23 direct adapters; custom-axiom rejection"
