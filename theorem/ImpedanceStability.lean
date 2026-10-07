@@ -2,6 +2,21 @@ import theorem.Hurwitz
 import theorem.StateSpacePassivity
 import theorem.generated.ImpedanceInterconnection
 
+/-! Impedance-based small-signal stability of one source–load interconnection at a single
+port, joined to state-space small-signal stability through the Agda-generated closed loop.
+Continuous-time LTI small-signal port models about an equilibrium, with arbitrary real
+matrices, finite state indices `ι₁` (source) and `ι₂` (load), and port index `κ` in the
+coordinates of the submitted models (one phase, or `Fin 2` for a dq frame).
+
+The source takes the port current `i` and returns its voltage drop:
+`ẋ₁ = A₁ x₁ + B₁ i`, `y₁ = C₁ x₁ + D₁ i`, terminal voltage `v = -y₁`. Its transfer matrix
+`Z_s` maps `i` to the drop `y₁`, not to `v`. The load takes `v` and returns `i` and is strictly
+proper: `ẋ₂ = A₂ x₂ + B₂ v`, `i = C₂ x₂`, with input admittance `Y_L`. Closed-loop states are
+source states then load states. Source references and other external inputs are held at zero.
+Delay, sampling, PWM, switching and nonlinear remainders are excluded; controller or PLL
+dynamics count only as subsystem states. The subsystem premises are the unloaded source
+(`i = 0`) and the load fed by an ideal source (`v = 0`), each small-signal stable. -/
+
 noncomputable section
 namespace powerlib.ImpedanceCriterion
 open Matrix
