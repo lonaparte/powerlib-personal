@@ -15,7 +15,11 @@ proper: `ẋ₂ = A₂ x₂ + B₂ v`, `i = C₂ x₂`, with input admittance `Y
 source states then load states. Source references and other external inputs are held at zero.
 Delay, sampling, PWM, switching and nonlinear remainders are excluded; controller or PLL
 dynamics count only as subsystem states. The subsystem premises are the unloaded source
-(`i = 0`) and the load fed by an ideal source (`v = 0`), each small-signal stable. -/
+(`i = 0`) and the load fed by an ideal source (`v = 0`), each small-signal stable. `transfer`
+uses Mathlib's total inverse, which is zero at an eigenvalue of `A`; under those premises no
+eigenvalue lies in `Re s ≥ 0`, where the criterion is evaluated. Every state of
+`closedLoopModel` is `Fin.append x₁ x₂`, and its solutions are exactly the solutions of the
+coupled port equations (`trajectory_iff_interconnection`). -/
 
 noncomputable section
 namespace powerlib.ImpedanceCriterion
@@ -187,6 +191,34 @@ def sourceModel : LTI.Model n₁ := ⟨ic.source.A⟩
 def loadModel : LTI.Model n₂ := ⟨ic.load.A⟩
 
 omit [DecidableEq κ] in
+@[powerlib_foundation] theorem closedLoopModel_field (x₁ : Fin n₁ → ℝ) (x₂ : Fin n₂ → ℝ) :
+    ic.closedLoopModel.field (Fin.append x₁ x₂) =
+      Fin.append (ic.field x₁ x₂).1 (ic.field x₁ x₂).2 := by
+  have hsplit : Fin.append x₁ x₂ ∘ finSumFinEquiv = Sum.elim x₁ x₂ := by
+    funext i
+    rcases i with i | i <;> simp
+  simp only [LTI.Model.field, generated.linearField_spec, closedLoopModel, Matrix.reindex_apply]
+  rw [Matrix.submatrix_mulVec_equiv, Equiv.symm_symm, hsplit, closedLoop_mulVec]
+  funext i
+  induction i using Fin.addCases with
+  | left j => simp
+  | right j => simp
+
+omit [DecidableEq κ] in
+@[powerlib_foundation] theorem trajectory_iff_interconnection (x₁ : ℝ → Fin n₁ → ℝ)
+    (x₂ : ℝ → Fin n₂ → ℝ) :
+    LTI.IsTrajectory ic.closedLoopModel (fun t => Fin.append (x₁ t) (x₂ t)) ↔
+      ∀ t, HasDerivAt x₁ (ic.field (x₁ t) (x₂ t)).1 t ∧
+        HasDerivAt x₂ (ic.field (x₁ t) (x₂ t)).2 t := by
+  simp only [LTI.IsTrajectory, closedLoopModel_field, hasDerivAt_pi]
+  refine forall_congr' fun t => ⟨fun h => ⟨fun j => ?_, fun j => ?_⟩, fun ⟨h₁, h₂⟩ i => ?_⟩
+  · simpa using h (Fin.castAdd n₂ j)
+  · simpa using h (Fin.natAdd n₁ j)
+  · induction i using Fin.addCases with
+    | left j => simpa using h₁ j
+    | right j => simpa using h₂ j
+
+omit [DecidableEq κ] in
 @[powerlib_foundation] theorem spectrallyStable_closedLoopModel_iff :
     SpectrallyStable ic.closedLoopModel.A ↔ SpectrallyStable ic.closedLoop :=
   LTI.spectrallyStable_reindex finSumFinEquiv ic.closedLoop
@@ -233,12 +265,14 @@ def hiddenMode : PortModel (Fin 1) (Fin 1) := ⟨!![1], 0, 0, 0⟩
 
 @[powerlib_domain] theorem impedanceStable_without_premises_insufficient :
     ∃ ic : Interconnection (Fin 1) (Fin 1) (Fin 1),
-      ic.ImpedanceStable ∧ ¬ SpectrallyStable ic.closedLoop := by
+      ic.ImpedanceStable ∧ ¬ LTI.ExponentiallyStable ic.closedLoopModel := by
   refine ⟨⟨hiddenMode, ⟨!![-1], !![1], !![1], 0⟩, rfl⟩, ?_, ?_⟩
   · intro s _
     simp [Interconnection.returnDifference, Interconnection.sourceImpedance,
       hiddenMode_transfer]
-  · intro h
+  · rw [LTI.exponentiallyStable_iff_spectrallyStable,
+      Interconnection.spectrallyStable_closedLoopModel_iff]
+    intro h
     have := h 1 (by
       rw [Interconnection.characteristicMatrix_closedLoop]
       simp [characteristicMatrix, hiddenMode, Matrix.det_unique])

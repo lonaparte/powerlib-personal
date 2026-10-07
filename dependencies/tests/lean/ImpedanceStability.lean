@@ -20,7 +20,7 @@ variable {κ : Type} [Fintype κ] [DecidableEq κ] {n₁ n₂ : ℕ}
   powerlib_search
 @[powerlib_domain] theorem premises_needed :
     ¬ ∀ ic : Interconnection (Fin 1) (Fin 1) (Fin 1),
-      ic.ImpedanceStable → LTI.SpectrallyStable ic.closedLoop := by
+      ic.ImpedanceStable → LTI.ExponentiallyStable ic.closedLoopModel := by
   intro h
   obtain ⟨ic, himp, hcl⟩ := impedanceStable_without_premises_insufficient
   exact hcl (h ic himp)
@@ -50,8 +50,8 @@ run_cmd do
       unless entry.axioms.all powerlib.Search.allowedAxiom do
         throwError "Unexpected axiom in {name}"
       count := count + 1
-  unless count == 19 do
-    throwError "Expected 19 registered impedance theorems, found {count}"
+  unless count == 21 do
+    throwError "Expected 21 registered impedance theorems, found {count}"
   for name in #[`powerlib.ImpedanceCriterion.Interconnection.spectrallyStable_closedLoop_iff,
       `powerlib.ImpedanceCriterion.Interconnection.exponentiallyStable_iff_impedanceStable,
       `powerlib.ImpedanceCriterion.impedanceStable_without_premises_insufficient] do
@@ -59,6 +59,7 @@ run_cmd do
       throwError "Impedance domain theorem lost its classification: {name}"
   for name in #[`powerlib.ImpedanceCriterion.Interconnection.det_characteristicMatrix_closedLoop,
       `powerlib.ImpedanceCriterion.Interconnection.closedLoop_mulVec,
+      `powerlib.ImpedanceCriterion.Interconnection.trajectory_iff_interconnection,
       `powerlib.ImpedanceCriterion.hiddenMode_transfer] do
     unless powerlib.Registry.kindOf? env name == some .foundation do
       throwError "Impedance foundation result lost its classification: {name}"
