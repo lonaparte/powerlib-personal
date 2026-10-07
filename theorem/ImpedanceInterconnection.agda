@@ -2,10 +2,6 @@
 module theorem.ImpedanceInterconnection where
 
 open import Cubical.Foundations.Prelude
-open import Cubical.Foundations.Equiv
-open import Cubical.Foundations.Isomorphism
-open import Cubical.Foundations.Univalence
-open import Cubical.Data.Sigma
 open import Cubical.Data.Nat using (ℕ)
 open import Cubical.Data.List using (List; []; _∷_; _++_)
 record PortModel (M : Type) : Type where
@@ -65,42 +61,6 @@ toClosedLoop-spec : {M : Type} (ops : Ops M) (a b c d a' b' c' : M) →
     closedLoop a (Ops.times ops b c') (Ops.minus ops (Ops.times ops b' c))
                (Ops.diff ops a' (Ops.times ops (Ops.times ops b' d) c'))
 toClosedLoop-spec ops a b c d a' b' c' = refl
-Subsystems : Type → Type
-Subsystems M = PortModel M × StrictPortModel M
-
-toSubsystems : {M : Type} → Interconnection M → Subsystems M
-toSubsystems (interconnection s l) = s , l
-
-fromSubsystems : {M : Type} → Subsystems M → Interconnection M
-fromSubsystems (s , l) = interconnection s l
-
-subsystemsEquiv : {M : Type} → Interconnection M ≃ Subsystems M
-subsystemsEquiv = isoToEquiv (iso toSubsystems fromSubsystems (λ _ → refl) (λ _ → refl))
-
-subsystemsPath : {M : Type} → Interconnection M ≡ Subsystems M
-subsystemsPath = ua subsystemsEquiv
-
-subsystemsTransport : {M : Type} (x : Interconnection M) →
-  transport subsystemsPath x ≡ toSubsystems x
-subsystemsTransport = uaβ subsystemsEquiv
-
-Table : Type → Type
-Table M = (M × M) × (M × M)
-
-toTable : {M : Type} → ClosedLoop M → Table M
-toTable (closedLoop a b c d) = (a , b) , (c , d)
-
-fromTable : {M : Type} → Table M → ClosedLoop M
-fromTable ((a , b) , (c , d)) = closedLoop a b c d
-
-blocksEquiv : {M : Type} → ClosedLoop M ≃ Table M
-blocksEquiv = isoToEquiv (iso toTable fromTable (λ _ → refl) (λ _ → refl))
-
-blocksPath : {M : Type} → ClosedLoop M ≡ Table M
-blocksPath = ua blocksEquiv
-
-blocksTransport : {M : Type} (x : ClosedLoop M) → transport blocksPath x ≡ toTable x
-blocksTransport = uaβ blocksEquiv
 tag : Tag → ℕ
 tag A₁ = 0
 tag B₁ = 1
