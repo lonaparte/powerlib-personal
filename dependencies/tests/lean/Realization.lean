@@ -1,6 +1,6 @@
 import powerlib
 
-open powerlib powerlib.ImpedanceCriterion
+open powerlib powerlib.ImpedanceCriterion powerlib.Realization
 
 namespace RealizationConsumers
 
@@ -67,30 +67,40 @@ end RealizationConsumers
 open Lean Elab Command in
 run_cmd do
   let env ← getEnv
-  let mut count : Nat := 0
+  let mut base : Nat := 0
+  let mut general : Nat := 0
+  let mut interconnection : Nat := 0
   for name in powerlib.Registry.theoremNames env do
     let some entry := powerlib.Search.describe env name |
       throwError "Registered theorem absent from discovery: {name}"
-    if entry.moduleName == `theorem.Realization then
-      count := count + 1
-  unless count == 50 do
-    throwError "Expected 50 registered realization theorems, found {count}"
+    let user := (Lean.privateToUserName? name).getD name
+    let m := entry.moduleName
+    if m == `theorem.PortTransfer || m == `theorem.Realization then
+      unless (`powerlib.Realization).isPrefixOf user do
+        throwError "General realization theorem outside powerlib.Realization: {name}"
+      if m == `theorem.PortTransfer then base := base + 1 else general := general + 1
+    if m == `theorem.ImpedanceRealization then
+      unless (`powerlib.ImpedanceCriterion).isPrefixOf user do
+        throwError "Interconnection realization theorem outside its namespace: {name}"
+      interconnection := interconnection + 1
+  unless base == 8 && general == 39 && interconnection == 12 do
+    throwError "Expected 8/39/12 base/general/interconnection theorems, found {base}/{general}/{interconnection}"
   for name in #[`powerlib.ImpedanceCriterion.Interconnection.impedanceStable_changeCoordinates_iff,
       `powerlib.ImpedanceCriterion.Interconnection.spectrallyStable_closedLoop_changeCoordinates_iff,
       `powerlib.ImpedanceCriterion.Interconnection.closedLoopPortFin_A,
-      `powerlib.ImpedanceCriterion.controllable_observable_iff_minimal,
-      `powerlib.ImpedanceCriterion.transfer_changeCoordinates,
+      `powerlib.Realization.controllable_observable_iff_minimal,
+      `powerlib.Realization.transfer_changeCoordinates,
       `powerlib.ImpedanceCriterion.Interconnection.closedLoopPort_changeCoordinates,
-      `powerlib.ImpedanceCriterion.markov_eq_of_transfer_eventually_eq,
-      `powerlib.ImpedanceCriterion.similar_of_markov_eq,
-      `powerlib.ImpedanceCriterion.similar_iff_transfer_eq,
+      `powerlib.Realization.markov_eq_of_transfer_eventually_eq,
+      `powerlib.Realization.similar_of_markov_eq,
+      `powerlib.Realization.similar_iff_transfer_eq,
       `powerlib.ImpedanceCriterion.Interconnection.similar_closedLoopPortFin_iff,
-      `powerlib.ImpedanceCriterion.transfer_eq_iff_markov_eq,
-      `powerlib.ImpedanceCriterion.exists_minimal_realization,
+      `powerlib.Realization.transfer_eq_iff_markov_eq,
+      `powerlib.Realization.exists_minimal_realization,
       `powerlib.ImpedanceCriterion.Interconnection.exists_minimal_realization_portImpedance] do
     unless powerlib.Registry.kindOf? env name == some .foundation do
       throwError "Realization foundation result lost its classification: {name}"
-  let some iso := env.find? `powerlib.ImpedanceCriterion.similar_of_markov_eq |
+  let some iso := env.find? `powerlib.Realization.similar_of_markov_eq |
     throwError "The state-space isomorphism theorem is missing"
   for upstream in #[`LinearSystems.IsControllable, `LinearSystems.IsObservable] do
     unless iso.type.getUsedConstants.contains upstream do
@@ -99,7 +109,7 @@ run_cmd do
       throwError "Upstream predicate has no module: {upstream}"
     unless env.header.moduleNames[idx]!.getRoot == `LeanForControl do
       throwError "Minimality predicate is not LeanForControl's: {upstream}"
-  let some reduceProof := (env.find? `powerlib.ImpedanceCriterion.reduce_uncontrollable).bind
+  let some reduceProof := (env.find? `powerlib.Realization.reduce_uncontrollable).bind
       (·.value? (allowOpaque := true)) |
     throwError "The controllability reduction is missing"
   for upstream in #[`LinearSystems.reachableSubspace_invariant,
