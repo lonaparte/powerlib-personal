@@ -104,33 +104,33 @@ omit [DecidableEq ι₁] [DecidableEq ι₂] [DecidableEq κ] in
 
 end Interconnection
 
-@[powerlib_foundation] private lemma complexify_mul {m n p : Type*} [Fintype n]
+@[powerlib_foundation] theorem complexify_mul {m n p : Type*} [Fintype n]
     (M : Matrix m n ℝ) (N : Matrix n p ℝ) : complexify (M * N) = complexify M * complexify N :=
   Matrix.map_mul
 
-@[powerlib_foundation] private lemma complexify_neg {m n : Type*} (M : Matrix m n ℝ) :
+@[powerlib_foundation] theorem complexify_neg {m n : Type*} (M : Matrix m n ℝ) :
     complexify (-M) = -complexify M :=
   Matrix.map_neg _ (fun a => map_neg _ a) M
 
-@[powerlib_foundation] private lemma complexify_sub {m n : Type*} (M N : Matrix m n ℝ) :
+@[powerlib_foundation] theorem complexify_sub {m n : Type*} (M N : Matrix m n ℝ) :
     complexify (M - N) = complexify M - complexify N :=
   Matrix.map_sub _ (fun a b => map_sub _ a b) M N
 
-@[powerlib_foundation] private lemma complexify_zero {m n : Type*} :
+@[powerlib_foundation] theorem complexify_zero {m n : Type*} :
     complexify (0 : Matrix m n ℝ) = 0 :=
   Matrix.map_zero _ (map_zero _)
 
-@[powerlib_foundation] private lemma complexify_fromRows {m₁ m₂ n : Type*}
+@[powerlib_foundation] theorem complexify_fromRows {m₁ m₂ n : Type*}
     (A₁ : Matrix m₁ n ℝ) (A₂ : Matrix m₂ n ℝ) :
     complexify (fromRows A₁ A₂) = fromRows (complexify A₁) (complexify A₂) :=
   fromRows_map _ _ _
 
-@[powerlib_foundation] private lemma complexify_fromCols {m n₁ n₂ : Type*}
+@[powerlib_foundation] theorem complexify_fromCols {m n₁ n₂ : Type*}
     (A₁ : Matrix m n₁ ℝ) (A₂ : Matrix m n₂ ℝ) :
     complexify (fromCols A₁ A₂) = fromCols (complexify A₁) (complexify A₂) :=
   fromCols_map _ _ _
 
-@[powerlib_foundation] private lemma complexify_fromBlocks {l m n o : Type*}
+@[powerlib_foundation] theorem complexify_fromBlocks {l m n o : Type*}
     (A : Matrix n l ℝ) (B : Matrix n m ℝ) (C : Matrix o l ℝ) (D : Matrix o m ℝ) :
     complexify (fromBlocks A B C D) =
       fromBlocks (complexify A) (complexify B) (complexify C) (complexify D) :=

@@ -66,6 +66,53 @@ toClosedLoop-spec : {M : Type} (ops : Ops M) (a b c d a' b' c' : M) →
                (Ops.minus ops c) (Ops.minus ops (Ops.times ops d c'))
                d
 toClosedLoop-spec ops a b c d a' b' c' = refl
+module _ {M : Type} (ops : Ops M) where
+  open Ops ops
+
+  record Laws : Type where
+    field
+      assoc : (x y z : M) → times (times x y) z ≡ times x (times y z)
+      mul-minus : (x y : M) → times x (minus y) ≡ minus (times x y)
+      minus-mul : (x y : M) → times (minus x) y ≡ minus (times x y)
+      mul-diff : (x y z : M) → times x (diff y z) ≡ diff (times x y) (times x z)
+      diff-mul : (x y z : M) → times (diff x y) z ≡ diff (times x z) (times y z)
+
+  changeCoordinates : (t₁ t₁' t₂ t₂' : M) → Interconnection M → Interconnection M
+  changeCoordinates t₁ t₁' t₂ t₂' (interconnection (portModel a b c d) (strictPortModel a' b' c')) =
+    interconnection (portModel (times (times t₁ a) t₁') (times t₁ b) (times c t₁') d)
+                    (strictPortModel (times (times t₂ a') t₂') (times t₂ b') (times c' t₂'))
+
+  conjugate : (t₁ t₁' t₂ t₂' : M) → ClosedLoop M → ClosedLoop M
+  conjugate t₁ t₁' t₂ t₂' (closedLoop a₁₁ a₁₂ a₂₁ a₂₂ b₁ b₂ c₁ c₂ d) =
+    closedLoop (times (times t₁ a₁₁) t₁') (times (times t₁ a₁₂) t₂')
+               (times (times t₂ a₂₁) t₁') (times (times t₂ a₂₂) t₂')
+               (times t₁ b₁) (times t₂ b₂) (times c₁ t₁') (times c₂ t₂') d
+
+  module _ (laws : Laws) where
+    open Laws laws
+
+    sandwich : (t x y t' : M) → times (times t x) (times y t') ≡ times (times t (times x y)) t'
+    sandwich t x y t' =
+      assoc t x (times y t') ∙ cong (times t) (sym (assoc x y t')) ∙ sym (assoc t (times x y) t')
+
+    toClosedLoop-covariant : (t₁ t₁' t₂ t₂' : M) (x : Interconnection M) →
+      toClosedLoop ops (changeCoordinates t₁ t₁' t₂ t₂' x) ≡
+        conjugate t₁ t₁' t₂ t₂' (toClosedLoop ops x)
+    toClosedLoop-covariant t₁ t₁' t₂ t₂'
+        (interconnection (portModel a b c d) (strictPortModel a' b' c')) =
+      λ i → closedLoop (times (times t₁ a) t₁') (p₁₂ i) (p₂₁ i) (p₂₂ i)
+                       (sym (mul-minus t₁ b) i) (assoc t₂ b' d i)
+                       (sym (minus-mul c t₁') i) (p₂ i) d
+      where
+      p₁₂ = sandwich t₁ b c' t₂'
+      p₂₁ = cong minus (sandwich t₂ b' c t₁') ∙ sym (minus-mul (times t₂ (times b' c)) t₁') ∙
+            cong (λ u → times u t₁') (sym (mul-minus t₂ (times b' c)))
+      q = cong (λ u → times u (times c' t₂')) (assoc t₂ b' d) ∙ sandwich t₂ (times b' d) c' t₂'
+      p₂₂ = cong (diff (times (times t₂ a') t₂')) q ∙
+            sym (diff-mul (times t₂ a') (times t₂ (times (times b' d) c')) t₂') ∙
+            cong (λ u → times u t₂') (sym (mul-diff t₂ a' (times (times b' d) c')))
+      p₂ = cong minus (sym (assoc d c' t₂')) ∙ sym (minus-mul (times d c') t₂')
+
 tag : Tag → ℕ
 tag A₁ = 0
 tag B₁ = 1

@@ -27,6 +27,7 @@ roots = ["dependencies.tests.lean.Acceptance", "dependencies.tests.lean.FormalCa
   "dependencies.tests.lean.Hurwitz", "dependencies.tests.lean.ImpedanceStability",
   "dependencies.tests.lean.LCLStorageSynthesis", "dependencies.tests.lean.LTISynthesis",
   "dependencies.tests.lean.Metadata", "dependencies.tests.lean.NativeTheoremUse",
+  "dependencies.tests.lean.Realization",
   "dependencies.tests.lean.RegistryFixture"]
 
 [[lean_lib]]
