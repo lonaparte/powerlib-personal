@@ -48,6 +48,7 @@ example (m : powerlib.Impedance) (s current voltage : ℂ) :
 #check powerlib.ImpedanceCriterion.Interconnection.similar_closedLoopPortFin_iff
 #check powerlib.ImpedanceCriterion.transfer_eq_iff_markov_eq
 #check powerlib.ImpedanceCriterion.exists_minimal_realization
+#check powerlib.ImpedanceCriterion.controllable_observable_iff_minimal
 #check powerlib.ImpedanceCriterion.Interconnection.exists_minimal_realization_portImpedance
 #print axioms powerlib.ImpedanceCriterion.similar_iff_transfer_eq
 #print axioms powerlib.ImpedanceCriterion.exists_minimal_realization

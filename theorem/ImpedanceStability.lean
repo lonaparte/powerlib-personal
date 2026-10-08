@@ -360,16 +360,6 @@ omit [Fintype κ] [DecidableEq κ] in
       complexify m.D := by
   rw [transfer, Matrix.inv_def, Ring.inverse_eq_inv', Matrix.mul_smul, Matrix.smul_mul]
 
-@[powerlib_foundation] theorem Interconnection.portImpedance_eq_adjugate
-    (ic : Interconnection ι₁ ι₂ κ) (s : ℂ)
-    (h₁ : (characteristicMatrix ic.source.A s).det ≠ 0)
-    (h₂ : (characteristicMatrix ic.load.A s).det ≠ 0) (h : ic.returnDifference s ≠ 0) :
-    ic.portImpedance s = ((characteristicMatrix ic.closedLoop s).det)⁻¹ •
-      (complexify ic.closedLoopPort.C * (characteristicMatrix ic.closedLoop s).adjugate *
-        complexify ic.closedLoopPort.B) + complexify ic.closedLoopPort.D := by
-  rw [← ic.transfer_closedLoopPort s h₁ h₂ h, transfer_eq_adjugate]
-  rfl
-
 def hiddenMode : PortModel (Fin 1) (Fin 1) := ⟨!![1], 0, 0, 0⟩
 
 @[powerlib_foundation] theorem hiddenMode_transfer (s : ℂ) : transfer hiddenMode s = 0 := by

@@ -21,25 +21,6 @@ omit [DecidableEq ι] [Fintype ι'] in
     (h : T * S = 1) : complexify T * complexify S = 1 := by
   rw [← Matrix.map_mul, h, Matrix.map_one _ (map_zero _) (map_one _)]
 
-@[powerlib_foundation] theorem isUnit_det_conj_iff {T : Matrix ι' ι ℂ} {S : Matrix ι ι' ℂ}
-    (hTS : T * S = 1) (hST : S * T = 1) (N : Matrix ι ι ℂ) :
-    IsUnit (T * N * S).det ↔ IsUnit N.det := by
-  have hN : S * (T * N * S) * T = N := by
-    calc S * (T * N * S) * T = S * T * N * (S * T) := by simp only [Matrix.mul_assoc]
-      _ = N := by rw [hST, Matrix.one_mul, Matrix.mul_one]
-  constructor
-  · intro hu
-    have key : S * (T * N * S) * T * (S * (T * N * S)⁻¹ * T) = 1 := by
-      calc S * (T * N * S) * T * (S * (T * N * S)⁻¹ * T)
-          = S * (T * N * S * (T * S) * (T * N * S)⁻¹) * T := by simp only [Matrix.mul_assoc]
-        _ = 1 := by rw [hTS, Matrix.mul_one, Matrix.mul_nonsing_inv _ hu, Matrix.mul_one, hST]
-    rw [hN] at key
-    exact Matrix.isUnit_det_of_right_inverse key
-  · intro hu
-    apply Matrix.isUnit_det_of_right_inverse (B := T * N⁻¹ * S)
-    calc T * N * S * (T * N⁻¹ * S) = T * (N * (S * T) * N⁻¹) * S := by simp only [Matrix.mul_assoc]
-      _ = 1 := by rw [hST, Matrix.mul_one, Matrix.mul_nonsing_inv _ hu, Matrix.mul_one, hTS]
-
 @[powerlib_foundation] theorem inv_conj {T : Matrix ι' ι ℂ} {S : Matrix ι ι' ℂ}
     (hTS : T * S = 1) (hST : S * T = 1) (N : Matrix ι ι ℂ) :
     (T * N * S)⁻¹ = T * N⁻¹ * S := by
@@ -47,7 +28,7 @@ omit [DecidableEq ι] [Fintype ι'] in
   · apply Matrix.inv_eq_right_inv
     calc T * N * S * (T * N⁻¹ * S) = T * (N * (S * T) * N⁻¹) * S := by simp only [Matrix.mul_assoc]
       _ = 1 := by rw [hST, Matrix.mul_one, Matrix.mul_nonsing_inv _ h, Matrix.mul_one, hTS]
-  · rw [Matrix.nonsing_inv_apply_not_isUnit _ ((isUnit_det_conj_iff hTS hST N).not.mpr h),
+  · rw [Matrix.nonsing_inv_apply_not_isUnit _ (by rwa [Matrix.det_conj_of_mul_eq_one hTS hST]),
       Matrix.nonsing_inv_apply_not_isUnit _ h, Matrix.mul_zero, Matrix.zero_mul]
 
 omit [Fintype ι'] in
@@ -58,19 +39,16 @@ omit [Fintype ι'] in
   simp only [characteristicMatrix, Matrix.map_mul, Matrix.mul_sub, Matrix.sub_mul,
     Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one, complexify_mul_eq_one hTS]
 
-@[powerlib_foundation] theorem det_characteristicMatrix_conj_eq_zero_iff {T : Matrix ι' ι ℝ}
+@[powerlib_foundation] theorem det_characteristicMatrix_conj {T : Matrix ι' ι ℝ}
     {S : Matrix ι ι' ℝ} (hTS : T * S = 1) (hST : S * T = 1) (A : Matrix ι ι ℝ) (s : ℂ) :
-    (characteristicMatrix (T * A * S) s).det = 0 ↔ (characteristicMatrix A s).det = 0 := by
-  rw [characteristicMatrix_conj hTS]
-  have h := isUnit_det_conj_iff (complexify_mul_eq_one hTS) (complexify_mul_eq_one hST)
-    (characteristicMatrix A s)
-  simp only [isUnit_iff_ne_zero, ne_eq] at h
-  exact not_iff_not.mp h
+    (characteristicMatrix (T * A * S) s).det = (characteristicMatrix A s).det := by
+  rw [characteristicMatrix_conj hTS,
+    Matrix.det_conj_of_mul_eq_one (complexify_mul_eq_one hTS) (complexify_mul_eq_one hST)]
 
 @[powerlib_foundation] theorem spectrallyStable_conj_iff {T : Matrix ι' ι ℝ} {S : Matrix ι ι' ℝ}
     (hTS : T * S = 1) (hST : S * T = 1) (A : Matrix ι ι ℝ) :
     SpectrallyStable (T * A * S) ↔ SpectrallyStable A := by
-  simp only [SpectrallyStable, det_characteristicMatrix_conj_eq_zero_iff hTS hST]
+  simp only [SpectrallyStable, det_characteristicMatrix_conj hTS hST]
 
 omit [Fintype κ] [DecidableEq κ] in
 @[powerlib_foundation] theorem transfer_changeCoordinates {T : Matrix ι' ι ℝ} {S : Matrix ι ι' ℝ}
@@ -151,13 +129,13 @@ include hTS₁ hST₁ hTS₂ hST₂
   simp only [returnDifference, sourceImpedance, loadAdmittance, Interconnection.changeCoordinates,
     transfer_changeCoordinates hTS₁ hST₁, transfer_changeCoordinates hTS₂ hST₂]
 
-@[powerlib_domain] theorem impedanceStable_changeCoordinates_iff :
+@[powerlib_foundation] theorem impedanceStable_changeCoordinates_iff :
     (ic.changeCoordinates T₁ S₁ T₂ S₂).ImpedanceStable ↔ ic.ImpedanceStable := by
   simp only [ImpedanceStable,
     ic.returnDifference_changeCoordinates hTS₁ hST₁ hTS₂ hST₂]
 
 omit [DecidableEq κ] in
-@[powerlib_domain] theorem spectrallyStable_closedLoop_changeCoordinates_iff :
+@[powerlib_foundation] theorem spectrallyStable_closedLoop_changeCoordinates_iff :
     SpectrallyStable (ic.changeCoordinates T₁ S₁ T₂ S₂).closedLoop ↔
       SpectrallyStable ic.closedLoop := by
   rw [closedLoop_changeCoordinates]
@@ -529,20 +507,18 @@ def ctrb (A : Matrix (Fin n) (Fin n) ℝ) (B : Matrix (Fin n) (Fin p) ℝ) (N : 
   rw [obsv_mul]
   simp only [Matrix.of_apply, pow_add, Matrix.mul_assoc]
 
-@[powerlib_foundation] private lemma exists_mul_eq_one {α β : Type*} [Fintype α] [DecidableEq α]
-    [Fintype β] (M : Matrix α β ℝ) (h : ∀ y, ∃ x, M *ᵥ x = y) : ∃ R : Matrix β α ℝ, M * R = 1 := by
-  choose f hf using h
-  refine ⟨Matrix.of fun b a => f (Pi.single a 1) b, ?_⟩
-  ext i j
-  have := congrFun (hf (Pi.single j 1)) i
-  simp only [Matrix.mulVec, dotProduct] at this
-  simp only [Matrix.mul_apply, Matrix.of_apply, this, Matrix.one_apply, Pi.single_apply]
+@[powerlib_foundation] theorem ctrb_eq (A : Matrix (Fin n) (Fin n) ℝ)
+    (B : Matrix (Fin n) (Fin p) ℝ) : ctrb A B n = LinearSystems.controllabilityMatrix A B := rfl
+
+@[powerlib_foundation] theorem obsv_eq (A : Matrix (Fin n) (Fin n) ℝ)
+    (C : Matrix (Fin p) (Fin n) ℝ) : obsv A C n = LinearSystems.observabilityMatrix A C := rfl
 
 @[powerlib_foundation] private lemma ctrb_right_inverse {A : Matrix (Fin n) (Fin n) ℝ}
     {B : Matrix (Fin n) (Fin p) ℝ} (h : LinearSystems.IsControllable A B) :
-    ∃ R : Matrix (Fin n × Fin p) (Fin n) ℝ, ctrb A B n * R = 1 :=
-  exists_mul_eq_one _ ((MatrixAlgebra.mulVec_range_top_iff_rank_eq_card_rows
-    (LinearSystems.controllabilityMatrix A B)).mpr (by
+    ∃ R : Matrix (Fin n × Fin p) (Fin n) ℝ, ctrb A B n * R = 1 := by
+  rw [ctrb_eq]
+  exact Matrix.mulVec_surjective_iff_exists_right_inverse.mp
+    ((MatrixAlgebra.mulVec_range_top_iff_rank_eq_card_rows _).mpr (by
       rw [Fintype.card_fin]
       exact (LinearSystems.isControllable_iff_controllabilityMatrix_rank_eq A B).mp h))
 
@@ -552,13 +528,10 @@ def ctrb (A : Matrix (Fin n) (Fin n) ℝ) (B : Matrix (Fin n) (Fin p) ℝ) (N : 
   have hr : (LinearSystems.observabilityMatrix A C)ᵀ.rank = Fintype.card (Fin n) := by
     rw [Matrix.rank_transpose, Fintype.card_fin]
     exact (LinearSystems.isObservable_iff_observabilityMatrix_rank_eq A C).mp h
-  obtain ⟨R, hR⟩ := exists_mul_eq_one _
-    ((MatrixAlgebra.mulVec_range_top_iff_rank_eq_card_rows _).mpr hr)
-  refine ⟨Rᵀ, ?_⟩
-  calc Rᵀ * obsv A C n = ((LinearSystems.observabilityMatrix A C)ᵀ * R)ᵀ := by
-        rw [Matrix.transpose_mul, Matrix.transpose_transpose]
-        rfl
-    _ = 1 := by rw [hR, Matrix.transpose_one]
+  rw [obsv_eq]
+  refine Matrix.vecMul_surjective_iff_exists_left_inverse.mp fun y => ?_
+  obtain ⟨x, hx⟩ := (MatrixAlgebra.mulVec_range_top_iff_rank_eq_card_rows _).mpr hr y
+  exact ⟨x, by simpa only [Matrix.mulVec_transpose] using hx⟩
 
 omit [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] in
 @[powerlib_foundation] private lemma model_eq {m m' : PortModel ι κ} (hA : m.A = m'.A)
@@ -664,6 +637,16 @@ def Interconnection.closedLoopPortFin {n₁ n₂ : ℕ} (ic : Interconnection (F
   rw [← PEquiv.toMatrix_trans (α := ℝ), ← Equiv.toPEquiv_trans, Equiv.self_trans_symm,
     Equiv.toPEquiv_refl, PEquiv.toMatrix_refl]
 
+omit [DecidableEq κ] in
+@[powerlib_foundation] theorem Interconnection.closedLoopPortFin_A {n₁ n₂ : ℕ}
+    (ic : Interconnection (Fin n₁) (Fin n₂) κ) :
+    ic.closedLoopPortFin.A = ic.closedLoopModel.A := by
+  simp only [Interconnection.closedLoopPortFin, ImpedanceCriterion.changeCoordinates,
+    Interconnection.closedLoopModel, closedLoopPort]
+  rw [PEquiv.toMatrix_toPEquiv_mul, PEquiv.mul_toMatrix_toPEquiv, Matrix.submatrix_submatrix,
+    Matrix.reindex_apply]
+  rfl
+
 @[powerlib_foundation] theorem Interconnection.similar_closedLoopPortFin_iff {n₁ n₂ : ℕ}
     (ic : Interconnection (Fin n₁) (Fin n₂) (Fin p)) {m' : PortModel (Fin n') (Fin p)}
     (hc : LinearSystems.IsControllable ic.closedLoopPortFin.A ic.closedLoopPortFin.B)
@@ -689,8 +672,8 @@ def Interconnection.closedLoopPortFin {n₁ n₂ : ℕ} (ic : Interconnection (F
     have h₁ := (ha₁ x hx₁).1
     have h₂ := (ha₂ x hx₂).1
     have hcl : (characteristicMatrix ic.closedLoop (x : ℂ)).det ≠ 0 := fun h0 =>
-      (ha x hxc).1 ((det_characteristicMatrix_conj_eq_zero_iff finSum_toMatrix_mul
-        toMatrix_finSum_mul ic.closedLoop (x : ℂ)).mpr h0)
+      (ha x hxc).1 ((det_characteristicMatrix_conj finSum_toMatrix_mul
+        toMatrix_finSum_mul ic.closedLoop (x : ℂ)).trans h0)
     have hrd : ic.returnDifference x ≠ 0 := fun h0 => hcl (by
       rw [ic.det_characteristicMatrix_closedLoop x h₁ h₂, h0, mul_zero])
     rw [hport, ic.transfer_closedLoopPort x h₁ h₂ hrd, h x h₁ h₂ hrd (ha' x hx').1]
@@ -713,7 +696,7 @@ def basisMatrix {r : ℕ} {V : Submodule ℝ (Fin n → ℝ)} (b : Module.Basis 
   simp only [basisMatrix, Matrix.mul_apply, Matrix.of_apply]
   exact Finset.sum_congr rfl fun l _ => mul_comm _ _
 
-@[powerlib_foundation] private lemma reduce_uncontrollable {m : PortModel (Fin n) (Fin p)}
+@[powerlib_foundation] theorem reduce_uncontrollable {m : PortModel (Fin n) (Fin p)}
     (h : ¬ LinearSystems.IsControllable m.A m.B) :
     ∃ (r : ℕ) (m' : PortModel (Fin r) (Fin p)), r < n ∧ m'.D = m.D ∧
       ∀ k, markov m' k = markov m k := by
@@ -768,12 +751,6 @@ omit [Fintype κ] [DecidableEq κ] in
   rw [LinearSystems.isObservable_iff_observabilityMatrix_rank_eq,
     LinearSystems.isControllable_iff_controllabilityMatrix_rank_eq, hO, Matrix.rank_transpose]
 
-@[powerlib_foundation] theorem isControllable_iff_isObservable_transpose
-    (A : Matrix (Fin n) (Fin n) ℝ) (B : Matrix (Fin n) (Fin p) ℝ) :
-    LinearSystems.IsControllable A B ↔ LinearSystems.IsObservable Aᵀ Bᵀ := by
-  rw [isObservable_iff_isControllable_transpose, Matrix.transpose_transpose,
-    Matrix.transpose_transpose]
-
 @[powerlib_foundation] private lemma reduce_unobservable {m : PortModel (Fin n) (Fin p)}
     (h : ¬ LinearSystems.IsObservable m.A m.C) :
     ∃ (r : ℕ) (m' : PortModel (Fin r) (Fin p)), r < n ∧ m'.D = m.D ∧
@@ -823,11 +800,36 @@ omit [Fintype κ] [DecidableEq κ] in
     rw [ic.det_characteristicMatrix_closedLoop s h₁ h₂]
     exact mul_ne_zero (mul_ne_zero h₁ h₂) hrd
   have hfin : (characteristicMatrix ic.closedLoopPortFin.A s).det ≠ 0 := fun h0 =>
-    hcl ((det_characteristicMatrix_conj_eq_zero_iff finSum_toMatrix_mul toMatrix_finSum_mul
-      ic.closedLoop s).mp h0)
+    hcl ((det_characteristicMatrix_conj finSum_toMatrix_mul toMatrix_finSum_mul
+      ic.closedLoop s).symm.trans h0)
   rw [hm' s hs hfin, Interconnection.closedLoopPortFin,
     transfer_changeCoordinates finSum_toMatrix_mul toMatrix_finSum_mul,
     ic.transfer_closedLoopPort s h₁ h₂ hrd]
+
+@[powerlib_foundation] theorem controllable_observable_iff_minimal
+    {m : PortModel (Fin n) (Fin p)} :
+    (LinearSystems.IsControllable m.A m.B ∧ LinearSystems.IsObservable m.A m.C) ↔
+      ∀ (n₂ : ℕ) (m₂ : PortModel (Fin n₂) (Fin p)),
+        (∀ s : ℂ, (characteristicMatrix m.A s).det ≠ 0 → (characteristicMatrix m₂.A s).det ≠ 0 →
+          transfer m s = transfer m₂ s) → n ≤ n₂ := by
+  constructor
+  · rintro ⟨hc, ho⟩ n₂ m₂ h
+    obtain ⟨hD, hM⟩ := transfer_eq_iff_markov_eq.mp h
+    obtain ⟨n₃, m₃, hn₃, hc₃, ho₃, hD₃, hM₃⟩ := exists_minimal_markov m₂
+    obtain ⟨T, S, hTS, hST, -⟩ := similar_of_markov_eq hc ho hc₃ ho₃ (hD.trans hD₃.symm)
+      fun k => (hM k).trans (hM₃ k).symm
+    have hcard := Fintype.card_congr (Matrix.indexEquivOfInv hST hTS)
+    simp only [Fintype.card_fin] at hcard
+    omega
+  · intro h
+    by_contra hco
+    rcases not_and_or.mp hco with hc | ho
+    · obtain ⟨r, m', hr, hD, hM⟩ := reduce_uncontrollable hc
+      exact absurd (h r m' (transfer_eq_iff_markov_eq.mpr ⟨hD.symm, fun k => (hM k).symm⟩))
+        (by omega)
+    · obtain ⟨r, m', hr, hD, hM⟩ := reduce_unobservable ho
+      exact absurd (h r m' (transfer_eq_iff_markov_eq.mpr ⟨hD.symm, fun k => (hM k).symm⟩))
+        (by omega)
 
 end Minimal
 
