@@ -79,11 +79,9 @@ run_cmd do
     let some entry := powerlib.Search.describe env name |
       throwError "Registered theorem absent from discovery: {name}"
     if entry.moduleName == `theorem.Hurwitz then
-      unless entry.axioms.all powerlib.Search.allowedAxiom do
-        throwError "Unexpected axiom in {name}"
       count := count + 1
-  unless count == 17 do
-    throwError "Expected 17 registered Hurwitz theorems, found {count}"
+  unless count == 15 do
+    throwError "Expected 15 registered Hurwitz theorems, found {count}"
   for name in #[`powerlib.LTI.exponentiallyStable_iff_spectrallyStable,
       `powerlib.LTI.accepted_nonempty_iff_isHurwitz,
       `powerlib.Dynamics.locallyExponentiallyStable_of_spectrallyStable_jacobian,

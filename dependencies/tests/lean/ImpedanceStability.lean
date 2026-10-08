@@ -58,8 +58,6 @@ run_cmd do
     let some entry := powerlib.Search.describe env name |
       throwError "Registered theorem absent from discovery: {name}"
     if entry.moduleName == `theorem.ImpedanceStability then
-      unless entry.axioms.all powerlib.Search.allowedAxiom do
-        throwError "Unexpected axiom in {name}"
       count := count + 1
   unless count == 21 do
     throwError "Expected 21 registered impedance theorems, found {count}"

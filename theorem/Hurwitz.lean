@@ -45,17 +45,6 @@ def SpectrallyStable (A : Matrix ι ι ℝ) : Prop :=
       rw [characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at hzero
       exact (sub_eq_zero.mp hzero).symm)
 
-@[powerlib_foundation]
-private lemma energy_continuous (P : Matrix (Fin n) (Fin n) ℝ) : Continuous (energy P) := by
-  unfold energy dotProduct Matrix.mulVec
-  fun_prop
-
-@[powerlib_foundation]
-private lemma energy_smul (P : Matrix (Fin n) (Fin n) ℝ) (a : ℝ) (x : State n) :
-    energy P (a • x) = a ^ 2 * energy P x := by
-  simp only [energy, Matrix.mulVec_smul, dotProduct_smul, smul_dotProduct, smul_eq_mul]
-  ring
-
 @[powerlib_domain] theorem accepted_nonempty_of_isHurwitz {m : Model n}
     (h : LinearSystems.IsHurwitz m.A) : Nonempty (Accepted m) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
@@ -66,17 +55,25 @@ private lemma energy_smul (P : Matrix (Fin n) (Fin n) ℝ) (a : ℝ) (x : State 
     h.exists_posDef_unique_solution_continuous_lyapunov 1 Matrix.PosDef.one
   have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
   let e := PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)
-  obtain ⟨α, hα, β, hβα, hb⟩ := powerlib.quadratic_bounds (fun y => energy P (e y))
-    ((energy_continuous P).comp e.continuous)
-    (fun a y => by simpa only [map_smul] using energy_smul P a (e y))
-    (fun y hy => by
-      have hey : e y ≠ 0 := fun h0 => hy (e.injective (by simpa using h0))
-      simpa only [energy, star_trivial] using hP.dotProduct_mulVec_pos hey)
+  obtain ⟨α, hα, β, hβα, hb⟩ := powerlib.quadratic_bounds
+    (fun y => StateSpacePassivity.energy P (e y))
+    ((StateSpacePassivity.energy_continuous P).comp e.continuous)
+    (fun a y => by simpa only [map_smul] using StateSpacePassivity.energy_smul P a (e y))
+    (fun y hy => StateSpacePassivity.energy_positive hP _
+      fun h0 => hy (e.injective (by simpa using h0)))
   have hbound (x : State n) :
-      α * sqNorm x ≤ energy P x ∧ energy P x ≤ β * sqNorm x := by
-    simpa [sqNorm_eq_norm_sq, euclidean] using! hb (euclidean x)
-  exact ⟨⟨P, α, β, hα, hα.trans_le hβα, StateSpacePassivity.symmetric_of_posDef hP,
-    fun x => (hbound x).1, fun x => (hbound x).2, by rw [add_comm]; exact hlyap⟩⟩
+      2 * α * sqNorm x ≤ energy P x ∧ energy P x ≤ 2 * β * sqNorm x := by
+    have h : α * sqNorm x ≤ StateSpacePassivity.energy P x ∧
+        StateSpacePassivity.energy P x ≤ β * sqNorm x := by
+      simpa [sqNorm_eq_norm_sq, euclidean] using! hb (euclidean x)
+    have hx : energy P x = 2 * StateSpacePassivity.energy P x := by
+      simp only [energy, StateSpacePassivity.energy]
+      ring
+    rw [hx]
+    constructor <;> linarith [h.1, h.2]
+  exact ⟨⟨P, 2 * α, 2 * β, mul_pos two_pos hα, mul_pos two_pos (hα.trans_le hβα),
+    StateSpacePassivity.symmetric_of_posDef hP, fun x => (hbound x).1, fun x => (hbound x).2,
+    by rw [add_comm]; exact hlyap⟩⟩
 
 @[powerlib_domain, aesop norm forward (immediate := [h])]
 theorem exponentiallyStable_of_isHurwitz {m : Model n}
