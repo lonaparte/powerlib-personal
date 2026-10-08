@@ -43,6 +43,19 @@ index 3bf0ea1b6ea53f6f91ecd451e3203be560a008ef..94fc11f3ddce9a1edb0a5cc569e4013f
              fun s hs => hf_anti hη (hη.trans_le hs.1) hs.1
        _ = f (a η) * (b η - a η) := by
            rw [intervalIntegral.integral_const_eq]; ring
+diff --git a/LeanForControl/LinearSystems/Controllability/Reachability.lean b/LeanForControl/LinearSystems/Controllability/Reachability.lean
+index 58302e725715a0dce23238cd7509be32a7d96acf..7c4f5063e50d36f5b37f1faec34896c279da3803 100644
+--- a/LeanForControl/LinearSystems/Controllability/Reachability.lean
++++ b/LeanForControl/LinearSystems/Controllability/Reachability.lean
+@@ -128,7 +128,7 @@ theorem reachableSubspace_eq_top_iff_isControllable
+   rw [isControllable_iff_controllabilityMatrix_rank_eq]
+   unfold reachableSubspace
+   rw [LinearMap.range_eq_top]
+-  simpa using
++  simpa using!
+     (MatrixAlgebra.mulVec_range_top_iff_rank_eq_card_rows
+       (controllabilityMatrix A B))
+ 
 diff --git a/LeanForControl/LinearSystems/Stability/Continuous/ExponentialStability.lean b/LeanForControl/LinearSystems/Stability/Continuous/ExponentialStability.lean
 index 5f053ddb8eed8f0e9a7a0ed9eeea896f67946f2c..ae8fd286d346be608cc56369791cbb9e9e39fadd 100644
 --- a/LeanForControl/LinearSystems/Stability/Continuous/ExponentialStability.lean

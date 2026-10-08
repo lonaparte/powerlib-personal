@@ -344,6 +344,154 @@ open scoped Matrix.Norms.Operator in
       exact hb
   exact ⟨hinj hD, fun k => hinj (hM k)⟩
 
+open scoped Matrix.Norms.Operator in
+@[powerlib_foundation] private lemma norm_mul_pow_le {α β : Type*} [Fintype α] [DecidableEq α]
+    [Fintype β] (C : Matrix β α ℂ) (A : Matrix α α ℂ) (N : ℕ) : ‖C * A ^ N‖ ≤ ‖C‖ * ‖A‖ ^ N := by
+  induction N with
+  | zero => simp
+  | succ N ih =>
+    rw [pow_succ, ← Matrix.mul_assoc]
+    calc ‖C * A ^ N * A‖ ≤ ‖C * A ^ N‖ * ‖A‖ := Matrix.linfty_opNorm_mul _ _
+      _ ≤ ‖C‖ * ‖A‖ ^ N * ‖A‖ := by gcongr
+      _ = ‖C‖ * ‖A‖ ^ (N + 1) := by ring
+
+open scoped Matrix.Norms.Operator in
+@[powerlib_foundation] private lemma norm_remainder_le (m : PortModel ι κ) (N : ℕ) (s : ℂ) :
+    ‖complexify m.C * complexify m.A ^ N * (characteristicMatrix m.A s)⁻¹ * complexify m.B‖ ≤
+      ‖complexify m.A‖ ^ N * (‖complexify m.C‖ * ‖(characteristicMatrix m.A s)⁻¹‖ *
+        ‖complexify m.B‖) := by
+  calc _ ≤ ‖complexify m.C * complexify m.A ^ N * (characteristicMatrix m.A s)⁻¹‖ *
+        ‖complexify m.B‖ := Matrix.linfty_opNorm_mul _ _
+    _ ≤ ‖complexify m.C * complexify m.A ^ N‖ * ‖(characteristicMatrix m.A s)⁻¹‖ *
+        ‖complexify m.B‖ := by gcongr; exact Matrix.linfty_opNorm_mul _ _
+    _ ≤ ‖complexify m.C‖ * ‖complexify m.A‖ ^ N * ‖(characteristicMatrix m.A s)⁻¹‖ *
+        ‖complexify m.B‖ := by gcongr; exact norm_mul_pow_le _ _ _
+    _ = _ := by ring
+
+open scoped Matrix.Norms.Operator in
+@[powerlib_foundation] theorem transfer_eventually_eq_of_markov_eq {m : PortModel ι κ}
+    {m' : PortModel ι' κ} (hD : m.D = m'.D) (hM : ∀ k, markov m k = markov m' k) :
+    ∃ s₁ : ℝ, ∀ x : ℝ, s₁ ≤ x → transfer m x = transfer m' x := by
+  obtain ⟨a, ha, hb⟩ := resolvent_bound m
+  obtain ⟨a', ha', hb'⟩ := resolvent_bound m'
+  refine ⟨max (max a a') (‖complexify m.A‖ + ‖complexify m'.A‖ + 1), fun x hx => ?_⟩
+  obtain ⟨hxa₁, hxn⟩ := max_le_iff.mp hx
+  obtain ⟨hxa, hxa'⟩ := max_le_iff.mp hxa₁
+  have hx0 : 0 < x := ha.trans_le hxa
+  have hxc : (x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hx0.ne'
+  have hn := norm_nonneg (complexify m.A)
+  have hn' := norm_nonneg (complexify m'.A)
+  have hdiff : ∀ N, transfer m x - transfer m' x = ((x : ℂ) ^ N)⁻¹ •
+      (complexify m.C * complexify m.A ^ N * (characteristicMatrix m.A (x : ℂ))⁻¹ *
+        complexify m.B - complexify m'.C * complexify m'.A ^ N *
+        (characteristicMatrix m'.A (x : ℂ))⁻¹ * complexify m'.B) := by
+    intro N
+    rw [transfer_expansion m hxc (hb x hxa).1 N, transfer_expansion m' hxc (hb' x hxa').1 N, hD]
+    simp only [hM, smul_sub]
+    abel
+  set K := ‖complexify m.C‖ * ‖(characteristicMatrix m.A (x : ℂ))⁻¹‖ * ‖complexify m.B‖
+  set K' := ‖complexify m'.C‖ * ‖(characteristicMatrix m'.A (x : ℂ))⁻¹‖ * ‖complexify m'.B‖
+  have hlim : Filter.Tendsto (fun N : ℕ => (‖complexify m.A‖ / x) ^ N * K +
+      (‖complexify m'.A‖ / x) ^ N * K') Filter.atTop (nhds 0) := by
+    have h₁ := tendsto_pow_atTop_nhds_zero_of_lt_one (div_nonneg hn hx0.le)
+      ((div_lt_one hx0).mpr (by linarith))
+    have h₂ := tendsto_pow_atTop_nhds_zero_of_lt_one (div_nonneg hn' hx0.le)
+      ((div_lt_one hx0).mpr (by linarith))
+    simpa using (h₁.mul_const K).add (h₂.mul_const K')
+  refine sub_eq_zero.mp (norm_le_zero_iff.mp (ge_of_tendsto' hlim fun N => ?_))
+  have hxN : ‖((x : ℂ) ^ N)⁻¹‖ = (x ^ N)⁻¹ := by
+    rw [norm_inv, norm_pow, Complex.norm_real, Real.norm_of_nonneg hx0.le]
+  rw [hdiff N, norm_smul, hxN]
+  calc (x ^ N)⁻¹ * ‖_ - _‖ ≤ (x ^ N)⁻¹ * (‖complexify m.A‖ ^ N * K + ‖complexify m'.A‖ ^ N * K') := by
+        gcongr
+        exact (norm_sub_le _ _).trans (add_le_add (norm_remainder_le m N _)
+          (norm_remainder_le m' N _))
+    _ = _ := by
+        rw [div_pow, div_pow]
+        field_simp
+
+omit [Fintype κ] [DecidableEq κ] in
+@[powerlib_foundation] private lemma transfer_eq_numerator (m : PortModel ι κ) (s : ℂ) :
+    transfer m s = ((complexify m.A).charpoly.eval s)⁻¹ •
+      ((complexify m.C).map Polynomial.C * (charmatrix (complexify m.A)).adjugate *
+        (complexify m.B).map Polynomial.C).map (Polynomial.eval s) + complexify m.D := by
+  have hchar : (Polynomial.evalRingHom s).mapMatrix (charmatrix (complexify m.A)) =
+      characteristicMatrix m.A s := by
+    ext i j
+    by_cases h : i = j
+    · subst h
+      simp [characteristicMatrix, charmatrix_apply_eq]
+    · simp [characteristicMatrix, charmatrix_apply_ne _ _ _ h, Matrix.one_apply_ne h]
+  have hadj : (charmatrix (complexify m.A)).adjugate.map (Polynomial.evalRingHom s) =
+      (characteristicMatrix m.A s).adjugate := by
+    rw [← hchar, ← RingHom.map_adjugate]
+    rfl
+  rw [transfer_eq_adjugate, LTI.det_characteristicMatrix]
+  congr 2
+  rw [show (Polynomial.eval s : Polynomial ℂ → ℂ) = Polynomial.evalRingHom s from rfl,
+    Matrix.map_mul, Matrix.map_mul, hadj]
+  congr 2 <;> ext <;> simp
+
+omit [Fintype κ] [DecidableEq κ] in
+@[powerlib_foundation] theorem transfer_eq_of_eventually_eq {m : PortModel ι κ}
+    {m' : PortModel ι' κ} (h : ∃ s₁ : ℝ, ∀ x : ℝ, s₁ ≤ x → transfer m x = transfer m' x)
+    (s : ℂ) (hs : (characteristicMatrix m.A s).det ≠ 0)
+    (hs' : (characteristicMatrix m'.A s).det ≠ 0) : transfer m s = transfer m' s := by
+  obtain ⟨s₁, hs₁⟩ := h
+  obtain ⟨a, -, ha⟩ := resolvent_bound m
+  obtain ⟨a', -, ha'⟩ := resolvent_bound m'
+  have hnum := transfer_eq_numerator m
+  have hnum' := transfer_eq_numerator m'
+  have hdet := LTI.det_characteristicMatrix m.A
+  have hdet' := LTI.det_characteristicMatrix m'.A
+  generalize (complexify m.A).charpoly = χ at hnum hdet
+  generalize (complexify m'.A).charpoly = χ' at hnum' hdet'
+  generalize (complexify m.C).map Polynomial.C * (charmatrix (complexify m.A)).adjugate *
+    (complexify m.B).map Polynomial.C = N at hnum
+  generalize (complexify m'.C).map Polynomial.C * (charmatrix (complexify m'.A)).adjugate *
+    (complexify m'.B).map Polynomial.C = N' at hnum'
+  have key : ∀ z, χ.eval z ≠ 0 → χ'.eval z ≠ 0 → ∀ i j,
+      (χ' * N i j + χ * χ' * Polynomial.C (complexify m.D i j) -
+        (χ * N' i j + χ * χ' * Polynomial.C (complexify m'.D i j))).eval z =
+      χ.eval z * χ'.eval z * (transfer m z i j - transfer m' z i j) := by
+    intro z hz hz' i j
+    rw [hnum z, hnum' z]
+    simp only [Polynomial.eval_sub, Polynomial.eval_add, Polynomial.eval_mul, Polynomial.eval_C,
+      Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply, smul_eq_mul]
+    field_simp
+  have hzero : ∀ i j, χ' * N i j + χ * χ' * Polynomial.C (complexify m.D i j) -
+      (χ * N' i j + χ * χ' * Polynomial.C (complexify m'.D i j)) = 0 := by
+    intro i j
+    apply Polynomial.eq_zero_of_infinite_isRoot
+    refine Set.Infinite.mono ?_ ((Set.Ici_infinite (max (max a a') s₁)).image
+      Complex.ofReal_injective.injOn)
+    rintro _ ⟨x, hx, rfl⟩
+    obtain ⟨hxa₁, hx₁⟩ := max_le_iff.mp (Set.mem_Ici.mp hx)
+    obtain ⟨hxa, hxa'⟩ := max_le_iff.mp hxa₁
+    have hz := (ha x hxa).1
+    have hz' := (ha' x hxa').1
+    rw [hdet] at hz
+    rw [hdet'] at hz'
+    show Polynomial.IsRoot _ _
+    rw [Polynomial.IsRoot, key x hz hz' i j, hs₁ x hx₁, sub_self, mul_zero]
+  rw [hdet] at hs
+  rw [hdet'] at hs'
+  ext i j
+  have e := key s hs hs' i j
+  rw [hzero i j, Polynomial.eval_zero] at e
+  exact sub_eq_zero.mp ((mul_eq_zero.mp e.symm).resolve_left (mul_ne_zero hs hs'))
+
+@[powerlib_foundation] theorem transfer_eq_iff_markov_eq {m : PortModel ι κ}
+    {m' : PortModel ι' κ} :
+    (∀ s : ℂ, (characteristicMatrix m.A s).det ≠ 0 → (characteristicMatrix m'.A s).det ≠ 0 →
+      transfer m s = transfer m' s) ↔ m.D = m'.D ∧ ∀ k, markov m k = markov m' k := by
+  refine ⟨fun h => ?_, fun ⟨hD, hM⟩ =>
+    transfer_eq_of_eventually_eq (transfer_eventually_eq_of_markov_eq hD hM)⟩
+  obtain ⟨a, -, ha⟩ := resolvent_bound m
+  obtain ⟨a', -, ha'⟩ := resolvent_bound m'
+  exact markov_eq_of_transfer_eventually_eq ⟨max a a', fun x hx =>
+    h x (ha x (le_of_max_le_left hx)).1 (ha' x (le_of_max_le_right hx)).1⟩
+
 section Minimal
 
 variable {n n' p : ℕ}
@@ -548,6 +696,138 @@ def Interconnection.closedLoopPortFin {n₁ n₂ : ℕ} (ic : Interconnection (F
     rw [hport, ic.transfer_closedLoopPort x h₁ h₂ hrd, h x h₁ h₂ hrd (ha' x hx').1]
   obtain ⟨hD, hM⟩ := markov_eq_of_transfer_eventually_eq hev
   exact similar_of_markov_eq hc ho hc' ho' hD hM
+
+def basisMatrix {r : ℕ} {V : Submodule ℝ (Fin n → ℝ)} (b : Module.Basis (Fin r) ℝ V) :
+    Matrix (Fin n) (Fin r) ℝ :=
+  Matrix.of fun i j => (b j : Fin n → ℝ) i
+
+@[powerlib_foundation] private lemma exists_coords {r : ℕ} {β : Type*}
+    {V : Submodule ℝ (Fin n → ℝ)} (b : Module.Basis (Fin r) ℝ V) (M : Matrix (Fin n) β ℝ)
+    (hM : ∀ j, (fun i => M i j) ∈ V) : ∃ M' : Matrix (Fin r) β ℝ, basisMatrix b * M' = M := by
+  refine ⟨Matrix.of fun l j => b.repr ⟨fun i => M i j, hM j⟩ l, ?_⟩
+  ext i j
+  have h := congrArg (fun y : V => (y : Fin n → ℝ) i) (b.sum_repr ⟨fun i => M i j, hM j⟩)
+  simp only [Submodule.coe_sum, Submodule.coe_smul, Finset.sum_apply, Pi.smul_apply,
+    smul_eq_mul] at h
+  rw [← h]
+  simp only [basisMatrix, Matrix.mul_apply, Matrix.of_apply]
+  exact Finset.sum_congr rfl fun l _ => mul_comm _ _
+
+@[powerlib_foundation] private lemma reduce_uncontrollable {m : PortModel (Fin n) (Fin p)}
+    (h : ¬ LinearSystems.IsControllable m.A m.B) :
+    ∃ (r : ℕ) (m' : PortModel (Fin r) (Fin p)), r < n ∧ m'.D = m.D ∧
+      ∀ k, markov m' k = markov m k := by
+  set V := LinearSystems.reachableSubspace m.A m.B
+  let b := Module.finBasis ℝ V
+  have hinv := (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).mp
+    (LinearSystems.reachableSubspace_invariant m.A m.B)
+  obtain ⟨Ar, hAr⟩ := exists_coords b (m.A * basisMatrix b) fun j => by
+    have hcol : (fun i => (m.A * basisMatrix b) i j) = m.A *ᵥ (b j : Fin n → ℝ) := by
+      funext i
+      simp [basisMatrix, Matrix.mul_apply, Matrix.mulVec, dotProduct]
+    rw [hcol]
+    exact hinv _ (b j).2
+  obtain ⟨Br, hBr⟩ := exists_coords b m.B fun j => by
+    have hcol : (fun i => m.B i j) = m.B *ᵥ Pi.single j 1 := by
+      funext i
+      simp [Matrix.mulVec, dotProduct, Pi.single_apply]
+    rw [hcol]
+    exact LinearSystems.range_B_le_reachableSubspace m.A m.B ⟨Pi.single j 1, rfl⟩
+  refine ⟨Module.finrank ℝ V, ⟨Ar, Br, m.C * basisMatrix b, m.D⟩, ?_, rfl, fun k => ?_⟩
+  · have hV : V ≠ ⊤ := fun hV =>
+      h ((LinearSystems.reachableSubspace_eq_top_iff_isControllable m.A m.B).mp hV)
+    simpa using Submodule.finrank_lt hV
+  · have hpow : ∀ k, m.A ^ k * basisMatrix b = basisMatrix b * Ar ^ k := by
+      intro k
+      induction k with
+      | zero => simp
+      | succ k ih =>
+        rw [pow_succ', Matrix.mul_assoc, ih, ← Matrix.mul_assoc, ← hAr, Matrix.mul_assoc,
+          ← pow_succ']
+    calc m.C * basisMatrix b * Ar ^ k * Br = m.C * (basisMatrix b * Ar ^ k) * Br := by
+          simp only [Matrix.mul_assoc]
+      _ = m.C * (m.A ^ k * basisMatrix b) * Br := by rw [hpow]
+      _ = m.C * m.A ^ k * (basisMatrix b * Br) := by simp only [Matrix.mul_assoc]
+      _ = markov m k := by rw [hBr, markov]
+
+def dualModel (m : PortModel ι κ) : PortModel ι κ := ⟨m.Aᵀ, m.Cᵀ, m.Bᵀ, m.Dᵀ⟩
+
+omit [Fintype κ] [DecidableEq κ] in
+@[powerlib_foundation] theorem markov_dualModel (m : PortModel ι κ) (k : ℕ) :
+    markov (dualModel m) k = (markov m k)ᵀ := by
+  simp [markov, dualModel, Matrix.transpose_mul, Matrix.transpose_pow, Matrix.mul_assoc]
+
+@[powerlib_foundation] theorem isObservable_iff_isControllable_transpose
+    (A : Matrix (Fin n) (Fin n) ℝ) (C : Matrix (Fin p) (Fin n) ℝ) :
+    LinearSystems.IsObservable A C ↔ LinearSystems.IsControllable Aᵀ Cᵀ := by
+  have hO : LinearSystems.observabilityMatrix A C =
+      (LinearSystems.controllabilityMatrix Aᵀ Cᵀ)ᵀ := by
+    ext ⟨k, i⟩ j
+    simp [LinearSystems.observabilityMatrix, LinearSystems.controllabilityMatrix,
+      ← Matrix.transpose_pow, ← Matrix.transpose_mul]
+  rw [LinearSystems.isObservable_iff_observabilityMatrix_rank_eq,
+    LinearSystems.isControllable_iff_controllabilityMatrix_rank_eq, hO, Matrix.rank_transpose]
+
+@[powerlib_foundation] theorem isControllable_iff_isObservable_transpose
+    (A : Matrix (Fin n) (Fin n) ℝ) (B : Matrix (Fin n) (Fin p) ℝ) :
+    LinearSystems.IsControllable A B ↔ LinearSystems.IsObservable Aᵀ Bᵀ := by
+  rw [isObservable_iff_isControllable_transpose, Matrix.transpose_transpose,
+    Matrix.transpose_transpose]
+
+@[powerlib_foundation] private lemma reduce_unobservable {m : PortModel (Fin n) (Fin p)}
+    (h : ¬ LinearSystems.IsObservable m.A m.C) :
+    ∃ (r : ℕ) (m' : PortModel (Fin r) (Fin p)), r < n ∧ m'.D = m.D ∧
+      ∀ k, markov m' k = markov m k := by
+  have hd : ¬ LinearSystems.IsControllable (dualModel m).A (dualModel m).B := by
+    show ¬ LinearSystems.IsControllable m.Aᵀ m.Cᵀ
+    rwa [← isObservable_iff_isControllable_transpose]
+  obtain ⟨r, m₁, hr, hD, hM⟩ := reduce_uncontrollable hd
+  refine ⟨r, dualModel m₁, hr, ?_, fun k => ?_⟩
+  · simp [dualModel, hD]
+  · rw [markov_dualModel, hM, markov_dualModel, Matrix.transpose_transpose]
+
+@[powerlib_foundation] theorem exists_minimal_markov (m : PortModel (Fin n) (Fin p)) :
+    ∃ (n' : ℕ) (m' : PortModel (Fin n') (Fin p)), n' ≤ n ∧
+      LinearSystems.IsControllable m'.A m'.B ∧ LinearSystems.IsObservable m'.A m'.C ∧
+        m'.D = m.D ∧ ∀ k, markov m' k = markov m k := by
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    by_cases hc : LinearSystems.IsControllable m.A m.B
+    · by_cases ho : LinearSystems.IsObservable m.A m.C
+      · exact ⟨n, m, le_rfl, hc, ho, rfl, fun _ => rfl⟩
+      · obtain ⟨r, m₁, hr, hD, hM⟩ := reduce_unobservable ho
+        obtain ⟨n', m', hn', hc', ho', hD', hM'⟩ := ih r hr m₁
+        exact ⟨n', m', hn'.trans hr.le, hc', ho', hD'.trans hD, fun k => (hM' k).trans (hM k)⟩
+    · obtain ⟨r, m₁, hr, hD, hM⟩ := reduce_uncontrollable hc
+      obtain ⟨n', m', hn', hc', ho', hD', hM'⟩ := ih r hr m₁
+      exact ⟨n', m', hn'.trans hr.le, hc', ho', hD'.trans hD, fun k => (hM' k).trans (hM k)⟩
+
+@[powerlib_foundation] theorem exists_minimal_realization (m : PortModel (Fin n) (Fin p)) :
+    ∃ (n' : ℕ) (m' : PortModel (Fin n') (Fin p)), n' ≤ n ∧
+      LinearSystems.IsControllable m'.A m'.B ∧ LinearSystems.IsObservable m'.A m'.C ∧
+        ∀ s : ℂ, (characteristicMatrix m'.A s).det ≠ 0 → (characteristicMatrix m.A s).det ≠ 0 →
+          transfer m' s = transfer m s := by
+  obtain ⟨n', m', hn, hc, ho, hD, hM⟩ := exists_minimal_markov m
+  exact ⟨n', m', hn, hc, ho, transfer_eq_iff_markov_eq.mpr ⟨hD, hM⟩⟩
+
+@[powerlib_foundation] theorem Interconnection.exists_minimal_realization_portImpedance
+    {n₁ n₂ : ℕ} (ic : Interconnection (Fin n₁) (Fin n₂) (Fin p)) :
+    ∃ (n' : ℕ) (m' : PortModel (Fin n') (Fin p)), n' ≤ n₁ + n₂ ∧
+      LinearSystems.IsControllable m'.A m'.B ∧ LinearSystems.IsObservable m'.A m'.C ∧
+        ∀ s : ℂ, (characteristicMatrix ic.source.A s).det ≠ 0 →
+          (characteristicMatrix ic.load.A s).det ≠ 0 → ic.returnDifference s ≠ 0 →
+            (characteristicMatrix m'.A s).det ≠ 0 → transfer m' s = ic.portImpedance s := by
+  obtain ⟨n', m', hn, hc, ho, hm'⟩ := exists_minimal_realization ic.closedLoopPortFin
+  refine ⟨n', m', hn, hc, ho, fun s h₁ h₂ hrd hs => ?_⟩
+  have hcl : (characteristicMatrix ic.closedLoop s).det ≠ 0 := by
+    rw [ic.det_characteristicMatrix_closedLoop s h₁ h₂]
+    exact mul_ne_zero (mul_ne_zero h₁ h₂) hrd
+  have hfin : (characteristicMatrix ic.closedLoopPortFin.A s).det ≠ 0 := fun h0 =>
+    hcl ((det_characteristicMatrix_conj_eq_zero_iff finSum_toMatrix_mul toMatrix_finSum_mul
+      ic.closedLoop s).mp h0)
+  rw [hm' s hs hfin, Interconnection.closedLoopPortFin,
+    transfer_changeCoordinates finSum_toMatrix_mul toMatrix_finSum_mul,
+    ic.transfer_closedLoopPort s h₁ h₂ hrd]
 
 end Minimal
 
