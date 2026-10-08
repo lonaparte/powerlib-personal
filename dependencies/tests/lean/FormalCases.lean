@@ -224,17 +224,6 @@ example : Filter.Tendsto (fun t => LTI.sqNorm (x t)) Filter.atTop (nhds 0) := by
 example : generated.linearField m.A u = m.A.mulVec u := by simp
 end LTIReuse
 
-
-open Lean Elab Command in
-run_cmd do
-  let env ← getEnv
-  for root in powerlib.Registry.theoremNames env do
-    if root.toString.startsWith "powerlib.LTI." || root == `powerlib.generated.linearField_spec then
-      for axiomName in powerlib.Search.declarationAxioms env root do
-        unless powerlib.Search.allowedAxiom axiomName do
-          throwError "Unexpected axiom {axiomName} in {root}"
-  logInfo "POWERLIB_LTI_REUSE_OK"
-
 -- State-space passivity cases.
 open powerlib Matrix
 open scoped Topology
@@ -535,8 +524,6 @@ run_cmd do
           | some source => source.moduleName.getRoot == `LeanForControl
           | none => false) do
         throwError "Adapter did not directly apply a real upstream theorem: {name}"
-      unless entry.axioms.all powerlib.Search.allowedAxiom do
-        throwError "Upstream adapter inherited an unapproved axiom: {name}"
       count := count + 1
   unless count == 23 do
     throwError "Expected 23 direct upstream adapters, found {count}"

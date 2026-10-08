@@ -32,3 +32,24 @@ example (m : powerlib.Impedance) (s current voltage : ℂ) :
 #check powerlib.LTI.Accepted.exponentially_stable
 #check powerlib.LTI.trajectory_exists
 #print axioms powerlib.LTI.Accepted.exponentially_stable
+
+#check powerlib.LTI.exponentiallyStable_iff_spectrallyStable
+#check powerlib.LTI.accepted_nonempty_iff_isHurwitz
+#check powerlib.Dynamics.locallyExponentiallyStable_of_spectrallyStable_jacobian
+#check powerlib.Dynamics.unstable_of_characteristic_root_re_pos
+#print axioms powerlib.LTI.exponentiallyStable_iff_isHurwitz
+
+#check powerlib.ImpedanceCriterion.Interconnection.exponentiallyStable_iff_impedanceStable
+#check powerlib.ImpedanceCriterion.Interconnection.det_characteristicMatrix_closedLoop
+#check powerlib.ImpedanceCriterion.impedanceStable_without_premises_insufficient
+#check powerlib.ImpedanceCriterion.Interconnection.transfer_closedLoopPort
+#check powerlib.ImpedanceCriterion.Interconnection.impedanceStable_changeCoordinates_iff
+#check powerlib.ImpedanceCriterion.similar_iff_transfer_eq
+#check powerlib.ImpedanceCriterion.Interconnection.similar_closedLoopPortFin_iff
+#check powerlib.ImpedanceCriterion.transfer_eq_iff_markov_eq
+#check powerlib.ImpedanceCriterion.exists_minimal_realization
+#check powerlib.ImpedanceCriterion.controllable_observable_iff_minimal
+#check powerlib.ImpedanceCriterion.Interconnection.exists_minimal_realization_portImpedance
+#print axioms powerlib.ImpedanceCriterion.similar_iff_transfer_eq
+#print axioms powerlib.ImpedanceCriterion.exists_minimal_realization
+#print axioms powerlib.ImpedanceCriterion.Interconnection.exponentiallyStable_iff_impedanceStable

@@ -43,6 +43,19 @@ index 3bf0ea1b6ea53f6f91ecd451e3203be560a008ef..94fc11f3ddce9a1edb0a5cc569e4013f
              fun s hs => hf_anti hη (hη.trans_le hs.1) hs.1
        _ = f (a η) * (b η - a η) := by
            rw [intervalIntegral.integral_const_eq]; ring
+diff --git a/LeanForControl/LinearSystems/Controllability/Reachability.lean b/LeanForControl/LinearSystems/Controllability/Reachability.lean
+index 58302e725715a0dce23238cd7509be32a7d96acf..7c4f5063e50d36f5b37f1faec34896c279da3803 100644
+--- a/LeanForControl/LinearSystems/Controllability/Reachability.lean
++++ b/LeanForControl/LinearSystems/Controllability/Reachability.lean
+@@ -128,7 +128,7 @@ theorem reachableSubspace_eq_top_iff_isControllable
+   rw [isControllable_iff_controllabilityMatrix_rank_eq]
+   unfold reachableSubspace
+   rw [LinearMap.range_eq_top]
+-  simpa using
++  simpa using!
+     (MatrixAlgebra.mulVec_range_top_iff_rank_eq_card_rows
+       (controllabilityMatrix A B))
+ 
 diff --git a/LeanForControl/LinearSystems/Stability/Continuous/ExponentialStability.lean b/LeanForControl/LinearSystems/Stability/Continuous/ExponentialStability.lean
 index 5f053ddb8eed8f0e9a7a0ed9eeea896f67946f2c..ae8fd286d346be608cc56369791cbb9e9e39fadd 100644
 --- a/LeanForControl/LinearSystems/Stability/Continuous/ExponentialStability.lean
@@ -56,6 +69,124 @@ index 5f053ddb8eed8f0e9a7a0ed9eeea896f67946f2c..ae8fd286d346be608cc56369791cbb9e
        norm_lt_one_of_mem_spectrum_exp_complexification hA hz
  
  /-- A real Hurwitz matrix has a positive integer-time exponential block with Frobenius norm
+diff --git a/LeanForControl/LinearSystems/Stability/Continuous/LyapunovEquation.lean b/LeanForControl/LinearSystems/Stability/Continuous/LyapunovEquation.lean
+index 3ce95d5f40e20759c82279c6305648c8fb2de08d..b504ca09ceb3eb42645eb24dc13cb9001ac5ad5c 100644
+--- a/LeanForControl/LinearSystems/Stability/Continuous/LyapunovEquation.lean
++++ b/LeanForControl/LinearSystems/Stability/Continuous/LyapunovEquation.lean
+@@ -29,6 +29,18 @@ variable {n : ℕ}
+ 
+ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
+ 
++-- Compatibility (Lean 4.34.1 / pinned Mathlib): the Frobenius uniformity agrees with the
++-- product uniformity only at default transparency, so expose the two derived instances
++-- that instance resolution can no longer assemble on its own.
++noncomputable local instance frobeniusENormedAddMonoid :
++    ENormedAddMonoid (Matrix (Fin n) (Fin n) ℝ) :=
++  (NormedAddCommGroup.toENormedAddCommMonoid :
++    ENormedAddCommMonoid (Matrix (Fin n) (Fin n) ℝ)).toENormedAddMonoid
++
++noncomputable local instance frobeniusOpNormedRing :
++    NormedRing (Matrix (Fin n) (Fin n) ℝ →L[ℝ] Matrix (Fin n) (Fin n) ℝ) :=
++  ContinuousLinearMap.toNormedRing
++
+ /-- `P` solves the continuous-time Lyapunov equation for `A` and `Q` when
+ `P A + Aᵀ P = -Q`.
+ 
+@@ -92,7 +104,7 @@ private lemma hasDerivAt_lyapunovKernel_operator
+       (lyapunovKernel A (X * A + Aᵀ * X) t) t := by
+   have hleft := (hasDerivAt_exp_smul_const Aᵀ t).mul_const X
+   have hright := hasDerivAt_exp_smul_const' A t
+-  simpa only [lyapunovKernel, mul_add, add_mul, mul_assoc, add_comm] using hleft.mul hright
++  simpa only [lyapunovKernel, mul_add, add_mul, mul_assoc, add_comm] using! hleft.mul hright
+ 
+ private lemma hasDerivAt_lyapunovKernel
+     (A Q : Matrix (Fin n) (Fin n) ℝ) (t : ℝ) :
+@@ -100,7 +112,7 @@ private lemma hasDerivAt_lyapunovKernel
+       (Aᵀ * lyapunovKernel A Q t + lyapunovKernel A Q t * A) t := by
+   have hleft := (hasDerivAt_exp_smul_const' Aᵀ t).mul_const Q
+   have hright := hasDerivAt_exp_smul_const A t
+-  simpa only [lyapunovKernel, mul_assoc] using hleft.mul hright
++  simpa only [lyapunovKernel, mul_assoc] using! hleft.mul hright
+ 
+ private lemma continuous_lyapunovKernel
+     (A Q : Matrix (Fin n) (Fin n) ℝ) : Continuous (lyapunovKernel A Q) := by
+@@ -135,7 +147,7 @@ private lemma finiteLyapunovIntegral_lyapunovOperator
+     finiteLyapunovIntegral A Q m * A + Aᵀ * finiteLyapunovIntegral A Q m =
+         L (finiteLyapunovIntegral A Q m) := rfl
+     _ = ∫ t in (0 : ℝ)..(m : ℝ), L (lyapunovKernel A Q t) := by
+-      simpa only [finiteLyapunovIntegral] using hmap.symm
++      simpa only [finiteLyapunovIntegral] using! hmap.symm
+     _ = finiteLyapunovIntegral A (Q * A + Aᵀ * Q) m := by
+       apply intervalIntegral.integral_congr
+       intro t _
+@@ -167,7 +179,7 @@ private lemma tendsto_conjugationOperator_pow_apply_zero
+   have hpows := tendsto_pow_atTop_nhds_zero_of_norm_lt_one
+     (show ‖T‖ < 1 from conjugationOperator_norm_lt_one C hC)
+   have happ := ev.continuous.continuousAt.tendsto.comp hpows
+-  simpa [ev, Function.comp_def] using happ
++  exact happ
+ 
+ private lemma eq_zero_of_conjugationOperator_fixed
+     (C X : Matrix (Fin n) (Fin n) ℝ) (hC : ‖C‖ < 1)
+@@ -212,7 +224,7 @@ private lemma finiteLyapunovIntegral_posDef
+       finiteLyapunovIntegral A Q m i j =
+         ∫ t in (0 : ℝ)..(m : ℝ), lyapunovKernel A Q t i j := by
+     have h := (entryCLM i j).intervalIntegral_comp_comm hint
+-    simpa [entryCLM, Function.comp_def, finiteLyapunovIntegral] using h.symm
++    simpa [entryCLM, Function.comp_def, finiteLyapunovIntegral] using! h.symm
+   have hkernelHermitian (t : ℝ) : (lyapunovKernel A Q t).IsHermitian := by
+     let B := NormedSpace.exp (t • A)
+     have hleft : NormedSpace.exp (t • Aᵀ) = Bᴴ := by
+@@ -237,7 +249,7 @@ private lemma finiteLyapunovIntegral_posDef
+           ∫ t in (0 : ℝ)..(m : ℝ),
+             dotProduct (star x) (lyapunovKernel A Q t *ᵥ x) := by
+       have h := (quadraticEvalCLM x).intervalIntegral_comp_comm hint
+-      simpa [quadraticEvalCLM, Function.comp_def, finiteLyapunovIntegral] using h.symm
++      simpa [quadraticEvalCLM, Function.comp_def, finiteLyapunovIntegral] using! h.symm
+     have hquadraticPos (t : ℝ) :
+         0 < dotProduct (star x) (lyapunovKernel A Q t *ᵥ x) := by
+       let B := NormedSpace.exp (t • A)
+@@ -270,6 +282,7 @@ private lemma posDef_conjugationOperator
+   have hconj : conjugationOperator C X = Cᴴ * X * C := by
+     ext i j
+     simp [conjugationOperator]
++    rfl
+   rw [hconj]
+   apply Matrix.PosDef.of_dotProduct_mulVec_pos
+   · exact Matrix.isHermitian_conjTranspose_mul_mul C hX.isHermitian
+@@ -289,9 +302,20 @@ private lemma summable_conjugationOperator_pow_apply
+       (Matrix (Fin n) (Fin n) ℝ →L[ℝ] Matrix (Fin n) (Fin n) ℝ) →L[ℝ]
+         Matrix (Fin n) (Fin n) ℝ :=
+     (ContinuousLinearMap.apply ℝ (Matrix (Fin n) (Fin n) ℝ)) X
+-  have hs := (summable_geometric_of_norm_lt_one
+-    (conjugationOperator_norm_lt_one C hC)).map ev ev.continuous
+-  simpa [ev, Function.comp_def] using hs
++  -- Compatibility: bound the iterates directly instead of summing the operator series,
++  -- whose completeness instance is not assembled at the pinned Mathlib.
++  have hT := conjugationOperator_norm_lt_one C hC
++  have hbound (k : ℕ) :
++      ‖((conjugationOperator C) ^ k) X‖ ≤ ‖conjugationOperator C‖ ^ k * ‖X‖ := by
++    induction k with
++    | zero => simp
++    | succ k ih =>
++      rw [pow_succ', ContinuousLinearMap.mul_apply, pow_succ, mul_comm _ ‖conjugationOperator C‖,
++        mul_assoc]
++      exact (ContinuousLinearMap.le_opNorm _ _).trans
++        (mul_le_mul_of_nonneg_left ih (norm_nonneg _))
++  exact Summable.of_norm_bounded
++    ((summable_geometric_of_lt_one (norm_nonneg _) hT).mul_right ‖X‖) hbound
+ 
+ private lemma lyapunovOperator_conjugationOperator
+     (A C X : Matrix (Fin n) (Fin n) ℝ) (hAC : Commute A C) :
+@@ -338,7 +362,7 @@ private lemma tsum_conjugationOperator_pow_apply_posDef
+   have hentry (i j : Fin n) :
+       (∑' k : ℕ, term k) i j = ∑' k : ℕ, term k i j := by
+     have h := (entryCLM i j).map_tsum hs
+-    simpa [entryCLM, Function.comp_def] using h
++    simpa [entryCLM, Function.comp_def] using! h
+   apply Matrix.PosDef.of_dotProduct_mulVec_pos
+   · rw [Matrix.IsHermitian]
+     ext i j
 diff --git a/LeanForControl/MatrixAlgebra/Exponential.lean b/LeanForControl/MatrixAlgebra/Exponential.lean
 index 9128433f795955251c8975d1f6dfcb346d10a690..68912746dc011b9b89c2858848e4b5ab1554fcb4 100644
 --- a/LeanForControl/MatrixAlgebra/Exponential.lean
@@ -69,6 +200,48 @@ index 9128433f795955251c8975d1f6dfcb346d10a690..68912746dc011b9b89c2858848e4b5ab
  
  section FinitePolynomial
  
+diff --git a/LeanForControl/MatrixAlgebra/QuadraticForm.lean b/LeanForControl/MatrixAlgebra/QuadraticForm.lean
+index 2266e2fb0d9bf95b329d88a7e86ee0061f24f2f5..88034bd2933e16edfc267c32e75bcbb4bb169293 100644
+--- a/LeanForControl/MatrixAlgebra/QuadraticForm.lean
++++ b/LeanForControl/MatrixAlgebra/QuadraticForm.lean
+@@ -3,6 +3,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
+ import Mathlib.Analysis.Matrix.PosDef
+ import Mathlib.Analysis.Normed.Module.FiniteDimension
+ import Mathlib.Data.Real.StarOrdered
++import Mathlib.Algebra.Order.Star.Real
+ import Mathlib.LinearAlgebra.QuadraticForm.Basic
+ import Mathlib.Topology.Order.Compact
+ import Architect
+@@ -70,7 +71,8 @@ instead of reproving it.
+ Reference: `Matrix.toQuadraticMap'` and `LinearMap.BilinMap.toQuadraticMap`. -/
+ lemma quadraticForm_eq_toQuadraticMap' (P : Matrix (Fin n) (Fin n) ℝ) (x : ℝⁿ) :
+     quadraticForm P x = P.toQuadraticMap' (WithLp.ofLp x) := by
+-  rw [quadraticForm, Matrix.toQuadraticMap', LinearMap.BilinMap.toQuadraticMap_apply,
++  rw [quadraticForm, Matrix.toQuadraticMap', Matrix.toQuadraticForm',
++    LinearMap.BilinMap.toQuadraticMap_apply,
+     Matrix.toLinearMap₂'_apply']
+   simp only [Matrix.ofLp_toEuclideanCLM, PiLp.inner_apply, dotProduct]
+   exact Finset.sum_congr rfl (fun i _ => mul_comm _ _)
+@@ -117,7 +119,8 @@ Reference: linearity of `Matrix.toQuadraticMap'` (via `Matrix.toLinearMap₂'`).
+ lemma quadraticForm_matrix_add
+     (P Q : Matrix (Fin n) (Fin n) ℝ) (x : ℝⁿ) :
+     quadraticForm (P + Q) x = quadraticForm P x + quadraticForm Q x := by
+-  simp only [quadraticForm_eq_toQuadraticMap', Matrix.toQuadraticMap', map_add]
++  simp only [quadraticForm_eq_toQuadraticMap', Matrix.toQuadraticMap', Matrix.toQuadraticForm',
++    map_add]
+   rfl
+ 
+ /-- A matrix quadratic form is homogeneous in its representing matrix.
+@@ -126,7 +129,8 @@ Reference: linearity of `Matrix.toQuadraticMap'` (via `Matrix.toLinearMap₂'`).
+ lemma quadraticForm_matrix_smul
+     (c : ℝ) (P : Matrix (Fin n) (Fin n) ℝ) (x : ℝⁿ) :
+     quadraticForm (c • P) x = c * quadraticForm P x := by
+-  simp only [quadraticForm_eq_toQuadraticMap', Matrix.toQuadraticMap', map_smul]
++  simp only [quadraticForm_eq_toQuadraticMap', Matrix.toQuadraticMap', Matrix.toQuadraticForm',
++    map_smul]
+   rfl
+ 
+ /-- In positive dimension, a positive-definite matrix quadratic form uniformly dominates
 diff --git a/LeanForControl/MatrixAlgebra/Spectrum.lean b/LeanForControl/MatrixAlgebra/Spectrum.lean
 index d5f3a6cf5c9cd3d44f869fea689ee5857b89c656..e1c8aea9f99dd8e3c7b4b26a26f281b2e6fe0cf5 100644
 --- a/LeanForControl/MatrixAlgebra/Spectrum.lean
@@ -167,6 +340,65 @@ index b070f7eb9bfd64426b25fb21ea2a246f6dd49339..8efcdae5f0fd4797001bd79c914f129f
        (mem_interior_iff_mem_nhds.mp ht)).add ((hasDerivAt_id t).const_mul c)
    apply antitoneOn_of_deriv_nonpos hs
    · exact (hV_cont.comp_continuousOn hφ.continuousOn).add
+diff --git a/LeanForControl/Stability/LyapunovIndirect/Chetaev.lean b/LeanForControl/Stability/LyapunovIndirect/Chetaev.lean
+index ecf7758a5c3f4f237390c5b7e41669fe17cbf539..025de4642e8298e59cc790122137e527d0d3cbed 100644
+--- a/LeanForControl/Stability/LyapunovIndirect/Chetaev.lean
++++ b/LeanForControl/Stability/LyapunovIndirect/Chetaev.lean
+@@ -85,7 +85,7 @@ private theorem exists_cutoff_forward_segment
+   let L : ℝ≥0 := ⟨C, hC0⟩
+   obtain ⟨φ, hφ0, hφg⟩ :=
+     exists_forward_segment_of_lipschitz_bounded g K L hg_lip
+-      (fun x ↦ by simpa [L] using hC x) hT x₀
++      (fun x ↦ by simpa [L] using! hC x) hT x₀
+   refine ⟨φ, hφ0, hφg.continuousOn, ?_⟩
+   intro t ht hball
+   have hb_one : b (φ t) = 1 := by
+@@ -123,7 +123,7 @@ private theorem exponential_lower_bound_on_forward_segment
+         (Real.exp (-(2 * α) * t) * (-(2 * α))) t := by
+       simpa only [id, mul_one] using
+         ((hasDerivAt_id t).const_mul (-(2 * α))).exp
+-    simpa [W, W', Function.comp_def] using hexp.mul hVφ
++    simpa [W, W', Function.comp_def] using! hexp.mul hVφ
+   have hWderiv_nonneg : ∀ t ∈ Ioo (0 : ℝ) T, 0 ≤ W' t := by
+     intro t ht
+     have hg := hgrowth t (Ioo_subset_Icc_self ht)
+diff --git a/LeanForControl/Stability/LyapunovIndirect/Linearization.lean b/LeanForControl/Stability/LyapunovIndirect/Linearization.lean
+index e780b66664bba1b09f13fe41d8e1a290c78023c9..a9fc373dd4c42a966f762c6ef8ebae531b5d0113 100644
+--- a/LeanForControl/Stability/LyapunovIndirect/Linearization.lean
++++ b/LeanForControl/Stability/LyapunovIndirect/Linearization.lean
+@@ -164,7 +164,7 @@ private theorem locallyExponentiallyStable_of_continuousLyapunovEquation
+       have hWderiv : HasDerivAt (fun q : ℝ ↦ Real.exp (k * q) * V (φ q))
+           (Real.exp (k * s) *
+             (k * V (φ s) + fderiv ℝ V (φ s) (f (φ s)))) s := by
+-        convert (((hasDerivAt_id s).const_mul k).exp.mul hVcurve) using 1
++        convert! (((hasDerivAt_id s).const_mul k).exp.mul hVcurve) using 1
+         simp only [id_eq, Function.comp_apply]
+         ring
+       rw [hWderiv.deriv]
+diff --git a/LeanForControl/Stability/LyapunovIndirect/LinearizationInstability.lean b/LeanForControl/Stability/LyapunovIndirect/LinearizationInstability.lean
+index 6c2b227a66647968f70fd9248c34d88014411d44..f6ae77c786e9e1fd572ca9685fc8c694c2046f6a 100644
+--- a/LeanForControl/Stability/LyapunovIndirect/LinearizationInstability.lean
++++ b/LeanForControl/Stability/LyapunovIndirect/LinearizationInstability.lean
+@@ -45,7 +45,7 @@ private lemma hasDerivAt_realEigenmode
+     rw [hasDerivAt_pi]
+     intro i
+     have hcoe : HasDerivAt (fun s : ℝ => (s : ℂ)) 1 t := by
+-      simpa using Complex.ofRealCLM.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_id t)
++      simpa using! Complex.ofRealCLM.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_id t)
+     have hlin : HasDerivAt (fun s : ℝ => μ * (s : ℂ)) μ t := by
+       simpa using hcoe.const_mul μ
+     have hexp : HasDerivAt (fun s : ℝ => Complex.exp (μ * (s : ℂ)))
+@@ -56,8 +56,8 @@ private lemma hasDerivAt_realEigenmode
+         (q * (Complex.exp (μ * (t : ℂ)) * μ) * v i) t :=
+       (hexp.const_mul q).mul_const (v i)
+     have hre := Complex.reCLM.hasFDerivAt.comp_hasDerivAt t hcomplex
+-    simpa [Complex.reCLM_apply, mul_assoc] using hre
+-  simpa [realEigenmode] using
++    simpa [Complex.reCLM_apply, mul_assoc] using! hre
++  simpa [realEigenmode] using!
+     (PiLp.hasFDerivAt_toLp 2
+       (fun i => (q * Complex.exp (μ * (t : ℂ)) * v i).re)).comp_hasDerivAt t hraw
+ 
 diff --git a/lakefile.toml b/lakefile.toml
 index 9e3839874ccead83890187542f51e496671c4895..19eeef0072bbd4a957ca03047e635ded05ef98cc 100644
 --- a/lakefile.toml
