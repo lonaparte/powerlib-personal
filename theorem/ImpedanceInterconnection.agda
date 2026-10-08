@@ -19,7 +19,7 @@ record Interconnection (M : Type) : Type where
     load : StrictPortModel M
 record ClosedLoop (M : Type) : Type where
   constructor closedLoop
-  field a₁₁ a₁₂ a₂₁ a₂₂ : M
+  field a₁₁ a₁₂ a₂₁ a₂₂ b₁ b₂ c₁ c₂ d : M
 record Ops (M : Type) : Type where
   field
     times : M → M → M
@@ -50,14 +50,21 @@ eval ops env (sub x y) = Ops.diff ops (eval ops env x) (eval ops env y)
 body : ClosedLoop Expr
 body = closedLoop (mat A₁) (mul (mat B₁) (mat C₂)) (neg (mul (mat B₂) (mat C₁)))
                   (sub (mat A₂) (mul (mul (mat B₂) (mat D₁)) (mat C₂)))
+                  (neg (mat B₁)) (mul (mat B₂) (mat D₁))
+                  (neg (mat C₁)) (neg (mul (mat D₁) (mat C₂)))
+                  (mat D₁)
+mapClosedLoop : {X Y : Type} → (X → Y) → ClosedLoop X → ClosedLoop Y
+mapClosedLoop f (closedLoop a₁₁ a₁₂ a₂₁ a₂₂ b₁ b₂ c₁ c₂ d) =
+  closedLoop (f a₁₁) (f a₁₂) (f a₂₁) (f a₂₂) (f b₁) (f b₂) (f c₁) (f c₂) (f d)
 toClosedLoop : {M : Type} → Ops M → Interconnection M → ClosedLoop M
-toClosedLoop ops x =
-  closedLoop (eval ops (entry x) (ClosedLoop.a₁₁ body)) (eval ops (entry x) (ClosedLoop.a₁₂ body))
-             (eval ops (entry x) (ClosedLoop.a₂₁ body)) (eval ops (entry x) (ClosedLoop.a₂₂ body))
+toClosedLoop ops x = mapClosedLoop (eval ops (entry x)) body
 toClosedLoop-spec : {M : Type} (ops : Ops M) (a b c d a' b' c' : M) →
   toClosedLoop ops (interconnection (portModel a b c d) (strictPortModel a' b' c')) ≡
     closedLoop a (Ops.times ops b c') (Ops.minus ops (Ops.times ops b' c))
                (Ops.diff ops a' (Ops.times ops (Ops.times ops b' d) c'))
+               (Ops.minus ops b) (Ops.times ops b' d)
+               (Ops.minus ops c) (Ops.minus ops (Ops.times ops d c'))
+               d
 toClosedLoop-spec ops a b c d a' b' c' = refl
 tag : Tag → ℕ
 tag A₁ = 0
@@ -75,6 +82,9 @@ encode (neg x) = 2 ∷ encode x
 encode (sub x y) = 3 ∷ (encode x ++ encode y)
 
 wire : List ℕ
-wire = 20261006 ∷ 1 ∷
+wire = 20261006 ∷ 2 ∷
   (encode (ClosedLoop.a₁₁ body) ++ encode (ClosedLoop.a₁₂ body) ++
-   encode (ClosedLoop.a₂₁ body) ++ encode (ClosedLoop.a₂₂ body))
+   encode (ClosedLoop.a₂₁ body) ++ encode (ClosedLoop.a₂₂ body) ++
+   encode (ClosedLoop.b₁ body) ++ encode (ClosedLoop.b₂ body) ++
+   encode (ClosedLoop.c₁ body) ++ encode (ClosedLoop.c₂ body) ++
+   encode (ClosedLoop.d body))

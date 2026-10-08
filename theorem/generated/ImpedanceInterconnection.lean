@@ -1,6 +1,6 @@
 -- Generated from the Agda-normalized executable conversion.
--- Agda source SHA-256: cc098479f49dc6384aa098e29b14cb994c5616307bc0f4706fd599fb39e46f66
--- Wire 20261006 v1: [0, 0, 1, 0, 1, 0, 6, 2, 1, 0, 5, 0, 2, 3, 0, 4, 1, 1, 0, 5, 0, 3, 0, 6]
+-- Agda source SHA-256: 78a2434c846dbdb524a7c4c55005380a40c1bf1274c1679a4965275932f1025e
+-- Wire 20261006 v2: [0, 0, 1, 0, 1, 0, 6, 2, 1, 0, 5, 0, 2, 3, 0, 4, 1, 1, 0, 5, 0, 3, 0, 6, 2, 0, 1, 1, 0, 5, 0, 3, 2, 0, 2, 2, 1, 0, 3, 0, 6, 0, 3]
 import dependencies.Mathlib
 import theorem.Attributes
 
@@ -18,5 +18,35 @@ def closedLoopBlocks {ι₁ ι₂ κ : Type*} [Fintype κ]
     (A₂ : Matrix ι₂ ι₂ ℝ) (B₂ : Matrix ι₂ κ ℝ) (C₂ : Matrix κ ι₂ ℝ) :
     closedLoopBlocks A₁ B₁ C₁ D₁ A₂ B₂ C₂ =
       Matrix.fromBlocks A₁ (B₁ * C₂) (-(B₂ * C₁)) (A₂ - B₂ * D₁ * C₂) := rfl
+
+def closedLoopInput {ι₁ ι₂ κ : Type*} [Fintype κ]
+    (B₁ : Matrix ι₁ κ ℝ) (D₁ : Matrix κ κ ℝ) (B₂ : Matrix ι₂ κ ℝ) :
+    Matrix (ι₁ ⊕ ι₂) κ ℝ :=
+  Matrix.fromRows (-B₁) (B₂ * D₁)
+
+@[simp, powerlib_foundation] theorem closedLoopInput_spec {ι₁ ι₂ κ : Type*} [Fintype κ]
+    (B₁ : Matrix ι₁ κ ℝ) (D₁ : Matrix κ κ ℝ) (B₂ : Matrix ι₂ κ ℝ) :
+    closedLoopInput B₁ D₁ B₂ =
+      Matrix.fromRows (-B₁) (B₂ * D₁) := rfl
+
+def closedLoopOutput {ι₁ ι₂ κ : Type*} [Fintype κ]
+    (C₁ : Matrix κ ι₁ ℝ) (D₁ : Matrix κ κ ℝ) (C₂ : Matrix κ ι₂ ℝ) :
+    Matrix κ (ι₁ ⊕ ι₂) ℝ :=
+  Matrix.fromCols (-C₁) (-(D₁ * C₂))
+
+@[simp, powerlib_foundation] theorem closedLoopOutput_spec {ι₁ ι₂ κ : Type*} [Fintype κ]
+    (C₁ : Matrix κ ι₁ ℝ) (D₁ : Matrix κ κ ℝ) (C₂ : Matrix κ ι₂ ℝ) :
+    closedLoopOutput C₁ D₁ C₂ =
+      Matrix.fromCols (-C₁) (-(D₁ * C₂)) := rfl
+
+def closedLoopFeedthrough {κ : Type*}
+    (D₁ : Matrix κ κ ℝ) :
+    Matrix κ κ ℝ :=
+  D₁
+
+@[simp, powerlib_foundation] theorem closedLoopFeedthrough_spec {κ : Type*}
+    (D₁ : Matrix κ κ ℝ) :
+    closedLoopFeedthrough D₁ =
+      D₁ := rfl
 
 end powerlib.generated

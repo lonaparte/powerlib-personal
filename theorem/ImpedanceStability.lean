@@ -34,6 +34,9 @@ def returnDifference (s : ℂ) : ℂ := (1 + ic.sourceImpedance s * ic.loadAdmit
 
 def ImpedanceStable : Prop := ∀ s : ℂ, 0 ≤ s.re → ic.returnDifference s ≠ 0
 
+def portImpedance (s : ℂ) : Matrix κ κ ℂ :=
+  (1 + ic.sourceImpedance s * ic.loadAdmittance s)⁻¹ * ic.sourceImpedance s
+
 def field (x₁ : ι₁ → ℝ) (x₂ : ι₂ → ℝ) : (ι₁ → ℝ) × (ι₂ → ℝ) :=
   let i := StateSpacePassivity.output ic.load x₂ 0
   let v := -StateSpacePassivity.output ic.source x₁ i
@@ -42,6 +45,19 @@ def field (x₁ : ι₁ → ℝ) (x₂ : ι₂ → ℝ) : (ι₁ → ℝ) × (ι
 def closedLoop : Matrix (ι₁ ⊕ ι₂) (ι₁ ⊕ ι₂) ℝ :=
   generated.closedLoopBlocks ic.source.A ic.source.B ic.source.C ic.source.D
     ic.load.A ic.load.B ic.load.C
+
+def portField (x₁ : ι₁ → ℝ) (x₂ : ι₂ → ℝ) (j : κ → ℝ) : (ι₁ → ℝ) × (ι₂ → ℝ) :=
+  let i := StateSpacePassivity.output ic.load x₂ 0 - j
+  let v := -StateSpacePassivity.output ic.source x₁ i
+  (StateSpacePassivity.field ic.source x₁ i, StateSpacePassivity.field ic.load x₂ v)
+
+def portVoltage (x₁ : ι₁ → ℝ) (x₂ : ι₂ → ℝ) (j : κ → ℝ) : κ → ℝ :=
+  -StateSpacePassivity.output ic.source x₁ (StateSpacePassivity.output ic.load x₂ 0 - j)
+
+def closedLoopPort : PortModel (ι₁ ⊕ ι₂) κ :=
+  ⟨ic.closedLoop, generated.closedLoopInput ic.source.B ic.source.D ic.load.B,
+    generated.closedLoopOutput ic.source.C ic.source.D ic.load.C,
+    generated.closedLoopFeedthrough ic.source.D⟩
 
 omit [Fintype ι₁] [DecidableEq ι₁] [Fintype ι₂] [DecidableEq ι₂] [DecidableEq κ] in
 @[powerlib_foundation] theorem closedLoop_eq_fromBlocks :
@@ -58,6 +74,32 @@ omit [DecidableEq ι₁] [DecidableEq ι₂] [DecidableEq κ] in
     simp [field, StateSpacePassivity.field, StateSpacePassivity.output, fromBlocks_mulVec,
       Matrix.mulVec_add, Matrix.mulVec_neg, Matrix.sub_mulVec, Matrix.neg_mulVec,
       ← Matrix.mulVec_mulVec]
+  abel
+
+omit [DecidableEq ι₁] [DecidableEq ι₂] [DecidableEq κ] in
+@[simp, powerlib_foundation] theorem portField_zero (x₁ : ι₁ → ℝ) (x₂ : ι₂ → ℝ) :
+    ic.portField x₁ x₂ 0 = ic.field x₁ x₂ := by
+  simp [portField, field]
+
+omit [DecidableEq ι₁] [DecidableEq ι₂] [DecidableEq κ] in
+@[powerlib_foundation] theorem closedLoopPort_field (x₁ : ι₁ → ℝ) (x₂ : ι₂ → ℝ) (j : κ → ℝ) :
+    StateSpacePassivity.field ic.closedLoopPort (Sum.elim x₁ x₂) j =
+      Sum.elim (ic.portField x₁ x₂ j).1 (ic.portField x₁ x₂ j).2 := by
+  simp only [StateSpacePassivity.field, closedLoopPort, closedLoop_eq_fromBlocks,
+    generated.closedLoopInput_spec]
+  ext (k | k) <;>
+    simp [portField, StateSpacePassivity.field, StateSpacePassivity.output, fromBlocks_mulVec,
+      fromRows_mulVec, Matrix.mulVec_add, Matrix.mulVec_neg, Matrix.mulVec_sub,
+      Matrix.sub_mulVec, Matrix.neg_mulVec, ← Matrix.mulVec_mulVec]
+  · abel
+  · abel
+
+omit [DecidableEq ι₁] [DecidableEq ι₂] [DecidableEq κ] in
+@[powerlib_foundation] theorem closedLoopPort_output (x₁ : ι₁ → ℝ) (x₂ : ι₂ → ℝ) (j : κ → ℝ) :
+    StateSpacePassivity.output ic.closedLoopPort (Sum.elim x₁ x₂) j = ic.portVoltage x₁ x₂ j := by
+  simp only [StateSpacePassivity.output, closedLoopPort, generated.closedLoopOutput_spec,
+    generated.closedLoopFeedthrough_spec, portVoltage]
+  simp [fromCols_mulVec, Matrix.mulVec_sub, Matrix.neg_mulVec, ← Matrix.mulVec_mulVec]
   abel
 
 end Interconnection
@@ -77,6 +119,16 @@ end Interconnection
 @[powerlib_foundation] private lemma complexify_zero {m n : Type*} :
     complexify (0 : Matrix m n ℝ) = 0 :=
   Matrix.map_zero _ (map_zero _)
+
+@[powerlib_foundation] private lemma complexify_fromRows {m₁ m₂ n : Type*}
+    (A₁ : Matrix m₁ n ℝ) (A₂ : Matrix m₂ n ℝ) :
+    complexify (fromRows A₁ A₂) = fromRows (complexify A₁) (complexify A₂) :=
+  fromRows_map _ _ _
+
+@[powerlib_foundation] private lemma complexify_fromCols {m n₁ n₂ : Type*}
+    (A₁ : Matrix m n₁ ℝ) (A₂ : Matrix m n₂ ℝ) :
+    complexify (fromCols A₁ A₂) = fromCols (complexify A₁) (complexify A₂) :=
+  fromCols_map _ _ _
 
 @[powerlib_foundation] private lemma complexify_fromBlocks {l m n o : Type*}
     (A : Matrix n l ℝ) (B : Matrix n m ℝ) (C : Matrix o l ℝ) (D : Matrix o m ℝ) :
@@ -135,6 +187,81 @@ omit [Fintype ι₁] [Fintype ι₂] [DecidableEq κ] in
   rw [hschur, det_mul, det_one_add_mul_comm (M₂⁻¹ * complexify ic.load.B)]
   simp only [Matrix.mul_assoc]
   ring
+
+@[powerlib_foundation] theorem transfer_closedLoopPort (s : ℂ)
+    (h₁ : (characteristicMatrix ic.source.A s).det ≠ 0)
+    (h₂ : (characteristicMatrix ic.load.A s).det ≠ 0) (h : ic.returnDifference s ≠ 0) :
+    transfer ic.closedLoopPort s = ic.portImpedance s := by
+  have hcl : IsUnit (characteristicMatrix ic.closedLoop s).det := by
+    rw [isUnit_iff_ne_zero, ic.det_characteristicMatrix_closedLoop s h₁ h₂]
+    exact mul_ne_zero (mul_ne_zero h₁ h₂) h
+  have u₁ : IsUnit (characteristicMatrix ic.source.A s).det := isUnit_iff_ne_zero.mpr h₁
+  have u₂ : IsUnit (characteristicMatrix ic.load.A s).det := isUnit_iff_ne_zero.mpr h₂
+  have hrd : IsUnit (1 + ic.sourceImpedance s * ic.loadAdmittance s).det :=
+    isUnit_iff_ne_zero.mpr h
+  have hZ : ic.sourceImpedance s = complexify ic.source.C *
+      (characteristicMatrix ic.source.A s)⁻¹ * complexify ic.source.B +
+      complexify ic.source.D := rfl
+  have hY : ic.loadAdmittance s = complexify ic.load.C *
+      (characteristicMatrix ic.load.A s)⁻¹ * complexify ic.load.B := by
+    simp [loadAdmittance, transfer, ic.load_strictly_proper]
+  have hB : complexify ic.closedLoopPort.B =
+      fromRows (-complexify ic.source.B) (complexify ic.load.B * complexify ic.source.D) := by
+    simp only [closedLoopPort, generated.closedLoopInput_spec, complexify_fromRows,
+      complexify_neg, complexify_mul]
+  have hC : complexify ic.closedLoopPort.C =
+      fromCols (-complexify ic.source.C) (-(complexify ic.source.D * complexify ic.load.C)) := by
+    simp only [closedLoopPort, generated.closedLoopOutput_spec, complexify_fromCols,
+      complexify_neg, complexify_mul]
+  have hMX := Matrix.mul_nonsing_inv_cancel_left _ (complexify ic.closedLoopPort.B) hcl
+  have hA : ic.closedLoopPort.A = ic.closedLoop := rfl
+  rw [portImpedance, transfer, hA, Matrix.mul_assoc, hC]
+  change _ + complexify ic.source.D = _
+  generalize hX : (characteristicMatrix ic.closedLoop s)⁻¹ * complexify ic.closedLoopPort.B = X
+    at hMX ⊢
+  rw [characteristicMatrix_closedLoop, hB] at hMX
+  obtain ⟨X₁, X₂, rfl⟩ : ∃ X₁ X₂, X = fromRows X₁ X₂ :=
+    ⟨X.toRows₁, X.toRows₂, (fromRows_toRows X).symm⟩
+  rw [fromBlocks_mul_fromRows] at hMX
+  obtain ⟨E₁, E₂⟩ := fromRows_inj hMX
+  rw [fromCols_mul_fromRows]
+  set G := -complexify ic.source.C * X₁ +
+    -(complexify ic.source.D * complexify ic.load.C) * X₂ + complexify ic.source.D with hG
+  have hX₁ : X₁ = (characteristicMatrix ic.source.A s)⁻¹ *
+      (complexify ic.source.B * (complexify ic.load.C * X₂ - 1)) := by
+    have hm : characteristicMatrix ic.source.A s * X₁ =
+        complexify ic.source.B * (complexify ic.load.C * X₂ - 1) := by
+      rw [Matrix.mul_sub, Matrix.mul_one, ← Matrix.mul_assoc]
+      rw [Matrix.neg_mul] at E₁
+      calc characteristicMatrix ic.source.A s * X₁
+          = (characteristicMatrix ic.source.A s * X₁ +
+              -(complexify ic.source.B * complexify ic.load.C * X₂)) +
+            complexify ic.source.B * complexify ic.load.C * X₂ := by abel
+        _ = _ := by rw [E₁]; abel
+    rw [← hm, Matrix.nonsing_inv_mul_cancel_left _ _ u₁]
+  have hGZ : G = ic.sourceImpedance s - ic.sourceImpedance s * (complexify ic.load.C * X₂) := by
+    rw [hG, hZ, hX₁]
+    simp only [Matrix.neg_mul, Matrix.add_mul, Matrix.mul_sub, Matrix.mul_one, Matrix.mul_assoc]
+    abel
+  have hX₂ : X₂ = (characteristicMatrix ic.load.A s)⁻¹ * (complexify ic.load.B * G) := by
+    have hm : characteristicMatrix ic.load.A s * X₂ = complexify ic.load.B * G := by
+      rw [hG]
+      simp only [Matrix.add_mul, Matrix.mul_add, Matrix.mul_neg, Matrix.neg_mul,
+        Matrix.mul_assoc] at E₂ ⊢
+      rw [← E₂]
+      abel
+    rw [← hm, Matrix.nonsing_inv_mul_cancel_left _ _ u₂]
+  have hW : complexify ic.load.C * X₂ = ic.loadAdmittance s * G := by
+    rw [hX₂, hY]
+    simp only [Matrix.mul_assoc]
+  have hfix : (1 + ic.sourceImpedance s * ic.loadAdmittance s) * G = ic.sourceImpedance s := by
+    rw [hW] at hGZ
+    rw [Matrix.add_mul, Matrix.one_mul, Matrix.mul_assoc]
+    exact eq_sub_iff_add_eq.mp hGZ
+  calc G = (1 + ic.sourceImpedance s * ic.loadAdmittance s)⁻¹ *
+        ((1 + ic.sourceImpedance s * ic.loadAdmittance s) * G) :=
+        (Matrix.nonsing_inv_mul_cancel_left _ _ hrd).symm
+    _ = _ := by rw [hfix]
 
 @[powerlib_foundation] private lemma det_ne_zero_of_rhp {A : Matrix ι ι ℝ}
     (h : SpectrallyStable A) {s : ℂ} (hs : 0 ≤ s.re) : (characteristicMatrix A s).det ≠ 0 :=
@@ -232,6 +359,16 @@ omit [Fintype κ] [DecidableEq κ] in
       (complexify m.C * (characteristicMatrix m.A s).adjugate * complexify m.B) +
       complexify m.D := by
   rw [transfer, Matrix.inv_def, Ring.inverse_eq_inv', Matrix.mul_smul, Matrix.smul_mul]
+
+@[powerlib_foundation] theorem Interconnection.portImpedance_eq_adjugate
+    (ic : Interconnection ι₁ ι₂ κ) (s : ℂ)
+    (h₁ : (characteristicMatrix ic.source.A s).det ≠ 0)
+    (h₂ : (characteristicMatrix ic.load.A s).det ≠ 0) (h : ic.returnDifference s ≠ 0) :
+    ic.portImpedance s = ((characteristicMatrix ic.closedLoop s).det)⁻¹ •
+      (complexify ic.closedLoopPort.C * (characteristicMatrix ic.closedLoop s).adjugate *
+        complexify ic.closedLoopPort.B) + complexify ic.closedLoopPort.D := by
+  rw [← ic.transfer_closedLoopPort s h₁ h₂ h, transfer_eq_adjugate]
+  rfl
 
 def hiddenMode : PortModel (Fin 1) (Fin 1) := ⟨!![1], 0, 0, 0⟩
 
