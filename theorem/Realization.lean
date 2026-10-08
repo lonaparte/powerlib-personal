@@ -166,4 +166,389 @@ omit [DecidableEq κ] in
 
 end Interconnection
 
+def markov (m : PortModel ι κ) (k : ℕ) : Matrix κ κ ℝ := m.C * m.A ^ k * m.B
+
+section Expansion
+
+variable (m : PortModel ι κ)
+
+omit [Fintype κ] [DecidableEq κ] in
+@[powerlib_foundation] private lemma smul_resolvent {s : ℂ}
+    (h : (characteristicMatrix m.A s).det ≠ 0) :
+    s • (characteristicMatrix m.A s)⁻¹ = 1 + complexify m.A * (characteristicMatrix m.A s)⁻¹ := by
+  have hinv := Matrix.mul_nonsing_inv (characteristicMatrix m.A s) (isUnit_iff_ne_zero.mpr h)
+  generalize (characteristicMatrix m.A s)⁻¹ = R at hinv ⊢
+  rw [show characteristicMatrix m.A s = s • 1 - complexify m.A from rfl, Matrix.sub_mul,
+    Matrix.smul_mul, Matrix.one_mul] at hinv
+  rw [← hinv]
+  abel
+
+omit [Fintype κ] [DecidableEq κ] in
+@[powerlib_foundation] private lemma resolvent_expansion {s : ℂ} (hs : s ≠ 0)
+    (h : (characteristicMatrix m.A s).det ≠ 0) (N : ℕ) :
+    (characteristicMatrix m.A s)⁻¹ =
+      ∑ j ∈ Finset.range N, (s ^ (j + 1))⁻¹ • complexify m.A ^ j +
+        (s ^ N)⁻¹ • (complexify m.A ^ N * (characteristicMatrix m.A s)⁻¹) := by
+  have hR := smul_resolvent m h
+  generalize (characteristicMatrix m.A s)⁻¹ = R at hR ⊢
+  have hR' : R = s⁻¹ • (1 + complexify m.A * R) := by
+    rw [← hR, smul_smul, inv_mul_cancel₀ hs, one_smul]
+  induction N with
+  | zero => simp
+  | succ N ih =>
+    have step : (s ^ N)⁻¹ • (complexify m.A ^ N * R) =
+        (s ^ (N + 1))⁻¹ • complexify m.A ^ N +
+          (s ^ (N + 1))⁻¹ • (complexify m.A ^ (N + 1) * R) := by
+      conv_lhs => rw [hR']
+      rw [Matrix.mul_smul, Matrix.mul_add, Matrix.mul_one, smul_smul, ← Matrix.mul_assoc,
+        ← mul_inv, ← pow_succ, ← pow_succ, smul_add]
+    rw [Finset.sum_range_succ, add_assoc, ← step]
+    exact ih
+
+omit [Fintype κ] [DecidableEq κ] in
+@[powerlib_foundation] private lemma transfer_expansion {s : ℂ} (hs : s ≠ 0)
+    (h : (characteristicMatrix m.A s).det ≠ 0) (N : ℕ) :
+    transfer m s = complexify m.D +
+      ∑ j ∈ Finset.range N, (s ^ (j + 1))⁻¹ • complexify (markov m j) +
+        (s ^ N)⁻¹ • (complexify m.C * complexify m.A ^ N * (characteristicMatrix m.A s)⁻¹ *
+          complexify m.B) := by
+  rw [transfer]
+  conv_lhs => rw [resolvent_expansion m hs h N]
+  simp only [markov, complexify_mul, Matrix.map_pow, Matrix.mul_add, Matrix.add_mul,
+    Matrix.mul_sum, Matrix.sum_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_assoc]
+  abel
+
+omit [Fintype κ] [DecidableEq κ] in
+open scoped Matrix.Norms.Operator in
+@[powerlib_foundation] private lemma resolvent_bound :
+    ∃ s₀ > 0, ∀ x : ℝ, s₀ ≤ x → (characteristicMatrix m.A (x : ℂ)).det ≠ 0 ∧
+      ‖(characteristicMatrix m.A (x : ℂ))⁻¹‖ ≤ 2 * ‖(1 : Matrix ι ι ℂ)‖ / x := by
+  refine ⟨2 * ‖complexify m.A‖ + 1, by positivity, fun x hx => ?_⟩
+  have ha := norm_nonneg (complexify m.A)
+  have hx0 : 0 < x := by linarith
+  have hxn : ‖(x : ℂ)‖ = x := by rw [Complex.norm_real, Real.norm_of_nonneg hx0.le]
+  have hdet : (characteristicMatrix m.A (x : ℂ)).det ≠ 0 := by
+    intro h0
+    obtain ⟨v, hv, hzero⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr h0
+    have hAv : complexify m.A *ᵥ v = (x : ℂ) • v := by
+      rw [show characteristicMatrix m.A (x : ℂ) = (x : ℂ) • 1 - complexify m.A from rfl,
+        Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, sub_eq_zero] at hzero
+      exact hzero.symm
+    have hle : x * ‖v‖ ≤ ‖complexify m.A‖ * ‖v‖ := by
+      rw [← hxn, ← norm_smul, ← hAv]
+      exact Matrix.linfty_opNorm_mulVec _ _
+    have hv0 : 0 < ‖v‖ := norm_pos_iff.mpr hv
+    nlinarith
+  refine ⟨hdet, ?_⟩
+  have hR := smul_resolvent m hdet
+  generalize (characteristicMatrix m.A (x : ℂ))⁻¹ = R at hR ⊢
+  have h1 : x * ‖R‖ ≤ ‖(1 : Matrix ι ι ℂ)‖ + ‖complexify m.A‖ * ‖R‖ := by
+    rw [← hxn, ← norm_smul, hR]
+    exact (norm_add_le _ _).trans (by gcongr; exact Matrix.linfty_opNorm_mul _ _)
+  rw [le_div_iff₀ hx0]
+  nlinarith [norm_nonneg R, mul_nonneg (show (0 : ℝ) ≤ x - 2 * ‖complexify m.A‖ by linarith)
+    (norm_nonneg R)]
+
+end Expansion
+
+@[powerlib_foundation] private lemma eq_zero_of_norm_le_div {E : Type*} [NormedAddCommGroup E]
+    (X : E) (K s₀ : ℝ) (h : ∀ x : ℝ, s₀ ≤ x → ‖X‖ ≤ K / x) : X = 0 := by
+  have ht : Filter.Tendsto (fun x : ℝ => K / x) Filter.atTop (nhds 0) :=
+    tendsto_const_nhds.div_atTop Filter.tendsto_id
+  exact norm_le_zero_iff.mp (ge_of_tendsto ht (Filter.eventually_atTop.2 ⟨s₀, h⟩))
+
+open scoped Matrix.Norms.Operator in
+@[powerlib_foundation] private lemma remainder_bound (m : PortModel ι κ) (N : ℕ) :
+    ∃ s₀ > 0, ∃ K, ∀ x : ℝ, s₀ ≤ x → (characteristicMatrix m.A (x : ℂ)).det ≠ 0 ∧
+      ‖complexify m.C * complexify m.A ^ N * (characteristicMatrix m.A (x : ℂ))⁻¹ *
+        complexify m.B‖ ≤ K / x := by
+  obtain ⟨s₀, hs₀, hb⟩ := resolvent_bound m
+  refine ⟨s₀, hs₀, ‖complexify m.C * complexify m.A ^ N‖ * (2 * ‖(1 : Matrix ι ι ℂ)‖) *
+    ‖complexify m.B‖, fun x hx => ⟨(hb x hx).1, ?_⟩⟩
+  have hx0 : 0 < x := hs₀.trans_le hx
+  calc _ ≤ ‖complexify m.C * complexify m.A ^ N‖ * ‖(characteristicMatrix m.A (x : ℂ))⁻¹‖ *
+        ‖complexify m.B‖ :=
+        (Matrix.linfty_opNorm_mul _ _).trans
+          (by gcongr; exact Matrix.linfty_opNorm_mul _ _)
+    _ ≤ ‖complexify m.C * complexify m.A ^ N‖ * (2 * ‖(1 : Matrix ι ι ℂ)‖ / x) *
+        ‖complexify m.B‖ := by gcongr; exact (hb x hx).2
+    _ = _ := by field_simp
+
+open scoped Matrix.Norms.Operator in
+@[powerlib_foundation] theorem markov_eq_of_transfer_eventually_eq {m : PortModel ι κ}
+    {m' : PortModel ι' κ} (h : ∃ s₁ : ℝ, ∀ x : ℝ, s₁ ≤ x → transfer m x = transfer m' x) :
+    m.D = m'.D ∧ ∀ k, markov m k = markov m' k := by
+  obtain ⟨s₁, hs₁⟩ := h
+  have hinj : Function.Injective fun M : Matrix κ κ ℝ => complexify M :=
+    Matrix.map_injective (algebraMap ℝ ℂ).injective
+  have key : ∀ N, ∃ s₀ > 0, ∃ K, ∀ x : ℝ, s₀ ≤ x →
+      complexify m.D + ∑ j ∈ Finset.range N, ((x : ℂ) ^ (j + 1))⁻¹ • complexify (markov m j) +
+          ((x : ℂ) ^ N)⁻¹ • (complexify m.C * complexify m.A ^ N *
+            (characteristicMatrix m.A (x : ℂ))⁻¹ * complexify m.B) =
+        complexify m'.D +
+          ∑ j ∈ Finset.range N, ((x : ℂ) ^ (j + 1))⁻¹ • complexify (markov m' j) +
+          ((x : ℂ) ^ N)⁻¹ • (complexify m'.C * complexify m'.A ^ N *
+            (characteristicMatrix m'.A (x : ℂ))⁻¹ * complexify m'.B) ∧
+      ‖complexify m.C * complexify m.A ^ N * (characteristicMatrix m.A (x : ℂ))⁻¹ *
+          complexify m.B - complexify m'.C * complexify m'.A ^ N *
+          (characteristicMatrix m'.A (x : ℂ))⁻¹ * complexify m'.B‖ ≤ K / x := by
+    intro N
+    obtain ⟨a, ha, K, hK⟩ := remainder_bound m N
+    obtain ⟨a', ha', K', hK'⟩ := remainder_bound m' N
+    refine ⟨max (max a a') s₁, lt_max_of_lt_left (lt_max_of_lt_left ha), K + K',
+      fun x hx => ?_⟩
+    have hxa : a ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hx
+    have hxa' : a' ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hx
+    have hx₁ : s₁ ≤ x := le_trans (le_max_right _ _) hx
+    have hx0 : (x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (ha.trans_le hxa).ne'
+    refine ⟨?_, ?_⟩
+    · rw [← transfer_expansion m hx0 (hK x hxa).1 N, ← transfer_expansion m' hx0 (hK' x hxa').1 N]
+      exact hs₁ x hx₁
+    · rw [add_div]
+      exact (norm_sub_le _ _).trans (add_le_add (hK x hxa).2 (hK' x hxa').2)
+  have hD : complexify m.D = complexify m'.D := by
+    obtain ⟨s₀, -, K, hK⟩ := key 0
+    refine sub_eq_zero.mp (eq_zero_of_norm_le_div _ K s₀ fun x hx => ?_)
+    obtain ⟨e, hb⟩ := hK x hx
+    simp only [Finset.range_zero, Finset.sum_empty, add_zero, pow_zero, inv_one, one_smul,
+      Matrix.mul_one] at e hb
+    rw [norm_sub_rev] at hb
+    have hdiff : complexify m.D - complexify m'.D =
+        complexify m'.C * (characteristicMatrix m'.A (x : ℂ))⁻¹ * complexify m'.B -
+          complexify m.C * (characteristicMatrix m.A (x : ℂ))⁻¹ * complexify m.B := by
+      rw [sub_eq_sub_iff_add_eq_add, e, add_comm]
+    rw [hdiff]
+    exact hb
+  have hM : ∀ k, complexify (markov m k) = complexify (markov m' k) := by
+    intro k
+    induction k using Nat.strong_induction_on with
+    | _ k ih =>
+      obtain ⟨s₀, hs₀, K, hK⟩ := key (k + 1)
+      refine sub_eq_zero.mp (eq_zero_of_norm_le_div _ K s₀ fun x hx => ?_)
+      obtain ⟨e, hb⟩ := hK x hx
+      have hx0 : (x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (hs₀.trans_le hx).ne'
+      rw [Finset.sum_range_succ, Finset.sum_range_succ, hD,
+        Finset.sum_congr rfl fun j hj => by rw [ih j (Finset.mem_range.mp hj)]] at e
+      set c : ℂ := ((x : ℂ) ^ (k + 1))⁻¹
+      have hc : c ≠ 0 := inv_ne_zero (pow_ne_zero _ hx0)
+      have hsc : c • (complexify (markov m k) - complexify (markov m' k)) =
+          c • ((complexify m'.C * complexify m'.A ^ (k + 1) *
+            (characteristicMatrix m'.A (x : ℂ))⁻¹ * complexify m'.B) -
+          (complexify m.C * complexify m.A ^ (k + 1) * (characteristicMatrix m.A (x : ℂ))⁻¹ *
+            complexify m.B)) := by
+        rw [smul_sub, smul_sub]
+        rw [← sub_eq_zero] at e ⊢
+        rw [← e]
+        abel
+      rw [smul_right_injective _ hc hsc, norm_sub_rev]
+      exact hb
+  exact ⟨hinj hD, fun k => hinj (hM k)⟩
+
+section Minimal
+
+variable {n n' p : ℕ}
+
+def obsv (A : Matrix (Fin n) (Fin n) ℝ) (C : Matrix (Fin p) (Fin n) ℝ) (N : ℕ) :
+    Matrix (Fin N × Fin p) (Fin n) ℝ :=
+  Matrix.of fun ki j => (C * A ^ (ki.1 : ℕ)) ki.2 j
+
+def ctrb (A : Matrix (Fin n) (Fin n) ℝ) (B : Matrix (Fin n) (Fin p) ℝ) (N : ℕ) :
+    Matrix (Fin n) (Fin N × Fin p) ℝ :=
+  Matrix.of fun i kj => (A ^ (kj.1 : ℕ) * B) i kj.2
+
+@[powerlib_foundation] private lemma obsv_mul {β : Type*} (A : Matrix (Fin n) (Fin n) ℝ)
+    (C : Matrix (Fin p) (Fin n) ℝ) (N : ℕ) (X : Matrix (Fin n) β ℝ) :
+    obsv A C N * X = Matrix.of fun ki j => (C * A ^ (ki.1 : ℕ) * X) ki.2 j := by
+  ext ⟨k, i⟩ j
+  simp [obsv, Matrix.mul_apply]
+
+@[powerlib_foundation] private lemma mul_ctrb {β : Type*} [Fintype β]
+    (A : Matrix (Fin n) (Fin n) ℝ) (B : Matrix (Fin n) (Fin p) ℝ) (N : ℕ)
+    (X : Matrix β (Fin n) ℝ) :
+    X * ctrb A B N = Matrix.of fun i kj => (X * A ^ (kj.1 : ℕ) * B) i kj.2 := by
+  ext i ⟨k, j⟩
+  simp only [Matrix.of_apply]
+  rw [Matrix.mul_assoc]
+  simp [ctrb, Matrix.mul_apply]
+
+@[powerlib_foundation] private lemma hankel (A : Matrix (Fin n) (Fin n) ℝ)
+    (B : Matrix (Fin n) (Fin p) ℝ) (C : Matrix (Fin p) (Fin n) ℝ) (N₁ N₂ r : ℕ) :
+    obsv A C N₁ * A ^ r * ctrb A B N₂ =
+      Matrix.of fun ki lj => (C * A ^ ((ki.1 : ℕ) + r + lj.1) * B) ki.2 lj.2 := by
+  rw [mul_ctrb]
+  ext ⟨k, i⟩ ⟨l, j⟩
+  simp only [Matrix.of_apply, Matrix.mul_assoc]
+  rw [obsv_mul]
+  simp only [Matrix.of_apply, pow_add, Matrix.mul_assoc]
+
+@[powerlib_foundation] private lemma exists_mul_eq_one {α β : Type*} [Fintype α] [DecidableEq α]
+    [Fintype β] (M : Matrix α β ℝ) (h : ∀ y, ∃ x, M *ᵥ x = y) : ∃ R : Matrix β α ℝ, M * R = 1 := by
+  choose f hf using h
+  refine ⟨Matrix.of fun b a => f (Pi.single a 1) b, ?_⟩
+  ext i j
+  have := congrFun (hf (Pi.single j 1)) i
+  simp only [Matrix.mulVec, dotProduct] at this
+  simp only [Matrix.mul_apply, Matrix.of_apply, this, Matrix.one_apply, Pi.single_apply]
+
+@[powerlib_foundation] private lemma ctrb_right_inverse {A : Matrix (Fin n) (Fin n) ℝ}
+    {B : Matrix (Fin n) (Fin p) ℝ} (h : LinearSystems.IsControllable A B) :
+    ∃ R : Matrix (Fin n × Fin p) (Fin n) ℝ, ctrb A B n * R = 1 :=
+  exists_mul_eq_one _ ((MatrixAlgebra.mulVec_range_top_iff_rank_eq_card_rows
+    (LinearSystems.controllabilityMatrix A B)).mpr (by
+      rw [Fintype.card_fin]
+      exact (LinearSystems.isControllable_iff_controllabilityMatrix_rank_eq A B).mp h))
+
+@[powerlib_foundation] private lemma obsv_left_inverse {A : Matrix (Fin n) (Fin n) ℝ}
+    {C : Matrix (Fin p) (Fin n) ℝ} (h : LinearSystems.IsObservable A C) :
+    ∃ L : Matrix (Fin n) (Fin n × Fin p) ℝ, L * obsv A C n = 1 := by
+  have hr : (LinearSystems.observabilityMatrix A C)ᵀ.rank = Fintype.card (Fin n) := by
+    rw [Matrix.rank_transpose, Fintype.card_fin]
+    exact (LinearSystems.isObservable_iff_observabilityMatrix_rank_eq A C).mp h
+  obtain ⟨R, hR⟩ := exists_mul_eq_one _
+    ((MatrixAlgebra.mulVec_range_top_iff_rank_eq_card_rows _).mpr hr)
+  refine ⟨Rᵀ, ?_⟩
+  calc Rᵀ * obsv A C n = ((LinearSystems.observabilityMatrix A C)ᵀ * R)ᵀ := by
+        rw [Matrix.transpose_mul, Matrix.transpose_transpose]
+        rfl
+    _ = 1 := by rw [hR, Matrix.transpose_one]
+
+omit [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] in
+@[powerlib_foundation] private lemma model_eq {m m' : PortModel ι κ} (hA : m.A = m'.A)
+    (hB : m.B = m'.B) (hC : m.C = m'.C) (hD : m.D = m'.D) : m = m' := by
+  cases m
+  cases m'
+  simp_all
+
+@[powerlib_foundation] theorem similar_of_markov_eq {m : PortModel (Fin n) (Fin p)}
+    {m' : PortModel (Fin n') (Fin p)}
+    (hc : LinearSystems.IsControllable m.A m.B) (ho : LinearSystems.IsObservable m.A m.C)
+    (hc' : LinearSystems.IsControllable m'.A m'.B) (ho' : LinearSystems.IsObservable m'.A m'.C)
+    (hD : m.D = m'.D) (hM : ∀ k, markov m k = markov m' k) : Similar m m' := by
+  obtain ⟨R, hR⟩ := ctrb_right_inverse hc
+  obtain ⟨R', hR'⟩ := ctrb_right_inverse hc'
+  obtain ⟨L, hL⟩ := obsv_left_inverse ho
+  obtain ⟨L', hL'⟩ := obsv_left_inverse ho'
+  have hH : ∀ N₁ N₂ r, obsv m.A m.C N₁ * m.A ^ r * ctrb m.A m.B N₂ =
+      obsv m'.A m'.C N₁ * m'.A ^ r * ctrb m'.A m'.B N₂ := by
+    intro N₁ N₂ r
+    rw [hankel, hankel]
+    ext ⟨k, i⟩ ⟨l, j⟩
+    exact congrFun (congrFun (hM _) i) j
+  have hH0 : ∀ N₁ N₂, obsv m.A m.C N₁ * ctrb m.A m.B N₂ =
+      obsv m'.A m'.C N₁ * ctrb m'.A m'.B N₂ := by
+    intro N₁ N₂
+    simpa only [pow_zero, Matrix.mul_one] using hH N₁ N₂ 0
+  set T := L' * obsv m.A m.C n' with hT
+  set S := L * obsv m'.A m'.C n with hS
+  have hTK : ∀ N, T * ctrb m.A m.B N = ctrb m'.A m'.B N := by
+    intro N
+    rw [hT, Matrix.mul_assoc, hH0, ← Matrix.mul_assoc, hL', Matrix.one_mul]
+  have hSK : ∀ N, S * ctrb m'.A m'.B N = ctrb m.A m.B N := by
+    intro N
+    rw [hS, Matrix.mul_assoc, ← hH0, ← Matrix.mul_assoc, hL, Matrix.one_mul]
+  have hTS : T * S = 1 := by
+    calc T * S = T * S * (ctrb m'.A m'.B n' * R') := by rw [hR', Matrix.mul_one]
+      _ = T * (S * ctrb m'.A m'.B n') * R' := by simp only [Matrix.mul_assoc]
+      _ = 1 := by rw [hSK, hTK, hR']
+  have hST : S * T = 1 := by
+    calc S * T = S * T * (ctrb m.A m.B n * R) := by rw [hR, Matrix.mul_one]
+      _ = S * (T * ctrb m.A m.B n) * R := by simp only [Matrix.mul_assoc]
+      _ = 1 := by rw [hTK, hSK, hR]
+  have hB : T * m.B = m'.B := by
+    have hOB : obsv m.A m.C n' * m.B = obsv m'.A m'.C n' * m'.B := by
+      rw [obsv_mul, obsv_mul]
+      ext ⟨k, i⟩ j
+      exact congrFun (congrFun (hM k) i) j
+    rw [hT, Matrix.mul_assoc, hOB, ← Matrix.mul_assoc, hL', Matrix.one_mul]
+  have hC : m'.C * T = m.C := by
+    have hCK : m'.C * ctrb m'.A m'.B n = m.C * ctrb m.A m.B n := by
+      rw [mul_ctrb, mul_ctrb]
+      ext i ⟨l, j⟩
+      exact (congrFun (congrFun (hM l) i) j).symm
+    calc m'.C * T = m'.C * T * (ctrb m.A m.B n * R) := by rw [hR, Matrix.mul_one]
+      _ = m'.C * (T * ctrb m.A m.B n) * R := by simp only [Matrix.mul_assoc]
+      _ = m.C := by rw [hTK, hCK, Matrix.mul_assoc, hR, Matrix.mul_one]
+  have hA : T * m.A = m'.A * T := by
+    have hshift : T * (m.A * ctrb m.A m.B n) = m'.A * ctrb m'.A m'.B n := by
+      calc T * (m.A * ctrb m.A m.B n) = L' * (obsv m.A m.C n' * m.A ^ 1 * ctrb m.A m.B n) := by
+            rw [hT, pow_one]
+            simp only [Matrix.mul_assoc]
+        _ = L' * (obsv m'.A m'.C n' * m'.A ^ 1 * ctrb m'.A m'.B n) := by rw [hH]
+        _ = m'.A * ctrb m'.A m'.B n := by
+            rw [pow_one, ← Matrix.mul_assoc, ← Matrix.mul_assoc, hL', Matrix.one_mul]
+    calc T * m.A = T * m.A * (ctrb m.A m.B n * R) := by rw [hR, Matrix.mul_one]
+      _ = T * (m.A * ctrb m.A m.B n) * R := by simp only [Matrix.mul_assoc]
+      _ = m'.A * (T * ctrb m.A m.B n) * R := by rw [hshift, hTK]
+      _ = m'.A * T := by rw [Matrix.mul_assoc, Matrix.mul_assoc, hR, Matrix.mul_one]
+  refine ⟨T, S, hTS, hST, model_eq ?_ hB.symm ?_ hD.symm⟩
+  · show m'.A = T * m.A * S
+    rw [hA, Matrix.mul_assoc, hTS, Matrix.mul_one]
+  · show m'.C = m.C * S
+    rw [← hC, Matrix.mul_assoc, hTS, Matrix.mul_one]
+
+@[powerlib_foundation] theorem similar_iff_transfer_eq {m : PortModel (Fin n) (Fin p)}
+    {m' : PortModel (Fin n') (Fin p)}
+    (hc : LinearSystems.IsControllable m.A m.B) (ho : LinearSystems.IsObservable m.A m.C)
+    (hc' : LinearSystems.IsControllable m'.A m'.B) (ho' : LinearSystems.IsObservable m'.A m'.C) :
+    Similar m m' ↔ ∀ s : ℂ, (characteristicMatrix m.A s).det ≠ 0 →
+      (characteristicMatrix m'.A s).det ≠ 0 → transfer m s = transfer m' s := by
+  refine ⟨fun h s _ _ => (h.transfer_eq s).symm, fun h => ?_⟩
+  obtain ⟨a, -, ha⟩ := resolvent_bound m
+  obtain ⟨a', -, ha'⟩ := resolvent_bound m'
+  obtain ⟨hD, hM⟩ := markov_eq_of_transfer_eventually_eq ⟨max a a', fun x hx =>
+    h x (ha x (le_of_max_le_left hx)).1 (ha' x (le_of_max_le_right hx)).1⟩
+  exact similar_of_markov_eq hc ho hc' ho' hD hM
+
+def Interconnection.closedLoopPortFin {n₁ n₂ : ℕ} (ic : Interconnection (Fin n₁) (Fin n₂) κ) :
+    PortModel (Fin (n₁ + n₂)) κ :=
+  ImpedanceCriterion.changeCoordinates finSumFinEquiv.symm.toPEquiv.toMatrix finSumFinEquiv.toPEquiv.toMatrix
+    ic.closedLoopPort
+
+@[powerlib_foundation] private lemma finSum_toMatrix_mul {n₁ n₂ : ℕ} :
+    (finSumFinEquiv.symm.toPEquiv.toMatrix : Matrix (Fin (n₁ + n₂)) (Fin n₁ ⊕ Fin n₂) ℝ) *
+      (finSumFinEquiv.toPEquiv.toMatrix : Matrix (Fin n₁ ⊕ Fin n₂) (Fin (n₁ + n₂)) ℝ) = 1 := by
+  rw [← PEquiv.toMatrix_trans (α := ℝ), ← Equiv.toPEquiv_trans, Equiv.symm_trans_self,
+    Equiv.toPEquiv_refl, PEquiv.toMatrix_refl]
+
+@[powerlib_foundation] private lemma toMatrix_finSum_mul {n₁ n₂ : ℕ} :
+    (finSumFinEquiv.toPEquiv.toMatrix : Matrix (Fin n₁ ⊕ Fin n₂) (Fin (n₁ + n₂)) ℝ) *
+      (finSumFinEquiv.symm.toPEquiv.toMatrix : Matrix (Fin (n₁ + n₂)) (Fin n₁ ⊕ Fin n₂) ℝ) = 1 := by
+  rw [← PEquiv.toMatrix_trans (α := ℝ), ← Equiv.toPEquiv_trans, Equiv.self_trans_symm,
+    Equiv.toPEquiv_refl, PEquiv.toMatrix_refl]
+
+@[powerlib_foundation] theorem Interconnection.similar_closedLoopPortFin_iff {n₁ n₂ : ℕ}
+    (ic : Interconnection (Fin n₁) (Fin n₂) (Fin p)) {m' : PortModel (Fin n') (Fin p)}
+    (hc : LinearSystems.IsControllable ic.closedLoopPortFin.A ic.closedLoopPortFin.B)
+    (ho : LinearSystems.IsObservable ic.closedLoopPortFin.A ic.closedLoopPortFin.C)
+    (hc' : LinearSystems.IsControllable m'.A m'.B) (ho' : LinearSystems.IsObservable m'.A m'.C) :
+    Similar ic.closedLoopPortFin m' ↔ ∀ s : ℂ, (characteristicMatrix ic.source.A s).det ≠ 0 →
+      (characteristicMatrix ic.load.A s).det ≠ 0 → ic.returnDifference s ≠ 0 →
+        (characteristicMatrix m'.A s).det ≠ 0 → transfer m' s = ic.portImpedance s := by
+  have hport : ∀ s, transfer ic.closedLoopPortFin s = transfer ic.closedLoopPort s :=
+    transfer_changeCoordinates finSum_toMatrix_mul toMatrix_finSum_mul _
+  refine ⟨fun h s h₁ h₂ hrd _ => ?_, fun h => ?_⟩
+  · rw [h.transfer_eq, hport, ic.transfer_closedLoopPort s h₁ h₂ hrd]
+  obtain ⟨a₁, -, ha₁⟩ := resolvent_bound ic.source
+  obtain ⟨a₂, -, ha₂⟩ := resolvent_bound ic.load
+  obtain ⟨a, -, ha⟩ := resolvent_bound ic.closedLoopPortFin
+  obtain ⟨a', -, ha'⟩ := resolvent_bound m'
+  have hev : ∃ s₁ : ℝ, ∀ x : ℝ, s₁ ≤ x →
+      transfer ic.closedLoopPortFin x = transfer m' x := by
+    refine ⟨max (max a₁ a₂) (max a a'), fun x hx => ?_⟩
+    obtain ⟨hx₁₂, hxa⟩ := max_le_iff.mp hx
+    obtain ⟨hx₁, hx₂⟩ := max_le_iff.mp hx₁₂
+    obtain ⟨hxc, hx'⟩ := max_le_iff.mp hxa
+    have h₁ := (ha₁ x hx₁).1
+    have h₂ := (ha₂ x hx₂).1
+    have hcl : (characteristicMatrix ic.closedLoop (x : ℂ)).det ≠ 0 := fun h0 =>
+      (ha x hxc).1 ((det_characteristicMatrix_conj_eq_zero_iff finSum_toMatrix_mul
+        toMatrix_finSum_mul ic.closedLoop (x : ℂ)).mpr h0)
+    have hrd : ic.returnDifference x ≠ 0 := fun h0 => hcl (by
+      rw [ic.det_characteristicMatrix_closedLoop x h₁ h₂, h0, mul_zero])
+    rw [hport, ic.transfer_closedLoopPort x h₁ h₂ hrd, h x h₁ h₂ hrd (ha' x hx').1]
+  obtain ⟨hD, hM⟩ := markov_eq_of_transfer_eventually_eq hev
+  exact similar_of_markov_eq hc ho hc' ho' hD hM
+
+end Minimal
+
 end powerlib.ImpedanceCriterion

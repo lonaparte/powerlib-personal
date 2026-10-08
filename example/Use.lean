@@ -43,4 +43,8 @@ example (m : powerlib.Impedance) (s current voltage : ℂ) :
 #check powerlib.ImpedanceCriterion.Interconnection.det_characteristicMatrix_closedLoop
 #check powerlib.ImpedanceCriterion.impedanceStable_without_premises_insufficient
 #check powerlib.ImpedanceCriterion.Interconnection.transfer_closedLoopPort
+#check powerlib.ImpedanceCriterion.Interconnection.impedanceStable_changeCoordinates_iff
+#check powerlib.ImpedanceCriterion.similar_iff_transfer_eq
+#check powerlib.ImpedanceCriterion.Interconnection.similar_closedLoopPortFin_iff
+#print axioms powerlib.ImpedanceCriterion.similar_iff_transfer_eq
 #print axioms powerlib.ImpedanceCriterion.Interconnection.exponentiallyStable_iff_impedanceStable

@@ -21,6 +21,24 @@ omit [DecidableEq κ] in
       LTI.SpectrallyStable ic.closedLoop := by
   powerlib_search
 
+@[powerlib_foundation] theorem minimal_realizations_agree {n n' p : ℕ}
+    {m : PortModel (Fin n) (Fin p)} {m' : PortModel (Fin n') (Fin p)}
+    (hc : LinearSystems.IsControllable m.A m.B) (ho : LinearSystems.IsObservable m.A m.C)
+    (hc' : LinearSystems.IsControllable m'.A m'.B) (ho' : LinearSystems.IsObservable m'.A m'.C) :
+    Similar m m' ↔ ∀ s : ℂ, (LTI.characteristicMatrix m.A s).det ≠ 0 →
+      (LTI.characteristicMatrix m'.A s).det ≠ 0 → transfer m s = transfer m' s := by
+  powerlib_search
+
+@[powerlib_foundation] theorem node_impedance_determines_closed_loop {p n' : ℕ}
+    (ic : Interconnection (Fin n₁) (Fin n₂) (Fin p)) {m' : PortModel (Fin n') (Fin p)}
+    (hc : LinearSystems.IsControllable ic.closedLoopPortFin.A ic.closedLoopPortFin.B)
+    (ho : LinearSystems.IsObservable ic.closedLoopPortFin.A ic.closedLoopPortFin.C)
+    (hc' : LinearSystems.IsControllable m'.A m'.B) (ho' : LinearSystems.IsObservable m'.A m'.C) :
+    Similar ic.closedLoopPortFin m' ↔ ∀ s : ℂ, (LTI.characteristicMatrix ic.source.A s).det ≠ 0 →
+      (LTI.characteristicMatrix ic.load.A s).det ≠ 0 → ic.returnDifference s ≠ 0 →
+        (LTI.characteristicMatrix m'.A s).det ≠ 0 → transfer m' s = ic.portImpedance s := by
+  powerlib_search
+
 end RealizationConsumers
 
 open Lean Elab Command in
@@ -32,14 +50,27 @@ run_cmd do
       throwError "Registered theorem absent from discovery: {name}"
     if entry.moduleName == `theorem.Realization then
       count := count + 1
-  unless count == 15 do
-    throwError "Expected 15 registered realization theorems, found {count}"
+  unless count == 34 do
+    throwError "Expected 34 registered realization theorems, found {count}"
   for name in #[`powerlib.ImpedanceCriterion.Interconnection.impedanceStable_changeCoordinates_iff,
       `powerlib.ImpedanceCriterion.Interconnection.spectrallyStable_closedLoop_changeCoordinates_iff] do
     unless powerlib.Registry.kindOf? env name == some .domain do
       throwError "Realization domain theorem lost its classification: {name}"
   for name in #[`powerlib.ImpedanceCriterion.transfer_changeCoordinates,
-      `powerlib.ImpedanceCriterion.Interconnection.closedLoopPort_changeCoordinates] do
+      `powerlib.ImpedanceCriterion.Interconnection.closedLoopPort_changeCoordinates,
+      `powerlib.ImpedanceCriterion.markov_eq_of_transfer_eventually_eq,
+      `powerlib.ImpedanceCriterion.similar_of_markov_eq,
+      `powerlib.ImpedanceCriterion.similar_iff_transfer_eq,
+      `powerlib.ImpedanceCriterion.Interconnection.similar_closedLoopPortFin_iff] do
     unless powerlib.Registry.kindOf? env name == some .foundation do
       throwError "Realization foundation result lost its classification: {name}"
-  logInfo "POWERLIB_REALIZATION_OK: coordinate-free impedance criterion"
+  let some iso := env.find? `powerlib.ImpedanceCriterion.similar_of_markov_eq |
+    throwError "The state-space isomorphism theorem is missing"
+  for upstream in #[`LinearSystems.IsControllable, `LinearSystems.IsObservable] do
+    unless iso.type.getUsedConstants.contains upstream do
+      throwError "The isomorphism theorem does not state {upstream}"
+    let some idx := env.getModuleIdxFor? upstream |
+      throwError "Upstream predicate has no module: {upstream}"
+    unless env.header.moduleNames[idx]!.getRoot == `LeanForControl do
+      throwError "Minimality predicate is not LeanForControl's: {upstream}"
+  logInfo "POWERLIB_REALIZATION_OK: coordinate-free criterion; minimal realizations unique"

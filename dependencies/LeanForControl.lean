@@ -7,3 +7,5 @@ import LeanForControl.LinearSystems.Stability.Continuous.ExponentialStability
 import LeanForControl.LinearSystems.Stability.Continuous.LyapunovEquation
 import LeanForControl.Stability.LyapunovIndirect.Linearization
 import LeanForControl.Stability.LyapunovIndirect.NonlinearInstability
+import LeanForControl.LinearSystems.Controllability.Controllability
+import LeanForControl.LinearSystems.Observability.Observability
