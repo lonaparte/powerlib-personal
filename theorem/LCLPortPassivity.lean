@@ -12,7 +12,7 @@ open scoped Topology
 abbrev PortInput := Fin 2 → ℝ
 
 def terminalStateSpace (m : Circuit) :
-    powerlib.StateSpacePassivity.Model (Fin 3) (Fin 2) where
+    powerlib.LTI.Model (Fin 3) (Fin 2) where
   A := (toStateSpace m).matrix
   B := ![![(toStateSpace m).first.inputGain.val, 0],
     ![0, 0], ![0, -(toStateSpace m).second.inputGain.val]]
@@ -25,20 +25,20 @@ def physicalStorageMatrix (m : Circuit) : Matrix (Fin 3) (Fin 3) ℝ :=
 
 @[powerlib_foundation] theorem terminalStateSpace_field (m : Circuit)
     (x : State) (u : PortInput) :
-    powerlib.StateSpacePassivity.field (terminalStateSpace m) x u =
+    powerlib.LTI.Model.field (terminalStateSpace m) x u =
       (toStateSpace m).vectorField (u 0) (u 1) x := by
   ext i
   fin_cases i <;>
-    simp [powerlib.StateSpacePassivity.field, terminalStateSpace,
+    simp [powerlib.LTI.Model.field, terminalStateSpace,
       StateSpace.matrix, StateSpace.vectorField, StateSpace.field,
       Matrix.mulVec, dotProduct, Fin.sum_univ_succ] <;> ring
 
 @[simp, powerlib_foundation] theorem terminalStateSpace_output (m : Circuit)
     (x : State) (u : PortInput) :
-    powerlib.StateSpacePassivity.output (terminalStateSpace m) x u = ![x 0, -x 2] := by
+    powerlib.LTI.Model.output (terminalStateSpace m) x u = ![x 0, -x 2] := by
   ext i
   fin_cases i <;>
-    simp [powerlib.StateSpacePassivity.output, terminalStateSpace,
+    simp [powerlib.LTI.Model.output, terminalStateSpace,
       Matrix.mulVec, dotProduct, Fin.sum_univ_succ]
 
 def portSystem (m : Circuit) : powerlib.Passivity.System State (Fin 2) where
@@ -165,7 +165,7 @@ def portEnergyRate (m : Circuit) (x : State) (u : PortInput) : ℝ :=
 @[powerlib_foundation] theorem terminalStateSpace_energyRate (m : Circuit)
     (x : State) (u : PortInput) :
     dotProduct ((physicalStorageMatrix m).mulVec x)
-      (powerlib.StateSpacePassivity.field (terminalStateSpace m) x u) =
+      (powerlib.LTI.Model.field (terminalStateSpace m) x u) =
       portEnergyRate m x u := by
   rw [terminalStateSpace_field]
   simp [physicalStorageMatrix, Matrix.mulVec_diagonal, dotProduct,
@@ -188,7 +188,7 @@ def portEnergyRate (m : Circuit) (x : State) (u : PortInput) : ℝ :=
   have hsym : (physicalStorageMatrix m).transpose = physicalStorageMatrix m := by
     simp [physicalStorageMatrix]
   have hx' : HasDerivWithinAt x
-      (powerlib.StateSpacePassivity.field (terminalStateSpace m) (x t) (u t)) (Ici 0) t := by
+      (powerlib.LTI.Model.field (terminalStateSpace m) (x t) (u t)) (Ici 0) t := by
     simpa only [terminalStateSpace_field] using hx t ht
   simpa only [terminalStateSpace_energy, terminalStateSpace_energyRate] using
     powerlib.StateSpacePassivity.energy_derivative (physicalStorageMatrix m) hsym hx'

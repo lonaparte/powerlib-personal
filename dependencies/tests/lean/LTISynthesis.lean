@@ -4,7 +4,7 @@ set_option maxRecDepth 10000
 set_option maxHeartbeats 4000000
 noncomputable section
 namespace Candidate
-def model : powerlib.LTI.Model 2 := ⟨![![(-1 / 1 : ℝ), (10 / 1 : ℝ)], ![(0 / 1 : ℝ), (-1 / 1 : ℝ)]]⟩
+def model : powerlib.LTI.AutonomousModel 2 := ⟨![![(-1 / 1 : ℝ), (10 / 1 : ℝ)], ![(0 / 1 : ℝ), (-1 / 1 : ℝ)]]⟩
 
 def certificate : powerlib.LTI.Accepted model where
   P := ![![(1 / 2 : ℝ), (5 / 2 : ℝ)], ![(5 / 2 : ℝ), (51 / 2 : ℝ)]]
@@ -36,7 +36,7 @@ def certificate : powerlib.LTI.Accepted model where
       norm_num [model, Fin.sum_univ_succ]
 end Candidate
 namespace Admission
-def submittedModel : powerlib.LTI.Model 2 := ⟨![![(-1 / 1 : ℝ), (10 / 1 : ℝ)], ![(0 / 1 : ℝ), (-1 / 1 : ℝ)]]⟩
+def submittedModel : powerlib.LTI.AutonomousModel 2 := ⟨![![(-1 / 1 : ℝ), (10 / 1 : ℝ)], ![(0 / 1 : ℝ), (-1 / 1 : ℝ)]]⟩
 
 def accepted : powerlib.LTI.Accepted submittedModel := Candidate.certificate
 @[powerlib_domain] theorem exponentially_stable :
@@ -115,7 +115,7 @@ run_cmd do
 namespace LTISynthesisBinding
 open powerlib
 
-def differentModel : LTI.Model 2 := ⟨![![-2, 10], ![0, -1]]⟩
+def differentModel : LTI.AutonomousModel 2 := ⟨![![-2, 10], ![0, -1]]⟩
 
 @[powerlib_foundation] theorem a_certificate_for_another_model_is_rejected : True := by
   fail_if_success

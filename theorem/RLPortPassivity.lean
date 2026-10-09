@@ -12,7 +12,7 @@ abbrev Input := Fin 1 → ℝ
 
 def toState (current : ℝ) : State := fun _ => current
 
-def stateSpace (m : Impedance) : StateSpacePassivity.Model (Fin 1) (Fin 1) where
+def stateSpace (m : Impedance) : LTI.Model (Fin 1) (Fin 1) where
   A := fun _ _ => -(toStateSpace m).decay
   B := fun _ _ => (toStateSpace m).inputGain.val
   C := fun _ _ => 1
@@ -23,17 +23,17 @@ def portSystem (m : Impedance) : Passivity.System State (Fin 1) :=
 
 @[simp, powerlib_foundation] theorem stateSpace_field (m : Impedance)
     (x : State) (u : Input) :
-    StateSpacePassivity.field (stateSpace m) x u = toState ((toStateSpace m).field (x 0) (u 0)) := by
+    LTI.Model.field (stateSpace m) x u = toState ((toStateSpace m).field (x 0) (u 0)) := by
   ext j
   fin_cases j
-  simp [StateSpacePassivity.field, stateSpace, Matrix.mulVec, dotProduct,
+  simp [LTI.Model.field, stateSpace, Matrix.mulVec, dotProduct,
     toState, StateSpace.field]
 
 @[simp, powerlib_foundation] theorem stateSpace_output (m : Impedance)
-    (x : State) (u : Input) : StateSpacePassivity.output (stateSpace m) x u = x := by
+    (x : State) (u : Input) : LTI.Model.output (stateSpace m) x u = x := by
   ext j
   fin_cases j
-  simp [StateSpacePassivity.output, stateSpace, Matrix.mulVec, dotProduct]
+  simp [LTI.Model.output, stateSpace, Matrix.mulVec, dotProduct]
 
 @[simp, powerlib_foundation] theorem port_supply (m : Impedance)
     (x : State) (u : Input) : Passivity.supply (portSystem m) x u = u 0 * x 0 := by
@@ -57,7 +57,7 @@ def synthesizePassivityCertificate (m : Impedance) (hR : 0 ≤ m.resistance) :
   kyp := by
     intro x u
     have hbalance : dotProduct ((storageMatrix m).mulVec x)
-        (StateSpacePassivity.field (stateSpace m) x u) = u 0 * x 0 - m.resistance * (x 0) ^ 2 := by
+        (LTI.Model.field (stateSpace m) x u) = u 0 * x 0 - m.resistance * (x 0) ^ 2 := by
       rw [stateSpace_field]
       simp only [storageMatrix, Matrix.mulVec_diagonal, dotProduct,
         Fin.sum_univ_one, toState]
@@ -94,7 +94,7 @@ def IsPortTrajectory (m : Impedance) (voltage : ℝ → ℝ) (current : ℝ → 
       (fun t => toState (voltage t)) (fun t => toState (current t)) := by
   constructor
   · intro h t ht
-    change HasDerivWithinAt _ (StateSpacePassivity.field (stateSpace m)
+    change HasDerivWithinAt _ (LTI.Model.field (stateSpace m)
       (toState (current t)) (toState (voltage t))) _ _
     rw [stateSpace_field]
     apply hasDerivWithinAt_pi.mpr
@@ -102,7 +102,7 @@ def IsPortTrajectory (m : Impedance) (voltage : ℝ → ℝ) (current : ℝ → 
     exact h t ht
   · intro h t ht
     have hd := h t ht
-    change HasDerivWithinAt _ (StateSpacePassivity.field (stateSpace m)
+    change HasDerivWithinAt _ (LTI.Model.field (stateSpace m)
       (toState (current t)) (toState (voltage t))) _ _ at hd
     rw [stateSpace_field] at hd
     exact (hasDerivWithinAt_pi.mp hd) 0
@@ -124,7 +124,7 @@ def IsPortTrajectory (m : Impedance) (voltage : ℝ → ℝ) (current : ℝ → 
     IsPortTrajectory m (fun t => u t 0) (fun t => x t 0) := by
   intro t ht
   have hd := hx t ht
-  change HasDerivWithinAt _ (StateSpacePassivity.field (stateSpace m)
+  change HasDerivWithinAt _ (LTI.Model.field (stateSpace m)
     (x t) (u t)) _ _ at hd
   rw [stateSpace_field] at hd
   exact (hasDerivWithinAt_pi.mp hd) 0
@@ -164,7 +164,7 @@ def IsPortTrajectory (m : Impedance) (voltage : ℝ → ℝ) (current : ℝ → 
 @[powerlib_foundation] theorem equilibrium_to_generic
     {m : Impedance} {v e : ℝ} (he : powerlib.IsEquilibrium m v e) :
     StateSpacePassivity.IsEquilibrium (stateSpace m) (toState v) (toState e) := by
-  change StateSpacePassivity.field (stateSpace m) (toState e) (toState v) = 0
+  change LTI.Model.field (stateSpace m) (toState e) (toState v) = 0
   rw [stateSpace_field]
   change toState ((toStateSpace m).field e v) = 0
   rw [powerlib.equilibrium_field he]

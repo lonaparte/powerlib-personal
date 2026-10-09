@@ -1,11 +1,11 @@
 import theorem.ImpedanceStability
-import theorem.Realization
+import theorem.LTI
 
 noncomputable section
 namespace powerlib.ImpedanceCriterion
 open Matrix
 open powerlib.LTI (characteristicMatrix SpectrallyStable)
-open powerlib.Realization
+open powerlib.LTI
 
 variable {ι₁ ι₂ ι₁' ι₂' κ : Type*} [Fintype ι₁] [DecidableEq ι₁] [Fintype ι₂] [DecidableEq ι₂]
   [Fintype ι₁'] [DecidableEq ι₁'] [Fintype ι₂'] [DecidableEq ι₂'] [Fintype κ] [DecidableEq κ]
@@ -13,8 +13,8 @@ variable {ι₁ ι₂ ι₁' ι₂' κ : Type*} [Fintype ι₁] [DecidableEq ι�
 def Interconnection.changeCoordinates (ic : Interconnection ι₁ ι₂ κ)
     (T₁ : Matrix ι₁' ι₁ ℝ) (S₁ : Matrix ι₁ ι₁' ℝ) (T₂ : Matrix ι₂' ι₂ ℝ) (S₂ : Matrix ι₂ ι₂' ℝ) :
     Interconnection ι₁' ι₂' κ :=
-  ⟨Realization.changeCoordinates T₁ S₁ ic.source,
-    Realization.changeCoordinates T₂ S₂ ic.load, ic.load_strictly_proper⟩
+  ⟨LTI.changeCoordinates T₁ S₁ ic.source,
+    LTI.changeCoordinates T₂ S₂ ic.load, ic.load_strictly_proper⟩
 
 namespace Interconnection
 
@@ -25,10 +25,10 @@ omit [DecidableEq ι₁] [DecidableEq ι₂] [Fintype ι₁'] [DecidableEq ι₁
   [DecidableEq ι₂'] [DecidableEq κ] in
 @[powerlib_foundation] theorem closedLoopPort_changeCoordinates :
     (ic.changeCoordinates T₁ S₁ T₂ S₂).closedLoopPort =
-      Realization.changeCoordinates (fromBlocks T₁ 0 0 T₂) (fromBlocks S₁ 0 0 S₂)
+      LTI.changeCoordinates (fromBlocks T₁ 0 0 T₂) (fromBlocks S₁ 0 0 S₂)
         ic.closedLoopPort := by
   simp only [closedLoopPort, Interconnection.changeCoordinates,
-    Realization.changeCoordinates]
+    LTI.changeCoordinates]
   congr 1
   · simp only [closedLoop_eq_fromBlocks, fromBlocks_multiply]
     simp only [Matrix.zero_mul, Matrix.mul_zero, neg_zero, sub_self, add_zero, zero_add,
@@ -45,7 +45,7 @@ omit [DecidableEq ι₁] [DecidableEq ι₂] [Fintype ι₁'] [DecidableEq ι₁
 @[powerlib_foundation] theorem closedLoop_changeCoordinates :
     (ic.changeCoordinates T₁ S₁ T₂ S₂).closedLoop =
       fromBlocks T₁ 0 0 T₂ * ic.closedLoop * fromBlocks S₁ 0 0 S₂ :=
-  congrArg StateSpacePassivity.Model.A (ic.closedLoopPort_changeCoordinates T₁ S₁ T₂ S₂)
+  congrArg LTI.Model.A (ic.closedLoopPort_changeCoordinates T₁ S₁ T₂ S₂)
 
 omit [DecidableEq ι₁] [DecidableEq ι₂] [Fintype ι₁'] [Fintype ι₂'] in
 @[powerlib_foundation] private lemma blockDiag_mul_eq_one
@@ -88,8 +88,9 @@ section Minimal
 variable {n' p : ℕ}
 
 def Interconnection.closedLoopPortFin {n₁ n₂ : ℕ} (ic : Interconnection (Fin n₁) (Fin n₂) κ) :
-    PortModel (Fin (n₁ + n₂)) κ :=
-  Realization.changeCoordinates finSumFinEquiv.symm.toPEquiv.toMatrix finSumFinEquiv.toPEquiv.toMatrix
+    LTI.Model (Fin (n₁ + n₂)) κ :=
+  LTI.changeCoordinates finSumFinEquiv.symm.toPEquiv.toMatrix
+    finSumFinEquiv.toPEquiv.toMatrix
     ic.closedLoopPort
 
 @[powerlib_foundation] private lemma finSum_toMatrix_mul {n₁ n₂ : ℕ} :
@@ -108,14 +109,14 @@ omit [DecidableEq κ] in
 @[powerlib_foundation] theorem Interconnection.closedLoopPortFin_A {n₁ n₂ : ℕ}
     (ic : Interconnection (Fin n₁) (Fin n₂) κ) :
     ic.closedLoopPortFin.A = ic.closedLoopModel.A := by
-  simp only [Interconnection.closedLoopPortFin, Realization.changeCoordinates,
+  simp only [Interconnection.closedLoopPortFin, LTI.changeCoordinates,
     Interconnection.closedLoopModel, closedLoopPort]
   rw [PEquiv.toMatrix_toPEquiv_mul, PEquiv.mul_toMatrix_toPEquiv, Matrix.submatrix_submatrix,
     Matrix.reindex_apply]
   rfl
 
 @[powerlib_foundation] theorem Interconnection.similar_closedLoopPortFin_iff {n₁ n₂ : ℕ}
-    (ic : Interconnection (Fin n₁) (Fin n₂) (Fin p)) {m' : PortModel (Fin n') (Fin p)}
+    (ic : Interconnection (Fin n₁) (Fin n₂) (Fin p)) {m' : LTI.Model (Fin n') (Fin p)}
     (hc : LinearSystems.IsControllable ic.closedLoopPortFin.A ic.closedLoopPortFin.B)
     (ho : LinearSystems.IsObservable ic.closedLoopPortFin.A ic.closedLoopPortFin.C)
     (hc' : LinearSystems.IsControllable m'.A m'.B) (ho' : LinearSystems.IsObservable m'.A m'.C) :
@@ -149,7 +150,7 @@ omit [DecidableEq κ] in
 
 @[powerlib_foundation] theorem Interconnection.exists_minimal_realization_portImpedance
     {n₁ n₂ : ℕ} (ic : Interconnection (Fin n₁) (Fin n₂) (Fin p)) :
-    ∃ (n' : ℕ) (m' : PortModel (Fin n') (Fin p)), n' ≤ n₁ + n₂ ∧
+    ∃ (n' : ℕ) (m' : LTI.Model (Fin n') (Fin p)), n' ≤ n₁ + n₂ ∧
       LinearSystems.IsControllable m'.A m'.B ∧ LinearSystems.IsObservable m'.A m'.C ∧
         ∀ s : ℂ, (characteristicMatrix ic.source.A s).det ≠ 0 →
           (characteristicMatrix ic.load.A s).det ≠ 0 → ic.returnDifference s ≠ 0 →

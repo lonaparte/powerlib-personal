@@ -1,6 +1,6 @@
 import powerlib
 
-open powerlib powerlib.ImpedanceCriterion powerlib.Realization
+open powerlib powerlib.ImpedanceCriterion powerlib.LTI
 
 namespace ImpedanceConsumers
 

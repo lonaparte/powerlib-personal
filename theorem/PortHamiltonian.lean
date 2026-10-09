@@ -40,7 +40,7 @@ def dampingPower (m : Model ι κ) (x : State ι) : ℝ :=
 def stateMatrix (m : Model ι κ) : Matrix ι ι ℝ :=
   (m.J - diagonal m.d) * diagonal m.w
 
-def linearModel (m : Model ι κ) : StateSpacePassivity.Model ι κ where
+def linearModel (m : Model ι κ) : LTI.Model ι κ where
   A := stateMatrix m
   B := m.B
   C := m.B.transpose * diagonal m.w
@@ -54,14 +54,14 @@ omit [Fintype κ] in
 
 @[simp, powerlib_foundation] theorem linearModel_field (m : Model ι κ)
     (x : State ι) (u : κ → ℝ) :
-    StateSpacePassivity.field (linearModel m) x u = field m x u := by
-  simp only [StateSpacePassivity.field, linearModel, stateMatrix, field,
+    LTI.Model.field (linearModel m) x u = field m x u := by
+  simp only [LTI.Model.field, linearModel, stateMatrix, field,
     ← mulVec_mulVec, diagonal_mulVec_gradient]
 
 @[simp, powerlib_foundation] theorem linearModel_output (m : Model ι κ)
     (x : State ι) (u : κ → ℝ) :
-    StateSpacePassivity.output (linearModel m) x u = output m x := by
-  simp only [StateSpacePassivity.output, linearModel, output, zero_mulVec, add_zero,
+    LTI.Model.output (linearModel m) x u = output m x := by
+  simp only [LTI.Model.output, linearModel, output, zero_mulVec, add_zero,
     ← mulVec_mulVec, diagonal_mulVec_gradient]
 
 @[simp, powerlib_foundation] theorem system_eq (m : Model ι κ) :

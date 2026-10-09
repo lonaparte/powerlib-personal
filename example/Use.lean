@@ -44,12 +44,12 @@ example (m : powerlib.Impedance) (s current voltage : ℂ) :
 #check powerlib.ImpedanceCriterion.impedanceStable_without_premises_insufficient
 #check powerlib.ImpedanceCriterion.Interconnection.transfer_closedLoopPort
 #check powerlib.ImpedanceCriterion.Interconnection.impedanceStable_changeCoordinates_iff
-#check powerlib.Realization.similar_iff_transfer_eq
+#check powerlib.LTI.similar_iff_transfer_eq
 #check powerlib.ImpedanceCriterion.Interconnection.similar_closedLoopPortFin_iff
-#check powerlib.Realization.transfer_eq_iff_markov_eq
-#check powerlib.Realization.exists_minimal_realization
-#check powerlib.Realization.controllable_observable_iff_minimal
+#check powerlib.LTI.transfer_eq_iff_markov_eq
+#check powerlib.LTI.exists_minimal_realization
+#check powerlib.LTI.controllable_observable_iff_minimal
 #check powerlib.ImpedanceCriterion.Interconnection.exists_minimal_realization_portImpedance
-#print axioms powerlib.Realization.similar_iff_transfer_eq
-#print axioms powerlib.Realization.exists_minimal_realization
+#print axioms powerlib.LTI.similar_iff_transfer_eq
+#print axioms powerlib.LTI.exists_minimal_realization
 #print axioms powerlib.ImpedanceCriterion.Interconnection.exponentiallyStable_iff_impedanceStable
