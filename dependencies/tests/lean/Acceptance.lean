@@ -406,7 +406,7 @@ run_cmd do
       (`powerlib.Passivity.DissipativeStorage.zeroInput_energy_antitone,
         `antitoneOn_of_hasDerivWithinAt_nonpos),
       (`powerlib.StateSpacePassivity.trajectory_unique, `ODE_solution_unique),
-      (`powerlib.StateSpacePassivity.response_solves, `hasDerivAt_exp_smul_const')] do
+      (`powerlib.LTI.Model.response_solves, `hasDerivAt_exp_smul_const')] do
     let info ← getConstInfo consumer
     let some proof := info.value? (allowOpaque := true) | throwError "Missing passivity proof: {consumer}"
     unless proof.getUsedConstants.contains source do

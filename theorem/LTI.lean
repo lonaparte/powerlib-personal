@@ -74,7 +74,7 @@ def euclidean (x : State n) : PiLp 2 (fun _ : Fin n => ℝ) :=
   rw [PiLp.norm_sq_eq_of_L2]
   simp [sqNorm, euclidean, Real.norm_eq_abs, sq_abs]
 
-def energy (P : Matrix (Fin n) (Fin n) ℝ) (x : State n) : ℝ :=
+def energy {ι : Type*} [Fintype ι] (P : Matrix ι ι ℝ) (x : ι → ℝ) : ℝ :=
   dotProduct x (P.mulVec x)
 
 def IsTrajectory (m : AutonomousModel n) (x : ℝ → State n) : Prop :=
@@ -97,6 +97,84 @@ def response (m : AutonomousModel n) (initial : State n) (t : ℝ) : State n :=
 @[powerlib_domain, aesop safe apply] theorem trajectory_exists (m : AutonomousModel n) (initial : State n) :
     ∃ x, IsTrajectory m x ∧ x 0 = initial :=
   ⟨response m initial, response_solves m initial, response_initial m initial⟩
+
+section ZeroInput
+
+variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
+
+def Model.operator (m : Model ι κ) : (ι → ℝ) →L[ℝ] (ι → ℝ) :=
+  LinearMap.toContinuousLinearMap (Matrix.toLin' m.A)
+
+omit [Fintype κ] in
+@[simp, powerlib_foundation] theorem Model.operator_apply (m : Model ι κ) (x : ι → ℝ) :
+    m.operator x = m.A.mulVec x := rfl
+
+@[powerlib_foundation] theorem Model.operator_field (m : Model ι κ) (x : ι → ℝ) :
+    m.operator x = m.field x 0 := by
+  simp [Model.field]
+
+@[powerlib_foundation] theorem Model.field_lipschitz (m : Model ι κ) (u : κ → ℝ) :
+    LipschitzWith ‖m.operator‖₊ (fun x => m.field x u) := by
+  apply lipschitzWith_iff_norm_sub_le.mpr
+  intro x y
+  simpa only [Model.field, Model.operator_apply, add_sub_add_right_eq_sub] using
+    (lipschitzWith_iff_norm_sub_le.mp m.operator.lipschitzWith x y)
+
+def Model.response (m : Model ι κ) (initial : ι → ℝ) (t : ℝ) : ι → ℝ :=
+  (NormedSpace.exp (t • m.operator)) initial
+
+omit [Fintype κ] in
+@[simp, powerlib_domain] theorem Model.response_initial (m : Model ι κ) (initial : ι → ℝ) :
+    m.response initial 0 = initial := by
+  simp [Model.response, NormedSpace.exp_zero]
+
+omit [Fintype κ] in
+@[powerlib_domain, aesop safe apply (transparency! := default)] theorem Model.response_solves
+    (m : Model ι κ) (initial : ι → ℝ) (t : ℝ) :
+    HasDerivAt (m.response initial) (m.operator (m.response initial t)) t := by
+  have h := (hasDerivAt_exp_smul_const' m.operator t).clm_apply
+    (hasDerivAt_const t initial)
+  simpa [Model.response, mul_apply_eq_comp] using! h
+
+def Model.IsEquilibrium (m : Model ι κ) (u : κ → ℝ) (e : ι → ℝ) : Prop :=
+  m.field e u = 0
+
+@[powerlib_foundation] theorem Model.field_shift {m : Model ι κ} {u : κ → ℝ} {e : ι → ℝ}
+    (he : m.IsEquilibrium u e) (x : ι → ℝ) :
+    m.field x u = m.operator (x - e) := by
+  change m.A.mulVec x + m.B.mulVec u = m.A.mulVec (x - e)
+  rw [mulVec_sub]
+  have he' : m.A.mulVec e + m.B.mulVec u = 0 := he
+  calc
+    _ = m.A.mulVec x + m.B.mulVec u - (m.A.mulVec e + m.B.mulVec u) := by
+      rw [he']; simp
+    _ = _ := by abel
+
+def Model.equilibriumResponse (m : Model ι κ) (e initial : ι → ℝ) (t : ℝ) : ι → ℝ :=
+  m.response (initial - e) t + e
+
+omit [Fintype κ] in
+@[simp, powerlib_domain] theorem Model.equilibriumResponse_initial
+    (m : Model ι κ) (e initial : ι → ℝ) : m.equilibriumResponse e initial 0 = initial := by
+  simp [Model.equilibriumResponse]
+
+end ZeroInput
+
+section Autonomous
+
+variable {κ : Type*}
+
+@[powerlib_foundation] theorem Model.autonomous_field [Fintype κ] (m : Model (Fin n) κ)
+    (x : State n) : m.autonomous.field x = m.field x 0 := by
+  simp [AutonomousModel.field, Model.autonomous, Model.field]
+
+@[powerlib_foundation] theorem Model.autonomous_operator (m : Model (Fin n) κ) :
+    m.autonomous.operator = m.operator := rfl
+
+@[powerlib_foundation] theorem Model.response_autonomous (m : Model (Fin n) κ) :
+    powerlib.LTI.response m.autonomous = m.response := rfl
+
+end Autonomous
 
 /-- Standard Euclidean-norm exponential decay of every global solution. -/
 def ExponentiallyStable (m : AutonomousModel n) : Prop :=

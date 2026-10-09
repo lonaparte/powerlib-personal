@@ -82,8 +82,8 @@ run_cmd do
       unless (`powerlib.ImpedanceCriterion).isPrefixOf user do
         throwError "Interconnection realization theorem outside its namespace: {name}"
       interconnection := interconnection + 1
-  unless lti == 70 && interconnection == 12 do
-    throwError "Expected 70/12 LTI/interconnection theorems, found {lti}/{interconnection}"
+  unless lti == 80 && interconnection == 12 do
+    throwError "Expected 80/12 LTI/interconnection theorems, found {lti}/{interconnection}"
   for name in #[`powerlib.ImpedanceCriterion.Interconnection.impedanceStable_changeCoordinates_iff,
       `powerlib.ImpedanceCriterion.Interconnection.spectrallyStable_closedLoop_changeCoordinates_iff,
       `powerlib.ImpedanceCriterion.Interconnection.closedLoopPortFin_A,

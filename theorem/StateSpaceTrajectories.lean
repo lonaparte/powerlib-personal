@@ -8,48 +8,15 @@ open scoped Topology
 
 variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
 
-def operator (m : LTI.Model ι κ) : (ι → ℝ) →L[ℝ] (ι → ℝ) :=
-  (Matrix.toLin' m.A).toContinuousLinearMap
-
-omit [Fintype κ] in
-@[simp, powerlib_foundation] theorem operator_apply (m : LTI.Model ι κ) (x : (ι → ℝ)) :
-    operator m x = m.A.mulVec x := rfl
-
-@[powerlib_foundation] theorem operator_field (m : LTI.Model ι κ) (x : (ι → ℝ)) :
-    operator m x = m.field x 0 := by
-  simp [LTI.Model.field]
-
-@[powerlib_foundation] theorem field_lipschitz (m : LTI.Model ι κ) (u : κ → ℝ) :
-    LipschitzWith ‖operator m‖₊ (fun x => m.field x u) := by
-  apply lipschitzWith_iff_norm_sub_le.mpr
-  intro x y
-  simpa only [LTI.Model.field, operator_apply, add_sub_add_right_eq_sub] using
-    (lipschitzWith_iff_norm_sub_le.mp (operator m).lipschitzWith x y)
-
-def response (m : LTI.Model ι κ) (initial : (ι → ℝ)) (t : ℝ) : (ι → ℝ) :=
-  (NormedSpace.exp (t • operator m)) initial
-
-omit [Fintype κ] in
-@[simp, powerlib_domain] theorem response_initial (m : LTI.Model ι κ) (initial : (ι → ℝ)) :
-    response m initial 0 = initial := by
-  simp [response, NormedSpace.exp_zero]
-
-omit [Fintype κ] in
-@[powerlib_domain, aesop safe apply (transparency! := default)] theorem response_solves (m : LTI.Model ι κ) (initial : (ι → ℝ)) (t : ℝ) :
-    HasDerivAt (response m initial) (operator m (response m initial t)) t := by
-  have h := (hasDerivAt_exp_smul_const' (operator m) t).clm_apply
-    (hasDerivAt_const t initial)
-  simpa [response, mul_apply_eq_comp] using! h
-
-@[powerlib_domain, aesop safe apply] theorem response_trajectory (m : LTI.Model ι κ) (initial : (ι → ℝ)) :
-    Passivity.IsTrajectory (system m) (fun _ => 0) (response m initial) := by
+@[powerlib_domain, aesop safe apply] theorem response_trajectory (m : LTI.Model ι κ) (initial : ι → ℝ) :
+    Passivity.IsTrajectory (system m) (fun _ => 0) (m.response initial) := by
   intro t _
-  simpa only [operator_field, system] using (response_solves m initial t).hasDerivWithinAt
+  simpa only [LTI.Model.operator_field, system] using (m.response_solves initial t).hasDerivWithinAt
 
 @[powerlib_domain, aesop norm forward (immediate := [m, initial])] theorem trajectory_exists
-    (m : LTI.Model ι κ) (initial : (ι → ℝ)) :
+    (m : LTI.Model ι κ) (initial : ι → ℝ) :
     ∃ x, Passivity.IsTrajectory (system m) (fun _ => 0) x ∧ x 0 = initial :=
-  ⟨response m initial, response_trajectory m initial, response_initial m initial⟩
+  ⟨m.response initial, response_trajectory m initial, m.response_initial initial⟩
 
 @[powerlib_domain, aesop norm forward (immediate := [m, hx, hy, h0])]
 theorem trajectory_unique (m : LTI.Model ι κ)
@@ -67,61 +34,53 @@ theorem trajectory_unique (m : LTI.Model ι κ)
     intro r hr
     exact (hz r hr.1).mono (fun _ hh => hr.1.trans hh)
   exact ODE_solution_unique (v := fun t x => m.field x (u t))
-    (fun t => field_lipschitz m (u t))
+    (fun t => m.field_lipschitz (u t))
     (hc x hx) (hd x hx) (hc y hy) (hd y hy) h0 ⟨ht, le_rfl⟩
 
 @[powerlib_domain] theorem trajectory_eq_response (m : LTI.Model ι κ)
     {x : ℝ → (ι → ℝ)} (hx : Passivity.IsTrajectory (system m) (fun _ => 0) x)
-    {t : ℝ} (ht : 0 ≤ t) : x t = response m (x 0) t :=
-  trajectory_unique m hx (response_trajectory m (x 0)) (response_initial m (x 0)).symm ht
+    {t : ℝ} (ht : 0 ≤ t) : x t = m.response (x 0) t :=
+  trajectory_unique m hx (response_trajectory m (x 0)) (m.response_initial (x 0)).symm ht
 
-@[powerlib_domain, aesop norm -1 apply] theorem trajectory_exists_unique (m : LTI.Model ι κ) (initial : (ι → ℝ)) :
+@[powerlib_domain, aesop norm -1 apply] theorem trajectory_exists_unique (m : LTI.Model ι κ) (initial : ι → ℝ) :
     ∃ x, Passivity.IsTrajectory (system m) (fun _ => 0) x ∧ x 0 = initial ∧
       ∀ y, Passivity.IsTrajectory (system m) (fun _ => 0) y → y 0 = initial →
         EqOn y x (Ici 0) := by
-  refine ⟨response m initial, response_trajectory m initial, response_initial m initial, ?_⟩
+  refine ⟨m.response initial, response_trajectory m initial, m.response_initial initial, ?_⟩
   intro y hy h0
   exact trajectory_unique m hy (response_trajectory m initial)
-    (h0.trans (response_initial m initial).symm)
+    (h0.trans (m.response_initial initial).symm)
 
-def IsEquilibrium (m : LTI.Model ι κ) (u : κ → ℝ) (e : (ι → ℝ)) : Prop :=
-  m.field e u = 0
+@[powerlib_foundation] theorem trajectory_of_autonomous {n : ℕ} {m : LTI.Model (Fin n) κ}
+    {x : ℝ → (Fin n → ℝ)} (hx : LTI.IsTrajectory m.autonomous x) :
+    Passivity.IsTrajectory (system m) (fun _ => 0) x := by
+  intro t _
+  simpa only [system, LTI.Model.autonomous_field] using (hx t).hasDerivWithinAt
 
-def LyapunovStableAt (m : LTI.Model ι κ) (u : κ → ℝ) (e : (ι → ℝ)) : Prop :=
+def LyapunovStableAt (m : LTI.Model ι κ) (u : κ → ℝ) (e : ι → ℝ) : Prop :=
   ∀ ε > 0, ∃ δ > 0, ∀ x,
     Passivity.IsTrajectory (system m) (fun _ => u) x → ‖x 0 - e‖ < δ →
       ∀ t ≥ 0, ‖x t - e‖ < ε
 
-@[powerlib_foundation] theorem field_shift {m : LTI.Model ι κ} {u : κ → ℝ} {e : (ι → ℝ)}
-    (he : IsEquilibrium m u e) (x : (ι → ℝ)) :
-    m.field x u = operator m (x - e) := by
-  change m.A.mulVec x + m.B.mulVec u = m.A.mulVec (x - e)
-  rw [mulVec_sub]
-  have he' : m.A.mulVec e + m.B.mulVec u = 0 := he
-  calc
-    _ = m.A.mulVec x + m.B.mulVec u - (m.A.mulVec e + m.B.mulVec u) := by
-      rw [he']; simp
-    _ = _ := by abel
-
 @[powerlib_foundation] theorem trajectory_shift {m : LTI.Model ι κ}
-    {u : κ → ℝ} {e : (ι → ℝ)} {x : ℝ → (ι → ℝ)}
-    (he : IsEquilibrium m u e)
+    {u : κ → ℝ} {e : ι → ℝ} {x : ℝ → (ι → ℝ)}
+    (he : m.IsEquilibrium u e)
     (hx : Passivity.IsTrajectory (system m) (fun _ => u) x) :
     Passivity.IsTrajectory (system m) (fun _ => 0) (fun t => x t - e) := by
   intro t ht
-  simpa only [system, field_shift he, ← operator_field] using (hx t ht).sub_const e
+  simpa only [system, LTI.Model.field_shift he, ← LTI.Model.operator_field] using (hx t ht).sub_const e
 
 @[powerlib_foundation] theorem trajectory_add_equilibrium {m : LTI.Model ι κ}
-    {u : κ → ℝ} {e : (ι → ℝ)} {x : ℝ → (ι → ℝ)}
-    (he : IsEquilibrium m u e)
+    {u : κ → ℝ} {e : ι → ℝ} {x : ℝ → (ι → ℝ)}
+    (he : m.IsEquilibrium u e)
     (hx : Passivity.IsTrajectory (system m) (fun _ => 0) x) :
     Passivity.IsTrajectory (system m) (fun _ => u) (fun t => x t + e) := by
   intro t ht
-  simpa only [system, field_shift he, add_sub_cancel_right, ← operator_field] using
+  simpa only [system, LTI.Model.field_shift he, add_sub_cancel_right, ← LTI.Model.operator_field] using
     (hx t ht).add_const e
 
 @[powerlib_foundation] theorem trajectory_shift_iff {m : LTI.Model ι κ}
-    {u : κ → ℝ} {e : (ι → ℝ)} {x : ℝ → (ι → ℝ)} (he : IsEquilibrium m u e) :
+    {u : κ → ℝ} {e : ι → ℝ} {x : ℝ → (ι → ℝ)} (he : m.IsEquilibrium u e) :
     Passivity.IsTrajectory (system m) (fun _ => u) x ↔
       Passivity.IsTrajectory (system m) (fun _ => 0) (fun t => x t - e) := by
   constructor
@@ -129,35 +88,27 @@ def LyapunovStableAt (m : LTI.Model ι κ) (u : κ → ℝ) (e : (ι → ℝ)) :
   · intro hx
     simpa only [sub_add_cancel] using trajectory_add_equilibrium he hx
 
-def equilibriumResponse (m : LTI.Model ι κ) (e initial : (ι → ℝ)) (t : ℝ) : (ι → ℝ) :=
-  response m (initial - e) t + e
-
-omit [Fintype κ] in
-@[simp, powerlib_domain] theorem equilibriumResponse_initial
-    (m : LTI.Model ι κ) (e initial : (ι → ℝ)) : equilibriumResponse m e initial 0 = initial := by
-  simp [equilibriumResponse]
-
 @[powerlib_domain, aesop safe apply] theorem equilibriumResponse_trajectory {m : LTI.Model ι κ}
-    {u : κ → ℝ} {e : (ι → ℝ)} (he : IsEquilibrium m u e) (initial : (ι → ℝ)) :
-    Passivity.IsTrajectory (system m) (fun _ => u) (equilibriumResponse m e initial) :=
+    {u : κ → ℝ} {e : ι → ℝ} (he : m.IsEquilibrium u e) (initial : ι → ℝ) :
+    Passivity.IsTrajectory (system m) (fun _ => u) (m.equilibriumResponse e initial) :=
   trajectory_add_equilibrium he (response_trajectory m (initial - e))
 
 @[powerlib_domain, aesop norm forward (immediate := [m, he, initial])] theorem equilibrium_trajectory_exists {m : LTI.Model ι κ}
-    {u : κ → ℝ} {e : (ι → ℝ)} (he : IsEquilibrium m u e) (initial : (ι → ℝ)) :
+    {u : κ → ℝ} {e : ι → ℝ} (he : m.IsEquilibrium u e) (initial : ι → ℝ) :
     ∃ x, Passivity.IsTrajectory (system m) (fun _ => u) x ∧ x 0 = initial :=
-  ⟨equilibriumResponse m e initial, equilibriumResponse_trajectory he initial,
-    equilibriumResponse_initial m e initial⟩
+  ⟨m.equilibriumResponse e initial, equilibriumResponse_trajectory he initial,
+    m.equilibriumResponse_initial e initial⟩
 
 @[powerlib_domain] theorem trajectory_eq_equilibriumResponse {m : LTI.Model ι κ}
-    {u : κ → ℝ} {e : (ι → ℝ)} (he : IsEquilibrium m u e) {x : ℝ → (ι → ℝ)}
+    {u : κ → ℝ} {e : ι → ℝ} (he : m.IsEquilibrium u e) {x : ℝ → (ι → ℝ)}
     (hx : Passivity.IsTrajectory (system m) (fun _ => u) x) {t : ℝ} (ht : 0 ≤ t) :
-    x t = equilibriumResponse m e (x 0) t :=
+    x t = m.equilibriumResponse e (x 0) t :=
   trajectory_unique m hx (equilibriumResponse_trajectory he (x 0))
-    (equilibriumResponse_initial m e (x 0)).symm ht
+    (m.equilibriumResponse_initial e (x 0)).symm ht
 
 @[powerlib_domain, aesop safe apply] theorem lyapunovStableAt_of_zeroInput
-    {m : LTI.Model ι κ} {u : κ → ℝ} {e : (ι → ℝ)}
-    (he : IsEquilibrium m u e) (hs : Passivity.LyapunovStable (system m)) :
+    {m : LTI.Model ι κ} {u : κ → ℝ} {e : ι → ℝ}
+    (he : m.IsEquilibrium u e) (hs : Passivity.LyapunovStable (system m)) :
     LyapunovStableAt m u e := by
   intro ε hε
   obtain ⟨δ, hδ, hbound⟩ := hs ε hε
@@ -167,12 +118,12 @@ omit [Fintype κ] in
 
 @[powerlib_domain, aesop norm forward (immediate := [c, he])]
 theorem Certificate.lyapunovStableAt [Nonempty ι]
-    {m : LTI.Model ι κ} (c : Certificate m) {u : κ → ℝ} {e : (ι → ℝ)}
-    (he : IsEquilibrium m u e) : LyapunovStableAt m u e :=
+    {m : LTI.Model ι κ} (c : Certificate m) {u : κ → ℝ} {e : ι → ℝ}
+    (he : m.IsEquilibrium u e) : LyapunovStableAt m u e :=
   lyapunovStableAt_of_zeroInput he c.lyapunovStable
 
 @[powerlib_domain] theorem lyapunovStableAt_iff_zeroInput
-    {m : LTI.Model ι κ} {u : κ → ℝ} {e : (ι → ℝ)} (he : IsEquilibrium m u e) :
+    {m : LTI.Model ι κ} {u : κ → ℝ} {e : ι → ℝ} (he : m.IsEquilibrium u e) :
     LyapunovStableAt m u e ↔ Passivity.LyapunovStable (system m) := by
   constructor
   · intro hs ε hε

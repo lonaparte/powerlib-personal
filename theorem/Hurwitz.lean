@@ -49,7 +49,7 @@ variable {n : ℕ} {ι ι' : Type*} [Fintype ι] [DecidableEq ι] [Fintype ι'] 
         StateSpacePassivity.energy P x ≤ β * sqNorm x := by
       simpa [sqNorm_eq_norm_sq, euclidean] using! hb (euclidean x)
     have hx : energy P x = 2 * StateSpacePassivity.energy P x := by
-      simp only [energy, StateSpacePassivity.energy]
+      simp only [StateSpacePassivity.energy]
       ring
     rw [hx]
     constructor <;> linarith [h.1, h.2]

@@ -73,7 +73,7 @@ omit [Fintype κ] in
 omit [Fintype κ] in
 @[simp, powerlib_foundation] theorem energy_eq (m : Model ι κ) (x : State ι) :
     StateSpacePassivity.energy (diagonal m.w) x = energy m x := by
-  simp only [StateSpacePassivity.energy, energy, dotProduct, Finset.sum_div,
+  simp only [StateSpacePassivity.energy, LTI.energy, energy, dotProduct, Finset.sum_div,
     mulVec_diagonal]
   apply Finset.sum_congr rfl
   intro i _
@@ -241,25 +241,25 @@ def storage (m : Model ι κ) : Passivity.QuadraticStorage (system m) where
   simpa only [system_eq] using (certificate m).lyapunovStable
 
 def operator (m : Model ι κ) : State ι →L[ℝ] State ι :=
-  StateSpacePassivity.operator (linearModel m)
+  (linearModel m).operator
 
 @[powerlib_foundation] theorem operator_field (m : Model ι κ) (x : State ι) :
     operator m x = field m x 0 := by
   simpa only [operator, linearModel_field] using
-    StateSpacePassivity.operator_field (linearModel m) x
+    (linearModel m).operator_field x
 
 def response (m : Model ι κ) (initial : State ι) (t : ℝ) : State ι :=
-  StateSpacePassivity.response (linearModel m) initial t
+  (linearModel m).response initial t
 
 omit [Fintype κ] in
 @[simp, powerlib_domain] theorem response_initial (m : Model ι κ) (initial : State ι) :
     response m initial 0 = initial :=
-  StateSpacePassivity.response_initial (linearModel m) initial
+  (linearModel m).response_initial initial
 
 omit [Fintype κ] in
 @[powerlib_domain, aesop safe apply] theorem response_solves (m : Model ι κ) (initial : State ι) (t : ℝ) :
     HasDerivAt (response m initial) (operator m (response m initial t)) t :=
-  StateSpacePassivity.response_solves (linearModel m) initial t
+  (linearModel m).response_solves initial t
 
 @[powerlib_domain, aesop safe apply] theorem response_trajectory (m : Model ι κ) (initial : State ι) :
     Passivity.IsTrajectory (system m) (fun _ => 0) (response m initial) := by

@@ -47,7 +47,7 @@ def portEnergy (m : Impedance) (x : State) : ℝ :=
 
 @[simp, powerlib_foundation] theorem storage_energy (m : Impedance) (x : State) :
     StateSpacePassivity.energy (storageMatrix m) x = portEnergy m x := by
-  simp [StateSpacePassivity.energy, storageMatrix, portEnergy, dotProduct]
+  simp [StateSpacePassivity.energy, LTI.energy, storageMatrix, portEnergy, dotProduct]
   ring
 
 def synthesizePassivityCertificate (m : Impedance) (hR : 0 ≤ m.resistance) :
@@ -163,7 +163,7 @@ def IsPortTrajectory (m : Impedance) (voltage : ℝ → ℝ) (current : ℝ → 
 
 @[powerlib_foundation] theorem equilibrium_to_generic
     {m : Impedance} {v e : ℝ} (he : powerlib.IsEquilibrium m v e) :
-    StateSpacePassivity.IsEquilibrium (stateSpace m) (toState v) (toState e) := by
+    (stateSpace m).IsEquilibrium (toState v) (toState e) := by
   change LTI.Model.field (stateSpace m) (toState e) (toState v) = 0
   rw [stateSpace_field]
   change toState ((toStateSpace m).field e v) = 0

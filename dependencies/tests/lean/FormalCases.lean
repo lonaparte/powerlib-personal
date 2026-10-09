@@ -245,7 +245,7 @@ namespace StateSpacePassivityCases
 @[powerlib_domain] theorem arbitrary_dimensions_equilibrium_stable {ι κ : Type*} [Fintype ι] [DecidableEq ι]
     [Fintype κ] [Nonempty ι] (m : LTI.Model ι κ)
     (c : StateSpacePassivity.Certificate m) (u : κ → ℝ) (e : ι → ℝ)
-    (he : StateSpacePassivity.IsEquilibrium m u e) :
+    (he : m.IsEquilibrium u e) :
     StateSpacePassivity.LyapunovStableAt m u e := by aesop
 
 @[powerlib_domain] theorem arbitrary_dimensions_matrix_certificate_passive {ι κ : Type*} [Fintype ι]
@@ -292,22 +292,20 @@ namespace StateSpacePassivityCases
 
 @[powerlib_domain] theorem constructed_response_contract {ι κ : Type*} [Fintype ι] [DecidableEq ι]
     [Fintype κ] (m : LTI.Model ι κ) (initial : ι → ℝ) (t : ℝ) :
-    HasDerivAt (StateSpacePassivity.response m initial)
-      (StateSpacePassivity.operator m (StateSpacePassivity.response m initial t)) t ∧
+    HasDerivAt (m.response initial) (m.operator (m.response initial t)) t ∧
       Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => 0)
-        (StateSpacePassivity.response m initial) ∧
-      StateSpacePassivity.response m initial 0 = initial := by aesop
+        (m.response initial) ∧
+      m.response initial 0 = initial := by aesop
 
 @[powerlib_domain] theorem constructed_equilibrium_response_contract {ι κ : Type*} [Fintype ι]
     [DecidableEq ι] [Fintype κ] (m : LTI.Model ι κ)
-    (u : κ → ℝ) (e initial : ι → ℝ) (he : StateSpacePassivity.IsEquilibrium m u e) :
-    Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => u)
-      (StateSpacePassivity.equilibriumResponse m e initial) ∧
-      StateSpacePassivity.equilibriumResponse m e initial 0 = initial := by aesop
+    (u : κ → ℝ) (e initial : ι → ℝ) (he : m.IsEquilibrium u e) :
+    Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => u) (m.equilibriumResponse e initial) ∧
+      m.equilibriumResponse e initial 0 = initial := by aesop
 
 @[powerlib_domain] theorem supplied_equilibrium_forward_solution {ι κ : Type*} [Fintype ι]
     [DecidableEq ι] [Fintype κ] (m : LTI.Model ι κ)
-    (u : κ → ℝ) (e initial : ι → ℝ) (he : StateSpacePassivity.IsEquilibrium m u e) :
+    (u : κ → ℝ) (e initial : ι → ℝ) (he : m.IsEquilibrium u e) :
     ∃ x, Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => u) x ∧
       x 0 = initial := by aesop
 

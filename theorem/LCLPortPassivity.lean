@@ -132,9 +132,9 @@ def IsPortTrajectory (m : Circuit) (u : ℝ → PortInput) (x : ℝ → State) :
 
 @[simp, powerlib_foundation] theorem terminalStateSpace_equilibrium_iff (m : Circuit)
     (u vg : ℝ) (e : State) :
-    powerlib.StateSpacePassivity.IsEquilibrium (terminalStateSpace m) ![u, vg] e ↔
+    (terminalStateSpace m).IsEquilibrium ![u, vg] e ↔
       IsEquilibrium m u vg e := by
-  simp [powerlib.StateSpacePassivity.IsEquilibrium, terminalStateSpace_field,
+  simp [powerlib.LTI.Model.IsEquilibrium, terminalStateSpace_field,
     IsEquilibrium]
 
 @[simp, powerlib_foundation] theorem terminalStateSpace_stability_iff (m : Circuit)
@@ -153,7 +153,7 @@ def portEnergyRate (m : Circuit) (x : State) (u : PortInput) : ℝ :=
 
 @[simp, powerlib_foundation] theorem terminalStateSpace_energy (m : Circuit) (x : State) :
     powerlib.StateSpacePassivity.energy (physicalStorageMatrix m) x = portEnergy m x := by
-  simp [powerlib.StateSpacePassivity.energy, physicalStorageMatrix,
+  simp [powerlib.StateSpacePassivity.energy, powerlib.LTI.energy, physicalStorageMatrix,
     portEnergy, quadraticEnergy, energy, physicalWeights,
     Matrix.mulVec_diagonal, dotProduct, Fin.sum_univ_succ]
   ring

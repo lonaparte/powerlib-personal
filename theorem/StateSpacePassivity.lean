@@ -8,11 +8,11 @@ open scoped Topology
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
 
-def system (m : LTI.Model ι κ) : Passivity.System ((ι → ℝ)) κ :=
+def system (m : LTI.Model ι κ) : Passivity.System (ι → ℝ) κ :=
   ⟨m.field, m.output⟩
 
-def energy (P : Matrix ι ι ℝ) (x : (ι → ℝ)) : ℝ :=
-  dotProduct x (P.mulVec x) / 2
+def energy (P : Matrix ι ι ℝ) (x : ι → ℝ) : ℝ :=
+  LTI.energy P x / 2
 
 structure Certificate (m : LTI.Model ι κ) where
   P : Matrix ι ι ℝ
@@ -25,23 +25,23 @@ structure Certificate (m : LTI.Model ι κ) where
   simp [Passivity.IsEquilibrium, system, LTI.Model.field]
 
 @[simp, powerlib_foundation] theorem energy_zero (P : Matrix ι ι ℝ) : energy P 0 = 0 := by
-  simp [energy]
+  simp [energy, LTI.energy]
 
 @[powerlib_foundation] theorem energy_continuous (P : Matrix ι ι ℝ) :
     Continuous (energy P) := by
-  unfold energy dotProduct Matrix.mulVec
+  unfold energy LTI.energy dotProduct Matrix.mulVec
   fun_prop
 
-@[powerlib_foundation] theorem energy_smul (P : Matrix ι ι ℝ) (a : ℝ) (x : (ι → ℝ)) :
+@[powerlib_foundation] theorem energy_smul (P : Matrix ι ι ℝ) (a : ℝ) (x : ι → ℝ) :
     energy P (a • x) = a ^ 2 * energy P x := by
-  simp only [energy, Matrix.mulVec_smul, dotProduct_smul, smul_dotProduct,
+  simp only [energy, LTI.energy, Matrix.mulVec_smul, dotProduct_smul, smul_dotProduct,
     smul_eq_mul]
   ring
 
 @[powerlib_foundation, aesop unsafe 75% apply] theorem energy_positive {P : Matrix ι ι ℝ} (hP : P.PosDef)
-    (x : (ι → ℝ)) (hx : x ≠ 0) : 0 < energy P x := by
+    (x : ι → ℝ) (hx : x ≠ 0) : 0 < energy P x := by
   apply div_pos _ (by norm_num)
-  simpa only [star_trivial] using hP.dotProduct_mulVec_pos hx
+  simpa only [LTI.energy, star_trivial] using hP.dotProduct_mulVec_pos hx
 
 omit [Fintype ι] in
 @[powerlib_foundation] theorem symmetric_of_posDef {P : Matrix ι ι ℝ}
@@ -49,7 +49,7 @@ omit [Fintype ι] in
   simpa only [Matrix.conjTranspose_eq_transpose_of_trivial] using hP.isHermitian.eq
 
 @[powerlib_foundation] theorem dotProduct_derivative
-    {x y : ℝ → (ι → ℝ)} {dx dy : (ι → ℝ)} {t : ℝ}
+    {x y : ℝ → (ι → ℝ)} {dx dy : ι → ℝ} {t : ℝ}
     (hx : HasDerivWithinAt x dx (Ici 0) t)
     (hy : HasDerivWithinAt y dy (Ici 0) t) :
     HasDerivWithinAt (fun τ => dotProduct (x τ) (y τ))
@@ -61,7 +61,7 @@ omit [Fintype ι] in
     HasDerivWithinAt.fun_sum (u := Finset.univ) (fun i _ => hd i)
 
 @[powerlib_foundation] theorem energy_derivative (P : Matrix ι ι ℝ)
-    (hP : P.transpose = P) {x : ℝ → (ι → ℝ)} {dx : (ι → ℝ)} {t : ℝ}
+    (hP : P.transpose = P) {x : ℝ → (ι → ℝ)} {dx : ι → ℝ} {t : ℝ}
     (hx : HasDerivWithinAt x dx (Ici 0) t) :
     HasDerivWithinAt (fun τ => energy P (x τ))
       (dotProduct (P.mulVec (x t)) dx) (Ici 0) t := by
@@ -117,12 +117,12 @@ structure CollocatedCertificate (m : LTI.Model ι κ) where
   feedthrough : m.D.PosSemidef
 
 @[powerlib_foundation] theorem dotProduct_symmetric (P : Matrix ι ι ℝ)
-    (hP : P.transpose = P) (x y : (ι → ℝ)) :
+    (hP : P.transpose = P) (x y : ι → ℝ) :
     dotProduct x (P.mulVec y) = dotProduct (P.mulVec x) y := by
   rw [dotProduct_mulVec, ← mulVec_transpose, hP]
 
 @[powerlib_foundation] theorem state_dissipation_form (P : Matrix ι ι ℝ)
-    (hP : P.transpose = P) (A : Matrix ι ι ℝ) (x : (ι → ℝ)) :
+    (hP : P.transpose = P) (A : Matrix ι ι ℝ) (x : ι → ℝ) :
     dotProduct x ((P * A + A.transpose * P).mulVec x) =
       2 * dotProduct (P.mulVec x) (A.mulVec x) := by
   have hA : dotProduct x (A.transpose.mulVec (P.mulVec x)) =
@@ -134,7 +134,7 @@ structure CollocatedCertificate (m : LTI.Model ι κ) where
 
 omit [Fintype κ] in
 @[powerlib_foundation] theorem CollocatedCertificate.state_rate_nonpos
-    {m : LTI.Model ι κ} (c : CollocatedCertificate m) (x : (ι → ℝ)) :
+    {m : LTI.Model ι κ} (c : CollocatedCertificate m) (x : ι → ℝ) :
     dotProduct (c.P.mulVec x) (m.A.mulVec x) ≤ 0 := by
   have h : 0 ≤ dotProduct x ((-(c.P * m.A + m.A.transpose * c.P)).mulVec x) := by
     simpa only [star_trivial] using c.dissipation.dotProduct_mulVec_nonneg x
@@ -143,7 +143,7 @@ omit [Fintype κ] in
   linarith
 
 @[powerlib_foundation] theorem CollocatedCertificate.port_power
-    {m : LTI.Model ι κ} (c : CollocatedCertificate m) (x : (ι → ℝ)) (u : κ → ℝ) :
+    {m : LTI.Model ι κ} (c : CollocatedCertificate m) (x : ι → ℝ) (u : κ → ℝ) :
     dotProduct (c.P.mulVec x) (m.B.mulVec u) = dotProduct u (m.C.mulVec x) := by
   rw [← dotProduct_symmetric c.P (symmetric_of_posDef c.positive),
     mulVec_mulVec, c.collocated, dotProduct_mulVec, ← mulVec_transpose,
@@ -178,7 +178,7 @@ omit [Fintype κ] in
   · simpa only [conjTranspose_eq_transpose_of_trivial] using isHermitian_add_transpose_self m.D
 
 @[powerlib_foundation] theorem kypMatrix_quadraticForm (m : LTI.Model ι κ)
-    (P : Matrix ι ι ℝ) (hP : P.transpose = P) (x : (ι → ℝ)) (u : κ → ℝ) :
+    (P : Matrix ι ι ℝ) (hP : P.transpose = P) (x : ι → ℝ) (u : κ → ℝ) :
     dotProduct (Sum.elim x u) ((kypMatrix m P).mulVec (Sum.elim x u)) =
       2 * (Passivity.supply (system m) x u -
         dotProduct (P.mulVec x) (m.field x u)) := by

@@ -165,7 +165,7 @@ namespace NativeConsumers
 @[powerlib_domain] theorem lcl_passive_lyapunov (m : LCL.Circuit) (hp : m.Passive) (u vg : ℝ) (e : LCL.State)
     (he : LCL.IsEquilibrium m u vg e) : LCL.LyapunovStable m u vg e := by
   let gc := (LCL.physicalStateSpaceCertificate m hp).toCertificate
-  have hg : StateSpacePassivity.IsEquilibrium (LCL.terminalStateSpace m) ![u, vg] e := by
+  have hg : (LCL.terminalStateSpace m).IsEquilibrium ![u, vg] e := by
     simpa only [LCL.terminalStateSpace_equilibrium_iff] using he
   clear_value gc
   clear hp
