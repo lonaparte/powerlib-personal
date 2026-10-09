@@ -1,6 +1,6 @@
 import powerlib
 
-open powerlib powerlib.ImpedanceCriterion
+open powerlib powerlib.ImpedanceCriterion powerlib.LTI
 
 namespace ImpedanceConsumers
 
@@ -76,8 +76,8 @@ run_cmd do
       throwError "Registered theorem absent from discovery: {name}"
     if entry.moduleName == `theorem.ImpedanceStability then
       count := count + 1
-  unless count == 27 do
-    throwError "Expected 27 registered impedance theorems, found {count}"
+  unless count == 19 do
+    throwError "Expected 19 registered impedance theorems, found {count}"
   for name in #[`powerlib.ImpedanceCriterion.Interconnection.spectrallyStable_closedLoop_iff,
       `powerlib.ImpedanceCriterion.Interconnection.exponentiallyStable_iff_impedanceStable,
       `powerlib.ImpedanceCriterion.impedanceStable_without_premises_insufficient] do

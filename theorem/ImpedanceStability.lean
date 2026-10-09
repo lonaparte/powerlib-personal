@@ -6,20 +6,14 @@ noncomputable section
 namespace powerlib.ImpedanceCriterion
 open Matrix
 open powerlib.LTI (characteristicMatrix SpectrallyStable)
-
-abbrev PortModel := StateSpacePassivity.Model
+open powerlib.LTI
 
 variable {ι ι₁ ι₂ κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype ι₁] [DecidableEq ι₁]
   [Fintype ι₂] [DecidableEq ι₂] [Fintype κ] [DecidableEq κ]
 
-abbrev complexify {m n : Type*} (M : Matrix m n ℝ) : Matrix m n ℂ := M.map (algebraMap ℝ ℂ)
-
-def transfer (m : PortModel ι κ) (s : ℂ) : Matrix κ κ ℂ :=
-  complexify m.C * (characteristicMatrix m.A s)⁻¹ * complexify m.B + complexify m.D
-
 structure Interconnection (ι₁ ι₂ κ : Type*) where
-  source : PortModel ι₁ κ
-  load : PortModel ι₂ κ
+  source : LTI.Model ι₁ κ
+  load : LTI.Model ι₂ κ
   load_strictly_proper : load.D = 0
 
 namespace Interconnection
@@ -38,23 +32,23 @@ def portImpedance (s : ℂ) : Matrix κ κ ℂ :=
   (1 + ic.sourceImpedance s * ic.loadAdmittance s)⁻¹ * ic.sourceImpedance s
 
 def field (x₁ : ι₁ → ℝ) (x₂ : ι₂ → ℝ) : (ι₁ → ℝ) × (ι₂ → ℝ) :=
-  let i := StateSpacePassivity.output ic.load x₂ 0
-  let v := -StateSpacePassivity.output ic.source x₁ i
-  (StateSpacePassivity.field ic.source x₁ i, StateSpacePassivity.field ic.load x₂ v)
+  let i := LTI.Model.output ic.load x₂ 0
+  let v := -LTI.Model.output ic.source x₁ i
+  (LTI.Model.field ic.source x₁ i, LTI.Model.field ic.load x₂ v)
 
 def closedLoop : Matrix (ι₁ ⊕ ι₂) (ι₁ ⊕ ι₂) ℝ :=
   generated.closedLoopBlocks ic.source.A ic.source.B ic.source.C ic.source.D
     ic.load.A ic.load.B ic.load.C
 
 def portField (x₁ : ι₁ → ℝ) (x₂ : ι₂ → ℝ) (j : κ → ℝ) : (ι₁ → ℝ) × (ι₂ → ℝ) :=
-  let i := StateSpacePassivity.output ic.load x₂ 0 - j
-  let v := -StateSpacePassivity.output ic.source x₁ i
-  (StateSpacePassivity.field ic.source x₁ i, StateSpacePassivity.field ic.load x₂ v)
+  let i := LTI.Model.output ic.load x₂ 0 - j
+  let v := -LTI.Model.output ic.source x₁ i
+  (LTI.Model.field ic.source x₁ i, LTI.Model.field ic.load x₂ v)
 
 def portVoltage (x₁ : ι₁ → ℝ) (x₂ : ι₂ → ℝ) (j : κ → ℝ) : κ → ℝ :=
-  -StateSpacePassivity.output ic.source x₁ (StateSpacePassivity.output ic.load x₂ 0 - j)
+  -LTI.Model.output ic.source x₁ (LTI.Model.output ic.load x₂ 0 - j)
 
-def closedLoopPort : PortModel (ι₁ ⊕ ι₂) κ :=
+def closedLoopPort : LTI.Model (ι₁ ⊕ ι₂) κ :=
   ⟨ic.closedLoop, generated.closedLoopInput ic.source.B ic.source.D ic.load.B,
     generated.closedLoopOutput ic.source.C ic.source.D ic.load.C,
     generated.closedLoopFeedthrough ic.source.D⟩
@@ -71,7 +65,7 @@ omit [DecidableEq ι₁] [DecidableEq ι₂] [DecidableEq κ] in
       Sum.elim (ic.field x₁ x₂).1 (ic.field x₁ x₂).2 := by
   rw [closedLoop_eq_fromBlocks]
   ext (j | j) <;>
-    simp [field, StateSpacePassivity.field, StateSpacePassivity.output, fromBlocks_mulVec,
+    simp [field, LTI.Model.field, LTI.Model.output, fromBlocks_mulVec,
       Matrix.mulVec_add, Matrix.mulVec_neg, Matrix.sub_mulVec, Matrix.neg_mulVec,
       ← Matrix.mulVec_mulVec]
   abel
@@ -83,12 +77,12 @@ omit [DecidableEq ι₁] [DecidableEq ι₂] [DecidableEq κ] in
 
 omit [DecidableEq ι₁] [DecidableEq ι₂] [DecidableEq κ] in
 @[powerlib_foundation] theorem closedLoopPort_field (x₁ : ι₁ → ℝ) (x₂ : ι₂ → ℝ) (j : κ → ℝ) :
-    StateSpacePassivity.field ic.closedLoopPort (Sum.elim x₁ x₂) j =
+    LTI.Model.field ic.closedLoopPort (Sum.elim x₁ x₂) j =
       Sum.elim (ic.portField x₁ x₂ j).1 (ic.portField x₁ x₂ j).2 := by
-  simp only [StateSpacePassivity.field, closedLoopPort, closedLoop_eq_fromBlocks,
+  simp only [LTI.Model.field, closedLoopPort, closedLoop_eq_fromBlocks,
     generated.closedLoopInput_spec]
   ext (k | k) <;>
-    simp [portField, StateSpacePassivity.field, StateSpacePassivity.output, fromBlocks_mulVec,
+    simp [portField, LTI.Model.field, LTI.Model.output, fromBlocks_mulVec,
       fromRows_mulVec, Matrix.mulVec_add, Matrix.mulVec_neg, Matrix.mulVec_sub,
       Matrix.sub_mulVec, Matrix.neg_mulVec, ← Matrix.mulVec_mulVec]
   · abel
@@ -96,45 +90,13 @@ omit [DecidableEq ι₁] [DecidableEq ι₂] [DecidableEq κ] in
 
 omit [DecidableEq ι₁] [DecidableEq ι₂] [DecidableEq κ] in
 @[powerlib_foundation] theorem closedLoopPort_output (x₁ : ι₁ → ℝ) (x₂ : ι₂ → ℝ) (j : κ → ℝ) :
-    StateSpacePassivity.output ic.closedLoopPort (Sum.elim x₁ x₂) j = ic.portVoltage x₁ x₂ j := by
-  simp only [StateSpacePassivity.output, closedLoopPort, generated.closedLoopOutput_spec,
+    LTI.Model.output ic.closedLoopPort (Sum.elim x₁ x₂) j = ic.portVoltage x₁ x₂ j := by
+  simp only [LTI.Model.output, closedLoopPort, generated.closedLoopOutput_spec,
     generated.closedLoopFeedthrough_spec, portVoltage]
   simp [fromCols_mulVec, Matrix.mulVec_sub, Matrix.neg_mulVec, ← Matrix.mulVec_mulVec]
   abel
 
 end Interconnection
-
-@[powerlib_foundation] theorem complexify_mul {m n p : Type*} [Fintype n]
-    (M : Matrix m n ℝ) (N : Matrix n p ℝ) : complexify (M * N) = complexify M * complexify N :=
-  Matrix.map_mul
-
-@[powerlib_foundation] theorem complexify_neg {m n : Type*} (M : Matrix m n ℝ) :
-    complexify (-M) = -complexify M :=
-  Matrix.map_neg _ (fun a => map_neg _ a) M
-
-@[powerlib_foundation] theorem complexify_sub {m n : Type*} (M N : Matrix m n ℝ) :
-    complexify (M - N) = complexify M - complexify N :=
-  Matrix.map_sub _ (fun a b => map_sub _ a b) M N
-
-@[powerlib_foundation] theorem complexify_zero {m n : Type*} :
-    complexify (0 : Matrix m n ℝ) = 0 :=
-  Matrix.map_zero _ (map_zero _)
-
-@[powerlib_foundation] theorem complexify_fromRows {m₁ m₂ n : Type*}
-    (A₁ : Matrix m₁ n ℝ) (A₂ : Matrix m₂ n ℝ) :
-    complexify (fromRows A₁ A₂) = fromRows (complexify A₁) (complexify A₂) :=
-  fromRows_map _ _ _
-
-@[powerlib_foundation] theorem complexify_fromCols {m n₁ n₂ : Type*}
-    (A₁ : Matrix m n₁ ℝ) (A₂ : Matrix m n₂ ℝ) :
-    complexify (fromCols A₁ A₂) = fromCols (complexify A₁) (complexify A₂) :=
-  fromCols_map _ _ _
-
-@[powerlib_foundation] theorem complexify_fromBlocks {l m n o : Type*}
-    (A : Matrix n l ℝ) (B : Matrix n m ℝ) (C : Matrix o l ℝ) (D : Matrix o m ℝ) :
-    complexify (fromBlocks A B C D) =
-      fromBlocks (complexify A) (complexify B) (complexify C) (complexify D) :=
-  Matrix.fromBlocks_map _ _ _ _ _
 
 namespace Interconnection
 
@@ -291,12 +253,12 @@ namespace Interconnection
 
 variable {n₁ n₂ : ℕ} (ic : Interconnection (Fin n₁) (Fin n₂) κ)
 
-def closedLoopModel : LTI.Model (n₁ + n₂) :=
+def closedLoopModel : LTI.AutonomousModel (n₁ + n₂) :=
   ⟨ic.closedLoop.reindex finSumFinEquiv finSumFinEquiv⟩
 
-def sourceModel : LTI.Model n₁ := ⟨ic.source.A⟩
+def sourceModel : LTI.AutonomousModel n₁ := ic.source.autonomous
 
-def loadModel : LTI.Model n₂ := ⟨ic.load.A⟩
+def loadModel : LTI.AutonomousModel n₂ := ic.load.autonomous
 
 omit [DecidableEq κ] in
 @[simp, powerlib_foundation] theorem closedLoopModel_field (x₁ : Fin n₁ → ℝ) (x₂ : Fin n₂ → ℝ) :
@@ -305,7 +267,7 @@ omit [DecidableEq κ] in
   have hsplit : Fin.append x₁ x₂ ∘ finSumFinEquiv = Sum.elim x₁ x₂ := by
     funext i
     rcases i with i | i <;> simp
-  simp only [LTI.Model.field, generated.linearField_spec, closedLoopModel, Matrix.reindex_apply]
+  simp only [LTI.AutonomousModel.field, generated.linearField_spec, closedLoopModel, Matrix.reindex_apply]
   rw [Matrix.submatrix_mulVec_equiv, Equiv.symm_symm, hsplit, closedLoop_mulVec]
   funext i
   induction i using Fin.addCases with
@@ -353,14 +315,7 @@ theorem impedanceStable_of_exponentiallyStable
 
 end Interconnection
 
-omit [Fintype κ] [DecidableEq κ] in
-@[powerlib_foundation] theorem transfer_eq_adjugate (m : PortModel ι κ) (s : ℂ) :
-    transfer m s = ((characteristicMatrix m.A s).det)⁻¹ •
-      (complexify m.C * (characteristicMatrix m.A s).adjugate * complexify m.B) +
-      complexify m.D := by
-  rw [transfer, Matrix.inv_def, Ring.inverse_eq_inv', Matrix.mul_smul, Matrix.smul_mul]
-
-def hiddenMode : PortModel (Fin 1) (Fin 1) := ⟨!![1], 0, 0, 0⟩
+def hiddenMode : LTI.Model (Fin 1) (Fin 1) := ⟨!![1], 0, 0, 0⟩
 
 @[powerlib_foundation] theorem hiddenMode_transfer (s : ℂ) : transfer hiddenMode s = 0 := by
   simp [transfer, hiddenMode]

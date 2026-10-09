@@ -5,19 +5,19 @@ open powerlib
 namespace HurwitzConsumers
 
 variable {n : ℕ}
-@[powerlib_domain] theorem linear_stable_of_hurwitz (m : LTI.Model n)
+@[powerlib_domain] theorem linear_stable_of_hurwitz (m : LTI.AutonomousModel n)
     (h : LinearSystems.IsHurwitz m.A) : LTI.ExponentiallyStable m := by aesop
 
-@[powerlib_domain] theorem linear_hurwitz_of_stable (m : LTI.Model n)
+@[powerlib_domain] theorem linear_hurwitz_of_stable (m : LTI.AutonomousModel n)
     (h : LTI.ExponentiallyStable m) : LinearSystems.IsHurwitz m.A := by aesop
 
 @[powerlib_foundation] theorem spectral_of_hurwitz (A : Matrix (Fin n) (Fin n) ℝ)
     (h : LinearSystems.IsHurwitz A) : LTI.SpectrallyStable A := by powerlib_search
 
-@[powerlib_domain] theorem linear_stable_of_spectral (m : LTI.Model n)
+@[powerlib_domain] theorem linear_stable_of_spectral (m : LTI.AutonomousModel n)
     (h : LTI.SpectrallyStable m.A) : LTI.ExponentiallyStable m := by powerlib_search
 
-@[powerlib_domain] theorem certificate_of_hurwitz (m : LTI.Model n)
+@[powerlib_domain] theorem certificate_of_hurwitz (m : LTI.AutonomousModel n)
     (h : LinearSystems.IsHurwitz m.A) : Nonempty (LTI.Accepted m) := by powerlib_search
 
 @[powerlib_domain] theorem nonlinear_small_signal_stable
@@ -34,7 +34,7 @@ variable {n : ℕ}
     (s : ℂ) (hroot : (LTI.characteristicMatrix A s).det = 0) (hs : 0 < s.re) :
     Dynamics.Unstable f x_eq := by
   powerlib_search
-def damped : LTI.Model 2 := ⟨!![-1, 0; 0, -1]⟩
+def damped : LTI.AutonomousModel 2 := ⟨!![-1, 0; 0, -1]⟩
 
 @[powerlib_domain] theorem damped_hurwitz : LinearSystems.IsHurwitz damped.A := by
   intro μ v hv heig
@@ -80,8 +80,8 @@ run_cmd do
       throwError "Registered theorem absent from discovery: {name}"
     if entry.moduleName == `theorem.Hurwitz then
       count := count + 1
-  unless count == 15 do
-    throwError "Expected 15 registered Hurwitz theorems, found {count}"
+  unless count == 13 do
+    throwError "Expected 13 registered Hurwitz theorems, found {count}"
   for name in #[`powerlib.LTI.exponentiallyStable_iff_spectrallyStable,
       `powerlib.LTI.accepted_nonempty_iff_isHurwitz,
       `powerlib.Dynamics.locallyExponentiallyStable_of_spectrallyStable_jacobian,

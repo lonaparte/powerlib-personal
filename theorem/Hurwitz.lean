@@ -10,24 +10,6 @@ open scoped Topology
 
 variable {n : ℕ} {ι ι' : Type*} [Fintype ι] [DecidableEq ι] [Fintype ι'] [DecidableEq ι']
 
-def characteristicMatrix (A : Matrix ι ι ℝ) (s : ℂ) : Matrix ι ι ℂ :=
-  s • (1 : Matrix ι ι ℂ) - A.map (algebraMap ℝ ℂ)
-
-def SpectrallyStable (A : Matrix ι ι ℝ) : Prop :=
-  ∀ s : ℂ, (characteristicMatrix A s).det = 0 → s.re < 0
-
-@[powerlib_foundation] theorem det_characteristicMatrix (A : Matrix ι ι ℝ) (s : ℂ) :
-    (characteristicMatrix A s).det = (A.map (algebraMap ℝ ℂ)).charpoly.eval s := by
-  rw [Matrix.eval_charpoly, characteristicMatrix, Matrix.scalar_apply, Matrix.smul_one_eq_diagonal]
-
-@[powerlib_foundation] theorem spectrallyStable_reindex (e : ι ≃ ι') (A : Matrix ι ι ℝ) :
-    SpectrallyStable (A.reindex e e) ↔ SpectrallyStable A := by
-  have h (s : ℂ) :
-      characteristicMatrix (A.reindex e e) s = (characteristicMatrix A s).reindex e e := by
-    ext i j
-    simp [characteristicMatrix, Matrix.one_apply]
-  simp only [SpectrallyStable, h, Matrix.det_reindex_self]
-
 @[powerlib_foundation] theorem spectrallyStable_iff_isHurwitz (A : Matrix (Fin n) (Fin n) ℝ) :
     SpectrallyStable A ↔ LinearSystems.IsHurwitz A := by
   constructor
@@ -45,7 +27,7 @@ def SpectrallyStable (A : Matrix ι ι ℝ) : Prop :=
       rw [characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at hzero
       exact (sub_eq_zero.mp hzero).symm)
 
-@[powerlib_domain] theorem accepted_nonempty_of_isHurwitz {m : Model n}
+@[powerlib_domain] theorem accepted_nonempty_of_isHurwitz {m : AutonomousModel n}
     (h : LinearSystems.IsHurwitz m.A) : Nonempty (Accepted m) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · exact ⟨⟨1, 1, 1, one_pos, one_pos, Matrix.transpose_one,
@@ -76,7 +58,7 @@ def SpectrallyStable (A : Matrix ι ι ℝ) : Prop :=
     by rw [add_comm]; exact hlyap⟩⟩
 
 @[powerlib_domain, aesop norm forward (immediate := [h])]
-theorem exponentiallyStable_of_isHurwitz {m : Model n}
+theorem exponentiallyStable_of_isHurwitz {m : AutonomousModel n}
     (h : LinearSystems.IsHurwitz m.A) : ExponentiallyStable m :=
   (accepted_nonempty_of_isHurwitz h).some.exponentially_stable
 
@@ -97,7 +79,7 @@ private lemma eigenmode_hasDerivAt (A : Matrix (Fin n) (Fin n) ℝ) {μ : ℂ} {
     _ = _ := by rw [hj]; ring
 
 @[powerlib_foundation]
-private lemma isTrajectory_part (m : Model n) {μ : ℂ} {v : Fin n → ℂ}
+private lemma isTrajectory_part (m : AutonomousModel n) {μ : ℂ} {v : Fin n → ℂ}
     (heig : m.A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v) (part : ℂ →L[ℝ] ℝ)
     (hpart : ∀ (a : ℝ) (z : ℂ), part ((a : ℂ) * z) = a * part z) :
     IsTrajectory m (fun t j => part (Complex.exp (μ * t) * v j)) := by
@@ -105,10 +87,10 @@ private lemma isTrajectory_part (m : Model n) {μ : ℂ} {v : Fin n → ℂ}
   refine hasDerivAt_pi.2 fun j => ?_
   have h := part.hasFDerivAt.comp_hasDerivAt t (eigenmode_hasDerivAt m.A heig t j)
   convert! h using 1
-  simp [Model.field, generated.linearField_spec, Matrix.mulVec, dotProduct, map_sum, hpart]
+  simp [AutonomousModel.field, generated.linearField_spec, Matrix.mulVec, dotProduct, map_sum, hpart]
 
 @[powerlib_domain, aesop norm forward (immediate := [h])]
-theorem isHurwitz_of_exponentiallyStable {m : Model n}
+theorem isHurwitz_of_exponentiallyStable {m : AutonomousModel n}
     (h : ExponentiallyStable m) : LinearSystems.IsHurwitz m.A := by
   obtain ⟨K, -, r, hr, hdecay⟩ := h
   intro μ v hv heig
@@ -156,15 +138,15 @@ theorem isHurwitz_of_exponentiallyStable {m : Model n}
     ((eventually_ge_atTop (0 : ℝ)).and (hlim.eventually (gt_mem_nhds zero_lt_one))).exists
   exact absurd (hlarge t ht) (not_le.mpr hsmall)
 
-@[powerlib_domain] theorem exponentiallyStable_iff_isHurwitz (m : Model n) :
+@[powerlib_domain] theorem exponentiallyStable_iff_isHurwitz (m : AutonomousModel n) :
     ExponentiallyStable m ↔ LinearSystems.IsHurwitz m.A :=
   ⟨isHurwitz_of_exponentiallyStable, exponentiallyStable_of_isHurwitz⟩
 
-@[powerlib_domain] theorem exponentiallyStable_iff_spectrallyStable (m : Model n) :
+@[powerlib_domain] theorem exponentiallyStable_iff_spectrallyStable (m : AutonomousModel n) :
     ExponentiallyStable m ↔ SpectrallyStable m.A :=
   (exponentiallyStable_iff_isHurwitz m).trans (spectrallyStable_iff_isHurwitz m.A).symm
 
-@[powerlib_domain] theorem accepted_nonempty_iff_isHurwitz (m : Model n) :
+@[powerlib_domain] theorem accepted_nonempty_iff_isHurwitz (m : AutonomousModel n) :
     Nonempty (Accepted m) ↔ LinearSystems.IsHurwitz m.A :=
   ⟨fun ⟨c⟩ => isHurwitz_of_exponentiallyStable c.exponentially_stable,
     accepted_nonempty_of_isHurwitz⟩

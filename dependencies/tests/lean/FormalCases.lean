@@ -171,12 +171,12 @@ run_cmd do
 -- LTI automatic reuse cases.
 open powerlib
 
-example {n : ℕ} (m : LTI.Model n) (c : LTI.Accepted m) : LTI.ExponentiallyStable m := by aesop
-example {n : ℕ} (m : LTI.Model n) (initial : LTI.State n) :
+example {n : ℕ} (m : LTI.AutonomousModel n) (c : LTI.Accepted m) : LTI.ExponentiallyStable m := by aesop
+example {n : ℕ} (m : LTI.AutonomousModel n) (initial : LTI.State n) :
     LTI.IsTrajectory m (LTI.response m initial) := by aesop
-example {n : ℕ} (m : LTI.Model n) (initial : LTI.State n) :
+example {n : ℕ} (m : LTI.AutonomousModel n) (initial : LTI.State n) :
     LTI.response m initial 0 = initial := by simp
-example {n : ℕ} (m : LTI.Model n) (c : LTI.Accepted m)
+example {n : ℕ} (m : LTI.AutonomousModel n) (c : LTI.Accepted m)
     (initial : LTI.State n) (t : ℝ) (ht : 0 ≤ t) :
     LTI.sqNorm (LTI.response m initial t) ≤
       (c.upper / c.lower) * Real.exp (-(t / c.upper)) * LTI.sqNorm initial := by aesop
@@ -185,7 +185,7 @@ example {n : ℕ} (m : LTI.Model n) (c : LTI.Accepted m)
 -- proofs supplies a theorem name to aesop/simp; mere registry membership is
 -- tested separately below and is not a substitute for actual proof search.
 section LTIReuse
-variable {n : ℕ} (m : LTI.Model n) (c : LTI.Accepted m)
+variable {n : ℕ} (m : LTI.AutonomousModel n) (c : LTI.Accepted m)
   (x y : ℝ → LTI.State n) (hx : LTI.IsTrajectory m x) (hy : LTI.IsTrajectory m y)
   (t : ℝ) (ht : 0 ≤ t) (u v : LTI.State n)
 
@@ -233,23 +233,23 @@ noncomputable section
 namespace StateSpacePassivityCases
 
 @[powerlib_domain] theorem arbitrary_dimensions_passive {ι κ : Type*} [Fintype ι] [DecidableEq ι]
-    [Fintype κ] (m : StateSpacePassivity.Model ι κ) (c : StateSpacePassivity.Certificate m) :
+    [Fintype κ] (m : LTI.Model ι κ) (c : StateSpacePassivity.Certificate m) :
     Passivity.PassiveWithStorage (StateSpacePassivity.system m)
       (StateSpacePassivity.energy c.P) := by aesop
 
 @[powerlib_domain] theorem arbitrary_dimensions_stable {ι κ : Type*} [Fintype ι] [DecidableEq ι]
-    [Fintype κ] [Nonempty ι] (m : StateSpacePassivity.Model ι κ)
+    [Fintype κ] [Nonempty ι] (m : LTI.Model ι κ)
     (c : StateSpacePassivity.Certificate m) :
     Passivity.LyapunovStable (StateSpacePassivity.system m) := by aesop
 
 @[powerlib_domain] theorem arbitrary_dimensions_equilibrium_stable {ι κ : Type*} [Fintype ι] [DecidableEq ι]
-    [Fintype κ] [Nonempty ι] (m : StateSpacePassivity.Model ι κ)
+    [Fintype κ] [Nonempty ι] (m : LTI.Model ι κ)
     (c : StateSpacePassivity.Certificate m) (u : κ → ℝ) (e : ι → ℝ)
     (he : StateSpacePassivity.IsEquilibrium m u e) :
     StateSpacePassivity.LyapunovStableAt m u e := by aesop
 
 @[powerlib_domain] theorem arbitrary_dimensions_matrix_certificate_passive {ι κ : Type*} [Fintype ι]
-    [DecidableEq ι] [Fintype κ] (m : StateSpacePassivity.Model ι κ)
+    [DecidableEq ι] [Fintype κ] (m : LTI.Model ι κ)
     (c : StateSpacePassivity.MatrixCertificate m) :
     Passivity.PassiveWithStorage (StateSpacePassivity.system m)
       (StateSpacePassivity.energy c.P) := by
@@ -259,14 +259,14 @@ namespace StateSpacePassivityCases
   exact hp
 
 @[powerlib_domain] theorem arbitrary_dimensions_matrix_certificate_stable {ι κ : Type*} [Fintype ι]
-    [DecidableEq ι] [Fintype κ] [Nonempty ι] (m : StateSpacePassivity.Model ι κ)
+    [DecidableEq ι] [Fintype κ] [Nonempty ι] (m : LTI.Model ι κ)
     (c : StateSpacePassivity.MatrixCertificate m) :
     Passivity.LyapunovStable (StateSpacePassivity.system m) := by
   let gc := c.toCertificate
   aesop
 
 @[powerlib_domain] theorem arbitrary_dimensions_integral {ι κ : Type*} [Fintype ι] [DecidableEq ι]
-    [Fintype κ] (m : StateSpacePassivity.Model ι κ) (c : StateSpacePassivity.Certificate m)
+    [Fintype κ] (m : LTI.Model ι κ) (c : StateSpacePassivity.Certificate m)
     {u : ℝ → (κ → ℝ)} {x : ℝ → (ι → ℝ)}
     (hx : Passivity.IsTrajectory (StateSpacePassivity.system m) u x)
     {t : ℝ} (ht : 0 ≤ t)
@@ -278,12 +278,12 @@ namespace StateSpacePassivityCases
   aesop
 
 @[powerlib_domain] theorem arbitrary_dimensions_forward_solution {ι κ : Type*} [Fintype ι] [DecidableEq ι]
-    [Fintype κ] (m : StateSpacePassivity.Model ι κ) (initial : ι → ℝ) :
+    [Fintype κ] (m : LTI.Model ι κ) (initial : ι → ℝ) :
     ∃ x, Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => 0) x ∧
       x 0 = initial := by aesop
 
 @[powerlib_domain] theorem arbitrary_input_uniqueness {ι κ : Type*} [Fintype ι] [DecidableEq ι]
-    [Fintype κ] (m : StateSpacePassivity.Model ι κ) {u : ℝ → (κ → ℝ)}
+    [Fintype κ] (m : LTI.Model ι κ) {u : ℝ → (κ → ℝ)}
     {x y : ℝ → (ι → ℝ)}
     (hx : Passivity.IsTrajectory (StateSpacePassivity.system m) u x)
     (hy : Passivity.IsTrajectory (StateSpacePassivity.system m) u y)
@@ -291,7 +291,7 @@ namespace StateSpacePassivityCases
 
 
 @[powerlib_domain] theorem constructed_response_contract {ι κ : Type*} [Fintype ι] [DecidableEq ι]
-    [Fintype κ] (m : StateSpacePassivity.Model ι κ) (initial : ι → ℝ) (t : ℝ) :
+    [Fintype κ] (m : LTI.Model ι κ) (initial : ι → ℝ) (t : ℝ) :
     HasDerivAt (StateSpacePassivity.response m initial)
       (StateSpacePassivity.operator m (StateSpacePassivity.response m initial t)) t ∧
       Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => 0)
@@ -299,20 +299,20 @@ namespace StateSpacePassivityCases
       StateSpacePassivity.response m initial 0 = initial := by aesop
 
 @[powerlib_domain] theorem constructed_equilibrium_response_contract {ι κ : Type*} [Fintype ι]
-    [DecidableEq ι] [Fintype κ] (m : StateSpacePassivity.Model ι κ)
+    [DecidableEq ι] [Fintype κ] (m : LTI.Model ι κ)
     (u : κ → ℝ) (e initial : ι → ℝ) (he : StateSpacePassivity.IsEquilibrium m u e) :
     Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => u)
       (StateSpacePassivity.equilibriumResponse m e initial) ∧
       StateSpacePassivity.equilibriumResponse m e initial 0 = initial := by aesop
 
 @[powerlib_domain] theorem supplied_equilibrium_forward_solution {ι κ : Type*} [Fintype ι]
-    [DecidableEq ι] [Fintype κ] (m : StateSpacePassivity.Model ι κ)
+    [DecidableEq ι] [Fintype κ] (m : LTI.Model ι κ)
     (u : κ → ℝ) (e initial : ι → ℝ) (he : StateSpacePassivity.IsEquilibrium m u e) :
     ∃ x, Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => u) x ∧
       x 0 = initial := by aesop
 
 @[powerlib_domain] theorem constructed_unique_forward_solution {ι κ : Type*} [Fintype ι]
-    [DecidableEq ι] [Fintype κ] (m : StateSpacePassivity.Model ι κ) (initial : ι → ℝ) :
+    [DecidableEq ι] [Fintype κ] (m : LTI.Model ι κ) (initial : ι → ℝ) :
     ∃ x, Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => 0) x ∧
       x 0 = initial ∧ ∀ y,
         Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => 0) y →
@@ -333,7 +333,7 @@ namespace StateSpacePassivityCases
 
 def fullStorage : Matrix (Fin 2) (Fin 2) ℝ := !![2, 1; 1, 2]
 
-def feedthroughModel : StateSpacePassivity.Model (Fin 2) (Fin 1) where
+def feedthroughModel : LTI.Model (Fin 2) (Fin 1) where
   A := !![-1, 0; 0, -1]
   B := !![1; 0]
   C := !![0, 0]
@@ -362,9 +362,9 @@ def feedthroughModel : StateSpacePassivity.Model (Fin 2) (Fin 1) where
     simpa only [star_trivial] using fullStorage_quadratic_positive x hx
 
 @[powerlib_foundation] theorem feedthrough_full_kyp (x : Fin 2 → ℝ) (u : Fin 1 → ℝ) :
-    dotProduct (fullStorage.mulVec x) (StateSpacePassivity.field feedthroughModel x u) ≤
+    dotProduct (fullStorage.mulVec x) (LTI.Model.field feedthroughModel x u) ≤
       Passivity.supply (StateSpacePassivity.system feedthroughModel) x u := by
-  simp [StateSpacePassivity.field, StateSpacePassivity.system, StateSpacePassivity.output,
+  simp [LTI.Model.field, StateSpacePassivity.system, LTI.Model.output,
     Passivity.supply, dotProduct, mulVec, fullStorage, feedthroughModel,
     Fin.sum_univ_two]
   nlinarith [sq_nonneg (u 0 - x 0 - x 1 / 2),
@@ -408,7 +408,7 @@ def feedthroughCertificate : StateSpacePassivity.Certificate feedthroughModel wh
 
 
 -- The same dimensions do not identify the submitted model.
-def mismatchedModel : StateSpacePassivity.Model (Fin 2) (Fin 1) :=
+def mismatchedModel : LTI.Model (Fin 2) (Fin 1) :=
   { feedthroughModel with D := !![-1] }
 
 @[powerlib_foundation] theorem mismatched_model_certificate_is_rejected : True := by
@@ -420,11 +420,11 @@ def mismatchedModel : StateSpacePassivity.Model (Fin 2) (Fin 1) :=
     ¬ Nonempty (StateSpacePassivity.Certificate mismatchedModel) := by
   rintro ⟨c⟩
   have hkyp := c.kyp 0 ![1]
-  norm_num [StateSpacePassivity.field, StateSpacePassivity.system,
-    StateSpacePassivity.output, Passivity.supply, mismatchedModel, feedthroughModel,
+  norm_num [LTI.Model.field, StateSpacePassivity.system,
+    LTI.Model.output, Passivity.supply, mismatchedModel, feedthroughModel,
     dotProduct, mulVec, Fin.sum_univ_one, Fin.sum_univ_two] at hkyp
 
-def reversedPortModel : StateSpacePassivity.Model (Fin 1) (Fin 1) where
+def reversedPortModel : LTI.Model (Fin 1) (Fin 1) where
   A := !![0]
   B := !![1]
   C := !![-1]
@@ -440,7 +440,7 @@ def reversedPortModel : StateSpacePassivity.Model (Fin 1) (Fin 1) where
   have hpositive := c.positive.dotProduct_mulVec_pos hnonzero
   have hkyp := c.kyp ![1] ![1]
   simp [star_trivial, dotProduct, mulVec] at hpositive
-  simp [StateSpacePassivity.field, StateSpacePassivity.system, StateSpacePassivity.output,
+  simp [LTI.Model.field, StateSpacePassivity.system, LTI.Model.output,
     Passivity.supply, reversedPortModel, dotProduct, mulVec] at hkyp
   linarith
 
