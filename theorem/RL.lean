@@ -152,7 +152,7 @@ def energy (p current : ℝ) : ℝ := p * current ^ 2
 def response (m : Impedance) (initial t : ℝ) : ℝ :=
   initial * Real.exp (-(toStateSpace m).decay * t)
 
-@[simp, powerlib_domain] theorem response_initial (m : Impedance) (initial : ℝ) : response m initial 0 = initial := by
+@[simp, powerlib_foundation] theorem response_initial (m : Impedance) (initial : ℝ) : response m initial 0 = initial := by
   simp [response]
 
 @[powerlib_domain, aesop safe apply] theorem response_solves (m : Impedance) (initial t : ℝ) :

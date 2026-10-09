@@ -252,7 +252,7 @@ def response (m : Model ι κ) (initial : State ι) (t : ℝ) : State ι :=
   (linearModel m).response initial t
 
 omit [Fintype κ] in
-@[simp, powerlib_domain] theorem response_initial (m : Model ι κ) (initial : State ι) :
+@[simp, powerlib_foundation] theorem response_initial (m : Model ι κ) (initial : State ι) :
     response m initial 0 = initial :=
   (linearModel m).response_initial initial
 

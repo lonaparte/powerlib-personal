@@ -123,7 +123,7 @@ def equilibrium (m : Circuit) (u vg : ℝ) : State :=
 def response (m : Circuit) (initial : State) (t : ℝ) : State :=
   (NormedSpace.exp (t • (toStateSpace m).operator)) initial
 
-@[simp, powerlib_domain] theorem response_initial (m : Circuit) (initial : State) :
+@[simp, powerlib_foundation] theorem response_initial (m : Circuit) (initial : State) :
     response m initial 0 = initial := by
   simp [response, NormedSpace.exp_zero]
 
@@ -141,7 +141,7 @@ def response (m : Circuit) (initial : State) (t : ℝ) : State :=
 def equilibriumResponse (m : Circuit) (e initial : State) (t : ℝ) : State :=
   e + response m (initial - e) t
 
-@[simp, powerlib_domain] theorem equilibriumResponse_initial (m : Circuit) (e initial : State) :
+@[simp, powerlib_foundation] theorem equilibriumResponse_initial (m : Circuit) (e initial : State) :
     equilibriumResponse m e initial 0 = initial := by
   simp [equilibriumResponse]
 

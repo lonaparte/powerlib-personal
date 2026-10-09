@@ -51,7 +51,7 @@ theorem trajectory_unique (m : LTI.Model ι κ)
   exact trajectory_unique m hy (response_trajectory m initial)
     (h0.trans (m.response_initial initial).symm)
 
-@[powerlib_foundation] theorem trajectory_of_autonomous {n : ℕ} {m : LTI.Model (Fin n) κ}
+@[powerlib_foundation, aesop safe forward] theorem trajectory_of_autonomous {n : ℕ} {m : LTI.Model (Fin n) κ}
     {x : ℝ → (Fin n → ℝ)} (hx : LTI.IsTrajectory m.autonomous x) :
     Passivity.IsTrajectory (system m) (fun _ => 0) x := by
   intro t _

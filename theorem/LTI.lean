@@ -83,7 +83,7 @@ def IsTrajectory (m : AutonomousModel n) (x : ℝ → State n) : Prop :=
 def response (m : AutonomousModel n) (initial : State n) (t : ℝ) : State n :=
   (NormedSpace.exp (t • m.operator)) initial
 
-@[simp, powerlib_domain] theorem response_initial (m : AutonomousModel n) (initial : State n) :
+@[simp, powerlib_foundation] theorem response_initial (m : AutonomousModel n) (initial : State n) :
     response m initial 0 = initial := by
   simp [response]
 
@@ -124,7 +124,7 @@ def Model.response (m : Model ι κ) (initial : ι → ℝ) (t : ℝ) : ι → �
   (NormedSpace.exp (t • m.operator)) initial
 
 omit [Fintype κ] in
-@[simp, powerlib_domain] theorem Model.response_initial (m : Model ι κ) (initial : ι → ℝ) :
+@[simp, powerlib_foundation] theorem Model.response_initial (m : Model ι κ) (initial : ι → ℝ) :
     m.response initial 0 = initial := by
   simp [Model.response, NormedSpace.exp_zero]
 
@@ -154,7 +154,7 @@ def Model.equilibriumResponse (m : Model ι κ) (e initial : ι → ℝ) (t : �
   m.response (initial - e) t + e
 
 omit [Fintype κ] in
-@[simp, powerlib_domain] theorem Model.equilibriumResponse_initial
+@[simp, powerlib_foundation] theorem Model.equilibriumResponse_initial
     (m : Model ι κ) (e initial : ι → ℝ) : m.equilibriumResponse e initial 0 = initial := by
   simp [Model.equilibriumResponse]
 

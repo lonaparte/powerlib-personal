@@ -83,7 +83,7 @@ def IsEquilibrium (m : Impedance) (voltage equilibrium : ℝ) : Prop :=
 def equilibriumResponse (m : Impedance) (e initial t : ℝ) : ℝ :=
   e + response m (initial - e) t
 
-@[simp, powerlib_domain] theorem equilibriumResponse_initial (m : Impedance) (e initial : ℝ) :
+@[simp, powerlib_foundation] theorem equilibriumResponse_initial (m : Impedance) (e initial : ℝ) :
     equilibriumResponse m e initial 0 = initial := by
   simp [equilibriumResponse, response_initial]
 

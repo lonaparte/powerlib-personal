@@ -453,6 +453,10 @@ def indefiniteStorage : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, -1]
   have hpositive := hp.dotProduct_mulVec_pos hnonzero
   norm_num [star_trivial, indefiniteStorage, dotProduct, mulVec, Fin.sum_univ_two] at hpositive
 
+@[powerlib_foundation] theorem autonomous_trajectory_forward {n : ℕ} {κ : Type*} [Fintype κ]
+    (m : LTI.Model (Fin n) κ) {x : ℝ → (Fin n → ℝ)} (hx : LTI.IsTrajectory m.autonomous x) :
+    Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => 0) x := by aesop
+
 end StateSpacePassivityCases
 
 open Lean Elab Command in
@@ -485,6 +489,8 @@ run_cmd do
     unless proof.getUsedConstants.contains source do
       throwError "Native consumer did not use the general state-space theorem {source}"
   for (consumer, sources) in #[
+      (`StateSpacePassivityCases.autonomous_trajectory_forward,
+        #[`powerlib.StateSpacePassivity.trajectory_of_autonomous]),
       (`StateSpacePassivityCases.arbitrary_dimensions_forward_solution,
         #[`powerlib.StateSpacePassivity.trajectory_exists,
           `powerlib.StateSpacePassivity.trajectory_exists_unique]),
