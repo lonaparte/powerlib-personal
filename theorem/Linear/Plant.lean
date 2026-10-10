@@ -32,6 +32,19 @@ abbrev op (A : Matrix (Fin n) (Fin n) ℝ) : ℝⁿ →L[ℝ] ℝⁿ :=
 @[powerlib_foundation] theorem affine_apply (A : Matrix (Fin n) (Fin n) ℝ) (e x : ℝⁿ) :
     affineLinearVectorField A e x = op A (x - e) := rfl
 
+@[powerlib_foundation] theorem op_mul_apply (X Y : Matrix (Fin n) (Fin n) ℝ) (x : ℝⁿ) :
+    op (X * Y) x = op X (op Y x) := by
+  change Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) (X * Y) x = _
+  rw [map_mul]
+  rfl
+
+@[powerlib_foundation] theorem op_cancel {T S : Matrix (Fin n) (Fin n) ℝ} (h : S * T = 1)
+    (x : ℝⁿ) : op S (op T x) = x := by
+  rw [← op_mul_apply, h]
+  change Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) 1 x = x
+  rw [map_one]
+  rfl
+
 /-- The vector field of the plant under the constant input `u`. -/
 def Plant.inputField (M : Plant n p) (u : Fin p → ℝ) : ℝⁿ → ℝⁿ :=
   fun x => op M.A x + WithLp.toLp 2 (M.B *ᵥ u)

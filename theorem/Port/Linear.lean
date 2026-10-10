@@ -91,6 +91,38 @@ def KYP.storage {M : Plant n p} (c : KYP M) (x : ℝⁿ) : ℝ :=
     rw [dotProduct_comm (M.C *ᵥ WithLp.ofLp x) u]
     linarith
 
+/-- With a lossless certificate, `Aᵀ P + P A = 0`, the storage is conserved along every zero-input
+solution segment. -/
+@[powerlib_foundation] theorem KYP.storage_conserved {M : Plant n p} (c : KYP M)
+    (hl : M.Aᵀ * c.P + c.P * M.A = 0) {x : ℝ → ℝⁿ} {t₀ t₁ : ℝ}
+    (hx : IsTrajectoryOn x (affineLinearVectorField M.A 0) t₀ t₁) :
+    ∀ t ∈ Icc t₀ t₁, c.storage (x t) = c.storage (x t₀) := by
+  have hcont : ContinuousOn (fun t => c.storage (x t)) (Icc t₀ t₁) :=
+    (by unfold KYP.storage; fun_prop : Continuous c.storage).comp_continuousOn hx.continuousOn
+  refine constant_of_has_deriv_right_zero hcont fun t ht => ?_
+  have hxt := hasDerivWithinAt_Ici_of_isIntegralCurveOn hx t ht
+  have hX : HasDerivWithinAt (fun τ => WithLp.ofLp (x τ))
+      (WithLp.ofLp (affineLinearVectorField M.A 0 (x t))) (Ici t) t :=
+    (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).hasFDerivAt.comp_hasDerivWithinAt t hxt
+  have hfield : WithLp.ofLp (affineLinearVectorField M.A 0 (x t)) = M.A *ᵥ WithLp.ofLp (x t) := by
+    simp [affine_apply]
+  rw [hfield] at hX
+  have hPX : HasDerivWithinAt (fun τ => c.P *ᵥ WithLp.ofLp (x τ))
+      (c.P *ᵥ (M.A *ᵥ WithLp.ofLp (x t))) (Ici t) t :=
+    (c.P.mulVecLin.toContinuousLinearMap).hasFDerivAt.comp_hasDerivWithinAt t hX
+  have h0 := quadratic_sym (A := M.A) c.symmetric (WithLp.ofLp (x t))
+  rw [hl, Matrix.zero_mulVec, dotProduct_zero] at h0
+  have hsym : (M.A *ᵥ WithLp.ofLp (x t)) ⬝ᵥ (c.P *ᵥ WithLp.ofLp (x t)) =
+      WithLp.ofLp (x t) ⬝ᵥ (c.P *ᵥ (M.A *ᵥ WithLp.ofLp (x t))) := by
+    rw [Matrix.dotProduct_mulVec, dotProduct_comm]
+    congr 1
+    conv_lhs => rw [← c.symmetric]
+    rw [Matrix.vecMul_transpose]
+  show HasDerivWithinAt (fun τ => WithLp.ofLp (x τ) ⬝ᵥ (c.P *ᵥ WithLp.ofLp (x τ)) / 2) 0 (Ici t) t
+  convert (dotProduct_hasDerivWithinAt hX hPX).div_const 2 using 1
+  rw [hsym]
+  linarith
+
 /-- With quadratic bounds on the storage, a KYP certificate proves Lyapunov stability of the
 zero-input plant in the Flow semantics. -/
 @[powerlib_foundation] theorem KYP.lyapunovStable {M : Plant n p} (c : KYP M) {a b : ℝ}
@@ -105,15 +137,7 @@ zero-input plant in the Flow semantics. -/
 @[powerlib_foundation] theorem KYP.lyapunovStable_of_pos {M : Plant n p} (c : KYP M)
     (hpos : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (c.P *ᵥ x)) :
     LyapunovStable (affineLinearVectorField M.A 0) 0 := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · intro ε hε
-    refine ⟨1, one_pos, fun t₀ t₁ φ _ _ t _ => ?_⟩
-    rw [Subsingleton.elim (φ t) 0, sub_zero, norm_zero]
-    exact hε
-  have : Nontrivial (EuclideanSpace ℝ (Fin n)) := by
-    have : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
-    infer_instance
-  obtain ⟨a, ha, b, hab, hb⟩ := Port.quadratic_bounds c.storage
+  obtain ⟨a, ha, b, hab, hb⟩ := Flow.quadratic_bounds c.storage
     (by unfold KYP.storage; fun_prop)
     (fun r x => by
       simp only [KYP.storage, WithLp.ofLp_smul, Matrix.mulVec_smul, dotProduct_smul,

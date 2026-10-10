@@ -334,6 +334,19 @@ def kyp (m : Circuit) (hp : m.Passive) : Linear.KYP m.plant where
   · exact h h1
   · exact h h2
 
+/-- A lossless circuit conserves its physical energy `(L₁ i₁² + C v² + L₂ i₂²) / 2` along every
+zero-input solution segment. -/
+@[powerlib_domain] theorem lossless_energy_conserved (m : Circuit) (h1 : m.first.resistance = 0)
+    (h2 : m.second.resistance = 0) {x : ℝ → EuclideanSpace ℝ (Fin 3)} {t₀ t₁ : ℝ}
+    (hx : IsTrajectoryOn x (affineLinearVectorField m.plant.A 0) t₀ t₁) :
+    ∀ t ∈ Set.Icc t₀ t₁,
+      (kyp m ⟨h1.ge, h2.ge⟩).storage (x t) = (kyp m ⟨h1.ge, h2.ge⟩).storage (x t₀) := by
+  have hl : m.plant.Aᵀ * energyMatrix m + energyMatrix m * m.plant.A = 0 := by
+    rw [energy_identity, h1, h2]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  exact (kyp m ⟨h1.ge, h2.ge⟩).storage_conserved hl hx
+
 /-! ## Requirements and translations -/
 
 /-- Engineering requirements on the LCL parameters. -/

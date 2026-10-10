@@ -1,4 +1,5 @@
 import theorem.Linear.Transfer
+import theorem.TMIO.Relation
 
 /-! # Realization theory
 
@@ -32,22 +33,6 @@ variable {n n' p : ℕ}
       (complexify m.C * (characteristicMatrix m.A s).adjugate * complexify m.B) +
       complexify m.D := by
   rw [transfer, Matrix.inv_def, Ring.inverse_eq_inv', Matrix.mul_smul, Matrix.smul_mul]
-
-/-- Two plants are similar when a state coordinate change carries one into the other. -/
-def Similar (m : Plant n p) (m' : Plant n' p) : Prop :=
-  ∃ (T : Matrix (Fin n') (Fin n) ℝ) (S : Matrix (Fin n) (Fin n') ℝ), T * S = 1 ∧ S * T = 1 ∧
-    m' = m.changeCoordinates T S
-
-@[powerlib_foundation] theorem Similar.transfer_eq {m : Plant n p} {m' : Plant n' p}
-    (h : Similar m m') (s : ℂ) : transfer m' s = transfer m s := by
-  obtain ⟨T, S, hTS, hST, rfl⟩ := h
-  exact transfer_changeCoordinates hTS hST m s
-
-/-- Similar plants have the same spectrum. -/
-@[powerlib_foundation] theorem Similar.isHurwitz_iff {m : Plant n p} {m' : Plant n' p}
-    (h : Similar m m') : IsHurwitz m'.A ↔ IsHurwitz m.A := by
-  obtain ⟨T, S, hTS, hST, rfl⟩ := h
-  exact isHurwitz_conj hTS hST m.A
 
 /-- The Markov parameters `C Aᵏ B`. -/
 def markov (m : Plant n p) (k : ℕ) : Matrix (Fin p) (Fin p) ℝ := m.C * m.A ^ k * m.B
@@ -658,6 +643,19 @@ mode. -/
     (h : ∀ s : ℂ, (characteristicMatrix m.A s).det ≠ 0 → (characteristicMatrix m'.A s).det ≠ 0 →
       transfer m s = transfer m' s) : IsHurwitz m.A ↔ IsHurwitz m'.A :=
   ((similar_iff_transfer_eq hm.1 hm.2 hm'.1 hm'.2).mpr h).isHurwitz_iff.symm
+
+/-- On minimal plants, the transfer function certifies every behavioural sentence: every minimal
+plant with the same transfer function is similar, hence satisfies the same sentences. -/
+@[powerlib_foundation] theorem transfer_certified {m : Plant n p} (hm : m.Minimal)
+    {P : Flow.Property} (h : P.holds (affineLinearVectorField m.A 0) 0) :
+    transfer m ∈ TMIO.certify (Function.graph fun m : {m : Plant n p // m.Minimal} => transfer m.1)
+      {m | P.holds (affineLinearVectorField m.1.A 0) 0} := by
+  rw [TMIO.mem_certify]
+  rintro ⟨m', hm'⟩ heq
+  have heq' : transfer m' = transfer m := heq
+  have hs : Similar m m' :=
+    (similar_iff_transfer_eq hm.1 hm.2 hm'.1 hm'.2).mpr fun s _ _ => congrFun heq'.symm s
+  exact (hs.holds_iff P).mpr h
 
 /-- The hidden mode is not minimal: the observation misses exactly such modes. -/
 @[powerlib_foundation] theorem hiddenMode_not_minimal : ¬ hiddenMode.Minimal := by

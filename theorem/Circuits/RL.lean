@@ -192,6 +192,41 @@ def kyp (m : Impedance) (hR : 0 ≤ m.resistance) : Linear.KYP m.plant where
   · simp only [Complex.ofReal_re, toStateSpace_decay, neg_pos]
     exact div_neg_of_neg_of_pos hR m.inductance.property
 
+/-! ## Responses -/
+
+/-- Every current trajectory of the branch field centred at `e` is the exponential
+`i(t) - e = e^{-(R/L)(t - t₀)} (i(t₀) - e)` on its whole segment, whatever the sign of `R`. -/
+@[powerlib_domain] theorem trajectory_eq (m : Impedance) {e : EuclideanSpace ℝ (Fin 1)}
+    {φ : ℝ → EuclideanSpace ℝ (Fin 1)} {t₀ t₁ : ℝ}
+    (hφ : IsTrajectoryOn φ (affineLinearVectorField m.plant.A e) t₀ t₁) :
+    ∀ t ∈ Set.Icc t₀ t₁,
+      φ t = e + Real.exp (-(m.resistance / m.inductance.val) * (t - t₀)) • (φ t₀ - e) := by
+  intro t ht
+  have h : m.plant.A = !![-(toStateSpace m).decay] := rfl
+  rw [h] at hφ
+  rw [Linear.trajectory_eq_scalar hφ t ht, toStateSpace_decay]
+
+/-- Under a constant terminal voltage with equilibrium current `e`, every trajectory relaxes to
+`e` with time constant `L / R`. -/
+@[powerlib_domain] theorem input_trajectory_eq (m : Impedance) {v : Fin 1 → ℝ}
+    {e : EuclideanSpace ℝ (Fin 1)} (he : IsEquilibrium (m.plant.inputField v) e)
+    {φ : ℝ → EuclideanSpace ℝ (Fin 1)} {t₀ t₁ : ℝ}
+    (hφ : IsTrajectoryOn φ (m.plant.inputField v) t₀ t₁) :
+    ∀ t ∈ Set.Icc t₀ t₁,
+      φ t = e + Real.exp (-(m.resistance / m.inductance.val) * (t - t₀)) • (φ t₀ - e) := by
+  rw [m.plant.inputField_eq he] at hφ
+  exact trajectory_eq m hφ
+
+/-- The distance to the equilibrium is exactly exponential. -/
+@[powerlib_domain] theorem norm_trajectory_eq (m : Impedance) {e : EuclideanSpace ℝ (Fin 1)}
+    {φ : ℝ → EuclideanSpace ℝ (Fin 1)} {t₀ t₁ : ℝ}
+    (hφ : IsTrajectoryOn φ (affineLinearVectorField m.plant.A e) t₀ t₁) :
+    ∀ t ∈ Set.Icc t₀ t₁,
+      ‖φ t - e‖ = Real.exp (-(m.resistance / m.inductance.val) * (t - t₀)) * ‖φ t₀ - e‖ := by
+  intro t ht
+  rw [trajectory_eq m hφ t ht, add_sub_cancel_left, norm_smul,
+    Real.norm_of_nonneg (Real.exp_pos _).le]
+
 /-! ## Requirements and their exact translations -/
 
 /-- Engineering requirements on the RL parameters. -/

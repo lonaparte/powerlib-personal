@@ -1,18 +1,22 @@
 import theorem.Linear.Stability
+import theorem.Flow.Certificate
 
 /-! # Lyapunov certificates
 
 A certificate is the evidence a synthesizer returns for a state matrix `A`: a symmetric matrix
 `P`, positive on every nonzero state, solving `Aᵀ P + P A = -1`. It is proof-relevant data,
-indexed by the exact matrix it was produced for. Its meaning is fixed once: a certificate exists
-exactly when `A` is Hurwitz, hence exactly when every attractive sentence holds. Families supply
-synthesizers that construct certificates; they do not restate what a certificate proves. -/
+indexed by the exact matrix it was produced for. It introduces no meaning of its own: its energy
+`⟪x - e, P (x - e)⟫` is a quadratic-decay certificate of the affine linear field
+(`Certificate.toQuadraticDecay`), so what it proves is what the generic certificate theory of
+`Flow` proves. A certificate exists exactly when `A` is Hurwitz. Families supply synthesizers that
+construct certificates; they do not restate what a certificate proves. -/
 
 noncomputable section
 
 namespace powerlib.Linear
 
 open Matrix LinearSystems
+open scoped RealInnerProductSpace
 
 variable {n : ℕ}
 
@@ -140,10 +144,95 @@ equation for the converse). -/
     rw [add_comm]
     exact h
 
-/-- A certificate proves every attractive sentence at every centre. -/
+/-! ## A certificate is a quadratic-decay certificate -/
+
+@[powerlib_foundation] theorem inner_op (P : Matrix (Fin n) (Fin n) ℝ) (x y : ℝⁿ) :
+    ⟪x, op P y⟫ = WithLp.ofLp x ⬝ᵥ (P *ᵥ WithLp.ofLp y) :=
+  Matrix.inner_toEuclideanCLM P x y
+
+/-- The energy `⟪x - e, P (x - e)⟫` of a certificate about the centre `e`. -/
+def Certificate.energy {A : Matrix (Fin n) (Fin n) ℝ} (c : Certificate A) (e x : ℝⁿ) : ℝ :=
+  ⟪x - e, op c.P (x - e)⟫
+
+@[powerlib_foundation] theorem Certificate.hasFDerivAt_energy {A : Matrix (Fin n) (Fin n) ℝ}
+    (c : Certificate A) (e x : ℝⁿ) :
+    HasFDerivAt (c.energy e) ((fderivInnerCLM ℝ (x - e, op c.P (x - e))).comp
+      ((ContinuousLinearMap.id ℝ ℝⁿ).prod (op c.P))) x := by
+  have h1 : HasFDerivAt (fun y : ℝⁿ => y - e) (ContinuousLinearMap.id ℝ ℝⁿ) x :=
+    (hasFDerivAt_id x).sub_const e
+  have h2 : HasFDerivAt (fun y : ℝⁿ => op c.P (y - e)) (op c.P) x := by
+    have h := (op c.P).hasFDerivAt.comp x h1
+    rwa [ContinuousLinearMap.comp_id] at h
+  exact h1.inner ℝ h2
+
+/-- Along the field, the energy decreases at the rate `‖x - e‖²`. -/
+@[powerlib_foundation] theorem Certificate.lie_energy {A : Matrix (Fin n) (Fin n) ℝ}
+    (c : Certificate A) (e x : ℝⁿ) :
+    fderiv ℝ (c.energy e) x (affineLinearVectorField A e x) = -‖x - e‖ ^ 2 := by
+  rw [(c.hasFDerivAt_energy e x).fderiv]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply, fderivInnerCLM_apply,
+    ContinuousLinearMap.id_apply, affine_apply]
+  rw [← op_mul_apply, inner_op, inner_op]
+  simp only [op, Matrix.ofLp_toEuclideanCLM, ← Matrix.mulVec_mulVec]
+  set y := WithLp.ofLp (x - e)
+  have hsym : (A *ᵥ y) ⬝ᵥ (c.P *ᵥ y) = y ⬝ᵥ (c.P *ᵥ (A *ᵥ y)) := by
+    rw [Matrix.dotProduct_mulVec, dotProduct_comm]
+    congr 1
+    conv_lhs => rw [← c.symmetric]
+    rw [Matrix.vecMul_transpose]
+  have hL := quadratic_lyapunov c.symmetric c.lyapunov y
+  have hn : ‖x - e‖ ^ 2 = y ⬝ᵥ y := by
+    rw [EuclideanSpace.norm_sq_eq]
+    simp [y, dotProduct, sq]
+  rw [hsym, hn]
+  linarith
+
+@[powerlib_foundation] theorem Certificate.energy_contDiff {A : Matrix (Fin n) (Fin n) ℝ}
+    (c : Certificate A) (e : ℝⁿ) : ContDiff ℝ 1 (c.energy e) :=
+  (contDiff_id.sub contDiff_const).inner ℝ ((op c.P).contDiff.comp (contDiff_id.sub contDiff_const))
+
+@[powerlib_foundation] theorem Certificate.exists_energy_bounds {A : Matrix (Fin n) (Fin n) ℝ}
+    (c : Certificate A) :
+    ∃ α > 0, ∃ β ≥ α, ∀ z : ℝⁿ, α * ‖z‖ ^ 2 ≤ ⟪z, op c.P z⟫ ∧ ⟪z, op c.P z⟫ ≤ β * ‖z‖ ^ 2 :=
+  Flow.quadratic_bounds (fun z => ⟪z, op c.P z⟫)
+    (continuous_id.inner (op c.P).continuous)
+    (fun a z => by simp only [map_smul, real_inner_smul_left, real_inner_smul_right]; ring)
+    (fun z hz => by
+      rw [inner_op]
+      exact c.positive _ (by simpa using hz))
+
+/-- A Lyapunov certificate is a quadratic-decay certificate of the affine linear field: its energy
+lies between two multiples of `‖x - e‖²` and decays at the rate `1 / β` of the upper one. -/
+def Certificate.toQuadraticDecay {A : Matrix (Fin n) (Fin n) ℝ} (c : Certificate A) (e : ℝⁿ) :
+    Flow.QuadraticDecay (affineLinearVectorField A e) (c.energy e) e where
+  lower := c.exists_energy_bounds.choose
+  upper := c.exists_energy_bounds.choose_spec.2.choose
+  rate := 1 / c.exists_energy_bounds.choose_spec.2.choose
+  lower_pos := c.exists_energy_bounds.choose_spec.1
+  upper_pos := c.exists_energy_bounds.choose_spec.1.trans_le
+    c.exists_energy_bounds.choose_spec.2.choose_spec.1
+  rate_pos := one_div_pos.mpr (c.exists_energy_bounds.choose_spec.1.trans_le
+    c.exists_energy_bounds.choose_spec.2.choose_spec.1)
+  smooth := c.energy_contDiff e
+  equilibrium := affine_isEquilibrium A e
+  lower_bound x := (c.exists_energy_bounds.choose_spec.2.choose_spec.2 (x - e)).1
+  upper_bound x := (c.exists_energy_bounds.choose_spec.2.choose_spec.2 (x - e)).2
+  dissipation x := by
+    have hβ := c.exists_energy_bounds.choose_spec.1.trans_le
+      c.exists_energy_bounds.choose_spec.2.choose_spec.1
+    have hb := (c.exists_energy_bounds.choose_spec.2.choose_spec.2 (x - e)).2
+    rw [c.lie_energy]
+    change -‖x - e‖ ^ 2 ≤ -(1 / c.exists_energy_bounds.choose_spec.2.choose) * c.energy e x
+    have : 1 / c.exists_energy_bounds.choose_spec.2.choose * c.energy e x ≤ ‖x - e‖ ^ 2 := by
+      rw [one_div, inv_mul_le_iff₀ hβ]
+      exact hb
+    linarith
+
+/-- A certificate proves every attractive sentence at every centre: the generic quadratic-decay
+theory applied to its energy. -/
 @[powerlib_foundation] theorem Certificate.holds {A : Matrix (Fin n) (Fin n) ℝ}
     (c : Certificate A) (e : ℝⁿ) {P : Flow.Property} (hP : P.Attractive) :
     P.holds (affineLinearVectorField A e) e :=
-  (holds_iff_isHurwitz e hP).mpr c.isHurwitz
+  (c.toQuadraticDecay e).holds (affine_contDiff A e) hP
 
 end powerlib.Linear

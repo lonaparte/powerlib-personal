@@ -78,6 +78,43 @@ compact sublevels is forward complete. -/
   refine ⟨φ, hφa, fun t ht => ?_⟩
   simpa only [hstate t ht, one_smul] using hφ t ht
 
+/-! ## Quadratic bounds -/
+
+/-- A continuous, quadratically homogeneous function that is positive away from the origin of a
+finite-dimensional space lies between two positive multiples of the squared norm. -/
+@[powerlib_foundation] theorem quadratic_bounds {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] (V : E → ℝ) (hc : Continuous V)
+    (hh : ∀ (a : ℝ) (x : E), V (a • x) = a ^ 2 * V x) (hp : ∀ x ≠ 0, 0 < V x) :
+    ∃ α > 0, ∃ β ≥ α, ∀ x, α * ‖x‖ ^ 2 ≤ V x ∧ V x ≤ β * ‖x‖ ^ 2 := by
+  have hzero : V 0 = 0 := by simpa using hh 0 0
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · refine ⟨1, one_pos, 1, le_rfl, fun x => ?_⟩
+    rw [Subsingleton.elim x 0, hzero, norm_zero]
+    norm_num
+  have hne : (Metric.sphere (0 : E) 1).Nonempty := by
+    obtain ⟨v, hv⟩ := exists_ne (0 : E)
+    have hn : ‖v‖ ≠ 0 := norm_ne_zero_iff.mpr hv
+    refine ⟨‖v‖⁻¹ • v, ?_⟩
+    simp [norm_smul, inv_mul_cancel₀ hn]
+  obtain ⟨v, hv, hmin⟩ := (isCompact_sphere (0 : E) 1).exists_isMinOn hne hc.continuousOn
+  obtain ⟨w, hw, hmax⟩ := (isCompact_sphere (0 : E) 1).exists_isMaxOn hne hc.continuousOn
+  have hvnorm : ‖v‖ = 1 := by simpa [Metric.mem_sphere, dist_eq_norm] using hv
+  have hα : 0 < V v := hp v (by intro h; simp [h] at hvnorm)
+  refine ⟨V v, hα, V w, hmin hw, ?_⟩
+  intro x
+  by_cases hx : x = 0
+  · simp [hx, hzero]
+  · have hn : ‖x‖ ≠ 0 := norm_ne_zero_iff.mpr hx
+    let z := ‖x‖⁻¹ • x
+    have hz : z ∈ Metric.sphere (0 : E) 1 := by
+      simp [z, norm_smul, inv_mul_cancel₀ hn]
+    have hs : ‖x‖ • z = x := by simp [z, smul_smul, hn]
+    have he : V x = ‖x‖ ^ 2 * V z := by rw [← hh ‖x‖ z, hs]
+    rw [he]
+    constructor
+    · simpa [mul_comm] using mul_le_mul_of_nonneg_left (hmin hz) (sq_nonneg ‖x‖)
+    · simpa [mul_comm] using mul_le_mul_of_nonneg_left (hmax hz) (sq_nonneg ‖x‖)
+
 /-! ## Quadratic-decay certificates -/
 
 /-- Quadratic bounds on a C¹ energy and its uniform exponential decay along the field. -/

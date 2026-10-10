@@ -80,6 +80,56 @@ def solution (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) (t₀ : ℝ) (x₀ : 
   fun t₀ x₀ => ⟨solution A e t₀ x₀, solution_initial A e t₀ x₀,
     fun t _ => (solution_hasDerivAt A e t₀ x₀ t).hasDerivWithinAt⟩
 
+/-- The affine linear field is globally Lipschitz. -/
+@[powerlib_foundation] theorem affine_lipschitzWith (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) :
+    LipschitzWith ‖op A‖₊ (affineLinearVectorField A e) :=
+  LipschitzWith.of_dist_le_mul fun x y => by
+    simp only [affine_apply, dist_eq_norm, ← map_sub, sub_sub_sub_cancel_right, coe_nnnorm]
+    exact (op A).le_opNorm _
+
+/-- Every solution segment of the affine linear field is the matrix-exponential solution
+(LeanForControl's uniqueness for Lipschitz fields). -/
+@[powerlib_foundation] theorem trajectory_eq_solution {A : Matrix (Fin n) (Fin n) ℝ} {e : ℝⁿ}
+    {φ : ℝ → ℝⁿ} {t₀ t₁ : ℝ} (hφ : IsTrajectoryOn φ (affineLinearVectorField A e) t₀ t₁) :
+    ∀ t ∈ Icc t₀ t₁, φ t = solution A e t₀ (φ t₀) t :=
+  eqOn_of_isIntegralCurveOn_Icc (fun _ => affine_lipschitzWith A e) hφ
+    (fun t _ => (solution_hasDerivAt A e t₀ (φ t₀) t).hasDerivWithinAt)
+    (solution_initial A e t₀ (φ t₀)).symm
+
+/-- Two solution segments with the same initial state coincide. -/
+@[powerlib_foundation] theorem trajectory_unique {A : Matrix (Fin n) (Fin n) ℝ} {e : ℝⁿ}
+    {φ ψ : ℝ → ℝⁿ} {t₀ t₁ : ℝ} (hφ : IsTrajectoryOn φ (affineLinearVectorField A e) t₀ t₁)
+    (hψ : IsTrajectoryOn ψ (affineLinearVectorField A e) t₀ t₁) (h₀ : φ t₀ = ψ t₀) :
+    ∀ t ∈ Icc t₀ t₁, φ t = ψ t :=
+  eqOn_of_isIntegralCurveOn_Icc (fun _ => affine_lipschitzWith A e) hφ hψ h₀
+
+/-! ## One-state plants -/
+
+@[powerlib_foundation] theorem op_one_apply (c : ℝ) (y : EuclideanSpace ℝ (Fin 1)) :
+    op !![c] y = c • y := by
+  ext i
+  fin_cases i
+  simp [Matrix.mulVec, dotProduct]
+
+/-- The explicit solution of the one-state field `x' = -a (x - e)`. -/
+@[powerlib_foundation] theorem scalar_solution_hasDerivAt (a : ℝ) (e x₀ : EuclideanSpace ℝ (Fin 1))
+    (t₀ t : ℝ) :
+    HasDerivAt (fun t => e + Real.exp (-a * (t - t₀)) • (x₀ - e))
+      (affineLinearVectorField !![-a] e (e + Real.exp (-a * (t - t₀)) • (x₀ - e))) t := by
+  have hexp : HasDerivAt (fun t => Real.exp (-a * (t - t₀))) (Real.exp (-a * (t - t₀)) * -a) t := by
+    simpa using (((hasDerivAt_id t).sub_const t₀).const_mul (-a)).exp
+  have h := (hexp.smul_const (x₀ - e)).const_add e
+  convert h using 1
+  rw [affine_apply, add_sub_cancel_left, op_one_apply, smul_smul, mul_comm]
+
+/-- Every solution segment of a one-state plant decays or grows exponentially. -/
+@[powerlib_foundation] theorem trajectory_eq_scalar {a : ℝ} {e : EuclideanSpace ℝ (Fin 1)}
+    {φ : ℝ → EuclideanSpace ℝ (Fin 1)} {t₀ t₁ : ℝ}
+    (hφ : IsTrajectoryOn φ (affineLinearVectorField !![-a] e) t₀ t₁) :
+    ∀ t ∈ Icc t₀ t₁, φ t = e + Real.exp (-a * (t - t₀)) • (φ t₀ - e) :=
+  trajectory_unique hφ (fun t _ => (scalar_solution_hasDerivAt a e (φ t₀) t₀ t).hasDerivWithinAt)
+    (by simp)
+
 /-- Solution segments scale about the centre. -/
 @[powerlib_foundation] theorem isTrajectoryOn_scale {A : Matrix (Fin n) (Fin n) ℝ} {e : ℝⁿ}
     {φ : ℝ → ℝⁿ} {t₀ t₁ : ℝ} (hφ : IsTrajectoryOn φ (affineLinearVectorField A e) t₀ t₁)
