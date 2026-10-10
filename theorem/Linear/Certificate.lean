@@ -50,7 +50,8 @@ structure Certificate (A : Matrix (Fin n) (Fin n) ℝ) where
   rw [← quadratic_sym hP, hL, Matrix.neg_mulVec, Matrix.one_mulVec, dotProduct_neg]
 
 /-- A certificate proves the matrix Hurwitz. -/
-@[powerlib_foundation] theorem Certificate.isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
+@[powerlib_foundation, aesop safe forward]
+theorem Certificate.isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
     (c : Certificate A) : IsHurwitz A := by
   intro μ v hv heig
   let x : Fin n → ℝ := fun j => (v j).re

@@ -1,12 +1,17 @@
 import theorem.Circuits.LCL
+import theorem.Linear.Synthesis
 
 /-! # Synthesis of LCL Lyapunov certificates
 
-For a passive, damped LCL circuit the synthesizer below constructs, from the model coefficients
-alone, a symmetric matrix solving the Lyapunov equation of the circuit's plant; no witness is
-supplied. Every endpoint of the symbolic witness is checked by the Lean kernel, and the result is
-an ordinary `Linear.Certificate` for the exact plant, so its meaning — every attractive sentence —
-comes from the hub and is not restated here. -/
+Two synthesizers produce ordinary `Linear.Certificate`s for the exact plant, so their meaning —
+every attractive sentence — comes from the hub and is not restated here.
+
+* For a passive, damped circuit, a closed-form symbolic witness built from the model
+  coefficients; every endpoint is checked by the Lean kernel.
+* For circuits submitted with rational parameters, the generic rational synthesizer of
+  `Linear.Synthesis`, run by the kernel on the exact rational plant matrix. It needs neither
+  passivity nor damping: a circuit with a negative resistance is certified whenever its plant is
+  Hurwitz. -/
 
 noncomputable section
 
@@ -300,5 +305,50 @@ def synthesize (m : Circuit) (hp : m.Passive) (hd : m.Damped) : Linear.Certifica
       rcases hd with hr | hr
       · exact Or.inl (div_pos (lt_of_le_of_ne hp.1 (Ne.symm hr)) m.first.inductance.property)
       · exact Or.inr (div_pos (lt_of_le_of_ne hp.2 (Ne.symm hr)) m.second.inductance.property))
+
+/-! ## Generic synthesis from rational parameters -/
+
+/-- Circuit parameters as submitted, in exact rationals. -/
+structure RationalCircuit where
+  firstResistance : ℚ
+  firstInductance : ℚ
+  capacitance : ℚ
+  secondResistance : ℚ
+  secondInductance : ℚ
+  firstInductance_pos : 0 < firstInductance
+  capacitance_pos : 0 < capacitance
+  secondInductance_pos : 0 < secondInductance
+
+/-- The circuit described by the parameters. -/
+def RationalCircuit.circuit (r : RationalCircuit) : Circuit :=
+  ⟨⟨r.firstResistance, ⟨r.firstInductance, by exact_mod_cast r.firstInductance_pos⟩⟩,
+    ⟨r.secondResistance, ⟨r.secondInductance, by exact_mod_cast r.secondInductance_pos⟩⟩,
+    ⟨r.capacitance, by exact_mod_cast r.capacitance_pos⟩⟩
+
+/-- The plant matrix computed exactly from the parameters. -/
+def RationalCircuit.matrix (r : RationalCircuit) : Matrix (Fin 3) (Fin 3) ℚ :=
+  !![-(r.firstResistance / r.firstInductance), -(1 / r.firstInductance), 0;
+     1 / r.capacitance, 0, -(1 / r.capacitance);
+     0, 1 / r.secondInductance, -(r.secondResistance / r.secondInductance)]
+
+/-- The exact rational matrix is the circuit's plant matrix. -/
+@[powerlib_foundation] theorem RationalCircuit.real_matrix (r : RationalCircuit) :
+    Linear.Synthesis.real r.matrix = r.circuit.plant.A := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [RationalCircuit.matrix, RationalCircuit.circuit, Circuit.plant, StateSpace.plant,
+      RL.toStateSpace_decay, div_eq_mul_inv]
+
+/-- The certificate the kernel synthesizes from the parameters alone. -/
+def RationalCircuit.certificate (r : RationalCircuit)
+    (h : Linear.Synthesis.accepts r.matrix = true) : Linear.Certificate r.circuit.plant.A :=
+  r.real_matrix ▸ Linear.Synthesis.certificateOf r.matrix h
+
+/-- When the kernel's run of the generic synthesizer accepts the parameters, the circuit
+satisfies every attractive sentence. -/
+@[powerlib_domain] theorem RationalCircuit.mem_den (r : RationalCircuit)
+    (h : Linear.Synthesis.accepts r.matrix = true) {P : Flow.Property} (hP : P.Attractive) :
+    r.circuit ∈ Linear.den Circuit.plant P :=
+  (r.certificate h).mem_den hP
 
 end powerlib.Circuits.LCL

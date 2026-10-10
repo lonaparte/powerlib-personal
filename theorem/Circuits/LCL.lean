@@ -125,7 +125,7 @@ def Circuit.Stable (m : Circuit) : Prop := ∀ s : ℂ, m.frequency s = 0 → s.
   ring
 
 /-- The plant is Hurwitz exactly when all poles lie in the open left half plane. -/
-@[powerlib_domain] theorem isHurwitz_iff_stable (m : Circuit) :
+@[simp, powerlib_domain] theorem isHurwitz_iff_stable (m : Circuit) :
     IsHurwitz m.plant.A ↔ m.Stable := by
   rw [← Linear.spectrallyStable_iff_isHurwitz]
   have ha3 : (m.a3 : ℂ) ≠ 0 := by exact_mod_cast (a3_pos m).ne'
@@ -182,11 +182,13 @@ def Circuit.Damped (m : Circuit) : Prop := m.first.resistance ≠ 0 ∨ m.second
 def Circuit.RouthHurwitz (m : Circuit) : Prop :=
   0 < m.a2 ∧ 0 < m.a1 ∧ 0 < m.a0 ∧ 0 < m.a2 * m.a1 - m.a3 * m.a0
 
-@[powerlib_foundation] theorem stable_of_routhHurwitz (m : Circuit) (h : m.RouthHurwitz) :
+@[powerlib_foundation, aesop unsafe 70% apply]
+theorem stable_of_routhHurwitz (m : Circuit) (h : m.RouthHurwitz) :
     m.Stable :=
   fun s hs => cubic_hurwitz m.a3 m.a2 m.a1 m.a0 (a3_pos m) h.1 h.2.1 h.2.2.1 h.2.2.2 s hs
 
-@[powerlib_foundation] theorem routhHurwitz_of_passive (m : Circuit) (hp : m.Passive)
+@[powerlib_foundation, aesop unsafe 70% apply]
+theorem routhHurwitz_of_passive (m : Circuit) (hp : m.Passive)
     (hd : m.Damped) : m.RouthHurwitz := by
   rcases hp with ⟨hr1, hr2⟩
   have hL1 := m.first.inductance.property

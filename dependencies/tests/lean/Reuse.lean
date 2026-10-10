@@ -156,6 +156,77 @@ run_cmd do
         throwError "Automatic reuse used an unapproved axiom: {consumer}: {ax}"
   logInfo "POWERLIB_AUTOMATIC_REUSE_OK"
 
+-- Multi-step goals closed by Aesop from the library's reviewed rules; no theorem names given.
+namespace AutomaticChaining
+
+open powerlib LinearSystems
+
+@[powerlib_foundation] theorem certificate_lyapunov {n : ℕ} (A : Matrix (Fin n) (Fin n) ℝ)
+    (c : Linear.Certificate A) : LyapunovStable (affineLinearVectorField A 0) 0 := by aesop
+
+@[powerlib_foundation] theorem certificate_local {n : ℕ} (A : Matrix (Fin n) (Fin n) ℝ)
+    (c : Linear.Certificate A) : LocalAsymptoticStable (affineLinearVectorField A 0) 0 := by
+  aesop
+
+@[powerlib_domain] theorem rl_resistance (m : Circuits.RL.Impedance) (h : 0 < m.resistance) :
+    Flow.GloballyExponentiallyStable (affineLinearVectorField m.plant.A 0) 0 := by aesop
+
+@[powerlib_domain] theorem lcl_passive_damped (m : Circuits.LCL.Circuit) (hp : m.Passive)
+    (hd : m.Damped) :
+    m ∈ Linear.den Circuits.LCL.Circuit.plant .globallyAsymptoticallyStable := by aesop
+
+@[powerlib_domain] theorem interconnection_criterion {n₁ n₂ p : ℕ}
+    (ic : Circuits.Interconnection n₁ n₂ p) (h₁ : IsHurwitz ic.source.A)
+    (h₂ : IsHurwitz ic.load.A) (h : ic.ImpedanceStable) :
+    Flow.GloballyExponentiallyStable (affineLinearVectorField ic.closedLoopA 0) 0 := by aesop
+
+@[powerlib_domain] theorem polynomial_certificate {model : Nonlinear.Polynomial2.Model}
+    (c : Nonlinear.Polynomial2.Accepted model) :
+    Flow.GloballyExponentiallyStable model.field 0 := by aesop
+
+end AutomaticChaining
+
+open Lean Elab Command in
+run_cmd do
+  let env ← getEnv
+  for (consumer, sources) in #[
+      (`AutomaticChaining.certificate_lyapunov,
+        #[`powerlib.Linear.Certificate.isHurwitz, `powerlib.Linear.lyapunovStable_of_isHurwitz]),
+      (`AutomaticChaining.certificate_local,
+        #[`powerlib.Linear.Certificate.isHurwitz,
+          `powerlib.Linear.localAsymptoticStable_of_isHurwitz]),
+      (`AutomaticChaining.rl_resistance,
+        #[`powerlib.Circuits.RL.isHurwitz_iff,
+          `powerlib.Linear.globallyExponentiallyStable_of_isHurwitz]),
+      (`AutomaticChaining.lcl_passive_damped,
+        #[`powerlib.Circuits.LCL.routhHurwitz_of_passive,
+          `powerlib.Circuits.LCL.stable_of_routhHurwitz, `powerlib.Circuits.LCL.isHurwitz_iff_stable]),
+      (`AutomaticChaining.interconnection_criterion,
+        #[`powerlib.Circuits.Interconnection.isHurwitz_closedLoop_of_impedanceStable,
+          `powerlib.Linear.globallyExponentiallyStable_of_isHurwitz]),
+      (`AutomaticChaining.polynomial_certificate,
+        #[`powerlib.Nonlinear.Polynomial2.Accepted.globallyExponentiallyStable])] do
+    let info ← getConstInfo consumer
+    let some proof := info.value? (allowOpaque := true) | throwError "Missing proof: {consumer}"
+    -- Follow the auxiliary declarations simp creates for rewrite rules (`_simp_1`, ...).
+    let mut used := proof.getUsedConstants
+    let mut todo := used.filter Name.isInternal
+    for _ in [0:64] do
+      let some aux := todo.back? | break
+      todo := todo.pop
+      if let some auxValue := (env.find? aux).bind (·.value? (allowOpaque := true)) then
+        for c in auxValue.getUsedConstants do
+          unless used.contains c do
+            used := used.push c
+            if c.isInternal then todo := todo.push c
+    for source in sources do
+      unless used.contains source do
+        throwError "Aesop did not chain through {source}: {consumer}"
+    for ax in powerlib.Search.declarationAxioms env consumer do
+      unless powerlib.Search.allowedAxiom ax do
+        throwError "Automatic chaining used an unapproved axiom: {consumer}: {ax}"
+  logInfo "POWERLIB_AUTOMATIC_CHAINING_OK"
+
 -- Direct reuse of Mathlib and LeanForControl: the library applies the upstream theorem and does
 -- not restate its proof.
 open Lean Elab Command in

@@ -55,6 +55,15 @@ the plant is Hurwitz: the behaviour about every operating point is the zero-inpu
   rw [M.inputField_eq he]
   exact holds_iff_isHurwitz e hP
 
+@[simp, powerlib_foundation] theorem mem_den {plant : X → Plant n p} {x : X} {P : Flow.Property} :
+    x ∈ den plant P ↔ P.holds (affineLinearVectorField (plant x).A 0) 0 := Iff.rfl
+
+/-- A member with a Hurwitz plant satisfies every attractive sentence. -/
+@[powerlib_foundation, aesop unsafe 80% apply] theorem mem_den_of_isHurwitz
+    {plant : X → Plant n p} {x : X} {P : Flow.Property} (hP : P.Attractive)
+    (h : IsHurwitz (plant x).A) : x ∈ den plant P :=
+  (holds_iff_isHurwitz 0 hP).mpr h
+
 /-- A certificate for a member's state matrix proves the member in every attractive sentence. -/
 @[powerlib_foundation] theorem Certificate.mem_den {plant : X → Plant n p} {x : X}
     (c : Certificate (plant x).A) {P : Flow.Property} (hP : P.Attractive) : x ∈ den plant P :=

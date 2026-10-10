@@ -65,4 +65,16 @@ def Property.Attractive : Property → Prop
   | .globallyAsymptoticallyStable | .globallyExponentiallyStable => True
   | _ => False
 
+@[simp, powerlib_foundation] theorem Property.attractive_locallyAsymptoticallyStable :
+    Property.locallyAsymptoticallyStable.Attractive := trivial
+
+@[simp, powerlib_foundation] theorem Property.attractive_locallyExponentiallyStable :
+    Property.locallyExponentiallyStable.Attractive := trivial
+
+@[simp, powerlib_foundation] theorem Property.attractive_globallyAsymptoticallyStable :
+    Property.globallyAsymptoticallyStable.Attractive := trivial
+
+@[simp, powerlib_foundation] theorem Property.attractive_globallyExponentiallyStable :
+    Property.globallyExponentiallyStable.Attractive := trivial
+
 end powerlib.Flow

@@ -248,6 +248,12 @@ impedance criterion holds. -/
     exact mul_ne_zero (mul_ne_zero (det_ne_zero_of_rhp h₁ hs) (det_ne_zero_of_rhp h₂ hs))
       (himp s hs) h.symm
 
+/-- The impedance criterion with stable components gives a stable closed loop. -/
+@[powerlib_domain, aesop unsafe 70% apply] theorem isHurwitz_closedLoop_of_impedanceStable
+    (h₁ : IsHurwitz ic.source.A) (h₂ : IsHurwitz ic.load.A) (h : ic.ImpedanceStable) :
+    IsHurwitz ic.closedLoopA :=
+  (ic.isHurwitz_closedLoop_iff h₁ h₂).mpr h
+
 end Interconnection
 
 /-! ## Coordinate changes of the components -/

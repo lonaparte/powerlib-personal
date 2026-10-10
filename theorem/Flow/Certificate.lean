@@ -201,7 +201,8 @@ namespace QuadraticDecay
   simpa only [mem_closedBall, dist_eq_norm] using Real.le_sqrt_of_sq_le hsquared
 
 /-- With a C¹ field, the certificate supplies a solution through every state. -/
-@[powerlib_foundation] theorem forwardComplete {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
+@[powerlib_foundation, aesop unsafe 80% apply]
+theorem forwardComplete {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
     (c : QuadraticDecay f V e) (hf : ContDiff ℝ 1 f) :
     ForwardComplete f := by
   refine forwardComplete_of_compact_sublevel hf (c.smooth.differentiable (by norm_num))
@@ -210,7 +211,8 @@ namespace QuadraticDecay
     ((mul_nonneg c.lower_pos.le (sq_nonneg _)).trans (c.lower_bound x))
 
 /-- The certificate proves global exponential stability. -/
-@[powerlib_foundation] theorem globallyExponentiallyStable {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
+@[powerlib_foundation, aesop unsafe 80% apply]
+theorem globallyExponentiallyStable {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
     (c : QuadraticDecay f V e)
     (hf : ContDiff ℝ 1 f) : GloballyExponentiallyStable f e :=
   ⟨c.equilibrium, c.forwardComplete hf, max 1 (Real.sqrt (c.upper / c.lower)), c.rate / 2,

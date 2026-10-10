@@ -193,7 +193,8 @@ def Accepted.certificate {model : Model} (c : Accepted model) :
     linarith
 
 /-- An accepted certificate proves global exponential stability of the full polynomial field. -/
-@[powerlib_domain] theorem Accepted.globallyExponentiallyStable {model : Model}
+@[powerlib_domain, aesop unsafe 80% apply]
+theorem Accepted.globallyExponentiallyStable {model : Model}
     (c : Accepted model) : Flow.GloballyExponentiallyStable model.field 0 :=
   c.certificate.globallyExponentiallyStable model.field_smooth
 

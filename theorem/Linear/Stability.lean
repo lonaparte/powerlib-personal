@@ -40,7 +40,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
   (op A).contDiff.comp (contDiff_id.sub contDiff_const)
 
 /-- Hurwitz gives local exponential stability (LeanForControl's linearization theorem). -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_of_isHurwitz
+@[powerlib_foundation, aesop safe apply] theorem locallyExponentiallyStable_of_isHurwitz
     {A : Matrix (Fin n) (Fin n) ℝ} (e : ℝⁿ) (hA : IsHurwitz A) :
     LocallyExponentiallyStable (affineLinearVectorField A e) e :=
   hurwitz_linearization_locally_exponentially_stable A (affine_contDiff A e)
@@ -163,7 +163,7 @@ def solution (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) (t₀ : ℝ) (x₀ : 
   exact le_of_mul_le_mul_left this hc
 
 /-- Hurwitz gives global exponential stability. -/
-@[powerlib_foundation] theorem globallyExponentiallyStable_of_isHurwitz
+@[powerlib_foundation, aesop safe apply] theorem globallyExponentiallyStable_of_isHurwitz
     {A : Matrix (Fin n) (Fin n) ℝ} (e : ℝⁿ) (hA : IsHurwitz A) :
     Flow.GloballyExponentiallyStable (affineLinearVectorField A e) e :=
   globallyExponentiallyStable_of_locallyExponentiallyStable
@@ -286,8 +286,28 @@ when `A` is Hurwitz. -/
   ⟨fun h => isHurwitz_of_localAsymptoticStable (Flow.Property.localAsymptoticStable hP h),
     fun hA => (globallyExponentiallyStable_of_isHurwitz e hA).holds hP⟩
 
+/-- Hurwitz gives every attractive sentence. -/
+@[powerlib_foundation, aesop unsafe 80% apply] theorem holds_of_isHurwitz
+    {A : Matrix (Fin n) (Fin n) ℝ} (e : ℝⁿ) {P : Flow.Property} (hP : P.Attractive)
+    (hA : IsHurwitz A) : P.holds (affineLinearVectorField A e) e :=
+  (holds_iff_isHurwitz e hP).mpr hA
+
+/-- Hurwitz gives global asymptotic stability, with a solution through every state. -/
+@[powerlib_foundation, aesop safe apply] theorem globallyAsymptoticallyStable_of_isHurwitz
+    {A : Matrix (Fin n) (Fin n) ℝ} (e : ℝⁿ) (hA : IsHurwitz A) :
+    Flow.GloballyAsymptoticallyStable (affineLinearVectorField A e) e :=
+  (globallyExponentiallyStable_of_isHurwitz e hA).globallyAsymptoticallyStable
+
+/-- Hurwitz gives local asymptotic stability. -/
+@[powerlib_foundation, aesop safe apply] theorem localAsymptoticStable_of_isHurwitz
+    {A : Matrix (Fin n) (Fin n) ℝ} (e : ℝⁿ) (hA : IsHurwitz A) :
+    LocalAsymptoticStable (affineLinearVectorField A e) e :=
+  Flow.locallyExponentiallyStable_localAsymptoticStable
+    (locallyExponentiallyStable_of_isHurwitz e hA)
+
 /-- Hurwitz gives Lyapunov stability. -/
-@[powerlib_foundation] theorem lyapunovStable_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
+@[powerlib_foundation, aesop unsafe 50% apply]
+theorem lyapunovStable_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
     (e : ℝⁿ) (hA : IsHurwitz A) : LyapunovStable (affineLinearVectorField A e) e :=
   (globallyExponentiallyStable_of_isHurwitz e hA).lyapunovStable
 

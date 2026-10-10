@@ -1,4 +1,5 @@
 import theorem.Linear.Family
+import theorem.Linear.Realization
 import theorem.Port.Linear
 import theorem.generated.Conversion
 
@@ -103,7 +104,7 @@ def Impedance.plant (m : Impedance) : Linear.Plant 1 1 := (toStateSpace m).plant
   simp [Impedance.plant]
 
 /-- The RL plant is Hurwitz exactly when the resistance is positive. -/
-@[powerlib_domain] theorem isHurwitz_iff (m : Impedance) :
+@[simp, powerlib_domain] theorem isHurwitz_iff (m : Impedance) :
     IsHurwitz m.plant.A ↔ 0 < m.resistance := by
   simp only [Impedance.plant, StateSpace.plant, toStateSpace_decay]
   rw [Linear.isHurwitz_one_iff, neg_lt_zero, div_pos_iff_of_pos_right m.inductance.property]
@@ -227,6 +228,44 @@ def kyp (m : Impedance) (hR : 0 ≤ m.resistance) : Linear.KYP m.plant where
   rw [trajectory_eq m hφ t ht, add_sub_cancel_left, norm_smul,
     Real.norm_of_nonneg (Real.exp_pos _).le]
 
+/-! ## The frequency domain -/
+
+/-- The transfer function from terminal voltage to branch current is the admittance
+`1 / (R + L s)`, at every complex frequency (both sides vanish at the pole). -/
+@[powerlib_domain] theorem transfer_eq (m : Impedance) (s : ℂ) :
+    Linear.transfer m.plant s = !![((m.resistance : ℂ) + m.inductance.val * s)⁻¹] := by
+  have hL : (m.inductance.val : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr m.inductance.property.ne'
+  ext i j
+  fin_cases i
+  fin_cases j
+  simp [Linear.transfer, Linear.characteristicMatrix, Impedance.plant, StateSpace.plant,
+    Ring.inverse_eq_inv', Matrix.mul_apply]
+  rw [show (m.resistance : ℂ) + m.inductance.val * s =
+      m.inductance.val * (s + m.resistance / m.inductance.val) by field_simp; ring, mul_inv]
+  ring
+
+/-- The branch has no hidden mode. -/
+@[powerlib_foundation] theorem minimal (m : Impedance) : m.plant.Minimal := by
+  have hL : (m.inductance.val : ℝ) ≠ 0 := m.inductance.property.ne'
+  refine ⟨fun x => ⟨fun _ _ => x 0 / (toStateSpace m).inputGain.val, ?_⟩, fun x hx => ?_⟩
+  · funext i
+    fin_cases i
+    simp [Impedance.plant, StateSpace.plant, dotProduct]
+    field_simp
+  · have h0 := congrFun (hx 0) 0
+    funext i
+    fin_cases i
+    simpa [Impedance.plant, StateSpace.plant, Matrix.mulVec, dotProduct] using h0
+
+/-- An impedance measurement certifies the branch: among all minimal one-state plants, the
+branch's transfer function certifies every sentence the branch satisfies. -/
+@[powerlib_domain] theorem transfer_certified (m : Impedance) {P : Flow.Property}
+    (h : m ∈ Linear.den Impedance.plant P) :
+    Linear.transfer m.plant ∈ TMIO.certify
+      (Function.graph fun M : {M : Linear.Plant 1 1 // M.Minimal} => Linear.transfer M.1)
+      {M | P.holds (affineLinearVectorField M.1.A 0) 0} :=
+  Linear.transfer_certified (minimal m) h
+
 /-! ## Requirements and their exact translations -/
 
 /-- Engineering requirements on the RL parameters. -/
@@ -264,7 +303,7 @@ def family : Linear.Family Impedance Requirement 1 1 := ⟨Impedance.plant, Meet
   simp [Meets, isHurwitz_iff]
 
 /-- Zero-input Lyapunov stability of the RL branch is exactly a nonnegative resistance. -/
-@[powerlib_domain] theorem lyapunovStable_iff (m : Impedance) :
+@[simp, powerlib_domain] theorem lyapunovStable_iff (m : Impedance) :
     LyapunovStable (affineLinearVectorField m.plant.A 0) 0 ↔ 0 ≤ m.resistance := by
   refine ⟨fun h => ?_, lyapunovStable_of_nonneg m⟩
   by_contra hR
