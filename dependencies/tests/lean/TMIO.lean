@@ -30,7 +30,7 @@ def seed : Seed (Set Sentence) (Set Requirement) (Set ℕ)ᵒᵈ (Set ℕ)ᵒᵈ
 @[powerlib_foundation] theorem certified_sound {r n : ℕ}
     (hr : r ∈ ofDual (generate seed.uTO {Sentence.safe})) (hn : (n, r) ∈ sensor) : n ≤ 10 :=
   relationalSeed_sound translation Meets sensor (den := fun _ => {n | n ≤ 10})
-    (fun φ x hx => by
+    (fun φ _ x hx => by
       rw [mem_realize] at hx
       exact hx (.atMost 10) ⟨φ, rfl, rfl⟩) hr hn .safe rfl
 
@@ -75,8 +75,12 @@ run_cmd do
   -- Instances and consumers reach their conclusions through the generated structure, and the
   -- families reach exactness through the single linear semantics.
   for (consumer, source) in #[
-      (`powerlib.Circuits.RL.reading_certifies, `powerlib.TMIO.relationalSeed_sound),
-      (`powerlib.Circuits.RL.certified_readings, `powerlib.TMIO.relationalSeed_whole),
+      (`powerlib.Linear.Family.certifies, `powerlib.TMIO.relationalSeed_sound),
+      (`powerlib.Linear.Family.certified, `powerlib.TMIO.relationalSeed_whole),
+      (`powerlib.Linear.Family.Exact.comap, `powerlib.Linear.Family.realize_comap),
+      (`powerlib.Circuits.RL.reading_certifies, `powerlib.Linear.Family.certifies),
+      (`powerlib.Circuits.RL.certified_readings, `powerlib.Linear.Family.certified),
+      (`powerlib.Circuits.RL.stateSpace_exact, `powerlib.Linear.Family.Exact.comap),
       (`powerlib.Circuits.RL.certified_records, `powerlib.TMIO.generate_comp),
       (`powerlib.Circuits.RL.predicted_readings, `powerlib.TMIO.predict_eq_image),
       (`powerlib.Circuits.RL.reading_refutes, `powerlib.TMIO.predict_eq_image),
@@ -85,7 +89,7 @@ run_cmd do
       (`powerlib.Circuits.RL.realize_translate, `powerlib.Linear.realize_eq_den),
       (`powerlib.Circuits.LCL.realize_translate_attractive, `powerlib.Linear.realize_eq_den),
       (`powerlib.Circuits.Interconnection.exactUnder_impedanceStable,
-        `powerlib.Linear.exactUnder_den),
+        `powerlib.Linear.Family.exactUnder_of_isHurwitz),
       (`powerlib.Circuits.Interconnection.portData_not_certified, `powerlib.TMIO.mem_certify),
       (`powerlib.Data.Analysis.generate_distributedEdge,
         `powerlib.Data.Analysis.distributedEdge_eq_centralEdge),
@@ -114,7 +118,10 @@ run_cmd do
       `powerlib.Circuits.LCL.realize_translate_attractive,
       `powerlib.Circuits.LCL.exactUnder_damped,
       `powerlib.Circuits.Interconnection.exactUnder_impedanceStable,
-      `powerlib.Circuits.Interconnection.portData_not_certified] do
+      `powerlib.Circuits.Interconnection.portData_not_certified,
+      `powerlib.Circuits.Interconnection.portData_certified,
+      `powerlib.Circuits.Interconnection.soundUnder, `powerlib.Circuits.LCL.sound,
+      `powerlib.Circuits.RL.stateSpace_exact] do
     unless powerlib.Registry.kindOf? env name == some .domain do
       throwError "A family conclusion is not a classified domain theorem: {name}"
   for name in #[`powerlib.TMIO.generate, `powerlib.TMIO.realize, `powerlib.TMIO.Seed,

@@ -57,6 +57,15 @@ def SpectrallyStable {ι : Type*} [Fintype ι] [DecidableEq ι] (A : Matrix ι �
       rw [characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at hzero
       exact (sub_eq_zero.mp hzero).symm)
 
+/-- A root of the characteristic polynomial in the open right half plane gives instability. -/
+@[powerlib_foundation] theorem unstable_of_root {A : Matrix (Fin n) (Fin n) ℝ}
+    (e : EuclideanSpace ℝ (Fin n)) {s : ℂ} (h : (characteristicMatrix A s).det = 0)
+    (hs : 0 < s.re) : Unstable (affineLinearVectorField A e) e := by
+  obtain ⟨v, hv, hzero⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr h
+  refine unstable_of_eigenvalue e hv ?_ hs
+  rw [characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at hzero
+  exact (sub_eq_zero.mp hzero).symm
+
 /-- The transfer function from port input to port output. -/
 def transfer (M : Plant n p) (s : ℂ) : Matrix (Fin p) (Fin p) ℂ :=
   complexify M.C * (characteristicMatrix M.A s)⁻¹ * complexify M.B + complexify M.D

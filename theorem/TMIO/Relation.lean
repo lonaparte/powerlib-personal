@@ -144,6 +144,19 @@ variable {S Q X V : Type*}
     GaloisConnection R.image R.core :=
   fun _ _ => SetRel.image_subset_iff
 
+/-- A translation table, each sentence listing its requirements, as a relation. -/
+def table (t : S → Set Q) : SetRel S Q := {p | p.2 ∈ t p.1}
+
+@[simp, powerlib_foundation] theorem image_table_singleton (t : S → Set Q) (φ : S) :
+    (table t).image {φ} = t φ := by
+  ext q
+  simp [table]
+
+@[powerlib_foundation] theorem image_table (t : S → Set Q) (Φ : Set S) :
+    (table t).image Φ = ⋃ φ ∈ Φ, t φ := by
+  ext q
+  simp [table]
+
 /-- A translation relation from theory sentences to requirements as the T—M edge:
 `Γ ↦ R.core Γ`, the sentences all of whose translations lie in `Γ`. -/
 def cover (R : SetRel S Q) : sInfHom (Set Q) (Set S) where
@@ -238,16 +251,17 @@ maximal legal space, and certify observations against it. -/
   rw [congrFun (generate_cover tr), congrFun (generate_possibly obs)]
   rfl
 
-/-- Soundness propagates along the generated chain: if the translation of each sentence is sound
-for its denotation, every system that may produce an observation certified for `Φ` satisfies
-every sentence of `Φ`. -/
+/-- Soundness propagates along the generated chain: if the translation of each sentence of `Φ`
+is sound for its denotation, every system that may produce an observation certified for `Φ`
+satisfies every sentence of `Φ`. -/
 @[powerlib_foundation] theorem relationalSeed_sound (tr : SetRel S Q) (sat : X → Q → Prop)
-    (obs : SetRel X V) {den : S → Set X} (hsound : ∀ φ, realize sat (tr.image {φ}) ⊆ den φ)
-    {Φ : Set S} {v : V} (hv : v ∈ ofDual (generate (relationalSeed tr sat obs).uTO Φ)) {x : X}
+    (obs : SetRel X V) {den : S → Set X} {Φ : Set S}
+    (hsound : ∀ φ ∈ Φ, realize sat (tr.image {φ}) ⊆ den φ) {v : V}
+    (hv : v ∈ ofDual (generate (relationalSeed tr sat obs).uTO Φ)) {x : X}
     (hx : (x, v) ∈ obs) : ∀ φ ∈ Φ, x ∈ den φ := by
   rw [relationalSeed_whole, mem_certify] at hv
   intro φ hφ
-  exact hsound φ (realize_antitone sat ((gc_image_core tr).monotone_l
+  exact hsound φ hφ (realize_antitone sat ((gc_image_core tr).monotone_l
     (Set.singleton_subset_iff.mpr hφ)) (hv x hx))
 
 end Seed

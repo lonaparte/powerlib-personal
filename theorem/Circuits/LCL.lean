@@ -243,14 +243,8 @@ exactly when all poles lie in the open left half plane. -/
 /-- A pole in the open right half plane makes the circuit unstable (LeanForControl). -/
 @[powerlib_domain] theorem unstable_of_pole (m : Circuit) {s : ℂ} (hs : m.frequency s = 0)
     (hre : 0 < s.re) : Unstable (affineLinearVectorField m.plant.A 0) 0 := by
-  have ha3 : (m.a3 : ℂ) ≠ 0 := by exact_mod_cast (a3_pos m).ne'
-  have hdet : (Linear.characteristicMatrix m.plant.A s).det = 0 := by
-    rw [det_characteristicMatrix, hs, zero_div]
-  obtain ⟨v, hv, hzero⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr hdet
-  refine Linear.unstable_of_eigenvalue 0 hv ?_ hre
-  rw [Linear.characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec]
-    at hzero
-  exact (sub_eq_zero.mp hzero).symm
+  refine Linear.unstable_of_root 0 ?_ hre
+  rw [det_characteristicMatrix, hs, zero_div]
 
 /-- The physical energy matrix `diag(L₁, C, L₂)`. -/
 def energyMatrix (m : Circuit) : Matrix (Fin 3) (Fin 3) ℝ :=
@@ -371,8 +365,8 @@ def translate : Flow.Property → Set Requirement
   | .unstable => {.rightHalfPlanePole}
   | _ => {.poleStable}
 
-/-- The translation as a relation. -/
-def translation : SetRel Flow.Property Requirement := {q | q.2 ∈ translate q.1}
+/-- The LCL family: the plant map, the requirement language and the translation table. -/
+def family : Linear.Family Circuit Requirement 3 2 := ⟨Circuit.plant, Meets, translate⟩
 
 @[powerlib_foundation] theorem realize_poleStable :
     realize Meets {Requirement.poleStable} = {m | IsHurwitz m.plant.A} := by
@@ -420,5 +414,16 @@ def translation : SetRel Flow.Property Requirement := {q | q.2 ∈ translate q.1
   obtain ⟨s, hs, hre⟩ : ∃ s : ℂ, m.frequency s = 0 ∧ 0 < s.re := by
     simpa [translate, Meets] using hm
   exact unstable_of_pole m hs hre
+
+/-- Every behavioural sentence has a sound translation into LCL requirements: exact for the
+attractive sentences, passivity for Lyapunov stability, a right-half-plane pole for
+instability. -/
+@[powerlib_domain] theorem sound (P : Flow.Property) : family.Sound P := by
+  by_cases hP : P.Attractive
+  · exact (realize_translate_attractive hP).le
+  · cases P with
+    | lyapunovStable => exact realize_passive_subset
+    | unstable => exact realize_pole_subset
+    | _ => exact absurd trivial hP
 
 end powerlib.Circuits.LCL

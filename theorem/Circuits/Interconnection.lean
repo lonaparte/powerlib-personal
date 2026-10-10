@@ -426,28 +426,77 @@ inductive Requirement
   | sourceStable
   | loadStable
   | impedanceStable
+  | impedanceUnstable
 
 /-- Satisfaction of a requirement by a complete interconnection. -/
 def Meets (ic : Interconnection n₁ n₂ p) : Requirement → Prop
   | .sourceStable => IsHurwitz ic.source.A
   | .loadStable => IsHurwitz ic.load.A
   | .impedanceStable => ic.ImpedanceStable
+  | .impedanceUnstable => ∃ s : ℂ, 0 < s.re ∧ ic.returnDifference s = 0
 
-/-- The impedance criterion is an exact translation of every attractive closed-loop sentence,
-relative to the internal stability of source and load. -/
+/-- The translation of the behavioural sentences into requirements on the port data. -/
+def translate : Flow.Property → Set Requirement
+  | .unstable => {.impedanceUnstable}
+  | _ => {.impedanceStable}
+
+/-- The interconnection family: the closed loop as plant map, the requirement language and the
+translation table. -/
+def family : Linear.Family (Interconnection n₁ n₂ p) Requirement (n₁ + n₂) p :=
+  ⟨closedLoop, Meets, translate⟩
+
+/-- The context in which the criterion speaks: internally stable source and load. -/
+def componentsStable : Set Requirement := {.sourceStable, .loadStable}
+
+/-- The impedance criterion is an exact translation of every attractive closed-loop sentence
+within the space of internally stable components. -/
 @[powerlib_domain] theorem exactUnder_impedanceStable {P : Flow.Property} (hP : P.Attractive) :
-    ExactUnder (Meets (n₁ := n₁) (n₂ := n₂) (p := p))
-      {Requirement.sourceStable, Requirement.loadStable} {Requirement.impedanceStable}
-      (den closedLoop P) := by
-  apply exactUnder_den _ hP
+    (family (n₁ := n₁) (n₂ := n₂) (p := p)).ExactUnder componentsStable P := by
+  have ht : translate P = {Requirement.impedanceStable} := by
+    cases P <;> first | rfl | exact absurd hP id
+  apply Linear.Family.exactUnder_of_isHurwitz hP
+  change TMIO.ExactUnder Meets componentsStable (translate P)
+    {ic : Interconnection n₁ n₂ p | IsHurwitz ic.closedLoopA}
+  rw [ht, TMIO.ExactUnder]
   ext ic
-  simp only [mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
-    Set.mem_inter_iff, Set.mem_ofPred_eq, forall_eq_or_imp, forall_eq, Meets, closedLoop_A]
+  simp only [componentsStable, mem_realize, Set.mem_union, Set.mem_insert_iff,
+    Set.mem_singleton_iff, Set.mem_inter_iff, Set.mem_ofPred_eq, forall_eq_or_imp, forall_eq,
+    Meets]
   constructor
   · rintro ⟨himp, h₁, h₂⟩
     exact ⟨(ic.isHurwitz_closedLoop_iff h₁ h₂).mpr himp, h₁, h₂⟩
   · rintro ⟨hcl, h₁, h₂⟩
     exact ⟨(ic.isHurwitz_closedLoop_iff h₁ h₂).mp hcl, h₁, h₂⟩
+
+/-- Every behavioural sentence of the closed loop has a sound translation within the space of
+internally stable components: the impedance criterion for the attractive sentences and Lyapunov
+stability, a right-half-plane zero of the return difference for instability. -/
+@[powerlib_domain] theorem soundUnder (P : Flow.Property) :
+    (family (n₁ := n₁) (n₂ := n₂) (p := p)).SoundUnder componentsStable P := by
+  intro ic hic
+  have hmem : ∀ q ∈ translate P ∪ componentsStable, Meets ic q := (mem_realize _ _ _).mp hic
+  have h₁ : IsHurwitz ic.source.A := hmem .sourceStable (by simp [componentsStable])
+  have h₂ : IsHurwitz ic.load.A := hmem .loadStable (by simp [componentsStable])
+  cases P with
+  | unstable =>
+    obtain ⟨s, hs, hrd⟩ : ∃ s : ℂ, 0 < s.re ∧ ic.returnDifference s = 0 :=
+      hmem .impedanceUnstable (by simp [translate])
+    have hd₁ := det_ne_zero_of_rhp ((spectrallyStable_iff_isHurwitz _).mpr h₁) hs.le
+    have hd₂ := det_ne_zero_of_rhp ((spectrallyStable_iff_isHurwitz _).mpr h₂) hs.le
+    refine unstable_of_root 0 ?_ hs
+    change (characteristicMatrix ic.closedLoopA s).det = 0
+    rw [det_characteristicMatrix_closedLoopA, ic.det_characteristicMatrix_closedLoop s hd₁ hd₂,
+      hrd, mul_zero]
+  | lyapunovStable =>
+    have hH := (ic.isHurwitz_closedLoop_iff h₁ h₂).mpr (hmem .impedanceStable (by simp [translate]))
+    exact lyapunovStable_of_isHurwitz 0 hH
+  | locallyAsymptoticallyStable | locallyExponentiallyStable | globallyAsymptoticallyStable
+  | globallyExponentiallyStable =>
+    have hH := (ic.isHurwitz_closedLoop_iff h₁ h₂).mpr (hmem .impedanceStable (by simp [translate]))
+    have key (Q : Flow.Property) (hQ : Q.Attractive) :
+        ic ∈ (family (n₁ := n₁) (n₂ := n₂) (p := p)).den Q :=
+      (holds_iff_isHurwitz 0 hQ).mpr hH
+    exact key _ trivial
 
 end Interconnection
 

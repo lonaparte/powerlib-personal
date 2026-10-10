@@ -255,13 +255,8 @@ def translate : Flow.Property → Set Requirement
   | .unstable => {.negativeResistance}
   | _ => {.positiveResistance}
 
-/-- The translation as a relation. -/
-def translation : SetRel Flow.Property Requirement := {q | q.2 ∈ translate q.1}
-
-@[simp, powerlib_foundation] theorem image_translation_singleton (P : Flow.Property) :
-    translation.image {P} = translate P := by
-  ext q
-  simp [translation]
+/-- The RL family: the plant map, the requirement language and the translation table. -/
+def family : Linear.Family Impedance Requirement 1 1 := ⟨Impedance.plant, Meets, translate⟩
 
 @[powerlib_foundation] theorem realize_positiveResistance :
     realize Meets {Requirement.positiveResistance} = {m | IsHurwitz m.plant.A} := by
@@ -275,7 +270,8 @@ def translation : SetRel Flow.Property Requirement := {q | q.2 ∈ translate q.1
   by_contra hR
   exact unstable_of_neg m (not_le.mp hR) h
 
-/-- Every behavioural sentence has an exact translation into RL requirements. -/
+/-- Every behavioural sentence has an exact translation into RL requirements
+(`family.Exact P`). -/
 @[powerlib_domain] theorem realize_translate (P : Flow.Property) :
     realize Meets (translate P) = Linear.den Impedance.plant P := by
   cases P with

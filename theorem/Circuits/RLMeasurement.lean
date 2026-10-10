@@ -46,9 +46,9 @@ def window : Flow.Property → Set ℝ
 /-- The DC resistance reading with accuracy `ε`. -/
 def reading (ε : ℝ) : SetRel Impedance ℝ := {p | |p.2 - p.1.resistance| ≤ ε}
 
-/-- The RL measurement seed. -/
+/-- The RL measurement seed: the family's seed for the reading relation. -/
 def seed (ε : ℝ) : Seed (Set Flow.Property) (Set Requirement) (Set Impedance)ᵒᵈ (Set ℝ)ᵒᵈ :=
-  relationalSeed translation Meets (reading ε)
+  family.seed (reading ε)
 
 /-- The readings certifying a resistance window. -/
 @[powerlib_foundation] theorem certify_reading (ε : ℝ) (S : Set ℝ) :
@@ -69,16 +69,16 @@ def seed (ε : ℝ) : Seed (Set Flow.Property) (Set Requirement) (Set Impedance)
 certified when its whole accuracy interval lies in the sentence's window. -/
 @[powerlib_domain] theorem certified_readings (ε : ℝ) (P : Flow.Property) :
     ofDual (generate (seed ε).uTO {P}) = {r | Set.Icc (r - ε) (r + ε) ⊆ window P} := by
-  rw [seed, relationalSeed_whole, image_translation_singleton, realize_translate, den_window,
-    certify_reading]
+  have h : ofDual (generate (seed ε).uTO {P}) = certify (reading ε) (Linear.den Impedance.plant P) :=
+    family.certified (reading ε) (realize_translate P)
+  rw [h, den_window, certify_reading]
 
-/-- A certified reading proves every sentence it certifies for every model that may produce it.
-The soundness of each step is the exactness of `realize_translate`. -/
+/-- A certified reading proves every sentence it certifies for every model that may produce it:
+the family's generic `certifies`, with the exactness of `realize_translate`. -/
 @[powerlib_domain] theorem reading_certifies {ε r : ℝ} {Φ : Set Flow.Property}
     (hr : r ∈ ofDual (generate (seed ε).uTO Φ)) {m : Impedance} (hm : |r - m.resistance| ≤ ε) :
     ∀ P ∈ Φ, P.holds (affineLinearVectorField m.plant.A 0) 0 :=
-  relationalSeed_sound translation Meets (reading ε) (den := Linear.den Impedance.plant)
-    (fun P => by rw [image_translation_singleton, realize_translate]) hr hm
+  family.certifies (fun P _ => (realize_translate P).le) hr hm
 
 /-- With a nonnegative accuracy, the attractive sentences are certified exactly by the readings
 above the accuracy. -/
@@ -206,6 +206,13 @@ that may have produced its estimate. -/
     Linear.den StateSpace.plant P = toImpedance ⁻¹' Linear.den Impedance.plant P := by
   ext s
   simp [Linear.den]
+
+/-- The RL family read in state-space parameters, through the Agda-generated conversion. -/
+def stateSpaceFamily : Linear.Family StateSpace Requirement 1 1 := family.comap toImpedance
+
+/-- The translations stay exact in state-space parameters; nothing is reproved. -/
+@[powerlib_domain] theorem stateSpace_exact (P : Flow.Property) : stateSpaceFamily.Exact P :=
+  Linear.Family.Exact.comap (F := family) (realize_translate P) toImpedance
 
 /-- The implementation layer in state-space coordinates, along the Agda-generated conversion. -/
 def stateSpaceIso : (Set Impedance)ᵒᵈ ≃o (Set StateSpace)ᵒᵈ :=
