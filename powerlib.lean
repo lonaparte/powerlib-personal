@@ -15,3 +15,5 @@ import theorem.ImpedanceStability
 import theorem.ImpedanceRealization
 import theorem.Upstream.LeanForControl
 import theorem.Upstream.LCLLeanForControl
+import theorem.TMIO.Instances.Finite
+import theorem.TMIO.Instances.RL

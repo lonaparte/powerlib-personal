@@ -1,0 +1,77 @@
+import theorem.TMIO.Derived
+
+/-! # Representation change (v0.3 §6)
+
+A representation change on both ends of an edge is a pair of order isomorphisms. The new semantic
+map is defined as `e_A ∘ u ∘ e_B⁻¹`; the new forward map, its closure operator and the whole
+generated chain then follow from uniqueness of adjoints and are not designed again. A bare type
+bijection does not establish this structure: the semantic map itself must be transported. -/
+
+namespace powerlib.TMIO
+
+section Edge
+
+variable {A B A' B' : Type*} [CompleteLattice A] [CompleteLattice B] [CompleteLattice A']
+  [CompleteLattice B']
+
+/-- The semantic map in the new representation, `e_A ∘ u ∘ e_B⁻¹`. -/
+def transport (u : sInfHom B A) (eA : A ≃o A') (eB : B ≃o B') : sInfHom B' A' where
+  toFun b := eA (u (eB.symm b))
+  map_sInf' s := by
+    rw [map_sInf eB.symm, map_sInf u, map_sInf eA, Set.image_image, Set.image_image]
+
+@[simp, powerlib_foundation] theorem transport_apply (u : sInfHom B A) (eA : A ≃o A')
+    (eB : B ≃o B') (b : B') : transport u eA eB b = eA (u (eB.symm b)) := rfl
+
+/-- The generated forward map transports with the structure. -/
+@[powerlib_foundation] theorem generate_transport (u : sInfHom B A) (eA : A ≃o A')
+    (eB : B ≃o B') : ⇑(generate (transport u eA eB)) = eB ∘ generate u ∘ eA.symm := by
+  symm
+  apply generate_unique
+  intro a b
+  change eB (generate u (eA.symm a)) ≤ b ↔ a ≤ eA (u (eB.symm b))
+  rw [← OrderIso.le_symm_apply, gc_generate u, OrderIso.symm_apply_le]
+
+/-- The generated closure operator transports by Mathlib's conjugation of closure operators. -/
+@[powerlib_foundation] theorem closure_transport (u : sInfHom B A) (eA : A ≃o A')
+    (eB : B ≃o B') : closure (transport u eA eB) = (closure u).conjBy eA := by
+  ext a
+  rw [closure_apply, congrFun (generate_transport u eA eB) a]
+  simp only [Function.comp_apply, transport_apply, OrderIso.symm_apply_apply]
+  rfl
+
+/-- Transporting along identities changes nothing. -/
+@[powerlib_foundation] theorem transport_refl (u : sInfHom B A) :
+    transport u (OrderIso.refl A) (OrderIso.refl B) = u := by
+  ext b
+  rfl
+
+end Edge
+
+namespace Seed
+
+variable {T M I O T' M' I' O' : Type*} [CompleteLattice T] [CompleteLattice M]
+  [CompleteLattice I] [CompleteLattice O] [CompleteLattice T'] [CompleteLattice M']
+  [CompleteLattice I'] [CompleteLattice O']
+
+/-- The seed in a new representation of all four layers. -/
+def transport (S : Seed T M I O) (eT : T ≃o T') (eM : M ≃o M') (eI : I ≃o I')
+    (eO : O ≃o O') : Seed T' M' I' O' where
+  u₁ := TMIO.transport S.u₁ eT eM
+  u₂ := TMIO.transport S.u₂ eM eI
+  u₃ := TMIO.transport S.u₃ eI eO
+
+/-- The whole generated chain transports with the four representation changes. -/
+@[powerlib_foundation] theorem transport_whole (S : Seed T M I O) (eT : T ≃o T') (eM : M ≃o M')
+    (eI : I ≃o I') (eO : O ≃o O') :
+    ⇑(generate (S.transport eT eM eI eO).uTO) = eO ∘ generate S.uTO ∘ eT.symm := by
+  rw [generate_uTO, generate_uTO]
+  funext t
+  simp only [Function.comp_apply, l₁, l₂, l₃, transport]
+  rw [congrFun (generate_transport S.u₁ eT eM), congrFun (generate_transport S.u₂ eM eI),
+    congrFun (generate_transport S.u₃ eI eO)]
+  simp
+
+end Seed
+
+end powerlib.TMIO
