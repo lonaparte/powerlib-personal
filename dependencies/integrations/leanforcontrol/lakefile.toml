@@ -19,27 +19,21 @@ rev = "7507ed04d94068fe3e7d4624b3383433a861bea7"
 [[lean_lib]]
 name = "PowerLibUpstream"
 srcDir = "../../.."
-roots = ["dependencies.Mathlib", "dependencies.LeanForControl", "theorem.Hurwitz",
-  "theorem.Upstream.LCLLeanForControl"]
+roots = ["dependencies.Mathlib", "dependencies.LeanForControl", "theorem.LibrarySearch",
+  "theorem.Flow.Certificate", "theorem.Linear.Certificate", "theorem.Linear.Realization"]
 globs = [
   "dependencies.Mathlib",
   "dependencies.LeanForControl",
   "theorem.Attributes",
   "theorem.LibrarySearch",
-  "theorem.generated.Conversion",
-  "theorem.generated.LCLConversion",
-  "theorem.generated.LTIFoundation",
-  "theorem.RL",
-  "theorem.LCL",
-  "theorem.LTI",
-  "theorem.Lyapunov",
-  "theorem.Passivity",
-  "theorem.StateSpacePassivity",
-  "theorem.Dynamics.Defs",
-  "theorem.Dynamics.LyapunovDefs",
-  "theorem.Hurwitz",
-  "theorem.Upstream.LeanForControl",
-  "theorem.Upstream.LCLLeanForControl",
+  "theorem.Flow.Defs",
+  "theorem.Flow.Basic",
+  "theorem.Flow.Certificate",
+  "theorem.Linear.Plant",
+  "theorem.Linear.Stability",
+  "theorem.Linear.Certificate",
+  "theorem.Linear.Transfer",
+  "theorem.Linear.Realization",
 ]
 
 [[lean_lib]]

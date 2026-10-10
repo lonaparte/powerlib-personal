@@ -1,0 +1,192 @@
+import powerlib
+import dependencies.tests.lean.RegistryFixture
+
+-- Registered theorem discovery.
+namespace RegistryCurrent
+
+open powerlib LinearSystems
+
+def StableContract (m : Circuits.RL.Impedance) : Prop :=
+  IsHurwitz m.plant.A ∧ IsHurwitz m.plant.A
+
+@[powerlib_domain] theorem stable (m : Circuits.RL.Impedance) (c : Linear.Certificate m.plant.A) :
+    StableContract m := ⟨c.isHurwitz, c.isHurwitz⟩
+
+def unclassifiable : Nat := 0
+
+/-- error: PowerLib theorem attributes require a theorem: RegistryCurrent.unclassifiable -/
+#guard_msgs in
+attribute [powerlib_domain] unclassifiable
+
+/-- error: PowerLib theorem RegistryCurrent.stable is already classified as domain -/
+#guard_msgs in
+attribute [powerlib_foundation] stable
+
+universe u
+
+-- These consumers supply no theorem names to the audited search.
+@[powerlib_foundation] theorem imported_application {α : Sort u} (P : α → Prop) (x : α) (h : P x) :
+    RegistryFixture.Envelope (P x) := by powerlib_search
+
+@[powerlib_foundation] theorem imported_iff (P : Prop) : RegistryFixture.Envelope P ↔ P := by
+  powerlib_search
+
+@[powerlib_domain] theorem current_application (m : Circuits.RL.Impedance)
+    (c : Linear.Certificate m.plant.A) : StableContract m := by powerlib_search
+
+end RegistryCurrent
+
+open Lean Elab Command in
+run_cmd do
+  let env ← getEnv
+  let some current := powerlib.Search.describe env `RegistryCurrent.stable |
+    throwError "A current-file tagged theorem lost its metadata"
+  unless current.kind == some .domain do
+    throwError "The current-file theorem classification changed"
+  let names := powerlib.Registry.theoremNames env
+  let domains := powerlib.Registry.theoremNames env (some .domain)
+  let foundations := powerlib.Registry.theoremNames env (some .foundation)
+  unless names.size == domains.size + foundations.size do
+    throwError "The classified theorem partition is incomplete"
+  unless names == names.qsort Name.quickLt && names.toList.eraseDups.length == names.size do
+    throwError "The classified theorem registry is not unique and deterministic"
+  unless domains.contains `RegistryCurrent.stable do
+    throwError "A newly tagged theorem outside the PowerLib namespace was omitted"
+  unless foundations.contains `RegistryFixture.envelope &&
+      foundations.contains `RegistryFixture.envelope_iff do
+    throwError "Imported attribute metadata was omitted"
+  let some imported := powerlib.Search.describe env `RegistryFixture.envelope |
+    throwError "An imported tagged theorem lost its metadata"
+  unless imported.moduleName == `dependencies.tests.lean.RegistryFixture &&
+      imported.kind == some .foundation && imported.levelParams.length == 1 do
+    throwError "Imported theorem origin, classification, or universe metadata changed"
+  for (consumer, sources) in #[
+      (`RegistryCurrent.imported_application,
+        #[`RegistryFixture.envelope, `RegistryFixture.envelope_iff]),
+      (`RegistryCurrent.current_application, #[`RegistryCurrent.stable])] do
+    let info ← getConstInfo consumer
+    let some proof := info.value? (allowOpaque := true) |
+      throwError "Missing automatic proof: {consumer}"
+    unless sources.any proof.getUsedConstants.contains do
+      throwError "Automatic search failed to reuse the discovered declaration: {consumer}"
+  for name in names do
+    unless powerlib.Search.eligible env name do
+      throwError "A registered theorem failed admission: {name}"
+  logInfo "POWERLIB_REGISTRY_OK"
+
+-- Goal-directed reuse of the library through the audited search: no theorem names are supplied.
+namespace AutomaticReuse
+
+open powerlib LinearSystems
+
+@[powerlib_foundation] theorem certificate_holds {n : ℕ} (A : Matrix (Fin n) (Fin n) ℝ)
+    (c : Linear.Certificate A) {P : Flow.Property} (hP : P.Attractive)
+    (e : EuclideanSpace ℝ (Fin n)) :
+    P.holds (affineLinearVectorField A e) e := by powerlib_search
+
+@[powerlib_foundation] theorem hurwitz_global {n : ℕ} (A : Matrix (Fin n) (Fin n) ℝ)
+    (h : IsHurwitz A) (e : EuclideanSpace ℝ (Fin n)) :
+    Flow.GloballyExponentiallyStable (affineLinearVectorField A e) e := by powerlib_search
+
+@[powerlib_domain] theorem rl_member (m : Circuits.RL.Impedance)
+    (c : Linear.Certificate m.plant.A) {P : Flow.Property} (hP : P.Attractive) :
+    m ∈ Linear.den Circuits.RL.Impedance.plant P := by powerlib_search
+
+@[powerlib_domain] theorem rl_sign (m : Circuits.RL.Impedance) :
+    IsHurwitz m.plant.A ↔ 0 < m.resistance := by powerlib_search
+
+@[powerlib_domain] theorem lcl_poles (m : Circuits.LCL.Circuit) :
+    IsHurwitz m.plant.A ↔ m.Stable := by powerlib_search
+
+@[powerlib_foundation] theorem decay_global {n : ℕ}
+    {f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)} {V : EuclideanSpace ℝ (Fin n) → ℝ}
+    {e : EuclideanSpace ℝ (Fin n)} (c : Flow.QuadraticDecay f V e) (hf : ContDiff ℝ 1 f) :
+    Flow.GloballyExponentiallyStable f e := by powerlib_search
+
+@[powerlib_foundation] theorem decay_complete {n : ℕ}
+    {f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)} {V : EuclideanSpace ℝ (Fin n) → ℝ}
+    {e : EuclideanSpace ℝ (Fin n)} (c : Flow.QuadraticDecay f V e) (hf : ContDiff ℝ 1 f) :
+    Flow.ForwardComplete f := by
+  powerlib_search
+
+@[powerlib_domain] theorem polynomial_member {model : Nonlinear.Polynomial2.Model}
+    (c : Nonlinear.Polynomial2.Accepted model) {P : Flow.Property} (hP : P.Attractive) :
+    model ∈ Flow.den Nonlinear.Polynomial2.Model.field 0 P := by powerlib_search
+
+-- Upstream declarations need no PowerLib attributes or names.
+@[powerlib_foundation] theorem exp_positive (x : ℝ) : 0 < Real.exp x := by powerlib_search
+@[powerlib_foundation] theorem exp_add (x y : ℝ) : Real.exp (x + y) = Real.exp x * Real.exp y := by
+  powerlib_search
+
+-- A type-directed rule whose numerical premise is discharged at the application.
+inductive DerivedClaim (value : ℕ) : Prop where
+  | intro : 0 < value → DerivedClaim value
+
+@[powerlib_foundation] theorem from_model_relation (value witness : ℕ)
+    (h : value = 2 * witness + 1) :
+    DerivedClaim value := .intro (by omega)
+
+@[powerlib_foundation] theorem concrete_relation : DerivedClaim 23 := by
+  have hmodel : (23 : ℕ) = 2 * 11 + 1 := by decide
+  powerlib_search
+
+end AutomaticReuse
+
+open Lean Elab Command in
+run_cmd do
+  let env ← getEnv
+  for (consumer, source) in #[
+      (`AutomaticReuse.certificate_holds, `powerlib.Linear.Certificate.holds),
+      (`AutomaticReuse.hurwitz_global, `powerlib.Linear.globallyExponentiallyStable_of_isHurwitz),
+      (`AutomaticReuse.rl_member, `powerlib.Linear.Certificate.mem_den),
+      (`AutomaticReuse.rl_sign, `powerlib.Circuits.RL.isHurwitz_iff),
+      (`AutomaticReuse.lcl_poles, `powerlib.Circuits.LCL.isHurwitz_iff_stable),
+      (`AutomaticReuse.decay_global, `powerlib.Flow.QuadraticDecay.globallyExponentiallyStable),
+      (`AutomaticReuse.decay_complete, `powerlib.Flow.QuadraticDecay.forwardComplete),
+      (`AutomaticReuse.polynomial_member, `powerlib.Nonlinear.Polynomial2.Accepted.mem_den),
+      (`AutomaticReuse.exp_positive, `Real.exp_pos),
+      (`AutomaticReuse.concrete_relation, `AutomaticReuse.from_model_relation)] do
+    let info ← getConstInfo consumer
+    let some proof := info.value? (allowOpaque := true) |
+      throwError "Missing automatic proof: {consumer}"
+    unless proof.getUsedConstants.contains source do
+      throwError "Automatic search did not apply {source}: {consumer}"
+    for ax in powerlib.Search.declarationAxioms env consumer do
+      unless powerlib.Search.allowedAxiom ax do
+        throwError "Automatic reuse used an unapproved axiom: {consumer}: {ax}"
+  logInfo "POWERLIB_AUTOMATIC_REUSE_OK"
+
+-- Direct reuse of Mathlib and LeanForControl: the library applies the upstream theorem and does
+-- not restate its proof.
+open Lean Elab Command in
+run_cmd do
+  let env ← getEnv
+  for (consumer, source, root) in #[
+      (`powerlib.Linear.locallyExponentiallyStable_of_isHurwitz,
+        `hurwitz_linearization_locally_exponentially_stable, `LeanForControl),
+      (`powerlib.Linear.nonempty_certificate_iff,
+        `LinearSystems.IsHurwitz.exists_posDef_unique_solution_continuous_lyapunov,
+        `LeanForControl),
+      (`powerlib.Linear.unstable_of_eigenvalue, `unstable_affineLinear_of_eigenvalue_re_pos,
+        `LeanForControl),
+      (`powerlib.Flow.globallyAsymptoticallyStable_of_strictLyapunov,
+        `lyapunov_asymptotic_stable, `LeanForControl),
+      (`powerlib.Flow.forwardComplete_of_lipschitzWith, `exists_isIntegralCurveOn_Ici,
+        `LeanForControl),
+      (`powerlib.Flow.forwardComplete_of_compact_sublevel, `antitoneOn_V_comp_traj,
+        `LeanForControl),
+      (`powerlib.Linear.isObservable_iff_isControllable_transpose,
+        `LinearSystems.isControllable_iff_controllabilityMatrix_rank_eq, `LeanForControl),
+      (`powerlib.Port.System.passiveWith_of_rate,
+        `intervalIntegral.sub_le_integral_of_hasDeriv_right_of_le, `Mathlib),
+      (`powerlib.Linear.solution_hasDerivAt, `hasDerivAt_exp_smul_const', `Mathlib)] do
+    let info ← getConstInfo consumer
+    let some proof := info.value? (allowOpaque := true) | throwError "Missing proof: {consumer}"
+    unless proof.getUsedConstants.contains source do
+      throwError "{consumer} did not directly reuse {source}"
+    let some entry := powerlib.Search.describe env source |
+      throwError "Upstream theorem absent from discovery: {source}"
+    unless entry.moduleName.getRoot == root && entry.kind.isNone &&
+        powerlib.Search.eligible env source do
+      throwError "Upstream theorem failed provenance, classification or axiom checks: {source}"
+  logInfo "POWERLIB_UPSTREAM_REUSE_OK"

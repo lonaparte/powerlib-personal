@@ -10,3 +10,4 @@ import LeanForControl.Stability.LyapunovIndirect.NonlinearInstability
 import LeanForControl.LinearSystems.Controllability.Controllability
 import LeanForControl.LinearSystems.Controllability.Reachability
 import LeanForControl.LinearSystems.Observability.Observability
+import LeanForControl.Stability.LyapunovIndirect.LinearizationInstability

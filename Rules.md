@@ -104,8 +104,7 @@ decomposition, or other sought answer supports certificate verification. It
 does not demonstrate synthesis of that answer.
 
 For example, submitting only `R = 2` and `L = 1`, automatically obtaining
-`p = 1/4` and `rate = 4`, and having Lean derive the resulting theorem is
-synthesis. Having a person supply those witness values is verification.
+`p = 1/4`, and having Lean derive the resulting theorem is synthesis. Having a person supply those witness values is verification.
 
 ## 8. The synthesizer is untrusted
 
@@ -122,8 +121,9 @@ theorem name, or proof path.
 
 Certificates must be tied to the exact submitted model. A witness or proof for
 a different model must not be admitted as the submitted model's certificate.
-The existing RL model-indexed `Accepted` type and independent admission target
-are the pattern for every family. A witness that genuinely satisfies the
+The model-indexed certificate types, such as `Linear.Certificate` of the state
+matrix that a family's plant map reconstructs from the submission, and the
+independent admission target are the pattern for every family. A witness that genuinely satisfies the
 obligations for several models can be checked anew for each model; an earlier
 acceptance for one model cannot replace checking another.
 
@@ -177,7 +177,7 @@ through the unified public interface. For example:
 
 ```lean
 import powerlib
-#check powerlib.lcl_stable_iff
+#check powerlib.Circuits.LCL.isHurwitz_iff_stable
 ```
 
 A theorem generated temporarily in `results/.../Certificate.lean` is a proof

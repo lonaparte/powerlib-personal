@@ -23,12 +23,9 @@ globs = ["powerlib", "theorem.+", "dependencies.Mathlib", "dependencies.LeanForC
 
 [[lean_lib]]
 name = "PowerLibTests"
-roots = ["dependencies.tests.lean.Acceptance", "dependencies.tests.lean.FormalCases",
-  "dependencies.tests.lean.Hurwitz", "dependencies.tests.lean.ImpedanceStability",
-  "dependencies.tests.lean.LCLStorageSynthesis", "dependencies.tests.lean.LTISynthesis",
-  "dependencies.tests.lean.Metadata", "dependencies.tests.lean.NativeTheoremUse",
-  "dependencies.tests.lean.LTI",
-  "dependencies.tests.lean.RegistryFixture", "dependencies.tests.lean.TMIO"]
+roots = ["dependencies.tests.lean.Admission", "dependencies.tests.lean.Metadata",
+  "dependencies.tests.lean.RegistryFixture", "dependencies.tests.lean.Reuse",
+  "dependencies.tests.lean.Semantics", "dependencies.tests.lean.TMIO"]
 
 [[lean_lib]]
 name = "PowerLibExamples"

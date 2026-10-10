@@ -11,27 +11,29 @@ open powerlib powerlib.TMIO
 #check powerlib.TMIO.relationalSeed_whole
 #check powerlib.TMIO.relationalSeed_sound
 #print axioms powerlib.TMIO.Seed.generate_uTO
-#print axioms powerlib.TMIO.RL.dcTest_certifies
+#print axioms powerlib.Circuits.RL.dcTest_certifies
 
 -- The generated space of a requirement set is the maximal legal family.
-example (Γ : Set TMIO.RL.Requirement) (P : Set Impedance) :
-    P ⊆ realize TMIO.RL.Meets Γ ↔ Γ ⊆ satisfaction TMIO.RL.Meets (OrderDual.toDual P) :=
-  realize_max TMIO.RL.Meets Γ P
+example (Γ : Set Circuits.RL.Requirement) (P : Set Circuits.RL.Impedance) :
+    P ⊆ realize Circuits.RL.Meets Γ ↔
+      Γ ⊆ satisfaction Circuits.RL.Meets (OrderDual.toDual P) :=
+  realize_max Circuits.RL.Meets Γ P
 
--- Added requirements reuse the generated conclusion.
-example (Δ : Set TMIO.RL.Requirement) (m : Impedance)
-    (hm : m ∈ realize TMIO.RL.Meets (TMIO.RL.translate .asymptoticallyStable ∪ Δ)) :
-    AsymptoticallyStable m 0 0 :=
-  TMIO.RL.realize_reuse Δ hm
+-- The certified readings of every sentence come from the generated chain.
+example (ε : ℝ) (P : Flow.Property) :
+    OrderDual.ofDual (generate (Circuits.RL.seed ε).uTO {P}) =
+      {r | Set.Icc (r - ε) (r + ε) ⊆ Circuits.RL.window P} :=
+  Circuits.RL.certified_readings ε P
 
--- A DC test record certifies asymptotic stability of the canonical RL model.
-example (m : Impedance)
-    (hm : |TMIO.Analysis.estimate TMIO.RL.dcTest - m.resistance| ≤ 1 / 2) :
-    AsymptoticallyStable m 0 0 :=
-  TMIO.RL.dcTest_certifies hm
+-- A DC test record proves every attractive sentence for every RL model that may produce it.
+example (m : Circuits.RL.Impedance)
+    (hm : |Data.Analysis.estimate Circuits.RL.dcTest - m.resistance| ≤ 1 / 2)
+    {P : Flow.Property} (hP : P.Attractive) :
+    P.holds (LinearSystems.affineLinearVectorField m.plant.A 0) 0 :=
+  Circuits.RL.dcTest_certifies hm hP
 
 -- The state-space representation is reached by transport, not by a second development.
-example (ε : ℝ) (s : StateSpace)
-    (hs : s ∈ OrderDual.ofDual (generate (TMIO.RL.stateSpaceSeed ε).u₂
-      (TMIO.RL.translate .asymptoticallyStable))) : s.Stable :=
-  TMIO.RL.stateSpace_space_stable ε hs
+example (ε : ℝ) (P : Flow.Property) :
+    OrderDual.ofDual (generate (Circuits.RL.stateSpaceSeed ε).u₂ (Circuits.RL.translate P)) =
+      Linear.den Circuits.RL.StateSpace.plant P :=
+  Circuits.RL.stateSpace_space ε P

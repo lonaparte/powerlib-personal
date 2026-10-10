@@ -1,5 +1,6 @@
-import theorem.Upstream.LCLLeanForControl
-import theorem.Hurwitz
+import theorem.LibrarySearch
+import theorem.Flow.Certificate
+import theorem.Linear.Realization
 import LeanForControl.axioms
 
 open scoped Matrix.Norms.Frobenius
@@ -7,11 +8,11 @@ open scoped Matrix.Norms.Frobenius
 open Lean Meta Elab Command in
 run_cmd do
   let env ← getEnv
-  for name in #[`MatrixAlgebra.complexification_exp, `MatrixAlgebra.exp_const_add,
-      `LinearSystems.IsHurwitz.exists_norm_exp_nat_smul_lt_one,
-      `LinearSystems.IsHurwitz.exists_posDef_unique_solution_continuous_lyapunov,
+  for name in #[`LinearSystems.IsHurwitz.exists_posDef_unique_solution_continuous_lyapunov,
       `hurwitz_linearization_locally_exponentially_stable,
-      `unstable_of_exists_complex_eigenvalue_re_pos] do
+      `unstable_affineLinear_of_eigenvalue_re_pos, `lyapunov_asymptotic_stable,
+      `exists_isIntegralCurveOn_Ici,
+      `LinearSystems.isControllable_iff_controllabilityMatrix_rank_eq] do
     let some entry := powerlib.Search.describe env name |
       throwError "LeanForControl declaration absent from discovery: {name}"
     unless entry.moduleName.getRoot == `LeanForControl && entry.kind.isNone do
@@ -19,12 +20,12 @@ run_cmd do
     unless powerlib.Search.eligible env name do
       throwError "Axiom-admissible LeanForControl declaration was excluded: {name}"
   let consumers : Array (Name × powerlib.Registry.TheoremKind) := #[
-    (`powerlib.Upstream.complexification_exp, .foundation),
-    (`powerlib.Upstream.exp_const_add, .foundation),
-    (`powerlib.Upstream.contractive_block, .foundation),
-    (`powerlib.LTI.accepted_nonempty_of_isHurwitz, .domain),
-    (`powerlib.Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian, .domain),
-    (`powerlib.Dynamics.unstable_of_jacobian_eigenvalue_re_pos, .domain)]
+    (`powerlib.Linear.locallyExponentiallyStable_of_isHurwitz, .foundation),
+    (`powerlib.Linear.nonempty_certificate_iff, .foundation),
+    (`powerlib.Linear.unstable_of_eigenvalue, .foundation),
+    (`powerlib.Flow.globallyAsymptoticallyStable_of_strictLyapunov, .foundation),
+    (`powerlib.Flow.forwardComplete_of_lipschitzWith, .foundation),
+    (`powerlib.Linear.isObservable_iff_isControllable_transpose, .foundation)]
   for (name, kind) in consumers do
     let info ← getConstInfo name
     let some proof := info.value? (allowOpaque := true) |

@@ -72,18 +72,23 @@ run_cmd do
     unless entry.moduleName.getRoot == `Mathlib && entry.kind.isNone &&
         powerlib.Search.eligible env source do
       throwError "Upstream theorem failed provenance or axiom checks: {source}"
-  -- Instances and consumers reach their conclusions through the generated structure.
+  -- Instances and consumers reach their conclusions through the generated structure, and the
+  -- families reach exactness through the single linear semantics.
   for (consumer, source) in #[
-      (`powerlib.TMIO.RL.reading_certifies, `powerlib.TMIO.relationalSeed_sound),
-      (`powerlib.TMIO.RL.certified_readings, `powerlib.TMIO.relationalSeed_whole),
-      (`powerlib.TMIO.RL.certified_records, `powerlib.TMIO.generate_comp),
-      (`powerlib.TMIO.RL.reading_refutes, `powerlib.TMIO.RL.predicted_readings),
-      (`powerlib.TMIO.RL.predicted_readings, `powerlib.TMIO.predict_eq_image),
-      (`powerlib.TMIO.RL.stateSpace_whole, `powerlib.TMIO.Seed.transport_whole),
-      (`powerlib.TMIO.RL.stateSpace_space, `powerlib.TMIO.generate_transport),
-      (`powerlib.TMIO.RL.stateSpace_space_stable, `powerlib.stability_agrees),
-      (`powerlib.TMIO.Analysis.generate_distributedEdge,
-        `powerlib.TMIO.Analysis.distributedEdge_eq_centralEdge),
+      (`powerlib.Circuits.RL.reading_certifies, `powerlib.TMIO.relationalSeed_sound),
+      (`powerlib.Circuits.RL.certified_readings, `powerlib.TMIO.relationalSeed_whole),
+      (`powerlib.Circuits.RL.certified_records, `powerlib.TMIO.generate_comp),
+      (`powerlib.Circuits.RL.predicted_readings, `powerlib.TMIO.predict_eq_image),
+      (`powerlib.Circuits.RL.reading_refutes, `powerlib.TMIO.predict_eq_image),
+      (`powerlib.Circuits.RL.stateSpace_whole, `powerlib.TMIO.Seed.transport_whole),
+      (`powerlib.Circuits.RL.stateSpace_space, `powerlib.TMIO.generate_transport),
+      (`powerlib.Circuits.RL.realize_translate, `powerlib.Linear.realize_eq_den),
+      (`powerlib.Circuits.LCL.realize_translate_attractive, `powerlib.Linear.realize_eq_den),
+      (`powerlib.Circuits.Interconnection.exactUnder_impedanceStable,
+        `powerlib.Linear.exactUnder_den),
+      (`powerlib.Circuits.Interconnection.portData_not_certified, `powerlib.TMIO.mem_certify),
+      (`powerlib.Data.Analysis.generate_distributedEdge,
+        `powerlib.Data.Analysis.distributedEdge_eq_centralEdge),
       (`TMIOConsumers.certified, `powerlib.TMIO.relationalSeed_whole),
       (`TMIOConsumers.certified_sound, `powerlib.TMIO.relationalSeed_sound),
       (`TMIOConsumers.forward_unique, `powerlib.TMIO.generate_unique)] do
@@ -92,28 +97,28 @@ run_cmd do
       throwError "Missing TMIO consumer proof: {consumer}"
     unless proof.getUsedConstants.contains source do
       throwError "TMIO consumer did not directly reuse {source}: {consumer}"
-  -- Every TMIO theorem is classified and passes the transitive axiom audit; the domain
-  -- conclusions are exactly the RL engineering results.
+  -- The core makes no engineering claim: every TMIO theorem is a foundation theorem and passes
+  -- the transitive axiom audit. Domain conclusions live with the families.
   let mut foundations : Nat := 0
-  let mut domains : Array Name := #[]
   for name in powerlib.Registry.theoremNames env do
     unless (`powerlib.TMIO).isPrefixOf name || (`TMIOConsumers).isPrefixOf name do
       continue
-    match powerlib.Registry.kindOf? env name with
-    | some .foundation => foundations := foundations + 1
-    | some .domain => domains := domains.push name
-    | none => throwError "Unclassified TMIO theorem: {name}"
+    unless powerlib.Registry.kindOf? env name == some .foundation do
+      throwError "The TMIO core makes a domain claim: {name}"
+    foundations := foundations + 1
     for axiomName in powerlib.Search.declarationAxioms env name do
       unless powerlib.Search.allowedAxiom axiomName do
         throwError "TMIO theorem used an unapproved axiom: {name}: {axiomName}"
-  let expected := #[`powerlib.TMIO.RL.realize_translate_asymptoticallyStable,
-    `powerlib.TMIO.RL.realize_reuse, `powerlib.TMIO.RL.reading_certifies,
-    `powerlib.TMIO.RL.reading_refutes, `powerlib.TMIO.RL.dcTest_certifies,
-    `powerlib.TMIO.RL.stateSpace_space_stable]
-  unless domains.size == expected.size && expected.all domains.contains do
-    throwError "TMIO domain conclusions changed: {domains}"
+  for name in #[`powerlib.Circuits.RL.realize_translate, `powerlib.Circuits.RL.reading_certifies,
+      `powerlib.Circuits.RL.dcTest_certifies, `powerlib.Circuits.RL.stateSpace_space,
+      `powerlib.Circuits.LCL.realize_translate_attractive,
+      `powerlib.Circuits.LCL.exactUnder_damped,
+      `powerlib.Circuits.Interconnection.exactUnder_impedanceStable,
+      `powerlib.Circuits.Interconnection.portData_not_certified] do
+    unless powerlib.Registry.kindOf? env name == some .domain do
+      throwError "A family conclusion is not a classified domain theorem: {name}"
   for name in #[`powerlib.TMIO.generate, `powerlib.TMIO.realize, `powerlib.TMIO.Seed,
-      `powerlib.TMIO.relationalSeed, `powerlib.TMIO.transport] do
+      `powerlib.TMIO.relationalSeed, `powerlib.TMIO.transport, `powerlib.TMIO.ExactUnder] do
     unless (powerlib.Registry.kindOf? env name).isNone do
       throwError "A TMIO definition was classified as a theorem: {name}"
-  logInfo m!"POWERLIB_TMIO_OK: {foundations} foundation, {domains.size} domain"
+  logInfo m!"POWERLIB_TMIO_OK: {foundations} foundation theorems in the core"

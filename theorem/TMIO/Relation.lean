@@ -252,4 +252,56 @@ every sentence of `Φ`. -/
 
 end Seed
 
+/-! ## Applied forms of the generated maps -/
+
+@[simp, powerlib_foundation] theorem generate_preimage_apply {D Y : Type*} (f : D → Y)
+    (A : Set D) : generate (preimage f) A = f '' A :=
+  congrFun (generate_preimage f) A
+
+@[simp, powerlib_foundation] theorem generate_kern_apply {D Y : Type*} (f : D → Y) (B : Set Y) :
+    generate (kern f) B = f ⁻¹' B :=
+  congrFun (generate_kern f) B
+
+@[simp, powerlib_foundation] theorem generate_cover_apply {S Q : Type*} (R : SetRel S Q)
+    (Φ : Set S) : generate (cover R) Φ = R.image Φ :=
+  congrFun (generate_cover R) Φ
+
+@[simp, powerlib_foundation] theorem generate_possibly_apply {X V : Type*} (R : SetRel X V)
+    (P : (Set X)ᵒᵈ) : ofDual (generate (possibly R) P) = certify R (ofDual P) :=
+  congrArg ofDual (congrFun (generate_possibly R) P)
+
+/-! ## Satisfaction along maps and products -/
+
+/-- Satisfaction read through a map of complete systems pulls the space back. -/
+@[simp, powerlib_foundation] theorem realize_comap {X Y Q : Type*} (sat : Y → Q → Prop)
+    (e : X → Y) (Γ : Set Q) : realize (fun x q => sat (e x) q) Γ = e ⁻¹' realize sat Γ := by
+  ext x
+  simp
+
+/-- A requirement set `Γ` is exact for `S` relative to the context `Δ`: within the space of `Δ`
+it carves out exactly `S`. With an empty context this is plain exactness. -/
+def ExactUnder {X Q : Type*} (sat : X → Q → Prop) (Δ Γ : Set Q) (S : Set X) : Prop :=
+  realize sat (Γ ∪ Δ) = S ∩ realize sat Δ
+
+@[powerlib_foundation] theorem exactUnder_empty_iff {X Q : Type*} (sat : X → Q → Prop)
+    (Γ : Set Q) (S : Set X) : ExactUnder sat ∅ Γ S ↔ realize sat Γ = S := by
+  have h : realize sat (∅ : Set Q) = Set.univ := by
+    ext x
+    simp
+  simp [ExactUnder, h]
+
+/-- Satisfaction of a sum of requirement languages by pairs of complete systems. -/
+def satSum {X₁ X₂ Q₁ Q₂ : Type*} (sat₁ : X₁ → Q₁ → Prop) (sat₂ : X₂ → Q₂ → Prop) :
+    X₁ × X₂ → Q₁ ⊕ Q₂ → Prop
+  | x, .inl q => sat₁ x.1 q
+  | x, .inr q => sat₂ x.2 q
+
+/-- Requirements that each speak about one component carve out a product space. -/
+@[powerlib_foundation] theorem realize_sum {X₁ X₂ Q₁ Q₂ : Type*} (sat₁ : X₁ → Q₁ → Prop)
+    (sat₂ : X₂ → Q₂ → Prop) (Γ₁ : Set Q₁) (Γ₂ : Set Q₂) :
+    realize (satSum sat₁ sat₂) (Sum.inl '' Γ₁ ∪ Sum.inr '' Γ₂) =
+      realize sat₁ Γ₁ ×ˢ realize sat₂ Γ₂ := by
+  ext ⟨x₁, x₂⟩
+  simp [mem_realize, satSum, or_imp, forall_and]
+
 end powerlib.TMIO
