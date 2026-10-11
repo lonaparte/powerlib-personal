@@ -33,9 +33,10 @@ Results.
   line-flow state matrix is singular (a circulating flow is a zero mode), so the model is
   **never** asymptotically stable, for any gains. Correction: line flows are not independent
   states on a meshed graph; a stable realization must use area angles or a spanning tree.
-* Exponential convergence for `N` areas is not formalized here (the trajectory interface
-  `Frequency.IsTrajectory` is stated on `Fin n`); the two-area case is
-  `LFC.exponentiallyConvergesTo_of_isHurwitz`.
+* `tendsto_of_spectrallyStable` (domain, any finite index type, by transport to `Fin N`) and
+  `netModel_tendsto` (domain): on a radial tie-line graph, a spectrally stable state matrix
+  (explicit premise; no parametric Routh–Hurwitz condition is available) makes every trajectory
+  under constant loads converge to `(0, 0, ΔP_L)`.
 -/
 
 noncomputable section
@@ -297,5 +298,74 @@ for any parameters. -/
       (netModel area ωs T (PH.signedIncidence (![0, 1, 2] : Fin 3 → Fin 3) ![1, 2, 0])).A :=
   netModel_not_spectrallyStable (p := fun _ => 1) (fun h => by simpa using congrFun h 0)
     triangle_circulation
+
+/-! ## Convergence on a general index type -/
+
+section Reindex
+
+variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
+
+/-- An LTI model on a finite index type, transported to `Fin N` along `eq : ι ≃ Fin N`. -/
+def reindexModel {N : ℕ} (eq : ι ≃ Fin N) (m : LTI.Model ι κ) : LTI.Model (Fin N) κ where
+  A := m.A.submatrix eq.symm eq.symm
+  B := m.B.submatrix eq.symm (Equiv.refl κ)
+  C := m.C.submatrix (Equiv.refl κ) eq.symm
+  D := m.D
+
+omit [DecidableEq ι] in
+@[powerlib_foundation] theorem reindexModel_field {N : ℕ} (eq : ι ≃ Fin N) (m : LTI.Model ι κ)
+    (v : ι → ℝ) (u : κ → ℝ) :
+    (reindexModel eq m).field (v ∘ eq.symm) u = m.field v u ∘ eq.symm := by
+  simp only [LTI.Model.field, reindexModel, submatrix_mulVec_equiv]
+  funext i
+  simp [Function.comp_def]
+
+/-- Spectral stability of the state matrix gives convergence of every constant-input trajectory
+to an equilibrium, on any finite index type (transport to `Fin N`, then
+`Frequency.exponentiallyConvergesTo_of_isHurwitz`). -/
+@[powerlib_domain] theorem tendsto_of_spectrallyStable {m : LTI.Model ι κ}
+    (hA : LTI.SpectrallyStable m.A) {u : κ → ℝ} {e : ι → ℝ} (he : m.IsEquilibrium u e)
+    {x : ℝ → ι → ℝ} (hx : Passivity.IsTrajectory (StateSpacePassivity.system m) (fun _ => u) x) :
+    Filter.Tendsto x Filter.atTop (𝓝 e) := by
+  set eq := Fintype.equivFin ι
+  set m' := reindexModel eq m
+  have hA' : LinearSystems.IsHurwitz m'.A := by
+    have h := (LTI.spectrallyStable_reindex eq m.A).2 hA
+    rw [Matrix.reindex_apply] at h
+    exact (LTI.spectrallyStable_iff_isHurwitz _).1 h
+  have he' : m'.IsEquilibrium u (e ∘ eq.symm) := by
+    unfold LTI.Model.IsEquilibrium
+    rw [reindexModel_field, show m.field e u = 0 from he]
+    rfl
+  have hx' : IsTrajectory m' u (fun t => x t ∘ eq.symm) := by
+    intro t ht
+    have h := hx t ht
+    change HasDerivWithinAt (fun t => x t ∘ eq.symm) (m'.field (x t ∘ eq.symm) u) (Ici 0) t
+    rw [reindexModel_field]
+    exact hasDerivWithinAt_pi.2 fun i => hasDerivWithinAt_pi.1 h (eq.symm i)
+  have hlim := tendsto_of_exponentiallyConvergesTo
+    (Frequency.exponentiallyConvergesTo_of_isHurwitz he' hA') hx'
+  have hc : Continuous (fun w : Fin (Fintype.card ι) → ℝ => w ∘ eq) := by fun_prop
+  have := (hc.tendsto _).comp hlim
+  simpa [Function.comp_def] using this
+
+end Reindex
+
+/-- `N`-area model on a radial tie-line graph: if the state matrix is spectrally stable, every
+trajectory under constant loads converges to the non-interactive steady state
+`(Δω, ΔP_tie, ΔP_C) = (0, 0, ΔP_L)`. -/
+@[powerlib_domain] theorem netModel_tendsto [DecidableEq β] (hM : ∀ a, (area a).M ≠ 0)
+    (hKI : ∀ a, (area a).KI ≠ 0) (hT : ∀ ℓ, ωs * T ℓ ≠ 0) (hB : ∑ a, (area a).B ≠ 0)
+    (hcol : ∀ ℓ, ∑ a, 𝓑 a ℓ = 0)
+    (hconn : ∀ w : α → ℝ, (∀ ℓ, ∑ c, 𝓑 c ℓ * w c = 0) → ∀ a c, w a = w c)
+    (hker : ∀ p : β → ℝ, 𝓑 *ᵥ p = 0 → p = 0)
+    (hA : LTI.SpectrallyStable (netModel area ωs T 𝓑).A) (u : α → ℝ)
+    {x : ℝ → α ⊕ (β ⊕ α) → ℝ}
+    (hx : Passivity.IsTrajectory (StateSpacePassivity.system (netModel area ωs T 𝓑))
+      (fun _ => u) x) :
+    Filter.Tendsto x Filter.atTop
+      (𝓝 (Sum.elim (fun _ => (0 : ℝ)) (Sum.elim (fun _ => (0 : ℝ)) u))) :=
+  tendsto_of_spectrallyStable hA
+    ((isEquilibrium_iff_of_ker hM hKI hT hB hcol hconn hker u _).2 rfl) hx
 
 end powerlib.Frequency.LFC
