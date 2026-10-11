@@ -69,8 +69,8 @@ def coordMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, -1 / d.KR]
     d.coordMatrix⁻¹ = !![1, 0; 0, -d.KR] := by
   apply Matrix.inv_eq_left_inv
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [coordMatrix, Matrix.mul_apply, Fin.sum_univ_two] <;>
-    field_simp
+  fin_cases i <;> fin_cases j <;> simp [coordMatrix, Matrix.mul_apply, Fin.sum_univ_two]
+  field_simp
 
 @[powerlib_foundation] theorem coordMatrix_isUnit (hK : d.KR ≠ 0) : IsUnit d.coordMatrix := by
   rw [Matrix.isUnit_iff_isUnit_det]

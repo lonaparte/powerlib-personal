@@ -21,6 +21,8 @@ import Mathlib.Topology.Order.IntermediateValue
   number of zeros in every window `[a, a + T)` (sign changes around the circle).
 * `trigPoly2_even_ncard_zeroSet`, `trigPoly2_ncard_zeroSet_mem`: if every zero of `h` is simple,
   the number of zeros in a period is even, hence `0`, `2` or `4`.
+* `deriv_mul_neg_of_consecutive_simple_zeros`: at two consecutive simple zeros of a continuous
+  function the derivatives have opposite signs (alternation of `h' < 0` / `h' > 0`).
 
 This is a foundation module: it states nothing about any power system. It is used for counting
 equilibria of reduced PLL models whose phase-detector characteristic is a trigonometric
@@ -341,6 +343,28 @@ the right. -/
       ring
     rw [eq] at key
     exact pos_of_mul_pos_left key hsq.le
+
+/-- Consecutive simple zeros have derivatives of opposite sign: if `θ₁ < θ₂` are zeros of a
+continuous `f` with no zero in between and `f'(θ₁) = g₁ ≠ 0`, `f'(θ₂) = g₂ ≠ 0`, then
+`g₁ g₂ < 0`. -/
+@[powerlib_foundation] theorem deriv_mul_neg_of_consecutive_simple_zeros (hf : Continuous f)
+    {θ₁ θ₂ g₁ g₂ : ℝ} (h12 : θ₁ < θ₂) (h1 : f θ₁ = 0) (h2 : f θ₂ = 0)
+    (hz : ∀ θ ∈ Ioo θ₁ θ₂, f θ ≠ 0) (hd1 : HasDerivAt f g₁ θ₁) (hd2 : HasDerivAt f g₂ θ₂)
+    (hg1 : g₁ ≠ 0) (hg2 : g₂ ≠ 0) : g₁ * g₂ < 0 := by
+  obtain ⟨-, ⟨c, hc, hcg⟩⟩ :=
+    exists_sign_near_simple_zero h1 hd1 hg1 (by linarith : θ₁ - 1 < θ₁) h12
+  obtain ⟨⟨d, hd, hdg⟩, -⟩ :=
+    exists_sign_near_simple_zero h2 hd2 hg2 hc.2 (by linarith : θ₂ < θ₂ + 1)
+  have hfc : f c ≠ 0 := hz c hc
+  have hfd : f d ≠ 0 := hz d ⟨hc.1.trans hd.1, hd.2⟩
+  have hcd : 0 < f c * f d := mul_pos_of_no_zero hf hd.1 hfc hfd
+    (fun θ hθ => hz θ ⟨hc.1.trans hθ.1, hθ.2.trans hd.2⟩)
+  have hneg := mul_neg_of_pos_of_neg hcg hdg
+  have e : (f c * g₁) * (f d * g₂) = (f c * f d) * (g₁ * g₂) := by ring
+  rw [e] at hneg
+  by_contra h
+  push Not at h
+  nlinarith [mul_nonneg hcd.le h]
 
 end Parity
 

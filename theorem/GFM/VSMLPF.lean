@@ -414,8 +414,7 @@ def Tred (s : ℂ) : ℂ := (g.K : ℂ) / ((g.M : ℂ) * s ^ 2 + (g.D : ℂ) * s
     rw [← hsM2, ← hsK2]
     apply Complex.ext <;>
       simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
-        Complex.ofReal_im, Complex.I_re, Complex.I_im, pow_two, Complex.re_ofNat, Complex.im_ofNat,
-        Complex.neg_re, Complex.neg_im, Complex.sub_re, Complex.sub_im] <;>
+        Complex.ofReal_im, Complex.I_re, Complex.I_im, pow_two, Complex.re_ofNat, Complex.im_ofNat] <;>
       field_simp <;> ring
   have hne : (g.ωc : ℂ) * (g.K : ℂ) ≠ 0 :=
     mul_ne_zero (by exact_mod_cast hω.ne') (by exact_mod_cast hK.ne')
@@ -441,7 +440,7 @@ def Tred (s : ℂ) : ℂ := (g.K : ℂ) / ((g.M : ℂ) * s ^ 2 + (g.D : ℂ) * s
     apply Complex.ext <;>
       simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
         Complex.ofReal_im, Complex.I_re, Complex.I_im, pow_two, Complex.re_ofNat, Complex.im_ofNat,
-        Complex.neg_re, Complex.neg_im, Complex.sub_re, Complex.sub_im] <;>
+        Complex.neg_re, Complex.neg_im] <;>
       field_simp <;> ring
   have hne : (g.K : ℂ) ≠ 0 := by exact_mod_cast hK.ne'
   rw [Tred, hden, div_mul_cancel_left₀ hne, one_div]

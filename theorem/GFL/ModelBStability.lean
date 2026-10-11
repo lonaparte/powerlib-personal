@@ -39,6 +39,9 @@ the 4×4 Routh conditions on the Jacobian (`tr < 0`, `m₃ < 0`, `det > 0`,
 polynomial `s⁴ + a3 s³ + a2 s² + a1 s + a0`) give local exponential stability; `det J < 0` gives
 instability. The trigonometric values `cos Δθ*`, `sin Δθ*` enter as exact real numbers (no
 floating point). Only the sufficient direction of Routh–Hurwitz is used.
+Non-vacuity (`modelB_noLoad_locallyExponentiallyStable`): at the no-load point (`I₀ = 0`, `R_g = 0`,
+`i_q0 = 0`, positive gains, `V_g, V_dc*, C_dc > 0`) the equilibrium `(0, (ω_g − ω_s)/k_i, V_dc*, 0)`
+satisfies the Routh conditions and is locally exponentially stable.
 
 Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (model B), §1.7 (equilibria);
 local-stability statement requested as the "4×4 Routh–Hurwitz of model B" item (the note itself
@@ -451,6 +454,73 @@ Jacobian has a positive real eigenvalue and the equilibrium is unstable. -/
     (p.contDiff_regField hV) hreg0 hJ hdet
   exact unstable_of_eqOn_ball (by positivity)
     (fun y hy => p.field_eq_regField_of_mem_ball hV (p.equilibrium_Vdc hx) hy) hreg
+
+/-- Concrete non-vacuous instance: the no-load operating point. With `I₀ = 0`, `R_g = 0`,
+`i_q0 = 0`, `V_dc* > 0`, `V_g > 0` and positive gains `k_p, k_i, k_pv, k_iv` and `C_dc > 0`
+(any `X_g`, `ω_s`, `ω_g`), the equilibrium `(0, (ω_g − ω_s)/k_i, V_dc*, 0)` of model B is locally
+exponentially stable. Its Jacobian is block upper-triangular with characteristic polynomial
+`(s² + a s + b)(s² + c s + d)`, `a = k_p V_g`, `b = k_i V_g`, `c = 3 k_pv V_g/(2 V_dc* C_dc)`,
+`d = 3 k_iv V_g/(2 V_dc* C_dc)`; the Routh determinant is
+`a3 a2 a1 − a1² − a3² a0 = a c ((b − d)² + (a + c)(a d + b c)) > 0`. -/
+@[powerlib_domain] theorem modelB_noLoad_locallyExponentiallyStable (hV : 0 < p.VdcRef)
+    (hVg : 0 < p.Vg) (hkp : 0 < p.kp) (hki : 0 < p.ki) (hkpv : 0 < p.kpv) (hkiv : 0 < p.kiv)
+    (hC : 0 < p.Cdc) (hI : p.I0 = 0) (hR : p.Rg = 0) (hq : p.iq0 = 0) :
+    Dynamics.LocallyExponentiallyStable p.field
+      (WithLp.toLp 2 ![0, (p.ωg - p.ωs) / p.ki, p.VdcRef, 0]) := by
+  have hx : p.field (WithLp.toLp 2 ![0, (p.ωg - p.ωs) / p.ki, p.VdcRef, 0]) = 0 := by
+    rw [field_eq_zero_iff]
+    simp [idRef, vgq, vgd, hI, hR, hq]
+    field_simp
+    ring
+  set a := p.kp * p.Vg with ha
+  set b := p.ki * p.Vg with hb
+  set c := 3 * p.kpv * p.Vg / (2 * p.VdcRef * p.Cdc) with hc
+  set d := 3 * p.kiv * p.Vg / (2 * p.VdcRef * p.Cdc) with hd
+  have ha0 : 0 < a := mul_pos hkp hVg
+  have hb0 : 0 < b := mul_pos hki hVg
+  have hc0 : 0 < c := by positivity
+  have hd0 : 0 < d := by positivity
+  set J := p.jacobian (WithLp.toLp 2 ![0, (p.ωg - p.ωs) / p.ki, p.VdcRef, 0]) with hJ
+  have e00 : J 0 0 = -a := by simp [J, jacobian, a]
+  have e01 : J 0 1 = p.ki := by simp [J, jacobian]
+  have e10 : J 1 0 = -p.Vg := by simp [J, jacobian]
+  have e11 : J 1 1 = 0 := by simp [J, jacobian]
+  have e20 : J 2 0 = 0 := by simp [J, jacobian, idRef, hq]
+  have e21 : J 2 1 = 0 := by simp [J, jacobian]
+  have e22 : J 2 2 = -c := by
+    simp [J, jacobian, idRef, vgd, pccP, vgq, hR, hq, c]
+    field_simp
+  have e23 : J 2 3 = d := by
+    simp [J, jacobian, idRef, vgd, hR, hq, d]
+  have e30 : J 3 0 = 0 := by simp [J, jacobian]
+  have e31 : J 3 1 = 0 := by simp [J, jacobian]
+  have e32 : J 3 2 = -1 := by simp [J, jacobian]
+  have e33 : J 3 3 = 0 := by simp [J, jacobian]
+  have htr : J.trace = -(a + c) := by
+    simp only [Matrix.trace, Matrix.diag_apply, Fin.sum_univ_four, e00, e11, e22, e33]
+    ring
+  have hm2 : Criteria.principalMinorSum2Fin4 J = b + d + a * c := by
+    simp only [Criteria.principalMinorSum2Fin4, e00, e01, e10, e11, e20, e21, e22, e23, e30, e31,
+      e32, e33]
+    rw [hb]
+    ring
+  have hm3 : Criteria.principalMinorSum3Fin4 J = -(a * d + b * c) := by
+    simp only [Criteria.principalMinorSum3Fin4, e00, e01, e10, e11, e20, e21, e22, e23, e30, e31,
+      e32, e33]
+    rw [hb]
+    ring
+  have hdet : J.det = b * d := by
+    rw [Criteria.det_fin_four]
+    simp only [e00, e01, e10, e11, e20, e21, e22, e23, e30, e31, e32, e33]
+    rw [hb]
+    ring
+  have hD : 0 < a * c * ((b - d) ^ 2 + (a + c) * (a * d + b * c)) := by positivity
+  refine p.modelB_locallyExponentiallyStable hV hx ?_ ?_ ?_ ?_
+  · rw [← hJ, htr]; linarith
+  · rw [← hJ, hm3]; nlinarith [mul_pos ha0 hd0, mul_pos hb0 hc0]
+  · rw [← hJ, hdet]; positivity
+  · rw [← hJ, htr, hm2, hm3, hdet]
+    nlinarith [hD]
 
 end ModelBParams
 

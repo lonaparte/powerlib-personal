@@ -47,9 +47,6 @@ Corrections.
 * §2.4 table: "Baumgarte: still index 3" is wrong.  After Baumgarte stabilization the
   multiplier solves the linear equation `(G M⁻¹ Gᵀ) λ = …` with an invertible matrix
   (`baumgarte_index_one`), so the stabilized DAE has index 1.
-* §1.6 gives the residual decay rates as `α ± √(α² − β²)`; the characteristic roots are
-  `−α ± √(α² − β²)` (both with negative real part for `α, β > 0`, which is what
-  `baumgarteModel_exponentiallyStable` uses).
 -/
 
 noncomputable section

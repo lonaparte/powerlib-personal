@@ -34,14 +34,15 @@ convention `1/0 = 0` applies, and only equilibrium-level statements are made her
 linearization, so global smoothness is not needed).
 * Necessary equilibrium conditions: `v_q = 0`, `V_dc = V_dc*`, `x_pll = (ω_g − ω_s)/k_i`.
 * With `R_g = 0`, `i_q0 = 0`: at an equilibrium `I₀ V_dc* = (3 V_g² / (4 X_g)) sin 2Δθ`, so an
-  equilibrium exists iff `|I₀| V_dc* ≤ 3 V_g² / (4 X_g)` (`modelB_exists_equilibrium_iff`), and
+  equilibrium exists iff `|I₀| V_dc* ≤ 3 V_g² / (4 X_g)` (`ModelBParams.exists_equilibrium_iff`), and
   at the fold `|I₀| V_dc* = 3 V_g²/(4 X_g)` one has `|X_g i_d| = V_g / √2`.
 Correction (§1.7): the note's boundary `|X_g i_d*| ≤ V_g` is only the solvability of
 `sin Δθ = −X_g i_d / V_g` for a *given* `i_d`; in model B `i_d` is fixed by the DC power balance,
 the existence boundary is `|I₀| V_dc* = 3 V_g² / (4 X_g)`, and the fold sits at
 `|X_g i_d| = V_g / √2`, not at `|X_g i_d| = V_g`.
 Not formalized: model A (§1.4) contains the implicit loop `Q ↔ i_q* ↔ |v_g|` (a DAE) and is
-excluded; the 4×4 Routh–Hurwitz local stability of model B is not formalized here.
+excluded. The 4×4 Routh–Hurwitz local stability of model B is in
+`theorem/GFL/ModelBStability.lean`.
 -/
 
 noncomputable section
