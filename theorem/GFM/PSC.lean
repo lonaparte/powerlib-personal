@@ -15,7 +15,8 @@ Model boundary (domain part).
 
 Results: equilibria `⇔ |P*| ≤ P_max`; equilibria with `cos δ₀ > 0` are locally exponentially
 stable and with `cos δ₀ < 0` unstable (`K_p, P_max > 0`), via the scalar linearization
-wrappers of `theorem/NormalForm/Scalar.lean`.
+wrappers of `theorem/NormalForm/Scalar.lean`; `absoluteAngle_iff` shows that the original law in
+the absolute angle `θ` is equivalent, pointwise in time, to the `δ`-equation.
 
 Algebra (foundation): the steady-state active power, the converter-side reactive power and the
 grid-side received reactive power from `S̄ = V̄ Ī*`; the active-resistance high-pass
@@ -130,6 +131,25 @@ def field : State 1 → State 1 := lift c.rhs
     have : (c.Pstar / c.Pmax) ^ 2 < 1 := by
       rw [← sq_abs]; nlinarith [abs_nonneg (c.Pstar / c.Pmax)]
     linarith
+
+/-- Bridge to the original law in the absolute angle `θ` against the grid angle
+`θ_g(t) = ω₁ t + θ_{g0}`: `θ̇ = ω₁ + K_p (P* − P_max sin(θ − θ_g))` at time `t` iff the relative
+angle `δ = θ − θ_g` satisfies `δ̇ = K_p (P* − P_max sin δ)` at `t` (the scalar field `rhs` that
+`field` lifts). -/
+@[powerlib_foundation] theorem absoluteAngle_iff (ω₁ θg0 : ℝ) (θ : ℝ → ℝ) (t : ℝ) :
+    HasDerivAt θ (ω₁ + c.Kp * (c.Pstar - c.Pmax * Real.sin (θ t - (ω₁ * t + θg0)))) t ↔
+      HasDerivAt (fun s => θ s - (ω₁ * s + θg0)) (c.rhs (θ t - (ω₁ * t + θg0))) t := by
+  have hg : HasDerivAt (fun s => ω₁ * s + θg0) ω₁ t := by
+    simpa using ((hasDerivAt_id t).const_mul ω₁).add_const θg0
+  constructor
+  · intro h
+    convert h.sub hg using 1
+    simp only [rhs]
+    ring
+  · intro h
+    convert h.add hg using 1
+    · funext s; simp only [Pi.add_apply]; ring
+    · simp only [rhs]; ring
 
 end PSC
 
