@@ -1,3 +1,4 @@
+import theorem.TMIO.ClaimElab
 import theorem.Family.Basic
 import theorem.Flow.Certificate
 import theorem.Linear.Synthesis
@@ -500,7 +501,7 @@ def Certificate.quadraticDecay {model : Model} (c : Certificate model) :
 
 /-- An accepted certificate proves global exponential stability of the full polynomial field. -/
 @[powerlib_foundation, aesop unsafe 80% apply]
-theorem Certificate.globallyExponentiallyStable {model : Model}
+private theorem Certificate.globallyExponentiallyStable {model : Model}
     (c : Certificate model) : Flow.GloballyExponentiallyStable model.field 0 :=
   c.quadraticDecay.globallyExponentiallyStable model.field_smooth
 
@@ -609,8 +610,15 @@ def family : Family Model Requirement 2 0 :=
 @[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
+@[aesop norm -1 apply (index := [unindexed])] theorem Certificate.mem_den {model : Model} (c : Certificate model) :
+    connection% (model ∈ family.den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  exact family_isAutonomous.mem_den_flow.mpr c.globallyExponentiallyStable
+
 /-- No model has a Hurwitz linearization with a right-half-plane root. -/
-@[powerlib_foundation] theorem realize_univ : TMIO.realize Meets Set.univ = ∅ := by
+@[powerlib_foundation] theorem realize_univ :
+    connection% (TMIO.realize Meets Set.univ = ∅) := by
+  unfold powerlib.TMIO.Statement
   ext model
   simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
   intro h
@@ -620,7 +628,7 @@ def family : Family Model Requirement 2 0 :=
 
 /-- An equilibrium with a Hurwitz linearization is locally exponentially stable (LeanForControl's
 linearization theorem). -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_of_linearization (model : Model)
+@[powerlib_foundation] private theorem locallyExponentiallyStable_of_linearization (model : Model)
     (h : coeff model.field0 (0, 0) = 0 ∧ coeff model.field1 (0, 0) = 0)
     (hH : IsHurwitz model.linearization) : LocallyExponentiallyStable model.field 0 :=
   hurwitz_linearization_locally_exponentially_stable model.linearization model.field_smooth
@@ -628,7 +636,7 @@ linearization theorem). -/
 
 /-- An equilibrium whose linearization has a right-half-plane root is unstable (LeanForControl's
 indirect method). -/
-@[powerlib_foundation] theorem unstable_of_linearization (model : Model)
+@[powerlib_foundation] private theorem unstable_of_linearization (model : Model)
     (h : coeff model.field0 (0, 0) = 0 ∧ coeff model.field1 (0, 0) = 0) {s : ℂ}
     (hs : (Linear.characteristicMatrix model.linearization s).det = 0) (hre : 0 < s.re) :
     Unstable model.field 0 := by
@@ -638,7 +646,9 @@ indirect method). -/
 
 /-- Every translation of the polynomial family is sound: its translation chain lies below its
 semantics connection. -/
-@[powerlib_domain] theorem chain_le_semantics : ∀ P, family.chain P ≤ family.semantics P := by
+@[powerlib_domain] theorem chain_le_semantics :
+    connection% (∀ P, family.chain P ≤ family.semantics P) := by
+  unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s model hm => ?_
   rw [TMIO.mem_realize] at hm
   change ∀ q ∈ translate s, Meets model q at hm
@@ -689,7 +699,7 @@ def cubicModel : Model := ⟨[⟨-1, (3, 0)⟩], [⟨-1, (0, 3)⟩]⟩
 
 /-- Cubic damping is globally asymptotically stable: `‖x‖²` is a strict Lyapunov function with
 compact sublevels. -/
-@[powerlib_foundation] theorem cubicModel_globallyAsymptoticallyStable :
+@[powerlib_foundation] private theorem cubicModel_globallyAsymptoticallyStable :
     Flow.GloballyAsymptoticallyStable cubicModel.field 0 := by
   refine Flow.globallyAsymptoticallyStable_of_strictLyapunov (V := fun x : ℝ² => ‖x‖ ^ 2)
     two_pos cubicModel.field_smooth ⟨by fun_prop, contDiff_norm_sq ℝ, by simp,
@@ -750,8 +760,9 @@ compact sublevels. -/
 globally, hence locally, asymptotically stable, yet it has no certificate and its linearization
 is not Hurwitz. -/
 @[powerlib_domain] theorem not_exact_asymptotic :
-    ¬ family.Exact (.flow .globallyAsymptoticallyStable) ∧
-      ¬ family.Exact (.flow .locallyAsymptoticallyStable) := by
+    connection% (¬ family.Exact (.flow .globallyAsymptoticallyStable) ∧
+      ¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
   have hgas := cubicModel_globallyAsymptoticallyStable
   constructor
   · intro h
@@ -797,7 +808,8 @@ noncomputable def cascadeEnergy (x : ℝ²) : ℝ := ‖x‖ ^ 2 + (x 1) ^ 4
 
 /-- A quartic energy proves global asymptotic stability through the family's denotation. -/
 @[powerlib_domain] theorem cascade_asymptotic :
-    cascadeModel ∈ family.den (.flow .globallyAsymptoticallyStable) := by
+    connection% (cascadeModel ∈ family.den (.flow .globallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
   rw [family_isAutonomous.mem_den_flow]
   refine Flow.globallyAsymptoticallyStable_of_strictLyapunov (V := cascadeEnergy)
     two_pos cascadeModel.field_smooth ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -838,7 +850,8 @@ noncomputable def cascadeEnergy (x : ℝ²) : ℝ := ‖x‖ ^ 2 + (x 1) ^ 4
 /-- The quadratic transient from `(0,N)` grows like `N²`; one global linear-in-state
 exponential bound cannot cover every initial state. -/
 @[powerlib_domain] theorem cascade_not_exponential :
-    cascadeModel ∉ family.den (.flow .globallyExponentiallyStable) := by
+    connection% (cascadeModel ∉ family.den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
   rw [family_isAutonomous.mem_den_flow]
   rintro ⟨_, _, C, a, hC, ha, hb⟩
   let N := C * Real.exp (-a) * Real.exp 2 + 1
@@ -896,8 +909,9 @@ exponential bound cannot cover every initial state. -/
 /-- This model is outside the certificate requirement space despite being in global asymptotic
 semantics. It is a proved limitation of the certificate language, not just of its search. -/
 @[powerlib_domain] theorem cascade_certificate_boundary :
-    cascadeModel ∈ family.den (.flow .globallyAsymptoticallyStable) ∧
-      cascadeModel ∉ TMIO.realize Meets {.certified} := by
+    connection% (cascadeModel ∈ family.den (.flow .globallyAsymptoticallyStable) ∧
+      cascadeModel ∉ TMIO.realize Meets {.certified}) := by
+  unfold powerlib.TMIO.Statement
   refine ⟨cascade_asymptotic, ?_⟩
   intro h
   have hc : Nonempty (Certificate cascadeModel) := (TMIO.mem_realize _ _ _).mp h .certified rfl
@@ -957,7 +971,8 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
 
 /-- Linear damping of the quartic rotation has a global exponential state bound. -/
 @[powerlib_domain] theorem quartic_exponential :
-    quarticModel ∈ family.den (.flow .globallyExponentiallyStable) := by
+    connection% (quarticModel ∈ family.den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
   rw [family_isAutonomous.mem_den_flow]
   have hd : ∀ x, fderiv ℝ quarticEnergy x (quarticModel.field x) ≤ -4 * quarticEnergy x :=
     fun x => (quarticEnergy_lie x).le
@@ -1032,8 +1047,9 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
 
 /-- The quadratic certificate language cannot describe this global exponential model. -/
 @[powerlib_domain] theorem quartic_certificate_boundary :
-    quarticModel ∈ family.den (.flow .globallyExponentiallyStable) ∧
-      quarticModel ∉ TMIO.realize Meets {.certified} := by
+    connection% (quarticModel ∈ family.den (.flow .globallyExponentiallyStable) ∧
+      quarticModel ∉ TMIO.realize Meets {.certified}) := by
+  unfold powerlib.TMIO.Statement
   refine ⟨quartic_exponential, ?_⟩
   intro h
   obtain ⟨c⟩ : Nonempty (Certificate quarticModel) := (TMIO.mem_realize _ _ _).mp h .certified rfl
@@ -1058,7 +1074,8 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
 
 /-- The global exponential translation is refuted as exact, independently of search failure. -/
 @[powerlib_domain] theorem not_exact_exponential :
-    ¬ family.Exact (.flow .globallyExponentiallyStable) := by
+    connection% (¬ family.Exact (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
   intro h
   have hmem := quartic_certificate_boundary.1
   rw [← h] at hmem
@@ -1066,7 +1083,9 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
 
 
 /-- The same quartic model contracts at an integer horizon, although no certificate represents it. -/
-@[powerlib_domain] theorem not_exact_contractive : ¬ family.Exact (.flow .contractive) := by
+@[powerlib_domain] theorem not_exact_contractive :
+    connection% (¬ family.Exact (.flow .contractive)) := by
+  unfold powerlib.TMIO.Statement
   intro h
   have hmem : quarticModel ∈ family.den (.flow .contractive) :=
     family_isAutonomous.mem_den_flow.mpr

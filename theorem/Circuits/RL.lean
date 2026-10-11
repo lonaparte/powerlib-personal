@@ -1,3 +1,4 @@
+import theorem.TMIO.ClaimElab
 import theorem.Linear.Family
 import theorem.Linear.Realization
 import theorem.Port.Linear
@@ -277,7 +278,9 @@ is carved out exactly by its requirement — Lyapunov stability and passivity by
 resistance, the attractive sentences and sampled contraction by a positive one, instability by a
 negative one, conservation by a lossless branch, and decay at the rate `a` by a time constant
 `L / R` with `a ≤ R / L`. -/
-@[powerlib_domain] theorem chain_eq_semantics : family.chain = family.semantics := by
+@[powerlib_domain] theorem chain_eq_semantics :
+    connection% (family.chain = family.semantics) := by
+  unfold powerlib.TMIO.Statement
   have hLS : ∀ m : Impedance,
       LyapunovStable (affineLinearVectorField m.plant.A 0) 0 ↔ 0 ≤ m.resistance := by
     intro m

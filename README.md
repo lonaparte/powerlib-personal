@@ -31,6 +31,13 @@ proof checks pass. See [Rules.md](Rules.md) for the formal requirements and
 [Architecture.md](Architecture.md) for generated connections, admission and
 proved completion boundaries.
 
+Public model results use `connection% (ordinary proposition)`. The resulting
+`TMIO.Statement` carries a kernel-checked certificate that the conclusion evaluates
+or compares generated connections. Classification annotations are optional search
+metadata. `lake build` and `lake build powerlib` check the actual module inventory,
+including new modules that omit the architecture linter import. Internal library
+targets provide compilation only; they do not run whole-package admission.
+
 ## Dependencies
 
 Lake resolves pinned Mathlib and LeanForControl checkouts as siblings of the

@@ -39,18 +39,10 @@ electronics, such as small-signal stability, impedance stability, or closed-loop
 exponential stability. They require final Lean theorems about the formalized
 system. Foundation evidence must not be presented as a domain conclusion.
 
-Every first-party, source-authored named Lean theorem must carry exactly one of
-`@[powerlib_foundation]` and `@[powerlib_domain]`. This includes private helpers,
-dependency adapters, generated endpoint contracts, and named formal consumers.
-The two classifications are mutually exclusive. Independently reviewed `simp`,
-`ext`, and Aesop attributes may coexist with either classification; classification
-alone does not register an automatic proof rule. Definitions, structures,
-anonymous examples, compiler-generated auxiliaries, and directly imported
-upstream theorems do not require these classification attributes.
-
-Admission must detect missing classifications from elaborated declaration
-provenance and collect registered theorems automatically, without a handwritten
-theorem list. Classification does not replace kernel or transitive axiom checks.
+`@[powerlib_foundation]` and `@[powerlib_domain]` are optional discovery and
+presentation metadata. They do not grant admission or exempt a declaration from
+checking. A typed `TMIO.Statement` is discovered as a domain result without either
+annotation. Simp, ext and Aesop registration remain independent decisions.
 
 Generic semantic implications and certificate arithmetic are foundation results.
 A model family's public engineering conclusion must be a domain theorem on a
@@ -70,17 +62,42 @@ Its semantics connection generates sentence denotations. Exactness compares the
 translation chain with that semantics connection; soundness orders them. These
 comparisons and their propagation belong to the generic framework.
 
-Domain theorem conclusions must use generated connection endpoints. Merely
-mentioning a Family type, or mentioning a connection only in a hypothesis, is
-insufficient. Behaviour is reached through a denotation or a generated
-connection, never through Holds, an alias of a behavioural predicate, or a
-direct Flow, Port, Mathlib or LeanForControl behavioural conclusion.
+There are two admission rules:
 
-The same interface applies to public examples, admission consumers, automatic
-reuse consumers and integration consumers. Deliberate negative controls are
-foundation fixtures passed explicitly to the rejection checker; they are not
-admitted domain theorems. Audits inspect elaborated conclusions and imported
-definitions, and run over all first-party consumers without a theorem-name list.
+1. A connection stores an arbitrary-infimum-preserving backward map. Its forward
+   adjoint is generated; an independently proposed adjoint must prove the Galois
+   law and therefore equals the generated map.
+2. A published connection result carries a `TMIO.ConnectionClaim` certificate in
+   its proposition type (`TMIO.Statement`). The closed grammar admits endpoint
+   evaluations, connection comparisons and boundaries. It has no constructor
+   injecting an arbitrary `Prop`. Use `connection% (ordinary proposition)` to
+   construct the certificate; Lean's kernel checks both it and the theorem proof.
+
+`TMIO.Endpoint` certificates are built from typed `sInfHom` applications,
+`generate`, generated closure, and structural powerset operations. Endpoint
+metadata cannot substitute for these certificates; `powerlib_connection` has
+been removed. A connection only in a hypothesis or an unrelated conjunct cannot
+satisfy the closed grammar. Behaviour is reached through these endpoints, never
+through a direct or aliased behavioural conclusion or operand.
+
+The bypass check inspects endpoint inputs, structural maps, and hypothesis types.
+An identity connection applied to a raw behavioural set cannot hide that set
+behind the otherwise valid connection.
+
+Whole-package admission discovers model-domain types from actual `Family`
+definitions. Every public model-specific behavioural proof must use Statement,
+even when unlabeled, labeled foundation, or written as a proof-valued definition.
+Generic semantic support and private helpers remain implementation evidence;
+static mathematics does not need a classification label. Negative behavioural
+fixtures are private evidence explicitly submitted to rejection tests.
+
+The public entry points `lake build` and `lake build powerlib` build every module
+selected by the package's actual Lake library globs and then audit that complete
+inventory. A file cannot opt out by omitting an Architecture import or by being
+absent from `powerlib.lean`. Examples, tests and the independent integration
+profile use the same admission checker. Raw `lean` or a staging-library target
+is compilation, not PowerLib admission. Changing the trusted build configuration
+can bypass policy; the kernel alone cannot forbid arbitrary valid Lean theorems.
 
 An inconsistent requirement context may give a sound empty translation space.
 Report it as unavailable translation coverage, not as evidence that the sentence
@@ -120,9 +137,9 @@ the completion criterion.
 The completed result must conclude a meaningful system property, for example:
 
 ```lean
-theorem stable : submittedModel ∈ family.den (.flow .lyapunovStable)
+theorem stable : connection% (submittedModel ∈ family.den (.flow .lyapunovStable))
 theorem exponentially_stable :
-    submittedModel ∈ family.den (.flow .globallyExponentiallyStable)
+    connection% (submittedModel ∈ family.den (.flow .globallyExponentiallyStable))
 ```
 
 The relevant stability predicate must describe the formalized system, with

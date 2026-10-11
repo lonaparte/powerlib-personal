@@ -1,3 +1,4 @@
+import theorem.TMIO.ClaimElab
 import powerlib
 
 -- Certificate admission.
@@ -35,12 +36,14 @@ def accepted : Linear.Certificate submittedModel.plant.A :=
 
 -- The synthesized certificate places the branch in every attractive sentence.
 @[powerlib_domain] theorem mem_den {P : Flow.Property} (hP : P.Attractive) :
-    submittedModel ∈ Circuits.RL.family.den (.flow P) := by
+    connection% (submittedModel ∈ Circuits.RL.family.den (.flow P)) := by
+  unfold powerlib.TMIO.Statement
   rw [Circuits.RL.family_isLinear.den_hurwitz (Or.inl hP)]
   exact accepted.isHurwitz
 
 -- The physical energy is a storage function: the branch is passive.
-@[powerlib_domain] theorem mem_den_passive : submittedModel ∈ Circuits.RL.family.den .passive :=
+@[powerlib_domain] theorem mem_den_passive :
+    connection% (submittedModel ∈ Circuits.RL.family.den .passive) :=
   Circuits.RL.family_isLinear.mem_den_passive
     (Circuits.RL.kyp submittedModel (by norm_num [submittedModel]))
 
@@ -58,11 +61,13 @@ def accepted : Linear.Certificate submittedModel.plant.A :=
     (by norm_num [submittedModel, Circuits.LCL.Circuit.Damped])
 
 @[powerlib_domain] theorem mem_den_globallyExponentiallyStable :
-    submittedModel ∈ Circuits.LCL.family.den (.flow .globallyExponentiallyStable) := by
+    connection% (submittedModel ∈ Circuits.LCL.family.den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
   rw [Circuits.LCL.family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
   exact accepted.isHurwitz
 
-@[powerlib_domain] theorem mem_den_passive : submittedModel ∈ Circuits.LCL.family.den .passive :=
+@[powerlib_domain] theorem mem_den_passive :
+    connection% (submittedModel ∈ Circuits.LCL.family.den .passive) :=
   Circuits.LCL.family_isLinear.mem_den_passive (Circuits.LCL.kyp submittedModel
     (by norm_num [submittedModel, Circuits.LCL.Circuit.Passive]))
 
@@ -82,7 +87,8 @@ def accepted : Linear.Certificate (Linear.Synthesis.real submittedMatrix) :=
   fin_cases i <;> fin_cases j <;> simp [submittedMatrix]
 
 @[powerlib_domain] theorem mem_den_globallyExponentiallyStable :
-    submittedMatrix ∈ (Linear.Rational.family (n := 2)).den (.flow .globallyExponentiallyStable) := by
+    connection% (submittedMatrix ∈ (Linear.Rational.family (n := 2)).den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
   rw [Linear.Rational.family_isLinear.den_hurwitz (P := .globallyExponentiallyStable)
     (Or.inl trivial)]
   exact accepted.isHurwitz
@@ -125,7 +131,8 @@ def accepted : Linear.Certificate (Linear.Synthesis.real submittedMatrix) :=
   lyapunov_certificate% submittedMatrix
 
 @[powerlib_domain] theorem mem_den_globallyExponentiallyStable :
-    submittedMatrix ∈ (Linear.Rational.family (n := 8)).den (.flow .globallyExponentiallyStable) := by
+    connection% (submittedMatrix ∈ (Linear.Rational.family (n := 8)).den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
   rw [Linear.Rational.family_isLinear.den_hurwitz (P := .globallyExponentiallyStable)
     (Or.inl trivial)]
   exact accepted.isHurwitz
@@ -161,7 +168,8 @@ def accepted : Linear.Certificate submitted.circuit.plant.A :=
   submitted.certificate (by decide +kernel)
 
 @[powerlib_domain] theorem mem_den_globallyExponentiallyStable :
-    submitted ∈ Circuits.LCL.rationalFamily.den (.flow .globallyExponentiallyStable) := by
+    connection% (submitted ∈ Circuits.LCL.rationalFamily.den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
   rw [Circuits.LCL.rationalFamily_isLinear.den_hurwitz (P := .globallyExponentiallyStable)
     (Or.inl trivial)]
   exact accepted.isHurwitz
@@ -179,8 +187,8 @@ def submittedModel : Model := ⟨[⟨-1, (1, 0)⟩, ⟨-1, (3, 0)⟩], [⟨-1, (
 def accepted : Certificate submittedModel := certificateOf submittedModel (by decide +kernel)
 
 @[powerlib_domain] theorem mem_den_globallyExponentiallyStable :
-    submittedModel ∈ family.den (.flow .globallyExponentiallyStable) :=
-  family_isAutonomous.mem_den_flow.mpr accepted.globallyExponentiallyStable
+    connection% (submittedModel ∈ family.den (.flow .globallyExponentiallyStable)) :=
+  accepted.mem_den
 
 /-- `x' = -x - x³ + x y² / 2`, `y' = -y - y³ + x² y / 2`. -/
 def coupledModel : Model :=
@@ -189,8 +197,8 @@ def coupledModel : Model :=
 def coupledAccepted : Certificate coupledModel := certificateOf coupledModel (by decide +kernel)
 
 @[powerlib_domain] theorem coupled_mem_den :
-    coupledModel ∈ family.den (.flow .globallyExponentiallyStable) :=
-  family_isAutonomous.mem_den_flow.mpr coupledAccepted.globallyExponentiallyStable
+    connection% (coupledModel ∈ family.den (.flow .globallyExponentiallyStable)) :=
+  coupledAccepted.mem_den
 
 -- Its decay certificate needs a square mixing `x²` and `y²`: `(x² - y²/2)²`.
 @[powerlib_foundation] theorem coupled_mixed_square :
@@ -207,13 +215,13 @@ def nonnormalAccepted : Certificate nonnormalModel :=
   certificateOf nonnormalModel (by decide +kernel)
 
 @[powerlib_domain] theorem nonnormal_mem_den :
-    nonnormalModel ∈ family.den (.flow .globallyExponentiallyStable) :=
-  family_isAutonomous.mem_den_flow.mpr nonnormalAccepted.globallyExponentiallyStable
+    connection% (nonnormalModel ∈ family.den (.flow .globallyExponentiallyStable)) :=
+  nonnormalAccepted.mem_den
 
 -- The cascade is globally asymptotically stable but has no certificate of this language.
 @[powerlib_domain] theorem cascade_boundary :
-    cascadeModel ∈ family.den (.flow .globallyAsymptoticallyStable) ∧
-      cascadeModel ∉ powerlib.TMIO.realize Meets {.certified} := cascade_certificate_boundary
+    connection% (cascadeModel ∈ family.den (.flow .globallyAsymptoticallyStable) ∧
+      cascadeModel ∉ powerlib.TMIO.realize Meets {.certified}) := cascade_certificate_boundary
 
 /-- A supplied witness passes the same check: verification, not synthesis. -/
 def suppliedWitness : Witness := ⟨1, 0, 1, 1, 1, 2, [], [], [⟨2, [⟨1, (2, 0)⟩]⟩]⟩
@@ -258,9 +266,10 @@ def marginCertificate : Certificate (Synthesis.real shiftedLCL) :=
   exact marginCertificate.isHurwitz
 
 @[powerlib_domain] theorem lcl_rate :
-    LCLAdmission.submittedModel ∈ TMIO.realize Circuits.LCL.Meets
+    connection% (LCLAdmission.submittedModel ∈ TMIO.realize Circuits.LCL.Meets
       {Circuits.LCL.Requirement.rate (1 / 4)} ∧
-    LCLAdmission.submittedModel ∈ Circuits.LCL.family.den (.flow (.decay (1 / 4))) := by
+    LCLAdmission.submittedModel ∈ Circuits.LCL.family.den (.flow (.decay (1 / 4)))) := by
+  unfold powerlib.TMIO.Statement
   refine ⟨?_, Circuits.LCL.family_isLinear.mem_den_decay_of_rateMargin lcl_margin⟩
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Circuits.LCL.Meets]
   exact lcl_margin

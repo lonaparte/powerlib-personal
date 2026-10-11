@@ -34,6 +34,7 @@ example (m : Circuits.RL.Impedance)
     (hm : |Data.Analysis.estimate Circuits.RL.dcTest - m.resistance| ≤ 1 / 2)
     {P : Flow.Property} (hP : P.Attractive) : m ∈ Circuits.RL.family.den (.flow P) := by
   have hd := Circuits.RL.dcTest_certified (Or.inl hP)
+  unfold powerlib.TMIO.Statement at hd
   rw [Circuits.RL.certified_records, Set.mem_preimage] at hd
   exact Family.certifies
     (fun s _ => (Family.chain_eq_semantics_iff.mp Circuits.RL.chain_eq_semantics s).sound) hd hm

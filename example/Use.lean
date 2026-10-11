@@ -1,3 +1,4 @@
+import theorem.TMIO.ClaimElab
 import powerlib
 
 /-! Public consumers of the library. -/
@@ -20,12 +21,14 @@ open powerlib LinearSystems
 #print axioms powerlib.Linear.holds_iff_isHurwitz
 
 -- RL: the translation chain is the semantics connection.
-@[powerlib_domain] theorem rl_chain : Circuits.RL.family.chain = Circuits.RL.family.semantics :=
+@[powerlib_domain] theorem rl_chain :
+    connection% (Circuits.RL.family.chain = Circuits.RL.family.semantics) :=
   Circuits.RL.chain_eq_semantics
 
 -- RL: decay at a rate is exactly a bound on the time constant, read off the faithful chain.
 @[powerlib_domain] theorem rl_decay (a : ℝ) (m : Circuits.RL.Impedance) :
-    m ∈ Circuits.RL.family.den (.flow (.decay a)) ↔ a ≤ m.resistance / m.inductance.val := by
+    connection% (m ∈ Circuits.RL.family.den (.flow (.decay a)) ↔ a ≤ m.resistance / m.inductance.val) := by
+  unfold powerlib.TMIO.Statement
   rw [← (Family.chain_eq_semantics_iff.mp Circuits.RL.chain_eq_semantics
     (.flow (.decay a)) : Circuits.RL.family.Exact _)]
   simp [Circuits.RL.family, Circuits.RL.translate, Circuits.RL.Meets]
@@ -45,12 +48,15 @@ open powerlib LinearSystems
 -- Synthesis: the certificate computed from the submitted parameters places the model in a
 -- denotation.
 @[powerlib_domain] theorem rl_synthesis (m : Circuits.RL.Impedance) (hR : 0 < m.resistance) {P : Flow.Property}
-    (hP : P.Attractive) : m ∈ Circuits.RL.family.den (.flow P) := by
+    (hP : P.Attractive) :
+    connection% (m ∈ Circuits.RL.family.den (.flow P)) := by
+  unfold powerlib.TMIO.Statement
   rw [Circuits.RL.family_isLinear.den_hurwitz (Or.inl hP)]
   exact (Circuits.RL.synthesize m hR).isHurwitz
 
 @[powerlib_domain] theorem lcl_synthesis (m : Circuits.LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
-    m ∈ Circuits.LCL.family.den (.flow .contractive) := by
+    connection% (m ∈ Circuits.LCL.family.den (.flow .contractive)) := by
+  unfold powerlib.TMIO.Statement
   rw [Circuits.LCL.family_isLinear.den_hurwitz (Or.inr rfl)]
   exact (Circuits.LCL.synthesize m hp hd).isHurwitz
 
@@ -59,8 +65,10 @@ open powerlib LinearSystems
 
 -- Synthesis inside the kernel: only a rational matrix is submitted; acceptance is a requirement,
 -- and the chain carries it to the sentence.
-@[powerlib_domain] theorem rational_submission : !![(-1 : ℚ), 10; 0, -1] ∈
-    (Linear.Rational.family (n := 2)).den (.flow .globallyExponentiallyStable) := by
+@[powerlib_domain] theorem rational_submission :
+    connection% (!![(-1 : ℚ), 10; 0, -1] ∈
+    (Linear.Rational.family (n := 2)).den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
   rw [← Linear.Rational.exact_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
   refine Linear.Rational.realize_accepted ?_
   rw [TMIO.mem_realize]
@@ -72,13 +80,14 @@ open powerlib LinearSystems
 
 -- Multi-step goals close automatically from the reviewed rules.
 @[powerlib_domain] theorem lcl_automatic (m : Circuits.LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
-    m ∈ Circuits.LCL.family.den (.flow .globallyExponentiallyStable) := by
+    connection% (m ∈ Circuits.LCL.family.den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
   rw [Circuits.LCL.family_isLinear.mem_den_flow]
   aesop
 
 -- Passivity from stored energy, for every port-Hamiltonian plant.
 @[powerlib_domain] theorem portHamiltonian_passive {n p : ℕ} (H : Port.PortHamiltonian n p) :
-    H ∈ Port.PortHamiltonian.family.den .passive :=
+    connection% (H ∈ Port.PortHamiltonian.family.den .passive) :=
   H.mem_den_passive
 
 -- Interconnection: the impedance criterion is exact relative to component stability; port data
@@ -117,7 +126,8 @@ open powerlib LinearSystems
 #check powerlib.Nonlinear.Polynomial2.not_exact_asymptotic
 #check powerlib.Nonlinear.Polynomial2.not_exact_exponential
 #check powerlib.Nonlinear.Polynomial2.cascade_certificate_boundary
-@[powerlib_domain] theorem cubic_global (n : ℕ) : (⟨1, one_pos⟩ : Nonlinear.Cubic.Gain) ∈
-    (Nonlinear.Cubic.family (n := n)).den (.flow .globallyExponentiallyStable) := by
-  rw [Nonlinear.Cubic.family_isAutonomous.mem_den_flow]
-  exact Nonlinear.Cubic.globallyExponentiallyStable ⟨1, one_pos⟩
+@[powerlib_domain] theorem cubic_global (n : ℕ) :
+    connection% ((⟨1, one_pos⟩ : Nonlinear.Cubic.Gain) ∈
+    (Nonlinear.Cubic.family (n := n)).den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  exact Nonlinear.Cubic.mem_den_globallyExponentiallyStable ⟨1, one_pos⟩

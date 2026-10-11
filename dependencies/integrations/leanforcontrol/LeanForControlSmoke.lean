@@ -1,3 +1,4 @@
+import theorem.TMIO.ClaimElab
 import theorem.Architecture
 import theorem.Linear.Rational
 import theorem.LibrarySearch
@@ -74,8 +75,9 @@ run_cmd do
 @[powerlib_domain] theorem complete_rational_certification {n : ℕ}
     (A : Matrix (Fin n) (Fin n) ℚ)
     (h : LinearSystems.IsHurwitz (powerlib.Linear.Synthesis.real A)) :
-    A ∈ powerlib.TMIO.realize powerlib.Linear.Rational.Meets
-      {powerlib.Linear.Rational.Requirement.accepted} := by
+    connection% (A ∈ powerlib.TMIO.realize powerlib.Linear.Rational.Meets
+      {powerlib.Linear.Rational.Requirement.accepted}) := by
+  unfold powerlib.TMIO.Statement
   rw [powerlib.TMIO.mem_realize]
   intro q hq
   rw [Set.mem_singleton_iff] at hq

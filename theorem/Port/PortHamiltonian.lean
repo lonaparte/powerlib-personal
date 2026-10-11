@@ -1,3 +1,4 @@
+import theorem.TMIO.ClaimElab
 import theorem.Linear.Family
 
 /-! # Linear port-Hamiltonian plants
@@ -83,16 +84,17 @@ def family : Family (PortHamiltonian n p) Requirement n p :=
 
 /-- Stored energy places each submitted plant in the passivity denotation. -/
 @[powerlib_domain] theorem mem_den_passive (h : PortHamiltonian n p) :
-    h ∈ family.den .passive := family_isLinear.mem_den_passive h.kyp
+    connection% (h ∈ family.den .passive) := family_isLinear.mem_den_passive h.kyp
 
 /-- Positive stored energy places each submitted plant in the zero-input stability denotation. -/
 @[powerlib_domain] theorem mem_den_lyapunovStable (h : PortHamiltonian n p) :
-    h ∈ family.den (.flow .lyapunovStable) :=
+    connection% (h ∈ family.den (.flow .lyapunovStable)) :=
   family_isLinear.mem_den_flow.mpr (h.kyp.lyapunovStable_of_pos h.energy_pos)
 
 /-- The translation chain is sound for every sentence of a port-Hamiltonian plant. -/
 @[powerlib_domain] theorem chain_le_semantics :
-    ∀ P, (family (n := n) (p := p)).chain P ≤ family.semantics P := by
+    connection% (∀ P, (family (n := n) (p := p)).chain P ≤ family.semantics P) := by
+  unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s h hh => ?_
   rw [TMIO.mem_realize] at hh
   change ∀ q ∈ translate s, Meets h q at hh

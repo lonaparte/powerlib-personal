@@ -1,3 +1,4 @@
+import theorem.TMIO.ClaimElab
 import theorem.Linear.Rate
 import theorem.Linear.Family
 import theorem.Linear.Realization
@@ -468,7 +469,8 @@ def componentsStable : Set Requirement := {.sourceStable, .loadStable}
 
 /-- No interconnection satisfies the impedance criterion and violates it. -/
 @[powerlib_foundation] theorem realize_univ :
-    realize (Meets (n₁ := n₁) (n₂ := n₂) (p := p)) Set.univ = ∅ := by
+    connection% (realize (Meets (n₁ := n₁) (n₂ := n₂) (p := p)) Set.univ = ∅) := by
+  unfold powerlib.TMIO.Statement
   ext ic
   simp only [mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
   intro h
@@ -479,7 +481,8 @@ def componentsStable : Set Requirement := {.sourceStable, .loadStable}
 translation of the attractive sentences and sampled contraction of the closed loop. -/
 @[powerlib_domain] theorem exactUnder_hurwitz {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
-    (family (n₁ := n₁) (n₂ := n₂) (p := p)).ExactUnder componentsStable (.flow P) := by
+    connection% ((family (n₁ := n₁) (n₂ := n₂) (p := p)).ExactUnder componentsStable (.flow P)) := by
+  unfold powerlib.TMIO.Statement
   have ht : translate (.flow P) = {Requirement.impedanceStable} := by
     rcases hP with hP | rfl
     · cases P <;> first | rfl | exact absurd hP id
@@ -498,7 +501,8 @@ translation of the attractive sentences and sampled contraction of the closed lo
 
 /-- Full-state rate evidence is sound without a separate component-stability context. -/
 @[powerlib_domain] theorem sound_decay (a : ℝ) :
-    (family (n₁ := n₁) (n₂ := n₂) (p := p)).Sound (.flow (.decay a)) := by
+    connection% ((family (n₁ := n₁) (n₂ := n₂) (p := p)).Sound (.flow (.decay a))) := by
+  unfold powerlib.TMIO.Statement
   intro ic hic
   have h := (mem_realize _ _ _).mp hic (.rate a) rfl
   exact family_isLinear.mem_den_decay_of_rateMargin h
@@ -507,7 +511,8 @@ translation of the attractive sentences and sampled contraction of the closed lo
 criterion proves Lyapunov stability, the attractive sentences and sampled contraction, and a
 right-half-plane zero of the return difference proves instability. -/
 @[powerlib_domain] theorem soundUnder (s : Sentence) :
-    (family (n₁ := n₁) (n₂ := n₂) (p := p)).SoundUnder componentsStable s := by
+    connection% ((family (n₁ := n₁) (n₂ := n₂) (p := p)).SoundUnder componentsStable s) := by
+  unfold powerlib.TMIO.Statement
   intro ic hic
   have hmem : ∀ q ∈ translate s ∪ componentsStable, Meets ic q := (mem_realize _ _ _).mp hic
   have h₁ : IsHurwitz ic.source.A := hmem .sourceStable (by simp [componentsStable])
@@ -601,9 +606,10 @@ def quietLoop : Interconnection 1 1 1 := ⟨quietMode, testLoad, rfl⟩
 exponentially stable, yet its port data are not certified for that sentence, because the
 hidden-mode interconnection produces the same data. -/
 @[powerlib_domain] theorem portData_not_certified :
-    quietLoop ∈ family.den (.flow .globallyExponentiallyStable) ∧
+    connection% (quietLoop ∈ family.den (.flow .globallyExponentiallyStable) ∧
       quietLoop.portData ∉ certify (Function.graph (portData (n₁ := 1) (n₂ := 1) (p := 1)))
-        (family.den (.flow .globallyExponentiallyStable)) := by
+        (family.den (.flow .globallyExponentiallyStable))) := by
+  unfold powerlib.TMIO.Statement
   rw [family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
   refine ⟨quietLoop_stable, fun h => ?_⟩
   rw [mem_certify] at h
@@ -653,8 +659,9 @@ satisfies it. This is the exact complement of `portData_not_certified`, whose so
 mode. -/
 @[powerlib_domain] theorem portData_certified {ic : Interconnection n₁ n₂ p}
     (hm : ic.MinimalComponents) {P : Flow.Property} (hP : ic ∈ family.den (.flow P)) :
-    ic.portData ∈ certify (Function.graph fun ic : Observable n₁ n₂ p => ic.1.portData)
-      {ic | ic.1 ∈ family.den (.flow P)} := by
+    connection% (ic.portData ∈ certify (Function.graph fun ic : Observable n₁ n₂ p => ic.1.portData)
+      {ic | ic.1 ∈ family.den (.flow P)}) := by
+  unfold powerlib.TMIO.Statement
   rw [mem_certify]
   rintro ⟨ic', hm'⟩ hic
   have hdata : ic'.portData = ic.portData := hic
@@ -698,9 +705,10 @@ components are all internally stable, the denotation of global exponential stabi
 product of a set of sources and a set of loads. Requirements that each speak about one component
 realize products (`TMIO.realize_sum`), so none of them translates the sentence exactly. -/
 @[powerlib_domain] theorem closedLoop_not_separable :
-    ¬ ∃ (D C : Set ℝ), (fun dc : ℝ × ℝ => staticLoop dc.1 dc.2) ⁻¹'
+    connection% (¬ ∃ (D C : Set ℝ), (fun dc : ℝ × ℝ => staticLoop dc.1 dc.2) ⁻¹'
       (family (n₁ := 0) (n₂ := 1) (p := 1)).den (.flow .globallyExponentiallyStable) =
-        D ×ˢ C := by
+        D ×ˢ C) := by
+  unfold powerlib.TMIO.Statement
   rintro ⟨D, C, h⟩
   have hmem : ∀ d c : ℝ, (d, c) ∈ D ×ˢ C ↔ 0 < 1 + d * c := fun d c => by
     rw [← h, Set.mem_preimage,

@@ -1,3 +1,4 @@
+import theorem.TMIO.ClaimElab
 import powerlib
 import dependencies.tests.lean.RegistryFixture
 
@@ -11,7 +12,8 @@ def StableContract (m : Circuits.RL.Impedance) : Prop :=
     m ∈ Circuits.RL.family.den (.flow .globallyExponentiallyStable)
 
 @[powerlib_domain] theorem stable (m : Circuits.RL.Impedance) (c : Linear.Certificate m.plant.A) :
-    StableContract m := by
+    connection% (StableContract m) := by
+  unfold powerlib.TMIO.Statement
   unfold StableContract
   rw [Circuits.RL.family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
   exact ⟨c.isHurwitz, c.isHurwitz⟩
@@ -36,7 +38,10 @@ universe u
   powerlib_search
 
 @[powerlib_domain] theorem current_application (m : Circuits.RL.Impedance)
-    (c : Linear.Certificate m.plant.A) : StableContract m := by powerlib_search
+    (c : Linear.Certificate m.plant.A) :
+    connection% (StableContract m) := by
+  unfold powerlib.TMIO.Statement
+  powerlib_search
 
 end RegistryCurrent
 
@@ -51,7 +56,7 @@ run_cmd do
   let domains := powerlib.Registry.theoremNames env (some .domain)
   let foundations := powerlib.Registry.theoremNames env (some .foundation)
   unless names.size == domains.size + foundations.size do
-    throwError "The classified theorem partition is incomplete"
+    throwError "The classified theorem partition is incomplete: all {names.size}, domain {domains.size}, foundation {foundations.size}; missing {names.filter (fun n => !domains.contains n && !foundations.contains n)}; overlap {domains.filter foundations.contains}"
   unless names == names.qsort Name.quickLt && names.toList.eraseDups.length == names.size do
     throwError "The classified theorem registry is not unique and deterministic"
   unless domains.contains `RegistryCurrent.stable do
@@ -93,7 +98,9 @@ open powerlib LinearSystems
     Flow.GloballyExponentiallyStable (affineLinearVectorField A e) e := by powerlib_search
 
 @[powerlib_domain] theorem rl_faithful :
-    Circuits.RL.family.chain = Circuits.RL.family.semantics := by powerlib_search
+    connection% (Circuits.RL.family.chain = Circuits.RL.family.semantics) := by
+  unfold powerlib.TMIO.Statement
+  powerlib_search
 
 @[powerlib_foundation] theorem rl_sign (m : Circuits.RL.Impedance) :
     IsHurwitz m.plant.A ↔ 0 < m.resistance := by powerlib_search
@@ -112,9 +119,11 @@ open powerlib LinearSystems
     Flow.ForwardComplete f := by
   powerlib_search
 
-@[powerlib_foundation] theorem polynomial_global {model : Nonlinear.Polynomial2.Model}
+theorem polynomial_global {model : Nonlinear.Polynomial2.Model}
     (c : Nonlinear.Polynomial2.Certificate model) :
-    Flow.GloballyExponentiallyStable model.field 0 := by powerlib_search
+    connection% (model ∈ Nonlinear.Polynomial2.family.den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  powerlib_search
 
 -- Upstream declarations need no PowerLib attributes or names.
 @[powerlib_foundation] theorem exp_positive (x : ℝ) : 0 < Real.exp x := by powerlib_search
@@ -147,9 +156,12 @@ run_cmd do
       (`AutomaticReuse.decay_global, `powerlib.Flow.QuadraticDecay.globallyExponentiallyStable),
       (`AutomaticReuse.decay_complete, `powerlib.Flow.QuadraticDecay.forwardComplete),
       (`AutomaticReuse.polynomial_global,
-        `powerlib.Nonlinear.Polynomial2.Certificate.globallyExponentiallyStable),
+        `powerlib.Nonlinear.Polynomial2.Certificate.mem_den),
       (`AutomaticReuse.exp_positive, `Real.exp_pos),
       (`AutomaticReuse.concrete_relation, `AutomaticReuse.from_model_relation)] do
+    let names := powerlib.Registry.theoremNames env
+    let consumer := (names.find? (fun name => privateToUserName name == consumer)).getD consumer
+    let source := (names.find? (fun name => privateToUserName name == source)).getD source
     let info ← getConstInfo consumer
     let some proof := info.value? (allowOpaque := true) |
       throwError "Missing automatic proof: {consumer}"
@@ -173,14 +185,16 @@ open powerlib LinearSystems
   aesop
 
 @[powerlib_domain] theorem rl_resistance (m : Circuits.RL.Impedance) (h : 0 < m.resistance) :
-    m ∈ Circuits.RL.family.den (.flow .globallyExponentiallyStable) := by
+    connection% (m ∈ Circuits.RL.family.den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
   rw [Circuits.RL.family_isLinear.mem_den_flow]
   change Flow.GloballyExponentiallyStable (affineLinearVectorField m.plant.A 0) 0
   aesop
 
 @[powerlib_domain] theorem lcl_passive_damped (m : Circuits.LCL.Circuit) (hp : m.Passive)
     (hd : m.Damped) :
-    m ∈ Circuits.LCL.family.den (.flow .globallyAsymptoticallyStable) := by
+    connection% (m ∈ Circuits.LCL.family.den (.flow .globallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
   rw [Circuits.LCL.family_isLinear.mem_den_flow]
   change Flow.GloballyAsymptoticallyStable (affineLinearVectorField m.plant.A 0) 0
   aesop
@@ -188,16 +202,16 @@ open powerlib LinearSystems
 @[powerlib_domain] theorem interconnection_criterion {n₁ n₂ p : ℕ}
     (ic : Circuits.Interconnection n₁ n₂ p) (h₁ : IsHurwitz ic.source.A)
     (h₂ : IsHurwitz ic.load.A) (h : ic.ImpedanceStable) :
-    ic ∈ Circuits.Interconnection.family.den (.flow .globallyExponentiallyStable) := by
+    connection% (ic ∈ Circuits.Interconnection.family.den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
   rw [Circuits.Interconnection.family_isLinear.mem_den_flow]
   change Flow.GloballyExponentiallyStable (affineLinearVectorField ic.closedLoopA 0) 0
   aesop
 
 @[powerlib_domain] theorem polynomial_certificate {model : Nonlinear.Polynomial2.Model}
     (c : Nonlinear.Polynomial2.Certificate model) :
-    model ∈ Nonlinear.Polynomial2.family.den (.flow .globallyExponentiallyStable) := by
-  rw [Nonlinear.Polynomial2.family_isAutonomous.mem_den_flow]
-  change Flow.GloballyExponentiallyStable model.field 0
+    connection% (model ∈ Nonlinear.Polynomial2.family.den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
   aesop
 
 end AutomaticChaining
@@ -221,7 +235,10 @@ run_cmd do
         #[`powerlib.Circuits.Interconnection.isHurwitz_closedLoop_of_impedanceStable,
           `powerlib.Linear.globallyExponentiallyStable_of_isHurwitz]),
       (`AutomaticChaining.polynomial_certificate,
-        #[`powerlib.Nonlinear.Polynomial2.Certificate.globallyExponentiallyStable])] do
+        #[`powerlib.Nonlinear.Polynomial2.Certificate.mem_den])] do
+    let names := powerlib.Registry.theoremNames env
+    let sources := sources.map fun source =>
+      (names.find? (fun name => privateToUserName name == source)).getD source
     let info ← getConstInfo consumer
     let some proof := info.value? (allowOpaque := true) | throwError "Missing proof: {consumer}"
     -- Follow the auxiliary declarations simp creates for rewrite rules (`_simp_1`, ...).

@@ -26,7 +26,7 @@ variable {A B C : Type*} [CompleteLattice A] [CompleteLattice B] [CompleteLattic
   exact le_sInf (by rintro _ ⟨b, hb, rfl⟩; exact hb)
 
 /-- The generated lower adjoint of `u`: `a ↦ ⨅ {b | a ≤ u b}`. -/
-@[powerlib_connection] def generate (u : sInfHom B A) : LowerAdjoint u where
+def generate (u : sInfHom B A) : LowerAdjoint u where
   toFun a := sInf {b | a ≤ u b}
   gc' a _ := ⟨fun h => (le_map_sInf_setOf u a).trans (sInfHom_monotone u h),
     fun h => sInf_le h⟩
@@ -73,7 +73,7 @@ adjoints, in reverse order. -/
 
 /-- The closure operator `u ∘ generate u` on the source side (Mathlib's
 `LowerAdjoint.closureOperator`). -/
-@[powerlib_connection] def closure (u : sInfHom B A) : ClosureOperator A := (generate u).closureOperator
+def closure (u : sInfHom B A) : ClosureOperator A := (generate u).closureOperator
 
 @[simp, powerlib_foundation] theorem closure_apply (u : sInfHom B A) (a : A) :
     closure u a = u (generate u a) := rfl

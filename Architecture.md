@@ -35,19 +35,43 @@ Those gaps are addressed by the interfaces and checks below.
 
 ## Public admission
 
-`powerlib_connection` marks generated endpoint definitions within TMIO and
-Family. It does not mark `Family.Holds`. `Architecture.conclusionOnConnection`
-examines the conclusion after removing the parameter and hypothesis telescope,
-checks every conjunction or disjunction branch, and follows aliases.
-`Architecture.rejection` also follows behavioural predicates transitively until
-an admitted endpoint. A Family parameter, a connection hypothesis or an unrelated
-connection conjunct cannot make a raw engineering conclusion admissible.
+The first admission implementation used endpoint tags and domain classifications.
+Independent mutation tests showed three escapes: relabel a model-behaviour
+conclusion as foundation, omit the Architecture import in a new module, or mark
+a behavioural alias as an endpoint within TMIO. That implementation did not
+provide whole-package enforcement.
 
-A module linter checks classified domain consumers. The full build additionally
-checks every imported first-party domain theorem, including all library modules,
-without a theorem-name exemption list. Seven adversarial placement controls and
-sixteen single-semantics definition controls exercise rejection. The existing
-provenance and transitive axiom checks remain independent requirements.
+The new interface uses two closed, proposition-indexed inductive grammars:
+`TMIO.Endpoint` certifies values of real infimum-preserving maps or their uniquely
+generated adjoints; `TMIO.ConnectionClaim` certifies endpoint evaluation,
+comparison and boundary conclusions. Neither has an arbitrary-Prop constructor.
+`TMIO.Statement` carries this syntax certificate in the public proposition type.
+`connection% (P)` elaborates ordinary notation into the certificate. Both the
+certificate and the proof of P are checked by the kernel; the elaborator is
+untrusted. Statements unfold definitionally to P, preserving mathematical use.
+
+Endpoint tags are removed. Foundation/domain annotations are optional metadata;
+unannotated typed claims are automatically discovered. Whole-package admission
+also rejects public model-specific behavioural helpers outside Statement,
+regardless of labels. Model types are inferred from actual Family definitions,
+not a handwritten list. Generic mathematical support and private helpers remain
+implementation evidence. The semantic bypass checker independently checks that
+claim operands and hypothesis types do not directly state behaviour. At a
+certified endpoint it checks the input and structural maps while keeping the
+semantic map abstract. A raw behavioural set passed to an identity connection
+therefore fails admission even though that connection is mathematically valid.
+
+The default Lake target `powerlib` builds every module selected by all package
+library globs and generates an admission module importing that actual inventory.
+Consequently a new source cannot evade admission by omitting the linter import
+or the central library import. `lake build` and `lake build powerlib` include this
+gate. Direct Lean invocation or internal staging-library builds are not admission;
+changing the gate itself remains a build-policy change, not a mathematical claim.
+
+This is a structural public-interface contract. The gate infers concrete model
+domains from declared Family types, including transparent aliases. It does not
+decide whether an arbitrary generic mathematical proposition ought to be an
+engineering claim. Generic support remains available for implementation proofs.
 
 PortHamiltonian now has a Family interface for passivity and Lyapunov stability.
 `Similar.sentence_iff` includes port passivity, using pullback of storage through
@@ -101,7 +125,32 @@ proved separating models rather than an unsupported completeness claim.
 `lake build` checks the library, examples and admission/discovery/reuse/architecture
 tests. The independent LeanForControl profile checks direct imported theorem
 reuse and rejection of an actual upstream custom-axiom consequence. All four
-Agda modules are checked with Agda 2.8.0 and cubical 0.9. The completed main build checks 37 library domain declarations and 987 library
-declarations in the single-semantics audit, in addition to the consumer module
-linters. The admitted Lean axiom
-set is restricted to `propext`, `Classical.choice` and `Quot.sound`.
+Agda modules were checked with Agda 2.8.0 and cubical 0.9; their sources are
+unchanged by the typed-admission change. Dependency oleans were reused without
+building Mathlib from source.
+
+The completed main admission checks 56 built modules, 705 proof declarations and
+85 typed connection statements, including private rejection fixtures. The
+independent profile checks 31 modules, 347 proof declarations and 6 typed
+statements. The admitted Lean axiom set remains `propext`, `Classical.choice`
+and `Quot.sound`.
+
+`ConnectionAdmission.lean` supplies two positive claims, one unannotated and one
+misleadingly annotated foundation, and nine rejection controls. Real temporary
+source files also exercise the public `lake build` entry point; none is added to
+the central library import or imports Architecture. Every expected rejection
+was checked against the offending declaration, rather than merely a nonzero
+build exit code.
+
+| Actual build probe | Result |
+| --- | --- |
+| Unannotated raw model behaviour, without the linter import | Rejected |
+| Raw behaviour marked foundation | Rejected |
+| Behavioural alias or model type alias | Both rejected |
+| Raw proof-valued `def` | Rejected |
+| Raw behavioural hypothesis of a typed claim | Rejected |
+| A new model behind a Family type alias | Rejected |
+| Entire model telescope hidden in a proposition alias | Rejected |
+| Behavioural set hidden as an identity connection's input | Rejected |
+| Behavioural alias marked with the removed endpoint tag inside TMIO | Rejected at compilation |
+| Unannotated genuine connection claim without the linter import | Accepted and discovered |

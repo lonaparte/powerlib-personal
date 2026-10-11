@@ -36,7 +36,7 @@ def satRel (sat : X → Q → Prop) : SetRel Q X := {p | sat p.2 p.1}
 /-- The M—I edge: `Guarantees P = {q | ∀ x ∈ P, sat x q}`, from implementations ordered by
 reverse inclusion to requirement sets ordered by inclusion. It is the upper adjoint in Mathlib's
 `SetRel.gc_leftDual_rightDual`, hence preserves arbitrary infima. -/
-@[powerlib_connection] def satisfaction (sat : X → Q → Prop) : sInfHom (Set X)ᵒᵈ (Set Q) where
+def satisfaction (sat : X → Q → Prop) : sInfHom (Set X)ᵒᵈ (Set Q) where
   toFun := (satRel sat).rightDual ∘ ofDual
   map_sInf' s := by
     rw [sInf_image]
@@ -51,7 +51,7 @@ reverse inclusion to requirement sets ordered by inclusion. It is the upper adjo
   (generate_unique _ (satRel sat).gc_leftDual_rightDual).symm
 
 /-- The generated maximal legal implementation space of the requirements `Γ`. -/
-@[powerlib_connection] def realize (sat : X → Q → Prop) (Γ : Set Q) : Set X := ofDual (generate (satisfaction sat) Γ)
+def realize (sat : X → Q → Prop) (Γ : Set Q) : Set X := ofDual (generate (satisfaction sat) Γ)
 
 @[simp, powerlib_foundation] theorem mem_realize (sat : X → Q → Prop) (Γ : Set Q) (x : X) :
     x ∈ realize sat Γ ↔ ∀ q ∈ Γ, sat x q := by
@@ -100,7 +100,7 @@ section Function
 variable {D Y Z : Type*}
 
 /-- A deterministic map, such as a data analysis, as the edge `B ↦ f⁻¹ B`. -/
-@[powerlib_connection] def preimage (f : D → Y) : sInfHom (Set Y) (Set D) := (CompleteLatticeHom.setPreimage f).tosInfHom
+def preimage (f : D → Y) : sInfHom (Set Y) (Set D) := (CompleteLatticeHom.setPreimage f).tosInfHom
 
 @[simp, powerlib_foundation] theorem preimage_apply (f : D → Y) (B : Set Y) :
     preimage f B = f ⁻¹' B := rfl
@@ -118,7 +118,7 @@ variable {D Y Z : Type*}
   exact (Set.image_comp g f s).symm
 
 /-- The fibre-universal image `B ↦ {y | f⁻¹{y} ⊆ B}` (v0.3 §8). -/
-@[powerlib_connection] def kern (f : D → Y) : sInfHom (Set D) (Set Y) where
+def kern (f : D → Y) : sInfHom (Set D) (Set Y) where
   toFun := Set.kernImage f
   map_sInf' s := by
     rw [sInf_image]
@@ -160,7 +160,7 @@ def table (t : S → Set Q) : SetRel S Q := {p | p.2 ∈ t p.1}
 
 /-- A translation relation from theory sentences to requirements as the T—M edge:
 `Γ ↦ R.core Γ`, the sentences all of whose translations lie in `Γ`. -/
-@[powerlib_connection] def cover (R : SetRel S Q) : sInfHom (Set Q) (Set S) where
+def cover (R : SetRel S Q) : sInfHom (Set Q) (Set S) where
   toFun := R.core
   map_sInf' s := by
     rw [sInf_image]
@@ -173,7 +173,7 @@ translations. -/
   (generate_unique _ (gc_image_core R)).symm
 
 /-- Certification: the readings all of whose possible sources lie in `P`. -/
-@[powerlib_connection] def certify (R : SetRel X V) (P : Set X) : Set V := R.inv.core P
+def certify (R : SetRel X V) (P : Set X) : Set V := R.inv.core P
 
 @[simp, powerlib_foundation] theorem mem_certify (R : SetRel X V) (P : Set X) (v : V) :
     v ∈ certify R P ↔ ∀ x, (x, v) ∈ R → x ∈ P :=
@@ -186,7 +186,7 @@ translations. -/
 
 /-- Relational observation in the requirement family: `B ↦ R.preimage B`, the implementations
 that may produce some reading in `B`, between reverse-inclusion orders. -/
-@[powerlib_connection] def possibly (R : SetRel X V) : sInfHom (Set V)ᵒᵈ (Set X)ᵒᵈ where
+def possibly (R : SetRel X V) : sInfHom (Set V)ᵒᵈ (Set X)ᵒᵈ where
   toFun := toDual ∘ R.preimage ∘ ofDual
   map_sInf' s := by
     rw [sInf_image]
@@ -201,7 +201,7 @@ that may produce some reading in `B`, between reverse-inclusion orders. -/
   (generate_unique _ (gc_certify R)).symm
 
 /-- Possible observations, derived from certification by complement. -/
-@[powerlib_connection] def predict (R : SetRel X V) (P : Set X) : Set V := (certify R Pᶜ)ᶜ
+def predict (R : SetRel X V) (P : Set X) : Set V := (certify R Pᶜ)ᶜ
 
 /-- The implementations all of whose possible readings lie in `B`. -/
 def allPre (R : SetRel X V) (B : Set V) : Set X := (R.preimage Bᶜ)ᶜ

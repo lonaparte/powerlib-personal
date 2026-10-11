@@ -1,3 +1,4 @@
+import theorem.TMIO.ClaimElab
 import theorem.Family.Basic
 import theorem.Flow.Certificate
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -77,13 +78,13 @@ def certificate (α : Gain) : Flow.QuadraticDecay (field (n := n) α.1) energy 0
     nlinarith [sq_nonneg (‖x‖ ^ 2)]
 
 /-- Every model is globally exponentially stable, with a solution through every state. -/
-@[powerlib_foundation] theorem globallyExponentiallyStable (α : Gain) :
+@[powerlib_foundation] private theorem globallyExponentiallyStable (α : Gain) :
     Flow.GloballyExponentiallyStable (field (n := n) α.1) 0 :=
   (certificate α).globallyExponentiallyStable (field_smooth _)
 
 /-- The energy never increases, so along a solution segment it decays no faster than at the rate
 `2 (α + r₀)`, with `r₀` the initial energy. -/
-@[powerlib_foundation] theorem energy_lower (α : Gain) {φ : ℝ → ℝⁿ} {a b t : ℝ}
+@[powerlib_foundation] private theorem energy_lower (α : Gain) {φ : ℝ → ℝⁿ} {a b t : ℝ}
     (hφ : IsTrajectoryOn φ (field α.1) a b) (ht : t ∈ Icc a b) :
     Real.exp (-(2 * (α.1 + ‖φ a‖ ^ 2) * (t - a))) * ‖φ a‖ ^ 2 ≤ ‖φ t‖ ^ 2 := by
   have hdec : ∀ s ∈ Icc a b, ‖φ s‖ ^ 2 ≤ ‖φ a‖ ^ 2 := fun s hs => by
@@ -129,8 +130,15 @@ def family : Family Gain Requirement n 0 :=
 @[powerlib_foundation] theorem family_isAutonomous :
     (family (n := n)).IsAutonomous fun α => field α.1 := fun _ => rfl
 
+theorem mem_den_globallyExponentiallyStable (α : Gain) :
+    connection% (α ∈ (family (n := n)).den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  exact family_isAutonomous.mem_den_flow.mpr (globallyExponentiallyStable α)
+
 /-- No gain bounds every decay rate. -/
-@[powerlib_foundation] theorem realize_univ : realize Meets Set.univ = ∅ := by
+@[powerlib_foundation] theorem realize_univ :
+    connection% (realize Meets Set.univ = ∅) := by
+  unfold powerlib.TMIO.Statement
   ext α
   simp only [mem_realize, mem_univ, true_implies, mem_empty_iff_false, iff_false, not_forall]
   exact ⟨.decayRateAtLeast (α.1 + 1), by simp [Meets]⟩
@@ -140,7 +148,8 @@ semantics connection. Every model satisfies the stability sentences, sampled con
 passivity; none is unstable or conservative; and a model decays at the rate `a` exactly when
 `a ≤ α`, since small solutions decay no faster than at the rate `α + ‖x₀‖²`. -/
 @[powerlib_domain] theorem chain_eq_semantics (hn : 0 < n) :
-    (family (n := n)).chain = (family (n := n)).semantics := by
+    connection% ((family (n := n)).chain = (family (n := n)).semantics) := by
+  unfold powerlib.TMIO.Statement
   have hges := globallyExponentiallyStable (n := n)
   have hall : ∀ {P : Flow.Property}, (∀ α : Gain, P.holds (field (n := n) α.1) 0) →
       (family (n := n)).den (.flow P) = univ := fun h => by

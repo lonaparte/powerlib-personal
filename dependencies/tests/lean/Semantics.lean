@@ -1,3 +1,4 @@
+import theorem.TMIO.ClaimElab
 import powerlib
 import theorem.Architecture
 
@@ -254,14 +255,16 @@ def boundaryFamily : Family Unit Unit 1 0 :=
 
 -- The linearization is Hurwitz: the origin is locally exponentially stable.
 @[powerlib_domain] theorem locallyExponentiallyStable :
-    () ∈ boundaryFamily.den (.flow .locallyExponentiallyStable) := by
+    connection% (() ∈ boundaryFamily.den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
   rw [boundaryFamily_isAutonomous.mem_den_flow]
   exact hurwitz_linearization_locally_exponentially_stable !![-1] field_contDiff (by simp [field])
     fderiv_field_zero ((Linear.isHurwitz_one_iff (-1)).mpr (by norm_num))
 
 -- The complete field has a nonzero constant solution, so global exponential stability is false.
 @[powerlib_domain] theorem not_globallyExponentiallyStable :
-    () ∉ boundaryFamily.den (.flow .globallyExponentiallyStable) := by
+    connection% (() ∉ boundaryFamily.den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
   rw [boundaryFamily_isAutonomous.mem_den_flow]
   rintro ⟨-, -, C, a, hC, ha, hb⟩
   have hC1 : 0 < C + 1 := by linarith
@@ -296,9 +299,11 @@ def boundaryFamily : Family Unit Unit 1 0 :=
 
 -- Global denotation includes existence through every state and convergence of every solution.
 @[powerlib_domain] theorem cubic_global (n : ℕ) (α : Nonlinear.Cubic.Gain) :
-    α ∈ (Nonlinear.Cubic.family (n := n)).den (.flow .globallyAsymptoticallyStable) := by
+    connection% (α ∈ (Nonlinear.Cubic.family (n := n)).den (.flow .globallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
   rw [Nonlinear.Cubic.family_isAutonomous.mem_den_flow]
-  exact (Nonlinear.Cubic.globallyExponentiallyStable α).globallyAsymptoticallyStable
+  exact (Nonlinear.Cubic.family_isAutonomous.mem_den_flow.mp
+    (Nonlinear.Cubic.mem_den_globallyExponentiallyStable α)).globallyAsymptoticallyStable
 
 -- The observation boundary: equal transfer functions with opposite stability, and the hidden
 -- mode is exactly what minimality excludes.

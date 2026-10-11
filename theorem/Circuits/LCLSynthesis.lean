@@ -1,3 +1,4 @@
+import theorem.TMIO.ClaimElab
 import theorem.Circuits.LCL
 import theorem.Linear.Synthesis
 
@@ -375,8 +376,9 @@ def rationalFamily : Family RationalCircuit (Requirement ⊕ Synthesis) 3 2 :=
 /-- Acceptance by the synthesizer entails pole stability: the accepted certificate proves the
 plant Hurwitz. -/
 @[powerlib_domain] theorem realize_accepted :
-    realize rationalFamily.meets {.inr .accepted} ⊆
-      realize rationalFamily.meets {.inl .poleStable} := by
+    connection% (realize rationalFamily.meets {.inr .accepted} ⊆
+      realize rationalFamily.meets {.inl .poleStable}) := by
+  unfold powerlib.TMIO.Statement
   intro r hr
   simp only [mem_realize, Set.mem_singleton_iff, forall_eq] at hr ⊢
   change Linear.Synthesis.accepts r.matrix = true at hr

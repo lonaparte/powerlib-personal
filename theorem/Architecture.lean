@@ -1,14 +1,15 @@
 import theorem.Family.Basic
 import theorem.LibrarySearch
+import theorem.TMIO.ClaimElab
 
-/-! Architectural admission at every first-party module boundary. Behavioural predicates are
-followed transitively until an explicitly marked generated connection endpoint is reached. -/
+/-! Whole-package admission, with earlier feedback at module boundaries. Behavioural
+predicates are followed transitively until a structurally certified connection endpoint. -/
 
 open Lean Meta Elab Command
 
 namespace SemanticAudit
 
-/-- The declared semantic layer: the only input of the audit. -/
+/-- The declared semantic definitions, from which signal spaces are inferred. -/
 def semanticLayer : Array Name := #[`theorem.Flow.Defs, `theorem.Port.Defs]
 
 def moduleOf? (env : Environment) (c : Name) : Option Name :=
@@ -28,6 +29,8 @@ structure Ctx where
   signals : IO.Ref (Std.HashMap Expr Bool)
   contains : IO.Ref (Std.HashMap Expr Bool)
   behaviour : IO.Ref (Std.HashMap Name Bool)
+  /-- Actual first-party modules selected by the admission build. -/
+  owners : Array Name := #[]
 
 /-- Time up to unfolding, or a structure whose only data is a time value: a subtype of time or a
 wrapper around it. -/
@@ -128,6 +131,8 @@ def carriesSignal (ctx : Ctx) (ty : Expr) : MetaM Bool := do
   carriesSignalAux ctx (← instantiateMVars ty) #[]
 
 structure Rules where
+  /-- At a certified endpoint, inspect its inputs while keeping its semantic map abstract. -/
+  boundary : Expr → MetaM (Option (Array Expr)) := fun _ => pure none
   /-- A binder inside a proposition; `quantifier` when it is quantified by a notion. -/
   binder : Expr → Bool → MetaM (Option String)
   /-- A value inside a proposition, with its type. -/
@@ -135,7 +140,8 @@ structure Rules where
   /-- Any constant occurrence. -/
   const : Name → MetaM (Option String)
 
-instance : Inhabited Rules := ⟨⟨fun _ _ => pure none, fun _ _ => pure none, fun _ => pure none⟩⟩
+instance : Inhabited Rules := ⟨⟨fun _ => pure none, fun _ _ => pure none,
+  fun _ _ => pure none, fun _ => pure none⟩⟩
 
 def isEliminator (env : Environment) (c : Name) : Bool :=
   isAuxRecursor env c || isRecCore env c || isCasesOnLike env c || isMatcherCore env c
@@ -149,6 +155,10 @@ partial def visit (R : Rules) (e : Expr) (inProp notional top : Bool) : MetaM (O
   | .mdata _ b => return ← visit R b inProp notional top
   | _ => pure ()
   if ← isProof e then return none
+  if let some inputs ← R.boundary e then
+    for input in inputs do
+      if let some reason ← visit R input inProp notional false then return some reason
+    return none
   let ty ← inferType e
   if ← isTypeFamily ty then return none
   let isPropE ← isProp e
@@ -243,6 +253,13 @@ partial def behavioural (ctx : Ctx) (c : Name) : MetaM Bool := do
   return r
 
 partial def classify (ctx : Ctx) : Rules where
+  boundary e := do
+    if ← isProp e then return none
+    let ty ← inferType e
+    if ty.getAppFn.isConstOf ``sInfHom then return some #[]
+    unless ty.getAppFn.isConstOf ``Set || ty.getAppFn.isConstOf ``OrderDual do return none
+    let some proof ← powerlib.TMIO.ClaimElab.endpoint? e | return none
+    powerlib.TMIO.ClaimElab.endpointInputs? proof
   binder d _ := do
     if ← carriesSignal ctx d then return some s!"binds a signal of type {← ppExpr d}"
     return none
@@ -250,8 +267,16 @@ partial def classify (ctx : Ctx) : Rules where
     if ← carriesSignal ctx ty then return some s!"contains the signal {← ppExpr e}"
     return none
   const c := do
-    let env ← getEnv
-    if powerlib.Registry.connectionEndpoints.hasTag env c then return none
+    let info ← getConstInfo c
+    -- Maps carry preservation proofs in their types. Set-valued aliases must reduce
+    -- to the closed Endpoint grammar, irrespective of their name or source module.
+    if ← forallTelescopeReducing info.type fun _ body =>
+        pure (body.getAppFn.isConstOf ``sInfHom) then return none
+    if let .defnInfo d := info then
+      if ← lambdaTelescope d.value fun _ body => do
+          let ty ← inferType body
+          unless ty.getAppFn.isConstOf ``Set || ty.getAppFn.isConstOf ``OrderDual do return false
+          return (← powerlib.TMIO.ClaimElab.endpoint? body).isSome then return none
     if ← behavioural ctx c then return some s!"refers to {c}"
     return none
 end
@@ -340,46 +365,46 @@ namespace powerlib.Architecture
 
 open Lean Meta Elab Command SemanticAudit
 
-/-- Check the conclusion, excluding the parameter and hypothesis telescope. Every branch of a
-logical combination must itself be on a connection; an unrelated conjunct cannot launder a raw
-behavioural conclusion. -/
-partial def conclusionOnConnection (e : Expr) : MetaM Bool := do
-  match e with
-  | .forallE name ty body bi =>
-    withLocalDecl name bi ty fun x => conclusionOnConnection (body.instantiate1 x)
-  | _ =>
-    let args := e.getAppArgs
-    if e.getAppFn.isConstOf ``And || e.getAppFn.isConstOf ``Or then
-      return (← conclusionOnConnection args[0]!) && (← conclusionOnConnection args[1]!)
-    if e.getAppFn.isConstOf ``Not then return ← conclusionOnConnection args[0]!
-    if e.getAppFn.isConstOf ``Exists then
-      return ← lambdaTelescope args[1]! fun _ body => conclusionOnConnection body
-    let env ← getEnv
-    let head := e.getAppFn
-    if let .const name _ := head then
-      if Registry.connectionEndpoints.hasTag env name then return true
-      -- Endpoint occurrences count only in logical relation operands, never inside an
-      -- arbitrary model predicate's data arguments.
-      if #[``Eq, ``Iff, ``LE.le, ``LT.lt, ``Membership.mem, ``Set.Subset].contains name &&
-          e.getUsedConstants.any (Registry.connectionEndpoints.hasTag env) then return true
-    if let some unfolded ← unfoldDefinition? e then
-      if unfolded != e then return ← conclusionOnConnection unfolded
-    return false
+/-- Ordinary notation must compile to the kernel-checked closed grammar. -/
+def conclusionOnConnection (e : Expr) : MetaM Bool := do
+  try
+    discard <| TMIO.ClaimElab.encode e
+    return true
+  catch _ => return false
 
-def context : MetaM Ctx := do
+/-- Published claims carry the certificate in their type, independently of attributes. -/
+partial def statement? (e : Expr) (fuel : Nat := 24) : MetaM (Option Expr) := do
+  if fuel == 0 then return none
+  if e.getAppFn.isConstOf ``TMIO.Statement then return some e.getAppArgs[0]!
+  if let .forallE name ty body bi := e then
+    return ← withLocalDecl name bi ty fun x => statement? (body.instantiate1 x) (fuel - 1)
+  if let some unfolded ← unfoldDefinition? e then
+    if unfolded != e then return ← statement? unfolded (fuel - 1)
+  return none
+
+def context (owners : Array Name := #[]) : MetaM Ctx := do
   let (times, spaces) ← readSemantics
   let #[time] := times | throwError "Expected one semantic time axis: {times}"
   let signals ← IO.mkRef {}
   let contains ← IO.mkRef {}
   let behaviour ← IO.mkRef {}
-  return ⟨time, spaces, signals, contains, behaviour⟩
+  return {time, spaces, signals, contains, behaviour, owners}
 
 /-- A public domain contract is a connection conclusion with no direct or aliased behaviour.
 This function is also used on intentionally rejected foundation fixtures. -/
 def rejection (ctx : Ctx) (type : Expr) : MetaM (Option String) := do
   unless ← conclusionOnConnection type do
     return some "the conclusion is not a generated connection endpoint"
-  visit (classify ctx) type true false false
+  -- Unwrap Statement so an unrelated behavioural expression on the other side of
+  -- an equality cannot be hidden in its implicit proposition index.
+  forallTelescope type fun xs body => do
+    for x in xs do
+      let ty ← inferType x
+      if let some reason ← (classify ctx).binder ty false then return some reason
+      let ty := (← statement? ty).getD ty
+      if let some reason ← visit (classify ctx) ty true false false then return some reason
+    let body := (← statement? body).getD body
+    visit (classify ctx) body true false false
 
 def audit (names : Array Name) : CommandElabM Unit := do
   liftTermElabM do
@@ -388,15 +413,156 @@ def audit (names : Array Name) : CommandElabM Unit := do
       if let some reason ← rejection ctx (← getConstInfo name).type then
         throwError "Domain theorem {name} violates connection admission: {reason}"
 
-/-- All named domain consumers are checked when their own module finishes, including tests,
-examples and standalone integration sources. There is no theorem-name exemption list. -/
+/-- Model types are inferred from the system-domain parameter of actual Family definitions.
+This is a semantic ownership boundary, not a list of model or theorem names. -/
+private partial def unfoldModelAlias (e : Expr) (owners : Array Name := #[])
+    (seen : Array Expr := #[]) : MetaM Expr := do
+  if seen.contains e then throwError "Cyclic model type alias during admission"
+  if let .const c _ := e.getAppFn then
+    let env ← getEnv
+    let owner := (moduleOf? env c).getD env.mainModule
+    if Registry.isFirstPartyModule owner || owners.contains owner then
+      if let some (.defnInfo _) := (← getEnv).find? c then
+        if let some unfolded ← unfoldDefinition? e then
+          if unfolded != e then return ← unfoldModelAlias unfolded owners (seen.push e)
+  return e
+
+def modelTypes (owners : Array Name := #[]) : MetaM (Array (Nat × Expr)) := do
+  let env ← getEnv
+  let mut out : Array (Nat × Expr) := #[]
+  for i in [:env.header.moduleNames.size] do
+    unless if owners.isEmpty then Registry.isFirstPartyModule env.header.moduleNames[i]!
+      else owners.contains env.header.moduleNames[i]! do continue
+    for name in env.header.moduleData[i]!.constNames do
+      let some info := env.find? name | continue
+      if info matches .defnInfo _ | .opaqueInfo _ then
+        if ← isProp info.type then continue
+        let resultHead := info.type.getForallBody.getAppFn
+        let isAlias := if let .const c _ := resultHead then
+            match env.find? c with
+            | some (.defnInfo _) =>
+              let owner := (moduleOf? env c).getD env.mainModule
+              Registry.isFirstPartyModule owner || owners.contains owner
+            | _ => false
+          else false
+        unless info.type.getUsedConstants.contains ``Family || isAlias do continue
+        let found ← forallTelescopeReducing info.type fun _ body => do
+          let body ← whnf body
+          unless body.getAppFn.isConstOf ``Family do return none
+          let model := body.getAppArgs[0]!
+          if model.isFVar then return none
+          let model ← unfoldModelAlias model owners
+          return some (← pattern model)
+        if let some found := found then
+          unless out.contains found do out := out.push found
+  return out
+
+private partial def usesModel (models : Array (Nat × Expr)) (e : Expr)
+    (owners : Array Name) (expanded : Array Name := #[]) : MetaM Bool := do
+  let ty ← unfoldModelAlias (← inferType e) owners
+  let value ← if (← isTypeFamily (← inferType e)) then unfoldModelAlias e owners else pure e
+  for (holes, model) in models do
+    let head := model.getForallBody.getAppFn
+    if ty.getAppFn == head && (← withNewMCtxDepth do
+        let (_, _, model) ← forallMetaBoundedTelescope model holes
+        isDefEq model ty) then return true
+    -- Binder types themselves are type-valued terms.
+    if value.getAppFn == head && (← withNewMCtxDepth do
+        let (_, _, model) ← forallMetaBoundedTelescope model holes
+        isDefEq model value) then return true
+  let found ← match e with
+  | .forallE n d b bi =>
+    if ← usesModel models d owners expanded then pure true
+    else withLocalDecl n bi d fun x => usesModel models (b.instantiate1 x) owners expanded
+  | .lam n d b bi =>
+    -- Match thunks introduce unused Unit binders; these are implementation data,
+    -- not quantified models. Used model parameters are found in the lambda body.
+    withLocalDecl n bi d fun x => usesModel models (b.instantiate1 x) owners expanded
+  | .app f x => usesModel models f owners expanded <||> usesModel models x owners expanded
+  | .mdata _ b => usesModel models b owners expanded
+  | .proj _ _ s => usesModel models s owners expanded
+  | .letE n t v b _ =>
+    if ← usesModel models t owners expanded <||> usesModel models v owners expanded then pure true
+    else withLetDecl n t v fun x => usesModel models (b.instantiate1 x) owners expanded
+  | _ => pure false
+  if found then return true
+  -- A proposition alias can hide the complete model telescope, not just its conclusion.
+  -- Expand fully applied propositions, not each partial application of a predicate.
+  unless ← isProp e do return false
+  let .const c _ := e.getAppFn | return false
+  if expanded.contains c then return false
+  let env ← getEnv
+  let owner := (moduleOf? env c).getD env.mainModule
+  unless Registry.isFirstPartyModule owner || owners.contains owner do return false
+  let some (.defnInfo d) := env.find? c | return false
+  unless ← isPredicateType d.type do return false
+  let some unfolded ← unfoldDefinition? e | return false
+  if unfolded == e then return false
+  usesModel models unfolded owners (expanded.push c)
+
+/-- Private proof helpers and generic semantic support are implementation evidence.
+Every public, model-specific behavioural conclusion must use Statement; its label is irrelevant.
+Static mathematics is checked normally and does not need a classification annotation. -/
+def publicTypeRejection (ctx : Ctx) (models : Array (Nat × Expr)) (type : Expr) : MetaM (Option String) := do
+  if (← statement? type).isSome then return ← rejection ctx type
+  if ← usesModel models type ctx.owners then
+    if let some reason ← visit (classify ctx) type true false false then
+      return some s!"public model behaviour requires a typed connection Statement ({reason})"
+    -- A connection-shaped model result carries its certificate, even if tagged foundation.
+    if ← conclusionOnConnection type then
+      return some "public connection conclusion requires a typed connection Statement"
+  return none
+
+def declarationRejection (ctx : Ctx) (models : Array (Nat × Expr)) (name : Name) : MetaM (Option String) := do
+  let info ← getConstInfo name
+  unless ← isProp info.type do return none
+  if isPrivateName name then return none
+  if (← statement? info.type).isNone && Registry.kindOf? (← getEnv) name == some .domain then
+    return some "domain publication requires a typed connection Statement"
+  publicTypeRejection ctx models info.type
+
+/-- Whole-package admission uses the actual Lake module inventory, supplied by the build.
+It neither trusts source imports of the linter nor the classification registry. -/
+def auditModules (modules : Array Name) : CommandElabM Unit := do
+  liftTermElabM do
+    let ctx ← context modules
+    let models ← modelTypes modules
+    let env ← getEnv
+    let mut checked : Nat := 0
+    let mut claims : Nat := 0
+    let mut rejected : Array String := #[]
+    for mod in modules do
+      let some index := env.header.moduleNames.idxOf? mod |
+        throwError "Built module missing from admission environment: {mod}"
+      for name in env.header.moduleData[index]!.constNames do
+        let some info := env.find? name | continue
+        -- Source declarations, including proof-valued definitions, are discovered from
+        -- provenance. Compiler auxiliaries have no authored declaration range.
+        unless (declRangeExt.find? env name).isSome do continue
+        for ax in Search.declarationAxioms env name do
+          unless Search.allowedAxiom ax do throwError "Admission rejected axiom {ax} in {name}"
+        unless ← isProp info.type do continue
+        checked := checked + 1
+        if (← withCurrHeartbeats (statement? info.type)).isSome then claims := claims + 1
+        if let some reason ← withCurrHeartbeats (declarationRejection ctx models name) then
+          rejected := rejected.push s!"{name} in {mod}: {reason}"
+    unless rejected.isEmpty do
+      throwError "Admission rejected:\n{String.intercalate "\n" rejected.toList}"
+    logInfo m!"POWERLIB_ADMISSION_OK: {modules.size} built modules; {checked} proofs; {claims} typed connection statements"
+
+/-- Earlier feedback for published connection statements. The complete module inventory
+is checked separately by the mandatory build target. -/
 def moduleLinter : ModuleLinter where
   run commands := do
     let env ← getEnv
     unless Registry.isFirstPartyModule env.mainModule ||
         Registry.isIntegrationSource (← getFileName) do return
     let names ← Registry.authoredTheorems commands
-    audit (names.filter fun name => Registry.kindOf? env name == some .domain)
+    -- Fast feedback for explicitly published statements. Mandatory complete coverage
+    -- is provided by auditModules after Lake builds every discovered source module.
+    let published ← liftTermElabM <| names.filterM fun name =>
+      return !isPrivateName name && (← statement? (← getConstInfo name).type).isSome
+    audit published
 
 initialize addModuleLinter moduleLinter
 

@@ -1,3 +1,4 @@
+import theorem.TMIO.ClaimElab
 import theorem.Circuits.RL
 import theorem.Data.Analysis
 
@@ -40,8 +41,9 @@ def seed (ε : ℝ) : Seed (Set Sentence) (Set Requirement) (Set Impedance)ᵒ�
 /-- A reading certifies a set of models exactly when its accuracy interval lies in the
 resistances all of whose models belong to the set. -/
 @[powerlib_foundation] theorem certify_reading (ε : ℝ) (D : Set Impedance) :
-    certify (reading ε) D =
-      {r | Set.Icc (r - ε) (r + ε) ⊆ Set.kernImage Impedance.resistance D} := by
+    connection% (certify (reading ε) D =
+      {r | Set.Icc (r - ε) (r + ε) ⊆ Set.kernImage Impedance.resistance D}) := by
+  unfold powerlib.TMIO.Statement
   ext r
   simp only [mem_certify, Set.mem_ofPred_eq]
   constructor
@@ -57,8 +59,9 @@ resistances all of whose models belong to the set. -/
 /-- The possible readings of a set of models, derived from certification by complement: those
 within the accuracy of some model's resistance. -/
 @[powerlib_foundation] theorem predict_reading (ε : ℝ) (D : Set Impedance) :
-    predict (reading ε) D =
-      {r | (Set.Icc (r - ε) (r + ε) ∩ Impedance.resistance '' D).Nonempty} := by
+    connection% (predict (reading ε) D =
+      {r | (Set.Icc (r - ε) (r + ε) ∩ Impedance.resistance '' D).Nonempty}) := by
+  unfold powerlib.TMIO.Statement
   rw [predict_eq_image]
   ext r
   simp only [SetRel.mem_image, Set.mem_ofPred_eq]
@@ -144,7 +147,8 @@ def window : Sentence → Set ℝ
 certified when its whole accuracy interval lies in the sentence's window. A positive decay rate
 has an empty window and is never certified. -/
 @[powerlib_domain] theorem certified_readings (ε : ℝ) (s : Sentence) :
-    ofDual (generate (seed ε).uTO {s}) = {r | Set.Icc (r - ε) (r + ε) ⊆ window s} := by
+    connection% (ofDual (generate (seed ε).uTO {s}) = {r | Set.Icc (r - ε) (r + ε) ⊆ window s}) := by
+  unfold powerlib.TMIO.Statement
   rw [seed, family.certified (reading ε) (Family.chain_eq_semantics_iff.mp chain_eq_semantics s),
     certify_reading, kernImage_den]
 
@@ -152,7 +156,8 @@ has an empty window and is never certified. -/
 
 /-- The candidates of a reading are the semantic map itself. -/
 @[powerlib_foundation] theorem candidates (ε r : ℝ) :
-    ofDual ((seed ε).u₃ (toDual {r})) = {m : Impedance | |r - m.resistance| ≤ ε} := by
+    connection% (ofDual ((seed ε).u₃ (toDual {r})) = {m : Impedance | |r - m.resistance| ≤ ε}) := by
+  unfold powerlib.TMIO.Statement
   ext m
   simp [seed, Family.seed, relationalSeed, reading]
 
@@ -160,7 +165,8 @@ has an empty window and is never certified. -/
 and with it the decay rate, is not identifiable from DC readings. -/
 @[powerlib_domain] theorem closure_resistance (ε : ℝ) (P : (Set Impedance)ᵒᵈ)
     {m m' : Impedance} (h : m.resistance = m'.resistance) :
-    m ∈ ofDual (closure (seed ε).u₃ P) ↔ m' ∈ ofDual (closure (seed ε).u₃ P) := by
+    connection% (m ∈ ofDual (closure (seed ε).u₃ P) ↔ m' ∈ ofDual (closure (seed ε).u₃ P)) := by
+  unfold powerlib.TMIO.Statement
   change m ∈ ofDual (possibly (reading ε) (generate (possibly (reading ε)) P)) ↔
     m' ∈ ofDual (possibly (reading ε) (generate (possibly (reading ε)) P))
   simp only [mem_possibly, reading, Set.mem_ofPred_eq, h]
@@ -175,8 +181,9 @@ def recordEdge : sInfHom (Set (Record ℝ))ᵒᵈ (Set ℝ)ᵒᵈ :=
 /-- The certified records of any sentences: the chain extended by the analysis edge, generated
 as a composite, certifies a record exactly when it certifies the record's estimate. -/
 @[powerlib_foundation] theorem certified_records (ε : ℝ) (Φ : Set Sentence) :
-    ofDual (generate ((seed ε).uTO.comp recordEdge) Φ) =
-      estimate ⁻¹' ofDual (generate (seed ε).uTO Φ) := by
+    connection% (ofDual (generate ((seed ε).uTO.comp recordEdge) Φ) =
+      estimate ⁻¹' ofDual (generate (seed ε).uTO Φ)) := by
+  unfold powerlib.TMIO.Statement
   rw [generate_comp, Function.comp_apply, recordEdge, generate_possibly_apply]
   ext d
   rw [mem_certify]
@@ -192,7 +199,8 @@ def dcTest : Record ℝ := [⟨2, 1⟩, ⟨4, 2⟩]
 analysis, for every attractive sentence and for sampled contraction. -/
 @[powerlib_domain] theorem dcTest_certified {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
-    dcTest ∈ ofDual (generate ((seed (1 / 2)).uTO.comp recordEdge) {.flow P}) := by
+    connection% (dcTest ∈ ofDual (generate ((seed (1 / 2)).uTO.comp recordEdge) {.flow P})) := by
+  unfold powerlib.TMIO.Statement
   have hw : window (.flow P) = Set.Ioi 0 := by
     rcases hP with hP | rfl
     · cases P <;> first | rfl | exact absurd hP id

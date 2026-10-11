@@ -1,3 +1,4 @@
+import theorem.TMIO.ClaimElab
 import powerlib
 
 open powerlib powerlib.TMIO OrderDual
@@ -157,14 +158,14 @@ open powerlib LinearSystems
     IsHurwitz !![(-1 : ℝ)] := offConnection
 
 -- Holds is a semantic alias, not a generated endpoint, even though it belongs to Family.
-@[powerlib_foundation] theorem directHolds (m : Circuits.RL.Impedance)
+@[powerlib_foundation] private theorem directHolds (m : Circuits.RL.Impedance)
     (h : Circuits.RL.family.Holds m (.flow .lyapunovStable)) :
     Circuits.RL.family.Holds m (.flow .lyapunovStable) := h
 
 def hiddenHolds (m : Circuits.RL.Impedance) : Prop :=
   Circuits.RL.family.Holds m (.flow .lyapunovStable)
 
-@[powerlib_foundation] theorem transitiveHolds (m : Circuits.RL.Impedance)
+@[powerlib_foundation] private theorem transitiveHolds (m : Circuits.RL.Impedance)
     (h : hiddenHolds m) : hiddenHolds m := h
 
 @[powerlib_foundation] theorem unrelatedConjunct :
@@ -179,7 +180,7 @@ def hiddenHolds (m : Circuits.RL.Impedance) : Prop :=
   exact offConnection
 
 @[powerlib_domain] theorem onConnection :
-    Circuits.RL.family.chain = Circuits.RL.family.semantics :=
+    connection% (Circuits.RL.family.chain = Circuits.RL.family.semantics) :=
   Circuits.RL.chain_eq_semantics
 
 end PlacementFixture
@@ -198,8 +199,8 @@ run_cmd do
       placed := placed + 1
     if placed == 0 then throwError "The placement audit found no domain theorem"
     for name in #[`PlacementFixture.offConnection, `PlacementFixture.phantomFamily,
-        `PlacementFixture.irrelevantHypothesis, `PlacementFixture.directHolds,
-        `PlacementFixture.transitiveHolds, `PlacementFixture.unrelatedConjunct,
+        `PlacementFixture.irrelevantHypothesis, ``PlacementFixture.directHolds,
+        ``PlacementFixture.transitiveHolds, `PlacementFixture.unrelatedConjunct,
         `PlacementFixture.conditionPadding] do
       if (← powerlib.Architecture.rejection ctx (← getConstInfo name).type).isNone then
         throwError "The architecture audit accepted its negative control: {name}"

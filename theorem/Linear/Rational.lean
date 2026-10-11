@@ -1,3 +1,4 @@
+import theorem.TMIO.ClaimElab
 import theorem.Linear.Rate
 import theorem.Linear.Synthesis
 
@@ -54,7 +55,9 @@ def family : Family (Matrix (Fin n) (Fin n) ℚ) Requirement n 0 :=
 @[powerlib_foundation] theorem family_isLinear : (family (n := n)).IsLinear plant := fun _ => rfl
 
 /-- No matrix is Hurwitz with a right-half-plane root. -/
-@[powerlib_foundation] theorem realize_univ : realize (Meets (n := n)) Set.univ = ∅ := by
+@[powerlib_foundation] theorem realize_univ :
+    connection% (realize (Meets (n := n)) Set.univ = ∅) := by
+  unfold powerlib.TMIO.Statement
   ext A
   simp only [mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
   intro h
@@ -65,7 +68,9 @@ def family : Family (Matrix (Fin n) (Fin n) ℚ) Requirement n 0 :=
 /-- The Hurwitz property is the exact translation of the attractive sentences and sampled
 contraction. -/
 @[powerlib_domain] theorem exact_hurwitz {P : Flow.Property}
-    (hP : P.Attractive ∨ P = .contractive) : (family (n := n)).Exact (.flow P) := by
+    (hP : P.Attractive ∨ P = .contractive) :
+    connection% ((family (n := n)).Exact (.flow P)) := by
+  unfold powerlib.TMIO.Statement
   have ht : translate (.flow P) = {.hurwitz} := by
     rcases hP with hP | rfl
     · cases P <;> first | rfl | exact absurd hP id
@@ -80,7 +85,8 @@ contraction. -/
 sentences and sampled contraction, a right-half-plane root proves instability, and a plant without
 ports is passive. -/
 @[powerlib_domain] theorem chain_le_semantics :
-    ∀ P, (family (n := n)).chain P ≤ (family (n := n)).semantics P := by
+    connection% (∀ P, (family (n := n)).chain P ≤ (family (n := n)).semantics P) := by
+  unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s A hA => ?_
   rw [mem_realize] at hA
   change ∀ q ∈ translate s, Meets A q at hA
@@ -106,7 +112,8 @@ ports is passive. -/
 /-- Acceptance by the synthesizer entails the Hurwitz property: the accepted proposal is a
 kernel-checked certificate. -/
 @[powerlib_domain] theorem realize_accepted :
-    realize (Meets (n := n)) {.accepted} ⊆ realize Meets {.hurwitz} := by
+    connection% (realize (Meets (n := n)) {.accepted} ⊆ realize Meets {.hurwitz}) := by
+  unfold powerlib.TMIO.Statement
   intro A hA
   simp only [mem_realize, Set.mem_singleton_iff, forall_eq] at hA ⊢
   exact (certificateOf A hA).isHurwitz
@@ -115,7 +122,8 @@ kernel-checked certificate. -/
 the executable synthesizer is complete, not merely sound. -/
 @[powerlib_domain] theorem accepted_eq_den {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
-    realize (Meets (n := n)) {.accepted} = family.den (.flow P) := by
+    connection% (realize (Meets (n := n)) {.accepted} = family.den (.flow P)) := by
+  unfold powerlib.TMIO.Statement
   rw [family_isLinear.den_hurwitz hP]
   ext A
   simp only [mem_realize, Set.mem_singleton_iff, forall_eq, Set.mem_ofPred_eq, Meets]

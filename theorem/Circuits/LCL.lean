@@ -1,3 +1,4 @@
+import theorem.TMIO.ClaimElab
 import theorem.Linear.Jordan
 import theorem.Linear.Rate
 import theorem.Circuits.RL
@@ -365,7 +366,9 @@ def family : Family Circuit Requirement 3 2 := ⟨fun m => m.plant.system, Meets
 
 /-- No circuit has both all poles in the open left half plane and one in the open right half
 plane: the whole requirement language is inconsistent. -/
-@[powerlib_foundation] theorem realize_univ : realize Meets Set.univ = ∅ := by
+@[powerlib_foundation] theorem realize_univ :
+    connection% (realize Meets Set.univ = ∅) := by
+  unfold powerlib.TMIO.Statement
   ext m
   simp only [mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
   intro h
@@ -384,7 +387,9 @@ plane: the whole requirement language is inconsistent. -/
 connection. Pole stability proves the attractive sentences and sampled contraction, passivity
 proves Lyapunov stability and passivity through the physical energy, losslessness proves
 conservation of that energy, and a right-half-plane pole proves instability. -/
-@[powerlib_domain] theorem chain_le_semantics : ∀ P, family.chain P ≤ family.semantics P := by
+@[powerlib_domain] theorem chain_le_semantics :
+    connection% (∀ P, family.chain P ≤ family.semantics P) := by
+  unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
   rw [mem_realize] at hm
   change ∀ q ∈ translate s, Meets m q at hm
@@ -412,7 +417,8 @@ conservation of that energy, and a right-half-plane pole proves instability. -/
 /-- On the attractive sentences and sampled contraction the chain agrees with the semantics: pole
 stability is their exact translation, for every circuit, passive or not. -/
 @[powerlib_domain] theorem exact_hurwitz {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    family.Exact (.flow P) := by
+    connection% (family.Exact (.flow P)) := by
+  unfold powerlib.TMIO.Statement
   have ht : translate (.flow P) = {.poleStable} := by
     rcases hP with hP | rfl
     · cases P <;> first | rfl | exact absurd hP id
@@ -426,7 +432,8 @@ stability is their exact translation, for every circuit, passive or not. -/
 /-- Within passive circuits, conservation is exactly losslessness: a damped passive circuit is
 pole-stable, so its solutions converge. -/
 @[powerlib_domain] theorem exactUnder_conservative :
-    family.ExactUnder {.passive} (.flow .conservative) := by
+    connection% (family.ExactUnder {.passive} (.flow .conservative)) := by
+  unfold powerlib.TMIO.Statement
   ext m
   simp only [mem_realize, Set.mem_union, Set.mem_inter_iff]
   constructor
@@ -475,7 +482,9 @@ pole-stable, so its solutions converge. -/
 circuit stores its physical energy; with a negative resistance in one branch, the other branch
 idle and the capacitor exchanging energy with the active branch over one period, the state returns
 to its start while the ports deliver the net energy `-R C² π`. -/
-@[powerlib_domain] theorem exact_passive : family.Exact .passive := by
+@[powerlib_domain] theorem exact_passive :
+    connection% (family.Exact .passive) := by
+  unfold powerlib.TMIO.Statement
   ext m
   rw [Family.mem_den, mem_realize]
   change (∀ q ∈ translate .passive, Meets m q) ↔ m.plant.system.Passive
@@ -551,14 +560,16 @@ to its start while the ports deliver the net energy `-R C² π`. -/
 
 /-- The Routh–Hurwitz condition entails pole stability. -/
 @[powerlib_domain] theorem realize_routhHurwitz :
-    realize Meets {.routhHurwitz} ⊆ realize Meets {.poleStable} := by
+    connection% (realize Meets {.routhHurwitz} ⊆ realize Meets {.poleStable}) := by
+  unfold powerlib.TMIO.Statement
   intro m hm
   simp only [mem_realize, Set.mem_singleton_iff, forall_eq, Meets] at hm ⊢
   exact stable_of_routhHurwitz m hm
 
 /-- Within passive circuits, pole stability is exactly damping. -/
 @[powerlib_domain] theorem realize_passive_damped :
-    realize Meets {.passive, .damped} = realize Meets {.passive, .poleStable} := by
+    connection% (realize Meets {.passive, .damped} = realize Meets {.passive, .poleStable}) := by
+  unfold powerlib.TMIO.Statement
   ext m
   simp only [mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq,
     Meets]
@@ -609,7 +620,9 @@ def balancedEnergy : Matrix (Fin 3) (Fin 3) ℝ := !![2, 2, 1; 2, 3, 2; 1, 2, 2]
 
 /-- Passivity is a sound but not exact translation of Lyapunov stability: the negative-resistance
 circuit is pole-stable, hence Lyapunov stable, without being passive. -/
-@[powerlib_domain] theorem not_exact_lyapunovStable : ¬ family.Exact (.flow .lyapunovStable) := by
+@[powerlib_domain] theorem not_exact_lyapunovStable :
+    connection% (¬ family.Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
   intro h
   have hs : negativeCircuit.Stable := stable_of_routhHurwitz _ negativeCircuit_routhHurwitz
   have hmem : negativeCircuit ∈ family.den (.flow .lyapunovStable) :=
@@ -623,7 +636,9 @@ circuit is pole-stable, hence Lyapunov stable, without being passive. -/
 /-- Losslessness is a sound but not exact translation of conservation: the balanced circuit
 conserves the energy `balancedEnergy` with both resistances nonzero. Passivity is the context in
 which the translation is exact (`exactUnder_conservative`). -/
-@[powerlib_domain] theorem not_exact_conservative : ¬ family.Exact (.flow .conservative) := by
+@[powerlib_domain] theorem not_exact_conservative :
+    connection% (¬ family.Exact (.flow .conservative)) := by
+  unfold powerlib.TMIO.Statement
   intro h
   have hmem : balancedCircuit ∈ family.den (.flow .conservative) :=
     family_isLinear.mem_den_conservative (P := balancedEnergy)
@@ -644,7 +659,9 @@ def jordanCircuit : Circuit :=
 
 /-- The right-half-plane pole translation misses polynomial growth at a zero Jordan block.
 This is a proved failure of exactness, not an unfinished equivalence. -/
-@[powerlib_domain] theorem not_exact_unstable : ¬ family.Exact (.flow .unstable) := by
+@[powerlib_domain] theorem not_exact_unstable :
+    connection% (¬ family.Exact (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
   intro hexact
   let v : EuclideanSpace ℝ (Fin 3) := WithLp.toLp 2 ![1, -1, 1]
   let w : EuclideanSpace ℝ (Fin 3) := WithLp.toLp 2 ![0, -1, 2]
