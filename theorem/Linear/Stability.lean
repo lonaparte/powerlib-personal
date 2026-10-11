@@ -317,4 +317,51 @@ theorem lyapunovStable_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
     (hμ : 0 < μ.re) : Unstable (affineLinearVectorField A e) e :=
   unstable_affineLinear_of_eigenvalue_re_pos A e μ v hv heig hμ
 
+/-! ## Sampling
+
+At integer multiples of a horizon the solutions of a Hurwitz field contract by a fixed factor
+(LeanForControl's spectral-radius argument, measured in the Frobenius norm). -/
+
+section Sampling
+
+open scoped Matrix.Norms.Frobenius
+
+/-- Hurwitz gives a positive integer horizon whose transition matrix has Frobenius norm below one
+(LeanForControl). -/
+@[powerlib_foundation] theorem contractive_block {A : Matrix (Fin n) (Fin n) ℝ} (hA : IsHurwitz A) :
+    ∃ k : ℕ, 0 < k ∧ ‖exp ((k : ℝ) • A)‖ < 1 :=
+  hA.exists_norm_exp_nat_smul_lt_one
+
+/-- The Frobenius norm bounds the action on states. -/
+@[powerlib_foundation] theorem norm_op_apply_le (M : Matrix (Fin n) (Fin n) ℝ) (x : ℝⁿ) :
+    ‖op M x‖ ≤ ‖M‖ * ‖x‖ :=
+  calc ‖op M x‖ = ‖replicateCol (Fin 1) (M *ᵥ x.ofLp)‖ :=
+        (frobenius_norm_replicateCol (ι := Fin 1) (M *ᵥ x.ofLp)).symm
+    _ = ‖M * replicateCol (Fin 1) x.ofLp‖ := by rw [replicateCol_mulVec]
+    _ ≤ ‖M‖ * ‖replicateCol (Fin 1) x.ofLp‖ := frobenius_norm_mul _ _
+    _ = ‖M‖ * ‖x‖ := congrArg (‖M‖ * ·) (frobenius_norm_replicateCol (ι := Fin 1) x.ofLp)
+
+/-- The exponential of a matrix acts on states as the exponential of its operator. -/
+@[powerlib_foundation] theorem op_exp (M : Matrix (Fin n) (Fin n) ℝ) : op (exp M) = exp (op M) :=
+  map_exp (Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ))
+    ((Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ)).toAlgEquiv.toLinearEquiv.toLinearMap
+      |>.continuous_of_finiteDimensional) M
+
+/-- Every attractive sentence of the affine linear field gives an integer horizon over which every
+solution segment contracts towards the centre by a fixed factor. -/
+@[powerlib_foundation] theorem contractive_sampling {A : Matrix (Fin n) (Fin n) ℝ} (e : ℝⁿ)
+    {P : Flow.Property} (hP : P.Attractive) (h : P.holds (affineLinearVectorField A e) e) :
+    ∃ k : ℕ, 0 < k ∧ ∃ c < 1, ∀ (t₀ : ℝ) (φ : ℝ → ℝⁿ),
+      IsTrajectoryOn φ (affineLinearVectorField A e) t₀ (t₀ + k) →
+        ‖φ (t₀ + k) - e‖ ≤ c * ‖φ t₀ - e‖ := by
+  obtain ⟨k, hk, hlt⟩ := contractive_block ((holds_iff_isHurwitz e hP).mp h)
+  refine ⟨k, hk, _, hlt, fun t₀ φ hφ => ?_⟩
+  have hk' : (0 : ℝ) ≤ k := Nat.cast_nonneg k
+  rw [trajectory_eq_solution hφ (t₀ + k) ⟨by linarith, le_rfl⟩, solution,
+    add_sub_cancel_left, add_sub_cancel_left, show (k : ℝ) • op A = op ((k : ℝ) • A) from
+      (map_smul _ _ _).symm, ← op_exp]
+  exact norm_op_apply_le _ _
+
+end Sampling
+
 end powerlib.Linear

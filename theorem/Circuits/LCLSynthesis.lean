@@ -84,8 +84,9 @@ def gap (a d b e k : ℝ) : ℝ := a*d*(a+d)+k*(a*b+d*e)
 def denominator (a d b e k : ℝ) : ℝ := 2*k*coupling a d b e*gap a d b e k
 
 def n11 (a d b e k : ℝ) : ℝ :=
-  a ^ 2 * d * e * k + a * d ^ 2 * b * k + a * d ^ 2 * e * k + a * d ^ 2 * k ^ 2 + a * b * e * k ^ 2 +
-    a * e ^ 2 * k ^ 2 + a * e * k ^ 3 + d ^ 3 * b * k + d ^ 3 * k ^ 2 + d * b * k ^ 3 +
+  a ^ 2 * d * e * k + a * d ^ 2 * b * k + a * d ^ 2 * e * k + a * d ^ 2 * k ^ 2 +
+    a * b * e * k ^ 2 + a * e ^ 2 * k ^ 2 + a * e * k ^ 3 + d ^ 3 * b * k + d ^ 3 * k ^ 2 +
+    d * b * k ^ 3 +
     d * k ^ 2 * ((b-e)^2 + b*e + e^2)
 
 def n12 (a d b e k : ℝ) : ℝ :=
@@ -199,49 +200,58 @@ set_option maxHeartbeats 4000000 in
         (denominator a d b e k)^3 := by
   dsimp [matrix, SymmetricMatrix.det]
   field_simp [hq]
-  dsimp [n11,n12,n13,n22,n23,n33,coupling,gap,detNumerator]
+  dsimp [n11, n12, n13, n22, n23, n33, coupling, gap, detNumerator]
   ring
 
 @[powerlib_foundation] theorem eq11 (a d b e k : ℝ)
-    (hq : denominator a d b e k ≠ 0) : -2*a*(matrix a d b e k).p11 + 2*k*(matrix a d b e k).p12 = -1 := by
+    (hq : denominator a d b e k ≠ 0) :
+    -2 * a * (matrix a d b e k).p11 + 2 * k * (matrix a d b e k).p12 = -1 := by
   dsimp [matrix]
   field_simp [hq]
-  dsimp [n11,n12,n13,n22,n23,n33,denominator,coupling,gap]
+  dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
 @[powerlib_foundation] theorem eq12 (a d b e k : ℝ)
-    (hq : denominator a d b e k ≠ 0) : -b*(matrix a d b e k).p11 - a*(matrix a d b e k).p12 + k*(matrix a d b e k).p22 + e*(matrix a d b e k).p13 = 0 := by
+    (hq : denominator a d b e k ≠ 0) :
+    -b * (matrix a d b e k).p11 - a * (matrix a d b e k).p12 + k * (matrix a d b e k).p22 +
+      e * (matrix a d b e k).p13 = 0 := by
   dsimp [matrix]
   field_simp [hq]
-  dsimp [n11,n12,n13,n22,n23,n33,denominator,coupling,gap]
+  dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
 @[powerlib_foundation] theorem eq13 (a d b e k : ℝ)
-    (hq : denominator a d b e k ≠ 0) : -(a+d)*(matrix a d b e k).p13 - k*(matrix a d b e k).p12 + k*(matrix a d b e k).p23 = 0 := by
+    (hq : denominator a d b e k ≠ 0) :
+    -(a + d) * (matrix a d b e k).p13 - k * (matrix a d b e k).p12 +
+      k * (matrix a d b e k).p23 = 0 := by
   dsimp [matrix]
   field_simp [hq]
-  dsimp [n11,n12,n13,n22,n23,n33,denominator,coupling,gap]
+  dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
 @[powerlib_foundation] theorem eq22 (a d b e k : ℝ)
-    (hq : denominator a d b e k ≠ 0) : -2*b*(matrix a d b e k).p12 + 2*e*(matrix a d b e k).p23 = -1 := by
+    (hq : denominator a d b e k ≠ 0) :
+    -2 * b * (matrix a d b e k).p12 + 2 * e * (matrix a d b e k).p23 = -1 := by
   dsimp [matrix]
   field_simp [hq]
-  dsimp [n11,n12,n13,n22,n23,n33,denominator,coupling,gap]
+  dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
 @[powerlib_foundation] theorem eq23 (a d b e k : ℝ)
-    (hq : denominator a d b e k ≠ 0) : -b*(matrix a d b e k).p13 - k*(matrix a d b e k).p22 - d*(matrix a d b e k).p23 + e*(matrix a d b e k).p33 = 0 := by
+    (hq : denominator a d b e k ≠ 0) :
+    -b * (matrix a d b e k).p13 - k * (matrix a d b e k).p22 - d * (matrix a d b e k).p23 +
+      e * (matrix a d b e k).p33 = 0 := by
   dsimp [matrix]
   field_simp [hq]
-  dsimp [n11,n12,n13,n22,n23,n33,denominator,coupling,gap]
+  dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
 @[powerlib_foundation] theorem eq33 (a d b e k : ℝ)
-    (hq : denominator a d b e k ≠ 0) : -2*k*(matrix a d b e k).p23 - 2*d*(matrix a d b e k).p33 = -1 := by
+    (hq : denominator a d b e k ≠ 0) :
+    -2 * k * (matrix a d b e k).p23 - 2 * d * (matrix a d b e k).p33 = -1 := by
   dsimp [matrix]
   field_simp [hq]
-  dsimp [n11,n12,n13,n22,n23,n33,denominator,coupling,gap]
+  dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
 end PassiveWitness

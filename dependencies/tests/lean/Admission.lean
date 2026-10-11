@@ -6,8 +6,10 @@ submission by the family's plant map, and the certificate type is indexed by tha
 matrix or by the model itself; a certificate for another model does not typecheck. For RL and LCL
 the witness is computed from the submitted parameters by the library's closed-form synthesizers;
 for rational matrices and rational LCL parameters the kernel runs the generic synthesizer and its
-check (S-level). The polynomial fixture supplies its witness and therefore tests verification
-only. -/
+check (S-level). For larger rational matrices the synthesizer is evaluated during elaboration and
+the kernel only checks its proposal (S-level). For polynomial fields only the
+polynomials are submitted and the kernel runs the sum-of-squares synthesizer and the coefficient
+check (S-level); one polynomial fixture supplies its witness and tests verification only. -/
 
 noncomputable section
 
@@ -106,6 +108,38 @@ def differentMatrix : Matrix (Fin 2) (Fin 2) ℚ := !![-2, 10; 0, -1]
 
 end LTIAdmission
 
+-- A larger LTI submission: the synthesizer runs during elaboration, the kernel checks its proposal.
+namespace LargeLTIAdmission
+
+/-- Eight states, negative diagonal dominating the coupling. -/
+def submittedMatrix : Matrix (Fin 8) (Fin 8) ℚ :=
+  !![-8, 1, 0, 1, 0, 2, 0, 1; 0, -8, 1, 0, 1, 0, 1, 0; 1, 1, -8, 1, 0, 0, 0, 1;
+    0, 1, 0, -8, 1, 1, 0, 0; 1, 0, 1, 0, -8, 1, 1, 0; 0, 2, 0, 1, 0, -8, 0, 1;
+    1, 0, 0, 0, 1, 0, -8, 1; 0, 0, 1, 1, 0, 1, 0, -8]
+
+def accepted : Linear.Certificate (Linear.Synthesis.real submittedMatrix) :=
+  lyapunov_certificate% submittedMatrix
+
+@[powerlib_domain] theorem globallyExponentiallyStable :
+    Flow.GloballyExponentiallyStable
+      (affineLinearVectorField (Linear.Synthesis.real submittedMatrix) 0) 0 :=
+  accepted.holds 0 (P := .globallyExponentiallyStable) trivial
+
+-- A matrix with an unstable mode: the Lyapunov equation is solvable, but the solution is
+-- indefinite and the kernel rejects the proposal.
+@[powerlib_foundation] theorem indefinite_rejected : True := by
+  fail_if_success
+    have := lyapunov_certificate% (!![(1 : ℚ), 0; 0, -2])
+  trivial
+
+-- The proposal for that matrix does exist; only the check refuses it.
+@[powerlib_foundation] theorem indefinite_proposed :
+    (Linear.Synthesis.synth (!![(1 : ℚ), 0; 0, -2])).map (·.check !![(1 : ℚ), 0; 0, -2]) =
+      some false := by
+  decide +kernel
+
+end LargeLTIAdmission
+
 -- LCL with a negative resistance: only the rational parameters are submitted. The closed-form
 -- synthesizer needs passivity; the kernel's run of the generic synthesizer does not.
 namespace NegativeResistanceAdmission
@@ -127,7 +161,7 @@ def accepted : Linear.Certificate submitted.circuit.plant.A :=
 
 end NegativeResistanceAdmission
 
--- Polynomial family: a supplied sum-of-squares witness (verification).
+-- Polynomial family: only the fields are submitted; the kernel runs the synthesizer and the check.
 namespace PolynomialAdmission
 
 open Nonlinear.Polynomial2
@@ -135,36 +169,62 @@ open Nonlinear.Polynomial2
 /-- `x' = -x - x³`, `y' = -y`. -/
 def submittedModel : Model := ⟨[⟨-1, (1, 0)⟩, ⟨-1, (3, 0)⟩], [⟨-1, (0, 1)⟩]⟩
 
-def accepted : Accepted submittedModel where
-  p00 := 1
-  p01 := 0
-  p11 := 1
-  lower := 1
-  upper := 1
-  rate := 2
-  lower_sos := []
-  upper_sos := []
-  decay_sos := [⟨2, [⟨1, (2, 0)⟩]⟩]
-  lower_pos := by norm_num
-  upper_pos := by norm_num
-  rate_pos := by norm_num
-  lower_nonneg := by simp
-  upper_nonneg := by simp
-  decay_nonneg := by norm_num
-  field_zero := by
-    ext i
-    fin_cases i <;> simp [Model.field, submittedModel, eval]
-  lower_identity x y := by
-    simp [quadratic, sosEval]
-  upper_identity x y := by
-    simp [quadratic, sosEval]
-  decay_identity x y := by
-    simp [lie, quadratic, sosEval, eval, submittedModel]
-    ring
+def accepted : Certificate submittedModel := certificateOf submittedModel (by decide +kernel)
 
 @[powerlib_domain] theorem globallyExponentiallyStable :
     Flow.GloballyExponentiallyStable submittedModel.field 0 :=
   accepted.globallyExponentiallyStable
+
+/-- `x' = -x - x³ + x y² / 2`, `y' = -y - y³ + x² y / 2`. -/
+def coupledModel : Model :=
+  ⟨[⟨-1, (1, 0)⟩, ⟨-1, (3, 0)⟩, ⟨1 / 2, (1, 2)⟩], [⟨-1, (0, 1)⟩, ⟨-1, (0, 3)⟩, ⟨1 / 2, (2, 1)⟩]⟩
+
+def coupledAccepted : Certificate coupledModel := certificateOf coupledModel (by decide +kernel)
+
+@[powerlib_domain] theorem coupled_globallyExponentiallyStable :
+    Flow.GloballyExponentiallyStable coupledModel.field 0 :=
+  coupledAccepted.globallyExponentiallyStable
+
+-- Its decay certificate needs a square mixing `x²` and `y²`: `(x² - y²/2)²`.
+@[powerlib_foundation] theorem coupled_mixed_square :
+    ((synth coupledModel).map fun w => w.decay_sos.map (·.poly)).any
+      (·.contains [⟨1, (2, 0)⟩, ⟨-1 / 2, (0, 2)⟩]) = true := by
+  decide +kernel
+
+/-- `x' = -x + 2y - x y²`, `y' = -3y - x² y`: the Lyapunov energy of the non-normal linearization
+leaves cubic cross terms; a diagonal energy of the family succeeds. -/
+def nonnormalModel : Model :=
+  ⟨[⟨-1, (1, 0)⟩, ⟨2, (0, 1)⟩, ⟨-1, (1, 2)⟩], [⟨-3, (0, 1)⟩, ⟨-1, (2, 1)⟩]⟩
+
+def nonnormalAccepted : Certificate nonnormalModel :=
+  certificateOf nonnormalModel (by decide +kernel)
+
+@[powerlib_domain] theorem nonnormal_globallyExponentiallyStable :
+    Flow.GloballyExponentiallyStable nonnormalModel.field 0 :=
+  nonnormalAccepted.globallyExponentiallyStable
+
+/-- The cascade `x' = -2x + y²`, `y' = -y`: no energy of the family gives a decay identity, and the
+synthesizer proposes nothing. This is unproved, not refuted. -/
+def cascadeModel : Model := ⟨[⟨-2, (1, 0)⟩, ⟨1, (0, 2)⟩], [⟨-1, (0, 1)⟩]⟩
+
+@[powerlib_foundation] theorem cascade_unproved : accepts cascadeModel = false := by
+  decide +kernel
+
+/-- A supplied witness passes the same check: verification, not synthesis. -/
+def suppliedWitness : Witness := ⟨1, 0, 1, 1, 1, 2, [], [], [⟨2, [⟨1, (2, 0)⟩]⟩]⟩
+
+def supplied : Certificate submittedModel := ⟨suppliedWitness, by decide +kernel⟩
+
+-- The same witness is rejected for another model.
+@[powerlib_foundation] theorem supplied_rejected_elsewhere :
+    suppliedWitness.check coupledModel = false := by
+  decide +kernel
+
+-- A certificate for another model is not a certificate for the submitted one.
+@[powerlib_foundation] theorem another_model_rejected : True := by
+  fail_if_success
+    have wrong : Certificate coupledModel := accepted
+  trivial
 
 end PolynomialAdmission
 
@@ -173,22 +233,38 @@ run_cmd do
   let env ← getEnv
   let registered := powerlib.Registry.theoremNames env
   let admitted := registered.filter fun name =>
-    #[`RLAdmission, `LCLAdmission, `LTIAdmission, `NegativeResistanceAdmission,
-      `PolynomialAdmission].contains name.getRoot
+    #[`RLAdmission, `LCLAdmission, `LTIAdmission, `LargeLTIAdmission,
+      `NegativeResistanceAdmission, `PolynomialAdmission].contains name.getRoot
   for name in admitted do
     if powerlib.Registry.kindOf? env name == some .domain then
       logInfo m!"POWERLIB_ADMITTED_THEOREM {name}"
     for ax in powerlib.Search.declarationAxioms env name do
       unless powerlib.Search.allowedAxiom ax do
         throwError "Unexpected axiom {ax} in {name}"
-  -- The synthesized certificates are computed by the library synthesizers from the submission.
+  -- The synthesized certificates are computed by the library synthesizers from the submission;
+  -- a certificate synthesized during elaboration is admitted only through the checked proposal.
+  -- Proofs abstracted out of a certificate are followed.
+  let used (certificate : Name) : CommandElabM (Array Name) := do
+    let mut todo := #[certificate]
+    let mut seen : Array Name := #[]
+    while h : todo.size > 0 do
+      let name := todo.back
+      todo := todo.pop
+      if seen.contains name then continue
+      seen := seen.push name
+      let some value := (← getConstInfo name).value? (allowOpaque := true) | continue
+      for c in value.getUsedConstants do
+        if certificate.isPrefixOf c then todo := todo.push c else seen := seen.push c
+    return seen
   for (certificate, synthesizer) in #[(`RLAdmission.accepted, `powerlib.Circuits.RL.synthesize),
       (`LCLAdmission.accepted, `powerlib.Circuits.LCL.synthesize),
       (`LTIAdmission.accepted, `powerlib.Linear.Synthesis.certificateOf),
+      (`LargeLTIAdmission.accepted, `powerlib.Linear.Synthesis.Witness.valid_of_check),
       (`NegativeResistanceAdmission.accepted,
-        `powerlib.Circuits.LCL.RationalCircuit.certificate)] do
-    let info ← getConstInfo certificate
-    let some value := info.value? (allowOpaque := true) | throwError "Missing {certificate}"
-    unless value.getUsedConstants.contains synthesizer do
+        `powerlib.Circuits.LCL.RationalCircuit.certificate),
+      (`PolynomialAdmission.accepted, `powerlib.Nonlinear.Polynomial2.certificateOf),
+      (`PolynomialAdmission.coupledAccepted, `powerlib.Nonlinear.Polynomial2.certificateOf),
+      (`PolynomialAdmission.nonnormalAccepted, `powerlib.Nonlinear.Polynomial2.certificateOf)] do
+    unless (← used certificate).contains synthesizer do
       throwError "{certificate} was not produced by {synthesizer}"
   logInfo "POWERLIB_ADMISSION_OK"

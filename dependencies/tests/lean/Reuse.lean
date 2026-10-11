@@ -110,7 +110,7 @@ open powerlib LinearSystems
   powerlib_search
 
 @[powerlib_domain] theorem polynomial_member {model : Nonlinear.Polynomial2.Model}
-    (c : Nonlinear.Polynomial2.Accepted model) {P : Flow.Property} (hP : P.Attractive) :
+    (c : Nonlinear.Polynomial2.Certificate model) {P : Flow.Property} (hP : P.Attractive) :
     model ∈ Flow.den Nonlinear.Polynomial2.Model.field 0 P := by powerlib_search
 
 -- Upstream declarations need no PowerLib attributes or names.
@@ -143,7 +143,7 @@ run_cmd do
       (`AutomaticReuse.lcl_poles, `powerlib.Circuits.LCL.isHurwitz_iff_stable),
       (`AutomaticReuse.decay_global, `powerlib.Flow.QuadraticDecay.globallyExponentiallyStable),
       (`AutomaticReuse.decay_complete, `powerlib.Flow.QuadraticDecay.forwardComplete),
-      (`AutomaticReuse.polynomial_member, `powerlib.Nonlinear.Polynomial2.Accepted.mem_den),
+      (`AutomaticReuse.polynomial_member, `powerlib.Nonlinear.Polynomial2.Certificate.mem_den),
       (`AutomaticReuse.exp_positive, `Real.exp_pos),
       (`AutomaticReuse.concrete_relation, `AutomaticReuse.from_model_relation)] do
     let info ← getConstInfo consumer
@@ -181,7 +181,7 @@ open powerlib LinearSystems
     Flow.GloballyExponentiallyStable (affineLinearVectorField ic.closedLoopA 0) 0 := by aesop
 
 @[powerlib_domain] theorem polynomial_certificate {model : Nonlinear.Polynomial2.Model}
-    (c : Nonlinear.Polynomial2.Accepted model) :
+    (c : Nonlinear.Polynomial2.Certificate model) :
     Flow.GloballyExponentiallyStable model.field 0 := by aesop
 
 end AutomaticChaining
@@ -205,7 +205,7 @@ run_cmd do
         #[`powerlib.Circuits.Interconnection.isHurwitz_closedLoop_of_impedanceStable,
           `powerlib.Linear.globallyExponentiallyStable_of_isHurwitz]),
       (`AutomaticChaining.polynomial_certificate,
-        #[`powerlib.Nonlinear.Polynomial2.Accepted.globallyExponentiallyStable])] do
+        #[`powerlib.Nonlinear.Polynomial2.Certificate.globallyExponentiallyStable])] do
     let info ← getConstInfo consumer
     let some proof := info.value? (allowOpaque := true) | throwError "Missing proof: {consumer}"
     -- Follow the auxiliary declarations simp creates for rewrite rules (`_simp_1`, ...).
@@ -248,6 +248,9 @@ run_cmd do
         `LeanForControl),
       (`powerlib.Linear.isObservable_iff_isControllable_transpose,
         `LinearSystems.isControllable_iff_controllabilityMatrix_rank_eq, `LeanForControl),
+      (`powerlib.Linear.contractive_block,
+        `LinearSystems.IsHurwitz.exists_norm_exp_nat_smul_lt_one, `LeanForControl),
+      (`powerlib.Linear.op_exp, `NormedSpace.map_exp, `Mathlib),
       (`powerlib.Port.System.passiveWith_of_rate,
         `intervalIntegral.sub_le_integral_of_hasDeriv_right_of_le, `Mathlib),
       (`powerlib.Linear.solution_hasDerivAt, `hasDerivAt_exp_smul_const', `Mathlib)] do

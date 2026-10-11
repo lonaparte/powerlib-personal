@@ -343,6 +343,17 @@ zero-input solution segment. -/
     fin_cases i <;> fin_cases j <;> simp
   exact (kyp m ⟨h1.ge, h2.ge⟩).storage_conserved hl hx
 
+/-- A passive damped circuit with its ports held at zero has an integer horizon over which every
+continuous-time solution segment contracts towards the origin by a fixed factor: the solutions
+sampled at that horizon form a contraction. -/
+@[powerlib_domain] theorem contractive_sampling (m : Circuit) (hp : m.Passive) (hd : m.Damped) :
+    ∃ k : ℕ, 0 < k ∧ ∃ c < 1, ∀ (t₀ : ℝ) (x : ℝ → EuclideanSpace ℝ (Fin 3)),
+      IsTrajectoryOn x (affineLinearVectorField m.plant.A 0) t₀ (t₀ + k) →
+        ‖x (t₀ + k)‖ ≤ c * ‖x t₀‖ :=
+  Linear.mem_den_contractive (plant := Circuit.plant) (P := .globallyExponentiallyStable) trivial
+    (Linear.mem_den_of_isHurwitz trivial ((isHurwitz_iff_stable m).mpr
+      (stable_of_routhHurwitz m (routhHurwitz_of_passive m hp hd))))
+
 /-! ## Requirements and translations -/
 
 /-- Engineering requirements on the LCL parameters. -/

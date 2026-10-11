@@ -69,6 +69,15 @@ the plant is Hurwitz: the behaviour about every operating point is the zero-inpu
     (c : Certificate (plant x).A) {P : Flow.Property} (hP : P.Attractive) : x ∈ den plant P :=
   c.holds 0 hP
 
+/-- A member satisfying an attractive sentence samples to a contraction: over some integer
+horizon every zero-input solution segment shrinks by a fixed factor. -/
+@[powerlib_foundation] theorem mem_den_contractive {plant : X → Plant n p} {x : X}
+    {P : Flow.Property} (hP : P.Attractive) (hx : x ∈ den plant P) :
+    ∃ k : ℕ, 0 < k ∧ ∃ c < 1, ∀ (t₀ : ℝ) (φ : ℝ → ℝⁿ),
+      IsTrajectoryOn φ (affineLinearVectorField (plant x).A 0) t₀ (t₀ + k) →
+        ‖φ (t₀ + k)‖ ≤ c * ‖φ t₀‖ := by
+  simpa using contractive_sampling 0 hP hx
+
 /-! ## Families -/
 
 /-- A linear family: the plant map of its complete systems, the satisfaction relation of its

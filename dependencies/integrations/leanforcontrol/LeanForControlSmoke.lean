@@ -12,7 +12,8 @@ run_cmd do
       `hurwitz_linearization_locally_exponentially_stable,
       `unstable_affineLinear_of_eigenvalue_re_pos, `lyapunov_asymptotic_stable,
       `exists_isIntegralCurveOn_Ici,
-      `LinearSystems.isControllable_iff_controllabilityMatrix_rank_eq] do
+      `LinearSystems.isControllable_iff_controllabilityMatrix_rank_eq,
+      `LinearSystems.IsHurwitz.exists_norm_exp_nat_smul_lt_one] do
     let some entry := powerlib.Search.describe env name |
       throwError "LeanForControl declaration absent from discovery: {name}"
     unless entry.moduleName.getRoot == `LeanForControl && entry.kind.isNone do
@@ -25,7 +26,8 @@ run_cmd do
     (`powerlib.Linear.unstable_of_eigenvalue, .foundation),
     (`powerlib.Flow.globallyAsymptoticallyStable_of_strictLyapunov, .foundation),
     (`powerlib.Flow.forwardComplete_of_lipschitzWith, .foundation),
-    (`powerlib.Linear.isObservable_iff_isControllable_transpose, .foundation)]
+    (`powerlib.Linear.isObservable_iff_isControllable_transpose, .foundation),
+    (`powerlib.Linear.contractive_block, .foundation)]
   for (name, kind) in consumers do
     let info ← getConstInfo name
     let some proof := info.value? (allowOpaque := true) |
@@ -64,4 +66,4 @@ run_cmd do
     withLetDecl `borrowed info.type badProof fun borrowed => do
       unless (← observing? (powerlib.Search.checkProof borrowed)).isNone do
         throwError "A local let hid an upstream custom axiom from the proof audit"
-  logInfo "POWERLIB_LEANFORCONTROL_REUSE_OK: 6 direct consumers; custom-axiom rejection"
+  logInfo "POWERLIB_LEANFORCONTROL_REUSE_OK: 7 direct consumers; custom-axiom rejection"
