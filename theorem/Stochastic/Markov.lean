@@ -40,8 +40,9 @@ Correction (§1.2).  "Markov ⇔ semigroup relation" is too strong: the Markov p
 Chapman–Kolmogorov `P_{X_s}`-a.e. (`chapmanKolmogorov_ae`), and the converse direction
 (semigroup ⇒ Markov) is false in general; only the forward a.e. statement is formalized.
 
-UNPROVED here: equivalence of the event form and the conditional-expectation form of the Markov
-property for general bounded measurable test functions (monotone-class argument).
+The equivalence of the event form and the conditional-expectation form of the Markov property
+(bounded measurable test functions) is `theorem/Stochastic/MarkovForms.lean`
+(`markovEvent_iff_markovCondExp`).
 -/
 
 noncomputable section
