@@ -15,3 +15,7 @@ import theorem.ImpedanceStability
 import theorem.ImpedanceRealization
 import theorem.Upstream.LeanForControl
 import theorem.Upstream.LCLLeanForControl
+import theorem.Criteria.Hurwitz2
+import theorem.Criteria.Routh3
+import theorem.Upstream.LaSalle
+import theorem.Dynamics.Basin
