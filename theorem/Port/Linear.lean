@@ -42,16 +42,6 @@ structure KYP (M : Plant n p) where
 def KYP.storage {M : Plant n p} (c : KYP M) (x : ℝⁿ) : ℝ :=
   WithLp.ofLp x ⬝ᵥ (c.P *ᵥ WithLp.ofLp x) / 2
 
-@[powerlib_foundation] theorem dotProduct_hasDerivWithinAt {X Y : ℝ → (Fin n → ℝ)}
-    {dX dY : Fin n → ℝ} {s : Set ℝ} {t : ℝ} (hX : HasDerivWithinAt X dX s t)
-    (hY : HasDerivWithinAt Y dY s t) :
-    HasDerivWithinAt (fun τ => X τ ⬝ᵥ Y τ) (dX ⬝ᵥ Y t + X t ⬝ᵥ dY) s t := by
-  have hd (i : Fin n) :=
-    ((ContinuousLinearMap.proj i : (Fin n → ℝ) →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt t hX).mul
-      ((ContinuousLinearMap.proj i : (Fin n → ℝ) →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt t hY)
-  simpa [dotProduct, Finset.sum_add_distrib, Pi.mul_apply, Function.comp_def] using!
-    HasDerivWithinAt.fun_sum (u := Finset.univ) (fun i _ => hd i)
-
 @[powerlib_foundation] theorem KYP.output_dot {M : Plant n p} (c : KYP M) (X : Fin n → ℝ)
     (u : Fin p → ℝ) : X ⬝ᵥ (c.P *ᵥ (M.B *ᵥ u)) = (M.C *ᵥ X) ⬝ᵥ u := by
   rw [← c.output, Matrix.mulVec_mulVec, Matrix.dotProduct_mulVec, ← Matrix.vecMul_transpose,
@@ -96,32 +86,8 @@ solution segment. -/
 @[powerlib_foundation] theorem KYP.storage_conserved {M : Plant n p} (c : KYP M)
     (hl : M.Aᵀ * c.P + c.P * M.A = 0) {x : ℝ → ℝⁿ} {t₀ t₁ : ℝ}
     (hx : IsTrajectoryOn x (affineLinearVectorField M.A 0) t₀ t₁) :
-    ∀ t ∈ Icc t₀ t₁, c.storage (x t) = c.storage (x t₀) := by
-  have hcont : ContinuousOn (fun t => c.storage (x t)) (Icc t₀ t₁) :=
-    (by unfold KYP.storage; fun_prop : Continuous c.storage).comp_continuousOn hx.continuousOn
-  refine constant_of_has_deriv_right_zero hcont fun t ht => ?_
-  have hxt := hasDerivWithinAt_Ici_of_isIntegralCurveOn hx t ht
-  have hX : HasDerivWithinAt (fun τ => WithLp.ofLp (x τ))
-      (WithLp.ofLp (affineLinearVectorField M.A 0 (x t))) (Ici t) t :=
-    (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).hasFDerivAt.comp_hasDerivWithinAt t hxt
-  have hfield : WithLp.ofLp (affineLinearVectorField M.A 0 (x t)) = M.A *ᵥ WithLp.ofLp (x t) := by
-    simp [affine_apply]
-  rw [hfield] at hX
-  have hPX : HasDerivWithinAt (fun τ => c.P *ᵥ WithLp.ofLp (x τ))
-      (c.P *ᵥ (M.A *ᵥ WithLp.ofLp (x t))) (Ici t) t :=
-    (c.P.mulVecLin.toContinuousLinearMap).hasFDerivAt.comp_hasDerivWithinAt t hX
-  have h0 := quadratic_sym (A := M.A) c.symmetric (WithLp.ofLp (x t))
-  rw [hl, Matrix.zero_mulVec, dotProduct_zero] at h0
-  have hsym : (M.A *ᵥ WithLp.ofLp (x t)) ⬝ᵥ (c.P *ᵥ WithLp.ofLp (x t)) =
-      WithLp.ofLp (x t) ⬝ᵥ (c.P *ᵥ (M.A *ᵥ WithLp.ofLp (x t))) := by
-    rw [Matrix.dotProduct_mulVec, dotProduct_comm]
-    congr 1
-    conv_lhs => rw [← c.symmetric]
-    rw [Matrix.vecMul_transpose]
-  show HasDerivWithinAt (fun τ => WithLp.ofLp (x τ) ⬝ᵥ (c.P *ᵥ WithLp.ofLp (x τ)) / 2) 0 (Ici t) t
-  convert (dotProduct_hasDerivWithinAt hX hPX).div_const 2 using 1
-  rw [hsym]
-  linarith
+    ∀ t ∈ Icc t₀ t₁, c.storage (x t) = c.storage (x t₀) := fun t ht => by
+  simp only [KYP.storage, quadratic_conserved c.symmetric hl hx t ht]
 
 /-- With quadratic bounds on the storage, a KYP certificate proves Lyapunov stability of the
 zero-input plant in the Flow semantics. -/

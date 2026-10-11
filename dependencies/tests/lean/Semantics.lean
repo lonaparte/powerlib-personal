@@ -441,6 +441,10 @@ structure Gain where
 
 def window (r : ℝ) : Set ℝ := Set.Icc (r - 1) (r + 1)
 
+/-- A statement naming a behavioural notion directly rather than through a denotation. -/
+@[powerlib_foundation] theorem bypass (f : ℝ² → ℝ²) (h : LyapunovStable f 0) :
+    LyapunovStable f 0 := h
+
 end SemanticFixture
 
 end
@@ -490,8 +494,26 @@ run_meta do
       ``SemanticFixture.Gain, ``SemanticFixture.window] do
     if let some reason ← scanDecl ctx (outside ctx) c then
       throwError "The audit rejected a non-behavioural definition: {c}: {reason}"
+  -- No bypass: a domain theorem of the library reaches behaviour only through a denotation, never
+  -- by naming a behavioural notion of the semantic layer or of the ambient libraries.
+  let mut domains : Nat := 0
+  let mut bypasses : Array String := #[]
+  for name in powerlib.Registry.theoremNames env (some .domain) do
+    let some i := env.getModuleIdxFor? name | continue
+    unless env.header.moduleNames[i.toNat]!.getRoot == `theorem do continue
+    domains := domains + 1
+    for c in (← getConstInfo name).type.getUsedConstants do
+      if let some reason ← (classify ctx).const c then
+        bypasses := bypasses.push s!"{name}: {reason}"
+  unless bypasses.isEmpty do
+    throwError "Domain theorems naming behaviour directly:\n{"\n".intercalate bypasses.toList}"
+  for c in #[``SemanticFixture.bypass] do
+    let used := (← getConstInfo c).type.getUsedConstants
+    unless ← used.anyM fun d => return (← (classify ctx).const d).isSome do
+      throwError "The bypass audit accepted a statement naming behaviour directly: {c}"
   logInfo m!"POWERLIB_SINGLE_SEMANTICS_OK: time {time}; signal spaces {spaces.map (·.2)}; \
-    {decls.size} declarations; notions {notions.qsort Name.quickLt}"
+    {decls.size} declarations; notions {notions.qsort Name.quickLt}; {domains} domain theorems \
+    reach behaviour through denotations"
 
 noncomputable section
 
@@ -505,15 +527,25 @@ example {n : ℕ} : Flow.Property.holds (n := n) .locallyExponentiallyStable =
     LocallyExponentiallyStable := rfl
 example {n : ℕ} : Flow.Property.holds (n := n) .unstable = Unstable := rfl
 
--- A linear family's denotation is the Flow denotation of its zero-input fields.
-example {X : Type*} {n p : ℕ} (plant : X → Linear.Plant n p) (P : Flow.Property) :
-    Linear.den plant P = Flow.den (fun x => affineLinearVectorField (plant x).A 0) 0 P := rfl
+-- The sentences of a system with ports read its zero-input field, and passivity its ports.
+example {n p : ℕ} (P : Flow.Property) (s : Port.System n p) :
+    (Sentence.flow P).holds s = P.holds s.zeroInput 0 := rfl
+example {n p : ℕ} (s : Port.System n p) : Sentence.passive.holds s = s.Passive := rfl
+
+-- A family's denotation is the semantics connection's generated value, and a linear family's
+-- flow sentences are the hub's sentences of its zero-input plants.
+example (s : Sentence) :
+    Circuits.RL.family.den s = OrderDual.ofDual (TMIO.generate Circuits.RL.family.semantics {s}) :=
+  rfl
+example (P : Flow.Property) (m : Circuits.RL.Impedance) :
+    m ∈ Circuits.RL.family.den (.flow P) ↔ P.holds (affineLinearVectorField m.plant.A 0) 0 :=
+  Circuits.RL.family_isLinear.mem_den_flow
 
 -- Both RL representations denote through the same plant.
-example (P : Flow.Property) :
-    Linear.den Circuits.RL.StateSpace.plant P =
-      Circuits.RL.toImpedance ⁻¹' Linear.den Circuits.RL.Impedance.plant P :=
-  Circuits.RL.den_stateSpace P
+example (s : Sentence) :
+    (Circuits.RL.family.comap Circuits.RL.toImpedance).den s =
+      Circuits.RL.toImpedance ⁻¹' Circuits.RL.family.den s :=
+  Circuits.RL.family.den_comap _ s
 
 /-! ## Semantic boundary: a stable linearization is not global stability -/
 
@@ -584,17 +616,17 @@ def unit : ℝ¹ := EuclideanSpace.single 0 1
   nlinarith [c.rate_pos]
 
 -- The cubic field: a solution through every state, and decay of every solution segment.
-@[powerlib_domain] theorem cubic_every_state_has_solution (n : ℕ) (a : ℝ)
-    (x₀ : EuclideanSpace ℝ (Fin n)) :
+@[powerlib_domain] theorem cubic_every_state_has_solution (n : ℕ) (α : Nonlinear.Cubic.Gain)
+    (a : ℝ) (x₀ : EuclideanSpace ℝ (Fin n)) :
     ∃ φ : ℝ → EuclideanSpace ℝ (Fin n), φ a = x₀ ∧
-      IsIntegralCurveOn φ (fun _ x => Nonlinear.Cubic.field x) (Set.Ici a) :=
-  (Nonlinear.Cubic.globallyExponentiallyStable n).2.1 a x₀
+      IsIntegralCurveOn φ (fun _ x => Nonlinear.Cubic.field α.1 x) (Set.Ici a) :=
+  (Nonlinear.Cubic.globallyExponentiallyStable α).2.1 a x₀
 
-@[powerlib_domain] theorem cubic_every_solution_converges (n : ℕ) (a : ℝ)
-    (φ : ℝ → EuclideanSpace ℝ (Fin n))
-    (hφ : IsIntegralCurveOn φ (fun _ x => Nonlinear.Cubic.field x) (Set.Ici a)) :
+@[powerlib_domain] theorem cubic_every_solution_converges (n : ℕ) (α : Nonlinear.Cubic.Gain)
+    (a : ℝ) (φ : ℝ → EuclideanSpace ℝ (Fin n))
+    (hφ : IsIntegralCurveOn φ (fun _ x => Nonlinear.Cubic.field α.1 x) (Set.Ici a)) :
     Filter.Tendsto φ Filter.atTop (nhds 0) :=
-  (Nonlinear.Cubic.globallyExponentiallyStable n).globallyAsymptoticallyStable.2.2.2 a φ hφ
+  (Nonlinear.Cubic.globallyExponentiallyStable α).globallyAsymptoticallyStable.2.2.2 a φ hφ
 
 -- The observation boundary: equal transfer functions with opposite stability, and the hidden
 -- mode is exactly what minimality excludes.

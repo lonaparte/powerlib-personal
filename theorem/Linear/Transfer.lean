@@ -57,14 +57,21 @@ def SpectrallyStable {ι : Type*} [Fintype ι] [DecidableEq ι] (A : Matrix ι �
       rw [characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at hzero
       exact (sub_eq_zero.mp hzero).symm)
 
+/-- A root of the characteristic polynomial is an eigenvalue. -/
+@[powerlib_foundation] theorem exists_eigenvector_of_root {A : Matrix (Fin n) (Fin n) ℝ} {s : ℂ}
+    (h : (characteristicMatrix A s).det = 0) :
+    ∃ v : Fin n → ℂ, v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = s • v := by
+  obtain ⟨v, hv, hzero⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr h
+  refine ⟨v, hv, ?_⟩
+  rw [characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at hzero
+  exact (sub_eq_zero.mp hzero).symm
+
 /-- A root of the characteristic polynomial in the open right half plane gives instability. -/
 @[powerlib_foundation] theorem unstable_of_root {A : Matrix (Fin n) (Fin n) ℝ}
     (e : EuclideanSpace ℝ (Fin n)) {s : ℂ} (h : (characteristicMatrix A s).det = 0)
     (hs : 0 < s.re) : Unstable (affineLinearVectorField A e) e := by
-  obtain ⟨v, hv, hzero⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr h
-  refine unstable_of_eigenvalue e hv ?_ hs
-  rw [characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at hzero
-  exact (sub_eq_zero.mp hzero).symm
+  obtain ⟨v, hv, heig⟩ := exists_eigenvector_of_root h
+  exact unstable_of_eigenvalue e hv heig hs
 
 /-- The transfer function from port input to port output. -/
 def transfer (M : Plant n p) (s : ℂ) : Matrix (Fin p) (Fin p) ℂ :=
@@ -183,6 +190,14 @@ def Plant.changeCoordinates {n' : ℕ} (T : Matrix (Fin n') (Fin n) ℝ)
 
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
+/-- A solution of the conjugated field read back through `K` is a solution of the field. -/
+@[powerlib_foundation] theorem isTrajectoryOn_conj {f : ℝⁿ → ℝⁿ} (L K : ℝⁿ →L[ℝ] ℝⁿ)
+    (hKL : ∀ x, K (L x) = x) {φ : ℝ → ℝⁿ} {t₀ t₁ : ℝ}
+    (hφ : IsTrajectoryOn φ (fun x => L (f (K x))) t₀ t₁) :
+    IsTrajectoryOn (fun t => K (φ t)) f t₀ t₁ := fun s hs => by
+  have := K.hasFDerivAt.comp_hasDerivWithinAt s (hφ s hs)
+  simpa [Function.comp_def, hKL] using this
+
 /-- Lyapunov stability of the origin survives a linear change of coordinates. -/
 @[powerlib_foundation] theorem lyapunovStable_conj {f : ℝⁿ → ℝⁿ} (L K : ℝⁿ →L[ℝ] ℝⁿ)
     (hKL : ∀ x, K (L x) = x) (hLK : ∀ x, L (K x) = x) (hf : LyapunovStable f 0) :
@@ -190,9 +205,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
   intro ε hε
   obtain ⟨δ, hδ, h⟩ := hf (ε / (‖L‖ + 1)) (by positivity)
   refine ⟨δ / (‖K‖ + 1), by positivity, fun t₀ t₁ φ hφ h0 t ht => ?_⟩
-  have hψ : IsTrajectoryOn (fun t => K (φ t)) f t₀ t₁ := fun s hs => by
-    have := K.hasFDerivAt.comp_hasDerivWithinAt s (hφ s hs)
-    simpa [Function.comp_def, hKL] using this
+  have hψ := isTrajectoryOn_conj L K hKL hφ
   have hK0 : ‖K (φ t₀) - 0‖ < δ := by
     rw [sub_zero] at h0 ⊢
     calc ‖K (φ t₀)‖ ≤ ‖K‖ * ‖φ t₀‖ := K.le_opNorm _
@@ -207,10 +220,45 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
     _ < (‖L‖ + 1) * (ε / (‖L‖ + 1)) := by gcongr
     _ = ε := by field_simp
 
-@[powerlib_foundation] theorem lyapunovStable_conj_iff {T S : Matrix (Fin n) (Fin n) ℝ}
-    (hTS : T * S = 1) (hST : S * T = 1) (A : Matrix (Fin n) (Fin n) ℝ) :
-    LyapunovStable (affineLinearVectorField (T * A * S) 0) 0 ↔
-      LyapunovStable (affineLinearVectorField A 0) 0 := by
+/-- A decay rate survives a linear change of coordinates, with a new overshoot constant. -/
+@[powerlib_foundation] theorem decay_conj {f : ℝⁿ → ℝⁿ} (L K : ℝⁿ →L[ℝ] ℝⁿ)
+    (hKL : ∀ x, K (L x) = x) (hLK : ∀ x, L (K x) = x) {a : ℝ} (hf : Flow.Decay f 0 a) :
+    Flow.Decay (fun x => L (f (K x))) 0 a := by
+  obtain ⟨C, hC⟩ := hf
+  refine ⟨‖L‖ * max C 0 * ‖K‖, fun t₀ t₁ φ hφ t ht => ?_⟩
+  have hb := hC t₀ t₁ _ (isTrajectoryOn_conj L K hKL hφ) t ht
+  rw [sub_zero, sub_zero] at hb ⊢
+  have he : 0 ≤ Real.exp (-a * (t - t₀)) := (Real.exp_pos _).le
+  calc ‖φ t‖ = ‖L (K (φ t))‖ := by rw [hLK]
+    _ ≤ ‖L‖ * ‖K (φ t)‖ := L.le_opNorm _
+    _ ≤ ‖L‖ * (max C 0 * Real.exp (-a * (t - t₀)) * ‖K (φ t₀)‖) := by
+        gcongr
+        refine hb.trans ?_
+        gcongr
+        exact le_max_left _ _
+    _ ≤ ‖L‖ * (max C 0 * Real.exp (-a * (t - t₀)) * (‖K‖ * ‖φ t₀‖)) :=
+        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left (K.le_opNorm _)
+          (mul_nonneg (le_max_right _ _) he)) (norm_nonneg _)
+    _ = ‖L‖ * max C 0 * ‖K‖ * Real.exp (-a * (t - t₀)) * ‖φ t₀‖ := by ring
+
+/-- Conservation survives a linear change of coordinates: the energy is read through `K`. -/
+@[powerlib_foundation] theorem conservative_conj {f : ℝⁿ → ℝⁿ} (L K : ℝⁿ →L[ℝ] ℝⁿ)
+    (hKL : ∀ x, K (L x) = x) (hLK : ∀ x, L (K x) = x) (hf : Flow.Conservative f 0) :
+    Flow.Conservative (fun x => L (f (K x))) 0 := by
+  obtain ⟨V, hV, hmin, hcons⟩ := hf
+  refine ⟨V ∘ K, hV.comp K.continuous, fun x hx => ?_, fun t₀ t₁ φ hφ t ht =>
+    hcons t₀ t₁ _ (isTrajectoryOn_conj L K hKL hφ) t ht⟩
+  have hKx : K x ≠ 0 := fun h => hx (by rw [← hLK x, h, map_zero])
+  simpa [Function.comp_apply, map_zero] using hmin (K x) hKx
+
+/-- A property of fields preserved by every linear change of coordinates holds for the conjugated
+linear field exactly when it holds for the original one. -/
+@[powerlib_foundation] theorem conj_iff {Q : (ℝⁿ → ℝⁿ) → Prop}
+    (hQ : ∀ (f : ℝⁿ → ℝⁿ) (L K : ℝⁿ →L[ℝ] ℝⁿ), (∀ x, K (L x) = x) → (∀ x, L (K x) = x) →
+      Q f → Q fun x => L (f (K x)))
+    {T S : Matrix (Fin n) (Fin n) ℝ} (hTS : T * S = 1) (hST : S * T = 1)
+    (A : Matrix (Fin n) (Fin n) ℝ) :
+    Q (affineLinearVectorField (T * A * S) 0) ↔ Q (affineLinearVectorField A 0) := by
   have h₁ : affineLinearVectorField (T * A * S) 0 =
       fun x => op T (affineLinearVectorField A 0 (op S x)) := by
     funext x
@@ -222,10 +270,10 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
   constructor
   · intro h
     rw [h₂]
-    exact lyapunovStable_conj (op S) (op T) (op_cancel hTS) (op_cancel hST) h
+    exact hQ _ (op S) (op T) (op_cancel hTS) (op_cancel hST) h
   · intro h
     rw [h₁]
-    exact lyapunovStable_conj (op T) (op S) (op_cancel hST) (op_cancel hTS) h
+    exact hQ _ (op T) (op S) (op_cancel hST) (op_cancel hTS) h
 
 /-- A coordinate change preserves every behavioural sentence at the origin. -/
 @[powerlib_foundation] theorem holds_conj (P : Flow.Property) {T S : Matrix (Fin n) (Fin n) ℝ}
@@ -234,10 +282,24 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
       P.holds (affineLinearVectorField A 0) 0 := by
   by_cases hP : P.Attractive
   · rw [holds_iff_isHurwitz 0 hP, holds_iff_isHurwitz 0 hP, isHurwitz_conj hTS hST]
-  · cases P with
-    | lyapunovStable => exact lyapunovStable_conj_iff hTS hST A
-    | unstable => exact not_congr (lyapunovStable_conj_iff hTS hST A)
-    | _ => exact absurd trivial hP
+  · cases P
+    case lyapunovStable =>
+      exact conj_iff (Q := fun f => LyapunovStable f 0)
+        (fun f L K h₁ h₂ => lyapunovStable_conj L K h₁ h₂) hTS hST A
+    case unstable =>
+      exact not_congr (conj_iff (Q := fun f => LyapunovStable f 0)
+        (fun f L K h₁ h₂ => lyapunovStable_conj L K h₁ h₂) hTS hST A)
+    case decay a =>
+      exact conj_iff (Q := fun f => Flow.Decay f 0 a)
+        (fun f L K h₁ h₂ => decay_conj L K h₁ h₂) hTS hST A
+    case contractive =>
+      change Flow.SampledContraction _ _ ↔ Flow.SampledContraction _ _
+      rw [sampledContraction_iff_isHurwitz, sampledContraction_iff_isHurwitz,
+        isHurwitz_conj hTS hST]
+    case conservative =>
+      exact conj_iff (Q := fun f => Flow.Conservative f 0)
+        (fun f L K h₁ h₂ => conservative_conj L K h₁ h₂) hTS hST A
+    all_goals exact absurd trivial hP
 
 /-! ## Similar plants -/
 

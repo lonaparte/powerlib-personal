@@ -11,7 +11,12 @@ it through its plant map.
   field itself.
 * Local ⇒ global exponential stability: the field is linear about `e`, so solution segments scale.
 * Forward completeness: the matrix exponential.
-* Local asymptotic stability ⇒ Hurwitz: a real eigenmode with `Re μ ≥ 0` does not decay. -/
+* Local asymptotic stability ⇒ Hurwitz: a real eigenmode with `Re μ ≥ 0` does not decay.
+
+Sampled contraction is decided by the same test: Hurwitz gives a contracting integer horizon
+(LeanForControl's spectral-radius argument), and a non-decaying eigenmode does not contract. A
+conserved energy excludes Hurwitz on a nontrivial state space, and a one-state plant decays exactly
+at the rates up to its pole. -/
 
 noncomputable section
 
@@ -129,6 +134,48 @@ def solution (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) (t₀ : ℝ) (x₀ : 
     ∀ t ∈ Icc t₀ t₁, φ t = e + Real.exp (-a * (t - t₀)) • (φ t₀ - e) :=
   trajectory_unique hφ (fun t _ => (scalar_solution_hasDerivAt a e (φ t₀) t₀ t).hasDerivWithinAt)
     (by simp)
+
+/-- A one-state plant `x' = -b x` decays exactly at the rates up to `b`: its solutions are the
+exponentials `e^{-b t}`. -/
+@[powerlib_foundation] theorem decay_scalar_iff (b a : ℝ) :
+    Flow.Decay (affineLinearVectorField !![-b] 0) 0 a ↔ a ≤ b := by
+  constructor
+  · rintro ⟨C, hC⟩
+    by_contra hab
+    push Not at hab
+    set x₀ : EuclideanSpace ℝ (Fin 1) := EuclideanSpace.single 0 1 with hx₀_def
+    have hx₀ : ‖x₀‖ = 1 := by simp [hx₀_def]
+    set T : ℝ := |C| / (a - b) with hT_def
+    have hT0 : 0 ≤ T := div_nonneg (abs_nonneg C) (by linarith)
+    have hsol : IsTrajectoryOn (fun t => 0 + Real.exp (-b * (t - 0)) • (x₀ - 0))
+        (affineLinearVectorField !![-b] 0) 0 T :=
+      fun t _ => (scalar_solution_hasDerivAt b 0 x₀ 0 t).hasDerivWithinAt
+    have hbound := hC 0 T _ hsol T ⟨hT0, le_rfl⟩
+    simp only [zero_add, sub_zero, mul_zero, Real.exp_zero, one_smul, norm_smul,
+      Real.norm_of_nonneg (Real.exp_pos _).le, hx₀, mul_one] at hbound
+    have hprod : (a - b) * T = |C| := by
+      rw [hT_def]
+      field_simp
+    have hgap : Real.exp ((a - b) * T) ≤ C := by
+      have h := mul_le_mul_of_nonneg_left hbound (Real.exp_pos (a * T)).le
+      have e₁ : Real.exp (a * T) * Real.exp (-b * T) = Real.exp ((a - b) * T) := by
+        rw [← Real.exp_add]
+        congr 1
+        ring
+      have e₂ : Real.exp (a * T) * (C * Real.exp (-a * T)) = C := by
+        rw [mul_left_comm, ← Real.exp_add, show a * T + -a * T = 0 by ring, Real.exp_zero,
+          mul_one]
+      linarith
+    have hlarge : |C| + 1 ≤ Real.exp ((a - b) * T) := by
+      rw [hprod]
+      exact Real.add_one_le_exp |C|
+    linarith [le_abs_self C]
+  · intro hab
+    refine ⟨1, fun t₀ t₁ φ hφ t ht => ?_⟩
+    rw [trajectory_eq_scalar hφ t ht]
+    simp only [zero_add, sub_zero, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le, one_mul]
+    gcongr
+    nlinarith [ht.1]
 
 /-- Solution segments scale about the centre. -/
 @[powerlib_foundation] theorem isTrajectoryOn_scale {A : Matrix (Fin n) (Fin n) ℝ} {e : ℝⁿ}
@@ -347,14 +394,11 @@ open scoped Matrix.Norms.Frobenius
     ((Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ)).toAlgEquiv.toLinearEquiv.toLinearMap
       |>.continuous_of_finiteDimensional) M
 
-/-- Every attractive sentence of the affine linear field gives an integer horizon over which every
-solution segment contracts towards the centre by a fixed factor. -/
-@[powerlib_foundation] theorem contractive_sampling {A : Matrix (Fin n) (Fin n) ℝ} (e : ℝⁿ)
-    {P : Flow.Property} (hP : P.Attractive) (h : P.holds (affineLinearVectorField A e) e) :
-    ∃ k : ℕ, 0 < k ∧ ∃ c < 1, ∀ (t₀ : ℝ) (φ : ℝ → ℝⁿ),
-      IsTrajectoryOn φ (affineLinearVectorField A e) t₀ (t₀ + k) →
-        ‖φ (t₀ + k) - e‖ ≤ c * ‖φ t₀ - e‖ := by
-  obtain ⟨k, hk, hlt⟩ := contractive_block ((holds_iff_isHurwitz e hP).mp h)
+/-- Hurwitz gives sampled contraction of the affine linear field: over an integer horizon the
+transition matrix has Frobenius norm below one. -/
+@[powerlib_foundation] theorem sampledContraction_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
+    (e : ℝⁿ) (hA : IsHurwitz A) : Flow.SampledContraction (affineLinearVectorField A e) e := by
+  obtain ⟨k, hk, hlt⟩ := contractive_block hA
   refine ⟨k, hk, _, hlt, fun t₀ φ hφ => ?_⟩
   have hk' : (0 : ℝ) ≤ k := Nat.cast_nonneg k
   rw [trajectory_eq_solution hφ (t₀ + k) ⟨by linarith, le_rfl⟩, solution,
@@ -363,5 +407,63 @@ solution segment contracts towards the centre by a fixed factor. -/
   exact norm_op_apply_le _ _
 
 end Sampling
+
+/-- A non-decaying eigenmode does not contract: sampled contraction of the affine linear field
+forces Hurwitz. -/
+@[powerlib_foundation] theorem isHurwitz_of_sampledContraction {A : Matrix (Fin n) (Fin n) ℝ}
+    {e : ℝⁿ} (h : Flow.SampledContraction (affineLinearVectorField A e) e) : IsHurwitz A := by
+  obtain ⟨k, hk, c, hc, hcon⟩ := h
+  intro μ v hv heig
+  by_contra hμ
+  have hre : 0 ≤ μ.re := by simpa using not_lt.mp hμ
+  have hN : 0 < ∑ j, Complex.normSq (v j) := by
+    obtain ⟨j, hj⟩ := Function.ne_iff.mp hv
+    exact Finset.sum_pos' (fun k _ => Complex.normSq_nonneg _)
+      ⟨j, Finset.mem_univ _, Complex.normSq_pos.mpr hj⟩
+  set N := ∑ j, Complex.normSq (v j)
+  have hcurve : ∀ part : ℂ →L[ℝ] ℝ, (∀ (a : ℝ) (z : ℂ), part ((a : ℂ) * z) = a * part z) →
+      IsTrajectoryOn (fun t => e + eigenmode part μ v t) (affineLinearVectorField A e) 0
+        (0 + k) := by
+    intro part hpart t _
+    have h := (eigenmode_hasDerivAt A heig part hpart t).const_add e
+    convert h.hasDerivWithinAt using 1
+    simp [affine_apply]
+  have h₁ := hcon 0 _ (hcurve Complex.reCLM (by simp))
+  have h₂ := hcon 0 _ (hcurve Complex.imCLM (by simp))
+  simp only [add_sub_cancel_left, zero_add] at h₁ h₂
+  have hk₀ := eigenmode_norm_sq μ v 0
+  have hkk := eigenmode_norm_sq μ v k
+  simp only [mul_zero, Real.exp_zero, one_pow, one_mul] at hk₀
+  have hgrow : 1 ≤ Real.exp (μ.re * k) ^ 2 :=
+    one_le_pow₀ (Real.one_le_exp_iff.mpr (mul_nonneg hre (Nat.cast_nonneg k)))
+  have a0 := norm_nonneg (eigenmode Complex.reCLM μ v 0)
+  have b0 := norm_nonneg (eigenmode Complex.imCLM μ v 0)
+  have ak := norm_nonneg (eigenmode Complex.reCLM μ v k)
+  have bk := norm_nonneg (eigenmode Complex.imCLM μ v k)
+  rcases lt_or_ge c 0 with hc0 | hc0
+  · have hz₁ : ‖eigenmode Complex.reCLM μ v k‖ = 0 :=
+      le_antisymm (h₁.trans (mul_nonpos_of_nonpos_of_nonneg hc0.le a0)) ak
+    have hz₂ : ‖eigenmode Complex.imCLM μ v k‖ = 0 :=
+      le_antisymm (h₂.trans (mul_nonpos_of_nonpos_of_nonneg hc0.le b0)) bk
+    rw [hz₁, hz₂] at hkk
+    nlinarith
+  · have hs₁ := pow_le_pow_left₀ ak h₁ 2
+    have hs₂ := pow_le_pow_left₀ bk h₂ 2
+    have hc2 : c ^ 2 < 1 := by nlinarith
+    nlinarith
+
+/-- For the affine linear field, sampled contraction holds at the centre exactly when the matrix
+is Hurwitz. -/
+@[powerlib_foundation] theorem sampledContraction_iff_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
+    (e : ℝⁿ) : Flow.SampledContraction (affineLinearVectorField A e) e ↔ IsHurwitz A :=
+  ⟨isHurwitz_of_sampledContraction, sampledContraction_of_isHurwitz e⟩
+
+/-- A conserved energy excludes Hurwitz on a nontrivial state space: every solution of a Hurwitz
+field converges. -/
+@[powerlib_foundation] theorem not_isHurwitz_of_conservative (hn : 0 < n)
+    {A : Matrix (Fin n) (Fin n) ℝ} {e : ℝⁿ}
+    (h : Flow.Conservative (affineLinearVectorField A e) e) : ¬ IsHurwitz A :=
+  fun hA => h.not_localAsymptoticStable hn (forwardComplete A e)
+    (localAsymptoticStable_of_isHurwitz e hA)
 
 end powerlib.Linear

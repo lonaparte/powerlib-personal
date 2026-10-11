@@ -1,5 +1,7 @@
+import theorem.Family.Basic
 import theorem.Flow.Certificate
 import theorem.Linear.Synthesis
+import theorem.Linear.Transfer
 
 /-! # Two-state polynomial fields with sum-of-squares certificates
 
@@ -7,13 +9,12 @@ Model boundary: autonomous fields `x' = f(x)` on `ℝ²` whose two components ar
 rational coefficients, in continuous time, without input, delay or switching. The equilibrium is
 the origin.
 
-A model enters the library through its field map; every sentence is the Flow semantics pulled
-back along it (`Flow.den Model.field 0`). A certificate is rational data — a quadratic energy, two
-bounds, a decay rate and three weighted sums of squares — accepted by an exact check: the three
-polynomial identities are compared coefficient by coefficient and the weights must be
-nonnegative. The check is a boolean computation whose soundness is a theorem; an accepted
-certificate is a quadratic-decay certificate and therefore proves forward completeness and global
-exponential stability.
+A model enters the library through its field map, read as an autonomous system. A certificate is
+rational data — a quadratic energy, two bounds, a decay rate and three weighted sums of squares —
+accepted by an exact check: the three polynomial identities are compared coefficient by
+coefficient and the weights must be nonnegative. The check is a boolean computation whose
+soundness is a theorem; an accepted certificate is a quadratic-decay certificate and therefore
+proves forward completeness, global exponential stability and decay at half its rate.
 
 The synthesizer proposes the data from the model alone. The energy is taken from a fixed family —
 the solution of the Lyapunov equation of the linearization (`Linear.Synthesis`), then diagonal
@@ -21,7 +22,15 @@ energies — the bounds and the rate come from eigenvalue bounds, and each sum o
 `L D Lᵀ` factorization of a Gram matrix of canonical shape. It is not trusted: whatever it
 proposes is checked. It succeeds when some energy of the family makes the higher-order terms
 dissipative and the decay polynomial admits a Gram matrix of that shape; otherwise it proposes
-nothing, which proves nothing. -/
+nothing, which proves nothing.
+
+The family's requirement language speaks of the origin as an equilibrium, of the linearization
+there — computed from the linear coefficients, and shown to be the Jacobian of the field — and of
+certificates. Its translation chain lies below its semantics connection (`chain_le_semantics`):
+the linearization decides the local sentences and instability (LeanForControl's indirect method),
+a certificate the global ones and a decay rate. Cubic damping `x' = -x³, y' = -y³` marks where the
+connections part: it is globally asymptotically stable with neither a certificate nor a Hurwitz
+linearization (`not_exact_asymptotic`). -/
 
 namespace powerlib.Nonlinear.Polynomial2
 
@@ -490,20 +499,277 @@ def Certificate.quadraticDecay {model : Model} (c : Certificate model) :
       linarith }
 
 /-- An accepted certificate proves global exponential stability of the full polynomial field. -/
-@[powerlib_domain, aesop unsafe 80% apply]
+@[powerlib_foundation, aesop unsafe 80% apply]
 theorem Certificate.globallyExponentiallyStable {model : Model}
     (c : Certificate model) : Flow.GloballyExponentiallyStable model.field 0 :=
   c.quadraticDecay.globallyExponentiallyStable model.field_smooth
 
-/-- An accepted certificate places the model in the denotation of every attractive sentence. -/
-@[powerlib_domain] theorem Certificate.mem_den {model : Model} (c : Certificate model)
-    {P : Flow.Property} (hP : P.Attractive) : model ∈ Flow.den Model.field 0 P :=
-  c.quadraticDecay.mem_den model.field_smooth hP
+/-! ## The linearization at the origin -/
 
-/-- A model accepted by the synthesizer satisfies every attractive sentence. -/
-@[powerlib_domain] theorem mem_den_of_accepts {model : Model} (h : accepts model = true)
-    {P : Flow.Property} (hP : P.Attractive) : model ∈ Flow.den Model.field 0 P :=
-  (certificateOf model h).mem_den hP
+/-- A coordinate functional. -/
+abbrev coord (j : Fin 2) : ℝ² →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) j
+
+@[powerlib_foundation] theorem hasFDerivAt_monomial_zero (c : ℝ) (a b : ℕ) :
+    HasFDerivAt (fun x : ℝ² => c * x 0 ^ a * x 1 ^ b)
+      ((if (a, b) = (1, 0) then c else 0) • coord 0 +
+        (if (a, b) = (0, 1) then c else 0) • coord 1) 0 := by
+  have h0 : HasFDerivAt (fun x : ℝ² => x 0) (coord 0) 0 := (coord 0).hasFDerivAt
+  have h1 : HasFDerivAt (fun x : ℝ² => x 1) (coord 1) 0 := (coord 1).hasFDerivAt
+  have h := ((hasFDerivAt_const c (0 : ℝ²)).mul (h0.pow a)).mul (h1.pow b)
+  convert h using 1
+  ext v
+  rcases a with _ | _ | a <;> rcases b with _ | _ | b <;> simp [pow_succ]
+
+/-- At the origin a polynomial has the derivative of its linear terms. -/
+@[powerlib_foundation] theorem hasFDerivAt_eval_zero (p : Polynomial) :
+    HasFDerivAt (fun x : ℝ² => eval p (x 0) (x 1))
+      ((coeff p (1, 0) : ℝ) • coord 0 + (coeff p (0, 1) : ℝ) • coord 1) 0 := by
+  induction p with
+  | nil => simpa [coeff] using hasFDerivAt_const (0 : ℝ) (0 : ℝ²)
+  | cons t ts ih =>
+    have h := (hasFDerivAt_monomial_zero t.coefficient t.powers.1 t.powers.2).add ih
+    convert h using 1
+    · rfl
+    · ext v
+      simp only [coeff_cons, Prod.mk.eta, Rat.cast_add]
+      split_ifs <;> simp_all <;> ring
+
+/-- The linearization at the origin: the matrix of linear coefficients. -/
+def Model.linearization (model : Model) : Matrix (Fin 2) (Fin 2) ℝ :=
+  Linear.Synthesis.real model.linearPart
+
+/-- The linearization is the Jacobian of the field at the origin. -/
+@[powerlib_foundation] theorem hasFDerivAt_field_zero (model : Model) :
+    HasFDerivAt model.field
+      (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) model.linearization) 0 := by
+  have hpi : HasFDerivAt
+      (fun x : ℝ² => ![eval model.field0 (x 0) (x 1), eval model.field1 (x 0) (x 1)])
+      (ContinuousLinearMap.pi fun i =>
+        ![(coeff model.field0 (1, 0) : ℝ) • coord 0 + (coeff model.field0 (0, 1) : ℝ) • coord 1,
+          (coeff model.field1 (1, 0) : ℝ) • coord 0 + (coeff model.field1 (0, 1) : ℝ) • coord 1]
+          i) 0 := by
+    refine hasFDerivAt_pi.mpr fun i => ?_
+    fin_cases i
+    · simpa using hasFDerivAt_eval_zero model.field0
+    · simpa using hasFDerivAt_eval_zero model.field1
+  have h :=
+    (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.hasFDerivAt.comp (0 : ℝ²) hpi
+  have hfun : model.field = (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm ∘
+      fun x : ℝ² => ![eval model.field0 (x 0) (x 1), eval model.field1 (x 0) (x 1)] := rfl
+  rw [hfun]
+  refine h.congr_fderiv ?_
+  ext v i
+  fin_cases i <;>
+    simp [Model.linearization, Model.linearPart, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+
+/-- Without constant terms the origin is an equilibrium. -/
+@[powerlib_foundation] theorem Model.field_eq_zero (model : Model)
+    (h : coeff model.field0 (0, 0) = 0 ∧ coeff model.field1 (0, 0) = 0) : model.field 0 = 0 := by
+  ext i
+  fin_cases i <;> simp [eval_zero, h.1, h.2]
+
+/-! ## The family -/
+
+open LinearSystems
+
+/-- Requirements on the polynomial models. -/
+inductive Requirement
+  | equilibrium
+  | linearizationHurwitz
+  | linearizationUnstable
+  | certified
+  | decayRateAtLeast (a : ℝ)
+
+/-- Satisfaction of a requirement by a model. -/
+def Meets (model : Model) : Requirement → Prop
+  | .equilibrium => coeff model.field0 (0, 0) = 0 ∧ coeff model.field1 (0, 0) = 0
+  | .linearizationHurwitz => IsHurwitz model.linearization
+  | .linearizationUnstable =>
+    ∃ s : ℂ, (Linear.characteristicMatrix model.linearization s).det = 0 ∧ 0 < s.re
+  | .certified => Nonempty (Certificate model)
+  | .decayRateAtLeast a => ∃ c : Certificate model, a ≤ (c.witness.rate : ℝ) / 2
+
+/-- The translation of the sentences: the local ones into an equilibrium with a Hurwitz
+linearization, instability into one with a right-half-plane root, the global ones into a
+certificate, a decay rate into a certificate with that rate. Conservation is translated into the
+whole language, which no model meets; passivity needs no requirement. -/
+def translate : Sentence → Set Requirement
+  | .flow .lyapunovStable | .flow .locallyAsymptoticallyStable
+  | .flow .locallyExponentiallyStable => {.equilibrium, .linearizationHurwitz}
+  | .flow .unstable => {.equilibrium, .linearizationUnstable}
+  | .flow (.decay a) => {.decayRateAtLeast a}
+  | .flow .conservative => Set.univ
+  | .flow _ => {.certified}
+  | .passive => ∅
+
+/-- The polynomial family: every model read as its autonomous field. -/
+def family : Family Model Requirement 2 0 :=
+  ⟨fun model => Port.System.autonomous model.field, Meets, translate⟩
+
+@[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+  fun _ => rfl
+
+/-- No model has a Hurwitz linearization with a right-half-plane root. -/
+@[powerlib_foundation] theorem realize_univ : TMIO.realize Meets Set.univ = ∅ := by
+  ext model
+  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
+  intro h
+  obtain ⟨s, hs, hre⟩ := h .linearizationUnstable
+  have hH : IsHurwitz model.linearization := h .linearizationHurwitz
+  exact absurd ((Linear.spectrallyStable_iff_isHurwitz _).mpr hH s hs) (not_lt.mpr hre.le)
+
+/-- An equilibrium with a Hurwitz linearization is locally exponentially stable (LeanForControl's
+linearization theorem). -/
+@[powerlib_foundation] theorem locallyExponentiallyStable_of_linearization (model : Model)
+    (h : coeff model.field0 (0, 0) = 0 ∧ coeff model.field1 (0, 0) = 0)
+    (hH : IsHurwitz model.linearization) : LocallyExponentiallyStable model.field 0 :=
+  hurwitz_linearization_locally_exponentially_stable model.linearization model.field_smooth
+    (model.field_eq_zero h) (hasFDerivAt_field_zero model).fderiv hH
+
+/-- An equilibrium whose linearization has a right-half-plane root is unstable (LeanForControl's
+indirect method). -/
+@[powerlib_foundation] theorem unstable_of_linearization (model : Model)
+    (h : coeff model.field0 (0, 0) = 0 ∧ coeff model.field1 (0, 0) = 0) {s : ℂ}
+    (hs : (Linear.characteristicMatrix model.linearization s).det = 0) (hre : 0 < s.re) :
+    Unstable model.field 0 := by
+  obtain ⟨v, hv, heig⟩ := Linear.exists_eigenvector_of_root hs
+  exact unstable_of_exists_complex_eigenvalue_re_pos model.linearization model.field_smooth
+    (model.field_eq_zero h) (hasFDerivAt_field_zero model).fderiv ⟨s, v, hv, heig, hre⟩
+
+/-- Every translation of the polynomial family is sound: its translation chain lies below its
+semantics connection. -/
+@[powerlib_domain] theorem chain_le_semantics : ∀ P, family.chain P ≤ family.semantics P := by
+  refine Family.chain_le_semantics_iff.mpr fun s model hm => ?_
+  rw [TMIO.mem_realize] at hm
+  change ∀ q ∈ translate s, Meets model q at hm
+  have hlocal : ∀ (Γ : Set Requirement), Γ = {.equilibrium, .linearizationHurwitz} →
+      (∀ q ∈ Γ, Meets model q) → LocallyExponentiallyStable model.field 0 := by
+    rintro Γ rfl h
+    exact locallyExponentiallyStable_of_linearization model (h .equilibrium (by simp))
+      (h .linearizationHurwitz (by simp))
+  rcases s with P | _
+  · rw [family_isAutonomous.mem_den_flow]
+    cases P
+    case lyapunovStable => exact (hlocal _ rfl hm).lyapunovStable
+    case locallyAsymptoticallyStable =>
+      exact Flow.locallyExponentiallyStable_localAsymptoticStable (hlocal _ rfl hm)
+    case locallyExponentiallyStable => exact hlocal _ rfl hm
+    case unstable =>
+      obtain ⟨s, hs, hre⟩ := hm .linearizationUnstable (by simp [translate])
+      exact unstable_of_linearization model (hm .equilibrium (by simp [translate])) hs hre
+    case decay a =>
+      obtain ⟨c, hc⟩ := hm (.decayRateAtLeast a) rfl
+      exact c.quadraticDecay.decay.mono hc
+    case conservative =>
+      have : model ∈ TMIO.realize Meets Set.univ :=
+        (TMIO.mem_realize _ _ _).mpr fun q _ => hm q trivial
+      rw [realize_univ] at this
+      exact this.elim
+    case globallyAsymptoticallyStable =>
+      obtain ⟨c⟩ := hm .certified rfl
+      exact c.globallyExponentiallyStable.globallyAsymptoticallyStable
+    case globallyExponentiallyStable =>
+      obtain ⟨c⟩ := hm .certified rfl
+      exact c.globallyExponentiallyStable
+    case contractive =>
+      obtain ⟨c⟩ := hm .certified rfl
+      exact c.globallyExponentiallyStable.sampledContraction
+  · rw [family_isAutonomous.den_passive]
+    trivial
+
+/-! ## Where the connections part -/
+
+/-- Cubic damping `x' = -x³`, `y' = -y³`: no linear part. -/
+def cubicModel : Model := ⟨[⟨-1, (3, 0)⟩], [⟨-1, (0, 3)⟩]⟩
+
+@[powerlib_foundation] theorem cubicModel_field (x : ℝ²) :
+    cubicModel.field x = WithLp.toLp 2 ![-(x 0) ^ 3, -(x 1) ^ 3] := by
+  ext i
+  fin_cases i <;> simp [Model.field, cubicModel]
+
+/-- Cubic damping is globally asymptotically stable: `‖x‖²` is a strict Lyapunov function with
+compact sublevels. -/
+@[powerlib_foundation] theorem cubicModel_globallyAsymptoticallyStable :
+    Flow.GloballyAsymptoticallyStable cubicModel.field 0 := by
+  refine Flow.globallyAsymptoticallyStable_of_strictLyapunov (V := fun x : ℝ² => ‖x‖ ^ 2)
+    two_pos cubicModel.field_smooth ⟨by fun_prop, contDiff_norm_sq ℝ, by simp,
+      fun x hx => by positivity, by simp [cubicModel_field], fun x hx => ?_, fun c => ?_⟩
+  · rw [(hasStrictFDerivAt_norm_sq x).hasFDerivAt.fderiv]
+    simp only [smul_apply, innerSL_apply_apply, nsmul_eq_mul, Nat.cast_ofNat]
+    rw [cubicModel_field]
+    have hne : x 0 ≠ 0 ∨ x 1 ≠ 0 := by
+      by_contra h
+      push Not at h
+      apply hx
+      ext i
+      fin_cases i
+      · exact h.1
+      · exact h.2
+    have hinner : inner ℝ x (WithLp.toLp 2 ![-(x 0) ^ 3, -(x 1) ^ 3]) =
+        -(x 0 ^ 4 + x 1 ^ 4) := by
+      simp [PiLp.inner_apply, Fin.sum_univ_two]
+      ring
+    rw [hinner]
+    rcases hne with h | h
+    · have : 0 < x 0 ^ 4 := by positivity
+      nlinarith [pow_two_nonneg (x 1 ^ 2)]
+    · have : 0 < x 1 ^ 4 := by positivity
+      nlinarith [pow_two_nonneg (x 0 ^ 2)]
+  · refine (isCompact_closedBall (0 : ℝ²) (Real.sqrt (max c 0))).of_isClosed_subset
+      (isClosed_le (by fun_prop) continuous_const) fun x hx => ?_
+    rw [Metric.mem_closedBall, dist_zero_right]
+    exact Real.le_sqrt_of_sq_le (le_max_of_le_left hx)
+
+/-- Cubic damping has no certificate: near the origin it decays slower than any exponential. -/
+@[powerlib_foundation] theorem cubicModel_not_certified : IsEmpty (Certificate cubicModel) := by
+  refine ⟨fun c => ?_⟩
+  have hrate : (0 : ℝ) < c.witness.rate := c.quadraticDecay.rate_pos
+  have hlower : (0 : ℝ) < c.witness.lower := c.quadraticDecay.lower_pos
+  set t := Real.sqrt ((c.witness.rate : ℝ) / 4) with ht_def
+  have ht : 0 < t := Real.sqrt_pos.mpr (by positivity)
+  have ht2 : t ^ 2 = (c.witness.rate : ℝ) / 4 := Real.sq_sqrt (by positivity)
+  set x : ℝ² := WithLp.toLp 2 ![t, 0] with hx_def
+  have hdiss := c.quadraticDecay.dissipation x
+  have hlow := c.quadraticDecay.lower_bound x
+  change fderiv ℝ c.witness.energy x (cubicModel.field x) ≤
+    -(c.witness.rate : ℝ) * c.witness.energy x at hdiss
+  change (c.witness.lower : ℝ) * ‖x - 0‖ ^ 2 ≤ c.witness.energy x at hlow
+  rw [c.witness.energy_derivative, c.witness.energy_apply] at hdiss
+  rw [c.witness.energy_apply, sub_zero, EuclideanSpace.norm_sq_eq] at hlow
+  simp [hx_def, cubicModel_field, Fin.sum_univ_two] at hdiss hlow
+  have hp : (0 : ℝ) < c.witness.p00 := by
+    have : (c.witness.lower : ℝ) * t ^ 2 ≤ c.witness.p00 * t ^ 2 := by nlinarith
+    nlinarith [pow_pos ht 2]
+  nlinarith [pow_pos ht 2, mul_pos hp (pow_pos ht 2)]
+
+@[powerlib_foundation] theorem cubicModel_linearization : cubicModel.linearization = 0 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [Model.linearization, Model.linearPart, cubicModel, coeff]
+
+/-- The translations of the asymptotic sentences are sound but not exact: cubic damping is
+globally, hence locally, asymptotically stable, yet it has no certificate and its linearization
+is not Hurwitz. -/
+@[powerlib_domain] theorem not_exact_asymptotic :
+    ¬ family.Exact (.flow .globallyAsymptoticallyStable) ∧
+      ¬ family.Exact (.flow .locallyAsymptoticallyStable) := by
+  have hgas := cubicModel_globallyAsymptoticallyStable
+  constructor
+  · intro h
+    have hmem : cubicModel ∈ family.den (.flow .globallyAsymptoticallyStable) :=
+      family_isAutonomous.mem_den_flow.mpr hgas
+    rw [← h, TMIO.mem_realize] at hmem
+    obtain ⟨c⟩ : Nonempty (Certificate cubicModel) := hmem .certified rfl
+    exact cubicModel_not_certified.false c
+  · intro h
+    have hmem : cubicModel ∈ family.den (.flow .locallyAsymptoticallyStable) :=
+      family_isAutonomous.mem_den_flow.mpr hgas.localAsymptoticStable
+    rw [← h, TMIO.mem_realize] at hmem
+    have hH : IsHurwitz cubicModel.linearization := hmem .linearizationHurwitz
+      (show _ ∈ ({.equilibrium, .linearizationHurwitz} : Set Requirement) from Or.inr rfl)
+    rw [cubicModel_linearization] at hH
+    have := hH 0 ![1, 0] (by simp [funext_iff])
+      (by ext i; simp [Matrix.mulVec, dotProduct, Matrix.map_apply])
+    simp at this
 
 end
 

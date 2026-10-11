@@ -236,4 +236,60 @@ theory applied to its energy. -/
     P.holds (affineLinearVectorField A e) e :=
   (c.toQuadraticDecay e).holds (affine_contDiff A e) hP
 
+/-! ## Conserved quadratic energies -/
+
+@[powerlib_foundation] theorem dotProduct_hasDerivWithinAt {X Y : ℝ → (Fin n → ℝ)}
+    {dX dY : Fin n → ℝ} {s : Set ℝ} {t : ℝ} (hX : HasDerivWithinAt X dX s t)
+    (hY : HasDerivWithinAt Y dY s t) :
+    HasDerivWithinAt (fun τ => X τ ⬝ᵥ Y τ) (dX ⬝ᵥ Y t + X t ⬝ᵥ dY) s t := by
+  have hd (i : Fin n) :=
+    ((ContinuousLinearMap.proj i : (Fin n → ℝ) →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt t hX).mul
+      ((ContinuousLinearMap.proj i : (Fin n → ℝ) →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt t hY)
+  simpa [dotProduct, Finset.sum_add_distrib, Pi.mul_apply, Function.comp_def] using!
+    HasDerivWithinAt.fun_sum (u := Finset.univ) (fun i _ => hd i)
+
+/-- A symmetric `P` with `Aᵀ P + P A = 0` gives a quadratic energy constant along every solution
+segment of the linear field. -/
+@[powerlib_foundation] theorem quadratic_conserved {A P : Matrix (Fin n) (Fin n) ℝ}
+    (hP : Pᵀ = P) (hl : Aᵀ * P + P * A = 0) {x : ℝ → ℝⁿ} {t₀ t₁ : ℝ}
+    (hx : IsTrajectoryOn x (affineLinearVectorField A 0) t₀ t₁) :
+    ∀ t ∈ Set.Icc t₀ t₁, WithLp.ofLp (x t) ⬝ᵥ (P *ᵥ WithLp.ofLp (x t)) =
+      WithLp.ofLp (x t₀) ⬝ᵥ (P *ᵥ WithLp.ofLp (x t₀)) := by
+  have hcont : ContinuousOn (fun t => WithLp.ofLp (x t) ⬝ᵥ (P *ᵥ WithLp.ofLp (x t)))
+      (Set.Icc t₀ t₁) :=
+    (by fun_prop : Continuous fun y : ℝⁿ => WithLp.ofLp y ⬝ᵥ (P *ᵥ WithLp.ofLp y)).comp_continuousOn
+      hx.continuousOn
+  refine constant_of_has_deriv_right_zero hcont fun t ht => ?_
+  have hxt := hasDerivWithinAt_Ici_of_isIntegralCurveOn hx t ht
+  have hX : HasDerivWithinAt (fun τ => WithLp.ofLp (x τ))
+      (WithLp.ofLp (affineLinearVectorField A 0 (x t))) (Set.Ici t) t :=
+    (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).hasFDerivAt.comp_hasDerivWithinAt t hxt
+  have hfield : WithLp.ofLp (affineLinearVectorField A 0 (x t)) = A *ᵥ WithLp.ofLp (x t) := by
+    simp [affine_apply]
+  rw [hfield] at hX
+  have hPX : HasDerivWithinAt (fun τ => P *ᵥ WithLp.ofLp (x τ))
+      (P *ᵥ (A *ᵥ WithLp.ofLp (x t))) (Set.Ici t) t :=
+    (P.mulVecLin.toContinuousLinearMap).hasFDerivAt.comp_hasDerivWithinAt t hX
+  have h0 := quadratic_sym (A := A) hP (WithLp.ofLp (x t))
+  rw [hl, Matrix.zero_mulVec, dotProduct_zero] at h0
+  have hsym : (A *ᵥ WithLp.ofLp (x t)) ⬝ᵥ (P *ᵥ WithLp.ofLp (x t)) =
+      WithLp.ofLp (x t) ⬝ᵥ (P *ᵥ (A *ᵥ WithLp.ofLp (x t))) := by
+    rw [Matrix.dotProduct_mulVec, dotProduct_comm]
+    congr 1
+    conv_lhs => rw [← hP]
+    rw [Matrix.vecMul_transpose]
+  convert dotProduct_hasDerivWithinAt hX hPX using 1
+  rw [hsym]
+  linarith
+
+/-- A positive definite `P` with `Aᵀ P + P A = 0` proves the linear field conservative: its
+quadratic energy has a strict minimum at the origin and is constant along every solution. -/
+@[powerlib_foundation] theorem conservative_of_quadratic {A P : Matrix (Fin n) (Fin n) ℝ}
+    (hP : Pᵀ = P) (hpos : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (P *ᵥ x))
+    (hl : Aᵀ * P + P * A = 0) : Flow.Conservative (affineLinearVectorField A 0) 0 := by
+  refine ⟨fun y => WithLp.ofLp y ⬝ᵥ (P *ᵥ WithLp.ofLp y), by fun_prop, fun y hy => ?_,
+    fun t₀ t₁ φ hφ t ht => quadratic_conserved hP hl hφ t ht⟩
+  have hy' : WithLp.ofLp y ≠ 0 := fun h => hy (by rw [← WithLp.toLp_ofLp 2 y, h]; rfl)
+  simpa using hpos _ hy'
+
 end powerlib.Linear

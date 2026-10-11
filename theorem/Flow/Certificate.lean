@@ -8,8 +8,9 @@ A certificate is data whose conditions imply Flow sentences for a complete nonli
 
 * A quadratic-decay certificate (`QuadraticDecay`): a C¹ energy, not necessarily quadratic,
   between two positive multiples of the squared distance to the equilibrium and decaying at a
-  uniform exponential rate along the field. With a C¹ field it proves global exponential
-  stability, hence every attractive sentence and Lyapunov stability.
+  uniform exponential rate along the field. It proves decay at half the energy rate; with a C¹
+  field it proves global exponential stability, hence every attractive sentence, Lyapunov
+  stability and sampled contraction.
 * LeanForControl's strict Lyapunov function (`IsStrictLyapunovFunction`) proves global asymptotic
   stability.
 
@@ -114,6 +115,41 @@ finite-dimensional space lies between two positive multiples of the squared norm
     constructor
     · simpa [mul_comm] using mul_le_mul_of_nonneg_left (hmin hz) (sq_nonneg ‖x‖)
     · simpa [mul_comm] using mul_le_mul_of_nonneg_left (hmax hz) (sq_nonneg ‖x‖)
+
+/-! ## Energy comparison -/
+
+/-- A lower bound `-ρ V` on the Lie derivative of a C¹ energy along a solution segment bounds the
+energy's decay on that segment from below. -/
+@[powerlib_foundation] theorem energy_lower_bound {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
+    (hV : ContDiff ℝ 1 V) {ρ : ℝ} {φ : ℝ → ℝⁿ} {a b t : ℝ} (hφ : IsTrajectoryOn φ f a b)
+    (hlie : ∀ s ∈ Icc a b, -ρ * V (φ s) ≤ fderiv ℝ V (φ s) (f (φ s))) (ht : t ∈ Icc a b) :
+    Real.exp (-(ρ * (t - a))) * V (φ a) ≤ V (φ t) := by
+  let W : ℝ → ℝ := fun s => Real.exp (ρ * (s - a)) * V (φ s)
+  let W' : ℝ → ℝ := fun s =>
+    Real.exp (ρ * (s - a)) * (ρ * V (φ s) + fderiv ℝ V (φ s) (f (φ s)))
+  have hW : ∀ s ∈ Icc a b, HasDerivWithinAt W (W' s) (Icc a b) s := by
+    intro s hs
+    have hexp : HasDerivAt (fun u => Real.exp (ρ * (u - a))) (Real.exp (ρ * (s - a)) * ρ) s := by
+      simpa only [id_eq, mul_one, mul_comm] using
+        (((hasDerivAt_id s).sub_const a).const_mul ρ).exp
+    have hVd : HasDerivWithinAt (fun s => V (φ s)) (fderiv ℝ V (φ s) (f (φ s))) (Icc a b) s :=
+      ((hV.differentiable (by norm_num)) (φ s)).hasFDerivAt.comp_hasDerivWithinAt s (hφ s hs)
+    convert! hexp.hasDerivWithinAt.mul hVd using 1
+    dsimp [W']
+    ring
+  have hmono : MonotoneOn W (Icc a b) := by
+    apply monotoneOn_of_hasDerivWithinAt_nonneg (convex_Icc a b)
+      (fun s hs => (hW s hs).continuousWithinAt)
+    · exact fun s hs => (hW s (interior_subset hs)).mono interior_subset
+    · intro s hs
+      apply mul_nonneg (Real.exp_nonneg _)
+      linarith [hlie s (interior_subset hs)]
+  have hbound := hmono (left_mem_Icc.mpr (ht.1.trans ht.2)) ht ht.1
+  have hmul := mul_le_mul_of_nonneg_left hbound (Real.exp_nonneg (-(ρ * (t - a))))
+  have hcancel : Real.exp (-(ρ * (t - a))) * Real.exp (ρ * (t - a)) = 1 := by
+    rw [← Real.exp_add]
+    simp
+  simpa [W, mul_assoc, ← mul_assoc, hcancel] using hmul
 
 /-! ## Quadratic-decay certificates -/
 
@@ -226,6 +262,11 @@ theorem globallyExponentiallyStable {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
     {P : Property} (hP : P.Attractive) : P.holds f e :=
   (c.globallyExponentiallyStable hf).holds hP
 
+/-- The certificate proves decay at half its energy rate. -/
+@[powerlib_foundation] theorem decay {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
+    (c : QuadraticDecay f V e) : Decay f e (c.rate / 2) :=
+  ⟨_, fun _ _ _ hφ _ ht => c.norm_bound hφ ht⟩
+
 end QuadraticDecay
 
 /-! ## Strict Lyapunov functions -/
@@ -244,17 +285,5 @@ C¹ field, including a solution through every state. -/
   exact ⟨hV.hequil, forwardComplete_of_compact_sublevel hf
     (hV.hV_c1.differentiable (by norm_num)) hdec hV.hbounded_sublevel,
     lyapunov_asymptotic_stable hn hV hf.continuous⟩
-
-/-! ## Families of fields -/
-
-/-- The denotation of a sentence over a family of fields: the Flow semantics, pulled back. -/
-def den {X : Type*} (field : X → ℝⁿ → ℝⁿ) (e : ℝⁿ) (P : Property) : Set X :=
-  {x | P.holds (field x) e}
-
-/-- A certificate for a member with a C¹ field proves the member in every attractive sentence. -/
-@[powerlib_foundation] theorem QuadraticDecay.mem_den {X : Type*} {field : X → ℝⁿ → ℝⁿ}
-    {e : ℝⁿ} {x : X} {V : ℝⁿ → ℝ} (c : QuadraticDecay (field x) V e)
-    (hf : ContDiff ℝ 1 (field x)) {P : Property} (hP : P.Attractive) : x ∈ den field e P :=
-  c.holds hf hP
 
 end powerlib.Flow

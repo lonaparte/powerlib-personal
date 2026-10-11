@@ -3,21 +3,26 @@ import theorem.Linear.Synthesis
 
 /-! # Synthesis of LCL Lyapunov certificates
 
-Two synthesizers produce ordinary `Linear.Certificate`s for the exact plant, so their meaning —
-every attractive sentence — comes from the hub and is not restated here.
+Two synthesizers produce ordinary `Linear.Certificate`s for the exact plant; what a certificate
+proves is the hub's, not restated here.
 
 * For a passive, damped circuit, a closed-form symbolic witness built from the model
   coefficients; every endpoint is checked by the Lean kernel.
 * For circuits submitted with rational parameters, the generic rational synthesizer of
   `Linear.Synthesis`, run by the kernel on the exact rational plant matrix. It needs neither
   passivity nor damping: a circuit with a negative resistance is certified whenever its plant is
-  Hurwitz. -/
+  Hurwitz.
+
+Rational submissions form the LCL family read through the submitted parameters, its requirement
+language extended by acceptance (`rationalFamily`). Acceptance is related to the circuit
+requirements by an evaluation of the satisfaction connection (`realize_accepted`); the sentences
+keep their exact translations by the generic extension theorems. -/
 
 noncomputable section
 
 namespace powerlib.Circuits.LCL
 
-open Matrix
+open Matrix TMIO
 
 /-- A symmetric 3 × 3 matrix by its upper triangle. -/
 @[ext] structure SymmetricMatrix where
@@ -354,11 +359,28 @@ def RationalCircuit.certificate (r : RationalCircuit)
     (h : Linear.Synthesis.accepts r.matrix = true) : Linear.Certificate r.circuit.plant.A :=
   r.real_matrix ▸ Linear.Synthesis.certificateOf r.matrix h
 
-/-- When the kernel's run of the generic synthesizer accepts the parameters, the circuit
-satisfies every attractive sentence. -/
-@[powerlib_domain] theorem RationalCircuit.mem_den (r : RationalCircuit)
-    (h : Linear.Synthesis.accepts r.matrix = true) {P : Flow.Property} (hP : P.Attractive) :
-    r.circuit ∈ Linear.den Circuit.plant P :=
-  (r.certificate h).mem_den hP
+/-- Requirements a rational submission can meet besides those of the circuit. -/
+inductive Synthesis
+  | accepted
+
+/-- The LCL family on rational submissions: the circuit requirements, and acceptance by the
+generic synthesizer run on the exact rational plant matrix. -/
+def rationalFamily : Family RationalCircuit (Requirement ⊕ Synthesis) 3 2 :=
+  family.extend RationalCircuit.circuit fun r _ => Linear.Synthesis.accepts r.matrix = true
+
+@[powerlib_foundation] theorem rationalFamily_isLinear :
+    rationalFamily.IsLinear (Circuit.plant ∘ RationalCircuit.circuit) :=
+  family_isLinear.extend _ _
+
+/-- Acceptance by the synthesizer entails pole stability: the accepted certificate proves the
+plant Hurwitz. -/
+@[powerlib_domain] theorem realize_accepted :
+    realize rationalFamily.meets {.inr .accepted} ⊆
+      realize rationalFamily.meets {.inl .poleStable} := by
+  intro r hr
+  simp only [mem_realize, Set.mem_singleton_iff, forall_eq] at hr ⊢
+  change Linear.Synthesis.accepts r.matrix = true at hr
+  change r.circuit.Stable
+  exact (isHurwitz_iff_stable _).mp (r.certificate hr).isHurwitz
 
 end powerlib.Circuits.LCL

@@ -3,13 +3,16 @@ import theorem.Port.Defs
 /-! # Storage functions
 
 The general facts about passivity, proved once: a storage whose rate along solutions is bounded
-by the supplied power proves passivity; with the ports at zero the storage cannot increase; and a
-storage between two positive quadratic bounds proves Lyapunov stability of the zero-input field
-in the Flow semantics. -/
+by the supplied power proves passivity; a solution segment returning to its initial state while
+drawing net energy out of the ports refutes it; with the ports at zero the storage cannot increase;
+a storage between two positive quadratic bounds proves Lyapunov stability of the zero-input field
+in the Flow semantics; and a system without ports is passive with the zero storage. -/
 
 noncomputable section
 
-namespace powerlib.Port
+namespace powerlib
+
+namespace Port
 
 open Set MeasureTheory Filter Topology
 
@@ -71,4 +74,47 @@ field. -/
   have hsq' : ‖φ t‖ ^ 2 < ε ^ 2 := lt_of_mul_lt_mul_left hfin ha.le
   exact lt_of_pow_lt_pow_left₀ 2 hε.le hsq'
 
-end powerlib.Port
+/-- A solution segment that returns to its initial state while the ports deliver net energy
+refutes passivity: no storage can absorb a negative supply over a closed cycle. -/
+@[powerlib_foundation] theorem System.not_passive_of_cycle (s : System n p)
+    {u : ℝ → Fin p → ℝ} {x : ℝ → ℝⁿ} {t₀ t₁ : ℝ} (hle : t₀ ≤ t₁)
+    (hx : s.IsTrajectoryOn u x t₀ t₁) (hcycle : x t₁ = x t₀)
+    (hint : IntervalIntegrable (fun t => s.supply (x t) (u t)) volume t₀ t₁)
+    (hneg : ∫ t in t₀..t₁, s.supply (x t) (u t) < 0) : ¬ s.Passive := by
+  rintro ⟨V, -, hV⟩
+  have h := hV u x t₀ t₁ hle hx hint
+  rw [hcycle, sub_self] at h
+  linarith
+
+/-- An equilibrium held by a constant input that draws energy out of the ports refutes
+passivity. -/
+@[powerlib_foundation] theorem System.not_passive_of_equilibrium (s : System n p)
+    {x₀ : ℝⁿ} {u₀ : Fin p → ℝ} (hfield : s.field x₀ u₀ = 0) (hsupply : s.supply x₀ u₀ < 0) :
+    ¬ s.Passive := by
+  refine s.not_passive_of_cycle (u := fun _ => u₀) (x := fun _ => x₀) zero_le_one
+    (fun t _ => ?_) rfl intervalIntegrable_const ?_
+  · simpa [hfield] using (hasDerivAt_const t x₀).hasDerivWithinAt
+  · simpa using hsupply
+
+@[simp, powerlib_foundation] theorem System.autonomous_zeroInput (f : ℝⁿ → ℝⁿ) :
+    (System.autonomous f).zeroInput = f := rfl
+
+/-- A system without ports is passive: the zero storage never increases, and nothing is
+supplied. -/
+@[powerlib_foundation] theorem System.passive_of_noPorts (s : System n 0) : s.Passive :=
+  ⟨fun _ => 0, fun _ => le_rfl, fun u x t₀ t₁ _ _ _ => by simp [System.supply]⟩
+
+@[powerlib_foundation] theorem System.autonomous_passive (f : ℝⁿ → ℝⁿ) :
+    (System.autonomous f).Passive :=
+  (System.autonomous f).passive_of_noPorts
+
+end Port
+
+/-- A sentence about the flow holds on a system exactly when it holds for its zero-input field. -/
+@[simp, powerlib_foundation] theorem Sentence.holds_flow {n p : ℕ} (P : Flow.Property)
+    (s : Port.System n p) : (Sentence.flow P).holds s ↔ P.holds s.zeroInput 0 := Iff.rfl
+
+@[simp, powerlib_foundation] theorem Sentence.holds_passive {n p : ℕ} (s : Port.System n p) :
+    Sentence.passive.holds s ↔ s.Passive := Iff.rfl
+
+end powerlib

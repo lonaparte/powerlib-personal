@@ -2,9 +2,11 @@ import theorem.Flow.Defs
 
 /-! # Relations between the behavioural sentences
 
-The implications between the sentences hold for every vector field and are proved once:
-global exponential stability gives every other attractive sentence, and a local exponential
-estimate gives local asymptotic stability. -/
+The implications between the sentences hold for every vector field and are proved once: global
+exponential stability gives every other attractive sentence, a decay rate and sampled contraction;
+a local exponential estimate gives local asymptotic stability; a positive decay rate gives sampled
+contraction; and a conserved energy with a strict minimum gives Lyapunov stability
+(Lagrange–Dirichlet) while ruling out convergence of every solution through a nearby state. -/
 
 noncomputable section
 
@@ -72,25 +74,132 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 @[powerlib_foundation] theorem Property.localAsymptoticStable {f : ℝⁿ → ℝⁿ} {x : ℝⁿ} {P : Property}
     (hP : P.Attractive)
     (h : P.holds f x) : LocalAsymptoticStable f x := by
-  cases P with
-  | locallyAsymptoticallyStable => exact h
-  | locallyExponentiallyStable => exact locallyExponentiallyStable_localAsymptoticStable h
-  | globallyAsymptoticallyStable => exact GloballyAsymptoticallyStable.localAsymptoticStable h
-  | globallyExponentiallyStable =>
+  cases P
+  case locallyAsymptoticallyStable => exact h
+  case locallyExponentiallyStable => exact locallyExponentiallyStable_localAsymptoticStable h
+  case globallyAsymptoticallyStable => exact GloballyAsymptoticallyStable.localAsymptoticStable h
+  case globallyExponentiallyStable =>
     exact GloballyAsymptoticallyStable.localAsymptoticStable h.globallyAsymptoticallyStable
-  | lyapunovStable => exact absurd hP id
-  | unstable => exact absurd hP id
+  all_goals exact absurd hP id
 
 /-- Global exponential stability gives every attractive sentence. -/
 @[powerlib_foundation] theorem GloballyExponentiallyStable.holds {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
     (h : GloballyExponentiallyStable f x) {P : Property} (hP : P.Attractive) : P.holds f x := by
-  cases P with
-  | locallyAsymptoticallyStable =>
+  cases P
+  case locallyAsymptoticallyStable =>
     exact locallyExponentiallyStable_localAsymptoticStable h.locallyExponentiallyStable
-  | locallyExponentiallyStable => exact h.locallyExponentiallyStable
-  | globallyAsymptoticallyStable => exact h.globallyAsymptoticallyStable
-  | globallyExponentiallyStable => exact h
-  | lyapunovStable => exact absurd hP id
-  | unstable => exact absurd hP id
+  case locallyExponentiallyStable => exact h.locallyExponentiallyStable
+  case globallyAsymptoticallyStable => exact h.globallyAsymptoticallyStable
+  case globallyExponentiallyStable => exact h
+  all_goals exact absurd hP id
+
+/-! ## Decay rates and sampled contraction -/
+
+/-- A decay rate gives every smaller rate. -/
+@[powerlib_foundation] theorem Decay.mono {f : ℝⁿ → ℝⁿ} {x : ℝⁿ} {a b : ℝ} (h : Decay f x a)
+    (hba : b ≤ a) : Decay f x b := by
+  obtain ⟨C, hC⟩ := h
+  refine ⟨max C 0, fun t₀ t₁ φ hφ t ht => (hC t₀ t₁ φ hφ t ht).trans ?_⟩
+  have hexp : Real.exp (-a * (t - t₀)) ≤ Real.exp (-b * (t - t₀)) :=
+    Real.exp_le_exp.mpr (by nlinarith [ht.1])
+  have h0 : 0 ≤ ‖φ t₀ - x‖ := norm_nonneg _
+  calc C * Real.exp (-a * (t - t₀)) * ‖φ t₀ - x‖
+      ≤ max C 0 * Real.exp (-a * (t - t₀)) * ‖φ t₀ - x‖ := by
+        gcongr
+        exact le_max_left _ _
+    _ ≤ max C 0 * Real.exp (-b * (t - t₀)) * ‖φ t₀ - x‖ := by
+        gcongr
+
+/-- Global exponential stability decays at a positive rate. -/
+@[powerlib_foundation] theorem GloballyExponentiallyStable.exists_decay {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
+    (h : GloballyExponentiallyStable f x) : ∃ a, 0 < a ∧ Decay f x a := by
+  obtain ⟨-, -, C, a, -, ha, hb⟩ := h
+  exact ⟨a, ha, C, hb⟩
+
+/-- A positive decay rate gives sampled contraction: the overshoot is eventually beaten by the
+exponential. -/
+@[powerlib_foundation] theorem Decay.sampledContraction {f : ℝⁿ → ℝⁿ} {x : ℝⁿ} {a : ℝ}
+    (h : Decay f x a) (ha : 0 < a) : SampledContraction f x := by
+  obtain ⟨C, hC⟩ := h
+  have hlim : Tendsto (fun k : ℕ => max C 0 * Real.exp (-a * k)) atTop (𝓝 0) := by
+    have h1 : Tendsto (fun k : ℕ => Real.exp (-a * k)) atTop (𝓝 0) :=
+      Real.tendsto_exp_atBot.comp ((tendsto_natCast_atTop_atTop).const_mul_atTop_of_neg
+        (by linarith))
+    simpa using h1.const_mul (max C 0)
+  obtain ⟨k, hk⟩ := ((eventually_gt_atTop 0).and (hlim.eventually (gt_mem_nhds one_pos))).exists
+  refine ⟨k, hk.1, max C 0 * Real.exp (-a * k), hk.2, fun t₀ φ hφ => ?_⟩
+  have hk0 : (0 : ℝ) ≤ k := Nat.cast_nonneg k
+  have hb := hC t₀ (t₀ + k) φ hφ (t₀ + k) ⟨by linarith, le_rfl⟩
+  rw [add_sub_cancel_left] at hb
+  refine hb.trans ?_
+  gcongr
+  exact le_max_left _ _
+
+/-- Global exponential stability gives sampled contraction. -/
+@[powerlib_foundation] theorem GloballyExponentiallyStable.sampledContraction {f : ℝⁿ → ℝⁿ}
+    {x : ℝⁿ} (h : GloballyExponentiallyStable f x) : SampledContraction f x := by
+  obtain ⟨a, ha, hd⟩ := h.exists_decay
+  exact hd.sampledContraction ha
+
+/-! ## Conservation -/
+
+/-- A conserved energy with a strict minimum gives Lyapunov stability (Lagrange–Dirichlet): a
+solution starting where the energy is below its minimum on a sphere never reaches the sphere. -/
+@[powerlib_foundation] theorem Conservative.lyapunovStable {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
+    (h : Conservative f x) : LyapunovStable f x := by
+  obtain ⟨V, hV, hmin, hcons⟩ := h
+  intro ε hε
+  by_cases hs : (Metric.sphere x ε).Nonempty
+  · obtain ⟨y₀, hy₀, hmin₀⟩ := (isCompact_sphere x ε).exists_isMinOn hs hV.continuousOn
+    have hy₀x : y₀ ≠ x := by
+      rintro rfl
+      rw [Metric.mem_sphere, dist_self] at hy₀
+      exact hε.ne hy₀
+    have hm : 0 < V y₀ - V x := by linarith [hmin y₀ hy₀x]
+    obtain ⟨δ, hδ, hδV⟩ := Metric.continuousAt_iff.mp hV.continuousAt _ hm
+    refine ⟨min δ ε, lt_min hδ hε, fun t₀ t₁ φ hφ h0 t ht => ?_⟩
+    by_contra hge
+    push Not at hge
+    obtain ⟨τ, hτ, hτε, -⟩ := exists_first_sphere_hit
+      (hφ.continuousOn.mono (Icc_subset_Icc le_rfl ht.2)) (h0.trans_le (min_le_right _ _))
+      ⟨ht.1, le_rfl⟩ hge
+    have hτV : V (φ τ) = V (φ t₀) := hcons t₀ t₁ φ hφ τ ⟨hτ.1, hτ.2.trans ht.2⟩
+    have h1 : V y₀ ≤ V (φ τ) := hmin₀ (by rw [Metric.mem_sphere, dist_eq_norm]; exact hτε)
+    have h2 := hδV (show dist (φ t₀) x < δ by
+      rw [dist_eq_norm]
+      exact h0.trans_le (min_le_left _ _))
+    rw [Real.dist_eq] at h2
+    linarith [(abs_lt.mp h2).2]
+  · refine ⟨ε, hε, fun t₀ t₁ φ hφ h0 t ht => ?_⟩
+    by_contra hge
+    push Not at hge
+    obtain ⟨τ, -, hτε, -⟩ := exists_first_sphere_hit
+      (hφ.continuousOn.mono (Icc_subset_Icc le_rfl ht.2)) h0 ⟨ht.1, le_rfl⟩ hge
+    exact hs ⟨φ τ, by rw [Metric.mem_sphere, dist_eq_norm]; exact hτε⟩
+
+/-- A conserved energy rules out local asymptotic stability once a solution passes through every
+state and the state space is not a point: the energy of a solution through a nearby state stays
+above its minimum, so the solution cannot converge. -/
+@[powerlib_foundation] theorem Conservative.not_localAsymptoticStable (hn : 0 < n)
+    {f : ℝⁿ → ℝⁿ} {x : ℝⁿ} (h : Conservative f x) (hc : ForwardComplete f) :
+    ¬ LocalAsymptoticStable f x := by
+  rintro ⟨-, c, hc0, hconv⟩
+  obtain ⟨V, hV, hmin, hcons⟩ := h
+  set y : ℝⁿ := x + EuclideanSpace.single ⟨0, hn⟩ (c / 2) with hy_def
+  have hsingle : ‖EuclideanSpace.single (⟨0, hn⟩ : Fin n) (c / 2)‖ = c / 2 := by
+    rw [PiLp.norm_single, Real.norm_of_nonneg (by linarith)]
+  have hyx : y ≠ x := by
+    intro hyx
+    have h0 : ‖y - x‖ = 0 := by rw [hyx, sub_self, norm_zero]
+    rw [hy_def, add_sub_cancel_left, hsingle] at h0
+    linarith
+  obtain ⟨φ, hφ0, hφ⟩ := hc 0 y
+  have hlim := hconv 0 φ hφ (by rw [hφ0, hy_def, add_sub_cancel_left, hsingle]; linarith)
+  have hconst : ∀ t, 0 ≤ t → V (φ t) = V y := fun t ht => by
+    rw [hcons 0 t φ (hφ.mono Icc_subset_Ici_self) t ⟨ht, le_rfl⟩, hφ0]
+  have hlimV : Tendsto (fun t => V (φ t)) atTop (𝓝 (V x)) := (hV.tendsto x).comp hlim
+  have hlimy : Tendsto (fun t => V (φ t)) atTop (𝓝 (V y)) :=
+    tendsto_const_nhds.congr' ((eventually_ge_atTop 0).mono fun t ht => (hconst t ht).symm)
+  exact (hmin y hyx).ne (tendsto_nhds_unique hlimV hlimy)
 
 end powerlib.Flow

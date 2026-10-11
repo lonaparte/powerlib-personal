@@ -1,5 +1,6 @@
 import theorem.Circuits.RL
 import theorem.generated.LCLConversion
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-! # The LCL filter
 
@@ -12,8 +13,19 @@ resistances are real, of either sign, unless passivity is required. No controlle
 sampling delay or further grid state.
 
 The circuit parameters and the state-space parameters are related by the Agda-generated
-conversion (the RL conversion on each branch, the reciprocal on the capacitance). The plant map
-sends the state-space parameters to the three-state plant; behaviour is the hub's, pulled back. -/
+conversion (the RL conversion on each branch, the reciprocal on the capacitance). The family reads
+every circuit as the port system of its three-state plant.
+
+Its translation chain lies below its semantics connection everywhere (`chain_le_semantics`) and
+agrees with it on the attractive sentences and sampled contraction, whose translation is pole
+stability (`exact_hurwitz`), and on passivity, whose translation is the passivity of both
+resistances (`exact_passive`: a negative resistance is exposed by a closed cycle along which the
+ports deliver net energy). Within passive circuits, conservation is exactly losslessness
+(`exactUnder_conservative`); the requirement equivalences of Routh and Hurwitz are evaluations of
+the satisfaction connection (`realize_routhHurwitz`, `realize_passive_damped`). Two circuits mark
+where the connections part: a Hurwitz circuit with a negative resistance is Lyapunov stable but
+not passive, and a circuit with opposite resistances conserves an energy without being lossless
+(`not_exact_lyapunovStable`, `not_exact_conservative`). -/
 
 noncomputable section
 
@@ -125,7 +137,7 @@ def Circuit.Stable (m : Circuit) : Prop := ∀ s : ℂ, m.frequency s = 0 → s.
   ring
 
 /-- The plant is Hurwitz exactly when all poles lie in the open left half plane. -/
-@[simp, powerlib_domain] theorem isHurwitz_iff_stable (m : Circuit) :
+@[simp, powerlib_foundation] theorem isHurwitz_iff_stable (m : Circuit) :
     IsHurwitz m.plant.A ↔ m.Stable := by
   rw [← Linear.spectrallyStable_iff_isHurwitz]
   have ha3 : (m.a3 : ℂ) ≠ 0 := by exact_mod_cast (a3_pos m).ne'
@@ -209,7 +221,7 @@ theorem routhHurwitz_of_passive (m : Circuit) (hp : m.Passive)
   exact ⟨h2, h1, h0, hg⟩
 
 /-- With passive resistances, pole stability is exactly damping. -/
-@[powerlib_domain] theorem passive_stable_iff (m : Circuit) (hp : m.Passive) :
+@[powerlib_foundation] theorem passive_stable_iff (m : Circuit) (hp : m.Passive) :
     m.Stable ↔ m.Damped := by
   constructor
   · intro hs
@@ -233,20 +245,6 @@ theorem routhHurwitz_of_passive (m : Circuit) (hp : m.Passive)
 
 @[simp, powerlib_foundation] theorem toStateSpace_capacitorGain (m : Circuit) :
     (toStateSpace m).capacitorGain.val = (m.capacitance.val)⁻¹ := rfl
-
-/-- At every pair of terminal voltages and every equilibrium, an attractive sentence holds
-exactly when all poles lie in the open left half plane. -/
-@[powerlib_domain] theorem holds_input_iff (m : Circuit) {u : Fin 2 → ℝ}
-    {e : EuclideanSpace ℝ (Fin 3)} (he : IsEquilibrium (m.plant.inputField u) e)
-    {P : Flow.Property} (hP : P.Attractive) :
-    P.holds (m.plant.inputField u) e ↔ m.Stable := by
-  rw [Linear.holds_input_iff m.plant he hP, isHurwitz_iff_stable]
-
-/-- A pole in the open right half plane makes the circuit unstable (LeanForControl). -/
-@[powerlib_domain] theorem unstable_of_pole (m : Circuit) {s : ℂ} (hs : m.frequency s = 0)
-    (hre : 0 < s.re) : Unstable (affineLinearVectorField m.plant.A 0) 0 := by
-  refine Linear.unstable_of_root 0 ?_ hre
-  rw [det_characteristicMatrix, hs, zero_div]
 
 /-- The physical energy matrix `diag(L₁, C, L₂)`. -/
 def energyMatrix (m : Circuit) : Matrix (Fin 3) (Fin 3) ℝ :=
@@ -312,49 +310,20 @@ def kyp (m : Circuit) (hp : m.Passive) : Linear.KYP m.plant where
   · nlinarith [mul_pos hL2 (mul_self_pos.mpr h), mul_nonneg hL1.le (mul_self_nonneg (x 0)),
       mul_nonneg hC.le (mul_self_nonneg (x 1))]
 
-/-- A passive circuit is Lyapunov stable with its ports held at zero. -/
-@[powerlib_domain] theorem lyapunovStable_of_passive (m : Circuit) (hp : m.Passive) :
-    LyapunovStable (affineLinearVectorField m.plant.A 0) 0 :=
-  (kyp m hp).lyapunovStable_of_pos (energy_pos m)
+/-- With both resistances zero the plant conserves the physical energy. -/
+@[powerlib_foundation] theorem energy_lossless (m : Circuit) (h1 : m.first.resistance = 0)
+    (h2 : m.second.resistance = 0) :
+    m.plant.Aᵀ * energyMatrix m + energyMatrix m * m.plant.A = 0 := by
+  rw [energy_identity, h1, h2]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
 
-/-- A lossless circuit is Lyapunov stable but satisfies no attractive sentence. -/
-@[powerlib_domain] theorem lossless (m : Circuit) (h1 : m.first.resistance = 0)
-    (h2 : m.second.resistance = 0) {P : Flow.Property} (hP : P.Attractive) :
-    LyapunovStable (affineLinearVectorField m.plant.A 0) 0 ∧
-      ¬ P.holds (affineLinearVectorField m.plant.A 0) 0 := by
-  have hp : m.Passive := ⟨h1.ge, h2.ge⟩
-  refine ⟨lyapunovStable_of_passive m hp, fun h => ?_⟩
-  have hs := (isHurwitz_iff_stable m).mp ((Linear.holds_iff_isHurwitz 0 hP).mp h)
-  have hd := (passive_stable_iff m hp).mp hs
-  rcases hd with h | h
-  · exact h h1
-  · exact h h2
+@[powerlib_foundation] theorem energyMatrix_symmetric (m : Circuit) :
+    (energyMatrix m)ᵀ = energyMatrix m := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> rfl
 
-/-- A lossless circuit conserves its physical energy `(L₁ i₁² + C v² + L₂ i₂²) / 2` along every
-zero-input solution segment. -/
-@[powerlib_domain] theorem lossless_energy_conserved (m : Circuit) (h1 : m.first.resistance = 0)
-    (h2 : m.second.resistance = 0) {x : ℝ → EuclideanSpace ℝ (Fin 3)} {t₀ t₁ : ℝ}
-    (hx : IsTrajectoryOn x (affineLinearVectorField m.plant.A 0) t₀ t₁) :
-    ∀ t ∈ Set.Icc t₀ t₁,
-      (kyp m ⟨h1.ge, h2.ge⟩).storage (x t) = (kyp m ⟨h1.ge, h2.ge⟩).storage (x t₀) := by
-  have hl : m.plant.Aᵀ * energyMatrix m + energyMatrix m * m.plant.A = 0 := by
-    rw [energy_identity, h1, h2]
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
-  exact (kyp m ⟨h1.ge, h2.ge⟩).storage_conserved hl hx
-
-/-- A passive damped circuit with its ports held at zero has an integer horizon over which every
-continuous-time solution segment contracts towards the origin by a fixed factor: the solutions
-sampled at that horizon form a contraction. -/
-@[powerlib_domain] theorem contractive_sampling (m : Circuit) (hp : m.Passive) (hd : m.Damped) :
-    ∃ k : ℕ, 0 < k ∧ ∃ c < 1, ∀ (t₀ : ℝ) (x : ℝ → EuclideanSpace ℝ (Fin 3)),
-      IsTrajectoryOn x (affineLinearVectorField m.plant.A 0) t₀ (t₀ + k) →
-        ‖x (t₀ + k)‖ ≤ c * ‖x t₀‖ :=
-  Linear.mem_den_contractive (plant := Circuit.plant) (P := .globallyExponentiallyStable) trivial
-    (Linear.mem_den_of_isHurwitz trivial ((isHurwitz_iff_stable m).mpr
-      (stable_of_routhHurwitz m (routhHurwitz_of_passive m hp hd))))
-
-/-! ## Requirements and translations -/
+/-! ## Requirements and the family -/
 
 /-- Engineering requirements on the LCL parameters. -/
 inductive Requirement
@@ -362,6 +331,7 @@ inductive Requirement
   | routhHurwitz
   | passive
   | damped
+  | lossless
   | rightHalfPlanePole
 
 /-- Satisfaction of a requirement by a complete LCL circuit. -/
@@ -370,73 +340,295 @@ def Meets (m : Circuit) : Requirement → Prop
   | .routhHurwitz => m.RouthHurwitz
   | .passive => m.Passive
   | .damped => m.Damped
+  | .lossless => m.first.resistance = 0 ∧ m.second.resistance = 0
   | .rightHalfPlanePole => ∃ s : ℂ, m.frequency s = 0 ∧ 0 < s.re
 
-/-- The translation of the behavioural sentences into requirements. -/
-def translate : Flow.Property → Set Requirement
-  | .lyapunovStable => {.passive}
-  | .unstable => {.rightHalfPlanePole}
-  | _ => {.poleStable}
+/-- The translation of the sentences into requirements. No requirement of the language speaks of
+a decay rate: that sentence is translated into the whole language, which no circuit meets. -/
+def translate : Sentence → Set Requirement
+  | .flow .lyapunovStable => {.passive}
+  | .flow .unstable => {.rightHalfPlanePole}
+  | .flow (.decay _) => Set.univ
+  | .flow .conservative => {.lossless}
+  | .flow _ => {.poleStable}
+  | .passive => {.passive}
 
-/-- The LCL family: the plant map, the requirement language and the translation table. -/
-def family : Linear.Family Circuit Requirement 3 2 := ⟨Circuit.plant, Meets, translate⟩
+/-- The LCL family: every circuit read as the port system of its plant, the requirement language
+and the translation table. -/
+def family : Family Circuit Requirement 3 2 := ⟨fun m => m.plant.system, Meets, translate⟩
 
-@[powerlib_foundation] theorem realize_poleStable :
-    realize Meets {Requirement.poleStable} = {m | IsHurwitz m.plant.A} := by
+@[powerlib_foundation] theorem family_isLinear : family.IsLinear Circuit.plant := fun _ => rfl
+
+/-- No circuit has both all poles in the open left half plane and one in the open right half
+plane: the whole requirement language is inconsistent. -/
+@[powerlib_foundation] theorem realize_univ : realize Meets Set.univ = ∅ := by
+  ext m
+  simp only [mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
+  intro h
+  obtain ⟨s, hs, hre⟩ := h .rightHalfPlanePole
+  exact absurd (h .poleStable s hs) (not_lt.mpr hre.le)
+
+/-- A conserving circuit is not pole-stable: every solution of a Hurwitz plant converges. -/
+@[powerlib_foundation] theorem not_stable_of_conservative {m : Circuit}
+    (h : m ∈ family.den (.flow .conservative)) : ¬ m.Stable := by
+  rw [← isHurwitz_iff_stable]
+  exact family_isLinear.not_isHurwitz_of_mem_den_conservative (by norm_num) h
+
+/-! ## Faithfulness -/
+
+/-- Every translation of the LCL family is sound: the translation chain lies below the semantics
+connection. Pole stability proves the attractive sentences and sampled contraction, passivity
+proves Lyapunov stability and passivity through the physical energy, losslessness proves
+conservation of that energy, and a right-half-plane pole proves instability. -/
+@[powerlib_domain] theorem chain_le_semantics : ∀ P, family.chain P ≤ family.semantics P := by
+  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
+  rw [mem_realize] at hm
+  change ∀ q ∈ translate s, Meets m q at hm
+  rcases s with P | _
+  · cases P
+    case lyapunovStable =>
+      have hp : m.Passive := hm .passive rfl
+      exact family_isLinear.mem_den_flow.mpr
+        ((kyp m hp).lyapunovStable_of_pos (energy_pos m))
+    case unstable =>
+      obtain ⟨s, hs, hre⟩ := hm .rightHalfPlanePole rfl
+      refine family_isLinear.mem_den_flow.mpr (Linear.unstable_of_root 0 ?_ hre)
+      rw [det_characteristicMatrix, hs, zero_div]
+    case decay a =>
+      have : m ∈ realize Meets Set.univ := (mem_realize _ _ _).mpr fun q _ => hm q trivial
+      rw [realize_univ] at this
+      exact this.elim
+    case conservative =>
+      obtain ⟨h1, h2⟩ := hm .lossless rfl
+      exact family_isLinear.mem_den_conservative (energyMatrix_symmetric m) (energy_pos m)
+        (energy_lossless m h1 h2)
+    all_goals
+      rw [family_isLinear.den_hurwitz (by simp), Set.mem_ofPred_eq, isHurwitz_iff_stable]
+      exact hm .poleStable rfl
+  · exact family_isLinear.mem_den_passive (kyp m (hm .passive rfl))
+
+/-- On the attractive sentences and sampled contraction the chain agrees with the semantics: pole
+stability is their exact translation, for every circuit, passive or not. -/
+@[powerlib_domain] theorem exact_hurwitz {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+    family.Exact (.flow P) := by
+  have ht : translate (.flow P) = {.poleStable} := by
+    rcases hP with hP | rfl
+    · cases P <;> first | rfl | exact absurd hP id
+    · rfl
+  unfold Family.Exact
+  change realize Meets (translate (.flow P)) = _
+  rw [ht, family_isLinear.den_hurwitz hP]
   ext m
   simp [Meets, isHurwitz_iff_stable]
 
-/-- Pole stability is an exact translation of every attractive sentence, for every circuit. -/
-@[powerlib_domain] theorem realize_translate_attractive {P : Flow.Property} (hP : P.Attractive) :
-    realize Meets (translate P) = Linear.den Circuit.plant P := by
-  have h : translate P = {Requirement.poleStable} := by
-    cases P <;> first | rfl | exact absurd hP id
-  rw [h]
-  exact Linear.realize_eq_den realize_poleStable hP
-
-/-- The Routh–Hurwitz condition is a sound translation of every attractive sentence. -/
-@[powerlib_domain] theorem realize_routhHurwitz_subset {P : Flow.Property} (hP : P.Attractive) :
-    realize Meets {Requirement.routhHurwitz} ⊆ Linear.den Circuit.plant P := by
-  intro m hm
-  rw [Linear.den_attractive _ hP]
-  exact (isHurwitz_iff_stable m).mpr (stable_of_routhHurwitz m (by simpa [Meets] using hm))
-
-/-- Damping is an exact translation of every attractive sentence relative to passivity. -/
-@[powerlib_domain] theorem exactUnder_damped {P : Flow.Property} (hP : P.Attractive) :
-    ExactUnder Meets {Requirement.passive} {Requirement.damped} (Linear.den Circuit.plant P) := by
-  apply Linear.exactUnder_den _ hP
+/-- Within passive circuits, conservation is exactly losslessness: a damped passive circuit is
+pole-stable, so its solutions converge. -/
+@[powerlib_domain] theorem exactUnder_conservative :
+    family.ExactUnder {.passive} (.flow .conservative) := by
   ext m
-  simp only [mem_realize, Set.mem_union, Set.mem_singleton_iff, Set.mem_inter_iff,
-    Set.mem_ofPred_eq, forall_eq_or_imp, forall_eq, Meets, isHurwitz_iff_stable]
+  simp only [mem_realize, Set.mem_union, Set.mem_inter_iff]
   constructor
-  · rintro ⟨hd, hp⟩
-    exact ⟨(passive_stable_iff m hp).mpr hd, hp⟩
-  · rintro ⟨hs, hp⟩
-    exact ⟨(passive_stable_iff m hp).mp hs, hp⟩
+  · intro h
+    have hm : m ∈ realize Meets (translate (.flow .conservative)) :=
+      (mem_realize _ _ _).mpr fun q hq => h q (Or.inl hq)
+    refine ⟨Family.chain_le_semantics_iff.mp chain_le_semantics _ hm, fun q hq => h q (Or.inr hq)⟩
+  · rintro ⟨hc, hp⟩ q hq
+    have hpass : m.Passive := hp .passive rfl
+    rcases hq with hq | hq
+    · have hq' : q = .lossless := hq
+      subst hq'
+      have hnd : ¬ m.Damped := fun hd => not_stable_of_conservative hc
+        ((passive_stable_iff m hpass).mpr hd)
+      show m.first.resistance = 0 ∧ m.second.resistance = 0
+      simpa [Circuit.Damped] using hnd
+    · exact hp q hq
 
-/-- Passivity is a sound translation of Lyapunov stability. -/
-@[powerlib_domain] theorem realize_passive_subset :
-    realize Meets (translate .lyapunovStable) ⊆ Linear.den Circuit.plant .lyapunovStable := by
+/-! ## Passivity -/
+
+/-- A curve in three states from its components. -/
+@[powerlib_foundation] theorem hasDerivAt_three {f₀ f₁ f₂ : ℝ → ℝ} {d₀ d₁ d₂ t : ℝ}
+    (h₀ : HasDerivAt f₀ d₀ t) (h₁ : HasDerivAt f₁ d₁ t) (h₂ : HasDerivAt f₂ d₂ t) :
+    HasDerivAt (fun t => WithLp.toLp 2 ![f₀ t, f₁ t, f₂ t] : ℝ → EuclideanSpace ℝ (Fin 3))
+      (WithLp.toLp 2 ![d₀, d₁, d₂]) t := by
+  have hpi : HasDerivAt (fun t => ![f₀ t, f₁ t, f₂ t]) ![d₀, d₁, d₂] t := by
+    refine hasDerivAt_pi.mpr fun i => ?_
+    fin_cases i
+    · simpa using h₀
+    · simpa using h₁
+    · simpa using h₂
+  exact (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 3 => ℝ)).symm.hasFDerivAt.comp_hasDerivAt t
+    hpi
+
+/-- Over one period the power `r c² cos² t + q sin t cos t` delivers the energy `r c² π`. -/
+@[powerlib_foundation] theorem integral_cycle (r c q : ℝ) :
+    ∫ t in (0 : ℝ)..(2 * Real.pi), (r * c ^ 2 * Real.cos t ^ 2 + q * (Real.sin t * Real.cos t)) =
+      r * c ^ 2 * Real.pi := by
+  rw [intervalIntegral.integral_add, intervalIntegral.integral_const_mul,
+    intervalIntegral.integral_const_mul, integral_cos_sq, integral_sin_mul_cos₁]
+  · simp
+  · exact (continuous_const.mul (Real.continuous_cos.pow 2)).intervalIntegrable _ _
+  · exact (continuous_const.mul (Real.continuous_sin.mul Real.continuous_cos)).intervalIntegrable _ _
+
+/-- Passivity of the port behaviour is exactly the passivity of both resistances. A passive
+circuit stores its physical energy; with a negative resistance in one branch, the other branch
+idle and the capacitor exchanging energy with the active branch over one period, the state returns
+to its start while the ports deliver the net energy `-R C² π`. -/
+@[powerlib_domain] theorem exact_passive : family.Exact .passive := by
+  ext m
+  rw [Family.mem_den, mem_realize]
+  change (∀ q ∈ translate .passive, Meets m q) ↔ m.plant.system.Passive
+  simp only [translate, Set.mem_singleton_iff, forall_eq, Meets]
+  refine ⟨fun hp => ⟨_, (kyp m hp).passiveWith⟩, fun h => ?_⟩
+  have hL₁ : (m.first.inductance.val : ℝ) ≠ 0 := m.first.inductance.property.ne'
+  have hL₂ : (m.second.inductance.val : ℝ) ≠ 0 := m.second.inductance.property.ne'
+  have hC : (m.capacitance.val : ℝ) ≠ 0 := m.capacitance.property.ne'
+  have hcycle : ∀ (u : ℝ → Fin 2 → ℝ) (x : ℝ → EuclideanSpace ℝ (Fin 3)) (r q : ℝ), r < 0 →
+      m.plant.system.IsTrajectoryOn u x 0 (2 * Real.pi) → x (2 * Real.pi) = x 0 →
+      (∀ t, m.plant.system.supply (x t) (u t) = r * m.capacitance.val ^ 2 * Real.cos t ^ 2 +
+        q * (Real.sin t * Real.cos t)) → False := by
+    intro u x r q hr hx hclose hsupply
+    refine m.plant.system.not_passive_of_cycle (by positivity) hx hclose ?_ ?_ h
+    · refine (Continuous.intervalIntegrable ?_ _ _)
+      simp only [hsupply]
+      fun_prop
+    · simp only [hsupply, integral_cycle]
+      exact mul_neg_of_neg_of_pos (mul_neg_of_neg_of_pos hr (by positivity)) Real.pi_pos
+  by_contra hp
+  simp only [Circuit.Passive, not_and_or, not_le] at hp
+  rcases hp with h₁ | h₂
+  · -- Converter current `C cos t`, capacitor voltage `sin t`, no grid current.
+    let x : ℝ → EuclideanSpace ℝ (Fin 3) := fun t =>
+      WithLp.toLp 2 ![m.capacitance.val * Real.cos t, Real.sin t, 0]
+    let u : ℝ → Fin 2 → ℝ := fun t =>
+      ![m.first.inductance.val * -(m.capacitance.val * Real.sin t) +
+        m.first.resistance * (m.capacitance.val * Real.cos t) + Real.sin t, Real.sin t]
+    have hfield : ∀ t, m.plant.system.field (x t) (u t) =
+        WithLp.toLp 2 ![m.capacitance.val * -Real.sin t, Real.cos t, 0] := by
+      intro t
+      ext i
+      fin_cases i <;>
+        simp [x, u, Circuit.plant, StateSpace.plant, Linear.Plant.system, dotProduct,
+          Fin.sum_univ_three, Fin.sum_univ_two, RL.toStateSpace_decay] <;>
+        field_simp <;> ring
+    refine hcycle u x m.first.resistance
+      (m.capacitance.val - m.first.inductance.val * m.capacitance.val ^ 2) h₁ (fun t _ => ?_)
+      (by simp [x]) fun t => ?_
+    · change HasDerivWithinAt x (m.plant.system.field (x t) (u t)) _ t
+      rw [hfield]
+      exact (hasDerivAt_three ((Real.hasDerivAt_cos t).const_mul m.capacitance.val)
+        (Real.hasDerivAt_sin t) (hasDerivAt_const t 0)).hasDerivWithinAt
+    · simp [Port.System.supply, x, u, Circuit.plant, StateSpace.plant, Linear.Plant.system,
+        dotProduct, Fin.sum_univ_three, Fin.sum_univ_two]
+      ring
+  · -- Grid current `C cos t`, capacitor voltage `-sin t`, no converter current.
+    let x : ℝ → EuclideanSpace ℝ (Fin 3) := fun t =>
+      WithLp.toLp 2 ![0, -Real.sin t, m.capacitance.val * Real.cos t]
+    let u : ℝ → Fin 2 → ℝ := fun t =>
+      ![-Real.sin t, -Real.sin t - m.second.resistance * (m.capacitance.val * Real.cos t) +
+        m.second.inductance.val * (m.capacitance.val * Real.sin t)]
+    have hfield : ∀ t, m.plant.system.field (x t) (u t) =
+        WithLp.toLp 2 ![0, -Real.cos t, m.capacitance.val * -Real.sin t] := by
+      intro t
+      ext i
+      fin_cases i <;>
+        simp [x, u, Circuit.plant, StateSpace.plant, Linear.Plant.system, dotProduct,
+          Fin.sum_univ_three, Fin.sum_univ_two, RL.toStateSpace_decay] <;>
+        field_simp <;> ring
+    refine hcycle u x m.second.resistance
+      (m.capacitance.val - m.second.inductance.val * m.capacitance.val ^ 2) h₂ (fun t _ => ?_)
+      (by simp [x]) fun t => ?_
+    · change HasDerivWithinAt x (m.plant.system.field (x t) (u t)) _ t
+      rw [hfield]
+      exact (hasDerivAt_three (hasDerivAt_const t 0) (Real.hasDerivAt_sin t).neg
+        ((Real.hasDerivAt_cos t).const_mul m.capacitance.val)).hasDerivWithinAt
+    · simp [Port.System.supply, x, u, Circuit.plant, StateSpace.plant, Linear.Plant.system,
+        dotProduct, Fin.sum_univ_three, Fin.sum_univ_two]
+      ring
+
+/-! ## Requirement equivalences -/
+
+/-- The Routh–Hurwitz condition entails pole stability. -/
+@[powerlib_domain] theorem realize_routhHurwitz :
+    realize Meets {.routhHurwitz} ⊆ realize Meets {.poleStable} := by
   intro m hm
-  exact lyapunovStable_of_passive m (by simpa [translate, Meets] using hm)
+  simp only [mem_realize, Set.mem_singleton_iff, forall_eq, Meets] at hm ⊢
+  exact stable_of_routhHurwitz m hm
 
-/-- A right-half-plane pole is a sound translation of instability. -/
-@[powerlib_domain] theorem realize_pole_subset :
-    realize Meets (translate .unstable) ⊆ Linear.den Circuit.plant .unstable := by
-  intro m hm
-  obtain ⟨s, hs, hre⟩ : ∃ s : ℂ, m.frequency s = 0 ∧ 0 < s.re := by
-    simpa [translate, Meets] using hm
-  exact unstable_of_pole m hs hre
+/-- Within passive circuits, pole stability is exactly damping. -/
+@[powerlib_domain] theorem realize_passive_damped :
+    realize Meets {.passive, .damped} = realize Meets {.passive, .poleStable} := by
+  ext m
+  simp only [mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq,
+    Meets]
+  exact ⟨fun ⟨hp, hd⟩ => ⟨hp, (passive_stable_iff m hp).mpr hd⟩,
+    fun ⟨hp, hs⟩ => ⟨hp, (passive_stable_iff m hp).mp hs⟩⟩
 
-/-- Every behavioural sentence has a sound translation into LCL requirements: exact for the
-attractive sentences, passivity for Lyapunov stability, a right-half-plane pole for
-instability. -/
-@[powerlib_domain] theorem sound (P : Flow.Property) : family.Sound P := by
-  by_cases hP : P.Attractive
-  · exact (realize_translate_attractive hP).le
-  · cases P with
-    | lyapunovStable => exact realize_passive_subset
-    | unstable => exact realize_pole_subset
-    | _ => exact absurd trivial hP
+/-! ## Where the connections part -/
+
+/-- A circuit with a negative converter-side resistance: `R₁ = -1/10`, `R₂ = 2`,
+`L₁ = L₂ = C = 1`. -/
+def negativeCircuit : Circuit := ⟨⟨-1 / 10, ⟨1, one_pos⟩⟩, ⟨2, ⟨1, one_pos⟩⟩, ⟨1, one_pos⟩⟩
+
+/-- Opposite resistances: `R₁ = 1`, `R₂ = -1`, `L₁ = L₂ = C = 1`. -/
+def balancedCircuit : Circuit := ⟨⟨1, ⟨1, one_pos⟩⟩, ⟨-1, ⟨1, one_pos⟩⟩, ⟨1, one_pos⟩⟩
+
+/-- The energy `xᵀ Q x` conserved by the balanced circuit. -/
+def balancedEnergy : Matrix (Fin 3) (Fin 3) ℝ := !![2, 2, 1; 2, 3, 2; 1, 2, 2]
+
+@[powerlib_foundation] theorem negativeCircuit_routhHurwitz : negativeCircuit.RouthHurwitz := by
+  norm_num [Circuit.RouthHurwitz, negativeCircuit, Circuit.a3, Circuit.a2, Circuit.a1,
+    Circuit.a0]
+
+@[powerlib_foundation] theorem balancedEnergy_conserved :
+    balancedCircuit.plant.Aᵀ * balancedEnergy + balancedEnergy * balancedCircuit.plant.A = 0 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    norm_num [balancedCircuit, balancedEnergy, Circuit.plant, StateSpace.plant, Matrix.mul_apply,
+      Fin.sum_univ_three, RL.toStateSpace_decay]
+
+@[powerlib_foundation] theorem balancedEnergy_pos (v : Fin 3 → ℝ) (hv : v ≠ 0) :
+    0 < v ⬝ᵥ (balancedEnergy *ᵥ v) := by
+  have hform : v ⬝ᵥ (balancedEnergy *ᵥ v) =
+      2 * (v 0 + v 1 + v 2 / 2) ^ 2 + (v 1 + v 2) ^ 2 + v 2 ^ 2 / 2 := by
+    simp [balancedEnergy, dotProduct, Matrix.mulVec, Fin.sum_univ_three]
+    ring
+  rw [hform]
+  by_contra hle
+  push Not at hle
+  have q₀ := sq_nonneg (v 0 + v 1 + v 2 / 2)
+  have q₁ := sq_nonneg (v 1 + v 2)
+  have q₂ := sq_nonneg (v 2)
+  have e₂ : v 2 = 0 := pow_eq_zero_iff two_ne_zero |>.mp (by nlinarith)
+  have e₁ : v 1 + v 2 = 0 := pow_eq_zero_iff two_ne_zero |>.mp (by nlinarith)
+  have e₀ : v 0 + v 1 + v 2 / 2 = 0 := pow_eq_zero_iff two_ne_zero |>.mp (by nlinarith)
+  apply hv
+  funext i
+  fin_cases i <;> simp <;> linarith
+
+/-- Passivity is a sound but not exact translation of Lyapunov stability: the negative-resistance
+circuit is pole-stable, hence Lyapunov stable, without being passive. -/
+@[powerlib_domain] theorem not_exact_lyapunovStable : ¬ family.Exact (.flow .lyapunovStable) := by
+  intro h
+  have hs : negativeCircuit.Stable := stable_of_routhHurwitz _ negativeCircuit_routhHurwitz
+  have hmem : negativeCircuit ∈ family.den (.flow .lyapunovStable) :=
+    family_isLinear.mem_den_flow.mpr
+      (Linear.lyapunovStable_of_isHurwitz 0 ((isHurwitz_iff_stable _).mpr hs))
+  rw [← h, mem_realize] at hmem
+  have hp : negativeCircuit.Passive := hmem .passive rfl
+  have := hp.1
+  norm_num [negativeCircuit] at this
+
+/-- Losslessness is a sound but not exact translation of conservation: the balanced circuit
+conserves the energy `balancedEnergy` with both resistances nonzero. Passivity is the context in
+which the translation is exact (`exactUnder_conservative`). -/
+@[powerlib_domain] theorem not_exact_conservative : ¬ family.Exact (.flow .conservative) := by
+  intro h
+  have hmem : balancedCircuit ∈ family.den (.flow .conservative) :=
+    family_isLinear.mem_den_conservative (P := balancedEnergy)
+      (by ext i j; fin_cases i <;> fin_cases j <;> rfl) balancedEnergy_pos
+      balancedEnergy_conserved
+  rw [← h, mem_realize] at hmem
+  have hl := (hmem .lossless rfl).1
+  norm_num [balancedCircuit] at hl
 
 end powerlib.Circuits.LCL

@@ -10,8 +10,11 @@ open powerlib powerlib.TMIO
 #check powerlib.TMIO.realize_max
 #check powerlib.TMIO.relationalSeed_whole
 #check powerlib.TMIO.relationalSeed_sound
+#check powerlib.TMIO.generate_inj
+#check powerlib.TMIO.chain_eq_satisfaction_iff
+#check powerlib.TMIO.chain_le_satisfaction_iff
 #print axioms powerlib.TMIO.Seed.generate_uTO
-#print axioms powerlib.Circuits.RL.dcTest_certifies
+#print axioms powerlib.Circuits.RL.dcTest_certified
 
 -- The generated space of a requirement set is the maximal legal family.
 example (Γ : Set Circuits.RL.Requirement) (P : Set Circuits.RL.Impedance) :
@@ -20,20 +23,22 @@ example (Γ : Set Circuits.RL.Requirement) (P : Set Circuits.RL.Impedance) :
   realize_max Circuits.RL.Meets Γ P
 
 -- The certified readings of every sentence come from the generated chain.
-example (ε : ℝ) (P : Flow.Property) :
-    OrderDual.ofDual (generate (Circuits.RL.seed ε).uTO {P}) =
-      {r | Set.Icc (r - ε) (r + ε) ⊆ Circuits.RL.window P} :=
-  Circuits.RL.certified_readings ε P
+example (ε : ℝ) (s : Sentence) :
+    OrderDual.ofDual (generate (Circuits.RL.seed ε).uTO {s}) =
+      {r | Set.Icc (r - ε) (r + ε) ⊆ Circuits.RL.window s} :=
+  Circuits.RL.certified_readings ε s
 
--- A DC test record proves every attractive sentence for every RL model that may produce it.
+-- A DC test record is certified for every attractive sentence, so every RL model that may produce
+-- its estimate satisfies it.
 example (m : Circuits.RL.Impedance)
     (hm : |Data.Analysis.estimate Circuits.RL.dcTest - m.resistance| ≤ 1 / 2)
-    {P : Flow.Property} (hP : P.Attractive) :
-    P.holds (LinearSystems.affineLinearVectorField m.plant.A 0) 0 :=
-  Circuits.RL.dcTest_certifies hm hP
+    {P : Flow.Property} (hP : P.Attractive) : m ∈ Circuits.RL.family.den (.flow P) := by
+  have hd := Circuits.RL.dcTest_certified (Or.inl hP)
+  rw [Circuits.RL.certified_records, Set.mem_preimage] at hd
+  exact Family.certifies
+    (fun s _ => (Family.chain_eq_semantics_iff.mp Circuits.RL.chain_eq_semantics s).sound) hd hm
+    _ rfl
 
 -- The state-space representation is reached by transport, not by a second development.
-example (ε : ℝ) (P : Flow.Property) :
-    OrderDual.ofDual (generate (Circuits.RL.stateSpaceSeed ε).u₂ (Circuits.RL.translate P)) =
-      Linear.den Circuits.RL.StateSpace.plant P :=
-  Circuits.RL.stateSpace_space ε P
+example (s : Sentence) : (Circuits.RL.family.comap Circuits.RL.toImpedance).Exact s :=
+  (Family.chain_eq_semantics_iff.mp Circuits.RL.chain_eq_semantics s).comap _

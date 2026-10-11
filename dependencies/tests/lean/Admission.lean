@@ -7,9 +7,12 @@ matrix or by the model itself; a certificate for another model does not typechec
 the witness is computed from the submitted parameters by the library's closed-form synthesizers;
 for rational matrices and rational LCL parameters the kernel runs the generic synthesizer and its
 check (S-level). For larger rational matrices the synthesizer is evaluated during elaboration and
-the kernel only checks its proposal (S-level). For polynomial fields only the
-polynomials are submitted and the kernel runs the sum-of-squares synthesizer and the coefficient
-check (S-level); one polynomial fixture supplies its witness and tests verification only. -/
+the kernel only checks its proposal (S-level). For polynomial fields only the polynomials are
+submitted and the kernel runs the sum-of-squares synthesizer and the coefficient check (S-level);
+one polynomial fixture supplies its witness and tests verification only.
+
+Every admitted conclusion is an evaluation of a family's semantics connection: the submitted model
+is placed in the denotation of a sentence. -/
 
 noncomputable section
 
@@ -30,17 +33,16 @@ def accepted : Linear.Certificate submittedModel.plant.A :=
   fin_cases j
   norm_num [accepted, Circuits.RL.synthesize, submittedModel]
 
-@[powerlib_domain] theorem globallyExponentiallyStable :
-    Flow.GloballyExponentiallyStable (affineLinearVectorField submittedModel.plant.A 0) 0 :=
-  accepted.holds 0 (P := .globallyExponentiallyStable) trivial
-
+-- The synthesized certificate places the branch in every attractive sentence.
 @[powerlib_domain] theorem mem_den {P : Flow.Property} (hP : P.Attractive) :
-    submittedModel ∈ Linear.den Circuits.RL.Impedance.plant P :=
-  accepted.mem_den hP
+    submittedModel ∈ Circuits.RL.family.den (.flow P) := by
+  rw [Circuits.RL.family_isLinear.den_hurwitz (Or.inl hP)]
+  exact accepted.isHurwitz
 
 -- The physical energy is a storage function: the branch is passive.
-@[powerlib_domain] theorem passive : submittedModel.plant.system.Passive :=
-  ⟨_, (Circuits.RL.kyp submittedModel (by norm_num [submittedModel])).passiveWith⟩
+@[powerlib_domain] theorem mem_den_passive : submittedModel ∈ Circuits.RL.family.den .passive :=
+  Circuits.RL.family_isLinear.mem_den_passive
+    (Circuits.RL.kyp submittedModel (by norm_num [submittedModel]))
 
 end RLAdmission
 
@@ -55,13 +57,14 @@ def accepted : Linear.Certificate submittedModel.plant.A :=
     (by norm_num [submittedModel, Circuits.LCL.Circuit.Passive])
     (by norm_num [submittedModel, Circuits.LCL.Circuit.Damped])
 
-@[powerlib_domain] theorem globallyExponentiallyStable :
-    Flow.GloballyExponentiallyStable (affineLinearVectorField submittedModel.plant.A 0) 0 :=
-  accepted.holds 0 (P := .globallyExponentiallyStable) trivial
+@[powerlib_domain] theorem mem_den_globallyExponentiallyStable :
+    submittedModel ∈ Circuits.LCL.family.den (.flow .globallyExponentiallyStable) := by
+  rw [Circuits.LCL.family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
+  exact accepted.isHurwitz
 
-@[powerlib_domain] theorem passive : submittedModel.plant.system.Passive :=
-  ⟨_, (Circuits.LCL.kyp submittedModel
-    (by norm_num [submittedModel, Circuits.LCL.Circuit.Passive])).passiveWith⟩
+@[powerlib_domain] theorem mem_den_passive : submittedModel ∈ Circuits.LCL.family.den .passive :=
+  Circuits.LCL.family_isLinear.mem_den_passive (Circuits.LCL.kyp submittedModel
+    (by norm_num [submittedModel, Circuits.LCL.Circuit.Passive]))
 
 end LCLAdmission
 
@@ -78,10 +81,11 @@ def accepted : Linear.Certificate (Linear.Synthesis.real submittedMatrix) :=
   ext i j
   fin_cases i <;> fin_cases j <;> simp [submittedMatrix]
 
-@[powerlib_domain] theorem globallyExponentiallyStable :
-    Flow.GloballyExponentiallyStable (affineLinearVectorField !![(-1 : ℝ), 10; 0, -1] 0) 0 := by
-  rw [← real_submittedMatrix]
-  exact accepted.holds 0 (P := .globallyExponentiallyStable) trivial
+@[powerlib_domain] theorem mem_den_globallyExponentiallyStable :
+    submittedMatrix ∈ (Linear.Rational.family (n := 2)).den (.flow .globallyExponentiallyStable) := by
+  rw [Linear.Rational.family_isLinear.den_hurwitz (P := .globallyExponentiallyStable)
+    (Or.inl trivial)]
+  exact accepted.isHurwitz
 
 -- The synthesized witness is the exact solution of the Lyapunov equation.
 @[powerlib_foundation] theorem synthesized_P :
@@ -120,10 +124,11 @@ def submittedMatrix : Matrix (Fin 8) (Fin 8) ℚ :=
 def accepted : Linear.Certificate (Linear.Synthesis.real submittedMatrix) :=
   lyapunov_certificate% submittedMatrix
 
-@[powerlib_domain] theorem globallyExponentiallyStable :
-    Flow.GloballyExponentiallyStable
-      (affineLinearVectorField (Linear.Synthesis.real submittedMatrix) 0) 0 :=
-  accepted.holds 0 (P := .globallyExponentiallyStable) trivial
+@[powerlib_domain] theorem mem_den_globallyExponentiallyStable :
+    submittedMatrix ∈ (Linear.Rational.family (n := 8)).den (.flow .globallyExponentiallyStable) := by
+  rw [Linear.Rational.family_isLinear.den_hurwitz (P := .globallyExponentiallyStable)
+    (Or.inl trivial)]
+  exact accepted.isHurwitz
 
 -- A matrix with an unstable mode: the Lyapunov equation is solvable, but the solution is
 -- indefinite and the kernel rejects the proposal.
@@ -155,9 +160,11 @@ def submitted : Circuits.LCL.RationalCircuit :=
 def accepted : Linear.Certificate submitted.circuit.plant.A :=
   submitted.certificate (by decide +kernel)
 
-@[powerlib_domain] theorem globallyExponentiallyStable :
-    Flow.GloballyExponentiallyStable (affineLinearVectorField submitted.circuit.plant.A 0) 0 :=
-  accepted.holds 0 (P := .globallyExponentiallyStable) trivial
+@[powerlib_domain] theorem mem_den_globallyExponentiallyStable :
+    submitted ∈ Circuits.LCL.rationalFamily.den (.flow .globallyExponentiallyStable) := by
+  rw [Circuits.LCL.rationalFamily_isLinear.den_hurwitz (P := .globallyExponentiallyStable)
+    (Or.inl trivial)]
+  exact accepted.isHurwitz
 
 end NegativeResistanceAdmission
 
@@ -171,9 +178,9 @@ def submittedModel : Model := ⟨[⟨-1, (1, 0)⟩, ⟨-1, (3, 0)⟩], [⟨-1, (
 
 def accepted : Certificate submittedModel := certificateOf submittedModel (by decide +kernel)
 
-@[powerlib_domain] theorem globallyExponentiallyStable :
-    Flow.GloballyExponentiallyStable submittedModel.field 0 :=
-  accepted.globallyExponentiallyStable
+@[powerlib_domain] theorem mem_den_globallyExponentiallyStable :
+    submittedModel ∈ family.den (.flow .globallyExponentiallyStable) :=
+  family_isAutonomous.mem_den_flow.mpr accepted.globallyExponentiallyStable
 
 /-- `x' = -x - x³ + x y² / 2`, `y' = -y - y³ + x² y / 2`. -/
 def coupledModel : Model :=
@@ -181,9 +188,9 @@ def coupledModel : Model :=
 
 def coupledAccepted : Certificate coupledModel := certificateOf coupledModel (by decide +kernel)
 
-@[powerlib_domain] theorem coupled_globallyExponentiallyStable :
-    Flow.GloballyExponentiallyStable coupledModel.field 0 :=
-  coupledAccepted.globallyExponentiallyStable
+@[powerlib_domain] theorem coupled_mem_den :
+    coupledModel ∈ family.den (.flow .globallyExponentiallyStable) :=
+  family_isAutonomous.mem_den_flow.mpr coupledAccepted.globallyExponentiallyStable
 
 -- Its decay certificate needs a square mixing `x²` and `y²`: `(x² - y²/2)²`.
 @[powerlib_foundation] theorem coupled_mixed_square :
@@ -199,9 +206,9 @@ def nonnormalModel : Model :=
 def nonnormalAccepted : Certificate nonnormalModel :=
   certificateOf nonnormalModel (by decide +kernel)
 
-@[powerlib_domain] theorem nonnormal_globallyExponentiallyStable :
-    Flow.GloballyExponentiallyStable nonnormalModel.field 0 :=
-  nonnormalAccepted.globallyExponentiallyStable
+@[powerlib_domain] theorem nonnormal_mem_den :
+    nonnormalModel ∈ family.den (.flow .globallyExponentiallyStable) :=
+  family_isAutonomous.mem_den_flow.mpr nonnormalAccepted.globallyExponentiallyStable
 
 /-- The cascade `x' = -2x + y²`, `y' = -y`: no energy of the family gives a decay identity, and the
 synthesizer proposes nothing. This is unproved, not refuted. -/

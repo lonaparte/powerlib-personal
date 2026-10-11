@@ -13,14 +13,16 @@ the plant from `j` to the port voltage. Its state, input, output and feedthrough
 Agda-generated block matrices, and its transfer function is the port impedance `(1 + Z Y)⁻¹ Z`.
 No controller, delay or switching beyond what the two plants already contain.
 
-The complete system is the pair of plants; its behaviour is the hub's applied to the closed loop,
-and nothing about closed-loop trajectories is restated. The impedance criterion is an exact
-translation of every attractive sentence relative to the internal stability of the source and
-the load. Coordinate changes of the components are representation changes of the complete
+The complete system is the pair of plants; the family reads it as the port system of the closed
+loop, so its behaviour is the hub's and nothing about closed-loop trajectories is restated. Within
+the space of internally stable components, the impedance criterion is an exact translation of the
+attractive sentences and sampled contraction (`exactUnder_hurwitz`) and every translation is sound
+(`soundUnder`). Coordinate changes of the components are representation changes of the complete
 system: they preserve the port data, the criterion and the closed loop up to similarity. What
-port data certify is decided by minimality. With minimal components, port data determine the
-closed loop up to similarity and certify every sentence; with a hidden mode, two interconnections
-with identical port data differ in closed-loop stability. -/
+port data certify is decided by minimality: with minimal components they certify every flow
+sentence (`portData_certified`); with a hidden mode, a stable interconnection shares its port data
+with an unstable one (`portData_not_certified`). Closed-loop stability is no product of
+requirements on the source and the load (`closedLoop_not_separable`). -/
 
 noncomputable section
 
@@ -229,7 +231,7 @@ pole. -/
 
 /-- With internally stable source and load, the closed loop is pole-stable exactly when the
 impedance criterion holds. -/
-@[powerlib_domain] theorem isHurwitz_closedLoop_iff (h₁ : IsHurwitz ic.source.A)
+@[powerlib_foundation] theorem isHurwitz_closedLoop_iff (h₁ : IsHurwitz ic.source.A)
     (h₂ : IsHurwitz ic.load.A) : IsHurwitz ic.closedLoopA ↔ ic.ImpedanceStable := by
   rw [← spectrallyStable_iff_isHurwitz] at h₁ h₂ ⊢
   rw [closedLoopA, spectrallyStable_reindex]
@@ -249,7 +251,7 @@ impedance criterion holds. -/
       (himp s hs) h.symm
 
 /-- The impedance criterion with stable components gives a stable closed loop. -/
-@[powerlib_domain, aesop unsafe 70% apply] theorem isHurwitz_closedLoop_of_impedanceStable
+@[powerlib_foundation, aesop unsafe 70% apply] theorem isHurwitz_closedLoop_of_impedanceStable
     (h₁ : IsHurwitz ic.source.A) (h₂ : IsHurwitz ic.load.A) (h : ic.ImpedanceStable) :
     IsHurwitz ic.closedLoopA :=
   (ic.isHurwitz_closedLoop_iff h₁ h₂).mpr h
@@ -423,7 +425,7 @@ similar to the closed loop. -/
 
 end Interconnection
 
-/-! ## Requirements and the relative exactness of the criterion -/
+/-! ## Requirements and the family -/
 
 namespace Interconnection
 
@@ -441,68 +443,93 @@ def Meets (ic : Interconnection n₁ n₂ p) : Requirement → Prop
   | .impedanceStable => ic.ImpedanceStable
   | .impedanceUnstable => ∃ s : ℂ, 0 < s.re ∧ ic.returnDifference s = 0
 
-/-- The translation of the behavioural sentences into requirements on the port data. -/
-def translate : Flow.Property → Set Requirement
-  | .unstable => {.impedanceUnstable}
-  | _ => {.impedanceStable}
+/-- The translation of the sentences into requirements on the port data. Decay rates,
+conservation and passivity have no requirement in the language and are translated into the
+whole language, which no interconnection meets. -/
+def translate : Sentence → Set Requirement
+  | .flow .unstable => {.impedanceUnstable}
+  | .flow (.decay _) | .flow .conservative | .passive => Set.univ
+  | .flow _ => {.impedanceStable}
 
-/-- The interconnection family: the closed loop as plant map, the requirement language and the
-translation table. -/
-def family : Linear.Family (Interconnection n₁ n₂ p) Requirement (n₁ + n₂) p :=
-  ⟨closedLoop, Meets, translate⟩
+/-- The interconnection family: the closed loop as the port system of the complete system, the
+requirement language and the translation table. -/
+def family : Family (Interconnection n₁ n₂ p) Requirement (n₁ + n₂) p :=
+  ⟨fun ic => ic.closedLoop.system, Meets, translate⟩
+
+@[powerlib_foundation] theorem family_isLinear :
+    (family (n₁ := n₁) (n₂ := n₂) (p := p)).IsLinear closedLoop := fun _ => rfl
 
 /-- The context in which the criterion speaks: internally stable source and load. -/
 def componentsStable : Set Requirement := {.sourceStable, .loadStable}
 
-/-- The impedance criterion is an exact translation of every attractive closed-loop sentence
-within the space of internally stable components. -/
-@[powerlib_domain] theorem exactUnder_impedanceStable {P : Flow.Property} (hP : P.Attractive) :
-    (family (n₁ := n₁) (n₂ := n₂) (p := p)).ExactUnder componentsStable P := by
-  have ht : translate P = {Requirement.impedanceStable} := by
-    cases P <;> first | rfl | exact absurd hP id
-  apply Linear.Family.exactUnder_of_isHurwitz hP
-  change TMIO.ExactUnder Meets componentsStable (translate P)
-    {ic : Interconnection n₁ n₂ p | IsHurwitz ic.closedLoopA}
-  rw [ht, TMIO.ExactUnder]
+/-- No interconnection satisfies the impedance criterion and violates it. -/
+@[powerlib_foundation] theorem realize_univ :
+    realize (Meets (n₁ := n₁) (n₂ := n₂) (p := p)) Set.univ = ∅ := by
+  ext ic
+  simp only [mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
+  intro h
+  obtain ⟨s, hs, hrd⟩ := h .impedanceUnstable
+  exact h .impedanceStable s hs.le hrd
+
+/-- Within the space of internally stable components, the impedance criterion is an exact
+translation of the attractive sentences and sampled contraction of the closed loop. -/
+@[powerlib_domain] theorem exactUnder_hurwitz {P : Flow.Property}
+    (hP : P.Attractive ∨ P = .contractive) :
+    (family (n₁ := n₁) (n₂ := n₂) (p := p)).ExactUnder componentsStable (.flow P) := by
+  have ht : translate (.flow P) = {Requirement.impedanceStable} := by
+    rcases hP with hP | rfl
+    · cases P <;> first | rfl | exact absurd hP id
+    · rfl
+  change TMIO.ExactUnder Meets componentsStable (translate (.flow P)) (family.den (.flow P))
+  rw [ht, family_isLinear.den_hurwitz hP, TMIO.ExactUnder]
   ext ic
   simp only [componentsStable, mem_realize, Set.mem_union, Set.mem_insert_iff,
     Set.mem_singleton_iff, Set.mem_inter_iff, Set.mem_ofPred_eq, forall_eq_or_imp, forall_eq,
-    Meets]
+    Meets, closedLoop_A]
   constructor
   · rintro ⟨himp, h₁, h₂⟩
     exact ⟨(ic.isHurwitz_closedLoop_iff h₁ h₂).mpr himp, h₁, h₂⟩
   · rintro ⟨hcl, h₁, h₂⟩
     exact ⟨(ic.isHurwitz_closedLoop_iff h₁ h₂).mp hcl, h₁, h₂⟩
 
-/-- Every behavioural sentence of the closed loop has a sound translation within the space of
-internally stable components: the impedance criterion for the attractive sentences and Lyapunov
-stability, a right-half-plane zero of the return difference for instability. -/
-@[powerlib_domain] theorem soundUnder (P : Flow.Property) :
-    (family (n₁ := n₁) (n₂ := n₂) (p := p)).SoundUnder componentsStable P := by
+/-- Within the space of internally stable components every translation is sound: the impedance
+criterion proves Lyapunov stability, the attractive sentences and sampled contraction, and a
+right-half-plane zero of the return difference proves instability. -/
+@[powerlib_domain] theorem soundUnder (s : Sentence) :
+    (family (n₁ := n₁) (n₂ := n₂) (p := p)).SoundUnder componentsStable s := by
   intro ic hic
-  have hmem : ∀ q ∈ translate P ∪ componentsStable, Meets ic q := (mem_realize _ _ _).mp hic
+  have hmem : ∀ q ∈ translate s ∪ componentsStable, Meets ic q := (mem_realize _ _ _).mp hic
   have h₁ : IsHurwitz ic.source.A := hmem .sourceStable (by simp [componentsStable])
   have h₂ : IsHurwitz ic.load.A := hmem .loadStable (by simp [componentsStable])
-  cases P with
-  | unstable =>
-    obtain ⟨s, hs, hrd⟩ : ∃ s : ℂ, 0 < s.re ∧ ic.returnDifference s = 0 :=
-      hmem .impedanceUnstable (by simp [translate])
-    have hd₁ := det_ne_zero_of_rhp ((spectrallyStable_iff_isHurwitz _).mpr h₁) hs.le
-    have hd₂ := det_ne_zero_of_rhp ((spectrallyStable_iff_isHurwitz _).mpr h₂) hs.le
-    refine unstable_of_root 0 ?_ hs
-    change (characteristicMatrix ic.closedLoopA s).det = 0
-    rw [det_characteristicMatrix_closedLoopA, ic.det_characteristicMatrix_closedLoop s hd₁ hd₂,
-      hrd, mul_zero]
-  | lyapunovStable =>
-    have hH := (ic.isHurwitz_closedLoop_iff h₁ h₂).mpr (hmem .impedanceStable (by simp [translate]))
-    exact lyapunovStable_of_isHurwitz 0 hH
-  | locallyAsymptoticallyStable | locallyExponentiallyStable | globallyAsymptoticallyStable
-  | globallyExponentiallyStable =>
-    have hH := (ic.isHurwitz_closedLoop_iff h₁ h₂).mpr (hmem .impedanceStable (by simp [translate]))
-    have key (Q : Flow.Property) (hQ : Q.Attractive) :
-        ic ∈ (family (n₁ := n₁) (n₂ := n₂) (p := p)).den Q :=
-      (holds_iff_isHurwitz 0 hQ).mpr hH
-    exact key _ trivial
+  have hcl : ∀ (q : Requirement), q ∈ translate s → q = .impedanceStable →
+      IsHurwitz ic.closedLoop.A := fun q hq hq' => by
+    subst hq'
+    exact (ic.isHurwitz_closedLoop_iff h₁ h₂).mpr (hmem _ (Or.inl hq))
+  have huniv : translate s = Set.univ → ic ∈ family.den s := fun hs => by
+    have : ic ∈ realize Meets Set.univ :=
+      (mem_realize _ _ _).mpr fun q _ => hmem q (Or.inl (hs ▸ Set.mem_univ q))
+    rw [realize_univ] at this
+    exact this.elim
+  rcases s with P | _
+  · cases P
+    case unstable =>
+      obtain ⟨s, hs, hrd⟩ : ∃ s : ℂ, 0 < s.re ∧ ic.returnDifference s = 0 :=
+        hmem .impedanceUnstable (by simp [translate])
+      have hd₁ := det_ne_zero_of_rhp ((spectrallyStable_iff_isHurwitz _).mpr h₁) hs.le
+      have hd₂ := det_ne_zero_of_rhp ((spectrallyStable_iff_isHurwitz _).mpr h₂) hs.le
+      refine family_isLinear.mem_den_flow.mpr (unstable_of_root 0 ?_ hs)
+      change (characteristicMatrix ic.closedLoopA s).det = 0
+      rw [det_characteristicMatrix_closedLoopA, ic.det_characteristicMatrix_closedLoop s hd₁ hd₂,
+        hrd, mul_zero]
+    case lyapunovStable =>
+      exact family_isLinear.mem_den_flow.mpr
+        (lyapunovStable_of_isHurwitz 0 (hcl .impedanceStable rfl rfl))
+    case decay a => exact huniv rfl
+    case conservative => exact huniv rfl
+    all_goals
+      rw [family_isLinear.den_hurwitz (by simp)]
+      exact hcl .impedanceStable rfl rfl
+  · exact huniv rfl
 
 end Interconnection
 
@@ -538,7 +565,7 @@ def quietLoop : Interconnection 1 1 1 := ⟨quietMode, testLoad, rfl⟩
   simpa [testLoad] using (isHurwitz_one_iff (-1)).mpr (by norm_num)
 
 /-- The quiet interconnection is stable, by the impedance criterion. -/
-@[powerlib_domain] theorem quietLoop_stable : IsHurwitz quietLoop.closedLoopA := by
+@[powerlib_foundation] theorem quietLoop_stable : IsHurwitz quietLoop.closedLoopA := by
   refine (quietLoop.isHurwitz_closedLoop_iff transfer_not_determines_stability.2.1
     testLoad_isHurwitz).mpr fun s _ => ?_
   have hZ : quietLoop.sourceImpedance s = 0 := by
@@ -546,7 +573,7 @@ def quietLoop : Interconnection 1 1 1 := ⟨quietMode, testLoad, rfl⟩
   simp [returnDifference, hZ]
 
 /-- The hidden-mode interconnection is unstable, although its port data are the quiet one's. -/
-@[powerlib_domain] theorem hiddenLoop_unstable : ¬ IsHurwitz hiddenLoop.closedLoopA := by
+@[powerlib_foundation] theorem hiddenLoop_unstable : ¬ IsHurwitz hiddenLoop.closedLoopA := by
   rw [← spectrallyStable_iff_isHurwitz, closedLoopA, spectrallyStable_reindex]
   intro h
   have hdet : (characteristicMatrix hiddenLoop.closedLoopBlocks 1).det = 0 := by
@@ -558,12 +585,15 @@ def quietLoop : Interconnection 1 1 1 := ⟨quietMode, testLoad, rfl⟩
   have := h 1 hdet
   norm_num at this
 
-/-- Port data do not certify closed-loop stability: the quiet loop's data point is not in the
-generated certification, because a hidden-mode loop produces the same data. -/
+/-- Port data do not certify closed-loop stability: the quiet interconnection is globally
+exponentially stable, yet its port data are not certified for that sentence, because the
+hidden-mode interconnection produces the same data. -/
 @[powerlib_domain] theorem portData_not_certified :
-    quietLoop.portData ∉ certify (Function.graph portData)
-      {ic : Interconnection 1 1 1 | IsHurwitz ic.closedLoopA} := by
-  intro h
+    quietLoop ∈ family.den (.flow .globallyExponentiallyStable) ∧
+      quietLoop.portData ∉ certify (Function.graph (portData (n₁ := 1) (n₂ := 1) (p := 1)))
+        (family.den (.flow .globallyExponentiallyStable)) := by
+  rw [family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
+  refine ⟨quietLoop_stable, fun h => ?_⟩
   rw [mem_certify] at h
   exact hiddenLoop_unstable (h hiddenLoop portData_hidden_quiet)
 
@@ -605,17 +635,19 @@ the components. -/
 /-- Interconnections whose components have no hidden mode. -/
 abbrev Observable (n₁ n₂ p : ℕ) := {ic : Interconnection n₁ n₂ p // ic.MinimalComponents}
 
-/-- With minimal components, port data certify every behavioural sentence of the closed loop:
-the generated certification of a sentence contains the port data of every interconnection that
-satisfies it. This is the exact complement of `portData_not_certified`, whose source has a
-hidden mode. -/
+/-- With minimal components, port data certify every flow sentence of the closed loop: the
+generated certification of a sentence contains the port data of every interconnection that
+satisfies it. This is the exact complement of `portData_not_certified`, whose source has a hidden
+mode. -/
 @[powerlib_domain] theorem portData_certified {ic : Interconnection n₁ n₂ p}
-    (hm : ic.MinimalComponents) {P : Flow.Property} (hP : ic ∈ den closedLoop P) :
+    (hm : ic.MinimalComponents) {P : Flow.Property} (hP : ic ∈ family.den (.flow P)) :
     ic.portData ∈ certify (Function.graph fun ic : Observable n₁ n₂ p => ic.1.portData)
-      {ic | ic.1 ∈ den closedLoop P} := by
+      {ic | ic.1 ∈ family.den (.flow P)} := by
   rw [mem_certify]
   rintro ⟨ic', hm'⟩ hic
   have hdata : ic'.portData = ic.portData := hic
+  rw [Set.mem_ofPred_eq, family_isLinear.mem_den_flow]
+  rw [family_isLinear.mem_den_flow] at hP
   exact ((similar_closedLoop_of_portData hm hm' hdata.symm).holds_iff P).mpr hP
 
 /-! ## Closed-loop stability does not split over the components -/
@@ -638,7 +670,7 @@ def staticLoop (d c : ℝ) : Interconnection 0 1 1 := ⟨staticSource d, firstOr
   simp [staticLoop, staticSource, firstOrderLoad]
 
 /-- The closed loop is stable exactly when `1 + d c > 0`. -/
-@[powerlib_domain] theorem staticLoop_isHurwitz_iff (d c : ℝ) :
+@[powerlib_foundation] theorem staticLoop_isHurwitz_iff (d c : ℝ) :
     IsHurwitz (staticLoop d c).closedLoopA ↔ 0 < 1 + d * c := by
   have h : ((staticLoop d c).closedLoopA : Matrix (Fin 1) (Fin 1) ℝ) = !![-1 - d * c] := by
     ext i j
@@ -649,16 +681,24 @@ def staticLoop (d c : ℝ) : Interconnection 0 1 1 := ⟨staticSource d, firstOr
   rw [h, isHurwitz_one_iff]
   constructor <;> intro h <;> linarith
 
-/-- Every component is internally stable, yet the stable interconnections do not form a product of
-a set of sources and a set of loads: closed-loop stability is a requirement on the complete
-system. -/
+/-- Closed-loop stability is a requirement on the complete system: over the static loops, whose
+components are all internally stable, the denotation of global exponential stability is no
+product of a set of sources and a set of loads. Requirements that each speak about one component
+realize products (`TMIO.realize_sum`), so none of them translates the sentence exactly. -/
 @[powerlib_domain] theorem closedLoop_not_separable :
-    IsHurwitz (staticLoop 1 1).closedLoopA ∧ IsHurwitz (staticLoop (-3) (-1)).closedLoopA ∧
-      ¬ IsHurwitz (staticLoop 1 (-1)).closedLoopA := by
-  refine ⟨(staticLoop_isHurwitz_iff 1 1).mpr (by norm_num),
-    (staticLoop_isHurwitz_iff (-3) (-1)).mpr (by norm_num), fun h => ?_⟩
-  have := (staticLoop_isHurwitz_iff 1 (-1)).mp h
-  norm_num at this
+    ¬ ∃ (D C : Set ℝ), (fun dc : ℝ × ℝ => staticLoop dc.1 dc.2) ⁻¹'
+      (family (n₁ := 0) (n₂ := 1) (p := 1)).den (.flow .globallyExponentiallyStable) =
+        D ×ˢ C := by
+  rintro ⟨D, C, h⟩
+  have hmem : ∀ d c : ℝ, (d, c) ∈ D ×ˢ C ↔ 0 < 1 + d * c := fun d c => by
+    rw [← h, Set.mem_preimage,
+      family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial),
+      Set.mem_ofPred_eq]
+    exact staticLoop_isHurwitz_iff d c
+  have h₁ := (hmem 1 1).mpr (by norm_num)
+  have h₂ := (hmem (-3) (-1)).mpr (by norm_num)
+  have h₃ := (hmem 1 (-1)).mp ⟨h₁.1, h₂.2⟩
+  norm_num at h₃
 
 end Interconnection
 

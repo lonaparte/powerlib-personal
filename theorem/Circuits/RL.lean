@@ -12,10 +12,13 @@ real, of either sign. No controller, PLL, PWM, delay, switching or discretizatio
 
 Two representations — impedance parameters `(R, L)` and state-space parameters
 `(a, b) = (R / L, 1 / L)` — are related by the Agda-generated conversion, an equivalence. The
-plant map sends the state-space parameters to `i' = -a i + b v`. Every behavioural sentence is the
-Flow semantics pulled back along the plant map; this module proves only the RL facts: which
-resistance condition carves out each sentence, the closed-form Lyapunov certificate, and the
-physical energy as a KYP certificate. -/
+plant map sends the state-space parameters to `i' = -a i + b v`; the family reads every branch as
+the port system of its plant, so every sentence denotes the single semantics pulled back.
+
+The family is faithful: its translation chain is its semantics connection
+(`chain_eq_semantics`). Every sentence — the stability sentences, decay at a rate, sampled
+contraction, conservation and passivity — is carved out exactly by a condition on the resistance
+and the time constant. -/
 
 noncomputable section
 
@@ -104,7 +107,7 @@ def Impedance.plant (m : Impedance) : Linear.Plant 1 1 := (toStateSpace m).plant
   simp [Impedance.plant]
 
 /-- The RL plant is Hurwitz exactly when the resistance is positive. -/
-@[simp, powerlib_domain] theorem isHurwitz_iff (m : Impedance) :
+@[simp, powerlib_foundation] theorem isHurwitz_iff (m : Impedance) :
     IsHurwitz m.plant.A ↔ 0 < m.resistance := by
   simp only [Impedance.plant, StateSpace.plant, toStateSpace_decay]
   rw [Linear.isHurwitz_one_iff, neg_lt_zero, div_pos_iff_of_pos_right m.inductance.property]
@@ -168,71 +171,11 @@ def kyp (m : Impedance) (hR : 0 ≤ m.resistance) : Linear.KYP m.plant where
     field_simp
   feedthrough u := by simp [Impedance.plant, StateSpace.plant]
 
-/-- A nonnegative resistance makes the zero-input RL branch Lyapunov stable. -/
-@[powerlib_domain] theorem lyapunovStable_of_nonneg (m : Impedance) (hR : 0 ≤ m.resistance) :
-    LyapunovStable (affineLinearVectorField m.plant.A 0) 0 := by
-  apply (kyp m hR).lyapunovStable_of_pos
-  intro x hx
-  have h0 : x 0 ≠ 0 := by
-    intro h
-    apply hx
-    funext i
-    fin_cases i
-    exact h
-  simp [kyp, dotProduct, Matrix.mulVec]
-  nlinarith [mul_pos m.inductance.property (mul_self_pos.mpr h0)]
-
-/-- A negative resistance makes the RL branch unstable (LeanForControl's instability theorem). -/
-@[powerlib_domain] theorem unstable_of_neg (m : Impedance) (hR : m.resistance < 0) :
-    Unstable (affineLinearVectorField m.plant.A 0) 0 := by
-  apply Linear.unstable_of_eigenvalue 0 (μ := ((-(toStateSpace m).decay : ℝ) : ℂ))
-    (v := fun _ => 1) (by simp [funext_iff])
-  · funext i
-    fin_cases i
-    simp [Impedance.plant, StateSpace.plant, Matrix.mulVec, dotProduct]
-  · simp only [Complex.ofReal_re, toStateSpace_decay, neg_pos]
-    exact div_neg_of_neg_of_pos hR m.inductance.property
-
-/-! ## Responses -/
-
-/-- Every current trajectory of the branch field centred at `e` is the exponential
-`i(t) - e = e^{-(R/L)(t - t₀)} (i(t₀) - e)` on its whole segment, whatever the sign of `R`. -/
-@[powerlib_domain] theorem trajectory_eq (m : Impedance) {e : EuclideanSpace ℝ (Fin 1)}
-    {φ : ℝ → EuclideanSpace ℝ (Fin 1)} {t₀ t₁ : ℝ}
-    (hφ : IsTrajectoryOn φ (affineLinearVectorField m.plant.A e) t₀ t₁) :
-    ∀ t ∈ Set.Icc t₀ t₁,
-      φ t = e + Real.exp (-(m.resistance / m.inductance.val) * (t - t₀)) • (φ t₀ - e) := by
-  intro t ht
-  have h : m.plant.A = !![-(toStateSpace m).decay] := rfl
-  rw [h] at hφ
-  rw [Linear.trajectory_eq_scalar hφ t ht, toStateSpace_decay]
-
-/-- Under a constant terminal voltage with equilibrium current `e`, every trajectory relaxes to
-`e` with time constant `L / R`. -/
-@[powerlib_domain] theorem input_trajectory_eq (m : Impedance) {v : Fin 1 → ℝ}
-    {e : EuclideanSpace ℝ (Fin 1)} (he : IsEquilibrium (m.plant.inputField v) e)
-    {φ : ℝ → EuclideanSpace ℝ (Fin 1)} {t₀ t₁ : ℝ}
-    (hφ : IsTrajectoryOn φ (m.plant.inputField v) t₀ t₁) :
-    ∀ t ∈ Set.Icc t₀ t₁,
-      φ t = e + Real.exp (-(m.resistance / m.inductance.val) * (t - t₀)) • (φ t₀ - e) := by
-  rw [m.plant.inputField_eq he] at hφ
-  exact trajectory_eq m hφ
-
-/-- The distance to the equilibrium is exactly exponential. -/
-@[powerlib_domain] theorem norm_trajectory_eq (m : Impedance) {e : EuclideanSpace ℝ (Fin 1)}
-    {φ : ℝ → EuclideanSpace ℝ (Fin 1)} {t₀ t₁ : ℝ}
-    (hφ : IsTrajectoryOn φ (affineLinearVectorField m.plant.A e) t₀ t₁) :
-    ∀ t ∈ Set.Icc t₀ t₁,
-      ‖φ t - e‖ = Real.exp (-(m.resistance / m.inductance.val) * (t - t₀)) * ‖φ t₀ - e‖ := by
-  intro t ht
-  rw [trajectory_eq m hφ t ht, add_sub_cancel_left, norm_smul,
-    Real.norm_of_nonneg (Real.exp_pos _).le]
-
 /-! ## The frequency domain -/
 
 /-- The transfer function from terminal voltage to branch current is the admittance
 `1 / (R + L s)`, at every complex frequency (both sides vanish at the pole). -/
-@[powerlib_domain] theorem transfer_eq (m : Impedance) (s : ℂ) :
+@[powerlib_foundation] theorem transfer_eq (m : Impedance) (s : ℂ) :
     Linear.transfer m.plant s = !![((m.resistance : ℂ) + m.inductance.val * s)⁻¹] := by
   have hL : (m.inductance.val : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr m.inductance.property.ne'
   ext i j
@@ -257,22 +200,15 @@ def kyp (m : Impedance) (hR : 0 ≤ m.resistance) : Linear.KYP m.plant where
     fin_cases i
     simpa [Impedance.plant, StateSpace.plant, Matrix.mulVec, dotProduct] using h0
 
-/-- An impedance measurement certifies the branch: among all minimal one-state plants, the
-branch's transfer function certifies every sentence the branch satisfies. -/
-@[powerlib_domain] theorem transfer_certified (m : Impedance) {P : Flow.Property}
-    (h : m ∈ Linear.den Impedance.plant P) :
-    Linear.transfer m.plant ∈ TMIO.certify
-      (Function.graph fun M : {M : Linear.Plant 1 1 // M.Minimal} => Linear.transfer M.1)
-      {M | P.holds (affineLinearVectorField M.1.A 0) 0} :=
-  Linear.transfer_certified (minimal m) h
-
-/-! ## Requirements and their exact translations -/
+/-! ## Requirements and the faithful family -/
 
 /-- Engineering requirements on the RL parameters. -/
 inductive Requirement
   | positiveResistance
   | nonnegativeResistance
   | negativeResistance
+  | lossless
+  | decayRateAtLeast (a : ℝ)
   | resistanceAtLeast (r : ℝ)
   | resistanceAtMost (r : ℝ)
   | inductanceAtLeast (l : ℝ)
@@ -283,58 +219,140 @@ def Meets (m : Impedance) : Requirement → Prop
   | .positiveResistance => 0 < m.resistance
   | .nonnegativeResistance => 0 ≤ m.resistance
   | .negativeResistance => m.resistance < 0
+  | .lossless => m.resistance = 0
+  | .decayRateAtLeast a => a ≤ m.resistance / m.inductance.val
   | .resistanceAtLeast r => r ≤ m.resistance
   | .resistanceAtMost r => m.resistance ≤ r
   | .inductanceAtLeast l => l ≤ m.inductance.val
   | .inductanceAtMost l => m.inductance.val ≤ l
 
-/-- The translation of the behavioural sentences into requirements. -/
-def translate : Flow.Property → Set Requirement
-  | .lyapunovStable => {.nonnegativeResistance}
-  | .unstable => {.negativeResistance}
-  | _ => {.positiveResistance}
+/-- The translation of the sentences into requirements. -/
+def translate : Sentence → Set Requirement
+  | .flow .lyapunovStable => {.nonnegativeResistance}
+  | .flow .unstable => {.negativeResistance}
+  | .flow (.decay a) => {.decayRateAtLeast a}
+  | .flow .conservative => {.lossless}
+  | .flow _ => {.positiveResistance}
+  | .passive => {.nonnegativeResistance}
 
-/-- The RL family: the plant map, the requirement language and the translation table. -/
-def family : Linear.Family Impedance Requirement 1 1 := ⟨Impedance.plant, Meets, translate⟩
+/-- The RL family: every branch read as the port system of its plant, the requirement language
+and the translation table. -/
+def family : Family Impedance Requirement 1 1 := ⟨fun m => m.plant.system, Meets, translate⟩
 
-@[powerlib_foundation] theorem realize_positiveResistance :
-    realize Meets {Requirement.positiveResistance} = {m | IsHurwitz m.plant.A} := by
+@[powerlib_foundation] theorem family_isLinear : family.IsLinear Impedance.plant := fun _ => rfl
+
+@[powerlib_foundation] theorem plant_A (m : Impedance) :
+    m.plant.A = !![-(m.resistance / m.inductance.val)] := by
+  simp [Impedance.plant, StateSpace.plant, toStateSpace_decay]
+
+/-- The physical energy `L i² / 2` is positive on every nonzero current. -/
+@[powerlib_foundation] theorem energy_pos (m : Impedance) (hR : 0 ≤ m.resistance)
+    (x : Fin 1 → ℝ) (hx : x ≠ 0) : 0 < x ⬝ᵥ ((kyp m hR).P *ᵥ x) := by
+  have h0 : x 0 ≠ 0 := by
+    intro h
+    apply hx
+    funext i
+    fin_cases i
+    exact h
+  simp [kyp, dotProduct, Matrix.mulVec]
+  nlinarith [mul_pos m.inductance.property (mul_self_pos.mpr h0)]
+
+/-- A constant current `c` held by the terminal voltage `R c` draws the power `R c²`. -/
+@[powerlib_foundation] theorem field_hold (m : Impedance) (c : ℝ) :
+    m.plant.system.field (WithLp.toLp 2 ![c]) ![m.resistance * c] = 0 := by
+  have hL := m.inductance.property.ne'
+  ext i
+  fin_cases i
+  simp [Impedance.plant, StateSpace.plant, Linear.Plant.system, dotProduct, toStateSpace_decay]
+  field_simp
+  ring
+
+@[powerlib_foundation] theorem supply_hold (m : Impedance) (c : ℝ) :
+    m.plant.system.supply (WithLp.toLp 2 ![c]) ![m.resistance * c] = m.resistance * c ^ 2 := by
+  simp [Port.System.supply, Impedance.plant, StateSpace.plant, Linear.Plant.system, dotProduct]
+  ring
+
+/-- The RL family is faithful: its translation chain is its semantics connection. Every sentence
+is carved out exactly by its requirement — Lyapunov stability and passivity by a nonnegative
+resistance, the attractive sentences and sampled contraction by a positive one, instability by a
+negative one, conservation by a lossless branch, and decay at the rate `a` by a time constant
+`L / R` with `a ≤ R / L`. -/
+@[powerlib_domain] theorem chain_eq_semantics : family.chain = family.semantics := by
+  have hLS : ∀ m : Impedance,
+      LyapunovStable (affineLinearVectorField m.plant.A 0) 0 ↔ 0 ≤ m.resistance := by
+    intro m
+    refine ⟨fun h => ?_, fun hR => (kyp m hR).lyapunovStable_of_pos (energy_pos m hR)⟩
+    by_contra hR
+    refine Linear.unstable_of_eigenvalue 0 (μ := ((-(toStateSpace m).decay : ℝ) : ℂ))
+      (v := fun _ => 1) (by simp [funext_iff]) ?_ ?_ h
+    · funext i
+      fin_cases i
+      simp [Impedance.plant, StateSpace.plant, Matrix.mulVec, dotProduct]
+    · simp only [Complex.ofReal_re, toStateSpace_decay, neg_pos]
+      exact div_neg_of_neg_of_pos (not_le.mp hR) m.inductance.property
+  have hhur : ∀ {P : Flow.Property}, P.Attractive ∨ P = .contractive → ∀ m : Impedance,
+      P.holds (affineLinearVectorField m.plant.A 0) 0 ↔ 0 < m.resistance := by
+    intro P hP m
+    rw [← family_isLinear.mem_den_flow, family_isLinear.den_hurwitz hP, Set.mem_ofPred_eq,
+      isHurwitz_iff]
+  refine Family.chain_eq_semantics_iff.mpr fun s => ?_
   ext m
-  simp [Meets, isHurwitz_iff]
-
-/-- Zero-input Lyapunov stability of the RL branch is exactly a nonnegative resistance. -/
-@[simp, powerlib_domain] theorem lyapunovStable_iff (m : Impedance) :
-    LyapunovStable (affineLinearVectorField m.plant.A 0) 0 ↔ 0 ≤ m.resistance := by
-  refine ⟨fun h => ?_, lyapunovStable_of_nonneg m⟩
-  by_contra hR
-  exact unstable_of_neg m (not_le.mp hR) h
-
-/-- Every behavioural sentence has an exact translation into RL requirements
-(`family.Exact P`). -/
-@[powerlib_domain] theorem realize_translate (P : Flow.Property) :
-    realize Meets (translate P) = Linear.den Impedance.plant P := by
-  cases P with
-  | lyapunovStable =>
-    ext m
-    simp [translate, Meets, Linear.den, Flow.Property.holds, lyapunovStable_iff]
-  | unstable =>
-    ext m
-    simp [translate, Meets, Linear.den, Flow.Property.holds, Unstable, lyapunovStable_iff]
-  | locallyAsymptoticallyStable =>
-    exact Linear.realize_eq_den realize_positiveResistance trivial
-  | locallyExponentiallyStable =>
-    exact Linear.realize_eq_den realize_positiveResistance trivial
-  | globallyAsymptoticallyStable =>
-    exact Linear.realize_eq_den realize_positiveResistance trivial
-  | globallyExponentiallyStable =>
-    exact Linear.realize_eq_den realize_positiveResistance trivial
-
-/-- At every terminal voltage and every equilibrium current, an attractive sentence holds exactly
-for a positive resistance. -/
-@[powerlib_domain] theorem holds_input_iff (m : Impedance) {v : Fin 1 → ℝ}
-    {e : EuclideanSpace ℝ (Fin 1)} (he : IsEquilibrium (m.plant.inputField v) e)
-    {P : Flow.Property} (hP : P.Attractive) :
-    P.holds (m.plant.inputField v) e ↔ 0 < m.resistance := by
-  rw [Linear.holds_input_iff m.plant he hP, isHurwitz_iff]
+  rw [Family.mem_den, mem_realize]
+  change (∀ q ∈ translate s, Meets m q) ↔ s.holds m.plant.system
+  rcases s with P | _
+  · rw [Sentence.holds_flow, Linear.Plant.system_zeroInput]
+    cases P
+    case lyapunovStable => simpa [translate, Meets, Flow.Property.holds] using (hLS m).symm
+    case unstable =>
+      simp only [translate, Set.mem_singleton_iff, forall_eq, Meets, Flow.Property.holds,
+        Unstable, hLS, not_le]
+    case decay a =>
+      simp only [translate, Set.mem_singleton_iff, forall_eq, Meets, Flow.Property.holds]
+      rw [plant_A, Linear.decay_scalar_iff]
+    case conservative =>
+      simp only [translate, Set.mem_singleton_iff, forall_eq, Meets, Flow.Property.holds]
+      constructor
+      · intro hR
+        have hA : m.plant.A = 0 := by
+          rw [plant_A, hR, zero_div, neg_zero]
+          ext i j
+          fin_cases i
+          fin_cases j
+          rfl
+        refine Linear.conservative_of_quadratic (P := 1) (by simp) (fun v hv => ?_) (by simp [hA])
+        have h0 : v 0 ≠ 0 := by
+          intro h
+          apply hv
+          funext i
+          fin_cases i
+          exact h
+        simpa [dotProduct] using mul_self_pos.mpr h0
+      · intro h
+        have hnn := (hLS m).mp h.lyapunovStable
+        have hnh := family_isLinear.not_isHurwitz_of_mem_den_conservative one_pos
+          (family_isLinear.mem_den_flow.mpr h)
+        rw [isHurwitz_iff] at hnh
+        exact le_antisymm (not_lt.mp hnh) hnn
+    case locallyAsymptoticallyStable =>
+      simpa [translate, Meets] using
+        (hhur (P := .locallyAsymptoticallyStable) (Or.inl trivial) m).symm
+    case locallyExponentiallyStable =>
+      simpa [translate, Meets] using
+        (hhur (P := .locallyExponentiallyStable) (Or.inl trivial) m).symm
+    case globallyAsymptoticallyStable =>
+      simpa [translate, Meets] using
+        (hhur (P := .globallyAsymptoticallyStable) (Or.inl trivial) m).symm
+    case globallyExponentiallyStable =>
+      simpa [translate, Meets] using
+        (hhur (P := .globallyExponentiallyStable) (Or.inl trivial) m).symm
+    case contractive => simpa [translate, Meets] using (hhur (P := .contractive) (Or.inr rfl) m).symm
+  · simp only [translate, Set.mem_singleton_iff, forall_eq, Meets, Sentence.holds_passive]
+    constructor
+    · intro hR
+      exact ⟨_, (kyp m hR).passiveWith⟩
+    · intro h
+      by_contra hR
+      exact m.plant.system.not_passive_of_equilibrium (field_hold m 1)
+        (by rw [supply_hold]; linarith [not_le.mp hR]) h
 
 end powerlib.Circuits.RL

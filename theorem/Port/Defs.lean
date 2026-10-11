@@ -9,11 +9,17 @@ finite segments under an arbitrary input signal, as in the Flow semantics. With 
 zero the system is the autonomous field `zeroInput`, whose behaviour is the Flow semantics.
 
 Passivity is dissipativity with respect to the supplied power: a nonnegative storage whose
-increase on every solution segment is bounded by the energy supplied through the ports. -/
+increase on every solution segment is bounded by the energy supplied through the ports.
+
+The sentences of the library are the Flow sentences of the zero-input field about the origin and
+passivity; their interpretation on systems with ports is fixed here once (`Sentence.holds`). An
+autonomous field is the system without ports. -/
 
 noncomputable section
 
-namespace powerlib.Port
+namespace powerlib
+
+namespace Port
 
 open Set MeasureTheory
 
@@ -49,4 +55,22 @@ def System.PassiveWith (s : System n p) (V : ℝⁿ → ℝ) : Prop :=
 /-- Passivity with some storage. -/
 def System.Passive (s : System n p) : Prop := ∃ V, s.PassiveWith V
 
-end powerlib.Port
+/-- The system of an autonomous field: no ports. -/
+def System.autonomous (f : ℝⁿ → ℝⁿ) : System n 0 := ⟨fun x _ => f x, fun _ _ => 0⟩
+
+end Port
+
+variable {n p : ℕ}
+
+/-- The sentences of the library: a behavioural sentence of the zero-input field about the
+origin, or passivity. -/
+inductive Sentence
+  | flow (P : Flow.Property)
+  | passive
+
+/-- The interpretation of every sentence on systems with ports, fixed once. -/
+def Sentence.holds : Sentence → Port.System n p → Prop
+  | .flow P, s => P.holds s.zeroInput 0
+  | .passive, s => s.Passive
+
+end powerlib

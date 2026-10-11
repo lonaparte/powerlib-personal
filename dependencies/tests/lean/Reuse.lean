@@ -88,14 +88,13 @@ open powerlib LinearSystems
     (h : IsHurwitz A) (e : EuclideanSpace ℝ (Fin n)) :
     Flow.GloballyExponentiallyStable (affineLinearVectorField A e) e := by powerlib_search
 
-@[powerlib_domain] theorem rl_member (m : Circuits.RL.Impedance)
-    (c : Linear.Certificate m.plant.A) {P : Flow.Property} (hP : P.Attractive) :
-    m ∈ Linear.den Circuits.RL.Impedance.plant P := by powerlib_search
+@[powerlib_domain] theorem rl_faithful :
+    Circuits.RL.family.chain = Circuits.RL.family.semantics := by powerlib_search
 
-@[powerlib_domain] theorem rl_sign (m : Circuits.RL.Impedance) :
+@[powerlib_foundation] theorem rl_sign (m : Circuits.RL.Impedance) :
     IsHurwitz m.plant.A ↔ 0 < m.resistance := by powerlib_search
 
-@[powerlib_domain] theorem lcl_poles (m : Circuits.LCL.Circuit) :
+@[powerlib_foundation] theorem lcl_poles (m : Circuits.LCL.Circuit) :
     IsHurwitz m.plant.A ↔ m.Stable := by powerlib_search
 
 @[powerlib_foundation] theorem decay_global {n : ℕ}
@@ -109,9 +108,9 @@ open powerlib LinearSystems
     Flow.ForwardComplete f := by
   powerlib_search
 
-@[powerlib_domain] theorem polynomial_member {model : Nonlinear.Polynomial2.Model}
-    (c : Nonlinear.Polynomial2.Certificate model) {P : Flow.Property} (hP : P.Attractive) :
-    model ∈ Flow.den Nonlinear.Polynomial2.Model.field 0 P := by powerlib_search
+@[powerlib_foundation] theorem polynomial_global {model : Nonlinear.Polynomial2.Model}
+    (c : Nonlinear.Polynomial2.Certificate model) :
+    Flow.GloballyExponentiallyStable model.field 0 := by powerlib_search
 
 -- Upstream declarations need no PowerLib attributes or names.
 @[powerlib_foundation] theorem exp_positive (x : ℝ) : 0 < Real.exp x := by powerlib_search
@@ -138,12 +137,13 @@ run_cmd do
   for (consumer, source) in #[
       (`AutomaticReuse.certificate_holds, `powerlib.Linear.Certificate.holds),
       (`AutomaticReuse.hurwitz_global, `powerlib.Linear.globallyExponentiallyStable_of_isHurwitz),
-      (`AutomaticReuse.rl_member, `powerlib.Linear.Certificate.mem_den),
+      (`AutomaticReuse.rl_faithful, `powerlib.Circuits.RL.chain_eq_semantics),
       (`AutomaticReuse.rl_sign, `powerlib.Circuits.RL.isHurwitz_iff),
       (`AutomaticReuse.lcl_poles, `powerlib.Circuits.LCL.isHurwitz_iff_stable),
       (`AutomaticReuse.decay_global, `powerlib.Flow.QuadraticDecay.globallyExponentiallyStable),
       (`AutomaticReuse.decay_complete, `powerlib.Flow.QuadraticDecay.forwardComplete),
-      (`AutomaticReuse.polynomial_member, `powerlib.Nonlinear.Polynomial2.Certificate.mem_den),
+      (`AutomaticReuse.polynomial_global,
+        `powerlib.Nonlinear.Polynomial2.Certificate.globallyExponentiallyStable),
       (`AutomaticReuse.exp_positive, `Real.exp_pos),
       (`AutomaticReuse.concrete_relation, `AutomaticReuse.from_model_relation)] do
     let info ← getConstInfo consumer
@@ -173,7 +173,7 @@ open powerlib LinearSystems
 
 @[powerlib_domain] theorem lcl_passive_damped (m : Circuits.LCL.Circuit) (hp : m.Passive)
     (hd : m.Damped) :
-    m ∈ Linear.den Circuits.LCL.Circuit.plant .globallyAsymptoticallyStable := by aesop
+    Flow.GloballyAsymptoticallyStable (affineLinearVectorField m.plant.A 0) 0 := by aesop
 
 @[powerlib_domain] theorem interconnection_criterion {n₁ n₂ p : ℕ}
     (ic : Circuits.Interconnection n₁ n₂ p) (h₁ : IsHurwitz ic.source.A)
