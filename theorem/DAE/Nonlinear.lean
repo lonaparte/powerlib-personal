@@ -341,4 +341,30 @@ to `x₀` decays exponentially, and its algebraic part is `y = h(x)`. -/
     _ ≤ C * 1 * ‖x t₀ - u.1‖ := by gcongr
     _ < R := by linarith
 
+/-- **Local index-1 equivalence.** Near `(x₀, y₀)`, a pair `(x, y)` is a DAE solution segment iff
+`x` solves the reduced ODE `ẋ = f(x, h(x))` and `y = h(x)`: there are neighbourhoods `U` of `x₀`
+and `V` of `y₀` such that this holds for every segment staying in `U × V`. -/
+@[powerlib_foundation] theorem dae_iff_reduced_local (hg : ContDiff ℝ 1 g)
+    (hinv : (partialY g u).IsInvertible) (hgu : g u = 0) :
+    ∃ U ∈ 𝓝 u.1, ∃ V ∈ 𝓝 u.2, ∀ (t₀ t₁ : ℝ) (x : ℝ → State n) (y : ℝ → State m),
+      (∀ t ∈ Icc t₀ t₁, x t ∈ U ∧ y t ∈ V) →
+      (IsDAESolutionOn f g x y t₀ t₁ ↔
+        ∀ t ∈ Icc t₀ t₁, HasDerivWithinAt x (reducedField f g u hg hinv (x t)) (Icc t₀ t₁) t ∧
+          y t = implicitMap g u hg hinv (x t)) := by
+  have huniq : ∀ᶠ v in 𝓝 u.1 ×ˢ 𝓝 u.2, g v = 0 ↔ implicitMap g u hg hinv v.1 = v.2 := by
+    rw [← nhds_prod_eq]
+    exact implicitMap_unique hg hinv hgu
+  obtain ⟨pa, hpa, pb, hpb, hall⟩ := Filter.eventually_prod_iff.mp huniq
+  refine ⟨{x | pa x}, hpa, {y | pb y}, hpb, fun t₀ t₁ x y hUV => ⟨fun hsol t ht => ?_,
+    fun hred t ht => ?_⟩⟩
+  · have hy : y t = implicitMap g u hg hinv (x t) :=
+      ((hall (hUV t ht).1 (hUV t ht).2).mp (hsol t ht).2).symm
+    refine ⟨?_, hy⟩
+    have := (hsol t ht).1
+    rwa [hy] at this
+  · obtain ⟨hd, hy⟩ := hred t ht
+    refine ⟨?_, (hall (hUV t ht).1 (hUV t ht).2).mpr hy.symm⟩
+    rw [hy]
+    exact hd
+
 end powerlib.DAE

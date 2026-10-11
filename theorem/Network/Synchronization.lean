@@ -1,7 +1,7 @@
 import theorem.Network.WeightedLaplacian
 import Mathlib.Combinatorics.SimpleGraph.LapMatrix
 import Mathlib.Analysis.ODE.ExistUnique
-import LeanForControl.LinearSystems.Stability.Continuous.DefsHurwitz
+import dependencies.LeanForControl
 
 /-! # Synchronization manifolds of diffusively coupled identical nodes
 
