@@ -1,3 +1,4 @@
+import theorem.Linear.Rate
 import theorem.Linear.Family
 import theorem.Linear.Realization
 import theorem.generated.ImpedanceInterconnection
@@ -435,20 +436,23 @@ inductive Requirement
   | loadStable
   | impedanceStable
   | impedanceUnstable
+  | rate (a : ℝ)
 
 /-- Satisfaction of a requirement by a complete interconnection. -/
 def Meets (ic : Interconnection n₁ n₂ p) : Requirement → Prop
   | .sourceStable => IsHurwitz ic.source.A
   | .loadStable => IsHurwitz ic.load.A
   | .impedanceStable => ic.ImpedanceStable
+  | .rate a => Linear.RateMargin ic.closedLoop.A a
   | .impedanceUnstable => ∃ s : ℂ, 0 < s.re ∧ ic.returnDifference s = 0
 
-/-- The translation of the sentences into requirements on the port data. Decay rates,
-conservation and passivity have no requirement in the language and are translated into the
+/-- Decay uses a strict margin on the full closed-loop state matrix. The other translated
+sentences use port data. Conservation and passivity are translated into the
 whole language, which no interconnection meets. -/
 def translate : Sentence → Set Requirement
   | .flow .unstable => {.impedanceUnstable}
-  | .flow (.decay _) | .flow .conservative | .passive => Set.univ
+  | .flow (.decay a) => {.rate a}
+  | .flow .conservative | .passive => Set.univ
   | .flow _ => {.impedanceStable}
 
 /-- The interconnection family: the closed loop as the port system of the complete system, the
@@ -492,6 +496,13 @@ translation of the attractive sentences and sampled contraction of the closed lo
   · rintro ⟨hcl, h₁, h₂⟩
     exact ⟨(ic.isHurwitz_closedLoop_iff h₁ h₂).mp hcl, h₁, h₂⟩
 
+/-- Full-state rate evidence is sound without a separate component-stability context. -/
+@[powerlib_domain] theorem sound_decay (a : ℝ) :
+    (family (n₁ := n₁) (n₂ := n₂) (p := p)).Sound (.flow (.decay a)) := by
+  intro ic hic
+  have h := (mem_realize _ _ _).mp hic (.rate a) rfl
+  exact family_isLinear.mem_den_decay_of_rateMargin h
+
 /-- Within the space of internally stable components every translation is sound: the impedance
 criterion proves Lyapunov stability, the attractive sentences and sampled contraction, and a
 right-half-plane zero of the return difference proves instability. -/
@@ -524,7 +535,8 @@ right-half-plane zero of the return difference proves instability. -/
     case lyapunovStable =>
       exact family_isLinear.mem_den_flow.mpr
         (lyapunovStable_of_isHurwitz 0 (hcl .impedanceStable rfl rfl))
-    case decay a => exact huniv rfl
+    case decay a =>
+      exact family_isLinear.mem_den_decay_of_rateMargin (hmem (.rate a) (Or.inl rfl))
     case conservative => exact huniv rfl
     all_goals
       rw [family_isLinear.den_hurwitz (by simp)]

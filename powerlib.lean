@@ -1,8 +1,10 @@
 import theorem.LibrarySearch
+import theorem.Architecture
 import theorem.TMIO.Instances.Finite
 import theorem.Data.Analysis
 import theorem.Flow.Certificate
 import theorem.Linear.Family
+import theorem.Linear.Coordinates
 import theorem.Linear.Realization
 import theorem.Linear.Synthesis
 import theorem.Linear.Rational

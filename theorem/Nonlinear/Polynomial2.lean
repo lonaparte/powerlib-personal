@@ -773,4 +773,306 @@ is not Hurwitz. -/
 
 end
 
+/-! The cascade boundary is stronger than a failed synthesis run: it has global asymptotic
+stability but no uniform global exponential estimate, so no certificate of this language exists. -/
+
+def cascadeModel : Model := ⟨[⟨-2, (1, 0)⟩, ⟨1, (0, 2)⟩], [⟨-1, (0, 1)⟩]⟩
+
+@[powerlib_foundation] theorem cascadeModel_field (x : ℝ²) :
+    cascadeModel.field x = WithLp.toLp 2 ![-2 * x 0 + (x 1) ^ 2, -x 1] := by
+  ext i
+  fin_cases i <;> simp [Model.field, cascadeModel]
+
+noncomputable def cascadeEnergy (x : ℝ²) : ℝ := ‖x‖ ^ 2 + (x 1) ^ 4
+
+@[powerlib_foundation] theorem cascadeEnergy_lie (x : ℝ²) :
+    fderiv ℝ cascadeEnergy x (cascadeModel.field x) =
+      -4 * (x 0) ^ 2 + 2 * x 0 * (x 1) ^ 2 - 2 * (x 1) ^ 2 - 4 * (x 1) ^ 4 := by
+  have h := (hasStrictFDerivAt_norm_sq x).hasFDerivAt.add
+    (((coord 1).hasFDerivAt (x := x)).pow 4)
+  change HasFDerivAt cascadeEnergy _ x at h
+  rw [h.fderiv]
+  simp [coord, cascadeModel_field, PiLp.inner_apply, Fin.sum_univ_two]
+  ring
+
+/-- A quartic energy proves global asymptotic stability through the family's denotation. -/
+@[powerlib_domain] theorem cascade_asymptotic :
+    cascadeModel ∈ family.den (.flow .globallyAsymptoticallyStable) := by
+  rw [family_isAutonomous.mem_den_flow]
+  refine Flow.globallyAsymptoticallyStable_of_strictLyapunov (V := cascadeEnergy)
+    two_pos cascadeModel.field_smooth ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact (continuous_norm.pow 2).add ((coord 1).continuous.pow 4)
+  · exact (contDiff_norm_sq ℝ).add ((coord 1).contDiff.pow 4)
+  · simp [cascadeEnergy]
+  · intro x hx
+    have : 0 < ‖x‖ ^ 2 := pow_pos (norm_pos_iff.mpr hx) 2
+    dsimp [cascadeEnergy]
+    positivity
+  · simp [cascadeModel_field]
+  · intro x hx
+    rw [cascadeEnergy_lie]
+    have hn : x 0 ≠ 0 ∨ x 1 ≠ 0 := by
+      by_contra h
+      push Not at h
+      apply hx
+      ext i
+      fin_cases i
+      · exact h.1
+      · exact h.2
+    rcases hn with h | h
+    · nlinarith [sq_pos_of_ne_zero h, sq_nonneg (x 0 - (x 1) ^ 2),
+        sq_nonneg (x 1), sq_nonneg ((x 1) ^ 2)]
+    · nlinarith [sq_pos_of_ne_zero h, sq_nonneg (x 0 - (x 1) ^ 2),
+        sq_nonneg (x 0), sq_nonneg ((x 1) ^ 2)]
+  · intro c
+    refine (isCompact_closedBall (0 : ℝ²) (Real.sqrt (max c 0))).of_isClosed_subset
+      (isClosed_le ((continuous_norm.pow 2).add ((coord 1).continuous.pow 4)) continuous_const)
+      fun x hx => ?_
+    rw [Metric.mem_closedBall, dist_zero_right]
+    apply Real.le_sqrt_of_sq_le
+    have hn : ‖x‖ ^ 2 ≤ c := by
+      change ‖x‖ ^ 2 + (x 1) ^ 4 ≤ c at hx
+      nlinarith [sq_nonneg ((x 1) ^ 2)]
+    exact le_max_of_le_left hn
+
+/-- The quadratic transient from `(0,N)` grows like `N²`; one global linear-in-state
+exponential bound cannot cover every initial state. -/
+@[powerlib_domain] theorem cascade_not_exponential :
+    cascadeModel ∉ family.den (.flow .globallyExponentiallyStable) := by
+  rw [family_isAutonomous.mem_den_flow]
+  rintro ⟨_, _, C, a, hC, ha, hb⟩
+  let N := C * Real.exp (-a) * Real.exp 2 + 1
+  have hN : 0 < N := by dsimp [N]; positivity
+  let φ : ℝ → ℝ² := fun t => WithLp.toLp 2
+    ![Real.exp (-2 * t) * (t * N ^ 2), Real.exp (-t) * N]
+  have hφ : IsTrajectoryOn φ cascadeModel.field 0 1 := by
+    intro t ht
+    have h0 := (((hasDerivAt_id t).const_mul (-2)).exp).mul
+      ((hasDerivAt_id t).mul_const (N ^ 2))
+    have h1 := ((hasDerivAt_id t).neg.exp).mul_const N
+    have hd : HasDerivAt φ (WithLp.toLp 2
+        ![Real.exp (-2 * t) * (-2) * (t * N ^ 2) + Real.exp (-2 * t) * N ^ 2,
+          Real.exp (-t) * (-1) * N]) t := by
+      convert (h0.smul_const ((EuclideanSpace.single (0 : Fin 2) (1 : ℝ)) : ℝ²)).add
+        (h1.smul_const ((EuclideanSpace.single (1 : Fin 2) (1 : ℝ)) : ℝ²)) using 1
+      · funext z
+        ext i
+        fin_cases i <;> simp [φ, EuclideanSpace.single]
+      · ext i
+        fin_cases i <;> simp [EuclideanSpace.single]
+    have hexp : Real.exp (-t) ^ 2 = Real.exp (-2 * t) := by
+      rw [← Real.exp_nat_mul]
+      congr 1
+      ring
+    change HasDerivWithinAt φ (cascadeModel.field (φ t)) (Set.Icc 0 1) t
+    convert hd.hasDerivWithinAt using 1
+    ext i
+    fin_cases i <;> simp [φ, cascadeModel_field, mul_pow, hexp]
+    ring
+  have hinit : φ 0 = EuclideanSpace.single 1 N := by
+    ext i
+    fin_cases i <;> simp [φ, EuclideanSpace.single]
+  have hnorm : ‖φ 0 - 0‖ = N := by
+    rw [sub_zero, hinit]
+    simp [Real.norm_eq_abs, abs_of_pos hN]
+  have hbound := hb 0 1 φ hφ 1 ⟨by norm_num, le_rfl⟩
+  rw [hnorm, sub_zero] at hbound
+  norm_num only [sub_zero, mul_one] at hbound
+  have hfirst : Real.exp (-2) * N ^ 2 ≤ ‖φ 1‖ := by
+    have h := PiLp.norm_apply_le (φ 1) (0 : Fin 2)
+    simpa [φ, Real.norm_eq_abs, abs_of_nonneg (by positivity : 0 ≤ Real.exp (-2) * N ^ 2)] using h
+  have hlinear : Real.exp (-2) * N ≤ C * Real.exp (-a) := by
+    apply (mul_le_mul_iff_right₀ hN).mp
+    nlinarith [hfirst.trans hbound]
+  have hexp : Real.exp (-2) * Real.exp 2 = 1 := by rw [← Real.exp_add]; norm_num
+  have hvalue : Real.exp (-2) * N = C * Real.exp (-a) + Real.exp (-2) := by
+    dsimp [N]
+    calc
+      _ = C * Real.exp (-a) * (Real.exp (-2) * Real.exp 2) + Real.exp (-2) := by ring
+      _ = _ := by rw [hexp]; ring
+  rw [hvalue] at hlinear
+  linarith [Real.exp_pos (-2)]
+
+/-- This model is outside the certificate requirement space despite being in global asymptotic
+semantics. It is a proved limitation of the certificate language, not just of its search. -/
+@[powerlib_domain] theorem cascade_certificate_boundary :
+    cascadeModel ∈ family.den (.flow .globallyAsymptoticallyStable) ∧
+      cascadeModel ∉ TMIO.realize Meets {.certified} := by
+  refine ⟨cascade_asymptotic, ?_⟩
+  intro h
+  have hc : Nonempty (Certificate cascadeModel) := (TMIO.mem_realize _ _ _).mp h .certified rfl
+  obtain ⟨c⟩ := hc
+  exact cascade_not_exponential (family_isAutonomous.mem_den_flow.mpr c.globallyExponentiallyStable)
+
+@[powerlib_foundation] theorem cascade_rejected : accepts cascadeModel = false := by decide +kernel
+
+/-! Global exponential semantics is also strictly larger than the quadratic certificate
+language. A quartic Hamiltonian rotation with linear damping is the separating example. -/
+
+def quarticModel : Model :=
+  ⟨[⟨-1, (1, 0)⟩, ⟨-1, (0, 3)⟩], [⟨-1, (0, 1)⟩, ⟨1, (3, 0)⟩]⟩
+
+@[powerlib_foundation] theorem quarticModel_field (x : ℝ²) :
+    quarticModel.field x = WithLp.toLp 2 ![-x 0 - (x 1) ^ 3, -x 1 + (x 0) ^ 3] := by
+  ext i
+  fin_cases i <;> simp [Model.field, quarticModel]
+  ring
+
+def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
+
+@[powerlib_foundation] theorem quarticEnergy_smooth : ContDiff ℝ 1 quarticEnergy :=
+  ((coord 0).contDiff.pow 4).add ((coord 1).contDiff.pow 4)
+
+@[powerlib_foundation] theorem quarticEnergy_lie (x : ℝ²) :
+    fderiv ℝ quarticEnergy x (quarticModel.field x) = -4 * quarticEnergy x := by
+  have h := (((coord 0).hasFDerivAt (x := x)).pow 4).add
+    (((coord 1).hasFDerivAt (x := x)).pow 4)
+  change HasFDerivAt quarticEnergy _ x at h
+  rw [h.fderiv]
+  simp [quarticEnergy, quarticModel_field, coord]
+  ring
+
+@[powerlib_foundation] theorem quarticEnergy_bounds (x : ℝ²) :
+    quarticEnergy x ≤ ‖x‖ ^ 4 ∧ ‖x‖ ^ 4 ≤ 2 * quarticEnergy x := by
+  have hn : ‖x‖ ^ 2 = (x 0) ^ 2 + (x 1) ^ 2 := by
+    rw [EuclideanSpace.norm_sq_eq]
+    simp [Fin.sum_univ_two]
+  have hn4 : ‖x‖ ^ 4 = ((x 0) ^ 2 + (x 1) ^ 2) ^ 2 := by
+    rw [show ‖x‖ ^ 4 = (‖x‖ ^ 2) ^ 2 by ring, hn]
+  rw [hn4]
+  dsimp [quarticEnergy]
+  constructor
+  · nlinarith [mul_nonneg (sq_nonneg (x 0)) (sq_nonneg (x 1))]
+  · nlinarith [sq_nonneg ((x 0) ^ 2 - (x 1) ^ 2)]
+
+@[powerlib_foundation] theorem quarticEnergy_compact (c : ℝ) :
+    IsCompact {x : ℝ² | quarticEnergy x ≤ c} := by
+  refine (isCompact_closedBall (0 : ℝ²) (Real.sqrt (2 * max c 0 + 1))).of_isClosed_subset
+    (isClosed_le quarticEnergy_smooth.continuous continuous_const) fun x hx => ?_
+  rw [Metric.mem_closedBall, dist_zero_right]
+  apply Real.le_sqrt_of_sq_le
+  have h := (quarticEnergy_bounds x).2.trans (mul_le_mul_of_nonneg_left hx (by norm_num))
+  have hmax : c ≤ max c 0 := le_max_left _ _
+  nlinarith [sq_nonneg ‖x‖, le_max_right c 0]
+
+/-- Linear damping of the quartic rotation has a global exponential state bound. -/
+@[powerlib_domain] theorem quartic_exponential :
+    quarticModel ∈ family.den (.flow .globallyExponentiallyStable) := by
+  rw [family_isAutonomous.mem_den_flow]
+  have hd : ∀ x, fderiv ℝ quarticEnergy x (quarticModel.field x) ≤ -4 * quarticEnergy x :=
+    fun x => (quarticEnergy_lie x).le
+  have hfc := Flow.forwardComplete_of_compact_sublevel quarticModel.field_smooth
+    (quarticEnergy_smooth.differentiable (by norm_num))
+    (fun x => by rw [quarticEnergy_lie]; exact mul_nonpos_of_nonpos_of_nonneg (by norm_num) (by dsimp [quarticEnergy]; positivity))
+    quarticEnergy_compact
+  refine ⟨by rw [IsEquilibrium, quarticModel_field]; ext i; fin_cases i <;> simp, hfc, 2, 1, by norm_num, one_pos,
+    fun t₀ t₁ φ hφ t ht => ?_⟩
+  have he := Flow.energy_bound_of_dissipation quarticEnergy_smooth hd hφ ht
+  have hfour : ‖φ t‖ ^ 4 ≤ 2 * Real.exp (-(4 * (t - t₀))) * ‖φ t₀‖ ^ 4 :=
+    ((quarticEnergy_bounds (φ t)).2.trans
+      (mul_le_mul_of_nonneg_left he (by norm_num))).trans (by
+        nlinarith [mul_le_mul_of_nonneg_left (quarticEnergy_bounds (φ t₀)).1
+          (Real.exp_nonneg (-(4 * (t - t₀))))])
+  have hexp : Real.exp (-(t - t₀)) ^ 4 = Real.exp (-(4 * (t - t₀))) := by
+    rw [← Real.exp_nat_mul]
+    congr 1
+    ring
+  let B := 2 * Real.exp (-(t - t₀)) * ‖φ t₀‖
+  have hB : 0 ≤ B := by dsimp [B]; positivity
+  have hfourB : ‖φ t‖ ^ 4 ≤ B ^ 4 := by
+    dsimp [B]
+    rw [mul_pow, mul_pow, hexp]
+    nlinarith [Real.exp_nonneg (-(4 * (t - t₀))), pow_nonneg (norm_nonneg (φ t₀)) 4]
+  have hsquared : ‖φ t‖ ^ 2 ≤ B ^ 2 :=
+    (sq_le_sq₀ (sq_nonneg ‖φ t‖) (sq_nonneg B)).mp (by nlinarith [hfourB])
+  have hnorm : ‖φ t‖ ≤ B := (sq_le_sq₀ (norm_nonneg _) hB).mp hsquared
+  simpa [B] using hnorm
+
+/-- A uniformly bounded quadratic growth coefficient cannot be positive. -/
+@[powerlib_foundation] theorem nonpos_of_sq_bound {a b : ℝ}
+    (h : ∀ s : ℝ, 0 < s → a * s ^ 2 ≤ b) : a ≤ 0 := by
+  by_contra ha
+  have ha : 0 < a := lt_of_not_ge ha
+  let s := Real.sqrt ((max b 0 + 1) / a)
+  have hs : 0 < s := by dsimp [s]; positivity
+  have hs2 : s ^ 2 = (max b 0 + 1) / a := Real.sq_sqrt (by positivity)
+  have hb := h s hs
+  rw [hs2] at hb
+  have he : a * ((max b 0 + 1) / a) = max b 0 + 1 := by field_simp
+  rw [he] at hb
+  linarith [le_max_left b 0]
+
+/-- A quadratic certificate forces every homogeneous quartic coefficient nonpositive. -/
+@[powerlib_foundation] theorem quartic_leading_nonpos (c : Certificate quarticModel) (u v : ℝ) :
+    2 * (c.witness.p01 : ℝ) * (u ^ 4 - v ^ 4) +
+      2 * (c.witness.p11 : ℝ) * u ^ 3 * v -
+      2 * (c.witness.p00 : ℝ) * u * v ^ 3 ≤ 0 := by
+  apply nonpos_of_sq_bound (b := (2 - (c.witness.rate : ℝ)) *
+    c.witness.energy (WithLp.toLp 2 ![u, v]))
+  intro s hs
+  let x : ℝ² := WithLp.toLp 2 ![s * u, s * v]
+  have he : c.witness.energy x = s ^ 2 * c.witness.energy (WithLp.toLp 2 ![u, v]) := by
+    rw [c.witness.energy_apply, c.witness.energy_apply]
+    simp [x]
+    ring
+  have hl : fderiv ℝ c.witness.energy x (quarticModel.field x) =
+      -2 * s ^ 2 * c.witness.energy (WithLp.toLp 2 ![u, v]) + s ^ 4 *
+        (2 * (c.witness.p01 : ℝ) * (u ^ 4 - v ^ 4) +
+          2 * (c.witness.p11 : ℝ) * u ^ 3 * v -
+          2 * (c.witness.p00 : ℝ) * u * v ^ 3) := by
+    rw [c.witness.energy_derivative, c.witness.energy_apply]
+    simp [quarticModel_field, x]
+    ring
+  have h := c.quadraticDecay.dissipation x
+  change fderiv ℝ c.witness.energy x (quarticModel.field x) ≤
+    -(c.witness.rate : ℝ) * c.witness.energy x at h
+  rw [he, hl] at h
+  apply (mul_le_mul_iff_right₀ (sq_pos_of_pos hs)).mp
+  nlinarith [h]
+
+/-- The quadratic certificate language cannot describe this global exponential model. -/
+@[powerlib_domain] theorem quartic_certificate_boundary :
+    quarticModel ∈ family.den (.flow .globallyExponentiallyStable) ∧
+      quarticModel ∉ TMIO.realize Meets {.certified} := by
+  refine ⟨quartic_exponential, ?_⟩
+  intro h
+  obtain ⟨c⟩ : Nonempty (Certificate quarticModel) := (TMIO.mem_realize _ _ _).mp h .certified rfl
+  have hp := c.quadraticDecay.lower_bound (WithLp.toLp 2 ![1, 0])
+  change (c.witness.lower : ℝ) * ‖(WithLp.toLp 2 ![1, 0] : ℝ²) - 0‖ ^ 2 ≤
+    c.witness.energy (WithLp.toLp 2 ![1, 0]) at hp
+  rw [sub_zero, EuclideanSpace.norm_sq_eq, c.witness.energy_apply] at hp
+  simp [Fin.sum_univ_two] at hp
+  have h0 := quartic_leading_nonpos c 1 0
+  have h1 := quartic_leading_nonpos c 0 1
+  have h2 := quartic_leading_nonpos c 1 1
+  have h3 := quartic_leading_nonpos c 1 (-1)
+  have h4 := quartic_leading_nonpos c 1 2
+  have h5 := quartic_leading_nonpos c 1 (-2)
+  norm_num at h0 h1 h2 h3 h4 h5
+  have hp0 : (0 : ℝ) < c.witness.lower := c.quadraticDecay.lower_pos
+  have hq0 : (c.witness.p01 : ℝ) = 0 := by linarith
+  have hrp : (c.witness.p11 : ℝ) = c.witness.p00 := by exact_mod_cast le_antisymm h2 h3
+  rw [hq0, hrp] at h4 h5
+  have hpl : (c.witness.lower : ℝ) ≤ c.witness.p00 := by exact_mod_cast hp
+  nlinarith only [h5, hpl, hp0]
+
+/-- The global exponential translation is refuted as exact, independently of search failure. -/
+@[powerlib_domain] theorem not_exact_exponential :
+    ¬ family.Exact (.flow .globallyExponentiallyStable) := by
+  intro h
+  have hmem := quartic_certificate_boundary.1
+  rw [← h] at hmem
+  exact quartic_certificate_boundary.2 hmem
+
+
+/-- The same quartic model contracts at an integer horizon, although no certificate represents it. -/
+@[powerlib_domain] theorem not_exact_contractive : ¬ family.Exact (.flow .contractive) := by
+  intro h
+  have hmem : quarticModel ∈ family.den (.flow .contractive) :=
+    family_isAutonomous.mem_den_flow.mpr
+      ((family_isAutonomous.mem_den_flow.mp quartic_exponential).sampledContraction)
+  rw [← h] at hmem
+  exact quartic_certificate_boundary.2 hmem
+
+
 end powerlib.Nonlinear.Polynomial2

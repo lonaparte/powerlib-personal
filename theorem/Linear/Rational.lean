@@ -1,4 +1,4 @@
-import theorem.Linear.Family
+import theorem.Linear.Rate
 import theorem.Linear.Synthesis
 
 /-! # Rational state matrices
@@ -29,19 +29,21 @@ inductive Requirement
   | hurwitz
   | accepted
   | rightHalfPlaneRoot
+  | rate (a : ℝ)
 
 /-- Satisfaction of a requirement by a submitted matrix. -/
 def Meets (A : Matrix (Fin n) (Fin n) ℚ) : Requirement → Prop
   | .hurwitz => IsHurwitz (real A)
   | .accepted => accepts A = true
+  | .rate a => RateMargin (real A) a
   | .rightHalfPlaneRoot => ∃ s : ℂ, (characteristicMatrix (real A) s).det = 0 ∧ 0 < s.re
 
-/-- The translation of the sentences. A decay rate and conservation have no requirement in the
-language and are translated into the whole language, which no matrix meets; passivity of a plant
-without ports needs no requirement. -/
+/-- Decay uses a strict matrix margin. Conservation is unavailable and uses the inconsistent
+whole language; passivity of a plant without ports needs no requirement. -/
 def translate : Sentence → Set Requirement
   | .flow .unstable => {.rightHalfPlaneRoot}
-  | .flow (.decay _) | .flow .conservative => Set.univ
+  | .flow (.decay a) => {.rate a}
+  | .flow .conservative => Set.univ
   | .passive => ∅
   | .flow _ => {.hurwitz}
 
@@ -94,7 +96,7 @@ ports is passive. -/
       exact family_isLinear.mem_den_flow.mpr (unstable_of_root 0 hs hre)
     case lyapunovStable =>
       exact family_isLinear.mem_den_flow.mpr (lyapunovStable_of_isHurwitz 0 (hA .hurwitz rfl))
-    case decay a => exact huniv rfl
+    case decay a => exact family_isLinear.mem_den_decay_of_rateMargin (hA (.rate a) rfl)
     case conservative => exact huniv rfl
     all_goals
       rw [family_isLinear.den_hurwitz (by simp)]
@@ -108,5 +110,15 @@ kernel-checked certificate. -/
   intro A hA
   simp only [mem_realize, Set.mem_singleton_iff, forall_eq] at hA ⊢
   exact (certificateOf A hA).isHurwitz
+
+/-- Acceptance is an exact requirement for the attractive sentences and sampled contraction:
+the executable synthesizer is complete, not merely sound. -/
+@[powerlib_domain] theorem accepted_eq_den {P : Flow.Property}
+    (hP : P.Attractive ∨ P = .contractive) :
+    realize (Meets (n := n)) {.accepted} = family.den (.flow P) := by
+  rw [family_isLinear.den_hurwitz hP]
+  ext A
+  simp only [mem_realize, Set.mem_singleton_iff, forall_eq, Set.mem_ofPred_eq, Meets]
+  exact accepts_iff_isHurwitz A
 
 end powerlib.Linear.Rational

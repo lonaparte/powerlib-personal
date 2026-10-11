@@ -1,3 +1,5 @@
+import theorem.Linear.Jordan
+import theorem.Linear.Rate
 import theorem.Circuits.RL
 import theorem.generated.LCLConversion
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
@@ -333,6 +335,7 @@ inductive Requirement
   | damped
   | lossless
   | rightHalfPlanePole
+  | rate (a : ℝ)
 
 /-- Satisfaction of a requirement by a complete LCL circuit. -/
 def Meets (m : Circuit) : Requirement → Prop
@@ -341,14 +344,15 @@ def Meets (m : Circuit) : Requirement → Prop
   | .passive => m.Passive
   | .damped => m.Damped
   | .lossless => m.first.resistance = 0 ∧ m.second.resistance = 0
+  | .rate a => Linear.RateMargin m.plant.A a
   | .rightHalfPlanePole => ∃ s : ℂ, m.frequency s = 0 ∧ 0 < s.re
 
-/-- The translation of the sentences into requirements. No requirement of the language speaks of
-a decay rate: that sentence is translated into the whole language, which no circuit meets. -/
+/-- The translation of the sentences into static requirements. A strict margin on the state
+matrix is the sound rate requirement; equality at the spectral boundary is not claimed exact. -/
 def translate : Sentence → Set Requirement
   | .flow .lyapunovStable => {.passive}
   | .flow .unstable => {.rightHalfPlanePole}
-  | .flow (.decay _) => Set.univ
+  | .flow (.decay a) => {.rate a}
   | .flow .conservative => {.lossless}
   | .flow _ => {.poleStable}
   | .passive => {.passive}
@@ -395,9 +399,7 @@ conservation of that energy, and a right-half-plane pole proves instability. -/
       refine family_isLinear.mem_den_flow.mpr (Linear.unstable_of_root 0 ?_ hre)
       rw [det_characteristicMatrix, hs, zero_div]
     case decay a =>
-      have : m ∈ realize Meets Set.univ := (mem_realize _ _ _).mpr fun q _ => hm q trivial
-      rw [realize_univ] at this
-      exact this.elim
+      exact family_isLinear.mem_den_decay_of_rateMargin (hm (.rate a) rfl)
     case conservative =>
       obtain ⟨h1, h2⟩ := hm .lossless rfl
       exact family_isLinear.mem_den_conservative (energyMatrix_symmetric m) (energy_pos m)
@@ -630,5 +632,39 @@ which the translation is exact (`exactUnder_conservative`). -/
   rw [← h, mem_realize] at hmem
   have hl := (hmem .lossless rfl).1
   norm_num [balancedCircuit] at hl
+
+/-- Opposite unit resistances with `L₁ = L₂ = 1` and `C = 2`: the state matrix has a
+nontrivial Jordan chain at zero, while its frequency polynomial is `2 s³`. -/
+def jordanCircuit : Circuit :=
+  ⟨⟨1, ⟨1, one_pos⟩⟩, ⟨-1, ⟨1, one_pos⟩⟩, ⟨2, by norm_num⟩⟩
+
+@[powerlib_foundation] theorem jordanCircuit_frequency (s : ℂ) :
+    jordanCircuit.frequency s = 2 * s ^ 3 := by
+  norm_num [Circuit.frequency, Circuit.a3, Circuit.a2, Circuit.a1, Circuit.a0, jordanCircuit]
+
+/-- The right-half-plane pole translation misses polynomial growth at a zero Jordan block.
+This is a proved failure of exactness, not an unfinished equivalence. -/
+@[powerlib_domain] theorem not_exact_unstable : ¬ family.Exact (.flow .unstable) := by
+  intro hexact
+  let v : EuclideanSpace ℝ (Fin 3) := WithLp.toLp 2 ![1, -1, 1]
+  let w : EuclideanSpace ℝ (Fin 3) := WithLp.toLp 2 ![0, -1, 2]
+  have hv : v ≠ 0 := by intro h; have := congrArg (fun x => x 0) h; norm_num [v] at this
+  have hAv : Linear.op jordanCircuit.plant.A v = 0 := by
+    ext i
+    fin_cases i <;> norm_num [v, Linear.op, Circuit.plant, StateSpace.plant,
+      jordanCircuit, RL.toStateSpace_decay, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+  have hAw : Linear.op jordanCircuit.plant.A w = v := by
+    ext i
+    fin_cases i <;> norm_num [v, w, Linear.op, Circuit.plant, StateSpace.plant,
+      jordanCircuit, RL.toStateSpace_decay, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+  have hmem : jordanCircuit ∈ family.den (.flow .unstable) :=
+    family_isLinear.mem_den_flow.mpr (Linear.unstable_of_zero_jordan_chain hv hAv hAw)
+  rw [← hexact, mem_realize] at hmem
+  obtain ⟨s, hs, hre⟩ := hmem .rightHalfPlanePole rfl
+  rw [jordanCircuit_frequency] at hs
+  have hz : s = 0 := by
+    have : s ^ 3 = 0 := (mul_eq_zero.mp hs).resolve_left (by norm_num)
+    exact (pow_eq_zero_iff (by decide : (3 : ℕ) ≠ 0)).mp this
+  simp [hz] at hre
 
 end powerlib.Circuits.LCL

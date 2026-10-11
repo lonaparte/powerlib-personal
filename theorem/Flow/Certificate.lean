@@ -167,24 +167,24 @@ structure QuadraticDecay (f : ℝⁿ → ℝⁿ) (V : ℝⁿ → ℝ) (e : ℝ�
   upper_bound : ∀ x, V x ≤ upper * ‖x - e‖ ^ 2
   dissipation : ∀ x, fderiv ℝ V x (f x) ≤ -rate * V x
 
-namespace QuadraticDecay
-
-/-- Integrating the decay inequality along any solution segment. -/
-@[powerlib_foundation] theorem energy_bound {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
-    (c : QuadraticDecay f V e) {φ : ℝ → ℝⁿ} {a b t : ℝ}
-    (hφ : IsTrajectoryOn φ f a b) (ht : t ∈ Icc a b) :
-    V (φ t) ≤ Real.exp (-(c.rate * (t - a))) * V (φ a) := by
-  let W : ℝ → ℝ := fun s => Real.exp (c.rate * (s - a)) * V (φ s)
+/-- Integrating an energy inequality needs no positivity assumption on its rate.
+Negative rates give growth bounds, and zero gives a bounded energy. -/
+@[powerlib_foundation] theorem energy_bound_of_dissipation {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
+    {rate : ℝ} (smooth : ContDiff ℝ 1 V)
+    (dissipation : ∀ x, fderiv ℝ V x (f x) ≤ -rate * V x)
+    {φ : ℝ → ℝⁿ} {a b t : ℝ} (hφ : IsTrajectoryOn φ f a b) (ht : t ∈ Icc a b) :
+    V (φ t) ≤ Real.exp (-(rate * (t - a))) * V (φ a) := by
+  let W : ℝ → ℝ := fun s => Real.exp (rate * (s - a)) * V (φ s)
   let W' : ℝ → ℝ := fun s =>
-    Real.exp (c.rate * (s - a)) * (c.rate * V (φ s) + fderiv ℝ V (φ s) (f (φ s)))
+    Real.exp (rate * (s - a)) * (rate * V (φ s) + fderiv ℝ V (φ s) (f (φ s)))
   have hW : ∀ s ∈ Icc a b, HasDerivWithinAt W (W' s) (Icc a b) s := by
     intro s hs
-    have hexp : HasDerivAt (fun u => Real.exp (c.rate * (u - a)))
-        (Real.exp (c.rate * (s - a)) * c.rate) s := by
+    have hexp : HasDerivAt (fun u => Real.exp (rate * (u - a)))
+        (Real.exp (rate * (s - a)) * rate) s := by
       simpa only [id_eq, mul_one, mul_comm] using
-        (((hasDerivAt_id s).sub_const a).const_mul c.rate).exp
+        (((hasDerivAt_id s).sub_const a).const_mul rate).exp
     have hV : HasDerivWithinAt (fun s => V (φ s)) (fderiv ℝ V (φ s) (f (φ s))) (Icc a b) s :=
-      ((c.smooth.differentiable (by norm_num)) (φ s)).hasFDerivAt.comp_hasDerivWithinAt s
+      ((smooth.differentiable (by norm_num)) (φ s)).hasFDerivAt.comp_hasDerivWithinAt s
         (hφ s hs)
     convert! hexp.hasDerivWithinAt.mul hV using 1
     dsimp [W']
@@ -195,34 +195,55 @@ namespace QuadraticDecay
     · exact fun s hs => (hW s (interior_subset hs)).mono interior_subset
     · intro s _
       apply mul_nonpos_of_nonneg_of_nonpos (Real.exp_nonneg _)
-      linarith [c.dissipation (φ s)]
+      linarith [dissipation (φ s)]
   have hbound := hmono (left_mem_Icc.mpr (ht.1.trans ht.2)) ht ht.1
-  have hmul := mul_le_mul_of_nonneg_left hbound (Real.exp_nonneg (-(c.rate * (t - a))))
-  have hcancel : Real.exp (-(c.rate * (t - a))) * Real.exp (c.rate * (t - a)) = 1 := by
+  have hmul := mul_le_mul_of_nonneg_left hbound (Real.exp_nonneg (-(rate * (t - a))))
+  have hcancel : Real.exp (-(rate * (t - a))) * Real.exp (rate * (t - a)) = 1 := by
     rw [← Real.exp_add]
     simp
   simpa [W, mul_assoc, ← mul_assoc, hcancel] using hmul
 
-/-- The energy estimate as an estimate on the state. -/
-@[powerlib_foundation] theorem norm_bound {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
-    (c : QuadraticDecay f V e) {φ : ℝ → ℝⁿ} {a b t : ℝ}
-    (hφ : IsTrajectoryOn φ f a b) (ht : t ∈ Icc a b) :
-    ‖φ t - e‖ ≤ Real.sqrt (c.upper / c.lower) * Real.exp (-(c.rate / 2) * (t - a)) * ‖φ a - e‖ := by
-  have henergy := (c.lower_bound (φ t)).trans ((c.energy_bound hφ ht).trans
-    (mul_le_mul_of_nonneg_left (c.upper_bound (φ a)) (Real.exp_nonneg _)))
+/-- Quadratic bounds convert the arbitrary-rate energy estimate to a state estimate. -/
+@[powerlib_foundation] theorem norm_bound_of_dissipation {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
+    {e : ℝⁿ} {rate lower upper : ℝ} (smooth : ContDiff ℝ 1 V)
+    (hlo : 0 < lower) (hup : 0 < upper)
+    (lower_bound : ∀ x, lower * ‖x - e‖ ^ 2 ≤ V x)
+    (upper_bound : ∀ x, V x ≤ upper * ‖x - e‖ ^ 2)
+    (dissipation : ∀ x, fderiv ℝ V x (f x) ≤ -rate * V x)
+    {φ : ℝ → ℝⁿ} {a b t : ℝ} (hφ : IsTrajectoryOn φ f a b) (ht : t ∈ Icc a b) :
+    ‖φ t - e‖ ≤ Real.sqrt (upper / lower) * Real.exp (-(rate / 2) * (t - a)) * ‖φ a - e‖ := by
+  have henergy := (lower_bound (φ t)).trans ((energy_bound_of_dissipation smooth dissipation hφ ht).trans
+    (mul_le_mul_of_nonneg_left (upper_bound (φ a)) (Real.exp_nonneg _)))
   have hsquared : ‖φ t - e‖ ^ 2 ≤
-      (c.upper / c.lower) * Real.exp (-(c.rate * (t - a))) * ‖φ a - e‖ ^ 2 := by
-    apply (mul_le_mul_iff_right₀ c.lower_pos).mp
+      (upper / lower) * Real.exp (-(rate * (t - a))) * ‖φ a - e‖ ^ 2 := by
+    apply (mul_le_mul_iff_right₀ hlo).mp
     convert! henergy using 1
-    field_simp [c.lower_pos.ne']
-  have hratio : 0 ≤ c.upper / c.lower := (div_pos c.upper_pos c.lower_pos).le
-  have hexp : Real.exp (-(c.rate / 2) * (t - a)) ^ 2 = Real.exp (-(c.rate * (t - a))) := by
+    field_simp [hlo.ne']
+  have hratio : 0 ≤ upper / lower := (div_pos hup hlo).le
+  have hexp : Real.exp (-(rate / 2) * (t - a)) ^ 2 = Real.exp (-(rate * (t - a))) := by
     rw [← Real.exp_nat_mul]
     congr 1
     ring
   apply (sq_le_sq₀ (norm_nonneg _)
     (mul_nonneg (mul_nonneg (Real.sqrt_nonneg _) (Real.exp_nonneg _)) (norm_nonneg _))).mp
   simpa only [mul_pow, Real.sq_sqrt hratio, hexp] using hsquared
+
+namespace QuadraticDecay
+
+/-- Integrating the decay inequality along any solution segment. -/
+@[powerlib_foundation] theorem energy_bound {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
+    (c : QuadraticDecay f V e) {φ : ℝ → ℝⁿ} {a b t : ℝ}
+    (hφ : IsTrajectoryOn φ f a b) (ht : t ∈ Icc a b) :
+    V (φ t) ≤ Real.exp (-(c.rate * (t - a))) * V (φ a) :=
+  energy_bound_of_dissipation c.smooth c.dissipation hφ ht
+
+/-- The energy estimate as an estimate on the state. -/
+@[powerlib_foundation] theorem norm_bound {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
+    (c : QuadraticDecay f V e) {φ : ℝ → ℝⁿ} {a b t : ℝ}
+    (hφ : IsTrajectoryOn φ f a b) (ht : t ∈ Icc a b) :
+    ‖φ t - e‖ ≤ Real.sqrt (c.upper / c.lower) * Real.exp (-(c.rate / 2) * (t - a)) * ‖φ a - e‖ :=
+  norm_bound_of_dissipation c.smooth c.lower_pos c.upper_pos c.lower_bound c.upper_bound
+    c.dissipation hφ ht
 
 /-- Quadratic coercivity and continuity make every energy sublevel compact. -/
 @[powerlib_foundation] theorem compact_sublevel {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}

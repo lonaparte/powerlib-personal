@@ -3,6 +3,17 @@ import Lean
 namespace powerlib.Registry
 open Lean
 
+/-- Semantic boundaries whose values are generated connection endpoints. This tag belongs on
+definitions of the framework, never on a model type or a behavioural alias. -/
+initialize connectionEndpoints : TagAttribute ←
+  registerTagAttribute `powerlib_connection "Generated connection endpoint" fun name => do
+    let env ← getEnv
+    unless (`theorem.TMIO).isPrefixOf env.mainModule || (`theorem.Family).isPrefixOf env.mainModule do
+      throwError "Connection endpoint tags belong to the TMIO/Family framework: {name}"
+    match ← getConstInfo name with
+    | .defnInfo _ => pure ()
+    | _ => throwError "Connection endpoint tags require a definition: {name}"
+
 inductive TheoremKind where
   | foundation
   | domain

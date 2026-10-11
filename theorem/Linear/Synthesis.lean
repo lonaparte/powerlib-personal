@@ -1,15 +1,18 @@
-import theorem.Linear.Certificate
+import theorem.Linear.VerifiedSynthesis
 
 /-! # Synthesis of Lyapunov certificates over the rationals
 
-Only a rational state matrix `A` is submitted. The synthesizer solves the Lyapunov equation
+Only a rational state matrix `A` is submitted. The fast proposal solves the Lyapunov equation
 `Aᵀ P + P A = -1` for a symmetric `P` by Gauss–Jordan elimination over `ℚ` and factors
-`P = L D Lᵀ`. It is ordinary code and is not trusted: its proposal is accepted only through an
-exact rational check — the Lyapunov equation, the factorization, the unit lower-triangular shape of
-`L` and the positivity of `D` — whose soundness is a theorem (`Witness.valid_of_check`,
-`Witness.certificate`). No witness is supplied by hand, and an arbitrarily wrong proposal can only
-be rejected. An accepted matrix receives a `Certificate` of its real image, hence every attractive
-sentence.
+`P = L D Lᵀ`. Its legacy witness checker remains available: `Witness.valid_of_check` and
+`Witness.certificate` prove the soundness of the exact equation, factorization, triangularity and
+positive-pivot checks. Proposal execution is untrusted; an accepted matrix receives a checked
+`Certificate` of its real image, hence every attractive sentence.
+
+Acceptance uses a checked fast solution when available and otherwise a complete rational
+full-operator backend, with positive definiteness decided by verified Schur elimination.
+`accepts_iff_isHurwitz` proves both directions for every dimension. The LDL proposal remains a
+fast candidate; both entry points use the complete backend when it supplies no checked solution.
 
 There are two ways to run it. `certificateOf A (by decide +kernel)` lets the kernel run both the
 synthesizer and the check. `lyapunov_certificate% A` evaluates the synthesizer during elaboration,
@@ -108,11 +111,18 @@ def Witness.check (A : Matrix (Fin n) (Fin n) ℚ) (w : Witness n) : Bool :=
     (w.P i j == (List.ofFn fun k => w.L i k * w.D k * w.L j k).sum) &&
     (!decide (i < j) || w.L i j == 0) && (!decide (i = j) || (w.L i j == 1 && decide (0 < w.D i)))
 
-/-- Run the synthesizer on `A` and check its proposal. -/
-def accepts (A : Matrix (Fin n) (Fin n) ℚ) : Bool :=
+/-- Use a fast proposal only when its rational Lyapunov equation is checked. Otherwise the
+verified full-operator backend supplies the candidate. Positivity is checked independently of
+whether the fast LDL proposal succeeded. -/
+def selectedMatrix (A : Matrix (Fin n) (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ :=
   match synth A with
-  | some w => w.check A
-  | none => false
+  | some w => if VerifiedSynthesis.solutionCheck A w.P then w.P else VerifiedSynthesis.candidate A
+  | none => VerifiedSynthesis.candidate A
+
+/-- Total verified synthesis. The untrusted proposal accelerates the common case; the complete
+backend and exact positivity check determine acceptance. -/
+def accepts (A : Matrix (Fin n) (Fin n) ℚ) : Bool :=
+  VerifiedSynthesis.check A (selectedMatrix A)
 
 /-! ## Soundness of the check -/
 
@@ -196,17 +206,28 @@ def Witness.certificate {A : Matrix (Fin n) (Fin n) ℚ} (w : Witness n)
 
 /-- The certificate synthesized for an accepted matrix. -/
 def certificateOf (A : Matrix (Fin n) (Fin n) ℚ) (h : accepts A = true) :
-    Certificate (real A) :=
-  match hs : synth A with
-  | some w => w.certificate (Witness.valid_of_check (by
-      have h' : accepts A = w.check A := by
-        unfold accepts
-        rw [hs]
-      rwa [h'] at h))
-  | none => absurd h (by
-      unfold accepts
-      rw [hs]
-      exact Bool.false_ne_true)
+    Certificate (real A) := VerifiedSynthesis.certificate A (selectedMatrix A) h
+
+/-- Acceptance is complete: an untrusted proposal can affect running time but cannot lose a
+Hurwitz matrix, because a checked solution is uniquely the positive upstream solution. -/
+@[powerlib_foundation] theorem accepts_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℚ}
+    (hA : LinearSystems.IsHurwitz (real A)) : accepts A = true := by
+  unfold accepts selectedMatrix
+  cases hs : synth A with
+  | none => exact VerifiedSynthesis.candidate_checked hA
+  | some w =>
+    by_cases h : VerifiedSynthesis.solutionCheck A w.P = true
+    · simp only [h, ↓reduceIte]
+      exact VerifiedSynthesis.check_of_solution hA
+        (by simpa [VerifiedSynthesis.solutionCheck] using h)
+    · have hf : VerifiedSynthesis.solutionCheck A w.P = false := Bool.eq_false_iff.mpr h
+      simp only [hf, Bool.false_eq_true, ↓reduceIte]
+      exact VerifiedSynthesis.candidate_checked hA
+
+/-- The executable synthesizer decides the Hurwitz property of every finite rational matrix. -/
+@[powerlib_foundation] theorem accepts_iff_isHurwitz (A : Matrix (Fin n) (Fin n) ℚ) :
+    accepts A = true ↔ LinearSystems.IsHurwitz (real A) :=
+  ⟨fun h => (certificateOf A h).isHurwitz, accepts_of_isHurwitz⟩
 
 /-- A rational matrix accepted by the synthesizer satisfies every attractive sentence. -/
 @[powerlib_foundation] theorem holds_of_accepts {A : Matrix (Fin n) (Fin n) ℚ}
@@ -230,6 +251,9 @@ def synthRows (A : Matrix (Fin n) (Fin n) ℚ) :
     Option (List (List ℚ) × List (List ℚ) × List ℚ) :=
   (synth A).map fun w => (rows w.P, rows w.L, (List.finRange n).map w.D)
 
+/-- The selected complete-backend candidate serialized for kernel verification. -/
+def selectedRows (A : Matrix (Fin n) (Fin n) ℚ) : List (List ℚ) := rows (selectedMatrix A)
+
 open Lean Elab Term Meta in
 /-- `lyapunov_certificate% A` evaluates the synthesizer on the rational matrix `A` during
 elaboration, outside the kernel, writes its proposal out as rational literals, and leaves the check
@@ -241,16 +265,12 @@ elab "lyapunov_certificate% " a:term:max : term => do
   let ty ← whnfR (← inferType A)
   let_expr Matrix fin _ _ := ty | throwError "expected a square rational matrix, got {ty}"
   let_expr Fin dim := fin | throwError "expected a square rational matrix, got {ty}"
-  let some (P, L, D) ← unsafe evalExpr (Option (List (List ℚ) × List (List ℚ) × List ℚ))
-      (toTypeExpr (Option (List (List ℚ) × List (List ℚ) × List ℚ)))
-      (mkApp2 (.const ``synthRows []) dim A) |
-    throwError "the synthesizer proposes no certificate for {A}"
-  let w := mkApp4 (.const ``Witness.mk []) dim (mkApp2 (.const ``ofRows []) dim (toExpr P))
-    (mkApp2 (.const ``ofRows []) dim (toExpr L)) (mkApp2 (.const ``ofList []) dim (toExpr D))
+  let P ← unsafe evalExpr (List (List ℚ)) (toTypeExpr (List (List ℚ)))
+    (mkApp2 (.const ``selectedRows []) dim A)
+  let p := mkApp2 (.const ``ofRows []) dim (toExpr P)
   let h ← elabTermEnsuringType (← `(by decide +kernel))
-    (← mkEq (mkApp3 (.const ``Witness.check []) dim A w) (toExpr true))
+    (← mkEq (mkApp3 (.const ``VerifiedSynthesis.check []) dim A p) (toExpr true))
   synthesizeSyntheticMVarsNoPostponing
-  return mkApp4 (.const ``Witness.certificate []) dim A w
-    (mkApp4 (.const ``Witness.valid_of_check []) dim A w (← instantiateMVars h))
+  return mkApp4 (.const ``VerifiedSynthesis.certificate []) dim A p (← instantiateMVars h)
 
 end powerlib.Linear.Synthesis

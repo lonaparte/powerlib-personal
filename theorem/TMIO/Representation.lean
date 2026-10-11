@@ -46,6 +46,46 @@ def transport (u : sInfHom B A) (eA : A ≃o A') (eB : B ≃o B') : sInfHom B' A
   ext b
   rfl
 
+/-- Closed source elements are transported by the source order isomorphism. -/
+def closedTransport (u : sInfHom B A) (eA : A ≃o A') (eB : B ≃o B') :
+    {a : A // u (generate u a) = a} ≃o
+      {a : A' // transport u eA eB (generate (transport u eA eB) a) = a} where
+  toFun a := ⟨eA a, by
+    rw [congrFun (generate_transport u eA eB) (eA a)]
+    simp only [Function.comp_apply, transport_apply, OrderIso.symm_apply_apply, a.property]⟩
+  invFun a := ⟨eA.symm a, by
+    have h := congrArg eA.symm a.property
+    rw [congrFun (generate_transport u eA eB) a] at h
+    simpa only [Function.comp_apply, transport_apply, OrderIso.symm_apply_apply] using h⟩
+  left_inv a := by ext; simp
+  right_inv a := by ext; simp
+  map_rel_iff' := eA.le_iff_le
+
+/-- Interior-stable target elements are transported by the target order isomorphism. -/
+def interiorTransport (u : sInfHom B A) (eA : A ≃o A') (eB : B ≃o B') :
+    {b : B // generate u (u b) = b} ≃o
+      {b : B' // generate (transport u eA eB) (transport u eA eB b) = b} where
+  toFun b := ⟨eB b, by
+    rw [congrFun (generate_transport u eA eB) (transport u eA eB (eB b))]
+    simp only [Function.comp_apply, transport_apply, OrderIso.symm_apply_apply, b.property]⟩
+  invFun b := ⟨eB.symm b, by
+    have h := congrArg eB.symm b.property
+    rw [congrFun (generate_transport u eA eB) (transport u eA eB b)] at h
+    simpa only [Function.comp_apply, transport_apply, OrderIso.symm_apply_apply] using h⟩
+  left_inv b := by ext; simp
+  right_inv b := by ext; simp
+  map_rel_iff' := eB.le_iff_le
+
+/-- Representation change preserves the generated fixed-point correspondence itself. -/
+@[powerlib_foundation] theorem fixedPointsIso_transport (u : sInfHom B A)
+    (eA : A ≃o A') (eB : B ≃o B') (a : {a : A // u (generate u a) = a}) :
+    fixedPointsIso (transport u eA eB) (closedTransport u eA eB a) =
+      interiorTransport u eA eB (fixedPointsIso u a) := by
+  apply Subtype.ext
+  change generate (transport u eA eB) (eA a.val) = eB (generate u a.val)
+  rw [congrFun (generate_transport u eA eB) (eA a.val)]
+  simp
+
 end Edge
 
 namespace Seed

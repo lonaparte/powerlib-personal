@@ -7,10 +7,14 @@ namespace RegistryCurrent
 open powerlib LinearSystems
 
 def StableContract (m : Circuits.RL.Impedance) : Prop :=
-  IsHurwitz m.plant.A ∧ IsHurwitz m.plant.A
+  m ∈ Circuits.RL.family.den (.flow .globallyExponentiallyStable) ∧
+    m ∈ Circuits.RL.family.den (.flow .globallyExponentiallyStable)
 
 @[powerlib_domain] theorem stable (m : Circuits.RL.Impedance) (c : Linear.Certificate m.plant.A) :
-    StableContract m := ⟨c.isHurwitz, c.isHurwitz⟩
+    StableContract m := by
+  unfold StableContract
+  rw [Circuits.RL.family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
+  exact ⟨c.isHurwitz, c.isHurwitz⟩
 
 def unclassifiable : Nat := 0
 
@@ -169,20 +173,32 @@ open powerlib LinearSystems
   aesop
 
 @[powerlib_domain] theorem rl_resistance (m : Circuits.RL.Impedance) (h : 0 < m.resistance) :
-    Flow.GloballyExponentiallyStable (affineLinearVectorField m.plant.A 0) 0 := by aesop
+    m ∈ Circuits.RL.family.den (.flow .globallyExponentiallyStable) := by
+  rw [Circuits.RL.family_isLinear.mem_den_flow]
+  change Flow.GloballyExponentiallyStable (affineLinearVectorField m.plant.A 0) 0
+  aesop
 
 @[powerlib_domain] theorem lcl_passive_damped (m : Circuits.LCL.Circuit) (hp : m.Passive)
     (hd : m.Damped) :
-    Flow.GloballyAsymptoticallyStable (affineLinearVectorField m.plant.A 0) 0 := by aesop
+    m ∈ Circuits.LCL.family.den (.flow .globallyAsymptoticallyStable) := by
+  rw [Circuits.LCL.family_isLinear.mem_den_flow]
+  change Flow.GloballyAsymptoticallyStable (affineLinearVectorField m.plant.A 0) 0
+  aesop
 
 @[powerlib_domain] theorem interconnection_criterion {n₁ n₂ p : ℕ}
     (ic : Circuits.Interconnection n₁ n₂ p) (h₁ : IsHurwitz ic.source.A)
     (h₂ : IsHurwitz ic.load.A) (h : ic.ImpedanceStable) :
-    Flow.GloballyExponentiallyStable (affineLinearVectorField ic.closedLoopA 0) 0 := by aesop
+    ic ∈ Circuits.Interconnection.family.den (.flow .globallyExponentiallyStable) := by
+  rw [Circuits.Interconnection.family_isLinear.mem_den_flow]
+  change Flow.GloballyExponentiallyStable (affineLinearVectorField ic.closedLoopA 0) 0
+  aesop
 
 @[powerlib_domain] theorem polynomial_certificate {model : Nonlinear.Polynomial2.Model}
     (c : Nonlinear.Polynomial2.Certificate model) :
-    Flow.GloballyExponentiallyStable model.field 0 := by aesop
+    model ∈ Nonlinear.Polynomial2.family.den (.flow .globallyExponentiallyStable) := by
+  rw [Nonlinear.Polynomial2.family_isAutonomous.mem_den_flow]
+  change Flow.GloballyExponentiallyStable model.field 0
+  aesop
 
 end AutomaticChaining
 

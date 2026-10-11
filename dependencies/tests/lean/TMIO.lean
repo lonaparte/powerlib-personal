@@ -140,17 +140,43 @@ run_cmd do
       throwError "A TMIO definition was classified as a theorem: {name}"
   logInfo m!"POWERLIB_TMIO_OK: {foundations} foundation theorems in the core"
 
--- Theorem placement: every domain theorem of the library is stated on a connection.
-/-! A domain theorem is the value of a connection at a point, the agreement or order of two
-connections, or a witness where they part; its statement therefore mentions a definition of the
-TMIO core or of the family layer. The audit reads only the module structure and the registry. The
-negative control is a domain theorem about a matrix alone. -/
+-- Every conclusion is checked independently of its theorem name and module root.
+-- These foundation controls test admission; their matrix-only claims are deliberately rejected.
 namespace PlacementFixture
 
 open powerlib LinearSystems
 
-@[powerlib_domain] theorem offConnection : IsHurwitz !![(-1 : ℝ)] :=
+@[powerlib_foundation] theorem offConnection : IsHurwitz !![(-1 : ℝ)] :=
   (Linear.isHurwitz_one_iff (-1)).mpr (by norm_num)
+
+@[powerlib_foundation] theorem phantomFamily (_F : Family Unit Unit 1 0) :
+    IsHurwitz !![(-1 : ℝ)] := offConnection
+
+@[powerlib_foundation] theorem irrelevantHypothesis (m : Circuits.RL.Impedance)
+    (_h : m ∈ Circuits.RL.family.den (.flow .lyapunovStable)) :
+    IsHurwitz !![(-1 : ℝ)] := offConnection
+
+-- Holds is a semantic alias, not a generated endpoint, even though it belongs to Family.
+@[powerlib_foundation] theorem directHolds (m : Circuits.RL.Impedance)
+    (h : Circuits.RL.family.Holds m (.flow .lyapunovStable)) :
+    Circuits.RL.family.Holds m (.flow .lyapunovStable) := h
+
+def hiddenHolds (m : Circuits.RL.Impedance) : Prop :=
+  Circuits.RL.family.Holds m (.flow .lyapunovStable)
+
+@[powerlib_foundation] theorem transitiveHolds (m : Circuits.RL.Impedance)
+    (h : hiddenHolds m) : hiddenHolds m := h
+
+@[powerlib_foundation] theorem unrelatedConjunct :
+    Circuits.RL.family.chain = Circuits.RL.family.semantics ∧ IsHurwitz !![(-1 : ℝ)] :=
+  ⟨Circuits.RL.chain_eq_semantics, offConnection⟩
+
+@[powerlib_foundation] theorem conditionPadding :
+    IsHurwitz (@ite (Matrix (Fin 1) (Fin 1) ℝ)
+      (Circuits.RL.family.chain = Circuits.RL.family.semantics)
+      (Classical.propDecidable _) !![(-1 : ℝ)] !![(-1 : ℝ)]) := by
+  simp only [ite_self]
+  exact offConnection
 
 @[powerlib_domain] theorem onConnection :
     Circuits.RL.family.chain = Circuits.RL.family.semantics :=
@@ -161,26 +187,23 @@ end PlacementFixture
 open Lean Elab Command in
 run_cmd do
   let env ← getEnv
-  let connectionModule (m : Name) : Bool :=
-    (`theorem.TMIO).isPrefixOf m || (`theorem.Family).isPrefixOf m
-  let onConnection (name : Name) : CommandElabM Bool := do
-    let info ← getConstInfo name
-    return info.type.getUsedConstants.any fun c =>
-      match env.getModuleIdxFor? c with
-      | some i => connectionModule env.header.moduleNames[i.toNat]!
-      | none => false
-  let mut placed : Nat := 0
-  let mut violations : Array Name := #[]
-  for name in powerlib.Registry.theoremNames env (some .domain) do
-    let some i := env.getModuleIdxFor? name | continue
-    unless env.header.moduleNames[i.toNat]!.getRoot == `theorem do continue
-    if (← onConnection name) then placed := placed + 1 else violations := violations.push name
-  unless violations.isEmpty do
-    throwError "Domain theorems not stated on a connection: {violations}"
-  if placed == 0 then throwError "The placement audit found no domain theorem"
-  if (← onConnection `PlacementFixture.offConnection) then
-    throwError "The placement audit accepted a domain theorem off every connection"
-  unless (← onConnection `PlacementFixture.onConnection) do
-    throwError "The placement audit rejected a domain theorem on a connection"
-  logInfo m!"POWERLIB_PLACEMENT_OK: {placed} library domain theorems on connections"
-
+  liftTermElabM do
+    let ctx ← powerlib.Architecture.context
+    let mut placed : Nat := 0
+    for name in powerlib.Registry.theoremNames env (some .domain) do
+      let some i := env.getModuleIdxFor? name | continue
+      unless powerlib.Registry.isFirstPartyModule env.header.moduleNames[i.toNat]! do continue
+      if let some reason ← powerlib.Architecture.rejection ctx (← getConstInfo name).type then
+        throwError "Domain theorem failed connection admission: {name}: {reason}"
+      placed := placed + 1
+    if placed == 0 then throwError "The placement audit found no domain theorem"
+    for name in #[`PlacementFixture.offConnection, `PlacementFixture.phantomFamily,
+        `PlacementFixture.irrelevantHypothesis, `PlacementFixture.directHolds,
+        `PlacementFixture.transitiveHolds, `PlacementFixture.unrelatedConjunct,
+        `PlacementFixture.conditionPadding] do
+      if (← powerlib.Architecture.rejection ctx (← getConstInfo name).type).isNone then
+        throwError "The architecture audit accepted its negative control: {name}"
+    if let some reason ← powerlib.Architecture.rejection ctx
+        (← getConstInfo `PlacementFixture.onConnection).type then
+      throwError "The architecture audit rejected its positive control: {reason}"
+    logInfo m!"POWERLIB_PLACEMENT_OK: {placed} first-party domain theorems; 7 negative controls"

@@ -210,12 +210,10 @@ def nonnormalAccepted : Certificate nonnormalModel :=
     nonnormalModel ∈ family.den (.flow .globallyExponentiallyStable) :=
   family_isAutonomous.mem_den_flow.mpr nonnormalAccepted.globallyExponentiallyStable
 
-/-- The cascade `x' = -2x + y²`, `y' = -y`: no energy of the family gives a decay identity, and the
-synthesizer proposes nothing. This is unproved, not refuted. -/
-def cascadeModel : Model := ⟨[⟨-2, (1, 0)⟩, ⟨1, (0, 2)⟩], [⟨-1, (0, 1)⟩]⟩
-
-@[powerlib_foundation] theorem cascade_unproved : accepts cascadeModel = false := by
-  decide +kernel
+-- The cascade is globally asymptotically stable but has no certificate of this language.
+@[powerlib_domain] theorem cascade_boundary :
+    cascadeModel ∈ family.den (.flow .globallyAsymptoticallyStable) ∧
+      cascadeModel ∉ powerlib.TMIO.realize Meets {.certified} := cascade_certificate_boundary
 
 /-- A supplied witness passes the same check: verification, not synthesis. -/
 def suppliedWitness : Witness := ⟨1, 0, 1, 1, 1, 2, [], [], [⟨2, [⟨1, (2, 0)⟩]⟩]⟩
@@ -235,13 +233,58 @@ def supplied : Certificate submittedModel := ⟨suppliedWitness, by decide +kern
 
 end PolynomialAdmission
 
+-- Rates use actual state evidence; the realization is inhabited in these fixtures.
+namespace RateAdmission
+
+open Linear
+
+def shiftedLCL : Matrix (Fin 3) (Fin 3) ℚ :=
+  !![-3 / 4, -1, 0; 1, 1 / 4, -1; 0, 1, -3 / 4]
+
+def marginCertificate : Certificate (Synthesis.real shiftedLCL) :=
+  lyapunov_certificate% shiftedLCL
+
+@[powerlib_foundation] theorem lcl_margin :
+    RateMargin LCLAdmission.submittedModel.plant.A (1 / 4) := by
+  have hA : LCLAdmission.submittedModel.plant.A + (1 / 4 : ℝ) • 1 =
+      Synthesis.real shiftedLCL := by
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      norm_num [LCLAdmission.submittedModel, Circuits.LCL.Circuit.plant,
+        Circuits.LCL.StateSpace.plant, Circuits.RL.toStateSpace_decay,
+        shiftedLCL, Matrix.one_apply]
+  unfold RateMargin
+  rw [hA]
+  exact marginCertificate.isHurwitz
+
+@[powerlib_domain] theorem lcl_rate :
+    LCLAdmission.submittedModel ∈ TMIO.realize Circuits.LCL.Meets
+      {Circuits.LCL.Requirement.rate (1 / 4)} ∧
+    LCLAdmission.submittedModel ∈ Circuits.LCL.family.den (.flow (.decay (1 / 4))) := by
+  refine ⟨?_, Circuits.LCL.family_isLinear.mem_den_decay_of_rateMargin lcl_margin⟩
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Circuits.LCL.Meets]
+  exact lcl_margin
+
+-- The complete backend runs on nonnormal input, independently of the fast proposal.
+@[powerlib_foundation] theorem complete_backend_accepts :
+    VerifiedSynthesis.check LTIAdmission.submittedMatrix
+      (VerifiedSynthesis.candidate LTIAdmission.submittedMatrix) = true := by decide +kernel
+
+-- A singular Lyapunov operator does not turn absence of a solution into a certificate.
+@[powerlib_foundation] theorem singular_backend_rejects :
+    VerifiedSynthesis.check !![(1 : ℚ), 0; 0, -1]
+      (VerifiedSynthesis.candidate !![(1 : ℚ), 0; 0, -1]) = false := by decide +kernel
+
+end RateAdmission
+
 open Lean Elab Command
 run_cmd do
   let env ← getEnv
   let registered := powerlib.Registry.theoremNames env
   let admitted := registered.filter fun name =>
-    #[`RLAdmission, `LCLAdmission, `LTIAdmission, `LargeLTIAdmission,
-      `NegativeResistanceAdmission, `PolynomialAdmission].contains name.getRoot
+    match env.getModuleIdxFor? name with
+    | none => true
+    | some i => powerlib.Registry.isFirstPartyModule env.header.moduleNames[i.toNat]!
   for name in admitted do
     if powerlib.Registry.kindOf? env name == some .domain then
       logInfo m!"POWERLIB_ADMITTED_THEOREM {name}"
@@ -266,7 +309,7 @@ run_cmd do
   for (certificate, synthesizer) in #[(`RLAdmission.accepted, `powerlib.Circuits.RL.synthesize),
       (`LCLAdmission.accepted, `powerlib.Circuits.LCL.synthesize),
       (`LTIAdmission.accepted, `powerlib.Linear.Synthesis.certificateOf),
-      (`LargeLTIAdmission.accepted, `powerlib.Linear.Synthesis.Witness.valid_of_check),
+      (`LargeLTIAdmission.accepted, `powerlib.Linear.VerifiedSynthesis.certificate),
       (`NegativeResistanceAdmission.accepted,
         `powerlib.Circuits.LCL.RationalCircuit.certificate),
       (`PolynomialAdmission.accepted, `powerlib.Nonlinear.Polynomial2.certificateOf),

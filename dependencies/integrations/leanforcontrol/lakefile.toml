@@ -30,6 +30,7 @@ globs = [
   "theorem.TMIO.Derived",
   "theorem.TMIO.Representation",
   "theorem.TMIO.Relation",
+  "theorem.TMIO.Compare",
   "theorem.Flow.Defs",
   "theorem.Flow.Basic",
   "theorem.Flow.Certificate",
@@ -38,6 +39,17 @@ globs = [
   "theorem.Linear.Certificate",
   "theorem.Linear.Transfer",
   "theorem.Linear.Realization",
+  "theorem.Architecture",
+  "theorem.Family.Basic",
+  "theorem.Port.Defs",
+  "theorem.Port.Basic",
+  "theorem.Port.Linear",
+  "theorem.Linear.Family",
+  "theorem.Linear.Positive",
+  "theorem.Linear.VerifiedSynthesis",
+  "theorem.Linear.Synthesis",
+  "theorem.Linear.Rate",
+  "theorem.Linear.Rational",
 ]
 
 [[lean_lib]]

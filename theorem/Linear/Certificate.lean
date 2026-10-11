@@ -166,10 +166,11 @@ def Certificate.energy {A : Matrix (Fin n) (Fin n) ℝ} (c : Certificate A) (e x
     rwa [ContinuousLinearMap.comp_id] at h
   exact h1.inner ℝ h2
 
-/-- Along the field, the energy decreases at the rate `‖x - e‖²`. -/
-@[powerlib_foundation] theorem Certificate.lie_energy {A : Matrix (Fin n) (Fin n) ℝ}
-    (c : Certificate A) (e x : ℝⁿ) :
-    fderiv ℝ (c.energy e) x (affineLinearVectorField A e x) = -‖x - e‖ ^ 2 := by
+/-- The derivative of a quadratic certificate energy along any linear field. -/
+@[powerlib_foundation] theorem Certificate.lie_energy_matrix
+    {A B : Matrix (Fin n) (Fin n) ℝ} (c : Certificate B) (e x : ℝⁿ) :
+    fderiv ℝ (c.energy e) x (affineLinearVectorField A e x) =
+      WithLp.ofLp (x - e) ⬝ᵥ ((Aᵀ * c.P + c.P * A) *ᵥ WithLp.ofLp (x - e)) := by
   rw [(c.hasFDerivAt_energy e x).fderiv]
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply, fderivInnerCLM_apply,
     ContinuousLinearMap.id_apply, affine_apply]
@@ -181,12 +182,17 @@ def Certificate.energy {A : Matrix (Fin n) (Fin n) ℝ} (c : Certificate A) (e x
     congr 1
     conv_lhs => rw [← c.symmetric]
     rw [Matrix.vecMul_transpose]
-  have hL := quadratic_lyapunov c.symmetric c.lyapunov y
-  have hn : ‖x - e‖ ^ 2 = y ⬝ᵥ y := by
-    rw [EuclideanSpace.norm_sq_eq]
-    simp [y, dotProduct, sq]
-  rw [hsym, hn]
-  linarith
+  rw [hsym, quadratic_sym c.symmetric]
+  ring
+
+/-- Along its own field, the energy decreases at the rate `‖x - e‖²`. -/
+@[powerlib_foundation] theorem Certificate.lie_energy {A : Matrix (Fin n) (Fin n) ℝ}
+    (c : Certificate A) (e x : ℝⁿ) :
+    fderiv ℝ (c.energy e) x (affineLinearVectorField A e x) = -‖x - e‖ ^ 2 := by
+  rw [c.lie_energy_matrix, c.lyapunov, Matrix.neg_mulVec, Matrix.one_mulVec, dotProduct_neg]
+  congr 1
+  rw [EuclideanSpace.norm_sq_eq]
+  simp [dotProduct, sq]
 
 @[powerlib_foundation] theorem Certificate.energy_contDiff {A : Matrix (Fin n) (Fin n) ℝ}
     (c : Certificate A) (e : ℝⁿ) : ContDiff ℝ 1 (c.energy e) :=

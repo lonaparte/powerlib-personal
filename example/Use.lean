@@ -20,11 +20,11 @@ open powerlib LinearSystems
 #print axioms powerlib.Linear.holds_iff_isHurwitz
 
 -- RL: the translation chain is the semantics connection.
-example : Circuits.RL.family.chain = Circuits.RL.family.semantics :=
+@[powerlib_domain] theorem rl_chain : Circuits.RL.family.chain = Circuits.RL.family.semantics :=
   Circuits.RL.chain_eq_semantics
 
 -- RL: decay at a rate is exactly a bound on the time constant, read off the faithful chain.
-example (a : ℝ) (m : Circuits.RL.Impedance) :
+@[powerlib_domain] theorem rl_decay (a : ℝ) (m : Circuits.RL.Impedance) :
     m ∈ Circuits.RL.family.den (.flow (.decay a)) ↔ a ≤ m.resistance / m.inductance.val := by
   rw [← (Family.chain_eq_semantics_iff.mp Circuits.RL.chain_eq_semantics
     (.flow (.decay a)) : Circuits.RL.family.Exact _)]
@@ -38,23 +38,28 @@ example (a : ℝ) (m : Circuits.RL.Impedance) :
 #check powerlib.Circuits.LCL.not_exact_lyapunovStable
 #check powerlib.Circuits.LCL.exactUnder_conservative
 #check powerlib.Circuits.LCL.not_exact_conservative
+#check powerlib.Circuits.LCL.not_exact_unstable
+#check powerlib.Linear.RateMargin
 #check powerlib.Circuits.LCL.realize_passive_damped
 
 -- Synthesis: the certificate computed from the submitted parameters places the model in a
 -- denotation.
-example (m : Circuits.RL.Impedance) (hR : 0 < m.resistance) {P : Flow.Property}
+@[powerlib_domain] theorem rl_synthesis (m : Circuits.RL.Impedance) (hR : 0 < m.resistance) {P : Flow.Property}
     (hP : P.Attractive) : m ∈ Circuits.RL.family.den (.flow P) := by
   rw [Circuits.RL.family_isLinear.den_hurwitz (Or.inl hP)]
   exact (Circuits.RL.synthesize m hR).isHurwitz
 
-example (m : Circuits.LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
+@[powerlib_domain] theorem lcl_synthesis (m : Circuits.LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
     m ∈ Circuits.LCL.family.den (.flow .contractive) := by
   rw [Circuits.LCL.family_isLinear.den_hurwitz (Or.inr rfl)]
   exact (Circuits.LCL.synthesize m hp hd).isHurwitz
 
+#check powerlib.Linear.Synthesis.accepts_iff_isHurwitz
+#check powerlib.Linear.Rational.accepted_eq_den
+
 -- Synthesis inside the kernel: only a rational matrix is submitted; acceptance is a requirement,
 -- and the chain carries it to the sentence.
-example : !![(-1 : ℚ), 10; 0, -1] ∈
+@[powerlib_domain] theorem rational_submission : !![(-1 : ℚ), 10; 0, -1] ∈
     (Linear.Rational.family (n := 2)).den (.flow .globallyExponentiallyStable) := by
   rw [← Linear.Rational.exact_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
   refine Linear.Rational.realize_accepted ?_
@@ -66,12 +71,15 @@ example : !![(-1 : ℚ), 10; 0, -1] ∈
   decide +kernel
 
 -- Multi-step goals close automatically from the reviewed rules.
-example (m : Circuits.LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
-    Flow.GloballyExponentiallyStable (affineLinearVectorField m.plant.A 0) 0 := by aesop
+@[powerlib_domain] theorem lcl_automatic (m : Circuits.LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
+    m ∈ Circuits.LCL.family.den (.flow .globallyExponentiallyStable) := by
+  rw [Circuits.LCL.family_isLinear.mem_den_flow]
+  aesop
 
 -- Passivity from stored energy, for every port-Hamiltonian plant.
-example {n p : ℕ} (H : Port.PortHamiltonian n p) : H.plant.system.Passive :=
-  ⟨_, H.passiveWith⟩
+@[powerlib_domain] theorem portHamiltonian_passive {n p : ℕ} (H : Port.PortHamiltonian n p) :
+    H ∈ Port.PortHamiltonian.family.den .passive :=
+  H.mem_den_passive
 
 -- Interconnection: the impedance criterion is exact relative to component stability; port data
 -- cannot certify the closed loop when a component hides a mode, and certify every flow sentence
@@ -85,7 +93,8 @@ example {n p : ℕ} (H : Port.PortHamiltonian n p) : H.plant.system.Passive :=
 #check powerlib.Circuits.Interconnection.closedLoop_not_separable
 #check powerlib.Linear.similar_iff_transfer_eq
 #check powerlib.Linear.transfer_certified
-#check powerlib.Linear.Similar.holds_iff
+#check powerlib.Linear.Similar.sentence_iff
+#check powerlib.Family.IsLinear.den_similar
 #check powerlib.Linear.exists_minimal_realization
 #print axioms powerlib.Linear.similar_iff_transfer_eq
 
@@ -106,5 +115,9 @@ example {n p : ℕ} (H : Port.PortHamiltonian n p) : H.plant.system.Passive :=
 #check powerlib.Nonlinear.Cubic.chain_eq_semantics
 #check powerlib.Nonlinear.Polynomial2.chain_le_semantics
 #check powerlib.Nonlinear.Polynomial2.not_exact_asymptotic
-example (n : ℕ) : Flow.GloballyExponentiallyStable (Nonlinear.Cubic.field (n := n) 1) 0 :=
-  Nonlinear.Cubic.globallyExponentiallyStable ⟨1, one_pos⟩
+#check powerlib.Nonlinear.Polynomial2.not_exact_exponential
+#check powerlib.Nonlinear.Polynomial2.cascade_certificate_boundary
+@[powerlib_domain] theorem cubic_global (n : ℕ) : (⟨1, one_pos⟩ : Nonlinear.Cubic.Gain) ∈
+    (Nonlinear.Cubic.family (n := n)).den (.flow .globallyExponentiallyStable) := by
+  rw [Nonlinear.Cubic.family_isAutonomous.mem_den_flow]
+  exact Nonlinear.Cubic.globallyExponentiallyStable ⟨1, one_pos⟩

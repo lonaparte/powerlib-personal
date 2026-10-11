@@ -1,3 +1,5 @@
+import theorem.Architecture
+import theorem.Linear.Rational
 import theorem.LibrarySearch
 import theorem.Flow.Certificate
 import theorem.Linear.Realization
@@ -67,3 +69,15 @@ run_cmd do
       unless (← observing? (powerlib.Search.checkProof borrowed)).isNone do
         throwError "A local let hid an upstream custom axiom from the proof audit"
   logInfo "POWERLIB_LEANFORCONTROL_REUSE_OK: 7 direct consumers; custom-axiom rejection"
+
+-- The independent upstream profile also admits engineering conclusions through connections.
+@[powerlib_domain] theorem complete_rational_certification {n : ℕ}
+    (A : Matrix (Fin n) (Fin n) ℚ)
+    (h : LinearSystems.IsHurwitz (powerlib.Linear.Synthesis.real A)) :
+    A ∈ powerlib.TMIO.realize powerlib.Linear.Rational.Meets
+      {powerlib.Linear.Rational.Requirement.accepted} := by
+  rw [powerlib.TMIO.mem_realize]
+  intro q hq
+  rw [Set.mem_singleton_iff] at hq
+  subst q
+  exact powerlib.Linear.Synthesis.accepts_of_isHurwitz h

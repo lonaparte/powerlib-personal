@@ -52,6 +52,42 @@ Admission must detect missing classifications from elaborated declaration
 provenance and collect registered theorems automatically, without a handwritten
 theorem list. Classification does not replace kernel or transitive axiom checks.
 
+Generic semantic implications and certificate arithmetic are foundation results.
+A model family's public engineering conclusion must be a domain theorem on a
+connection: an evaluation of its generated space, a comparison of connections,
+or a boundary witness. Relabeling such a conclusion as foundation does not
+complete its public domain interface.
+
+## 3a. Generated connections and public conclusions
+
+The four TMIO layers contain objects and their orders. A seed supplies one
+arbitrary-infimum-preserving semantic map per adjacent edge; the forward
+adjoints, complete implementation spaces, closures and composites are generated.
+Do not supply a second independent forward map or implementation space.
+
+A family supplies its system map, requirement satisfaction and translation.
+Its semantics connection generates sentence denotations. Exactness compares the
+translation chain with that semantics connection; soundness orders them. These
+comparisons and their propagation belong to the generic framework.
+
+Domain theorem conclusions must use generated connection endpoints. Merely
+mentioning a Family type, or mentioning a connection only in a hypothesis, is
+insufficient. Behaviour is reached through a denotation or a generated
+connection, never through Holds, an alias of a behavioural predicate, or a
+direct Flow, Port, Mathlib or LeanForControl behavioural conclusion.
+
+The same interface applies to public examples, admission consumers, automatic
+reuse consumers and integration consumers. Deliberate negative controls are
+foundation fixtures passed explicitly to the rejection checker; they are not
+admitted domain theorems. Audits inspect elaborated conclusions and imported
+definitions, and run over all first-party consumers without a theorem-name list.
+
+An inconsistent requirement context may give a sound empty translation space.
+Report it as unavailable translation coverage, not as evidence that the sentence
+has a usable translation. Adjoint generation, translation exactness and
+algorithmic synthesis completeness are separate claims and require separate
+evidence. Preserve UNPROVED until a kernel-checked proof or refutation exists.
+
 ## 4. Explicit model boundaries
 
 Every domain theorem must precisely identify the system it concerns. State
@@ -84,12 +120,14 @@ the completion criterion.
 The completed result must conclude a meaningful system property, for example:
 
 ```lean
-theorem stable : ClosedLoop.Stable
-theorem exponentially_stable : ExponentiallyStable system
+theorem stable : submittedModel ∈ family.den (.flow .lyapunovStable)
+theorem exponentially_stable :
+    submittedModel ∈ family.den (.flow .globallyExponentiallyStable)
 ```
 
 The relevant stability predicate must describe the formalized system, with
-its interpretation and assumptions established. PowerLib must not present a
+its interpretation and assumptions established through the family's system map.
+PowerLib must not present a
 successful certificate check as proof of an engineering theorem unless the
 semantic theorem has also been derived and kernel-checked.
 
@@ -177,7 +215,7 @@ through the unified public interface. For example:
 
 ```lean
 import powerlib
-#check powerlib.Circuits.LCL.isHurwitz_iff_stable
+#check powerlib.Circuits.LCL.exact_hurwitz
 ```
 
 A theorem generated temporarily in `results/.../Certificate.lean` is a proof

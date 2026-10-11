@@ -1,4 +1,4 @@
-import theorem.Port.Linear
+import theorem.Linear.Family
 
 /-! # Linear port-Hamiltonian plants
 
@@ -58,14 +58,55 @@ def PortHamiltonian.kyp (h : PortHamiltonian n p) : Linear.KYP h.plant where
   output := rfl
   feedthrough u := by simp [PortHamiltonian.plant]
 
-/-- Port-Hamiltonian plants are passive with their stored energy. -/
-@[powerlib_foundation] theorem PortHamiltonian.passiveWith (h : PortHamiltonian n p) :
-    h.plant.system.PassiveWith h.kyp.storage :=
-  h.kyp.passiveWith
+namespace PortHamiltonian
 
-/-- With the ports at zero, port-Hamiltonian plants are Lyapunov stable. -/
-@[powerlib_foundation] theorem PortHamiltonian.lyapunovStable (h : PortHamiltonian n p) :
-    LyapunovStable (affineLinearVectorField h.plant.A 0) 0 :=
-  h.kyp.lyapunovStable_of_pos h.energy_pos
+/-- Static requirements of the port-Hamiltonian family. Structure fields already enforce
+passivity and positive stored energy; unavailable sentences use an inconsistent language. -/
+inductive Requirement
+  | hurwitz
+  | impossible
+
+def Meets (h : PortHamiltonian n p) : Requirement → Prop
+  | .hurwitz => IsHurwitz h.plant.A
+  | .impossible => False
+
+def translate : Sentence → Set Requirement
+  | .passive | .flow .lyapunovStable => ∅
+  | .flow .unstable | .flow (.decay _) | .flow .conservative => Set.univ
+  | .flow _ => {.hurwitz}
+
+def family : Family (PortHamiltonian n p) Requirement n p :=
+  ⟨fun h => h.plant.system, Meets, translate⟩
+
+@[powerlib_foundation] theorem family_isLinear :
+    (family (n := n) (p := p)).IsLinear PortHamiltonian.plant := fun _ => rfl
+
+/-- Stored energy places each submitted plant in the passivity denotation. -/
+@[powerlib_domain] theorem mem_den_passive (h : PortHamiltonian n p) :
+    h ∈ family.den .passive := family_isLinear.mem_den_passive h.kyp
+
+/-- Positive stored energy places each submitted plant in the zero-input stability denotation. -/
+@[powerlib_domain] theorem mem_den_lyapunovStable (h : PortHamiltonian n p) :
+    h ∈ family.den (.flow .lyapunovStable) :=
+  family_isLinear.mem_den_flow.mpr (h.kyp.lyapunovStable_of_pos h.energy_pos)
+
+/-- The translation chain is sound for every sentence of a port-Hamiltonian plant. -/
+@[powerlib_domain] theorem chain_le_semantics :
+    ∀ P, (family (n := n) (p := p)).chain P ≤ family.semantics P := by
+  refine Family.chain_le_semantics_iff.mpr fun s h hh => ?_
+  rw [TMIO.mem_realize] at hh
+  change ∀ q ∈ translate s, Meets h q at hh
+  rcases s with P | _
+  · cases P
+    case lyapunovStable => exact h.mem_den_lyapunovStable
+    case unstable => exact (hh .impossible (Set.mem_univ _)).elim
+    case decay a => exact (hh .impossible (Set.mem_univ _)).elim
+    case conservative => exact (hh .impossible (Set.mem_univ _)).elim
+    all_goals
+      rw [family_isLinear.den_hurwitz (by simp)]
+      exact hh .hurwitz rfl
+  · exact h.mem_den_passive
+
+end PortHamiltonian
 
 end powerlib.Port

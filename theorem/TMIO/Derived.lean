@@ -30,26 +30,26 @@ variable {T M I O : Type*} [CompleteLattice T] [CompleteLattice M] [CompleteLatt
   [CompleteLattice O] (S : Seed T M I O)
 
 /-- Generated forward map from theories to models. -/
-def l₁ : LowerAdjoint S.u₁ := generate S.u₁
+@[powerlib_connection] def l₁ : LowerAdjoint S.u₁ := generate S.u₁
 
 /-- Generated forward map from models to implementations. -/
-def l₂ : LowerAdjoint S.u₂ := generate S.u₂
+@[powerlib_connection] def l₂ : LowerAdjoint S.u₂ := generate S.u₂
 
 /-- Generated forward map from implementations to observations. -/
-def l₃ : LowerAdjoint S.u₃ := generate S.u₃
+@[powerlib_connection] def l₃ : LowerAdjoint S.u₃ := generate S.u₃
 
 @[powerlib_foundation] theorem gc₁ : GaloisConnection S.l₁ S.u₁ := gc_generate S.u₁
 @[powerlib_foundation] theorem gc₂ : GaloisConnection S.l₂ S.u₂ := gc_generate S.u₂
 @[powerlib_foundation] theorem gc₃ : GaloisConnection S.l₃ S.u₃ := gc_generate S.u₃
 
 /-- Composite semantic map from implementations back to theories. -/
-def uTI : sInfHom I T := S.u₁.comp S.u₂
+@[powerlib_connection] def uTI : sInfHom I T := S.u₁.comp S.u₂
 
 /-- Composite semantic map from observations back to models. -/
-def uMO : sInfHom O M := S.u₂.comp S.u₃
+@[powerlib_connection] def uMO : sInfHom O M := S.u₂.comp S.u₃
 
 /-- Whole-chain semantic map from observations back to theories. -/
-def uTO : sInfHom O T := S.u₁.comp (S.u₂.comp S.u₃)
+@[powerlib_connection] def uTO : sInfHom O T := S.u₁.comp (S.u₂.comp S.u₃)
 
 @[powerlib_foundation] theorem generate_uTI : ⇑(generate S.uTI) = S.l₂ ∘ S.l₁ :=
   generate_comp S.u₁ S.u₂
