@@ -85,7 +85,7 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
     (hV : ∀ x, HasDerivAt V (dV x) x) (y : State 2) :
     fderiv ℝ (energy m V) y (field m γ dV y) = -γ * y 1 ^ 2 := by
   rw [(hasFDerivAt_energy hV y).fderiv]
-  simp only [ContinuousLinearMap.add_apply, ContinuousLinearMap.smul_apply, coord_apply,
+  simp only [_root_.add_apply, _root_.smul_apply, coord_apply,
     field_apply_zero, field_apply_one, smul_eq_mul]
   field_simp
   ring

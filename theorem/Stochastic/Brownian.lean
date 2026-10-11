@@ -272,6 +272,7 @@ omit [IsProbabilityMeasure P] in
   rw [mgf] at this
   rw [this]; congr 1; ring
 
+omit [IsProbabilityMeasure P] in
 /-- **GBM mean** `E X_t = x₀ e^{μ t}`. -/
 @[powerlib_foundation] theorem gbm_mean (hB : IsPreBrownianReal B P) (x₀ μ σ : ℝ) (t : ℝ≥0) :
     ∫ ω, gbm x₀ μ σ B t ω ∂P = x₀ * exp (μ * t) := by
@@ -281,6 +282,7 @@ omit [IsProbabilityMeasure P] in
   rw [e, integral_const_mul, integral_exp_brownian hB, mul_assoc, ← exp_add]
   congr 2; ring
 
+omit [IsProbabilityMeasure P] in
 /-- **GBM second moment** `E X_t² = x₀² e^{(2μ + σ²) t}`. -/
 @[powerlib_foundation] theorem gbm_second_moment (hB : IsPreBrownianReal B P) (x₀ μ σ : ℝ)
     (t : ℝ≥0) : ∫ ω, gbm x₀ μ σ B t ω ^ 2 ∂P = x₀ ^ 2 * exp ((2 * μ + σ ^ 2) * t) := by
@@ -291,6 +293,7 @@ omit [IsProbabilityMeasure P] in
   rw [e, integral_const_mul, integral_exp_brownian hB, mul_assoc, ← exp_add]
   congr 2; ring
 
+omit [IsProbabilityMeasure P] in
 /-- **GBM variance** `Var X_t = x₀² e^{2μt} (e^{σ² t} − 1)`. -/
 @[powerlib_foundation] theorem gbm_variance (hB : IsPreBrownianReal B P) (x₀ μ σ : ℝ) (t : ℝ≥0) :
     ∫ ω, gbm x₀ μ σ B t ω ^ 2 ∂P - (∫ ω, gbm x₀ μ σ B t ω ∂P) ^ 2 =
@@ -300,6 +303,7 @@ omit [IsProbabilityMeasure P] in
   push_cast
   ring_nf
 
+omit [IsProbabilityMeasure P] in
 /-- Second-moment Lyapunov exponent of GBM: `(1/t) log E X_t² = (2/t) log|x₀| + 2μ + σ²`, so
 `Λ(2) = 2μ + σ²`. -/
 @[powerlib_foundation] theorem gbm_log_second_moment (hB : IsPreBrownianReal B P) {x₀ : ℝ}

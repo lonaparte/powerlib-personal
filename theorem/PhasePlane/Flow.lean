@@ -15,7 +15,7 @@ backward solutions are not used.
 Results.
 * `lipschitzFlow hf : Flow ℝ≥0 E` — a Mathlib `Flow`: jointly continuous, `φ₀ = id`,
   `φ_{t+s} = φ_t ∘ φ_s` (`lipschitzFlow_add`); joint continuity comes from the Grönwall estimate
-  `‖φ_t x − φ_t y‖ ≤ e^{Kt} ‖x − y‖` (`dist_lipschitzFlow_le`).
+  `‖φ_t x − φ_t y‖ ≤ e^{Kt} ‖x − y‖` (`dist_forwardSolution_le`).
 * `lipschitzFlow_solution`: `t ↦ φ_t x` solves the ODE on `[0, ∞)` with `φ₀ x = x`;
   `lipschitzFlow_unique`: every forward solution from `x` coincides with it.
 * `isInvariant_omegaLimit`: the ω-limit set `ω(s)` (Mathlib `omegaLimit` along `atTop`) is
