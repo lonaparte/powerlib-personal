@@ -36,6 +36,9 @@ Category B counterexamples (§1.6), each on a concrete probability space:
 Correction (§1.2).  "`L^p` convergence automatically gives `X_n, X ∈ L^p`" is false: the
 distance `E|X_n − X|^p` can vanish while `X ∉ L^p` (the note's suggestion: `X_n = X` Cauchy).
 `Lp_conv_not_memLp`: on `[0,1]`, `X_n = X = 1/u` has `‖X_n − X‖_p = 0` but `X ∉ L¹`.
+
+The distribution-function characterization of convergence in distribution (both directions)
+is `ConvergenceCDF.lean`.
 -/
 
 noncomputable section
@@ -99,8 +102,7 @@ def spike (n : ℕ) (u : I) : ℝ := if (u : ℝ) < 1 / ((n : ℝ) + 1) then (n 
   have : 1 / ((n : ℝ) + 1) ≤ u := by
     refine le_trans ?_ hN.le
     exact one_div_le_one_div_of_le (by positivity) (by exact_mod_cast Nat.add_le_add_right hn 1)
-  simp only [spike]
-  rw [if_neg (not_lt.mpr this)]
+  simp only [spike, not_lt.mpr this, ↓reduceIte]
 
 @[powerlib_foundation] theorem integral_spike (n : ℕ) : ∫ u, spike n u ∂(volume : Measure I) = 1 := by
   have hx : (1 / ((n : ℝ) + 1)) ∈ I := ⟨by positivity, by

@@ -33,6 +33,9 @@ Main results.
 * `as_exponent_le` (§1.4, discrete time): if `E‖X_n‖^p ≤ e^{an}` eventually, then almost surely
   `‖X_n‖ ≤ e^{γn}` eventually for every rational `γ > a/p` — i.e. `λ_a.s. ≤ Λ(p)/p` (Markov's
   inequality + first Borel–Cantelli lemma).
+
+The explicit GBM example where `λ_as < 0 < Λ(2)/2` (a.s. stable, second-moment unstable) is
+`GBMSeparation.lean`.
 -/
 
 noncomputable section

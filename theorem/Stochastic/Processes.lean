@@ -40,6 +40,10 @@ a stopped path is only bounded on the side of the level (`oneSided_stopped_unbou
 `w(t) = −t` never reaches `a > 0`, so `w(t ∧ τ_a) = −t` is unbounded).  The bounded-stopping
 argument needs the **two-sided** exit time from `(a, b)`: then `w(t ∧ τ) ∈ [a, b]` for every
 continuous path started in `[a, b]` (`twoSided_stopped_mem`).
+
+Related modules: `OptionalStoppingUI.lean` (optional stopping for uniformly integrable stopped
+martingales), `MartingaleNotMarkov.lean` (a martingale that is not Markov),
+`ProcessFoundations.lean` (adapted / progressive / predictable, finite-dimensional laws).
 -/
 
 noncomputable section
