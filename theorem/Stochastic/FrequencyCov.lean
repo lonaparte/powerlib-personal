@@ -152,7 +152,7 @@ stationary covariance (1.8)–(1.9). -/
   intro i
   simp only [mulVec, dotProduct, Pi.zero_apply]
   rw [show (0 : ℝ) = ∑ j : Fin 2, 0 * m₀ j by simp]
-  refine tendsto_finset_sum _ fun j _ => (Tendsto.mul_const _ ?_)
+  refine tendsto_finsetSum _ fun j _ => (Tendsto.mul_const _ ?_)
   rw [tendsto_zero_iff_norm_tendsto_zero]
   exact squeeze_zero (fun t => norm_nonneg _) (fun t => abs_entry_le_norm _ i j) hE
 
