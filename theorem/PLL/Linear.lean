@@ -1,0 +1,396 @@
+import theorem.Criteria.Hurwitz2
+import theorem.Transform.Park
+
+/-! # Linearized SRF-PLL: state-space models, transfer functions and tuning
+
+Model boundary (all models in this module).
+* System: three-phase SRF-PLL (Park projection on the PLL frame + PI loop filter + VCO) on an
+  ideal balanced sinusoidal grid of constant amplitude `V`, **linearized** at the locked
+  operating point `θ̃ = θ̂ − θ_g = 0` (phase-detector slope `∂V_q/∂θ̃ = −V`). No pre-filter
+  (SOGI/DDSRF/MAF), sampling, delay, PWM, current loop, LCL filter, saturation or
+  anti-windup. Continuous time. Parameters `V, K_p, K_i` are real numbers; every hypothesis
+  is stated in each theorem.
+* State order `(θ, η)`: `θ` = PLL angle deviation (phase model, port model) or phase error
+  `θ̃` (frequency model); `η = ∫ V_q dt` = raw PI integrator state (V·s).
+  All three models share the state matrix `linA = [[−V K_p, K_i], [−V, 0]]`, which is the
+  Jacobian of the nonlinear SRF-PLL error field at its in-phase equilibrium
+  (`theorem/PLL/Model.lean`, `srf_fderiv_inPhase`).
+* `phaseModel`: input grid angle deviation `Δθ_g`, output `Δθ̂`
+  (`θ̂̇ = K_p V (θ_g − θ̂) + K_i η`, `η̇ = V (θ_g − θ̂)`); transfer
+  `H_pll(s) = V (K_p s + K_i) / (s² + V K_p s + V K_i)` (T-pll-dynamics §1.3).
+* `frequencyModel`: input grid frequency deviation `Δω_g`, output estimated frequency
+  deviation `Δω̂ = −V K_p θ̃ + K_i η`; same transfer `H_pll` (T-pll-dynamics §1.4,
+  T-frequency-measurement §1.1 with `V = 1`).
+* `portModel`: input external q-axis voltage perturbation `ΔV_q^sys`, output `Δθ̂`, with the
+  PLL-frame voltage `V_q^pll = ΔV_q^sys − V Δθ̂` (self-rotation feedback); transfer
+  `G_pll(s) = (K_p s + K_i) / (s² + V K_p s + V K_i) = H_pll / V` (T-pll-dynamics §1.11).
+* `admittanceModel I_d0`: same input, output `ΔI_q^sys = I_d0 Δθ̂`: the PLL contribution
+  to the q-axis port admittance of a current-controlled converter whose current is held at
+  its PLL-frame reference `(I_d0, I_q0)` (IN-positive current, work-sync `conventions.md`
+  §D1; only the PLL term, ideal current loop, no outer loops). `rot_linearization` derives the
+  output gain `I_d0` from the frame rotation `I^sys = rot(Δθ̂) I^pll`.
+
+Results.
+* `det(sI − linA) = s² + V K_p s + V K_i`; `linA` Hurwitz iff `V K_p > 0 ∧ V K_i > 0`; the
+  same condition is necessary and sufficient for exponential stability of the linear PLL
+  (`LTI.ExponentiallyStable`).
+* Transfer functions above; `H_pll(0) = 1`; `G_pll = H_pll / V`.
+* `ω_n = √(V K_i)`, `ζ = V K_p / (2 ω_n)`; standard form `s² + 2ζω_n s + ω_n²`;
+  `ζ = (K_p/2)√(V/K_i)`, `4ζ² = V K_p²/K_i`; raw-voltage tuning `K_p = 2ζ₀ω_b/V`,
+  `K_i = ω_b²/V` gives `ω_n = ω_b`, `ζ = ζ₀` (`ζ₀ = 1/√2`: `K_p = √2 ω_b / V`);
+  `ω_n(V) = ω_n(V₀)√(V/V₀)`; normalized-input gains applied to raw `V_q` give
+  `ζ_eff = ζ √V`.
+* `Re G_pll(jω) = (V K_i² + ω²(V K_p² − K_i)) / |den|²`; for `V, K_p, K_i > 0`,
+  `Re G_pll(jω) > 0 ∀ω ⇔ K_i ≤ V K_p² ⇔ ζ ≥ 1/2`; with `I_d0 < 0` (exporting active power)
+  this gives `Re Y_qq^pll(jω) < 0 ∀ω` (negative conductance).
+
+Source: work-sync `theory/T-pll-dynamics.md` §1.3, §1.4, §1.5, §1.11;
+`theory/T-invariant-coordinates.md` §1.2 (ζ algebra, raw-voltage tuning);
+`theory/T-gfl-impedance.md` §1.3 (`G_i^pll`), §1.6; `theory/T-frequency-measurement.md` §1.1.
+
+Correction (T-pll-dynamics §1.11 / T-gfl-impedance §1.3, "phase near 0° ⇒ real part > 0"):
+`Re G_pll(jω) > 0` at **every** frequency holds exactly when `K_i ≤ V K_p²` (`ζ ≥ 1/2`); for
+`ζ < 1/2` it becomes negative at high frequency (`re_transfer_portModel_pos_iff`), so the
+sign of `Re Y_qq^pll` is guaranteed only under that tuning condition.
+-/
+
+noncomputable section
+namespace powerlib.PLL
+open Matrix
+
+/-! ## State matrix and models -/
+
+/-- Linearized SRF-PLL state matrix in state order `(θ, η)`: `[[−V K_p, K_i], [−V, 0]]`. -/
+def linA (V Kp Ki : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-(V * Kp), Ki; -V, 0]
+
+/-- Closed-loop phase tracking model: input `Δθ_g`, output `Δθ̂`. -/
+def phaseModel (V Kp Ki : ℝ) : LTI.Model (Fin 2) (Fin 1) :=
+  ⟨linA V Kp Ki, !![V * Kp; V], !![1, 0], 0⟩
+
+/-- Frequency tracking model: input `Δω_g`, output `Δω̂ = −V K_p θ̃ + K_i η`. -/
+def frequencyModel (V Kp Ki : ℝ) : LTI.Model (Fin 2) (Fin 1) :=
+  ⟨linA V Kp Ki, !![-1; 0], !![-(V * Kp), Ki], 0⟩
+
+/-- Port model: input `ΔV_q^sys`, output `Δθ̂` (`G_pll`). -/
+def portModel (V Kp Ki : ℝ) : LTI.Model (Fin 2) (Fin 1) :=
+  ⟨linA V Kp Ki, !![Kp; 1], !![1, 0], 0⟩
+
+/-- PLL admittance model: input `ΔV_q^sys`, output `ΔI_q^sys = I_d0 Δθ̂` (`Y_qq^pll`). -/
+def admittanceModel (V Kp Ki Id0 : ℝ) : LTI.Model (Fin 2) (Fin 1) :=
+  ⟨linA V Kp Ki, !![Kp; 1], !![Id0, 0], 0⟩
+
+/-- Loop polynomial `s² + V K_p s + V K_i`. -/
+def loopPoly (V Kp Ki : ℝ) (s : ℂ) : ℂ := s ^ 2 + (V : ℂ) * Kp * s + (V : ℂ) * Ki
+
+/-- `H_pll(s) = V (K_p s + K_i) / (s² + V K_p s + V K_i)`. -/
+def closedLoopTF (V Kp Ki : ℝ) (s : ℂ) : ℂ :=
+  ((V : ℂ) * Kp * s + (V : ℂ) * Ki) / loopPoly V Kp Ki s
+
+/-- `G_pll(s) = (K_p s + K_i) / (s² + V K_p s + V K_i)`. -/
+def portTF (V Kp Ki : ℝ) (s : ℂ) : ℂ := ((Kp : ℂ) * s + Ki) / loopPoly V Kp Ki s
+
+@[powerlib_foundation] theorem characteristicMatrix_linA (V Kp Ki : ℝ) (s : ℂ) :
+    LTI.characteristicMatrix (linA V Kp Ki) s = !![s + V * Kp, -(Ki : ℂ); V, s] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [LTI.characteristicMatrix, linA]
+
+/-- Characteristic polynomial of the linearized PLL: `det(sI − A) = s² + V K_p s + V K_i`. -/
+@[powerlib_foundation] theorem det_characteristicMatrix_linA (V Kp Ki : ℝ) (s : ℂ) :
+    (LTI.characteristicMatrix (linA V Kp Ki) s).det = loopPoly V Kp Ki s := by
+  rw [characteristicMatrix_linA, det_fin_two_of, loopPoly]; ring
+
+@[simp, powerlib_foundation] theorem trace_linA (V Kp Ki : ℝ) : (linA V Kp Ki).trace = -(V * Kp) := by
+  simp [linA, Matrix.trace_fin_two]
+
+@[simp, powerlib_foundation] theorem det_linA (V Kp Ki : ℝ) : (linA V Kp Ki).det = V * Ki := by
+  simp [linA, Matrix.det_fin_two]; ring
+
+/-- Hurwitz test: `linA` is Hurwitz iff `V K_p > 0 ∧ V K_i > 0`. -/
+@[powerlib_foundation] theorem isHurwitz_linA_iff (V Kp Ki : ℝ) :
+    LinearSystems.IsHurwitz (linA V Kp Ki) ↔ 0 < V * Kp ∧ 0 < V * Ki := by
+  rw [Criteria.isHurwitz_fin_two_iff, trace_linA, det_linA, neg_lt_zero]
+
+/-- Every root of the loop polynomial lies in the open left half-plane iff
+`V K_p > 0 ∧ V K_i > 0`. -/
+@[powerlib_foundation] theorem loopPoly_roots_re_neg_iff (V Kp Ki : ℝ) :
+    (∀ s : ℂ, loopPoly V Kp Ki s = 0 → s.re < 0) ↔ 0 < V * Kp ∧ 0 < V * Ki := by
+  have h := Criteria.quadratic_roots_re_neg_iff (V * Kp) (V * Ki)
+  push_cast at h
+  simpa only [loopPoly] using h
+
+/-! ## Exponential stability of the linearized PLL -/
+
+/-- Linear SRF-PLL (any of the three models; they share the state matrix): exponential
+stability of every solution iff `V K_p > 0 ∧ V K_i > 0`. -/
+@[powerlib_domain] theorem linearPLL_exponentiallyStable_iff (V Kp Ki : ℝ) :
+    LTI.ExponentiallyStable (⟨linA V Kp Ki⟩ : LTI.AutonomousModel 2) ↔ 0 < V * Kp ∧ 0 < V * Ki :=
+  (LTI.exponentiallyStable_iff_isHurwitz _).trans (isHurwitz_linA_iff V Kp Ki)
+
+@[powerlib_domain] theorem phaseModel_exponentiallyStable_iff (V Kp Ki : ℝ) :
+    LTI.ExponentiallyStable (phaseModel V Kp Ki).autonomous ↔ 0 < V * Kp ∧ 0 < V * Ki :=
+  linearPLL_exponentiallyStable_iff V Kp Ki
+
+@[powerlib_domain] theorem frequencyModel_exponentiallyStable_iff (V Kp Ki : ℝ) :
+    LTI.ExponentiallyStable (frequencyModel V Kp Ki).autonomous ↔ 0 < V * Kp ∧ 0 < V * Ki :=
+  linearPLL_exponentiallyStable_iff V Kp Ki
+
+@[powerlib_domain] theorem portModel_exponentiallyStable_iff (V Kp Ki : ℝ) :
+    LTI.ExponentiallyStable (portModel V Kp Ki).autonomous ↔ 0 < V * Kp ∧ 0 < V * Ki :=
+  linearPLL_exponentiallyStable_iff V Kp Ki
+
+/-! ## Transfer functions -/
+
+@[powerlib_foundation] private lemma transfer_linA_model (V Kp Ki : ℝ) (B : Matrix (Fin 2) (Fin 1) ℝ)
+    (C : Matrix (Fin 1) (Fin 2) ℝ) (s : ℂ) :
+    LTI.transfer (⟨linA V Kp Ki, B, C, 0⟩ : LTI.Model (Fin 2) (Fin 1)) s =
+      (loopPoly V Kp Ki s)⁻¹ •
+        (LTI.complexify C * !![s, (Ki : ℂ); -(V : ℂ), s + V * Kp] * LTI.complexify B) := by
+  rw [LTI.transfer_eq_adjugate]
+  simp only
+  rw [det_characteristicMatrix_linA, characteristicMatrix_linA, adjugate_fin_two_of]
+  simp [LTI.complexify]
+
+/-- `θ̂(s)/θ_g(s) = V (K_p s + K_i) / (s² + V K_p s + V K_i)` (division by zero is `0` on both
+sides, so the identity holds for every `s`). -/
+@[powerlib_foundation] theorem transfer_phaseModel (V Kp Ki : ℝ) (s : ℂ) :
+    LTI.transfer (phaseModel V Kp Ki) s = !![closedLoopTF V Kp Ki s] := by
+  rw [phaseModel, transfer_linA_model]
+  ext i j; fin_cases i; fin_cases j
+  simp [closedLoopTF, LTI.complexify, Matrix.mul_apply, Fin.sum_univ_two]
+  ring
+
+/-- `ω̂(s)/ω_g(s) = H_pll(s)`: the frequency estimate has the same transfer function. -/
+@[powerlib_foundation] theorem transfer_frequencyModel (V Kp Ki : ℝ) (s : ℂ) :
+    LTI.transfer (frequencyModel V Kp Ki) s = !![closedLoopTF V Kp Ki s] := by
+  rw [frequencyModel, transfer_linA_model]
+  ext i j; fin_cases i; fin_cases j
+  simp [closedLoopTF, LTI.complexify, Matrix.mul_apply, Fin.sum_univ_two]
+  ring
+
+/-- `Δθ̂(s)/ΔV_q^sys(s) = G_pll(s) = (K_p s + K_i)/(s² + V K_p s + V K_i)`. -/
+@[powerlib_foundation] theorem transfer_portModel (V Kp Ki : ℝ) (s : ℂ) :
+    LTI.transfer (portModel V Kp Ki) s = !![portTF V Kp Ki s] := by
+  rw [portModel, transfer_linA_model]
+  ext i j; fin_cases i; fin_cases j
+  simp [portTF, LTI.complexify, Matrix.mul_apply, Fin.sum_univ_two]
+  ring
+
+/-- `Y_qq^pll(s) = I_d0 G_pll(s)`. -/
+@[powerlib_foundation] theorem transfer_admittanceModel (V Kp Ki Id0 : ℝ) (s : ℂ) :
+    LTI.transfer (admittanceModel V Kp Ki Id0) s = !![(Id0 : ℂ) * portTF V Kp Ki s] := by
+  rw [admittanceModel, transfer_linA_model]
+  ext i j; fin_cases i; fin_cases j
+  simp [portTF, LTI.complexify, Matrix.mul_apply, Fin.sum_univ_two]
+  ring
+
+/-- `G_pll = H_pll / V` (`V ≠ 0`). -/
+@[powerlib_foundation] theorem portTF_eq_closedLoopTF_div {V : ℝ} (hV : V ≠ 0) (Kp Ki : ℝ)
+    (s : ℂ) : portTF V Kp Ki s = closedLoopTF V Kp Ki s / V := by
+  have hV' : (V : ℂ) ≠ 0 := by exact_mod_cast hV
+  rw [portTF, closedLoopTF]
+  field_simp
+
+/-- Transfer-matrix form of `G_pll = H_pll / V`. -/
+@[powerlib_foundation] theorem transfer_portModel_eq_smul {V : ℝ} (hV : V ≠ 0) (Kp Ki : ℝ)
+    (s : ℂ) : LTI.transfer (portModel V Kp Ki) s =
+      (V : ℂ)⁻¹ • LTI.transfer (phaseModel V Kp Ki) s := by
+  rw [transfer_portModel, transfer_phaseModel, portTF_eq_closedLoopTF_div hV]
+  ext i j; fin_cases i; fin_cases j
+  simp [div_eq_inv_mul]
+
+/-- Unit DC gain `H_pll(0) = 1`: zero steady-state phase error for a phase step and zero
+steady-state frequency error for a frequency step (final-value form). -/
+@[powerlib_foundation] theorem closedLoopTF_zero {V Ki : ℝ} (h : V * Ki ≠ 0) (Kp : ℝ) :
+    closedLoopTF V Kp Ki 0 = 1 := by
+  have h' : (V : ℂ) * Ki ≠ 0 := by exact_mod_cast h
+  simp [closedLoopTF, loopPoly, h']
+
+@[powerlib_foundation] theorem transfer_phaseModel_zero {V Ki : ℝ} (h : V * Ki ≠ 0) (Kp : ℝ) :
+    LTI.transfer (phaseModel V Kp Ki) 0 = 1 := by
+  rw [transfer_phaseModel, closedLoopTF_zero h]
+  ext i j; fin_cases i; fin_cases j; rfl
+
+@[powerlib_foundation] theorem transfer_frequencyModel_zero {V Ki : ℝ} (h : V * Ki ≠ 0) (Kp : ℝ) :
+    LTI.transfer (frequencyModel V Kp Ki) 0 = 1 := by
+  rw [transfer_frequencyModel, closedLoopTF_zero h]
+  ext i j; fin_cases i; fin_cases j; rfl
+
+/-! ## Natural frequency and damping ratio -/
+
+/-- `ω_n = √(V K_i)`. -/
+def omegaN (V Ki : ℝ) : ℝ := Real.sqrt (V * Ki)
+
+/-- `ζ = V K_p / (2 ω_n)`. -/
+def zeta (V Kp Ki : ℝ) : ℝ := V * Kp / (2 * omegaN V Ki)
+
+/-- Standard second-order form `s² + 2ζω_n s + ω_n²` of the loop polynomial (`V K_i > 0`). -/
+@[powerlib_foundation] theorem loopPoly_eq_standard {V Kp Ki : ℝ} (h : 0 < V * Ki) (s : ℂ) :
+    loopPoly V Kp Ki s = s ^ 2 + 2 * (zeta V Kp Ki : ℂ) * (omegaN V Ki : ℂ) * s +
+      (omegaN V Ki : ℂ) ^ 2 := by
+  have hω : 0 < omegaN V Ki := Real.sqrt_pos.mpr h
+  have hsq : omegaN V Ki ^ 2 = V * Ki := Real.sq_sqrt h.le
+  have h2 : 2 * zeta V Kp Ki * omegaN V Ki = V * Kp := by
+    rw [zeta]; field_simp
+  have h2' : 2 * (zeta V Kp Ki : ℂ) * (omegaN V Ki : ℂ) = (V : ℂ) * Kp := by exact_mod_cast h2
+  have hsq' : (omegaN V Ki : ℂ) ^ 2 = (V : ℂ) * Ki := by exact_mod_cast hsq
+  rw [loopPoly, h2', hsq']
+
+/-- `ζ = (K_p/2) √(V/K_i)` for `V, K_i > 0` (T-pll-dynamics §1.3 boxed). -/
+@[powerlib_foundation] theorem zeta_eq {V Kp Ki : ℝ} (hV : 0 < V) (hKi : 0 < Ki) :
+    zeta V Kp Ki = Kp / 2 * Real.sqrt (V / Ki) := by
+  rw [zeta, omegaN, Real.sqrt_mul hV.le, Real.sqrt_div hV.le]
+  have hsV : 0 < Real.sqrt V := Real.sqrt_pos.mpr hV
+  have hsK : 0 < Real.sqrt Ki := Real.sqrt_pos.mpr hKi
+  have hV' : V = Real.sqrt V * Real.sqrt V := (Real.mul_self_sqrt hV.le).symm
+  field_simp
+  nth_rewrite 1 [hV']
+  ring
+
+/-- `4ζ² = V K_p² / K_i` (T-invariant-coordinates §1.2). -/
+@[powerlib_foundation] theorem four_mul_zeta_sq {V Kp Ki : ℝ} (hV : V ≠ 0) (h : 0 < V * Ki) :
+    4 * zeta V Kp Ki ^ 2 = V * Kp ^ 2 / Ki := by
+  have hsq : omegaN V Ki ^ 2 = V * Ki := Real.sq_sqrt h.le
+  have hω : omegaN V Ki ≠ 0 := (Real.sqrt_pos.mpr h).ne'
+  have hKi : Ki ≠ 0 := by rintro rfl; simp at h
+  rw [zeta, div_pow, mul_pow, mul_pow, hsq]
+  field_simp
+  ring
+
+/-- Raw-voltage PI tuning `K_p = 2ζ₀ω_b/V`, `K_i = ω_b²/V` gives `ω_n = ω_b` and `ζ = ζ₀`
+independently of `V` (T-invariant-coordinates §1.2). -/
+@[powerlib_foundation] theorem rawVoltageTuning {V ωb : ℝ} (hV : V ≠ 0) (hω : 0 < ωb)
+    (ζ₀ : ℝ) :
+    omegaN V (ωb ^ 2 / V) = ωb ∧ zeta V (2 * ζ₀ * ωb / V) (ωb ^ 2 / V) = ζ₀ := by
+  have hn : omegaN V (ωb ^ 2 / V) = ωb := by
+    rw [omegaN, show V * (ωb ^ 2 / V) = ωb ^ 2 by field_simp, Real.sqrt_sq hω.le]
+  refine ⟨hn, ?_⟩
+  rw [zeta, hn]
+  field_simp
+
+/-- Typical tuning (T-pll-dynamics §1.3): `K_p = √2 ω_b / V`, `K_i = ω_b² / V` gives
+`ω_n = ω_b` and `ζ = 1/√2`. -/
+@[powerlib_foundation] theorem standardTuning {V ωb : ℝ} (hV : V ≠ 0) (hω : 0 < ωb) :
+    omegaN V (ωb ^ 2 / V) = ωb ∧
+      zeta V (Real.sqrt 2 * ωb / V) (ωb ^ 2 / V) = 1 / Real.sqrt 2 := by
+  have h2 : Real.sqrt 2 = 2 * (1 / Real.sqrt 2) := by
+    have : Real.sqrt 2 * Real.sqrt 2 = 2 := Real.mul_self_sqrt (by norm_num)
+    have hs : Real.sqrt 2 ≠ 0 := by positivity
+    field_simp; linarith
+  have h := rawVoltageTuning hV hω (1 / Real.sqrt 2)
+  rw [← h2] at h
+  exact h
+
+/-- Operating-point dependence (T-pll-dynamics §1.5): `ω_n(V) = ω_n(V₀) √(V/V₀)`. -/
+@[powerlib_foundation] theorem omegaN_scale {V V₀ Ki : ℝ} (hV₀ : 0 < V₀) (hKi : 0 ≤ Ki) : omegaN V Ki = omegaN V₀ Ki * Real.sqrt (V / V₀) := by
+  rw [omegaN, omegaN, ← Real.sqrt_mul (mul_nonneg hV₀.le hKi)]
+  congr 1
+  field_simp
+
+/-- Applying gains designed for the normalized input `V_q/V` (design `ζ = zeta 1 K_p K_i`) to
+the raw signal `V_q` gives `ζ_eff = ζ √V` (T-invariant-coordinates §1.2). -/
+@[powerlib_foundation] theorem zeta_raw_eq {V Kp Ki : ℝ} (hV : 0 < V) (hKi : 0 < Ki) :
+    zeta V Kp Ki = zeta 1 Kp Ki * Real.sqrt V := by
+  rw [zeta_eq hV hKi, zeta_eq one_pos hKi, Real.sqrt_div hV.le, Real.sqrt_div zero_le_one,
+    Real.sqrt_one]
+  ring
+
+/-- `ζ ≥ 1/2 ⇔ K_i ≤ V K_p²` (`V, K_i > 0`, `K_p ≥ 0`). -/
+@[powerlib_foundation] theorem half_le_zeta_iff {V Kp Ki : ℝ} (hV : 0 < V) (hKp : 0 ≤ Kp)
+    (hKi : 0 < Ki) : 1 / 2 ≤ zeta V Kp Ki ↔ Ki ≤ V * Kp ^ 2 := by
+  have h4 := four_mul_zeta_sq (Kp := Kp) hV.ne' (mul_pos hV hKi)
+  have hz : 0 ≤ zeta V Kp Ki := by
+    rw [zeta]; exact div_nonneg (mul_nonneg hV.le hKp) (by unfold omegaN; positivity)
+  constructor
+  · intro h
+    have : 1 ≤ 4 * zeta V Kp Ki ^ 2 := by nlinarith
+    rw [h4, le_div_iff₀ hKi] at this
+    linarith
+  · intro h
+    have : 1 ≤ 4 * zeta V Kp Ki ^ 2 := by
+      rw [h4, le_div_iff₀ hKi]; linarith
+    nlinarith
+
+/-! ## Real part of `G_pll(jω)` and the PLL negative conductance -/
+
+/-- `Re G_pll(jω) = (V K_i² + ω²(V K_p² − K_i)) / ((V K_i − ω²)² + (V K_p ω)²)`. -/
+@[powerlib_foundation] theorem re_portTF (V Kp Ki ω : ℝ) :
+    (portTF V Kp Ki ((ω : ℂ) * Complex.I)).re =
+      (V * Ki ^ 2 + ω ^ 2 * (V * Kp ^ 2 - Ki)) / ((V * Ki - ω ^ 2) ^ 2 + (V * Kp * ω) ^ 2) := by
+  have hden : loopPoly V Kp Ki ((ω : ℂ) * Complex.I) =
+      ⟨V * Ki - ω ^ 2, V * Kp * ω⟩ := by
+    apply Complex.ext <;> simp [loopPoly, pow_two]
+    ring
+  have hnum : (Kp : ℂ) * ((ω : ℂ) * Complex.I) + Ki = ⟨Ki, Kp * ω⟩ := by
+    apply Complex.ext <;> simp
+  rw [portTF, hden, hnum, Complex.div_re, Complex.normSq_mk, ← add_div]
+  congr 1 <;> ring
+
+@[powerlib_foundation] private lemma portTF_den_pos {V Kp Ki : ℝ} (hVKp : V * Kp ≠ 0)
+    (hVKi : V * Ki ≠ 0) (ω : ℝ) : 0 < (V * Ki - ω ^ 2) ^ 2 + (V * Kp * ω) ^ 2 := by
+  rcases eq_or_ne ω 0 with rfl | hω
+  · simp; positivity
+  · have : 0 < (V * Kp * ω) ^ 2 := by positivity
+    positivity
+
+/-- For `V, K_p, K_i > 0`: `Re G_pll(jω) > 0` for every real `ω` iff `K_i ≤ V K_p²`. -/
+@[powerlib_foundation] theorem re_portTF_pos_iff {V Kp Ki : ℝ} (hV : 0 < V) (hKp : 0 < Kp)
+    (hKi : 0 < Ki) :
+    (∀ ω : ℝ, 0 < (portTF V Kp Ki ((ω : ℂ) * Complex.I)).re) ↔ Ki ≤ V * Kp ^ 2 := by
+  have hden := portTF_den_pos (mul_pos hV hKp).ne' (mul_pos hV hKi).ne'
+  constructor
+  · intro h
+    by_contra hc
+    push Not at hc
+    set c := Ki - V * Kp ^ 2 with hcdef
+    have hc' : 0 < c := by linarith
+    set ω := Real.sqrt (V * Ki ^ 2 / c + 1) with hω
+    have hω2 : ω ^ 2 = V * Ki ^ 2 / c + 1 := Real.sq_sqrt (by positivity)
+    have hneg : V * Ki ^ 2 + ω ^ 2 * (V * Kp ^ 2 - Ki) < 0 := by
+      rw [hω2, show V * Kp ^ 2 - Ki = -c by rw [hcdef]; ring]
+      field_simp
+      nlinarith
+    have := h ω
+    rw [re_portTF] at this
+    exact absurd this (not_lt.mpr (div_nonpos_of_nonpos_of_nonneg hneg.le (hden ω).le))
+  · intro h ω
+    rw [re_portTF]
+    apply div_pos _ (hden ω)
+    have : 0 ≤ ω ^ 2 * (V * Kp ^ 2 - Ki) := mul_nonneg (sq_nonneg _) (by linarith)
+    have : 0 < V * Ki ^ 2 := by positivity
+    linarith
+
+/-- The same statement for the port model's transfer function: `Re G_pll(jω) > 0 ∀ω ⇔
+ζ ≥ 1/2` (`V, K_p, K_i > 0`). -/
+@[powerlib_foundation] theorem re_transfer_portModel_pos_iff {V Kp Ki : ℝ} (hV : 0 < V)
+    (hKp : 0 < Kp) (hKi : 0 < Ki) :
+    (∀ ω : ℝ, 0 < (LTI.transfer (portModel V Kp Ki) ((ω : ℂ) * Complex.I) 0 0).re) ↔
+      1 / 2 ≤ zeta V Kp Ki := by
+  rw [half_le_zeta_iff hV hKp.le hKi, ← re_portTF_pos_iff hV hKp hKi]
+  simp [transfer_portModel]
+
+/-- Frame-rotation linearization of a constant PLL-frame current (`T-gfl-impedance` §1.3):
+`d/dθ̂ (rot θ̂ · I₀)|₀ = J I₀ = (−I_q0, I_d0)`; its q component is the output gain `I_d0` of
+`admittanceModel`. -/
+@[powerlib_foundation] theorem rot_linearization (I0 : Fin 2 → ℝ) :
+    HasDerivAt (fun θ : ℝ => Transform.rot θ *ᵥ I0) ![-(I0 1), I0 0] 0 := by
+  have h := Transform.hasDerivAt_rot_mulVec (θ := fun θ => θ) (x := fun _ => I0) (t := 0)
+    (hasDerivAt_id 0) (hasDerivAt_const 0 I0)
+  convert h using 1
+  simp
+
+/-- PLL negative conductance (T-pll-dynamics §1.11, T-gfl-impedance §1.6): for
+`V, K_p, K_i > 0` with `ζ ≥ 1/2` (`K_i ≤ V K_p²`) and an exporting converter
+(`I_d0 < 0`, IN-positive), the PLL contribution to the q-axis admittance has negative real
+part at every frequency. -/
+@[powerlib_domain] theorem admittanceModel_re_neg {V Kp Ki Id0 : ℝ} (hV : 0 < V) (hKp : 0 < Kp)
+    (hKi : 0 < Ki) (hζ : 1 / 2 ≤ zeta V Kp Ki) (hId : Id0 < 0) (ω : ℝ) :
+    (LTI.transfer (admittanceModel V Kp Ki Id0) ((ω : ℂ) * Complex.I) 0 0).re < 0 := by
+  have hpos := ((re_portTF_pos_iff hV hKp hKi).mpr
+    ((half_le_zeta_iff hV hKp.le hKi).mp hζ)) ω
+  rw [transfer_admittanceModel]
+  simp only [Matrix.of_apply, Matrix.cons_val', Matrix.empty_val',
+    Matrix.cons_val_fin_one, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
+    sub_zero]
+  exact mul_neg_of_neg_of_pos hId hpos
+
+end powerlib.PLL

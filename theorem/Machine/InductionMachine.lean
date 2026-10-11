@@ -1,0 +1,506 @@
+import dependencies.Mathlib
+import Mathlib.Analysis.InnerProductSpace.Calculus
+import theorem.Dynamics.Stability
+import theorem.Criteria.Hurwitz2
+import theorem.Machine.SpaceVector
+
+/-! # Induction machine: rotor-flux algebra and indirect field orientation (IFOC)
+
+## Model boundary
+
+* Machine: symmetric three-phase induction machine, dq (space-vector) model in a frame
+  rotating at the electrical speed `ω_e`; the rotor turns at electrical speed `ω_r`, the slip
+  speed is `ω_sl = ω_e − ω_r`. Linear magnetics, constant parameters `r_r, L_s, L_r, L_m`,
+  no saturation, iron loss or skin effect. Motor convention (IN-positive stator current,
+  work-sync conventions §D). Amplitude-invariant transform, `np` pole pairs.
+* Flux–current relations: `ψ_s = L_s i_s + L_m i_r`, `ψ_r = L_m i_s + L_r i_r`.
+* Rotor voltage equation (short-circuited rotor): `0 = r_r i_r + dψ_r/dt + j ω_sl ψ_r`,
+  i.e. componentwise `0 = r_r i_rd + ψ̇_rd − ω_sl ψ_rq`, `0 = r_r i_rq + ψ̇_rq + ω_sl ψ_rd`.
+
+Foundation part (algebra of §1.1–§1.4 of the FOC note): torque in rotor-flux form, the
+oriented torque `T_e = (3/2) np (L_m/L_r) ψ_r i_sq`, slip relation and `T_r ψ̇_r + ψ_r =
+L_m i_sd` under orientation, the voltage-model flux estimate, the stator current from
+stator/rotor flux (used by DTC), and the corrected current model.
+
+Domain part: **IFOC rotor-flux orientation** (`ifocFlux_globallyExponentiallyStable`,
+`ifocFlux_tuned_globallyExponentiallyStable`).
+* State: rotor flux `ψ_r = (ψ_rd, ψ_rq)` (order `d, q`) in `Dynamics.State 2`, expressed in
+  the IFOC frame whose angle is `θ_e = ∫ (ω_r + ω̂_sl) dt` (encoder speed plus slip command).
+* Inputs/controller: **ideal stator-current tracking** — the stator current equals its
+  constant command `(i_sd*, i_sq*)` (inner current loop, PWM and delays are abstracted away);
+  constant slip command `ω̂_sl`. In this frame `ω_e − ω_r = ω̂_sl` for **any** rotor speed
+  trajectory `ω_r(t)`, so the mechanical dynamics do not enter the rotor-flux equation.
+* Parameters: `r_r > 0`, `L_r > 0` (so `T_r = L_r / r_r > 0`); `L_m` arbitrary real.
+* Continuous time, full (affine, hence exact) rotor-flux dynamics; the conclusion is
+  trajectory-level global exponential stability (`Dynamics.GloballyExponentiallyStable`) of
+  the unique equilibrium, with the exact rate `1/T_r`.
+* Tuned case (`ω̂_sl = i_sq*/(T_r i_sd*)`, i.e. `T̂_r = T_r`, `i_sd* ≠ 0`): the equilibrium
+  is `(L_m i_sd*, 0)` — perfect orientation. Detuned case: the equilibrium has
+  `ψ_rq ≠ 0` (`ifocFluxEquilibrium_q_eq_zero_iff`).
+* Excluded: stator dynamics, current-loop error, PWM, sampling, flux/torque limits, magnetic
+  saturation, parameter drift during the transient, mechanical dynamics.
+
+Source: work-sync theory/T-field-oriented-control.md §1.1–§1.4 (and §1.3 IFOC);
+theory/T-direct-torque-control.md §1.2 (stator current from fluxes);
+theory/T-sensorless-machine-control.md §1.2 / §1.9 (voltage / current model).
+
+Correction (T-field-oriented-control.md §1.4): the note's current model
+`T_r ψ̇_r + ψ_r = L_m i_s + j(ω_e − ω_r) T_r ψ_r` has the wrong sign of the `j` term. From the
+note's own §1.1 rotor equations, `T_r ψ̇_r + ψ_r = L_m i_s − j(ω_e − ω_r) T_r ψ_r`
+(`currentModel`). In the stationary frame (`ω_e = 0`) this is the
+`dψ_r/dt = (L_m/T_r) i_s − (1/T_r − jω_r) ψ_r` of the sensorless note, which is correct.
+Pole convention: the note writes `(3/2)(p/2)` with `p` = number of poles; here `np = p/2`.
+-/
+
+noncomputable section
+namespace powerlib.Machine.InductionMachine
+
+open Complex ComplexConjugate
+open powerlib.Machine.SpaceVector
+
+/-- Electrical parameters of the induction machine dq model. -/
+structure Params where
+  rs : ℝ
+  rr : ℝ
+  Ls : ℝ
+  Lr : ℝ
+  Lm : ℝ
+
+/-- Rotor time constant `T_r = L_r / r_r`. -/
+def Params.Tr (p : Params) : ℝ := p.Lr / p.rr
+
+/-- Leakage coefficient `σ = 1 − L_m² / (L_s L_r)`. -/
+def Params.sigma (p : Params) : ℝ := 1 - p.Lm ^ 2 / (p.Ls * p.Lr)
+
+/-- Stator flux linkage `ψ_s = L_s i_s + L_m i_r`. -/
+def statorFlux (p : Params) (is ir : ℂ) : ℂ := p.Ls * is + p.Lm * ir
+
+/-- Rotor flux linkage `ψ_r = L_m i_s + L_r i_r`. -/
+def rotorFlux (p : Params) (is ir : ℂ) : ℂ := p.Lm * is + p.Lr * ir
+
+/-! ## Flux, current and torque algebra -/
+
+/-- Rotor current recovered from rotor flux and stator current. -/
+@[powerlib_foundation] theorem rotorCurrent_eq (p : Params) (hLr : p.Lr ≠ 0) (is ir : ℂ) :
+    ir = (rotorFlux p is ir - p.Lm * is) / p.Lr := by
+  have : (p.Lr : ℂ) ≠ 0 := by exact_mod_cast hLr
+  unfold rotorFlux
+  field_simp
+  ring
+
+/-- `Im(conj ψ_s · i_s) = (L_m / L_r) Im(conj ψ_r · i_s)`: the torque can be written with
+the rotor flux. -/
+@[powerlib_foundation] theorem cross_statorFlux_eq (p : Params) (hLr : p.Lr ≠ 0) (is ir : ℂ) :
+    (conj (statorFlux p is ir) * is).im = p.Lm / p.Lr * (conj (rotorFlux p is ir) * is).im := by
+  rw [cross_eq, cross_eq]
+  simp only [statorFlux, rotorFlux, Complex.add_re, Complex.add_im,
+    Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im]
+  field_simp
+  ring
+
+/-- Torque in rotor-flux form:
+`T_e = (3/2) np (L_m / L_r) (ψ_rd i_sq − ψ_rq i_sd)` (FOC note §1.1, `p/2 = np`). -/
+@[powerlib_foundation] theorem torque_rotorFlux (p : Params) (hLr : p.Lr ≠ 0) (np : ℝ)
+    (is ir : ℂ) :
+    torque np (statorFlux p is ir) is =
+      3 / 2 * np * (p.Lm / p.Lr) *
+        ((rotorFlux p is ir).re * is.im - (rotorFlux p is ir).im * is.re) := by
+  unfold torque
+  rw [cross_statorFlux_eq p hLr, cross_eq]
+  ring
+
+/-- Rotor-flux orientation (`ψ_rq = 0`, `ψ_rd = ψ_r`) linearises the torque in `i_sq`:
+`T_e = (3/2) np (L_m / L_r) ψ_r i_sq` (FOC note §1.2). -/
+@[powerlib_foundation] theorem torque_oriented (p : Params) (hLr : p.Lr ≠ 0) (np : ℝ)
+    (is ir : ℂ) (ψr : ℝ) (horient : rotorFlux p is ir = ψr) :
+    torque np (statorFlux p is ir) is = 3 / 2 * np * (p.Lm / p.Lr) * ψr * is.im := by
+  rw [torque_rotorFlux p hLr, horient]
+  simp
+  ring
+
+/-- Voltage-model rotor flux (DFOC, sensorless MRAS reference model):
+`ψ_r = (L_r / L_m)(ψ_s − σ L_s i_s)`. -/
+@[powerlib_foundation] theorem rotorFlux_voltageModel (p : Params) (hLm : p.Lm ≠ 0)
+    (hLs : p.Ls ≠ 0) (hLr : p.Lr ≠ 0) (is ir : ℂ) :
+    rotorFlux p is ir = (p.Lr / p.Lm : ℝ) * (statorFlux p is ir - (p.sigma * p.Ls : ℝ) * is) := by
+  have h1 : (p.Lm : ℂ) ≠ 0 := by exact_mod_cast hLm
+  have h2 : (p.Ls : ℂ) ≠ 0 := by exact_mod_cast hLs
+  have h3 : (p.Lr : ℂ) ≠ 0 := by exact_mod_cast hLr
+  unfold rotorFlux statorFlux Params.sigma
+  push_cast
+  field_simp
+  ring
+
+/-- Stator current from stator and rotor flux (DTC note §1.2):
+`i_s = (ψ_s − (L_m/L_r) ψ_r) / (σ L_s)`. -/
+@[powerlib_foundation] theorem statorCurrent_of_fluxes (p : Params) (hLr : p.Lr ≠ 0)
+    (hσ : p.sigma * p.Ls ≠ 0) (is ir : ℂ) :
+    is = (statorFlux p is ir - (p.Lm / p.Lr : ℝ) * rotorFlux p is ir) / (p.sigma * p.Ls : ℝ) := by
+  have h3 : (p.Lr : ℂ) ≠ 0 := by exact_mod_cast hLr
+  have hσ' : ((p.sigma * p.Ls : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hσ
+  rw [eq_div_iff hσ']
+  have hs : p.sigma * p.Ls = p.Ls - p.Lm ^ 2 / p.Lr := by
+    unfold Params.sigma
+    by_cases hLs : p.Ls = 0
+    · simp [hLs] at hσ
+    · field_simp
+  rw [hs]
+  unfold statorFlux rotorFlux
+  push_cast
+  field_simp
+  ring
+
+/-! ## Rotor voltage equation and the current model -/
+
+/-- Rotor voltage equation in a frame rotating at `ω_e`, rotor speed `ω_r`
+(short-circuited rotor, complex form): `0 = r_r i_r + dψ_r + j(ω_e − ω_r) ψ_r`. -/
+def RotorVoltageEquation (p : Params) (ωe ωr : ℝ) (ir ψr dψr : ℂ) : Prop :=
+  0 = (p.rr : ℂ) * ir + dψr + I * ((ωe - ωr : ℝ) : ℂ) * ψr
+
+/-- The complex rotor equation is exactly the pair of real equations of FOC note §1.1. -/
+@[powerlib_foundation] theorem rotorVoltageEquation_iff (p : Params) (ωe ωr : ℝ) (ir ψr dψr : ℂ) :
+    RotorVoltageEquation p ωe ωr ir ψr dψr ↔
+      0 = p.rr * ir.re + dψr.re - (ωe - ωr) * ψr.im ∧
+      0 = p.rr * ir.im + dψr.im + (ωe - ωr) * ψr.re := by
+  unfold RotorVoltageEquation
+  rw [Complex.ext_iff]
+  simp only [Complex.zero_re, Complex.zero_im, Complex.add_re, Complex.add_im, Complex.mul_re,
+    Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]
+  constructor <;> rintro ⟨h1, h2⟩ <;> exact ⟨by linarith, by linarith⟩
+
+/-- Corrected current model: `T_r ψ̇_r + ψ_r = L_m i_s − j(ω_e − ω_r) T_r ψ_r`. -/
+@[powerlib_foundation] theorem currentModel (p : Params) (hrr : p.rr ≠ 0) (hLr : p.Lr ≠ 0)
+    (ωe ωr : ℝ) (is ir dψr : ℂ)
+    (h : RotorVoltageEquation p ωe ωr ir (rotorFlux p is ir) dψr) :
+    (p.Tr : ℂ) * dψr + rotorFlux p is ir =
+      p.Lm * is - I * ((ωe - ωr : ℝ) : ℂ) * p.Tr * rotorFlux p is ir := by
+  have h1 : (p.rr : ℂ) ≠ 0 := by exact_mod_cast hrr
+  have h3 : (p.Lr : ℂ) ≠ 0 := by exact_mod_cast hLr
+  unfold RotorVoltageEquation at h
+  have hTr : (p.Tr : ℂ) = p.Lr / p.rr := by unfold Params.Tr; push_cast; ring
+  have hdψ : dψr = -(p.rr : ℂ) * ir - I * ((ωe - ωr : ℝ) : ℂ) * rotorFlux p is ir := by
+    linear_combination -h
+  rw [hTr, hdψ]
+  unfold rotorFlux
+  field_simp
+  ring
+
+/-- The note's sign `+j(ω_e − ω_r)` is inconsistent with the rotor equation whenever the
+slip and the rotor flux are both nonzero. -/
+@[powerlib_foundation] theorem currentModel_noteSign_false (p : Params) (hrr : p.rr ≠ 0)
+    (hLr : p.Lr ≠ 0) (ωe ωr : ℝ) (is ir dψr : ℂ)
+    (h : RotorVoltageEquation p ωe ωr ir (rotorFlux p is ir) dψr)
+    (hsl : ωe - ωr ≠ 0) (hψ : rotorFlux p is ir ≠ 0) :
+    (p.Tr : ℂ) * dψr + rotorFlux p is ir ≠
+      p.Lm * is + I * ((ωe - ωr : ℝ) : ℂ) * p.Tr * rotorFlux p is ir := by
+  intro hnote
+  have hcorr := currentModel p hrr hLr ωe ωr is ir dψr h
+  have hTr : (p.Tr : ℂ) ≠ 0 := by
+    unfold Params.Tr; push_cast
+    exact div_ne_zero (by exact_mod_cast hLr) (by exact_mod_cast hrr)
+  have h2 : (2 : ℂ) * I * ((ωe - ωr : ℝ) : ℂ) * p.Tr * rotorFlux p is ir = 0 := by
+    linear_combination hcorr - hnote
+  have hsl' : ((ωe - ωr : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hsl
+  exact (mul_ne_zero (mul_ne_zero (mul_ne_zero (mul_ne_zero two_ne_zero I_ne_zero) hsl') hTr)
+    hψ) h2
+
+/-- Under rotor-flux orientation maintained in time (`ψ_rq = 0`, `ψ̇_rq = 0`), the q-axis
+rotor equation gives the slip relation `ω_sl ψ_r = (L_m / T_r) i_sq` and the d-axis equation
+gives `T_r ψ̇_r + ψ_r = L_m i_sd` (FOC note §1.2). -/
+@[powerlib_foundation] theorem oriented_slip_and_flux (p : Params) (hrr : p.rr ≠ 0)
+    (hLr : p.Lr ≠ 0) (ωe ωr : ℝ) (is ir dψr : ℂ)
+    (h : RotorVoltageEquation p ωe ωr ir (rotorFlux p is ir) dψr)
+    (hq : (rotorFlux p is ir).im = 0) (hdq : dψr.im = 0) :
+    (ωe - ωr) * (rotorFlux p is ir).re = p.Lm / p.Tr * is.im ∧
+      p.Tr * dψr.re + (rotorFlux p is ir).re = p.Lm * is.re := by
+  have hc := currentModel p hrr hLr ωe ωr is ir dψr h
+  have hre := congrArg Complex.re hc
+  have him := congrArg Complex.im hc
+  simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.sub_re,
+    Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im, hq, hdq]
+    at hre him
+  have hTr : p.Tr ≠ 0 := div_ne_zero hLr hrr
+  refine ⟨?_, ?_⟩
+  · field_simp
+    linear_combination him
+  · linear_combination hre
+
+/-- Steady-state oriented operation: `ψ_r = L_m i_sd` and `ω_sl = i_sq / (T_r i_sd)`. -/
+@[powerlib_foundation] theorem oriented_steadyState (p : Params) (hrr : p.rr ≠ 0)
+    (hLr : p.Lr ≠ 0) (hLm : p.Lm ≠ 0) (ωe ωr : ℝ) (is ir : ℂ)
+    (h : RotorVoltageEquation p ωe ωr ir (rotorFlux p is ir) 0)
+    (hq : (rotorFlux p is ir).im = 0) (hd : is.re ≠ 0) :
+    (rotorFlux p is ir).re = p.Lm * is.re ∧ ωe - ωr = is.im / (p.Tr * is.re) := by
+  obtain ⟨hsl, hflux⟩ := oriented_slip_and_flux p hrr hLr ωe ωr is ir 0 h hq (by simp)
+  simp only [Complex.zero_re, mul_zero, zero_add] at hflux
+  refine ⟨hflux, ?_⟩
+  rw [hflux] at hsl
+  have hTr : p.Tr ≠ 0 := div_ne_zero hLr hrr
+  field_simp
+  field_simp at hsl
+  linear_combination hsl
+
+/-! ## IFOC rotor-flux dynamics (domain) -/
+
+abbrev State2 := Dynamics.State 2
+
+/-- Build a vector of `Dynamics.State 2` from its `d, q` coordinates. -/
+def vec (x y : ℝ) : State2 := (WithLp.equiv 2 (Fin 2 → ℝ)).symm ![x, y]
+
+@[simp, powerlib_foundation] theorem vec_apply_zero (x y : ℝ) : vec x y 0 = x := by simp [vec]
+
+@[simp, powerlib_foundation] theorem vec_apply_one (x y : ℝ) : vec x y 1 = y := by simp [vec]
+
+/-- Rotor-flux vector field of the current-fed machine in the IFOC frame (stator current
+held at `(isd, isq)`, slip `ω_sl`): the unique `ψ̇_r` solving the rotor voltage equation
+with `i_r = (ψ_r − L_m i_s)/L_r`. -/
+def fluxField (p : Params) (isd isq ωsl : ℝ) (ψ : State2) : State2 :=
+  vec (-(p.rr / p.Lr) * (ψ 0 - p.Lm * isd) + ωsl * ψ 1)
+    (-(p.rr / p.Lr) * (ψ 1 - p.Lm * isq) - ωsl * ψ 0)
+
+/-- The field is the rotor voltage equation solved for `ψ̇_r`, in the IFOC frame
+`ω_e = ω_r + ω_sl` for an **arbitrary** rotor speed `ω_r`. -/
+@[powerlib_foundation] theorem fluxField_spec (p : Params) (hLr : p.Lr ≠ 0) (isd isq ωsl ωr : ℝ)
+    (ψ dψ : State2) :
+    RotorVoltageEquation p (ωr + ωsl) ωr (((⟨ψ 0, ψ 1⟩ : ℂ) - p.Lm * ⟨isd, isq⟩) / p.Lr)
+        ⟨ψ 0, ψ 1⟩ ⟨dψ 0, dψ 1⟩ ↔ dψ = fluxField p isd isq ωsl ψ := by
+  rw [rotorVoltageEquation_iff]
+  have hsl : ωr + ωsl - ωr = ωsl := by ring
+  rw [hsl]
+  simp only [Complex.div_ofReal_re, Complex.div_ofReal_im, Complex.sub_re, Complex.sub_im,
+    Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im]
+  constructor
+  · rintro ⟨h0, h1⟩
+    ext j
+    fin_cases j
+    · simp [fluxField]
+      linear_combination -h0
+    · simp [fluxField]
+      linear_combination -h1
+  · intro h
+    subst h
+    simp [fluxField]
+    constructor <;> field_simp <;> ring
+
+/-- Normalised slip `k = ω_sl T_r`. -/
+def slipRatio (p : Params) (ωsl : ℝ) : ℝ := ωsl * p.Tr
+
+/-- Equilibrium rotor flux `ψ_eq = L_m i_s / (1 + j ω_sl T_r)`, in coordinates. -/
+def fluxEquilibrium (p : Params) (isd isq ωsl : ℝ) : State2 :=
+  vec (p.Lm * (isd + slipRatio p ωsl * isq) / (1 + slipRatio p ωsl ^ 2))
+    (p.Lm * (isq - slipRatio p ωsl * isd) / (1 + slipRatio p ωsl ^ 2))
+
+/-- State matrix `[[−1/T_r, ω_sl], [−ω_sl, −1/T_r]]` of the rotor-flux dynamics. -/
+def fluxMatrix (p : Params) (ωsl : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
+  !![-(1 / p.Tr), ωsl; -ωsl, -(1 / p.Tr)]
+
+/-- The field is affine with linear part `fluxMatrix` and vanishes at `fluxEquilibrium`:
+`ψ̇_r = A (ψ_r − ψ_eq)`. -/
+@[powerlib_foundation] theorem fluxField_eq_error (p : Params) (hrr : p.rr ≠ 0) (hLr : p.Lr ≠ 0)
+    (isd isq ωsl : ℝ) (ψ : State2) :
+    fluxField p isd isq ωsl ψ =
+      vec (-(1 / p.Tr) * (ψ 0 - fluxEquilibrium p isd isq ωsl 0) +
+            ωsl * (ψ 1 - fluxEquilibrium p isd isq ωsl 1))
+        (-ωsl * (ψ 0 - fluxEquilibrium p isd isq ωsl 0) -
+            (1 / p.Tr) * (ψ 1 - fluxEquilibrium p isd isq ωsl 1)) := by
+  have hden : 1 + slipRatio p ωsl ^ 2 ≠ 0 := by positivity
+  ext j
+  fin_cases j
+  · simp only [fluxField, fluxEquilibrium, vec_apply_zero, vec_apply_one, Fin.zero_eta,
+      Fin.isValue]
+    unfold slipRatio Params.Tr at *
+    field_simp
+    ring
+  · simp only [fluxField, fluxEquilibrium, vec_apply_zero, vec_apply_one, Fin.mk_one,
+      Fin.isValue]
+    unfold slipRatio Params.Tr at *
+    field_simp
+    ring
+
+@[powerlib_foundation] theorem fluxField_equilibrium (p : Params) (hrr : p.rr ≠ 0) (hLr : p.Lr ≠ 0)
+    (isd isq ωsl : ℝ) :
+    fluxField p isd isq ωsl (fluxEquilibrium p isd isq ωsl) = 0 := by
+  rw [fluxField_eq_error p hrr hLr]
+  ext j
+  fin_cases j <;> simp [vec]
+
+/-- `fluxMatrix` is Hurwitz for every slip (`tr = −2/T_r < 0`, `det = 1/T_r² + ω_sl² > 0`);
+intermediate evidence only. -/
+@[powerlib_foundation] theorem fluxMatrix_isHurwitz (p : Params) (hrr : 0 < p.rr) (hLr : 0 < p.Lr)
+    (ωsl : ℝ) : LinearSystems.IsHurwitz (fluxMatrix p ωsl) := by
+  have hTr : 0 < p.Tr := div_pos hLr hrr
+  rw [fluxMatrix, Criteria.isHurwitz_fin_two_of_iff]
+  have h1 : 0 < 1 / p.Tr := by positivity
+  constructor
+  · linarith
+  · nlinarith [sq_nonneg ωsl]
+
+@[powerlib_foundation] theorem coordinate_smooth (j : Fin 2) :
+    ContDiff ℝ 1 (fun x : State2 => x j) :=
+  (PiLp.proj 2 (fun _ : Fin 2 => ℝ) j : State2 →L[ℝ] ℝ).contDiff
+
+@[powerlib_foundation] theorem fluxField_smooth (p : Params) (isd isq ωsl : ℝ) :
+    ContDiff ℝ 1 (fluxField p isd isq ωsl) := by
+  have hs : ContDiff ℝ 1 (fun x : State2 =>
+      ![-(p.rr / p.Lr) * (x 0 - p.Lm * isd) + ωsl * x 1,
+        -(p.rr / p.Lr) * (x 1 - p.Lm * isq) - ωsl * x 0]) := by
+    apply contDiff_pi.mpr
+    intro j
+    fin_cases j
+    · simp only [Fin.zero_eta, Fin.isValue, Matrix.cons_val_zero]
+      have h0 := coordinate_smooth 0
+      have h1 := coordinate_smooth 1
+      fun_prop
+    · simp only [Fin.mk_one, Fin.isValue, Matrix.cons_val_one, Matrix.cons_val_zero]
+      have h0 := coordinate_smooth 0
+      have h1 := coordinate_smooth 1
+      fun_prop
+  exact (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.contDiff.comp hs
+
+@[powerlib_foundation] theorem norm_sq_state2 (x : State2) : ‖x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 := by
+  rw [PiLp.norm_sq_eq_of_L2]
+  simp [Fin.sum_univ_succ, sq_abs]
+
+@[powerlib_foundation] theorem inner_state2 (x y : State2) :
+    inner ℝ x y = x 0 * y 0 + x 1 * y 1 := by
+  rw [PiLp.inner_apply]
+  simp [Fin.sum_univ_succ, mul_comm]
+
+/-- Squared distance to the equilibrium. -/
+def fluxError (p : Params) (isd isq ωsl : ℝ) (ψ : State2) : ℝ :=
+  ‖ψ - fluxEquilibrium p isd isq ωsl‖ ^ 2
+
+/-- Exact dissipation: `d/dt ‖ψ_r − ψ_eq‖² = −(2/T_r) ‖ψ_r − ψ_eq‖²` (the slip term is
+skew and does no work). -/
+@[powerlib_foundation] theorem fluxError_lie (p : Params) (hrr : p.rr ≠ 0) (hLr : p.Lr ≠ 0)
+    (isd isq ωsl : ℝ) (ψ : State2) :
+    fderiv ℝ (fluxError p isd isq ωsl) ψ (fluxField p isd isq ωsl ψ) =
+      -(2 / p.Tr) * fluxError p isd isq ωsl ψ := by
+  have hd : HasFDerivAt (fun x : State2 => x - fluxEquilibrium p isd isq ωsl)
+      (ContinuousLinearMap.id ℝ State2) ψ :=
+    (hasFDerivAt_id ψ).sub_const _
+  have h := hd.norm_sq
+  unfold fluxError
+  rw [h.fderiv]
+  simp only [smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.id_apply, innerSL_apply_apply]
+  rw [inner_state2, norm_sq_state2, fluxField_eq_error p hrr hLr]
+  simp only [vec_apply_zero, vec_apply_one, PiLp.sub_apply, nsmul_eq_mul, Nat.cast_ofNat]
+  ring
+
+/-- Global quadratic decay certificate with energy `‖ψ_r − ψ_eq‖²` and rate `2/T_r`. -/
+def fluxCertificate (p : Params) (hrr : 0 < p.rr) (hLr : 0 < p.Lr) (isd isq ωsl : ℝ) :
+    Dynamics.QuadraticDecayCertificate (fluxField p isd isq ωsl) (fluxError p isd isq ωsl)
+      (fluxEquilibrium p isd isq ωsl) where
+  lower := 1
+  upper := 1
+  rate := 2 / p.Tr
+  lower_pos := by norm_num
+  upper_pos := by norm_num
+  rate_pos := by unfold Params.Tr; positivity
+  smooth := by
+    unfold fluxError
+    exact (contDiff_id.sub contDiff_const).norm_sq ℝ
+  equilibrium_field := fluxField_equilibrium p hrr.ne' hLr.ne' isd isq ωsl
+  equilibrium_value := by simp [fluxError]
+  lower_bound := by intro x; simp [fluxError]
+  upper_bound := by intro x; simp [fluxError]
+  dissipation := by
+    intro x
+    rw [fluxError_lie p hrr.ne' hLr.ne']
+
+/-- **IFOC rotor-flux convergence (any slip command).** For the current-fed induction
+machine in the IFOC frame with constant stator current `(isd, isq)` and constant slip
+command `ω_sl`, the rotor flux is globally exponentially stable at
+`ψ_eq = L_m i_s / (1 + jω_sl T_r)`: every solution exists for all forward time and every
+solution segment satisfies `‖ψ(t) − ψ_eq‖ ≤ C e^{−rate (t−a)} ‖ψ(a) − ψ_eq‖`. -/
+@[powerlib_domain] theorem ifocFlux_globallyExponentiallyStable (p : Params) (hrr : 0 < p.rr)
+    (hLr : 0 < p.Lr) (isd isq ωsl : ℝ) :
+    Dynamics.GloballyExponentiallyStable (fluxField p isd isq ωsl)
+      (fluxEquilibrium p isd isq ωsl) :=
+  (fluxCertificate p hrr hLr isd isq ωsl).globallyExponentiallyStable
+    (fluxField_smooth p isd isq ωsl)
+
+/-- Exact decay rate `1/T_r` on every solution segment, for every initial flux. -/
+@[powerlib_domain] theorem ifocFlux_norm_bound (p : Params) (hrr : 0 < p.rr) (hLr : 0 < p.Lr)
+    (isd isq ωsl : ℝ) {ψ : ℝ → State2} {a b t : ℝ}
+    (hψ : Dynamics.IsTrajectoryOn ψ (fluxField p isd isq ωsl) a b) (ht : t ∈ Set.Icc a b) :
+    ‖ψ t - fluxEquilibrium p isd isq ωsl‖ ≤
+      Real.exp (-((t - a) / p.Tr)) * ‖ψ a - fluxEquilibrium p isd isq ωsl‖ := by
+  have h := (fluxCertificate p hrr hLr isd isq ωsl).norm_bound hψ ht
+  have hTr : p.Tr ≠ 0 := (div_pos hLr hrr).ne'
+  simp only [fluxCertificate, div_one, Real.sqrt_one, one_mul] at h
+  have hr : 2 / p.Tr / 2 * (t - a) = (t - a) / p.Tr := by field_simp
+  rwa [hr] at h
+
+/-- Tuned slip command `ω̂_sl = i_sq* / (T_r i_sd*)` puts the equilibrium exactly on the
+d-axis: `ψ_eq = (L_m i_sd*, 0)`. -/
+@[powerlib_foundation] theorem fluxEquilibrium_tuned (p : Params) (hrr : p.rr ≠ 0) (hLr : p.Lr ≠ 0)
+    (isd isq : ℝ) (hd : isd ≠ 0) :
+    fluxEquilibrium p isd isq (isq / (p.Tr * isd)) = vec (p.Lm * isd) 0 := by
+  have hTr : p.Tr ≠ 0 := div_ne_zero hLr hrr
+  have hk : slipRatio p (isq / (p.Tr * isd)) = isq / isd := by
+    unfold slipRatio
+    field_simp
+  have hden : 1 + (isq / isd) ^ 2 ≠ 0 := by positivity
+  ext j
+  fin_cases j
+  · simp only [fluxEquilibrium, hk, vec_apply_zero, Fin.zero_eta, Fin.isValue]
+    field_simp
+  · simp only [fluxEquilibrium, hk, vec_apply_one, Fin.mk_one, Fin.isValue]
+    field_simp
+    ring
+
+/-- **IFOC field orientation with exact parameters.** With ideal current tracking, constant
+commands `(i_sd*, i_sq*)`, `i_sd* ≠ 0`, and the slip command computed with the true rotor
+time constant, the rotor flux converges globally exponentially (rate `1/T_r`) to the
+oriented value `(L_m i_sd*, 0)`. -/
+@[powerlib_domain] theorem ifocFlux_tuned_globallyExponentiallyStable (p : Params)
+    (hrr : 0 < p.rr) (hLr : 0 < p.Lr) (isd isq : ℝ) (hd : isd ≠ 0) :
+    Dynamics.GloballyExponentiallyStable (fluxField p isd isq (isq / (p.Tr * isd)))
+      (vec (p.Lm * isd) 0) := by
+  rw [← fluxEquilibrium_tuned p hrr.ne' hLr.ne' isd isq hd]
+  exact ifocFlux_globallyExponentiallyStable p hrr hLr isd isq _
+
+/-- Orientation of the IFOC equilibrium holds exactly when the slip command is tuned:
+`ψ_eq,q = 0 ↔ ω_sl = i_sq / (T_r i_sd)` (for `L_m ≠ 0`, `i_sd ≠ 0`). A slip command based
+on a wrong `T̂_r` therefore leaves a permanent orientation error (FOC note §1.3). -/
+@[powerlib_foundation] theorem ifocFluxEquilibrium_q_eq_zero_iff (p : Params) (hrr : p.rr ≠ 0)
+    (hLr : p.Lr ≠ 0) (hLm : p.Lm ≠ 0) (isd isq ωsl : ℝ) (hd : isd ≠ 0) :
+    fluxEquilibrium p isd isq ωsl 1 = 0 ↔ ωsl = isq / (p.Tr * isd) := by
+  have hTr : p.Tr ≠ 0 := div_ne_zero hLr hrr
+  have hden : 1 + slipRatio p ωsl ^ 2 ≠ 0 := by positivity
+  simp only [fluxEquilibrium, vec_apply_one, div_eq_zero_iff, hden, or_false,
+    mul_eq_zero, hLm, false_or]
+  unfold slipRatio
+  constructor
+  · intro h
+    field_simp
+    linear_combination -h
+  · intro h
+    rw [h]
+    field_simp
+    ring
+
+/-- Rotor flux of the detuned IFOC drive at its equilibrium when the slip command uses an
+estimate `T̂_r` (`ω̂_sl = i_sq/(T̂_r i_sd)`): oriented iff `T̂_r = T_r` (for `i_sq ≠ 0`). -/
+@[powerlib_domain] theorem ifocFlux_detuned_orientationError (p : Params) (hrr : 0 < p.rr)
+    (hLr : 0 < p.Lr) (hLm : p.Lm ≠ 0) (isd isq Tr_hat : ℝ) (hd : isd ≠ 0) (hq : isq ≠ 0)
+    (hTh : Tr_hat ≠ 0) :
+    Dynamics.GloballyExponentiallyStable (fluxField p isd isq (isq / (Tr_hat * isd)))
+        (fluxEquilibrium p isd isq (isq / (Tr_hat * isd))) ∧
+      (fluxEquilibrium p isd isq (isq / (Tr_hat * isd)) 1 = 0 ↔ Tr_hat = p.Tr) := by
+  refine ⟨ifocFlux_globallyExponentiallyStable p hrr hLr isd isq _, ?_⟩
+  rw [ifocFluxEquilibrium_q_eq_zero_iff p hrr.ne' hLr.ne' hLm isd isq _ hd]
+  have hTr : p.Tr ≠ 0 := (div_pos hLr hrr).ne'
+  constructor
+  · intro h
+    rw [div_eq_div_iff (mul_ne_zero hTh hd) (mul_ne_zero hTr hd)] at h
+    have : isq * isd * (p.Tr - Tr_hat) = 0 := by linear_combination h
+    rcases mul_eq_zero.mp this with h' | h'
+    · exact absurd h' (mul_ne_zero hq hd)
+    · linarith
+  · intro h
+    rw [h]
+
+end powerlib.Machine.InductionMachine
