@@ -12,7 +12,8 @@ construction"), §1.3 (Joseph form equals the short form at the exact gain), §1
 Foundation (linear algebra), not an engineering result.  All statements are matrix identities /
 Loewner inequalities for one measurement update with real matrices: prior covariance
 `P : n × n`, observation matrix `H : p × n`, noise covariance `R : p × p`, gain `K : n × p`.
-That `P⁺` is the conditional covariance of a linear-Gaussian model is not formalized here.
+That `P⁺` is the conditional covariance of a linear-Gaussian model is proved only in the scalar
+case, in `theorem/Estimation/KalmanGaussian.lean` (`kalman_condExp_eq`, `kalman_condVar_eq`).
 
 Main results.
 * `joseph_posSemidef`: for **any** gain `K`, `P ⪰ 0`, `R ⪰ 0` ⇒ Joseph form `⪰ 0`.

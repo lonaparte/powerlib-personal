@@ -124,9 +124,9 @@ path visits the set during `[0, i]` (the infimum is attained). -/
         exact hF.preimage hc
       have hne : ({j : ℝ≥0 | 0 ≤ j ∧ X j ω ∈ F}).Nonempty := hex
       have hmem := hS.csInf_mem hne (OrderBot.bddBelow _)
-      rw [hittingAfter, if_pos hex] at h
+      simp only [hittingAfter, hex, ↓reduceIte] at h
       exact ⟨_, by exact_mod_cast h, hmem.2⟩
-    · rw [hittingAfter, if_neg hex] at h
+    · simp only [hittingAfter, hex, ↓reduceIte] at h
       exact absurd h (not_le.mpr (WithTop.coe_lt_top i))
   · rintro ⟨j, hj, hjF⟩
     exact le_trans (hittingAfter_le_of_mem zero_le hjF) (by exact_mod_cast hj)
