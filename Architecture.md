@@ -65,7 +65,10 @@ The default Lake target `powerlib` builds every module selected by all package
 library globs and generates an admission module importing that actual inventory.
 Consequently a new source cannot evade admission by omitting the linter import
 or the central library import. `lake build` and `lake build powerlib` include this
-gate. Direct Lean invocation or internal staging-library builds are not admission;
+gate. Lake reuses a successful audit only while the complete module inventory and
+all its built module dependencies are unchanged, including the admission checker.
+Failed audits never produce a success receipt. Direct Lean invocation or internal
+staging-library builds are not admission;
 changing the gate itself remains a build-policy change, not a mathematical claim.
 
 This is a structural public-interface contract. The gate infers concrete model

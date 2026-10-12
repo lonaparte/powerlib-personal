@@ -457,33 +457,62 @@ def modelTypes (owners : Array Name := #[]) : MetaM (Array (Nat × Expr)) := do
           unless out.contains found do out := out.push found
   return out
 
-private partial def usesModel (models : Array (Nat × Expr)) (e : Expr)
-    (owners : Array Name) (expanded : Array Name := #[]) : MetaM Bool := do
-  let ty ← unfoldModelAlias (← inferType e) owners
-  let value ← if (← isTypeFamily (← inferType e)) then unfoldModelAlias e owners else pure e
+private def canUnfoldModelAlias (e : Expr) (owners : Array Name) : MetaM Bool := do
+  let .const c _ := e.getAppFn | return false
+  let env ← getEnv
+  let owner := (moduleOf? env c).getD env.mainModule
+  unless Registry.isFirstPartyModule owner || owners.contains owner do return false
+  return (env.find? c).any fun info => info matches .defnInfo _
+
+private abbrev ModelUseCache := IO.Ref (Std.HashMap (Expr × Array Name) Bool)
+
+mutual
+private partial def usesModelCached (cache : ModelUseCache) (models : Array (Nat × Expr))
+    (e : Expr) (owners : Array Name) (expanded : Array Name := #[]) : MetaM Bool := do
+  -- Free-variable IDs identify their immutable local declarations. Unresolved
+  -- metavariables, in contrast, could change the answer later in the traversal.
+  let cacheable := !e.hasMVar && !e.hasLevelMVar
+  let key := (e, expanded)
+  if cacheable then
+    if let some result := (← cache.get)[key]? then return result
+  let result ← usesModelCore cache models e owners expanded
+  if cacheable then cache.modify (·.insert key result)
+  return result
+
+private partial def usesModelCore (cache : ModelUseCache) (models : Array (Nat × Expr))
+    (e : Expr) (owners : Array Name) (expanded : Array Name) : MetaM Bool := do
+  let eType ← inferType e
+  let ty ← unfoldModelAlias eType owners
   for (holes, model) in models do
     let head := model.getForallBody.getAppFn
     if ty.getAppFn == head && (← withNewMCtxDepth do
         let (_, _, model) ← forallMetaBoundedTelescope model holes
         isDefEq model ty) then return true
-    -- Binder types themselves are type-valued terms.
-    if value.getAppFn == head && (← withNewMCtxDepth do
-        let (_, _, model) ← forallMetaBoundedTelescope model holes
-        isDefEq model value) then return true
+  -- Only a matching head or an unfoldable first-party alias can match as a
+  -- type-valued term. Avoid reducing the complete type telescope of every
+  -- partial application merely to learn whether it returns a type.
+  let mayUnfold ← canUnfoldModelAlias e owners
+  if mayUnfold || models.any (fun (_, model) => model.getForallBody.getAppFn == e.getAppFn) then
+    let value ← if mayUnfold && (← isTypeFamily eType) then unfoldModelAlias e owners else pure e
+    for (holes, model) in models do
+      if value.getAppFn == model.getForallBody.getAppFn && (← withNewMCtxDepth do
+          let (_, _, model) ← forallMetaBoundedTelescope model holes
+          isDefEq model value) then return true
+  let uses := fun e => usesModelCached cache models e owners expanded
   let found ← match e with
   | .forallE n d b bi =>
-    if ← usesModel models d owners expanded then pure true
-    else withLocalDecl n bi d fun x => usesModel models (b.instantiate1 x) owners expanded
+    if ← uses d then pure true
+    else withLocalDecl n bi d fun x => uses (b.instantiate1 x)
   | .lam n d b bi =>
     -- Match thunks introduce unused Unit binders; these are implementation data,
     -- not quantified models. Used model parameters are found in the lambda body.
-    withLocalDecl n bi d fun x => usesModel models (b.instantiate1 x) owners expanded
-  | .app f x => usesModel models f owners expanded <||> usesModel models x owners expanded
-  | .mdata _ b => usesModel models b owners expanded
-  | .proj _ _ s => usesModel models s owners expanded
+    withLocalDecl n bi d fun x => uses (b.instantiate1 x)
+  | .app f x => uses f <||> uses x
+  | .mdata _ b => uses b
+  | .proj _ _ s => uses s
   | .letE n t v b _ =>
-    if ← usesModel models t owners expanded <||> usesModel models v owners expanded then pure true
-    else withLetDecl n t v fun x => usesModel models (b.instantiate1 x) owners expanded
+    if ← uses t <||> uses v then pure true
+    else withLetDecl n t v fun x => uses (b.instantiate1 x)
   | _ => pure false
   if found then return true
   -- A proposition alias can hide the complete model telescope, not just its conclusion.
@@ -498,7 +527,15 @@ private partial def usesModel (models : Array (Nat × Expr)) (e : Expr)
   unless ← isPredicateType d.type do return false
   let some unfolded ← unfoldDefinition? e | return false
   if unfolded == e then return false
-  usesModel models unfolded owners (expanded.push c)
+  usesModelCached cache models unfolded owners (expanded.push c)
+end
+
+private def usesModel (models : Array (Nat × Expr)) (e : Expr)
+    (owners : Array Name) : MetaM Bool := do
+  -- Scope the cache to one model inventory, environment and traversal. Alias
+  -- expansion paths are part of its key, so recursion cuts cannot poison it.
+  let cache ← IO.mkRef {}
+  usesModelCached cache models e owners
 
 /-- Private proof helpers and generic semantic support are implementation evidence.
 Every public, model-specific behavioural conclusion must use Statement; its label is irrelevant.
@@ -531,21 +568,25 @@ def auditModules (modules : Array Name) : CommandElabM Unit := do
     let mut checked : Nat := 0
     let mut claims : Nat := 0
     let mut rejected : Array String := #[]
+    let mut roots : Array (Name × Name) := #[]
     for mod in modules do
       let some index := env.header.moduleNames.idxOf? mod |
         throwError "Built module missing from admission environment: {mod}"
       for name in env.header.moduleData[index]!.constNames do
-        let some info := env.find? name | continue
+        let some _ := env.find? name | continue
         -- Source declarations, including proof-valued definitions, are discovered from
         -- provenance. Compiler auxiliaries have no authored declaration range.
         unless (declRangeExt.find? env name).isSome do continue
-        for ax in Search.declarationAxioms env name do
-          unless Search.allowedAxiom ax do throwError "Admission rejected axiom {ax} in {name}"
-        unless ← isProp info.type do continue
-        checked := checked + 1
-        if (← withCurrHeartbeats (statement? info.type)).isSome then claims := claims + 1
-        if let some reason ← withCurrHeartbeats (declarationRejection ctx models name) then
-          rejected := rejected.push s!"{name} in {mod}: {reason}"
+        roots := roots.push (name, mod)
+    if let some (name, ax) := Search.axiomViolation? env (roots.map (·.1)) then
+      throwError "Admission rejected axiom {ax} in {name}"
+    for (name, mod) in roots do
+      let info ← getConstInfo name
+      unless ← isProp info.type do continue
+      checked := checked + 1
+      if (← withCurrHeartbeats (statement? info.type)).isSome then claims := claims + 1
+      if let some reason ← withCurrHeartbeats (declarationRejection ctx models name) then
+        rejected := rejected.push s!"{name} in {mod}: {reason}"
     unless rejected.isEmpty do
       throwError "Admission rejected:\n{String.intercalate "\n" rejected.toList}"
     logInfo m!"POWERLIB_ADMISSION_OK: {modules.size} built modules; {checked} proofs; {claims} typed connection statements"

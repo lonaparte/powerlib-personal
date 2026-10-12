@@ -25,6 +25,56 @@ def declarationAxioms (env : Environment) (name : Name) : Array Name :=
     { getEnv := get, modifyEnv := modify }
   ((collectAxioms (m := StateM Environment) name).run env).1
 
+-- For admission only the allowlist decision is needed, not a separate axiom
+-- array for every root. Walk the union of their kernel dependencies once.
+-- Keep provenance queries above on Lean's public CollectAxioms API.
+private partial def axiomViolation (env : Environment) (checked : Kernel.Environment) (name : Name) :
+    StateM (Std.HashSet Name) (Option Name) := do
+  if (← get).contains name then return none
+  modify (·.insert name)
+  -- Imported declarations already have axiom metadata in pinned Lean. Preserve
+  -- that constant-time boundary rather than rescanning their proof bodies.
+  -- This also handles proved declarations exported as axioms by the module system.
+  if (env.getModuleIdxFor? name).isSome then
+    return (declarationAxioms env name).find? fun ax => !allowedAxiom ax
+  let visitExpr (e : Expr) : StateM (Std.HashSet Name) (Option Name) := do
+    for dependency in e.getUsedConstants do
+      if let some ax ← axiomViolation env checked dependency then return some ax
+    return none
+  match checked.find? name with
+  | some (.axiomInfo v) =>
+    if !allowedAxiom name then return some name
+    visitExpr v.type
+  | some (.defnInfo v) =>
+    if let some ax ← visitExpr v.type then return some ax
+    visitExpr v.value
+  | some (.thmInfo v) =>
+    if let some ax ← visitExpr v.type then return some ax
+    visitExpr v.value
+  | some (.opaqueInfo v) =>
+    if let some ax ← visitExpr v.type then return some ax
+    visitExpr v.value
+  | some (.ctorInfo v) => visitExpr v.type
+  | some (.recInfo v) => visitExpr v.type
+  | some (.inductInfo v) =>
+    if let some ax ← visitExpr v.type then return some ax
+    for ctor in v.ctors do
+      if let some ax ← axiomViolation env checked ctor then return some ax
+    return none
+  | some (.quotInfo _) | none => return none
+
+/-- Audit every root's transitive type and value dependencies against the same
+allowlist as `declarationAxioms`. The visited set belongs to this fixed kernel
+environment and this batch only; it is never reused after environment changes.
+On failure, retain both the offending axiom and the root that reached it. -/
+def axiomViolation? (env : Environment) (roots : Array Name) : Option (Name × Name) :=
+  let checked := env.checked.get
+  let audit : StateM (Std.HashSet Name) (Option (Name × Name)) := do
+    for root in roots do
+      if let some ax ← axiomViolation env checked root then return some (root, ax)
+    return none
+  audit.run' {}
+
 def describe (env : Environment) (name : Name) : Option TheoremEntry := do
   let info ← env.find? name
   if !info.isTheorem || info.isUnsafe then none else
@@ -51,10 +101,8 @@ def checkProof (proof : Expr) : MetaM Unit := do
   -- Looking only at constants in an open term would miss their dependencies.
   let proof ← mkLambdaFVars (← getLCtx).getFVars proof (usedOnly := true)
   let env ← getEnv
-  for name in proof.getUsedConstants do
-    for axiomName in declarationAxioms env name do
-      unless allowedAxiom axiomName do
-        throwError "Library search used an unapproved axiom: {axiomName}"
+  if let some (_, axiomName) := axiomViolation? env proof.getUsedConstants then
+    throwError "Library search used an unapproved axiom: {axiomName}"
 
 def solve (goal : MVarId) : MetaM Unit := do
   let found ← LibrarySearch.librarySearchSymm candidates goal

@@ -10,10 +10,8 @@ run_cmd do
     if root.getRoot == `powerlib && !info.isUnsafe then
       roots := roots.push root
   -- Registered declarations outside the namespace remain admission roots.
-  for root in (roots.qsort Name.quickLt).toList.eraseDups do
-    for axiomName in powerlib.Search.declarationAxioms env root do
-      unless powerlib.Search.allowedAxiom axiomName do
-        throwError "Unexpected axiom {axiomName} in {root}"
+  if let some (root, axiomName) := powerlib.Search.axiomViolation? env roots then
+    throwError "Unexpected axiom {axiomName} in {root}"
   logInfo "POWERLIB_KERNEL_OK"
 
 -- Machine-readable public theorem registry export.

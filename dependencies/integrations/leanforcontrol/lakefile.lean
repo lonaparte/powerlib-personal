@@ -28,18 +28,25 @@ target admission pkg : Unit := do
   let jobs ← modules.mapM (·.leanArts.fetch)
   (Job.collectArray jobs).mapM fun _ => do
     let source := pkg.buildDir / "admission.lean"
-    IO.FS.createDirAll pkg.buildDir
+    let receipt := pkg.buildDir / "admission.ok"
     let mut text := "import theorem.Architecture\n"
     for mod in modules do text := text ++ s!"import {mod.name}\n"
     let names := modules.map (fun m => "`" ++ m.name.toString)
     text := text ++ "set_option maxHeartbeats 0\nopen Lean Elab Command in\nrun_cmd powerlib.Architecture.auditModules #[" ++
       String.intercalate ", " names.toList ++ "]\n"
+    -- The collected jobs trace every built module, including the checker.
+    -- Also trace the inventory itself, so adding or removing a module reruns
+    -- admission. Failed checks never produce a successful receipt.
+    IO.FS.createDirAll pkg.buildDir
     IO.FS.writeFile source text
-    let result ← IO.Process.output {
-      cmd := ws.lakeEnv.lean.lean.toString
-      args := #[source.toString]
-      env := ws.augmentedEnvVars
-    }
-    unless result.exitCode == 0 do
-      error s!"Whole-package admission failed:\n{result.stdout}\n{result.stderr}"
-    logInfo result.stdout.trimAscii.toString
+    Lake.addTrace (BuildTrace.ofHash (Hash.ofString text) "admission source")
+    buildFileUnlessUpToDate' receipt do
+      let result ← IO.Process.output {
+        cmd := ws.lakeEnv.lean.lean.toString
+        args := #[source.toString]
+        env := ws.augmentedEnvVars
+      }
+      unless result.exitCode == 0 do
+        error s!"Whole-package admission failed:\n{result.stdout}\n{result.stderr}"
+      IO.FS.writeFile receipt result.stdout
+      logInfo result.stdout.trimAscii.toString
