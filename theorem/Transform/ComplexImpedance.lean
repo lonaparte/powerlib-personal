@@ -20,7 +20,8 @@ Source: work-sync `theory/T-impedance-modeling.md` §1.4 (complex transfer funct
   is needed.)
 * `CModel` is a complex-coefficient state-space model. `CModel.shift ω₁` adds `jω₁ I` to the
   state matrix. `transfer_shift`: `G_{shift}(s) = G(s − jω₁)`. `isTrajectory_shift`: if `z`
-  solves the model with input `u`, then `e^{jω₁t} z` solves the shifted model with input
+  solves the model with input `u` (a global solution, `∀ t, HasDerivAt z (A z(t) + B u(t)) t`,
+  written out in the statement), then `e^{jω₁t} z` solves the shifted model with input
   `e^{jω₁t} u`, and the output is multiplied by `e^{jω₁t}`. With `A` the complex dq model and
   `ω₁` the frame speed, the shifted model is the αβ description, i.e.
   `G_{αβ}(s) = G_{dq}(s − jω₁)`.
@@ -223,10 +224,6 @@ def transfer (m : CModel ι κ) (s : ℂ) : Matrix κ κ ℂ :=
 def shift (ω₁ : ℝ) (m : CModel ι κ) : CModel ι κ :=
   ⟨m.A + ((ω₁ : ℂ) * Complex.I) • (1 : Matrix ι ι ℂ), m.B, m.C, m.D⟩
 
-/-- Solutions with input `u`. -/
-def IsTrajectory (m : CModel ι κ) (u : ℝ → κ → ℂ) (z : ℝ → ι → ℂ) : Prop :=
-  ∀ t, HasDerivAt z (m.A *ᵥ z t + m.B *ᵥ u t) t
-
 /-- Output map. -/
 def output (m : CModel ι κ) (z : ι → ℂ) (u : κ → ℂ) : κ → ℂ := m.C *ᵥ z + m.D *ᵥ u
 
@@ -248,11 +245,13 @@ def rotor (ω₁ t : ℝ) : ℂ := Complex.exp ((t : ℂ) * ((ω₁ : ℂ) * Com
   simp only [id, Complex.ofReal_one, one_mul] at h
   exact h
 
-/-- Time-domain form of the shift: if `z` solves `m` with input `u`, then `e^{jω₁t} z` solves
-the shifted model with input `e^{jω₁t} u` (dq → αβ when `m` is the complex dq model). -/
+/-- Time-domain form of the shift: if `z` solves `m` with input `u` (`ż = A z + B u` at every
+time), then `e^{jω₁t} z` solves the shifted model with input `e^{jω₁t} u` (dq → αβ when `m` is
+the complex dq model). -/
 @[powerlib_foundation] theorem isTrajectory_shift {m : CModel ι κ} {u : ℝ → κ → ℂ}
-    {z : ℝ → ι → ℂ} (ω₁ : ℝ) (h : m.IsTrajectory u z) :
-    (m.shift ω₁).IsTrajectory (fun t => rotor ω₁ t • u t) (fun t => rotor ω₁ t • z t) := by
+    {z : ℝ → ι → ℂ} (ω₁ : ℝ) (h : ∀ t, HasDerivAt z (m.A *ᵥ z t + m.B *ᵥ u t) t) :
+    ∀ t, HasDerivAt (fun t => rotor ω₁ t • z t)
+      ((m.shift ω₁).A *ᵥ (rotor ω₁ t • z t) + (m.shift ω₁).B *ᵥ (rotor ω₁ t • u t)) t := by
   intro t
   have hd := (hasDerivAt_rotor ω₁ t).smul (h t)
   convert hd using 1
