@@ -31,10 +31,6 @@ open scoped Matrix.Norms.Operator
 
 variable {X : Type*} [Fintype X] [DecidableEq X]
 
-/-- Uniform exponential stability of `ẋ = A(t) x`, stated on the transition matrix. -/
-def UniformlyExponentiallyStable (A : ℝ → Matrix X X ℝ) : Prop :=
-  ∃ K β : ℝ, 0 < β ∧ ∀ s t, s ≤ t → ‖transition A t s‖ ≤ K * Real.exp (-(β * (t - s)))
-
 @[powerlib_foundation] theorem norm_map_algebraMap (P : Matrix X X ℝ) :
     ‖P.map (algebraMap ℝ ℂ)‖ = ‖P‖ := by
   rw [Matrix.linfty_opNorm_def, Matrix.linfty_opNorm_def]
@@ -122,11 +118,12 @@ def UniformlyExponentiallyStable (A : ℝ → Matrix X X ℝ) : Prop :=
 variable {A : ℝ → Matrix X X ℝ} {T : ℝ}
 
 /-- **Floquet sufficient criterion.** For a continuous `T`-periodic state matrix, Floquet
-multipliers strictly inside the unit disk give uniform exponential stability. -/
+multipliers strictly inside the unit disk give uniform exponential stability of `ẋ = A(t) x`,
+stated on the transition matrix: `‖Φ(t, s)‖ ≤ K e^{-β (t - s)}` for all `s ≤ t`, with `β > 0`. -/
 @[powerlib_foundation] theorem uniformlyExponentiallyStable_of_spectralRadius_lt_one
     (hA : Continuous A) (hP : Periodic A T) (hT : 0 < T)
     (hρ : spectralRadius ℂ ((monodromy A T 0).map (algebraMap ℝ ℂ)) < 1) :
-    UniformlyExponentiallyStable A := by
+    ∃ K β : ℝ, 0 < β ∧ ∀ s t, s ≤ t → ‖transition A t s‖ ≤ K * Real.exp (-(β * (t - s))) := by
   obtain ⟨M, hM⟩ := exists_bound_of_periodic hA hP hT
   obtain ⟨m, hm, hlt⟩ := exists_pow_norm_lt_one _ hρ
   obtain ⟨C, γ, hC, hγ, hpow⟩ := exists_pow_norm_le_exp hm hlt

@@ -4,8 +4,8 @@ import theorem.Frequency.SFR
 /-! # Latched single-stage UFLS in closed loop with a linear frequency-response model
 
 Source: work-sync `theory/T-ufls.md` §1.1 (single-stage shedding added to the swing equation),
-with the corrected latched trip rule of `Frequency.UFLS` (`latchedTrip`), and §1.4 (state after
-shedding).
+with the corrected latched trip rule of `Frequency.UFLS` (`∃ τ ∈ [0, t], Δω(τ) ≤ −θ`,
+`latchedTrip_iff_sInf`), and §1.4 (state after shedding).
 
 Model boundary.
 * Plant: any continuous-time linear plant `m : Linear.Plant n 1` (states in
@@ -16,8 +16,13 @@ Model boundary.
   (`θ = Δf_th/f₀ > 0` in per-unit) the load `shed = p P⁰` is disconnected for good: the input is
   `ΔP_L − shed · 1[min_{0≤τ≤t} Δω(τ) ≤ −θ]`. No confirmation delay, no relay or breaker delay,
   no multi-stage scheme, no RoCoF stage, no reconnection.
-* Solution concept (`IsLatchedTrajectory`): continuous on `[0, ∞)` with right derivatives
-  (the input jumps at the trip instant, so two-sided derivatives do not exist there).
+* Solution concept (latched trajectory): `x` is continuous on `[0, ∞)` and, at every `t ≥ 0`,
+  has the right derivative `A x(t) + B (ΔP_L − shed · 1[∃ τ ∈ [0, t], x(τ)_{i₀} ≤ −θ])`
+  (the input jumps at the trip instant, so two-sided derivatives do not exist there). This
+  condition is written out in the statements as the hypothesis `hx` (behavioural notions are
+  defined only in the semantic layer):
+  `ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t → HasDerivWithinAt x (m.inputField (load (ΔPL −
+  {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t`.
 
 Results.
 * `latched_representation_noTrip`, `latched_representation_trip` (foundation, any plant): every
@@ -54,13 +59,6 @@ open scoped Topology
 variable {n : ℕ}
 
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
-
-/-- Closed-loop trajectory of a linear frequency plant with a latched single-stage UFLS. -/
-def IsLatchedTrajectory (m : Linear.Plant n 1) (i₀ : Fin n) (ΔPL shed θ : ℝ)
-    (x : ℝ → ℝⁿ) : Prop :=
-  ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
-    HasDerivWithinAt x (m.inputField (load (ΔPL -
-      {s | latchedTrip (fun τ => x τ i₀) θ s}.indicator (fun _ => shed) t)) (x t)) (Ici t) t
 
 variable {m : Linear.Plant n 1} {i₀ : Fin n} {ΔPL shed θ : ℝ}
 
@@ -103,7 +101,7 @@ variable {m : Linear.Plant n 1} {i₀ : Fin n} {ΔPL shed θ : ℝ}
 /-- With first crossing time `T`, the latched trip at `t ≥ 0` is `T ≤ t`. -/
 @[powerlib_foundation] theorem latchedTrip_iff_of_first {z : ℝ → ℝ} {T : ℝ} (hT : 0 ≤ T)
     (hzT : z T ≤ -θ) (hfirst : ∀ s ∈ Ico 0 T, -θ < z s) {t : ℝ} :
-    latchedTrip z θ t ↔ T ≤ t := by
+    (∃ τ ∈ Icc 0 t, z τ ≤ -θ) ↔ T ≤ t := by
   constructor
   · rintro ⟨τ, hτ, hτz⟩
     by_contra hc
@@ -113,17 +111,17 @@ variable {m : Linear.Plant n 1} {i₀ : Fin n} {ΔPL shed θ : ℝ}
     exact ⟨T, ⟨hT, h⟩, hzT⟩
 
 @[powerlib_foundation] theorem latched_input_of_not {x : ℝ → ℝⁿ} {t : ℝ}
-    (h : ¬ latchedTrip (fun τ => x τ i₀) θ t) :
-    load (ΔPL - {s | latchedTrip (fun τ => x τ i₀) θ s}.indicator (fun _ => shed) t) =
+    (h : ¬ ∃ τ ∈ Icc 0 t, x τ i₀ ≤ -θ) :
+    load (ΔPL - {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t) =
       load ΔPL := by
-  rw [Set.indicator_of_notMem (show t ∉ {s | latchedTrip (fun τ => x τ i₀) θ s} from h),
+  rw [Set.indicator_of_notMem (show t ∉ {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ} from h),
     sub_zero]
 
 @[powerlib_foundation] theorem latched_input_of {x : ℝ → ℝⁿ} {t : ℝ}
-    (h : latchedTrip (fun τ => x τ i₀) θ t) :
-    load (ΔPL - {s | latchedTrip (fun τ => x τ i₀) θ s}.indicator (fun _ => shed) t) =
+    (h : ∃ τ ∈ Icc 0 t, x τ i₀ ≤ -θ) :
+    load (ΔPL - {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t) =
       load (ΔPL - shed) := by
-  rw [Set.indicator_of_mem (show t ∈ {s | latchedTrip (fun τ => x τ i₀) θ s} from h)]
+  rw [Set.indicator_of_mem (show t ∈ {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ} from h)]
 
 private theorem coord_continuous (i : Fin n) : Continuous (fun y : ℝⁿ => y i) :=
   PiLp.continuous_apply 2 (fun _ : Fin n => ℝ) i
@@ -138,8 +136,11 @@ include he₁
 
 /-- Before the first trip, a latched trajectory is the unshed response. -/
 @[powerlib_foundation] theorem latched_eqOn_unshed {x : ℝ → ℝⁿ}
-    (hx : IsLatchedTrajectory m i₀ ΔPL shed θ x) {b : ℝ}
-    (hun : ∀ t ∈ Ico 0 b, ¬ latchedTrip (fun τ => x τ i₀) θ t) :
+    (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
+        HasDerivWithinAt x (m.inputField (load (ΔPL -
+          {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))
+    {b : ℝ}
+    (hun : ∀ t ∈ Ico 0 b, ¬ ∃ τ ∈ Icc 0 t, x τ i₀ ≤ -θ) :
     EqOn x (Linear.solution m.A e₁ 0 (x 0)) (Icc 0 b) := by
   refine rightODE_unique m (load ΔPL) (hx.1.mono Icc_subset_Ici_self) (fun t ht => ?_)
     (solution_continuous m.A e₁ 0 _).continuousOn
@@ -149,15 +150,17 @@ include he₁
 
 /-- If the unshed response never reaches `−θ`, the latched trajectory is the unshed response. -/
 @[powerlib_foundation] theorem latched_representation_noTrip {x : ℝ → ℝⁿ}
-    (hx : IsLatchedTrajectory m i₀ ΔPL shed θ x)
+    (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
+        HasDerivWithinAt x (m.inputField (load (ΔPL -
+          {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))
     (hφ : ∀ t ≥ 0, -θ < Linear.solution m.A e₁ 0 (x 0) t i₀) :
     ∀ t ≥ 0, x t = Linear.solution m.A e₁ 0 (x 0) t := by
-  have hnever : ∀ t ≥ 0, ¬ latchedTrip (fun τ => x τ i₀) θ t := by
+  have hnever : ∀ t ≥ 0, ¬ ∃ τ ∈ Icc 0 t, x τ i₀ ≤ -θ := by
     intro t ht htrip
     obtain ⟨τ, hτ, hτz⟩ := htrip
     obtain ⟨T, hT0, hTz, hfirst⟩ := exists_first_crossing (z := fun τ => x τ i₀)
       ((coord_continuous i₀).comp_continuousOn hx.1) ⟨τ, hτ.1, hτz⟩
-    have hun : ∀ s ∈ Ico 0 T, ¬ latchedTrip (fun τ => x τ i₀) θ s := fun s hs h' =>
+    have hun : ∀ s ∈ Ico 0 T, ¬ ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ := fun s hs h' =>
       absurd ((latchedTrip_iff_of_first hT0 hTz hfirst).1 h') (not_le.2 hs.2)
     have heq := latched_eqOn_unshed he₁ hx hun ⟨hT0, le_rfl⟩
     have := hφ T hT0
@@ -171,7 +174,10 @@ include he₂ in
 /-- If the unshed response first reaches `−θ` at `T`, the latched trajectory equals it on
 `[0, T]` and equals the post-shedding response from its state at `T` afterwards. -/
 @[powerlib_foundation] theorem latched_representation_trip {x : ℝ → ℝⁿ}
-    (hx : IsLatchedTrajectory m i₀ ΔPL shed θ x) {T : ℝ} (hT0 : 0 ≤ T)
+    (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
+        HasDerivWithinAt x (m.inputField (load (ΔPL -
+          {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))
+    {T : ℝ} (hT0 : 0 ≤ T)
     (hTz : Linear.solution m.A e₁ 0 (x 0) T i₀ ≤ -θ)
     (hfirst : ∀ s ∈ Ico 0 T, -θ < Linear.solution m.A e₁ 0 (x 0) s i₀) :
     ∀ t ≥ 0, x t = if t ≤ T then Linear.solution m.A e₁ 0 (x 0) t
@@ -180,12 +186,12 @@ include he₂ in
   have hxc : ContinuousOn (fun τ => x τ i₀) (Ici 0) :=
     (coord_continuous i₀).comp_continuousOn hx.1
   -- no trip before `T`
-  have hun : ∀ s ∈ Ico 0 T, ¬ latchedTrip (fun τ => x τ i₀) θ s := by
+  have hun : ∀ s ∈ Ico 0 T, ¬ ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ := by
     intro s hs htrip
     obtain ⟨τ, hτ, hτz⟩ := htrip
     obtain ⟨Tx, hTx0, hTxz, hfx⟩ := exists_first_crossing hxc ⟨τ, hτ.1, hτz⟩
     have hTxs : Tx ≤ s := (latchedTrip_iff_of_first hTx0 hTxz hfx).1 ⟨τ, hτ, hτz⟩
-    have hunx : ∀ r ∈ Ico 0 Tx, ¬ latchedTrip (fun τ => x τ i₀) θ r := fun r hr h' =>
+    have hunx : ∀ r ∈ Ico 0 Tx, ¬ ∃ τ ∈ Icc 0 r, x τ i₀ ≤ -θ := fun r hr h' =>
       absurd ((latchedTrip_iff_of_first hTx0 hTxz hfx).1 h') (not_le.2 hr.2)
     have heq := latched_eqOn_unshed he₁ hx hunx ⟨hTx0, le_rfl⟩
     have := hfirst Tx ⟨hTx0, lt_of_le_of_lt hTxs hs.2⟩
@@ -194,8 +200,8 @@ include he₂ in
     linarith
   have hbefore := latched_eqOn_unshed he₁ hx hun
   have hxT : x T = φ T := hbefore ⟨hT0, le_rfl⟩
-  have htrip : ∀ t ≥ T, latchedTrip (fun τ => x τ i₀) θ t := fun t ht =>
-    ⟨T, ⟨hT0, ht⟩, by simp only; rw [hxT]; exact hTz⟩
+  have htrip : ∀ t ≥ T, ∃ τ ∈ Icc 0 t, x τ i₀ ≤ -θ := fun t ht =>
+    ⟨T, ⟨hT0, ht⟩, by rw [hxT]; exact hTz⟩
   -- after `T`: post-shedding dynamics
   set ψ := fun t => Linear.solution m.A e₂ 0 (φ T) (t - T)
   have hψd : ∀ t, HasDerivAt ψ (m.inputField (load (ΔPL - shed)) (ψ t)) t := fun t => by
@@ -217,7 +223,12 @@ include he₂ in
 include he₂ in
 /-- Uniqueness of the closed-loop solution. -/
 @[powerlib_foundation] theorem latched_unique {x y : ℝ → ℝⁿ}
-    (hx : IsLatchedTrajectory m i₀ ΔPL shed θ x) (hy : IsLatchedTrajectory m i₀ ΔPL shed θ y)
+    (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
+        HasDerivWithinAt x (m.inputField (load (ΔPL -
+          {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))
+    (hy : (ContinuousOn y (Ici 0) ∧ ∀ t, 0 ≤ t →
+        HasDerivWithinAt y (m.inputField (load (ΔPL -
+          {s | ∃ τ ∈ Icc 0 s, y τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (y t)) (Ici t) t))
     (h0 : x 0 = y 0) : EqOn x y (Ici 0) := by
   intro t ht
   by_cases hφ : ∀ t ≥ 0, -θ < Linear.solution m.A e₁ 0 (x 0) t i₀
@@ -233,12 +244,15 @@ include he₂ in
 include he₂ in
 /-- Existence of the closed-loop solution from every initial state. -/
 @[powerlib_foundation] theorem latched_exists (x₀ : ℝⁿ) :
-    ∃ x, IsLatchedTrajectory m i₀ ΔPL shed θ x ∧ x 0 = x₀ := by
+    ∃ x : ℝ → ℝⁿ, (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
+      HasDerivWithinAt x (m.inputField (load (ΔPL -
+        {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t) ∧
+      x 0 = x₀ := by
   set φ := Linear.solution m.A e₁ 0 x₀
   have hφc : Continuous φ := solution_continuous m.A e₁ 0 x₀
   by_cases hφ : ∀ t ≥ 0, -θ < φ t i₀
   · refine ⟨φ, ⟨hφc.continuousOn, fun t _ => ?_⟩, by simp [φ]⟩
-    have hnot : ¬ latchedTrip (fun τ => φ τ i₀) θ t := by
+    have hnot : ¬ ∃ τ ∈ Icc 0 t, φ τ i₀ ≤ -θ := by
       rintro ⟨τ, hτ, hτz⟩
       exact absurd hτz (not_le.2 (hφ τ hτ.1))
     rw [latched_input_of_not hnot]
@@ -267,9 +281,8 @@ include he₂ in
     refine ⟨x, ⟨hxc.continuousOn, fun t ht => ?_⟩, hx0⟩
     rcases lt_or_ge t T with hlt | hge
     · -- before the trip: no shedding, `x = φ` near `t`
-      have hnot : ¬ latchedTrip (fun τ => x τ i₀) θ t := by
+      have hnot : ¬ ∃ τ ∈ Icc 0 t, x τ i₀ ≤ -θ := by
         rintro ⟨τ, hτ, hτz⟩
-        simp only at hτz
         rw [hxle τ (hτ.2.trans hlt.le)] at hτz
         exact absurd hτz (not_le.2 (hfirst τ ⟨hτ.1, lt_of_le_of_lt hτ.2 hlt⟩))
       rw [latched_input_of_not hnot, hxle t hlt.le]
@@ -277,8 +290,8 @@ include he₂ in
         filter_upwards [Iio_mem_nhds hlt] with s hs using hxle s (le_of_lt hs)
       exact ((solution_hasDerivAt m he₁ 0 x₀ t).congr_of_eventuallyEq hev).hasDerivWithinAt
     · -- after the trip: shedding, `x = ψ` on `[t, ∞)`
-      have htrip : latchedTrip (fun τ => x τ i₀) θ t :=
-        ⟨T, ⟨hT0, hge⟩, by simp only; rw [hxle T le_rfl]; exact hTz⟩
+      have htrip : ∃ τ ∈ Icc 0 t, x τ i₀ ≤ -θ :=
+        ⟨T, ⟨hT0, hge⟩, by rw [hxle T le_rfl]; exact hTz⟩
       rw [latched_input_of htrip, hxge t hge]
       exact (hψd t).hasDerivWithinAt.congr (fun s hs => hxge s (le_trans hge hs)) (hxge t hge)
 
@@ -294,7 +307,10 @@ include he₁ he₂ hA
 
 /-- A latched trajectory that trips converges to the post-shedding equilibrium. -/
 @[powerlib_foundation] theorem latched_tendsto_of_trip {x : ℝ → ℝⁿ}
-    (hx : IsLatchedTrajectory m i₀ ΔPL shed θ x) (htrip : ∃ t ≥ 0, x t i₀ ≤ -θ) :
+    (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
+        HasDerivWithinAt x (m.inputField (load (ΔPL -
+          {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))
+    (htrip : ∃ t ≥ 0, x t i₀ ≤ -θ) :
     Tendsto x atTop (𝓝 e₂) := by
   set φ := Linear.solution m.A e₁ 0 (x 0)
   by_cases hφ : ∀ t ≥ 0, -θ < φ t i₀
@@ -320,9 +336,12 @@ include he₁ he₂ hA
 omit he₂ in
 /-- A latched trajectory that never trips converges to the pre-shedding equilibrium. -/
 @[powerlib_foundation] theorem latched_tendsto_of_noTrip {x : ℝ → ℝⁿ}
-    (hx : IsLatchedTrajectory m i₀ ΔPL shed θ x) (hno : ∀ t ≥ 0, -θ < x t i₀) :
+    (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
+        HasDerivWithinAt x (m.inputField (load (ΔPL -
+          {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))
+    (hno : ∀ t ≥ 0, -θ < x t i₀) :
     Tendsto x atTop (𝓝 e₁) := by
-  have hun : ∀ t ≥ 0, ¬ latchedTrip (fun τ => x τ i₀) θ t := by
+  have hun : ∀ t ≥ 0, ¬ ∃ τ ∈ Icc 0 t, x τ i₀ ≤ -θ := by
     rintro t - ⟨τ, hτ, hτz⟩
     exact absurd hτz (not_le.2 (hno τ hτ.1))
   have hrep : ∀ t ≥ 0, x t = Linear.solution m.A e₁ 0 (x 0) t := fun t ht =>
@@ -344,7 +363,10 @@ private theorem swingGovernor_latched_trip {M D K Tg : ℝ} (hM : 0 < M) (hTg : 
     (hD : 0 ≤ D) (hKD : 0 < K + D) (_hP : 0 < ΔPL)
     (hζ : SwingGovernor.dampingRatio M D K Tg < 1)
     (hnadir : SwingGovernor.nadirValue M D K Tg ΔPL ≤ -θ) {x : ℝ → EuclideanSpace ℝ (Fin 2)}
-    (hx : IsLatchedTrajectory (SwingGovernor.plant M D K Tg) 0 ΔPL shed θ x) (h0 : x 0 = 0) :
+    (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
+        HasDerivWithinAt x ((SwingGovernor.plant M D K Tg).inputField (load (ΔPL -
+          {s | ∃ τ ∈ Icc 0 s, x τ 0 ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))
+    (h0 : x 0 = 0) :
     (∃ t ≥ 0, x t 0 ≤ -θ) ∧
       Tendsto (fun t => x t 0) atTop (𝓝 (-(ΔPL - shed) / (K + D))) := by
   have he₁ := SwingGovernor.steadyState_isEquilibrium (ΔPL := ΔPL) hM.ne' hTg.ne' hKD.ne'
@@ -354,7 +376,7 @@ private theorem swingGovernor_latched_trip {M D K Tg : ℝ} (hM : 0 < M) (hTg : 
   have htrip : ∃ t ≥ 0, x t 0 ≤ -θ := by
     by_contra hno
     push Not at hno
-    have hun : ∀ t ≥ 0, ¬ latchedTrip (fun τ => x τ 0) θ t := by
+    have hun : ∀ t ≥ 0, ¬ ∃ τ ∈ Icc 0 t, x τ 0 ≤ -θ := by
       rintro t - ⟨τ, hτ, hτz⟩
       exact absurd hτz (not_le.2 (hno τ hτ.1))
     set φ := Linear.solution (SwingGovernor.plant M D K Tg).A
@@ -385,7 +407,9 @@ trips converges to `Δω = −(ΔP_L − p P⁰)/(K_R + D)`. -/
 private theorem sfr_latched_tendsto {M D K F Tg TR : ℝ} (hM : 0 < M) (hTg : 0 < Tg)
     (hTR : 0 < TR) (hD : 0 ≤ D) (hK : 0 ≤ K) (hKD : 0 < K + D) (hF : Tg / (Tg + TR) ≤ F)
     {x : ℝ → EuclideanSpace ℝ (Fin 3)}
-    (hx : IsLatchedTrajectory (SFR.plant M D K F Tg TR) 0 ΔPL shed θ x)
+    (hx : (ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t →
+        HasDerivWithinAt x ((SFR.plant M D K F Tg TR).inputField (load (ΔPL -
+          {s | ∃ τ ∈ Icc 0 s, x τ 0 ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t))
     (htrip : ∃ t ≥ 0, x t 0 ≤ -θ) :
     Tendsto (fun t => x t 0) atTop (𝓝 (-(ΔPL - shed) / (K + D))) := by
   have he₁ := SFR.steadyState_isEquilibrium (F := F) (ΔPL := ΔPL) hM.ne' hTg.ne' hTR.ne' hKD.ne'

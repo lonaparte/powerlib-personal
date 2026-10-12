@@ -417,8 +417,10 @@ def detunedD (cω g2 Δ y : ℝ) : ℝ := g2 * y / 4 - (Δ + cω * y) ^ 2
 def flipSet (α₀ cα cω g2 : ℝ) : Set (ℝ × ℝ) :=
   {p | 0 ≤ detunedD cω g2 p.2 p.1 ∧ damping α₀ cα p.1 < √(detunedD cω g2 p.2 p.1)}
 
-/-- `Δ`-projection of the flip set over positive amplitudes. -/
-def flipProjection (α₀ cα cω g2 : ℝ) : Set ℝ := {Δ | ∃ y, 0 < y ∧ (y, Δ) ∈ flipSet α₀ cα cω g2}
+/-- `Δ`-projection of the flip set over positive amplitudes: the image of `ℱ ∩ {y > 0}` under
+`(y, Δ) ↦ Δ` (`mem_flipProjection`). A static set in the parameter plane `(y, Δ)`. -/
+def flipProjection (α₀ cα cω g2 : ℝ) : Set ℝ :=
+  Prod.snd '' (flipSet α₀ cα cω g2 ∩ Prod.fst ⁻¹' Ioi 0)
 
 /-- `Δ*_± = (±√(c_α² + c_ω²) √(Q² − 4c_α²α₀²) − c_ω Q)/(2c_α²)`. -/
 def deltaStarPlus (α₀ cα cω g2 : ℝ) : ℝ :=
@@ -447,6 +449,15 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
   · intro h
     refine ⟨by nlinarith, (Real.lt_sqrt ha.le).mpr (by linarith)⟩
 
+/-- `Δ` lies in the projection iff `(y, Δ) ∈ ℱ` for some amplitude `y > 0`. -/
+@[powerlib_foundation] theorem mem_flipProjection {Δ : ℝ} :
+    Δ ∈ flipProjection α₀ cα cω g2 ↔ ∃ y, 0 < y ∧ (y, Δ) ∈ flipSet α₀ cα cω g2 := by
+  constructor
+  · rintro ⟨⟨y, Δ'⟩, ⟨hmem, hy⟩, rfl⟩
+    exact ⟨y, hy, hmem⟩
+  · rintro ⟨y, hy, hmem⟩
+    exact ⟨(y, Δ), ⟨hmem, hy⟩, rfl⟩
+
 /-- Case `c_α < 0`: the `Δ`-projection of `ℱ` is exactly `(Δ*₋, Δ*₊)` (both ends finite). -/
 @[powerlib_foundation] theorem flipProjection_calpha_neg (hα : 0 < α₀) (hg : 0 < g2)
     (hcα : cα < 0) (hcω : 0 < cω) :
@@ -467,7 +478,7 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
     have hQlow : -(2 * α₀ * (-cα)) < Q := by simp only [hQdef, pumpQ]; nlinarith
     nlinarith
   ext Δ
-  simp only [flipProjection, Set.mem_ofPred_eq, mem_Ioo]
+  simp only [mem_flipProjection, mem_Ioo]
   constructor
   · rintro ⟨y, hy, hmem⟩
     rw [mem_flipSet_of_damping_pos (hdamp y hy)] at hmem
@@ -540,7 +551,7 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
   have hdamp : ∀ y, damping α₀ 0 y = α₀ := fun y => by simp [damping]
   have hQ : pumpQ α₀ 0 g2 = g2 / 4 := by simp [pumpQ]
   ext Δ
-  simp only [flipProjection, Set.mem_ofPred_eq, mem_Iio]
+  simp only [mem_flipProjection, mem_Iio]
   have hmem : ∀ y, (y, Δ) ∈ flipSet α₀ 0 cω g2 ↔
       cω ^ 2 * y ^ 2 - (g2 / 4 - 2 * cω * Δ) * y + (α₀ ^ 2 + Δ ^ 2) < 0 := by
     intro y
@@ -600,7 +611,7 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
   constructor
   · -- attained at `y* = g2/(16 c_ω²)`, where `a < 0` and `D = 0`
     set y := g2 / (16 * cω ^ 2) with hydef
-    refine ⟨y, by positivity, ?_, ?_⟩
+    refine mem_flipProjection.2 ⟨y, by positivity, ?_, ?_⟩
     · have hD : detunedD cω g2 (g2 / (16 * cω)) y = 0 := by
         simp only [detunedD, hydef]; field_simp; ring
       simp only; rw [hD]
@@ -610,7 +621,8 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
       simp only [damping]
       have := (div_lt_iff₀ hcα).mp hhigh
       nlinarith
-  · rintro Δ ⟨y, hy, hD, hlt⟩
+  · intro Δ hΔ
+    obtain ⟨y, hy, hD, hlt⟩ := mem_flipProjection.1 hΔ
     simp only at hD hlt
     -- from `D ≥ 0`: `(Δ + c_ω y)² ≤ g2 y/4`, hence `Δ ≤ −c_ω y + √g2 √y/2 ≤ g2/(16c_ω)`
     have hsq : (Δ + cω * y) ^ 2 ≤ (√g2 * √y / 2) ^ 2 := by
@@ -630,7 +642,7 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
   have hy1 : 1 ≤ y := le_max_left _ _
   have hy2 : (|α₀| + 1) / cα + |m| / cω + 1 ≤ y := le_max_right _ _
   have hmem : -(cω * y) ∈ flipProjection α₀ cα cω g2 := by
-    refine ⟨y, by linarith, ?_, ?_⟩
+    refine mem_flipProjection.2 ⟨y, by linarith, ?_, ?_⟩
     · simp only [detunedD]; nlinarith
     · simp only [damping]
       have : (|α₀| + 1) / cα < y := by

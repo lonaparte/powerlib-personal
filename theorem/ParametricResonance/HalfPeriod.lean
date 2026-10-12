@@ -38,10 +38,13 @@ def pump (δ ωp t : ℝ) : ℝ := δ * Real.cos (ωp * t)
   rw [show ωp * (t + T / 2) = ωp * t + Real.pi by linarith [hT], Real.cos_add_pi]
   ring
 
+/-- Every global solution of `ż = f(z, u_δ(t))`, shifted by `T/2`, is a global solution of
+`ż = f(z, u_{−δ}(t))`. -/
 @[powerlib_foundation] theorem drivenTrajectory_half_shift {n : ℕ}
     {f : EuclideanSpace ℝ (Fin n) → ℝ → EuclideanSpace ℝ (Fin n)} {δ ωp T : ℝ}
-    (hT : ωp * T = 2 * Real.pi) {z : ℝ → EuclideanSpace ℝ (Fin n)} (hz : IsDrivenTrajectory f (pump δ ωp) z) :
-    IsDrivenTrajectory f (pump (-δ) ωp) (fun t => z (t + T / 2)) := by
+    (hT : ωp * T = 2 * Real.pi) {z : ℝ → EuclideanSpace ℝ (Fin n)}
+    (hz : ∀ t, HasDerivAt z (f (z t) (pump δ ωp t)) t) :
+    ∀ t, HasDerivAt (fun t => z (t + T / 2)) (f (z (t + T / 2)) (pump (-δ) ωp t)) t := by
   intro t
   have h := (hz (t + T / 2)).comp_add_const t (T / 2)
   rw [pump_add_half hT] at h

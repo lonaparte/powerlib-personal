@@ -166,10 +166,6 @@ variable (A : Matrix ι ι ℝ) (B : Matrix ι (Fin p) ℝ) (C : Matrix (Fin p) 
     · exact absurd h hI
   exact ⟨ha, by rw [ha, neg_zero]⟩
 
-/-- Complex-signal trajectories of an LTI model with complex input `u`. -/
-def IsToneTrajectory (u : ℝ → Fin p → ℂ) (x : ℝ → ι → ℂ) : Prop :=
-  ∀ t, HasDerivAt x (Linear.complexify A *ᵥ x t + Linear.complexify B *ᵥ u t) t
-
 /-- The output `y = C x + D u` of a complex-signal trajectory. -/
 def toneOutput (u : ℝ → Fin p → ℂ) (x : ℝ → ι → ℂ) (t : ℝ) : Fin p → ℂ :=
   Linear.complexify C *ᵥ x t + Linear.complexify D *ᵥ u t
@@ -179,9 +175,13 @@ def toneState (ω : ℝ) (U : Fin p → ℂ) (t : ℝ) : ι → ℂ :=
   Complex.exp (ω * t * I) • ((Linear.characteristicMatrix A (ω * I))⁻¹ *ᵥ
     (Linear.complexify B *ᵥ U))
 
+/-- The tone steady state is a complex-signal trajectory of the LTI model under the complex
+input `u(t) = U e^{jωt}`: `ẋ = A x + B u` at every instant. -/
 @[powerlib_foundation] theorem tone_solves {ω : ℝ}
     (h : (Linear.characteristicMatrix A (ω * I)).det ≠ 0) (U : Fin p → ℂ) :
-    IsToneTrajectory A B (fun t => Complex.exp (ω * t * I) • U) (toneState A B ω U) := by
+    ∀ t, HasDerivAt (toneState A B ω U)
+      (Linear.complexify A *ᵥ toneState A B ω U t +
+        Linear.complexify B *ᵥ (Complex.exp (ω * t * I) • U)) t := by
   intro t
   set R := Linear.characteristicMatrix A (ω * I)
   set w := R⁻¹ *ᵥ (Linear.complexify B *ᵥ U)

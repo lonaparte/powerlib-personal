@@ -9,10 +9,15 @@ Model boundary.
 * Forced LTI plant `ẋ = A₀ x + Re(b e^{jωt})` on `ℝⁿ = EuclideanSpace ℝ (Fin n)` (Euclidean
   norm, `A₀` acting as `Linear.op A₀`), constant real `A₀`, constant complex drive vector `b`
   (`b = f_u + jω f_{u̇}` in the source, which covers both the angle and the angle-rate entry),
-  real pump frequency `ω`, continuous time, global solutions (`IsForcedSolution`).
+  real pump frequency `ω`, continuous time, global solutions: curves `x : ℝ → ℝⁿ` with
+  `∀ t, HasDerivAt x (Linear.op A₀ (x t) + forcing b ω t) t`.
 * Input-affine plants `ż = f(z, u(t))` whose state Jacobian is a constant matrix `A₀` for all
   `z` and all `u` (i.e. `D²_z f = 0` and `A₁ = ∂_u ∂_z f = 0`), with an arbitrary input signal
-  `u : ℝ → U` and an arbitrary reference solution `z_orb` (for instance a forced periodic orbit).
+  `u : ℝ → U` and an arbitrary reference solution `z_orb` (for instance a forced periodic orbit);
+  solutions are global: `∀ t, HasDerivAt z (f (z t) (u t)) t`.
+
+These solution conditions are written out in the statements (behavioural notions are defined only
+in the semantic layer, `theorem/Flow/Defs.lean`).
 
 Results.
 * `forcedOrbit_solves`: if `jω` is not an eigenvalue of `A₀`, `x₁(t) = Re(χ e^{jωt})` with
@@ -118,11 +123,6 @@ def forcedOrbit (A : Matrix (Fin n) (Fin n) ℝ) (b : Fin n → ℂ) (ω t : ℝ
 def forcing (b : Fin n → ℂ) (ω t : ℝ) : ℝⁿ :=
   WithLp.toLp 2 fun i => (b i * Complex.exp ((ω : ℂ) * t * I)).re
 
-/-- Global solutions of the forced LTI equation `ẋ = A₀ x + Re(b e^{jωt})`. -/
-def IsForcedSolution (A : Matrix (Fin n) (Fin n) ℝ) (b : Fin n → ℂ) (ω : ℝ)
-    (x : ℝ → ℝⁿ) : Prop :=
-  ∀ t, HasDerivAt x (Linear.op A (x t) + forcing b ω t) t
-
 @[powerlib_foundation] theorem characteristicMatrix_mulVec_forcedAmplitude
     {A : Matrix (Fin n) (Fin n) ℝ} {ω : ℝ} (b : Fin n → ℂ)
     (h : (Linear.characteristicMatrix A ((ω : ℂ) * I)).det ≠ 0) :
@@ -148,9 +148,11 @@ def IsForcedSolution (A : Matrix (Fin n) (Fin n) ℝ) (b : Fin n → ℂ) (ω : 
   have := (Linear.spectrallyStable_iff_isHurwitz A).mpr hA _ h
   simp at this
 
+/-- `x₁` is a global solution of the forced LTI equation `ẋ = A₀ x + Re(b e^{jωt})`. -/
 @[powerlib_foundation] theorem forcedOrbit_solves {A : Matrix (Fin n) (Fin n) ℝ} {ω : ℝ}
     (b : Fin n → ℂ) (h : (Linear.characteristicMatrix A ((ω : ℂ) * I)).det ≠ 0) :
-    IsForcedSolution A b ω (forcedOrbit A b ω) := by
+    ∀ t, HasDerivAt (forcedOrbit A b ω)
+      (Linear.op A (forcedOrbit A b ω t) + forcing b ω t) t := by
   intro t
   apply hasDerivAt_of_coords
   intro i
@@ -196,10 +198,11 @@ def IsForcedSolution (A : Matrix (Fin n) (Fin n) ℝ) (b : Fin n → ℂ) (ω : 
     push_cast; linear_combination I * hT'
   rw [this, Complex.exp_add, Complex.exp_two_pi_mul_I, mul_one]
 
-/-- The deviation from the forced orbit obeys the homogeneous LTI equation `ė = A₀ e`. -/
+/-- The deviation of a global solution `x` of the forced equation from the forced orbit obeys
+the homogeneous LTI equation `ė = A₀ e`. -/
 @[powerlib_foundation] theorem isTrajectory_sub_forcedOrbit {A : Matrix (Fin n) (Fin n) ℝ}
     {ω : ℝ} {b : Fin n → ℂ} (h : (Linear.characteristicMatrix A ((ω : ℂ) * I)).det ≠ 0)
-    {x : ℝ → ℝⁿ} (hx : IsForcedSolution A b ω x) :
+    {x : ℝ → ℝⁿ} (hx : ∀ t, HasDerivAt x (Linear.op A (x t) + forcing b ω t) t) :
     ∀ t, HasDerivAt (fun t => x t - forcedOrbit A b ω t)
       (Linear.op A (x t - forcedOrbit A b ω t)) t := by
   intro t
@@ -207,21 +210,24 @@ def IsForcedSolution (A : Matrix (Fin n) (Fin n) ℝ) (b : Fin n → ℂ) (ω : 
   convert h1 using 1
   rw [map_sub]; abel
 
-/-- Hurwitz `A₀`: every solution converges exponentially to the forced orbit. -/
+/-- Hurwitz `A₀`: every global solution of the forced equation converges exponentially to the
+forced orbit. -/
 @[powerlib_foundation] theorem forced_error_bound {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : IsHurwitz A) (b : Fin n → ℂ) (ω : ℝ) :
-    ∃ K > 0, ∃ rate > 0, ∀ x, IsForcedSolution A b ω x → ∀ t, 0 ≤ t →
+    ∃ K > 0, ∃ rate > 0, ∀ x : ℝ → ℝⁿ,
+      (∀ t, HasDerivAt x (Linear.op A (x t) + forcing b ω t) t) → ∀ t, 0 ≤ t →
       ‖x t - forcedOrbit A b ω t‖ ≤
         K * Real.exp (-(rate * t)) * ‖x 0 - forcedOrbit A b ω 0‖ := by
   obtain ⟨K, hK, rate, hrate, hbound⟩ := exists_global_bound_of_isHurwitz hA
   exact ⟨K, hK, rate, hrate, fun x hx t ht =>
     hbound _ (isTrajectory_sub_forcedOrbit (det_characteristicMatrix_imag_ne_zero hA ω) hx) t ht⟩
 
-/-- Hurwitz `A₀`: the forced orbit is the only solution of the forcing period
-`T = 2π/ω` (`ω T = 2π`, `T > 0`). -/
+/-- Hurwitz `A₀`: the forced orbit is the only global solution of the forced equation with the
+forcing period `T = 2π/ω` (`ω T = 2π`, `T > 0`). -/
 @[powerlib_foundation] theorem forced_periodic_unique {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : IsHurwitz A) (b : Fin n → ℂ) {ω T : ℝ} (hT0 : 0 < T)
-    (hT : ω * T = 2 * Real.pi) {x : ℝ → ℝⁿ} (hx : IsForcedSolution A b ω x)
+    (hT : ω * T = 2 * Real.pi) {x : ℝ → ℝⁿ}
+    (hx : ∀ t, HasDerivAt x (Linear.op A (x t) + forcing b ω t) t)
     (hper : ∀ t, x (t + T) = x t) : x = forcedOrbit A b ω := by
   obtain ⟨K, hK, rate, hrate, hbound⟩ := forced_error_bound hA b ω
   set e := fun t => x t - forcedOrbit A b ω t with he
@@ -264,16 +270,6 @@ def IsForcedSolution (A : Matrix (Fin n) (Fin n) ℝ) (b : Fin n → ℂ) (ω : 
 
 variable {U : Type*}
 
-/-- Global solutions of `ż = f(z, u(t))`. -/
-def IsDrivenTrajectory (f : ℝⁿ → U → ℝⁿ) (u : ℝ → U) (z : ℝ → ℝⁿ) : Prop :=
-  ∀ t, HasDerivAt z (f (z t) (u t)) t
-
-/-- Exponential stability of a reference solution `z_orb`: every solution converges to it at a
-uniform exponential rate. -/
-def OrbitExponentiallyStable (f : ℝⁿ → U → ℝⁿ) (u : ℝ → U) (z_orb : ℝ → ℝⁿ) : Prop :=
-  ∃ K > 0, ∃ rate > 0, ∀ z, IsDrivenTrajectory f u z → ∀ t, 0 ≤ t →
-    ‖z t - z_orb t‖ ≤ K * Real.exp (-(rate * t)) * ‖z 0 - z_orb 0‖
-
 /-- A constant state Jacobian `A₀` (`D²f = 0`, `A₁ = 0`) forces `f(z, u) = A₀ z + f(0, u)`. -/
 @[powerlib_foundation] theorem affine_of_const_jacobian {f : ℝⁿ → U → ℝⁿ}
     {A : Matrix (Fin n) (Fin n) ℝ}
@@ -298,18 +294,22 @@ def OrbitExponentiallyStable (f : ℝⁿ → U → ℝⁿ) (u : ℝ → U) (z_or
     fderiv ℝ (fun z => f z (u t)) (z_orb t) = Linear.op A :=
   (hf (z_orb t) (u t)).fderiv
 
-/-- With a constant state Jacobian, any reference solution is exponentially stable iff `A₀` is
-Hurwitz: the forcing can produce a large response but never a parametric instability. -/
+/-- With a constant state Jacobian, any reference solution `z_orb` of `ż = f(z, u(t))` is
+exponentially stable iff `A₀` is Hurwitz: the forcing can produce a large response but never a
+parametric instability. Exponential stability of `z_orb` means that every global solution
+converges to it at a uniform exponential rate,
+`‖z(t) − z_orb(t)‖ ≤ K e^{−rate t} ‖z(0) − z_orb(0)‖` for `t ≥ 0`. -/
 @[powerlib_foundation] theorem orbitExponentiallyStable_iff {f : ℝⁿ → U → ℝⁿ}
     {A : Matrix (Fin n) (Fin n) ℝ}
     (hf : ∀ z u, HasFDerivAt (fun z => f z u) (Linear.op A) z)
-    {u : ℝ → U} {z_orb : ℝ → ℝⁿ} (horb : IsDrivenTrajectory f u z_orb) :
-    OrbitExponentiallyStable f u z_orb ↔ IsHurwitz A := by
+    {u : ℝ → U} {z_orb : ℝ → ℝⁿ} (horb : ∀ t, HasDerivAt z_orb (f (z_orb t) (u t)) t) :
+    (∃ K > 0, ∃ rate > 0, ∀ z : ℝ → ℝⁿ, (∀ t, HasDerivAt z (f (z t) (u t)) t) → ∀ t, 0 ≤ t →
+      ‖z t - z_orb t‖ ≤ K * Real.exp (-(rate * t)) * ‖z 0 - z_orb 0‖) ↔ IsHurwitz A := by
   have haff := affine_of_const_jacobian hf
   constructor
   · rintro ⟨K, hK, rate, hrate, hb⟩
     refine isHurwitz_of_global_bound (K := K) hrate fun e he t ht => ?_
-    have hz : IsDrivenTrajectory f u (fun s => z_orb s + e s) := by
+    have hz : ∀ s, HasDerivAt (fun s => z_orb s + e s) (f (z_orb s + e s) (u s)) s := by
       intro s
       have h1 := (horb s).add (he s)
       convert h1 using 1

@@ -26,6 +26,10 @@ explicitly given bases; there is no physical model or approximation in this modu
   `Ĉ' = ω_B C' z_B Z_B` (`telegrapher_pu_iff`).
 * DC side (§1.12) and PI gains (§1.13).
 
+The swing equations and the telegrapher system are differential equations along signals; they
+are written out in the statements that use them (no separate solution predicate), since
+behavioural notions are defined only in the semantic layer (`theorem/Flow/Defs.lean`).
+
 Correction (`T-PU.md` §1.12): the note concludes `Ŵ_dc = H_dc V̂_dc²` for the energy base
 `S_B / ω_B`. With that base the exact value is `Ŵ_dc = ω_B H_dc V̂_dc²`
 (`dcEnergy_pu`); `H_dc V̂_dc²` is the energy normalised by `S_B` (in seconds), which is the
@@ -262,23 +266,17 @@ def puCapacitance (ωB Zb C : ℝ) : ℝ := ωB * C * Zb
 
 /-! ## Swing equation: power forms and torque form (§1.8–§1.9) -/
 
-/-- §1.9 form 1: SI angular speed `ω` (rad/s), per-unit powers, SI time:
-`(2H/ω_s) ω̇ = P̂_m − P̂_e − D̂ (ω − ω_s)/ω_s`. -/
-def SwingPowerSI (H D ωs : ℝ) (Pm Pe ω : ℝ → ℝ) : Prop :=
-  ∀ t, HasDerivAt ω (ωs / (2 * H) * (Pm t - Pe t - D * ((ω t - ωs) / ωs))) t
+/-- The two power forms of §1.9 are exactly equivalent under `ω̂ = ω / ω_s`.
 
-/-- §1.9 form 2: per-unit speed `ω̂`, per-unit powers: `2H dω̂/dt = P̂_m − P̂_e − D̂ (ω̂ − 1)`. -/
-def SwingPowerPU (H D : ℝ) (Pm Pe w : ℝ → ℝ) : Prop :=
-  ∀ t, HasDerivAt w (1 / (2 * H) * (Pm t - Pe t - D * (w t - 1))) t
-
-/-- §1.8 torque form: `2H dω̂/dt = T̂_m − T̂_e − D̂ (ω̂ − 1)`. -/
-def SwingTorquePU (H D : ℝ) (Tm Te w : ℝ → ℝ) : Prop :=
-  ∀ t, HasDerivAt w (1 / (2 * H) * (Tm t - Te t - D * (w t - 1))) t
-
-/-- The two power forms of §1.9 are exactly equivalent under `ω̂ = ω / ω_s`. -/
+* Form 1 (SI angular speed `ω` in rad/s, per-unit powers, SI time):
+  `(2H/ω_s) ω̇ = P̂_m − P̂_e − D̂ (ω − ω_s)/ω_s` at every instant.
+* Form 2 (per-unit speed `ω̂`, per-unit powers): `2H dω̂/dt = P̂_m − P̂_e − D̂ (ω̂ − 1)` at
+  every instant. -/
 @[powerlib_foundation] theorem swingPowerSI_iff_swingPowerPU {H D ωs : ℝ} (hω : ωs ≠ 0)
     (Pm Pe ω : ℝ → ℝ) :
-    SwingPowerSI H D ωs Pm Pe ω ↔ SwingPowerPU H D Pm Pe (fun t => ω t / ωs) := by
+    (∀ t, HasDerivAt ω (ωs / (2 * H) * (Pm t - Pe t - D * ((ω t - ωs) / ωs))) t) ↔
+      ∀ t, HasDerivAt (fun t => ω t / ωs)
+        (1 / (2 * H) * (Pm t - Pe t - D * (ω t / ωs - 1))) t := by
   constructor
   · intro h t
     convert (h t).div_const ωs using 1
@@ -293,10 +291,13 @@ def SwingTorquePU (H D : ℝ) (Tm Te w : ℝ → ℝ) : Prop :=
 /-- Exact relation between the torque form (§1.8) and the power form (§1.9 form 2) with
 per-unit power `P̂ = ω̂ T̂`: a torque-form solution solves the power form iff
 `(ω̂ − 1)(T̂_m − T̂_e) = 0` at every instant. The forms agree only at `ω̂ = 1` or zero
-accelerating torque; otherwise they are different equations. -/
+accelerating torque; otherwise they are different equations.
+
+* Torque form (§1.8): `2H dω̂/dt = T̂_m − T̂_e − D̂ (ω̂ − 1)` at every instant (hypothesis `h`).
+* Power form (§1.9 form 2): `2H dω̂/dt = P̂_m − P̂_e − D̂ (ω̂ − 1)` with `P̂ = ω̂ T̂`. -/
 @[powerlib_foundation] theorem swingTorque_iff_swingPower {H D : ℝ} (hH : H ≠ 0)
-    {Tm Te w : ℝ → ℝ} (h : SwingTorquePU H D Tm Te w) :
-    SwingPowerPU H D (fun t => w t * Tm t) (fun t => w t * Te t) w ↔
+    {Tm Te w : ℝ → ℝ} (h : ∀ t, HasDerivAt w (1 / (2 * H) * (Tm t - Te t - D * (w t - 1))) t) :
+    (∀ t, HasDerivAt w (1 / (2 * H) * (w t * Tm t - w t * Te t - D * (w t - 1))) t) ↔
       ∀ t, (w t - 1) * (Tm t - Te t) = 0 := by
   constructor
   · intro hp t
@@ -309,24 +310,31 @@ accelerating torque; otherwise they are different equations. -/
     field_simp
     linear_combination this
 
-/-! ## Telegrapher equations (§1.10) -/
+/-! ## Telegrapher equations (§1.10)
 
-/-- Solutions of `∂v/∂z = −R' i − L' ∂i/∂t`, `∂i/∂z = −G' v − C' ∂v/∂t` (partial derivatives as
-one-variable derivatives of the sections). -/
-def Telegrapher (R L G C : ℝ) (v i : ℝ → ℝ → ℝ) : Prop :=
-  ∀ z t, ∃ vz vt iz it : ℝ,
-    HasDerivAt (fun z' => v z' t) vz z ∧ HasDerivAt (fun t' => v z t') vt t ∧
-    HasDerivAt (fun z' => i z' t) iz z ∧ HasDerivAt (fun t' => i z t') it t ∧
-    vz = -R * i z t - L * it ∧ iz = -G * v z t - C * vt
+A telegrapher solution with line parameters `R', L', G', C'` is a pair of fields `v, i` of
+`(z, t)` satisfying `∂v/∂z = −R' i − L' ∂i/∂t`, `∂i/∂z = −G' v − C' ∂v/∂t` at every point, the
+partial derivatives being one-variable derivatives of the sections `z' ↦ x(z', t)`,
+`t' ↦ x(z, t')`. The statements below spell this condition out. -/
 
 /-- Per-unit field `x̂(ẑ, τ) = x(z_B ẑ, τ / ω_B) / X_B`. -/
 def puField (Xb zb ωB : ℝ) (x : ℝ → ℝ → ℝ) : ℝ → ℝ → ℝ := fun z τ => x (zb * z) (τ / ωB) / Xb
 
+/-- Per-unit scaling maps a telegrapher solution for `(R', L', G', C')` to a telegrapher
+solution for `(R' z_B I_B / V_B, ω_B L' z_B I_B / V_B, G' z_B V_B / I_B, ω_B C' z_B V_B / I_B)`. -/
 @[powerlib_foundation] private lemma telegrapher_pu_of {R L G C zb ωB Vb Ib : ℝ} (hz : zb ≠ 0)
     (hω : ωB ≠ 0) (hV : Vb ≠ 0) (hI : Ib ≠ 0) {v i : ℝ → ℝ → ℝ}
-    (h : Telegrapher R L G C v i) :
-    Telegrapher (R * zb * Ib / Vb) (ωB * L * zb * Ib / Vb) (G * zb * Vb / Ib)
-      (ωB * C * zb * Vb / Ib) (puField Vb zb ωB v) (puField Ib zb ωB i) := by
+    (h : ∀ z t, ∃ vz vt iz it : ℝ,
+      HasDerivAt (fun z' => v z' t) vz z ∧ HasDerivAt (fun t' => v z t') vt t ∧
+      HasDerivAt (fun z' => i z' t) iz z ∧ HasDerivAt (fun t' => i z t') it t ∧
+      vz = -R * i z t - L * it ∧ iz = -G * v z t - C * vt) :
+    ∀ z t, ∃ vz vt iz it : ℝ,
+      HasDerivAt (fun z' => puField Vb zb ωB v z' t) vz z ∧
+      HasDerivAt (fun t' => puField Vb zb ωB v z t') vt t ∧
+      HasDerivAt (fun z' => puField Ib zb ωB i z' t) iz z ∧
+      HasDerivAt (fun t' => puField Ib zb ωB i z t') it t ∧
+      vz = -(R * zb * Ib / Vb) * puField Ib zb ωB i z t - ωB * L * zb * Ib / Vb * it ∧
+      iz = -(G * zb * Vb / Ib) * puField Vb zb ωB v z t - ωB * C * zb * Vb / Ib * vt := by
   intro z τ
   obtain ⟨vz, vt, iz, it, hvz, hvt, hiz, hit, e1, e2⟩ := h (zb * z) (τ / ωB)
   have hzl : HasDerivAt (fun z : ℝ => zb * z) zb z := by
@@ -342,27 +350,42 @@ def puField (Xb zb ωB : ℝ) (x : ℝ → ℝ → ℝ) : ℝ → ℝ → ℝ :=
   · simp only [puField]; rw [e2]; field_simp
 
 /-- Per-unit scaling of space (`z_B`), time (`ω_B`), voltage (`V_B`) and current (`I_B`) maps
-telegrapher solutions to telegrapher solutions with the §1.10 per-unit line parameters, and
-back: the per-unit telegrapher equation has the same form. -/
+telegrapher solutions to telegrapher solutions with the §1.10 per-unit line parameters
+`R̂' = R' z_B / Z_B`, `L̂' = ω_B L' z_B / Z_B`, `Ĝ' = G' z_B Z_B`, `Ĉ' = ω_B C' z_B Z_B`
+(`Z_B = V_B / I_B`), and back: the per-unit telegrapher equation has the same form. Both sides
+are the telegrapher condition of the section header, for `(v, i)` and for the per-unit fields
+`(v̂, î) = (puField V_B z_B ω_B v, puField I_B z_B ω_B i)`. -/
 @[powerlib_foundation] theorem telegrapher_pu_iff {R L G C zb ωB Vb Ib : ℝ} (hz : zb ≠ 0)
     (hω : ωB ≠ 0) (hV : Vb ≠ 0) (hI : Ib ≠ 0) (v i : ℝ → ℝ → ℝ) :
-    Telegrapher R L G C v i ↔
-      Telegrapher (R * zb / (Vb / Ib)) (ωB * L * zb / (Vb / Ib)) (G * zb * (Vb / Ib))
-        (ωB * C * zb * (Vb / Ib)) (puField Vb zb ωB v) (puField Ib zb ωB i) := by
+    (∀ z t, ∃ vz vt iz it : ℝ,
+      HasDerivAt (fun z' => v z' t) vz z ∧ HasDerivAt (fun t' => v z t') vt t ∧
+      HasDerivAt (fun z' => i z' t) iz z ∧ HasDerivAt (fun t' => i z t') it t ∧
+      vz = -R * i z t - L * it ∧ iz = -G * v z t - C * vt) ↔
+    ∀ z t, ∃ vz vt iz it : ℝ,
+      HasDerivAt (fun z' => puField Vb zb ωB v z' t) vz z ∧
+      HasDerivAt (fun t' => puField Vb zb ωB v z t') vt t ∧
+      HasDerivAt (fun z' => puField Ib zb ωB i z' t) iz z ∧
+      HasDerivAt (fun t' => puField Ib zb ωB i z t') it t ∧
+      vz = -(R * zb / (Vb / Ib)) * puField Ib zb ωB i z t - ωB * L * zb / (Vb / Ib) * it ∧
+      iz = -(G * zb * (Vb / Ib)) * puField Vb zb ωB v z t - ωB * C * zb * (Vb / Ib) * vt := by
   have e1 : R * zb / (Vb / Ib) = R * zb * Ib / Vb := by field_simp
   have e2 : ωB * L * zb / (Vb / Ib) = ωB * L * zb * Ib / Vb := by field_simp
   have e3 : G * zb * (Vb / Ib) = G * zb * Vb / Ib := by field_simp
   have e4 : ωB * C * zb * (Vb / Ib) = ωB * C * zb * Vb / Ib := by field_simp
   rw [e1, e2, e3, e4]
   refine ⟨telegrapher_pu_of hz hω hV hI, fun h => ?_⟩
-  have h' := telegrapher_pu_of (inv_ne_zero hz) (inv_ne_zero hω) (inv_ne_zero hV)
-    (inv_ne_zero hI) h
+  have h' := telegrapher_pu_of (v := puField Vb zb ωB v) (i := puField Ib zb ωB i)
+    (inv_ne_zero hz) (inv_ne_zero hω) (inv_ne_zero hV) (inv_ne_zero hI) h
   have hv : puField Vb⁻¹ zb⁻¹ ωB⁻¹ (puField Vb zb ωB v) = v := by
     funext z t; simp only [puField]; field_simp
   have hi : puField Ib⁻¹ zb⁻¹ ωB⁻¹ (puField Ib zb ωB i) = i := by
     funext z t; simp only [puField]; field_simp
-  rw [hv, hi] at h'
-  convert h' using 1 <;> field_simp
+  have f1 : R * zb * Ib / Vb * zb⁻¹ * Ib⁻¹ / Vb⁻¹ = R := by field_simp
+  have f2 : ωB⁻¹ * (ωB * L * zb * Ib / Vb) * zb⁻¹ * Ib⁻¹ / Vb⁻¹ = L := by field_simp
+  have f3 : G * zb * Vb / Ib * zb⁻¹ * Vb⁻¹ / Ib⁻¹ = G := by field_simp
+  have f4 : ωB⁻¹ * (ωB * C * zb * Vb / Ib) * zb⁻¹ * Vb⁻¹ / Ib⁻¹ = C := by field_simp
+  rw [hv, hi, f1, f2, f3, f4] at h'
+  exact h'
 
 /-! ## Converter DC side (§1.12) -/
 

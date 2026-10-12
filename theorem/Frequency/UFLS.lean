@@ -30,11 +30,14 @@ Results.
 * Trip logic (foundation, §1.1–§1.2). The note's single-stage indicator `1[Δf(t) ≤ −Δf_th]`
   is not latched: it re-connects the load as soon as the frequency recovers
   (`instantTrip_not_latched`). The corrected latched indicator is
-  `1[min_{0 ≤ τ ≤ t} Δf(τ) ≤ −Δf_th]` (`latchedTrip`, `latchedTrip_iff_sInf`,
-  `latchedTrip_mono`). The note's confirmation-delay rule `1[inf_{τ∈[t−τ_d,t]} Δf(τ) ≤ −Δf_i]`
-  trips on a single touch of the threshold (`windowInfTrip_single_touch`), i.e. it provides no
-  confirmation; the corrected rule requires the whole window below the threshold,
-  `1[sup_{τ∈[t−τ_d,t]} Δf(τ) ≤ −Δf_i]` (`confirmedTrip`, `confirmedTrip_iff_sSup`).
+  `1[min_{0 ≤ τ ≤ t} Δf(τ) ≤ −Δf_th]`, i.e. `∃ τ ∈ [0, t], Δf(τ) ≤ −Δf_th`
+  (`latchedTrip_iff_sInf`, `latchedTrip_mono`). The note's confirmation-delay rule
+  `1[inf_{τ∈[t−τ_d,t]} Δf(τ) ≤ −Δf_i]` trips on a single touch of the threshold
+  (`windowInfTrip_single_touch`), i.e. it provides no confirmation; the corrected rule requires
+  the whole window below the threshold, `1[sup_{τ∈[t−τ_d,t]} Δf(τ) ≤ −Δf_i]`, i.e.
+  `∀ τ ∈ [t − τ_d, t], Δf(τ) ≤ −Δf_i` (`confirmedTrip_iff_sSup`). These window conditions on
+  the record are written out in the statements (behavioural notions are defined only in the
+  semantic layer).
 
 Family and connection conclusions. This module adds no family; the plant is the swing + governor
 plant of `Frequency.SwingGovernor`, whose family publishes the stability conclusions. The
@@ -147,30 +150,29 @@ private theorem load_eq_of_rocof (hM : 0 < M) (hf : 0 < f₀) (hP : 0 ≤ ΔPL)
   have := mul_left_cancel₀ hP.ne' this
   linarith
 
-/-! ## Trip logic (§1.1–§1.2) -/
+/-! ## Trip logic (§1.1–§1.2)
+
+Trip rules on a frequency record `Δf` at time `t`, written out in the statements:
+* corrected latched indicator `min_{0 ≤ τ ≤ t} Δf(τ) ≤ −Δf_th`: `∃ τ ∈ [0, t], Δf τ ≤ −th`;
+* the note's §1.2 confirmation rule `inf_{τ ∈ [t−τ_d, t]} Δf(τ) ≤ −Δf_i`:
+  `∃ τ ∈ [t − τ_d, t], Δf τ ≤ −th`;
+* corrected confirmation rule `sup_{τ ∈ [t−τ_d, t]} Δf(τ) ≤ −Δf_i`:
+  `∀ τ ∈ [t − τ_d, t], Δf τ ≤ −th`. -/
 
 /-- The note's §1.1 indicator `1[Δf(t) ≤ −Δf_th]` (not latched). -/
 def instantTrip (Δf : ℝ → ℝ) (th t : ℝ) : Prop := Δf t ≤ -th
 
-/-- Corrected latched indicator: `min_{0 ≤ τ ≤ t} Δf(τ) ≤ −Δf_th`. -/
-def latchedTrip (Δf : ℝ → ℝ) (th t : ℝ) : Prop := ∃ τ ∈ Icc 0 t, Δf τ ≤ -th
-
-/-- The note's §1.2 confirmation rule `inf_{τ ∈ [t−τ_d, t]} Δf(τ) ≤ −Δf_i`. -/
-def windowInfTrip (Δf : ℝ → ℝ) (th τd t : ℝ) : Prop := ∃ τ ∈ Icc (t - τd) t, Δf τ ≤ -th
-
-/-- Corrected confirmation rule `sup_{τ ∈ [t−τ_d, t]} Δf(τ) ≤ −Δf_i`. -/
-def confirmedTrip (Δf : ℝ → ℝ) (th τd t : ℝ) : Prop := ∀ τ ∈ Icc (t - τd) t, Δf τ ≤ -th
-
-/-- A latched trip stays tripped. -/
+/-- A latched trip stays tripped: `min_{0 ≤ τ ≤ t} Δf(τ) ≤ −Δf_th` persists for `t' ≥ t`. -/
 @[powerlib_foundation] theorem latchedTrip_mono {Δf : ℝ → ℝ} {t t' : ℝ} (htt : t ≤ t')
-    (h : latchedTrip Δf th t) : latchedTrip Δf th t' := by
+    (h : ∃ τ ∈ Icc 0 t, Δf τ ≤ -th) : ∃ τ ∈ Icc 0 t', Δf τ ≤ -th := by
   obtain ⟨τ, hτ, hle⟩ := h
   exact ⟨τ, ⟨hτ.1, hτ.2.trans htt⟩, hle⟩
 
-/-- For a continuous frequency record the latched trip is the `min` rule. -/
+/-- For a continuous frequency record the latched trip (`Δf` at or below `−Δf_th` somewhere on
+`[0, t]`) is the `min` rule. -/
 @[powerlib_foundation] theorem latchedTrip_iff_sInf {Δf : ℝ → ℝ} {t : ℝ} (ht : 0 ≤ t)
     (hc : ContinuousOn Δf (Icc 0 t)) :
-    latchedTrip Δf th t ↔ sInf (Δf '' Icc 0 t) ≤ -th := by
+    (∃ τ ∈ Icc 0 t, Δf τ ≤ -th) ↔ sInf (Δf '' Icc 0 t) ≤ -th := by
   have hK : IsCompact (Δf '' Icc 0 t) := isCompact_Icc.image_of_continuousOn hc
   have hne : (Δf '' Icc 0 t).Nonempty := (nonempty_Icc.2 ht).image Δf
   constructor
@@ -180,10 +182,11 @@ def confirmedTrip (Δf : ℝ → ℝ) (th τd t : ℝ) : Prop := ∀ τ ∈ Icc 
     obtain ⟨τ, hτ, heq⟩ := hK.sInf_mem hne
     exact ⟨τ, hτ, heq ▸ h⟩
 
-/-- For a continuous frequency record the corrected confirmation rule is the `sup` rule. -/
+/-- For a continuous frequency record the corrected confirmation rule (`Δf` at or below
+`−Δf_i` on the whole window `[t − τ_d, t]`) is the `sup` rule. -/
 @[powerlib_foundation] theorem confirmedTrip_iff_sSup {Δf : ℝ → ℝ} {τd t : ℝ} (hτ : 0 ≤ τd)
     (hc : ContinuousOn Δf (Icc (t - τd) t)) :
-    confirmedTrip Δf th τd t ↔ sSup (Δf '' Icc (t - τd) t) ≤ -th := by
+    (∀ τ ∈ Icc (t - τd) t, Δf τ ≤ -th) ↔ sSup (Δf '' Icc (t - τd) t) ≤ -th := by
   have hK : IsCompact (Δf '' Icc (t - τd) t) := isCompact_Icc.image_of_continuousOn hc
   have hne : (Δf '' Icc (t - τd) t).Nonempty :=
     (nonempty_Icc.2 (by linarith)).image Δf
@@ -194,10 +197,11 @@ def confirmedTrip (Δf : ℝ → ℝ) (th τd t : ℝ) : Prop := ∀ τ ∈ Icc 
   · intro h τ hτ
     exact h _ (mem_image_of_mem Δf hτ)
 
-/-- The corrected rule implies the note's rule (and, after `τ_d`, the latched trip). -/
+/-- The corrected rule (whole window below the threshold) implies the note's rule (some
+instant of the window below it) and, after `τ_d`, the latched trip. -/
 @[powerlib_foundation] theorem confirmedTrip_imp {Δf : ℝ → ℝ} {τd t : ℝ} (hτ : 0 ≤ τd)
-    (h : confirmedTrip Δf th τd t) :
-    windowInfTrip Δf th τd t ∧ (τd ≤ t → latchedTrip Δf th t) := by
+    (h : ∀ τ ∈ Icc (t - τd) t, Δf τ ≤ -th) :
+    (∃ τ ∈ Icc (t - τd) t, Δf τ ≤ -th) ∧ (τd ≤ t → ∃ τ ∈ Icc 0 t, Δf τ ≤ -th) := by
   refine ⟨⟨t, ⟨by linarith, le_rfl⟩, h t ⟨by linarith, le_rfl⟩⟩, fun hle => ?_⟩
   exact ⟨t, ⟨hτ.trans hle, le_rfl⟩, h t ⟨by linarith, le_rfl⟩⟩
 
@@ -207,17 +211,18 @@ latched indicator stays tripped. -/
 @[powerlib_foundation] theorem instantTrip_not_latched (hth : 0 < th) :
     instantTrip (fun t => -2 * th + 3 * th * t) th 0 ∧
       ¬ instantTrip (fun t => -2 * th + 3 * th * t) th 1 ∧
-      latchedTrip (fun t => -2 * th + 3 * th * t) th 1 := by
-  refine ⟨?_, ?_, ⟨0, ⟨le_rfl, zero_le_one⟩, ?_⟩⟩ <;> simp only [instantTrip] <;> linarith
+      ∃ τ ∈ Icc (0 : ℝ) 1, -2 * th + 3 * th * τ ≤ -th := by
+  refine ⟨?_, ?_, ⟨0, ⟨le_rfl, zero_le_one⟩, ?_⟩⟩ <;> (try simp only [instantTrip]) <;> linarith
 
 /-- The note's `inf` confirmation rule trips on a single touch of the threshold: the record
 `Δf(τ) = −Δf_th + Δf_th |τ − 1|` is at or below `−Δf_th` only at `τ = 1`, yet the `inf` rule
-trips at `t = 1 + τ_d`; the corrected `sup` rule does not. -/
+(some instant of `[t − τ_d, t]` below the threshold) trips at `t = 1 + τ_d`; the corrected `sup`
+rule (the whole window below it) does not. -/
 @[powerlib_foundation] theorem windowInfTrip_single_touch {τd : ℝ} (hth : 0 < th)
     (hτ : 0 < τd) :
     (∀ τ, -th + th * |τ - 1| ≤ -th → τ = 1) ∧
-      windowInfTrip (fun τ => -th + th * |τ - 1|) th τd (1 + τd) ∧
-      ¬ confirmedTrip (fun τ => -th + th * |τ - 1|) th τd (1 + τd) := by
+      (∃ τ ∈ Icc (1 + τd - τd) (1 + τd), -th + th * |τ - 1| ≤ -th) ∧
+      ¬ ∀ τ ∈ Icc (1 + τd - τd) (1 + τd), -th + th * |τ - 1| ≤ -th := by
   refine ⟨fun τ hτ' => ?_, ⟨1, ⟨by linarith, by linarith⟩, by simp⟩, fun h => ?_⟩
   · have h1 : th * |τ - 1| ≤ 0 := by linarith
     have h2 : |τ - 1| ≤ 0 := by

@@ -23,10 +23,11 @@ Conventions fixed by this module:
   `balanced V φ θ` is the balanced positive-sequence signal `V cos(θ − 2πk/3 + φ)`.
 
 The chain rule (`hasDerivAt_rot_mulVec`, `hasDerivAt_mul_cexp`) holds for every differentiable
-frame angle `θ(t)`, constant or time-varying. `AlphaBetaRL` / `DqRL` are the αβ- and dq-frame
-KVL of one series R–L branch (IN-positive current, `conventions.md` §D1); their trajectories
-correspond one to one under Park for any differentiable `θ`, with no balanced-three-phase
-premise. Everything here is a coordinate identity (foundation); the stability of the RL branch
+frame angle `θ(t)`, constant or time-varying. The αβ- and dq-frame KVL of one series R–L
+branch (IN-positive current, `conventions.md` §D1; written out in the statements, since
+behavioural notions are defined only in the semantic layer) have trajectories that correspond
+one to one under Park for any differentiable `θ`, with no balanced-three-phase premise
+(`alphaBetaRL_iff_dqRL`). Everything here is a coordinate identity (foundation); the stability of the RL branch
 is the domain module `theorem/Transform/DqRL.lean`.
 
 Correction (`T-park-transformation.md` §1.5): the note says a fundamental positive-sequence
@@ -268,17 +269,13 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
   convert hz.mul he using 1
   ring
 
-/-! ## Rotating-frame KVL of an RL branch (`T-park-transformation.md` §1.4) -/
+/-! ## Rotating-frame KVL of an RL branch (`T-park-transformation.md` §1.4)
 
-/-- αβ-frame KVL of a series R–L branch, IN-positive current: `L i̇ = v − R i`, written as
-`i̇ = L⁻¹ (v − R i)`. `v` is the branch voltage. -/
-def AlphaBetaRL (R L : ℝ) (v i : ℝ → Fin 2 → ℝ) : Prop :=
-  ∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t)) t
-
-/-- dq-frame KVL of the same branch in a frame rotating at `ω(t)`:
-`i̇ = L⁻¹ (v − R i) − ω J i` (§1.4 boxed, the `±ωL` cross terms). -/
-def DqRL (R L : ℝ) (ω : ℝ → ℝ) (v i : ℝ → Fin 2 → ℝ) : Prop :=
-  ∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t) - ω t • (J *ᵥ i t)) t
+The KVL of a series R–L branch, IN-positive current, with branch voltage `v`, is written out in
+the statements below:
+* αβ frame: `L i̇ = v − R i`, i.e. `∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t)) t`;
+* dq frame rotating at `ω(t)`: `i̇ = L⁻¹ (v − R i) − ω J i` (§1.4 boxed, the `±ωL` cross terms),
+  i.e. `∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t) - ω t • (J *ᵥ i t)) t`. -/
 
 /-- Componentwise form: `i̇_d = (v_d − R i_d)/L + ω i_q`, `i̇_q = (v_q − R i_q)/L − ω i_d`. -/
 @[powerlib_foundation] theorem dqRL_field_apply (R L ω : ℝ) (v i : Fin 2 → ℝ) :
@@ -289,16 +286,21 @@ def DqRL (R L : ℝ) (ω : ℝ → ℝ) (v i : ℝ → Fin 2 → ℝ) : Prop :=
 /-- Park maps αβ-frame RL trajectories to dq-frame RL trajectories, for any differentiable
 frame angle `θ` with `θ̇ = ω`. No balanced-three-phase premise is needed. -/
 @[powerlib_foundation] theorem dqRL_of_alphaBetaRL {R L : ℝ} {θ ω : ℝ → ℝ}
-    (hθ : ∀ t, HasDerivAt θ (ω t) t) {v i : ℝ → Fin 2 → ℝ} (h : AlphaBetaRL R L v i) :
-    DqRL R L ω (fun t => park (θ t) *ᵥ v t) (fun t => park (θ t) *ᵥ i t) := by
+    (hθ : ∀ t, HasDerivAt θ (ω t) t) {v i : ℝ → Fin 2 → ℝ}
+    (h : ∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t)) t) :
+    ∀ t, HasDerivAt (fun t => park (θ t) *ᵥ i t)
+      (L⁻¹ • (park (θ t) *ᵥ v t - R • (park (θ t) *ᵥ i t)) -
+        ω t • (J *ᵥ (park (θ t) *ᵥ i t))) t := by
   intro t
   convert hasDerivAt_park_mulVec (hθ t) (h t) using 1
   rw [Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_smul]
 
 /-- Inverse direction: rotating a dq-frame trajectory back gives an αβ-frame trajectory. -/
 @[powerlib_foundation] theorem alphaBetaRL_of_dqRL {R L : ℝ} {θ ω : ℝ → ℝ}
-    (hθ : ∀ t, HasDerivAt θ (ω t) t) {v i : ℝ → Fin 2 → ℝ} (h : DqRL R L ω v i) :
-    AlphaBetaRL R L (fun t => rot (θ t) *ᵥ v t) (fun t => rot (θ t) *ᵥ i t) := by
+    (hθ : ∀ t, HasDerivAt θ (ω t) t) {v i : ℝ → Fin 2 → ℝ}
+    (h : ∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t) - ω t • (J *ᵥ i t)) t) :
+    ∀ t, HasDerivAt (fun t => rot (θ t) *ᵥ i t)
+      (L⁻¹ • (rot (θ t) *ᵥ v t - R • (rot (θ t) *ᵥ i t))) t := by
   intro t
   convert hasDerivAt_rot_mulVec (hθ t) (h t) using 1
   rw [sub_add_cancel, Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_smul]
@@ -306,8 +308,10 @@ frame angle `θ` with `θ̇ = ω`. No balanced-three-phase premise is needed. -/
 /-- One-to-one correspondence of αβ and dq RL trajectories under `x^{dq} = park θ · x^{αβ}`. -/
 @[powerlib_foundation] theorem alphaBetaRL_iff_dqRL {R L : ℝ} {θ ω : ℝ → ℝ}
     (hθ : ∀ t, HasDerivAt θ (ω t) t) (v i : ℝ → Fin 2 → ℝ) :
-    AlphaBetaRL R L v i ↔
-      DqRL R L ω (fun t => park (θ t) *ᵥ v t) (fun t => park (θ t) *ᵥ i t) := by
+    (∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t)) t) ↔
+      ∀ t, HasDerivAt (fun t => park (θ t) *ᵥ i t)
+        (L⁻¹ • (park (θ t) *ᵥ v t - R • (park (θ t) *ᵥ i t)) -
+          ω t • (J *ᵥ (park (θ t) *ᵥ i t))) t := by
   refine ⟨dqRL_of_alphaBetaRL hθ, fun h => ?_⟩
   have h' := alphaBetaRL_of_dqRL hθ h
   simp only [rot_mulVec_park_mulVec] at h'
