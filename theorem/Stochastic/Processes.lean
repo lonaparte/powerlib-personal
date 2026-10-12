@@ -33,7 +33,8 @@ Category B.
   an **open** domain `𝒟` is a stopping time.
 * `UsualConditions` (complete + right-continuous filtration) and `UsualConditions.null_mem`.
 * `deterministic_markov_not_martingale`: the deterministic process `X_n = n` is Markov (in the
-  conditional-expectation sense `IsMarkovProcess`) but is not a martingale.
+  conditional-expectation sense, written out in the statement: for bounded measurable `g`,
+  `E[g(X_{n+1}) | 𝓕_n] = E[g(X_{n+1}) | σ(X_n)]` a.s.) but is not a martingale.
 
 Correction (T-martingales §1.6.1).  "`W_{t∧τ_a}` is bounded" is false for a one-sided level:
 a stopped path is only bounded on the side of the level (`oneSided_stopped_unbounded`: the path
@@ -241,19 +242,18 @@ def UsualConditions (P : Measure Ω) (𝓕 : Filtration ℝ≥0 m) : Prop :=
 
 /-! ## Markov does not imply martingale -/
 
-/-- Markov property of a real discrete-time process w.r.t. a filtration, in conditional
-expectation form: for bounded measurable test functions `g`,
-`E[g(X_{n+1}) | 𝓕_n] = E[g(X_{n+1}) | σ(X_n)]` a.s. -/
-def IsMarkovProcess (P : Measure Ω) (𝓕 : Filtration ℕ m) (X : ℕ → Ω → ℝ) : Prop :=
-  ∀ n (g : ℝ → ℝ), Measurable g → (∃ C, ∀ x, |g x| ≤ C) →
-    P[fun ω => g (X (n + 1) ω) | 𝓕 n] =ᵐ[P]
-      P[fun ω => g (X (n + 1) ω) | MeasurableSpace.comap (X n) inferInstance]
-
 /-- **Markov but not a martingale** (T-process-foundations §1.4): on any probability space the
-deterministic process `X_n = n` is Markov (for any filtration) and is not a martingale. -/
+deterministic process `X_n = n` is Markov (for any filtration) and is not a martingale.
+
+The first conjunct is the Markov property of a real discrete-time process `X` w.r.t. a filtration
+`𝓕`, in conditional expectation form, written out for `X_n = n`: for bounded measurable test
+functions `g`, `E[g(X_{n+1}) | 𝓕_n] = E[g(X_{n+1}) | σ(X_n)]` a.s. -/
 @[powerlib_foundation] theorem deterministic_markov_not_martingale {P : Measure Ω}
     [IsProbabilityMeasure P] (𝓕 : Filtration ℕ m) :
-    IsMarkovProcess P 𝓕 (fun (n : ℕ) _ => (n : ℝ)) ∧
+    (∀ (n : ℕ) (g : ℝ → ℝ), Measurable g → (∃ C, ∀ x, |g x| ≤ C) →
+      P[fun _ => g ((n + 1 : ℕ) : ℝ) | 𝓕 n] =ᵐ[P]
+        P[fun _ => g ((n + 1 : ℕ) : ℝ) |
+          MeasurableSpace.comap (fun _ : Ω => (n : ℝ)) inferInstance]) ∧
       ¬ Martingale (fun (n : ℕ) (_ : Ω) => (n : ℝ)) 𝓕 P := by
   constructor
   · intro n g _ _

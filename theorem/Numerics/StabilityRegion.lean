@@ -6,7 +6,9 @@ import Mathlib.Analysis.Matrix.Normed
 
 Model boundary: complex linear recursions `x_{k+1} = Φ x_k` on `Fin n → ℂ` (a real system is
 the special case of real entries), with boundedness of every trajectory as the stability
-notion (`BoundedTrajectories`).  The stability region is the closed set `‖R(z)‖ ≤ 1`.
+notion: "bounded trajectories" means `∀ x₀, ∃ C, ∀ k, ‖Φ^k x₀‖ ≤ C` (every trajectory
+`x_k = Φ^k x₀` of the recursion is bounded), written out in each statement.  The stability
+region is the closed set `‖R(z)‖ ≤ 1`.
 
 Results (foundation):
 * `norm_le_one_of_boundedTrajectories`: bounded trajectories ⇒ every eigenvalue of `Φ` has
@@ -37,10 +39,6 @@ open scoped Matrix.Norms.Operator
 
 variable {n : ℕ}
 
-/-- Every trajectory of `x_{k+1} = Φ x_k` is bounded. -/
-def BoundedTrajectories (Φ : Matrix (Fin n) (Fin n) ℂ) : Prop :=
-  ∀ x₀ : Fin n → ℂ, ∃ C : ℝ, ∀ k : ℕ, ‖(Φ ^ k) *ᵥ x₀‖ ≤ C
-
 @[powerlib_foundation] theorem pow_mulVec_eigen {Φ : Matrix (Fin n) (Fin n) ℂ} {μ : ℂ}
     {v : Fin n → ℂ} (heig : Φ *ᵥ v = μ • v) (k : ℕ) : (Φ ^ k) *ᵥ v = μ ^ k • v := by
   induction k with
@@ -48,10 +46,11 @@ def BoundedTrajectories (Φ : Matrix (Fin n) (Fin n) ℂ) : Prop :=
   | succ k ih =>
     rw [pow_succ, ← Matrix.mulVec_mulVec, heig, Matrix.mulVec_smul, ih, smul_smul, ← pow_succ']
 
-/-- Bounded trajectories force every eigenvalue into the closed unit disk. -/
+/-- Bounded trajectories (every trajectory `Φ^k x₀` of `x_{k+1} = Φ x_k` is bounded) force
+every eigenvalue into the closed unit disk. -/
 @[powerlib_foundation] theorem norm_le_one_of_boundedTrajectories
-    {Φ : Matrix (Fin n) (Fin n) ℂ} (hB : BoundedTrajectories Φ) {μ : ℂ} {v : Fin n → ℂ}
-    (hv : v ≠ 0) (heig : Φ *ᵥ v = μ • v) : ‖μ‖ ≤ 1 := by
+    {Φ : Matrix (Fin n) (Fin n) ℂ} (hB : ∀ x₀ : Fin n → ℂ, ∃ C : ℝ, ∀ k : ℕ, ‖(Φ ^ k) *ᵥ x₀‖ ≤ C)
+    {μ : ℂ} {v : Fin n → ℂ} (hv : v ≠ 0) (heig : Φ *ᵥ v = μ • v) : ‖μ‖ ≤ 1 := by
   by_contra hμ
   push Not at hμ
   obtain ⟨C, hC⟩ := hB v
@@ -74,12 +73,13 @@ def BoundedTrajectories (Φ : Matrix (Fin n) (Fin n) ℂ) : Prop :=
           simp only [Matrix.mul_assoc]
       _ = P * (D ^ k * D) * Pinv := by rw [hP', Matrix.mul_one]; simp only [Matrix.mul_assoc]
 
-/-- Diagonalizable recursion: bounded trajectories ⇔ all eigenvalues in the closed unit
-disk. -/
+/-- Diagonalizable recursion: bounded trajectories (every `Φ^k x₀` bounded, for
+`Φ = P diag(d) P⁻¹`) ⇔ all eigenvalues in the closed unit disk. -/
 @[powerlib_foundation] theorem boundedTrajectories_iff_of_diagonalizable
     {P Pinv : Matrix (Fin n) (Fin n) ℂ} (hP : P * Pinv = 1) (hP' : Pinv * P = 1)
     (d : Fin n → ℂ) :
-    BoundedTrajectories (P * diagonal d * Pinv) ↔ ∀ i, ‖d i‖ ≤ 1 := by
+    (∀ x₀ : Fin n → ℂ, ∃ C : ℝ, ∀ k : ℕ, ‖((P * diagonal d * Pinv) ^ k) *ᵥ x₀‖ ≤ C) ↔
+      ∀ i, ‖d i‖ ≤ 1 := by
   constructor
   · intro hB i
     have hv : P *ᵥ Pi.single i 1 ≠ 0 := by
@@ -113,12 +113,15 @@ disk. -/
       _ ≤ ‖P‖ * 1 * ‖Pinv‖ * ‖x₀‖ := by gcongr
       _ = ‖P‖ * ‖Pinv‖ * ‖x₀‖ := by ring
 
-/-- Forward Euler on a diagonalizable linear system: bounded numerical trajectories exactly
-when every `hλᵢ` lies in the forward-Euler region `‖1 + z‖ ≤ 1`. -/
+/-- Forward Euler on a diagonalizable linear system: bounded numerical trajectories (every
+`(1 + hA)^k x₀` bounded) exactly when every `hλᵢ` lies in the forward-Euler region
+`‖1 + z‖ ≤ 1`. -/
 @[powerlib_foundation] theorem forwardEuler_boundedTrajectories_iff
     {P Pinv : Matrix (Fin n) (Fin n) ℂ} (hP : P * Pinv = 1) (hP' : Pinv * P = 1)
     (lam : Fin n → ℂ) (h : ℂ) :
-    BoundedTrajectories (1 + h • (P * diagonal lam * Pinv)) ↔ ∀ i, ‖1 + h * lam i‖ ≤ 1 := by
+    (∀ x₀ : Fin n → ℂ, ∃ C : ℝ, ∀ k : ℕ,
+        ‖((1 + h • (P * diagonal lam * Pinv)) ^ k) *ᵥ x₀‖ ≤ C) ↔
+      ∀ i, ‖1 + h * lam i‖ ≤ 1 := by
   have hconj : 1 + h • (P * diagonal lam * Pinv) = P * diagonal (fun i => 1 + h * lam i) * Pinv := by
     have : diagonal (fun i => 1 + h * lam i) = 1 + h • diagonal lam := by
       ext i j
@@ -131,11 +134,13 @@ when every `hλᵢ` lies in the forward-Euler region `‖1 + z‖ ≤ 1`. -/
   exact boundedTrajectories_iff_of_diagonalizable hP hP' _
 
 /-- The unconditional "⇐" fails: a Jordan block whose eigenvalue maps to the boundary point
-`R(0) = 1` of the forward-Euler region has unbounded forward-Euler trajectories. -/
+`R(0) = 1` of the forward-Euler region has unbounded forward-Euler trajectories (not every
+`(1 + hA)^k x₀` is bounded). -/
 @[powerlib_foundation] theorem jordan_counterexample {h : ℝ} (hh : 0 < h) :
     (∀ (μ : ℂ) (v : Fin 2 → ℂ), v ≠ 0 → !![0, 1; 0, 0] *ᵥ v = μ • v →
         ‖1 + (h : ℂ) * μ‖ ≤ 1) ∧
-      ¬ BoundedTrajectories (1 + (h : ℂ) • !![(0 : ℂ), 1; 0, 0]) := by
+      ¬ ∀ x₀ : Fin 2 → ℂ, ∃ C : ℝ, ∀ k : ℕ,
+        ‖((1 + (h : ℂ) • !![(0 : ℂ), 1; 0, 0]) ^ k) *ᵥ x₀‖ ≤ C := by
   constructor
   · intro μ v hv heig
     have h0 := congrFun heig 0

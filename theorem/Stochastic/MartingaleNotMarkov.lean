@@ -17,7 +17,9 @@ Construction (two fair coins, `Ω = Bool × Bool` with the uniform product law).
 `X₀ = X₁ = 0`, `X_n = ξ₁ ξ₂` for `n ≥ 2`, with the filtration `𝓕₀ = {∅, Ω}`, `𝓕₁ = σ(ξ₁)`,
 `𝓕_n = σ(ξ₁, ξ₂)` (`n ≥ 2`).
 * `cm_martingale`: `X` is an `𝓕`-martingale (`E[ξ₁ ξ₂ | ξ₁] = ξ₁ E ξ₂ = 0`).
-* `cm_not_markov`: `X` is not Markov w.r.t. `𝓕` (`Proc.IsMarkovProcess`): for the bounded test
+* `cm_not_markov`: `X` is not Markov w.r.t. `𝓕` (conditional-expectation form, written out in
+  the statement: it is false that `E[g(X_{n+1}) | 𝓕_n] = E[g(X_{n+1}) | σ(X_n)]` a.s. for every
+  `n` and every bounded measurable `g`): for the bounded test
   function `g = 1_{x ≠ 0}`, `E[g(X₂) | 𝓕₁] = ξ₁` while `E[g(X₂) | σ(X₁)] = E ξ₁ = 1/2`, since `X₁`
   is constant; the future of `X` depends on information (`ξ₁`) that its present value does not
   carry.
@@ -119,8 +121,13 @@ def cmF : Filtration ℕ (inferInstance : MeasurableSpace (Bool × Bool)) where
       rw [cmF_of_two_le hi]
       exact (measurable_of_countable _).stronglyMeasurable
 
-/-- **`X` is not Markov** for `𝓕`: martingale does not imply Markov. -/
-@[powerlib_foundation] theorem cm_not_markov : ¬ IsMarkovProcess coin2 cmF cmX := by
+/-- **`X` is not Markov** for `𝓕`: martingale does not imply Markov. The negated statement is the
+Markov property in conditional-expectation form: for bounded measurable test functions `g`,
+`E[g(X_{n+1}) | 𝓕_n] = E[g(X_{n+1}) | σ(X_n)]` a.s. -/
+@[powerlib_foundation] theorem cm_not_markov :
+    ¬ ∀ (n : ℕ) (g : ℝ → ℝ), Measurable g → (∃ C, ∀ x, |g x| ≤ C) →
+      coin2[fun ω => g (cmX (n + 1) ω) | cmF n] =ᵐ[coin2]
+        coin2[fun ω => g (cmX (n + 1) ω) | MeasurableSpace.comap (cmX n) inferInstance] := by
   intro h
   set g : ℝ → ℝ := fun x => if x = 0 then 0 else 1 with hg
   have hgm : Measurable g := by

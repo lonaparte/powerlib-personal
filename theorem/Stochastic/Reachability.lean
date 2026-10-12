@@ -13,8 +13,9 @@ Markov kernels: `V_N = 1`, `V_k(x) = ∫ 1_A(y) V_{k+1}(y) Q(x, dy)`).
 Foundation (probability), not an engineering result.
 
 Setting: a process `X` adapted to a filtration `𝓕` on a probability space that is Markov with
-kernels `K s t` (`Markov.IsMarkovWith`, conditional-expectation form) and time-homogeneous
-one-step kernel `Q = K k (k+1)`; a measurable safe set `A`.
+kernels `K s t` (conditional-expectation form, written out as the hypothesis `h` of each theorem:
+for `s ≤ t` and bounded measurable `g`, `E[g(X_t) | 𝓕_s] = ∫ g dK_{s,t}(X_s)` a.s.) and
+time-homogeneous one-step kernel `Q = K k (k+1)`; a measurable safe set `A`.
 * `safeValue Q A N`: the value function `V_0 = 1`, `V_{N+1}(x) = ∫ 1_A(y) V_N(y) Q(x, dy)`
   (`0 ≤ V_N ≤ 1`, measurable).
 * `stayIn X A k N = ∏_{i<N} 1_A(X_{k+1+i})`: indicator that the path stays in `A` during the next
@@ -100,7 +101,10 @@ omit [MeasurableSpace E] in
 `P(X_{k+1}, …, X_{k+N} ∈ A | 𝓕_k) = V_N(X_k)` almost surely. -/
 @[powerlib_foundation] theorem safety_dp {P : Measure Ω} [IsProbabilityMeasure P]
     {𝓕 : Filtration ℕ mΩ} {X : ℕ → Ω → E} {K : ℕ → ℕ → Kernel E E} {Q : Kernel E E}
-    [IsMarkovKernel Q] (h : IsMarkovWith P 𝓕 X K) (hQ : ∀ k, K k (k + 1) = Q)
+    [IsMarkovKernel Q]
+    (h : ∀ s t, s ≤ t → ∀ g : E → ℝ, Measurable g → (∃ C, ∀ y, |g y| ≤ C) →
+      P[fun ω => g (X t ω) | 𝓕 s] =ᵐ[P] fun ω => ∫ y, g y ∂(K s t (X s ω)))
+    (hQ : ∀ k, K k (k + 1) = Q)
     (hadapt : ∀ k, Measurable[𝓕 k] (X k)) {A : Set E} (hA : MeasurableSet A) :
     ∀ N k, P[stayIn X A k N | 𝓕 k] =ᵐ[P] fun ω => safeValue Q A N (X k ω) := by
   have hX : ∀ n, Measurable (X n) := fun n => (hadapt n).mono (𝓕.le n) le_rfl
@@ -153,7 +157,10 @@ omit [MeasurableSpace E] in
 /-- **Safety probability from the initial law**: `P(X_1, …, X_N ∈ A) = E[V_N(X_0)]`. -/
 @[powerlib_foundation] theorem safety_prob_eq {P : Measure Ω} [IsProbabilityMeasure P]
     {𝓕 : Filtration ℕ mΩ} {X : ℕ → Ω → E} {K : ℕ → ℕ → Kernel E E} {Q : Kernel E E}
-    [IsMarkovKernel Q] (h : IsMarkovWith P 𝓕 X K) (hQ : ∀ k, K k (k + 1) = Q)
+    [IsMarkovKernel Q]
+    (h : ∀ s t, s ≤ t → ∀ g : E → ℝ, Measurable g → (∃ C, ∀ y, |g y| ≤ C) →
+      P[fun ω => g (X t ω) | 𝓕 s] =ᵐ[P] fun ω => ∫ y, g y ∂(K s t (X s ω)))
+    (hQ : ∀ k, K k (k + 1) = Q)
     (hadapt : ∀ k, Measurable[𝓕 k] (X k)) {A : Set E} (hA : MeasurableSet A) (N : ℕ) :
     ∫ ω, stayIn X A 0 N ω ∂P = ∫ ω, safeValue Q A N (X 0 ω) ∂P := by
   rw [← integral_condExp (𝓕.le 0)]
@@ -278,7 +285,10 @@ omit [MeasurableSpace E] in
 `P(reach T within N steps while staying in D | 𝓕_k) = W_N(X_k)` almost surely. -/
 @[powerlib_foundation] theorem reachAvoid_dp {P : Measure Ω} [IsProbabilityMeasure P]
     {𝓕 : Filtration ℕ mΩ} {X : ℕ → Ω → E} {K : ℕ → ℕ → Kernel E E} {Q : Kernel E E}
-    [IsMarkovKernel Q] (h : IsMarkovWith P 𝓕 X K) (hQ : ∀ k, K k (k + 1) = Q)
+    [IsMarkovKernel Q]
+    (h : ∀ s t, s ≤ t → ∀ g : E → ℝ, Measurable g → (∃ C, ∀ y, |g y| ≤ C) →
+      P[fun ω => g (X t ω) | 𝓕 s] =ᵐ[P] fun ω => ∫ y, g y ∂(K s t (X s ω)))
+    (hQ : ∀ k, K k (k + 1) = Q)
     (hadapt : ∀ k, Measurable[𝓕 k] (X k)) {T D : Set E} (hT : MeasurableSet T)
     (hD : MeasurableSet D) :
     ∀ N k, P[reachAvoid X T D k N | 𝓕 k] =ᵐ[P] fun ω => reachValue Q T D N (X k ω) := by

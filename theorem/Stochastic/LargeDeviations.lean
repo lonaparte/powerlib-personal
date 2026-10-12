@@ -16,10 +16,11 @@ asserts that a particular diffusion satisfies an LDP (Freidlin–Wentzell's theo
 formalized); the action and the quasi-potential are deterministic variational objects.
 
 Main results.
-* `SatisfiesLDP`: large-deviation principle with speed `ε → 0⁺` for a family of measures on a
-  topological space, with the bounds stated for **Borel** sets `A` and a **lower semicontinuous**
-  rate function (the hypotheses the note leaves implicit); `dirac_satisfiesLDP`: the constant
-  family `δ_{x₀}` satisfies it with rate `0` at `x₀` and `∞` elsewhere (non-vacuity check).
+* Large-deviation principle with speed `ε → 0⁺` for a family of measures on a topological space,
+  with the bounds stated for **Borel** sets `A` and a **lower semicontinuous** rate function (the
+  hypotheses the note leaves implicit; written out in the statement, see the section header);
+  `dirac_satisfiesLDP`: the constant family `δ_{x₀}` satisfies it with rate `0` at `x₀` and `∞`
+  elsewhere (non-vacuity check).
 * `chernoff_bound` (wrapper of Mathlib `ProbabilityTheory.measure_ge_le_exp_mul_mgf`) and
   `chernoff_iid`: `P(Σ_{i<n} Xᵢ ≥ n a) ≤ (e^{−ta} M(t))ⁿ` for independent summands with common
   moment generating function — the exponential (Cramér) upper bound.
@@ -41,28 +42,31 @@ namespace powerlib.Stochastic.LDP
 open MeasureTheory ProbabilityTheory Filter Real Set Topology Matrix
 open scoped ENNReal Classical
 
-/-! ## LDP definition -/
+/-! ## Large-deviation principle
 
-/-- **Large-deviation principle** with speed `ε → 0⁺` and rate function `I` (Borel sets,
-lower semicontinuous rate). -/
-structure SatisfiesLDP {E : Type*} [TopologicalSpace E] [MeasurableSpace E]
-    (P : ℝ → Measure E) (I : E → ℝ≥0∞) : Prop where
-  lsc : LowerSemicontinuous I
-  upper : ∀ A : Set E, MeasurableSet A →
-    limsup (fun ε : ℝ => (ε : EReal) * ENNReal.log (P ε A)) (𝓝[>] 0) ≤
-      -(⨅ x ∈ closure A, ((I x : ℝ≥0∞) : EReal))
-  lower : ∀ A : Set E, MeasurableSet A →
-    -(⨅ x ∈ interior A, ((I x : ℝ≥0∞) : EReal)) ≤
-      liminf (fun ε : ℝ => (ε : EReal) * ENNReal.log (P ε A)) (𝓝[>] 0)
+A family of measures `P ε` satisfies the **large-deviation principle** with speed `ε → 0⁺` and
+rate function `I` (Borel sets, lower semicontinuous rate) when `I` is lower semicontinuous and,
+for every measurable `A`,
+`limsup_{ε → 0⁺} ε log P_ε(A) ≤ −inf_{x ∈ cl A} I(x)` (upper bound) and
+`−inf_{x ∈ int A} I(x) ≤ liminf_{ε → 0⁺} ε log P_ε(A)` (lower bound).
+The principle is written out in the statement of `dirac_satisfiesLDP`. -/
 
 /-- Rate function of a point mass: `0` at `x₀`, `∞` elsewhere. -/
 def diracRate {E : Type*} (x₀ : E) (x : E) : ℝ≥0∞ := if x = x₀ then 0 else ⊤
 
-/-- **Non-vacuity**: the constant family `δ_{x₀}` satisfies the LDP with `diracRate x₀` (on a
-T1 space). -/
+/-- **Non-vacuity**: the constant family `δ_{x₀}` satisfies the large-deviation principle with
+speed `ε → 0⁺` and rate function `diracRate x₀` (on a T1 space): the rate is lower semicontinuous,
+and for every Borel set `A` the upper bound `limsup_{ε → 0⁺} ε log δ_{x₀}(A) ≤ −inf_{cl A} I` and
+the lower bound `−inf_{int A} I ≤ liminf_{ε → 0⁺} ε log δ_{x₀}(A)` hold. -/
 @[powerlib_foundation] theorem dirac_satisfiesLDP {E : Type*} [TopologicalSpace E] [T1Space E]
     [MeasurableSpace E] [MeasurableSingletonClass E] (x₀ : E) :
-    SatisfiesLDP (fun _ => Measure.dirac x₀) (diracRate x₀) := by
+    LowerSemicontinuous (diracRate x₀) ∧
+      (∀ A : Set E, MeasurableSet A →
+        limsup (fun ε : ℝ => (ε : EReal) * ENNReal.log (Measure.dirac x₀ A)) (𝓝[>] 0) ≤
+          -(⨅ x ∈ closure A, ((diracRate x₀ x : ℝ≥0∞) : EReal))) ∧
+      (∀ A : Set E, MeasurableSet A →
+        -(⨅ x ∈ interior A, ((diracRate x₀ x : ℝ≥0∞) : EReal)) ≤
+          liminf (fun ε : ℝ => (ε : EReal) * ENNReal.log (Measure.dirac x₀ A)) (𝓝[>] 0)) := by
   have hval : ∀ A : Set E, MeasurableSet A → ∀ ε : ℝ, 0 < ε →
       (ε : EReal) * ENNReal.log (Measure.dirac x₀ A) = if x₀ ∈ A then 0 else ⊥ := by
     intro A hA ε hε

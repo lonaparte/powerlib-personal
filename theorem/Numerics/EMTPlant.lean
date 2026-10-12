@@ -130,13 +130,16 @@ private theorem rlPlant_backwardEulerDiscretization_exponentiallyStable
     backwardEuler_exponentiallyStable_of_isHurwitz hA hh⟩
 
 /-- For a well-posed trapezoidal step, the discretized RL model decays geometrically exactly
-when the resistance is positive: the trapezoidal rule neither creates nor removes
-stability of this plant.
+when the resistance is positive (every trajectory of the trapezoidal recursion satisfies
+`‖x k‖ ≤ C ρ^k ‖x 0‖` with `C > 0`, `0 ≤ ρ < 1`): the trapezoidal rule neither creates nor
+removes stability of this plant.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem rlPlant_trapezoidalDiscretization_exponentiallyStable_iff
     (m : RL.Impedance) {h : ℝ} (hh : 0 < h)
     (hP : IsUnit (1 - (h / 2) • rlMatrix m).det) :
-    Discrete.ExponentiallyStable ⟨trapezoidalMatrix h (rlMatrix m)⟩ ↔ 0 < m.resistance := by
+    (∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
+      ∀ x, Discrete.IsTrajectory ⟨trapezoidalMatrix h (rlMatrix m)⟩ x →
+        ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔ 0 < m.resistance := by
   rw [Discrete.exponentiallyStable_iff_schurStable, trapezoidal_schurStable_iff_isHurwitz hh hP,
     rlMatrix_isHurwitz_iff]
 
@@ -212,12 +215,16 @@ private theorem idealLCLPlant_backwardEulerDiscretization_exponentiallyStable
     backwardEuler_exponentiallyStable_of_isHurwitz hA hh⟩
 
 /-- For a passive ideal LCL plant and a well-posed trapezoidal step, the discretized model
-decays geometrically exactly when the plant is damped (`R₁ ≠ 0 ∨ R₂ ≠ 0`).
+decays geometrically (every trajectory of the trapezoidal recursion satisfies
+`‖x k‖ ≤ C ρ^k ‖x 0‖` with `C > 0`, `0 ≤ ρ < 1`) exactly when the plant is damped
+(`R₁ ≠ 0 ∨ R₂ ≠ 0`).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_iff
     (m : LCL.Circuit) (hp : m.Passive) {h : ℝ} (hh : 0 < h)
     (hP : IsUnit (1 - (h / 2) • m.plant.A).det) :
-    Discrete.ExponentiallyStable ⟨trapezoidalMatrix h m.plant.A⟩ ↔
+    (∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
+      ∀ x, Discrete.IsTrajectory ⟨trapezoidalMatrix h m.plant.A⟩ x →
+        ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔
       m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0 := by
   rw [Discrete.exponentiallyStable_iff_schurStable, trapezoidal_schurStable_iff_isHurwitz hh hP,
     LCL.isHurwitz_iff_stable, LCL.passive_stable_iff m hp]

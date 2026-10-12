@@ -16,6 +16,11 @@ Because the noise is additive, the SDE is understood **pathwise** as the integra
 not prove existence, uniqueness or non-explosion of solutions, and we do not compute the escape
 law.
 
+The pathwise solution notions are written out in the statements (behaviour is defined only in
+the semantic layer): `x` solves the swept problem driven by `w` when
+`∀ t ≥ 0, x(t) = x(0) + ∫₀ᵗ (μ₀ − ε r − x(r)²) dr + σ w(t)`, and `y` solves the rescaled problem
+driven by `w̃` when `∀ s ≥ 0, y(s) = y(0) + ∫₀ˢ (s₀ − r − y(r)²) dr + η w̃(s)`.
+
 Main results.
 * `sweptFold_rescale_iff`: with `ε = c³` (`c > 0`), `x` solves the swept problem driven by `w`
   iff `y(s) = x(s/c)/c` solves the parameter-free problem
@@ -43,14 +48,6 @@ namespace powerlib.Stochastic.NoiseFold
 open Real intervalIntegral MeasureTheory ProbabilityTheory
 open scoped NNReal
 
-/-- Pathwise solution of the swept noisy fold `dx = (μ₀ − εt − x²) dt + σ dw` on `t ≥ 0`. -/
-def SweptSol (μ₀ ε σ : ℝ) (w x : ℝ → ℝ) : Prop :=
-  ∀ t, 0 ≤ t → x t = x 0 + (∫ r in (0 : ℝ)..t, (μ₀ - ε * r - x r ^ 2)) + σ * w t
-
-/-- Pathwise solution of the rescaled problem `dy = (s₀ − s − y²) ds + η dw̃` on `s ≥ 0`. -/
-def ScaledSol (s₀ η : ℝ) (w y : ℝ → ℝ) : Prop :=
-  ∀ s, 0 ≤ s → y s = y 0 + (∫ r in (0 : ℝ)..s, (s₀ - r - y r ^ 2)) + η * w s
-
 /-- Rescaled state `y(s) = x(s/c)/c`. -/
 def rescaleState (c : ℝ) (x : ℝ → ℝ) (s : ℝ) : ℝ := x (s / c) / c
 
@@ -75,11 +72,19 @@ def rescalePath (c : ℝ) (w : ℝ → ℝ) (s : ℝ) : ℝ := √c * w (s / c)
 
 /-- **Exact rescaling of the noisy swept fold**: with `ε = c³`, `x` solves the swept problem
 driven by `w` iff `y = x(·/c)/c` solves the rescaled problem with `s₀ = μ₀/c²`,
-`η = σ/c^{3/2}`, driven by `w̃ = √c · w(·/c)`. -/
+`η = σ/c^{3/2}`, driven by `w̃ = √c · w(·/c)`.
+
+Both sides are pathwise solutions, written out: the left side is the pathwise solution of the
+swept noisy fold `dx = (μ₀ − εt − x²) dt + σ dw` on `t ≥ 0`
+(`x(t) = x(0) + ∫₀ᵗ (μ₀ − ε r − x(r)²) dr + σ w(t)`), the right side that of the rescaled problem
+`dy = (s₀ − s − y²) ds + η dw̃` on `s ≥ 0`
+(`y(s) = y(0) + ∫₀ˢ (s₀ − r − y(r)²) dr + η w̃(s)`). -/
 @[powerlib_foundation] theorem sweptFold_rescale_iff {c : ℝ} (hc : 0 < c) (μ₀ σ : ℝ)
     (w x : ℝ → ℝ) :
-    SweptSol μ₀ (c ^ 3) σ w x ↔
-      ScaledSol (μ₀ / c ^ 2) (σ / (c * √c)) (rescalePath c w) (rescaleState c x) := by
+    (∀ t, 0 ≤ t → x t = x 0 + (∫ r in (0 : ℝ)..t, (μ₀ - c ^ 3 * r - x r ^ 2)) + σ * w t) ↔
+      ∀ s, 0 ≤ s → rescaleState c x s = rescaleState c x 0 +
+        (∫ r in (0 : ℝ)..s, (μ₀ / c ^ 2 - r - rescaleState c x r ^ 2)) +
+          σ / (c * √c) * rescalePath c w s := by
   have hc0 : c ≠ 0 := hc.ne'
   have hsq : 0 < √c := Real.sqrt_pos.mpr hc
   have hnoise : ∀ t, σ * w t / c = σ / (c * √c) * (√c * w t) := by

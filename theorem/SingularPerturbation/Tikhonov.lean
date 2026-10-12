@@ -20,6 +20,10 @@ slow manifold `h ≡ 0`, boundary-layer matrix `-1` (exponentially attracting).
   `x̄`, not to `0` (`mixed_boundary_layer_tendsto`). Correct form: `ỹ = y - h(x̄)` satisfies
   `dỹ/dτ = g(x̄, ỹ + h(x̄))`, `ỹ(0) = y₀ - h(x₀)`, and then `ỹ → 0`.
 
+Solution notion: a fast solution for the parameter `ε` is a global-in-time function
+`y : ℝ → ℝ` with `∀ t, HasDerivAt y (-(y t) / ε) t` (the fast state of `ε ẏ = -y`); it is
+written out in each statement that uses it.
+
 Model boundary: scalar linear test systems that exhibit the logical errors; no general
 Tikhonov theorem is claimed here (the linear stability theorem is in
 `theorem.SingularPerturbation.Linear`, the regular `O(ε)` estimate in `...Regular`).
@@ -52,17 +56,17 @@ open Set Filter Topology
 
 /-! ## Correction 1: no uniform `O(ε)` bound up to `t = 0` -/
 
-/-- The fast state of `ε ẏ = -y`. -/
-def IsFastSolution (ε : ℝ) (y : ℝ → ℝ) : Prop := ∀ t, HasDerivAt y (-(y t) / ε) t
-
+/-- `y₀ e^{-t/ε}` is a fast solution: it solves the fast equation `ε ẏ = -y` at every time. -/
 @[powerlib_foundation] theorem fastSolution_exp (ε y₀ : ℝ) :
-    IsFastSolution ε (fun t => y₀ * Real.exp (-(t / ε))) := by
+    ∀ t, HasDerivAt (fun t => y₀ * Real.exp (-(t / ε))) (-(y₀ * Real.exp (-(t / ε))) / ε) t := by
   intro t
   have h1 : HasDerivAt (fun x => -(x / ε)) (-(1 / ε)) t := ((hasDerivAt_id' t).div_const ε).neg
   exact (h1.exp.const_mul y₀).congr_deriv (by ring)
 
+/-- Every fast solution (`∀ t, HasDerivAt y (-(y t) / ε) t`, the fast state of `ε ẏ = -y`) is
+`y(0) e^{-t/ε}`. -/
 @[powerlib_foundation] theorem fastSolution_eq {ε : ℝ} {y : ℝ → ℝ}
-    (hy : IsFastSolution ε y) (t : ℝ) : y t = y 0 * Real.exp (-(t / ε)) := by
+    (hy : ∀ t, HasDerivAt y (-(y t) / ε) t) (t : ℝ) : y t = y 0 * Real.exp (-(t / ε)) := by
   have h := linear_relaxation_eq (u := y) (r := 1 / ε) (c := 0)
     (fun s => (hy s).congr_deriv (by ring)) t
   rw [h]
@@ -70,10 +74,11 @@ def IsFastSolution (ε : ℝ) (y : ℝ → ℝ) : Prop := ∀ t, HasDerivAt y (-
   ring_nf
 
 /-- The claim "`|y(t) - h(x_s(t))| ≤ C ε` on `[0, T]` for all small `ε`" is false for the
-initial value `y(0) = 1` (here `h ≡ 0`). -/
+initial value `y(0) = 1` (here `h ≡ 0`): `y` ranges over the fast solutions of `ε ẏ = -y`,
+`∀ t, HasDerivAt y (-(y t) / ε) t`. -/
 @[powerlib_foundation] theorem tikhonov_uniform_claim_false {T : ℝ} (hT : 0 ≤ T) :
-    ¬ ∃ C ε₀ : ℝ, 0 < ε₀ ∧ ∀ ε ∈ Ioo 0 ε₀, ∀ y : ℝ → ℝ, IsFastSolution ε y → y 0 = 1 →
-      ∀ t ∈ Icc 0 T, |y t - 0| ≤ C * ε := by
+    ¬ ∃ C ε₀ : ℝ, 0 < ε₀ ∧ ∀ ε ∈ Ioo 0 ε₀, ∀ y : ℝ → ℝ, (∀ t, HasDerivAt y (-(y t) / ε) t) →
+      y 0 = 1 → ∀ t ∈ Icc 0 T, |y t - 0| ≤ C * ε := by
   rintro ⟨C, ε₀, hε₀, h⟩
   set ε := min (ε₀ / 2) (1 / (2 * (|C| + 1))) with hεdef
   have hpos : 0 < ε := lt_min (by linarith) (by positivity)
@@ -89,9 +94,10 @@ initial value `y(0) = 1` (here `h ≡ 0`). -/
   linarith
 
 /-- Corrected statement: outside the initial layer `[0, t_b)` the error is `O(ε)`:
-`|y(t) - h| ≤ (|y(0)| / t_b) ε` for `t ≥ t_b > 0`. -/
+`|y(t) - h| ≤ (|y(0)| / t_b) ε` for `t ≥ t_b > 0`, for every fast solution `y` of `ε ẏ = -y`
+(`∀ t, HasDerivAt y (-(y t) / ε) t`). -/
 @[powerlib_foundation] theorem fastSolution_le_after_layer {ε tb : ℝ} (hε : 0 < ε) (htb : 0 < tb)
-    {y : ℝ → ℝ} (hy : IsFastSolution ε y) {t : ℝ} (ht : tb ≤ t) :
+    {y : ℝ → ℝ} (hy : ∀ t, HasDerivAt y (-(y t) / ε) t) {t : ℝ} (ht : tb ≤ t) :
     |y t - 0| ≤ |y 0| / tb * ε := by
   rw [sub_zero, fastSolution_eq hy t, abs_mul, Real.abs_exp]
   have htpos : 0 < t := lt_of_lt_of_le htb ht

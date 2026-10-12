@@ -14,6 +14,10 @@ X(t) = X(0) + ∫₀ᵗ (Axx X + Axy Y + Bx u) ds + G (W(t) - W(0)),
 Itô integral `∫₀ᵗ G dW` equals `G (W(t) - W(0))` pathwise, so no stochastic calculus is
 needed). The drift integrals are interval integrals of `Fin n → ℝ`-valued functions.
 
+A path of the SDAE is a pair `(X, Y)` satisfying both lines for every `t` (written out in the
+statement of `isSDAEPath_iff`; there is no separate path predicate, by the single-semantics
+rule).
+
 Result (index 1, `Ayy` invertible): `(X, Y)` is a path of the SDAE iff
 `X(t) = X(0) + ∫₀ᵗ (A_red X + B_red u) ds + G (W(t) - W(0))` and
 `Y(t) = -Ayy⁻¹ (Ayx X(t) + By u(t))`: the drift is reduced by the Schur complement
@@ -37,18 +41,15 @@ namespace LinearDAE
 
 variable (d : LinearDAE n m p)
 
-/-- Pathwise integral form of the linear SDAE with additive noise `G dW`. -/
-def IsSDAEPath (G : Matrix (Fin n) (Fin q) ℝ) (u : ℝ → Fin p → ℝ) (W : ℝ → Fin q → ℝ)
-    (X : ℝ → Fin n → ℝ) (Y : ℝ → Fin m → ℝ) : Prop :=
-  (∀ t, X t = X 0 + (∫ s in (0 : ℝ)..t, (d.Axx *ᵥ X s + d.Axy *ᵥ Y s + d.Bx *ᵥ u s)) +
-    G *ᵥ (W t - W 0)) ∧
-  ∀ t, d.Ayx *ᵥ X t + d.Ayy *ᵥ Y t + d.By *ᵥ u t = 0
-
-/-- Index-1 reduction of the SDAE: Schur-complement drift, unchanged diffusion `G`. -/
+/-- Index-1 reduction of the SDAE: Schur-complement drift, unchanged diffusion `G`. The
+left-hand side is the pathwise integral form of the linear SDAE with additive noise `G dW`
+(`(X, Y)` is a path of the SDAE driven by `W` with input `u`). -/
 @[powerlib_foundation] theorem isSDAEPath_iff (hA : IsUnit d.Ayy.det)
     (G : Matrix (Fin n) (Fin q) ℝ) (u : ℝ → Fin p → ℝ) (W : ℝ → Fin q → ℝ)
     (X : ℝ → Fin n → ℝ) (Y : ℝ → Fin m → ℝ) :
-    d.IsSDAEPath G u W X Y ↔
+    ((∀ t, X t = X 0 + (∫ s in (0 : ℝ)..t, (d.Axx *ᵥ X s + d.Axy *ᵥ Y s + d.Bx *ᵥ u s)) +
+        G *ᵥ (W t - W 0)) ∧
+      ∀ t, d.Ayx *ᵥ X t + d.Ayy *ᵥ Y t + d.By *ᵥ u t = 0) ↔
       (∀ t, X t = X 0 + (∫ s in (0 : ℝ)..t, (d.schurA *ᵥ X s + d.schurB *ᵥ u s)) +
         G *ᵥ (W t - W 0)) ∧
       ∀ t, Y t = d.algebraic (X t) (u t) := by

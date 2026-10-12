@@ -19,9 +19,10 @@ Main results.
   `A`, then `E[g(Z) | m₁] = E[g(Z) | m₂]` for every bounded measurable `g` (simple-function
   induction + conditional dominated convergence in `L¹` + closedness of the a.e.
   `m₂`-measurable functions in `L¹`).
-* `MarkovEvent`, `MarkovCondExp` and `markovEvent_iff_markovCondExp`: for an adapted process
-  with values in a measurable space, the event form and the conditional-expectation form of the
-  Markov property are equivalent (any index order, any state space).
+* `MarkovEvent` and `markovEvent_iff_markovCondExp`: for an adapted process with values in a
+  measurable space, the event form and the conditional-expectation form of the Markov property
+  (`E[g(X_t) | 𝓕_s] = E[g(X_t) | X_s]` a.s. for `s ≤ t` and bounded measurable `g`, written out in
+  the statement) are equivalent (any index order, any state space).
 -/
 
 noncomputable section
@@ -113,17 +114,16 @@ def MarkovEvent (P : Measure Ω) (𝓕 : Filtration ι mΩ) (X : ι → Ω → E
     P[fun ω => A.indicator (fun _ => (1 : ℝ)) (X t ω) | 𝓕 s] =ᵐ[P]
       P[fun ω => A.indicator (fun _ => (1 : ℝ)) (X t ω) | mE.comap (X s)]
 
-/-- Markov property, **conditional-expectation form**: `E[g(X_t) | 𝓕_s] = E[g(X_t) | X_s]` a.s.
-for `s ≤ t` and every bounded measurable `g`. -/
-def MarkovCondExp (P : Measure Ω) (𝓕 : Filtration ι mΩ) (X : ι → Ω → E) : Prop :=
-  ∀ s t, s ≤ t → ∀ g : E → ℝ, Measurable g → (∃ C, ∀ y, |g y| ≤ C) →
-    P[fun ω => g (X t ω) | 𝓕 s] =ᵐ[P] P[fun ω => g (X t ω) | mE.comap (X s)]
-
 /-- **Event form ⇔ conditional-expectation form** of the Markov property, for an adapted
-process on a finite measure space. -/
+process on a finite measure space. The right-hand side is the Markov property in
+**conditional-expectation form**: `E[g(X_t) | 𝓕_s] = E[g(X_t) | X_s]` a.s. for `s ≤ t` and every
+bounded measurable `g`. -/
 @[powerlib_foundation] theorem markovEvent_iff_markovCondExp {P : Measure Ω} [IsFiniteMeasure P]
     {𝓕 : Filtration ι mΩ} {X : ι → Ω → E} (hadapt : ∀ s, Measurable[𝓕 s] (X s))
-    (hX : ∀ t, Measurable (X t)) : MarkovEvent P 𝓕 X ↔ MarkovCondExp P 𝓕 X := by
+    (hX : ∀ t, Measurable (X t)) :
+    MarkovEvent P 𝓕 X ↔
+      ∀ s t, s ≤ t → ∀ g : E → ℝ, Measurable g → (∃ C, ∀ y, |g y| ≤ C) →
+        P[fun ω => g (X t ω) | 𝓕 s] =ᵐ[P] P[fun ω => g (X t ω) | mE.comap (X s)] := by
   constructor
   · rintro h s t hst g hg ⟨C, hC⟩
     exact condExp_eq_condExp_of_indicator (hadapt s).comap_le (𝓕.le s) (hX t) (h s t hst) hg hC

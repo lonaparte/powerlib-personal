@@ -14,8 +14,9 @@ where `φ` is *DAG-ordered* (`IsDAG φ`): the `k`-th component of `φ(x, y)` dep
 Results.
 * Sequential substitution: `solveDAG φ x` (obtained by `m` passes of `y ↦ φ(x, y)`) is the
   unique solution of `y = φ(x, y)`, for every `x` (global, no implicit-function argument).
-* Global trajectory equivalence: `(x, y)` solves the DAE on all of `ℝ` iff `x` solves the
-  ODE `ẋ = f(x, solveDAG φ x)` and `y(t) = solveDAG φ (x(t))` for every `t`.
+* Global trajectory equivalence: `(x, y)` solves the DAE on all of `ℝ`, i.e.
+  `∀ t, HasDerivAt x (f (x t) (y t)) t ∧ y t = φ (x t) (y t)` (written out in the statement),
+  iff `x` solves the ODE `ẋ = f(x, solveDAG φ x)` and `y(t) = solveDAG φ (x(t))` for every `t`.
 * Index 1: if `φ(x, ·)` is differentiable, its Jacobian is strictly lower triangular, hence
   `∂g/∂y = I - ∂φ/∂y` is unit lower triangular with determinant `1` (in particular
   invertible: the DAE is index 1).
@@ -83,17 +84,13 @@ def solveDAG (φ : X → (Fin m → ℝ) → Fin m → ℝ) (x : X) : Fin m → 
     (x : X) (y : Fin m → ℝ) : φ x y = y ↔ y = solveDAG φ x :=
   ⟨fun h => eq_of_fixed hφ h (solveDAG_spec hφ x), fun h => h ▸ solveDAG_spec hφ x⟩
 
-/-- Global solution of the semi-explicit DAE `ẋ = f(x, y)`, `y = φ(x, y)`. -/
-def IsDAGSolution {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (f : E → (Fin m → ℝ) → E) (φ : E → (Fin m → ℝ) → Fin m → ℝ)
-    (x : ℝ → E) (y : ℝ → Fin m → ℝ) : Prop :=
-  ∀ t, HasDerivAt x (f (x t) (y t)) t ∧ y t = φ (x t) (y t)
-
-/-- Global trajectory equivalence of the DAG-ordered DAE and its substituted ODE. -/
+/-- Global trajectory equivalence of the DAG-ordered DAE and its substituted ODE: `(x, y)` is a
+global solution of the semi-explicit DAE `ẋ = f(x, y)`, `y = φ(x, y)` (left-hand side) iff `x`
+solves the substituted ODE and `y = solveDAG φ x` pointwise. -/
 @[powerlib_foundation] theorem isDAGSolution_iff {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {f : E → (Fin m → ℝ) → E} {φ : E → (Fin m → ℝ) → Fin m → ℝ}
     (hφ : IsDAG φ) (x : ℝ → E) (y : ℝ → Fin m → ℝ) :
-    IsDAGSolution f φ x y ↔
+    (∀ t, HasDerivAt x (f (x t) (y t)) t ∧ y t = φ (x t) (y t)) ↔
       (∀ t, HasDerivAt x (f (x t) (solveDAG φ (x t))) t) ∧ ∀ t, y t = solveDAG φ (x t) := by
   constructor
   · intro h

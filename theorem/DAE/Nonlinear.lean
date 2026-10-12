@@ -45,8 +45,10 @@ Architecture: generic mathematical support (no `Family`). The two stability theo
 `@[powerlib_domain]` in the former architecture; they are implications for every `f`, `g`
 (classification policy 4) and are now `@[powerlib_foundation]`. Behaviour is LeanForControl's
 `IsTrajectoryOn` / `LocallyExponentiallyStable`; the linearization step is
-`Flow.locallyExponentiallyStable_of_isHurwitz_jacobian`. The DAE solution semantics
-`IsDAESolutionOn` lies outside the Flow sentence language.
+`Flow.locallyExponentiallyStable_of_isHurwitz_jacobian`. The DAE solution notion lies outside
+the Flow sentence language and is written out in the statements that use it: `(x, y)` is a
+solution segment of `ẋ = f(x, y)`, `0 = g(x, y)` on `[t₀, t₁]` when
+`∀ t ∈ Icc t₀ t₁, HasDerivWithinAt x (f (x t, y t)) (Icc t₀ t₁) t ∧ g (x t, y t) = 0`.
 
 Source: work-sync theory/T-small-signal-stability.md §1.1–§1.4 (nonlinear DAE, index-1
 reduction, Schur complement); theory/T-dae-systems.md §1.3–§1.4, §1.9;
@@ -287,19 +289,16 @@ eliminated ODE `ẋ = f(x, h(x))` is locally exponentially stable at `x₀`. -/
   have hG := Flow.locallyExponentiallyStable_of_isHurwitz_jacobian _ hGc hGeq hJac hH
   exact locallyExponentiallyStable_of_eqOn_ball hR (fun x hx => (hGF x hx).symm) hG
 
-/-- Solution segment of the semi-explicit DAE `ẋ = f(x, y)`, `0 = g(x, y)` on `[t₀, t₁]`. -/
-def IsDAESolutionOn (f : State n × State m → State n) (g : State n × State m → State m)
-    (x : ℝ → State n) (y : ℝ → State m) (t₀ t₁ : ℝ) : Prop :=
-  ∀ t ∈ Icc t₀ t₁, HasDerivWithinAt x (f (x t, y t)) (Icc t₀ t₁) t ∧ g (x t, y t) = 0
-
 /-- **DAE stability.** Under the hypotheses of `reducedODE_locallyExponentiallyStable`, every
-DAE solution segment on the branch selected by a neighbourhood `V` of `y₀` and starting close
-to `x₀` decays exponentially, and its algebraic part is `y = h(x)`. -/
+DAE solution segment (a pair `(x, y)` solving `ẋ = f(x, y)`, `0 = g(x, y)` on `[t₀, t₁]`) on the
+branch selected by a neighbourhood `V` of `y₀` and starting close to `x₀` decays exponentially,
+and its algebraic part is `y = h(x)`. -/
 @[powerlib_foundation] theorem dae_locallyExponentiallyStable (hf : ContDiff ℝ 1 f)
     (hg : ContDiff ℝ 1 g) (hinv : (partialY g u).IsInvertible) (hfu : f u = 0) (hgu : g u = 0)
     (hH : LinearSystems.IsHurwitz (schurMatrix f g u)) :
     ∃ V ∈ 𝓝 u.2, ∃ r C a : ℝ, 0 < r ∧ 1 ≤ C ∧ 0 < a ∧
-      ∀ (t₀ t₁ : ℝ) (x : ℝ → State n) (y : ℝ → State m), IsDAESolutionOn f g x y t₀ t₁ →
+      ∀ (t₀ t₁ : ℝ) (x : ℝ → State n) (y : ℝ → State m),
+        (∀ t ∈ Icc t₀ t₁, HasDerivWithinAt x (f (x t, y t)) (Icc t₀ t₁) t ∧ g (x t, y t) = 0) →
         (∀ t ∈ Icc t₀ t₁, y t ∈ V) → ‖x t₀ - u.1‖ < r → ∀ t ∈ Icc t₀ t₁,
           ‖x t - u.1‖ ≤ C * Real.exp (-a * (t - t₀)) * ‖x t₀ - u.1‖ ∧
             y t = implicitMap g u hg hinv (x t) := by
@@ -350,14 +349,15 @@ to `x₀` decays exponentially, and its algebraic part is `y = h(x)`. -/
     _ ≤ C * 1 * ‖x t₀ - u.1‖ := by gcongr
     _ < R := by linarith
 
-/-- **Local index-1 equivalence.** Near `(x₀, y₀)`, a pair `(x, y)` is a DAE solution segment iff
-`x` solves the reduced ODE `ẋ = f(x, h(x))` and `y = h(x)`: there are neighbourhoods `U` of `x₀`
-and `V` of `y₀` such that this holds for every segment staying in `U × V`. -/
+/-- **Local index-1 equivalence.** Near `(x₀, y₀)`, a pair `(x, y)` is a DAE solution segment
+(solves `ẋ = f(x, y)`, `0 = g(x, y)` on `[t₀, t₁]`) iff `x` solves the reduced ODE
+`ẋ = f(x, h(x))` and `y = h(x)`: there are neighbourhoods `U` of `x₀` and `V` of `y₀` such that
+this holds for every segment staying in `U × V`. -/
 @[powerlib_foundation] theorem dae_iff_reduced_local (hg : ContDiff ℝ 1 g)
     (hinv : (partialY g u).IsInvertible) (hgu : g u = 0) :
     ∃ U ∈ 𝓝 u.1, ∃ V ∈ 𝓝 u.2, ∀ (t₀ t₁ : ℝ) (x : ℝ → State n) (y : ℝ → State m),
       (∀ t ∈ Icc t₀ t₁, x t ∈ U ∧ y t ∈ V) →
-      (IsDAESolutionOn f g x y t₀ t₁ ↔
+      ((∀ t ∈ Icc t₀ t₁, HasDerivWithinAt x (f (x t, y t)) (Icc t₀ t₁) t ∧ g (x t, y t) = 0) ↔
         ∀ t ∈ Icc t₀ t₁, HasDerivWithinAt x (reducedField f g u hg hinv (x t)) (Icc t₀ t₁) t ∧
           y t = implicitMap g u hg hinv (x t)) := by
   have huniq : ∀ᶠ v in 𝓝 u.1 ×ˢ 𝓝 u.2, g v = 0 ↔ implicitMap g u hg hinv v.1 = v.2 := by

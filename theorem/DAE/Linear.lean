@@ -9,9 +9,17 @@ variables, `p` inputs; state order `x` then `y`):
 ```
 ẋ = Axx x + Axy y + Bx u,      0 = Ayx x + Ayy y + By u .
 ```
-`IsSolution d u x y` means: for every `t : ℝ`, `x` has derivative
-`Axx x(t) + Axy y(t) + Bx u(t)` and the algebraic constraint holds at `t`. No regularity of
-`y` is assumed. Solutions are global in time, with coordinate-vector states `Fin n → ℝ`.
+A solution for the input signal `u` is a pair `(x, y)` such that for every `t : ℝ`, `x` has
+derivative `Axx x(t) + Axy y(t) + Bx u(t)` and the algebraic constraint holds at `t`:
+```
+∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ u t) t ∧
+  d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ u t = 0
+```
+(zero input: `u = 0`, written `d.Bx *ᵥ 0`, `d.By *ᵥ 0`). No regularity of `y` is assumed.
+Solutions are global in time, with coordinate-vector states `Fin n → ℝ`. This solution notion
+and the exponential stability below are written out in each statement that uses them; they are
+not separate definitions (single-semantics rule: behaviour is defined only in the semantic
+layer).
 
 Index-1 reduction (`Ayy` invertible, i.e. `IsUnit Ayy.det`):
 * `isSolution_iff`: `(x, y)` solves the DAE iff `x` solves the reduced ODE
@@ -22,9 +30,9 @@ Index-1 reduction (`Ayy` invertible, i.e. `IsUnit Ayy.det`):
 * Matrix pencil: with `E = diag(I, 0)` and `J` the block Jacobian,
   `det (s E - J) = det (-Ayy) · det (s I - A_red)` (`Matrix.det_fromBlocks₂₂`), so the finite
   generalized eigenvalues are exactly the eigenvalues of `A_red`.
-* `ExponentiallyStable d` (zero input): every solution satisfies
-  `‖x t‖ ≤ K e^{-r t} ‖x 0‖` and `‖y t‖ ≤ K e^{-r t} ‖x 0‖` (Euclidean norms). Under index 1,
-  `ExponentiallyStable d ↔ IsHurwitz A_red`.
+* Exponential stability of the DAE (zero input): for some `K > 0`, `r > 0`, every solution
+  satisfies `‖x t‖ ≤ K e^{-r t} ‖x 0‖` and `‖y t‖ ≤ K e^{-r t} ‖x 0‖` for `t ≥ 0` (Euclidean
+  norms). Under index 1 this holds iff `IsHurwitz A_red` (`exponentiallyStable_iff_isHurwitz`).
 * Consistent initial values: every solution satisfies the constraint at `t = 0`; under
   index 1 the consistent `y(0)` is unique, and every `x(0)` has a solution.
 * One differentiation: under index 1 every solution has differentiable `y` and the stacked
@@ -46,9 +54,9 @@ Model boundary: constant-coefficient linear DAE only; no switching, delay, PWM o
 the semantic predicates are about the given matrices. Nonlinear index-1 DAEs are in
 `theorem.DAE.Nonlinear`.
 
-Architecture: generic mathematical support (no `Family`). The DAE solution semantics
-(`IsSolution`, `ExponentiallyStable`) lies outside the Flow sentence language, which concerns
-explicit ODEs; it is connected to that language through the reduced ODE. Coordinate solutions of
+Architecture: generic mathematical support (no `Family`). The DAE solution notion and its
+exponential stability lie outside the Flow sentence language, which concerns explicit ODEs; they
+are connected to that language through the reduced ODE. Coordinate solutions of
 `ẋ = A x` are linked to LeanForControl's affine linear field on `EuclideanSpace ℝ (Fin k)`
 (`isTrajectoryOn_toLp`), whose Hurwitz theory (`Linear.globallyExponentiallyStable_of_isHurwitz`,
 `Linear.eigenmode`) gives both directions of the coordinate decay test
@@ -196,11 +204,6 @@ namespace LinearDAE
 
 variable (d : LinearDAE n m p)
 
-/-- Global solution of the DAE for the input signal `u`. -/
-def IsSolution (u : ℝ → Fin p → ℝ) (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ) : Prop :=
-  ∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ u t) t ∧
-    d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ u t = 0
-
 /-- Schur complement `A_red = Axx - Axy Ayy⁻¹ Ayx`. -/
 def schurA : Matrix (Fin n) (Fin n) ℝ := d.Axx - d.Axy * d.Ayy⁻¹ * d.Ayx
 
@@ -210,12 +213,6 @@ def schurB : Matrix (Fin n) (Fin p) ℝ := d.Bx - d.Axy * d.Ayy⁻¹ * d.By
 /-- The algebraic variable on the constraint manifold, `-Ayy⁻¹ (Ayx x + By u)`. -/
 def algebraic (x : Fin n → ℝ) (u : Fin p → ℝ) : Fin m → ℝ :=
   -(d.Ayy⁻¹ *ᵥ (d.Ayx *ᵥ x + d.By *ᵥ u))
-
-/-- Exponential stability of the zero-input DAE, both components bounded by `‖x(0)‖`. -/
-def ExponentiallyStable : Prop :=
-  ∃ K > 0, ∃ rate > 0, ∀ x y, d.IsSolution 0 x y → ∀ t, 0 ≤ t →
-    ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ ∧
-    ‖WithLp.toLp 2 (y t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖
 
 /-! ## Constraint solving and solution correspondence -/
 
@@ -238,10 +235,13 @@ def ExponentiallyStable : Prop :=
   simp only [algebraic, schurA, schurB, mulVec_neg, mulVec_add, sub_mulVec, ← mulVec_mulVec]
   abel
 
-/-- Index-1 solution correspondence with the Schur-complement ODE. -/
+/-- Index-1 solution correspondence with the Schur-complement ODE: `(x, y)` is a global
+solution of the DAE for the input `u` (left-hand side) iff `x` solves the reduced ODE and `y`
+lies on the constraint manifold. -/
 @[powerlib_foundation] theorem isSolution_iff (hA : IsUnit d.Ayy.det) (u : ℝ → Fin p → ℝ)
     (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ) :
-    d.IsSolution u x y ↔
+    (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ u t) t ∧
+      d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ u t = 0) ↔
       (∀ t, HasDerivAt x (d.schurA *ᵥ x t + d.schurB *ᵥ u t) t) ∧
         ∀ t, y t = d.algebraic (x t) (u t) := by
   constructor
@@ -256,36 +256,47 @@ def ExponentiallyStable : Prop :=
     rw [hy t, field_on_constraint]
     exact hx t
 
+/-- Zero-input version of `isSolution_iff`. -/
 @[powerlib_foundation] theorem isSolution_zero_iff (hA : IsUnit d.Ayy.det)
     (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ) :
-    d.IsSolution 0 x y ↔
+    (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
+      d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) ↔
       (∀ t, HasDerivAt x (d.schurA *ᵥ x t) t) ∧ ∀ t, y t = d.algebraic (x t) 0 := by
   rw [d.isSolution_iff hA]
   simp only [Pi.zero_apply, mulVec_zero, add_zero]
 
-/-- Every reduced trajectory lifts to a DAE solution (zero input). -/
+/-- Every reduced trajectory lifts to a DAE solution (zero input), with algebraic part
+`y t = algebraic (x t) 0`. -/
 @[powerlib_foundation] theorem isSolution_lift (hA : IsUnit d.Ayy.det) {x : ℝ → Fin n → ℝ}
     (hx : ∀ t, HasDerivAt x (d.schurA *ᵥ x t) t) :
-    d.IsSolution 0 x (fun t => d.algebraic (x t) 0) :=
+    ∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ d.algebraic (x t) 0 + d.Bx *ᵥ 0) t ∧
+      d.Ayx *ᵥ x t + d.Ayy *ᵥ d.algebraic (x t) 0 + d.By *ᵥ 0 = 0 :=
   (d.isSolution_zero_iff hA _ _).mpr ⟨hx, fun _ => rfl⟩
 
 /-! ## Consistent initial values -/
 
-/-- Necessary condition: the constraint holds at the initial time. -/
+/-- Necessary condition: along every solution `(x, y)` of the DAE for the input `u`, the
+constraint holds at the initial time. -/
 @[powerlib_foundation] theorem initial_consistent {u : ℝ → Fin p → ℝ} {x : ℝ → Fin n → ℝ}
-    {y : ℝ → Fin m → ℝ} (h : d.IsSolution u x y) :
+    {y : ℝ → Fin m → ℝ}
+    (h : ∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ u t) t ∧
+      d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ u t = 0) :
     d.Ayx *ᵥ x 0 + d.Ayy *ᵥ y 0 + d.By *ᵥ u 0 = 0 := (h 0).2
 
-/-- An initial point violating the constraint carries no solution. -/
+/-- An initial point violating the constraint carries no solution of the DAE. -/
 @[powerlib_foundation] theorem not_solution_of_inconsistent {u : ℝ → Fin p → ℝ}
     {x : ℝ → Fin n → ℝ} {y : ℝ → Fin m → ℝ}
-    (hc : d.Ayx *ᵥ x 0 + d.Ayy *ᵥ y 0 + d.By *ᵥ u 0 ≠ 0) : ¬ d.IsSolution u x y :=
+    (hc : d.Ayx *ᵥ x 0 + d.Ayy *ᵥ y 0 + d.By *ᵥ u 0 ≠ 0) :
+    ¬ ∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ u t) t ∧
+      d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ u t = 0 :=
   fun h => hc (d.initial_consistent h)
 
 /-- Index 1: for `m > 0` some initial point `(x₀, y₀)` admits no solution, so the
 undifferentiated DAE is not an explicit ODE in `(x, y)`. -/
 @[powerlib_foundation] theorem exists_inconsistent_initial (hA : IsUnit d.Ayy.det) (hm : 0 < m) :
-    ∃ y₀ : Fin m → ℝ, ∀ x y, x 0 = 0 → y 0 = y₀ → ¬ d.IsSolution 0 x y := by
+    ∃ y₀ : Fin m → ℝ, ∀ (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ), x 0 = 0 → y 0 = y₀ →
+      ¬ (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
+        d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) := by
   refine ⟨fun _ => 1, fun x y hx hy hs => ?_⟩
   have h := (d.constraint_iff hA _ _ _).mp (d.initial_consistent hs)
   rw [hx, hy] at h
@@ -295,7 +306,9 @@ undifferentiated DAE is not an explicit ODE in `(x, y)`. -/
 /-- Index 1: the consistent algebraic initial value is unique and every `x₀` has a
 (zero-input) solution. -/
 @[powerlib_foundation] theorem exists_unique_consistent (hA : IsUnit d.Ayy.det) (x₀ : Fin n → ℝ) :
-    (∃ x y, d.IsSolution 0 x y ∧ x 0 = x₀) ∧
+    (∃ (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ),
+      (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
+        d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) ∧ x 0 = x₀) ∧
       ∀ y₀ : Fin m → ℝ, d.Ayx *ᵥ x₀ + d.Ayy *ᵥ y₀ + d.By *ᵥ 0 = 0 → y₀ = d.algebraic x₀ 0 := by
   refine ⟨?_, fun y₀ h => (d.constraint_iff hA _ _ _).mp h⟩
   obtain ⟨x, hx, h0⟩ := exists_linear_trajectory d.schurA x₀
@@ -308,10 +321,12 @@ undifferentiated DAE is not an explicit ODE in `(x, y)`. -/
 def stackedField : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℝ :=
   fromBlocks d.Axx d.Axy (-(d.Ayy⁻¹ * d.Ayx * d.Axx)) (-(d.Ayy⁻¹ * d.Ayx * d.Axy))
 
-/-- Index 1 = one differentiation: on every zero-input solution, `y` is differentiable and
-the stacked state solves the explicit linear ODE `ż = stackedField z`. -/
+/-- Index 1 = one differentiation: on every zero-input solution `(x, y)` (hypothesis `h`), `y`
+is differentiable and the stacked state solves the explicit linear ODE `ż = stackedField z`. -/
 @[powerlib_foundation] theorem isSolution_stacked_ode (hA : IsUnit d.Ayy.det)
-    {x : ℝ → Fin n → ℝ} {y : ℝ → Fin m → ℝ} (h : d.IsSolution 0 x y) (t : ℝ) :
+    {x : ℝ → Fin n → ℝ} {y : ℝ → Fin m → ℝ}
+    (h : ∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
+      d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) (t : ℝ) :
     HasDerivAt (fun s => Sum.elim (x s) (y s)) (d.stackedField *ᵥ Sum.elim (x t) (y t)) t := by
   have hy : ∀ s, y s = -((d.Ayy⁻¹ * d.Ayx) *ᵥ x s) := by
     intro s
@@ -412,9 +427,15 @@ Schur complement is spectrally stable. -/
       have hS : 0 ≤ ∑ i, ∑ j, M i j ^ 2 := by positivity
       rw [Real.sqrt_mul hS, Real.sqrt_sq (norm_nonneg _)]
 
-/-- Index 1 and Hurwitz Schur complement ⇒ exponential stability of the DAE. -/
+/-- Index 1 and Hurwitz Schur complement ⇒ exponential stability of the zero-input DAE: every
+solution has both components bounded by `K e^{-rate t} ‖x(0)‖` for `t ≥ 0`. -/
 @[powerlib_foundation] theorem exponentiallyStable_of_isHurwitz (hA : IsUnit d.Ayy.det)
-    (hH : LinearSystems.IsHurwitz d.schurA) : d.ExponentiallyStable := by
+    (hH : LinearSystems.IsHurwitz d.schurA) :
+    ∃ K > 0, ∃ rate > 0, ∀ (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ),
+      (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
+        d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) → ∀ t, 0 ≤ t →
+      ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ ∧
+      ‖WithLp.toLp 2 (y t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ := by
   obtain ⟨K, hK, r, hr, hdecay⟩ := linear_decay_of_isHurwitz hH
   set c := Real.sqrt (∑ i, ∑ j, (d.Ayy⁻¹ * d.Ayx) i j ^ 2)
   refine ⟨K * (1 + c), by positivity, r, hr, fun x y hs t ht => ?_⟩
@@ -436,15 +457,27 @@ Schur complement is spectrally stable. -/
           mul_le_mul_of_nonneg_left hxb hc
       _ ≤ K * (1 + c) * Real.exp (-(r * t)) * ‖WithLp.toLp 2 (x 0)‖ := by nlinarith
 
-/-- Conversely, exponential stability of the index-1 DAE forces the Schur complement to be
-Hurwitz. -/
+/-- Conversely, exponential stability of the index-1 zero-input DAE (both components of every
+solution bounded by `K e^{-rate t} ‖x(0)‖`) forces the Schur complement to be Hurwitz. -/
 @[powerlib_foundation] theorem isHurwitz_of_exponentiallyStable (hA : IsUnit d.Ayy.det)
-    (h : d.ExponentiallyStable) : LinearSystems.IsHurwitz d.schurA := by
+    (h : ∃ K > 0, ∃ rate > 0, ∀ (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ),
+        (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
+          d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) → ∀ t, 0 ≤ t →
+        ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ ∧
+        ‖WithLp.toLp 2 (y t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖) :
+    LinearSystems.IsHurwitz d.schurA := by
   obtain ⟨K, -, r, hr, hb⟩ := h
   exact isHurwitz_of_linear_decay hr fun x hx t ht => (hb x _ (d.isSolution_lift hA hx) t ht).1
 
+/-- Index 1: exponential stability of the zero-input DAE (both components of every solution
+bounded by `K e^{-rate t} ‖x(0)‖`, `K, rate > 0`) holds iff the Schur complement is Hurwitz. -/
 @[powerlib_foundation] theorem exponentiallyStable_iff_isHurwitz (hA : IsUnit d.Ayy.det) :
-    d.ExponentiallyStable ↔ LinearSystems.IsHurwitz d.schurA :=
+    (∃ K > 0, ∃ rate > 0, ∀ (x : ℝ → Fin n → ℝ) (y : ℝ → Fin m → ℝ),
+        (∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ 0) t ∧
+          d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) → ∀ t, 0 ≤ t →
+        ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ ∧
+        ‖WithLp.toLp 2 (y t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖) ↔
+      LinearSystems.IsHurwitz d.schurA :=
   ⟨d.isHurwitz_of_exponentiallyStable hA, d.exponentiallyStable_of_isHurwitz hA⟩
 
 end LinearDAE

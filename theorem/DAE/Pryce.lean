@@ -32,7 +32,9 @@ Results.
   `c = 0, d = (1, 1, 0)`; the note's formula gives `0`, the corrected one gives `1`, and the
   DAE indeed has differentiation index `1`: every solution satisfies the hidden constraint
   `y = 2 x₁` (so an initial point is inconsistent — index ≠ 0) and one differentiation gives
-  the explicit ODE `ẏ = 2 y`. For the pendulum both formulas give `3`.
+  the explicit ODE `ẏ = 2 y`. A solution of the example is a triple `x₁ x₂ y : ℝ → ℝ` with
+  `∀ t, HasDerivAt x₁ (y t) t ∧ HasDerivAt x₂ (x₁ t - y t) t ∧ deriv x₁ t + 2 * deriv x₂ t = 0`,
+  written out in each statement. For the pendulum both formulas give `3`.
 * Correction (§1.9 Case A): adding `ω₁ = ω₂` to two independent swing equations makes the
   system overdetermined (three equations, two unknowns), not "index raised": solutions exist
   only under a compatibility condition on the data, and e.g. distinct constant
@@ -308,28 +310,31 @@ def exampleσ : Equiv.Perm (Fin 3) := Equiv.swap 0 2
   unfold Signature.pryceIndex
   decide
 
-/-- Solutions of `ẋ₁ = y, ẋ₂ = x₁ - y, ẋ₁ + 2ẋ₂ = 0`. -/
-def IsExampleSolution (x₁ x₂ y : ℝ → ℝ) : Prop :=
-  ∀ t, HasDerivAt x₁ (y t) t ∧ HasDerivAt x₂ (x₁ t - y t) t ∧ deriv x₁ t + 2 * deriv x₂ t = 0
-
+/-- Hidden constraint: every solution of `ẋ₁ = y, ẋ₂ = x₁ - y, ẋ₁ + 2ẋ₂ = 0` (hypothesis `h`)
+satisfies `y = 2 x₁`. -/
 @[powerlib_foundation] theorem example_hidden_constraint {x₁ x₂ y : ℝ → ℝ}
-    (h : IsExampleSolution x₁ x₂ y) (t : ℝ) : y t = 2 * x₁ t := by
+    (h : ∀ t, HasDerivAt x₁ (y t) t ∧ HasDerivAt x₂ (x₁ t - y t) t ∧
+      deriv x₁ t + 2 * deriv x₂ t = 0) (t : ℝ) : y t = 2 * x₁ t := by
   obtain ⟨h1, h2, h3⟩ := h t
   rw [h1.deriv, h2.deriv] at h3
   linarith
 
-/-- Index ≠ 0: the initial point `(x₁, x₂, y) = (0, 0, 1)` is inconsistent. -/
+/-- Index ≠ 0: the initial point `(x₁, x₂, y) = (0, 0, 1)` is inconsistent: no solution of
+`ẋ₁ = y, ẋ₂ = x₁ - y, ẋ₁ + 2ẋ₂ = 0` starts there. -/
 @[powerlib_foundation] theorem example_inconsistent_initial {x₁ x₂ y : ℝ → ℝ}
-    (h : IsExampleSolution x₁ x₂ y) : ¬ (x₁ 0 = 0 ∧ y 0 = 1) := by
+    (h : ∀ t, HasDerivAt x₁ (y t) t ∧ HasDerivAt x₂ (x₁ t - y t) t ∧
+      deriv x₁ t + 2 * deriv x₂ t = 0) : ¬ (x₁ 0 = 0 ∧ y 0 = 1) := by
   rintro ⟨h1, h2⟩
   have := example_hidden_constraint h 0
   rw [h1, h2] at this
   norm_num at this
 
-/-- Index ≤ 1: one differentiation of the hidden constraint gives `ẏ = 2 y`, so
-`(x₁, x₂, y)` solves an explicit ODE. -/
+/-- Index ≤ 1: along every solution of `ẋ₁ = y, ẋ₂ = x₁ - y, ẋ₁ + 2ẋ₂ = 0`, one
+differentiation of the hidden constraint gives `ẏ = 2 y`, so `(x₁, x₂, y)` solves an explicit
+ODE. -/
 @[powerlib_foundation] theorem example_one_differentiation {x₁ x₂ y : ℝ → ℝ}
-    (h : IsExampleSolution x₁ x₂ y) (t : ℝ) : HasDerivAt y (2 * y t) t := by
+    (h : ∀ t, HasDerivAt x₁ (y t) t ∧ HasDerivAt x₂ (x₁ t - y t) t ∧
+      deriv x₁ t + 2 * deriv x₂ t = 0) (t : ℝ) : HasDerivAt y (2 * y t) t := by
   have hd := ((h t).1).const_mul 2
   exact hd.congr_of_eventuallyEq (Filter.Eventually.of_forall fun s => example_hidden_constraint h s)
 

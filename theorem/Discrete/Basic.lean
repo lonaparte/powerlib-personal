@@ -9,8 +9,12 @@ Model boundary.
 * There is no input, no noise, no switching, no delay and no nonlinear remainder; any
   controller or numerical scheme must already be folded into the single real matrix `Φ`.
 * Norms: the state norm is the default sup norm on `Fin n → ℝ`.  All norms on a
-  finite-dimensional space are equivalent, so the exponential-decay predicate does not depend
-  on this choice (only the constant `C` does).
+  finite-dimensional space are equivalent, so exponential decay does not depend on this choice
+  (only the constant `C` does).
+* Exponential stability (uniform geometric decay of every trajectory) is
+  `∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x, IsTrajectory m x → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖`;
+  it quantifies real constants, so it is written out in each statement that uses it rather
+  than defined (single-semantics rule).
 * `SchurStable Φ` is stated through complex eigenpairs of the complexification, exactly like
   `LinearSystems.IsHurwitz`.  `schurStable_iff_spectralRadius_lt_one` connects it with the
   Banach-algebra spectral radius.
@@ -72,11 +76,6 @@ def response (m : Model n) (initial : State n) (k : ℕ) : State n :=
 /-- Schur stability: every complex eigenvalue lies in the open unit disk. -/
 def SchurStable (Φ : Matrix (Fin n) (Fin n) ℝ) : Prop :=
   ∀ (μ : ℂ) (v : Fin n → ℂ), v ≠ 0 → Φ.map (algebraMap ℝ ℂ) *ᵥ v = μ • v → ‖μ‖ < 1
-
-/-- Uniform exponential decay of every trajectory. -/
-def ExponentiallyStable (m : Model n) : Prop :=
-  ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
-    ∀ x, IsTrajectory m x → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖
 
 /-- Every trajectory converges to the origin. -/
 def AsymptoticallyStable (m : Model n) : Prop :=
@@ -197,9 +196,12 @@ open scoped Matrix.Norms.Operator
         have : 0 ≤ ρ ^ k := pow_nonneg hρ0.le _
         nlinarith
 
-/-- Schur stability implies uniform exponential decay of every trajectory. -/
+/-- Schur stability implies uniform exponential decay of every trajectory:
+`‖x k‖ ≤ C ρ^k ‖x 0‖` with `C > 0`, `0 ≤ ρ < 1`. -/
 @[powerlib_foundation] theorem exponentiallyStable_of_schurStable {m : Model n}
-    (h : SchurStable m.Φ) : ExponentiallyStable m := by
+    (h : SchurStable m.Φ) :
+    ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
+      ∀ x, IsTrajectory m x → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖ := by
   obtain ⟨C, hC, ρ, hρ0, hρ1, hb⟩ := h.exists_pow_bound
   refine ⟨C, hC, ρ, hρ0.le, hρ1, fun x hx k => ?_⟩
   rw [hx.eq_response k, response]
@@ -259,16 +261,21 @@ imaginary part of the complex eigenmode `μ^k v`) that does not converge to zero
   obtain ⟨x, hx, hnot⟩ := exists_trajectory_not_tendsto_zero hv heig (not_lt.mp hμ)
   exact hnot (h x hx)
 
+/-- Uniform exponential decay of every trajectory implies convergence of every trajectory. -/
 @[powerlib_foundation] theorem asymptoticallyStable_of_exponentiallyStable {m : Model n}
-    (h : ExponentiallyStable m) : AsymptoticallyStable m := by
+    (h : ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
+      ∀ x, IsTrajectory m x → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) : AsymptoticallyStable m := by
   obtain ⟨C, -, ρ, hρ0, hρ1, hb⟩ := h
   intro x hx
   have hlim : Tendsto (fun k : ℕ => C * ρ ^ k * ‖x 0‖) atTop (𝓝 0) := by
     simpa using ((tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1).const_mul C).mul_const ‖x 0‖
   exact squeeze_zero_norm (hb x hx) hlim
 
+/-- Uniform exponential decay of every trajectory (`‖x k‖ ≤ C ρ^k ‖x 0‖`, `C > 0`,
+`0 ≤ ρ < 1`) holds exactly for a Schur matrix. -/
 @[powerlib_foundation] theorem exponentiallyStable_iff_schurStable (m : Model n) :
-    ExponentiallyStable m ↔ SchurStable m.Φ :=
+    (∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
+      ∀ x, IsTrajectory m x → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔ SchurStable m.Φ :=
   ⟨fun h => schurStable_of_asymptoticallyStable (asymptoticallyStable_of_exponentiallyStable h),
     exponentiallyStable_of_schurStable⟩
 

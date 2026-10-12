@@ -25,8 +25,9 @@ Ionescu–Tulcea theorem has the prescribed one-step kernel], `ionescuTulcea_mar
 Category B.
 * `kpow`, `kpow_add`: discrete-time Chapman–Kolmogorov `K^{m+n} = K^m ∘ K^n` for the iterates of
   a kernel; `kpow_invariant`: an invariant measure is invariant for every iterate.
-* `IsMarkovWith` (Markov property in conditional-expectation form with transition kernels
-  `K s t`, any time set) and `chapmanKolmogorov_ae`: the Markov property implies
+* `chapmanKolmogorov_ae`: the Markov property in conditional-expectation form with transition
+  kernels `K s t` (any time set; written out as the hypothesis: for `s ≤ t` and bounded measurable
+  `g`, `E[g(X_t) | 𝓕_s] = ∫ g dK_{s,t}(X_s)` a.s.) implies
   `K_{s,u}(X_s, A) = ∫ K_{t,u}(y, A) K_{s,t}(X_s, dy)` **almost surely**, i.e. only for
   `P_{X_s}`-almost every starting point.
 * `gaussian_bind`: `∫ N(c y, v) N(m, w)(dy) = N(c m, c² w + v)`; `ou_chapmanKolmogorov`: the OU
@@ -115,19 +116,17 @@ section MarkovProperty
 
 variable {Ω E ι : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω} [MeasurableSpace E]
 
-/-- **Markov property with transition kernels** (conditional-expectation form, T-markov §1.3):
-for `s ≤ t` and bounded measurable `g`, `E[g(X_t) | 𝓕_s] = ∫ g dK_{s,t}(X_s)` a.s. -/
-def IsMarkovWith (P : Measure Ω) (𝓕 : Filtration ι mΩ) (X : ι → Ω → E)
-    (K : ι → ι → Kernel E E) : Prop :=
-  ∀ s t, s ≤ t → ∀ g : E → ℝ, Measurable g → (∃ C, ∀ y, |g y| ≤ C) →
-    P[fun ω => g (X t ω) | 𝓕 s] =ᵐ[P] fun ω => ∫ y, g y ∂(K s t (X s ω))
-
-/-- **Chapman–Kolmogorov from the Markov property (§1.2), almost surely**: for `s ≤ t ≤ u` and
-measurable `A`, `K_{s,u}(X_s, A) = (K_{t,u} ∘ K_{s,t})(X_s, A)` for `P`-a.e. `ω`. -/
+/-- **Chapman–Kolmogorov from the Markov property (§1.2), almost surely**. The hypothesis `h` is
+the **Markov property with transition kernels** `K s t` (conditional-expectation form,
+T-markov §1.3): for `s ≤ t` and bounded measurable `g`, `E[g(X_t) | 𝓕_s] = ∫ g dK_{s,t}(X_s)`
+a.s. Then for `s ≤ t ≤ u` and measurable `A`, `K_{s,u}(X_s, A) = (K_{t,u} ∘ K_{s,t})(X_s, A)` for
+`P`-a.e. `ω`. -/
 @[powerlib_foundation] theorem chapmanKolmogorov_ae {P : Measure Ω} [IsProbabilityMeasure P]
     {𝓕 : Filtration ι mΩ} {X : ι → Ω → E} {K : ι → ι → Kernel E E}
-    [∀ s t, IsMarkovKernel (K s t)] (h : IsMarkovWith P 𝓕 X K) {s t u : ι} (hst : s ≤ t)
-    (htu : t ≤ u) {A : Set E} (hA : MeasurableSet A) :
+    [∀ s t, IsMarkovKernel (K s t)]
+    (h : ∀ s t, s ≤ t → ∀ g : E → ℝ, Measurable g → (∃ C, ∀ y, |g y| ≤ C) →
+      P[fun ω => g (X t ω) | 𝓕 s] =ᵐ[P] fun ω => ∫ y, g y ∂(K s t (X s ω)))
+    {s t u : ι} (hst : s ≤ t) (htu : t ≤ u) {A : Set E} (hA : MeasurableSet A) :
     ∀ᵐ ω ∂P, K s u (X s ω) A = (K t u ∘ₖ K s t) (X s ω) A := by
   set g : E → ℝ := A.indicator fun _ => 1 with hg
   have hgm : Measurable g := measurable_const.indicator hA

@@ -26,7 +26,13 @@ Results.
 * Subcritical (`μ < 0 < l₁`, `R = √(−μ/l₁)`): the cycle is repelling,
   `|1/|z|² − 1/R²|` grows like `e^{2|μ|(t−a)}`, and solutions starting inside converge to `0`.
 
-`IsPeriodicOrbit` and `IsAttractingLimitCycle` are defined here for `State n`.
+Periodic orbits and attracting limit cycles are written out in the statements (behaviour is
+defined only in the semantic layer). A *periodic orbit* of `ẋ = f x` with period `T` is a curve
+`γ : ℝ → State n` with `0 < T`, `∀ t, HasDerivAt γ (f (γ t)) t` (a solution defined for all time),
+`∀ t, γ (t + T) = γ t` and `∃ t, γ t ≠ γ 0` (nonconstant). It is an *attracting limit cycle* when,
+in addition, some open `U ⊇ range γ` is *orbitally attracted*: every forward-complete solution
+`φ` (`IsIntegralCurveOn φ (fun _ x => f x) (Ici a)`) with `φ a ∈ U` has
+`Metric.infDist (φ t) (range γ) → 0` as `t → ∞`.
 
 Source: work-sync theory/T-hopf-bifurcation.md §1.1–1.4, theory/T-bifurcation.md §1.4
 (Hopf normal form), theory/T-fold-critical-scaling.md §2.4 (Hopf linear rate).
@@ -38,25 +44,6 @@ linearization theorems of `powerlib.Criteria` / `powerlib.Flow`.
 -/
 
 noncomputable section
-namespace powerlib.NormalForm
-open Set Filter Topology Matrix
-open powerlib.Dynamics (State)
-
-/-- `γ` is a nonconstant `T`-periodic solution of `ẋ = f x` defined for all time. -/
-def IsPeriodicOrbit {n : ℕ} (f : State n → State n) (γ : ℝ → State n) (T : ℝ) : Prop :=
-  0 < T ∧ (∀ t, HasDerivAt γ (f (γ t)) t) ∧ (∀ t, γ (t + T) = γ t) ∧ ∃ t, γ t ≠ γ 0
-
-/-- Every forward-complete solution starting in `S` approaches the closed orbit `range γ`. -/
-def AttractsOrbitally {n : ℕ} (f : State n → State n) (γ : ℝ → State n) (S : Set (State n)) :
-    Prop :=
-  ∀ (a : ℝ) (φ : ℝ → State n), IsIntegralCurveOn φ (fun _ x => f x) (Ici a) →
-    φ a ∈ S → Tendsto (fun t => Metric.infDist (φ t) (range γ)) atTop (𝓝 0)
-
-/-- A periodic orbit attracting all forward-complete solutions from an open neighborhood. -/
-def IsAttractingLimitCycle {n : ℕ} (f : State n → State n) (γ : ℝ → State n) (T : ℝ) : Prop :=
-  IsPeriodicOrbit f γ T ∧ ∃ U : Set (State n), IsOpen U ∧ range γ ⊆ U ∧ AttractsOrbitally f γ U
-
-end powerlib.NormalForm
 
 namespace powerlib.NormalForm.Hopf
 open Set Filter Topology Matrix
@@ -348,10 +335,13 @@ def cycle (p : Params) (t : ℝ) : State 2 :=
     rw [cycle, mul_div_cancel₀ _ hΩ, ← hz, Complex.norm_mul_cos_arg, Complex.norm_mul_sin_arg]
     exact mk_coords y
 
-/-- If `R² = −μ/l₁ > 0` and `Ω ≠ 0`, the cycle is a `2π/|Ω|`-periodic orbit. -/
+/-- If `R² = −μ/l₁ > 0` and `Ω ≠ 0`, the cycle is a `2π/|Ω|`-periodic orbit: a nonconstant
+`T`-periodic solution of `ẋ = field p x` defined for all time, `T = 2π/|Ω| > 0`. -/
 @[powerlib_foundation] theorem cycle_isPeriodicOrbit (p : Params) (hl : p.l₁ ≠ 0)
     (hR : 0 < -p.μ / p.l₁) (hΩ : frequency p ≠ 0) :
-    IsPeriodicOrbit (field p) (cycle p) (2 * Real.pi / |frequency p|) := by
+    0 < 2 * Real.pi / |frequency p| ∧ (∀ t, HasDerivAt (cycle p) (field p (cycle p t)) t) ∧
+      (∀ t, cycle p (t + 2 * Real.pi / |frequency p|) = cycle p t) ∧
+      ∃ t, cycle p t ≠ cycle p 0 := by
   have hrpos : 0 < radius p := Real.sqrt_pos.mpr hR
   refine ⟨by positivity, cycle_hasDerivAt p hl hR.le, ?_, ?_⟩
   · intro t
@@ -395,11 +385,19 @@ def cycle (p : Params) (t : ℝ) : State 2 :=
   refine this.congr (fun t => ?_)
   simp [Real.sqrt_sq (norm_nonneg _)]
 
-/-- Supercritical truncation: the cycle is an attracting limit cycle; it attracts every
-forward-complete solution that does not start at the origin. -/
+/-- Supercritical truncation: the cycle is an attracting limit cycle — a `2π/|Ω|`-periodic orbit
+(as in `cycle_isPeriodicOrbit`) together with an open neighbourhood `U ⊇ range (cycle p)` that it
+attracts orbitally: every forward-complete solution starting in `U` has distance to the cycle
+`→ 0`. Here `U` is the punctured plane, so it attracts every forward-complete solution that does
+not start at the origin. -/
 @[powerlib_foundation] theorem supercritical_isAttractingLimitCycle (p : Params) (hμ : 0 < p.μ)
     (hl : p.l₁ < 0) (hΩ : frequency p ≠ 0) :
-    IsAttractingLimitCycle (field p) (cycle p) (2 * Real.pi / |frequency p|) := by
+    (0 < 2 * Real.pi / |frequency p| ∧ (∀ t, HasDerivAt (cycle p) (field p (cycle p t)) t) ∧
+      (∀ t, cycle p (t + 2 * Real.pi / |frequency p|) = cycle p t) ∧
+      ∃ t, cycle p t ≠ cycle p 0) ∧
+    ∃ U : Set (State 2), IsOpen U ∧ range (cycle p) ⊆ U ∧
+      ∀ (a : ℝ) (φ : ℝ → State 2), IsIntegralCurveOn φ (fun _ x => field p x) (Ici a) →
+        φ a ∈ U → Tendsto (fun t => Metric.infDist (φ t) (range (cycle p))) atTop (𝓝 0) := by
   have hR : 0 < -p.μ / p.l₁ := div_pos_of_neg_of_neg (by linarith) hl
   have hrpos : 0 < radius p := Real.sqrt_pos.mpr hR
   refine ⟨cycle_isPeriodicOrbit p hl.ne hR hΩ, {x | x ≠ 0}, isOpen_ne, ?_, ?_⟩

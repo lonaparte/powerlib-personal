@@ -23,11 +23,12 @@ Results.
 * Order-`α` coefficient equations (`homological_coeff_unique`): if `σ(A_c) ⊂ jℝ` (eigenvalues
   `λᵢ` with `Re λᵢ = 0`) and the hyperbolic block `A_h` has no eigenvalue on `jℝ` (spectral gap),
   then `(A_h − (α·λ) I) h_α = R_α` is uniquely solvable for every multi-index `α`.
-* Heteroclinic orbits (`heteroclinic_iff`): with global stable/unstable sets defined through
-  global solutions (`stableSet`, `unstableSet`), a global solution `γ` is heteroclinic from `a` to
-  `b` iff `γ(0) ∈ W^u(a) ∩ W^s(b)`, for a globally Lipschitz field (uniqueness in both time
-  directions); the forward implication needs no uniqueness, and then every point of the orbit lies
-  in `W^u(a) ∩ W^s(b)`.
+* Heteroclinic orbits (`heteroclinic_iff`): with the global stable/unstable sets `W^s(b)`,
+  `W^u(a)` read through global solutions (initial states of global solutions converging to `b`
+  forwards, resp. to `a` backwards; written out in the statements), a global solution `γ` is
+  heteroclinic from `a` to `b` iff `γ(0) ∈ W^u(a) ∩ W^s(b)`, for a globally Lipschitz field
+  (uniqueness in both time directions); the forward implication needs no uniqueness, and then
+  every point of the orbit lies in `W^u(a) ∩ W^s(b)`.
 
 Invariant-set definitions are already available: LeanForControl's `IsPositivelyInvariant` and Mathlib's `IsInvariant` / `IsForwardInvariant` for flows. The real spectral
 decomposition `ℝⁿ = E^s ⊕ E^c ⊕ E^u`, the stable/unstable/center manifold theorems and NHIM
@@ -166,31 +167,35 @@ section Heteroclinic
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- Global solutions of `ẋ = f(x)`. -/
-def IsGlobalSolution (f : E → E) (γ : ℝ → E) : Prop := ∀ t, HasDerivAt γ (f (γ t)) t
+/-! The behavioural notions of this section are written out in each statement (behaviour is
+defined only in the semantic layer):
+* a *global solution* of `ẋ = f(x)` is a curve `γ : ℝ → E` with `∀ t, HasDerivAt γ (f (γ t)) t`;
+* the *global stable set* `W^s(b)` is the set of initial states `ψ 0` of global solutions `ψ`
+  converging to `b` as `t → +∞` (`Tendsto ψ atTop (𝓝 b)`); the *global unstable set* `W^u(a)` is
+  the set of initial states of global solutions converging to `a` backwards
+  (`Tendsto ψ atBot (𝓝 a)`);
+* a *heteroclinic orbit* from `a` to `b` is a global solution `γ` with `γ → a` as `t → −∞` and
+  `γ → b` as `t → +∞`. -/
 
-/-- Global stable set `W^s(b)`: initial states of global solutions converging to `b`. -/
-def stableSet (f : E → E) (b : E) : Set E :=
-  {x | ∃ ψ, IsGlobalSolution f ψ ∧ ψ 0 = x ∧ Tendsto ψ atTop (𝓝 b)}
-
-/-- Global unstable set `W^u(a)`: initial states of global solutions converging to `a` backwards. -/
-def unstableSet (f : E → E) (a : E) : Set E :=
-  {x | ∃ ψ, IsGlobalSolution f ψ ∧ ψ 0 = x ∧ Tendsto ψ atBot (𝓝 a)}
-
-/-- A heteroclinic orbit from `a` to `b`. -/
-def IsHeteroclinic (f : E → E) (a b : E) (γ : ℝ → E) : Prop :=
-  IsGlobalSolution f γ ∧ Tendsto γ atBot (𝓝 a) ∧ Tendsto γ atTop (𝓝 b)
-
+/-- A time shift of a global solution of `ẋ = f(x)` (a curve with
+`∀ t, HasDerivAt γ (f (γ t)) t`) is again a global solution. -/
 @[powerlib_foundation] theorem IsGlobalSolution.shift {f : E → E} {γ : ℝ → E}
-    (h : IsGlobalSolution f γ) (c : ℝ) : IsGlobalSolution f (fun t => γ (t + c)) :=
+    (h : ∀ t, HasDerivAt γ (f (γ t)) t) (c : ℝ) :
+    ∀ t, HasDerivAt (fun t => γ (t + c)) (f (γ (t + c))) t :=
   fun t => (h (t + c)).comp_add_const t c
 
-/-- Every point of a heteroclinic orbit lies in `W^u(a) ∩ W^s(b)`. -/
+/-- Every point of a heteroclinic orbit from `a` to `b` (a global solution `γ` with `γ → a` as
+`t → −∞` and `γ → b` as `t → +∞`) lies in `W^u(a) ∩ W^s(b)`: it is the initial state of a global
+solution converging to `a` backwards and of one converging to `b` forwards. -/
 @[powerlib_foundation] theorem heteroclinic_mem {f : E → E} {a b : E} {γ : ℝ → E}
-    (h : IsHeteroclinic f a b γ) (t₀ : ℝ) :
-    γ t₀ ∈ unstableSet f a ∩ stableSet f b := by
+    (h : (∀ t, HasDerivAt γ (f (γ t)) t) ∧ Tendsto γ atBot (𝓝 a) ∧ Tendsto γ atTop (𝓝 b))
+    (t₀ : ℝ) :
+    γ t₀ ∈ {x | ∃ ψ : ℝ → E, (∀ t, HasDerivAt ψ (f (ψ t)) t) ∧ ψ 0 = x ∧
+          Tendsto ψ atBot (𝓝 a)} ∩
+        {x | ∃ ψ : ℝ → E, (∀ t, HasDerivAt ψ (f (ψ t)) t) ∧ ψ 0 = x ∧
+          Tendsto ψ atTop (𝓝 b)} := by
   obtain ⟨hγ, ha, hb⟩ := h
-  have hshift := hγ.shift t₀
+  have hshift := IsGlobalSolution.shift hγ t₀
   have hT : Tendsto (fun t : ℝ => t + t₀) atTop atTop := tendsto_atTop_add_const_right _ t₀ tendsto_id
   have hB : Tendsto (fun t : ℝ => t + t₀) atBot atBot := tendsto_atBot_add_const_right _ t₀ tendsto_id
   exact ⟨⟨_, hshift, by simp, ha.comp hB⟩, ⟨_, hshift, by simp, hb.comp hT⟩⟩
@@ -198,16 +203,17 @@ def IsHeteroclinic (f : E → E) (a b : E) (γ : ℝ → E) : Prop :=
 variable [CompleteSpace E]
 
 omit [CompleteSpace E] in
-/-- Uniqueness of global solutions for a globally Lipschitz field (both time directions). -/
+/-- Uniqueness of global solutions (`∀ t, HasDerivAt γ (f (γ t)) t`) for a globally Lipschitz
+field (both time directions). -/
 @[powerlib_foundation] theorem globalSolution_unique {f : E → E} {K : NNReal}
-    (hf : LipschitzWith K f) {γ ψ : ℝ → E} (hγ : IsGlobalSolution f γ)
-    (hψ : IsGlobalSolution f ψ) (h0 : γ 0 = ψ 0) : γ = ψ := by
+    (hf : LipschitzWith K f) {γ ψ : ℝ → E} (hγ : ∀ t, HasDerivAt γ (f (γ t)) t)
+    (hψ : ∀ t, HasDerivAt ψ (f (ψ t)) t) (h0 : γ 0 = ψ 0) : γ = ψ := by
   funext t
   rcases le_total 0 t with ht | ht
   · exact _root_.eqOn_of_isIntegralCurveOn_Icc (f := fun _ x => f x) (fun _ => hf)
       (fun s _ => (hγ s).hasDerivWithinAt) (fun s _ => (hψ s).hasDerivWithinAt) h0 ⟨ht, le_rfl⟩
   · -- reverse time: `s ↦ γ(−s)` solves `ẏ = −f(y)`
-    have hrev : ∀ φ : ℝ → E, IsGlobalSolution f φ →
+    have hrev : ∀ φ : ℝ → E, (∀ t, HasDerivAt φ (f (φ t)) t) →
         IsIntegralCurveOn (fun s => φ (-s)) (fun _ x => -f x) (Icc 0 (-t)) := by
       intro φ hφ s _
       have := (hφ (-s)).scomp s (hasDerivAt_neg s)
@@ -218,10 +224,17 @@ omit [CompleteSpace E] in
     simpa using this
 
 omit [CompleteSpace E] in
-/-- For a globally Lipschitz field, `γ` is heteroclinic from `a` to `b` iff `γ(0) ∈ W^u(a) ∩ W^s(b)`. -/
+/-- For a globally Lipschitz field, a global solution `γ` is heteroclinic from `a` to `b`
+(`γ → a` as `t → −∞` and `γ → b` as `t → +∞`) iff `γ(0) ∈ W^u(a) ∩ W^s(b)`, i.e. `γ(0)` is the
+initial state of a global solution converging to `a` backwards and of one converging to `b`
+forwards. -/
 @[powerlib_foundation] theorem heteroclinic_iff {f : E → E} {K : NNReal} (hf : LipschitzWith K f)
-    {a b : E} {γ : ℝ → E} (hγ : IsGlobalSolution f γ) :
-    IsHeteroclinic f a b γ ↔ γ 0 ∈ unstableSet f a ∩ stableSet f b := by
+    {a b : E} {γ : ℝ → E} (hγ : ∀ t, HasDerivAt γ (f (γ t)) t) :
+    ((∀ t, HasDerivAt γ (f (γ t)) t) ∧ Tendsto γ atBot (𝓝 a) ∧ Tendsto γ atTop (𝓝 b)) ↔
+      γ 0 ∈ {x | ∃ ψ : ℝ → E, (∀ t, HasDerivAt ψ (f (ψ t)) t) ∧ ψ 0 = x ∧
+          Tendsto ψ atBot (𝓝 a)} ∩
+        {x | ∃ ψ : ℝ → E, (∀ t, HasDerivAt ψ (f (ψ t)) t) ∧ ψ 0 = x ∧
+          Tendsto ψ atTop (𝓝 b)} := by
   constructor
   · intro h; exact heteroclinic_mem h 0
   · rintro ⟨⟨ψ₁, hψ₁, h₁, ha⟩, ⟨ψ₂, hψ₂, h₂, hb⟩⟩

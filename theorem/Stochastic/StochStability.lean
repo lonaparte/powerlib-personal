@@ -12,15 +12,25 @@ Source: work-sync `theory/T-lyapunov-stability-stochastic.md` §1.1 (three stabi
 log E‖X_t‖^p` is convex in `p`), §1.4 (`λ_a.s. ≤ Λ(p)/p`).
 
 Scope (Rules §3).  The process is an arbitrary family of random variables `X : T → Ω → E`
-(continuous or discrete time); no SDE is involved.  The stability notions are definitions; the
-theorems are measure-theoretic or ODE facts.  The Itô step of §1.2 (`d/dt E V(X_t) =
+(continuous or discrete time); no SDE is involved.  The stability notions are written out in
+the statements (behaviour is defined only in the semantic layer); the theorems are
+measure-theoretic or ODE facts.  The Itô step of §1.2 (`d/dt E V(X_t) =
 E LV(X_t)`) is **not** formalized: only the deterministic Gronwall step from
 `m' ≤ −c m` is (wrapper of Mathlib `le_gronwallBound_of_liminf_deriv_right_le`).  Foundation
 results, not a stability theorem for a particular power system.
 
 Main results.
-* Definitions `StableInProbability`, `ASAttractive`, `ASAsymptoticallyStable` (= stable in
-  probability **and** a.s. attractive), `MomentStable`.
+* Stability notions (§1.1) for a family `X x₀ : ℝ≥0 → Ω → E` of processes indexed by the
+  initial state `x₀`:
+  - **stability in probability** of the zero solution: small initial states keep the whole path
+    in a ball with high probability,
+    `∀ ε > 0, ∀ r > 0, ∃ δ > 0, ∀ x₀, ‖x₀‖ < δ → P {ω | ∃ t, r ≤ ‖X x₀ t ω‖} ≤ ε`;
+  - **almost-sure attractivity** of the path started at `x₀`:
+    `∀ᵐ ω ∂P, Tendsto (fun t => X x₀ t ω) atTop (𝓝 0)`;
+  - **almost-sure asymptotic stability** (Khasminskii / Mao): stable in probability **and** a.s.
+    attractive for all small initial states (`∃ δ > 0, ∀ x₀, ‖x₀‖ < δ →` a.s. attractive);
+  - **`p`-th moment stability** of the path started at `x₀`: `E‖X x₀ t‖^p → 0`, i.e.
+    `Tendsto (fun t => ∫⁻ ω, ‖X x₀ t ω‖ₑ ^ p ∂P) atTop (𝓝 0)`.
 * Correction (§1.1): the note defines a.s. stability by attractivity alone.
   `attractive_not_stableInProbability`: a (deterministic) family whose every member tends to `0`
   but with unit excursions from arbitrarily small initial states — attractivity does not give
@@ -46,32 +56,7 @@ open scoped ENNReal NNReal Topology
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
-/-! ## Stability notions -/
-
-section Defs
-
-variable {E : Type*} [NormedAddCommGroup E] {S : Type*} [Norm S]
-
-/-- **Stability in probability** of the zero solution for a family `X x₀` of processes indexed
-by the initial state: small initial states keep the whole path in a ball with high probability. -/
-def StableInProbability (P : Measure Ω) (X : S → ℝ≥0 → Ω → E) : Prop :=
-  ∀ ε > (0 : ℝ≥0∞), ∀ r > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x₀ : S, ‖x₀‖ < δ →
-    P {ω | ∃ t, r ≤ ‖X x₀ t ω‖} ≤ ε
-
-/-- **Almost-sure attractivity** of the path started at `x₀`. -/
-def ASAttractive (P : Measure Ω) (X : S → ℝ≥0 → Ω → E) (x₀ : S) : Prop :=
-  ∀ᵐ ω ∂P, Tendsto (fun t => X x₀ t ω) atTop (𝓝 0)
-
-/-- **Almost-sure asymptotic stability** (Khasminskii / Mao): stable in probability and a.s.
-attractive for all small initial states. -/
-def ASAsymptoticallyStable (P : Measure Ω) (X : S → ℝ≥0 → Ω → E) : Prop :=
-  StableInProbability P X ∧ ∃ δ > (0 : ℝ), ∀ x₀ : S, ‖x₀‖ < δ → ASAttractive P X x₀
-
-/-- **`p`-th moment stability**: `E‖X_t‖^p → 0`. -/
-def MomentStable (P : Measure Ω) (X : S → ℝ≥0 → Ω → E) (p : ℝ) (x₀ : S) : Prop :=
-  Tendsto (fun t => ∫⁻ ω, ‖X x₀ t ω‖ₑ ^ p ∂P) atTop (𝓝 0)
-
-end Defs
+/-! ## Attractivity without stability in probability (§1.1) -/
 
 /-- Unit bump `t e^{1−t}` (peak `1` at `t = 1`, tends to `0`). -/
 def bump (t : ℝ) : ℝ := t * exp (1 - t)
@@ -87,10 +72,17 @@ def bump (t : ℝ) : ℝ := t * exp (1 - t)
 
 /-- **Correction (§1.1)**: attractivity does not imply stability in probability.  The
 deterministic family `X x₀ t = bump t` for `x₀ ≠ 0` (and `0` for `x₀ = 0`) is a.s. attractive for
-every initial state, but every nonzero initial state produces an excursion of size `1`. -/
+every initial state, but every nonzero initial state produces an excursion of size `1`.
+
+Written out: the first conjunct is **almost-sure attractivity** of the path started at every
+`x₀` (`X x₀ t ω → 0` as `t → ∞` for `P`-a.e. `ω`); the negated second conjunct is **stability in
+probability** of the zero solution (small initial states keep the whole path in a ball with high
+probability: `∀ ε > 0, ∀ r > 0, ∃ δ > 0, ∀ x₀, ‖x₀‖ < δ → P(∃ t, r ≤ ‖X x₀ t‖) ≤ ε`). -/
 @[powerlib_foundation] theorem attractive_not_stableInProbability [IsProbabilityMeasure P] :
     let X : ℝ → ℝ≥0 → Ω → ℝ := fun x₀ t _ => if x₀ = 0 then 0 else bump t
-    (∀ x₀, ASAttractive P X x₀) ∧ ¬ StableInProbability P X := by
+    (∀ x₀, ∀ᵐ ω ∂P, Tendsto (fun t => X x₀ t ω) atTop (𝓝 0)) ∧
+      ¬ ∀ ε > (0 : ℝ≥0∞), ∀ r > (0 : ℝ), ∃ δ > (0 : ℝ), ∀ x₀ : ℝ, ‖x₀‖ < δ →
+        P {ω | ∃ t, r ≤ ‖X x₀ t ω‖} ≤ ε := by
   intro X
   constructor
   · intro x₀
