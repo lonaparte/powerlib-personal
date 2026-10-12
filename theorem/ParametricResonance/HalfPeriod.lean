@@ -1,0 +1,69 @@
+import theorem.ParametricResonance.ForcedResponse
+import theorem.Periodic.Shift
+
+/-! # Half-period symmetry of the single-tone pump
+
+Foundation layer (exact identity, no expansion).
+
+Model boundary. Any plant `ż = f(z, u(t))` on `ℝⁿ = EuclideanSpace ℝ (Fin n)` driven by the single-tone pump
+`u_δ(t) = δ cos(ω_p t)` (`pump`), `T = 2π/ω_p`, continuous time; no assumption on `f`.
+
+Results.
+* `pump_add_half`: `u_δ(t + T/2) = u_{−δ}(t)`, so `δ ↦ −δ` is a time shift by `T/2`.
+* `drivenTrajectory_half_shift`: every solution for `δ` shifted by `T/2` is a solution for `−δ`
+  (forced orbits correspond).
+* `floquetUnstable_half_shift`: if the variational matrix for `−δ` is the `T/2`-shift of the one for
+  `δ` (as it is along corresponding forced orbits), the Floquet multipliers coincide
+  (`Periodic.spectrum_monodromy_shift`); in particular "some multiplier outside the unit circle"
+  holds for `δ` iff it holds for `−δ`: monodromy spectrum and flip threshold are invariant.
+
+The Hill-level gauge `φ_m ↦ (−1)^m φ_m` of the source is not formalized.
+
+Source: work-sync projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
+gfl-gfm-parametric-contrast.md §11 (半周期对称性).
+-/
+
+noncomputable section
+namespace powerlib.ParametricResonance
+
+open Matrix Function
+open scoped Matrix.Norms.Operator
+
+/-- Single-tone pump `u_δ(t) = δ cos(ω_p t)`. -/
+def pump (δ ωp t : ℝ) : ℝ := δ * Real.cos (ωp * t)
+
+@[powerlib_foundation] theorem pump_add_half {δ ωp T : ℝ} (hT : ωp * T = 2 * Real.pi) (t : ℝ) :
+    pump δ ωp (t + T / 2) = pump (-δ) ωp t := by
+  simp only [pump]
+  rw [show ωp * (t + T / 2) = ωp * t + Real.pi by linarith [hT], Real.cos_add_pi]
+  ring
+
+@[powerlib_foundation] theorem drivenTrajectory_half_shift {n : ℕ}
+    {f : EuclideanSpace ℝ (Fin n) → ℝ → EuclideanSpace ℝ (Fin n)} {δ ωp T : ℝ}
+    (hT : ωp * T = 2 * Real.pi) {z : ℝ → EuclideanSpace ℝ (Fin n)} (hz : IsDrivenTrajectory f (pump δ ωp) z) :
+    IsDrivenTrajectory f (pump (-δ) ωp) (fun t => z (t + T / 2)) := by
+  intro t
+  have h := (hz (t + T / 2)).comp_add_const t (T / 2)
+  rw [pump_add_half hT] at h
+  exact h
+
+/-- Some Floquet multiplier lies strictly outside the unit circle. -/
+def FloquetUnstable {X : Type*} [Fintype X] [DecidableEq X] (A : ℝ → Matrix X X ℝ) (T : ℝ) :
+    Prop :=
+  ∃ ρ ∈ spectrum ℂ ((Periodic.monodromy A T 0).map (algebraMap ℝ ℂ)), 1 < ‖ρ‖
+
+/-- If `J_{−δ}(t) = J_δ(t + T/2)`, the Floquet multipliers (and hence Floquet instability) of the
+two variational systems coincide. -/
+@[powerlib_foundation] theorem floquetUnstable_half_shift {X : Type*} [Fintype X] [DecidableEq X]
+    {Jp Jm : ℝ → Matrix X X ℝ} {M T : ℝ} (hA : Continuous Jp) (hM : ∀ t, ‖Jp t‖ ≤ M)
+    (hT : 0 ≤ T) (hP : Periodic Jp T) (hshift : ∀ t, Jm t = Jp (t + T / 2)) :
+    spectrum ℂ ((Periodic.monodromy Jm T 0).map (algebraMap ℝ ℂ)) =
+        spectrum ℂ ((Periodic.monodromy Jp T 0).map (algebraMap ℝ ℂ)) ∧
+      (FloquetUnstable Jm T ↔ FloquetUnstable Jp T) := by
+  have hJ : Jm = fun t => Jp (t + T / 2) := funext hshift
+  have hs := Periodic.spectrum_monodromy_shift hA hM hT hP (T / 2)
+  rw [← hJ] at hs
+  refine ⟨hs, ?_⟩
+  simp only [FloquetUnstable, hs]
+
+end powerlib.ParametricResonance
