@@ -12,8 +12,12 @@ Foundation layer: generic statements about parameter families, not an engineerin
    increasing for every `x` (the local form of `f_μ > 0`), `f` is continuous, and
    `f(x₀, μ₀) = 0` is the minimum of `f(·, μ₀)` (`f_x(x₀, μ₀) = 0`) — the number of equilibria in
    `[x₀ − r, x₀ + r]` is `0` for `μ ∈ (μ₀, μ₀ + ε]` and exactly `2` for `μ` in some
-   `(μ₀ − ε', μ₀)`: crossing `Σ_SN` changes the count `2 → 0`. (The derivation of the box
-   conditions from `f ∈ C²`, `f_xx ≠ 0`, `f_μ ≠ 0` by continuity is not formalized.)
+   `(μ₀ − ε', μ₀)`: crossing `Σ_SN` changes the count `2 → 0`. The box conditions follow from
+   `C²` fold data by continuity: `fold_box_of_partials` (continuous `f` with partial derivatives
+   `f_x`, `f_xx`, `f_μ`, the last two continuous at the fold point, `f = f_x = 0`, `f_xx > 0`,
+   `f_μ > 0`) and `fold_box_of_contDiff` (`f ∈ C²(ℝ²)`, partials as `deriv`); combined:
+   `fold_crossing_of_contDiff`. The sign cases `f_xx < 0` or `f_μ < 0` reduce to this one by
+   `f ↦ −f`, `μ ↦ −μ` (not stated separately).
 2. `Σ_WS` with transversality (`ws_crossing_trace`, `ws_crossing_det`): for a planar family with
    equilibrium Jacobian `A(μ)` (derived with `fderiv`), if `det A > 0` near `μ₀`, `tr A(μ₀) = 0`
    and `d tr/dμ > 0` at `μ₀` (Hopf type), the equilibrium is locally exponentially stable just
@@ -182,6 +186,158 @@ in `[x₀ − r, x₀ + r]` just above `μ₀`, exactly two just below. -/
     linarith
   apply ncard_zeros_strictConvex (hconv μ hμI) _ (by linarith) (by linarith) hl hr' hc
   exact (hcont.comp (continuousOn_id.prodMk continuousOn_const) (fun x hx => ⟨hx, hμI⟩))
+
+/-! ## 1b. The box premises of `fold_crossing` from `C²` fold data -/
+
+/-- **Box premises from partial-derivative data.** Let `f` be continuous with partial derivatives
+`f_x`, `f_xx` (in `x`) and `f_μ` (in `μ`) everywhere, with `f_xx` and `f_μ` continuous at the fold
+point `(x₀, μ₀)`. If `f = f_x = 0`, `f_xx > 0` and `f_μ > 0` there, then on some box
+`[x₀ − r, x₀ + r] × [μ₀ − ε, μ₀ + ε]` every premise of `fold_crossing` holds: strict convexity in
+`x`, strict monotonicity in `μ`, continuity, and `f(·, μ₀) ≥ 0` with minimum `f(x₀, μ₀) = 0`. -/
+@[powerlib_foundation] theorem fold_box_of_partials {f fx fxx fμ : ℝ → ℝ → ℝ} {x₀ μ₀ : ℝ}
+    (hcont : Continuous (Function.uncurry f))
+    (hfx : ∀ x μ, HasDerivAt (fun x => f x μ) (fx x μ) x)
+    (hfxx : ∀ x μ, HasDerivAt (fun x => fx x μ) (fxx x μ) x)
+    (hfμ : ∀ x μ, HasDerivAt (f x) (fμ x μ) μ)
+    (hcxx : ContinuousAt (Function.uncurry fxx) (x₀, μ₀))
+    (hcμ : ContinuousAt (Function.uncurry fμ) (x₀, μ₀))
+    (h0 : f x₀ μ₀ = 0) (h1 : fx x₀ μ₀ = 0) (h2 : 0 < fxx x₀ μ₀) (h3 : 0 < fμ x₀ μ₀) :
+    ∃ r > 0, ∃ ε > 0,
+      (∀ μ ∈ Icc (μ₀ - ε) (μ₀ + ε), StrictConvexOn ℝ (Icc (x₀ - r) (x₀ + r)) (f · μ)) ∧
+      (∀ x ∈ Icc (x₀ - r) (x₀ + r), StrictMonoOn (f x) (Icc (μ₀ - ε) (μ₀ + ε))) ∧
+      ContinuousOn (Function.uncurry f) (Icc (x₀ - r) (x₀ + r) ×ˢ Icc (μ₀ - ε) (μ₀ + ε)) ∧
+      (∀ x ∈ Icc (x₀ - r) (x₀ + r), 0 ≤ f x μ₀) := by
+  -- positivity of `f_xx` and `f_μ` on a neighbourhood, hence on a box
+  have hev := (hcxx.eventually (lt_mem_nhds h2)).and (hcμ.eventually (lt_mem_nhds h3))
+  obtain ⟨δ, hδ, hball⟩ := Metric.eventually_nhds_iff.1 hev
+  set r := δ / 2 with hrdef
+  have hr : 0 < r := by positivity
+  have hbox : ∀ x ∈ Icc (x₀ - r) (x₀ + r), ∀ μ ∈ Icc (μ₀ - r) (μ₀ + r),
+      0 < fxx x μ ∧ 0 < fμ x μ := by
+    intro x hx μ hμ
+    have hd : dist (x, μ) (x₀, μ₀) < δ := by
+      rw [Prod.dist_eq, max_lt_iff, Real.dist_eq, Real.dist_eq, abs_lt, abs_lt]
+      refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> linarith [hx.1, hx.2, hμ.1, hμ.2]
+    exact hball hd
+  have hderivx : ∀ μ, deriv (fun x => f x μ) = fun x => fx x μ :=
+    fun μ => funext fun x => (hfx x μ).deriv
+  -- `f_x(·, μ)` is strictly increasing on the box
+  have hfxmono : ∀ μ ∈ Icc (μ₀ - r) (μ₀ + r),
+      StrictMonoOn (fun x => fx x μ) (Icc (x₀ - r) (x₀ + r)) := by
+    intro μ hμ
+    apply strictMonoOn_of_deriv_pos (convex_Icc _ _)
+      (fun x _ => (hfxx x μ).continuousAt.continuousWithinAt)
+    intro x hx
+    rw [interior_Icc] at hx
+    rw [(hfxx x μ).deriv]
+    exact (hbox x (Ioo_subset_Icc_self hx) μ hμ).1
+  refine ⟨r, hr, r, hr, ?_, ?_, hcont.continuousOn, ?_⟩
+  · intro μ hμ
+    apply StrictMonoOn.strictConvexOn_of_deriv (convex_Icc _ _)
+      (fun x _ => (hfx x μ).continuousAt.continuousWithinAt)
+    rw [hderivx, interior_Icc]
+    exact (hfxmono μ hμ).mono Ioo_subset_Icc_self
+  · intro x hx
+    apply strictMonoOn_of_deriv_pos (convex_Icc _ _)
+      (fun μ _ => (hfμ x μ).continuousAt.continuousWithinAt)
+    intro μ hμ
+    rw [interior_Icc] at hμ
+    rw [(hfμ x μ).deriv]
+    exact (hbox x hx μ (Ioo_subset_Icc_self hμ)).2
+  · -- `f(·, μ₀)` decreases up to `x₀` and increases after it
+    have hμ₀ : μ₀ ∈ Icc (μ₀ - r) (μ₀ + r) := ⟨by linarith, by linarith⟩
+    have hx₀ : x₀ ∈ Icc (x₀ - r) (x₀ + r) := ⟨by linarith, by linarith⟩
+    have hsign : ∀ x ∈ Icc (x₀ - r) (x₀ + r), (x < x₀ → fx x μ₀ < 0) ∧ (x₀ < x → 0 < fx x μ₀) := by
+      intro x hx
+      refine ⟨fun h => ?_, fun h => ?_⟩
+      · have := hfxmono μ₀ hμ₀ hx hx₀ h; simpa [h1] using this
+      · have := hfxmono μ₀ hμ₀ hx₀ hx h; simpa [h1] using this
+    intro x hx
+    rcases le_total x x₀ with hle | hge
+    · have hanti : AntitoneOn (fun y => f y μ₀) (Icc x x₀) := by
+        apply antitoneOn_of_deriv_nonpos (convex_Icc _ _)
+          (fun y _ => (hfx y μ₀).continuousAt.continuousWithinAt)
+          (fun y _ => (hfx y μ₀).differentiableAt.differentiableWithinAt)
+        intro y hy
+        rw [interior_Icc] at hy
+        rw [(hfx y μ₀).deriv]
+        exact ((hsign y ⟨by linarith [hx.1, hy.1], by linarith [hy.2]⟩).1 hy.2).le
+      have := hanti ⟨le_rfl, hle⟩ ⟨hle, le_rfl⟩ hle
+      simp only at this
+      linarith
+    · have hmono : MonotoneOn (fun y => f y μ₀) (Icc x₀ x) := by
+        apply monotoneOn_of_deriv_nonneg (convex_Icc _ _)
+          (fun y _ => (hfx y μ₀).continuousAt.continuousWithinAt)
+          (fun y _ => (hfx y μ₀).differentiableAt.differentiableWithinAt)
+        intro y hy
+        rw [interior_Icc] at hy
+        rw [(hfx y μ₀).deriv]
+        exact ((hsign y ⟨by linarith [hy.1], by linarith [hx.2, hy.2]⟩).2 hy.1).le
+      have := hmono ⟨le_rfl, hge⟩ ⟨hge, le_rfl⟩ hge
+      simp only at this
+      linarith
+
+/-- **Box premises from `C²` data.** For `f ∈ C²(ℝ²)` with a fold at `(x₀, μ₀)`
+(`f = ∂ₓf = 0`, `∂ₓₓf > 0`, `∂_μ f > 0`), the box premises of `fold_crossing` hold on some box
+`[x₀ − r, x₀ + r] × [μ₀ − ε, μ₀ + ε]`. (The other sign cases of `f_xx`, `f_μ` reduce to this one by
+`f ↦ −f` and `μ ↦ −μ`.) -/
+@[powerlib_foundation] theorem fold_box_of_contDiff {f : ℝ → ℝ → ℝ} {x₀ μ₀ : ℝ}
+    (hf : ContDiff ℝ 2 (Function.uncurry f)) (h0 : f x₀ μ₀ = 0)
+    (h1 : deriv (fun x => f x μ₀) x₀ = 0)
+    (h2 : 0 < deriv (fun x => deriv (fun x => f x μ₀) x) x₀)
+    (h3 : 0 < deriv (f x₀) μ₀) :
+    ∃ r > 0, ∃ ε > 0,
+      (∀ μ ∈ Icc (μ₀ - ε) (μ₀ + ε), StrictConvexOn ℝ (Icc (x₀ - r) (x₀ + r)) (f · μ)) ∧
+      (∀ x ∈ Icc (x₀ - r) (x₀ + r), StrictMonoOn (f x) (Icc (μ₀ - ε) (μ₀ + ε))) ∧
+      ContinuousOn (Function.uncurry f) (Icc (x₀ - r) (x₀ + r) ×ˢ Icc (μ₀ - ε) (μ₀ + ε)) ∧
+      (∀ x ∈ Icc (x₀ - r) (x₀ + r), 0 ≤ f x μ₀) := by
+  set F := Function.uncurry f with hFdef
+  have hF1 : Differentiable ℝ F := hf.differentiable (by norm_num)
+  -- first partials from the Fréchet derivative
+  set G : ℝ × ℝ → ℝ := fun p => fderiv ℝ F p (1, 0) with hGdef
+  have hG : ContDiff ℝ 1 G :=
+    (hf.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const
+  have hG1 : Differentiable ℝ G := hG.differentiable (by norm_num)
+  have hline : ∀ x μ : ℝ, HasDerivAt (fun x : ℝ => (x, μ)) ((1 : ℝ), (0 : ℝ)) x :=
+    fun x μ => (hasDerivAt_id x).prodMk (hasDerivAt_const x μ)
+  have hline' : ∀ x μ : ℝ, HasDerivAt (fun μ : ℝ => (x, μ)) ((0 : ℝ), (1 : ℝ)) μ :=
+    fun x μ => (hasDerivAt_const μ x).prodMk (hasDerivAt_id μ)
+  have hfx : ∀ x μ, HasDerivAt (fun x => f x μ) (G (x, μ)) x := fun x μ => by
+    have h := (hF1 (x, μ)).hasFDerivAt.comp_hasDerivAt x (hline x μ)
+    exact h
+  have hfxx : ∀ x μ, HasDerivAt (fun x => G (x, μ)) (fderiv ℝ G (x, μ) (1, 0)) x := fun x μ => by
+    have h := (hG1 (x, μ)).hasFDerivAt.comp_hasDerivAt x (hline x μ)
+    exact h
+  have hfμ : ∀ x μ, HasDerivAt (f x) (fderiv ℝ F (x, μ) (0, 1)) μ := fun x μ => by
+    have h := (hF1 (x, μ)).hasFDerivAt.comp_hasDerivAt μ (hline' x μ)
+    exact h
+  have hcxx : Continuous fun p : ℝ × ℝ => fderiv ℝ G p (1, 0) :=
+    (hG.continuous_fderiv (by norm_num)).clm_apply continuous_const
+  have hcμ : Continuous fun p : ℝ × ℝ => fderiv ℝ F p (0, 1) :=
+    (hf.continuous_fderiv (by norm_num)).clm_apply continuous_const
+  have hd1 : deriv (fun x => f x μ₀) = fun x => G (x, μ₀) :=
+    funext fun x => (hfx x μ₀).deriv
+  rw [hd1] at h2
+  rw [(hfx x₀ μ₀).deriv] at h1
+  rw [(hfxx x₀ μ₀).deriv] at h2
+  rw [(hfμ x₀ μ₀).deriv] at h3
+  exact fold_box_of_partials (f := f) (fx := fun x μ => G (x, μ))
+    (fxx := fun x μ => fderiv ℝ G (x, μ) (1, 0)) (fμ := fun x μ => fderiv ℝ F (x, μ) (0, 1))
+    hf.continuous hfx hfxx hfμ hcxx.continuousAt hcμ.continuousAt h0 h1 h2 h3
+
+/-- **`Σ_SN` crossing from `C²` data.** For `f ∈ C²(ℝ²)` with `f = ∂ₓf = 0`, `∂ₓₓf > 0`,
+`∂_μ f > 0` at `(x₀, μ₀)`, there is a neighbourhood `[x₀ − r, x₀ + r]` in which the number of
+equilibria of `ẋ = f(x, μ)` is `0` for `μ ∈ (μ₀, μ₀ + ε]` and `2` for `μ` in some `(μ₀ − ε', μ₀)`. -/
+@[powerlib_foundation] theorem fold_crossing_of_contDiff {f : ℝ → ℝ → ℝ} {x₀ μ₀ : ℝ}
+    (hf : ContDiff ℝ 2 (Function.uncurry f)) (h0 : f x₀ μ₀ = 0)
+    (h1 : deriv (fun x => f x μ₀) x₀ = 0)
+    (h2 : 0 < deriv (fun x => deriv (fun x => f x μ₀) x) x₀)
+    (h3 : 0 < deriv (f x₀) μ₀) :
+    ∃ r > 0, ∃ ε > 0,
+      (∀ μ ∈ Ioc μ₀ (μ₀ + ε), ∀ x ∈ Icc (x₀ - r) (x₀ + r), f x μ ≠ 0) ∧
+      ∃ ε' > 0, ∀ μ ∈ Ioo (μ₀ - ε') μ₀, {x ∈ Icc (x₀ - r) (x₀ + r) | f x μ = 0}.ncard = 2 := by
+  obtain ⟨r, hr, ε, hε, hconv, hmono, hcont, hmin⟩ := fold_box_of_contDiff hf h0 h1 h2 h3
+  exact ⟨r, hr, ε, hε, fold_crossing hr hε hconv hmono hcont h0 hmin⟩
 
 /-! ## 2. `Σ_WS` crossing with transversality -/
 

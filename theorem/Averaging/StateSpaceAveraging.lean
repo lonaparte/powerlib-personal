@@ -27,9 +27,15 @@ The state-space averaged model is the LTI system `x̄̇ = Ā x̄`, `Ā = d A₁ 
 * `stateSpaceAveraging_error`: for every horizon `L ≥ 0` there is `C` such that for all
   `T ∈ (0, 1]`, every switched trajectory with `x(0) = x₀`, and every switching instant
   `kT ≤ L`: `‖x(kT) − x̄(kT)‖ ≤ C T ‖x₀‖`.
-
-The bound is stated at the switching instants `kT` (the sampled / cycle-averaged comparison);
-the intra-period ripple, also `O(T)`, is not formalized.
+* `switched_ripple` (intra-period ripple): there is `c`, depending only on `A₁`, `A₂`, such that
+  for every `T ∈ (0, 1]`, every switched trajectory, every period `k` and every
+  `t ∈ [kT, (k + 1)T]`: `‖x(t) − x(kT)‖ ≤ c T ‖x(kT)‖` (from `norm_exp_smul_sub_one_le` on the
+  ON and OFF subintervals).
+* `stateSpaceAveraging_error_uniform`: the averaging error is `O(T)` at **every** instant, not
+  only at the switching instants: for every horizon `L ≥ 0` there is `C` with
+  `‖x(t) − x̄(t)‖ ≤ C T ‖x₀‖` for all `t ∈ [0, L]` (sampled error + ripple + the drift
+  `‖e^{sĀ} − 1‖ = O(s)` of the averaged model within the partial period). Auxiliary:
+  `norm_avgMatrix_le`, `norm_periodMap_le`, `exp_smul_bounds`, `exp_add_smul`.
 
 Architecture: generic mathematical support (no `Family`). `stateSpaceAveraging_error` was
 `@[powerlib_domain]` in the former architecture; it holds for arbitrary matrices `A₁`, `A₂`,
@@ -45,7 +51,8 @@ definition `IsSwitchedTrajectory` is removed: behaviour is defined only in the s
 layer).
 
 Source: work-sync theory/T-averaging-method.md §1.5 (state-space averaging, `O(ε)` agreement on
-the slow time scale).
+the slow time scale; the intra-period ripple bound completes the `O(T)` comparison at every
+instant).
 -/
 
 noncomputable section
@@ -240,6 +247,58 @@ omit [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] in
   calc ‖periodMap d T A₁ A₂ - NormedSpace.exp (T • avgMatrix d A₁ A₂)‖ ≤ c * T * T := hmv
     _ = c * T ^ 2 := by ring
 
+omit [CompleteSpace 𝔸] [NormOneClass 𝔸] in
+/-- `‖Ā‖ ≤ ‖A₁‖ + ‖A₂‖` for `d ∈ [0, 1]`. -/
+@[powerlib_foundation] theorem norm_avgMatrix_le {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
+    (A₁ A₂ : 𝔸) : ‖avgMatrix d A₁ A₂‖ ≤ ‖A₁‖ + ‖A₂‖ := by
+  have hd1' : 0 ≤ 1 - d := by linarith
+  calc ‖avgMatrix d A₁ A₂‖ ≤ ‖d • A₁‖ + ‖(1 - d) • A₂‖ := norm_add_le _ _
+    _ = d * ‖A₁‖ + (1 - d) * ‖A₂‖ := by
+        rw [norm_smul, norm_smul, Real.norm_of_nonneg hd0, Real.norm_of_nonneg hd1']
+    _ ≤ ‖A₁‖ + ‖A₂‖ := by nlinarith [norm_nonneg A₁, norm_nonneg A₂]
+
+/-- One switching period: `‖e^{(1−d)TA₂} e^{dTA₁}‖ ≤ e^{(‖A₁‖ + ‖A₂‖)T}`. -/
+@[powerlib_foundation] theorem norm_periodMap_le {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
+    (A₁ A₂ : 𝔸) {T : ℝ} (hT : 0 ≤ T) :
+    ‖periodMap d T A₁ A₂‖ ≤ Real.exp ((‖A₁‖ + ‖A₂‖) * T) := by
+  have hd1' : 0 ≤ 1 - d := by linarith
+  calc ‖periodMap d T A₁ A₂‖
+      ≤ ‖NormedSpace.exp (((1 - d) * T) • A₂)‖ * ‖NormedSpace.exp ((d * T) • A₁)‖ :=
+        norm_mul_le _ _
+    _ ≤ Real.exp (‖A₂‖ * ((1 - d) * T)) * Real.exp (‖A₁‖ * (d * T)) :=
+        mul_le_mul (norm_exp_smul_le _ (mul_nonneg hd1' hT)) (norm_exp_smul_le _ (mul_nonneg hd0 hT))
+          (norm_nonneg _) (Real.exp_pos _).le
+    _ = Real.exp (‖A₂‖ * ((1 - d) * T) + ‖A₁‖ * (d * T)) := (Real.exp_add _ _).symm
+    _ ≤ Real.exp ((‖A₁‖ + ‖A₂‖) * T) := by
+        apply Real.exp_le_exp.mpr
+        nlinarith [mul_nonneg (norm_nonneg A₂) (mul_nonneg hd0 hT),
+          mul_nonneg (norm_nonneg A₁) (mul_nonneg hd1' hT)]
+
+/-- `‖e^{sX}‖ ≤ e^{a}` and `‖e^{sX} − 1‖ ≤ a s e^{a}` for `‖X‖ ≤ a`, `0 ≤ s ≤ 1`. -/
+@[powerlib_foundation] theorem exp_smul_bounds {X : 𝔸} {a s : ℝ} (hX : ‖X‖ ≤ a) (hs0 : 0 ≤ s)
+    (hs1 : s ≤ 1) :
+    ‖NormedSpace.exp (s • X)‖ ≤ Real.exp a ∧
+      ‖NormedSpace.exp (s • X) - 1‖ ≤ a * s * Real.exp a := by
+  have ha : 0 ≤ a := (norm_nonneg X).trans hX
+  have hexp : Real.exp (‖X‖ * s) ≤ Real.exp a :=
+    Real.exp_le_exp.mpr (by nlinarith [norm_nonneg X])
+  refine ⟨(norm_exp_smul_le X hs0).trans hexp, ?_⟩
+  calc ‖NormedSpace.exp (s • X) - 1‖ ≤ ‖X‖ * s * Real.exp (‖X‖ * s) :=
+        norm_exp_smul_sub_one_le X hs0
+    _ ≤ a * s * Real.exp a := by
+        apply mul_le_mul (mul_le_mul_of_nonneg_right hX hs0) hexp (Real.exp_pos _).le
+        positivity
+
+omit [NormOneClass 𝔸] in
+/-- `e^{(r + s)X} = e^{rX} e^{sX}`. -/
+@[powerlib_foundation] theorem exp_add_smul (X : 𝔸) (r s : ℝ) :
+    NormedSpace.exp ((r + s) • X) = NormedSpace.exp (r • X) * NormedSpace.exp (s • X) := by
+  rw [add_smul]
+  refine NormedSpace.exp_add_of_commute_of_mem_ball (𝕂 := ℝ)
+    (((Commute.refl X).smul_left r).smul_right s) ?_ ?_ <;>
+  · rw [NormedSpace.expSeries_radius_eq_top]
+    simp
+
 end Algebra
 
 /-! ## Switched trajectories -/
@@ -377,6 +436,171 @@ switched trajectory and every switching instant `kT ≤ L`,
   calc ‖(M ^ k - P ^ k) *ᵥ x 0‖ ≤ ‖M ^ k - P ^ k‖ * ‖x 0‖ := Matrix.linfty_opNorm_mulVec _ _
     _ ≤ c * L * Real.exp (2 * a * L) * T * ‖x 0‖ :=
         mul_le_mul_of_nonneg_right hmat (norm_nonneg _)
+
+/-- **Intra-period ripple.** There is `c`, depending only on `A₁`, `A₂`, such that for every
+switching period `T ∈ (0, 1]`, every switched trajectory, every period `k` and every instant
+`t ∈ [kT, (k + 1)T]`: `‖x(t) − x(kT)‖ ≤ c T ‖x(kT)‖`. -/
+@[powerlib_foundation] theorem switched_ripple [Nonempty X] {d : ℝ} (hd0 : 0 ≤ d) (hd1 : d ≤ 1)
+    (A₁ A₂ : Matrix X X ℝ) :
+    ∃ c : ℝ, 0 ≤ c ∧ ∀ T ∈ Ioc (0 : ℝ) 1, ∀ x : ℝ → X → ℝ,
+      (∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A₁ *ᵥ y) (Icc (k * T) (k * T + d * T)) ∧
+        IsIntegralCurveOn x (fun _ y => A₂ *ᵥ y) (Icc (k * T + d * T) ((k + 1) * T))) →
+      ∀ k : ℕ, ∀ t ∈ Icc ((k : ℝ) * T) ((k + 1) * T),
+        ‖x t - x (k * T)‖ ≤ c * T * ‖x (k * T)‖ := by
+  set a := ‖A₁‖ + ‖A₂‖ with hadef
+  have ha0 : 0 ≤ a := by positivity
+  set K := Real.exp a
+  have hK1 : 1 ≤ K := Real.one_le_exp ha0
+  have ha1 : ‖A₁‖ ≤ a := by linarith [norm_nonneg A₂]
+  have ha2 : ‖A₂‖ ≤ a := by linarith [norm_nonneg A₁]
+  refine ⟨a * K * (K + 1), by positivity, fun T hT x hx k t ht => ?_⟩
+  have hT0 : 0 ≤ T := hT.1.le
+  obtain ⟨h1, h2⟩ := hx k
+  have hdT : d * T ≤ T := by nlinarith
+  have hdT0 : 0 ≤ d * T := mul_nonneg hd0 hT0
+  rcases le_or_gt t (k * T + d * T) with htd | htd
+  · -- ON interval
+    have e := const_solution_eq h1 ⟨ht.1, htd⟩
+    have hs0 : 0 ≤ t - k * T := by linarith [ht.1]
+    have hs1 : t - k * T ≤ T := by linarith
+    obtain ⟨-, hb⟩ := exp_smul_bounds ha1 hs0 (hs1.trans hT.2)
+    have hdiff : x t - x (k * T) =
+        (NormedSpace.exp ((t - k * T) • A₁) - 1) *ᵥ x (k * T) := by
+      rw [e, Matrix.sub_mulVec, Matrix.one_mulVec]
+    rw [hdiff]
+    calc ‖(NormedSpace.exp ((t - k * T) • A₁) - 1) *ᵥ x (k * T)‖
+        ≤ ‖NormedSpace.exp ((t - k * T) • A₁) - 1‖ * ‖x (k * T)‖ :=
+          Matrix.linfty_opNorm_mulVec _ _
+      _ ≤ a * T * K * ‖x (k * T)‖ := by
+          apply mul_le_mul_of_nonneg_right _ (norm_nonneg _)
+          refine hb.trans ?_
+          gcongr
+      _ ≤ a * K * (K + 1) * T * ‖x (k * T)‖ := by
+          apply mul_le_mul_of_nonneg_right _ (norm_nonneg _)
+          nlinarith [mul_nonneg (mul_nonneg ha0 hT0) (by positivity : (0 : ℝ) ≤ K)]
+  · -- OFF interval
+    have e2 := const_solution_eq h2 ⟨htd.le, ht.2⟩
+    have e1 := const_solution_eq h1 (t := k * T + d * T) ⟨by linarith, le_rfl⟩
+    rw [show (k : ℝ) * T + d * T - k * T = d * T by ring] at e1
+    set E₁ := NormedSpace.exp ((d * T) • A₁)
+    set E₂ := NormedSpace.exp ((t - (k * T + d * T)) • A₂)
+    have hs0 : 0 ≤ t - (k * T + d * T) := by linarith
+    have hs1 : t - (k * T + d * T) ≤ T := by linarith [ht.2]
+    obtain ⟨hE₁, hb₁⟩ := exp_smul_bounds ha1 hdT0 (hdT.trans hT.2)
+    obtain ⟨-, hb₂⟩ := exp_smul_bounds ha2 hs0 (hs1.trans hT.2)
+    have hdiff : x t - x (k * T) = (E₂ * E₁ - 1) *ᵥ x (k * T) := by
+      rw [e2, e1, Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.mulVec_mulVec]
+    have hprod : ‖E₂ * E₁ - 1‖ ≤ a * T * K * K + a * T * K := by
+      have : E₂ * E₁ - 1 = (E₂ - 1) * E₁ + (E₁ - 1) := by noncomm_ring
+      rw [this]
+      calc ‖(E₂ - 1) * E₁ + (E₁ - 1)‖ ≤ ‖E₂ - 1‖ * ‖E₁‖ + ‖E₁ - 1‖ :=
+            (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
+        _ ≤ a * T * K * K + a * T * K := by
+            have h1' : ‖E₂ - 1‖ ≤ a * T * K := hb₂.trans (by gcongr)
+            have h2' : ‖E₁ - 1‖ ≤ a * T * K := hb₁.trans (by gcongr)
+            gcongr
+            exact hE₁
+    rw [hdiff]
+    calc ‖(E₂ * E₁ - 1) *ᵥ x (k * T)‖ ≤ ‖E₂ * E₁ - 1‖ * ‖x (k * T)‖ :=
+          Matrix.linfty_opNorm_mulVec _ _
+      _ ≤ (a * T * K * K + a * T * K) * ‖x (k * T)‖ :=
+          mul_le_mul_of_nonneg_right hprod (norm_nonneg _)
+      _ = a * K * (K + 1) * T * ‖x (k * T)‖ := by ring
+
+/-- **State-space averaging error, uniform in time** (Middlebrook–Ćuk, ideal switches, fixed duty
+ratio, CCM): for every horizon `L` there is `C` such that for all switching periods `T ∈ (0, 1]`,
+every switched trajectory and **every** instant `t ∈ [0, L]` (not only the switching instants),
+`‖x(t) − x̄(t)‖ ≤ C T ‖x(0)‖` with `x̄(t) = e^{tĀ} x(0)`: the averaged model tracks the switched
+state including its intra-period ripple to `O(T)`. -/
+@[powerlib_foundation] theorem stateSpaceAveraging_error_uniform [Nonempty X] {d : ℝ}
+    (hd0 : 0 ≤ d) (hd1 : d ≤ 1) (A₁ A₂ : Matrix X X ℝ) {L : ℝ} (hL : 0 ≤ L) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ T ∈ Ioc (0 : ℝ) 1, ∀ x : ℝ → X → ℝ,
+      (∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A₁ *ᵥ y) (Icc (k * T) (k * T + d * T)) ∧
+        IsIntegralCurveOn x (fun _ y => A₂ *ᵥ y) (Icc (k * T + d * T) ((k + 1) * T))) →
+      ∀ t ∈ Icc (0 : ℝ) L,
+        ‖x t - NormedSpace.exp (t • avgMatrix d A₁ A₂) *ᵥ x 0‖ ≤ C * T * ‖x 0‖ := by
+  obtain ⟨C₀, hC₀, herr⟩ := stateSpaceAveraging_error hd0 hd1 A₁ A₂ hL
+  obtain ⟨c, hc, hrip⟩ := switched_ripple hd0 hd1 A₁ A₂
+  set a := ‖A₁‖ + ‖A₂‖ with hadef
+  have ha0 : 0 ≤ a := by positivity
+  refine ⟨c * Real.exp (a * L) + C₀ + a * Real.exp a * Real.exp (a * L), by positivity, ?_⟩
+  intro T hT x hx t ht
+  have hT0 : 0 < T := hT.1
+  set k := ⌊t / T⌋₊ with hkdef
+  have hk1 : (k : ℝ) * T ≤ t := by
+    have := Nat.floor_le (div_nonneg ht.1 hT0.le)
+    rwa [le_div_iff₀ hT0] at this
+  have hk2 : t < ((k : ℝ) + 1) * T := by
+    have := Nat.lt_floor_add_one (t / T)
+    rwa [div_lt_iff₀ hT0] at this
+  have hkL : (k : ℝ) * T ≤ L := hk1.trans ht.2
+  set Ab := avgMatrix d A₁ A₂
+  have hAb : ‖Ab‖ ≤ a := norm_avgMatrix_le hd0 hd1 A₁ A₂
+  -- (1) ripple
+  have h1 := hrip T hT x hx k t ⟨hk1, hk2.le⟩
+  have hxk : ‖x (k * T)‖ ≤ Real.exp (a * L) * ‖x 0‖ := by
+    rw [switched_sample hd0 hd1 hT0.le hx k]
+    calc ‖periodMap d T A₁ A₂ ^ k *ᵥ x 0‖ ≤ ‖periodMap d T A₁ A₂ ^ k‖ * ‖x 0‖ :=
+          Matrix.linfty_opNorm_mulVec _ _
+      _ ≤ ‖periodMap d T A₁ A₂‖ ^ k * ‖x 0‖ :=
+          mul_le_mul_of_nonneg_right (norm_pow_le _ _) (norm_nonneg _)
+      _ ≤ Real.exp (a * T) ^ k * ‖x 0‖ :=
+          mul_le_mul_of_nonneg_right
+            (pow_le_pow_left₀ (norm_nonneg _) (norm_periodMap_le hd0 hd1 A₁ A₂ hT0.le) k)
+            (norm_nonneg _)
+      _ ≤ Real.exp (a * L) * ‖x 0‖ := by
+          apply mul_le_mul_of_nonneg_right _ (norm_nonneg _)
+          rw [← Real.exp_nat_mul]
+          apply Real.exp_le_exp.mpr
+          nlinarith
+  -- (2) sampled error
+  have h2 := herr T hT x hx k hkL
+  -- (3) averaged model across the partial period
+  set s := t - k * T
+  have hs0 : 0 ≤ s := by simp only [s]; linarith
+  have hsT : s ≤ T := by simp only [s]; linarith
+  have hsplit : NormedSpace.exp (t • Ab) =
+      NormedSpace.exp (s • Ab) * NormedSpace.exp (((k : ℝ) * T) • Ab) := by
+    have h := exp_add_smul Ab s ((k : ℝ) * T)
+    rw [show s + (k : ℝ) * T = t by simp only [s]; ring] at h
+    exact h
+  obtain ⟨-, hbs⟩ := exp_smul_bounds hAb hs0 (hsT.trans hT.2)
+  have hkexp : ‖NormedSpace.exp (((k : ℝ) * T) • Ab)‖ ≤ Real.exp (a * L) :=
+    (norm_exp_smul_le Ab (by positivity)).trans
+      (Real.exp_le_exp.mpr (by nlinarith [norm_nonneg Ab, mul_nonneg (Nat.cast_nonneg k) hT0.le]))
+  have h3 : ‖NormedSpace.exp (((k : ℝ) * T) • Ab) *ᵥ x 0 - NormedSpace.exp (t • Ab) *ᵥ x 0‖ ≤
+      a * Real.exp a * Real.exp (a * L) * T * ‖x 0‖ := by
+    have : NormedSpace.exp (((k : ℝ) * T) • Ab) *ᵥ x 0 - NormedSpace.exp (t • Ab) *ᵥ x 0 =
+        -((NormedSpace.exp (s • Ab) - 1) * NormedSpace.exp (((k : ℝ) * T) • Ab)) *ᵥ x 0 := by
+      rw [hsplit, Matrix.neg_mulVec, sub_mul, one_mul, Matrix.sub_mulVec]; abel
+    rw [this]
+    calc ‖-((NormedSpace.exp (s • Ab) - 1) * NormedSpace.exp (((k : ℝ) * T) • Ab)) *ᵥ x 0‖
+        ≤ ‖-((NormedSpace.exp (s • Ab) - 1) * NormedSpace.exp (((k : ℝ) * T) • Ab))‖ * ‖x 0‖ :=
+          Matrix.linfty_opNorm_mulVec _ _
+      _ ≤ (a * s * Real.exp a) * Real.exp (a * L) * ‖x 0‖ := by
+          rw [norm_neg]
+          apply mul_le_mul_of_nonneg_right _ (norm_nonneg _)
+          exact (norm_mul_le _ _).trans (mul_le_mul hbs hkexp (norm_nonneg _) (by positivity))
+      _ ≤ a * Real.exp a * Real.exp (a * L) * T * ‖x 0‖ := by
+          apply mul_le_mul_of_nonneg_right _ (norm_nonneg _)
+          have : 0 ≤ a * Real.exp a * Real.exp (a * L) := by positivity
+          nlinarith
+  -- combine
+  have hsum : x t - NormedSpace.exp (t • Ab) *ᵥ x 0 =
+      (x t - x (k * T)) + (x (k * T) - NormedSpace.exp (((k : ℝ) * T) • Ab) *ᵥ x 0) +
+        (NormedSpace.exp (((k : ℝ) * T) • Ab) *ᵥ x 0 - NormedSpace.exp (t • Ab) *ᵥ x 0) := by
+    abel
+  rw [hsum]
+  calc ‖(x t - x (k * T)) + (x (k * T) - NormedSpace.exp (((k : ℝ) * T) • Ab) *ᵥ x 0) +
+        (NormedSpace.exp (((k : ℝ) * T) • Ab) *ᵥ x 0 - NormedSpace.exp (t • Ab) *ᵥ x 0)‖
+      ≤ ‖x t - x (k * T)‖ + ‖x (k * T) - NormedSpace.exp (((k : ℝ) * T) • Ab) *ᵥ x 0‖ +
+        ‖NormedSpace.exp (((k : ℝ) * T) • Ab) *ᵥ x 0 - NormedSpace.exp (t • Ab) *ᵥ x 0‖ :=
+        norm_add₃_le
+    _ ≤ c * T * (Real.exp (a * L) * ‖x 0‖) + C₀ * T * ‖x 0‖ +
+        a * Real.exp a * Real.exp (a * L) * T * ‖x 0‖ := by
+        gcongr
+        exact h1.trans (mul_le_mul_of_nonneg_left hxk (by positivity))
+    _ = (c * Real.exp (a * L) + C₀ + a * Real.exp a * Real.exp (a * L)) * T * ‖x 0‖ := by ring
 
 end Switched
 

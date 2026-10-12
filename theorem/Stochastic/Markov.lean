@@ -39,7 +39,9 @@ Category B.
 
 Correction (§1.2).  "Markov ⇔ semigroup relation" is too strong: the Markov property only gives
 Chapman–Kolmogorov `P_{X_s}`-a.e. (`chapmanKolmogorov_ae`), and the converse direction
-(semigroup ⇒ Markov) is false in general; only the forward a.e. statement is formalized.
+(semigroup ⇒ Markov) is false: it is refuted by Feller's three-step example
+`semigroup_not_markov` in `theorem/Stochastic/MarkovForms.lean` (transition kernels forming a
+Chapman–Kolmogorov semigroup, process not Markov).
 
 The equivalence of the event form and the conditional-expectation form of the Markov property
 (bounded measurable test functions) is `theorem/Stochastic/MarkovForms.lean`

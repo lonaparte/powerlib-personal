@@ -48,6 +48,24 @@ Domain: matching control (§1.2, Arghir–Jouini–Dörfler).
   implementation evidence together with the solution correspondence `matching_trajectory_iff`
   (a trajectory-level statement outside the sentence language).
 
+Global stability (Arghir–Dörfler 2020, Theorem 3 / Appendix B, quoted in T-dc-voltage-gfm §1.2
+and T-gfm-control §1.6: `(G_dc + K_p)/η² > L_s² μ² v*²/(4 R_s ‖Z_s‖²)` ⇒ global stability via a
+shifted Hamiltonian and LaSalle). **UNPROVED**: the sources quote only the condition. The
+closed loop it refers to — AC-side states `i_dq` with `L_s i̇ = −R_s i − v_g + μ v_dc (cos θ, sin θ)`
+(or the αβ version), the modulation amplitude `μ`, the synchronizing potential `S`/Bregman
+divergence `W`, the feedforward, the grid model behind `Z_s`, and the target set — is not written
+in any work-sync note (theory/ and projects/ checked), so it cannot be formalized without
+inventing the model. Nor can it be obtained from `matching_den_eq`: no global swing result
+exists in the library, and the global sentences are in fact unavailable. Formalized boundary
+(connection): for every load law `i_x` that is `2π`-periodic in the angle (any AC network seen
+through `e^{jθ}`), the shifted points `(θ* + 2π, v*)` are equilibria too, so the selected point is
+never globally asymptotically or exponentially stable on `ℝ²`
+(`matching_not_mem_den_globallyAsymptoticallyStable`,
+`matching_not_mem_den_globallyExponentiallyStable`; generic lemma
+`not_globallyAsymptoticallyStable_of_equilibrium_ne`). The source's "global" result is
+stability of the set of equilibria modulo `2π` (a set-stability notion outside the sentence
+language).
+
 Correction (T-dc-voltage-gfm §2.2 ROCOF). Exactly, `ω' = η v' = η (i_dc − i_x − G v)/C`; a
 step `ΔP` of exported power from equilibrium gives the initial ROCOF `−η ΔP/(C v*)`
 `= −ω_s ΔP/(C v*²)` (`matching_rocof`). With the note's data (`C = 20 mF`, `v* = 1500 V`,
@@ -424,5 +442,62 @@ point `(θ*, η v*)`. -/
     rw [matching_eq_swing m.C_ne m.η_ne]
     rfl
   rw [hpt, hfield, holds_transport_iff]
+
+
+/-! ## Global stability of matching control: the sentence-language boundary -/
+
+/-- With a load law `2π`-periodic in the modulation angle, the matching field is `2π`-periodic
+in `θ`. Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem matchingField_add_two_pi {C G η idc : ℝ} {ix : ℝ → ℝ → ℝ}
+    (hper : ∀ θ v, ix (θ + 2 * Real.pi) v = ix θ v) (θ v : ℝ) :
+    matchingField C G η idc ix (WithLp.toLp 2 ![θ + 2 * Real.pi, v]) =
+      matchingField C G η idc ix (WithLp.toLp 2 ![θ, v]) := by
+  simp [matchingField, hper]
+
+/-- A field with an equilibrium `y ≠ x` has no globally asymptotically stable point `x`: the
+constant solution at `y` does not converge to `x`. Generic. -/
+@[powerlib_foundation] theorem not_globallyAsymptoticallyStable_of_equilibrium_ne {n : ℕ}
+    {f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)} {x y : EuclideanSpace ℝ (Fin n)}
+    (hy : f y = 0) (hne : y ≠ x) : ¬ Flow.GloballyAsymptoticallyStable f x := by
+  rintro ⟨-, -, -, hconv⟩
+  have hc : IsIntegralCurveOn (fun _ : ℝ => y) (fun _ z => f z) (Set.Ici 0) := by
+    intro t _
+    show HasDerivWithinAt (fun _ => y) (f y) (Set.Ici 0) t
+    rw [hy]
+    exact hasDerivWithinAt_const t (Set.Ici 0) y
+  exact hne (tendsto_nhds_unique tendsto_const_nhds (hconv 0 _ hc))
+
+/-- **Boundary of the global matching claim** (T-dc-voltage-gfm §1.2, Arghir–Dörfler, Theorem 3).
+A load law `2π`-periodic in the modulation angle — every AC network seen through `e^{jθ}` — gives
+the matching model the equilibria `(θ* + 2πk, v*)`, so no selected point is globally
+asymptotically stable on `ℝ²`, whatever the gains. The global result of the source is stability
+of the *set* of equilibria (the angle modulo `2π`), which is not a sentence of the library. -/
+@[powerlib_domain] theorem matching_not_mem_den_globallyAsymptoticallyStable (m : MatchingModel)
+    (hper : ∀ θ v, m.ix (θ + 2 * Real.pi) v = m.ix θ v) :
+    connection% (m ∉ matchingFamily.den (.flow .globallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [matching_mem_den_flow]
+  intro h
+  change Flow.GloballyAsymptoticallyStable _ _ at h
+  refine not_globallyAsymptoticallyStable_of_equilibrium_ne
+    (y := WithLp.toLp 2 ![m.θ + 2 * Real.pi, m.v]) ?_ ?_ h
+  · rw [matchingField_add_two_pi hper]
+    exact h.1
+  · intro he
+    have h0 := congrArg (fun z : State 2 => z 0) he
+    simp [MatchingModel.point] at h0
+
+/-- The same boundary for global exponential stability. -/
+@[powerlib_domain] theorem matching_not_mem_den_globallyExponentiallyStable (m : MatchingModel)
+    (hper : ∀ θ v, m.ix (θ + 2 * Real.pi) v = m.ix θ v) :
+    connection% (m ∉ matchingFamily.den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  rw [matching_mem_den_flow] at h
+  have hgas := Flow.GloballyExponentiallyStable.globallyAsymptoticallyStable h
+  have := matching_not_mem_den_globallyAsymptoticallyStable m hper
+  unfold powerlib.TMIO.Statement at this
+  rw [matching_mem_den_flow] at this
+  exact this hgas
 
 end powerlib.DCLink

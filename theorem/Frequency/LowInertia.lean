@@ -35,6 +35,16 @@ condition off the initial slope of a forward solution of the `Frequency.SwingGov
   variance ratio 9 > 2.5² = 6.25, `p ≈ 2.4`) **cannot** be produced by this first-order model
   with any nonnegative PSD; the note's explanation "noise concentrated above `ω_c`" can give at
   most `p = 2`.
+* `variance_tendsto_zero`, `twoPointExponent_tendsto_zero` (§1.7, `p = 0` end): for an
+  integrable nonnegative PSD with `∫ S > 0`, `σ²(M) → (∫ S)/β²` as `M → 0` (all noise below the
+  corner `ω_c = β/M`), so the two-point exponent `p(M, κM) = ln(σ²(M)/σ²(κM))/ln κ` tends to `0`.
+  `mul_variance_tendsto_atTop`, `twoPointExponent_tendsto_two` (`p = 2` end): if `S(ω)/ω²` is
+  integrable with positive integral, `M² σ²(M) → ∫ S/ω²` as `M → ∞` (all noise above the
+  corner), so `p(M, κM) → 2`. Both by dominated convergence. Together with
+  `powerLaw_exponent_mem` this makes `[0, 2]` the exact range of the exponent: both ends are
+  attained asymptotically, low-frequency noise at small inertia and high-frequency noise at large
+  inertia (the note's "low-frequency OU noise ⇒ `p = 0`, high-frequency noise ⇒ `p = 2`"; the
+  note's band statements are regimes of `M` relative to the noise band, not exact power laws).
 * Correction (§1.1): the electromechanical time constant `T_em = 2H/ω_s` is about 25 ms for
   `H = 4 s` at 50 Hz (`electromechanicalTime_example`), not "几秒"; the seconds-scale constant
   is `M = 2H` itself (the time constant of the per-unit swing equation).
@@ -354,6 +364,144 @@ cannot come from the first-order model with any nonnegative PSD: the model allow
   nlinarith
 
 end Elasticity
+
+/-! ## The two ends of the exponent range (§1.7) -/
+
+section Asymptotics
+
+variable {S : ℝ → ℝ} {β : ℝ}
+
+/-- Two-point scaling exponent `p(M₁, M₂) = ln(σ²(M₁)/σ²(M₂)) / ln(M₂/M₁)` of the variance:
+the exponent of the power law `σ² = c M^{−p}` through the two points. -/
+def twoPointExponent (S : ℝ → ℝ) (β M₁ M₂ : ℝ) : ℝ :=
+  Real.log (variance S β M₁ / variance S β M₂) / Real.log (M₂ / M₁)
+
+/-- **Low-frequency end (`p → 0`).** For an integrable nonnegative PSD the variance tends to
+`(∫ S)/β²` as the inertia vanishes: all the noise lies below the corner `ω_c = β/M → ∞`, where
+`|H|² → 1/β²` does not depend on `M`. -/
+@[powerlib_foundation] theorem variance_tendsto_zero (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
+    (hint : IntegrableOn S (Ioi 0)) :
+    Tendsto (fun M => variance S β M) (𝓝 0) (𝓝 ((∫ ω in Ioi (0 : ℝ), S ω) / β ^ 2)) := by
+  have hb : 0 < β ^ 2 := by positivity
+  have hlim : (∫ ω in Ioi (0 : ℝ), S ω) / β ^ 2 = ∫ ω in Ioi (0 : ℝ), S ω / β ^ 2 :=
+    (integral_div _ _).symm
+  rw [hlim]
+  unfold variance
+  refine tendsto_integral_filter_of_dominated_convergence (fun ω => S ω / β ^ 2) ?_ ?_
+    (hint.div_const _) ?_
+  · refine Eventually.of_forall fun M => ?_
+    exact hint.aestronglyMeasurable.div₀ (by fun_prop : Continuous fun ω : ℝ =>
+      β ^ 2 + M ^ 2 * ω ^ 2).aestronglyMeasurable
+  · refine Eventually.of_forall fun M => Eventually.of_forall fun ω => ?_
+    have hd : β ^ 2 ≤ β ^ 2 + M ^ 2 * ω ^ 2 := by nlinarith [sq_nonneg (M * ω)]
+    rw [Real.norm_eq_abs, abs_of_nonneg (div_nonneg (hS ω) (hb.trans_le hd).le)]
+    exact div_le_div_of_nonneg_left (hS ω) hb hd
+  · refine Eventually.of_forall fun ω => ?_
+    have hc : Continuous fun M : ℝ => S ω / (β ^ 2 + M ^ 2 * ω ^ 2) :=
+      continuous_const.div (by fun_prop) fun M => by
+        have : 0 ≤ M ^ 2 * ω ^ 2 := by positivity
+        linarith
+    simpa using hc.tendsto 0
+
+/-- **High-frequency end (`p → 2`).** If `S(ω)/ω²` is integrable, `M² σ²(M)` tends to
+`∫ S/ω²` as the inertia grows: all the noise lies above the corner `ω_c = β/M → 0`, where
+`|H|² ≈ 1/(M² ω²)`. -/
+@[powerlib_foundation] theorem mul_variance_tendsto_atTop (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
+    (hint : IntegrableOn (fun ω => S ω / ω ^ 2) (Ioi 0)) :
+    Tendsto (fun M => M ^ 2 * variance S β M) atTop
+      (𝓝 (∫ ω in Ioi (0 : ℝ), S ω / ω ^ 2)) := by
+  have hSm : AEStronglyMeasurable S (volume.restrict (Ioi (0 : ℝ))) := by
+    refine (hint.aestronglyMeasurable.mul
+      (continuous_pow 2).aestronglyMeasurable).congr ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with ω (hω : 0 < ω)
+    simp only [Pi.mul_apply]
+    field_simp
+  unfold variance
+  simp_rw [← integral_const_mul]
+  refine tendsto_integral_filter_of_dominated_convergence (fun ω => S ω / ω ^ 2) ?_ ?_ hint ?_
+  · refine Eventually.of_forall fun M => ?_
+    exact (hSm.div₀ (by fun_prop : Continuous fun ω : ℝ =>
+      β ^ 2 + M ^ 2 * ω ^ 2).aestronglyMeasurable).const_mul _
+  · refine Eventually.of_forall fun M => ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with ω (hω : 0 < ω)
+    have hω2 : 0 < ω ^ 2 := by positivity
+    have hb : 0 < β ^ 2 := by positivity
+    have hden : 0 < β ^ 2 + M ^ 2 * ω ^ 2 := by positivity
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (sq_nonneg M) (div_nonneg (hS ω) hden.le)),
+      mul_div_assoc', div_le_div_iff₀ hden hω2]
+    nlinarith [hS ω, sq_nonneg β, mul_nonneg (hS ω) (sq_nonneg β)]
+  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with ω (hω : 0 < ω)
+    have hω2 : 0 < ω ^ 2 := by positivity
+    have hinv : Tendsto (fun M : ℝ => β ^ 2 / M ^ 2 + ω ^ 2) atTop (𝓝 (0 + ω ^ 2)) := by
+      have : Tendsto (fun M : ℝ => β ^ 2 / M ^ 2) atTop (𝓝 0) := by
+        simpa [div_eq_mul_inv] using
+          (tendsto_inv_atTop_zero.comp (tendsto_pow_atTop (n := 2) (by norm_num))).const_mul (β ^ 2)
+      exact this.add_const _
+    rw [zero_add] at hinv
+    have h := (tendsto_const_nhds (x := S ω)).div hinv hω2.ne'
+    refine h.congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with M hM
+    have hM2 : 0 < M ^ 2 := by positivity
+    show S ω / (β ^ 2 / M ^ 2 + ω ^ 2) = M ^ 2 * (S ω / (β ^ 2 + M ^ 2 * ω ^ 2))
+    have hb : 0 < β ^ 2 := by positivity
+    have hden : 0 < β ^ 2 + M ^ 2 * ω ^ 2 := by positivity
+    field_simp
+
+/-- **`p → 0` at small inertia.** For an integrable nonnegative PSD with `∫ S > 0`, the two-point
+exponent between `M` and `κ M` (`κ > 1` fixed; the limit holds for every `κ`) tends to `0` as
+`M → 0⁺`. -/
+@[powerlib_foundation] theorem twoPointExponent_tendsto_zero (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
+    (hint : IntegrableOn S (Ioi 0)) (hpos : 0 < ∫ ω in Ioi (0 : ℝ), S ω) (κ : ℝ) :
+    Tendsto (fun M => twoPointExponent S β M (κ * M)) (𝓝[>] 0) (𝓝 0) := by
+  set L := (∫ ω in Ioi (0 : ℝ), S ω) / β ^ 2 with hLdef
+  have hL : 0 < L := div_pos hpos (by positivity)
+  have h0 := variance_tendsto_zero hβ hS hint
+  have h1 : Tendsto (fun M => variance S β M) (𝓝[>] 0) (𝓝 L) := h0.mono_left nhdsWithin_le_nhds
+  have hk : Tendsto (fun M : ℝ => κ * M) (𝓝 0) (𝓝 0) := by
+    simpa using (continuous_const.mul continuous_id).tendsto (0 : ℝ) (f := fun M : ℝ => κ * M)
+  have h2 : Tendsto (fun M => variance S β (κ * M)) (𝓝[>] 0) (𝓝 L) :=
+    (h0.comp hk).mono_left nhdsWithin_le_nhds
+  have hratio := h1.div h2 hL.ne'
+  rw [div_self hL.ne'] at hratio
+  have hlog := ((Real.continuousAt_log one_ne_zero).tendsto.comp hratio).div_const (Real.log κ)
+  rw [Real.log_one, zero_div] at hlog
+  refine hlog.congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with M (hM : 0 < M)
+  simp only [Function.comp_apply, twoPointExponent, Pi.div_apply]
+  rw [mul_div_assoc, div_self hM.ne', mul_one]
+
+/-- **`p → 2` at large inertia.** If `S(ω)/ω²` is integrable with positive integral, the
+two-point exponent between `M` and `κ M` (`κ > 1` fixed) tends to `2` as `M → ∞`. -/
+@[powerlib_foundation] theorem twoPointExponent_tendsto_two (hβ : β ≠ 0) (hS : ∀ ω, 0 ≤ S ω)
+    (hint : IntegrableOn (fun ω => S ω / ω ^ 2) (Ioi 0))
+    (hpos : 0 < ∫ ω in Ioi (0 : ℝ), S ω / ω ^ 2) {κ : ℝ} (hκ : 1 < κ) :
+    Tendsto (fun M => twoPointExponent S β M (κ * M)) atTop (𝓝 2) := by
+  set L := ∫ ω in Ioi (0 : ℝ), S ω / ω ^ 2 with hLdef
+  have hκ0 : 0 < κ := by linarith
+  have h1 := mul_variance_tendsto_atTop hβ hS hint
+  have h2 : Tendsto (fun M => (κ * M) ^ 2 * variance S β (κ * M)) atTop (𝓝 L) :=
+    h1.comp (tendsto_id.const_mul_atTop hκ0)
+  have hratio := (h1.div h2 hpos.ne').const_mul (κ ^ 2)
+  rw [div_self hpos.ne', mul_one] at hratio
+  have hlog := ((Real.continuousAt_log (by positivity)).tendsto.comp hratio).div_const
+    (Real.log κ)
+  have hk : Real.log (κ ^ 2) / Real.log κ = 2 := by
+    rw [Real.log_pow]
+    field_simp [(Real.log_pos hκ).ne']
+    norm_num
+  rw [hk] at hlog
+  refine hlog.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with M hM
+  simp only [Function.comp_apply, twoPointExponent, Pi.div_apply]
+  have e1 : κ * M / M = κ := by field_simp
+  have e2 : κ ^ 2 * (M ^ 2 * variance S β M / ((κ * M) ^ 2 * variance S β (κ * M))) =
+      variance S β M / variance S β (κ * M) := by
+    rw [show (κ * M) ^ 2 * variance S β (κ * M) = (κ ^ 2 * M ^ 2) * variance S β (κ * M) by ring,
+      ← mul_div_assoc, show κ ^ 2 * (M ^ 2 * variance S β M) =
+        (κ ^ 2 * M ^ 2) * variance S β M by ring, mul_div_mul_left _ _ (by positivity)]
+  rw [e1, e2]
+
+end Asymptotics
 
 /-! ## Time scales (§1.1) -/
 

@@ -21,7 +21,7 @@ Foundation (probability), not an engineering result.  Scalar state and scalar me
 * `kalman_condVar_eq`: `E[(X − E[X|Y])² | Y] = (1 − k h) p` a.s. — the Kalman posterior variance
   is the (deterministic) conditional variance.
 
-The vector case (matrix gain, Gaussian vectors) is not formalized here.
+The vector case (matrix gain, Gaussian vectors) is `theorem/Estimation/KalmanGaussianVector.lean`.
 -/
 
 noncomputable section

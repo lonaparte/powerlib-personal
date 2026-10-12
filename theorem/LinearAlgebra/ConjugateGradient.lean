@@ -3,6 +3,7 @@ import theorem.Attributes
 import Mathlib.Analysis.Matrix.Spectrum
 import Mathlib.Analysis.Matrix.PosDef
 import Mathlib.Algebra.Star.UnitaryStarAlgAut
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.RootsExtrema
 
 /-! # Conjugate gradients: Galerkin optimality and the polynomial (min–max) error bound
 
@@ -26,13 +27,20 @@ Results.
   `Matrix.IsHermitian.spectral_theorem`).
 * `cg_minmax`: the Galerkin iterate satisfies `‖x_m − x*‖_A² ≤ M² ‖x₀ − x*‖_A²` for every
   `p(0) = 1`, `deg p ≤ m` with `|p(λᵢ)| ≤ M` on the spectrum.
+* `chebyshev_T_ge`: `T_m((u + u⁻¹)/2) ≥ uᵐ/2` for `u > 0` (Mathlib `Chebyshev.T_real_cosh`).
+* `exists_chebyshev_poly`: for `0 < lo` there is `p(0) = 1`, `deg p ≤ m`, with
+  `|p(x)| ≤ 2((√κ−1)/(√κ+1))^m` on `[lo, hi]`, `κ = hi/lo` (shifted normalised Chebyshev
+  polynomial; `|T_m| ≤ 1` on `[−1, 1]` is Mathlib `Chebyshev.abs_eval_T_real_le_one`).
+* `cg_chebyshev`, `cg_chebyshev_sqrt`: **CG Chebyshev bound** — if the spectrum of `A` lies in
+  `[lo, hi]`, `0 < lo`, then `‖x_m − x*‖_A ≤ 2((√κ−1)/(√κ+1))^m ‖x₀ − x*‖_A`, `κ = hi/lo`.
+* `cg_chebyshev_cond`: the same with `κ = λ_max/λ_min` the spectral condition number of a positive
+  definite `A` (`k > 0`).
 
 Correction (`T-linear-algebra` §2.4): the note states "CG 第 `m` 步残差 `≤ 2 · min_p max_λ |p(λ)| ‖r₀‖_A`".
 The correct statement is for the **error** in the `A`-norm and has **no factor 2**:
 `‖x_m − x*‖_A ≤ min_{p(0)=1, deg p ≤ m} max_{λ∈σ(A)} |p(λ)| · ‖x₀ − x*‖_A` (`cg_minmax`); the factor
-2 appears only after inserting the Chebyshev bound
-`min_p max |p| ≤ 2((√κ−1)/(√κ+1))^m` (§1.6), which is not formalized here (UNPROVED: Chebyshev
-extremal bound).
+2 appears only after inserting the Chebyshev bound `min_p max |p| ≤ 2((√κ−1)/(√κ+1))^m` (§1.6),
+which gives `cg_chebyshev`.
 -/
 
 noncomputable section
@@ -213,5 +221,152 @@ def krylov (A : Matrix (Fin k) (Fin k) ℝ) (r : Fin k → ℝ) (m : ℕ) : Subm
   have hdiff : (xs + aeval A p *ᵥ (x₀ - xs)) - xs = aeval A p *ᵥ (x₀ - xs) := by abel
   rw [hdiff] at hopt
   exact hopt.trans (anorm_poly_le hA p hM _)
+
+/-! ## Chebyshev bound (§1.6) -/
+
+/-- `T_m((u + u⁻¹)/2) ≥ uᵐ / 2` for `u > 0`: with `u = e^θ`, `T_m(cosh θ) = cosh(mθ)`. -/
+@[powerlib_foundation] theorem chebyshev_T_ge {u : ℝ} (hu : 0 < u) (m : ℕ) :
+    u ^ m / 2 ≤ (Chebyshev.T ℝ (m : ℤ)).eval ((u + u⁻¹) / 2) := by
+  have hcosh : Real.cosh (Real.log u) = (u + u⁻¹) / 2 := by
+    rw [Real.cosh_eq, Real.exp_neg, Real.exp_log hu]
+  rw [← hcosh, Chebyshev.T_real_cosh, Real.cosh_eq]
+  have h1 : Real.exp (((m : ℤ) : ℝ) * Real.log u) = u ^ m := by
+    rw [Int.cast_natCast, Real.exp_nat_mul, Real.exp_log hu]
+  rw [h1]
+  have h2 : 0 < Real.exp (-(((m : ℤ) : ℝ) * Real.log u)) := Real.exp_pos _
+  linarith
+
+/-- **Chebyshev polynomial bound**: for `0 < lo` there is a polynomial `p` with `p(0) = 1`,
+`deg p ≤ m` and `|p(x)| ≤ 2((√κ − 1)/(√κ + 1))ᵐ` on `[lo, hi]`, `κ = hi / lo`: the shifted,
+normalised Chebyshev polynomial `T_m((hi+lo−2x)/(hi−lo)) / T_m((hi+lo)/(hi−lo))` (for `lo < hi`;
+`1 − x/lo` or `1` in the degenerate cases). -/
+@[powerlib_foundation] theorem exists_chebyshev_poly {lo hi : ℝ} (hlo : 0 < lo) (m : ℕ) :
+    ∃ p : ℝ[X], p.eval 0 = 1 ∧ p.natDegree ≤ m ∧
+      ∀ x ∈ Set.Icc lo hi, |p.eval x| ≤ 2 * ((√(hi / lo) - 1) / (√(hi / lo) + 1)) ^ m := by
+  rcases lt_trichotomy lo hi with hlt | heq | hgt
+  · -- the Chebyshev construction
+    set q := √(hi / lo) with hq
+    have hκ : 1 < hi / lo := (one_lt_div hlo).mpr hlt
+    have hq1 : 1 < q := by
+      rw [hq, show (1 : ℝ) = √1 from Real.sqrt_one.symm]
+      exact Real.sqrt_lt_sqrt zero_le_one hκ
+    have hqq : q ^ 2 = hi / lo := Real.sq_sqrt (by linarith)
+    set u := (q + 1) / (q - 1) with hu
+    have hqm : 0 < q - 1 := by linarith
+    have hupos : 0 < u := div_pos (by linarith) hqm
+    have hσ : (u + u⁻¹) / 2 = (hi + lo) / (hi - lo) := by
+      have hhl : 0 < hi - lo := by linarith
+      rw [hu, inv_div]
+      have hhi : hi = q ^ 2 * lo := by rw [hqq]; field_simp
+      have h1 : q + 1 ≠ 0 := by linarith
+      have h2 : q - 1 ≠ 0 := hqm.ne'
+      have h3 : q ^ 2 * lo - lo ≠ 0 := by nlinarith
+      rw [hhi, div_add_div _ _ h2 h1, div_div,
+        div_eq_div_iff (mul_ne_zero (mul_ne_zero h2 h1) two_ne_zero) h3]
+      ring
+    set σ := (hi + lo) / (hi - lo)
+    set Tσ := (Chebyshev.T ℝ (m : ℤ)).eval σ
+    have hTσ : u ^ m / 2 ≤ Tσ := by
+      have := chebyshev_T_ge hupos m
+      rwa [hσ] at this
+    have hTpos : 0 < Tσ := lt_of_lt_of_le (by positivity) hTσ
+    refine ⟨C Tσ⁻¹ * (Chebyshev.T ℝ (m : ℤ)).comp (C σ - C (2 / (hi - lo)) * X), ?_, ?_, ?_⟩
+    · simp [eval_comp, Tσ, inv_mul_cancel₀ hTpos.ne']
+    · refine (natDegree_C_mul_le _ _).trans ?_
+      refine natDegree_comp_le.trans ?_
+      rw [Chebyshev.natDegree_T, Int.natAbs_natCast]
+      have : (C σ - C (2 / (hi - lo)) * X).natDegree ≤ 1 := by
+        refine (natDegree_sub_le _ _).trans ?_
+        simp only [natDegree_C, zero_le, max_le_iff, true_and]
+        exact (natDegree_C_mul_le _ _).trans natDegree_X_le
+      calc m * (C σ - C (2 / (hi - lo)) * X).natDegree ≤ m * 1 := Nat.mul_le_mul_left _ this
+        _ = m := mul_one m
+    · intro x hx
+      have hhl : 0 < hi - lo := by linarith
+      have hℓ : |σ - 2 / (hi - lo) * x| ≤ 1 := by
+        rw [abs_le]
+        have e : σ - 2 / (hi - lo) * x = (hi + lo - 2 * x) / (hi - lo) := by
+          simp only [σ]; field_simp
+        rw [e, le_div_iff₀ hhl, div_le_iff₀ hhl]
+        constructor <;> linarith [hx.1, hx.2]
+      have hT := Chebyshev.abs_eval_T_real_le_one (m : ℤ) hℓ
+      simp only [eval_mul, eval_C, eval_comp, eval_sub, eval_X]
+      rw [abs_mul, abs_of_pos (inv_pos.mpr hTpos)]
+      have hρ : (q - 1) / (q + 1) = u⁻¹ := by rw [hu, inv_div]
+      rw [hρ, inv_pow]
+      calc Tσ⁻¹ * |(Chebyshev.T ℝ (m : ℤ)).eval (σ - 2 / (hi - lo) * x)| ≤ Tσ⁻¹ * 1 :=
+            mul_le_mul_of_nonneg_left hT (inv_pos.mpr hTpos).le
+        _ = Tσ⁻¹ := mul_one _
+        _ ≤ (u ^ m / 2)⁻¹ := inv_anti₀ (by positivity) hTσ
+        _ = 2 * (u ^ m)⁻¹ := by rw [inv_div, div_eq_mul_inv]
+  · -- `lo = hi`: the single point `lo` is killed by `1 − x/lo`
+    subst heq
+    rcases Nat.eq_zero_or_pos m with hm | hm
+    · refine ⟨1, by simp, by simp, fun x _ => ?_⟩
+      simp [hm]
+    · refine ⟨1 - C lo⁻¹ * X, by simp, ?_, fun x hx => ?_⟩
+      · refine (natDegree_sub_le _ _).trans ?_
+        simp only [natDegree_one, zero_le, max_le_iff, true_and]
+        exact ((natDegree_C_mul_le _ _).trans natDegree_X_le).trans hm
+      · have hx' : x = lo := le_antisymm hx.2 hx.1
+        subst hx'
+        simp [inv_mul_cancel₀ hlo.ne', div_self hlo.ne', zero_pow hm.ne']
+  · -- `hi < lo`: the interval is empty
+    refine ⟨1, by simp, by simp, fun x hx => absurd (hx.1.trans hx.2) (not_le.mpr hgt)⟩
+
+/-- **CG Chebyshev bound** (squared `A`-norm form): if the spectrum of `A ⪰ 0` lies in `[lo, hi]`
+with `0 < lo`, the Galerkin (CG) iterate satisfies
+`‖x_m − x*‖_A² ≤ (2((√κ−1)/(√κ+1))^m)² ‖x₀ − x*‖_A²`, `κ = hi / lo`. -/
+@[powerlib_foundation] theorem cg_chebyshev {A : Matrix (Fin k) (Fin k) ℝ} (hA : A.PosSemidef)
+    {x₀ xm xs b : Fin k → ℝ} (hxs : A *ᵥ xs = b) {m : ℕ}
+    (hxm : xm - x₀ ∈ krylov A (b - A *ᵥ x₀) m)
+    (horth : ∀ s ∈ krylov A (b - A *ᵥ x₀) m, s ⬝ᵥ (b - A *ᵥ xm) = 0)
+    {lo hi : ℝ} (hlo : 0 < lo) (hspec : ∀ i, hA.1.eigenvalues i ∈ Set.Icc lo hi) :
+    anorm2 A (xm - xs) ≤
+      (2 * ((√(hi / lo) - 1) / (√(hi / lo) + 1)) ^ m) ^ 2 * anorm2 A (x₀ - xs) := by
+  obtain ⟨p, hp0, hpm, hp⟩ := exists_chebyshev_poly (hi := hi) hlo m
+  exact cg_minmax hA hxs hxm horth p hp0 hpm fun i => hp _ (hspec i)
+
+/-- **CG Chebyshev bound** `‖x_m − x*‖_A ≤ 2((√κ−1)/(√κ+1))^m ‖x₀ − x*‖_A`, `κ = hi / lo`, for a
+spectrum in `[lo, hi]`, `0 < lo ≤ hi` (`‖u‖_A = √(uᵀAu)`). -/
+@[powerlib_foundation] theorem cg_chebyshev_sqrt {A : Matrix (Fin k) (Fin k) ℝ}
+    (hA : A.PosSemidef) {x₀ xm xs b : Fin k → ℝ} (hxs : A *ᵥ xs = b) {m : ℕ}
+    (hxm : xm - x₀ ∈ krylov A (b - A *ᵥ x₀) m)
+    (horth : ∀ s ∈ krylov A (b - A *ᵥ x₀) m, s ⬝ᵥ (b - A *ᵥ xm) = 0)
+    {lo hi : ℝ} (hlo : 0 < lo) (hlh : lo ≤ hi) (hspec : ∀ i, hA.1.eigenvalues i ∈ Set.Icc lo hi) :
+    √(anorm2 A (xm - xs)) ≤
+      2 * ((√(hi / lo) - 1) / (√(hi / lo) + 1)) ^ m * √(anorm2 A (x₀ - xs)) := by
+  have h := cg_chebyshev hA hxs hxm horth hlo hspec
+  have hq : 1 ≤ √(hi / lo) := by
+    rw [show (1 : ℝ) = √1 from Real.sqrt_one.symm]
+    exact Real.sqrt_le_sqrt ((one_le_div hlo).mpr hlh)
+  have hc : 0 ≤ 2 * ((√(hi / lo) - 1) / (√(hi / lo) + 1)) ^ m :=
+    mul_nonneg zero_le_two (pow_nonneg (div_nonneg (by linarith) (by linarith)) m)
+  calc √(anorm2 A (xm - xs))
+      ≤ √((2 * ((√(hi / lo) - 1) / (√(hi / lo) + 1)) ^ m) ^ 2 * anorm2 A (x₀ - xs)) :=
+        Real.sqrt_le_sqrt h
+    _ = 2 * ((√(hi / lo) - 1) / (√(hi / lo) + 1)) ^ m * √(anorm2 A (x₀ - xs)) := by
+        rw [Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq hc]
+
+/-- **CG Chebyshev bound with the spectral condition number** `κ = λ_max / λ_min` of a positive
+definite `A` (`k > 0`): `‖x_m − x*‖_A ≤ 2((√κ−1)/(√κ+1))^m ‖x₀ − x*‖_A`. -/
+@[powerlib_foundation] theorem cg_chebyshev_cond {A : Matrix (Fin k) (Fin k) ℝ} (hA : A.PosDef)
+    (hk : 0 < k) {x₀ xm xs b : Fin k → ℝ} (hxs : A *ᵥ xs = b) {m : ℕ}
+    (hxm : xm - x₀ ∈ krylov A (b - A *ᵥ x₀) m)
+    (horth : ∀ s ∈ krylov A (b - A *ᵥ x₀) m, s ⬝ᵥ (b - A *ᵥ xm) = 0) :
+    √(anorm2 A (xm - xs)) ≤
+      2 * ((√(Finset.univ.sup' ⟨⟨0, hk⟩, Finset.mem_univ _⟩ hA.1.eigenvalues /
+          Finset.univ.inf' ⟨⟨0, hk⟩, Finset.mem_univ _⟩ hA.1.eigenvalues) - 1) /
+        (√(Finset.univ.sup' ⟨⟨0, hk⟩, Finset.mem_univ _⟩ hA.1.eigenvalues /
+          Finset.univ.inf' ⟨⟨0, hk⟩, Finset.mem_univ _⟩ hA.1.eigenvalues) + 1)) ^ m *
+        √(anorm2 A (x₀ - xs)) := by
+  have hne : (Finset.univ : Finset (Fin k)).Nonempty := ⟨⟨0, hk⟩, Finset.mem_univ _⟩
+  obtain ⟨i₀, -, hi₀⟩ := Finset.exists_mem_eq_inf' hne hA.1.eigenvalues
+  have hlo : 0 < Finset.univ.inf' hne hA.1.eigenvalues := by
+    rw [hi₀]; exact hA.eigenvalues_pos i₀
+  have hlh : Finset.univ.inf' hne hA.1.eigenvalues ≤ Finset.univ.sup' hne hA.1.eigenvalues :=
+    (Finset.inf'_le _ (Finset.mem_univ i₀)).trans (Finset.le_sup' _ (Finset.mem_univ i₀))
+  exact cg_chebyshev_sqrt hA.posSemidef hxs hxm horth hlo hlh fun i =>
+    ⟨Finset.inf'_le _ (Finset.mem_univ i), Finset.le_sup' _ (Finset.mem_univ i)⟩
 
 end powerlib.LinearAlgebra

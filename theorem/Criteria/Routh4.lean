@@ -1,30 +1,52 @@
 import theorem.Criteria.Routh3
 
-/-! # Routh–Hurwitz sufficient condition for monic real quartics
+/-! # Routh–Hurwitz criterion for monic real quartics and real 4×4 matrices
 
 Foundation layer (plus thin generic semantic corollaries at the end).
 
-* Monic real quartic `s ^ 4 + a3 * s ^ 3 + a2 * s ^ 2 + a1 * s + a0`. If
-  `0 < a3`, `0 < a1`, `0 < a0` and `a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1`, every complex root has
-  negative real part (`quartic_roots_re_neg_of`). These are the Routh-array conditions; the
-  remaining classical conditions `0 < a2` and `a1 < a3 * a2` follow from them
-  (`quartic_routh_consequences`), and `quartic_roots_re_neg_of_routh` takes the full classical
-  list. Only the sufficient direction is formalized.
-* `a0 < 0` gives a positive real root (intermediate value theorem).
+* Monic real quartic `s ^ 4 + a3 * s ^ 3 + a2 * s ^ 2 + a1 * s + a0`. Every complex root has
+  negative real part **iff** `0 < a3`, `0 < a1`, `0 < a0` and
+  `a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1` (`quartic_hurwitz_iff`). These are the Routh-array
+  conditions; the remaining classical conditions `0 < a2` and `a1 < a3 * a2` follow from them
+  (`quartic_routh_consequences`), and `quartic_hurwitz_iff_routh` states the iff with the full
+  classical list. Sufficient direction: `quartic_roots_re_neg_of` (and
+  `quartic_roots_re_neg_of_routh`); necessary direction: `quartic_routh_of_roots_re_neg`.
+* Factorization: every monic real quartic is a product of two monic real quadratics
+  (`quartic_factor_quadratics`, from the fundamental theorem of algebra `Complex.exists_root`
+  and the real cubic root `exists_cubic_real_root`), and the third Hurwitz determinant of such
+  a product is `b p ((b + p)(b q + c p) + (c − q)²)` (`quartic_hurwitzDet_eq`).
+* Instability: if every root has nonpositive real part, all coefficients and the third Hurwitz
+  determinant are nonnegative (`quartic_coeffs_nonneg_of_roots_re_nonpos`); hence a negative
+  coefficient or a negative third Hurwitz determinant gives a root with positive real part
+  (`exists_quartic_root_re_pos_of_violation`; for `a3 < 0` this is the Vieta statement that the
+  roots sum to `-a3`, `exists_quartic_root_re_pos_of_cubic_coeff_neg`). `a0 < 0` gives a positive
+  real root (intermediate value theorem).
 * Matrix interface for any state dimension: if `det (s • 1 - A)` is identified with the
-  quartic for every `s`, the conditions give `IsHurwitz A`, and `a0 < 0` gives an eigenpair
-  with positive real part (shape of `Flow.unstable_of_jacobian_eigenvalue_re_pos`).
-  `det_characteristicMatrix_fin_four` computes the coefficients of a general 4×4 matrix.
+  quartic for every `s`, `IsHurwitz A` iff the Routh conditions hold
+  (`isHurwitz_iff_of_det_characteristicMatrix_quartic`), and a strict sign violation gives an
+  eigenpair with positive real part (shape of `Flow.unstable_of_jacobian_eigenvalue_re_pos`).
+  `det_characteristicMatrix_fin_four` computes the coefficients of a general 4×4 matrix;
+  `isHurwitz_fin_four_iff` is the 4×4 iff in trace / principal-minor / determinant form and
+  `isHurwitz_companion_four_iff` the companion form.
 * Semantic corollaries: linearization at an equilibrium of a caller-supplied `ContDiff ℝ 1`
   field on `EuclideanSpace ℝ (Fin n)` (any dimension, quartic characteristic polynomial) or
-  `EuclideanSpace ℝ (Fin 4)`, and the attractive sentences of a linear field `x' = A (x - e)`.
-  They only repackage `Flow.locallyExponentiallyStable_of_isHurwitz_jacobian`,
+  `EuclideanSpace ℝ (Fin 4)`, and the attractive sentences of a linear field `x' = A (x - e)`
+  (both directions: `holds_affine_iff_of_det_characteristicMatrix_quartic`,
+  `holds_affine_fin_four_iff`). They only repackage
+  `Flow.locallyExponentiallyStable_of_isHurwitz_jacobian`,
   `Flow.unstable_of_jacobian_eigenvalue_re_pos` and `Linear.holds_iff_isHurwitz`.
 
 Proof of the sufficient direction: for a root `x + i y` with `x ≥ 0`, the imaginary part forces
 `y = 0` (impossible: all terms positive) or `y² (4x + a3) = 4x³ + 3a3x² + 2a2x + a1`;
 substituting into the real part gives a degree-six polynomial in `x` whose coefficients are all
 nonpositive and whose constant term `a3²a0 − a3a2a1 + a1²` is negative.
+
+Proof of the necessary direction: factor the quartic as `(s² + b s + c)(s² + p s + q)` over ℝ
+(a complex root `x + i y` with `y ≠ 0` gives the factor `s² − 2x s + x² + y²`; a real root `r`
+leaves a real cubic, which has a real root `r'`, giving the factor `(s − r)(s − r')`). Each
+factor's roots are roots of the quartic, so the quadratic criterion
+`quadratic_roots_re_neg_iff` gives `b, c, p, q > 0`; then `a3, a1, a0 > 0` and the Hurwitz
+determinant identity gives the last condition.
 
 Connection architecture. No model family is defined or fixed here. Every statement is static
 algebra about real polynomials and matrices, or a generic semantic implication about an arbitrary
@@ -178,6 +200,156 @@ def quarticEval (a3 a2 a1 a0 x : ℝ) : ℝ := x ^ 4 + a3 * x ^ 3 + a2 * x ^ 2 +
       (a0 : ℂ) = 0 := by
   exact_mod_cast h
 
+/-! ### Necessary direction and instability -/
+
+open Polynomial in
+/-- Fundamental theorem of algebra (`Complex.exists_root`) for the monic real quartic. -/
+@[powerlib_foundation] theorem exists_quartic_root (a3 a2 a1 a0 : ℝ) :
+    ∃ s : ℂ, s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 := by
+  set f : ℂ[X] := X ^ 4 + C (a3 : ℂ) * X ^ 3 + C (a2 : ℂ) * X ^ 2 + C (a1 : ℂ) * X + C (a0 : ℂ)
+  have hdeg : f.degree = 4 := by
+    simp only [f]
+    compute_degree!
+  obtain ⟨z, hz⟩ := Complex.exists_root (f := f) (by rw [hdeg]; norm_num)
+  exact ⟨z, by simpa [f] using hz⟩
+
+/-- Every monic real quartic is a product of two monic real quadratics
+`(s ^ 2 + b s + c) (s ^ 2 + p s + q)`, in coefficient form. -/
+@[powerlib_foundation] theorem quartic_factor_quadratics (a3 a2 a1 a0 : ℝ) :
+    ∃ b c p q : ℝ, a3 = b + p ∧ a2 = c + q + b * p ∧ a1 = b * q + c * p ∧ a0 = c * q := by
+  obtain ⟨z, hz⟩ := exists_quartic_root a3 a2 a1 a0
+  obtain ⟨hr, hi⟩ := quartic_root_re_im hz
+  set x := z.re
+  set y := z.im
+  rcases mul_eq_zero.mp hi with hy | hq
+  · rw [hy] at hr
+    obtain ⟨r, hr'⟩ := exists_cubic_real_root (a3 + x) (a2 + x * a3 + x ^ 2)
+      (a1 + x * a2 + x ^ 2 * a3 + x ^ 3)
+    exact ⟨-(x + r), x * r, a3 + x + r, a2 + x * a3 + x ^ 2 + r * (a3 + x) + r ^ 2,
+      by ring, by ring, by linear_combination hr', by linear_combination (-x) * hr' + hr⟩
+  · exact ⟨-2 * x, x ^ 2 + y ^ 2, a3 + 2 * x, a2 + 2 * a3 * x + 3 * x ^ 2 - y ^ 2,
+      by ring, by ring, by linear_combination hq, by linear_combination hr - x * hq⟩
+
+/-- The quartic in factored form. -/
+@[powerlib_foundation] theorem quartic_eq_mul_quadratics {a3 a2 a1 a0 b c p q : ℝ}
+    (h3 : a3 = b + p) (h2 : a2 = c + q + b * p) (h1 : a1 = b * q + c * p) (h0 : a0 = c * q)
+    (s : ℂ) :
+    s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) =
+      (s ^ 2 + (b : ℂ) * s + (c : ℂ)) * (s ^ 2 + (p : ℂ) * s + (q : ℂ)) := by
+  subst h3 h2 h1 h0
+  push_cast
+  ring
+
+/-- The third Hurwitz determinant of a product of two monic quadratics:
+`a3 a2 a1 − a1² − a3² a0 = b p ((b + p)(b q + c p) + (c − q)²)`. -/
+@[powerlib_foundation] theorem quartic_hurwitzDet_eq {a3 a2 a1 a0 b c p q : ℝ}
+    (h3 : a3 = b + p) (h2 : a2 = c + q + b * p) (h1 : a1 = b * q + c * p) (h0 : a0 = c * q) :
+    a3 * a2 * a1 - a1 ^ 2 - a3 ^ 2 * a0 = b * p * ((b + p) * (b * q + c * p) + (c - q) ^ 2) := by
+  subst h3 h2 h1 h0
+  ring
+
+@[powerlib_foundation] private theorem quadratic_coeffs_nonneg_of_roots_re_nonpos {a1 a0 : ℝ}
+    (H : ∀ s : ℂ, s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 → s.re ≤ 0) : 0 ≤ a1 ∧ 0 ≤ a0 := by
+  constructor
+  · by_contra h
+    obtain ⟨s, hs, hre⟩ := exists_quadratic_root_re_pos_of_linear_neg (a0 := a0) (not_le.mp h)
+    exact absurd (H s hs) (not_le.mpr hre)
+  · by_contra h
+    obtain ⟨r, hr, hroot⟩ := exists_quadratic_root_pos_of_const_neg (a1 := a1) (not_le.mp h)
+    have := H r (quadratic_real_root_complex hroot)
+    rw [Complex.ofReal_re] at this
+    linarith
+
+/-- **Routh–Hurwitz (necessary), degree four.** If every complex root has negative real part,
+the Routh conditions hold. -/
+@[powerlib_foundation] theorem quartic_routh_of_roots_re_neg {a3 a2 a1 a0 : ℝ}
+    (H : ∀ s : ℂ, s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 →
+      s.re < 0) :
+    0 < a3 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1 := by
+  obtain ⟨b, c, p, q, h3, h2, h1, h0⟩ := quartic_factor_quadratics a3 a2 a1 a0
+  have hbc : 0 < b ∧ 0 < c := by
+    rw [← quadratic_roots_re_neg_iff]
+    intro s hs
+    exact H s (by rw [quartic_eq_mul_quadratics h3 h2 h1 h0, hs, zero_mul])
+  have hpq : 0 < p ∧ 0 < q := by
+    rw [← quadratic_roots_re_neg_iff]
+    intro s hs
+    exact H s (by rw [quartic_eq_mul_quadratics h3 h2 h1 h0, hs, mul_zero])
+  obtain ⟨hb, hc⟩ := hbc
+  obtain ⟨hp, hq⟩ := hpq
+  have hdet := quartic_hurwitzDet_eq h3 h2 h1 h0
+  have ha1 : 0 < a1 := by rw [h1]; positivity
+  refine ⟨by rw [h3]; positivity, ha1, by rw [h0]; positivity, ?_⟩
+  have : 0 < b * p * ((b + p) * (b * q + c * p) + (c - q) ^ 2) := by positivity
+  linarith
+
+/-- **Routh–Hurwitz, degree four, both directions** (minimal Routh list). -/
+@[powerlib_foundation] theorem quartic_hurwitz_iff (a3 a2 a1 a0 : ℝ) :
+    (∀ s : ℂ, s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 →
+      s.re < 0) ↔
+      0 < a3 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1 :=
+  ⟨quartic_routh_of_roots_re_neg, fun ⟨h3, h1, h0, hg⟩ => quartic_roots_re_neg_of h3 h1 h0 hg⟩
+
+/-- **Routh–Hurwitz, degree four, both directions**, with the full classical list
+`a3, a2, a1, a0 > 0`, `a3 a2 > a1`, `a3 a2 a1 > a1² + a3² a0`. -/
+@[powerlib_foundation] theorem quartic_hurwitz_iff_routh (a3 a2 a1 a0 : ℝ) :
+    (∀ s : ℂ, s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 →
+      s.re < 0) ↔
+      0 < a3 ∧ 0 < a2 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 < a3 * a2 ∧
+        a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1 := by
+  rw [quartic_hurwitz_iff]
+  constructor
+  · rintro ⟨h3, h1, h0, hg⟩
+    obtain ⟨h2, h32⟩ := quartic_routh_consequences h3 h1 h0 hg
+    exact ⟨h3, h2, h1, h0, h32, hg⟩
+  · rintro ⟨h3, -, h1, h0, -, hg⟩
+    exact ⟨h3, h1, h0, hg⟩
+
+/-- Closed-half-plane version: if every root has nonpositive real part, all coefficients and
+the third Hurwitz determinant are nonnegative. -/
+@[powerlib_foundation] theorem quartic_coeffs_nonneg_of_roots_re_nonpos {a3 a2 a1 a0 : ℝ}
+    (H : ∀ s : ℂ, s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 →
+      s.re ≤ 0) :
+    0 ≤ a3 ∧ 0 ≤ a2 ∧ 0 ≤ a1 ∧ 0 ≤ a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 ≤ a3 * a2 * a1 := by
+  obtain ⟨b, c, p, q, h3, h2, h1, h0⟩ := quartic_factor_quadratics a3 a2 a1 a0
+  obtain ⟨hb, hc⟩ := quadratic_coeffs_nonneg_of_roots_re_nonpos (a1 := b) (a0 := c)
+    fun s hs => H s (by rw [quartic_eq_mul_quadratics h3 h2 h1 h0, hs, zero_mul])
+  obtain ⟨hp, hq⟩ := quadratic_coeffs_nonneg_of_roots_re_nonpos (a1 := p) (a0 := q)
+    fun s hs => H s (by rw [quartic_eq_mul_quadratics h3 h2 h1 h0, hs, mul_zero])
+  have hdet := quartic_hurwitzDet_eq h3 h2 h1 h0
+  refine ⟨by rw [h3]; positivity, by rw [h2]; positivity, by rw [h1]; positivity,
+    by rw [h0]; positivity, ?_⟩
+  have : 0 ≤ b * p * ((b + p) * (b * q + c * p) + (c - q) ^ 2) := by positivity
+  linarith
+
+/-- A strict violation of a Routh sign condition (a negative coefficient, or a negative third
+Hurwitz determinant) gives a root with positive real part. -/
+@[powerlib_foundation] theorem exists_quartic_root_re_pos_of_violation {a3 a2 a1 a0 : ℝ}
+    (h : a3 < 0 ∨ a2 < 0 ∨ a1 < 0 ∨ a0 < 0 ∨ a3 * a2 * a1 < a1 ^ 2 + a3 ^ 2 * a0) :
+    ∃ s : ℂ, s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 ∧
+      0 < s.re := by
+  by_contra hn
+  push Not at hn
+  obtain ⟨h3, h2, h1, h0, hg⟩ := quartic_coeffs_nonneg_of_roots_re_nonpos hn
+  rcases h with h | h | h | h | h <;> linarith
+
+/-- `a3 < 0`: a root with positive real part (Vieta: the roots sum to `-a3`; in the factored
+form `a3 = b + p`, so one quadratic factor has a negative linear coefficient). -/
+@[powerlib_foundation] theorem exists_quartic_root_re_pos_of_cubic_coeff_neg {a3 a2 a1 a0 : ℝ}
+    (h3 : a3 < 0) :
+    ∃ s : ℂ, s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 ∧
+      0 < s.re :=
+  exists_quartic_root_re_pos_of_violation (Or.inl h3)
+
+/-- If the strict Routh conditions fail, some root has nonnegative real part. -/
+@[powerlib_foundation] theorem exists_quartic_root_re_nonneg {a3 a2 a1 a0 : ℝ}
+    (h : ¬ (0 < a3 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1)) :
+    ∃ s : ℂ, s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 ∧
+      0 ≤ s.re := by
+  rw [← quartic_hurwitz_iff] at h
+  push Not at h
+  exact h
+
 end Quartic
 
 /-! ## Matrix interface -/
@@ -214,6 +386,30 @@ real eigenvalue, in the shape of `Flow.unstable_of_jacobian_eigenvalue_re_pos`. 
     (by rw [Complex.ofReal_re]; exact hr)
   rw [hchar]
   exact quartic_real_root_complex hroot
+
+/-- **Routh–Hurwitz (both directions), matrix form**: if the characteristic determinant of `A`
+is the quartic, `IsHurwitz A` iff the Routh conditions hold. -/
+@[powerlib_foundation] theorem isHurwitz_iff_of_det_characteristicMatrix_quartic
+    (A : Matrix (Fin n) (Fin n) ℝ) {a3 a2 a1 a0 : ℝ}
+    (hchar : ∀ s : ℂ, (Linear.characteristicMatrix A s).det =
+      s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ)) :
+    LinearSystems.IsHurwitz A ↔
+      0 < a3 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1 := by
+  rw [isHurwitz_iff_characteristic_roots, ← quartic_hurwitz_iff]
+  simp only [hchar]
+
+/-- A strict violation of a quartic Routh sign condition gives an eigenpair with positive real
+part, in the shape of `Flow.unstable_of_jacobian_eigenvalue_re_pos`. -/
+@[powerlib_foundation] theorem
+    exists_eigenvalue_re_pos_of_det_characteristicMatrix_quartic_violation
+    (A : Matrix (Fin n) (Fin n) ℝ) {a3 a2 a1 a0 : ℝ}
+    (hchar : ∀ s : ℂ, (Linear.characteristicMatrix A s).det =
+      s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ))
+    (h : a3 < 0 ∨ a2 < 0 ∨ a1 < 0 ∨ a0 < 0 ∨ a3 * a2 * a1 < a1 ^ 2 + a3 ^ 2 * a0) :
+    ∃ (μ : ℂ) (v : Fin n → ℂ),
+      v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re := by
+  obtain ⟨s, hs, hre⟩ := exists_quartic_root_re_pos_of_violation h
+  exact exists_eigenpair_re_pos_of_characteristic_root A (by rw [hchar]; exact hs) hre
 
 end Matrix
 
@@ -300,6 +496,65 @@ def principalMinorSum3Fin4 (A : Matrix (Fin 4) (Fin 4) ℝ) : ℝ :=
   exists_eigenvalue_re_pos_of_det_characteristicMatrix_quartic A
     (det_characteristicMatrix_fin_four' A) h
 
+/-- **Routh–Hurwitz for real 4×4 matrices, both directions** (the hypotheses of
+`isHurwitz_fin_four_of` are also necessary). -/
+@[powerlib_foundation] theorem isHurwitz_fin_four_iff (A : Matrix (Fin 4) (Fin 4) ℝ) :
+    LinearSystems.IsHurwitz A ↔
+      A.trace < 0 ∧ principalMinorSum3Fin4 A < 0 ∧ 0 < A.det ∧
+        principalMinorSum3Fin4 A ^ 2 + A.trace ^ 2 * A.det <
+          A.trace * principalMinorSum2Fin4 A * principalMinorSum3Fin4 A := by
+  rw [isHurwitz_iff_of_det_characteristicMatrix_quartic A (det_characteristicMatrix_fin_four' A),
+    neg_pos, neg_pos]
+  have e1 : (-principalMinorSum3Fin4 A) ^ 2 + (-A.trace) ^ 2 * A.det =
+      principalMinorSum3Fin4 A ^ 2 + A.trace ^ 2 * A.det := by ring
+  have e2 : -A.trace * principalMinorSum2Fin4 A * -principalMinorSum3Fin4 A =
+      A.trace * principalMinorSum2Fin4 A * principalMinorSum3Fin4 A := by ring
+  rw [e1, e2]
+
+@[powerlib_foundation] theorem spectrallyStable_fin_four_iff (A : Matrix (Fin 4) (Fin 4) ℝ) :
+    Linear.SpectrallyStable A ↔
+      A.trace < 0 ∧ principalMinorSum3Fin4 A < 0 ∧ 0 < A.det ∧
+        principalMinorSum3Fin4 A ^ 2 + A.trace ^ 2 * A.det <
+          A.trace * principalMinorSum2Fin4 A * principalMinorSum3Fin4 A :=
+  (Linear.spectrallyStable_iff_isHurwitz A).trans (isHurwitz_fin_four_iff A)
+
+/-- A strict violation of a 4×4 Routh sign condition (`0 < tr A`, `m₂ < 0`, `0 < m₃`,
+`det A < 0`, or a negative third Hurwitz determinant) gives an eigenvalue with positive real
+part. -/
+@[powerlib_foundation] theorem exists_eigenvalue_re_pos_of_violation_fin_four
+    (A : Matrix (Fin 4) (Fin 4) ℝ)
+    (h : 0 < A.trace ∨ principalMinorSum2Fin4 A < 0 ∨ 0 < principalMinorSum3Fin4 A ∨ A.det < 0 ∨
+      A.trace * principalMinorSum2Fin4 A * principalMinorSum3Fin4 A <
+        principalMinorSum3Fin4 A ^ 2 + A.trace ^ 2 * A.det) :
+    ∃ (μ : ℂ) (v : Fin 4 → ℂ),
+      v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re := by
+  refine exists_eigenvalue_re_pos_of_det_characteristicMatrix_quartic_violation A
+    (det_characteristicMatrix_fin_four' A) ?_
+  have e1 : (-principalMinorSum3Fin4 A) ^ 2 + (-A.trace) ^ 2 * A.det =
+      principalMinorSum3Fin4 A ^ 2 + A.trace ^ 2 * A.det := by ring
+  have e2 : -A.trace * principalMinorSum2Fin4 A * -principalMinorSum3Fin4 A =
+      A.trace * principalMinorSum2Fin4 A * principalMinorSum3Fin4 A := by ring
+  rw [e1, e2, neg_lt_zero, neg_lt_zero]
+  exact h
+
+/-- `0 < tr A` for a real 4×4 matrix: an eigenvalue with positive real part (the eigenvalues
+sum to `tr A`). -/
+@[powerlib_foundation] theorem exists_eigenvalue_re_pos_of_trace_pos_fin_four
+    (A : Matrix (Fin 4) (Fin 4) ℝ) (h : 0 < A.trace) :
+    ∃ (μ : ℂ) (v : Fin 4 → ℂ),
+      v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re :=
+  exists_eigenvalue_re_pos_of_violation_fin_four A (Or.inl h)
+
+/-- Companion form of `s ^ 4 + a3 s ^ 3 + a2 s ^ 2 + a1 s + a0`. -/
+@[powerlib_foundation] theorem isHurwitz_companion_four_iff (a0 a1 a2 a3 : ℝ) :
+    LinearSystems.IsHurwitz
+        !![0, 1, 0, 0; 0, 0, 1, 0; 0, 0, 0, 1; -a0, -a1, -a2, -a3] ↔
+      0 < a3 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1 := by
+  refine isHurwitz_iff_of_det_characteristicMatrix_quartic _ fun s => ?_
+  rw [det_characteristicMatrix_fin_four]
+  simp [Matrix.trace, Fin.sum_univ_four, principalMinorSum2Fin4, principalMinorSum3Fin4,
+    det_fin_four]
+
 end FinFour
 
 /-! ## Semantic corollaries (linearization and linear fields)
@@ -378,6 +633,67 @@ instability. -/
     (hdet : A.det < 0) : Unstable f x_eq :=
   Flow.unstable_of_jacobian_eigenvalue_re_pos A hf heq hJac
     (exists_eigenvalue_re_pos_of_det_neg_fin_four A hdet)
+
+/-- Linearization at an equilibrium of a `C¹` field on `ℝⁿ` whose Jacobian has a quartic
+characteristic polynomial with a strict Routh sign violation (a negative coefficient or a
+negative third Hurwitz determinant): instability. -/
+@[powerlib_foundation] theorem unstable_of_jacobian_quartic_violation
+    {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
+    (A : Matrix (Fin n) (Fin n) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
+    (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
+    {a3 a2 a1 a0 : ℝ}
+    (hchar : ∀ s : ℂ, (Linear.characteristicMatrix A s).det =
+      s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ))
+    (h : a3 < 0 ∨ a2 < 0 ∨ a1 < 0 ∨ a0 < 0 ∨ a3 * a2 * a1 < a1 ^ 2 + a3 ^ 2 * a0) :
+    Unstable f x_eq :=
+  Flow.unstable_of_jacobian_eigenvalue_re_pos A hf heq hJac
+    (exists_eigenvalue_re_pos_of_det_characteristicMatrix_quartic_violation A hchar h)
+
+/-- Continuous-time linear field `x' = A (x - e)` whose state matrix has a quartic
+characteristic polynomial: every attractive sentence holds at `e` iff the Routh conditions
+hold (both directions of `holds_affine_of_det_characteristicMatrix_quartic`). -/
+@[powerlib_foundation] theorem holds_affine_iff_of_det_characteristicMatrix_quartic
+    (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) {P : Flow.Property} (hP : P.Attractive)
+    {a3 a2 a1 a0 : ℝ}
+    (hchar : ∀ s : ℂ, (Linear.characteristicMatrix A s).det =
+      s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ)) :
+    P.holds (LinearSystems.affineLinearVectorField A e) e ↔
+      0 < a3 ∧ 0 < a1 ∧ 0 < a0 ∧ a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1 :=
+  (Linear.holds_iff_isHurwitz e hP).trans
+    (isHurwitz_iff_of_det_characteristicMatrix_quartic A hchar)
+
+/-- Linearization at an equilibrium of a `C¹` field on `ℝ⁴`: a Jacobian with a strict 4×4
+Routh sign violation gives instability. -/
+@[powerlib_foundation] theorem unstable_of_jacobian_violation_fin_four
+    {f : ℝ⁴ → ℝ⁴} {x_eq : ℝ⁴}
+    (A : Matrix (Fin 4) (Fin 4) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
+    (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) A)
+    (h : 0 < A.trace ∨ principalMinorSum2Fin4 A < 0 ∨ 0 < principalMinorSum3Fin4 A ∨ A.det < 0 ∨
+      A.trace * principalMinorSum2Fin4 A * principalMinorSum3Fin4 A <
+        principalMinorSum3Fin4 A ^ 2 + A.trace ^ 2 * A.det) :
+    Unstable f x_eq :=
+  Flow.unstable_of_jacobian_eigenvalue_re_pos A hf heq hJac
+    (exists_eigenvalue_re_pos_of_violation_fin_four A h)
+
+/-- Linearization at an equilibrium of a `C¹` field on `ℝ⁴`: a Jacobian with `0 < tr` gives
+instability. -/
+@[powerlib_foundation] theorem unstable_of_jacobian_trace_pos_fin_four
+    {f : ℝ⁴ → ℝ⁴} {x_eq : ℝ⁴}
+    (A : Matrix (Fin 4) (Fin 4) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
+    (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) A)
+    (htr : 0 < A.trace) : Unstable f x_eq :=
+  unstable_of_jacobian_violation_fin_four A hf heq hJac (Or.inl htr)
+
+/-- Four-state continuous-time linear field `x' = A (x - e)`: every attractive sentence of the
+Flow semantics (in particular global exponential stability) holds at `e` iff the 4×4 Routh
+conditions hold. -/
+@[powerlib_foundation] theorem holds_affine_fin_four_iff (A : Matrix (Fin 4) (Fin 4) ℝ)
+    (e : ℝ⁴) {P : Flow.Property} (hP : P.Attractive) :
+    P.holds (LinearSystems.affineLinearVectorField A e) e ↔
+      A.trace < 0 ∧ principalMinorSum3Fin4 A < 0 ∧ 0 < A.det ∧
+        principalMinorSum3Fin4 A ^ 2 + A.trace ^ 2 * A.det <
+          A.trace * principalMinorSum2Fin4 A * principalMinorSum3Fin4 A :=
+  (Linear.holds_iff_isHurwitz e hP).trans (isHurwitz_fin_four_iff A)
 
 end Semantic
 
