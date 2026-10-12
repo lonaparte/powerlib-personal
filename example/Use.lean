@@ -1,55 +1,133 @@
+import theorem.TMIO.ClaimElab
 import powerlib
 
-#check powerlib.lcl_stable_iff
-#print axioms powerlib.lcl_stable_iff
-#print axioms powerlib.LCL.Accepted.stable
+/-! Public consumers of the library. -/
 
--- Internal pole stability for the passive canonical three-state LCL plant.
-example (m : powerlib.LCL.Circuit) (hp : m.Passive) :
-    (powerlib.LCL.toStateSpace m).Stable ↔
-      m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0 :=
-  powerlib.lcl_stable_iff m hp
+open powerlib LinearSystems
 
-example (m : powerlib.LCL.Circuit) (certificate : powerlib.LCL.Accepted m) :
-    (powerlib.LCL.toStateSpace m).Stable := certificate.stable
+-- One semantics: a sentence is read through a family's system map, and the semantics connection
+-- generates the denotations. Exactness and soundness compare the translation chain with it.
+#check powerlib.Sentence.holds
+#check powerlib.Family.semantics
+#check powerlib.Family.chain
+#check powerlib.Family.chain_eq_semantics_iff
+#check powerlib.Family.chain_le_semantics_iff
+#print axioms powerlib.Family.chain_eq_semantics_iff
 
--- Reuse stability through the equivalence between the two model descriptions.
-example (m : powerlib.Impedance) :
-    (powerlib.toStateSpace m).Stable ↔ m.Stable :=
-  powerlib.stability_agrees m
+-- The hub: the attractive sentences and sampled contraction of a linear field are the Hurwitz
+-- property.
+#check powerlib.Linear.holds_iff_isHurwitz
+#check powerlib.Linear.sampledContraction_iff_isHurwitz
+#print axioms powerlib.Linear.holds_iff_isHurwitz
 
--- A verified synthesized certificate provides a theorem about its exact model.
-example (m : powerlib.Impedance) (certificate : powerlib.Accepted m) : m.Stable :=
-  certificate.stable
+-- RL: the translation chain is the semantics connection.
+@[powerlib_domain] theorem rl_chain :
+    connection% (Circuits.RL.family.chain = Circuits.RL.family.semantics) :=
+  Circuits.RL.chain_eq_semantics
 
--- The frequency-domain equations have the same voltage/current interpretation.
-example (m : powerlib.Impedance) (s current voltage : ℂ) :
-    (s + ((powerlib.toStateSpace m).decay : ℂ)) * current =
-        ((powerlib.toStateSpace m).inputGain.val : ℂ) * voltage ↔
-      voltage = m.frequency s * current :=
-  powerlib.same_port_relation m s current voltage
+-- RL: decay at a rate is exactly a bound on the time constant, read off the faithful chain.
+@[powerlib_domain] theorem rl_decay (a : ℝ) (m : Circuits.RL.Impedance) :
+    connection% (m ∈ Circuits.RL.family.den (.flow (.decay a)) ↔ a ≤ m.resistance / m.inductance.val) := by
+  unfold powerlib.TMIO.Statement
+  rw [← (Family.chain_eq_semantics_iff.mp Circuits.RL.chain_eq_semantics
+    (.flow (.decay a)) : Circuits.RL.family.Exact _)]
+  simp [Circuits.RL.family, Circuits.RL.translate, Circuits.RL.Meets]
 
-#check powerlib.LTI.Accepted.exponentially_stable
-#check powerlib.LTI.trajectory_exists
-#print axioms powerlib.LTI.Accepted.exponentially_stable
+-- LCL: pole stability is exact for the attractive sentences and sampled contraction, for every
+-- circuit; passivity is sound but not exact for Lyapunov stability; within passive circuits
+-- conservation is losslessness.
+#check powerlib.Circuits.LCL.exact_hurwitz
+#check powerlib.Circuits.LCL.exact_passive
+#check powerlib.Circuits.LCL.not_exact_lyapunovStable
+#check powerlib.Circuits.LCL.exactUnder_conservative
+#check powerlib.Circuits.LCL.not_exact_conservative
+#check powerlib.Circuits.LCL.not_exact_unstable
+#check powerlib.Linear.RateMargin
+#check powerlib.Circuits.LCL.realize_passive_damped
 
-#check powerlib.LTI.exponentiallyStable_iff_spectrallyStable
-#check powerlib.LTI.accepted_nonempty_iff_isHurwitz
-#check powerlib.Dynamics.locallyExponentiallyStable_of_spectrallyStable_jacobian
-#check powerlib.Dynamics.unstable_of_characteristic_root_re_pos
-#print axioms powerlib.LTI.exponentiallyStable_iff_isHurwitz
+-- Synthesis: the certificate computed from the submitted parameters places the model in a
+-- denotation.
+@[powerlib_domain] theorem rl_synthesis (m : Circuits.RL.Impedance) (hR : 0 < m.resistance) {P : Flow.Property}
+    (hP : P.Attractive) :
+    connection% (m ∈ Circuits.RL.family.den (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  rw [Circuits.RL.family_isLinear.den_hurwitz (Or.inl hP)]
+  exact (Circuits.RL.synthesize m hR).isHurwitz
 
-#check powerlib.ImpedanceCriterion.Interconnection.exponentiallyStable_iff_impedanceStable
-#check powerlib.ImpedanceCriterion.Interconnection.det_characteristicMatrix_closedLoop
-#check powerlib.ImpedanceCriterion.impedanceStable_without_premises_insufficient
-#check powerlib.ImpedanceCriterion.Interconnection.transfer_closedLoopPort
-#check powerlib.ImpedanceCriterion.Interconnection.impedanceStable_changeCoordinates_iff
-#check powerlib.LTI.similar_iff_transfer_eq
-#check powerlib.ImpedanceCriterion.Interconnection.similar_closedLoopPortFin_iff
-#check powerlib.LTI.transfer_eq_iff_markov_eq
-#check powerlib.LTI.exists_minimal_realization
-#check powerlib.LTI.controllable_observable_iff_minimal
-#check powerlib.ImpedanceCriterion.Interconnection.exists_minimal_realization_portImpedance
-#print axioms powerlib.LTI.similar_iff_transfer_eq
-#print axioms powerlib.LTI.exists_minimal_realization
-#print axioms powerlib.ImpedanceCriterion.Interconnection.exponentiallyStable_iff_impedanceStable
+@[powerlib_domain] theorem lcl_synthesis (m : Circuits.LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
+    connection% (m ∈ Circuits.LCL.family.den (.flow .contractive)) := by
+  unfold powerlib.TMIO.Statement
+  rw [Circuits.LCL.family_isLinear.den_hurwitz (Or.inr rfl)]
+  exact (Circuits.LCL.synthesize m hp hd).isHurwitz
+
+#check powerlib.Linear.Synthesis.accepts_iff_isHurwitz
+#check powerlib.Linear.Rational.accepted_eq_den
+
+-- Synthesis inside the kernel: only a rational matrix is submitted; acceptance is a requirement,
+-- and the chain carries it to the sentence.
+@[powerlib_domain] theorem rational_submission :
+    connection% (!![(-1 : ℚ), 10; 0, -1] ∈
+    (Linear.Rational.family (n := 2)).den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [← Linear.Rational.exact_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
+  refine Linear.Rational.realize_accepted ?_
+  rw [TMIO.mem_realize]
+  intro q hq
+  rw [Set.mem_singleton_iff] at hq
+  subst hq
+  change Linear.Synthesis.accepts _ = true
+  decide +kernel
+
+-- Multi-step goals close automatically from the reviewed rules.
+@[powerlib_domain] theorem lcl_automatic (m : Circuits.LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
+    connection% (m ∈ Circuits.LCL.family.den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [Circuits.LCL.family_isLinear.mem_den_flow]
+  aesop
+
+-- Passivity from stored energy, for every port-Hamiltonian plant.
+@[powerlib_domain] theorem portHamiltonian_passive {n p : ℕ} (H : Port.PortHamiltonian n p) :
+    connection% (H ∈ Port.PortHamiltonian.family.den .passive) :=
+  H.mem_den_passive
+
+-- Interconnection: the impedance criterion is exact relative to component stability; port data
+-- cannot certify the closed loop when a component hides a mode, and certify every flow sentence
+-- when both components are minimal; closed-loop stability is no product of component
+-- requirements.
+#check powerlib.Circuits.Interconnection.exactUnder_hurwitz
+#check powerlib.Circuits.Interconnection.soundUnder
+#check powerlib.Circuits.Interconnection.portData_not_certified
+#check powerlib.Circuits.Interconnection.portData_certified
+#check powerlib.Circuits.Interconnection.transfer_closedLoop
+#check powerlib.Circuits.Interconnection.closedLoop_not_separable
+#check powerlib.Linear.similar_iff_transfer_eq
+#check powerlib.Linear.transfer_certified
+#check powerlib.Linear.Similar.sentence_iff
+#check powerlib.Family.IsLinear.den_similar
+#check powerlib.Linear.exists_minimal_realization
+#print axioms powerlib.Linear.similar_iff_transfer_eq
+
+-- A family supplies three semantic maps; certification, refutation and representation changes
+-- are generated.
+#check powerlib.Family
+#check powerlib.Family.certifies
+#check powerlib.Family.refutes
+#check powerlib.Family.Exact.comap
+#check powerlib.Family.Exact.extend
+
+-- A Lyapunov certificate is a quadratic-decay certificate of the affine field.
+#check powerlib.Linear.Certificate.toQuadraticDecay
+
+-- Nonlinear: the cubic family is faithful, its decay rate set by the linear gain; the polynomial
+-- family is sound, and cubic damping without a linear part marks where its translations stop being
+-- exact.
+#check powerlib.Nonlinear.Cubic.chain_eq_semantics
+#check powerlib.Nonlinear.Polynomial2.chain_le_semantics
+#check powerlib.Nonlinear.Polynomial2.not_exact_asymptotic
+#check powerlib.Nonlinear.Polynomial2.not_exact_exponential
+#check powerlib.Nonlinear.Polynomial2.cascade_certificate_boundary
+@[powerlib_domain] theorem cubic_global (n : ℕ) :
+    connection% ((⟨1, one_pos⟩ : Nonlinear.Cubic.Gain) ∈
+    (Nonlinear.Cubic.family (n := n)).den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  exact Nonlinear.Cubic.mem_den_globallyExponentiallyStable ⟨1, one_pos⟩

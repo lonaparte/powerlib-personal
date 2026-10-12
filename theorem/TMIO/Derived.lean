@@ -1,0 +1,81 @@
+import theorem.TMIO.Generate
+
+/-! # The TMIO chain generated from its seed (v0.3 §2, §5)
+
+A `Seed` holds four complete lattices `T, M, I, O` (theories, models, implementations,
+observations) and, per adjacent edge, one arbitrary-infimum preserving semantic map pointing back
+to the earlier layer. The forward maps `l₁, l₂, l₃` are generated, never supplied.
+
+Every composite of edges is again a seed edge, and the generated forward map of a composite is the
+composite of the generated forward maps (`generate_uTO`). There is therefore no separate
+cross-layer algorithm that could disagree with the layer-by-layer one. -/
+
+namespace powerlib.TMIO
+
+/-- Generation data (v0.3 §2): four complete lattices and one arbitrary-infimum preserving
+semantic map per adjacent edge, from the later layer back to the earlier one. The order of each
+lattice is part of its type. -/
+structure Seed (T M I O : Type*) [CompleteLattice T] [CompleteLattice M] [CompleteLattice I]
+    [CompleteLattice O] where
+  /-- Semantic map from the model layer back to the theory layer. -/
+  u₁ : sInfHom M T
+  /-- Semantic map from the implementation layer back to the model layer. -/
+  u₂ : sInfHom I M
+  /-- Semantic map from the observation layer back to the implementation layer. -/
+  u₃ : sInfHom O I
+
+namespace Seed
+
+variable {T M I O : Type*} [CompleteLattice T] [CompleteLattice M] [CompleteLattice I]
+  [CompleteLattice O] (S : Seed T M I O)
+
+/-- Generated forward map from theories to models. -/
+def l₁ : LowerAdjoint S.u₁ := generate S.u₁
+
+/-- Generated forward map from models to implementations. -/
+def l₂ : LowerAdjoint S.u₂ := generate S.u₂
+
+/-- Generated forward map from implementations to observations. -/
+def l₃ : LowerAdjoint S.u₃ := generate S.u₃
+
+@[powerlib_foundation] theorem gc₁ : GaloisConnection S.l₁ S.u₁ := gc_generate S.u₁
+@[powerlib_foundation] theorem gc₂ : GaloisConnection S.l₂ S.u₂ := gc_generate S.u₂
+@[powerlib_foundation] theorem gc₃ : GaloisConnection S.l₃ S.u₃ := gc_generate S.u₃
+
+/-- Composite semantic map from implementations back to theories. -/
+def uTI : sInfHom I T := S.u₁.comp S.u₂
+
+/-- Composite semantic map from observations back to models. -/
+def uMO : sInfHom O M := S.u₂.comp S.u₃
+
+/-- Whole-chain semantic map from observations back to theories. -/
+def uTO : sInfHom O T := S.u₁.comp (S.u₂.comp S.u₃)
+
+@[powerlib_foundation] theorem generate_uTI : ⇑(generate S.uTI) = S.l₂ ∘ S.l₁ :=
+  generate_comp S.u₁ S.u₂
+
+@[powerlib_foundation] theorem generate_uMO : ⇑(generate S.uMO) = S.l₃ ∘ S.l₂ :=
+  generate_comp S.u₂ S.u₃
+
+/-- Whole equals parts for the full chain (v0.3 §5). -/
+@[powerlib_foundation] theorem generate_uTO : ⇑(generate S.uTO) = S.l₃ ∘ S.l₂ ∘ S.l₁ := by
+  rw [uTO, generate_comp, generate_comp]
+  rfl
+
+/-- The whole-chain Galois connection. -/
+@[powerlib_foundation] theorem gc_whole :
+    GaloisConnection (S.l₃ ∘ S.l₂ ∘ S.l₁) (S.u₁ ∘ S.u₂ ∘ S.u₃) :=
+  (S.gc₁.compose S.gc₂).compose S.gc₃
+
+/-- Monotone propagation: stronger theory data never yields weaker observation data. -/
+@[powerlib_foundation] theorem whole_monotone : Monotone (S.l₃ ∘ S.l₂ ∘ S.l₁) :=
+  S.gc_whole.monotone_l
+
+/-- The whole chain preserves arbitrary joins of theory data. -/
+@[powerlib_foundation] theorem whole_sSup (s : Set T) :
+    (S.l₃ ∘ S.l₂ ∘ S.l₁) (sSup s) = sSup ((S.l₃ ∘ S.l₂ ∘ S.l₁) '' s) :=
+  S.gc_whole.l_sSup_eq_sSup_image
+
+end Seed
+
+end powerlib.TMIO

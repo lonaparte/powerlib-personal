@@ -37,8 +37,15 @@ initialize theoremKinds : EnumAttributes TheoremKind ← do
   registry.set (some attributes)
   pure attributes
 
+private partial def statementType (type : Expr) : Bool :=
+  if type.getAppFn.isConstOf `powerlib.TMIO.Statement then true
+  else match type with
+    | .forallE _ _ body _ => statementType body
+    | _ => false
+
 def kindOf? (env : Environment) (name : Name) : Option TheoremKind :=
-  lookupKind? theoremKinds env name
+  if (env.find? name).any (fun info => statementType info.type) then some .domain
+  else lookupKind? theoremKinds env name
 
 -- Whole-registry queries belong at command boundaries, outside a pending proof.
 def theoremNames (env : Environment) (kind : Option TheoremKind := none) : Array Name := Id.run do
@@ -47,9 +54,14 @@ def theoremNames (env : Environment) (kind : Option TheoremKind := none) : Array
     for (name, actual) in theoremKinds.ext.getModuleEntries env modIdx do
       entries := entries.insert name actual
   let mut names : Array Name := #[]
-  for (name, actual) in entries.toList do
-    if kind.isNone || kind == some actual then
+  for (name, _) in entries.toList do
+    if kind.isNone || kind == kindOf? env name then
       names := names.push name
+  -- Typed public claims are discoverable without either metadata annotation.
+  for (name, info) in env.constants do
+    if let .thmInfo _ := info then
+      if statementType info.type && (kind.isNone || kind == some .domain) && !names.contains name then
+        names := names.push name
   return names.qsort Name.quickLt
 
 end powerlib.Registry
@@ -126,6 +138,6 @@ def classificationLinter : ModuleLinter where
     if ← isFirstPartySource then
       auditAuthoredTheorems commands
 
-initialize addModuleLinter classificationLinter
+-- Classification is optional search metadata, never an admission exemption.
 
 end powerlib.Registry
