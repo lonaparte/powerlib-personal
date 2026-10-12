@@ -11,10 +11,11 @@ angle `θ_g` that also returns to its initial value and has a continuous rate:
 * `k_i ∫₀ᵀ x = 0` (from `θ̇ = k_p v_q + k_i x − θ̇_g`), so `⟨x⟩ = 0` when `k_i ≠ 0`.
 Nothing is assumed about the existence or stability of the periodic solution.
 
-Family and connection conclusions. No new family and no connection conclusion: these are
-integral identities (fundamental theorem of calculus) for an arbitrary returning solution of the
-input-driven field `fieldAngle`, which lies outside the autonomous sentence language of
-`FourState.family`; they remain foundation results, as before the migration.
+Family and connection conclusions. No new family and no connection conclusion. The integral
+identities concern solutions of the input-driven field `fieldAngle` of this specific model, which
+lies outside the autonomous sentence language of `FourState.family`; they are kept as private
+implementation evidence (Rules §3a). The public result is the static component form
+`fieldAngle_apply`.
 
 Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
 gfl-gfm-parametric-contrast.md` §14 (积分器约束).
@@ -34,17 +35,17 @@ variable (p : FourState.Params)
       (fieldAngle p u ud z) 3 = z 2 - 1 := by
   refine ⟨?_, ?_, ?_⟩ <;> simp [fieldAngle, field, lift, coordField]
 
-@[powerlib_foundation] theorem hasDerivAt_coord {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
+@[powerlib_foundation] private theorem hasDerivAt_coord {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t) (i : Fin 4) (t : ℝ) :
     HasDerivAt (fun s => φ s i) (fieldAngle p (θg t) (θgd t) (φ t) i) t := by
   exact (EuclideanSpace.proj (𝕜 := ℝ) i).hasFDerivAt.comp_hasDerivAt t (hφ t)
 
-@[powerlib_foundation] theorem continuous_coord {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
+@[powerlib_foundation] private theorem continuous_coord {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t) (i : Fin 4) :
     Continuous fun s => φ s i :=
   continuous_iff_continuousAt.2 fun t => (hasDerivAt_coord p hφ i t).continuousAt
 
-@[powerlib_foundation] theorem continuous_vq {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
+@[powerlib_foundation] private theorem continuous_vq {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t) :
     Continuous fun s => vq p (φ s 0) (φ s 2) (φ s 3) := by
   have h0 := continuous_coord p hφ 0
@@ -55,7 +56,7 @@ variable (p : FourState.Params)
       (continuous_const.mul h3)))
 
 /-- `⟨V⟩ = 1`: `∫₀ᵀ (V − 1) dt = 0` on a returning solution. -/
-@[powerlib_foundation] theorem integral_V_sub_one {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
+@[powerlib_foundation] private theorem integral_V_sub_one {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t) {T : ℝ} (hT : φ T = φ 0) :
     ∫ t in (0 : ℝ)..T, (φ t 2 - 1) = 0 := by
   have hd : ∀ t ∈ Set.uIcc 0 T, HasDerivAt (fun s => φ s 3) (φ t 2 - 1) t := by
@@ -66,7 +67,7 @@ variable (p : FourState.Params)
     (((continuous_coord p hφ 2).sub continuous_const).intervalIntegrable _ _), hT, sub_self]
 
 /-- `⟨v_q⟩ = 0`: `∫₀ᵀ v_q dt = 0` on a returning solution. -/
-@[powerlib_foundation] theorem integral_vq {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
+@[powerlib_foundation] private theorem integral_vq {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t) {T : ℝ} (hT : φ T = φ 0) :
     ∫ t in (0 : ℝ)..T, vq p (φ t 0) (φ t 2) (φ t 3) = 0 := by
   have hd : ∀ t ∈ Set.uIcc 0 T,
@@ -78,7 +79,7 @@ variable (p : FourState.Params)
     sub_self]
 
 /-- `k_i ⟨x⟩ = 0`: `k_i ∫₀ᵀ x dt = 0` on a returning solution with returning grid angle. -/
-@[powerlib_foundation] theorem ki_mul_integral_x {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
+@[powerlib_foundation] private theorem ki_mul_integral_x {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t)
     (hθg : ∀ t, HasDerivAt θg (θgd t) t) (hθgd : Continuous θgd) {T : ℝ} (hT : φ T = φ 0)
     (hTg : θg T = θg 0) :
@@ -105,7 +106,7 @@ variable (p : FourState.Params)
   linarith
 
 /-- `⟨x⟩ = 0` when `k_i ≠ 0`. -/
-@[powerlib_foundation] theorem integral_x {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
+@[powerlib_foundation] private theorem integral_x {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t)
     (hθg : ∀ t, HasDerivAt θg (θgd t) t) (hθgd : Continuous θgd) (hki : p.ki ≠ 0) {T : ℝ}
     (hT : φ T = φ 0) (hTg : θg T = θg 0) :
