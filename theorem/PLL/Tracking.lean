@@ -10,12 +10,16 @@ Model boundary.
   input `w(t) = ω_g(t) − ω_s` (grid frequency deviation, any real function of time),
   `θ̃̇ = −V K_p θ̃ + K_i η − w`, `η̇ = −V θ̃`; output `Δω̂ = −V K_p θ̃ + K_i η`.
   `phaseModel V K_p K_i`: state `(Δθ̂, η)`, input grid-angle deviation, output `Δθ̂`.
-* Trajectories are forward solutions (`t ≥ 0`, `IsForwardTrajectory`: one-sided derivatives on
-  `[0, ∞)` of `ẋ = A x + B u`) with an arbitrary initial state; conclusions are limits as
-  `t → ∞` of every such solution. They are derived in the time domain by subtracting an
-  explicit particular solution and using global exponential stability of the error dynamics
-  (`V K_p > 0`, `V K_i > 0`, the linear hub `Linear.globallyExponentiallyStable_of_isHurwitz`);
-  the Laplace final-value theorem is not used.
+* Trajectories are forward solutions (`t ≥ 0`: one-sided derivatives on `[0, ∞)` of
+  `ẋ = A x + B u`, in plain coordinates) with an arbitrary initial state, written out in each
+  statement as `∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x (M.A *ᵥ x t + M.B *ᵥ u t) (Ici 0) t` for the
+  plant `M` and input signal `u`; for the error dynamics `M = frequencyModel V K_p K_i` and
+  `u t = ![w t]` with the grid-frequency deviation `w(t) = ω_g(t) − ω_s`. (The former definitions
+  `IsForwardTrajectory` / `IsErrorTrajectory` are removed: behaviour is defined only in the
+  semantic layer.) Conclusions are limits as `t → ∞` of every such solution. They are derived
+  in the time domain by subtracting an explicit particular solution and using global
+  exponential stability of the error dynamics (`V K_p > 0`, `V K_i > 0`, the linear hub
+  `Linear.globallyExponentiallyStable_of_isHurwitz`); the Laplace final-value theorem is not used.
 
 Results (T-pll-dynamics §1.4 table).
 * Phase step: `Δθ̂ → Δφ` (zero phase error).
@@ -46,22 +50,20 @@ open scoped Topology
 
 /-! ## Forward solutions of a plant and a general convergence lemma -/
 
-/-- A forward solution (on `[0, ∞)`) of the plant `ẋ = A x + B u` under the input signal `u`, in
-plain coordinates, with one-sided derivatives at `0`. -/
-def IsForwardTrajectory {n p : ℕ} (M : Linear.Plant n p) (u : ℝ → Fin p → ℝ)
-    (x : ℝ → Fin n → ℝ) : Prop :=
-  ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x (M.A *ᵥ x t + M.B *ᵥ u t) (Ici 0) t
-
 /-- The output `C x + D u` of a plant. -/
 def plantOutput {n p : ℕ} (M : Linear.Plant n p) (x : Fin n → ℝ) (u : Fin p → ℝ) : Fin p → ℝ :=
   M.C *ᵥ x + M.D *ᵥ u
 
 /-- Two forward trajectories of the same input-driven plant with Hurwitz state matrix converge to
 each other, componentwise, for any common input signal: their difference solves the zero-input
-field, which is globally exponentially stable (the linear hub). -/
+field, which is globally exponentially stable (the linear hub). A forward trajectory `x` of the
+plant `ẋ = A x + B u` under the input signal `u` is a solution on `[0, ∞)`, in plain coordinates,
+with one-sided derivatives at `0`. -/
 @[powerlib_foundation] theorem tendsto_sub_of_isHurwitz {n p : ℕ} {M : Linear.Plant n p}
     (hA : LinearSystems.IsHurwitz M.A) {u : ℝ → Fin p → ℝ} {x y : ℝ → Fin n → ℝ}
-    (hx : IsForwardTrajectory M u x) (hy : IsForwardTrajectory M u y) (i : Fin n) :
+    (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x (M.A *ᵥ x t + M.B *ᵥ u t) (Ici 0) t)
+    (hy : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt y (M.A *ᵥ y t + M.B *ᵥ u t) (Ici 0) t)
+    (i : Fin n) :
     Tendsto (fun t => x t i - y t i) atTop (𝓝 0) := by
   let φ : ℝ → EuclideanSpace ℝ (Fin n) := fun t => WithLp.toLp 2 (x t - y t)
   have hder : ∀ t ∈ Ici (0 : ℝ),
@@ -95,12 +97,11 @@ field, which is globally exponentially stable (the linear hub). -/
     simpa using (he.const_mul C).mul_const ‖φ 0‖
   exact squeeze_zero_norm' (eventually_ge_atTop 0 |>.mono hbound) hlim
 
-/-! ## Trajectories of the linearized PLL -/
+/-! ## Trajectories of the linearized PLL
 
-/-- Forward trajectory of the linearized error dynamics for the grid-frequency deviation
-`w(t) = ω_g(t) − ω_s`. -/
-abbrev IsErrorTrajectory (V Kp Ki : ℝ) (w : ℝ → ℝ) (x : ℝ → Fin 2 → ℝ) : Prop :=
-  IsForwardTrajectory (frequencyModel V Kp Ki) (fun t => ![w t]) x
+A forward trajectory of the linearized error dynamics for the grid-frequency deviation
+`w(t) = ω_g(t) − ω_s` is a forward trajectory of `frequencyModel V K_p K_i` under the input
+`t ↦ ![w t]`. -/
 
 @[powerlib_foundation] theorem frequencyModel_field (V Kp Ki : ℝ) (x : Fin 2 → ℝ)
     (u : Fin 1 → ℝ) :
@@ -116,12 +117,14 @@ abbrev IsErrorTrajectory (V Kp Ki : ℝ) (w : ℝ → ℝ) (x : ℝ → Fin 2 �
     plantOutput (frequencyModel V Kp Ki) x u 0 = -(V * Kp) * x 0 + Ki * x 1 := by
   simp [plantOutput, frequencyModel, dotProduct, Fin.sum_univ_two]
 
-/-- A function with componentwise derivatives `d₀, d₁` solves the error dynamics. -/
+/-- A function with componentwise derivatives `d₀, d₁` solves the error dynamics (forward
+trajectory of `frequencyModel V K_p K_i` under the input `t ↦ ![w t]`). -/
 @[powerlib_foundation] private lemma isErrorTrajectory_of {V Kp Ki : ℝ} {w : ℝ → ℝ}
     {x : ℝ → Fin 2 → ℝ}
     (h0 : ∀ t, HasDerivAt (fun τ => x τ 0) (-(V * Kp) * x t 0 + Ki * x t 1 - w t) t)
     (h1 : ∀ t, HasDerivAt (fun τ => x τ 1) (-V * x t 0) t) :
-    IsErrorTrajectory V Kp Ki w x := by
+    ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
+      ((frequencyModel V Kp Ki).A *ᵥ x t + (frequencyModel V Kp Ki).B *ᵥ ![w t]) (Ici 0) t := by
   intro t _
   apply HasDerivAt.hasDerivWithinAt
   rw [frequencyModel_field]
@@ -137,11 +140,13 @@ the phase model has `Δθ̂ → Δφ` (zero steady-state phase error).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem phaseStep_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
     (hVKi : 0 < V * Ki) (Δφ : ℝ) {x : ℝ → Fin 2 → ℝ}
-    (hx : IsForwardTrajectory (phaseModel V Kp Ki) (fun _ => ![Δφ]) x) :
+    (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
+      ((phaseModel V Kp Ki).A *ᵥ x t + (phaseModel V Kp Ki).B *ᵥ ![Δφ]) (Ici 0) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 Δφ) := by
   have hA : LinearSystems.IsHurwitz (phaseModel V Kp Ki).A :=
     (isHurwitz_linA_iff V Kp Ki).mpr ⟨hVKp, hVKi⟩
-  have hp : IsForwardTrajectory (phaseModel V Kp Ki) (fun _ => ![Δφ]) (fun _ => ![Δφ, 0]) := by
+  have hp : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt (fun _ : ℝ => (![Δφ, 0] : Fin 2 → ℝ))
+      ((phaseModel V Kp Ki).A *ᵥ ![Δφ, 0] + (phaseModel V Kp Ki).B *ᵥ ![Δφ]) (Ici 0) t := by
     intro t _
     apply HasDerivAt.hasDerivWithinAt
     convert hasDerivAt_const t (![Δφ, 0] : Fin 2 → ℝ) using 1
@@ -156,13 +161,17 @@ private theorem phaseStep_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
 `Δω̂ − w → 0`, for every forward trajectory. 
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem frequencyStep_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
-    (hVKi : 0 < V * Ki) (c : ℝ) {x : ℝ → Fin 2 → ℝ} (hx : IsErrorTrajectory V Kp Ki (fun _ => c) x) :
+    (hVKi : 0 < V * Ki) (c : ℝ) {x : ℝ → Fin 2 → ℝ}
+    (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
+      ((frequencyModel V Kp Ki).A *ᵥ x t + (frequencyModel V Kp Ki).B *ᵥ ![c]) (Ici 0) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 0) ∧ Tendsto (fun t => x t 1) atTop (𝓝 (c / Ki)) ∧
       Tendsto (fun t => plantOutput (frequencyModel V Kp Ki) (x t) ![c] 0 - c) atTop (𝓝 0) := by
   have hKi : Ki ≠ 0 := by rintro rfl; simp at hVKi
   have hA : LinearSystems.IsHurwitz (frequencyModel V Kp Ki).A :=
     (isHurwitz_linA_iff V Kp Ki).mpr ⟨hVKp, hVKi⟩
-  have hp : IsErrorTrajectory V Kp Ki (fun _ => c) (fun _ => ![0, c / Ki]) :=
+  have hp : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt (fun _ : ℝ => (![0, c / Ki] : Fin 2 → ℝ))
+      ((frequencyModel V Kp Ki).A *ᵥ ![0, c / Ki] + (frequencyModel V Kp Ki).B *ᵥ ![c])
+        (Ici 0) t :=
     isErrorTrajectory_of
       (fun t => (hasDerivAt_const t (0 : ℝ)).congr_deriv (by simp; field_simp; ring))
       (fun t => (hasDerivAt_const t (c / Ki)).congr_deriv (by simp))
@@ -183,9 +192,13 @@ private theorem frequencyStep_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
 def rampParticular (V Kp Ki ρ : ℝ) (t : ℝ) : Fin 2 → ℝ :=
   ![-ρ / (V * Ki), (ρ * t + V * Kp * (-ρ / (V * Ki))) / Ki]
 
+/-- The particular solution `rampParticular` is a forward trajectory of the error dynamics
+for `w = ρ t`. -/
 @[powerlib_foundation] theorem rampParticular_isTrajectory {V Kp Ki : ℝ} (hV : V ≠ 0)
     (hKi : Ki ≠ 0) (ρ : ℝ) :
-    IsErrorTrajectory V Kp Ki (fun t => ρ * t) (rampParticular V Kp Ki ρ) := by
+    ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt (rampParticular V Kp Ki ρ)
+      ((frequencyModel V Kp Ki).A *ᵥ rampParticular V Kp Ki ρ t +
+        (frequencyModel V Kp Ki).B *ᵥ ![ρ * t]) (Ici 0) t := by
   refine isErrorTrajectory_of (fun t => ?_) (fun t => ?_)
   · show HasDerivAt (fun _ => -ρ / (V * Ki)) _ t
     exact (hasDerivAt_const t (-ρ / (V * Ki))).congr_deriv (by
@@ -202,7 +215,8 @@ tracks the ramp (`Δω̂ − w → 0`), for every forward trajectory.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem frequencyRamp_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
     (hVKi : 0 < V * Ki) (ρ : ℝ) {x : ℝ → Fin 2 → ℝ}
-    (hx : IsErrorTrajectory V Kp Ki (fun t => ρ * t) x) :
+    (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
+      ((frequencyModel V Kp Ki).A *ᵥ x t + (frequencyModel V Kp Ki).B *ᵥ ![ρ * t]) (Ici 0) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 (-ρ / (V * Ki))) ∧
       Tendsto (fun t => plantOutput (frequencyModel V Kp Ki) (x t) ![ρ * t] 0 - ρ * t) atTop (𝓝 0) := by
   have hKi : Ki ≠ 0 := by rintro rfl; simp at hVKi
@@ -226,7 +240,8 @@ the particular trajectory has the constant phase error `−ρ/(V K_i) ≠ ρ/(V 
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem frequencyRamp_limit_ne_note {V Kp Ki ρ : ℝ} (hVKp : 0 < V * Kp)
     (hVKi : 0 < V * Ki) (hρ : ρ ≠ 0) :
-    ∃ x : ℝ → Fin 2 → ℝ, IsErrorTrajectory V Kp Ki (fun t => ρ * t) x ∧
+    ∃ x : ℝ → Fin 2 → ℝ, (∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
+        ((frequencyModel V Kp Ki).A *ᵥ x t + (frequencyModel V Kp Ki).B *ᵥ ![ρ * t]) (Ici 0) t) ∧
       ¬ Tendsto (fun t => x t 0) atTop (𝓝 (ρ / (V * Ki))) := by
   have hKi : Ki ≠ 0 := by rintro rfl; simp at hVKi
   have hV : V ≠ 0 := by rintro rfl; simp at hVKi
@@ -248,9 +263,13 @@ def quadParticular (V Kp Ki α : ℝ) (t : ℝ) : Fin 2 → ℝ :=
   let q := -Kp * p / Ki
   ![p * t + q, (p + V * Kp * q + V * Kp * p * t + α * t ^ 2) / Ki]
 
+/-- The particular solution `quadParticular` is a forward trajectory of the error dynamics
+for `w = α t²`. -/
 @[powerlib_foundation] theorem quadParticular_isTrajectory {V Kp Ki : ℝ} (hV : V ≠ 0)
     (hKi : Ki ≠ 0) (α : ℝ) :
-    IsErrorTrajectory V Kp Ki (fun t => α * t ^ 2) (quadParticular V Kp Ki α) := by
+    ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt (quadParticular V Kp Ki α)
+      ((frequencyModel V Kp Ki).A *ᵥ quadParticular V Kp Ki α t +
+        (frequencyModel V Kp Ki).B *ᵥ ![α * t ^ 2]) (Ici 0) t := by
   set p := -2 * α / (V * Ki) with hp
   set q := -Kp * p / Ki with hq
   refine isErrorTrajectory_of (fun t => ?_) (fun t => ?_)
@@ -270,7 +289,8 @@ def quadParticular (V Kp Ki α : ℝ) (t : ℝ) : Fin 2 → ℝ :=
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem frequencyQuadratic_unbounded {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
     (hVKi : 0 < V * Ki) {α : ℝ} (hα : α ≠ 0) {x : ℝ → Fin 2 → ℝ}
-    (hx : IsErrorTrajectory V Kp Ki (fun t => α * t ^ 2) x) :
+    (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
+      ((frequencyModel V Kp Ki).A *ᵥ x t + (frequencyModel V Kp Ki).B *ᵥ ![α * t ^ 2]) (Ici 0) t) :
     Tendsto (fun t => |x t 0|) atTop atTop := by
   have hKi : Ki ≠ 0 := by rintro rfl; simp at hVKi
   have hV : V ≠ 0 := by rintro rfl; simp at hVKi

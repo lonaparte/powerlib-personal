@@ -6,7 +6,10 @@ import theorem.Dynamics.State
 Foundation layer for the attractor/basin language, under the completeness premise of
 `PhasePlane/Flow.lean` (globally Lipschitz field, forward flow `φ_t`, `t ∈ ℝ≥0`).
 
-Definition. The basin of `x*` is `𝓑(x*) = {x | φ_t x → x* as t → ∞}` (`basin`).
+Basin. The basin of attraction of `x*` for the forward flow is `𝓑(x*) = {x | φ_t x → x* as
+t → ∞}`, written out in the statements as the set
+`{x | Tendsto (fun t : ℝ≥0 => lipschitzFlow hf t x) atTop (𝓝 xs)}` (the former definition
+`basin` is removed: behaviour is defined only in the semantic layer).
 
 Results.
 * `basin_isInvariant`: `φ_s(𝓑) ⊆ 𝓑` for every `s ≥ 0` (Mathlib `IsInvariant`).
@@ -27,13 +30,11 @@ open Set Filter Topology NNReal
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {f : E → E} {K : ℝ≥0}
 
-/-- Basin of attraction of `x*` for the forward flow. -/
-def basin (hf : LipschitzWith K f) (xs : E) : Set E :=
-  {x | Tendsto (fun t : ℝ≥0 => lipschitzFlow hf t x) atTop (𝓝 xs)}
-
-/-- The basin is forward invariant. -/
+/-- The basin of attraction `{x | φ_t x → x*}` of `x*` for the forward flow is forward
+invariant. -/
 @[powerlib_foundation] theorem basin_isInvariant (hf : LipschitzWith K f) (xs : E) :
-    IsInvariant (lipschitzFlow hf) (basin hf xs) := by
+    IsInvariant (lipschitzFlow hf)
+      {x | Tendsto (fun t : ℝ≥0 => lipschitzFlow hf t x) atTop (𝓝 xs)} := by
   intro s x hx
   show Tendsto (fun t : ℝ≥0 => lipschitzFlow hf t (lipschitzFlow hf s x)) atTop (𝓝 xs)
   have : (fun t : ℝ≥0 => lipschitzFlow hf t (lipschitzFlow hf s x)) =
@@ -42,9 +43,11 @@ def basin (hf : LipschitzWith K f) (xs : E) : Set E :=
   rw [this]
   exact hx.comp (tendsto_atTop_mono (fun _ => le_self_add) tendsto_id)
 
-/-- Local attraction makes the basin open. -/
+/-- Local attraction makes the basin of attraction `{x | φ_t x → x*}` open. -/
 @[powerlib_foundation] theorem basin_isOpen (hf : LipschitzWith K f) {xs : E}
-    (hattr : ∃ r > 0, ∀ y, dist y xs < r → y ∈ basin hf xs) : IsOpen (basin hf xs) := by
+    (hattr : ∃ r > 0, ∀ y, dist y xs < r →
+      y ∈ {x | Tendsto (fun t : ℝ≥0 => lipschitzFlow hf t x) atTop (𝓝 xs)}) :
+    IsOpen {x | Tendsto (fun t : ℝ≥0 => lipschitzFlow hf t x) atTop (𝓝 xs)} := by
   obtain ⟨r, hr, hball⟩ := hattr
   rw [Metric.isOpen_iff]
   intro x hx
@@ -81,10 +84,12 @@ def basin (hf : LipschitzWith K f) (xs : E) : Set E :=
   intro b
   exact ⟨⟨max b 0, le_max_right _ _⟩, fun a ha => le_trans (le_max_left _ _) ha⟩
 
-/-- On `State n`, local asymptotic stability gives local attraction, hence an open basin. -/
+/-- On `State n`, local asymptotic stability gives local attraction, hence an open basin of
+attraction `{x | φ_t x → x*}`. -/
 @[powerlib_foundation] theorem basin_isOpen_of_localAsymptoticStable {n : ℕ}
     {g : Dynamics.State n → Dynamics.State n} (hg : LipschitzWith K g) {xs : Dynamics.State n}
-    (hlas : LocalAsymptoticStable g xs) : IsOpen (basin hg xs) := by
+    (hlas : LocalAsymptoticStable g xs) :
+    IsOpen {x | Tendsto (fun t : ℝ≥0 => lipschitzFlow hg t x) atTop (𝓝 xs)} := by
   obtain ⟨-, c, hc, hconv⟩ := hlas
   apply basin_isOpen hg ⟨c, hc, fun y hy => ?_⟩
   have h := hconv 0 (forwardSolution hg y) (lipschitzFlow_solution hg y)

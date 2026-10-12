@@ -27,8 +27,16 @@ The two linear facts used per mode are restated here for global solutions of `�
 `Linear.eigenmode`; they replace the removed `LTI.exponentiallyStable_iff_isHurwitz`.
 
 Family and connection conclusions. Foundation module (generic in `A`, `Γ`, `L`, `σ`): no family,
-no connection statement. The synchronization notion `ExpSync` concerns pairwise differences of
-network solutions, outside the sentence language; every statement is a generic implication.
+no connection statement. The synchronization notion concerns pairwise differences of network
+solutions, outside the sentence language; every statement is a generic implication.
+
+Behaviour written out. A global solution of the linear network is a curve
+`X : ℝ → Fin N → Fin d → ℝ` with `∀ t, HasDerivAt X (linNetField A Γ L σ (X t)) t`. Uniform
+exponential synchronization is
+`∃ K > 0, ∃ r > 0, ∀ X, (X is a global solution) → ∀ t, 0 ≤ t → ∀ i j,
+  ‖euclidean (X t i - X t j)‖ ≤ K * Real.exp (-(r * t)) * ∑ l, ‖euclidean (X 0 l)‖`.
+Both are written out in the statements (the former definitions `IsNetSolution` / `ExpSync` are
+removed: behaviour is defined only in the semantic layer).
 -/
 
 noncomputable section
@@ -42,18 +50,8 @@ def linNetField (A Γ : Matrix (Fin d) (Fin d) ℝ) (L : Matrix (Fin N) (Fin N) 
     (X : Fin N → Fin d → ℝ) : Fin N → Fin d → ℝ :=
   fun i => A *ᵥ X i - σ • ∑ j, L i j • (Γ *ᵥ X j)
 
-/-- Global solution of the linear network. -/
-def IsNetSolution (A Γ : Matrix (Fin d) (Fin d) ℝ) (L : Matrix (Fin N) (Fin N) ℝ) (σ : ℝ)
-    (X : ℝ → Fin N → Fin d → ℝ) : Prop :=
-  ∀ t, HasDerivAt X (linNetField A Γ L σ (X t)) t
-
 /-- A vector of `Fin d → ℝ` read in the Euclidean norm. -/
 abbrev euclidean (x : Fin d → ℝ) : EuclideanSpace ℝ (Fin d) := WithLp.toLp 2 x
-
-/-- Uniform exponential synchronization. -/
-def ExpSync (A Γ : Matrix (Fin d) (Fin d) ℝ) (L : Matrix (Fin N) (Fin N) ℝ) (σ : ℝ) : Prop :=
-  ∃ K > 0, ∃ r > 0, ∀ X, IsNetSolution A Γ L σ X → ∀ t, 0 ≤ t → ∀ i j,
-    ‖euclidean (X t i - X t j)‖ ≤ K * Real.exp (-(r * t)) * ∑ l, ‖euclidean (X 0 l)‖
 
 /-- Orthonormal eigenbasis of the coupling matrix with a constant (synchronous) column `k₀`. -/
 structure SpectralData (L : Matrix (Fin N) (Fin N) ℝ) where
@@ -218,11 +216,16 @@ end SpectralData
 
 /-! ## The equivalence -/
 
-/-- **Linear network synchronization**: exponential synchronization ⇔ every transverse block
-`A − σ μ_k Γ` (`k ≠ k₀`) is Hurwitz. -/
+/-- **Linear network synchronization**: uniform exponential synchronization (left side: there
+are `K, r > 0` such that every global solution `X` of the linear network,
+`Ẋ = linNetField A Γ L σ X`, has `‖Xᵢ(t) − Xⱼ(t)‖ ≤ K e^{−rt} Σₗ ‖Xₗ(0)‖` for all `t ≥ 0` and
+all nodes `i, j`) ⇔ every transverse block `A − σ μ_k Γ` (`k ≠ k₀`) is Hurwitz. -/
 @[powerlib_foundation] theorem expSync_iff {A Γ : Matrix (Fin d) (Fin d) ℝ}
     {L : Matrix (Fin N) (Fin N) ℝ} (hL : Lᵀ = L) (D : SpectralData L) (σ : ℝ) :
-    ExpSync A Γ L σ ↔ ∀ k, k ≠ D.k0 → LinearSystems.IsHurwitz (A - (σ * D.μ k) • Γ) := by
+    (∃ K > 0, ∃ r > 0, ∀ X : ℝ → Fin N → Fin d → ℝ,
+      (∀ t, HasDerivAt X (linNetField A Γ L σ (X t)) t) → ∀ t, 0 ≤ t → ∀ i j,
+        ‖euclidean (X t i - X t j)‖ ≤ K * Real.exp (-(r * t)) * ∑ l, ‖euclidean (X 0 l)‖) ↔
+      ∀ k, k ≠ D.k0 → LinearSystems.IsHurwitz (A - (σ * D.μ k) • Γ) := by
   constructor
   · -- a transverse trajectory lifts to a network solution
     rintro ⟨K, hK, r, hr, hsync⟩ k hk
@@ -233,7 +236,7 @@ end SpectralData
     have hS : 0 ≤ S := Finset.sum_nonneg fun l _ => abs_nonneg _
     refine ⟨K * (S + 1) / |D.V i₀ k - D.V j₀ k|, by positivity, r, hr, fun y hy t ht => ?_⟩
     set X : ℝ → Fin N → Fin d → ℝ := fun τ i => D.V i k • y τ
-    have hX : IsNetSolution A Γ L σ X := by
+    have hX : ∀ τ, HasDerivAt X (linNetField A Γ L σ (X τ)) τ := by
       intro τ
       refine hasDerivAt_pi.mpr fun i => ?_
       have hyt := (hy τ).const_smul (D.V i k)

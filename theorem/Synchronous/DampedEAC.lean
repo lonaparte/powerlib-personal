@@ -9,7 +9,12 @@ state `(δ, ω) : Dynamics.State 2`, `M δ̈ + D δ̇ = P_m − (k₁ + k₂ sin
 generator OUT-positive convention, continuous time, no AVR / governor / PLL / limiter; for the
 switched model the three-stage trajectories of `theorem/Synchronous/FaultSequence.lean`.
 Damping is now allowed: `D ≥ 0` (sufficiency) or `D > 0` (convergence).  Statements are at
-trajectory level and quantify over every solution.
+trajectory level and quantify over every solution.  A three-stage trajectory is written out as
+in `FaultSequence.lean`: `tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
+IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
+IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc)`.  "`S` lies in the region of attraction
+of `x_eq`" is written out as in `theorem/Dynamics/Basin.lean`: from every initial state in `S` a
+forward solution on `[0, ∞)` exists and every forward solution from it converges to `x_eq`.
 
 Results.
 * `energy_antitoneOn` (`D ≥ 0`): the energy `W = ½ M ω² + U(δ)` is non-increasing along every
@@ -226,8 +231,10 @@ private theorem regionOfAttraction_well (hM : 0 < p.M) (hD : 0 < p.D)
     (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) {c : ℝ}
     (hc1 : c < p.potential p.deltaS p.deltaU)
     (hc2 : c < p.potential p.deltaS (p.deltaU - 2 * Real.pi)) :
-    Dynamics.RegionOfAttraction p.field (mkState p.deltaS 0)
-      {x ∈ p.wellWindow | p.energy p.deltaS x ≤ c} := by
+    ∀ x₀ ∈ {x ∈ p.wellWindow | p.energy p.deltaS x ≤ c},
+      (∃ φ : ℝ → State 2, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => p.field x) (Ici 0)) ∧
+      ∀ φ : ℝ → State 2, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => p.field x) (Ici 0) →
+        Tendsto φ atTop (𝓝 (mkState p.deltaS 0)) := by
   have hω : ∀ x : State 2, fderiv ℝ (p.energy p.deltaS) x (p.field x) = 0 → x 1 = 0 := by
     intro x hx
     rw [p.energy_lie hM.ne'] at hx
@@ -275,7 +282,8 @@ private theorem tendsto_of_firstSwing_margin (hM : 0 < p.M) (hD : 0 < p.D)
     rw [p.potential_sub_two_pi]
     have : 0 ≤ 2 * Real.pi * (p.Pm - p.k₁) := mul_nonneg (by positivity) (by linarith)
     linarith
-  refine (p.regionOfAttraction_well hM hD hk h hc1 hc2).tendsto hφ ?_
+  refine Dynamics.RegionOfAttraction.tendsto (p.regionOfAttraction_well hM hD hk h hc1 hc2)
+    hφ ?_
   rw [h0]
   exact ⟨⟨by simpa using hwell, by simpa using hδc⟩, le_rfl⟩
 
@@ -306,13 +314,16 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem faultTrajectory_firstSwing_of_areas {pre fault post : SwingParams}
     (hM : 0 < post.M) (hMeq : fault.M = post.M) (hDf : 0 ≤ fault.D) (hDp : 0 ≤ post.D)
     (hk : 0 < post.k₂) (h : |post.Pm - post.k₁| < post.k₂) {φ : ℝ → State 2} {tf tc δ₀ : ℝ}
-    (hφ : IsFaultTrajectory pre fault post tf tc φ) (h0 : φ tf = mkState δ₀ 0)
+    (hφ : tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
+      IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
+      IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc))
+    (h0 : φ tf = mkState δ₀ 0)
     (hδc : φ tc 0 ≤ post.deltaU)
     (hA : fault.Aacc δ₀ (φ tc 0) ≤ post.Adec (φ tc 0) post.deltaU) :
     ∀ t ∈ Ici tc, φ t 0 ≤ post.deltaU := by
-  have hE := clearing_energy_le (hMeq ▸ hM) hDf hφ.onFault hφ.le h0
+  have hE := clearing_energy_le (hMeq ▸ hM) hDf hφ.2.2.1 hφ.1 h0
   rw [hMeq] at hE
-  exact post.firstSwing_le_deltaU_of_damping hM hDp hk h hφ.onPost (eq_mkState (φ tc)) hδc
+  exact post.firstSwing_le_deltaU_of_damping hM hDp hk h hφ.2.2.2 (eq_mkState (φ tc)) hδc
     (by rw [← SwingParams.Adec]; linarith)
 
 /-- **Strict area margin ⇒ asymptotic recovery** for the switched model: with `D ≥ 0` in the
@@ -324,13 +335,16 @@ private theorem faultTrajectory_tendsto_of_areas {pre fault post : SwingParams}
     (hM : 0 < post.M) (hMeq : fault.M = post.M) (hDf : 0 ≤ fault.D) (hDp : 0 < post.D)
     (hk : 0 < post.k₂) (h : |post.Pm - post.k₁| < post.k₂) (hPk : post.k₁ ≤ post.Pm)
     {φ : ℝ → State 2} {tf tc δ₀ : ℝ}
-    (hφ : IsFaultTrajectory pre fault post tf tc φ) (h0 : φ tf = mkState δ₀ 0)
+    (hφ : tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
+      IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
+      IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc))
+    (h0 : φ tf = mkState δ₀ 0)
     (hwell : post.deltaU - 2 * Real.pi < φ tc 0) (hδc : φ tc 0 < post.deltaU)
     (hA : fault.Aacc δ₀ (φ tc 0) < post.Adec (φ tc 0) post.deltaU) :
     Tendsto φ atTop (𝓝 (mkState post.deltaS 0)) := by
-  have hE := clearing_energy_le (hMeq ▸ hM) hDf hφ.onFault hφ.le h0
+  have hE := clearing_energy_le (hMeq ▸ hM) hDf hφ.2.2.1 hφ.1 h0
   rw [hMeq] at hE
-  exact post.tendsto_of_firstSwing_margin hM hDp hk h hPk hφ.onPost (eq_mkState (φ tc)) hwell
+  exact post.tendsto_of_firstSwing_margin hM hDp hk h hPk hφ.2.2.2 (eq_mkState (φ tc)) hwell
     hδc (by rw [← SwingParams.Adec]; linarith)
 
 end powerlib.Synchronous

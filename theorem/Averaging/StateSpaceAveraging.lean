@@ -35,7 +35,14 @@ Architecture: generic mathematical support (no `Family`). `stateSpaceAveraging_e
 `@[powerlib_domain]` in the former architecture; it holds for arbitrary matrices `A₁`, `A₂`,
 duty ratio and state index (no particular converter is formalized), so it is a generic
 foundation result (classification policy 4). Switched trajectories are Mathlib integral curves
-on each closed subinterval; uniqueness is LeanForControl's `eqOn_of_isIntegralCurveOn_Icc`.
+on each closed subinterval; uniqueness is LeanForControl's `eqOn_of_isIntegralCurveOn_Icc`. A
+trajectory of the ideal two-topology switched system with duty ratio `d` and period `T`
+(`ẋ = A₁ x` on `[kT, kT + dT]`, `ẋ = A₂ x` on `[kT + dT, (k + 1)T]`, one-sided derivatives at
+the switching instants) is written out in the statements as
+`∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A₁ *ᵥ y) (Icc (k * T) (k * T + d * T)) ∧
+IsIntegralCurveOn x (fun _ y => A₂ *ᵥ y) (Icc (k * T + d * T) ((k + 1) * T))` (the former
+definition `IsSwitchedTrajectory` is removed: behaviour is defined only in the semantic
+layer).
 
 Source: work-sync theory/T-averaging-method.md §1.5 (state-space averaging, `O(ε)` agreement on
 the slow time scale).
@@ -241,13 +248,6 @@ section Switched
 
 variable {X : Type*} [Fintype X] [DecidableEq X]
 
-/-- Trajectories of the ideal two-topology switched system with duty ratio `d` and period `T`:
-`ẋ = A₁ x` on `[kT, kT + dT]`, `ẋ = A₂ x` on `[kT + dT, (k + 1)T]` (one-sided derivatives at the
-switching instants). -/
-def IsSwitchedTrajectory (A₁ A₂ : Matrix X X ℝ) (d T : ℝ) (x : ℝ → X → ℝ) : Prop :=
-  ∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A₁ *ᵥ y) (Icc (k * T) (k * T + d * T)) ∧
-    IsIntegralCurveOn x (fun _ y => A₂ *ᵥ y) (Icc (k * T + d * T) ((k + 1) * T))
-
 /-- `t ↦ e^{(t − a)A} v` solves `ẋ = A x`. -/
 @[powerlib_foundation] theorem hasDerivAt_exp_mulVec (A : Matrix X X ℝ) (a : ℝ) (v : X → ℝ)
     (t : ℝ) :
@@ -277,9 +277,14 @@ def IsSwitchedTrajectory (A₁ A₂ : Matrix X X ℝ) (d T : ℝ) (x : ℝ → X
   exact _root_.eqOn_of_isIntegralCurveOn_Icc (f := Periodic.vecField fun _ => A) hlip hx hy
     (by simp) ht
 
-/-- Sampled switched trajectory: `x(kT) = (e^{(1−d)TA₂} e^{dTA₁})^k x(0)`. -/
+/-- Sampled switched trajectory: every trajectory of the ideal two-topology switched system
+with duty ratio `d` and period `T` (`ẋ = A₁ x` on `[kT, kT + dT]`, `ẋ = A₂ x` on
+`[kT + dT, (k + 1)T]`, one-sided derivatives at the switching instants) satisfies
+`x(kT) = (e^{(1−d)TA₂} e^{dTA₁})^k x(0)`. -/
 @[powerlib_foundation] theorem switched_sample {A₁ A₂ : Matrix X X ℝ} {d T : ℝ} (hd0 : 0 ≤ d)
-    (hd1 : d ≤ 1) (hT : 0 ≤ T) {x : ℝ → X → ℝ} (hx : IsSwitchedTrajectory A₁ A₂ d T x)
+    (hd1 : d ≤ 1) (hT : 0 ≤ T) {x : ℝ → X → ℝ}
+    (hx : ∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A₁ *ᵥ y) (Icc (k * T) (k * T + d * T)) ∧
+      IsIntegralCurveOn x (fun _ y => A₂ *ᵥ y) (Icc (k * T + d * T) ((k + 1) * T)))
     (k : ℕ) : x (k * T) = periodMap d T A₁ A₂ ^ k *ᵥ x 0 := by
   induction k with
   | zero => simp
@@ -308,7 +313,9 @@ switched trajectory and every switching instant `kT ≤ L`,
 `‖x(kT) − x̄(kT)‖ ≤ C T ‖x(0)‖`, where `x̄(t) = e^{tĀ} x(0)` solves the averaged model. -/
 @[powerlib_foundation] theorem stateSpaceAveraging_error [Nonempty X] {d : ℝ} (hd0 : 0 ≤ d)
     (hd1 : d ≤ 1) (A₁ A₂ : Matrix X X ℝ) {L : ℝ} (hL : 0 ≤ L) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ T ∈ Ioc (0 : ℝ) 1, ∀ x : ℝ → X → ℝ, IsSwitchedTrajectory A₁ A₂ d T x →
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ T ∈ Ioc (0 : ℝ) 1, ∀ x : ℝ → X → ℝ,
+      (∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A₁ *ᵥ y) (Icc (k * T) (k * T + d * T)) ∧
+        IsIntegralCurveOn x (fun _ y => A₂ *ᵥ y) (Icc (k * T + d * T) ((k + 1) * T))) →
       ∀ k : ℕ, (k : ℝ) * T ≤ L →
         ‖x (k * T) - NormedSpace.exp (((k : ℝ) * T) • avgMatrix d A₁ A₂) *ᵥ x 0‖ ≤
           C * T * ‖x 0‖ := by

@@ -9,10 +9,16 @@ Foundation layer: the first-order averaging theorem for a fast periodic forcing,
 error constant. No engineering model is fixed here.
 
 Setting. `ẋ = ε f(x, t)` on a real Banach space `E`, with `f` jointly continuous, `T`-periodic in
-`t` (`T > 0`), globally Lipschitz in `x` (constant `ℓ ≥ 0`, uniformly in `t`) and bounded by `M`
-(`PeriodicField`). The averaged field is `f̄(x) = (1/T) ∫₀ᵀ f(x, s) ds` (`fieldAverage`) and the
-averaged system is `x̄̇ = ε f̄(x̄)`. Solutions are global solutions (they exist under the global
-Lipschitz bound); only the window `[0, L/ε]` is used.
+`t` (`T > 0`), globally Lipschitz in `x` (constant `ℓ ≥ 0`, uniformly in `t`) and bounded by `M`.
+These hypotheses on the fast-periodic field are written out in every statement as the single
+hypothesis `hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+(∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M` (the former structure
+`PeriodicField` with fields `hT`, `hℓ`, `cont`, `per`, `lip`, `bound` is removed: its fields
+quantify over time, and behaviour is defined only in the semantic layer; the namespace lemmas
+`PeriodicField.continuous_snd`, `PeriodicField.M_nonneg` keep their names). The averaged field
+is `f̄(x) = (1/T) ∫₀ᵀ f(x, s) ds` (`fieldAverage`) and the averaged system is `x̄̇ = ε f̄(x̄)`.
+Solutions are global solutions (they exist under the global Lipschitz bound); only the window
+`[0, L/ε]` is used.
 
 Results.
 * `periodIntegral_eq`: `∫ₐ^{a+T} f(y, s) ds = T f̄(y)` for every `a` (periodicity);
@@ -43,75 +49,80 @@ open scoped Interval
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
-/-- Hypotheses on the fast-periodic field `f(x, t)`. -/
-structure PeriodicField (f : E → ℝ → E) (T ℓ M : ℝ) : Prop where
-  hT : 0 < T
-  hℓ : 0 ≤ ℓ
-  cont : Continuous (Function.uncurry f)
-  per : ∀ x t, f x (t + T) = f x t
-  lip : ∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖
-  bound : ∀ x t, ‖f x t‖ ≤ M
-
 /-- The averaged field `f̄(x) = (1/T) ∫₀ᵀ f(x, s) ds`. -/
 def fieldAverage (f : E → ℝ → E) (T : ℝ) (x : E) : E := T⁻¹ • ∫ s in (0 : ℝ)..T, f x s
 
 variable {f : E → ℝ → E} {T ℓ M : ℝ}
 
 omit [NormedSpace ℝ E] [CompleteSpace E] in
-@[powerlib_foundation] theorem PeriodicField.continuous_snd (hf : PeriodicField f T ℓ M) (x : E) :
+@[powerlib_foundation] theorem PeriodicField.continuous_snd
+    (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+      (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) (x : E) :
     Continuous (f x) :=
-  hf.cont.comp (continuous_const.prodMk continuous_id)
+  hf.2.2.1.comp (continuous_const.prodMk continuous_id)
 
 omit [NormedSpace ℝ E] [CompleteSpace E] in
-@[powerlib_foundation] theorem PeriodicField.M_nonneg (hf : PeriodicField f T ℓ M) [Nonempty E] :
+@[powerlib_foundation] theorem PeriodicField.M_nonneg
+    (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+      (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) [Nonempty E] :
     0 ≤ M :=
-  (norm_nonneg _).trans (hf.bound (Classical.arbitrary E) 0)
+  (norm_nonneg _).trans (hf.2.2.2.2.2 (Classical.arbitrary E) 0)
 
 omit [CompleteSpace E] in
 /-- Periodicity: the integral over any period equals `T f̄(y)`. -/
-@[powerlib_foundation] theorem periodIntegral_eq (hf : PeriodicField f T ℓ M) (y : E) (a : ℝ) :
+@[powerlib_foundation] theorem periodIntegral_eq
+    (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+      (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) (y : E) (a : ℝ) :
     ∫ s in a..a + T, f y s = T • fieldAverage f T y := by
-  have hP : Function.Periodic (f y) T := fun t => hf.per y t
+  have hP : Function.Periodic (f y) T := fun t => hf.2.2.2.1 y t
   rw [hP.intervalIntegral_add_eq a 0, zero_add, fieldAverage, smul_smul,
-    mul_inv_cancel₀ hf.hT.ne', one_smul]
+    mul_inv_cancel₀ hf.1.ne', one_smul]
 
 omit [CompleteSpace E] in
-@[powerlib_foundation] theorem norm_fieldAverage_le (hf : PeriodicField f T ℓ M) (x : E) :
+@[powerlib_foundation] theorem norm_fieldAverage_le
+    (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+      (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) (x : E) :
     ‖fieldAverage f T x‖ ≤ M := by
-  rw [fieldAverage, norm_smul, Real.norm_of_nonneg (inv_nonneg.mpr hf.hT.le)]
+  rw [fieldAverage, norm_smul, Real.norm_of_nonneg (inv_nonneg.mpr hf.1.le)]
   have h := norm_integral_le_of_norm_le_const (a := 0) (b := T) (f := f x) (C := M)
-    (fun s _ => hf.bound x s)
-  rw [sub_zero, abs_of_pos hf.hT] at h
+    (fun s _ => hf.2.2.2.2.2 x s)
+  rw [sub_zero, abs_of_pos hf.1] at h
   calc T⁻¹ * ‖∫ s in (0 : ℝ)..T, f x s‖ ≤ T⁻¹ * (M * T) :=
-        mul_le_mul_of_nonneg_left h (inv_nonneg.mpr hf.hT.le)
-    _ = M := by field_simp [hf.hT.ne']
+        mul_le_mul_of_nonneg_left h (inv_nonneg.mpr hf.1.le)
+    _ = M := by field_simp [hf.1.ne']
 
 omit [CompleteSpace E] in
-@[powerlib_foundation] theorem fieldAverage_lipschitz (hf : PeriodicField f T ℓ M) (x y : E) :
+@[powerlib_foundation] theorem fieldAverage_lipschitz
+    (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+      (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) (x y : E) :
     ‖fieldAverage f T x - fieldAverage f T y‖ ≤ ℓ * ‖x - y‖ := by
   rw [fieldAverage, fieldAverage, ← smul_sub,
-    ← integral_sub ((hf.continuous_snd x).intervalIntegrable _ _)
-      ((hf.continuous_snd y).intervalIntegrable _ _),
-    norm_smul, Real.norm_of_nonneg (inv_nonneg.mpr hf.hT.le)]
+    ← integral_sub ((PeriodicField.continuous_snd hf x).intervalIntegrable _ _)
+      ((PeriodicField.continuous_snd hf y).intervalIntegrable _ _),
+    norm_smul, Real.norm_of_nonneg (inv_nonneg.mpr hf.1.le)]
   have h := norm_integral_le_of_norm_le_const (a := 0) (b := T) (f := fun s => f x s - f y s)
-    (C := ℓ * ‖x - y‖) (fun s _ => hf.lip x y s)
-  rw [sub_zero, abs_of_pos hf.hT] at h
+    (C := ℓ * ‖x - y‖) (fun s _ => hf.2.2.2.2.1 x y s)
+  rw [sub_zero, abs_of_pos hf.1] at h
   calc T⁻¹ * ‖∫ s in (0 : ℝ)..T, f x s - f y s‖ ≤ T⁻¹ * (ℓ * ‖x - y‖ * T) :=
-        mul_le_mul_of_nonneg_left h (inv_nonneg.mpr hf.hT.le)
-    _ = ℓ * ‖x - y‖ := by field_simp [hf.hT.ne']
+        mul_le_mul_of_nonneg_left h (inv_nonneg.mpr hf.1.le)
+    _ = ℓ * ‖x - y‖ := by field_simp [hf.1.ne']
 
 omit [CompleteSpace E] in
-@[powerlib_foundation] theorem fieldAverage_continuous (hf : PeriodicField f T ℓ M) :
+@[powerlib_foundation] theorem fieldAverage_continuous
+    (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+      (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) :
     Continuous (fieldAverage f T) := by
   have : LipschitzWith (Real.toNNReal ℓ) (fieldAverage f T) := by
     refine LipschitzWith.of_dist_le_mul fun x y => ?_
-    rw [dist_eq_norm, dist_eq_norm, Real.coe_toNNReal _ hf.hℓ]
+    rw [dist_eq_norm, dist_eq_norm, Real.coe_toNNReal _ hf.2.1]
     exact fieldAverage_lipschitz hf x y
   exact this.continuous
 
 omit [CompleteSpace E] in
 /-- Slow drift of the averaged solution: `‖x̄(s) − x̄(r)‖ ≤ εM(s − r)` for `r ≤ s`. -/
-@[powerlib_foundation] theorem averaged_drift (hf : PeriodicField f T ℓ M) {ε : ℝ} (hε : 0 ≤ ε)
+@[powerlib_foundation] theorem averaged_drift
+    (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+      (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) {ε : ℝ} (hε : 0 ≤ ε)
     {xbar : ℝ → E} (hxbar : ∀ t, HasDerivAt xbar (ε • fieldAverage f T (xbar t)) t) {r s : ℝ}
     (hrs : r ≤ s) : ‖xbar s - xbar r‖ ≤ ε * M * (s - r) := by
   have h := norm_image_sub_le_of_norm_deriv_le_segment' (a := r) (b := s) (f := xbar)
@@ -128,22 +139,28 @@ def oscPart (f : E → ℝ → E) (T : ℝ) (xbar : ℝ → E) (s : ℝ) : E :=
   f (xbar s) s - fieldAverage f T (xbar s)
 
 omit [CompleteSpace E] in
-@[powerlib_foundation] theorem oscPart_continuous (hf : PeriodicField f T ℓ M) {xbar : ℝ → E}
+@[powerlib_foundation] theorem oscPart_continuous
+    (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+      (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) {xbar : ℝ → E}
     (hc : Continuous xbar) : Continuous (oscPart f T xbar) := by
   unfold oscPart
-  exact (hf.cont.comp (hc.prodMk continuous_id)).sub ((fieldAverage_continuous hf).comp hc)
+  exact (hf.2.2.1.comp (hc.prodMk continuous_id)).sub ((fieldAverage_continuous hf).comp hc)
 
 omit [CompleteSpace E] in
-@[powerlib_foundation] theorem norm_oscPart_le (hf : PeriodicField f T ℓ M) (xbar : ℝ → E)
+@[powerlib_foundation] theorem norm_oscPart_le
+    (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+      (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) (xbar : ℝ → E)
     (s : ℝ) : ‖oscPart f T xbar s‖ ≤ 2 * M := by
   unfold oscPart
   calc ‖f (xbar s) s - fieldAverage f T (xbar s)‖
       ≤ ‖f (xbar s) s‖ + ‖fieldAverage f T (xbar s)‖ := norm_sub_le _ _
-    _ ≤ M + M := add_le_add (hf.bound _ _) (norm_fieldAverage_le hf _)
+    _ ≤ M + M := add_le_add (hf.2.2.2.2.2 _ _) (norm_fieldAverage_le hf _)
     _ = 2 * M := by ring
 
 /-- One period: `‖∫ₐ^{a+T} g‖ ≤ 2ℓεMT²`. -/
-@[powerlib_foundation] theorem norm_period_osc_le (hf : PeriodicField f T ℓ M) {ε : ℝ}
+@[powerlib_foundation] theorem norm_period_osc_le
+    (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+      (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) {ε : ℝ}
     (hε : 0 ≤ ε) {xbar : ℝ → E} (hxbar : ∀ t, HasDerivAt xbar (ε • fieldAverage f T (xbar t)) t)
     (a : ℝ) : ‖∫ s in a..a + T, oscPart f T xbar s‖ ≤ 2 * ℓ * ε * M * T ^ 2 := by
   have hc : Continuous xbar := continuous_iff_continuousAt.mpr fun t => (hxbar t).continuousAt
@@ -153,23 +170,25 @@ omit [CompleteSpace E] in
         ∫ s in a..a + T, (f y s - fieldAverage f T y) := by
     rw [← integral_add]
     · congr 1; funext s; abel
-    · exact ((oscPart_continuous hf hc).sub ((hf.continuous_snd y).sub continuous_const))
+    · exact ((oscPart_continuous hf hc).sub
+        ((PeriodicField.continuous_snd hf y).sub continuous_const))
         |>.intervalIntegrable _ _
-    · exact ((hf.continuous_snd y).sub continuous_const).intervalIntegrable _ _
+    · exact ((PeriodicField.continuous_snd hf y).sub continuous_const).intervalIntegrable _ _
   have hzero : ∫ s in a..a + T, (f y s - fieldAverage f T y) = 0 := by
-    rw [integral_sub ((hf.continuous_snd y).intervalIntegrable _ _) intervalIntegrable_const,
+    rw [integral_sub ((PeriodicField.continuous_snd hf y).intervalIntegrable _ _)
+      intervalIntegrable_const,
       periodIntegral_eq hf y a, integral_const, add_sub_cancel_left, sub_self]
   rw [hsplit, hzero, add_zero]
   have hbound : ∀ s ∈ Ι a (a + T),
       ‖oscPart f T xbar s - (f y s - fieldAverage f T y)‖ ≤ 2 * ℓ * ε * M * T := by
     intro s hs
-    rw [uIoc_of_le (by linarith [hf.hT])] at hs
+    rw [uIoc_of_le (by linarith [hf.1])] at hs
     have hdrift : ‖xbar s - y‖ ≤ ε * M * T := by
       have := averaged_drift hf hε hxbar hs.1.le
       calc ‖xbar s - y‖ ≤ ε * M * (s - a) := this
         _ ≤ ε * M * T := by
           apply mul_le_mul_of_nonneg_left (by linarith [hs.2])
-          have hM : 0 ≤ M := (norm_nonneg _).trans (hf.bound y 0)
+          have hM : 0 ≤ M := (norm_nonneg _).trans (hf.2.2.2.2.2 y 0)
           positivity
     unfold oscPart
     calc ‖f (xbar s) s - fieldAverage f T (xbar s) - (f y s - fieldAverage f T y)‖
@@ -178,25 +197,27 @@ omit [CompleteSpace E] in
       _ ≤ ‖f (xbar s) s - f y s‖ + ‖fieldAverage f T (xbar s) - fieldAverage f T y‖ :=
           norm_sub_le _ _
       _ ≤ ℓ * ‖xbar s - y‖ + ℓ * ‖xbar s - y‖ :=
-          add_le_add (hf.lip _ _ _) (fieldAverage_lipschitz hf _ _)
+          add_le_add (hf.2.2.2.2.1 _ _ _) (fieldAverage_lipschitz hf _ _)
       _ ≤ ℓ * (ε * M * T) + ℓ * (ε * M * T) := by
-          gcongr <;> exact hf.hℓ
+          gcongr <;> exact hf.2.1
       _ = 2 * ℓ * ε * M * T := by ring
   have h := norm_integral_le_of_norm_le_const hbound
-  rw [show a + T - a = T by ring, abs_of_pos hf.hT] at h
+  rw [show a + T - a = T by ring, abs_of_pos hf.1] at h
   calc _ ≤ 2 * ℓ * ε * M * T * T := h
     _ = 2 * ℓ * ε * M * T ^ 2 := by ring
 
 /-- Accumulated oscillation: `‖∫₀ᵗ g‖ ≤ 2ℓMLT + 2MT` for `0 ≤ t`, `εt ≤ L`. -/
-@[powerlib_foundation] theorem norm_integral_osc_le (hf : PeriodicField f T ℓ M) {ε L : ℝ}
+@[powerlib_foundation] theorem norm_integral_osc_le
+    (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+      (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) {ε L : ℝ}
     (hε : 0 < ε) {xbar : ℝ → E}
     (hxbar : ∀ t, HasDerivAt xbar (ε • fieldAverage f T (xbar t)) t) {t : ℝ} (ht : 0 ≤ t)
     (htL : ε * t ≤ L) :
     ‖∫ s in (0 : ℝ)..t, oscPart f T xbar s‖ ≤ 2 * ℓ * M * L * T + 2 * M * T := by
   have hc : Continuous xbar := continuous_iff_continuousAt.mpr fun t => (hxbar t).continuousAt
   have hg := oscPart_continuous hf hc
-  have hT := hf.hT
-  have hM : 0 ≤ M := (norm_nonneg _).trans (hf.bound (xbar 0) 0)
+  have hT := hf.1
+  have hM : 0 ≤ M := (norm_nonneg _).trans (hf.2.2.2.2.2 (xbar 0) 0)
   set N := ⌊t / T⌋₊
   have hNT : (N : ℝ) * T ≤ t := by
     have := Nat.floor_le (div_nonneg ht hT.le)
@@ -236,7 +257,7 @@ omit [CompleteSpace E] in
     calc _ ≤ 2 * M * (t - N * T) := this
       _ ≤ 2 * M * T := mul_le_mul_of_nonneg_left hNT' (by positivity)
   have h3 : (N : ℝ) * (2 * ℓ * ε * M * T ^ 2) ≤ 2 * ℓ * M * L * T := by
-    have hℓ := hf.hℓ
+    have hℓ := hf.2.1
     calc (N : ℝ) * (2 * ℓ * ε * M * T ^ 2) = 2 * ℓ * M * T * (ε * (N * T)) := by ring
       _ ≤ 2 * ℓ * M * T * (ε * t) := by
           apply mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hNT hε.le)
@@ -250,7 +271,9 @@ omit [CompleteSpace E] in
 
 /-- **First-order periodic averaging.** With `x(0) = x̄(0)`, for every `t ∈ [0, L/ε]`:
 `‖x(t) − x̄(t)‖ ≤ (2ℓMLT + 2MT) e^{ℓL} ε`. -/
-@[powerlib_foundation] theorem kbm_first_order (hf : PeriodicField f T ℓ M) {ε L : ℝ}
+@[powerlib_foundation] theorem kbm_first_order
+    (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+      (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) {ε L : ℝ}
     (hε : 0 < ε) (hL : 0 ≤ L) {x xbar : ℝ → E}
     (hx : ∀ t, HasDerivAt x (ε • f (x t) t) t)
     (hxbar : ∀ t, HasDerivAt xbar (ε • fieldAverage f T (xbar t)) t) (h0 : x 0 = xbar 0) :
@@ -259,10 +282,10 @@ omit [CompleteSpace E] in
   have hcbar : Continuous xbar := continuous_iff_continuousAt.mpr fun t => (hxbar t).continuousAt
   have hcx : Continuous x := continuous_iff_continuousAt.mpr fun t => (hx t).continuousAt
   have hg := oscPart_continuous hf hcbar
-  have hM : 0 ≤ M := (norm_nonneg _).trans (hf.bound (xbar 0) 0)
-  have hℓ := hf.hℓ
+  have hM : 0 ≤ M := (norm_nonneg _).trans (hf.2.2.2.2.2 (xbar 0) 0)
+  have hℓ := hf.2.1
   set C₁ := 2 * ℓ * M * L * T + 2 * M * T
-  have hC₁ : 0 ≤ C₁ := by have := hf.hT; positivity
+  have hC₁ : 0 ≤ C₁ := by have := hf.1; positivity
   set R : ℝ → E := fun t => ε • ∫ s in (0 : ℝ)..t, oscPart f T xbar s
   have hR : ∀ t, HasDerivAt R (ε • oscPart f T xbar t) t :=
     fun t => (hg.integral_hasStrictDerivAt 0 t).hasDerivAt.const_smul ε
@@ -287,7 +310,7 @@ omit [CompleteSpace E] in
       (fun t _ => (hw t).hasDerivWithinAt) (by simp [hw0])
       (fun t ht => by
         rw [norm_smul, Real.norm_of_nonneg hε.le]
-        have h1 := hf.lip (x t) (xbar t) t
+        have h1 := hf.2.2.2.2.1 (x t) (xbar t) t
         have h2 : ‖x t - xbar t‖ ≤ ‖w t‖ + ‖R t‖ := by
           have : x t - xbar t = w t + R t := by simp [w]
           rw [this]; exact norm_add_le _ _

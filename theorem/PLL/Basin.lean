@@ -7,10 +7,13 @@ Model boundary.
 * System: the nonlinear SRF-PLL of `theorem/PLL/Model.lean` (ideal balanced grid of constant
   amplitude `V` and frequency, PI loop filter, VCO, constant frequency offset; no pre-filter,
   delay, PWM, current loop or saturation), continuous time, autonomous.
-* Conclusions are `Dynamics.RegionOfAttraction f x_eq S` (from every initial state in `S`
-  a forward solution exists and every forward solution converges to `x_eq`), derived with the
-  LaSalle invariance principle of `theorem/Dynamics/Basin.lean` (no global Lipschitz bound is
-  needed). Positive invariance of the estimates is proved, not assumed.
+* Conclusions are region-of-attraction estimates "`S` lies in the region of attraction of
+  `x_eq`", written out as `∀ x₀ ∈ S, (∃ φ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x)
+  (Ici 0)) ∧ ∀ φ, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
+  Tendsto φ atTop (𝓝 x_eq)` (from every initial state in `S` a forward solution exists and every
+  forward solution converges to `x_eq`), derived with the LaSalle invariance principle of
+  `theorem/Dynamics/Basin.lean` (no global Lipschitz bound is needed). Positive invariance of
+  the estimates is proved, not assumed.
 
 Two estimates.
 1. Port-Hamiltonian energy (T-pll-ph): coordinates `(θ, η)`, field `srfField V K_p K_i δω`,
@@ -97,8 +100,12 @@ port-Hamiltonian energy lies in the region of attraction of the locked equilibri
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem srf_regionOfAttraction_hamiltonian {V Kp Ki : ℝ} (hV : 0 < V)
     (hKp : 0 < Kp) (hKi : 0 < Ki) (δω : ℝ) {c : ℝ} (hc : c < 2 * V) :
-    Dynamics.RegionOfAttraction (srfField V Kp Ki δω) (piPLLState 0 (δω / Ki))
-      {x | |x 0| < Real.pi ∧ pllHamiltonian V Ki (δω / Ki) x ≤ c} := by
+    ∀ x₀ ∈ {x : State 2 | |x 0| < Real.pi ∧ pllHamiltonian V Ki (δω / Ki) x ≤ c},
+      (∃ φ : ℝ → State 2, φ 0 = x₀ ∧
+        IsIntegralCurveOn φ (fun _ x => srfField V Kp Ki δω x) (Ici 0)) ∧
+      ∀ φ : ℝ → State 2, φ 0 = x₀ →
+        IsIntegralCurveOn φ (fun _ x => srfField V Kp Ki δω x) (Ici 0) →
+        Tendsto φ atTop (𝓝 (piPLLState 0 (δω / Ki))) := by
   set H := pllHamiltonian V Ki (δω / Ki)
   set W : Set (State 2) := {x | |x 0| < Real.pi}
   have hW : IsOpen W := isOpen_lt (continuous_abs.comp (contDiff_coord 0).continuous)
@@ -177,8 +184,12 @@ the region of attraction of the locked equilibrium.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem srf_regionOfAttraction_hamiltonian_lt {V Kp Ki : ℝ} (hV : 0 < V)
     (hKp : 0 < Kp) (hKi : 0 < Ki) (δω : ℝ) :
-    Dynamics.RegionOfAttraction (srfField V Kp Ki δω) (piPLLState 0 (δω / Ki))
-      {x | |x 0| < Real.pi ∧ pllHamiltonian V Ki (δω / Ki) x < 2 * V} := by
+    ∀ x₀ ∈ {x : State 2 | |x 0| < Real.pi ∧ pllHamiltonian V Ki (δω / Ki) x < 2 * V},
+      (∃ φ : ℝ → State 2, φ 0 = x₀ ∧
+        IsIntegralCurveOn φ (fun _ x => srfField V Kp Ki δω x) (Ici 0)) ∧
+      ∀ φ : ℝ → State 2, φ 0 = x₀ →
+        IsIntegralCurveOn φ (fun _ x => srfField V Kp Ki δω x) (Ici 0) →
+        Tendsto φ atTop (𝓝 (piPLLState 0 (δω / Ki))) := by
   intro x₀ hx₀
   exact srf_regionOfAttraction_hamiltonian hV hKp hKi δω hx₀.2 x₀ ⟨hx₀.1, le_rfl⟩
 
@@ -244,8 +255,12 @@ in the region of attraction of `(0, −Δω/b)`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem xi_regionOfAttraction_pendulum {a b Δω : ℝ} (ha : 0 < a) (hb : 0 < b)
     {c : ℝ} (hc : c < b) :
-    Dynamics.RegionOfAttraction (xiField a b Δω) (piPLLState 0 (-Δω / b))
-      {x | |x 0| < Real.pi / 2 ∧ pendulumEnergy a b Δω x ≤ c} := by
+    ∀ x₀ ∈ {x : State 2 | |x 0| < Real.pi / 2 ∧ pendulumEnergy a b Δω x ≤ c},
+      (∃ φ : ℝ → State 2, φ 0 = x₀ ∧
+        IsIntegralCurveOn φ (fun _ x => xiField a b Δω x) (Ici 0)) ∧
+      ∀ φ : ℝ → State 2, φ 0 = x₀ →
+        IsIntegralCurveOn φ (fun _ x => xiField a b Δω x) (Ici 0) →
+        Tendsto φ atTop (𝓝 (piPLLState 0 (-Δω / b))) := by
   set E := pendulumEnergy a b Δω
   set W : Set (State 2) := {x | |x 0| < Real.pi / 2}
   have hW : IsOpen W := isOpen_lt (continuous_abs.comp (contDiff_coord 0).continuous)
@@ -345,8 +360,12 @@ private theorem xi_regionOfAttraction_pendulum {a b Δω : ℝ} (ha : 0 < a) (hb
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem xi_regionOfAttraction_pendulum_lt {a b Δω : ℝ} (ha : 0 < a)
     (hb : 0 < b) :
-    Dynamics.RegionOfAttraction (xiField a b Δω) (piPLLState 0 (-Δω / b))
-      {x | |x 0| < Real.pi / 2 ∧ pendulumEnergy a b Δω x < b} := by
+    ∀ x₀ ∈ {x : State 2 | |x 0| < Real.pi / 2 ∧ pendulumEnergy a b Δω x < b},
+      (∃ φ : ℝ → State 2, φ 0 = x₀ ∧
+        IsIntegralCurveOn φ (fun _ x => xiField a b Δω x) (Ici 0)) ∧
+      ∀ φ : ℝ → State 2, φ 0 = x₀ →
+        IsIntegralCurveOn φ (fun _ x => xiField a b Δω x) (Ici 0) →
+        Tendsto φ atTop (𝓝 (piPLLState 0 (-Δω / b))) := by
   intro x₀ hx₀
   exact xi_regionOfAttraction_pendulum ha hb hx₀.2 x₀ ⟨hx₀.1, le_rfl⟩
 

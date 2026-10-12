@@ -42,7 +42,11 @@ results (Rules §3): the four former `@[powerlib_foundation]` wrappers (LaSalle,
 Chetaev) are relabeled `@[powerlib_foundation]`, with unchanged statements. The predicates are
 LeanForControl's (`IsPositivelyInvariant`, `IsLocalLyapunovFunction`, `SublevelSet`,
 `LocalAsymptoticStable`, `GlobalAsymptoticStable`, `Unstable`) used directly, replacing the
-former `theorem/Dynamics` aliases; `LocalAsymptoticStable` and `Unstable` are exactly the Flow
+former `theorem/Dynamics` aliases; likewise the ω-limit set of a forward trajectory `φ` is
+LeanForControl's `_root_.omegaLimitTraj φ` (the points `y` such that `φ t` is frequently in every
+neighbourhood of `y` as `t → ∞`; Khalil's positive limit set `L⁺`), written directly in the
+statements (the former alias `Dynamics.omegaLimitTraj` is removed: behaviour is defined only in
+the semantic layer); `LocalAsymptoticStable` and `Unstable` are exactly the Flow
 sentences `.locallyAsymptoticallyStable` and `.unstable`. The upstream Krasovskii conclusion has no
 solution-existence clause; `globallyAsymptoticallyStable_of_lasalle` adds the equilibrium and
 forward completeness (from the global Lipschitz bound, `Flow.forwardComplete_of_lipschitzWith`)
@@ -59,26 +63,26 @@ open Set Filter Topology
 variable {n : ℕ}
 local notation "ℝⁿ" => State n
 
-/-- The ω-limit set of a forward trajectory (upstream `_root_.omegaLimitTraj`). -/
-abbrev omegaLimitTraj := @_root_.omegaLimitTraj
-
 /-- `{x ∈ Ω | fderiv ℝ V x (f x) = 0}` (upstream `_root_.LieDerivZeroSet`). -/
 abbrev LieDerivZeroSet := @_root_.LieDerivZeroSet
 
 @[powerlib_foundation] theorem lieDerivZeroSet_def (f : ℝⁿ → ℝⁿ) (V : ℝⁿ → ℝ) (Ω : Set ℝⁿ) :
     LieDerivZeroSet f V Ω = {x ∈ Ω | fderiv ℝ V x (f x) = 0} := rfl
 
-/-- Upstream: `_root_.mem_omegaLimitTraj_iff`. -/
+/-- Membership in the ω-limit set `_root_.omegaLimitTraj φ` of a forward trajectory `φ`
+(Khalil's positive limit set `L⁺`): `φ` is frequently in every neighbourhood of `y`.
+Upstream: `_root_.mem_omegaLimitTraj_iff`. -/
 @[powerlib_foundation] theorem mem_omegaLimitTraj_iff {φ : ℝ → ℝⁿ} {y : ℝⁿ} :
-    y ∈ omegaLimitTraj φ ↔ ∀ U ∈ 𝓝 y, ∃ᶠ t in atTop, φ t ∈ U :=
+    y ∈ _root_.omegaLimitTraj φ ↔ ∀ U ∈ 𝓝 y, ∃ᶠ t in atTop, φ t ∈ U :=
   _root_.mem_omegaLimitTraj_iff
 
-/-- The ω-limit set is positively invariant (Khalil, Lemma 4.1).
+/-- The ω-limit set `_root_.omegaLimitTraj φ` of a forward trajectory is positively invariant
+(Khalil, Lemma 4.1).
 Upstream: `_root_.isPositivelyInvariant_omegaLimitTraj`. -/
 @[powerlib_foundation] theorem isPositivelyInvariant_omegaLimitTraj
     {f : ℝⁿ → ℝⁿ} {K : NNReal} (hf : LipschitzWith K f)
     {φ : ℝ → ℝⁿ} (hφ : IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) :
-    IsPositivelyInvariant (omegaLimitTraj φ) f :=
+    IsPositivelyInvariant (_root_.omegaLimitTraj φ) f :=
   _root_.isPositivelyInvariant_omegaLimitTraj hf hφ
 
 /-- `V̇` vanishes on the ω-limit set of a trajectory confined to a compact positively
@@ -89,7 +93,7 @@ invariant set where `V̇ ≤ 0`. Upstream: `_root_.lieDeriv_eq_zero_on_omegaLimi
     (hΩ_compact : IsCompact Ω) (hΩ_inv : IsPositivelyInvariant Ω f)
     (hLie : ∀ x ∈ Ω, fderiv ℝ V x (f x) ≤ 0)
     {φ : ℝ → ℝⁿ} (hφ : IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) (hφ0 : φ 0 ∈ Ω) :
-    ∀ y ∈ omegaLimitTraj φ, fderiv ℝ V y (f y) = 0 :=
+    ∀ y ∈ _root_.omegaLimitTraj φ, fderiv ℝ V y (f y) = 0 :=
   _root_.lieDeriv_eq_zero_on_omegaLimitTraj hf_lip hf_c1 hV_c1 hΩ_compact hΩ_inv hLie hφ hφ0
 
 /-- LaSalle's invariance principle (Khalil, Theorem 4.4; positively-invariant variant).

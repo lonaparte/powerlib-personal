@@ -10,10 +10,15 @@ Model boundary.
   rad/s), `M δ̈ + D δ̇ = P_m − (k₁ + k₂ sin(δ − k₃))`, constant `P_m`, generator OUT-positive
   (Kundur) convention, continuous time; no AVR / governor / PLL / limiter / protection delay.
 * Switched dynamics: the fault occurs at `t_f` and is cleared at `t_c ≥ t_f`.  A three-stage
-  trajectory (`IsFaultTrajectory`) is one function `φ : ℝ → State 2` — so the state is
-  continuous at the switching instants (trajectory gluing) — that solves the pre-fault field on
-  `(−∞, t_f]`, the during-fault field on `[t_f, t_c]` and the post-fault field on `[t_c, ∞)`,
-  with one-sided derivatives at the switching instants.
+  trajectory is one function `φ : ℝ → State 2` — so the state is continuous at the switching
+  instants (trajectory gluing) — that solves the pre-fault field on `(−∞, t_f]`, the
+  during-fault field on `[t_f, t_c]` and the post-fault field on `[t_c, ∞)`, with one-sided
+  derivatives at the switching instants.  It is written out in each statement as the
+  conjunction `tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
+  IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
+  IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc)` (the former structure
+  `IsFaultTrajectory` with fields `le`, `onPre`, `onFault`, `onPost` is removed: behaviour is
+  defined only in the semantic layer).
 * Single-stage statements: a post-fault statement starts from the clearing state `(δ_c, ω_c)` at
   the clearing time `t_c`, a during-fault statement from the pre-fault equilibrium `(δ₀, 0)` at
   the fault time `t_f`.  Every statement quantifies over every solution of the relevant stage on
@@ -54,9 +59,9 @@ connection conclusion of `Synchronous.Swing.family` (`Swing.deltaS_mem_den_*`,
 
 Corrections (beyond `theorem/Synchronous/EqualArea.lean`).
 * T-transient-stability §1.5–§1.6 present `t_cc` and the equal-area criterion for the switched
-  system without stating the gluing of the three stages; here the trajectory notion is defined
-  and the criterion is proved for every glued trajectory.  The boundary case
-  `A_acc = A_dec` belongs to the stable ("does not cross `δ_u`") side.
+  system without stating the gluing of the three stages; here the trajectory notion is made
+  explicit (the conjunction above) and the criterion is proved for every glued trajectory.  The
+  boundary case `A_acc = A_dec` belongs to the stable ("does not cross `δ_u`") side.
 
 Source: work-sync theory/T-transient-stability.md §1.1, §1.3–§1.6.
 -/
@@ -375,21 +380,18 @@ end SwingParams
 
 /-! ## The switched model -/
 
-/-- Three-stage (pre-fault / during-fault / post-fault) trajectory with switching instants
-`t_f ≤ t_c`; the stages are glued by continuity of the state (one function `φ`). -/
-structure IsFaultTrajectory (pre fault post : SwingParams) (tf tc : ℝ) (φ : ℝ → State 2) :
-    Prop where
-  le : tf ≤ tc
-  onPre : IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf)
-  onFault : IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc)
-  onPost : IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc)
-
 /-- Existence for the switched model: from a pre-fault equilibrium `x₀` there is a three-stage
-trajectory that rests at `x₀` up to the fault instant.
+(pre-fault / during-fault / post-fault) trajectory with switching instants `t_f ≤ t_c` — one
+function `φ`, so the stages are glued by continuity of the state, solving the pre-fault field on
+`(−∞, t_f]`, the during-fault field on `[t_f, t_c]` and the post-fault field on `[t_c, ∞)` —
+that rests at `x₀` up to the fault instant.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem exists_faultTrajectory (pre fault post : SwingParams) {x₀ : State 2}
     (hx₀ : pre.field x₀ = 0) {tf tc : ℝ} (htc : tf ≤ tc) :
-    ∃ φ, IsFaultTrajectory pre fault post tf tc φ ∧ ∀ t ∈ Iic tf, φ t = x₀ := by
+    ∃ φ : ℝ → State 2, (tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
+        IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
+        IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc)) ∧
+      ∀ t ∈ Iic tf, φ t = x₀ := by
   obtain ⟨φ1, h1₀, h1⟩ := Flow.forwardComplete_of_lipschitzWith fault.lipschitzWith_field tf x₀
   obtain ⟨φ2, h2₀, h2⟩ := Flow.forwardComplete_of_lipschitzWith post.lipschitzWith_field tc
     (φ1 tc)
@@ -429,22 +431,29 @@ private theorem exists_faultTrajectory (pre fault post : SwingParams) {x₀ : St
     rw [e2 ht]
     exact (h2 t ht).congr e2 (e2 ht)
 
-/-- Uniqueness for the switched model: two three-stage trajectories with the same state at the
-fault instant agree at every later time.
+/-- Uniqueness for the switched model: two three-stage trajectories (`tf ≤ tc`, pre-fault field
+on `Iic tf`, during-fault field on `Icc tf tc`, post-fault field on `Ici tc`) with the same state
+at the fault instant agree at every later time.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem faultTrajectory_unique {pre fault post : SwingParams} {tf tc : ℝ}
-    {φ ψ : ℝ → State 2} (hφ : IsFaultTrajectory pre fault post tf tc φ)
-    (hψ : IsFaultTrajectory pre fault post tf tc ψ) (h0 : φ tf = ψ tf) :
+    {φ ψ : ℝ → State 2}
+    (hφ : tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
+        IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
+        IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc))
+    (hψ : tf ≤ tc ∧ IsIntegralCurveOn ψ (fun _ x => pre.field x) (Iic tf) ∧
+        IsIntegralCurveOn ψ (fun _ x => fault.field x) (Icc tf tc) ∧
+        IsIntegralCurveOn ψ (fun _ x => post.field x) (Ici tc))
+    (h0 : φ tf = ψ tf) :
     ∀ t ∈ Ici tf, φ t = ψ t := by
   have hfault : EqOn φ ψ (Icc tf tc) :=
-    eqOn_of_isIntegralCurveOn_Icc (fun _ => fault.lipschitzWith_field) hφ.onFault
-      hψ.onFault h0
-  have hc : φ tc = ψ tc := hfault ⟨hφ.le, le_rfl⟩
+    eqOn_of_isIntegralCurveOn_Icc (fun _ => fault.lipschitzWith_field) hφ.2.2.1
+      hψ.2.2.1 h0
+  have hc : φ tc = ψ tc := hfault ⟨hφ.1, le_rfl⟩
   intro t ht
   rcases le_total t tc with h | h
   · exact hfault ⟨ht, h⟩
   · exact eqOn_of_isIntegralCurveOn_Icc (fun _ => post.lipschitzWith_field)
-      (hφ.onPost.mono Icc_subset_Ici_self) (hψ.onPost.mono Icc_subset_Ici_self) hc ⟨h, le_rfl⟩
+      (hφ.2.2.2.mono Icc_subset_Ici_self) (hψ.2.2.2.mono Icc_subset_Ici_self) hc ⟨h, le_rfl⟩
 
 namespace SwingParams
 
@@ -492,15 +501,18 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem firstSwing_iff_areas {pre fault post : SwingParams}
     (hM : 0 < post.M) (hMeq : fault.M = post.M) (hDf : fault.D = 0) (hDp : post.D = 0)
     (hk : 0 < post.k₂) (h : |post.Pm - post.k₁| < post.k₂) {φ : ℝ → State 2} {tf tc δ₀ : ℝ}
-    (hφ : IsFaultTrajectory pre fault post tf tc φ) (h0 : φ tf = mkState δ₀ 0)
+    (hφ : tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
+        IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
+        IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc))
+    (h0 : φ tf = mkState δ₀ 0)
     (hwell : post.deltaU - 2 * Real.pi < φ tc 0) (hδc : φ tc 0 ≤ post.deltaU)
     (hω : 0 < φ tc 1) :
     (∀ t ∈ Ici tc, φ t 0 ≤ post.deltaU) ↔
       fault.Aacc δ₀ (φ tc 0) ≤ post.Adec (φ tc 0) post.deltaU := by
-  have hE := clearing_energy (hMeq ▸ hM.ne') hDf hφ.onFault hφ.le h0
+  have hE := clearing_energy (hMeq ▸ hM.ne') hDf hφ.2.2.1 hφ.1 h0
   rw [hMeq] at hE
   rw [← hE, SwingParams.Adec]
-  exact post.firstSwing_iff hM hDp hk h hφ.onPost (eq_mkState (φ tc)) hwell hδc hω
+  exact post.firstSwing_iff hM hDp hk h hφ.2.2.2 (eq_mkState (φ tc)) hwell hδc hω
 
 /-- **Critical clearing time of a bolted fault** (`P_e^f ≡ 0`, `D = 0`, `P_m > 0`, same `M` and
 `P_m` in both stages).  Let `δ_cc ∈ [δ₀, δ_u]` be a zero of `g = A_acc − A_dec`, and let the
@@ -511,14 +523,17 @@ private theorem boltedFault_firstSwing_iff {pre fault post : SwingParams}
     (hM : 0 < post.M) (hMeq : fault.M = post.M) (hPm : fault.Pm = post.Pm) (hPm0 : 0 < post.Pm)
     (hDf : fault.D = 0) (hDp : post.D = 0) (hk₁ : fault.k₁ = 0) (hk₂ : fault.k₂ = 0)
     (hk : 0 < post.k₂) (h : |post.Pm - post.k₁| < post.k₂) {φ : ℝ → State 2} {tf tc δ₀ δcc : ℝ}
-    (hφ : IsFaultTrajectory pre fault post tf tc φ) (h0 : φ tf = mkState δ₀ 0) (htc : tf < tc)
+    (hφ : tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
+        IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
+        IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc))
+    (h0 : φ tf = mkState δ₀ 0) (htc : tf < tc)
     (hwell : post.deltaU - 2 * Real.pi < δ₀) (hpos : ∀ x ∈ Ioo δ₀ post.deltaU, 0 < post.Pe x)
     (hcc : δcc ∈ Icc δ₀ post.deltaU) (hg : eacG fault post δ₀ post.deltaU δcc = 0) :
     (∀ t ∈ Ici tc, φ t 0 ≤ post.deltaU) ↔
       tc - tf ≤ Real.sqrt (2 * post.M * (δcc - δ₀) / post.Pm) := by
   have hMf : 0 < fault.M := hMeq ▸ hM
-  obtain ⟨hωc, hδc⟩ := fault.boltedFault_trajectory hMf hDf hk₁ hk₂ hφ.onFault h0 tc
-    ⟨hφ.le, le_rfl⟩
+  obtain ⟨hωc, hδc⟩ := fault.boltedFault_trajectory hMf hDf hk₁ hk₂ hφ.2.2.1 h0 tc
+    ⟨hφ.1, le_rfl⟩
   rw [hMeq, hPm] at hωc hδc
   set τ := tc - tf with hτ
   have hτ0 : 0 < τ := by rw [hτ]; linarith
@@ -570,7 +585,10 @@ private theorem boltedFault_firstSwing_iff_classical {pre fault post : SwingPara
     (hDf : fault.D = 0) (hDp : post.D = 0) (hk₁ : fault.k₁ = 0) (hk₂ : fault.k₂ = 0)
     (hpk₁ : post.k₁ = 0) (hpk₃ : post.k₃ = 0) (hk : 0 < post.k₂) (h : post.Pm < post.k₂)
     {φ : ℝ → State 2} {tf tc δ₀ δcc : ℝ}
-    (hφ : IsFaultTrajectory pre fault post tf tc φ) (h0 : φ tf = mkState δ₀ 0) (htc : tf < tc)
+    (hφ : tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
+        IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
+        IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc))
+    (h0 : φ tf = mkState δ₀ 0) (htc : tf < tc)
     (hδ₀ : 0 ≤ δ₀) (hcc : δcc ∈ Icc δ₀ post.deltaU)
     (hg : eacG fault post δ₀ post.deltaU δcc = 0) :
     (∀ t ∈ Ici tc, φ t 0 ≤ post.deltaU) ↔
