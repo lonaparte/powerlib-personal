@@ -30,6 +30,19 @@ Results.
   `exp(σ K angle)`) decreases at a uniform rate (`hasDerivWithinAt_spiralLyap`, algebra
   `spiral_ineq`), a segment can touch the plane only where `q = 0` (`q_eq_zero_of_touch`) and
   hence only at its end, and segments last `O(‖y(t₀) − x‖)`.
+* `unstable_of_barriers`: instability from seeds arbitrarily close to `x`, each with a trapping
+  region `{σ y_k ≥ σ y₀_k / 2, W₁, W₂, W₃ ≥ 0}` (three `C¹` barriers crossed inwards) in which
+  `σ y_k` does not decrease and a bounded `C¹` function grows at a positive rate; generalizes
+  `unstable_of_cone` (helpers `eventually_pos_of_hasDerivAt`, `exists_lipschitz_bound`).
+* `unstable_of_degenerate_node`: in the setting of `locallyExponentiallyStable_of_spiral`, a double
+  root `h(x)/2 ≠ 0` of `λ² − h(x)λ − g(x)` (`h(x)² + 4g(x) = 0`) with `C¹` coefficients `g, h`
+  makes `x` unstable: on the side `σ = sign h(x)` the shrinking cone
+  `q ≥ (|h(x)|/2 − √w) w` (`w = σ y_k`), cut down to a horn `‖y − x‖ ≤ (K + 1) w`, is entered by the
+  field because its margin `√w` dominates the `O(w)` variation of `g, h`.
+* `not_locallyExponentiallyStable_of_nilpotent`: if `g(x) = h(x) = 0` (`C¹`), `∂_k q = h`, and the
+  field off the `k`-th coordinate does not vanish at `x`, the local exponential estimate fails:
+  under it the solution from `x + s³ e_k` stays `O(s³)`-close, so `q = O(s⁵)` and the solution
+  lives for a time `≍ s³`, during which the drift carries it beyond the estimate.
 * `localAsymptoticStable_of_eqOn_ball`: local asymptotic stability depends only on the field on a
   ball (first-exit argument), complementing the ball-locality lemmas of
   `theorem/GFL/ModelBStability.lean`.
@@ -1449,5 +1462,768 @@ most at its end, after a time `O(‖y(t₀) − x‖)`, and stays within `O(‖y
         have h7 : C1 * δ * (2 * Real.exp (-1 * (t - t₀))) =
             2 * C1 * Real.exp (-1 * (t - t₀)) * δ := by ring
         linarith
+
+/-! ## Degenerate points of the plane: barriers, degenerate node, nilpotent drift -/
+
+/-- A function vanishing at `0` with positive derivative there is positive just to the right. -/
+@[powerlib_foundation] theorem eventually_pos_of_hasDerivAt {ψ : ℝ → ℝ} {d : ℝ} (hd : HasDerivAt ψ d 0)
+    (h0 : ψ 0 = 0) (hpos : 0 < d) : ∀ᶠ t in 𝓝[>] (0 : ℝ), 0 < ψ t := by
+  rw [hasDerivAt_iff_tendsto_slope] at hd
+  have h1 : Tendsto (slope ψ 0) (𝓝[>] 0) (𝓝 d) :=
+    hd.mono_left (nhdsWithin_mono _ fun t ht => ne_of_gt ht)
+  filter_upwards [h1.eventually (lt_mem_nhds hpos), self_mem_nhdsWithin] with t ht ht0
+  rw [slope_def_field, h0, sub_zero, sub_zero] at ht
+  exact (div_pos_iff_of_pos_right ht0).mp ht
+
+/-- **Instability from a trapping region with three barriers.** Let the field agree near `x` on
+every half ball `{σ y_k ≥ s}` (`s > 0`) with a `C¹` field. Suppose that arbitrarily close to `x` there are seeds `y₀` with `σ y₀_k > 0` and a
+region `{σ y_k ≥ σ y₀_k / 2, W₁, W₂, W₃ ≥ 0}` (three `C¹` barriers, positive at `y₀`) near `x`
+in which `σ y_k` does not decrease, a `C¹` function `V`, bounded near `x`, grows at a rate
+`μ > 0`, and the field crosses each barrier `W_i = 0` inwards. Then `x` is unstable. -/
+@[powerlib_foundation] theorem unstable_of_barriers {f : State n → State n} {x : State n} (k : Fin n) {σ : ℝ}
+    {ρ : ℝ} (hρ : 0 < ρ)
+    (hext : ∀ s > 0, ∃ g : State n → State n, ContDiff ℝ 1 g ∧
+      ∀ y : State n, ‖y - x‖ < ρ → s ≤ σ * y k → g y = f y)
+    (hseed : ∀ δ > 0, ∃ y₀ : State n, ‖y₀ - x‖ < δ ∧ 0 < σ * y₀ k ∧
+      ∃ (W₁ W₂ W₃ V : State n → ℝ) (μ b : ℝ), 0 < μ ∧ ContDiff ℝ 1 W₁ ∧ ContDiff ℝ 1 W₂ ∧
+        ContDiff ℝ 1 W₃ ∧ ContDiff ℝ 1 V ∧ 0 < W₁ y₀ ∧ 0 < W₂ y₀ ∧ 0 < W₃ y₀ ∧
+        (∀ y : State n, ‖y - x‖ < ρ → V y ≤ b) ∧
+        ∀ y : State n, ‖y - x‖ < ρ → σ * y₀ k / 2 ≤ σ * y k → 0 ≤ W₁ y → 0 ≤ W₂ y →
+          0 ≤ W₃ y → 0 ≤ σ * f y k ∧ μ ≤ fderiv ℝ V y (f y) ∧
+          (W₁ y = 0 → 0 < fderiv ℝ W₁ y (f y)) ∧ (W₂ y = 0 → 0 < fderiv ℝ W₂ y (f y)) ∧
+          (W₃ y = 0 → 0 < fderiv ℝ W₃ y (f y))) :
+    Unstable f x := by
+  intro hLS
+  obtain ⟨δ, hδ, hb⟩ := hLS (ρ / 2) (by positivity)
+  obtain ⟨y₀, hy₀x, hs₀0, W₁, W₂, W₃, V, μ, b, hμ, hW₁, hW₂, hW₃, hV, h1₀, h2₀, h3₀, hVb,
+    hreg⟩ := hseed (min δ (ρ / 2)) (lt_min hδ (by positivity))
+  obtain ⟨s₀, hs₀⟩ : ∃ s, s = σ * y₀ k := ⟨_, rfl⟩
+  rw [← hs₀] at hs₀0 hreg
+  obtain ⟨g, hg, hgf⟩ := hext (s₀ / 2) (by positivity)
+  obtain ⟨G, hG, ⟨K, hGlip⟩, hGg⟩ := exists_contDiff_lipschitz_extension hg (‖x‖ + ρ)
+  obtain ⟨ψ, hψ0, hψ⟩ := Flow.forwardComplete_of_lipschitzWith hGlip 0 y₀
+  have hGf : ∀ y : State n, ‖y - x‖ < ρ → s₀ / 2 ≤ σ * y k → G y = f y := by
+    intro y hy hyk
+    rw [hGg y (by
+      have := norm_le_norm_add_norm_sub' y x
+      linarith)]
+    exact hgf y hy hyk
+  obtain ⟨Φ, hΦ⟩ : ∃ Φ : State n → ℝ, Φ = fun y => max (max (max (‖y - x‖ - ρ / 2)
+      (s₀ / 2 - σ * y k)) (-W₁ y)) (max (-W₂ y) (-W₃ y)) := ⟨_, rfl⟩
+  have hΦc : Continuous Φ := by
+    rw [hΦ]
+    exact ((((continuous_norm.comp (continuous_sub_right x)).sub continuous_const).max
+      (continuous_const.sub (continuous_const.mul
+        ((EuclideanSpace.proj k : State n →L[ℝ] ℝ).continuous)))).max hW₁.continuous.neg).max
+      (hW₂.continuous.neg.max hW₃.continuous.neg)
+  have hregion : ∀ y : State n, Φ y ≤ 0 → ‖y - x‖ < ρ ∧ s₀ / 2 ≤ σ * y k ∧ 0 ≤ W₁ y ∧
+      0 ≤ W₂ y ∧ 0 ≤ W₃ y := by
+    intro y hy
+    simp only [hΦ, max_le_iff, sub_nonpos, neg_nonpos] at hy
+    exact ⟨by linarith [hy.1.1.1], hy.1.1.2, hy.1.2, hy.2.1, hy.2.2⟩
+  -- along a stretch in the region: a solution of `f`, `σ y_k ≥ s₀`, `V` grows at rate `μ`
+  have hgrow : ∀ T, 0 ≤ T → (∀ u ∈ Icc 0 T, Φ (ψ u) ≤ 0) →
+      IsTrajectoryOn ψ f 0 T ∧ (∀ u ∈ Icc 0 T, s₀ ≤ σ * ψ u k) ∧
+        ∀ u ∈ Icc 0 T, V y₀ + μ * u ≤ V (ψ u) := by
+    intro T hT hin
+    have hseg : IsTrajectoryOn ψ f 0 T :=
+      isIntegralCurveOn_of_eq_on_curve (hψ.mono Icc_subset_Ici_self)
+        (fun u hu => hGf _ (hregion _ (hin u hu)).1 (hregion _ (hin u hu)).2.1)
+    have hR : ∀ u ∈ Icc 0 T, _ := fun u hu => by
+      obtain ⟨r1, r2, r3, r4, r5⟩ := hregion _ (hin u hu)
+      exact hreg _ r1 r2 r3 r4 r5
+    refine ⟨hseg, ?_, ?_⟩
+    · intro u hu
+      have hdk : ∀ t ∈ Icc 0 T, HasDerivWithinAt (fun t => σ * ψ t k) (σ * f (ψ t) k)
+          (Icc 0 T) t :=
+        fun t ht => ((EuclideanSpace.proj k : State n →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt
+          t (hseg t ht)).const_mul σ
+      have := sub_ge_of_deriv_ge (m := 0) hu.1 le_rfl hu.2 hdk
+        (fun s hs => (hR s ⟨hs.1.le, hs.2.le.trans hu.2⟩).1)
+      simp only [zero_mul, hψ0] at this
+      linarith
+    · intro u hu
+      have hdV : ∀ t ∈ Icc 0 T, HasDerivWithinAt (fun t => V (ψ t)) (fderiv ℝ V (ψ t) (f (ψ t)))
+          (Icc 0 T) t :=
+        fun t ht => ((hV.differentiable one_ne_zero) (ψ t)).hasFDerivAt.comp_hasDerivWithinAt t
+          (hseg t ht)
+      have := sub_ge_of_deriv_ge (m := μ) hu.1 le_rfl hu.2 hdV
+        (fun s hs => (hR s ⟨hs.1.le, hs.2.le.trans hu.2⟩).2.1)
+      simp only [sub_zero, hψ0] at this
+      linarith
+  -- a barrier positive at the seed stays positive while the solution is in the region
+  have hbar : ∀ W : State n → ℝ, ContDiff ℝ 1 W → 0 < W y₀ →
+      (∀ y : State n, ‖y - x‖ < ρ → s₀ / 2 ≤ σ * y k → 0 ≤ W₁ y → 0 ≤ W₂ y → 0 ≤ W₃ y →
+        W y = 0 → 0 < fderiv ℝ W y (f y)) →
+      ∀ t, 0 ≤ t → (∀ u ∈ Icc 0 t, Φ (ψ u) ≤ 0) → (∀ u ∈ Icc 0 t, 0 ≤ W (ψ u)) →
+        0 < W (ψ t) := by
+    intro W hW hW0 hWb t ht hin hWin
+    by_contra hW3
+    push Not at hW3
+    have hWt : W (ψ t) = 0 := le_antisymm hW3 (hWin t ⟨ht, le_rfl⟩)
+    have htpos : 0 < t := by
+      rcases eq_or_lt_of_le ht with h | h
+      · rw [← h, hψ0] at hWt; linarith
+      · exact h
+    obtain ⟨hseg, -, -⟩ := hgrow t ht hin
+    have hd : HasDerivWithinAt (fun u => W (ψ u)) (fderiv ℝ W (ψ t) (f (ψ t))) (Icc 0 t) t :=
+      ((hW.differentiable one_ne_zero) (ψ t)).hasFDerivAt.comp_hasDerivWithinAt t
+        (hseg t ⟨ht, le_rfl⟩)
+    have hle := deriv_nonpos_of_isMinOn_right htpos hd (fun u hu => by
+      rw [hWt]; exact hWin u hu)
+    obtain ⟨r1, r2, r3, r4, r5⟩ := hregion _ (hin t ⟨ht, le_rfl⟩)
+    linarith [hWb _ r1 r2 r3 r4 r5 hWt]
+  have hstay : ∀ T, 0 ≤ T → ∀ u ∈ Icc 0 T, Φ (ψ u) < 0 := by
+    intro T hT
+    refine forall_lt_of_first_exit hΦc (hψ.continuousOn.mono Icc_subset_Ici_self) ?_ ?_
+    · simp only [hΦ, hψ0, max_lt_iff]
+      refine ⟨⟨⟨by linarith [hy₀x.trans_le (min_le_right _ _)], by linarith⟩, by linarith⟩,
+        by linarith, by linarith⟩
+    · intro t ht hin
+      obtain ⟨hseg, hsk, -⟩ := hgrow t ht.1 hin
+      have h1 : ‖ψ t - x‖ < ρ / 2 :=
+        hb 0 t ψ hseg (by rw [hψ0]; exact hy₀x.trans_le (min_le_left _ _)) t ⟨ht.1, le_rfl⟩
+      have h2 : s₀ ≤ σ * ψ t k := hsk t ⟨ht.1, le_rfl⟩
+      have hWin : ∀ u ∈ Icc 0 t, 0 ≤ W₁ (ψ u) ∧ 0 ≤ W₂ (ψ u) ∧ 0 ≤ W₃ (ψ u) :=
+        fun u hu => (hregion _ (hin u hu)).2.2
+      have h3 := hbar W₁ hW₁ h1₀ (fun y r1 r2 r3 r4 r5 => (hreg y r1 r2 r3 r4 r5).2.2.1) t ht.1
+        hin (fun u hu => (hWin u hu).1)
+      have h4 := hbar W₂ hW₂ h2₀ (fun y r1 r2 r3 r4 r5 => (hreg y r1 r2 r3 r4 r5).2.2.2.1) t
+        ht.1 hin (fun u hu => (hWin u hu).2.1)
+      have h5 := hbar W₃ hW₃ h3₀ (fun y r1 r2 r3 r4 r5 => (hreg y r1 r2 r3 r4 r5).2.2.2.2) t
+        ht.1 hin (fun u hu => (hWin u hu).2.2)
+      simp only [hΦ, max_lt_iff]
+      exact ⟨⟨⟨by linarith, by linarith⟩, by linarith⟩, by linarith, by linarith⟩
+  -- but `V` is bounded near `x`
+  have hVy₀ : V y₀ ≤ b := hVb y₀ (by linarith [hy₀x.trans_le (min_le_right _ _)])
+  obtain ⟨T, hT⟩ : ∃ T, T = (b - V y₀) / μ + 1 := ⟨_, rfl⟩
+  have hT0 : 0 ≤ T := by rw [hT]; have := div_nonneg (sub_nonneg.mpr hVy₀) hμ.le; linarith
+  obtain ⟨-, -, hVg⟩ := hgrow T hT0 (fun u hu => (hstay T hT0 u hu).le)
+  have hfin := hregion _ (hstay T hT0 T ⟨hT0, le_rfl⟩).le
+  have h1 := hVg T ⟨hT0, le_rfl⟩
+  have h2 := hVb _ hfin.1
+  have h3 : μ * T = b - V y₀ + μ := by rw [hT]; field_simp
+  linarith
+
+
+/-- A `C¹` real function is Lipschitz at a point on a ball. -/
+@[powerlib_foundation] theorem exists_lipschitz_bound {g : State n → ℝ} (hg : ContDiff ℝ 1 g) (x : State n) :
+    ∃ L ρ : ℝ, 0 ≤ L ∧ 0 < ρ ∧ ∀ y : State n, ‖y - x‖ < ρ → |g y - g x| ≤ L * ‖y - x‖ := by
+  obtain ⟨K, t, ht, hK⟩ := hg.contDiffAt.exists_lipschitzOnWith
+  obtain ⟨ρ, hρ, hball⟩ := Metric.mem_nhds_iff.mp ht
+  refine ⟨K, ρ, K.2, hρ, fun y hy => ?_⟩
+  have := hK.dist_le_mul y (hball (by rwa [Metric.mem_ball, dist_eq_norm]))
+    x (hball (Metric.mem_ball_self hρ))
+  rwa [Real.dist_eq, dist_eq_norm] at this
+
+
+set_option maxHeartbeats 1000000 in
+/-- **Instability at a degenerate node of the plane.** Let `x` lie on the plane `y_k = 0` and
+suppose that near `x`, off the plane, `y_k f_k = q` and `dq/dt = g + h q / y_k` with `C¹`
+functions `q, g, h`, `q(x) = 0`, `∂_k q(x) = h(x)`, the remaining components of the field
+continuous at `x`, and the field equal on every half ball `{σ y_k ≥ s}` to a `C¹` field. If the
+quadratic `λ² − h(x) λ − g(x)` has a double root `h(x)/2 ≠ 0` (`h(x)² + 4 g(x) = 0`), then `x` is
+unstable: on the side `σ = sign h(x)`, with `w = σ y_k` and `λ = |h(x)|/2`, the horn
+`{q ≥ (λ − √w) w, ‖y − x‖² ≤ (K² + 1) y_k²}` is entered by the field (the margin `√w` of the
+shrinking cone dominates the Lipschitz variation `O(w)` of `g, h`), and in it `w' ≥ λ / 2`. -/
+@[powerlib_foundation] theorem unstable_of_degenerate_node {f : State n → State n} {x : State n} (k : Fin n)
+    (hxk : x k = 0) {q g h : State n → ℝ} (hq : ContDiff ℝ 1 q) (hq0 : q x = 0)
+    (hg : ContDiff ℝ 1 g) (hh : ContDiff ℝ 1 h) {ρ : ℝ} (hρ : 0 < ρ)
+    (hrel : ∀ y : State n, ‖y - x‖ < ρ → y k ≠ 0 → y k * f y k = q y)
+    (hlie : ∀ y : State n, ‖y - x‖ < ρ → y k ≠ 0 →
+      fderiv ℝ q y (f y) = g y + h y * (q y / y k))
+    (hqk : fderiv ℝ q x (EuclideanSpace.single k 1) = h x)
+    (hD : h x ^ 2 + 4 * g x = 0) (hh0 : h x ≠ 0)
+    (hF : ContinuousAt (fun y => f y - f y k • EuclideanSpace.single k (1 : ℝ)) x)
+    (hext : ∀ σ : ℝ, (σ = 1 ∨ σ = -1) → ∀ s > 0, ∃ G : State n → State n, ContDiff ℝ 1 G ∧
+      ∀ y : State n, ‖y - x‖ < ρ → s ≤ σ * y k → G y = f y) :
+    Unstable f x := by
+  obtain ⟨σ, hσ, hσh⟩ : ∃ σ : ℝ, (σ = 1 ∨ σ = -1) ∧ σ * h x = |h x| := by
+    by_cases h0 : 0 ≤ h x
+    · exact ⟨1, Or.inl rfl, by rw [one_mul, abs_of_nonneg h0]⟩
+    · exact ⟨-1, Or.inr rfl, by rw [abs_of_neg (not_le.mp h0)]; ring⟩
+  have hσ2 : σ * σ = 1 := by rcases hσ with h | h <;> rw [h] <;> norm_num
+  have hσa : |σ| = 1 := by rcases hσ with h | h <;> rw [h] <;> norm_num
+  obtain ⟨l, hl⟩ : ∃ l, l = |h x| / 2 := ⟨_, rfl⟩
+  have hl0 : 0 < l := by rw [hl]; have := abs_pos.mpr hh0; linarith
+  have hσh' : σ * h x = 2 * l := by rw [hσh, hl]; ring
+  have hgx : g x = -l ^ 2 := by
+    have h1 : h x ^ 2 = |h x| ^ 2 := (sq_abs _).symm
+    have h2 : |h x| = 2 * l := by rw [hl]; ring
+    rw [h2] at h1
+    linarith
+  obtain ⟨Lg, ρg, hLg, hρg, hgL⟩ := exists_lipschitz_bound hg x
+  obtain ⟨Lh, ρh, hLh, hρh, hhL⟩ := exists_lipschitz_bound hh x
+  obtain ⟨ρF, hρF, hFb⟩ := Metric.continuousAt_iff.mp hF 1 one_pos
+  set e : State n := EuclideanSpace.single k (1 : ℝ) with he
+  obtain ⟨M, hM⟩ : ∃ M, M = ‖f x - f x k • e‖ + 1 := ⟨_, rfl⟩
+  have hM0 : 0 ≤ M := by rw [hM]; positivity
+  have hFM : ∀ y : State n, ‖y - x‖ < ρF → ‖f y - f y k • e‖ ≤ M := by
+    intro y hy
+    have h1 := hFb (by rwa [dist_eq_norm])
+    rw [dist_eq_norm] at h1
+    have h2 := norm_le_norm_add_norm_sub' (f y - f y k • e) (f x - f x k • e)
+    rw [hM]
+    have h3 : ‖f x - f x k • e - (f y - f y k • e)‖ = ‖f y - f y k • e - (f x - f x k • e)‖ :=
+      norm_sub_rev _ _
+    linarith
+  obtain ⟨L, hL⟩ : ∃ L, L = Lg + Lh := ⟨_, rfl⟩
+  have hL0 : 0 ≤ L := by rw [hL]; positivity
+  obtain ⟨K, hK⟩ : ∃ K, K = 4 * (M + 1) / l + 1 := ⟨_, rfl⟩
+  have hK1 : 1 ≤ K := by
+    have : 0 ≤ 4 * (M + 1) / l := by positivity
+    rw [hK]; linarith
+  have hKl : K * l = 4 * (M + 1) + l := by rw [hK]; field_simp
+  obtain ⟨S, hS⟩ : ∃ S, S = 3 / 2 + L * (1 + l) * (1 + K) := ⟨_, rfl⟩
+  have hS1 : 3 / 2 ≤ S := by
+    have : 0 ≤ L * (1 + l) * (1 + K) := by positivity
+    rw [hS]; linarith
+  obtain ⟨c, hc⟩ : ∃ c, c = l / 2 / S := ⟨_, rfl⟩
+  have hc0 : 0 < c := by
+    have : 0 < S := by linarith
+    rw [hc]; positivity
+  have hcS : c * S = l / 2 := by rw [hc]; field_simp
+  have hcl : c ≤ l / 2 := by
+    have : c * (3 / 2) ≤ c * S := mul_le_mul_of_nonneg_left hS1 hc0.le
+    linarith
+  obtain ⟨r, hr⟩ : ∃ r, r = min (min ρ ρg) (min ρh (min ρF (c ^ 2))) := ⟨_, rfl⟩
+  have hr0 : 0 < r := by rw [hr]; positivity
+  have hrρ : r ≤ ρ := by rw [hr]; exact (min_le_left _ _).trans (min_le_left _ _)
+  have hrg : r ≤ ρg := by rw [hr]; exact (min_le_left _ _).trans (min_le_right _ _)
+  have hrh : r ≤ ρh := by rw [hr]; exact (min_le_right _ _).trans (min_le_left _ _)
+  have hrF : r ≤ ρF := by
+    rw [hr]; exact (min_le_right _ _).trans ((min_le_right _ _).trans (min_le_left _ _))
+  have hrc : r ≤ c ^ 2 := by
+    rw [hr]; exact (min_le_right _ _).trans ((min_le_right _ _).trans (min_le_right _ _))
+  have hqd : Differentiable ℝ q := hq.differentiable one_ne_zero
+  -- the coordinate `σ y_k` and its derivative
+  have hk : ∀ y : State n, HasFDerivAt (fun y : State n => σ * y k)
+      (σ • (EuclideanSpace.proj k : State n →L[ℝ] ℝ)) y :=
+    fun y => (EuclideanSpace.proj k : State n →L[ℝ] ℝ).hasFDerivAt.const_mul σ
+  have hkc : ContDiff ℝ 1 (fun y : State n => σ * y k) :=
+    contDiff_const.mul (EuclideanSpace.proj k : State n →L[ℝ] ℝ).contDiff
+  -- the barriers
+  obtain ⟨W₁, hW₁⟩ : ∃ W : State n → ℝ,
+      W = fun y => q y - l * (σ * y k) + (σ * y k) ^ (3 / 2 : ℝ) := ⟨_, rfl⟩
+  obtain ⟨W₂, hW₂⟩ : ∃ W : State n → ℝ,
+      W = fun y => (K ^ 2 + 1) * (y k) ^ 2 - ‖y - x‖ ^ 2 := ⟨_, rfl⟩
+  have hW₁c : ContDiff ℝ 1 W₁ := by
+    rw [hW₁]
+    exact (hq.sub (contDiff_const.mul hkc)).add
+      ((Real.contDiff_rpow_const_of_le (by norm_num)).comp hkc)
+  have hW₂c : ContDiff ℝ 1 W₂ := by
+    rw [hW₂]
+    exact (contDiff_const.mul
+      ((EuclideanSpace.proj k : State n →L[ℝ] ℝ).contDiff.pow 2)).sub
+      ((contDiff_id.sub contDiff_const).norm_sq ℝ)
+  refine unstable_of_barriers k (σ := σ) hr0 ?_ ?_
+  · intro s hs
+    obtain ⟨G, hG, hGf⟩ := hext σ hσ s hs
+    exact ⟨G, hG, fun y hy hys => hGf y (lt_of_lt_of_le hy hrρ) hys⟩
+  intro δ hδ
+  -- a seed on the line `x + t σ e_k`
+  have hline : HasDerivAt (fun t : ℝ => q (x + (t * σ) • e) - l * t) (σ * h x - l) 0 := by
+    have hl' : HasDerivAt (fun t : ℝ => x + (t * σ) • e) (σ • e) 0 := by
+      have := (((hasDerivAt_id (0 : ℝ)).mul_const σ).smul_const e).const_add x
+      simpa using this
+    have h1 := (hqd (x + ((0 : ℝ) * σ) • e)).hasFDerivAt.comp_hasDerivAt (0 : ℝ) hl'
+    simp only [zero_mul, zero_smul, add_zero] at h1
+    have h2 := h1.sub ((hasDerivAt_id (0 : ℝ)).const_mul l)
+    refine HasDerivAt.congr_deriv (f := fun t : ℝ => q (x + (t * σ) • e) - l * t) h2 ?_
+    rw [map_smul, hqk, smul_eq_mul, mul_one]
+  have hev := eventually_pos_of_hasDerivAt hline (by simp [hq0]) (by rw [hσh']; linarith)
+  obtain ⟨t, ht, htδ⟩ := (hev.and (Ioo_mem_nhdsGT hδ)).exists
+  have ht0 : 0 < t := htδ.1
+  obtain ⟨y₀, hy₀⟩ : ∃ y₀ : State n, y₀ = x + (t * σ) • e := ⟨_, rfl⟩
+  have hy₀x : ‖y₀ - x‖ = t := by
+    rw [hy₀, add_sub_cancel_left, norm_smul, he, PiLp.norm_single, norm_one, mul_one,
+      Real.norm_eq_abs, abs_mul, hσa, mul_one, abs_of_pos ht0]
+  have hy₀k : y₀ k = t * σ := by
+    rw [hy₀, he]; simp [hxk]
+  have hσy₀ : σ * y₀ k = t := by rw [hy₀k]; linear_combination t * hσ2
+  refine ⟨y₀, by rw [hy₀x]; exact htδ.2, by rw [hσy₀]; exact ht0, W₁, W₂, fun _ => 1,
+    fun y => σ * y k, l / 2, r, by positivity, hW₁c, hW₂c, contDiff_const, hkc, ?_, ?_,
+    one_pos, ?_, ?_⟩
+  · rw [hW₁]
+    simp only
+    rw [hσy₀]
+    have h1 : 0 ≤ t ^ (3 / 2 : ℝ) := Real.rpow_nonneg ht0.le _
+    have h2 : 0 < q y₀ - l * t := by rw [hy₀]; exact ht
+    linarith
+  · rw [hW₂]
+    simp only
+    rw [hy₀x, hy₀k]
+    have : 0 < K ^ 2 * t ^ 2 := by positivity
+    linear_combination this - (K ^ 2 + 1) * t ^ 2 * hσ2
+  · intro y hy
+    have h1 : |y k| ≤ ‖y - x‖ := by
+      have := PiLp.norm_apply_le (y - x) k
+      simpa [hxk] using this
+    have h2 : σ * y k ≤ |y k| := by
+      calc σ * y k ≤ |σ * y k| := le_abs_self _
+        _ = |y k| := by rw [abs_mul, hσa, one_mul]
+    linarith
+  intro y hy hyk h1 h2 _
+  have hyρ : ‖y - x‖ < ρ := lt_of_lt_of_le hy hrρ
+  obtain ⟨w, hw⟩ : ∃ w, w = σ * y k := ⟨_, rfl⟩
+  rw [hσy₀, ← hw] at hyk
+  have hw0 : 0 < w := by linarith
+  have hyk' : y k = σ * w := by rw [hw]; linear_combination (-(y k)) * hσ2
+  have hyk0 : y k ≠ 0 := by
+    rw [hyk']; exact mul_ne_zero (by rcases hσ with h | h <;> rw [h] <;> norm_num) hw0.ne'
+  have hwN : w ≤ ‖y - x‖ := by
+    have h3 := PiLp.norm_apply_le (y - x) k
+    simp only [PiLp.sub_apply, hxk, sub_zero, Real.norm_eq_abs] at h3
+    have h4 : |y k| = w := by rw [hyk', abs_mul, hσa, one_mul, abs_of_pos hw0]
+    linarith
+  obtain ⟨s, hs⟩ : ∃ s, s = w ^ (1 / 2 : ℝ) := ⟨_, rfl⟩
+  have hs0 : 0 < s := by rw [hs]; exact Real.rpow_pos_of_pos hw0 _
+  have hss : s * s = w := by
+    rw [hs, ← Real.rpow_add hw0]; norm_num
+  have h32 : w ^ (3 / 2 : ℝ) = w * s := by
+    rw [hs, show (3 / 2 : ℝ) = 1 + 1 / 2 by norm_num, Real.rpow_add hw0, Real.rpow_one]
+  have hsc : s < c := by nlinarith
+  have hN : ‖y - x‖ ≤ (K + 1) * w := by
+    rw [hW₂] at h2
+    simp only at h2
+    rw [hyk'] at h2
+    by_contra hcon
+    push Not at hcon
+    have h3 : ((K + 1) * w) ^ 2 < ‖y - x‖ ^ 2 :=
+      pow_lt_pow_left₀ hcon (by positivity) two_ne_zero
+    nlinarith
+  have hq1 : l * w - w * s ≤ q y := by
+    rw [hW₁] at h1
+    simp only at h1
+    rw [← hw, h32] at h1
+    linarith
+  have ha : w * (σ * f y k) = q y := by
+    rw [← hrel y hyρ hyk0, hyk']; ring
+  have hal : l / 2 ≤ σ * f y k := by
+    by_contra hcon
+    push Not at hcon
+    have : w * (σ * f y k) < w * (l / 2) := mul_lt_mul_of_pos_left hcon hw0
+    nlinarith
+  refine ⟨by linarith, ?_, ?_, ?_, fun h0 => absurd h0 one_ne_zero⟩
+  · rw [(hk y).fderiv]
+    simpa using hal
+  · intro hW0
+    have hW₁d : HasFDerivAt W₁ (fderiv ℝ q y - l • σ • (EuclideanSpace.proj k : State n →L[ℝ] ℝ)
+        + ((3 / 2) * (σ * y k) ^ ((3 / 2 : ℝ) - 1)) •
+          σ • (EuclideanSpace.proj k : State n →L[ℝ] ℝ)) y := by
+      rw [hW₁]
+      exact ((hqd y).hasFDerivAt.sub ((hk y).const_mul l)).add
+        ((Real.hasDerivAt_rpow_const (Or.inr (by norm_num))).comp_hasFDerivAt y (hk y))
+    rw [hW₁d.fderiv]
+    simp only [_root_.add_apply, _root_.sub_apply, _root_.smul_apply, smul_eq_mul,
+      PiLp.proj_apply]
+    rw [hlie y hyρ hyk0, ← hw, show (3 / 2 : ℝ) - 1 = 1 / 2 by norm_num, ← hs]
+    have hqW : q y = l * w - w * s := by
+      rw [hW₁] at hW0
+      simp only at hW0
+      rw [← hw, h32] at hW0
+      linarith
+    obtain ⟨a, ha'⟩ : ∃ a, a = σ * f y k := ⟨_, rfl⟩
+    rw [← ha'] at ha hal ⊢
+    have haval : a = l - s := by
+      have h3 : w * a = w * (l - s) := by rw [ha, hqW]; ring
+      exact mul_left_cancel₀ hw0.ne' h3
+    have hqf : q y / y k = σ * a := by
+      rw [← hrel y hyρ hyk0, ha']
+      field_simp
+      linear_combination (-(f y k)) * hσ2
+    rw [hqf]
+    obtain ⟨N, hNdef⟩ : ∃ N, N = ‖y - x‖ := ⟨_, rfl⟩
+    rw [← hNdef] at hN
+    have hgy : -l ^ 2 - Lg * N ≤ g y := by
+      have h3 := (abs_le.mp (hgL y (lt_of_lt_of_le hy hrg))).1
+      rw [hgx, ← hNdef] at h3
+      linarith
+    have hhy : 2 * l - Lh * N ≤ σ * h y := by
+      have h3 := hhL y (lt_of_lt_of_le hy hrh)
+      rw [← hNdef] at h3
+      have h4 : |σ * (h y - h x)| = |h y - h x| := by rw [abs_mul, hσa, one_mul]
+      have h5 := neg_abs_le (σ * (h y - h x))
+      rw [h4] at h5
+      have h6 : σ * h y = σ * h x + σ * (h y - h x) := by ring
+      rw [h6, hσh']
+      linarith
+    have ha0 : 0 ≤ a := by linarith
+    have hE1 : (2 * l - Lh * N) * a ≤ (σ * h y) * a := mul_le_mul_of_nonneg_right hhy ha0
+    have hrw : h y * (σ * a) = (σ * h y) * a := by ring
+    have hN' : N ≤ (K + 1) * (s * s) := by rw [hss]; exact hN
+    have hLg' : Lg * N ≤ Lg * ((K + 1) * (s * s)) := mul_le_mul_of_nonneg_left hN' hLg
+    have hLh' : Lh * N * a ≤ Lh * ((K + 1) * (s * s)) * l := by
+      have h6 : a ≤ l := by rw [haval]; linarith
+      have h7 : 0 ≤ Lh * N := mul_nonneg hLh (by rw [hNdef]; exact norm_nonneg _)
+      calc Lh * N * a ≤ Lh * N * l := mul_le_mul_of_nonneg_left h6 h7
+        _ ≤ Lh * ((K + 1) * (s * s)) * l :=
+          mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hN' hLh) hl0.le
+    have hsum : Lg * ((K + 1) * (s * s)) + Lh * ((K + 1) * (s * s)) * l ≤
+        (S - 3 / 2) * (s * s) := by
+      have h3 : (S - 3 / 2) * (s * s) - (Lg * ((K + 1) * (s * s)) +
+          Lh * ((K + 1) * (s * s)) * l) = (K + 1) * (s * s) * (Lg * l + Lh) := by
+        rw [hS, hL]; ring
+      have h4 : 0 ≤ (K + 1) * (s * s) * (Lg * l + Lh) := by positivity
+      linarith
+    have hfin : 0 < s * (l / 2) - S * (s * s) := by
+      have h3 : S * s < S * c := mul_lt_mul_of_pos_left hsc (by linarith)
+      have h4 : 0 < l / 2 - S * s := by linarith [hcS]
+      have h5 := mul_pos hs0 h4
+      linarith [h5]
+    have hexp : (2 * l - Lh * N) * a - l * a + 3 / 2 * s * a =
+        s * (l / 2) - 3 / 2 * (s * s) + l ^ 2 - Lh * N * a := by
+      rw [haval]; ring
+    rw [hrw]
+    linarith
+  · intro hW0
+    have hW₂d : HasFDerivAt W₂ ((K ^ 2 + 1) • ((2 • (y k) ^ (2 - 1)) •
+        (EuclideanSpace.proj k : State n →L[ℝ] ℝ)) -
+        2 • (innerSL ℝ (y - x)).comp (ContinuousLinearMap.id ℝ (State n))) y := by
+      rw [hW₂]
+      exact (((EuclideanSpace.proj k : State n →L[ℝ] ℝ).hasFDerivAt.pow 2).const_mul
+        (K ^ 2 + 1)).sub ((hasFDerivAt_id y).sub_const x).norm_sq
+    rw [hW₂d.fderiv]
+    simp only [_root_.sub_apply, _root_.smul_apply, smul_eq_mul, PiLp.proj_apply,
+      ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, innerSL_apply_apply]
+    have hsimp : (K ^ 2 + 1) * (2 • y k ^ (2 - 1) * f y k) - 2 • inner ℝ (y - x) (f y) =
+        2 * (K ^ 2 + 1) * (y k * f y k) - 2 * inner ℝ (y - x) (f y) := by
+      simp only [nsmul_eq_mul, Nat.cast_ofNat, pow_one, Nat.add_one_sub_one]
+      ring
+    have hinner : inner ℝ (y - x) (f y) = inner ℝ (y - x) (f y - f y k • e) + f y k * y k := by
+      have h3 : f y = (f y - f y k • e) + f y k • e := by abel
+      conv_lhs => rw [h3]
+      rw [inner_add_right, inner_smul_right, he, EuclideanSpace.inner_single_right]
+      simp [hxk]
+    have hFin : inner ℝ (y - x) (f y - f y k • e) ≤ ‖y - x‖ * M :=
+      (real_inner_le_norm _ _).trans
+        (mul_le_mul_of_nonneg_left (hFM y (lt_of_lt_of_le hy hrF)) (norm_nonneg _))
+    rw [hsimp, hinner, hrel y hyρ hyk0]
+    have hqwl : w * (l / 2) ≤ q y := by
+      rw [← ha]; exact mul_le_mul_of_nonneg_left hal hw0.le
+    have hK2 : K ^ 2 * (w * (l / 2)) ≤ K ^ 2 * q y := mul_le_mul_of_nonneg_left hqwl (sq_nonneg K)
+    have hNM : ‖y - x‖ * M ≤ (K + 1) * w * M := mul_le_mul_of_nonneg_right hN hM0
+    have hKK : 0 < K ^ 2 * l - 2 * (K + 1) * M := by
+      have e1 : K ^ 2 * l - 2 * (K + 1) * M = 2 * M * (K - 1) + K * (4 + l) := by
+        have e0 : K ^ 2 * l = K * (K * l) := by ring
+        rw [e0, hKl]; ring
+      rw [e1]
+      have h4 := mul_nonneg (by linarith : 0 ≤ 2 * M) (by linarith : 0 ≤ K - 1)
+      have h5 := mul_pos (by linarith : 0 < K) (by linarith : 0 < 4 + l)
+      linarith
+    have hfk : f y k * y k = q y := by rw [← hrel y hyρ hyk0]; ring
+    rw [hfk]
+    rw [show 2 * (K ^ 2 + 1) * q y - 2 * (inner ℝ (y - x) (f y - f y k • e) + q y) =
+      2 * (K ^ 2 * q y) - 2 * inner ℝ (y - x) (f y - f y k • e) by ring]
+    have h3' : 0 < 2 * (K ^ 2 * (w * (l / 2))) - 2 * ((K + 1) * w * M) := by
+      have h := mul_pos hw0 hKK
+      have e : 2 * (K ^ 2 * (w * (l / 2))) - 2 * ((K + 1) * w * M) =
+          w * (K ^ 2 * l - 2 * (K + 1) * M) := by ring
+      rw [e]; exact h
+    linarith [hFin, hNM, hK2, h3']
+
+
+/-- **No exponential estimate at a nilpotent point of the plane with drift.** Let `x` lie on the
+plane `y_k = 0`, and suppose that near `x`, off the plane, `y_k f_k = q` and
+`dq/dt = g + h q / y_k`, with `C¹` functions `q, g, h` vanishing at `x`, `∂_k q = h`, the remaining
+components `F = f − f_k e_k` of the field continuous at `x` with `F(x) ≠ 0`, and the field equal
+on every half ball `{y_k ≥ s}` to a `C¹` field. Then the local exponential estimate fails. Under
+the estimate with overshoot `C`, the solution from `x + s³ e_k` stays within `C s³` of `x`; there
+`g, h = O(s³)`, so `q` stays `O(s⁵)` and `y_k ≥ s³/2` for a time `4 C s³ / ‖F(x)‖`, during which
+the drift `F ≈ F(x)` carries the solution to distance `2 C s³`. -/
+@[powerlib_foundation] theorem not_locallyExponentiallyStable_of_nilpotent {f : State n → State n} {x : State n}
+    (k : Fin n) (hxk : x k = 0) {q g h : State n → ℝ} (hq : ContDiff ℝ 1 q) (hq0 : q x = 0)
+    (hg : ContDiff ℝ 1 g) (hh : ContDiff ℝ 1 h) (hg0 : g x = 0) (hh0 : h x = 0)
+    {ρ : ℝ} (hρ : 0 < ρ)
+    (hrel : ∀ y : State n, ‖y - x‖ < ρ → y k ≠ 0 → y k * f y k = q y)
+    (hlie : ∀ y : State n, ‖y - x‖ < ρ → y k ≠ 0 →
+      fderiv ℝ q y (f y) = g y + h y * (q y / y k))
+    (hqk : ∀ y : State n, fderiv ℝ q y (EuclideanSpace.single k 1) = h y)
+    (hF : ContinuousAt (fun y => f y - f y k • EuclideanSpace.single k (1 : ℝ)) x)
+    (hF0 : f x - f x k • EuclideanSpace.single k (1 : ℝ) ≠ 0)
+    (hext : ∀ s > 0, ∃ G : State n → State n, ContDiff ℝ 1 G ∧
+      ∀ y : State n, ‖y - x‖ < ρ → s ≤ y k → G y = f y) :
+    ¬ LocallyExponentiallyStable f x := by
+  rintro ⟨r, C, a, hr, hC, ha, hles⟩
+  set e : State n := EuclideanSpace.single k (1 : ℝ) with he
+  obtain ⟨Lg, ρg, hLg, hρg, hgL⟩ := exists_lipschitz_bound hg x
+  obtain ⟨Lh, ρh, hLh, hρh, hhL⟩ := exists_lipschitz_bound hh x
+  obtain ⟨Fx, hFx⟩ : ∃ v : State n, v = f x - f x k • e := ⟨_, rfl⟩
+  obtain ⟨F0, hF0d⟩ : ∃ F0, F0 = ‖Fx‖ := ⟨_, rfl⟩
+  have hF0p : 0 < F0 := by rw [hF0d, hFx]; exact norm_pos_iff.mpr hF0
+  obtain ⟨ρF, hρF, hFb⟩ := Metric.continuousAt_iff.mp hF (F0 / 2) (by positivity)
+  obtain ⟨L, hL⟩ : ∃ L, L = Lg + Lh := ⟨_, rfl⟩
+  have hL0 : 0 ≤ L := by rw [hL]; positivity
+  obtain ⟨ρ', hρ'⟩ : ∃ ρ', ρ' = min (min ρ ρg) (min ρh ρF) := ⟨_, rfl⟩
+  have hρ'0 : 0 < ρ' := by rw [hρ']; positivity
+  have hρ'ρ : ρ' ≤ ρ := by rw [hρ']; exact (min_le_left _ _).trans (min_le_left _ _)
+  have hρ'g : ρ' ≤ ρg := by rw [hρ']; exact (min_le_left _ _).trans (min_le_right _ _)
+  have hρ'h : ρ' ≤ ρh := by rw [hρ']; exact (min_le_right _ _).trans (min_le_left _ _)
+  have hρ'F : ρ' ≤ ρF := by rw [hρ']; exact (min_le_right _ _).trans (min_le_right _ _)
+  have hC0 : 0 < C := by linarith
+  obtain ⟨Λ, hΛ⟩ : ∃ Λ, Λ = L + 12 * L * C ^ 2 / F0 := ⟨_, rfl⟩
+  have hΛ0 : 0 ≤ Λ := by rw [hΛ]; positivity
+  -- the small parameter
+  obtain ⟨m, hm⟩ : ∃ m, m = min (min (min 1 r) (ρ' / (2 * C))) (min (1 / (Λ + 1)) (F0 / (16 * C))) :=
+    ⟨_, rfl⟩
+  have hm0 : 0 < m := by rw [hm]; positivity
+  obtain ⟨s, hs⟩ : ∃ s, s = m / 2 := ⟨_, rfl⟩
+  have hs0 : 0 < s := by rw [hs]; positivity
+  have hsm : s < m := by rw [hs]; linarith
+  have hs1 : s < 1 := by
+    refine lt_of_lt_of_le hsm ?_
+    rw [hm]; exact (min_le_left _ _).trans ((min_le_left _ _).trans (min_le_left _ _))
+  have hsr : s < r := by
+    refine lt_of_lt_of_le hsm ?_
+    rw [hm]; exact (min_le_left _ _).trans ((min_le_left _ _).trans (min_le_right _ _))
+  have hsρ : s < ρ' / (2 * C) := by
+    refine lt_of_lt_of_le hsm ?_
+    rw [hm]; exact (min_le_left _ _).trans (min_le_right _ _)
+  have hsΛ : s < 1 / (Λ + 1) := by
+    refine lt_of_lt_of_le hsm ?_
+    rw [hm]; exact (min_le_right _ _).trans (min_le_left _ _)
+  have hsF : s < F0 / (16 * C) := by
+    refine lt_of_lt_of_le hsm ?_
+    rw [hm]; exact (min_le_right _ _).trans (min_le_right _ _)
+  have hqd : Differentiable ℝ q := hq.differentiable one_ne_zero
+  have hLgL : Lg ≤ L := by rw [hL]; linarith
+  have hLhL : Lh ≤ L := by rw [hL]; linarith
+  -- derived smallness
+  have hs2 : s ^ 2 ≤ 1 := pow_le_one₀ hs0.le hs1.le
+  have hs2s : s ^ 2 ≤ s := pow_le_of_le_one hs0.le hs1.le two_ne_zero
+  have hs3p : 0 < s ^ 3 := by positivity
+  have hs3s : s ^ 3 ≤ s := pow_le_of_le_one hs0.le hs1.le (by norm_num)
+  have hs3r : s ^ 3 < r := lt_of_le_of_lt hs3s hsr
+  have hCs : C * s < ρ' / 2 := by
+    rw [lt_div_iff₀ (by positivity)] at hsρ
+    linarith only [hsρ]
+  have hCs3 : C * s ^ 3 < ρ' / 2 := by
+    have := mul_le_mul_of_nonneg_left hs3s hC0.le
+    linarith only [this, hCs]
+  have hs3C : s ^ 3 ≤ C * s ^ 3 := le_mul_of_one_le_left hs3p.le hC
+  have hsΛ' : s * Λ < 1 := by
+    rw [lt_div_iff₀ (by positivity)] at hsΛ
+    linarith only [hsΛ, hs0]
+  have hsF' : 16 * C * s ^ 2 < F0 := by
+    rw [lt_div_iff₀ (by positivity)] at hsF
+    have := mul_le_mul_of_nonneg_left hs2s (by positivity : (0 : ℝ) ≤ 16 * C)
+    linarith only [hsF, this]
+  -- the seed
+  obtain ⟨y₀, hy₀⟩ : ∃ y₀ : State n, y₀ = x + s ^ 3 • e := ⟨_, rfl⟩
+  have hy₀x : ‖y₀ - x‖ = s ^ 3 := by
+    rw [hy₀, add_sub_cancel_left, norm_smul, he, PiLp.norm_single, norm_one, mul_one,
+      Real.norm_eq_abs, abs_of_pos hs3p]
+  have hy₀k : y₀ k = s ^ 3 := by rw [hy₀, he]; simp [hxk]
+  have hqy₀ : |q y₀| ≤ Lh * s ^ 6 := by
+    have hd : ∀ u ∈ Icc 0 (s ^ 3), HasDerivWithinAt (fun u : ℝ => q (x + u • e))
+        (h (x + u • e)) (Icc 0 (s ^ 3)) u := by
+      intro u _
+      have hl : HasDerivAt (fun u : ℝ => x + u • e) e u := by
+        simpa using ((hasDerivAt_id u).smul_const e).const_add x
+      have h1 := (hqd (x + u • e)).hasFDerivAt.comp_hasDerivAt u hl
+      rw [he, hqk] at h1
+      exact h1.hasDerivWithinAt
+    have hbd : ∀ u ∈ Ioo 0 (s ^ 3), |h (x + u • e)| ≤ Lh * s ^ 3 := by
+      intro u hu
+      have hn : ‖x + u • e - x‖ = u := by
+        rw [add_sub_cancel_left, norm_smul, he, PiLp.norm_single, norm_one, mul_one,
+          Real.norm_eq_abs, abs_of_pos hu.1]
+      have h1 := hhL (x + u • e) (by rw [hn]; linarith [hu.2])
+      rw [hh0, sub_zero, hn] at h1
+      exact h1.trans (mul_le_mul_of_nonneg_left hu.2.le hLh)
+    have h1 := sub_le_of_deriv_le (m := Lh * s ^ 3) hs3p.le le_rfl le_rfl hd
+      (fun u hu => (abs_le.mp (hbd u hu)).2)
+    have h2 := sub_ge_of_deriv_ge (m := -(Lh * s ^ 3)) hs3p.le le_rfl le_rfl hd
+      (fun u hu => (abs_le.mp (hbd u hu)).1)
+    simp only [zero_smul, add_zero, hq0, sub_zero] at h1 h2
+    rw [← hy₀] at h1 h2
+    rw [abs_le]
+    constructor
+    · linarith only [h2]
+    · linarith only [h1]
+  -- the solution from the seed, through a globally Lipschitz `C¹` field
+  obtain ⟨G, hG, hGf⟩ := hext (s ^ 3 / 2) (by positivity)
+  obtain ⟨Gt, hGt, ⟨K, hGlip⟩, hGg⟩ := exists_contDiff_lipschitz_extension hG (‖x‖ + ρ)
+  obtain ⟨ψ, hψ0, hψ⟩ := Flow.forwardComplete_of_lipschitzWith hGlip 0 y₀
+  have hGtf : ∀ y : State n, ‖y - x‖ < ρ → s ^ 3 / 2 ≤ y k → Gt y = f y := by
+    intro y hy hyk
+    rw [hGg y (by
+      have := norm_le_norm_add_norm_sub' y x
+      linarith)]
+    exact hGf y hy hyk
+  obtain ⟨Φ, hΦ⟩ : ∃ Φ : State n → ℝ, Φ = fun y =>
+      max (max (‖y - x‖ - ρ' / 2) (s ^ 3 / 2 - y k)) (|q y| - s ^ 5) := ⟨_, rfl⟩
+  have hΦc : Continuous Φ := by
+    rw [hΦ]
+    exact (((continuous_norm.comp (continuous_sub_right x)).sub continuous_const).max
+      (continuous_const.sub (EuclideanSpace.proj k : State n →L[ℝ] ℝ).continuous)).max
+      ((continuous_abs.comp hq.continuous).sub continuous_const)
+  have hregion : ∀ y : State n, Φ y ≤ 0 →
+      ‖y - x‖ ≤ ρ' / 2 ∧ s ^ 3 / 2 ≤ y k ∧ |q y| ≤ s ^ 5 := by
+    intro y hy
+    simp only [hΦ, max_le_iff, sub_nonpos] at hy
+    exact ⟨hy.1.1, hy.1.2, hy.2⟩
+  have hseg : ∀ t, 0 ≤ t → (∀ u ∈ Icc 0 t, Φ (ψ u) ≤ 0) → IsTrajectoryOn ψ f 0 t := by
+    intro t _ hin
+    exact isIntegralCurveOn_of_eq_on_curve (hψ.mono Icc_subset_Ici_self)
+      (fun u hu => hGtf _ (by linarith [(hregion _ (hin u hu)).1]) (hregion _ (hin u hu)).2.1)
+  have hnear : ∀ t, IsTrajectoryOn ψ f 0 t → ∀ u ∈ Icc 0 t, ‖ψ u - x‖ ≤ C * s ^ 3 := by
+    intro t hst u hu
+    have h1 := hles 0 t ψ hst (by rw [hψ0, hy₀x]; exact hs3r) u hu
+    rw [hψ0, hy₀x] at h1
+    have h2 : Real.exp (-a * (u - 0)) ≤ 1 := Real.exp_le_one_iff.mpr (by
+      have := mul_nonneg ha.le hu.1
+      linarith only [this])
+    have h3 : C * Real.exp (-a * (u - 0)) * s ^ 3 ≤ C * 1 * s ^ 3 := by
+      apply mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left h2 hC0.le) hs3p.le
+    linarith only [h1, h3]
+  -- the slope `f_k = q / y_k` is `O(s²)` in the region
+  have hslope : ∀ y : State n, ‖y - x‖ ≤ ρ' / 2 → s ^ 3 / 2 ≤ y k → |q y| ≤ s ^ 5 →
+      |f y k| ≤ 2 * s ^ 2 ∧ |q y / y k| ≤ 2 * s ^ 2 := by
+    intro y hy hyk hqy
+    have hyk0 : 0 < y k := lt_of_lt_of_le (by positivity) hyk
+    have hfk : f y k = q y / y k := by
+      rw [← hrel y (by linarith) hyk0.ne']; field_simp
+    have h1 : |q y / y k| ≤ 2 * s ^ 2 := by
+      rw [abs_div, abs_of_pos hyk0, div_le_iff₀ hyk0]
+      have : 2 * s ^ 2 * (s ^ 3 / 2) ≤ 2 * s ^ 2 * y k :=
+        mul_le_mul_of_nonneg_left hyk (by positivity)
+      linarith only [this, hqy]
+    exact ⟨by rw [hfk]; exact h1, h1⟩
+  obtain ⟨T, hT⟩ : ∃ T, T = 4 * C * s ^ 3 / F0 := ⟨_, rfl⟩
+  have hT0 : 0 ≤ T := by rw [hT]; positivity
+  have hstay : ∀ u ∈ Icc 0 T, Φ (ψ u) < 0 := by
+    refine forall_lt_of_first_exit hΦc (hψ.continuousOn.mono Icc_subset_Ici_self) ?_ ?_
+    · rw [hψ0]
+      simp only [hΦ, max_lt_iff]
+      refine ⟨⟨by rw [hy₀x]; linarith only [hs3C, hCs3], by rw [hy₀k]; linarith only [hs3p]⟩, ?_⟩
+      have h1 : Lh * s ^ 6 ≤ Λ * s ^ 6 := by
+        apply mul_le_mul_of_nonneg_right _ (by positivity)
+        rw [hΛ]
+        have : 0 ≤ 12 * L * C ^ 2 / F0 := by positivity
+        linarith only [this, hLhL]
+      have h2 : Λ * s ^ 6 < s ^ 5 := by
+        have : s ^ 5 * (s * Λ) < s ^ 5 * 1 := mul_lt_mul_of_pos_left hsΛ' (by positivity)
+        have e : Λ * s ^ 6 = s ^ 5 * (s * Λ) := by ring
+        linarith only [this, e]
+      have := abs_le.mp hqy₀
+      have h3 : |q y₀| < s ^ 5 := lt_of_le_of_lt hqy₀ (lt_of_le_of_lt h1 h2)
+      linarith only [h3]
+    intro t ht hin
+    have hst := hseg t ht.1 hin
+    have hN := hnear t hst
+    have hreg : ∀ u ∈ Icc 0 t, ‖ψ u - x‖ ≤ ρ' / 2 ∧ s ^ 3 / 2 ≤ ψ u k ∧ |q (ψ u)| ≤ s ^ 5 :=
+      fun u hu => hregion _ (hin u hu)
+    -- `q` along the solution
+    have hdq : ∀ u ∈ Icc 0 t, HasDerivWithinAt (fun u => q (ψ u))
+        (fderiv ℝ q (ψ u) (f (ψ u))) (Icc 0 t) u :=
+      fun u hu => (hqd (ψ u)).hasFDerivAt.comp_hasDerivWithinAt u (hst u hu)
+    obtain ⟨mq, hmq⟩ : ∃ mq, mq = L * C * s ^ 3 + 2 * L * C * s ^ 5 := ⟨_, rfl⟩
+    have hdqb : ∀ u ∈ Ioo 0 t, |fderiv ℝ q (ψ u) (f (ψ u))| ≤ mq := by
+      intro u hu
+      obtain ⟨r1, r2, r3⟩ := hreg u ⟨hu.1.le, hu.2.le⟩
+      have hNu := hN u ⟨hu.1.le, hu.2.le⟩
+      have hyk0 : ψ u k ≠ 0 := (lt_of_lt_of_le (by positivity) r2).ne'
+      rw [hlie _ (by linarith) hyk0]
+      have hg1 := hgL (ψ u) (by linarith)
+      have hh1 := hhL (ψ u) (by linarith)
+      rw [hg0, sub_zero] at hg1
+      rw [hh0, sub_zero] at hh1
+      have hsl := (hslope _ r1 r2 r3).2
+      have hgb : |g (ψ u)| ≤ L * C * s ^ 3 := by
+        calc |g (ψ u)| ≤ Lg * ‖ψ u - x‖ := hg1
+          _ ≤ L * (C * s ^ 3) := mul_le_mul hLgL hNu (norm_nonneg _) hL0
+          _ = L * C * s ^ 3 := by ring
+      have hhb : |h (ψ u) * (q (ψ u) / ψ u k)| ≤ 2 * L * C * s ^ 5 := by
+        rw [abs_mul]
+        have hh2 : |h (ψ u)| ≤ L * (C * s ^ 3) :=
+          hh1.trans (mul_le_mul hLhL hNu (norm_nonneg _) hL0)
+        calc |h (ψ u)| * |q (ψ u) / ψ u k| ≤ L * (C * s ^ 3) * (2 * s ^ 2) :=
+              mul_le_mul hh2 hsl (abs_nonneg _) (by positivity)
+          _ = 2 * L * C * s ^ 5 := by ring
+      rw [hmq]
+      exact (abs_add_le _ _).trans (add_le_add hgb hhb)
+    have hq1 := sub_le_of_deriv_le (m := mq) ht.1 le_rfl le_rfl hdq
+      (fun u hu => (abs_le.mp (hdqb u hu)).2)
+    have hq2 := sub_ge_of_deriv_ge (m := -mq) ht.1 le_rfl le_rfl hdq
+      (fun u hu => (abs_le.mp (hdqb u hu)).1)
+    rw [hψ0] at hq1 hq2
+    have hmq0 : 0 ≤ mq := by rw [hmq]; positivity
+    have hmqT : mq * t ≤ mq * T := mul_le_mul_of_nonneg_left ht.2 hmq0
+    have hmqT' : mq * T + Lh * s ^ 6 < s ^ 5 := by
+      have e1 : mq * T = 4 * L * C ^ 2 / F0 * s ^ 6 + 8 * L * C ^ 2 / F0 * s ^ 8 := by
+        rw [hmq, hT]; field_simp; ring
+      have e2 : s ^ 8 ≤ s ^ 6 := by
+        have : s ^ 8 = s ^ 6 * s ^ 2 := by ring
+        rw [this]; exact mul_le_of_le_one_right (by positivity) hs2
+      have e3 : 0 ≤ 8 * L * C ^ 2 / F0 := by positivity
+      have e4 : 8 * L * C ^ 2 / F0 * s ^ 8 ≤ 8 * L * C ^ 2 / F0 * s ^ 6 :=
+        mul_le_mul_of_nonneg_left e2 e3
+      have e5 : Lh * s ^ 6 ≤ L * s ^ 6 := mul_le_mul_of_nonneg_right hLhL (by positivity)
+      have e6 : Λ * s ^ 6 = L * s ^ 6 + 4 * L * C ^ 2 / F0 * s ^ 6 +
+          8 * L * C ^ 2 / F0 * s ^ 6 := by rw [hΛ]; ring
+      have e7 : Λ * s ^ 6 < s ^ 5 := by
+        have : s ^ 5 * (s * Λ) < s ^ 5 * 1 := mul_lt_mul_of_pos_left hsΛ' (by positivity)
+        have e : Λ * s ^ 6 = s ^ 5 * (s * Λ) := by ring
+        linarith only [this, e]
+      linarith only [e1, e4, e5, e6, e7]
+    have hqt : |q (ψ t)| < s ^ 5 := by
+      have := abs_le.mp hqy₀
+      rw [abs_lt]
+      constructor
+      · linarith only [this.1, hq2, hmqT, hmqT']
+      · linarith only [this.2, hq1, hmqT, hmqT']
+    -- `y_k` along the solution
+    have hdk : ∀ u ∈ Icc 0 t, HasDerivWithinAt (fun u => ψ u k) (f (ψ u) k) (Icc 0 t) u :=
+      fun u hu => (EuclideanSpace.proj k : State n →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt u
+        (hst u hu)
+    have hk1 := sub_ge_of_deriv_ge (m := -(2 * s ^ 2)) ht.1 le_rfl le_rfl hdk
+      (fun u hu => by
+        obtain ⟨r1, r2, r3⟩ := hreg u ⟨hu.1.le, hu.2.le⟩
+        exact (abs_le.mp (hslope _ r1 r2 r3).1).1)
+    rw [hψ0, hy₀k] at hk1
+    have hkT : 2 * s ^ 2 * t ≤ 2 * s ^ 2 * T := mul_le_mul_of_nonneg_left ht.2 (by positivity)
+    have hkT' : 2 * s ^ 2 * T < s ^ 3 / 2 := by
+      have e1 : 2 * s ^ 2 * T = 8 * C * s ^ 2 / F0 * s ^ 3 := by rw [hT]; field_simp; ring
+      have e2 : 8 * C * s ^ 2 / F0 < 1 / 2 := by
+        rw [div_lt_iff₀ hF0p]; linarith only [hsF']
+      rw [e1]
+      have := mul_lt_mul_of_pos_right e2 hs3p
+      linarith only [this]
+    have hNt := hN t ⟨ht.1, le_rfl⟩
+    simp only [hΦ, max_lt_iff]
+    exact ⟨⟨by linarith only [hNt, hCs3], by linarith only [hk1, hkT, hkT']⟩,
+      by linarith only [hqt]⟩
+  -- the drift carries the solution away
+  have hsT := hseg T hT0 (fun u hu => (hstay u hu).le)
+  have hNT := hnear T hsT T ⟨hT0, le_rfl⟩
+  have hFxk : Fx k = 0 := by rw [hFx, he]; simp
+  have hin_e : inner ℝ Fx e = 0 := by
+    rw [he, EuclideanSpace.inner_single_right]; simp [hFxk]
+  have hdi : ∀ u ∈ Icc 0 T, HasDerivWithinAt (fun u => inner ℝ Fx (ψ u - x))
+      (inner ℝ Fx (f (ψ u))) (Icc 0 T) u :=
+    fun u hu => (innerSL ℝ Fx).hasFDerivAt.comp_hasDerivWithinAt u ((hsT u hu).sub_const x)
+  have hdib : ∀ u ∈ Ioo 0 T, F0 ^ 2 / 2 ≤ inner ℝ Fx (f (ψ u)) := by
+    intro u hu
+    have hNu := hnear T hsT u ⟨hu.1.le, hu.2.le⟩
+    have hFu := hFb (x := ψ u) (by rw [dist_eq_norm]; linarith)
+    simp only [dist_eq_norm] at hFu
+    rw [← hFx] at hFu
+    have hsplit : f (ψ u) = Fx + ((f (ψ u) - f (ψ u) k • e) - Fx) + f (ψ u) k • e := by abel
+    rw [hsplit, inner_add_right, inner_add_right, inner_smul_right, hin_e, mul_zero, add_zero,
+      real_inner_self_eq_norm_sq, ← hF0d]
+    have h1 := (abs_le.mp (abs_real_inner_le_norm Fx ((f (ψ u) - f (ψ u) k • e) - Fx))).1
+    rw [← hF0d] at h1
+    have h2 : F0 * ‖f (ψ u) - f (ψ u) k • e - Fx‖ ≤ F0 * (F0 / 2) :=
+      mul_le_mul_of_nonneg_left hFu.le hF0p.le
+    linarith only [h1, h2]
+  have hgrow := sub_ge_of_deriv_ge (m := F0 ^ 2 / 2) hT0 le_rfl le_rfl hdi hdib
+  rw [hψ0, hy₀, add_sub_cancel_left, inner_smul_right, hin_e, mul_zero, sub_zero] at hgrow
+  have hup : inner ℝ Fx (ψ T - x) ≤ F0 * (C * s ^ 3) := by
+    calc inner ℝ Fx (ψ T - x) ≤ ‖Fx‖ * ‖ψ T - x‖ := real_inner_le_norm _ _
+      _ ≤ F0 * (C * s ^ 3) := by rw [← hF0d]; exact mul_le_mul_of_nonneg_left hNT hF0p.le
+  have hval : F0 ^ 2 / 2 * (T - 0) = 2 * (F0 * (C * s ^ 3)) := by rw [hT]; field_simp; ring
+  have hpos : 0 < F0 * (C * s ^ 3) := by positivity
+  linarith only [hgrow, hup, hval, hpos]
 
 end powerlib.Dynamics

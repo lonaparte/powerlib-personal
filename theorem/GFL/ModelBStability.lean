@@ -113,8 +113,14 @@ Selected states on the singular plane that are not equilibria. With `P = pccP x*
   (`mem_den_unstable_of_disc_pos`), `D < 0` with `I₀ / C_dc ≠ 0` ⇒ the local exponential estimate
   (`mem_den_locallyExponentiallyStable_of_disc_neg`), and
   `mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nondegenerate` characterizes the whole
-  plane except the degenerate set `{P = 0, I₀ / C_dc ≠ 0, D = 0}` (UNPROVED there: a double root
-  of the reduced system, decided by higher-order terms).
+  plane except the degenerate set `{P = 0, I₀ / C_dc ≠ 0, D = 0}`. That set is treated in
+  `theorem/GFL/ModelBCollapseDegenerate.lean`: `D = 0`, `H ≠ 0` (degenerate node) ⇒ unstable
+  (`mem_den_unstable_of_disc_eq_zero`); `H = G = 0` with a nonzero drift `(f₀, f₁, f₃)(x*) ≠ 0` ⇒
+  not locally exponentially stable (`not_mem_den_locallyExponentiallyStable_of_nilpotent`); the
+  characterization therefore holds off the residual set
+  `{P = 0, I₀ / C_dc ≠ 0, H = 0, f₀ = f₁ = f₃ = 0}` (UNPROVED there: forces `V_dc,ref = 0`)
+  (`mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nonresidual`), and is complete for
+  `V_dc,ref ≠ 0` (`mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_VdcRef`).
 * The concrete `collapsePoint` (`V_dc,ref = 1 > 0`, `x* = (0, 0, 0, −1)`) is such a collapse state
   (`collapsePoint_mem_den_locallyExponentiallyStable`). Therefore none of the local translations
   is exact within the context of a positive reference alone

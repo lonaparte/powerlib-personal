@@ -33,10 +33,10 @@ Results.
   `planeG`, `planeH`, `planeDisc`, `hasFDerivAt_planeQ`, `planeQ_lie`, `field_two_eq_planeQ_div`,
   `continuous_planeG`, `continuous_planeH`, `exists_contDiff_eq_field_of_sign`.
 
-Remaining (UNPROVED): `P(x*) = 0`, `I₀ / C_dc ≠ 0` and `D = 0` (a double root of
-`λ² − Hλ − G`: the reduced linear system is a degenerate node, decided by higher-order terms of
-`G`, `H` along the solution; a nowhere-dense, codimension-three subset of the plane's parameter
-space).
+The degenerate discriminant `D = 0` (with `P(x*) = 0`, `I₀ / C_dc ≠ 0`) is treated in
+`theorem/GFL/ModelBCollapseDegenerate.lean`: `H ≠ 0` ⇒ unstable, `H = G = 0` with nonzero drift
+`(f₀, f₁, f₃)(x*)` ⇒ not locally exponentially stable; it leaves (UNPROVED) only the residual set
+`{P = 0, I₀ / C_dc ≠ 0, H = 0, f₀ = f₁ = f₃ = 0}`, which forces `V_dc,ref = 0`.
 
 Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (model B); the reduction is new
 (answers the residual case of the `V_dc* = 0` question). Candidate analysis checked numerically
