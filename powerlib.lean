@@ -298,3 +298,7 @@ import theorem.Modal.Splitting
 import theorem.Numerics.BDFInstability
 import theorem.SingularPerturbation.BoundaryLayer
 import theorem.SingularPerturbation.FiniteHorizon
+import theorem.Line.BesselK
+import theorem.Line.CableSchelkunoff
+import theorem.DCLink.MatchingClosedLoop
+import theorem.DCLink.MatchingStiffGrid
