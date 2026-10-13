@@ -81,6 +81,13 @@ Results.
   conclusions there: `mem_den_locallyAsymptoticallyStable_of_dissipative` (`margin ≥ 0` already
   gives local asymptotic stability) and `not_exact_locallyAsymptoticallyStable` (the local
   asymptotic translation of this family is sound but not exact: a `margin = 0` model).
+  Without synchronizing torque (`μ u* v₀ = 0`, outside the source): with `margin > 0` every
+  solution converges to one point of the circle of equilibria `(θ, u*, î(θ))` and the operating
+  point is Lyapunov stable but not locally asymptotically stable
+  (`mem_den_lyapunovStable_of_no_sync`, `not_mem_den_locallyAsymptoticallyStable_of_no_sync`;
+  hence `not_exact_lyapunovStable`); with `margin = 0` and `μ ≠ 0` every solution still converges
+  to an equilibrium; with `margin = 0` and `μ = 0` the DC error is conserved and the angle drifts
+  (`mem_den_unstable_of_mu_eq_zero` for `η ≠ 0`).
 
 Corrections.
 * The note's condition is the source's condition (`margin_pos_iff`), but it is not a global

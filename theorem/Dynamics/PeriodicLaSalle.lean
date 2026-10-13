@@ -45,6 +45,10 @@ Results.
 * `exists_cos_sin`, `exists_angle_lift`: a point of the unit circle has an angle; a solution
   `(c, s)` of `c' = −s w`, `s' = c w` on `[0, ∞)` is `(cos θ, sin θ)` for `θ = θ₀ + ∫ w`
   (lifting a cylinder solution back to the angle).
+* `norm_le_sum_abs`, `le_exp_mul_of_hasDerivWithinAt` (Grönwall, linear form),
+  `abs_le_of_sq_le_exp` (square-root-free decay bound), `abs_sub_le_of_abs_deriv_le_exp` (an
+  exponentially decaying rate gives a bounded drift) and `exists_tendsto_of_abs_deriv_le_exp` (and a
+  convergent angle): an angle driven by an exponentially decaying state settles.
 * `infDist_le_of_reduction`, `infDist_le_of_reduction'`: if a reduction `red` maps the solutions
   of `F` that start in `L` to solutions of a globally exponentially stable field `f` (and keeps them
   in `L`), and the distance to a set `O` is comparable with `‖red X − x*‖` on `L`, then every
@@ -384,6 +388,148 @@ there and starts at `(cos θ₀, sin θ₀)`, then `θ = θ₀ + ∫₀ᵗ w` ha
     linarith
   · have := pow_eq_zero_iff (n := 2) (by norm_num) |>.mp e2
     linarith
+
+
+/-! ## Exponential decay and integrable drift -/
+
+/-- The norm of a vector of `State n` is at most the sum of the absolute values of its
+coordinates. -/
+@[powerlib_foundation] theorem norm_le_sum_abs {n : ℕ} (v : State n) : ‖v‖ ≤ ∑ i, |v i| := by
+  rw [EuclideanSpace.norm_eq, Real.sqrt_le_left (Finset.sum_nonneg fun i _ => abs_nonneg _)]
+  simp only [Real.norm_eq_abs]
+  exact Finset.sum_sq_le_sq_sum_of_nonneg fun i _ => abs_nonneg _
+
+private theorem hasDerivAt_exp_lin (c t₀ t : ℝ) :
+    HasDerivAt (fun τ => Real.exp (c * (τ - t₀))) (c * Real.exp (c * (t - t₀))) t := by
+  have h := (Real.hasDerivAt_exp (c * (t - t₀))).comp t
+    (((hasDerivAt_id t).sub_const t₀).const_mul c)
+  rw [show (fun τ => Real.exp (c * (τ - t₀))) = Real.exp ∘ fun y => c * (id y - t₀) from rfl]
+  convert h using 1
+  ring
+
+/-- **Grönwall's inequality, linear form.** If `g' ≤ −ρ g` on `[t₀, t₁]`, then
+`g t ≤ e^{−ρ (t − t₀)} g t₀` there. -/
+@[powerlib_foundation] theorem le_exp_mul_of_hasDerivWithinAt {g g' : ℝ → ℝ} {ρ t₀ t₁ : ℝ}
+    (hg : ∀ t ∈ Icc t₀ t₁, HasDerivWithinAt g (g' t) (Icc t₀ t₁) t)
+    (hle : ∀ t ∈ Icc t₀ t₁, g' t ≤ -ρ * g t) :
+    ∀ t ∈ Icc t₀ t₁, g t ≤ Real.exp (-ρ * (t - t₀)) * g t₀ := by
+  set h : ℝ → ℝ := fun t => Real.exp (ρ * (t - t₀)) * g t with hh
+  have hd : ∀ t ∈ Icc t₀ t₁, HasDerivWithinAt h
+      (ρ * Real.exp (ρ * (t - t₀)) * g t + Real.exp (ρ * (t - t₀)) * g' t) (Icc t₀ t₁) t :=
+    fun t ht => ((hasDerivAt_exp_lin ρ t₀ t).hasDerivWithinAt.mul (hg t ht))
+  have hanti : AntitoneOn h (Icc t₀ t₁) := by
+    refine antitoneOn_of_hasDerivWithinAt_nonpos (convex_Icc _ _)
+      (fun t ht => (hd t ht).continuousWithinAt) (fun t ht =>
+        (hd t (interior_subset ht)).mono interior_subset) (fun t ht => ?_)
+    have h1 := hle t (interior_subset ht)
+    have h2 := Real.exp_pos (ρ * (t - t₀))
+    nlinarith
+  intro t ht
+  have h1 := hanti ⟨le_rfl, ht.1.trans ht.2⟩ ht ht.1
+  simp only [hh, sub_self, mul_zero, Real.exp_zero, one_mul] at h1
+  have h2 : Real.exp (-ρ * (t - t₀)) * Real.exp (ρ * (t - t₀)) = 1 := by
+    rw [← Real.exp_add]
+    simp
+  have h3 := Real.exp_pos (-ρ * (t - t₀))
+  calc g t = Real.exp (-ρ * (t - t₀)) * (Real.exp (ρ * (t - t₀)) * g t) := by
+        rw [← mul_assoc, h2, one_mul]
+    _ ≤ Real.exp (-ρ * (t - t₀)) * g t₀ := mul_le_mul_of_nonneg_left h1 h3.le
+
+/-- `|x| ≤ (c/λ + λ)/2 · e^{−β s}` whenever `x² ≤ c e^{−2β s}` and `λ > 0` (arithmetic-geometric
+mean with the weight `λ e^{−β s}`; no square roots). -/
+@[powerlib_foundation] theorem abs_le_of_sq_le_exp {x c l β s : ℝ} (hl : 0 < l)
+    (hx : x ^ 2 ≤ c * Real.exp (-(2 * β) * s)) :
+    |x| ≤ (c / l + l) / 2 * Real.exp (-β * s) := by
+  set e := Real.exp (-β * s) with he
+  have he0 : 0 < e := Real.exp_pos _
+  have he2 : Real.exp (-(2 * β) * s) = e ^ 2 := by
+    rw [he, sq, ← Real.exp_add]
+    ring_nf
+  rw [he2] at hx
+  have hw : 0 < l * e := mul_pos hl he0
+  have key : 2 * (l * e) * |x| ≤ x ^ 2 + (l * e) ^ 2 := by
+    nlinarith [sq_nonneg (|x| - l * e), sq_abs x]
+  have key2 : x ^ 2 + (l * e) ^ 2 ≤ (c + l ^ 2) * e ^ 2 := by nlinarith
+  have : (c / l + l) / 2 * e = (c + l ^ 2) * e ^ 2 / (2 * (l * e)) := by
+    field_simp
+  rw [this, le_div_iff₀ (by positivity)]
+  nlinarith
+
+/-- **Bounded drift.** If `|θ'| ≤ A e^{−b (t − t₀)}` on `[t₀, t₁]` with `b > 0`, then
+`|θ t − θ t₀| ≤ A / b` there. -/
+@[powerlib_foundation] theorem abs_sub_le_of_abs_deriv_le_exp {θ θ' : ℝ → ℝ} {A b t₀ t₁ : ℝ}
+    (hb : 0 < b) (hθ : ∀ t ∈ Icc t₀ t₁, HasDerivWithinAt θ (θ' t) (Icc t₀ t₁) t)
+    (hle : ∀ t ∈ Icc t₀ t₁, |θ' t| ≤ A * Real.exp (-b * (t - t₀))) :
+    ∀ t ∈ Icc t₀ t₁, |θ t - θ t₀| ≤ A / b := by
+  intro t ht
+  have ht₀ : t₀ ∈ Icc t₀ t₁ := ⟨le_rfl, ht.1.trans ht.2⟩
+  have hA : 0 ≤ A := by
+    have := (abs_nonneg _).trans (hle t₀ ht₀)
+    simpa using this
+  -- `±θ + (A/b) e^{−b (t − t₀)}` is antitone
+  have side : ∀ σ : ℝ, σ = 1 ∨ σ = -1 → σ * (θ t - θ t₀) ≤ A / b := by
+    intro σ hσ
+    set F : ℝ → ℝ := fun τ => σ * θ τ + A / b * Real.exp (-b * (τ - t₀)) with hF
+    have hd : ∀ τ ∈ Icc t₀ t₁, HasDerivWithinAt F
+        (σ * θ' τ + A / b * (-b * Real.exp (-b * (τ - t₀)))) (Icc t₀ t₁) τ :=
+      fun τ hτ => ((hθ τ hτ).const_mul σ).add
+        ((hasDerivAt_exp_lin (-b) t₀ τ).hasDerivWithinAt.const_mul (A / b))
+    have hanti : AntitoneOn F (Icc t₀ t₁) := by
+      refine antitoneOn_of_hasDerivWithinAt_nonpos (convex_Icc _ _)
+        (fun τ hτ => (hd τ hτ).continuousWithinAt) (fun τ hτ =>
+          (hd τ (interior_subset hτ)).mono interior_subset) (fun τ hτ => ?_)
+      have h1 := hle τ (interior_subset hτ)
+      have h2 : σ * θ' τ ≤ |θ' τ| := by
+        rcases hσ with rfl | rfl
+        · simpa using le_abs_self (θ' τ)
+        · simpa using neg_le_abs (θ' τ)
+      have h3 : A / b * (-b * Real.exp (-b * (τ - t₀))) = -(A * Real.exp (-b * (τ - t₀))) := by
+        field_simp
+      rw [h3]
+      linarith
+    have h1 := hanti ht₀ ht ht.1
+    simp only [hF, sub_self, mul_zero, Real.exp_zero, mul_one] at h1
+    have h2 : 0 ≤ A / b * Real.exp (-b * (t - t₀)) := by positivity
+    linarith
+  rw [abs_le]
+  constructor
+  · have := side (-1) (Or.inr rfl)
+    linarith
+  · have := side 1 (Or.inl rfl)
+    linarith
+
+/-- **Integrable drift converges.** If `|θ'| ≤ A e^{−b (t − t₀)}` on `[t₀, ∞)` with `b > 0`, then
+`θ` converges. -/
+@[powerlib_foundation] theorem exists_tendsto_of_abs_deriv_le_exp {θ θ' : ℝ → ℝ} {A b t₀ : ℝ}
+    (hb : 0 < b) (hθ : ∀ t, t₀ ≤ t → HasDerivWithinAt θ (θ' t) (Ici t₀) t)
+    (hle : ∀ t, t₀ ≤ t → |θ' t| ≤ A * Real.exp (-b * (t - t₀))) :
+    ∃ L : ℝ, Tendsto θ atTop (𝓝 L) := by
+  have hbound : ∀ s, t₀ ≤ s → ∀ t, s ≤ t →
+      |θ t - θ s| ≤ A * Real.exp (-b * (s - t₀)) / b := by
+    intro s hs t hst
+    refine abs_sub_le_of_abs_deriv_le_exp (θ' := θ') hb (t₁ := t)
+      (fun τ hτ => (hθ τ (hs.trans hτ.1)).mono fun r hr => hs.trans hr.1) (fun τ hτ => ?_)
+      t ⟨hst, le_rfl⟩
+    have h := hle τ (hs.trans hτ.1)
+    have e : Real.exp (-b * (τ - t₀)) =
+        Real.exp (-b * (s - t₀)) * Real.exp (-b * (τ - s)) := by
+      rw [← Real.exp_add]
+      ring_nf
+    rw [e] at h
+    linarith [h]
+  have hlim : Tendsto (fun s => A * Real.exp (-b * (s - t₀)) / b) atTop (𝓝 0) := by
+    have hexp : Tendsto (fun s => Real.exp (-b * (s - t₀))) atTop (𝓝 0) :=
+      Real.tendsto_exp_atBot.comp ((tendsto_atTop_atTop.2 fun c =>
+        ⟨c + t₀, fun s hs => by linarith⟩).const_mul_atTop_of_neg (by linarith))
+    simpa using (hexp.const_mul A).div_const b
+  apply cauchySeq_tendsto_of_complete
+  rw [Metric.cauchySeq_iff']
+  intro ε hε
+  obtain ⟨N, hN⟩ := eventually_atTop.mp ((hlim.eventually (gt_mem_nhds hε)).and
+    (eventually_ge_atTop t₀))
+  refine ⟨N, fun n hn => ?_⟩
+  rw [Real.dist_eq]
+  exact (hbound N (hN N le_rfl).2 n hn).trans_lt (hN N le_rfl).1
 
 /-! ## Attraction of a set through a reduction -/
 
