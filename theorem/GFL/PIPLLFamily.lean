@@ -3,6 +3,8 @@ import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
 import theorem.Flow.Shift
 import theorem.TMIO.ClaimElab
+import theorem.PH.Observability
+import theorem.CurrentControl.SISO
 
 /-! # The PI-PLL family
 
@@ -45,8 +47,11 @@ point is locally exponentially stable exactly when it is an equilibrium with a H
 i.e. phase-locked with both slope-gain products negative. The instability translation is not
 exact (`not_exact_unstable`): instability is the failure of Lyapunov stability, so a model whose
 selected point is not phase-locked (`offEquilibrium`) is unstable
-(`offEquilibrium_mem_den_unstable`, `Dynamics.unstable_of_ne_zero`). Exactness of the local
-asymptotic translation is not claimed (UNPROVED). -/
+(`offEquilibrium_mem_den_unstable`, `Dynamics.unstable_of_ne_zero`). The local asymptotic
+translation is not exact either (`not_exact_locallyAsymptoticallyStable`): the cubic detector is
+locally asymptotically stable (`cubicDetector_mem_den_locallyAsymptoticallyStable`, LaSalle's
+principle through `PH.tendsto_zero_of_lasalle_detectable`: the PLL energy decreases at the rate
+`θ⁶`, and the only solution with `θ ≡ 0` is the locked point) although its slope is zero. -/
 
 noncomputable section
 
@@ -450,6 +455,129 @@ phase-locked point with zero slope, which meets no slope-gain requirement. -/
   unfold powerlib.TMIO.Statement
   intro h
   have hmem := cubicDetector_mem_den_lyapunovStable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hs : Meets cubicDetector .slopeStable := hmem .slopeStable (by simp [family, translate])
+  have := hs.1
+  rw [cubicDetector_slope] at this
+  simp at this
+
+/-! ### The degenerate slope is locally asymptotically stable -/
+
+@[powerlib_foundation] theorem cubicEnergy_contDiff : ContDiff ℝ 1 cubicEnergy := by
+  unfold cubicEnergy
+  exact (contDiff_const.mul
+      ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ).contDiff.pow 4)).add
+    (contDiff_const.mul ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : ℝ² →L[ℝ] ℝ).contDiff.pow 2))
+
+@[powerlib_foundation] theorem cubicEnergy_pos {z : ℝ²} (hz : z ≠ 0) : 0 < cubicEnergy z := by
+  have hne : z 0 ≠ 0 ∨ z 1 ≠ 0 := by
+    by_contra h
+    push Not at h
+    apply hz
+    ext i
+    fin_cases i
+    · exact h.1
+    · exact h.2
+  dsimp [cubicEnergy]
+  rcases hne with h | h
+  · have : 0 < (z 0) ^ 4 := by positivity
+    nlinarith [sq_nonneg (z 1)]
+  · have : 0 < (z 1) ^ 2 := by positivity
+    nlinarith [pow_two_nonneg ((z 0) ^ 2)]
+
+/-- The PLL energy bounds the squared norm: `‖z‖² ≤ 4 V(z) + 1/4`. -/
+@[powerlib_foundation] theorem norm_sq_le_cubicEnergy (z : ℝ²) :
+    ‖z‖ ^ 2 ≤ 4 * cubicEnergy z + 1 / 4 := by
+  have hsq : ‖z‖ ^ 2 = z 0 ^ 2 + z 1 ^ 2 := by
+    rw [PiLp.norm_sq_eq_of_L2]
+    simp [Fin.sum_univ_succ, sq_abs]
+  rw [hsq]
+  dsimp [cubicEnergy]
+  nlinarith [sq_nonneg ((z 0) ^ 2 - 1 / 2), sq_nonneg (z 1)]
+
+open scoped Pointwise in
+/-- The cubic detector is locally asymptotically stable (LaSalle's principle): the PLL energy
+decreases at the rate `θ⁶`, and the only solution along which `θ ≡ 0` is the locked point (then
+`θ̇ = η` vanishes too). Its Jacobian `[[0, 1], [0, 0]]` is nilpotent, so the linearization decides
+nothing. -/
+@[powerlib_domain] theorem cubicDetector_mem_den_locallyAsymptoticallyStable :
+    connection% (cubicDetector ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
+  have hls := cubicDetector_mem_den_lyapunovStable
+  unfold powerlib.TMIO.Statement at hls ⊢
+  rw [family_isAutonomous.mem_den_flow] at hls ⊢
+  set f := cubicDetector.field with hfdef
+  have hf : ContDiff ℝ 1 f :=
+    (contDiff_piPLLField cubicDetector.smooth).comp (contDiff_id.add contDiff_const)
+  have hVd : Differentiable ℝ cubicEnergy := cubicEnergy_contDiff.differentiable one_ne_zero
+  have hdec : ∀ z, fderiv ℝ cubicEnergy z (f z) ≤ 0 := fun z => by
+    rw [cubicEnergy_lie]
+    nlinarith [pow_two_nonneg ((z 0) ^ 3)]
+  have hdet : ∀ φ : ℝ → ℝ², IsIntegralCurveOn φ (fun _ x => f x) (Set.Ici 0) →
+      (∀ t ∈ Set.Ici (0 : ℝ), fderiv ℝ cubicEnergy (φ t) (f (φ t)) = 0) →
+      Filter.Tendsto φ Filter.atTop (nhds 0) := by
+    intro φ hφ hzero
+    have h0 : ∀ t ∈ Set.Ici (0 : ℝ), φ t 0 = 0 := fun t ht => by
+      have := hzero t ht
+      rw [cubicEnergy_lie] at this
+      have h6 : (φ t 0) ^ 6 = 0 := by linarith
+      exact pow_eq_zero_iff (by norm_num) |>.mp h6
+    have h1 : ∀ t ∈ Set.Ici (0 : ℝ), φ t 1 = 0 := fun t ht => by
+      have hd := ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ).hasFDerivAt
+        (x := φ t)).comp_hasDerivWithinAt t (hφ t ht)
+      have hc : HasDerivWithinAt (fun s => (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ)
+          (φ s)) 0 (Set.Ici 0) t :=
+        (hasDerivWithinAt_const t (Set.Ici (0 : ℝ)) (0 : ℝ)).congr
+          (fun s hs => h0 s hs) (h0 t ht)
+      have heq := (uniqueDiffOn_Ici (0 : ℝ) t ht).eq_deriv _ hd hc
+      have heq' : cubicDetector.field (φ t) 0 = 0 := heq
+      rw [cubicDetector_field] at heq'
+      simpa [h0 t ht] using heq'
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [Filter.eventually_ge_atTop 0] with t ht
+    ext i
+    fin_cases i
+    · exact (h0 t ht).symm
+    · exact (h1 t ht).symm
+  refine ⟨hls, 1, one_pos, fun t₀ φ hφ _ => ?_⟩
+  have hψs : IsIntegralCurveOn (fun s => φ (s + t₀)) (fun _ x => f x) (Set.Ici 0) := by
+    have hset : -t₀ +ᵥ Set.Ici t₀ = Set.Ici (0 : ℝ) := by
+      ext x
+      simp only [Set.mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, neg_neg, Set.mem_Ici]
+      constructor <;> intro h <;> linarith
+    have h' := _root_.IsIntegralCurveOn.comp_add_autonomous hφ t₀
+    rwa [hset] at h'
+  have hclosed : IsClosed {x : ℝ² | cubicEnergy x ≤ cubicEnergy (φ t₀)} :=
+    isClosed_le hVd.continuous continuous_const
+  have hinv : IsPositivelyInvariant {x | cubicEnergy x ≤ cubicEnergy (φ t₀)} f := by
+    have h := Dynamics.isPositivelyInvariant_sublevel_of_isOpen (f := f)
+      (c := cubicEnergy (φ t₀)) isOpen_univ hVd (fun x _ => hdec x) (by simpa using hclosed)
+    simpa using h
+  have hΩ : IsCompact {x : ℝ² | cubicEnergy x ≤ cubicEnergy (φ t₀)} := by
+    refine Metric.isCompact_of_isClosed_isBounded hclosed ?_
+    refine (Metric.isBounded_iff_subset_closedBall (0 : ℝ²)).mpr
+      ⟨4 * cubicEnergy (φ t₀) + 1, fun x hx => ?_⟩
+    rw [Metric.mem_closedBall, dist_zero_right]
+    have h1 := norm_sq_le_cubicEnergy x
+    have h2 : cubicEnergy x ≤ cubicEnergy (φ t₀) := hx
+    have h3 : 0 ≤ cubicEnergy x := by
+      rcases eq_or_ne x 0 with rfl | hx0
+      · simp [cubicEnergy]
+      · exact (cubicEnergy_pos hx0).le
+    nlinarith [norm_nonneg x]
+  have hconv := PH.tendsto_zero_of_lasalle_detectable hf cubicEnergy_contDiff
+    (by simp [cubicEnergy]) (fun x hx => cubicEnergy_pos hx) hdec hdet hΩ hinv hψs (by simp)
+  exact Filter.Tendsto.congr (fun x => by simp)
+    (hconv.comp (Filter.tendsto_atTop_add_const_right Filter.atTop (-t₀) Filter.tendsto_id))
+
+/-- The local asymptotic translation is sound but not exact: the cubic detector is locally
+asymptotically stable at a phase-locked point with zero slope, which meets no slope-gain
+requirement. -/
+@[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
+    connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := cubicDetector_mem_den_locallyAsymptoticallyStable
   unfold powerlib.TMIO.Statement at hmem
   rw [← h, TMIO.mem_realize] at hmem
   have hs : Meets cubicDetector .slopeStable := hmem .slopeStable (by simp [family, translate])

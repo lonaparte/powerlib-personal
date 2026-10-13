@@ -3,6 +3,7 @@ import theorem.PH.Linearization
 import theorem.Criteria.Hurwitz2
 import theorem.Dynamics.ConverseLinearization
 import theorem.TMIO.ClaimElab
+import theorem.CurrentControl.SISO
 
 /-! # Synchronous machines as nonlinear port-Hamiltonian systems
 
@@ -73,8 +74,16 @@ Two models, both instances of `powerlib.PH.NonlinearModel` (P0b), continuous tim
   `cos δ* > 0`. The instability translation is not exact (`ClassicalSM.not_exact_unstable`):
   instability is the failure of Lyapunov stability, so the unbalanced machine
   `ClassicalSM.offEquilibrium` (`P_m = 2 > b = 1`) is unstable
-  (`ClassicalSM.offEquilibrium_mem_den_unstable`). Exactness of the Lyapunov and local asymptotic
-  translations is not claimed (UNPROVED).
+  (`ClassicalSM.offEquilibrium_mem_den_unstable`). The local asymptotic translation is exact
+  (`ClassicalSM.exact_locallyAsymptoticallyStable`), although the linearization does not decide the
+  degenerate cases: an undamped machine conserves `H`, and at a fold (`cos δ* = 0`) the Hamiltonian
+  `p²/(2M) − P_m (s − sin s)` (`classicalSM_H_fold`) is below its value at `(δ*, 0)` on one side, where
+  the dissipated `H` keeps every solution away (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`).
+  The Lyapunov translation is not exact (`ClassicalSM.not_exact_lyapunovStable`): the stable-branch
+  requirement `|δ*| < π/2` is not invariant under whole turns (`ClassicalSM.wrapped`, `δ* = 2π`,
+  `ClassicalSM.wrapped_mem_den_lyapunovStable`); its denotation is
+  `ClassicalSM.mem_den_lyapunovStable_iff` (`b sin δ* = P_m`, `cos δ* > 0`, every `D ≥ 0`): a fold is
+  unstable for every `D ≥ 0` (`classicalSM_accel_fold`, `Dynamics.unstable_of_lie_nonpos_of_lie_pos`).
 * `SyncMachine7.family`: a complete system is the seven-state machine (`SyncMachine7Params`),
   read as its pH port system at the origin (the unforced state, an equilibrium). Passivity is
   translated into no requirement and is exact (`H ≥ 0`); flow sentences have no translation.
@@ -586,6 +595,328 @@ whose Jacobian `(J − R) ∇²H = [[0, 1/M], [−b cos δ*, −D/M]]` is Hurwit
     · have : 0 < 1 / m.p.M * (m.p.b * Real.cos m.δs) := by linarith
       have h2 : 0 < m.p.b * Real.cos m.δs := pos_of_mul_pos_right this (by positivity)
       exact pos_of_mul_pos_right h2 hb.le
+
+/-! #### The local asymptotic and Lyapunov translations -/
+
+private theorem norm_state2_le (x : State 2) : ‖x‖ ≤ |x 0| + |x 1| := by
+  have h0 := abs_nonneg (x 0)
+  have h1 := abs_nonneg (x 1)
+  have hsq : ‖x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 := by
+    rw [PiLp.norm_sq_eq_of_L2]
+    simp [Fin.sum_univ_succ, sq_abs]
+  have h : ‖x‖ ^ 2 ≤ (|x 0| + |x 1|) ^ 2 := by
+    rw [hsq]
+    nlinarith [sq_abs (x 0), sq_abs (x 1), mul_nonneg h0 h1]
+  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp h
+
+private theorem norm_seed_sub (δs s w : ℝ) :
+    ‖(WithLp.toLp 2 ![δs + s, w] : State 2) - classicalSM_equilibrium δs‖ ≤ |s| + |w| := by
+  refine (norm_state2_le _).trans (le_of_eq ?_)
+  simp [classicalSM_equilibrium]
+
+private theorem H_contDiff (p : ClassicalSMParams) : ContDiff ℝ 1 (classicalSM_H p) := by
+  unfold classicalSM_H
+  fun_prop
+
+/-- Under zero input the Hamiltonian decreases at the damping rate `D ω²`. -/
+private theorem H_lie (p : ClassicalSMParams) (x : State 2) :
+    fderiv ℝ (classicalSM_H p) x ((classicalSM p).zeroInputField x) =
+      -(p.D * (x 1 / p.M) ^ 2) := by
+  have h := (classicalSM p).zeroInput_power_balance x
+  rw [classicalSM_dampingPower] at h
+  exact h
+
+/-- At a fold of the machine (`b sin δ* = P_m`, `cos δ* = 0`) the Hamiltonian relative to
+`(δ*, 0)` is `p² / (2M) − P_m (s − sin s)` at `(δ* + s, p)`.
+Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem classicalSM_H_fold (p : ClassicalSMParams) {δs : ℝ}
+    (heq : p.b * Real.sin δs = p.Pm) (hcos : Real.cos δs = 0) (s w : ℝ) :
+    classicalSM_H p (WithLp.toLp 2 ![δs + s, w]) - classicalSM_H p (classicalSM_equilibrium δs) =
+      1 / (2 * p.M) * w ^ 2 - p.Pm * (s - Real.sin s) := by
+  simp only [classicalSM_H, classicalSM_equilibrium]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  rw [Real.cos_add, hcos, ← heq]
+  ring
+
+/-- At a fold the accelerating power is `P_m (1 − cos s)` at `δ* + s`.
+Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem classicalSM_accel_fold (p : ClassicalSMParams) {δs : ℝ}
+    (heq : p.b * Real.sin δs = p.Pm) (hcos : Real.cos δs = 0) (s : ℝ) :
+    p.Pm - p.b * Real.sin (δs + s) = p.Pm * (1 - Real.cos s) := by
+  rw [Real.sin_add, hcos, ← heq]
+  ring
+
+private theorem Pm_ne_zero_of_fold (p : ClassicalSMParams) {δs : ℝ}
+    (heq : p.b * Real.sin δs = p.Pm) (hcos : Real.cos δs = 0) : p.Pm ≠ 0 := by
+  intro h0
+  rw [h0] at heq
+  have hs : Real.sin δs = 0 := (mul_eq_zero.mp heq).resolve_left p.b_pos.ne'
+  have := Real.sin_sq_add_cos_sq δs
+  rw [hs, hcos] at this
+  norm_num at this
+
+/-- At a fold the Hamiltonian takes values below `H(δ*, 0)` arbitrarily close to it. -/
+private theorem fold_seeds (p : ClassicalSMParams) {δs : ℝ} (heq : p.b * Real.sin δs = p.Pm)
+    (hcos : Real.cos δs = 0) : ∀ ε > 0, ∃ x, ‖x - classicalSM_equilibrium δs‖ < ε ∧
+      classicalSM_H p x < classicalSM_H p (classicalSM_equilibrium δs) := by
+  intro ε hε
+  have hε2 : 0 < ε / 2 := by linarith
+  have hP := Pm_ne_zero_of_fold p heq hcos
+  have hsin := Real.sin_lt hε2
+  rcases lt_or_gt_of_ne hP with hneg | hpos
+  · refine ⟨WithLp.toLp 2 ![δs + -(ε / 2), 0], ?_, ?_⟩
+    · refine (norm_seed_sub _ _ _).trans_lt ?_
+      rw [abs_neg, abs_of_pos hε2, abs_zero, add_zero]
+      linarith
+    · have h := classicalSM_H_fold p heq hcos (-(ε / 2)) 0
+      rw [Real.sin_neg] at h
+      nlinarith
+  · refine ⟨WithLp.toLp 2 ![δs + ε / 2, 0], ?_, ?_⟩
+    · refine (norm_seed_sub _ _ _).trans_lt ?_
+      rw [abs_of_pos hε2, abs_zero, add_zero]
+      linarith
+    · have h := classicalSM_H_fold p heq hcos (ε / 2) 0
+      nlinarith
+
+/-- Local asymptotic stability of `(δ*, 0)` forces `b sin δ* = P_m`, `D > 0` and `cos δ* > 0`:
+an undamped machine conserves `H`, the unstable branch is unstable, and at a fold `H` is below
+its value at `(δ*, 0)` on one side, where the dissipated `H` keeps every solution away. -/
+private theorem las_requirements {m : Model}
+    (hlas : LocalAsymptoticStable (classicalSM m.p).zeroInputField m.point) :
+    m.p.b * Real.sin m.δs = m.p.Pm ∧ 0 < m.p.D ∧ 0 < Real.cos m.δs := by
+  have hcd := zeroInputField_contDiff m.p
+  have heq := Dynamics.isEquilibrium_of_lyapunovStable hcd hlas.1
+  rw [classicalSM_isEquilibrium_iff] at heq
+  have hl : m.p.b * Real.sin m.δs = m.p.Pm := by
+    simpa [Model.point, classicalSM_equilibrium] using heq.1
+  have hM := m.p.M_pos
+  have hHd : Differentiable ℝ (classicalSM_H m.p) := (H_contDiff m.p).differentiable one_ne_zero
+  have hD : 0 < m.p.D := by
+    rcases eq_or_lt_of_le m.p.D_nonneg with hD | hD
+    · exfalso
+      refine Dynamics.not_localAsymptoticStable_of_lie_nonpos
+        (V := fun x => -classicalSM_H m.p x) (ρ := 1) hcd hHd.neg one_pos (fun x _ => ?_)
+        (fun ε hε => ⟨WithLp.toLp 2 ![m.δs + 0, ε / 2], ?_, ?_⟩) hlas
+      · rw [fderiv_fun_neg, _root_.neg_apply, H_lie, ← hD]
+        simp
+      · refine (norm_seed_sub _ _ _).trans_lt ?_
+        rw [abs_zero, zero_add, abs_of_pos (by linarith)]
+        linarith
+      · simp only [Model.point, classicalSM_H, classicalSM_equilibrium, PiLp.toLp_apply,
+          Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, add_zero]
+        have : 0 < 1 / (2 * m.p.M) * (ε / 2) ^ 2 := by positivity
+        linarith
+    · exact hD
+  refine ⟨hl, hD, ?_⟩
+  rcases lt_trichotomy (Real.cos m.δs) 0 with hc | hc | hc
+  · exact absurd hlas.1 (classicalSM_unstable m.p hl hc)
+  · exfalso
+    refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := classicalSM_H m.p) (ρ := 1)
+      hcd hHd one_pos (fun x _ => ?_) (fold_seeds m.p hl hc) hlas
+    rw [H_lie]
+    have := m.p.D_nonneg
+    nlinarith [sq_nonneg (x 1 / m.p.M)]
+  · exact hc
+
+/-- The local asymptotic translation is exact: the classical machine is locally asymptotically
+stable at `(δ*, 0)` exactly when `b sin δ* = P_m`, `D > 0` and `cos δ* > 0`. The linearization
+does not decide the degenerate cases, the model's structure does: an undamped machine conserves
+`H`, and at a fold (`cos δ* = 0`) the Hamiltonian `p²/(2M) − P_m (s − sin s)`
+(`classicalSM_H_fold`) is below its value at `(δ*, 0)` on one side, where the dissipated `H`
+keeps every solution away (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
+@[powerlib_domain] theorem exact_locallyAsymptoticallyStable :
+    connection% (family.Exact (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  ext m
+  rw [TMIO.mem_realize]
+  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
+    forall_eq]
+  constructor
+  · rintro ⟨hl, hd⟩
+    have h := mem_den_locallyExponentiallyStable m hd.1 hl hd.2
+    unfold powerlib.TMIO.Statement at h
+    exact mem_den_flow_iff.mpr
+      (Flow.locallyExponentiallyStable_localAsymptoticStable (mem_den_flow_iff.mp h))
+  · intro h
+    obtain ⟨hl, hD, hc⟩ := las_requirements (mem_den_flow_iff.mp h)
+    exact ⟨hl, hD, hc⟩
+
+/-- The zero-input field is `2π`-periodic in the rotor angle. -/
+private theorem zeroInputField_add_period (p : ClassicalSMParams) (k : ℤ) (x : State 2) :
+    (classicalSM p).zeroInputField (x + WithLp.toLp 2 ![k * (2 * Real.pi), 0]) =
+      (classicalSM p).zeroInputField x := by
+  apply WithLp.ofLp_injective 2
+  simp only [NonlinearModel.zeroInputField]
+  rw [classicalSM_field, classicalSM_field]
+  ext i
+  fin_cases i <;> simp [Real.sin_add_int_mul_two_pi]
+
+private theorem lyapunovStable_add_period (p : ClassicalSMParams) (δs : ℝ) (k : ℤ) :
+    LyapunovStable (classicalSM p).zeroInputField
+        (classicalSM_equilibrium (δs + k * (2 * Real.pi))) ↔
+      LyapunovStable (classicalSM p).zeroInputField (classicalSM_equilibrium δs) := by
+  have hfun : (fun z => (classicalSM p).zeroInputField
+        (z + classicalSM_equilibrium (δs + k * (2 * Real.pi)))) =
+      fun z => (classicalSM p).zeroInputField (z + classicalSM_equilibrium δs) := by
+    funext z
+    have hz : z + classicalSM_equilibrium (δs + k * (2 * Real.pi)) =
+        (z + classicalSM_equilibrium δs) + WithLp.toLp 2 ![k * (2 * Real.pi), 0] := by
+      ext i
+      fin_cases i
+      · simp [classicalSM_equilibrium]
+        ring
+      · simp [classicalSM_equilibrium]
+    rw [hz, zeroInputField_add_period]
+  have h1 := Flow.Property.holds_shift_iff (f := (classicalSM p).zeroInputField)
+    (e := classicalSM_equilibrium (δs + k * (2 * Real.pi))) Flow.Property.lyapunovStable
+  have h2 := Flow.Property.holds_shift_iff (f := (classicalSM p).zeroInputField)
+    (e := classicalSM_equilibrium δs) Flow.Property.lyapunovStable
+  rw [hfun] at h1
+  exact h1.symm.trans h2
+
+/-- Lyapunov stability holds exactly at the equilibria with `cos δ* > 0` (every damping
+`D ≥ 0`): the stable branch up to whole turns. The unstable branch is unstable, and a fold
+(`cos δ* = 0`) is unstable for every `D ≥ 0`: below the level of `(δ*, 0)` the dissipated
+Hamiltonian keeps the solution, and there `P_m (p + D δ)` grows at the rate
+`P_m² (1 − cos(δ − δ*))` (`Dynamics.unstable_of_lie_nonpos_of_lie_pos`). -/
+@[powerlib_domain] theorem mem_den_lyapunovStable_iff (m : Model) :
+    connection% (m ∈ family.den (.flow .lyapunovStable) ↔
+      m ∈ {m : Model | m.p.b * Real.sin m.δs = m.p.Pm ∧ 0 < Real.cos m.δs}) := by
+  unfold powerlib.TMIO.Statement
+  rw [Set.mem_ofPred_eq, mem_den_flow_iff]
+  have hcd := zeroInputField_contDiff m.p
+  have hM := m.p.M_pos
+  constructor
+  · intro hls
+    have heq := Dynamics.isEquilibrium_of_lyapunovStable hcd hls
+    rw [classicalSM_isEquilibrium_iff] at heq
+    have hl : m.p.b * Real.sin m.δs = m.p.Pm := by
+      simpa [Model.point, classicalSM_equilibrium] using heq.1
+    refine ⟨hl, ?_⟩
+    rcases lt_trichotomy (Real.cos m.δs) 0 with hc | hc | hc
+    · exact absurd hls (classicalSM_unstable m.p hl hc)
+    · exfalso
+      set a := m.p.Pm with ha
+      have h0 := fun x : State 2 => (smCoord (n := 2) 0).hasFDerivAt (x := x)
+      have h1 := fun x : State 2 => (smCoord (n := 2) 1).hasFDerivAt (x := x)
+      have hW : ContDiff ℝ 1 fun x : State 2 => a * (x 1 + m.p.D * x 0) :=
+        contDiff_const.mul ((smCoord (n := 2) 1).contDiff.add
+          (contDiff_const.mul (smCoord (n := 2) 0).contDiff))
+      refine Dynamics.unstable_of_lie_nonpos_of_lie_pos (E := classicalSM_H m.p)
+        (W := fun x : State 2 => a * (x 1 + m.p.D * x 0)) (r := 1) hcd (H_contDiff m.p) hW
+        one_pos (fun x _ => ?_) (fold_seeds m.p hl hc) (fun x hx hEx => ?_) hls
+      · rw [H_lie]
+        have := m.p.D_nonneg
+        nlinarith [sq_nonneg (x 1 / m.p.M)]
+      · have hd : HasFDerivAt (fun y : State 2 => a * (y 1 + m.p.D * y 0))
+            (a • (smCoord (n := 2) 1 + m.p.D • smCoord (n := 2) 0)) x :=
+          ((h1 x).add ((h0 x).const_mul m.p.D)).const_mul a
+        rw [hd.fderiv]
+        have hf := classicalSM_field m.p x 0
+        have hf0 : ((classicalSM m.p).zeroInputField x) 0 = x 1 / m.p.M := by
+          have := congrFun hf 0
+          simpa [NonlinearModel.zeroInputField] using this
+        have hf1 : ((classicalSM m.p).zeroInputField x) 1 =
+            m.p.Pm - m.p.b * Real.sin (x 0) - m.p.D * (x 1 / m.p.M) := by
+          have := congrFun hf 1
+          simpa [NonlinearModel.zeroInputField] using this
+        simp only [_root_.smul_apply, _root_.add_apply, smCoord, PiLp.proj_apply, smul_eq_mul,
+          hf0, hf1]
+        set s₀ := x 0 - m.δs with hs₀
+        have hx0 : x 0 = m.δs + s₀ := by rw [hs₀]; ring
+        have hrate : m.p.Pm - m.p.b * Real.sin (x 0) - m.p.D * (x 1 / m.p.M) +
+            m.p.D * (x 1 / m.p.M) = a * (1 - Real.cos s₀) := by
+          rw [hx0, ← classicalSM_accel_fold m.p hl hc]
+          ring
+        rw [hrate]
+        have hs1 : |s₀| ≤ 1 := by
+          have h' := PiLp.norm_apply_le (x - classicalSM_equilibrium m.δs) 0
+          have he : (x - classicalSM_equilibrium m.δs) 0 = s₀ := by
+            simp [classicalSM_equilibrium, hs₀]
+          rw [he, Real.norm_eq_abs] at h'
+          exact h'.trans hx
+        have hs0 : s₀ ≠ 0 := by
+          intro h
+          have hx' : x = WithLp.toLp 2 ![m.δs + 0, x 1] := by
+            ext i
+            fin_cases i
+            · simp [hx0, h]
+            · simp
+          have hfold := classicalSM_H_fold m.p hl hc 0 (x 1)
+          rw [← hx'] at hfold
+          change classicalSM_H m.p x < classicalSM_H m.p (classicalSM_equilibrium m.δs) at hEx
+          have : 0 ≤ 1 / (2 * m.p.M) * x 1 ^ 2 := by positivity
+          simp only [sub_zero, Real.sin_zero, mul_zero] at hfold
+          linarith
+        have hcos1 : Real.cos s₀ < 1 := by
+          refine lt_of_le_of_ne (Real.cos_le_one _) fun h => hs0 ?_
+          refine (Real.cos_eq_one_iff_of_lt_of_lt ?_ ?_).mp h
+          · linarith [neg_abs_le s₀, Real.two_le_pi]
+          · linarith [le_abs_self s₀, Real.two_le_pi]
+        have ha0 : a ≠ 0 := Pm_ne_zero_of_fold m.p hl hc
+        have : 0 < a * a := mul_self_pos.mpr ha0
+        nlinarith
+    · exact hc
+  · rintro ⟨hl, hc⟩
+    -- reduce to the stable branch `|δ'| < π/2`, `δ* = δ' + k · 2π`
+    set k : ℤ := round (m.δs / (2 * Real.pi)) with hk
+    set δ' := m.δs - k * (2 * Real.pi) with hδ'
+    have hpi := Real.pi_pos
+    have habs : |δ'| ≤ Real.pi := by
+      have h := abs_sub_round (m.δs / (2 * Real.pi))
+      have : δ' = 2 * Real.pi * (m.δs / (2 * Real.pi) - round (m.δs / (2 * Real.pi))) := by
+        rw [hδ', hk]; field_simp
+      rw [this, abs_mul, abs_of_pos (by positivity)]
+      nlinarith
+    have hcos' : Real.cos δ' = Real.cos m.δs := by
+      rw [hδ', Real.cos_sub_int_mul_two_pi]
+    have hsin' : Real.sin δ' = Real.sin m.δs := by
+      rw [hδ', Real.sin_sub_int_mul_two_pi]
+    have hmem : δ' ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2) := by
+      constructor
+      · by_contra h
+        push Not at h
+        have : Real.cos δ' ≤ 0 := by
+          rw [← Real.cos_neg]
+          exact Real.cos_nonpos_of_pi_div_two_le_of_le (by linarith)
+            (by linarith [neg_abs_le δ'])
+        linarith
+      · by_contra h
+        push Not at h
+        have : Real.cos δ' ≤ 0 :=
+          Real.cos_nonpos_of_pi_div_two_le_of_le h (by linarith [le_abs_self δ'])
+        linarith
+    have hls := classicalSM_lyapunovStable m.p hmem (by rw [hsin']; exact hl)
+    have hδs : m.δs = δ' + k * (2 * Real.pi) := by rw [hδ']; ring
+    change LyapunovStable _ (classicalSM_equilibrium m.δs)
+    rw [hδs, lyapunovStable_add_period]
+    exact hls
+
+/-- A machine balanced one whole turn away from the reference: `M = b = 1`, `D = P_m = 0`,
+`δ* = 2π`. It is the stable equilibrium `(0, 0)` up to a turn. -/
+def wrapped : Model := ⟨⟨1, 0, 1, 0, one_pos, le_rfl, one_pos⟩, 2 * Real.pi⟩
+
+/-- The wrapped machine is Lyapunov stable (`cos 2π = 1 > 0`). -/
+@[powerlib_domain] theorem wrapped_mem_den_lyapunovStable :
+    connection% (wrapped ∈ family.den (.flow .lyapunovStable)) := by
+  have h := mem_den_lyapunovStable_iff wrapped
+  unfold powerlib.TMIO.Statement at h ⊢
+  exact h.mpr ⟨by simp [wrapped], by simp [wrapped]⟩
+
+/-- The Lyapunov translation is sound but not exact: the stable-branch requirement
+`|δ*| < π/2` is not invariant under whole turns, so the wrapped machine is Lyapunov stable
+without meeting it. Its denotation is `mem_den_lyapunovStable_iff` (`cos δ* > 0`). -/
+@[powerlib_domain] theorem not_exact_lyapunovStable :
+    connection% (¬ family.Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := wrapped_mem_den_lyapunovStable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hs : Meets wrapped .stableBranch := hmem .stableBranch (by simp [family, translate])
+  have h2 := hs.2
+  simp only [wrapped] at h2
+  linarith [Real.pi_pos]
 
 /-! #### Exactness of the passivity translation -/
 

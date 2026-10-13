@@ -1,6 +1,7 @@
 import theorem.Criteria.Routh3
 import theorem.Dynamics.ConverseLinearization
 import theorem.Synchronous.Swing
+import theorem.CurrentControl.SISO
 
 /-! # Grid-forming VSM with a first-order power filter on an infinite bus (three states)
 
@@ -41,7 +42,15 @@ Family and connection conclusions.
   `M = D = K₀ = −1`, `ω_c = 1` is locally exponentially stable).  The instability translation
   is not exact (`VSMLPF.not_exact_unstable`): instability is the failure of Lyapunov stability,
   so an unbalanced model (`VSMLPF.offEquilibrium`) is unstable
-  (`VSMLPF.offEquilibrium_mem_den_unstable`, `Dynamics.unstable_of_ne_zero`).
+  (`VSMLPF.offEquilibrium_mem_den_unstable`, `Dynamics.unstable_of_ne_zero`). The local
+  asymptotic and Lyapunov translations are not exact (`VSMLPF.not_exact_locallyAsymptoticallyStable`,
+  `VSMLPF.not_exact_lyapunovStable`, the negative-inertia model, via
+  `Spectral.not_exact_of_den_subset`); the Lyapunov translation is not exact even within positive
+  `M, D, ω_c` (`VSMLPF.not_exactUnder_lyapunovStable`: the flat curve `VSMLPF.flatCurve`,
+  `K₀ = P₀ = 0`, is Lyapunov stable, `VSMLPF.flatCurve_mem_den_lyapunovStable`). Exactness of the
+  local asymptotic translation within positive `M, D, ω_c` is not claimed (UNPROVED): on the Hopf
+  boundary `K = D ω_c + D²/M` the Jacobian has a purely imaginary pair, and deciding local asymptotic
+  stability there needs the first Lyapunov coefficient (normal form), not available here.
 * Connection conclusions at the loading angle (`VSMLPF.atLoading`): `locallyExponentiallyStable`,
   `unstable`, and the exact boundary `locallyExponentiallyStable_iff` (a member-equivalence:
   local exponential stability iff `K < D ω_c + D²/M`, boundary excluded); new:
@@ -51,7 +60,16 @@ Family and connection conclusions.
   `DroopLPF.exactUnder_locallyExponentiallyStable`, and not exact without that range,
   `DroopLPF.not_exact_locallyExponentiallyStable` with `DroopLPF.negativeDamping`; the
   instability translation is not exact, `DroopLPF.not_exact_unstable` with the unbalanced
-  `DroopLPF.offEquilibrium`);
+  `DroopLPF.offEquilibrium`); within positive `D, ω_c` the local asymptotic translation is exact too
+  (`DroopLPF.exactUnder_locallyAsymptoticallyStable`: the loop is the swing equation
+  `(D/ω_c) δ̈ + D δ̇ = P₀ − K₀ sin δ` with the dissipated energy `DroopLPF.energy`; a vanishing power
+  curve has a continuum of equilibria and a fold leaves the energy below its value on one side,
+  `DroopLPF.energy_fold`), and the Lyapunov denotation is
+  `DroopLPF.mem_den_lyapunovStable_iff_of_physical` (balanced with `K₀ cos δ* > 0` or `K₀ = 0`; a fold
+  is unstable, `Dynamics.unstable_of_lie_nonpos_of_lie_pos`), so the Lyapunov translation is not
+  exact within that range (`DroopLPF.not_exactUnder_lyapunovStable`, `DroopLPF.flatCurve`); without
+  it neither translation is exact (`DroopLPF.not_exact_locallyAsymptoticallyStable`,
+  `DroopLPF.not_exact_lyapunovStable`, the negative-damping model);
   `DroopLPF.locallyExponentiallyStable` (no Hopf boundary) is a connection conclusion; new:
   `DroopLPF.unstable_atAntiLoading`.
 * Static evidence on the model: the equilibrium theorems `field_eq_zero_iff`,
@@ -892,6 +910,89 @@ but not exact: the negative-inertia model is locally exponentially stable. -/
   have := hp.1
   norm_num [negativeInertia] at this
 
+/-! ### The local asymptotic and Lyapunov translations -/
+
+/-- Without positive inertia, damping and bandwidth the local asymptotic translation is sound but
+not exact (the negative-inertia model). -/
+@[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
+    connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have hsound := chain_le_semantics
+  have hles := not_exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hsound hles
+  refine Spectral.not_exact_of_den_subset (s := .flow .locallyExponentiallyStable)
+    (s' := .flow .locallyAsymptoticallyStable) rfl
+    (Family.chain_le_semantics_iff.mp hsound _) (fun m hm => ?_) hles
+  rw [family_isAutonomous.mem_den_flow] at hm ⊢
+  exact Flow.locallyExponentiallyStable_localAsymptoticStable hm
+
+/-- Without positive inertia, damping and bandwidth the Lyapunov translation is sound but not
+exact (the negative-inertia model). -/
+@[powerlib_domain] theorem not_exact_lyapunovStable :
+    connection% (¬ family.Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  have hsound := chain_le_semantics
+  have hles := not_exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hsound hles
+  refine Spectral.not_exact_of_den_subset (s := .flow .locallyExponentiallyStable)
+    (s' := .flow .lyapunovStable) rfl
+    (Family.chain_le_semantics_iff.mp hsound _) (fun m hm => ?_) hles
+  rw [family_isAutonomous.mem_den_flow] at hm ⊢
+  exact hm.lyapunovStable
+
+/-- A flat power curve: `M = D = ω_c = 1`, `P₀ = K₀ = 0`, `δ* = 0`. Every angle is balanced; the
+field is `δ̇ = ω`, `ω̇ = −P_f − ω`, `Ṗ_f = −P_f`. -/
+def flatCurve : Model := ⟨⟨1, 1, 1, 0, 0⟩, 0⟩
+
+/-- The flat-curve VSM is Lyapunov stable: `(δ + ω − P_f)² + ω² + P_f²` does not increase
+(`δ + ω − P_f` is conserved), although its synchronizing coefficient is zero. -/
+@[powerlib_domain] theorem flatCurve_mem_den_lyapunovStable :
+    connection% (flatCurve ∈ family.den (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [family_isAutonomous.mem_den_flow]
+  refine Dynamics.lyapunovStable_of_inner_nonpos (by norm_num)
+    (Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) !![1, 1, -1; 0, 1, 0; 0, 0, 1])
+    (fun z w hzw => ?_) fun z => ?_
+  · have h0 := congrArg (fun y : State 3 => y 0) hzw
+    have h1 := congrArg (fun y : State 3 => y 1) hzw
+    have h2 := congrArg (fun y : State 3 => y 2) hzw
+    simp only [toEuclideanCLM_apply3] at h0 h1 h2
+    simp at h0 h1 h2
+    exact state3_ext (by linarith) h1 h2
+  · have hf0 : flatCurve.field z 0 = z 1 := by
+      simp [Model.field, flatCurve, Model.point, VSMLPF.field]
+    have hf1 : flatCurve.field z 1 = -z 2 - z 1 := by
+      simp [Model.field, flatCurve, Model.point, VSMLPF.field]
+    have hf2 : flatCurve.field z 2 = -z 2 := by
+      simp [Model.field, flatCurve, Model.point, VSMLPF.field]
+    simp only [PiLp.inner_apply, Fin.sum_univ_succ, Fin.sum_univ_zero, toEuclideanCLM_apply3,
+      hf0, hf1, hf2, RCLike.inner_apply, conj_trivial]
+    simp
+    nlinarith [sq_nonneg (z 1 + z 2), sq_nonneg (z 1), sq_nonneg (z 2)]
+
+/-- Within positive inertia, damping and bandwidth the Lyapunov translation is not exact: the
+flat-curve VSM is physical and Lyapunov stable with a zero synchronizing coefficient. -/
+@[powerlib_domain] theorem not_exactUnder_lyapunovStable :
+    connection% (¬ family.ExactUnder {.physical} (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
+  intro h
+  have hmem := flatCurve_mem_den_lyapunovStable
+  unfold powerlib.TMIO.Statement at hmem
+  have hI : flatCurve ∈ TMIO.realize family.meets {.physical} := by
+    rw [TMIO.mem_realize]
+    intro q hq
+    rw [Set.mem_singleton_iff] at hq
+    subst hq
+    show 0 < (1 : ℝ) ∧ 0 < (1 : ℝ) ∧ 0 < (1 : ℝ)
+    norm_num
+  have h' : flatCurve ∈ TMIO.realize family.meets (family.translate (.flow .lyapunovStable) ∪
+      {.physical}) := by
+    rw [h]
+    exact ⟨hmem, hI⟩
+  rw [TMIO.mem_realize] at h'
+  have hs : Meets flatCurve .synchronizing := h' .synchronizing (by simp [family, translate])
+  simp [Meets, flatCurve, Model.K] at hs
+
 end VSMLPF
 
 
@@ -1301,6 +1402,368 @@ exact: the negative-damping model is locally exponentially stable. -/
   have hp : Meets negativeDamping .physical := hmem .physical (by simp [family, translate])
   have := hp.1
   norm_num [negativeDamping] at this
+
+/-! ### The local asymptotic and Lyapunov translations -/
+
+/-- The droop + LPF energy relative to `δ₀`: `(P₀ − P_f)² / (2 D ω_c) + U(δ)` with
+`U(δ) = ∫_{δ₀}^{δ} (K₀ sin − P₀) = K₀ (cos δ₀ − cos δ) − P₀ (δ − δ₀)`: the loop is the swing
+equation `(D/ω_c) δ̈ + D δ̇ = P₀ − K₀ sin δ`. -/
+def energy (δ₀ : ℝ) (x : State 2) : ℝ :=
+  (q.P0 - x 1) ^ 2 / (2 * q.D * q.ωc) +
+    (q.K0 * (Real.cos δ₀ - Real.cos (x 0)) - q.P0 * (x 0 - δ₀))
+
+@[powerlib_foundation] theorem contDiff_energy (δ₀ : ℝ) : ContDiff ℝ 1 (q.energy δ₀) := by
+  unfold energy
+  fun_prop
+
+@[powerlib_foundation] theorem hasFDerivAt_energy (δ₀ : ℝ) (x : State 2) :
+    HasFDerivAt (q.energy δ₀)
+      ((-(q.P0 - x 1) / (q.D * q.ωc)) •
+          (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ) +
+        (q.K0 * Real.sin (x 0) - q.P0) •
+          (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ)) x := by
+  have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
+  have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
+  have hk := ((h1.const_sub q.P0).pow 2).mul_const (2 * q.D * q.ωc)⁻¹
+  have hc := (Real.hasDerivAt_cos (x 0)).comp_hasFDerivAt x h0
+  have hU := ((hc.const_sub (Real.cos δ₀)).const_mul q.K0).sub ((h0.sub_const δ₀).const_mul q.P0)
+  have h := hk.add hU
+  convert h using 1
+  · funext y
+    simp only [energy, Pi.add_apply, Pi.sub_apply, PiLp.proj_apply, Function.comp_apply]
+    ring
+  · apply ContinuousLinearMap.ext
+    intro v
+    simp
+    ring
+
+/-- Lie derivative of the energy along the field: `Ė = −(P₀ − P_f)² / D` (`D, ω_c ≠ 0`). -/
+@[powerlib_foundation] theorem energy_lie (hD : q.D ≠ 0) (hω : q.ωc ≠ 0) (δ₀ : ℝ) (x : State 2) :
+    fderiv ℝ (q.energy δ₀) x (q.field x) = -((q.P0 - x 1) ^ 2 / q.D) := by
+  rw [(q.hasFDerivAt_energy δ₀ x).fderiv]
+  simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply, smul_eq_mul, field,
+    Synchronous.mkState_zero, Synchronous.mkState_one]
+  field_simp
+  ring
+
+/-- At a balanced fold angle (`cos δ* = 0`) the energy at `(δ* + s, P₀)` is `−P₀ (s − sin s)`.
+Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem energy_fold {δ₀ : ℝ} (hb : q.K0 * Real.sin δ₀ = q.P0)
+    (hcos : Real.cos δ₀ = 0) (s : ℝ) :
+    q.energy δ₀ (Synchronous.mkState (δ₀ + s) q.P0) = -q.P0 * (s - Real.sin s) := by
+  simp only [energy, Synchronous.mkState_zero, Synchronous.mkState_one, sub_self]
+  rw [Real.cos_add, hcos, ← hb]
+  simp
+  ring
+
+/-- At a balanced fold angle the restoring power is `P₀ − K₀ sin(δ* + s) = P₀ (1 − cos s)`.
+Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem restoring_fold {δ₀ : ℝ} (hb : q.K0 * Real.sin δ₀ = q.P0)
+    (hcos : Real.cos δ₀ = 0) (s : ℝ) :
+    q.P0 - q.K0 * Real.sin (δ₀ + s) = q.P0 * (1 - Real.cos s) := by
+  rw [Real.sin_add, hcos, ← hb]
+  ring
+
+private theorem norm_state2_le (x : State 2) : ‖x‖ ≤ |x 0| + |x 1| :=
+  Synchronous.norm_state_le x
+
+private theorem norm_mkState_sub_point (m : Model) (s t : ℝ) :
+    ‖Synchronous.mkState (m.δ + s) (m.q.P0 + t) - m.point‖ ≤ |s| + |t| := by
+  refine (norm_state2_le _).trans (le_of_eq ?_)
+  simp [Model.point]
+
+private theorem sin_ne_zero_of_cos {δ₀ : ℝ} (hcos : Real.cos δ₀ = 0) : Real.sin δ₀ ≠ 0 := by
+  intro h
+  have := Real.sin_sq_add_cos_sq δ₀
+  rw [h, hcos] at this
+  norm_num at this
+
+/-- At a fold the energy takes values below its value at the operating point arbitrarily close
+to it. -/
+private theorem fold_seeds {m : Model} (hb : m.q.K0 * Real.sin m.δ = m.q.P0)
+    (hcos : Real.cos m.δ = 0) (hK : m.q.K0 ≠ 0) :
+    ∀ ε > 0, ∃ x, ‖x - m.point‖ < ε ∧ m.q.energy m.δ x < m.q.energy m.δ m.point := by
+  intro ε hε
+  have hE0 : m.q.energy m.δ m.point = 0 := by simp [energy, Model.point]
+  rw [hE0]
+  have hP : m.q.P0 ≠ 0 := by rw [← hb]; exact mul_ne_zero hK (sin_ne_zero_of_cos hcos)
+  have hε2 : 0 < ε / 2 := by linarith
+  have hsin := Real.sin_lt hε2
+  rcases lt_or_gt_of_ne hP with hneg | hpos
+  · refine ⟨Synchronous.mkState (m.δ + -(ε / 2)) (m.q.P0 + 0), ?_, ?_⟩
+    · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
+      rw [abs_zero, add_zero, abs_neg, abs_of_pos hε2]
+      linarith
+    · rw [add_zero, m.q.energy_fold hb hcos, Real.sin_neg]
+      nlinarith
+  · refine ⟨Synchronous.mkState (m.δ + ε / 2) (m.q.P0 + 0), ?_, ?_⟩
+    · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
+      rw [abs_zero, add_zero, abs_of_pos hε2]
+      linarith
+    · rw [add_zero, m.q.energy_fold hb hcos]
+      nlinarith
+
+/-- With `D, ω_c > 0`, an equilibrium at the selected point is balanced. -/
+private theorem balanced_of_eq {m : Model} (hp : Meets m .physical)
+    (heq : m.q.field m.point = 0) : m.q.K0 * Real.sin m.δ = m.q.P0 := by
+  simpa [Model.point] using ((m.q.field_eq_zero_iff hp.1.ne' hp.2.ne' _).mp heq).2
+
+/-- A vanishing power curve (`K₀ = 0`) at a balanced angle (`P₀ = 0`): every `(δ, 0)` is an
+equilibrium. -/
+private theorem field_flat {m : Model} (hK : m.q.K0 = 0) (hP : m.q.P0 = 0) (δ : ℝ) :
+    m.q.field (Synchronous.mkState δ m.q.P0) = 0 := by
+  apply Synchronous.state_ext <;> simp [field, hK, hP]
+
+/-- Within positive droop damping and bandwidth, local asymptotic stability of `(δ*, P₀)` forces
+balance and synchronization. A negative synchronizing coefficient is a saddle; a vanishing power
+curve has a continuum of equilibria; and at a fold the dissipated energy is below its value at
+the operating point on one side. -/
+private theorem las_requirements {m : Model} (hp : Meets m .physical)
+    (hlas : LocalAsymptoticStable m.q.field m.point) :
+    Meets m .balanced ∧ Meets m .synchronizing := by
+  have hC : ContDiff ℝ 1 m.q.field := m.q.contDiff_field
+  have hb := balanced_of_eq hp (Dynamics.isEquilibrium_of_lyapunovStable hC hlas.1)
+  refine ⟨hb, ?_⟩
+  show 0 < m.q.K0 * Real.cos m.δ
+  rcases lt_trichotomy (m.q.K0 * Real.cos m.δ) 0 with hK | hK | hK
+  · exact absurd hlas.1 (unstable_of hp hb hK)
+  · exfalso
+    rcases mul_eq_zero.mp hK with hK0 | hc
+    · have hP : m.q.P0 = 0 := by rw [← hb, hK0, zero_mul]
+      refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
+        ⟨Synchronous.mkState (m.δ + ε / 2) (m.q.P0 + 0), fun h => ?_, ?_, ?_⟩) hlas
+      · have := congrArg (fun y : State 2 => y 0) h
+        simp [Model.point] at this
+        linarith
+      · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
+        rw [abs_zero, add_zero, abs_of_pos (by linarith)]
+        linarith
+      · rw [add_zero]
+        exact field_flat hK0 hP _
+    · by_cases hK0 : m.q.K0 = 0
+      · have hP : m.q.P0 = 0 := by rw [← hb, hK0, zero_mul]
+        refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
+          ⟨Synchronous.mkState (m.δ + ε / 2) (m.q.P0 + 0), fun h => ?_, ?_, ?_⟩) hlas
+        · have := congrArg (fun y : State 2 => y 0) h
+          simp [Model.point] at this
+          linarith
+        · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
+          rw [abs_zero, add_zero, abs_of_pos (by linarith)]
+          linarith
+        · rw [add_zero]
+          exact field_flat hK0 hP _
+      refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := m.q.energy m.δ) (ρ := 1) hC
+        ((m.q.contDiff_energy _).differentiable one_ne_zero) one_pos (fun x _ => ?_)
+        (fold_seeds hb hc hK0) hlas
+      rw [m.q.energy_lie hp.1.ne' hp.2.ne']
+      have : 0 ≤ (m.q.P0 - x 1) ^ 2 / m.q.D := div_nonneg (sq_nonneg _) hp.1.le
+      linarith
+  · exact hK
+
+/-- Within positive droop damping and bandwidth the local asymptotic translation is exact: a
+model with `D, ω_c > 0` is locally asymptotically stable at `(δ*, P₀)` exactly when the angle is
+balanced and synchronizing (`K₀ cos δ* > 0`). The linearization does not decide `K₀ cos δ* = 0`,
+the model's structure does: a vanishing power curve has a continuum of equilibria, and at a fold
+the energy `(P₀ − P_f)²/(2 D ω_c) + U(δ)`, dissipated at the rate `(P₀ − P_f)²/D`, is
+`−P₀ (s − sin s)` at `(δ* + s, P₀)` (`energy_fold`), below its value at the operating point on
+one side (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
+@[powerlib_domain] theorem exactUnder_locallyAsymptoticallyStable :
+    connection% (family.ExactUnder {.physical} (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
+  change TMIO.realize Meets ({.balanced, .physical, .synchronizing} ∪ {.physical}) = _
+  ext m
+  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
+    Set.mem_inter_iff]
+  constructor
+  · intro h
+    have hp : Meets m .physical := h .physical (by simp)
+    exact ⟨mem_den_flow_iff.mpr (Flow.locallyExponentiallyStable_localAsymptoticStable
+      (les_of hp (h .balanced (by simp)) (h .synchronizing (by simp)))),
+      fun q hq => by rw [hq]; exact hp⟩
+  · rintro ⟨hd, hI⟩ r hr
+    have hp : Meets m .physical := hI .physical rfl
+    obtain ⟨hb, hK⟩ := las_requirements hp (mem_den_flow_iff.mp hd)
+    rcases hr with ((rfl | rfl | rfl) | rfl)
+    · exact hb
+    · exact hp
+    · exact hK
+    · exact hp
+
+/-- Within positive droop damping and bandwidth, Lyapunov stability of `(δ*, P₀)` holds exactly
+at a balanced angle that is synchronizing (`K₀ cos δ* > 0`) or has a vanishing power curve
+(`K₀ = 0`, where `δ − P_f/(D ω_c)` is conserved and `P_f` decays). A negative synchronizing
+coefficient is a saddle, and a fold is unstable: below the level of the operating point the
+dissipated energy keeps the solution, and there `P₀ ((P₀ − P_f)/ω_c + D δ)` grows at the rate
+`P₀² (1 − cos(δ − δ*))` (`Dynamics.unstable_of_lie_nonpos_of_lie_pos`). -/
+@[powerlib_domain] theorem mem_den_lyapunovStable_iff_of_physical (m : Model) (hD : 0 < m.q.D)
+    (hω : 0 < m.q.ωc) :
+    connection% (m ∈ family.den (.flow .lyapunovStable) ↔
+      m ∈ {m : Model | m.q.K0 * Real.sin m.δ = m.q.P0 ∧
+        (0 < m.q.K0 * Real.cos m.δ ∨ m.q.K0 = 0)}) := by
+  unfold powerlib.TMIO.Statement
+  rw [Set.mem_ofPred_eq]
+  have hp : Meets m .physical := ⟨hD, hω⟩
+  have hC : ContDiff ℝ 1 m.q.field := m.q.contDiff_field
+  constructor
+  · intro hm
+    have hls : LyapunovStable m.q.field m.point := mem_den_flow_iff.mp hm
+    have hb := balanced_of_eq hp (Dynamics.isEquilibrium_of_lyapunovStable hC hls)
+    refine ⟨hb, ?_⟩
+    by_cases hK0 : m.q.K0 = 0
+    · exact Or.inr hK0
+    rcases lt_trichotomy (m.q.K0 * Real.cos m.δ) 0 with hK | hK | hK
+    · exact absurd hls (unstable_of hp hb hK)
+    · exfalso
+      have hc : Real.cos m.δ = 0 := (mul_eq_zero.mp hK).resolve_left hK0
+      set a := m.q.P0 with ha
+      have h0 := fun x : State 2 =>
+        (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
+      have h1 := fun x : State 2 =>
+        (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
+      have hW : ContDiff ℝ 1 fun x : State 2 => a * ((a - x 1) / m.q.ωc + m.q.D * x 0) := by
+        fun_prop
+      refine Dynamics.unstable_of_lie_nonpos_of_lie_pos (E := m.q.energy m.δ)
+        (W := fun x : State 2 => a * ((a - x 1) / m.q.ωc + m.q.D * x 0)) (r := 1) hC
+        (m.q.contDiff_energy _) hW one_pos (fun x _ => ?_) (fold_seeds hb hc hK0)
+        (fun x hx hEx => ?_) hls
+      · rw [m.q.energy_lie hD.ne' hω.ne']
+        have : 0 ≤ (m.q.P0 - x 1) ^ 2 / m.q.D := div_nonneg (sq_nonneg _) hD.le
+        linarith
+      · have hd : HasFDerivAt (fun y : State 2 => a * ((a - y 1) / m.q.ωc + m.q.D * y 0))
+            (a • ((-1 / m.q.ωc) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) :
+                State 2 →L[ℝ] ℝ) +
+              m.q.D • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ))) x := by
+          have h := ((((h1 x).const_sub a).mul_const m.q.ωc⁻¹).add
+            ((h0 x).const_mul m.q.D)).const_mul a
+          convert h using 1
+          · funext y
+            simp only [Pi.add_apply, PiLp.proj_apply]
+            ring
+          · apply ContinuousLinearMap.ext
+            intro v
+            simp
+            ring
+        rw [hd.fderiv]
+        simp only [_root_.smul_apply, _root_.add_apply, PiLp.proj_apply, smul_eq_mul, field,
+          Synchronous.mkState_zero, Synchronous.mkState_one]
+        set s₀ := x 0 - m.δ with hs₀
+        have hx0 : x 0 = m.δ + s₀ := by rw [hs₀]; ring
+        have hrate : -1 / m.q.ωc * (m.q.ωc * (m.q.K0 * Real.sin (x 0) - x 1)) +
+            m.q.D * ((m.q.P0 - x 1) / m.q.D) = a * (1 - Real.cos s₀) := by
+          rw [hx0, ← m.q.restoring_fold hb hc]
+          field_simp
+          ring
+        rw [hrate]
+        have hs1 : |s₀| ≤ 1 := by
+          have := Synchronous.abs_coord_le (x - m.point) 0
+          simp only [PiLp.sub_apply, Model.point, Synchronous.mkState_zero] at this
+          rw [← hs₀] at this
+          exact this.trans hx
+        have hs0 : s₀ ≠ 0 := by
+          intro h
+          have hE0 : m.q.energy m.δ m.point = 0 := by simp [energy, Model.point]
+          rw [hE0] at hEx
+          have hx' : x 0 = m.δ := by rw [hx0, h, add_zero]
+          simp only [energy, hx', sub_self, mul_zero] at hEx
+          have : 0 ≤ (m.q.P0 - x 1) ^ 2 / (2 * m.q.D * m.q.ωc) :=
+            div_nonneg (sq_nonneg _) (by positivity)
+          linarith
+        have hcos1 : Real.cos s₀ < 1 := by
+          refine lt_of_le_of_ne (Real.cos_le_one _) fun h => hs0 ?_
+          refine (Real.cos_eq_one_iff_of_lt_of_lt ?_ ?_).mp h
+          · linarith [neg_abs_le s₀, Real.two_le_pi]
+          · linarith [le_abs_self s₀, Real.two_le_pi]
+        have ha0 : a ≠ 0 := fun h0 => mul_ne_zero hK0 (sin_ne_zero_of_cos hc) (hb.trans h0)
+        have : 0 < a * a := mul_self_pos.mpr ha0
+        nlinarith
+    · exact Or.inl hK
+  · rintro ⟨hb, (hK | hK0)⟩
+    · exact mem_den_flow_iff.mpr (les_of hp hb hK).lyapunovStable
+    · -- a vanishing power curve: `(δ − P_f/(D ω_c))² + P_f²` does not increase
+      have hP : m.q.P0 = 0 := by rw [← hb, hK0, zero_mul]
+      rw [family_isAutonomous.mem_den_flow]
+      have hDw : m.q.D * m.q.ωc ≠ 0 := mul_ne_zero hD.ne' hω.ne'
+      refine Dynamics.lyapunovStable_of_inner_nonpos two_pos
+        (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![1, -1 / (m.q.D * m.q.ωc); 0, 1])
+        (fun z w hzw => ?_) fun z => ?_
+      · have hz0 := congrArg (fun y : State 2 => y 0) hzw
+        have hz1 := congrArg (fun y : State 2 => y 1) hzw
+        simp only [Synchronous.toEuclideanCLM_apply_zero, Synchronous.toEuclideanCLM_apply_one]
+          at hz0 hz1
+        simp at hz0 hz1
+        refine Synchronous.state_ext ?_ hz1
+        rw [hz1] at hz0
+        linarith
+      · have hf0 : m.field z 0 = -(z 1 / m.q.D) := by
+          simp [Model.field, Model.point, field, hP]
+          ring
+        have hf1 : m.field z 1 = -(m.q.ωc * z 1) := by
+          simp [Model.field, Model.point, field, hP, hK0]
+        simp only [PiLp.inner_apply, Fin.sum_univ_two, Synchronous.toEuclideanCLM_apply_zero,
+          Synchronous.toEuclideanCLM_apply_one, hf0, hf1, RCLike.inner_apply, conj_trivial]
+        have hcancel : -(z 1 / m.q.D) + -1 / (m.q.D * m.q.ωc) * -(m.q.ωc * z 1) = 0 := by
+          field_simp
+          ring
+        simp only [Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
+          Matrix.cons_val_fin_one, Matrix.of_apply, one_mul, zero_mul, zero_add]
+        simp only [hcancel]
+        nlinarith [sq_nonneg (z 1), hω]
+
+/-- Without positive damping and bandwidth the local asymptotic translation is sound but not
+exact (the negative-damping model). -/
+@[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
+    connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have hsound := chain_le_semantics
+  have hles := not_exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hsound hles
+  refine Spectral.not_exact_of_den_subset (s := .flow .locallyExponentiallyStable)
+    (s' := .flow .locallyAsymptoticallyStable) rfl
+    (Family.chain_le_semantics_iff.mp hsound _) (fun m hm => ?_) hles
+  rw [family_isAutonomous.mem_den_flow] at hm ⊢
+  exact Flow.locallyExponentiallyStable_localAsymptoticStable hm
+
+/-- Without positive damping and bandwidth the Lyapunov translation is sound but not exact (the
+negative-damping model). -/
+@[powerlib_domain] theorem not_exact_lyapunovStable :
+    connection% (¬ family.Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  have hsound := chain_le_semantics
+  have hles := not_exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hsound hles
+  refine Spectral.not_exact_of_den_subset (s := .flow .locallyExponentiallyStable)
+    (s' := .flow .lyapunovStable) rfl
+    (Family.chain_le_semantics_iff.mp hsound _) (fun m hm => ?_) hles
+  rw [family_isAutonomous.mem_den_flow] at hm ⊢
+  exact hm.lyapunovStable
+
+/-- A vanishing power curve: `D = ω_c = 1`, `P₀ = K₀ = 0`, `δ* = 0`. -/
+def flatCurve : Model := ⟨⟨1, 1, 0, 0⟩, 0⟩
+
+/-- Within positive damping and bandwidth the Lyapunov translation is not exact: the flat-curve
+droop loop is Lyapunov stable with a zero synchronizing coefficient. -/
+@[powerlib_domain] theorem not_exactUnder_lyapunovStable :
+    connection% (¬ family.ExactUnder {.physical} (.flow .lyapunovStable)) := by
+  have hmem := mem_den_lyapunovStable_iff_of_physical flatCurve one_pos one_pos
+  unfold powerlib.TMIO.Statement at hmem ⊢
+  unfold Family.ExactUnder TMIO.ExactUnder
+  intro h
+  have hls : flatCurve ∈ family.den (.flow .lyapunovStable) :=
+    hmem.mpr ⟨by simp [flatCurve], Or.inr rfl⟩
+  have hI : flatCurve ∈ TMIO.realize family.meets {.physical} := by
+    rw [TMIO.mem_realize]
+    intro q hq
+    rw [Set.mem_singleton_iff] at hq
+    subst hq
+    show 0 < (1 : ℝ) ∧ 0 < (1 : ℝ)
+    norm_num
+  have h' : flatCurve ∈ TMIO.realize family.meets (family.translate (.flow .lyapunovStable) ∪
+      {.physical}) := by
+    rw [h]
+    exact ⟨hls, hI⟩
+  rw [TMIO.mem_realize] at h'
+  have hs : Meets flatCurve .synchronizing := h' .synchronizing (by simp [family, translate])
+  simp [Meets, flatCurve] at hs
 
 end DroopLPF
 

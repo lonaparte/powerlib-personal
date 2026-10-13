@@ -3,6 +3,7 @@ import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
 import theorem.Flow.Shift
 import theorem.TMIO.ClaimElab
+import theorem.CurrentControl.SISO
 
 /-! # Power-synchronization control (PSC): quasi-static one-dimensional model and algebra
 
@@ -37,6 +38,17 @@ and `unstable_pi_sub_arcsin` are connection statements (members of the denotatio
 translation is not exact (`PSC.not_exact_unstable`): instability is the failure of Lyapunov
 stability, so an unbalanced angle (`PSC.offEquilibrium`) is unstable
 (`PSC.offEquilibrium_mem_den_unstable`, `Dynamics.unstable_of_ne_zero`).
+The local asymptotic translation is exact (`PSC.exact_locallyAsymptoticallyStable`), although the
+linearization does not decide the degenerate slope `K_p P_max cos δ* = 0`: there the model's
+structure does. A vanishing gain or curve (`K_p = 0`, or `P_max = P* = 0`) makes every state an
+equilibrium (`Dynamics.not_localAsymptoticStable_of_equilibria`), and at a balanced fold angle
+(`cos δ* = 0`) the field is `k (1 − cos(δ − δ*))`, `k = K_p P_max sin δ*` (`PSC.rhs_eq_fold`), of one
+sign on both sides, so the coordinate `k δ` never decreases
+(`Dynamics.not_localAsymptoticStable_of_lie_nonpos`). The Lyapunov translation is not exact
+(`PSC.not_exact_lyapunovStable`: the frozen loop `PSC.frozen`, `K_p = 0`, is Lyapunov stable,
+`PSC.frozen_mem_den_lyapunovStable`); its denotation is `PSC.mem_den_lyapunovStable_iff`: a balanced
+angle with a negative slope, or a vanishing scalar field (the fold angle is unstable by Chetaev's
+theorem, `Dynamics.unstable_of_chetaev`).
 
 Algebra (foundation): the steady-state active power, the converter-side reactive power and the
 grid-side received reactive power from `S̄ = V̄ Ī*`; the active-resistance high-pass
@@ -311,6 +323,230 @@ angle `δ = θ − θ_g` satisfies `δ̇ = K_p (P* − P_max sin δ)` at `t` (th
     convert h.add hg using 1
     · funext s; simp only [Pi.add_apply]; ring
     · simp only [rhs]; ring
+
+/-! ### The local asymptotic and Lyapunov translations -/
+
+/-- At a balanced fold angle (`cos δ₀ = 0`) the scalar field is `k (1 − cos(δ − δ₀))` with
+`k = K_p P_max sin δ₀`: it has one sign on both sides of `δ₀`.
+Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem rhs_eq_fold {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
+    (hcos : Real.cos δ₀ = 0) (z : ℝ) :
+    c.rhs z = c.Kp * c.Pmax * Real.sin δ₀ * (1 - Real.cos (z - δ₀)) := by
+  have hs : Real.sin z = Real.sin δ₀ * Real.cos (z - δ₀) := by
+    have h := Real.sin_add δ₀ (z - δ₀)
+    rw [add_sub_cancel] at h
+    rw [h, hcos]
+    ring
+  rw [rhs, ← hb, hs]
+  ring
+
+private theorem hasFDerivAt_coord (k : ℝ) (z : State 1) :
+    HasFDerivAt (fun y : State 1 => k * y 0) (k • NormalForm.coordCLM) z :=
+  (NormalForm.coordCLM.hasFDerivAt (x := z)).const_mul k
+
+private theorem fderiv_coord_apply (k : ℝ) (z v : State 1) :
+    fderiv ℝ (fun y : State 1 => k * y 0) z v = k * v 0 := by
+  rw [(hasFDerivAt_coord k z).fderiv]
+  rfl
+
+private theorem norm_embed_add_sub (δ₀ s : ℝ) : ‖embed (δ₀ + s) - embed δ₀‖ = |s| := by
+  rw [NormalForm.embed_sub, NormalForm.norm_embed, add_sub_cancel_left]
+
+/-- With a vanishing scalar field every state is an equilibrium: no point is locally
+asymptotically stable. -/
+private theorem not_las_of_rhs_zero {c : PSC} (h : ∀ z, c.rhs z = 0) (δ₀ : ℝ) :
+    ¬ LocalAsymptoticStable c.field (embed δ₀) := by
+  refine Dynamics.not_localAsymptoticStable_of_equilibria fun ε hε =>
+    ⟨embed (δ₀ + ε / 2), ?_, ?_, ?_⟩
+  · rw [Ne, NormalForm.embed_eq_iff]
+    linarith
+  · rw [norm_embed_add_sub, abs_of_pos (by linarith)]
+    linarith
+  · rw [field, NormalForm.lift_embed, h, NormalForm.embed_zero]
+
+private theorem sin_ne_zero_of_cos {δ₀ : ℝ} (hcos : Real.cos δ₀ = 0) : Real.sin δ₀ ≠ 0 := by
+  intro h
+  have := Real.sin_sq_add_cos_sq δ₀
+  rw [h, hcos] at this
+  norm_num at this
+
+/-- A balanced fold angle with `K_p P_max ≠ 0` is not locally asymptotically stable: the
+coordinate `−k δ` never increases along the field and is below its value at `δ₀` on one side. -/
+private theorem not_las_fold {c : PSC} {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
+    (hcos : Real.cos δ₀ = 0) (hk : c.Kp * c.Pmax ≠ 0) :
+    ¬ LocalAsymptoticStable c.field (embed δ₀) := by
+  set k := c.Kp * c.Pmax * Real.sin δ₀ with hkdef
+  have hk0 : k ≠ 0 := mul_ne_zero hk (sin_ne_zero_of_cos hcos)
+  refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := fun z : State 1 => -k * z 0)
+    (ρ := 1) (NormalForm.lift_contDiff c.rhs_contDiff)
+    (fun z => (hasFDerivAt_coord (-k) z).differentiableAt) one_pos (fun z _ => ?_)
+    (fun ε hε => ?_)
+  · rw [fderiv_coord_apply, field, NormalForm.lift_apply, c.rhs_eq_fold hb hcos]
+    have := Real.cos_le_one (z 0 - δ₀)
+    nlinarith [sq_nonneg k]
+  · rcases lt_or_gt_of_ne hk0 with hneg | hpos
+    · refine ⟨embed (δ₀ + -(ε / 2)), ?_, ?_⟩
+      · rw [norm_embed_add_sub, abs_neg, abs_of_pos (by linarith)]
+        linarith
+      · simp only [NormalForm.embed_apply]
+        nlinarith
+    · refine ⟨embed (δ₀ + ε / 2), ?_, ?_⟩
+      · rw [norm_embed_add_sub, abs_of_pos (by linarith)]
+        linarith
+      · simp only [NormalForm.embed_apply]
+        nlinarith
+
+/-- A balanced fold angle with `K_p P_max ≠ 0` is unstable (Chetaev's theorem with the
+coordinate `k (δ − δ₀)`, which grows at the rate `k² (1 − cos(δ − δ₀)) > 0` where it is
+positive). -/
+private theorem unstable_fold {c : PSC} {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
+    (hcos : Real.cos δ₀ = 0) (hk : c.Kp * c.Pmax ≠ 0) :
+    Unstable c.field (embed δ₀) := by
+  set k := c.Kp * c.Pmax * Real.sin δ₀ with hkdef
+  have hk0 : k ≠ 0 := mul_ne_zero hk (sin_ne_zero_of_cos hcos)
+  have hW : ContDiff ℝ 1 fun z : State 1 => k * z 0 - k * δ₀ :=
+    (contDiff_const.mul (NormalForm.coordCLM.contDiff)).sub contDiff_const
+  refine Dynamics.unstable_of_chetaev (W := fun z : State 1 => k * z 0 - k * δ₀) (r := 1)
+    (NormalForm.lift_contDiff c.rhs_contDiff) hW one_pos (fun ε hε => ?_) (fun z hz hWz => ?_)
+  · rcases lt_or_gt_of_ne hk0 with hneg | hpos
+    · refine ⟨embed (δ₀ + -(ε / 2)), ?_, ?_⟩
+      · rw [norm_embed_add_sub, abs_neg, abs_of_pos (by linarith)]
+        linarith
+      · simp only [NormalForm.embed_apply]
+        nlinarith
+    · refine ⟨embed (δ₀ + ε / 2), ?_, ?_⟩
+      · rw [norm_embed_add_sub, abs_of_pos (by linarith)]
+        linarith
+      · simp only [NormalForm.embed_apply]
+        nlinarith
+  · have hd : HasFDerivAt (fun z : State 1 => k * z 0 - k * δ₀) (k • NormalForm.coordCLM) z :=
+      (hasFDerivAt_coord k z).sub_const _
+    rw [hd.fderiv]
+    change 0 < k * (c.field z) 0
+    rw [field, NormalForm.lift_apply, c.rhs_eq_fold hb hcos]
+    have hne : z 0 - δ₀ ≠ 0 := by
+      intro h
+      apply (lt_irrefl (0 : ℝ))
+      calc (0 : ℝ) < k * z 0 - k * δ₀ := hWz
+        _ = k * (z 0 - δ₀) := by ring
+        _ = 0 := by rw [h, mul_zero]
+    have hlt : |z 0 - δ₀| ≤ 1 := by
+      have : ‖z - embed δ₀‖ = |z 0 - δ₀| := by
+        rw [← NormalForm.embed_coord z, NormalForm.embed_sub, NormalForm.norm_embed,
+          NormalForm.embed_coord]
+      linarith
+    have hcos1 : Real.cos (z 0 - δ₀) < 1 := by
+      refine lt_of_le_of_ne (Real.cos_le_one _) fun h => hne ?_
+      refine (Real.cos_eq_one_iff_of_lt_of_lt ?_ ?_).mp h <;>
+        [linarith [neg_abs_le (z 0 - δ₀), Real.two_le_pi];
+          linarith [le_abs_self (z 0 - δ₀), Real.two_le_pi]]
+    have : 0 < 1 - Real.cos (z 0 - δ₀) := by linarith
+    have hk2 : 0 < k * k := mul_self_pos.mpr hk0
+    nlinarith
+
+/-- The local asymptotic translation is exact: a PSC model is locally asymptotically stable at
+`δ*` exactly when the angle is balanced with a negative slope (`K_p P_max cos δ* > 0`). Local
+asymptotic stability forces an equilibrium (`Dynamics.isEquilibrium_of_lyapunovStable`); a vanishing
+gain `K_p = 0` or a vanishing curve `P_max = P* = 0` makes every state an equilibrium; a positive
+slope is unstable; and at a balanced fold angle (`cos δ* = 0`, `K_p P_max ≠ 0`) the field
+`k (1 − cos(δ − δ*))` keeps the coordinate `k δ` nondecreasing, so the solutions from one side
+never return (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`). The linearization alone does
+not decide the fold, the model's structure does. -/
+@[powerlib_domain] theorem exact_locallyAsymptoticallyStable :
+    connection% (family.Exact (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have hsound := chain_le_semantics
+  unfold powerlib.TMIO.Statement at hsound
+  refine Set.Subset.antisymm (Family.chain_le_semantics_iff.mp hsound _) fun m hm => ?_
+  have hlas : LocalAsymptoticStable m.c.field (embed m.δ) := mem_den_flow_iff.mp hm
+  have hC : ContDiff ℝ 1 m.c.field := NormalForm.lift_contDiff m.c.rhs_contDiff
+  have heq : m.c.rhs m.δ = 0 := by
+    have h := Dynamics.isEquilibrium_of_lyapunovStable hC hlas.1
+    rwa [IsEquilibrium, field, NormalForm.lift_eq_zero_iff] at h
+  have hK : m.c.Kp ≠ 0 := fun hK =>
+    not_las_of_rhs_zero (fun z => by simp [rhs, hK]) m.δ hlas
+  have hb : m.c.Pmax * Real.sin m.δ = m.c.Pstar := by
+    have := (mul_eq_zero.mp heq).resolve_left hK
+    linarith
+  have hzero : m.c.Pmax = 0 → False := fun hP => by
+    have hP' : m.c.Pstar = 0 := by rw [← hb, hP, zero_mul]
+    exact not_las_of_rhs_zero (fun z => by simp [rhs, hP, hP']) m.δ hlas
+  rw [TMIO.mem_realize]
+  intro q hq
+  change q ∈ ({.balanced, .stableSlope} : Set Requirement) at hq
+  rcases hq with rfl | rfl
+  · exact hb
+  · show 0 < m.c.Kp * m.c.Pmax * Real.cos m.δ
+    rcases lt_trichotomy (m.c.Kp * m.c.Pmax * Real.cos m.δ) 0 with h | h | h
+    · exact absurd hlas.1 (unstable_of (m := m) hb h)
+    · exfalso
+      rcases mul_eq_zero.mp h with h' | h'
+      · exact hzero ((mul_eq_zero.mp h').resolve_left hK)
+      · exact not_las_fold hb h' (mul_ne_zero hK fun hP => hzero hP) hlas
+    · exact h
+
+/-- Lyapunov stability holds exactly at a balanced angle with a negative slope, or for a
+vanishing scalar field (`K_p = 0`, or `P_max = P* = 0`, where every state is an equilibrium). A
+positive slope is unstable, and so is a balanced fold angle (`cos δ* = 0`, `K_p P_max ≠ 0`), by
+Chetaev's theorem (`Dynamics.unstable_of_chetaev`). -/
+@[powerlib_domain] theorem mem_den_lyapunovStable_iff (m : Model) :
+    connection% (m ∈ family.den (.flow .lyapunovStable) ↔
+      m ∈ {m : Model | (m.c.Pmax * Real.sin m.δ = m.c.Pstar ∧
+          0 < m.c.Kp * m.c.Pmax * Real.cos m.δ) ∨
+        m.c.Kp = 0 ∨ (m.c.Pmax = 0 ∧ m.c.Pstar = 0)}) := by
+  unfold powerlib.TMIO.Statement
+  rw [Set.mem_ofPred_eq]
+  constructor
+  · intro hm
+    have hls : LyapunovStable m.c.field (embed m.δ) := mem_den_flow_iff.mp hm
+    have hC : ContDiff ℝ 1 m.c.field := NormalForm.lift_contDiff m.c.rhs_contDiff
+    have heq : m.c.rhs m.δ = 0 := by
+      have h := Dynamics.isEquilibrium_of_lyapunovStable hC hls
+      rwa [IsEquilibrium, field, NormalForm.lift_eq_zero_iff] at h
+    by_cases hK : m.c.Kp = 0
+    · exact Or.inr (Or.inl hK)
+    have hb : m.c.Pmax * Real.sin m.δ = m.c.Pstar := by
+      have := (mul_eq_zero.mp heq).resolve_left hK
+      linarith
+    by_cases hP : m.c.Pmax = 0
+    · exact Or.inr (Or.inr ⟨hP, by rw [← hb, hP, zero_mul]⟩)
+    rcases lt_trichotomy (m.c.Kp * m.c.Pmax * Real.cos m.δ) 0 with h | h | h
+    · exact absurd hls (unstable_of (m := m) hb h)
+    · rcases mul_eq_zero.mp h with h' | h'
+      · exact absurd ((mul_eq_zero.mp h').resolve_left hK) hP
+      · exact absurd hls (unstable_fold hb h' (mul_ne_zero hK hP))
+    · exact Or.inl ⟨hb, h⟩
+  · rintro (⟨hb, hs⟩ | hK | ⟨hP, hP'⟩)
+    · exact mem_den_flow_iff.mpr (les_of (m := m) hb hs).lyapunovStable
+    all_goals
+      rw [family_isAutonomous.mem_den_flow]
+      refine Dynamics.lyapunovStable_of_inner_nonpos one_pos
+        (ContinuousLinearMap.id ℝ (State 1)) Function.injective_id fun z => ?_
+      simp [Model.field, field, rhs, NormalForm.lift, *]
+
+/-- A frozen synchronization loop: `K_p = 0` (and `P* = P_max = 0`, `δ* = 0`); the scalar field
+vanishes and every state is an equilibrium. -/
+def frozen : Model := ⟨⟨0, 0, 0⟩, 0⟩
+
+/-- The frozen loop is Lyapunov stable (every solution is constant) although its slope
+`K_p P_max cos δ*` is zero. -/
+@[powerlib_domain] theorem frozen_mem_den_lyapunovStable :
+    connection% (frozen ∈ family.den (.flow .lyapunovStable)) := by
+  have h := mem_den_lyapunovStable_iff frozen
+  unfold powerlib.TMIO.Statement at h ⊢
+  exact h.mpr (Or.inr (Or.inl rfl))
+
+/-- The Lyapunov translation is sound but not exact: the frozen loop is Lyapunov stable without a
+negative slope. -/
+@[powerlib_domain] theorem not_exact_lyapunovStable :
+    connection% (¬ family.Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := frozen_mem_den_lyapunovStable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hs : Meets frozen .stableSlope := hmem .stableSlope (by simp [family, translate])
+  simp [Meets, frozen] at hs
 
 /-! ### Instability away from equilibrium -/
 
