@@ -48,9 +48,10 @@ Results.
   `ΔU − α(r_c − y)² ≤ U(y) ≤ ΔU − (α/4)(r_c − y)²`, `barrier_sub_sq_le_guardPotential`,
   `guardPotential_le_barrier_sub_sq`). The inner integral `K` enters only through
   `K(a) ≤ K(y) ≤ K(ψ(a)) ≤ (1 + κ) K(a)`, so no separate expansion of `K` is needed. The rate is
-  an upper bound; that the `X^{−1/2}` term is generically present is the endpoint-table statement
-  `endpointCorrection_ne_zero_iff` (`Asymptotics/EndpointLaplace.lean`), not a statement proved
-  here for this integral.
+  sharp: for this integral the `X^{−1/2}` term is present with a nonzero coefficient,
+  `T_committed/T_guard = 2 (1 − 1/√(πX) + O(1/X))` (`guardMFPT_ratio_two_term`,
+  `tendsto_guardMFPT_ratio_mul_sqrt_atTop`, `guardMFPT_ratio_sub_two_isTheta` in
+  `Asymptotics/GuardMFPTExpansion.lean`).
 * Single-term asymptotics (source §1.3, and the `× 2` of §1.5), with
   `P = guardPrefactor α l₁ D̃ = (√π/2) √(D̃ l₁)/α²` and `X = ΔU/D̃`:
   `guardMFPT_guard_isBigO`: `T_guard/(P e^X) − 1 = O(√D̃)` as `D̃ → 0⁺`;
@@ -71,8 +72,14 @@ Results.
   finite interval with a non-global quadratic phase. Generic Gaussian facts: `gaussMoment1`,
   `gaussMoment3`, `gaussMoment5` (`∫_0^∞ ξⁿ e^{−cξ²}`, `n = 1, 3, 5`), `integral_exp_neg_mul_sq_ge`
   (`∫_0^L e^{−cξ²} ≥ √(π/c)/2 − 1/(2cL)`), `intervalIntegral_le_integral_Ioi`.
-  The rates are upper bounds; that the `X^{−1/2}` term is present for this barrier is the
-  truncated-table statement `endpointCorrection_ne_zero_iff`, not proved here for the integral.
+  The `T_guard` rate is sharp: `T_guard = P e^X (1 + 1/√(πX) + O(1/X))` (`guardMFPT_guard_two_term`,
+  `tendsto_guardMFPT_guard_mul_sqrt_atTop`, `guardMFPT_guard_sub_one_isTheta` in
+  `Asymptotics/GuardMFPTExpansion.lean`). The committed rate is not: the half-order terms of the two
+  halves of the peak cancel and `T_committed = 2 P e^X (1 + O(1/X))`
+  (`guardMFPT_committed_two_term`, `guardMFPT_committed_two_term_atTop`).
+* Two-term expansions (`Asymptotics/GuardMFPTExpansion.lean`) use the bounds of this module made
+  public for that purpose: `guard_inside_bounds`, `guard_tails_le`, `guardInner_reflect_le`,
+  `guardKappa_nonneg`, `guardEps_nonneg`, `guard_exists_cut`, `intervalIntegrable_guardWeight`.
 * Supporting facts: `U(z) = ΔU − (l₁/4)(z² − r_c²)²` (`guardPotential_eq_barrier_sub`),
   monotonicity / integrability / two-sided bounds of the inner integral `K` (`guardInner_*`) and
   of the outer integrand (`guardIntegrand_*`).
@@ -677,7 +684,7 @@ variable {D : ℝ}
     hct hc1).mul (hc2.div hc1 (Real.sqrt_pos.mpr hpos).ne')
 
 /-- The weight `w(y) = y⁻¹ e^{U(y)/D̃}` is interval integrable on `[a, b]`, `0 < a ≤ b`. -/
-@[powerlib_foundation] private theorem intervalIntegrable_guardWeight {a b : ℝ} (ha : 0 < a)
+@[powerlib_foundation] theorem intervalIntegrable_guardWeight {a b : ℝ} (ha : 0 < a)
     (hab : a ≤ b) :
     IntervalIntegrable (fun y => y⁻¹ * Real.exp (guardPotential α l₁ y / D)) volume a b := by
   apply ContinuousOn.intervalIntegrable
@@ -687,7 +694,7 @@ variable {D : ℝ}
 
 /-- The part of the outer integral just inside the barrier top:
 `K(a) I ≤ ∫_a^{r_c} h ≤ K(r_c) I`, `I = ∫_a^{r_c} y⁻¹ e^{U/D̃}`. -/
-@[powerlib_foundation] private theorem guard_inside_bounds {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
+@[powerlib_foundation] theorem guard_inside_bounds {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
     guardInner α l₁ D a * ∫ y in a..b, y⁻¹ * Real.exp (guardPotential α l₁ y / D) ≤
         ∫ y in a..b, guardIntegrand α l₁ D y ∧
       ∫ y in a..b, guardIntegrand α l₁ D y ≤
@@ -898,7 +905,7 @@ with `U ≥ U(m)` on `[m, r_c]`. -/
 
 /-- The two tails are exponentially small against the main part: with
 `I = ∫_a^{r_c} y⁻¹ e^{U/D̃}`, `∫₀^a h + ∫_{ψ(a)}^{r_b} h ≤ ε K(a) I`. -/
-@[powerlib_foundation] private theorem guard_tails_le (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
+@[powerlib_foundation] theorem guard_tails_le (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
     (ha : 0 < a) (har : a < √(α / l₁)) (hψ : √(2 * (α / l₁) - a ^ 2) ≤ rb) (hD : 0 < D)
     (hDa : D ≤ a ^ 2) :
     (∫ y in (0 : ℝ)..a, guardIntegrand α l₁ D y) +
@@ -971,7 +978,7 @@ with `U ≥ U(m)` on `[m, r_c]`. -/
 
 /-- `K(ψ(a)) ≤ (1 + κ) K(a)`: across the barrier the inner integral grows by an exponentially
 small relative amount. -/
-@[powerlib_foundation] private theorem guardInner_reflect_le (hα : 0 < α) (hl : 0 < l₁) {a : ℝ}
+@[powerlib_foundation] theorem guardInner_reflect_le (hα : 0 < α) (hl : 0 < l₁) {a : ℝ}
     (ha : 0 < a) (har : a < √(α / l₁)) (hD : 0 < D) (hDa : D ≤ a ^ 2) :
     guardInner α l₁ D √(2 * (α / l₁) - a ^ 2) ≤
       (1 + guardKappa α l₁ a D) * guardInner α l₁ D a := by
@@ -1002,7 +1009,7 @@ small relative amount. -/
     exact mul_le_mul_of_nonneg_left hKa this
   linarith
 
-@[powerlib_foundation] private theorem guardKappa_nonneg (hα : 0 < α) (hl : 0 < l₁) {a : ℝ}
+@[powerlib_foundation] theorem guardKappa_nonneg (hα : 0 < α) (hl : 0 < l₁) {a : ℝ}
     (ha : 0 < a) (har : a < √(α / l₁)) (hD : 0 < D) : 0 ≤ guardKappa α l₁ a D := by
   have hρ : 0 < α / l₁ := div_pos hα hl
   have hrc2 : √(α / l₁) ^ 2 = α / l₁ := Real.sq_sqrt hρ.le
@@ -1013,7 +1020,7 @@ small relative amount. -/
   have : 0 ≤ √(2 * (α / l₁) - a ^ 2) - a := by linarith
   positivity
 
-@[powerlib_foundation] private theorem guardEps_nonneg (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
+@[powerlib_foundation] theorem guardEps_nonneg (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
     (ha : 0 < a) (har : a < √(α / l₁)) (hψ : √(2 * (α / l₁) - a ^ 2) ≤ rb) (hD : 0 < D) :
     0 ≤ guardEps α l₁ a rb D := by
   have hρ : 0 < α / l₁ := div_pos hα hl
@@ -1415,7 +1422,7 @@ is `O(√D̃)` and `κ`, `ε` are exponentially small (`tendsto_guardKappa_div`,
 
 /-- Choice of the cut: for every `t < 1` there is `a ∈ (0, r_c)` with `ψ(a) ≤ r_b` and
 `t < a²/(2r_c² − a²)`. -/
-@[powerlib_foundation] private theorem guard_exists_cut (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
+@[powerlib_foundation] theorem guard_exists_cut (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
     (hrb : guardRadius α l₁ < rb) {t : ℝ} (ht : t < 1) :
     ∃ a, 0 < a ∧ a < √(α / l₁) ∧ √(2 * (α / l₁) - a ^ 2) ≤ rb ∧
       t < a ^ 2 / (2 * (α / l₁) - a ^ 2) := by
@@ -1598,8 +1605,9 @@ boundary `r_b > r_c`. Explicitly, at a fixed cut `a`, `|T(r_b)/T(r_c) − 2| ≤
   nlinarith
 
 /-- **`T_committed / T_guard = 2(1 + O(X^{−1/2}))`** along `X = ΔU/D̃ → ∞`, `ΔU = α²/(4 l₁)`
-(source §1.2, "趋近 2 的方式本身是 `1 + O(X^{−1/2})`"). The half-order term is genuinely present
-in general (`endpointCorrection_ne_zero_iff`); this theorem is the upper bound. -/
+(source §1.2, "趋近 2 的方式本身是 `1 + O(X^{−1/2})`"). This theorem is the upper bound; the
+half-order term is present for this integral, with coefficient `−1/√π`
+(`tendsto_guardMFPT_ratio_mul_sqrt_atTop`, `Asymptotics/GuardMFPTExpansion.lean`). -/
 @[powerlib_foundation] theorem guardMFPT_ratio_isBigO_atTop (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
     (hrb : guardRadius α l₁ < rb) :
     (fun X => guardMFPT α l₁ (barrierHeight α l₁ / X) rb /
@@ -2242,7 +2250,8 @@ mass `D̃/α`, the weight `1/r_c` at the top and the half Gaussian `√(πD̃/α
 
 /-- **`T_committed = 2 P e^X (1 + O(√D̃))`** as `D̃ → 0⁺`, for every committed-escape boundary
 `r_b > r_c` (source §1.5, "`× 2` 承诺逃逸"): the product of `guardMFPT_ratio_sub_two_isBigO` and
-`guardMFPT_guard_isBigO`. -/
+`guardMFPT_guard_isBigO`. Not sharp: the half-order terms cancel and the relative error is `O(D̃)`
+(`guardMFPT_committed_two_term`, `Asymptotics/GuardMFPTExpansion.lean`). -/
 @[powerlib_foundation] theorem guardMFPT_committed_isBigO (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
     (hrb : guardRadius α l₁ < rb) :
     (fun D => guardMFPT α l₁ D rb /
