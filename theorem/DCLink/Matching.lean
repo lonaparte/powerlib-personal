@@ -48,15 +48,17 @@ Domain: matching control (§1.2, Arghir–Jouini–Dörfler).
   implementation evidence together with the solution correspondence `matching_trajectory_iff`
   (a trajectory-level statement outside the sentence language).
 
-Global stability (Arghir–Dörfler 2020, Theorem 3 / Appendix B, quoted in T-dc-voltage-gfm §1.2
-and T-gfm-control §1.6: `(G_dc + K_p)/η² > L_s² μ² v*²/(4 R_s ‖Z_s‖²)` ⇒ global stability via a
-shifted Hamiltonian and LaSalle). **UNPROVED**: the sources quote only the condition. The
-closed loop it refers to — AC-side states `i_dq` with `L_s i̇ = −R_s i − v_g + μ v_dc (cos θ, sin θ)`
-(or the αβ version), the modulation amplitude `μ`, the synchronizing potential `S`/Bregman
-divergence `W`, the feedforward, the grid model behind `Z_s`, and the target set — is not written
-in any work-sync note (theory/ and projects/ checked), so it cannot be formalized without
-inventing the model. Nor can it be obtained from `matching_den_eq`: no global swing result
-exists in the library, and the global sentences are in fact unavailable. Formalized boundary
+Global stability (Arghir–Dörfler 2020, quoted in T-dc-voltage-gfm §1.2 and T-gfm-control §1.6:
+`(G_dc + K_p)/η² > L_s² μ² v*²/(4 R_s ‖Z_s‖²)` ⇒ global stability via a shifted Hamiltonian and
+LaSalle). The work-sync notes quote only the condition; the closed loops are not written there
+and are not obtainable from `matching_den_eq` (the two-state model hides the AC side in `i_x`).
+They are formalized from the sources in separate modules: `theorem.DCLink.MatchingClosedLoop`
+(Arghir–Jouini–Dörfler, Automatica 2018: the converter with filter, DC P-control and load, global
+exponential stability of the steady state in the `θ`-free `dq` coordinates, and the absence of
+global attraction in the stationary frame) and `theorem.DCLink.MatchingStiffGrid` (the TPEL
+appendix the quoted condition comes from: Lyapunov stability of the operating point, no global
+asymptotic stability, LaSalle set convergence not formalized). Formalized boundary for the
+two-state model here
 (connection): for every load law `i_x` that is `2π`-periodic in the angle (any AC network seen
 through `e^{jθ}`), the shifted points `(θ* + 2π, v*)` are equilibria too, so the selected point is
 never globally asymptotically or exponentially stable on `ℝ²`
