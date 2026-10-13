@@ -22,7 +22,9 @@ Model boundary.
   instability of the loading equilibrium `(δ₀, 0, P₀)`, `δ₀ = arcsin(P₀/K₀)`, from the
   Jacobian computed by `fderiv` and the three-state Routh–Hurwitz criterion.  With
   `K = K₀ cos δ₀`: `ω_c > K/D − D/M` ⇒ stable, `ω_c < K/D − D/M` ⇒ unstable, hence (boundary
-  excluded) stable ⇔ `K < D ω_c + D²/M` — light loading (large `K`) is the dangerous side.
+  excluded) stable ⇔ `K < D ω_c + D²/M` — light loading (large `K`) is the dangerous side.  On the
+  boundary itself the equilibrium is asymptotically, not exponentially, stable (a supercritical
+  Hopf point; `theorem/GFM/VSMLPFHopf.lean`).
 
 Family and connection conclusions.
 * `VSMLPF.family`: a complete system (`VSMLPF.Model`) is a parameter set with a selected angle
@@ -47,14 +49,22 @@ Family and connection conclusions.
   `VSMLPF.not_exact_lyapunovStable`, the negative-inertia model, via
   `Spectral.not_exact_of_den_subset`); the Lyapunov translation is not exact even within positive
   `M, D, ω_c` (`VSMLPF.not_exactUnder_lyapunovStable`: the flat curve `VSMLPF.flatCurve`,
-  `K₀ = P₀ = 0`, is Lyapunov stable, `VSMLPF.flatCurve_mem_den_lyapunovStable`). Exactness of the
-  local asymptotic translation within positive `M, D, ω_c` is not claimed (UNPROVED): on the Hopf
-  boundary `K = D ω_c + D²/M` the Jacobian has a purely imaginary pair, and deciding local asymptotic
-  stability there needs the first Lyapunov coefficient (normal form), not available here.
+  `K₀ = P₀ = 0`, is Lyapunov stable, `VSMLPF.flatCurve_mem_den_lyapunovStable`). The local
+  asymptotic translation is not exact even within positive `M, D, ω_c`
+  (`VSMLPF.not_exactUnder_locallyAsymptoticallyStable`, in `theorem/GFM/VSMLPFHopf.lean`): on the
+  Hopf boundary `K = D ω_c + D²/M` the Jacobian has a purely imaginary pair, and an explicit
+  quartic Lyapunov function (`Dynamics.WeakFocus.localAsymptoticStable_of_hopf_weakFocus`) shows
+  that every physical boundary model is a weak stable focus
+  (`VSMLPF.mem_den_locallyAsymptoticallyStable_of_hopf`; witness `VSMLPF.hopfBoundary`). Its exact
+  denotation within positive `M, D, ω_c` is
+  `VSMLPF.mem_den_locallyAsymptoticallyStable_iff_of_physical`: a balanced angle with
+  `0 < K ≤ D ω_c + D²/M`.
 * Connection conclusions at the loading angle (`VSMLPF.atLoading`): `locallyExponentiallyStable`,
   `unstable`, and the exact boundary `locallyExponentiallyStable_iff` (a member-equivalence:
   local exponential stability iff `K < D ω_c + D²/M`, boundary excluded); new:
-  `unstable_atAntiLoading` (the second equilibrium `π − δ₀` is a saddle).
+  `unstable_atAntiLoading` (the second equilibrium `π − δ₀` is a saddle) and, in
+  `theorem/GFM/VSMLPFHopf.lean`, `locallyAsymptoticallyStable_iff` (local asymptotic stability iff
+  `K ≤ D ω_c + D²/M`, boundary included).
 * `DroopLPF.family` (two states, the `M → 0` limit) with the same pattern (within positive
   `D, ω_c` the local exponential translation is exact,
   `DroopLPF.exactUnder_locallyExponentiallyStable`, and not exact without that range,
