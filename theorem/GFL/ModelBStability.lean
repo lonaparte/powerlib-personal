@@ -107,9 +107,14 @@ Selected states on the singular plane that are not equilibria. With `P = pccP x*
   `(f₀, f₁, 0, f₃)` agrees with model B on the invariant plane).
 * `mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero`: hence for `P / C_dc ≠ 0`, local
   exponential stability on the plane holds exactly when `P / C_dc < 0 ∧ I₀ / C_dc ≠ 0`. The
-  degenerate power balance `P(x*) = 0` with `I₀ / C_dc ≠ 0` is not decided (UNPROVED: there
-  `P / V_dc` is a direction-dependent quotient of first-order terms, so neither the collapse nor
-  the repulsion estimate holds uniformly near `x*`).
+  degenerate power balance `P(x*) = 0` is treated in `theorem/GFL/ModelBCollapse.lean`: with
+  `q = (I₀ V_dc + (3/2) P) / C_dc`, the pair `(V_dc, q)` is, in the time `dt / V_dc`, a linear
+  system whose discriminant `D = H² + 4G` decides: `D > 0` ⇒ unstable
+  (`mem_den_unstable_of_disc_pos`), `D < 0` with `I₀ / C_dc ≠ 0` ⇒ the local exponential estimate
+  (`mem_den_locallyExponentiallyStable_of_disc_neg`), and
+  `mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nondegenerate` characterizes the whole
+  plane except the degenerate set `{P = 0, I₀ / C_dc ≠ 0, D = 0}` (UNPROVED there: a double root
+  of the reduced system, decided by higher-order terms).
 * The concrete `collapsePoint` (`V_dc,ref = 1 > 0`, `x* = (0, 0, 0, −1)`) is such a collapse state
   (`collapsePoint_mem_den_locallyExponentiallyStable`). Therefore none of the local translations
   is exact within the context of a positive reference alone
