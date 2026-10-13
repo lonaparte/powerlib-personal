@@ -56,6 +56,42 @@ index 58302e725715a0dce23238cd7509be32a7d96acf..7c4f5063e50d36f5b37f1faec34896c2
      (MatrixAlgebra.mulVec_range_top_iff_rank_eq_card_rows
        (controllabilityMatrix A B))
  
+diff --git a/LeanForControl/LinearSystems/Solutions/CtsLTV.lean b/LeanForControl/LinearSystems/Solutions/CtsLTV.lean
+index f746fab677d72644e9d06754ce595c142beb4f80..97e4cfd8b47cda00c232bfac06de71ef7602ca35 100644
+--- a/LeanForControl/LinearSystems/Solutions/CtsLTV.lean
++++ b/LeanForControl/LinearSystems/Solutions/CtsLTV.lean
+@@ -308,8 +308,7 @@ theorem hasDerivAt_stateTransitionMatrix (hA : Continuous A) {t₀ t₁ M : ℝ}
+     intro k z
+     have hF : Continuous (fun s => A s * peanoBakerTerm A k s t₀) :=
+       hA.mul (continuous_peanoBakerTerm hA k t₀)
+-    exact intervalIntegral.integral_hasDerivAt_right (hF.intervalIntegrable t₀ z)
+-      hF.stronglyMeasurable.stronglyMeasurableAtFilter hF.continuousAt
++    exact (hF.integral_hasStrictDerivAt t₀ z).hasDerivAt
+   -- Step 1b: a uniform (`z`-independent) bound on the derivative terms over the open segment
+   -- between `t₀` and `t₁`, from the factorial bound at the worst case `z = t₁`.
+   have hu_summable : Summable (fun k => M * (C1 * (M * |t₁ - t₀|) ^ k / (k)!)) := by
+@@ -406,7 +405,7 @@ theorem hasDerivAt_stateTransitionMatrix_mulVec (hA : Continuous A) {t₀ t₁ M
+   have hL_apply : ∀ M' : Matrix X X ℝ, L M' = M' *ᵥ x₀ := fun M' => rfl
+   have hderiv := (L.hasFDerivAt (x := stateTransitionMatrix A t t₀)).comp_hasDerivAt t
+     (hasDerivAt_stateTransitionMatrix hA hA_le ht)
+-  simpa [hL_apply, Matrix.mulVec_mulVec] using hderiv
++  simpa [hL_apply, Matrix.mulVec_mulVec] using! hderiv
+ 
+ /-- The matrix analogue of `hasDerivAt_stateTransitionMatrix_mulVec`: for a *constant* matrix
+ `C`, `Y(t) := Φ(t, t₀) * C` solves the matrix ODE `Ẏ = A(t) Y`. Needed for the semigroup
+@@ -983,8 +982,10 @@ private lemma hasDerivAt_variationOfConstants_mulVec (hA : Continuous A) (hB : C
+     rw [stateTransitionMatrix_comp_base hA
+       (fun r hr => hA_le r (Set.uIcc_subset_uIcc_left (Set.uIoo_subset_uIcc_self ht) hr))
+       Set.right_mem_uIcc, stateTransitionMatrix_self]
+-  rwa [Matrix.mulVec_mulVec (B t *ᵥ u t), hcancel, Matrix.one_mulVec,
+-    ← Matrix.mulVec_mulVec] at hderiv
++  rw [Matrix.mulVec_mulVec (B t *ᵥ u t), hcancel, Matrix.one_mulVec] at hderiv
++  convert hderiv using 2
++  rw [Matrix.mulVec_mulVec]
++  rfl
+ 
+ /-- **Variation of constants: existence** (Hespanha, Theorem 5.2).
+ `x(t) := Φ(t,t₀) *ᵥ x₀ +
 diff --git a/LeanForControl/LinearSystems/Stability/Continuous/ExponentialStability.lean b/LeanForControl/LinearSystems/Stability/Continuous/ExponentialStability.lean
 index 5f053ddb8eed8f0e9a7a0ed9eeea896f67946f2c..ae8fd286d346be608cc56369791cbb9e9e39fadd 100644
 --- a/LeanForControl/LinearSystems/Stability/Continuous/ExponentialStability.lean
