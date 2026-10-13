@@ -1,7 +1,8 @@
 import theorem.Asymptotics.GuardPotential
+import theorem.Asymptotics.LaplaceMethod
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 
-/-! # Guard versus committed escape: `T_committed / T_guard → 2`
+/-! # Guard versus committed escape: `T_committed / T_guard → 2`, rate and `T_guard ~ P e^X`
 
 Foundation layer: one-variable real analysis of an explicit double integral. Nothing here is a
 stochastic statement; the integral is *taken* as the definition of the mean first-passage time
@@ -50,22 +51,120 @@ Results.
   an upper bound; that the `X^{−1/2}` term is generically present is the endpoint-table statement
   `endpointCorrection_ne_zero_iff` (`Asymptotics/EndpointLaplace.lean`), not a statement proved
   here for this integral.
+* Single-term asymptotics (source §1.3, and the `× 2` of §1.5), with
+  `P = guardPrefactor α l₁ D̃ = (√π/2) √(D̃ l₁)/α²` and `X = ΔU/D̃`:
+  `guardMFPT_guard_isBigO`: `T_guard/(P e^X) − 1 = O(√D̃)` as `D̃ → 0⁺`;
+  `guardMFPT_guard_isBigO_atTop`: `T_guard = P e^X (1 + O(X^{−1/2}))`;
+  `tendsto_guardMFPT_guard`: `T_guard/(P e^X) → 1`;
+  `guardMFPT_committed_isBigO`, `guardMFPT_committed_isBigO_atTop`:
+  `T_committed = 2 P e^X (1 + O(X^{−1/2}))` for every `r_b > r_c`.
+  Explicit two-sided bounds at a cut `0 < a < r_c` (`guardMFPT_guard_ge`, `guardMFPT_guard_le`):
+  `(1 − e^{−αa²/(2D̃)})(1 − √(D̃/α)/(√π(r_c − a))) P e^X ≤ T_guard ≤
+  (1 + ε)(1 + 16 l₁D̃/α²)(1 + 17√(D̃/α)/(√π a)) P e^X` (`D̃ ≤ a²` for the upper bound).
+  Route, following the source's assembly "阱 · 垒 · 1/D̃": the inner integral is a Gaussian mass,
+  `(D̃/α)(1 − e^{−αa²/(2D̃)}) ≤ K(a) ≤ K(r_c) ≤ (D̃/α)(1 + 16 l₁D̃/α²)` (`guardInner_ge_gauss`,
+  `guardInner_le_gauss`; relative error `O(1/X)`), and the weight integral is an endpoint Gaussian,
+  `r_c⁻¹ e^X √(πD̃/α)/2 · (1 + O(√D̃))` (`guard_weight_ge_gauss`, `guard_weight_le_gauss`; relative
+  error `O(X^{−1/2})`, the endpoint half order), from
+  `ΔU − α(r_c − y)² ≤ U(y)` and `e^{−s} ≤ e^{−cξ²} + (l₁ r_c ξ³/D̃) e^{−cξ²/4}` in `ξ = r_c − y`;
+  the generic Laplace theorems `laplace_endpoint_rate` are not used because the integral is over a
+  finite interval with a non-global quadratic phase. Generic Gaussian facts: `gaussMoment1`,
+  `gaussMoment3`, `gaussMoment5` (`∫_0^∞ ξⁿ e^{−cξ²}`, `n = 1, 3, 5`), `integral_exp_neg_mul_sq_ge`
+  (`∫_0^L e^{−cξ²} ≥ √(π/c)/2 − 1/(2cL)`), `intervalIntegral_le_integral_Ioi`.
+  The rates are upper bounds; that the `X^{−1/2}` term is present for this barrier is the
+  truncated-table statement `endpointCorrection_ne_zero_iff`, not proved here for the integral.
 * Supporting facts: `U(z) = ΔU − (l₁/4)(z² − r_c²)²` (`guardPotential_eq_barrier_sub`),
   monotonicity / integrability / two-sided bounds of the inner integral `K` (`guardInner_*`) and
   of the outer integrand (`guardIntegrand_*`).
 
-Not formalized: the individual asymptotics `T_guard ~ P e^X` of §1.3 (the endpoint/interior
-Laplace rates themselves are in `Asymptotics/LaplaceMethod.lean`, `laplace_endpoint_rate`,
-`laplace_interior_rate`).
-
 Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.2 ("逃逸时间的两种边界，比值恰为 2",
-`T_committed / T_guard → 2`), §1.3 (the potential `U = αr²/2 − l₁r⁴/4`).
+`T_committed / T_guard → 2` and "趋近 2 的方式本身是 `1 + O(X^{−1/2})`"), §1.3 (the potential
+`U = αr²/2 − l₁r⁴/4` and `T_guard ∼ (√π/2) √(D̃ l₁)/α² e^X (1 + O(X^{−1/2}))`), §1.5 (`× 2` for
+committed escape).
 -/
 
 noncomputable section
 namespace powerlib.Asymptotics
 
 open Real Set Filter Topology MeasureTheory intervalIntegral
+
+/-! ## Half-line Gaussian moments and a finite-interval Gaussian bound
+
+Generic one-variable facts in the form `∫_0^∞ ξⁿ e^{−cξ²}` used for `T_guard ~ P e^X`. -/
+
+/-- `∫_0^∞ ξ e^{−cξ²} dξ = 1/(2c)` (`halfMoment1` with `b = 2c`). -/
+@[powerlib_foundation] theorem gaussMoment1 {c : ℝ} (hc : 0 < c) :
+    ∫ ξ in Ioi (0 : ℝ), ξ * Real.exp (-c * ξ ^ 2) = 1 / (2 * c) := by
+  have h := halfMoment1 (b := 2 * c) (by positivity)
+  rw [show 2 * c / 2 = c by ring] at h
+  rw [← h]
+
+/-- `∫_0^∞ ξ³ e^{−cξ²} dξ = 1/(2c²)` (`halfMoment3` with `b = 2c`). -/
+@[powerlib_foundation] theorem gaussMoment3 {c : ℝ} (hc : 0 < c) :
+    ∫ ξ in Ioi (0 : ℝ), ξ ^ 3 * Real.exp (-c * ξ ^ 2) = 1 / (2 * c ^ 2) := by
+  have h := halfMoment3 (b := 2 * c) (by positivity)
+  rw [show 2 * c / 2 = c by ring] at h
+  have e : (2 : ℝ) / (2 * c) ^ 2 = 1 / (2 * c ^ 2) := by field_simp
+  rw [← e, ← h]
+
+/-- `∫_0^∞ ξ⁵ e^{−cξ²} dξ = 1/c³` (wraps `integral_rpow_mul_exp_neg_mul_rpow`, `Γ(3) = 2`). -/
+@[powerlib_foundation] theorem gaussMoment5 {c : ℝ} (hc : 0 < c) :
+    ∫ ξ in Ioi (0 : ℝ), ξ ^ 5 * Real.exp (-c * ξ ^ 2) = 1 / c ^ 3 := by
+  have h := integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := 5) (b := c)
+    two_pos (by norm_num) hc
+  have h5 : ∀ ξ : ℝ, ξ ^ (5 : ℝ) = ξ ^ (5 : ℕ) := fun ξ => by
+    exact_mod_cast Real.rpow_natCast ξ 5
+  simp only [h5, Real.rpow_two] at h
+  rw [h]
+  have hG : Real.Gamma ((5 + 1) / 2) = 2 := by
+    rw [show ((5 : ℝ) + 1) / 2 = (2 : ℕ) + 1 by norm_num, Real.Gamma_nat_eq_factorial]
+    norm_num
+  rw [hG, show -((5 : ℝ) + 1) / 2 = -(3 : ℕ) by norm_num, Real.rpow_neg hc.le,
+    Real.rpow_natCast]
+  field_simp
+
+/-- A finite integral of a function that is nonnegative and integrable on `(0, ∞)` is at most the
+half-line integral. -/
+@[powerlib_foundation] theorem intervalIntegral_le_integral_Ioi {f : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
+    (hf : IntegrableOn f (Ioi 0)) (h0 : ∀ x, 0 < x → 0 ≤ f x) :
+    ∫ x in (0 : ℝ)..L, f x ≤ ∫ x in Ioi (0 : ℝ), f x := by
+  rw [intervalIntegral.integral_of_le hL]
+  apply setIntegral_mono_set hf
+  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx using h0 x hx
+  · exact Ioc_subset_Ioi_self.eventuallyLE
+
+/-- Gaussian lower bound on a finite interval:
+`∫_0^L e^{−cξ²} dξ ≥ √(π/c)/2 − 1/(2cL)` (the tail beyond `L` is at most `(1/L) ∫ ξ e^{−cξ²}`). -/
+@[powerlib_foundation] theorem integral_exp_neg_mul_sq_ge {c L : ℝ} (hc : 0 < c) (hL : 0 < L) :
+    √(π / c) / 2 - 1 / (2 * c * L) ≤ ∫ ξ in (0 : ℝ)..L, Real.exp (-c * ξ ^ 2) := by
+  have hg : Integrable fun ξ : ℝ => Real.exp (-c * ξ ^ 2) := integrable_exp_neg_mul_sq hc
+  have hg1 : Integrable fun ξ : ℝ => ξ * Real.exp (-c * ξ ^ 2) := integrable_mul_exp_neg_mul_sq hc
+  have hsplit : ∫ ξ in Ioi (0 : ℝ), Real.exp (-c * ξ ^ 2) =
+      (∫ ξ in Ioc (0 : ℝ) L, Real.exp (-c * ξ ^ 2)) + ∫ ξ in Ioi L, Real.exp (-c * ξ ^ 2) := by
+    rw [← setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi hg.integrableOn
+      hg.integrableOn, Ioc_union_Ioi_eq_Ioi hL.le]
+  have htail : ∫ ξ in Ioi L, Real.exp (-c * ξ ^ 2) ≤ 1 / (2 * c * L) := by
+    calc ∫ ξ in Ioi L, Real.exp (-c * ξ ^ 2)
+        ≤ ∫ ξ in Ioi L, L⁻¹ * (ξ * Real.exp (-c * ξ ^ 2)) := by
+          apply setIntegral_mono_on hg.integrableOn (hg1.const_mul _).integrableOn
+            measurableSet_Ioi
+          intro ξ hξ
+          have hξ' : L < ξ := hξ
+          rw [← mul_assoc]
+          apply le_mul_of_one_le_left (Real.exp_pos _).le
+          rw [inv_mul_eq_div, one_le_div hL]; exact hξ'.le
+      _ ≤ ∫ ξ in Ioi (0 : ℝ), L⁻¹ * (ξ * Real.exp (-c * ξ ^ 2)) := by
+          apply setIntegral_mono_set (hg1.const_mul _).integrableOn
+          · filter_upwards [ae_restrict_mem measurableSet_Ioi] with ξ hξ
+            have : (0 : ℝ) < ξ := hξ
+            positivity
+          · exact (Ioi_subset_Ioi hL.le).eventuallyLE
+      _ = 1 / (2 * c * L) := by
+          rw [MeasureTheory.integral_const_mul, gaussMoment1 hc]; field_simp
+  have hmain := integral_gaussian_Ioi c
+  rw [intervalIntegral.integral_of_le hL.le]
+  linarith
+
 
 /-! ## The mean first-passage time and its two boundary choices -/
 
@@ -1524,5 +1623,682 @@ in general (`endpointCorrection_ne_zero_iff`); this theorem is the upper bound. 
   ring
 
 end Ratio
+
+/-! ## The single-term asymptotics `T_guard ~ P e^X` -/
+
+section Guard
+
+/-- `∫_0^y z e^{−αz²/(2D̃)} dz = (D̃/α)(1 − e^{−αy²/(2D̃)})`. -/
+@[powerlib_foundation] theorem integral_mul_exp_neg_sq_div (hα : 0 < α) {D : ℝ} (hD : 0 < D)
+    (y : ℝ) :
+    ∫ z in (0 : ℝ)..y, z * Real.exp (-(α / (2 * D)) * z ^ 2) =
+      D / α * (1 - Real.exp (-(α / (2 * D)) * y ^ 2)) := by
+  have hderiv : ∀ z ∈ uIcc 0 y, HasDerivAt (fun z => -(D / α) * Real.exp (-(α / (2 * D)) * z ^ 2))
+      (z * Real.exp (-(α / (2 * D)) * z ^ 2)) z := by
+    intro z _
+    have h1 : HasDerivAt (fun z => -(α / (2 * D)) * z ^ 2) (-(α / (2 * D)) * (2 * z)) z := by
+      simpa using (hasDerivAt_pow 2 z).const_mul (-(α / (2 * D)))
+    have := (h1.exp).const_mul (-(D / α))
+    convert this using 1
+    field_simp
+  rw [integral_eq_sub_of_hasDerivAt hderiv
+    ((by fun_prop : Continuous fun z : ℝ =>
+      z * Real.exp (-(α / (2 * D)) * z ^ 2)).intervalIntegrable _ _)]
+  simp
+  ring
+
+/-- Lower Gaussian bound for the inner integral: `K(y) ≥ (D̃/α)(1 − e^{−αy²/(2D̃)})`, `y ≥ 0`
+(from `U(z) ≤ αz²/2`). -/
+@[powerlib_foundation] theorem guardInner_ge_gauss (hα : 0 < α) (hl : 0 ≤ l₁) {D y : ℝ}
+    (hD : 0 < D) (hy : 0 ≤ y) :
+    D / α * (1 - Real.exp (-(α / (2 * D)) * y ^ 2)) ≤ guardInner α l₁ D y := by
+  rw [← integral_mul_exp_neg_sq_div hα hD]
+  apply integral_mono_on hy
+    ((by fun_prop : Continuous fun z : ℝ =>
+      z * Real.exp (-(α / (2 * D)) * z ^ 2)).intervalIntegrable _ _)
+    ((continuous_guardInner_integrand α l₁ D).intervalIntegrable _ _)
+  intro z hz
+  apply mul_le_mul_of_nonneg_left _ hz.1
+  apply Real.exp_le_exp.mpr
+  have h := guardPotential_le_quad (α := α) hl z
+  have : guardPotential α l₁ z / D ≤ α / (2 * D) * z ^ 2 := by
+    rw [div_le_iff₀ hD]
+    have e : α / (2 * D) * z ^ 2 * D = α * z ^ 2 / 2 := by field_simp
+    rw [e]; exact h
+  linarith
+
+/-- Upper Gaussian bound for the inner integral up to the barrier top:
+`K(r_c) ≤ (D̃/α)(1 + 16 l₁ D̃/α²)` (from `e^{−U/D̃} ≤ e^{−αz²/(2D̃)} + (l₁z⁴/(4D̃)) e^{−αz²/(4D̃)}`
+on `[0, r_c]` and the fifth half-line moment). -/
+@[powerlib_foundation] theorem guardInner_le_gauss (hα : 0 < α) (hl : 0 < l₁) {D : ℝ}
+    (hD : 0 < D) :
+    guardInner α l₁ D √(α / l₁) ≤ D / α * (1 + 16 * l₁ * D / α ^ 2) := by
+  have hρ : 0 < α / l₁ := div_pos hα hl
+  have hrc : 0 ≤ √(α / l₁) := Real.sqrt_nonneg _
+  have hrc2 : √(α / l₁) ^ 2 = α / l₁ := Real.sq_sqrt hρ.le
+  have hc : 0 < α / (4 * D) := by positivity
+  have hg5 : Continuous fun z : ℝ =>
+      l₁ / (4 * D) * (z ^ 5 * Real.exp (-(α / (4 * D)) * z ^ 2)) := by fun_prop
+  have hg1 : Continuous fun z : ℝ => z * Real.exp (-(α / (2 * D)) * z ^ 2) := by fun_prop
+  have hpt : ∀ z ∈ Icc (0 : ℝ) √(α / l₁), z * Real.exp (-(guardPotential α l₁ z / D)) ≤
+      z * Real.exp (-(α / (2 * D)) * z ^ 2) +
+        l₁ / (4 * D) * (z ^ 5 * Real.exp (-(α / (4 * D)) * z ^ 2)) := by
+    intro z hz
+    have hz2 : z ^ 2 ≤ α / l₁ := by
+      have := pow_le_pow_left₀ hz.1 hz.2 2; rwa [hrc2] at this
+    have hlz : l₁ * z ^ 2 ≤ α := by rwa [le_div_iff₀ hl, mul_comm] at hz2
+    set s := guardPotential α l₁ z / D with hs
+    set t := α / (2 * D) * z ^ 2 with ht
+    have hts : t - s = l₁ / (4 * D) * z ^ 4 := by
+      simp only [hs, ht, guardPotential]; field_simp; ring
+    have hs4 : α / (4 * D) * z ^ 2 ≤ s := by
+      simp only [hs, guardPotential]
+      rw [le_div_iff₀ hD]
+      have e : α / (4 * D) * z ^ 2 * D = α * z ^ 2 / 4 := by field_simp
+      rw [e]
+      nlinarith [mul_le_mul_of_nonneg_left hlz (sq_nonneg z)]
+    have hts0 : 0 ≤ t - s := by rw [hts]; positivity
+    -- `e^{−s} ≤ e^{−t} + (t − s) e^{−s}`
+    have hexp : Real.exp (-s) ≤ Real.exp (-t) + (t - s) * Real.exp (-s) := by
+      have h1 := Real.add_one_le_exp (-(t - s))
+      have h2 : Real.exp (-t) = Real.exp (-s) * Real.exp (-(t - s)) := by
+        rw [← Real.exp_add]; congr 1; ring
+      have := mul_le_mul_of_nonneg_left h1 (Real.exp_pos (-s)).le
+      nlinarith
+    have hexp2 : Real.exp (-s) ≤ Real.exp (-(α / (4 * D)) * z ^ 2) :=
+      Real.exp_le_exp.mpr (by linarith)
+    have : Real.exp (-s) ≤ Real.exp (-t) +
+        l₁ / (4 * D) * z ^ 4 * Real.exp (-(α / (4 * D)) * z ^ 2) := by
+      rw [← hts]; nlinarith [mul_le_mul_of_nonneg_left hexp2 hts0]
+    have e1 : Real.exp (-t) = Real.exp (-(α / (2 * D)) * z ^ 2) := by
+      simp only [ht]; ring_nf
+    rw [e1] at this
+    calc z * Real.exp (-s) ≤ z * (Real.exp (-(α / (2 * D)) * z ^ 2) +
+          l₁ / (4 * D) * z ^ 4 * Real.exp (-(α / (4 * D)) * z ^ 2)) :=
+          mul_le_mul_of_nonneg_left this hz.1
+      _ = _ := by ring
+  have hint5 : IntegrableOn (fun z : ℝ => l₁ / (4 * D) *
+      (z ^ 5 * Real.exp (-(α / (4 * D)) * z ^ 2))) (Ioi 0) :=
+    ((integrable_pow_mul_exp_neg_mul_sq hc 5).const_mul _).integrableOn
+  calc guardInner α l₁ D √(α / l₁)
+      ≤ ∫ z in (0 : ℝ)..√(α / l₁), (z * Real.exp (-(α / (2 * D)) * z ^ 2) +
+          l₁ / (4 * D) * (z ^ 5 * Real.exp (-(α / (4 * D)) * z ^ 2))) :=
+        integral_mono_on hrc ((continuous_guardInner_integrand α l₁ D).intervalIntegrable _ _)
+          ((hg1.add hg5).intervalIntegrable _ _) hpt
+    _ = (∫ z in (0 : ℝ)..√(α / l₁), z * Real.exp (-(α / (2 * D)) * z ^ 2)) +
+          ∫ z in (0 : ℝ)..√(α / l₁), l₁ / (4 * D) *
+            (z ^ 5 * Real.exp (-(α / (4 * D)) * z ^ 2)) :=
+        intervalIntegral.integral_add (hg1.intervalIntegrable _ _) (hg5.intervalIntegrable _ _)
+    _ ≤ D / α + l₁ / (4 * D) * (1 / (α / (4 * D)) ^ 3) := by
+        apply add_le_add
+        · rw [integral_mul_exp_neg_sq_div hα hD]
+          have := Real.exp_pos (-(α / (2 * D)) * √(α / l₁) ^ 2)
+          have : 0 < D / α := by positivity
+          nlinarith
+        · refine (intervalIntegral_le_integral_Ioi hrc hint5 fun z hz => by positivity).trans ?_
+          rw [MeasureTheory.integral_const_mul, gaussMoment5 hc]
+    _ = D / α * (1 + 16 * l₁ * D / α ^ 2) := by field_simp; ring
+
+
+/-- Lower Gaussian bound for the barrier weight, `c = α/D̃`:
+`∫_a^{r_c} y⁻¹ e^{U/D̃} ≥ r_c⁻¹ e^{ΔU/D̃} (√(π/c)/2 − 1/(2c(r_c − a)))`
+(from `U(y) ≥ ΔU − α(r_c − y)²` and `integral_exp_neg_mul_sq_ge`). -/
+@[powerlib_foundation] theorem guard_weight_ge_gauss (hα : 0 < α) (hl : 0 < l₁) {D a : ℝ}
+    (hD : 0 < D) (ha : 0 < a) (har : a < √(α / l₁)) :
+    (√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) *
+        (√(π / (α / D)) / 2 - 1 / (2 * (α / D) * (√(α / l₁) - a))) ≤
+      ∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D) := by
+  have hc : 0 < α / D := div_pos hα hD
+  have hG := integral_exp_neg_mul_sq_ge hc (sub_pos.2 har)
+  have hsub : ∫ y in a..√(α / l₁), Real.exp (-(α / D) * (√(α / l₁) - y) ^ 2) =
+      ∫ ξ in (0 : ℝ)..(√(α / l₁) - a), Real.exp (-(α / D) * ξ ^ 2) := by
+    have := intervalIntegral.integral_comp_sub_left
+      (fun ξ => Real.exp (-(α / D) * ξ ^ 2)) (√(α / l₁)) (a := a) (b := √(α / l₁))
+    simp only [sub_self] at this
+    exact this
+  calc (√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) *
+        (√(π / (α / D)) / 2 - 1 / (2 * (α / D) * (√(α / l₁) - a)))
+      ≤ (√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) *
+          ∫ y in a..√(α / l₁), Real.exp (-(α / D) * (√(α / l₁) - y) ^ 2) := by
+        rw [hsub]; exact mul_le_mul_of_nonneg_left hG (by positivity)
+    _ = ∫ y in a..√(α / l₁), (√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) *
+          Real.exp (-(α / D) * (√(α / l₁) - y) ^ 2) := by
+        rw [intervalIntegral.integral_const_mul]
+    _ ≤ ∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D) := by
+        apply integral_mono_on har.le
+        · exact (by fun_prop : Continuous fun y : ℝ => (√(α / l₁))⁻¹ *
+            Real.exp (barrierHeight α l₁ / D) *
+              Real.exp (-(α / D) * (√(α / l₁) - y) ^ 2)).intervalIntegrable _ _
+        · apply ContinuousOn.intervalIntegrable
+          rw [uIcc_of_le har.le]
+          apply ContinuousOn.mul _ (continuous_exp_guardPotential α l₁ D).continuousOn
+          exact continuousOn_inv₀.mono fun y hy => (ne_of_gt (ha.trans_le hy.1) : y ≠ 0)
+        intro y hy
+        have hy0 : 0 < y := ha.trans_le hy.1
+        rw [mul_assoc, ← Real.exp_add]
+        apply mul_le_mul (inv_anti₀ hy0 hy.2) _ (Real.exp_pos _).le (inv_nonneg.2 hy0.le)
+        apply Real.exp_le_exp.mpr
+        have hU := barrier_sub_sq_le_guardPotential hα hl hy0.le hy.2
+        have e : barrierHeight α l₁ / D + -(α / D) * (√(α / l₁) - y) ^ 2 =
+            (barrierHeight α l₁ - α * (√(α / l₁) - y) ^ 2) / D := by field_simp; ring
+        rw [e]
+        exact div_le_div_of_nonneg_right hU hD.le
+
+/-- Upper Gaussian bound for the barrier weight, `c = α/D̃`, `c' = α/(4D̃)`:
+`∫_a^{r_c} y⁻¹ e^{U/D̃} ≤ e^{ΔU/D̃} (r_c⁻¹ √(π/c)/2 + (a r_c)⁻¹/(2c) + (l₁ r_c/(a D̃))/(2c'²))`.
+In `ξ = r_c − y`: `U = ΔU − D̃ s`, `s ≥ c'ξ²`, `0 ≤ cξ² − s ≤ l₁ r_c ξ³/D̃`, so
+`e^{−s} ≤ e^{−cξ²} + (l₁ r_c ξ³/D̃) e^{−c'ξ²}`; and `(r_c − ξ)⁻¹ ≤ r_c⁻¹ + ξ/(a r_c)`. -/
+@[powerlib_foundation] theorem guard_weight_le_gauss (hα : 0 < α) (hl : 0 < l₁) {D a : ℝ}
+    (hD : 0 < D) (ha : 0 < a) (har : a < √(α / l₁)) :
+    ∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D) ≤
+      Real.exp (barrierHeight α l₁ / D) * ((√(α / l₁))⁻¹ * (√(π / (α / D)) / 2) +
+        (a * √(α / l₁))⁻¹ * (1 / (2 * (α / D))) +
+          l₁ * √(α / l₁) / (a * D) * (1 / (2 * (α / (4 * D)) ^ 2))) := by
+  have hρ : 0 < α / l₁ := div_pos hα hl
+  have hc : 0 < α / D := div_pos hα hD
+  have hc' : 0 < α / (4 * D) := by positivity
+  obtain ⟨rc, hrcdef, hrc2⟩ : ∃ r, r = √(α / l₁) ∧ r ^ 2 = α / l₁ :=
+    ⟨_, rfl, Real.sq_sqrt hρ.le⟩
+  rw [← hrcdef] at har ⊢
+  have hrc : 0 < rc := ha.trans har
+  have hαe : α = l₁ * rc ^ 2 := by rw [hrc2]; field_simp
+  have hL0 : 0 < rc - a := sub_pos.2 har
+  -- substitution `y = r_c − ξ`
+  have hsub : ∫ y in a..rc, y⁻¹ * Real.exp (guardPotential α l₁ y / D) =
+      ∫ ξ in (0 : ℝ)..(rc - a), (rc - ξ)⁻¹ * Real.exp (guardPotential α l₁ (rc - ξ) / D) := by
+    have := intervalIntegral.integral_comp_sub_left
+      (fun ξ => (rc - ξ)⁻¹ * Real.exp (guardPotential α l₁ (rc - ξ) / D)) rc (a := a) (b := rc)
+    simp only [sub_sub_cancel, sub_self] at this
+    exact this
+  set E := Real.exp (barrierHeight α l₁ / D) with hE
+  set F : ℝ → ℝ := fun ξ => E * (rc⁻¹ * Real.exp (-(α / D) * ξ ^ 2) +
+      (a * rc)⁻¹ * (ξ * Real.exp (-(α / D) * ξ ^ 2)) +
+        l₁ * rc / (a * D) * (ξ ^ 3 * Real.exp (-(α / (4 * D)) * ξ ^ 2))) with hF
+  have hFc : Continuous F := by simp only [hF]; fun_prop
+  have hFi : IntegrableOn F (Ioi 0) := by
+    have := (((integrable_exp_neg_mul_sq hc).const_mul rc⁻¹).add
+      ((integrable_mul_exp_neg_mul_sq hc).const_mul (a * rc)⁻¹)).add
+      ((integrable_pow_mul_exp_neg_mul_sq hc' 3).const_mul (l₁ * rc / (a * D)))
+    exact (this.const_mul E).integrableOn
+  have hF0 : ∀ ξ : ℝ, 0 < ξ → 0 ≤ F ξ := fun ξ hξ => by simp only [hF]; positivity
+  have hpt : ∀ ξ ∈ Icc (0 : ℝ) (rc - a),
+      (rc - ξ)⁻¹ * Real.exp (guardPotential α l₁ (rc - ξ) / D) ≤ F ξ := by
+    intro ξ hξ
+    have hξ0 := hξ.1
+    have hra : a ≤ rc - ξ := by linarith [hξ.2]
+    have hr0 : 0 < rc - ξ := ha.trans_le hra
+    have hξr : ξ ≤ rc := by linarith
+    set s := l₁ / 4 * (ξ ^ 2 * (2 * rc - ξ) ^ 2) / D with hs
+    have hU : guardPotential α l₁ (rc - ξ) / D = barrierHeight α l₁ / D - s := by
+      rw [guardPotential_eq_barrier_sub hl, ← hrc2]; simp only [hs]; field_simp; ring
+    set t := α / D * ξ ^ 2 with ht
+    have hts : t - s = l₁ / (4 * D) * (ξ ^ 2 * (4 * rc * ξ - ξ ^ 2)) := by
+      simp only [hs, ht]; rw [hαe]; field_simp; ring
+    have hts0 : 0 ≤ t - s := by
+      rw [hts]
+      have : 0 ≤ 4 * rc * ξ - ξ ^ 2 := by nlinarith
+      positivity
+    have hts1 : t - s ≤ l₁ * rc / D * ξ ^ 3 := by
+      rw [hts]
+      have e : l₁ / (4 * D) * (ξ ^ 2 * (4 * rc * ξ - ξ ^ 2)) =
+          l₁ * rc / D * ξ ^ 3 - l₁ / (4 * D) * ξ ^ 4 := by field_simp
+      rw [e]
+      have : 0 ≤ l₁ / (4 * D) * ξ ^ 4 := by positivity
+      linarith
+    have hs4 : α / (4 * D) * ξ ^ 2 ≤ s := by
+      simp only [hs]
+      rw [le_div_iff₀ hD, hαe]
+      have e : l₁ * rc ^ 2 / (4 * D) * ξ ^ 2 * D = l₁ / 4 * (ξ ^ 2 * rc ^ 2) := by field_simp
+      rw [e]
+      apply mul_le_mul_of_nonneg_left _ (by positivity)
+      apply mul_le_mul_of_nonneg_left _ (sq_nonneg ξ)
+      nlinarith
+    have hexp : Real.exp (-s) ≤ Real.exp (-t) + (t - s) * Real.exp (-s) := by
+      have h1 := Real.add_one_le_exp (-(t - s))
+      have h2 : Real.exp (-t) = Real.exp (-s) * Real.exp (-(t - s)) := by
+        rw [← Real.exp_add]; congr 1; ring
+      have := mul_le_mul_of_nonneg_left h1 (Real.exp_pos (-s)).le
+      nlinarith
+    have hexp2 : Real.exp (-s) ≤ Real.exp (-(α / (4 * D)) * ξ ^ 2) :=
+      Real.exp_le_exp.mpr (by linarith)
+    have hexp3 : Real.exp (-s) ≤ Real.exp (-(α / D) * ξ ^ 2) +
+        l₁ * rc / D * ξ ^ 3 * Real.exp (-(α / (4 * D)) * ξ ^ 2) := by
+      have e : Real.exp (-t) = Real.exp (-(α / D) * ξ ^ 2) := by simp only [ht]; ring_nf
+      have : (t - s) * Real.exp (-s) ≤ l₁ * rc / D * ξ ^ 3 *
+          Real.exp (-(α / (4 * D)) * ξ ^ 2) :=
+        mul_le_mul hts1 hexp2 (Real.exp_pos _).le (by positivity)
+      rw [← e]; linarith
+    have hinv1 : (rc - ξ)⁻¹ ≤ rc⁻¹ + (a * rc)⁻¹ * ξ := by
+      have e : (rc - ξ)⁻¹ = rc⁻¹ + ξ / (rc * (rc - ξ)) := by field_simp; ring
+      have h : ξ / (rc * (rc - ξ)) ≤ ξ / (rc * a) :=
+        div_le_div_of_nonneg_left hξ0 (by positivity) (mul_le_mul_of_nonneg_left hra hrc.le)
+      rw [e]
+      have e2 : ξ / (rc * a) = (a * rc)⁻¹ * ξ := by field_simp
+      linarith
+    have hinv2 : (rc - ξ)⁻¹ ≤ a⁻¹ := inv_anti₀ ha hra
+    have hE0 : 0 < E := Real.exp_pos _
+    have hes : Real.exp (barrierHeight α l₁ / D - s) = E * Real.exp (-s) := by
+      rw [hE, ← Real.exp_add]; ring_nf
+    rw [hU, hes]
+    have hK : 0 ≤ l₁ * rc / D * ξ ^ 3 * Real.exp (-(α / (4 * D)) * ξ ^ 2) := by positivity
+    have hq0 : 0 ≤ (rc - ξ)⁻¹ := (inv_pos.2 hr0).le
+    calc (rc - ξ)⁻¹ * (E * Real.exp (-s)) = E * ((rc - ξ)⁻¹ * Real.exp (-s)) := by ring
+      _ ≤ E * ((rc - ξ)⁻¹ * Real.exp (-(α / D) * ξ ^ 2) +
+            (rc - ξ)⁻¹ * (l₁ * rc / D * ξ ^ 3 * Real.exp (-(α / (4 * D)) * ξ ^ 2))) := by
+          rw [← mul_add]
+          exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hexp3 hq0) hE0.le
+      _ ≤ E * ((rc⁻¹ + (a * rc)⁻¹ * ξ) * Real.exp (-(α / D) * ξ ^ 2) +
+            a⁻¹ * (l₁ * rc / D * ξ ^ 3 * Real.exp (-(α / (4 * D)) * ξ ^ 2))) := by
+          apply mul_le_mul_of_nonneg_left _ hE0.le
+          exact add_le_add (mul_le_mul_of_nonneg_right hinv1 (Real.exp_pos _).le)
+            (mul_le_mul_of_nonneg_right hinv2 hK)
+      _ = F ξ := by simp only [hF]; field_simp
+  have hlhs : IntervalIntegrable (fun ξ => (rc - ξ)⁻¹ *
+      Real.exp (guardPotential α l₁ (rc - ξ) / D)) volume 0 (rc - a) := by
+    apply ContinuousOn.intervalIntegrable
+    rw [uIcc_of_le hL0.le]
+    apply ContinuousOn.mul
+    · apply ContinuousOn.inv₀ (by fun_prop)
+      intro ξ hξ; have := hξ.2; linarith
+    · exact ((continuous_exp_guardPotential α l₁ D).comp
+        (continuous_const.sub continuous_id)).continuousOn
+  rw [hsub]
+  calc ∫ ξ in (0 : ℝ)..(rc - a), (rc - ξ)⁻¹ * Real.exp (guardPotential α l₁ (rc - ξ) / D)
+      ≤ ∫ ξ in (0 : ℝ)..(rc - a), F ξ :=
+        integral_mono_on hL0.le hlhs (hFc.intervalIntegrable _ _) hpt
+    _ ≤ ∫ ξ in Ioi (0 : ℝ), F ξ := intervalIntegral_le_integral_Ioi hL0.le hFi hF0
+    _ = _ := by
+        have i0 := (integrable_exp_neg_mul_sq hc).integrableOn (s := Ioi (0 : ℝ))
+        have i1 := (integrable_mul_exp_neg_mul_sq hc).integrableOn (s := Ioi (0 : ℝ))
+        have i3 := (integrable_pow_mul_exp_neg_mul_sq hc' 3).integrableOn (s := Ioi (0 : ℝ))
+        simp only [hF]
+        rw [MeasureTheory.integral_const_mul, MeasureTheory.integral_add,
+          MeasureTheory.integral_add, MeasureTheory.integral_const_mul,
+          MeasureTheory.integral_const_mul, MeasureTheory.integral_const_mul,
+          integral_gaussian_Ioi, gaussMoment1 hc, gaussMoment3 hc']
+        all_goals first
+          | exact i0.const_mul _
+          | exact i1.const_mul _
+          | exact i3.const_mul _
+          | exact (i0.const_mul _).add (i1.const_mul _)
+
+
+/-- `D̃ P = (D̃/α) · r_c⁻¹ · √(π/(α/D̃))/2`: the prefactor is the product of the inner Gaussian
+mass `D̃/α`, the weight `1/r_c` at the top and the half Gaussian `√(πD̃/α)/2`. -/
+@[powerlib_foundation] theorem mul_guardPrefactor_eq (hα : 0 < α) (hl : 0 < l₁) {D : ℝ}
+    (hD : 0 < D) :
+    D * guardPrefactor α l₁ D = D / α * ((√(α / l₁))⁻¹ * (√(π / (α / D)) / 2)) := by
+  have e1 : π / (α / D) = π * D / α := by field_simp
+  rw [guardPrefactor, e1, Real.sqrt_div' _ hα.le, Real.sqrt_div' _ hl.le,
+    Real.sqrt_mul Real.pi_pos.le, Real.sqrt_mul hD.le]
+  have hsl : 0 < √l₁ := Real.sqrt_pos.mpr hl
+  obtain ⟨u, hu, hu2⟩ : ∃ u, u = √α ∧ u ^ 2 = α := ⟨_, rfl, Real.sq_sqrt hα.le⟩
+  have hu0 : 0 < u := hu ▸ Real.sqrt_pos.mpr hα
+  rw [← hu, ← hu2]
+  field_simp
+
+/-- Algebra of the upper weight bound in `σ = √(D̃/α)`. -/
+@[powerlib_foundation] private theorem weight_upper_identity {α l₁ D a rc σ p : ℝ}
+    (hα : 0 < α) (hl : 0 < l₁) (hD : 0 < D) (ha : 0 < a) (hrc : 0 < rc)
+    (hrc2 : rc ^ 2 = α / l₁) (hσ : 0 < σ) (hσ2 : σ ^ 2 = D / α) (hp : 0 < p) :
+    rc⁻¹ * (p * σ / 2) + (a * rc)⁻¹ * (1 / (2 * (α / D))) +
+        l₁ * rc / (a * D) * (1 / (2 * (α / (4 * D)) ^ 2)) =
+      rc⁻¹ * (p * σ / 2) * (1 + 17 * σ / (p * a)) := by
+  have hl' : l₁ = α / rc ^ 2 := by
+    rw [hrc2]; field_simp
+  have hD' : D = α * σ ^ 2 := by rw [hσ2]; field_simp
+  subst hl' hD'
+  field_simp
+  ring
+
+/-- **Explicit lower bound for `T_guard`** (source §1.3): for `0 < a < r_c` and `D̃ > 0`,
+`(1 − e^{−αa²/(2D̃)}) (1 − √(D̃/α)/(√π (r_c − a))) · P e^X ≤ T_guard`, `P = guardPrefactor`,
+`X = ΔU/D̃`. -/
+@[powerlib_foundation] theorem guardMFPT_guard_ge (hα : 0 < α) (hl : 0 < l₁) {D a : ℝ}
+    (ha : 0 < a) (har : a < √(α / l₁)) (hD : 0 < D) :
+    (1 - Real.exp (-(α / (2 * D)) * a ^ 2)) * (1 - √(D / α) / (√π * (√(α / l₁) - a))) *
+        (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) ≤
+      guardMFPT α l₁ D (guardRadius α l₁) := by
+  have hρ : 0 < α / l₁ := div_pos hα hl
+  have hrc : 0 < √(α / l₁) := Real.sqrt_pos.mpr hρ
+  have hc : 0 < α / D := div_pos hα hD
+  have hL : 0 < √(α / l₁) - a := sub_pos.2 har
+  have hsπ : 0 < √π := Real.sqrt_pos.mpr Real.pi_pos
+  have hσ : 0 < √(D / α) := Real.sqrt_pos.mpr (div_pos hD hα)
+  have hσ2 : √(D / α) ^ 2 = D / α := Real.sq_sqrt (div_pos hD hα).le
+  have hsq : √(π / (α / D)) = √π * √(D / α) := by
+    rw [show π / (α / D) = π * (D / α) by field_simp, Real.sqrt_mul Real.pi_pos.le]
+  -- `T_guard ≥ D̃⁻¹ K(a) I`
+  have hKa := guardInner_ge_gauss (l₁ := l₁) hα hl.le hD ha.le
+  have hI := guard_weight_ge_gauss hα hl hD ha har
+  obtain ⟨hAm, -⟩ := guard_inside_bounds (α := α) (l₁ := l₁) (D := D) ha har.le
+  have hAt0 : 0 ≤ ∫ y in (0 : ℝ)..a, guardIntegrand α l₁ D y :=
+    integral_nonneg ha.le fun y hy => guardIntegrand_nonneg hy.1
+  have hsplit : ∫ y in (0 : ℝ)..√(α / l₁), guardIntegrand α l₁ D y =
+      (∫ y in (0 : ℝ)..a, guardIntegrand α l₁ D y) + ∫ y in a..√(α / l₁), guardIntegrand α l₁ D y :=
+    (integral_add_adjacent_intervals (intervalIntegrable_guardIntegrand hl hD ha.le)
+      (intervalIntegrable_guardIntegrand_of_pos ha hrc)).symm
+  have hE1 : Real.exp (-(α / (2 * D)) * a ^ 2) ≤ 1 :=
+    Real.exp_le_one_iff.mpr (by have : 0 ≤ α / (2 * D) * a ^ 2 := by positivity
+                                linarith)
+  have hk0 : 0 ≤ D / α * (1 - Real.exp (-(α / (2 * D)) * a ^ 2)) :=
+    mul_nonneg (by positivity) (by linarith)
+  -- the main term
+  have hmain : D * (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) =
+      D / α * ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2)) := by
+    rw [← mul_assoc, mul_guardPrefactor_eq hα hl hD]; ring
+  have hi : (√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) *
+      (√(π / (α / D)) / 2 - 1 / (2 * (α / D) * (√(α / l₁) - a))) =
+      (√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2) *
+        (1 - √(D / α) / (√π * (√(α / l₁) - a))) := by
+    rw [hsq]
+    obtain ⟨σ, hσdef, hσ2'⟩ : ∃ σ, σ = √(D / α) ∧ σ ^ 2 = D / α := ⟨_, rfl, hσ2⟩
+    have hσ0 : 0 < σ := hσdef ▸ hσ
+    rw [← hσdef]
+    have hD' : D = α * σ ^ 2 := by rw [hσ2']; field_simp
+    rw [hD']
+    field_simp
+  rw [hi] at hI
+  generalize hIdef : (∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D)) = I
+    at hI hAm
+  have hKI : D / α * (1 - Real.exp (-(α / (2 * D)) * a ^ 2)) *
+      ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2) *
+        (1 - √(D / α) / (√π * (√(α / l₁) - a)))) ≤ guardInner α l₁ D a * I := by
+    rcases le_or_gt 0 ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2) *
+        (1 - √(D / α) / (√π * (√(α / l₁) - a)))) with h | h
+    · exact mul_le_mul hKa hI h (hk0.trans hKa)
+    · have : D / α * (1 - Real.exp (-(α / (2 * D)) * a ^ 2)) *
+          ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2) *
+            (1 - √(D / α) / (√π * (√(α / l₁) - a)))) ≤ 0 := mul_nonpos_of_nonneg_of_nonpos hk0 h.le
+      have : 0 ≤ guardInner α l₁ D a * I := by
+        have hI0 : 0 ≤ I := by
+          rw [← hIdef]
+          exact integral_nonneg har.le fun y hy =>
+            mul_nonneg (inv_nonneg.2 (ha.le.trans hy.1)) (Real.exp_pos _).le
+        exact mul_nonneg (guardInner_nonneg ha.le) hI0
+      linarith
+  unfold guardMFPT guardRadius
+  rw [hsplit, le_inv_mul_iff₀ hD]
+  calc D * ((1 - Real.exp (-(α / (2 * D)) * a ^ 2)) * (1 - √(D / α) / (√π * (√(α / l₁) - a))) *
+        (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)))
+      = D / α * (1 - Real.exp (-(α / (2 * D)) * a ^ 2)) *
+          ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2) *
+            (1 - √(D / α) / (√π * (√(α / l₁) - a)))) := by
+        rw [show D * ((1 - Real.exp (-(α / (2 * D)) * a ^ 2)) *
+          (1 - √(D / α) / (√π * (√(α / l₁) - a))) *
+            (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D))) =
+          (1 - Real.exp (-(α / (2 * D)) * a ^ 2)) * (1 - √(D / α) / (√π * (√(α / l₁) - a))) *
+            (D * (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D))) by ring, hmain]
+        ring
+    _ ≤ guardInner α l₁ D a * I := hKI
+    _ ≤ _ := by linarith
+
+/-- **Explicit upper bound for `T_guard`** (source §1.3): for `0 < a < r_c` and `0 < D̃ ≤ a²`,
+`T_guard ≤ (1 + ε)(1 + 16 l₁D̃/α²)(1 + 17√(D̃/α)/(√π a)) · P e^X` with the exponentially small
+`ε = guardEps α l₁ a ψ(a) D̃`. -/
+@[powerlib_foundation] theorem guardMFPT_guard_le (hα : 0 < α) (hl : 0 < l₁) {D a : ℝ}
+    (ha : 0 < a) (har : a < √(α / l₁)) (hD : 0 < D) (hDa : D ≤ a ^ 2) :
+    guardMFPT α l₁ D (guardRadius α l₁) ≤
+      (1 + guardEps α l₁ a √(2 * (α / l₁) - a ^ 2) D) * (1 + 16 * l₁ * D / α ^ 2) *
+        (1 + 17 * √(D / α) / (√π * a)) *
+          (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) := by
+  have hρ : 0 < α / l₁ := div_pos hα hl
+  have hrc : 0 < √(α / l₁) := Real.sqrt_pos.mpr hρ
+  have hrc2 : √(α / l₁) ^ 2 = α / l₁ := Real.sq_sqrt hρ.le
+  have hsπ : 0 < √π := Real.sqrt_pos.mpr Real.pi_pos
+  have hσ : 0 < √(D / α) := Real.sqrt_pos.mpr (div_pos hD hα)
+  have hσ2 : √(D / α) ^ 2 = D / α := Real.sq_sqrt (div_pos hD hα).le
+  have hsq : √(π / (α / D)) = √π * √(D / α) := by
+    rw [show π / (α / D) = π * (D / α) by field_simp, Real.sqrt_mul Real.pi_pos.le]
+  have htails := guard_tails_le (D := D) hα hl ha har le_rfl hD hDa
+  rw [intervalIntegral.integral_same, add_zero] at htails
+  have heps0 := guardEps_nonneg (D := D) hα hl ha har le_rfl hD
+  obtain ⟨-, hAm⟩ := guard_inside_bounds (α := α) (l₁ := l₁) (D := D) ha har.le
+  have hKr := guardInner_le_gauss hα hl hD
+  have hI := guard_weight_le_gauss hα hl hD ha har
+  have hKar : guardInner α l₁ D a ≤ guardInner α l₁ D √(α / l₁) := guardInner_mono ha.le har.le
+  have hK0 : 0 ≤ guardInner α l₁ D a := guardInner_nonneg ha.le
+  have hI0 : 0 ≤ ∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D) :=
+    integral_nonneg har.le fun y hy =>
+      mul_nonneg (inv_nonneg.2 (ha.le.trans hy.1)) (Real.exp_pos _).le
+  have hiden : Real.exp (barrierHeight α l₁ / D) * ((√(α / l₁))⁻¹ * (√(π / (α / D)) / 2) +
+      (a * √(α / l₁))⁻¹ * (1 / (2 * (α / D))) +
+        l₁ * √(α / l₁) / (a * D) * (1 / (2 * (α / (4 * D)) ^ 2))) =
+      (√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2) *
+        (1 + 17 * √(D / α) / (√π * a)) := by
+    rw [hsq, weight_upper_identity hα hl hD ha hrc hrc2 hσ hσ2 hsπ]
+    ring
+  rw [hiden] at hI
+  have hsplit : ∫ y in (0 : ℝ)..√(α / l₁), guardIntegrand α l₁ D y =
+      (∫ y in (0 : ℝ)..a, guardIntegrand α l₁ D y) + ∫ y in a..√(α / l₁), guardIntegrand α l₁ D y :=
+    (integral_add_adjacent_intervals (intervalIntegrable_guardIntegrand hl hD ha.le)
+      (intervalIntegrable_guardIntegrand_of_pos ha hrc)).symm
+  have hmain : D * (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) =
+      D / α * ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2)) := by
+    rw [← mul_assoc, mul_guardPrefactor_eq hα hl hD]; ring
+  generalize (∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D)) = I
+    at htails hAm hI hI0
+  have hk1 : 0 ≤ D / α * (1 + 16 * l₁ * D / α ^ 2) := by positivity
+  have hA : (∫ y in (0 : ℝ)..a, guardIntegrand α l₁ D y) +
+      ∫ y in a..√(α / l₁), guardIntegrand α l₁ D y ≤
+        (1 + guardEps α l₁ a √(2 * (α / l₁) - a ^ 2) D) * (guardInner α l₁ D √(α / l₁) * I) := by
+    have h1 : guardEps α l₁ a √(2 * (α / l₁) - a ^ 2) D * (guardInner α l₁ D a * I) ≤
+        guardEps α l₁ a √(2 * (α / l₁) - a ^ 2) D * (guardInner α l₁ D √(α / l₁) * I) :=
+      mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hKar hI0) heps0
+    nlinarith
+  have hKI : guardInner α l₁ D √(α / l₁) * I ≤ D / α * (1 + 16 * l₁ * D / α ^ 2) *
+      ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2) *
+        (1 + 17 * √(D / α) / (√π * a))) := mul_le_mul hKr hI hI0 hk1
+  unfold guardMFPT guardRadius
+  rw [hsplit, inv_mul_le_iff₀ hD]
+  calc (∫ y in (0 : ℝ)..a, guardIntegrand α l₁ D y) +
+        ∫ y in a..√(α / l₁), guardIntegrand α l₁ D y
+      ≤ (1 + guardEps α l₁ a √(2 * (α / l₁) - a ^ 2) D) * (guardInner α l₁ D √(α / l₁) * I) := hA
+    _ ≤ (1 + guardEps α l₁ a √(2 * (α / l₁) - a ^ 2) D) * (D / α * (1 + 16 * l₁ * D / α ^ 2) *
+          ((√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) * (√(π / (α / D)) / 2) *
+            (1 + 17 * √(D / α) / (√π * a)))) :=
+        mul_le_mul_of_nonneg_left hKI (by linarith)
+    _ = D * ((1 + guardEps α l₁ a √(2 * (α / l₁) - a ^ 2) D) * (1 + 16 * l₁ * D / α ^ 2) *
+          (1 + 17 * √(D / α) / (√π * a)) *
+            (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D))) := by
+        rw [show D * ((1 + guardEps α l₁ a √(2 * (α / l₁) - a ^ 2) D) *
+          (1 + 16 * l₁ * D / α ^ 2) * (1 + 17 * √(D / α) / (√π * a)) *
+            (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D))) =
+          (1 + guardEps α l₁ a √(2 * (α / l₁) - a ^ 2) D) * (1 + 16 * l₁ * D / α ^ 2) *
+            (1 + 17 * √(D / α) / (√π * a)) *
+              (D * (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D))) by ring, hmain]
+        ring
+
+/-- **`T_guard = P e^X (1 + O(√D̃))`** as `D̃ → 0⁺` (source §1.3,
+`T_guard ∼ (√π/2) √(D̃ l₁)/α² e^X (1 + O(X^{−1/2}))`), `P = guardPrefactor`, `X = ΔU/D̃`. -/
+@[powerlib_foundation] theorem guardMFPT_guard_isBigO (hα : 0 < α) (hl : 0 < l₁) :
+    (fun D => guardMFPT α l₁ D (guardRadius α l₁) /
+        (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) - 1) =O[𝓝[>] 0]
+      fun D => √D := by
+  have hρ : 0 < α / l₁ := div_pos hα hl
+  have hrc : 0 < √(α / l₁) := Real.sqrt_pos.mpr hρ
+  have hrc2 : √(α / l₁) ^ 2 = α / l₁ := Real.sq_sqrt hρ.le
+  set a := √(α / l₁) / 2 with hadef
+  have ha : 0 < a := by positivity
+  have har : a < √(α / l₁) := by linarith
+  have hL : 0 < √(α / l₁) - a := by linarith
+  have hsα : 0 < √α := Real.sqrt_pos.mpr hα
+  have hsπ : 0 < √π := Real.sqrt_pos.mpr Real.pi_pos
+  have hca : 0 < α * a ^ 2 / 2 := by positivity
+  have he1 := tendsto_exp_neg_div_div hca
+  have hε := tendsto_guardEps_div (rb := √(2 * (α / l₁) - a ^ 2)) hl ha har hρ
+  set k₁ := 1 / (√α * √π * (√(α / l₁) - a)) with hk₁
+  set k₃ := 17 / (√α * √π * a) with hk₃
+  set c₂ := 16 * l₁ / α ^ 2 with hc₂
+  have hk₁0 : 0 ≤ k₁ := by positivity
+  have hk₃0 : 0 ≤ k₃ := by positivity
+  have hc₂0 : 0 ≤ c₂ := by positivity
+  apply Asymptotics.IsBigO.of_bound ((1 + k₁) + (1 + 2 * c₂ + 2 * k₃ + 2 * c₂ * k₃))
+  filter_upwards [self_mem_nhdsWithin,
+    nhdsWithin_le_nhds (eventually_lt_nhds (by positivity : (0 : ℝ) < a ^ 2)),
+    nhdsWithin_le_nhds (eventually_lt_nhds (one_pos : (0 : ℝ) < 1)),
+    he1.eventually (gt_mem_nhds one_pos), hε.eventually (gt_mem_nhds one_pos)]
+    with D hD hDa hD1 he1D hεD
+  have hD0 : (0 : ℝ) < D := hD
+  have hQ : 0 < guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D) := by
+    unfold guardPrefactor; positivity
+  have hs0 : 0 ≤ √D := Real.sqrt_nonneg D
+  have hs2 : √D ^ 2 = D := Real.sq_sqrt hD0.le
+  have hs1 : √D ≤ 1 := by
+    rw [show (1 : ℝ) = √1 by simp]; exact Real.sqrt_le_sqrt hD1.le
+  have hDs : D ≤ √D := by
+    have := pow_le_of_le_one hs0 hs1 two_ne_zero; rwa [hs2] at this
+  have hσ : √(D / α) = √D / √α := Real.sqrt_div' D hα.le
+  have he1le : Real.exp (-(α / (2 * D)) * a ^ 2) ≤ D := by
+    have e : Real.exp (-(α / (2 * D)) * a ^ 2) = Real.exp (-(α * a ^ 2 / 2 / D)) := by
+      congr 1; field_simp
+    rw [e]
+    have := (div_lt_one hD0).1 he1D; linarith
+  have hεle : guardEps α l₁ a √(2 * (α / l₁) - a ^ 2) D ≤ D := by
+    have := (div_lt_one hD0).1 hεD; linarith
+  have hε0 := guardEps_nonneg (D := D) hα hl ha har le_rfl hD0
+  have he0 := Real.exp_pos (-(α / (2 * D)) * a ^ 2)
+  have hlo := guardMFPT_guard_ge hα hl ha har hD0
+  have hhi := guardMFPT_guard_le hα hl ha har hD0 hDa.le
+  rw [hσ] at hlo hhi
+  have e₁ : √D / √α / (√π * (√(α / l₁) - a)) = k₁ * √D := by
+    simp only [hk₁]; field_simp
+  have e₃ : 17 * (√D / √α) / (√π * a) = k₃ * √D := by
+    simp only [hk₃]; field_simp
+  have e₂ : 16 * l₁ * D / α ^ 2 = c₂ * D := by simp only [hc₂]; ring
+  rw [e₁] at hlo
+  rw [e₃, e₂] at hhi
+  generalize guardMFPT α l₁ D (guardRadius α l₁) = T at hlo hhi ⊢
+  generalize guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D) = Q at hQ hlo hhi ⊢
+  generalize Real.exp (-(α / (2 * D)) * a ^ 2) = e at he1le he0 hlo
+  generalize guardEps α l₁ a √(2 * (α / l₁) - a ^ 2) D = ε at hεle hε0 hhi
+  generalize √D = s at hs0 hs1 hDs hlo hhi ⊢
+  clear_value k₁ k₃ c₂
+  have hlo' : (1 - e) * (1 - k₁ * s) ≤ T / Q := by rw [le_div_iff₀ hQ]; exact hlo
+  have hhi' : T / Q ≤ (1 + ε) * (1 + c₂ * D) * (1 + k₃ * s) := by rw [div_le_iff₀ hQ]; exact hhi
+  have hlo2 : -((1 + k₁) * s) ≤ T / Q - 1 := by
+    have h1 : 0 ≤ e * (k₁ * s) := by positivity
+    have h2 : (1 - e) * (1 - k₁ * s) = 1 - e - k₁ * s + e * (k₁ * s) := by ring
+    have h3 : (1 + k₁) * s = s + k₁ * s := by ring
+    linarith
+  have hhi2 : T / Q - 1 ≤ (1 + 2 * c₂ + 2 * k₃ + 2 * c₂ * k₃) * s := by
+    have h1 : 0 ≤ 1 + c₂ * D := by have := mul_nonneg hc₂0 hD0.le; linarith
+    have m1 : (1 + ε) * (1 + c₂ * D) ≤ (1 + s) * (1 + c₂ * s) :=
+      mul_le_mul (by linarith) (by linarith [mul_le_mul_of_nonneg_left hDs hc₂0]) h1
+        (by linarith)
+    have m2 : (1 + ε) * (1 + c₂ * D) * (1 + k₃ * s) ≤ (1 + s) * (1 + c₂ * s) * (1 + k₃ * s) :=
+      mul_le_mul_of_nonneg_right m1 (by have := mul_nonneg hk₃0 hs0; linarith)
+    have hs2' : s ^ 2 ≤ s := pow_le_of_le_one hs0 hs1 two_ne_zero
+    have hs3' : s ^ 3 ≤ s := pow_le_of_le_one hs0 hs1 (by norm_num)
+    have expand : (1 + s) * (1 + c₂ * s) * (1 + k₃ * s) = 1 + (1 + c₂ + k₃) * s +
+        (c₂ + k₃ + c₂ * k₃) * s ^ 2 + c₂ * k₃ * s ^ 3 := by ring
+    have t2 : (c₂ + k₃ + c₂ * k₃) * s ^ 2 ≤ (c₂ + k₃ + c₂ * k₃) * s :=
+      mul_le_mul_of_nonneg_left hs2' (by positivity)
+    have t3 : c₂ * k₃ * s ^ 3 ≤ c₂ * k₃ * s := mul_le_mul_of_nonneg_left hs3' (by positivity)
+    have eR : (1 + 2 * c₂ + 2 * k₃ + 2 * c₂ * k₃) * s =
+        (1 + c₂ + k₃) * s + (c₂ + k₃ + c₂ * k₃) * s + c₂ * k₃ * s := by ring
+    linarith
+  have hB : 0 ≤ (1 + 2 * c₂ + 2 * k₃ + 2 * c₂ * k₃) * s := by positivity
+  have hA1 : 0 ≤ (1 + k₁) * s := by positivity
+  have eC : ((1 + k₁) + (1 + 2 * c₂ + 2 * k₃ + 2 * c₂ * k₃)) * s =
+      (1 + k₁) * s + (1 + 2 * c₂ + 2 * k₃ + 2 * c₂ * k₃) * s := by ring
+  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg hs0, abs_le, eC]
+  constructor <;> linarith
+
+/-- `T_guard / (P e^X) → 1` as `D̃ → 0⁺`. -/
+@[powerlib_foundation] theorem tendsto_guardMFPT_guard (hα : 0 < α) (hl : 0 < l₁) :
+    Tendsto (fun D => guardMFPT α l₁ D (guardRadius α l₁) /
+        (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D))) (𝓝[>] 0) (𝓝 1) := by
+  have hs : Tendsto (fun D : ℝ => √D) (𝓝[>] 0) (𝓝 0) := by
+    have h := Real.continuous_sqrt.tendsto (0 : ℝ)
+    rw [Real.sqrt_zero] at h
+    exact h.mono_left nhdsWithin_le_nhds
+  have h := ((guardMFPT_guard_isBigO hα hl).trans_tendsto hs).add_const 1
+  rw [zero_add] at h
+  exact h.congr fun D => by ring
+
+/-- **`T_guard = P e^X (1 + O(X^{−1/2}))`** along `X = ΔU/D̃ → ∞` (source §1.3), with
+`P = (√π/2) √(D̃ l₁)/α² = √π/(4α√X)` (`guardPrefactor_eq`). -/
+@[powerlib_foundation] theorem guardMFPT_guard_isBigO_atTop (hα : 0 < α) (hl : 0 < l₁) :
+    (fun X => guardMFPT α l₁ (barrierHeight α l₁ / X) (guardRadius α l₁) /
+        (guardPrefactor α l₁ (barrierHeight α l₁ / X) * Real.exp X) - 1) =O[atTop]
+      fun X => (√X)⁻¹ := by
+  have hΔ : 0 < barrierHeight α l₁ := by unfold barrierHeight; positivity
+  have hD : Tendsto (fun X : ℝ => barrierHeight α l₁ / X) atTop (𝓝[>] 0) := by
+    refine tendsto_nhdsWithin_iff.2 ⟨tendsto_const_nhds.div_atTop tendsto_id, ?_⟩
+    filter_upwards [eventually_gt_atTop 0] with X hX
+    exact div_pos hΔ hX
+  have h1 := (guardMFPT_guard_isBigO hα hl).comp_tendsto hD
+  have h2 : (fun X => √(barrierHeight α l₁ / X)) =O[atTop] fun X => (√X)⁻¹ := by
+    apply Asymptotics.IsBigO.of_bound (√(barrierHeight α l₁))
+    filter_upwards [eventually_gt_atTop 0] with X hX
+    have hsX : 0 < √X := Real.sqrt_pos.mpr hX
+    rw [Real.sqrt_div' _ hX.le, Real.norm_eq_abs, Real.norm_eq_abs,
+      abs_of_nonneg (by positivity), abs_of_nonneg (by positivity), div_eq_mul_inv]
+  refine (h1.trans h2).congr' ?_ EventuallyEq.rfl
+  filter_upwards [eventually_gt_atTop 0] with X hX
+  simp only [Function.comp_apply]
+  rw [div_div_cancel₀ hΔ.ne']
+
+/-- **`T_committed = 2 P e^X (1 + O(√D̃))`** as `D̃ → 0⁺`, for every committed-escape boundary
+`r_b > r_c` (source §1.5, "`× 2` 承诺逃逸"): the product of `guardMFPT_ratio_sub_two_isBigO` and
+`guardMFPT_guard_isBigO`. -/
+@[powerlib_foundation] theorem guardMFPT_committed_isBigO (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
+    (hrb : guardRadius α l₁ < rb) :
+    (fun D => guardMFPT α l₁ D rb /
+        (2 * (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D))) - 1) =O[𝓝[>] 0]
+      fun D => √D := by
+  have hs : Tendsto (fun D : ℝ => √D) (𝓝[>] 0) (𝓝 0) := by
+    have h := Real.continuous_sqrt.tendsto (0 : ℝ)
+    rw [Real.sqrt_zero] at h
+    exact h.mono_left nhdsWithin_le_nhds
+  have hf := guardMFPT_ratio_sub_two_isBigO hα hl hrb
+  have hg := guardMFPT_guard_isBigO hα hl
+  have hg1 := hg.trans_tendsto_nhds (F := ℝ) hs
+  have hfg := (hf.mul hg1).congr_right (fun D => mul_one (√D))
+  have hsum := (hg.add (hf.const_mul_left (1 / 2))).add (hfg.const_mul_left (1 / 2))
+  refine hsum.congr' ?_ EventuallyEq.rfl
+  filter_upwards [self_mem_nhdsWithin,
+    (tendsto_guardMFPT_guard hα hl).eventually (lt_mem_nhds (one_pos : (0 : ℝ) < 1))]
+    with D hD hTD
+  have hD0 : (0 : ℝ) < D := hD
+  have hQ : 0 < guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D) := by
+    unfold guardPrefactor; positivity
+  have hT : guardMFPT α l₁ D (guardRadius α l₁) ≠ 0 := by
+    intro h; rw [h, zero_div] at hTD; exact lt_irrefl _ hTD
+  generalize guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D) = Q at hQ ⊢
+  have hQ0 : Q ≠ 0 := hQ.ne'
+  field_simp
+  ring
+
+/-- Composition with `D̃ = c/X` (`c > 0`): an `O(√D̃)` bound as `D̃ → 0⁺` is an `O(X^{−1/2})` bound
+as `X → ∞`. -/
+@[powerlib_foundation] theorem isBigO_comp_div_atTop {f : ℝ → ℝ} {c : ℝ} (hc : 0 < c)
+    (hf : f =O[𝓝[>] 0] fun D => √D) : (fun X => f (c / X)) =O[atTop] fun X => (√X)⁻¹ := by
+  have hD : Tendsto (fun X : ℝ => c / X) atTop (𝓝[>] 0) := by
+    refine tendsto_nhdsWithin_iff.2 ⟨tendsto_const_nhds.div_atTop tendsto_id, ?_⟩
+    filter_upwards [eventually_gt_atTop 0] with X hX
+    exact div_pos hc hX
+  have h2 : (fun X => √(c / X)) =O[atTop] fun X => (√X)⁻¹ := by
+    apply Asymptotics.IsBigO.of_bound (√c)
+    filter_upwards [eventually_gt_atTop 0] with X hX
+    have hsX : 0 < √X := Real.sqrt_pos.mpr hX
+    rw [Real.sqrt_div' _ hX.le, Real.norm_eq_abs, Real.norm_eq_abs,
+      abs_of_nonneg (by positivity), abs_of_nonneg (by positivity), div_eq_mul_inv]
+  exact (hf.comp_tendsto hD).trans h2
+
+/-- **`T_committed = 2 P e^X (1 + O(X^{−1/2}))`** along `X = ΔU/D̃ → ∞`. -/
+@[powerlib_foundation] theorem guardMFPT_committed_isBigO_atTop (hα : 0 < α) (hl : 0 < l₁)
+    {rb : ℝ} (hrb : guardRadius α l₁ < rb) :
+    (fun X => guardMFPT α l₁ (barrierHeight α l₁ / X) rb /
+        (2 * (guardPrefactor α l₁ (barrierHeight α l₁ / X) * Real.exp X)) - 1) =O[atTop]
+      fun X => (√X)⁻¹ := by
+  have hΔ : 0 < barrierHeight α l₁ := by unfold barrierHeight; positivity
+  refine (isBigO_comp_div_atTop hΔ (guardMFPT_committed_isBigO hα hl hrb)).congr' ?_
+    EventuallyEq.rfl
+  filter_upwards [eventually_gt_atTop 0] with X hX
+  rw [div_div_cancel₀ hΔ.ne']
+
+end Guard
 
 end powerlib.Asymptotics
