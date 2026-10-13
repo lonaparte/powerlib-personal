@@ -1,5 +1,6 @@
 import theorem.GFLParametric.Basic
 import theorem.Criteria.Routh3
+import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
 import theorem.Flow.Shift
 import theorem.TMIO.ClaimElab
@@ -47,7 +48,12 @@ unavailable translation coverage. `chain_le_semantics` proves every translation 
 memberships (`mem_den_locallyExponentiallyStable_of_cos_two_mul_pos`, `…_of_abs_lt`,
 `mem_den_unstable_of_cos_two_mul_neg`, `…_of_pi_div_four_lt`, with
 `not_mem_den_lyapunovStable_of_cos_two_mul_neg`); `equilibrium_exists_iff` (formerly
-domain-labelled) is static evidence on the model. Exactness of the local translations is not
+domain-labelled) is static evidence on the model. The local exponential translation is exact
+(`exact_locallyExponentiallyStable`): by the converse linearization theorem
+(`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`) local exponential stability of the
+selected point holds exactly when it is an equilibrium with a Hurwitz Jacobian (the strict 3×3
+Routh–Hurwitz conditions; a Hurwitz Jacobian has `k_P ≠ 0`, so the field's equilibrium is an
+`IsEq` point). Exactness of the local asymptotic, Lyapunov and instability translations is not
 claimed (UNPROVED).
 
 Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
@@ -418,6 +424,47 @@ point, moved to the origin), and passivity holds without requirement. -/
     all_goals exact (hnone fun q => hm q trivial).elim
   · rw [family_isAutonomous.den_passive]
     trivial
+
+/-! ### Exactness of the local exponential translation -/
+
+/-- With no dispatch gain the Jacobian is singular. -/
+private theorem det_jac_of_kP_eq_zero {p : Params} (h : p.kP = 0) (θ Id : ℝ) :
+    (jac p θ Id).det = 0 := by
+  simp [jac, Matrix.det_fin_three, h]
+
+/-- An equilibrium of the field at `(θ*, 0, I_d*)` with a nonzero dispatch gain is an `IsEq`
+point. -/
+private theorem isEq_of_field_eq_zero {p : Params} {θ Id : ℝ} (hkP : p.kP ≠ 0)
+    (h : field p (point θ Id) = 0) : IsEq p θ Id := by
+  have h1 := congrArg (fun y : Dynamics.State 3 => y 1) h
+  have h2 := congrArg (fun y : Dynamics.State 3 => y 2) h
+  simp [field, point, lift, coordField] at h1 h2
+  rcases h2 with h2 | h2
+  · exact absurd h2 hkP
+  · refine ⟨by unfold vq at h1; linarith, by linarith⟩
+
+/-- The local exponential translation is exact: a model is locally exponentially stable at its
+selected point exactly when the point is an equilibrium (`IsEq`) and the closed-form Jacobian
+satisfies the strict 3×3 Routh–Hurwitz conditions. Converse linearization: local exponential
+stability of the `C¹` field forces an equilibrium with a Hurwitz Jacobian. -/
+@[powerlib_domain] theorem exact_locallyExponentiallyStable :
+    connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  ext m
+  rw [TMIO.mem_realize, mem_den_flow_iff]
+  change _ ↔ LocallyExponentiallyStable _ (WithLp.toLp 2 ![m.θ, 0, m.Id])
+  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ (contDiff_field m.params)
+    (fderiv_field m.params m.θ 0 m.Id), Criteria.isHurwitz_fin_three_iff]
+  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
+    forall_eq, Meets]
+  constructor
+  · rintro ⟨he, hs⟩
+    exact ⟨field_point_eq_zero m.params he, hs⟩
+  · rintro ⟨he, hs⟩
+    refine ⟨isEq_of_field_eq_zero (fun hkP => ?_) he, hs⟩
+    have := hs.2.1
+    rw [det_jac_of_kP_eq_zero hkP] at this
+    exact lt_irrefl 0 this
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by

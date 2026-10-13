@@ -1,4 +1,5 @@
 import theorem.Criteria.Hurwitz2
+import theorem.Dynamics.ConverseLinearization
 import theorem.Dynamics.State
 import theorem.Flow.Certificate
 import theorem.Flow.Shift
@@ -44,8 +45,13 @@ Family and connection conclusions.
   `Swing.not_exact_locallyExponentiallyStable` (and the Lyapunov / asymptotic versions) is a
   boundary witness: a model with negative inertia, negative damping and negative synchronizing
   coefficient is locally exponentially stable without meeting the requirements, so the local
-  translations are sound but not exact. Exactness under positive inertia is not claimed
-  (UNPROVED: it would need the converse of the linearization theorem at a degenerate slope).
+  translations are sound but not exact. Within positive inertia the local exponential translation
+  is exact (`Swing.exactUnder_locallyExponentiallyStable`): by the converse linearization theorem
+  (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`) local exponential stability of
+  `(δ*, 0)` holds exactly when it is an equilibrium (power balance) with a Hurwitz Jacobian
+  (`D > 0`, `K > 0`). Exactness of the local asymptotic and Lyapunov translations under positive
+  inertia is not claimed (UNPROVED: a degenerate slope `K = 0` or `D = 0` is not decided by the
+  linearization).
 * The linearization at the selected angle is a second family on the same models
   (`Swing.Linearized.family`, the linear plant of the Jacobian). Within positive inertia its
   attractive sentences and sampled contraction are translated exactly
@@ -792,6 +798,44 @@ in particular for the undamped swing equation. -/
     (hD : 0 ≤ p.D) (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
     connection% (Model.mk p p.deltaS ∈ family.den (.flow .lyapunovStable)) :=
   mem_den_lyapunovStable _ hM hD (p.Pe_deltaS hk h.le) (p.syncCoeff_deltaS_pos hk h)
+
+/-! ### Exactness within positive inertia -/
+
+/-- Within positive inertia, local exponential stability is translated exactly: a swing model with
+`M > 0` is locally exponentially stable at `(δ*, 0)` exactly when the angle is balanced, damped and
+synchronizing. Converse linearization: local exponential stability of the `C¹` swing field forces
+an equilibrium whose Jacobian `[[0, 1], [−K/M, −D/M]]` is Hurwitz. -/
+@[powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
+    connection% (family.ExactUnder {.inertia} (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  unfold Family.ExactUnder TMIO.ExactUnder
+  change TMIO.realize Meets ({.balanced, .inertia, .damped, .synchronizing} ∪ {.inertia}) = _
+  ext m
+  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
+    Set.mem_inter_iff]
+  constructor
+  · intro h
+    have hM : 0 < m.p.M := h .inertia (by simp)
+    refine ⟨mem_den_flow_iff.mpr ?_, fun q hq => by rw [hq]; exact hM⟩
+    change LocallyExponentiallyStable _ _
+    rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ m.p.contDiff_field
+      m.fderiv_point, m.p.field_eq_zero_iff hM.ne', m.p.isHurwitz_jacobian_iff hM]
+    have hb : m.p.Pe m.δ = m.p.Pm := h .balanced (by simp)
+    exact ⟨⟨by simp [Model.point], by simpa [Model.point] using hb⟩,
+      h .damped (by simp), h .synchronizing (by simp)⟩
+  · rintro ⟨hd, hI⟩ q hq
+    have hM : 0 < m.p.M := hI .inertia rfl
+    have hles : LocallyExponentiallyStable m.p.field m.point := mem_den_flow_iff.mp hd
+    rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ m.p.contDiff_field
+      m.fderiv_point, m.p.field_eq_zero_iff hM.ne', m.p.isHurwitz_jacobian_iff hM] at hles
+    obtain ⟨⟨-, hb⟩, hD, hK⟩ := hles
+    rcases hq with ((rfl | rfl | rfl | rfl) | rfl)
+    · show m.p.Pe m.δ = m.p.Pm
+      simpa [Model.point] using hb
+    · exact hM
+    · exact hD
+    · exact hK
+    · exact hM
 
 /-! ### Boundary witness: negative inertia -/
 

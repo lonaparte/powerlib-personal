@@ -1,6 +1,7 @@
 import theorem.PH.Linear
 import theorem.PH.Linearization
 import theorem.Criteria.Hurwitz2
+import theorem.Dynamics.ConverseLinearization
 import theorem.TMIO.ClaimElab
 
 /-! # Synchronous machines as nonlinear port-Hamiltonian systems
@@ -61,8 +62,16 @@ Two models, both instances of `powerlib.PH.NonlinearModel` (P0b), continuous tim
   `cos δ* > 0`, instability into an equilibrium on the unstable branch, passivity into
   `P_m = 0`; the global sentences, decay rates, sampled contraction and conservation have no
   translation (the whole, inconsistent, language). The chain lies below the semantics
-  (`ClassicalSM.chain_le_semantics`). Exactness of the passivity translation (non-passivity for
-  `P_m ≠ 0`) and of the local translations is not claimed (UNPROVED).
+  (`ClassicalSM.chain_le_semantics`). The passivity translation is exact
+  (`ClassicalSM.exact_passive`): for `P_m ≠ 0` the machine is not passive
+  (`ClassicalSM.not_mem_den_passive`) — a slow spin `ω₀ = P_m / (2 (D + 1))`, held at constant
+  speed by the port, draws `2π |P_m|` minus the damping loss per revolution, so the energy drawn
+  over many revolutions exceeds every nonnegative storage. The local exponential translation is
+  exact (`ClassicalSM.exact_locallyExponentiallyStable`): by the converse linearization theorem
+  (`Dynamics.isHurwitz_of_locallyExponentiallyStable`) local exponential stability forces an
+  equilibrium whose Jacobian `[[0, 1/M], [−b cos δ*, −D/M]]` is Hurwitz, i.e. `D > 0`,
+  `cos δ* > 0`. Exactness of the Lyapunov, local asymptotic and instability translations is not
+  claimed (UNPROVED).
 * `SyncMachine7.family`: a complete system is the seven-state machine (`SyncMachine7Params`),
   read as its pH port system at the origin (the unforced state, an equilibrium). Passivity is
   translated into no requirement and is exact (`H ≥ 0`); flow sentences have no translation.
@@ -520,6 +529,184 @@ machine is passive. -/
         (hm .unstableBranch (by simp [translate]))
     all_goals exact (hnone fun q => hm q trivial).elim
   · exact mem_den_passive_of_Pm_zero m (hm .noPower rfl)
+
+/-! #### Exactness of the local exponential translation -/
+
+private theorem zeroInputField_contDiff (p : ClassicalSMParams) :
+    ContDiff ℝ 1 (classicalSM p).zeroInputField :=
+  (classicalSM p).contDiff_zeroInputField (fun _ _ => contDiff_const) (fun _ _ => contDiff_const)
+    (classicalSM_contDiff_dH p)
+
+/-- The local exponential translation is exact: the classical machine is locally exponentially
+stable at `(δ*, 0)` exactly when `b sin δ* = P_m`, `D > 0` and `cos δ* > 0`. Converse
+linearization: local exponential stability of the `C¹` zero-input field forces an equilibrium
+whose Jacobian `(J − R) ∇²H = [[0, 1/M], [−b cos δ*, −D/M]]` is Hurwitz. -/
+@[powerlib_domain] theorem exact_locallyExponentiallyStable :
+    connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  ext m
+  rw [TMIO.mem_realize]
+  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
+    forall_eq]
+  constructor
+  · rintro ⟨hl, hd⟩
+    exact mem_den_locallyExponentiallyStable m hd.1 hl hd.2
+  · intro h
+    have hles : LocallyExponentiallyStable (classicalSM m.p).zeroInputField m.point :=
+      mem_den_flow_iff.mp h
+    have hcd := zeroInputField_contDiff m.p
+    have heq := Dynamics.isEquilibrium_of_locallyExponentiallyStable hcd hles
+    rw [classicalSM_isEquilibrium_iff] at heq
+    have hl : m.p.b * Real.sin m.δs = m.p.Pm := by
+      simpa [Model.point, classicalSM_equilibrium] using heq.1
+    have h0 : (classicalSM m.p).dH m.point = 0 := by
+      apply WithLp.ofLp_injective 2
+      ext i
+      fin_cases i <;> simp [classicalSM, classicalSM_dH, Model.point, classicalSM_equilibrium, hl]
+    have hQ := classicalSM_hasFDerivAt_dH m.p m.point
+    simp only [Model.point, classicalSM_equilibrium, PiLp.toLp_apply, Matrix.cons_val_zero] at hQ
+    have hJac := (classicalSM m.p).fderiv_zeroInputField_of_dH_eq_zero
+      (fun _ _ => differentiableAt_const _) (fun _ _ => differentiableAt_const _) hQ h0
+    have hA := Dynamics.isHurwitz_of_locallyExponentiallyStable _ hcd hJac hles
+    have hlin : ((classicalSM m.p).J (WithLp.toLp 2 ![m.δs, 0]) -
+        (classicalSM m.p).R (WithLp.toLp 2 ![m.δs, 0])) *
+          !![m.p.b * Real.cos m.δs, 0; 0, 1 / m.p.M] =
+        !![0, 1 / m.p.M; -(m.p.b * Real.cos m.δs), -(m.p.D / m.p.M)] :=
+      classicalSM_linearization m.p m.δs
+    rw [hlin, Criteria.isHurwitz_fin_two_of_iff] at hA
+    obtain ⟨htr, hdet⟩ := hA
+    have hM := m.p.M_pos
+    have hb := m.p.b_pos
+    refine ⟨hl, show 0 < m.p.D ∧ 0 < Real.cos m.δs from ⟨?_, ?_⟩⟩
+    · have : 0 < m.p.D / m.p.M := by linarith
+      exact (div_pos_iff_of_pos_right hM).mp this
+    · have : 0 < 1 / m.p.M * (m.p.b * Real.cos m.δs) := by linarith
+      have h2 : 0 < m.p.b * Real.cos m.δs := pos_of_mul_pos_right this (by positivity)
+      exact pos_of_mul_pos_right h2 hb.le
+
+/-! #### Exactness of the passivity translation -/
+
+/-- The spinning motion in coordinates centred at the operating point: the rotor turns at the
+constant speed `ω₀`, `(δ − δ*, p) = (ω₀ t, M ω₀)`. -/
+private def spin (m : Model) (ω₀ t : ℝ) : State 2 := WithLp.toLp 2 ![ω₀ * t, m.p.M * ω₀]
+
+/-- The port power that holds the speed constant: `u = −P_m + b sin δ + D ω₀`. -/
+private def spinInput (m : Model) (ω₀ t : ℝ) : Fin 1 → ℝ :=
+  fun _ => -m.p.Pm + m.p.b * Real.sin (ω₀ * t + m.δs) + m.p.D * ω₀
+
+private theorem spin_hasDerivAt (m : Model) (ω₀ t : ℝ) :
+    HasDerivAt (spin m ω₀) (WithLp.toLp 2 ![ω₀, 0]) t := by
+  have h := ((hasDerivAt_id t).smul_const (WithLp.toLp 2 ![ω₀, (0 : ℝ)] : State 2)).const_add
+    (WithLp.toLp 2 ![0, m.p.M * ω₀] : State 2)
+  convert h using 1
+  · funext s
+    ext i
+    fin_cases i <;> simp [spin, mul_comm]
+  · simp
+
+private theorem spin_field (m : Model) (ω₀ t : ℝ) :
+    m.toPH.system.field (spin m ω₀ t) (spinInput m ω₀ t) = WithLp.toLp 2 ![ω₀, 0] := by
+  apply WithLp.ofLp_injective 2
+  change WithLp.ofLp ((classicalSM m.p).field (spin m ω₀ t + m.point) (spinInput m ω₀ t)) = _
+  rw [classicalSM_field]
+  have hM := m.p.M_pos.ne'
+  ext i
+  fin_cases i
+  · simp [spin, Model.point, classicalSM_equilibrium]
+    field_simp
+  · simp [spin, spinInput, Model.point, classicalSM_equilibrium]
+    field_simp
+    ring_nf
+
+private theorem spin_supply (m : Model) (ω₀ t : ℝ) :
+    m.toPH.system.supply (spin m ω₀ t) (spinInput m ω₀ t) =
+      ω₀ * (-m.p.Pm + m.p.b * Real.sin (ω₀ * t + m.δs) + m.p.D * ω₀) := by
+  change (classicalSM m.p).supply (spin m ω₀ t + m.point) (spinInput m ω₀ t) = _
+  have hM := m.p.M_pos.ne'
+  simp [NonlinearModel.supply, NonlinearModel.output, classicalSM, classicalSM_dH, mulVec,
+    dotProduct, spin, spinInput, Model.point, classicalSM_equilibrium]
+  field_simp
+
+/-- With mechanical power `P_m ≠ 0` the classical machine is not passive. The port holds a slow
+spin `ω₀ = P_m / (2 (D + 1))` in the direction of `P_m` at constant speed; per unit time it draws
+`κ = ω₀ (P_m − D ω₀) > 0` on average (the work of `P_m` minus the damping loss), so along one
+solution segment from a fixed state the supplied energy falls below minus every storage value. -/
+@[powerlib_domain] theorem not_mem_den_passive (m : Model) (hPm : m.p.Pm ≠ 0) :
+    connection% (m ∉ family.den .passive) := by
+  unfold powerlib.TMIO.Statement
+  rw [Family.mem_den]
+  rintro ⟨V, hV0, hV⟩
+  have hD := m.p.D_nonneg
+  have hb := m.p.b_pos
+  set ω₀ : ℝ := m.p.Pm / (2 * (m.p.D + 1)) with hω₀
+  set κ : ℝ := ω₀ * (m.p.D * ω₀ - m.p.Pm) with hκ_def
+  have hκ : κ < 0 := by
+    have e : κ = -(m.p.Pm ^ 2 * (m.p.D + 2)) / (4 * (m.p.D + 1) ^ 2) := by
+      rw [hκ_def, hω₀]
+      field_simp
+      ring
+    rw [e, neg_div, neg_lt_zero]
+    have : 0 < m.p.Pm ^ 2 := by positivity
+    positivity
+  set V₀ := V (spin m ω₀ 0)
+  set T : ℝ := (V₀ + 2 * m.p.b + 1) / (-κ) with hT_def
+  have hT : 0 ≤ T := by
+    have := hV0 (spin m ω₀ 0)
+    have : 0 < -κ := neg_pos.mpr hκ
+    positivity
+  have hκT : κ * T = -(V₀ + 2 * m.p.b + 1) := by
+    have hκ0 : κ ≠ 0 := hκ.ne
+    rw [hT_def]
+    field_simp
+  have htraj : (family.system m).IsTrajectoryOn (spinInput m ω₀) (spin m ω₀) 0 T := by
+    intro t _
+    show HasDerivWithinAt (spin m ω₀) (m.toPH.system.field (spin m ω₀ t) (spinInput m ω₀ t))
+      (Set.Icc 0 T) t
+    rw [spin_field]
+    exact (spin_hasDerivAt m ω₀ t).hasDerivWithinAt
+  have hsupply : (fun t => (family.system m).supply (spin m ω₀ t) (spinInput m ω₀ t)) =
+      fun t => ω₀ * (-m.p.Pm + m.p.b * Real.sin (ω₀ * t + m.δs) + m.p.D * ω₀) :=
+    funext (spin_supply m ω₀)
+  have hcont : Continuous fun t : ℝ =>
+      ω₀ * (-m.p.Pm + m.p.b * Real.sin (ω₀ * t + m.δs) + m.p.D * ω₀) := by fun_prop
+  have hint : IntervalIntegrable
+      (fun t => (family.system m).supply (spin m ω₀ t) (spinInput m ω₀ t)) MeasureTheory.volume
+        0 T := by
+    rw [hsupply]
+    exact hcont.intervalIntegrable 0 T
+  have h := hV _ _ 0 T hT htraj hint
+  have hF : ∀ t ∈ Set.uIcc (0 : ℝ) T, HasDerivAt
+      (fun t => κ * t - m.p.b * Real.cos (ω₀ * t + m.δs))
+      (ω₀ * (-m.p.Pm + m.p.b * Real.sin (ω₀ * t + m.δs) + m.p.D * ω₀)) t := by
+    intro t _
+    have h := ((hasDerivAt_id t).const_mul κ).sub
+      ((((hasDerivAt_id t).const_mul ω₀).add_const m.δs).cos.const_mul m.p.b)
+    refine h.congr_deriv ?_
+    simp only [id, mul_one, hκ_def]
+    ring
+  rw [hsupply, intervalIntegral.integral_eq_sub_of_hasDerivAt hF (hcont.intervalIntegrable 0 T)]
+    at h
+  have hc1 := Real.neg_one_le_cos (ω₀ * T + m.δs)
+  have hc2 := Real.cos_le_one (ω₀ * 0 + m.δs)
+  have hVT := hV0 (spin m ω₀ T)
+  have e1 : -(m.p.b * Real.cos (ω₀ * T + m.δs)) ≤ m.p.b := by nlinarith
+  have e2 : m.p.b * Real.cos (ω₀ * 0 + m.δs) ≤ m.p.b := by nlinarith
+  linarith
+
+/-- The passivity translation is exact: the classical machine is passive exactly when it has no
+mechanical power, `P_m = 0`. -/
+@[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
+  unfold powerlib.TMIO.Statement
+  ext m
+  rw [TMIO.mem_realize]
+  change (∀ q ∈ ({.noPower} : Set Requirement), Meets m q) ↔ _
+  simp only [Set.mem_singleton_iff, forall_eq]
+  constructor
+  · intro h
+    exact mem_den_passive_of_Pm_zero m h
+  · intro h
+    by_contra hPm
+    exact not_mem_den_passive m hPm h
 
 end ClassicalSM
 

@@ -1,6 +1,7 @@
 import theorem.Criteria.Jacobian
 import theorem.DCLink.Locality
 import theorem.CurrentControl.SISO
+import theorem.Dynamics.ConverseLinearization
 import theorem.Flow.Shift
 
 /-! # DC-link voltage of a grid-following VSC: open loop and PI outer loop (domain)
@@ -57,7 +58,14 @@ The local sentences translate into `stable`, instability into `unstable`, passiv
 and the global sentences, decay rates, sampled contraction and conservation into the whole
 (inconsistent) language. Connection conclusions: `openChain_le_semantics`,
 `closedChain_le_semantics` (soundness), `openExact_passive`, `closedExact_passive`, and the
-memberships listed above. The Jacobians, Hurwitz criteria and the small-signal transfer function
+memberships listed above. Exactness within the physical range (converse linearization for fields
+that are `C¹` on `V_dc > 0`, `Dynamics.isHurwitz_of_locallyExponentiallyStable_local`):
+`openLoop_mem_den_locallyExponentiallyStable_iff` (`C, V0 > 0`: locally exponentially stable iff
+rectifier, `P/V0 > 0`) and `closedLoop_mem_den_locallyExponentiallyStable_iff`
+(`V_d, V_dc*, C > 0`: iff `Kp > −I_dc0/V_d ∧ Ki > 0`; with `Ki = 0` the integrator direction is
+killed by the Jacobian). Outside that range the local exponential translations are not exact:
+`openNot_exact_locallyExponentiallyStable` and `closedNot_exact_locallyExponentiallyStable`
+(negative-capacitance witnesses). The Jacobians, Hurwitz criteria and the small-signal transfer function
 are static evidence.
 
 Source: work-sync `theory/T-vsc-dc-voltage-control.md` §1.1, §1.3, §1.4;
@@ -527,5 +535,133 @@ exponential stability, their strict violation instability. -/
     connection% (p ∈ closedFamily.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   exact closed_mem_den_flow.mpr (p.closedLoop_unstable_of_ki hVd hV hC hki)
+
+/-! ## Exactness within the physical range -/
+
+/-- Positive capacitance and operating voltage: the open-loop DC node is locally exponentially
+stable exactly in rectifier operation, `P/V0 > 0`. -/
+@[powerlib_domain] theorem openLoop_mem_den_locallyExponentiallyStable_iff (m : OpenLoop) (hC : 0 < m.C)
+    (hV : 0 < m.V0) :
+    connection% (m ∈ openFamily.den (.flow .locallyExponentiallyStable) ↔
+      m ∈ {m : OpenLoop | 0 < m.P / m.V0}) := by
+  unfold powerlib.TMIO.Statement
+  rw [open_mem_den_flow, Set.mem_ofPred_eq]
+  change LocallyExponentiallyStable _ _ ↔ _
+  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local (isOpen_posDC 1)
+    (by simpa [posDC, dcState] using hV) _ (openField_contDiffOn _ _ _) (openJacobian hV.ne'),
+    isHurwitz_fin_one_iff, neg_div, neg_lt_zero]
+  have hCV : 0 < m.C * m.V0 := mul_pos hC hV
+  constructor
+  · rintro ⟨-, h⟩
+    exact (div_pos_iff_of_pos_right hCV).mp h
+  · intro h
+    exact ⟨openField_eq_zero hV.ne', div_pos h hCV⟩
+
+/-- A negative capacitance with negative power, `C = P = −1`, `V0 = 1`. -/
+def negativeCapacitance : OpenLoop := ⟨-1, -1, 1⟩
+
+/-- The negative-capacitance node is locally exponentially stable (Jacobian `−1`). -/
+@[powerlib_domain] theorem negativeCapacitance_mem_den_locallyExponentiallyStable :
+    connection% (negativeCapacitance ∈ openFamily.den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  refine open_mem_den_flow.mpr (locallyExponentiallyStable_of_isHurwitz_jacobian_local
+    (isOpen_posDC 1) (by simp [posDC, dcState, negativeCapacitance]) _
+    (openField_contDiffOn _ _ _) (openField_eq_zero (by norm_num [negativeCapacitance]))
+    (openJacobian (by norm_num [negativeCapacitance])) ?_)
+  rw [isHurwitz_fin_one_iff]
+  norm_num [negativeCapacitance]
+
+/-- The local exponential translation of the open-loop family is sound but not exact: the
+negative-capacitance node is locally exponentially stable without `C > 0`. -/
+@[powerlib_domain] theorem openNot_exact_locallyExponentiallyStable :
+    connection% (¬ openFamily.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := negativeCapacitance_mem_den_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hs : OpenLoop.Stable negativeCapacitance := hmem .stable rfl
+  have := hs.2.1
+  norm_num [negativeCapacitance] at this
+
+/-- With no integral gain the integrator direction is killed by the Jacobian. -/
+private theorem closed_fderiv_ki_zero {p : DCParams} (hKi : p.Ki = 0) (hV : 0 < p.Vref) :
+    fderiv ℝ p.closedField p.eqState (EuclideanSpace.single 1 1) = 0 := by
+  have hx : p.eqState ∈ posDC 2 := by simpa [posDC, DCParams.eqState] using hV
+  have hdiff : DifferentiableAt ℝ p.closedField p.eqState :=
+    (p.closedField_contDiffOn.contDiffAt ((isOpen_posDC 2).mem_nhds hx)).differentiableAt
+      one_ne_zero
+  have hconst : ∀ t : ℝ, p.closedField (p.eqState + t • EuclideanSpace.single 1 1) =
+      p.closedField p.eqState := by
+    intro t
+    ext i
+    fin_cases i <;> simp [DCParams.closedField, DCParams.idRef, hKi]
+  have h1 : HasDerivAt (fun t : ℝ => p.closedField (p.eqState + t • EuclideanSpace.single 1 1))
+      (fderiv ℝ p.closedField p.eqState (EuclideanSpace.single 1 1)) 0 := by
+    have h := hdiff.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ)
+      (((hasDerivAt_id (0 : ℝ)).smul_const (EuclideanSpace.single 1 1 : State 2)).const_add
+        p.eqState) (by simp)
+    rw [one_smul] at h
+    exact h
+  have h2 : HasDerivAt (fun t : ℝ => p.closedField (p.eqState + t • EuclideanSpace.single 1 1))
+      0 0 := by
+    simp only [hconst]
+    exact hasDerivAt_const _ _
+  exact h1.unique h2
+
+/-- Positive `V_d`, `V_dc*`, `C`: the nonlinear DC-voltage loop is locally exponentially stable
+at `(V_dc*, ζ0)` exactly when `Kp > −I_dc0/V_d` and `Ki > 0` (§1.4 boxed, both directions). -/
+@[powerlib_domain] theorem closedLoop_mem_den_locallyExponentiallyStable_iff (p : DCParams) (hVd : 0 < p.Vd)
+    (hV : 0 < p.Vref) (hC : 0 < p.C) :
+    connection% (p ∈ closedFamily.den (.flow .locallyExponentiallyStable) ↔
+      p ∈ {p : DCParams | -(p.Idc0 / p.Vd) < p.Kp ∧ 0 < p.Ki}) := by
+  unfold powerlib.TMIO.Statement
+  rw [closed_mem_den_flow, Set.mem_ofPred_eq]
+  have hx : p.eqState ∈ posDC 2 := by simpa [posDC, DCParams.eqState] using hV
+  constructor
+  · intro h
+    by_cases hKi : p.Ki = 0
+    · exact absurd h (Dynamics.not_locallyExponentiallyStable_of_fderiv_apply_eq_zero_local
+        (isOpen_posDC 2) hx p.closedField_contDiffOn
+        (by intro h0; simpa using congrArg (fun v : State 2 => v 1) h0)
+        (closed_fderiv_ki_zero hKi hV))
+    · exact (p.closed_isHurwitz_iff hVd hV hC).mp
+        (Dynamics.isHurwitz_of_locallyExponentiallyStable_local (isOpen_posDC 2) hx _
+          p.closedField_contDiffOn (p.closedJacobian hKi hV.ne' hC.ne') h)
+  · rintro ⟨hkp, hki⟩
+    exact p.closedLoop_locallyExponentiallyStable hVd hV hC hkp hki
+
+/-- A negative-capacitance loop: `C = −1`, `V_d = V_dc* = 1`, `Kp = Ki = −1`, `i_ff = I_d0 = 0`. -/
+def negativeCapacitanceLoop : DCParams := ⟨-1, 1, 1, -1, -1, 0, 0⟩
+
+/-- The negative-capacitance loop is locally exponentially stable: its Jacobian
+`[[−1, −1], [1, 0]]` is Hurwitz. -/
+@[powerlib_domain] theorem negativeCapacitanceLoop_mem_den_locallyExponentiallyStable :
+    connection% (negativeCapacitanceLoop ∈
+      closedFamily.den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have hKi : negativeCapacitanceLoop.Ki ≠ 0 := by norm_num [negativeCapacitanceLoop]
+  have hV : negativeCapacitanceLoop.Vref ≠ 0 := by norm_num [negativeCapacitanceLoop]
+  have hC : negativeCapacitanceLoop.C ≠ 0 := by norm_num [negativeCapacitanceLoop]
+  refine closed_mem_den_flow.mpr (locallyExponentiallyStable_of_isHurwitz_jacobian_local
+    (isOpen_posDC 2) (by simp [posDC, DCParams.eqState, negativeCapacitanceLoop]) _
+    negativeCapacitanceLoop.closedField_contDiffOn
+    (negativeCapacitanceLoop.closedField_eqState hKi hV)
+    (negativeCapacitanceLoop.closedJacobian hKi hV hC) ?_)
+  rw [Criteria.isHurwitz_fin_two_iff, DCParams.jacobian_trace, DCParams.jacobian_det]
+  norm_num [negativeCapacitanceLoop, DCParams.a, DCParams.b, DCParams.Idc0]
+
+/-- The local exponential translation of the DC-voltage loop family is sound but not exact: the
+negative-capacitance loop is locally exponentially stable without `C > 0`. -/
+@[powerlib_domain] theorem closedNot_exact_locallyExponentiallyStable :
+    connection% (¬ closedFamily.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := negativeCapacitanceLoop_mem_den_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hs : DCParams.Stable negativeCapacitanceLoop := hmem .stable rfl
+  have := hs.2.2.1
+  norm_num [negativeCapacitanceLoop] at this
 
 end powerlib.DCLink

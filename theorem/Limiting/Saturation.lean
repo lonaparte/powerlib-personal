@@ -1,5 +1,6 @@
 import theorem.Criteria.Jacobian
 import theorem.CurrentControl.SISO
+import theorem.Dynamics.ConverseLinearization
 import theorem.Flow.Shift
 
 /-! # Grid-forming converter in current saturation: equilibria and the optimal current angle
@@ -41,6 +42,13 @@ Jacobian `[[0, 1], [P_sat sin(δ* − φ)/M, −D/M]]`): `stable` — `(δ*, 0)`
   `δ_s = φ − arccos(P_ref/P_sat)` is locally exponentially stable;
   `saturated_unstable_equilibrium` (connection): `δ_u = φ + arccos(P_ref/P_sat)` is unstable
   (saddle).
+* `mem_den_locallyExponentiallyStable_iff` (connection, member equivalence): with `M > 0`, local
+  exponential stability of `(δ*, 0)` holds exactly when it is an equilibrium with `D > 0` and
+  `P_sat sin(δ* − φ) < 0` (converse linearization,
+  `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`): the translation is exact within
+  positive inertia. `not_exact_locallyExponentiallyStable` (boundary witness): without that range
+  it is not exact — the model `M = D = −1`, `P_sat = 1`, `φ = P_ref = 0`, `δ* = π/2` is locally
+  exponentially stable (`negativeInertia_mem_den_locallyExponentiallyStable`).
 
 Source: work-sync `theory/T-current-limiting.md` §1.3, §1.9; `theory/T-gfm-control.md` §1.10.
 -/
@@ -286,5 +294,64 @@ private lemma sin_arccos_pos {Pref Psat : ℝ} (hsat : 0 < Psat) (h : |Pref| < P
     field_simp
   · rw [add_sub_cancel_left]
     positivity
+
+/-! ## Exactness within positive inertia -/
+
+/-- Positive inertia: local exponential stability of a saturated model at `(δ*, 0)` holds exactly
+when `(δ*, 0)` is an equilibrium, `D > 0` and `P_sat sin(δ* − φ) < 0`. Converse linearization:
+local exponential stability forces an equilibrium with a Hurwitz Jacobian. -/
+@[powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff (m : SatModel) (hM : 0 < m.M) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable) ↔
+      m ∈ {m : SatModel | m.Psat * Real.cos (m.δ - m.φ) = m.Pref ∧ 0 < m.D ∧
+        m.Psat * Real.sin (m.δ - m.φ) < 0}) := by
+  unfold powerlib.TMIO.Statement
+  rw [mem_den_flow, Set.mem_ofPred_eq]
+  change LocallyExponentiallyStable _ _ ↔ _
+  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ (satField_contDiff _ _ _ _ _)
+    (satField_fderiv _ _ _ _ _ _), satField_eq_zero_iff hM.ne', satJacobian,
+    Criteria.isHurwitz_fin_two_of_iff]
+  simp only [angleState, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one, true_and, zero_add, zero_mul, zero_sub]
+  constructor
+  · rintro ⟨heq, htr, hdet⟩
+    refine ⟨heq, ?_, ?_⟩
+    · rw [neg_div, neg_lt_zero] at htr
+      exact (div_pos_iff_of_pos_right hM).mp htr
+    · have : m.Psat * Real.sin (m.δ - m.φ) / m.M < 0 := by linarith
+      exact (div_neg_iff.mp this).elim (fun h => absurd hM (not_lt.mpr h.2.le)) (fun h => h.1)
+  · rintro ⟨heq, hD, hs⟩
+    refine ⟨heq, ?_, ?_⟩
+    · rw [neg_div, neg_lt_zero]
+      exact div_pos hD hM
+    · have : m.Psat * Real.sin (m.δ - m.φ) / m.M < 0 := div_neg_of_neg_of_pos hs hM
+      linarith
+
+/-- Negative inertia and damping, `M = D = −1`, `P_sat = 1`, `φ = P_ref = 0`, at `δ* = π/2`. -/
+def negativeInertia : SatModel := ⟨-1, -1, 0, 1, 0, Real.pi / 2⟩
+
+/-- The negative-inertia saturated model is locally exponentially stable: its Jacobian
+`[[0, 1], [−1, −1]]` is Hurwitz. -/
+@[powerlib_domain] theorem negativeInertia_mem_den_locallyExponentiallyStable :
+    connection% (negativeInertia ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_flow.mpr (Criteria.locallyExponentiallyStable_of_jacobian_fin_two _
+    (satField_contDiff _ _ _ _ _) ((satField_eq_zero_iff (by norm_num [negativeInertia]) _).mpr
+      ⟨by simp [angleState], by simp [negativeInertia, angleState]⟩) (satField_fderiv _ _ _ _ _ _)
+    ?_ ?_)
+  · simp [satJacobian, negativeInertia, Matrix.trace_fin_two_of]
+  · simp [satJacobian, negativeInertia, Matrix.det_fin_two_of]
+
+/-- The local exponential translation is sound but not exact: the negative-inertia model is
+locally exponentially stable without positive inertia. -/
+@[powerlib_domain] theorem not_exact_locallyExponentiallyStable :
+    connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := negativeInertia_mem_den_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hs : SatModel.Stable negativeInertia := hmem .stable rfl
+  have := hs.2.1
+  norm_num [negativeInertia] at this
 
 end powerlib.Limiting

@@ -1,4 +1,5 @@
 import theorem.NormalForm.Scalar
+import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
 import theorem.Flow.Shift
 import theorem.TMIO.ClaimElab
@@ -27,7 +28,9 @@ set with a selected angle `δ*`, read as the scalar field translated so that `δ
 slope `K_p P_max cos δ* > 0` (i.e. `d/dδ [K_p (P* − P_max sin δ)] < 0` at `δ*`), or a positive
 slope `K_p P_max cos δ* < 0`.  The local sentences translate into balance and a negative slope,
 instability into balance and a positive slope, passivity into nothing (exact), the remaining
-sentences into the whole, inconsistent, language.  `PSC.chain_le_semantics` proves soundness; the
+sentences into the whole, inconsistent, language.  `PSC.chain_le_semantics` proves soundness;
+`PSC.exact_locallyExponentiallyStable` proves the local exponential translation exact (converse
+linearization of the scalar field, `Dynamics.lift_locallyExponentiallyStable_iff`); the
 former domain theorems `locallyExponentiallyStable`, `unstable`, `locallyExponentiallyStable_arcsin`
 and `unstable_pi_sub_arcsin` are connection statements (members of the denotations), and
 `field_eq_zero_iff`, `exists_equilibrium_iff` are static evidence on the model.
@@ -216,6 +219,32 @@ without requirement. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
+
+/-- The local exponential translation is exact: a PSC model is locally exponentially stable at
+`δ*` exactly when the angle is balanced (`P_max sin δ* = P*`) with a negative slope
+(`K_p P_max cos δ* > 0`). Converse linearization of the scalar field
+`δ̇ = K_p (P* − P_max sin δ)`: local exponential stability forces a zero with negative slope. -/
+@[powerlib_domain] theorem exact_locallyExponentiallyStable :
+    connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  ext m
+  rw [TMIO.mem_realize, mem_den_flow_iff]
+  change _ ↔ LocallyExponentiallyStable (NormalForm.lift m.c.rhs) _
+  rw [Dynamics.lift_locallyExponentiallyStable_iff m.c.rhs_contDiff,
+    (m.c.hasDerivAt_rhs m.δ).deriv]
+  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
+    forall_eq, Meets, rhs, neg_lt_zero]
+  constructor
+  · rintro ⟨hb, hs⟩
+    exact ⟨by rw [hb, sub_self, mul_zero], hs⟩
+  · rintro ⟨hb, hs⟩
+    have hK : m.c.Kp ≠ 0 := by
+      rintro h
+      rw [h, zero_mul, zero_mul] at hs
+      exact lt_irrefl 0 hs
+    refine ⟨?_, hs⟩
+    have := (mul_eq_zero.mp hb).resolve_left hK
+    linarith
 
 /-- An equilibrium with `cos δ₀ > 0` is locally exponentially stable (`K_p, P_max > 0`). -/
 @[powerlib_domain] theorem locallyExponentiallyStable (hK : 0 < c.Kp) (hP : 0 < c.Pmax)

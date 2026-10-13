@@ -1,5 +1,6 @@
 import theorem.GFLParametric.Basic
 import theorem.Criteria.Hurwitz2
+import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
 import theorem.Flow.Shift
 import theorem.TMIO.ClaimElab
@@ -57,8 +58,13 @@ contraction and conservation into the whole (inconsistent) language: unavailable
 coverage. `chain_le_semantics` proves every translation sound; `exact_passive` proves the
 passivity translation exact. The former domain theorems are now connection memberships:
 `mem_den_locallyExponentiallyStable_of_tan_lt` and `mem_den_unstable_of_tan_gt`, together with
-`not_mem_den_lyapunovStable_of_tan_gt`. Exactness of the local translations is not claimed
-(UNPROVED). The boundary pair, damping ratio, `X_g` elimination and the frozen-coefficient
+`not_mem_den_lyapunovStable_of_tan_gt`. The local exponential translation is exact
+(`exact_locallyExponentiallyStable`): by the converse linearization theorem
+(`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`) local exponential stability of
+`(θ*, 0)` holds exactly when it is an equilibrium with a Hurwitz Jacobian; a degenerate loop
+`D₀ = 0` freezes the angle, a linear first integral that excludes local exponential stability
+(`Dynamics.not_locallyExponentiallyStable_of_firstIntegral`). Exactness of the local asymptotic,
+Lyapunov and instability translations is not claimed (UNPROVED). The boundary pair, damping ratio, `X_g` elimination and the frozen-coefficient
 threshold remain static foundation results (`frozen_hurwitz_forall_iff` is about constant
 matrices, not the time-varying system).
 
@@ -516,6 +522,56 @@ the origin), and passivity holds without requirement. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
+
+/-! ### Exactness of the local exponential translation -/
+
+/-- With a degenerate algebraic loop `D₀ = 0` the angle is frozen: `θ` is a linear first
+integral of the field, so no point is locally exponentially stable. -/
+private theorem not_les_of_D0_eq_zero {p : Params} (hD0 : p.D0 = 0) (x : Dynamics.State 2) :
+    ¬ LocallyExponentiallyStable (RatePLL.field p) x := by
+  refine Dynamics.not_locallyExponentiallyStable_of_firstIntegral (contDiff_field p)
+    (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0) ?_ fun y => ?_
+  · intro h
+    have := congrArg (fun L : Dynamics.State 2 →L[ℝ] ℝ => L (EuclideanSpace.single 0 1)) h
+    simp at this
+  · simp [RatePLL.field, lift, coordField, pllOut, hD0]
+
+/-- An equilibrium of the field at `(θ*, 0)` with `D₀ ≠ 0` is balanced, `V sin θ* = X_g I_d`. -/
+private theorem balance_of_field_eq_zero {p : Params} (hD0 : p.D0 ≠ 0) {θ : ℝ}
+    (h : RatePLL.field p (equilibrium θ) = 0) : p.V * Real.sin θ = p.Xg * p.Id := by
+  have h0 := congrArg (fun y : Dynamics.State 2 => y 0) h
+  have h1 := congrArg (fun y : Dynamics.State 2 => y 1) h
+  simp [RatePLL.field, lift, coordField, equilibrium, pllOut, vq, hD0] at h0 h1
+  have hk : p.kp * gridQ p θ = 0 := by
+    rcases h0 with h0 | h0 <;> simp [h0]
+  rw [hk, zero_div, mul_zero, zero_mul, add_zero] at h1
+  unfold gridQ at h1
+  linarith
+
+/-- The local exponential translation is exact: a model is locally exponentially stable at
+`(θ*, 0)` exactly when the point is an equilibrium with a nondegenerate loop
+(`V sin θ* = X_g I_d`, `D₀ ≠ 0`) and the closed-form Jacobian has `tr < 0`, `det > 0`. Converse
+linearization: local exponential stability of the `C¹` field forces an equilibrium with a Hurwitz
+Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
+@[powerlib_domain] theorem exact_locallyExponentiallyStable :
+    connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  ext m
+  rw [TMIO.mem_realize, mem_den_flow_iff]
+  change _ ↔ LocallyExponentiallyStable _ _
+  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
+    forall_eq, Meets]
+  by_cases hD0 : m.params.D0 = 0
+  · simp only [hD0, ne_eq, not_true_eq_false, and_false, false_and, false_iff]
+    exact not_les_of_D0_eq_zero hD0 _
+  · change _ ↔ LocallyExponentiallyStable _ (WithLp.toLp 2 ![m.θ, 0])
+    rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ (contDiff_field m.params)
+      (fderiv_field m.params hD0 m.θ 0), Criteria.isHurwitz_fin_two_iff]
+    constructor
+    · rintro ⟨⟨hb, -⟩, hs⟩
+      exact ⟨field_equilibrium m.params hb, hs⟩
+    · rintro ⟨he, hs⟩
+      exact ⟨⟨balance_of_field_eq_zero hD0 he, hD0⟩, hs⟩
 
 /-! ### Members of the local denotations: the boundary angle `tan θ_H = ω_s k_p / k_i` -/
 

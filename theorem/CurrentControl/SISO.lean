@@ -1,4 +1,5 @@
 import theorem.Criteria.Hurwitz2
+import theorem.Dynamics.ConverseLinearization
 import theorem.Linear.Family
 import theorem.TMIO.ClaimElab
 
@@ -42,6 +43,13 @@ whose satisfaction is supplied by the static conditions `S` and `U` of the model
   sentences, decay rates, sampled contraction and conservation to the whole language.
   `local_chain_le_semantics` proves every translation sound when `S` gives local exponential
   stability and `U` instability of the field at the origin; `local_exact_passive` is exact.
+  `local_exact_locallyExponentiallyStable` proves the local exponential translation exact when
+  `S` is equivalent to local exponential stability at the origin, and `local_exact_of_jacobian`
+  when, for `C¹` fields, `S` is equivalent to an equilibrium at the origin with a Hurwitz Jacobian
+  (converse linearization, `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`). A
+  stability condition that also fixes physical signs (positive inertia, capacitance, …) is not of
+  this form; such families publish the exact membership within the physical range and a
+  witness that the translation itself is not exact.
 
 These are generic statements about arbitrary families of the two shapes: foundation results. A
 model module instantiates them and publishes its conclusions as connection statements.
@@ -295,5 +303,28 @@ passive. -/
 @[powerlib_foundation] theorem local_exact_passive (field : X → ℝⁿ → ℝⁿ) (S U : X → Prop) :
     (localFamily field S U).Exact .passive :=
   Family.exact_of_translate_eq_empty rfl (localFamily_isAutonomous field S U).den_passive
+
+/-- With a stability condition equivalent to local exponential stability of the field at the
+origin, the local exponential translation of a local spectral family is exact. -/
+@[powerlib_foundation] theorem local_exact_locallyExponentiallyStable {field : X → ℝⁿ → ℝⁿ}
+    {S U : X → Prop} (hS : ∀ x, S x ↔ LocallyExponentiallyStable (field x) 0) :
+    (localFamily field S U).Exact (.flow .locallyExponentiallyStable) := by
+  unfold Family.Exact
+  ext x
+  rw [mem_realize, (localFamily_isAutonomous field S U).mem_den_flow]
+  change (∀ q ∈ ({.stable} : Set Requirement), Meets S U x q) ↔
+    LocallyExponentiallyStable (field x) 0
+  simp [hS x]
+
+/-- With a stability condition equivalent to an equilibrium at the origin with a Hurwitz
+Jacobian, for `C¹` fields, the local exponential translation of a local spectral family is exact
+(converse linearization, `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`). -/
+@[powerlib_foundation] theorem local_exact_of_jacobian {field : X → ℝⁿ → ℝⁿ} {S U : X → Prop}
+    (jac : X → Matrix (Fin n) (Fin n) ℝ) (hC : ∀ x, ContDiff ℝ 1 (field x))
+    (hJ : ∀ x, fderiv ℝ (field x) 0 = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) (jac x))
+    (hS : ∀ x, S x ↔ field x 0 = 0 ∧ IsHurwitz (jac x)) :
+    (localFamily field S U).Exact (.flow .locallyExponentiallyStable) :=
+  local_exact_locallyExponentiallyStable fun x =>
+    (hS x).trans (Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ (hC x) (hJ x)).symm
 
 end powerlib.Spectral

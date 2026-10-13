@@ -1,5 +1,6 @@
 import theorem.GFLParametric.Basic
 import theorem.Criteria.Routh4
+import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
 import theorem.Flow.Shift
 import theorem.TMIO.ClaimElab
@@ -61,8 +62,14 @@ are connection conclusions: `mem_den_locallyExponentiallyStable_of_routh`,
 `mem_den_unstable_of_cos_two_mul_neg`, and — the former necessary condition
 `cos_two_mul_nonneg_of_locallyExponentiallyStable`, which had a behavioural premise — its
 contrapositive `not_mem_den_locallyExponentiallyStable_of_cos_two_mul_neg` (with the stronger
-`not_mem_den_lyapunovStable_of_cos_two_mul_neg`). Exactness of the local translations is not
-claimed (UNPROVED). The angle-input field `fieldAngle` and its Jacobian identities are static.
+`not_mem_den_lyapunovStable_of_cos_two_mul_neg`). The local exponential translation is exact
+(`exact_locallyExponentiallyStable`): the physical field agrees with `regField` on a ball around
+the operating point, and by the converse linearization theorem
+(`Dynamics.isHurwitz_of_locallyExponentiallyStable`) local exponential stability forces an
+equilibrium (`IsEq`) with `A₀` Hurwitz, i.e. the quartic Routh conditions
+(`Criteria.isHurwitz_iff_of_det_characteristicMatrix_quartic`); with `C = 0` the dc-bus voltage
+is a linear first integral and excludes it. Exactness of the local asymptotic, Lyapunov and
+instability translations is not claimed (UNPROVED). The angle-input field `fieldAngle` and its Jacobian identities are static.
 
 Source: work-sync `projects/vsc-parametric-oscillation/notes/theory-draft.md` §1.2, §2.3;
 `.../references/gfm-driven-gfl-parametric-resonance/notes/concepts/
@@ -655,5 +662,60 @@ def fieldAngle (_u ud : ℝ) (z : Dynamics.State 4) : Dynamics.State 4 :=
     (u : ℝ) : HasDerivAt (fun u => fderiv ℝ (fieldAngle p u ud) z) 0 u := by
   show HasDerivAt (fun _ : ℝ => fderiv ℝ (fieldAngle p 0 ud) z) 0 u
   exact hasDerivAt_const u _
+
+/-! ### Exactness of the local exponential translation -/
+
+/-- Without capacitance (`C = 0`) the dc-bus voltage is frozen: `V` is a linear first integral
+of the regularized field, so it has no locally exponentially stable point. -/
+private theorem not_les_regField_of_C_eq_zero {p : Params} (hC : p.C = 0) (x : Dynamics.State 4) :
+    ¬ LocallyExponentiallyStable (regField p) x := by
+  refine Dynamics.not_locallyExponentiallyStable_of_firstIntegral (contDiff_regField p)
+    (PiLp.proj 2 (fun _ : Fin 4 => ℝ) 2) ?_ fun y => ?_
+  · intro h
+    have := congrArg (fun L : Dynamics.State 4 →L[ℝ] ℝ => L (EuclideanSpace.single 2 1)) h
+    simp at this
+  · simp [regField, lift, regCoordField, Params.γ, hC]
+
+/-- Local exponential stability of the physical field at `(θ₀, 0, 1, 0)` is that of the
+regularized field. -/
+private theorem les_field_iff_regField {p : Params} {θ0 : ℝ} :
+    LocallyExponentiallyStable (FourState.field p) (opPoint θ0) ↔
+      LocallyExponentiallyStable (regField p) (opPoint θ0) :=
+  ⟨locallyExponentiallyStable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
+      (fun y hy => (field_eq_regField_of_near p hy).symm),
+    locallyExponentiallyStable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
+      (fun y hy => field_eq_regField_of_near p hy)⟩
+
+/-- The local exponential translation is exact: a model is locally exponentially stable at
+`(θ₀, 0, 1, 0)` exactly when the point is an equilibrium (`IsEq`, `C ≠ 0`) whose quartic
+`det(λI − A₀)` meets the Routh conditions. Converse linearization of the regularized field
+(which is the physical field on a ball around the point) and the quartic Routh–Hurwitz
+criterion; with `C = 0` the frozen dc-bus voltage excludes local exponential stability. -/
+@[powerlib_domain] theorem exact_locallyExponentiallyStable :
+    connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  ext m
+  rw [TMIO.mem_realize]
+  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
+    forall_eq]
+  constructor
+  · rintro ⟨he, hr⟩
+    exact les_of_meets he hr
+  · intro h
+    have hles : LocallyExponentiallyStable (regField m.params) (opPoint m.θ) :=
+      les_field_iff_regField.mp (mem_den_flow_iff.mp h)
+    by_cases hC : m.params.C = 0
+    · exact absurd hles (not_les_regField_of_C_eq_zero hC _)
+    have h0 := Dynamics.isEquilibrium_of_locallyExponentiallyStable (contDiff_regField m.params)
+      hles
+    have heq : IsEq m.params m.θ := by
+      rw [← isEq_iff m.params hC]
+      rw [field_eq_regField_of_near m.params (by simp : ‖opPoint m.θ - opPoint m.θ‖ < 1 / 2)]
+      exact h0
+    have hA := Dynamics.isHurwitz_of_locallyExponentiallyStable _ (contDiff_regField m.params)
+      (fderiv_regField_opPoint m.params m.θ) hles
+    rw [Criteria.isHurwitz_iff_of_det_characteristicMatrix_quartic _
+      (det_characteristicMatrix_A0_quartic m.params heq.1)] at hA
+    exact ⟨⟨heq, hC⟩, hA⟩
 
 end powerlib.GFLParametric.FourState

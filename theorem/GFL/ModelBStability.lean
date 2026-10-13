@@ -2,6 +2,7 @@ import theorem.GFL.ReducedOrder
 import theorem.Criteria.Routh4
 import theorem.Criteria.Jacobian
 import theorem.Dynamics.Basin
+import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
 import theorem.Flow.Shift
 import theorem.TMIO.ClaimElab
@@ -60,7 +61,13 @@ first two and the determinant condition, passivity into nothing; the global sent
 rates, sampled contraction and conservation into the whole (inconsistent) language. Connection
 conclusions: soundness (`chain_le_semantics`), exact passivity (`exact_passive`), and the former
 domain theorems as memberships (`mem_den_locallyExponentiallyStable`,
-`mem_den_unstable_of_det_neg`, `noLoad_mem_den_locallyExponentiallyStable`). The untranslated
+`mem_den_unstable_of_det_neg`, `noLoad_mem_den_locallyExponentiallyStable`). At equilibria with
+positive reference the local exponential translation is exact
+(`exactUnder_locallyExponentiallyStable`, context `{equilibrium, positiveReference}`): by the
+converse linearization theorem applied to `regField`
+(`Dynamics.isHurwitz_of_locallyExponentiallyStable`) local exponential stability forces a
+Hurwitz Jacobian, i.e. the 4×4 Routh conditions
+(`Criteria.isHurwitz_fin_four_iff`). The untranslated
 local-stability statements are private implementation evidence; the ball-locality lemmas, the
 regularized field and the Jacobian are foundation.
 -/
@@ -704,6 +711,46 @@ exponentially stable. -/
   unfold powerlib.TMIO.Statement
   exact mem_den_flow_iff.mpr
     (p.modelB_noLoad_locallyExponentiallyStable hV hVg hkp hki hkpv hkiv hC hI hR hq)
+
+/-! ### Exactness of the local exponential translation at equilibria -/
+
+/-- At an equilibrium with positive DC-voltage reference, local exponential stability is
+translated exactly: the equilibrium is locally exponentially stable exactly when its Jacobian
+satisfies the 4×4 Routh conditions. Converse linearization of the regularized field, which is
+model B on a ball around the equilibrium, and the quartic Routh–Hurwitz criterion. -/
+@[powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
+    connection% (family.ExactUnder {.equilibrium, .positiveReference}
+      (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
+  change TMIO.realize Meets ({.equilibrium, .positiveReference, .routh} ∪
+    {.equilibrium, .positiveReference}) = _
+  ext m
+  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
+    Set.mem_inter_iff]
+  constructor
+  · intro h
+    have he : Meets m .equilibrium := h .equilibrium (by simp)
+    have hV : Meets m .positiveReference := h .positiveReference (by simp)
+    refine ⟨les_of_meets he hV (h .routh (by simp)), fun q hq => ?_⟩
+    rcases hq with rfl | rfl
+    · exact he
+    · exact hV
+  · rintro ⟨hd, hI⟩ q hq
+    have hx : m.p.field m.x = 0 := hI .equilibrium (by simp)
+    have hV : 0 < m.p.VdcRef := hI .positiveReference (by simp)
+    obtain ⟨-, hJ⟩ := m.p.regField_equilibrium_jacobian hV hx
+    have hles : LocallyExponentiallyStable m.p.regField m.x :=
+      locallyExponentiallyStable_of_eqOn_ball (by positivity)
+        (fun y hy => (m.p.field_eq_regField_of_mem_ball hV (m.p.equilibrium_Vdc hx) hy).symm)
+        (mem_den_flow_iff.mp hd)
+    have hA := Dynamics.isHurwitz_of_locallyExponentiallyStable _ (m.p.contDiff_regField hV) hJ
+      hles
+    rcases hq with ((rfl | rfl | rfl) | (rfl | rfl))
+    · exact hx
+    · exact hV
+    · exact (Criteria.isHurwitz_fin_four_iff _).mp hA
+    · exact hx
+    · exact hV
 
 end ModelB
 

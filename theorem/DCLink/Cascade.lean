@@ -2,6 +2,7 @@ import theorem.CurrentControl.PILoop
 import theorem.Criteria.Jacobian
 import theorem.DCLink.Locality
 import theorem.DCLink.PowerBalance
+import theorem.Dynamics.ConverseLinearization
 import theorem.Flow.Shift
 
 /-! # Current loop feeding the DC link: the full `ΔV_dc/Δi_d*` transfer (domain)
@@ -59,6 +60,13 @@ Results.
   exponentially stable; `mem_den_unstable_of_inverter` (formerly `unstable_of_inverter`): in
   inverter mode (`I_dc0 < 0`) the plant is unstable, whatever the current-loop gains (the
   open-loop pole `−I_dc0/(C V0)` of §1.4 survives the inner loop).
+  Within `L, C, V0 > 0` the local exponential translation is exact
+  (`mem_den_locallyExponentiallyStable_iff`: locally exponentially stable iff `R + Kp > 0`,
+  `Ki > 0`, `I_dc0 > 0`; converse linearization for fields that are `C¹` on `V_dc > 0`,
+  `Dynamics.isHurwitz_of_locallyExponentiallyStable_local`; with `Ki = 0` the integrator direction
+  is killed by the Jacobian). Outside that range it is not exact
+  (`not_exact_locallyExponentiallyStable`: the negative-inductance cascade
+  `negativeInductance` is locally exponentially stable).
 The Jacobian, the transfer function and its zeros are static evidence.
 
 Source: work-sync `theory/T-vsc-dc-voltage-control.md` §1.1, §1.1.1, §1.4, §1.5;
@@ -526,5 +534,89 @@ the inner loop does not move the DC-node pole. -/
     connection% (p ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   exact mem_den_flow.mpr (p.unstable_of_inverter hC hV hKi hI)
+
+/-! ## Exactness within the physical range -/
+
+/-- With no integral gain the integrator direction is killed by the Jacobian. -/
+private theorem cascade_fderiv_ki_zero {p : CascadeParams} (hKi : p.pi.Ki = 0) (hV : 0 < p.V0) :
+    fderiv ℝ (p.field p.Id0) p.eqState (EuclideanSpace.single 1 1) = 0 := by
+  have hx : p.eqState ∈ CascadeParams.posV := by
+    simpa [CascadeParams.posV, CascadeParams.eqState] using hV
+  have hdiff : DifferentiableAt ℝ (p.field p.Id0) p.eqState :=
+    ((p.field_contDiffOn _).contDiffAt (CascadeParams.isOpen_posV.mem_nhds hx)).differentiableAt
+      one_ne_zero
+  have hconst : ∀ t : ℝ, p.field p.Id0 (p.eqState + t • EuclideanSpace.single 1 1) =
+      p.field p.Id0 p.eqState := by
+    intro t
+    ext i
+    fin_cases i <;> simp [CascadeParams.field, CascadeParams.vconv, hKi]
+  have h1 : HasDerivAt (fun t : ℝ => p.field p.Id0 (p.eqState + t • EuclideanSpace.single 1 1))
+      (fderiv ℝ (p.field p.Id0) p.eqState (EuclideanSpace.single 1 1)) 0 := by
+    have h := hdiff.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ)
+      (((hasDerivAt_id (0 : ℝ)).smul_const (EuclideanSpace.single 1 1 : State 3)).const_add
+        p.eqState) (by simp)
+    rw [one_smul] at h
+    exact h
+  have h2 : HasDerivAt (fun t : ℝ => p.field p.Id0 (p.eqState + t • EuclideanSpace.single 1 1))
+      0 0 := by
+    simp only [hconst]
+    exact hasDerivAt_const _ _
+  exact h1.unique h2
+
+/-- With `L, C, V0 > 0` the nonlinear cascade is locally exponentially stable at its operating
+point exactly when the current loop is stable (`R + Kp > 0`, `Ki > 0`) and the converter
+rectifies (`I_dc0 > 0`). -/
+@[powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff (p : CascadeParams) (hL : 0 < p.pi.L)
+    (hC : 0 < p.C) (hV : 0 < p.V0) :
+    connection% (p ∈ family.den (.flow .locallyExponentiallyStable) ↔
+      p ∈ {p : CascadeParams | (0 < p.pi.R + p.pi.Kp ∧ 0 < p.pi.Ki) ∧ 0 < p.Idc0}) := by
+  unfold powerlib.TMIO.Statement
+  rw [mem_den_flow, Set.mem_ofPred_eq]
+  have hx : p.eqState ∈ CascadeParams.posV := by
+    simpa [CascadeParams.posV, CascadeParams.eqState] using hV
+  constructor
+  · intro h
+    by_cases hKi : p.pi.Ki = 0
+    · exact absurd h (Dynamics.not_locallyExponentiallyStable_of_fderiv_apply_eq_zero_local
+        CascadeParams.isOpen_posV hx (p.field_contDiffOn _)
+        (by intro h0; simpa using congrArg (fun v : State 3 => v 1) h0)
+        (cascade_fderiv_ki_zero hKi hV))
+    · exact (p.isHurwitz_iff hL hC hV).mp
+        (Dynamics.isHurwitz_of_locallyExponentiallyStable_local CascadeParams.isOpen_posV hx _
+          (p.field_contDiffOn _) (p.jacobian_eq hKi hV.ne') h)
+  · rintro ⟨⟨hR, hKi⟩, hI⟩
+    exact p.locallyExponentiallyStable hL hC hV hR hKi hI
+
+/-- A negative-inductance cascade: `L = −1`, `R = 0`, `Kp = Ki = −1`, `C = V_d0 = V0 = I_d0 = 1`
+(`I_dc0 = 1`). -/
+def negativeInductance : CascadeParams := ⟨⟨-1, 0, -1, -1⟩, 1, 1, 1, 1⟩
+
+/-- The negative-inductance cascade is locally exponentially stable: its current loop
+`L s² + (R + Kp) s + Ki = −(s² + s + 1)` and its DC node are stable. -/
+@[powerlib_domain] theorem negativeInductance_mem_den_locallyExponentiallyStable :
+    connection% (negativeInductance ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have hKi : negativeInductance.pi.Ki ≠ 0 := by norm_num [negativeInductance]
+  have hV : negativeInductance.V0 ≠ 0 := by norm_num [negativeInductance]
+  refine mem_den_flow.mpr (locallyExponentiallyStable_of_isHurwitz_jacobian_local
+    CascadeParams.isOpen_posV
+    (by simp [CascadeParams.posV, CascadeParams.eqState, negativeInductance]) _
+    (negativeInductance.field_contDiffOn _) (negativeInductance.field_eqState hKi)
+    (negativeInductance.jacobian_eq hKi hV) ?_)
+  rw [CascadeParams.isHurwitz_iff_pi, CurrentControl.PIParams.isHurwitz_iff_div]
+  norm_num [negativeInductance, CascadeParams.Idc0]
+
+/-- The local exponential translation of the nonlinear cascade is sound but not exact: the
+negative-inductance cascade is locally exponentially stable without `L > 0`. -/
+@[powerlib_domain] theorem not_exact_locallyExponentiallyStable :
+    connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := negativeInductance_mem_den_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hs : CascadeParams.Stable negativeInductance := hmem .stable rfl
+  have := hs.1
+  norm_num [negativeInductance] at this
 
 end powerlib.DCLink

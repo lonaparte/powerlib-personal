@@ -1,4 +1,5 @@
 import theorem.PLL.Invariant
+import theorem.Dynamics.ConverseLinearization
 import theorem.PH.Nonlinear
 import theorem.TMIO.ClaimElab
 
@@ -52,7 +53,11 @@ bottom; or `V K_i > 0` at an anti-phase point (`cos θ* = −1`). Connection con
 `pllPH_passive`), Lyapunov stability of a well bottom from the shifted Hamiltonian
 (`mem_den_lyapunovStable`, the behavioural part of the former `pllPH_shifted_lyapunov`, now at
 every well bottom and every `K_p ≥ 0`), and the former zero-input linearization results
-(`mem_den_locallyExponentiallyStable`, `mem_den_unstable_antiPhase`). The Lyapunov-function
+(`mem_den_locallyExponentiallyStable`, `mem_den_unstable_antiPhase`). Within nonnegative energy
+the local exponential translation is exact (`exactUnder_locallyExponentiallyStable`, by the converse
+linearization theorem `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`); without it
+the translation is not exact (`not_exact_locallyExponentiallyStable`: with `V = −1`,
+`K_p = K_i = 1` the anti-phase point `θ* = π` is locally exponentially stable). The Lyapunov-function
 facts are static (`pllHamiltonian_shifted_lyapunovFunction`); the first integral of the lossless
 loop along solution segments (`pllPH_lossless_firstIntegral`) is private implementation evidence
 (a trajectory statement; the shifted energy is periodic in `θ`, so it is not a conservation
@@ -471,6 +476,104 @@ loop gains at a well bottom prove local exponential stability and a saddle prove
     (hθ : Real.cos m.θ = -1) :
     connection% (m ∈ family.den (.flow .unstable)) :=
   unstable_of_meets ⟨hVKi, hθ⟩
+
+/-! ### Exactness of the local exponential translation -/
+
+/-- Converse linearization at `(θ*, η*)`: local exponential stability holds exactly when
+`V sin θ* = 0` and both slope-gain products `K_p V cos θ*`, `K_i V cos θ*` are positive. -/
+private theorem mem_den_les_iff {m : Model} :
+    m ∈ family.den (.flow .locallyExponentiallyStable) ↔
+      m.V * Real.sin m.θ = 0 ∧ 0 < m.Kp * (m.V * Real.cos m.θ) ∧
+        0 < m.Ki * (m.V * Real.cos m.θ) := by
+  rw [mem_den_flow_iff]
+  change LocallyExponentiallyStable _ _ ↔ _
+  have hJac := fderiv_srfField m.V m.Kp m.Ki (m.Ki * m.ηs) m.point
+  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ (contDiff_srfField _ _ _ _)
+    hJac, GFL.piPLLJacobian_isHurwitz_iff]
+  have hp0 : m.point 0 = m.θ := by simp [Model.point, piPLLState]
+  have hp1 : m.point 1 = m.ηs := by simp [Model.point, piPLLState]
+  have hz : srfField m.V m.Kp m.Ki (m.Ki * m.ηs) m.point = 0 ↔ m.V * Real.sin m.θ = 0 := by
+    constructor
+    · intro h
+      have h1 := congrArg (fun y : State 2 => y 1) h
+      simp only [srfField_apply_one, hp0, PiLp.zero_apply, neg_eq_zero] at h1
+      exact h1
+    · intro h
+      ext i
+      fin_cases i
+      · simp [hp0, hp1, mul_assoc, h]
+      · simp [hp0, h]
+  rw [hz, hp0]
+  constructor
+  · rintro ⟨h0, h1, h2⟩
+    exact ⟨h0, by linarith, by linarith⟩
+  · rintro ⟨h0, h1, h2⟩
+    exact ⟨h0, by linarith, by linarith⟩
+
+/-- Within nonnegative energy (`V, K_i ≥ 0`), local exponential stability is translated exactly:
+a model is locally exponentially stable at `(θ*, η*)` exactly when `V K_p > 0`, `V K_i > 0` and
+`cos θ* = 1`. -/
+@[powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
+    connection% (family.ExactUnder {.nonnegativeEnergy} (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
+  change TMIO.realize Meets ({.slopeStable} ∪ {.nonnegativeEnergy}) = _
+  ext m
+  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_singleton_iff, Set.mem_inter_iff]
+  constructor
+  · intro h
+    obtain ⟨hVKp, hVKi, hθ⟩ : Meets m .slopeStable := h .slopeStable (by simp)
+    have hn : Meets m .nonnegativeEnergy := h .nonnegativeEnergy (by simp)
+    refine ⟨mem_den_les_iff.mpr ⟨?_, ?_, ?_⟩, fun q hq => by rw [hq]; exact hn⟩
+    · rw [sin_eq_zero_of_cos_sq (by rw [hθ]; norm_num), mul_zero]
+    · rw [hθ]; linarith [mul_comm m.V m.Kp]
+    · rw [hθ]; linarith [mul_comm m.V m.Ki]
+  · rintro ⟨hd, hI⟩ q hq
+    have hn : Meets m .nonnegativeEnergy := hI .nonnegativeEnergy rfl
+    obtain ⟨hV, hKi⟩ := hn
+    obtain ⟨h0, h1, h2⟩ := mem_den_les_iff.mp hd
+    have hKp := m.damping
+    have hVpos : 0 < m.V := by
+      rcases hV.lt_or_eq with h | h
+      · exact h
+      · rw [← h] at h1; simp at h1
+    have hcos : 0 < Real.cos m.θ := by
+      by_contra hc
+      have hle : m.V * Real.cos m.θ ≤ 0 := mul_nonpos_of_nonneg_of_nonpos hVpos.le (not_lt.mp hc)
+      nlinarith
+    have hs : Real.sin m.θ = 0 := (mul_eq_zero.mp h0).resolve_left hVpos.ne'
+    have hc1 : Real.cos m.θ = 1 := by
+      have := Real.sin_sq_add_cos_sq m.θ
+      rw [hs] at this
+      nlinarith
+    rcases hq with rfl | rfl
+    · show 0 < m.V * m.Kp ∧ 0 < m.V * m.Ki ∧ Real.cos m.θ = 1
+      rw [hc1] at h1 h2
+      exact ⟨by linarith [mul_comm m.V m.Kp], by linarith [mul_comm m.V m.Ki], hc1⟩
+    · exact ⟨hV, hKi⟩
+
+/-- A negative amplitude reverses the stable branch: `V = −1`, `K_p = K_i = 1` at the anti-phase
+point `θ* = π`. -/
+def reversedAmplitude : Model := ⟨-1, 1, 1, 0, Real.pi, zero_le_one⟩
+
+/-- The reversed-amplitude model is locally exponentially stable at `θ* = π`. -/
+@[powerlib_domain] theorem reversedAmplitude_mem_den_locallyExponentiallyStable :
+    connection% (reversedAmplitude ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_les_iff.mpr ⟨?_, ?_, ?_⟩ <;> simp [reversedAmplitude]
+
+/-- Without the context of nonnegative energy the local exponential translation is sound but not
+exact: the reversed-amplitude model is locally exponentially stable at an anti-phase point. -/
+@[powerlib_domain] theorem not_exact_locallyExponentiallyStable :
+    connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := reversedAmplitude_mem_den_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hs : Meets reversedAmplitude .slopeStable := hmem .slopeStable (by simp [family, translate])
+  have := hs.2.2
+  simp [reversedAmplitude] at this
+  norm_num at this
 
 end PLLPH
 

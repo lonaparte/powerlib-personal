@@ -1,4 +1,5 @@
 import theorem.Criteria.Routh3
+import theorem.Dynamics.ConverseLinearization
 import theorem.Synchronous.Swing
 
 /-! # Grid-forming VSM with a first-order power filter on an infinite bus (three states)
@@ -30,12 +31,19 @@ Family and connection conclusions.
   condition `K < D ω_c + D²/M`, and a destabilizing sign (`D ω_c + D²/M < K`, or `K < 0`).  The
   local sentences translate into the first four, instability into balance, positivity and a
   destabilizing sign, passivity into nothing (exact), the remaining sentences into the whole,
-  inconsistent, language.  `VSMLPF.chain_le_semantics` proves soundness.
+  inconsistent, language.  `VSMLPF.chain_le_semantics` proves soundness.  Within positive
+  `M, D, ω_c` the local exponential translation is exact
+  (`VSMLPF.exactUnder_locallyExponentiallyStable`): by the converse linearization theorem
+  (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`) local exponential stability of
+  the operating point holds exactly when it is an equilibrium with a Hurwitz Jacobian, i.e.
+  balanced with `0 < K < D ω_c + D²/M`.
 * Connection conclusions at the loading angle (`VSMLPF.atLoading`): `locallyExponentiallyStable`,
   `unstable`, and the exact boundary `locallyExponentiallyStable_iff` (a member-equivalence:
   local exponential stability iff `K < D ω_c + D²/M`, boundary excluded); new:
   `unstable_atAntiLoading` (the second equilibrium `π − δ₀` is a saddle).
-* `DroopLPF.family` (two states, the `M → 0` limit) with the same pattern;
+* `DroopLPF.family` (two states, the `M → 0` limit) with the same pattern (within positive
+  `D, ω_c` the local exponential translation is exact,
+  `DroopLPF.exactUnder_locallyExponentiallyStable`);
   `DroopLPF.locallyExponentiallyStable` (no Hopf boundary) is a connection conclusion; new:
   `DroopLPF.unstable_atAntiLoading`.
 * Static evidence on the model: the equilibrium theorems `field_eq_zero_iff`,
@@ -663,6 +671,52 @@ and passivity holds without requirement. -/
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
+/-- Within positive inertia, damping and filter bandwidth, local exponential stability is
+translated exactly: a model with `M, D, ω_c > 0` is locally exponentially stable at
+`(δ*, 0, P₀)` exactly when the angle is balanced with `0 < K < D ω_c + D²/M`. Converse
+linearization: local exponential stability of the `C¹` field forces an equilibrium whose Jacobian
+satisfies the strict 3×3 Routh–Hurwitz conditions. -/
+@[powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
+    connection% (family.ExactUnder {.physical} (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
+  change TMIO.realize Meets ({.balanced, .physical, .synchronizing, .fastFilter} ∪ {.physical}) = _
+  ext m
+  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
+    Set.mem_inter_iff]
+  constructor
+  · intro h
+    have hp : Meets m .physical := h .physical (by simp)
+    exact ⟨mem_den_flow_iff.mpr (les_of hp (h .balanced (by simp)) (h .synchronizing (by simp))
+      (h .fastFilter (by simp))), fun q hq => by rw [hq]; exact hp⟩
+  · rintro ⟨hd, hI⟩ q hq
+    have hp : Meets m .physical := hI .physical rfl
+    obtain ⟨hM, hD, hω⟩ := hp
+    have hles : LocallyExponentiallyStable m.g.field m.point := mem_den_flow_iff.mp hd
+    rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ m.g.contDiff_field
+      (fderiv_point m), m.g.field_eq_zero_iff hM.ne' hω.ne', Criteria.isHurwitz_fin_three_iff,
+      trace_jacobian, det_jacobian, principalMinorSum_jacobian] at hles
+    obtain ⟨⟨-, -, hb⟩, -, hdet, hg⟩ := hles
+    have hwM : 0 < m.g.ωc / m.g.M := div_pos hω hM
+    have hK : 0 < m.K := by
+      have e : -(m.g.ωc * (m.g.K0 * Real.cos m.δ)) / m.g.M = -(m.g.ωc / m.g.M * m.K) := by
+        unfold Model.K; ring
+      rw [e] at hdet
+      exact pos_of_mul_pos_right (by linarith) hwM.le
+    have hf : m.K < m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M := by
+      have e1 : (-m.g.D / m.g.M - m.g.ωc) * (m.g.D * m.g.ωc / m.g.M) =
+          -(m.g.ωc / m.g.M * (m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M)) := by ring
+      have e2 : -(m.g.ωc * (m.g.K0 * Real.cos m.δ)) / m.g.M = -(m.g.ωc / m.g.M * m.K) := by
+        unfold Model.K; ring
+      rw [e1, e2] at hg
+      exact lt_of_mul_lt_mul_left (by linarith) hwM.le
+    rcases hq with ((rfl | rfl | rfl | rfl) | rfl)
+    · show m.g.K0 * Real.sin m.δ = m.g.P0
+      simpa [Model.point] using hb
+    · exact ⟨hM, hD, hω⟩
+    · exact hK
+    · exact hf
+    · exact ⟨hM, hD, hω⟩
+
 /-! ### Members -/
 
 /-- Positive `M, D, ω_c`, a balanced angle, a positive synchronizing coefficient and the
@@ -1044,6 +1098,41 @@ both positive and negative. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
+
+/-- Within positive droop damping and filter bandwidth, local exponential stability is translated
+exactly: a model with `D, ω_c > 0` is locally exponentially stable at `(δ*, P₀)` exactly when the
+angle is balanced and synchronizing (`K₀ cos δ* > 0`). Converse linearization: local exponential
+stability of the `C¹` field forces an equilibrium with a Hurwitz Jacobian
+(`tr = −ω_c`, `det = ω_c K₀ cos δ* / D`). -/
+@[powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
+    connection% (family.ExactUnder {.physical} (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
+  change TMIO.realize Meets ({.balanced, .physical, .synchronizing} ∪ {.physical}) = _
+  ext m
+  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
+    Set.mem_inter_iff]
+  constructor
+  · intro h
+    have hp : Meets m .physical := h .physical (by simp)
+    exact ⟨mem_den_flow_iff.mpr (les_of hp (h .balanced (by simp)) (h .synchronizing (by simp))),
+      fun q hq => by rw [hq]; exact hp⟩
+  · rintro ⟨hd, hI⟩ q hq
+    have hp : Meets m .physical := hI .physical rfl
+    obtain ⟨hD, hω⟩ := hp
+    have hles : LocallyExponentiallyStable m.q.field m.point := mem_den_flow_iff.mp hd
+    rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ m.q.contDiff_field
+      (fderiv_point m), m.q.field_eq_zero_iff hD.ne' hω.ne', Criteria.isHurwitz_fin_two_iff,
+      trace_jacobian, det_jacobian] at hles
+    obtain ⟨⟨-, hb⟩, -, hdet⟩ := hles
+    have hK : 0 < m.q.K0 * Real.cos m.δ := by
+      rw [lt_div_iff₀ hD, zero_mul] at hdet
+      exact pos_of_mul_pos_right hdet hω.le
+    rcases hq with ((rfl | rfl | rfl) | rfl)
+    · show m.q.K0 * Real.sin m.δ = m.q.P0
+      simpa [Model.point] using hb
+    · exact ⟨hD, hω⟩
+    · exact hK
+    · exact ⟨hD, hω⟩
 
 /-- The model read about its loading angle `arcsin(P₀/K₀)`. -/
 def atLoading : Model := ⟨q, Real.arcsin (q.P0 / q.K0)⟩

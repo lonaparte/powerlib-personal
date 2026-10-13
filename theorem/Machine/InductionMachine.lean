@@ -61,7 +61,11 @@ evidence), `ifocFlux_tuned_globallyExponentiallyStable` and
 `ifocFlux_detuned_globallyExponentiallyStable` (the stability half of the former
 `ifocFlux_detuned_orientationError`; its orientation half is the static
 `ifocFlux_detuned_orientation_iff`). Equilibria, the flux algebra and the dissipation identity
-are static evidence.
+are static evidence. Boundary witness (`not_exact`): only `r_r / L_r` enters the rotor-flux field,
+so the drive `negativeRotor` with `r_r = L_r = −1` has the field of the unit-rotor drive and
+satisfies every attractive sentence, sampled contraction and Lyapunov stability
+(`negativeRotor_mem_den`) without a positive rotor: those translations are sound but not exact.
+The physical requirement `r_r, L_r > 0` is kept as the translation.
 
 Source: work-sync theory/T-field-oriented-control.md §1.1–§1.4 (and §1.3 IFOC);
 theory/T-direct-torque-control.md §1.2 (stator current from fluxes);
@@ -650,5 +654,57 @@ exponentially stable; its equilibrium is oriented only when `T̂_r = T_r`
     connection% (⟨p, isd, isq, isq / (Tr_hat * isd)⟩ ∈
       family.den (.flow .globallyExponentiallyStable)) :=
   ifocFlux_globallyExponentiallyStable ⟨p, isd, isq, isq / (Tr_hat * isd)⟩ hrr hLr
+
+/-! ## Boundary witness: a negative rotor -/
+
+/-- A drive with negative rotor resistance and inductance, `r_r = L_r = −1` (all other data
+zero). -/
+def negativeRotor : Drive := ⟨⟨0, -1, 0, -1, 0⟩, 0, 0, 0⟩
+
+/-- The same drive with `r_r = L_r = 1`. -/
+def unitRotor : Drive := ⟨⟨0, 1, 0, 1, 0⟩, 0, 0, 0⟩
+
+/-- Only `r_r / L_r` enters the rotor-flux field: the negative-rotor drive has the field of the
+unit-rotor drive. -/
+@[powerlib_foundation] theorem negativeRotor_field : negativeRotor.field = unitRotor.field := by
+  funext z
+  simp [Drive.field, fluxField, fluxEquilibrium, negativeRotor, unitRotor, Params.Tr, slipRatio]
+
+/-- The negative-rotor drive satisfies every attractive sentence, sampled contraction and
+Lyapunov stability: its field is that of the unit-rotor drive, globally exponentially stable. -/
+@[powerlib_domain] theorem negativeRotor_mem_den {P : Flow.Property}
+    (hP : P.Attractive ∨ P = .contractive ∨ P = .lyapunovStable) :
+    connection% (negativeRotor ∈ family.den (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  have h := ifocFlux_globallyExponentiallyStable unitRotor (by norm_num [unitRotor])
+    (by norm_num [unitRotor])
+  unfold powerlib.TMIO.Statement at h
+  rw [family_isAutonomous.mem_den_flow] at h ⊢
+  rw [negativeRotor_field]
+  rcases hP with hP | rfl | rfl
+  · exact h.holds hP
+  · exact h.sampledContraction
+  · exact h.lyapunovStable
+
+/-- The attractive, contractive and Lyapunov translations are sound but not exact: the
+negative-rotor drive satisfies these sentences without a positive rotor. -/
+@[powerlib_domain] theorem not_exact {P : Flow.Property}
+    (hP : P.Attractive ∨ P = .contractive ∨ P = .lyapunovStable) :
+    connection% (¬ family.Exact (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := negativeRotor_mem_den hP
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have ht : translate (.flow P) = {.positiveRotor} := by
+    rcases hP with hP | rfl | rfl
+    · cases P <;> first | rfl | exact hP.elim
+    · rfl
+    · rfl
+  have hm : Meets negativeRotor .positiveRotor := hmem .positiveRotor (by
+    change Requirement.positiveRotor ∈ translate (.flow P)
+    rw [ht]; rfl)
+  have := hm.1
+  norm_num [negativeRotor] at this
 
 end powerlib.Machine.InductionMachine

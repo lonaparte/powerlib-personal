@@ -30,33 +30,84 @@ Results.
 * `tendsto_of_firstSwing_margin`, `faultTrajectory_tendsto_of_areas` (`D > 0`, `P_m ≥ k₁`):
   a strict equal-area margin at clearing implies convergence of the post-fault trajectory to
   `(δ_s, 0)`.
+* **Damping strictly delays the critical clearing time** (bolted fault `P_e^f ≡ 0`, same `M`,
+  `P_m` in both stages, `D > 0` during the fault).  `dampedBolted_trajectory`: explicit damped
+  during-fault trajectory `ω = (P_m/D)(1 − e^{−Dτ/M})`,
+  `δ = δ₀ + (P_m/D)(τ − (M/D)(1 − e^{−Dτ/M}))`, `τ = t − t_f`, which stays strictly below the
+  undamped `δ₀ + P_m τ²/(2M)` for `τ > 0` (`exp_neg_lt_quadratic`: `e^{−u} < 1 − u + u²/2`).
+  `boltedFault_damped_clearingAngle`: with `δ_cc ∈ (δ₀, δ_u]` the undamped critical clearing
+  angle (zero of `g = A_acc − A_dec`, post-fault curve positive on `(δ₀, δ_u)`) there is `ε > 0`
+  such that every clearing time `t_c − t_f ≤ t_cc^EAC + ε`, `t_cc^EAC = √(2M(δ_cc − δ₀)/P_m)`,
+  gives a clearing angle in `[δ₀, δ_cc)` and a strict undamped area margin;
+  `boltedFault_damped_firstSwing` (`D_post ≥ 0`): all those clearing times keep the first swing
+  below `δ_u`; `boltedFault_damped_tendsto` (`D_post > 0`, `P_m ≥ k₁`, `δ_u − 2π < δ₀`): all of
+  them give convergence to `(δ_s, 0)`.  Since without damping the first swing stays below `δ_u`
+  exactly for `t_c − t_f ≤ t_cc^EAC` (`FaultSequence.boltedFault_firstSwing_iff`), the true
+  (damped) critical clearing time is at least `t_cc^EAC + ε`, strictly larger than the EAC value.
 
 Correction.
 * T-transient-stability §1.8 writes `A_dec^{D>0} = A_dec^{D=0} − ∫ D Δω² dt > A_dec^{D=0}`,
   which is self-contradictory (subtracting a positive quantity cannot increase the area).  The
   formal content of "the undamped EAC is conservative" is energy dissipation
   (`Ẇ = −D ω² ≤ 0`): the undamped area condition stays sufficient for every `D ≥ 0`, and with
-  `D > 0` a strict margin gives convergence to `δ_s`.  The claim that the true critical clearing
-  time is *strictly* larger than the EAC value is not formalized.
+  `D > 0` a strict margin gives convergence to `δ_s`.  The claim `t_cc^真 > t_cc^EAC` is proved
+  for the bolted fault (`boltedFault_damped_firstSwing`, `boltedFault_damped_tendsto`, with a
+  uniform `ε > 0`); for a general during-fault curve (no closed-form undamped trajectory) it is
+  not formalized.
 
 Family and connection conclusions.  None: energy dissipation along solutions, first-swing bounds,
 region-of-attraction estimates (LaSalle on the well) and convergence of switched trajectories are
 outside the sentence language of `Synchronous.Swing.family` (Rules §3a).  The seven former domain
 theorems (`energy_antitoneOn`, `firstSwing_le_deltaU_of_damping`, `regionOfAttraction_well`,
 `tendsto_of_firstSwing_margin`, `clearing_energy_le`, `faultTrajectory_firstSwing_of_areas`,
-`faultTrajectory_tendsto_of_areas`) are private implementation evidence; the local stability of
+`faultTrajectory_tendsto_of_areas`) and the bolted-fault clearing-time results
+(`dampedBolted_trajectory`, `boltedFault_damped_clearingAngle`, `boltedFault_damped_firstSwing`,
+`boltedFault_damped_tendsto`) are private implementation evidence; the local stability of
 `(δ_s, 0)` with `D > 0` is the connection conclusion `Swing.deltaS_mem_den_locallyExponentiallyStable`.
-The well geometry (`wellWindow`, compact sublevels, the only equilibrium in the window) stays
-public foundation.  LaSalle is the generic `Dynamics.regionOfAttraction_of_lasalle_sublevel`
+The well geometry (`wellWindow`, compact sublevels, the only equilibrium in the window) and the
+elementary bounds `exp_neg_lt_quadratic`, `exp_neg_le_quadratic` are public foundation.  LaSalle is the generic `Dynamics.regionOfAttraction_of_lasalle_sublevel`
 (`theorem/Dynamics/Basin.lean`).
 
-Source: work-sync theory/T-transient-stability.md §1.3, §1.5, §1.8, §2.2.
+Source: work-sync theory/T-transient-stability.md §1.3, §1.5, §1.6, §1.8, §2.2.
 -/
 
 noncomputable section
 namespace powerlib.Synchronous
 open Set Filter Topology intervalIntegral
 open powerlib.Dynamics (State)
+
+/-- `e^{−u} < 1 − u + u²/2` for `u > 0`. -/
+@[powerlib_foundation] theorem exp_neg_lt_quadratic {u : ℝ} (hu : 0 < u) :
+    Real.exp (-u) < 1 - u + u ^ 2 / 2 := by
+  let f : ℝ → ℝ := fun x => 1 - x + x ^ 2 / 2 - Real.exp (-x)
+  have hd : ∀ x, HasDerivAt f (-1 + x + Real.exp (-x)) x := by
+    intro x
+    have h1 : HasDerivAt (fun x : ℝ => 1 - x + x ^ 2 / 2) (-1 + x) x := by
+      have := ((hasDerivAt_id' x).const_sub 1).add ((hasDerivAt_pow 2 x).div_const 2)
+      convert this using 1
+      simp
+    have h2 : HasDerivAt (fun x : ℝ => Real.exp (-x)) (-Real.exp (-x)) x := by
+      have := (hasDerivAt_neg x).exp
+      convert this using 1; ring
+    convert h1.sub h2 using 1; ring
+  have hmono : StrictMonoOn f (Ici 0) := by
+    apply strictMonoOn_of_deriv_pos (convex_Ici 0)
+    · exact fun x _ => (hd x).continuousAt.continuousWithinAt
+    · intro x hx
+      rw [interior_Ici] at hx
+      rw [(hd x).deriv]
+      have := Real.add_one_lt_exp (x := -x) (by linarith [mem_Ioi.mp hx])
+      linarith
+  have := hmono (mem_Ici.mpr le_rfl) (mem_Ici.mpr hu.le) hu
+  simp only [f, neg_zero, Real.exp_zero] at this
+  linarith
+
+/-- `1 − u ≤ e^{−u} ≤ 1 − u + u²/2` for `u ≥ 0`. -/
+@[powerlib_foundation] theorem exp_neg_le_quadratic {u : ℝ} (hu : 0 ≤ u) :
+    Real.exp (-u) ≤ 1 - u + u ^ 2 / 2 := by
+  rcases hu.lt_or_eq with h | h
+  · exact (exp_neg_lt_quadratic h).le
+  · subst h; simp
 
 namespace SwingParams
 
@@ -287,6 +338,87 @@ private theorem tendsto_of_firstSwing_margin (hM : 0 < p.M) (hD : 0 < p.D)
   rw [h0]
   exact ⟨⟨by simpa using hwell, by simpa using hδc⟩, le_rfl⟩
 
+/-- Damped bolted fault (`P_e^f ≡ 0`, `D > 0`): from `(δ₀, 0)` at `t_f`,
+`ω = (P_m/D)(1 − e^{−D(t−t_f)/M})`, `δ = δ₀ + (P_m/D)((t − t_f) − (M/D)(1 − e^{−D(t−t_f)/M}))`.
+Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
+private theorem dampedBolted_trajectory (hM : 0 < p.M) (hD : 0 < p.D)
+    (hk₁ : p.k₁ = 0) (hk₂ : p.k₂ = 0) {φ : ℝ → State 2} {tf T δ₀ : ℝ}
+    (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
+    (h0 : φ tf = mkState δ₀ 0) :
+    ∀ t ∈ Icc tf T, φ t 1 = p.Pm / p.D * (1 - Real.exp (-(p.D / p.M) * (t - tf))) ∧
+      φ t 0 = δ₀ + p.Pm / p.D * ((t - tf) - p.M / p.D * (1 - Real.exp (-(p.D / p.M) * (t - tf)))) := by
+  have hacc : ∀ x : State 2, p.field x 1 = (p.Pm - p.D * x 1) / p.M := by
+    intro x; simp [accel, Pe, hk₁, hk₂]
+  have hd := hasDerivWithinAt_Ici_of_isIntegralCurveOn hφ
+  have hcont := hφ.continuousOn
+  have hEd : ∀ x, HasDerivAt (fun t => Real.exp (p.D / p.M * (t - tf)))
+      (p.D / p.M * Real.exp (p.D / p.M * (x - tf))) x :=
+    fun x => ((((hasDerivAt_id' x).sub_const tf).const_mul (p.D / p.M)).exp).congr_deriv
+      (by ring)
+  -- `(ω − W) e^{a(t−t_f)}` is constant
+  have h1 : ∀ t ∈ Icc tf T, φ t 1 * Real.exp (p.D / p.M * (t - tf)) -
+      p.Pm / p.D * (Real.exp (p.D / p.M * (t - tf)) - 1) =
+      φ tf 1 * Real.exp (p.D / p.M * (tf - tf)) - p.Pm / p.D * (Real.exp (p.D / p.M * (tf - tf)) - 1) := by
+    apply constant_of_has_deriv_right_zero
+    · exact ((((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : State 2 →L[ℝ] ℝ).continuous).comp_continuousOn
+        hcont).mul (by fun_prop)).sub (by fun_prop)
+    · intro x hx
+      have hω := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : State 2 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt
+        x (hd x hx)
+      have := (hω.mul (hEd x).hasDerivWithinAt).sub
+        (((hEd x).sub_const 1).const_mul (p.Pm / p.D)).hasDerivWithinAt
+      convert this using 1
+      · funext y; simp [Function.comp_def]
+      · simp only [Function.comp_apply, PiLp.proj_apply, hacc]
+        field_simp
+        ring
+  have hω : ∀ t ∈ Icc tf T, φ t 1 = p.Pm / p.D * (1 - Real.exp (-(p.D / p.M) * (t - tf))) := by
+    intro t ht
+    have h := h1 t ht
+    simp only [sub_self, mul_zero, Real.exp_zero, h0, mkState_one, zero_mul] at h
+    have hE : Real.exp (p.D / p.M * (t - tf)) ≠ 0 := (Real.exp_pos _).ne'
+    have hinv : Real.exp (-(p.D / p.M) * (t - tf)) = (Real.exp (p.D / p.M * (t - tf)))⁻¹ := by
+      rw [← Real.exp_neg]; ring_nf
+    have key : φ t 1 * Real.exp (p.D / p.M * (t - tf)) =
+        p.Pm / p.D * (Real.exp (p.D / p.M * (t - tf)) - 1) := by
+      linear_combination h
+    rw [hinv]
+    calc φ t 1 = φ t 1 * Real.exp (p.D / p.M * (t - tf)) / Real.exp (p.D / p.M * (t - tf)) := by
+          field_simp
+      _ = p.Pm / p.D * (Real.exp (p.D / p.M * (t - tf)) - 1) / Real.exp (p.D / p.M * (t - tf)) := by
+          rw [key]
+      _ = p.Pm / p.D * (1 - (Real.exp (p.D / p.M * (t - tf)))⁻¹) := by field_simp
+  have h2 : ∀ t ∈ Icc tf T, φ t 0 - (δ₀ + p.Pm / p.D * ((t - tf) - p.M / p.D *
+      (1 - Real.exp (-(p.D / p.M) * (t - tf))))) = φ tf 0 - (δ₀ + p.Pm / p.D * ((tf - tf) -
+        p.M / p.D * (1 - Real.exp (-(p.D / p.M) * (tf - tf))))) := by
+    apply constant_of_has_deriv_right_zero
+    · exact (((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : State 2 →L[ℝ] ℝ).continuous).comp_continuousOn
+        hcont).sub (by fun_prop)
+    · intro x hx
+      have hδ := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : State 2 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt
+        x (hd x hx)
+      have hE2 : HasDerivAt (fun t => Real.exp (-(p.D / p.M) * (t - tf)))
+          (-(p.D / p.M) * Real.exp (-(p.D / p.M) * (x - tf))) x :=
+        ((((hasDerivAt_id' x).sub_const tf).const_mul (-(p.D / p.M))).exp).congr_deriv
+          (by ring)
+      have hW : HasDerivAt (fun t => δ₀ + p.Pm / p.D * ((t - tf) - p.M / p.D *
+          (1 - Real.exp (-(p.D / p.M) * (t - tf)))))
+          (p.Pm / p.D * (1 - p.M / p.D * (-(-(p.D / p.M) * Real.exp (-(p.D / p.M) * (x - tf)))))) x :=
+        ((((hasDerivAt_id' x).sub_const tf).sub ((hE2.const_sub 1).const_mul (p.M / p.D))).const_mul
+          (p.Pm / p.D)).const_add δ₀
+      have := hδ.sub hW.hasDerivWithinAt
+      convert this using 1
+      · funext y; simp [Function.comp_def]
+      · simp only [PiLp.proj_apply, field_apply_zero]
+        rw [hω x ⟨hx.1, hx.2.le⟩]
+        field_simp
+        ring
+  intro t ht
+  refine ⟨hω t ht, ?_⟩
+  have := h2 t ht
+  simp only [sub_self, mul_zero, Real.exp_zero, h0, mkState_zero] at this
+  linarith
+
 end SwingParams
 
 /-! ## The switched model with damping -/
@@ -346,5 +478,174 @@ private theorem faultTrajectory_tendsto_of_areas {pre fault post : SwingParams}
   rw [hMeq] at hE
   exact post.tendsto_of_firstSwing_margin hM hDp hk h hPk hφ.2.2.2 (eq_mkState (φ tc)) hwell
     hδc (by rw [← SwingParams.Adec]; linarith)
+
+/-- Clearing-angle margin of a damped bolted fault.  With `D > 0` during a bolted fault
+(`P_e^f ≡ 0`) and `δ_cc ∈ (δ₀, δ_u]` the zero of the undamped equal-area function
+`g = A_acc − A_dec` (post-fault curve positive on `(δ₀, δ_u)`), there is `ε > 0` such that for
+every clearing time `t_c − t_f ≤ √(2M(δ_cc − δ₀)/P_m) + ε` the clearing angle satisfies
+`δ₀ ≤ δ(t_c) < δ_cc` and the undamped areas have a strict margin `A_acc < A_dec`.
+Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
+private theorem boltedFault_damped_clearingAngle {fault post : SwingParams}
+    (hM : 0 < post.M) (hMeq : fault.M = post.M) (hPm : fault.Pm = post.Pm) (hPm0 : 0 < post.Pm)
+    (hDf : 0 < fault.D) (hk₁ : fault.k₁ = 0) (hk₂ : fault.k₂ = 0) {δ₀ δcc : ℝ}
+    (hpos : ∀ x ∈ Ioo δ₀ post.deltaU, 0 < post.Pe x)
+    (hcc : δcc ∈ Ioc δ₀ post.deltaU) (hg : eacG fault post δ₀ post.deltaU δcc = 0) :
+    ∃ ε > 0, ∀ {φ : ℝ → State 2} {tf tc : ℝ}, tf ≤ tc →
+      IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) → φ tf = mkState δ₀ 0 →
+      tc - tf ≤ Real.sqrt (2 * post.M * (δcc - δ₀) / post.Pm) + ε →
+      δ₀ ≤ φ tc 0 ∧ φ tc 0 < δcc ∧ fault.Aacc δ₀ (φ tc 0) < post.Adec (φ tc 0) post.deltaU := by
+  have hMf : 0 < fault.M := hMeq ▸ hM
+  have hPf : 0 < fault.Pm := hPm ▸ hPm0
+  rw [← hMeq, ← hPm]
+  set M := fault.M with hMdef
+  set D := fault.D with hDdef
+  set P := fault.Pm with hPdef
+  set T := Real.sqrt (2 * M * (δcc - δ₀) / P) with hTdef
+  -- the damped during-fault angle as a function of the elapsed time `τ = t − t_f`
+  let F : ℝ → ℝ := fun τ => δ₀ + P / D * (τ - M / D * (1 - Real.exp (-(D / M) * τ)))
+  have hFc : Continuous F := by fun_prop
+  have haM : M / D * (D / M) = 1 := by field_simp
+  -- `δ₀ ≤ F τ` for `τ ≥ 0`
+  have hFlo : ∀ τ, 0 ≤ τ → δ₀ ≤ F τ := by
+    intro τ hτ
+    have h1 := Real.add_one_le_exp (-(D / M) * τ)
+    have h2 : M / D * (1 - Real.exp (-(D / M) * τ)) ≤ τ := by
+      have : 1 - Real.exp (-(D / M) * τ) ≤ D / M * τ := by linarith
+      calc M / D * (1 - Real.exp (-(D / M) * τ)) ≤ M / D * (D / M * τ) :=
+            mul_le_mul_of_nonneg_left this (by positivity)
+        _ = τ := by rw [← mul_assoc, haM, one_mul]
+    have : 0 ≤ P / D * (τ - M / D * (1 - Real.exp (-(D / M) * τ))) :=
+      mul_nonneg (by positivity) (by linarith)
+    simp only [F]; linarith
+  -- `F τ ≤ δ₀ + P τ²/(2M)` for `τ ≥ 0` (the undamped angle), strictly for `τ > 0`
+  have hFq : ∀ τ, 0 ≤ τ → F τ ≤ δ₀ + P / (2 * M) * τ ^ 2 := by
+    intro τ hτ
+    have h1 := exp_neg_le_quadratic (u := D / M * τ) (by positivity)
+    have h2 : τ - D / M * τ ^ 2 / 2 ≤ M / D * (1 - Real.exp (-(D / M) * τ)) := by
+      have e : -(D / M) * τ = -(D / M * τ) := by ring
+      rw [e]
+      have : D / M * τ - (D / M * τ) ^ 2 / 2 ≤ 1 - Real.exp (-(D / M * τ)) := by linarith
+      calc τ - D / M * τ ^ 2 / 2 = M / D * (D / M * τ - (D / M * τ) ^ 2 / 2) := by
+            field_simp
+        _ ≤ M / D * (1 - Real.exp (-(D / M * τ))) :=
+            mul_le_mul_of_nonneg_left this (by positivity)
+    have h3 : P / D * (τ - M / D * (1 - Real.exp (-(D / M) * τ))) ≤ P / D * (D / M * τ ^ 2 / 2) :=
+      mul_le_mul_of_nonneg_left (by linarith) (by positivity)
+    have h4 : P / D * (D / M * τ ^ 2 / 2) = P / (2 * M) * τ ^ 2 := by field_simp
+    simp only [F]; linarith
+  have hFq' : ∀ τ, 0 < τ → F τ < δ₀ + P / (2 * M) * τ ^ 2 := by
+    intro τ hτ
+    have h1 := exp_neg_lt_quadratic (u := D / M * τ) (by positivity)
+    have h2 : τ - D / M * τ ^ 2 / 2 < M / D * (1 - Real.exp (-(D / M) * τ)) := by
+      have e : -(D / M) * τ = -(D / M * τ) := by ring
+      rw [e]
+      have : D / M * τ - (D / M * τ) ^ 2 / 2 < 1 - Real.exp (-(D / M * τ)) := by linarith
+      calc τ - D / M * τ ^ 2 / 2 = M / D * (D / M * τ - (D / M * τ) ^ 2 / 2) := by
+            field_simp
+        _ < M / D * (1 - Real.exp (-(D / M * τ))) :=
+            mul_lt_mul_of_pos_left this (by positivity)
+    have h3 : P / D * (τ - M / D * (1 - Real.exp (-(D / M) * τ))) < P / D * (D / M * τ ^ 2 / 2) :=
+      mul_lt_mul_of_pos_left (by linarith) (by positivity)
+    have h4 : P / D * (D / M * τ ^ 2 / 2) = P / (2 * M) * τ ^ 2 := by field_simp
+    simp only [F]; linarith
+  -- the undamped angle reaches `δ_cc` exactly at `T`
+  have hcc0 : 0 < δcc - δ₀ := sub_pos.mpr hcc.1
+  have hTpos : 0 < T := Real.sqrt_pos.mpr (by positivity)
+  have hT2 : δ₀ + P / (2 * M) * T ^ 2 = δcc := by
+    rw [hTdef, Real.sq_sqrt (by positivity)]
+    field_simp
+    ring
+  have hFT : F T < δcc := hT2 ▸ hFq' T hTpos
+  obtain ⟨ε, hε, hεF⟩ := Metric.eventually_nhds_iff.mp
+    (hFc.continuousAt.eventually (gt_mem_nhds hFT))
+  -- strict monotonicity of `g` on `[δ₀, δ_u]`
+  have hfPe : ∀ x, fault.Pe x = 0 := fun x => by simp [SwingParams.Pe, hk₁, hk₂]
+  have hmono : StrictMonoOn (eacG fault post δ₀ post.deltaU) (Icc δ₀ post.deltaU) := by
+    apply strictMonoOn_of_deriv_pos (convex_Icc _ _)
+    · exact fun z _ =>
+        (hasDerivAt_eacG fault post hPm δ₀ post.deltaU z).continuousAt.continuousWithinAt
+    · intro z hz
+      rw [interior_Icc] at hz
+      rw [(hasDerivAt_eacG fault post hPm δ₀ post.deltaU z).deriv, hfPe, sub_zero]
+      exact hpos z hz
+  refine ⟨ε / 2, half_pos hε, ?_⟩
+  intro φ tf tc htc hφ h0 hle
+  have hδc := (fault.dampedBolted_trajectory hMf hDf hk₁ hk₂ hφ h0 tc ⟨htc, le_rfl⟩).2
+  have hδF : φ tc 0 = F (tc - tf) := hδc
+  have hτ0 : 0 ≤ tc - tf := by linarith
+  have hlt : φ tc 0 < δcc := by
+    rw [hδF]
+    rcases lt_or_ge (tc - tf) T with h | h
+    · calc F (tc - tf) ≤ δ₀ + P / (2 * M) * (tc - tf) ^ 2 := hFq _ hτ0
+        _ < δ₀ + P / (2 * M) * T ^ 2 := by
+            have : (tc - tf) ^ 2 < T ^ 2 := by nlinarith
+            have : 0 < P / (2 * M) := by positivity
+            nlinarith
+        _ = δcc := hT2
+    · apply hεF
+      rw [Real.dist_eq, abs_lt]
+      constructor <;> linarith
+  have hge : δ₀ ≤ φ tc 0 := hδF ▸ hFlo _ hτ0
+  refine ⟨hge, hlt, ?_⟩
+  have hg' := hmono ⟨hge, hlt.le.trans hcc.2⟩ ⟨hcc.1.le, hcc.2⟩ hlt
+  rw [hg] at hg'
+  simp only [eacG] at hg'
+  linarith
+
+/-- **Damping strictly delays the critical clearing time of a bolted fault.**  Same inertia and
+mechanical power in both stages, `D > 0` during the bolted fault (`P_e^f ≡ 0`), `D ≥ 0`
+post-fault, `δ_cc ∈ (δ₀, δ_u]` the critical clearing angle (zero of the undamped equal-area
+function, post-fault curve positive on `(δ₀, δ_u)`).  Without damping the first swing stays
+below `δ_u` exactly for `t_c − t_f ≤ t_cc^EAC = √(2M(δ_cc − δ₀)/P_m)`
+(`FaultSequence.boltedFault_firstSwing_iff`); with damping there is `ε > 0` such that every
+clearing time `t_c − t_f ≤ t_cc^EAC + ε` keeps the first swing below `δ_u`, so the true critical
+clearing time is at least `t_cc^EAC + ε > t_cc^EAC`.
+Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
+private theorem boltedFault_damped_firstSwing {pre fault post : SwingParams}
+    (hM : 0 < post.M) (hMeq : fault.M = post.M) (hPm : fault.Pm = post.Pm) (hPm0 : 0 < post.Pm)
+    (hDf : 0 < fault.D) (hDp : 0 ≤ post.D) (hk₁ : fault.k₁ = 0) (hk₂ : fault.k₂ = 0)
+    (hk : 0 < post.k₂) (h : |post.Pm - post.k₁| < post.k₂) {δ₀ δcc : ℝ}
+    (hpos : ∀ x ∈ Ioo δ₀ post.deltaU, 0 < post.Pe x)
+    (hcc : δcc ∈ Ioc δ₀ post.deltaU) (hg : eacG fault post δ₀ post.deltaU δcc = 0) :
+    ∃ ε > 0, ∀ {φ : ℝ → State 2} {tf tc : ℝ},
+      (tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
+        IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
+        IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc)) →
+      φ tf = mkState δ₀ 0 →
+      tc - tf ≤ Real.sqrt (2 * post.M * (δcc - δ₀) / post.Pm) + ε →
+      ∀ t ∈ Ici tc, φ t 0 ≤ post.deltaU := by
+  obtain ⟨ε, hε, hmargin⟩ :=
+    boltedFault_damped_clearingAngle hM hMeq hPm hPm0 hDf hk₁ hk₂ hpos hcc hg
+  refine ⟨ε, hε, fun {φ tf tc} hφ h0 hle => ?_⟩
+  obtain ⟨-, hlt, hA⟩ := hmargin hφ.1 hφ.2.2.1 h0 hle
+  exact faultTrajectory_firstSwing_of_areas hM hMeq hDf.le hDp hk h hφ h0
+    (hlt.le.trans hcc.2) hA.le
+
+/-- **Damping strictly delays the critical clearing time (asymptotic recovery)**: under the
+hypotheses of `boltedFault_damped_firstSwing` with `D > 0` post-fault, `P_m ≥ k₁` and
+`δ_u − 2π < δ₀`, there is `ε > 0` such that every clearing time
+`t_c − t_f ≤ √(2M(δ_cc − δ₀)/P_m) + ε` gives convergence to the post-fault stable equilibrium
+`(δ_s, 0)`.
+Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
+private theorem boltedFault_damped_tendsto {pre fault post : SwingParams}
+    (hM : 0 < post.M) (hMeq : fault.M = post.M) (hPm : fault.Pm = post.Pm) (hPm0 : 0 < post.Pm)
+    (hDf : 0 < fault.D) (hDp : 0 < post.D) (hk₁ : fault.k₁ = 0) (hk₂ : fault.k₂ = 0)
+    (hk : 0 < post.k₂) (h : |post.Pm - post.k₁| < post.k₂) (hPk : post.k₁ ≤ post.Pm)
+    {δ₀ δcc : ℝ} (hwell : post.deltaU - 2 * Real.pi < δ₀)
+    (hpos : ∀ x ∈ Ioo δ₀ post.deltaU, 0 < post.Pe x)
+    (hcc : δcc ∈ Ioc δ₀ post.deltaU) (hg : eacG fault post δ₀ post.deltaU δcc = 0) :
+    ∃ ε > 0, ∀ {φ : ℝ → State 2} {tf tc : ℝ},
+      (tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
+        IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
+        IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc)) →
+      φ tf = mkState δ₀ 0 →
+      tc - tf ≤ Real.sqrt (2 * post.M * (δcc - δ₀) / post.Pm) + ε →
+      Tendsto φ atTop (𝓝 (mkState post.deltaS 0)) := by
+  obtain ⟨ε, hε, hmargin⟩ :=
+    boltedFault_damped_clearingAngle hM hMeq hPm hPm0 hDf hk₁ hk₂ hpos hcc hg
+  refine ⟨ε, hε, fun {φ tf tc} hφ h0 hle => ?_⟩
+  obtain ⟨hge, hlt, hA⟩ := hmargin hφ.1 hφ.2.2.1 h0 hle
+  exact faultTrajectory_tendsto_of_areas hM hMeq hDf.le hDp hk h hPk hφ h0
+    (by linarith) (hlt.trans_le hcc.2) hA
 
 end powerlib.Synchronous

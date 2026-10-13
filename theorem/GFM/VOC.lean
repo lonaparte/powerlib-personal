@@ -1,4 +1,5 @@
 import theorem.Synchronous.EqualArea
+import theorem.Dynamics.ConverseLinearization
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
 /-! # Andronov–Hopf virtual oscillator (AHO-VOC) at no load
@@ -34,7 +35,9 @@ Family and connection conclusions.
   sentences and sampled contraction into decay and stiffness (the energy `|v|²` decays at the
   rate `2|c|`, `Flow.QuadraticDecay`); the decay rate `r` into stiffness and `r ≤ −c`; passivity
   into nothing (exact); conservation into the whole, inconsistent, language.
-  `AHO.chain_le_semantics` proves soundness.
+  `AHO.chain_le_semantics` proves soundness; `AHO.exact_locallyExponentiallyStable` proves the
+  local exponential translation exact (converse linearization: the Jacobian at the origin is
+  Hurwitz iff `c < 0`).
 * New connection conclusion for the module's own regime: under the standing assumptions the
   origin is unstable (`Admissible.mem_den_unstable`): solutions leave the origin, towards the limit
   cycle of the trajectory-level results.
@@ -615,6 +618,25 @@ contraction and decay rates, and passivity without requirement. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
+
+/-- The local exponential translation is exact: the origin of the no-load AHO is locally
+exponentially stable exactly when it decays, `c = κ_v v*² − σ < 0`. Converse linearization: local
+exponential stability forces a Hurwitz Jacobian `[[c, −ω_s], [ω_s, c]]` (trace `2c`). -/
+@[powerlib_domain] theorem exact_locallyExponentiallyStable :
+    connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  ext a
+  rw [TMIO.mem_realize, family_isAutonomous.mem_den_flow]
+  change _ ↔ LocallyExponentiallyStable _ _
+  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_of_eq _ a.contDiff_realField
+    a.realField_zero (a.hasFDerivAt_realField 0).fderiv, realJacobian_zero,
+    Criteria.isHurwitz_fin_two_of_iff]
+  simp only [family, translate, Set.mem_singleton_iff, forall_eq, Meets]
+  constructor
+  · intro hc
+    exact ⟨by linarith, by nlinarith [sq_nonneg a.ωs, sq_pos_of_neg hc]⟩
+  · rintro ⟨h, -⟩
+    linarith
 
 /-! ### Members -/
 

@@ -1,4 +1,5 @@
 import theorem.GFL.PIPLL
+import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
 import theorem.Flow.Shift
 import theorem.TMIO.ClaimElab
@@ -38,8 +39,11 @@ exponentially stable, so that translation is sound but not exact
 (`not_exact_globallyExponentiallyStable`). At a degenerate slope the local connections part: the
 cubic detector `h = −θ³` is Lyapunov stable through the PLL energy `θ⁴/4 + η²/2`
 (LeanForControl's `lyapunov_stable`) with a nilpotent Jacobian (`not_exact_lyapunovStable`).
-Exactness of the local exponential, local asymptotic and instability translations is not claimed
-(UNPROVED). -/
+The local exponential translation is exact (`exact_locallyExponentiallyStable`): by the converse
+linearization theorem (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`), the selected
+point is locally exponentially stable exactly when it is an equilibrium with a Hurwitz Jacobian,
+i.e. phase-locked with both slope-gain products negative. Exactness of the local asymptotic and
+instability translations is not claimed (UNPROVED). -/
 
 noncomputable section
 
@@ -218,6 +222,24 @@ selected point, moved to the origin), and passivity holds without requirement. -
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
+
+/-- The local exponential translation is exact: a model is locally exponentially stable at its
+selected point exactly when the point is phase-locked (`h θ* = 0`, and `K_i ≠ 0` or `δω = 0`) and
+both slope-gain products are negative (`K_p h'(θ*) < 0`, `K_i h'(θ*) < 0`). Converse
+linearization: local exponential stability of a `C¹` field forces an equilibrium with a Hurwitz
+Jacobian `[[K_p g, K_i], [g, 0]]`. -/
+@[powerlib_domain] theorem exact_locallyExponentiallyStable :
+    connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  ext m
+  rw [TMIO.mem_realize, mem_den_flow_iff]
+  have hJac := fderiv_piPLLField (Kp := m.Kp) (Ki := m.Ki) (δω := m.δω) (x := m.point)
+    (m.hasDerivAt (m.point 0))
+  change _ ↔ LocallyExponentiallyStable _ _
+  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _
+    (contDiff_piPLLField m.smooth) hJac, piPLLJacobian_isHurwitz_iff, Model.point,
+    piPLLField_point_eq_zero_iff]
+  simp [family, translate, Meets, piPLLState]
 
 /-! ### Members of the local denotations -/
 

@@ -1,4 +1,5 @@
 import theorem.Flow.Linearization
+import theorem.Dynamics.ConverseLinearization
 import theorem.Flow.Shift
 import theorem.Dynamics.State
 import theorem.Family.Basic
@@ -42,12 +43,18 @@ Family and connection conclusions.
   about `x*` itself. No ports.
 * Requirements (static): `powerFlow` (`Pₖ = ∑ⱼ Bₖⱼ sin(θ*ₖ − θ*ⱼ)`), `angle` (every coupled
   edge has `|θ*ᵢ − θ*ⱼ| < π/2`), `connected` (the graph of `B` is connected),
-  `jacobianUnstable` (the reduced Jacobian at `x*` has a characteristic root in the open right
-  half plane). The local sentences translate into `{powerFlow, angle, connected}`, instability
-  into `{powerFlow, jacobianUnstable}`, passivity into nothing; the global sentences, decay
-  rates, sampled contraction and conservation, which a linearization cannot decide, into the
-  whole (inconsistent) language.
-* Connection theorems: `chain_le_semantics`, `exact_passive`,
+  `jacobianStable` (the reduced Jacobian at `x*` is Hurwitz), `jacobianUnstable` (the reduced
+  Jacobian at `x*` has a characteristic root in the open right half plane). The local sentences
+  translate into `{powerFlow, jacobianStable}`, instability into `{powerFlow, jacobianUnstable}`,
+  passivity into nothing; the global sentences, decay rates, sampled contraction and
+  conservation, which a linearization cannot decide, into the whole (inconsistent) language.
+  The angle condition on a connected graph is a static sufficient condition for `jacobianStable`
+  (`jacobian_isHurwitz_of_angle`), not a necessary one in meshed networks; the local sentences
+  were formerly translated into `{powerFlow, angle, connected}`, a sound translation whose
+  exactness is not claimed. With the Hurwitz test the local exponential translation is exact
+  (`exact_locallyExponentiallyStable`, by the converse linearization theorem
+  `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`).
+* Connection theorems: `chain_le_semantics`, `exact_passive`, `exact_locallyExponentiallyStable`,
   `mem_den_locallyExponentiallyStable` (the former `reducedSwing_locallyExponentiallyStable`) and
   `mem_den_unstable`.
 * Static evidence (formerly `@[powerlib_domain]`): `fullField_equilibrium_shift`,
@@ -564,6 +571,8 @@ inductive Requirement
   | angle
   /-- The graph of `B` is connected. -/
   | connected
+  /-- The reduced Jacobian at `θ*` is Hurwitz. -/
+  | jacobianStable
   /-- The reduced Jacobian at `θ*` has a characteristic root in the open right half plane. -/
   | jacobianUnstable
 
@@ -572,17 +581,18 @@ def Meets (m : Model n) : Requirement → Prop
   | .powerFlow => ∀ k, m.params.P k = powerInjection m.params.B m.θ k
   | .angle => ∀ i j, 0 < m.params.B i j → |m.θ i - m.θ j| < Real.pi / 2
   | .connected => ∀ i j, Reach m.params.B i j
+  | .jacobianStable => LinearSystems.IsHurwitz (jacobian m.params m.θ)
   | .jacobianUnstable =>
     ∃ s : ℂ, (Linear.characteristicMatrix (jacobian m.params m.θ) s).det = 0 ∧ 0 < s.re
 
-/-- The translation of the sentences: the local ones into power balance with the angle
-condition on a connected graph, instability into power balance with an unstable Jacobian,
-passivity into nothing. The global sentences, decay rates, sampled contraction and conservation
-are translated into the whole language, which no model meets (unavailable translation coverage,
-not a usable translation). -/
+/-- The translation of the sentences: the local ones into power balance with a Hurwitz reduced
+Jacobian, instability into power balance with an unstable Jacobian, passivity into nothing. The
+global sentences, decay rates, sampled contraction and conservation are translated into the
+whole language, which no model meets (unavailable translation coverage, not a usable
+translation). -/
 def translate : Sentence → Set Requirement
   | .flow .lyapunovStable | .flow .locallyAsymptoticallyStable
-  | .flow .locallyExponentiallyStable => {.powerFlow, .angle, .connected}
+  | .flow .locallyExponentiallyStable => {.powerFlow, .jacobianStable}
   | .flow .unstable => {.powerFlow, .jacobianUnstable}
   | .flow _ => Set.univ
   | .passive => ∅
@@ -612,9 +622,11 @@ private theorem reducedSwing_locallyExponentiallyStable (p : Params n)
     (reducedField_contDiff p) (reducedField_equilibrium p θ heq)
     (hasFDerivAt_reducedField p θ).fderiv (jacobian_isHurwitz_of_angle p θ hangle hconn)
 
-private theorem les_of_meets {m : Model n} (hp : Meets m .powerFlow) (ha : Meets m .angle)
-    (hc : Meets m .connected) : m ∈ family.den (.flow .locallyExponentiallyStable) :=
-  mem_den_flow_iff.mpr (reducedSwing_locallyExponentiallyStable m.params m.θ hp ha hc)
+private theorem les_of_meets {m : Model n} (hp : Meets m .powerFlow)
+    (hH : Meets m .jacobianStable) : m ∈ family.den (.flow .locallyExponentiallyStable) :=
+  mem_den_flow_iff.mpr (Flow.locallyExponentiallyStable_of_isHurwitz_jacobian
+    (jacobian m.params m.θ) (reducedField_contDiff m.params)
+    (reducedField_equilibrium m.params m.θ hp) (hasFDerivAt_reducedField m.params m.θ).fderiv hH)
 
 private theorem unstable_of_meets {m : Model n} (hp : Meets m .powerFlow)
     (hu : Meets m .jacobianUnstable) : m ∈ family.den (.flow .unstable) := by
@@ -652,21 +664,19 @@ holds without requirement. -/
     rw [realize_univ] at hm'
     exact hm'
   rcases s with P | _
-  · have hles : Meets m .powerFlow → Meets m .angle → Meets m .connected →
-        LocallyExponentiallyStable m.field 0 := fun hp ha hc =>
-      family_isAutonomous.mem_den_flow.mp (les_of_meets hp ha hc)
+  · have hles : Meets m .powerFlow → Meets m .jacobianStable →
+        LocallyExponentiallyStable m.field 0 := fun hp hH =>
+      family_isAutonomous.mem_den_flow.mp (les_of_meets hp hH)
     rw [family_isAutonomous.mem_den_flow]
     cases P
     case lyapunovStable =>
-      exact (hles (hm .powerFlow (by simp [translate])) (hm .angle (by simp [translate]))
-        (hm .connected (by simp [translate]))).lyapunovStable
+      exact (hles (hm .powerFlow (by simp [translate]))
+        (hm .jacobianStable (by simp [translate]))).lyapunovStable
     case locallyAsymptoticallyStable =>
       exact Flow.locallyExponentiallyStable_localAsymptoticStable
-        (hles (hm .powerFlow (by simp [translate])) (hm .angle (by simp [translate]))
-          (hm .connected (by simp [translate])))
+        (hles (hm .powerFlow (by simp [translate])) (hm .jacobianStable (by simp [translate])))
     case locallyExponentiallyStable =>
-      exact hles (hm .powerFlow (by simp [translate])) (hm .angle (by simp [translate]))
-        (hm .connected (by simp [translate]))
+      exact hles (hm .powerFlow (by simp [translate])) (hm .jacobianStable (by simp [translate]))
     case unstable =>
       exact family_isAutonomous.mem_den_flow.mp (unstable_of_meets
         (hm .powerFlow (by simp [translate])) (hm .jacobianUnstable (by simp [translate])))
@@ -679,6 +689,37 @@ holds without requirement. -/
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
+/-- An equilibrium of the reduced field at the selected point is a power-balance point. -/
+private theorem powerFlow_of_equilibrium {p : Params n} {θ : Fin (n + 1) → ℝ}
+    (h : reducedField p (equilibrium θ) = 0) : ∀ k, p.P k = powerInjection p.B θ k := by
+  intro k
+  have hk := congrArg (fun z : State (n + (n + 1)) => z (wIdx k)) h
+  simp only [reducedField_wIdx, equilibrium, reduce_wIdx, angleMap_reduce,
+    powerInjection_add_const, PiLp.zero_apply] at hk
+  rw [div_eq_zero_iff, or_iff_left (p.M_pos k).ne'] at hk
+  simp only [Pi.zero_apply, mul_zero, sub_zero] at hk
+  linarith
+
+/-- The local exponential translation is exact: a swing-network model is locally exponentially
+stable at its selected point exactly when the angle profile is a power-balance point with a
+Hurwitz reduced Jacobian. Converse linearization: local exponential stability of the `C¹`
+reduced field forces an equilibrium with a Hurwitz Jacobian. -/
+@[powerlib_domain] theorem exact_locallyExponentiallyStable :
+    connection% ((family (n := n)).Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  ext m
+  rw [TMIO.mem_realize, mem_den_flow_iff]
+  change _ ↔ LocallyExponentiallyStable _ _
+  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _
+    (reducedField_contDiff m.params) (hasFDerivAt_reducedField m.params m.θ).fderiv]
+  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
+    forall_eq]
+  constructor
+  · rintro ⟨hp, hH⟩
+    exact ⟨reducedField_equilibrium m.params m.θ hp, hH⟩
+  · rintro ⟨he, hH⟩
+    exact ⟨powerFlow_of_equilibrium he, hH⟩
+
 /-- **Swing network, relative-angle coordinates.** At a synchronous equilibrium with
 `Pₖ = ∑ⱼ Bₖⱼ sin(θ*ₖ - θ*ⱼ)`, every line angle difference `|θ*ᵢ - θ*ⱼ| < π/2` and a
 connected coupling graph, the reduced nonlinear swing dynamics (relative angles and
@@ -689,7 +730,7 @@ frequencies, positive inertia and damping) is locally exponentially stable. -/
     (hconn : ∀ i j, Reach m.params.B i j) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact les_of_meets heq hangle hconn
+  exact les_of_meets heq (jacobian_isHurwitz_of_angle m.params m.θ hangle hconn)
 
 /-- At a power-balance point, a reduced Jacobian with a characteristic root in the open right
 half plane places the model in instability. -/
