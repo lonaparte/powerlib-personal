@@ -1,7 +1,7 @@
 import theorem.Numerics.BDF
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
-/-! # Zero-instability of BDF`k` for `7 ≤ k ≤ 20`
+/-! # Zero-instability of BDF`k` for every `k ≥ 7`
 
 Foundation layer (static algebra of the methods' coefficients; no time, no trajectories).
 
@@ -28,44 +28,59 @@ Results:
     (`LMM.rhoRev`); contrapositive `LMM.exists_root_norm_gt_one_of_norm_rhoRev_lt` and
     `LMM.not_rootCondition_of_norm_rhoRev_lt`: one point `0 < ‖w‖ ≤ 1` with
     `‖ρ*(w)‖ < ‖ρ(w)‖` exhibits a root of `ρ` outside the closed unit disk.
-  - The same for the BDF polynomial for every `k ≥ 1`:
+  - `norm_coeff_sq_sub_le_of_roots_norm_le_one` (second power-sum bound): if all roots of
+    `p = Σ cᵢ Xⁱ : ℂ[X]` of degree `n ≥ 2` lie in the closed unit disk, then
+    `‖c_{n-1}² - 2 c_{n-2} c_n‖ ≤ n ‖c_n‖²` (the left side is `‖c_n‖² ‖Σ ζᵢ²‖` by Vieta);
+    contrapositive `exists_root_norm_gt_one_of_coeff`. Multiset helpers
+    `multiset_esymm_cons_succ`, `multiset_esymm_one`, `multiset_sum_sq`
+    (`(Σ x)² = Σ x² + 2 e₂`).
+  - The Schur–Cohn bound for the BDF polynomial for every `k ≥ 1`:
     `bdfRhoSum_exists_root_norm_gt_one_of_lt`, with reversed polynomial
     `bdfRevSum k w = Σ_{j=1}^{k} (1 - w)^j / j` (`bdfRevSum_eq`); `bdfPoly_natDegree`,
     `bdfLMM_rho_eq` (`ρ(bdfLMM k) = bdfRhoSum k / H_k` for every `k`).
+  - Top coefficients of `bdfRhoSum k`: `bdfPoly_coeff` (`c_k = H_k`), `bdfPoly_coeff_pred`
+    (`c_{k-1} = -k`), `bdfPoly_coeff_pred_pred` (`c_{k-2} = k(k-1)/4`); `bdfHarmonic_succ`.
 * Instability:
-  - `bdfRhoSum_exists_root_norm_gt_one`: for every `7 ≤ k ≤ 20`, `bdfRhoSum k` has a root
-    `ζ` with `1 < ‖ζ‖`; hence `bdfLMM_exists_root_norm_gt_one` and
-    `bdfLMM_not_rootCondition`: the `k`-step BDF is not zero-stable for `7 ≤ k ≤ 20`.
+  - `bdfRhoSum_exists_root_norm_gt_one_of_nineteen_le`: for every `k ≥ 19`, `bdfRhoSum k` has
+    a root `ζ` with `1 < ‖ζ‖` (one argument, uniform in `k`).
+  - `bdfRhoSum_exists_root_norm_gt_one`: for every `k ≥ 7`, `bdfRhoSum k` has a root `ζ` with
+    `1 < ‖ζ‖`; hence `bdfLMM_exists_root_norm_gt_one` and `bdfLMM_not_rootCondition`:
+    **the `k`-step BDF is not zero-stable for every `k ≥ 7`**.
   - `bdf7`, `bdf8`, `bdf9`: the coefficient tables, each of exact order `k`
     (`bdfk_exactOrder`), with `bdfk.rho = β_k · bdfRhoSum k` (`bdfk_rho_eq_sum`),
     `bdfk_rho_eq_bdfLMM` (same `ρ` as `bdfLMM k`), `bdfk_exists_root_norm_gt_one`
     (numerically `‖ζ‖ ≈ 1.0222, 1.1839, 1.3475`) and `bdfk_not_rootCondition`.
 
-Proof method (exact, kernel-checked; no floating point, Rules §12): write `ρ = a Π (ζ - ζᵢ)`
-over the roots (ℂ is algebraically closed). For `‖w‖ ≤ 1` and `‖ζᵢ‖ ≤ 1`,
-`‖1 - w̄ ζᵢ‖² - ‖w - ζᵢ‖² = (1 - ‖w‖²)(1 - ‖ζᵢ‖²) ≥ 0`, and `‖w‖ ‖1/w̄ - ζᵢ‖ = ‖1 - w̄ ζᵢ‖`;
-multiplying gives the Schur–Cohn bound, and for real coefficients `‖ρ(1/w̄)‖ = ‖ρ(1/w)‖`,
-`‖w‖^k ‖ρ(1/w)‖ = ‖ρ*(w)‖`. For each `k` a dyadic point `w_k` near `1/ζ̄₀` (`ζ₀` the
-unstable root) is a witness: `ρ_k(w_k) = A + B i` and `ρ_k*(w_k) = A' + B' i` are exact
-rationals (checked by `linear_combination Q * Complex.I_sq` with an explicit quotient `Q`) and
-`A'² + B'² < A² + B²`. The witnesses and quotients were computed outside Lean (untrusted exact
-rational arithmetic, numerical root location only for choosing `w_k`); Lean checks every
-identity and inequality.
+Proof method (exact, kernel-checked; no floating point, Rules §12). Two arguments.
 
-Not formalized (UNPROVED): failure of zero-stability for every `k ≥ 7` (Cryer 1972; see
-Hairer–Nørsett–Wanner, Solving ODE I, §III.3). A uniform proof needs a root-location argument
-valid for all `k` (order stars, the root-locus curve with the argument principle, or
-asymptotics with explicit error bounds for the zeros of the truncated series `Σ_{j ≤ k} u^j / j`,
-`u = 1 - 1/ζ`); Mathlib has no argument principle or Rouché theorem, and the witness inequality
-above holds only near the reflected unstable roots `1/ζ̄₀`, whose location depends on `k`, so
-no single `k`-uniform witness is available. This file covers `7 ≤ k ≤ 20`, one witness per
-`k`. Also not formalized: zero-stability of BDF1–BDF6, and exact order `k` of `bdfLMM k` for
-general `k` (checked for the tables `bdf7`–`bdf9` here and BDF1–BDF6 in
-`theorem/Numerics/BDF.lean`).
+1. `k ≥ 19`, uniformly (second power sum of the roots). Write `ρ = c_k Π (ζ - ζᵢ)` over the `k`
+   roots (ℂ is algebraically closed). Vieta (`Polynomial.coeff_eq_esymm_roots_of_card`) and
+   `(Σ ζᵢ)² = Σ ζᵢ² + 2 e₂` give `c_{k-1}² - 2 c_{k-2} c_k = c_k² Σ ζᵢ²`, and if every
+   `‖ζᵢ‖ ≤ 1` then `‖Σ ζᵢ²‖ ≤ Σ ‖ζᵢ‖² ≤ k`. For BDF, `Σ ζᵢ² = k²/H_k² - k(k-1)/(2H_k)`; this is
+   `< -k` iff `H_k (k - 1 - 2H_k) > 2k`, which holds for every `k ≥ 19` because
+   `7/2 ≤ H_k < (3k - 7)/14` (exact at `k = 19`, then induction:
+   `1/(k+1) ≤ 3/14`). The threshold is sharp for this test: `Σ ζᵢ² ≈ -19.52 < -19` at
+   `k = 19`, but `≈ -17.25 > -18` at `k = 18`.
+2. `7 ≤ k ≤ 18`, one Schur–Cohn witness per `k`. For `‖w‖ ≤ 1` and `‖ζᵢ‖ ≤ 1`,
+   `‖1 - w̄ ζᵢ‖² - ‖w - ζᵢ‖² = (1 - ‖w‖²)(1 - ‖ζᵢ‖²) ≥ 0`, and `‖w‖ ‖1/w̄ - ζᵢ‖ = ‖1 - w̄ ζᵢ‖`;
+   multiplying gives the Schur–Cohn bound, and for real coefficients `‖ρ(1/w̄)‖ = ‖ρ(1/w)‖`,
+   `‖w‖^k ‖ρ(1/w)‖ = ‖ρ*(w)‖`. For each `k` a dyadic point `w_k` near `1/ζ̄₀` (`ζ₀` the
+   unstable root) is a witness: `ρ_k(w_k) = A + B i` and `ρ_k*(w_k) = A' + B' i` are exact
+   rationals (checked by `linear_combination Q * Complex.I_sq` with an explicit quotient `Q`)
+   and `A'² + B'² < A² + B²`. The witnesses and quotients were computed outside Lean (untrusted
+   exact rational arithmetic, numerical root location only for choosing `w_k`); Lean checks
+   every identity and inequality.
+
+No argument principle, Rouché theorem or root asymptotics is needed: argument 1 only uses the
+top three coefficients of `ρ_k`.
+
+Not formalized: zero-stability of BDF1–BDF6 (all roots of `ρ_k` in the closed unit disk, the
+root `ζ = 1` simple), and exact order `k` of `bdfLMM k` for general `k` (checked for the tables
+`bdf7`–`bdf9` here and BDF1–BDF6 in `theorem/Numerics/BDF.lean`).
 
 Source: work-sync theory/T-numerical-integration.md §1.5 (0-stability: all roots of `ρ` in
 `|ζ| ≤ 1`, those on `|ζ| = 1` simple), §1.6 (BDF table row "k ≥ 7: 0-不稳定") and §2.4
-("BDF7+ 不存在（0-不稳定）"). The note's claim is formalized for `7 ≤ k ≤ 20`. Foundation.
+("BDF7+ 不存在（0-不稳定）"). The note's claim is formalized for every `k ≥ 7`. Foundation.
 -/
 
 noncomputable section
@@ -228,6 +243,72 @@ single point `0 < ‖w‖ ≤ 1`, then `ρ` has a root `ζ` with `1 < ‖ζ‖`.
 
 end LMM
 
+/-! ## Second power sum of the roots -/
+
+/-- Recursion of the elementary symmetric functions of a multiset:
+`e_{n+1}(a :: s) = e_{n+1}(s) + a e_n(s)`. -/
+@[powerlib_foundation] theorem multiset_esymm_cons_succ {R : Type*} [CommSemiring R]
+    (s : Multiset R) (a : R) (n : ℕ) :
+    (a ::ₘ s).esymm (n + 1) = s.esymm (n + 1) + a * s.esymm n := by
+  simp [Multiset.esymm, Multiset.powersetCard_cons, Multiset.map_map, Multiset.prod_cons,
+    Multiset.sum_map_mul_left]
+
+/-- `e₁(s) = Σ s`. -/
+@[powerlib_foundation] theorem multiset_esymm_one {R : Type*} [CommSemiring R]
+    (s : Multiset R) : s.esymm 1 = s.sum := by
+  simp [Multiset.esymm, Multiset.powersetCard_one, Multiset.map_map]
+
+/-- Newton's identity for the second power sum: `(Σ x)² = Σ x² + 2 e₂`. -/
+@[powerlib_foundation] theorem multiset_sum_sq {R : Type*} [CommRing R] (s : Multiset R) :
+    s.sum ^ 2 = (s.map fun x => x ^ 2).sum + 2 * s.esymm 2 := by
+  induction s using Multiset.induction_on with
+  | empty => rw [Multiset.esymm_of_card_lt (by simp)]; simp
+  | cons a s ih =>
+    rw [Multiset.sum_cons, Multiset.map_cons, Multiset.sum_cons, multiset_esymm_cons_succ,
+      multiset_esymm_one]
+    linear_combination ih
+
+/-- **Second power-sum bound.** If every root of `p : ℂ[X]` (degree `n ≥ 2`) lies in the closed
+unit disk, then `‖c_{n-1}² - 2 c_{n-2} c_n‖ ≤ n ‖c_n‖²`: by Vieta the left side is
+`‖c_n‖² ‖Σ ζᵢ²‖ ≤ ‖c_n‖² Σ ‖ζᵢ‖²`. -/
+@[powerlib_foundation] theorem norm_coeff_sq_sub_le_of_roots_norm_le_one (p : ℂ[X])
+    (hn : 2 ≤ p.natDegree) (hroots : ∀ ζ ∈ p.roots, ‖ζ‖ ≤ 1) :
+    ‖p.coeff (p.natDegree - 1) ^ 2 - 2 * p.coeff (p.natDegree - 2) * p.leadingCoeff‖ ≤
+      p.natDegree * ‖p.leadingCoeff‖ ^ 2 := by
+  have hcard := IsAlgClosed.card_roots_eq_natDegree (p := p)
+  have h1 := coeff_eq_esymm_roots_of_card hcard (k := p.natDegree - 1) (by omega)
+  have h2 := coeff_eq_esymm_roots_of_card hcard (k := p.natDegree - 2) (by omega)
+  rw [show p.natDegree - (p.natDegree - 1) = 1 by omega, multiset_esymm_one] at h1
+  rw [show p.natDegree - (p.natDegree - 2) = 2 by omega] at h2
+  have key : p.coeff (p.natDegree - 1) ^ 2 - 2 * p.coeff (p.natDegree - 2) * p.leadingCoeff
+      = p.leadingCoeff ^ 2 * (p.roots.map fun x => x ^ 2).sum := by
+    rw [h1, h2]
+    linear_combination (p.leadingCoeff ^ 2) * multiset_sum_sq p.roots
+  rw [key, norm_mul, norm_pow, mul_comm]
+  gcongr
+  calc ‖(p.roots.map fun x => x ^ 2).sum‖
+      ≤ ((p.roots.map fun x => x ^ 2).map fun x => ‖x‖).sum := norm_multiset_sum_le _
+    _ ≤ Multiset.card ((p.roots.map fun x => x ^ 2).map fun x => ‖x‖) • (1 : ℝ) := by
+        refine Multiset.sum_le_card_nsmul _ _ fun x hx => ?_
+        simp only [Multiset.map_map, Function.comp_apply, Multiset.mem_map] at hx
+        obtain ⟨ζ, hζ, rfl⟩ := hx
+        rw [norm_pow]
+        exact pow_le_one₀ (norm_nonneg _) (hroots ζ hζ)
+    _ = p.natDegree := by simp [hcard]
+
+/-- **A root outside the unit disk from three coefficients.** If `n ≥ 2` and
+`n ‖c_n‖² < ‖c_{n-1}² - 2 c_{n-2} c_n‖`, then `p` has a root `ζ` with `1 < ‖ζ‖`. -/
+@[powerlib_foundation] theorem exists_root_norm_gt_one_of_coeff (p : ℂ[X])
+    (hn : 2 ≤ p.natDegree)
+    (hlt : p.natDegree * ‖p.leadingCoeff‖ ^ 2 <
+      ‖p.coeff (p.natDegree - 1) ^ 2 - 2 * p.coeff (p.natDegree - 2) * p.leadingCoeff‖) :
+    ∃ ζ, p.IsRoot ζ ∧ 1 < ‖ζ‖ := by
+  have hP : p ≠ 0 := fun h0 => by rw [h0, natDegree_zero] at hn; omega
+  by_contra hne
+  simp only [not_exists, not_and, not_lt] at hne
+  have hr : ∀ ζ ∈ p.roots, ‖ζ‖ ≤ 1 := fun ζ hζ => hne ζ ((mem_roots hP).mp hζ)
+  exact absurd (norm_coeff_sq_sub_le_of_roots_norm_le_one p hn hr) (not_le.mpr hlt)
+
 /-! ## Exact norm comparisons at Gaussian-rational points -/
 
 @[powerlib_foundation] theorem ofReal_add_mul_I_ne_zero {a b : ℝ} (h : 0 < a ^ 2 + b ^ 2) :
@@ -380,7 +461,129 @@ def bdfLMM (k : ℕ) : LMM k :=
   push_cast
   ring
 
-/-! ## Witnesses, `7 ≤ k ≤ 20` -/
+/-! ## The top coefficients of `bdfRhoSum k` and the uniform bound for `k ≥ 19` -/
+
+private theorem bdfTerm_coeff (k j d : ℕ) :
+    ((X : ℂ[X]) ^ (k - 1 - j) * (X - 1) ^ (j + 1)).coeff d =
+      if k - 1 - j ≤ d then
+        (-1 : ℂ) ^ (j + 1 - (d - (k - 1 - j))) * ((j + 1).choose (d - (k - 1 - j)) : ℂ)
+      else 0 := by
+  rw [coeff_X_pow_mul', show (X : ℂ[X]) - 1 = X + C (-1) by simp [sub_eq_add_neg],
+    coeff_X_add_C_pow]
+
+/-- The coefficient of `ζ^{k-1}` in `bdfRhoSum k` is `-k` (each term contributes `-1`). -/
+@[powerlib_foundation] theorem bdfPoly_coeff_pred {k : ℕ} (hk : 1 ≤ k) :
+    (bdfPoly k).coeff (k - 1) = -(k : ℂ) := by
+  simp only [bdfPoly, finsetSum_coeff, mul_assoc, coeff_C_mul, bdfTerm_coeff]
+  have : ∀ j ∈ Finset.range k, (1 / ((j + 1 : ℕ) : ℂ)) *
+      (if k - 1 - j ≤ k - 1 then
+        (-1 : ℂ) ^ (j + 1 - (k - 1 - (k - 1 - j))) * ((j + 1).choose (k - 1 - (k - 1 - j)) : ℂ)
+      else 0) = -1 := by
+    intro j hj
+    have hj := Finset.mem_range.mp hj
+    rw [ite_eq_left (by omega), show k - 1 - (k - 1 - j) = j by omega,
+      show j + 1 - j = 1 by omega, Nat.choose_succ_self_right]
+    have : ((j + 1 : ℕ) : ℂ) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero j
+    field_simp
+  rw [Finset.sum_congr rfl this]
+  simp
+
+/-- The coefficient of `ζ^{k-2}` in `bdfRhoSum k` is `k(k-1)/4` (the term `j` contributes
+`C(j, 2)/j = (j-1)/2`). -/
+@[powerlib_foundation] theorem bdfPoly_coeff_pred_pred {k : ℕ} (hk : 2 ≤ k) :
+    (bdfPoly k).coeff (k - 2) = (k : ℂ) * ((k : ℂ) - 1) / 4 := by
+  obtain ⟨m, rfl⟩ : ∃ m, k = m + 2 := ⟨k - 2, by omega⟩
+  simp only [bdfPoly, finsetSum_coeff, mul_assoc, coeff_C_mul, bdfTerm_coeff]
+  rw [Finset.sum_range_succ']
+  rw [ite_eq_right (by omega), mul_zero, add_zero]
+  have : ∀ i ∈ Finset.range (m + 1), (1 / ((i + 1 + 1 : ℕ) : ℂ)) *
+      (if m + 2 - 1 - (i + 1) ≤ m + 2 - 2 then
+        (-1 : ℂ) ^ (i + 1 + 1 - (m + 2 - 2 - (m + 2 - 1 - (i + 1)))) *
+          ((i + 1 + 1).choose (m + 2 - 2 - (m + 2 - 1 - (i + 1))) : ℂ)
+      else 0) = ((i : ℂ) + 1) / 2 := by
+    intro i hi
+    have hi := Finset.mem_range.mp hi
+    rw [ite_eq_left (by omega), show m + 2 - 2 - (m + 2 - 1 - (i + 1)) = i by omega,
+      show i + 1 + 1 - i = 2 by omega]
+    have hc : ((i + 1 + 1).choose i : ℂ) = ((i : ℂ) + 2) * ((i : ℂ) + 1) / 2 := by
+      rw [Nat.choose_symm_of_eq_add (show i + 1 + 1 = i + 2 by ring), Nat.cast_choose_two]
+      push_cast
+      ring
+    rw [hc]
+    have : ((i + 1 + 1 : ℕ) : ℂ) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero (i + 1)
+    field_simp
+    push_cast
+    ring
+  rw [Finset.sum_congr rfl this, ← Finset.sum_div]
+  have hs : ∀ n : ℕ, ∑ i ∈ Finset.range n, ((i : ℂ) + 1) = (n : ℂ) * ((n : ℂ) + 1) / 2 := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ n ih => rw [Finset.sum_range_succ, ih]; push_cast; ring
+  rw [hs]
+  push_cast
+  ring
+
+@[powerlib_foundation] theorem bdfHarmonic_succ (k : ℕ) :
+    bdfHarmonic (k + 1) = bdfHarmonic k + 1 / ((k + 1 : ℕ) : ℚ) := by
+  simp only [bdfHarmonic, Finset.sum_range_succ]
+
+/-- `7/2 ≤ H_k < (3k - 7)/14` for every `k ≥ 19`. -/
+private theorem bdfHarmonic_bounds (n : ℕ) :
+    7 / 2 ≤ bdfHarmonic (n + 19) ∧
+      bdfHarmonic (n + 19) < (3 * ((n + 19 : ℕ) : ℚ) - 7) / 14 := by
+  induction n with
+  | zero => norm_num [bdfHarmonic, Finset.sum_range_succ]
+  | succ n ih =>
+    rw [show n + 1 + 19 = (n + 19) + 1 by ring, bdfHarmonic_succ]
+    have hpos : (0 : ℚ) < 1 / ((n + 19 + 1 : ℕ) : ℚ) := by positivity
+    have hle : 1 / ((n + 19 + 1 : ℕ) : ℚ) ≤ 3 / 14 := by
+      rw [div_le_div_iff₀ (by positivity) (by norm_num)]
+      push_cast
+      nlinarith
+    push_cast at ih hle hpos ⊢
+    constructor <;> linarith [ih.1, ih.2]
+
+/-- **BDF`k` is zero-unstable for every `k ≥ 19`** (uniform argument): `bdfRhoSum k` has a root
+outside the closed unit disk. The second power sum of its roots is
+`k²/H_k² - k(k-1)/(2H_k) < -k`, impossible if all `k` roots had modulus `≤ 1`. -/
+@[powerlib_foundation] theorem bdfRhoSum_exists_root_norm_gt_one_of_nineteen_le {k : ℕ}
+    (hk : 19 ≤ k) : ∃ ζ : ℂ, bdfRhoSum k ζ = 0 ∧ 1 < ‖ζ‖ := by
+  have hdeg := bdfPoly_natDegree (by omega : 0 < k)
+  refine (exists_root_norm_gt_one_of_coeff (bdfPoly k) (by omega) ?_).imp fun ζ hζ =>
+    ⟨by rw [← bdfPoly_eval]; exact hζ.1, hζ.2⟩
+  rw [leadingCoeff, hdeg, bdfPoly_coeff_pred (by omega), bdfPoly_coeff_pred_pred (by omega),
+    bdfPoly_coeff]
+  obtain ⟨n, rfl⟩ : ∃ n, k = n + 19 := ⟨k - 19, by omega⟩
+  obtain ⟨hH1, hH2⟩ := bdfHarmonic_bounds n
+  have hH1' : (7 / 2 : ℝ) ≤ (bdfHarmonic (n + 19) : ℝ) := by
+    have := (Rat.cast_le (K := ℝ)).mpr hH1
+    push_cast at this
+    linarith
+  have hH2' : (bdfHarmonic (n + 19) : ℝ) < (3 * ((n + 19 : ℕ) : ℝ) - 7) / 14 := by
+    have := (Rat.cast_lt (K := ℝ)).mpr hH2
+    push_cast at this ⊢
+    linarith
+  set h : ℝ := (bdfHarmonic (n + 19) : ℝ) with hh
+  set K : ℝ := ((n + 19 : ℕ) : ℝ) with hK
+  have hK19 : (19 : ℝ) ≤ K := by rw [hK]; push_cast; linarith
+  have eH : (∑ j ∈ Finset.range (n + 19), 1 / ((j + 1 : ℕ) : ℂ)) = ((h : ℝ) : ℂ) := by
+    rw [hh, bdfHarmonic]
+    push_cast
+    rfl
+  have e2 : (-((n + 19 : ℕ) : ℂ)) ^ 2 - 2 * (((n + 19 : ℕ) : ℂ) * (((n + 19 : ℕ) : ℂ) - 1) / 4) *
+      ((h : ℝ) : ℂ) = ((K ^ 2 - K * (K - 1) * h / 2 : ℝ) : ℂ) := by
+    rw [hK]; push_cast; ring
+  rw [eH, e2, Complex.norm_real, Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs, sq_abs]
+  -- `h (K - 1 - 2h) > 2K`, i.e. `K (K - 1) h / 2 - K² > K h²`
+  have hX : 4 * K / 7 < K - 1 - 2 * h := by linarith
+  have hkey : 2 * K < h * (K - 1 - 2 * h) := by
+    nlinarith [mul_le_mul_of_nonneg_right hH1' (by linarith : (0 : ℝ) ≤ K - 1 - 2 * h)]
+  have hlt : K * h ^ 2 < -(K ^ 2 - K * (K - 1) * h / 2) := by nlinarith
+  have := neg_le_abs (K ^ 2 - K * (K - 1) * h / 2)
+  linarith
+
+/-! ## Witnesses, `7 ≤ k ≤ 18` -/
 
 /-- Witness value of `bdfRhoSum 7` at `w = 1/16 + 31/32 i`. -/
 private theorem bdfRhoSum_witness_7 :
@@ -909,156 +1112,11 @@ private theorem bdfRhoSum_exists_root_18 : ∃ ζ : ℂ, bdfRhoSum 18 ζ = 0 ∧
   rw [bdfRhoSum_witness_18, bdfRevSum_witness_18]
   exact norm_ofReal_add_mul_I_lt (by norm_num)
 
-/-- Witness value of `bdfRhoSum 19` at `w = -3/32 + 5/16 i`. -/
-private theorem bdfRhoSum_witness_19 :
-    bdfRhoSum 19 (((-3 / 32 : ℝ) : ℂ)
-        + ((5 / 16 : ℝ) : ℂ)
-        * Complex.I) =
-        (((-981851302461656048219801924429682455 / 1844372677579163166510533567123030016 : ℝ) : ℝ) :
-        ℂ) + (((-2209268068967408935249545228672455 / 4931477747537869429172549644713984 : ℝ) : ℝ) :
-        ℂ) * Complex.I := by
-  simp [bdfRhoSum, Finset.sum_range_succ]
-  linear_combination ((5211407611237216395991316335712525 / 24268061547094252190928073251618816 : ℂ)
-      + (174331295231022724019126888625602375 / 76848861565798465271272231963459584 : ℂ) * Complex.I
-      - (713308390097237092840697545984375 / 137886713335762796539364052566016 : ℂ) * Complex.I ^ 2
-      + (30088947145169487010698527707230625 / 4803053847862404079454514497716224 : ℂ)
-      * Complex.I ^ 3
-      - (1984591730405197363076213202840625 / 379188461673347690483251144556544 : ℂ) * Complex.I ^ 4
-      + (304614609580933940634869180890625 / 92366420151200078451048355725312 : ℂ) * Complex.I ^ 5
-      - (310137269586538510086474322421875 / 189594230836673845241625572278272 : ℂ) * Complex.I ^ 6
-      + (30196430633626114201680848046875 / 46183210075600039225524177862656 : ℂ) * Complex.I ^ 7
-      - (10114787318275943898565830078125 / 47398557709168461310406393069568 : ℂ) * Complex.I ^ 8
-      + (661050702328373336643798828125 / 11545802518900009806381044465664 : ℂ) * Complex.I ^ 9
-      - (1189980480038927725341796875 / 94044757359461232758742843392 : ℂ) * Complex.I ^ 10
-      + (301658196641748236083984375 / 131202301351136475072511868928 : ℂ) * Complex.I ^ 11
-      - (28119281290899114990234375 / 82289162689528578663899987968 : ℂ) * Complex.I ^ 12
-      + (96690779252710833740234375 / 2345241136651564491921149657088 : ℂ) * Complex.I ^ 13
-      - (660498461040069580078125 / 164578325379057157327799975936 : ℂ) * Complex.I ^ 14
-      + (1485847549810943603515625 / 4690482273303128983842299314176 : ℂ) * Complex.I ^ 15
-      - (841524260711669921875 / 41144581344764289331949993984 : ℂ) * Complex.I ^ 16
-      + (1050170131683349609375 / 1172620568325782245960574828544 : ℂ) * Complex.I ^ 17)
-      * Complex.I_sq
+/-! ## BDF`k` is not zero-stable for every `k ≥ 7` -/
 
-/-- Witness value of `bdfRevSum 19` at `w = -3/32 + 5/16 i`. -/
-private theorem bdfRevSum_witness_19 :
-    bdfRevSum 19 (((-3 / 32 : ℝ) : ℂ)
-        + ((5 / 16 : ℝ) : ℂ)
-        * Complex.I) =
-        (((-8332151237985338528573610848226745 / 115273292348697697906908347945189376 : ℝ) : ℝ) : ℂ)
-        + (((-5272616134738062829138425272050915 / 57636646174348848953454173972594688 : ℝ) : ℝ) :
-        ℂ) * Complex.I := by
-  simp [bdfRevSum, Finset.sum_range_succ]
-  linear_combination ((4064329932824827162176464115325 / 623921779799831658549158608896 : ℂ)
-      - (214260596753829571363174788194571125 / 14409161543587212238363543493148672 : ℂ) * Complex.I
-      + (709988694265074174020588361875 / 38995111237489478659322413056 : ℂ) * Complex.I ^ 2
-      - (13796568675929070224206467701291875 / 900572596474200764897721468321792 : ℂ)
-      * Complex.I ^ 3
-      + (94426791313113445269535609375 / 9748777809372369664830603264 : ℂ) * Complex.I ^ 4
-      - (1081914260653330877748594020234375 / 225143149118550191224430367080448 : ℂ) * Complex.I ^ 5
-      + (9337011272667711127823828125 / 4874388904686184832415301632 : ℂ) * Complex.I ^ 6
-      - (9995547809786368082959185546875 / 16081653508467870801745026220032 : ℂ) * Complex.I ^ 7
-      + (201310344934240407576171875 / 1218597226171546208103825408 : ℂ) * Complex.I ^ 8
-      - (16082535540648302377783203125 / 446712597457440855604028506112 : ℂ) * Complex.I ^ 9
-      + (976385469159658935546875 / 152324653271443276012978176 : ℂ) * Complex.I ^ 10
-      - (4692315160980277099609375 / 5076279516561827904591233024 : ℂ) * Complex.I ^ 11
-      + (2025836871051025390625 / 19040581658930409501622272 : ℂ) * Complex.I ^ 12
-      - (466191304180908203125 / 48810379966940652928761856 : ℂ) * Complex.I ^ 13
-      + (3507433624267578125 / 5440166188265831286177792 : ℂ) * Complex.I ^ 14
-      - (3006432342529296875 / 97620759933881305857523712 : ℂ) * Complex.I ^ 15
-      + (1262664794921875 / 1360041547066457821544448 : ℂ) * Complex.I ^ 16
-      - (19073486328125 / 1435599410792372144963584 : ℂ) * Complex.I ^ 17) * Complex.I_sq
-
-/-- BDF19: `bdfRhoSum 19` has a root of modulus `> 1` (numerically `≈ 3.0335`). -/
-private theorem bdfRhoSum_exists_root_19 : ∃ ζ : ℂ, bdfRhoSum 19 ζ = 0 ∧ 1 < ‖ζ‖ := by
-  refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-3 / 32 : ℝ) : ℂ)
-      + ((5 / 16 : ℝ) : ℂ) * Complex.I))
-    (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
-  rw [bdfRhoSum_witness_19, bdfRevSum_witness_19]
-  exact norm_ofReal_add_mul_I_lt (by norm_num)
-
-/-- Witness value of `bdfRhoSum 20` at `w = -3/32 + 5/16 i`. -/
-private theorem bdfRhoSum_witness_20 :
-    bdfRhoSum 20 (((-3 / 32 : ℝ) : ℂ)
-        + ((5 / 16 : ℝ) : ℂ)
-        * Complex.I) =
-        (((40469947973305223356964979708797466565 / 59019925682533221328337074147936960512 : ℝ) : ℝ)
-        : ℂ) + (((2272475092469792994651427343057646245 / 7377490710316652666042134268492120064 : ℝ)
-        : ℝ) : ℂ) * Complex.I := by
-  simp [bdfRhoSum, Finset.sum_range_succ]
-  linear_combination
-      (-(2624756345324732294757911125792492175 / 7377490710316652666042134268492120064 : ℂ)
-      - (4229270798165120761957653967879745375 / 1844372677579163166510533567123030016 : ℂ)
-      * Complex.I
-      + (2477545371789384040574796288661670625 / 409860595017591814780118570471784448 : ℂ)
-      * Complex.I ^ 2
-      - (926444800047832935825899355799999375 / 115273292348697697906908347945189376 : ℂ)
-      * Complex.I ^ 3
-      + (1795117212234617564940349139671875 / 246310453736533542536128948600832 : ℂ) * Complex.I ^ 4
-      - (143276831289438731327654767381953125 / 28818323087174424476727086986297344 : ℂ)
-      * Complex.I ^ 5
-      + (34234201750961235623253370695703125 / 12808143594299744211878705327243264 : ℂ)
-      * Complex.I ^ 6
-      - (16740975644544217620220874298828125 / 14409161543587212238363543493148672 : ℂ)
-      * Complex.I ^ 7
-      + (94790611742779429698500837890625 / 228716849898209718069262595129344 : ℂ) * Complex.I ^ 8
-      - (440681059932897748378077197265625 / 3602290385896803059590885873287168 : ℂ) * Complex.I ^ 9
-      + (72019163606687246309562255859375 / 2401526923931202039727257248858112 : ℂ) * Complex.I ^ 10
-      - (305446520653053104017333984375 / 50031810915233375827651192684544 : ℂ) * Complex.I ^ 11
-      + (44115548187366207647705078125 / 42884409355914322137986736586752 : ℂ) * Complex.I ^ 12
-      - (111458701969328057861328125 / 781747045550521497307049885696 : ℂ) * Complex.I ^ 13
-      + (4838684386205699920654296875 / 300190865491400254965907156107264 : ℂ) * Complex.I ^ 14
-      - (2638032409931182861328125 / 1786850389829763422416114024448 : ℂ) * Complex.I ^ 15
-      + (590129149951934814453125 / 5360551169489290267248342073344 : ℂ) * Complex.I ^ 16
-      - (21112109279632568359375 / 3126988182202085989228199542784 : ℂ) * Complex.I ^ 17
-      + (5324853420257568359375 / 18761929093212515935369197256704 : ℂ) * Complex.I ^ 18)
-      * Complex.I_sq
-
-/-- Witness value of `bdfRevSum 20` at `w = -3/32 + 5/16 i`. -/
-private theorem bdfRevSum_witness_20 :
-    bdfRevSum 20 (((-3 / 32 : ℝ) : ℂ)
-        + ((5 / 16 : ℝ) : ℂ)
-        * Complex.I) =
-        (((6248917513533413116960646506495336015 / 14754981420633305332084268536984240128 : ℝ) : ℝ)
-        : ℂ) + (((628761127156927977406928148862730095 / 1844372677579163166510533567123030016 : ℝ)
-        : ℝ) : ℂ) * Complex.I := by
-  simp [bdfRevSum, Finset.sum_range_succ]
-  linear_combination ((252304658155906997060781740490175 / 39930993907189226147146150969344 : ℂ)
-      - (7846538174788097164201446280087604125 / 461093169394790791627633391780757504 : ℂ)
-      * Complex.I
-      + (460366067291270234541015606514375 / 19965496953594613073573075484672 : ℂ) * Complex.I ^ 2
-      - (609588410644304847061405825083918125 / 28818323087174424476727086986297344 : ℂ)
-      * Complex.I ^ 3
-      + (2265725507959957126418282640625 / 155980444949957914637289652224 : ℂ) * Complex.I ^ 4
-      - (56429456431424832135711203715859375 / 7204580771793606119181771746574336 : ℂ)
-      * Complex.I ^ 5
-      + (2124093978308458887612182421875 / 623921779799831658549158608896 : ℂ) * Complex.I ^ 6
-      - (623142169049962498842834806640625 / 514612912270971865655840839041024 : ℂ) * Complex.I ^ 7
-      + (27710904848127296881994140625 / 77990222474978957318644826112 : ℂ) * Complex.I ^ 8
-      - (1233367836033837583590283203125 / 14294803118638107379328912195584 : ℂ) * Complex.I ^ 9
-      + (675414010564448340576171875 / 38995111237489478659322413056 : ℂ) * Complex.I ^ 10
-      - (464530660854741822509765625 / 162440944529978492946919456768 : ℂ) * Complex.I ^ 11
-      + (1874560987856097412109375 / 4874388904686184832415301632 : ℂ) * Complex.I ^ 12
-      - (8098031646624755859375 / 195241519867762611715047424 : ℂ) * Complex.I ^ 13
-      + (2439471771392822265625 / 696341272098026404630757376 : ℂ) * Complex.I ^ 14
-      - (697586087799072265625 / 3123864317884201787440758784 : ℂ) * Complex.I ^ 15
-      + (879550933837890625 / 87042659012253300578844672 : ℂ) * Complex.I ^ 16
-      - (13294219970703125 / 45939181145355908638834688 : ℂ) * Complex.I ^ 17
-      + (19073486328125 / 4835703278458516698824704 : ℂ) * Complex.I ^ 18) * Complex.I_sq
-
-/-- BDF20: `bdfRhoSum 20` has a root of modulus `> 1` (numerically `≈ 3.2045`). -/
-private theorem bdfRhoSum_exists_root_20 : ∃ ζ : ℂ, bdfRhoSum 20 ζ = 0 ∧ 1 < ‖ζ‖ := by
-  refine bdfRhoSum_exists_root_norm_gt_one_of_lt (by norm_num) (w := (((-3 / 32 : ℝ) : ℂ)
-      + ((5 / 16 : ℝ) : ℂ) * Complex.I))
-    (ofReal_add_mul_I_ne_zero (by norm_num)) (norm_ofReal_add_mul_I_le_one (by norm_num)) ?_
-  rw [bdfRhoSum_witness_20, bdfRevSum_witness_20]
-  exact norm_ofReal_add_mul_I_lt (by norm_num)
-
-/-! ## BDF`k` is not zero-stable for `7 ≤ k ≤ 20` -/
-
-/-- **BDF`k` is zero-unstable for `7 ≤ k ≤ 20`**: the backward-difference polynomial
-`bdfRhoSum k` has a root outside the closed unit disk. -/
-@[powerlib_foundation] theorem bdfRhoSum_exists_root_norm_gt_one {k : ℕ} (hk : 7 ≤ k)
-    (hk' : k ≤ 20) : ∃ ζ : ℂ, bdfRhoSum k ζ = 0 ∧ 1 < ‖ζ‖ := by
+/-- `7 ≤ k ≤ 18`: one Schur–Cohn witness per `k`. -/
+private theorem bdfRhoSum_exists_root_norm_gt_one_of_le_eighteen {k : ℕ} (hk : 7 ≤ k)
+    (hk' : k ≤ 18) : ∃ ζ : ℂ, bdfRhoSum k ζ = 0 ∧ 1 < ‖ζ‖ := by
   interval_cases k
   · exact bdfRhoSum_exists_root_7
   · exact bdfRhoSum_exists_root_8
@@ -1072,18 +1130,27 @@ private theorem bdfRhoSum_exists_root_20 : ∃ ζ : ℂ, bdfRhoSum 20 ζ = 0 ∧
   · exact bdfRhoSum_exists_root_16
   · exact bdfRhoSum_exists_root_17
   · exact bdfRhoSum_exists_root_18
-  · exact bdfRhoSum_exists_root_19
-  · exact bdfRhoSum_exists_root_20
 
-@[powerlib_foundation] theorem bdfLMM_exists_root_norm_gt_one {k : ℕ} (hk : 7 ≤ k)
-    (hk' : k ≤ 20) : ∃ ζ : ℂ, (bdfLMM k).rho ζ = 0 ∧ 1 < ‖ζ‖ := by
-  obtain ⟨ζ, h, h1⟩ := bdfRhoSum_exists_root_norm_gt_one hk hk'
+/-- **BDF`k` is zero-unstable for every `k ≥ 7`**: the backward-difference polynomial
+`bdfRhoSum k` has a root outside the closed unit disk (Schur–Cohn witnesses for `k ≤ 18`, the
+uniform second power-sum bound for `k ≥ 19`). -/
+@[powerlib_foundation] theorem bdfRhoSum_exists_root_norm_gt_one {k : ℕ} (hk : 7 ≤ k) :
+    ∃ ζ : ℂ, bdfRhoSum k ζ = 0 ∧ 1 < ‖ζ‖ := by
+  rcases le_or_gt k 18 with h | h
+  · exact bdfRhoSum_exists_root_norm_gt_one_of_le_eighteen hk h
+  · exact bdfRhoSum_exists_root_norm_gt_one_of_nineteen_le h
+
+/-- For every `k ≥ 7` the first characteristic polynomial of the `k`-step BDF has a root of
+modulus `> 1`. -/
+@[powerlib_foundation] theorem bdfLMM_exists_root_norm_gt_one {k : ℕ} (hk : 7 ≤ k) :
+    ∃ ζ : ℂ, (bdfLMM k).rho ζ = 0 ∧ 1 < ‖ζ‖ := by
+  obtain ⟨ζ, h, h1⟩ := bdfRhoSum_exists_root_norm_gt_one hk
   exact ⟨ζ, by rw [bdfLMM_rho_eq, h, mul_zero], h1⟩
 
-/-- The `k`-step BDF violates the root condition (is not zero-stable) for `7 ≤ k ≤ 20`. -/
-@[powerlib_foundation] theorem bdfLMM_not_rootCondition {k : ℕ} (hk : 7 ≤ k) (hk' : k ≤ 20) :
+/-- **The `k`-step BDF violates the root condition (is not zero-stable) for every `k ≥ 7`.** -/
+@[powerlib_foundation] theorem bdfLMM_not_rootCondition {k : ℕ} (hk : 7 ≤ k) :
     ¬ (bdfLMM k).RootCondition := by
-  obtain ⟨ζ, hζ, h1⟩ := bdfLMM_exists_root_norm_gt_one hk hk'
+  obtain ⟨ζ, hζ, h1⟩ := bdfLMM_exists_root_norm_gt_one hk
   exact (bdfLMM k).not_rootCondition_of_root hζ h1
 
 /-! ## The coefficient tables BDF7–BDF9 -/

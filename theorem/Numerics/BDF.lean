@@ -14,9 +14,8 @@ lists only `β_k`) have exact order `k`.
 
 Source: work-sync theory/T-numerical-integration.md §1.5–§1.6 (BDF table).  Foundation.
 Not formalized here: zero-stability of BDF1–6. Failure of zero-stability (a root of `ρ` outside
-the closed unit disk) is proved for every `7 ≤ k ≤ 20` in `theorem/Numerics/BDFInstability.lean`
-(`bdfLMM_not_rootCondition`; coefficient tables `bdf7`–`bdf9`); the general statement for every
-`k ≥ 7` remains UNPROVED.
+the closed unit disk) is proved for every `k ≥ 7` in `theorem/Numerics/BDFInstability.lean`
+(`bdfLMM_not_rootCondition`; coefficient tables `bdf7`–`bdf9`).
 -/
 
 noncomputable section
