@@ -101,7 +101,10 @@ constant, every `(θ, u*, î(θ))` is an equilibrium, `field_eq_zero_of_kappa_eq
   (`utilde_const_of_mu_eq_zero`, private); `(θ₀ + η a t, u* + a, î(θ₀))` is a solution
   (`drift_isIntegralCurveOn`), so `not_tendsto_critical_of_mu_eq_zero` (private counterexample: no
   convergence to the source's set) and, for `η ≠ 0`, the connection `mem_den_unstable_of_mu_eq_zero`
-  (the angle drifts away linearly from arbitrarily small DC offsets).
+  (the angle drifts away linearly from arbitrarily small DC offsets). With `η = 0` (frozen angle;
+  any `margin ≥ 0`) the deviation dynamics is `z' = (0, −margin z₁/C_dc, −R_s z₂/L_s, −R_s z₃/L_s)`,
+  so `⟨z, z'⟩ ≤ 0`: Lyapunov stable (private `lyapunovStable_of_frozen`, connection
+  `mem_den_lyapunovStable_of_frozen`), not asymptotically.
 * (c) `margin = 0`, `μ ≠ 0` (so `u* v₀ = 0`): `tendsto_error_of_no_sync_margin_zero` (private, LaSalle
   on the cylinder with the LaSalle-set argument `no_sync_margin_zero_segment`: `ũ_dc, ĩ_dq → 0`) and
   `tendsto_equilibrium_of_no_sync_margin_zero` (private: every forward solution converges to one
@@ -109,7 +112,16 @@ constant, every `(θ, u*, î(θ))` is an equilibrium, `field_eq_zero_of_kappa_eq
   autonomous field `redField` (`red_field_identity`), whose Jacobian `redJac` is Hurwitz
   (`redJac_isHurwitz`, Routh–Hurwitz of `theorem.Criteria.Routh3`); local exponential stability
   then bounds `ũ` exponentially after the solution enters the ball, and
-  `Dynamics.exists_tendsto_of_abs_deriv_le_exp` makes the angle converge.
+  `Dynamics.exists_tendsto_of_abs_deriv_le_exp` makes the angle converge. Lyapunov stability
+  (private `lyapunovStable_of_no_sync_of_mu_ne_zero`, connection
+  `mem_den_lyapunovStable_of_no_sync_of_mu_ne_zero`, for every `margin ≥ 0`): starting near `x*`
+  the reduced error starts in the ball of local exponential stability (`red_bounds`), stays
+  exponentially small, and the angle moves by at most `|η| C K₁ ‖x₀ − x*‖ / a`
+  (`Dynamics.abs_sub_le_of_abs_deriv_le_exp`).
+* Decision (connection `mem_den_lyapunovStable_iff_of_no_sync`): with `C_dc, L_s, R_s > 0`,
+  `μ u* v₀ = 0` and `margin ≥ 0`, the operating point is Lyapunov stable iff
+  `margin > 0 ∨ μ ≠ 0 ∨ η = 0`; it is never locally asymptotically stable (continuum of
+  equilibria), and in the remaining case `margin = 0, μ = 0, η ≠ 0` it is unstable.
 
 Source: work-sync `theory/T-dc-voltage-gfm.md` §1.2, `theory/T-gfm-control.md` §1.6,
 `theory/papers/@arghir2020matching.md`; equations from the TPEL author version as listed in
@@ -2264,5 +2276,272 @@ private theorem tendsto_equilibrium_of_no_sync_margin_zero (m : Model) (hC : 0 <
   · simpa using hu.add_const m.ustar
   · simpa using hd.add (((iHatD_continuous m).tendsto _).comp hθ)
   · simpa using hq.add (((iHatQ_continuous m).tendsto _).comp hθ)
+
+
+/-! ### Lyapunov stability without synchronizing torque at the boundary -/
+
+/-- **Frozen angle without modulation** (`μ = 0`, `η = 0`, `margin ≥ 0`): in deviation coordinates
+the closed loop is `z' = (0, −margin z₁/C_dc, −R_s z₂/L_s, −R_s z₃/L_s)` (the angle and, at
+`margin = 0`, the DC error are conserved, the current error decays), so `⟨z, z'⟩ ≤ 0` and the
+operating point is Lyapunov stable (`Dynamics.lyapunovStable_of_inner_nonpos`). Implementation
+evidence. -/
+private theorem lyapunovStable_of_frozen (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
+    (hR : 0 < m.Rs) (hμ : m.μ = 0) (hη : m.η = 0) (hδ : 0 ≤ m.margin) :
+    LyapunovStable m.translated 0 := by
+  have hω : m.ω0 = 0 := by simp [Model.ω0, hη]
+  have hNR : m.N = m.Rs ^ 2 := by simp [Model.N, hω]
+  have hGK : m.Gdc + m.Kp = m.margin := by simp [Model.margin, hμ]
+  have hf : ∀ z : State 4, m.translated z = WithLp.toLp 2 ![0, -(m.margin * z 1) / m.Cdc,
+      -(m.Rs * z 2) / m.Ls, -(m.Rs * z 3) / m.Ls] := by
+    intro z
+    ext i
+    fin_cases i
+    · simp [Model.translated, Model.field, Model.point, hη, hω]
+    · simp only [Model.translated, Model.field, Model.idc, Model.ixHat, Model.κ, Model.point,
+        hμ, PiLp.toLp_apply, PiLp.add_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+        Fin.isValue, Fin.mk_one, ← hGK]
+      ring
+    · simp only [Model.translated, Model.field, Model.point, Model.iHatD, hμ, hω,
+        PiLp.toLp_apply, PiLp.add_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+        Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, Fin.isValue, Fin.reduceFinMk]
+      ring
+    · simp only [Model.translated, Model.field, Model.point, Model.iHatQ, hμ, hω, hNR,
+        PiLp.toLp_apply, PiLp.add_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+        Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons,
+        Fin.isValue, Fin.reduceFinMk]
+      field_simp
+      ring
+  refine powerlib.Dynamics.lyapunovStable_of_inner_nonpos (by norm_num)
+    (ContinuousLinearMap.id ℝ (State 4)) Function.injective_id fun z => ?_
+  simp only [ContinuousLinearMap.id_apply, hf, PiLp.inner_apply, Fin.sum_univ_four,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+    Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons, RCLike.inner_apply, conj_trivial]
+  have h1 : 0 ≤ m.margin * z 1 ^ 2 / m.Cdc := by positivity
+  have h2 : 0 ≤ m.Rs * z 2 ^ 2 / m.Ls := by positivity
+  have h3 : 0 ≤ m.Rs * z 3 ^ 2 / m.Ls := by positivity
+  have e : z 0 * 0 + z 1 * (-(m.margin * z 1) / m.Cdc) + z 2 * (-(m.Rs * z 2) / m.Ls) +
+      z 3 * (-(m.Rs * z 3) / m.Ls) = -(m.margin * z 1 ^ 2 / m.Cdc) - m.Rs * z 2 ^ 2 / m.Ls -
+        m.Rs * z 3 ^ 2 / m.Ls := by ring
+  nlinarith [e]
+
+/-- The reduced error `red x = (ũ, R_θᵀ ĩ)` and the errors `(ũ, ĩ)` control each other.
+Implementation evidence (it names the model's reduction only; kept private with its users). -/
+private theorem red_bounds (m : Model) (x : State 4) :
+    |x 1 - m.ustar| ≤ ‖m.red x‖ ∧ |x 2 - m.iHatD (x 0)| ≤ 2 * ‖m.red x‖ ∧
+      |x 3 - m.iHatQ (x 0)| ≤ 2 * ‖m.red x‖ ∧
+      ‖m.red x‖ ≤ |x 1 - m.ustar| + 2 * (|x 2 - m.iHatD (x 0)| + |x 3 - m.iHatQ (x 0)|) := by
+  have r0 : m.red x 0 = x 1 - m.ustar := by simp [Model.red]
+  have r1 : m.red x 1 = Real.cos (x 0) * (x 2 - m.iHatD (x 0)) +
+      Real.sin (x 0) * (x 3 - m.iHatQ (x 0)) := by simp [Model.red]
+  have r2 : m.red x 2 = -Real.sin (x 0) * (x 2 - m.iHatD (x 0)) +
+      Real.cos (x 0) * (x 3 - m.iHatQ (x 0)) := by simp [Model.red]
+  have n0 := PiLp.norm_apply_le (m.red x) 0
+  have n1 := PiLp.norm_apply_le (m.red x) 1
+  have n2 := PiLp.norm_apply_le (m.red x) 2
+  have hn := Dynamics.norm_le_sum_abs (m.red x)
+  rw [Fin.sum_univ_three, r0, r1, r2] at hn
+  rw [r0, Real.norm_eq_abs] at n0
+  rw [r1, Real.norm_eq_abs] at n1
+  rw [r2, Real.norm_eq_abs] at n2
+  set c := Real.cos (x 0)
+  set s := Real.sin (x 0)
+  set e1 := x 2 - m.iHatD (x 0)
+  set e2 := x 3 - m.iHatQ (x 0)
+  have hsc : s ^ 2 + c ^ 2 = 1 := Real.sin_sq_add_cos_sq _
+  have hc := Real.abs_cos_le_one (x 0)
+  have hs := Real.abs_sin_le_one (x 0)
+  have i1 : e1 = c * (c * e1 + s * e2) - s * (-s * e1 + c * e2) := by
+    linear_combination (-e1) * hsc
+  have i2 : e2 = s * (c * e1 + s * e2) + c * (-s * e1 + c * e2) := by
+    linear_combination (-e2) * hsc
+  have bnd : ∀ a b p q : ℝ, |a| ≤ 1 → |b| ≤ 1 → |a * p + b * q| ≤ |p| + |q| := fun a b p q ha hb => by
+    calc |a * p + b * q| ≤ |a| * |p| + |b| * |q| := by
+          rw [← abs_mul, ← abs_mul]; exact abs_add_le _ _
+      _ ≤ 1 * |p| + 1 * |q| := by gcongr
+      _ = |p| + |q| := by ring
+  refine ⟨n0, ?_, ?_, ?_⟩
+  · rw [i1, sub_eq_add_neg, ← neg_mul]
+    have := bnd c (-s) (c * e1 + s * e2) (-s * e1 + c * e2) hc (by rwa [abs_neg])
+    linarith
+  · rw [i2]
+    have := bnd s c (c * e1 + s * e2) (-s * e1 + c * e2) hs hc
+    linarith
+  · have b1 := bnd c s e1 e2 hc hs
+    have b2 := bnd (-s) c e1 e2 (by rwa [abs_neg]) hc
+    linarith
+
+/-- **Lyapunov stability without synchronizing torque, with modulation** (`μ ≠ 0`, `margin ≥ 0`):
+the rotation-reduced error is locally exponentially stable and the angle moves by at most a
+multiple of the initial error. Implementation evidence. -/
+private theorem lyapunovStable_of_no_sync_of_mu_ne_zero (m : Model) (hC : 0 < m.Cdc)
+    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ ≠ 0) (hs : m.μ * m.ustar * m.v0 = 0)
+    (hδ : 0 ≤ m.margin) : LyapunovStable m.field m.point := by
+  have hN := N_pos m hR
+  have hκ := kappa_eq_zero_of_no_sync m hs
+  obtain ⟨r, Cc, a, hr, hC1, ha, hles⟩ := Flow.locallyExponentiallyStable_of_isHurwitz_jacobian
+    m.redJac (redField_contDiff m) (redField_zero m) (hasFDerivAt_redField_zero m hL.ne').fderiv
+    (redJac_isHurwitz m hC hL hR hμ hδ)
+  obtain ⟨Λ, hΛdef⟩ : ∃ Λ, Λ = (|m.Rs * (m.μ * m.ustar)| + |m.ω0 * m.Ls * (m.μ * m.ustar)|) /
+      m.N := ⟨_, rfl⟩
+  have hΛ : 0 ≤ Λ := by rw [hΛdef]; positivity
+  obtain ⟨K₁, hK₁⟩ : ∃ K₁, K₁ = 1 + 4 * (1 + Λ) := ⟨_, rfl⟩
+  have hK₁0 : 0 < K₁ := by rw [hK₁]; positivity
+  obtain ⟨K, hK⟩ : ∃ K, K = (1 + 2 * Λ) * (1 + |m.η| * Cc * K₁ / a) + 5 * Cc * K₁ := ⟨_, rfl⟩
+  have hCc : 0 ≤ Cc := by linarith
+  have hK0 : 0 ≤ K := by rw [hK]; positivity
+  obtain ⟨p0, p1, p2, p3⟩ := point_apply m
+  intro ε hε
+  refine ⟨min (r / (K₁ + 1)) (ε / (K + 1)), lt_min (by positivity) (by positivity),
+    fun t₀ t₁ φ hφ h0 t ht => ?_⟩
+  obtain ⟨ρ₀, hρ₀⟩ : ∃ ρ₀, ρ₀ = ‖φ t₀ - m.point‖ := ⟨_, rfl⟩
+  rw [← hρ₀] at h0
+  have hρ₁ : ρ₀ < r / (K₁ + 1) := h0.trans_le (min_le_left _ _)
+  have hρ₂ : ρ₀ < ε / (K + 1) := h0.trans_le (min_le_right _ _)
+  have hρ0 : 0 ≤ ρ₀ := hρ₀ ▸ norm_nonneg _
+  have hc : ∀ i, |(φ t₀ - m.point) i| ≤ ρ₀ := fun i => by
+    rw [hρ₀]
+    simpa using PiLp.norm_apply_le (φ t₀ - m.point) i
+  have hθ0 : |φ t₀ 0| ≤ ρ₀ := by
+    have := hc 0; rw [PiLp.sub_apply, p0, sub_zero] at this; exact this
+  have hu0 : |φ t₀ 1 - m.ustar| ≤ ρ₀ := by
+    have := hc 1; rw [PiLp.sub_apply, p1] at this; exact this
+  have hd0 : |φ t₀ 2 - m.iHatD 0| ≤ ρ₀ := by
+    have := hc 2; rw [PiLp.sub_apply, p2] at this; exact this
+  have hq0 : |φ t₀ 3 - m.iHatQ 0| ≤ ρ₀ := by
+    have := hc 3; rw [PiLp.sub_apply, p3] at this; exact this
+  have hD := abs_iHatD_sub_le m hN (φ t₀ 0)
+  have hQ := abs_iHatQ_sub_le m hN (φ t₀ 0)
+  rw [← hΛdef] at hD hQ
+  have hΛθ0 := mul_le_mul_of_nonneg_left hθ0 hΛ
+  have he1 : |φ t₀ 2 - m.iHatD (φ t₀ 0)| ≤ (1 + Λ) * ρ₀ := by
+    have := abs_sub_le (φ t₀ 2) (m.iHatD 0) (m.iHatD (φ t₀ 0))
+    rw [abs_sub_comm (m.iHatD 0)] at this
+    linarith
+  have he2 : |φ t₀ 3 - m.iHatQ (φ t₀ 0)| ≤ (1 + Λ) * ρ₀ := by
+    have := abs_sub_le (φ t₀ 3) (m.iHatQ 0) (m.iHatQ (φ t₀ 0))
+    rw [abs_sub_comm (m.iHatQ 0)] at this
+    linarith
+  have hred0 : ‖m.red (φ t₀)‖ ≤ K₁ * ρ₀ := by
+    have := (red_bounds m (φ t₀)).2.2.2
+    rw [hK₁]
+    linarith
+  have hin : ‖m.red (φ t₀) - 0‖ < r := by
+    rw [sub_zero]
+    have h1 : K₁ * ρ₀ < r := by
+      have := (lt_div_iff₀ (by linarith : (0 : ℝ) < K₁ + 1)).mp hρ₁
+      linarith
+    linarith
+  have hseg : IsTrajectoryOn (fun t => m.red (φ t)) m.redField t₀ t₁ :=
+    red_isIntegralCurveOn m hN.ne' hL.ne' hκ hφ
+  have hdec : ∀ τ ∈ Icc t₀ t₁, ‖m.red (φ τ)‖ ≤ Cc * K₁ * ρ₀ * Real.exp (-a * (τ - t₀)) := by
+    intro τ hτ
+    have h := hles t₀ t₁ _ hseg hin τ hτ
+    simp only [sub_zero] at h
+    have hp : 0 ≤ Cc * Real.exp (-a * (τ - t₀)) := by
+      have := Real.exp_pos (-a * (τ - t₀)); positivity
+    calc ‖m.red (φ τ)‖ ≤ Cc * Real.exp (-a * (τ - t₀)) * ‖m.red (φ t₀)‖ := h
+      _ ≤ Cc * Real.exp (-a * (τ - t₀)) * (K₁ * ρ₀) := mul_le_mul_of_nonneg_left hred0 hp
+      _ = Cc * K₁ * ρ₀ * Real.exp (-a * (τ - t₀)) := by ring
+  have hθ : |φ t 0 - φ t₀ 0| ≤ |m.η| * (Cc * K₁ * ρ₀) / a :=
+    Dynamics.abs_sub_le_of_abs_deriv_le_exp (θ := fun τ => φ τ 0)
+      (θ' := fun τ => m.η * (φ τ 1 - m.ustar)) ha
+      (fun τ hτ => hasDerivWithinAt_angle m (hφ τ hτ))
+      (fun τ hτ => by
+        rw [abs_mul, mul_assoc]
+        exact mul_le_mul_of_nonneg_left (((red_bounds m (φ τ)).1).trans (hdec τ hτ))
+          (abs_nonneg _)) t ht
+  have hx : Real.exp (-a * (t - t₀)) ≤ 1 := by
+    rw [Real.exp_le_one_iff]
+    have := mul_nonneg ha.le (sub_nonneg.mpr ht.1)
+    linarith
+  have hRt : ‖m.red (φ t)‖ ≤ Cc * K₁ * ρ₀ := by
+    have := hdec t ht
+    have hp : 0 ≤ Cc * K₁ * ρ₀ := by positivity
+    have := mul_le_mul_of_nonneg_left hx hp
+    linarith
+  obtain ⟨b0, b1, b2, -⟩ := red_bounds m (φ t)
+  have hθt : |φ t 0| ≤ ρ₀ * (1 + |m.η| * Cc * K₁ / a) := by
+    have h1 := abs_sub_abs_le_abs_sub (φ t 0) (φ t₀ 0)
+    have h2 : |m.η| * (Cc * K₁ * ρ₀) / a = ρ₀ * (|m.η| * Cc * K₁ / a) := by ring
+    rw [h2] at hθ
+    linarith
+  have hDt := abs_iHatD_sub_le m hN (φ t 0)
+  have hQt := abs_iHatQ_sub_le m hN (φ t 0)
+  rw [← hΛdef] at hDt hQt
+  have h2 : |φ t 2 - m.iHatD 0| ≤ 2 * (Cc * K₁ * ρ₀) + Λ * |φ t 0| := by
+    have := abs_sub_le (φ t 2) (m.iHatD (φ t 0)) (m.iHatD 0)
+    linarith
+  have h3 : |φ t 3 - m.iHatQ 0| ≤ 2 * (Cc * K₁ * ρ₀) + Λ * |φ t 0| := by
+    have := abs_sub_le (φ t 3) (m.iHatQ (φ t 0)) (m.iHatQ 0)
+    linarith
+  have hn := Dynamics.norm_le_sum_abs (φ t - m.point)
+  rw [Fin.sum_univ_four, PiLp.sub_apply, PiLp.sub_apply, PiLp.sub_apply, PiLp.sub_apply, p0, p1,
+    p2, p3, sub_zero] at hn
+  have hΛθ := mul_le_mul_of_nonneg_left hθt hΛ
+  have hfin : ‖φ t - m.point‖ ≤ K * ρ₀ := by
+    have e : K * ρ₀ = ρ₀ * (1 + |m.η| * Cc * K₁ / a) +
+        2 * (Λ * (ρ₀ * (1 + |m.η| * Cc * K₁ / a))) + Cc * K₁ * ρ₀ + 2 * (2 * (Cc * K₁ * ρ₀)) := by
+      rw [hK]; ring
+    rw [e]
+    linarith
+  have hKε : K * ρ₀ < ε := by
+    have := (lt_div_iff₀ (by linarith : (0 : ℝ) < K + 1)).mp hρ₂
+    linarith
+  linarith
+
+/-- **Lyapunov stability with a frozen angle and no modulation**: with `C_dc, L_s, R_s > 0`,
+`μ = 0`, `η = 0` and `margin ≥ 0` the operating point is Lyapunov stable. -/
+@[powerlib_domain] theorem mem_den_lyapunovStable_of_frozen (m : Model) (hC : 0 < m.Cdc)
+    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ = 0) (hη : m.η = 0) (hδ : 0 ≤ m.margin) :
+    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [(show family.IsAutonomous Model.translated from fun _ => rfl).mem_den_flow]
+  exact lyapunovStable_of_frozen m hC hL hR hμ hη hδ
+
+/-- **Lyapunov stability without synchronizing torque, with modulation**: with
+`C_dc, L_s, R_s > 0`, `μ ≠ 0`, `μ u* v₀ = 0` and `margin ≥ 0` (in particular at `margin = 0`) the
+operating point is Lyapunov stable. -/
+@[powerlib_domain] theorem mem_den_lyapunovStable_of_no_sync_of_mu_ne_zero (m : Model)
+    (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ ≠ 0)
+    (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 ≤ m.margin) :
+    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [mem_den_flow']
+  exact lyapunovStable_of_no_sync_of_mu_ne_zero m hC hL hR hμ hs hδ
+
+/-- **Lyapunov stability without synchronizing torque, decided** (`C_dc, L_s, R_s > 0`,
+`μ u* v₀ = 0`, `margin ≥ 0`): the operating point is Lyapunov stable exactly when
+`margin > 0`, or `μ ≠ 0`, or `η = 0`; the remaining case `margin = 0`, `μ = 0`, `η ≠ 0` is
+unstable (`mem_den_unstable_of_mu_eq_zero`). -/
+@[powerlib_domain] theorem mem_den_lyapunovStable_iff_of_no_sync (m : Model) (hC : 0 < m.Cdc)
+    (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 ≤ m.margin) :
+    connection% (m ∈ family.den (.flow .lyapunovStable) ↔
+      m ∈ {m : Model | 0 < m.margin ∨ m.μ ≠ 0 ∨ m.η = 0}) := by
+  unfold powerlib.TMIO.Statement
+  rw [Set.mem_ofPred_eq]
+  constructor
+  · intro h
+    by_contra hc
+    push Not at hc
+    obtain ⟨h1, h2, h3⟩ := hc
+    have hm : m.margin = 0 := le_antisymm h1 hδ
+    have hu := mem_den_unstable_of_mu_eq_zero m hR h2 hm h3
+    unfold powerlib.TMIO.Statement at hu
+    rw [mem_den_flow'] at h hu
+    exact hu h
+  · rintro (h | h | h)
+    · have := mem_den_lyapunovStable_of_no_sync m hC hL hR hs h
+      unfold powerlib.TMIO.Statement at this
+      exact this
+    · have := mem_den_lyapunovStable_of_no_sync_of_mu_ne_zero m hC hL hR h hs hδ
+      unfold powerlib.TMIO.Statement at this
+      exact this
+    · by_cases hμ : m.μ = 0
+      · have := mem_den_lyapunovStable_of_frozen m hC hL hR hμ h hδ
+        unfold powerlib.TMIO.Statement at this
+        exact this
+      · have := mem_den_lyapunovStable_of_no_sync_of_mu_ne_zero m hC hL hR hμ hs hδ
+        unfold powerlib.TMIO.Statement at this
+        exact this
 
 end powerlib.DCLink.MatchingStiffGrid

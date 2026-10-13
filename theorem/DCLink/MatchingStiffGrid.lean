@@ -87,7 +87,9 @@ Results.
   (`mem_den_lyapunovStable_of_no_sync`, `not_mem_den_locallyAsymptoticallyStable_of_no_sync`;
   hence `not_exact_lyapunovStable`); with `margin = 0` and `μ ≠ 0` every solution still converges
   to an equilibrium; with `margin = 0` and `μ = 0` the DC error is conserved and the angle drifts
-  (`mem_den_unstable_of_mu_eq_zero` for `η ≠ 0`).
+  (`mem_den_unstable_of_mu_eq_zero` for `η ≠ 0`). Decided: for `μ u* v₀ = 0` and `margin ≥ 0` the
+  operating point is Lyapunov stable iff `margin > 0 ∨ μ ≠ 0 ∨ η = 0`
+  (`mem_den_lyapunovStable_iff_of_no_sync`), and never locally asymptotically stable.
 
 Corrections.
 * The note's condition is the source's condition (`margin_pos_iff`), but it is not a global
