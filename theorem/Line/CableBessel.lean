@@ -49,6 +49,9 @@ Results (foundation).
   `norm_integral_gaussian_half`; elementary bounds `norm_cexp_sub_one_le_of_re_nonpos`,
   `norm_cexp_sub_cexp_le`, `sq_div_two_sub_one_sub_cos_le`, `sq_mul_exp_le`,
   `pow_four_mul_exp_le`, `integral_exp_neg_mul_sq_le`.
+* **Laplace bounds in a sector**: `besselI_laplace_le` (for every `K > 0` there is `C ≥ 0` with
+  `‖e^{−z}π I₀(z) − G(z)‖ ≤ (C/x)‖G(z)‖` and `‖e^{−z}π(I₀(z) − I₁(z))‖ ≤ (C/x)‖G(z)‖`,
+  `G(z) = ∫₀^∞ e^{−zθ²/2}`, whenever `x = Re z > 0`, `‖z‖ ≤ K x`).
 * **Large argument**: `besselI0_div_besselI1_sub_one_le` (for every `K > 0` there are `C`, `x₀`
   with `I₀(z), I₁(z) ≠ 0` and `‖I₀(z)/I₁(z) − 1‖ ≤ C/Re z` whenever `Re z ≥ x₀`,
   `‖z‖ ≤ K Re z`), `tendsto_besselI0_div_besselI1` (`I₀/I₁ → 1` as `z → ∞` in a sector).
@@ -58,13 +61,13 @@ Results (foundation).
   (`Z(m) = ρ m/(2π r) + O(1)` along the same ray), `coreImpedance_tendsto_surface_omega` (the same
   limit as `ω → ∞` for `m(ω) = (1 + i)√(ωμ/(2ρ))`, with `m² = jωμ/ρ` by `one_add_I_mul_sqrt_sq`).
 
-UNPROVED.
-* The exact (Schelkunoff) tubular-conductor impedances of §1.2.2 need the second-kind functions
-  `K₀`, `K₁` (logarithmic singularity at `0`, series with harmonic numbers, their own
-  large-argument asymptotics) in addition to `I₀`, `I₁`; their low/high-frequency limits are not
-  formalized. The note itself only states the Wedepohl–Wilcox `coth`/`csch` approximations; the
-  limits of those engineering formulas are proved in `theorem/Line/Cable.lean`
-  (`tubeZin_tendsto_dc`, …), not their accuracy against the exact Bessel solution.
+Tubular conductors (§1.2.2). The exact (Schelkunoff) tubular-conductor impedances need the
+second-kind functions `K₀`, `K₁` in addition to `I₀`, `I₁`; they are defined (integral
+representation), with their small/large-argument behaviour, derivatives and the Wronskian
+`I₀K₁ + I₁K₀ = 1/z`, in `theorem/Line/BesselK.lean`. The exact inner, outer and transfer
+impedances, their low-frequency (DC resistance) and high-frequency (surface impedance, complete
+screening) limits and their comparison with the Wedepohl–Wilcox `coth`/`csch` formulas of
+`theorem/Line/Cable.lean` are in `theorem/Line/CableSchelkunoff.lean`.
 
 Family and connection conclusions: none (static special-function analysis; no model family).
 -/
@@ -672,12 +675,17 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
     Complex.norm_real, Real.norm_eq_abs, abs_of_pos Real.pi_pos, norm_div, Complex.norm_two,
     Real.sqrt_eq_rpow]
 
-/-- **Large-argument limit of `I₀/I₁` in a sector**, with rate: for every `K > 0` there are
-`C` and `x₀ > 0` such that `I₀(z) ≠ 0`, `I₁(z) ≠ 0` and `‖I₀(z)/I₁(z) − 1‖ ≤ C/Re z` whenever
-`Re z ≥ x₀` and `‖z‖ ≤ K Re z` (the closed sector `|arg z| ≤ arccos(1/K)`). -/
-@[powerlib_foundation] theorem besselI0_div_besselI1_sub_one_le {K : ℝ} (hK : 0 < K) :
-    ∃ C x₀ : ℝ, 0 < x₀ ∧ ∀ z : ℂ, x₀ ≤ z.re → ‖z‖ ≤ K * z.re →
-      besselI0 z ≠ 0 ∧ besselI1 z ≠ 0 ∧ ‖besselI0 z / besselI1 z - 1‖ ≤ C / z.re := by
+/-- **Laplace bounds for `I₀`, `I₁` in a sector**, relative to the half-line Gaussian
+`G(z) = ∫₀^∞ e^{−zθ²/2} dθ = √(π/(2z))`: for every `K > 0` there is `C ≥ 0` with
+`‖e^{−z}π I₀(z) − G(z)‖ ≤ (C/x)‖G(z)‖` and `‖e^{−z}π(I₀(z) − I₁(z))‖ ≤ (C/x)‖G(z)‖` whenever
+`x = Re z > 0` and `‖z‖ ≤ K x`. Hence `π e^{−z} I_ν(z)/G(z) = 1 + O(1/x)`, `ν = 0, 1`. -/
+@[powerlib_foundation] theorem besselI_laplace_le {K : ℝ} (hK : 0 < K) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ z : ℂ, 0 < z.re → ‖z‖ ≤ K * z.re →
+      ‖Complex.exp (-z) * (Real.pi * besselI0 z) -
+          ∫ θ in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (θ : ℂ) ^ 2)‖ ≤
+        C / z.re * ‖∫ θ in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (θ : ℂ) ^ 2)‖ ∧
+      ‖Complex.exp (-z) * (Real.pi * besselI0 z - Real.pi * besselI1 z)‖ ≤
+        C / z.re * ‖∫ θ in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (θ : ℂ) ^ 2)‖ := by
   set k₁ := Real.sqrt (K * Real.pi ^ 2 / 2) with hk₁
   set k₂ := Real.sqrt (2 * K) with hk₂
   set C₁ := Real.pi ^ 2 / 2 * k₁ with hC₁
@@ -686,16 +694,14 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
   have hk₂0 : 0 ≤ k₂ := Real.sqrt_nonneg _
   have hC₁0 : 0 ≤ C₁ := by positivity
   have hC₂0 : 0 ≤ C₂ := by positivity
-  refine ⟨4 * C₁, max 1 (max (2 * C₂) (4 * C₁)), lt_max_of_lt_left one_pos, ?_⟩
-  intro z hx hzK
+  refine ⟨C₁ + C₂, by positivity, fun z hx0 hzK => ?_⟩
   set x := z.re with hxdef
-  have hx1 : 1 ≤ x := le_trans (le_max_left _ _) hx
-  have hx0 : 0 < x := by linarith
-  have hxC₂ : 2 * C₂ ≤ x := le_trans (le_trans (le_max_left _ _) (le_max_right _ _)) hx
-  have hxC₁ : 4 * C₁ ≤ x := le_trans (le_trans (le_max_right _ _) (le_max_right _ _)) hx
   have hz0 : 0 < ‖z‖ := lt_of_lt_of_le hx0 (Complex.re_le_norm z)
   have hπ := Real.pi_pos
+  set G := ∫ θ in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (θ : ℂ) ^ 2) with hGdef
   set γ₀ := Real.sqrt (Real.pi / (‖z‖ / 2)) / 2 with hγ₀def
+  have hG : ‖G‖ = γ₀ := norm_integral_gaussian_half hx0
+  rw [hG]
   have hγ₀ : 0 < γ₀ := by positivity
   -- the two auxiliary Gaussian widths relative to `γ₀`
   have hγ₁ : Real.sqrt (Real.pi / (x / Real.pi ^ 2)) / 2 ≤ k₁ * γ₀ := by
@@ -724,24 +730,14 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
     rw [Real.exp_neg, inv_le_comm₀ (Real.exp_pos _) (by positivity)]
     have : (4 / Real.pi ^ 2 / x)⁻¹ = x * Real.pi ^ 2 / 4 := by field_simp
     rw [this]; linarith
-  set A := ∫ θ in (0 : ℝ)..Real.pi, Complex.exp (-z * ((1 - Real.cos θ : ℝ) : ℂ)) with hAdef
-  set B := ∫ θ in (0 : ℝ)..Real.pi, Complex.exp (-z * ((1 - Real.cos θ : ℝ) : ℂ)) *
-    ((1 - Real.cos θ : ℝ) : ℂ) with hBdef
-  set G := ∫ θ in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (θ : ℂ) ^ 2) with hGdef
   have hB := norm_integral_cexp_one_sub_cos_mul_le hx0
   have hAG := norm_integral_cexp_one_sub_cos_sub_gaussian_le hx0
-  have hG := norm_integral_gaussian_half hx0
-  rw [← hBdef] at hB
-  rw [← hAdef, ← hGdef] at hAG
-  rw [← hGdef, ← hγ₀def] at hG
-  -- relative bounds
-  have hB' : ‖B‖ ≤ C₁ / x * γ₀ := by
-    refine hB.trans ?_
-    calc Real.pi ^ 2 / (2 * x) * (Real.sqrt (Real.pi / (x / Real.pi ^ 2)) / 2) ≤
-          Real.pi ^ 2 / (2 * x) * (k₁ * γ₀) := by gcongr
-      _ = C₁ / x * γ₀ := by rw [hC₁]; field_simp
-  have hAG' : ‖A - G‖ ≤ C₂ / x * γ₀ := by
-    refine hAG.trans ?_
+  rw [integral_cexp_neg_mul_one_sub_cos_mul] at hB
+  rw [integral_cexp_neg_mul_one_sub_cos, ← hGdef] at hAG
+  have hC₁le : C₁ / x * γ₀ ≤ (C₁ + C₂) / x * γ₀ := by gcongr; linarith
+  have hC₂le : C₂ / x * γ₀ ≤ (C₁ + C₂) / x * γ₀ := by gcongr; linarith
+  constructor
+  · refine hAG.trans (le_trans ?_ hC₂le)
     have h1 : ‖z‖ * Real.pi ^ 4 / (12 * x ^ 2) ≤ K * Real.pi ^ 4 / 12 / x := by
       rw [div_le_div_iff₀ (by positivity) hx0]
       have := mul_le_mul_of_nonneg_right hzK (by positivity : 0 ≤ Real.pi ^ 4 * x)
@@ -751,35 +747,58 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
           K * Real.pi ^ 4 / 12 / x * (k₁ * γ₀) + 4 / Real.pi ^ 2 / x * (k₂ * γ₀) := by
           gcongr
       _ = C₂ / x * γ₀ := by rw [hC₂]; field_simp
+  · refine hB.trans (le_trans ?_ hC₁le)
+    calc Real.pi ^ 2 / (2 * x) * (Real.sqrt (Real.pi / (x / Real.pi ^ 2)) / 2) ≤
+          Real.pi ^ 2 / (2 * x) * (k₁ * γ₀) := by gcongr
+      _ = C₁ / x * γ₀ := by rw [hC₁]; field_simp
+
+/-- **Large-argument limit of `I₀/I₁` in a sector**, with rate: for every `K > 0` there are
+`C` and `x₀ > 0` such that `I₀(z) ≠ 0`, `I₁(z) ≠ 0` and `‖I₀(z)/I₁(z) − 1‖ ≤ C/Re z` whenever
+`Re z ≥ x₀` and `‖z‖ ≤ K Re z` (the closed sector `|arg z| ≤ arccos(1/K)`). -/
+@[powerlib_foundation] theorem besselI0_div_besselI1_sub_one_le {K : ℝ} (hK : 0 < K) :
+    ∃ C x₀ : ℝ, 0 < x₀ ∧ ∀ z : ℂ, x₀ ≤ z.re → ‖z‖ ≤ K * z.re →
+      besselI0 z ≠ 0 ∧ besselI1 z ≠ 0 ∧ ‖besselI0 z / besselI1 z - 1‖ ≤ C / z.re := by
+  obtain ⟨C, hC0, hC⟩ := besselI_laplace_le hK
+  refine ⟨4 * C, max 1 (4 * C), lt_max_of_lt_left one_pos, ?_⟩
+  intro z hx hzK
+  set x := z.re with hxdef
+  have hx1 : 1 ≤ x := le_trans (le_max_left _ _) hx
+  have hx0 : 0 < x := by linarith
+  have hxC : 4 * C ≤ x := le_trans (le_max_right _ _) hx
+  obtain ⟨hAG, hB⟩ := hC z hx0 hzK
+  set G := ∫ θ in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (θ : ℂ) ^ 2) with hGdef
+  set A := Complex.exp (-z) * (Real.pi * besselI0 z) with hAdef
+  set B := Complex.exp (-z) * (Real.pi * besselI0 z - Real.pi * besselI1 z) with hBdef
+  set γ₀ := ‖G‖ with hγ₀def
+  have hγ₀ : 0 < γ₀ := by
+    rw [hγ₀def, hGdef, norm_integral_gaussian_half hx0]
+    have hz0 : 0 < ‖z‖ := lt_of_lt_of_le hx0 (Complex.re_le_norm z)
+    positivity
   -- `‖A‖ ≥ γ₀/2`
   have hA : γ₀ / 2 ≤ ‖A‖ := by
-    have h1 : C₂ / x * γ₀ ≤ γ₀ / 2 := by
-      have : C₂ / x ≤ 1 / 2 := by rw [div_le_iff₀ hx0]; linarith
+    have h1 : C / x * γ₀ ≤ γ₀ / 2 := by
+      have : C / x ≤ 1 / 2 := by rw [div_le_iff₀ hx0]; linarith
       nlinarith
     have := norm_sub_norm_le G (G - A)
-    rw [sub_sub_cancel, norm_sub_rev, hG] at this
+    rw [sub_sub_cancel, norm_sub_rev] at this
     linarith
   have hA0 : A ≠ 0 := by
     intro h; rw [h, norm_zero] at hA; linarith
-  -- relation with the Bessel functions
-  have hAeq : A = Complex.exp (-z) * (Real.pi * besselI0 z) := integral_cexp_neg_mul_one_sub_cos z
-  have hBeq : B = Complex.exp (-z) * (Real.pi * besselI0 z - Real.pi * besselI1 z) :=
-    integral_cexp_neg_mul_one_sub_cos_mul z
   have hE : Complex.exp (-z) ≠ 0 := Complex.exp_ne_zero _
   have hπc : (Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
   have hI0 : besselI0 z ≠ 0 := by
-    intro h; apply hA0; rw [hAeq, h]; simp
+    intro h; apply hA0; rw [hAdef, h]; simp
   set q := B / A with hqdef
-  have hq : ‖q‖ ≤ 2 * C₁ / x := by
+  have hq : ‖q‖ ≤ 2 * C / x := by
     rw [hqdef, norm_div, div_le_iff₀ (by linarith)]
-    calc ‖B‖ ≤ C₁ / x * γ₀ := hB'
-      _ = 2 * C₁ / x * (γ₀ / 2) := by ring
-      _ ≤ 2 * C₁ / x * ‖A‖ := by gcongr
+    calc ‖B‖ ≤ C / x * γ₀ := hB
+      _ = 2 * C / x * (γ₀ / 2) := by ring
+      _ ≤ 2 * C / x * ‖A‖ := by gcongr
   have hq2 : ‖q‖ ≤ 1 / 2 := by
     refine hq.trans ?_
     rw [div_le_iff₀ hx0]; linarith
   have hqI : besselI1 z / besselI0 z = 1 - q := by
-    rw [hqdef, hAeq, hBeq]
+    rw [hqdef, hAdef, hBdef]
     field_simp
     ring
   have h1q : ‖1 - q‖ ≥ 1 / 2 := by
@@ -797,9 +816,9 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
     rw [this]; field_simp; ring
   rw [e, norm_div]
   rw [div_le_iff₀ (by linarith)]
-  calc ‖q‖ ≤ 2 * C₁ / x := hq
-    _ = 4 * C₁ / x * (1 / 2) := by ring
-    _ ≤ 4 * C₁ / x * ‖1 - q‖ := by gcongr
+  calc ‖q‖ ≤ 2 * C / x := hq
+    _ = 4 * C / x * (1 / 2) := by ring
+    _ ≤ 4 * C / x * ‖1 - q‖ := by gcongr
 
 /-- **`I₀(z)/I₁(z) → 1` as `z → ∞` in a sector**: along any `f` with `Re f → +∞` and eventually
 `‖f‖ ≤ K Re f`. -/
