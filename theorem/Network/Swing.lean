@@ -60,14 +60,24 @@ Family and connection conclusions.
   `mem_den_unstable`. Boundary witness: the instability translation is not exact
   (`not_exact_unstable`): instability is the failure of Lyapunov stability, so an unbalanced
   network (`offEquilibrium`) is unstable (`offEquilibrium_mem_den_unstable`,
-  `Dynamics.unstable_of_ne_zero`) while the translation asks for power balance. The Lyapunov
-  translation is not exact (`not_exact_lyapunovStable_two`, two machines): two uncoupled machines
-  (`uncoupled`, `B = 0`) are Lyapunov stable (`uncoupled_mem_den_lyapunovStable`: the relative angle
-  plus the frequency difference is conserved and the frequencies decay) while their reduced Jacobian
-  has a zero column (`uncoupled_not_isHurwitz`). Exactness of the local asymptotic translation is not
-  claimed (UNPROVED): a power-balance point with a singular reduced Laplacian beyond the angle
-  reference is not decided by the linearization (a degenerate strict minimum of the network
-  potential would be asymptotically stable by LaSalle, a fold is not).
+  `Dynamics.unstable_of_ne_zero`) while the translation asks for power balance.
+* Lyapunov translation: not exact for every network of at least two machines
+  (`not_exact_lyapunovStable`, `n + 2` machines): `n + 2` uncoupled machines (`uncoupledN`, `B = 0`)
+  are Lyapunov stable (`uncoupledN_mem_den_lyapunovStable`: in the block coordinates
+  `(δᵢ + ω_{i+1} − ω₀, ω)`, built with `Fin.addCases`, the first block is conserved and the
+  frequencies decay) while their reduced Jacobian has a zero column (`uncoupledN_not_isHurwitz`);
+  the two-machine instance `not_exact_lyapunovStable_two` (`uncoupled`) is kept. For a single machine
+  (`n = 0`) it is exact (`exact_lyapunovStable_zero`; `jacobian_isHurwitz_zero`).
+* Local asymptotic translation `{powerFlow, jacobianStable}`, decided per number of machines:
+  exact for one machine (`exact_locallyAsymptoticallyStable_zero`, here), two machines
+  (`exact_locallyAsymptoticallyStable_two`) and three machines
+  (`exact_locallyAsymptoticallyStable_three`) in `theorem/Network/SwingDegenerate.lean`; not exact
+  for five or more machines (`not_exact_locallyAsymptoticallyStable`, `n + 5` machines, a five-machine
+  ring with a degenerate strict minimum of the network potential plus unit leaves) in
+  `theorem/Network/SwingDegenerateRing.lean`. The complete membership characterization for every
+  `n` is `mem_den_locallyAsymptoticallyStable_iff` (power balance, a strict local minimum of the
+  network potential in relative angles, and an isolated power-balance point). UNPROVED: exactness
+  for exactly four machines (`n = 3`); see `theorem/Network/SwingDegenerate.lean`.
 * Static evidence (formerly `@[powerlib_domain]`): `fullField_equilibrium_shift`,
   `reducedField_reduce`, `reducedField_equilibrium`, and the new `jacobian_isHurwitz_of_angle`.
   Private implementation evidence (trajectory level, Rules §3a): `reduce_trajectory`.
@@ -871,5 +881,165 @@ machines are Lyapunov stable at a power-balance point whose reduced Jacobian is 
   rw [← h, TMIO.mem_realize] at hmem
   have hj : Meets uncoupled .jacobianStable := hmem .jacobianStable (by simp [family, translate])
   exact uncoupled_not_isHurwitz hj
+
+/-! ### The Lyapunov translation for every number of machines -/
+
+/-- `n + 2` uncoupled machines: unit inertia and damping, no power, no coupling, `θ* = 0`. In the
+reduced state the field is `δ̇ᵢ = ω_{i+1} − ω₀`, `ω̇ₖ = −ωₖ`. -/
+def uncoupledN (n : ℕ) : Model (n + 1) :=
+  ⟨⟨fun _ => 1, fun _ => 1, fun _ => 0, 0, fun _ => one_pos, fun _ => one_pos,
+    fun _ _ => rfl, fun _ _ => le_rfl⟩, 0⟩
+
+private theorem uncoupledN_point : equilibrium (uncoupledN n).θ = 0 := by
+  apply state_ext
+  · intro i; simp [equilibrium, uncoupledN]
+  · intro k; simp [equilibrium, uncoupledN]
+
+private theorem uncoupledN_field_d (z : State (n + 1 + (n + 1 + 1))) (i : Fin (n + 1)) :
+    (uncoupledN n).field z (dIdx i) = z (wIdx i.succ) - z (wIdx 0) := by
+  simp [Model.field, uncoupledN_point]
+
+private theorem uncoupledN_field_w (z : State (n + 1 + (n + 1 + 1))) (k : Fin (n + 1 + 1)) :
+    (uncoupledN n).field z (wIdx k) = - z (wIdx k) := by
+  show reducedField _ (z + equilibrium (uncoupledN n).θ) (wIdx k) = _
+  rw [uncoupledN_point, add_zero, reducedField_wIdx]
+  simp [uncoupledN, powerInjection]
+
+/-- The block coordinates `(δᵢ + ω_{i+1} − ω₀, ω)` (built with `Fin.addCases`): the first block is
+conserved by the uncoupled field. -/
+private def conservedLin (m : ℕ) : State (m + (m + 1)) →ₗ[ℝ] State (m + (m + 1)) where
+  toFun z := WithLp.toLp 2 fun r => Fin.addCases (motive := fun _ => ℝ)
+    (fun i => z (dIdx i) + z (wIdx i.succ) - z (wIdx 0)) (fun k => z (wIdx k)) r
+  map_add' z w := by
+    apply state_ext
+    · intro i; simp; ring
+    · intro k; simp
+  map_smul' c z := by
+    apply state_ext
+    · intro i; simp; ring
+    · intro k; simp
+
+private theorem conservedLin_d {m : ℕ} (z : State (m + (m + 1))) (i : Fin m) :
+    conservedLin m z (dIdx i) = z (dIdx i) + z (wIdx i.succ) - z (wIdx 0) := by
+  simp [conservedLin]
+
+private theorem conservedLin_w {m : ℕ} (z : State (m + (m + 1))) (k : Fin (m + 1)) :
+    conservedLin m z (wIdx k) = z (wIdx k) := by
+  simp [conservedLin]
+
+private theorem conservedLin_injective (m : ℕ) : Function.Injective (conservedLin m) := by
+  intro z w h
+  have hw : ∀ k, z (wIdx k) = w (wIdx k) := fun k => by
+    have := congrArg (fun y : State (m + (m + 1)) => y (wIdx k)) h
+    simpa [conservedLin_w] using this
+  apply state_ext _ hw
+  intro i
+  have := congrArg (fun y : State (m + (m + 1)) => y (dIdx i)) h
+  simp only [conservedLin_d, hw] at this
+  linarith
+
+/-- `n + 2` uncoupled machines are Lyapunov stable: in the block coordinates
+`(δᵢ + ω_{i+1} − ω₀, ω)` the first block is conserved and the frequencies decay, so the quadratic
+energy `∑ᵢ (δᵢ + ω_{i+1} − ω₀)² + ∑ₖ ωₖ²` does not increase. -/
+@[powerlib_domain] theorem uncoupledN_mem_den_lyapunovStable :
+    connection% (uncoupledN n ∈ family.den (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [family_isAutonomous.mem_den_flow]
+  refine Dynamics.lyapunovStable_of_inner_nonpos (by omega)
+    (LinearMap.toContinuousLinearMap (conservedLin (n + 1))) (conservedLin_injective _)
+    fun z => ?_
+  simp only [LinearMap.coe_toContinuousLinearMap', PiLp.inner_apply, RCLike.inner_apply,
+    conj_trivial]
+  rw [sum_state]
+  have h1 : ∀ i : Fin (n + 1), conservedLin (n + 1) ((uncoupledN n).field z) (dIdx i) = 0 := by
+    intro i
+    rw [conservedLin_d, uncoupledN_field_d, uncoupledN_field_w, uncoupledN_field_w]
+    ring
+  simp only [h1, zero_mul, Finset.sum_const_zero, zero_add, conservedLin_w, uncoupledN_field_w]
+  exact Finset.sum_nonpos fun k _ => by nlinarith [sq_nonneg (z (wIdx k))]
+
+/-- The reduced Jacobian of `n + 2` uncoupled machines is not Hurwitz (the column of `δ₀` is zero).
+Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem uncoupledN_not_isHurwitz :
+    ¬ LinearSystems.IsHurwitz (jacobian (uncoupledN n).params (uncoupledN n).θ) := by
+  intro hH
+  apply Dynamics.mulVec_ne_zero_of_isHurwitz hH (v := Pi.single (dIdx 0) 1)
+  · intro h
+    have := congrFun h (dIdx 0)
+    simp at this
+  · rw [Matrix.mulVec_single]
+    funext r
+    refine Fin.addCases (fun i => ?_) (fun k => ?_) r
+    · have h := jacobian_dd (uncoupledN n).params (uncoupledN n).θ i 0
+      simp only [Pi.smul_apply, Matrix.col_apply, op_smul_eq_mul, mul_one, Pi.zero_apply]
+      exact h
+    · have h := jacobian_wd (uncoupledN n).params (uncoupledN n).θ k 0
+      simp only [Pi.smul_apply, Matrix.col_apply, op_smul_eq_mul, mul_one, Pi.zero_apply]
+      rw [h]
+      simp [uncoupledN, laplacian, flowWeights]
+
+/-- **The Lyapunov translation is not exact for any network of at least two machines**
+(`n + 2` machines, every `n`): `n + 2` uncoupled machines are Lyapunov stable at a power-balance
+point whose reduced Jacobian is not Hurwitz. -/
+@[powerlib_domain] theorem not_exact_lyapunovStable :
+    connection% (¬ (family (n := n + 1)).Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := uncoupledN_mem_den_lyapunovStable (n := n)
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hj : Meets (uncoupledN n) .jacobianStable :=
+    hmem .jacobianStable (by simp [family, translate])
+  exact uncoupledN_not_isHurwitz hj
+
+/-! ### A single machine -/
+
+/-- The reduced Jacobian of a single machine (`n = 0`, the frequency alone) is Hurwitz. Static
+evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem jacobian_isHurwitz_zero (p : Params 0) (θ : Fin 1 → ℝ) :
+    LinearSystems.IsHurwitz (jacobian p θ) := by
+  have hij : ∀ i j : Fin (0 + 1), i = j := fun i j => Fin.ext (by omega)
+  refine jacobian_isHurwitz p θ (fun i j => ?_) (fun i j => ?_)
+  · rw [hij i j]
+    simp [flowWeights, p.B_nonneg]
+  · rw [hij i j]
+    exact Relation.ReflTransGen.refl
+
+/-- For a single machine the three local translations agree with the semantics for every sentence
+that forces an equilibrium: a Lyapunov stable point of the `C¹` field is a power-balance point, and
+the reduced Jacobian is always Hurwitz. -/
+private theorem exact_zero_of_imp {P : Flow.Property}
+    (htr : translate (.flow P) = {.powerFlow, .jacobianStable})
+    (hLS : ∀ {f : State (0 + (0 + 1)) → State (0 + (0 + 1))} {x : State (0 + (0 + 1))},
+      P.holds f x → LyapunovStable f x)
+    (hsound : ∀ m : Model 0, Meets m .powerFlow → Meets m .jacobianStable →
+      m ∈ family.den (.flow P)) :
+    (family (n := 0)).Exact (.flow P) := by
+  ext m
+  rw [TMIO.mem_realize]
+  simp only [family, htr, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
+    forall_eq]
+  constructor
+  · rintro ⟨hp, hH⟩
+    exact hsound m hp hH
+  · intro hm
+    have h := hLS (mem_den_flow_iff.mp hm)
+    exact ⟨powerFlow_of_equilibrium (Dynamics.isEquilibrium_of_lyapunovStable
+      (reducedField_contDiff m.params) h), jacobian_isHurwitz_zero _ _⟩
+
+/-- For a single machine (`n = 0`) the Lyapunov translation is exact. -/
+@[powerlib_domain] theorem exact_lyapunovStable_zero :
+    connection% ((family (n := 0)).Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  exact exact_zero_of_imp rfl id fun m hp hH =>
+    mem_den_flow_iff.mpr (mem_den_flow_iff.mp (les_of_meets hp hH)).lyapunovStable
+
+/-- For a single machine (`n = 0`) the local asymptotic translation is exact. -/
+@[powerlib_domain] theorem exact_locallyAsymptoticallyStable_zero :
+    connection% ((family (n := 0)).Exact (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  exact exact_zero_of_imp rfl (fun h => h.1) fun m hp hH =>
+    mem_den_flow_iff.mpr (Flow.locallyExponentiallyStable_localAsymptoticStable
+      (mem_den_flow_iff.mp (les_of_meets hp hH)))
 
 end powerlib.Network.Swing
