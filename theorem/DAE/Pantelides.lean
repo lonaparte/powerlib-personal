@@ -54,12 +54,26 @@ Results.
 * Necessity (`exists_infinite_run`, `pantelides_terminates_iff`): if no transversal exists, there
   is an infinite run; hence "every run terminates" is equivalent to structural nonsingularity
   (`StructurallyNonsingular`, a nonsingular real matrix with the occurrence pattern).
-* Relation to Pryce (`pryce_le_pantelides`): at a terminal state, Pryce's least offsets for the
-  final assignment are componentwise at most Pantelides' counts `(c, d)` (equality, claimed in
-  §1.5 of the note, is not formalized).
+* Relation to Pryce — **equality, for every run** (§1.5 of the note). `pryce_le_pantelides`: at
+  a reachable state with assignment `σ`, Pryce's least offsets for `σ` are componentwise at most
+  Pantelides' counts `(c, d)`. Conversely (`differentiate_le`, `le_of_reaches`), along every run
+  the counts stay below every pair of offsets that is dual feasible and tight on some transversal
+  (every optimal dual solution of the assignment problem): a failed search can only colour
+  equations and variables whose optimal offsets are strictly above the current counts. Hence
+  `pryce_eq_pantelides`: Pryce's offsets on the final assignment *equal* `(c, d)`;
+  `pryce_eq_pantelides_of_highestValue`: the same holds for Pryce's offsets on any
+  highest-value transversal. Uniqueness question: the step relation is nondeterministic (choice
+  of the processed equation, choice of the augmenting matching) and different runs may end with
+  different assignments, but `pantelides_offsets_unique` shows that all terminating runs end with
+  the same counts `(c, d)` — the componentwise least optimal dual offsets (Pryce's canonical
+  offsets). So the correct form of the note's claim is "all runs give Pryce's offsets", not
+  merely "some run does" (`pantelides_eq_of_least` computes the counts from least offsets).
 * Examples: termination on the pendulum and on the index-formula counterexample of
-  `theorem.DAE.Pryce` (`pendulum_pantelides_terminates`, `example_pantelides_terminates`), and an
-  infinite run on a structurally singular pattern (`singular_pantelides_nonterminating`).
+  `theorem.DAE.Pryce` (`pendulum_pantelides_terminates`, `example_pantelides_terminates`); every
+  terminating run on the pendulum ends with `c = (1,1,0,0,2)`, `d = (2,2,1,1,0)`
+  (`pendulum_offsets_least`, `pendulum_pantelides_counts`); on the counterexample no run ever
+  differentiates (`example_pantelides_counts`); an infinite run on a structurally singular
+  pattern (`singular_pantelides_nonterminating`).
 
 Model boundary: structural (occurrence/order pattern) analysis only. No claim is made that the
 number of differentiations equals the differentiation index (the note's "key lemma"
@@ -658,6 +672,219 @@ Pantelides' algorithm. -/
   obtain ⟨N, -, hfix, hdf, htt, hmin⟩ := S.pryce_iteration_terminates htr hv.1 ht
   exact ⟨N, hfix, hdf, htt, hmin st.c st.d hv.1 ht⟩
 
+/-! ## Equality with Pryce's offsets (all runs) -/
+
+omit [DecidableEq ι] in
+/-- Complementary slackness for the assignment LP: dual-feasible offsets whose dual objective
+`Σ d - Σ c` equals the value of a transversal `τ` are tight on `τ`. -/
+@[powerlib_foundation] theorem isTight_of_value_add_eq {τ : Equiv.Perm ι} {c d : ι → ℕ}
+    (hτ : S.IsTransversal τ) (hf : S.IsDualFeasible c d) (h : S.value τ + ∑ i, c i = ∑ j, d j) :
+    S.IsTight τ c d := by
+  intro i
+  have hle : ∀ i ∈ (univ : Finset ι), S.order i (τ i) + c i ≤ d (τ i) :=
+    fun i _ => hf i (τ i) (hτ i)
+  have hsum : ∑ i, (S.order i (τ i) + c i) = ∑ i, d (τ i) := by
+    rw [sum_add_distrib, Equiv.sum_comp τ d]; exact h
+  exact (Finset.sum_eq_sum_iff_of_le hle).mp hsum i (mem_univ i)
+
+/-- Key step of the equality: a failed search keeps Pantelides' counts below every optimal dual
+solution. Let `(c, d)` be dual feasible and tight on a transversal `τ`, with
+`(st.c, st.d) ≤ (c, d)`. Then every coloured equation has `st.c l < c l` (and hence every
+coloured variable `st.d j < d j`), so the differentiated state is still below `(c, d)`.
+Proof: let `R₀` (`J₀`) be the coloured equations (variables) where the bound is attained. `τ`
+maps `R₀` injectively into `J₀` (an attained tight `τ`-edge is a current highest-derivative edge),
+and the assignment maps `R₀ \ {i}` onto `J₀` (an attained variable is assigned to an attained
+equation). Counting gives `i ∉ R₀` and `assign(R₀) = J₀`; then `R₀` is empty, because the
+complement of `R₀` among the coloured equations contains the root and is closed under the
+alternating search (a strict bound at `l` is strict at every highest-derivative neighbour of
+`l`, which is not in `J₀`, so its assigned equation is not in `R₀`). -/
+@[powerlib_foundation] theorem differentiate_le {st : PantelidesState ι} {i : ι}
+    (hv : S.Valid st) (hi : st.assign i = none) (hfail : S.SearchFails st i)
+    {τ : Equiv.Perm ι} (hτ : S.IsTransversal τ) {c d : ι → ℕ} (hf : S.IsDualFeasible c d)
+    (ht : S.IsTight τ c d) (hle : (st.c, st.d) ≤ (c, d)) :
+    ((S.differentiate st i).c, (S.differentiate st i).d) ≤ (c, d) := by
+  classical
+  obtain ⟨hfst, htight, -⟩ := hv
+  have hcle : ∀ l, st.c l ≤ c l := hle.1
+  have hdle : ∀ j, st.d j ≤ d j := hle.2
+  set R0 := univ.filter fun l => S.Reach st i l ∧ c l = st.c l with hR0
+  set J0 := univ.filter fun j => (∃ l, S.Reach st i l ∧ S.Tight st.c st.d l j) ∧ d j = st.d j
+    with hJ0
+  set g : ι → ι := fun x => (st.assign x).getD i with hg
+  have hτR : ∀ l ∈ R0, τ l ∈ J0 := by
+    intro l hl
+    simp only [R0, mem_filter, mem_univ, true_and] at hl
+    obtain ⟨hlr, hlc⟩ := hl
+    have h1 := ht l
+    have h2 := hfst l (τ l) (hτ l)
+    have h3 := hdle (τ l)
+    have heq : S.order l (τ l) + st.c l = st.d (τ l) := by omega
+    simp only [J0, mem_filter, mem_univ, true_and]
+    exact ⟨⟨l, hlr, hτ l, heq⟩, by omega⟩
+  have hJR : ∀ j ∈ J0, ∃ x ∈ R0.erase i, g x = j := by
+    intro j hj
+    simp only [J0, mem_filter, mem_univ, true_and] at hj
+    obtain ⟨⟨l, hl, htj⟩, hdj⟩ := hj
+    obtain ⟨x, hx⟩ := hfail l j hl htj
+    have hxr := S.reach_of_assign hl htj hx
+    obtain ⟨hocc, heq⟩ := htight x j hx
+    have h1 := hf x j hocc
+    have h2 := hcle x
+    refine ⟨x, ?_, by simp [g, hx]⟩
+    simp only [R0, mem_erase, mem_filter, mem_univ, true_and]
+    refine ⟨fun hxi => (by rw [hxi, hi] at hx; cases hx), hxr, by omega⟩
+  have hc1 : R0.card ≤ J0.card :=
+    card_le_card_of_injOn τ (fun l hl => hτR l hl) τ.injective.injOn
+  have hsub : J0 ⊆ (R0.erase i).image g := fun j hj => by
+    obtain ⟨x, hx, hgx⟩ := hJR j hj
+    exact mem_image.mpr ⟨x, hx, hgx⟩
+  have hc2 := card_le_card hsub
+  have hc3 : ((R0.erase i).image g).card ≤ (R0.erase i).card := card_image_le
+  have hiR : i ∉ R0 := fun hiR => by
+    have := card_erase_of_mem hiR
+    have := card_pos.mpr ⟨i, hiR⟩
+    omega
+  have hc4 : (R0.erase i).card ≤ R0.card := card_erase_le
+  have hJeq : J0 = (R0.erase i).image g := eq_of_subset_of_card_le hsub (by omega)
+  have hRJ : ∀ x ∈ R0, g x ∈ J0 := fun x hx => by
+    rw [hJeq]
+    exact mem_image_of_mem g (mem_erase.mpr ⟨fun h => hiR (h ▸ hx), hx⟩)
+  have hlt : ∀ k l, S.reachWithin st i k l → st.c l < c l := by
+    intro k
+    induction k with
+    | zero =>
+      intro l hl
+      have hl' : l = i := hl
+      subst hl'
+      by_contra hcx
+      exact hiR (by
+        simp only [R0, mem_filter, mem_univ, true_and]
+        exact ⟨S.reach_self st l, by have := hcle l; omega⟩)
+    | succ k ih =>
+      rintro x (hx | ⟨l, j, hl, htj, hxj⟩)
+      · exact ih x hx
+      · have hcl := ih l hl
+        by_contra hcx
+        have hxR0 : x ∈ R0 := by
+          simp only [R0, mem_filter, mem_univ, true_and]
+          exact ⟨S.reach_of_assign ⟨k, hl⟩ htj hxj, by have := hcle x; omega⟩
+        have hgx := hRJ x hxR0
+        simp only [g, hxj, Option.getD_some, J0, mem_filter, mem_univ, true_and] at hgx
+        have h1 := hf l j htj.1
+        have h2 := htj.2
+        omega
+  refine ⟨fun l => ?_, fun j => ?_⟩
+  · simp only [differentiate]
+    split_ifs with h
+    · obtain ⟨k, hk⟩ := h
+      have := hlt k l hk
+      omega
+    · simpa using hcle l
+  · simp only [differentiate]
+    split_ifs with h
+    · obtain ⟨l, ⟨k, hk⟩, htj⟩ := h
+      have h0 := hlt k l hk
+      have h1 := hf l j htj.1
+      have h2 := htj.2
+      omega
+    · simpa using hdle j
+
+
+/-- Every step keeps the counts below a dual-feasible `(c, d)` tight on a transversal (an
+augmentation does not change the counts; a differentiation is `differentiate_le`). -/
+@[powerlib_foundation] theorem Step.le_of_le {st st' : PantelidesState ι} (hv : S.Valid st)
+    (h : S.Step st st') {τ : Equiv.Perm ι} (hτ : S.IsTransversal τ) {c d : ι → ℕ}
+    (hf : S.IsDualFeasible c d) (ht : S.IsTight τ c d) (hle : (st.c, st.d) ≤ (c, d)) :
+    (st'.c, st'.d) ≤ (c, d) := by
+  cases h with
+  | augment i a _ _ _ _ _ => exact hle
+  | differentiate i hi hfail => exact S.differentiate_le hv hi hfail hτ hf ht hle
+
+omit [DecidableEq ι] in
+/-- The initial counts are below every dual-feasible pair of offsets. -/
+@[powerlib_foundation] theorem initial_le {c d : ι → ℕ} (hf : S.IsDualFeasible c d) :
+    (S.initial.c, S.initial.d) ≤ (c, d) := by
+  refine ⟨fun l => Nat.zero_le _, fun j => Finset.sup_le fun l hl => ?_⟩
+  have := hf l j (by simpa using hl)
+  change S.order l j ≤ d j
+  omega
+
+/-- **Pantelides' counts are below every optimal dual solution**: at every state reachable from
+the initial state (along any run), `(c, d)` is componentwise at most every pair of offsets that
+is dual feasible and tight on some transversal (equivalently, by complementary slackness, every
+optimal solution of the dual of the assignment problem). -/
+@[powerlib_foundation] theorem le_of_reaches {st : PantelidesState ι}
+    (hr : Relation.ReflTransGen S.Step S.initial st) {τ : Equiv.Perm ι} (hτ : S.IsTransversal τ)
+    {c d : ι → ℕ} (hf : S.IsDualFeasible c d) (ht : S.IsTight τ c d) :
+    (st.c, st.d) ≤ (c, d) := by
+  induction hr with
+  | refl => exact S.initial_le hf
+  | tail hr' hs ih => exact hs.le_of_le S (S.valid_of_reaches hr') hτ hf ht ih
+
+/-- **Pryce's offsets equal Pantelides' counts** (T-pantelides-index-reduction §1.5), for every
+run: at a reachable state assigning each equation `i` to `σ i` (in particular at the terminal
+state of any run), Pryce's fixed-point iteration on `σ` stops exactly at the differentiation
+counts `c` and highest derivative orders `d` produced by Pantelides' algorithm. The `≤` half is
+`pryce_le_pantelides`; the `≥` half is `le_of_reaches` applied to Pryce's offsets. -/
+@[powerlib_foundation] theorem pryce_eq_pantelides {st : PantelidesState ι}
+    (hr : Relation.ReflTransGen S.Step S.initial st) {σ : Equiv.Perm ι}
+    (hσ : ∀ i, st.assign i = some (σ i)) :
+    ∃ N, S.pryceStep σ (S.pryceIter σ N) = S.pryceIter σ N ∧
+      S.IsDualFeasible (S.pryceIter σ N).1 (S.pryceIter σ N).2 ∧
+      S.IsTight σ (S.pryceIter σ N).1 (S.pryceIter σ N).2 ∧ S.pryceIter σ N = (st.c, st.d) := by
+  have hv := S.valid_of_reaches hr
+  have htr : S.IsTransversal σ := fun i => (hv.2.1 i (σ i) (hσ i)).1
+  obtain ⟨N, hfix, hdf, htt, hle⟩ := S.pryce_le_pantelides hr hσ
+  exact ⟨N, hfix, hdf, htt, le_antisymm hle (S.le_of_reaches hr htr hdf htt)⟩
+
+/-- Pryce's offsets computed on **any** highest-value transversal `τ` (not necessarily the
+assignment found by the run) equal the counts at the terminal state of any run. -/
+@[powerlib_foundation] theorem pryce_eq_pantelides_of_highestValue {st : PantelidesState ι}
+    (hr : Relation.ReflTransGen S.Step S.initial st) (hfin : st.IsFinal) {τ : Equiv.Perm ι}
+    (hτ : S.IsTransversal τ) (hmax : ∀ τ', S.IsTransversal τ' → S.value τ' ≤ S.value τ) :
+    ∃ N, S.pryceStep τ (S.pryceIter τ N) = S.pryceIter τ N ∧
+      S.IsDualFeasible (S.pryceIter τ N).1 (S.pryceIter τ N).2 ∧
+      S.IsTight τ (S.pryceIter τ N).1 (S.pryceIter τ N).2 ∧ S.pryceIter τ N = (st.c, st.d) := by
+  have hv := S.valid_of_reaches hr
+  obtain ⟨σ, -, hσ, hdf, ht⟩ := S.exists_perm_of_isFinal hv hfin
+  have h1 := S.value_add_eq ht
+  have h2 := S.value_add_le hτ hdf
+  have h3 := hmax σ hσ
+  have htτ : S.IsTight τ st.c st.d := S.isTight_of_value_add_eq hτ hdf (by omega)
+  obtain ⟨N, -, hfix, hdf', htt', hmin⟩ := S.pryce_iteration_terminates hτ hdf htτ
+  exact ⟨N, hfix, hdf', htt', le_antisymm (hmin _ _ hdf htτ) (S.le_of_reaches hr hτ hdf' htt')⟩
+
+/-- **The counts do not depend on the run.** The step relation is nondeterministic (the
+processed equation and the augmenting matching are arbitrary), and different runs may end with
+different assignments, but any two terminal states reachable from the initial state have the
+same differentiation counts `c` and the same highest derivative orders `d`. -/
+@[powerlib_foundation] theorem pantelides_offsets_unique {st st' : PantelidesState ι}
+    (hr : Relation.ReflTransGen S.Step S.initial st) (hfin : st.IsFinal)
+    (hr' : Relation.ReflTransGen S.Step S.initial st') (hfin' : st'.IsFinal) :
+    st.c = st'.c ∧ st.d = st'.d := by
+  obtain ⟨σ, -, hσ, hdf, ht⟩ := S.exists_perm_of_isFinal (S.valid_of_reaches hr) hfin
+  obtain ⟨σ', -, hσ', hdf', ht'⟩ := S.exists_perm_of_isFinal (S.valid_of_reaches hr') hfin'
+  have h1 := S.le_of_reaches hr hσ' hdf' ht'
+  have h2 := S.le_of_reaches hr' hσ hdf ht
+  have h := le_antisymm h1 h2
+  exact ⟨congrArg Prod.fst h, congrArg Prod.snd h⟩
+
+/-- Computing Pantelides' counts from least offsets: if `(c, d)` is dual feasible, tight on a
+transversal `τ`, and componentwise least among such offsets, then every run that terminates
+ends with counts exactly `(c, d)`. -/
+@[powerlib_foundation] theorem pantelides_eq_of_least {st : PantelidesState ι}
+    (hr : Relation.ReflTransGen S.Step S.initial st) (hfin : st.IsFinal) {τ : Equiv.Perm ι}
+    (hτ : S.IsTransversal τ) {c d : ι → ℕ} (hf : S.IsDualFeasible c d) (ht : S.IsTight τ c d)
+    (hleast : ∀ c' d', S.IsDualFeasible c' d' → S.IsTight τ c' d' → c ≤ c' ∧ d ≤ d') :
+    st.c = c ∧ st.d = d := by
+  obtain ⟨N, -, -, htN, hN⟩ := S.pryce_eq_pantelides_of_highestValue hr hfin hτ
+    (fun τ' hτ' => S.value_le_of_tight hτ' hf ht)
+  have hle := S.le_of_reaches hr hτ hf ht
+  have hge := hleast (S.pryceIter τ N).1 (S.pryceIter τ N).2
+    (by have := S.valid_of_reaches hr; rw [hN]; exact this.1) htN
+  rw [hN] at hge
+  exact ⟨le_antisymm hle.1 hge.1, le_antisymm hle.2 hge.2⟩
+
 end Signature
 
 /-! ## Examples -/
@@ -675,6 +902,47 @@ end Signature
       ∀ k, exampleSig.Step (run k) (run (k + 1)) :=
   exampleSig.pantelides_terminates_iff.mpr
     (exampleSig.structurallyNonsingular_iff.mpr ⟨exampleσ, example_offsets.1⟩)
+
+/-- On the pendulum, `c = (1,1,0,0,2)`, `d = (2,2,1,1,0)` are the least offsets that are dual
+feasible and tight on `pendulumσ`. -/
+@[powerlib_foundation] theorem pendulum_offsets_least (c d : Fin 5 → ℕ)
+    (hf : pendulumSig.IsDualFeasible c d) (ht : pendulumSig.IsTight pendulumσ c d) :
+    pendulumC ≤ c ∧ pendulumD ≤ d := by
+  have f01 := hf 0 2 rfl
+  have f12 := hf 1 1 rfl
+  have f24 := hf 2 4 rfl
+  have f40 := hf 4 0 rfl
+  have f41 := hf 4 1 rfl
+  have f31 := hf 3 3 rfl
+  have t0 := ht 0
+  have t1 := ht 1
+  have t2 := ht 2
+  have t3 := ht 3
+  have t4 := ht 4
+  simp [pendulumSig, pendulumσ] at f01 f12 f24 f40 f41 f31 t0 t1 t2 t3 t4
+  refine ⟨fun i => ?_, fun j => ?_⟩
+  · fin_cases i <;> simp [pendulumC] <;> omega
+  · fin_cases j <;> simp [pendulumD] <;> omega
+
+/-- Every terminating run of Pantelides' algorithm on the pendulum differentiates the position
+equations `ṗ₁ = v₁`, `ṗ₂ = v₂` once and the constraint `p₁² + p₂² = L²` twice
+(`c = (1,1,0,0,2)`), and ends with highest derivatives `d = (2,2,1,1,0)` — Pryce's offsets
+(`pendulum_offsets`). -/
+@[powerlib_foundation] theorem pendulum_pantelides_counts {st : PantelidesState (Fin 5)}
+    (hr : Relation.ReflTransGen pendulumSig.Step pendulumSig.initial st) (hfin : st.IsFinal) :
+    st.c = pendulumC ∧ st.d = pendulumD :=
+  pendulumSig.pantelides_eq_of_least hr hfin pendulum_offsets.1 pendulum_offsets.2.1
+    pendulum_offsets.2.2.1 pendulum_offsets_least
+
+/-- On the index-formula counterexample, every reachable state has the counts `c = 0`,
+`d = (1,1,0)` (Pryce's offsets): Pantelides' algorithm never differentiates. -/
+@[powerlib_foundation] theorem example_pantelides_counts {st : PantelidesState (Fin 3)}
+    (hr : Relation.ReflTransGen exampleSig.Step exampleSig.initial st) :
+    st.c = exampleC ∧ st.d = exampleD := by
+  have hle := exampleSig.le_of_reaches hr example_offsets.1 example_offsets.2.1
+    example_offsets.2.2
+  have hge := example_offsets_least st.c st.d (exampleSig.valid_of_reaches hr).1
+  exact ⟨le_antisymm hle.1 hge.1, le_antisymm hle.2 hge.2⟩
 
 /-- A structurally singular pattern: two equations in `x₁` only (`x₂` occurs nowhere). -/
 def singularSig : Signature (Fin 2) where

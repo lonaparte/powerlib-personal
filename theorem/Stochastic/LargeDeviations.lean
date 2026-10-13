@@ -6,6 +6,8 @@ import Mathlib.Order.LiminfLimsup
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Probability.Moments.MGFAnalytic
 import Mathlib.Probability.IdentDistrib
+import Mathlib.Probability.Independence.InfinitePi
+import Mathlib.Probability.ConditionalProbability
 
 /-! # Large deviations: definitions, Chernoff bound, Freidlin–Wentzell action, quasi-potential
 
@@ -63,10 +65,20 @@ Main results.
   `−inf_{x ∈ G} I(x) ≤ liminf (1/n) log P(S_n/n ∈ G)` for every open `G` (written
   `⨆ x ∈ G, −I(x) ≤ liminf …`).
 
-UNPROVED here: Cramér's lower bound for **unbounded** i.i.d. summands at non-exposed points
-(`x` not of the form `Λ'(θ)` with `θ` interior to the effective domain, e.g. non-steep `Λ` or
-`Λ = ∞` off `0`); it needs a truncation argument (condition on `|X₀| ≤ R`, let `R → ∞`), not
-formalized.  For unbounded summands only the exposed-point form `cramer_lower_bound` is proved.
+* General i.i.d. summands (no boundedness or moment assumption; Dembo–Zeitouni Thm 2.2.3):
+  **`cramer_lower_bound_general`**: `−inf_{x ∈ G} I(x) ≤ liminf (1/n) log P(S_n/n ∈ G)` for every
+  open `G`, at every `x` (non-exposed points, non-steep `Λ`, `Λ = ∞` off `0`, `I(x) = ∞`
+  included).  Proof by truncation: for each level `M`, `cramer_lower_bound_of_bounded` is applied
+  to i.i.d. copies of `X₀` conditioned on `|X₀| ≤ M` (coordinates of the product measure
+  `Measure.infinitePi` of the conditioned law `ProbabilityTheory.cond`), and
+  `P(S_n/n ∈ G) ≥ P(|X₀| ≤ M)ⁿ ν_M^{⊗n}(S_n/n ∈ G)` (product measure restricted to the box);
+  this yields tilts `t` with `E[e^{t(X₀ − x)}; |X₀| ≤ M] ≤ e^{ℓ + ε}` (`ℓ` the `liminf`).  When
+  both `P(X₀ < x)` and `P(X₀ > x)` are positive the truncated exponential moments are coercive
+  in `t` uniformly in `M`, so the sublevel sets are nested nonempty compacts; their common point
+  `t` satisfies `E[e^{t(X₀ − x)}] ≤ e^ℓ` by monotone convergence `M → ∞`, i.e. `−I(x) ≤ ℓ`.  The
+  remaining cases `P(X₀ > x) = 0` / `P(X₀ < x) = 0` are the endpoint lemmas above.
+  The rate `I = cramerRate X₀` is the Legendre transform over the effective domain, i.e. the
+  classical `sup_{t ∈ ℝ} (t x − Λ(t))` with `Λ = +∞` off the domain.
 -/
 
 noncomputable section
@@ -1420,6 +1432,476 @@ where `I = ∞`) use `P(S_n/n ∈ G) ≥ P(X₀ ∈ (x − δ, x])ⁿ` and `I(x)
   exact le_iSup₂_of_le (f := fun x (_ : x ∈ G) =>
     ⨆ (_ : 0 < μ {ω | X 0 ω < x}) (_ : 0 < μ {ω | x < X 0 ω}), -cramerRate (X 0) μ x) x hx
     (le_iSup₂_of_le (pos_iff_ne_zero.mpr h2) (pos_iff_ne_zero.mpr h1) le_rfl)
+
+
+/-! ## Cramér lower bound: general (unbounded) i.i.d. summands, by truncation -/
+
+/-- The truncation event `{|Y| ≤ M}` is measurable. -/
+private theorem measurableSet_abs_le {Y : Ω → ℝ} (hY : Measurable Y) (M : ℝ) :
+    MeasurableSet {ω | |Y ω| ≤ M} :=
+  measurableSet_le (continuous_abs.measurable.comp hY) measurable_const
+
+/-- Exponential moments of `Y − x` on the truncation `{|Y| ≤ M}` are finite. -/
+private theorem integrable_exp_trunc [IsFiniteMeasure μ] {Y : Ω → ℝ} (hY : Measurable Y)
+    (x M t : ℝ) :
+    Integrable (fun ω => exp (t * (Y ω - x))) (μ.restrict {ω | |Y ω| ≤ M}) := by
+  have hb : ∀ᵐ ω ∂(μ.restrict {ω | |Y ω| ≤ M}), |Y ω - x| ≤ M + |x| := by
+    filter_upwards [ae_restrict_mem (measurableSet_abs_le hY M)] with ω hω
+    have h : |Y ω| ≤ M := hω
+    calc |Y ω - x| ≤ |Y ω| + |x| := abs_sub _ _
+      _ ≤ M + |x| := by linarith
+  have h := integrableExpSet_eq_univ (Y := fun ω => Y ω - x) (hY.sub_const x).aemeasurable hb
+  have ht : t ∈ integrableExpSet (fun ω => Y ω - x) (μ.restrict {ω | |Y ω| ≤ M}) := by
+    rw [h]; trivial
+  exact ht
+
+/-- Lower bound for the truncated exponential moment from a sub-event. -/
+private theorem le_mgf_trunc [IsFiniteMeasure μ] {Y : Ω → ℝ} (hY : Measurable Y) (x : ℝ)
+    {M t c : ℝ} {E : Set Ω} (hE : MeasurableSet E) (hsub : E ⊆ {ω | |Y ω| ≤ M})
+    (hc : ∀ ω ∈ E, c ≤ t * (Y ω - x)) :
+    exp c * μ.real E ≤ mgf (fun ω => Y ω - x) (μ.restrict {ω | |Y ω| ≤ M}) t := by
+  have hint := integrable_exp_trunc (μ := μ) hY x M t
+  have hle : μ.restrict E ≤ μ.restrict {ω | |Y ω| ≤ M} := Measure.restrict_mono hsub le_rfl
+  have h1 : ∫ ω in E, exp (t * (Y ω - x)) ∂μ ≤
+      mgf (fun ω => Y ω - x) (μ.restrict {ω | |Y ω| ≤ M}) t :=
+    integral_mono_measure hle (ae_of_all _ fun _ => (exp_pos _).le) hint
+  have h2 : ∫ ω in E, exp c ∂μ ≤ ∫ ω in E, exp (t * (Y ω - x)) ∂μ :=
+    setIntegral_mono_on (integrable_const _) (hint.mono_measure hle) hE
+      fun ω hω => exp_le_exp.mpr (hc ω hω)
+  rw [setIntegral_const, smul_eq_mul, mul_comm] at h2
+  linarith
+
+/-- Truncated exponential moments increase with the truncation level. -/
+private theorem mgf_trunc_mono [IsFiniteMeasure μ] {Y : Ω → ℝ} (hY : Measurable Y) (x : ℝ)
+    {M M' : ℝ} (h : M ≤ M') (t : ℝ) :
+    mgf (fun ω => Y ω - x) (μ.restrict {ω | |Y ω| ≤ M}) t ≤
+      mgf (fun ω => Y ω - x) (μ.restrict {ω | |Y ω| ≤ M'}) t :=
+  integral_mono_measure (Measure.restrict_mono (fun _ (hω : |Y _| ≤ M) => hω.trans h) le_rfl)
+    (ae_of_all _ fun _ => (exp_pos _).le) (integrable_exp_trunc hY x M' t)
+
+/-- If `P(Y > x) > 0`, some event `{Y > x + a, |Y| ≤ M}` (`a > 0`) has positive probability. -/
+private theorem exists_trunc_level {Y : Ω → ℝ} {x : ℝ}
+    (hx : 0 < μ {ω | x < Y ω}) :
+    ∃ a : ℝ, 0 < a ∧ ∃ M : ℝ, 0 < μ {ω | x + a < Y ω ∧ |Y ω| ≤ M} := by
+  have hU : {ω | x < Y ω} = ⋃ k : ℕ, {ω | x + 1 / ((k : ℝ) + 1) < Y ω ∧ |Y ω| ≤ k} := by
+    ext ω
+    simp only [mem_ofPred_eq, mem_iUnion]
+    constructor
+    · intro h
+      obtain ⟨k1, hk1⟩ := exists_nat_one_div_lt (sub_pos.mpr h)
+      obtain ⟨k2, hk2⟩ := exists_nat_ge |Y ω|
+      refine ⟨k1 + k2, ?_, ?_⟩
+      · have : 1 / (((k1 + k2 : ℕ) : ℝ) + 1) ≤ 1 / ((k1 : ℝ) + 1) := by
+          apply one_div_le_one_div_of_le (by positivity)
+          push_cast; linarith [(k2.cast_nonneg : (0 : ℝ) ≤ k2)]
+        linarith
+      · exact hk2.trans (by push_cast; linarith [(k1.cast_nonneg : (0 : ℝ) ≤ k1)])
+    · rintro ⟨k, hk, -⟩
+      have : 0 < 1 / ((k : ℝ) + 1) := by positivity
+      linarith
+  obtain ⟨k, hk⟩ : ∃ k : ℕ, 0 < μ {ω | x + 1 / ((k : ℝ) + 1) < Y ω ∧ |Y ω| ≤ k} := by
+    by_contra h
+    push Not at h
+    have : μ {ω | x < Y ω} = 0 := by
+      rw [hU]; exact measure_iUnion_null fun k => nonpos_iff_eq_zero.mp (h k)
+    exact absurd this hx.ne'
+  exact ⟨1 / ((k : ℝ) + 1), by positivity, k, hk⟩
+
+/-- `∀ r, ℓ ≤ r → a ≤ r` in `EReal` gives `a ≤ ℓ`. -/
+private theorem ereal_le_of_forall_coe_ge {a ℓ : EReal} (h : ∀ r : ℝ, ℓ ≤ r → a ≤ r) :
+    a ≤ ℓ := by
+  induction ℓ using EReal.rec with
+  | bot =>
+    have : a = ⊥ := by
+      induction a using EReal.rec with
+      | bot => rfl
+      | coe s =>
+        have := EReal.coe_le_coe_iff.mp (h (s - 1) bot_le)
+        linarith
+      | top => exact absurd (h 0 bot_le) (by simp)
+    rw [this]
+  | coe s => exact h s le_rfl
+  | top => exact le_top
+
+/-- **Truncation limit for the Legendre transform** (Dembo–Zeitouni, proof of Thm 2.2.3).  Let
+`P(Y < x) > 0` and `P(Y > x) > 0`.  If for every truncation level `M` (with `P(|Y| ≤ M) > 0`)
+and every `ε > 0` some `t` has `E[e^{t(Y − x)}; |Y| ≤ M] ≤ e^{r + ε}`, then `−I(x) ≤ r`.
+The minimisers stay in a fixed compact interval (both tails of `Y − x` near `x` carry mass), so
+nested compact sublevel sets give one `t` working for every `M`; monotone convergence `M → ∞`
+then gives `E[e^{t(Y − x)}] ≤ e^r`. -/
+private theorem neg_cramerRate_le_of_trunc [IsProbabilityMeasure μ] {Y : Ω → ℝ}
+    (hY : Measurable Y) {x r : ℝ} (hlo : 0 < μ {ω | Y ω < x}) (hhi : 0 < μ {ω | x < Y ω})
+    (h : ∀ M : ℝ, 0 < μ {ω | |Y ω| ≤ M} → ∀ ε : ℝ, 0 < ε →
+      ∃ t, mgf (fun ω => Y ω - x) (μ.restrict {ω | |Y ω| ≤ M}) t ≤ exp (r + ε)) :
+    -cramerRate Y μ x ≤ (r : EReal) := by
+  set F : ℝ → ℝ → ℝ := fun M t => mgf (fun ω => Y ω - x) (μ.restrict {ω | |Y ω| ≤ M}) t
+    with hFdef
+  obtain ⟨a1, ha1, M1, hM1⟩ := exists_trunc_level hhi
+  obtain ⟨a2, ha2, M2, hM2⟩ := exists_trunc_level (x := -x) (Y := -Y) (by simpa using hlo)
+  set E1 := {ω | x + a1 < Y ω ∧ |Y ω| ≤ M1} with hE1
+  set E2 := {ω | -x + a2 < (-Y) ω ∧ |(-Y) ω| ≤ M2} with hE2
+  have hE1m : MeasurableSet E1 :=
+    (measurableSet_lt measurable_const hY).inter (measurableSet_abs_le hY M1)
+  have hE2m : MeasurableSet E2 :=
+    (measurableSet_lt measurable_const hY.neg).inter (measurableSet_abs_le hY.neg M2)
+  set a := min a1 a2 with ha
+  have ha0 : 0 < a := lt_min ha1 ha2
+  set M0 := max M1 M2 with hM0
+  set q := min (μ.real E1) (μ.real E2) with hq
+  have hq0 : 0 < q := lt_min (ENNReal.toReal_pos hM1.ne' (measure_ne_top _ _))
+    (ENNReal.toReal_pos hM2.ne' (measure_ne_top _ _))
+  -- coercivity: `F M t ≥ q e^{|t| a}` for `M ≥ M0`
+  have hlow : ∀ M, M0 ≤ M → ∀ t, q * exp (|t| * a) ≤ F M t := by
+    intro M hM t
+    rcases le_total 0 t with ht | ht
+    · have hsub : E1 ⊆ {ω | |Y ω| ≤ M} := fun ω hω =>
+        hω.2.trans ((le_max_left M1 M2).trans hM)
+      have hc : ∀ ω ∈ E1, |t| * a ≤ t * (Y ω - x) := by
+        intro ω hω
+        rw [abs_of_nonneg ht]
+        have : a ≤ Y ω - x := by have := hω.1; have := min_le_left a1 a2; linarith
+        exact mul_le_mul_of_nonneg_left this ht
+      have := le_mgf_trunc (μ := μ) hY x hE1m hsub hc
+      have hq1 : q ≤ μ.real E1 := min_le_left _ _
+      calc q * exp (|t| * a) ≤ μ.real E1 * exp (|t| * a) :=
+            mul_le_mul_of_nonneg_right hq1 (exp_pos _).le
+        _ = exp (|t| * a) * μ.real E1 := mul_comm _ _
+        _ ≤ F M t := this
+    · have hsub : E2 ⊆ {ω | |Y ω| ≤ M} := fun ω hω => by
+        have h2 : |(-Y) ω| ≤ M2 := hω.2
+        rw [Pi.neg_apply, abs_neg] at h2
+        exact h2.trans ((le_max_right M1 M2).trans hM)
+      have hc : ∀ ω ∈ E2, |t| * a ≤ t * (Y ω - x) := by
+        intro ω hω
+        rw [abs_of_nonpos ht]
+        have h1 : -x + a2 < (-Y) ω := hω.1
+        rw [Pi.neg_apply] at h1
+        have : a ≤ x - Y ω := by have := min_le_right a1 a2; linarith
+        nlinarith
+      have := le_mgf_trunc (μ := μ) hY x hE2m hsub hc
+      have hq2 : q ≤ μ.real E2 := min_le_right _ _
+      calc q * exp (|t| * a) ≤ μ.real E2 * exp (|t| * a) :=
+            mul_le_mul_of_nonneg_right hq2 (exp_pos _).le
+        _ = exp (|t| * a) * μ.real E2 := mul_comm _ _
+        _ ≤ F M t := this
+  have hcont : ∀ M, Continuous (F M) := fun M =>
+    continuous_mgf fun t => integrable_exp_trunc (μ := μ) hY x M t
+  have hmono : ∀ M M', M ≤ M' → ∀ t, F M t ≤ F M' t := fun M M' hMM' t =>
+    mgf_trunc_mono hY x hMM' t
+  -- sublevel sets of level `≤ e^{r+1}` lie in `[−T0, T0]`
+  set T0 := max 0 ((r + 1 - Real.log q) / a) with hT0
+  have hin : ∀ M, M0 ≤ M → ∀ t, F M t ≤ exp (r + 1) → t ∈ Icc (-T0) T0 := by
+    intro M hM t ht
+    have h2 : q * exp (|t| * a) ≤ exp (r + 1) := (hlow M hM t).trans ht
+    have h3 := Real.log_le_log (by positivity) h2
+    rw [Real.log_mul hq0.ne' (exp_pos _).ne', Real.log_exp, Real.log_exp] at h3
+    have h4 : |t| ≤ T0 := le_max_of_le_right ((le_div_iff₀ ha0).mpr (by linarith))
+    exact ⟨by linarith [neg_abs_le t], (le_abs_self t).trans h4⟩
+  -- nested compact sublevel sets
+  set K : ℕ → Set ℝ := fun k =>
+    Icc (-T0) T0 ∩ {t | F (M0 + k) t ≤ exp (r + 1 / ((k : ℝ) + 1))} with hK
+  have hM0k : ∀ k : ℕ, M0 ≤ M0 + k := fun k => le_add_of_nonneg_right k.cast_nonneg
+  have hKne : ∀ k, (K k).Nonempty := by
+    intro k
+    have hpos : 0 < μ {ω | |Y ω| ≤ M0 + k} := lt_of_lt_of_le hM1
+      (measure_mono fun ω hω => hω.2.trans ((le_max_left M1 M2).trans (hM0k k)))
+    obtain ⟨t, ht⟩ := h (M0 + k) hpos (1 / ((k : ℝ) + 1)) (by positivity)
+    have hk1 : 1 / ((k : ℝ) + 1) ≤ 1 := by
+      rw [div_le_one (by positivity)]; linarith [(k.cast_nonneg : (0 : ℝ) ≤ k)]
+    exact ⟨t, hin (M0 + k) (hM0k k) t (ht.trans (exp_le_exp.mpr (by linarith))), ht⟩
+  have hKsub : ∀ k, K (k + 1) ⊆ K k := by
+    rintro k t ⟨ht1, ht2⟩
+    refine ⟨ht1, ?_⟩
+    simp only [mem_ofPred_eq] at ht2 ⊢
+    have hkk : (M0 + k : ℝ) ≤ M0 + ((k + 1 : ℕ) : ℝ) := by push_cast; linarith
+    have hdiv : 1 / (((k + 1 : ℕ) : ℝ) + 1) ≤ 1 / ((k : ℝ) + 1) := by
+      apply one_div_le_one_div_of_le (by positivity); push_cast; linarith
+    calc F (M0 + k) t ≤ F (M0 + ((k + 1 : ℕ) : ℝ)) t := hmono _ _ hkk t
+      _ ≤ exp (r + 1 / (((k + 1 : ℕ) : ℝ) + 1)) := ht2
+      _ ≤ exp (r + 1 / ((k : ℝ) + 1)) := exp_le_exp.mpr (by linarith)
+  have hKcl : ∀ k, IsClosed (K k) := fun k =>
+    isClosed_Icc.inter (isClosed_le (hcont _) continuous_const)
+  have hK0 : IsCompact (K 0) := isCompact_Icc.of_isClosed_subset (hKcl 0) inter_subset_left
+  obtain ⟨t, ht⟩ :=
+    IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed K hKsub hKne hK0 hKcl
+  rw [mem_iInter] at ht
+  -- one tilt `t` works for every truncation level
+  have hbound : ∀ j : ℕ, F (M0 + j) t ≤ exp r := by
+    intro j
+    have hlim : Tendsto (fun k : ℕ => exp (r + 1 / ((k : ℝ) + 1))) atTop (𝓝 (exp r)) := by
+      have h0 : Tendsto (fun k : ℕ => r + 1 / ((k : ℝ) + 1)) atTop (𝓝 (r + 0)) :=
+        tendsto_const_nhds.add tendsto_one_div_add_atTop_nhds_zero_nat
+      rw [add_zero] at h0
+      exact (continuous_exp.tendsto r).comp h0
+    refine ge_of_tendsto hlim ?_
+    filter_upwards [eventually_ge_atTop j] with k hk
+    have hjk : (M0 + j : ℝ) ≤ M0 + k := by
+      have : (j : ℝ) ≤ k := by exact_mod_cast hk
+      linarith
+    exact (hmono _ _ hjk t).trans (ht k).2
+  -- monotone convergence: `E[e^{t(Y − x)}] ≤ e^r`
+  set f : Ω → ℝ := fun ω => exp (t * (Y ω - x)) with hf
+  have hfm : AEStronglyMeasurable f μ :=
+    ((hY.sub_const x).const_mul t).exp.aestronglyMeasurable
+  have hf0 : 0 ≤ᵐ[μ] f := ae_of_all _ fun _ => (exp_pos _).le
+  have hUnion : (⋃ j : ℕ, {ω | |Y ω| ≤ M0 + j}) = univ := by
+    refine eq_univ_of_forall fun ω => mem_iUnion.mpr ?_
+    obtain ⟨j, hj⟩ := exists_nat_ge (|Y ω| - M0)
+    exact ⟨j, show |Y ω| ≤ M0 + j by linarith⟩
+  have hdir : Directed (· ⊆ ·) fun j : ℕ => {ω | |Y ω| ≤ M0 + j} := by
+    refine Monotone.directed_le fun i j hij ω (hω : |Y ω| ≤ M0 + i) => ?_
+    show |Y ω| ≤ M0 + j
+    have : (i : ℝ) ≤ j := by exact_mod_cast hij
+    linarith
+  have hlin : ∫⁻ ω, ENNReal.ofReal (f ω) ∂μ ≤ ENNReal.ofReal (exp r) := by
+    rw [← Measure.restrict_univ (μ := μ), ← hUnion, setLIntegral_iUnion_of_directed _ hdir]
+    refine iSup_le fun j => ?_
+    rw [← ofReal_integral_eq_lintegral_ofReal (integrable_exp_trunc hY x (M0 + j) t)
+      (ae_of_all _ fun _ => (exp_pos _).le)]
+    exact ENNReal.ofReal_le_ofReal (hbound j)
+  have hfi : Integrable f μ :=
+    (lintegral_ofReal_ne_top_iff_integrable hfm hf0).mp (ne_top_of_le_ne_top ENNReal.ofReal_ne_top hlin)
+  have hfint : ∫ ω, f ω ∂μ ≤ exp r := by
+    rw [integral_eq_lintegral_of_nonneg_ae hf0 hfm]
+    exact ENNReal.toReal_le_of_le_ofReal (exp_pos r).le hlin
+  -- conclude: `I(x) ≥ t x − Λ(t) ≥ −r`
+  have hexp : (fun ω => exp (t * Y ω)) = fun ω => exp (t * x) * f ω := by
+    funext ω; rw [hf, ← exp_add]; ring_nf
+  have htD : t ∈ integrableExpSet Y μ := by
+    show Integrable (fun ω => exp (t * Y ω)) μ
+    rw [hexp]; exact hfi.const_mul _
+  have hmgf : mgf Y μ t = exp (t * x) * ∫ ω, f ω ∂μ := by
+    rw [mgf, hexp, integral_const_mul]
+  have hMpos : 0 < mgf Y μ t := mgf_pos htD
+  have hcgf : cgf Y μ t ≤ t * x + r := by
+    rw [cgf]
+    have h1 : mgf Y μ t ≤ exp (t * x + r) := by
+      rw [hmgf, exp_add]; exact mul_le_mul_of_nonneg_left hfint (exp_pos _).le
+    have := Real.log_le_log hMpos h1
+    rwa [Real.log_exp] at this
+  have hI : (((-r : ℝ)) : EReal) ≤ cramerRate Y μ x := by
+    refine le_iSup₂_of_le (f := fun t (_ : t ∈ integrableExpSet Y μ) =>
+      ((t * x - cgf Y μ t : ℝ) : EReal)) t htD ?_
+    exact EReal.coe_le_coe_iff.mpr (by linarith)
+  rw [EReal.neg_le, ← EReal.coe_neg]
+  exact hI
+
+/-- **Truncation comparison.**  Let `ν` be the law of `X₀` conditioned on `|X₀| ≤ M`,
+`p = P(|X₀| ≤ M)`, and `(Yᵢ)` the coordinates of the product space `ν^{⊗ℕ}`.  Then
+`P(S_n/n ∈ G) ≥ pⁿ ν^{⊗ℕ}(S'_n/n ∈ G)` (restrict to `{|Xᵢ| ≤ M, i < n}`). -/
+private theorem trunc_comparison [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
+    (hmeas : ∀ i, Measurable (X i)) (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) {G : Set ℝ}
+    (hG : IsOpen G) {M : ℝ} (hp : μ {ω | |X 0 ω| ≤ M} ≠ 0) (n : ℕ) :
+    μ {ω | |X 0 ω| ≤ M} ^ n * Measure.infinitePi (fun _ : ℕ => (μ.map (X 0))[|{y : ℝ | |y| ≤ M}])
+        {ω : ℕ → ℝ | (∑ i ∈ Finset.range n, ω i) / n ∈ G} ≤
+      μ {ω | (∑ i ∈ Finset.range n, X i ω) / n ∈ G} := by
+  set S' : Set ℝ := {y : ℝ | |y| ≤ M} with hS'def
+  have hS' : MeasurableSet S' := measurableSet_le continuous_abs.measurable measurable_const
+  set L := μ.map (X 0) with hLdef
+  have hLS : L S' = μ {ω | |X 0 ω| ≤ M} := Measure.map_apply (hmeas 0) hS'
+  set p := μ {ω | |X 0 ω| ≤ M} with hpdef
+  have hptop : p ≠ ⊤ := measure_ne_top _ _
+  set ν := L[|S'] with hν
+  have : IsProbabilityMeasure ν := cond_isProbabilityMeasure (by rw [hLS]; exact hp)
+  set s := Finset.range n with hs
+  set D : Set (s → ℝ) := {z | (∑ i, z i) / n ∈ G} with hDdef
+  have hD : MeasurableSet D := by
+    have : Measurable fun z : s → ℝ => (∑ i, z i) / (n : ℝ) :=
+      (Finset.measurable_sum _ fun i _ => measurable_pi_apply i).div_const _
+    exact this hG.measurableSet
+  set B : Set (s → ℝ) := univ.pi fun _ => S' with hBdef
+  have hB : MeasurableSet B := MeasurableSet.univ_pi fun _ => hS'
+  -- product-space side
+  have hA' : {ω : ℕ → ℝ | (∑ i ∈ s, ω i) / n ∈ G} = (s.restrict : (ℕ → ℝ) → (s → ℝ)) ⁻¹' D := by
+    ext ω
+    simp only [mem_ofPred_eq, mem_preimage, hDdef, Finset.restrict]
+    rw [Finset.sum_coe_sort s (fun i => ω i)]
+  have hP : Measure.infinitePi (fun _ : ℕ => ν) ((s.restrict : (ℕ → ℝ) → (s → ℝ)) ⁻¹' D) =
+      Measure.pi (fun _ : s => ν) D := by
+    rw [← Measure.map_apply (Finset.measurable_restrict s) hD, Measure.infinitePi_map_restrict]
+  -- original side
+  have hjoint : μ.map (fun ω i => X i ω) = Measure.infinitePi (fun _ : ℕ => L) := by
+    rw [hindep.map_fun_eq_infinitePi_map hmeas]
+    congr 1; funext i; exact (hid i).map_eq
+  have hΦ : Measurable fun ω (i : ℕ) => X i ω := measurable_pi_iff.mpr hmeas
+  have hDB : MeasurableSet ((s.restrict : (ℕ → ℝ) → (s → ℝ)) ⁻¹' (D ∩ B)) :=
+    (hD.inter hB).preimage (Finset.measurable_restrict (X := fun _ : ℕ => ℝ) s)
+  have hμ : μ ((fun ω (i : ℕ) => X i ω) ⁻¹' ((s.restrict : (ℕ → ℝ) → (s → ℝ)) ⁻¹' (D ∩ B))) =
+      Measure.pi (fun _ : s => L) (D ∩ B) := by
+    rw [← Measure.map_apply hΦ hDB, hjoint,
+      ← Measure.map_apply (Finset.measurable_restrict s) (hD.inter hB),
+      Measure.infinitePi_map_restrict]
+  have hsub : (fun ω (i : ℕ) => X i ω) ⁻¹' ((s.restrict : (ℕ → ℝ) → (s → ℝ)) ⁻¹' (D ∩ B)) ⊆
+      {ω | (∑ i ∈ s, X i ω) / n ∈ G} := by
+    intro ω hω
+    have h1 := hω.1
+    simp only [mem_ofPred_eq, hDdef, Finset.restrict] at h1
+    rw [Finset.sum_coe_sort s (fun i => X i ω)] at h1
+    exact h1
+  -- restricting the product to the box and normalising each factor
+  have hpi : Measure.pi (fun _ : s => L.restrict S') =
+      p ^ n • Measure.pi (fun _ : s => ν) := by
+    refine Measure.pi_eq fun t ht => ?_
+    rw [Measure.smul_apply, Measure.pi_pi, smul_eq_mul]
+    have hfac : ∀ i : s, L.restrict S' (t i) = p * ν (t i) := by
+      intro i
+      rw [hν, cond_apply hS', Measure.restrict_apply (ht i), hLS, ← mul_assoc,
+        ENNReal.mul_inv_cancel hp hptop, one_mul, inter_comm]
+    rw [Finset.prod_congr rfl fun i _ => hfac i, Finset.prod_mul_distrib, Finset.prod_const,
+      Finset.card_univ, Fintype.card_coe, show s.card = n from Finset.card_range n]
+  have hbox : Measure.pi (fun _ : s => L) (D ∩ B) = p ^ n * Measure.pi (fun _ : s => ν) D := by
+    rw [← Measure.restrict_apply hD, hBdef, Measure.restrict_pi_pi, hpi, Measure.smul_apply,
+      smul_eq_mul]
+  calc p ^ n * Measure.infinitePi (fun _ : ℕ => ν) {ω : ℕ → ℝ | (∑ i ∈ s, ω i) / n ∈ G}
+      = μ ((fun ω (i : ℕ) => X i ω) ⁻¹' ((s.restrict : (ℕ → ℝ) → (s → ℝ)) ⁻¹' (D ∩ B))) := by
+        rw [hA', hP, hμ, hbox]
+    _ ≤ _ := measure_mono hsub
+
+/-- **Truncated tilts from the `liminf`.**  If `liminf (1/n) log P(S_n/n ∈ G) ≤ r` and `x ∈ G`,
+then for every truncation level `M` with `P(|X₀| ≤ M) > 0` and every `ε > 0` some tilt `t` has
+`E[e^{t(X₀ − x)}; |X₀| ≤ M] ≤ e^{r + ε}`: the bounded Cramér lower bound
+(`cramer_lower_bound_of_bounded`) for i.i.d. copies of `X₀` conditioned on `|X₀| ≤ M`, compared
+through `trunc_comparison`, gives `I_ν(x) ≥ log P(|X₀| ≤ M) − r`. -/
+private theorem trunc_exists_tilt [IsProbabilityMeasure μ] (hindep : iIndepFun X μ)
+    (hmeas : ∀ i, Measurable (X i)) (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) {G : Set ℝ}
+    (hG : IsOpen G) {x : ℝ} (hxG : x ∈ G) {M : ℝ} (hp : 0 < μ {ω | |X 0 ω| ≤ M}) {r : ℝ}
+    (hℓ : liminf (fun n : ℕ => (((n : ℝ)⁻¹ : ℝ) : EReal) *
+        ENNReal.log (μ {ω | (∑ i ∈ Finset.range n, X i ω) / n ∈ G})) atTop ≤ (r : EReal))
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ t, mgf (fun ω => X 0 ω - x) (μ.restrict {ω | |X 0 ω| ≤ M}) t ≤ exp (r + ε) := by
+  set S' : Set ℝ := {y : ℝ | |y| ≤ M} with hS'def
+  have hS' : MeasurableSet S' := measurableSet_le continuous_abs.measurable measurable_const
+  set S : Set Ω := {ω | |X 0 ω| ≤ M} with hSdef
+  set L := μ.map (X 0) with hLdef
+  have hLS : L S' = μ S := Measure.map_apply (hmeas 0) hS'
+  set p := μ S with hpdef
+  have hp0 : p ≠ 0 := hp.ne'
+  have hptop : p ≠ ⊤ := measure_ne_top _ _
+  have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hptop
+  set ν := L[|S'] with hν
+  have : IsProbabilityMeasure ν := cond_isProbabilityMeasure (by rw [hLS]; exact hp0)
+  set P : Measure (ℕ → ℝ) := Measure.infinitePi (fun _ : ℕ => ν) with hPdef
+  have hYm : ∀ i, Measurable (fun ω : ℕ → ℝ => ω i) := fun i => measurable_pi_apply i
+  have hYind : iIndepFun (fun i (ω : ℕ → ℝ) => ω i) P :=
+    iIndepFun_infinitePi (P := fun _ : ℕ => ν) (X := fun _ => id) fun _ => measurable_id
+  have hYlaw : ∀ i, P.map (fun ω : ℕ → ℝ => ω i) = ν := fun i =>
+    Measure.infinitePi_map_eval _ i
+  have hYid : ∀ i, IdentDistrib (fun ω : ℕ → ℝ => ω i) (fun ω => ω 0) P P := fun i =>
+    ⟨(hYm i).aemeasurable, (hYm 0).aemeasurable, by rw [hYlaw, hYlaw]⟩
+  have hYb : ∀ᵐ ω ∂P, |(fun ω : ℕ → ℝ => ω 0) ω| ≤ M :=
+    ae_of_ae_map (hYm 0).aemeasurable (by rw [hYlaw 0]; exact ae_cond_mem hS')
+  have hbd := cramer_lower_bound_of_bounded hYind hYm hYid hYb hG
+  have hx := le_trans (le_iSup₂ (f := fun x (_ : x ∈ G) =>
+    -cramerRate (fun ω : ℕ → ℝ => ω 0) P x) x hxG) hbd
+  set lp := Real.log p.toReal with hlp
+  -- `liminf (1/n) log ν^{⊗ℕ}(S'_n/n ∈ G) ≤ r − log p`
+  have hB1 : liminf (fun n : ℕ => (((n : ℝ)⁻¹ : ℝ) : EReal) *
+      ENNReal.log (P {ω | (∑ i ∈ Finset.range n, (fun ω : ℕ → ℝ => ω i) ω) / n ∈ G})) atTop ≤
+        ((r - lp : ℝ) : EReal) := by
+    by_contra hcon
+    push Not at hcon
+    obtain ⟨c, hc1, hc2⟩ := EReal.lt_iff_exists_real_btwn.mp hcon
+    have hev := eventually_lt_of_lt_liminf hc2
+    have hle : ((lp + c : ℝ) : EReal) ≤ liminf (fun n : ℕ => (((n : ℝ)⁻¹ : ℝ) : EReal) *
+        ENNReal.log (μ {ω | (∑ i ∈ Finset.range n, X i ω) / n ∈ G})) atTop := by
+      refine le_liminf_of_le (by isBoundedDefault) ?_
+      filter_upwards [hev, eventually_ge_atTop 1] with n hn hn1
+      have hn' : (0 : ℝ) < n := by exact_mod_cast hn1
+      set a := P {ω | (∑ i ∈ Finset.range n, (fun ω : ℕ → ℝ => ω i) ω) / n ∈ G} with ha
+      set b := μ {ω | (∑ i ∈ Finset.range n, X i ω) / n ∈ G} with hb
+      have ha0 : a ≠ 0 := by
+        intro h0
+        rw [h0, ENNReal.log_zero, EReal.coe_mul_bot_of_pos (inv_pos.mpr hn')] at hn
+        exact not_lt_bot hn
+      have hatop : a ≠ ⊤ := measure_ne_top _ _
+      have hcmp : p ^ n * a ≤ b := trunc_comparison hindep hmeas hid hG hp0 n
+      have hb0 : b ≠ 0 := by
+        intro h0
+        rw [h0, nonpos_iff_eq_zero] at hcmp
+        exact mul_ne_zero (pow_ne_zero n hp0) ha0 hcmp
+      have hbtop : b ≠ ⊤ := measure_ne_top _ _
+      rw [ENNReal.log_pos_real ha0 hatop, ← EReal.coe_mul, EReal.coe_lt_coe_iff] at hn
+      rw [ENNReal.log_pos_real hb0 hbtop, ← EReal.coe_mul, EReal.coe_le_coe_iff]
+      have har : 0 < a.toReal := ENNReal.toReal_pos ha0 hatop
+      have hcr : p.toReal ^ n * a.toReal ≤ b.toReal := by
+        have := ENNReal.toReal_mono hbtop hcmp
+        rwa [ENNReal.toReal_mul, ENNReal.toReal_pow] at this
+      have hlog := Real.log_le_log (by positivity) hcr
+      rw [Real.log_mul (by positivity) har.ne', Real.log_pow] at hlog
+      have h3 : (n : ℝ)⁻¹ * (n * lp + Real.log a.toReal) ≤ (n : ℝ)⁻¹ * Real.log b.toReal :=
+        mul_le_mul_of_nonneg_left hlog (inv_nonneg.mpr hn'.le)
+      rw [mul_add, ← mul_assoc, inv_mul_cancel₀ hn'.ne', one_mul] at h3
+      linarith
+    have h2 := EReal.coe_le_coe_iff.mp (hle.trans hℓ)
+    exact absurd hc1 (not_lt.mpr (EReal.coe_le_coe_iff.mpr (by linarith)))
+  -- a tilt `t` for the conditioned law with `t x − Λ_ν(t) > log p − r − ε`
+  have hI : ((lp - r - ε : ℝ) : EReal) < cramerRate (fun ω : ℕ → ℝ => ω 0) P x := by
+    have h1 : -cramerRate (fun ω : ℕ → ℝ => ω 0) P x ≤ ((r - lp : ℝ) : EReal) := hx.trans hB1
+    rw [EReal.neg_le, ← EReal.coe_neg] at h1
+    exact lt_of_lt_of_le (EReal.coe_lt_coe_iff.mpr (by linarith)) h1
+  obtain ⟨t, ht⟩ := lt_iSup_iff.mp hI
+  obtain ⟨htD, ht⟩ := lt_iSup_iff.mp ht
+  rw [EReal.coe_lt_coe_iff] at ht
+  refine ⟨t, ?_⟩
+  have hMpos : 0 < mgf (fun ω : ℕ → ℝ => ω 0) P t := mgf_pos htD
+  -- `mgf_ν(t) = p⁻¹ E[e^{tX₀}; |X₀| ≤ M]`
+  have hmap : ∫ y, exp (t * y) ∂(P.map (fun ω : ℕ → ℝ => ω 0)) = ∫ ω, exp (t * ω 0) ∂P :=
+    integral_map (hYm 0).aemeasurable
+      ((measurable_const_mul t).exp.aestronglyMeasurable)
+  rw [hYlaw 0] at hmap
+  have hνint : ∫ y, exp (t * y) ∂ν = (p.toReal)⁻¹ * ∫ ω in S, exp (t * X 0 ω) ∂μ := by
+    rw [hν, ProbabilityTheory.cond, integral_smul_measure,
+      setIntegral_map hS' ((measurable_const_mul t).exp.aestronglyMeasurable)
+        (hmeas 0).aemeasurable, hLS, ENNReal.toReal_inv, smul_eq_mul]
+    rfl
+  have hmgfν : mgf (fun ω : ℕ → ℝ => ω 0) P t =
+      (p.toReal)⁻¹ * ∫ ω in S, exp (t * X 0 ω) ∂μ := by
+    rw [← hνint, hmap]; rfl
+  have hF : mgf (fun ω => X 0 ω - x) (μ.restrict S) t =
+      exp (-(t * x)) * ∫ ω in S, exp (t * X 0 ω) ∂μ := by
+    rw [mgf, ← integral_const_mul]
+    congr 1; funext ω; rw [← exp_add]; ring_nf
+  have hlt : mgf (fun ω : ℕ → ℝ => ω 0) P t < exp (t * x - lp + r + ε) := by
+    rw [← Real.log_lt_iff_lt_exp hMpos]
+    have : cgf (fun ω : ℕ → ℝ => ω 0) P t = Real.log (mgf (fun ω : ℕ → ℝ => ω 0) P t) := rfl
+    linarith
+  rw [hmgfν] at hlt
+  have hJ : ∫ ω in S, exp (t * X 0 ω) ∂μ < exp (t * x) * exp (r + ε) := by
+    have e : exp (t * x - lp + r + ε) = (p.toReal)⁻¹ * (exp (t * x) * exp (r + ε)) := by
+      rw [show t * x - lp + r + ε = -lp + (t * x + (r + ε)) by ring, exp_add, exp_add, hlp,
+        exp_neg, exp_log hpr]
+    rw [e] at hlt
+    exact lt_of_mul_lt_mul_left hlt (inv_nonneg.mpr hpr.le)
+  rw [hF]
+  calc exp (-(t * x)) * ∫ ω in S, exp (t * X 0 ω) ∂μ ≤ exp (-(t * x)) * (exp (t * x) * exp (r + ε)) :=
+        mul_le_mul_of_nonneg_left hJ.le (exp_pos _).le
+    _ = exp (r + ε) := by rw [← mul_assoc, ← exp_add, neg_add_cancel, exp_zero, one_mul]
+
+/-- **Cramér's theorem, lower bound, general i.i.d. case** (no boundedness or moment
+assumption; Dembo–Zeitouni, Thm 2.2.3).  For i.i.d. real `X₀, X₁, …` and every open `G ⊆ ℝ`,
+`sup_{x ∈ G} (−I(x)) = −inf_{x ∈ G} I(x) ≤ liminf_{n → ∞} (1/n) log P(S_n / n ∈ G)`,
+with `I = cramerRate X₀` the Legendre transform of the cumulant generating function over its
+effective domain (`I(x) = ∞` is allowed; then the bound is trivial).
+Endpoint cases `P(X₀ > x) = 0` / `P(X₀ < x) = 0` as in the bounded case.  Otherwise
+truncation: for each level `M`, the bounded lower bound for `X₀` conditioned on `|X₀| ≤ M`
+(on the product space of the conditioned law) and `P(S_n/n ∈ G) ≥ P(|X₀| ≤ M)ⁿ ν_M^{⊗n}(…)`
+give tilts `t` with `E[e^{t(X₀ − x)}; |X₀| ≤ M] ≤ e^{ℓ + ε}` (`ℓ` the `liminf`); these tilts
+stay in a compact interval, a nested-compact argument gives one `t` for all `M`, and monotone
+convergence `M → ∞` yields `t x − Λ(t) ≥ −ℓ`, hence `−I(x) ≤ ℓ`. -/
+@[powerlib_foundation] theorem cramer_lower_bound_general [IsProbabilityMeasure μ]
+    (hindep : iIndepFun X μ) (hmeas : ∀ i, Measurable (X i))
+    (hid : ∀ i, IdentDistrib (X i) (X 0) μ μ) {G : Set ℝ} (hG : IsOpen G) :
+    (⨆ x ∈ G, -cramerRate (X 0) μ x) ≤
+      liminf (fun n : ℕ => (((n : ℝ)⁻¹ : ℝ) : EReal) *
+        ENNReal.log (μ {ω | (∑ i ∈ Finset.range n, X i ω) / n ∈ G})) atTop := by
+  refine iSup₂_le fun x hx => ?_
+  by_cases h1 : μ {ω | x < X 0 ω} = 0
+  · exact cramer_lower_upper_endpoint hindep hmeas hid hG hx h1
+  by_cases h2 : μ {ω | X 0 ω < x} = 0
+  · exact cramer_lower_lower_endpoint hindep hmeas hid hG hx h2
+  refine ereal_le_of_forall_coe_ge fun r hr => ?_
+  exact neg_cramerRate_le_of_trunc (hmeas 0) (pos_iff_ne_zero.mpr h2) (pos_iff_ne_zero.mpr h1)
+    fun M hM ε hε => trunc_exists_tilt hindep hmeas hid hG hx hM hr hε
 
 end Cramer
 
