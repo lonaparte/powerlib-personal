@@ -321,3 +321,4 @@ import theorem.GFLParametric.RatePLLHopf
 import theorem.GFM.VSMLPFHopf
 import theorem.Network.SwingDegenerate
 import theorem.Network.SwingDegenerateRing
+import theorem.GFL.ModelBCollapse
