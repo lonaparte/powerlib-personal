@@ -4,6 +4,7 @@ import theorem.Flow.Shift
 import theorem.Dynamics.State
 import theorem.Family.Basic
 import theorem.TMIO.ClaimElab
+import theorem.CurrentControl.SISO
 import theorem.Network.WeightedLaplacian
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -59,7 +60,14 @@ Family and connection conclusions.
   `mem_den_unstable`. Boundary witness: the instability translation is not exact
   (`not_exact_unstable`): instability is the failure of Lyapunov stability, so an unbalanced
   network (`offEquilibrium`) is unstable (`offEquilibrium_mem_den_unstable`,
-  `Dynamics.unstable_of_ne_zero`) while the translation asks for power balance.
+  `Dynamics.unstable_of_ne_zero`) while the translation asks for power balance. The Lyapunov
+  translation is not exact (`not_exact_lyapunovStable_two`, two machines): two uncoupled machines
+  (`uncoupled`, `B = 0`) are Lyapunov stable (`uncoupled_mem_den_lyapunovStable`: the relative angle
+  plus the frequency difference is conserved and the frequencies decay) while their reduced Jacobian
+  has a zero column (`uncoupled_not_isHurwitz`). Exactness of the local asymptotic translation is not
+  claimed (UNPROVED): a power-balance point with a singular reduced Laplacian beyond the angle
+  reference is not decided by the linearization (a degenerate strict minimum of the network
+  potential would be asymptotically stable by LaSalle, a fold is not).
 * Static evidence (formerly `@[powerlib_domain]`): `fullField_equilibrium_shift`,
   `reducedField_reduce`, `reducedField_equilibrium`, and the new `jacobian_isHurwitz_of_angle`.
   Private implementation evidence (trajectory level, Rules §3a): `reduce_trajectory`.
@@ -774,5 +782,94 @@ while the translation asks for power balance. -/
     hmem .powerFlow (by simp [family, translate])
   have := hp 0
   simp [offEquilibrium, powerInjection] at this
+
+/-! ### The Lyapunov translation: two uncoupled machines -/
+
+/-- Two uncoupled machines (`n = 1`): unit inertia and damping, no power, no coupling, `θ* = 0`.
+In the reduced state `(δ, ω₀, ω₁)` the field is `δ̇ = ω₁ − ω₀`, `ω̇ₖ = −ωₖ`. -/
+def uncoupled : Model 1 :=
+  ⟨⟨fun _ => 1, fun _ => 1, fun _ => 0, 0, fun _ => one_pos, fun _ => one_pos,
+    fun _ _ => rfl, fun _ _ => le_rfl⟩, 0⟩
+
+private theorem uncoupled_point : equilibrium uncoupled.θ = 0 := by
+  apply state_ext
+  · intro i; simp [equilibrium, uncoupled]
+  · intro k; simp [equilibrium, uncoupled]
+
+private theorem uncoupled_field (z : State (1 + (1 + 1))) :
+    uncoupled.field z = WithLp.toLp 2 ![z 2 - z 1, -z 1, -z 2] := by
+  have hz : uncoupled.field z = reducedField uncoupled.params z := by
+    simp [Model.field, uncoupled_point]
+  rw [hz]
+  ext r
+  fin_cases r
+  · show reducedField uncoupled.params z (dIdx 0) = _
+    rw [reducedField_dIdx]
+    rfl
+  · show reducedField uncoupled.params z (wIdx 0) = _
+    rw [reducedField_wIdx]
+    simp [uncoupled, powerInjection]
+    rfl
+  · show reducedField uncoupled.params z (wIdx 1) = _
+    rw [reducedField_wIdx]
+    simp [uncoupled, powerInjection]
+    rfl
+
+/-- Two uncoupled machines are Lyapunov stable: `(δ − ω₀ + ω₁)² + ω₀² + ω₁²` does not increase
+(`δ − ω₀ + ω₁` is conserved, the frequencies decay), although the relative angle has no restoring
+force (the reduced Jacobian has a zero column). -/
+@[powerlib_domain] theorem uncoupled_mem_den_lyapunovStable :
+    connection% (uncoupled ∈ family.den (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [family_isAutonomous.mem_den_flow]
+  refine Dynamics.lyapunovStable_of_inner_nonpos (by norm_num)
+    (Matrix.toEuclideanCLM (n := Fin (1 + (1 + 1))) (𝕜 := ℝ) !![1, -1, 1; 0, 1, 0; 0, 0, 1])
+    (fun z w hzw => ?_) fun z => ?_
+  · have h0 := congrArg (fun y : State (1 + (1 + 1)) => y 0) hzw
+    have h1 := congrArg (fun y : State (1 + (1 + 1)) => y 1) hzw
+    have h2 := congrArg (fun y : State (1 + (1 + 1)) => y 2) hzw
+    simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_succ] at h0 h1 h2
+    ext r
+    fin_cases r
+    · simp
+      linarith
+    · simpa using h1
+    · simpa using h2
+  · rw [uncoupled_field]
+    simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_succ,
+      PiLp.inner_apply]
+    nlinarith [sq_nonneg (z 1), sq_nonneg (z 2)]
+
+/-- The reduced Jacobian of two uncoupled machines is not Hurwitz: the relative angle is not
+restored (zero column). Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem uncoupled_not_isHurwitz :
+    ¬ LinearSystems.IsHurwitz (jacobian uncoupled.params uncoupled.θ) := by
+  intro hH
+  apply Dynamics.mulVec_ne_zero_of_isHurwitz hH (v := Pi.single (dIdx 0) 1)
+  · intro h
+    have := congrFun h (dIdx 0)
+    simp at this
+  · rw [Matrix.mulVec_single]
+    funext r
+    refine Fin.addCases (fun i => ?_) (fun k => ?_) r
+    · have h := jacobian_dd uncoupled.params uncoupled.θ i 0
+      simp only [Pi.smul_apply, Matrix.col_apply, op_smul_eq_mul, mul_one, Pi.zero_apply]
+      exact h
+    · have h := jacobian_wd uncoupled.params uncoupled.θ k 0
+      simp only [Pi.smul_apply, Matrix.col_apply, op_smul_eq_mul, mul_one, Pi.zero_apply]
+      rw [h]
+      simp [uncoupled, laplacian, flowWeights]
+
+/-- The Lyapunov translation of the two-machine network is sound but not exact: two uncoupled
+machines are Lyapunov stable at a power-balance point whose reduced Jacobian is not Hurwitz. -/
+@[powerlib_domain] theorem not_exact_lyapunovStable_two :
+    connection% (¬ (family (n := 1)).Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := uncoupled_mem_den_lyapunovStable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hj : Meets uncoupled .jacobianStable := hmem .jacobianStable (by simp [family, translate])
+  exact uncoupled_not_isHurwitz hj
 
 end powerlib.Network.Swing

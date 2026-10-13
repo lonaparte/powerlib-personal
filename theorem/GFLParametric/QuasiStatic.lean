@@ -55,8 +55,14 @@ selected point holds exactly when it is an equilibrium with a Hurwitz Jacobian (
 Routh–Hurwitz conditions; a Hurwitz Jacobian has `k_P ≠ 0`, so the field's equilibrium is an
 `IsEq` point). The instability translation is not exact (`not_exact_unstable`): instability is
 the failure of Lyapunov stability, so a model whose selected point is not an equilibrium
-(`offEquilibrium`) is unstable (`offEquilibrium_mem_den_unstable`). Exactness of the local
-asymptotic and Lyapunov translations is not claimed (UNPROVED).
+(`offEquilibrium`) is unstable (`offEquilibrium_mem_den_unstable`). The Lyapunov translation is not
+exact (`not_exact_lyapunovStable`): the undamped PLL with a frozen dispatch loop `undampedPLL`
+(`k_p = k_P = 0`) is Lyapunov stable through the conserved energy `1 − cos θ + x²/2 + I_d²/2`
+(`undampedPLL_mem_den_lyapunovStable`) with a trace-zero Jacobian. Exactness of the local asymptotic
+translation is not claimed (UNPROVED): for positive gains the boundary of the Routh–Hurwitz region is
+the fold `cos 2θ* = 0` (no Hopf pair, `no_imaginary_eigenvalue`), a saddle-node whose instability
+needs a center-manifold argument in three dimensions, and for gains of arbitrary sign imaginary
+pairs are not excluded.
 
 Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
 notes/concepts/contrast-conclusions.md` (差别二 `P_SN = 3V_g²/(4X_g)`, 折叠角 45°;
@@ -598,5 +604,99 @@ while the translation asks for an equilibrium. -/
   rw [← h, TMIO.mem_realize] at hmem
   have he : Meets offEquilibrium .equilibrium := hmem .equilibrium (by simp [family, translate])
   simp [Meets, IsEq, offEquilibrium] at he
+
+/-! ### The Lyapunov translation -/
+
+/-- An undamped PLL with a frozen dispatch loop: `V = k_i = 1`, `X_g = k_p = k_P = P_ref = 0` at
+`(θ*, 0, I_d*) = (0, 0, 0)`; the field is the pendulum `θ̇ = x`, `ẋ = −sin θ` with `I_d` constant. -/
+def undampedPLL : Model := ⟨⟨1, 0, 0, 1, 0, 0⟩, 0, 0⟩
+
+private theorem undampedPLL_field (z : Dynamics.State 3) :
+    QuasiStatic.field undampedPLL.params z = WithLp.toLp 2 ![z 1, -Real.sin (z 0), 0] := by
+  ext i
+  fin_cases i <;> simp [QuasiStatic.field, lift, coordField, undampedPLL, vq, power]
+
+/-- The energy `1 − cos θ + x²/2 + I_d²/2`. -/
+private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 3) :
+    HasFDerivAt (fun y : Dynamics.State 3 => 1 - Real.cos (y 0) + 1 / 2 * y 1 ^ 2 + 1 / 2 * y 2 ^ 2)
+      (Real.sin (z 0) • (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 0 : Dynamics.State 3 →L[ℝ] ℝ) +
+        z 1 • (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 1 : Dynamics.State 3 →L[ℝ] ℝ) +
+        z 2 • (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 2 : Dynamics.State 3 →L[ℝ] ℝ)) z := by
+  have h0 := (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (0 : Fin 3) :
+    Dynamics.State 3 →L[ℝ] ℝ).hasFDerivAt (x := z)
+  have h1 := (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (1 : Fin 3) :
+    Dynamics.State 3 →L[ℝ] ℝ).hasFDerivAt (x := z)
+  have h2 := (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (2 : Fin 3) :
+    Dynamics.State 3 →L[ℝ] ℝ).hasFDerivAt (x := z)
+  have hc := (Real.hasDerivAt_cos (z 0)).comp_hasFDerivAt z h0
+  have h := ((hc.const_sub 1).add ((h1.pow 2).const_mul (1 / 2 : ℝ))).add
+    ((h2.pow 2).const_mul (1 / 2 : ℝ))
+  refine h.congr_fderiv ?_
+  apply ContinuousLinearMap.ext
+  intro v
+  simp
+  ring
+
+/-- The undamped PLL with a frozen dispatch loop is Lyapunov stable: the energy
+`1 − cos θ + x²/2 + I_d²/2` is conserved and has a strict minimum on `|θ| < π`. Its Jacobian has
+trace `0`, so it meets no Routh–Hurwitz requirement. -/
+@[powerlib_domain] theorem undampedPLL_mem_den_lyapunovStable :
+    connection% (undampedPLL ∈ family.den (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_flow_iff.mpr ?_
+  change LyapunovStable _ _
+  have hpt : point undampedPLL.θ undampedPLL.Id = 0 := by
+    ext i
+    fin_cases i <;> simp [point, undampedPLL]
+  rw [hpt]
+  have hcont : Continuous fun y : Dynamics.State 3 => y 0 :=
+    (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (0 : Fin 3) : Dynamics.State 3 →L[ℝ] ℝ).continuous
+  refine lyapunov_stable
+    (V := fun y : Dynamics.State 3 => 1 - Real.cos (y 0) + 1 / 2 * y 1 ^ 2 + 1 / 2 * y 2 ^ 2)
+    (D := {y | |y 0| < Real.pi}) (by norm_num)
+    ⟨isOpen_lt (continuous_abs.comp hcont) continuous_const, by simp [Real.pi_pos],
+      continuous_iff_continuousAt.mpr fun y => (pendulumEnergy_hasFDerivAt y).continuousAt,
+      fun y => (pendulumEnergy_hasFDerivAt y).differentiableAt, by simp,
+      fun y hy hne => ?_, fun y _ => ?_⟩
+  · have hy' : |y 0| < Real.pi := hy
+    have h1 : 0 ≤ 1 / 2 * y 1 ^ 2 := by positivity
+    have h2 : 0 ≤ 1 / 2 * y 2 ^ 2 := by positivity
+    by_cases h0 : y 0 = 0
+    · have h12 : y 1 ≠ 0 ∨ y 2 ≠ 0 := by
+        by_contra h
+        push Not at h
+        apply hne
+        ext i
+        fin_cases i
+        · exact h0
+        · exact h.1
+        · exact h.2
+      rw [h0, Real.cos_zero, sub_self, zero_add]
+      rcases h12 with h | h
+      · have : 0 < 1 / 2 * y 1 ^ 2 := by positivity
+        linarith
+      · have : 0 < 1 / 2 * y 2 ^ 2 := by positivity
+        linarith
+    · have hcos : Real.cos (y 0) < 1 := by
+        refine lt_of_le_of_ne (Real.cos_le_one _) fun h => h0 ?_
+        refine (Real.cos_eq_one_iff_of_lt_of_lt ?_ ?_).mp h
+        · linarith [neg_abs_le (y 0), Real.pi_pos]
+        · linarith [le_abs_self (y 0), Real.pi_pos]
+      linarith
+  · rw [(pendulumEnergy_hasFDerivAt y).fderiv, undampedPLL_field]
+    simp [mul_comm]
+
+/-- The Lyapunov translation is sound but not exact: the undamped PLL with a frozen dispatch loop
+is Lyapunov stable at an equilibrium whose Jacobian has trace `0`. -/
+@[powerlib_domain] theorem not_exact_lyapunovStable :
+    connection% (¬ family.Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := undampedPLL_mem_den_lyapunovStable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hs : Meets undampedPLL .jacobianStable := hmem .jacobianStable (by simp [family, translate])
+  have := hs.1
+  simp [jac, Matrix.trace_fin_three, undampedPLL] at this
 
 end powerlib.GFLParametric.QuasiStatic

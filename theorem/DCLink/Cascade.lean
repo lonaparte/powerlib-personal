@@ -66,7 +66,11 @@ Results.
   `Dynamics.isHurwitz_of_locallyExponentiallyStable_local`; with `Ki = 0` the integrator direction
   is killed by the Jacobian). Outside that range it is not exact
   (`not_exact_locallyExponentiallyStable`: the negative-inductance cascade
-  `negativeInductance` is locally exponentially stable).
+  `negativeInductance` is locally exponentially stable), and neither are the local asymptotic and
+  Lyapunov translations (`not_exact_locallyAsymptoticallyStable`, `not_exact_lyapunovStable`,
+  through `Spectral.local_not_exact_of_not_exact_les`). Their exactness within the physical range
+  is not claimed (UNPROVED: on the boundaries `R + Kp = 0`, `I_dc0 = 0` the three-state Jacobian is
+  not Hurwitz and only the nonlinear terms decide).
 The Jacobian, the transfer function and its zeros are static evidence.
 
 Source: work-sync `theory/T-vsc-dc-voltage-control.md` §1.1, §1.1.1, §1.4, §1.5;
@@ -618,5 +622,31 @@ negative-inductance cascade is locally exponentially stable without `L > 0`. -/
   have hs : CascadeParams.Stable negativeInductance := hmem .stable rfl
   have := hs.1
   norm_num [negativeInductance] at this
+
+/-! ## The local asymptotic and Lyapunov sentences -/
+
+private theorem cascade_les_of {p : CascadeParams} (h : CascadeParams.Stable p) :
+    LocallyExponentiallyStable (CascadeParams.shiftedField p) 0 := by
+  obtain ⟨hL, hC, hV, hR, hKi, hI⟩ := h
+  exact (Flow.Property.holds_shift_iff .locallyExponentiallyStable).mpr
+    (p.locallyExponentiallyStable hL hC hV hR hKi hI)
+
+/-- The local asymptotic translation of the nonlinear cascade is not exact (the
+negative-inductance cascade). -/
+@[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
+    connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have h := not_exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at h
+  exact Spectral.local_not_exact_of_not_exact_les (fun _ hm => cascade_les_of hm) h (Or.inr rfl)
+
+/-- The Lyapunov translation of the nonlinear cascade is not exact (the negative-inductance
+cascade). -/
+@[powerlib_domain] theorem not_exact_lyapunovStable :
+    connection% (¬ family.Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  have h := not_exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at h
+  exact Spectral.local_not_exact_of_not_exact_les (fun _ hm => cascade_les_of hm) h (Or.inl rfl)
 
 end powerlib.DCLink

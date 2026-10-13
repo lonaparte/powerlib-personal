@@ -6,6 +6,7 @@ import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
 import theorem.Flow.Shift
 import theorem.TMIO.ClaimElab
+import theorem.CurrentControl.SISO
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 /-! # GFL reduced-order model B: local stability by linearization (4×4 Routh–Hurwitz)
@@ -70,6 +71,30 @@ Hurwitz Jacobian, i.e. the 4×4 Routh conditions
 (`Criteria.isHurwitz_fin_four_iff`). The untranslated
 local-stability statements are private implementation evidence; the ball-locality lemmas, the
 regularized field and the Jacobian are foundation.
+
+Without that context the local exponential translation is not exact
+(`not_exact_locallyExponentiallyStable`, and not even within the context of an equilibrium,
+`not_exactUnder_equilibrium_locallyExponentiallyStable`): the converter `negativeReference`
+with a negative DC-voltage reference `V_dc* = −1` and negative DC-loop gains is locally
+exponentially stable (`negativeReference_mem_den_locallyExponentiallyStable`). Model B is `C¹`
+on `V_dc ≠ 0` (`ModelBParams.field_contDiffOn`, both signs), so on either side the converse
+linearization theorem for locally `C¹` fields applies directly and no separate negative-side
+regularization is needed: for every selected state with `V_dc* ≠ 0`,
+`mem_den_locallyExponentiallyStable_iff` (an equilibrium whose Jacobian satisfies the 4×4 Routh
+conditions; at an equilibrium `V_dc* = V_dc,ref`, so the positive-reference requirement is what
+excludes the negative side from the translation). On the singular plane `V_dc = 0` the field is
+read with Lean's `x / 0 = 0`: the power term vanishes and the DC components are `I₀ / C_dc` and
+`V_dc,ref` (`ModelBParams.field_eq_zero_iff_of_Vdc_eq_zero`); an equilibrium there
+(`V_dc,ref = 0`, `I₀ / C_dc = 0`) lies on a curve of equilibria of that plane and is neither
+locally asymptotically nor exponentially stable
+(`not_mem_den_locallyAsymptoticallyStable_of_Vdc_eq_zero`,
+`not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero`). Whether a non-equilibrium state with
+`V_dc* = 0` can satisfy the segment-based local exponential estimate is not claimed (UNPROVED: the
+field is discontinuous on that plane and solutions may reach it in finite time). The local
+asymptotic and Lyapunov translations are not exact (`not_exact_locallyAsymptoticallyStable`,
+`not_exact_lyapunovStable`, the same witness); their exactness away from the Routh boundary at
+positive reference is not claimed (UNPROVED: a 4×4 Jacobian on the Routh boundary is not decided by
+the linearization).
 -/
 
 noncomputable section
@@ -548,6 +573,59 @@ private theorem modelB_noLoad_locallyExponentiallyStable (hV : 0 < p.VdcRef)
   · rw [← hJ, htr, hm2, hm3, hdet]
     nlinarith [hD]
 
+/-! ## Model B away from the singular plane `V_dc = 0` -/
+
+/-- The states with nonzero DC-link voltage, where the field is smooth. -/
+def nonzeroVdc : Set (State 4) := {x | x 2 ≠ 0}
+
+@[powerlib_foundation] theorem isOpen_nonzeroVdc : IsOpen nonzeroVdc :=
+  isOpen_ne_fun (Criteria.contDiff_coord (n := 4) (k := 0) 2).continuous continuous_const
+
+/-- Model B is `C¹` on `V_dc ≠ 0` (both signs of the DC-link voltage). -/
+@[powerlib_foundation] theorem field_contDiffOn : ContDiffOn ℝ 1 p.field nonzeroVdc := by
+  rw [contDiffOn_euclidean]
+  intro i
+  fin_cases i
+  · simp only [field, PiLp.toLp_apply, Fin.zero_eta, Matrix.cons_val_zero]
+    apply ContDiff.contDiffOn
+    unfold vgq idRef
+    fun_prop
+  · simp only [field, PiLp.toLp_apply, Fin.mk_one, Matrix.cons_val_one, Matrix.cons_val_zero]
+    apply ContDiff.contDiffOn
+    unfold vgq idRef
+    fun_prop
+  · simp only [field, PiLp.toLp_apply, Fin.reduceFinMk, Matrix.cons_val]
+    apply ContDiffOn.div_const
+    apply contDiffOn_const.add
+    apply ContDiffOn.div _ (contDiff_const.mul (Criteria.contDiff_coord 2)).contDiffOn
+    · intro x hx
+      exact mul_ne_zero two_ne_zero hx
+    · apply ContDiff.contDiffOn
+      unfold vgq vgd idRef
+      fun_prop
+  · simp only [field, PiLp.toLp_apply, Fin.reduceFinMk, Matrix.cons_val]
+    apply ContDiff.contDiffOn
+    fun_prop
+
+/-- At `V_dc = 0` the field is read with Lean's `x / 0 = 0`: the power term `3 P / (2 V_dc)`
+vanishes, so the DC-link and DC-loop components are `I₀ / C_dc` and `V_dc*`.
+Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem field_eq_zero_iff_of_Vdc_eq_zero {x : State 4} (hx : x 2 = 0) :
+    p.field x = 0 ↔
+      p.ωs - p.ωg + p.kp * p.vgq (x 0) (p.kiv * x 3) + p.ki * x 1 = 0 ∧
+        p.vgq (x 0) (p.kiv * x 3) = 0 ∧ p.I0 / p.Cdc = 0 ∧ p.VdcRef = 0 := by
+  rw [field_eq_zero_iff, hx]
+  simp only [mul_zero, div_zero, add_zero, sub_zero]
+  constructor
+  · rintro ⟨h0, h1, h2, h3⟩
+    have hid : p.idRef 0 (x 3) = p.kiv * x 3 := by simp [idRef, h3]
+    rw [hid] at h0 h1
+    exact ⟨h0, h1, h2, h3⟩
+  · rintro ⟨h0, h1, h2, h3⟩
+    have hid : p.idRef 0 (x 3) = p.kiv * x 3 := by simp [idRef, h3]
+    rw [hid]
+    exact ⟨h0, h1, h2, h3⟩
+
 end ModelBParams
 
 
@@ -751,6 +829,254 @@ model B on a ball around the equilibrium, and the quartic Routh–Hurwitz criter
     · exact (Criteria.isHurwitz_fin_four_iff _).mp hA
     · exact hx
     · exact hV
+
+/-! ### The local exponential translation without context -/
+
+/-- At a selected state with nonzero DC-link voltage — of either sign — local exponential
+stability holds exactly when the state is an equilibrium whose Jacobian satisfies the 4×4 Routh
+conditions. Model B is `C¹` on `V_dc ≠ 0` (`ModelBParams.field_contDiffOn`), so the converse
+linearization theorem for fields that are `C¹` on an open neighbourhood applies
+(`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local`): the negative side needs no
+separate regularization. -/
+@[powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff (m : Model) (hx : m.x 2 ≠ 0) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable) ↔
+      m ∈ {m : Model | m.p.field m.x = 0 ∧ RouthFin4 (m.p.jacobian m.x)}) := by
+  unfold powerlib.TMIO.Statement
+  rw [Set.mem_ofPred_eq, mem_den_flow_iff]
+  change LocallyExponentiallyStable _ _ ↔ _
+  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local
+    ModelBParams.isOpen_nonzeroVdc hx (m.p.jacobian m.x) m.p.field_contDiffOn
+    (m.p.fderiv_field hx), Criteria.isHurwitz_fin_four_iff]
+  rfl
+
+/-- A converter with a negative DC-voltage reference: `V_dc* = −1` with negative DC-loop gains
+`k_pv = k_iv = −1` (so that the loop still regulates), `V_g = C_dc = k_p = k_i = 1`, no load,
+lossless line `R_g = X_g = 0`, `i_q0 = 0`, `ω_s = ω_g = 0`, at `x* = (0, 0, −1, 0)`. -/
+def negativeReference : Model :=
+  ⟨⟨0, 0, 1, 1, 1, 0, -1, -1, -1, 1, 0, 0, 0⟩, WithLp.toLp 2 ![0, 0, -1, 0]⟩
+
+private theorem negativeReference_equilibrium :
+    negativeReference.p.field negativeReference.x = 0 := by
+  rw [ModelBParams.field_eq_zero_iff]
+  simp [negativeReference, ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
+
+/-- The negative-reference converter is locally exponentially stable: its Jacobian is block
+diagonal, `[[−1, 1], [−1, 0]]` (PLL) and `[[−3/2, 3/2], [−1, 0]]` (DC loop), both Hurwitz. -/
+@[powerlib_domain] theorem negativeReference_mem_den_locallyExponentiallyStable :
+    connection% (negativeReference ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  have h := mem_den_locallyExponentiallyStable_iff negativeReference (by simp [negativeReference])
+  unfold powerlib.TMIO.Statement at h ⊢
+  refine h.mpr ⟨negativeReference_equilibrium, ?_⟩
+  set J := negativeReference.p.jacobian negativeReference.x with hJ
+  have e00 : J 0 0 = -1 := by simp [J, ModelBParams.jacobian, negativeReference]
+  have e01 : J 0 1 = 1 := by simp [J, ModelBParams.jacobian, negativeReference]
+  have e02 : J 0 2 = 0 := by simp [J, ModelBParams.jacobian, negativeReference]
+  have e03 : J 0 3 = 0 := by simp [J, ModelBParams.jacobian, negativeReference]
+  have e10 : J 1 0 = -1 := by simp [J, ModelBParams.jacobian, negativeReference]
+  have e11 : J 1 1 = 0 := by simp [J, ModelBParams.jacobian, negativeReference]
+  have e12 : J 1 2 = 0 := by simp [J, ModelBParams.jacobian, negativeReference]
+  have e13 : J 1 3 = 0 := by simp [J, ModelBParams.jacobian, negativeReference]
+  have e20 : J 2 0 = 0 := by
+    simp [J, ModelBParams.jacobian, negativeReference, ModelBParams.idRef]
+  have e21 : J 2 1 = 0 := by simp [J, ModelBParams.jacobian, negativeReference]
+  have e22 : J 2 2 = -3 / 2 := by
+    simp [J, ModelBParams.jacobian, negativeReference, ModelBParams.idRef, ModelBParams.vgd,
+      ModelBParams.vgq, ModelBParams.pccP]
+  have e23 : J 2 3 = 3 / 2 := by
+    simp [J, ModelBParams.jacobian, negativeReference, ModelBParams.idRef, ModelBParams.vgd]
+  have e30 : J 3 0 = 0 := by simp [J, ModelBParams.jacobian]
+  have e31 : J 3 1 = 0 := by simp [J, ModelBParams.jacobian]
+  have e32 : J 3 2 = -1 := by simp [J, ModelBParams.jacobian]
+  have e33 : J 3 3 = 0 := by simp [J, ModelBParams.jacobian]
+  have htr : J.trace = -5 / 2 := by
+    simp only [Matrix.trace, Matrix.diag_apply, Fin.sum_univ_four, e00, e11, e22, e33]
+    norm_num
+  have hm2 : Criteria.principalMinorSum2Fin4 J = 4 := by
+    simp only [Criteria.principalMinorSum2Fin4, e00, e01, e02, e03, e10, e11, e12, e13, e20, e21,
+      e22, e23, e30, e31, e32, e33]
+    norm_num
+  have hm3 : Criteria.principalMinorSum3Fin4 J = -3 := by
+    simp only [Criteria.principalMinorSum3Fin4, e00, e01, e02, e03, e10, e11, e12, e13, e20, e21,
+      e22, e23, e30, e31, e32, e33]
+    norm_num
+  have hdet : J.det = 3 / 2 := by
+    rw [Criteria.det_fin_four]
+    simp only [e00, e01, e02, e03, e10, e11, e12, e13, e20, e21, e22, e23, e30, e31, e32, e33]
+    norm_num
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [htr]; norm_num
+  · rw [hm3]; norm_num
+  · rw [hdet]; norm_num
+  · rw [htr, hm2, hm3, hdet]; norm_num
+
+/-- The local exponential translation is not exact without context: the negative-reference
+converter is locally exponentially stable at an equilibrium whose Jacobian meets the Routh
+conditions, but its DC-voltage reference is negative. Not even the context of an equilibrium
+makes it exact (`not_exactUnder_equilibrium_locallyExponentiallyStable`). -/
+@[powerlib_domain] theorem not_exact_locallyExponentiallyStable :
+    connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := negativeReference_mem_den_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hV : Meets negativeReference .positiveReference :=
+    hmem .positiveReference (by simp [family, translate])
+  have : (0 : ℝ) < -1 := hV
+  norm_num at this
+
+/-- Within the context of an equilibrium the local exponential translation is still not exact:
+the negative-reference converter is an equilibrium. -/
+@[powerlib_domain] theorem not_exactUnder_equilibrium_locallyExponentiallyStable :
+    connection% (¬ family.ExactUnder {.equilibrium} (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
+  intro h
+  have hmem := negativeReference_mem_den_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hmem
+  have hI : negativeReference ∈ TMIO.realize family.meets {.equilibrium} := by
+    rw [TMIO.mem_realize]
+    intro q hq
+    rw [Set.mem_singleton_iff] at hq
+    subst hq
+    exact negativeReference_equilibrium
+  have h' : negativeReference ∈ TMIO.realize family.meets
+      (family.translate (.flow .locallyExponentiallyStable) ∪ {.equilibrium}) := by
+    rw [h]
+    exact ⟨hmem, hI⟩
+  rw [TMIO.mem_realize] at h'
+  have hV : Meets negativeReference .positiveReference :=
+    h' .positiveReference (by simp [family, translate])
+  have : (0 : ℝ) < -1 := hV
+  norm_num at this
+
+/-- On the singular plane `V_dc = 0` (read with `x / 0 = 0`) an equilibrium is not locally
+asymptotically stable: there the DC-link and DC-loop components vanish identically, and the
+equilibria of the plane form a curve through the point (along `Δθ` with
+`ξ_v = −(V_g sin Δθ + R_g i_q0)/(X_g k_iv)` when `X_g k_iv ≠ 0`, along `ξ_v` otherwise). -/
+@[powerlib_domain] theorem not_mem_den_locallyAsymptoticallyStable_of_Vdc_eq_zero (m : Model)
+    (hx : m.x 2 = 0) (heq : m.p.field m.x = 0) :
+    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro hm
+  have hlas : LocalAsymptoticStable m.p.field m.x := mem_den_flow_iff.mp hm
+  obtain ⟨h0, h1, h2, h3⟩ := (m.p.field_eq_zero_iff_of_Vdc_eq_zero hx).mp heq
+  have hpt : ∀ a c : ℝ, m.p.vgq a (m.p.kiv * c) = 0 →
+      m.p.field (WithLp.toLp 2 ![a, m.x 1, 0, c]) = 0 := by
+    intro a c hq
+    rw [m.p.field_eq_zero_iff_of_Vdc_eq_zero (by simp)]
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_three,
+      Matrix.head_cons, Matrix.tail_cons]
+    refine ⟨?_, hq, h2, h3⟩
+    rw [hq]
+    have : m.p.ωs - m.p.ωg + m.p.ki * m.x 1 = 0 := by rw [h1] at h0; linarith
+    linarith
+  have hnorm : ∀ a c : ℝ, ‖(WithLp.toLp 2 ![a, m.x 1, 0, c] : State 4) - m.x‖ ≤
+      |a - m.x 0| + |c - m.x 3| := by
+    intro a c
+    rw [EuclideanSpace.norm_eq, Real.sqrt_le_left (by positivity)]
+    simp only [PiLp.sub_apply, Fin.sum_univ_four, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
+      Matrix.tail_cons, hx, sub_self, Real.norm_eq_abs, sq_abs]
+    norm_num
+    nlinarith [abs_nonneg (a - m.x 0), abs_nonneg (c - m.x 3), sq_abs (a - m.x 0),
+      sq_abs (c - m.x 3)]
+  have hxeq : (WithLp.toLp 2 ![m.x 0, m.x 1, 0, m.x 3] : State 4) = m.x := by
+    ext i
+    fin_cases i <;> simp [hx]
+  by_cases hX : m.p.Xg * m.p.kiv = 0
+  · -- equilibria along `ξ_v`
+    refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
+      ⟨WithLp.toLp 2 ![m.x 0, m.x 1, 0, m.x 3 + ε / 2], fun h => ?_, ?_, ?_⟩) hlas
+    · have := congrArg (fun y : State 4 => y 3) h
+      simp at this
+      linarith
+    · refine (hnorm _ _).trans_lt ?_
+      rw [sub_self, abs_zero, zero_add, add_sub_cancel_left, abs_of_pos (by linarith)]
+      linarith
+    · refine hpt _ _ ?_
+      have : m.p.vgq (m.x 0) (m.p.kiv * m.x 3) = 0 := h1
+      simp only [ModelBParams.vgq] at this ⊢
+      have hX' : m.p.Xg * (m.p.kiv * (m.x 3 + ε / 2)) = m.p.Xg * (m.p.kiv * m.x 3) := by
+        rw [← mul_assoc, ← mul_assoc, hX, zero_mul, zero_mul]
+      rw [hX']
+      exact this
+  · -- equilibria along `Δθ`
+    set k := m.p.Xg * m.p.kiv with hk
+    set ξ : ℝ → ℝ := fun a => -(m.p.Vg * Real.sin a + m.p.Rg * m.p.iq0) / k with hξ
+    have hξa : ξ (m.x 0) = m.x 3 := by
+      have : m.p.vgq (m.x 0) (m.p.kiv * m.x 3) = 0 := h1
+      simp only [ModelBParams.vgq] at this
+      simp only [hξ]
+      field_simp
+      linarith
+    have hq : ∀ a, m.p.vgq a (m.p.kiv * ξ a) = 0 := fun a => by
+      simp only [ModelBParams.vgq, hξ]
+      field_simp
+      ring
+    have hξlip : ∀ a, |ξ a - m.x 3| ≤ |m.p.Vg / k| * |a - m.x 0| := by
+      intro a
+      rw [← hξa]
+      simp only [hξ]
+      rw [show -(m.p.Vg * Real.sin a + m.p.Rg * m.p.iq0) / k -
+          -(m.p.Vg * Real.sin (m.x 0) + m.p.Rg * m.p.iq0) / k =
+          -(m.p.Vg / k) * (Real.sin a - Real.sin (m.x 0)) by field_simp; ring]
+      rw [abs_mul, abs_neg]
+      exact mul_le_mul_of_nonneg_left (Real.abs_sin_sub_sin_le _ _) (abs_nonneg _)
+    refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε => ?_) hlas
+    set L := |m.p.Vg / k| with hL
+    set s := ε / (2 * (1 + L)) with hs
+    have hL0 : 0 ≤ L := abs_nonneg _
+    have hs0 : 0 < s := by positivity
+    refine ⟨WithLp.toLp 2 ![m.x 0 + s, m.x 1, 0, ξ (m.x 0 + s)], fun h => ?_, ?_, ?_⟩
+    · have := congrArg (fun y : State 4 => y 0) h
+      simp at this
+      linarith
+    · refine (hnorm _ _).trans_lt ?_
+      have h1' := hξlip (m.x 0 + s)
+      rw [add_sub_cancel_left] at h1' ⊢
+      rw [abs_of_pos hs0] at h1' ⊢
+      have : s + L * s = ε / 2 := by
+        rw [hs]
+        field_simp
+      linarith
+    · exact hpt _ _ (hq _)
+
+/-- On the singular plane an equilibrium is not locally exponentially stable either. -/
+@[powerlib_domain] theorem not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero (m : Model)
+    (hx : m.x 2 = 0) (heq : m.p.field m.x = 0) :
+    connection% (m ∉ family.den (.flow .locallyExponentiallyStable)) := by
+  have h := not_mem_den_locallyAsymptoticallyStable_of_Vdc_eq_zero m hx heq
+  unfold powerlib.TMIO.Statement at h ⊢
+  intro hm
+  apply h
+  rw [family_isAutonomous.mem_den_flow] at hm ⊢
+  exact Flow.locallyExponentiallyStable_localAsymptoticStable hm
+
+/-- The local asymptotic translation is not exact (the negative-reference converter). -/
+@[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
+    connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have hsound := chain_le_semantics
+  have hles := not_exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hsound hles
+  refine Spectral.not_exact_of_den_subset (s := .flow .locallyExponentiallyStable)
+    (s' := .flow .locallyAsymptoticallyStable) rfl
+    (Family.chain_le_semantics_iff.mp hsound _) (fun m hm => ?_) hles
+  rw [family_isAutonomous.mem_den_flow] at hm ⊢
+  exact Flow.locallyExponentiallyStable_localAsymptoticStable hm
+
+/-- The Lyapunov translation is not exact (the negative-reference converter). -/
+@[powerlib_domain] theorem not_exact_lyapunovStable :
+    connection% (¬ family.Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  have hsound := chain_le_semantics
+  have hles := not_exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hsound hles
+  refine Spectral.not_exact_of_den_subset (s := .flow .locallyExponentiallyStable)
+    (s' := .flow .lyapunovStable) rfl
+    (Family.chain_le_semantics_iff.mp hsound _) (fun m hm => ?_) hles
+  rw [family_isAutonomous.mem_den_flow] at hm ⊢
+  exact hm.lyapunovStable
 
 end ModelB
 

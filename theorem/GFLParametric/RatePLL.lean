@@ -66,8 +66,14 @@ passivity translation exact. The former domain theorems are now connection membe
 (`Dynamics.not_locallyExponentiallyStable_of_firstIntegral`). The instability translation is not
 exact (`not_exact_unstable`): instability is the failure of Lyapunov stability, so a model whose
 selected point is not an equilibrium (`offEquilibrium`) is unstable
-(`offEquilibrium_mem_den_unstable`). Exactness of the local asymptotic and Lyapunov translations
-is not claimed (UNPROVED). The boundary pair, damping ratio, `X_g` elimination and the
+(`offEquilibrium_mem_den_unstable`). The Lyapunov translation is not exact
+(`not_exact_lyapunovStable`): the undamped PLL `undampedPLL` (`k_p = 0`, `I_d = 0`) is the pendulum
+`θ̇ = x`, `ẋ = −sin θ`, Lyapunov stable through its conserved energy `1 − cos θ + x²/2`
+(`undampedPLL_mem_den_lyapunovStable`) with a trace-zero Jacobian. Exactness of the local
+asymptotic translation is not claimed (UNPROVED): on the boundary `tan θ = ω_s k_p / k_i` the
+Jacobian has the purely imaginary pair `± j √det J` (`imaginary_pair_at_boundary`), and deciding
+local asymptotic stability there needs the first Lyapunov coefficient of the Hopf normal form; the
+remaining degenerate cases (`k_i = 0`, `V cos θ* = 0`) have a continuum of equilibria or a fold. The boundary pair, damping ratio, `X_g` elimination and the
 frozen-coefficient threshold remain static foundation results (`frozen_hurwitz_forall_iff` is
 about constant matrices, not the time-varying system).
 
@@ -636,5 +642,89 @@ while the translation asks for an equilibrium. -/
   rw [← h, TMIO.mem_realize] at hmem
   have he : Meets offEquilibrium .equilibrium := hmem .equilibrium (by simp [family, translate])
   simp [Meets, offEquilibrium] at he
+
+/-! ### The Lyapunov translation -/
+
+/-- An undamped PLL: `V = k_i = ω_s = 1`, `k_p = X_g = I_d = 0` (so `D₀ = 1`) at `θ* = 0`; the
+field is the pendulum `θ̇ = x`, `ẋ = −sin θ`. -/
+def undampedPLL : Model := ⟨⟨1, 0, 1, 0, 1, 0⟩, 0⟩
+
+private theorem undampedPLL_field (z : Dynamics.State 2) :
+    RatePLL.field undampedPLL.params z = WithLp.toLp 2 ![z 1, -Real.sin (z 0)] := by
+  ext i
+  fin_cases i <;>
+    simp [RatePLL.field, lift, coordField, undampedPLL, vq, pllOut, gridQ, Params.D0, Params.Lg]
+
+/-- The pendulum energy `1 − cos θ + x²/2`. -/
+private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 2) :
+    HasFDerivAt (fun y : Dynamics.State 2 => 1 - Real.cos (y 0) + 1 / 2 * y 1 ^ 2)
+      (Real.sin (z 0) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : Dynamics.State 2 →L[ℝ] ℝ) +
+        z 1 • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : Dynamics.State 2 →L[ℝ] ℝ)) z := by
+  have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) :
+    Dynamics.State 2 →L[ℝ] ℝ).hasFDerivAt (x := z)
+  have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) :
+    Dynamics.State 2 →L[ℝ] ℝ).hasFDerivAt (x := z)
+  have hc := (Real.hasDerivAt_cos (z 0)).comp_hasFDerivAt z h0
+  have h := (hc.const_sub 1).add ((h1.pow 2).const_mul (1 / 2 : ℝ))
+  refine h.congr_fderiv ?_
+  apply ContinuousLinearMap.ext
+  intro v
+  simp
+  ring
+
+/-- The undamped PLL is Lyapunov stable at `θ* = 0`: the pendulum energy `1 − cos θ + x²/2` is
+conserved and has a strict minimum on `|θ| < π`. Its Jacobian `[[0, 1], [−1, 0]]` has trace `0`,
+so it meets no stable-Jacobian requirement. -/
+@[powerlib_domain] theorem undampedPLL_mem_den_lyapunovStable :
+    connection% (undampedPLL ∈ family.den (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_flow_iff.mpr ?_
+  change LyapunovStable _ _
+  have hpt : equilibrium undampedPLL.θ = 0 := by
+    ext i
+    fin_cases i <;> simp [equilibrium, undampedPLL]
+  rw [hpt]
+  have hcont : Continuous fun y : Dynamics.State 2 => y 0 :=
+    (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : Dynamics.State 2 →L[ℝ] ℝ).continuous
+  refine lyapunov_stable (V := fun y : Dynamics.State 2 => 1 - Real.cos (y 0) + 1 / 2 * y 1 ^ 2)
+    (D := {y | |y 0| < Real.pi}) two_pos
+    ⟨isOpen_lt (continuous_abs.comp hcont) continuous_const, by simp [Real.pi_pos],
+      continuous_iff_continuousAt.mpr fun y => (pendulumEnergy_hasFDerivAt y).continuousAt,
+      fun y => (pendulumEnergy_hasFDerivAt y).differentiableAt, by simp,
+      fun y hy hne => ?_, fun y _ => ?_⟩
+  · have hy' : |y 0| < Real.pi := hy
+    by_cases h0 : y 0 = 0
+    · have h1 : y 1 ≠ 0 := by
+        intro h1
+        apply hne
+        ext i
+        fin_cases i
+        · exact h0
+        · exact h1
+      have : 0 < 1 / 2 * y 1 ^ 2 := by positivity
+      simp only [h0, Real.cos_zero, sub_self, zero_add]
+      exact this
+    · have hcos : Real.cos (y 0) < 1 := by
+        refine lt_of_le_of_ne (Real.cos_le_one _) fun h => h0 ?_
+        refine (Real.cos_eq_one_iff_of_lt_of_lt ?_ ?_).mp h
+        · linarith [neg_abs_le (y 0), Real.pi_pos]
+        · linarith [le_abs_self (y 0), Real.pi_pos]
+      have : 0 ≤ 1 / 2 * y 1 ^ 2 := by positivity
+      linarith
+  · rw [(pendulumEnergy_hasFDerivAt y).fderiv, undampedPLL_field]
+    simp [mul_comm]
+
+/-- The Lyapunov translation is sound but not exact: the undamped PLL is Lyapunov stable at an
+equilibrium whose Jacobian has trace `0`. -/
+@[powerlib_domain] theorem not_exact_lyapunovStable :
+    connection% (¬ family.Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := undampedPLL_mem_den_lyapunovStable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hs : Meets undampedPLL .jacobianStable := hmem .jacobianStable (by simp [family, translate])
+  have := hs.1
+  simp [jac, Matrix.trace_fin_two, undampedPLL, Params.D0, Params.Lg] at this
 
 end powerlib.GFLParametric.RatePLL

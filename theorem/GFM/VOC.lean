@@ -1,5 +1,6 @@
 import theorem.Synchronous.EqualArea
 import theorem.Dynamics.ConverseLinearization
+import theorem.CurrentControl.SISO
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
 /-! # Andronov–Hopf virtual oscillator (AHO-VOC) at no load
@@ -42,7 +43,12 @@ Family and connection conclusions.
   asymptotically stable through the strict Lyapunov function `|v|²`
   (`AHO.critical_mem_den_globallyAsymptoticallyStable`) without decay at the origin
   (`AHO.not_exact_globallyAsymptoticallyStable`, `AHO.not_exact_locallyAsymptoticallyStable`,
-  `AHO.not_exact_lyapunovStable`): the cubic-damping boundary of the linearization.
+  `AHO.not_exact_lyapunovStable`): the cubic-damping boundary of the linearization. Their
+  denotations are decided exactly (`AHO.mem_den_locallyAsymptoticallyStable_iff`: `c < 0`, or
+  `c = 0` with `κ_v > 0`; `AHO.mem_den_lyapunovStable_iff`: `c < 0`, or `c = 0` with `κ_v ≥ 0`): at
+  `c = 0` the energy obeys `d|v|²/dt = −2 κ_v |v|⁴`, a strict Lyapunov function for `κ_v > 0`,
+  conserved for `κ_v = 0` (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`) and growing for
+  `κ_v < 0` (`Dynamics.unstable_of_chetaev`).
 * New connection conclusion for the module's own regime: under the standing assumptions the
   origin is unstable (`Admissible.mem_den_unstable`): solutions leave the origin, towards the limit
   cycle of the trajectory-level results.
@@ -775,6 +781,112 @@ stability is not decided by the linearization. -/
     family_isAutonomous.mem_den_flow.mpr (family_isAutonomous.mem_den_flow.mp hmem).2.2.1
   rw [← h, TMIO.mem_realize] at hmem'
   exact critical_not_decaying (hmem' .decaying (by simp [family, translate]))
+
+/-! ### The local asymptotic and Lyapunov denotations -/
+
+/-- With `c = 0` and `κ_v > 0`, `|v|²` is a strict global Lyapunov function (derivative
+`−2 κ_v |v|⁴`). -/
+private theorem strictLyapunov_of_critical {a : AHO} (hc : a.c = 0) (hκ : 0 < a.κv) :
+    IsStrictLyapunovFunction a.realField energy 0 where
+  hcont := by unfold energy; fun_prop
+  hV_c1 := by unfold energy; fun_prop
+  hzero := by simp [energy]
+  hpos x hx := energy_pos hx
+  hequil := a.realField_zero
+  hLie_neg x hx := by
+    rw [energy_lie, hc]
+    have h := energy_pos hx
+    nlinarith [mul_pos hκ (mul_pos h h)]
+  hbounded_sublevel c := by
+    refine (isCompact_closedBall (0 : State 2) (Real.sqrt (max c 0))).of_isClosed_subset
+      (isClosed_le (by unfold energy; fun_prop) continuous_const) fun x hx => ?_
+    rw [Metric.mem_closedBall, dist_zero_right]
+    have hx' : ‖x‖ ^ 2 ≤ max c 0 := by
+      have := energy_eq x
+      rw [sub_zero] at this
+      rw [← this]
+      exact (Set.mem_ofPred_eq ▸ hx).trans (le_max_left _ _)
+    calc ‖x‖ = Real.sqrt (‖x‖ ^ 2) := (Real.sqrt_sq (norm_nonneg x)).symm
+      _ ≤ Real.sqrt (max c 0) := Real.sqrt_le_sqrt hx'
+
+private theorem energy_differentiable : Differentiable ℝ energy := fun x =>
+  (hasFDerivAt_energy x).differentiableAt
+
+private theorem seed (ε : ℝ) (hε : 0 < ε) :
+    ‖Synchronous.mkState (ε / 2) 0 - 0‖ < ε ∧ 0 < energy (Synchronous.mkState (ε / 2) 0) := by
+  have hne : Synchronous.mkState (ε / 2) 0 ≠ 0 := by
+    intro h
+    have := congrArg (fun y : State 2 => y 0) h
+    simp at this
+    linarith
+  refine ⟨?_, energy_pos hne⟩
+  rw [sub_zero]
+  refine (Synchronous.norm_state_le _).trans_lt ?_
+  simp only [Synchronous.mkState_zero, Synchronous.mkState_one, abs_zero, add_zero]
+  rw [abs_of_pos (by linarith)]
+  linarith
+
+/-- The origin is locally asymptotically stable exactly when it decays (`c < 0`) or, at the
+critical gain `c = 0`, the amplitude is cubically damped (`κ_v > 0`, `ṙ = −κ_v r³`): the
+linearization decides `c ≠ 0`, and at `c = 0` the energy `|v|²` obeys `d|v|²/dt = −2 κ_v |v|⁴`
+(strict Lyapunov function for `κ_v > 0`; nondecreasing for `κ_v ≤ 0`, so no nearby solution
+converges, `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
+@[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff (a : AHO) :
+    connection% (a ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
+      a ∈ {a : AHO | a.c < 0 ∨ (a.c = 0 ∧ 0 < a.κv)}) := by
+  unfold powerlib.TMIO.Statement
+  rw [family_isAutonomous.mem_den_flow, Set.mem_ofPred_eq]
+  change LocalAsymptoticStable _ _ ↔ _
+  constructor
+  · intro h
+    rcases lt_trichotomy a.c 0 with hc | hc | hc
+    · exact Or.inl hc
+    · refine Or.inr ⟨hc, ?_⟩
+      by_contra hκ
+      push Not at hκ
+      refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := fun x => -energy x)
+        (ρ := 1) a.contDiff_realField energy_differentiable.neg one_pos (fun x _ => ?_)
+        (fun ε hε => ⟨Synchronous.mkState (ε / 2) 0, (seed ε hε).1, ?_⟩) h
+      · rw [fderiv_fun_neg, _root_.neg_apply, energy_lie, hc]
+        nlinarith [mul_nonneg (neg_nonneg.mpr hκ) (sq_nonneg (energy x))]
+      · simp [energy]
+        positivity
+    · exact absurd h.1 (unstable_of hc)
+  · rintro (hc | ⟨hc, hκ⟩)
+    · exact Flow.locallyExponentiallyStable_localAsymptoticStable (les hc)
+    · exact (Flow.globallyAsymptoticallyStable_of_strictLyapunov two_pos a.contDiff_realField
+        (strictLyapunov_of_critical hc hκ)).localAsymptoticStable
+
+/-- The origin is Lyapunov stable exactly when it decays (`c < 0`) or `c = 0` with `κ_v ≥ 0`
+(the energy `|v|²` does not increase); at `c = 0` with `κ_v < 0` the energy grows at the rate
+`2 |κ_v| |v|⁴` (Chetaev's theorem, `Dynamics.unstable_of_chetaev`). -/
+@[powerlib_domain] theorem mem_den_lyapunovStable_iff (a : AHO) :
+    connection% (a ∈ family.den (.flow .lyapunovStable) ↔
+      a ∈ {a : AHO | a.c < 0 ∨ (a.c = 0 ∧ 0 ≤ a.κv)}) := by
+  unfold powerlib.TMIO.Statement
+  rw [family_isAutonomous.mem_den_flow, Set.mem_ofPred_eq]
+  change LyapunovStable _ _ ↔ _
+  constructor
+  · intro h
+    rcases lt_trichotomy a.c 0 with hc | hc | hc
+    · exact Or.inl hc
+    · refine Or.inr ⟨hc, ?_⟩
+      by_contra hκ
+      push Not at hκ
+      refine Dynamics.unstable_of_chetaev (W := energy) (r := 1) a.contDiff_realField
+        (by unfold energy; fun_prop) one_pos (fun ε hε => ⟨Synchronous.mkState (ε / 2) 0, ?_⟩)
+        (fun x _ hx => ?_) h
+      · exact seed ε hε
+      · rw [energy_lie, hc]
+        nlinarith [mul_pos (neg_pos.mpr hκ) (mul_pos hx hx)]
+    · exact absurd h (unstable_of hc)
+  · rintro (hc | ⟨hc, hκ⟩)
+    · exact (les hc).lyapunovStable
+    · exact lyapunov_stable (V := energy) (D := Set.univ) two_pos
+        ⟨isOpen_univ, Set.mem_univ _, energy_differentiable.continuous, energy_differentiable,
+          by simp [energy], fun x _ hx => energy_pos hx, fun x _ => by
+            rw [energy_lie, hc]
+            nlinarith [mul_nonneg hκ (sq_nonneg (energy x))]⟩
 
 /-! ## Algebra (foundation) -/
 

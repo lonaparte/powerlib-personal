@@ -8,6 +8,7 @@ import theorem.TMIO.ClaimElab
 import theorem.Criteria.Hurwitz2
 import theorem.Machine.SpaceVector
 import theorem.Criteria.Jacobian
+import theorem.CurrentControl.SISO
 import theorem.Linear.Stability
 import theorem.Dynamics.ConverseLinearization
 
@@ -72,7 +73,10 @@ The physical requirement `r_r, L_r > 0` is kept as the translation. The attracti
 are characterized exactly by a member equivalence (`mem_den_attractive_iff`): a drive satisfies
 local / global, asymptotic / exponential stability exactly when `r_r / L_r > 0` (the field is
 affine; an attractive equilibrium makes it linear with Jacobian `fluxMatrix`, Hurwitz only for a
-negative trace `−2 r_r/L_r`; conversely the drive with `|r_r|, |L_r|` has the same field).
+negative trace `−2 r_r/L_r`; conversely the drive with `|r_r|, |L_r|` has the same field). The
+Lyapunov sentence is characterized by `mem_den_lyapunovStable_iff`: `r_r / L_r > 0`, or
+`r_r / L_r = 0` with `ω_sl L_m i_s = 0` (a rotation about, or rest at, the selected point; with
+`r_r / L_r < 0` the flux deviation grows, Chetaev's theorem `Dynamics.unstable_of_chetaev`).
 
 Source: work-sync theory/T-field-oriented-control.md §1.1–§1.4 (and §1.3 IFOC);
 theory/T-direct-torque-control.md §1.2 (stator current from fluxes);
@@ -809,5 +813,91 @@ strictly stronger (`not_exact`). -/
     unfold powerlib.TMIO.Statement at h
     rw [family_isAutonomous.mem_den_flow, hfield] at h
     exact Flow.GloballyExponentiallyStable.holds h hP
+
+/-! ## The Lyapunov sentence -/
+
+/-- With `r_r / L_r = 0` (so `T_r = 0` and `ψ_eq = L_m i_s`) the selected point is an equilibrium of
+the rotor-flux field — which is then the rotation `(ω_sl ψ_q, −ω_sl ψ_d)` — exactly when
+`ω_sl L_m i_s = 0`. -/
+private theorem field_zero_iff_of_ratio_zero {d : Drive} (hk : d.p.rr / d.p.Lr = 0) :
+    d.field 0 = 0 ↔ d.ωsl * d.p.Lm * d.isd = 0 ∧ d.ωsl * d.p.Lm * d.isq = 0 := by
+  have hT : d.p.Tr = 0 := by
+    rcases div_eq_zero_iff.mp hk with h | h <;> simp [Params.Tr, h]
+  have hf : d.field 0 = vec (d.ωsl * d.p.Lm * d.isq) (-(d.ωsl * d.p.Lm * d.isd)) := by
+    apply WithLp.ofLp_injective 2
+    ext i
+    fin_cases i <;>
+      simp [Drive.field, fluxField, fluxEquilibrium, slipRatio, hT, hk] <;> ring
+  rw [hf]
+  constructor
+  · intro h
+    have h0 := congrArg (fun y : State2 => y 0) h
+    have h1 := congrArg (fun y : State2 => y 1) h
+    simp only [vec_apply_zero, vec_apply_one, PiLp.zero_apply, neg_eq_zero] at h0 h1
+    exact ⟨h1, h0⟩
+  · rintro ⟨h1, h0⟩
+    apply WithLp.ofLp_injective 2
+    ext i
+    fin_cases i <;> simp [h0, h1]
+
+/-- The quadratic form of `fluxMatrix`: `⟨z, A z⟩ = −(r_r / L_r) ‖z‖²` (the rotation is
+skew). -/
+private theorem inner_fluxMatrix (d : Drive) (z : State2) :
+    inner ℝ z (LinearSystems.affineLinearVectorField (fluxMatrix d.p d.ωsl) 0 z) =
+      -(d.p.rr / d.p.Lr) * (z 0 ^ 2 + z 1 ^ 2) := by
+  simp [LinearSystems.affineLinearVectorField, fluxMatrix, Matrix.ofLp_toEuclideanCLM,
+    Matrix.mulVec, dotProduct, Fin.sum_univ_two, PiLp.inner_apply, Params.Tr]
+  ring
+
+/-- **The Lyapunov sentence is decided by `r_r / L_r` and the commands.** A current-fed IFOC drive
+is Lyapunov stable at its rotor-flux equilibrium exactly when `r_r / L_r > 0`, or `r_r / L_r = 0`
+with `ω_sl L_m i_s = 0` (then the field is a rotation about the selected point, or vanishes).
+With `r_r / L_r < 0` the flux grows (`‖ψ − ψ_eq‖²` increases at the rate `−2 (r_r/L_r) ‖·‖²`,
+Chetaev); with `r_r / L_r = 0` and `ω_sl L_m i_s ≠ 0` the selected point is not an equilibrium.
+So the translation `positiveRotor` is not exact for Lyapunov stability even with `L_r > 0`. -/
+@[powerlib_domain] theorem mem_den_lyapunovStable_iff (d : Drive) :
+    connection% (d ∈ family.den (.flow .lyapunovStable) ↔
+      d ∈ {d : Drive | 0 < d.p.rr / d.p.Lr ∨ (d.p.rr / d.p.Lr = 0 ∧
+        d.ωsl * d.p.Lm * d.isd = 0 ∧ d.ωsl * d.p.Lm * d.isq = 0)}) := by
+  unfold powerlib.TMIO.Statement
+  rw [Set.mem_ofPred_eq]
+  constructor
+  · intro hm
+    have h : LyapunovStable d.field 0 := family_isAutonomous.mem_den_flow.mp hm
+    have h0 : d.field 0 = 0 := Dynamics.isEquilibrium_of_lyapunovStable (field_contDiff d) h
+    rcases lt_trichotomy (d.p.rr / d.p.Lr) 0 with hk | hk | hk
+    · exfalso
+      rw [field_eq_linear d h0] at h
+      refine Dynamics.unstable_of_chetaev (W := fun z : State2 => ‖z‖ ^ 2) (r := 1)
+        (Linear.affine_contDiff _ _) (contDiff_norm_sq ℝ) one_pos
+        (fun ε hε => ⟨vec (ε / 2) 0, ?_, ?_⟩) (fun z _ hz => ?_) h
+      · rw [sub_zero, ← sq_lt_sq₀ (norm_nonneg _) hε.le, norm_sq_state2]
+        simp only [vec_apply_zero, vec_apply_one]
+        nlinarith
+      · rw [norm_sq_state2]
+        simp only [vec_apply_zero, vec_apply_one]
+        positivity
+      · rw [fderiv_norm_sq_apply]
+        show 0 < (2 : ℕ) • inner ℝ z
+          (LinearSystems.affineLinearVectorField (fluxMatrix d.p d.ωsl) 0 z)
+        rw [nsmul_eq_mul, inner_fluxMatrix, ← norm_sq_state2]
+        nlinarith
+    · exact Or.inr ⟨hk, (field_zero_iff_of_ratio_zero hk).mp h0⟩
+    · exact Or.inl hk
+  · rintro (hk | ⟨hk, hd, hq⟩)
+    · have h := mem_den_attractive_iff d (P := .locallyExponentiallyStable) trivial
+      unfold powerlib.TMIO.Statement at h
+      have hles := h.mpr hk
+      rw [family_isAutonomous.mem_den_flow] at hles ⊢
+      exact hles.lyapunovStable
+    · have h0 := (field_zero_iff_of_ratio_zero hk).mpr ⟨hd, hq⟩
+      rw [family_isAutonomous.mem_den_flow]
+      change LyapunovStable d.field 0
+      rw [field_eq_linear d h0]
+      refine Dynamics.lyapunovStable_of_inner_nonpos two_pos (ContinuousLinearMap.id ℝ State2)
+        Function.injective_id fun z => ?_
+      simp only [ContinuousLinearMap.id_apply]
+      rw [inner_fluxMatrix, hk]
+      simp
 
 end powerlib.Machine.InductionMachine

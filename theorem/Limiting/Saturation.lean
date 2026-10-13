@@ -2,6 +2,7 @@ import theorem.Criteria.Jacobian
 import theorem.CurrentControl.SISO
 import theorem.Dynamics.ConverseLinearization
 import theorem.Flow.Shift
+import theorem.Synchronous.Swing
 
 /-! # Grid-forming converter in current saturation: equilibria and the optimal current angle
 
@@ -49,6 +50,17 @@ Jacobian `[[0, 1], [P_sat sin(δ* − φ)/M, −D/M]]`): `stable` — `(δ*, 0)`
   positive inertia. `not_exact_locallyExponentiallyStable` (boundary witness): without that range
   it is not exact — the model `M = D = −1`, `P_sat = 1`, `φ = P_ref = 0`, `δ* = π/2` is locally
   exponentially stable (`negativeInertia_mem_den_locallyExponentiallyStable`).
+* The saturated model is the canonical swing model with `k₁ = 0`, `k₂ = P_sat`, `k₃ = φ − π/2`
+  (`SatModel.toSwing`, `satField_eq_swing`); on flow sentences the two families agree
+  (`mem_den_flow_iff_swing`, a comparison of the two semantics connections). Through it, within
+  positive inertia, `mem_den_locallyAsymptoticallyStable_iff`: local asymptotic stability holds
+  exactly under the local exponential condition (the swing family's exactness,
+  `Synchronous.Swing.exactUnder_locallyAsymptoticallyStable`, decides the degenerate slopes), and
+  `mem_den_lyapunovStable_iff`: Lyapunov stability holds exactly at an equilibrium with `D ≥ 0` and
+  `P_sat sin(δ* − φ) < 0`, or with `P_sat = 0` and `D > 0` — so the Lyapunov translation is not
+  exact even within positive inertia. Without positive inertia neither is exact
+  (`not_exact_locallyAsymptoticallyStable`, `not_exact_lyapunovStable`, the negative-inertia
+  witness through `Spectral.local_not_exact_of_not_exact_les`).
 * `not_exact_unstable` (boundary witness): instability is the failure of Lyapunov stability, so
   an unbalanced model (`offEquilibrium`) is unstable (`offEquilibrium_mem_den_unstable`,
   `Dynamics.unstable_of_ne_zero`) while the instability condition asks for an equilibrium.
@@ -356,6 +368,158 @@ locally exponentially stable without positive inertia. -/
   have hs : SatModel.Stable negativeInertia := hmem .stable rfl
   have := hs.2.1
   norm_num [negativeInertia] at this
+
+/-! ## The local asymptotic and Lyapunov sentences: the saturated model is a swing model -/
+
+/-- The saturated model read as the canonical swing model: `k₁ = 0`, `k₂ = P_sat`,
+`k₃ = φ − π/2`, so that `P_e = P_sat sin(δ − φ + π/2) = P_sat cos(δ − φ)`. -/
+def SatModel.toSwing (m : SatModel) : Synchronous.Swing.Model :=
+  ⟨⟨m.M, m.D, m.Pref, 0, m.Psat, m.φ - Real.pi / 2⟩, m.δ⟩
+
+/-- The saturated field is the swing field of `toSwing`.
+Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem satField_eq_swing (m : SatModel) :
+    satField m.M m.D m.Pref m.Psat m.φ = m.toSwing.p.field := by
+  funext x
+  ext i
+  fin_cases i
+  · simp [satField, Synchronous.SwingParams.field, SatModel.toSwing]
+  · simp only [satField, Synchronous.SwingParams.field, SatModel.toSwing,
+      Synchronous.SwingParams.accel, Synchronous.SwingParams.Pe]
+    simp only [PiLp.toLp_apply, Synchronous.mkState,
+      WithLp.equiv_symm_apply]
+    rw [show x 0 - (m.φ - Real.pi / 2) = (x 0 - m.φ) + Real.pi / 2 by ring,
+      Real.sin_add_pi_div_two, zero_add]
+
+/-- On flow sentences the saturated family agrees with the swing family: a saturated model
+satisfies a flow sentence exactly when its swing reading does. A comparison of the two semantics
+connections at the two members. -/
+@[powerlib_domain] theorem mem_den_flow_iff_swing (m : SatModel) (P : Flow.Property) :
+    connection% (m ∈ family.den (.flow P) ↔
+      m.toSwing ∈ Synchronous.Swing.family.den (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  rw [mem_den_flow, Synchronous.Swing.family_isAutonomous.mem_den_flow,
+    ← Flow.Property.holds_shift_iff, satField_eq_swing]
+  have hpt : angleState m.δ = m.toSwing.point := by
+    ext i
+    fin_cases i <;> simp [angleState, Synchronous.Swing.Model.point, SatModel.toSwing]
+  rw [hpt]
+  rfl
+
+private theorem toSwing_Pe (m : SatModel) :
+    m.toSwing.p.Pe m.toSwing.δ = m.Psat * Real.cos (m.δ - m.φ) := by
+  simp only [SatModel.toSwing, Synchronous.SwingParams.Pe, zero_add]
+  rw [show m.δ - (m.φ - Real.pi / 2) = (m.δ - m.φ) + Real.pi / 2 by ring,
+    Real.sin_add_pi_div_two]
+
+private theorem toSwing_syncCoeff (m : SatModel) :
+    m.toSwing.p.syncCoeff m.toSwing.δ = -(m.Psat * Real.sin (m.δ - m.φ)) := by
+  simp only [SatModel.toSwing, Synchronous.SwingParams.syncCoeff]
+  rw [show m.δ - (m.φ - Real.pi / 2) = (m.δ - m.φ) + Real.pi / 2 by ring,
+    Real.cos_add_pi_div_two]
+  ring
+
+/-- Positive inertia: local asymptotic stability of a saturated model at `(δ*, 0)` holds exactly
+when `(δ*, 0)` is an equilibrium, `D > 0` and `P_sat sin(δ* − φ) < 0` — the same condition as
+local exponential stability. The linearization does not decide the degenerate cases; through the
+swing reading (`mem_den_flow_iff_swing`) the swing family's exactness within positive inertia
+applies (`Synchronous.Swing.exactUnder_locallyAsymptoticallyStable`: conserved energy for `D = 0`,
+a continuum of equilibria for `P_sat = 0`, the dissipated energy at a fold of the curve). -/
+@[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff (m : SatModel) (hM : 0 < m.M) :
+    connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
+      m ∈ {m : SatModel | m.Psat * Real.cos (m.δ - m.φ) = m.Pref ∧ 0 < m.D ∧
+        m.Psat * Real.sin (m.δ - m.φ) < 0}) := by
+  have hsw := mem_den_flow_iff_swing m .locallyAsymptoticallyStable
+  have hex := Synchronous.Swing.exactUnder_locallyAsymptoticallyStable
+  unfold powerlib.TMIO.Statement at hsw hex ⊢
+  unfold Family.ExactUnder TMIO.ExactUnder at hex
+  rw [hsw, Set.mem_ofPred_eq]
+  have hI : m.toSwing ∈ TMIO.realize Synchronous.Swing.family.meets {.inertia} := by
+    rw [TMIO.mem_realize]
+    intro q hq
+    rw [Set.mem_singleton_iff] at hq
+    subst hq
+    exact hM
+  constructor
+  · intro h
+    have h' : m.toSwing ∈ TMIO.realize Synchronous.Swing.family.meets
+        (Synchronous.Swing.family.translate (.flow .locallyAsymptoticallyStable) ∪
+          {.inertia}) := by
+      rw [hex]
+      exact ⟨h, hI⟩
+    rw [TMIO.mem_realize] at h'
+    have hb : m.toSwing.p.Pe m.toSwing.δ = m.toSwing.p.Pm :=
+      h' .balanced (by simp [Synchronous.Swing.family, Synchronous.Swing.translate])
+    have hD : 0 < m.toSwing.p.D :=
+      h' .damped (by simp [Synchronous.Swing.family, Synchronous.Swing.translate])
+    have hK : 0 < m.toSwing.p.syncCoeff m.toSwing.δ :=
+      h' .synchronizing (by simp [Synchronous.Swing.family, Synchronous.Swing.translate])
+    rw [toSwing_Pe] at hb
+    rw [toSwing_syncCoeff] at hK
+    exact ⟨hb, hD, by linarith⟩
+  · rintro ⟨hb, hD, hs⟩
+    have h' : m.toSwing ∈ TMIO.realize Synchronous.Swing.family.meets
+        (Synchronous.Swing.family.translate (.flow .locallyAsymptoticallyStable) ∪
+          {.inertia}) := by
+      rw [TMIO.mem_realize]
+      intro q hq
+      simp only [Synchronous.Swing.family, Synchronous.Swing.translate, Set.mem_union,
+        Set.mem_insert_iff, Set.mem_singleton_iff] at hq
+      rcases hq with ((rfl | rfl | rfl | rfl) | rfl)
+      · show m.toSwing.p.Pe m.toSwing.δ = m.toSwing.p.Pm
+        rw [toSwing_Pe]
+        exact hb
+      · exact hM
+      · exact hD
+      · show 0 < m.toSwing.p.syncCoeff m.toSwing.δ
+        rw [toSwing_syncCoeff]
+        linarith
+      · exact hM
+    rw [hex] at h'
+    exact h'.1
+
+/-- Positive inertia: Lyapunov stability of a saturated model at `(δ*, 0)` holds exactly at an
+equilibrium with `D ≥ 0` and `P_sat sin(δ* − φ) < 0`, or with a zero saturated current
+(`P_sat = 0`) and `D > 0` (`Synchronous.Swing.mem_den_lyapunovStable_iff_of_inertia`: a fold of
+the curve is unstable for every `D ≥ 0`). -/
+@[powerlib_domain] theorem mem_den_lyapunovStable_iff (m : SatModel) (hM : 0 < m.M) :
+    connection% (m ∈ family.den (.flow .lyapunovStable) ↔
+      m ∈ {m : SatModel | m.Psat * Real.cos (m.δ - m.φ) = m.Pref ∧
+        ((0 ≤ m.D ∧ m.Psat * Real.sin (m.δ - m.φ) < 0) ∨ (m.Psat = 0 ∧ 0 < m.D))}) := by
+  have hsw := mem_den_flow_iff_swing m .lyapunovStable
+  have hiff := Synchronous.Swing.mem_den_lyapunovStable_iff_of_inertia m.toSwing hM
+  unfold powerlib.TMIO.Statement at hsw hiff ⊢
+  rw [hsw, hiff, Set.mem_ofPred_eq, Set.mem_ofPred_eq, toSwing_Pe, toSwing_syncCoeff]
+  simp only [SatModel.toSwing]
+  constructor
+  · rintro ⟨hb, (⟨hD, hK⟩ | ⟨hk, hD⟩)⟩
+    · exact ⟨hb, Or.inl ⟨hD, by linarith⟩⟩
+    · exact ⟨hb, Or.inr ⟨hk, hD⟩⟩
+  · rintro ⟨hb, (⟨hD, hK⟩ | ⟨hk, hD⟩)⟩
+    · exact ⟨hb, Or.inl ⟨hD, by linarith⟩⟩
+    · exact ⟨hb, Or.inr ⟨hk, hD⟩⟩
+
+/-- Without positive inertia the local asymptotic translation is sound but not exact (the
+negative-inertia model, `Spectral.local_not_exact_of_not_exact_les`). -/
+@[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
+    connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have h := not_exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at h
+  exact Spectral.local_not_exact_of_not_exact_les (fun m hm =>
+    (Flow.Property.holds_shift_iff .locallyExponentiallyStable).mpr
+      (satField_les_of hm.2.1 hm.2.2.1 hm.1 hm.2.2.2)) h (Or.inr rfl)
+
+/-- The Lyapunov translation is sound but not exact: the negative-inertia model, and, within
+positive inertia, a zero saturated current with `D > 0` (`mem_den_lyapunovStable_iff`). -/
+@[powerlib_domain] theorem not_exact_lyapunovStable :
+    connection% (¬ family.Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  have h := not_exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at h
+  exact Spectral.local_not_exact_of_not_exact_les (fun m hm =>
+    (Flow.Property.holds_shift_iff .locallyExponentiallyStable).mpr
+      (satField_les_of hm.2.1 hm.2.2.1 hm.1 hm.2.2.2)) h (Or.inl rfl)
 
 /-! ## Instability away from equilibrium -/
 

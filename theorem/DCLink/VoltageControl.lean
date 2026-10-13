@@ -65,7 +65,16 @@ rectifier, `P/V0 > 0`) and `closedLoop_mem_den_locallyExponentiallyStable_iff`
 (`V_d, V_dc*, C > 0`: iff `Kp > −I_dc0/V_d ∧ Ki > 0`; with `Ki = 0` the integrator direction is
 killed by the Jacobian). Outside that range the local exponential translations are not exact:
 `openNot_exact_locallyExponentiallyStable` and `closedNot_exact_locallyExponentiallyStable`
-(negative-capacitance witnesses). The Jacobians, Hurwitz criteria and the small-signal transfer function
+(negative-capacitance witnesses). The same witnesses make the local asymptotic and Lyapunov
+translations inexact (`openNot_exact_locallyAsymptoticallyStable`, `openNot_exact_lyapunovStable`,
+`closedNot_exact_locallyAsymptoticallyStable`, `closedNot_exact_lyapunovStable`, through
+`Spectral.local_not_exact_of_not_exact_les`). Within the physical range the open loop is decided
+exactly: `openLoop_mem_den_locallyAsymptoticallyStable_iff` (iff rectifier, `P/V0 > 0`; with no AC
+power every voltage is an equilibrium) and `openLoop_mem_den_lyapunovStable_iff` (iff `P/V0 ≥ 0`:
+the node with no AC power is Lyapunov stable, so that translation is not exact even there). For
+the closed loop within the physical range, exactness of the local asymptotic translation is not
+claimed (UNPROVED: on `Kp = −I_dc0/V_d`, `Ki > 0` the Jacobian has a purely imaginary pair, decided
+only by the nonlinear terms). The Jacobians, Hurwitz criteria and the small-signal transfer function
 are static evidence.
 
 Source: work-sync `theory/T-vsc-dc-voltage-control.md` §1.1, §1.3, §1.4;
@@ -663,5 +672,123 @@ negative-capacitance loop is locally exponentially stable without `C > 0`. -/
   have hs : DCParams.Stable negativeCapacitanceLoop := hmem .stable rfl
   have := hs.2.2.1
   norm_num [negativeCapacitanceLoop] at this
+
+/-! ## The local asymptotic and Lyapunov sentences -/
+
+/-- With no AC power (`P = 0`) the open-loop node has no dynamics: every voltage is an
+equilibrium. -/
+private theorem openField_P_zero {C P V0 : ℝ} (hP : P / V0 = 0) (hV : 0 < V0) (x : State 1) :
+    openField C (-(P / V0)) P x = 0 := by
+  have hP0 : P = 0 := by
+    rcases div_eq_zero_iff.mp hP with h | h
+    · exact h
+    · exact absurd h hV.ne'
+  subst hP0
+  ext i
+  fin_cases i
+  simp [openField]
+
+/-- Positive capacitance and operating voltage: the open-loop DC node is locally asymptotically
+stable exactly in rectifier operation, `P/V0 > 0` — the local exponential condition. Inverter
+operation is unstable, and with no AC power (`P = 0`) every voltage is an equilibrium
+(`Dynamics.not_localAsymptoticStable_of_equilibria`). -/
+@[powerlib_domain] theorem openLoop_mem_den_locallyAsymptoticallyStable_iff (m : OpenLoop)
+    (hC : 0 < m.C) (hV : 0 < m.V0) :
+    connection% (m ∈ openFamily.den (.flow .locallyAsymptoticallyStable) ↔
+      m ∈ {m : OpenLoop | 0 < m.P / m.V0}) := by
+  unfold powerlib.TMIO.Statement
+  rw [open_mem_den_flow, Set.mem_ofPred_eq]
+  change LocalAsymptoticStable _ _ ↔ _
+  constructor
+  · intro h
+    rcases lt_trichotomy (m.P / m.V0) 0 with hP | hP | hP
+    · exact absurd h.1 (openLoop_unstable hC hV hP)
+    · exfalso
+      refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
+        ⟨dcState (m.V0 + ε / 2), fun h' => ?_, ?_, openField_P_zero hP hV _⟩) h
+      · have := congrArg (fun y : State 1 => y 0) h'
+        simp [dcState] at this
+        linarith
+      · rw [EuclideanSpace.norm_eq]
+        simp only [dcState, PiLp.sub_apply, Fin.sum_univ_one,
+          Matrix.cons_val_zero, Real.norm_eq_abs, sq_abs, add_sub_cancel_left]
+        rw [Real.sqrt_sq (by linarith)]
+        linarith
+    · exact hP
+  · intro hP
+    exact Flow.locallyExponentiallyStable_localAsymptoticStable
+      (openLoop_locallyExponentiallyStable hC hV hP)
+
+/-- Positive capacitance and operating voltage: the open-loop DC node is Lyapunov stable exactly
+when `P/V0 ≥ 0` — rectifier operation, or no AC power, where the node has no dynamics. So the
+Lyapunov translation is not exact even within the physical range. -/
+@[powerlib_domain] theorem openLoop_mem_den_lyapunovStable_iff (m : OpenLoop) (hC : 0 < m.C)
+    (hV : 0 < m.V0) :
+    connection% (m ∈ openFamily.den (.flow .lyapunovStable) ↔
+      m ∈ {m : OpenLoop | 0 ≤ m.P / m.V0}) := by
+  unfold powerlib.TMIO.Statement
+  rw [Set.mem_ofPred_eq]
+  constructor
+  · intro h
+    rw [open_mem_den_flow] at h
+    by_contra hP
+    exact openLoop_unstable hC hV (not_le.mp hP) h
+  · intro hP
+    rcases eq_or_lt_of_le hP with hP | hP
+    · refine ((Spectral.localFamily_isAutonomous OpenLoop.field OpenLoop.Stable
+        OpenLoop.Unstable).mem_den_flow (P := .lyapunovStable) (x := m)).mpr ?_
+      refine Dynamics.lyapunovStable_of_inner_nonpos one_pos
+        (ContinuousLinearMap.id ℝ (State 1)) Function.injective_id fun z => ?_
+      have hz : OpenLoop.field m z = 0 := openField_P_zero hP.symm hV _
+      simp [hz]
+    · rw [open_mem_den_flow]
+      exact (openLoop_locallyExponentiallyStable hC hV hP).lyapunovStable
+
+private theorem open_les_of {m : OpenLoop} (h : OpenLoop.Stable m) :
+    LocallyExponentiallyStable (OpenLoop.field m) 0 :=
+  (Flow.Property.holds_shift_iff .locallyExponentiallyStable).mpr
+    (openLoop_locallyExponentiallyStable h.2.1 h.1 h.2.2)
+
+/-- The local asymptotic translation of the open-loop family is not exact (the
+negative-capacitance node). -/
+@[powerlib_domain] theorem openNot_exact_locallyAsymptoticallyStable :
+    connection% (¬ openFamily.Exact (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have h := openNot_exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at h
+  exact Spectral.local_not_exact_of_not_exact_les (fun _ hm => open_les_of hm) h (Or.inr rfl)
+
+/-- The Lyapunov translation of the open-loop family is not exact (the negative-capacitance
+node; within the physical range, the node with no AC power). -/
+@[powerlib_domain] theorem openNot_exact_lyapunovStable :
+    connection% (¬ openFamily.Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  have h := openNot_exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at h
+  exact Spectral.local_not_exact_of_not_exact_les (fun _ hm => open_les_of hm) h (Or.inl rfl)
+
+private theorem closed_les_of {p : DCParams} (h : DCParams.Stable p) :
+    LocallyExponentiallyStable (DCParams.shiftedField p) 0 := by
+  obtain ⟨hVd, hV, hC, hkp, hki⟩ := h
+  exact (Flow.Property.holds_shift_iff .locallyExponentiallyStable).mpr
+    (p.closedLoop_locallyExponentiallyStable hVd hV hC hkp hki)
+
+/-- The local asymptotic translation of the DC-voltage loop family is not exact (the
+negative-capacitance loop). -/
+@[powerlib_domain] theorem closedNot_exact_locallyAsymptoticallyStable :
+    connection% (¬ closedFamily.Exact (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have h := closedNot_exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at h
+  exact Spectral.local_not_exact_of_not_exact_les (fun _ hm => closed_les_of hm) h (Or.inr rfl)
+
+/-- The Lyapunov translation of the DC-voltage loop family is not exact (the
+negative-capacitance loop). -/
+@[powerlib_domain] theorem closedNot_exact_lyapunovStable :
+    connection% (¬ closedFamily.Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  have h := closedNot_exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at h
+  exact Spectral.local_not_exact_of_not_exact_les (fun _ hm => closed_les_of hm) h (Or.inl rfl)
 
 end powerlib.DCLink
