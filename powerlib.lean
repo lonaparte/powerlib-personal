@@ -323,3 +323,4 @@ import theorem.Network.SwingDegenerate
 import theorem.Network.SwingDegenerateRing
 import theorem.GFL.ModelBCollapse
 import theorem.Network.SwingFour
+import theorem.GFL.ModelBCollapseDegenerate
