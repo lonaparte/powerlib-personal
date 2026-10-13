@@ -7,6 +7,7 @@ import theorem.Family.Basic
 import theorem.Flow.Shift
 import theorem.TMIO.ClaimElab
 import theorem.CurrentControl.SISO
+import theorem.Dynamics.ModelBLocal
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 /-! # GFL reduced-order model B: local stability by linearization (4×4 Routh–Hurwitz)
@@ -56,8 +57,9 @@ states no stability condition for model B).
 `ModelB.family` reads a complete system `ModelB.Model` — the model-B parameters `p` and a
 selected state `x*` — as the autonomous field `z ↦ p.field (z + x*)`, so that the library
 semantics at the origin speaks about `x*` (`Flow.Property.holds_shift_iff`). Requirements are
-static: `x*` is a zero of the field, `V_dc* > 0`, the 4×4 Routh conditions on `jacobian x*`, or
-`det (jacobian x*) < 0`. The local sentences translate into the first three, instability into the
+static: `x*` is a zero of the field, `V_dc* > 0`, the 4×4 Routh conditions on `jacobian x*`,
+`det (jacobian x*) < 0`, or `jacobian x*` off the Routh boundary (`offBoundary`, used only as a
+context). The local sentences translate into the first three, instability into the
 first two and the determinant condition, passivity into nothing; the global sentences, decay
 rates, sampled contraction and conservation into the whole (inconsistent) language. Connection
 conclusions: soundness (`chain_le_semantics`), exact passivity (`exact_passive`), and the former
@@ -88,13 +90,43 @@ read with Lean's `x / 0 = 0`: the power term vanishes and the DC components are 
 (`V_dc,ref = 0`, `I₀ / C_dc = 0`) lies on a curve of equilibria of that plane and is neither
 locally asymptotically nor exponentially stable
 (`not_mem_den_locallyAsymptoticallyStable_of_Vdc_eq_zero`,
-`not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero`). Whether a non-equilibrium state with
-`V_dc* = 0` can satisfy the segment-based local exponential estimate is not claimed (UNPROVED: the
-field is discontinuous on that plane and solutions may reach it in finite time). The local
-asymptotic and Lyapunov translations are not exact (`not_exact_locallyAsymptoticallyStable`,
-`not_exact_lyapunovStable`, the same witness); their exactness away from the Routh boundary at
-positive reference is not claimed (UNPROVED: a 4×4 Jacobian on the Routh boundary is not decided by
-the linearization).
+`not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero`).
+
+Selected states on the singular plane that are not equilibria. With `P = pccP x*`:
+* `mem_den_locallyExponentiallyStable_of_collapse`: if the power term drives `V_dc` into the plane
+  from both sides (`P / C_dc < 0`) and the injection crosses it (`I₀ / C_dc ≠ 0`), the state
+  satisfies the segment-based local exponential estimate although it is not an equilibrium: near
+  `x*`, `d(V_dc²)/dt = (2 I₀ V_dc + 3 P) / C_dc` is bounded below zero, so solution segments end
+  before reaching the plane, after a time `O(V_dc(t₀)²)` (generic
+  `Dynamics.locallyExponentiallyStable_of_collapse`, `theorem/Dynamics/ModelBLocal.lean`). The
+  estimate holds because solutions cease, not because they converge.
+* `mem_den_unstable_of_repel`: if `P / C_dc > 0` the state is unstable (`V_dc²` grows linearly;
+  generic `Dynamics.unstable_of_repel`).
+* `not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero_of_I0`: if `I₀ / C_dc = 0` (in particular
+  `C_dc = 0`) no state on the plane is locally exponentially stable (the smooth field
+  `(f₀, f₁, 0, f₃)` agrees with model B on the invariant plane).
+* `mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero`: hence for `P / C_dc ≠ 0`, local
+  exponential stability on the plane holds exactly when `P / C_dc < 0 ∧ I₀ / C_dc ≠ 0`. The
+  degenerate power balance `P(x*) = 0` with `I₀ / C_dc ≠ 0` is not decided (UNPROVED: there
+  `P / V_dc` is a direction-dependent quotient of first-order terms, so neither the collapse nor
+  the repulsion estimate holds uniformly near `x*`).
+* The concrete `collapsePoint` (`V_dc,ref = 1 > 0`, `x* = (0, 0, 0, −1)`) is such a collapse state
+  (`collapsePoint_mem_den_locallyExponentiallyStable`). Therefore none of the local translations
+  is exact within the context of a positive reference alone
+  (`not_exactUnder_positiveReference_locallyExponentiallyStable`,
+  `not_exactUnder_positiveReference_locallyAsymptoticallyStable`,
+  `not_exactUnder_positiveReference_lyapunovStable`); for the local exponential sentence the exact
+  context is that of an equilibrium with positive reference
+  (`exactUnder_locallyExponentiallyStable`).
+
+The local asymptotic and Lyapunov translations are not exact (`not_exact_locallyAsymptoticallyStable`,
+`not_exact_lyapunovStable`, the same witness). At equilibria with positive reference they are exact
+off the 4×4 Routh boundary and not exact on it: requirement `Requirement.offBoundary` (Routh
+conditions or a strict violation `RouthViolationFin4`), with the conclusions
+`exactUnder_offBoundary_lyapunovStable`, `exactUnder_offBoundary_locallyAsymptoticallyStable`,
+`not_exactUnder_lyapunovStable`, `not_exactUnder_locallyAsymptoticallyStable` and three boundary
+witnesses (asymptotically stable, stable but not attractive, unstable) in
+`theorem/GFL/ModelBBoundary.lean`.
 -/
 
 noncomputable section
@@ -626,6 +658,160 @@ Static evidence on the model, not a connection conclusion. -/
     rw [hid]
     exact ⟨h0, h1, h2, h3⟩
 
+/-! ## Model B near the singular plane `V_dc = 0` -/
+
+/-- Off the singular plane, `2 V_dc` times the DC-link component of the field is the smooth
+function `(2 I₀ V_dc + 3 P) / C_dc`. Static evidence on the model. -/
+@[powerlib_foundation] theorem two_mul_field_two {y : State 4} (hy : y 2 ≠ 0) :
+    2 * y 2 * p.field y 2 = (2 * p.I0 * y 2 + 3 * p.pccP y) / p.Cdc := by
+  have h : p.field y 2 = (p.I0 + 3 * p.pccP y / (2 * y 2)) / p.Cdc := by
+    simp [field, pccP]
+  rw [h, show 2 * y 2 * ((p.I0 + 3 * p.pccP y / (2 * y 2)) / p.Cdc) =
+    (2 * y 2 * (p.I0 + 3 * p.pccP y / (2 * y 2))) / p.Cdc by ring]
+  congr 1
+  field_simp
+
+/-- On the singular plane the DC-link component of the field is `I₀ / C_dc` (`x / 0 = 0`). -/
+@[powerlib_foundation] theorem field_two_of_Vdc_eq_zero {y : State 4} (hy : y 2 = 0) :
+    p.field y 2 = p.I0 / p.Cdc := by
+  simp [field, hy]
+
+@[powerlib_foundation] theorem contDiff_pccP : ContDiff ℝ 1 p.pccP := by
+  unfold pccP vgd vgq idRef
+  fun_prop
+
+/-- The components of model B other than the DC-link voltage are smooth on the whole space. -/
+@[powerlib_foundation] theorem contDiff_field_offDC :
+    ContDiff ℝ 1 (fun y : State 4 => (WithLp.toLp 2 ![p.field y 0, p.field y 1, 0, p.field y 3] :
+      State 4)) := by
+  apply Criteria.contDiff_of_components
+  intro i
+  fin_cases i
+  · show ContDiff ℝ 1 (fun y : State 4 =>
+      p.ωs - p.ωg + p.kp * p.vgq (y 0) (p.idRef (y 2) (y 3)) + p.ki * y 1)
+    unfold vgq idRef
+    fun_prop
+  · show ContDiff ℝ 1 (fun y : State 4 => p.vgq (y 0) (p.idRef (y 2) (y 3)))
+    unfold vgq idRef
+    fun_prop
+  · exact contDiff_const
+  · show ContDiff ℝ 1 (fun y : State 4 => p.VdcRef - y 2)
+    fun_prop
+
+/-- With `C_dc = 0` the DC-link component vanishes (`x / 0 = 0`) and model B is smooth on the
+whole space. -/
+@[powerlib_foundation] theorem contDiff_field_of_Cdc_eq_zero (hC : p.Cdc = 0) :
+    ContDiff ℝ 1 p.field := by
+  have h : p.field = fun y : State 4 =>
+      (WithLp.toLp 2 ![p.field y 0, p.field y 1, 0, p.field y 3] : State 4) := by
+    funext y
+    ext i
+    fin_cases i <;> simp [field, hC]
+  rw [h]
+  exact p.contDiff_field_offDC
+
+/-- **Model B on the singular plane: collapse.** At a state `x` with `V_dc = 0` where the power
+term pushes the DC-link voltage towards the plane from both sides (`P(x) / C_dc < 0`) and the
+current injection crosses it (`I₀ / C_dc ≠ 0`), the segment-based local exponential estimate holds,
+although `x` is not an equilibrium (`field x 2 = I₀ / C_dc ≠ 0`): near `x`,
+`d(V_dc²)/dt = (2 I₀ V_dc + 3 P) / C_dc ≤ −a`, so every solution segment reaches the plane only at
+its end, after a time at most `V_dc(t₀)² / a`. Implementation evidence for
+`ModelB.mem_den_locallyExponentiallyStable_of_collapse`. -/
+private theorem modelB_locallyExponentiallyStable_of_collapse {x : State 4} (hx : x 2 = 0)
+    (hP : p.pccP x / p.Cdc < 0) (hI : p.I0 / p.Cdc ≠ 0) :
+    LocallyExponentiallyStable p.field x := by
+  set g : State 4 → ℝ := fun y => (2 * p.I0 * y 2 + 3 * p.pccP y) / p.Cdc with hg
+  have hgc : Continuous g :=
+    ((continuous_const.mul (Criteria.contDiff_coord (n := 4) (k := 1) 2).continuous).add
+      (continuous_const.mul p.contDiff_pccP.continuous)).div_const _
+  have hgx : g x = 3 * (p.pccP x / p.Cdc) := by
+    simp only [hg, hx, mul_zero, zero_add]
+    ring
+  set a := -(g x) / 2 with ha
+  have ha0 : 0 < a := by rw [ha, hgx]; linarith
+  obtain ⟨ρ₁, hρ₁, hball⟩ := Metric.continuous_iff.mp hgc x a ha0
+  obtain ⟨M, hM⟩ := (isCompact_closedBall x 1).exists_bound_of_continuousOn
+    p.contDiff_field_offDC.continuous.continuousOn
+  refine Dynamics.locallyExponentiallyStable_of_collapse 2 hx (ρ := min ρ₁ 1) (a := a) (M := M)
+    (lt_min hρ₁ one_pos) ha0 ?_ ?_ ?_
+  · intro y hy hy2
+    rw [p.two_mul_field_two hy2]
+    have h1 := hball y (by rw [dist_eq_norm]; exact lt_of_lt_of_le hy (min_le_left _ _))
+    rw [Real.dist_eq] at h1
+    have h2 := (abs_lt.mp h1).2
+    show g y ≤ -a
+    linarith
+  · intro y _ hy2
+    rwa [p.field_two_of_Vdc_eq_zero hy2]
+  · intro y hy
+    have hFy : p.field y - p.field y 2 • EuclideanSpace.single 2 (1 : ℝ) =
+        (WithLp.toLp 2 ![p.field y 0, p.field y 1, 0, p.field y 3] : State 4) := by
+      ext i
+      fin_cases i <;> simp
+    rw [hFy]
+    exact hM y (by
+      rw [Metric.mem_closedBall, dist_eq_norm]
+      exact (lt_of_lt_of_le hy (min_le_right _ _)).le)
+
+/-- **Model B on the singular plane: repulsion.** At a state `x` with `V_dc = 0` where the power
+term pushes the DC-link voltage away from the plane on both sides (`P(x) / C_dc > 0`), the state
+is unstable: near `x`, `d(V_dc²)/dt = (2 I₀ V_dc + 3 P) / C_dc` is bounded below by a positive
+rate, and on each half ball `{V_dc ≥ s}` model B is the smooth field with denominator
+`regDen s V_dc`. Implementation evidence for `ModelB.mem_den_unstable_of_repel`. -/
+private theorem modelB_unstable_of_repel {x : State 4} (hx : x 2 = 0)
+    (hP : 0 < p.pccP x / p.Cdc) : Unstable p.field x := by
+  set g : State 4 → ℝ := fun y => (2 * p.I0 * y 2 + 3 * p.pccP y) / p.Cdc with hg
+  have hgc : Continuous g :=
+    ((continuous_const.mul (Criteria.contDiff_coord (n := 4) (k := 1) 2).continuous).add
+      (continuous_const.mul p.contDiff_pccP.continuous)).div_const _
+  have hgx : g x = 3 * (p.pccP x / p.Cdc) := by
+    simp only [hg, hx, mul_zero, zero_add]
+    ring
+  set a := g x / 2 with ha
+  have ha0 : 0 < a := by rw [ha, hgx]; linarith
+  obtain ⟨ρ, hρ, hball⟩ := Metric.continuous_iff.mp hgc x a ha0
+  refine Dynamics.unstable_of_repel 2 hx hρ ha0 (fun y hy hy2 => ?_) (fun s hs => ?_)
+  · rw [p.two_mul_field_two hy2]
+    have h1 := hball y (by rw [dist_eq_norm]; exact hy)
+    rw [Real.dist_eq] at h1
+    have h2 := (abs_lt.mp h1).1
+    show a ≤ g y
+    linarith
+  · refine ⟨fun y => (WithLp.toLp 2 ![p.field y 0, p.field y 1,
+      (p.I0 + 3 * p.pccP y / (2 * regDen s (y 2))) / p.Cdc, p.field y 3] : State 4), ?_, ?_⟩
+    · have hden : ContDiff ℝ 1 (fun y : State 4 => 2 * regDen s (y 2)) :=
+        contDiff_const.mul ((contDiff_regDen _).comp (Criteria.contDiff_coord 2))
+      have hden0 : ∀ y : State 4, 2 * regDen s (y 2) ≠ 0 := fun y => by
+        have := half_le_regDen hs (y 2)
+        have : 0 < regDen s (y 2) := lt_of_lt_of_le (by positivity) this
+        positivity
+      have hoff := p.contDiff_field_offDC
+      apply Criteria.contDiff_of_components
+      intro i
+      fin_cases i
+      · show ContDiff ℝ 1 (fun y : State 4 => p.field y 0)
+        have h := (Criteria.contDiff_coord (n := 4) (k := 1) 0).comp hoff
+        exact h
+      · show ContDiff ℝ 1 (fun y : State 4 => p.field y 1)
+        have h := (Criteria.contDiff_coord (n := 4) (k := 1) 1).comp hoff
+        exact h
+      · show ContDiff ℝ 1 (fun y : State 4 =>
+          (p.I0 + 3 * p.pccP y / (2 * regDen s (y 2))) / p.Cdc)
+        exact (contDiff_const.add ((contDiff_const.mul p.contDiff_pccP).div hden hden0)).div_const _
+      · show ContDiff ℝ 1 (fun y : State 4 => p.field y 3)
+        have h := (Criteria.contDiff_coord (n := 4) (k := 1) 3).comp hoff
+        exact h
+    · intro y _ hy2
+      have hr : regDen s (y 2) = y 2 := regDen_eq hs (by linarith)
+      ext i
+      fin_cases i
+      · rfl
+      · rfl
+      · show (p.I0 + 3 * p.pccP y / (2 * regDen s (y 2))) / p.Cdc = p.field y 2
+        rw [hr]
+        simp [field, pccP]
+      · rfl
+
 end ModelBParams
 
 
@@ -650,6 +836,14 @@ def RouthFin4 (J : Matrix (Fin 4) (Fin 4) ℝ) : Prop :=
     Criteria.principalMinorSum3Fin4 J ^ 2 + J.trace ^ 2 * J.det <
       J.trace * Criteria.principalMinorSum2Fin4 J * Criteria.principalMinorSum3Fin4 J
 
+/-- A strict violation of the 4×4 Routh conditions on a matrix `J`: `tr J > 0`, `m₂(J) < 0`,
+`m₃(J) > 0`, `det J < 0` or `tr m₂ m₃ < m₃² + tr² det`; each places a characteristic root in the
+open right half plane (`Criteria.exists_eigenvalue_re_pos_of_violation_fin_four`). -/
+def RouthViolationFin4 (J : Matrix (Fin 4) (Fin 4) ℝ) : Prop :=
+  0 < J.trace ∨ Criteria.principalMinorSum2Fin4 J < 0 ∨ 0 < Criteria.principalMinorSum3Fin4 J ∨
+    J.det < 0 ∨ J.trace * Criteria.principalMinorSum2Fin4 J * Criteria.principalMinorSum3Fin4 J <
+      Criteria.principalMinorSum3Fin4 J ^ 2 + J.trace ^ 2 * J.det
+
 /-- Requirements on model B, all static. -/
 inductive Requirement
   /-- The selected state is a zero of the field. -/
@@ -660,6 +854,9 @@ inductive Requirement
   | routh
   /-- Negative Jacobian determinant at the selected state. -/
   | detNeg
+  /-- The Jacobian at the selected state is off the 4×4 Routh boundary: it meets the Routh
+  conditions or violates them strictly. -/
+  | offBoundary
 
 /-- Satisfaction of a requirement by a model. -/
 def Meets (m : Model) : Requirement → Prop
@@ -667,6 +864,7 @@ def Meets (m : Model) : Requirement → Prop
   | .positiveReference => 0 < m.p.VdcRef
   | .routh => RouthFin4 (m.p.jacobian m.x)
   | .detNeg => (m.p.jacobian m.x).det < 0
+  | .offBoundary => RouthFin4 (m.p.jacobian m.x) ∨ RouthViolationFin4 (m.p.jacobian m.x)
 
 /-- The translation of the sentences: the local sentences into an equilibrium with positive
 reference satisfying the Routh conditions, instability into one with a negative Jacobian
@@ -1051,6 +1249,179 @@ equilibria of the plane form a curve through the point (along `Δθ` with
   apply h
   rw [family_isAutonomous.mem_den_flow] at hm ⊢
   exact Flow.locallyExponentiallyStable_localAsymptoticStable hm
+
+/-! ### Selected states on the singular plane that are not equilibria -/
+
+/-- **Collapse onto the singular plane.** A selected state with `V_dc* = 0` at which the power term
+drives the DC-link voltage into the plane from both sides (`P(x*) / C_dc < 0`) while the current
+injection crosses the plane (`I₀ / C_dc ≠ 0`) is locally exponentially stable in the segment
+semantics, although it is not an equilibrium (the DC-link component of the field is
+`I₀ / C_dc ≠ 0` there): near `x*`, `d(V_dc²)/dt = (2 I₀ V_dc + 3 P) / C_dc` is bounded below zero,
+so every solution segment reaches the plane at most at its end, after a time `O(V_dc(t₀)²)`, and
+moves by `O(‖x(t₀) − x*‖²)` (`Dynamics.locallyExponentiallyStable_of_collapse`). The estimate is
+met because the solutions cease to exist, not because they converge. -/
+@[powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_collapse (m : Model)
+    (hx : m.x 2 = 0) (hP : m.p.pccP m.x / m.p.Cdc < 0) (hI : m.p.I0 / m.p.Cdc ≠ 0) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  exact mem_den_flow_iff.mpr (m.p.modelB_locallyExponentiallyStable_of_collapse hx hP hI)
+
+/-- When the injection does not cross the singular plane (`I₀ / C_dc = 0`, in particular when
+`C_dc = 0`), no selected state on the plane is locally exponentially stable. The field agrees on
+the plane with the smooth field `G = (f₀, f₁, 0, f₃)`, which keeps the plane invariant: a solution of
+`G` through `x*` is a solution of model B, so the estimate forces it to stay at `x*`, making `x*` an
+equilibrium (`not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero`). -/
+@[powerlib_domain] theorem not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero_of_I0
+    (m : Model) (hx : m.x 2 = 0) (hI : m.p.I0 / m.p.Cdc = 0) :
+    connection% (m ∉ family.den (.flow .locallyExponentiallyStable)) := by
+  have heqn := not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero m hx
+  unfold powerlib.TMIO.Statement at heqn ⊢
+  intro hm
+  have hles : LocallyExponentiallyStable m.p.field m.x := mem_den_flow_iff.mp hm
+  set G : State 4 → State 4 := fun y =>
+    (WithLp.toLp 2 ![m.p.field y 0, m.p.field y 1, 0, m.p.field y 3] : State 4) with hG
+  have hGc : ContDiff ℝ 1 G := m.p.contDiff_field_offDC
+  have hGf : ∀ y : State 4, y 2 = 0 → G y = m.p.field y := fun y hy => by
+    ext i
+    fin_cases i
+    · rfl
+    · rfl
+    · show (0 : ℝ) = m.p.field y 2
+      rw [m.p.field_two_of_Vdc_eq_zero hy, hI]
+    · rfl
+  obtain ⟨T, ψ, hT, hψ0, hψ⟩ := (hGc.contDiffAt (x := m.x)).exists_isIntegralCurveOn_Icc
+  -- the solution of `G` stays on the plane
+  have hplane : ∀ t ∈ Icc 0 T, ψ t 2 = 0 := by
+    have hd : ∀ t ∈ Icc 0 T, HasDerivWithinAt (fun t => (ψ t 2 : ℝ)) (G (ψ t) 2 : ℝ)
+        (Icc 0 T) t := fun t ht =>
+      (Criteria.coord 2 : State 4 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt t (hψ t ht)
+    have hb := norm_image_sub_le_of_norm_deriv_le_segment' hd (C := 0) (fun t _ => by simp [hG])
+    intro t ht
+    have := hb t ht
+    rw [zero_mul, norm_le_zero_iff, sub_eq_zero, hψ0, hx] at this
+    exact this
+  have hseg : IsTrajectoryOn ψ m.p.field 0 T :=
+    Dynamics.isIntegralCurveOn_of_eq_on_curve hψ fun t ht => hGf _ (hplane t ht)
+  obtain ⟨r, C, a, hr, -, -, hb⟩ := hles
+  have hconst : ∀ t ∈ Icc 0 T, ψ t = m.x := fun t ht => by
+    have := hb 0 T ψ hseg (by rw [hψ0, sub_self, norm_zero]; exact hr) t ht
+    rw [hψ0, sub_self, norm_zero, mul_zero] at this
+    exact sub_eq_zero.mp (norm_le_zero_iff.mp this)
+  have hmem0 : (0 : ℝ) ∈ Icc 0 T := ⟨le_rfl, hT.le⟩
+  have hd1 : HasDerivWithinAt ψ (m.p.field m.x) (Icc 0 T) 0 := by
+    have := hseg 0 hmem0
+    rwa [hψ0] at this
+  have hd2 : HasDerivWithinAt ψ 0 (Icc 0 T) 0 :=
+    (hasDerivWithinAt_const 0 (Icc 0 T) m.x).congr (fun t ht => hconst t ht) (hconst 0 hmem0)
+  exact heqn (UniqueDiffWithinAt.eq_deriv _ (uniqueDiffOn_Icc hT 0 hmem0) hd1 hd2) hm
+
+/-- **Repulsion from the singular plane.** A selected state with `V_dc* = 0` at which the power
+term pushes the DC-link voltage away from the plane (`P(x*) / C_dc > 0`) is unstable: near `x*`,
+`d(V_dc²)/dt` is bounded below by a positive rate, and the solution from `V_dc = s > 0` exists
+while it stays near `x*` (`Dynamics.unstable_of_repel`). -/
+@[powerlib_domain] theorem mem_den_unstable_of_repel (m : Model) (hx : m.x 2 = 0)
+    (hP : 0 < m.p.pccP m.x / m.p.Cdc) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  exact mem_den_flow_iff.mpr (m.p.modelB_unstable_of_repel hx hP)
+
+/-- **Local exponential stability on the singular plane.** For a selected state with `V_dc* = 0`
+and nonzero power term `P(x*) / C_dc ≠ 0` (so `C_dc ≠ 0`), the segment-based local exponential
+estimate holds exactly when the power term drives `V_dc` into the plane (`P(x*) / C_dc < 0`) and the
+injection crosses it (`I₀ / C_dc ≠ 0`); such a state is never an equilibrium. The degenerate
+power-balance case `P(x*) = 0` is not decided here. -/
+@[powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero (m : Model)
+    (hx : m.x 2 = 0) (hP : m.p.pccP m.x / m.p.Cdc ≠ 0) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable) ↔
+      m ∈ {m : Model | m.p.pccP m.x / m.p.Cdc < 0 ∧ m.p.I0 / m.p.Cdc ≠ 0}) := by
+  have hcol := mem_den_locallyExponentiallyStable_of_collapse m hx
+  have hI0 := not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero_of_I0 m hx
+  unfold powerlib.TMIO.Statement at hcol hI0 ⊢
+  rw [Set.mem_ofPred_eq]
+  constructor
+  · intro hm
+    refine ⟨?_, fun h => hI0 h hm⟩
+    rcases lt_or_gt_of_ne hP with h | h
+    · exact h
+    · exact absurd (mem_den_flow_iff.mp hm).lyapunovStable
+        (m.p.modelB_unstable_of_repel hx h)
+  · rintro ⟨h1, h2⟩
+    exact hcol h1 h2
+
+/-- A converter at rest on the singular plane: `V_dc* = 0` and `ξ_v* = −1`, so that `i_d* = −1`,
+`v_d = 1` and `P = −1`; positive reference `V_dc,ref = 1`; `I₀ = C_dc = V_g = k_p = k_i = k_iv = 1`,
+`k_pv = R_g = X_g = i_q0 = 0`, `ω_s = ω_g = 0`; `x* = (0, 0, 0, −1)`. -/
+def collapsePoint : Model :=
+  ⟨⟨0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0⟩, WithLp.toLp 2 ![0, 0, 0, -1]⟩
+
+private theorem collapsePoint_field_ne_zero :
+    collapsePoint.p.field collapsePoint.x ≠ 0 := by
+  intro h
+  have := congrArg (fun y : State 4 => y 3) h
+  simp [collapsePoint, ModelBParams.field] at this
+
+/-- The collapse point, which is not an equilibrium and has positive DC-voltage reference, is
+locally exponentially stable in the segment semantics. -/
+@[powerlib_domain] theorem collapsePoint_mem_den_locallyExponentiallyStable :
+    connection% (collapsePoint ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  have h := mem_den_locallyExponentiallyStable_of_collapse collapsePoint
+    (by simp [collapsePoint]) (by
+      simp [collapsePoint, ModelBParams.pccP, ModelBParams.vgd, ModelBParams.vgq,
+        ModelBParams.idRef])
+    (by simp [collapsePoint])
+  unfold powerlib.TMIO.Statement at h ⊢
+  exact h
+
+/-- A member of a local denotation outside the equilibria, with positive reference, refutes
+exactness of the translation within the context of a positive reference. -/
+private theorem not_exactUnder_positiveReference_of_mem {P : Flow.Property}
+    (hP : family.translate (.flow P) = {.equilibrium, .positiveReference, .routh})
+    (hmem : collapsePoint ∈ family.den (.flow P)) :
+    ¬ family.ExactUnder {.positiveReference} (.flow P) := by
+  unfold Family.ExactUnder TMIO.ExactUnder
+  intro h
+  have hI : collapsePoint ∈ TMIO.realize family.meets {.positiveReference} := by
+    rw [TMIO.mem_realize]
+    intro q hq
+    rw [Set.mem_singleton_iff] at hq
+    subst hq
+    show (0 : ℝ) < collapsePoint.p.VdcRef
+    simp [collapsePoint]
+  have h' : collapsePoint ∈ TMIO.realize family.meets
+      (family.translate (.flow P) ∪ {.positiveReference}) := by
+    rw [h]
+    exact ⟨hmem, hI⟩
+  rw [TMIO.mem_realize, hP] at h'
+  exact collapsePoint_field_ne_zero (h' .equilibrium (by simp))
+
+/-- Within the context of a positive DC-voltage reference the local exponential translation is not
+exact: the collapse point is locally exponentially stable but not an equilibrium. The exact context
+is that of an equilibrium with positive reference (`exactUnder_locallyExponentiallyStable`). -/
+@[powerlib_domain] theorem not_exactUnder_positiveReference_locallyExponentiallyStable :
+    connection% (¬ family.ExactUnder {.positiveReference} (.flow .locallyExponentiallyStable)) := by
+  have hmem := collapsePoint_mem_den_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hmem ⊢
+  exact not_exactUnder_positiveReference_of_mem rfl hmem
+
+/-- Within the context of a positive DC-voltage reference the local asymptotic translation is not
+exact (the collapse point). -/
+@[powerlib_domain] theorem not_exactUnder_positiveReference_locallyAsymptoticallyStable :
+    connection% (¬ family.ExactUnder {.positiveReference} (.flow .locallyAsymptoticallyStable)) := by
+  have hmem := collapsePoint_mem_den_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hmem ⊢
+  refine not_exactUnder_positiveReference_of_mem rfl ?_
+  rw [family_isAutonomous.mem_den_flow] at hmem ⊢
+  exact Flow.locallyExponentiallyStable_localAsymptoticStable hmem
+
+/-- Within the context of a positive DC-voltage reference the Lyapunov translation is not exact
+(the collapse point). -/
+@[powerlib_domain] theorem not_exactUnder_positiveReference_lyapunovStable :
+    connection% (¬ family.ExactUnder {.positiveReference} (.flow .lyapunovStable)) := by
+  have hmem := collapsePoint_mem_den_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hmem ⊢
+  refine not_exactUnder_positiveReference_of_mem rfl ?_
+  rw [family_isAutonomous.mem_den_flow] at hmem ⊢
+  exact hmem.lyapunovStable
 
 /-- The local asymptotic translation is not exact (the negative-reference converter). -/
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
