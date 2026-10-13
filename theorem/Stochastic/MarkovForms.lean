@@ -3,6 +3,9 @@ import theorem.Attributes
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
 import Mathlib.Probability.Process.Filtration
+import Mathlib.Probability.UniformOn
+import Mathlib.Probability.ConditionalProbability
+import Mathlib.Probability.Kernel.Composition.Comp
 
 /-! # Markov property: event form ⇔ conditional-expectation form
 
@@ -23,6 +26,18 @@ Main results.
   measurable space, the event form and the conditional-expectation form of the Markov property
   (`E[g(X_t) | 𝓕_s] = E[g(X_t) | X_s]` a.s. for `s ≤ t` and bounded measurable `g`, written out in
   the statement) are equivalent (any index order, any state space).
+
+Counterexample: semigroup ⇏ Markov (`theory/T-markov-processes.md` §1.2, "Markov ⇔ semigroup").
+* `semigroup_not_markov` (Feller's example): on `Ω = (Fin 3)²` with the uniform probability, the
+  three-step process `X₀ = a`, `X₁ = b`, `X₂ = −(a + b) (mod 3)` has, for every pair of times
+  `i ≠ j`, the elementary transition probabilities `P(X_j = b | X_i = a) = 1/3`, i.e. the constant
+  uniform kernel `K`, and `K ∘ K = K` — the transition kernels satisfy Chapman–Kolmogorov (they are
+  those of an i.i.d. uniform sequence) — yet `X` is **not** Markov in event form for any filtration
+  to which it is adapted: `X₂` is a function of `(X₀, X₁)`.  Hence the semigroup
+  (Chapman–Kolmogorov) relation of the two-dimensional transition laws does not imply the Markov
+  property.
+  Supporting facts: `feller_pair` (every pair `(X_i, X_j)` is uniform on `(Fin 3)²`),
+  `feller_marginal`, `feller_transition`, `unifKernel_comp`, `feller_not_markov`.
 -/
 
 noncomputable section
@@ -132,5 +147,145 @@ bounded measurable `g`. -/
     by_cases hy : y ∈ A <;> simp [Set.indicator, hy]
 
 end Process
+
+/-! ## Semigroup does not imply Markov: Feller's example -/
+
+section Feller
+
+open ProbabilityTheory
+open scoped ENNReal
+
+/-- Feller's process on `Ω = (Fin 3)²`: `X₀ = a`, `X₁ = b`, `X₂ = −(a + b)` (mod 3). -/
+def fellerX : Fin 3 → Fin 3 × Fin 3 → Fin 3 :=
+  ![Prod.fst, Prod.snd, fun ω => -(ω.1 + ω.2)]
+
+/-- The uniform probability on `(Fin 3)²`. -/
+def fellerP : Measure (Fin 3 × Fin 3) := uniformOn Set.univ
+
+instance : IsProbabilityMeasure fellerP := by unfold fellerP; infer_instance
+
+/-- The constant uniform transition kernel on `Fin 3`. -/
+def unifKernel : Kernel (Fin 3) (Fin 3) := Kernel.const (Fin 3) (uniformOn Set.univ)
+
+/-- Probabilities under `fellerP` are counts divided by `9`. -/
+@[powerlib_foundation] theorem fellerP_apply (p : Fin 3 × Fin 3 → Prop) [DecidablePred p] :
+    fellerP {ω | p ω} = (Finset.univ.filter p).card / 9 := by
+  rw [fellerP, uniformOn_univ]
+  have : {ω | p ω} = ((Finset.univ.filter p : Finset _) : Set (Fin 3 × Fin 3)) := by ext; simp
+  rw [this, Measure.count_apply_finset]
+  rfl
+
+/-- Every sample point has probability `1/9`. -/
+@[powerlib_foundation] theorem fellerP_singleton (x : Fin 3 × Fin 3) :
+    fellerP.real {x} = 1 / 9 := by
+  have : ({x} : Set (Fin 3 × Fin 3)) = {ω | ω = x} := rfl
+  rw [measureReal_def, this, fellerP_apply, Finset.filter_eq' Finset.univ x]
+  simp
+
+private theorem ennreal_three_div_nine : (3 : ℝ≥0∞) / 9 = 1 / 3 := by
+  rw [ENNReal.div_eq_div_iff (by norm_num) (by norm_num) (by norm_num) (by norm_num)]
+  norm_num
+
+/-- Two-dimensional laws: every pair `(X_i, X_j)`, `i ≠ j`, is uniform on `(Fin 3)²`. -/
+@[powerlib_foundation] theorem feller_pair (i j : Fin 3) (hij : i ≠ j) (a b : Fin 3) :
+    fellerP {ω | fellerX i ω = a ∧ fellerX j ω = b} = 1 / 9 := by
+  have hc : (Finset.univ.filter fun ω => fellerX i ω = a ∧ fellerX j ω = b).card = 1 := by
+    revert i j a b; decide
+  rw [fellerP_apply, hc]
+  simp
+
+/-- One-dimensional laws: every `X_i` is uniform on `Fin 3`. -/
+@[powerlib_foundation] theorem feller_marginal (i a : Fin 3) :
+    fellerP {ω | fellerX i ω = a} = 1 / 3 := by
+  have hc : (Finset.univ.filter fun ω => fellerX i ω = a).card = 3 := by revert i a; decide
+  rw [fellerP_apply, hc]
+  exact_mod_cast ennreal_three_div_nine
+
+/-- `K(a, {b}) = 1/3`. -/
+@[powerlib_foundation] theorem unifKernel_apply (a b : Fin 3) : unifKernel a {b} = 1 / 3 := by
+  rw [unifKernel, Kernel.const_apply, uniformOn_univ, Measure.count_singleton]
+  simp
+
+/-- Chapman–Kolmogorov for the uniform kernel: `K ∘ K = K`. -/
+@[powerlib_foundation] theorem unifKernel_comp : unifKernel ∘ₖ unifKernel = unifKernel := by
+  ext1 a
+  rw [unifKernel, Kernel.const_comp]
+  simp [Kernel.const_apply]
+
+/-- Transition probabilities between any two distinct times: `P(X_j = b | X_i = a) = K(a, {b})`. -/
+@[powerlib_foundation] theorem feller_transition (i j : Fin 3) (hij : i ≠ j) (a b : Fin 3) :
+    fellerP[{ω | fellerX j ω = b} | {ω | fellerX i ω = a}] = unifKernel a {b} := by
+  have hm : MeasurableSet {ω : Fin 3 × Fin 3 | fellerX i ω = a} :=
+    DiscreteMeasurableSpace.forall_measurableSet _
+  rw [cond_apply hm, feller_marginal, unifKernel_apply]
+  have : {ω | fellerX i ω = a} ∩ {ω | fellerX j ω = b} =
+      {ω : Fin 3 × Fin 3 | fellerX i ω = a ∧ fellerX j ω = b} := rfl
+  rw [this, feller_pair i j hij]
+  simp only [one_div, inv_inv]
+  rw [← div_eq_mul_inv, ennreal_three_div_nine, one_div]
+
+/-- Feller's process is not Markov (event form) for any filtration to which it is adapted:
+`P(X₂ = 0 | 𝓕₁)` equals `1` at `(0, 0)` and `0` at `(1, 0)`, while `P(X₂ = 0 | X₁)` cannot
+separate these two points (`X₁ = 0` at both). -/
+@[powerlib_foundation] theorem feller_not_markov
+    (𝓕 : Filtration (Fin 3) (inferInstance : MeasurableSpace (Fin 3 × Fin 3)))
+    (hadapt : ∀ s, Measurable[𝓕 s] (fellerX s)) : ¬ MarkovEvent fellerP 𝓕 fellerX := by
+  intro h
+  set f : Fin 3 × Fin 3 → ℝ :=
+    fun ω => ({0} : Set (Fin 3)).indicator (fun _ => (1 : ℝ)) (fellerX 2 ω) with hf
+  have hm := h 1 2 (by decide) {0} (measurableSet_singleton 0)
+  set F := fellerP[f | 𝓕 1]
+  set G := fellerP[f | (inferInstance : MeasurableSpace (Fin 3)).comap (fellerX 1)]
+  have hint : Integrable f fellerP := Integrable.of_finite
+  -- `F` agrees with `f` at every point (singletons are `𝓕 1`-measurable, positive mass)
+  have hsing : ∀ x : Fin 3 × Fin 3, MeasurableSet[𝓕 1] {x} := by
+    intro x
+    have h0 : Measurable[𝓕 1] (fellerX 0) := (hadapt 0).mono (𝓕.mono (by decide)) le_rfl
+    have h1 : Measurable[𝓕 1] (fellerX 1) := hadapt 1
+    have e : ({x} : Set (Fin 3 × Fin 3)) = fellerX 0 ⁻¹' {x.1} ∩ fellerX 1 ⁻¹' {x.2} := by
+      ext ω; simp [fellerX, Prod.ext_iff]
+    rw [e]
+    exact (h0 (measurableSet_singleton _)).inter (h1 (measurableSet_singleton _))
+  have hF : ∀ x, F x = f x := by
+    intro x
+    have := setIntegral_condExp (𝓕.le 1) hint (hsing x)
+    rw [integral_singleton, integral_singleton, fellerP_singleton] at this
+    simpa using this
+  have hFG : ∀ x, F x = G x := by
+    intro x
+    have hx : ∫ y in {x}, F y ∂fellerP = ∫ y in {x}, G y ∂fellerP :=
+      setIntegral_congr_ae (measurableSet_singleton x) (hm.mono fun y hy _ => hy)
+    rw [integral_singleton, integral_singleton, fellerP_singleton] at hx
+    simpa using hx
+  -- `G` is `σ(X₁)`-measurable, hence constant on the fibres of `X₁`
+  have hGm : Measurable[(inferInstance : MeasurableSpace (Fin 3)).comap (fellerX 1)] G :=
+    stronglyMeasurable_condExp.measurable
+  have hfib : G (0, 0) = G (1, 0) := by
+    obtain ⟨s', -, hs'⟩ := MeasurableSpace.measurableSet_comap.mp
+      (hGm (measurableSet_singleton (G (0, 0))))
+    have h00 : (0, 0) ∈ fellerX 1 ⁻¹' s' := by rw [hs']; rfl
+    have h10 : ((1 : Fin 3), (0 : Fin 3)) ∈ fellerX 1 ⁻¹' s' := by
+      simpa [fellerX] using h00
+    rw [hs'] at h10
+    exact h10.symm
+  have e1 : f (0, 0) = 1 := by simp [hf, fellerX]
+  have e2 : f (1, 0) = 0 := by simp [hf, fellerX]
+  rw [← hFG, ← hFG, hF, hF, e1, e2] at hfib
+  norm_num at hfib
+
+/-- **Semigroup ⇏ Markov** (Feller's example).  The process `fellerX` (`X₀ = a`, `X₁ = b`,
+`X₂ = −(a + b) mod 3` under the uniform law of `(a, b)`) has the constant uniform transition kernel
+`K` between any two times (`P(X_j = b | X_i = a) = K(a, {b}) = 1/3` for `i ≠ j`), and these
+kernels satisfy Chapman–Kolmogorov (`K ∘ K = K`); nevertheless `X` is not Markov (event form) for
+any filtration to which it is adapted. -/
+@[powerlib_foundation] theorem semigroup_not_markov :
+    unifKernel ∘ₖ unifKernel = unifKernel ∧
+      (∀ i j : Fin 3, i ≠ j → ∀ a b : Fin 3,
+        fellerP[{ω | fellerX j ω = b} | {ω | fellerX i ω = a}] = unifKernel a {b}) ∧
+      ∀ 𝓕 : Filtration (Fin 3) (inferInstance : MeasurableSpace (Fin 3 × Fin 3)),
+        (∀ s, Measurable[𝓕 s] (fellerX s)) → ¬ MarkovEvent fellerP 𝓕 fellerX :=
+  ⟨unifKernel_comp, feller_transition, feller_not_markov⟩
+
+end Feller
 
 end powerlib.Stochastic.Markov

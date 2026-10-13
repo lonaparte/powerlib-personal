@@ -24,6 +24,16 @@ the measure-zero form.
   are countable, so atom-free points are dense), and their masses converge; Mathlib's criterion
   `IsPiSystem.tendsto_probabilityMeasure_of_tendsto_of_mem` concludes.
 * `tendsto_iff_cdf_tendsto`: the equivalence.
+
+Skorokhod representation on `ℝ` (`T-convergence-stochastic.md`, stretch item), by the quantile
+coupling on `((0, 1), Lebesgue)` (`unifI`):
+* `quantile μ u = inf {x | u ≤ F_μ(x)}`; `quantile_le_iff`: `Q(u) ≤ x ↔ u ≤ F(x)` for `u ∈ (0, 1)`
+  (right-continuity of `F`); `quantile_monotoneOn`;
+* `map_quantile`: `Q_μ(U) ∼ μ` for `U` uniform on `(0, 1)`;
+* `tendsto_quantile`, `ae_tendsto_quantile`: `F_n → F` at atom-free points ⇒ `Q_n(u) → Q(u)` at
+  every continuity point `u` of `Q`, hence for a.e. `u` (countably many discontinuities);
+* `skorokhod_representation`: if `μ_n → μ` weakly, then `Y_n = Q_{μ_n}`, `Y = Q_μ` on `(0, 1)`
+  have laws `μ_n`, `μ` and `Y_n → Y` almost surely.
 -/
 
 noncomputable section
@@ -106,5 +116,155 @@ continuity (atom-free) points of the limit.** -/
     Tendsto μs l (𝓝 ν) ↔ ∀ x, (ν : Measure ℝ) {x} = 0 →
       Tendsto (fun i => cdf (μs i : Measure ℝ) x) l (𝓝 (cdf (ν : Measure ℝ) x)) :=
   ⟨fun h _ hx => cdf_tendsto_of_tendsto h hx, tendsto_of_cdf_tendsto⟩
+
+/-! ## Skorokhod representation on `ℝ` (quantile coupling) -/
+
+/-- **Quantile function** (generalized inverse of the distribution function):
+`Q_μ(u) = inf {x | u ≤ F_μ(x)}`. -/
+def quantile (μ : Measure ℝ) (u : ℝ) : ℝ := sInf {x | u ≤ cdf μ x}
+
+section Quantile
+
+variable {μ : Measure ℝ} {u : ℝ}
+
+private theorem quantile_set_nonempty (hu1 : u < 1) : {x | u ≤ cdf μ x}.Nonempty := by
+  obtain ⟨x, hx⟩ := ((tendsto_order.1 (tendsto_cdf_atTop (μ := μ))).1 u hu1).exists
+  exact ⟨x, hx.le⟩
+
+private theorem quantile_set_bddBelow (hu0 : 0 < u) : BddBelow {x | u ≤ cdf μ x} := by
+  obtain ⟨x₀, hx₀⟩ := eventually_atBot.mp ((tendsto_order.1 (tendsto_cdf_atBot (μ := μ))).2 u hu0)
+  refine ⟨x₀, fun y hy => ?_⟩
+  by_contra h
+  exact absurd hy (not_le.mpr (hx₀ y (not_le.mp h).le))
+
+/-- **Galois connection** of the quantile: for `u ∈ (0, 1)`, `Q(u) ≤ x ↔ u ≤ F(x)`. -/
+@[powerlib_foundation] theorem quantile_le_iff (hu0 : 0 < u) (hu1 : u < 1) (x : ℝ) :
+    quantile μ u ≤ x ↔ u ≤ cdf μ x := by
+  have hne := quantile_set_nonempty (μ := μ) hu1
+  have hbdd := quantile_set_bddBelow (μ := μ) hu0
+  constructor
+  · intro h
+    refine le_trans ?_ (monotone_cdf μ h)
+    -- `Q(u)` belongs to the set, by right-continuity of `F`
+    have hcont : ContinuousWithinAt (cdf μ) (Ioi (quantile μ u)) (quantile μ u) :=
+      ((cdf μ).right_continuous _).mono Ioi_subset_Ici_self
+    refine ge_of_tendsto hcont ?_
+    filter_upwards [self_mem_nhdsWithin] with y hy
+    obtain ⟨s, hs, hsy⟩ := exists_lt_of_csInf_lt hne hy
+    exact le_trans hs (monotone_cdf μ hsy.le)
+  · intro h
+    exact csInf_le hbdd h
+
+/-- The quantile is monotone on `(0, 1)`. -/
+@[powerlib_foundation] theorem quantile_monotoneOn : MonotoneOn (quantile μ) (Ioo 0 1) := by
+  intro u hu v hv huv
+  rw [quantile_le_iff hu.1 hu.2]
+  exact huv.trans ((quantile_le_iff hv.1 hv.2 _).mp le_rfl)
+
+end Quantile
+
+/-- The uniform probability on `(0, 1)`. -/
+abbrev unifI : Measure ℝ := volume.restrict (Ioo 0 1)
+
+instance : IsProbabilityMeasure unifI := ⟨by simp⟩
+
+/-- The quantile is a.e.-measurable for the uniform law on `(0, 1)`. -/
+@[powerlib_foundation] theorem aemeasurable_quantile (μ : Measure ℝ) [IsProbabilityMeasure μ] :
+    AEMeasurable (quantile μ) unifI :=
+  aemeasurable_restrict_of_monotoneOn measurableSet_Ioo quantile_monotoneOn
+
+/-- **The quantile transform has law `μ`**: if `U` is uniform on `(0, 1)`, `Q_μ(U) ∼ μ`. -/
+@[powerlib_foundation] theorem map_quantile (μ : Measure ℝ) [IsProbabilityMeasure μ] :
+    unifI.map (quantile μ) = μ := by
+  refine Measure.ext_of_Iic _ _ fun x => ?_
+  rw [Measure.map_apply_of_aemeasurable (aemeasurable_quantile μ) measurableSet_Iic,
+    Measure.restrict_apply' measurableSet_Ioo, ← ofReal_cdf]
+  have e : quantile μ ⁻¹' Iic x ∩ Ioo 0 1 = Ioo 0 1 ∩ Iic (cdf μ x) := by
+    ext u
+    simp only [mem_inter_iff, mem_preimage, mem_Iic, mem_Ioo]
+    constructor
+    · rintro ⟨h, h0, h1⟩
+      exact ⟨⟨h0, h1⟩, (quantile_le_iff h0 h1 x).mp h⟩
+    · rintro ⟨⟨h0, h1⟩, h⟩
+      exact ⟨(quantile_le_iff h0 h1 x).mpr h, h0, h1⟩
+  rw [e]
+  have h0 := cdf_nonneg μ x
+  have h1 := cdf_le_one μ x
+  apply le_antisymm
+  · calc volume (Ioo 0 1 ∩ Iic (cdf μ x)) ≤ volume (Icc 0 (cdf μ x)) :=
+          measure_mono fun y hy => ⟨hy.1.1.le, hy.2⟩
+      _ = ENNReal.ofReal (cdf μ x) := by rw [Real.volume_Icc, sub_zero]
+  · rcases h1.lt_or_eq with h1 | h1
+    · calc ENNReal.ofReal (cdf μ x) = volume (Ioo 0 (cdf μ x)) := by rw [Real.volume_Ioo, sub_zero]
+        _ ≤ volume (Ioo 0 1 ∩ Iic (cdf μ x)) :=
+            measure_mono fun y hy => ⟨⟨hy.1, hy.2.trans h1⟩, hy.2.le⟩
+    · calc ENNReal.ofReal (cdf μ x) = volume (Ioo (0 : ℝ) 1) := by rw [Real.volume_Ioo, h1]; simp
+        _ ≤ volume (Ioo 0 1 ∩ Iic (cdf μ x)) :=
+            measure_mono fun y hy => ⟨hy, by rw [h1]; exact hy.2.le⟩
+
+/-- **Quantiles converge at continuity points.**  If `F_n(x) → F(x)` at every atom-free point `x`
+of the finite measure `μ`, then `Q_n(u) → Q(u)` at every `u ∈ (0, 1)` where `Q = Q_μ` is continuous
+(relative to `(0, 1)`). -/
+@[powerlib_foundation] theorem tendsto_quantile {μs : ℕ → Measure ℝ} {μ : Measure ℝ}
+    [IsFiniteMeasure μ]
+    (hF : ∀ x, μ {x} = 0 → Tendsto (fun n => cdf (μs n) x) atTop (𝓝 (cdf μ x)))
+    {u : ℝ} (hu : u ∈ Ioo (0 : ℝ) 1) (hc : ContinuousWithinAt (quantile μ) (Ioo 0 1) u) :
+    Tendsto (fun n => quantile (μs n) u) atTop (𝓝 (quantile μ u)) := by
+  have hdense := dense_atomFree μ
+  rw [tendsto_order]
+  constructor
+  · intro a ha
+    obtain ⟨x, hx, hax, hxq⟩ := hdense.exists_between ha
+    have hFx : cdf μ x < u := by
+      by_contra h
+      exact absurd ((quantile_le_iff hu.1 hu.2 x).mpr (not_lt.mp h)) (not_le.mpr hxq)
+    filter_upwards [(tendsto_order.1 (hF x hx)).2 u hFx] with n hn
+    have : ¬ quantile (μs n) u ≤ x := fun h =>
+      absurd ((quantile_le_iff hu.1 hu.2 x).mp h) (not_le.mpr hn)
+    exact hax.trans (not_le.mp this)
+  · intro b hb
+    obtain ⟨δ, hδ, hδc⟩ := Metric.continuousWithinAt_iff.mp hc (b - quantile μ u) (by linarith)
+    set v := min (u + δ / 2) ((u + 1) / 2) with hvdef
+    have huv : u < v := lt_min (by linarith) (by linarith [hu.2])
+    have hv : v ∈ Ioo (0 : ℝ) 1 :=
+      ⟨hu.1.trans huv, (min_le_right _ _).trans_lt (by linarith [hu.2])⟩
+    have hdist : dist v u < δ := by
+      rw [Real.dist_eq, abs_of_pos (by linarith)]
+      linarith [min_le_left (u + δ / 2) ((u + 1) / 2)]
+    have hQv : quantile μ v < b := by
+      have := hδc hv hdist
+      rw [Real.dist_eq, abs_lt] at this
+      linarith [this.2]
+    obtain ⟨x, hx, hvx, hxb⟩ := hdense.exists_between hQv
+    have hFx : u < cdf μ x := huv.trans_le ((quantile_le_iff hv.1 hv.2 x).mp hvx.le)
+    filter_upwards [(tendsto_order.1 (hF x hx)).1 u hFx] with n hn
+    exact ((quantile_le_iff hu.1 hu.2 x).mpr hn.le).trans_lt hxb
+
+/-- **Almost-sure convergence of the quantile coupling**: under the hypothesis of
+`tendsto_quantile`, `Q_n(U) → Q(U)` for Lebesgue-a.e. `U ∈ (0, 1)` (the discontinuities of the
+monotone `Q` on `(0, 1)` are countable). -/
+@[powerlib_foundation] theorem ae_tendsto_quantile {μs : ℕ → Measure ℝ} {μ : Measure ℝ}
+    [IsFiniteMeasure μ]
+    (hF : ∀ x, μ {x} = 0 → Tendsto (fun n => cdf (μs n) x) atTop (𝓝 (cdf μ x))) :
+    ∀ᵐ u ∂unifI, Tendsto (fun n => quantile (μs n) u) atTop (𝓝 (quantile μ u)) := by
+  have hcount := (quantile_monotoneOn (μ := μ)).countable_not_continuousWithinAt
+  have hnull := hcount.measure_zero (volume : Measure ℝ)
+  rw [ae_restrict_iff' measurableSet_Ioo]
+  filter_upwards [measure_eq_zero_iff_ae_notMem.mp hnull] with u hu hu01
+  exact tendsto_quantile hF hu01 (by by_contra h; exact hu ⟨hu01, h⟩)
+
+/-- **Skorokhod representation on `ℝ`** (quantile coupling).  If `μ_n → μ` weakly (convergence in
+distribution), then on the probability space `((0, 1), Lebesgue)` the random variables
+`Y_n = Q_{μ_n}` and `Y = Q_μ` have laws `μ_n` and `μ`, and `Y_n → Y` almost surely. -/
+@[powerlib_foundation] theorem skorokhod_representation {μs : ℕ → ProbabilityMeasure ℝ}
+    {μ : ProbabilityMeasure ℝ} (h : Tendsto μs atTop (𝓝 μ)) :
+    (∀ n, AEMeasurable (quantile (μs n : Measure ℝ)) unifI ∧
+        unifI.map (quantile (μs n : Measure ℝ)) = μs n) ∧
+      AEMeasurable (quantile (μ : Measure ℝ)) unifI ∧
+      unifI.map (quantile (μ : Measure ℝ)) = μ ∧
+      ∀ᵐ u ∂unifI, Tendsto (fun n => quantile (μs n : Measure ℝ) u) atTop
+        (𝓝 (quantile (μ : Measure ℝ) u)) :=
+  ⟨fun _ => ⟨aemeasurable_quantile _, map_quantile _⟩, aemeasurable_quantile _, map_quantile _,
+    ae_tendsto_quantile fun _ hx => cdf_tendsto_of_tendsto h hx⟩
 
 end powerlib.Stochastic.Conv

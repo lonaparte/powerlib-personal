@@ -13,8 +13,9 @@ Results: BDF1–BDF6 with the coefficients of the source table (BDF5/BDF6 comple
 lists only `β_k`) have exact order `k`.
 
 Source: work-sync theory/T-numerical-integration.md §1.5–§1.6 (BDF table).  Foundation.
-Not formalized: zero-stability of BDF1–6 and its failure for `k ≥ 7` (the latter needs a
-certified root location of `ρ`; reported as UNPROVED/stretch).
+Not formalized here: zero-stability of BDF1–6. Failure of zero-stability (a root of `ρ` outside
+the closed unit disk) is proved for BDF7 in `theorem/Numerics/BDFInstability.lean`; the general
+statement for every `k ≥ 7` remains UNPROVED.
 -/
 
 noncomputable section

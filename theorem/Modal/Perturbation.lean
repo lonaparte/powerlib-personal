@@ -2,6 +2,8 @@ import theorem.Modal.Participation
 import theorem.LinearAlgebra.Conditioning
 import Mathlib.Analysis.Matrix.Spectrum
 import Mathlib.Analysis.CStarAlgebra.Basic
+import Mathlib.Analysis.CStarAlgebra.Spectrum
+import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 
 /-! # Eigenvalue perturbation: Bauer–Fike, first-order sensitivity, spectral condition number
 
@@ -22,6 +24,14 @@ Results.
   (`V⁻¹ = Wᵀ`).
 * `bauerFike_hermitian` (normal-matrix corollary, Hermitian case via Mathlib's spectral theorem
   `Matrix.IsHermitian.spectral_theorem`, unitary `V`, `‖V‖ = ‖V⁻¹‖ = 1`): `minᵢ |μ − λᵢ| ≤ ‖E‖`.
+* `bauerFike_normal`: **Bauer–Fike for a general normal matrix** (`Aᴴ A = A Aᴴ`): every eigenvalue
+  `μ` of `A + E` has some `ν ∈ σ(A)` with `|μ − ν| ≤ ‖E‖`. No diagonalisation is assumed: for
+  `μ ∉ σ(A)` the resolvent `R = (μI − A)⁻¹` is normal, so its spectral norm equals its spectral
+  radius (Mathlib `IsStarNormal.spectralRadius_eq_nnnorm`; complex matrices with the `ℓ²` operator
+  norm form a C⋆-algebra), which is attained at some `1/(μ − ν)`, `ν ∈ σ(A)`
+  (`spectrum.exists_nnnorm_eq_spectralRadius`); `x = R E x` gives `1 ≤ ‖R‖ ‖E‖`.
+  `mem_spectrum_iff_exists_eigvec`: `σ(M)` is the set of eigenvalues of a complex matrix.
+  `bauerFike_normal_spectrum`: the same with `μ ∈ σ(A + E)` (spectrum form).
 * `eigenvalue_sensitivity`: along a differentiable eigen-branch `A(α) v(α) = λ(α) v(α)` with a
   left eigenvector `ψ` of `A(α₀)` (`ψᵀ v(α₀) ≠ 0`), `λ'(α₀) = ψᵀ A'(α₀) v(α₀) / (ψᵀ v(α₀))`
   (`= ψᵀ A' v` under the normalisation `ψᵀ v = 1`). The existence of a differentiable branch
@@ -144,6 +154,96 @@ eigenvalue of `A + E` lies within `‖E‖` of the spectrum of `A`. -/
   have h2 : ‖star U‖ = 1 := CStarRing.norm_of_mem_unitary hUs
   rw [h1, h2, one_mul, one_mul] at hi
   simpa using hi
+
+/-! ## Bauer–Fike for normal matrices -/
+
+/-- The spectrum of a complex matrix is its set of eigenvalues. -/
+@[powerlib_foundation] theorem mem_spectrum_iff_exists_eigvec {M : Matrix n n ℂ} {ν : ℂ} :
+    ν ∈ spectrum ℂ M ↔ ∃ w : n → ℂ, w ≠ 0 ∧ M *ᵥ w = ν • w := by
+  rw [spectrum.mem_iff, Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero, not_not,
+    ← Matrix.exists_mulVec_eq_zero_iff, Algebra.algebraMap_eq_smul_one]
+  refine exists_congr fun w => and_congr_right fun _ => ?_
+  rw [Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, sub_eq_zero, eq_comm]
+
+/-- **Bauer–Fike for normal matrices**: if `A` is normal (`Aᴴ A = A Aᴴ`), every eigenvalue `μ` of
+`A + E` lies within `‖E‖` (spectral norm) of some eigenvalue `ν ∈ σ(A)`. -/
+@[powerlib_foundation] theorem bauerFike_normal {A E : Matrix n n ℂ} (hA : Aᴴ * A = A * Aᴴ) {μ : ℂ}
+    {x : EuclideanSpace ℂ n} (hx : x ≠ 0) (heig : act (A + E) x = μ • x) :
+    ∃ ν ∈ spectrum ℂ A, ‖μ - ν‖ ≤ ‖E‖ := by
+  by_cases hμ : μ ∈ spectrum ℂ A
+  · exact ⟨μ, hμ, by simp⟩
+  have hne : Nonempty n := by
+    by_contra h
+    rw [not_nonempty_iff] at h
+    exact hx (Subsingleton.elim _ _)
+  set b : Matrix n n ℂ := μ • 1 - A with hb
+  have hbu : IsUnit b := by
+    rw [spectrum.mem_iff, not_not, Algebra.algebraMap_eq_smul_one] at hμ
+    exact hμ
+  have hbdet : IsUnit b.det := (Matrix.isUnit_iff_isUnit_det b).mp hbu
+  set R : Matrix n n ℂ := b⁻¹ with hR
+  -- `b` and hence `R = b⁻¹` are normal
+  have hbn : bᴴ * b = b * bᴴ := by
+    simp only [hb, conjTranspose_sub, conjTranspose_smul, conjTranspose_one, Matrix.sub_mul,
+      Matrix.mul_sub, Matrix.smul_mul, Matrix.mul_smul, Matrix.one_mul, Matrix.mul_one, hA]
+    module
+  have hRn : Rᴴ * R = R * Rᴴ := by
+    rw [hR, conjTranspose_nonsing_inv, ← Matrix.mul_inv_rev, ← Matrix.mul_inv_rev, hbn]
+  have : IsStarNormal R := ⟨by
+    change Rᴴ * R = R * Rᴴ
+    exact hRn⟩
+  -- `x = R E x`
+  have hbx : act b x = act E x := by
+    have e1 : act (A + E) x = act A x + act E x := by simp [act]
+    have e2 : act b x = μ • x - act A x := by simp [act, hb]
+    rw [e2, ← heig, e1]
+    abel
+  have hxeq : x = act R (act E x) := by rw [← hbx, hR, act_inv_act hbdet]
+  have hxpos : 0 < ‖x‖ := norm_pos_iff.mpr hx
+  have h1 : 1 ≤ ‖R‖ * ‖E‖ := by
+    have hb' : ‖x‖ ≤ ‖R‖ * ‖E‖ * ‖x‖ := by
+      calc ‖x‖ = ‖act R (act E x)‖ := by rw [← hxeq]
+        _ ≤ ‖R‖ * ‖act E x‖ := norm_act_le _ _
+        _ ≤ ‖R‖ * (‖E‖ * ‖x‖) := by gcongr; exact norm_act_le _ _
+        _ = ‖R‖ * ‖E‖ * ‖x‖ := by ring
+    exact (le_mul_iff_one_le_left hxpos).mp (by simpa using hb')
+  have hRpos : 0 < ‖R‖ := by
+    by_contra h
+    push Not at h
+    have : ‖R‖ * ‖E‖ ≤ 0 := mul_nonpos_of_nonpos_of_nonneg h (norm_nonneg _)
+    linarith
+  -- the spectral radius of the normal matrix `R` is its norm and is attained
+  obtain ⟨z, hz, hzr⟩ := spectrum.exists_nnnorm_eq_spectralRadius R
+  rw [IsStarNormal.spectralRadius_eq_nnnorm R, ENNReal.coe_inj] at hzr
+  have hzn : ‖z‖ = ‖R‖ := congrArg NNReal.toReal hzr
+  obtain ⟨w, hw, hRw⟩ := mem_spectrum_iff_exists_eigvec.mp hz
+  have hz0 : z ≠ 0 := by
+    intro h0; rw [h0, norm_zero] at hzn; linarith
+  -- `b w = z⁻¹ w`, so `A w = (μ − z⁻¹) w`
+  have hbw : b *ᵥ w = z⁻¹ • w := by
+    have hbR : b * R = 1 := Matrix.mul_nonsing_inv b hbdet
+    have : b *ᵥ (R *ᵥ w) = w := by rw [Matrix.mulVec_mulVec, hbR, Matrix.one_mulVec]
+    rw [hRw, Matrix.mulVec_smul] at this
+    calc b *ᵥ w = z⁻¹ • (z • b *ᵥ w) := by rw [smul_smul, inv_mul_cancel₀ hz0, one_smul]
+      _ = z⁻¹ • w := by rw [this]
+  refine ⟨μ - z⁻¹, mem_spectrum_iff_exists_eigvec.mpr ⟨w, hw, ?_⟩, ?_⟩
+  · rw [hb, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at hbw
+    rw [sub_smul, ← hbw]
+    abel
+  · rw [sub_sub_cancel, norm_inv, hzn]
+    rw [inv_le_iff_one_le_mul₀' hRpos]
+    linarith
+
+/-- **Bauer–Fike for normal matrices**, spectral form: `A` normal, `μ ∈ σ(A + E)` ⇒
+`∃ ν ∈ σ(A)`, `|μ − ν| ≤ ‖E‖₂`. -/
+@[powerlib_foundation] theorem bauerFike_normal_spectrum {A E : Matrix n n ℂ} (hA : Aᴴ * A = A * Aᴴ) {μ : ℂ}
+    (hμ : μ ∈ spectrum ℂ (A + E)) : ∃ ν ∈ spectrum ℂ A, ‖μ - ν‖ ≤ ‖E‖ := by
+  obtain ⟨w, hw, hAw⟩ := mem_spectrum_iff_exists_eigvec.mp hμ
+  refine bauerFike_normal hA (x := WithLp.toLp 2 w) (fun h => hw ?_) ?_
+  · have := congrArg WithLp.ofLp h
+    simpa using this
+  · rw [act, Matrix.toEuclideanCLM_toLp, hAw]
+    rfl
 
 /-! ## First-order sensitivity of a simple eigenvalue -/
 

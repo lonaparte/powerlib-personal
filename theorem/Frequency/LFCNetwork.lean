@@ -36,8 +36,25 @@ Results.
   states on a meshed graph; a stable realization must use area angles or a spanning tree.
 * `tendsto_of_spectrallyStable` (foundation, any matrices on a finite index type, by transport to
   `Fin N`) and `netModel_tendsto` (private): on a radial tie-line graph, a spectrally stable
-  state matrix (explicit premise; no parametric Routh–Hurwitz condition is available) makes every
-  trajectory under constant loads converge to `(0, 0, ΔP_L)`.
+  state matrix (explicit premise) makes every trajectory under constant loads converge to
+  `(0, 0, ΔP_L)`.
+* Gain condition (foundation, static; replaces the missing parametric Routh–Hurwitz condition by
+  a sufficient one that holds for every tie-line strength and every radial topology):
+  `netA_spectrallyStable_of_gain` — if `𝓑` has trivial kernel (radial graph), every area has
+  `M_a, K_I,a, B_a > 0` and **`K_I,a M_a ≤ D_a + K_R,a`**, and every line has `ω_s T_ℓ > 0`, the
+  state matrix is spectrally stable. Proof: in the coordinates `ξ_a = ΔP_C,a − K_I,a M_a Δω_a` the
+  tie-line flows drop out of the AGC rows (`netXi_mulVec`: `ξ̇ = K_I (g − B) Δω − K_I ξ`,
+  `g = D + K_R − K_I M ≥ 0`); the storage
+  `E = Σ M Δω² + Σ ΔP_tie²/(ω_s T) + Σ ξ²/(K_I (g + B))` (`netEnergy`) has
+  `E(z, A z) = −Σ ((ξ − g Δω)² + g B Δω²)/(g + B)` for every state `z` (`netEnergy_mulVec`, the
+  tie-line terms cancel by `𝓑`/`𝓑ᵀ` duality); a real eigen-pair with nonnegative real part
+  (`spectrallyStable_of_real_pairs`) must then have `ξ = 0`, `Δω = 0` (AGC rows), zero net exports
+  (frequency rows) and zero line flows (trivial kernel). `plant_A_eq_reindex`,
+  `plant_isHurwitz_of_gain`: the five-state two-area matrix of `Frequency.LFC` is this matrix for
+  two areas and one line (`𝓑 = (1, −1)ᵀ`), relabelled, so the same condition makes it Hurwitz.
+  Only sufficiency is claimed (the exact two-area condition would be the fifth-order
+  Hurwitz-determinant list, not formalized); the condition involves neither the tie-line
+  coefficients nor the size of the frequency bias.
 
 Family and connection conclusions.
 * System map: an `N`-area model (`NetModel α β`: areas, `ω_s`, line coefficients, coupling
@@ -54,6 +71,10 @@ Family and connection conclusions.
   `net_mem_den_globallyExponentiallyStable` (spectral stability of `netA`, explicit static
   premise; formerly `netModel_tendsto`), `net_not_mem_den_attractive` (a loop in the tie-line
   graph excludes every attractive sentence, for any gains) and `triangle_not_mem_den_attractive`.
+  Parametric connection conclusions: `net_mem_den_of_gain` (`N` areas, radial graph, gain
+  condition ⇒ every attractive sentence and sampled contraction) and `mem_den_of_gain` (the
+  two-area family `Frequency.LFC.family` under the same condition, replacing the Hurwitz premise
+  of `LFC.mem_den_globallyExponentiallyStable`).
 * The equilibrium characterizations and spectral statements (formerly `@[powerlib_domain]`) are
   static evidence (`@[powerlib_foundation]`); `tendsto_of_spectrallyStable` is a generic
   implication about arbitrary matrices (foundation). Private implementation evidence
@@ -389,6 +410,361 @@ solution to an equilibrium, on any finite index type (transport to `Fin N`, then
 
 end Reindex
 
+/-! ## Gain condition: a parametric stability certificate on radial graphs -/
+
+/-- Spectral stability from real eigen-pairs: if every real pair `(a, b)` with
+`A a = x a − y b`, `A b = y a + x b` and `x ≥ 0` vanishes, then `A` is spectrally stable
+(`a ± i b` would be an eigenvector for `x ± i y`). Generic. -/
+@[powerlib_foundation] theorem spectrallyStable_of_real_pairs {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (A : Matrix ι ι ℝ)
+    (h : ∀ (x y : ℝ) (a b : ι → ℝ), A *ᵥ a = x • a - y • b → A *ᵥ b = y • a + x • b →
+      0 ≤ x → a = 0 ∧ b = 0) : Linear.SpectrallyStable A := by
+  intro s hs
+  obtain ⟨v, hv, hmv⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr hs
+  have heig : Linear.complexify A *ᵥ v = s • v := by
+    rw [Linear.characteristicMatrix, sub_mulVec, smul_mulVec, one_mulVec, sub_eq_zero] at hmv
+    exact hmv.symm
+  by_contra hre
+  push Not at hre
+  have hcomp : ∀ i, (Linear.complexify A *ᵥ v) i =
+      ((A *ᵥ fun j => (v j).re) i : ℂ) + ((A *ᵥ fun j => (v j).im) i : ℂ) * Complex.I := by
+    intro i
+    apply Complex.ext <;>
+      simp [mulVec, dotProduct, Complex.re_sum, Complex.im_sum, Complex.mul_re, Complex.mul_im]
+  have hre_eq : A *ᵥ (fun j => (v j).re) =
+      s.re • (fun j => (v j).re) - s.im • (fun j => (v j).im) := by
+    funext i
+    have := congrArg Complex.re ((hcomp i).symm.trans (congrFun heig i))
+    simpa [Complex.mul_re] using this
+  have him_eq : A *ᵥ (fun j => (v j).im) =
+      s.im • (fun j => (v j).re) + s.re • (fun j => (v j).im) := by
+    funext i
+    have := congrArg Complex.im ((hcomp i).symm.trans (congrFun heig i))
+    simp [Complex.mul_im] at this
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    linarith
+  obtain ⟨ha, hb⟩ := h s.re s.im _ _ hre_eq him_eq hre
+  apply hv
+  funext j
+  apply Complex.ext
+  · simpa using congrFun ha j
+  · simpa using congrFun hb j
+
+
+/-- Margin `g_a = D_a + K_R,a − K_I,a M_a` of the gain condition. -/
+def netGap (area : α → Area) (a : α) : ℝ := (area a).D + (area a).K - (area a).KI * (area a).M
+
+/-- AGC deviation `ξ_a = ΔP_C,a − K_I,a M_a Δω_a` of a state vector. -/
+def netXi (area : α → Area) (z : α ⊕ (β ⊕ α) → ℝ) (a : α) : ℝ :=
+  z (.inr (.inr a)) - (area a).KI * (area a).M * z (.inl a)
+
+/-- Bilinear storage `Σ M ω ω' + Σ P P'/(ω_s T) + Σ ξ ξ'/(K_I (g + B))`. -/
+def netEnergy (area : α → Area) (ωs : ℝ) (T : β → ℝ) (z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) : ℝ :=
+  (∑ a, (area a).M * z₁ (.inl a) * z₂ (.inl a)) +
+    (∑ ℓ, z₁ (.inr (.inl ℓ)) * z₂ (.inr (.inl ℓ)) / (ωs * T ℓ)) +
+    ∑ a, netXi area z₁ a * netXi area z₂ a / ((area a).KI * (netGap area a + (area a).B))
+
+/-- Dissipation `Σ ((ξ − g ω)² + g B ω²)/(g + B)`. -/
+def netDiss (area : α → Area) (z : α ⊕ (β ⊕ α) → ℝ) : ℝ :=
+  ∑ a, ((netXi area z a - netGap area a * z (.inl a)) ^ 2 +
+    netGap area a * (area a).B * z (.inl a) ^ 2) / (netGap area a + (area a).B)
+
+@[powerlib_foundation] theorem netA_mulVec_freq (z : α ⊕ (β ⊕ α) → ℝ) (a : α) :
+    (netA area ωs T 𝓑 *ᵥ z) (.inl a) =
+      (-((area a).D + (area a).K) * z (.inl a) - ∑ ℓ, 𝓑 a ℓ * z (.inr (.inl ℓ)) +
+        z (.inr (.inr a))) / (area a).M := by
+  have h := netField_freq (area := area) (ωs := ωs) (T := T) (𝓑 := 𝓑) z 0 a
+  simpa [netField] using h
+
+@[powerlib_foundation] theorem netA_mulVec_tie (z : α ⊕ (β ⊕ α) → ℝ) (ℓ : β) :
+    (netA area ωs T 𝓑 *ᵥ z) (.inr (.inl ℓ)) = ωs * T ℓ * ∑ c, 𝓑 c ℓ * z (.inl c) := by
+  have h := netField_tie (area := area) (ωs := ωs) (T := T) (𝓑 := 𝓑) z 0 ℓ
+  simpa [netField] using h
+
+@[powerlib_foundation] theorem netA_mulVec_agc (z : α ⊕ (β ⊕ α) → ℝ) (a : α) :
+    (netA area ωs T 𝓑 *ᵥ z) (.inr (.inr a)) =
+      -(area a).KI * (∑ ℓ, 𝓑 a ℓ * z (.inr (.inl ℓ)) + (area a).B * z (.inl a)) := by
+  have h := netField_agc (area := area) (ωs := ωs) (T := T) (𝓑 := 𝓑) z 0 a
+  simpa [netField] using h
+
+/-- AGC deviation of `A z`: `ξ(A z) = K_I (g − B) ω − K_I ξ`. -/
+@[powerlib_foundation] theorem netXi_mulVec (hM : ∀ a, (area a).M ≠ 0) (z : α ⊕ (β ⊕ α) → ℝ)
+    (a : α) :
+    netXi area (netA area ωs T 𝓑 *ᵥ z) a =
+      (area a).KI * (netGap area a - (area a).B) * z (.inl a) - (area a).KI * netXi area z a := by
+  rw [netXi, netA_mulVec_freq, netA_mulVec_agc, netXi, netGap]
+  field_simp [hM a]
+  ring
+
+/-- **Energy identity**: `E(z, A z) = −Diss(z)` for every state vector `z`. -/
+@[powerlib_foundation] theorem netEnergy_mulVec (hM : ∀ a, (area a).M ≠ 0)
+    (hK : ∀ a, (area a).KI ≠ 0) (hgB : ∀ a, netGap area a + (area a).B ≠ 0)
+    (hw : ∀ ℓ, ωs * T ℓ ≠ 0) (z : α ⊕ (β ⊕ α) → ℝ) :
+    netEnergy area ωs T z (netA area ωs T 𝓑 *ᵥ z) = -netDiss area z := by
+  have htie : ∑ ℓ, z (.inr (.inl ℓ)) * (netA area ωs T 𝓑 *ᵥ z) (.inr (.inl ℓ)) / (ωs * T ℓ) =
+      ∑ a, z (.inl a) * ∑ ℓ, 𝓑 a ℓ * z (.inr (.inl ℓ)) := by
+    simp_rw [netA_mulVec_tie, Finset.mul_sum, Finset.sum_div]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun ℓ _ => ?_
+    rw [div_eq_iff (hw ℓ)]
+    ring
+  unfold netEnergy netDiss
+  rw [htie, ← Finset.sum_neg_distrib, ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun a _ => ?_
+  rw [netA_mulVec_freq, netXi_mulVec hM]
+  have hgB' := hgB a
+  have hK' := hK a
+  have hM' := hM a
+  have hd : (area a).D + (area a).K = netGap area a + (area a).KI * (area a).M := by
+    unfold netGap; ring
+  rw [hd]
+  unfold netXi
+  generalize netGap area a = g at hgB' ⊢
+  field_simp
+  ring
+
+omit [Fintype α] [DecidableEq α] [Fintype β] in
+@[powerlib_foundation] theorem netXi_combo (c d : ℝ) (z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) (a : α) :
+    netXi area (c • z₁ + d • z₂) a = c * netXi area z₁ a + d * netXi area z₂ a := by
+  simp only [netXi, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+  ring
+
+omit [Fintype α] [DecidableEq α] [Fintype β] in
+@[powerlib_foundation] theorem netXi_sub (c d : ℝ) (z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) (a : α) :
+    netXi area (c • z₁ - d • z₂) a = c * netXi area z₁ a - d * netXi area z₂ a := by
+  simp only [netXi, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
+  ring
+
+omit [DecidableEq α] in
+/-- The storage is linear in its second argument. -/
+@[powerlib_foundation] theorem netEnergy_combo (c d : ℝ) (z z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) :
+    netEnergy area ωs T z (c • z₁ + d • z₂) =
+      c * netEnergy area ωs T z z₁ + d * netEnergy area ωs T z z₂ := by
+  unfold netEnergy
+  simp only [netXi_combo, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+  have h1 : (∑ a, (area a).M * z (.inl a) * (c * z₁ (.inl a) + d * z₂ (.inl a))) =
+      c * (∑ a, (area a).M * z (.inl a) * z₁ (.inl a)) +
+        d * ∑ a, (area a).M * z (.inl a) * z₂ (.inl a) := by
+    rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun _ _ => by ring
+  have h2 : (∑ ℓ, z (.inr (.inl ℓ)) * (c * z₁ (.inr (.inl ℓ)) + d * z₂ (.inr (.inl ℓ))) /
+      (ωs * T ℓ)) = c * (∑ ℓ, z (.inr (.inl ℓ)) * z₁ (.inr (.inl ℓ)) / (ωs * T ℓ)) +
+        d * ∑ ℓ, z (.inr (.inl ℓ)) * z₂ (.inr (.inl ℓ)) / (ωs * T ℓ) := by
+    rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun _ _ => by ring
+  have h3 : (∑ a, netXi area z a * (c * netXi area z₁ a + d * netXi area z₂ a) /
+      ((area a).KI * (netGap area a + (area a).B))) =
+      c * (∑ a, netXi area z a * netXi area z₁ a / ((area a).KI * (netGap area a + (area a).B))) +
+        d * ∑ a, netXi area z a * netXi area z₂ a /
+          ((area a).KI * (netGap area a + (area a).B)) := by
+    rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun _ _ => by ring
+  rw [h1, h2, h3]
+  ring
+
+omit [DecidableEq α] in
+@[powerlib_foundation] theorem netEnergy_sub (c d : ℝ) (z z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) :
+    netEnergy area ωs T z (c • z₁ - d • z₂) =
+      c * netEnergy area ωs T z z₁ - d * netEnergy area ωs T z z₂ := by
+  rw [sub_eq_add_neg, ← neg_smul, netEnergy_combo]
+  ring
+
+omit [DecidableEq α] in
+/-- The storage is symmetric. -/
+@[powerlib_foundation] theorem netEnergy_comm (z₁ z₂ : α ⊕ (β ⊕ α) → ℝ) :
+    netEnergy area ωs T z₁ z₂ = netEnergy area ωs T z₂ z₁ := by
+  simp only [netEnergy]
+  congr 1
+  · congr 1
+    · exact Finset.sum_congr rfl fun a _ => by ring
+    · exact Finset.sum_congr rfl fun ℓ _ => by ring
+  · exact Finset.sum_congr rfl fun a _ => by ring
+
+omit [DecidableEq α] in
+/-- The storage is nonnegative under positive inertia, AGC gain, `g + B` and line coefficients. -/
+@[powerlib_foundation] theorem netEnergy_nonneg (hM : ∀ a, 0 ≤ (area a).M)
+    (hK : ∀ a, 0 < (area a).KI) (hgB : ∀ a, 0 < netGap area a + (area a).B)
+    (hw : ∀ ℓ, 0 < ωs * T ℓ) (z : α ⊕ (β ⊕ α) → ℝ) : 0 ≤ netEnergy area ωs T z z := by
+  unfold netEnergy
+  refine add_nonneg (add_nonneg (Finset.sum_nonneg fun a _ => ?_) (Finset.sum_nonneg fun ℓ _ => ?_))
+    (Finset.sum_nonneg fun a _ => ?_)
+  · have := hM a; rw [mul_assoc]; exact mul_nonneg this (mul_self_nonneg _)
+  · exact div_nonneg (mul_self_nonneg _) (hw ℓ).le
+  · exact div_nonneg (mul_self_nonneg _) (mul_pos (hK a) (hgB a)).le
+
+omit [Fintype α] [DecidableEq α] [Fintype β] in
+/-- The dissipation is nonnegative under `g ≥ 0`, `B > 0`. -/
+@[powerlib_foundation] theorem netDiss_term_nonneg (hg : ∀ a, 0 ≤ netGap area a)
+    (hB : ∀ a, 0 < (area a).B) (z : α ⊕ (β ⊕ α) → ℝ) (a : α) :
+    0 ≤ ((netXi area z a - netGap area a * z (.inl a)) ^ 2 +
+      netGap area a * (area a).B * z (.inl a) ^ 2) / (netGap area a + (area a).B) := by
+  have := hg a; have := hB a
+  positivity
+
+omit [DecidableEq α] [Fintype β] in
+/-- A vanishing dissipation forces `ξ = 0` and `g ω = 0` in every area. -/
+@[powerlib_foundation] theorem netDiss_eq_zero (hg : ∀ a, 0 ≤ netGap area a)
+    (hB : ∀ a, 0 < (area a).B) {z : α ⊕ (β ⊕ α) → ℝ} (h : netDiss area z = 0) (a : α) :
+    netXi area z a = 0 ∧ netGap area a * z (.inl a) = 0 := by
+  have hterm := (Finset.sum_eq_zero_iff_of_nonneg fun a _ => netDiss_term_nonneg hg hB z a).mp h a
+    (Finset.mem_univ a)
+  have hpos : 0 < netGap area a + (area a).B := add_pos_of_nonneg_of_pos (hg a) (hB a)
+  rw [div_eq_zero_iff, or_iff_left hpos.ne'] at hterm
+  have hB' := hB a
+  have hg' := hg a
+  have h1 : (netXi area z a - netGap area a * z (.inl a)) ^ 2 = 0 := by
+    nlinarith [sq_nonneg (netXi area z a - netGap area a * z (.inl a)),
+      mul_nonneg (mul_nonneg hg' hB'.le) (sq_nonneg (z (.inl a)))]
+  have h2 : netGap area a * (area a).B * z (.inl a) ^ 2 = 0 := by
+    nlinarith [sq_nonneg (netXi area z a - netGap area a * z (.inl a)),
+      mul_nonneg (mul_nonneg hg' hB'.le) (sq_nonneg (z (.inl a)))]
+  have h3 : netGap area a * z (.inl a) = 0 := by
+    have : (netGap area a * z (.inl a)) * z (.inl a) * (area a).B = 0 := by linear_combination h2
+    rcases mul_eq_zero.mp this with h | h
+    · rcases mul_eq_zero.mp h with h | h
+      · exact h
+      · rw [h, mul_zero]
+    · exact absurd h hB'.ne'
+  have h4 := pow_eq_zero_iff (n := 2) (by norm_num) |>.mp h1
+  exact ⟨by linear_combination h4 + h3, h3⟩
+
+/-- **Gain condition, `N` areas on a radial tie-line graph.** If every area has `M_a, K_I,a,
+B_a > 0` and `K_I,a M_a ≤ D_a + K_R,a`, every line has `ω_s T_ℓ > 0`, and `𝓑` has trivial
+kernel (radial graph), the line-flow state matrix is spectrally stable — for every tie-line
+strength and every radial topology. -/
+@[powerlib_foundation] theorem netA_spectrallyStable_of_gain [DecidableEq β] (hM : ∀ a, 0 < (area a).M)
+    (hK : ∀ a, 0 < (area a).KI) (hB : ∀ a, 0 < (area a).B)
+    (hgain : ∀ a, (area a).KI * (area a).M ≤ (area a).D + (area a).K)
+    (hw : ∀ ℓ, 0 < ωs * T ℓ) (hker : ∀ p : β → ℝ, 𝓑 *ᵥ p = 0 → p = 0) :
+    Linear.SpectrallyStable (netA area ωs T 𝓑) := by
+  classical
+  have hg : ∀ a, 0 ≤ netGap area a := fun a => by unfold netGap; linarith [hgain a]
+  have hgB : ∀ a, 0 < netGap area a + (area a).B := fun a => add_pos_of_nonneg_of_pos (hg a) (hB a)
+  have hM0 : ∀ a, (area a).M ≠ 0 := fun a => (hM a).ne'
+  refine spectrallyStable_of_real_pairs _ fun x y u v hu hv hx => ?_
+  have hEu := netEnergy_mulVec (𝓑 := 𝓑) hM0 (fun a => (hK a).ne') (fun a => (hgB a).ne')
+    (fun ℓ => (hw ℓ).ne') u
+  have hEv := netEnergy_mulVec (𝓑 := 𝓑) hM0 (fun a => (hK a).ne') (fun a => (hgB a).ne')
+    (fun ℓ => (hw ℓ).ne') v
+  rw [hu, netEnergy_sub] at hEu
+  rw [hv, netEnergy_combo] at hEv
+  have hcomm := netEnergy_comm (area := area) (ωs := ωs) (T := T) u v
+  have hNu := netEnergy_nonneg (fun a => (hM a).le) hK hgB hw u
+  have hNv := netEnergy_nonneg (fun a => (hM a).le) hK hgB hw v
+  have hDu : 0 ≤ netDiss area u := Finset.sum_nonneg fun a _ => netDiss_term_nonneg hg hB u a
+  have hDv : 0 ≤ netDiss area v := Finset.sum_nonneg fun a _ => netDiss_term_nonneg hg hB v a
+  have hsum : x * (netEnergy area ωs T u u + netEnergy area ωs T v v) =
+      -(netDiss area u + netDiss area v) := by linear_combination hEu + hEv + y * hcomm
+  have hxE : 0 ≤ x * (netEnergy area ωs T u u + netEnergy area ωs T v v) :=
+    mul_nonneg hx (add_nonneg hNu hNv)
+  have hDu0 : netDiss area u = 0 := by linarith
+  have hDv0 : netDiss area v = 0 := by linarith
+  -- every area: `ω = 0` and `ξ = 0`
+  have hω : ∀ a, u (.inl a) = 0 ∧ v (.inl a) = 0 := by
+    intro a
+    obtain ⟨xu, gu⟩ := netDiss_eq_zero hg hB hDu0 a
+    obtain ⟨xv, gv⟩ := netDiss_eq_zero hg hB hDv0 a
+    have ru := netXi_mulVec (ωs := ωs) (T := T) (𝓑 := 𝓑) hM0 u a
+    have rv := netXi_mulVec (ωs := ωs) (T := T) (𝓑 := 𝓑) hM0 v a
+    rw [hu, netXi_sub, xu, xv] at ru
+    rw [hv, netXi_combo, xu, xv] at rv
+    have hKB : (area a).KI * (area a).B ≠ 0 := (mul_pos (hK a) (hB a)).ne'
+    constructor
+    · have : (area a).KI * (area a).B * u (.inl a) = 0 := by
+        linear_combination ru + (area a).KI * gu
+      exact (mul_eq_zero.mp this).resolve_left hKB
+    · have : (area a).KI * (area a).B * v (.inl a) = 0 := by
+        linear_combination rv + (area a).KI * gv
+      exact (mul_eq_zero.mp this).resolve_left hKB
+  have hC : ∀ a, u (.inr (.inr a)) = 0 ∧ v (.inr (.inr a)) = 0 := by
+    intro a
+    obtain ⟨xu, -⟩ := netDiss_eq_zero hg hB hDu0 a
+    obtain ⟨xv, -⟩ := netDiss_eq_zero hg hB hDv0 a
+    unfold netXi at xu xv
+    rw [(hω a).1] at xu
+    rw [(hω a).2] at xv
+    constructor <;> linarith
+  -- the frequency rows force zero net export, hence zero line flows (radial graph)
+  have hP : ∀ z : α ⊕ (β ⊕ α) → ℝ, ∀ c d : ℝ, netA area ωs T 𝓑 *ᵥ z = c • u + d • v →
+      (∀ a, z (.inl a) = 0) → (∀ a, z (.inr (.inr a)) = 0) → ∀ ℓ, z (.inr (.inl ℓ)) = 0 := by
+    intro z c d hz hz0 hzC
+    have hexp : 𝓑 *ᵥ (fun ℓ => z (.inr (.inl ℓ))) = 0 := by
+      funext a
+      have h := congrFun hz (.inl a)
+      rw [netA_mulVec_freq, Pi.add_apply, Pi.smul_apply, Pi.smul_apply, (hω a).1, (hω a).2,
+        hz0 a, hzC a] at h
+      simp only [smul_eq_mul, mul_zero, add_zero, zero_sub] at h
+      have hMa := hM0 a
+      field_simp at h
+      simp only [mulVec, dotProduct, Pi.zero_apply]
+      linarith
+    exact fun ℓ => congrFun (hker _ hexp) ℓ
+  have hPu := hP u x (-y) (by rw [hu]; simp [sub_eq_add_neg]) (fun a => (hω a).1)
+    (fun a => (hC a).1)
+  have hPv := hP v y x hv (fun a => (hω a).2) (fun a => (hC a).2)
+  constructor
+  · funext i
+    rcases i with a | ℓ | a
+    · exact (hω a).1
+    · exact hPu ℓ
+    · exact (hC a).1
+  · funext i
+    rcases i with a | ℓ | a
+    · exact (hω a).2
+    · exact hPv ℓ
+    · exact (hC a).2
+
+/-- Relabelling of the two-area state `(Δω_a, Δω_b, ΔP_tie, ΔP_C,a, ΔP_C,b)` as areas, the one
+line `a → b`, and the AGC states. -/
+def twoAreaEquiv : Fin 2 ⊕ (Fin 1 ⊕ Fin 2) ≃ Fin 5 where
+  toFun
+    | .inl a => if a = 0 then 0 else 1
+    | .inr (.inl _) => 2
+    | .inr (.inr a) => if a = 0 then 3 else 4
+  invFun i := if i = 0 then .inl 0 else if i = 1 then .inl 1 else if i = 2 then .inr (.inl 0)
+    else if i = 3 then .inr (.inr 0) else .inr (.inr 1)
+  left_inv := by
+    intro x
+    rcases x with a | ℓ | a
+    · fin_cases a <;> rfl
+    · fin_cases ℓ; rfl
+    · fin_cases a <;> rfl
+  right_inv := by
+    intro i
+    fin_cases i <;> rfl
+
+/-- The two-area state matrix of `Frequency.LFC.plant` is the line-flow `N`-area matrix of the two
+areas and the single line `a → b` (`𝓑 = (1, −1)ᵀ`), relabelled. Static evidence on the model, not
+a connection conclusion. -/
+@[powerlib_foundation] theorem plant_A_eq_reindex (a b : Area) (ωs T : ℝ) :
+    (plant a b ωs T).A =
+      (netA ![a, b] ωs (fun _ : Fin 1 => T) !![1; -1]).reindex twoAreaEquiv twoAreaEquiv := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [plant, netA, twoAreaEquiv, Matrix.reindex_apply, Matrix.submatrix_apply] 
+
+/-- **Gain condition, two areas.** With `M, K_I, B > 0` in both areas, `ω_s T > 0` and
+`K_I M ≤ D + K_R` in both areas, the five-state LFC matrix is Hurwitz. -/
+@[powerlib_foundation] theorem plant_isHurwitz_of_gain {a b : Area} {ωs T : ℝ}
+    (hMa : 0 < a.M) (hMb : 0 < b.M) (hKa : 0 < a.KI) (hKb : 0 < b.KI) (hBa : 0 < a.B)
+    (hBb : 0 < b.B) (hga : a.KI * a.M ≤ a.D + a.K) (hgb : b.KI * b.M ≤ b.D + b.K)
+    (hw : 0 < ωs * T) : IsHurwitz (plant a b ωs T).A := by
+  rw [← Linear.spectrallyStable_iff_isHurwitz, plant_A_eq_reindex,
+    Linear.spectrallyStable_reindex]
+  refine netA_spectrallyStable_of_gain (fun i => ?_) (fun i => ?_) (fun i => ?_) (fun i => ?_)
+    (fun _ => hw) ?_
+  · fin_cases i <;> simpa
+  · fin_cases i <;> simpa
+  · fin_cases i <;> simpa
+  · fin_cases i <;> simpa
+  · intro p hp
+    have h := congrFun hp 0
+    simp [mulVec, dotProduct] at h
+    funext ℓ
+    fin_cases ℓ
+    simpa using h
+
+
 /-! ## The `N`-area family -/
 
 variable (α β) in
@@ -470,6 +846,33 @@ parameters. -/
       NetModel (Fin 3) (Fin 3)) ∉ (netFamily (Fin 3) (Fin 3)).den (.flow P)) :=
   net_not_mem_den_attractive _ (p := fun _ => 1) (fun h => by simpa using congrFun h 0)
     triangle_circulation hP
+
+/-- **Gain condition (connection), `N` areas.** On a radial tie-line graph (`𝓑` with trivial
+kernel), if every area has `M_a, K_I,a, B_a > 0` and `K_I,a M_a ≤ D_a + K_R,a`, and every line
+has `ω_s T_ℓ > 0`, the model satisfies every attractive sentence and sampled contraction —
+whatever the tie-line strengths and the radial topology. -/
+@[powerlib_domain] theorem net_mem_den_of_gain {Na Nt : ℕ} (m : NetModel (Fin Na) (Fin Nt))
+    (hM : ∀ a, 0 < (m.area a).M) (hK : ∀ a, 0 < (m.area a).KI) (hB : ∀ a, 0 < (m.area a).B)
+    (hgain : ∀ a, (m.area a).KI * (m.area a).M ≤ (m.area a).D + (m.area a).K)
+    (hw : ∀ ℓ, 0 < m.ωs * m.T ℓ) (hker : ∀ p : Fin Nt → ℝ, m.𝓑 *ᵥ p = 0 → p = 0)
+    {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+    connection% (m ∈ (netFamily (Fin Na) (Fin Nt)).den (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  rw [netFamily_isLinear.den_hurwitz hP]
+  exact (netModel_isHurwitz_iff m).2 (netA_spectrallyStable_of_gain hM hK hB hgain hw hker)
+
+/-- **Gain condition (connection), two areas** (`Frequency.LFC.family`, five states): with
+`M, K_I, B > 0`, `K_I M ≤ D + K_R` in both areas and `ω_s T > 0`, the two-area model satisfies
+every attractive sentence and sampled contraction; this replaces the explicit Hurwitz premise of
+`LFC.mem_den_globallyExponentiallyStable` by a parametric one. -/
+@[powerlib_domain] theorem mem_den_of_gain (m : Model) (hMa : 0 < m.a.M) (hMb : 0 < m.b.M)
+    (hKa : 0 < m.a.KI) (hKb : 0 < m.b.KI) (hBa : 0 < m.a.B) (hBb : 0 < m.b.B)
+    (hga : m.a.KI * m.a.M ≤ m.a.D + m.a.K) (hgb : m.b.KI * m.b.M ≤ m.b.D + m.b.K)
+    (hw : 0 < m.ωs * m.T) {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+    connection% (m ∈ family.den (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  rw [family_isLinear.den_hurwitz hP]
+  exact plant_isHurwitz_of_gain hMa hMb hKa hKb hBa hBb hga hgb hw
 
 /-! ## Implementation evidence (private, trajectory level) -/
 

@@ -39,8 +39,10 @@ Results.
   (non-interactive control). The steady state is an equilibrium for every parameter value
   (`steadyState_isEquilibrium`, `plant7_steadyState_isEquilibrium`).
 * If the state matrix is Hurwitz, every trajectory converges exponentially to that equilibrium.
-  The five-state matrix has no parametric Routh–Hurwitz condition here, so Hurwitz is an
-  explicit (static) premise. Correction: the note's §1.6 "设稳态存在" assumes convergence; the
+  In this module Hurwitz is an explicit (static) premise; a parametric sufficient condition —
+  `K_I M ≤ D + K_R` in both areas with `M, K_I, B, ω_s T > 0` — is proved in
+  `Frequency.LFCNetwork` (`plant_isHurwitz_of_gain`, connection `mem_den_of_gain`), by reading the
+  five-state matrix as the two-area case of the radial `N`-area matrix. Correction: the note's §1.6 "设稳态存在" assumes convergence; the
   steady-state analysis alone does not establish it.
 
 Family and connection conclusions.

@@ -22,11 +22,10 @@ Main results (time-invariant `A`, `Q = Σ Σᵀ`).
 * `predict_cov_hurwitz`: for `A` Hurwitz and `Q ⪰ 0` such a `P∞ ⪰ 0` exists (uniquely), the
   prediction ODE has the explicit solution above and `P(t) → P∞`.
 
-Not formalized (recorded as UNPROVED in the coverage report): the general variation-of-constants
-form `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ` for time-varying `A(t)`
-(needs matrix-valued Bochner integrals with Leibniz differentiation on top of LeanForControl's
-`stateTransitionMatrix`); for constant `A` without an algebraic solution `P∞` the same integral
-form is needed.
+The general variation-of-constants form `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ)
+Φ(t, τ)ᵀ dτ` for time-varying `A(t)` (relative to a fundamental matrix `Φ`), its constant-`A`
+instance without an algebraic solution `P∞`, and the Riccati integral representation are in
+`theorem/Estimation/KalmanLTV.lean`.
 -/
 
 noncomputable section

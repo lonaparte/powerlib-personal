@@ -20,9 +20,12 @@ Model boundary.
   open at end 1 (`I_s(0) = 0`), bonded through `R_b` at end 2, core loaded by `Z_L` at end 2.
   The theorems are algebraic identities of this closed-form model; the `O(η)` error with
   respect to the coupled 4-state model is *not* formalized.
-* Tubular-conductor (Schelkunoff/Bessel) impedances and their high/low-frequency limits are
-  not formalized here (they need Bessel functions); the Wedepohl–Wilcox formulas are
-  engineering approximations, not theorems.
+* Bessel impedances: the solid-conductor surface impedance `ρm/(2πr) · I₀(mr)/I₁(mr)` (§1.2.1)
+  and its low-frequency limit (DC resistance plus internal inductance `μ/(8π)`, with an `O(m⁴)`
+  remainder) are in `theorem/Line/CableBessel.lean` (modified Bessel functions defined by their
+  power series). UNPROVED there: the high-frequency (skin-effect) limit and the exact tubular
+  (Schelkunoff) impedances, which need large-argument asymptotics and `K₀`, `K₁`. The
+  Wedepohl–Wilcox formulas are engineering approximations, not theorems.
 
 Results.
 * GMR: `ln D_s(r_in, r_sh) → ln r_sh - 1/4` as `r_in → 0` (solid conductor) and

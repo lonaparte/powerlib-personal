@@ -22,7 +22,10 @@ Results:
   `g₀ √(2π/(X φ₂))`, with no `X^{-1/2}` term.
 
 Scope: this is an exact statement about the truncated table, not the Laplace asymptotic
-theorem itself (no remainder estimate for the discarded Taylor terms is proved here).
+theorem itself (no remainder estimate for the discarded Taylor terms is proved here). The
+remainder-controlled correction orders — interior `1 + O(1/X)`, endpoint `1 + O(X^{−1/2})` —
+are `laplace_interior_rate` / `laplace_endpoint_rate` (and their `IsBigO` forms) in
+`Asymptotics/LaplaceMethod.lean`.
 
 Correction: the note states "端点处……修正从 `O(X^{-1})` 变成 `O(X^{-1/2})`" and, for the
 guard barrier, "修正确为半阶" from `U''' ≠ 0` alone. The half-order coefficient is

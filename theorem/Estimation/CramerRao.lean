@@ -27,8 +27,10 @@ What is proved.
   shifts `θ ↦ θ + h` and Cauchy–Schwarz, `h² ≤ Var(T)(e^{h²/v} − 1)`, then `h → 0`), so no
   differentiation under the integral sign is needed.
 
-Not proved (UNPROVED in the report): the general CRB `Cov(θ̂) ⪰ 𝓘⁻¹` for arbitrary regular
-families and the multi-parameter Gaussian version; Mathlib has no Fisher-information theory.
+The general multi-parameter bound `Cov(θ̂) ⪰ 𝓘⁻¹` (finite sample spaces; general probability
+spaces and density families with the differentiation-under-the-integral premise stated explicitly)
+is `theorem/Estimation/CramerRaoMatrix.lean`.  Not proved: the multi-parameter Gaussian instance
+with that premise discharged (Mathlib has no Fisher-information theory).
 -/
 
 noncomputable section

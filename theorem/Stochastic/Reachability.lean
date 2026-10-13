@@ -3,6 +3,7 @@ import theorem.Attributes
 import theorem.Stochastic.Markov
 import Mathlib.Probability.Kernel.MeasurableIntegral
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 
 /-! # Probabilistic safety / reachability of a discrete-time Markov chain by dynamic programming
 
@@ -30,8 +31,19 @@ time-homogeneous one-step kernel `Q = K k (k+1)`; a measurable safe set `A`.
   `W_0 = 1_T`, `W_{N+1} = 1_T + 1_{D∖T} ∫ W_N dQ` (`0 ≤ W_N ≤ 1`), and `reachAvoid_dp`:
   `P(reach-avoid within N | 𝓕_k) = W_N(X_k)` a.s. (Abate et al. 2008 recursion).
 
-The note's continuous-time backward PDE / HJB characterization is not formalized (it needs the
-generator of a diffusion).
+Continuous-time HJB (deterministic optimal control; verification direction).
+* `hjb_le_cost`: a `C¹` function `V` satisfying the HJB inequality
+  `∂ₜV + D_yV · f(t, y, w) + L(t, y, w) ≥ 0` (all states `y`, all admissible `w`) and `V(T, ·) = g`
+  is a lower bound for the cost of every admissible pair from `x(0)`;
+* `hjb_eq_cost`: equality along a pair on which the HJB expression vanishes;
+* `hjb_verification`: hence `V(0, x₀)` is the least admissible cost (the value) and a pair
+  attaining the minimum in the HJB equation along its trajectory is optimal;
+* `lq_value` (non-vacuity): for `ẋ = u`, cost `∫₀ᵀ (x² + u²)`, the Riccati solution
+  `V(t, x) = tanh(T − t) x²` verifies HJB and the minimal cost from `x₀` is `tanh(T) x₀²`.
+Proof: chain rule for `t ↦ V(t, x(t))` and the integral comparison
+`intervalIntegral.sub_le_integral_of_hasDeriv_right_of_le` / FTC.  The converse direction (the
+value function, when `C¹`, satisfies HJB) and the stochastic HJB `∂ₜr + sup_u Lᵘ r = 0` of the note
+are not formalized (the latter needs the generator of a controlled diffusion / Itô calculus).
 -/
 
 noncomputable section
@@ -346,5 +358,198 @@ omit [MeasurableSpace E] in
     filter_upwards [hadd, hpull, hRk] with ω h1 h2 h3
     rw [h1, Pi.add_apply, h2, Pi.mul_apply, h3]
     simp only [reachValue]
+
+/-! ## Continuous-time HJB: verification theorem (deterministic optimal control)
+
+Finite-horizon problem: state `x(t) ∈ H` (a real normed space), control `u(t) ∈ Uad`, dynamics
+`ẋ = f(t, x, u)` on `(0, T)`, cost `J(x, u) = ∫₀ᵀ L(t, x, u) dt + g(x(T))`.  The trajectories and
+the cost are written out in the statements (no trajectory predicate is defined). -/
+
+section HJB
+
+variable {H A : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H]
+
+/-- Chain rule along a trajectory: `d/dt V(t, x(t)) = DV(t, x(t)) (1, ẋ(t))`. -/
+private theorem hasDerivAt_value_along {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)}
+    (hV : ∀ p, HasFDerivAt V (DV p) p) {x : ℝ → H} {v : H} {t : ℝ} (hx : HasDerivAt x v t) :
+    HasDerivAt (fun s => V (s, x s)) (DV (t, x t) (1, v)) t := by
+  have hp : HasDerivAt (fun s => (s, x s)) ((1 : ℝ), v) t := (hasDerivAt_id t).prodMk hx
+  exact (hV (t, x t)).comp_hasDerivAt t hp
+
+private theorem continuousOn_value_along {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)}
+    (hV : ∀ p, HasFDerivAt V (DV p) p) {x : ℝ → H} {T : ℝ} (hxc : ContinuousOn x (Set.Icc 0 T)) :
+    ContinuousOn (fun s => V (s, x s)) (Set.Icc 0 T) := by
+  have hVc : Continuous V := continuous_iff_continuousAt.mpr fun p => (hV p).continuousAt
+  exact hVc.comp_continuousOn (continuousOn_id.prodMk hxc)
+
+/-- **HJB verification, lower bound.**  If `V` is `C¹` on `ℝ × H` and satisfies the HJB
+inequality `∂ₜV(t, y) + D_yV(t, y) f(t, y, w) + L(t, y, w) ≥ 0` for every state `y`, every
+admissible control value `w ∈ Uad` and `t ∈ (0, T)`, with terminal condition `V(T, ·) = g`, then
+for every admissible pair (`x` continuous on `[0, T]`, `ẋ = f(t, x, u)` and `u(t) ∈ Uad` on
+`(0, T)`, running cost integrable) `V(0, x(0)) ≤ ∫₀ᵀ L(t, x, u) dt + g(x(T))`.
+(`DV p (1, v)` is `∂ₜV + D_yV · v`.) -/
+theorem hjb_le_cost {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g : H → ℝ} {Uad : Set A}
+    {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)} {T : ℝ} (hT : 0 ≤ T)
+    (hV : ∀ p, HasFDerivAt V (DV p) p)
+    (hHJB : ∀ t ∈ Set.Ioo 0 T, ∀ y, ∀ w ∈ Uad, 0 ≤ DV (t, y) (1, f t y w) + L t y w)
+    (hterm : ∀ y, V (T, y) = g y)
+    {x : ℝ → H} {u : ℝ → A} (hxc : ContinuousOn x (Set.Icc 0 T))
+    (hx : ∀ t ∈ Set.Ioo 0 T, HasDerivAt x (f t (x t) (u t)) t) (hu : ∀ t ∈ Set.Ioo 0 T, u t ∈ Uad)
+    (hL : IntegrableOn (fun t => L t (x t) (u t)) (Set.Icc 0 T)) :
+    V (0, x 0) ≤ (∫ t in (0 : ℝ)..T, L t (x t) (u t)) + g (x T) := by
+  have h := intervalIntegral.sub_le_integral_of_hasDeriv_right_of_le hT
+    (continuousOn_value_along hV hxc).neg
+    (fun t ht => ((hasDerivAt_value_along hV (hx t ht)).neg).hasDerivWithinAt) hL
+    (fun t ht => by
+      have := hHJB t ht (x t) (u t) (hu t ht)
+      linarith)
+  simp only [Pi.neg_apply] at h
+  rw [← hterm]
+  linarith
+
+/-- **HJB verification, equality along a minimizing pair**: if the HJB expression vanishes along
+`(x, u)` (the control attains the minimum in the Hamiltonian along its own trajectory), the cost of
+`(x, u)` equals `V(0, x(0))`. -/
+theorem hjb_eq_cost {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g : H → ℝ}
+    {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)} {T : ℝ} (hT : 0 ≤ T)
+    (hV : ∀ p, HasFDerivAt V (DV p) p)
+    (hterm : ∀ y, V (T, y) = g y)
+    {x : ℝ → H} {u : ℝ → A} (hxc : ContinuousOn x (Set.Icc 0 T))
+    (hx : ∀ t ∈ Set.Ioo 0 T, HasDerivAt x (f t (x t) (u t)) t)
+    (hopt : ∀ t ∈ Set.Ioo 0 T, DV (t, x t) (1, f t (x t) (u t)) + L t (x t) (u t) = 0)
+    (hL : IntervalIntegrable (fun t => L t (x t) (u t)) volume 0 T) :
+    V (0, x 0) = (∫ t in (0 : ℝ)..T, L t (x t) (u t)) + g (x T) := by
+  have h := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le hT
+    (continuousOn_value_along hV hxc).neg
+    (fun t ht => by
+      have h1 := (hasDerivAt_value_along hV (hx t ht)).neg
+      have h2 : -(DV (t, x t)) (1, f t (x t) (u t)) = L t (x t) (u t) := by
+        linarith [hopt t ht]
+      rwa [h2] at h1) hL
+  simp only [Pi.neg_apply] at h
+  rw [← hterm]
+  linarith
+
+/-- **HJB verification theorem (finite horizon, deterministic, continuous time).**  Let `V` be
+`C¹` with `V(T, ·) = g` and satisfy the HJB equation in the form
+`min_{w ∈ Uad} [∂ₜV + D_yV · f(t, y, w) + L(t, y, w)] = 0`: the expression is `≥ 0` for all `w`, and
+`= 0` along an admissible pair `(x*, u*)` from `x₀`.  Then `V(0, x₀)` is the **least** cost over all
+admissible pairs from `x₀` — `V(0, x₀)` is the value of the problem and `(x*, u*)` is optimal. -/
+theorem hjb_verification {f : ℝ → H → A → H} {L : ℝ → H → A → ℝ} {g : H → ℝ} {Uad : Set A}
+    {V : ℝ × H → ℝ} {DV : ℝ × H → (ℝ × H →L[ℝ] ℝ)} {T : ℝ} (hT : 0 ≤ T)
+    (hV : ∀ p, HasFDerivAt V (DV p) p)
+    (hHJB : ∀ t ∈ Set.Ioo 0 T, ∀ y, ∀ w ∈ Uad, 0 ≤ DV (t, y) (1, f t y w) + L t y w)
+    (hterm : ∀ y, V (T, y) = g y) (x₀ : H)
+    {xs : ℝ → H} {us : ℝ → A} (hxs0 : xs 0 = x₀) (hxsc : ContinuousOn xs (Set.Icc 0 T))
+    (hxs : ∀ t ∈ Set.Ioo 0 T, HasDerivAt xs (f t (xs t) (us t)) t)
+    (hus : ∀ t ∈ Set.Ioo 0 T, us t ∈ Uad)
+    (hopt : ∀ t ∈ Set.Ioo 0 T, DV (t, xs t) (1, f t (xs t) (us t)) + L t (xs t) (us t) = 0)
+    (hLs : IntegrableOn (fun t => L t (xs t) (us t)) (Set.Icc 0 T)) :
+    IsLeast {J | ∃ (x : ℝ → H) (u : ℝ → A), x 0 = x₀ ∧ ContinuousOn x (Set.Icc 0 T) ∧
+        (∀ t ∈ Set.Ioo 0 T, HasDerivAt x (f t (x t) (u t)) t) ∧ (∀ t ∈ Set.Ioo 0 T, u t ∈ Uad) ∧
+        IntegrableOn (fun t => L t (x t) (u t)) (Set.Icc 0 T) ∧
+        J = (∫ t in (0 : ℝ)..T, L t (x t) (u t)) + g (x T)} (V (0, x₀)) := by
+  refine ⟨⟨xs, us, hxs0, hxsc, hxs, hus, hLs, ?_⟩, ?_⟩
+  · rw [← hxs0]
+    exact hjb_eq_cost hT hV hterm hxsc hxs hopt
+      ((intervalIntegrable_iff_integrableOn_Icc_of_le hT).mpr hLs)
+  · rintro J ⟨x, u, hx0, hxc, hx, hu, hL, rfl⟩
+    rw [← hx0]
+    exact hjb_le_cost hT hV hHJB hterm hxc hx hu hL
+
+end HJB
+
+section LQ
+
+open Real
+
+/-- Riccati solution `p(t) = tanh(T − t)` of `ṗ = p² − 1`, `p(T) = 0`. -/
+def lqGain (T t : ℝ) : ℝ := sinh (T - t) / cosh (T - t)
+
+private theorem lqGain_hasDerivAt (T t : ℝ) :
+    HasDerivAt (lqGain T) (lqGain T t ^ 2 - 1) t := by
+  have hc : cosh (T - t) ≠ 0 := (cosh_pos _).ne'
+  have hs : HasDerivAt (fun s => sinh (T - s)) (-cosh (T - t)) t := by
+    have := ((hasDerivAt_id' t).const_sub T).sinh
+    convert this using 1; ring
+  have hco : HasDerivAt (fun s => cosh (T - s)) (-sinh (T - t)) t := by
+    have := ((hasDerivAt_id' t).const_sub T).cosh
+    convert this using 1; ring
+  have h := hs.div hco hc
+  refine h.congr_deriv ?_
+  unfold lqGain
+  have hid := cosh_sq_sub_sinh_sq (T - t)
+  field_simp
+  linarith
+
+private theorem lqGain_continuous (T : ℝ) : Continuous (lqGain T) :=
+  continuous_iff_continuousAt.mpr fun t => (lqGain_hasDerivAt T t).continuousAt
+
+/-- `V(t, x) = p(t) x²`. -/
+def lqValue (T : ℝ) (q : ℝ × ℝ) : ℝ := lqGain T q.1 * q.2 ^ 2
+
+/-- Its derivative `DV(t, x)(τ, ξ) = ṗ(t) x² τ + 2 p(t) x ξ`. -/
+def lqDValue (T : ℝ) (q : ℝ × ℝ) : ℝ × ℝ →L[ℝ] ℝ :=
+  ((lqGain T q.1 ^ 2 - 1) * q.2 ^ 2) • ContinuousLinearMap.fst ℝ ℝ ℝ +
+    (2 * lqGain T q.1 * q.2) • ContinuousLinearMap.snd ℝ ℝ ℝ
+
+private theorem lqValue_hasFDerivAt (T : ℝ) (q : ℝ × ℝ) :
+    HasFDerivAt (lqValue T) (lqDValue T q) q := by
+  have h1 : HasFDerivAt (fun r : ℝ × ℝ => lqGain T r.1)
+      ((lqGain T q.1 ^ 2 - 1) • ContinuousLinearMap.fst ℝ ℝ ℝ) q :=
+    (lqGain_hasDerivAt T q.1).comp_hasFDerivAt q (hasFDerivAt_fst (𝕜 := ℝ) (p := q))
+  have h2 := (hasDerivAt_pow 2 q.2).comp_hasFDerivAt q (hasFDerivAt_snd (𝕜 := ℝ) (p := q))
+  have h : HasFDerivAt (lqValue T) _ q := h1.mul h2
+  refine h.congr_fderiv (ContinuousLinearMap.ext fun r => ?_)
+  simp [lqDValue]
+  ring
+
+/-- **Linear–quadratic example of the HJB verification theorem.**  For `ẋ = u` on `[0, T]`
+(`T ≥ 0`), `u` unconstrained, and cost `∫₀ᵀ (x² + u²) dt`, the minimal cost from `x₀` is
+`tanh(T) x₀²`, attained by the feedback `u = −tanh(T − t) x`, i.e.
+`x*(t) = x₀ cosh(T − t) / cosh T`. -/
+@[powerlib_foundation] theorem lq_value {T : ℝ} (hT : 0 ≤ T) (x₀ : ℝ) :
+    IsLeast {J | ∃ (x u : ℝ → ℝ), x 0 = x₀ ∧ ContinuousOn x (Set.Icc 0 T) ∧
+        (∀ t ∈ Set.Ioo 0 T, HasDerivAt x (u t) t) ∧
+        MeasureTheory.IntegrableOn (fun t => x t ^ 2 + u t ^ 2) (Set.Icc 0 T) ∧
+        J = ∫ t in (0 : ℝ)..T, (x t ^ 2 + u t ^ 2)}
+      (sinh T / cosh T * x₀ ^ 2) := by
+  set xs : ℝ → ℝ := fun t => x₀ * cosh (T - t) / cosh T with hxs
+  set us : ℝ → ℝ := fun t => -(lqGain T t * xs t) with hus
+  have hcT : cosh T ≠ 0 := (cosh_pos _).ne'
+  have hxsd : ∀ t, HasDerivAt xs (us t) t := by
+    intro t
+    have hco : HasDerivAt (fun s => cosh (T - s)) (-sinh (T - t)) t := by
+      have := ((hasDerivAt_id' t).const_sub T).cosh
+      convert this using 1; ring
+    have := (hco.const_mul x₀).div_const (cosh T)
+    refine this.congr_deriv ?_
+    simp only [hus, hxs, lqGain]
+    have : cosh (T - t) ≠ 0 := (cosh_pos _).ne'
+    field_simp
+  have hxsc : Continuous xs := continuous_iff_continuousAt.mpr fun t => (hxsd t).continuousAt
+  have hc : Continuous fun t => xs t ^ 2 + us t ^ 2 := by
+    have : Continuous us := ((lqGain_continuous T).mul hxsc).neg
+    fun_prop
+  have h := hjb_verification (f := fun _ _ w => w) (L := fun _ y w => y ^ 2 + w ^ 2)
+    (g := fun _ => 0) (Uad := Set.univ) (V := lqValue T) (DV := lqDValue T) hT
+    (lqValue_hasFDerivAt T)
+    (fun t _ y w _ => by
+      simp only [lqDValue, add_apply, smul_apply,
+        ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', smul_eq_mul]
+      nlinarith [sq_nonneg (w + lqGain T t * y)])
+    (fun y => by simp [lqValue, lqGain]) x₀ (xs := xs) (us := us)
+    (by simp [hxs, hcT]) hxsc.continuousOn (fun t _ => hxsd t) (fun _ _ => Set.mem_univ _)
+    (fun t _ => by
+      simp only [lqDValue, add_apply, smul_apply,
+        ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', smul_eq_mul, hus]
+      ring)
+    (hc.continuousOn.integrableOn_Icc)
+  simp only [Set.mem_univ, implies_true, true_and, add_zero] at h
+  have hv : lqValue T (0, x₀) = sinh T / cosh T * x₀ ^ 2 := by simp [lqValue, lqGain]
+  rw [hv] at h
+  exact h
+
+end LQ
 
 end powerlib.Stochastic.Markov

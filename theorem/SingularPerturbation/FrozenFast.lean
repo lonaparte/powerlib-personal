@@ -21,6 +21,9 @@ Results (`|y|² = y ⬝ᵥ y`, trajectories are global coordinate solutions
 * `nonempty_boundedCertificate_of_isHurwitz`: a Hurwitz matrix has a Lyapunov certificate
   (`Linear.Certificate`, from LeanForControl's Lyapunov equation) together with explicit bounds
   `lo|y|² ≤ yᵀPy ≤ hi|y|²` (`Linear.Certificate.exists_energy_bounds`).
+* `dissipation_of_close`: the certificate of `A₀` is a dissipation certificate for every nearby
+  matrix `M` (`yᵀ P M y ≤ −|y|²/4`); reused for the nonlinear boundary layer in
+  `theorem.SingularPerturbation.BoundaryLayer`.
 * `decay_of_close`: if `c` is a Lyapunov certificate for `A₀` (`A₀ᵀP + PA₀ = −I`, `lo|y|² ≤ yᵀPy ≤
   hi|y|²`) and `Σᵢⱼ |Mᵢⱼ − A₀ᵢⱼ| ≤ 1/(4 Σᵢⱼ|Pᵢⱼ| + 4)`, every trajectory of `ẏ = M y` satisfies
   `|y(t)|² ≤ (hi/lo) e^{−t/(2 hi)} |y(0)|²` — the same `P` works for all nearby matrices.
@@ -100,6 +103,35 @@ structure BoundedCertificate (A : Matrix (Fin m) (Fin m) ℝ) extends Linear.Cer
   rw [← hasDerivWithinAt_univ] at hy hP ⊢
   exact Linear.dotProduct_hasDerivWithinAt hy hP
 
+/-- A Lyapunov certificate of `A₀` is a dissipation certificate for every nearby matrix `M`:
+`yᵀ P M y ≤ −|y|²/4` whenever `Σᵢⱼ |Mᵢⱼ − A₀ᵢⱼ| ≤ 1/(4 Σᵢⱼ|Pᵢⱼ| + 4)`. -/
+@[powerlib_foundation] theorem dissipation_of_close {A0 M : Matrix (Fin m) (Fin m) ℝ}
+    (c : BoundedCertificate A0) (hM : absSum (M - A0) ≤ 1 / (4 * absSum c.P + 4))
+    (v : Fin m → ℝ) : v ⬝ᵥ (c.P *ᵥ (M *ᵥ v)) ≤ -(v ⬝ᵥ v) / 4 := by
+  have hP := c.symmetric
+  have hlyap : c.P * A0 + A0ᵀ * c.P = -1 := by rw [add_comm]; exact c.lyapunov
+  have hAbs := absSum_nonneg c.P
+  have hsplit : v ⬝ᵥ (c.P *ᵥ (M *ᵥ v)) =
+      v ⬝ᵥ (c.P *ᵥ (A0 *ᵥ v)) + v ⬝ᵥ ((c.P * (M - A0)) *ᵥ v) := by
+    rw [← mulVec_mulVec, ← dotProduct_add, ← mulVec_add, ← add_mulVec, add_sub_cancel]
+  have h1 := dotProduct_mulVec_lyapunov hP hlyap v
+  have h2 := abs_dotProduct_mulVec_le (c.P * (M - A0)) v v one_pos
+  have h3 : absSum (c.P * (M - A0)) ≤ 1 / 4 := by
+    calc absSum (c.P * (M - A0)) ≤ absSum c.P * absSum (M - A0) := absSum_mul_le _ _
+      _ ≤ absSum c.P * (1 / (4 * absSum c.P + 4)) := by gcongr
+      _ ≤ 1 / 4 := by
+          rw [mul_one_div, div_le_div_iff₀ (by positivity) (by norm_num)]
+          linarith
+  have hvv := dotProduct_self_nonneg' v
+  have : |v ⬝ᵥ ((c.P * (M - A0)) *ᵥ v)| ≤ (v ⬝ᵥ v) / 4 := by
+    calc |v ⬝ᵥ ((c.P * (M - A0)) *ᵥ v)| ≤ absSum (c.P * (M - A0)) * (1 * (v ⬝ᵥ v) +
+          (v ⬝ᵥ v) / 1) / 2 := h2
+      _ = absSum (c.P * (M - A0)) * (v ⬝ᵥ v) := by ring
+      _ ≤ 1 / 4 * (v ⬝ᵥ v) := by gcongr
+      _ = (v ⬝ᵥ v) / 4 := by ring
+  rw [hsplit, h1]
+  linarith [abs_le.mp this]
+
 /-- A Lyapunov certificate of `A₀` also proves exponential decay for every nearby matrix `M`. -/
 @[powerlib_foundation] theorem decay_of_close {A0 M : Matrix (Fin m) (Fin m) ℝ}
     (c : BoundedCertificate A0) (hM : absSum (M - A0) ≤ 1 / (4 * absSum c.P + 4))
@@ -109,29 +141,8 @@ structure BoundedCertificate (A : Matrix (Fin m) (Fin m) ℝ) extends Linear.Cer
   have hP := c.symmetric
   have hlyap : c.P * A0 + A0ᵀ * c.P = -1 := by rw [add_comm]; exact c.lyapunov
   have hAbs := absSum_nonneg c.P
-  -- dissipation: `yᵀ P M y ≤ −|y|²/4`
-  have hdiss : ∀ v : Fin m → ℝ, v ⬝ᵥ (c.P *ᵥ (M *ᵥ v)) ≤ -(v ⬝ᵥ v) / 4 := by
-    intro v
-    have hsplit : v ⬝ᵥ (c.P *ᵥ (M *ᵥ v)) =
-        v ⬝ᵥ (c.P *ᵥ (A0 *ᵥ v)) + v ⬝ᵥ ((c.P * (M - A0)) *ᵥ v) := by
-      rw [← mulVec_mulVec, ← dotProduct_add, ← mulVec_add, ← add_mulVec, add_sub_cancel]
-    have h1 := dotProduct_mulVec_lyapunov hP hlyap v
-    have h2 := abs_dotProduct_mulVec_le (c.P * (M - A0)) v v one_pos
-    have h3 : absSum (c.P * (M - A0)) ≤ 1 / 4 := by
-      calc absSum (c.P * (M - A0)) ≤ absSum c.P * absSum (M - A0) := absSum_mul_le _ _
-        _ ≤ absSum c.P * (1 / (4 * absSum c.P + 4)) := by gcongr
-        _ ≤ 1 / 4 := by
-            rw [mul_one_div, div_le_div_iff₀ (by positivity) (by norm_num)]
-            linarith
-    have hvv := dotProduct_self_nonneg' v
-    have : |v ⬝ᵥ ((c.P * (M - A0)) *ᵥ v)| ≤ (v ⬝ᵥ v) / 4 := by
-      calc |v ⬝ᵥ ((c.P * (M - A0)) *ᵥ v)| ≤ absSum (c.P * (M - A0)) * (1 * (v ⬝ᵥ v) +
-            (v ⬝ᵥ v) / 1) / 2 := h2
-        _ = absSum (c.P * (M - A0)) * (v ⬝ᵥ v) := by ring
-        _ ≤ 1 / 4 * (v ⬝ᵥ v) := by gcongr
-        _ = (v ⬝ᵥ v) / 4 := by ring
-    rw [hsplit, h1]
-    linarith [abs_le.mp this]
+  have hdiss : ∀ v : Fin m → ℝ, v ⬝ᵥ (c.P *ᵥ (M *ᵥ v)) ≤ -(v ⬝ᵥ v) / 4 :=
+    dissipation_of_close c hM
   -- energy derivative
   have hderiv : ∀ s, HasDerivAt (fun s => y s ⬝ᵥ (c.P *ᵥ y s))
       (2 * (y s ⬝ᵥ (c.P *ᵥ (M *ᵥ y s)))) s := by
