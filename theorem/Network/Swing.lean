@@ -76,8 +76,11 @@ Family and connection conclusions.
   ring with a degenerate strict minimum of the network potential plus unit leaves) in
   `theorem/Network/SwingDegenerateRing.lean`. The complete membership characterization for every
   `n` is `mem_den_locallyAsymptoticallyStable_iff` (power balance, a strict local minimum of the
-  network potential in relative angles, and an isolated power-balance point). UNPROVED: exactness
-  for exactly four machines (`n = 3`); see `theorem/Network/SwingDegenerate.lean`.
+  network potential in relative angles, and an isolated power-balance point). Four machines
+  (`n = 3`): exact on every network with at most four lines
+  (`mem_den_locallyAsymptoticallyStable_iff_four`, `theorem/Network/SwingFour.lean`); UNPROVED for
+  networks with at least five lines (the diamond and the complete graph), residual set stated in
+  `theorem/Network/SwingFour.lean`.
 * Static evidence (formerly `@[powerlib_domain]`): `fullField_equilibrium_shift`,
   `reducedField_reduce`, `reducedField_equilibrium`, and the new `jacobian_isHurwitz_of_angle`.
   Private implementation evidence (trajectory level, Rules §3a): `reduce_trajectory`.

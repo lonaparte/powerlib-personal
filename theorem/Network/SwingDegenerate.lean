@@ -40,14 +40,14 @@ Results.
   machines every singular positive semidefinite Hessian is a fold (nonzero cubic term along the
   null direction) or comes with a continuum of equilibria. For five or more machines the
   translation is not exact (`theorem/Network/SwingDegenerateRing.lean`).
-* UNPROVED: exactness for exactly four machines (`n = 3`). Remaining exact set: four-machine
-  power-balance points whose Hessian form `A₂` is positive semidefinite with a null direction `v`
-  along which the cubic form `A₃` vanishes (`A₂(v) = 0`, `A₃(v) = 0`). The membership
-  characterization above decides each such point; what is missing is the general four-node
-  analogue of `triangle_cubic_ne_zero` (on the 4-cycle the cubic term cannot vanish by
-  superadditivity of `tan`, and a numerical search over the complete graph finds no positive
-  semidefinite corank-one configuration with `A₃(v) = 0`, but the general four-node case — two
-  overlapping cycles, two negative lines — is not proved).
+* Four machines (`n = 3`): `theorem/Network/SwingFour.lean` proves exactness for every network with
+  at most four lines (`mem_den_locallyAsymptoticallyStable_iff_four`; two uncoupled machine pairs:
+  a subgraph of a four-cycle, the cubic term by superadditivity of `tan`, or of a triangle with a
+  pendant line) and the cut and flat-direction tests for every `n`. UNPROVED residual: four-machine
+  networks with at least five lines (the diamond and the complete graph) at power-balance points
+  whose Hessian form `A₂` is positive semidefinite and singular, every cut has positive total
+  weight, every non-constant null direction carries a nonzero circulation, and the cubic form `A₃`
+  vanishes on all null directions (see the module header of `SwingFour`).
 
 Connection architecture. The family is `Swing.family`; the public model conclusions are
 `connection%` statements on its generated denotations. Energy, Taylor and Hurwitz lemmas are static
