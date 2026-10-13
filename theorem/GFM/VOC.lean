@@ -37,7 +37,12 @@ Family and connection conclusions.
   into nothing (exact); conservation into the whole, inconsistent, language.
   `AHO.chain_le_semantics` proves soundness; `AHO.exact_locallyExponentiallyStable` proves the
   local exponential translation exact (converse linearization: the Jacobian at the origin is
-  Hurwitz iff `c < 0`).
+  Hurwitz iff `c < 0`). The asymptotic and Lyapunov translations are not exact: the critical
+  oscillator `AHO.critical` (`ω_s = 0`, `σ = κ_v = v* = 1`, so `c = 0` and `ṙ = −r³`) is globally
+  asymptotically stable through the strict Lyapunov function `|v|²`
+  (`AHO.critical_mem_den_globallyAsymptoticallyStable`) without decay at the origin
+  (`AHO.not_exact_globallyAsymptoticallyStable`, `AHO.not_exact_locallyAsymptoticallyStable`,
+  `AHO.not_exact_lyapunovStable`): the cubic-damping boundary of the linearization.
 * New connection conclusion for the module's own regime: under the standing assumptions the
   origin is unstable (`Admissible.mem_den_unstable`): solutions leave the origin, towards the limit
   cycle of the trajectory-level results.
@@ -671,6 +676,105 @@ sign of `κ_v`. -/
     connection% (a ∈ family.den (.flow (.decay r))) := by
   unfold powerlib.TMIO.Statement
   exact family_isAutonomous.mem_den_flow.mpr (decay_of hκ hr)
+
+/-! ### Boundary witness: cubic damping at `c = 0` -/
+
+private theorem energy_lie (a : AHO) (x : State 2) :
+    fderiv ℝ energy x (a.realField x) = 2 * a.c * energy x - 2 * a.κv * energy x ^ 2 := by
+  rw [(hasFDerivAt_energy x).fderiv]
+  simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply,
+    smul_eq_mul, realField, Synchronous.mkState_zero, Synchronous.mkState_one, energy]
+  ring
+
+private theorem energy_pos {x : State 2} (hx : x ≠ 0) : 0 < energy x := by
+  rw [energy_eq, sub_zero]
+  have : 0 < ‖x‖ := norm_pos_iff.mpr hx
+  positivity
+
+/-- The critical AHO `ω_s = 0`, `σ = κ_v = v* = 1`: the linear growth rate vanishes, `c = 0`,
+and the amplitude obeys the cubic damping `ṙ = −r³`. -/
+def critical : AHO := ⟨0, 1, 1, 1⟩
+
+/-- Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem critical_c : critical.c = 0 := by
+  simp [critical, AHO.c]
+
+/-- The energy `|v|²` is a strict global Lyapunov function of the critical AHO: its derivative
+along the field is `−2 |v|⁴`. -/
+private theorem critical_strictLyapunov : IsStrictLyapunovFunction critical.realField energy 0 where
+  hcont := by unfold energy; fun_prop
+  hV_c1 := by unfold energy; fun_prop
+  hzero := by simp [energy]
+  hpos x hx := energy_pos hx
+  hequil := critical.realField_zero
+  hLie_neg x hx := by
+    rw [energy_lie, critical_c]
+    have h := energy_pos hx
+    have hk : critical.κv = 1 := rfl
+    rw [hk]
+    nlinarith
+  hbounded_sublevel c := by
+    refine (isCompact_closedBall (0 : State 2) (Real.sqrt (max c 0))).of_isClosed_subset
+      (isClosed_le (by unfold energy; fun_prop) continuous_const) fun x hx => ?_
+    rw [Metric.mem_closedBall, dist_zero_right]
+    have hx' : ‖x‖ ^ 2 ≤ max c 0 := by
+      have := energy_eq x
+      rw [sub_zero] at this
+      rw [← this]
+      exact (Set.mem_ofPred_eq ▸ hx).trans (le_max_left _ _)
+    calc ‖x‖ = Real.sqrt (‖x‖ ^ 2) := (Real.sqrt_sq (norm_nonneg x)).symm
+      _ ≤ Real.sqrt (max c 0) := Real.sqrt_le_sqrt hx'
+
+/-- The critical AHO is globally asymptotically stable (cubic damping). -/
+@[powerlib_domain] theorem critical_mem_den_globallyAsymptoticallyStable :
+    connection% (critical ∈ family.den (.flow .globallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  exact family_isAutonomous.mem_den_flow.mpr
+    (Flow.globallyAsymptoticallyStable_of_strictLyapunov two_pos critical.contDiff_realField
+      critical_strictLyapunov)
+
+private theorem critical_not_decaying : ¬ Meets critical .decaying := by
+  change ¬ critical.c < 0
+  rw [critical_c]
+  exact lt_irrefl 0
+
+/-- The global asymptotic translation is sound but not exact: the critical AHO is globally
+asymptotically stable without decay at the origin (`c = 0`). -/
+@[powerlib_domain] theorem not_exact_globallyAsymptoticallyStable :
+    connection% (¬ family.Exact (.flow .globallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := critical_mem_den_globallyAsymptoticallyStable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  exact critical_not_decaying (hmem .decaying (by simp [family, translate]))
+
+/-- The local asymptotic translation is sound but not exact (the same witness): local asymptotic
+stability is not decided by the linearization. -/
+@[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
+    connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := critical_mem_den_globallyAsymptoticallyStable
+  unfold powerlib.TMIO.Statement at hmem
+  have hmem' : critical ∈ family.den (.flow .locallyAsymptoticallyStable) :=
+    family_isAutonomous.mem_den_flow.mpr
+      (Flow.GloballyAsymptoticallyStable.localAsymptoticStable
+        (family_isAutonomous.mem_den_flow.mp hmem))
+  rw [← h, TMIO.mem_realize] at hmem'
+  exact critical_not_decaying (hmem' .decaying (by simp [family, translate]))
+
+/-- The Lyapunov translation is sound but not exact (the same witness). -/
+@[powerlib_domain] theorem not_exact_lyapunovStable :
+    connection% (¬ family.Exact (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := critical_mem_den_globallyAsymptoticallyStable
+  unfold powerlib.TMIO.Statement at hmem
+  have hmem' : critical ∈ family.den (.flow .lyapunovStable) :=
+    family_isAutonomous.mem_den_flow.mpr (family_isAutonomous.mem_den_flow.mp hmem).2.2.1
+  rw [← h, TMIO.mem_realize] at hmem'
+  exact critical_not_decaying (hmem' .decaying (by simp [family, translate]))
 
 /-! ## Algebra (foundation) -/
 

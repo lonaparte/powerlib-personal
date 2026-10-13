@@ -2,6 +2,7 @@ import theorem.Frequency.Basic
 import theorem.Criteria.Hurwitz2
 import theorem.Linear.Rate
 import theorem.TMIO.ClaimElab
+import theorem.SingularPerturbation.FiniteHorizon
 
 /-! # Single-area swing + first-order governor (two-state frequency model)
 
@@ -59,6 +60,53 @@ Family and connection conclusions.
   and the convergence `Δω(t) → −ΔP_L/(K_R + D)` of every forward solution under the load step
   (`tendsto_freq`, §1.6). The former `@[powerlib_domain]` labels of `isEquilibrium_iff` and
   `steadyState_isEquilibrium` are now `@[powerlib_foundation]` (static evidence).
+
+Singular-perturbation limit `T_g → 0` (the governor becomes the static droop `ΔP_m = −K_R Δω`).
+Reduced model: the first-order swing `M Δω̇ = −(K_R + D) Δω − ΔP_L` (`reducedPlant`, state `Δω`,
+input `ΔP_L`, output `Δω`; it is `LowInertia.firstOrderModel M (K_R + D)`). Two-time-scale form
+`twoTimeScale` (`SingularPerturbation.LinearSP 1 1`): slow `Δω`, fast `ΔP_m`, `ε = T_g`.
+* Static (foundation): `plant_A_eq_stateMatrix` (the state matrix is the generic two-time-scale
+  matrix at `ε = T_g`), `twoTimeScale_gain` (quasi-steady state `ΔP_m = −K_R Δω`),
+  `twoTimeScale_reducedMatrix` (the Schur complement is `−(K_R + D)/M`),
+  `twoTimeScale_A22_isHurwitz`; `field_quasiSteady` (on `ΔP_m = −K_R Δω` the governor row vanishes
+  and the swing row is the first-order field).
+* Eigenvalues: `eigDisc`, `slowEig`, `fastEig` (the real roots of
+  `M T_g s² + (M + D T_g) s + (D + K_R)`, slow root rationalized), `slowEig_root`, `fastEig_root`,
+  `slowEig_eq`, Vieta (`slowEig_add_fastEig`, `slowEig_mul_fastEig`), `slowEig_sub_fastEig`,
+  `det_characteristicMatrix_eq_mul` / `det_characteristicMatrix_eq_zero_iff` (for a nonnegative
+  discriminant the spectrum is `{λ_s, λ_f}`), `plant_mulVec_slowEigvec` (slow eigenvector
+  `(1, M λ_s + D)`). Limits: `eventually_eigDisc_pos` (real distinct roots for small `T_g`),
+  `eventually_rootSum_pos`, `slowEig_zero`, `tendsto_slowEig` (`λ_s → −(K_R + D)/M`,
+  continuous at `T_g = 0`), `tendsto_slowSlope` (the invariant slow line `ΔP_m = (M λ_s + D) Δω` tends to `ΔP_m = −K_R Δω`), `tendsto_mul_fastEig`
+  (`T_g λ_f → −1`, with `mul_fastEig`), `tendsto_fastEig_atBot` (`λ_f → −∞` as `T_g → 0⁺`),
+  `tendsto_dampingRatio_atTop` (`ζ_n → ∞`: overdamped in the limit).
+* Transfer function: `reduced_field_apply`, `reduced_transfer_apply` (`−1/(M s + K_R + D)`),
+  `tendsto_transfer` (pointwise convergence off the first-order pole).
+* Stability (static): `reduced_isHurwitz_iff` (`0 < K_R + D`), `isHurwitz_iff_reduced` (Hurwitz
+  iff the reduction is, whenever `0 < M + D T_g`), `eventually_isHurwitz_iff_reduced`;
+  `rateMargin_iff`, `reduced_rateMargin_iff`, `eventually_rateMargin_iff_reduced` (off the pole
+  `a M = K_R + D` the rate margins agree for small `T_g`); generic `not_decay_of_eigenvector`
+  (a real eigenvalue `μ > −a` excludes decay at the rate `a`).
+* First-order family `reducedFamily` (`ReducedModel`: `M > 0`, `D`, `K_R`; requirements `stable`
+  `0 < K_R + D`, `unstable` `K_R + D < 0`, `rate a` `a M ≤ K_R + D`; `Model.reduce` forgets `T_g`,
+  `reduce_plant`): `reducedFamily_isLinear`, `reduced_realize_univ`,
+  `reduced_chain_le_semantics`, `reduced_exact_hurwitz`, `reduced_exact_decay` (the decay translation is exact at every rate: the solutions are
+  `e^{−(K_R + D) t/M}`).
+* Connection conclusions of the limit: `mem_den_iff_reduce` (for `0 < M + D T_g` a model satisfies
+  an attractive sentence or sampled contraction exactly when its reduction does),
+  `mem_den_iff_reduce_of_nonneg` (every `T_g` when `0 ≤ D`),
+  `exists_unstable_reduce_globallyExponentiallyStable` (boundary: `M = 1`, `D = −1`, `K_R = 2`,
+  `T_g = 2` is unstable while its reduction is globally exponentially stable, so with negative
+  damping the transfer needs a small `T_g`), `not_mem_den_decay_of_slowEig` (the slow root bounds
+  every decay rate), `exists_threshold_mem_den_decay_iff_reduce` (for a rate off the pole there is a
+  threshold `τ > 0` below which the model decays at that rate exactly when its reduction does).
+* Implementation evidence (private, trajectory level): `finiteHorizon_reduce` — for every horizon
+  `T` and `T_g ≤ ε₀`, `|Δω(t) − Δω̄(t)|² ≤ C T_g² |x(0) − x^∞|²` and
+  `|ΔP_m(t) − (−K_R Δω̄(t) + e^{−t/T_g}(ΔP_m(0) + K_R Δω(0)))|² ≤ C T_g² |x(0) − x^∞|²` on
+  `[0, T]` under any constant load (`K_R + D ≠ 0`), from the generic
+  `SingularPerturbation.LinearSP.exists_finiteHorizon_error`.
+Not claimed: the decay translation of the full model at the boundary rate `a M = K_R + D`
+(the slow root may lie on either side), uniform-in-time (infinite horizon) trajectory estimates.
 -/
 
 noncomputable section
@@ -508,5 +556,794 @@ private theorem exponentiallyConvergesTo_steadyState (m : Model) (hD : 0 ≤ m.D
   exact (Linear.holds_input_iff m.plant
     (steadyState_isEquilibrium m.M_pos.ne' m.Tg_pos.ne' hKD.ne')
     (P := .globallyExponentiallyStable) (by simp)).2 hmem
+
+/-! ## Singular-perturbation limit `T_g → 0` -/
+
+/-- The reduced first-order swing model (`T_g = 0`: instantaneous droop `ΔP_m = −K_R Δω`):
+`M Δω̇ = −(K_R + D) Δω − ΔP_L`; state `Δω`, input `ΔP_L`, output `Δω`. -/
+def reducedPlant (M D K : ℝ) : Linear.Plant 1 1 where
+  A := !![-(K + D) / M]
+  B := !![-1 / M]
+  C := !![1]
+  D := 0
+
+/-- The swing + governor model as a linear two-time-scale system: slow state `Δω`, fast state
+`ΔP_m`, small parameter `ε = T_g`: `Δω̇ = −(D/M) Δω + (1/M) ΔP_m`, `T_g ΔṖ_m = −K_R Δω − ΔP_m`. -/
+def twoTimeScale (M D K : ℝ) : SingularPerturbation.LinearSP 1 1 where
+  A11 := !![-D / M]
+  A12 := !![1 / M]
+  A21 := !![-K]
+  A22 := !![-1]
+
+/-- Discriminant of `M T_g s² + (M + D T_g) s + (D + K_R)`. -/
+def eigDisc (M D K Tg : ℝ) : ℝ := (M + D * Tg) ^ 2 - 4 * M * Tg * (D + K)
+
+/-- The slow characteristic root `λ_s = −2 (D + K_R)/(M + D T_g + √disc)` (rationalized form of
+`(−(M + D T_g) + √disc)/(2 M T_g)`; it stays bounded as `T_g → 0`). -/
+def slowEig (M D K Tg : ℝ) : ℝ := -(2 * (D + K)) / (M + D * Tg + Real.sqrt (eigDisc M D K Tg))
+
+/-- The fast characteristic root `λ_f = −(M + D T_g + √disc)/(2 M T_g)`. -/
+def fastEig (M D K Tg : ℝ) : ℝ := -(M + D * Tg + Real.sqrt (eigDisc M D K Tg)) / (2 * M * Tg)
+
+/-- The state matrix is the two-time-scale state matrix at `ε = T_g`. -/
+@[powerlib_foundation] theorem plant_A_eq_stateMatrix :
+    (plant M D K Tg).A = (twoTimeScale M D K).stateMatrix Tg := by
+  have h0 : (finSumFinEquiv.symm (0 : Fin (1 + 1)) : Fin 1 ⊕ Fin 1) = Sum.inl 0 := rfl
+  have h1 : (finSumFinEquiv.symm (1 : Fin (1 + 1)) : Fin 1 ⊕ Fin 1) = Sum.inr 0 := rfl
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [plant, twoTimeScale, SingularPerturbation.LinearSP.stateMatrix,
+      SingularPerturbation.LinearSP.blockMatrix, h0, h1] <;> ring
+
+private theorem inv_neg_one_fin_one : (!![(-1 : ℝ)])⁻¹ = !![-1] :=
+  Matrix.inv_eq_left_inv (by ext i j; fin_cases i; fin_cases j; simp)
+
+/-- The quasi-steady-state gain is `K_R`: the slow manifold of the reduction is
+`ΔP_m = −K_R Δω`. -/
+@[powerlib_foundation] theorem twoTimeScale_gain : (twoTimeScale M D K).gain = !![K] := by
+  rw [SingularPerturbation.LinearSP.gain, twoTimeScale]
+  simp only
+  rw [inv_neg_one_fin_one]
+  ext i j; fin_cases i; fin_cases j; simp
+
+/-- The reduced (Schur-complement) matrix is the first-order swing matrix `−(K_R + D)/M`. -/
+@[powerlib_foundation] theorem twoTimeScale_reducedMatrix :
+    (twoTimeScale M D K).reducedMatrix = (reducedPlant M D K).A := by
+  rw [SingularPerturbation.LinearSP.reducedMatrix, twoTimeScale]
+  simp only
+  rw [inv_neg_one_fin_one]
+  ext i j; fin_cases i; fin_cases j
+  simp [reducedPlant]
+  ring
+
+/-- The boundary-layer matrix `−1` (governor time scale) is Hurwitz. -/
+@[powerlib_foundation] theorem twoTimeScale_A22_isHurwitz :
+    IsHurwitz (twoTimeScale M D K).A22 :=
+  (Linear.isHurwitz_one_iff (-1)).2 (by norm_num)
+
+/-! ### Characteristic roots -/
+
+private theorem root_aux (hΔ : 0 ≤ eigDisc M D K Tg) :
+    (M + D * Tg + Real.sqrt (eigDisc M D K Tg)) ^ 2
+      - 2 * (M + D * Tg) * (M + D * Tg + Real.sqrt (eigDisc M D K Tg))
+      + 4 * M * Tg * (D + K) = 0 := by
+  have hs := Real.sq_sqrt hΔ
+  unfold eigDisc at hs ⊢
+  linear_combination hs
+
+/-- The slow root solves `M T_g λ² + (M + D T_g) λ + (D + K_R) = 0`. -/
+@[powerlib_foundation] theorem slowEig_root (hΔ : 0 ≤ eigDisc M D K Tg)
+    (hS : M + D * Tg + Real.sqrt (eigDisc M D K Tg) ≠ 0) :
+    M * Tg * slowEig M D K Tg ^ 2 + (M + D * Tg) * slowEig M D K Tg + (D + K) = 0 := by
+  have h := root_aux hΔ
+  set S := M + D * Tg + Real.sqrt (eigDisc M D K Tg) with hSdef
+  have hl : slowEig M D K Tg * S = -(2 * (D + K)) := by
+    rw [slowEig, ← hSdef]
+    field_simp
+  apply mul_left_cancel₀ (pow_ne_zero 2 hS)
+  linear_combination (D + K) * h +
+    (M * Tg * (slowEig M D K Tg * S - 2 * (D + K)) + (M + D * Tg) * S) * hl
+
+/-- The fast root solves `M T_g λ² + (M + D T_g) λ + (D + K_R) = 0`. -/
+@[powerlib_foundation] theorem fastEig_root (hM : M ≠ 0) (hTg : Tg ≠ 0)
+    (hΔ : 0 ≤ eigDisc M D K Tg) :
+    M * Tg * fastEig M D K Tg ^ 2 + (M + D * Tg) * fastEig M D K Tg + (D + K) = 0 := by
+  have h := root_aux hΔ
+  unfold fastEig
+  field_simp
+  linear_combination h
+
+/-- The slow root is the textbook root `(−(M + D T_g) + √disc)/(2 M T_g)`. -/
+@[powerlib_foundation] theorem slowEig_eq (hM : M ≠ 0) (hTg : Tg ≠ 0) (hΔ : 0 ≤ eigDisc M D K Tg)
+    (hS : M + D * Tg + Real.sqrt (eigDisc M D K Tg) ≠ 0) :
+    slowEig M D K Tg = (-(M + D * Tg) + Real.sqrt (eigDisc M D K Tg)) / (2 * M * Tg) := by
+  have h := root_aux hΔ
+  unfold slowEig
+  rw [div_eq_div_iff hS (by simp [hM, hTg])]
+  linear_combination -h
+
+/-- `λ_s − λ_f = √disc/(M T_g)`: for positive discriminant the fast root lies strictly below the
+slow root. -/
+@[powerlib_foundation] theorem slowEig_sub_fastEig (hM : M ≠ 0) (hTg : Tg ≠ 0)
+    (hΔ : 0 ≤ eigDisc M D K Tg) (hS : M + D * Tg + Real.sqrt (eigDisc M D K Tg) ≠ 0) :
+    slowEig M D K Tg - fastEig M D K Tg = Real.sqrt (eigDisc M D K Tg) / (M * Tg) := by
+  rw [slowEig_eq hM hTg hΔ hS, fastEig]
+  field_simp
+  ring
+
+/-- Vieta: `λ_s + λ_f = −(D/M + 1/T_g)`, `λ_s λ_f = (D + K_R)/(M T_g)`. -/
+@[powerlib_foundation] theorem slowEig_add_fastEig (hM : M ≠ 0) (hTg : Tg ≠ 0)
+    (hΔ : 0 ≤ eigDisc M D K Tg) (hS : M + D * Tg + Real.sqrt (eigDisc M D K Tg) ≠ 0) :
+    slowEig M D K Tg + fastEig M D K Tg = -(D / M + 1 / Tg) := by
+  rw [slowEig_eq hM hTg hΔ hS, fastEig]
+  field_simp
+  ring
+
+@[powerlib_foundation] theorem slowEig_mul_fastEig (hM : M ≠ 0) (hTg : Tg ≠ 0)
+    (hS : M + D * Tg + Real.sqrt (eigDisc M D K Tg) ≠ 0) :
+    slowEig M D K Tg * fastEig M D K Tg = (D + K) / (M * Tg) := by
+  unfold slowEig fastEig
+  field_simp
+
+/-- For a nonnegative discriminant the characteristic polynomial factors over the two real
+roots: `det(sI − A) = (s − λ_s)(s − λ_f)`. -/
+@[powerlib_foundation] theorem det_characteristicMatrix_eq_mul (hM : M ≠ 0) (hTg : Tg ≠ 0)
+    (hΔ : 0 ≤ eigDisc M D K Tg) (hS : M + D * Tg + Real.sqrt (eigDisc M D K Tg) ≠ 0) (s : ℂ) :
+    (Linear.characteristicMatrix (plant M D K Tg).A s).det =
+      (s - slowEig M D K Tg) * (s - fastEig M D K Tg) := by
+  rw [det_characteristicMatrix]
+  have e1 : ((D / M + 1 / Tg : ℝ) : ℂ) = -((slowEig M D K Tg : ℂ) + fastEig M D K Tg) := by
+    rw [← Complex.ofReal_add, slowEig_add_fastEig hM hTg hΔ hS, Complex.ofReal_neg, neg_neg]
+  have e2 : (((D + K) / (M * Tg) : ℝ) : ℂ) = (slowEig M D K Tg : ℂ) * fastEig M D K Tg := by
+    rw [← Complex.ofReal_mul, slowEig_mul_fastEig hM hTg hS]
+  rw [e1, e2]
+  ring
+
+/-- The characteristic roots are exactly `λ_s` and `λ_f` (nonnegative discriminant). -/
+@[powerlib_foundation] theorem det_characteristicMatrix_eq_zero_iff (hM : M ≠ 0) (hTg : Tg ≠ 0)
+    (hΔ : 0 ≤ eigDisc M D K Tg) (hS : M + D * Tg + Real.sqrt (eigDisc M D K Tg) ≠ 0) (s : ℂ) :
+    (Linear.characteristicMatrix (plant M D K Tg).A s).det = 0 ↔
+      s = slowEig M D K Tg ∨ s = fastEig M D K Tg := by
+  rw [det_characteristicMatrix_eq_mul hM hTg hΔ hS, mul_eq_zero, sub_eq_zero, sub_eq_zero]
+
+/-- The slow eigenvector `(1, M λ_s + D)`: the invariant slow line of the model is
+`ΔP_m = (M λ_s + D) Δω`. -/
+@[powerlib_foundation] theorem plant_mulVec_slowEigvec (hM : M ≠ 0) (hTg : Tg ≠ 0)
+    (hΔ : 0 ≤ eigDisc M D K Tg) (hS : M + D * Tg + Real.sqrt (eigDisc M D K Tg) ≠ 0) :
+    (plant M D K Tg).A *ᵥ ![1, M * slowEig M D K Tg + D] =
+      slowEig M D K Tg • ![1, M * slowEig M D K Tg + D] := by
+  have hr := slowEig_root hΔ hS
+  ext i
+  fin_cases i
+  · simp [plant, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+    field_simp
+    ring
+  · simp [plant, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+    field_simp
+    linear_combination -hr
+
+/-! ### Limits as `T_g → 0` -/
+
+@[powerlib_foundation] theorem eigDisc_zero : eigDisc M D K 0 = M ^ 2 := by
+  simp [eigDisc]
+
+@[powerlib_foundation] theorem continuous_eigDisc : Continuous (fun Tg => eigDisc M D K Tg) := by
+  unfold eigDisc
+  fun_prop
+
+private theorem continuous_rootSum :
+    Continuous (fun Tg => M + D * Tg + Real.sqrt (eigDisc M D K Tg)) :=
+  (continuous_const.add (continuous_const.mul continuous_id)).add
+    (Real.continuous_sqrt.comp continuous_eigDisc)
+
+private theorem rootSum_zero (hM : 0 < M) :
+    M + D * 0 + Real.sqrt (eigDisc M D K 0) = 2 * M := by
+  rw [eigDisc_zero, Real.sqrt_sq hM.le]
+  ring
+
+/-- For small `T_g` the discriminant is positive: both characteristic roots are real and
+distinct (the oscillatory mode of §1.7 disappears in the limit). -/
+@[powerlib_foundation] theorem eventually_eigDisc_pos (hM : M ≠ 0) :
+    ∀ᶠ Tg in 𝓝 0, 0 < eigDisc M D K Tg := by
+  have h := (continuous_eigDisc (M := M) (D := D) (K := K)).tendsto 0
+  rw [eigDisc_zero] at h
+  exact h.eventually_const_lt (by positivity)
+
+@[powerlib_foundation] theorem eventually_rootSum_pos (hM : 0 < M) :
+    ∀ᶠ Tg in 𝓝 0, 0 < M + D * Tg + Real.sqrt (eigDisc M D K Tg) := by
+  have h := (continuous_rootSum (M := M) (D := D) (K := K)).tendsto 0
+  rw [rootSum_zero hM] at h
+  exact h.eventually_const_lt (by positivity)
+
+/-- At `T_g = 0` the slow root is the pole `−(K_R + D)/M` of the first-order model. -/
+@[powerlib_foundation] theorem slowEig_zero (hM : 0 < M) : slowEig M D K 0 = -(K + D) / M := by
+  rw [slowEig, rootSum_zero hM]
+  field_simp
+  ring
+
+/-- **Slow eigenvalue limit**: `λ_s(T_g) → −(K_R + D)/M` as `T_g → 0` (the slow root is
+continuous at `T_g = 0`, where it equals the first-order pole). -/
+@[powerlib_foundation] theorem tendsto_slowEig (hM : 0 < M) :
+    Tendsto (fun Tg => slowEig M D K Tg) (𝓝 0) (𝓝 (-(K + D) / M)) := by
+  have hc : ContinuousAt (fun Tg => slowEig M D K Tg) 0 := by
+    unfold slowEig
+    refine continuousAt_const.div continuous_rootSum.continuousAt ?_
+    rw [rootSum_zero hM]
+    positivity
+  have h := hc.tendsto
+  rwa [slowEig_zero hM] at h
+
+/-- The invariant slow line `ΔP_m = (M λ_s + D) Δω` tends to the quasi-steady-state line
+`ΔP_m = −K_R Δω` of the reduction. -/
+@[powerlib_foundation] theorem tendsto_slowSlope (hM : 0 < M) :
+    Tendsto (fun Tg => M * slowEig M D K Tg + D) (𝓝 0) (𝓝 (-K)) := by
+  have h := ((tendsto_slowEig (D := D) (K := K) hM).const_mul M).add_const D
+  convert h using 2
+  field_simp
+  ring
+
+@[powerlib_foundation] theorem mul_fastEig (hM : M ≠ 0) (hTg : Tg ≠ 0) :
+    Tg * fastEig M D K Tg = -(M + D * Tg + Real.sqrt (eigDisc M D K Tg)) / (2 * M) := by
+  unfold fastEig
+  field_simp
+
+/-- **Fast eigenvalue limit**: `T_g λ_f(T_g) → −1`, i.e. `λ_f = −1/T_g + O(1)` (the governor
+time scale). -/
+@[powerlib_foundation] theorem tendsto_mul_fastEig (hM : 0 < M) :
+    Tendsto (fun Tg => Tg * fastEig M D K Tg) (𝓝[≠] 0) (𝓝 (-1)) := by
+  have hc : Tendsto (fun Tg => -(M + D * Tg + Real.sqrt (eigDisc M D K Tg)) / (2 * M)) (𝓝 0)
+      (𝓝 (-1)) := by
+    have h := ((continuous_rootSum (M := M) (D := D) (K := K)).tendsto 0).neg.div_const (2 * M)
+    rw [rootSum_zero hM] at h
+    convert h using 2
+    field_simp
+  refine (hc.mono_left nhdsWithin_le_nhds).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with Tg hTg
+  exact (mul_fastEig hM.ne' hTg).symm
+
+/-- `λ_f(T_g) → −∞` as `T_g → 0⁺`. -/
+@[powerlib_foundation] theorem tendsto_fastEig_atBot (hM : 0 < M) :
+    Tendsto (fun Tg => fastEig M D K Tg) (𝓝[>] 0) atBot := by
+  have h := ((tendsto_mul_fastEig (D := D) (K := K) hM).mono_left
+    (nhdsWithin_mono _ fun x (hx : 0 < x) => hx.ne')).neg_mul_atTop (by norm_num)
+    tendsto_inv_nhdsGT_zero
+  refine h.congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with Tg (hTg : 0 < Tg)
+  field_simp
+
+/-- §1.7 damping ratio in the limit: `ζ_n → ∞` as `T_g → 0⁺` (for `0 < K_R + D`): the
+second-order response becomes overdamped. -/
+@[powerlib_foundation] theorem tendsto_dampingRatio_atTop (hM : 0 < M) (hKD : 0 < D + K) :
+    Tendsto (fun Tg => dampingRatio M D K Tg) (𝓝[>] 0) atTop := by
+  have hnum : Tendsto (fun Tg => M + D * Tg) (𝓝[>] 0) (𝓝 M) := by
+    have h : Continuous (fun Tg : ℝ => M + D * Tg) := by fun_prop
+    exact (h.tendsto' 0 M (by simp)).mono_left nhdsWithin_le_nhds
+  have hden : Tendsto (fun Tg => 2 * Real.sqrt (M * Tg * (D + K))) (𝓝[>] 0) (𝓝[>] 0) := by
+    refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
+    · have h : Continuous (fun Tg => 2 * Real.sqrt (M * Tg * (D + K))) := by fun_prop
+      have h0 := h.tendsto 0
+      simp only [mul_zero, zero_mul, Real.sqrt_zero] at h0
+      exact h0.mono_left nhdsWithin_le_nhds
+    · filter_upwards [self_mem_nhdsWithin] with Tg (hTg : 0 < Tg)
+      exact mul_pos two_pos (Real.sqrt_pos.2 (by positivity))
+  have h := Filter.Tendsto.pos_mul_atTop hM hnum (tendsto_inv_nhdsGT_zero.comp hden)
+  refine h.congr' ?_
+  filter_upwards with Tg
+  simp [dampingRatio, div_eq_mul_inv]
+
+/-! ### The reduced model, transfer function and stability -/
+
+@[powerlib_foundation] theorem reduced_field_apply (x : EuclideanSpace ℝ (Fin 1)) :
+    (reducedPlant M D K).inputField (load ΔPL) x =
+      WithLp.toLp 2 ![-(K + D) / M * x 0 + -1 / M * ΔPL] := by
+  rw [inputField_apply]
+  congr 1
+  ext i
+  fin_cases i
+  simp [reducedPlant, load, dotProduct]
+
+/-- On the quasi-steady-state line `ΔP_m = −K_R Δω` the governor row vanishes and the swing row is
+the first-order field: `M Δω̇ = −(K_R + D) Δω − ΔP_L`. -/
+@[powerlib_foundation] theorem field_quasiSteady (w : ℝ) :
+    (plant M D K Tg).inputField (load ΔPL) (WithLp.toLp 2 ![w, -K * w]) 0 =
+        (reducedPlant M D K).inputField (load ΔPL) (WithLp.toLp 2 ![w]) 0 ∧
+      (plant M D K Tg).inputField (load ΔPL) (WithLp.toLp 2 ![w, -K * w]) 1 = 0 := by
+  rw [field_apply, reduced_field_apply]
+  constructor
+  · simp
+    ring
+  · simp
+    ring
+
+/-- Transfer function of the first-order model: `Δω(s)/ΔP_L(s) = −1/(M s + K_R + D)` (both
+sides `0` at the pole). -/
+@[powerlib_foundation] theorem reduced_transfer_apply (hM : M ≠ 0) (s : ℂ) :
+    Linear.transfer (reducedPlant M D K) s 0 0 = -1 / ((M : ℂ) * s + (K + D)) := by
+  have hM' : (M : ℂ) ≠ 0 := by exact_mod_cast hM
+  have hdet : (Linear.characteristicMatrix (reducedPlant M D K).A s).det = s + (K + D) / M := by
+    simp [reducedPlant, Linear.characteristicMatrix]
+    ring
+  have hadj : (Linear.complexify (reducedPlant M D K).C *
+      (Linear.characteristicMatrix (reducedPlant M D K).A s).adjugate *
+        Linear.complexify (reducedPlant M D K).B) 0 0 = -1 / M := by
+    simp [reducedPlant, Matrix.adjugate_fin_one, Matrix.mul_apply, Linear.complexify]
+  have hD : Linear.complexify (reducedPlant M D K).D 0 0 = 0 := by simp [reducedPlant]
+  rw [Linear.transfer_eq_adjugate]
+  simp only [Matrix.add_apply, Matrix.smul_apply, hadj, hD, smul_eq_mul, add_zero, hdet]
+  have key : (M : ℂ) * s + (K + D) = M * (s + (K + D) / M) := by field_simp
+  rw [key]
+  by_cases h : s + ((K : ℂ) + D) / M = 0
+  · rw [h]; simp
+  · field_simp
+
+/-- **Transfer function limit**: off the first-order pole, the load-to-frequency transfer
+function of the swing + governor model tends to that of the first-order model as `T_g → 0`. -/
+@[powerlib_foundation] theorem tendsto_transfer (hM : M ≠ 0) {s : ℂ}
+    (hs : (M : ℂ) * s + (K + D) ≠ 0) :
+    Tendsto (fun Tg => Linear.transfer (plant M D K Tg) s 0 0) (𝓝[≠] 0)
+      (𝓝 (Linear.transfer (reducedPlant M D K) s 0 0)) := by
+  rw [reduced_transfer_apply hM]
+  have hc : ContinuousAt (fun Tg : ℝ => -(1 + (Tg : ℂ) * s) /
+      ((M : ℂ) * Tg * s ^ 2 + (M + D * Tg) * s + (D + K))) 0 := by
+    refine ContinuousAt.div (by fun_prop) (by fun_prop) ?_
+    simp only [Complex.ofReal_zero, mul_zero, zero_mul, add_zero, zero_add]
+    rwa [add_comm (D : ℂ) K]
+  have h := hc.tendsto
+  have e : -(1 + ((0 : ℝ) : ℂ) * s) / ((M : ℂ) * ((0 : ℝ) : ℂ) * s ^ 2 +
+      (M + D * ((0 : ℝ) : ℂ)) * s + (D + K)) = -1 / ((M : ℂ) * s + (K + D)) := by
+    simp only [Complex.ofReal_zero, mul_zero, zero_mul, add_zero, zero_add]
+    rw [add_comm (D : ℂ) K]
+  rw [e] at h
+  refine (h.mono_left nhdsWithin_le_nhds).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with Tg hTg
+  exact (transfer_apply hM hTg s).symm
+
+/-- The first-order model is Hurwitz iff `0 < K_R + D`. -/
+@[powerlib_foundation] theorem reduced_isHurwitz_iff (hM : 0 < M) :
+    IsHurwitz (reducedPlant M D K).A ↔ 0 < K + D := by
+  change IsHurwitz !![-(K + D) / M] ↔ _
+  rw [Linear.isHurwitz_one_iff, neg_div, neg_lt_zero, div_pos_iff_of_pos_right hM]
+
+/-- **Stability is inherited from the first-order model** whenever `0 < M + D T_g` (in particular
+for every `T_g` when `0 ≤ D`, and for every small `T_g`). -/
+@[powerlib_foundation] theorem isHurwitz_iff_reduced (hM : 0 < M) (hTg : 0 < Tg)
+    (h : 0 < M + D * Tg) :
+    IsHurwitz (plant M D K Tg).A ↔ IsHurwitz (reducedPlant M D K).A := by
+  rw [isHurwitz_iff hM hTg, reduced_isHurwitz_iff hM]
+  exact ⟨fun h' => h'.2, fun h' => ⟨h, h'⟩⟩
+
+@[powerlib_foundation] theorem eventually_isHurwitz_iff_reduced (hM : 0 < M) :
+    ∀ᶠ Tg in 𝓝[>] 0, IsHurwitz (plant M D K Tg).A ↔ IsHurwitz (reducedPlant M D K).A := by
+  have hc : Continuous (fun Tg : ℝ => M + D * Tg) := by fun_prop
+  have h : ∀ᶠ Tg in 𝓝 0, 0 < M + D * Tg := (hc.tendsto' 0 M (by simp)).eventually_const_lt hM
+  filter_upwards [nhdsWithin_le_nhds h, self_mem_nhdsWithin] with Tg h1 (h2 : 0 < Tg)
+  exact isHurwitz_iff_reduced hM h2 h1
+
+/-- The rate margin of the swing + governor model: `A + aI` Hurwitz iff
+`T_g (2 a M − D) < M` and `0 < K_R + D − a M + a T_g (a M − D)`. -/
+@[powerlib_foundation] theorem rateMargin_iff (hM : 0 < M) (hTg : 0 < Tg) (a : ℝ) :
+    Linear.RateMargin (plant M D K Tg).A a ↔
+      Tg * (2 * a * M - D) < M ∧ 0 < K + D - a * M + a * Tg * (a * M - D) := by
+  unfold Linear.RateMargin
+  have hA : (plant M D K Tg).A + a • (1 : Matrix (Fin 2) (Fin 2) ℝ) =
+      !![-D / M + a, 1 / M; -K / Tg, -1 / Tg + a] := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [plant]
+  have hMT : 0 < M * Tg := mul_pos hM hTg
+  have htr : -D / M + a + (-1 / Tg + a) = (Tg * (2 * a * M - D) - M) / (M * Tg) := by
+    field_simp
+    ring
+  have hdet : (-D / M + a) * (-1 / Tg + a) - 1 / M * (-K / Tg) =
+      (K + D - a * M + a * Tg * (a * M - D)) / (M * Tg) := by
+    field_simp
+    ring
+  rw [hA, Criteria.isHurwitz_fin_two_of_iff, htr, hdet, div_lt_iff₀ hMT, zero_mul, sub_neg,
+    div_pos_iff_of_pos_right hMT]
+
+/-- The rate margin of the first-order model: `a M < K_R + D`. -/
+@[powerlib_foundation] theorem reduced_rateMargin_iff (hM : 0 < M) (a : ℝ) :
+    Linear.RateMargin (reducedPlant M D K).A a ↔ a * M < K + D := by
+  unfold Linear.RateMargin
+  have hA : (reducedPlant M D K).A + a • (1 : Matrix (Fin 1) (Fin 1) ℝ) =
+      !![(a * M - (K + D)) / M] := by
+    ext i j
+    fin_cases i; fin_cases j
+    simp [reducedPlant]
+    field_simp
+    ring
+  rw [hA, Linear.isHurwitz_one_iff, div_lt_iff₀ hM, zero_mul, sub_neg]
+
+/-- **Rate margins converge**: off the first-order pole (`a M ≠ K_R + D`), for small `T_g` the
+swing + governor model has the rate margin `a` exactly when the first-order model has it. -/
+@[powerlib_foundation] theorem eventually_rateMargin_iff_reduced (hM : 0 < M) {a : ℝ}
+    (ha : a * M ≠ K + D) :
+    ∀ᶠ Tg in 𝓝[>] 0, Linear.RateMargin (plant M D K Tg).A a ↔
+      Linear.RateMargin (reducedPlant M D K).A a := by
+  have hc1 : Continuous (fun Tg : ℝ => Tg * (2 * a * M - D)) := by fun_prop
+  have hc2 : Continuous (fun Tg : ℝ => K + D - a * M + a * Tg * (a * M - D)) := by fun_prop
+  have h1 := hc1.tendsto' 0 0 (by simp)
+  have h2 := hc2.tendsto' 0 (K + D - a * M) (by simp)
+  have e1 : ∀ᶠ Tg in 𝓝 0, Tg * (2 * a * M - D) < M := h1.eventually_lt_const hM
+  rcases lt_or_gt_of_ne ha with hlt | hgt
+  · have e2 : ∀ᶠ Tg in 𝓝 0, 0 < K + D - a * M + a * Tg * (a * M - D) :=
+      h2.eventually_const_lt (by linarith)
+    filter_upwards [nhdsWithin_le_nhds e1, nhdsWithin_le_nhds e2, self_mem_nhdsWithin]
+      with Tg h1 h2 (h3 : 0 < Tg)
+    rw [rateMargin_iff hM h3, reduced_rateMargin_iff hM]
+    exact iff_of_true ⟨h1, h2⟩ hlt
+  · have e2 : ∀ᶠ Tg in 𝓝 0, K + D - a * M + a * Tg * (a * M - D) < 0 :=
+      h2.eventually_lt_const (by linarith)
+    filter_upwards [nhdsWithin_le_nhds e2, self_mem_nhdsWithin] with Tg h2 (h3 : 0 < Tg)
+    rw [rateMargin_iff hM h3, reduced_rateMargin_iff hM]
+    exact iff_of_false (fun h => by linarith [h.2]) (by linarith)
+
+/-- A real eigenvector `A v = μ v`, `v ≠ 0`, with `−a < μ` excludes decay at the rate `a`: the
+eigenmode `e^{μ t} v` is a solution segment that decays too slowly. -/
+@[powerlib_foundation] theorem not_decay_of_eigenvector {n : ℕ} {A : Matrix (Fin n) (Fin n) ℝ}
+    {μ a : ℝ} {v : EuclideanSpace ℝ (Fin n)} (hv : v ≠ 0) (hAv : Linear.op A v = μ • v)
+    (hμ : -a < μ) : ¬ Flow.Decay (affineLinearVectorField A 0) 0 a := by
+  rintro ⟨C, hC⟩
+  have hμa : 0 < μ + a := by linarith
+  set T : ℝ := |C| / (μ + a) with hT_def
+  have hT0 : 0 ≤ T := div_nonneg (abs_nonneg C) hμa.le
+  have hsol : IsTrajectoryOn (fun t => Real.exp (μ * t) • v) (affineLinearVectorField A 0) 0 T := by
+    intro t _
+    have h : HasDerivAt (fun t => Real.exp (μ * t) • v) ((Real.exp (μ * t) * μ) • v) t := by
+      simpa using ((hasDerivAt_id t).const_mul μ).exp.smul_const v
+    have e : affineLinearVectorField A 0 (Real.exp (μ * t) • v) = (Real.exp (μ * t) * μ) • v := by
+      rw [Linear.affine_apply, sub_zero, map_smul, hAv, smul_smul, mul_comm]
+    show HasDerivWithinAt _ (affineLinearVectorField A 0 (Real.exp (μ * t) • v)) _ _
+    rw [e]
+    exact h.hasDerivWithinAt
+  have hb := hC 0 T _ hsol T ⟨hT0, le_rfl⟩
+  have hvn : 0 < ‖v‖ := norm_pos_iff.2 hv
+  simp only [sub_zero, mul_zero, Real.exp_zero, one_smul, norm_smul,
+    Real.norm_of_nonneg (Real.exp_pos _).le] at hb
+  have h1 : Real.exp (μ * T) ≤ C * Real.exp (-a * T) := le_of_mul_le_mul_right hb hvn
+  have h2 : Real.exp ((μ + a) * T) ≤ C := by
+    have h := mul_le_mul_of_nonneg_left h1 (Real.exp_pos (a * T)).le
+    have e₁ : Real.exp (a * T) * Real.exp (μ * T) = Real.exp ((μ + a) * T) := by
+      rw [← Real.exp_add]; congr 1; ring
+    have e₂ : Real.exp (a * T) * (C * Real.exp (-a * T)) = C := by
+      rw [mul_left_comm, ← Real.exp_add, show a * T + -a * T = 0 by ring, Real.exp_zero, mul_one]
+    linarith
+  have hprod : (μ + a) * T = |C| := by
+    rw [hT_def]
+    field_simp
+  rw [hprod] at h2
+  linarith [Real.add_one_le_exp |C|, le_abs_self C]
+
+/-! ### The first-order family and the connection conclusions of the limit -/
+
+/-- A first-order swing model: inertia `M > 0`, damping `D`, droop gain `K_R`. It is the
+reduction `T_g → 0` of a swing + governor model (`Model.reduce`). -/
+structure ReducedModel where
+  /-- Inertia `M_eff = 2 H_eff` [s]. -/
+  M : ℝ
+  /-- Damping `D_eff`. -/
+  D : ℝ
+  /-- Aggregate droop gain `K_R`. -/
+  K : ℝ
+  M_pos : 0 < M
+
+/-- The plant of a first-order model. -/
+def ReducedModel.plant (r : ReducedModel) : Linear.Plant 1 1 := reducedPlant r.M r.D r.K
+
+/-- The first-order reduction of a swing + governor model (forget `T_g`). -/
+def Model.reduce (m : Model) : ReducedModel := ⟨m.M, m.D, m.K, m.M_pos⟩
+
+/-- Requirements on the first-order models, all static. -/
+inductive ReducedRequirement
+  /-- `0 < K_R + D`. -/
+  | stable
+  /-- `K_R + D < 0`. -/
+  | unstable
+  /-- `a M ≤ K_R + D`: the rate `a` does not exceed the pole magnitude `(K_R + D)/M`. -/
+  | rate (a : ℝ)
+
+/-- Satisfaction of a requirement by a first-order model. -/
+def ReducedMeets (r : ReducedModel) : ReducedRequirement → Prop
+  | .stable => 0 < r.K + r.D
+  | .unstable => r.K + r.D < 0
+  | .rate a => a * r.M ≤ r.K + r.D
+
+/-- Lyapunov stability, the attractive sentences and sampled contraction into `stable`,
+instability into `unstable`, a decay rate into `rate`; conservation and passivity into the whole
+(inconsistent) language. -/
+def reducedTranslate : Sentence → Set ReducedRequirement
+  | .flow .unstable => {.unstable}
+  | .flow (.decay a) => {.rate a}
+  | .flow .conservative => Set.univ
+  | .flow _ => {.stable}
+  | .passive => Set.univ
+
+/-- The first-order family: every model read as the port system of its plant (load deviation
+in, frequency deviation out). -/
+def reducedFamily : Family ReducedModel ReducedRequirement 1 1 :=
+  ⟨fun r => r.plant.system, ReducedMeets, reducedTranslate⟩
+
+@[powerlib_foundation] theorem reducedFamily_isLinear :
+    reducedFamily.IsLinear ReducedModel.plant := fun _ => rfl
+
+@[powerlib_foundation] theorem reduce_plant (m : Model) :
+    m.reduce.plant = reducedPlant m.M m.D m.K := rfl
+
+/-- No first-order model is both stable and unstable. -/
+@[powerlib_foundation] theorem reduced_realize_univ :
+    connection% (realize ReducedMeets Set.univ = ∅) := by
+  unfold powerlib.TMIO.Statement
+  ext r
+  simp only [mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
+  intro h
+  have h1 : ReducedMeets r .stable := h .stable
+  have h2 : ReducedMeets r .unstable := h .unstable
+  exact absurd (lt_trans h1 h2) (lt_irrefl _)
+
+private theorem reduced_den_hurwitz {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+    reducedFamily.den (.flow P) = {r | ReducedMeets r .stable} := by
+  rw [reducedFamily_isLinear.den_hurwitz hP]
+  ext r
+  exact reduced_isHurwitz_iff r.M_pos
+
+private theorem reduced_mem_den_decay_iff (r : ReducedModel) (a : ℝ) :
+    r ∈ reducedFamily.den (.flow (.decay a)) ↔ a * r.M ≤ r.K + r.D := by
+  rw [reducedFamily_isLinear.mem_den_flow]
+  have hA : r.plant.A = !![-((r.K + r.D) / r.M)] := by
+    change !![-(r.K + r.D) / r.M] = _
+    rw [neg_div]
+  change Flow.Decay (affineLinearVectorField r.plant.A 0) 0 a ↔ _
+  rw [hA, Linear.decay_scalar_iff, le_div_iff₀ r.M_pos]
+
+/-- Every translation of the first-order family is sound. -/
+@[powerlib_domain] theorem reduced_chain_le_semantics :
+    connection% (∀ P, reducedFamily.chain P ≤ reducedFamily.semantics P) := by
+  unfold powerlib.TMIO.Statement
+  refine Family.chain_le_semantics_iff.mpr fun s r hm => ?_
+  rw [mem_realize] at hm
+  change ∀ q ∈ reducedTranslate s, ReducedMeets r q at hm
+  have hnone : (∀ q, ReducedMeets r q) → False := fun h =>
+    absurd (lt_trans (h .stable) (h .unstable)) (lt_irrefl _)
+  have hstable : ReducedMeets r .stable → ∀ {P : Flow.Property},
+      (P.Attractive ∨ P = .contractive) → r ∈ reducedFamily.den (.flow P) := by
+    intro h P hP
+    rw [reduced_den_hurwitz hP]
+    exact h
+  rcases s with P | _
+  · cases P
+    case lyapunovStable =>
+      have h := hstable (hm .stable rfl) (P := .globallyExponentiallyStable) (by simp)
+      rw [reducedFamily_isLinear.mem_den_flow] at h ⊢
+      exact h.lyapunovStable
+    case unstable =>
+      have hu : r.K + r.D < 0 := hm .unstable rfl
+      refine reducedFamily_isLinear.mem_den_flow.mpr
+        (Linear.unstable_of_root (s := ((-(r.K + r.D) / r.M : ℝ) : ℂ)) 0 ?_ ?_)
+      · simp [ReducedModel.plant, reducedPlant, Linear.characteristicMatrix]
+      · simp only [Complex.ofReal_re]
+        exact div_pos (by linarith) r.M_pos
+    case decay a =>
+      exact (reduced_mem_den_decay_iff r a).2 (hm (.rate a) rfl)
+    case conservative => exact (hnone fun q => hm q trivial).elim
+    case contractive => exact hstable (hm .stable rfl) (Or.inr rfl)
+    all_goals exact hstable (hm .stable rfl) (Or.inl (by simp))
+  · exact (hnone fun q => hm q trivial).elim
+
+/-- On the attractive sentences and sampled contraction the first-order translation is exact
+(`0 < K_R + D`). -/
+@[powerlib_domain] theorem reduced_exact_hurwitz {P : Flow.Property}
+    (hP : P.Attractive ∨ P = .contractive) :
+    connection% (reducedFamily.Exact (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  unfold Family.Exact
+  rw [reduced_den_hurwitz hP]
+  have hs : reducedTranslate (.flow P) = {.stable} := by
+    rcases hP with hP | rfl
+    · cases P <;> first | rfl | exact absurd hP (by simp [Flow.Property.Attractive])
+    · rfl
+  change realize ReducedMeets (reducedTranslate (.flow P)) = _
+  rw [hs]
+  ext r
+  simp [mem_realize]
+
+/-- The first-order decay translation is exact at every rate: the model decays at the rate `a`
+exactly when `a M ≤ K_R + D` (its solutions are `e^{−(K_R + D) t/M}`). -/
+@[powerlib_domain] theorem reduced_exact_decay (a : ℝ) :
+    connection% (reducedFamily.Exact (.flow (.decay a))) := by
+  unfold powerlib.TMIO.Statement
+  unfold Family.Exact
+  ext r
+  change r ∈ realize ReducedMeets {.rate a} ↔ _
+  rw [reduced_mem_den_decay_iff]
+  simp [mem_realize, ReducedMeets]
+
+/-- **Stability is preserved by the reduction `T_g → 0`**: whenever `0 < M + D T_g`, a swing +
+governor model satisfies an attractive sentence (or sampled contraction) exactly when its
+first-order reduction does. -/
+@[powerlib_domain] theorem mem_den_iff_reduce (m : Model) {P : Flow.Property}
+    (hP : P.Attractive ∨ P = .contractive) (h : 0 < m.M + m.D * m.Tg) :
+    connection% (m ∈ family.den (.flow P) ↔ m.reduce ∈ reducedFamily.den (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  rw [family_isLinear.den_hurwitz hP, reducedFamily_isLinear.den_hurwitz hP]
+  exact isHurwitz_iff_reduced m.M_pos m.Tg_pos h
+
+/-- With nonnegative damping the reduction preserves the attractive sentences for every `T_g`. -/
+@[powerlib_domain] theorem mem_den_iff_reduce_of_nonneg (m : Model) {P : Flow.Property}
+    (hP : P.Attractive ∨ P = .contractive) (hD : 0 ≤ m.D) :
+    connection% (m ∈ family.den (.flow P) ↔ m.reduce ∈ reducedFamily.den (.flow P)) :=
+  mem_den_iff_reduce m hP (by nlinarith [m.M_pos, m.Tg_pos])
+
+/-- Boundary of the reduction: with negative damping a large `T_g` breaks it. `M = 1`, `D = −1`,
+`K_R = 2`, `T_g = 2` is unstable (`M + D T_g = −1 < 0`) while its first-order reduction
+(`K_R + D = 1 > 0`) is globally exponentially stable. -/
+@[powerlib_domain] theorem exists_unstable_reduce_globallyExponentiallyStable :
+    connection% (∃ m : Model, m ∈ family.den (.flow .unstable) ∧
+      m.reduce ∈ reducedFamily.den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  refine ⟨⟨1, -1, 2, 2, one_pos, two_pos⟩, ?_, ?_⟩
+  · exact mem_den_unstable ⟨1, -1, 2, 2, one_pos, two_pos⟩ (Or.inr (by norm_num))
+  · rw [reducedFamily_isLinear.den_hurwitz (Or.inl (by simp))]
+    exact (reduced_isHurwitz_iff one_pos).2 (by change (0 : ℝ) < 2 + -1; norm_num)
+
+/-- The slow root bounds every decay rate: if `−a < λ_s` (real roots, `M + D T_g + √disc ≠ 0`),
+the model does not decay at the rate `a` (its slow eigenmode decays like `e^{λ_s t}`). -/
+@[powerlib_domain] theorem not_mem_den_decay_of_slowEig (m : Model) {a : ℝ}
+    (hΔ : 0 ≤ eigDisc m.M m.D m.K m.Tg)
+    (hS : m.M + m.D * m.Tg + Real.sqrt (eigDisc m.M m.D m.K m.Tg) ≠ 0)
+    (h : -a < slowEig m.M m.D m.K m.Tg) :
+    connection% (m ∉ family.den (.flow (.decay a))) := by
+  unfold powerlib.TMIO.Statement
+  rw [family_isLinear.mem_den_flow]
+  refine not_decay_of_eigenvector (A := m.plant.A)
+    (v := WithLp.toLp 2 ![1, m.M * slowEig m.M m.D m.K m.Tg + m.D]) ?_ ?_ h
+  · intro h0
+    have := congrArg (fun v : EuclideanSpace ℝ (Fin 2) => v 0) h0
+    simp at this
+  · rw [Matrix.toEuclideanCLM_toLp]
+    change WithLp.toLp 2 ((plant m.M m.D m.K m.Tg).A *ᵥ _) = _
+    rw [plant_mulVec_slowEigvec m.M_pos.ne' m.Tg_pos.ne' hΔ hS]
+    rfl
+
+/-- **Decay rates in the limit `T_g → 0`.** For fixed `M > 0`, `D`, `K_R` and a rate off the
+first-order pole (`a M ≠ K_R + D`) there is a threshold `τ > 0` such that every swing + governor
+model with these parameters and `T_g < τ` decays at the rate `a` exactly when its first-order
+reduction does (i.e. exactly when `a M ≤ K_R + D`). -/
+@[powerlib_domain] theorem exists_threshold_mem_den_decay_iff_reduce (M D K a : ℝ) (hM : 0 < M)
+    (ha : a * M ≠ K + D) :
+    connection% (∃ τ : {τ : ℝ // 0 < τ}, ∀ m : Model, m.M = M → m.D = D → m.K = K →
+      m.Tg < τ.1 → (m ∈ family.den (.flow (.decay a)) ↔
+        m.reduce ∈ reducedFamily.den (.flow (.decay a)))) := by
+  unfold powerlib.TMIO.Statement
+  -- the eventual facts as `T_g → 0⁺`
+  have hev : ∀ᶠ Tg in 𝓝[>] 0, (Linear.RateMargin (plant M D K Tg).A a ↔
+        Linear.RateMargin (reducedPlant M D K).A a) ∧ 0 < eigDisc M D K Tg ∧
+      0 < M + D * Tg + Real.sqrt (eigDisc M D K Tg) ∧
+      (K + D < a * M → -a < slowEig M D K Tg) := by
+    have hslow : ∀ᶠ Tg in 𝓝 0, K + D < a * M → -a < slowEig M D K Tg := by
+      rcases lt_or_ge (K + D) (a * M) with hgt | hle
+      · have hlim : -a < -(K + D) / M := by
+          rw [neg_div, neg_lt_neg_iff, div_lt_iff₀ hM]
+          linarith
+        filter_upwards [(tendsto_slowEig (D := D) (K := K) hM).eventually_const_lt hlim]
+          with Tg h _ using h
+      · exact Eventually.of_forall fun _ h => absurd h (not_lt.2 hle)
+    filter_upwards [eventually_rateMargin_iff_reduced (D := D) (K := K) hM ha,
+      nhdsWithin_le_nhds (eventually_eigDisc_pos (D := D) (K := K) hM.ne'),
+      nhdsWithin_le_nhds (eventually_rootSum_pos (D := D) (K := K) hM),
+      nhdsWithin_le_nhds hslow] with Tg h1 h2 h3 h4
+    exact ⟨h1, h2, h3, h4⟩
+  obtain ⟨τ, hτ, hτP⟩ := (nhdsGT_basis (0 : ℝ)).eventually_iff.1 hev
+  refine ⟨⟨τ, hτ⟩, fun m hMm hDm hKm hTm => ?_⟩
+  obtain ⟨hrate, hΔ, hS, hslow⟩ := hτP ⟨m.Tg_pos, hTm⟩
+  subst hMm hDm hKm
+  rw [reduced_mem_den_decay_iff]
+  rcases lt_or_gt_of_ne ha with hlt | hgt
+  · refine iff_of_true ?_ hlt.le
+    refine family_isLinear.mem_den_decay_of_rateMargin ?_
+    exact hrate.2 ((reduced_rateMargin_iff m.M_pos a).2 hlt)
+  · refine iff_of_false ?_ (not_le.2 hgt)
+    exact not_mem_den_decay_of_slowEig m hΔ.le hS.ne' (hslow hgt)
+
+/-! ### Implementation evidence (private, trajectory level): solutions converge -/
+
+private theorem hasDerivAt_apply' {n : ℕ} {x : ℝ → EuclideanSpace ℝ (Fin n)}
+    {v : EuclideanSpace ℝ (Fin n)} {s : ℝ} (h : HasDerivAt x v s) (i : Fin n) :
+    HasDerivAt (fun t => x t i) (v i) s :=
+  (PiLp.proj 2 (fun _ : Fin n => ℝ) i).hasFDerivAt.comp_hasDerivAt s h
+
+/-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
+**Solutions converge to the first-order model as `T_g → 0`** (Tikhonov's theorem, finite
+horizon, from the generic `SingularPerturbation.LinearSP.exists_finiteHorizon_error` applied to
+`twoTimeScale`). For every horizon `T` there are `ε₀ > 0` and `C` such that for every
+`T_g ∈ (0, ε₀]`, every solution `x = (Δω, ΔP_m)` of the swing + governor model under the load
+`ΔP_L` and the solution `x̄` of the first-order model under the same load from the same frequency
+deviation, on `[0, T]`:
+`|Δω(t) − Δω̄(t)|² ≤ C T_g² |x(0) − x^∞|²` and
+`|ΔP_m(t) − (−K_R Δω̄(t) + e^{−t/T_g} (ΔP_m(0) + K_R Δω(0)))|² ≤ C T_g² |x(0) − x^∞|²`
+(`x^∞` the quasi-steady state; the second bound includes the governor's initial layer). -/
+private theorem finiteHorizon_reduce (hKD : K + D ≠ 0) (T : ℝ) :
+    ∃ ε₀ > 0, ∃ C : ℝ, ∀ Tg, 0 < Tg → Tg ≤ ε₀ →
+      ∀ (x : ℝ → ℝ²) (xbar : ℝ → EuclideanSpace ℝ (Fin 1)),
+      (∀ t, HasDerivAt x ((plant M D K Tg).inputField (load ΔPL) (x t)) t) →
+      (∀ t, HasDerivAt xbar ((reducedPlant M D K).inputField (load ΔPL) (xbar t)) t) →
+      xbar 0 0 = x 0 0 →
+      ∀ t ∈ Icc 0 T,
+        (x t 0 - xbar t 0) ^ 2 ≤ C * Tg ^ 2 *
+          ((x 0 0 - steadyState D K ΔPL 0) ^ 2 + (x 0 1 - steadyState D K ΔPL 1) ^ 2) ∧
+        (x t 1 - (-K * xbar t 0 + Real.exp (-(t / Tg)) * (x 0 1 + K * x 0 0))) ^ 2 ≤
+          C * Tg ^ 2 *
+            ((x 0 0 - steadyState D K ΔPL 0) ^ 2 + (x 0 1 - steadyState D K ΔPL 1) ^ 2) := by
+  obtain ⟨ε₀, hε₀, C, H⟩ :=
+    (twoTimeScale M D K).exists_finiteHorizon_error twoTimeScale_A22_isHurwitz T
+  refine ⟨ε₀, hε₀, C, fun Tg hTg hTgε x xbar hx hxbar h0 t ht => ?_⟩
+  set w := steadyState D K ΔPL 0 with hw
+  set q := steadyState D K ΔPL 1 with hq
+  have hwq : q + K * w = 0 := by
+    rw [hw, hq, steadyState_zero, steadyState_one]
+    ring
+  have hrow0 : -D / M * w + 1 / M * q + -1 / M * ΔPL = 0 := by
+    rw [hw, hq, steadyState_zero, steadyState_one]
+    field_simp
+    ring
+  have hred : -(K + D) / M * w + -1 / M * ΔPL = 0 := by
+    rw [hw, steadyState_zero]
+    field_simp
+    ring
+  set sp := twoTimeScale M D K
+  let X : ℝ → Fin 1 → ℝ := fun s _ => x s 0 - w
+  let Z : ℝ → Fin 1 → ℝ := fun s _ => x s 1 - q
+  let Xb : ℝ → Fin 1 → ℝ := fun s _ => xbar s 0 - w
+  let Zb : ℝ → Fin 1 → ℝ := fun τ _ => Real.exp (-τ) * (x 0 1 + K * x 0 0)
+  have hX : ∀ s, HasDerivAt X (sp.A11 *ᵥ X s + sp.A12 *ᵥ Z s) s := by
+    intro s
+    refine hasDerivAt_pi.2 fun i => ?_
+    have h := (hasDerivAt_apply' (hx s) 0).sub_const w
+    rw [field_apply] at h
+    convert h using 1
+    simp [sp, twoTimeScale, X, Z, dotProduct]
+    linear_combination -hrow0
+  have hZ : ∀ s, HasDerivAt Z (Tg⁻¹ • (sp.A21 *ᵥ X s + sp.A22 *ᵥ Z s)) s := by
+    intro s
+    refine hasDerivAt_pi.2 fun i => ?_
+    have h := (hasDerivAt_apply' (hx s) 1).sub_const q
+    rw [field_apply] at h
+    convert h using 1
+    simp [sp, twoTimeScale, X, Z, dotProduct]
+    field_simp
+    linear_combination hwq
+  have hXb : ∀ s, HasDerivAt Xb (sp.reducedMatrix *ᵥ Xb s) s := by
+    intro s
+    refine hasDerivAt_pi.2 fun i => ?_
+    have h := (hasDerivAt_apply' (hxbar s) 0).sub_const w
+    rw [reduced_field_apply] at h
+    convert h using 1
+    rw [twoTimeScale_reducedMatrix]
+    simp [Xb, reducedPlant, Matrix.mulVec, dotProduct]
+    linear_combination -hred
+  have hXb0 : Xb 0 = X 0 := by
+    funext i
+    simp [Xb, X, h0]
+  have hZb : ∀ τ, HasDerivAt Zb (sp.A22 *ᵥ Zb τ) τ := by
+    intro τ
+    refine hasDerivAt_pi.2 fun i => ?_
+    have h := ((hasDerivAt_id τ).neg.exp).mul_const (x 0 1 + K * x 0 0)
+    convert h using 1 <;> simp [sp, twoTimeScale, Zb, Matrix.mulVec, dotProduct]
+  have hZb0 : Zb 0 = Z 0 + sp.gain *ᵥ X 0 := by
+    funext i
+    rw [twoTimeScale_gain]
+    simp [Zb, Z, X, dotProduct]
+    linear_combination hwq
+  obtain ⟨h1, h2⟩ := H Tg hTg hTgε X Z Xb Zb hX hZ hXb hXb0 hZb hZb0 t ht
+  rw [twoTimeScale_gain] at h2
+  simp only [dotProduct, Finset.univ_unique, Fin.default_eq_zero, Finset.sum_singleton,
+    Pi.sub_apply, Pi.add_apply, Pi.neg_apply, X, Z, Xb, Zb] at h1 h2
+  simp only [Matrix.mulVec, dotProduct, Finset.univ_unique, Fin.default_eq_zero,
+    Finset.sum_singleton, Matrix.of_apply, Matrix.cons_val',
+    Matrix.empty_val', Matrix.cons_val_fin_one] at h2
+  constructor
+  · convert h1 using 1 <;> ring
+  · convert h2 using 1
+    · linear_combination ((x t 1 - (-K * xbar t 0 + Real.exp (-(t / Tg)) * (x 0 1 + K * x 0 0)))
+        + (x t 1 - q - (-(K * (xbar t 0 - w)) + Real.exp (-(t / Tg)) * (x 0 1 + K * x 0 0)))) * hwq
+    · ring
 
 end powerlib.Frequency.SwingGovernor

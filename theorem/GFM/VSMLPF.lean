@@ -36,14 +36,22 @@ Family and connection conclusions.
   (`VSMLPF.exactUnder_locallyExponentiallyStable`): by the converse linearization theorem
   (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`) local exponential stability of
   the operating point holds exactly when it is an equilibrium with a Hurwitz Jacobian, i.e.
-  balanced with `0 < K < D ω_c + D²/M`.
+  balanced with `0 < K < D ω_c + D²/M`; without positive `M, D, ω_c` it is not exact
+  (`VSMLPF.not_exact_locallyExponentiallyStable`: the model `VSMLPF.negativeInertia` with
+  `M = D = K₀ = −1`, `ω_c = 1` is locally exponentially stable).  The instability translation
+  is not exact (`VSMLPF.not_exact_unstable`): instability is the failure of Lyapunov stability,
+  so an unbalanced model (`VSMLPF.offEquilibrium`) is unstable
+  (`VSMLPF.offEquilibrium_mem_den_unstable`, `Dynamics.unstable_of_ne_zero`).
 * Connection conclusions at the loading angle (`VSMLPF.atLoading`): `locallyExponentiallyStable`,
   `unstable`, and the exact boundary `locallyExponentiallyStable_iff` (a member-equivalence:
   local exponential stability iff `K < D ω_c + D²/M`, boundary excluded); new:
   `unstable_atAntiLoading` (the second equilibrium `π − δ₀` is a saddle).
 * `DroopLPF.family` (two states, the `M → 0` limit) with the same pattern (within positive
   `D, ω_c` the local exponential translation is exact,
-  `DroopLPF.exactUnder_locallyExponentiallyStable`);
+  `DroopLPF.exactUnder_locallyExponentiallyStable`, and not exact without that range,
+  `DroopLPF.not_exact_locallyExponentiallyStable` with `DroopLPF.negativeDamping`; the
+  instability translation is not exact, `DroopLPF.not_exact_unstable` with the unbalanced
+  `DroopLPF.offEquilibrium`);
   `DroopLPF.locallyExponentiallyStable` (no Hopf boundary) is a connection conclusion; new:
   `DroopLPF.unstable_atAntiLoading`.
 * Static evidence on the model: the equilibrium theorems `field_eq_zero_iff`,
@@ -822,6 +830,68 @@ positive `M, D, ω_c` and `|P₀| < K₀`. -/
     simp only [K] at this
     linarith
 
+/-! ### Instability away from equilibrium -/
+
+/-- An unbalanced model: `M = ω_c = P₀ = 1`, `D = K₀ = 0`, `δ* = 0`. -/
+def offEquilibrium : Model := ⟨⟨1, 0, 1, 1, 0⟩, 0⟩
+
+/-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+@[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
+    connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero offEquilibrium.g.contDiff_field
+    fun h => ?_)
+  rw [offEquilibrium.g.field_eq_zero_iff (by norm_num [offEquilibrium])
+    (by norm_num [offEquilibrium])] at h
+  simp [offEquilibrium, Model.point] at h
+
+/-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
+while the translation asks for a balanced angle. -/
+@[powerlib_domain] theorem not_exact_unstable :
+    connection% (¬ family.Exact (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := offEquilibrium_mem_den_unstable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hb : Meets offEquilibrium .balanced := hmem .balanced (by simp [family, translate])
+  simp [Meets, offEquilibrium] at hb
+
+/-! ### Boundary witness: negative inertia and damping -/
+
+/-- A model with negative inertia, damping and synchronizing coefficient: `M = D = K₀ = −1`,
+`ω_c = 1`, `P₀ = 0`, at `δ* = 0`. -/
+def negativeInertia : Model := ⟨⟨-1, -1, 1, 0, -1⟩, 0⟩
+
+/-- The negative-inertia model is locally exponentially stable: its Jacobian has `tr = −2`,
+`det = −1` and `tr · Σ₂ = −2 < det` (strict 3×3 Routh–Hurwitz). -/
+@[powerlib_domain] theorem negativeInertia_mem_den_locallyExponentiallyStable :
+    connection% (negativeInertia ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_flow_iff.mpr (Criteria.locallyExponentiallyStable_of_jacobian_fin_three _
+    negativeInertia.g.contDiff_field ((negativeInertia.g.field_eq_zero_iff
+      (by norm_num [negativeInertia]) (by norm_num [negativeInertia]) _).mpr
+      (by simp [negativeInertia, Model.point])) (fderiv_point negativeInertia) ?_ ?_ ?_)
+  · rw [trace_jacobian]
+    norm_num [negativeInertia]
+  · rw [det_jacobian]
+    norm_num [negativeInertia]
+  · rw [trace_jacobian, det_jacobian, principalMinorSum_jacobian]
+    norm_num [negativeInertia]
+
+/-- Without positive inertia, damping and bandwidth the local exponential translation is sound
+but not exact: the negative-inertia model is locally exponentially stable. -/
+@[powerlib_domain] theorem not_exact_locallyExponentiallyStable :
+    connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := negativeInertia_mem_den_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hp : Meets negativeInertia .physical := hmem .physical (by simp [family, translate])
+  have := hp.1
+  norm_num [negativeInertia] at this
+
 end VSMLPF
 
 
@@ -1171,6 +1241,66 @@ locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): n
     have : (q.P0 / q.K0) ^ 2 < 1 := by rw [← sq_abs]; nlinarith [abs_nonneg (q.P0 / q.K0)]
     linarith
   exact mem_den_flow_iff.mpr (unstable_of ⟨hD, hω⟩ hsin (mul_neg_of_pos_of_neg hK0 hcos))
+
+/-! ### Instability away from equilibrium -/
+
+/-- An unbalanced model: `D = ω_c = P₀ = 1`, `K₀ = 0`, `δ* = 0`. -/
+def offEquilibrium : Model := ⟨⟨1, 1, 1, 0⟩, 0⟩
+
+/-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+@[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
+    connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero offEquilibrium.q.contDiff_field
+    fun h => ?_)
+  rw [offEquilibrium.q.field_eq_zero_iff (by norm_num [offEquilibrium])
+    (by norm_num [offEquilibrium])] at h
+  simp [offEquilibrium, Model.point] at h
+
+/-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
+while the translation asks for a balanced angle. -/
+@[powerlib_domain] theorem not_exact_unstable :
+    connection% (¬ family.Exact (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := offEquilibrium_mem_den_unstable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hb : Meets offEquilibrium .balanced := hmem .balanced (by simp [family, translate])
+  simp [Meets, offEquilibrium] at hb
+
+/-! ### Boundary witness: negative damping -/
+
+/-- A droop model with negative damping and synchronizing coefficient: `D = K₀ = −1`,
+`ω_c = 1`, `P₀ = 0`, at `δ* = 0`. -/
+def negativeDamping : Model := ⟨⟨-1, 1, 0, -1⟩, 0⟩
+
+/-- The negative-damping model is locally exponentially stable: its Jacobian has `tr = −1` and
+`det = ω_c K₀ cos δ* / D = 1`. -/
+@[powerlib_domain] theorem negativeDamping_mem_den_locallyExponentiallyStable :
+    connection% (negativeDamping ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_flow_iff.mpr (Criteria.locallyExponentiallyStable_of_jacobian_fin_two _
+    negativeDamping.q.contDiff_field ((negativeDamping.q.field_eq_zero_iff
+      (by norm_num [negativeDamping]) (by norm_num [negativeDamping]) _).mpr
+      (by simp [negativeDamping, Model.point])) (fderiv_point negativeDamping) ?_ ?_)
+  · rw [trace_jacobian]
+    norm_num [negativeDamping]
+  · rw [det_jacobian]
+    norm_num [negativeDamping]
+
+/-- Without positive damping and bandwidth the local exponential translation is sound but not
+exact: the negative-damping model is locally exponentially stable. -/
+@[powerlib_domain] theorem not_exact_locallyExponentiallyStable :
+    connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := negativeDamping_mem_den_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hp : Meets negativeDamping .physical := hmem .physical (by simp [family, translate])
+  have := hp.1
+  norm_num [negativeDamping] at this
 
 end DroopLPF
 

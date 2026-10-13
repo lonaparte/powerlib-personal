@@ -57,7 +57,10 @@ every well bottom and every `K_p ≥ 0`), and the former zero-input linearizatio
 the local exponential translation is exact (`exactUnder_locallyExponentiallyStable`, by the converse
 linearization theorem `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`); without it
 the translation is not exact (`not_exact_locallyExponentiallyStable`: with `V = −1`,
-`K_p = K_i = 1` the anti-phase point `θ* = π` is locally exponentially stable). The Lyapunov-function
+`K_p = K_i = 1` the anti-phase point `θ* = π` is locally exponentially stable). The instability
+translation is not exact (`not_exact_unstable`): instability is the failure of Lyapunov
+stability, so the non-equilibrium phase `θ* = π/2` (`offEquilibrium`) is unstable
+(`offEquilibrium_mem_den_unstable`, `Dynamics.unstable_of_ne_zero`). The Lyapunov-function
 facts are static (`pllHamiltonian_shifted_lyapunovFunction`); the first integral of the lossless
 loop along solution segments (`pllPH_lossless_firstIntegral`) is private implementation evidence
 (a trajectory statement; the shifted energy is periodic in `θ`, so it is not a conservation
@@ -574,6 +577,34 @@ exact: the reversed-amplitude model is locally exponentially stable at an anti-p
   have := hs.2.2
   simp [reversedAmplitude] at this
   norm_num at this
+
+/-! ### Instability away from equilibrium -/
+
+/-- A model whose selected phase is not an equilibrium: `V = K_i = 1`, `K_p = η* = 0`,
+`θ* = π/2`. -/
+def offEquilibrium : Model := ⟨1, 0, 1, 0, Real.pi / 2, le_rfl⟩
+
+/-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+@[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
+    connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero (contDiff_srfField _ _ _ _)
+    fun h => ?_)
+  have := congrArg (fun y : State 2 => y 1) h
+  simp [offEquilibrium, Model.point, piPLLState] at this
+
+/-- The instability translation is sound but not exact: every non-equilibrium phase is unstable,
+while the translation asks for an anti-phase point. -/
+@[powerlib_domain] theorem not_exact_unstable :
+    connection% (¬ family.Exact (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := offEquilibrium_mem_den_unstable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hs : Meets offEquilibrium .saddle := hmem .saddle (by simp [family, translate])
+  have := hs.2
+  simp [offEquilibrium] at this
 
 end PLLPH
 

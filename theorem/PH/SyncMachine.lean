@@ -70,8 +70,11 @@ Two models, both instances of `powerlib.PH.NonlinearModel` (P0b), continuous tim
   exact (`ClassicalSM.exact_locallyExponentiallyStable`): by the converse linearization theorem
   (`Dynamics.isHurwitz_of_locallyExponentiallyStable`) local exponential stability forces an
   equilibrium whose Jacobian `[[0, 1/M], [−b cos δ*, −D/M]]` is Hurwitz, i.e. `D > 0`,
-  `cos δ* > 0`. Exactness of the Lyapunov, local asymptotic and instability translations is not
-  claimed (UNPROVED).
+  `cos δ* > 0`. The instability translation is not exact (`ClassicalSM.not_exact_unstable`):
+  instability is the failure of Lyapunov stability, so the unbalanced machine
+  `ClassicalSM.offEquilibrium` (`P_m = 2 > b = 1`) is unstable
+  (`ClassicalSM.offEquilibrium_mem_den_unstable`). Exactness of the Lyapunov and local asymptotic
+  translations is not claimed (UNPROVED).
 * `SyncMachine7.family`: a complete system is the seven-state machine (`SyncMachine7Params`),
   read as its pH port system at the origin (the unforced state, an equilibrium). Passivity is
   translated into no requirement and is exact (`H ≥ 0`); flow sentences have no translation.
@@ -707,6 +710,33 @@ mechanical power, `P_m = 0`. -/
   · intro h
     by_contra hPm
     exact not_mem_den_passive m hPm h
+
+/-! #### Instability away from equilibrium -/
+
+/-- A model whose selected point is not an equilibrium: `M = b = 1`, `D = 0`, `P_m = 2`,
+`δ* = 0`. -/
+def offEquilibrium : Model := ⟨⟨1, 0, 1, 2, one_pos, le_rfl, one_pos⟩, 0⟩
+
+/-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+@[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
+    connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero
+    (zeroInputField_contDiff offEquilibrium.p) fun h => ?_)
+  have h' := (classicalSM_isEquilibrium_iff offEquilibrium.p _).mp h
+  simp [offEquilibrium, Model.point, classicalSM_equilibrium] at h'
+
+/-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
+while the translation asks for an equilibrium. -/
+@[powerlib_domain] theorem not_exact_unstable :
+    connection% (¬ family.Exact (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := offEquilibrium_mem_den_unstable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hl : Meets offEquilibrium .locked := hmem .locked (by simp [family, translate])
+  simp [Meets, offEquilibrium] at hl
 
 end ClassicalSM
 

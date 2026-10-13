@@ -49,6 +49,9 @@ Jacobian `[[0, 1], [P_sat sin(δ* − φ)/M, −D/M]]`): `stable` — `(δ*, 0)`
   positive inertia. `not_exact_locallyExponentiallyStable` (boundary witness): without that range
   it is not exact — the model `M = D = −1`, `P_sat = 1`, `φ = P_ref = 0`, `δ* = π/2` is locally
   exponentially stable (`negativeInertia_mem_den_locallyExponentiallyStable`).
+* `not_exact_unstable` (boundary witness): instability is the failure of Lyapunov stability, so
+  an unbalanced model (`offEquilibrium`) is unstable (`offEquilibrium_mem_den_unstable`,
+  `Dynamics.unstable_of_ne_zero`) while the instability condition asks for an equilibrium.
 
 Source: work-sync `theory/T-current-limiting.md` §1.3, §1.9; `theory/T-gfm-control.md` §1.10.
 -/
@@ -353,5 +356,32 @@ locally exponentially stable without positive inertia. -/
   have hs : SatModel.Stable negativeInertia := hmem .stable rfl
   have := hs.2.1
   norm_num [negativeInertia] at this
+
+/-! ## Instability away from equilibrium -/
+
+/-- An unbalanced saturated model: `M = P_ref = 1`, `D = P_sat = φ = 0`, `δ* = 0`. -/
+def offEquilibrium : SatModel := ⟨1, 0, 1, 0, 0, 0⟩
+
+/-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+@[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
+    connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_flow.mpr (Dynamics.unstable_of_ne_zero (satField_contDiff _ _ _ _ _)
+    fun h => ?_)
+  rw [satField_eq_zero_iff (by norm_num [offEquilibrium])] at h
+  simp [offEquilibrium, angleState] at h
+
+/-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
+while the instability condition asks for an equilibrium. -/
+@[powerlib_domain] theorem not_exact_unstable :
+    connection% (¬ family.Exact (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := offEquilibrium_mem_den_unstable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hs : SatModel.Unstable offEquilibrium := hmem .unstable rfl
+  have := hs.1
+  simp [offEquilibrium] at this
 
 end powerlib.Limiting

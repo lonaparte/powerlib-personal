@@ -51,7 +51,10 @@ Family and connection conclusions.
   `(δ*, 0)` holds exactly when it is an equilibrium (power balance) with a Hurwitz Jacobian
   (`D > 0`, `K > 0`). Exactness of the local asymptotic and Lyapunov translations under positive
   inertia is not claimed (UNPROVED: a degenerate slope `K = 0` or `D = 0` is not decided by the
-  linearization).
+  linearization). The instability translation is not exact (`Swing.not_exact_unstable`):
+  instability is the failure of Lyapunov stability, so an unbalanced model
+  (`Swing.offEquilibrium`) is unstable (`Swing.offEquilibrium_mem_den_unstable`,
+  `Dynamics.unstable_of_ne_zero`) while the translation asks for power balance.
 * The linearization at the selected angle is a second family on the same models
   (`Swing.Linearized.family`, the linear plant of the Jacobian). Within positive inertia its
   attractive sentences and sampled contraction are translated exactly
@@ -1058,6 +1061,32 @@ swing equation are translated exactly: `M s² + D s + K` is Hurwitz iff `D > 0` 
   exact family.mem_den.mpr (Port.System.passive_of_noPorts _)
 
 end Linearized
+
+/-! ### Instability away from equilibrium -/
+
+/-- An unbalanced model: `M = P_m = 1`, no damping or electrical power, `δ* = 0`. -/
+def offEquilibrium : Model := ⟨⟨1, 0, 1, 0, 0, 0⟩, 0⟩
+
+/-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+@[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
+    connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero offEquilibrium.p.contDiff_field
+    fun h => ?_)
+  rw [offEquilibrium.p.field_eq_zero_iff (by norm_num [offEquilibrium])] at h
+  simp [offEquilibrium, Model.point, SwingParams.Pe] at h
+
+/-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
+while the translation asks for a balanced angle. -/
+@[powerlib_domain] theorem not_exact_unstable :
+    connection% (¬ family.Exact (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := offEquilibrium_mem_den_unstable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hb : Meets offEquilibrium .balanced := hmem .balanced (by simp [family, translate])
+  simp [Meets, offEquilibrium, SwingParams.Pe] at hb
 
 end Swing
 

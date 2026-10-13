@@ -42,8 +42,11 @@ cubic detector `h = −θ³` is Lyapunov stable through the PLL energy `θ⁴/4 
 The local exponential translation is exact (`exact_locallyExponentiallyStable`): by the converse
 linearization theorem (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`), the selected
 point is locally exponentially stable exactly when it is an equilibrium with a Hurwitz Jacobian,
-i.e. phase-locked with both slope-gain products negative. Exactness of the local asymptotic and
-instability translations is not claimed (UNPROVED). -/
+i.e. phase-locked with both slope-gain products negative. The instability translation is not
+exact (`not_exact_unstable`): instability is the failure of Lyapunov stability, so a model whose
+selected point is not phase-locked (`offEquilibrium`) is unstable
+(`offEquilibrium_mem_den_unstable`, `Dynamics.unstable_of_ne_zero`). Exactness of the local
+asymptotic translation is not claimed (UNPROVED). -/
 
 noncomputable section
 
@@ -453,5 +456,33 @@ phase-locked point with zero slope, which meets no slope-gain requirement. -/
   have := hs.1
   rw [cubicDetector_slope] at this
   simp at this
+
+/-! ### Instability away from equilibrium -/
+
+/-- A model whose selected point is not phase-locked: the constant detector `h ≡ 1`, all gains
+and the offset zero, `θ* = 0`. -/
+def offEquilibrium : Model := ⟨fun _ => 1, 0, 0, 0, 0, contDiff_const⟩
+
+/-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+@[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
+    connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero
+    (contDiff_piPLLField offEquilibrium.smooth) fun h => ?_)
+  have := congrArg (fun y : ℝ² => y 1) h
+  simp [offEquilibrium] at this
+
+/-- The instability translation is sound but not exact: instability is the failure of Lyapunov
+stability, which every non-equilibrium point satisfies, while the translation asks for a
+phase-locked point. -/
+@[powerlib_domain] theorem not_exact_unstable :
+    connection% (¬ family.Exact (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := offEquilibrium_mem_den_unstable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hp : Meets offEquilibrium .phaseLocked := hmem .phaseLocked (by simp [family, translate])
+  simp [Meets, offEquilibrium] at hp
 
 end powerlib.GFL.PIPLL

@@ -33,7 +33,10 @@ sentences into the whole, inconsistent, language.  `PSC.chain_le_semantics` prov
 linearization of the scalar field, `Dynamics.lift_locallyExponentiallyStable_iff`); the
 former domain theorems `locallyExponentiallyStable`, `unstable`, `locallyExponentiallyStable_arcsin`
 and `unstable_pi_sub_arcsin` are connection statements (members of the denotations), and
-`field_eq_zero_iff`, `exists_equilibrium_iff` are static evidence on the model.
+`field_eq_zero_iff`, `exists_equilibrium_iff` are static evidence on the model. The instability
+translation is not exact (`PSC.not_exact_unstable`): instability is the failure of Lyapunov
+stability, so an unbalanced angle (`PSC.offEquilibrium`) is unstable
+(`PSC.offEquilibrium_mem_den_unstable`, `Dynamics.unstable_of_ne_zero`).
 
 Algebra (foundation): the steady-state active power, the converter-side reactive power and the
 grid-side received reactive power from `S̄ = V̄ Ī*`; the active-resistance high-pass
@@ -308,6 +311,33 @@ angle `δ = θ − θ_g` satisfies `δ̇ = K_p (P* − P_max sin δ)` at `t` (th
     convert h.add hg using 1
     · funext s; simp only [Pi.add_apply]; ring
     · simp only [rhs]; ring
+
+/-! ### Instability away from equilibrium -/
+
+/-- An unbalanced model: `K_p = P* = 1`, `P_max = 0`, `δ* = 0`. -/
+def offEquilibrium : Model := ⟨⟨1, 1, 0⟩, 0⟩
+
+/-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+@[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
+    connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero
+    (NormalForm.lift_contDiff offEquilibrium.c.rhs_contDiff) fun h => ?_)
+  change NormalForm.lift offEquilibrium.c.rhs (NormalForm.embed offEquilibrium.δ) = 0 at h
+  rw [NormalForm.lift_eq_zero_iff] at h
+  simp [offEquilibrium, rhs] at h
+
+/-- The instability translation is sound but not exact: every non-equilibrium angle is unstable,
+while the translation asks for a balanced one. -/
+@[powerlib_domain] theorem not_exact_unstable :
+    connection% (¬ family.Exact (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := offEquilibrium_mem_den_unstable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hb : Meets offEquilibrium .balanced := hmem .balanced (by simp [family, translate])
+  simp [Meets, offEquilibrium] at hb
 
 end PSC
 

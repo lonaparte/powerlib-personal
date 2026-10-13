@@ -53,8 +53,10 @@ domain-labelled) is static evidence on the model. The local exponential translat
 (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`) local exponential stability of the
 selected point holds exactly when it is an equilibrium with a Hurwitz Jacobian (the strict 3×3
 Routh–Hurwitz conditions; a Hurwitz Jacobian has `k_P ≠ 0`, so the field's equilibrium is an
-`IsEq` point). Exactness of the local asymptotic, Lyapunov and instability translations is not
-claimed (UNPROVED).
+`IsEq` point). The instability translation is not exact (`not_exact_unstable`): instability is
+the failure of Lyapunov stability, so a model whose selected point is not an equilibrium
+(`offEquilibrium`) is unstable (`offEquilibrium_mem_den_unstable`). Exactness of the local
+asymptotic and Lyapunov translations is not claimed (UNPROVED).
 
 Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
 notes/concepts/contrast-conclusions.md` (差别二 `P_SN = 3V_g²/(4X_g)`, 折叠角 45°;
@@ -570,5 +572,31 @@ a nonzero purely imaginary eigenvalue. -/
       have : 0 < p.V ^ 2 * p.kP * p.ki := by positivity
       nlinarith
     nlinarith
+
+/-! ### Instability away from equilibrium -/
+
+/-- An unbalanced model: `V = 0`, `X_g = 1`, all gains and the reference zero, at
+`(θ*, 0, I_d*) = (0, 0, 1)`. -/
+def offEquilibrium : Model := ⟨⟨0, 1, 0, 0, 0, 0⟩, 0, 1⟩
+
+/-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+@[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
+    connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero (contDiff_field _) fun h => ?_)
+  have := congrArg (fun y : Dynamics.State 3 => y 1) h
+  simp [offEquilibrium, QuasiStatic.field, lift, coordField, point, vq] at this
+
+/-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
+while the translation asks for an equilibrium. -/
+@[powerlib_domain] theorem not_exact_unstable :
+    connection% (¬ family.Exact (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := offEquilibrium_mem_den_unstable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have he : Meets offEquilibrium .equilibrium := hmem .equilibrium (by simp [family, translate])
+  simp [Meets, IsEq, offEquilibrium] at he
 
 end powerlib.GFLParametric.QuasiStatic

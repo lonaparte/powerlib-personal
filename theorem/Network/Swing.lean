@@ -56,7 +56,10 @@ Family and connection conclusions.
   `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`).
 * Connection theorems: `chain_le_semantics`, `exact_passive`, `exact_locallyExponentiallyStable`,
   `mem_den_locallyExponentiallyStable` (the former `reducedSwing_locallyExponentiallyStable`) and
-  `mem_den_unstable`.
+  `mem_den_unstable`. Boundary witness: the instability translation is not exact
+  (`not_exact_unstable`): instability is the failure of Lyapunov stability, so an unbalanced
+  network (`offEquilibrium`) is unstable (`offEquilibrium_mem_den_unstable`,
+  `Dynamics.unstable_of_ne_zero`) while the translation asks for power balance.
 * Static evidence (formerly `@[powerlib_domain]`): `fullField_equilibrium_shift`,
   `reducedField_reduce`, `reducedField_equilibrium`, and the new `jacobian_isHurwitz_of_angle`.
   Private implementation evidence (trajectory level, Rules §3a): `reduce_trajectory`.
@@ -740,5 +743,36 @@ half plane places the model in instability. -/
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   exact unstable_of_meets heq ⟨s, hs, hre⟩
+
+/-! ### Instability away from equilibrium -/
+
+/-- An unbalanced network: unit inertia, damping and power at every machine, no coupling,
+`θ* = 0`. -/
+def offEquilibrium : Model n :=
+  ⟨⟨fun _ => 1, fun _ => 1, fun _ => 1, 0, fun _ => one_pos, fun _ => one_pos,
+    fun _ _ => rfl, fun _ _ => le_rfl⟩, 0⟩
+
+/-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+@[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
+    connection% ((offEquilibrium (n := n)) ∈ family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero (reducedField_contDiff _)
+    fun h => ?_)
+  have := powerFlow_of_equilibrium h 0
+  simp [offEquilibrium, powerInjection] at this
+
+/-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
+while the translation asks for power balance. -/
+@[powerlib_domain] theorem not_exact_unstable :
+    connection% (¬ (family (n := n)).Exact (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := offEquilibrium_mem_den_unstable (n := n)
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have hp : Meets (offEquilibrium (n := n)) .powerFlow :=
+    hmem .powerFlow (by simp [family, translate])
+  have := hp 0
+  simp [offEquilibrium, powerInjection] at this
 
 end powerlib.Network.Swing

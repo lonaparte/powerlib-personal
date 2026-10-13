@@ -3,10 +3,13 @@ import theorem.Attributes
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.Complex.Trigonometric
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
+import Mathlib.Analysis.SpecialFunctions.Exp
+import Mathlib.Analysis.Calculus.Deriv.Slope
 
 /-! # Single-core coaxial cable: geometric identities and the two-loop port relation
 
-Source: work-sync `theory/T-cable.md` §1.2.3, §1.4, §1.5, §1.6, §1.8, §1.8.1, §1.9, §2.3.
+Source: work-sync `theory/T-cable.md` §1.2.1, §1.2.2, §1.2.3, §1.4, §1.5, §1.6, §1.8, §1.8.1, §1.9, §2.3.
 
 Model boundary.
 * Single-phase concentric cable: core radius `r_c`, insulation outer radius `r_in`
@@ -20,12 +23,17 @@ Model boundary.
   open at end 1 (`I_s(0) = 0`), bonded through `R_b` at end 2, core loaded by `Z_L` at end 2.
   The theorems are algebraic identities of this closed-form model; the `O(η)` error with
   respect to the coupled 4-state model is *not* formalized.
-* Bessel impedances: the solid-conductor surface impedance `ρm/(2πr) · I₀(mr)/I₁(mr)` (§1.2.1)
-  and its low-frequency limit (DC resistance plus internal inductance `μ/(8π)`, with an `O(m⁴)`
-  remainder) are in `theorem/Line/CableBessel.lean` (modified Bessel functions defined by their
-  power series). UNPROVED there: the high-frequency (skin-effect) limit and the exact tubular
-  (Schelkunoff) impedances, which need large-argument asymptotics and `K₀`, `K₁`. The
-  Wedepohl–Wilcox formulas are engineering approximations, not theorems.
+* Bessel impedances: the solid-conductor surface impedance `ρm/(2πr) · I₀(mr)/I₁(mr)` (§1.2.1),
+  its low-frequency limit (DC resistance plus internal inductance `μ/(8π)`, with an `O(m⁴)`
+  remainder) and its high-frequency (skin-effect) limit (`Z/(ρm/(2πr)) → 1`,
+  `Z = ρm/(2πr) + O(1)` along `m = (1 + j)s`) are in `theorem/Line/CableBessel.lean` (modified
+  Bessel functions defined by their power series, integral representation, Laplace estimate).
+  UNPROVED there: the exact tubular (Schelkunoff) impedances, which need `K₀`, `K₁`.
+* Tubular conductor (§1.2.2): the note's Wedepohl–Wilcox formulas `Z_in`, `Z_out`, `Z_mut`
+  (`tubeZin`, `tubeZout`, `tubeZmut`; inner radius `a = r_in`, outer radius `b = r_sh`,
+  `t = b − a`, any complex `m`, `coth = cosh/sinh`, `csch = 1/sinh`) are taken as given
+  engineering formulas; their limits are proved, not their accuracy against the exact Bessel
+  solution. High frequency is the physical ray `m = (1 + j)s`, `s = 1/δ → ∞`.
 
 Results.
 * GMR: `ln D_s(r_in, r_sh) → ln r_sh - 1/4` as `r_in → 0` (solid conductor) and
@@ -40,6 +48,19 @@ Results.
 * `Y₂ = 0` ⇒ `det(ZY) = 0` and a size-2 Jordan chain for the zero mode.
 * Cable charging power `Q = -ωC₁ℓ|V|²` (absorb-positive) from `S = V I*`; lumped `LC`
   resonance at `ω² L C = 1`.
+* Tube impedances, low frequency (`m → 0`): `tubeZin_tendsto_dc`, `tubeZout_tendsto_dc`,
+  `tubeZmut_tendsto_dc` — all three tend to the tube DC resistance `ρ/(π(b² − a²))`
+  (`tube_dc_eq`; the transfer impedance gives no screening at DC); from
+  `tendsto_sinh_div_self`, `tendsto_div_sinh_mul` (`m/sinh(mt) → 1/t`).
+* Tube impedances, high frequency (`m = (1 + j)s`, `s → ∞`): `tubeZmut_tendsto_zero`
+  (`Z_mut → 0`, complete screening), `tubeZin_tendsto_surface`, `tubeZout_tendsto_surface`
+  (`Z_in/(ρm/(2πa)) → 1`, `Z_out/(ρm/(2πb)) → 1`, surface impedances); from
+  `tendsto_cosh_div_sinh` (`coth w → 1`) and `tendsto_exp_div_sinh` (`csch w · e^w → 2`) as
+  `Re w → ∞`.
+
+Correction.
+* §1.2.2 writes `csch(mt) ∼ e^{−mt}` at high frequency; the asymptotic equivalent is
+  `csch(mt) ∼ 2e^{−mt}` (`tendsto_exp_div_sinh`). The conclusion `Z_mut → 0` is unaffected.
 -/
 
 noncomputable section
@@ -386,5 +407,297 @@ and there is a generalized eigenvector `w` with `A w ≠ 0`, `A² w = 0`. -/
     push_cast at h
     field_simp
     linear_combination (-1 : ℂ) * h + ((ω : ℂ) ^ 2 * C * L) * Complex.I_sq
+
+/-! ## Wedepohl–Wilcox tubular-conductor impedances (§1.2.2): frequency limits -/
+
+/-- Inner-surface impedance of a tube (inner radius `a`, outer radius `b`, thickness
+`t = b − a`, resistivity `ρ`), Wedepohl–Wilcox form
+`Z_in(m) = (ρ m/(2π a)) coth(m t) − ρ/(2π a (a + b))` (§1.2.2). -/
+def tubeZin (ρ a b : ℝ) (m : ℂ) : ℂ :=
+  (ρ : ℂ) * m / (2 * Real.pi * a) * (Complex.cosh (m * (b - a)) / Complex.sinh (m * (b - a))) -
+    (ρ / (2 * Real.pi * a * (a + b)) : ℝ)
+
+/-- Outer-surface impedance `Z_out(m) = (ρ m/(2π b)) coth(m t) + ρ/(2π b (a + b))` (§1.2.2). -/
+def tubeZout (ρ a b : ℝ) (m : ℂ) : ℂ :=
+  (ρ : ℂ) * m / (2 * Real.pi * b) * (Complex.cosh (m * (b - a)) / Complex.sinh (m * (b - a))) +
+    (ρ / (2 * Real.pi * b * (a + b)) : ℝ)
+
+/-- Transfer (screening) impedance `Z_mut(m) = (ρ m/(π (a + b))) csch(m t)` (§1.2.2). -/
+def tubeZmut (ρ a b : ℝ) (m : ℂ) : ℂ :=
+  (ρ : ℂ) * m / (Real.pi * (a + b)) / Complex.sinh (m * (b - a))
+
+/-- `sinh w / w → 1` as `w → 0`. -/
+@[powerlib_foundation] theorem tendsto_sinh_div_self :
+    Tendsto (fun w : ℂ => Complex.sinh w / w) (𝓝[≠] 0) (𝓝 1) := by
+  have h := hasDerivAt_iff_tendsto_slope.mp (Complex.hasDerivAt_sinh 0)
+  rw [Complex.cosh_zero] at h
+  refine h.congr fun w => ?_
+  simp [slope_def_field, Complex.sinh_zero]
+
+/-- `m / sinh(m t) → 1/t` as `m → 0` (`t ≠ 0`). -/
+@[powerlib_foundation] theorem tendsto_div_sinh_mul {t : ℝ} (ht : t ≠ 0) :
+    Tendsto (fun m : ℂ => m / Complex.sinh (m * t)) (𝓝[≠] 0) (𝓝 ((1 / t : ℝ) : ℂ)) := by
+  have ht' : (t : ℂ) ≠ 0 := by exact_mod_cast ht
+  have hmt : Tendsto (fun m : ℂ => m * t) (𝓝[≠] 0) (𝓝[≠] 0) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
+    · have : Tendsto (fun m : ℂ => m * t) (𝓝 0) (𝓝 0) := by
+        have hc : Continuous fun m : ℂ => m * t := by fun_prop
+        simpa using hc.tendsto 0
+      exact this.mono_left nhdsWithin_le_nhds
+    · filter_upwards [self_mem_nhdsWithin] with m (hm : m ≠ 0)
+      exact mul_ne_zero hm ht'
+  have h := (tendsto_sinh_div_self.comp hmt).inv₀ one_ne_zero
+  have h2 := h.div_const (t : ℂ)
+  rw [inv_one] at h2
+  refine (h2.congr' ?_).trans (by push_cast; simp)
+  filter_upwards [self_mem_nhdsWithin] with m (hm : m ≠ 0)
+  simp only [Function.comp_apply]
+  rw [inv_div]
+  field_simp
+
+/-- The tube's DC resistance: `ρ/(π(a+b)) · 1/(b − a) = ρ/(π(b² − a²))`. -/
+@[powerlib_foundation] theorem tube_dc_eq {ρ a b : ℝ} (hab : a < b) (ha : 0 < a) :
+    ρ / (Real.pi * (a + b)) * (1 / (b - a)) = ρ / (Real.pi * (b ^ 2 - a ^ 2)) := by
+  have h1 : b - a ≠ 0 := by linarith
+  have h2 : a + b ≠ 0 := by linarith
+  have h3 : b ^ 2 - a ^ 2 ≠ 0 := by nlinarith
+  field_simp; ring
+
+/-- **Low-frequency limit of the transfer impedance**: `Z_mut(m) → ρ/(π(b² − a²))` as `m → 0`, the
+DC resistance of the tube (no screening at DC). -/
+@[powerlib_foundation] theorem tubeZmut_tendsto_dc {ρ a b : ℝ} (ha : 0 < a) (hab : a < b) :
+    Tendsto (tubeZmut ρ a b) (𝓝[≠] 0) (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) := by
+  have h := (tendsto_div_sinh_mul (t := b - a) (by linarith)).const_mul
+    ((ρ / (Real.pi * (a + b)) : ℝ) : ℂ)
+  rw [← Complex.ofReal_mul, tube_dc_eq hab ha] at h
+  refine h.congr fun m => ?_
+  simp only [tubeZmut]
+  push_cast
+  ring
+
+/-- **Low-frequency limit of the inner-surface impedance**: `Z_in(m) → ρ/(π(b² − a²))`. -/
+@[powerlib_foundation] theorem tubeZin_tendsto_dc {ρ a b : ℝ} (ha : 0 < a) (hab : a < b) :
+    Tendsto (tubeZin ρ a b) (𝓝[≠] 0) (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) := by
+  have hc : Tendsto (fun m : ℂ => Complex.cosh (m * (b - a))) (𝓝[≠] 0) (𝓝 1) := by
+    have : Tendsto (fun m : ℂ => Complex.cosh (m * (b - a))) (𝓝 0) (𝓝 1) := by
+      have hc : Continuous fun m : ℂ => Complex.cosh (m * (b - a)) := by fun_prop
+      simpa using hc.tendsto 0
+    exact this.mono_left nhdsWithin_le_nhds
+  have h := (((tendsto_div_sinh_mul (t := b - a) (by linarith)).mul hc).const_mul
+    ((ρ / (2 * Real.pi * a) : ℝ) : ℂ)).sub_const ((ρ / (2 * Real.pi * a * (a + b)) : ℝ) : ℂ)
+  have e : ((ρ / (2 * Real.pi * a) : ℝ) : ℂ) * (((1 / (b - a) : ℝ) : ℂ) * 1) -
+      ((ρ / (2 * Real.pi * a * (a + b)) : ℝ) : ℂ) = ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ) := by
+    have h1 : b - a ≠ 0 := by linarith
+    have h2 : a + b ≠ 0 := by linarith
+    have h3 : b ^ 2 - a ^ 2 ≠ 0 := by nlinarith
+    have h4 : a ≠ 0 := ha.ne'
+    have hR : ρ / (2 * Real.pi * a) * (1 / (b - a) * 1) - ρ / (2 * Real.pi * a * (a + b)) =
+        ρ / (Real.pi * (b ^ 2 - a ^ 2)) := by
+      field_simp
+      ring
+    rw [← hR]
+    push_cast
+    ring
+  rw [e] at h
+  refine h.congr fun m => ?_
+  simp only [tubeZin]
+  push_cast
+  ring
+
+/-- **Low-frequency limit of the outer-surface impedance**: `Z_out(m) → ρ/(π(b² − a²))`. -/
+@[powerlib_foundation] theorem tubeZout_tendsto_dc {ρ a b : ℝ} (ha : 0 < a) (hab : a < b) :
+    Tendsto (tubeZout ρ a b) (𝓝[≠] 0) (𝓝 ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ)) := by
+  have hc : Tendsto (fun m : ℂ => Complex.cosh (m * (b - a))) (𝓝[≠] 0) (𝓝 1) := by
+    have : Tendsto (fun m : ℂ => Complex.cosh (m * (b - a))) (𝓝 0) (𝓝 1) := by
+      have hc : Continuous fun m : ℂ => Complex.cosh (m * (b - a)) := by fun_prop
+      simpa using hc.tendsto 0
+    exact this.mono_left nhdsWithin_le_nhds
+  have h := (((tendsto_div_sinh_mul (t := b - a) (by linarith)).mul hc).const_mul
+    ((ρ / (2 * Real.pi * b) : ℝ) : ℂ)).add_const ((ρ / (2 * Real.pi * b * (a + b)) : ℝ) : ℂ)
+  have e : ((ρ / (2 * Real.pi * b) : ℝ) : ℂ) * (((1 / (b - a) : ℝ) : ℂ) * 1) +
+      ((ρ / (2 * Real.pi * b * (a + b)) : ℝ) : ℂ) = ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ) := by
+    have h1 : b - a ≠ 0 := by linarith
+    have h2 : a + b ≠ 0 := by linarith
+    have h3 : b ^ 2 - a ^ 2 ≠ 0 := by nlinarith
+    have h4 : b ≠ 0 := by linarith
+    have hR : ρ / (2 * Real.pi * b) * (1 / (b - a) * 1) + ρ / (2 * Real.pi * b * (a + b)) =
+        ρ / (Real.pi * (b ^ 2 - a ^ 2)) := by
+      field_simp
+      ring
+    rw [← hR]
+    push_cast
+    ring
+  rw [e] at h
+  refine h.congr fun m => ?_
+  simp only [tubeZout]
+  push_cast
+  ring
+
+/-- `e^{−2w} → 0` when `Re w → +∞`. -/
+@[powerlib_foundation] theorem tendsto_cexp_neg_two_mul {α : Type*} {l : Filter α} {f : α → ℂ}
+    (hf : Tendsto (fun a => (f a).re) l atTop) :
+    Tendsto (fun a => Complex.exp (-(2 * f a))) l (𝓝 0) := by
+  rw [tendsto_zero_iff_norm_tendsto_zero]
+  have : Tendsto (fun a => -(2 * (f a).re)) l atBot :=
+    tendsto_neg_atTop_atBot.comp (hf.const_mul_atTop two_pos)
+  refine (Real.tendsto_exp_atBot.comp this).congr fun a => ?_
+  simp [Complex.norm_exp]
+
+/-- `coth w = (1 + e^{−2w})/(1 − e^{−2w})` (both sides `0` when `sinh w = 0`). -/
+@[powerlib_foundation] theorem cosh_div_sinh_eq (w : ℂ) :
+    Complex.cosh w / Complex.sinh w =
+      (1 + Complex.exp (-(2 * w))) / (1 - Complex.exp (-(2 * w))) := by
+  have hc : Complex.cosh w = (Complex.exp w + Complex.exp (-w)) / 2 := by
+    rw [← Complex.two_cosh]; ring
+  have hs : Complex.sinh w = (Complex.exp w - Complex.exp (-w)) / 2 := by
+    rw [← Complex.two_sinh]; ring
+  have he : Complex.exp (-(2 * w)) = Complex.exp (-w) * Complex.exp (-w) := by
+    rw [← Complex.exp_add]; ring_nf
+  have h1 : Complex.exp (-w) * Complex.exp w = 1 := by rw [← Complex.exp_add]; simp
+  have hne : Complex.exp (-w) ≠ 0 := Complex.exp_ne_zero _
+  rw [hc, hs, he, div_div_div_cancel_right₀ (two_ne_zero), ← mul_div_mul_left _ _ hne]
+  congr 1
+  · rw [mul_add, h1]
+  · rw [mul_sub, h1]
+
+/-- `e^w / sinh w = 2/(1 − e^{−2w})`. -/
+@[powerlib_foundation] theorem exp_div_sinh_eq (w : ℂ) :
+    Complex.exp w / Complex.sinh w = 2 / (1 - Complex.exp (-(2 * w))) := by
+  have hs : Complex.sinh w = (Complex.exp w - Complex.exp (-w)) / 2 := by
+    rw [← Complex.two_sinh]; ring
+  have he : Complex.exp (-(2 * w)) = Complex.exp (-w) * Complex.exp (-w) := by
+    rw [← Complex.exp_add]; ring_nf
+  have h1 : Complex.exp (-w) * Complex.exp w = 1 := by rw [← Complex.exp_add]; simp
+  have hne : Complex.exp (-w) ≠ 0 := Complex.exp_ne_zero _
+  rw [hs, he, div_div_eq_mul_div, ← mul_div_mul_left _ _ hne]
+  congr 1
+  · rw [mul_comm (Complex.exp w), ← mul_assoc, mul_comm (Complex.exp (-w)), mul_assoc, h1]; ring
+  · rw [mul_sub, h1]
+
+/-- `coth w → 1` when `Re w → +∞`. -/
+@[powerlib_foundation] theorem tendsto_cosh_div_sinh {α : Type*} {l : Filter α} {f : α → ℂ}
+    (hf : Tendsto (fun a => (f a).re) l atTop) :
+    Tendsto (fun a => Complex.cosh (f a) / Complex.sinh (f a)) l (𝓝 1) := by
+  have h := tendsto_cexp_neg_two_mul hf
+  have := ((h.const_add 1).div (h.const_sub 1) (by simp))
+  simp only [add_zero, sub_zero, div_one] at this
+  exact this.congr fun a => (cosh_div_sinh_eq (f a)).symm
+
+/-- `csch w · e^w → 2` when `Re w → +∞`, i.e. `csch w ∼ 2 e^{−w}`. -/
+@[powerlib_foundation] theorem tendsto_exp_div_sinh {α : Type*} {l : Filter α} {f : α → ℂ}
+    (hf : Tendsto (fun a => (f a).re) l atTop) :
+    Tendsto (fun a => Complex.exp (f a) / Complex.sinh (f a)) l (𝓝 2) := by
+  have h := tendsto_cexp_neg_two_mul hf
+  have := (tendsto_const_nhds (x := (2 : ℂ))).div (h.const_sub 1) (by simp)
+  simp only [sub_zero, div_one] at this
+  exact this.congr fun a => (exp_div_sinh_eq (f a)).symm
+
+/-- `Re((1 + i)s t) = s t`. -/
+@[powerlib_foundation] theorem re_one_add_I_mul (s t : ℝ) :
+    ((1 + Complex.I) * s * t).re = s * t := by simp
+
+/-- **High-frequency limit of the transfer impedance**: along the physical ray `m = (1 + i)s`
+(`s = 1/δ`, `δ` the skin depth), `Z_mut(m) → 0` as `s → ∞` (complete screening). -/
+@[powerlib_foundation] theorem tubeZmut_tendsto_zero {ρ a b : ℝ} (hab : a < b) :
+    Tendsto (fun s : ℝ => tubeZmut ρ a b ((1 + Complex.I) * s)) atTop (𝓝 0) := by
+  have ht : 0 < b - a := by linarith
+  have hre : Tendsto (fun s : ℝ => ((1 + Complex.I) * s * ((b - a : ℝ) : ℂ)).re) atTop atTop := by
+    simpa [re_one_add_I_mul] using tendsto_id.atTop_mul_const ht
+  have hq := tendsto_exp_div_sinh hre
+  -- `m e^{−m t} → 0`
+  have hdecay : Tendsto (fun s : ℝ => (1 + Complex.I) * s *
+      Complex.exp (-((1 + Complex.I) * s * ((b - a : ℝ) : ℂ)))) atTop (𝓝 0) := by
+    rw [tendsto_zero_iff_norm_tendsto_zero]
+    have h1 : Tendsto (fun s : ℝ => ‖(1 + Complex.I)‖ / (b - a) * ((s * (b - a)) ^ 1 *
+        Real.exp (-(s * (b - a))))) atTop (𝓝 (‖(1 + Complex.I)‖ / (b - a) * 0)) :=
+      ((Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 1).comp
+        (tendsto_id.atTop_mul_const ht)).const_mul _
+    rw [mul_zero] at h1
+    refine h1.congr' ?_
+    filter_upwards [eventually_ge_atTop 0] with s hs
+    rw [norm_mul, norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hs, Complex.norm_exp]
+    have : (-((1 + Complex.I) * s * ((b - a : ℝ) : ℂ))).re = -(s * (b - a)) := by
+      rw [Complex.neg_re, re_one_add_I_mul]
+    rw [this]
+    field_simp
+  have h := (hdecay.mul hq).const_mul ((ρ / (Real.pi * (a + b)) : ℝ) : ℂ)
+  rw [zero_mul, mul_zero] at h
+  refine h.congr fun s => ?_
+  simp only [tubeZmut]
+  have hE : Complex.exp ((1 + Complex.I) * s * ((b - a : ℝ) : ℂ)) ≠ 0 := Complex.exp_ne_zero _
+  rw [Complex.exp_neg]
+  push_cast
+  field_simp
+
+/-- `1 + i ≠ 0`. -/
+@[powerlib_foundation] theorem one_add_I_ne_zero : (1 + Complex.I) ≠ 0 := by
+  intro h; have := congrArg Complex.re h; simp at this
+
+/-- `c/s → 0` in `ℂ` as `s → ∞`. -/
+@[powerlib_foundation] theorem tendsto_const_mul_inv_ofReal (c : ℂ) :
+    Tendsto (fun s : ℝ => c * ((s⁻¹ : ℝ) : ℂ)) atTop (𝓝 0) := by
+  have h : Tendsto (fun s : ℝ => ((s⁻¹ : ℝ) : ℂ)) atTop (𝓝 0) := by
+    have := (Complex.continuous_ofReal.tendsto 0).comp tendsto_inv_atTop_zero
+    rw [Complex.ofReal_zero] at this
+    exact this
+  simpa using h.const_mul c
+
+/-- **High-frequency limit of the inner-surface impedance**: along `m = (1 + i)s`,
+`Z_in(m)/(ρ m/(2π a)) → 1` as `s → ∞` (skin effect on the inner surface). -/
+@[powerlib_foundation] theorem tubeZin_tendsto_surface {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a)
+    (hab : a < b) :
+    Tendsto (fun s : ℝ => tubeZin ρ a b ((1 + Complex.I) * s) /
+      ((ρ : ℂ) * ((1 + Complex.I) * s) / (2 * Real.pi * a))) atTop (𝓝 1) := by
+  have ht : 0 < b - a := by linarith
+  have hre : Tendsto (fun s : ℝ => ((1 + Complex.I) * s * ((b - a : ℝ) : ℂ)).re) atTop atTop := by
+    simpa [re_one_add_I_mul] using tendsto_id.atTop_mul_const ht
+  have h := (tendsto_cosh_div_sinh hre).sub
+    (tendsto_const_mul_inv_ofReal (1 / ((1 + Complex.I) * ((a + b : ℝ) : ℂ))))
+  rw [sub_zero] at h
+  refine h.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with s hs
+  have hρ' : (ρ : ℂ) ≠ 0 := by exact_mod_cast hρ
+  have ha' : (a : ℂ) ≠ 0 := by exact_mod_cast ha.ne'
+  have hab' : ((a + b : ℝ) : ℂ) ≠ 0 := by exact_mod_cast (by linarith : a + b ≠ 0)
+  have hs' : (s : ℂ) ≠ 0 := by exact_mod_cast hs.ne'
+  have hπ : (Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
+  have hI := one_add_I_ne_zero
+  simp only [tubeZin]
+  have hw : (1 + Complex.I) * (s : ℂ) * ((b - a : ℝ) : ℂ) = (1 + Complex.I) * s * (b - a) := by
+    push_cast; ring
+  rw [hw]
+  generalize Complex.cosh ((1 + Complex.I) * s * (b - a)) /
+    Complex.sinh ((1 + Complex.I) * s * (b - a)) = X
+  push_cast
+  field_simp
+
+/-- **High-frequency limit of the outer-surface impedance**: along `m = (1 + i)s`,
+`Z_out(m)/(ρ m/(2π b)) → 1` as `s → ∞`. -/
+@[powerlib_foundation] theorem tubeZout_tendsto_surface {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a)
+    (hab : a < b) :
+    Tendsto (fun s : ℝ => tubeZout ρ a b ((1 + Complex.I) * s) /
+      ((ρ : ℂ) * ((1 + Complex.I) * s) / (2 * Real.pi * b))) atTop (𝓝 1) := by
+  have ht : 0 < b - a := by linarith
+  have hre : Tendsto (fun s : ℝ => ((1 + Complex.I) * s * ((b - a : ℝ) : ℂ)).re) atTop atTop := by
+    simpa [re_one_add_I_mul] using tendsto_id.atTop_mul_const ht
+  have h := (tendsto_cosh_div_sinh hre).add
+    (tendsto_const_mul_inv_ofReal (1 / ((1 + Complex.I) * ((a + b : ℝ) : ℂ))))
+  rw [add_zero] at h
+  refine h.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with s hs
+  have hρ' : (ρ : ℂ) ≠ 0 := by exact_mod_cast hρ
+  have hb' : (b : ℂ) ≠ 0 := by exact_mod_cast (by linarith : b ≠ 0)
+  have hab' : ((a + b : ℝ) : ℂ) ≠ 0 := by exact_mod_cast (by linarith : a + b ≠ 0)
+  have hs' : (s : ℂ) ≠ 0 := by exact_mod_cast hs.ne'
+  have hπ : (Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
+  have hI := one_add_I_ne_zero
+  simp only [tubeZout]
+  have hw : (1 + Complex.I) * (s : ℂ) * ((b - a : ℝ) : ℂ) = (1 + Complex.I) * s * (b - a) := by
+    push_cast; ring
+  rw [hw]
+  generalize Complex.cosh ((1 + Complex.I) * s * (b - a)) /
+    Complex.sinh ((1 + Complex.I) * s * (b - a)) = X
+  push_cast
+  field_simp
 
 end powerlib.Line.Cable

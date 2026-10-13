@@ -22,6 +22,10 @@ Results.
   serve all parameters: for every `p` there is a symmetric `P` with `lo|v|² ≤ vᵀPv ≤ hi|v|²` and
   `vᵀ P A(p) v ≤ −|v|²/4` (finite subcover of the certificates of `FrozenFast`, via
   `dissipation_of_close`).
+* `boundaryLayer_uniform_exponentialStability_of_certificates`: the same conclusion for an
+  arbitrary (not necessarily compact or topological) parameter set, given uniform Lyapunov
+  certificates of the linearizations as a hypothesis (Khalil's uniform form: one `lo`, `hi`, one
+  bound on `Σ|Pᵢⱼ|`, `vᵀ P A(p) v ≤ −|v|²/4`).
 * `boundaryLayer_uniform_exponentialStability`: under the uniform linearization hypothesis
   `∀ κ > 0, ∃ ρ > 0, ∀ p w, |w|² ≤ ρ → |g p (h p + w) − A p w|² ≤ κ |w|²`, there are
   `r, C, α > 0`, independent of `p`, such that every forward solution with `|y(0) − h p|² < r`
@@ -35,10 +39,18 @@ Results.
   (`∀ κ > 0, ∃ ρ > 0, ∀ p z, ‖z − h p‖ ≤ ρ → ‖J p z − J p (h p)‖ ≤ κ`), by the mean value
   inequality; this is the nonlinear, uniform-in-`(t, x)` version of the frozen linearized
   statement `uniform_frozen_exponentialStability`.
+* `uniform_jacobian_of_lipschitz`: a Jacobian Lipschitz at the equilibrium with one constant `L`
+  (`‖J p z − J p (h p)‖ ≤ L ‖z − h p‖`) satisfies that uniform continuity hypothesis.
+* `boundaryLayer_uniform_exponentialStability_tx`: the Tikhonov hypothesis in its `(t, x)` form —
+  `g(t, x, ·)` with `(t, x)` frozen in a compact `S ⊆ ℝ × ℝⁿ`, `g(t, x, h(t, x)) = 0`,
+  `∂g/∂z(t, x, h(t, x)) = A(t, x)` continuous and Hurwitz on `S`, Jacobian Lipschitz at `h` with
+  one constant: one `r, C, α` serve every `(t, x) ∈ S`.
 
 Excluded: the full Tikhonov approximation theorem for the nonlinear slow–fast system (only its
 boundary-layer hypothesis is established here), global (non-local) stability, existence of
-solutions, non-compact parameter sets.
+solutions; on non-compact parameter sets only the certificate form is provided (deriving uniform
+certificates from a uniform spectral bound `Re λ(A(p)) ≤ −c` with `‖A(p)‖` bounded needs the
+continuity of eigenvalues, not formalized here).
 
 Architecture: generic mathematical support (no `Family`, no definitions); every statement is
 about an arbitrary parametrized field, so the results are public foundation.
@@ -110,18 +122,23 @@ space: one pair of constants `lo, hi` and one bound `Pb` serve every parameter. 
     have h3 := dotProduct_self_nonneg' v
     nlinarith
 
-/-- **Nonlinear boundary layer: uniform local exponential stability.** -/
-@[powerlib_foundation] theorem boundaryLayer_uniform_exponentialStability {X : Type*} [TopologicalSpace X]
-    [CompactSpace X] {A : X → Matrix (Fin m) (Fin m) ℝ} (hA : Continuous A)
-    (hH : ∀ p, LinearSystems.IsHurwitz (A p)) {g : X → (Fin m → ℝ) → Fin m → ℝ}
-    {h : X → Fin m → ℝ}
+/-- **Nonlinear boundary layer, uniform Lyapunov certificates** (no compactness): if one pair of
+energy bounds `lo, hi` and one bound `Pb` on `Σ|Pᵢⱼ|` serve a dissipation certificate of every
+linearization `A p` (Khalil's uniform form of the hypothesis), the boundary layer is locally
+exponentially stable uniformly in `p`, with `r = lo ρ/hi`, `C = hi/lo`, `α = 1/(8 hi)`. -/
+@[powerlib_foundation] theorem boundaryLayer_uniform_exponentialStability_of_certificates
+    {X : Type*} {A : X → Matrix (Fin m) (Fin m) ℝ} {lo hi Pb : ℝ} (hlo : 0 < lo) (hhi : 0 < hi)
+    (hPb : 0 ≤ Pb)
+    (hcert : ∀ p, ∃ P : Matrix (Fin m) (Fin m) ℝ, Pᵀ = P ∧
+      (∀ v, lo * (v ⬝ᵥ v) ≤ v ⬝ᵥ (P *ᵥ v)) ∧ (∀ v, v ⬝ᵥ (P *ᵥ v) ≤ hi * (v ⬝ᵥ v)) ∧
+      absSum P ≤ Pb ∧ ∀ v, v ⬝ᵥ (P *ᵥ (A p *ᵥ v)) ≤ -(v ⬝ᵥ v) / 4)
+    {g : X → (Fin m → ℝ) → Fin m → ℝ} {h : X → Fin m → ℝ}
     (hlin : ∀ κ > 0, ∃ ρ > 0, ∀ p w, w ⬝ᵥ w ≤ ρ →
       (g p (h p + w) - A p *ᵥ w) ⬝ᵥ (g p (h p + w) - A p *ᵥ w) ≤ κ * (w ⬝ᵥ w)) :
     ∃ r > 0, ∃ C > 0, ∃ α > 0, ∀ p (y : ℝ → Fin m → ℝ),
       IsIntegralCurveOn y (fun _ v => g p v) (Ici 0) →
       (y 0 - h p) ⬝ᵥ (y 0 - h p) < r → ∀ τ, 0 ≤ τ →
         (y τ - h p) ⬝ᵥ (y τ - h p) ≤ C * Real.exp (-(α * τ)) * ((y 0 - h p) ⬝ᵥ (y 0 - h p)) := by
-  obtain ⟨lo, hlo, hi, hhi, Pb, hPb, hcert⟩ := exists_uniform_dissipation hA hH
   set δ : ℝ := 1 / (8 * (Pb + 1)) with hδ
   have hδpos : 0 < δ := by positivity
   obtain ⟨ρ, hρ, hrem⟩ := hlin (δ ^ 2) (by positivity)
@@ -237,6 +254,23 @@ space: one pair of constants `lo, hi` and one bound `Pb` serve every parameter. 
         rw [hV0]; exact mul_le_mul_of_nonneg_right hup0 hE.le
     _ = hi * Real.exp (-(β * τ)) * (w 0 ⬝ᵥ w 0) := by ring
 
+/-- **Nonlinear boundary layer: uniform local exponential stability** over a compact parameter
+space with a continuous Hurwitz linearization (the certificates of
+`boundaryLayer_uniform_exponentialStability_of_certificates` come from
+`exists_uniform_dissipation`). -/
+@[powerlib_foundation] theorem boundaryLayer_uniform_exponentialStability {X : Type*} [TopologicalSpace X]
+    [CompactSpace X] {A : X → Matrix (Fin m) (Fin m) ℝ} (hA : Continuous A)
+    (hH : ∀ p, LinearSystems.IsHurwitz (A p)) {g : X → (Fin m → ℝ) → Fin m → ℝ}
+    {h : X → Fin m → ℝ}
+    (hlin : ∀ κ > 0, ∃ ρ > 0, ∀ p w, w ⬝ᵥ w ≤ ρ →
+      (g p (h p + w) - A p *ᵥ w) ⬝ᵥ (g p (h p + w) - A p *ᵥ w) ≤ κ * (w ⬝ᵥ w)) :
+    ∃ r > 0, ∃ C > 0, ∃ α > 0, ∀ p (y : ℝ → Fin m → ℝ),
+      IsIntegralCurveOn y (fun _ v => g p v) (Ici 0) →
+      (y 0 - h p) ⬝ᵥ (y 0 - h p) < r → ∀ τ, 0 ≤ τ →
+        (y τ - h p) ⬝ᵥ (y τ - h p) ≤ C * Real.exp (-(α * τ)) * ((y 0 - h p) ⬝ᵥ (y 0 - h p)) := by
+  obtain ⟨lo, hlo, hi, hhi, Pb, hPb, hcert⟩ := exists_uniform_dissipation hA hH
+  exact boundaryLayer_uniform_exponentialStability_of_certificates hlo hhi hPb hcert hlin
+
 /-- `|v|² ≤ m ‖v‖²` (sup norm). -/
 @[powerlib_foundation] theorem dotProduct_self_le_card_mul_norm_sq (v : Fin m → ℝ) : v ⬝ᵥ v ≤ m * ‖v‖ ^ 2 := by
   have h : ∀ i, v i * v i ≤ ‖v‖ ^ 2 := fun i => by
@@ -336,5 +370,53 @@ continuous at the equilibrium, the boundary layer is locally exponentially stabl
         (y τ - h p) ⬝ᵥ (y τ - h p) ≤ C * Real.exp (-(α * τ)) * ((y 0 - h p) ⬝ᵥ (y 0 - h p)) :=
   boundaryLayer_uniform_exponentialStability hA hH
     (uniform_linearization_of_jacobian heq hJ hJA hunif)
+
+/-- A Jacobian that is Lipschitz at the equilibrium with one constant `L` for all parameters
+(`‖J p z − J p (h p)‖ ≤ L ‖z − h p‖`) is uniformly continuous there. -/
+@[powerlib_foundation] theorem uniform_jacobian_of_lipschitz {X : Type*} {h : X → Fin m → ℝ}
+    {J : X → (Fin m → ℝ) → (Fin m → ℝ) →L[ℝ] (Fin m → ℝ)} {L : ℝ}
+    (hL : ∀ p z, ‖J p z - J p (h p)‖ ≤ L * ‖z - h p‖) :
+    ∀ κ > 0, ∃ ρ > 0, ∀ p z, ‖z - h p‖ ≤ ρ → ‖J p z - J p (h p)‖ ≤ κ := by
+  intro κ hκ
+  refine ⟨κ / (|L| + 1), by positivity, fun p z hz => ?_⟩
+  have hL0 := abs_nonneg L
+  calc ‖J p z - J p (h p)‖ ≤ L * ‖z - h p‖ := hL p z
+    _ ≤ |L| * ‖z - h p‖ := mul_le_mul_of_nonneg_right (le_abs_self L) (norm_nonneg _)
+    _ ≤ |L| * (κ / (|L| + 1)) := mul_le_mul_of_nonneg_left hz hL0
+    _ ≤ κ := by
+        rw [mul_div_assoc', div_le_iff₀ (by positivity)]
+        nlinarith
+
+/-- **Tikhonov's boundary-layer hypothesis, `(t, x)` form.** The boundary-layer system
+`dz/dτ = g(t, x, z)` with the slow variables `(t, x)` frozen in a compact set
+`S ⊆ ℝ × ℝⁿ` (e.g. `[0, T] × K`): if `g(t, x, h(t, x)) = 0`, the Jacobian `∂g/∂z` exists, equals a
+matrix `A(t, x)` at `z = h(t, x)` that is continuous on `S` and Hurwitz at every point of `S`, and
+is Lipschitz at the equilibrium with one constant `L`, then `z = h(t, x)` is locally exponentially
+stable uniformly in `(t, x) ∈ S`: one radius `r`, one constant `C` and one rate `α` serve every
+frozen `(t, x)`. -/
+@[powerlib_foundation] theorem boundaryLayer_uniform_exponentialStability_tx {n : ℕ}
+    {S : Set (ℝ × (Fin n → ℝ))} (hS : IsCompact S)
+    {g : ℝ → (Fin n → ℝ) → (Fin m → ℝ) → Fin m → ℝ} {h : ℝ → (Fin n → ℝ) → Fin m → ℝ}
+    {J : ℝ → (Fin n → ℝ) → (Fin m → ℝ) → (Fin m → ℝ) →L[ℝ] (Fin m → ℝ)}
+    {A : ℝ → (Fin n → ℝ) → Matrix (Fin m) (Fin m) ℝ} {L : ℝ}
+    (hA : ContinuousOn (fun q : ℝ × (Fin n → ℝ) => A q.1 q.2) S)
+    (hH : ∀ q ∈ S, LinearSystems.IsHurwitz (A q.1 q.2))
+    (heq : ∀ q ∈ S, g q.1 q.2 (h q.1 q.2) = 0)
+    (hJ : ∀ q ∈ S, ∀ z, HasFDerivAt (g q.1 q.2) (J q.1 q.2 z) z)
+    (hJA : ∀ q ∈ S, ∀ v, J q.1 q.2 (h q.1 q.2) v = A q.1 q.2 *ᵥ v)
+    (hL : ∀ q ∈ S, ∀ z, ‖J q.1 q.2 z - J q.1 q.2 (h q.1 q.2)‖ ≤ L * ‖z - h q.1 q.2‖) :
+    ∃ r > 0, ∃ C > 0, ∃ α > 0, ∀ t x, (t, x) ∈ S → ∀ y : ℝ → Fin m → ℝ,
+      IsIntegralCurveOn y (fun _ v => g t x v) (Ici 0) →
+      (y 0 - h t x) ⬝ᵥ (y 0 - h t x) < r → ∀ τ, 0 ≤ τ →
+        (y τ - h t x) ⬝ᵥ (y τ - h t x) ≤
+          C * Real.exp (-(α * τ)) * ((y 0 - h t x) ⬝ᵥ (y 0 - h t x)) := by
+  have : CompactSpace S := isCompact_iff_compactSpace.mp hS
+  obtain ⟨r, hr, C, hC, α, hα, H⟩ :=
+    boundaryLayer_uniform_exponentialStability_of_jacobian (X := S)
+      (A := fun q => A q.1.1 q.1.2) (g := fun q => g q.1.1 q.1.2) (h := fun q => h q.1.1 q.1.2)
+      (J := fun q => J q.1.1 q.1.2) hA.domRestrict (fun q => hH q.1 q.2) (fun q => heq q.1 q.2)
+      (fun q => hJ q.1 q.2) (fun q => hJA q.1 q.2)
+      (uniform_jacobian_of_lipschitz (fun q => hL q.1 q.2))
+  exact ⟨r, hr, C, hC, α, hα, fun t x htx y hy => H ⟨(t, x), htx⟩ y hy⟩
 
 end powerlib.SingularPerturbation

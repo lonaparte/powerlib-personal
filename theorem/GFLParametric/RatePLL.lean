@@ -63,10 +63,13 @@ passivity translation exact. The former domain theorems are now connection membe
 (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`) local exponential stability of
 `(θ*, 0)` holds exactly when it is an equilibrium with a Hurwitz Jacobian; a degenerate loop
 `D₀ = 0` freezes the angle, a linear first integral that excludes local exponential stability
-(`Dynamics.not_locallyExponentiallyStable_of_firstIntegral`). Exactness of the local asymptotic,
-Lyapunov and instability translations is not claimed (UNPROVED). The boundary pair, damping ratio, `X_g` elimination and the frozen-coefficient
-threshold remain static foundation results (`frozen_hurwitz_forall_iff` is about constant
-matrices, not the time-varying system).
+(`Dynamics.not_locallyExponentiallyStable_of_firstIntegral`). The instability translation is not
+exact (`not_exact_unstable`): instability is the failure of Lyapunov stability, so a model whose
+selected point is not an equilibrium (`offEquilibrium`) is unstable
+(`offEquilibrium_mem_den_unstable`). Exactness of the local asymptotic and Lyapunov translations
+is not claimed (UNPROVED). The boundary pair, damping ratio, `X_g` elimination and the
+frozen-coefficient threshold remain static foundation results (`frozen_hurwitz_forall_iff` is
+about constant matrices, not the time-varying system).
 
 Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
 notes/concepts/contrast-conclusions.md` (推论二 `tan θ_H`, 推论四 ζ 比),
@@ -607,5 +610,31 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
   unfold powerlib.TMIO.Statement at h
   rw [family_isAutonomous.mem_den_flow] at h ⊢
   exact h
+
+/-! ### Instability away from equilibrium -/
+
+/-- An unbalanced model: `V = 0`, `X_g = ω_s = I_d = 1`, `k_p = k_i = 0` (so `D₀ = 1`), `θ* = 0`. -/
+def offEquilibrium : Model := ⟨⟨0, 1, 1, 0, 0, 1⟩, 0⟩
+
+/-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+@[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
+    connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero (contDiff_field _) fun h => ?_)
+  have := congrArg (fun y : Dynamics.State 2 => y 1) h
+  simp [offEquilibrium, RatePLL.field, lift, coordField, equilibrium, vq, pllOut, gridQ,
+    Params.D0, Params.Lg] at this
+
+/-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
+while the translation asks for an equilibrium. -/
+@[powerlib_domain] theorem not_exact_unstable :
+    connection% (¬ family.Exact (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := offEquilibrium_mem_den_unstable
+  unfold powerlib.TMIO.Statement at hmem
+  rw [← h, TMIO.mem_realize] at hmem
+  have he : Meets offEquilibrium .equilibrium := hmem .equilibrium (by simp [family, translate])
+  simp [Meets, offEquilibrium] at he
 
 end powerlib.GFLParametric.RatePLL

@@ -7,6 +7,9 @@ import theorem.Family.Basic
 import theorem.TMIO.ClaimElab
 import theorem.Criteria.Hurwitz2
 import theorem.Machine.SpaceVector
+import theorem.Criteria.Jacobian
+import theorem.Linear.Stability
+import theorem.Dynamics.ConverseLinearization
 
 /-! # Induction machine: rotor-flux algebra and indirect field orientation (IFOC)
 
@@ -65,7 +68,11 @@ are static evidence. Boundary witness (`not_exact`): only `r_r / L_r` enters the
 so the drive `negativeRotor` with `r_r = L_r = −1` has the field of the unit-rotor drive and
 satisfies every attractive sentence, sampled contraction and Lyapunov stability
 (`negativeRotor_mem_den`) without a positive rotor: those translations are sound but not exact.
-The physical requirement `r_r, L_r > 0` is kept as the translation.
+The physical requirement `r_r, L_r > 0` is kept as the translation. The attractive sentences
+are characterized exactly by a member equivalence (`mem_den_attractive_iff`): a drive satisfies
+local / global, asymptotic / exponential stability exactly when `r_r / L_r > 0` (the field is
+affine; an attractive equilibrium makes it linear with Jacobian `fluxMatrix`, Hurwitz only for a
+negative trace `−2 r_r/L_r`; conversely the drive with `|r_r|, |L_r|` has the same field).
 
 Source: work-sync theory/T-field-oriented-control.md §1.1–§1.4 (and §1.3 IFOC);
 theory/T-direct-torque-control.md §1.2 (stator current from fluxes);
@@ -706,5 +713,101 @@ negative-rotor drive satisfies these sentences without a positive rotor. -/
     rw [ht]; rfl)
   have := hm.1
   norm_num [negativeRotor] at this
+
+/-! ## The attractive sentences are decided by `r_r / L_r` -/
+
+private theorem field_contDiff (d : Drive) : ContDiff ℝ 1 d.field :=
+  (fluxField_smooth d.p d.isd d.isq d.ωsl).comp (contDiff_id.add contDiff_const)
+
+/-- The translated rotor-flux field has the constant Jacobian `fluxMatrix`
+(`1/T_r = r_r/L_r`, without sign conditions). -/
+private theorem field_hasFDerivAt (d : Drive) (z : State2) :
+    HasFDerivAt d.field (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (fluxMatrix d.p d.ωsl)) z := by
+  set e := fluxEquilibrium d.p d.isd d.isq d.ωsl
+  set k := d.p.rr / d.p.Lr with hk
+  have h0 := Criteria.hasFDerivAt_coord (0 : Fin 2) z
+  have h1 := Criteria.hasFDerivAt_coord (1 : Fin 2) z
+  refine Criteria.hasFDerivAt_toEuclideanCLM_of_components _
+    ![(-k) • Criteria.coord 0 + d.ωsl • Criteria.coord 1,
+      (-k) • Criteria.coord 1 - d.ωsl • Criteria.coord 0] ?_ ?_
+  · intro i
+    fin_cases i
+    · have h := (((h0.add_const (e 0)).sub_const (d.p.Lm * d.isd)).const_mul (-k)).add
+        ((h1.add_const (e 1)).const_mul d.ωsl)
+      refine h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y => ?_)
+      simp [Drive.field, fluxField, e, k]
+    · have h := (((h1.add_const (e 1)).sub_const (d.p.Lm * d.isq)).const_mul (-k)).sub
+        ((h0.add_const (e 0)).const_mul d.ωsl)
+      refine h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y => ?_)
+      simp [Drive.field, fluxField, e, k]
+  · intro i v
+    fin_cases i
+    · simp [fluxMatrix, Fin.sum_univ_two, Params.Tr, k]
+    · simp [fluxMatrix, Fin.sum_univ_two, Params.Tr, k]
+      ring
+
+/-- Once the origin is an equilibrium, the translated field is the linear field of
+`fluxMatrix`. -/
+private theorem field_eq_linear (d : Drive) (h0 : d.field 0 = 0) :
+    d.field = LinearSystems.affineLinearVectorField (fluxMatrix d.p d.ωsl) 0 := by
+  set T := Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (fluxMatrix d.p d.ωsl)
+  have h : d.field = fun z => T z :=
+    eq_of_fderiv_eq (fun z => (field_hasFDerivAt d z).differentiableAt) T.differentiable
+      (fun z => by rw [(field_hasFDerivAt d z).fderiv, T.fderiv]) 0 (by rw [h0, map_zero])
+  rw [h]
+  funext z
+  simp [LinearSystems.affineLinearVectorField, T]
+
+/-- Two drives whose rotors have the same ratio `r_r / L_r` (hence the same `T_r`), the same
+`L_m`, and the same commands have the same translated field. -/
+private theorem field_congr {d d' : Drive} (hk : d'.p.rr / d'.p.Lr = d.p.rr / d.p.Lr)
+    (hT : d'.p.Tr = d.p.Tr) (hm : d'.p.Lm = d.p.Lm) (hd : d'.isd = d.isd) (hq : d'.isq = d.isq)
+    (hω : d'.ωsl = d.ωsl) : d'.field = d.field := by
+  funext z
+  simp only [Drive.field, fluxField, fluxEquilibrium, slipRatio, hk, hT, hm, hd, hq, hω]
+
+/-- **The attractive sentences are decided by `r_r / L_r`.** A current-fed IFOC drive satisfies
+an attractive sentence (local / global, asymptotic / exponential stability of its rotor-flux
+equilibrium) exactly when `r_r / L_r > 0`. With `r_r / L_r > 0` the drive with `|r_r|, |L_r|` has
+the same field and a positive rotor, hence is globally exponentially stable; conversely, an
+attractive equilibrium of the affine field makes it linear, and `fluxMatrix` is Hurwitz only when
+its trace `−2 r_r/L_r` is negative. The translation `positiveRotor` is therefore sound and
+strictly stronger (`not_exact`). -/
+@[powerlib_domain] theorem mem_den_attractive_iff (d : Drive) {P : Flow.Property}
+    (hP : P.Attractive) :
+    connection% (d ∈ family.den (.flow P) ↔ d ∈ {d : Drive | 0 < d.p.rr / d.p.Lr}) := by
+  unfold powerlib.TMIO.Statement
+  rw [family_isAutonomous.mem_den_flow, Set.mem_ofPred_eq]
+  constructor
+  · intro h
+    have hlas := Flow.Property.localAsymptoticStable hP h
+    have h0 : d.field 0 = 0 := Dynamics.isEquilibrium_of_lyapunovStable (field_contDiff d) hlas.1
+    rw [field_eq_linear d h0] at hlas
+    have hA := (Linear.holds_iff_isHurwitz (A := fluxMatrix d.p d.ωsl) 0
+      (P := .locallyAsymptoticallyStable) trivial).mp hlas
+    rw [fluxMatrix, Criteria.isHurwitz_fin_two_of_iff, Params.Tr, one_div_div] at hA
+    linarith [hA.1]
+  · intro hk
+    have hrr : d.p.rr ≠ 0 := by
+      rintro h
+      rw [h, zero_div] at hk
+      exact lt_irrefl 0 hk
+    have hLr : d.p.Lr ≠ 0 := by
+      rintro h
+      rw [h, div_zero] at hk
+      exact lt_irrefl 0 hk
+    let d' : Drive := ⟨⟨d.p.rs, |d.p.rr|, d.p.Ls, |d.p.Lr|, d.p.Lm⟩, d.isd, d.isq, d.ωsl⟩
+    have hfield : d'.field = d.field := by
+      refine field_congr ?_ ?_ rfl rfl rfl rfl
+      · show |d.p.rr| / |d.p.Lr| = _
+        rw [← abs_div, abs_of_pos hk]
+      · show |d.p.Lr| / |d.p.rr| = d.p.Lr / d.p.rr
+        rw [← abs_div, abs_of_pos]
+        rw [← one_div_div]
+        exact one_div_pos.mpr hk
+    have h := ifocFlux_globallyExponentiallyStable d' (abs_pos.mpr hrr) (abs_pos.mpr hLr)
+    unfold powerlib.TMIO.Statement at h
+    rw [family_isAutonomous.mem_den_flow, hfield] at h
+    exact Flow.GloballyExponentiallyStable.holds h hP
 
 end powerlib.Machine.InductionMachine
