@@ -69,11 +69,17 @@ selected point is not an equilibrium (`offEquilibrium`) is unstable
 (`offEquilibrium_mem_den_unstable`). The Lyapunov translation is not exact
 (`not_exact_lyapunovStable`): the undamped PLL `undampedPLL` (`k_p = 0`, `I_d = 0`) is the pendulum
 `θ̇ = x`, `ẋ = −sin θ`, Lyapunov stable through its conserved energy `1 − cos θ + x²/2`
-(`undampedPLL_mem_den_lyapunovStable`) with a trace-zero Jacobian. Exactness of the local
-asymptotic translation is not claimed (UNPROVED): on the boundary `tan θ = ω_s k_p / k_i` the
-Jacobian has the purely imaginary pair `± j √det J` (`imaginary_pair_at_boundary`), and deciding
-local asymptotic stability there needs the first Lyapunov coefficient of the Hopf normal form; the
-remaining degenerate cases (`k_i = 0`, `V cos θ* = 0`) have a continuum of equilibria or a fold. The boundary pair, damping ratio, `X_g` elimination and the
+(`undampedPLL_mem_den_lyapunovStable`) with a trace-zero Jacobian. The local asymptotic
+translation is not exact (`not_exact_locallyAsymptoticallyStable`, in
+`theorem/GFLParametric/RatePLLHopf.lean`): on the boundary `tr J = 0` (`tan θ = ω_s k_p / k_i` for
+physical gains) the Jacobian has the imaginary pair `± j √det J` (`imaginary_pair_at_boundary`),
+and the Hopf normal form decides the point — supercritical, hence locally asymptotically stable,
+for `k_p k_i < 0` (witness `supercriticalPLL`), subcritical and unstable for `k_p k_i > 0` (the
+physical boundary angle is unstable, `mem_den_unstable_of_tan_eq`). That module proves the
+complete membership `mem_den_locallyAsymptoticallyStable_iff` (Hurwitz, or `tr J = 0` with
+`k_p k_i < 0`; `k_i = 0` and `V = 0` give lines of equilibria, `cos θ* = 0` a fold with a monotone
+coordinate, `k_p = 0` on the boundary a conserved energy). The boundary pair, damping ratio, `X_g`
+elimination and the
 frozen-coefficient threshold remain static foundation results (`frozen_hurwitz_forall_iff` is
 about constant matrices, not the time-varying system).
 

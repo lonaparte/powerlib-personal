@@ -40,8 +40,9 @@ this point is the origin, `z ↦ field p (z + point θ* I_d*)` (every flow sente
 under this translation, `Flow.Property.holds_shift_iff`). The requirement language is static:
 the point is an equilibrium (`IsEq p θ* I_d*`); the closed-form Jacobian `jac p θ* I_d*` (proved
 to be the `fderiv`) satisfies the strict 3×3 Routh–Hurwitz conditions (`tr < 0`, `det < 0`,
-`tr · m₂ < det`); or it has `det > 0` or `tr > 0`. The local sentences translate into the first
-two, instability into the first and the third, passivity into nothing, and the global sentences,
+`tr · m₂ < det`); or it has `det > 0` or `tr > 0`; and the context requirement `positiveGains`
+(`k_p, k_i, k_P > 0`), into which no sentence is translated. The local sentences translate into the
+first two, instability into the first and the third, passivity into nothing, and the global sentences,
 decay rates, sampled contraction and conservation into the whole (inconsistent) language:
 unavailable translation coverage. `chain_le_semantics` proves every translation sound;
 `exact_passive` proves the passivity translation exact. The former domain theorems are connection
@@ -58,11 +59,17 @@ the failure of Lyapunov stability, so a model whose selected point is not an equ
 (`offEquilibrium`) is unstable (`offEquilibrium_mem_den_unstable`). The Lyapunov translation is not
 exact (`not_exact_lyapunovStable`): the undamped PLL with a frozen dispatch loop `undampedPLL`
 (`k_p = k_P = 0`) is Lyapunov stable through the conserved energy `1 − cos θ + x²/2 + I_d²/2`
-(`undampedPLL_mem_den_lyapunovStable`) with a trace-zero Jacobian. Exactness of the local asymptotic
-translation is not claimed (UNPROVED): for positive gains the boundary of the Routh–Hurwitz region is
-the fold `cos 2θ* = 0` (no Hopf pair, `no_imaginary_eigenvalue`), a saddle-node whose instability
-needs a center-manifold argument in three dimensions, and for gains of arbitrary sign imaginary
-pairs are not excluded.
+(`undampedPLL_mem_den_lyapunovStable`) with a trace-zero Jacobian. The local asymptotic translation
+is not exact for gains of arbitrary sign (`not_exact_locallyAsymptoticallyStable`, in
+`theorem/GFLParametric/QuasiStaticFoldHopf.lean`): the witness `supercriticalQS` (`k_p = −1/4 < 0`)
+sits on the Hopf boundary `a₂a₁ = a₀` with eigenvalues `±3i`, `−7/2` and is locally asymptotically
+stable (a supercritical weak focus, decided by an explicit normal-form polynomial). Within positive
+gains both the local asymptotic and the Lyapunov translations are exact
+(`exactUnder_locallyAsymptoticallyStable`, `exactUnder_lyapunovStable`, in
+`theorem/GFLParametric/QuasiStaticFold.lean`): the boundary of the Routh–Hurwitz region is the fold
+`cos 2θ* = 0` (no Hopf pair, `no_imaginary_eigenvalue`), a saddle-node that is unstable
+(`mem_den_unstable_of_fold`, explicit fold function, no centre-manifold theorem), and every other
+non-Hurwitz point with positive gains is unstable as well.
 
 Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
 notes/concepts/contrast-conclusions.md` (差别二 `P_SN = 3V_g²/(4X_g)`, 折叠角 45°;
@@ -327,6 +334,9 @@ inductive Requirement
   | jacobianStable
   /-- The closed-form Jacobian has `det > 0` or `tr > 0`. -/
   | jacobianUnstable
+  /-- Positive gains `k_p, k_i, k_P > 0` (context requirement; no sentence is translated into
+  it). -/
+  | positiveGains
 
 /-- Satisfaction of a requirement by a model. -/
 def Meets (m : Model) : Requirement → Prop
@@ -335,6 +345,7 @@ def Meets (m : Model) : Requirement → Prop
       (jac m.params m.θ m.Id).trace * Criteria.principalMinorSum (jac m.params m.θ m.Id) <
         (jac m.params m.θ m.Id).det
   | .jacobianUnstable => 0 < (jac m.params m.θ m.Id).det ∨ 0 < (jac m.params m.θ m.Id).trace
+  | .positiveGains => 0 < m.params.kp ∧ 0 < m.params.ki ∧ 0 < m.params.kP
 
 /-- The translation of the sentences: the local ones into an equilibrium with a Routh–Hurwitz
 Jacobian, instability into one with `det > 0` or `tr > 0`, passivity into nothing. The global
@@ -442,7 +453,7 @@ private theorem det_jac_of_kP_eq_zero {p : Params} (h : p.kP = 0) (θ Id : ℝ) 
 
 /-- An equilibrium of the field at `(θ*, 0, I_d*)` with a nonzero dispatch gain is an `IsEq`
 point. -/
-private theorem isEq_of_field_eq_zero {p : Params} {θ Id : ℝ} (hkP : p.kP ≠ 0)
+@[powerlib_foundation] theorem isEq_of_field_eq_zero {p : Params} {θ Id : ℝ} (hkP : p.kP ≠ 0)
     (h : field p (point θ Id) = 0) : IsEq p θ Id := by
   have h1 := congrArg (fun y : Dynamics.State 3 => y 1) h
   have h2 := congrArg (fun y : Dynamics.State 3 => y 2) h
