@@ -1,5 +1,6 @@
 import theorem.DCLink.Matching
 import theorem.Flow.Certificate
+import theorem.Dynamics.PeriodicLaSalle
 
 /-! # Matching control in closed loop: global exponential stability in the rotating frame
 
@@ -89,8 +90,22 @@ Family and connection conclusions.
   `full_not_mem_den_globallyExponentiallyStable` (the field is `2π`-periodic in `θ`, so no point
   is globally attractive on `ℝ⁸`, whatever the gains), and `full_mem_den_unstable` (a point with
   frequency `η v* ≠ 0` is not an equilibrium, hence not Lyapunov stable — the steady state is a
-  rotating orbit). The global result therefore lives only on the reduced space; set-attraction
-  of the steady-state orbit in `ℝ⁸` is not a sentence of the library.
+  rotating orbit). The global result as a sentence therefore lives only on the reduced space;
+  set attraction of the steady-state orbit in `ℝ⁸` is not a sentence of the library and is proved
+  below as implementation evidence.
+* Stationary-frame orbit attraction (Rules §3a: set attraction is outside the sentence language,
+  so these are private implementation evidence; the generic transfer is the public foundation
+  `Dynamics.infDist_le_of_reduction'` of `theorem.Dynamics.PeriodicLaSalle`). The steady-state
+  orbit is `O = range orbitPoint`, `orbitPoint θ = (θ, v*, R_θ i*_dq, R_θ v*_dq, R_θ s_dq)`;
+  static: `reduce_orbitPoint` (`O` reduces to `x*`), `orbitPoint_load`, `rotD_rot`, `rotQ_rot`,
+  `rot_dist_sq`, `rot_sub_rot_sq`, `norm_sub_orbitPoint` (with the model's load phasor,
+  `‖X − orbitPoint (X θ)‖ = ‖reduce X − x*‖`), `norm_orbitPoint_sub_le` (`O` is Lipschitz in `θ`).
+  Private: `norm_reduce_sub_le` (`‖reduce X − x*‖ ≤ (1 + Λ) dist(X, O)`), `load_const` (the load
+  phasor `R_θᵀ s_αβ` is constant along stationary solutions), `orbit_exponentiallyAttractive`
+  (**PROVED**: under `physical`, `equilibrium`, `damping` there are `K ≥ 0`, `a > 0` with
+  `dist(X t, O) ≤ K e^{−a (t − t₀)} dist(X t₀, O)` for every stationary-frame solution segment
+  whose load phasor is the model's `s_dq` — the source's stationary loads), `tendsto_infDist_orbit`
+  (forward solutions converge to `O`) and `orbit_invariant` (`O` is invariant).
 * Static evidence: `margin_pos_iff` (for `η ≠ 0` the damping requirement is exactly the source's
   inequality), `eq_point_of_field_eq_zero` (uniqueness of the steady state, as in the source),
   `abField_eq_zero` (every stationary-frame equilibrium has `η v_dc = 0`),
@@ -740,6 +755,43 @@ private theorem abField_smooth (m : Model) : ContDiff ℝ 1 m.abField := by
     fin_cases j <;> simp <;> fun_prop
   exact (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 8 => ℝ)).symm.contDiff.comp hs
 
+/-- Along every stationary-frame solution segment the load phasor `R_θᵀ s_αβ` is constant.
+Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
+private theorem load_const (m : Model) {X : ℝ → State 8} {a b : ℝ}
+    (hX : IsTrajectoryOn X m.abField a b) :
+    ∀ t ∈ Set.Icc a b, rotD (X t 0) (X t 6) (X t 7) = rotD (X a 0) (X a 6) (X a 7) ∧
+      rotQ (X t 0) (X t 6) (X t 7) = rotQ (X a 0) (X a 6) (X a 7) := by
+  have hc : ∀ t ∈ Set.Icc a b, ∀ k : Fin 8,
+      HasDerivWithinAt (fun τ => X τ k) (m.abField (X t) k) (Set.Icc a b) t :=
+    fun t ht k => coord_hasDerivWithinAt (hX t ht) k
+  have hrot : ∀ t ∈ Set.Icc a b, ∀ j k : Fin 8,
+      HasDerivWithinAt (fun τ => rotD (X τ 0) (X τ j) (X τ k))
+          (rotD (X t 0) (m.abField (X t) j) (m.abField (X t) k) +
+            m.abField (X t) 0 * rotQ (X t 0) (X t j) (X t k)) (Set.Icc a b) t ∧
+        HasDerivWithinAt (fun τ => rotQ (X τ 0) (X τ j) (X τ k))
+          (rotQ (X t 0) (m.abField (X t) j) (m.abField (X t) k) -
+            m.abField (X t) 0 * rotD (X t 0) (X t j) (X t k)) (Set.Icc a b) t :=
+    fun t ht j k => hasDerivWithinAt_rot (hc t ht 0) (hc t ht j) (hc t ht k)
+  have hcontD : ContinuousOn (fun τ => rotD (X τ 0) (X τ 6) (X τ 7)) (Set.Icc a b) :=
+    fun t ht => ((hrot t ht 6 7).1).continuousWithinAt
+  have hcontQ : ContinuousOn (fun τ => rotQ (X τ 0) (X τ 6) (X τ 7)) (Set.Icc a b) :=
+    fun t ht => ((hrot t ht 6 7).2).continuousWithinAt
+  have hzD : ∀ t ∈ Set.Ico a b,
+      HasDerivWithinAt (fun τ => rotD (X τ 0) (X τ 6) (X τ 7)) 0 (Set.Ici t) t := by
+    intro t ht
+    have h := (hrot t (Set.mem_Icc_of_Ico ht) 6 7).1
+    rw [(field_reduce m (X t)).2.2.2.2.2.1] at h
+    exact h.mono_of_mem_nhdsWithin (Icc_mem_nhdsGE_of_mem ht)
+  have hzQ : ∀ t ∈ Set.Ico a b,
+      HasDerivWithinAt (fun τ => rotQ (X τ 0) (X τ 6) (X τ 7)) 0 (Set.Ici t) t := by
+    intro t ht
+    have h := (hrot t (Set.mem_Icc_of_Ico ht) 6 7).2
+    rw [(field_reduce m (X t)).2.2.2.2.2.2] at h
+    exact h.mono_of_mem_nhdsWithin (Icc_mem_nhdsGE_of_mem ht)
+  intro t ht
+  exact ⟨constant_of_has_deriv_right_zero hcontD hzD t ht,
+    constant_of_has_deriv_right_zero hcontQ hzQ t ht⟩
+
 /-- Every stationary-frame solution segment is mapped by `reduce` to a solution segment of the
 reduced model whose load is the initial `R_θᵀ s_αβ`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
@@ -760,27 +812,7 @@ private theorem reduce_isTrajectoryOn (m : Model) {X : ℝ → State 8} {a b : �
             m.abField (X t) 0 * rotD (X t 0) (X t j) (X t k)) (Set.Icc a b) t :=
     fun t ht j k => hasDerivWithinAt_rot (hc t ht 0) (hc t ht j) (hc t ht k)
   -- the load source is constant in the rotating frame
-  have hconst : ∀ t ∈ Set.Icc a b, rotD (X t 0) (X t 6) (X t 7) = rotD (X a 0) (X a 6) (X a 7) ∧
-      rotQ (X t 0) (X t 6) (X t 7) = rotQ (X a 0) (X a 6) (X a 7) := by
-    have hcontD : ContinuousOn (fun τ => rotD (X τ 0) (X τ 6) (X τ 7)) (Set.Icc a b) :=
-      fun t ht => ((hrot t ht 6 7).1).continuousWithinAt
-    have hcontQ : ContinuousOn (fun τ => rotQ (X τ 0) (X τ 6) (X τ 7)) (Set.Icc a b) :=
-      fun t ht => ((hrot t ht 6 7).2).continuousWithinAt
-    have hzD : ∀ t ∈ Set.Ico a b,
-        HasDerivWithinAt (fun τ => rotD (X τ 0) (X τ 6) (X τ 7)) 0 (Set.Ici t) t := by
-      intro t ht
-      have h := (hrot t (Set.mem_Icc_of_Ico ht) 6 7).1
-      rw [(field_reduce m (X t)).2.2.2.2.2.1] at h
-      exact h.mono_of_mem_nhdsWithin (Icc_mem_nhdsGE_of_mem ht)
-    have hzQ : ∀ t ∈ Set.Ico a b,
-        HasDerivWithinAt (fun τ => rotQ (X τ 0) (X τ 6) (X τ 7)) 0 (Set.Ici t) t := by
-      intro t ht
-      have h := (hrot t (Set.mem_Icc_of_Ico ht) 6 7).2
-      rw [(field_reduce m (X t)).2.2.2.2.2.2] at h
-      exact h.mono_of_mem_nhdsWithin (Icc_mem_nhdsGE_of_mem ht)
-    intro t ht
-    exact ⟨constant_of_has_deriv_right_zero hcontD hzD t ht,
-      constant_of_has_deriv_right_zero hcontQ hzQ t ht⟩
+  have hconst := load_const m hX
   intro t ht
   obtain ⟨hD, hQ⟩ := hconst t ht
   obtain ⟨f0, f1, f2, f3, f4, -, -⟩ := field_reduce m (X t)
@@ -898,5 +930,225 @@ closed loop, hence not Lyapunov stable: the steady state is a rotating orbit. -/
   have := abField_eq_zero M.p he
   simp only [FullModel.point, PiLp.toLp_apply, Matrix.cons_val_one] at this
   exact h this
+
+/-! ## Attraction of the steady-state orbit in the stationary frame -/
+
+/-- The steady state rotated by `θ`: `(θ, v*, R_θ i*_dq, R_θ v*_dq, R_θ s_dq)`. Its range is the
+steady-state rotating orbit in the stationary frame. -/
+def Model.orbitPoint (m : Model) (θ : ℝ) : State 8 :=
+  WithLp.toLp 2 ![θ, m.vStar,
+    Real.cos θ * m.idStar - Real.sin θ * m.iqStar, Real.sin θ * m.idStar + Real.cos θ * m.iqStar,
+    Real.cos θ * m.vdStar - Real.sin θ * m.vqStar, Real.sin θ * m.vdStar + Real.cos θ * m.vqStar,
+    Real.cos θ * m.sd - Real.sin θ * m.sq, Real.sin θ * m.sd + Real.cos θ * m.sq]
+
+/-- `R_θᵀ R_θ = 1`, `d` component. Static evidence, not a connection conclusion. -/
+@[powerlib_foundation] theorem rotD_rot (θ d q : ℝ) :
+    rotD θ (Real.cos θ * d - Real.sin θ * q) (Real.sin θ * d + Real.cos θ * q) = d := by
+  simp only [rotD]
+  linear_combination d * Real.sin_sq_add_cos_sq θ
+
+/-- `R_θᵀ R_θ = 1`, `q` component. Static evidence, not a connection conclusion. -/
+@[powerlib_foundation] theorem rotQ_rot (θ d q : ℝ) :
+    rotQ θ (Real.cos θ * d - Real.sin θ * q) (Real.sin θ * d + Real.cos θ * q) = q := by
+  simp only [rotQ]
+  linear_combination q * Real.sin_sq_add_cos_sq θ
+
+/-- `‖z − R_θ w‖ = ‖R_θᵀ z − w‖`. Static evidence, not a connection conclusion. -/
+@[powerlib_foundation] theorem rot_dist_sq (θ a b d q : ℝ) :
+    (a - (Real.cos θ * d - Real.sin θ * q)) ^ 2 + (b - (Real.sin θ * d + Real.cos θ * q)) ^ 2 =
+      (rotD θ a b - d) ^ 2 + (rotQ θ a b - q) ^ 2 := by
+  simp only [rotD, rotQ]
+  linear_combination (d ^ 2 + q ^ 2 - a ^ 2 - b ^ 2) * Real.sin_sq_add_cos_sq θ
+
+/-- `‖R_a w − R_b w‖² = 2 ‖w‖² (1 − cos (a − b))`. Static evidence, not a connection conclusion. -/
+@[powerlib_foundation] theorem rot_sub_rot_sq (a b d q : ℝ) :
+    (Real.cos a * d - Real.sin a * q - (Real.cos b * d - Real.sin b * q)) ^ 2 +
+      (Real.sin a * d + Real.cos a * q - (Real.sin b * d + Real.cos b * q)) ^ 2 =
+      2 * (d ^ 2 + q ^ 2) * (1 - Real.cos (a - b)) := by
+  rw [Real.cos_sub]
+  linear_combination (d ^ 2 + q ^ 2) * Real.sin_sq_add_cos_sq a +
+    (d ^ 2 + q ^ 2) * Real.sin_sq_add_cos_sq b
+
+/-- The orbit reduces to the selected point. Static evidence, not a connection conclusion. -/
+@[powerlib_foundation] theorem reduce_orbitPoint (m : Model) (θ : ℝ) :
+    reduce (m.orbitPoint θ) = m.point := by
+  ext i
+  fin_cases i <;> simp [reduce, Model.orbitPoint, Model.point, rotD_rot, rotQ_rot]
+
+/-- The orbit carries the model's load phasor. Static evidence, not a connection conclusion. -/
+@[powerlib_foundation] theorem orbitPoint_load (m : Model) (θ : ℝ) :
+    rotD (m.orbitPoint θ 0) (m.orbitPoint θ 6) (m.orbitPoint θ 7) = m.sd ∧
+      rotQ (m.orbitPoint θ 0) (m.orbitPoint θ 6) (m.orbitPoint θ 7) = m.sq := by
+  simp [Model.orbitPoint, rotD_rot, rotQ_rot]
+
+/-- With the model's load phasor, the distance to the orbit point of the same angle is the
+rotating-frame deviation. Static evidence, not a connection conclusion. -/
+@[powerlib_foundation] theorem norm_sub_orbitPoint (m : Model) (X : State 8)
+    (hD : rotD (X 0) (X 6) (X 7) = m.sd) (hQ : rotQ (X 0) (X 6) (X 7) = m.sq) :
+    ‖X - m.orbitPoint (X 0)‖ = ‖reduce X - m.point‖ := by
+  rw [EuclideanSpace.norm_eq, EuclideanSpace.norm_eq]
+  congr 1
+  have h1 := rot_dist_sq (X 0) (X 2) (X 3) m.idStar m.iqStar
+  have h2 := rot_dist_sq (X 0) (X 4) (X 5) m.vdStar m.vqStar
+  have h3 := rot_dist_sq (X 0) (X 6) (X 7) m.sd m.sq
+  rw [hD, hQ, sub_self, sub_self] at h3
+  simp [Fin.sum_univ_eight, Fin.sum_univ_five, Model.orbitPoint, reduce, Model.point]
+  linarith
+
+/-- The orbit is Lipschitz in its angle. Static evidence, not a connection conclusion. -/
+@[powerlib_foundation] theorem norm_orbitPoint_sub_le (m : Model) (a b : ℝ) :
+    ‖m.orbitPoint a - m.orbitPoint b‖ ≤ Real.sqrt (1 + (m.idStar ^ 2 + m.iqStar ^ 2) +
+      (m.vdStar ^ 2 + m.vqStar ^ 2) + (m.sd ^ 2 + m.sq ^ 2)) * |a - b| := by
+  rw [EuclideanSpace.norm_eq, ← Real.sqrt_sq_eq_abs, ← Real.sqrt_mul (by positivity)]
+  apply Real.sqrt_le_sqrt
+  have hc : 2 * (1 - Real.cos (a - b)) ≤ (a - b) ^ 2 := by
+    have := Real.one_sub_sq_div_two_le_cos (x := a - b)
+    linarith
+  have h1 := rot_sub_rot_sq a b m.idStar m.iqStar
+  have h2 := rot_sub_rot_sq a b m.vdStar m.vqStar
+  have h3 := rot_sub_rot_sq a b m.sd m.sq
+  have k1 := mul_le_mul_of_nonneg_left hc (by positivity : 0 ≤ m.idStar ^ 2 + m.iqStar ^ 2)
+  have k2 := mul_le_mul_of_nonneg_left hc (by positivity : 0 ≤ m.vdStar ^ 2 + m.vqStar ^ 2)
+  have k3 := mul_le_mul_of_nonneg_left hc (by positivity : 0 ≤ m.sd ^ 2 + m.sq ^ 2)
+  simp [Fin.sum_univ_eight, Model.orbitPoint]
+  linarith
+
+/-- On the load-matched set the rotating-frame deviation is at most `(1 + Λ)` times the distance
+to the orbit (`Λ` the Lipschitz constant of the orbit). Implementation evidence (it names the
+orbit `range orbitPoint` of the model, Rules §3a). -/
+private theorem norm_reduce_sub_le (m : Model) (X : State 8)
+    (hD : rotD (X 0) (X 6) (X 7) = m.sd) (hQ : rotQ (X 0) (X 6) (X 7) = m.sq) :
+    ‖reduce X - m.point‖ ≤ (1 + Real.sqrt (1 + (m.idStar ^ 2 + m.iqStar ^ 2) +
+      (m.vdStar ^ 2 + m.vqStar ^ 2) + (m.sd ^ 2 + m.sq ^ 2))) *
+      Metric.infDist X (Set.range m.orbitPoint) := by
+  set Λ := Real.sqrt (1 + (m.idStar ^ 2 + m.iqStar ^ 2) + (m.vdStar ^ 2 + m.vqStar ^ 2) +
+    (m.sd ^ 2 + m.sq ^ 2))
+  have hΛ : 0 ≤ Λ := Real.sqrt_nonneg _
+  have hB : 0 < 1 + Λ := by linarith
+  by_contra hlt
+  rw [not_le] at hlt
+  have hlt' : Metric.infDist X (Set.range m.orbitPoint) < ‖reduce X - m.point‖ / (1 + Λ) := by
+    rw [lt_div_iff₀ hB]
+    linarith
+  obtain ⟨Y, ⟨φ, rfl⟩, hY⟩ := (Metric.infDist_lt_iff (Set.range_nonempty m.orbitPoint)).mp hlt'
+  rw [dist_eq_norm, lt_div_iff₀ hB] at hY
+  have h1 := norm_sub_orbitPoint m X hD hQ
+  have h2 : ‖X - m.orbitPoint (X 0)‖ ≤
+      ‖X - m.orbitPoint φ‖ + ‖m.orbitPoint φ - m.orbitPoint (X 0)‖ :=
+    norm_sub_le_norm_sub_add_norm_sub _ _ _
+  have h3 := norm_orbitPoint_sub_le m φ (X 0)
+  have h4 : |φ - X 0| ≤ ‖X - m.orbitPoint φ‖ := by
+    have := PiLp.norm_apply_le (X - m.orbitPoint φ) 0
+    simp only [PiLp.sub_apply, Real.norm_eq_abs] at this
+    rw [abs_sub_comm]
+    simpa [Model.orbitPoint] using this
+  have h5 : Λ * |φ - X 0| ≤ Λ * ‖X - m.orbitPoint φ‖ := mul_le_mul_of_nonneg_left h4 hΛ
+  nlinarith
+
+private theorem orbitPoint_continuous (m : Model) : Continuous m.orbitPoint := by
+  apply (PiLp.continuous_toLp 2 (fun _ : Fin 8 => ℝ)).comp
+  refine continuous_pi fun i => ?_
+  fin_cases i <;> simp <;> fun_prop
+
+private theorem isClosed_orbit (m : Model) : IsClosed (Set.range m.orbitPoint) := by
+  have e : Set.range m.orbitPoint = {X : State 8 | X = m.orbitPoint (X 0)} := by
+    ext X
+    constructor
+    · rintro ⟨φ, rfl⟩
+      show m.orbitPoint φ = m.orbitPoint (m.orbitPoint φ 0)
+      simp [Model.orbitPoint]
+    · intro h
+      exact ⟨X 0, h.symm⟩
+  rw [e]
+  exact isClosed_eq continuous_id ((orbitPoint_continuous m).comp
+    (PiLp.proj 2 (fun _ : Fin 8 => ℝ) 0 : State 8 →L[ℝ] ℝ).continuous)
+
+/-- **Exponential attraction of the steady-state orbit in the stationary frame.** Under the static
+requirements (`C_dc, L, C, R, G + G_l > 0`, the selected point an equilibrium, `margin > 0`),
+there are `K ≥ 0`, `a > 0` such that every stationary-frame solution segment whose load phasor
+`R_θᵀ s_αβ` is the model's `s_dq` (a stationary load in the source's sense) satisfies
+`dist(X t, O) ≤ K e^{−a (t − t₀)} dist(X t₀, O)`, `O = range orbitPoint` the steady-state orbit.
+Proof: global exponential stability in the reduced coordinates (`ges`), the reduction of solutions
+(`reduce_isTrajectoryOn`, `load_const`), and the two-sided comparison `norm_sub_orbitPoint`,
+`norm_reduce_sub_le` through `Dynamics.infDist_le_of_reduction'`.
+Implementation evidence: set attraction is outside the sentence language (Rules §3a). -/
+private theorem orbit_exponentiallyAttractive (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L)
+    (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0)
+    (hδ : 0 < m.margin) :
+    ∃ K a : ℝ, 0 ≤ K ∧ 0 < a ∧ ∀ (t₀ t₁ : ℝ) (X : ℝ → State 8), IsTrajectoryOn X m.abField t₀ t₁ →
+      rotD (X t₀ 0) (X t₀ 6) (X t₀ 7) = m.sd → rotQ (X t₀ 0) (X t₀ 6) (X t₀ 7) = m.sq →
+      ∀ t ∈ Set.Icc t₀ t₁, Metric.infDist (X t) (Set.range m.orbitPoint) ≤
+        K * Real.exp (-a * (t - t₀)) * Metric.infDist (X t₀) (Set.range m.orbitPoint) := by
+  have hges : Flow.GloballyExponentiallyStable (fun y => m.field y 0) m.point :=
+    Flow.globallyExponentiallyStable_shift_iff.mp (ges m hCdc hL hC hR hG he hδ)
+  have hwl : m.withLoad m.sd m.sq = m := by cases m; rfl
+  have hB : 0 ≤ 1 + Real.sqrt (1 + (m.idStar ^ 2 + m.iqStar ^ 2) +
+      (m.vdStar ^ 2 + m.vqStar ^ 2) + (m.sd ^ 2 + m.sq ^ 2)) := by
+    have := Real.sqrt_nonneg (1 + (m.idStar ^ 2 + m.iqStar ^ 2) +
+      (m.vdStar ^ 2 + m.vqStar ^ 2) + (m.sd ^ 2 + m.sq ^ 2))
+    linarith
+  have hred : ∀ (t₀ t₁ : ℝ) (X : ℝ → State 8), IsTrajectoryOn X m.abField t₀ t₁ →
+      X t₀ ∈ {X : State 8 | rotD (X 0) (X 6) (X 7) = m.sd ∧ rotQ (X 0) (X 6) (X 7) = m.sq} →
+      IsTrajectoryOn (fun t => reduce (X t)) (fun y => m.field y 0) t₀ t₁ ∧
+        ∀ t ∈ Set.Icc t₀ t₁,
+          X t ∈ {X : State 8 | rotD (X 0) (X 6) (X 7) = m.sd ∧ rotQ (X 0) (X 6) (X 7) = m.sq} := by
+    rintro t₀ t₁ X hX ⟨hD, hQ⟩
+    have hr := reduce_isTrajectoryOn m hX
+    rw [hD, hQ, hwl] at hr
+    refine ⟨hr, fun t ht => ?_⟩
+    obtain ⟨h1, h2⟩ := load_const m hX t ht
+    exact ⟨h1.trans hD, h2.trans hQ⟩
+  have hO : ∀ X ∈ {X : State 8 | rotD (X 0) (X 6) (X 7) = m.sd ∧ rotQ (X 0) (X 6) (X 7) = m.sq},
+      Metric.infDist X (Set.range m.orbitPoint) ≤ 1 * ‖reduce X - m.point‖ := by
+    rintro X ⟨hD, hQ⟩
+    rw [one_mul, ← norm_sub_orbitPoint m X hD hQ, ← dist_eq_norm]
+    exact Metric.infDist_le_dist_of_mem (Set.mem_range_self (X 0))
+  have hO' : ∀ X ∈ {X : State 8 | rotD (X 0) (X 6) (X 7) = m.sd ∧ rotQ (X 0) (X 6) (X 7) = m.sq},
+      ‖reduce X - m.point‖ ≤ (1 + Real.sqrt (1 + (m.idStar ^ 2 + m.iqStar ^ 2) +
+        (m.vdStar ^ 2 + m.vqStar ^ 2) + (m.sd ^ 2 + m.sq ^ 2))) *
+        Metric.infDist X (Set.range m.orbitPoint) := by
+    rintro X ⟨hD, hQ⟩
+    exact norm_reduce_sub_le m X hD hQ
+  obtain ⟨K, a, hK, ha, h⟩ :=
+    Dynamics.infDist_le_of_reduction' zero_le_one hB hges hred hO hO'
+  exact ⟨K, a, hK, ha, fun t₀ t₁ X hX hD hQ => h t₀ t₁ X hX ⟨hD, hQ⟩⟩
+
+/-- Every forward solution with the model's load phasor converges to the steady-state orbit.
+Implementation evidence (Rules §3a). -/
+private theorem tendsto_infDist_orbit (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L)
+    (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0)
+    (hδ : 0 < m.margin) {X : ℝ → State 8} {t₀ : ℝ}
+    (hX : IsIntegralCurveOn X (fun _ x => m.abField x) (Set.Ici t₀))
+    (hD : rotD (X t₀ 0) (X t₀ 6) (X t₀ 7) = m.sd) (hQ : rotQ (X t₀ 0) (X t₀ 6) (X t₀ 7) = m.sq) :
+    Filter.Tendsto (fun t => Metric.infDist (X t) (Set.range m.orbitPoint)) Filter.atTop
+      (nhds 0) := by
+  obtain ⟨K, a, hK, ha, h⟩ := orbit_exponentiallyAttractive m hCdc hL hC hR hG he hδ
+  have hexp : Filter.Tendsto (fun t => Real.exp (-a * (t - t₀))) Filter.atTop (nhds 0) :=
+    Real.tendsto_exp_atBot.comp ((Filter.tendsto_atTop_atTop.2 fun b =>
+      ⟨b + t₀, fun t ht => by linarith⟩).const_mul_atTop_of_neg (by linarith))
+  have hlim : Filter.Tendsto (fun t => K * Real.exp (-a * (t - t₀)) *
+      Metric.infDist (X t₀) (Set.range m.orbitPoint)) Filter.atTop (nhds 0) := by
+    simpa using (hexp.const_mul K).mul_const (Metric.infDist (X t₀) (Set.range m.orbitPoint))
+  refine squeeze_zero' (Filter.Eventually.of_forall fun _ => Metric.infDist_nonneg) ?_ hlim
+  filter_upwards [Filter.eventually_ge_atTop t₀] with t ht
+  exact h t₀ t X (hX.mono Set.Icc_subset_Ici_self) hD hQ t ⟨ht, le_rfl⟩
+
+/-- The steady-state orbit is invariant: a solution segment starting on it stays on it.
+Implementation evidence (Rules §3a). -/
+private theorem orbit_invariant (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L)
+    (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0)
+    (hδ : 0 < m.margin) {t₀ t₁ : ℝ} {X : ℝ → State 8} (hX : IsTrajectoryOn X m.abField t₀ t₁)
+    (h0 : X t₀ ∈ Set.range m.orbitPoint) : ∀ t ∈ Set.Icc t₀ t₁, X t ∈ Set.range m.orbitPoint := by
+  obtain ⟨K, a, -, -, h⟩ := orbit_exponentiallyAttractive m hCdc hL hC hR hG he hδ
+  obtain ⟨φ, hφ⟩ := h0
+  have hl := orbitPoint_load m φ
+  rw [hφ] at hl
+  intro t ht
+  have hle := h t₀ t₁ X hX hl.1 hl.2 t ht
+  have hmem : X t₀ ∈ Set.range m.orbitPoint := ⟨φ, hφ⟩
+  rw [Metric.infDist_zero_of_mem hmem, mul_zero] at hle
+  have h0' : Metric.infDist (X t) (Set.range m.orbitPoint) = 0 :=
+    le_antisymm hle Metric.infDist_nonneg
+  exact ((isClosed_orbit m).mem_iff_infDist_zero (Set.range_nonempty m.orbitPoint)).mpr h0'
 
 end powerlib.DCLink.MatchingClosedLoop

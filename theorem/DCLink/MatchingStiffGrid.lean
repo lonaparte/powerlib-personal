@@ -68,18 +68,26 @@ Results.
   `margin > 0`, `μ u* v₀ > 0`, `η ≠ 0`; eigenvector form of the energy argument), giving the
   connection results `mem_den_locallyExponentiallyStable` and
   `mem_den_locallyAsymptoticallyStable`.
-* Not formalized (UNPROVED): the source's convergence of every trajectory to the critical set of
-  `S` (set attraction, outside the sentence language; LaSalle in LeanForControl also needs a
-  globally Lipschitz field and a compact positively invariant set, while here the field is
-  bilinear and the sublevel sets of `H` are unbounded in `θ_dq`), and any estimate of the
-  basin of `x*`.
+* Trajectory level, in `theorem.DCLink.MatchingLaSalle` (private implementation evidence: set
+  attraction and regions of attraction are outside the sentence language; the generic tools are
+  the foundation results of `theorem.Dynamics.PeriodicLaSalle`, LaSalle on the invariant cylinder
+  `(cos θ_dq, sin θ_dq, u_dc, i_dq)` with the `C¹` LaSalle of `theorem.Dynamics.Basin`):
+  `tendsto_equilibrium` (the source's LaSalle conclusion, also for the non-strict condition: with
+  `margin ≥ 0`, `η ≠ 0`, `μ u* v₀ ≠ 0` every forward solution converges to one equilibrium
+  `(j π, u*, î(j π))`, hence to `{ũ_dc = 0, ∇S = 0, ĩ_dq = 0}`, `tendsto_critical`),
+  `exists_solution` (forward solutions exist on `[0, ∞)`), `basin` (with `μ u* v₀ > 0` the window
+  `{|θ_dq| < π, H − S(0) < 2k}` below the saddle energy lies in the region of attraction of `x*`)
+  and the boundary `not_tendsto_critical_of_eta_eq_zero` (`η ≠ 0` is necessary). Connection
+  conclusions there: `mem_den_locallyAsymptoticallyStable_of_dissipative` (`margin ≥ 0` already
+  gives local asymptotic stability) and `not_exact_locallyAsymptoticallyStable` (the local
+  asymptotic translation of this family is sound but not exact: a `margin = 0` model).
 
 Corrections.
 * The note's condition is the source's condition (`margin_pos_iff`), but it is not a global
   stability condition of the operating point: it makes `H` nonincreasing (dissipation in
   `(ũ_dc, ĩ_dq)` only), which gives Lyapunov stability of `θ_dq = 0` (with `μ u* v₀ > 0`),
-  local exponential stability (with `η ≠ 0`, `mem_den_locallyExponentiallyStable`) and, in the
-  source, LaSalle convergence to `{ũ_dc = 0, ∇S = 0, ĩ_dq = 0}`. That set contains the saddle
+  local exponential stability (with `η ≠ 0`, `mem_den_locallyExponentiallyStable`) and LaSalle
+  convergence to `{ũ_dc = 0, ∇S = 0, ĩ_dq = 0}` (`theorem.DCLink.MatchingLaSalle`). That set contains the saddle
   equilibria `θ_dq = π` (`field_eq_zero_of_sin_eq_zero`), and no point is globally
   asymptotically stable on `ℝ⁴` (`exact_globallyAsymptoticallyStable`).
 * The note attributes the condition to "[[@arghir2020matching]] Theorem 3" inside a section
