@@ -2,6 +2,7 @@ import theorem.Criteria.Jacobian
 import theorem.DCLink.Locality
 import theorem.CurrentControl.SISO
 import theorem.Dynamics.ConverseLinearization
+import theorem.Dynamics.DCLinkBoundary
 import theorem.Flow.Shift
 
 /-! # DC-link voltage of a grid-following VSC: open loop and PI outer loop (domain)
@@ -71,11 +72,31 @@ translations inexact (`openNot_exact_locallyAsymptoticallyStable`, `openNot_exac
 `Spectral.local_not_exact_of_not_exact_les`). Within the physical range the open loop is decided
 exactly: `openLoop_mem_den_locallyAsymptoticallyStable_iff` (iff rectifier, `P/V0 > 0`; with no AC
 power every voltage is an equilibrium) and `openLoop_mem_den_lyapunovStable_iff` (iff `P/V0 ≥ 0`:
-the node with no AC power is Lyapunov stable, so that translation is not exact even there). For
-the closed loop within the physical range, exactness of the local asymptotic translation is not
-claimed (UNPROVED: on `Kp = −I_dc0/V_d`, `Ki > 0` the Jacobian has a purely imaginary pair, decided
-only by the nonlinear terms). The Jacobians, Hurwitz criteria and the small-signal transfer function
-are static evidence.
+the node with no AC power is Lyapunov stable, so that translation is not exact even there).
+
+The closed loop within the physical range (`V_d, V_dc*, C > 0`) is decided exactly as well:
+* Boundary `Kp = −I_dc0/V_d`, `Ki > 0` (Jacobian with the purely imaginary pair `±i √(a Ki)`): the
+  nonlinear loop `dv/dt = −(V_d Ki/C) z/(V_dc* + v)`, `dz/dt = v` is reversible and conserves
+  `DCParams.centerEnergy` `= V_dc* v²/2 + v³/3 + (V_d Ki/(2C)) z²` (`DCParams.centerEnergy_lie`),
+  a strict minimum on `V_dc > 0` (`DCParams.centerEnergy_pos`): a centre (first Lyapunov
+  coefficient `0`, computed with SymPy and implied by the first integral) — Lyapunov stable, not
+  locally asymptotically stable.
+* `Ki = 0`: the integrator does not act on the loop; the operating point is an equilibrium iff
+  `i_ff = I_d0`, and then every `(V_dc*, ζ)` is one.
+* `closedLoop_mem_den_locallyAsymptoticallyStable_iff`: locally asymptotically stable iff
+  `Kp > −I_dc0/V_d ∧ Ki > 0`, i.e. `closedExact_locallyAsymptoticallyStable_physical`: the
+  generated space of the local asymptotic translation is its denotation cut by the physical range
+  (the translation is exact there).
+* `closedLoop_mem_den_lyapunovStable_iff`: Lyapunov stable iff `Ki > 0 ∧ Kp ≥ −I_dc0/V_d` (centre
+  included) or `Ki = 0 ∧ i_ff = I_d0 ∧ Kp > −I_dc0/V_d` (`ζ + γ (V_dc* v + v²/2)` conserved, `v²`
+  decaying); `Ki = 0` with `Kp ≤ −I_dc0/V_d` is unstable (Chetaev's theorem,
+  `Dynamics.unstable_of_chetaev_local`). Hence `closedNot_exact_lyapunovStable_physical`: the
+  Lyapunov translation is not exact within the physical range, witness `centerLoop`
+  (`C = V_d = V_dc* = Ki = 1`, `Kp = i_ff = I_d0 = 0`; `centerLoop_mem_den_lyapunovStable`,
+  `centerLoop_not_mem_den_locallyAsymptoticallyStable`).
+The degenerate-equilibrium tools for the locally `C¹` field are
+`theorem/Dynamics/DCLinkBoundary.lean`.
+The Jacobians, Hurwitz criteria and the small-signal transfer function are static evidence.
 
 Source: work-sync `theory/T-vsc-dc-voltage-control.md` §1.1, §1.3, §1.4;
 `theory/T-gfl-reduced-order-dynamics.md` §1.2.1, §1.2.4.
@@ -790,5 +811,499 @@ negative-capacitance loop). -/
   have h := closedNot_exact_locallyExponentiallyStable
   unfold powerlib.TMIO.Statement at h
   exact Spectral.local_not_exact_of_not_exact_les (fun _ hm => closed_les_of hm) h (Or.inl rfl)
+
+/-! ## The boundary `Kp = −I_dc0/V_d` and the missing integral gain
+
+On `Kp = −I_dc0/V_d`, `Ki > 0` the Jacobian `[[0, −a Ki], [1, 0]]` has the purely imaginary pair
+`±i √(a Ki)`. The nonlinear loop is then `dv/dt = −(V_d Ki/C) z/(V_dc* + v)`, `dz/dt = v`, which
+is reversible (`z ↦ −z`, `t ↦ −t`) and has the first integral `DCParams.centerEnergy`
+(`V_dc* v²/2 + v³/3 + (V_d Ki/(2C)) z²`, a strict minimum on `V_dc > 0`): a centre, so the first
+Lyapunov coefficient vanishes and the boundary is Lyapunov stable but not locally asymptotically
+stable. With `Ki = 0` the integrator state does not act on the loop. -/
+
+namespace DCParams
+
+variable (p : DCParams)
+
+/-- The conserved energy of the boundary loop `Kp = −I_dc0/V_d`:
+`V_dc* v²/2 + v³/3 + (V_d Ki/(2C)) z²`, `v = V_dc − V_dc*`, `z = ζ − ζ0`. -/
+def centerEnergy (x : State 2) : ℝ :=
+  p.Vref / 2 * (x 0 - p.Vref) ^ 2 + 1 / 3 * (x 0 - p.Vref) ^ 3 +
+    p.Vd * p.Ki / (2 * p.C) * (x 1 - (p.iff - p.Id0) / p.Ki) ^ 2
+
+@[powerlib_foundation] theorem hasFDerivAt_centerEnergy (x : State 2) :
+    HasFDerivAt p.centerEnergy
+      ((p.Vref * (x 0 - p.Vref) + (x 0 - p.Vref) ^ 2) • Criteria.coord 0 +
+        (p.Vd * p.Ki / p.C * (x 1 - (p.iff - p.Id0) / p.Ki)) • Criteria.coord 1) x := by
+  have h0 := (Criteria.hasFDerivAt_coord 0 x).sub_const p.Vref
+  have h1 := (Criteria.hasFDerivAt_coord 1 x).sub_const ((p.iff - p.Id0) / p.Ki)
+  have h := (((h0.pow 2).const_mul (p.Vref / 2)).add ((h0.pow 3).const_mul (1 / 3))).add
+    ((h1.pow 2).const_mul (p.Vd * p.Ki / (2 * p.C)))
+  convert h using 1
+  · funext y; simp [centerEnergy]
+  · ext v
+    simp
+    field_simp
+
+/-- On the boundary `Kp = −I_dc0/V_d` the energy is conserved on `V_dc ≠ 0`. -/
+@[powerlib_foundation] theorem centerEnergy_lie (hVd : p.Vd ≠ 0) (hV : p.Vref ≠ 0)
+    (hKi : p.Ki ≠ 0) (hkp : p.Kp = -(p.Idc0 / p.Vd)) {x : State 2} (hx : x 0 ≠ 0) :
+    fderiv ℝ p.centerEnergy x (p.closedField x) = 0 := by
+  rw [(p.hasFDerivAt_centerEnergy x).fderiv]
+  simp only [_root_.add_apply, _root_.smul_apply, Criteria.coord_apply, smul_eq_mul, closedField,
+    Matrix.cons_val_zero, Matrix.cons_val_one, idRef, isrc, Idc0]
+  rw [hkp]
+  simp only [Idc0]
+  field_simp
+  ring
+
+/-- The boundary energy is positive away from the equilibrium on `V_dc > 0`. -/
+@[powerlib_foundation] theorem centerEnergy_pos (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
+    (hC : 0 < p.C) (hKi : 0 < p.Ki) {x : State 2} (hx : 0 < x 0) (hne : x ≠ p.eqState) :
+    0 < p.centerEnergy x := by
+  have hk : 0 < p.Vd * p.Ki / (2 * p.C) := by positivity
+  have hform : p.centerEnergy x = (x 0 - p.Vref) ^ 2 * (p.Vref + 2 * x 0) / 6 +
+      p.Vd * p.Ki / (2 * p.C) * (x 1 - (p.iff - p.Id0) / p.Ki) ^ 2 := by
+    simp only [centerEnergy]; ring
+  rw [hform]
+  by_cases h0 : x 0 = p.Vref
+  · have h1 : x 1 ≠ (p.iff - p.Id0) / p.Ki := by
+      intro h1
+      apply hne
+      ext i
+      fin_cases i
+      · simpa [eqState] using h0
+      · simpa [eqState] using h1
+    have : 0 < (x 1 - (p.iff - p.Id0) / p.Ki) ^ 2 := by
+      have := sub_ne_zero.mpr h1
+      positivity
+    have h2 : 0 ≤ (x 0 - p.Vref) ^ 2 * (p.Vref + 2 * x 0) / 6 := by
+      have : 0 ≤ p.Vref + 2 * x 0 := by linarith
+      positivity
+    nlinarith
+  · have : 0 < (x 0 - p.Vref) ^ 2 := by
+      have := sub_ne_zero.mpr h0
+      positivity
+    have h2 : 0 < (x 0 - p.Vref) ^ 2 * (p.Vref + 2 * x 0) / 6 := by
+      have : 0 < p.Vref + 2 * x 0 := by linarith
+      positivity
+    have : 0 ≤ p.Vd * p.Ki / (2 * p.C) * (x 1 - (p.iff - p.Id0) / p.Ki) ^ 2 := by positivity
+    linarith
+
+private theorem eqState_mem (hV : 0 < p.Vref) : p.eqState ∈ posDC 2 := by
+  simpa [posDC, eqState] using hV
+
+/-- On the boundary the loop is Lyapunov stable: the energy is conserved and has a strict
+minimum. -/
+private theorem closed_lyapunovStable_boundary (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
+    (hC : 0 < p.C) (hKi : 0 < p.Ki) (hkp : p.Kp = -(p.Idc0 / p.Vd)) :
+    LyapunovStable p.closedField p.eqState :=
+  lyapunov_stable (V := p.centerEnergy) (D := posDC 2) two_pos
+    ⟨isOpen_posDC 2, p.eqState_mem hV,
+      continuous_iff_continuousAt.mpr fun x => (p.hasFDerivAt_centerEnergy x).continuousAt,
+      fun x => (p.hasFDerivAt_centerEnergy x).differentiableAt,
+      by simp [centerEnergy, eqState],
+      fun x hx hne => p.centerEnergy_pos hVd hV hC hKi hx hne,
+      fun x hx => (p.centerEnergy_lie hVd.ne' hV.ne' hKi.ne' hkp (ne_of_gt hx)).le⟩
+
+/-- On the boundary the loop is not locally asymptotically stable: the conserved energy keeps
+every nearby solution on its level. -/
+private theorem closed_not_las_boundary (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
+    (hC : 0 < p.C) (hKi : 0 < p.Ki) (hkp : p.Kp = -(p.Idc0 / p.Vd)) :
+    ¬ LocalAsymptoticStable p.closedField p.eqState := by
+  refine Dynamics.not_localAsymptoticStable_of_lie_nonpos_local (V := fun x => -p.centerEnergy x)
+    (ρ := 1) (isOpen_posDC 2) (p.eqState_mem hV) p.closedField_contDiffOn
+    (fun x => (p.hasFDerivAt_centerEnergy x).differentiableAt.neg) one_pos
+    (fun x hx _ => ?_) (fun ε hε => ?_)
+  · rw [fderiv_fun_neg, _root_.neg_apply,
+      p.centerEnergy_lie hVd.ne' hV.ne' hKi.ne' hkp (ne_of_gt hx), neg_zero]
+  · refine ⟨p.eqState + WithLp.toLp 2 ![ε / 2, 0], ?_, ?_⟩
+    · rw [add_sub_cancel_left]
+      refine (Dynamics.norm_le_abs_add_abs_two _).trans_lt ?_
+      simp only [Matrix.cons_val_zero, Matrix.cons_val_one, abs_zero, add_zero]
+      rw [abs_of_pos (by positivity)]
+      linarith
+    · have hne : p.eqState + WithLp.toLp 2 ![ε / 2, 0] ≠ p.eqState := by
+        intro h
+        have := congrArg (fun y : State 2 => y 0) h
+        simp at this
+        linarith
+      have hpos := p.centerEnergy_pos hVd hV hC hKi (by simp [eqState]; positivity) hne
+      have h0 : p.centerEnergy p.eqState = 0 := by simp [centerEnergy, eqState]
+      simp only [h0, neg_zero, neg_lt_zero]
+      exact hpos
+
+/-! ### No integral gain -/
+
+/-- With no integral gain the field does not depend on `ζ`. -/
+private theorem closedField_ki_zero_shift (hKi : p.Ki = 0) (x : State 2) (t : ℝ) :
+    p.closedField (x + t • EuclideanSpace.single 1 1) = p.closedField x := by
+  ext i
+  fin_cases i <;> simp [closedField, idRef, hKi]
+
+/-- With no integral gain the loop is not locally asymptotically stable: either the operating
+point is not an equilibrium, or every `(V_dc*, ζ)` is one. -/
+private theorem closed_not_las_ki_zero (hV : 0 < p.Vref) (hKi : p.Ki = 0) :
+    ¬ LocalAsymptoticStable p.closedField p.eqState := by
+  intro h
+  by_cases h0 : p.closedField p.eqState = 0
+  · refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
+      ⟨p.eqState + (ε / 2) • EuclideanSpace.single 1 1, ?_, ?_, ?_⟩) h
+    · intro h'
+      have := congrArg (fun y : State 2 => y 1) h'
+      simp at this
+      linarith
+    · rw [add_sub_cancel_left, norm_smul, PiLp.norm_single, norm_one, mul_one,
+        Real.norm_eq_abs, abs_of_pos (by positivity)]
+      linarith
+    · rw [p.closedField_ki_zero_shift hKi]
+      exact h0
+  · exact h0 (Dynamics.isEquilibrium_of_lyapunovStable_local (isOpen_posDC 2) (p.eqState_mem hV)
+      p.closedField_contDiffOn h.1)
+
+/-- With no integral gain and `i_ff = I_d0` the DC equation is
+`dV_dc/dt = −V_d (I_d0 + V_dc* Kp)(V_dc − V_dc*)/(V_dc* C V_dc)`. -/
+private theorem closedField_zero_ki (hKi : p.Ki = 0) (hff : p.iff = p.Id0) (hV : p.Vref ≠ 0)
+    (hC : p.C ≠ 0) {x : State 2} (hx : x 0 ≠ 0) :
+    p.closedField x 0 =
+      -(p.Vd * (p.Id0 + p.Vref * p.Kp) * (x 0 - p.Vref)) / (p.Vref * p.C * x 0) := by
+  simp only [closedField, PiLp.toLp_apply, Matrix.cons_val_zero, idRef, isrc, Idc0, hKi, hff]
+  field_simp
+  ring
+
+private theorem closedField_one (x : State 2) : p.closedField x 1 = x 0 - p.Vref := by
+  simp [closedField]
+
+private theorem eqState_one_ki_zero (hKi : p.Ki = 0) : p.eqState 1 = 0 := by
+  simp [eqState, hKi]
+
+/-- The Lyapunov function of the loop without integral gain: `ζ + γ (V_dc* v + v²/2)` is
+conserved, `v²` decays. -/
+private def driftEnergy (γ : ℝ) (x : State 2) : ℝ :=
+  (x 1 + γ * (p.Vref * (x 0 - p.Vref) + (x 0 - p.Vref) ^ 2 / 2)) ^ 2 + (x 0 - p.Vref) ^ 2
+
+private theorem hasFDerivAt_driftEnergy (γ : ℝ) (x : State 2) :
+    HasFDerivAt (p.driftEnergy γ)
+      ((2 * (x 1 + γ * (p.Vref * (x 0 - p.Vref) + (x 0 - p.Vref) ^ 2 / 2)) *
+          (γ * (p.Vref + (x 0 - p.Vref))) + 2 * (x 0 - p.Vref)) • Criteria.coord 0 +
+        (2 * (x 1 + γ * (p.Vref * (x 0 - p.Vref) + (x 0 - p.Vref) ^ 2 / 2))) •
+          Criteria.coord 1) x := by
+  have h0 := (Criteria.hasFDerivAt_coord 0 x).sub_const p.Vref
+  have h1 := Criteria.hasFDerivAt_coord 1 x
+  have hin := h1.add (((h0.const_mul p.Vref).add ((h0.pow 2).const_mul (1 / 2))).const_mul γ)
+  have h := (hin.pow 2).add (h0.pow 2)
+  convert h using 1
+  · funext y; simp [driftEnergy]; ring
+  · ext v
+    simp
+    ring
+
+/-- Without integral gain, with `i_ff = I_d0` and `Kp > −I_dc0/V_d`, the loop is Lyapunov
+stable. -/
+private theorem closed_lyapunovStable_ki_zero (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
+    (hC : 0 < p.C) (hKi : p.Ki = 0) (hff : p.iff = p.Id0) (hβ : 0 < p.Id0 + p.Vref * p.Kp) :
+    LyapunovStable p.closedField p.eqState := by
+  set γ := p.C * p.Vref / (p.Vd * (p.Id0 + p.Vref * p.Kp)) with hγ
+  refine lyapunov_stable (V := p.driftEnergy γ) (D := posDC 2) two_pos
+    ⟨isOpen_posDC 2, p.eqState_mem hV,
+      continuous_iff_continuousAt.mpr fun x => (p.hasFDerivAt_driftEnergy γ x).continuousAt,
+      fun x => (p.hasFDerivAt_driftEnergy γ x).differentiableAt,
+      by simp [driftEnergy, eqState, hKi], fun x hx hne => ?_, fun x hx => ?_⟩
+  · have hx' : 0 < x 0 := hx
+    by_cases h0 : x 0 = p.Vref
+    · have h1 : x 1 ≠ 0 := by
+        intro h1
+        apply hne
+        ext i
+        fin_cases i
+        · simpa [eqState] using h0
+        · simp [eqState, hKi, h1]
+      rw [show p.driftEnergy γ x = x 1 ^ 2 by simp only [driftEnergy, h0]; ring]
+      positivity
+    · have : (x 0 - p.Vref) ^ 2 > 0 := by
+        have := sub_ne_zero.mpr h0
+        positivity
+      simp only [driftEnergy]
+      positivity
+  · have hx' : 0 < x 0 := hx
+    rw [(p.hasFDerivAt_driftEnergy γ x).fderiv]
+    simp only [_root_.add_apply, _root_.smul_apply, Criteria.coord_apply, smul_eq_mul]
+    rw [p.closedField_zero_ki hKi hff hV.ne' hC.ne' (ne_of_gt hx'), p.closedField_one]
+    have hconv : p.Vref + (x 0 - p.Vref) = x 0 := by ring
+    rw [hconv]
+    have hcancel : γ * x 0 * (-(p.Vd * (p.Id0 + p.Vref * p.Kp) * (x 0 - p.Vref)) /
+        (p.Vref * p.C * x 0)) = -(x 0 - p.Vref) := by
+      rw [hγ]
+      field_simp
+    have hdec : 2 * (x 0 - p.Vref) * (-(p.Vd * (p.Id0 + p.Vref * p.Kp) * (x 0 - p.Vref)) /
+        (p.Vref * p.C * x 0)) ≤ 0 := by
+      have : 0 ≤ p.Vd * (p.Id0 + p.Vref * p.Kp) * (x 0 - p.Vref) ^ 2 / (p.Vref * p.C * x 0) := by
+        positivity
+      have heq : 2 * (x 0 - p.Vref) * (-(p.Vd * (p.Id0 + p.Vref * p.Kp) * (x 0 - p.Vref)) /
+          (p.Vref * p.C * x 0)) =
+          -(2 * (p.Vd * (p.Id0 + p.Vref * p.Kp) * (x 0 - p.Vref) ^ 2 / (p.Vref * p.C * x 0))) := by
+        ring
+      rw [heq]
+      linarith
+    have key : (2 * (x 1 + γ * (p.Vref * (x 0 - p.Vref) + (x 0 - p.Vref) ^ 2 / 2)) * (γ * x 0) +
+          2 * (x 0 - p.Vref)) *
+        (-(p.Vd * (p.Id0 + p.Vref * p.Kp) * (x 0 - p.Vref)) / (p.Vref * p.C * x 0)) +
+      2 * (x 1 + γ * (p.Vref * (x 0 - p.Vref) + (x 0 - p.Vref) ^ 2 / 2)) * (x 0 - p.Vref) =
+        2 * (x 0 - p.Vref) * (-(p.Vd * (p.Id0 + p.Vref * p.Kp) * (x 0 - p.Vref)) /
+          (p.Vref * p.C * x 0)) := by
+      linear_combination (2 * (x 1 + γ * (p.Vref * (x 0 - p.Vref) + (x 0 - p.Vref) ^ 2 / 2))) *
+        hcancel
+    rw [key]
+    exact hdec
+
+/-- Without integral gain, with `i_ff = I_d0` and `Kp < −I_dc0/V_d`, the voltage error grows:
+unstable (Chetaev's function `v²`). -/
+private theorem closed_unstable_ki_zero_lt (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
+    (hC : 0 < p.C) (hKi : p.Ki = 0) (hff : p.iff = p.Id0) (hβ : p.Id0 + p.Vref * p.Kp < 0) :
+    _root_.Unstable p.closedField p.eqState := by
+  refine Dynamics.unstable_of_chetaev_local (W := fun x : State 2 => (x 0 - p.Vref) ^ 2)
+    (r := 1) (isOpen_posDC 2) (p.eqState_mem hV) p.closedField_contDiffOn (by fun_prop) one_pos
+    (fun ε hε => ⟨p.eqState + WithLp.toLp 2 ![ε / 2, 0], ?_, ?_⟩) (fun x hx _ hW => ?_)
+  · rw [add_sub_cancel_left]
+    refine (Dynamics.norm_le_abs_add_abs_two _).trans_lt ?_
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, abs_zero, add_zero]
+    rw [abs_of_pos (by positivity)]
+    linarith
+  · simp [eqState]
+    positivity
+  · have hx' : 0 < x 0 := hx
+    have hd : HasFDerivAt (fun x : State 2 => (x 0 - p.Vref) ^ 2)
+        ((2 * (x 0 - p.Vref)) • Criteria.coord 0) x := by
+      have h := ((Criteria.hasFDerivAt_coord 0 x).sub_const p.Vref).pow 2
+      convert h using 1
+      ext v; simp
+    rw [hd.fderiv]
+    simp only [_root_.smul_apply, Criteria.coord_apply, smul_eq_mul]
+    rw [p.closedField_zero_ki hKi hff hV.ne' hC.ne' (ne_of_gt hx')]
+    have hW' : 0 < (x 0 - p.Vref) ^ 2 := hW
+    have : 0 < -(p.Vd * (p.Id0 + p.Vref * p.Kp)) * (x 0 - p.Vref) ^ 2 / (p.Vref * p.C * x 0) := by
+      have : 0 < -(p.Vd * (p.Id0 + p.Vref * p.Kp)) := by nlinarith
+      positivity
+    have heq : 2 * (x 0 - p.Vref) * (-(p.Vd * (p.Id0 + p.Vref * p.Kp) * (x 0 - p.Vref)) /
+        (p.Vref * p.C * x 0)) =
+        2 * (-(p.Vd * (p.Id0 + p.Vref * p.Kp)) * (x 0 - p.Vref) ^ 2 / (p.Vref * p.C * x 0)) := by
+      ring
+    rw [heq]
+    linarith
+
+/-- Without integral gain, with `i_ff = I_d0` and `Kp = −I_dc0/V_d`, the voltage error stays
+constant and the integrator drifts: unstable (Chetaev's function `v z`). -/
+private theorem closed_unstable_ki_zero_eq (hV : 0 < p.Vref) (hC : 0 < p.C) (hKi : p.Ki = 0)
+    (hff : p.iff = p.Id0) (hβ : p.Id0 + p.Vref * p.Kp = 0) :
+    _root_.Unstable p.closedField p.eqState := by
+  refine Dynamics.unstable_of_chetaev_local (W := fun x : State 2 => (x 0 - p.Vref) * x 1)
+    (r := 1) (isOpen_posDC 2) (p.eqState_mem hV) p.closedField_contDiffOn (by fun_prop) one_pos
+    (fun ε hε => ⟨p.eqState + WithLp.toLp 2 ![ε / 4, ε / 4], ?_, ?_⟩) (fun x hx _ hW => ?_)
+  · rw [add_sub_cancel_left]
+    refine (Dynamics.norm_le_abs_add_abs_two _).trans_lt ?_
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
+    rw [abs_of_pos (by positivity)]
+    linarith
+  · simp [eqState, hKi]
+    positivity
+  · have hx' : 0 < x 0 := hx
+    have hd : HasFDerivAt (fun x : State 2 => (x 0 - p.Vref) * x 1)
+        (x 1 • Criteria.coord 0 + (x 0 - p.Vref) • Criteria.coord 1) x := by
+      have h := ((Criteria.hasFDerivAt_coord 0 x).sub_const p.Vref).mul
+        (Criteria.hasFDerivAt_coord 1 x)
+      convert h using 1
+      ext v; simp; ring
+    rw [hd.fderiv]
+    simp only [_root_.add_apply, _root_.smul_apply, Criteria.coord_apply, smul_eq_mul]
+    rw [p.closedField_zero_ki hKi hff hV.ne' hC.ne' (ne_of_gt hx'), p.closedField_one, hβ]
+    have hv : x 0 - p.Vref ≠ 0 := by
+      intro h
+      have : (x 0 - p.Vref) * x 1 = 0 := by rw [h, zero_mul]
+      linarith
+    have : 0 < (x 0 - p.Vref) * (x 0 - p.Vref) := mul_self_pos.mpr hv
+    simpa using this
+
+/-- Without integral gain the operating point is an equilibrium exactly when the feedforward
+matches the operating current, `i_ff = I_d0`. -/
+private theorem closedField_eqState_ki_zero (hKi : p.Ki = 0) (hVd : p.Vd ≠ 0) (hV : p.Vref ≠ 0)
+    (hC : p.C ≠ 0) : p.closedField p.eqState = 0 ↔ p.iff = p.Id0 := by
+  constructor
+  · intro h
+    have h0 := congrArg (fun y : State 2 => y 0) h
+    simp only [closedField, eqState, idRef, isrc, Idc0, hKi, PiLp.toLp_apply, Matrix.cons_val_zero,
+      PiLp.zero_apply] at h0
+    field_simp at h0
+    have : p.Vd * (p.iff - p.Id0) = 0 := by linear_combination h0
+    rcases mul_eq_zero.mp this with h1 | h1
+    · exact absurd h1 hVd
+    · linarith
+  · intro hff
+    ext i
+    fin_cases i
+    · simp only [closedField, eqState, idRef, isrc, Idc0, hKi, hff, PiLp.toLp_apply,
+        Fin.zero_eta, Matrix.cons_val_zero, PiLp.zero_apply]
+      field_simp
+      ring
+    · simp [closedField, eqState]
+
+/-- `Kp` against the boundary `−I_dc0/V_d`: the sign of `I_d0 + V_dc* Kp`. -/
+private theorem kp_sub_boundary (hVd : 0 < p.Vd) (hV : 0 < p.Vref) :
+    p.Vd * p.Kp + p.Idc0 = p.Vd / p.Vref * (p.Id0 + p.Vref * p.Kp) ∧
+      (-(p.Idc0 / p.Vd) < p.Kp ↔ 0 < p.Vd * p.Kp + p.Idc0) ∧
+      (-(p.Idc0 / p.Vd) = p.Kp ↔ p.Vd * p.Kp + p.Idc0 = 0) := by
+  refine ⟨?_, ?_, ?_⟩
+  · simp only [Idc0]
+    field_simp
+    ring
+  · rw [← neg_div, div_lt_iff₀ hVd]
+    constructor <;> intro h <;> linarith
+  · rw [← neg_div, div_eq_iff hVd.ne']
+    constructor <;> intro h <;> linarith
+
+end DCParams
+
+private theorem closed_las_iff (p : DCParams) (hVd : 0 < p.Vd) (hV : 0 < p.Vref) (hC : 0 < p.C) :
+    LocalAsymptoticStable p.closedField p.eqState ↔ -(p.Idc0 / p.Vd) < p.Kp ∧ 0 < p.Ki := by
+  constructor
+  · intro h
+    rcases lt_trichotomy p.Ki 0 with hki | hki | hki
+    · exact absurd h.1 (p.closedLoop_unstable_of_ki hVd hV hC hki)
+    · exact absurd h (p.closed_not_las_ki_zero hV hki)
+    · refine ⟨?_, hki⟩
+      rcases lt_trichotomy p.Kp (-(p.Idc0 / p.Vd)) with hkp | hkp | hkp
+      · exact absurd h.1 (p.closedLoop_unstable_of_kp hVd hV hC hki.ne' hkp)
+      · exact absurd h (p.closed_not_las_boundary hVd hV hC hki hkp)
+      · exact hkp
+  · rintro ⟨hkp, hki⟩
+    exact Flow.locallyExponentiallyStable_localAsymptoticStable
+      (p.closedLoop_locallyExponentiallyStable hVd hV hC hkp hki)
+
+private theorem closed_ls_iff (p : DCParams) (hVd : 0 < p.Vd) (hV : 0 < p.Vref) (hC : 0 < p.C) :
+    LyapunovStable p.closedField p.eqState ↔ (0 < p.Ki ∧ -(p.Idc0 / p.Vd) ≤ p.Kp) ∨
+      (p.Ki = 0 ∧ p.iff = p.Id0 ∧ -(p.Idc0 / p.Vd) < p.Kp) := by
+  obtain ⟨hsplit, hlt, -⟩ := p.kp_sub_boundary hVd hV
+  have hVV : 0 < p.Vd / p.Vref := div_pos hVd hV
+  constructor
+  · intro h
+    rcases lt_trichotomy p.Ki 0 with hki | hki | hki
+    · exact absurd h (p.closedLoop_unstable_of_ki hVd hV hC hki)
+    · have hff : p.iff = p.Id0 := (p.closedField_eqState_ki_zero hki hVd.ne' hV.ne' hC.ne').mp
+        (Dynamics.isEquilibrium_of_lyapunovStable_local (isOpen_posDC 2) (p.eqState_mem hV)
+          p.closedField_contDiffOn h)
+      refine Or.inr ⟨hki, hff, ?_⟩
+      rw [hlt, hsplit]
+      rcases lt_trichotomy (p.Id0 + p.Vref * p.Kp) 0 with hβ | hβ | hβ
+      · exact absurd h (p.closed_unstable_ki_zero_lt hVd hV hC hki hff hβ)
+      · exact absurd h (p.closed_unstable_ki_zero_eq hV hC hki hff hβ)
+      · positivity
+    · exact Or.inl ⟨hki, not_lt.mp fun hkp => p.closedLoop_unstable_of_kp hVd hV hC hki.ne' hkp h⟩
+  · rintro (⟨hki, hkp⟩ | ⟨hki, hff, hkp⟩)
+    · rcases hkp.lt_or_eq with hkp | hkp
+      · exact (p.closedLoop_locallyExponentiallyStable hVd hV hC hkp hki).lyapunovStable
+      · exact p.closed_lyapunovStable_boundary hVd hV hC hki hkp.symm
+    · refine p.closed_lyapunovStable_ki_zero hVd hV hC hki hff ?_
+      rw [hlt, hsplit] at hkp
+      exact pos_of_mul_pos_right hkp hVV.le
+
+/-- Positive `V_d`, `V_dc*`, `C`: the nonlinear DC-voltage loop is locally asymptotically stable
+at `(V_dc*, ζ0)` exactly when `Kp > −I_dc0/V_d` and `Ki > 0` — the local exponential condition.
+On the boundary `Kp = −I_dc0/V_d`, `Ki > 0` the conserved energy `DCParams.centerEnergy` keeps every
+nearby solution on its level (a centre, first Lyapunov coefficient zero); with `Ki = 0` either the
+operating point is not an equilibrium or every `(V_dc*, ζ)` is one; elsewhere the loop is
+unstable. -/
+@[powerlib_domain] theorem closedLoop_mem_den_locallyAsymptoticallyStable_iff (p : DCParams)
+    (hVd : 0 < p.Vd) (hV : 0 < p.Vref) (hC : 0 < p.C) :
+    connection% (p ∈ closedFamily.den (.flow .locallyAsymptoticallyStable) ↔
+      p ∈ {p : DCParams | -(p.Idc0 / p.Vd) < p.Kp ∧ 0 < p.Ki}) := by
+  unfold powerlib.TMIO.Statement
+  rw [closed_mem_den_flow, Set.mem_ofPred_eq]
+  exact closed_las_iff p hVd hV hC
+
+/-- Positive `V_d`, `V_dc*`, `C`: the nonlinear DC-voltage loop is Lyapunov stable at
+`(V_dc*, ζ0)` exactly when `Ki > 0` and `Kp ≥ −I_dc0/V_d` (the centre on the boundary included),
+or `Ki = 0`, `i_ff = I_d0` (the operating point is an equilibrium) and `Kp > −I_dc0/V_d` (then
+`ζ + γ (V_dc* v + v²/2)` is conserved and `v²` decays). With `Ki = 0`, `Kp = −I_dc0/V_d` the
+voltage error is frozen and the integrator drifts; with `Kp < −I_dc0/V_d` the error grows
+(Chetaev's theorem). -/
+@[powerlib_domain] theorem closedLoop_mem_den_lyapunovStable_iff (p : DCParams) (hVd : 0 < p.Vd)
+    (hV : 0 < p.Vref) (hC : 0 < p.C) :
+    connection% (p ∈ closedFamily.den (.flow .lyapunovStable) ↔
+      p ∈ {p : DCParams | (0 < p.Ki ∧ -(p.Idc0 / p.Vd) ≤ p.Kp) ∨
+        (p.Ki = 0 ∧ p.iff = p.Id0 ∧ -(p.Idc0 / p.Vd) < p.Kp)}) := by
+  unfold powerlib.TMIO.Statement
+  rw [closed_mem_den_flow, Set.mem_ofPred_eq]
+  exact closed_ls_iff p hVd hV hC
+
+/-- The loop on the boundary: `C = V_d = V_dc* = Ki = 1`, `Kp = i_ff = I_d0 = 0` (`I_dc0 = 0`, so
+`Kp = −I_dc0/V_d`). -/
+def centerLoop : DCParams := ⟨1, 1, 1, 0, 1, 0, 0⟩
+
+private theorem centerLoop_boundary :
+    centerLoop.Kp = -(centerLoop.Idc0 / centerLoop.Vd) := by
+  norm_num [centerLoop, DCParams.Idc0]
+
+/-- The boundary loop is Lyapunov stable (a centre with the conserved energy
+`v²/2 + v³/3 + z²/2`). -/
+@[powerlib_domain] theorem centerLoop_mem_den_lyapunovStable :
+    connection% (centerLoop ∈ closedFamily.den (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  exact closed_mem_den_flow.mpr (centerLoop.closed_lyapunovStable_boundary
+    (by norm_num [centerLoop]) (by norm_num [centerLoop]) (by norm_num [centerLoop])
+    (by norm_num [centerLoop]) centerLoop_boundary)
+
+/-- The boundary loop is not locally asymptotically stable. -/
+@[powerlib_domain] theorem centerLoop_not_mem_den_locallyAsymptoticallyStable :
+    connection% (centerLoop ∉ closedFamily.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [closed_mem_den_flow]
+  exact centerLoop.closed_not_las_boundary (by norm_num [centerLoop]) (by norm_num [centerLoop])
+    (by norm_num [centerLoop]) (by norm_num [centerLoop]) centerLoop_boundary
+
+private theorem closed_realize_stable :
+    TMIO.realize closedFamily.meets (closedFamily.translate (.flow .locallyAsymptoticallyStable)) =
+      {p : DCParams | DCParams.Stable p} := by
+  ext p
+  rw [TMIO.mem_realize]
+  change (∀ q ∈ ({.stable} : Set Spectral.Requirement), Spectral.Meets _ _ p q) ↔ _
+  simp
+
+/-- Within positive `V_d`, `V_dc*`, `C` the local asymptotic translation is exact: the generated
+space of its translation (`stable`) is the local asymptotic denotation cut by the physical
+range. -/
+@[powerlib_domain] theorem closedExact_locallyAsymptoticallyStable_physical :
+    connection% (TMIO.realize closedFamily.meets
+        (closedFamily.translate (.flow .locallyAsymptoticallyStable)) =
+      closedFamily.den (.flow .locallyAsymptoticallyStable) ∩
+        {p : DCParams | 0 < p.Vd ∧ 0 < p.Vref ∧ 0 < p.C}) := by
+  unfold powerlib.TMIO.Statement
+  rw [closed_realize_stable]
+  ext p
+  simp only [Set.mem_ofPred_eq, Set.mem_inter_iff]
+  rw [closed_mem_den_flow]
+  constructor
+  · rintro ⟨hVd, hV, hC, hkp, hki⟩
+    exact ⟨(closed_las_iff p hVd hV hC).mpr ⟨hkp, hki⟩, hVd, hV, hC⟩
+  · rintro ⟨h, hVd, hV, hC⟩
+    obtain ⟨hkp, hki⟩ := (closed_las_iff p hVd hV hC).mp h
+    exact ⟨hVd, hV, hC, hkp, hki⟩
+
+/-- Within positive `V_d`, `V_dc*`, `C` the Lyapunov translation is not exact: the boundary loop
+`centerLoop` is physical and Lyapunov stable but does not meet `stable`. -/
+@[powerlib_domain] theorem closedNot_exact_lyapunovStable_physical :
+    connection% (¬ TMIO.realize closedFamily.meets
+        (closedFamily.translate (.flow .lyapunovStable)) =
+      closedFamily.den (.flow .lyapunovStable) ∩
+        {p : DCParams | 0 < p.Vd ∧ 0 < p.Vref ∧ 0 < p.C}) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hmem := centerLoop_mem_den_lyapunovStable
+  unfold powerlib.TMIO.Statement at hmem
+  have hin : centerLoop ∈ closedFamily.den (.flow .lyapunovStable) ∩
+      {p : DCParams | 0 < p.Vd ∧ 0 < p.Vref ∧ 0 < p.C} :=
+    ⟨hmem, by norm_num [centerLoop]⟩
+  rw [← h, TMIO.mem_realize] at hin
+  have hs : DCParams.Stable centerLoop := hin .stable rfl
+  have := hs.2.2.2.1
+  norm_num [centerLoop, DCParams.Idc0] at this
 
 end powerlib.DCLink
