@@ -40,19 +40,13 @@ Results.
   most four lines (two uncoupled pairs, labelled by `σ`), local asymptotic stability holds exactly
   when the profile is a power-balance point with a Hurwitz reduced Jacobian: on this class the
   local asymptotic translation `{powerFlow, jacobianStable}` is exact.
-* UNPROVED (remaining exact set for `n = 3`): four-machine models with at least five lines (all
-  pairs coupled except at most one: the diamond and the complete graph) whose selected profile is
-  a power-balance point at which the Hessian form `A₂` is positive semidefinite and singular, every
-  cut has positive total linearization weight, every non-constant null direction carries a nonzero
-  linearized circulation, and the cubic form `A₃` vanishes on every null direction. Every other
-  four-machine model is decided by the results above (and by
-  `mem_den_locallyAsymptoticallyStable_iff`). Missing general theorem: on these graphs the null
-  circulation can use two or three independent cycles and two or three lines can have negative
-  weight, so neither `triangle_cubic_ne_zero` nor `ring_cubic_ne_zero` applies directly; what is
-  needed is a sign theorem for the cubic term — the circulation splits into directed cycles each
-  with one negative line, on which the bracket of `ring_cubic_ne_zero` has one common sign. A
-  random search (complete graph and diamond, also with a zero-weight line whose coupling is
-  free) finds no configuration with `A₃ = 0`.
+* The remaining four-machine networks (at least five lines: the diamond and the complete graph)
+  are decided in `theorem/Network/SwingFourDense.lean` (`diamond_cubic_ne_zero` by a branch
+  identity, `sorted_cubic_ne_zero` by sorted lifted angles and cycle bounds from
+  `tan_sum_mul_sq_lt`); the family conclusion there, `exact_locallyAsymptoticallyStable_four`,
+  states that the local asymptotic translation of `family (n := 3)` is exact, and
+  `mem_den_locallyAsymptoticallyStable_iff_four_machines` drops the line restriction of
+  `mem_den_locallyAsymptoticallyStable_iff_four`. No UNPROVED residual remains for `n = 3`.
 
 Connection architecture. The family is `Swing.family`; the public model conclusion is a
 `connection%` statement on its generated denotation. The cut, form and trigonometric lemmas are

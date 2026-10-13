@@ -43,11 +43,10 @@ Results.
 * Four machines (`n = 3`): `theorem/Network/SwingFour.lean` proves exactness for every network with
   at most four lines (`mem_den_locallyAsymptoticallyStable_iff_four`; two uncoupled machine pairs:
   a subgraph of a four-cycle, the cubic term by superadditivity of `tan`, or of a triangle with a
-  pendant line) and the cut and flat-direction tests for every `n`. UNPROVED residual: four-machine
-  networks with at least five lines (the diamond and the complete graph) at power-balance points
-  whose Hessian form `A₂` is positive semidefinite and singular, every cut has positive total
-  weight, every non-constant null direction carries a nonzero circulation, and the cubic form `A₃`
-  vanishes on all null directions (see the module header of `SwingFour`).
+  pendant line) and the cut and flat-direction tests for every `n`;
+  `theorem/Network/SwingFourDense.lean` decides the diamond and the complete graph and proves
+  `exact_locallyAsymptoticallyStable_four` (exact for every four-machine network) and
+  `mem_den_locallyAsymptoticallyStable_iff_four_machines`.
 
 Connection architecture. The family is `Swing.family`; the public model conclusions are
 `connection%` statements on its generated denotations. Energy, Taylor and Hurwitz lemmas are static
