@@ -40,6 +40,12 @@ Static results.
   reference feedback `i* = r + κ i` into the state matrix: Hurwitz iff
   `R + Kp (1 − κ) > 0 ∧ Ki (1 − κ) > 0`. With `κ = −k_p^Q` the A_ci condition of the note becomes
   `R + Kp (1 + k_p^Q) > 0 ∧ Ki (1 + k_p^Q) > 0`; the frozen reference is the case `κ = 0`.
+* Current-loop order (`firstOrderLag_error`, `piLoop_error`): with `G₁(s) = ω/(s + ω)`
+  (`lagLoop`) and the PI closed loop `G_PI(s) = (2ζωs + ω²)/(s² + 2ζωs + ω²)` (`piLoop`;
+  `k_pc = 2ζωL`, `k_ic = ω²L`), `1 − G₁ = s/(s + ω)` and `1 − G_PI = s²/(s² + 2ζωs + ω²)`
+  (`one_sub_lagLoop`, `one_sub_piLoop`); at any fixed `s`, `ω (1 − G₁(s)) → s` and
+  `ω² (1 − G_PI(s)) → s²` as `ω → ∞`: the low-frequency error is of exact order `ω⁻¹` for the lag
+  and `ω⁻²` for the PI loop.
 
 ## Families and connection conclusions
 
@@ -64,7 +70,9 @@ private implementation evidence.
 
 Source: work-sync `theory/T-gfl-control.md` §1.4.1, §1.4.4; `theory/T-gfl-impedance.md` §1.4
 (scalar sanity check); `theory/T-gfl-reduced-order-dynamics.md` §1.3 (`A_ci`);
-`projects/vsc-stochastic-stability/notes/concepts/reduction-pipeline.md` §2.
+`projects/vsc-stochastic-stability/notes/concepts/reduction-pipeline.md` §2;
+`projects/gfl-gfm-stability-tree/notes/concepts/frozen-and-basin.md` (PI 环 `O(ω_cc⁻²)` vs
+一阶滞后 `O(ω_cc⁻¹)`, current-loop order).
 -/
 
 noncomputable section
@@ -411,5 +419,97 @@ private theorem tracks_reference (p : PIParams) (hL : 0 < p.L) (hR : 0 < p.R + p
     by simpa [equilibrium] using LTI.tendsto_equilibrium_apply p.model hA he hx' 1⟩
 
 end PIParams
+
+/-! ## Current-loop order: PI versus first-order lag -/
+
+section LoopOrder
+
+open Complex Filter Topology
+
+/-- First-order lag `G₁(s) = ω/(s + ω)`. -/
+def lagLoop (ω : ℝ) (s : ℂ) : ℂ := ω / (s + ω)
+
+/-- PI closed loop `G_PI(s) = (2ζωs + ω²)/(s² + 2ζωs + ω²)`. -/
+def piLoop (ζ ω : ℝ) (s : ℂ) : ℂ := (2 * ζ * ω * s + ω ^ 2) / (s ^ 2 + 2 * ζ * ω * s + ω ^ 2)
+
+@[powerlib_foundation] theorem one_sub_lagLoop {ω : ℝ} {s : ℂ} (h : s + ω ≠ 0) :
+    1 - lagLoop ω s = s / (s + ω) := by
+  rw [lagLoop]; field_simp; ring
+
+@[powerlib_foundation] theorem one_sub_piLoop {ζ ω : ℝ} {s : ℂ}
+    (h : s ^ 2 + 2 * ζ * ω * s + ω ^ 2 ≠ 0) :
+    1 - piLoop ζ ω s = s ^ 2 / (s ^ 2 + 2 * ζ * ω * s + ω ^ 2) := by
+  rw [piLoop, eq_div_iff h, sub_mul, one_mul, div_mul_cancel₀ _ h]
+  ring
+
+/-- The lag error is of exact order `ω⁻¹`: `ω (1 − G₁(s)) → s`. -/
+@[powerlib_foundation] theorem firstOrderLag_error (s : ℂ) :
+    Tendsto (fun ω : ℝ => (ω : ℂ) * (1 - lagLoop ω s)) atTop (𝓝 s) := by
+  have hinv : Tendsto (fun ω : ℝ => s * ((ω : ℂ))⁻¹) atTop (𝓝 0) := by
+    have : Tendsto (fun ω : ℝ => ((ω : ℂ))⁻¹) atTop (𝓝 0) := by
+      have h := (tendsto_inv_atTop_zero (𝕜 := ℝ)).ofReal
+      simpa using h
+    simpa using this.const_mul s
+  have hlim : Tendsto (fun ω : ℝ => s / (s * ((ω : ℂ))⁻¹ + 1)) atTop (𝓝 (s / (0 + 1))) :=
+    tendsto_const_nhds.div (hinv.add tendsto_const_nhds) (by norm_num)
+  rw [zero_add, div_one] at hlim
+  apply hlim.congr'
+  filter_upwards [eventually_gt_atTop (‖s‖)] with ω hω
+  have hω0 : (ω : ℂ) ≠ 0 := by
+    have : 0 < ω := lt_of_le_of_lt (norm_nonneg s) hω
+    exact_mod_cast this.ne'
+  have hsω : s + ω ≠ 0 := by
+    intro h
+    have : ‖s‖ = ω := by
+      rw [show s = -(ω : ℂ) by linear_combination h, norm_neg, Complex.norm_real,
+        Real.norm_eq_abs, abs_of_pos (lt_of_le_of_lt (norm_nonneg s) hω)]
+    linarith
+  rw [one_sub_lagLoop hsω]
+  field_simp
+
+/-- The PI-loop error is of exact order `ω⁻²`: `ω² (1 − G_PI(s)) → s²`. -/
+@[powerlib_foundation] theorem piLoop_error (ζ : ℝ) (s : ℂ) :
+    Tendsto (fun ω : ℝ => (ω : ℂ) ^ 2 * (1 - piLoop ζ ω s)) atTop (𝓝 (s ^ 2)) := by
+  have hinv : Tendsto (fun ω : ℝ => ((ω : ℂ))⁻¹) atTop (𝓝 0) := by
+    have h := (tendsto_inv_atTop_zero (𝕜 := ℝ)).ofReal
+    simpa using h
+  have hden : Tendsto (fun ω : ℝ => s ^ 2 * ((ω : ℂ))⁻¹ ^ 2 + 2 * ζ * s * ((ω : ℂ))⁻¹ + 1)
+      atTop (𝓝 (s ^ 2 * 0 ^ 2 + 2 * ζ * s * 0 + 1)) :=
+    (((tendsto_const_nhds.mul (hinv.pow 2)).add (tendsto_const_nhds.mul hinv)).add
+      tendsto_const_nhds)
+  simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, mul_zero, add_zero,
+    zero_add] at hden
+  have hlim := (tendsto_const_nhds (x := s ^ 2)).div hden one_ne_zero
+  rw [div_one] at hlim
+  apply hlim.congr'
+  -- for large `ω` the denominator does not vanish
+  have hev : ∀ᶠ ω : ℝ in atTop,
+      ‖s ^ 2 * ((ω : ℂ))⁻¹ ^ 2 + 2 * ζ * s * ((ω : ℂ))⁻¹‖ < 1 / 2 := by
+    have h0 : Tendsto (fun ω : ℝ => s ^ 2 * ((ω : ℂ))⁻¹ ^ 2 + 2 * ζ * s * ((ω : ℂ))⁻¹)
+        atTop (𝓝 0) := by
+      have := ((tendsto_const_nhds (x := s ^ 2)).mul (hinv.pow 2)).add
+        ((tendsto_const_nhds (x := 2 * ζ * s)).mul hinv)
+      simpa using this
+    exact (h0.norm).eventually (gt_mem_nhds (by norm_num : ‖(0 : ℂ)‖ < 1 / 2))
+  filter_upwards [hev, eventually_gt_atTop (0 : ℝ)] with ω hω hpos
+  have hω0 : (ω : ℂ) ≠ 0 := by exact_mod_cast hpos.ne'
+  have hrep : s ^ 2 * ((ω : ℂ))⁻¹ ^ 2 + 2 * ζ * s * ((ω : ℂ))⁻¹ + 1 =
+      (s ^ 2 + 2 * ζ * ω * s + (ω : ℂ) ^ 2) / (ω : ℂ) ^ 2 := by
+    field_simp; try ring
+  have hD : s ^ 2 * ((ω : ℂ))⁻¹ ^ 2 + 2 * ζ * s * ((ω : ℂ))⁻¹ + 1 ≠ 0 := by
+    intro h
+    have : s ^ 2 * ((ω : ℂ))⁻¹ ^ 2 + 2 * ζ * s * ((ω : ℂ))⁻¹ = -1 := by linear_combination h
+    rw [this, norm_neg, norm_one] at hω
+    norm_num at hω
+  have hD' : s ^ 2 + 2 * ζ * ω * s + (ω : ℂ) ^ 2 ≠ 0 := by
+    intro h
+    apply hD
+    rw [hrep, h, zero_div]
+  show s ^ 2 / (s ^ 2 * ((ω : ℂ))⁻¹ ^ 2 + 2 * ζ * s * ((ω : ℂ))⁻¹ + 1) =
+    (ω : ℂ) ^ 2 * (1 - piLoop ζ ω s)
+  rw [hrep, one_sub_piLoop hD', div_div_eq_mul_div]
+  ring
+
+end LoopOrder
 
 end powerlib.CurrentControl

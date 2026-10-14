@@ -15,6 +15,10 @@ Conventions fixed by this module:
   Hence `park θ = rot (-θ)` and, in complex form, `x^{dq} = x^{αβ} · e^{-jθ}`.
 * `J = [[0, -1], [1, 0]]` is the rotation generator (`d/dθ rot θ = J · rot θ`); in complex
   form it is multiplication by `j`.
+* Scalar components: `parkD θ x_d x_q`, `parkQ θ x_d x_q` are the two rows of `park θ` applied to
+  `(x_d, x_q)` (system → controller frame, `conventions.md` §D4) and `iparkD`, `iparkQ` those of
+  `rot θ` (controller → system); `parkD_ipark` … `iparkQ_park` (inverse pairs), `park_dot` (dot
+  product preserved), `parkD_J`, `parkQ_J` (commutation with `J`).
 * `clarke` is the amplitude-invariant Clarke matrix `(2/3)[[1, -1/2, -1/2], [0, √3/2, -√3/2]]`
   (`conventions.md` §4). `clarkePI` is the 3 × 3 power-invariant Clarke matrix with the
   zero-sequence row (`T-impedance-modeling.md` §1.1); it is orthogonal.
@@ -305,6 +309,54 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
   simp only [smul_add, smul_smul, mul_inv_cancel₀ hC, one_smul] at h3
   rw [← h3, mul_comm ω C, ← smul_smul]
   abel
+
+/-! ## Park transformation components (`conventions.md` §D4) -/
+
+section Components
+
+open Real
+
+/-- d-component of `T(θ) x` (system → controller). -/
+def parkD (θ xd xq : ℝ) : ℝ := cos θ * xd + sin θ * xq
+
+/-- q-component of `T(θ) x` (system → controller). -/
+def parkQ (θ xd xq : ℝ) : ℝ := -sin θ * xd + cos θ * xq
+
+/-- d-component of `T(−θ) x` (controller → system). -/
+def iparkD (θ xd xq : ℝ) : ℝ := cos θ * xd - sin θ * xq
+
+/-- q-component of `T(−θ) x` (controller → system). -/
+def iparkQ (θ xd xq : ℝ) : ℝ := sin θ * xd + cos θ * xq
+
+@[simp, powerlib_foundation] theorem parkD_ipark (θ x y : ℝ) :
+    parkD θ (iparkD θ x y) (iparkQ θ x y) = x := by
+  unfold parkD iparkD iparkQ; linear_combination x * sin_sq_add_cos_sq θ
+
+@[simp, powerlib_foundation] theorem parkQ_ipark (θ x y : ℝ) :
+    parkQ θ (iparkD θ x y) (iparkQ θ x y) = y := by
+  unfold parkQ iparkD iparkQ; linear_combination y * sin_sq_add_cos_sq θ
+
+@[simp, powerlib_foundation] theorem iparkD_park (θ x y : ℝ) :
+    iparkD θ (parkD θ x y) (parkQ θ x y) = x := by
+  unfold parkD parkQ iparkD; linear_combination x * sin_sq_add_cos_sq θ
+
+@[simp, powerlib_foundation] theorem iparkQ_park (θ x y : ℝ) :
+    iparkQ θ (parkD θ x y) (parkQ θ x y) = y := by
+  unfold parkD parkQ iparkQ; linear_combination y * sin_sq_add_cos_sq θ
+
+/-- The rotation preserves the dot product. -/
+@[powerlib_foundation] theorem park_dot (θ x y u v : ℝ) :
+    parkD θ x y * parkD θ u v + parkQ θ x y * parkQ θ u v = x * u + y * v := by
+  unfold parkD parkQ; linear_combination (x * u + y * v) * sin_sq_add_cos_sq θ
+
+/-- The rotation commutes with the generator `J (x, y) = (−y, x)`. -/
+@[powerlib_foundation] theorem parkD_J (θ x y : ℝ) : parkD θ (-y) x = -parkQ θ x y := by
+  unfold parkD parkQ; ring
+
+@[powerlib_foundation] theorem parkQ_J (θ x y : ℝ) : parkQ θ (-y) x = parkD θ x y := by
+  unfold parkD parkQ; ring
+
+end Components
 
 /-! ## Clarke transformations -/
 

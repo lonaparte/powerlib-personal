@@ -14,7 +14,7 @@ For `A > 0` and a period window `[a, a + 2π)`:
 
 Explicitly `stableRoot ≡ arcsin(c/A) − φ` and `saddleRoot ≡ π − arcsin(c/A) − φ (mod 2π)`.
 This is pure trigonometry; it is used for the reduced GFL-PLL model whose phase-detector
-characteristic is exactly of this form (`theorem/VSC/Reduction.lean`, `h_eq_polar`).
+characteristic is exactly of this form (`theorem/GFL/LCLine/Reduction.lean`, `h_eq_polar`).
 
 Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/equilibria-and-bifurcation.md`
 §2 (number of equilibria per period).

@@ -16,11 +16,15 @@ not state in this form. Nothing here describes a physical system.
   `carrier_mean_sin_sq` (the mean of `A sin²(ω t)` over one period `2π/ω` is `A/2`).
 * Absolute values and signs: `mul_sign_eq_abs` (`x · sign x = |x|`), `abs_mul_pow_le`
   (`|w^i ξ^j| ≤ m^(i+j)` when `|w|, |ξ| ≤ m`), `sq_max_abs_le` (`max(|w|, |ξ|)² ≤ w² + ξ²`).
+* Complex exponential: `normSq_affine_exp` (`|a e^{jδ} + b|² = a² + b² + 2ab cos δ`),
+  `im_logDeriv_affine_exp`
+  (`Im(a j e^{jδ}/(a e^{jδ} + b)) = (a² + ab cos δ)/(a² + b² + 2ab cos δ)`).
 
 Source: elementary analysis, used by the swing-equation damping estimates
 (`theorem/Synchronous/DampedEAC.lean`), the model-B boundary analysis
-(`theorem/GFL/ModelBBoundary.lean`) and the sensorless drive averaging
-(`theorem/Machine/Sensorless.lean`).
+(`theorem/GFL/DCLink/ModelBBoundary.lean`), the sensorless drive averaging
+(`theorem/Machine/Sensorless.lean`) and the Thévenin modulation map
+(`theorem/GFL/Parametric/ModulationTransfer.lean`).
 -/
 
 noncomputable section
@@ -130,5 +134,34 @@ end Exponential
   rcases le_total |w| |ξ| with h | h
   · rw [max_eq_right h, sq_abs]; nlinarith [sq_nonneg w]
   · rw [max_eq_left h, sq_abs]; nlinarith [sq_nonneg ξ]
+
+/-! ## Complex exponential -/
+
+section ComplexExp
+
+open Complex
+
+@[powerlib_foundation] theorem normSq_affine_exp (a b δ : ℝ) :
+    normSq ((a : ℂ) * exp (δ * I) + b) = a ^ 2 + b ^ 2 + 2 * a * b * Real.cos δ := by
+  rw [exp_mul_I, ← ofReal_cos, ← ofReal_sin]
+  rw [normSq_apply]
+  simp only [add_re, add_im, mul_re, mul_im, ofReal_re, ofReal_im, I_re, I_im]
+  have := Real.sin_sq_add_cos_sq δ
+  nlinarith [this]
+
+@[powerlib_foundation] theorem im_logDeriv_affine_exp (a b δ : ℝ) :
+    ((a : ℂ) * (exp (δ * I) * I) / ((a : ℂ) * exp (δ * I) + b)).im =
+      (a ^ 2 + a * b * Real.cos δ) / (a ^ 2 + b ^ 2 + 2 * a * b * Real.cos δ) := by
+  have hQ := normSq_affine_exp a b δ
+  rw [div_im, hQ]
+  rw [exp_mul_I, ← ofReal_cos, ← ofReal_sin]
+  simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im]
+  have hs := Real.sin_sq_add_cos_sq δ
+  rw [← sub_div]
+  congr 1
+  ring_nf
+  nlinarith [hs]
+
+end ComplexExp
 
 end powerlib.SpecialFunctions

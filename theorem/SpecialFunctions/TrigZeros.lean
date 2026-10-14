@@ -36,7 +36,7 @@ Source: work-sync `theory/T-gfl-dynamics.md` §1.8–§1.9 and §1.14 (counts 2 
 `theory/T-gfl-ph.md` §1.5, `theory/T-pll-dynamics.md` §1.13(a). The notes state the counts
 ("2 or 4", "two stable and two saddles") without proof; this module proves the general bound
 (at most 4) and the parity (even when all zeros are simple). It does not prove that 4 zeros
-actually occur for the GFL form-B characteristic (see `theorem/GFL/FormB.lean`: for the exact
+actually occur for the GFL form-B characteristic (see `theorem/GFL/LCLine/FormB.lean`: for the exact
 quasi-steady line solution the `2θ` coefficients vanish).
 -/
 

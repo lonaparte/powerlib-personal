@@ -1,4 +1,5 @@
 import theorem.Dynamics.Lyapunov
+import theorem.Dynamics.Calculus
 
 /-! # Weak foci: polynomial Lyapunov functions at a Hopf point (foundation)
 
@@ -20,7 +21,10 @@ implication about an arbitrary field, function or polynomial, a foundation resul
   direction (`dpoly3_add_smul`) and the bounds of homogeneous polynomials:
   `|poly3 l a b c| ≤ (Σ |κ|) N^d` for degree `d`, and
   `|dpoly3 l a b c da db dc| ≤ (Σ |κ| (d + 1)) N^d` for degree `d + 1`, when `|a|, |b|, |c| ≤ N`
-  and `|da|, |db|, |dc| ≤ 1` (`abs_poly3_le`, `abs_dpoly3_le`).
+  and `|da|, |db|, |dc| ≤ 1` (`abs_poly3_le`, `abs_dpoly3_le`). Weighted bounds
+  (`isBigO_poly3_weight`): if every monomial `a^i b^j c^k` has weight `i + j + 2k ≥ k₀`, the
+  polynomial is `O(s^{k₀})` when `a, b = O(s)`, `c = O(s²)` and `s → 0` (the weights of a
+  centre-manifold expansion).
 * A Hopf point with one stable real eigenvalue. In coordinates `w = (a, b, c)` the normal form is
   `ȧ = b`, `ḃ = −H a − G`, `ċ = −λ c − G` (`H, λ > 0`): the linearization has eigenvalues
   `±i√H` and `−λ`, and one scalar `G = g₂ ξ² + g₃ ξ³ + O(ξ⁴)` of `ξ = (λ a − b + c)/(H + λ²)`
@@ -38,9 +42,19 @@ implication about an arbitrary field, function or polynomial, a foundation resul
   weak focus: asymptotically, not exponentially, stable. (`κ > 0` says that the averaged radial
   rate of the normal form is negative; by a SymPy computation outside the library it is the sign
   condition `l₁ < 0` on the first Lyapunov coefficient. Only the Lyapunov argument is formal.)
+* Planar sine–Liénard weak focus (`φ̇ = αw + βN(φ)`, `ẇ = −Aφ + N(φ)` with
+  `N(φ) = A(φ − sin φ) + B(1 − cos φ)`, `hopfN`, and its cubic Taylor polynomial `hopfN3`):
+  `hopfN_sub_hopfN3_isBigO` (`N − N₃ = O(φ⁴)`); the polynomial `lyapPoly` (quadratic form plus six
+  cubic / quartic monomials), its partial derivatives `lyapPolyφ`, `lyapPolyw` and its derivative
+  and smoothness in the coordinates `φ = z₀`, `w = z₁ − b z₀` (`hasFDerivAt_lyapPoly`,
+  `contDiff_lyapPoly`); the normal-form Lyapunov polynomial `hopfW` (`hopfWφ`, `hopfWw`) with
+  `hopf_lie_poly`: along the cubic truncation its derivative is `−κ (φ² + (α/A) w²)²` up to eight
+  monomials of degree five and six, `κ = hopfκ A B β = −β(A² + B²)/(16A)` (coefficients from
+  SymPy, checked by `field_simp; ring`).
 
 Connection architecture. No model family is defined or fixed here; model families apply these
-criteria inside their own connection proofs (`theorem/GFM/VSMLPFHopf.lean`).
+criteria inside their own connection proofs (`theorem/GFM/VSMLPFHopf.lean`,
+`theorem/GFL/RatePLLHopf.lean`, `theorem/GFL/PowerLoop/QuasiStaticFoldHopf.lean`).
 
 Source: Khalil, *Nonlinear Systems* (3rd ed.), Theorem 4.1 (local Lyapunov theorem) and Theorem 4.4
 (LaSalle); Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.5 and §5.4 (first
@@ -237,6 +251,34 @@ private theorem abs_dterm_le {x y w dv N : ℝ} (hx : |x| ≤ N) (hy : |y| ≤ N
         · nlinarith [sq_nonneg b]
         · nlinarith [sq_nonneg a]
     _ = _ := by ring
+
+/-! ### Weighted bounds of polynomials -/
+
+section WeightedBounds
+
+open Asymptotics
+
+/-- A polynomial whose monomials `a^i b^j c^k` all have weight `i + j + 2k ≥ k₀` is `O(s^{k₀})`
+when `a, b = O(s)`, `c = O(s²)` and `s → 0` (the weights of a centre-manifold expansion). -/
+@[powerlib_foundation] theorem isBigO_poly3_weight {α : Type*} {l : Filter α} {s a b c : α → ℝ}
+    (hs : Tendsto s l (𝓝 0)) (ha : a =O[l] s) (hb : b =O[l] s)
+    (hc : c =O[l] fun x => s x ^ 2) (L : List (ℝ × ℕ × ℕ × ℕ)) {k : ℕ}
+    (hL : ∀ t ∈ L, k ≤ t.2.1 + t.2.2.1 + 2 * t.2.2.2) :
+    (fun x => poly3 L (a x) (b x) (c x)) =O[l] fun x => s x ^ k := by
+  induction L with
+  | nil => simpa using isBigO_zero (fun x => s x ^ k) l
+  | cons t L ih =>
+    have ht := hL t List.mem_cons_self
+    have ih' := ih fun t' ht' => hL t' (List.mem_cons_of_mem _ ht')
+    have hm : (fun x => a x ^ t.2.1 * b x ^ t.2.2.1 * c x ^ t.2.2.2) =O[l]
+        fun x => s x ^ (t.2.1 + t.2.2.1 + 2 * t.2.2.2) := by
+      refine (((ha.pow t.2.1).mul (hb.pow t.2.2.1)).mul (hc.pow t.2.2.2)).congr_right
+        fun x => ?_
+      rw [← pow_mul, ← pow_add, ← pow_add]
+    simp only [poly3_cons]
+    exact ((hm.trans (Dynamics.isBigO_pow_of_tendsto hs ht)).const_mul_left t.1).add ih'
+
+end WeightedBounds
 
 /-! ## A Hopf point with one stable real eigenvalue -/
 
@@ -755,5 +797,127 @@ a punctured ball. -/
       linarith [norm_nonneg (T z)]
     have : 0 < ‖T z‖ ^ 4 * (m - CR * ‖T z‖) := mul_pos (pow_pos h2 4) (by linarith)
     linarith
+
+/-! ## Planar sine–Liénard weak focus: Lyapunov polynomials -/
+
+section PlanarLienard
+
+open Asymptotics
+
+/-- Nonlinear part of the boundary normal form, `N(φ) = A(φ − sin φ) + B(1 − cos φ)`. -/
+def hopfN (A B φ : ℝ) : ℝ := A * (φ - Real.sin φ) + B * (1 - Real.cos φ)
+
+/-- The cubic Taylor polynomial `B φ²/2 + A φ³/6` of `N`. -/
+def hopfN3 (A B φ : ℝ) : ℝ := B / 2 * φ ^ 2 + A / 6 * φ ^ 3
+
+/-- A quadratic form plus six cubic/quartic monomials:
+`(φ² + q w²)/2 + c₀ w³ + c₂ φ²w + c₃ φ³ + c₄ φw³ + c₅ φ³w + c₆ φ⁴`. -/
+def lyapPoly (q c₀ c₂ c₃ c₄ c₅ c₆ φ w : ℝ) : ℝ :=
+  1 / 2 * (φ ^ 2 + q * w ^ 2) + c₀ * w ^ 3 + c₂ * (φ ^ 2 * w) + c₃ * φ ^ 3 + c₄ * (φ * w ^ 3) +
+    c₅ * (φ ^ 3 * w) + c₆ * φ ^ 4
+
+/-- `∂ lyapPoly / ∂φ`. -/
+def lyapPolyφ (c₂ c₃ c₄ c₅ c₆ φ w : ℝ) : ℝ :=
+  φ + c₂ * (2 * (φ * w)) + c₃ * (3 * φ ^ 2) + c₄ * w ^ 3 + c₅ * (3 * (φ ^ 2 * w)) +
+    c₆ * (4 * φ ^ 3)
+
+/-- `∂ lyapPoly / ∂w`. -/
+def lyapPolyw (q c₀ c₂ c₄ c₅ φ w : ℝ) : ℝ :=
+  q * w + c₀ * (3 * w ^ 2) + c₂ * φ ^ 2 + c₄ * (3 * (φ * w ^ 2)) + c₅ * φ ^ 3
+
+/-- First Lyapunov quantity of the normal form, `κ = −β(A² + B²)/(16A)`. -/
+def hopfκ (A B β : ℝ) : ℝ := -β * (A ^ 2 + B ^ 2) / (16 * A)
+
+/-- The normal-form Lyapunov polynomial of the boundary. -/
+def hopfW (A B α β φ w : ℝ) : ℝ :=
+  lyapPoly (α / A) (B * α * β / (3 * A ^ 2)) (B * β / (2 * A)) (-B / (6 * A))
+    (α * β * (A ^ 2 + B ^ 2) / (16 * A ^ 3)) (β * (5 * A ^ 2 - 3 * B ^ 2) / (48 * A ^ 2))
+    (-(A * α + 3 * B ^ 2 * β ^ 2) / (24 * A * α)) φ w
+
+/-- `∂ hopfW / ∂φ`. -/
+def hopfWφ (A B α β φ w : ℝ) : ℝ :=
+  lyapPolyφ (B * β / (2 * A)) (-B / (6 * A)) (α * β * (A ^ 2 + B ^ 2) / (16 * A ^ 3))
+    (β * (5 * A ^ 2 - 3 * B ^ 2) / (48 * A ^ 2)) (-(A * α + 3 * B ^ 2 * β ^ 2) / (24 * A * α)) φ w
+
+/-- `∂ hopfW / ∂w`. -/
+def hopfWw (A B α β φ w : ℝ) : ℝ :=
+  lyapPolyw (α / A) (B * α * β / (3 * A ^ 2)) (B * β / (2 * A))
+    (α * β * (A ^ 2 + B ^ 2) / (16 * A ^ 3)) (β * (5 * A ^ 2 - 3 * B ^ 2) / (48 * A ^ 2)) φ w
+
+/-- The normal-form identity: along the cubic truncation `φ̇ = αw + βN₃`, `ẇ = −Aφ + N₃` the
+derivative of `hopfW` is `−κ (φ² + (α/A) w²)²` up to eight monomials of degree five and six. -/
+@[powerlib_foundation] theorem hopf_lie_poly {A B α β : ℝ} (hA : A ≠ 0) (hα : α ≠ 0) (φ w : ℝ) :
+    hopfWφ A B α β φ w * (α * w + β * hopfN3 A B φ) +
+        hopfWw A B α β φ w * (-A * φ + hopfN3 A B φ) +
+        hopfκ A B β * (φ ^ 2 + α / A * w ^ 2) ^ 2 =
+      B * α * β ^ 2 * (A ^ 2 + B ^ 2) / (32 * A ^ 3) * (φ ^ 2 * w ^ 3) +
+      B * α * β * (25 * A ^ 2 + 9 * B ^ 2) / (96 * A ^ 3) * (φ ^ 3 * w ^ 2) +
+      α * β ^ 2 * (A ^ 2 + B ^ 2) / (96 * A ^ 2) * (φ ^ 3 * w ^ 3) +
+      B * β ^ 2 * (31 * A ^ 2 - 9 * B ^ 2) / (96 * A ^ 2) * (φ ^ 4 * w ^ 1) +
+      α * β * (A ^ 2 + B ^ 2) / (32 * A ^ 2) * (φ ^ 4 * w ^ 2) +
+      -B * β * (A ^ 2 * α + 8 * A * B ^ 2 * β ^ 2 + B ^ 2 * α) / (32 * A ^ 2 * α) *
+        (φ ^ 5 * w ^ 0) +
+      β ^ 2 * (5 * A ^ 2 - 3 * B ^ 2) / (96 * A) * (φ ^ 5 * w ^ 1) +
+      -β * (A ^ 2 * α + 8 * A * B ^ 2 * β ^ 2 + B ^ 2 * α) / (96 * A * α) * (φ ^ 6 * w ^ 0) := by
+  unfold hopfWφ hopfWw lyapPolyφ lyapPolyw hopfN3 hopfκ
+  field_simp
+  ring
+
+/-- The Taylor remainder of `N` is of fourth order. -/
+@[powerlib_foundation] theorem hopfN_sub_hopfN3_isBigO (A B : ℝ) :
+    (fun φ => hopfN A B φ - hopfN3 A B φ) =O[𝓝 0] fun φ => φ ^ 4 := by
+  refine IsBigO.of_bound (|A| + |B|) ?_
+  filter_upwards [Metric.ball_mem_nhds (0 : ℝ) one_pos] with φ hφ
+  rw [Metric.mem_ball, Real.dist_eq, sub_zero] at hφ
+  have hs := Real.sin_bound hφ.le
+  have hc := Real.cos_bound hφ.le
+  have he : hopfN A B φ - hopfN3 A B φ =
+      -A * (Real.sin φ - (φ - φ ^ 3 / 6)) - B * (Real.cos φ - (1 - φ ^ 2 / 2)) := by
+    unfold hopfN hopfN3; ring
+  rw [he, Real.norm_eq_abs, Real.norm_eq_abs, abs_pow]
+  have h5 : |φ| ^ 5 ≤ |φ| ^ 4 := pow_le_pow_of_le_one (abs_nonneg _) hφ.le (by norm_num)
+  have h4 : 0 ≤ |φ| ^ 4 := by positivity
+  calc |-A * (Real.sin φ - (φ - φ ^ 3 / 6)) - B * (Real.cos φ - (1 - φ ^ 2 / 2))|
+      ≤ |A| * |Real.sin φ - (φ - φ ^ 3 / 6)| + |B| * |Real.cos φ - (1 - φ ^ 2 / 2)| := by
+        refine (abs_sub _ _).trans ?_
+        rw [abs_mul, abs_mul, abs_neg]
+    _ ≤ |A| * (|φ| ^ 5 / 100) + |B| * (|φ| ^ 4 * (5 / 96)) := by
+        gcongr
+    _ ≤ (|A| + |B|) * |φ| ^ 4 := by
+        have hA := abs_nonneg A
+        have hB := abs_nonneg B
+        nlinarith
+
+/-- Derivative of `lyapPoly` in the coordinates `φ = z₀`, `w = z₁ − b z₀`. -/
+@[powerlib_foundation] theorem hasFDerivAt_lyapPoly (q c₀ c₂ c₃ c₄ c₅ c₆ b : ℝ)
+    (z : Dynamics.State 2) :
+    HasFDerivAt (fun z : Dynamics.State 2 => lyapPoly q c₀ c₂ c₃ c₄ c₅ c₆ (z 0) (z 1 - b * z 0))
+      (lyapPolyφ c₂ c₃ c₄ c₅ c₆ (z 0) (z 1 - b * z 0) •
+          (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : Dynamics.State 2 →L[ℝ] ℝ) +
+        lyapPolyw q c₀ c₂ c₄ c₅ (z 0) (z 1 - b * z 0) •
+          ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : Dynamics.State 2 →L[ℝ] ℝ) -
+            b • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : Dynamics.State 2 →L[ℝ] ℝ))) z := by
+  have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) :
+    Dynamics.State 2 →L[ℝ] ℝ).hasFDerivAt (x := z)
+  have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) :
+    Dynamics.State 2 →L[ℝ] ℝ).hasFDerivAt (x := z)
+  have hw := h1.sub (h0.const_mul b)
+  have h := ((((((((h0.pow 2).add ((hw.pow 2).const_mul q)).const_mul (1 / 2 : ℝ)).add
+    ((hw.pow 3).const_mul c₀)).add (((h0.pow 2).mul hw).const_mul c₂)).add
+    ((h0.pow 3).const_mul c₃)).add ((h0.mul (hw.pow 3)).const_mul c₄)).add
+    (((h0.pow 3).mul hw).const_mul c₅)).add ((h0.pow 4).const_mul c₆)
+  unfold lyapPoly
+  refine h.congr_fderiv ?_
+  ext v
+  simp [lyapPolyφ, lyapPolyw]
+  ring
+
+@[powerlib_foundation] theorem contDiff_lyapPoly (q c₀ c₂ c₃ c₄ c₅ c₆ b : ℝ) :
+    ContDiff ℝ 1
+      (fun z : Dynamics.State 2 => lyapPoly q c₀ c₂ c₃ c₄ c₅ c₆ (z 0) (z 1 - b * z 0)) := by
+  unfold lyapPoly
+  fun_prop
+
+end PlanarLienard
 
 end powerlib.Dynamics.Degenerate

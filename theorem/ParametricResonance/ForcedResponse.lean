@@ -31,12 +31,18 @@ Results.
   the variational matrix along any orbit is `J(t) ≡ A₀` (`jacobian_along_orbit`), and
   `orbitExponentiallyStable_iff`: every orbit is exponentially stable (all solutions converge to
   it at a uniform exponential rate) iff `A₀` is Hurwitz — no parametric instability can arise.
+* `jacobian_additive_forcing`: for `f_ε(x, t) = f(x) + ε g(t)` the state Jacobian is `Df(x)` for
+  every `ε, t`; in particular the frozen Jacobian at a fixed operating point, and every quantity
+  computed from it (frozen damping ratio, frozen spectrum), does not depend on `ε` by
+  construction.
 
 Source: work-sync projects/vsc-parametric-oscillation/notes/theory-draft.md §2.1.1
 (`x₁ = Re{χ e^{jω_p t}}`, `χ = (jω_pI − A₀)⁻¹ b`), §2.1.2 ("若系统在工作区内完全线性，并且扰动
 不直接改变 A₀，则 D²f = 0 且 A₁ = 0，于是 J(t) = A₀"); references/gfl-gfm-contrast/
 gfl-gfm-parametric-contrast.md §2. The uniqueness/attraction statement is the B-strengthening
-asked for in the task list.
+asked for in the task list. Additive forcing: projects/gfl-gfm-stability-tree/notes/concepts/
+nonautonomous-criteria.md (加性强迫不进雅可比); projects/vsc-parametric-oscillation/references/
+gfl-gfm-contrast/archive/notes/concepts/forced-orbit-and-bandwidth.md (冻结 `ζ` 对 `ε` 恒定).
 
 Architecture: generic linear-systems facts with no model family; all results remain public
 foundation support. Decay and the converse (a uniform exponential bound on every global solution
@@ -272,5 +278,13 @@ converges to it at a uniform exponential rate,
       convert h1 using 1
       rw [haff (z s), haff (z_orb s), map_sub]; abel
     exact hb _ he t ht
+
+/-! ### Additive forcing does not enter the Jacobian -/
+
+/-- For `f_ε(x, t) = f(x) + ε g(t)` the state Jacobian is `Df(x)` for every `ε` and `t`. -/
+@[powerlib_foundation] theorem jacobian_additive_forcing {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (f : E → E) (g : ℝ → E) (ε t : ℝ) (x : E) :
+    fderiv ℝ (fun y => f y + ε • g t) x = fderiv ℝ f x :=
+  fderiv_add_const _
 
 end powerlib.ParametricResonance

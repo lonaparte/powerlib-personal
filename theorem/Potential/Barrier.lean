@@ -7,7 +7,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 /-! # Potential barrier of the tilted washboard `V(θ) = −c θ − A cos(θ + φ)` (foundation)
 
 `V` is an antiderivative of `−(c − A sin(θ + φ))`; for the reduced GFL-PLL model
-(`theorem/VSC/Reduced2D.lean`) it is the potential part of the Hamiltonian with `c = c₀`.
+(`theorem/GFL/LCLine/Reduced2D.lean`) it is the potential part of the Hamiltonian with `c = c₀`.
 For `A > 0`, `|c| < A`, write `s = c/A`, `ψ_s = arcsin s` and
 * `θ_s = ψ_s − φ` (stable zero, `cos(θ_s + φ) > 0`),
 * `θ_u⁺ = π − ψ_s − φ`, `θ_u⁻ = −π − ψ_s − φ` (the two neighbouring saddles).

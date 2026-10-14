@@ -9,7 +9,7 @@ Model boundary.
   the 5-coefficient phase-detector characteristic of T-pll-dynamics §1.13,
   `h(θ) = a sin θ + b cos θ + c sin 2θ + d cos 2θ + e` (`trigPD a b c d e`); the coefficients are
   arbitrary reals (they are produced by the embedding closed loop, e.g. the GFL form B of
-  `theorem/GFL/FormB.lean`; that derivation is not part of this model).
+  `theorem/GFL/LCLine/FormB.lean`; that derivation is not part of this model).
 * Excluded: the derivation of `h` (time-scale reduction), current loop, LC filter, line, outer
   loops, saturation, delay, PWM, noise. Basins of attraction (§1.13.3) and the stochastic
   basin-hopping of §1.13.4 are not formalized.

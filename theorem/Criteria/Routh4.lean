@@ -27,7 +27,9 @@ Foundation layer (plus thin generic semantic corollaries at the end).
   eigenpair with positive real part (shape of `Dynamics.unstable_of_jacobian_eigenvalue_re_pos`).
   `det_characteristicMatrix_fin_four` computes the coefficients of a general 4×4 matrix;
   `isHurwitz_fin_four_iff` is the 4×4 iff in trace / principal-minor / determinant form and
-  `isHurwitz_companion_four_iff` the companion form.
+  `isHurwitz_companion_four_iff` the companion form. `RouthFin4 J` is that condition list and
+  `RouthViolationFin4 J` its strict violation (each disjunct places a characteristic root in the
+  open right half plane, `exists_eigenvalue_re_pos_of_violation_fin_four`).
 * Semantic corollaries: linearization at an equilibrium of a caller-supplied `ContDiff ℝ 1`
   field on `EuclideanSpace ℝ (Fin n)` (any dimension, quartic characteristic polynomial) or
   `EuclideanSpace ℝ (Fin 4)`, and the attractive sentences of a linear field `x' = A (x - e)`
@@ -554,6 +556,21 @@ sum to `tr A`). -/
   rw [det_characteristicMatrix_fin_four]
   simp [Matrix.trace, Fin.sum_univ_four, principalMinorSum2Fin4, principalMinorSum3Fin4,
     det_fin_four]
+
+/-- The 4×4 Routh conditions on a matrix `J`: `tr J < 0`, `m₃(J) < 0`, `det J > 0` and
+`m₃² + tr² det < tr m₂ m₃`. -/
+def RouthFin4 (J : Matrix (Fin 4) (Fin 4) ℝ) : Prop :=
+  J.trace < 0 ∧ Criteria.principalMinorSum3Fin4 J < 0 ∧ 0 < J.det ∧
+    Criteria.principalMinorSum3Fin4 J ^ 2 + J.trace ^ 2 * J.det <
+      J.trace * Criteria.principalMinorSum2Fin4 J * Criteria.principalMinorSum3Fin4 J
+
+/-- A strict violation of the 4×4 Routh conditions on a matrix `J`: `tr J > 0`, `m₂(J) < 0`,
+`m₃(J) > 0`, `det J < 0` or `tr m₂ m₃ < m₃² + tr² det`; each places a characteristic root in the
+open right half plane (`Criteria.exists_eigenvalue_re_pos_of_violation_fin_four`). -/
+def RouthViolationFin4 (J : Matrix (Fin 4) (Fin 4) ℝ) : Prop :=
+  0 < J.trace ∨ Criteria.principalMinorSum2Fin4 J < 0 ∨ 0 < Criteria.principalMinorSum3Fin4 J ∨
+    J.det < 0 ∨ J.trace * Criteria.principalMinorSum2Fin4 J * Criteria.principalMinorSum3Fin4 J <
+      Criteria.principalMinorSum3Fin4 J ^ 2 + J.trace ^ 2 * J.det
 
 end FinFour
 

@@ -19,13 +19,20 @@ stability statement; the domain results live in `VSMLPF.lean`.
   Routh–Hurwitz boundary `ω_c = K/D − D/M` by `D/M`.
 * `iteratedDeriv_jacobian_u`: `f_xuu = ∂²J/∂u² |_{u=0} = −(A₀)_{P_f δ} e_{P_f} e_δᵀ`.
 * `boundary_eigenpairs`: on the Routh boundary both `±j ω_H` are eigenvalues of `A₀`.
+* GFM channels (`gfmPref_affine`, `gfmPref_jacobian_indep`, `gfmAngle_mixed_partial`): in the
+  same three-state model written on `Fin 3 → ℝ` (`gfmPref`, `gfmAngle`), a `P_ref` modulation
+  enters affinely with a constant coefficient, so `A_u = ∂_u ∂_z f = 0`; a grid-angle modulation
+  enters through `K₀ sin(δ − u)`, whose mixed partial `∂_u ∂_δ = ω_c K₀ sin(δ − u)` is nonzero at
+  a loaded operating point (`sin δ₀ ≠ 0`).
 
 Family and connection conclusions: none.  The stability conclusions of the model are the
 connection statements of `VSMLPF.family` (`theorem/GFM/VSMLPF.lean`); the former domain theorem
 `exists_equilibrium_iff_EVX` is static evidence on the model.
 
 Source: work-sync projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
-gfl-gfm-parametric-contrast.md §15 ("摆动二阶约化", "混合张量"); notes/theory-draft.md §2.4.
+gfl-gfm-parametric-contrast.md §15 ("摆动二阶约化", "混合张量"); notes/theory-draft.md §2.4,
+§1.3 (GFM model); GFM channels: projects/gfl-gfm-stability-tree/notes/concepts/
+nonautonomous-criteria.md (GFM `P_ref` 通道 `A_u = 0`).
 -/
 
 noncomputable section
@@ -168,4 +175,52 @@ eigenvalues of the Jacobian at the loading equilibrium. -/
       (g.det_characteristicMatrix_boundary hM hD hωc (by rw [neg_sq]; exact hH))⟩
 
 end VSMLPF
+
+/-! ## GFM channels: `P_ref` versus grid angle -/
+
+namespace VSMLPF
+
+/-- VSM + low-pass GFM field `(δ̇, ω̇, Ṗ_f)` with a `P_ref` deviation `u` (export-positive). -/
+def gfmPref (M D ωc K₀ P₀ u : ℝ) (z : Fin 3 → ℝ) : Fin 3 → ℝ :=
+  ![z 1, (P₀ + u - z 2 - D * z 1) / M, ωc * (K₀ * Real.sin (z 0) - z 2)]
+
+/-- The same model with a grid-angle deviation `u` entering through `sin(δ − u)`. -/
+def gfmAngle (M D ωc K₀ P₀ u : ℝ) (z : Fin 3 → ℝ) : Fin 3 → ℝ :=
+  ![z 1, (P₀ - z 2 - D * z 1) / M, ωc * (K₀ * Real.sin (z 0 - u) - z 2)]
+
+/-- The `P_ref` channel is affine with a constant coefficient `(0, 1/M, 0)`. -/
+@[powerlib_foundation] theorem gfmPref_affine (M D ωc K₀ P₀ u : ℝ) (z : Fin 3 → ℝ) :
+    gfmPref M D ωc K₀ P₀ u z = gfmPref M D ωc K₀ P₀ 0 z + u • ![0, 1 / M, 0] := by
+  ext i; fin_cases i <;> simp [gfmPref]; ring
+
+/-- Hence `A_u = 0`: the state Jacobian of the `P_ref` channel does not depend on `u`. -/
+@[powerlib_foundation] theorem gfmPref_jacobian_indep (M D ωc K₀ P₀ u : ℝ) (z : Fin 3 → ℝ) :
+    fderiv ℝ (gfmPref M D ωc K₀ P₀ u) z = fderiv ℝ (gfmPref M D ωc K₀ P₀ 0) z := by
+  have : gfmPref M D ωc K₀ P₀ u = fun y => gfmPref M D ωc K₀ P₀ 0 y + u • ![0, 1 / M, 0] :=
+    funext (gfmPref_affine M D ωc K₀ P₀ u)
+  rw [this, fderiv_add_const]
+
+/-- Grid-angle channel: the `δ`-derivative of the filter row is `ω_c K₀ cos(δ − u)`, and its
+`u`-derivative is `ω_c K₀ sin(δ − u)`, nonzero at a loaded point: `A_u ≠ 0`. -/
+@[powerlib_foundation] theorem gfmAngle_mixed_partial (M D ωc K₀ P₀ u : ℝ) (z : Fin 3 → ℝ) :
+    HasDerivAt (fun δ => gfmAngle M D ωc K₀ P₀ u (Function.update z 0 δ) 2)
+        (ωc * K₀ * Real.cos (z 0 - u)) (z 0) ∧
+      HasDerivAt (fun v => ωc * K₀ * Real.cos (z 0 - v)) (ωc * K₀ * Real.sin (z 0 - u)) u ∧
+      (ωc * K₀ ≠ 0 → Real.sin (z 0) ≠ 0 → ωc * K₀ * Real.sin (z 0 - 0) ≠ 0) := by
+  refine ⟨?_, ?_, ?_⟩
+  · have h := (((Real.hasDerivAt_sin (z 0 - u)).comp (z 0)
+      ((hasDerivAt_id (z 0)).sub_const u)).const_mul K₀).sub_const (z 2) |>.const_mul ωc
+    convert h using 1
+    · funext δ; simp [gfmAngle, Function.update]
+    · simp; ring
+  · have h := ((Real.hasDerivAt_cos (z 0 - u)).comp u
+      ((hasDerivAt_id u).const_sub (z 0))).const_mul (ωc * K₀)
+    convert h using 1
+    simp; ring
+  · intro h1 h2
+    rw [sub_zero]
+    exact mul_ne_zero h1 h2
+
+end VSMLPF
+
 end powerlib.GFM

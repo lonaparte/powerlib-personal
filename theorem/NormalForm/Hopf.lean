@@ -25,6 +25,16 @@ Results.
   forward-complete solution with `x(a) ≠ 0` has `|z| → R` and distance to the cycle `→ 0`.
 * Subcritical (`μ < 0 < l₁`, `R = √(−μ/l₁)`): the cycle is repelling,
   `|1/|z|² − 1/R²|` grows like `e^{2|μ|(t−a)}`, and solutions starting inside converge to `0`.
+* Normal-form scaling (`normalForm_rescale`): if `z` solves `ż = λz + c z|z|²`, then `w = κ z`
+  (`κ > 0`) solves `ẇ = λw + (c/κ²) w|w|²`. The Guckenheimer–Holmes planar coordinate
+  `x − x* = T[Re w, −Im w]ᵀ = Re(v w)` and Kuznetsov's `x − x* = z q + z̄ q̄ = 2 Re(z q)` agree
+  for `q = v` when `w = 2z` (`gh_coordinate`), so the GH cubic coefficient is exactly `Re c₁/4`
+  and the GH cycle radius is exactly twice Kuznetsov's (`radius_factor_two`).
+* First Lyapunov coefficient normalization (`lyap1_scale`): in Kuznetsov's projection formula
+  `ℓ₁ = Re[⟨p, C(q,q,q̄)⟩ − 2⟨p, B(q, A⁻¹B(q,q̄))⟩ + ⟨p, B(q̄, (2jω₀ − A)⁻¹B(q,q))⟩]/(2ω₀)`
+  (`lyap1`), rescaling the eigenvector `q ↦ s q` (with `p` rescaled to keep `⟨p, q⟩ = 1`)
+  multiplies `ℓ₁` by `|s|²`: `ℓ₁ ∝ ‖q‖²`, so values computed with different eigenvector
+  normalizations are not comparable without renormalization.
 
 Periodic orbits and attracting limit cycles are written out in the statements (behaviour is
 defined only in the semantic layer). A *periodic orbit* of `ẋ = f x` with period `T` is a curve
@@ -35,7 +45,10 @@ in addition, some open `U ⊇ range γ` is *orbitally attracted*: every forward-
 `Metric.infDist (φ t) (range γ) → 0` as `t → ∞`.
 
 Source: work-sync theory/T-hopf-bifurcation.md §1.1–1.4, theory/T-bifurcation.md §1.4
-(Hopf normal form), theory/T-fold-critical-scaling.md §2.4 (Hopf linear rate).
+(Hopf normal form), theory/T-fold-critical-scaling.md §2.4 (Hopf linear rate);
+projects/gfl-gfm-stability-tree/notes/concepts/frozen-and-basin.md (幅值坐标声明: GH vs Kuznetsov
+"精确差因子 4", `r_c` 差因子 2); projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
+archive/notes/concepts/forced-orbit-and-bandwidth.md (`ℓ₁ ∝ ‖q‖²`).
 The `O(|z|⁴)` / `O(r⁵)` remainder bookkeeping of §1.2 is not formalized (truncated system only).
 
 Architecture: a truncated normal form, not an engineering model, so no model family is defined;
@@ -447,5 +460,87 @@ converge to the origin. -/
   simp only [Real.sqrt_zero] at this
   refine this.congr (fun t => ?_)
   simp [Real.sqrt_sq (norm_nonneg _)]
+
+/-! ## Hopf normal-form scaling and the GH / Kuznetsov coordinates -/
+
+section Conventions
+
+open Complex Filter Topology
+
+/-- `w = κ z` turns `ż = λz + c z|z|²` into `ẇ = λw + (c/κ²) w|w|²`. -/
+@[powerlib_foundation] theorem normalForm_rescale {lam c : ℂ} {κ : ℝ} (hκ : κ ≠ 0) {z : ℝ → ℂ}
+    (hz : ∀ t, HasDerivAt z (lam * z t + c * z t * (‖z t‖ ^ 2 : ℝ)) t) (t : ℝ) :
+    HasDerivAt (fun t => (κ : ℂ) * z t)
+      (lam * ((κ : ℂ) * z t) + c / (κ : ℂ) ^ 2 * ((κ : ℂ) * z t) *
+        (‖(κ : ℂ) * z t‖ ^ 2 : ℝ)) t := by
+  have h := (hz t).const_mul (κ : ℂ)
+  convert h using 1
+  rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, mul_pow, sq_abs]
+  have hκ' : (κ : ℂ) ≠ 0 := by exact_mod_cast hκ
+  push_cast
+  field_simp
+
+/-- GH coordinate `T[Re w, −Im w]ᵀ = Re(v w)`, and with `w = 2z` it equals Kuznetsov's
+`z q + z̄ q̄ = 2 Re(z q)` (`q = v`). -/
+@[powerlib_foundation] theorem gh_coordinate (v z : ℂ) :
+    v.re * (2 * z).re - v.im * (2 * z).im = (v * (2 * z)).re ∧
+      (v * (2 * z)).re = (z * v + (starRingEnd ℂ) (z * v)).re := by
+  constructor
+  · simp [Complex.mul_re]
+  · simp [Complex.mul_re, Complex.conj_re]; ring
+
+/-- With the GH coefficient `a₁ = Re c₁/4`, the cycle radius `√(α/a₁)` is twice Kuznetsov's. -/
+@[powerlib_foundation] theorem radius_factor_two {α l : ℝ} (hl : 0 < l) :
+    √(α / (l / 4)) = 2 * √(α / l) := by
+  rw [show α / (l / 4) = 2 ^ 2 * (α / l) by field_simp; ring, Real.sqrt_mul (by norm_num),
+    Real.sqrt_sq (by norm_num)]
+
+end Conventions
+
+/-! ## `ℓ₁ ∝ ‖q‖²` -/
+
+section Lyap
+
+open Complex Filter Topology
+
+variable {V : Type*} [AddCommGroup V] [Module ℂ V]
+
+/-- Kuznetsov's projection formula for the first Lyapunov coefficient, with the bilinear and
+trilinear forms `B`, `C`, the resolvents `A⁻¹`, `(2jω₀ − A)⁻¹`, the functional `x ↦ ⟨p, x⟩`, and
+`q̄` passed as an independent vector `qc`. -/
+def lyap1 (B : V →ₗ[ℂ] V →ₗ[ℂ] V) (C : V →ₗ[ℂ] V →ₗ[ℂ] V →ₗ[ℂ] V) (Ainv R2 : V →ₗ[ℂ] V)
+    (P : V →ₗ[ℂ] ℂ) (ω₀ : ℝ) (q qc : V) : ℝ :=
+  (1 / (2 * ω₀)) * (P (C q q qc) - 2 * P (B q (Ainv (B q qc))) + P (B qc (R2 (B q q)))).re
+
+/-- Rescaling the eigenvector `q ↦ s q`, `q̄ ↦ s̄ q̄`, `p ↦ p/s̄` (so `⟨p, q⟩` is unchanged)
+multiplies `ℓ₁` by `|s|²`. -/
+@[powerlib_foundation] theorem lyap1_scale (B : V →ₗ[ℂ] V →ₗ[ℂ] V)
+    (C : V →ₗ[ℂ] V →ₗ[ℂ] V →ₗ[ℂ] V) (Ainv R2 : V →ₗ[ℂ] V) (P : V →ₗ[ℂ] ℂ) (ω₀ : ℝ)
+    (q qc : V) {s : ℂ} (hs : s ≠ 0) :
+    lyap1 B C Ainv R2 (s⁻¹ • P) ω₀ (s • q) ((starRingEnd ℂ) s • qc) =
+      ‖s‖ ^ 2 * lyap1 B C Ainv R2 P ω₀ q qc := by
+  have hn : ((‖s‖ ^ 2 : ℝ) : ℂ) = s * (starRingEnd ℂ) s := by
+    rw [Complex.mul_conj, Complex.sq_norm]
+  have e1 : (s⁻¹ • P) (C (s • q) (s • q) ((starRingEnd ℂ) s • qc)) =
+      ((‖s‖ ^ 2 : ℝ) : ℂ) * P (C q q qc) := by
+    simp only [LinearMap.smul_apply, map_smul, smul_eq_mul]
+    rw [hn]; field_simp; try ring
+  have e2 : (s⁻¹ • P) (B (s • q) (Ainv (B (s • q) ((starRingEnd ℂ) s • qc)))) =
+      ((‖s‖ ^ 2 : ℝ) : ℂ) * P (B q (Ainv (B q qc))) := by
+    simp only [LinearMap.smul_apply, map_smul, smul_eq_mul]
+    rw [hn]; field_simp; try ring
+  have e3 : (s⁻¹ • P) (B ((starRingEnd ℂ) s • qc) (R2 (B (s • q) (s • q)))) =
+      ((‖s‖ ^ 2 : ℝ) : ℂ) * P (B qc (R2 (B q q))) := by
+    simp only [LinearMap.smul_apply, map_smul, smul_eq_mul]
+    rw [hn]; field_simp; try ring
+  simp only [lyap1]
+  rw [e1, e2, e3, show ((‖s‖ ^ 2 : ℝ) : ℂ) * P (C q q qc) -
+      2 * (((‖s‖ ^ 2 : ℝ) : ℂ) * P (B q (Ainv (B q qc)))) +
+      ((‖s‖ ^ 2 : ℝ) : ℂ) * P (B qc (R2 (B q q))) =
+      ((‖s‖ ^ 2 : ℝ) : ℂ) * (P (C q q qc) - 2 * P (B q (Ainv (B q qc))) +
+        P (B qc (R2 (B q q)))) by ring, Complex.re_ofReal_mul]
+  ring
+
+end Lyap
 
 end powerlib.NormalForm.Hopf

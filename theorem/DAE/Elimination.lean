@@ -20,15 +20,21 @@ Results.
 * Index 1: if `φ(x, ·)` is differentiable, its Jacobian is strictly lower triangular, hence
   `∂g/∂y = I - ∂φ/∂y` is unit lower triangular with determinant `1` (in particular
   invertible: the DAE is index 1).
-* d–q decoupling cancellation: with `u_d = +ω̂ L̂ i_q`, `u_q = -ω̂ L̂ i_d` the decoupling
-  power `u_d i_d + u_q i_q` vanishes identically.
+* Explicit algebraic layer (`isIntegralCurveOn_dae_iff`): a pair `(x, z)` solves
+  `ẋ = F(x, z)`, `z = G(x)` on a set `s` iff `z = G ∘ x` on `s` and `x` is an integral curve of
+  `ẋ = F(x, G(x))` on `s` (Mathlib's `IsIntegralCurveOn`; any DAG of explicit assignments composes
+  into one such `G`).
+* The d–q decoupling cancellation of §2.2 (`u_d = +ω̂ L̂ i_q`, `u_q = −ω̂ L̂ i_d` give zero
+  decoupling power) is `CurrentControl.decoupling_power_cancel`.
 
 Model boundary: deterministic, unforced (inputs and parameters may be absorbed into `f`,
-`φ`); no switching; the solution notion is a global-in-time `HasDerivAt` trajectory.
+`φ`); no switching; the solution notion is a global-in-time `HasDerivAt` trajectory
+(`isIntegralCurveOn_dae_iff`: `HasDerivWithinAt` on an arbitrary time set `s`).
 
 Source: work-sync theory/T-dae-elimination.md §1.3 (DAG substitution, boxed reduced ODE),
 §1.4 (pointwise equivalence of DAE and ODE trajectories), §2.2 (d–q cancellation);
-theory/T-dae-systems.md §1.3 (index-1 condition `det ∂g/∂y ≠ 0`).
+theory/T-dae-systems.md §1.3 (index-1 condition `det ∂g/∂y ≠ 0`);
+theory/T-gfl-reduced-order-dynamics.md §1.2.8 (explicit algebraic layer, DAE → ODE).
 -/
 
 noncomputable section
@@ -146,10 +152,24 @@ solves the substituted ODE and `y = solveDAG φ x` pointwise. -/
     rw [LinearMap.toMatrix'_apply]
     exact jacobian_strictLower hφ hD hkj
 
-/-! ## d–q decoupling cancellation -/
+/-! ## Explicit algebraic layer: DAE ≡ ODE -/
 
-/-- `(+ω̂ L̂ i_q) i_d + (-ω̂ L̂ i_d) i_q = 0`. -/
-@[powerlib_foundation] theorem decoupling_power_cancel (ω L id iq : ℝ) :
-    (ω * L * iq) * id + (-(ω * L * id)) * iq = 0 := by ring
+/-- A semi-explicit DAE `ẋ = F(x, z)`, `z = G(x)` with an explicit algebraic layer: a pair
+`(x(t), z(t))` solves it on `s` iff `z = G ∘ x` on `s` and `x` solves `ẋ = F(x, G(x))` on `s`.
+(Any DAG of explicit algebraic assignments composes into one such `G`.) -/
+@[powerlib_foundation] theorem isIntegralCurveOn_dae_iff {E Z : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (F : E → Z → E) (G : E → Z) (x : ℝ → E) (z : ℝ → Z) (s : Set ℝ) :
+    ((∀ t ∈ s, z t = G (x t)) ∧ ∀ t ∈ s, HasDerivWithinAt x (F (x t) (z t)) s t) ↔
+      ((∀ t ∈ s, z t = G (x t)) ∧
+        IsIntegralCurveOn x (fun _ y => F y (G y)) s) := by
+  constructor
+  · rintro ⟨hz, hx⟩
+    refine ⟨hz, fun t ht => ?_⟩
+    have := hx t ht
+    rwa [hz t ht] at this
+  · rintro ⟨hz, hx⟩
+    refine ⟨hz, fun t ht => ?_⟩
+    rw [hz t ht]
+    exact hx t ht
 
 end powerlib.DAE
