@@ -4,7 +4,7 @@ import theorem.Attributes
 
 /-! # Phase margin of the IMC current loop with a transport delay (foundation)
 
-Model: one axis of the IMC-tuned current loop of `CascadeControl` (RL plant `1/(Ls + R)`,
+Model: one axis of the IMC-tuned current loop of `Machine.CascadeControl` (RL plant `1/(Ls + R)`,
 PI `K_p = Lα`, `K_i = Rα`, so the delay-free open loop is exactly `α/s`), in series with a pure
 transport delay `τ ≥ 0` lumping computation and PWM delay (`τ_d ≈ 1.5 T_s`).  Open-loop
 frequency response `L(jω) = (α/(jω)) e^{−jωτ}`, `α > 0`, continuous time, linear, no
@@ -31,7 +31,7 @@ FOC current loop: with the IMC loop `α/s` (phase `−π/2`) the delay may only 
 -/
 
 noncomputable section
-namespace powerlib.Machine.LoopDelay
+namespace powerlib.CurrentControl.LoopDelay
 
 open Complex
 
@@ -100,4 +100,4 @@ is `PM = π + arg L(jα) = π/2 − ατ`. -/
   rw [imcDelayLoop_arg_crossover hα hτ.le (by rw [hατ]; linarith [Real.pi_pos]), hατ]
   ring
 
-end powerlib.Machine.LoopDelay
+end powerlib.CurrentControl.LoopDelay

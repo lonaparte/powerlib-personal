@@ -1,5 +1,6 @@
-import theorem.CurrentControl.Network
-import theorem.CurrentControl.ComplexPower
+import theorem.GFL.Impedance.GridImpedance
+import theorem.Transform.ComplexPower
+import theorem.LTI.Plant
 
 /-! # 10-state small-signal GFL port realization and its closed-form dq admittance (foundation)
 
@@ -25,7 +26,8 @@ work-sync `conventions.md` §D1; per-unit P/Q Jacobians without `3/2`):
 * Current loop (§1.4, IN-positive form): `ΔD^pll = −G_ci (ΔI_ref − ΔI^pll) − G_dei ΔI^pll`,
   `G_ci = Kpc + Kic/s`, `G_dei = gdei · J` (the note's value is `gdei = 3 ω L / V_dc`).
 * Power loop (§1.5): `ΔI_ref = −G_cpq (G_i^pq ΔI^pll + G_v^pq ΔV^pll)`, `G_cpq = Kpp + Kip/s`,
-  references `P*, Q*` frozen; `G_i^pq`, `G_v^pq` are the P/Q Jacobians of `ComplexPower.lean`.
+  references `P*, Q*` frozen; `G_i^pq`, `G_v^pq` are the P/Q Jacobians of
+  `theorem/Transform/ComplexPower.lean`.
 * Excluded: current / modulation limits, DC-link and source dynamics, LCL resonance, grid
   frequency variation, large-signal PLL behaviour.
 
@@ -36,8 +38,8 @@ Results.
   `det [I − G_id G_del Φ]`, `det (sI − A)` nonzero) the transfer matrix of the realization is
   `Ygfl s`. This confirms the boxed §1.5 formula (with `K = I`) exactly; no correction needed.
 * `gflOnNetwork`, `gflOnNetwork_returnDifference`: with the network realization of
-  `Network.lean` as source (its input is the IN-positive converter current, its output `−v_PCC`),
-  the GFL realization is an admissible strictly proper load of `Circuits.Interconnection`
+  `GridImpedance.lean` as source (its input is the IN-positive converter current, its output
+  `−v_PCC`), the GFL realization is an admissible strictly proper load of `Circuits.Interconnection`
   and the return difference of the GFL–grid interconnection is `det (I + Z_ext Y_gfl)`.
 These are realization identities (foundation, static evidence); no stability claim is made. The
 behaviour of the interconnection is that of the family `Circuits.Interconnection.family`.
@@ -47,8 +49,9 @@ Source: work-sync `theory/T-gfl-impedance.md` §1.1–§1.5, §1.7;
 -/
 
 noncomputable section
-namespace powerlib.CurrentControl
+namespace powerlib.GFL.Impedance
 open Matrix Linear
+open powerlib.Transform (Gi Gv)
 
 /-- Parameters of the 10-state small-signal GFL port model. -/
 @[ext] structure GFLParams where
@@ -436,15 +439,6 @@ end Resp
   · simp [resp]
     field_simp
 
-/-- A solution of `(sI − A) X = B` gives the transfer matrix `C X + D`. -/
-@[powerlib_foundation] theorem _root_.powerlib.CurrentControl.transfer_eq_of_solution
-    {n k : ℕ} (m : Plant n k) (s : ℂ) (X : Matrix (Fin n) (Fin k) ℂ)
-    (hM : (characteristicMatrix m.A s).det ≠ 0)
-    (hX : characteristicMatrix m.A s * X = complexify m.B) :
-    transfer m s = complexify m.C * X + complexify m.D := by
-  rw [transfer, Matrix.mul_assoc, ← hX,
-    Matrix.nonsing_inv_mul_cancel_left _ _ (isUnit_iff_ne_zero.mpr hM)]
-
 /-- The 10-state realization has exactly the closed-form GFL port admittance. -/
 @[powerlib_foundation] theorem transfer_eq_Ygfl {s : ℂ} (hs : s ≠ 0) (ha : p.a ≠ 0)
     (hda : 1 + (p.a : ℂ) * s ≠ 0) (hL : p.L ≠ 0) (hpll : s ^ 2 + p.V0 0 * p.Kpl * s + p.V0 0 * p.Kil ≠ 0)
@@ -468,11 +462,11 @@ end Resp
       Matrix.sub_apply, Matrix.smul_apply, smul_eq_mul, model, hAX]
     have hXic : X i c = p.resp (p.Ygfl s) s c i := by simp [hX]
     rw [hXic, h, add_sub_cancel_left]
-  rw [transfer_eq_of_solution _ _ _ hM hMX]
+  rw [LTI.transfer_eq_of_solution _ _ _ hM hMX]
   ext k c
   fin_cases k <;> simp [model, gflOutput, hX, Matrix.mul_apply, Fin.sum_univ_succ, resp]
 
-/-- The GFL realization as the load of the grid-side network of `Network.lean`. -/
+/-- The GFL realization as the load of the grid-side network of `GridImpedance.lean`. -/
 def gflOnNetwork (Lg Rg Rl C : ℝ) : Circuits.Interconnection 4 10 2 :=
   withNetwork Lg Rg Rl C p.ω p.model p.model_D
 
@@ -493,4 +487,4 @@ def gflOnNetwork (Lg Rg Rl C : ℝ) : Circuits.Interconnection 4 10 2 :=
 
 end GFLParams
 
-end powerlib.CurrentControl
+end powerlib.GFL.Impedance

@@ -1,5 +1,5 @@
 import theorem.VSC.Reduction
-import theorem.GFL.PIPLL
+import theorem.PLL.PIPLL
 
 /-! # Second-order form and closed-form Lyapunov-equation solutions of the linearized GFL-PLL
 
@@ -35,7 +35,7 @@ gauge identity to `1e−5`; here both are exact.
 noncomputable section
 namespace powerlib.VSC
 open Real Matrix Filter Topology
-open powerlib.GFL
+open powerlib.PLL
 
 /-- Second-order oscillator form of the reduced PLL: if `θ̇ = K_p h(θ) + K_i η` and `η̇ = h(θ)`
 everywhere, then `θ̈ = K_p h′(θ) θ̇ + K_i h(θ)`. -/

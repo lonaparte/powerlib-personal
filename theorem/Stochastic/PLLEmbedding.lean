@@ -1,7 +1,7 @@
 import dependencies.Mathlib
 import theorem.Attributes
 import theorem.Stochastic.SPH
-import theorem.Stochastic.PLLSPH
+import theorem.PLL.StochasticPH
 
 /-! # SPHS embedding of the reduced 2D GFL–PLL equation: port geometry and the generator
 
@@ -31,7 +31,7 @@ noncomputable section
 namespace powerlib.Stochastic.Embed
 
 open Matrix
-open powerlib.Stochastic.SPH powerlib.Stochastic.PLL
+open powerlib.Stochastic.SPH powerlib.PLL.StochasticPH
 
 /-! ## Constant-structure pH form -/
 

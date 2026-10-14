@@ -27,7 +27,7 @@ the note are reproduced exactly (`pllIto`, `gflSigma_sq`).
 -/
 
 noncomputable section
-namespace powerlib.Stochastic.PLL
+namespace powerlib.PLL.StochasticPH
 
 open Matrix Real
 open powerlib.Stochastic.SPH
@@ -302,4 +302,4 @@ through the Park factors `(sin θ, cos θ)`. -/
           * (Kp ^ 2 * V2 + Ki) := by
   rw [pllIto, gflSigma_sq]
 
-end powerlib.Stochastic.PLL
+end powerlib.PLL.StochasticPH

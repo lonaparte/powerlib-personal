@@ -49,7 +49,7 @@ frequency offset is `δω = K_i η*`) and a selected phase `θ*`; its pH system
 `K_i η*`; output `h(θ)`) in coordinates centred at `(θ*, η*)` (`PH.NonlinearModel.shift`), so
 the flow sentences speak about `(θ*, η*)` and the zero-input field is
 `srfField V K_p K_i (K_i η*)` (`pllPH_zeroInputField`). This is a different system from the
-autonomous PI-PLL family `GFL.PIPLL.family` (it has a port); on flow sentences the two agree
+autonomous PI-PLL family `PLL.PIPLL.family` (it has a port); on flow sentences the two agree
 (`mem_den_flow_iff_srf`, a comparison of the two semantics connections). Requirements are
 static: `V, K_i ≥ 0`; a well bottom (`V, K_i > 0`, `cos θ* = 1`); positive loop gains at a well
 bottom; or `V K_i > 0` at an anti-phase point (`cos θ* = −1`). Connection conclusions: soundness
@@ -83,8 +83,7 @@ noncomputable section
 namespace powerlib.PLL
 open Matrix
 open powerlib.Dynamics (State)
-open powerlib.GFL (piPLLState piPLLField)
-open powerlib.GFL.PIPLL (srf)
+open powerlib.PLL.PIPLL (srf)
 
 /-- Shifted PLL Hamiltonian `V(1 − cos θ) + ½ K_i (η − η*)²`. -/
 def pllHamiltonian (V Ki ηs : ℝ) (x : State 2) : ℝ :=
@@ -92,7 +91,7 @@ def pllHamiltonian (V Ki ηs : ℝ) (x : State 2) : ℝ :=
 
 /-- Its gradient `(V sin θ, K_i (η − η*))`. -/
 def pllGradient (V Ki ηs : ℝ) (x : State 2) : State 2 :=
-  piPLLState (V * Real.sin (x 0)) (Ki * (x 1 - ηs))
+  PhasePlane.mk (V * Real.sin (x 0)) (Ki * (x 1 - ηs))
 
 /-- Interconnection matrix `J = [[0, 1], [−1, 0]]`. -/
 def pllJ : Matrix (Fin 2) (Fin 2) ℝ := !![0, 1; -1, 0]
@@ -115,7 +114,7 @@ def pllB : Matrix (Fin 2) (Fin 1) ℝ := !![-1; 0]
   have hH := hp.add hq
   refine PH.hasGradientAt_of_hasFDerivAt hH ?_
   intro v
-  simp [pllGradient, piPLLState, π0, π1, dotProduct, Fin.sum_univ_two]
+  simp [pllGradient, PhasePlane.mk, π0, π1, dotProduct, Fin.sum_univ_two]
   ring
 
 /-- The SRF-PLL as a nonlinear port-Hamiltonian model (`K_p ≥ 0`). -/
@@ -134,8 +133,8 @@ def pllPH (V Kp Ki ηs : ℝ) (hKp : 0 ≤ Kp) : PH.NonlinearModel 2 1 where
 /-- T-pll-ph (1.3): `(J − R)∇H + B u` is the SRF-PLL field with frequency offset `u`. -/
 @[powerlib_foundation] theorem pllPH_field {V Kp Ki : ℝ} (hKp : 0 ≤ Kp) (x : State 2) (u : ℝ) :
     (pllPH V Kp Ki 0 hKp).field x ![u] = srfField V Kp Ki u x := by
-  rw [GFL.state_two_ext_iff]
-  simp [PH.NonlinearModel.field, pllPH, pllJ, pllR, pllB, pllGradient, piPLLState,
+  rw [PhasePlane.ext_iff']
+  simp [PH.NonlinearModel.field, pllPH, pllJ, pllR, pllB, pllGradient, PhasePlane.mk,
     Matrix.mulVec, dotProduct, Fin.sum_univ_two]
   ring
 
@@ -143,13 +142,13 @@ def pllPH (V Kp Ki ηs : ℝ) (hKp : 0 ≤ Kp) : PH.NonlinearModel 2 1 where
 @[powerlib_foundation] theorem pllPH_output {V Kp Ki ηs : ℝ} (hKp : 0 ≤ Kp) (x : State 2) :
     (pllPH V Kp Ki ηs hKp).output x = ![srfPD V (x 0)] := by
   ext i; fin_cases i
-  simp [PH.NonlinearModel.output, pllPH, pllB, pllGradient, piPLLState, srfPD, Matrix.mulVec,
+  simp [PH.NonlinearModel.output, pllPH, pllB, pllGradient, PhasePlane.mk, srfPD, Matrix.mulVec,
     dotProduct, Fin.sum_univ_two]
 
 /-- Damping power `∇Hᵀ R ∇H = K_p h(θ)²`. -/
 @[powerlib_foundation] theorem pllPH_dampingPower {V Kp Ki ηs : ℝ} (hKp : 0 ≤ Kp) (x : State 2) :
     (pllPH V Kp Ki ηs hKp).dampingPower x = Kp * srfPD V (x 0) ^ 2 := by
-  simp [PH.NonlinearModel.dampingPower, pllPH, pllR, pllGradient, piPLLState, srfPD,
+  simp [PH.NonlinearModel.dampingPower, pllPH, pllR, pllGradient, PhasePlane.mk, srfPD,
     Matrix.mulVec, dotProduct, Fin.sum_univ_two, Matrix.diagonal_apply]
   ring
 
@@ -174,8 +173,8 @@ def pllPH (V Kp Ki ηs : ℝ) (hKp : 0 ≤ Kp) : PH.NonlinearModel 2 1 where
 offset `K_i η* + u`. -/
 @[powerlib_foundation] theorem pllPH_field_input {V Kp Ki ηs : ℝ} (hKp : 0 ≤ Kp) (x : State 2)
     (u : ℝ) : (pllPH V Kp Ki ηs hKp).field x ![u] = srfField V Kp Ki (Ki * ηs + u) x := by
-  rw [GFL.state_two_ext_iff]
-  simp [PH.NonlinearModel.field, pllPH, pllJ, pllR, pllB, pllGradient, piPLLState,
+  rw [PhasePlane.ext_iff']
+  simp [PH.NonlinearModel.field, pllPH, pllJ, pllR, pllB, pllGradient, PhasePlane.mk,
     Matrix.mulVec, dotProduct, Fin.sum_univ_two]
   ring
 
@@ -184,9 +183,9 @@ offset `K_i η* + u`. -/
 @[powerlib_foundation] theorem pllPH_zeroInputField {V Kp Ki ηs : ℝ} (hKp : 0 ≤ Kp) :
     (pllPH V Kp Ki ηs hKp).zeroInputField = srfField V Kp Ki (Ki * ηs) := by
   funext x
-  rw [GFL.state_two_ext_iff]
+  rw [PhasePlane.ext_iff']
   simp [PH.NonlinearModel.zeroInputField, PH.NonlinearModel.field, pllPH, pllJ, pllR,
-    pllGradient, piPLLState, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+    pllGradient, PhasePlane.mk, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
   ring
 
 /-! ## Constant frequency offset: the shifted Hamiltonian -/
@@ -197,9 +196,9 @@ the shifted Hamiltonian (`η* = δω/K_i`). -/
     (hKi : Ki ≠ 0) (δω : ℝ) :
     (pllPH V Kp Ki (δω / Ki) hKp).zeroInputField = srfField V Kp Ki δω := by
   funext x
-  rw [GFL.state_two_ext_iff]
+  rw [PhasePlane.ext_iff']
   simp [PH.NonlinearModel.zeroInputField, PH.NonlinearModel.field, pllPH, pllJ, pllR,
-    pllGradient, piPLLState, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+    pllGradient, PhasePlane.mk, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
   field_simp
   ring
 
@@ -220,34 +219,34 @@ Static evidence on the model, not a connection conclusion; Lyapunov stability it
 @[powerlib_foundation] theorem pllHamiltonian_shifted_lyapunovFunction {V Kp Ki : ℝ} (hV : 0 < V)
     (hKp : 0 ≤ Kp) (hKi : 0 < Ki) (δω : ℝ) :
     (∀ x, 0 ≤ pllHamiltonian V Ki (δω / Ki) x) ∧
-      pllHamiltonian V Ki (δω / Ki) (piPLLState 0 (δω / Ki)) = 0 ∧
+      pllHamiltonian V Ki (δω / Ki) (PhasePlane.mk 0 (δω / Ki)) = 0 ∧
       (∀ x, fderiv ℝ (pllHamiltonian V Ki (δω / Ki)) x (srfField V Kp Ki δω x) ≤ 0) :=
-  ⟨pllHamiltonian_nonneg hV.le hKi.le _, by simp [pllHamiltonian, piPLLState],
+  ⟨pllHamiltonian_nonneg hV.le hKi.le _, by simp [pllHamiltonian, PhasePlane.mk],
     fun x => by rw [pllHamiltonian_shifted_lie hKp hKi.ne']; nlinarith [sq_nonneg (srfPD V (x 0))]⟩
 
 /-- At a well bottom `cos θ* = 1` (`V, K_i > 0`) the Hamiltonian with set point `η*` has a strict
 local minimum at `(θ*, η*)`. -/
 @[powerlib_foundation] theorem pllPH_isStrictLocalMin {V Kp Ki ηs θ : ℝ} (hKp : 0 ≤ Kp)
     (hV : 0 < V) (hKi : 0 < Ki) (hθ : Real.cos θ = 1) :
-    (pllPH V Kp Ki ηs hKp).IsStrictLocalMin (piPLLState θ ηs) := by
+    (pllPH V Kp Ki ηs hKp).IsStrictLocalMin (PhasePlane.mk θ ηs) := by
   have hsθ : Real.sin θ = 0 := by
     have := Real.sin_sq_add_cos_sq θ
     rw [hθ] at this
     exact pow_eq_zero_iff two_ne_zero |>.mp (by linarith)
-  have hball : Metric.ball (piPLLState θ ηs) Real.pi ∈ nhds (piPLLState θ ηs) :=
+  have hball : Metric.ball (PhasePlane.mk θ ηs) Real.pi ∈ nhds (PhasePlane.mk θ ηs) :=
     Metric.ball_mem_nhds _ Real.pi_pos
   rw [PH.NonlinearModel.IsStrictLocalMin, eventually_nhdsWithin_iff]
   filter_upwards [hball] with x hx hne
   have hx0 : |x 0 - θ| < Real.pi := by
-    have h1 : |x 0 - θ| ≤ dist x (piPLLState θ ηs) := by
-      have := PiLp.dist_apply_le (p := 2) x (piPLLState θ ηs) 0
+    have h1 : |x 0 - θ| ≤ dist x (PhasePlane.mk θ ηs) := by
+      have := PiLp.dist_apply_le (p := 2) x (PhasePlane.mk θ ηs) 0
       rw [Real.dist_eq] at this
-      simpa [piPLLState] using this
+      simpa [PhasePlane.mk] using this
     rw [Metric.mem_ball] at hx
     exact lt_of_le_of_lt h1 hx
-  show pllHamiltonian V Ki ηs (piPLLState θ ηs) < pllHamiltonian V Ki ηs x
-  have hzero : pllHamiltonian V Ki ηs (piPLLState θ ηs) = 0 := by
-    simp [pllHamiltonian, piPLLState, hθ]
+  show pllHamiltonian V Ki ηs (PhasePlane.mk θ ηs) < pllHamiltonian V Ki ηs x
+  have hzero : pllHamiltonian V Ki ηs (PhasePlane.mk θ ηs) = 0 := by
+    simp [pllHamiltonian, PhasePlane.mk, hθ]
   rw [hzero, pllHamiltonian]
   have hcos_shift : Real.cos (x 0) = Real.cos (x 0 - θ) := by
     rw [Real.cos_sub, hθ, hsθ]
@@ -256,8 +255,8 @@ local minimum at `(θ*, η*)`. -/
   by_cases h0 : x 0 - θ = 0
   · have h1 : x 1 ≠ ηs := by
       intro h1; apply hne
-      rw [Set.mem_singleton_iff, GFL.state_two_ext_iff]
-      simp [piPLLState, h1]
+      rw [Set.mem_singleton_iff, PhasePlane.ext_iff']
+      simp [PhasePlane.mk, h1]
       linarith
     have : 0 < (x 1 - ηs) ^ 2 := by
       have := sub_ne_zero.mpr h1; positivity
@@ -324,7 +323,7 @@ structure Model where
   damping : 0 ≤ Kp
 
 /-- The selected point `(θ*, η*)`. -/
-def Model.point (m : Model) : State 2 := piPLLState m.θ m.ηs
+def Model.point (m : Model) : State 2 := PhasePlane.mk m.θ m.ηs
 
 /-- The pH system of a model. -/
 def Model.toPH (m : Model) : PH.NonlinearModel 2 1 := pllPH m.V m.Kp m.Ki m.ηs m.damping
@@ -390,11 +389,11 @@ same phase does. A comparison of the two semantics connections at the two member
 @[powerlib_domain] theorem mem_den_flow_iff_srf (m : Model) (hKi : m.Ki ≠ 0)
     (P : Flow.Property) :
     connection% (m ∈ family.den (.flow P) ↔
-      srf m.V m.Kp m.Ki (m.Ki * m.ηs) m.θ ∈ GFL.PIPLL.family.den (.flow P)) := by
+      srf m.V m.Kp m.Ki (m.Ki * m.ηs) m.θ ∈ PIPLL.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den_flow_iff, GFL.PIPLL.family_isAutonomous.mem_den_flow]
+  rw [mem_den_flow_iff, PIPLL.family_isAutonomous.mem_den_flow]
   change _ ↔ P.holds (fun z => piPLLField (srf m.V m.Kp m.Ki (m.Ki * m.ηs) m.θ).h m.Kp m.Ki
-    (m.Ki * m.ηs) (z + piPLLState m.θ (m.Ki * m.ηs / m.Ki))) 0
+    (m.Ki * m.ηs) (z + PhasePlane.mk m.θ (m.Ki * m.ηs / m.Ki))) 0
   rw [Flow.Property.holds_shift_iff, srf_piPLLField, mul_div_cancel_left₀ _ hKi]
   rfl
 
@@ -408,13 +407,13 @@ private theorem les_of_meets {m : Model} (h : Meets m .slopeStable) :
   have hKi : m.Ki ≠ 0 := by rintro h0; rw [h0, mul_zero] at hVKi; exact lt_irrefl 0 hVKi
   have hs : Real.sin m.θ = 0 := sin_eq_zero_of_cos_sq (by rw [hθ]; norm_num)
   refine (mem_den_flow_iff_srf m hKi _).mpr
-    (GFL.PIPLL.mem_den_locallyExponentiallyStable _ ?_ ?_ ?_)
+    (PIPLL.mem_den_locallyExponentiallyStable _ ?_ ?_ ?_)
   · change -m.V * Real.sin m.θ = 0
     rw [hs, mul_zero]
-  · rw [GFL.PIPLL.srf_deriv, hθ]
+  · rw [PIPLL.srf_deriv, hθ]
     show m.Kp * (-m.V * 1) < 0
     linarith [mul_comm m.V m.Kp]
-  · rw [GFL.PIPLL.srf_deriv, hθ]
+  · rw [PIPLL.srf_deriv, hθ]
     show m.Ki * (-m.V * 1) < 0
     linarith [mul_comm m.V m.Ki]
 
@@ -423,10 +422,10 @@ private theorem unstable_of_meets {m : Model} (h : Meets m .saddle) :
   obtain ⟨hVKi, hθ⟩ := h
   have hKi : m.Ki ≠ 0 := by rintro h0; rw [h0, mul_zero] at hVKi; exact lt_irrefl 0 hVKi
   have hs : Real.sin m.θ = 0 := sin_eq_zero_of_cos_sq (by rw [hθ]; norm_num)
-  refine (mem_den_flow_iff_srf m hKi _).mpr (GFL.PIPLL.mem_den_unstable _ ?_ ?_)
+  refine (mem_den_flow_iff_srf m hKi _).mpr (PIPLL.mem_den_unstable _ ?_ ?_)
   · change -m.V * Real.sin m.θ = 0
     rw [hs, mul_zero]
-  · rw [GFL.PIPLL.srf_deriv, hθ]
+  · rw [PIPLL.srf_deriv, hθ]
     show 0 < m.Ki * (-m.V * -1)
     linarith [mul_comm m.V m.Ki]
 
@@ -504,9 +503,9 @@ private theorem mem_den_les_iff {m : Model} :
   change LocallyExponentiallyStable _ _ ↔ _
   have hJac := fderiv_srfField m.V m.Kp m.Ki (m.Ki * m.ηs) m.point
   rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ (contDiff_srfField _ _ _ _)
-    hJac, GFL.piPLLJacobian_isHurwitz_iff]
-  have hp0 : m.point 0 = m.θ := by simp [Model.point, piPLLState]
-  have hp1 : m.point 1 = m.ηs := by simp [Model.point, piPLLState]
+    hJac, piPLLJacobian_isHurwitz_iff]
+  have hp0 : m.point 0 = m.θ := by simp [Model.point, PhasePlane.mk]
+  have hp1 : m.point 1 = m.ηs := by simp [Model.point, PhasePlane.mk]
   have hz : srfField m.V m.Kp m.Ki (m.Ki * m.ηs) m.point = 0 ↔ m.V * Real.sin m.θ = 0 := by
     constructor
     · intro h
@@ -592,21 +591,10 @@ exact: the reversed-amplitude model is locally exponentially stable at an anti-p
 
 /-! ### The local asymptotic and Lyapunov translations -/
 
-private theorem norm_state2_le (x : State 2) : ‖x‖ ≤ |x 0| + |x 1| := by
-  have h0 := abs_nonneg (x 0)
-  have h1 := abs_nonneg (x 1)
-  have hsq : ‖x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 := by
-    rw [PiLp.norm_sq_eq_of_L2]
-    simp [Fin.sum_univ_succ, sq_abs]
-  have h : ‖x‖ ^ 2 ≤ (|x 0| + |x 1|) ^ 2 := by
-    rw [hsq]
-    nlinarith [sq_abs (x 0), sq_abs (x 1), mul_nonneg h0 h1]
-  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp h
-
 private theorem norm_point_sub (θ ηs s w : ℝ) :
-    ‖piPLLState (θ + s) (ηs + w) - piPLLState θ ηs‖ ≤ |s| + |w| := by
-  refine (norm_state2_le _).trans (le_of_eq ?_)
-  simp [piPLLState]
+    ‖PhasePlane.mk (θ + s) (ηs + w) - PhasePlane.mk θ ηs‖ ≤ |s| + |w| := by
+  refine (Dynamics.norm_le_abs_add_abs_two _).trans (le_of_eq ?_)
+  simp [PhasePlane.mk]
 
 /-- The Hamiltonian with set point `η*` decreases at the damping rate `K_p h(θ)²` along the
 SRF-PLL with offset `K_i η*`. -/
@@ -628,35 +616,35 @@ private theorem las_requirements {m : Model} (hn : Meets m .nonnegativeEnergy)
   have hC := contDiff_srfField m.V m.Kp m.Ki (m.Ki * m.ηs)
   have heq : srfField m.V m.Kp m.Ki (m.Ki * m.ηs) m.point = 0 :=
     Dynamics.isEquilibrium_of_lyapunovStable hC hlas.1
-  have hp0 : m.point 0 = m.θ := by simp [Model.point, piPLLState]
+  have hp0 : m.point 0 = m.θ := by simp [Model.point, PhasePlane.mk]
   have hVs : m.V * Real.sin m.θ = 0 := by
     have h1 := congrArg (fun y : State 2 => y 1) heq
     simpa [hp0] using h1
   rcases eq_or_lt_of_le hV with hV0 | hVpos
   · exfalso
     refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
-      ⟨piPLLState (m.θ + ε / 2) (m.ηs + 0), fun h => ?_, ?_, ?_⟩) hlas
+      ⟨PhasePlane.mk (m.θ + ε / 2) (m.ηs + 0), fun h => ?_, ?_, ?_⟩) hlas
     · have := congrArg (fun y : State 2 => y 0) h
-      simp [Model.point, piPLLState] at this
+      simp [Model.point, PhasePlane.mk] at this
       linarith
     · refine (norm_point_sub _ _ _ _).trans_lt ?_
       rw [abs_zero, add_zero, abs_of_pos (by linarith)]
       linarith
     · ext i
-      fin_cases i <;> simp [piPLLState, ← hV0]
+      fin_cases i <;> simp [PhasePlane.mk, ← hV0]
   have hs : Real.sin m.θ = 0 := (mul_eq_zero.mp hVs).resolve_left hVpos.ne'
   rcases eq_or_lt_of_le hKi with hKi0 | hKipos
   · exfalso
     refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
-      ⟨piPLLState (m.θ + 0) (m.ηs + ε / 2), fun h => ?_, ?_, ?_⟩) hlas
+      ⟨PhasePlane.mk (m.θ + 0) (m.ηs + ε / 2), fun h => ?_, ?_, ?_⟩) hlas
     · have := congrArg (fun y : State 2 => y 1) h
-      simp [Model.point, piPLLState] at this
+      simp [Model.point, PhasePlane.mk] at this
       linarith
     · refine (norm_point_sub _ _ _ _).trans_lt ?_
       rw [abs_zero, zero_add, abs_of_pos (by linarith)]
       linarith
     · ext i
-      fin_cases i <;> simp [piPLLState, ← hKi0, hs]
+      fin_cases i <;> simp [PhasePlane.mk, ← hKi0, hs]
   have hc : Real.cos m.θ = 1 ∨ Real.cos m.θ = -1 := by
     have := Real.sin_sq_add_cos_sq m.θ
     rw [hs] at this
@@ -670,19 +658,19 @@ private theorem las_requirements {m : Model} (hn : Meets m .nonnegativeEnergy)
       have hHd : Differentiable ℝ (pllHamiltonian m.V m.Ki m.ηs) := fun x =>
         (hasGradientAt_pllHamiltonian m.V m.Ki m.ηs x).hasFDerivAt.differentiableAt
       have hH0 : pllHamiltonian m.V m.Ki m.ηs m.point = 0 := by
-        simp [pllHamiltonian, Model.point, piPLLState, hc1]
+        simp [pllHamiltonian, Model.point, PhasePlane.mk, hc1]
       refine Dynamics.not_localAsymptoticStable_of_lie_nonpos
         (V := fun x => -pllHamiltonian m.V m.Ki m.ηs x) (ρ := 1) hC hHd.neg one_pos
-        (fun x _ => ?_) (fun ε hε => ⟨piPLLState (m.θ + 0) (m.ηs + ε / 2), ?_, ?_⟩) hlas
+        (fun x _ => ?_) (fun ε hε => ⟨PhasePlane.mk (m.θ + 0) (m.ηs + ε / 2), ?_, ?_⟩) hlas
       · rw [fderiv_fun_neg, _root_.neg_apply, hamiltonian_lie, ← hKp0]
         simp
       · refine (norm_point_sub _ _ _ _).trans_lt ?_
         rw [abs_zero, zero_add, abs_of_pos (by linarith)]
         linarith
-      · show -pllHamiltonian m.V m.Ki m.ηs (piPLLState (m.θ + 0) (m.ηs + ε / 2)) <
+      · show -pllHamiltonian m.V m.Ki m.ηs (PhasePlane.mk (m.θ + 0) (m.ηs + ε / 2)) <
           -pllHamiltonian m.V m.Ki m.ηs m.point
         rw [hH0, neg_zero, neg_lt_zero]
-        simp only [pllHamiltonian, piPLLState, add_zero]
+        simp only [pllHamiltonian, PhasePlane.mk, add_zero]
         simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, hc1,
           sub_self, mul_zero, zero_add, add_sub_cancel_left]
         positivity
@@ -801,7 +789,7 @@ def offEquilibrium : Model := ⟨1, 0, 1, 0, Real.pi / 2, le_rfl⟩
   refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero (contDiff_srfField _ _ _ _)
     fun h => ?_)
   have := congrArg (fun y : State 2 => y 1) h
-  simp [offEquilibrium, Model.point, piPLLState] at this
+  simp [offEquilibrium, Model.point, PhasePlane.mk] at this
 
 /-- The instability translation is sound but not exact: every non-equilibrium phase is unstable,
 while the translation asks for an anti-phase point. -/

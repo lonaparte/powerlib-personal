@@ -1,5 +1,6 @@
 import theorem.Transform.Park
 import theorem.Spectral.Family
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 /-! # Single series R–L branch in the αβ and dq frames
 
@@ -12,13 +13,21 @@ Model boundary:
   (`conventions.md` §D1). No converter, controller, PLL, delay, PWM or saturation.
 * Time: continuous. Parameters: any real `R`, `L`; `ω` real and CONSTANT (ideal grid / frame
   frequency, `θ(t) = ω t`). The time-varying-`ω` trajectory correspondence is
-  `alphaBetaRL_iff_dqRL` in `theorem/Transform/Park.lean`.
+  `alphaBetaRL_iff_dqRL` (below).
 * αβ state `(i_α, i_β)`; dq state `(i_d, i_q)` with `i^{dq} = park(ω t) i^{αβ}`, both in
   `EuclideanSpace ℝ (Fin 2)`. dq field `ẋ = A x + L⁻¹ v`,
   `A = −(R/L) I − ω J = [[−R/L, ω], [−ω, −R/L]]` (`dqRLMatrix`); the αβ description is the
   case `ω = 0`.
 * `dqRLPlant` is the input-driven dq model (input `v`, output `i`); its transfer matrix is the
   inverse of the dq impedance `Z_dq(s) = (sL + R) I + ωL J` (`T-impedance-modeling.md` §1.7).
+* Rotating-frame KVL for any differentiable frame angle `θ` (`T-park-transformation.md` §1.4,
+  chain rule of `theorem/Transform/Park.lean`): `dqRL_field_apply`, `dqRL_of_alphaBetaRL`,
+  `alphaBetaRL_of_dqRL`, `alphaBetaRL_iff_dqRL` (Park maps αβ and dq trajectories one to one, no
+  balanced-three-phase premise).
+* Amplitude–phase coordinates of the dq current (`T-invariant-coordinates.md` §1.3; dq R–L filter
+  with converter voltage `V^c`, any `ω(t)`): `hasDerivAt_half_sq_amplitude` (the rotation terms
+  cancel in `d/dt(½|I|²)`), `hasDerivAt_arg_current`, `hasDerivAt_phase`
+  (`φ̇ = (1/(L|I|²))[(V_q I_d − V_d I_q) − (V_q^c I_d − V_d^c I_q)] − ω` for `φ = arg I`).
 
 ## Family and connection conclusions
 
@@ -35,17 +44,18 @@ branch at the origin. Requirements: `R/L > 0` (`stable`, eigenvalues `−R/L ± 
   with its two directions): the attractive denotation of the dq family is its own pull-back
   along `DqBranch.alphaBeta` — the αβ and dq descriptions are stable together, at every frame
   speed. The former proof transported trajectories through the norm-preserving rotation
-  (`alphaBetaRL_of_dqRL`, `dqRL_of_alphaBetaRL` in `Transform/Park.lean`); the comparison is
+  (`alphaBetaRL_of_dqRL`, `dqRL_of_alphaBetaRL`); the comparison is
   now read from the spectra (`spectrallyStable_dqRLMatrix_iff`), which do not depend on `ω`.
 The spectra, the field identity and the dq impedance are static evidence. The former adapters
 `isTrajectory_dqRLModel_iff`, `isTrajectory_alphaBetaRLModel_iff` between the deleted
-`LTI.IsTrajectory` and Park's KVL predicates have no counterpart: the trajectory form of the
-dq KVL is Park's `DqRL`, and the plant's field is `dqRLPlant_field`.
+`LTI.IsTrajectory` and the KVL predicates have no counterpart: the trajectory form of the
+dq KVL is `dqRL_of_alphaBetaRL`, and the plant's field is `dqRLPlant_field`.
 -/
 
 noncomputable section
-namespace powerlib.Transform
+namespace powerlib.CurrentControl
 open Matrix Linear LinearSystems
+open powerlib.Transform (J park rot)
 
 /-- Zero-input dq-frame state matrix `−(R/L) I − ω J` of one R–L branch. -/
 def dqRLMatrix (R L ω : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-(R / L), ω; -ω, -(R / L)]
@@ -138,6 +148,120 @@ def dqImpedance (R L ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
     Matrix.mul_smul, Matrix.mul_one, Matrix.smul_mul, ← Matrix.mul_smul, hZ]
   exact Matrix.nonsing_inv_mul _ (isUnit_iff_ne_zero.mpr hs)
 
+/-! ## Rotating-frame KVL of an RL branch (`T-park-transformation.md` §1.4)
+
+The KVL of a series R–L branch, IN-positive current, with branch voltage `v`, is written out in
+the statements below:
+* αβ frame: `L i̇ = v − R i`, i.e. `∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t)) t`;
+* dq frame rotating at `ω(t)`: `i̇ = L⁻¹ (v − R i) − ω J i` (§1.4 boxed, the `±ωL` cross terms),
+  i.e. `∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t) - ω t • (J *ᵥ i t)) t`. -/
+
+/-- Componentwise form: `i̇_d = (v_d − R i_d)/L + ω i_q`, `i̇_q = (v_q − R i_q)/L − ω i_d`. -/
+@[powerlib_foundation] theorem dqRL_field_apply (R L ω : ℝ) (v i : Fin 2 → ℝ) :
+    L⁻¹ • (v - R • i) - ω • (J *ᵥ i) =
+      ![L⁻¹ * (v 0 - R * i 0) + ω * i 1, L⁻¹ * (v 1 - R * i 1) - ω * i 0] := by
+  ext k; fin_cases k <;> simp [Transform.J_mulVec]
+
+/-- Park maps αβ-frame RL trajectories to dq-frame RL trajectories, for any differentiable
+frame angle `θ` with `θ̇ = ω`. No balanced-three-phase premise is needed. -/
+@[powerlib_foundation] theorem dqRL_of_alphaBetaRL {R L : ℝ} {θ ω : ℝ → ℝ}
+    (hθ : ∀ t, HasDerivAt θ (ω t) t) {v i : ℝ → Fin 2 → ℝ}
+    (h : ∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t)) t) :
+    ∀ t, HasDerivAt (fun t => park (θ t) *ᵥ i t)
+      (L⁻¹ • (park (θ t) *ᵥ v t - R • (park (θ t) *ᵥ i t)) -
+        ω t • (J *ᵥ (park (θ t) *ᵥ i t))) t := by
+  intro t
+  convert Transform.hasDerivAt_park_mulVec (hθ t) (h t) using 1
+  rw [Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_smul]
+
+/-- Inverse direction: rotating a dq-frame trajectory back gives an αβ-frame trajectory. -/
+@[powerlib_foundation] theorem alphaBetaRL_of_dqRL {R L : ℝ} {θ ω : ℝ → ℝ}
+    (hθ : ∀ t, HasDerivAt θ (ω t) t) {v i : ℝ → Fin 2 → ℝ}
+    (h : ∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t) - ω t • (J *ᵥ i t)) t) :
+    ∀ t, HasDerivAt (fun t => rot (θ t) *ᵥ i t)
+      (L⁻¹ • (rot (θ t) *ᵥ v t - R • (rot (θ t) *ᵥ i t))) t := by
+  intro t
+  convert Transform.hasDerivAt_rot_mulVec (hθ t) (h t) using 1
+  rw [sub_add_cancel, Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_smul]
+
+/-- One-to-one correspondence of αβ and dq RL trajectories under `x^{dq} = park θ · x^{αβ}`. -/
+@[powerlib_foundation] theorem alphaBetaRL_iff_dqRL {R L : ℝ} {θ ω : ℝ → ℝ}
+    (hθ : ∀ t, HasDerivAt θ (ω t) t) (v i : ℝ → Fin 2 → ℝ) :
+    (∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t)) t) ↔
+      ∀ t, HasDerivAt (fun t => park (θ t) *ᵥ i t)
+        (L⁻¹ • (park (θ t) *ᵥ v t - R • (park (θ t) *ᵥ i t)) -
+          ω t • (J *ᵥ (park (θ t) *ᵥ i t))) t := by
+  refine ⟨dqRL_of_alphaBetaRL hθ, fun h => ?_⟩
+  have h' := alphaBetaRL_of_dqRL hθ h
+  simp only [Transform.rot_mulVec_park_mulVec] at h'
+  exact h'
+
+/-! ## Amplitude–phase coordinates of a dq current (`T-invariant-coordinates.md` §1.3) -/
+
+/-- Squared-amplitude balance of the dq R–L filter: the frame-rotation terms cancel. -/
+@[powerlib_foundation] theorem hasDerivAt_half_sq_amplitude {L R : ℝ} (hL : L ≠ 0)
+    {Id Iq Vd Vq Vcd Vcq ω : ℝ → ℝ} {t : ℝ}
+    (hd : HasDerivAt Id ((Vd t - Vcd t - R * Id t + ω t * L * Iq t) / L) t)
+    (hq : HasDerivAt Iq ((Vq t - Vcq t - R * Iq t - ω t * L * Id t) / L) t) :
+    HasDerivAt (fun τ => (Id τ ^ 2 + Iq τ ^ 2) / 2)
+      (((Vd t * Id t + Vq t * Iq t) - (Vcd t * Id t + Vcq t * Iq t)) / L -
+        R / L * (Id t ^ 2 + Iq t ^ 2)) t := by
+  have h := ((hd.pow 2).add (hq.pow 2)).div_const 2
+  convert h using 1
+  field_simp
+  ring
+
+/-- Phase derivative `d/dt arg(I_d + j I_q) = (I_d İ_q − I_q İ_d)/|I|²` wherever `I` lies in
+the slit plane (`|I| ≠ 0` and not on the negative real axis; any other branch of the
+phase differs locally by a constant). -/
+@[powerlib_foundation] theorem hasDerivAt_arg_current {Id Iq : ℝ → ℝ} {dId dIq t : ℝ}
+    (hd : HasDerivAt Id dId t) (hq : HasDerivAt Iq dIq t)
+    (hslit : (⟨Id t, Iq t⟩ : ℂ) ∈ Complex.slitPlane) :
+    HasDerivAt (fun τ => Complex.arg ⟨Id τ, Iq τ⟩)
+      ((Id t * dIq - Iq t * dId) / (Id t ^ 2 + Iq t ^ 2)) t := by
+  have hz : HasDerivAt (fun τ => (⟨Id τ, Iq τ⟩ : ℂ)) (⟨dId, dIq⟩ : ℂ) t := by
+    have h1 := hd.ofReal_comp
+    have h2 := hq.ofReal_comp.mul_const Complex.I
+    have := h1.add h2
+    convert this using 1
+    · funext τ; apply Complex.ext <;> simp
+    · apply Complex.ext <;> simp
+  have hlog := hz.clog_real hslit
+  have him := (Complex.imCLM : ℂ →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivAt t hlog
+  have hne : (⟨Id t, Iq t⟩ : ℂ) ≠ 0 := Complex.slitPlane_ne_zero hslit
+  have hn2 : Id t ^ 2 + Iq t ^ 2 ≠ 0 := by
+    intro h0
+    apply hne
+    have h1 : Id t = 0 := by nlinarith [sq_nonneg (Id t), sq_nonneg (Iq t)]
+    have h2 : Iq t = 0 := by nlinarith [sq_nonneg (Id t), sq_nonneg (Iq t)]
+    apply Complex.ext <;> simp [h1, h2]
+  convert him using 1
+  · funext τ; simp [Complex.log_im]
+  · simp only [Complex.imCLM_apply, Complex.div_im, Complex.normSq_mk]
+    field_simp
+
+/-- Phase dynamics of the dq R–L filter:
+`φ̇ = (1/(L|I|²))[(V_q I_d − V_d I_q) − (V_q^c I_d − V_d^c I_q)] − ω`. -/
+@[powerlib_foundation] theorem hasDerivAt_phase {L R : ℝ} (hL : L ≠ 0)
+    {Id Iq Vd Vq Vcd Vcq ω : ℝ → ℝ} {t : ℝ}
+    (hd : HasDerivAt Id ((Vd t - Vcd t - R * Id t + ω t * L * Iq t) / L) t)
+    (hq : HasDerivAt Iq ((Vq t - Vcq t - R * Iq t - ω t * L * Id t) / L) t)
+    (hslit : (⟨Id t, Iq t⟩ : ℂ) ∈ Complex.slitPlane) :
+    HasDerivAt (fun τ => Complex.arg ⟨Id τ, Iq τ⟩)
+      (((Vq t * Id t - Vd t * Iq t) - (Vcq t * Id t - Vcd t * Iq t)) /
+          (L * (Id t ^ 2 + Iq t ^ 2)) - ω t) t := by
+  have h := hasDerivAt_arg_current hd hq hslit
+  have hne : (⟨Id t, Iq t⟩ : ℂ) ≠ 0 := Complex.slitPlane_ne_zero hslit
+  have hn2 : Id t ^ 2 + Iq t ^ 2 ≠ 0 := by
+    intro h0
+    apply hne
+    have h1 : Id t = 0 := by nlinarith [sq_nonneg (Id t), sq_nonneg (Iq t)]
+    have h2 : Iq t = 0 := by nlinarith [sq_nonneg (Id t), sq_nonneg (Iq t)]
+    apply Complex.ext <;> simp [h1, h2]
+  convert h using 1
+  field_simp
+  ring
+
 /-! ## The dq RL-branch family -/
 
 /-- One series R–L branch read in the dq frame rotating at the constant speed `ω`. -/
@@ -216,4 +340,4 @@ attractive denotation of the dq family is its pull-back along the αβ reading. 
   rw [den_flow hP]
   rfl
 
-end powerlib.Transform
+end powerlib.CurrentControl

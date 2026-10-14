@@ -25,6 +25,12 @@ Source: work-sync `theory/T-impedance-modeling.md` §1.4 (complex transfer funct
   `e^{jω₁t} u`, and the output is multiplied by `e^{jω₁t}`. With `A` the complex dq model and
   `ω₁` the frame speed, the shifted model is the αβ description, i.e.
   `G_{αβ}(s) = G_{dq}(s − jω₁)`.
+* dq ↔ complex-vector (sequence) form (`T-gfl-control.md` §2.12): `toSeq Y = A Y A⁻¹` with
+  `A = [[1, j], [1, −j]]` (`seqMatrix`, inverse `seqMatrixInv`); `toSeq_eq` gives its entries
+  `Y± = ((Y_dd + Y_qq) ± j(Y_qd − Y_dq))/2` on the diagonal and the mirror couplings off it;
+  `toSeq_offDiag_eq_zero_iff`: no ± coupling iff `Y_dd = Y_qq ∧ Y_dq = −Y_qd`;
+  `returnDifference_toSeq`: `det(I + Z Y)` (hence the generalized Nyquist test) is the same in
+  both forms.
 
 These are algebraic / calculus identities; no stability claim is made here.
 -/
@@ -272,5 +278,68 @@ def ofReal {n p : ℕ} (m : Linear.Plant n p) : CModel (Fin n) (Fin p) :=
     (ofReal m).transfer s = Linear.transfer m s := rfl
 
 end CModel
+
+/-! ## dq ↔ complex-vector (sequence) form (`T-gfl-control.md` §2.12) -/
+
+/-- `A = [[1, j], [1, −j]]`: `(x_d, x_q) ↦ (x_d + j x_q, x_d − j x_q)`. -/
+def seqMatrix : Matrix (Fin 2) (Fin 2) ℂ := !![1, Complex.I; 1, -Complex.I]
+
+/-- `A⁻¹ = ½ [[1, 1], [−j, j]]`. -/
+def seqMatrixInv : Matrix (Fin 2) (Fin 2) ℂ := (1 / 2 : ℂ) • !![1, 1; -Complex.I, Complex.I]
+
+@[powerlib_foundation] theorem seqMatrix_mul_inv : seqMatrix * seqMatrixInv = 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [seqMatrix, seqMatrixInv, Matrix.mul_apply, Fin.sum_univ_two] <;> ring_nf <;>
+    simp [Complex.I_sq] <;> norm_num
+
+@[powerlib_foundation] theorem seqMatrixInv_mul : seqMatrixInv * seqMatrix = 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [seqMatrix, seqMatrixInv, Matrix.mul_apply, Fin.sum_univ_two] <;> ring_nf <;>
+    simp [Complex.I_sq]
+
+/-- Complex-vector (modified sequence) form of a dq transfer matrix. -/
+def toSeq (Y : Matrix (Fin 2) (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
+  seqMatrix * Y * seqMatrixInv
+
+@[powerlib_foundation] theorem toSeq_eq (Y : Matrix (Fin 2) (Fin 2) ℂ) :
+    toSeq Y =
+      !![((Y 0 0 + Y 1 1) + Complex.I * (Y 1 0 - Y 0 1)) / 2,
+          ((Y 0 0 - Y 1 1) + Complex.I * (Y 1 0 + Y 0 1)) / 2;
+        ((Y 0 0 - Y 1 1) - Complex.I * (Y 1 0 + Y 0 1)) / 2,
+          ((Y 0 0 + Y 1 1) - Complex.I * (Y 1 0 - Y 0 1)) / 2] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [toSeq, seqMatrix, seqMatrixInv, Matrix.mul_apply, Matrix.vecMul, dotProduct,
+      Fin.sum_univ_two] <;> ring_nf <;> simp [Complex.I_sq] <;> ring
+
+/-- No coupling between the two complex-vector channels iff `Y_dd = Y_qq ∧ Y_dq = −Y_qd`. -/
+@[powerlib_foundation] theorem toSeq_offDiag_eq_zero_iff (Y : Matrix (Fin 2) (Fin 2) ℂ) :
+    (toSeq Y 0 1 = 0 ∧ toSeq Y 1 0 = 0) ↔ (Y 0 0 = Y 1 1 ∧ Y 0 1 = -Y 1 0) := by
+  rw [toSeq_eq]
+  simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.empty_val', Matrix.cons_val_fin_one]
+  constructor
+  · rintro ⟨h1, h2⟩
+    have hs : Y 0 0 - Y 1 1 = 0 := by linear_combination h1 + h2
+    have hd : Complex.I * (Y 1 0 + Y 0 1) = 0 := by linear_combination h1 - h2
+    have hd' : Y 1 0 + Y 0 1 = 0 := by simpa [Complex.I_ne_zero] using hd
+    exact ⟨by linear_combination hs, by linear_combination hd'⟩
+  · rintro ⟨h1, h2⟩
+    constructor
+    · rw [h1, h2]; ring
+    · rw [h1, h2]; ring
+
+/-- The return difference `det(I + Z Y)` is the same in dq and complex-vector form. -/
+@[powerlib_foundation] theorem returnDifference_toSeq (Z Y : Matrix (Fin 2) (Fin 2) ℂ) :
+    (1 + toSeq Z * toSeq Y).det = (1 + Z * Y).det := by
+  have h : 1 + toSeq Z * toSeq Y = seqMatrix * (1 + Z * Y) * seqMatrixInv := by
+    simp only [toSeq, Matrix.mul_add, Matrix.add_mul, Matrix.mul_one]
+    rw [seqMatrix_mul_inv]
+    simp only [Matrix.mul_assoc]
+    rw [← Matrix.mul_assoc seqMatrixInv seqMatrix, seqMatrixInv_mul, Matrix.one_mul]
+  rw [h, Matrix.det_mul, Matrix.det_mul, mul_comm (seqMatrix.det), mul_assoc,
+    ← Matrix.det_mul, seqMatrix_mul_inv, Matrix.det_one, mul_one]
 
 end powerlib.Transform

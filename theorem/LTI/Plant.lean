@@ -9,7 +9,8 @@ current-loop, DC-link and feedforward modules. Nothing here describes a physical
 * `transfer_fin_one`, `transfer_fin_two`: closed forms of `Linear.transfer` for one- and
   two-state single-input single-output plants `⟨A, B, C, D⟩` (one port), off the
   characteristic roots. These are plain resolvent computations (adjugate of a 1×1 / 2×2
-  matrix).
+  matrix). `transfer_eq_of_solution`: a solution `X` of `(sI − A) X = B` gives the transfer
+  matrix `C X + D`.
 * `negOutput`, `transfer_negOutput`: reversing the output sign of a plant negates its transfer
   matrix. With the output read as a port current, this is the `Y^IN = −Y^OUT` translation
   between the IN-positive and OUT-positive current conventions (work-sync
@@ -30,6 +31,13 @@ current-loop, DC-link and feedforward modules. Nothing here describes a physical
   equilibrium the field is the zero-input field); `exists_not_tendsto_of_eigenvector` (a real
   eigenvector of a positive eigenvalue gives a solution through the equilibrium that converges
   to no value along every component where the eigenvector is nonzero).
+
+* Derivative output: `derivModel` (`(A, B, C A, C B)`) — along any input–state solution of a
+  strictly proper plant its output is the time derivative of `C x + D u` (`hasDerivAt_output`),
+  and its transfer matrix is `s G(s)` (`transfer_derivModel`).
+* Common input: `plantOutput` (`C x + D u`); `tendsto_sub_of_isHurwitz`: two forward solutions of
+  a plant with Hurwitz state matrix under the same input signal converge to each other,
+  componentwise (their difference solves the zero-input field).
 
 The spectral `Family` templates built on these plants are in `theorem/Spectral/Family.lean`.
 
@@ -66,6 +74,15 @@ open scoped Topology
   field_simp
   ring
 
+/-- A solution of `(sI − A) X = B` gives the transfer matrix `C X + D`. -/
+@[powerlib_foundation] theorem transfer_eq_of_solution
+    {n k : ℕ} (m : Plant n k) (s : ℂ) (X : Matrix (Fin n) (Fin k) ℂ)
+    (hM : (characteristicMatrix m.A s).det ≠ 0)
+    (hX : characteristicMatrix m.A s * X = complexify m.B) :
+    transfer m s = complexify m.C * X + complexify m.D := by
+  rw [transfer, Matrix.mul_assoc, ← hX,
+    Matrix.nonsing_inv_mul_cancel_left _ _ (isUnit_iff_ne_zero.mpr hM)]
+
 section Sign
 
 variable {n p : ℕ}
@@ -84,6 +101,44 @@ current: `Y^IN(s) = −Y^OUT(s)`. -/
   simp [negOutput]
 
 end Sign
+
+/-! ## Derivative output -/
+
+/-- Derivative-output realization `(A, B, C A, C B)` of a plant. -/
+def derivModel {n p : ℕ} (m : Linear.Plant n p) : Linear.Plant n p :=
+  ⟨m.A, m.B, m.C * m.A, m.C * m.B⟩
+
+/-- Along any input–state solution `ẋ = A x + B u` of a strictly proper plant (`D = 0`), the
+output of `derivModel` is the time derivative of the original output `C x + D u`. Generic: any
+plant, any differentiable state signal. -/
+@[powerlib_foundation] theorem hasDerivAt_output {n p : ℕ} {m : Linear.Plant n p} (hD : m.D = 0)
+    {x : ℝ → Fin n → ℝ} {u : ℝ → Fin p → ℝ} {t : ℝ}
+    (hx : HasDerivAt x (m.A *ᵥ x t + m.B *ᵥ u t) t) :
+    HasDerivAt (fun τ => m.C *ᵥ x τ + m.D *ᵥ u τ)
+      ((derivModel m).C *ᵥ x t + (derivModel m).D *ᵥ u t) t := by
+  have hC : HasDerivAt (fun τ => m.C *ᵥ x τ) (m.C *ᵥ (m.A *ᵥ x t + m.B *ᵥ u t)) t := by
+    refine hasDerivAt_pi.2 fun i => ?_
+    simp only [Matrix.mulVec, dotProduct]
+    exact HasDerivAt.fun_sum fun j _ => (hasDerivAt_pi.1 hx j).const_mul (m.C i j)
+  simp only [hD, Matrix.zero_mulVec, add_zero]
+  convert hC using 1
+  simp [derivModel, Matrix.mulVec_add, Matrix.mulVec_mulVec]
+
+/-- Transfer of the derivative output: `s H(s)` (`D = 0`, `s` not an eigenvalue). -/
+@[powerlib_foundation] theorem transfer_derivModel {n p : ℕ} {m : Linear.Plant n p}
+    (hD : m.D = 0) {s : ℂ} (hs : (Linear.characteristicMatrix m.A s).det ≠ 0) :
+    Linear.transfer (derivModel m) s = s • Linear.transfer m s := by
+  set M := Linear.characteristicMatrix m.A s
+  have hA : Linear.complexify m.A = s • 1 - M := by
+    simp [M, Linear.characteristicMatrix, Linear.complexify]
+  have hinv : M * M⁻¹ = 1 := Matrix.mul_nonsing_inv M (isUnit_iff_ne_zero.mpr hs)
+  simp only [Linear.transfer, derivModel, Linear.complexify_mul, hD]
+  change Linear.complexify m.C * Linear.complexify m.A * M⁻¹ * Linear.complexify m.B +
+    Linear.complexify m.C * Linear.complexify m.B =
+    s • (Linear.complexify m.C * M⁻¹ * Linear.complexify m.B + Linear.complexify 0)
+  rw [hA, Linear.complexify_zero, add_zero, Matrix.mul_sub, Matrix.sub_mul, Matrix.sub_mul,
+    Matrix.mul_assoc (Linear.complexify m.C) M, hinv, Matrix.mul_one]
+  simp [Matrix.mul_smul, Matrix.smul_mul]
 
 section Trajectory
 
@@ -202,5 +257,60 @@ and every component where `v` is nonzero diverges, so it converges to no value. 
     exact not_tendsto_atTop_of_tendsto_nhds hT0.abs habs
 
 end ConstantInput
+
+/-! ## Forward solutions under a common input -/
+
+section CommonInput
+
+open Set
+
+/-- The output `C x + D u` of a plant. -/
+def plantOutput {n p : ℕ} (M : Linear.Plant n p) (x : Fin n → ℝ) (u : Fin p → ℝ) : Fin p → ℝ :=
+  M.C *ᵥ x + M.D *ᵥ u
+
+/-- Two forward trajectories of the same input-driven plant with Hurwitz state matrix converge to
+each other, componentwise, for any common input signal: their difference solves the zero-input
+field, which is globally exponentially stable (the linear hub). A forward trajectory `x` of the
+plant `ẋ = A x + B u` under the input signal `u` is a solution on `[0, ∞)`, in plain coordinates,
+with one-sided derivatives at `0`. -/
+@[powerlib_foundation] theorem tendsto_sub_of_isHurwitz {n p : ℕ} {M : Linear.Plant n p}
+    (hA : LinearSystems.IsHurwitz M.A) {u : ℝ → Fin p → ℝ} {x y : ℝ → Fin n → ℝ}
+    (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x (M.A *ᵥ x t + M.B *ᵥ u t) (Ici 0) t)
+    (hy : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt y (M.A *ᵥ y t + M.B *ᵥ u t) (Ici 0) t)
+    (i : Fin n) :
+    Tendsto (fun t => x t i - y t i) atTop (𝓝 0) := by
+  let φ : ℝ → EuclideanSpace ℝ (Fin n) := fun t => WithLp.toLp 2 (x t - y t)
+  have hder : ∀ t ∈ Ici (0 : ℝ),
+      HasDerivWithinAt φ (LinearSystems.affineLinearVectorField M.A 0 (φ t)) (Ici 0) t := by
+    intro t ht
+    have h := (hx t ht).sub (hy t ht)
+    have h2 := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm.hasFDerivAt.comp_hasDerivWithinAt
+      t h
+    have heq : LinearSystems.affineLinearVectorField M.A 0 (φ t) =
+        (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm
+          (M.A *ᵥ x t + M.B *ᵥ u t - (M.A *ᵥ y t + M.B *ᵥ u t)) := by
+      rw [Linear.affine_apply, sub_zero]
+      ext j
+      simp [φ, Linear.op]
+    rw [heq]
+    exact h2
+  obtain ⟨-, -, C, a, -, ha, hb⟩ :=
+    Linear.globallyExponentiallyStable_of_isHurwitz (0 : EuclideanSpace ℝ (Fin n)) hA
+  have hbound : ∀ t, 0 ≤ t → ‖x t i - y t i‖ ≤ C * Real.exp (-a * t) * ‖φ 0‖ := by
+    intro t ht
+    have htraj : IsTrajectoryOn φ (LinearSystems.affineLinearVectorField M.A 0) 0 t :=
+      fun s hs => (hder s hs.1).mono Icc_subset_Ici_self
+    have h := hb 0 t φ htraj t ⟨ht, le_rfl⟩
+    simp only [sub_zero] at h
+    calc ‖x t i - y t i‖ = ‖φ t i‖ := by simp [φ]
+      _ ≤ ‖φ t‖ := PiLp.norm_apply_le (φ t) i
+      _ ≤ C * Real.exp (-a * t) * ‖φ 0‖ := h
+  have hlim : Tendsto (fun t => C * Real.exp (-a * t) * ‖φ 0‖) atTop (𝓝 0) := by
+    have he : Tendsto (fun t : ℝ => Real.exp (-a * t)) atTop (𝓝 0) :=
+      Real.tendsto_exp_atBot.comp (tendsto_id.const_mul_atTop_of_neg (by linarith))
+    simpa using (he.const_mul C).mul_const ‖φ 0‖
+  exact squeeze_zero_norm' (eventually_ge_atTop 0 |>.mono hbound) hlim
+
+end CommonInput
 
 end powerlib.LTI

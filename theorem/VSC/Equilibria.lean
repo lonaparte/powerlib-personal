@@ -21,7 +21,7 @@ Main results (per period window `[a, a + 2π)` of the angle `θ_e`).
 
 Family and connection conclusions. No new family: the stability conclusions are connection
 memberships of the reduced model's members `p.pllModel θ` of the PI-PLL family
-`GFL.PIPLL.family` (`theorem/VSC/Reduced2D.lean`). The former `two_equilibria_per_period` is split
+`PLL.PIPLL.family` (`theorem/VSC/Reduced2D.lean`). The former `two_equilibria_per_period` is split
 into its static part (`two_equilibria_per_period`: the count and the explicit pair) and its
 connection part (`two_equilibria_per_period_den`: the stable root is locally exponentially stable,
 the saddle root unstable). The fold Jacobian (`fold_equilibrium_per_period`), the absence of
@@ -44,7 +44,7 @@ noncomputable section
 namespace powerlib.VSC
 open Real Set
 open powerlib.Dynamics (State)
-open powerlib.GFL (piPLLState piPLLJacobian)
+open powerlib.PLL (piPLLJacobian)
 open powerlib.SpecialFunctions (sinusoidZeros stableRoot saddleRoot)
 
 namespace Params
@@ -88,8 +88,8 @@ locally exponentially stable and `(θ_u, 0)` is unstable. -/
 @[powerlib_domain] theorem two_equilibria_per_period_den (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hVg : 0 < p.Vg) (hKp : 0 < p.Kp) (hKi : 0 < p.Ki) (hc : |p.c0| < p.amp) (a : ℝ) :
     connection% (p.pllModel (stableRoot p.c0 p.amp p.phase a) ∈
-        GFL.PIPLL.family.den (.flow .locallyExponentiallyStable) ∧
-      p.pllModel (saddleRoot p.c0 p.amp p.phase a) ∈ GFL.PIPLL.family.den (.flow .unstable)) := by
+        PLL.PIPLL.family.den (.flow .locallyExponentiallyStable) ∧
+      p.pllModel (saddleRoot p.c0 p.amp p.phase a) ∈ PLL.PIPLL.family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   have hA := p.amp_pos hVg hΔ
   have hs := SpecialFunctions.sqrt_one_sub_sq_pos hc hA
@@ -107,8 +107,8 @@ Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem fold_equilibrium_per_period (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hVg : 0 < p.Vg) (hKi : p.Ki ≠ 0) (hc : |p.c0| = p.amp) (a : ℝ) :
     (p.hZeros a).ncard = 1 ∧ p.hZeros a = {stableRoot p.c0 p.amp p.phase a} ∧
-      p.reducedField (piPLLState (stableRoot p.c0 p.amp p.phase a) 0) = 0 ∧
-      fderiv ℝ p.reducedField (piPLLState (stableRoot p.c0 p.amp p.phase a) 0) =
+      p.reducedField (PhasePlane.mk (stableRoot p.c0 p.amp p.phase a) 0) = 0 ∧
+      fderiv ℝ p.reducedField (PhasePlane.mk (stableRoot p.c0 p.amp p.phase a) 0) =
         Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian p.Kp p.Ki 0) ∧
       piPLLJacobian p.Kp p.Ki 0 ≠ 0 ∧ (piPLLJacobian p.Kp p.Ki 0) ^ 2 = 0 := by
   have hA := p.amp_pos hVg hΔ

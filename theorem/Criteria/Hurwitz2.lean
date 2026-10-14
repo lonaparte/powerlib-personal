@@ -20,7 +20,10 @@ Contents.
   iff `0 < a1 ∧ 0 < a0` (both directions); explicit root witnesses with `0 ≤ re` / `0 < re`;
   all roots real iff `0 ≤ a1 ^ 2 - 4 * a0`. For a real quadratic `a x² + b x + c` with `a > 0`:
   negative exactly strictly between the two roots (`quad_neg_iff`), and `(−b ± √D)/(2a)` are
-  its roots when `D ≥ 0` (`quad_root`).
+  its roots when `D ≥ 0` (`quad_root`). For `λ² + aλ + b` with `a > 0`, `0 ≤ b`, `4b ≤ a²`
+  (`ε = b/a²`): real roots iff `ε ≤ 1/4` (`eigen_real_iff`), `λ± = −(a/2)(1 ∓ √(1 − 4ε))`
+  (`eigen_roots`), `λ₊/λ₋ = 4ε/(1 + √(1 − 4ε))² ∈ [ε, 4ε]` (`eigen_ratio`),
+  `λ₋ ∈ [−a, −a/2]`, `λ₊ ∈ [−2b/a, −b/a]` (`eigen_bounds`).
 * `A : Matrix (Fin 2) (Fin 2) ℝ`: `det (s • 1 - A) = s ^ 2 - tr A * s + det A`;
   `IsHurwitz A ↔ A.trace < 0 ∧ 0 < A.det` (also for `SpectrallyStable`, for the literal
   `!![a, b; c, d]`, and for the companion form `!![0, 1; -a0, -a1]`).
@@ -267,6 +270,93 @@ section Quadratic
     field_simp; ring
   rw [key, hσ2, hs]; simp
 
+/-! ### Real roots of `λ² + aλ + b`: closed form, ratio and bounds -/
+
+/-- The in-phase eigenvalues are real iff `ε_od ≤ 1/4` (`a ≠ 0`). -/
+@[powerlib_foundation] theorem eigen_real_iff {a b : ℝ} (ha : a ≠ 0) :
+    0 ≤ a ^ 2 - 4 * b ↔ b / a ^ 2 ≤ 1 / 4 := by
+  have ha2 : 0 < a ^ 2 := by positivity
+  rw [div_le_iff₀ ha2]
+  constructor <;> intro h <;> linarith
+
+/-- Real eigenvalues `λ± = −(a/2)(1 ∓ √(1 − 4ε))`, `ε = b/a²` (`a > 0`, `4b ≤ a²`), roots of
+`λ² + aλ + b`. -/
+@[powerlib_foundation] theorem eigen_roots {a b : ℝ} (ha : 0 < a) (hd : 4 * b ≤ a ^ 2) :
+    let s := Real.sqrt (1 - 4 * (b / a ^ 2))
+    (-(a / 2) * (1 - s)) ^ 2 + a * (-(a / 2) * (1 - s)) + b = 0 ∧
+      (-(a / 2) * (1 + s)) ^ 2 + a * (-(a / 2) * (1 + s)) + b = 0 := by
+  intro s
+  have h1 : 0 ≤ 1 - 4 * (b / a ^ 2) := by
+    rw [sub_nonneg, ← le_div_iff₀' (by norm_num : (0 : ℝ) < 4), div_le_iff₀ (by positivity)]
+    linarith
+  have hs : s ^ 2 = 1 - 4 * (b / a ^ 2) := Real.sq_sqrt h1
+  have ha2 : a ^ 2 ≠ 0 := by positivity
+  have hs' : a ^ 2 * s ^ 2 = a ^ 2 - 4 * b := by rw [hs]; field_simp
+  constructor
+  · linear_combination (1 / 4 : ℝ) * hs'
+  · linear_combination (1 / 4 : ℝ) * hs'
+
+/-- Exact eigenvalue ratio: `λ₊/λ₋ = 4ε/(1 + √(1 − 4ε))²`, and `ε ≤ λ₊/λ₋ ≤ 4ε`
+(`a > 0`, `0 ≤ b`, `4b ≤ a²`). -/
+@[powerlib_foundation] theorem eigen_ratio {a b : ℝ} (ha : 0 < a) (hb : 0 ≤ b)
+    (hd : 4 * b ≤ a ^ 2) :
+    let ε := b / a ^ 2
+    let s := Real.sqrt (1 - 4 * ε)
+    (-(a / 2) * (1 - s)) / (-(a / 2) * (1 + s)) = 4 * ε / (1 + s) ^ 2 ∧
+      ε ≤ 4 * ε / (1 + s) ^ 2 ∧ 4 * ε / (1 + s) ^ 2 ≤ 4 * ε := by
+  intro ε s
+  have hε : 0 ≤ ε := by positivity
+  have h1 : 0 ≤ 1 - 4 * ε := by
+    simp only [ε]
+    rw [sub_nonneg, ← le_div_iff₀' (by norm_num : (0 : ℝ) < 4), div_le_iff₀ (by positivity)]
+    linarith
+  have hs : s ^ 2 = 1 - 4 * ε := Real.sq_sqrt h1
+  have hs0 : 0 ≤ s := Real.sqrt_nonneg _
+  have hs1 : s ≤ 1 := by nlinarith
+  have hpos : 0 < 1 + s := by linarith
+  refine ⟨?_, ?_, ?_⟩
+  · have : -(a / 2) * (1 + s) ≠ 0 := by
+      have : 0 < a / 2 * (1 + s) := by positivity
+      linarith
+    rw [div_eq_div_iff this (by positivity)]
+    linear_combination (a / 2) * (1 + s) * hs
+  · rw [le_div_iff₀ (by positivity)]
+    nlinarith
+  · rw [div_le_iff₀ (by positivity)]
+    nlinarith
+
+/-- Fast and slow eigenvalue bounds: `λ₋ ∈ [−a, −a/2]`, `λ₊ ∈ [−2b/a, −b/a]`
+(`a > 0`, `0 ≤ b`, `4b ≤ a²`). -/
+@[powerlib_foundation] theorem eigen_bounds {a b : ℝ} (ha : 0 < a) (hb : 0 ≤ b)
+    (hd : 4 * b ≤ a ^ 2) :
+    let s := Real.sqrt (1 - 4 * (b / a ^ 2))
+    (-a ≤ -(a / 2) * (1 + s) ∧ -(a / 2) * (1 + s) ≤ -(a / 2)) ∧
+      (-(2 * b / a) ≤ -(a / 2) * (1 - s) ∧ -(a / 2) * (1 - s) ≤ -(b / a)) := by
+  intro s
+  have h1 : 0 ≤ 1 - 4 * (b / a ^ 2) := by
+    rw [sub_nonneg, ← le_div_iff₀' (by norm_num : (0 : ℝ) < 4), div_le_iff₀ (by positivity)]
+    linarith
+  have hs : s ^ 2 = 1 - 4 * (b / a ^ 2) := Real.sq_sqrt h1
+  have hs0 : 0 ≤ s := Real.sqrt_nonneg _
+  have hs1 : s ≤ 1 := by nlinarith [div_nonneg hb (sq_nonneg a)]
+  have hkey : a / 2 * (1 - s) * (1 + s) = 2 * b / a := by
+    have : (1 - s) * (1 + s) = 4 * (b / a ^ 2) := by nlinarith
+    rw [mul_assoc, this]; field_simp; ring
+  refine ⟨⟨by nlinarith, by nlinarith⟩, ?_, ?_⟩
+  · -- `a/2 (1 − s) = (2b/a)/(1 + s) ≤ 2b/a`
+    have h2 : a / 2 * (1 - s) ≤ 2 * b / a := by
+      have : 0 ≤ a / 2 * (1 - s) := by nlinarith
+      nlinarith
+    linarith
+  · have h2 : b / a ≤ a / 2 * (1 - s) := by
+      have h3 : (1 + s) ≤ 2 := by linarith
+      have : 0 ≤ a / 2 * (1 - s) := by nlinarith
+      have h4 : 2 * b / a ≤ a / 2 * (1 - s) * 2 := by
+        rw [← hkey]; exact mul_le_mul_of_nonneg_left h3 this
+      have : 2 * b / a = 2 * (b / a) := by ring
+      linarith
+    linarith
+
 end Quadratic
 
 /-! ## Real 2×2 matrices -/
@@ -486,7 +576,7 @@ end FinTwo
 
 These are generic semantic implications about an arbitrary caller-supplied field: foundation
 results (Rules §3), not model-specific engineering conclusions. A model family that uses them
-publishes its conclusions as connection statements (see `theorem/GFL/PIPLLFamily.lean`). -/
+publishes its conclusions as connection statements (see `theorem/PLL/PIPLLFamily.lean`). -/
 
 section Semantic
 

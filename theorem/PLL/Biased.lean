@@ -1,16 +1,16 @@
-import theorem.GFL.PIPLLFamily
+import theorem.PLL.PIPLLFamily
 
 /-! # PI-PLL with a biased sinusoidal phase detector `h(θ) = −V sin θ + μ`
 
 Model boundary.
-* System: the general PI-PLL of `theorem/GFL/PIPLL.lean` (state `(θ, η)` in this order,
+* System: the general PI-PLL of `theorem/PLL/PIPLL.lean` (state `(θ, η)` in this order,
   `θ̇ = K_p h(θ) + K_i η − δω`, `η̇ = h(θ)`, constant `δω`) with the phase-detector
   characteristic of the "simple pendulum" model of T-pll-dynamics §1.13.2,
   `h(θ) = −V sin θ + μ` (`biasedPD V μ`), `V > 0`; `μ` is a constant bias of the phase
   detector (small-signal frequency/offset bias in the note). Continuous time, autonomous; no
   pre-filter, delay, PWM, current loop or saturation. All equilibrium and stability results are
-  instantiations of `theorem/GFL/PIPLL.lean` and of the PI-PLL family
-  (`theorem/GFL/PIPLLFamily.lean`).
+  instantiations of `theorem/PLL/PIPLL.lean` and of the PI-PLL family
+  (`theorem/PLL/PIPLLFamily.lean`).
 * Level: equilibrium set and local behaviour at equilibria (linearization).
 
 Results (T-pll-dynamics §1.13.2).
@@ -25,7 +25,7 @@ Results (T-pll-dynamics §1.13.2).
 Source: work-sync `theory/T-pll-dynamics.md` §1.13.2.
 
 Family and connection conclusions. No new family: the biased PLL is the member
-`biasedModel V μ K_p K_i δω θ*` of the PI-PLL family `GFL.PIPLL.family`, whose system map reads
+`biasedModel V μ K_p K_i δω θ*` of the PI-PLL family `PLL.PIPLL.family`, whose system map reads
 the field translated so that the selected point `(θ*, δω / K_i)` is the origin. The stable and
 saddle equilibria are connection statements on that family's semantics connection
 (`biased_mem_den_locallyExponentiallyStable`, `biased_mem_den_unstable`); loss of lock for
@@ -37,7 +37,6 @@ Jacobian (`biased_fold`) are static evidence on the model, not connection conclu
 noncomputable section
 namespace powerlib.PLL
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
-open powerlib.GFL (piPLLField piPLLState)
 
 /-- Biased sinusoidal phase detector `h(θ) = −V sin θ + μ`. -/
 def biasedPD (V μ θ : ℝ) : ℝ := -(V * Real.sin θ) + μ
@@ -101,7 +100,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- The PI-PLL model with the biased detector, read about the selected phase `θ*`
 (selected point `(θ*, δω / K_i)`). -/
-def biasedModel (V μ Kp Ki δω θ : ℝ) : GFL.PIPLL.Model :=
+def biasedModel (V μ Kp Ki δω θ : ℝ) : PIPLL.Model :=
   ⟨biasedPD V μ, Kp, Ki, δω, θ, contDiff_biasedPD V μ⟩
 
 @[powerlib_foundation] theorem biasedModel_deriv (V μ Kp Ki δω θ : ℝ) :
@@ -114,12 +113,12 @@ exponentially stable, for every constant frequency offset `δω`. -/
 @[powerlib_domain] theorem biased_mem_den_locallyExponentiallyStable {V μ Kp Ki : ℝ}
     (hV : 0 < V) (hμ : |μ| < V) (hKp : 0 < Kp) (hKi : 0 < Ki) (δω : ℝ) :
     connection% (biasedModel V μ Kp Ki δω (Real.arcsin (μ / V)) ∈
-      GFL.PIPLL.family.den (.flow .locallyExponentiallyStable)) := by
+      PIPLL.family.den (.flow .locallyExponentiallyStable)) := by
   have hx : |μ / V| < 1 := by rw [abs_div, abs_of_pos hV, div_lt_one hV]; exact hμ
   have hx' := abs_lt.mp hx
   have hcos : 0 < Real.cos (Real.arcsin (μ / V)) := by
     rw [Real.cos_arcsin]; apply Real.sqrt_pos.mpr; nlinarith
-  refine GFL.PIPLL.mem_den_locallyExponentiallyStable_of_pos _ hKp hKi ?_ ?_
+  refine PIPLL.mem_den_locallyExponentiallyStable_of_pos _ hKp hKi ?_ ?_
   · change biasedPD V μ (Real.arcsin (μ / V)) = 0
     rw [biasedPD, Real.sin_arcsin hx'.1.le hx'.2.le]; field_simp; ring
   · rw [biasedModel_deriv]; nlinarith
@@ -129,12 +128,12 @@ every `K_p` and every constant frequency offset `δω`. -/
 @[powerlib_domain] theorem biased_mem_den_unstable {V μ Kp Ki : ℝ} (hV : 0 < V) (hμ : |μ| < V)
     (hKi : 0 < Ki) (δω : ℝ) :
     connection% (biasedModel V μ Kp Ki δω (Real.pi - Real.arcsin (μ / V)) ∈
-      GFL.PIPLL.family.den (.flow .unstable)) := by
+      PIPLL.family.den (.flow .unstable)) := by
   have hx : |μ / V| < 1 := by rw [abs_div, abs_of_pos hV, div_lt_one hV]; exact hμ
   have hx' := abs_lt.mp hx
   have hcos : 0 < Real.cos (Real.arcsin (μ / V)) := by
     rw [Real.cos_arcsin]; apply Real.sqrt_pos.mpr; nlinarith
-  refine GFL.PIPLL.mem_den_unstable_of_pos _ hKi ?_ ?_
+  refine PIPLL.mem_den_unstable_of_pos _ hKi ?_ ?_
   · change biasedPD V μ (Real.pi - Real.arcsin (μ / V)) = 0
     rw [biasedPD, Real.sin_pi_sub, Real.sin_arcsin hx'.1.le hx'.2.le]; field_simp; ring
   · rw [biasedModel_deriv, Real.cos_pi_sub]; nlinarith
@@ -144,26 +143,26 @@ PLL meets the phase-locking requirement of the PI-PLL family. -/
 @[powerlib_domain] theorem biased_not_phaseLocked {V μ : ℝ} (hV : 0 ≤ V) (hμ : V < |μ|)
     (Kp Ki δω θ : ℝ) :
     connection% (biasedModel V μ Kp Ki δω θ ∉
-      TMIO.realize GFL.PIPLL.Meets {.phaseLocked}) := by
+      TMIO.realize PIPLL.Meets {.phaseLocked}) := by
   unfold powerlib.TMIO.Statement
   rw [TMIO.mem_realize]
   intro h
-  have hp : GFL.PIPLL.Meets (biasedModel V μ Kp Ki δω θ) .phaseLocked := h _ rfl
+  have hp : PIPLL.Meets (biasedModel V μ Kp Ki δω θ) .phaseLocked := h _ rfl
   exact biased_no_equilibrium hV hμ Kp Ki δω _
-    ((GFL.piPLLField_point_eq_zero_iff (Kp := Kp)).mpr hp)
+    ((piPLLField_point_eq_zero_iff (Kp := Kp)).mpr hp)
 
 /-- Fold `μ = V` (`V ≠ 0`, `K_i ≠ 0`): `θ* = π/2` is an equilibrium with `h'(θ*) = 0`, and the
 Jacobian there is the nonzero nilpotent matrix `[[0, K_i], [0, 0]]` (non-hyperbolic). The case
 `μ = −V` is symmetric (`θ* = −π/2`). Static evidence on the model (linearization only), not a
 connection conclusion. -/
 @[powerlib_foundation] theorem biased_fold {V Kp Ki : ℝ} (hKi : Ki ≠ 0) (δω : ℝ) :
-    piPLLField (biasedPD V V) Kp Ki δω (piPLLState (Real.pi / 2) (δω / Ki)) = 0 ∧
-      fderiv ℝ (piPLLField (biasedPD V V) Kp Ki δω) (piPLLState (Real.pi / 2) (δω / Ki)) =
-        Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (GFL.piPLLJacobian Kp Ki 0) ∧
-      GFL.piPLLJacobian Kp Ki 0 ≠ 0 ∧ (GFL.piPLLJacobian Kp Ki 0) ^ 2 = 0 ∧
-      ¬ LinearSystems.IsHurwitz (GFL.piPLLJacobian Kp Ki 0) := by
+    piPLLField (biasedPD V V) Kp Ki δω (PhasePlane.mk (Real.pi / 2) (δω / Ki)) = 0 ∧
+      fderiv ℝ (piPLLField (biasedPD V V) Kp Ki δω) (PhasePlane.mk (Real.pi / 2) (δω / Ki)) =
+        Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki 0) ∧
+      piPLLJacobian Kp Ki 0 ≠ 0 ∧ (piPLLJacobian Kp Ki 0) ^ 2 = 0 ∧
+      ¬ LinearSystems.IsHurwitz (piPLLJacobian Kp Ki 0) := by
   have hd := hasDerivAt_biasedPD V V (Real.pi / 2)
   rw [Real.cos_pi_div_two, mul_zero, neg_zero] at hd
-  exact GFL.piPLL_jacobian_nilpotent_of_deriv_zero (by simp [biasedPD]) hd hKi
+  exact piPLL_jacobian_nilpotent_of_deriv_zero (by simp [biasedPD]) hd hKi
 
 end powerlib.PLL

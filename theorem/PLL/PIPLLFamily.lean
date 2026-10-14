@@ -1,4 +1,4 @@
-import theorem.GFL.PIPLL
+import theorem.PLL.PIPLL
 import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
 import theorem.Dynamics.Shift
@@ -13,7 +13,7 @@ characteristic, read about one selected operating point:
   `K_i` (any reals), constant grid-frequency offset `δω` (constant input), and the selected phase
   `θ*`; the selected point is `x* = (θ*, δω / K_i)` (`= (θ*, 0)` when `K_i = 0`);
 * state `(θ, η) ∈ ℝ² = EuclideanSpace ℝ (Fin 2)` in this order, field
-  `θ̇ = K_p h(θ) + K_i η − δω`, `η̇ = h(θ)` (`piPLLField`, `theorem/GFL/PIPLL.lean`), continuous
+  `θ̇ = K_p h(θ) + K_i η − δω`, `η̇ = h(θ)` (`piPLLField`, `theorem/PLL/PIPLL.lean`), continuous
   time, no delay, PWM, saturation, current loop, filter or line dynamics; feedback signs as in
   `PIPLL.lean`;
 * the system map reads the model as the autonomous field translated so that `x*` is the origin,
@@ -57,7 +57,7 @@ noncomputable section
 
 /-! ## The family -/
 
-namespace powerlib.GFL.PIPLL
+namespace powerlib.PLL.PIPLL
 
 open Matrix Set
 
@@ -80,7 +80,7 @@ structure Model where
   smooth : ContDiff ℝ 1 h
 
 /-- The selected point `(θ*, δω / K_i)`. -/
-def Model.point (m : Model) : ℝ² := piPLLState m.θ (m.δω / m.Ki)
+def Model.point (m : Model) : ℝ² := PhasePlane.mk m.θ (m.δω / m.Ki)
 
 /-- The PI-PLL field translated so that the selected point is the origin. -/
 def Model.field (m : Model) (z : ℝ²) : ℝ² := piPLLField m.h m.Kp m.Ki m.δω (z + m.point)
@@ -138,7 +138,7 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
 private theorem piPLL_locallyExponentiallyStable_of_mul_neg {h : ℝ → ℝ}
     {Kp Ki δω θ g : ℝ} (hh : ContDiff ℝ 1 h) (hzero : h θ = 0) (hderiv : HasDerivAt h g θ)
     (hKpg : Kp * g < 0) (hKig : Ki * g < 0) :
-    LocallyExponentiallyStable (piPLLField h Kp Ki δω) (piPLLState θ (δω / Ki)) := by
+    LocallyExponentiallyStable (piPLLField h Kp Ki δω) (PhasePlane.mk θ (δω / Ki)) := by
   have hKi : Ki ≠ 0 := by
     rintro rfl
     simp at hKig
@@ -154,9 +154,9 @@ private theorem piPLL_locallyExponentiallyStable_of_mul_neg {h : ℝ → ℝ}
 equilibrium hypothesis generalized from `K_i ≠ 0`: at an equilibrium, a negative determinant or a
 positive trace of the Jacobian gives instability. -/
 private theorem piPLL_unstable_of_slope {h : ℝ → ℝ} {Kp Ki δω θ g : ℝ}
-    (hh : ContDiff ℝ 1 h) (heq : piPLLField h Kp Ki δω (piPLLState θ (δω / Ki)) = 0)
+    (hh : ContDiff ℝ 1 h) (heq : piPLLField h Kp Ki δω (PhasePlane.mk θ (δω / Ki)) = 0)
     (hderiv : HasDerivAt h g θ) (hg : 0 < Ki * g ∨ 0 < Kp * g) :
-    Unstable (piPLLField h Kp Ki δω) (piPLLState θ (δω / Ki)) := by
+    Unstable (piPLLField h Kp Ki δω) (PhasePlane.mk θ (δω / Ki)) := by
   rcases hg with hdet | htr
   · refine Criteria.unstable_of_jacobian_det_neg_fin_two (piPLLJacobian Kp Ki g)
       (contDiff_piPLLField hh) heq (fderiv_piPLLField hderiv) ?_
@@ -246,7 +246,7 @@ Jacobian `[[K_p g, K_i], [g, 0]]`. -/
   rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _
     (contDiff_piPLLField m.smooth) hJac, piPLLJacobian_isHurwitz_iff, Model.point,
     piPLLField_point_eq_zero_iff]
-  simp [family, translate, Meets, piPLLState]
+  simp [family, translate, Meets, PhasePlane.mk]
 
 /-! ### Members of the local denotations -/
 
@@ -612,4 +612,4 @@ phase-locked point. -/
   have hp : Meets offEquilibrium .phaseLocked := hmem .phaseLocked (by simp [family, translate])
   simp [Meets, offEquilibrium] at hp
 
-end powerlib.GFL.PIPLL
+end powerlib.PLL.PIPLL

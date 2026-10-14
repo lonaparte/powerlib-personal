@@ -1,12 +1,12 @@
-import theorem.GFL.PIPLL
+import theorem.PLL.PIPLL
 
 /-! # Linearization structure of the PI-PLL with general phase detector (foundation)
 
 Matrix-level facts about the Jacobian `J = [[K_p g, K_i], [g, 0]]` (`g = h'(θ*)`) of
-`piPLLField h K_p K_i δω` (`theorem/GFL/PIPLL.lean`), and their transfer to the Jacobian of the
+`piPLLField h K_p K_i δω` (`theorem/PLL/PIPLL.lean`), and their transfer to the Jacobian of the
 field itself through `fderiv`. These are linearization facts (static foundation); the model boundary is
-the one of `theorem/GFL/PIPLL.lean`. The module states no behaviour: the family and its connection
-conclusions are in `theorem/GFL/PIPLLFamily.lean`. Every result here is static evidence on the
+the one of `theorem/PLL/PIPLL.lean`. The module states no behaviour: the family and its connection
+conclusions are in `theorem/PLL/PIPLLFamily.lean`. Every result here is static evidence on the
 model, not a connection conclusion.
 
 * Node / focus: for `g < 0`, `K_p ≠ 0`, all eigenvalues are real iff `|g| ≥ 4 K_i / K_p²`
@@ -27,7 +27,7 @@ claimed about limit cycles of the nonlinear field.
 -/
 
 noncomputable section
-namespace powerlib.GFL
+namespace powerlib.PLL
 open Matrix
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
@@ -135,18 +135,13 @@ imaginary eigenvalue `j √(−K_i g)`. -/
 
 /-! ## Transfer to the Jacobian of the field (`fderiv`) -/
 
-@[powerlib_foundation] theorem toEuclideanCLM_injective_fin_two :
-    Function.Injective (fun A : Matrix (Fin 2) (Fin 2) ℝ =>
-      Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A) :=
-  Matrix.toEuclideanCLM.injective
-
 /-- Any matrix representing the Jacobian `fderiv` of the PI-PLL field at a point is
 `piPLLJacobian K_p K_i (h'(θ))`. -/
 @[powerlib_foundation] theorem piPLL_jacobian_matrix_eq {h : ℝ → ℝ} {Kp Ki δω g : ℝ}
     {x : ℝ²} (hh : HasDerivAt h g (x 0)) {A : Matrix (Fin 2) (Fin 2) ℝ}
     (hA : fderiv ℝ (piPLLField h Kp Ki δω) x = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A) :
     A = piPLLJacobian Kp Ki g :=
-  toEuclideanCLM_injective_fin_two (by
+  Dynamics.toEuclideanCLM_injective_fin_two (by
     change Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki g)
     rw [← hA, fderiv_piPLLField hh])
@@ -171,4 +166,4 @@ differentiable there, the linearization has no nonzero purely imaginary eigenval
   rw [piPLL_jacobian_matrix_eq hh hA]
   exact piPLLJacobian_not_hopf hKp
 
-end powerlib.GFL
+end powerlib.PLL

@@ -14,7 +14,7 @@ This module reduces both to the scalar component functions `fun y => f y i`:
 
 * `hasFDerivAt_toEuclideanCLM_of_components` / `fderiv_eq_toEuclideanCLM_of_components`:
   if each component has derivative `L i` with `L i v = ∑ j, A i j * v j`, the Jacobian is `A`
-  (any dimension).
+  (any dimension); `toEuclideanCLM_injective_fin_two`: a planar Jacobian determines its matrix.
 * `coord`, `hasFDerivAt_coord`, `contDiff_coord` (`fun_prop`): coordinates are smooth linear maps.
 * `contDiff_of_components`: smoothness of `f` from smoothness of its components.
 * `contDiff_field_mk_two_example`: a `fun_prop` demonstration for a planar field built from
@@ -84,6 +84,11 @@ def coord (i : Fin n) : Dynamics.State n →L[ℝ] ℝ := EuclideanSpace.proj i
     (hA : ∀ i (v : Dynamics.State n), L i v = ∑ j, A i j * v j) :
     fderiv ℝ f x = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A :=
   (hasFDerivAt_toEuclideanCLM_of_components A L hL hA).fderiv
+
+@[powerlib_foundation] theorem toEuclideanCLM_injective_fin_two :
+    Function.Injective (fun A : Matrix (Fin 2) (Fin 2) ℝ =>
+      Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A) :=
+  Matrix.toEuclideanCLM.injective
 
 /-- Smoothness of a field on `Dynamics.State n` from smoothness of its components. -/
 @[powerlib_foundation] theorem contDiff_of_components {f : Dynamics.State n → Dynamics.State n}

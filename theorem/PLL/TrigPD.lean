@@ -1,10 +1,10 @@
-import theorem.GFL.PIPLLFamily
+import theorem.PLL.PIPLLFamily
 import theorem.SpecialFunctions.TrigZeros
 
 /-! # PI-PLL with a second-order trigonometric phase detector (multi-equilibrium geometry)
 
 Model boundary.
-* System: the general PI-PLL of `theorem/GFL/PIPLL.lean`, state `(θ_e, η)` in this order,
+* System: the general PI-PLL of `theorem/PLL/PIPLL.lean`, state `(θ_e, η)` in this order,
   `θ̇_e = K_p h(θ_e) + K_i η − δω`, `η̇ = h(θ_e)`, constant `δω`, continuous time, autonomous, with
   the 5-coefficient phase-detector characteristic of T-pll-dynamics §1.13,
   `h(θ) = a sin θ + b cos θ + c sin 2θ + d cos 2θ + e` (`trigPD a b c d e`); the coefficients are
@@ -14,7 +14,7 @@ Model boundary.
   loops, saturation, delay, PWM, noise. Basins of attraction (§1.13.3) and the stochastic
   basin-hopping of §1.13.4 are not formalized.
 * Level: equilibrium set per period window and local behaviour at equilibria (linearization,
-  instantiating `theorem/GFL/PIPLL.lean`; zero counting from
+  instantiating `theorem/PLL/PIPLL.lean`; zero counting from
   `theorem/SpecialFunctions/TrigZeros.lean`).
 
 Results (T-pll-dynamics §1.13.1).
@@ -33,7 +33,7 @@ not formalized; only the general bound `N ≤ 4` and the parity (`N` even for si
 
 Family and connection conclusions. No new family: the trigonometric-detector PLL read about a
 selected phase `θ*` is the member `trigModel a b c d e K_p K_i δω θ*` of the PI-PLL family
-`GFL.PIPLL.family` (field translated so that `(θ*, δω / K_i)` is the origin). Local exponential
+`PLL.PIPLL.family` (field translated so that `(θ*, δω / K_i)` is the origin). Local exponential
 stability, instability and the stable/saddle alternation are connection statements on that
 family's semantics connection (`trigPLL_mem_den_locallyExponentiallyStable`,
 `trigPLL_mem_den_unstable`, `trigPLL_stable_saddle_alternate`). The equilibrium set, its count and
@@ -44,7 +44,6 @@ noncomputable section
 namespace powerlib.PLL
 open Set
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
-open powerlib.GFL (piPLLField piPLLState)
 open powerlib.SpecialFunctions (trigPoly2 trigPoly2Deriv trigPoly2ZeroSet)
 
 /-- T-pll-dynamics §1.13 phase detector `h(θ) = a sin θ + b cos θ + c sin 2θ + d cos 2θ + e`. -/
@@ -79,16 +78,16 @@ Static evidence on the model, not a connection conclusion. -/
     (α : ℝ) :
     {x : ℝ² | piPLLField (trigPD a b c d e) Kp Ki δω x = 0 ∧
         x 0 ∈ Ico α (α + 2 * Real.pi)} =
-      (fun θ => piPLLState θ (δω / Ki)) '' trigPoly2ZeroSet e b a d c α := by
+      (fun θ => PhasePlane.mk θ (δω / Ki)) '' trigPoly2ZeroSet e b a d c α := by
   ext x
-  simp only [mem_ofPred_eq, mem_image, GFL.piPLLField_eq_zero_iff hKi]
+  simp only [mem_ofPred_eq, mem_image, piPLLField_eq_zero_iff hKi]
   constructor
   · rintro ⟨⟨hz, h1⟩, hw⟩
     refine ⟨x 0, ⟨hw, hz⟩, ?_⟩
-    rw [GFL.state_two_ext_iff]
+    rw [PhasePlane.ext_iff']
     simp [h1]
   · rintro ⟨θ, ⟨hw, hz⟩, rfl⟩
-    simp only [GFL.piPLLState_apply_zero, GFL.piPLLState_apply_one]
+    simp only [PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
     exact ⟨⟨hz, trivial⟩, hw⟩
 
 @[powerlib_foundation] private lemma ncard_equilibria_window {a b c d e Kp Ki δω : ℝ}
@@ -126,7 +125,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- The PI-PLL model with the trigonometric detector, read about the selected phase `θ*`
 (selected point `(θ*, δω / K_i)`). -/
-def trigModel (a b c d e Kp Ki δω θ : ℝ) : GFL.PIPLL.Model :=
+def trigModel (a b c d e Kp Ki δω θ : ℝ) : PIPLL.Model :=
   ⟨trigPD a b c d e, Kp, Ki, δω, θ, contDiff_trigPD a b c d e⟩
 
 @[powerlib_foundation] theorem trigModel_deriv (a b c d e Kp Ki δω θ : ℝ) :
@@ -139,15 +138,15 @@ def trigModel (a b c d e Kp Ki δω θ : ℝ) : GFL.PIPLL.Model :=
     (hKp : 0 < Kp) (hKi : 0 < Ki) (hz : trigPD a b c d e θ = 0)
     (hd : trigPDDeriv a b c d θ < 0) :
     connection% (trigModel a b c d e Kp Ki δω θ ∈
-      GFL.PIPLL.family.den (.flow .locallyExponentiallyStable)) :=
-  GFL.PIPLL.mem_den_locallyExponentiallyStable_of_pos _ hKp hKi hz
+      PIPLL.family.den (.flow .locallyExponentiallyStable)) :=
+  PIPLL.mem_den_locallyExponentiallyStable_of_pos _ hKp hKi hz
     (by rw [trigModel_deriv]; exact hd)
 
 /-- `K_i > 0`, `h(θ*) = 0`, `h'(θ*) > 0`: `(θ*, δω/K_i)` is unstable (saddle), for every `K_p`. -/
 @[powerlib_domain] theorem trigPLL_mem_den_unstable {a b c d e Kp Ki δω θ : ℝ} (hKi : 0 < Ki)
     (hz : trigPD a b c d e θ = 0) (hd : 0 < trigPDDeriv a b c d θ) :
-    connection% (trigModel a b c d e Kp Ki δω θ ∈ GFL.PIPLL.family.den (.flow .unstable)) :=
-  GFL.PIPLL.mem_den_unstable_of_pos _ hKi hz (by rw [trigModel_deriv]; exact hd)
+    connection% (trigModel a b c d e Kp Ki δω θ ∈ PIPLL.family.den (.flow .unstable)) :=
+  PIPLL.mem_den_unstable_of_pos _ hKi hz (by rw [trigModel_deriv]; exact hd)
 
 /-- Alternation (T-pll-dynamics §1.13.1): for consecutive simple zeros `θ₁ < θ₂` of `h` (no zero
 of `h` in `(θ₁, θ₂)`) and `K_p, K_i > 0`, one of the two equilibria `(θᵢ, δω/K_i)` is locally
@@ -157,11 +156,11 @@ exponentially stable and the other is unstable. -/
     (hz2 : trigPD a b c d e θ₂ = 0) (hnz : ∀ θ ∈ Ioo θ₁ θ₂, trigPD a b c d e θ ≠ 0)
     (hs1 : trigPDDeriv a b c d θ₁ ≠ 0) (hs2 : trigPDDeriv a b c d θ₂ ≠ 0) :
     connection% ((trigModel a b c d e Kp Ki δω θ₁ ∈
-          GFL.PIPLL.family.den (.flow .locallyExponentiallyStable) ∧
-        trigModel a b c d e Kp Ki δω θ₂ ∈ GFL.PIPLL.family.den (.flow .unstable)) ∨
-      (trigModel a b c d e Kp Ki δω θ₁ ∈ GFL.PIPLL.family.den (.flow .unstable) ∧
+          PIPLL.family.den (.flow .locallyExponentiallyStable) ∧
+        trigModel a b c d e Kp Ki δω θ₂ ∈ PIPLL.family.den (.flow .unstable)) ∨
+      (trigModel a b c d e Kp Ki δω θ₁ ∈ PIPLL.family.den (.flow .unstable) ∧
         trigModel a b c d e Kp Ki δω θ₂ ∈
-          GFL.PIPLL.family.den (.flow .locallyExponentiallyStable))) := by
+          PIPLL.family.den (.flow .locallyExponentiallyStable))) := by
   unfold powerlib.TMIO.Statement
   have hmul := SpecialFunctions.deriv_mul_neg_of_consecutive_simple_zeros
     (SpecialFunctions.continuous_trigPoly2 e b a d c) h12 hz1 hz2 hnz
@@ -187,12 +186,12 @@ exponentially stable and the other is unstable. -/
 Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem trigPLL_saddleNode_nilpotent {a b c d e Kp Ki δω θ : ℝ}
     (hKi : Ki ≠ 0) (hz : trigPD a b c d e θ = 0) (hd : trigPDDeriv a b c d θ = 0) :
-    fderiv ℝ (piPLLField (trigPD a b c d e) Kp Ki δω) (piPLLState θ (δω / Ki)) =
-        Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (GFL.piPLLJacobian Kp Ki 0) ∧
-      GFL.piPLLJacobian Kp Ki 0 ≠ 0 ∧ (GFL.piPLLJacobian Kp Ki 0) ^ 2 = 0 := by
+    fderiv ℝ (piPLLField (trigPD a b c d e) Kp Ki δω) (PhasePlane.mk θ (δω / Ki)) =
+        Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki 0) ∧
+      piPLLJacobian Kp Ki 0 ≠ 0 ∧ (piPLLJacobian Kp Ki 0) ^ 2 = 0 := by
   have hder := hasDerivAt_trigPD a b c d e θ
   rw [hd] at hder
-  obtain ⟨-, h1, h2, h3, -⟩ := GFL.piPLL_jacobian_nilpotent_of_deriv_zero (Kp := Kp) (δω := δω)
+  obtain ⟨-, h1, h2, h3, -⟩ := piPLL_jacobian_nilpotent_of_deriv_zero (Kp := Kp) (δω := δω)
     hz hder hKi
   exact ⟨h1, h2, h3⟩
 

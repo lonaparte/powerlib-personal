@@ -1,8 +1,8 @@
-import theorem.GFL.PIPLL
+import theorem.PLL.PIPLL
 
 /-! # Liénard (velocity) coordinates of the PI-PLL and the Bogdanov–Takens coefficients
 
-Foundation module on the model of `theorem/GFL/PIPLL.lean` (same boundary: state `(θ, η)`,
+Foundation module on the model of `theorem/PLL/PIPLL.lean` (same boundary: state `(θ, η)`,
 `θ̇ = K_p h(θ) + K_i η − δω`, `η̇ = h(θ)`, continuous time, constant `δω`).
 
 * Velocity coordinates `w = θ̇ = K_p h(θ) + K_i η − δω` (`piPLLVelocityCoord`). For `K_i ≠ 0`
@@ -31,13 +31,13 @@ line through the origin; no claim about a versal unfolding, Hopf or homoclinic c
 (consistent with the narrowed statement of the vsc note §9).
 
 Family and connection conclusions. This module defines no family and states no behaviour of the
-PI-PLL family (`theorem/GFL/PIPLLFamily.lean`). The conjugacy of the integral curves of the raw
+PI-PLL family (`theorem/PLL/PIPLLFamily.lean`). The conjugacy of the integral curves of the raw
 PI-PLL field and the Liénard field is a change of coordinates for arbitrary `h`, `K_p`, `K_i`,
 `δω` (generic foundation, Mathlib integral curves); the Jacobian and BT coefficients are static.
 -/
 
 noncomputable section
-namespace powerlib.GFL
+namespace powerlib.PLL
 open Matrix
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
@@ -49,7 +49,7 @@ then `y ↦ (F₀ y, F₁ y)` has Jacobian matrix `[[a, b], [c, d]]` at `x`. -/
     {L₀ L₁ : ℝ² →L[ℝ] ℝ} {a b c d : ℝ} (h₀ : HasFDerivAt F₀ L₀ x)
     (h₁ : HasFDerivAt F₁ L₁ x) (hL₀ : ∀ v : ℝ², L₀ v = a * v 0 + b * v 1)
     (hL₁ : ∀ v : ℝ², L₁ v = c * v 0 + d * v 1) :
-    HasFDerivAt (fun y => piPLLState (F₀ y) (F₁ y))
+    HasFDerivAt (fun y => PhasePlane.mk (F₀ y) (F₁ y))
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![a, b; c, d]) x := by
   have hG : HasFDerivAt (fun y : ℝ² => ![F₀ y, F₁ y]) (ContinuousLinearMap.pi ![L₀, L₁]) x := by
     rw [hasFDerivAt_pi]
@@ -59,7 +59,7 @@ then `y ↦ (F₀ y, F₁ y)` has Jacobian matrix `[[a, b], [c, d]]` at `x`. -/
     · simpa using h₁
   have hE :=
     (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.hasFDerivAt.comp x hG
-  have hfun : (fun y => piPLLState (F₀ y) (F₁ y)) =
+  have hfun : (fun y => PhasePlane.mk (F₀ y) (F₁ y)) =
       (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm ∘
         (fun y : ℝ² => ![F₀ y, F₁ y]) := rfl
   rw [hfun]
@@ -84,22 +84,22 @@ then `y ↦ (F₀ y, F₁ y)` has Jacobian matrix `[[a, b], [c, d]]` at `x`. -/
 
 /-- `(θ, η) ↦ (θ, w)`, `w = K_p h(θ) + K_i η − δω` (`= θ̇`). -/
 def piPLLVelocityCoord (h : ℝ → ℝ) (Kp Ki δω : ℝ) (x : ℝ²) : ℝ² :=
-  piPLLState (x 0) (Kp * h (x 0) + Ki * x 1 - δω)
+  PhasePlane.mk (x 0) (Kp * h (x 0) + Ki * x 1 - δω)
 
 /-- Inverse of the velocity coordinates: `(θ, w) ↦ (θ, (w − K_p h(θ) + δω) / K_i)`. -/
 def piPLLVelocityCoordInv (h : ℝ → ℝ) (Kp Ki δω : ℝ) (y : ℝ²) : ℝ² :=
-  piPLLState (y 0) (Ki⁻¹ * (y 1 - Kp * h (y 0) + δω))
+  PhasePlane.mk (y 0) (Ki⁻¹ * (y 1 - Kp * h (y 0) + δω))
 
 /-- Liénard field `θ̇ = w`, `ẇ = K_i h(θ) + K_p h'(θ) w` (`h'` the derivative of `h`). -/
 def piPLLLienardField (h h' : ℝ → ℝ) (Kp Ki : ℝ) (y : ℝ²) : ℝ² :=
-  piPLLState (y 1) (Ki * h (y 0) + Kp * h' (y 0) * y 1)
+  PhasePlane.mk (y 1) (Ki * h (y 0) + Kp * h' (y 0) * y 1)
 
 @[powerlib_foundation] theorem piPLLVelocityCoordInv_comp {h : ℝ → ℝ} {Kp Ki δω : ℝ}
     (hKi : Ki ≠ 0) (x : ℝ²) :
     piPLLVelocityCoordInv h Kp Ki δω (piPLLVelocityCoord h Kp Ki δω x) = x := by
-  rw [state_two_ext_iff]
-  simp only [piPLLVelocityCoordInv, piPLLVelocityCoord, piPLLState_apply_zero,
-    piPLLState_apply_one]
+  rw [PhasePlane.ext_iff']
+  simp only [piPLLVelocityCoordInv, piPLLVelocityCoord, PhasePlane.mk_apply_zero,
+    PhasePlane.mk_apply_one]
   refine ⟨trivial, ?_⟩
   field_simp
   ring
@@ -107,9 +107,9 @@ def piPLLLienardField (h h' : ℝ → ℝ) (Kp Ki : ℝ) (y : ℝ²) : ℝ² :=
 @[powerlib_foundation] theorem piPLLVelocityCoord_comp_inv {h : ℝ → ℝ} {Kp Ki δω : ℝ}
     (hKi : Ki ≠ 0) (y : ℝ²) :
     piPLLVelocityCoord h Kp Ki δω (piPLLVelocityCoordInv h Kp Ki δω y) = y := by
-  rw [state_two_ext_iff]
-  simp only [piPLLVelocityCoordInv, piPLLVelocityCoord, piPLLState_apply_zero,
-    piPLLState_apply_one]
+  rw [PhasePlane.ext_iff']
+  simp only [piPLLVelocityCoordInv, piPLLVelocityCoord, PhasePlane.mk_apply_zero,
+    PhasePlane.mk_apply_one]
   refine ⟨trivial, ?_⟩
   field_simp
   ring
@@ -117,9 +117,9 @@ def piPLLLienardField (h h' : ℝ → ℝ) (Kp Ki : ℝ) (y : ℝ²) : ℝ² :=
 /-- The equilibrium `(θ*, δω / K_i)` is sent to `(θ*, 0)`. -/
 @[powerlib_foundation] theorem piPLLVelocityCoord_equilibrium {h : ℝ → ℝ} {Kp Ki δω θ : ℝ}
     (hKi : Ki ≠ 0) (hzero : h θ = 0) :
-    piPLLVelocityCoord h Kp Ki δω (piPLLState θ (δω / Ki)) = piPLLState θ 0 := by
-  rw [state_two_ext_iff]
-  simp only [piPLLVelocityCoord, piPLLState_apply_zero, piPLLState_apply_one, hzero]
+    piPLLVelocityCoord h Kp Ki δω (PhasePlane.mk θ (δω / Ki)) = PhasePlane.mk θ 0 := by
+  rw [PhasePlane.ext_iff']
+  simp only [piPLLVelocityCoord, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, hzero]
   refine ⟨trivial, ?_⟩
   field_simp
   ring
@@ -150,7 +150,7 @@ def piPLLLienardField (h h' : ℝ → ℝ) (Kp Ki : ℝ) (y : ℝ²) : ℝ² :=
     Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![1, 0; Kp * h' (x 0), Ki]
         (piPLLField h Kp Ki δω x) =
       piPLLLienardField h h' Kp Ki (piPLLVelocityCoord h Kp Ki δω x) := by
-  rw [state_two_ext_iff]
+  rw [PhasePlane.ext_iff']
   constructor
   · simp [piPLLLienardField, piPLLVelocityCoord, Matrix.ofLp_toEuclideanCLM, Matrix.mulVec,
       dotProduct, Fin.sum_univ_two]
@@ -164,7 +164,7 @@ def piPLLLienardField (h h' : ℝ → ℝ) (Kp Ki : ℝ) (y : ℝ²) : ℝ² :=
     Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![1, 0; -(Kp * h' (y 0)) / Ki, 1 / Ki]
         (piPLLLienardField h h' Kp Ki y) =
       piPLLField h Kp Ki δω (piPLLVelocityCoordInv h Kp Ki δω y) := by
-  rw [state_two_ext_iff]
+  rw [PhasePlane.ext_iff']
   constructor
   · simp [piPLLLienardField, piPLLVelocityCoordInv, Matrix.ofLp_toEuclideanCLM, Matrix.mulVec,
       dotProduct, Fin.sum_univ_two]
@@ -219,13 +219,13 @@ this is a conjugacy of the two flows. -/
 `[[0, 1], [0, 0]]`, and `(θ*, 0)` is an equilibrium. -/
 @[powerlib_foundation] theorem piPLLLienard_jordan_block {h h' : ℝ → ℝ} {Kp Ki θ h2 : ℝ}
     (hzero : h θ = 0) (hd0 : h' θ = 0) (hh : HasDerivAt h (h' θ) θ) (hh' : HasDerivAt h' h2 θ) :
-    piPLLLienardField h h' Kp Ki (piPLLState θ 0) = 0 ∧
+    piPLLLienardField h h' Kp Ki (PhasePlane.mk θ 0) = 0 ∧
       HasFDerivAt (piPLLLienardField h h' Kp Ki)
-        (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![0, 1; 0, 0]) (piPLLState θ 0) := by
+        (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![0, 1; 0, 0]) (PhasePlane.mk θ 0) := by
   refine ⟨?_, ?_⟩
-  · rw [state_two_ext_iff]
+  · rw [PhasePlane.ext_iff']
     simp [piPLLLienardField, hzero]
-  · have := hasFDerivAt_piPLLLienardField (Kp := Kp) (Ki := Ki) (y := piPLLState θ 0)
+  · have := hasFDerivAt_piPLLLienardField (Kp := Kp) (Ki := Ki) (y := PhasePlane.mk θ 0)
       (by simpa using hh) (by simpa using hh')
     simpa [hd0] using this
 
@@ -308,4 +308,4 @@ def lienardSecond (h h' : ℝ → ℝ) (Kp Ki θ : ℝ) (u w : ℝ) : ℝ :=
   · intro h
     exact ⟨div_ne_zero (mul_ne_zero hKi h) two_ne_zero, mul_ne_zero hKp h⟩
 
-end powerlib.GFL
+end powerlib.PLL

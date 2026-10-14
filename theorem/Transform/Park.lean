@@ -25,12 +25,12 @@ Conventions fixed by this module:
   `V e^{−j(θ+φ)}` in αβ (`clarke_mulVec_negSeq`, `toComplex_clarke_negSeq`).
 
 The chain rule (`hasDerivAt_rot_mulVec`, `hasDerivAt_mul_cexp`) holds for every differentiable
-frame angle `θ(t)`, constant or time-varying. The αβ- and dq-frame KVL of one series R–L
-branch (IN-positive current, `conventions.md` §D1; written out in the statements, since
-behavioural notions are defined only in the semantic layer) have trajectories that correspond
-one to one under Park for any differentiable `θ`, with no balanced-three-phase premise
-(`alphaBetaRL_iff_dqRL`). Everything here is a coordinate identity (foundation); the stability of the RL branch
-is the domain module `theorem/Transform/DqRL.lean`.
+frame angle `θ(t)`, constant or time-varying. Its first-order form at `θ = 0`
+(`hasDerivAt_park_zero`: `d/dθ (park θ · x)|₀ = −J x`) gives the PLL frame projections of
+`T-gfl-impedance.md` §1.3, and its consequence for a shunt capacitor (`capacitor_dq`:
+`C dv/dt = i − ω C J v` in the dq frame) the cross term of §1.7. The αβ / dq KVL of one series
+R–L branch and its trajectory correspondence under Park (`alphaBetaRL_iff_dqRL`) are in
+`theorem/CurrentControl/DqRL.lean`. Everything here is a coordinate identity (foundation).
 
 Correction (`T-park-transformation.md` §1.5): the note says a fundamental positive-sequence
 vector is "DC in the αβ frame". It is the reverse: `clarke_mulVec_balanced` shows it is the
@@ -271,53 +271,40 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
   convert hz.mul he using 1
   ring
 
-/-! ## Rotating-frame KVL of an RL branch (`T-park-transformation.md` §1.4)
+/-! ## First-order frame rotation and a shunt capacitor in the dq frame -/
 
-The KVL of a series R–L branch, IN-positive current, with branch voltage `v`, is written out in
-the statements below:
-* αβ frame: `L i̇ = v − R i`, i.e. `∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t)) t`;
-* dq frame rotating at `ω(t)`: `i̇ = L⁻¹ (v − R i) − ω J i` (§1.4 boxed, the `±ωL` cross terms),
-  i.e. `∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t) - ω t • (J *ᵥ i t)) t`. -/
+/-- First-order rotation: `d/dθ (park θ · x)` at `θ = 0` is `−J x`. -/
+@[powerlib_foundation] theorem hasDerivAt_park_zero (x : Fin 2 → ℝ) :
+    HasDerivAt (fun θ => Transform.park θ *ᵥ x) (-(Transform.J *ᵥ x)) 0 := by
+  refine hasDerivAt_pi.2 fun i => ?_
+  fin_cases i
+  · simp only [Transform.park_apply_mulVec, Fin.zero_eta, Matrix.cons_val_zero]
+    convert ((Real.hasDerivAt_cos 0).mul_const (x 0)).add
+      ((Real.hasDerivAt_sin 0).mul_const (x 1)) using 1
+    simp
+  · simp only [Transform.park_apply_mulVec, Fin.mk_one, Matrix.cons_val_one,
+      Matrix.cons_val_zero]
+    convert ((Real.hasDerivAt_sin 0).neg.mul_const (x 0)).add
+      ((Real.hasDerivAt_cos 0).mul_const (x 1)) using 1
+    simp
 
-/-- Componentwise form: `i̇_d = (v_d − R i_d)/L + ω i_q`, `i̇_q = (v_q − R i_q)/L − ω i_d`. -/
-@[powerlib_foundation] theorem dqRL_field_apply (R L ω : ℝ) (v i : Fin 2 → ℝ) :
-    L⁻¹ • (v - R • i) - ω • (J *ᵥ i) =
-      ![L⁻¹ * (v 0 - R * i 0) + ω * i 1, L⁻¹ * (v 1 - R * i 1) - ω * i 0] := by
-  ext k; fin_cases k <;> simp [J_mulVec]
-
-/-- Park maps αβ-frame RL trajectories to dq-frame RL trajectories, for any differentiable
-frame angle `θ` with `θ̇ = ω`. No balanced-three-phase premise is needed. -/
-@[powerlib_foundation] theorem dqRL_of_alphaBetaRL {R L : ℝ} {θ ω : ℝ → ℝ}
-    (hθ : ∀ t, HasDerivAt θ (ω t) t) {v i : ℝ → Fin 2 → ℝ}
-    (h : ∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t)) t) :
-    ∀ t, HasDerivAt (fun t => park (θ t) *ᵥ i t)
-      (L⁻¹ • (park (θ t) *ᵥ v t - R • (park (θ t) *ᵥ i t)) -
-        ω t • (J *ᵥ (park (θ t) *ᵥ i t))) t := by
-  intro t
-  convert hasDerivAt_park_mulVec (hθ t) (h t) using 1
-  rw [Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_smul]
-
-/-- Inverse direction: rotating a dq-frame trajectory back gives an αβ-frame trajectory. -/
-@[powerlib_foundation] theorem alphaBetaRL_of_dqRL {R L : ℝ} {θ ω : ℝ → ℝ}
-    (hθ : ∀ t, HasDerivAt θ (ω t) t) {v i : ℝ → Fin 2 → ℝ}
-    (h : ∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t) - ω t • (J *ᵥ i t)) t) :
-    ∀ t, HasDerivAt (fun t => rot (θ t) *ᵥ i t)
-      (L⁻¹ • (rot (θ t) *ᵥ v t - R • (rot (θ t) *ᵥ i t))) t := by
-  intro t
-  convert hasDerivAt_rot_mulVec (hθ t) (h t) using 1
-  rw [sub_add_cancel, Matrix.mulVec_smul, Matrix.mulVec_sub, Matrix.mulVec_smul]
-
-/-- One-to-one correspondence of αβ and dq RL trajectories under `x^{dq} = park θ · x^{αβ}`. -/
-@[powerlib_foundation] theorem alphaBetaRL_iff_dqRL {R L : ℝ} {θ ω : ℝ → ℝ}
-    (hθ : ∀ t, HasDerivAt θ (ω t) t) (v i : ℝ → Fin 2 → ℝ) :
-    (∀ t, HasDerivAt i (L⁻¹ • (v t - R • i t)) t) ↔
-      ∀ t, HasDerivAt (fun t => park (θ t) *ᵥ i t)
-        (L⁻¹ • (park (θ t) *ᵥ v t - R • (park (θ t) *ᵥ i t)) -
-          ω t • (J *ᵥ (park (θ t) *ᵥ i t))) t := by
-  refine ⟨dqRL_of_alphaBetaRL hθ, fun h => ?_⟩
-  have h' := alphaBetaRL_of_dqRL hθ h
-  simp only [rot_mulVec_park_mulVec] at h'
-  exact h'
+/-- Park: if `C dv_αβ/dt = i_αβ` with `v_αβ = rot θ · v`, `i_αβ = rot θ · i`, `θ' = ω`, then
+`C dv/dt = i − ω C J v`. -/
+@[powerlib_foundation] theorem capacitor_dq {C : ℝ} {θ : ℝ → ℝ} {ω : ℝ} {v i : ℝ → Fin 2 → ℝ}
+    {v' : Fin 2 → ℝ} {t : ℝ} (hθ : HasDerivAt θ ω t) (hv : HasDerivAt v v' t)
+    (hαβ : HasDerivAt (fun s => Transform.rot (θ s) *ᵥ v s)
+      (C⁻¹ • (Transform.rot (θ t) *ᵥ i t)) t) (hC : C ≠ 0) :
+    C • v' = i t - (ω * C) • (Transform.J *ᵥ v t) := by
+  have h := Transform.hasDerivAt_rot_mulVec hθ hv
+  have heq := h.unique hαβ
+  have h2 : v' + ω • (Transform.J *ᵥ v t) = C⁻¹ • i t := by
+    have := congrArg (fun y => Transform.park (θ t) *ᵥ y) heq
+    simp only [← Matrix.mulVec_smul, Transform.park_mulVec_rot_mulVec] at this
+    rwa [Matrix.mulVec_smul] at this
+  have h3 := congrArg (fun y => C • y) h2
+  simp only [smul_add, smul_smul, mul_inv_cancel₀ hC, one_smul] at h3
+  rw [← h3, mul_comm ω C, ← smul_smul]
+  abel
 
 /-! ## Clarke transformations -/
 

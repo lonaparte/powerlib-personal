@@ -1,10 +1,10 @@
-import theorem.GFL.PIPLL
+import theorem.PLL.PIPLL
 import theorem.PH.Nonlinear
 
 /-! # Port-Hamiltonian form of the reduced GFL PI-PLL (`T-gfl-ph`)
 
 Model boundary. The system is `piPLLField h K_p K_i δω` of
-`theorem/GFL/PIPLL.lean`: state `x = (θ, η)` (`x 0 = θ = θ̂_g − θ_g`, swing sign, `x 1 = η` PI
+`theorem/PLL/PIPLL.lean`: state `x = (θ, η)` (`x 0 = θ = θ̂_g − θ_g`, swing sign, `x 1 = η` PI
 integrator), continuous time, `θ̇ = K_p h(θ) + K_i η − δω`, `η̇ = h(θ)`. Here `δω` is the port
 input (allowed to be time-varying along trajectories, `u(t) = δω(t)`), `K_p ≥ 0`, `K_i` real,
 `h` an arbitrary phase-detector characteristic with a chosen primitive `V`, `V' = −h`.
@@ -34,7 +34,7 @@ Correction (§1.3): the bare-PLL degeneration `c₁ = −V_g` gives `h = −V_g 
 
 Family and connection conclusions. No family is defined here (and none may take
 `PH.NonlinearModel` itself as its model type): the autonomous behaviour of this model with
-constant `δω` is the PI-PLL family `GFL.PIPLL.family` (`gflPH_field` identifies the fields). The
+constant `δω` is the PI-PLL family `PLL.PIPLL.family` (`gflPH_field` identifies the fields). The
 former domain theorems are re-classified: the field identity (`gflPH_field`), the pointwise power
 balance (`gflPH_power_balance`) and the unboundedness of the form-B Hamiltonian
 (`formBHamiltonian_not_bddBelow`) are static evidence on the model, not connection conclusions;
@@ -44,7 +44,7 @@ not the passivity sentence) are private implementation evidence.
 -/
 
 noncomputable section
-namespace powerlib.GFL
+namespace powerlib.PLL
 open Matrix Set
 open powerlib.Dynamics (State)
 
@@ -58,7 +58,7 @@ def gflPHModel (h V : ℝ → ℝ) (hV : ∀ θ, HasDerivAt V (-h θ) θ) (Kp Ki
   R := fun _ => Matrix.diagonal ![Kp, 0]
   g := fun _ => !![-1; 0]
   H := fun x => V (x 0) + Ki / 2 * x 1 ^ 2
-  dH := fun x => piPLLState (-h (x 0)) (Ki * x 1)
+  dH := fun x => PhasePlane.mk (-h (x 0)) (Ki * x 1)
   skew := by
     intro _
     ext i j
@@ -81,7 +81,7 @@ def gflPHModel (h V : ℝ → ℝ) (hV : ∀ θ, HasDerivAt V (-h θ) θ) (Kp Ki
     have hH := hp.add hq
     refine PH.hasGradientAt_of_hasFDerivAt hH ?_
     intro v
-    simp [π0, π1, dotProduct, Fin.sum_univ_two, piPLLState]
+    simp [π0, π1, dotProduct, Fin.sum_univ_two, PhasePlane.mk]
     ring
 
 variable {h V : ℝ → ℝ} {hV : ∀ θ, HasDerivAt V (-h θ) θ} {Kp Ki : ℝ} {hKp : 0 ≤ Kp}
@@ -93,8 +93,8 @@ variable {h V : ℝ → ℝ} {hV : ∀ θ, HasDerivAt V (-h θ) θ} {Kp Ki : ℝ
 Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem gflPH_field (x : State 2) (δω : ℝ) :
     (gflPHModel h V hV Kp Ki hKp).field x ![δω] = piPLLField h Kp Ki δω x := by
-  rw [state_two_ext_iff]
-  simp [PH.NonlinearModel.field, gflPHModel, piPLLState, Matrix.mulVec, dotProduct,
+  rw [PhasePlane.ext_iff']
+  simp [PH.NonlinearModel.field, gflPHModel, PhasePlane.mk, Matrix.mulVec, dotProduct,
     Fin.sum_univ_two]
   constructor
 
@@ -103,7 +103,7 @@ Static evidence on the model, not a connection conclusion. -/
     (gflPHModel h V hV Kp Ki hKp).output x = ![h (x 0)] := by
   ext i
   fin_cases i
-  simp [PH.NonlinearModel.output, gflPHModel, piPLLState, Matrix.mulVec, dotProduct,
+  simp [PH.NonlinearModel.output, gflPHModel, PhasePlane.mk, Matrix.mulVec, dotProduct,
     Fin.sum_univ_two]
 
 @[powerlib_foundation] theorem gflPH_supply (x : State 2) (δω : ℝ) :
@@ -113,7 +113,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 @[powerlib_foundation] theorem gflPH_dampingPower (x : State 2) :
     (gflPHModel h V hV Kp Ki hKp).dampingPower x = Kp * h (x 0) ^ 2 := by
-  simp [PH.NonlinearModel.dampingPower, gflPHModel, piPLLState, Matrix.mulVec, dotProduct,
+  simp [PH.NonlinearModel.dampingPower, gflPHModel, PhasePlane.mk, Matrix.mulVec, dotProduct,
     Fin.sum_univ_two, Matrix.diagonal]
   ring
 
@@ -257,8 +257,8 @@ Static evidence on the model, not a connection conclusion. -/
     rw [hθ]
     field_simp
     ring
-  have h1 := hc (piPLLState θ 0)
-  simp only [formBPHModel, gflPHModel_H, piPLLState_apply_zero, piPLLState_apply_one] at h1
+  have h1 := hc (PhasePlane.mk θ 0)
+  simp only [formBPHModel, gflPHModel_H, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one] at h1
   have h2 := hbound θ
   nlinarith
 
@@ -273,4 +273,4 @@ private theorem formB_not_passiveWithStorage {ωg Cf c₀ c₁ c₂ c₃ c₄ Kp
   rintro ⟨hnn, -⟩
   exact formBHamiltonian_not_bddBelow (hKp := hKp) hωC hc₀ ⟨c, fun x => by linarith [hnn x]⟩
 
-end powerlib.GFL
+end powerlib.PLL

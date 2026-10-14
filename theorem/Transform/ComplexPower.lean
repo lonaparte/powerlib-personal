@@ -26,7 +26,7 @@ Source: work-sync `theory/T-gfl-control.md` §1.5; `theory/T-gfl-impedance.md` �
 -/
 
 noncomputable section
-namespace powerlib.CurrentControl
+namespace powerlib.Transform
 open Matrix ComplexConjugate
 
 /-- `V̄ Ī*` expanded into real and imaginary parts. -/
@@ -165,4 +165,4 @@ def Gv (i : Fin 2 → ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![i 0, i 1; -i 1, i 
   rw [← pq_mulVec_voltage, ← pq_mulVec_current]
   fin_cases k <;> simp [pq] <;> ring
 
-end powerlib.CurrentControl
+end powerlib.Transform

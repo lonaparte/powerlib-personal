@@ -1,5 +1,5 @@
 import theorem.VSC.FullModel
-import theorem.GFL.PIPLL
+import theorem.PLL.PIPLL
 
 /-! # The 13-state GFL-VSC with DC-link dynamics: constant-power equilibria
 
@@ -53,7 +53,7 @@ noncomputable section
 namespace powerlib.VSC
 open Real Matrix
 open powerlib.Dynamics (State)
-open powerlib.GFL
+open powerlib.PLL
 
 /-- DC-side parameters. -/
 structure DCParams where

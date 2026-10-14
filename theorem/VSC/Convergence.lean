@@ -1,5 +1,5 @@
 import theorem.VSC.Equilibria
-import theorem.GFL.PIPLLLinear
+import theorem.PLL.PIPLLLinear
 import Mathlib.Topology.MetricSpace.Sequences
 
 /-! # Bounded solutions of the reduced GFL-PLL model converge; node / focus classification
@@ -7,7 +7,7 @@ import Mathlib.Topology.MetricSpace.Sequences
 Domain module (`vsc-stochastic-stability`, reduced model of `theorem/VSC/Reduced2D.lean`).
 
 Model boundary.
-* General part: A1b's PI-PLL field `piPLLField h K_p K_i 0` (`theorem/GFL/PIPLL.lean`), state
+* General part: A1b's PI-PLL field `piPLLField h K_p K_i 0` (`theorem/PLL/PIPLL.lean`), state
   `x 0 = θ` (PLL angle error), `x 1 = η` (PLL integrator), `θ̇ = K_p h(θ) + K_i η`, `η̇ = h(θ)`,
   no grid-frequency drift (`δω = 0`), continuous time, autonomous. Hypotheses on the phase
   detector: `h` globally Lipschitz, an antiderivative `V` of `−h` (`V′ = −h`), isolated zeros.
@@ -31,7 +31,7 @@ Results.
   `Params.lipschitzWith_h`, `Params.h_zero_isolated`.
 * `Params.reduced_node_iff` (A1): at a slope `g = h′(θ*) < 0` the Jacobian (from `fderiv`) is
   `[[K_p g, K_i], [g, 0]]`; it has only real eigenvalues (stable node) iff `|g| ≥ 4 K_i / K_p²`,
-  otherwise a non-real pair (stable focus) — instantiating `theorem/GFL/PIPLLLinear.lean`.
+  otherwise a non-real pair (stable focus) — instantiating `theorem/PLL/PIPLLLinear.lean`.
 
 Family and connection conclusions. No family and no connection conclusion. The convergence of
 bounded solutions is a trajectory-level result (ω-limit level, on the forward ray of one
@@ -55,7 +55,7 @@ noncomputable section
 namespace powerlib.VSC
 open Real Filter Topology Set
 open powerlib.Dynamics (State)
-open powerlib.GFL
+open powerlib.PLL
 open scoped Matrix
 
 /-- Mean-value bound on a segment of `(0, ∞)`. -/
@@ -90,7 +90,7 @@ private theorem piPLL_tendsto_of_bounded
     {φ : ℝ → State 2}
     (hφ : IsIntegralCurveOn φ (fun _ x => piPLLField h Kp Ki 0 x) (Ici 0))
     (hb : Bornology.IsBounded (φ '' Ici 0)) :
-    ∃ θs, h θs = 0 ∧ Tendsto φ atTop (𝓝 (piPLLState θs 0)) := by
+    ∃ θs, h θs = 0 ∧ Tendsto φ atTop (𝓝 (PhasePlane.mk θs 0)) := by
   set θ : ℝ → ℝ := fun t => φ t 0 with hθdef
   set η : ℝ → ℝ := fun t => φ t 1 with hηdef
   have hderφ : ∀ t, 0 < t → HasDerivAt φ (piPLLField h Kp Ki 0 (φ t)) t := fun t ht =>
@@ -349,7 +349,7 @@ private theorem piPLL_tendsto_of_bounded
   refine ⟨θs, hzero, ?_⟩
   have hφeq : φ = fun t => WithLp.toLp 2 ![θ t, η t] := by
     funext t
-    exact (piPLLState_coords (φ t)).symm
+    exact (PhasePlane.mk_coords (φ t)).symm
   rw [hφeq]
   apply ((PiLp.continuous_toLp 2 (fun _ : Fin 2 => ℝ)).tendsto _).comp
   rw [tendsto_pi_nhds]
@@ -401,7 +401,7 @@ private theorem reduced_tendsto_equilibrium_of_bounded (hwC : p.wC ≠ 0)
     (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) (hKp : 0 < p.Kp) (hKi : 0 < p.Ki) {φ : ℝ → State 2}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.reducedField x) (Ici 0))
     (hb : Bornology.IsBounded (φ '' Ici 0)) :
-    ∃ θs, p.h θs = 0 ∧ Tendsto φ atTop (𝓝 (piPLLState θs 0)) := by
+    ∃ θs, p.h θs = 0 ∧ Tendsto φ atTop (𝓝 (PhasePlane.mk θs 0)) := by
   rw [reducedField_eq] at hφ
   exact piPLL_tendsto_of_bounded hKp hKi (p.lipschitzWith_h hwC hΔ hVg) (p.hasDerivAt_pot hwC hΔ)
     (fun θ _ => p.h_zero_isolated hwC hΔ hVg θ) hφ hb
@@ -411,7 +411,7 @@ reduced field (computed with `fderiv`) is `[[K_p g, K_i], [g, 0]]`, and all its 
 real (stable node) iff `|g| ≥ 4 K_i / K_p²`; otherwise it has a non-real pair (stable focus). -/
 @[powerlib_foundation] theorem reduced_node_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : p.Kp ≠ 0)
     {θ η : ℝ} (hslope : -(p.amp * cos (θ + p.phase)) < 0) :
-    fderiv ℝ p.reducedField (piPLLState θ η) =
+    fderiv ℝ p.reducedField (PhasePlane.mk θ η) =
         Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ)
           (piPLLJacobian p.Kp p.Ki (-(p.amp * cos (θ + p.phase)))) ∧
       ((∀ (μ : ℂ) (v : Fin 2 → ℂ), v ≠ 0 →

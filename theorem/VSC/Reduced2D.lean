@@ -1,5 +1,5 @@
 import theorem.VSC.FullModel
-import theorem.GFL.PIPLLFamily
+import theorem.PLL.PIPLLFamily
 import theorem.PH.Nonlinear
 import theorem.Dynamics.Transport
 import theorem.Dynamics.Shift
@@ -16,7 +16,7 @@ Model boundary.
 * Field (`reducedField`, defined in `theorem/VSC/FullModel.lean` as the slow rows of the
   10-state field on its quasi-steady set): `θ̇_e = K_p h(θ_e) + K_i η`, `η̇ = h(θ_e)`, with
   `h(θ) = c₀ − A sin(θ + φ)` the exact closed form of `theorem/VSC/Reduction.lean`.
-  It coincides with A1b's general `GFL.piPLLField h K_p K_i 0` (`reducedField_eq`).
+  It coincides with A1b's general `PLL.piPLLField h K_p K_i 0` (`reducedField_eq`).
 * Reduced 2-state PLL model only: frozen `i_d*, i_q*`, rigid DC source, current loop and
   LC/line taken at their quasi-steady algebraic values (no claim about the approximation error),
   no grid-frequency drift (`δω_g = 0`; the port-Hamiltonian form below also carries `δω_g` as a
@@ -31,7 +31,7 @@ Main results.
 * `reduced_locallyExponentiallyStable` / `reduced_unstable` (`K_p, K_i > 0`):
   `h′(θ*) = −A cos(θ* + φ) < 0` ⇒ locally exponentially stable; `> 0` ⇒ unstable;
   `reduced_jacobian_nilpotent` : `h′(θ*) = 0` ⇒ the Jacobian is the nonzero nilpotent
-  `[[0, K_i], [0, 0]]`. All by instantiating `theorem/GFL/PIPLL.lean`.
+  `[[0, K_i], [0, 0]]`. All by instantiating `theorem/PLL/PIPLL.lean`.
 * `pHModel` : constant `J = [[0, 1], [−1, 0]]`, `R = diag(K_p, 0)`, port matrix `(−1, 0)ᵀ`
   (input `δω_g`), non-quadratic Hamiltonian `H = ½ K_i η² + V(θ)`, `V(θ) = −c₀θ − A cos(θ + φ)`
   (`V′ = −h`); its zero-input field is `reducedField` and its input field is
@@ -45,7 +45,7 @@ Main results.
   `(θ, η) ↦ (−θ, η)`; stability and instability transfer (`code_locallyExponentiallyStable_iff`).
 
 Family and connection conclusions. No new family for the text frame: the reduced model with a
-selected angle `θ*` is the member `p.pllModel θ*` of the PI-PLL family `GFL.PIPLL.family`
+selected angle `θ*` is the member `p.pllModel θ*` of the PI-PLL family `PLL.PIPLL.family`
 (`h = p.h`, gains `K_p, K_i`, `δω = 0`), whose system map reads the field translated so that
 `(θ*, 0)` is the origin; `pllModel_field` identifies that translated field with `reducedField`.
 Local exponential stability and instability are connection memberships on that family's semantics
@@ -81,7 +81,7 @@ noncomputable section
 namespace powerlib.VSC
 open Real Matrix
 open powerlib.Dynamics (State)
-open powerlib.GFL
+open powerlib.PLL
 
 namespace Params
 
@@ -108,7 +108,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- The Jacobian of the reduced field, computed with `fderiv`:
 `[[K_p h′(θ), K_i], [h′(θ), 0]]`, `h′(θ) = −A cos(θ + φ)`. -/
 @[powerlib_foundation] theorem fderiv_reducedField (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ η : ℝ) :
-    fderiv ℝ p.reducedField (piPLLState θ η) =
+    fderiv ℝ p.reducedField (PhasePlane.mk θ η) =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ)
         (piPLLJacobian p.Kp p.Ki (-(p.amp * cos (θ + p.phase)))) := by
   rw [reducedField_eq]
@@ -123,13 +123,13 @@ coefficients); the polar form `contDiff_h` needs `ω_g C_f ≠ 0`, `Δ ≠ 0`. -
 
 /-- The reduced model read about the selected angle `θ*` as a member of the PI-PLL family:
 phase detector `h = p.h`, gains `K_p, K_i`, no frequency drift (`δω = 0`). -/
-def pllModel (θ : ℝ) : GFL.PIPLL.Model := ⟨p.h, p.Kp, p.Ki, 0, θ, p.contDiff_h_one⟩
+def pllModel (θ : ℝ) : PLL.PIPLL.Model := ⟨p.h, p.Kp, p.Ki, 0, θ, p.contDiff_h_one⟩
 
 /-- The system map of the PI-PLL family reads the member `p.pllModel θ*` as the reduced field
 translated so that `(θ*, 0)` is the origin. -/
 @[powerlib_foundation] theorem pllModel_field (θ : ℝ) (z : State 2) :
-    (p.pllModel θ).field z = p.reducedField (z + piPLLState θ 0) := by
-  simp only [GFL.PIPLL.Model.field, GFL.PIPLL.Model.point, pllModel, zero_div]
+    (p.pllModel θ).field z = p.reducedField (z + PhasePlane.mk θ 0) := by
+  simp only [PLL.PIPLL.Model.field, PLL.PIPLL.Model.point, pllModel, zero_div]
   rw [reducedField_eq]
 
 @[powerlib_foundation] theorem deriv_pllModel (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
@@ -141,24 +141,24 @@ stable for the reduced 2-state PLL model. -/
 @[powerlib_domain] theorem reduced_mem_den_locallyExponentiallyStable (hwC : p.wC ≠ 0)
     (hΔ : p.Δ ≠ 0) (hKp : 0 < p.Kp) (hKi : 0 < p.Ki) {θ : ℝ} (hθ : p.h θ = 0)
     (hslope : -(p.amp * cos (θ + p.phase)) < 0) :
-    connection% (p.pllModel θ ∈ GFL.PIPLL.family.den (.flow .locallyExponentiallyStable)) :=
-  GFL.PIPLL.mem_den_locallyExponentiallyStable_of_pos _ hKp hKi hθ
+    connection% (p.pllModel θ ∈ PLL.PIPLL.family.den (.flow .locallyExponentiallyStable)) :=
+  PLL.PIPLL.mem_den_locallyExponentiallyStable_of_pos _ hKp hKi hθ
     (by rw [p.deriv_pllModel hwC hΔ]; exact hslope)
 
 /-- A1: `K_i > 0` and `h′(θ*) > 0` ⇒ `(θ*, 0)` is unstable (saddle). -/
 @[powerlib_domain] theorem reduced_mem_den_unstable (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKi : 0 < p.Ki) {θ : ℝ} (hθ : p.h θ = 0) (hslope : 0 < -(p.amp * cos (θ + p.phase))) :
-    connection% (p.pllModel θ ∈ GFL.PIPLL.family.den (.flow .unstable)) :=
-  GFL.PIPLL.mem_den_unstable_of_pos _ hKi hθ (by rw [p.deriv_pllModel hwC hΔ]; exact hslope)
+    connection% (p.pllModel θ ∈ PLL.PIPLL.family.den (.flow .unstable)) :=
+  PLL.PIPLL.mem_den_unstable_of_pos _ hKi hθ (by rw [p.deriv_pllModel hwC hΔ]; exact hslope)
 
 /-- A1: at a saddle (`K_i > 0`, `h′(θ*) > 0`) the point is not Lyapunov stable. -/
 @[powerlib_domain] theorem reduced_not_mem_den_lyapunovStable (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKi : 0 < p.Ki) {θ : ℝ} (hθ : p.h θ = 0) (hslope : 0 < -(p.amp * cos (θ + p.phase))) :
-    connection% (p.pllModel θ ∉ GFL.PIPLL.family.den (.flow .lyapunovStable)) := by
+    connection% (p.pllModel θ ∉ PLL.PIPLL.family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   have h := p.reduced_mem_den_unstable hwC hΔ hKi hθ hslope
   unfold powerlib.TMIO.Statement at h
-  rw [GFL.PIPLL.family_isAutonomous.mem_den_flow] at h ⊢
+  rw [PLL.PIPLL.family_isAutonomous.mem_den_flow] at h ⊢
   exact h
 
 /-- A1: at an equilibrium with `h′(θ*) = 0` (fold), the Jacobian of the reduced field is the
@@ -166,8 +166,8 @@ nonzero nilpotent `[[0, K_i], [0, 0]]` (`K_i ≠ 0`); the equilibrium is not hyp
 Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem reduced_jacobian_nilpotent (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKi : p.Ki ≠ 0) {θ : ℝ} (hθ : p.h θ = 0) (hslope : p.amp * cos (θ + p.phase) = 0) :
-    p.reducedField (piPLLState θ 0) = 0 ∧
-      fderiv ℝ p.reducedField (piPLLState θ 0) =
+    p.reducedField (PhasePlane.mk θ 0) = 0 ∧
+      fderiv ℝ p.reducedField (PhasePlane.mk θ 0) =
         Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian p.Kp p.Ki 0) ∧
       piPLLJacobian p.Kp p.Ki 0 ≠ 0 ∧ (piPLLJacobian p.Kp p.Ki 0) ^ 2 = 0 := by
   have hd : HasDerivAt p.h 0 θ := by
@@ -356,8 +356,8 @@ def reflectMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![-1, 0; 0, 1]
 /-- The reflection `(θ, η) ↦ (−θ, η)` as a coordinate change. -/
 def reflect : State 2 ≃L[ℝ] State 2 := Dynamics.matrixCoord reflectMatrix reflectMatrix_isUnit
 
-@[powerlib_foundation] theorem reflect_apply (y : State 2) : reflect y = piPLLState (-(y 0)) (y 1) := by
-  rw [state_two_ext_iff]
+@[powerlib_foundation] theorem reflect_apply (y : State 2) : reflect y = PhasePlane.mk (-(y 0)) (y 1) := by
+  rw [PhasePlane.ext_iff']
   simp [reflect, reflectMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
 namespace Params
@@ -367,7 +367,7 @@ variable (p : Params)
 /-- The two frames are conjugate: `F_code ∘ S = S ∘ F_text` with `S(θ, η) = (−θ, η)`. -/
 @[powerlib_foundation] theorem codeField_reflect (y : State 2) :
     p.codeField (reflect y) = reflect (p.reducedField y) := by
-  rw [reflect_apply, reflect_apply, state_two_ext_iff]
+  rw [reflect_apply, reflect_apply, PhasePlane.ext_iff']
   simp [codeField, reducedField_apply, hCode_eq]
   ring
 
@@ -397,25 +397,25 @@ structure CodeModel where
 
 /-- The text-frame member of the PI-PLL family that the code-frame model describes: the code
 angle is the negative of the text angle. -/
-def CodeModel.toText (m : CodeModel) : GFL.PIPLL.Model := m.params.pllModel (-m.θ)
+def CodeModel.toText (m : CodeModel) : PLL.PIPLL.Model := m.params.pllModel (-m.θ)
 
 /-- The code-frame field translated so that the selected point `(θ_c*, 0)` is the origin. -/
 def CodeModel.field (m : CodeModel) (z : State 2) : State 2 :=
-  m.params.codeField (z + piPLLState m.θ 0)
+  m.params.codeField (z + PhasePlane.mk m.θ 0)
 
 /-- The code-frame family: the code field about the selected point, with the PI-PLL requirement
 language pulled back to the text frame. -/
-def codeFamily : Family CodeModel GFL.PIPLL.Requirement 2 0 :=
-  ⟨fun m => Port.System.autonomous m.field, fun m q => GFL.PIPLL.Meets m.toText q,
-    GFL.PIPLL.translate⟩
+def codeFamily : Family CodeModel PLL.PIPLL.Requirement 2 0 :=
+  ⟨fun m => Port.System.autonomous m.field, fun m q => PLL.PIPLL.Meets m.toText q,
+    PLL.PIPLL.translate⟩
 
 @[powerlib_foundation] theorem codeFamily_isAutonomous : codeFamily.IsAutonomous CodeModel.field :=
   fun _ => rfl
 
 /-- The code-frame field at a point is the text-frame field at the reflected point. -/
 private theorem codeField_holds_iff (p : Params) (P : Flow.Property) (θ : ℝ) :
-    P.holds p.codeField (piPLLState θ 0) ↔ P.holds p.reducedField (piPLLState (-θ) 0) := by
-  have hpt : piPLLState θ 0 = Dynamics.affineCoord reflect 0 (piPLLState (-θ) 0) := by
+    P.holds p.codeField (PhasePlane.mk θ 0) ↔ P.holds p.reducedField (PhasePlane.mk (-θ) 0) := by
+  have hpt : PhasePlane.mk θ 0 = Dynamics.affineCoord reflect 0 (PhasePlane.mk (-θ) 0) := by
     rw [Dynamics.affineCoord, add_zero, reflect_apply]
     simp
   rw [hpt, p.codeField_eq_transport]
@@ -425,19 +425,19 @@ private theorem codeField_holds_iff (p : Params) (P : Flow.Property) (θ : ℝ) 
 code-frame family is the preimage of the PI-PLL denotation under `θ_text* = −θ_code*`, for every
 sentence. -/
 @[powerlib_domain] theorem codeFamily_den (s : Sentence) :
-    connection% (codeFamily.den s = CodeModel.toText ⁻¹' GFL.PIPLL.family.den s) := by
+    connection% (codeFamily.den s = CodeModel.toText ⁻¹' PLL.PIPLL.family.den s) := by
   unfold powerlib.TMIO.Statement
   ext m
   rw [Set.mem_preimage]
   rcases s with P | _
-  · rw [codeFamily_isAutonomous.mem_den_flow, GFL.PIPLL.family_isAutonomous.mem_den_flow]
-    have h1 : CodeModel.field m = fun z => m.params.codeField (z + piPLLState m.θ 0) := rfl
+  · rw [codeFamily_isAutonomous.mem_den_flow, PLL.PIPLL.family_isAutonomous.mem_den_flow]
+    have h1 : CodeModel.field m = fun z => m.params.codeField (z + PhasePlane.mk m.θ 0) := rfl
     have h2 : (CodeModel.toText m).field =
-        fun z => m.params.reducedField (z + piPLLState (-m.θ) 0) :=
+        fun z => m.params.reducedField (z + PhasePlane.mk (-m.θ) 0) :=
       funext (m.params.pllModel_field (-m.θ))
     rw [h1, h2, Flow.Property.holds_shift_iff, Flow.Property.holds_shift_iff]
     exact codeField_holds_iff m.params P m.θ
-  · rw [codeFamily_isAutonomous.den_passive, GFL.PIPLL.family_isAutonomous.den_passive]
+  · rw [codeFamily_isAutonomous.den_passive, PLL.PIPLL.family_isAutonomous.den_passive]
     simp
 
 /-- Every translation of the code-frame family is sound, by the corrected conjugacy and the
@@ -445,7 +445,7 @@ soundness of the PI-PLL family. -/
 @[powerlib_domain] theorem codeFamily_chain_le_semantics :
     connection% (∀ P, codeFamily.chain P ≤ codeFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
-  have hpll := GFL.PIPLL.chain_le_semantics
+  have hpll := PLL.PIPLL.chain_le_semantics
   unfold powerlib.TMIO.Statement at hpll
   refine Family.chain_le_semantics_iff.mpr fun s => ?_
   have hs := Family.chain_le_semantics_iff.mp hpll s
@@ -460,7 +460,7 @@ soundness of the PI-PLL family. -/
 /-- Every sentence transfers between the two frames (mirror points): this replaces the former
 `code_locallyExponentiallyStable_iff` and `code_unstable_iff`. -/
 @[powerlib_domain] theorem code_mem_den_iff (m : CodeModel) (s : Sentence) :
-    connection% (m ∈ codeFamily.den s ↔ m.toText ∈ GFL.PIPLL.family.den s) := by
+    connection% (m ∈ codeFamily.den s ↔ m.toText ∈ PLL.PIPLL.family.den s) := by
   unfold powerlib.TMIO.Statement
   have h := codeFamily_den s
   unfold powerlib.TMIO.Statement at h
@@ -471,7 +471,7 @@ namespace Params
 variable (p : Params)
 
 /-- The table's map `(θ, η) ↦ (θ, −η)`. -/
-def tableMap (y : State 2) : State 2 := piPLLState (y 0) (-(y 1))
+def tableMap (y : State 2) : State 2 := PhasePlane.mk (y 0) (-(y 1))
 
 /-- The table's map conjugates the two fields iff `h` is odd. -/
 @[powerlib_foundation] theorem tableMap_conj_iff :
@@ -479,10 +479,10 @@ def tableMap (y : State 2) : State 2 := piPLLState (y 0) (-(y 1))
       ∀ θ, p.h (-θ) = -p.h θ := by
   constructor
   · intro H θ
-    have h1 := congrArg (fun z : State 2 => z 1) (H (piPLLState θ 0))
+    have h1 := congrArg (fun z : State 2 => z 1) (H (PhasePlane.mk θ 0))
     simpa [codeField, tableMap, reducedField_apply, hCode_eq] using h1
   · intro H y
-    rw [state_two_ext_iff]
+    rw [PhasePlane.ext_iff']
     simp [codeField, tableMap, reducedField_apply, hCode_eq, H]
 
 /-- For the closed-form `h`, oddness holds iff `c₀ = 0 ∧ A sin φ = 0`. -/

@@ -1,4 +1,4 @@
-import theorem.GFL.PIPLL
+import theorem.PLL.PIPLL
 import theorem.SpecialFunctions.TrigZeros
 
 /-! # GFL form-B reduction: quasi-steady algebra and the phase-detector characteristic
@@ -16,7 +16,7 @@ formalized is the algebra of the form-B reduction of `T-gfl-dynamics` §1.4–§
 * step 4 (`formBPllInput`): the PLL input `v_cq^c = −sin θ v_cd + cos θ v_cq`.
 The singular-perturbation (Tikhonov) justification of the reduction and its error are **not**
 formalized; the reduced 2D model is `piPLLField p.formBChar K_p K_i δω` of
-`theorem/GFL/PIPLL.lean`, valid as a model only under the note's assumptions (strong grid,
+`theorem/PLL/PIPLL.lean`, valid as a model only under the note's assumptions (strong grid,
 time-scale separation, frozen outer loops). Continuous time; no saturation, PWM or delay.
 
 Results.
@@ -51,12 +51,13 @@ Family and connection conclusions. This module states no behaviour and defines n
 result is algebra of the reduction or a count of zeros of the reduced field. The equilibrium count
 `formB_equilibria_ncard_le_two` (formerly a domain theorem) is static evidence on the model, not a
 connection conclusion. Behavioural conclusions about the reduced 2D model go through the PI-PLL
-family of `theorem/GFL/PIPLLFamily.lean` with `h = formBChar` (`contDiff_formBChar`).
+family of `theorem/PLL/PIPLLFamily.lean` with `h = formBChar` (`contDiff_formBChar`).
 -/
 
 noncomputable section
 namespace powerlib.GFL
 open Complex Polynomial Set
+open powerlib.PLL (piPLLField)
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 /-! ## Step 1: the current loop -/
@@ -314,11 +315,11 @@ Static evidence on the model, not a connection conclusion. -/
   refine le_trans (ncard_le_ncard_of_injOn (fun x : ℝ² => x 0) ?_ ?_ hfin) hle
   · rintro x ⟨hx, hxa⟩
     refine ⟨hxa, ?_⟩
-    have := ((piPLLField_eq_zero_iff hKi x).mp hx).1
+    have := ((PLL.piPLLField_eq_zero_iff hKi x).mp hx).1
     rwa [FormBParams.formBChar_eq_trigPoly2] at this
   · rintro x ⟨hx, -⟩ y ⟨hy, -⟩ hxy
-    have h1 := ((piPLLField_eq_zero_iff hKi x).mp hx).2
-    have h2 := ((piPLLField_eq_zero_iff hKi y).mp hy).2
-    exact state_two_ext_iff.mpr ⟨hxy, by rw [h1, h2]⟩
+    have h1 := ((PLL.piPLLField_eq_zero_iff hKi x).mp hx).2
+    have h2 := ((PLL.piPLLField_eq_zero_iff hKi y).mp hy).2
+    exact PhasePlane.ext_iff'.mpr ⟨hxy, by rw [h1, h2]⟩
 
 end powerlib.GFL

@@ -41,7 +41,7 @@ about the origin and passivity), so no connection statement is made here: the fo
 theorems (`srf_regionOfAttraction_hamiltonian`, `srf_regionOfAttraction_hamiltonian_lt`,
 `xi_regionOfAttraction_pendulum`, `xi_regionOfAttraction_pendulum_lt`) are private
 implementation evidence. Their models are the SRF members of the PI-PLL family
-(`GFL.PIPLL.srf V K_p K_i δω 0`, and `srf 1 a b (−Δω) 0` in `(θ, ξ)` coordinates); the local
+(`PLL.PIPLL.srf V K_p K_i δω 0`, and `srf 1 a b (−Δω) 0` in `(θ, ξ)` coordinates); the local
 sentences about these equilibria are connection statements in `theorem/PLL/Model.lean`,
 `theorem/PLL/Invariant.lean` and `theorem/PLL/PH.lean`. The pendulum-energy identities are
 foundation.
@@ -59,7 +59,6 @@ namespace powerlib.PLL
 open Set Filter Matrix
 open scoped Topology
 open powerlib.Dynamics (State)
-open powerlib.GFL (piPLLState)
 
 @[powerlib_foundation] private lemma norm_sq_state (x : State 2) : ‖x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 := by
   rw [EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, Real.norm_eq_abs, Real.norm_eq_abs, sq_abs,
@@ -105,7 +104,7 @@ private theorem srf_regionOfAttraction_hamiltonian {V Kp Ki : ℝ} (hV : 0 < V)
         IsIntegralCurveOn φ (fun _ x => srfField V Kp Ki δω x) (Ici 0)) ∧
       ∀ φ : ℝ → State 2, φ 0 = x₀ →
         IsIntegralCurveOn φ (fun _ x => srfField V Kp Ki δω x) (Ici 0) →
-        Tendsto φ atTop (𝓝 (piPLLState 0 (δω / Ki))) := by
+        Tendsto φ atTop (𝓝 (PhasePlane.mk 0 (δω / Ki))) := by
   set H := pllHamiltonian V Ki (δω / Ki)
   set W : Set (State 2) := {x | |x 0| < Real.pi}
   have hW : IsOpen W := isOpen_lt (continuous_abs.comp (contDiff_coord 0).continuous)
@@ -173,9 +172,9 @@ private theorem srf_regionOfAttraction_hamiltonian {V Kp Ki : ℝ} (hV : 0 < V)
         exact this.resolve_left hV.ne'
       exact (Real.sin_eq_zero_iff_of_lt_of_lt (abs_lt.mp hxW).1 (abs_lt.mp hxW).2).mp hs
     rw [fderiv_coord, srfField_apply_zero, hθ, Real.sin_zero] at hd
-    rw [GFL.state_two_ext_iff]
-    refine ⟨by simp [piPLLState, hθ], ?_⟩
-    simp only [GFL.piPLLState_apply_one]
+    rw [PhasePlane.ext_iff']
+    refine ⟨by simp [PhasePlane.mk, hθ], ?_⟩
+    simp only [PhasePlane.mk_apply_one]
     field_simp
     linarith
 
@@ -189,7 +188,7 @@ private theorem srf_regionOfAttraction_hamiltonian_lt {V Kp Ki : ℝ} (hV : 0 < 
         IsIntegralCurveOn φ (fun _ x => srfField V Kp Ki δω x) (Ici 0)) ∧
       ∀ φ : ℝ → State 2, φ 0 = x₀ →
         IsIntegralCurveOn φ (fun _ x => srfField V Kp Ki δω x) (Ici 0) →
-        Tendsto φ atTop (𝓝 (piPLLState 0 (δω / Ki))) := by
+        Tendsto φ atTop (𝓝 (PhasePlane.mk 0 (δω / Ki))) := by
   intro x₀ hx₀
   exact srf_regionOfAttraction_hamiltonian hV hKp hKi δω hx₀.2 x₀ ⟨hx₀.1, le_rfl⟩
 
@@ -260,7 +259,7 @@ private theorem xi_regionOfAttraction_pendulum {a b Δω : ℝ} (ha : 0 < a) (hb
         IsIntegralCurveOn φ (fun _ x => xiField a b Δω x) (Ici 0)) ∧
       ∀ φ : ℝ → State 2, φ 0 = x₀ →
         IsIntegralCurveOn φ (fun _ x => xiField a b Δω x) (Ici 0) →
-        Tendsto φ atTop (𝓝 (piPLLState 0 (-Δω / b))) := by
+        Tendsto φ atTop (𝓝 (PhasePlane.mk 0 (-Δω / b))) := by
   set E := pendulumEnergy a b Δω
   set W : Set (State 2) := {x | |x 0| < Real.pi / 2}
   have hW : IsOpen W := isOpen_lt (continuous_abs.comp (contDiff_coord 0).continuous)
@@ -350,9 +349,9 @@ private theorem xi_regionOfAttraction_pendulum {a b Δω : ℝ} (ha : 0 < a) (hb
     (by linarith [(abs_lt.mp hxW').1, Real.pi_pos])
     (by linarith [(abs_lt.mp hxW').2, Real.pi_pos])).mp hs
   rw [hθ, Real.sin_zero, mul_zero, sub_zero] at hw'
-  rw [GFL.state_two_ext_iff]
-  refine ⟨by simp [piPLLState, hθ], ?_⟩
-  simp only [GFL.piPLLState_apply_one]
+  rw [PhasePlane.ext_iff']
+  refine ⟨by simp [PhasePlane.mk, hθ], ?_⟩
+  simp only [PhasePlane.mk_apply_one]
   field_simp
   linarith
 
@@ -365,7 +364,7 @@ private theorem xi_regionOfAttraction_pendulum_lt {a b Δω : ℝ} (ha : 0 < a)
         IsIntegralCurveOn φ (fun _ x => xiField a b Δω x) (Ici 0)) ∧
       ∀ φ : ℝ → State 2, φ 0 = x₀ →
         IsIntegralCurveOn φ (fun _ x => xiField a b Δω x) (Ici 0) →
-        Tendsto φ atTop (𝓝 (piPLLState 0 (-Δω / b))) := by
+        Tendsto φ atTop (𝓝 (PhasePlane.mk 0 (-Δω / b))) := by
   intro x₀ hx₀
   exact xi_regionOfAttraction_pendulum ha hb hx₀.2 x₀ ⟨hx₀.1, le_rfl⟩
 

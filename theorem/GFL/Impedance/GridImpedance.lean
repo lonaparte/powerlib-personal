@@ -1,5 +1,6 @@
 import theorem.Circuits.Interconnection
-import theorem.CurrentControl.ImpedanceAlgebra
+import theorem.GFL.Impedance.Algebra
+import theorem.Transform.Park
 
 /-! # State-space realization of the grid-side impedance `Z_ext` (foundation)
 
@@ -11,12 +12,12 @@ on `Fin 4` through `finSumFinEquiv` by the plant `networkModel`) with
 `w = −v_PCC` and `i_line` flowing from the grid into the PCC; input `u` = current drawn by the
 converter (IN-positive), output `w = −v_PCC`:
 `C w' = u − i_line − w/R_l − ωC J w`, `L_g i_line' = w − R_g i_line − ωL_g J i_line`.
-The capacitor carries the dq cross term `ωC J` (`capacitor_dq`), which the note omits.
+The capacitor carries the dq cross term `ωC J` (`Transform.capacitor_dq`), which the note omits.
 
 * `networkModel_D`: the realization has no feedthrough (strictly proper).
 * `networkBlocks_field`: the block equations are the PCC KCL and the line KVL.
 * `networkModel_transfer`: off the characteristic roots and with `det Z_line ≠ 0`, its transfer
-  matrix is exactly the corrected `Z_ext = (Z_line⁻¹ + Y_load)⁻¹` of `ImpedanceAlgebra.lean`.
+  matrix is exactly the corrected `Z_ext = (Z_line⁻¹ + Y_load)⁻¹` of `Algebra.lean`.
 * `withNetwork`, `withNetwork_sourceImpedance`: so the network is an admissible `source` of
   `Circuits.Interconnection`, with any strictly proper converter admittance realization
   (`D = 0`, e.g. a GFL admittance) as `load`; the interconnection's source impedance is `Z_ext`
@@ -29,7 +30,7 @@ Source: work-sync `theory/T-gfl-impedance.md` §1.7; `theory/T-gfl-control.md` �
 -/
 
 noncomputable section
-namespace powerlib.CurrentControl
+namespace powerlib.GFL.Impedance
 open Matrix Linear
 
 /-- State index of the blocks: `(w_d, w_q)` then `(i_line,d, i_line,q)`. -/
@@ -202,4 +203,4 @@ def withNetwork {n₂ : ℕ} (Lg Rg Rl C ω : ℝ) (load : Plant n₂ 2) (hD : l
     withNetwork_sourceImpedance hC hL load hD hM hZ]
   rfl
 
-end powerlib.CurrentControl
+end powerlib.GFL.Impedance

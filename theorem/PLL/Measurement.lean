@@ -1,18 +1,16 @@
 import theorem.PLL.Linear
-import theorem.PLL.Signals
-import Mathlib.Probability.Distributions.Gaussian.Real
+import theorem.LTI.Plant
 
-/-! # Frequency measurement by SRF-PLL and PMU: bandwidth, phase, ROCOF, window estimator
+/-! # Frequency measurement by SRF-PLL: bandwidth, phase, ROCOF
 
-Exact frequency-response and estimator identities for the formalized
+Exact frequency-response identities for the formalized
 linearized SRF-PLL of `theorem/PLL/Linear.lean` (`frequencyModel`, transfer
 `H(s) = (a s + b)/(s² + a s + b)`, `a = V K_p`, `b = V K_i`; with `V = 1` this is
-T-frequency-measurement §1.1's `(K_p s + K_i)/(s² + K_p s + K_i)`), for an ideal
-noise-free continuous-time window estimator, and for a Gaussian error model.
+T-frequency-measurement §1.1's `(K_p s + K_i)/(s² + K_p s + K_i)`).
 No stability claim is made here; the stability of these models is in `Linear.lean`
 (`LinearPLL.family`). This module defines no family and states no behaviour of a family's
-models: every result is a frequency-response identity, a generic derivative-output identity, an
-identity of the window estimator on a given signal, or a probability of a Gaussian estimate.
+models: every result is a frequency-response identity. The PMU window estimator and the ROCOF
+trip probability are in `theorem/Frequency/Measurement.lean`.
 
 Contents.
 * −3 dB bandwidth: for `V K_i > 0`, on `ω ≥ 0`, `|H(jω)|² = 1/2` holds exactly at
@@ -20,15 +18,10 @@ Contents.
   `|H|² > 1/2` below and `< 1/2` above (`V K_p ≠ 0`).
 * Phase: `arg H(jω) = −arctan(a ω³ / (ω_n²(ω_n² − ω²) + a² ω²))` whenever the denominator is
   positive, in particular for every `ω` when `ζ ≥ 1/2`.
-* ROCOF: the derivative-output realization `(A, B, C A, C B)` of a strictly proper model has
-  transfer `s H(s)` and its output is the time derivative of the original output; for the PLL
+* ROCOF: the derivative-output realization `LTI.derivModel` `(A, B, C A, C B)` of a strictly
+  proper model has transfer `s H(s)` and its output is the time derivative of the original
+  output (`theorem/LTI/Plant.lean`); for the PLL `rocofModel` has transfer `s H(s)` and
   `|s H(jω)|² = ω² |H(jω)|²` (noise PSD amplified by `ω²`).
-* PMU window estimator on the complex positive-sequence (analytic) signal
-  `x(τ) = A e^{j(ωτ + φ)}`: with the one-window demodulated phasor
-  `X(t) = (1/T)∫_{t−T}^t x(τ) e^{−jω₀τ} dτ`, `f̂ = f₀ + arg(X(t)/X(t−T))/(2πT)` equals
-  `f = ω/2π` exactly whenever `|ω − ω₀| T < π`.
-* ROCOF trip probability for a Gaussian estimate `N(μ, σ²)`:
-  `P(X ≤ −a) = Φ((−a − μ)/σ)`, and the probability is the same in Hz/s and rad/s².
 
 Source: work-sync `theory/T-frequency-measurement.md` §1.1–§1.5.
 
@@ -44,15 +37,12 @@ formula vanishes at `ω = ω_n`, while the true phase there is `−arctan(ω_n/K
 (`arg_closedLoopTF_omegaN_ne_zero`). The note's numerical values (7° lag and 25 ms group delay
 at 1 Hz for `ω_n = 30`, `ζ = 0.7`) are therefore not reproduced; the corrected formula gives
 about 0.71° (computed outside Lean, not a kernel-checked claim).
-
-Correction (§1.5): the note writes `P(ω̂̇ ≤ −ḟ_th)` with an angular-acceleration estimate and a
-Hz/s threshold. The consistent statement uses one unit: `P(ḟ̂ ≤ −ḟ_th) = Φ((−ḟ_th − ḟ)/σ_ḟ)`,
-equivalently `Φ((−2πḟ_th − ω̇)/σ_ω̇)` with `ω̇ = 2πḟ`, `σ_ω̇ = 2πσ_ḟ` (`trip_unit_invariant`).
 -/
 
 noncomputable section
 namespace powerlib.PLL
 open Matrix Complex
+open powerlib.LTI (derivModel)
 
 /-! ## Magnitude and the −3 dB bandwidth -/
 
@@ -312,42 +302,6 @@ the note's formula `arctan(ω(ω_n² − ω²)/(K_p ω_n²))` vanishes there. -/
 
 /-! ## ROCOF estimation: derivative output -/
 
-/-- Derivative-output realization `(A, B, C A, C B)` of a plant. -/
-def derivModel {n p : ℕ} (m : Linear.Plant n p) : Linear.Plant n p :=
-  ⟨m.A, m.B, m.C * m.A, m.C * m.B⟩
-
-/-- Along any input–state solution `ẋ = A x + B u` of a strictly proper plant (`D = 0`), the
-output of `derivModel` is the time derivative of the original output `C x + D u`. Generic: any
-plant, any differentiable state signal. -/
-@[powerlib_foundation] theorem hasDerivAt_output {n p : ℕ} {m : Linear.Plant n p} (hD : m.D = 0)
-    {x : ℝ → Fin n → ℝ} {u : ℝ → Fin p → ℝ} {t : ℝ}
-    (hx : HasDerivAt x (m.A *ᵥ x t + m.B *ᵥ u t) t) :
-    HasDerivAt (fun τ => m.C *ᵥ x τ + m.D *ᵥ u τ)
-      ((derivModel m).C *ᵥ x t + (derivModel m).D *ᵥ u t) t := by
-  have hC : HasDerivAt (fun τ => m.C *ᵥ x τ) (m.C *ᵥ (m.A *ᵥ x t + m.B *ᵥ u t)) t := by
-    refine hasDerivAt_pi.2 fun i => ?_
-    simp only [Matrix.mulVec, dotProduct]
-    exact HasDerivAt.fun_sum fun j _ => (hasDerivAt_pi.1 hx j).const_mul (m.C i j)
-  simp only [hD, Matrix.zero_mulVec, add_zero]
-  convert hC using 1
-  simp [derivModel, Matrix.mulVec_add, Matrix.mulVec_mulVec]
-
-/-- Transfer of the derivative output: `s H(s)` (`D = 0`, `s` not an eigenvalue). -/
-@[powerlib_foundation] theorem transfer_derivModel {n p : ℕ} {m : Linear.Plant n p}
-    (hD : m.D = 0) {s : ℂ} (hs : (Linear.characteristicMatrix m.A s).det ≠ 0) :
-    Linear.transfer (derivModel m) s = s • Linear.transfer m s := by
-  set M := Linear.characteristicMatrix m.A s
-  have hA : Linear.complexify m.A = s • 1 - M := by
-    simp [M, Linear.characteristicMatrix, Linear.complexify]
-  have hinv : M * M⁻¹ = 1 := Matrix.mul_nonsing_inv M (isUnit_iff_ne_zero.mpr hs)
-  simp only [Linear.transfer, derivModel, Linear.complexify_mul, hD]
-  change Linear.complexify m.C * Linear.complexify m.A * M⁻¹ * Linear.complexify m.B +
-    Linear.complexify m.C * Linear.complexify m.B =
-    s • (Linear.complexify m.C * M⁻¹ * Linear.complexify m.B + Linear.complexify 0)
-  rw [hA, Linear.complexify_zero, add_zero, Matrix.mul_sub, Matrix.sub_mul, Matrix.sub_mul,
-    Matrix.mul_assoc (Linear.complexify m.C) M, hinv, Matrix.mul_one]
-  simp [Matrix.mul_smul, Matrix.smul_mul]
-
 /-- ROCOF estimate of the PLL: output `d/dt Δω̂`. -/
 def rocofModel (V Kp Ki : ℝ) : Linear.Plant 2 1 := derivModel (frequencyModel V Kp Ki)
 
@@ -355,8 +309,8 @@ def rocofModel (V Kp Ki : ℝ) : Linear.Plant 2 1 := derivModel (frequencyModel 
 @[powerlib_foundation] theorem transfer_rocofModel {V Kp Ki : ℝ} {s : ℂ}
     (hs : loopPoly V Kp Ki s ≠ 0) :
     Linear.transfer (rocofModel V Kp Ki) s = !![s * closedLoopTF V Kp Ki s] := by
-  rw [rocofModel, transfer_derivModel rfl (by rwa [show (frequencyModel V Kp Ki).A = linA V Kp Ki
-    from rfl, det_characteristicMatrix_linA]), transfer_frequencyModel]
+  rw [rocofModel, LTI.transfer_derivModel rfl (by rwa [show (frequencyModel V Kp Ki).A =
+    linA V Kp Ki from rfl, det_characteristicMatrix_linA]), transfer_frequencyModel]
   ext i j; fin_cases i; fin_cases j; simp
 
 /-- Noise amplification of differentiation: `|jω H(jω)|² = ω² |H(jω)|²`. -/
@@ -366,118 +320,5 @@ def rocofModel (V Kp Ki : ℝ) : Linear.Plant 2 1 := derivModel (frequencyModel 
   rw [Complex.normSq_mul]
   congr 1
   simp [Complex.normSq_apply]; ring
-
-/-! ## PMU window estimator on a complex positive-sequence signal -/
-
-/-- One-window demodulated phasor `X(t) = (1/T) ∫_{t−T}^{t} x(τ) e^{−jω₀τ} dτ`. -/
-def windowPhasor (T ω₀ : ℝ) (x : ℝ → ℂ) (t : ℝ) : ℂ :=
-  (1 / (T : ℂ)) * ∫ τ in (t - T)..t, x τ * Complex.exp (-((ω₀ : ℂ) * I * τ))
-
-/-- Complex positive-sequence (analytic) signal `A e^{j(ωτ + φ)}`. -/
-def analyticSignal (A ω φ : ℝ) (τ : ℝ) : ℂ := A * Complex.exp (((ω * τ + φ : ℝ) : ℂ) * I)
-
-@[powerlib_foundation] private lemma windowPhasor_analytic {T ω₀ A ω φ : ℝ} (hT : T ≠ 0) :
-    ∃ K : ℂ, (A ≠ 0 → |ω - ω₀| * |T| < 2 * Real.pi → K ≠ 0) ∧
-      ∀ s, windowPhasor T ω₀ (analyticSignal A ω φ) s =
-        K * Complex.exp (((ω - ω₀ : ℝ) : ℂ) * I * s) := by
-  have hint : ∀ τ : ℝ, analyticSignal A ω φ τ * Complex.exp (-((ω₀ : ℂ) * I * τ)) =
-      (A * Complex.exp ((φ : ℂ) * I)) * Complex.exp (((ω - ω₀ : ℝ) : ℂ) * I * τ) := by
-    intro τ
-    simp only [analyticSignal]
-    rw [mul_assoc (A : ℂ), mul_assoc (A : ℂ), ← Complex.exp_add, ← Complex.exp_add]
-    congr 2; push_cast; ring
-  rcases eq_or_ne (ω - ω₀) 0 with h0 | h0
-  · refine ⟨A * Complex.exp ((φ : ℂ) * I), fun hA _ => mul_ne_zero (by exact_mod_cast hA)
-      (Complex.exp_ne_zero _), fun s => ?_⟩
-    simp only [windowPhasor, hint, h0, Complex.ofReal_zero, zero_mul, Complex.exp_zero, mul_one]
-    rw [intervalIntegral.integral_const]
-    have hT' : (T : ℂ) ≠ 0 := by exact_mod_cast hT
-    simp [Complex.real_smul]
-    field_simp
-  · refine ⟨A * Complex.exp ((φ : ℂ) * I) * mafTF T (((ω - ω₀ : ℝ) : ℂ) * I), ?_, fun s => ?_⟩
-    · intro hA hlt
-      refine mul_ne_zero (mul_ne_zero (by exact_mod_cast hA) (Complex.exp_ne_zero _)) ?_
-      rw [mafTF]
-      refine div_ne_zero ?_ (mul_ne_zero (by exact_mod_cast hT)
-        (mul_ne_zero (by exact_mod_cast h0) I_ne_zero))
-      intro h1
-      have h1' : Complex.exp (-((T : ℂ) * (((ω - ω₀ : ℝ) : ℂ) * I))) = 1 := by
-        linear_combination -h1
-      obtain ⟨n, hn⟩ := Complex.exp_eq_one_iff.mp h1'
-      have him := congrArg Complex.im hn
-      simp at him
-      have hn0 : n ≠ 0 := by
-        rintro rfl; simp at him
-        rcases him with h | h
-        · exact hT h
-        · exact h0 h
-      have habs : |T * (ω - ω₀)| = |(n : ℝ)| * (2 * Real.pi) := by
-        rw [show T * (ω - ω₀) = -(n * (2 * Real.pi)) by linarith, abs_neg, abs_mul,
-          abs_of_pos (by positivity : (0 : ℝ) < 2 * Real.pi)]
-      have hn1 : (1 : ℝ) ≤ |(n : ℝ)| := by
-        rw [← Int.cast_abs]; exact_mod_cast Int.one_le_abs hn0
-      rw [abs_mul] at habs
-      nlinarith [Real.pi_pos]
-    · simp only [windowPhasor, hint]
-      rw [intervalIntegral.integral_const_mul, ← mul_assoc, mul_comm (1 / (T : ℂ)), mul_assoc,
-        movingAverage_exp hT h0 s]
-      ring
-
-/-- PMU frequency estimate `f̂ = f₀ + arg(X(t)/X(t − T))/(2πT)` is exact on a complex
-positive-sequence signal of nonzero amplitude when `|ω − ω₀| T < π`. -/
-@[powerlib_foundation] theorem pmu_frequency_exact {T ω₀ A ω φ : ℝ} (hT : 0 < T) (hA : A ≠ 0)
-    (hω : |ω - ω₀| * T < Real.pi) (t : ℝ) :
-    ω₀ / (2 * Real.pi) +
-        arg (windowPhasor T ω₀ (analyticSignal A ω φ) t /
-          windowPhasor T ω₀ (analyticSignal A ω φ) (t - T)) / (2 * Real.pi * T) =
-      ω / (2 * Real.pi) := by
-  obtain ⟨K, hK, hX⟩ := windowPhasor_analytic (ω₀ := ω₀) (A := A) (ω := ω) (φ := φ) hT.ne'
-  have hK' := hK hA (by rw [abs_of_pos hT]; linarith [Real.pi_pos])
-  have hratio : windowPhasor T ω₀ (analyticSignal A ω φ) t /
-      windowPhasor T ω₀ (analyticSignal A ω φ) (t - T) =
-        Complex.exp ((((ω - ω₀) * T : ℝ) : ℂ) * I) := by
-    rw [hX, hX, div_eq_iff (mul_ne_zero hK' (Complex.exp_ne_zero _)), mul_left_comm,
-      ← Complex.exp_add]
-    congr 2; push_cast; ring
-  have hmem : (ω - ω₀) * T ∈ Set.Ioc (-Real.pi) Real.pi := by
-    have := abs_lt.mp (show |(ω - ω₀) * T| < Real.pi by rwa [abs_mul, abs_of_pos hT])
-    exact ⟨this.1, this.2.le⟩
-  rw [hratio, Complex.exp_mul_I, Complex.arg_cos_add_sin_mul_I hmem]
-  field_simp
-  ring
-
-/-! ## ROCOF trip probability under a Gaussian estimation error -/
-
-open MeasureTheory ProbabilityTheory in
-/-- For a Gaussian ROCOF estimate `X ~ N(μ, σ²)`, `σ > 0`:
-`P(X ≤ −a) = Φ((−a − μ)/σ)` with `Φ` the standard normal law of `(−∞, ·]`. -/
-@[powerlib_foundation] theorem trip_probability {μ σ : ℝ} (hσ : 0 < σ) (a : ℝ) :
-    gaussianReal μ (⟨σ ^ 2, sq_nonneg σ⟩) (Set.Iic (-a)) =
-      gaussianReal 0 1 (Set.Iic ((-a - μ) / σ)) := by
-  have hmap : gaussianReal μ (⟨σ ^ 2, sq_nonneg σ⟩) =
-      (gaussianReal 0 1).map (fun z => σ * z + μ) := by
-    have hc : (fun z : ℝ => σ * z + μ) = (fun z => z + μ) ∘ (fun z => σ * z) := rfl
-    rw [hc, ← Measure.map_map (by fun_prop) (by fun_prop), gaussianReal_map_const_mul,
-      gaussianReal_map_add_const]
-    congr 1
-    · simp
-    · ext; simp; rfl
-  rw [hmap, Measure.map_apply (by fun_prop) measurableSet_Iic]
-  congr 1
-  ext z
-  simp only [Set.mem_preimage, Set.mem_Iic]
-  rw [le_div_iff₀ hσ]
-  constructor <;> intro h <;> linarith
-
-open MeasureTheory ProbabilityTheory in
-/-- Unit consistency: measuring the ROCOF in rad/s² (`ω̇ = 2πḟ`, `σ_ω̇ = 2πσ_ḟ`, threshold
-`2πḟ_th`) gives the same trip probability as in Hz/s. -/
-@[powerlib_foundation] theorem trip_unit_invariant {μ σ : ℝ} (hσ : 0 < σ) (a : ℝ) :
-    gaussianReal (2 * Real.pi * μ) (⟨(2 * Real.pi * σ) ^ 2, sq_nonneg _⟩)
-        (Set.Iic (-(2 * Real.pi * a))) =
-      gaussianReal μ (⟨σ ^ 2, sq_nonneg σ⟩) (Set.Iic (-a)) := by
-  rw [trip_probability (mul_pos (by positivity) hσ), trip_probability hσ]
-  congr 2
-  field_simp
 
 end powerlib.PLL

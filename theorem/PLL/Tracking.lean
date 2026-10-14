@@ -1,4 +1,5 @@
 import theorem.PLL.Linear
+import theorem.LTI.Plant
 
 /-! # Linearized SRF-PLL: steady-state tracking in the time domain
 
@@ -39,63 +40,16 @@ solutions under time-varying inputs (limits of tracking errors, unbounded phase 
 sentence language (flow sentences about the origin of the zero-input field, passivity) cannot
 express: the five former domain theorems (`phaseStep_tracking`, `frequencyStep_tracking`,
 `frequencyRamp_tracking`, `frequencyRamp_limit_ne_note`, `frequencyQuadratic_unbounded`) are kept
-as private implementation evidence. The generic convergence lemma `tendsto_sub_of_isHurwitz`
-(any plant with Hurwitz state matrix) and the explicit particular solutions remain foundation.
+as private implementation evidence. The generic convergence lemma `LTI.tendsto_sub_of_isHurwitz`
+(any plant with Hurwitz state matrix, `theorem/LTI/Plant.lean`) and the explicit particular
+solutions remain foundation.
 -/
 
 noncomputable section
 namespace powerlib.PLL
 open Matrix Filter Set
 open scoped Topology
-
-/-! ## Forward solutions of a plant and a general convergence lemma -/
-
-/-- The output `C x + D u` of a plant. -/
-def plantOutput {n p : ℕ} (M : Linear.Plant n p) (x : Fin n → ℝ) (u : Fin p → ℝ) : Fin p → ℝ :=
-  M.C *ᵥ x + M.D *ᵥ u
-
-/-- Two forward trajectories of the same input-driven plant with Hurwitz state matrix converge to
-each other, componentwise, for any common input signal: their difference solves the zero-input
-field, which is globally exponentially stable (the linear hub). A forward trajectory `x` of the
-plant `ẋ = A x + B u` under the input signal `u` is a solution on `[0, ∞)`, in plain coordinates,
-with one-sided derivatives at `0`. -/
-@[powerlib_foundation] theorem tendsto_sub_of_isHurwitz {n p : ℕ} {M : Linear.Plant n p}
-    (hA : LinearSystems.IsHurwitz M.A) {u : ℝ → Fin p → ℝ} {x y : ℝ → Fin n → ℝ}
-    (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x (M.A *ᵥ x t + M.B *ᵥ u t) (Ici 0) t)
-    (hy : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt y (M.A *ᵥ y t + M.B *ᵥ u t) (Ici 0) t)
-    (i : Fin n) :
-    Tendsto (fun t => x t i - y t i) atTop (𝓝 0) := by
-  let φ : ℝ → EuclideanSpace ℝ (Fin n) := fun t => WithLp.toLp 2 (x t - y t)
-  have hder : ∀ t ∈ Ici (0 : ℝ),
-      HasDerivWithinAt φ (LinearSystems.affineLinearVectorField M.A 0 (φ t)) (Ici 0) t := by
-    intro t ht
-    have h := (hx t ht).sub (hy t ht)
-    have h2 := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm.hasFDerivAt.comp_hasDerivWithinAt
-      t h
-    have heq : LinearSystems.affineLinearVectorField M.A 0 (φ t) =
-        (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm
-          (M.A *ᵥ x t + M.B *ᵥ u t - (M.A *ᵥ y t + M.B *ᵥ u t)) := by
-      rw [Linear.affine_apply, sub_zero]
-      ext j
-      simp [φ, Linear.op]
-    rw [heq]
-    exact h2
-  obtain ⟨-, -, C, a, -, ha, hb⟩ :=
-    Linear.globallyExponentiallyStable_of_isHurwitz (0 : EuclideanSpace ℝ (Fin n)) hA
-  have hbound : ∀ t, 0 ≤ t → ‖x t i - y t i‖ ≤ C * Real.exp (-a * t) * ‖φ 0‖ := by
-    intro t ht
-    have htraj : IsTrajectoryOn φ (LinearSystems.affineLinearVectorField M.A 0) 0 t :=
-      fun s hs => (hder s hs.1).mono Icc_subset_Ici_self
-    have h := hb 0 t φ htraj t ⟨ht, le_rfl⟩
-    simp only [sub_zero] at h
-    calc ‖x t i - y t i‖ = ‖φ t i‖ := by simp [φ]
-      _ ≤ ‖φ t‖ := PiLp.norm_apply_le (φ t) i
-      _ ≤ C * Real.exp (-a * t) * ‖φ 0‖ := h
-  have hlim : Tendsto (fun t => C * Real.exp (-a * t) * ‖φ 0‖) atTop (𝓝 0) := by
-    have he : Tendsto (fun t : ℝ => Real.exp (-a * t)) atTop (𝓝 0) :=
-      Real.tendsto_exp_atBot.comp (tendsto_id.const_mul_atTop_of_neg (by linarith))
-    simpa using (he.const_mul C).mul_const ‖φ 0‖
-  exact squeeze_zero_norm' (eventually_ge_atTop 0 |>.mono hbound) hlim
+open powerlib.LTI (plantOutput)
 
 /-! ## Trajectories of the linearized PLL
 
@@ -152,7 +106,7 @@ private theorem phaseStep_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
     convert hasDerivAt_const t (![Δφ, 0] : Fin 2 → ℝ) using 1
     ext i; fin_cases i <;>
       simp [phaseModel, linA]
-  have h := tendsto_sub_of_isHurwitz hA hx hp 0
+  have h := LTI.tendsto_sub_of_isHurwitz hA hx hp 0
   simpa using h.add_const Δφ
 
 /-! ## Frequency step -/
@@ -175,8 +129,8 @@ private theorem frequencyStep_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
     isErrorTrajectory_of
       (fun t => (hasDerivAt_const t (0 : ℝ)).congr_deriv (by simp; field_simp; ring))
       (fun t => (hasDerivAt_const t (c / Ki)).congr_deriv (by simp))
-  have h0 := tendsto_sub_of_isHurwitz hA hx hp 0
-  have h1 := tendsto_sub_of_isHurwitz hA hx hp 1
+  have h0 := LTI.tendsto_sub_of_isHurwitz hA hx hp 0
+  have h1 := LTI.tendsto_sub_of_isHurwitz hA hx hp 1
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, sub_zero] at h0 h1
   refine ⟨h0, by simpa using h1.add_const (c / Ki), ?_⟩
   have := (h0.const_mul (-(V * Kp))).add (h1.const_mul Ki)
@@ -224,8 +178,8 @@ private theorem frequencyRamp_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
   have hA : LinearSystems.IsHurwitz (frequencyModel V Kp Ki).A :=
     (isHurwitz_linA_iff V Kp Ki).mpr ⟨hVKp, hVKi⟩
   have hp := rampParticular_isTrajectory (Kp := Kp) hV hKi ρ
-  have h0 := tendsto_sub_of_isHurwitz hA hx hp 0
-  have h1 := tendsto_sub_of_isHurwitz hA hx hp 1
+  have h0 := LTI.tendsto_sub_of_isHurwitz hA hx hp 0
+  have h1 := LTI.tendsto_sub_of_isHurwitz hA hx hp 1
   refine ⟨by simpa [rampParticular] using h0.add_const (-ρ / (V * Ki)), ?_⟩
   have := (h0.const_mul (-(V * Kp))).add (h1.const_mul Ki)
   simp only [mul_zero, add_zero] at this
@@ -297,7 +251,7 @@ private theorem frequencyQuadratic_unbounded {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
   have hA : LinearSystems.IsHurwitz (frequencyModel V Kp Ki).A :=
     (isHurwitz_linA_iff V Kp Ki).mpr ⟨hVKp, hVKi⟩
   have hp := quadParticular_isTrajectory (Kp := Kp) hV hKi α
-  have h0 := tendsto_sub_of_isHurwitz hA hx hp 0
+  have h0 := LTI.tendsto_sub_of_isHurwitz hA hx hp 0
   set p := -2 * α / (V * Ki) with hpdef
   have hp0 : p ≠ 0 := by
     rw [hpdef]

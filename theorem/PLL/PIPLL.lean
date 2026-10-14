@@ -1,15 +1,17 @@
 import theorem.Criteria.Hurwitz2
+import theorem.PhasePlane.Planar
 
 /-! # PI phase-locked loop with a general phase-detector characteristic: the static model
 
 Static foundation of the PI-PLL model. This module contains the vector field, its Jacobian and
 the equilibrium set; it states no behaviour. The behavioural (connection) conclusions are made in
-`theorem/GFL/PIPLLFamily.lean`, through the family's system map.
+`theorem/PLL/PIPLLFamily.lean`, through the family's system map.
 
 Model boundary.
 * State `x : ℝ² = EuclideanSpace ℝ (Fin 2)`, coordinates in this order:
   `x 0 = θ` (phase offset `θ_e = θ̂_g − θ_g`, PLL estimate minus grid angle, swing-style sign of
-  work-sync `conventions.md` §D5), `x 1 = η` (state of the PI integrator, `η̇ = h(θ)`).
+  work-sync `conventions.md` §D5), `x 1 = η` (state of the PI integrator, `η̇ = h(θ)`); the
+  point `(θ, η)` is `PhasePlane.mk θ η` (`theorem/PhasePlane/Planar.lean`).
 * Continuous-time autonomous vector field
   `θ̇ = K_p h(θ) + K_i η − δω`, `η̇ = h(θ)` (`piPLLField h Kp Ki δω`).
   `h : ℝ → ℝ` is an arbitrary phase-detector characteristic (the PLL input `v_q^c` written as a
@@ -53,14 +55,11 @@ Correction (`T-gfl-dynamics` §1.12, `Σ_FD`, and §1.14 region D): the note cla
 -/
 
 noncomputable section
-namespace powerlib.GFL
+namespace powerlib.PLL
 open Matrix
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 /-! ## The model -/
-
-/-- The state `(θ, η)` as an element of `ℝ²`. -/
-def piPLLState (θ η : ℝ) : ℝ² := WithLp.toLp 2 ![θ, η]
 
 /-- PI-PLL vector field with phase-detector characteristic `h`:
 `θ̇ = K_p h(θ) + K_i η − δω`, `η̇ = h(θ)`; coordinates `x 0 = θ`, `x 1 = η`. -/
@@ -75,33 +74,6 @@ def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki;
 
 @[simp, powerlib_foundation] theorem piPLLField_apply_one (h : ℝ → ℝ) (Kp Ki δω : ℝ)
     (x : ℝ²) : piPLLField h Kp Ki δω x 1 = h (x 0) := rfl
-
-@[simp, powerlib_foundation] theorem piPLLState_apply_zero (θ η : ℝ) :
-    piPLLState θ η 0 = θ := rfl
-
-@[simp, powerlib_foundation] theorem piPLLState_apply_one (θ η : ℝ) :
-    piPLLState θ η 1 = η := rfl
-
-/-- Two points of `ℝ²` are equal iff both coordinates agree. -/
-@[powerlib_foundation] theorem state_two_ext_iff {x y : ℝ²} :
-    x = y ↔ x 0 = y 0 ∧ x 1 = y 1 := by
-  constructor
-  · rintro rfl
-    exact ⟨rfl, rfl⟩
-  · rintro ⟨h0, h1⟩
-    ext i
-    fin_cases i
-    · exact h0
-    · exact h1
-
-@[simp, powerlib_foundation] theorem piPLLState_coords (x : ℝ²) :
-    piPLLState (x 0) (x 1) = x :=
-  state_two_ext_iff.mpr ⟨rfl, rfl⟩
-
-@[powerlib_foundation] theorem piPLLState_eq_iff {θ η θ' η' : ℝ} :
-    piPLLState θ η = piPLLState θ' η' ↔ θ = θ' ∧ η = η' := by
-  rw [state_two_ext_iff]
-  simp
 
 /-! ## Smoothness and Jacobian (derived from the field) -/
 
@@ -245,7 +217,7 @@ def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki;
 Static evidence, not a connection conclusion. -/
 @[powerlib_foundation] theorem piPLLField_eq_zero_iff {h : ℝ → ℝ} {Kp Ki δω : ℝ} (hKi : Ki ≠ 0)
     (x : ℝ²) : piPLLField h Kp Ki δω x = 0 ↔ h (x 0) = 0 ∧ x 1 = δω / Ki := by
-  rw [state_two_ext_iff]
+  rw [PhasePlane.ext_iff']
   simp only [piPLLField_apply_zero, piPLLField_apply_one, PiLp.zero_apply]
   constructor
   · rintro ⟨h0, h1⟩
@@ -263,7 +235,7 @@ Static evidence, not a connection conclusion. -/
 Static evidence, not a connection conclusion. -/
 @[powerlib_foundation] theorem piPLLField_eq_zero_iff_of_Ki_eq_zero {h : ℝ → ℝ} {Kp δω : ℝ}
     (x : ℝ²) : piPLLField h Kp 0 δω x = 0 ↔ h (x 0) = 0 ∧ δω = 0 := by
-  rw [state_two_ext_iff]
+  rw [PhasePlane.ext_iff']
   simp only [piPLLField_apply_zero, piPLLField_apply_one, PiLp.zero_apply]
   constructor
   · rintro ⟨h0, h1⟩
@@ -276,19 +248,19 @@ Static evidence, not a connection conclusion. -/
 /-- The equilibrium predicate at `(θ, η)`. Static evidence, not a connection conclusion. -/
 @[powerlib_foundation] theorem piPLL_isEquilibrium_iff {h : ℝ → ℝ} {Kp Ki δω : ℝ} (hKi : Ki ≠ 0)
     (θ η : ℝ) :
-    IsEquilibrium (piPLLField h Kp Ki δω) (piPLLState θ η) ↔ h θ = 0 ∧ η = δω / Ki :=
-  piPLLField_eq_zero_iff hKi (piPLLState θ η)
+    IsEquilibrium (piPLLField h Kp Ki δω) (PhasePlane.mk θ η) ↔ h θ = 0 ∧ η = δω / Ki :=
+  piPLLField_eq_zero_iff hKi (PhasePlane.mk θ η)
 
 /-- The equilibrium set, for every constant `δω` (`K_i ≠ 0`):
 `{x | f x = 0} = {(θ*, δω / K_i) : h(θ*) = 0}`. Static evidence, not a connection conclusion. -/
 @[powerlib_foundation] theorem piPLL_equilibria_eq {h : ℝ → ℝ} {Kp Ki δω : ℝ} (hKi : Ki ≠ 0) :
     {x : ℝ² | piPLLField h Kp Ki δω x = 0} =
-      (fun θ => piPLLState θ (δω / Ki)) '' {θ | h θ = 0} := by
+      (fun θ => PhasePlane.mk θ (δω / Ki)) '' {θ | h θ = 0} := by
   ext x
   simp only [Set.mem_ofPred_eq, Set.mem_image, piPLLField_eq_zero_iff hKi]
   constructor
   · rintro ⟨h0, h1⟩
-    exact ⟨x 0, h0, by rw [← h1, piPLLState_coords]⟩
+    exact ⟨x 0, h0, by rw [← h1, PhasePlane.mk_coords]⟩
   · rintro ⟨θ, hθ, rfl⟩
     exact ⟨hθ, rfl⟩
 
@@ -300,13 +272,13 @@ Static evidence, not a connection conclusion. -/
   · rintro ⟨x, hx⟩
     exact ⟨x 0, ((piPLLField_eq_zero_iff hKi x).mp hx).1⟩
   · rintro ⟨θ, hθ⟩
-    exact ⟨piPLLState θ (δω / Ki), (piPLLField_eq_zero_iff hKi _).mpr ⟨hθ, rfl⟩⟩
+    exact ⟨PhasePlane.mk θ (δω / Ki), (piPLLField_eq_zero_iff hKi _).mpr ⟨hθ, rfl⟩⟩
 
 /-- At the selected point `(θ, δω / K_i)` (Lean's `δω / 0 = 0` when `K_i = 0`) the field vanishes
 exactly when `h(θ) = 0` and the integrator can absorb the offset (`K_i ≠ 0`) or there is no offset.
 Static evidence, not a connection conclusion. -/
 @[powerlib_foundation] theorem piPLLField_point_eq_zero_iff {h : ℝ → ℝ} {Kp Ki δω θ : ℝ} :
-    piPLLField h Kp Ki δω (piPLLState θ (δω / Ki)) = 0 ↔ h θ = 0 ∧ (Ki ≠ 0 ∨ δω = 0) := by
+    piPLLField h Kp Ki δω (PhasePlane.mk θ (δω / Ki)) = 0 ↔ h θ = 0 ∧ (Ki ≠ 0 ∨ δω = 0) := by
   by_cases hKi : Ki = 0
   · subst hKi
     rw [piPLLField_eq_zero_iff_of_Ki_eq_zero]
@@ -323,8 +295,8 @@ This is a statement about the linearization only, not a stability conclusion: st
 not a connection conclusion. -/
 @[powerlib_foundation] theorem piPLL_jacobian_nilpotent_of_deriv_zero {h : ℝ → ℝ}
     {Kp Ki δω θ : ℝ} (hzero : h θ = 0) (hderiv : HasDerivAt h 0 θ) (hKi : Ki ≠ 0) :
-    piPLLField h Kp Ki δω (piPLLState θ (δω / Ki)) = 0 ∧
-      fderiv ℝ (piPLLField h Kp Ki δω) (piPLLState θ (δω / Ki)) =
+    piPLLField h Kp Ki δω (PhasePlane.mk θ (δω / Ki)) = 0 ∧
+      fderiv ℝ (piPLLField h Kp Ki δω) (PhasePlane.mk θ (δω / Ki)) =
         Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (piPLLJacobian Kp Ki 0) ∧
       piPLLJacobian Kp Ki 0 ≠ 0 ∧ (piPLLJacobian Kp Ki 0) ^ 2 = 0 ∧
       ¬ LinearSystems.IsHurwitz (piPLLJacobian Kp Ki 0) :=
@@ -346,6 +318,6 @@ exponentially stable) in `PIPLLFamily` are the connection forms. -/
   intro H
   apply H (fun θ => -Real.sin θ) 1 1 2 1 one_pos one_pos
     (fun θ => by rw [abs_neg]; exact Real.abs_sin_le_one θ) (by norm_num)
-  exact ⟨piPLLState 0 2, (piPLLField_eq_zero_iff one_ne_zero _).mpr ⟨by simp, by simp⟩⟩
+  exact ⟨PhasePlane.mk 0 2, (piPLLField_eq_zero_iff one_ne_zero _).mpr ⟨by simp, by simp⟩⟩
 
-end powerlib.GFL
+end powerlib.PLL

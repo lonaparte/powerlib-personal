@@ -19,10 +19,12 @@ Setting: `(θ, ξ)` coordinates of `theorem/PLL/Model.lean` (`xiField a b Δω`:
   the shifted 1-state linear model `ẏ = −(b/a) y` is globally exponentially stable iff
   `b/a > 0` (`ReducedSlow.mem_den_globallyExponentiallyStable_iff`).
 * Eigenvalues of the in-phase linearization `λ² + aλ + b = 0` and the overdamping parameter
-  `ε_od = b/a² = 1/(4ζ²)` (`ζ = a/(2√b)`, the `zeta` of `Linear.lean`):
+  `ε_od = b/a² = 1/(4ζ²)` (`epsOd_eq`; `ζ = a/(2√b)`, the `zeta` of `Linear.lean`). The root
+  facts are generic quadratics in `Criteria` (`theorem/Criteria/Hurwitz2.lean`):
   real roots iff `ε_od ≤ 1/4` (`ζ ≥ 1`); then `λ± = −(a/2)(1 ∓ √(1 − 4ε_od))`,
   `λ₊/λ₋ = 4ε_od/(1 + √(1 − 4ε_od))² ∈ [ε_od, 4ε_od]`, `λ₋ ∈ [−a, −a/2]`,
-  `λ₊ ∈ [−2b/a, −b/a]`.
+  `λ₊ ∈ [−2b/a, −b/a]` (`Criteria.eigen_real_iff`, `eigen_roots`, `eigen_ratio`,
+  `eigen_bounds`).
 
 Source: work-sync `theory/T-gfl-multiscale-modeling.md` §1.5, §1.7, §1.8;
 `theory/T-invariant-coordinates.md` §1.2 (overdamped limit).
@@ -229,90 +231,5 @@ end ReducedSlow
   have ha2 : (V * Kp) ^ 2 ≠ 0 := pow_ne_zero 2 ha
   rw [zeta, div_pow, h2]
   field_simp
-
-/-- The in-phase eigenvalues are real iff `ε_od ≤ 1/4` (`a ≠ 0`). -/
-@[powerlib_foundation] theorem eigen_real_iff {a b : ℝ} (ha : a ≠ 0) :
-    0 ≤ a ^ 2 - 4 * b ↔ b / a ^ 2 ≤ 1 / 4 := by
-  have ha2 : 0 < a ^ 2 := by positivity
-  rw [div_le_iff₀ ha2]
-  constructor <;> intro h <;> linarith
-
-/-- Real eigenvalues `λ± = −(a/2)(1 ∓ √(1 − 4ε))`, `ε = b/a²` (`a > 0`, `4b ≤ a²`), roots of
-`λ² + aλ + b`. -/
-@[powerlib_foundation] theorem eigen_roots {a b : ℝ} (ha : 0 < a) (hd : 4 * b ≤ a ^ 2) :
-    let s := Real.sqrt (1 - 4 * (b / a ^ 2))
-    (-(a / 2) * (1 - s)) ^ 2 + a * (-(a / 2) * (1 - s)) + b = 0 ∧
-      (-(a / 2) * (1 + s)) ^ 2 + a * (-(a / 2) * (1 + s)) + b = 0 := by
-  intro s
-  have h1 : 0 ≤ 1 - 4 * (b / a ^ 2) := by
-    rw [sub_nonneg, ← le_div_iff₀' (by norm_num : (0 : ℝ) < 4), div_le_iff₀ (by positivity)]
-    linarith
-  have hs : s ^ 2 = 1 - 4 * (b / a ^ 2) := Real.sq_sqrt h1
-  have ha2 : a ^ 2 ≠ 0 := by positivity
-  have hs' : a ^ 2 * s ^ 2 = a ^ 2 - 4 * b := by rw [hs]; field_simp
-  constructor
-  · linear_combination (1 / 4 : ℝ) * hs'
-  · linear_combination (1 / 4 : ℝ) * hs'
-
-/-- Exact eigenvalue ratio: `λ₊/λ₋ = 4ε/(1 + √(1 − 4ε))²`, and `ε ≤ λ₊/λ₋ ≤ 4ε`
-(`a > 0`, `0 ≤ b`, `4b ≤ a²`). -/
-@[powerlib_foundation] theorem eigen_ratio {a b : ℝ} (ha : 0 < a) (hb : 0 ≤ b)
-    (hd : 4 * b ≤ a ^ 2) :
-    let ε := b / a ^ 2
-    let s := Real.sqrt (1 - 4 * ε)
-    (-(a / 2) * (1 - s)) / (-(a / 2) * (1 + s)) = 4 * ε / (1 + s) ^ 2 ∧
-      ε ≤ 4 * ε / (1 + s) ^ 2 ∧ 4 * ε / (1 + s) ^ 2 ≤ 4 * ε := by
-  intro ε s
-  have hε : 0 ≤ ε := by positivity
-  have h1 : 0 ≤ 1 - 4 * ε := by
-    simp only [ε]
-    rw [sub_nonneg, ← le_div_iff₀' (by norm_num : (0 : ℝ) < 4), div_le_iff₀ (by positivity)]
-    linarith
-  have hs : s ^ 2 = 1 - 4 * ε := Real.sq_sqrt h1
-  have hs0 : 0 ≤ s := Real.sqrt_nonneg _
-  have hs1 : s ≤ 1 := by nlinarith
-  have hpos : 0 < 1 + s := by linarith
-  refine ⟨?_, ?_, ?_⟩
-  · have : -(a / 2) * (1 + s) ≠ 0 := by
-      have : 0 < a / 2 * (1 + s) := by positivity
-      linarith
-    rw [div_eq_div_iff this (by positivity)]
-    linear_combination (a / 2) * (1 + s) * hs
-  · rw [le_div_iff₀ (by positivity)]
-    nlinarith
-  · rw [div_le_iff₀ (by positivity)]
-    nlinarith
-
-/-- Fast and slow eigenvalue bounds: `λ₋ ∈ [−a, −a/2]`, `λ₊ ∈ [−2b/a, −b/a]`
-(`a > 0`, `0 ≤ b`, `4b ≤ a²`). -/
-@[powerlib_foundation] theorem eigen_bounds {a b : ℝ} (ha : 0 < a) (hb : 0 ≤ b)
-    (hd : 4 * b ≤ a ^ 2) :
-    let s := Real.sqrt (1 - 4 * (b / a ^ 2))
-    (-a ≤ -(a / 2) * (1 + s) ∧ -(a / 2) * (1 + s) ≤ -(a / 2)) ∧
-      (-(2 * b / a) ≤ -(a / 2) * (1 - s) ∧ -(a / 2) * (1 - s) ≤ -(b / a)) := by
-  intro s
-  have h1 : 0 ≤ 1 - 4 * (b / a ^ 2) := by
-    rw [sub_nonneg, ← le_div_iff₀' (by norm_num : (0 : ℝ) < 4), div_le_iff₀ (by positivity)]
-    linarith
-  have hs : s ^ 2 = 1 - 4 * (b / a ^ 2) := Real.sq_sqrt h1
-  have hs0 : 0 ≤ s := Real.sqrt_nonneg _
-  have hs1 : s ≤ 1 := by nlinarith [div_nonneg hb (sq_nonneg a)]
-  have hkey : a / 2 * (1 - s) * (1 + s) = 2 * b / a := by
-    have : (1 - s) * (1 + s) = 4 * (b / a ^ 2) := by nlinarith
-    rw [mul_assoc, this]; field_simp; ring
-  refine ⟨⟨by nlinarith, by nlinarith⟩, ?_, ?_⟩
-  · -- `a/2 (1 − s) = (2b/a)/(1 + s) ≤ 2b/a`
-    have h2 : a / 2 * (1 - s) ≤ 2 * b / a := by
-      have : 0 ≤ a / 2 * (1 - s) := by nlinarith
-      nlinarith
-    linarith
-  · have h2 : b / a ≤ a / 2 * (1 - s) := by
-      have h3 : (1 + s) ≤ 2 := by linarith
-      have : 0 ≤ a / 2 * (1 - s) := by nlinarith
-      have h4 : 2 * b / a ≤ a / 2 * (1 - s) * 2 := by
-        rw [← hkey]; exact mul_le_mul_of_nonneg_left h3 this
-      have : 2 * b / a = 2 * (b / a) := by ring
-      linarith
-    linarith
 
 end powerlib.PLL

@@ -36,7 +36,7 @@ Results.
 Family and connection conclusions. No family and no connection conclusion: the module contains
 pH constructions, energy-rate identities, matrix identities of the noise ports and linearization
 invariants only (static foundation, as before the migration). The class-B behavioural conclusions
-are made through the members `p.pllModel θ` of `GFL.PIPLL.family` (`theorem/VSC/Reduced2D.lean`).
+are made through the members `p.pllModel θ` of `PLL.PIPLL.family` (`theorem/VSC/Reduced2D.lean`).
 
 Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/damping-class-dichotomy.md`
 §1–§3; `sn-critical-scaling.md` §1.
@@ -46,7 +46,7 @@ noncomputable section
 namespace powerlib.VSC
 open Real Matrix Filter Topology
 open powerlib.Dynamics (State)
-open powerlib.GFL
+open powerlib.PLL
 
 /-! ### Class A: the swing equation as a pH system -/
 
