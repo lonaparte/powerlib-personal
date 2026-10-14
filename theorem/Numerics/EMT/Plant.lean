@@ -59,7 +59,7 @@ discretization in EMT); theory/T-numerical-integration.md §1.3, §2.7 (A-stabil
 -/
 
 noncomputable section
-namespace powerlib.Numerics
+namespace powerlib.Numerics.EMT
 open Matrix LinearSystems
 open powerlib.Circuits
 
@@ -138,9 +138,9 @@ private theorem rlPlant_trapezoidalDiscretization_exponentiallyStable_iff
     (m : RL.Impedance) {h : ℝ} (hh : 0 < h)
     (hP : IsUnit (1 - (h / 2) • rlMatrix m).det) :
     (∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
-      ∀ x, Discrete.IsTrajectory ⟨trapezoidalMatrix h (rlMatrix m)⟩ x →
+      ∀ x, LTI.IsTrajectory ⟨trapezoidalMatrix h (rlMatrix m)⟩ x →
         ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔ 0 < m.resistance := by
-  rw [Discrete.exponentiallyStable_iff_schurStable, trapezoidal_schurStable_iff_isHurwitz hh hP,
+  rw [LTI.exponentiallyStable_iff_schurStable, trapezoidal_schurStable_iff_isHurwitz hh hP,
     rlMatrix_isHurwitz_iff]
 
 /-- The trapezoidal recursion of `rlMatrix` is exactly the trajectory predicate of the
@@ -149,7 +149,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem rlPlant_isTrapezoidalTrajectory_iff (m : RL.Impedance)
     {h : ℝ} (hP : IsUnit (1 - (h / 2) • rlMatrix m).det) (x : ℕ → Fin 1 → ℝ) :
     IsTrapezoidalTrajectory (rlField m) h x ↔
-      Discrete.IsTrajectory ⟨trapezoidalMatrix h (rlMatrix m)⟩ x := by
+      LTI.IsTrajectory ⟨trapezoidalMatrix h (rlMatrix m)⟩ x := by
   rw [rlField_eq_linearField]
   exact isTrapezoidalTrajectory_iff _ h hP x
 
@@ -223,10 +223,10 @@ private theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_iff
     (m : LCL.Circuit) (hp : m.Passive) {h : ℝ} (hh : 0 < h)
     (hP : IsUnit (1 - (h / 2) • m.plant.A).det) :
     (∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
-      ∀ x, Discrete.IsTrajectory ⟨trapezoidalMatrix h m.plant.A⟩ x →
+      ∀ x, LTI.IsTrajectory ⟨trapezoidalMatrix h m.plant.A⟩ x →
         ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔
       m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0 := by
-  rw [Discrete.exponentiallyStable_iff_schurStable, trapezoidal_schurStable_iff_isHurwitz hh hP,
+  rw [LTI.exponentiallyStable_iff_schurStable, trapezoidal_schurStable_iff_isHurwitz hh hP,
     LCL.isHurwitz_iff_stable, LCL.passive_stable_iff m hp]
   rfl
 
@@ -270,4 +270,4 @@ private theorem rlPlant_trapezoidal_deviation_decay
     linear_combination (norm := module) hx j
   exact hb _ hdev k
 
-end powerlib.Numerics
+end powerlib.Numerics.EMT

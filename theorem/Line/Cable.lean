@@ -27,9 +27,10 @@ Model boundary.
   its low-frequency limit (DC resistance plus internal inductance `μ/(8π)`, with an `O(m⁴)`
   remainder) and its high-frequency (skin-effect) limit (`Z/(ρm/(2πr)) → 1`,
   `Z = ρm/(2πr) + O(1)` along `m = (1 + j)s`) are in `theorem/Line/CableBessel.lean` (modified
-  Bessel functions defined by their power series, integral representation, Laplace estimate).
-  The exact tubular (Schelkunoff) impedances, with `K₀`, `K₁` from `theorem/Line/BesselK.lean`,
-  are in `theorem/Line/CableSchelkunoff.lean`.
+  Bessel functions defined by their power series, integral representation, Laplace estimate in
+  `theorem/SpecialFunctions/BesselI.lean`). The exact tubular (Schelkunoff) impedances, with
+  `K₀`, `K₁` from `theorem/SpecialFunctions/BesselK.lean`, are in
+  `theorem/Line/CableSchelkunoff.lean`.
 * Tubular conductor (§1.2.2): the note's Wedepohl–Wilcox formulas `Z_in`, `Z_out`, `Z_mut`
   (`tubeZin`, `tubeZout`, `tubeZmut`; inner radius `a = r_in`, outer radius `b = r_sh`,
   `t = b − a`, any complex `m`, `coth = cosh/sinh`, `csch = 1/sinh`) are taken as given

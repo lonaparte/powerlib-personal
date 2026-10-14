@@ -1,4 +1,5 @@
 import theorem.Linear.Stability
+import theorem.Criteria.Lyapunov
 
 /-! # Linear singularly perturbed systems: Kokotović's two-time-scale stability theorem
 
@@ -28,9 +29,10 @@ coordinates `η = z + A₂₂⁻¹ A₂₁ x`, `V = xᵀ P₀ x + ηᵀ P₂ η`
 and `|N|₁ = Σᵢⱼ |Nᵢⱼ|` (`isHurwitz_of_lt_epsStar`). Along the way:
 `V̇ ≤ -|x|²/4 - |η|²/2`.
 
-Also provided: a general Lyapunov-inequality criterion (`re_neg_of_lyapunov`: symmetric
-positive definite `P` with `wᵀ P M w < 0` for `w ≠ 0` forces every complex eigenvalue of `M`
-into the open left half-plane) and `isUnit_det_of_isHurwitz`.
+Also provided: `isUnit_det_of_isHurwitz`. The general Lyapunov-inequality criterion
+(`Criteria.re_neg_of_lyapunov`: symmetric positive definite `P` with `wᵀ P M w < 0` for `w ≠ 0`
+forces every complex eigenvalue of `M` into the open left half-plane) is in
+`theorem/Criteria/Lyapunov.lean`.
 
 Model boundary: linear, time invariant, autonomous, constant `ε`; the theorem is about the
 full two-time-scale linear system, not about any particular converter. Nonlinear and
@@ -49,84 +51,7 @@ noncomputable section
 namespace powerlib.SingularPerturbation
 open Matrix
 
-/-! ## A Lyapunov-inequality criterion for the spectrum -/
-
-@[powerlib_foundation] theorem dotProduct_mulVec_comm_of_symm {ι : Type*} [Fintype ι]
-    {P : Matrix ι ι ℝ} (hP : Pᵀ = P) (u w : ι → ℝ) :
-    u ⬝ᵥ (P *ᵥ w) = w ⬝ᵥ (P *ᵥ u) := by
-  rw [dotProduct_mulVec, ← hP, vecMul_transpose, hP, dotProduct_comm]
-
-/-- If `P = Pᵀ` is positive definite and `wᵀ P (M w) < 0` for all `w ≠ 0`, every complex
-eigenvalue of `M` has negative real part. -/
-@[powerlib_foundation] theorem re_neg_of_lyapunov {ι : Type*} [Fintype ι] {M P : Matrix ι ι ℝ}
-    (hPsymm : Pᵀ = P) (hPpos : ∀ w : ι → ℝ, w ≠ 0 → 0 < w ⬝ᵥ (P *ᵥ w))
-    (hdiss : ∀ w : ι → ℝ, w ≠ 0 → w ⬝ᵥ (P *ᵥ (M *ᵥ w)) < 0)
-    {μ : ℂ} {v : ι → ℂ} (hv : v ≠ 0) (heig : M.map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
-    μ.re < 0 := by
-  set a : ι → ℝ := fun i => (v i).re with ha_def
-  set b : ι → ℝ := fun i => (v i).im with hb_def
-  have hcomp : ∀ i, (M.map (algebraMap ℝ ℂ) *ᵥ v) i = ((M *ᵥ a) i : ℂ) + ((M *ᵥ b) i : ℂ) * Complex.I := by
-    intro i
-    simp only [mulVec, dotProduct, Matrix.map_apply, Complex.coe_algebraMap, a, b]
-    push_cast
-    rw [Finset.sum_mul, ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun j _ => ?_
-    conv_lhs => rw [← Complex.re_add_im (v j)]
-    ring
-  have hMa : M *ᵥ a = μ.re • a - μ.im • b := by
-    ext i
-    have h := congrArg Complex.re ((hcomp i).symm.trans (congrFun heig i))
-    simp [a, b, Complex.mul_re] at h ⊢
-    linarith
-  have hMb : M *ᵥ b = μ.re • b + μ.im • a := by
-    ext i
-    have h := congrArg Complex.im ((hcomp i).symm.trans (congrFun heig i))
-    simp [a, b, Complex.mul_im] at h ⊢
-    linarith
-  have hab : a ≠ 0 ∨ b ≠ 0 := by
-    by_contra h
-    push Not at h
-    apply hv
-    funext i
-    apply Complex.ext
-    · simpa [a] using congrFun h.1 i
-    · simpa [b] using congrFun h.2 i
-  have hsum : a ⬝ᵥ (P *ᵥ (M *ᵥ a)) + b ⬝ᵥ (P *ᵥ (M *ᵥ b)) =
-      μ.re * (a ⬝ᵥ (P *ᵥ a) + b ⬝ᵥ (P *ᵥ b)) := by
-    rw [hMa, hMb]
-    simp only [mulVec_sub, mulVec_add, mulVec_smul, dotProduct_sub, dotProduct_add,
-      dotProduct_smul, smul_eq_mul]
-    rw [dotProduct_mulVec_comm_of_symm hPsymm a b]
-    ring
-  have hle : ∀ w, w ⬝ᵥ (P *ᵥ (M *ᵥ w)) ≤ 0 := fun w => by
-    by_cases hw : w = 0
-    · simp [hw]
-    · exact (hdiss w hw).le
-  have hge : ∀ w, 0 ≤ w ⬝ᵥ (P *ᵥ w) := fun w => by
-    by_cases hw : w = 0
-    · simp [hw]
-    · exact (hPpos w hw).le
-  by_contra hμ
-  push Not at hμ
-  rcases hab with ha | hb
-  · have h1 := hdiss a ha
-    have h2 := hle b
-    have h3 := hPpos a ha
-    have h4 := hge b
-    nlinarith
-  · have h1 := hdiss b hb
-    have h2 := hle a
-    have h3 := hPpos b hb
-    have h4 := hge a
-    nlinarith
-
-/-- Lyapunov-inequality criterion for `LinearSystems.IsHurwitz`. -/
-@[powerlib_foundation] theorem isHurwitz_of_lyapunov {N : ℕ} {M P : Matrix (Fin N) (Fin N) ℝ}
-    (hPsymm : Pᵀ = P) (hPpos : ∀ w : Fin N → ℝ, w ≠ 0 → 0 < w ⬝ᵥ (P *ᵥ w))
-    (hdiss : ∀ w : Fin N → ℝ, w ≠ 0 → w ⬝ᵥ (P *ᵥ (M *ᵥ w)) < 0) :
-    LinearSystems.IsHurwitz M := by
-  intro μ v hv heig
-  simpa using re_neg_of_lyapunov hPsymm hPpos hdiss hv heig
+/-! ## A Hurwitz matrix is invertible -/
 
 /-- A Hurwitz matrix is invertible. -/
 @[powerlib_foundation] theorem isUnit_det_of_isHurwitz {k : ℕ} {A : Matrix (Fin k) (Fin k) ℝ}
@@ -209,7 +134,7 @@ def absSum {k l : Type*} [Fintype k] [Fintype l] (N : Matrix k l ℝ) : ℝ := �
   simp only [add_mulVec, dotProduct_add, ← mulVec_mulVec, neg_mulVec, one_mulVec,
     dotProduct_neg] at h
   have h2 : x ⬝ᵥ (Aᵀ *ᵥ (P *ᵥ x)) = x ⬝ᵥ (P *ᵥ (A *ᵥ x)) := by
-    rw [dotProduct_mulVec, vecMul_transpose, dotProduct_mulVec_comm_of_symm hP x (A *ᵥ x)]
+    rw [dotProduct_mulVec, vecMul_transpose, Criteria.dotProduct_mulVec_comm_of_symm hP x (A *ᵥ x)]
   rw [h2] at h
   linarith
 
@@ -462,7 +387,7 @@ Hurwitz. -/
     simp only [stateMatrix, reindex_apply, ← submatrix_map, submatrix_mulVec_equiv,
       Function.comp_apply, Equiv.symm_apply_apply, Pi.smul_apply] at h ⊢
     exact h
-  simpa using re_neg_of_lyapunov (sp.compositeP_symm h0 h2) hpos hdiss hv' heig'
+  simpa using Criteria.re_neg_of_lyapunov (sp.compositeP_symm h0 h2) hpos hdiss hv' heig'
 
 /-- Kokotović's linear two-time-scale theorem: `A₂₂` and `A₀` Hurwitz ⇒ there is `ε* > 0`
 such that the full system is globally exponentially stable for every `ε ∈ (0, ε*)`. -/

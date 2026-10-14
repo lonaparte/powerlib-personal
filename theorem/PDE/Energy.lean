@@ -1,4 +1,4 @@
-import theorem.Line.Telegrapher
+import theorem.PDE.Partial
 import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 
@@ -13,7 +13,7 @@ is conserved).
 Model boundary: one space dimension, `x ∈ [0, ℓ]` (`ℓ > 0`), homogeneous Dirichlet data
 `u(0,t) = u(ℓ,t) = 0`, constant coefficients `ν > 0`, `c`; classical solutions that extend to
 `C²` functions on the whole plane (`ContDiff ℝ 2` on `ℝ × ℝ`, coordinates `(x, t)`); partial
-derivatives `dx`, `dt` from `theorem/Line/Telegrapher.lean`; the PDE is required on the closed
+derivatives `dx`, `dt` from `theorem/PDE/Partial.lean`; the PDE is required on the closed
 strip `[0, ℓ] × [0, ∞)` (heat) or `[0, ℓ] × ℝ` (wave).
 
 Results.
@@ -27,8 +27,8 @@ Results.
 -/
 
 noncomputable section
-namespace powerlib.Line.Energy
-open Set MeasureTheory intervalIntegral Telegrapher
+namespace powerlib.PDE
+open Set MeasureTheory intervalIntegral
 
 /-! ## Differentiation under the integral sign -/
 
@@ -256,4 +256,4 @@ variable {u : ℝ × ℝ → ℝ}
   rw [hcomm, hftc]
   simp [hut0, hutℓ]
 
-end powerlib.Line.Energy
+end powerlib.PDE

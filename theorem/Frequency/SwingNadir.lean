@@ -1,5 +1,5 @@
 import theorem.Frequency.SwingGovernor
-import theorem.Frequency.Oscillator2
+import theorem.LTI.Oscillator2
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
 /-! # Frequency nadir of the swing + governor model (exact closed form)
@@ -46,7 +46,7 @@ foundation. The nadir statements quantify over forward solutions and their extre
 which the sentence language does not express: `trajectory_freq_eq`, `nadir` and
 `nadir_successive` (formerly `@[powerlib_domain]`) are private implementation evidence (Rules
 §3a). Modules that need a nadir of a forward solution re-derive it from the generic
-`Frequency.trajectory_eq_osc2`, `osc2_freq` and the scalar core.
+`LTI.trajectory_eq_osc2`, `osc2_freq` and the scalar core.
 -/
 
 noncomputable section
@@ -246,7 +246,7 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
       ⟨(tCrit_pos hωd).le, le_rfl⟩ h
   · have hs := respC_shift (c := c) (σ := σ) hωd hTg (t - tCrit σ ωd Tg)
     rw [add_sub_cancel] at hs
-    have hG := one_add_ratio_sin_le_exp hσ hωd (sub_nonneg.2 h)
+    have hG := LTI.one_add_ratio_sin_le_exp hσ hωd (sub_nonneg.2 h)
     have hneg := respC_tCrit_add_c_neg (σ := σ) hωd hTg hc
     nlinarith
 
@@ -347,7 +347,7 @@ variable {M D K Tg ΔPL : ℝ}
 closed form `respC`. A static identity of closed forms. -/
 @[powerlib_foundation] theorem osc2_freq (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hKD : 0 < K + D) (hζ : dampingRatio M D K Tg < 1) (t : ℝ) :
-    (steadyState D K ΔPL + WithLp.toLp 2 (osc2 (plant M D K Tg).A (decayRate M D K Tg)
+    (steadyState D K ΔPL + WithLp.toLp 2 (LTI.osc2 (plant M D K Tg).A (decayRate M D K Tg)
       (dampedFreq M D K Tg) (WithLp.ofLp (0 - steadyState D K ΔPL)) t)) 0 =
       respC (ΔPL / (K + D)) (decayRate M D K Tg) (dampedFreq M D K Tg) Tg t := by
   have hsum := decayRate_sq_add_dampedFreq_sq hM hTg hD hKD hζ
@@ -355,7 +355,7 @@ closed form `respC`. A static identity of closed forms. -/
   have hωd := (dampedFreq_pos hM hTg hD hKD hζ).ne'
   unfold respC
   rw [hsum]
-  simp only [osc2, Matrix.add_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, A_mulVec]
+  simp only [LTI.osc2, Matrix.add_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, A_mulVec]
   simp [steadyState]
   field_simp
   ring
@@ -397,7 +397,7 @@ private theorem trajectory_freq_eq (hM : 0 < M) (hTg : 0 < Tg) (hD : 0 ≤ D)
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
     (h0 : x 0 = 0) {t : ℝ} (ht : 0 ≤ t) :
     x t 0 = respC (ΔPL / (K + D)) (decayRate M D K Tg) (dampedFreq M D K Tg) Tg t := by
-  rw [trajectory_eq_osc2 (plant M D K Tg) (steadyState_isEquilibrium hM.ne' hTg.ne' hKD.ne')
+  rw [LTI.trajectory_eq_osc2 (plant M D K Tg) (steadyState_isEquilibrium hM.ne' hTg.ne' hKD.ne')
     (trace_A hM hTg hKD) (det_A hM hTg hD hKD hζ) (dampedFreq_pos hM hTg hD hKD hζ).ne' hx ht,
     h0]
   exact osc2_freq hM hTg hD hKD hζ t

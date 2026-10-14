@@ -216,7 +216,7 @@ private theorem copied_not_tracks (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc) (hKi
     nlinarith
   obtain ⟨r, hr, v, hv, hAv⟩ :=
     Criteria.exists_pos_real_eigenvector_of_det_neg _ (p.copied_det_neg hL hV hKi)
-  obtain ⟨x, hx, hn⟩ := exists_not_tendsto_of_eigenvector (p.withGain (-Vdc)).model
+  obtain ⟨x, hx, hn⟩ := LTI.exists_not_tendsto_of_eigenvector (p.withGain (-Vdc)).model
     ((p.withGain (-Vdc)).isEquilibrium hKi'.ne iref) hr hAv
     ((p.withGain (-Vdc)).first_ne_zero hr hv hAv) iref
   refine ⟨x, fun t => ?_, hn⟩

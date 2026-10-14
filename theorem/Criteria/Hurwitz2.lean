@@ -18,7 +18,9 @@ Contents.
   eigenpair with nonnegative real part.
 * Monic real quadratic `s ^ 2 + a1 * s + a0`: all complex roots in the open left half-plane
   iff `0 < a1 ∧ 0 < a0` (both directions); explicit root witnesses with `0 ≤ re` / `0 < re`;
-  all roots real iff `0 ≤ a1 ^ 2 - 4 * a0`.
+  all roots real iff `0 ≤ a1 ^ 2 - 4 * a0`. For a real quadratic `a x² + b x + c` with `a > 0`:
+  negative exactly strictly between the two roots (`quad_neg_iff`), and `(−b ± √D)/(2a)` are
+  its roots when `D ≥ 0` (`quad_root`).
 * `A : Matrix (Fin 2) (Fin 2) ℝ`: `det (s • 1 - A) = s ^ 2 - tr A * s + det A`;
   `IsHurwitz A ↔ A.trace < 0 ∧ 0 < A.det` (also for `SpectrallyStable`, for the literal
   `!![a, b; c, d]`, and for the companion form `!![0, 1; -a0, -a1]`).
@@ -240,6 +242,30 @@ section Quadratic
       have : s.im ^ 2 = -(a1 ^ 2 - 4 * a0) / 4 := by linear_combination -hr
       have h2 : s.im ^ 2 ≤ 0 := by rw [this]; linarith
       exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp (le_antisymm h2 (sq_nonneg _))
+
+/-! ### Real quadratics with positive leading coefficient: sign and roots -/
+
+/-- For `a > 0`, `a x² + b x + c < 0` iff `x` lies strictly between the two roots. -/
+@[powerlib_foundation] theorem quad_neg_iff {a b c x : ℝ} (ha : 0 < a) :
+    a * x ^ 2 + b * x + c < 0 ↔
+      (-b - √(b ^ 2 - 4 * a * c)) / (2 * a) < x ∧ x < (-b + √(b ^ 2 - 4 * a * c)) / (2 * a) := by
+  have h : a * x ^ 2 + b * x + c < 0 ↔ (2 * a * x + b) ^ 2 < b ^ 2 - 4 * a * c := by
+    constructor <;> intro h <;> nlinarith
+  rw [h, Real.sq_lt, div_lt_iff₀ (by positivity), lt_div_iff₀ (by positivity)]
+  constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith
+
+/-- For `a ≠ 0` and nonnegative discriminant, `(−b ± √D)/(2a)` are roots. -/
+@[powerlib_foundation] theorem quad_root {a b c : ℝ} (ha : a ≠ 0) (hD : 0 ≤ b ^ 2 - 4 * a * c)
+    (σ : ℝ) (hσ : σ = 1 ∨ σ = -1) :
+    a * ((-b + σ * √(b ^ 2 - 4 * a * c)) / (2 * a)) ^ 2 +
+      b * ((-b + σ * √(b ^ 2 - 4 * a * c)) / (2 * a)) + c = 0 := by
+  have hs := Real.sq_sqrt hD
+  have hσ2 : σ ^ 2 = 1 := by rcases hσ with rfl | rfl <;> norm_num
+  set r := √(b ^ 2 - 4 * a * c) with hr
+  have key : a * ((-b + σ * r) / (2 * a)) ^ 2 + b * ((-b + σ * r) / (2 * a)) + c =
+      (σ ^ 2 * r ^ 2 - (b ^ 2 - 4 * a * c)) / (4 * a) := by
+    field_simp; ring
+  rw [key, hσ2, hs]; simp
 
 end Quadratic
 

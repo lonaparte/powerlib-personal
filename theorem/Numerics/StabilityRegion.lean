@@ -29,7 +29,7 @@ Correction: the note states the equivalence without conditions.  "⇒" is true; 
 eigenvalues with `‖R(hλᵢ)‖ = 1` to be semisimple; the formalized version assumes
 diagonalizability, and `jordan_counterexample` refutes the unconditional statement.  The
 strict version (`‖R‖ < 1` for every eigenvalue ⇔ geometric decay) needs no such assumption;
-see `powerlib.Discrete.exponentiallyStable_iff_schurStable`.
+see `powerlib.LTI.exponentiallyStable_iff_schurStable`.
 -/
 
 noncomputable section

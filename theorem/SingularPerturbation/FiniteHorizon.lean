@@ -155,7 +155,7 @@ open Matrix Set
     {y : ℝ → Fin k → ℝ} {dy : Fin k → ℝ} {t : ℝ} (hy : HasDerivAt y dy t) :
     HasDerivAt (fun s => y s ⬝ᵥ (P *ᵥ y s)) (2 * (y t ⬝ᵥ (P *ᵥ dy))) t := by
   convert hasDerivAt_quadratic P hy using 1
-  rw [dotProduct_mulVec_comm_of_symm hP dy (y t)]
+  rw [Criteria.dotProduct_mulVec_comm_of_symm hP dy (y t)]
   ring
 
 /-- Derivative of `|y|²`: `2 yᵀ ẏ`. -/

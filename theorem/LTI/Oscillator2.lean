@@ -1,4 +1,4 @@
-import theorem.Frequency.Basic
+import theorem.LTI.Plant
 
 /-! # Closed-form flow of a real 2×2 system with complex eigenvalues (foundation)
 
@@ -32,7 +32,7 @@ two-state plant (Rules §3). It defines no family. The former `@[powerlib_domain
 -/
 
 noncomputable section
-namespace powerlib.Frequency
+namespace powerlib.LTI
 open Set Filter Matrix
 open scoped Topology
 
@@ -186,4 +186,4 @@ form. -/
         mul_le_mul_of_nonneg_left (by linarith) hpos.le
     _ = 1 := hprod
 
-end powerlib.Frequency
+end powerlib.LTI

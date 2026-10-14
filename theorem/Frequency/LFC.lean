@@ -119,15 +119,6 @@ def syncCoeff (Va Vb X δ0 : ℝ) : ℝ := Va * Vb * Real.cos δ0 / X
     Ptie + B * w = Ptie + B / f₀ * (f₀ * w) := by
   field_simp
 
-/-- In deviation coordinates about an equilibrium of a constant input, the field of a plant is
-its zero-input field. -/
-@[powerlib_foundation] theorem inputField_shift {n p : ℕ} (P : Linear.Plant n p)
-    {u : Fin p → ℝ} {e : EuclideanSpace ℝ (Fin n)} (he : IsEquilibrium (P.inputField u) e) :
-    (fun z => P.inputField u (z + e)) = affineLinearVectorField P.A 0 := by
-  funext z
-  rw [P.inputField_eq he, Linear.affine_apply, Linear.affine_apply, add_sub_cancel_right,
-    sub_zero]
-
 /-! ## Two-area model, governors instantaneous (§1.7) -/
 
 /-- §1.7 five-state two-area LFC plant. -/
@@ -153,7 +144,7 @@ variable {a b : Area} {ωs T : ℝ}
         ωs * T * x 0 + -(ωs * T) * x 1,
         -(a.KI * a.B) * x 0 + -a.KI * x 2,
         -(b.KI * b.B) * x 1 + b.KI * x 2] := by
-  rw [inputField_apply]
+  rw [LTI.inputField_apply]
   congr 1
   ext i; fin_cases i <;>
     simp [plant, dotProduct, Fin.sum_univ_five, Fin.sum_univ_two]
@@ -277,7 +268,7 @@ def steadyState7 (u : Fin 2 → ℝ) : EuclideanSpace ℝ (Fin 7) :=
         -(b.KI * b.B) * x 1 + b.KI * x 2,
         -a.K / a.Tg * x 0 + 1 / a.Tg * x 3 + -1 / a.Tg * x 5,
         -b.K / b.Tg * x 1 + 1 / b.Tg * x 4 + -1 / b.Tg * x 6] := by
-  rw [inputField_apply]
+  rw [LTI.inputField_apply]
   congr 1
   ext i; fin_cases i <;>
     simp [plant7, dotProduct, Fin.sum_univ_seven, Fin.sum_univ_two]
@@ -533,7 +524,7 @@ private theorem tendsto_of_isHurwitz (m : Model) (hA : IsHurwitz m.plant.A) (u :
   have hmem := mem_den_globallyExponentiallyStable m hA
   unfold powerlib.TMIO.Statement at hmem
   rw [family_isLinear.den_hurwitz (Or.inl (by simp))] at hmem
-  exact Frequency.tendsto_of_isHurwitz m.plant (steadyState_isEquilibrium u) hmem hx
+  exact LTI.tendsto_equilibrium m.plant hmem (steadyState_isEquilibrium u) hx
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 Formerly `exponentiallyConvergesTo_of_isHurwitz`: with a Hurwitz state matrix every solution

@@ -34,7 +34,7 @@ irrelevant: `G_n` is symmetric because each branch contributes the symmetric sta
 -/
 
 noncomputable section
-namespace powerlib.Numerics
+namespace powerlib.Numerics.EMT
 open Matrix
 
 /-! ### Element companion models -/
@@ -278,4 +278,4 @@ definite, hence every implicit step has a unique solution. -/
   obtain ⟨b, hb⟩ := hst
   exact ⟨b, Element.conductance_pos hh (e b) (he b), hb⟩
 
-end powerlib.Numerics
+end powerlib.Numerics.EMT

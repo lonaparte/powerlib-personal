@@ -30,7 +30,8 @@ This module reduces both to the scalar component functions `fun y => f y i`:
 * Curves in `State n`: `fderiv_apply_eq_of_hasDerivAt_line` (a directional derivative is the
   derivative along the line), `hasDerivWithinAt_euclidean_of_coord`,
   `HasDerivWithinAt.euclidean_coord`, `tendsto_euclidean_of_coord` (curves are differentiated,
-  and converge, coordinatewise).
+  and converge, coordinatewise); `hasDerivAt_of_coords`, `hasDerivAt_iff_coords` (the same for
+  `HasDerivAt`).
 
 Every statement is generic calculus about an arbitrary field or about the explicit example fields;
 no model family is involved and no behavioural sentence is stated, so the module stays
@@ -302,5 +303,29 @@ coordinates. -/
   exact Finset.sum_sq_le_sq_sum_of_nonneg fun i _ => abs_nonneg _
 
 end Curves
+
+/-! ## Curves in `ℝⁿ` through `HasDerivAt` -/
+
+section CurvesAt
+
+variable {n : ℕ}
+
+local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
+
+/-- Coordinatewise derivatives give the derivative of a curve in `ℝⁿ`. -/
+@[powerlib_foundation] theorem hasDerivAt_of_coords {x : ℝ → ℝⁿ} {v : ℝⁿ} {t : ℝ}
+    (h : ∀ i, HasDerivAt (fun s => x s i) (v i) t) : HasDerivAt x v t := by
+  have hpi : HasDerivAt (fun s => WithLp.ofLp (x s)) (WithLp.ofLp v) t := hasDerivAt_pi.2 h
+  have h2 := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm.hasFDerivAt.comp_hasDerivAt
+    t hpi
+  simpa [Function.comp_def] using h2
+
+/-- A curve in `ℝⁿ` has the derivative `v` iff each coordinate has the derivative `v i`. -/
+@[powerlib_foundation] theorem hasDerivAt_iff_coords {x : ℝ → ℝⁿ} {v : ℝⁿ} {t : ℝ} :
+    HasDerivAt x v t ↔ ∀ i, HasDerivAt (fun s => x s i) (v i) t :=
+  ⟨fun h i => (EuclideanSpace.proj i : ℝⁿ →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivAt t h,
+    hasDerivAt_of_coords⟩
+
+end CurvesAt
 
 end powerlib.Dynamics

@@ -60,7 +60,7 @@ transfer functions, integrals and inequalities (foundation; the swing + governor
 conclusions are the connection statements of `Frequency.SwingGovernor.family`).
 `rocof_le_iff_criticalInertia` (formerly `@[powerlib_domain]`) quantifies over a forward solution
 and its initial slope, outside the sentence language: it is private implementation evidence
-(Rules §3a), derived from the generic `Frequency.hasDerivWithinAt_apply_zero` and the static
+(Rules §3a), derived from the generic `LTI.hasDerivWithinAt_apply_zero` and the static
 `SwingGovernor.field_apply`.
 -/
 
@@ -150,7 +150,7 @@ private theorem rocof_le_iff_criticalInertia {H D K Tg ΔPL f₀ r ρ : ℝ}
     (h0 : x 0 = 0) (hρ : HasDerivWithinAt (fun t => f₀ * (1 + x t 0)) ρ (Ici 0) 0) :
     |ρ| ≤ r ↔ criticalInertia ΔPL f₀ r ≤ H := by
   have hr0 : HasDerivWithinAt (fun t => x t 0) (-ΔPL / (2 * H)) (Ici 0) 0 := by
-    have h := hasDerivWithinAt_apply_zero hx 0
+    have h := LTI.hasDerivWithinAt_apply_zero hx 0
     rw [SwingGovernor.field_apply, h0] at h
     convert h using 1
     simp only [Fin.isValue, Matrix.cons_val_zero, PiLp.zero_apply]

@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.PDE.Partial
 
 /-! # Telegrapher equations: characteristics, d'Alembert form and the Bergeron relations
 
@@ -31,53 +32,16 @@ Results.
 * d'Alembert: `v = f(x-ct) + g(x+ct)`, `i = (f(x-ct) - g(x+ct))/Z_c` solves the lossless
   system for differentiable `f, g`; conversely every C¹ solution on the whole plane has
   this form.
-* Transport equation `u_t + a u_x = 0`: `u₀(x - at)` solves it and every C¹ solution
-  equals `u(x - at, 0)`.
+
+The partial-derivative predicate `PDE.HasPartialsWithin`, the strip `PDE.strip` and
+`PDE.const_along_segment` are in `theorem/PDE/Partial.lean`; the transport equation
+`u_t + a u_x = 0` is in `theorem/PDE/Transport.lean`.
 -/
 
 noncomputable section
 namespace powerlib.Line
 open Set
-
-/-- `U` has partial derivatives `Ux`, `Ut` (in `x` and `t`) within `S` at `q`. -/
-abbrev HasPartialsWithin (U Ux Ut : ℝ × ℝ → ℝ) (S : Set (ℝ × ℝ)) (q : ℝ × ℝ) : Prop :=
-  HasFDerivWithinAt U
-    (Ux q • ContinuousLinearMap.fst ℝ ℝ ℝ + Ut q • ContinuousLinearMap.snd ℝ ℝ ℝ) S q
-
-/-- The space-time strip `[a, b] × ℝ`. -/
-def strip (a b : ℝ) : Set (ℝ × ℝ) := Icc a b ×ˢ univ
-
-/-- A function with partial derivatives is constant along a segment on which its
-directional derivative vanishes. -/
-@[powerlib_foundation] theorem const_along_segment {U Ux Ut : ℝ × ℝ → ℝ} {S : Set (ℝ × ℝ)}
-    {p₀ d : ℝ × ℝ} {a b : ℝ} (hab : a ≤ b)
-    (hmaps : ∀ s ∈ Icc a b, p₀ + s • d ∈ S)
-    (hU : ∀ s ∈ Icc a b, HasPartialsWithin U Ux Ut S (p₀ + s • d))
-    (hdir : ∀ s ∈ Icc a b, Ux (p₀ + s • d) * d.1 + Ut (p₀ + s • d) * d.2 = 0) :
-    U (p₀ + b • d) = U (p₀ + a • d) := by
-  have hderiv : ∀ s ∈ Icc a b,
-      HasDerivWithinAt (fun s => U (p₀ + s • d)) 0 (Icc a b) s := by
-    intro s hs
-    have hγ : HasDerivWithinAt (fun s : ℝ => p₀ + s • d) d (Icc a b) s := by
-      have := ((hasDerivAt_id s).smul_const d).const_add p₀
-      simpa using this.hasDerivWithinAt
-    have hU' : HasFDerivWithinAt U
-        (Ux (p₀ + s • d) • ContinuousLinearMap.fst ℝ ℝ ℝ +
-          Ut (p₀ + s • d) • ContinuousLinearMap.snd ℝ ℝ ℝ) S (p₀ + s • d) := hU s hs
-    have h := hU'.comp_hasDerivWithinAt s hγ (fun s hs => hmaps s hs)
-    have h0 : (Ux (p₀ + s • d) • ContinuousLinearMap.fst ℝ ℝ ℝ +
-        Ut (p₀ + s • d) • ContinuousLinearMap.snd ℝ ℝ ℝ) d = 0 := by
-      simp only [ContinuousLinearMap.add_apply, ContinuousLinearMap.smul_apply,
-        ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', smul_eq_mul]
-      linarith [hdir s hs]
-    rw [h0] at h
-    exact h
-  have hconst := constant_of_has_deriv_right_zero (f := fun s => U (p₀ + s • d))
-    (fun s hs => (hderiv s hs).continuousWithinAt)
-    (fun s hs => (hderiv s ⟨hs.1, hs.2.le⟩).mono_of_mem_nhdsWithin
-      (Filter.mem_of_superset (Icc_mem_nhdsGE hs.2) (Icc_subset_Icc_left hs.1)))
-    b ⟨hab, le_rfl⟩
-  exact hconst
+open powerlib.PDE (HasPartialsWithin strip const_along_segment)
 
 /-- A solution of the telegrapher equations on the strip `[a, b] × ℝ`. -/
 def IsTelegrapherSolution (L C R G a b : ℝ) (v i : ℝ × ℝ → ℝ) : Prop :=
@@ -360,42 +324,5 @@ travelling-wave pair**, with `f(ξ) = (v + Z_c i)(ξ, 0)/2`, `g(η) = (v - Z_c i
     linarith
 
 end LosslessLine
-
-/-! ## Transport equation -/
-
-/-- `u₀(x - at)` solves the transport equation `u_t + a u_x = 0`. -/
-@[powerlib_foundation] theorem transport_solution {u₀ u₀' : ℝ → ℝ} (a : ℝ)
-    (hu : ∀ y, HasDerivAt u₀ (u₀' y) y) (q : ℝ × ℝ) :
-    HasPartialsWithin (fun q => u₀ (q.1 - a * q.2)) (fun q => u₀' (q.1 - a * q.2))
-      (fun q => -a * u₀' (q.1 - a * q.2)) univ q ∧
-      -a * u₀' (q.1 - a * q.2) + a * u₀' (q.1 - a * q.2) = 0 := by
-  refine ⟨?_, by ring⟩
-  have hm : HasFDerivAt (fun q : ℝ × ℝ => q.1 - a * q.2)
-      (ContinuousLinearMap.fst ℝ ℝ ℝ - a • ContinuousLinearMap.snd ℝ ℝ ℝ) q :=
-    (hasFDerivAt_fst).sub ((hasFDerivAt_snd).const_mul a)
-  have := (hu _).comp_hasFDerivAt q hm
-  exact (this.congr_fderiv (by ext <;> simp <;> ring)).hasFDerivWithinAt
-
-/-- Uniqueness for the transport equation: every C¹ solution of `u_t + a u_x = 0` on the
-plane is constant along the characteristics, `u(x, t) = u(x - at, 0)`. -/
-@[powerlib_foundation] theorem transport_eq_initial {u ux ut : ℝ × ℝ → ℝ} (a : ℝ)
-    (hu : ∀ q, HasPartialsWithin u ux ut univ q) (hpde : ∀ q, ut q + a * ux q = 0)
-    (x t : ℝ) : u (x, t) = u (x - a * t, 0) := by
-  have hpt : ∀ s : ℝ, ((x - a * t, 0) : ℝ × ℝ) + s • (a, (1 : ℝ)) = (x - a * t + a * s, s) := by
-    intro s; ext <;> simp; ring
-  have hdir : ∀ s : ℝ, ux (((x - a * t, 0) : ℝ × ℝ) + s • (a, (1 : ℝ))) * a +
-      ut (((x - a * t, 0) : ℝ × ℝ) + s • (a, (1 : ℝ))) * 1 = 0 := by
-    intro s; linarith [hpde (((x - a * t, 0) : ℝ × ℝ) + s • (a, (1 : ℝ)))]
-  rcases le_total 0 t with ht | ht
-  · have := const_along_segment (U := u) (Ux := ux) (Ut := ut) (S := univ)
-      (p₀ := (x - a * t, 0)) (d := (a, 1)) ht (fun _ _ => trivial) (fun s _ => hu _)
-      (fun s _ => hdir s)
-    rw [hpt, hpt] at this
-    simpa using this
-  · have := const_along_segment (U := u) (Ux := ux) (Ut := ut) (S := univ)
-      (p₀ := (x - a * t, 0)) (d := (a, 1)) ht (fun _ _ => trivial) (fun s _ => hu _)
-      (fun s _ => hdir s)
-    rw [hpt, hpt] at this
-    simpa using this.symm
 
 end powerlib.Line

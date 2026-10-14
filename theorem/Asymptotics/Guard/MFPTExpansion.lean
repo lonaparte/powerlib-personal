@@ -1,4 +1,4 @@
-import theorem.Asymptotics.GuardMFPT
+import theorem.Asymptotics.Guard.MFPT
 import theorem.Asymptotics.LaplaceTwoTerm
 import theorem.Asymptotics.EndpointLaplace
 
@@ -7,7 +7,7 @@ import theorem.Asymptotics.EndpointLaplace
 Foundation layer: one-variable real analysis of the explicit MFPT double integral; nothing here is a
 stochastic statement (the integral is taken as the definition of the MFPT, as in the source note).
 
-Model boundary: exactly that of `Asymptotics/GuardMFPT.lean` — truncated subcritical-Hopf potential
+Model boundary: exactly that of `Asymptotics/Guard/MFPT.lean` — truncated subcritical-Hopf potential
 `U(r) = αr²/2 − l₁r⁴/4` (`α, l₁ > 0`), barrier top `r_c = √(α/l₁)`, `ΔU = α²/(4l₁)`,
 `T(r_b) = D̃⁻¹ ∫₀^{r_b} (dy/y) e^{U(y)/D̃} ∫₀^y z e^{−U(z)/D̃} dz` (`guardMFPT`),
 `T_guard = T(r_c)`,
@@ -28,7 +28,7 @@ Results (`c = 2√l₁/(√π α)`, so that `c √D̃ = 1/√(πX)`):
   `guardMFPT_guard_isBigO` and `guardMFPT_ratio_sub_two_isBigO` are sharp:
   `guardMFPT_guard_sub_one_isTheta`, `guardMFPT_ratio_sub_two_isTheta` (`=Θ(√D̃)`),
   `not_guardMFPT_guard_sub_one_isLittleO`, `not_guardMFPT_ratio_sub_two_isLittleO` (`≠ o(√D̃)`).
-  This settles for the integral itself what `Asymptotics/GuardMFPT.lean` only had from the
+  This settles for the integral itself what `Asymptotics/Guard/MFPT.lean` only had from the
   truncated table `endpointCorrection_ne_zero_iff`.
 * `guardMFPT_committed_two_term`, `guardMFPT_committed_two_term_atTop`:
   `T_committed = 2 P e^X (1 + O(1/X))` — the half-order terms of the two halves of the barrier peak
@@ -47,7 +47,7 @@ it up to the reflected cut `ψ(a) = √(2r_c² − a²)`, `guard_weight_beyond_m
 to `1 ± c√D̃ + O(D̃)` (`guard_weight_inside_two_term`, `guard_weight_beyond_two_term`). The inner
 integral and the tails enter only at relative order `O(D̃)`: deterministic sandwiches
 `guardMFPT_guard_weight_bounds`, `guardMFPT_beyond_weight_bounds` (from the bounds of
-`Asymptotics/GuardMFPT.lean`: `guardInner_ge_gauss`, `guardInner_le_gauss`, `guard_inside_bounds`,
+`Asymptotics/Guard/MFPT.lean`: `guardInner_ge_gauss`, `guardInner_le_gauss`, `guard_inside_bounds`,
 `guard_tails_le`, `guardInner_reflect_le`). Cross-check with the truncated table
 (`guard_endpointCorrection_eq`): in `ξ = r_c − y`, `g₀ = 1/r_c`, `g₁ = 1/r_c²`, `φ₂ = 2α`,
 `φ₃ = −6l₁r_c` give `endpointCorrection = 2√l₁/(√π α) = c` (with `X` there `= 1/D̃`).
@@ -61,7 +61,7 @@ Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.2 ("趋近 2 的�
 -/
 
 noncomputable section
-namespace powerlib.Asymptotics
+namespace powerlib.Asymptotics.Guard
 
 open Real Set Filter Topology MeasureTheory intervalIntegral
 
@@ -936,4 +936,4 @@ half-order term (`guardMFPT_committed_two_term`). -/
   filter_upwards [eventually_gt_atTop 0] with X hX
   rw [div_div_cancel₀ hΔ.ne']
 
-end powerlib.Asymptotics
+end powerlib.Asymptotics.Guard

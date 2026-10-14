@@ -136,7 +136,7 @@ variable {M D K F Tg TR ΔPL : ℝ}
       WithLp.toLp 2 ![-D / M * x 0 + 1 / M * x 1 + -1 / M * ΔPL,
         -(F * K) / Tg * x 0 + -1 / TR * x 1 + (1 / TR - F / Tg) * x 2,
         -K / Tg * x 0 + -1 / Tg * x 2] := by
-  rw [inputField_apply]
+  rw [LTI.inputField_apply]
   congr 1
   ext i
   fin_cases i <;> simp [plant, load, dotProduct, Fin.sum_univ_three]
@@ -704,7 +704,7 @@ private theorem rocof {x : ℝ → ℝ³}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K F Tg TR).inputField (load ΔPL) y)
       (Ici 0)) (h0 : x 0 = 0) :
     HasDerivWithinAt (fun t => x t 0) (-ΔPL / M) (Ici 0) 0 := by
-  have h := hasDerivWithinAt_apply_zero hx 0
+  have h := LTI.hasDerivWithinAt_apply_zero hx 0
   rw [field_apply, h0] at h
   convert h using 1
   simp only [Fin.isValue, Matrix.cons_val_zero, PiLp.zero_apply]
@@ -718,7 +718,7 @@ private theorem tendsto_freq (hM : 0 < M) (hTg : 0 < Tg) (hTR : 0 < TR)
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K F Tg TR).inputField (load ΔPL) y)
       (Ici 0)) :
     Tendsto (fun t => x t 0) atTop (𝓝 (-ΔPL / (K + D))) := by
-  have h := tendsto_apply_of_isHurwitz (plant M D K F Tg TR)
+  have h := LTI.tendsto_apply_of_isHurwitz (plant M D K F Tg TR)
     (steadyState_isEquilibrium hM.ne' hTg.ne' hTR.ne' hKD.ne')
     (isHurwitz_of_hp_fraction hM hTg hTR hD hK hKD hF) hx 0
   simpa using h
@@ -758,7 +758,7 @@ private theorem reduced_nadir (hM : 0 < M) (hTR : 0 < TR) (hD : 0 ≤ D + F * K)
   have hfreq : ∀ {t : ℝ}, 0 ≤ t → x t 0 = SwingGovernor.respC (ΔPL / (K' + D'))
       (SwingGovernor.decayRate M D' K' TR) (SwingGovernor.dampedFreq M D' K' TR) TR t := by
     intro t ht
-    rw [trajectory_eq_osc2 (SwingGovernor.plant M D' K' TR)
+    rw [LTI.trajectory_eq_osc2 (SwingGovernor.plant M D' K' TR)
       (SwingGovernor.steadyState_isEquilibrium hM.ne' hTR.ne' hKD'.ne')
       (SwingGovernor.trace_A hM hTR hKD') (SwingGovernor.det_A hM hTR hD hKD' hζ) hωd.ne' hx ht,
       h0]
@@ -782,7 +782,7 @@ private theorem reduced_rocof {x : ℝ → EuclideanSpace ℝ (Fin 2)}
     (hx : IsIntegralCurveOn x (fun _ y => (reducedPlant M D K F TR).inputField (load ΔPL) y)
       (Ici 0)) (h0 : x 0 = 0) :
     HasDerivWithinAt (fun t => x t 0) (-ΔPL / M) (Ici 0) 0 := by
-  have h := hasDerivWithinAt_apply_zero hx 0
+  have h := LTI.hasDerivWithinAt_apply_zero hx 0
   rw [reducedPlant, SwingGovernor.field_apply, h0] at h
   convert h using 1
   simp only [Fin.isValue, Matrix.cons_val_zero, PiLp.zero_apply]
@@ -796,7 +796,7 @@ private theorem reduced_tendsto_freq (hM : 0 < M) (hTR : 0 < TR) (hD : 0 ≤ D +
       (Ici 0)) :
     Tendsto (fun t => x t 0) atTop (𝓝 (-ΔPL / (K + D))) := by
   have hKD' : 0 < (1 - F) * K + (D + F * K) := by linarith
-  have h := tendsto_apply_of_isHurwitz (reducedPlant M D K F TR)
+  have h := LTI.tendsto_apply_of_isHurwitz (reducedPlant M D K F TR)
     (SwingGovernor.steadyState_isEquilibrium hM.ne' hTR.ne' hKD'.ne')
     ((SwingGovernor.isHurwitz_iff_of_nonneg hM hTR hD).2 hKD') hx 0
   rw [SwingGovernor.steadyState_zero, show (1 - F) * K + (D + F * K) = K + D by ring] at h

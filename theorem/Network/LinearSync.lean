@@ -21,10 +21,10 @@ Result (`expSync_iff`): the network synchronizes exponentially (uniformly over a
 mode `k ≠ k₀`. Together with `transverse_isHurwitz_of_threshold` (`Γ = I`) this gives the
 threshold `σ μ₂ > a`.
 
-The two linear facts used per mode are restated here for global solutions of `ẏ = M y` on
-`Fin d → ℝ` (`expBound_of_isHurwitz`, `isHurwitz_of_expBound`), from the linear hub
-`Linear.globallyExponentiallyStable_of_isHurwitz` and the non-decaying eigenmodes
-`Linear.eigenmode`; they replace the removed `LTI.exponentiallyStable_iff_isHurwitz`.
+The two linear facts used per mode, for global solutions of `ẏ = M y` on `Fin d → ℝ`, are
+`LTI.linear_decay_of_isHurwitz` and `LTI.isHurwitz_of_linear_decay` (`theorem/LTI/Decay.lean`,
+from the linear hub `Linear.globallyExponentiallyStable_of_isHurwitz` and the non-decaying
+eigenmodes `Linear.eigenmode`).
 
 Family and connection conclusions. Foundation module (generic in `A`, `Γ`, `L`, `σ`): no family,
 no connection statement. The synchronization notion concerns pairwise differences of network
@@ -81,85 +81,6 @@ structure SpectralData (L : Matrix (Fin N) (Fin N) ℝ) where
   refine (norm_sum_le _ _).trans (le_of_eq ?_)
   refine Finset.sum_congr rfl fun k _ => ?_
   rw [euclidean_smul, norm_smul, Real.norm_eq_abs]
-
-/-! ## Linear facts for global solutions -/
-
-/-- A Hurwitz matrix gives a uniform exponential bound on every global solution of `ẏ = M y`
-(the linear hub). -/
-@[powerlib_foundation] theorem expBound_of_isHurwitz {M : Matrix (Fin d) (Fin d) ℝ}
-    (hM : LinearSystems.IsHurwitz M) :
-    ∃ K > 0, ∃ r > 0, ∀ y : ℝ → Fin d → ℝ, (∀ t, HasDerivAt y (M *ᵥ y t) t) → ∀ t, 0 ≤ t →
-      ‖euclidean (y t)‖ ≤ K * Real.exp (-(r * t)) * ‖euclidean (y 0)‖ := by
-  obtain ⟨-, -, C, a, hC, ha, hb⟩ := Linear.globallyExponentiallyStable_of_isHurwitz 0 hM
-  refine ⟨C, by linarith, a, ha, fun y hy t ht => ?_⟩
-  have hφ : IsTrajectoryOn (fun s => euclidean (y s))
-      (LinearSystems.affineLinearVectorField M 0) 0 t := by
-    intro s _
-    have h := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin d => ℝ)).symm.hasFDerivAt
-      |>.comp_hasDerivAt s (hy s)
-    refine h.hasDerivWithinAt.congr_deriv ?_
-    show _ = LinearSystems.affineLinearVectorField M 0 _
-    rw [Linear.affine_apply, sub_zero]
-    rfl
-  have h := hb 0 t _ hφ t ⟨ht, le_rfl⟩
-  simpa [neg_mul] using h
-
-/-- A uniform exponential bound on every global solution of `ẏ = M y` forces `M` Hurwitz: a
-non-decaying eigenmode would violate it. -/
-@[powerlib_foundation] theorem isHurwitz_of_expBound {M : Matrix (Fin d) (Fin d) ℝ}
-    (h : ∃ K > 0, ∃ r > 0, ∀ y : ℝ → Fin d → ℝ, (∀ t, HasDerivAt y (M *ᵥ y t) t) → ∀ t, 0 ≤ t →
-      ‖euclidean (y t)‖ ≤ K * Real.exp (-(r * t)) * ‖euclidean (y 0)‖) :
-    LinearSystems.IsHurwitz M := by
-  obtain ⟨K, hK, r, hr, hb⟩ := h
-  intro μ v hv heig
-  by_contra hμ
-  have hre : 0 ≤ μ.re := by simpa using not_lt.mp hμ
-  have hN : 0 < ∑ j, Complex.normSq (v j) := by
-    obtain ⟨j, hj⟩ := Function.ne_iff.mp hv
-    exact Finset.sum_pos' (fun k _ => Complex.normSq_nonneg _)
-      ⟨j, Finset.mem_univ _, Complex.normSq_pos.mpr hj⟩
-  obtain ⟨Nv, hNv⟩ : ∃ x, x = ∑ j, Complex.normSq (v j) := ⟨_, rfl⟩
-  rw [← hNv] at hN
-  have hsol : ∀ part : ℂ →L[ℝ] ℝ, (∀ (a : ℝ) (z : ℂ), part ((a : ℂ) * z) = a * part z) →
-      ∀ t, HasDerivAt (fun s => WithLp.ofLp (Linear.eigenmode part μ v s))
-        (M *ᵥ WithLp.ofLp (Linear.eigenmode part μ v t)) t := by
-    intro part hpart t
-    have h := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin d => ℝ)).hasFDerivAt.comp_hasDerivAt t
-      (Linear.eigenmode_hasDerivAt M heig part hpart t)
-    exact h
-  set T : ℝ := K ^ 2 / (2 * r) with hT
-  have hT0 : 0 ≤ T := by positivity
-  have bre := hb _ (hsol Complex.reCLM (by simp)) T hT0
-  have bim := hb _ (hsol Complex.imCLM (by simp)) T hT0
-  simp only [euclidean, WithLp.toLp_ofLp] at bre bim
-  have hsT := Linear.eigenmode_norm_sq μ v T
-  have hs0 := Linear.eigenmode_norm_sq μ v 0
-  simp only [mul_zero, Real.exp_zero, one_pow, one_mul] at hs0
-  rw [← hNv] at hsT hs0
-  have hgrow : 1 ≤ Real.exp (μ.re * T) ^ 2 :=
-    one_le_pow₀ (Real.one_le_exp_iff.mpr (mul_nonneg hre hT0))
-  set E := Real.exp (-(r * T))
-  have hE : 0 < E := Real.exp_pos _
-  have hKE : K ^ 2 * E ^ 2 < 1 := by
-    have h1 : 1 + 2 * r * T ≤ Real.exp (2 * r * T) := by
-      have := Real.add_one_le_exp (2 * r * T); linarith
-    have h2 : E ^ 2 * Real.exp (2 * r * T) = 1 := by
-      rw [← Real.exp_nat_mul, ← Real.exp_add]; simp only [Nat.cast_ofNat]; ring_nf; simp
-    have h3 : 2 * r * T = K ^ 2 := by rw [hT]; field_simp
-    rw [h3] at h1 h2
-    nlinarith [sq_nonneg E]
-  have a0 := norm_nonneg (Linear.eigenmode Complex.reCLM μ v 0)
-  have b0 := norm_nonneg (Linear.eigenmode Complex.imCLM μ v 0)
-  have aT := norm_nonneg (Linear.eigenmode Complex.reCLM μ v T)
-  have bT := norm_nonneg (Linear.eigenmode Complex.imCLM μ v T)
-  have hs1 := pow_le_pow_left₀ aT bre 2
-  have hs2 := pow_le_pow_left₀ bT bim 2
-  have hsum : Real.exp (μ.re * T) ^ 2 * Nv ≤ K ^ 2 * E ^ 2 * Nv := by
-    have e1 : (K * E * ‖Linear.eigenmode Complex.reCLM μ v 0‖) ^ 2 +
-        (K * E * ‖Linear.eigenmode Complex.imCLM μ v 0‖) ^ 2 = K ^ 2 * E ^ 2 * Nv := by
-      rw [← hs0]; ring
-    nlinarith
-  nlinarith
 
 /-! ## Spectral facts -/
 
@@ -229,12 +150,12 @@ all nodes `i, j`) ⇔ every transverse block `A − σ μ_k Γ` (`k ≠ k₀`) i
   constructor
   · -- a transverse trajectory lifts to a network solution
     rintro ⟨K, hK, r, hr, hsync⟩ k hk
-    apply isHurwitz_of_expBound
     obtain ⟨i₀, j₀, hij⟩ := D.exists_ne hk
     have hdpos : 0 < |D.V i₀ k - D.V j₀ k| := abs_pos.mpr (sub_ne_zero.mpr hij)
     set S := ∑ l, |D.V l k|
     have hS : 0 ≤ S := Finset.sum_nonneg fun l _ => abs_nonneg _
-    refine ⟨K * (S + 1) / |D.V i₀ k - D.V j₀ k|, by positivity, r, hr, fun y hy t ht => ?_⟩
+    refine LTI.isHurwitz_of_linear_decay (K := K * (S + 1) / |D.V i₀ k - D.V j₀ k|) hr
+      fun y hy t ht => ?_
     set X : ℝ → Fin N → Fin d → ℝ := fun τ i => D.V i k • y τ
     have hX : ∀ τ, HasDerivAt X (linNetField A Γ L σ (X τ)) τ := by
       intro τ
@@ -269,7 +190,7 @@ all nodes `i, j`) ⇔ every transverse block `A − σ μ_k Γ` (`k ≠ k₀`) i
       have := congrArg transpose D.eig
       rwa [transpose_mul, transpose_mul, hL, diagonal_transpose] at this
     -- per-mode exponential stability
-    have hstab := fun k (hk : k ≠ D.k0) => expBound_of_isHurwitz (hH k hk)
+    have hstab := fun k (hk : k ≠ D.k0) => LTI.linear_decay_of_isHurwitz (hH k hk)
     choose! Kf hKf rf hrf hbound using hstab
     have hne : (Finset.univ : Finset (Fin N)).Nonempty := ⟨D.k0, Finset.mem_univ _⟩
     set r := Finset.univ.inf' hne (fun k => if k = D.k0 then 1 else rf k)

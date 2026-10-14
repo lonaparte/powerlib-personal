@@ -1,4 +1,8 @@
-import theorem.VSC.Zeros
+import dependencies.Mathlib
+import theorem.Attributes
+import Mathlib.Algebra.Order.ToIntervalMod
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-! # Potential barrier of the tilted washboard `V(θ) = −c θ − A cos(θ + φ)` (foundation)
 
@@ -30,7 +34,7 @@ Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/equilibria-a
 -/
 
 noncomputable section
-namespace powerlib.VSC
+namespace powerlib.Potential.Barrier
 open Real Set
 
 /-- Tilted-washboard potential `V(θ) = −c θ − A cos(θ + φ)`. -/
@@ -310,4 +314,4 @@ def barrierDown (c A φ : ℝ) : ℝ :=
 
 end
 
-end powerlib.VSC
+end powerlib.Potential.Barrier

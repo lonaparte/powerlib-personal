@@ -1,4 +1,5 @@
 import theorem.Linear.Transfer
+import theorem.LTI.Decay
 
 /-! # Linear semi-explicit DAEs: Schur-complement reduction, matrix pencil, stability
 
@@ -47,8 +48,9 @@ Corrections (source vs. formal statement).
   `not_solution_of_inconsistent`); the list should read "index k: k differentiations".
 * Correction (T-dae-systems §2.1, "Ybus connected ⇒ nonsingular"): a network admittance
   matrix with no shunt (ground) branches is Laplacian-type, `Y 𝟏 = 0`, hence singular for
-  every topology, connected or not (`ybusNoShunt_det_eq_zero`); the two-bus line is a
-  connected counterexample (`ybus_two_bus_singular`). Nonsingularity needs a shunt path.
+  every topology, connected or not (`Network.ybusNoShunt_det_eq_zero`); the two-bus line is a
+  connected counterexample (`Network.ybus_two_bus_singular`). Nonsingularity needs a shunt path.
+  Both are in `theorem/Network/WeightedLaplacian.lean`.
 
 Model boundary: constant-coefficient linear DAE only; no switching, delay, PWM or PLL;
 the semantic predicates are about the given matrices. Nonlinear index-1 DAEs are in
@@ -58,9 +60,9 @@ Architecture: generic mathematical support (no `Family`). The DAE solution notio
 exponential stability lie outside the Flow sentence language, which concerns explicit ODEs; they
 are connected to that language through the reduced ODE. Coordinate solutions of
 `ẋ = A x` are linked to LeanForControl's affine linear field on `EuclideanSpace ℝ (Fin k)`
-(`isTrajectoryOn_toLp`), whose Hurwitz theory (`Linear.globallyExponentiallyStable_of_isHurwitz`,
-`Linear.eigenmode`) gives both directions of the coordinate decay test
-(`linear_decay_of_isHurwitz`, `isHurwitz_of_linear_decay`). The former `LTI.AutonomousModel`
+(`LTI.isTrajectoryOn_toLp`), whose Hurwitz theory gives both directions of the coordinate decay
+test (`LTI.linear_decay_of_isHurwitz`, `LTI.isHurwitz_of_linear_decay`, in
+`theorem/LTI/Decay.lean`). The former `LTI.AutonomousModel`
 wrapper `LinearDAE.reduced` is removed; its trajectory predicate is written out.
 
 Source: work-sync theory/T-dae-systems.md §1.2–§1.4, §1.7, §1.9, §2.1;
@@ -70,111 +72,6 @@ theory/T-small-signal-stability.md §1.3–§1.4; theory/T-sdae-systems.md §1.1
 noncomputable section
 namespace powerlib.DAE
 open Matrix LinearSystems
-
-/-! ## Coordinate solutions of a linear ODE -/
-
-section Coordinates
-
-variable {k : ℕ}
-
-/-- A global coordinate solution of `ẋ = A x` is, on every interval, a solution segment of
-LeanForControl's affine linear field of `A` centred at the origin. -/
-@[powerlib_foundation] theorem isTrajectoryOn_toLp {A : Matrix (Fin k) (Fin k) ℝ}
-    {x : ℝ → Fin k → ℝ} (hx : ∀ t, HasDerivAt x (A *ᵥ x t) t) (t₀ t₁ : ℝ) :
-    IsTrajectoryOn (fun t => WithLp.toLp 2 (x t)) (affineLinearVectorField A 0) t₀ t₁ := by
-  intro t _
-  have h := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin k => ℝ)).symm.hasFDerivAt.comp_hasDerivAt
-    t (hx t)
-  convert h.hasDerivWithinAt using 1
-  · rfl
-  · show Linear.op A (WithLp.toLp 2 (x t) - 0) = _
-    rw [sub_zero]
-    rfl
-
-/-- The coordinates of the matrix-exponential solution solve `ẋ = A x` globally. -/
-@[powerlib_foundation] theorem hasDerivAt_ofLp_solution (A : Matrix (Fin k) (Fin k) ℝ)
-    (x₀ : Fin k → ℝ) (t : ℝ) :
-    HasDerivAt (fun s => WithLp.ofLp (Linear.solution A 0 0 (WithLp.toLp 2 x₀) s))
-      (A *ᵥ WithLp.ofLp (Linear.solution A 0 0 (WithLp.toLp 2 x₀) t)) t := by
-  have h := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin k => ℝ)).hasFDerivAt.comp_hasDerivAt t
-    (Linear.solution_hasDerivAt A 0 0 (WithLp.toLp 2 x₀) t)
-  convert h using 1
-  · rfl
-  · show _ = WithLp.ofLp (Linear.op A (Linear.solution A 0 0 (WithLp.toLp 2 x₀) t - 0))
-    rw [sub_zero]
-    rfl
-
-/-- Every initial state has a global coordinate solution of `ẋ = A x`. -/
-@[powerlib_foundation] theorem exists_linear_trajectory (A : Matrix (Fin k) (Fin k) ℝ)
-    (x₀ : Fin k → ℝ) : ∃ x : ℝ → Fin k → ℝ, (∀ t, HasDerivAt x (A *ᵥ x t) t) ∧ x 0 = x₀ :=
-  ⟨fun s => WithLp.ofLp (Linear.solution A 0 0 (WithLp.toLp 2 x₀) s),
-    hasDerivAt_ofLp_solution A x₀, by simp⟩
-
-/-- Hurwitz `A`: every global coordinate solution of `ẋ = A x` decays exponentially in the
-Euclidean norm (from the Flow global exponential stability of the affine linear field). -/
-@[powerlib_foundation] theorem linear_decay_of_isHurwitz {A : Matrix (Fin k) (Fin k) ℝ}
-    (hA : IsHurwitz A) :
-    ∃ K > 0, ∃ rate > 0, ∀ x : ℝ → Fin k → ℝ, (∀ t, HasDerivAt x (A *ᵥ x t) t) → ∀ t, 0 ≤ t →
-      ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ := by
-  obtain ⟨-, -, C, a, hC, ha, hb⟩ := Linear.globallyExponentiallyStable_of_isHurwitz 0 hA
-  refine ⟨C, by linarith, a, ha, fun x hx t ht => ?_⟩
-  have h := hb 0 t _ (isTrajectoryOn_toLp hx 0 t) t ⟨ht, le_rfl⟩
-  simpa [sub_zero, neg_mul] using h
-
-/-- Conversely, exponential decay of every global coordinate solution of `ẋ = A x` forces `A` to
-be Hurwitz: an eigenmode with `Re μ ≥ 0` does not decay. -/
-@[powerlib_foundation] theorem isHurwitz_of_linear_decay {A : Matrix (Fin k) (Fin k) ℝ}
-    {K rate : ℝ} (hr : 0 < rate)
-    (hdecay : ∀ x : ℝ → Fin k → ℝ, (∀ t, HasDerivAt x (A *ᵥ x t) t) → ∀ t, 0 ≤ t →
-      ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖) :
-    IsHurwitz A := by
-  intro μ v hv heig
-  by_contra hμ
-  have hre : 0 ≤ μ.re := by simpa using hμ
-  have hmode : ∀ part : ℂ →L[ℝ] ℝ, (∀ (a : ℝ) (z : ℂ), part ((a : ℂ) * z) = a * part z) →
-      ∀ t, HasDerivAt (fun s => WithLp.ofLp (Linear.eigenmode part μ v s))
-        (A *ᵥ WithLp.ofLp (Linear.eigenmode part μ v t)) t := by
-    intro part hpart t
-    have h := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin k => ℝ)).hasFDerivAt.comp_hasDerivAt t
-      (Linear.eigenmode_hasDerivAt A heig part hpart t)
-    convert h using 1 <;> rfl
-  have hsq : ∀ part : ℂ →L[ℝ] ℝ, (∀ (a : ℝ) (z : ℂ), part ((a : ℂ) * z) = a * part z) →
-      ∀ t, 0 ≤ t → ‖Linear.eigenmode part μ v t‖ ^ 2 ≤
-        (K * Real.exp (-(rate * t))) ^ 2 * ‖Linear.eigenmode part μ v 0‖ ^ 2 := by
-    intro part hpart t ht
-    have hb := hdecay _ (hmode part hpart) t ht
-    have hb2 := pow_le_pow_left₀ (norm_nonneg _) hb 2
-    calc ‖Linear.eigenmode part μ v t‖ ^ 2 ≤ (K * Real.exp (-(rate * t)) *
-          ‖Linear.eigenmode part μ v 0‖) ^ 2 := hb2
-      _ = _ := by ring
-  set N : ℝ := ∑ j, Complex.normSq (v j)
-  have hN : 0 < N := by
-    obtain ⟨j, hj⟩ := Function.ne_iff.mp hv
-    exact Finset.sum_pos' (fun k _ => Complex.normSq_nonneg _)
-      ⟨j, Finset.mem_univ _, Complex.normSq_pos.mpr hj⟩
-  have hsum (t : ℝ) : ‖Linear.eigenmode Complex.reCLM μ v t‖ ^ 2 +
-      ‖Linear.eigenmode Complex.imCLM μ v t‖ ^ 2 = Real.exp (μ.re * t) ^ 2 * N :=
-    Linear.eigenmode_norm_sq μ v t
-  have hlarge (t : ℝ) (ht : 0 ≤ t) : 1 ≤ (K * Real.exp (-(rate * t))) ^ 2 := by
-    have h0 := hsum 0
-    simp only [mul_zero, Real.exp_zero, one_pow, one_mul] at h0
-    have hgrow : N ≤ Real.exp (μ.re * t) ^ 2 * N :=
-      le_mul_of_one_le_left hN.le
-        (one_le_pow₀ (Real.one_le_exp_iff.mpr (mul_nonneg hre ht)))
-    have hle : Real.exp (μ.re * t) ^ 2 * N ≤ (K * Real.exp (-(rate * t))) ^ 2 * N := by
-      rw [← hsum t, ← h0, mul_add]
-      exact add_le_add (hsq Complex.reCLM (by simp) t ht) (hsq Complex.imCLM (by simp) t ht)
-    exact le_of_mul_le_mul_right (by rw [one_mul]; exact hgrow.trans hle) hN
-  have hlim : Filter.Tendsto (fun t : ℝ => (K * Real.exp (-(rate * t))) ^ 2) Filter.atTop
-      (nhds 0) := by
-    have he : Filter.Tendsto (fun t : ℝ => Real.exp (-(rate * t))) Filter.atTop (nhds 0) :=
-      Real.tendsto_exp_neg_atTop_nhds_zero.comp (Filter.tendsto_id.const_mul_atTop hr)
-    simpa using (he.const_mul K).pow 2
-  obtain ⟨t, ht, hsmall⟩ :=
-    ((Filter.eventually_ge_atTop (0 : ℝ)).and (hlim.eventually (gt_mem_nhds zero_lt_one))).exists
-  exact absurd (hlarge t ht) (not_le.mpr hsmall)
-
-end Coordinates
 
 /-- Linear semi-explicit DAE `ẋ = Axx x + Axy y + Bx u`, `0 = Ayx x + Ayy y + By u`. -/
 structure LinearDAE (n m p : ℕ) where
@@ -311,7 +208,7 @@ undifferentiated DAE is not an explicit ODE in `(x, y)`. -/
         d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) ∧ x 0 = x₀) ∧
       ∀ y₀ : Fin m → ℝ, d.Ayx *ᵥ x₀ + d.Ayy *ᵥ y₀ + d.By *ᵥ 0 = 0 → y₀ = d.algebraic x₀ 0 := by
   refine ⟨?_, fun y₀ h => (d.constraint_iff hA _ _ _).mp h⟩
-  obtain ⟨x, hx, h0⟩ := exists_linear_trajectory d.schurA x₀
+  obtain ⟨x, hx, h0⟩ := LTI.exists_linear_trajectory d.schurA x₀
   exact ⟨x, _, d.isSolution_lift hA hx, h0⟩
 
 /-! ## One differentiation of the constraint gives an explicit ODE -/
@@ -436,7 +333,7 @@ solution has both components bounded by `K e^{-rate t} ‖x(0)‖` for `t ≥ 0`
         d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) → ∀ t, 0 ≤ t →
       ‖WithLp.toLp 2 (x t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ ∧
       ‖WithLp.toLp 2 (y t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖ := by
-  obtain ⟨K, hK, r, hr, hdecay⟩ := linear_decay_of_isHurwitz hH
+  obtain ⟨K, hK, r, hr, hdecay⟩ := LTI.linear_decay_of_isHurwitz hH
   set c := Real.sqrt (∑ i, ∑ j, (d.Ayy⁻¹ * d.Ayx) i j ^ 2)
   refine ⟨K * (1 + c), by positivity, r, hr, fun x y hs t ht => ?_⟩
   obtain ⟨hx, hy⟩ := (d.isSolution_zero_iff hA x y).mp hs
@@ -467,7 +364,7 @@ solution bounded by `K e^{-rate t} ‖x(0)‖`) forces the Schur complement to b
         ‖WithLp.toLp 2 (y t)‖ ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 (x 0)‖) :
     LinearSystems.IsHurwitz d.schurA := by
   obtain ⟨K, -, r, hr, hb⟩ := h
-  exact isHurwitz_of_linear_decay hr fun x hx t ht => (hb x _ (d.isSolution_lift hA hx) t ht).1
+  exact LTI.isHurwitz_of_linear_decay hr fun x hx t ht => (hb x _ (d.isSolution_lift hA hx) t ht).1
 
 /-- Index 1: exponential stability of the zero-input DAE (both components of every solution
 bounded by `K e^{-rate t} ‖x(0)‖`, `K, rate > 0`) holds iff the Schur complement is Hurwitz. -/
@@ -481,33 +378,5 @@ bounded by `K e^{-rate t} ‖x(0)‖`, `K, rate > 0`) holds iff the Schur comple
   ⟨d.isHurwitz_of_exponentiallyStable hA, d.exponentiallyStable_of_isHurwitz hA⟩
 
 end LinearDAE
-
-/-! ## Correction: a network matrix without shunt branches is singular -/
-
-/-- Bus admittance matrix built from branch admittances `y i j` with no shunt (ground)
-elements: `Y_ii = Σ_{j ≠ i} y_ij`, `Y_ij = -y_ij`. (The diagonal of `y` cancels.) -/
-def ybusNoShunt {ι : Type*} [Fintype ι] [DecidableEq ι] (y : Matrix ι ι ℂ) : Matrix ι ι ℂ :=
-  Matrix.diagonal (fun i => ∑ j, y i j) - y
-
-@[powerlib_foundation] theorem ybusNoShunt_mulVec_one {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (y : Matrix ι ι ℂ) : ybusNoShunt y *ᵥ (fun _ => 1) = 0 := by
-  ext i
-  rw [ybusNoShunt, sub_mulVec, Pi.sub_apply, mulVec_diagonal]
-  simp [mulVec, dotProduct]
-
-/-- Laplacian-type admittance matrices are singular, whatever the topology. -/
-@[powerlib_foundation] theorem ybusNoShunt_det_eq_zero {ι : Type*} [Fintype ι] [DecidableEq ι]
-    [Nonempty ι] (y : Matrix ι ι ℂ) : (ybusNoShunt y).det = 0 := by
-  apply Matrix.exists_mulVec_eq_zero_iff.mp
-  exact ⟨fun _ => 1, fun h => one_ne_zero (congrFun h (Classical.arbitrary ι)),
-    ybusNoShunt_mulVec_one y⟩
-
-/-- Counterexample to "connected ⇒ nonsingular": two buses joined by one line. -/
-@[powerlib_foundation] theorem ybus_two_bus_singular :
-    ybusNoShunt (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℂ) = !![1, -1; -1, 1] ∧
-      (ybusNoShunt (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℂ)).det = 0 := by
-  refine ⟨?_, ybusNoShunt_det_eq_zero _⟩
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [ybusNoShunt, Fin.sum_univ_two]
 
 end powerlib.DAE

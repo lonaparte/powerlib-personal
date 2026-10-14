@@ -1,5 +1,4 @@
 import theorem.Linear.Transfer
-import theorem.Transform.Park
 import Mathlib.Analysis.Fourier.AddCircle
 
 /-! # LTI checks of the harmonic-linearization framework
@@ -15,9 +14,9 @@ general (time-periodic) Hill matrices (item 4).
    some `|h| ≤ K`, i.e. `eig(𝓗_K) = {λ − jhω_s}` (`hillLTI_root_iff`).
 2. Sequence injection in the αβ frame (amplitude-invariant Clarke, `Transform.clarke`): a
    negative-sequence three-phase signal `V cos(θ + φ − 2πk/3·(−1))` maps to the αβ vector
-   `V(cos(θ + φ), −sin(θ + φ))`, i.e. `V e^{−j(θ+φ)}` (`clarke_mulVec_negSeq`). The
-   positive-sequence counterpart `V e^{j(θ+φ)}` is `Transform.clarke_mulVec_balanced`
-   (already in powerlib).
+   `V(cos(θ + φ), −sin(θ + φ))`, i.e. `V e^{−j(θ+φ)}` (`Transform.clarke_mulVec_negSeq`, with
+   `Transform.negSeq` and `Transform.toComplex_clarke_negSeq`, in `theorem/Transform/Park.lean`).
+   The positive-sequence counterpart `V e^{j(θ+φ)}` is `Transform.clarke_mulVec_balanced`.
 3. No mirror coupling for LTI. For a (real-coefficient) LTI model driven by complex tones, a
    tone at `jω` produces exactly `G(jω) U e^{jωt}` (`tone_solves`), tones superpose, and the
    coefficients of distinct exponentials are unique (`exp_coeff_unique`). Hence for the mirror
@@ -102,53 +101,6 @@ def hillLTI (A : Matrix X X ℝ) (ωs : ℝ) (K : ℕ) :
   simp
 
 end Hill
-
-/-! ## 2. Negative-sequence injection in the αβ frame -/
-
-/-- Negative-sequence three-phase signal `V cos(θ + φ)`, `V cos(θ + 2π/3 + φ)`,
-`V cos(θ − 2π/3 + φ)` (phases `b`, `c` swapped with respect to `Transform.balanced`). -/
-def negSeq (V φ θ : ℝ) : Fin 3 → ℝ :=
-  ![V * Real.cos (θ + φ), V * Real.cos (θ + 2 * Real.pi / 3 + φ),
-    V * Real.cos (θ - 2 * Real.pi / 3 + φ)]
-
-@[powerlib_foundation] private lemma cos_two_pi_div_three' :
-    Real.cos (2 * Real.pi / 3) = -(1 / 2) := by
-  have h : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring
-  rw [h, Real.cos_pi_sub, Real.cos_pi_div_three]
-
-@[powerlib_foundation] private lemma sin_two_pi_div_three' :
-    Real.sin (2 * Real.pi / 3) = Real.sqrt 3 / 2 := by
-  have h : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring
-  rw [h, Real.sin_pi_sub, Real.sin_pi_div_three]
-
-/-- A negative-sequence signal is `V e^{−j(θ+φ)}` in αβ: `(V cos(θ + φ), −V sin(θ + φ))`. -/
-@[powerlib_foundation] theorem clarke_mulVec_negSeq (V φ θ : ℝ) :
-    Transform.clarke *ᵥ negSeq V φ θ = ![V * Real.cos (θ + φ), -(V * Real.sin (θ + φ))] := by
-  have h3 : Real.sqrt 3 * Real.sqrt 3 = 3 := Real.mul_self_sqrt (by norm_num)
-  have h1 : θ + 2 * Real.pi / 3 + φ = (θ + φ) + 2 * Real.pi / 3 := by ring
-  have h2 : θ - 2 * Real.pi / 3 + φ = (θ + φ) - 2 * Real.pi / 3 := by ring
-  simp only [negSeq, h1, h2]
-  generalize θ + φ = ψ
-  rw [Real.cos_sub ψ, Real.cos_add ψ, cos_two_pi_div_three', sin_two_pi_div_three']
-  ext i; fin_cases i <;>
-    simp [Transform.clarke, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
-  · ring
-  · linear_combination (-(1 / 3)) * V * Real.sin ψ * h3
-
-/-- In complex form, `toComplex (clarke · negSeq) = V e^{−j(θ+φ)}`. -/
-@[powerlib_foundation] theorem toComplex_clarke_negSeq (V φ θ : ℝ) :
-    Transform.toComplex (Transform.clarke *ᵥ negSeq V φ θ) =
-      V * Complex.exp (-((θ + φ : ℝ) : ℂ) * I) := by
-  rw [clarke_mulVec_negSeq]
-  have he : Complex.exp (-((θ + φ : ℝ) : ℂ) * I) =
-      ((Real.cos (θ + φ) : ℝ) : ℂ) - ((Real.sin (θ + φ) : ℝ) : ℂ) * I := by
-    rw [show -((θ + φ : ℝ) : ℂ) * I = ((-(θ + φ) : ℝ) : ℂ) * I by push_cast; ring,
-      Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin, Real.cos_neg, Real.sin_neg]
-    push_cast; ring
-  rw [he]
-  generalize Real.cos (θ + φ) = c
-  generalize Real.sin (θ + φ) = sn
-  apply Complex.ext <;> simp [Transform.toComplex]
 
 /-! ## 3. No mirror coupling for LTI systems -/
 

@@ -12,8 +12,8 @@ The proof uses Vieta's relations for a root pair `s₁, s₂ = −α − s₁`:
 algebraic closedness of `ℂ`.
 
 Special case used for the decoupled current loop with inductance mismatch
-(`Mismatch.lean`): if `β = c` is real then the condition is `Re α > 0 ∧ c > 0`, independently of
-`Im α` (`complexQuadratic_realConst_roots_re_neg_iff`).
+(`theorem/CurrentControl/Mismatch.lean`): if `β = c` is real then the condition is
+`Re α > 0 ∧ c > 0`, independently of `Im α` (`complexQuadratic_realConst_roots_re_neg_iff`).
 
 Source: needed by work-sync `theory/T-decoupling-control.md` §1.4 / §2.2 (characteristic
 polynomial `L s² + (R + Kp + jωΔL) s + Ki` of the mismatched decoupled PI loop); the criterion
@@ -21,7 +21,7 @@ is the degree-two case of the Hermite–Biehler / Bilharz test for complex polyn
 -/
 
 noncomputable section
-namespace powerlib.CurrentControl
+namespace powerlib.Criteria
 
 /-- Vieta form of the complex-quadratic Hurwitz discriminant. -/
 @[powerlib_foundation] theorem vieta_discriminant (s₁ s₂ : ℂ) :
@@ -82,4 +82,4 @@ namespace powerlib.CurrentControl
   · rintro ⟨ha, hc⟩
     exact ⟨ha, by positivity⟩
 
-end powerlib.CurrentControl
+end powerlib.Criteria

@@ -1,4 +1,4 @@
-import theorem.Asymptotics.GuardPotential
+import theorem.Asymptotics.Guard.Potential
 import theorem.Asymptotics.LaplaceMethod
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 
@@ -11,7 +11,7 @@ it is formalized.
 
 Model boundary.
 * Potential: the truncated subcritical-Hopf potential `U(r) = α r²/2 − l₁ r⁴/4` of
-  `Asymptotics/GuardPotential.lean` (`guardPotential`), `α, l₁ > 0`, well at `r = 0`, barrier top
+  `Asymptotics/Guard/Potential.lean` (`guardPotential`), `α, l₁ > 0`, well at `r = 0`, barrier top
   at `r_c = √(α/l₁)` (`guardRadius`), barrier height `ΔU = α²/(4 l₁)`.
 * MFPT (source §1.2, two-dimensional amplitude measure, natural reflection at `r = 0`):
   `T(r_b) = D̃⁻¹ ∫₀^{r_b} (dy/y) e^{U(y)/D̃} ∫₀^y z e^{−U(z)/D̃} dz` (`guardMFPT α l₁ D̃ r_b`).
@@ -51,7 +51,7 @@ Results.
   sharp: for this integral the `X^{−1/2}` term is present with a nonzero coefficient,
   `T_committed/T_guard = 2 (1 − 1/√(πX) + O(1/X))` (`guardMFPT_ratio_two_term`,
   `tendsto_guardMFPT_ratio_mul_sqrt_atTop`, `guardMFPT_ratio_sub_two_isTheta` in
-  `Asymptotics/GuardMFPTExpansion.lean`).
+  `Asymptotics/Guard/MFPTExpansion.lean`).
 * Single-term asymptotics (source §1.3, and the `× 2` of §1.5), with
   `P = guardPrefactor α l₁ D̃ = (√π/2) √(D̃ l₁)/α²` and `X = ΔU/D̃`:
   `guardMFPT_guard_isBigO`: `T_guard/(P e^X) − 1 = O(√D̃)` as `D̃ → 0⁺`;
@@ -69,15 +69,16 @@ Results.
   error `O(X^{−1/2})`, the endpoint half order), from
   `ΔU − α(r_c − y)² ≤ U(y)` and `e^{−s} ≤ e^{−cξ²} + (l₁ r_c ξ³/D̃) e^{−cξ²/4}` in `ξ = r_c − y`;
   the generic Laplace theorems `laplace_endpoint_rate` are not used because the integral is over a
-  finite interval with a non-global quadratic phase. Generic Gaussian facts: `gaussMoment1`,
-  `gaussMoment3`, `gaussMoment5` (`∫_0^∞ ξⁿ e^{−cξ²}`, `n = 1, 3, 5`), `integral_exp_neg_mul_sq_ge`
+  finite interval with a non-global quadratic phase. Generic Gaussian facts (in
+  `theorem/Asymptotics/GaussianMoments.lean`): `gaussMoment1`, `gaussMoment3`, `gaussMoment5`
+  (`∫_0^∞ ξⁿ e^{−cξ²}`, `n = 1, 3, 5`), `integral_exp_neg_mul_sq_ge`
   (`∫_0^L e^{−cξ²} ≥ √(π/c)/2 − 1/(2cL)`), `intervalIntegral_le_integral_Ioi`.
   The `T_guard` rate is sharp: `T_guard = P e^X (1 + 1/√(πX) + O(1/X))` (`guardMFPT_guard_two_term`,
   `tendsto_guardMFPT_guard_mul_sqrt_atTop`, `guardMFPT_guard_sub_one_isTheta` in
-  `Asymptotics/GuardMFPTExpansion.lean`). The committed rate is not: the half-order terms of the two
-  halves of the peak cancel and `T_committed = 2 P e^X (1 + O(1/X))`
+  `Asymptotics/Guard/MFPTExpansion.lean`). The committed rate is not: the half-order terms of the
+  two halves of the peak cancel and `T_committed = 2 P e^X (1 + O(1/X))`
   (`guardMFPT_committed_two_term`, `guardMFPT_committed_two_term_atTop`).
-* Two-term expansions (`Asymptotics/GuardMFPTExpansion.lean`) use the bounds of this module made
+* Two-term expansions (`Asymptotics/Guard/MFPTExpansion.lean`) use the bounds of this module made
   public for that purpose: `guard_inside_bounds`, `guard_tails_le`, `guardInner_reflect_le`,
   `guardKappa_nonneg`, `guardEps_nonneg`, `guard_exists_cut`, `intervalIntegrable_guardWeight`.
 * Supporting facts: `U(z) = ΔU − (l₁/4)(z² − r_c²)²` (`guardPotential_eq_barrier_sub`),
@@ -91,87 +92,9 @@ committed escape).
 -/
 
 noncomputable section
-namespace powerlib.Asymptotics
+namespace powerlib.Asymptotics.Guard
 
 open Real Set Filter Topology MeasureTheory intervalIntegral
-
-/-! ## Half-line Gaussian moments and a finite-interval Gaussian bound
-
-Generic one-variable facts in the form `∫_0^∞ ξⁿ e^{−cξ²}` used for `T_guard ~ P e^X`. -/
-
-/-- `∫_0^∞ ξ e^{−cξ²} dξ = 1/(2c)` (`halfMoment1` with `b = 2c`). -/
-@[powerlib_foundation] theorem gaussMoment1 {c : ℝ} (hc : 0 < c) :
-    ∫ ξ in Ioi (0 : ℝ), ξ * Real.exp (-c * ξ ^ 2) = 1 / (2 * c) := by
-  have h := halfMoment1 (b := 2 * c) (by positivity)
-  rw [show 2 * c / 2 = c by ring] at h
-  rw [← h]
-
-/-- `∫_0^∞ ξ³ e^{−cξ²} dξ = 1/(2c²)` (`halfMoment3` with `b = 2c`). -/
-@[powerlib_foundation] theorem gaussMoment3 {c : ℝ} (hc : 0 < c) :
-    ∫ ξ in Ioi (0 : ℝ), ξ ^ 3 * Real.exp (-c * ξ ^ 2) = 1 / (2 * c ^ 2) := by
-  have h := halfMoment3 (b := 2 * c) (by positivity)
-  rw [show 2 * c / 2 = c by ring] at h
-  have e : (2 : ℝ) / (2 * c) ^ 2 = 1 / (2 * c ^ 2) := by field_simp
-  rw [← e, ← h]
-
-/-- `∫_0^∞ ξ⁵ e^{−cξ²} dξ = 1/c³` (wraps `integral_rpow_mul_exp_neg_mul_rpow`, `Γ(3) = 2`). -/
-@[powerlib_foundation] theorem gaussMoment5 {c : ℝ} (hc : 0 < c) :
-    ∫ ξ in Ioi (0 : ℝ), ξ ^ 5 * Real.exp (-c * ξ ^ 2) = 1 / c ^ 3 := by
-  have h := integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := 5) (b := c)
-    two_pos (by norm_num) hc
-  have h5 : ∀ ξ : ℝ, ξ ^ (5 : ℝ) = ξ ^ (5 : ℕ) := fun ξ => by
-    exact_mod_cast Real.rpow_natCast ξ 5
-  simp only [h5, Real.rpow_two] at h
-  rw [h]
-  have hG : Real.Gamma ((5 + 1) / 2) = 2 := by
-    rw [show ((5 : ℝ) + 1) / 2 = (2 : ℕ) + 1 by norm_num, Real.Gamma_nat_eq_factorial]
-    norm_num
-  rw [hG, show -((5 : ℝ) + 1) / 2 = -(3 : ℕ) by norm_num, Real.rpow_neg hc.le,
-    Real.rpow_natCast]
-  field_simp
-
-/-- A finite integral of a function that is nonnegative and integrable on `(0, ∞)` is at most the
-half-line integral. -/
-@[powerlib_foundation] theorem intervalIntegral_le_integral_Ioi {f : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
-    (hf : IntegrableOn f (Ioi 0)) (h0 : ∀ x, 0 < x → 0 ≤ f x) :
-    ∫ x in (0 : ℝ)..L, f x ≤ ∫ x in Ioi (0 : ℝ), f x := by
-  rw [intervalIntegral.integral_of_le hL]
-  apply setIntegral_mono_set hf
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx using h0 x hx
-  · exact Ioc_subset_Ioi_self.eventuallyLE
-
-/-- Gaussian lower bound on a finite interval:
-`∫_0^L e^{−cξ²} dξ ≥ √(π/c)/2 − 1/(2cL)` (the tail beyond `L` is at most `(1/L) ∫ ξ e^{−cξ²}`). -/
-@[powerlib_foundation] theorem integral_exp_neg_mul_sq_ge {c L : ℝ} (hc : 0 < c) (hL : 0 < L) :
-    √(π / c) / 2 - 1 / (2 * c * L) ≤ ∫ ξ in (0 : ℝ)..L, Real.exp (-c * ξ ^ 2) := by
-  have hg : Integrable fun ξ : ℝ => Real.exp (-c * ξ ^ 2) := integrable_exp_neg_mul_sq hc
-  have hg1 : Integrable fun ξ : ℝ => ξ * Real.exp (-c * ξ ^ 2) := integrable_mul_exp_neg_mul_sq hc
-  have hsplit : ∫ ξ in Ioi (0 : ℝ), Real.exp (-c * ξ ^ 2) =
-      (∫ ξ in Ioc (0 : ℝ) L, Real.exp (-c * ξ ^ 2)) + ∫ ξ in Ioi L, Real.exp (-c * ξ ^ 2) := by
-    rw [← setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi hg.integrableOn
-      hg.integrableOn, Ioc_union_Ioi_eq_Ioi hL.le]
-  have htail : ∫ ξ in Ioi L, Real.exp (-c * ξ ^ 2) ≤ 1 / (2 * c * L) := by
-    calc ∫ ξ in Ioi L, Real.exp (-c * ξ ^ 2)
-        ≤ ∫ ξ in Ioi L, L⁻¹ * (ξ * Real.exp (-c * ξ ^ 2)) := by
-          apply setIntegral_mono_on hg.integrableOn (hg1.const_mul _).integrableOn
-            measurableSet_Ioi
-          intro ξ hξ
-          have hξ' : L < ξ := hξ
-          rw [← mul_assoc]
-          apply le_mul_of_one_le_left (Real.exp_pos _).le
-          rw [inv_mul_eq_div, one_le_div hL]; exact hξ'.le
-      _ ≤ ∫ ξ in Ioi (0 : ℝ), L⁻¹ * (ξ * Real.exp (-c * ξ ^ 2)) := by
-          apply setIntegral_mono_set (hg1.const_mul _).integrableOn
-          · filter_upwards [ae_restrict_mem measurableSet_Ioi] with ξ hξ
-            have : (0 : ℝ) < ξ := hξ
-            positivity
-          · exact (Ioi_subset_Ioi hL.le).eventuallyLE
-      _ = 1 / (2 * c * L) := by
-          rw [MeasureTheory.integral_const_mul, gaussMoment1 hc]; field_simp
-  have hmain := integral_gaussian_Ioi c
-  rw [intervalIntegral.integral_of_le hL.le]
-  linarith
-
 
 /-! ## The mean first-passage time and its two boundary choices -/
 
@@ -1607,7 +1530,7 @@ boundary `r_b > r_c`. Explicitly, at a fixed cut `a`, `|T(r_b)/T(r_c) − 2| ≤
 /-- **`T_committed / T_guard = 2(1 + O(X^{−1/2}))`** along `X = ΔU/D̃ → ∞`, `ΔU = α²/(4 l₁)`
 (source §1.2, "趋近 2 的方式本身是 `1 + O(X^{−1/2})`"). This theorem is the upper bound; the
 half-order term is present for this integral, with coefficient `−1/√π`
-(`tendsto_guardMFPT_ratio_mul_sqrt_atTop`, `Asymptotics/GuardMFPTExpansion.lean`). -/
+(`tendsto_guardMFPT_ratio_mul_sqrt_atTop`, `Asymptotics/Guard/MFPTExpansion.lean`). -/
 @[powerlib_foundation] theorem guardMFPT_ratio_isBigO_atTop (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
     (hrb : guardRadius α l₁ < rb) :
     (fun X => guardMFPT α l₁ (barrierHeight α l₁ / X) rb /
@@ -1635,25 +1558,6 @@ end Ratio
 /-! ## The single-term asymptotics `T_guard ~ P e^X` -/
 
 section Guard
-
-/-- `∫_0^y z e^{−αz²/(2D̃)} dz = (D̃/α)(1 − e^{−αy²/(2D̃)})`. -/
-@[powerlib_foundation] theorem integral_mul_exp_neg_sq_div (hα : 0 < α) {D : ℝ} (hD : 0 < D)
-    (y : ℝ) :
-    ∫ z in (0 : ℝ)..y, z * Real.exp (-(α / (2 * D)) * z ^ 2) =
-      D / α * (1 - Real.exp (-(α / (2 * D)) * y ^ 2)) := by
-  have hderiv : ∀ z ∈ uIcc 0 y, HasDerivAt (fun z => -(D / α) * Real.exp (-(α / (2 * D)) * z ^ 2))
-      (z * Real.exp (-(α / (2 * D)) * z ^ 2)) z := by
-    intro z _
-    have h1 : HasDerivAt (fun z => -(α / (2 * D)) * z ^ 2) (-(α / (2 * D)) * (2 * z)) z := by
-      simpa using (hasDerivAt_pow 2 z).const_mul (-(α / (2 * D)))
-    have := (h1.exp).const_mul (-(D / α))
-    convert this using 1
-    field_simp
-  rw [integral_eq_sub_of_hasDerivAt hderiv
-    ((by fun_prop : Continuous fun z : ℝ =>
-      z * Real.exp (-(α / (2 * D)) * z ^ 2)).intervalIntegrable _ _)]
-  simp
-  ring
 
 /-- Lower Gaussian bound for the inner integral: `K(y) ≥ (D̃/α)(1 − e^{−αy²/(2D̃)})`, `y ≥ 0`
 (from `U(z) ≤ αz²/2`). -/
@@ -2251,7 +2155,7 @@ mass `D̃/α`, the weight `1/r_c` at the top and the half Gaussian `√(πD̃/α
 /-- **`T_committed = 2 P e^X (1 + O(√D̃))`** as `D̃ → 0⁺`, for every committed-escape boundary
 `r_b > r_c` (source §1.5, "`× 2` 承诺逃逸"): the product of `guardMFPT_ratio_sub_two_isBigO` and
 `guardMFPT_guard_isBigO`. Not sharp: the half-order terms cancel and the relative error is `O(D̃)`
-(`guardMFPT_committed_two_term`, `Asymptotics/GuardMFPTExpansion.lean`). -/
+(`guardMFPT_committed_two_term`, `Asymptotics/Guard/MFPTExpansion.lean`). -/
 @[powerlib_foundation] theorem guardMFPT_committed_isBigO (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
     (hrb : guardRadius α l₁ < rb) :
     (fun D => guardMFPT α l₁ D rb /
@@ -2310,4 +2214,4 @@ as `X → ∞`. -/
 
 end Guard
 
-end powerlib.Asymptotics
+end powerlib.Asymptotics.Guard

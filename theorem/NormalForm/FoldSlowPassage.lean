@@ -47,7 +47,7 @@ arithmetic, not a theorem; it is not stated here.
 -/
 
 noncomputable section
-namespace powerlib.Asymptotics
+namespace powerlib.NormalForm
 
 open Real MeasureTheory
 
@@ -101,13 +101,13 @@ iff `η' = 2τη + (λ - 1) + η²` there. -/
 /-- Parity: every odd perturbation leaves the threshold at `λ* = 1`. -/
 @[powerlib_foundation] theorem solvabilityShift_odd {φ : ℝ → ℝ} (hφ : ∀ τ, φ (-τ) = -φ τ) :
     solvabilityShift φ = 1 := by
-  rw [solvabilityShift, integral_exp_neg_sq_mul_odd hφ, mul_zero, sub_zero]
+  rw [solvabilityShift, Asymptotics.integral_exp_neg_sq_mul_odd hφ, mul_zero, sub_zero]
 
 /-- The even test perturbation `φ = τ²` gives `λ* = 1/2`. -/
 @[powerlib_foundation] theorem solvabilityShift_sq :
     solvabilityShift (fun τ => τ ^ 2) = 1 / 2 := by
   have h : ∫ τ : ℝ, Real.exp (-τ ^ 2) * τ ^ 2 = Real.sqrt π / 2 := by
-    rw [← integral_sq_mul_exp_neg_sq]
+    rw [← Asymptotics.integral_sq_mul_exp_neg_sq]
     congr 1
     funext τ
     ring
@@ -121,7 +121,7 @@ iff `η' = 2τη + (λ - 1) + η²` there. -/
 @[powerlib_foundation] theorem solvabilityShift_const (c : ℝ) :
     solvabilityShift (fun _ => c) = 1 - c := by
   have hpi : 0 < Real.sqrt π := Real.sqrt_pos.mpr Real.pi_pos
-  rw [solvabilityShift, integral_mul_const, integral_exp_neg_sq]
+  rw [solvabilityShift, integral_mul_const, Asymptotics.integral_exp_neg_sq]
   field_simp
 
 /-- Constant-rate ramp: if `X` solves `X' = τ + X²`, then `Y(τ) = X(τ + λ)` solves
@@ -452,4 +452,4 @@ attracting branch and exists for all `τ ∈ ℝ` is the separatrix `X = τ`. -/
 
 end Threshold
 
-end powerlib.Asymptotics
+end powerlib.NormalForm

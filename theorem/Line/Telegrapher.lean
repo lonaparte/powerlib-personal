@@ -1,4 +1,5 @@
 import theorem.Line.Bergeron
+import theorem.PDE.Partial
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 
 /-! # Telegrapher equations: second-order form and the distortionless line
@@ -13,7 +14,8 @@ Model boundary: single uniform conductor, constant `L', C' > 0`, `R', G' ≥ 0`,
 `v, i : ℝ × ℝ → ℝ` of `(x, t)` on the whole plane (current along `+x`, the through convention
 of `theorem/Line/Bergeron.lean`), continuous time, no frequency dependence.
 
-* `dx F`, `dt F` are the partial derivatives `fderiv ℝ F p (1,0)`, `fderiv ℝ F p (0,1)`.
+* `dx F`, `dt F` are the partial derivatives `fderiv ℝ F p (1,0)`, `fderiv ℝ F p (0,1)`
+  (`PDE.dx`, `PDE.dt`, with the mixed-partial lemmas, in `theorem/PDE/Partial.lean`).
 * `second_order_v` / `second_order_i`: if `v, i ∈ C²` solve `∂ₓv = −L'∂ₜi − R'i`,
   `∂ₓi = −C'∂ₜv − G'v`, then
   `∂ₓₓv = L'C' ∂ₜₜv + (L'G' + R'C') ∂ₜv + R'G' v` and the same for `i`. (The proof uses the
@@ -32,42 +34,8 @@ set_option linter.unnecessarySeqFocus false
 noncomputable section
 namespace powerlib.Line.Telegrapher
 open Set
-
-/-- Partial derivative in `x`. -/
-def dx (F : ℝ × ℝ → ℝ) (p : ℝ × ℝ) : ℝ := fderiv ℝ F p (1, 0)
-
-/-- Partial derivative in `t`. -/
-def dt (F : ℝ × ℝ → ℝ) (p : ℝ × ℝ) : ℝ := fderiv ℝ F p (0, 1)
-
-@[powerlib_foundation] theorem hasFDerivAt_fderiv_apply {F : ℝ × ℝ → ℝ} (hF : ContDiff ℝ 2 F)
-    (w p : ℝ × ℝ) :
-    HasFDerivAt (fun q => fderiv ℝ F q w)
-      ((ContinuousLinearMap.apply ℝ ℝ w).comp (fderiv ℝ (fderiv ℝ F) p)) p := by
-  have hd : DifferentiableAt ℝ (fderiv ℝ F) p :=
-    ((hF.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero) p
-  exact (ContinuousLinearMap.apply ℝ ℝ w).hasFDerivAt.comp p hd.hasFDerivAt
-
-@[powerlib_foundation] theorem differentiable_dx {F : ℝ × ℝ → ℝ} (hF : ContDiff ℝ 2 F) :
-    Differentiable ℝ (dx F) := fun p => (hasFDerivAt_fderiv_apply hF (1, 0) p).differentiableAt
-
-@[powerlib_foundation] theorem differentiable_dt {F : ℝ × ℝ → ℝ} (hF : ContDiff ℝ 2 F) :
-    Differentiable ℝ (dt F) := fun p => (hasFDerivAt_fderiv_apply hF (0, 1) p).differentiableAt
-
-/-- Mixed partials commute for `C²` functions. -/
-@[powerlib_foundation] theorem dx_dt_comm {F : ℝ × ℝ → ℝ} (hF : ContDiff ℝ 2 F) (p : ℝ × ℝ) :
-    dx (dt F) p = dt (dx F) p := by
-  unfold dx dt
-  rw [(hasFDerivAt_fderiv_apply hF (0, 1) p).fderiv, (hasFDerivAt_fderiv_apply hF (1, 0) p).fderiv]
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply]
-  exact (hF.contDiffAt.isSymmSndFDerivAt (by simp)) (1, 0) (0, 1)
-
-/-- Partial derivative of `a·F − b·G`. -/
-@[powerlib_foundation] theorem fderiv_combo {F G : ℝ × ℝ → ℝ} (hF : Differentiable ℝ F)
-    (hG : Differentiable ℝ G) (a b : ℝ) (w p : ℝ × ℝ) :
-    fderiv ℝ (fun q => a * F q - b * G q) p w = a * fderiv ℝ F p w - b * fderiv ℝ G p w := by
-  rw [fderiv_fun_sub ((hF p).const_mul a) ((hG p).const_mul b), fderiv_const_mul (hF p),
-    fderiv_const_mul (hG p)]
-  simp
+open powerlib.PDE (dx dt hasFDerivAt_fderiv_apply differentiable_dx differentiable_dt dx_dt_comm
+  fderiv_combo)
 
 /-- **Second-order telegrapher equation** obtained by eliminating `i`. -/
 @[powerlib_foundation] theorem second_order_v (L C R G : ℝ) {v i : ℝ × ℝ → ℝ}

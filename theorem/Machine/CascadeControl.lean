@@ -1,6 +1,7 @@
 import theorem.Spectral.Family
 import theorem.Machine.SpaceVector
 import theorem.Criteria.Hurwitz2
+import theorem.Numerics.StabilityFunctions
 
 /-! # Machine-drive cascade loops: IMC current loop, speed loop, forward-Euler limit
 
@@ -39,8 +40,9 @@ Foundation results.
   realization.
 * `speedLoop_transfer`: speed PI around an ideal (transparent) current loop and the rigid
   mechanics `J ω̇ = K_t i_q`: `ω/ω* = K_t (K_p s + K_i) / (J s² + K_t K_p s + K_t K_i)`.
-* `eulerFirstOrder_tendsto_zero_iff`: forward-Euler discretization of the target first-order
-  loop `ė = −α e` with period `T_s` converges for every initial error iff `0 < α T_s < 2`.
+* Forward-Euler discretization of the target first-order loop `ė = −α e` with period `T_s`
+  converges for every initial error iff `0 < α T_s < 2`
+  (`Numerics.eulerFirstOrder_tendsto_zero_iff`, `theorem/Numerics/StabilityFunctions.lean`).
 * `complexVector_iff`: the complex-vector current equation
   `σL_s di/dt = v − r' i − jω_e σL_s i + e` is the pair of real dq equations of FOC note §1.5.
 
@@ -315,34 +317,6 @@ denominator is `J (s² + 2ζω_n s + ω_n²)`. -/
   have : (Kt : ℂ) ≠ 0 := by exact_mod_cast hKt
   push_cast
   field_simp
-
-/-! ## Forward-Euler discretization -/
-
-/-- Forward-Euler recursion of `ė = −α e` with period `T_s`: `e[k] = (1 − α T_s)^k e[0]`. -/
-@[powerlib_foundation] theorem eulerFirstOrder_closedForm (α Ts : ℝ) (e : ℕ → ℝ)
-    (he : ∀ k, e (k + 1) = e k + Ts * (-α * e k)) (k : ℕ) :
-    e k = (1 - α * Ts) ^ k * e 0 := by
-  induction k with
-  | zero => simp
-  | succ k ih => rw [he, ih, pow_succ]; ring
-
-/-- Forward-Euler stability limit: every forward-Euler trajectory of `ė = −α e` converges to
-zero iff `0 < α T_s < 2`. -/
-@[powerlib_foundation] theorem eulerFirstOrder_tendsto_zero_iff (α Ts : ℝ) :
-    (∀ e : ℕ → ℝ, (∀ k, e (k + 1) = e k + Ts * (-α * e k)) →
-        Tendsto e atTop (𝓝 0)) ↔ 0 < α * Ts ∧ α * Ts < 2 := by
-  constructor
-  · intro h
-    have h1 := h (fun k => (1 - α * Ts) ^ k) (fun k => by rw [pow_succ]; ring)
-    have h2 := tendsto_pow_atTop_nhds_zero_iff.mp h1
-    rw [abs_lt] at h2
-    constructor <;> linarith [h2.1, h2.2]
-  · rintro ⟨h0, h2⟩ e he
-    have hr : |1 - α * Ts| < 1 := by rw [abs_lt]; constructor <;> linarith
-    have hpow := (tendsto_pow_atTop_nhds_zero_iff.mpr hr).mul_const (e 0)
-    rw [zero_mul] at hpow
-    refine hpow.congr fun k => ?_
-    rw [eulerFirstOrder_closedForm α Ts e he k]
 
 /-! ## Complex-vector form of the stator current equation -/
 

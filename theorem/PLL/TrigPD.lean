@@ -1,5 +1,5 @@
 import theorem.GFL.PIPLLFamily
-import theorem.GFL.TrigZeros
+import theorem.SpecialFunctions.TrigZeros
 
 /-! # PI-PLL with a second-order trigonometric phase detector (multi-equilibrium geometry)
 
@@ -14,7 +14,8 @@ Model boundary.
   loops, saturation, delay, PWM, noise. Basins of attraction (§1.13.3) and the stochastic
   basin-hopping of §1.13.4 are not formalized.
 * Level: equilibrium set per period window and local behaviour at equilibria (linearization,
-  instantiating `theorem/GFL/PIPLL.lean`; zero counting from `theorem/GFL/TrigZeros.lean`).
+  instantiating `theorem/GFL/PIPLL.lean`; zero counting from
+  `theorem/SpecialFunctions/TrigZeros.lean`).
 
 Results (T-pll-dynamics §1.13.1).
 * Equilibria (`K_i ≠ 0`) with `θ_e` in a window `[α, α + 2π)` are exactly `(θ*, δω/K_i)` with
@@ -43,7 +44,8 @@ noncomputable section
 namespace powerlib.PLL
 open Set
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
-open powerlib.GFL (piPLLField piPLLState trigPoly2 trigPoly2Deriv trigPoly2ZeroSet)
+open powerlib.GFL (piPLLField piPLLState)
+open powerlib.SpecialFunctions (trigPoly2 trigPoly2Deriv trigPoly2ZeroSet)
 
 /-- T-pll-dynamics §1.13 phase detector `h(θ) = a sin θ + b cos θ + c sin 2θ + d cos 2θ + e`. -/
 def trigPD (a b c d e : ℝ) : ℝ → ℝ := trigPoly2 e b a d c
@@ -65,11 +67,11 @@ def trigPDDeriv (a b c d : ℝ) : ℝ → ℝ := trigPoly2Deriv b a d c
 
 @[powerlib_foundation] theorem hasDerivAt_trigPD (a b c d e θ : ℝ) :
     HasDerivAt (trigPD a b c d e) (trigPDDeriv a b c d θ) θ :=
-  GFL.hasDerivAt_trigPoly2 e b a d c θ
+  SpecialFunctions.hasDerivAt_trigPoly2 e b a d c θ
 
 @[powerlib_foundation] theorem contDiff_trigPD (a b c d e : ℝ) :
     ContDiff ℝ 1 (trigPD a b c d e) :=
-  GFL.contDiff_trigPoly2 e b a d c
+  SpecialFunctions.contDiff_trigPoly2 e b a d c
 
 /-- Equilibria with `θ_e ∈ [α, α + 2π)` are the points `(θ*, δω/K_i)`, `h(θ*) = 0`.
 Static evidence on the model, not a connection conclusion. -/
@@ -105,7 +107,7 @@ Static evidence on the model, not a connection conclusion. -/
     {x : ℝ² | piPLLField (trigPD a b c d e) Kp Ki δω x = 0 ∧
         x 0 ∈ Ico α (α + 2 * Real.pi)}.ncard ≤ 4 := by
   rw [ncard_equilibria_window hKi α]
-  exact GFL.trigPoly2_ncard_zeroSet_le_four
+  exact SpecialFunctions.trigPoly2_ncard_zeroSet_le_four
     (fun h => hne ⟨h.2.2.1, h.2.1, h.2.2.2.2, h.2.2.2.1, h.1⟩) α
 
 /-- If every zero of `h` is simple, the number of equilibria per period window is `0`, `2` or
@@ -120,7 +122,7 @@ Static evidence on the model, not a connection conclusion. -/
   intro N
   simp only [N]
   rw [ncard_equilibria_window hKi α]
-  exact GFL.trigPoly2_ncard_zeroSet_mem hsimple α
+  exact SpecialFunctions.trigPoly2_ncard_zeroSet_mem hsimple α
 
 /-- The PI-PLL model with the trigonometric detector, read about the selected phase `θ*`
 (selected point `(θ*, δω / K_i)`). -/
@@ -161,9 +163,9 @@ exponentially stable and the other is unstable. -/
         trigModel a b c d e Kp Ki δω θ₂ ∈
           GFL.PIPLL.family.den (.flow .locallyExponentiallyStable))) := by
   unfold powerlib.TMIO.Statement
-  have hmul := GFL.deriv_mul_neg_of_consecutive_simple_zeros
-    (GFL.continuous_trigPoly2 e b a d c) h12 hz1 hz2 hnz (hasDerivAt_trigPD a b c d e θ₁)
-    (hasDerivAt_trigPD a b c d e θ₂) hs1 hs2
+  have hmul := SpecialFunctions.deriv_mul_neg_of_consecutive_simple_zeros
+    (SpecialFunctions.continuous_trigPoly2 e b a d c) h12 hz1 hz2 hnz
+    (hasDerivAt_trigPD a b c d e θ₁) (hasDerivAt_trigPD a b c d e θ₂) hs1 hs2
   rcases lt_or_gt_of_ne hs1 with h1 | h1
   · left
     have h2 : 0 < trigPDDeriv a b c d θ₂ := by

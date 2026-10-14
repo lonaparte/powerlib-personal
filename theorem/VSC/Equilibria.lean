@@ -1,5 +1,5 @@
 import theorem.VSC.Reduced2D
-import theorem.VSC.Zeros
+import theorem.SpecialFunctions.Sinusoid
 
 /-! # Equilibrium count, saddle-node surface and fold of the GFL-PLL model
 
@@ -45,6 +45,7 @@ namespace powerlib.VSC
 open Real Set
 open powerlib.Dynamics (State)
 open powerlib.GFL (piPLLState piPLLJacobian)
+open powerlib.SpecialFunctions (sinusoidZeros stableRoot saddleRoot)
 
 namespace Params
 
@@ -66,9 +67,9 @@ def hZeros (a : ℝ) : Set ℝ := {θ | θ ∈ Ico a (a + 2 * π) ∧ p.h θ = 0
     (hVg : 0 < p.Vg) (a : ℝ) : (p.hZeros a).ncard ≤ 2 := by
   rw [p.hZeros_eq hwC hΔ]
   rcases lt_trichotomy |p.c0| p.amp with h | h | h
-  · rw [ncard_sinusoidZeros_of_lt h (p.amp_pos hVg hΔ)]
-  · rw [ncard_sinusoidZeros_of_eq h (p.amp_pos hVg hΔ)]; norm_num
-  · rw [sinusoidZeros_eq_empty (p.amp_pos hVg hΔ).le h]; simp
+  · rw [SpecialFunctions.ncard_sinusoidZeros_of_lt h (p.amp_pos hVg hΔ)]
+  · rw [SpecialFunctions.ncard_sinusoidZeros_of_eq h (p.amp_pos hVg hΔ)]; norm_num
+  · rw [SpecialFunctions.sinusoidZeros_eq_empty (p.amp_pos hVg hΔ).le h]; simp
 
 /-- A4, `|c₀| < A`: in every period window the reduced PLL model has exactly two equilibria
 `(θ_s, 0)` and `(θ_u, 0)` (the count and the explicit pair).
@@ -79,8 +80,8 @@ Static evidence on the model, not a connection conclusion. -/
       p.hZeros a = {stableRoot p.c0 p.amp p.phase a, saddleRoot p.c0 p.amp p.phase a} := by
   have hA := p.amp_pos hVg hΔ
   refine ⟨?_, ?_⟩
-  · rw [p.hZeros_eq hwC hΔ]; exact ncard_sinusoidZeros_of_lt hc hA
-  · rw [p.hZeros_eq hwC hΔ]; exact sinusoidZeros_eq hc.le hA
+  · rw [p.hZeros_eq hwC hΔ]; exact SpecialFunctions.ncard_sinusoidZeros_of_lt hc hA
+  · rw [p.hZeros_eq hwC hΔ]; exact SpecialFunctions.sinusoidZeros_eq hc.le hA
 
 /-- A4, `|c₀| < A`, `K_p, K_i > 0`: of the two equilibria of every period window, `(θ_s, 0)` is
 locally exponentially stable and `(θ_u, 0)` is unstable. -/
@@ -91,14 +92,14 @@ locally exponentially stable and `(θ_u, 0)` is unstable. -/
       p.pllModel (saddleRoot p.c0 p.amp p.phase a) ∈ GFL.PIPLL.family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   have hA := p.amp_pos hVg hΔ
-  have hs := sqrt_one_sub_sq_pos hc hA
+  have hs := SpecialFunctions.sqrt_one_sub_sq_pos hc hA
   refine ⟨?_, ?_⟩
   · refine p.reduced_mem_den_locallyExponentiallyStable hwC hΔ hKp hKi ?_ ?_
-    · rw [p.h_eq_polar hwC hΔ]; exact stableRoot_zero hc.le hA
-    · rw [cos_stableRoot]; nlinarith
+    · rw [p.h_eq_polar hwC hΔ]; exact SpecialFunctions.stableRoot_zero hc.le hA
+    · rw [SpecialFunctions.cos_stableRoot]; nlinarith
   · refine p.reduced_mem_den_unstable hwC hΔ hKi ?_ ?_
-    · rw [p.h_eq_polar hwC hΔ]; exact saddleRoot_zero hc.le hA
-    · rw [cos_saddleRoot]; nlinarith
+    · rw [p.h_eq_polar hwC hΔ]; exact SpecialFunctions.saddleRoot_zero hc.le hA
+    · rw [SpecialFunctions.cos_saddleRoot]; nlinarith
 
 /-- A4, `|c₀| = A` (saddle-node): exactly one equilibrium per period, at which the Jacobian is the
 nonzero nilpotent `[[0, K_i], [0, 0]]`.
@@ -112,24 +113,24 @@ Static evidence on the model, not a connection conclusion. -/
       piPLLJacobian p.Kp p.Ki 0 ≠ 0 ∧ (piPLLJacobian p.Kp p.Ki 0) ^ 2 = 0 := by
   have hA := p.amp_pos hVg hΔ
   refine ⟨?_, ?_, p.reduced_jacobian_nilpotent hwC hΔ hKi ?_ ?_⟩
-  · rw [p.hZeros_eq hwC hΔ]; exact ncard_sinusoidZeros_of_eq hc hA
-  · rw [p.hZeros_eq hwC hΔ, sinusoidZeros_eq hc.le hA, stableRoot_eq_saddleRoot hc hA,
-      Set.pair_eq_singleton]
-  · rw [p.h_eq_polar hwC hΔ]; exact stableRoot_zero hc.le hA
-  · rw [cos_stableRoot, sqrt_one_sub_sq_eq_zero hc hA, mul_zero]
+  · rw [p.hZeros_eq hwC hΔ]; exact SpecialFunctions.ncard_sinusoidZeros_of_eq hc hA
+  · rw [p.hZeros_eq hwC hΔ, SpecialFunctions.sinusoidZeros_eq hc.le hA,
+      SpecialFunctions.stableRoot_eq_saddleRoot hc hA, Set.pair_eq_singleton]
+  · rw [p.h_eq_polar hwC hΔ]; exact SpecialFunctions.stableRoot_zero hc.le hA
+  · rw [SpecialFunctions.cos_stableRoot, SpecialFunctions.sqrt_one_sub_sq_eq_zero hc hA, mul_zero]
 
 /-- A4, `|c₀| > A`: the reduced PLL model has no equilibrium (loss of synchronism).
 Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem no_equilibrium (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg)
     (hKi : p.Ki ≠ 0) (hc : p.amp < |p.c0|) (y : State 2) : p.reducedField y ≠ 0 := by
   rw [Ne, p.reducedField_eq_zero_iff hKi, p.h_eq_polar hwC hΔ]
-  exact fun h => sinusoid_ne_zero_of_lt (p.amp_pos hVg hΔ).le hc (y 0) h.1
+  exact fun h => SpecialFunctions.sinusoid_ne_zero_of_lt (p.amp_pos hVg hΔ).le hc (y 0) h.1
 
 /-- Existence of a PLL equilibrium angle: `(∃ θ, h θ = 0) ↔ |c₀| ≤ A`. -/
 @[powerlib_foundation] theorem exists_h_zero_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
     (∃ θ, p.h θ = 0) ↔ |p.c0| ≤ p.amp := by
   simp only [p.h_eq_polar hwC hΔ]
-  exact exists_sinusoid_zero_iff (p.amp_pos hVg hΔ)
+  exact SpecialFunctions.exists_sinusoid_zero_iff (p.amp_pos hVg hΔ)
 
 /-- A3 + A4: the complete 10-state field has an equilibrium iff `|c₀| ≤ A`.
 Static evidence on the model, not a connection conclusion. -/

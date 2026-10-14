@@ -1,5 +1,6 @@
 import theorem.ParametricResonance.ForcedResponse
 import theorem.Periodic.Shift
+import theorem.Periodic.Floquet
 
 /-! # Half-period symmetry of the single-tone pump
 
@@ -50,11 +51,6 @@ def pump (δ ωp t : ℝ) : ℝ := δ * Real.cos (ωp * t)
   rw [pump_add_half hT] at h
   exact h
 
-/-- Some Floquet multiplier lies strictly outside the unit circle. -/
-def FloquetUnstable {X : Type*} [Fintype X] [DecidableEq X] (A : ℝ → Matrix X X ℝ) (T : ℝ) :
-    Prop :=
-  ∃ ρ ∈ spectrum ℂ ((Periodic.monodromy A T 0).map (algebraMap ℝ ℂ)), 1 < ‖ρ‖
-
 /-- If `J_{−δ}(t) = J_δ(t + T/2)`, the Floquet multipliers (and hence Floquet instability) of the
 two variational systems coincide. -/
 @[powerlib_foundation] theorem floquetUnstable_half_shift {X : Type*} [Fintype X] [DecidableEq X]
@@ -62,11 +58,11 @@ two variational systems coincide. -/
     (hT : 0 ≤ T) (hP : Periodic Jp T) (hshift : ∀ t, Jm t = Jp (t + T / 2)) :
     spectrum ℂ ((Periodic.monodromy Jm T 0).map (algebraMap ℝ ℂ)) =
         spectrum ℂ ((Periodic.monodromy Jp T 0).map (algebraMap ℝ ℂ)) ∧
-      (FloquetUnstable Jm T ↔ FloquetUnstable Jp T) := by
+      (Periodic.FloquetUnstable Jm T ↔ Periodic.FloquetUnstable Jp T) := by
   have hJ : Jm = fun t => Jp (t + T / 2) := funext hshift
   have hs := Periodic.spectrum_monodromy_shift hA hM hT hP (T / 2)
   rw [← hJ] at hs
   refine ⟨hs, ?_⟩
-  simp only [FloquetUnstable, hs]
+  simp only [Periodic.FloquetUnstable, hs]
 
 end powerlib.ParametricResonance

@@ -1,5 +1,6 @@
 import theorem.Synchronous.FaultSequence
 import theorem.Dynamics.LaSalle.Basin
+import theorem.SpecialFunctions.Elementary
 
 /-! # Equal-area criterion with damping: conservative sufficiency and the LaSalle basin of the
 potential well
@@ -34,7 +35,8 @@ Results.
   `P_m` in both stages, `D > 0` during the fault).  `dampedBolted_trajectory`: explicit damped
   during-fault trajectory `ω = (P_m/D)(1 − e^{−Dτ/M})`,
   `δ = δ₀ + (P_m/D)(τ − (M/D)(1 − e^{−Dτ/M}))`, `τ = t − t_f`, which stays strictly below the
-  undamped `δ₀ + P_m τ²/(2M)` for `τ > 0` (`exp_neg_lt_quadratic`: `e^{−u} < 1 − u + u²/2`).
+  undamped `δ₀ + P_m τ²/(2M)` for `τ > 0` (`SpecialFunctions.exp_neg_lt_quadratic`:
+  `e^{−u} < 1 − u + u²/2`).
   `boltedFault_damped_clearingAngle`: with `δ_cc ∈ (δ₀, δ_u]` the undamped critical clearing
   angle (zero of `g = A_acc − A_dec`, post-fault curve positive on `(δ₀, δ_u)`) there is `ε > 0`
   such that every clearing time `t_c − t_f ≤ t_cc^EAC + ε`, `t_cc^EAC = √(2M(δ_cc − δ₀)/P_m)`,
@@ -64,8 +66,10 @@ theorems (`energy_antitoneOn`, `firstSwing_le_deltaU_of_damping`, `regionOfAttra
 (`dampedBolted_trajectory`, `boltedFault_damped_clearingAngle`, `boltedFault_damped_firstSwing`,
 `boltedFault_damped_tendsto`) are private implementation evidence; the local stability of
 `(δ_s, 0)` with `D > 0` is the connection conclusion `Swing.deltaS_mem_den_locallyExponentiallyStable`.
-The well geometry (`wellWindow`, compact sublevels, the only equilibrium in the window) and the
-elementary bounds `exp_neg_lt_quadratic`, `exp_neg_le_quadratic` are public foundation.  LaSalle is the generic `Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel`
+The well geometry (`wellWindow`, compact sublevels, the only equilibrium in the window) is public
+foundation; the elementary bounds `SpecialFunctions.exp_neg_lt_quadratic`,
+`SpecialFunctions.exp_neg_le_quadratic` are in `theorem/SpecialFunctions/Elementary.lean`.
+LaSalle is the generic `Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel`
 (`theorem/Dynamics/LaSalle/Basin.lean`).
 
 Source: work-sync theory/T-transient-stability.md §1.3, §1.5, §1.6, §1.8, §2.2.
@@ -75,39 +79,6 @@ noncomputable section
 namespace powerlib.Synchronous
 open Set Filter Topology intervalIntegral
 open powerlib.Dynamics (State)
-
-/-- `e^{−u} < 1 − u + u²/2` for `u > 0`. -/
-@[powerlib_foundation] theorem exp_neg_lt_quadratic {u : ℝ} (hu : 0 < u) :
-    Real.exp (-u) < 1 - u + u ^ 2 / 2 := by
-  let f : ℝ → ℝ := fun x => 1 - x + x ^ 2 / 2 - Real.exp (-x)
-  have hd : ∀ x, HasDerivAt f (-1 + x + Real.exp (-x)) x := by
-    intro x
-    have h1 : HasDerivAt (fun x : ℝ => 1 - x + x ^ 2 / 2) (-1 + x) x := by
-      have := ((hasDerivAt_id' x).const_sub 1).add ((hasDerivAt_pow 2 x).div_const 2)
-      convert this using 1
-      simp
-    have h2 : HasDerivAt (fun x : ℝ => Real.exp (-x)) (-Real.exp (-x)) x := by
-      have := (hasDerivAt_neg x).exp
-      convert this using 1; ring
-    convert h1.sub h2 using 1; ring
-  have hmono : StrictMonoOn f (Ici 0) := by
-    apply strictMonoOn_of_deriv_pos (convex_Ici 0)
-    · exact fun x _ => (hd x).continuousAt.continuousWithinAt
-    · intro x hx
-      rw [interior_Ici] at hx
-      rw [(hd x).deriv]
-      have := Real.add_one_lt_exp (x := -x) (by linarith [mem_Ioi.mp hx])
-      linarith
-  have := hmono (mem_Ici.mpr le_rfl) (mem_Ici.mpr hu.le) hu
-  simp only [f, neg_zero, Real.exp_zero] at this
-  linarith
-
-/-- `1 − u ≤ e^{−u} ≤ 1 − u + u²/2` for `u ≥ 0`. -/
-@[powerlib_foundation] theorem exp_neg_le_quadratic {u : ℝ} (hu : 0 ≤ u) :
-    Real.exp (-u) ≤ 1 - u + u ^ 2 / 2 := by
-  rcases hu.lt_or_eq with h | h
-  · exact (exp_neg_lt_quadratic h).le
-  · subst h; simp
 
 namespace SwingParams
 
@@ -520,7 +491,7 @@ private theorem boltedFault_damped_clearingAngle {fault post : SwingParams}
   -- `F τ ≤ δ₀ + P τ²/(2M)` for `τ ≥ 0` (the undamped angle), strictly for `τ > 0`
   have hFq : ∀ τ, 0 ≤ τ → F τ ≤ δ₀ + P / (2 * M) * τ ^ 2 := by
     intro τ hτ
-    have h1 := exp_neg_le_quadratic (u := D / M * τ) (by positivity)
+    have h1 := SpecialFunctions.exp_neg_le_quadratic (u := D / M * τ) (by positivity)
     have h2 : τ - D / M * τ ^ 2 / 2 ≤ M / D * (1 - Real.exp (-(D / M) * τ)) := by
       have e : -(D / M) * τ = -(D / M * τ) := by ring
       rw [e]
@@ -535,7 +506,7 @@ private theorem boltedFault_damped_clearingAngle {fault post : SwingParams}
     simp only [F]; linarith
   have hFq' : ∀ τ, 0 < τ → F τ < δ₀ + P / (2 * M) * τ ^ 2 := by
     intro τ hτ
-    have h1 := exp_neg_lt_quadratic (u := D / M * τ) (by positivity)
+    have h1 := SpecialFunctions.exp_neg_lt_quadratic (u := D / M * τ) (by positivity)
     have h2 : τ - D / M * τ ^ 2 / 2 < M / D * (1 - Real.exp (-(D / M) * τ)) := by
       have e : -(D / M) * τ = -(D / M * τ) := by ring
       rw [e]

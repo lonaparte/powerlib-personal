@@ -17,6 +17,9 @@ Contents.
 * Backward Euler: A-stable and `R → 0` at infinity (L-stable); real multiplier in `(0, 1)`.
 * Forward Euler: for `λ = -α + iω`, `‖1 + hλ‖ ≤ 1 ↔ h ≤ 2α/(α² + ω²)`; purely imaginary
   nonzero `λ` admits no stable step; real `λ < 0`: `|1 + hλ| < 1 ↔ h < 2/|λ|`.
+  For the real recursion `e[k+1] = e[k] + T_s(−α e[k])`: `e[k] = (1 − α T_s)^k e[0]`
+  (`eulerFirstOrder_closedForm`), and every trajectory tends to `0` iff `0 < α T_s < 2`
+  (`eulerFirstOrder_tendsto_zero_iff`).
 * RK4 on the imaginary axis: `‖R(iy)‖ ≤ 1 ↔ |y| ≤ 2√2` (exact).
 * A polynomial stability function with `R'(0) = 1` is never A-stable.
 
@@ -277,6 +280,34 @@ unit disk `‖z‖ ≤ 1` differ in both directions. -/
     rw [this, Complex.norm_real, Real.norm_eq_abs]; norm_num [abs_of_neg]
   · have : (-3 / 2 : ℂ) = ((-3 / 2 : ℝ) : ℂ) := by push_cast; ring
     rw [this, Complex.norm_real, Real.norm_eq_abs]; norm_num [abs_of_neg]
+
+/-! ### Forward Euler on a real first-order loop `ė = −α e` -/
+
+/-- Forward-Euler recursion of `ė = −α e` with period `T_s`: `e[k] = (1 − α T_s)^k e[0]`. -/
+@[powerlib_foundation] theorem eulerFirstOrder_closedForm (α Ts : ℝ) (e : ℕ → ℝ)
+    (he : ∀ k, e (k + 1) = e k + Ts * (-α * e k)) (k : ℕ) :
+    e k = (1 - α * Ts) ^ k * e 0 := by
+  induction k with
+  | zero => simp
+  | succ k ih => rw [he, ih, pow_succ]; ring
+
+/-- Forward-Euler stability limit: every forward-Euler trajectory of `ė = −α e` converges to
+zero iff `0 < α T_s < 2`. -/
+@[powerlib_foundation] theorem eulerFirstOrder_tendsto_zero_iff (α Ts : ℝ) :
+    (∀ e : ℕ → ℝ, (∀ k, e (k + 1) = e k + Ts * (-α * e k)) →
+        Tendsto e atTop (𝓝 0)) ↔ 0 < α * Ts ∧ α * Ts < 2 := by
+  constructor
+  · intro h
+    have h1 := h (fun k => (1 - α * Ts) ^ k) (fun k => by rw [pow_succ]; ring)
+    have h2 := tendsto_pow_atTop_nhds_zero_iff.mp h1
+    rw [abs_lt] at h2
+    constructor <;> linarith [h2.1, h2.2]
+  · rintro ⟨h0, h2⟩ e he
+    have hr : |1 - α * Ts| < 1 := by rw [abs_lt]; constructor <;> linarith
+    have hpow := (tendsto_pow_atTop_nhds_zero_iff.mpr hr).mul_const (e 0)
+    rw [zero_mul] at hpow
+    refine hpow.congr fun k => ?_
+    rw [eulerFirstOrder_closedForm α Ts e he k]
 
 /-! ### RK4 on the imaginary axis -/
 

@@ -3,6 +3,7 @@ import theorem.Criteria.Hurwitz2
 import theorem.Linear.Rate
 import theorem.TMIO.ClaimElab
 import theorem.SingularPerturbation.FiniteHorizon
+import theorem.LTI.Decay
 
 /-! # Single-area swing + first-order governor (two-state frequency model)
 
@@ -85,7 +86,7 @@ input `ΔP_L`, output `Δω`; it is `LowInertia.firstOrderModel M (K_R + D)`). T
 * Stability (static): `reduced_isHurwitz_iff` (`0 < K_R + D`), `isHurwitz_iff_reduced` (Hurwitz
   iff the reduction is, whenever `0 < M + D T_g`), `eventually_isHurwitz_iff_reduced`;
   `rateMargin_iff`, `reduced_rateMargin_iff`, `eventually_rateMargin_iff_reduced` (off the pole
-  `a M = K_R + D` the rate margins agree for small `T_g`); generic `not_decay_of_eigenvector`
+  `a M = K_R + D` the rate margins agree for small `T_g`); generic `LTI.not_decay_of_eigenvector`
   (a real eigenvalue `μ > −a` excludes decay at the rate `a`).
 * First-order family `reducedFamily` (`ReducedModel`: `M > 0`, `D`, `K_R`; requirements `stable`
   `0 < K_R + D`, `unstable` `K_R + D < 0`, `rate a` `a M ≤ K_R + D`; `Model.reduce` forgets `T_g`,
@@ -144,7 +145,7 @@ variable {M D K Tg ΔPL : ℝ}
     (plant M D K Tg).inputField (load ΔPL) x =
       WithLp.toLp 2 ![-D / M * x 0 + 1 / M * x 1 + -1 / M * ΔPL,
         -K / Tg * x 0 + -1 / Tg * x 1] := by
-  rw [inputField_apply]
+  rw [LTI.inputField_apply]
   congr 1
   ext i
   fin_cases i <;> simp [plant, load, dotProduct, Fin.sum_univ_two]
@@ -511,7 +512,7 @@ private theorem rocof {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔPL) y) (Ici 0))
     (h0 : x 0 = 0) :
     HasDerivWithinAt (fun t => x t 0) (-ΔPL / M) (Ici 0) 0 := by
-  have h := hasDerivWithinAt_apply_zero hx 0
+  have h := LTI.hasDerivWithinAt_apply_zero hx 0
   rw [field_apply, h0] at h
   convert h using 1
   simp only [Fin.isValue, Matrix.cons_val_zero, PiLp.zero_apply]
@@ -538,7 +539,7 @@ private theorem tendsto_freq (m : Model) (hD : 0 ≤ m.D) (hKD : 0 < m.K + m.D) 
   have hA : IsHurwitz m.plant.A := by
     rw [family_isLinear.den_hurwitz (Or.inl (by simp))] at hmem
     exact hmem
-  have h := tendsto_apply_of_isHurwitz m.plant
+  have h := LTI.tendsto_apply_of_isHurwitz m.plant
     (steadyState_isEquilibrium m.M_pos.ne' m.Tg_pos.ne' hKD.ne') hA hx 0
   simpa using h
 
@@ -836,7 +837,7 @@ second-order response becomes overdamped. -/
 @[powerlib_foundation] theorem reduced_field_apply (x : EuclideanSpace ℝ (Fin 1)) :
     (reducedPlant M D K).inputField (load ΔPL) x =
       WithLp.toLp 2 ![-(K + D) / M * x 0 + -1 / M * ΔPL] := by
-  rw [inputField_apply]
+  rw [LTI.inputField_apply]
   congr 1
   ext i
   fin_cases i
@@ -976,42 +977,6 @@ swing + governor model has the rate margin `a` exactly when the first-order mode
     filter_upwards [nhdsWithin_le_nhds e2, self_mem_nhdsWithin] with Tg h2 (h3 : 0 < Tg)
     rw [rateMargin_iff hM h3, reduced_rateMargin_iff hM]
     exact iff_of_false (fun h => by linarith [h.2]) (by linarith)
-
-/-- A real eigenvector `A v = μ v`, `v ≠ 0`, with `−a < μ` excludes decay at the rate `a`: the
-eigenmode `e^{μ t} v` is a solution segment that decays too slowly. -/
-@[powerlib_foundation] theorem not_decay_of_eigenvector {n : ℕ} {A : Matrix (Fin n) (Fin n) ℝ}
-    {μ a : ℝ} {v : EuclideanSpace ℝ (Fin n)} (hv : v ≠ 0) (hAv : Linear.op A v = μ • v)
-    (hμ : -a < μ) : ¬ Flow.Decay (affineLinearVectorField A 0) 0 a := by
-  rintro ⟨C, hC⟩
-  have hμa : 0 < μ + a := by linarith
-  set T : ℝ := |C| / (μ + a) with hT_def
-  have hT0 : 0 ≤ T := div_nonneg (abs_nonneg C) hμa.le
-  have hsol : IsTrajectoryOn (fun t => Real.exp (μ * t) • v) (affineLinearVectorField A 0) 0 T := by
-    intro t _
-    have h : HasDerivAt (fun t => Real.exp (μ * t) • v) ((Real.exp (μ * t) * μ) • v) t := by
-      simpa using ((hasDerivAt_id t).const_mul μ).exp.smul_const v
-    have e : affineLinearVectorField A 0 (Real.exp (μ * t) • v) = (Real.exp (μ * t) * μ) • v := by
-      rw [Linear.affine_apply, sub_zero, map_smul, hAv, smul_smul, mul_comm]
-    show HasDerivWithinAt _ (affineLinearVectorField A 0 (Real.exp (μ * t) • v)) _ _
-    rw [e]
-    exact h.hasDerivWithinAt
-  have hb := hC 0 T _ hsol T ⟨hT0, le_rfl⟩
-  have hvn : 0 < ‖v‖ := norm_pos_iff.2 hv
-  simp only [sub_zero, mul_zero, Real.exp_zero, one_smul, norm_smul,
-    Real.norm_of_nonneg (Real.exp_pos _).le] at hb
-  have h1 : Real.exp (μ * T) ≤ C * Real.exp (-a * T) := le_of_mul_le_mul_right hb hvn
-  have h2 : Real.exp ((μ + a) * T) ≤ C := by
-    have h := mul_le_mul_of_nonneg_left h1 (Real.exp_pos (a * T)).le
-    have e₁ : Real.exp (a * T) * Real.exp (μ * T) = Real.exp ((μ + a) * T) := by
-      rw [← Real.exp_add]; congr 1; ring
-    have e₂ : Real.exp (a * T) * (C * Real.exp (-a * T)) = C := by
-      rw [mul_left_comm, ← Real.exp_add, show a * T + -a * T = 0 by ring, Real.exp_zero, mul_one]
-    linarith
-  have hprod : (μ + a) * T = |C| := by
-    rw [hT_def]
-    field_simp
-  rw [hprod] at h2
-  linarith [Real.add_one_le_exp |C|, le_abs_self C]
 
 /-! ### The first-order family and the connection conclusions of the limit -/
 
@@ -1193,7 +1158,7 @@ the model does not decay at the rate `a` (its slow eigenmode decays like `e^{λ_
     connection% (m ∉ family.den (.flow (.decay a))) := by
   unfold powerlib.TMIO.Statement
   rw [family_isLinear.mem_den_flow]
-  refine not_decay_of_eigenvector (A := m.plant.A)
+  refine LTI.not_decay_of_eigenvector (A := m.plant.A)
     (v := WithLp.toLp 2 ![1, m.M * slowEig m.M m.D m.K m.Tg + m.D]) ?_ ?_ h
   · intro h0
     have := congrArg (fun v : EuclideanSpace ℝ (Fin 2) => v 0) h0

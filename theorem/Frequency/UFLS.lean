@@ -45,8 +45,8 @@ shedding statements quantify over forward solutions under a load step (eventual 
 excursions, initial slope), which the sentence language does not express: `postShed_necessary`,
 `postShed_not_sufficient` and `load_eq_of_rocof` (formerly `@[powerlib_domain]`) are private
 implementation evidence (Rules §3a). They are derived from the generic
-`Frequency.tendsto_apply_of_isHurwitz`, `Frequency.trajectory_eq_osc2`,
-`Frequency.hasDerivWithinAt_apply_zero` and static facts of the plant. The steady-state
+`LTI.tendsto_apply_of_isHurwitz`, `LTI.trajectory_eq_osc2`,
+`LTI.hasDerivWithinAt_apply_zero` and static facts of the plant. The steady-state
 inequality, the corrected load estimate and the trip logic are foundation.
 -/
 
@@ -77,7 +77,7 @@ private theorem postShed_necessary {ΔP' : ℝ} (hM : 0 < M) (hTg : 0 < Tg)
     (hD : 0 ≤ D) (hKD : 0 < K + D) (hf : 0 < f₀) {x : ℝ → ℝ²}
     (hx : IsIntegralCurveOn x (fun _ y => (plant M D K Tg).inputField (load ΔP') y) (Ici 0))
     (hev : ∀ᶠ t in atTop, -(th / f₀) ≤ x t 0) : ΔP' ≤ (K + D) * th / f₀ := by
-  have hlim := tendsto_apply_of_isHurwitz (plant M D K Tg)
+  have hlim := LTI.tendsto_apply_of_isHurwitz (plant M D K Tg)
     (SwingGovernor.steadyState_isEquilibrium hM.ne' hTg.ne' hKD.ne')
     ((SwingGovernor.isHurwitz_iff_of_nonneg hM hTg hD).2 hKD) hx 0
   rw [SwingGovernor.steadyState_zero] at hlim
@@ -99,7 +99,7 @@ private theorem postShed_not_sufficient {ΔP' : ℝ} (hM : 0 < M) (hTg : 0 < Tg)
   have hωd := SwingGovernor.dampedFreq_pos hM hTg hD hKD hζ
   have hT0 : 0 < SwingGovernor.nadirTime M D K Tg := SwingGovernor.tCrit_pos hωd
   have hval : x (SwingGovernor.nadirTime M D K Tg) 0 = SwingGovernor.nadirValue M D K Tg ΔP' := by
-    rw [trajectory_eq_osc2 (plant M D K Tg)
+    rw [LTI.trajectory_eq_osc2 (plant M D K Tg)
       (SwingGovernor.steadyState_isEquilibrium hM.ne' hTg.ne' hKD.ne')
       (SwingGovernor.trace_A hM hTg hKD) (SwingGovernor.det_A hM hTg hD hKD hζ) hωd.ne' hx
       hT0.le, h0, SwingGovernor.osc2_freq hM hTg hD hKD hζ,
@@ -128,7 +128,7 @@ private theorem load_eq_of_rocof (hM : 0 < M) (hf : 0 < f₀) (hP : 0 ≤ ΔPL)
     (h0 : x 0 = 0) {ρ : ℝ} (hρ : HasDerivWithinAt (fun t => f₀ * (1 + x t 0)) ρ (Ici 0) 0) :
     ΔPL = M * |ρ| / f₀ := by
   have hr : HasDerivWithinAt (fun t => x t 0) (-ΔPL / M) (Ici 0) 0 := by
-    have h := hasDerivWithinAt_apply_zero hx 0
+    have h := LTI.hasDerivWithinAt_apply_zero hx 0
     rw [SwingGovernor.field_apply, h0] at h
     convert h using 1
     simp only [Fin.isValue, Matrix.cons_val_zero, PiLp.zero_apply]

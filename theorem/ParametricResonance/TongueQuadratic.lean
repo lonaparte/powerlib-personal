@@ -60,30 +60,6 @@ namespace powerlib.ParametricResonance
 
 open Set Filter Topology
 
-/-! ## A quadratic helper -/
-
-/-- For `a > 0`, `a x² + b x + c < 0` iff `x` lies strictly between the two roots. -/
-@[powerlib_foundation] theorem quad_neg_iff {a b c x : ℝ} (ha : 0 < a) :
-    a * x ^ 2 + b * x + c < 0 ↔
-      (-b - √(b ^ 2 - 4 * a * c)) / (2 * a) < x ∧ x < (-b + √(b ^ 2 - 4 * a * c)) / (2 * a) := by
-  have h : a * x ^ 2 + b * x + c < 0 ↔ (2 * a * x + b) ^ 2 < b ^ 2 - 4 * a * c := by
-    constructor <;> intro h <;> nlinarith
-  rw [h, Real.sq_lt, div_lt_iff₀ (by positivity), lt_div_iff₀ (by positivity)]
-  constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith
-
-/-- For `a ≠ 0` and nonnegative discriminant, `(−b ± √D)/(2a)` are roots. -/
-@[powerlib_foundation] theorem quad_root {a b c : ℝ} (ha : a ≠ 0) (hD : 0 ≤ b ^ 2 - 4 * a * c)
-    (σ : ℝ) (hσ : σ = 1 ∨ σ = -1) :
-    a * ((-b + σ * √(b ^ 2 - 4 * a * c)) / (2 * a)) ^ 2 +
-      b * ((-b + σ * √(b ^ 2 - 4 * a * c)) / (2 * a)) + c = 0 := by
-  have hs := Real.sq_sqrt hD
-  have hσ2 : σ ^ 2 = 1 := by rcases hσ with rfl | rfl <;> norm_num
-  set r := √(b ^ 2 - 4 * a * c) with hr
-  have key : a * ((-b + σ * r) / (2 * a)) ^ 2 + b * ((-b + σ * r) / (2 * a)) + c =
-      (σ ^ 2 * r ^ 2 - (b ^ 2 - 4 * a * c)) / (4 * a) := by
-    field_simp; ring
-  rw [key, hσ2, hs]; simp
-
 /-! ## The second-order slow flow (§6–§7) -/
 
 variable (α₀ cα cω g2 : ℝ)
@@ -180,7 +156,8 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
 /-- `q(y) < 0` exactly strictly between the two roots. -/
 @[powerlib_foundation] theorem tongue_neg_iff (hS : 0 < cα ^ 2 + cω ^ 2) (y : ℝ) :
     tongue α₀ cα cω g2 y < 0 ↔ yMinus α₀ cα cω g2 < y ∧ y < yPlus α₀ cα cω g2 := by
-  have h := quad_neg_iff (a := cα ^ 2 + cω ^ 2) (b := -pumpQ α₀ cα g2) (c := α₀ ^ 2) (x := y) hS
+  have h := Criteria.quad_neg_iff (a := cα ^ 2 + cω ^ 2) (b := -pumpQ α₀ cα g2) (c := α₀ ^ 2)
+    (x := y) hS
   have hd : (-pumpQ α₀ cα g2) ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2 = tongueDisc α₀ cα cω g2 := by
     simp only [tongueDisc]; ring
   rw [hd, neg_neg] at h
@@ -193,7 +170,7 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
     (hd : 0 ≤ tongueDisc α₀ cα cω g2) : tongue α₀ cα cω g2 (yMinus α₀ cα cω g2) = 0 := by
   have hd' : 0 ≤ (-pumpQ α₀ cα g2) ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2 := by
     simp only [tongueDisc] at hd; linarith
-  have h := quad_root hS.ne' hd' (-1) (Or.inr rfl)
+  have h := Criteria.quad_root hS.ne' hd' (-1) (Or.inr rfl)
   have he : (-pumpQ α₀ cα g2) ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2 = tongueDisc α₀ cα cω g2 := by
     simp only [tongueDisc]; ring
   rw [he] at h
@@ -204,7 +181,7 @@ flow: `a(y) > 0 ∧ (δ̂₁|𝒢|/2)² < a(y)² + (Δ + c_ω y)²`. -/
     (hd : 0 ≤ tongueDisc α₀ cα cω g2) : tongue α₀ cα cω g2 (yPlus α₀ cα cω g2) = 0 := by
   have hd' : 0 ≤ (-pumpQ α₀ cα g2) ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2 := by
     simp only [tongueDisc] at hd; linarith
-  have h := quad_root hS.ne' hd' 1 (Or.inl rfl)
+  have h := Criteria.quad_root hS.ne' hd' 1 (Or.inl rfl)
   have he : (-pumpQ α₀ cα g2) ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2 = tongueDisc α₀ cα cω g2 := by
     simp only [tongueDisc]; ring
   rw [he] at h
@@ -498,7 +475,7 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
     -- as a quadratic in `Δ`: `cα² Δ² + Q c_ω Δ − (Q² − 4 S α₀²)/4 < 0`
     have hq : cα ^ 2 * Δ ^ 2 + (Q * cω) * Δ + (-(Q ^ 2 - 4 * S * α₀ ^ 2) / 4) < 0 := by
       simp only [hSdef] at hdisc ⊢; nlinarith
-    have h := (quad_neg_iff hca2).mp hq
+    have h := (Criteria.quad_neg_iff hca2).mp hq
     have hD : (Q * cω) ^ 2 - 4 * cα ^ 2 * (-(Q ^ 2 - 4 * S * α₀ ^ 2) / 4) =
         S * (Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) := by simp only [hSdef]; ring
     rw [hD, Real.sqrt_mul hS.le] at h
@@ -518,7 +495,7 @@ def deltaStarMinus (α₀ cα cω g2 : ℝ) : ℝ :=
     have hD : (Q * cω) ^ 2 - 4 * cα ^ 2 * (-(Q ^ 2 - 4 * S * α₀ ^ 2) / 4) =
         S * (Q ^ 2 - 4 * cα ^ 2 * α₀ ^ 2) := by simp only [hSdef]; ring
     have hq : cα ^ 2 * Δ ^ 2 + (Q * cω) * Δ + (-(Q ^ 2 - 4 * S * α₀ ^ 2) / 4) < 0 := by
-      rw [quad_neg_iff hca2, hD, Real.sqrt_mul hS.le]
+      rw [Criteria.quad_neg_iff hca2, hD, Real.sqrt_mul hS.le]
       simp only [deltaStarMinus, deltaStarPlus, ← hQdef, ← hSdef] at h1 h2
       constructor
       · convert h1 using 1; ring
@@ -732,7 +709,7 @@ def detunedP (α₀ cα cω g2 Δ : ℝ) : ℝ :=
       deltaStarMinus α₀ cα cω g2 < Δ ∧ Δ < deltaStarPlus α₀ cα cω g2 := by
   have hca2 : 0 < cα ^ 2 := by positivity
   have hS : 0 ≤ cα ^ 2 + cω ^ 2 := by positivity
-  have h := quad_neg_iff (a := cα ^ 2) (b := pumpQ α₀ cα g2 * cω)
+  have h := Criteria.quad_neg_iff (a := cα ^ 2) (b := pumpQ α₀ cα g2 * cω)
     (c := -(pumpQ α₀ cα g2 ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2) / 4) (x := Δ) hca2
   have hD : (pumpQ α₀ cα g2 * cω) ^ 2 -
       4 * cα ^ 2 * (-(pumpQ α₀ cα g2 ^ 2 - 4 * (cα ^ 2 + cω ^ 2) * α₀ ^ 2) / 4) =

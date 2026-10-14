@@ -32,7 +32,7 @@ mean-square stable, `β² < 2λ` (`driftImplicit_msFactor_lt_one`), not for arbi
 -/
 
 noncomputable section
-namespace powerlib.Stochastic.EM
+namespace powerlib.Numerics
 
 open MeasureTheory ProbabilityTheory Filter
 open scoped NNReal Topology
@@ -248,4 +248,4 @@ fixed point direction, the second moment diverges. -/
   exact tendsto_atTop_add_const_right _ _
     ((tendsto_pow_atTop_atTop_of_one_lt h1).atTop_mul_const hpos)
 
-end powerlib.Stochastic.EM
+end powerlib.Numerics

@@ -1,4 +1,4 @@
-import theorem.Line.CableBessel
+import theorem.SpecialFunctions.BesselI
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
@@ -11,7 +11,8 @@ import Mathlib.Analysis.Complex.Convex
 
 Source: work-sync `theory/T-cable.md` §1.2.2 (tubular conductors; Schelkunoff 1934, ref. 1 of the
 note). The exact tubular-conductor impedances need, besides `I₀`, `I₁`
-(`theorem/Line/CableBessel.lean`), the second-kind functions `K₀`, `K₁`; Mathlib has neither kind.
+(`theorem/SpecialFunctions/BesselI.lean`), the second-kind functions `K₀`, `K₁`; Mathlib has
+neither kind.
 
 Definitions (functions, not predicates). For `Re z > 0`:
 * `besselK0 z = ∫₀^∞ e^{−z cosh t} dt`, `besselK1 z = ∫₀^∞ e^{−z cosh t} cosh t dt` (the standard
@@ -36,7 +37,7 @@ Results (foundation; static special-function analysis, no model family).
 * Large argument: `norm_exp_mul_besselK0_sub_le`, `norm_exp_mul_besselK1_sub_le`
   (`‖e^z K_ν(z) − G(z)‖ = O(x^{−3/2})`, `x = Re z`, explicit constants, every `x > 0`),
   `besselK_laplace_le` (relative form `≤ (2√(2K)/x)‖G(z)‖` in the sector `‖z‖ ≤ K x`),
-  `besselI_laplace_le'` (the same for `π e^{−z} I_ν(z)`, from `CableBessel.besselI_laplace_le`),
+  `besselI_laplace_le'` (the same for `π e^{−z} I_ν(z)`, from `besselI_laplace_le`),
   `tendsto_bessel_div_gaussHalf` (all four normalized functions `→ 1` as `Re z → ∞` in a sector),
   i.e. `K_ν(z) ∼ √(π/(2z)) e^{−z}` and `I_ν(z) ∼ e^z/√(2πz)`.
 * The scale: `norm_gaussHalf` (`‖G(z)‖ = √(π/(‖z‖/2))/2`), `gaussHalf_ne_zero`, `gaussHalf_sq`
@@ -56,9 +57,8 @@ Family and connection conclusions: none (static special-function analysis; no mo
 -/
 
 noncomputable section
-namespace powerlib.Line.BesselK
+namespace powerlib.SpecialFunctions
 open Filter Topology MeasureTheory Set
-open powerlib.Line.CableBessel
 
 /-- `K₀(z) = ∫₀^∞ e^{−z cosh t} dt` (`Re z > 0`). -/
 def besselK0 (z : ℂ) : ℂ := ∫ t in Ioi (0 : ℝ), Complex.exp (-z * Real.cosh t)
@@ -492,7 +492,7 @@ theorem besselK_laplace_le {K : ℝ} {z : ℂ} (hz : 0 < z.re) (hzK : ‖z‖ �
   exact ⟨(norm_exp_mul_besselK0_sub_le hz).trans (h0.trans h1),
     (norm_exp_mul_besselK1_sub_le hz).trans h1⟩
 
-/-- **Laplace bounds for `I₀`, `I₁` in a sector** (from `CableBessel.besselI_laplace_le`), in terms of
+/-- **Laplace bounds for `I₀`, `I₁` in a sector** (from `besselI_laplace_le`), in terms of
 `G`: `‖π e^{−z} I_ν(z) − G(z)‖ ≤ (C/x)‖G(z)‖`, `ν = 0, 1`. -/
 @[powerlib_foundation] theorem besselI_laplace_le' {K : ℝ} (hK : 0 < K) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ z : ℂ, 0 < z.re → ‖z‖ ≤ K * z.re →
@@ -1065,4 +1065,4 @@ theorem besselI0_mul_besselK1_add_besselI1_mul_besselK0 {z : ℂ} (hz : 0 < z.re
   field_simp
   linear_combination h
 
-end powerlib.Line.BesselK
+end powerlib.SpecialFunctions

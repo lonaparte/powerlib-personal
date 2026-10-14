@@ -1,4 +1,6 @@
 import theorem.Linear.Transfer
+import theorem.LTI.Decay
+import theorem.Dynamics.Coordinates
 
 /-! # Forced response of an LTI plant and the constant-Jacobian obstruction
 
@@ -38,7 +40,8 @@ asked for in the task list.
 
 Architecture: generic linear-systems facts with no model family; all results remain public
 foundation support. Decay and the converse (a uniform exponential bound on every global solution
-of `ẋ = A x` forces `A` Hurwitz) go through the linear stability hub
+of `ẋ = A x` forces `A` Hurwitz; `LTI.exists_global_bound_of_isHurwitz`,
+`LTI.isHurwitz_of_global_bound` in `theorem/LTI/Decay.lean`) go through the linear stability hub
 (`Linear.globallyExponentiallyStable_of_isHurwitz`, `Linear.holds_iff_isHurwitz`) applied to the
 field `LinearSystems.affineLinearVectorField A 0`; the former `LTI` trajectory and norm
 conventions are replaced by curves in `ℝⁿ`.
@@ -52,62 +55,6 @@ open Matrix Complex Filter Topology Set LinearSystems
 variable {n : ℕ}
 
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
-
-/-! ## Curves in `ℝⁿ` and the linear hub -/
-
-/-- Coordinatewise derivatives give the derivative of a curve in `ℝⁿ`. -/
-@[powerlib_foundation] theorem hasDerivAt_of_coords {x : ℝ → ℝⁿ} {v : ℝⁿ} {t : ℝ}
-    (h : ∀ i, HasDerivAt (fun s => x s i) (v i) t) : HasDerivAt x v t := by
-  have hpi : HasDerivAt (fun s => WithLp.ofLp (x s)) (WithLp.ofLp v) t := hasDerivAt_pi.2 h
-  have h2 := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm.hasFDerivAt.comp_hasDerivAt
-    t hpi
-  simpa [Function.comp_def] using h2
-
-/-- A curve in `ℝⁿ` has the derivative `v` iff each coordinate has the derivative `v i`. -/
-@[powerlib_foundation] theorem hasDerivAt_iff_coords {x : ℝ → ℝⁿ} {v : ℝⁿ} {t : ℝ} :
-    HasDerivAt x v t ↔ ∀ i, HasDerivAt (fun s => x s i) (v i) t :=
-  ⟨fun h i => (EuclideanSpace.proj i : ℝⁿ →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivAt t h,
-    hasDerivAt_of_coords⟩
-
-/-- Hurwitz `A`: every global solution of `ẋ = A x` decays exponentially from time `0` (the
-linear hub `Linear.globallyExponentiallyStable_of_isHurwitz`). -/
-@[powerlib_foundation] theorem exists_global_bound_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
-    (hA : IsHurwitz A) :
-    ∃ K > 0, ∃ rate > 0, ∀ e : ℝ → ℝⁿ, (∀ t, HasDerivAt e (Linear.op A (e t)) t) →
-      ∀ t, 0 ≤ t → ‖e t‖ ≤ K * Real.exp (-(rate * t)) * ‖e 0‖ := by
-  obtain ⟨-, -, C, a, hC, ha, hb⟩ := Linear.globallyExponentiallyStable_of_isHurwitz (0 : ℝⁿ) hA
-  refine ⟨C, by linarith, a, ha, fun e he t ht => ?_⟩
-  have htraj : IsTrajectoryOn e (affineLinearVectorField A 0) 0 t := fun s _ => by
-    simpa [Linear.affine_apply] using (he s).hasDerivWithinAt
-  have := hb 0 t e htraj t ⟨ht, le_rfl⟩
-  simpa [neg_mul, sub_zero] using this
-
-/-- A uniform exponential bound on every global solution of `ẋ = A x` forces `A` to be Hurwitz
-(the linear hub `Linear.holds_iff_isHurwitz`). -/
-@[powerlib_foundation] theorem isHurwitz_of_global_bound {A : Matrix (Fin n) (Fin n) ℝ}
-    {K rate : ℝ} (hrate : 0 < rate)
-    (hb : ∀ e : ℝ → ℝⁿ, (∀ t, HasDerivAt e (Linear.op A (e t)) t) →
-      ∀ t, 0 ≤ t → ‖e t‖ ≤ K * Real.exp (-(rate * t)) * ‖e 0‖) : IsHurwitz A := by
-  refine (Linear.holds_iff_isHurwitz (0 : ℝⁿ)
-    Flow.Property.attractive_globallyExponentiallyStable).mp ?_
-  show Flow.GloballyExponentiallyStable _ _
-  refine ⟨Linear.affine_isEquilibrium A 0, Linear.forwardComplete A 0, max K 1, rate,
-    le_max_right _ _, hrate, ?_⟩
-  intro t₀ t₁ φ hφ t ht
-  have heq := Linear.trajectory_eq_solution hφ t ht
-  set ψ : ℝ → ℝⁿ := fun s => Linear.solution A 0 t₀ (φ t₀) (s + t₀) with hψdef
-  have hψ : ∀ s, HasDerivAt ψ (Linear.op A (ψ s)) s := by
-    intro s
-    have h := (Linear.solution_hasDerivAt A 0 t₀ (φ t₀) (s + t₀)).comp_add_const s t₀
-    simpa [Linear.affine_apply, hψdef] using h
-  have hψ0 : ψ 0 = φ t₀ := by simp [hψdef]
-  have hψt : ψ (t - t₀) = φ t := by simp [hψdef, heq]
-  have hbound := hb ψ hψ (t - t₀) (by linarith [ht.1])
-  rw [hψt, hψ0] at hbound
-  simp only [sub_zero]
-  calc ‖φ t‖ ≤ K * Real.exp (-(rate * (t - t₀))) * ‖φ t₀‖ := hbound
-    _ ≤ max K 1 * Real.exp (-rate * (t - t₀)) * ‖φ t₀‖ := by
-      rw [neg_mul]; gcongr; exact le_max_left _ _
 
 /-! ## The first-order forced response -/
 
@@ -154,7 +101,7 @@ def forcing (b : Fin n → ℂ) (ω t : ℝ) : ℝⁿ :=
     ∀ t, HasDerivAt (forcedOrbit A b ω)
       (Linear.op A (forcedOrbit A b ω t) + forcing b ω t) t := by
   intro t
-  apply hasDerivAt_of_coords
+  apply Dynamics.hasDerivAt_of_coords
   intro i
   set χ := forcedAmplitude A b ω with hχdef
   have he : HasDerivAt (fun s : ℂ => χ i * Complex.exp ((ω : ℂ) * s * I))
@@ -218,7 +165,7 @@ forced orbit. -/
       (∀ t, HasDerivAt x (Linear.op A (x t) + forcing b ω t) t) → ∀ t, 0 ≤ t →
       ‖x t - forcedOrbit A b ω t‖ ≤
         K * Real.exp (-(rate * t)) * ‖x 0 - forcedOrbit A b ω 0‖ := by
-  obtain ⟨K, hK, rate, hrate, hbound⟩ := exists_global_bound_of_isHurwitz hA
+  obtain ⟨K, hK, rate, hrate, hbound⟩ := LTI.exists_global_bound_of_isHurwitz hA
   exact ⟨K, hK, rate, hrate, fun x hx t ht =>
     hbound _ (isTrajectory_sub_forcedOrbit (det_characteristicMatrix_imag_ne_zero hA ω) hx) t ht⟩
 
@@ -308,7 +255,7 @@ converges to it at a uniform exponential rate,
   have haff := affine_of_const_jacobian hf
   constructor
   · rintro ⟨K, hK, rate, hrate, hb⟩
-    refine isHurwitz_of_global_bound (K := K) hrate fun e he t ht => ?_
+    refine LTI.isHurwitz_of_global_bound (K := K) hrate fun e he t ht => ?_
     have hz : ∀ s, HasDerivAt (fun s => z_orb s + e s) (f (z_orb s + e s) (u s)) s := by
       intro s
       have h1 := (horb s).add (he s)
@@ -317,7 +264,7 @@ converges to it at a uniform exponential rate,
     have := hb _ hz t ht
     simpa using this
   · intro hA
-    obtain ⟨K, hK, rate, hrate, hb⟩ := exists_global_bound_of_isHurwitz hA
+    obtain ⟨K, hK, rate, hrate, hb⟩ := LTI.exists_global_bound_of_isHurwitz hA
     refine ⟨K, hK, rate, hrate, fun z hz t ht => ?_⟩
     have he : ∀ s, HasDerivAt (fun s => z s - z_orb s) (Linear.op A (z s - z_orb s)) s := by
       intro s

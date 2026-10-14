@@ -381,9 +381,9 @@ variable (p : Params)
 /-- The zeros of `h` are isolated (at most two per period, `V_g > 0`). -/
 @[powerlib_foundation] theorem h_zero_isolated (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg)
     (θ : ℝ) : ∀ᶠ θ' in 𝓝[≠] θ, p.h θ' ≠ 0 := by
-  set Z := sinusoidZeros p.c0 p.amp p.phase (θ - π)
+  set Z := SpecialFunctions.sinusoidZeros p.c0 p.amp p.phase (θ - π)
   have hfin : Z.Finite :=
-    (Set.toFinite _).subset (sinusoidZeros_subset (p.amp_pos hVg hΔ))
+    (Set.toFinite _).subset (SpecialFunctions.sinusoidZeros_subset (p.amp_pos hVg hΔ))
   have h1 : (Z \ {θ})ᶜ ∈ 𝓝 θ :=
     (hfin.subset Set.sdiff_subset).isClosed.compl_mem_nhds (by simp)
   have h2 : Ioo (θ - π) (θ + π) ∈ 𝓝 θ := Ioo_mem_nhds (by linarith [pi_pos]) (by linarith [pi_pos])

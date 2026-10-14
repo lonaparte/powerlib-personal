@@ -1,4 +1,5 @@
-import theorem.Modal.Participation
+import theorem.Attributes
+import dependencies.Mathlib
 import Mathlib.LinearAlgebra.Eigenspace.Zero
 import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import Mathlib.LinearAlgebra.Matrix.Block
@@ -32,7 +33,7 @@ scope of this module.
 -/
 
 noncomputable section
-namespace powerlib.Modal
+namespace powerlib.LinearAlgebra
 open Matrix Polynomial Module
 
 variable {K : Type*} [Field K] {n : Type*} [Fintype n] [DecidableEq n]
@@ -167,4 +168,4 @@ variable {k : ℕ}
     rw [hQ]; exact hessenberg_mul_upper hHμ (upperTriangular_inv hR hdet)
   exact hessenberg_add_smul_one (upper_mul_hessenberg hQH hR) μ
 
-end powerlib.Modal
+end powerlib.LinearAlgebra

@@ -1,4 +1,4 @@
-import theorem.Line.BesselK
+import theorem.SpecialFunctions.BesselK
 import theorem.Line.Cable
 
 /-! # Exact (Schelkunoff) tubular-conductor impedances: frequency limits and Wedepohl–Wilcox
@@ -18,9 +18,9 @@ one is `m = (1 + j)s`, `s = √(ωμ/(2ρ)) = 1/δ`). Per unit length, with
   current inside the tube),
 * `exactZout = (ρm/(2πb)) (I₀(mb)K₁(ma) + K₀(mb)I₁(ma))/D` — outer-surface impedance,
 * `exactZmut = ρ/(2πab D)` — transfer (screening) impedance.
-`I₀`, `I₁` are the power series of `theorem/Line/CableBessel.lean`; `K₀`, `K₁` the integrals
-`∫₀^∞ e^{−z cosh t}(1, cosh t) dt` of `theorem/Line/BesselK.lean`. The formulas are the
-definitions here (the field solution behind them is not derived). No proximity effect, no
+`I₀`, `I₁` are the power series of `theorem/SpecialFunctions/BesselI.lean`; `K₀`, `K₁` the
+integrals `∫₀^∞ e^{−z cosh t}(1, cosh t) dt` of `theorem/SpecialFunctions/BesselK.lean`. The
+formulas are the definitions here (the field solution behind them is not derived). No proximity effect, no
 earth return, no insulation; the Wedepohl–Wilcox comparisons use `Cable.tubeZin`, `tubeZout`,
 `tubeZmut` of `theorem/Line/Cable.lean`.
 
@@ -67,7 +67,7 @@ Family and connection conclusions: none (static special-function analysis; no mo
 noncomputable section
 namespace powerlib.Line.CableSchelkunoff
 open Filter Topology
-open powerlib.Line.CableBessel powerlib.Line.BesselK powerlib.Line.Cable
+open powerlib.SpecialFunctions powerlib.Line.Cable
 
 /-- Schelkunoff's determinant of a tube (inner radius `a`, outer radius `b`):
 `D(m) = I₁(mb) K₁(ma) − I₁(ma) K₁(mb)`. -/

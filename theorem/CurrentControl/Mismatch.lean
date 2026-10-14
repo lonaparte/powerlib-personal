@@ -1,5 +1,5 @@
 import theorem.CurrentControl.PILoop
-import theorem.CurrentControl.ComplexQuadratic
+import theorem.Criteria.ComplexQuadratic
 
 /-! # Decoupled dq PI current loop with inductance mismatch (domain)
 
@@ -182,12 +182,12 @@ private lemma eigenvector_ne_zero (s : ℂ) :
     IsHurwitz (stateMatrix a b c) ↔ 0 < a ∧ 0 < c := by
   constructor
   · intro h
-    rw [← complexQuadratic_realConst_roots_re_neg_iff a b c]
+    rw [← Criteria.complexQuadratic_realConst_roots_re_neg_iff a b c]
     intro s hs
     simpa using h s _ (eigenvector_ne_zero s) (eigenpair_of_root hs)
   · rintro ⟨ha, hc⟩ μ v hv heig
-    have hp := (complexQuadratic_realConst_roots_re_neg_iff a b c).2 ⟨ha, hc⟩
-    have hm := (complexQuadratic_realConst_roots_re_neg_iff a (-b) c).2 ⟨ha, hc⟩
+    have hp := (Criteria.complexQuadratic_realConst_roots_re_neg_iff a b c).2 ⟨ha, hc⟩
+    have hm := (Criteria.complexQuadratic_realConst_roots_re_neg_iff a (-b) c).2 ⟨ha, hc⟩
     have : μ.re < 0 := by
       rcases eigenvalue_root hv heig with h | h
       · exact hp μ h
@@ -201,7 +201,7 @@ plane: the two roots of `s² + (a + j b) s + c` sum to `−a − j b`. -/
   obtain ⟨d, hd⟩ := IsAlgClosed.exists_eq_mul_self (discrim (1 : ℂ) (⟨a, b⟩ : ℂ) (c : ℂ))
   obtain ⟨s, hs⟩ := exists_quadratic_eq_zero (one_ne_zero) ⟨d, hd⟩
   have hs' : s ^ 2 + (⟨a, b⟩ : ℂ) * s + (c : ℂ) = 0 := by linear_combination hs
-  obtain ⟨-, -, hs₂⟩ := quadratic_partner hs'
+  obtain ⟨-, -, hs₂⟩ := Criteria.quadratic_partner hs'
   have hsum : s.re + (-(⟨a, b⟩ : ℂ) - s).re = -a := by simp
   by_cases hpos : 0 < s.re
   · exact ⟨s, Criteria.det_characteristicMatrix_eq_zero_of_eigenpair _ (eigenvector_ne_zero s)

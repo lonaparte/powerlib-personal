@@ -20,7 +20,9 @@ Conventions fixed by this module:
   zero-sequence row (`T-impedance-modeling.md` §1.1); it is orthogonal.
 
 * `parkABC θ = park θ · clarke` is the amplitude-invariant three-phase Park of `T-PU.md` §1.7;
-  `balanced V φ θ` is the balanced positive-sequence signal `V cos(θ − 2πk/3 + φ)`.
+  `balanced V φ θ` is the balanced positive-sequence signal `V cos(θ − 2πk/3 + φ)`;
+  `negSeq V φ θ` is the negative-sequence signal (phases `b`, `c` swapped), which is
+  `V e^{−j(θ+φ)}` in αβ (`clarke_mulVec_negSeq`, `toComplex_clarke_negSeq`).
 
 The chain rule (`hasDerivAt_rot_mulVec`, `hasDerivAt_mul_cexp`) holds for every differentiable
 frame angle `θ(t)`, constant or time-varying. The αβ- and dq-frame KVL of one series R–L
@@ -452,5 +454,48 @@ In particular `v_q = +V sin φ` for the amplitude-invariant Park. -/
   · simp only [park_apply_mulVec]
     conv_rhs => rw [hφ, Real.sin_sub]
     simp; ring
+
+/-! ## Negative-sequence signals in the αβ frame -/
+
+section NegativeSequence
+
+open Complex
+
+/-- Negative-sequence three-phase signal `V cos(θ + φ)`, `V cos(θ + 2π/3 + φ)`,
+`V cos(θ − 2π/3 + φ)` (phases `b`, `c` swapped with respect to `Transform.balanced`). -/
+def negSeq (V φ θ : ℝ) : Fin 3 → ℝ :=
+  ![V * Real.cos (θ + φ), V * Real.cos (θ + 2 * Real.pi / 3 + φ),
+    V * Real.cos (θ - 2 * Real.pi / 3 + φ)]
+
+/-- A negative-sequence signal is `V e^{−j(θ+φ)}` in αβ: `(V cos(θ + φ), −V sin(θ + φ))`. -/
+@[powerlib_foundation] theorem clarke_mulVec_negSeq (V φ θ : ℝ) :
+    Transform.clarke *ᵥ negSeq V φ θ = ![V * Real.cos (θ + φ), -(V * Real.sin (θ + φ))] := by
+  have h3 : Real.sqrt 3 * Real.sqrt 3 = 3 := Real.mul_self_sqrt (by norm_num)
+  have h1 : θ + 2 * Real.pi / 3 + φ = (θ + φ) + 2 * Real.pi / 3 := by ring
+  have h2 : θ - 2 * Real.pi / 3 + φ = (θ + φ) - 2 * Real.pi / 3 := by ring
+  simp only [negSeq, h1, h2]
+  generalize θ + φ = ψ
+  rw [Real.cos_sub ψ, Real.cos_add ψ, cos_two_pi_div_three, sin_two_pi_div_three]
+  ext i; fin_cases i <;>
+    simp [Transform.clarke, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+  · ring
+  · linear_combination (-(1 / 3)) * V * Real.sin ψ * h3
+
+/-- In complex form, `toComplex (clarke · negSeq) = V e^{−j(θ+φ)}`. -/
+@[powerlib_foundation] theorem toComplex_clarke_negSeq (V φ θ : ℝ) :
+    Transform.toComplex (Transform.clarke *ᵥ negSeq V φ θ) =
+      V * Complex.exp (-((θ + φ : ℝ) : ℂ) * I) := by
+  rw [clarke_mulVec_negSeq]
+  have he : Complex.exp (-((θ + φ : ℝ) : ℂ) * I) =
+      ((Real.cos (θ + φ) : ℝ) : ℂ) - ((Real.sin (θ + φ) : ℝ) : ℂ) * I := by
+    rw [show -((θ + φ : ℝ) : ℂ) * I = ((-(θ + φ) : ℝ) : ℂ) * I by push_cast; ring,
+      Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin, Real.cos_neg, Real.sin_neg]
+    push_cast; ring
+  rw [he]
+  generalize Real.cos (θ + φ) = c
+  generalize Real.sin (θ + φ) = sn
+  apply Complex.ext <;> simp [Transform.toComplex]
+
+end NegativeSequence
 
 end powerlib.Transform

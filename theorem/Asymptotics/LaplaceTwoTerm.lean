@@ -9,7 +9,7 @@ Setting. `J(β) = ∫_0^L h(u) e^{−βu²} du` with `L > 0`, `h` continuous on 
 Taylor bound `|h(u) − h₀ − h₁ u| ≤ M u²` on `[0, L]`. The phase `βu²` is exactly quadratic with its
 minimum at the endpoint `u = 0`; a nondegenerate endpoint minimum of a general phase takes this form
 after the Morse change of variables `u² = φ(y) − φ(y*)`, the Jacobian being absorbed into `h`
-(this is how `Asymptotics/GuardMFPTExpansion.lean` uses it). Large parameter `β → ∞`.
+(this is how `Asymptotics/Guard/MFPTExpansion.lean` uses it). Large parameter `β → ∞`.
 
 Results.
 * `gaussMoment2_Ioi`: `∫_0^∞ u² e^{−βu²} du = √(π/β)/(4β)`.

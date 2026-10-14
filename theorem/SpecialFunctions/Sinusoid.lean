@@ -21,7 +21,7 @@ Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/equilibria-a
 -/
 
 noncomputable section
-namespace powerlib.VSC
+namespace powerlib.SpecialFunctions
 open Real Set
 
 /-- Zeros of `θ ↦ c − A sin(θ + φ)` in the window `[a, a + 2π)`. -/
@@ -192,4 +192,4 @@ variable {c A φ a : ℝ}
 
 end
 
-end powerlib.VSC
+end powerlib.SpecialFunctions

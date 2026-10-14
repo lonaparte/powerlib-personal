@@ -97,7 +97,7 @@ def field (ζ ω₀ a F ωp t : ℝ) (y : State 2) : State 2 :=
   have hdet : (Linear.characteristicMatrix (linPart ζ ω₀) ((ωp : ℂ) * I)).det ≠ 0 := by
     rw [det_characteristicMatrix_linPart]; exact hD
   have h := forcedOrbit_solves (drive F) hdet t
-  rw [hasDerivAt_iff_coords] at h
+  rw [Dynamics.hasDerivAt_iff_coords] at h
   refine ⟨?_, ?_, ?_⟩
   · convert h 0 using 1
     simp [forcing_drive, linPart, Matrix.mulVec, dotProduct, Fin.sum_univ_two]

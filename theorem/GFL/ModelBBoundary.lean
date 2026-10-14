@@ -1,6 +1,7 @@
 import theorem.GFL.ModelBStability
 import theorem.Dynamics.Degenerate.PlaneCollapse
 import theorem.Dynamics.Lyapunov
+import theorem.SpecialFunctions.Elementary
 
 /-! # GFL reduced-order model B on the 4×4 Routh boundary
 
@@ -84,28 +85,6 @@ private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
     |y i - x i| ≤ ‖y - x‖ := by
   have := PiLp.norm_apply_le (y - x) i
   simpa using this
-
-/-- `1 − cos θ ≤ sin² θ` where `cos θ ≥ 0`. -/
-@[powerlib_foundation] theorem one_sub_cos_le_sin_sq {θ : ℝ} (h : 0 ≤ Real.cos θ) :
-    1 - Real.cos θ ≤ Real.sin θ ^ 2 := by
-  have h1 := Real.sin_sq_add_cos_sq θ
-  have h2 := Real.cos_le_one θ
-  nlinarith
-
-/-- `cos θ ≥ 0` for `|θ| < 1`. -/
-@[powerlib_foundation] theorem cos_nonneg_of_abs_lt_one {θ : ℝ} (h : |θ| < 1) :
-    0 ≤ Real.cos θ := by
-  apply Real.cos_nonneg_of_neg_pi_div_two_le_of_le <;>
-  · have := Real.two_le_pi
-    have := abs_lt.mp h
-    linarith
-
-/-- `cos θ = 1` with `|θ| < 1` forces `θ = 0`. -/
-@[powerlib_foundation] theorem eq_zero_of_cos_eq_one {θ : ℝ} (h : |θ| < 1)
-    (hc : Real.cos θ = 1) : θ = 0 := by
-  have := Real.two_le_pi
-  have := abs_lt.mp h
-  exact (Real.cos_eq_one_iff_of_lt_of_lt (by linarith) (by linarith)).mp hc
 
 /-! ## Off the Routh boundary -/
 
@@ -257,8 +236,8 @@ private theorem centerEnergy_lie_nonpos {σ : ℝ} (hσ : |σ| ≤ 1) {y : State
   have hy2 : y 2 ≠ 0 := by
     intro h; rw [h] at b2; norm_num at b2
   rw [centerEnergy_lie σ y hy2]
-  have hc := cos_nonneg_of_abs_lt_one (b0.trans (by norm_num))
-  have hcs := one_sub_cos_le_sin_sq hc
+  have hc := SpecialFunctions.cos_nonneg_of_abs_lt_one (b0.trans (by norm_num))
+  have hcs := SpecialFunctions.one_sub_cos_le_sin_sq hc
   have hc1 := Real.cos_le_one (y 0)
   have hw : |σ * ((y 2 - 1) * y 3)| ≤ 1 / 4 := by
     rw [abs_mul, abs_mul]
@@ -308,7 +287,7 @@ decides nothing. -/
       have : (y 2 - 1) ^ 2 = 0 := by linarith
       have := pow_eq_zero_iff (n := 2) (by norm_num) |>.mp this
       linarith
-    have e0' := eq_zero_of_cos_eq_one (b0.trans (by norm_num)) e0
+    have e0' := SpecialFunctions.eq_zero_of_cos_eq_one (b0.trans (by norm_num)) e0
     apply hne
     ext i
     fin_cases i
@@ -533,14 +512,6 @@ integrator `ξ_v` drifts; Chetaev's function `(1 − V_dc) ξ_v` grows at the ra
 
 /-! ## The Routh boundary: a weakly damped DC loop (locally asymptotically stable) -/
 
-/-- Monomial bound: `|w^i ξ^j| ≤ m^(i+j)` when `|w|, |ξ| ≤ m`. -/
-@[powerlib_foundation] theorem abs_mul_pow_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m)
-    (i j : ℕ) : |w ^ i * ξ ^ j| ≤ m ^ (i + j) := by
-  have hm : 0 ≤ m := (abs_nonneg _).trans hw
-  rw [abs_mul, abs_pow, abs_pow, pow_add]
-  exact mul_le_mul (pow_le_pow_left₀ (abs_nonneg _) hw i) (pow_le_pow_left₀ (abs_nonneg _) hξ j)
-    (by positivity) (by positivity)
-
 /-- The DC-loop Lyapunov function of the weakly damped loop, in `w = V_dc − 1`, `ξ = ξ_v − 1/2`:
 the conserved energy `w²/2 + w³/3 + ξ²/2` of the undamped loop corrected by the cubic and quartic
 terms that make its derivative `−(3/2)(w² + ξ²)² + O(5)` (first Lyapunov coefficient `−6`). -/
@@ -633,12 +604,6 @@ def hopfDamped : Model :=
   field_simp
   ring
 
-/-- `max(|w|, |ξ|)² ≤ w² + ξ²`. -/
-@[powerlib_foundation] theorem sq_max_abs_le (w ξ : ℝ) : max |w| |ξ| ^ 2 ≤ w ^ 2 + ξ ^ 2 := by
-  rcases le_total |w| |ξ| with h | h
-  · rw [max_eq_right h, sq_abs]; nlinarith [sq_nonneg w]
-  · rw [max_eq_left h, sq_abs]; nlinarith [sq_nonneg ξ]
-
 private theorem pll_lie_le {s c y : ℝ} (hc : 1 / 2 ≤ c) (hc1 : c ≤ 1) :
     -6 * s ^ 2 + 3 * c * s * y - c * y ^ 2 ≤ -(3 / 2) * s ^ 2 - 1 / 4 * y ^ 2 := by
   nlinarith [mul_nonneg (by linarith : (0:ℝ) ≤ c) (sq_nonneg (3 * s - y)),
@@ -647,12 +612,12 @@ private theorem pll_lie_le {s c y : ℝ} (hc : 1 / 2 ≤ c) (hc1 : c ≤ 1) :
 
 private theorem dcQuintic_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) :
     dcQuintic w ξ ≤ 128 * m ^ 5 := by
-  have b0 := abs_le.mp (abs_mul_pow_le hw hξ 5 0)
-  have b1 := abs_le.mp (abs_mul_pow_le hw hξ 4 1)
-  have b2 := abs_le.mp (abs_mul_pow_le hw hξ 3 2)
-  have b3 := abs_le.mp (abs_mul_pow_le hw hξ 2 3)
-  have b4 := abs_le.mp (abs_mul_pow_le hw hξ 1 4)
-  have b5 := abs_le.mp (abs_mul_pow_le hw hξ 0 5)
+  have b0 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 5 0)
+  have b1 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 4 1)
+  have b2 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 3 2)
+  have b3 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 2 3)
+  have b4 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 1 4)
+  have b5 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 0 5)
   simp only [pow_zero, mul_one, one_mul, pow_one] at b0 b1 b2 b3 b4 b5
   norm_num at b0 b1 b2 b3 b4 b5
   unfold dcQuintic
@@ -661,12 +626,12 @@ private theorem dcQuintic_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) 
 private theorem abs_dcEnergyW_le {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) (hm : m ≤ 1 / 200) :
     |dcEnergyW w ξ| ≤ 2 * m := by
   have hm0 : 0 ≤ m := (abs_nonneg _).trans hw
-  have a1 := abs_le.mp (abs_mul_pow_le hw hξ 1 0)
-  have a2 := abs_le.mp (abs_mul_pow_le hw hξ 2 0)
-  have a3 := abs_le.mp (abs_mul_pow_le hw hξ 1 1)
-  have a4 := abs_le.mp (abs_mul_pow_le hw hξ 0 3)
-  have a5 := abs_le.mp (abs_mul_pow_le hw hξ 2 1)
-  have a6 := abs_le.mp (abs_mul_pow_le hw hξ 3 0)
+  have a1 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 1 0)
+  have a2 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 2 0)
+  have a3 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 1 1)
+  have a4 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 0 3)
+  have a5 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 2 1)
+  have a6 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 3 0)
   simp only [pow_zero, mul_one, one_mul, pow_one] at a1 a2 a3 a4 a5 a6
   norm_num at a1 a2 a3 a4 a5 a6
   have hm2 : m ^ 2 ≤ m / 200 := by nlinarith
@@ -679,13 +644,13 @@ private theorem dcEnergy_ge {w ξ m : ℝ} (hw : |w| ≤ m) (hξ : |ξ| ≤ m) (
     (hmS : m ^ 2 ≤ w ^ 2 + ξ ^ 2) :
     1 / 4 * (w ^ 2 + ξ ^ 2) ≤ dcEnergy w ξ := by
   have hm0 : 0 ≤ m := (abs_nonneg _).trans hw
-  have c1 := abs_le.mp (abs_mul_pow_le hw hξ 3 0)
-  have c2 := abs_le.mp (abs_mul_pow_le hw hξ 2 1)
-  have c3 := abs_le.mp (abs_mul_pow_le hw hξ 0 3)
-  have q1 := abs_le.mp (abs_mul_pow_le hw hξ 0 4)
-  have q2 := abs_le.mp (abs_mul_pow_le hw hξ 1 3)
-  have q3 := abs_le.mp (abs_mul_pow_le hw hξ 3 1)
-  have q4 := abs_le.mp (abs_mul_pow_le hw hξ 4 0)
+  have c1 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 3 0)
+  have c2 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 2 1)
+  have c3 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 0 3)
+  have q1 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 0 4)
+  have q2 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 1 3)
+  have q3 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 3 1)
+  have q4 := abs_le.mp (SpecialFunctions.abs_mul_pow_le hw hξ 4 0)
   simp only [pow_zero, mul_one, one_mul, pow_one] at c1 c2 c3 q1 q2 q3 q4
   norm_num at c1 c2 c3 q1 q2 q3 q4
   have hm3 : m ^ 3 ≤ m ^ 2 / 200 := by nlinarith
@@ -705,7 +670,7 @@ private theorem damped_lie_le {s c y w ξ : ℝ} (hsc : s ^ 2 + c ^ 2 = 1) (hc :
   have hξm : |ξ| ≤ m := le_max_right _ _
   have hm : m ≤ 1 / 200 := max_le hw hξ
   have hm0 : 0 ≤ m := (abs_nonneg _).trans hwm
-  have hmS := sq_max_abs_le w ξ
+  have hmS := SpecialFunctions.sq_max_abs_le w ξ
   rw [← hmdef] at hmS
   have hc1 : c ≤ 1 := by nlinarith [sq_nonneg s]
   have hcs : 1 - c ≤ s ^ 2 := by nlinarith
@@ -744,7 +709,7 @@ private theorem damped_energy_ge {s c y w ξ : ℝ} (hw : |w| ≤ 1 / 200) (hξ 
     (3 * (1 - c) - 3 / 2 * s ^ 2) + (s ^ 2 + 1 / 2 * (s - y) ^ 2) + 1 / 4 * (w ^ 2 + ξ ^ 2) ≤
       3 * (1 - c) + 1 / 2 * y ^ 2 - y * s + dcEnergy w ξ := by
   have hE := dcEnergy_ge (le_max_left |w| |ξ|) (le_max_right |w| |ξ|) (max_le hw hξ)
-    (sq_max_abs_le w ξ)
+    (SpecialFunctions.sq_max_abs_le w ξ)
   nlinarith
 
 private theorem cos_eq_one_of_sq {c : ℝ} (h : c ^ 2 = 1) (hc : 1 / 2 ≤ c) : c = 1 := by
@@ -842,7 +807,7 @@ coefficient of the DC loop, dominates the quintic remainder. -/
       y 2 - 1 = 0 → y 3 - 1 / 2 = 0 → y = hopfDamped.x := by
     intro y hy hc h1 h2 h3
     obtain ⟨b0, -, -, -⟩ := hb y hy
-    have h0 := eq_zero_of_cos_eq_one (b0.trans (by norm_num)) hc
+    have h0 := SpecialFunctions.eq_zero_of_cos_eq_one (b0.trans (by norm_num)) hc
     ext i
     fin_cases i
     · simpa [hopfDamped_x] using h0

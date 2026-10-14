@@ -1,5 +1,6 @@
 import theorem.Frequency.LFC
 import theorem.PH.RLNetwork
+import theorem.LTI.Decay
 
 /-! # Multi-area load-frequency control on a tie-line graph
 
@@ -34,10 +35,10 @@ Results.
   line-flow state matrix is singular (a circulating flow is a zero mode), so the model is
   **never** asymptotically stable, for any gains. Correction: line flows are not independent
   states on a meshed graph; a stable realization must use area angles or a spanning tree.
-* `tendsto_of_spectrallyStable` (foundation, any matrices on a finite index type, by transport to
-  `Fin N`) and `netModel_tendsto` (private): on a radial tie-line graph, a spectrally stable
-  state matrix (explicit premise) makes every trajectory under constant loads converge to
-  `(0, 0, ΔP_L)`.
+* `LTI.tendsto_of_spectrallyStable` (foundation, any matrices on a finite index type, by
+  transport to `Fin N`; `theorem/LTI/Decay.lean`) and `netModel_tendsto` (private): on a radial
+  tie-line graph, a spectrally stable state matrix (explicit premise) makes every trajectory
+  under constant loads converge to `(0, 0, ΔP_L)`.
 * Gain condition (foundation, static; replaces the missing parametric Routh–Hurwitz condition by
   a sufficient one that holds for every tie-line strength and every radial topology):
   `netA_spectrallyStable_of_gain` — if `𝓑` has trivial kernel (radial graph), every area has
@@ -48,8 +49,8 @@ Results.
   `E = Σ M Δω² + Σ ΔP_tie²/(ω_s T) + Σ ξ²/(K_I (g + B))` (`netEnergy`) has
   `E(z, A z) = −Σ ((ξ − g Δω)² + g B Δω²)/(g + B)` for every state `z` (`netEnergy_mulVec`, the
   tie-line terms cancel by `𝓑`/`𝓑ᵀ` duality); a real eigen-pair with nonnegative real part
-  (`spectrallyStable_of_real_pairs`) must then have `ξ = 0`, `Δω = 0` (AGC rows), zero net exports
-  (frequency rows) and zero line flows (trivial kernel). `plant_A_eq_reindex`,
+  (`LTI.spectrallyStable_of_real_pairs`) must then have `ξ = 0`, `Δω = 0` (AGC rows), zero net
+  exports (frequency rows) and zero line flows (trivial kernel). `plant_A_eq_reindex`,
   `plant_isHurwitz_of_gain`: the five-state two-area matrix of `Frequency.LFC` is this matrix for
   two areas and one line (`𝓑 = (1, −1)ᵀ`), relabelled, so the same condition makes it Hurwitz.
   Only sufficiency is claimed (the exact two-area condition would be the fifth-order
@@ -76,7 +77,7 @@ Family and connection conclusions.
   two-area family `Frequency.LFC.family` under the same condition, replacing the Hurwitz premise
   of `LFC.mem_den_globallyExponentiallyStable`).
 * The equilibrium characterizations and spectral statements (formerly `@[powerlib_domain]`) are
-  static evidence (`@[powerlib_foundation]`); `tendsto_of_spectrallyStable` is a generic
+  static evidence (`@[powerlib_foundation]`); `LTI.tendsto_of_spectrallyStable` is a generic
   implication about arbitrary matrices (foundation). Private implementation evidence
   (trajectory level, Rules §3a): `netModel_tendsto`.
 -/
@@ -361,95 +362,7 @@ for any parameters. Static evidence on the model, not a connection conclusion. -
   netModel_not_spectrallyStable (p := fun _ => 1) (fun h => by simpa using congrFun h 0)
     triangle_circulation
 
-/-! ## Convergence on a general index type -/
-
-section Reindex
-
-variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
-
-/-- Spectral stability of the state matrix gives convergence of every constant-input forward
-solution to an equilibrium, on any finite index type (transport to `Fin N`, then the linear hub
-`Linear.globallyAsymptoticallyStable_of_isHurwitz`). Generic in the matrices. -/
-@[powerlib_foundation] theorem tendsto_of_spectrallyStable {A : Matrix ι ι ℝ}
-    {B : Matrix ι κ ℝ} (hA : Linear.SpectrallyStable A) {u : κ → ℝ} {e : ι → ℝ}
-    (he : A *ᵥ e + B *ᵥ u = 0) {x : ℝ → ι → ℝ}
-    (hx : ∀ t ≥ 0, HasDerivWithinAt x (A *ᵥ x t + B *ᵥ u) (Ici 0) t) :
-    Tendsto x atTop (𝓝 e) := by
-  set eq := Fintype.equivFin ι
-  set A' := A.reindex eq eq
-  have hA' : IsHurwitz A' :=
-    (Linear.spectrallyStable_iff_isHurwitz _).1 ((Linear.spectrallyStable_reindex eq A).2 hA)
-  set e' : EuclideanSpace ℝ (Fin (Fintype.card ι)) := WithLp.toLp 2 (e ∘ eq.symm)
-  set y : ℝ → EuclideanSpace ℝ (Fin (Fintype.card ι)) := fun t => WithLp.toLp 2 (x t ∘ eq.symm)
-  have hBu : B *ᵥ u = -(A *ᵥ e) := eq_neg_of_add_eq_zero_right he
-  have hy : IsIntegralCurveOn y (fun _ z => affineLinearVectorField A' e' z) (Ici 0) := by
-    intro t ht
-    have h1 : HasDerivWithinAt (fun t => x t ∘ eq.symm) ((A *ᵥ x t + B *ᵥ u) ∘ eq.symm)
-        (Ici 0) t :=
-      hasDerivWithinAt_pi.2 fun i => hasDerivWithinAt_pi.1 (hx t ht) (eq.symm i)
-    have h2 := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin (Fintype.card ι) => ℝ)).symm
-      |>.hasFDerivAt.comp_hasDerivWithinAt t h1
-    refine h2.congr_deriv ?_
-    show _ = affineLinearVectorField A' e' (y t)
-    rw [Linear.affine_apply]
-    change WithLp.toLp 2 ((A *ᵥ x t + B *ᵥ u) ∘ eq.symm) =
-      WithLp.toLp 2 (A' *ᵥ ((x t - e) ∘ eq.symm))
-    congr 1
-    rw [hBu, show A' = A.submatrix eq.symm eq.symm from rfl, Matrix.submatrix_mulVec_equiv]
-    funext i
-    simp only [Function.comp_def, Equiv.symm_symm, Pi.add_apply,
-      Pi.neg_apply, Pi.sub_apply]
-    rw [show (fun j => x t (eq.symm (eq j)) - e (eq.symm (eq j))) = x t - e by
-      funext j; simp, Matrix.mulVec_sub]
-    simp [sub_eq_add_neg]
-  have hlim := (Linear.globallyAsymptoticallyStable_of_isHurwitz e' hA').2.2.2 0 y hy
-  have hc : Continuous (fun w : EuclideanSpace ℝ (Fin (Fintype.card ι)) => WithLp.ofLp w ∘ eq) :=
-    by fun_prop
-  have := (hc.tendsto _).comp hlim
-  simpa [Function.comp_def, y, e'] using this
-
-end Reindex
-
 /-! ## Gain condition: a parametric stability certificate on radial graphs -/
-
-/-- Spectral stability from real eigen-pairs: if every real pair `(a, b)` with
-`A a = x a − y b`, `A b = y a + x b` and `x ≥ 0` vanishes, then `A` is spectrally stable
-(`a ± i b` would be an eigenvector for `x ± i y`). Generic. -/
-@[powerlib_foundation] theorem spectrallyStable_of_real_pairs {ι : Type*} [Fintype ι]
-    [DecidableEq ι] (A : Matrix ι ι ℝ)
-    (h : ∀ (x y : ℝ) (a b : ι → ℝ), A *ᵥ a = x • a - y • b → A *ᵥ b = y • a + x • b →
-      0 ≤ x → a = 0 ∧ b = 0) : Linear.SpectrallyStable A := by
-  intro s hs
-  obtain ⟨v, hv, hmv⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr hs
-  have heig : Linear.complexify A *ᵥ v = s • v := by
-    rw [Linear.characteristicMatrix, sub_mulVec, smul_mulVec, one_mulVec, sub_eq_zero] at hmv
-    exact hmv.symm
-  by_contra hre
-  push Not at hre
-  have hcomp : ∀ i, (Linear.complexify A *ᵥ v) i =
-      ((A *ᵥ fun j => (v j).re) i : ℂ) + ((A *ᵥ fun j => (v j).im) i : ℂ) * Complex.I := by
-    intro i
-    apply Complex.ext <;>
-      simp [mulVec, dotProduct, Complex.re_sum, Complex.im_sum, Complex.mul_re, Complex.mul_im]
-  have hre_eq : A *ᵥ (fun j => (v j).re) =
-      s.re • (fun j => (v j).re) - s.im • (fun j => (v j).im) := by
-    funext i
-    have := congrArg Complex.re ((hcomp i).symm.trans (congrFun heig i))
-    simpa [Complex.mul_re] using this
-  have him_eq : A *ᵥ (fun j => (v j).im) =
-      s.im • (fun j => (v j).re) + s.re • (fun j => (v j).im) := by
-    funext i
-    have := congrArg Complex.im ((hcomp i).symm.trans (congrFun heig i))
-    simp [Complex.mul_im] at this
-    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-    linarith
-  obtain ⟨ha, hb⟩ := h s.re s.im _ _ hre_eq him_eq hre
-  apply hv
-  funext j
-  apply Complex.ext
-  · simpa using congrFun ha j
-  · simpa using congrFun hb j
-
 
 /-- Margin `g_a = D_a + K_R,a − K_I,a M_a` of the gain condition. -/
 def netGap (area : α → Area) (a : α) : ℝ := (area a).D + (area a).K - (area a).KI * (area a).M
@@ -641,7 +554,7 @@ strength and every radial topology. -/
   have hg : ∀ a, 0 ≤ netGap area a := fun a => by unfold netGap; linarith [hgain a]
   have hgB : ∀ a, 0 < netGap area a + (area a).B := fun a => add_pos_of_nonneg_of_pos (hg a) (hB a)
   have hM0 : ∀ a, (area a).M ≠ 0 := fun a => (hM a).ne'
-  refine spectrallyStable_of_real_pairs _ fun x y u v hu hv hx => ?_
+  refine LTI.spectrallyStable_of_real_pairs _ fun x y u v hu hv hx => ?_
   have hEu := netEnergy_mulVec (𝓑 := 𝓑) hM0 (fun a => (hK a).ne') (fun a => (hgB a).ne')
     (fun ℓ => (hw ℓ).ne') u
   have hEv := netEnergy_mulVec (𝓑 := 𝓑) hM0 (fun a => (hK a).ne') (fun a => (hgB a).ne')
@@ -889,7 +802,7 @@ private theorem netModel_tendsto [DecidableEq β] (hM : ∀ a, (area a).M ≠ 0)
     {x : ℝ → α ⊕ (β ⊕ α) → ℝ}
     (hx : ∀ t ≥ 0, HasDerivWithinAt x (netField area ωs T 𝓑 (x t) u) (Ici 0) t) :
     Tendsto x atTop (𝓝 (netSteadyState u)) :=
-  tendsto_of_spectrallyStable hA
+  LTI.tendsto_of_spectrallyStable hA
     ((isEquilibrium_iff_of_ker hM hKI hT hB hcol hconn hker u _).2 rfl) hx
 
 end powerlib.Frequency.LFC

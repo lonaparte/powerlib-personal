@@ -3,6 +3,7 @@ import Mathlib.Basic.Real.Sign
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import theorem.Machine.InductionMachine
 import theorem.Machine.CascadeControl
+import theorem.SpecialFunctions.Elementary
 
 /-! # Sensorless machine control: observer algebra (foundation)
 
@@ -103,12 +104,6 @@ def backEMF (ω ψf θ : ℝ) : ℂ := ⟨-(ω * ψf * Real.sin θ), ω * ψf * 
   field_simp
   ring
 
-@[powerlib_foundation] theorem mul_sign_eq_abs (x : ℝ) : x * Real.sign x = |x| := by
-  rcases lt_trichotomy x 0 with h | h | h
-  · rw [Real.sign_of_neg h, abs_of_neg h]; ring
-  · rw [h, Real.sign_zero]; simp
-  · rw [Real.sign_of_pos h, abs_of_pos h]; ring
-
 /-- **SMO Lyapunov inequality.** For `V = ½ Σ s_i²` and
 `ṡ_i = −(r/L) s_i − e_i/L − K sgn(s_i)` with `r ≥ 0`, `L > 0`, `|e_i| ≤ M`:
 `Σ s_i ṡ_i ≤ −(K − M/L) Σ |s_i|`. -/
@@ -121,7 +116,7 @@ def backEMF (ω ψf θ : ℝ) : ℂ := ⟨-(ω * ψf * Real.sin θ), ω * ψf * 
   have hrl : 0 ≤ r / L := div_nonneg hr hL.le
   have h1 : s j * (-(r / L) * s j - e j / L - K * Real.sign (s j)) =
       -(r / L) * s j ^ 2 - s j * e j / L - K * |s j| := by
-    rw [← mul_sign_eq_abs]; ring
+    rw [← SpecialFunctions.mul_sign_eq_abs]; ring
   rw [h1]
   have h2 : -(s j * e j) ≤ |s j| * M := by
     have := neg_abs_le (s j * e j)
@@ -235,24 +230,6 @@ def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   intro h
   exact hne (by field_simp at h; linarith)
 
-/-- Mean of `A sin²(ω t)` over one carrier period is `A/2`. -/
-@[powerlib_foundation] theorem carrier_mean_sin_sq (A ω : ℝ) (hω : 0 < ω) :
-    ω / (2 * Real.pi) * ∫ t in (0 : ℝ)..(2 * Real.pi / ω), A * Real.sin (ω * t) * Real.sin (ω * t) =
-      A / 2 := by
-  have hpi := Real.pi_pos
-  have h1 : (∫ t in (0 : ℝ)..(2 * Real.pi / ω), A * Real.sin (ω * t) * Real.sin (ω * t)) =
-      A * ∫ t in (0 : ℝ)..(2 * Real.pi / ω), Real.sin (ω * t) ^ 2 := by
-    rw [← intervalIntegral.integral_const_mul]
-    congr 1; funext t; ring
-  have h2 : (∫ t in (0 : ℝ)..(2 * Real.pi / ω), Real.sin (ω * t) ^ 2) = Real.pi / ω := by
-    rw [intervalIntegral.integral_comp_mul_left (fun x => Real.sin x ^ 2) hω.ne', integral_sin_sq]
-    simp only [mul_zero, Real.sin_zero, Real.cos_zero, zero_mul, smul_eq_mul]
-    rw [show ω * (2 * Real.pi / ω) = 2 * Real.pi by field_simp, Real.sin_two_pi]
-    field_simp
-    ring
-  rw [h1, h2]
-  field_simp
-
 /-- **HF demodulation.** Multiplying `î_q` by the carrier and averaging over one period gives
 `(V_h/(4ω_h))(1/L_d − 1/L_q) sin 2Δθ`. -/
 @[powerlib_foundation] theorem hf_demodulation (Δ Ld Lq Vh ωh : ℝ) (hω : 0 < ωh) :
@@ -260,7 +237,7 @@ def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
         Vh / ωh * ((1 / Ld - 1 / Lq) / 2 * Real.sin (2 * Δ)) * Real.sin (ωh * t) *
           Real.sin (ωh * t) =
       Vh / (4 * ωh) * (1 / Ld - 1 / Lq) * Real.sin (2 * Δ) := by
-  rw [carrier_mean_sin_sq _ ωh hω]
+  rw [SpecialFunctions.carrier_mean_sin_sq _ ωh hω]
   field_simp
   ring
 

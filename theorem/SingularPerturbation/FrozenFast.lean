@@ -149,7 +149,7 @@ structure BoundedCertificate (A : Matrix (Fin m) (Fin m) ℝ) extends Linear.Cer
     intro s
     have := hasDerivAt_quadratic c.P (hy s)
     convert this using 1
-    rw [dotProduct_mulVec_comm_of_symm hP (M *ᵥ y s) (y s)]
+    rw [Criteria.dotProduct_mulVec_comm_of_symm hP (M *ᵥ y s) (y s)]
     ring
   -- `exp(s/(2 hi)) V(y s)` is antitone
   set F := fun s => Real.exp (s / (2 * c.upper)) * (y s ⬝ᵥ (c.P *ᵥ y s))

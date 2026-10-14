@@ -1,6 +1,6 @@
 import theorem.Numerics.BDF
 import theorem.Criteria.Hurwitz2
-import theorem.DAE.Linear
+import theorem.LTI.Decay
 import Mathlib.Analysis.InnerProductSpace.Adjoint
 
 /-! Algebra of DAE solvers: the BDF/Newton Jacobian, its Schur-complement determinant,
@@ -15,7 +15,7 @@ Model boundary.
   `ë + 2αė + β²e = 0` (continuous time, exact solution); conclusion at trajectory level
   (exponential decay of `(e, ė)`), via the 2×2 state matrix `baumgarteModel`, whose affine
   linear field is globally exponentially stable (Flow semantics); the coordinate decay of
-  `(e, ė)` uses `DAE.linear_decay_of_isHurwitz`.  The
+  `(e, ė)` uses `LTI.linear_decay_of_isHurwitz`.  The
   multibody model behind it (`M q̈ + Gᵀλ = F`, `G q̈ = −Ġq̇ − 2αGq̇ − β²g`) is used only to
   show that `λ` is an algebraic function of `(q, q̇)` (`baumgarte_index_one`).
 * GGL: exact solutions of `q̇ = v − G(q)ᵀμ`, `g(q) = 0`, `G(q)v = 0` on real inner-product
@@ -182,7 +182,7 @@ satisfies `|e(t)| ≤ K e^{−rate t} ‖(e(0), ė(0))‖` for `t ≥ 0`. -/
       (∀ t, HasDerivAt e' (-(2 * α) * e' t - β ^ 2 * e t) t) → ∀ t, 0 ≤ t →
         |e t| ≤ K * Real.exp (-(rate * t)) * ‖WithLp.toLp 2 ![e 0, e' 0]‖ := by
   obtain ⟨K, hK, rate, hrate, hbound⟩ :=
-    DAE.linear_decay_of_isHurwitz (baumgarteModel_isHurwitz hα hβ)
+    LTI.linear_decay_of_isHurwitz (baumgarteModel_isHurwitz hα hβ)
   refine ⟨K, hK, rate, hrate, fun e e' he he' t ht => ?_⟩
   have h := hbound _ (baumgarte_isTrajectory he he') t ht
   refine le_trans ?_ h

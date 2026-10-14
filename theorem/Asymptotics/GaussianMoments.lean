@@ -16,8 +16,11 @@ integrals:
 
 The statements below only specialize these to the half-line moments
 `∫_0^∞ ξⁿ e^{-b ξ²/2} dξ` (`n = 0, 1, 3`) of the endpoint Laplace table and to the
-full-line weight `e^{-τ²}` of the fold slow-passage solvability condition. No asymptotic
-statement is made here.
+full-line weight `e^{-τ²}` of the fold slow-passage solvability condition, and give the
+half-line moments `∫_0^∞ ξⁿ e^{−cξ²}` (`gaussMoment1`, `gaussMoment3`, `gaussMoment5`), the
+finite-interval bounds `intervalIntegral_le_integral_Ioi`, `integral_exp_neg_mul_sq_ge`
+(`∫_0^L e^{−cξ²} ≥ √(π/c)/2 − 1/(2cL)`) and the closed form `integral_mul_exp_neg_sq_div`
+used by the guard first-passage asymptotics. No asymptotic statement is made here.
 
 Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.1 (moment table);
 theory/T-fold-slow-passage.md §1.2–§1.3 (`∫ e^{-τ²} = √π`, odd weights vanish);
@@ -107,5 +110,107 @@ term. -/
   · have h := integral_neg_eq_self (fun ξ : ℝ => ξ ^ 3 * Real.exp (-(b / 2) * ξ ^ 2)) volume
     simp only [neg_sq, Odd.neg_pow (by decide : Odd 3), neg_mul, integral_neg] at h ⊢
     linarith
+
+/-! ## Half-line Gaussian moments `∫_0^∞ ξⁿ e^{−cξ²}` and finite-interval Gaussian bounds -/
+
+section HalfLine
+
+open Filter Topology intervalIntegral
+
+variable {α : ℝ}
+
+/-- `∫_0^∞ ξ e^{−cξ²} dξ = 1/(2c)` (`halfMoment1` with `b = 2c`). -/
+@[powerlib_foundation] theorem gaussMoment1 {c : ℝ} (hc : 0 < c) :
+    ∫ ξ in Ioi (0 : ℝ), ξ * Real.exp (-c * ξ ^ 2) = 1 / (2 * c) := by
+  have h := halfMoment1 (b := 2 * c) (by positivity)
+  rw [show 2 * c / 2 = c by ring] at h
+  rw [← h]
+
+/-- `∫_0^∞ ξ³ e^{−cξ²} dξ = 1/(2c²)` (`halfMoment3` with `b = 2c`). -/
+@[powerlib_foundation] theorem gaussMoment3 {c : ℝ} (hc : 0 < c) :
+    ∫ ξ in Ioi (0 : ℝ), ξ ^ 3 * Real.exp (-c * ξ ^ 2) = 1 / (2 * c ^ 2) := by
+  have h := halfMoment3 (b := 2 * c) (by positivity)
+  rw [show 2 * c / 2 = c by ring] at h
+  have e : (2 : ℝ) / (2 * c) ^ 2 = 1 / (2 * c ^ 2) := by field_simp
+  rw [← e, ← h]
+
+/-- `∫_0^∞ ξ⁵ e^{−cξ²} dξ = 1/c³` (wraps `integral_rpow_mul_exp_neg_mul_rpow`, `Γ(3) = 2`). -/
+@[powerlib_foundation] theorem gaussMoment5 {c : ℝ} (hc : 0 < c) :
+    ∫ ξ in Ioi (0 : ℝ), ξ ^ 5 * Real.exp (-c * ξ ^ 2) = 1 / c ^ 3 := by
+  have h := integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := 5) (b := c)
+    two_pos (by norm_num) hc
+  have h5 : ∀ ξ : ℝ, ξ ^ (5 : ℝ) = ξ ^ (5 : ℕ) := fun ξ => by
+    exact_mod_cast Real.rpow_natCast ξ 5
+  simp only [h5, Real.rpow_two] at h
+  rw [h]
+  have hG : Real.Gamma ((5 + 1) / 2) = 2 := by
+    rw [show ((5 : ℝ) + 1) / 2 = (2 : ℕ) + 1 by norm_num, Real.Gamma_nat_eq_factorial]
+    norm_num
+  rw [hG, show -((5 : ℝ) + 1) / 2 = -(3 : ℕ) by norm_num, Real.rpow_neg hc.le,
+    Real.rpow_natCast]
+  field_simp
+
+/-- A finite integral of a function that is nonnegative and integrable on `(0, ∞)` is at most the
+half-line integral. -/
+@[powerlib_foundation] theorem intervalIntegral_le_integral_Ioi {f : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
+    (hf : IntegrableOn f (Ioi 0)) (h0 : ∀ x, 0 < x → 0 ≤ f x) :
+    ∫ x in (0 : ℝ)..L, f x ≤ ∫ x in Ioi (0 : ℝ), f x := by
+  rw [intervalIntegral.integral_of_le hL]
+  apply setIntegral_mono_set hf
+  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx using h0 x hx
+  · exact Ioc_subset_Ioi_self.eventuallyLE
+
+/-- Gaussian lower bound on a finite interval:
+`∫_0^L e^{−cξ²} dξ ≥ √(π/c)/2 − 1/(2cL)` (the tail beyond `L` is at most `(1/L) ∫ ξ e^{−cξ²}`). -/
+@[powerlib_foundation] theorem integral_exp_neg_mul_sq_ge {c L : ℝ} (hc : 0 < c) (hL : 0 < L) :
+    √(π / c) / 2 - 1 / (2 * c * L) ≤ ∫ ξ in (0 : ℝ)..L, Real.exp (-c * ξ ^ 2) := by
+  have hg : Integrable fun ξ : ℝ => Real.exp (-c * ξ ^ 2) := integrable_exp_neg_mul_sq hc
+  have hg1 : Integrable fun ξ : ℝ => ξ * Real.exp (-c * ξ ^ 2) := integrable_mul_exp_neg_mul_sq hc
+  have hsplit : ∫ ξ in Ioi (0 : ℝ), Real.exp (-c * ξ ^ 2) =
+      (∫ ξ in Ioc (0 : ℝ) L, Real.exp (-c * ξ ^ 2)) + ∫ ξ in Ioi L, Real.exp (-c * ξ ^ 2) := by
+    rw [← setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi hg.integrableOn
+      hg.integrableOn, Ioc_union_Ioi_eq_Ioi hL.le]
+  have htail : ∫ ξ in Ioi L, Real.exp (-c * ξ ^ 2) ≤ 1 / (2 * c * L) := by
+    calc ∫ ξ in Ioi L, Real.exp (-c * ξ ^ 2)
+        ≤ ∫ ξ in Ioi L, L⁻¹ * (ξ * Real.exp (-c * ξ ^ 2)) := by
+          apply setIntegral_mono_on hg.integrableOn (hg1.const_mul _).integrableOn
+            measurableSet_Ioi
+          intro ξ hξ
+          have hξ' : L < ξ := hξ
+          rw [← mul_assoc]
+          apply le_mul_of_one_le_left (Real.exp_pos _).le
+          rw [inv_mul_eq_div, one_le_div hL]; exact hξ'.le
+      _ ≤ ∫ ξ in Ioi (0 : ℝ), L⁻¹ * (ξ * Real.exp (-c * ξ ^ 2)) := by
+          apply setIntegral_mono_set (hg1.const_mul _).integrableOn
+          · filter_upwards [ae_restrict_mem measurableSet_Ioi] with ξ hξ
+            have : (0 : ℝ) < ξ := hξ
+            positivity
+          · exact (Ioi_subset_Ioi hL.le).eventuallyLE
+      _ = 1 / (2 * c * L) := by
+          rw [MeasureTheory.integral_const_mul, gaussMoment1 hc]; field_simp
+  have hmain := integral_gaussian_Ioi c
+  rw [intervalIntegral.integral_of_le hL.le]
+  linarith
+
+/-- `∫_0^y z e^{−αz²/(2D̃)} dz = (D̃/α)(1 − e^{−αy²/(2D̃)})`. -/
+@[powerlib_foundation] theorem integral_mul_exp_neg_sq_div (hα : 0 < α) {D : ℝ} (hD : 0 < D)
+    (y : ℝ) :
+    ∫ z in (0 : ℝ)..y, z * Real.exp (-(α / (2 * D)) * z ^ 2) =
+      D / α * (1 - Real.exp (-(α / (2 * D)) * y ^ 2)) := by
+  have hderiv : ∀ z ∈ uIcc 0 y, HasDerivAt (fun z => -(D / α) * Real.exp (-(α / (2 * D)) * z ^ 2))
+      (z * Real.exp (-(α / (2 * D)) * z ^ 2)) z := by
+    intro z _
+    have h1 : HasDerivAt (fun z => -(α / (2 * D)) * z ^ 2) (-(α / (2 * D)) * (2 * z)) z := by
+      simpa using (hasDerivAt_pow 2 z).const_mul (-(α / (2 * D)))
+    have := (h1.exp).const_mul (-(D / α))
+    convert this using 1
+    field_simp
+  rw [integral_eq_sub_of_hasDerivAt hderiv
+    ((by fun_prop : Continuous fun z : ℝ =>
+      z * Real.exp (-(α / (2 * D)) * z ^ 2)).intervalIntegrable _ _)]
+  simp
+  ring
+
+end HalfLine
 
 end powerlib.Asymptotics

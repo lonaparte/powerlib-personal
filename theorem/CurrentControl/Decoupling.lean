@@ -72,44 +72,6 @@ open scoped Topology
 
 /-! ## Zero steady-state error needs closed-loop stability -/
 
-section Eigenmode
-
-variable {n m : ℕ}
-
-/-- Generic: along a real eigenvector `v` of a positive eigenvalue `r` of the state matrix, the
-exponential mode `e + e^{r t} v` through an equilibrium `e` of a constant input is a solution,
-and every component where `v` is nonzero diverges, so it converges to no value. -/
-@[powerlib_foundation] theorem exists_not_tendsto_of_eigenvector (M : Linear.Plant n m)
-    {u : Fin m → ℝ} {e : EuclideanSpace ℝ (Fin n)} (he : IsEquilibrium (M.inputField u) e)
-    {r : ℝ} (hr : 0 < r) {v : Fin n → ℝ} (hAv : M.A *ᵥ v = r • v) {j : Fin n} (hvj : v j ≠ 0)
-    (c : ℝ) : ∃ x : ℝ → EuclideanSpace ℝ (Fin n), (∀ t, HasDerivAt x (M.inputField u (x t)) t) ∧
-      ¬ Tendsto (fun t => x t j) atTop (𝓝 c) := by
-  let x : ℝ → EuclideanSpace ℝ (Fin n) := fun t => e + Real.exp (r * t) • WithLp.toLp 2 v
-  refine ⟨x, fun t => ?_, ?_⟩
-  · rw [M.inputField_eq he, Linear.affine_apply]
-    have hexp : HasDerivAt (fun s => Real.exp (r * s)) (Real.exp (r * t) * r) t := by
-      simpa using ((hasDerivAt_id t).const_mul r).exp
-    have h := (hexp.smul_const (WithLp.toLp 2 v : EuclideanSpace ℝ (Fin n))).const_add e
-    convert h using 1
-    simp only [x, add_sub_cancel_left, map_smul, Linear.op, Matrix.toEuclideanCLM_toLp, hAv,
-      smul_smul, WithLp.toLp_smul]
-  · intro hlim
-    have hpos : 0 < |v j| := abs_pos.mpr hvj
-    have hT0 : Tendsto (fun t => x t j - e j) atTop (𝓝 (c - e j)) := hlim.sub_const (e j)
-    have hcomp : (fun t => x t j - e j) = fun t => Real.exp (r * t) * v j := by
-      funext t
-      simp [x]
-    rw [hcomp] at hT0
-    have hgrow : Tendsto (fun t => Real.exp (r * t) * |v j|) atTop atTop :=
-      (Real.tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop hr)).atTop_mul_const hpos
-    have habs : Tendsto (fun t => |Real.exp (r * t) * v j|) atTop atTop := by
-      refine hgrow.congr fun t => ?_
-      rw [abs_mul, abs_of_pos (Real.exp_pos _)]
-    exact not_tendsto_atTop_of_tendsto_nhds hT0.abs habs
-
-end Eigenmode
-
-
 namespace PIParams
 
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
@@ -151,7 +113,7 @@ private theorem not_tracks_of_Ki_neg (hL : 0 < p.L) (hKi : p.Ki < 0) (iref : ℝ
     have : p.Ki / p.L < 0 := div_neg_of_neg_of_pos hKi hL
     linarith
   obtain ⟨r, hr, v, hv, hAv⟩ := Criteria.exists_pos_real_eigenvector_of_det_neg _ hdet
-  obtain ⟨x, hx, hn⟩ := exists_not_tendsto_of_eigenvector p.model (p.isEquilibrium hKi.ne iref)
+  obtain ⟨x, hx, hn⟩ := LTI.exists_not_tendsto_of_eigenvector p.model (p.isEquilibrium hKi.ne iref)
     hr hAv (p.first_ne_zero hr hv hAv) iref
   exact ⟨x, fun t => by rw [← model_field]; exact hx t, hn⟩
 

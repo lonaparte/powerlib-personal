@@ -48,7 +48,7 @@ stability concluded in the Flow semantics through the linear hub
 -/
 
 noncomputable section
-namespace powerlib.Line.MethodOfLines
+namespace powerlib.Numerics
 open Matrix Finset Real
 
 /-! ## The tridiagonal heat Laplacian -/
@@ -488,4 +488,4 @@ notion of `theorem.DAE.Linear` for `portCoupled`) — are exactly the reduced OD
         ∀ t, y t = -(Gb⁻¹ *ᵥ (Gx *ᵥ x t + Ge *ᵥ u t)) :=
   (portCoupled Aii Aib B Gx Gb Ge).isSolution_iff (isUnit_iff_ne_zero.mpr hGb) u x y
 
-end powerlib.Line.MethodOfLines
+end powerlib.Numerics

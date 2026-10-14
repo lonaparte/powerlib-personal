@@ -2,6 +2,7 @@ import theorem.Network.WeightedLaplacian
 import Mathlib.Combinatorics.SimpleGraph.LapMatrix
 import Mathlib.Analysis.ODE.ExistUnique
 import dependencies.LeanForControl
+import theorem.LTI.Decay
 
 /-! # Synchronization manifolds of diffusively coupled identical nodes
 
@@ -28,9 +29,10 @@ Results.
 * `variational_decouple`: for `δẊᵢ = A(t) δXᵢ − σ Σⱼ Lᵢⱼ Γ(t) δXⱼ` and any matrix `W` of left
   eigenvectors (`W L = diag(μ) W`; for symmetric `L`, `W = Vᵀ` with `L = VΛVᵀ`), the modal
   coordinates `ξ_k = Σᵢ W_{ki} δXᵢ` obey `ξ̇_k = (A(t) − σ μ_k Γ(t)) ξ_k`.
-* `isHurwitz_sub_smul_one`, `transverse_isHurwitz_of_threshold`: with `H = Γ = I`, every
-  transverse block `A − σμ_k I` (`k ≥ 2`) is Hurwitz as soon as `σ μ_k > a` where `a` bounds the
-  real parts of the spectrum of `A` — in particular for all `k` once `σ μ₂ > a`, `σ ≥ 0`.
+* `transverse_isHurwitz_of_threshold` (through `LTI.isHurwitz_sub_smul_one`): with `H = Γ = I`,
+  every transverse block `A − σμ_k I` (`k ≥ 2`) is Hurwitz as soon as `σ μ_k > a` where `a`
+  bounds the real parts of the spectrum of `A` — in particular for all `k` once `σ μ₂ > a`,
+  `σ ≥ 0`.
 * Cluster synchronization (`EquitablePartition`, `cluster_field`, `cluster_lift`,
   `cluster_invariant`): if every node of cluster `c` receives the same total coupling `Q c c'`
   from cluster `c'`, the cluster manifold `{X = Y ∘ π}` is invariant and carries the quotient
@@ -164,21 +166,6 @@ at `(s(0), …, s(0))` equals `(s(t), …, s(t))` for all `t`. -/
 
 /-! ## Linear nodes: the transverse blocks and the threshold `σ μ₂ > a` -/
 
-/-- Shifting by `c I` shifts the spectrum: if every eigenvalue of `A` has real part `< c`,
-then `A − c I` is Hurwitz. -/
-@[powerlib_foundation] theorem isHurwitz_sub_smul_one {d : ℕ} {A : Matrix (Fin d) (Fin d) ℝ}
-    {c : ℝ} (h : ∀ (lam : ℂ) (v : Fin d → ℂ), v ≠ 0 → A.map (algebraMap ℝ ℂ) *ᵥ v = lam • v →
-      lam.re < c) : LinearSystems.IsHurwitz (A - c • 1) := by
-  intro lam v hv heig
-  have hmap : (A - c • (1 : Matrix (Fin d) (Fin d) ℝ)).map (algebraMap ℝ ℂ) =
-      A.map (algebraMap ℝ ℂ) - (c : ℂ) • 1 := by
-    ext i j; simp [Matrix.one_apply]; split_ifs <;> simp
-  rw [hmap, sub_mulVec, smul_mulVec, one_mulVec, sub_eq_iff_eq_add, ← add_smul] at heig
-  have := h _ v hv heig
-  simp only [Complex.add_re, Complex.ofReal_re] at this
-  simp only [neg_zero]
-  linarith
-
 /-- **Threshold `σ μ_k > a`**: with `H = Γ = I`, if every eigenvalue of `A` has real part
 `≤ a` and `σ μ_k > a`, the transverse block `A − σ μ_k I` is Hurwitz. If `0 ≤ σ`, the eigenvalues
 are ordered `μ₂ ≤ μ_k`, and `σ μ₂ > a`, this holds for every transverse mode. -/
@@ -187,7 +174,7 @@ are ordered `μ₂ ≤ μ_k`, and `σ μ₂ > a`, this holds for every transvers
     (ha : ∀ (lam : ℂ) (v : Fin d → ℂ), v ≠ 0 → A.map (algebraMap ℝ ℂ) *ᵥ v = lam • v →
       lam.re ≤ a) (hσ : 0 ≤ σ) (hμ : μ2 ≤ μk) (hthr : a < σ * μ2) :
     LinearSystems.IsHurwitz (A - (σ * μk) • 1) := by
-  apply isHurwitz_sub_smul_one
+  apply LTI.isHurwitz_sub_smul_one
   intro lam v hv heig
   have := ha lam v hv heig
   have : σ * μ2 ≤ σ * μk := mul_le_mul_of_nonneg_left hμ hσ

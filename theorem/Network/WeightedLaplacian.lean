@@ -20,6 +20,11 @@ invertible, its inverse is entrywise nonnegative (the M-matrix special case), an
 for symmetric weights, it is positive definite exactly when every node has such a
 path to ground.
 
+A bus admittance matrix built from branch admittances with no shunt (ground) branch
+(`ybusNoShunt`) is Laplacian-type, `Y 𝟏 = 0`, hence singular for every topology
+(`ybusNoShunt_det_eq_zero`; two-bus counterexample `ybus_two_bus_singular`, the correction of
+`theory/T-dae-systems.md` §2.1).
+
 Connectivity is the reflexive-transitive closure of the relation `0 < W i j`.
 These are algebraic statements; no power-flow or dynamic claim is made here.
 -/
@@ -395,5 +400,37 @@ def flowWeights (b : Matrix ι ι ℝ) (θ : ι → ℝ) : Matrix ι ι ℝ :=
       flowWeights, of_apply, ContinuousLinearMap.coe_sum', Finset.sum_apply,
       ContinuousLinearMap.coe_smul', Pi.smul_apply, ContinuousLinearMap.coe_sub', Pi.sub_apply,
       smul_eq_mul]
+
+/-! ## Bus admittance matrices without shunt branches are singular -/
+
+section Ybus
+
+/-- Bus admittance matrix built from branch admittances `y i j` with no shunt (ground)
+elements: `Y_ii = Σ_{j ≠ i} y_ij`, `Y_ij = -y_ij`. (The diagonal of `y` cancels.) -/
+def ybusNoShunt {ι : Type*} [Fintype ι] [DecidableEq ι] (y : Matrix ι ι ℂ) : Matrix ι ι ℂ :=
+  Matrix.diagonal (fun i => ∑ j, y i j) - y
+
+@[powerlib_foundation] theorem ybusNoShunt_mulVec_one {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (y : Matrix ι ι ℂ) : ybusNoShunt y *ᵥ (fun _ => 1) = 0 := by
+  ext i
+  rw [ybusNoShunt, sub_mulVec, Pi.sub_apply, mulVec_diagonal]
+  simp [mulVec, dotProduct]
+
+/-- Laplacian-type admittance matrices are singular, whatever the topology. -/
+@[powerlib_foundation] theorem ybusNoShunt_det_eq_zero {ι : Type*} [Fintype ι] [DecidableEq ι]
+    [Nonempty ι] (y : Matrix ι ι ℂ) : (ybusNoShunt y).det = 0 := by
+  apply Matrix.exists_mulVec_eq_zero_iff.mp
+  exact ⟨fun _ => 1, fun h => one_ne_zero (congrFun h (Classical.arbitrary ι)),
+    ybusNoShunt_mulVec_one y⟩
+
+/-- Counterexample to "connected ⇒ nonsingular": two buses joined by one line. -/
+@[powerlib_foundation] theorem ybus_two_bus_singular :
+    ybusNoShunt (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℂ) = !![1, -1; -1, 1] ∧
+      (ybusNoShunt (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℂ)).det = 0 := by
+  refine ⟨?_, ybusNoShunt_det_eq_zero _⟩
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [ybusNoShunt, Fin.sum_univ_two]
+
+end Ybus
 
 end powerlib.Network

@@ -46,7 +46,7 @@ representation, existence, uniqueness and convergence statements are generic imp
 an arbitrary caller-supplied plant (formerly `@[powerlib_domain]`, now `@[powerlib_foundation]`,
 Rules §3). The two instances on the swing + governor and SFR plants are trajectory-level results
 about specific engineering models: private implementation evidence (Rules §3a), derived from the
-generic statements, the generic closed form `Frequency.trajectory_eq_osc2` and static facts of
+generic statements, the generic closed form `LTI.trajectory_eq_osc2` and static facts of
 `SwingGovernor`, `SwingNadir` and `SFR`. The stability of the two plants themselves is published
 by `SwingGovernor.family` and `SFR.family`.
 -/
@@ -143,8 +143,8 @@ include he₁
     (hun : ∀ t ∈ Ico 0 b, ¬ ∃ τ ∈ Icc 0 t, x τ i₀ ≤ -θ) :
     EqOn x (Linear.solution m.A e₁ 0 (x 0)) (Icc 0 b) := by
   refine rightODE_unique m (load ΔPL) (hx.1.mono Icc_subset_Ici_self) (fun t ht => ?_)
-    (solution_continuous m.A e₁ 0 _).continuousOn
-    (fun t _ => (solution_hasDerivAt m he₁ 0 _ t).hasDerivWithinAt) (by simp)
+    (LTI.solution_continuous m.A e₁ 0 _).continuousOn
+    (fun t _ => (LTI.solution_hasDerivAt m he₁ 0 _ t).hasDerivWithinAt) (by simp)
   have h := hx.2 t ht.1
   rwa [latched_input_of_not (hun t ht)] at h
 
@@ -205,7 +205,7 @@ include he₂ in
   -- after `T`: post-shedding dynamics
   set ψ := fun t => Linear.solution m.A e₂ 0 (φ T) (t - T)
   have hψd : ∀ t, HasDerivAt ψ (m.inputField (load (ΔPL - shed)) (ψ t)) t := fun t => by
-    have h := (solution_hasDerivAt m he₂ 0 (φ T) (t - T)).comp_sub_const t T
+    have h := (LTI.solution_hasDerivAt m he₂ 0 (φ T) (t - T)).comp_sub_const t T
     exact h
   have hafter : ∀ b ≥ T, EqOn x ψ (Icc T b) := by
     intro b _
@@ -237,7 +237,7 @@ include he₂ in
   · push Not at hφ
     obtain ⟨T, hT0, hTz, hfirst⟩ := exists_first_crossing (z := fun τ =>
       Linear.solution m.A e₁ 0 (x 0) τ i₀)
-      ((coord_continuous i₀).comp (solution_continuous m.A e₁ 0 _)).continuousOn hφ
+      ((coord_continuous i₀).comp (LTI.solution_continuous m.A e₁ 0 _)).continuousOn hφ
     rw [latched_representation_trip he₁ he₂ hx hT0 hTz hfirst t ht,
       latched_representation_trip he₁ he₂ hy hT0 (h0 ▸ hTz) (h0 ▸ hfirst) t ht, h0]
 
@@ -249,21 +249,21 @@ include he₂ in
         {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t) ∧
       x 0 = x₀ := by
   set φ := Linear.solution m.A e₁ 0 x₀
-  have hφc : Continuous φ := solution_continuous m.A e₁ 0 x₀
+  have hφc : Continuous φ := LTI.solution_continuous m.A e₁ 0 x₀
   by_cases hφ : ∀ t ≥ 0, -θ < φ t i₀
   · refine ⟨φ, ⟨hφc.continuousOn, fun t _ => ?_⟩, by simp [φ]⟩
     have hnot : ¬ ∃ τ ∈ Icc 0 t, φ τ i₀ ≤ -θ := by
       rintro ⟨τ, hτ, hτz⟩
       exact absurd hτz (not_le.2 (hφ τ hτ.1))
     rw [latched_input_of_not hnot]
-    exact (solution_hasDerivAt m he₁ 0 x₀ t).hasDerivWithinAt
+    exact (LTI.solution_hasDerivAt m he₁ 0 x₀ t).hasDerivWithinAt
   · push Not at hφ
     obtain ⟨T, hT0, hTz, hfirst⟩ :=
       exists_first_crossing (z := fun τ => φ τ i₀)
         ((coord_continuous i₀).comp hφc).continuousOn hφ
     set ψ := fun t => Linear.solution m.A e₂ 0 (φ T) (t - T)
     have hψd : ∀ t, HasDerivAt ψ (m.inputField (load (ΔPL - shed)) (ψ t)) t := fun t =>
-      (solution_hasDerivAt m he₂ 0 (φ T) (t - T)).comp_sub_const t T
+      (LTI.solution_hasDerivAt m he₂ 0 (φ T) (t - T)).comp_sub_const t T
     have hψc : Continuous ψ :=
       continuous_iff_continuousAt.2 fun t => (hψd t).continuousAt
     have hψT : ψ T = φ T := by simp [ψ]
@@ -288,7 +288,7 @@ include he₂ in
       rw [latched_input_of_not hnot, hxle t hlt.le]
       have hev : x =ᶠ[𝓝 t] φ := by
         filter_upwards [Iio_mem_nhds hlt] with s hs using hxle s (le_of_lt hs)
-      exact ((solution_hasDerivAt m he₁ 0 x₀ t).congr_of_eventuallyEq hev).hasDerivWithinAt
+      exact ((LTI.solution_hasDerivAt m he₁ 0 x₀ t).congr_of_eventuallyEq hev).hasDerivWithinAt
     · -- after the trip: shedding, `x = ψ` on `[t, ∞)`
       have htrip : ∃ τ ∈ Icc 0 t, x τ i₀ ≤ -θ :=
         ⟨T, ⟨hT0, hge⟩, by rw [hxle T le_rfl]; exact hTz⟩
@@ -321,11 +321,11 @@ include he₁ he₂ hA
   · push Not at hφ
     obtain ⟨T, hT0, hTz, hfirst⟩ :=
       exists_first_crossing (z := fun τ => φ τ i₀)
-        ((coord_continuous i₀).comp (solution_continuous m.A e₁ 0 _)).continuousOn hφ
+        ((coord_continuous i₀).comp (LTI.solution_continuous m.A e₁ 0 _)).continuousOn hφ
     have hrep := latched_representation_trip he₁ he₂ hx hT0 hTz hfirst
     have hψ : Tendsto (Linear.solution m.A e₂ 0 (φ T)) atTop (𝓝 e₂) :=
-      tendsto_of_isHurwitz m he₂ hA
-        (fun t _ => (solution_hasDerivAt m he₂ 0 (φ T) t).hasDerivWithinAt)
+      LTI.tendsto_equilibrium m hA he₂ (t₀ := 0)
+        (fun t _ => (LTI.solution_hasDerivAt m he₂ 0 (φ T) t).hasDerivWithinAt)
     have hψ' : Tendsto (fun t => Linear.solution m.A e₂ 0 (φ T) (t - T)) atTop (𝓝 e₂) :=
       hψ.comp (tendsto_atTop_add_const_right _ (-T) tendsto_id |>.congr fun t => by
         simp only [id]; ring)
@@ -346,8 +346,8 @@ omit he₂ in
     exact absurd hτz (not_le.2 (hno τ hτ.1))
   have hrep : ∀ t ≥ 0, x t = Linear.solution m.A e₁ 0 (x 0) t := fun t ht =>
     latched_eqOn_unshed he₁ hx (fun s hs => hun s hs.1) ⟨ht, le_rfl⟩
-  have hφ := tendsto_of_isHurwitz m he₁ hA
-    (fun t _ => (solution_hasDerivAt m he₁ 0 (x 0) t).hasDerivWithinAt)
+  have hφ := LTI.tendsto_equilibrium m hA he₁ (t₀ := 0)
+    (fun t _ => (LTI.solution_hasDerivAt m he₁ 0 (x 0) t).hasDerivWithinAt)
   refine hφ.congr' ?_
   filter_upwards [eventually_ge_atTop 0] with t ht
   exact (hrep t ht).symm
@@ -385,12 +385,12 @@ private theorem swingGovernor_latched_trip {M D K Tg : ℝ} (hM : 0 < M) (hTg : 
       latched_eqOn_unshed he₁ hx (fun s hs => hun s hs.1) ⟨ht, le_rfl⟩
     have hφ : IsIntegralCurveOn φ
         (fun _ y => (SwingGovernor.plant M D K Tg).inputField (load ΔPL) y) (Ici 0) :=
-      fun t _ => (solution_hasDerivAt _ he₁ 0 (x 0) t).hasDerivWithinAt
+      fun t _ => (LTI.solution_hasDerivAt _ he₁ 0 (x 0) t).hasDerivWithinAt
     have hωd := SwingGovernor.dampedFreq_pos hM hTg hD hKD hζ
     have hT0 : 0 < SwingGovernor.nadirTime M D K Tg := SwingGovernor.tCrit_pos hωd
     have hφ0 : φ 0 = 0 := by simp [φ, h0]
     have hval : φ (SwingGovernor.nadirTime M D K Tg) 0 = SwingGovernor.nadirValue M D K Tg ΔPL := by
-      rw [trajectory_eq_osc2 _ he₁ (SwingGovernor.trace_A hM hTg hKD)
+      rw [LTI.trajectory_eq_osc2 _ he₁ (SwingGovernor.trace_A hM hTg hKD)
         (SwingGovernor.det_A hM hTg hD hKD hζ) hωd.ne' hφ hT0.le, hφ0,
         SwingGovernor.osc2_freq hM hTg hD hKD hζ, SwingGovernor.respC_nadirTime hM hTg hD hKD hζ]
     have := hno _ hT0.le

@@ -70,7 +70,7 @@ variable {m : ℕ}
   have hPy : HasDerivWithinAt (fun τ => P *ᵥ y τ) (P *ᵥ dy) s t :=
     (LinearMap.toContinuousLinearMap (Matrix.toLin' P)).hasFDerivAt.comp_hasDerivWithinAt t hy
   convert Linear.dotProduct_hasDerivWithinAt hy hPy using 1
-  rw [dotProduct_mulVec_comm_of_symm hP dy (y t)]
+  rw [Criteria.dotProduct_mulVec_comm_of_symm hP dy (y t)]
   ring
 
 /-- **Uniform Lyapunov dissipation** for a continuous Hurwitz family on a compact parameter

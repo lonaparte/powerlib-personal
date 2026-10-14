@@ -26,6 +26,11 @@ Results (all trajectory-level, for every initial state):
 * `exists_trajectory_not_tendsto_zero`: one eigenvalue with `‖μ‖ ≥ 1` yields a real
   trajectory that does not converge to zero.
 * `exponentiallyStable_iff_schurStable`, `asymptoticallyStable_iff_schurStable`.
+* Matrix powers on any finite index type (`L∞` operator norm): `norm_map_algebraMap`
+  (complexification preserves the norm), `norm_pow_le_norm_one_mul`, `exists_pow_norm_lt_one`
+  (spectral radius `< 1` of the complexification gives a contractive power, through the
+  LeanForControl Gelfand-formula lemma) and `exists_pow_norm_le_exp` (a contractive power gives
+  `‖P ^ n‖ ≤ C e^{-γ n}`); used by the Floquet criterion `theorem/Periodic/Floquet.lean`.
 
 Source: work-sync theory/T-numerical-integration.md §2.7 (discrete recursion
 `x_{n+1} = R(hA) x_n`), required as the discrete semantic layer for the A9 numerics
@@ -33,7 +38,7 @@ formalization.  These are general mathematics: foundation results.
 -/
 
 noncomputable section
-namespace powerlib.Discrete
+namespace powerlib.LTI
 open Matrix Filter
 open scoped Topology
 
@@ -127,32 +132,119 @@ complexification in the Banach algebra of complex matrices). -/
 
 end Spectral
 
+section MatrixPowers
+
+open scoped Matrix.Norms.Operator
+
+variable {X : Type*} [Fintype X] [DecidableEq X]
+
+@[powerlib_foundation] theorem norm_map_algebraMap (P : Matrix X X ℝ) :
+    ‖P.map (algebraMap ℝ ℂ)‖ = ‖P‖ := by
+  rw [Matrix.linfty_opNorm_def, Matrix.linfty_opNorm_def]
+  simp [Complex.nnnorm_real]
+
+@[powerlib_foundation] theorem norm_pow_le_norm_one_mul {Q : Matrix X X ℝ} (k : ℕ) :
+    ‖Q ^ k‖ ≤ ‖(1 : Matrix X X ℝ)‖ * ‖Q‖ ^ k := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ, pow_succ]
+    calc ‖Q ^ k * Q‖ ≤ ‖Q ^ k‖ * ‖Q‖ := norm_mul_le _ _
+      _ ≤ ‖(1 : Matrix X X ℝ)‖ * ‖Q‖ ^ k * ‖Q‖ :=
+        mul_le_mul_of_nonneg_right ih (norm_nonneg _)
+      _ = _ := by ring
+
+/-- Spectral radius `< 1` gives a contractive power (wraps LeanForControl
+`exists_pow_norm_lt_one_of_spectralRadius_lt_one` on the complexification). -/
+@[powerlib_foundation] theorem exists_pow_norm_lt_one (P : Matrix X X ℝ)
+    (hρ : spectralRadius ℂ (P.map (algebraMap ℝ ℂ)) < 1) : ∃ m : ℕ, 0 < m ∧ ‖P ^ m‖ < 1 := by
+  rcases isEmpty_or_nonempty X with hX | hX
+  · refine ⟨1, one_pos, ?_⟩
+    rw [Subsingleton.elim (P ^ 1) 0, norm_zero]
+    norm_num
+  · obtain ⟨m, hm, hlt⟩ := exists_pow_norm_lt_one_of_spectralRadius_lt_one
+      (P.map (algebraMap ℝ ℂ)) hρ
+    refine ⟨m, hm, ?_⟩
+    have hmap : (P ^ m).map (algebraMap ℝ ℂ) = (P.map (algebraMap ℝ ℂ)) ^ m := by
+      have h := map_pow ((algebraMap ℝ ℂ).mapMatrix (m := X)) P m
+      simpa [RingHom.mapMatrix_apply] using h
+    rw [← norm_map_algebraMap, hmap]
+    exact hlt
+
+/-- A contractive power gives geometric decay of all powers. -/
+@[powerlib_foundation] theorem exists_pow_norm_le_exp {P : Matrix X X ℝ} {m : ℕ} (hm : 0 < m)
+    (hq : ‖P ^ m‖ < 1) :
+    ∃ C γ : ℝ, 0 ≤ C ∧ 0 < γ ∧ ∀ n : ℕ, ‖P ^ n‖ ≤ C * Real.exp (-(γ * n)) := by
+  set q : ℝ := max ‖P ^ m‖ (1 / 2) with hq_def
+  have hq0 : 0 < q := lt_of_lt_of_le (by norm_num) (le_max_right _ _)
+  have hq1 : q < 1 := max_lt hq (by norm_num)
+  set γ₀ : ℝ := -Real.log q with hγ₀
+  have hγ₀pos : 0 < γ₀ := by
+    have := Real.log_neg hq0 hq1
+    linarith
+  set C₀ : ℝ := ∑ r ∈ Finset.range m, ‖P ^ r‖ with hC₀
+  have hC₀nn : 0 ≤ C₀ := Finset.sum_nonneg fun _ _ => norm_nonneg _
+  have hmR : (0 : ℝ) < m := Nat.cast_pos.mpr hm
+  refine ⟨‖(1 : Matrix X X ℝ)‖ * C₀ * Real.exp γ₀, γ₀ / m, by positivity,
+    div_pos hγ₀pos hmR, fun n => ?_⟩
+  set k := n / m
+  set r := n % m
+  have hn : n = m * k + r := (Nat.div_add_mod n m).symm
+  have hr : r < m := Nat.mod_lt n hm
+  have hPn : P ^ n = (P ^ m) ^ k * P ^ r := by rw [hn, pow_add, pow_mul]
+  have hPr : ‖P ^ r‖ ≤ C₀ :=
+    Finset.single_le_sum (f := fun r => ‖P ^ r‖) (fun _ _ => norm_nonneg _)
+      (Finset.mem_range.mpr hr)
+  have hqk : ‖P ^ m‖ ^ k ≤ q ^ k :=
+    pow_le_pow_left₀ (norm_nonneg _) (le_max_left _ _) k
+  have hqexp : q ^ k = Real.exp (-(γ₀ * k)) := by
+    rw [hγ₀, neg_mul, neg_neg, mul_comm, Real.exp_nat_mul, Real.exp_log hq0]
+  have hkge : (n : ℝ) / m - 1 ≤ k := by
+    have h1 : (n : ℝ) < m * (k + 1) := by
+      have : n < m * (k + 1) := by rw [hn]; nlinarith
+      exact_mod_cast this
+    rw [div_sub_one hmR.ne', div_le_iff₀ hmR]
+    linarith
+  have hexp : Real.exp (-(γ₀ * k)) ≤ Real.exp γ₀ * Real.exp (-(γ₀ / m * n)) := by
+    rw [← Real.exp_add]
+    apply Real.exp_le_exp.mpr
+    have : γ₀ * ((n : ℝ) / m - 1) ≤ γ₀ * k := mul_le_mul_of_nonneg_left hkge hγ₀pos.le
+    have e : γ₀ / m * n = γ₀ * ((n : ℝ) / m) := by ring
+    rw [e]
+    linarith
+  calc ‖P ^ n‖ = ‖(P ^ m) ^ k * P ^ r‖ := by rw [hPn]
+    _ ≤ ‖(P ^ m) ^ k‖ * ‖P ^ r‖ := norm_mul_le _ _
+    _ ≤ (‖(1 : Matrix X X ℝ)‖ * ‖P ^ m‖ ^ k) * C₀ :=
+        mul_le_mul (norm_pow_le_norm_one_mul k) hPr (norm_nonneg _) (by positivity)
+    _ ≤ (‖(1 : Matrix X X ℝ)‖ * Real.exp (-(γ₀ * k))) * C₀ := by
+        rw [← hqexp]; gcongr
+    _ ≤ (‖(1 : Matrix X X ℝ)‖ * (Real.exp γ₀ * Real.exp (-(γ₀ / m * n)))) * C₀ := by
+        gcongr
+    _ = ‖(1 : Matrix X X ℝ)‖ * C₀ * Real.exp γ₀ * Real.exp (-(γ₀ / m * n)) := by ring
+
+end MatrixPowers
+
 section Decay
 
 open scoped Matrix.Norms.Operator
 
-@[powerlib_foundation] private lemma norm_map_complex (A : Matrix (Fin n) (Fin n) ℝ) :
-    ‖A.map (algebraMap ℝ ℂ)‖ = ‖A‖ := by
-  simp only [Matrix.linfty_opNorm_def, Matrix.map_apply, Complex.coe_algebraMap,
-    Complex.nnnorm_real]
-
 /-- A power of a Schur matrix has operator norm below one. -/
-@[powerlib_foundation] private lemma exists_pow_norm_lt_one {Φ : Matrix (Fin n) (Fin n) ℝ}
-    (h : SchurStable Φ) : ∃ m : ℕ, 0 < m ∧ ‖Φ ^ m‖ < 1 := by
+@[powerlib_foundation] private lemma exists_pow_norm_lt_one_of_schurStable
+    {Φ : Matrix (Fin n) (Fin n) ℝ} (h : SchurStable Φ) : ∃ m : ℕ, 0 < m ∧ ‖Φ ^ m‖ < 1 := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · exact ⟨1, one_pos, by rw [Subsingleton.elim (Φ ^ 1) 0]; simp⟩
   · have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
     obtain ⟨m, hm, hlt⟩ := exists_pow_norm_lt_one_of_spectralRadius_lt_one
       (Φ.map (algebraMap ℝ ℂ)) ((schurStable_iff_spectralRadius_lt_one Φ).mp h)
     refine ⟨m, hm, ?_⟩
-    rw [← norm_map_complex, Matrix.map_pow]
+    rw [← norm_map_algebraMap, Matrix.map_pow]
     exact hlt
 
 /-- Geometric bound on all powers of a Schur matrix. -/
 @[powerlib_foundation] theorem SchurStable.exists_pow_bound {Φ : Matrix (Fin n) (Fin n) ℝ}
     (h : SchurStable Φ) :
     ∃ C > 0, ∃ ρ : ℝ, 0 < ρ ∧ ρ < 1 ∧ ∀ k : ℕ, ‖Φ ^ k‖ ≤ C * ρ ^ k := by
-  obtain ⟨m, hm, hlt⟩ := exists_pow_norm_lt_one h
+  obtain ⟨m, hm, hlt⟩ := exists_pow_norm_lt_one_of_schurStable h
   set q : ℝ := max ‖Φ ^ m‖ (1 / 2) with hq
   have hq0 : 0 < q := lt_max_of_lt_right (by norm_num)
   have hq1 : q < 1 := max_lt hlt (by norm_num)
@@ -286,4 +378,4 @@ imaginary part of the complex eigenmode `μ^k v`) that does not converge to zero
 
 end Converse
 
-end powerlib.Discrete
+end powerlib.LTI

@@ -1,5 +1,5 @@
 import theorem.GFL.PIPLL
-import theorem.GFL.TrigZeros
+import theorem.SpecialFunctions.TrigZeros
 
 /-! # GFL form-B reduction: quasi-steady algebra and the phase-detector characteristic
 
@@ -58,66 +58,6 @@ noncomputable section
 namespace powerlib.GFL
 open Complex Polynomial Set
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
-
-/-! ## First-order trigonometric polynomials: at most two zeros per period -/
-
-/-- `Q(z) = ((c₁ − j s₁)/2) z² + c₀ z + (c₁ + j s₁)/2`, with `Q(e^{jθ}) = e^{jθ} h(θ)` for
-`h = c₀ + c₁ cos θ + s₁ sin θ`. -/
-def trigPoly1Poly (c₀ c₁ s₁ : ℝ) : ℂ[X] :=
-  C (((c₁ : ℂ) - s₁ * I) / 2) * X ^ 2 + C (c₀ : ℂ) * X + C (((c₁ : ℂ) + s₁ * I) / 2)
-
-@[powerlib_foundation] theorem trigPoly1Poly_natDegree_le (c₀ c₁ s₁ : ℝ) :
-    (trigPoly1Poly c₀ c₁ s₁).natDegree ≤ 2 := by
-  unfold trigPoly1Poly
-  compute_degree
-
-@[powerlib_foundation] theorem trigPoly1Poly_ne_zero {c₀ c₁ s₁ : ℝ}
-    (hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0)) : trigPoly1Poly c₀ c₁ s₁ ≠ 0 := by
-  intro hP
-  have k2 := congrArg (fun p => Polynomial.coeff p 2) hP
-  have k1 := congrArg (fun p => Polynomial.coeff p 1) hP
-  simp [trigPoly1Poly, coeff_X_pow, coeff_C] at k2 k1
-  apply hne
-  have r2 := congrArg Complex.re k2
-  have i2 := congrArg Complex.im k2
-  simp at r2 i2
-  exact ⟨k1, r2, by linarith⟩
-
-@[powerlib_foundation] theorem trigPoly1_eval_cexp (c₀ c₁ s₁ θ : ℝ) :
-    (trigPoly1Poly c₀ c₁ s₁).eval (exp (θ * I)) =
-      exp (θ * I) * (trigPoly2 c₀ c₁ s₁ 0 0 θ : ℂ) := by
-  have h2 := trigPoly2_eval_cexp c₀ c₁ s₁ 0 0 θ
-  have hz0 : exp ((θ : ℂ) * I) ≠ 0 := exp_ne_zero _
-  have hP : trigPoly2Poly c₀ c₁ s₁ 0 0 = X * trigPoly1Poly c₀ c₁ s₁ := by
-    simp only [trigPoly2Poly, trigPoly1Poly, ofReal_zero, zero_mul, sub_zero, add_zero,
-      zero_div, map_zero]
-    ring
-  rw [hP, eval_mul, eval_X] at h2
-  apply mul_left_cancel₀ hz0
-  rw [h2]
-  ring
-
-/-- A first-order trigonometric polynomial `c₀ + c₁ cos θ + s₁ sin θ`, not identically zero, has at
-most two zeros in every window `[a, a + 2π)`. -/
-@[powerlib_foundation] theorem trigPoly1_ncard_zeroSet_le_two {c₀ c₁ s₁ : ℝ}
-    (hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0)) (a : ℝ) :
-    (trigPoly2ZeroSet c₀ c₁ s₁ 0 0 a).ncard ≤ 2 := by
-  have hP := trigPoly1Poly_ne_zero hne
-  set P := trigPoly1Poly c₀ c₁ s₁
-  have hmaps : MapsTo (fun θ : ℝ => exp ((θ : ℂ) * I)) (trigPoly2ZeroSet c₀ c₁ s₁ 0 0 a)
-      {z | P.IsRoot z} := by
-    intro θ hθ
-    simp only [mem_ofPred_eq, IsRoot.def, P, trigPoly1_eval_cexp, hθ.2, ofReal_zero, mul_zero]
-  have hroots : {z | P.IsRoot z} = (P.roots.toFinset : Set ℂ) := by
-    ext z
-    simp [Polynomial.mem_roots hP]
-  have h1 := ncard_le_ncard_of_injOn (fun θ : ℝ => exp ((θ : ℂ) * I)) hmaps
-    ((injOn_cexp_mul_I_Ico a).mono fun _ h => h.1) (Polynomial.finite_setOfPred_isRoot hP)
-  rw [hroots, ncard_coe_finset] at h1
-  calc _ ≤ P.roots.toFinset.card := h1
-    _ ≤ Multiset.card P.roots := Multiset.toFinset_card_le _
-    _ ≤ P.natDegree := Polynomial.card_roots' P
-    _ ≤ 2 := trigPoly1Poly_natDegree_le c₀ c₁ s₁
 
 /-! ## Step 1: the current loop -/
 
@@ -326,15 +266,15 @@ def formBChar (θ : ℝ) : ℝ :=
 /-- `formBChar` as a trigonometric polynomial (coefficients in `trigPoly2` order:
 constant, `cos θ`, `sin θ`, `cos 2θ`, `sin 2θ`). -/
 @[powerlib_foundation] theorem formBChar_eq_trigPoly2 :
-    p.formBChar = trigPoly2 ((-p.idRef + p.βq) / (p.ωg * p.Cf)) (p.αd / (p.ωg * p.Cf))
-      (p.αq / (p.ωg * p.Cf)) 0 0 := by
+    p.formBChar = SpecialFunctions.trigPoly2 ((-p.idRef + p.βq) / (p.ωg * p.Cf))
+      (p.αd / (p.ωg * p.Cf)) (p.αq / (p.ωg * p.Cf)) 0 0 := by
   funext θ
-  simp only [formBChar, trigPoly2]
+  simp only [formBChar, SpecialFunctions.trigPoly2]
   ring
 
 @[powerlib_foundation] theorem contDiff_formBChar : ContDiff ℝ 1 p.formBChar := by
   rw [formBChar_eq_trigPoly2]
-  exact contDiff_trigPoly2 _ _ _ _ _
+  exact SpecialFunctions.contDiff_trigPoly2 _ _ _ _ _
 
 /-- With `V_g ≠ 0` (and `Δ ≠ 0`, `ω_g C_f ≠ 0`) the characteristic is not identically zero. -/
 @[powerlib_foundation] theorem formBChar_coeffs_ne_zero (hωC : p.ωg * p.Cf ≠ 0)
@@ -368,8 +308,8 @@ Static evidence on the model, not a connection conclusion. -/
     {x : ℝ² | piPLLField p.formBChar Kp Ki δω x = 0 ∧
       x 0 ∈ Ico a (a + 2 * Real.pi)}.ncard ≤ 2 := by
   have hne := p.formBChar_coeffs_ne_zero hωC hΔ hVg
-  have hle := trigPoly1_ncard_zeroSet_le_two hne a
-  have hfin := trigPoly2_zeroSet_finite (c₂ := 0) (s₂ := 0)
+  have hle := SpecialFunctions.trigPoly1_ncard_zeroSet_le_two hne a
+  have hfin := SpecialFunctions.trigPoly2_zeroSet_finite (c₂ := 0) (s₂ := 0)
     (fun h => hne ⟨h.1, h.2.1, h.2.2.1⟩) a
   refine le_trans (ncard_le_ncard_of_injOn (fun x : ℝ² => x 0) ?_ ?_ hfin) hle
   · rintro x ⟨hx, hxa⟩

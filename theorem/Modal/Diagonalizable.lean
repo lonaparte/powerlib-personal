@@ -1,5 +1,5 @@
 import theorem.Modal.Spectral
-import theorem.Modal.Eigen
+import theorem.LinearAlgebra.Eigen
 import Mathlib.LinearAlgebra.Eigenspace.Triangularizable
 import Mathlib.Algebra.DirectSum.Module
 
@@ -36,7 +36,7 @@ abbrev op (A : Matrix n n ℂ) : Module.End ℂ (n → ℂ) := Matrix.toLin' A
 /-- (⇒) for a diagonalizable matrix, `m_g(μ) = m_a(μ)` for every `μ`. -/
 @[powerlib_foundation] theorem ModalBasis.geom_eq_alg {A : Matrix n n ℂ} (mb : ModalBasis A)
     (μ : ℂ) : finrank ℂ ((op A).eigenspace μ) = A.charpoly.rootMultiplicity μ := by
-  refine le_antisymm (geom_le_alg A μ) ?_
+  refine le_antisymm (LinearAlgebra.geom_le_alg A μ) ?_
   rw [mb.rootMultiplicity_eq_card]
   -- the columns `vᵢ` with `λᵢ = μ` are independent vectors of the eigenspace
   set S := Finset.univ.filter (fun i => mb.eig i = μ)

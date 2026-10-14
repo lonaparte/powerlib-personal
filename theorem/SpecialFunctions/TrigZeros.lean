@@ -7,7 +7,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Topology.Order.IntermediateValue
 
-/-! # Zeros of a second-order trigonometric polynomial (foundation)
+/-! # Zeros of first- and second-order trigonometric polynomials (foundation)
 
 `trigPoly2 c₀ c₁ s₁ c₂ s₂ θ = c₀ + c₁ cos θ + s₁ sin θ + c₂ cos 2θ + s₂ sin 2θ`.
 
@@ -16,6 +16,10 @@ import Mathlib.Topology.Order.IntermediateValue
 * `trigPoly2_zeroSet_finite`, `trigPoly2_ncard_zeroSet_le_four`: if the five coefficients are not
   all zero, then in every period window `[a, a + 2π)` the zero set is finite and has at most four
   elements (distinct `θ` in a window give distinct `z` on the unit circle, all roots of `P ≠ 0`).
+* `trigPoly1_ncard_zeroSet_le_two`: a first-order trigonometric polynomial
+  `c₀ + c₁ cos θ + s₁ sin θ`, not identically zero, has at most two zeros in every window
+  `[a, a + 2π)` (`trigPoly1Poly`, a degree-≤-2 polynomial with `Q(e^{jθ}) = e^{jθ} h(θ)`,
+  `trigPoly1_eval_cexp`).
 * `even_ncard_zeroSet_of_simple`: a general parity lemma — a continuous `T`-periodic function
   whose zeros in each window are finitely many and all simple (nonzero derivative) has an even
   number of zeros in every window `[a, a + T)` (sign changes around the circle).
@@ -37,7 +41,7 @@ quasi-steady line solution the `2θ` coefficients vanish).
 -/
 
 noncomputable section
-namespace powerlib.GFL
+namespace powerlib.SpecialFunctions
 open Complex Polynomial Set Filter Topology
 
 /-! ## The trigonometric polynomial and its derivative -/
@@ -203,6 +207,66 @@ def trigPoly2Poly (c₀ c₁ s₁ c₂ s₂ : ℝ) : ℂ[X] :=
     _ ≤ Multiset.card P.roots := Multiset.toFinset_card_le _
     _ ≤ P.natDegree := Polynomial.card_roots' P
     _ ≤ 4 := trigPoly2Poly_natDegree_le c₀ c₁ s₁ c₂ s₂
+
+/-! ## First-order trigonometric polynomials: at most two zeros per period -/
+
+/-- `Q(z) = ((c₁ − j s₁)/2) z² + c₀ z + (c₁ + j s₁)/2`, with `Q(e^{jθ}) = e^{jθ} h(θ)` for
+`h = c₀ + c₁ cos θ + s₁ sin θ`. -/
+def trigPoly1Poly (c₀ c₁ s₁ : ℝ) : ℂ[X] :=
+  C (((c₁ : ℂ) - s₁ * I) / 2) * X ^ 2 + C (c₀ : ℂ) * X + C (((c₁ : ℂ) + s₁ * I) / 2)
+
+@[powerlib_foundation] theorem trigPoly1Poly_natDegree_le (c₀ c₁ s₁ : ℝ) :
+    (trigPoly1Poly c₀ c₁ s₁).natDegree ≤ 2 := by
+  unfold trigPoly1Poly
+  compute_degree
+
+@[powerlib_foundation] theorem trigPoly1Poly_ne_zero {c₀ c₁ s₁ : ℝ}
+    (hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0)) : trigPoly1Poly c₀ c₁ s₁ ≠ 0 := by
+  intro hP
+  have k2 := congrArg (fun p => Polynomial.coeff p 2) hP
+  have k1 := congrArg (fun p => Polynomial.coeff p 1) hP
+  simp [trigPoly1Poly, coeff_X_pow, coeff_C] at k2 k1
+  apply hne
+  have r2 := congrArg Complex.re k2
+  have i2 := congrArg Complex.im k2
+  simp at r2 i2
+  exact ⟨k1, r2, by linarith⟩
+
+@[powerlib_foundation] theorem trigPoly1_eval_cexp (c₀ c₁ s₁ θ : ℝ) :
+    (trigPoly1Poly c₀ c₁ s₁).eval (exp (θ * I)) =
+      exp (θ * I) * (trigPoly2 c₀ c₁ s₁ 0 0 θ : ℂ) := by
+  have h2 := trigPoly2_eval_cexp c₀ c₁ s₁ 0 0 θ
+  have hz0 : exp ((θ : ℂ) * I) ≠ 0 := exp_ne_zero _
+  have hP : trigPoly2Poly c₀ c₁ s₁ 0 0 = X * trigPoly1Poly c₀ c₁ s₁ := by
+    simp only [trigPoly2Poly, trigPoly1Poly, ofReal_zero, zero_mul, sub_zero, add_zero,
+      zero_div, map_zero]
+    ring
+  rw [hP, eval_mul, eval_X] at h2
+  apply mul_left_cancel₀ hz0
+  rw [h2]
+  ring
+
+/-- A first-order trigonometric polynomial `c₀ + c₁ cos θ + s₁ sin θ`, not identically zero, has at
+most two zeros in every window `[a, a + 2π)`. -/
+@[powerlib_foundation] theorem trigPoly1_ncard_zeroSet_le_two {c₀ c₁ s₁ : ℝ}
+    (hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0)) (a : ℝ) :
+    (trigPoly2ZeroSet c₀ c₁ s₁ 0 0 a).ncard ≤ 2 := by
+  have hP := trigPoly1Poly_ne_zero hne
+  set P := trigPoly1Poly c₀ c₁ s₁
+  have hmaps : MapsTo (fun θ : ℝ => exp ((θ : ℂ) * I)) (trigPoly2ZeroSet c₀ c₁ s₁ 0 0 a)
+      {z | P.IsRoot z} := by
+    intro θ hθ
+    simp only [mem_ofPred_eq, IsRoot.def, P, trigPoly1_eval_cexp, hθ.2, ofReal_zero, mul_zero]
+  have hroots : {z | P.IsRoot z} = (P.roots.toFinset : Set ℂ) := by
+    ext z
+    simp [Polynomial.mem_roots hP]
+  have h1 := ncard_le_ncard_of_injOn (fun θ : ℝ => exp ((θ : ℂ) * I)) hmaps
+    ((injOn_cexp_mul_I_Ico a).mono fun _ h => h.1) (Polynomial.finite_setOfPred_isRoot hP)
+  rw [hroots, ncard_coe_finset] at h1
+  calc _ ≤ P.roots.toFinset.card := h1
+    _ ≤ Multiset.card P.roots := Multiset.toFinset_card_le _
+    _ ≤ P.natDegree := Polynomial.card_roots' P
+    _ ≤ 2 := trigPoly1Poly_natDegree_le c₀ c₁ s₁
 
 /-! ## Parity of the number of simple zeros of a periodic function -/
 
@@ -455,4 +519,4 @@ is even. -/
   obtain ⟨k, hk⟩ := trigPoly2_even_ncard_zeroSet hsimple a
   omega
 
-end powerlib.GFL
+end powerlib.SpecialFunctions

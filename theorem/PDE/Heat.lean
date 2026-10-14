@@ -21,7 +21,7 @@ continuously on the data (`not_continuous_dependence`).
 -/
 
 noncomputable section
-namespace powerlib.Line.Heat
+namespace powerlib.PDE
 open Real Filter Topology
 
 /-- `uₙ(x, t) = e^{νn²t} sin(nx)/n`. -/
@@ -121,4 +121,4 @@ equation, at any `t > 0` and any constant `C`. -/
     _ = |C| := mul_one _
   linarith
 
-end powerlib.Line.Heat
+end powerlib.PDE
