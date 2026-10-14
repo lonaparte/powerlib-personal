@@ -39,7 +39,7 @@ Corrections.
 -/
 
 noncomputable section
-namespace powerlib.Machine.ScalarVF
+namespace powerlib.Drives.ScalarVF
 
 /-! ## Frequency ramp -/
 
@@ -191,4 +191,4 @@ def maxTorqueVF (k x rs f : ℝ) : ℝ := maxTorque (k * f) (2 * Real.pi * f) rs
   rw [e f1 hf1, e f2 hf2]
   apply div_lt_div_of_pos_left (by positivity) hf1 h12
 
-end powerlib.Machine.ScalarVF
+end powerlib.Drives.ScalarVF

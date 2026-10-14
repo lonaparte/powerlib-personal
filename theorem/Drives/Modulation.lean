@@ -1,14 +1,14 @@
 import dependencies.Mathlib
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import theorem.Machine.SpaceVector
+import theorem.Transform.SpaceVector
 
 /-! # Two-level inverter modulation limits (foundation)
 
-Model: ideal two-level three-phase inverter, DC link `V_dc > 0`; each leg voltage (with
-respect to the negative rail, averaged over a switching period) lies in `[0, V_dc]`; the
-output space vector is the amplitude-invariant Clarke vector of the three leg voltages
-(`SpaceVector.clarke`). Dead time, device drops, ripple and DC-link variation are excluded.
+Model: ideal two-level three-phase inverter, DC link `V_dc > 0`; each leg voltage (with respect to
+the negative rail, averaged over a switching period) lies in `[0, V_dc]`; the output space vector is
+the amplitude-invariant Clarke vector of the three leg voltages (`Transform.SpaceVector.clarke`).
+Dead time, device drops, ripple and DC-link variation are excluded.
 
 Contents.
 * `linearRange_projection_le`: for **any** leg voltages in `[0, V_dc]` (any PWM pattern, any
@@ -32,10 +32,10 @@ theory/T-predictive-machine-control.md §1.5 (`|u| ≤ V_dc/√3`).
 -/
 
 noncomputable section
-namespace powerlib.Machine.Modulation
+namespace powerlib.Drives.Modulation
 
 open Complex
-open powerlib.Machine.SpaceVector
+open powerlib.Transform.SpaceVector
 
 /-- Projection of a space vector on the unit vector `e^{jπ/6} = (√3/2, 1/2)`. -/
 def apothemProjection (u : ℂ) : ℝ := Real.sqrt 3 / 2 * u.re + 1 / 2 * u.im
@@ -65,7 +65,7 @@ def invClarke (u : ℂ) : ℝ × ℝ × ℝ :=
 
 @[powerlib_foundation] theorem clarke_invClarke (u : ℂ) :
     clarke (invClarke u).1 (invClarke u).2.1 (invClarke u).2.2 = u := by
-  have h3 := sqrt3_sq
+  have h3 := Transform.sqrt3_sq
   apply Complex.ext
   · simp only [clarke_re, invClarke]; ring
   · simp only [clarke_im, invClarke]
@@ -76,7 +76,7 @@ def invClarke (u : ℂ) : ℝ × ℝ × ℝ :=
     |(invClarke u).1 - (invClarke u).2.1| ≤ Real.sqrt 3 * ‖u‖ ∧
       |(invClarke u).2.1 - (invClarke u).2.2| ≤ Real.sqrt 3 * ‖u‖ ∧
       |(invClarke u).2.2 - (invClarke u).1| ≤ Real.sqrt 3 * ‖u‖ := by
-  have h3 := sqrt3_sq
+  have h3 := Transform.sqrt3_sq
   have h3p : 0 ≤ Real.sqrt 3 := Real.sqrt_nonneg 3
   have hn : ‖u‖ ^ 2 = u.re ^ 2 + u.im ^ 2 := by
     rw [Complex.sq_norm, Complex.normSq_apply]; ring
@@ -142,7 +142,7 @@ produced by leg voltages in `[0, V_dc]`, then `ρ ≤ V_dc/√3`. -/
       xc ∈ Set.Icc 0 V ∧ clarke xa xb xc = u) :
     ρ ≤ V / Real.sqrt 3 := by
   set u : ℂ := ⟨ρ * (Real.sqrt 3 / 2), ρ * (1 / 2)⟩
-  have h3 := sqrt3_sq
+  have h3 := Transform.sqrt3_sq
   have hu : ‖u‖ = ρ := by
     have hsq : ‖u‖ ^ 2 = ρ ^ 2 := by
       rw [Complex.sq_norm, Complex.normSq_apply]
@@ -201,7 +201,7 @@ produced by leg voltages in `[0, V_dc]`, then `ρ ≤ V_dc/√3`. -/
     have : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring
     rw [this, Real.sin_pi_sub, Real.sin_pi_div_three]
   rw [Real.sin_sub, Real.cos_sub, hc, hs, Real.cos_pi_div_three, Real.sin_pi_div_three]
-  have h3 := sqrt3_sq
+  have h3 := Transform.sqrt3_sq
   linear_combination (-Real.sin θ / 2) * h3
 
 /-- Utilisation factors `V_LL,rms / V_dc`: SPWM `√(3/2)·(1/2) = √6/4 ∈ (0.612, 0.613)`,
@@ -247,4 +247,4 @@ SVPWM `√(3/2)·(1/√3) = 1/√2 ∈ (0.707, 0.708)`, six-step `√3·(2/π)/�
     field_simp
     nlinarith
 
-end powerlib.Machine.Modulation
+end powerlib.Drives.Modulation

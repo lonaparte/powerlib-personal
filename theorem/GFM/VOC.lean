@@ -1,4 +1,6 @@
-import theorem.Synchronous.EqualArea
+import theorem.PhasePlane.Planar
+import theorem.Family.Basic
+import theorem.TMIO.ClaimElab
 import theorem.Dynamics.ConverseLinearization
 import theorem.Dynamics.Instability
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
@@ -423,17 +425,17 @@ private theorem limitCycle_isSolution (h : a.Admissible) (φ₀ : ℝ) :
 
 /-- The no-load AHO field in the real coordinates `(v_α, v_β)`. -/
 def realField (x : State 2) : State 2 :=
-  Synchronous.mkState ((a.c - a.κv * (x 0 ^ 2 + x 1 ^ 2)) * x 0 - a.ωs * x 1)
+  PhasePlane.mk ((a.c - a.κv * (x 0 ^ 2 + x 1 ^ 2)) * x 0 - a.ωs * x 1)
     (a.ωs * x 0 + (a.c - a.κv * (x 0 ^ 2 + x 1 ^ 2)) * x 1)
 
 /-- The real field is the complex field `v̇ = (j ω_s + c − κ_v |v|²) v` in the coordinates
 `v = v_α + j v_β`. -/
 @[powerlib_foundation] theorem realField_eq (x : State 2) :
-    a.realField x = Synchronous.mkState (a.field ⟨x 0, x 1⟩).re (a.field ⟨x 0, x 1⟩).im := by
-  apply Synchronous.state_ext
-  · simp only [realField, Synchronous.mkState_zero, aho_re, normSq_mk, c]
+    a.realField x = PhasePlane.mk (a.field ⟨x 0, x 1⟩).re (a.field ⟨x 0, x 1⟩).im := by
+  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
+  · simp only [realField, PhasePlane.mk_apply_zero, aho_re, normSq_mk, c]
     ring
-  · simp only [realField, Synchronous.mkState_one, aho_im, normSq_mk, c]
+  · simp only [realField, PhasePlane.mk_apply_one, aho_im, normSq_mk, c]
     ring
 
 /-- The Jacobian of the real field at `x`. -/
@@ -469,7 +471,7 @@ def realJacobian (x : State 2) : Matrix (Fin 2) (Fin 2) ℝ :=
       ring
 
 @[simp, powerlib_foundation] theorem realField_zero : a.realField 0 = 0 := by
-  apply Synchronous.state_ext <;> simp [realField]
+  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;> simp [realField]
 
 @[powerlib_foundation] theorem realJacobian_zero :
     a.realJacobian 0 = !![a.c, -a.ωs; a.ωs, a.c] := by
@@ -534,13 +536,13 @@ private theorem hasFDerivAt_energy (x : State 2) :
   simp
 
 private theorem energy_eq (x : State 2) : energy x = ‖x - 0‖ ^ 2 := by
-  rw [sub_zero, Synchronous.norm_sq_state, energy]
+  rw [sub_zero, PhasePlane.norm_sq_eq, energy]
 
 private theorem dissipation (hκ : 0 ≤ a.κv) (x : State 2) :
     fderiv ℝ energy x (a.realField x) ≤ -(-2 * a.c) * energy x := by
   rw [(hasFDerivAt_energy x).fderiv]
   simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply,
-    smul_eq_mul, realField, Synchronous.mkState_zero, Synchronous.mkState_one, energy]
+    smul_eq_mul, realField, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, energy]
   nlinarith [mul_nonneg hκ (sq_nonneg (x 0 ^ 2 + x 1 ^ 2))]
 
 private def quadraticDecay (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
@@ -690,7 +692,7 @@ private theorem energy_lie (a : AHO) (x : State 2) :
     fderiv ℝ energy x (a.realField x) = 2 * a.c * energy x - 2 * a.κv * energy x ^ 2 := by
   rw [(hasFDerivAt_energy x).fderiv]
   simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply,
-    smul_eq_mul, realField, Synchronous.mkState_zero, Synchronous.mkState_one, energy]
+    smul_eq_mul, realField, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, energy]
   ring
 
 private theorem energy_pos {x : State 2} (hx : x ≠ 0) : 0 < energy x := by
@@ -814,16 +816,16 @@ private theorem energy_differentiable : Differentiable ℝ energy := fun x =>
   (hasFDerivAt_energy x).differentiableAt
 
 private theorem seed (ε : ℝ) (hε : 0 < ε) :
-    ‖Synchronous.mkState (ε / 2) 0 - 0‖ < ε ∧ 0 < energy (Synchronous.mkState (ε / 2) 0) := by
-  have hne : Synchronous.mkState (ε / 2) 0 ≠ 0 := by
+    ‖PhasePlane.mk (ε / 2) 0 - 0‖ < ε ∧ 0 < energy (PhasePlane.mk (ε / 2) 0) := by
+  have hne : PhasePlane.mk (ε / 2) 0 ≠ 0 := by
     intro h
     have := congrArg (fun y : State 2 => y 0) h
     simp at this
     linarith
   refine ⟨?_, energy_pos hne⟩
   rw [sub_zero]
-  refine (Synchronous.norm_state_le _).trans_lt ?_
-  simp only [Synchronous.mkState_zero, Synchronous.mkState_one, abs_zero, add_zero]
+  refine (Dynamics.norm_le_abs_add_abs_two _).trans_lt ?_
+  simp only [PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, abs_zero, add_zero]
   rw [abs_of_pos (by linarith)]
   linarith
 
@@ -847,7 +849,7 @@ converges, `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
       push Not at hκ
       refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := fun x => -energy x)
         (ρ := 1) a.contDiff_realField energy_differentiable.neg one_pos (fun x _ => ?_)
-        (fun ε hε => ⟨Synchronous.mkState (ε / 2) 0, (seed ε hε).1, ?_⟩) h
+        (fun ε hε => ⟨PhasePlane.mk (ε / 2) 0, (seed ε hε).1, ?_⟩) h
       · rw [fderiv_fun_neg, _root_.neg_apply, energy_lie, hc]
         nlinarith [mul_nonneg (neg_nonneg.mpr hκ) (sq_nonneg (energy x))]
       · simp [energy]
@@ -875,7 +877,7 @@ converges, `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
       by_contra hκ
       push Not at hκ
       refine Dynamics.unstable_of_chetaev (W := energy) (r := 1) a.contDiff_realField
-        (by unfold energy; fun_prop) one_pos (fun ε hε => ⟨Synchronous.mkState (ε / 2) 0, ?_⟩)
+        (by unfold energy; fun_prop) one_pos (fun ε hε => ⟨PhasePlane.mk (ε / 2) 0, ?_⟩)
         (fun x _ hx => ?_) h
       · exact seed ε hε
       · rw [energy_lie, hc]

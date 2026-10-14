@@ -1048,12 +1048,12 @@ namespace DroopLPF
 variable (q : DroopLPF)
 
 def field (x : State 2) : State 2 :=
-  Synchronous.mkState ((q.P0 - x 1) / q.D) (q.ωc * (q.K0 * Real.sin (x 0) - x 1))
+  PhasePlane.mk ((q.P0 - x 1) / q.D) (q.ωc * (q.K0 * Real.sin (x 0) - x 1))
 
 def jacobian (δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![0, -1 / q.D; q.ωc * (q.K0 * Real.cos δ), -q.ωc]
 
-def equilibrium : State 2 := Synchronous.mkState (Real.arcsin (q.P0 / q.K0)) q.P0
+def equilibrium : State 2 := PhasePlane.mk (Real.arcsin (q.P0 / q.K0)) q.P0
 
 @[powerlib_foundation] theorem contDiff_field {k : WithTop ℕ∞} : ContDiff ℝ k q.field := by
   rw [contDiff_euclidean]
@@ -1091,12 +1091,12 @@ Static evidence on the model, not a connection conclusion. -/
   · intro h
     have e0 := congrArg (fun y : State 2 => y 0) h
     have e1 := congrArg (fun y : State 2 => y 1) h
-    simp only [field, Synchronous.mkState_zero, Synchronous.mkState_one, PiLp.zero_apply] at e0 e1
+    simp only [field, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, PiLp.zero_apply] at e0 e1
     rw [div_eq_zero_iff, or_iff_left hD, sub_eq_zero] at e0
     rw [mul_eq_zero, or_iff_right hω, sub_eq_zero] at e1
     exact ⟨e0.symm, e1.trans e0.symm⟩
   · rintro ⟨h1, h2⟩
-    apply Synchronous.state_ext <;> simp [field, h1, h2]
+    refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;> simp [field, h1, h2]
 
 /-- A droop + LPF model read about a selected angle `δ*`: the operating point is `(δ*, P₀)`. -/
 structure Model where
@@ -1106,7 +1106,7 @@ structure Model where
   δ : ℝ
 
 /-- The selected point `(δ*, P₀)`. -/
-def Model.point (m : Model) : State 2 := Synchronous.mkState m.δ m.q.P0
+def Model.point (m : Model) : State 2 := PhasePlane.mk m.δ m.q.P0
 
 /-- The closed-loop field translated so that the selected point is the origin. -/
 def Model.field (m : Model) (z : State 2) : State 2 := m.q.field (z + m.point)
@@ -1402,7 +1402,7 @@ def energy (δ₀ : ℝ) (x : State 2) : ℝ :=
     fderiv ℝ (q.energy δ₀) x (q.field x) = -((q.P0 - x 1) ^ 2 / q.D) := by
   rw [(q.hasFDerivAt_energy δ₀ x).fderiv]
   simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply, smul_eq_mul, field,
-    Synchronous.mkState_zero, Synchronous.mkState_one]
+    PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
   field_simp
   ring
 
@@ -1410,8 +1410,8 @@ def energy (δ₀ : ℝ) (x : State 2) : ℝ :=
 Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem energy_fold {δ₀ : ℝ} (hb : q.K0 * Real.sin δ₀ = q.P0)
     (hcos : Real.cos δ₀ = 0) (s : ℝ) :
-    q.energy δ₀ (Synchronous.mkState (δ₀ + s) q.P0) = -q.P0 * (s - Real.sin s) := by
-  simp only [energy, Synchronous.mkState_zero, Synchronous.mkState_one, sub_self]
+    q.energy δ₀ (PhasePlane.mk (δ₀ + s) q.P0) = -q.P0 * (s - Real.sin s) := by
+  simp only [energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, sub_self]
   rw [Real.cos_add, hcos, ← hb]
   simp
   ring
@@ -1425,7 +1425,7 @@ Static evidence on the model, not a connection conclusion. -/
   ring
 
 private theorem norm_mkState_sub_point (m : Model) (s t : ℝ) :
-    ‖Synchronous.mkState (m.δ + s) (m.q.P0 + t) - m.point‖ ≤ |s| + |t| := by
+    ‖PhasePlane.mk (m.δ + s) (m.q.P0 + t) - m.point‖ ≤ |s| + |t| := by
   refine (Dynamics.norm_le_abs_add_abs_two _).trans (le_of_eq ?_)
   simp [Model.point]
 
@@ -1442,13 +1442,13 @@ private theorem fold_seeds {m : Model} (hb : m.q.K0 * Real.sin m.δ = m.q.P0)
   have hε2 : 0 < ε / 2 := by linarith
   have hsin := Real.sin_lt hε2
   rcases lt_or_gt_of_ne hP with hneg | hpos
-  · refine ⟨Synchronous.mkState (m.δ + -(ε / 2)) (m.q.P0 + 0), ?_, ?_⟩
+  · refine ⟨PhasePlane.mk (m.δ + -(ε / 2)) (m.q.P0 + 0), ?_, ?_⟩
     · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
       rw [abs_zero, add_zero, abs_neg, abs_of_pos hε2]
       linarith
     · rw [add_zero, m.q.energy_fold hb hcos, Real.sin_neg]
       nlinarith
-  · refine ⟨Synchronous.mkState (m.δ + ε / 2) (m.q.P0 + 0), ?_, ?_⟩
+  · refine ⟨PhasePlane.mk (m.δ + ε / 2) (m.q.P0 + 0), ?_, ?_⟩
     · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
       rw [abs_zero, add_zero, abs_of_pos hε2]
       linarith
@@ -1463,8 +1463,8 @@ private theorem balanced_of_eq {m : Model} (hp : Meets m .physical)
 /-- A vanishing power curve (`K₀ = 0`) at a balanced angle (`P₀ = 0`): every `(δ, 0)` is an
 equilibrium. -/
 private theorem field_flat {m : Model} (hK : m.q.K0 = 0) (hP : m.q.P0 = 0) (δ : ℝ) :
-    m.q.field (Synchronous.mkState δ m.q.P0) = 0 := by
-  apply Synchronous.state_ext <;> simp [field, hK, hP]
+    m.q.field (PhasePlane.mk δ m.q.P0) = 0 := by
+  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;> simp [field, hK, hP]
 
 /-- Within positive droop damping and bandwidth, local asymptotic stability of `(δ*, P₀)` forces
 balance and synchronization. A negative synchronizing coefficient is a saddle; a vanishing power
@@ -1483,7 +1483,7 @@ private theorem las_requirements {m : Model} (hp : Meets m .physical)
     rcases mul_eq_zero.mp hK with hK0 | hc
     · have hP : m.q.P0 = 0 := by rw [← hb, hK0, zero_mul]
       refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
-        ⟨Synchronous.mkState (m.δ + ε / 2) (m.q.P0 + 0), fun h => ?_, ?_, ?_⟩) hlas
+        ⟨PhasePlane.mk (m.δ + ε / 2) (m.q.P0 + 0), fun h => ?_, ?_, ?_⟩) hlas
       · have := congrArg (fun y : State 2 => y 0) h
         simp [Model.point] at this
         linarith
@@ -1495,7 +1495,7 @@ private theorem las_requirements {m : Model} (hp : Meets m .physical)
     · by_cases hK0 : m.q.K0 = 0
       · have hP : m.q.P0 = 0 := by rw [← hb, hK0, zero_mul]
         refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
-          ⟨Synchronous.mkState (m.δ + ε / 2) (m.q.P0 + 0), fun h => ?_, ?_, ?_⟩) hlas
+          ⟨PhasePlane.mk (m.δ + ε / 2) (m.q.P0 + 0), fun h => ?_, ?_, ?_⟩) hlas
         · have := congrArg (fun y : State 2 => y 0) h
           simp [Model.point] at this
           linarith
@@ -1597,7 +1597,7 @@ dissipated energy keeps the solution, and there `P₀ ((P₀ − P_f)/ω_c + D �
             ring
         rw [hd.fderiv]
         simp only [_root_.smul_apply, _root_.add_apply, PiLp.proj_apply, smul_eq_mul, field,
-          Synchronous.mkState_zero, Synchronous.mkState_one]
+          PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
         set s₀ := x 0 - m.δ with hs₀
         have hx0 : x 0 = m.δ + s₀ := by rw [hs₀]; ring
         have hrate : -1 / m.q.ωc * (m.q.ωc * (m.q.K0 * Real.sin (x 0) - x 1)) +
@@ -1607,8 +1607,8 @@ dissipated energy keeps the solution, and there `P₀ ((P₀ − P_f)/ω_c + D �
           ring
         rw [hrate]
         have hs1 : |s₀| ≤ 1 := by
-          have := Synchronous.abs_coord_le (x - m.point) 0
-          simp only [PiLp.sub_apply, Model.point, Synchronous.mkState_zero] at this
+          have := Dynamics.abs_apply_le_norm (x - m.point) 0
+          simp only [PiLp.sub_apply, Model.point, PhasePlane.mk_apply_zero] at this
           rw [← hs₀] at this
           exact this.trans hx
         have hs0 : s₀ ≠ 0 := by
@@ -1644,7 +1644,7 @@ dissipated energy keeps the solution, and there `P₀ ((P₀ − P_f)/ω_c + D �
         simp only [PhasePlane.toEuclideanCLM_apply_zero, PhasePlane.toEuclideanCLM_apply_one]
           at hz0 hz1
         simp at hz0 hz1
-        refine Synchronous.state_ext ?_ hz1
+        refine PhasePlane.ext_iff'.2 ⟨?_, hz1⟩
         rw [hz1] at hz0
         linarith
       · have hf0 : m.field z 0 = -(z 1 / m.q.D) := by

@@ -32,7 +32,7 @@ Family and connection conclusions. No family: `NonlinearModel` is the generic fr
 `unstable_of_eigenvalue_re_pos`) are generic implications for every nonlinear pH system and are
 relabeled `@[powerlib_foundation]` (the indirect method, LeanForControl's linearization theorems
 through `Dynamics.Linearization`). Concrete families built on `NonlinearModel` (for example the
-classical machine in `theorem/PH/SyncMachine.lean`) publish their connection conclusions through
+classical machine in `theorem/Synchronous/PH.lean`) publish their connection conclusions through
 `Family.IsNonlinearPH.mem_den_flow_shift`.
 -/
 

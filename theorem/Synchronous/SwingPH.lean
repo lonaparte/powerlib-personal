@@ -101,8 +101,8 @@ def momentumCoord : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, p.M]
 @[powerlib_foundation] theorem linearPH_field (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D)
     (hK : 0 < p.syncCoeff δ₀) (x : State 2) (u : Fin 1 → ℝ) :
     (p.linearPH δ₀ hM hD hK).plant.system.field x u =
-      mkState (x 1 / p.M) (-p.syncCoeff δ₀ * x 0 - p.D * (x 1 / p.M) + u 0) := by
-  apply state_ext
+      PhasePlane.mk (x 1 / p.M) (-p.syncCoeff δ₀ * x 0 - p.D * (x 1 / p.M) + u 0) := by
+  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
   · simp [Linear.Plant.system, Port.PortHamiltonian.plant, linearPH, PhasePlane.toEuclideanCLM_apply_zero,
       dotProduct]
     ring

@@ -1,13 +1,14 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.Transform.ParkABC
 
 /-! # Space vectors for three-phase machines (foundation)
 
-Foundation layer for the `theorem/Machine/` family. Nothing here is a statement about a
+Foundation layer for the `theorem/Drives/` family. Nothing here is a statement about a
 particular machine or controller; the results are algebraic identities about complex space
 vectors that the machine modules reuse.
 
-Conventions (shared by every `Machine` module unless a module states otherwise).
+Conventions (shared by every `Drives` module unless a module states otherwise).
 * A three-phase quantity `(x_a, x_b, x_c)` has the **amplitude-invariant** space vector
   `clarke x_a x_b x_c = (2/3) (x_a + a x_b + a² x_c)`, `a = e^{j2π/3}`. A balanced sinusoid of
   peak `X` maps to a vector of modulus `X`; three-phase power is `(3/2) Re(v · conj i)`.
@@ -34,15 +35,12 @@ pairs but writes `T_e = (3/2)(p/2) Im{i ψ*}`. With pole pairs the coefficient i
 -/
 
 noncomputable section
-namespace powerlib.Machine.SpaceVector
+namespace powerlib.Transform.SpaceVector
 
 open Complex ComplexConjugate
 
 /-- `a = e^{j2π/3} = -1/2 + j√3/2`. -/
 def a : ℂ := ⟨-1 / 2, Real.sqrt 3 / 2⟩
-
-@[powerlib_foundation] theorem sqrt3_sq : Real.sqrt 3 ^ 2 = 3 :=
-  Real.sq_sqrt (by norm_num)
 
 @[powerlib_foundation] theorem a_sq : a ^ 2 = ⟨-1 / 2, -(Real.sqrt 3 / 2)⟩ := by
   apply Complex.ext <;> simp [a, pow_two] <;> nlinarith [sqrt3_sq]
@@ -212,4 +210,4 @@ read as pole pairs) is wrong. -/
   have : np = 0 := by linarith
   exact hnp this
 
-end powerlib.Machine.SpaceVector
+end powerlib.Transform.SpaceVector

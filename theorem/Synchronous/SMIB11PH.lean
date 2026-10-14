@@ -5,7 +5,7 @@ import theorem.TMIO.ClaimElab
 
 Model boundary (T-power-system-ph §1.5.1).
 * One seven-state dq synchronous machine (the `syncMachine7` model of
-  `theorem/PH/SyncMachine.lean`: linear magnetics, inverse inductance `Γ ≻ 0`, IN-positive
+  `theorem/Synchronous/PH.lean`: linear magnetics, inverse inductance `Γ ≻ 0`, IN-positive
   stator currents, damping `D` on `ω_r`), one network node with shunt capacitance `C > 0`
   (common DQ frame), one series RL link `L_l > 0`, `r_l ≥ 0` (common DQ frame), and an
   infinite bus with prescribed voltage `(V_D^∞, V_Q^∞)`.
@@ -51,15 +51,20 @@ corrections are static evidence. The former `smib11Rel_storage` (a storage struc
 removed `Passivity` interface) is replaced by the passivity proof through
 `Port.System.passiveWith_of_rate`.
 
+State dimension of the multi-machine system (T-power-system-ph §1.8):
+`powerSystem_state_dim` (`N` seven-state machines, `ℓ` branch fluxes and `n_C` node charges give
+`7N + ℓ + n_C` states; ZIP loads add none).
+
 Source: work-sync `theory/T-power-system-ph.md` §1.5.1 (11-state `J^tot`, `R^tot`, `B`,
-state equations, energy balance), §1.4 (block-sum Hamiltonian); parent
+state equations, energy balance), §1.4 (block-sum Hamiltonian), §1.8 (state dimension); parent
 `theory/T-sync-machine.md` §1.13.
 -/
 
 noncomputable section
-namespace powerlib.PH
+namespace powerlib.Synchronous
 open Matrix Set Filter
 open powerlib.Dynamics (State)
+open powerlib.PH
 
 /-- Parameters of the 11-state test system. -/
 structure SMIB11Params where
@@ -451,4 +456,13 @@ private theorem passiveWith (p : SMIB11Params) :
 
 end SMIB11Rel
 
-end powerlib.PH
+/-! ## State dimension -/
+
+/-- T-power-system-ph §1.8: `N` seven-state machines, `ℓ` branch fluxes and `n_C` node charges
+give a state of dimension `7N + ℓ + n_C` (ZIP loads add no state). -/
+@[powerlib_foundation] theorem powerSystem_state_dim (N : ℕ) (β ν : Type*) [Fintype β]
+    [Fintype ν] :
+    Fintype.card ((Fin N × Fin 7) ⊕ β ⊕ ν) = 7 * N + Fintype.card β + Fintype.card ν := by
+  simp [Fintype.card_sum, Fintype.card_prod, mul_comm, add_assoc]
+
+end powerlib.Synchronous

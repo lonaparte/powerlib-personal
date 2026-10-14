@@ -1,7 +1,7 @@
 import dependencies.Mathlib
-import theorem.Machine.SpaceVector
-import theorem.Machine.InductionMachine
-import theorem.Machine.PMSM
+import theorem.Transform.SpaceVector
+import theorem.Drives.InductionMachine
+import theorem.Drives.PMSM
 
 /-! # Direct torque control: flux estimation, load-angle torque, switching geometry
 
@@ -33,14 +33,15 @@ Contents.
 Source: work-sync theory/T-direct-torque-control.md §1.1–§1.6.
 
 Correction (§1.2): with `p` = pole pairs the torque is `T_e = (3/2) p Im{conj ψ_s · i_s}`
-(`SpaceVector.torque`, `SpaceVector.torque_coefficient_unique`), not `(3/2)(p/2)…`.
+(`Transform.SpaceVector.torque`, `Transform.SpaceVector.torque_coefficient_unique`), not
+`(3/2)(p/2)…`.
 -/
 
 noncomputable section
-namespace powerlib.Machine.DTC
+namespace powerlib.Drives.DTC
 
 open Complex ComplexConjugate
-open powerlib.Machine.SpaceVector
+open powerlib.Transform.SpaceVector
 
 /-- Voltage-model stator flux estimate (integral form of `ψ̇ = v − r i`). -/
 @[powerlib_foundation] theorem fluxVoltageModel (r : ℝ) (v i ψ : ℝ → ℂ) (hv : Continuous v)
@@ -163,4 +164,4 @@ active vectors). -/
   · rw [key _ ⟨by linarith, by linarith⟩]
     constructor <;> intro h <;> linarith
 
-end powerlib.Machine.DTC
+end powerlib.Drives.DTC

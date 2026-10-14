@@ -1,6 +1,6 @@
 import theorem.Port.PortHamiltonian
 import theorem.Linear.Coordinates
-import theorem.Transform.Park
+import theorem.Criteria.Lyapunov
 
 /-! # Composition of port-Hamiltonian systems (foundation layer)
 
@@ -24,11 +24,16 @@ import theorem.Transform.Park
 * Block structure (T-power-system-ph §1.4–§1.5.2): block-diagonal PSD dissipation, adding
   skew pairs keeps `J` skew, adding a nonnegative diagonal (constant-impedance loads) keeps
   `R ⪰ 0`.
-* Frame rotation (T-power-system-ph §1.2): `R(δ)` is orthogonal, so `v·i` is frame invariant.
-* Kron reduction (T-power-system-ph §1.7): eliminating internal nodes with zero injection
-  from a linear resistive network `Y` gives `i_b = (Y_bb − Y_bi Y_ii⁻¹ Y_ib) v_b`, conserves
-  the port power, and (Mathlib Schur complement) keeps a PSD network PSD.
-* State dimension (T-power-system-ph §1.8): `7N + ℓ + n_C`.
+* Frame rotation (T-power-system-ph §1.2, `v·i` is frame invariant):
+  `Transform.frameRotation_power_invariant` in `theorem/Transform/Park.lean`.
+* Kron reduction (T-power-system-ph §1.7): `Network.kron_current`, `Network.kron_power`,
+  `Network.kron_posSemidef` in `theorem/Network/WeightedLaplacian.lean`.
+* Strictly damped diagonal models: the energy `H = Σ wᵢ xᵢ² / 2` is `C¹` with derivative
+  `∇H · v` (`energy_hasFDerivAt`, `fderiv_energy_apply`, `energy_contDiff`), the unforced
+  field is `C¹` (`zeroInput_contDiff`), and a model whose every state is damped is globally
+  exponentially stable in every numbering (`toPH_mem_den_globallyExponentiallyStable`).
+* State dimension (T-power-system-ph §1.8, `7N + ℓ + n_C`): `Synchronous.powerSystem_state_dim`
+  in `theorem/Synchronous/SMIB11PH.lean`.
 
 Family and connection conclusions. No new family is introduced: every numbered model is a
 member of the linear port-Hamiltonian family `Port.PortHamiltonian.family`
@@ -37,7 +42,7 @@ whose sentences are interpreted at the origin. The connection conclusions here a
 in its denotations, valid for every linear port-Hamiltonian plant: strictly positive dissipation
 places a plant in every attractive sentence and in sampled contraction
 (`mem_den_of_dissipation_pos`, `mem_den_globallyExponentiallyStable_of_dissipation_pos`, through
-the strict Lyapunov inequality `xᵀ Q A x = −(Q x)ᵀ R (Q x)`, `isHurwitz_of_strict_lyapunov`); no
+the strict Lyapunov inequality `xᵀ Q A x = −(Q x)ᵀ R (Q x)`, `Criteria.isHurwitz_of_lyapunov`); no
 dissipation places it in conservation (`mem_den_conservative_of_lossless`); strict dissipation
 excludes conservation (`not_mem_den_conservative_of_dissipation_pos`); similar plants share every
 sentence (`mem_den_iff_of_similar`); and every numbering of an interconnection is passive and
@@ -275,74 +280,6 @@ section Linear
 
 variable {n p : ℕ}
 
-/-- A strict Lyapunov inequality `xᵀ P A x < 0` for a positive definite symmetric `P` makes `A`
-Hurwitz. -/
-@[powerlib_foundation] theorem isHurwitz_of_strict_lyapunov {A P : Matrix (Fin n) (Fin n) ℝ}
-    (hP : Pᵀ = P) (hpos : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (P *ᵥ x))
-    (hneg : ∀ x : Fin n → ℝ, x ≠ 0 → x ⬝ᵥ (P *ᵥ (A *ᵥ x)) < 0) : IsHurwitz A := by
-  intro μ v hv heig
-  let x : Fin n → ℝ := fun j => (v j).re
-  let y : Fin n → ℝ := fun j => (v j).im
-  have hcomp (j : Fin n) : ∑ k, (A j k : ℂ) * v k = μ * v j := by
-    have hj := congrFun heig j
-    simpa [Matrix.mulVec, dotProduct, Matrix.map_apply] using hj
-  have hAx : A *ᵥ x = μ.re • x - μ.im • y := by
-    funext j
-    have h := congrArg Complex.re (hcomp j)
-    simp only [Complex.re_sum, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
-      sub_zero] at h
-    simp only [Matrix.mulVec, dotProduct, x, y, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
-    linarith
-  have hAy : A *ᵥ y = μ.im • x + μ.re • y := by
-    funext j
-    have h := congrArg Complex.im (hcomp j)
-    simp only [Complex.im_sum, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
-      add_zero] at h
-    simp only [Matrix.mulVec, dotProduct, x, y, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-    linarith
-  have hcross : y ⬝ᵥ (P *ᵥ x) = x ⬝ᵥ (P *ᵥ y) := by
-    rw [Matrix.dotProduct_mulVec, dotProduct_comm]
-    congr 1
-    conv_lhs => rw [← hP]
-    rw [Matrix.vecMul_transpose]
-  have hsum : x ⬝ᵥ (P *ᵥ (A *ᵥ x)) + y ⬝ᵥ (P *ᵥ (A *ᵥ y)) =
-      μ.re * (x ⬝ᵥ (P *ᵥ x) + y ⬝ᵥ (P *ᵥ y)) := by
-    rw [hAx, hAy]
-    simp only [Matrix.mulVec_sub, Matrix.mulVec_add, Matrix.mulVec_smul, dotProduct_sub,
-      dotProduct_add, dotProduct_smul, smul_eq_mul, hcross]
-    ring
-  have hnn : ∀ z : Fin n → ℝ, 0 ≤ z ⬝ᵥ (P *ᵥ z) := fun z => by
-    by_cases hz : z = 0
-    · simp [hz]
-    · exact (hpos z hz).le
-  have hnp : ∀ z : Fin n → ℝ, z ⬝ᵥ (P *ᵥ (A *ᵥ z)) ≤ 0 := fun z => by
-    by_cases hz : z = 0
-    · simp [hz]
-    · exact (hneg z hz).le
-  have hxy : x ≠ 0 ∨ y ≠ 0 := by
-    by_contra h
-    push Not at h
-    apply hv
-    funext j
-    apply Complex.ext
-    · exact congrFun h.1 j
-    · exact congrFun h.2 j
-  have hq : 0 < x ⬝ᵥ (P *ᵥ x) + y ⬝ᵥ (P *ᵥ y) := by
-    rcases hxy with h | h
-    · linarith [hpos x h, hnn y]
-    · linarith [hpos y h, hnn x]
-  have hl : x ⬝ᵥ (P *ᵥ (A *ᵥ x)) + y ⬝ᵥ (P *ᵥ (A *ᵥ y)) < 0 := by
-    rcases hxy with h | h
-    · linarith [hneg x h, hnp y]
-    · linarith [hneg y h, hnp x]
-  rw [hsum] at hl
-  have : μ.re < 0 := by
-    by_contra hμ
-    push Not at hμ
-    have : 0 ≤ μ.re * (x ⬝ᵥ (P *ᵥ x) + y ⬝ᵥ (P *ᵥ y)) := mul_nonneg hμ hq.le
-    linarith
-  simpa using this
-
 /-- In a linear port-Hamiltonian plant the energy matrix turns the state matrix into the
 dissipation: `xᵀ Q A x = −(Q x)ᵀ R (Q x)`. -/
 @[powerlib_foundation] theorem energy_rate (h : Port.PortHamiltonian n p) (x : Fin n → ℝ) :
@@ -366,7 +303,7 @@ dissipation: `xᵀ Q A x = −(Q x)ᵀ R (Q x)`. -/
 Hurwitz. -/
 @[powerlib_foundation] theorem isHurwitz_of_dissipation_pos (h : Port.PortHamiltonian n p)
     (hR : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (h.R *ᵥ x)) : IsHurwitz h.plant.A := by
-  refine isHurwitz_of_strict_lyapunov h.energy_symmetric h.energy_pos fun x hx => ?_
+  refine Criteria.isHurwitz_of_lyapunov h.energy_symmetric h.energy_pos fun x hx => ?_
   rw [energy_rate]
   have hQx : h.Q *ᵥ x ≠ 0 := by
     intro h0
@@ -768,71 +705,67 @@ omit [Fintype ι] in
 
 end Blocks
 
-/-! ## Frame rotation -/
+/-! ## Strictly damped diagonal port-Hamiltonian models -/
 
-/-- T-power-system-ph §1.2: the rotation `R(δ)` is orthogonal, so the port power
-`v_d i_d + v_q i_q` is the same in the machine frame and in the common DQ frame. -/
-@[powerlib_foundation] theorem frameRotation_power_invariant (δ : ℝ) (v i : Fin 2 → ℝ) :
-    (Transform.rot δ *ᵥ v) ⬝ᵥ (Transform.rot δ *ᵥ i) = v ⬝ᵥ i := by
-  simp only [Transform.rot_apply_mulVec, dotProduct, Fin.sum_univ_two, Matrix.cons_val_zero,
-    Matrix.cons_val_one]
-  have h := Real.sin_sq_add_cos_sq δ
-  linear_combination (v 0 * i 0 + v 1 * i 1) * h
+section Strict
 
-/-! ## Kron reduction -/
+variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
 
-section Kron
+@[powerlib_foundation] theorem exists_pos_lower {ι : Type*} [Finite ι] (f : ι → ℝ)
+    (hf : ∀ i, 0 < f i) : ∃ c > 0, ∀ i, c ≤ f i := by
+  rcases isEmpty_or_nonempty ι with h | h
+  · exact ⟨1, one_pos, fun i => isEmptyElim i⟩
+  · obtain ⟨i₀, hi₀⟩ := Finite.exists_min f
+    exact ⟨f i₀, hf i₀, hi₀⟩
 
-variable {ι β : Type*} [Fintype ι] [DecidableEq ι] [Fintype β] [DecidableEq β]
+omit [DecidableEq ι] [Fintype κ] in
+@[powerlib_foundation] theorem energy_hasFDerivAt (m : DiagonalPH ι κ) (x : ι → ℝ) :
+    HasFDerivAt m.energy
+      (∑ i, (m.w i * x i) • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι => ℝ) i) x := by
+  have h : ∀ i ∈ (Finset.univ : Finset ι), HasFDerivAt (fun y : ι → ℝ => m.w i * y i ^ 2 / 2)
+      ((m.w i * x i) • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι => ℝ) i) x := by
+    intro i _
+    have hp := ((hasFDerivAt_apply (𝕜 := ℝ) (F' := fun _ : ι => ℝ) i x).pow 2).const_mul
+      (m.w i / 2)
+    convert hp using 1
+    · funext y; ring
+    · ext v
+      simp
+      ring
+  exact HasFDerivAt.fun_sum h
 
-omit [DecidableEq β] in
-/-- Kron reduction: if the internal nodes inject no current (`Y_ii v_i + Y_ib v_b = 0`) and
-`Y_ii` is invertible, the boundary injections are `(Y_bb − Y_bi Y_ii⁻¹ Y_ib) v_b`. -/
-@[powerlib_foundation] theorem kron_current {Yii : Matrix ι ι ℝ} {Yib : Matrix ι β ℝ}
-    {Ybi : Matrix β ι ℝ} {Ybb : Matrix β β ℝ} (hinv : IsUnit Yii.det) {vi : ι → ℝ}
-    {vb : β → ℝ} (hint : Yii *ᵥ vi + Yib *ᵥ vb = 0) :
-    Ybi *ᵥ vi + Ybb *ᵥ vb = (Ybb - Ybi * Yii⁻¹ * Yib) *ᵥ vb := by
-  have hvi : vi = -((Yii⁻¹ * Yib) *ᵥ vb) := by
-    have h1 : Yii *ᵥ vi = -(Yib *ᵥ vb) := eq_neg_of_add_eq_zero_left hint
-    have h2 := congrArg (fun z => Yii⁻¹ *ᵥ z) h1
-    simp only [mulVec_mulVec, nonsing_inv_mul _ hinv, one_mulVec, mulVec_neg] at h2
-    exact h2
-  rw [hvi, sub_mulVec, mulVec_neg, mulVec_mulVec, Matrix.mul_assoc]
-  abel
+omit [DecidableEq ι] [Fintype κ] in
+@[powerlib_foundation] theorem fderiv_energy_apply (m : DiagonalPH ι κ) (x v : ι → ℝ) :
+    fderiv ℝ m.energy x v = m.gradient x ⬝ᵥ v := by
+  rw [(energy_hasFDerivAt m x).fderiv]
+  simp [dotProduct, DiagonalPH.gradient]
 
-omit [DecidableEq ι] [DecidableEq β] in
-/-- Kron reduction conserves port power: with zero internal injection, the network power
-`vᵀ Y v` equals the boundary port power `v_bᵀ i_b`. -/
-@[powerlib_foundation] theorem kron_power (Yii : Matrix ι ι ℝ) (Yib : Matrix ι β ℝ)
-    (Ybi : Matrix β ι ℝ) (Ybb : Matrix β β ℝ) {vi : ι → ℝ} {vb : β → ℝ}
-    (hint : Yii *ᵥ vi + Yib *ᵥ vb = 0) :
-    Sum.elim vi vb ⬝ᵥ (fromBlocks Yii Yib Ybi Ybb *ᵥ Sum.elim vi vb) =
-      vb ⬝ᵥ (Ybi *ᵥ vi + Ybb *ᵥ vb) := by
-  rw [fromBlocks_mulVec]
-  simp only [Sum.elim_comp_inl, Sum.elim_comp_inr, hint, dotProduct, Fintype.sum_sum_type,
-    Sum.elim_inl, Sum.elim_inr, Pi.zero_apply, mul_zero, Finset.sum_const_zero, zero_add]
+omit [DecidableEq ι] [Fintype κ] in
+@[powerlib_foundation] theorem energy_contDiff (m : DiagonalPH ι κ) :
+    ContDiff ℝ 1 m.energy := by
+  unfold DiagonalPH.energy
+  apply ContDiff.sum
+  intro i _
+  exact ((contDiff_const.mul ((contDiff_apply ℝ ℝ i).pow 2)).div_const 2)
 
-omit [DecidableEq β] in
-/-- Kron reduction of a positive semidefinite network with positive definite internal block is
-positive semidefinite (passivity is preserved). Wrapper of Mathlib
-`Matrix.PosDef.fromBlocks₁₁` (Schur complement). -/
-@[powerlib_foundation] theorem kron_posSemidef {Yii : Matrix ι ι ℝ} {Yib : Matrix ι β ℝ}
-    {Ybb : Matrix β β ℝ} (hY : (fromBlocks Yii Yib Yibᵀ Ybb).PosSemidef) (hii : Yii.PosDef) :
-    (Ybb - Yibᵀ * Yii⁻¹ * Yib).PosSemidef := by
-  have := hii.isUnit.invertible
-  have h := (PosDef.fromBlocks₁₁ Yib Ybb hii).mp
-  simp only [conjTranspose_eq_transpose_of_trivial] at h
-  exact h hY
+@[powerlib_foundation] theorem zeroInput_contDiff (m : DiagonalPH ι κ) :
+    ContDiff ℝ 1 (fun x => m.field x 0) := by
+  have h : (fun x => m.field x 0) = fun x => m.stateMatrix *ᵥ x := by
+    funext x
+    rw [DiagonalPH.field_eq_stateMatrix, mulVec_zero, add_zero]
+  rw [h]
+  exact (Matrix.mulVecLin m.stateMatrix).toContinuousLinearMap.contDiff
 
-end Kron
+/-- A diagonal port-Hamiltonian model whose every state is damped is globally exponentially
+stable with zero input, in every numbering: equilibrium, global existence, and a uniform
+exponential bound on every solution segment. -/
+@[powerlib_domain] theorem toPH_mem_den_globallyExponentiallyStable {a b n p : ℕ}
+    (m : DiagonalPH (Fin a) (Fin b)) (e : Fin a ≃ Fin n) (e' : Fin b ≃ Fin p)
+    (hd : ∀ i, 0 < m.d i) :
+    connection% (m.toPH e e' ∈
+      Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable)) :=
+  mem_den_globallyExponentiallyStable_of_dissipation_pos _ (m.toPH_dissipation_pos e e' hd)
 
-/-! ## State dimension -/
-
-/-- T-power-system-ph §1.8: `N` seven-state machines, `ℓ` branch fluxes and `n_C` node charges
-give a state of dimension `7N + ℓ + n_C` (ZIP loads add no state). -/
-@[powerlib_foundation] theorem powerSystem_state_dim (N : ℕ) (β ν : Type*) [Fintype β]
-    [Fintype ν] :
-    Fintype.card ((Fin N × Fin 7) ⊕ β ⊕ ν) = 7 * N + Fintype.card β + Fintype.card ν := by
-  simp [Fintype.card_sum, Fintype.card_prod, mul_comm, add_assoc]
+end Strict
 
 end powerlib.PH

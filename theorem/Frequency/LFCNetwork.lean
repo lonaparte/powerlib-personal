@@ -1,5 +1,5 @@
 import theorem.Frequency.LFC
-import theorem.PH.RLNetwork
+import theorem.Network.WeightedLaplacian
 import theorem.LTI.Decay
 
 /-! # Multi-area load-frequency control on a tie-line graph
@@ -12,7 +12,7 @@ per-unit, governors instantaneous `T_g → 0`, one coherent machine per area, AG
 tie-line-bias ACE, no dead-band / limits / HVDC / voltage dynamics), now for a finite set `α`
 of areas and a finite set `β` of tie lines, coupled by an arbitrary real matrix
 `𝓑 : Matrix α β ℝ`; the intended case is the signed incidence matrix
-`PH.signedIncidence tail head` of the directed tie-line graph (`+1` at the sending area).
+`Network.signedIncidence tail head` of the directed tie-line graph (`+1` at the sending area).
 * State index `α ⊕ (β ⊕ α)`: `inl a` = `Δω_a`, `inr (inl ℓ)` = line flow `ΔP_tie,ℓ`
   (from `tail ℓ` to `head ℓ`), `inr (inr a)` = `ΔP_C,a`. Input `ΔP_L : α → ℝ`.
 * Equations: `M_a Δω̇_a = ΔP_C,a − K_R,a Δω_a − ΔP_L,a − D_a Δω_a − (𝓑 ΔP_tie)_a`;
@@ -263,18 +263,18 @@ def TieConnected (tail head : β → α) : Prop :=
 
 omit [Fintype β] in
 @[powerlib_foundation] theorem signedIncidence_col_sum (tail head : β → α) (ℓ : β) :
-    ∑ a, PH.signedIncidence tail head a ℓ = 0 := by
-  have h := PH.signedIncidence_transpose_mulVec tail head (fun _ => (1 : ℝ)) ℓ
+    ∑ a, Network.signedIncidence tail head a ℓ = 0 := by
+  have h := Network.signedIncidence_transpose_mulVec tail head (fun _ => (1 : ℝ)) ℓ
   simpa [mulVec, dotProduct] using h
 
 omit [Fintype β] in
 @[powerlib_foundation] theorem signedIncidence_const_of_connected {tail head : β → α}
     (hconn : TieConnected tail head) (w : α → ℝ)
-    (hw : ∀ ℓ, ∑ c, PH.signedIncidence tail head c ℓ * w c = 0) (a c : α) : w a = w c := by
+    (hw : ∀ ℓ, ∑ c, Network.signedIncidence tail head c ℓ * w c = 0) (a c : α) : w a = w c := by
   have hedge : ∀ ℓ, w (tail ℓ) = w (head ℓ) := by
     intro ℓ
-    have h := PH.signedIncidence_transpose_mulVec tail head w ℓ
-    have h' : ((PH.signedIncidence tail head)ᵀ *ᵥ w) ℓ = 0 := by
+    have h := Network.signedIncidence_transpose_mulVec tail head w ℓ
+    have h' : ((Network.signedIncidence tail head)ᵀ *ᵥ w) ℓ = 0 := by
       simpa [mulVec, dotProduct] using hw ℓ
     linarith
   induction hconn a c with
@@ -290,9 +290,9 @@ evidence on the model, not a connection conclusion. -/
     (hconn : TieConnected tail head) (hM : ∀ a, (area a).M ≠ 0)
     (hKI : ∀ a, (area a).KI ≠ 0) (hT : ∀ ℓ, ωs * T ℓ ≠ 0) (hB : ∑ a, (area a).B ≠ 0)
     (u : α → ℝ) (e : α ⊕ (β ⊕ α) → ℝ) :
-    netField area ωs T (PH.signedIncidence tail head) e u = 0 ↔
+    netField area ωs T (Network.signedIncidence tail head) e u = 0 ↔
       (∀ a, e (.inl a) = 0) ∧
-        (∀ a, ∑ ℓ, PH.signedIncidence tail head a ℓ * e (.inr (.inl ℓ)) = 0) ∧
+        (∀ a, ∑ ℓ, Network.signedIncidence tail head a ℓ * e (.inr (.inl ℓ)) = 0) ∧
         ∀ a, e (.inr (.inr a)) = u a :=
   netModel_isEquilibrium_iff hM hKI hT hB (signedIncidence_col_sum tail head)
     (signedIncidence_const_of_connected hconn) u e
@@ -346,10 +346,10 @@ model, not a connection conclusion. -/
 /-- Three areas in a ring: the circulating flow `(1, 1, 1)` is in the kernel of the signed
 incidence matrix. -/
 @[powerlib_foundation] theorem triangle_circulation :
-    PH.signedIncidence (![0, 1, 2] : Fin 3 → Fin 3) ![1, 2, 0] *ᵥ (fun _ => (1 : ℝ)) = 0 := by
+    Network.signedIncidence (![0, 1, 2] : Fin 3 → Fin 3) ![1, 2, 0] *ᵥ (fun _ => (1 : ℝ)) = 0 := by
   funext a
   fin_cases a <;>
-    simp only [PH.signedIncidence, mulVec, dotProduct, Matrix.of_apply, Fin.sum_univ_three,
+    simp only [Network.signedIncidence, mulVec, dotProduct, Matrix.of_apply, Fin.sum_univ_three,
       Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons,
       Matrix.tail_cons, Pi.zero_apply] <;> norm_num
 
@@ -358,7 +358,7 @@ for any parameters. Static evidence on the model, not a connection conclusion. -
 @[powerlib_foundation] theorem triangle_not_spectrallyStable (area : Fin 3 → Area) (ωs : ℝ)
     (T : Fin 3 → ℝ) :
     ¬ Linear.SpectrallyStable
-      (netA area ωs T (PH.signedIncidence (![0, 1, 2] : Fin 3 → Fin 3) ![1, 2, 0])) :=
+      (netA area ωs T (Network.signedIncidence (![0, 1, 2] : Fin 3 → Fin 3) ![1, 2, 0])) :=
   netModel_not_spectrallyStable (p := fun _ => 1) (fun h => by simpa using congrFun h 0)
     triangle_circulation
 
@@ -755,7 +755,7 @@ constant loads to its steady state (on a radial graph, `(0, 0, ΔP_L)`). -/
 parameters. -/
 @[powerlib_domain] theorem triangle_not_mem_den_attractive (area : Fin 3 → Area) (ωs : ℝ)
     (T : Fin 3 → ℝ) {P : Flow.Property} (hP : P.Attractive) :
-    connection% ((⟨area, ωs, T, PH.signedIncidence (![0, 1, 2] : Fin 3 → Fin 3) ![1, 2, 0]⟩ :
+    connection% ((⟨area, ωs, T, Network.signedIncidence (![0, 1, 2] : Fin 3 → Fin 3) ![1, 2, 0]⟩ :
       NetModel (Fin 3) (Fin 3)) ∉ (netFamily (Fin 3) (Fin 3)).den (.flow P)) :=
   net_not_mem_den_attractive _ (p := fun _ => 1) (fun h => by simpa using congrFun h 0)
     triangle_circulation hP

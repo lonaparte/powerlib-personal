@@ -24,7 +24,7 @@ not state in this form. Nothing here describes a physical system.
 Source: elementary analysis, used by the swing-equation damping estimates
 (`theorem/Synchronous/DampedEAC.lean`), the model-B boundary analysis
 (`theorem/GFL/DCLink/ModelBBoundary.lean`), the sensorless drive averaging
-(`theorem/Machine/Sensorless.lean`) and the Thévenin modulation map
+(`theorem/Drives/Sensorless.lean`) and the Thévenin modulation map
 (`theorem/GFL/Parametric/ModulationTransfer.lean`).
 -/
 

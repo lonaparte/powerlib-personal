@@ -40,6 +40,16 @@ for (1.2), (1.3), the dissipation inequality, or Lyapunov stability; it is used 
 the passivity statement (1.4), where the storage is `H − H_min`. The §1.2 corollary claim
 "global asymptotic stability by LaSalle" is not formalized here (LaSalle is out of scope).
 
+Deterministic disturbance channels (`gridDisturbance_field`, `gridDisturbance_power_balance`):
+a nonlinear pH model driven by its own control port `u_S` and three further deterministic input
+channels, a constant frequency channel `B_ω u_ω`, a state-dependent voltage channel `B_v(x) u_v`
+and a constant channel `B_T u_T` (T-grid-disturbance (1.1)). Result: the pointwise energy balance
+(T-grid-disturbance §1.5 (1.2)) split by channel,
+`Ḣ = −∇Hᵀ R ∇H + y_Sᵀ u_S + y_ωᵀ u_ω + y_vᵀ u_v + y_Tᵀ u_T`, `y_k = B_kᵀ ∇H`; no noise (the
+σ → 0 limit of the note), no Itô correction. A static identity for every nonlinear pH model; the
+linear diagonal special case of (1.2) is `powerlib.PH.DiagonalPH.power_balance`.
+Source: work-sync `theory/T-grid-disturbance.md` (1.1), §1.5 (1.2).
+
 ## Port semantics and the connection interface
 
 `NonlinearModel` is a generic framework — the class of all nonlinear pH systems — not a model
@@ -473,6 +483,41 @@ system. -/
   (M.holds_flow_shift_iff .lyapunovStable xs).mpr h.lyapunovStable
 
 end NonlinearModel
+
+/-! ## Deterministic disturbance channels on a nonlinear pH model -/
+
+section GridDisturbance
+
+variable {n m a b c : ℕ}
+
+/-- Field (1.1) of T-grid-disturbance: the pH drift and control port of `M`, plus a constant
+frequency channel `Bω uω`, a state-dependent voltage channel `Bv(x) uv`, and a constant
+channel `BT uT`. -/
+def gridDisturbance_field (M : NonlinearModel n m) (Bω : Matrix (Fin n) (Fin a) ℝ)
+    (Bv : State n → Matrix (Fin n) (Fin b) ℝ) (BT : Matrix (Fin n) (Fin c) ℝ)
+    (x : State n) (uS : Fin m → ℝ) (uω : Fin a → ℝ) (uv : Fin b → ℝ)
+    (uT : Fin c → ℝ) : State n :=
+  M.field x uS + WithLp.toLp 2 (Bω *ᵥ uω + Bv x *ᵥ uv + BT *ᵥ uT)
+
+/-- Energy balance (1.2) split by channel:
+`Ḣ = y_Sᵀ u_S + y_ωᵀ u_ω + y_vᵀ u_v + y_Tᵀ u_T − ∇Hᵀ R ∇H`, `y_k = B_kᵀ ∇H`. -/
+@[powerlib_foundation] theorem gridDisturbance_power_balance (M : NonlinearModel n m)
+    (Bω : Matrix (Fin n) (Fin a) ℝ) (Bv : State n → Matrix (Fin n) (Fin b) ℝ)
+    (BT : Matrix (Fin n) (Fin c) ℝ) (x : State n) (uS : Fin m → ℝ)
+    (uω : Fin a → ℝ) (uv : Fin b → ℝ) (uT : Fin c → ℝ) :
+    fderiv ℝ M.H x (gridDisturbance_field M Bω Bv BT x uS uω uv uT) =
+      M.supply x uS + uω ⬝ᵥ (Bωᵀ *ᵥ WithLp.ofLp (M.dH x)) +
+        uv ⬝ᵥ ((Bv x)ᵀ *ᵥ WithLp.ofLp (M.dH x)) + uT ⬝ᵥ (BTᵀ *ᵥ WithLp.ofLp (M.dH x)) -
+        M.dampingPower x := by
+  have hport : ∀ {k : ℕ} (G : Matrix (Fin n) (Fin k) ℝ) (v : Fin k → ℝ),
+      WithLp.ofLp (M.dH x) ⬝ᵥ (G *ᵥ v) = v ⬝ᵥ (Gᵀ *ᵥ WithLp.ofLp (M.dH x)) := by
+    intro k G v
+    rw [dotProduct_mulVec, ← mulVec_transpose, dotProduct_comm]
+  rw [gridDisturbance_field, map_add, M.power_balance, M.fderiv_H_apply, WithLp.ofLp_toLp,
+    dotProduct_add, dotProduct_add, hport, hport, hport]
+  ring
+
+end GridDisturbance
 
 end powerlib.PH
 

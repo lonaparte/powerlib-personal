@@ -1,14 +1,16 @@
 import theorem.PH.Composition
+import theorem.Network.WeightedLaplacian
 
 /-! # Lumped RL networks (with optional node capacitors) as port-Hamiltonian systems
 
 Model boundary.
-* Topology: a finite directed multigraph with node type `ν` and branch type `β`
-  (`Fintype`, `DecidableEq`). The signed incidence matrix `signedIncidence tail head :
-  Matrix ν β ℝ` has entry `+1` at the tail of a branch (branch current leaves the node),
-  `−1` at the head, `0` otherwise (a self-loop gives a zero column). Mathlib's `incMatrix`
-  is unsigned and is not used. Every model below is stated for an **arbitrary** real matrix
-  `𝓑 : Matrix ν β ℝ`, so weighted (ideal-transformer) incidence columns are included.
+* Topology: a finite directed multigraph with node type `ν` and branch type `β` (`Fintype`,
+  `DecidableEq`). The signed incidence matrix `signedIncidence tail head : Matrix ν β ℝ`
+  (`Network.signedIncidence`, `theorem/Network/WeightedLaplacian.lean`) has entry `+1` at the
+  tail of a branch (branch current leaves the node), `−1` at the head, `0` otherwise (a self-loop
+  gives a zero column). Mathlib's `incMatrix` is unsigned and is not used. Every model below is
+  stated for an **arbitrary** real matrix `𝓑 : Matrix ν β ℝ`, so weighted (ideal-transformer)
+  incidence columns are included.
 * Branches: series `L_k > 0`, `r_k ≥ 0`; state is the branch flux `φ_k = L_k i_k`;
   `H = Σ φ_k² / (2 L_k)`. Lumped, linear, continuous time, single phase or one axis of a
   stationary frame (no dq rotation terms), no switching, no controller.
@@ -52,24 +54,13 @@ Source: work-sync `theory/T-ph.md` §1.6.bis (RL network pH form and energy chec
 -/
 
 noncomputable section
-namespace powerlib.PH
+namespace powerlib.PH.Models
 open Matrix Set
+open powerlib.Network (signedIncidence signedIncidence_transpose_mulVec)
 
 variable {β ν : Type*} [Fintype β] [DecidableEq β] [Fintype ν] [DecidableEq ν]
 
 /-! ## Signed incidence matrix -/
-
-/-- Signed node–branch incidence matrix: `+1` if branch `k` leaves node `i` (tail),
-`−1` if it enters node `i` (head). -/
-def signedIncidence (tail head : β → ν) : Matrix ν β ℝ :=
-  Matrix.of fun i k => (if i = tail k then 1 else 0) - (if i = head k then 1 else 0)
-
-omit [Fintype β] [DecidableEq β] in
-/-- KVL: the branch voltage `(𝓑ᵀ v)_k` is the potential difference `v(tail k) − v(head k)`. -/
-@[powerlib_foundation] theorem signedIncidence_transpose_mulVec (tail head : β → ν)
-    (v : ν → ℝ) (k : β) :
-    ((signedIncidence tail head)ᵀ *ᵥ v) k = v (tail k) - v (head k) := by
-  simp [signedIncidence, mulVec, dotProduct, sub_mul, Finset.sum_sub_distrib, ite_mul]
 
 omit [Fintype ν] [DecidableEq β] in
 /-- KCL: `(𝓑 i)_j` is the total current leaving node `j` through the branches. -/
@@ -432,4 +423,4 @@ magnetic plus electric energy (`toPH_storage`). -/
       Port.PortHamiltonian.family.den (.flow .lyapunovStable)) :=
   Port.PortHamiltonian.mem_den_lyapunovStable _
 
-end powerlib.PH
+end powerlib.PH.Models

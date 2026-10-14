@@ -233,7 +233,7 @@ def toSwing : SwingParams := ⟨m.M, m.D, m.Pm, 0, m.Pmax, 0⟩
 `E' V_∞ / X_d' > 0`). -/
 @[powerlib_domain] theorem locallyExponentiallyStable (hM : 0 < m.M) (hD : 0 < m.D)
     (hP : 0 < m.Pmax) {δ₀ : ℝ} (hδ : δ₀ ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2))
-    (heq : m.toSwing.field (mkState δ₀ 0) = 0) :
+    (heq : m.toSwing.field (PhasePlane.mk δ₀ 0) = 0) :
     connection% (Swing.Model.mk m.toSwing δ₀ ∈ Swing.family.den (.flow .locallyExponentiallyStable)) :=
   Swing.mem_den_locallyExponentiallyStable _ hM hD
     (by simpa using ((m.toSwing.field_eq_zero_iff hM.ne' _).mp heq).2)
@@ -241,7 +241,7 @@ def toSwing : SwingParams := ⟨m.M, m.D, m.Pm, 0, m.Pmax, 0⟩
 
 /-- An equilibrium with `cos δ₀ < 0` is unstable for every damping. -/
 @[powerlib_domain] theorem unstable (hM : 0 < m.M) (hP : 0 < m.Pmax) {δ₀ : ℝ}
-    (hδ : Real.cos δ₀ < 0) (heq : m.toSwing.field (mkState δ₀ 0) = 0) :
+    (hδ : Real.cos δ₀ < 0) (heq : m.toSwing.field (PhasePlane.mk δ₀ 0) = 0) :
     connection% (Swing.Model.mk m.toSwing δ₀ ∈ Swing.family.den (.flow .unstable)) :=
   Swing.mem_den_unstable _ hM
     (by simpa using ((m.toSwing.field_eq_zero_iff hM.ne' _).mp heq).2)

@@ -31,11 +31,25 @@ former trajectory-level `seriesRLC_trajectory_exponential_decay`); and for the l
 (`seriesRLCPH_mem_den_conservative`, `seriesRLCPH_not_mem_den_locallyAsymptoticallyStable`). The
 field, output, energy, power balance and state-matrix identities are static evidence.
 
-Source: work-sync `theory/T-ph.md` §1.6 (1.11) and §1.2 (energy balance (1.2)).
+Complex normal modes of an LC pair (T-invariant-coordinates §1.4): `a± = √L Ī ± j √C V̄` give
+`|a₊|² + |a₋|² = 2(L|I|² + C|V|²) = 2η₊` (`normalMode_sum`) and
+`|a₊|² − |a₋|² = 4 √(LC) Im(Ī V̄*)` (`normalMode_diff`); identities for arbitrary phasors,
+foundation.
+
+Correction (T-invariant-coordinates §1.4): the difference of the normal-mode energies is
+`|a₊|² − |a₋|² = 4√(L_f C_f) Im(Ī V̄*)`; the note's "∝ Im(L_f Ī V̄*)" has the wrong scale
+factor (`L_f` instead of `√(L_f C_f)`, `normalMode_diff_ne_note`). The note also labels
+`|a₊|² + |a₋|² = 2η₊` "conserved": by `normalMode_sum` this is `4H` with
+`H = ½L|I|² + ½C|V|²`, so it is conserved exactly when `H` is, i.e. (energy balance
+`Ḣ = P_src − P_conv`, the dq LC model of `theorem/PH/Models/Instances.lean`) only while the port
+power vanishes, not in general.
+
+Source: work-sync `theory/T-ph.md` §1.6 (1.11) and §1.2 (energy balance (1.2));
+`theory/T-invariant-coordinates.md` §1.4 (normal modes).
 -/
 
 noncomputable section
-namespace powerlib.PH
+namespace powerlib.PH.Models
 open Matrix Set LinearSystems
 
 /-- Physical parameters of the series RLC loop. -/
@@ -211,4 +225,45 @@ constant for all segments. -/
   rw [hr] at this
   exact lt_irrefl 0 this
 
-end powerlib.PH
+/-! ## Complex normal modes of an LC pair -/
+
+/-- `a± = √L Ī ± j √C V̄`: `|a₊|² + |a₋|² = 2(L|I|² + C|V|²)`. -/
+@[powerlib_foundation] theorem normalMode_sum {L C : ℝ} (hL : 0 ≤ L) (hC : 0 ≤ C) (I V : ℂ) :
+    Complex.normSq (Real.sqrt L * I + Complex.I * (Real.sqrt C * V)) +
+        Complex.normSq (Real.sqrt L * I - Complex.I * (Real.sqrt C * V)) =
+      2 * (L * Complex.normSq I + C * Complex.normSq V) := by
+  have hl := Real.sq_sqrt hL
+  have hc := Real.sq_sqrt hC
+  simp only [Complex.normSq_apply, Complex.add_re, Complex.add_im, Complex.sub_re,
+    Complex.sub_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
+    Complex.I_re, Complex.I_im]
+  linear_combination (2 * (I.re ^ 2 + I.im ^ 2)) * hl + (2 * (V.re ^ 2 + V.im ^ 2)) * hc
+
+/-- `|a₊|² − |a₋|² = 4 √(LC) Im(Ī V̄*)`. -/
+@[powerlib_foundation] theorem normalMode_diff {L C : ℝ} (hL : 0 ≤ L) (I V : ℂ) :
+    Complex.normSq (Real.sqrt L * I + Complex.I * (Real.sqrt C * V)) -
+        Complex.normSq (Real.sqrt L * I - Complex.I * (Real.sqrt C * V)) =
+      4 * Real.sqrt (L * C) * (I * (starRingEnd ℂ) V).im := by
+  rw [Real.sqrt_mul hL]
+  simp only [Complex.normSq_apply, Complex.add_re, Complex.add_im, Complex.sub_re,
+    Complex.sub_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
+    Complex.I_re, Complex.I_im, Complex.conj_re, Complex.conj_im]
+  ring
+
+/-- The note's scale factor is wrong: with `L ≠ C` (both positive) and `Im(Ī V̄*) ≠ 0`,
+`|a₊|² − |a₋|²` is not `4 L Im(Ī V̄*)`. -/
+@[powerlib_foundation] theorem normalMode_diff_ne_note {L C : ℝ} (hL : 0 < L) (hC : 0 < C)
+    (hLC : L ≠ C) {I V : ℂ} (hIV : (I * (starRingEnd ℂ) V).im ≠ 0) :
+    Complex.normSq (Real.sqrt L * I + Complex.I * (Real.sqrt C * V)) -
+        Complex.normSq (Real.sqrt L * I - Complex.I * (Real.sqrt C * V)) ≠
+      4 * L * (I * (starRingEnd ℂ) V).im := by
+  rw [normalMode_diff hL.le]
+  intro h
+  have h1 : Real.sqrt (L * C) = L := by
+    have := mul_right_cancel₀ hIV (by linarith : 4 * Real.sqrt (L * C) * _ = 4 * L * _)
+    linarith
+  have h2 : Real.sqrt (L * C) ^ 2 = L ^ 2 := by rw [h1]
+  rw [Real.sq_sqrt (mul_nonneg hL.le hC.le), sq] at h2
+  exact hLC (mul_left_cancel₀ hL.ne' h2).symm
+
+end powerlib.PH.Models

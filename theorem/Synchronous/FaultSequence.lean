@@ -106,7 +106,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem firstSwing_le_deltaU (hM : 0 < p.M) (hD : p.D = 0) (hk : 0 < p.k₂)
     (h : |p.Pm - p.k₁| < p.k₂) {φ : ℝ → State 2} {tc δc ωc : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Ici tc))
-    (h0 : φ tc = mkState δc ωc) (hδc : δc ≤ p.deltaU)
+    (h0 : φ tc = PhasePlane.mk δc ωc) (hδc : δc ≤ p.deltaU)
     (hE : p.M / 2 * ωc ^ 2 ≤ ∫ s in δc..p.deltaU, (p.Pe s - p.Pm)) :
     ∀ t ∈ Ici tc, φ t 0 ≤ p.deltaU := by
   intro t ht
@@ -119,14 +119,16 @@ private theorem firstSwing_le_deltaU (hM : 0 < p.M) (hD : p.D = 0) (hk : 0 < p.k
   simp only at hδs
   have hcons := p.energy_conserved hM.ne' hD δc hφ ts hts.1
   rw [h0] at hcons
-  simp only [energy, mkState_zero, mkState_one, potential_self, add_zero, hδs] at hcons
+  simp only [energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, potential_self, add_zero,
+    hδs] at hcons
   rw [← potential_eq_integral] at hE
   have hω : φ ts 1 = 0 := by
     have : p.M / 2 * φ ts 1 ^ 2 ≤ 0 := by linarith
     have h2 : 0 < p.M / 2 := by positivity
     have := nonpos_of_mul_nonpos_right this h2 |>.antisymm (sq_nonneg _)
     exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp this
-  have hsteq : φ ts = mkState p.deltaU 0 := state_ext (by simpa using hδs) (by simpa using hω)
+  have hsteq : φ ts = PhasePlane.mk p.deltaU 0 :=
+    PhasePlane.ext_iff'.2 ⟨by simpa using hδs, by simpa using hω⟩
   have heqf := p.field_mkState_deltaU hM.ne' hk h.le
   have huniq := eqOn_of_isIntegralCurveOn_Icc (f := fun _ x => p.field x)
     (fun _ => p.lipschitzWith_field) (hφ.mono (Icc_subset_Ici_iff hts.2 |>.mpr hts.1))
@@ -142,7 +144,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem exists_gt_deltaU (hM : 0 < p.M) (hD : p.D = 0) (hk : 0 < p.k₂)
     (h : |p.Pm - p.k₁| < p.k₂) {φ : ℝ → State 2} {tc δc ωc : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Ici tc))
-    (h0 : φ tc = mkState δc ωc) (hwell : p.deltaU - 2 * Real.pi < δc) (hδc : δc ≤ p.deltaU)
+    (h0 : φ tc = PhasePlane.mk δc ωc) (hwell : p.deltaU - 2 * Real.pi < δc) (hδc : δc ≤ p.deltaU)
     (hω : 0 < ωc) (hE : ∫ s in δc..p.deltaU, (p.Pe s - p.Pm) < p.M / 2 * ωc ^ 2) :
     ∃ t ∈ Ici tc, p.deltaU < φ t 0 := by
   by_contra hno
@@ -239,7 +241,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem firstSwing_iff (hM : 0 < p.M) (hD : p.D = 0) (hk : 0 < p.k₂)
     (h : |p.Pm - p.k₁| < p.k₂) {φ : ℝ → State 2} {tc δc ωc : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Ici tc))
-    (h0 : φ tc = mkState δc ωc) (hwell : p.deltaU - 2 * Real.pi < δc) (hδc : δc ≤ p.deltaU)
+    (h0 : φ tc = PhasePlane.mk δc ωc) (hwell : p.deltaU - 2 * Real.pi < δc) (hδc : δc ≤ p.deltaU)
     (hω : 0 < ωc) :
     (∀ t ∈ Ici tc, φ t 0 ≤ p.deltaU) ↔
       p.M / 2 * ωc ^ 2 ≤ ∫ s in δc..p.deltaU, (p.Pe s - p.Pm) := by
@@ -260,7 +262,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem boltedFault_trajectory (hM : 0 < p.M) (hD : p.D = 0)
     (hk₁ : p.k₁ = 0) (hk₂ : p.k₂ = 0) {φ : ℝ → State 2} {tf T δ₀ : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
-    (h0 : φ tf = mkState δ₀ 0) :
+    (h0 : φ tf = PhasePlane.mk δ₀ 0) :
     ∀ t ∈ Icc tf T, φ t 1 = p.Pm / p.M * (t - tf) ∧
       φ t 0 = δ₀ + p.Pm / (2 * p.M) * (t - tf) ^ 2 := by
   have hacc : ∀ x : State 2, p.field x 1 = p.Pm / p.M := by
@@ -307,7 +309,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem boltedFault_clearingTime (hM : 0 < p.M) (hD : p.D = 0)
     (hk₁ : p.k₁ = 0) (hk₂ : p.k₂ = 0) (hPm : 0 < p.Pm) {φ : ℝ → State 2} {tf T δ₀ δcc : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
-    (h0 : φ tf = mkState δ₀ 0) (hcc : δ₀ ≤ δcc) {t : ℝ} (ht : t ∈ Icc tf T) :
+    (h0 : φ tf = PhasePlane.mk δ₀ 0) (hcc : δ₀ ≤ δcc) {t : ℝ} (ht : t ∈ Icc tf T) :
     φ t 0 = δcc ↔ t = tf + Real.sqrt (2 * p.M * (δcc - δ₀) / p.Pm) := by
   rw [(p.boltedFault_trajectory hM hD hk₁ hk₂ hφ h0 t ht).2]
   have hτ : 0 ≤ t - tf := by linarith [ht.1]
@@ -333,7 +335,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem time_in_window_le (hM : 0 < p.M) (hD : p.D = 0) {pmax δ₀ δcc : ℝ}
     (hgap : pmax < p.Pm) (hbound : ∀ δ ∈ Icc δ₀ δcc, p.Pe δ ≤ pmax) {φ : ℝ → State 2}
     {tf T : ℝ} (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
-    (h0 : φ tf = mkState δ₀ 0) {t : ℝ} (ht : t ∈ Icc tf T)
+    (h0 : φ tf = PhasePlane.mk δ₀ 0) {t : ℝ} (ht : t ∈ Icc tf T)
     (hwin : ∀ s ∈ Icc tf t, φ s 0 ∈ Icc δ₀ δcc) :
     t - tf ≤ Real.sqrt (2 * p.M * (δcc - δ₀) / (p.Pm - pmax)) := by
   set a := (p.Pm - pmax) / p.M with hadef
@@ -483,12 +485,12 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem clearing_energy {fault : SwingParams} (hM : fault.M ≠ 0)
     (hD : fault.D = 0) {φ : ℝ → State 2} {tf tc δ₀ : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc)) (htc : tf ≤ tc)
-    (h0 : φ tf = mkState δ₀ 0) :
+    (h0 : φ tf = PhasePlane.mk δ₀ 0) :
     fault.M / 2 * φ tc 1 ^ 2 = fault.Aacc δ₀ (φ tc 0) := by
   have h := fault.energy_conserved_Icc hM hD δ₀ hφ tc ⟨htc, le_rfl⟩
   rw [h0] at h
-  simp only [SwingParams.energy, mkState_zero, mkState_one, SwingParams.potential_self,
-    add_zero] at h
+  simp only [SwingParams.energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one,
+    SwingParams.potential_self, add_zero] at h
   rw [SwingParams.Aacc_eq_neg_potential]
   norm_num at h
   linarith
@@ -504,7 +506,7 @@ private theorem firstSwing_iff_areas {pre fault post : SwingParams}
     (hφ : tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
         IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
         IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc))
-    (h0 : φ tf = mkState δ₀ 0)
+    (h0 : φ tf = PhasePlane.mk δ₀ 0)
     (hwell : post.deltaU - 2 * Real.pi < φ tc 0) (hδc : φ tc 0 ≤ post.deltaU)
     (hω : 0 < φ tc 1) :
     (∀ t ∈ Ici tc, φ t 0 ≤ post.deltaU) ↔
@@ -512,7 +514,7 @@ private theorem firstSwing_iff_areas {pre fault post : SwingParams}
   have hE := clearing_energy (hMeq ▸ hM.ne') hDf hφ.2.2.1 hφ.1 h0
   rw [hMeq] at hE
   rw [← hE, SwingParams.Adec]
-  exact post.firstSwing_iff hM hDp hk h hφ.2.2.2 (eq_mkState (φ tc)) hwell hδc hω
+  exact post.firstSwing_iff hM hDp hk h hφ.2.2.2 (PhasePlane.mk_coords (φ tc)).symm hwell hδc hω
 
 /-- **Critical clearing time of a bolted fault** (`P_e^f ≡ 0`, `D = 0`, `P_m > 0`, same `M` and
 `P_m` in both stages).  Let `δ_cc ∈ [δ₀, δ_u]` be a zero of `g = A_acc − A_dec`, and let the
@@ -526,7 +528,7 @@ private theorem boltedFault_firstSwing_iff {pre fault post : SwingParams}
     (hφ : tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
         IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
         IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc))
-    (h0 : φ tf = mkState δ₀ 0) (htc : tf < tc)
+    (h0 : φ tf = PhasePlane.mk δ₀ 0) (htc : tf < tc)
     (hwell : post.deltaU - 2 * Real.pi < δ₀) (hpos : ∀ x ∈ Ioo δ₀ post.deltaU, 0 < post.Pe x)
     (hcc : δcc ∈ Icc δ₀ post.deltaU) (hg : eacG fault post δ₀ post.deltaU δcc = 0) :
     (∀ t ∈ Ici tc, φ t 0 ≤ post.deltaU) ↔
@@ -588,7 +590,7 @@ private theorem boltedFault_firstSwing_iff_classical {pre fault post : SwingPara
     (hφ : tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
         IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
         IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc))
-    (h0 : φ tf = mkState δ₀ 0) (htc : tf < tc)
+    (h0 : φ tf = PhasePlane.mk δ₀ 0) (htc : tf < tc)
     (hδ₀ : 0 ≤ δ₀) (hcc : δcc ∈ Icc δ₀ post.deltaU)
     (hg : eacG fault post δ₀ post.deltaU δcc = 0) :
     (∀ t ∈ Ici tc, φ t 0 ≤ post.deltaU) ↔

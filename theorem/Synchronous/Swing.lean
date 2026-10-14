@@ -86,6 +86,11 @@ Instances (`theorem/Synchronous/Instances.lean`): VSG / VSM on an infinite bus
 (`k₁ = 0, k₃ = 0, k₂ = E V_g / X_g`), the classical SMIB model (`k₂ = E' V_∞ / X_d'`), and the
 post-fault SMIB curve with line resistance.
 
+The same classical machine on an infinite bus, written as a nonlinear port-Hamiltonian system in
+`(δ, p = M ω)` with `P_e = b sin δ`, is the family `ClassicalSM.family` of
+`theorem/Synchronous/PH.lean`; the two families are kept side by side (different requirement
+languages and sentence sets), not merged.
+
 Source: work-sync theory/T-vsg-control.md §1.2, §1.10; theory/T-sync-machine.md §1.9;
 theory/T-transient-stability.md §1.3, §1.4, §1.7;
 projects/vsc-stochastic-stability/notes/concepts/damping-class-dichotomy.md §1–§3
@@ -106,44 +111,6 @@ structure SwingParams where
   k₂ : ℝ
   k₃ : ℝ
 
-/-- Coordinate projections of the two-dimensional state are smooth. -/
-@[fun_prop, powerlib_foundation] theorem coord_contDiff {k : WithTop ℕ∞} (j : Fin 2) :
-    ContDiff ℝ k (fun x : State 2 => x j) :=
-  (PiLp.proj 2 (fun _ : Fin 2 => ℝ) j : State 2 →L[ℝ] ℝ).contDiff
-
-/-- The state `(δ, ω)`. -/
-def mkState (δ ω : ℝ) : State 2 := (WithLp.equiv 2 (Fin 2 → ℝ)).symm ![δ, ω]
-
-@[simp, powerlib_foundation] theorem mkState_zero (δ ω : ℝ) : mkState δ ω 0 = δ := by
-  simp [mkState]
-
-@[simp, powerlib_foundation] theorem mkState_one (δ ω : ℝ) : mkState δ ω 1 = ω := by
-  simp [mkState]
-
-@[powerlib_foundation] theorem state_ext {x y : State 2} (h0 : x 0 = y 0) (h1 : x 1 = y 1) :
-    x = y := by
-  ext i
-  fin_cases i
-  · exact h0
-  · exact h1
-
-@[powerlib_foundation] theorem eq_mkState (x : State 2) : x = mkState (x 0) (x 1) :=
-  state_ext (by simp) (by simp)
-
-@[powerlib_foundation] theorem norm_sq_state (x : State 2) : ‖x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 := by
-  rw [PiLp.norm_sq_eq_of_L2]
-  simp [Fin.sum_univ_succ, sq_abs]
-
-@[powerlib_foundation] theorem norm_state_le (x : State 2) : ‖x‖ ≤ |x 0| + |x 1| := by
-  have h0 := abs_nonneg (x 0)
-  have h1 := abs_nonneg (x 1)
-  have h : ‖x‖ ^ 2 ≤ (|x 0| + |x 1|) ^ 2 := by
-    rw [norm_sq_state]; nlinarith [sq_abs (x 0), sq_abs (x 1), mul_nonneg h0 h1]
-  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp h
-
-@[powerlib_foundation] theorem abs_coord_le (x : State 2) (j : Fin 2) : |x j| ≤ ‖x‖ := by
-  simpa using PiLp.norm_apply_le x j
-
 namespace SwingParams
 
 variable (p : SwingParams)
@@ -155,7 +122,7 @@ def Pe (δ : ℝ) : ℝ := p.k₁ + p.k₂ * Real.sin (δ - p.k₃)
 def accel (δ ω : ℝ) : ℝ := (p.Pm - p.Pe δ - p.D * ω) / p.M
 
 /-- The full nonlinear swing vector field on `(δ, ω)`. -/
-def field (x : State 2) : State 2 := mkState (x 1) (p.accel (x 0) (x 1))
+def field (x : State 2) : State 2 := PhasePlane.mk (x 1) (p.accel (x 0) (x 1))
 
 @[simp, powerlib_foundation] theorem field_apply_zero (x : State 2) : p.field x 0 = x 1 := by
   simp [field]
@@ -175,7 +142,7 @@ def jacobian (δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   rw [contDiff_euclidean]
   intro i
   fin_cases i
-  · simpa using coord_contDiff (k := k) 1
+  · simpa using Dynamics.contDiff_coord (k := k) 1
   · simp only [Fin.mk_one, Fin.isValue, field_apply_one, accel, Pe]
     fun_prop
 
@@ -231,7 +198,7 @@ Static evidence on the model, not a connection conclusion. -/
     simp only [accel, h0, mul_zero, sub_zero, div_eq_zero_iff, hM, or_false] at h1
     linarith
   · rintro ⟨h0, h1⟩
-    apply state_ext
+    refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
     · simp [h0]
     · simp [accel, h0, h1]
 
@@ -249,10 +216,10 @@ Static evidence on the model, not a connection conclusion. -/
   · intro h
     have ha : |(p.Pm - p.k₁) / p.k₂| ≤ 1 := by
       rw [abs_div, abs_of_pos hk, div_le_one hk]; exact h
-    refine ⟨mkState (Real.arcsin ((p.Pm - p.k₁) / p.k₂) + p.k₃) 0, ?_⟩
+    refine ⟨PhasePlane.mk (Real.arcsin ((p.Pm - p.k₁) / p.k₂) + p.k₃) 0, ?_⟩
     rw [p.field_eq_zero_iff hM]
     refine ⟨by simp, ?_⟩
-    simp only [mkState_zero, Pe, add_sub_cancel_right]
+    simp only [PhasePlane.mk_apply_zero, Pe, add_sub_cancel_right]
     rw [Real.sin_arcsin (abs_le.mp ha).1 (abs_le.mp ha).2]
     field_simp
     ring
@@ -339,12 +306,12 @@ period of the power-angle curve). Static evidence on the model, not a connection
 
 /-- `(δ_s, 0)` is an equilibrium. Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem field_mkState_deltaS (hM : p.M ≠ 0) (hk : 0 < p.k₂)
-    (h : |p.Pm - p.k₁| ≤ p.k₂) : p.field (mkState p.deltaS 0) = 0 :=
+    (h : |p.Pm - p.k₁| ≤ p.k₂) : p.field (PhasePlane.mk p.deltaS 0) = 0 :=
   (p.field_eq_zero_iff hM _).mpr ⟨by simp, by simpa using p.Pe_deltaS hk h⟩
 
 /-- `(δ_u, 0)` is an equilibrium. Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem field_mkState_deltaU (hM : p.M ≠ 0) (hk : 0 < p.k₂)
-    (h : |p.Pm - p.k₁| ≤ p.k₂) : p.field (mkState p.deltaU 0) = 0 :=
+    (h : |p.Pm - p.k₁| ≤ p.k₂) : p.field (PhasePlane.mk p.deltaU 0) = 0 :=
   (p.field_eq_zero_iff hM _).mpr ⟨by simp, by simpa using p.Pe_deltaU hk h⟩
 
 /-! ## Linearization (static) -/
@@ -513,7 +480,7 @@ private theorem lyapunovStable_of_syncCoeff_pos (hM : 0 < p.M) (hD : 0 ≤ p.D)
     have hx' : |x 0 - x₀ 0| < r := hx
     by_cases h0 : x 0 = x₀ 0
     · have h1' : x 1 ≠ 0 := by
-        intro h1'; apply hne; exact state_ext h0 (by rw [h1', h1])
+        intro h1'; apply hne; exact PhasePlane.ext_iff'.2 ⟨h0, by rw [h1', h1]⟩
       have : 0 < p.M / 2 * x 1 ^ 2 := by positivity
       simpa [energy, h0] using this
     · have hU := p.potential_pos hbal hr' hx' h0
@@ -531,13 +498,13 @@ private theorem lyapunovStable_of_syncCoeff_pos (hM : 0 < p.M) (hD : 0 ≤ p.D)
   apply LipschitzWith.of_dist_le_mul
   intro x y
   simp only [dist_eq_norm]
-  have hx0 := abs_coord_le (x - y) 0
-  have hx1 := abs_coord_le (x - y) 1
+  have hx0 := Dynamics.abs_apply_le_norm (x - y) 0
+  have hx1 := Dynamics.abs_apply_le_norm (x - y) 1
   simp only [PiLp.sub_apply] at hx0 hx1
   have hs := Real.abs_sin_sub_sin_le (x 0 - p.k₃) (y 0 - p.k₃)
   have hsub : x 0 - p.k₃ - (y 0 - p.k₃) = x 0 - y 0 := by ring
   rw [hsub] at hs
-  refine (norm_state_le _).trans ?_
+  refine (Dynamics.norm_le_abs_add_abs_two _).trans ?_
   simp only [PiLp.sub_apply, field_apply_zero, field_apply_one, accel, Pe]
   have he : (p.Pm - (p.k₁ + p.k₂ * Real.sin (x 0 - p.k₃)) - p.D * x 1) / p.M -
       (p.Pm - (p.k₁ + p.k₂ * Real.sin (y 0 - p.k₃)) - p.D * y 1) / p.M =
@@ -595,7 +562,7 @@ structure Model where
   δ : ℝ
 
 /-- The selected point `(δ*, 0)`. -/
-def Model.point (m : Model) : State 2 := mkState m.δ 0
+def Model.point (m : Model) : State 2 := PhasePlane.mk m.δ 0
 
 /-- The swing field translated so that the selected point is the origin. -/
 def Model.field (m : Model) (z : State 2) : State 2 := m.p.field (z + m.point)
@@ -877,12 +844,12 @@ conclusion. -/
   exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp this
 
 private theorem norm_mkState_sub_point (m : Model) (s t : ℝ) :
-    ‖mkState (m.δ + s) t - m.point‖ ≤ |s| + |t| := by
-  refine (norm_state_le _).trans (le_of_eq ?_)
+    ‖PhasePlane.mk (m.δ + s) t - m.point‖ ≤ |s| + |t| := by
+  refine (Dynamics.norm_le_abs_add_abs_two _).trans (le_of_eq ?_)
   simp [Model.point]
 
 private theorem energy_mkState (p : SwingParams) (δ₀ s : ℝ) :
-    p.energy δ₀ (mkState (δ₀ + s) 0) = p.potential δ₀ (δ₀ + s) := by
+    p.energy δ₀ (PhasePlane.mk (δ₀ + s) 0) = p.potential δ₀ (δ₀ + s) := by
   simp [SwingParams.energy]
 
 /-- Within positive inertia, local asymptotic stability of `(δ*, 0)` forces balance, positive
@@ -907,15 +874,15 @@ private theorem las_requirements {m : Model} (hM : 0 < m.p.M)
     · exfalso
       refine Dynamics.not_localAsymptoticStable_of_lie_nonpos
         (V := fun x => -m.p.energy m.δ x) (ρ := 1) hC hEd.neg one_pos (fun x _ => ?_)
-        (fun ε hε => ⟨mkState (m.δ + 0) (ε / 2), ?_, ?_⟩) hlas
+        (fun ε hε => ⟨PhasePlane.mk (m.δ + 0) (ε / 2), ?_, ?_⟩) hlas
       · rw [fderiv_fun_neg]
         simp [m.p.energy_lie hM.ne', hD]
       · refine (norm_mkState_sub_point m 0 (ε / 2)).trans_lt ?_
         rw [abs_zero, zero_add, abs_of_pos (by linarith)]
         linarith
-      · show -m.p.energy m.δ (mkState (m.δ + 0) (ε / 2)) < -m.p.energy m.δ m.point
+      · show -m.p.energy m.δ (PhasePlane.mk (m.δ + 0) (ε / 2)) < -m.p.energy m.δ m.point
         rw [hE0, neg_zero, neg_lt_zero]
-        simp only [SwingParams.energy, mkState_one, mkState_zero, add_zero,
+        simp only [SwingParams.energy, PhasePlane.mk_apply_one, PhasePlane.mk_apply_zero, add_zero,
           SwingParams.potential_self]
         positivity
     · exact hD
@@ -926,7 +893,7 @@ private theorem las_requirements {m : Model} (hM : 0 < m.p.M)
     by_cases ha : m.p.Pm - m.p.k₁ = 0
     · have hk2 := k₂_eq_zero_of_flat m.p hb hK ha
       refine Dynamics.not_localAsymptoticStable_of_equilibria
-        (fun ε hε => ⟨mkState (m.δ + ε / 2) 0, fun h => ?_, ?_, ?_⟩) hlas
+        (fun ε hε => ⟨PhasePlane.mk (m.δ + ε / 2) 0, fun h => ?_, ?_, ?_⟩) hlas
       · have := congrArg (fun y : State 2 => y 0) h
         simp [Model.point] at this
         linarith
@@ -935,7 +902,7 @@ private theorem las_requirements {m : Model} (hM : 0 < m.p.M)
         linarith
       · rw [m.p.field_eq_zero_iff hM.ne']
         refine ⟨by simp, ?_⟩
-        simp only [mkState_zero, SwingParams.Pe, hk2, zero_mul, add_zero]
+        simp only [PhasePlane.mk_apply_zero, SwingParams.Pe, hk2, zero_mul, add_zero]
         linarith
     · refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := m.p.energy m.δ) (ρ := 1) hC
         hEd one_pos (fun x _ => ?_) (fun ε hε => ?_) hlas
@@ -944,14 +911,14 @@ private theorem las_requirements {m : Model} (hM : 0 < m.p.M)
       · rw [hE0]
         have hε2 : 0 < ε / 2 := by linarith
         rcases lt_or_gt_of_ne ha with hneg | hpos
-        · refine ⟨mkState (m.δ + -(ε / 2)) 0, ?_, ?_⟩
+        · refine ⟨PhasePlane.mk (m.δ + -(ε / 2)) 0, ?_, ?_⟩
           · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
             rw [abs_zero, add_zero, abs_neg, abs_of_pos hε2]
             linarith
           · rw [energy_mkState, potential_fold m.p hb hK, Real.sin_neg]
             have := Real.sin_lt hε2
             nlinarith
-        · refine ⟨mkState (m.δ + ε / 2) 0, ?_, ?_⟩
+        · refine ⟨PhasePlane.mk (m.δ + ε / 2) 0, ?_, ?_⟩
           · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
             rw [abs_zero, add_zero, abs_of_pos hε2]
             linarith
@@ -1011,7 +978,7 @@ conserved, `ω` decays), although its synchronizing coefficient is zero (the Jac
     have h1 := congrArg (fun y : State 2 => y 1) hzw
     simp only [PhasePlane.toEuclideanCLM_apply_zero, PhasePlane.toEuclideanCLM_apply_one] at h0 h1
     simp at h0 h1
-    exact state_ext (by linarith) h1
+    exact PhasePlane.ext_iff'.2 ⟨by linarith, h1⟩
   · have hf0 : flatCurve.field z 0 = z 1 := by
       simp [Model.field, flatCurve, Model.point]
     have hf1 : flatCurve.field z 1 = -z 1 := by
@@ -1073,14 +1040,14 @@ private theorem fold_seeds {m : Model} (hb : m.p.Pe m.δ = m.p.Pm)
   rw [hE0]
   have hε2 : 0 < ε / 2 := by linarith
   rcases lt_or_gt_of_ne ha with hneg | hpos
-  · refine ⟨mkState (m.δ + -(ε / 2)) 0, ?_, ?_⟩
+  · refine ⟨PhasePlane.mk (m.δ + -(ε / 2)) 0, ?_, ?_⟩
     · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
       rw [abs_zero, add_zero, abs_neg, abs_of_pos hε2]
       linarith
     · rw [energy_mkState, potential_fold m.p hb hK, Real.sin_neg]
       have := Real.sin_lt hε2
       nlinarith
-  · refine ⟨mkState (m.δ + ε / 2) 0, ?_, ?_⟩
+  · refine ⟨PhasePlane.mk (m.δ + ε / 2) 0, ?_, ?_⟩
     · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
       rw [abs_zero, add_zero, abs_of_pos hε2]
       linarith
@@ -1124,14 +1091,14 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
         · -- an undamped flat curve: `(δ − δ*) ω` grows at the rate `ω²`
           exfalso
           have hW : ContDiff ℝ 1 fun x : State 2 => (x 0 - m.δ) * x 1 :=
-            ((coord_contDiff 0).sub contDiff_const).mul (coord_contDiff 1)
+            ((Dynamics.contDiff_coord 0).sub contDiff_const).mul (Dynamics.contDiff_coord 1)
           refine Dynamics.unstable_of_chetaev (W := fun x : State 2 => (x 0 - m.δ) * x 1)
-            (r := 1) hC hW one_pos (fun ε hε => ⟨mkState (m.δ + ε / 4) (ε / 4), ?_, ?_⟩)
+            (r := 1) hC hW one_pos (fun ε hε => ⟨PhasePlane.mk (m.δ + ε / 4) (ε / 4), ?_, ?_⟩)
             (fun x _ hWx => ?_) hls
           · refine (norm_mkState_sub_point m _ _).trans_lt ?_
             rw [abs_of_pos (by linarith)]
             linarith
-          · simp only [mkState_zero, mkState_one, add_sub_cancel_left]
+          · simp only [PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, add_sub_cancel_left]
             positivity
           · have hd : HasFDerivAt (fun y : State 2 => (y 0 - m.δ) * y 1)
                 ((x 0 - m.δ) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ) +
@@ -1153,8 +1120,8 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
         exfalso
         set a := m.p.Pm - m.p.k₁ with ha_def
         have hW : ContDiff ℝ 1 fun x : State 2 => a * (m.p.M * x 1 + m.p.D * x 0) :=
-          contDiff_const.mul ((contDiff_const.mul (coord_contDiff 1)).add
-            (contDiff_const.mul (coord_contDiff 0)))
+          contDiff_const.mul ((contDiff_const.mul (Dynamics.contDiff_coord 1)).add
+            (contDiff_const.mul (Dynamics.contDiff_coord 0)))
         refine Dynamics.unstable_of_lie_nonpos_of_lie_pos (E := m.p.energy m.δ)
           (W := fun x : State 2 => a * (m.p.M * x 1 + m.p.D * x 0)) (r := 1) hC
           (m.p.contDiff_energy _) hW one_pos (fun x _ => ?_) (fold_seeds hb hK ha)
@@ -1176,7 +1143,7 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
           have hx0 : x 0 = m.δ + s₀ := by rw [hs₀]; ring
           rw [hx0, Pe_fold m.p hb hK]
           have hs1 : |s₀| ≤ 1 := by
-            have := abs_coord_le (x - m.point) 0
+            have := Dynamics.abs_apply_le_norm (x - m.point) 0
             simp only [PiLp.sub_apply, Model.point_zero] at this
             linarith
           have hs0 : s₀ ≠ 0 := by
@@ -1207,7 +1174,7 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
         have hz1 := congrArg (fun y : State 2 => y 1) hzw
         simp only [PhasePlane.toEuclideanCLM_apply_zero, PhasePlane.toEuclideanCLM_apply_one] at hz0 hz1
         simp at hz0 hz1
-        refine state_ext ?_ hz1
+        refine PhasePlane.ext_iff'.2 ⟨?_, hz1⟩
         rw [hz1] at hz0
         linarith
       · have hf0 : m.field z 0 = z 1 := by simp [Model.field, Model.point]

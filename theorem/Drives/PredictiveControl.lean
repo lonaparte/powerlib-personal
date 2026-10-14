@@ -13,7 +13,7 @@ import theorem.Attributes
 * **Discrete time**: the plant is the **forward-Euler** discretization with sampling period
   `T_s ≠ 0`, `x[k+1] = x[k] + T_s f(x[k], u[k], ω_e[k])` (`eulerStep`); the electrical speed
   sequence `ω_e[k]` is known to the controller. This is a statement about the Euler model,
-  not about the continuous machine (whose exact sampled model is `zoh_exact`).
+  not about the continuous machine (whose exact sampled model is `Dynamics.zoh_exact`).
 * Controller: deadbeat law `u[k] = B_d⁻¹(i*[k+1] − A_d i[k] − d_0)`; the delay-compensated
   variant applies the voltage computed at `k` during sample `k+1` and uses the model
   prediction of `i[k+1]`.
@@ -24,18 +24,20 @@ import theorem.Attributes
 Foundation results.
 * `eulerStep_eq_note` / `eulerStep_eq_affine`: the note's discrete model is exactly the
   forward-Euler step `x⁺ = A_d x + B_d u + d_0`.
-* `prediction_closedForm`: multi-step prediction `x[k+j] = A^j x[k] + Σ A^{j−1−i}(B u[k+i] + d)`.
+* `LTI.prediction_closedForm` (`theorem/LTI/Discrete.lean`): multi-step prediction
+  `x[k+j] = A^j x[k] + Σ A^{j−1−i}(B u[k+i] + d)`.
 * `fcs_argmin_exists` (wrapper of `Finset.exists_min_image`): every finite nonempty candidate
   set (e.g. the 7 distinct two-level vectors, or `7^{N_p}` sequences) has a cost minimiser.
-* `zoh_exact`: exact zero-order-hold sampling of `ẋ = A x + c` with constant `c` over one
-  period, `x(T) = e^{TA} x(0) + ∫₀ᵀ e^{σA} c dσ`.
+* `Dynamics.zoh_exact` (`theorem/Dynamics/VariationOfConstants.lean`): exact zero-order-hold
+  sampling of `ẋ = A x + c` with constant `c` over one period,
+  `x(T) = e^{TA} x(0) + ∫₀ᵀ e^{σA} c dσ`.
 
 Source: work-sync theory/T-predictive-machine-control.md §1.1–§1.4.
 
 Corrections.
 * §1.1 labels the discrete model "zero-order hold or trapezoidal"; the displayed formulas are
   exactly the forward-Euler step (`eulerStep_eq_note`). The exact ZOH model uses the matrix
-  exponential (`zoh_exact`).
+  exponential (`Dynamics.zoh_exact`).
 * §1.5 calls the CCS-MPC problem with `|u| ≤ V_dc/√3` a QP; that constraint is a second-order
   cone (`u_d² + u_q² ≤ V_dc²/3`), so the problem is an SOCP (not formalized here).
 
@@ -45,7 +47,7 @@ implementation evidence; the public results of this module are static foundation
 -/
 
 noncomputable section
-namespace powerlib.Machine.Predictive
+namespace powerlib.Drives.Predictive
 
 open Matrix Finset
 
@@ -184,29 +186,7 @@ Implementation evidence: discrete-time result outside the sentence language (Rul
   have h1 : x (k + 1) = eulerStep p Ts (ω k) (x k) (u k) := hplant k
   rw [hplant (k + 1), hctrl k, ← h1, eulerStep_deadbeat p hd hq Ts _ hTs]
 
-/-! ## Multi-step prediction and finite-control-set optimisation -/
-
-/-- Closed form of the `j`-step prediction of the affine model `x⁺ = A x + B u + d`. -/
-@[powerlib_foundation] theorem prediction_closedForm {n m : Type*} [Fintype n] [DecidableEq n]
-    [Fintype m] (A : Matrix n n ℝ) (B : Matrix n m ℝ) (d : n → ℝ) (x : ℕ → n → ℝ)
-    (u : ℕ → m → ℝ) (hx : ∀ k, x (k + 1) = A *ᵥ x k + B *ᵥ u k + d) (k j : ℕ) :
-    x (k + j) = (A ^ j) *ᵥ x k +
-      ∑ i ∈ range j, (A ^ (j - 1 - i)) *ᵥ (B *ᵥ u (k + i) + d) := by
-  induction j with
-  | zero => simp
-  | succ j ih =>
-    rw [← add_assoc, hx, ih, sum_range_succ, Matrix.mulVec_add, Matrix.mulVec_sum,
-      Matrix.mulVec_mulVec, ← pow_succ']
-    have hterm : ∀ i ∈ range j, A *ᵥ ((A ^ (j - 1 - i)) *ᵥ (B *ᵥ u (k + i) + d)) =
-        (A ^ (j + 1 - 1 - i)) *ᵥ (B *ᵥ u (k + i) + d) := by
-      intro i hi
-      rw [Matrix.mulVec_mulVec, ← pow_succ']
-      congr 2
-      have := mem_range.mp hi
-      omega
-    rw [sum_congr rfl hterm]
-    simp only [Nat.add_sub_cancel, Nat.sub_self, pow_zero, Matrix.one_mulVec]
-    abel
+/-! ## Finite-control-set optimisation -/
 
 /-- FCS-MPC is well posed: a finite nonempty candidate set always has a cost minimiser
 (thin wrapper of `Finset.exists_min_image`). -/
@@ -214,67 +194,4 @@ Implementation evidence: discrete-time result outside the sentence language (Rul
     (J : ι → ℝ) : ∃ k ∈ s, ∀ k' ∈ s, J k ≤ J k' :=
   Finset.exists_min_image s J hs
 
-/-! ## Exact zero-order-hold sampling -/
-
-section ZOH
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-
-/-- **Exact ZOH discretization.** If `ẋ = A x + c` with `c` constant on `[0, T]` (input held by
-a zero-order hold), then `x(T) = e^{TA} x(0) + ∫₀ᵀ e^{σA} c dσ`. -/
-@[powerlib_foundation] theorem zoh_exact (A : E →L[ℝ] E) (c : E) (x : ℝ → E) (T : ℝ)
-    (hx : ∀ t ∈ Set.uIcc 0 T, HasDerivAt x (A (x t) + c) t) :
-    x T = NormedSpace.exp (T • A) (x 0) +
-      ∫ σ in (0 : ℝ)..T, NormedSpace.exp (σ • A) c := by
-  -- g(t) = e^{-tA} x(t) has derivative e^{-tA} c.
-  have hg : ∀ t ∈ Set.uIcc 0 T, HasDerivAt (fun s => NormedSpace.exp (s • (-A)) (x s))
-      (NormedSpace.exp (t • (-A)) c) t := by
-    intro t ht
-    have he := hasDerivAt_exp_smul_const (𝕂 := ℝ) (-A) t
-    have h := he.clm_apply (hx t ht)
-    convert h using 1
-    simp only [mul_apply_eq_comp, _root_.neg_apply, map_add, map_neg]
-    abel
-  have hexp : Continuous fun s : ℝ => NormedSpace.exp (s • (-A)) :=
-    continuous_iff_continuousAt.2 fun s =>
-      (hasDerivAt_exp_smul_const (𝕂 := ℝ) (-A) s).continuousAt
-  have hcont : Continuous fun s : ℝ => NormedSpace.exp (s • (-A)) c :=
-    hexp.clm_apply continuous_const
-  have hint := intervalIntegral.integral_eq_sub_of_hasDerivAt hg
-    (hcont.intervalIntegrable 0 T)
-  simp only [zero_smul, NormedSpace.exp_zero, one_apply_eq_self] at hint
-  have hrad : ∀ y : E →L[ℝ] E,
-      y ∈ Metric.eball (0 : E →L[ℝ] E) (NormedSpace.expSeries ℝ (E →L[ℝ] E)).radius := by
-    intro y
-    rw [NormedSpace.expSeries_radius_eq_top]
-    exact edist_lt_top _ _
-  -- multiply by e^{TA}
-  have hcomm : ∀ s : ℝ, NormedSpace.exp (T • A) * NormedSpace.exp (s • (-A)) =
-      NormedSpace.exp ((T - s) • A) := by
-    intro s
-    have hc : Commute (T • A) (s • (-A)) :=
-      ((Commute.refl A).neg_right.smul_left T).smul_right s
-    rw [← NormedSpace.exp_add_of_commute_of_mem_ball hc (hrad _) (hrad _)]
-    congr 1
-    rw [smul_neg, sub_smul]
-    abel
-  have hinv : NormedSpace.exp (T • A) (NormedSpace.exp (T • (-A)) (x T)) = x T := by
-    rw [← mul_apply_eq_comp, hcomm, sub_self, zero_smul, NormedSpace.exp_zero,
-      one_apply_eq_self]
-  have hxT : x T = NormedSpace.exp (T • A) (x 0) +
-      NormedSpace.exp (T • A) (∫ s in (0 : ℝ)..T, NormedSpace.exp (s • (-A)) c) := by
-    rw [hint, map_sub, hinv]
-    abel
-  rw [hxT, ← ContinuousLinearMap.intervalIntegral_comp_comm _ (hcont.intervalIntegrable 0 T)]
-  congr 1
-  have h1 : ∫ s in (0 : ℝ)..T, NormedSpace.exp (T • A) (NormedSpace.exp (s • (-A)) c) =
-      ∫ s in (0 : ℝ)..T, NormedSpace.exp ((T - s) • A) c := by
-    congr 1
-    funext s
-    rw [← mul_apply_eq_comp, hcomm]
-  rw [h1, intervalIntegral.integral_comp_sub_left (fun σ => NormedSpace.exp (σ • A) c) T]
-  simp
-
-end ZOH
-
-end powerlib.Machine.Predictive
+end powerlib.Drives.Predictive

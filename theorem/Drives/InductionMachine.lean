@@ -6,7 +6,7 @@ import theorem.Dynamics.Shift
 import theorem.Family.Basic
 import theorem.TMIO.ClaimElab
 import theorem.Criteria.Hurwitz2
-import theorem.Machine.SpaceVector
+import theorem.Transform.SpaceVector
 import theorem.Dynamics.Coordinates
 import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
@@ -92,10 +92,10 @@ Pole convention: the note writes `(3/2)(p/2)` with `p` = number of poles; here `
 -/
 
 noncomputable section
-namespace powerlib.Machine.InductionMachine
+namespace powerlib.Drives.InductionMachine
 
 open Complex ComplexConjugate
-open powerlib.Machine.SpaceVector
+open powerlib.Transform.SpaceVector
 
 /-- Electrical parameters of the induction machine dq model. -/
 structure Params where
@@ -901,4 +901,4 @@ So the translation `positiveRotor` is not exact for Lyapunov stability even with
       rw [inner_fluxMatrix, hk]
       simp
 
-end powerlib.Machine.InductionMachine
+end powerlib.Drives.InductionMachine

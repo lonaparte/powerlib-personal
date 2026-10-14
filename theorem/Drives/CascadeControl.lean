@@ -1,5 +1,5 @@
 import theorem.Spectral.Family
-import theorem.Machine.SpaceVector
+import theorem.Transform.SpaceVector
 import theorem.Criteria.Hurwitz2
 import theorem.Numerics.StabilityFunctions
 
@@ -61,7 +61,7 @@ Corrections.
 -/
 
 noncomputable section
-namespace powerlib.Machine.CascadeControl
+namespace powerlib.Drives.CascadeControl
 
 open Matrix Filter Topology Linear LinearSystems
 
@@ -332,4 +332,4 @@ denominator is `J (s² + 2ζω_n s + ω_n²)`. -/
     Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]
   constructor <;> rintro ⟨h1, h2⟩ <;> exact ⟨by linarith, by linarith⟩
 
-end powerlib.Machine.CascadeControl
+end powerlib.Drives.CascadeControl

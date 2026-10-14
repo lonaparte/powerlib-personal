@@ -25,6 +25,16 @@ A bus admittance matrix built from branch admittances with no shunt (ground) bra
 (`ybusNoShunt_det_eq_zero`; two-bus counterexample `ybus_two_bus_singular`, the correction of
 `theory/T-dae-systems.md` §2.1).
 
+The signed node–branch incidence matrix `signedIncidence tail head` of a directed multigraph
+(`+1` at the tail, `−1` at the head) satisfies KVL, `(𝓑ᵀ v)_k = v(tail k) − v(head k)`
+(`signedIncidence_transpose_mulVec`); source `theory/T-ph.md` §1.6.bis. The RL-network pH
+models built on it are in `theorem/PH/Models/RLNetwork.lean`.
+
+Kron reduction (`theory/T-power-system-ph.md` §1.7): eliminating internal nodes with zero
+injection from a linear resistive network `Y` gives `i_b = (Y_bb − Y_bi Y_ii⁻¹ Y_ib) v_b`
+(`kron_current`), conserves the port power (`kron_power`), and (Mathlib Schur complement) keeps
+a PSD network PSD (`kron_posSemidef`).
+
 Connectivity is the reflexive-transitive closure of the relation `0 < W i j`.
 These are algebraic statements; no power-flow or dynamic claim is made here.
 -/
@@ -432,5 +442,72 @@ def ybusNoShunt {ι : Type*} [Fintype ι] [DecidableEq ι] (y : Matrix ι ι ℂ
   fin_cases i <;> fin_cases j <;> simp [ybusNoShunt, Fin.sum_univ_two]
 
 end Ybus
+
+/-! ## Signed incidence matrix -/
+
+section Incidence
+
+variable {β ν : Type*} [Fintype β] [DecidableEq β] [Fintype ν] [DecidableEq ν]
+
+/-- Signed node–branch incidence matrix: `+1` if branch `k` leaves node `i` (tail),
+`−1` if it enters node `i` (head). -/
+def signedIncidence (tail head : β → ν) : Matrix ν β ℝ :=
+  Matrix.of fun i k => (if i = tail k then 1 else 0) - (if i = head k then 1 else 0)
+
+omit [Fintype β] [DecidableEq β] in
+/-- KVL: the branch voltage `(𝓑ᵀ v)_k` is the potential difference `v(tail k) − v(head k)`. -/
+@[powerlib_foundation] theorem signedIncidence_transpose_mulVec (tail head : β → ν)
+    (v : ν → ℝ) (k : β) :
+    ((signedIncidence tail head)ᵀ *ᵥ v) k = v (tail k) - v (head k) := by
+  simp [signedIncidence, mulVec, dotProduct, sub_mul, Finset.sum_sub_distrib, ite_mul]
+
+end Incidence
+
+/-! ## Kron reduction -/
+
+section Kron
+
+variable {ι β : Type*} [Fintype ι] [DecidableEq ι] [Fintype β] [DecidableEq β]
+
+omit [DecidableEq β] in
+/-- Kron reduction: if the internal nodes inject no current (`Y_ii v_i + Y_ib v_b = 0`) and
+`Y_ii` is invertible, the boundary injections are `(Y_bb − Y_bi Y_ii⁻¹ Y_ib) v_b`. -/
+@[powerlib_foundation] theorem kron_current {Yii : Matrix ι ι ℝ} {Yib : Matrix ι β ℝ}
+    {Ybi : Matrix β ι ℝ} {Ybb : Matrix β β ℝ} (hinv : IsUnit Yii.det) {vi : ι → ℝ}
+    {vb : β → ℝ} (hint : Yii *ᵥ vi + Yib *ᵥ vb = 0) :
+    Ybi *ᵥ vi + Ybb *ᵥ vb = (Ybb - Ybi * Yii⁻¹ * Yib) *ᵥ vb := by
+  have hvi : vi = -((Yii⁻¹ * Yib) *ᵥ vb) := by
+    have h1 : Yii *ᵥ vi = -(Yib *ᵥ vb) := eq_neg_of_add_eq_zero_left hint
+    have h2 := congrArg (fun z => Yii⁻¹ *ᵥ z) h1
+    simp only [mulVec_mulVec, nonsing_inv_mul _ hinv, one_mulVec, mulVec_neg] at h2
+    exact h2
+  rw [hvi, sub_mulVec, mulVec_neg, mulVec_mulVec, Matrix.mul_assoc]
+  abel
+
+omit [DecidableEq ι] [DecidableEq β] in
+/-- Kron reduction conserves port power: with zero internal injection, the network power
+`vᵀ Y v` equals the boundary port power `v_bᵀ i_b`. -/
+@[powerlib_foundation] theorem kron_power (Yii : Matrix ι ι ℝ) (Yib : Matrix ι β ℝ)
+    (Ybi : Matrix β ι ℝ) (Ybb : Matrix β β ℝ) {vi : ι → ℝ} {vb : β → ℝ}
+    (hint : Yii *ᵥ vi + Yib *ᵥ vb = 0) :
+    Sum.elim vi vb ⬝ᵥ (fromBlocks Yii Yib Ybi Ybb *ᵥ Sum.elim vi vb) =
+      vb ⬝ᵥ (Ybi *ᵥ vi + Ybb *ᵥ vb) := by
+  rw [fromBlocks_mulVec]
+  simp only [Sum.elim_comp_inl, Sum.elim_comp_inr, hint, dotProduct, Fintype.sum_sum_type,
+    Sum.elim_inl, Sum.elim_inr, Pi.zero_apply, mul_zero, Finset.sum_const_zero, zero_add]
+
+omit [DecidableEq β] in
+/-- Kron reduction of a positive semidefinite network with positive definite internal block is
+positive semidefinite (passivity is preserved). Wrapper of Mathlib
+`Matrix.PosDef.fromBlocks₁₁` (Schur complement). -/
+@[powerlib_foundation] theorem kron_posSemidef {Yii : Matrix ι ι ℝ} {Yib : Matrix ι β ℝ}
+    {Ybb : Matrix β β ℝ} (hY : (fromBlocks Yii Yib Yibᵀ Ybb).PosSemidef) (hii : Yii.PosDef) :
+    (Ybb - Yibᵀ * Yii⁻¹ * Yib).PosSemidef := by
+  have := hii.isUnit.invertible
+  have h := (PosDef.fromBlocks₁₁ Yib Ybb hii).mp
+  simp only [conjTranspose_eq_transpose_of_trivial] at h
+  exact h hY
+
+end Kron
 
 end powerlib.Network

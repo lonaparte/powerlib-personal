@@ -1,9 +1,10 @@
 import dependencies.Mathlib
 import Mathlib.Basic.Real.Sign
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import theorem.Machine.InductionMachine
-import theorem.Machine.CascadeControl
+import theorem.Drives.InductionMachine
+import theorem.Drives.CascadeControl
 import theorem.SpecialFunctions.Elementary
+import theorem.Transform.Park
 
 /-! # Sensorless machine control: observer algebra (foundation)
 
@@ -13,8 +14,8 @@ Models and conventions: PMSM / IM space vectors, motor convention, amplitude-inv
 transform, electrical angles. Surface PMSM in the stationary frame:
 `v = r i + L di/dt + e`, back-EMF `e = ωψ_f (−sin θ, cos θ)`. IPMSM in the rotor frame:
 `ψ_dq = diag(L_d, L_q) i_dq`; an estimated frame lagging by `Δθ = θ − θ̂` sees
-`x̂ = R(Δθ) x_dq`. High-frequency injection neglects resistance and rotation (`ω_h ≫ ω_r`),
-the "LPF" is the average over one carrier period.
+`x̂ = R(Δθ) x_dq` (`R` = `Transform.rot`). High-frequency injection neglects resistance and
+rotation (`ω_h ≫ ω_r`), the "LPF" is the average over one carrier period.
 
 Contents.
 * `backEMF_estimate`, `angle_of_backEMF` (atan2 / `Complex.arg` recovers `θ` on `(−π, π]`
@@ -51,9 +52,10 @@ Corrections.
 -/
 
 noncomputable section
-namespace powerlib.Machine.Sensorless
+namespace powerlib.Drives.Sensorless
 
 open Complex ComplexConjugate Matrix
+open powerlib.Transform (rot rot_neg_mul_rot)
 
 /-! ## Back-EMF methods -/
 
@@ -150,14 +152,6 @@ def backEMF (ω ψf θ : ℝ) : ℂ := ⟨-(ω * ψf * Real.sin θ), ω * ψf * 
   linarith
 
 /-! ## High-frequency injection -/
-
-/-- Rotation matrix `R(a)`. -/
-def rot (a : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Real.cos a, -Real.sin a; Real.sin a, Real.cos a]
-
-@[powerlib_foundation] theorem rot_neg_mul_rot (a : ℝ) : rot (-a) * rot a = 1 := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [rot, Matrix.mul_apply, Fin.sum_univ_two] <;>
-    nlinarith [Real.sin_sq_add_cos_sq a]
 
 /-- Inverse inductance seen in the estimated frame. -/
 def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
@@ -286,4 +280,4 @@ def trackingLoopModel (kε Kp Ki : ℝ) : Linear.Plant 2 1 :=
   push_cast
   ring
 
-end powerlib.Machine.Sensorless
+end powerlib.Drives.Sensorless

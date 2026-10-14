@@ -29,6 +29,11 @@ The only additional step is the compactness bound `‖A s‖ ≤ M` on the segme
 norm, `Matrix.Norms.Operator`, the norm of the upstream track) required by the upstream
 hypotheses.
 
+Also here (proved directly, not an upstream wrapper): `zoh_exact`, exact zero-order-hold
+sampling of `ẋ = A x + c` with constant `c` on a Banach space over one period,
+`x(T) = e^{TA} x(0) + ∫₀ᵀ e^{σA} c dσ` (operator exponential; used by the predictive
+machine-control note theory/T-predictive-machine-control.md §1.1).
+
 Dependency note: LeanForControl's `LinearSystems/Solutions/CtsLTV.lean` did not build against the
 pinned Mathlib; `dependencies/LeanForControl-4.34.1.patch` contains the minimal compatibility diff
 (three proof-local changes, no statement changes) and `dependencies/LeanForControl.lean` imports
@@ -94,5 +99,68 @@ variable {X U : Type*} [Fintype X] [DecidableEq X] [Fintype U]
       ∫ τ in t₀..t, LinearSystems.stateTransitionMatrix A t τ *ᵥ (B τ *ᵥ u τ) :=
   eq_forcedResponse_of_isIntegralCurveOn hA hB hu (t₁ := t)
     (fun s _ => (hx s).hasDerivWithinAt) rfl t right_mem_uIcc
+
+/-! ## Exact zero-order-hold sampling -/
+
+section ZOH
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+
+/-- **Exact ZOH discretization.** If `ẋ = A x + c` with `c` constant on `[0, T]` (input held by
+a zero-order hold), then `x(T) = e^{TA} x(0) + ∫₀ᵀ e^{σA} c dσ`. -/
+@[powerlib_foundation] theorem zoh_exact (A : E →L[ℝ] E) (c : E) (x : ℝ → E) (T : ℝ)
+    (hx : ∀ t ∈ Set.uIcc 0 T, HasDerivAt x (A (x t) + c) t) :
+    x T = NormedSpace.exp (T • A) (x 0) +
+      ∫ σ in (0 : ℝ)..T, NormedSpace.exp (σ • A) c := by
+  -- g(t) = e^{-tA} x(t) has derivative e^{-tA} c.
+  have hg : ∀ t ∈ Set.uIcc 0 T, HasDerivAt (fun s => NormedSpace.exp (s • (-A)) (x s))
+      (NormedSpace.exp (t • (-A)) c) t := by
+    intro t ht
+    have he := hasDerivAt_exp_smul_const (𝕂 := ℝ) (-A) t
+    have h := he.clm_apply (hx t ht)
+    convert h using 1
+    simp only [mul_apply_eq_comp, _root_.neg_apply, map_add, map_neg]
+    abel
+  have hexp : Continuous fun s : ℝ => NormedSpace.exp (s • (-A)) :=
+    continuous_iff_continuousAt.2 fun s =>
+      (hasDerivAt_exp_smul_const (𝕂 := ℝ) (-A) s).continuousAt
+  have hcont : Continuous fun s : ℝ => NormedSpace.exp (s • (-A)) c :=
+    hexp.clm_apply continuous_const
+  have hint := intervalIntegral.integral_eq_sub_of_hasDerivAt hg
+    (hcont.intervalIntegrable 0 T)
+  simp only [zero_smul, NormedSpace.exp_zero, one_apply_eq_self] at hint
+  have hrad : ∀ y : E →L[ℝ] E,
+      y ∈ Metric.eball (0 : E →L[ℝ] E) (NormedSpace.expSeries ℝ (E →L[ℝ] E)).radius := by
+    intro y
+    rw [NormedSpace.expSeries_radius_eq_top]
+    exact edist_lt_top _ _
+  -- multiply by e^{TA}
+  have hcomm : ∀ s : ℝ, NormedSpace.exp (T • A) * NormedSpace.exp (s • (-A)) =
+      NormedSpace.exp ((T - s) • A) := by
+    intro s
+    have hc : Commute (T • A) (s • (-A)) :=
+      ((Commute.refl A).neg_right.smul_left T).smul_right s
+    rw [← NormedSpace.exp_add_of_commute_of_mem_ball hc (hrad _) (hrad _)]
+    congr 1
+    rw [smul_neg, sub_smul]
+    abel
+  have hinv : NormedSpace.exp (T • A) (NormedSpace.exp (T • (-A)) (x T)) = x T := by
+    rw [← mul_apply_eq_comp, hcomm, sub_self, zero_smul, NormedSpace.exp_zero,
+      one_apply_eq_self]
+  have hxT : x T = NormedSpace.exp (T • A) (x 0) +
+      NormedSpace.exp (T • A) (∫ s in (0 : ℝ)..T, NormedSpace.exp (s • (-A)) c) := by
+    rw [hint, map_sub, hinv]
+    abel
+  rw [hxT, ← ContinuousLinearMap.intervalIntegral_comp_comm _ (hcont.intervalIntegrable 0 T)]
+  congr 1
+  have h1 : ∫ s in (0 : ℝ)..T, NormedSpace.exp (T • A) (NormedSpace.exp (s • (-A)) c) =
+      ∫ s in (0 : ℝ)..T, NormedSpace.exp ((T - s) • A) c := by
+    congr 1
+    funext s
+    rw [← mul_apply_eq_comp, hcomm]
+  rw [h1, intervalIntegral.integral_comp_sub_left (fun σ => NormedSpace.exp (σ • A) c) T]
+  simp
+
+end ZOH
 
 end powerlib.Dynamics

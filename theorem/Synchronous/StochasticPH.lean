@@ -12,7 +12,8 @@ eq. (1.2)), §1.3 (eqs. (1.4)–(1.6): `Δ_Itô^SM = ½[σ_{v,d}² (∇²H)_{Ψd
 Model boundary.  Seven-state SM pH model `x = (Ψ_d, Ψ_q, Ψ_f, Ψ_kd, Ψ_kq, p, δ)`,
 `H = ½ Ψᵀ L⁻¹ Ψ + p²/(2M) + V_el(δ)`, constant diffusion columns `σ_{v,d} e_{Ψd}`,
 `σ_{v,q} e_{Ψq}`, `σ_T e_p`.  The Itô correction is the algebraic expression
-`½ tr(Σ Σᵀ ∇²H)` (`SPH.itoCorrection`); nothing about SDE solutions or expectations is claimed.
+`½ tr(Σ Σᵀ ∇²H)` (`Stochastic.SPH.itoCorrection`); nothing about SDE solutions or expectations is
+claimed.
 For the magnetic block we use the axis-separated (block-diagonal) inductance
 `L = diag(L_d-block (d, f, kd), L_q-block (q, kq))`, written with Mathlib's `fromBlocks`.
 
@@ -24,7 +25,7 @@ Correction (T-sync-machine-stochastic §1.3).  The note first writes
 -/
 
 noncomputable section
-namespace powerlib.Stochastic.SM
+namespace powerlib.Synchronous.SM
 
 open Matrix
 open powerlib.Stochastic.SPH
@@ -131,4 +132,4 @@ of `L⁻¹` is the `(0,0)` entry of the q-block inverse (the d-axis coupling doe
     (i : Fin m) : 0 < L⁻¹ i i :=
   hL.inv.diag_pos
 
-end powerlib.Stochastic.SM
+end powerlib.Synchronous.SM

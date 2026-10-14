@@ -4,6 +4,7 @@ import theorem.Criteria.Hurwitz2
 import theorem.Dynamics.ConverseLinearization
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Instability
+import theorem.Dynamics.Coordinates
 
 /-! # Synchronous machines as nonlinear port-Hamiltonian systems
 
@@ -20,6 +21,9 @@ Two models, both instances of `powerlib.PH.NonlinearModel` (P0b), continuous tim
   Dynamics `δ̇ = ω`, `ṗ = P_m − b sin δ − D ω + u` (swing equation).
 * Not modelled: flux dynamics, AVR, governor, network beyond the single infinite bus,
   saturation, delay. Equilibrium-level and trajectory-level results under zero input `u = 0`.
+* The same machine in swing-equation form `(δ, ω)` (`k₁ = k₃ = 0`, `k₂ = b`) is the family
+  `Swing.family` of `theorem/Synchronous/Swing.lean`; the two families are kept side by side
+  (different requirement languages and sentence sets), not merged.
 * Correction (T-ph §1.1, structural assumption 3 `H ≥ H_min > −∞`): this `H` contains
   `−P_m δ` and is **not bounded below** whenever `P_m ≠ 0`
   (`classicalSM_hamiltonian_not_bddBelow`), so (1.12) violates assumption 3 and the global
@@ -111,10 +115,11 @@ Source: work-sync `theory/T-ph.md` §1.7 (1.12); `theory/T-sync-machine.md` §1.
 -/
 
 noncomputable section
-namespace powerlib.PH
+namespace powerlib.Synchronous
 open Matrix Set Filter
 open scoped Topology
 open powerlib.Dynamics (State)
+open powerlib.PH
 
 /-- Coordinate functional on `State n`. -/
 abbrev smCoord {n : ℕ} (i : Fin n) : State n →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin n => ℝ) i
@@ -680,20 +685,9 @@ whose Jacobian `(J − R) ∇²H = [[0, 1/M], [−b cos δ*, −D/M]]` is Hurwit
 
 /-! #### The local asymptotic and Lyapunov translations -/
 
-private theorem norm_state2_le (x : State 2) : ‖x‖ ≤ |x 0| + |x 1| := by
-  have h0 := abs_nonneg (x 0)
-  have h1 := abs_nonneg (x 1)
-  have hsq : ‖x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 := by
-    rw [PiLp.norm_sq_eq_of_L2]
-    simp [Fin.sum_univ_succ, sq_abs]
-  have h : ‖x‖ ^ 2 ≤ (|x 0| + |x 1|) ^ 2 := by
-    rw [hsq]
-    nlinarith [sq_abs (x 0), sq_abs (x 1), mul_nonneg h0 h1]
-  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp h
-
 private theorem norm_seed_sub (δs s w : ℝ) :
     ‖(WithLp.toLp 2 ![δs + s, w] : State 2) - classicalSM_equilibrium δs‖ ≤ |s| + |w| := by
-  refine (norm_state2_le _).trans (le_of_eq ?_)
+  refine (Dynamics.norm_le_abs_add_abs_two _).trans (le_of_eq ?_)
   simp [classicalSM_equilibrium]
 
 private theorem H_contDiff (p : ClassicalSMParams) : ContDiff ℝ 1 (classicalSM_H p) := by
@@ -1351,4 +1345,4 @@ input `(v_d, v_q, v_f, T_m^ext)` and solution segment,
 
 end SyncMachine7
 
-end powerlib.PH
+end powerlib.Synchronous

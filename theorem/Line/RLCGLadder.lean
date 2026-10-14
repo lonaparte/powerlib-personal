@@ -34,83 +34,20 @@ origin, the unforced state with `v₁ = 0`, `i₂ = 0`). Connection conclusions:
 Lyapunov stability (`ladderPH_mem_den_passive`, `ladderPH_mem_den_lyapunovStable`); global
 exponential stability of the lossy ladder `R' > 0`, `G' > 0`
 (`lossyLadder_mem_den_globallyExponentiallyStable`, an instance of the general
-`PHStrict.toPH_mem_den_globallyExponentiallyStable` for strictly damped diagonal models); the
-correction in sentence form — the lossy ladder with at least one cell conserves **no** positive
-definite energy (`lossyLadder_not_mem_den_conservative`) — and conservation in the lossless case
-(`losslessLadder_mem_den_conservative`). The KVL/KCL fields and the port supply are static
-evidence. The former trajectory-level statements about the stored energy itself —
-strict decrease along nonzero lossy solutions and constancy along lossless solutions — are private
-implementation evidence (`lossyLadder_energy_strictly_decreases`,
-`losslessLadder_energy_conserved`). The former energy certificate `PHStrict.certificate` is
-replaced by the generic `PH.exists_quadraticDecay`.
+`PH.toPH_mem_den_globallyExponentiallyStable` for strictly damped diagonal models,
+`theorem/PH/Composition.lean`); the correction in sentence form — the lossy ladder with at least one
+cell conserves **no** positive definite energy (`lossyLadder_not_mem_den_conservative`) — and
+conservation in the lossless case (`losslessLadder_mem_den_conservative`). The KVL/KCL fields and
+the port supply are static evidence. The former trajectory-level statements about the stored energy
+itself — strict decrease along nonzero lossy solutions and constancy along lossless solutions — are
+private implementation evidence (`lossyLadder_energy_strictly_decreases`,
+`losslessLadder_energy_conserved`). The former energy certificate `PHStrict.certificate` is replaced
+by the generic `PH.exists_quadraticDecay`.
 -/
 
 noncomputable section
 namespace powerlib.Line
 open Matrix Set PH
-
-/-! ## Strictly damped diagonal port-Hamiltonian models -/
-
-namespace PHStrict
-
-variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
-
-@[powerlib_foundation] theorem exists_pos_lower {ι : Type*} [Finite ι] (f : ι → ℝ)
-    (hf : ∀ i, 0 < f i) : ∃ c > 0, ∀ i, c ≤ f i := by
-  rcases isEmpty_or_nonempty ι with h | h
-  · exact ⟨1, one_pos, fun i => isEmptyElim i⟩
-  · obtain ⟨i₀, hi₀⟩ := Finite.exists_min f
-    exact ⟨f i₀, hf i₀, hi₀⟩
-
-omit [DecidableEq ι] [Fintype κ] in
-@[powerlib_foundation] theorem energy_hasFDerivAt (m : DiagonalPH ι κ) (x : ι → ℝ) :
-    HasFDerivAt m.energy
-      (∑ i, (m.w i * x i) • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι => ℝ) i) x := by
-  have h : ∀ i ∈ (Finset.univ : Finset ι), HasFDerivAt (fun y : ι → ℝ => m.w i * y i ^ 2 / 2)
-      ((m.w i * x i) • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι => ℝ) i) x := by
-    intro i _
-    have hp := ((hasFDerivAt_apply (𝕜 := ℝ) (F' := fun _ : ι => ℝ) i x).pow 2).const_mul
-      (m.w i / 2)
-    convert hp using 1
-    · funext y; ring
-    · ext v
-      simp
-      ring
-  exact HasFDerivAt.fun_sum h
-
-omit [DecidableEq ι] [Fintype κ] in
-@[powerlib_foundation] theorem fderiv_energy_apply (m : DiagonalPH ι κ) (x v : ι → ℝ) :
-    fderiv ℝ m.energy x v = m.gradient x ⬝ᵥ v := by
-  rw [(energy_hasFDerivAt m x).fderiv]
-  simp [dotProduct, DiagonalPH.gradient]
-
-omit [DecidableEq ι] [Fintype κ] in
-@[powerlib_foundation] theorem energy_contDiff (m : DiagonalPH ι κ) :
-    ContDiff ℝ 1 m.energy := by
-  unfold DiagonalPH.energy
-  apply ContDiff.sum
-  intro i _
-  exact ((contDiff_const.mul ((contDiff_apply ℝ ℝ i).pow 2)).div_const 2)
-
-@[powerlib_foundation] theorem zeroInput_contDiff (m : DiagonalPH ι κ) :
-    ContDiff ℝ 1 (fun x => m.field x 0) := by
-  have h : (fun x => m.field x 0) = fun x => m.stateMatrix *ᵥ x := by
-    funext x
-    rw [DiagonalPH.field_eq_stateMatrix, mulVec_zero, add_zero]
-  rw [h]
-  exact (Matrix.mulVecLin m.stateMatrix).toContinuousLinearMap.contDiff
-
-/-- A diagonal port-Hamiltonian model whose every state is damped is globally exponentially
-stable with zero input, in every numbering: equilibrium, global existence, and a uniform
-exponential bound on every solution segment. -/
-@[powerlib_domain] theorem toPH_mem_den_globallyExponentiallyStable {a b n p : ℕ}
-    (m : DiagonalPH (Fin a) (Fin b)) (e : Fin a ≃ Fin n) (e' : Fin b ≃ Fin p)
-    (hd : ∀ i, 0 < m.d i) :
-    connection% (m.toPH e e' ∈
-      Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable)) :=
-  mem_den_globallyExponentiallyStable_of_dissipation_pos _ (m.toPH_dissipation_pos e e' hd)
-
-end PHStrict
 
 /-! ## The RLCG ladder -/
 

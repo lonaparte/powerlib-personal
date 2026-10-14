@@ -13,6 +13,9 @@ Conventions fixed by this module:
 * `rot θ` is the counter-clockwise rotation by `θ` (dq → αβ). The Park matrix is
   `park θ = [[cos θ, sin θ], [-sin θ, cos θ]]` (αβ → dq), exactly `conventions.md` §4.
   Hence `park θ = rot (-θ)` and, in complex form, `x^{dq} = x^{αβ} · e^{-jθ}`.
+  `rot_neg_mul_rot`: `rot (−a) · rot a = 1` (used by `theorem/Drives/Sensorless.lean`);
+  `frameRotation_power_invariant`: `rot δ` preserves the port power `v·i` (machine frame vs
+  common DQ frame, `theory/T-power-system-ph.md` §1.2).
 * `J = [[0, -1], [1, 0]]` is the rotation generator (`d/dθ rot θ = J · rot θ`); in complex
   form it is multiplication by `j`.
 * Scalar components: `parkD θ x_d x_q`, `parkQ θ x_d x_q` are the two rows of `park θ` applied to
@@ -105,6 +108,20 @@ def ofComplex (z : ℂ) : Fin 2 → ℝ := ![z.re, z.im]
 
 @[powerlib_foundation] theorem park_mul_rot (θ : ℝ) : park θ * rot θ = 1 := by
   rw [park_eq_rot_neg, ← rot_add, neg_add_cancel, rot_zero]
+
+@[powerlib_foundation] theorem rot_neg_mul_rot (a : ℝ) : rot (-a) * rot a = 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [rot, Matrix.mul_apply, Fin.sum_univ_two] <;>
+    nlinarith [Real.sin_sq_add_cos_sq a]
+
+/-- T-power-system-ph §1.2: the rotation `R(δ)` is orthogonal, so the port power
+`v_d i_d + v_q i_q` is the same in the machine frame and in the common DQ frame. -/
+@[powerlib_foundation] theorem frameRotation_power_invariant (δ : ℝ) (v i : Fin 2 → ℝ) :
+    (Transform.rot δ *ᵥ v) ⬝ᵥ (Transform.rot δ *ᵥ i) = v ⬝ᵥ i := by
+  simp only [Transform.rot_apply_mulVec, dotProduct, Fin.sum_univ_two, Matrix.cons_val_zero,
+    Matrix.cons_val_one]
+  have h := Real.sin_sq_add_cos_sq δ
+  linear_combination (v 0 * i 0 + v 1 * i 1) * h
 
 @[simp, powerlib_foundation] theorem rot_mulVec_park_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
     rot θ *ᵥ (park θ *ᵥ x) = x := by

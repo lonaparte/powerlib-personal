@@ -34,7 +34,7 @@ Correction (FOC note §1.6): the note's MTPA formula
 -/
 
 noncomputable section
-namespace powerlib.Machine.PMSM
+namespace powerlib.Drives.PMSM
 
 /-- PMSM electromagnetic torque. -/
 def torque (np ψf Ld Lq id iq : ℝ) : ℝ := 3 / 2 * np * (ψf * iq + (Ld - Lq) * id * iq)
@@ -300,4 +300,4 @@ which differs from the MTPA value, and the corresponding point on the current ci
   rw [div_pow, le_div_iff₀ hω2]
   constructor <;> intro h <;> nlinarith
 
-end powerlib.Machine.PMSM
+end powerlib.Drives.PMSM

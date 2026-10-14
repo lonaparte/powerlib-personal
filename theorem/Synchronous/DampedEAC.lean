@@ -116,7 +116,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem firstSwing_le_deltaU_of_damping (hM : 0 < p.M) (hD : 0 ≤ p.D)
     (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) {φ : ℝ → State 2} {tc δc ωc : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Ici tc))
-    (h0 : φ tc = mkState δc ωc) (hδc : δc ≤ p.deltaU)
+    (h0 : φ tc = PhasePlane.mk δc ωc) (hδc : δc ≤ p.deltaU)
     (hE : p.M / 2 * ωc ^ 2 ≤ ∫ s in δc..p.deltaU, (p.Pe s - p.Pm)) :
     ∀ t ∈ Ici tc, φ t 0 ≤ p.deltaU := by
   intro t ht
@@ -129,14 +129,16 @@ private theorem firstSwing_le_deltaU_of_damping (hM : 0 < p.M) (hD : 0 ≤ p.D)
   simp only at hδs
   have hdec := p.energy_antitoneOn hM.ne' hD δc (convex_Ici tc) hφ (mem_Ici.mpr le_rfl) hts.1
     hts.1
-  simp only [h0, energy, mkState_zero, mkState_one, potential_self, add_zero, hδs] at hdec
+  simp only [h0, energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, potential_self,
+    add_zero, hδs] at hdec
   rw [← potential_eq_integral] at hE
   have hω : φ ts 1 = 0 := by
     have : p.M / 2 * φ ts 1 ^ 2 ≤ 0 := by linarith
     have h2 : 0 < p.M / 2 := by positivity
     have := nonpos_of_mul_nonpos_right this h2 |>.antisymm (sq_nonneg _)
     exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp this
-  have hsteq : φ ts = mkState p.deltaU 0 := state_ext (by simpa using hδs) (by simpa using hω)
+  have hsteq : φ ts = PhasePlane.mk p.deltaU 0 :=
+    PhasePlane.ext_iff'.2 ⟨by simpa using hδs, by simpa using hω⟩
   have heqf := p.field_mkState_deltaU hM.ne' hk h.le
   have huniq := eqOn_of_isIntegralCurveOn_Icc (f := fun _ x => p.field x)
     (fun _ => p.lipschitzWith_field) (hφ.mono (Icc_subset_Ici_iff hts.2 |>.mpr hts.1))
@@ -152,8 +154,8 @@ private theorem firstSwing_le_deltaU_of_damping (hM : 0 < p.M) (hD : 0 ≤ p.D)
 def wellWindow : Set (State 2) := {x | p.deltaU - 2 * Real.pi < x 0 ∧ x 0 < p.deltaU}
 
 @[powerlib_foundation] theorem isOpen_wellWindow : IsOpen p.wellWindow :=
-  (isOpen_lt continuous_const (coord_contDiff (k := 0) 0).continuous).inter
-    (isOpen_lt (coord_contDiff (k := 0) 0).continuous continuous_const)
+  (isOpen_lt continuous_const (Dynamics.contDiff_coord (k := 0) 0).continuous).inter
+    (isOpen_lt (Dynamics.contDiff_coord (k := 0) 0).continuous continuous_const)
 
 /-- The energy dominates the potential (`M > 0`). -/
 @[powerlib_foundation] theorem potential_le_energy (hM : 0 < p.M) (δ₀ : ℝ) (x : State 2) :
@@ -171,7 +173,7 @@ def wellWindow : Set (State 2) := {x | p.deltaU - 2 * Real.pi < x 0 ∧ x 0 < p.
   have hab : a ≤ b := by have := Real.pi_pos; simp only [a, b]; linarith
   have hcU : Continuous (p.potential p.deltaS) := by unfold potential; fun_prop
   have hcV : Continuous (p.energy p.deltaS) := (p.contDiff_energy (k := 0) _).continuous
-  have hc0 : Continuous fun x : State 2 => x 0 := (coord_contDiff (k := 0) 0).continuous
+  have hc0 : Continuous fun x : State 2 => x 0 := (Dynamics.contDiff_coord (k := 0) 0).continuous
   have hEq : {x ∈ p.wellWindow | p.energy p.deltaS x ≤ c} =
       {x : State 2 | a ≤ x 0} ∩ {x | x 0 ≤ b} ∩ {x | p.energy p.deltaS x ≤ c} := by
     ext x
@@ -205,12 +207,12 @@ def wellWindow : Set (State 2) := {x | p.deltaU - 2 * Real.pi < x 0 ∧ x 0 < p.
     have hx1' : |x 1| ≤ 1 + x 1 ^ 2 := by
       rcases abs_cases (x 1) with ⟨h, -⟩ | ⟨h, -⟩ <;> rw [h] <;> nlinarith [sq_nonneg (x 1 - 1),
         sq_nonneg (x 1 + 1)]
-    linarith [norm_state_le x]
+    linarith [Dynamics.norm_le_abs_add_abs_two x]
 
 /-- Inside the well window the only equilibrium is `(δ_s, 0)`. -/
 @[powerlib_foundation] theorem eq_deltaS_of_field_eq_zero (hM : p.M ≠ 0) (hk : 0 < p.k₂)
     (h : |p.Pm - p.k₁| < p.k₂) {x : State 2} (hx : x ∈ p.wellWindow) (hf : p.field x = 0) :
-    x = mkState p.deltaS 0 := by
+    x = PhasePlane.mk p.deltaS 0 := by
   obtain ⟨h1, n, hn⟩ := (p.field_eq_zero_iff_branches hM hk h.le x).mp hf
   obtain ⟨hxa, hxb⟩ := hx
   have hs1 := p.deltaS_lt_deltaU hk h
@@ -231,7 +233,7 @@ def wellWindow : Set (State 2) := {x | p.deltaU - 2 * Real.pi < x 0 ∧ x 0 < p.
       omega
     rw [hn0] at hn
     simp only [Int.cast_zero, mul_zero, zero_mul, add_zero] at hn
-    exact state_ext (by simpa using hn) (by simpa using h1)
+    exact PhasePlane.ext_iff'.2 ⟨by simpa using hn, by simpa using h1⟩
   · exfalso
     have hlo : -1 < (n : ℝ) := by
       by_contra hc; push Not at hc
@@ -256,7 +258,7 @@ private theorem regionOfAttraction_well (hM : 0 < p.M) (hD : 0 < p.D)
     ∀ x₀ ∈ {x ∈ p.wellWindow | p.energy p.deltaS x ≤ c},
       (∃ φ : ℝ → State 2, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => p.field x) (Ici 0)) ∧
       ∀ φ : ℝ → State 2, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => p.field x) (Ici 0) →
-        Tendsto φ atTop (𝓝 (mkState p.deltaS 0)) := by
+        Tendsto φ atTop (𝓝 (PhasePlane.mk p.deltaS 0)) := by
   have hω : ∀ x : State 2, fderiv ℝ (p.energy p.deltaS) x (p.field x) = 0 → x 1 = 0 := by
     intro x hx
     rw [p.energy_lie hM.ne'] at hx
@@ -269,7 +271,7 @@ private theorem regionOfAttraction_well (hM : 0 < p.M) (hD : 0 < p.D)
   · rw [p.energy_lie hM.ne']
     nlinarith [sq_nonneg (x 1)]
   · refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv p.contDiff_field (h := fun x : State 2 => x 1)
-      (coord_contDiff 1) ?_ ?_
+      (Dynamics.contDiff_coord 1) ?_ ?_
     · intro x hx
       exact hω x hx.2
     · intro x hx hder
@@ -291,15 +293,15 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem tendsto_of_firstSwing_margin (hM : 0 < p.M) (hD : 0 < p.D)
     (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) (hPk : p.k₁ ≤ p.Pm) {φ : ℝ → State 2}
     {tc δc ωc : ℝ} (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Ici tc))
-    (h0 : φ tc = mkState δc ωc) (hwell : p.deltaU - 2 * Real.pi < δc) (hδc : δc < p.deltaU)
+    (h0 : φ tc = PhasePlane.mk δc ωc) (hwell : p.deltaU - 2 * Real.pi < δc) (hδc : δc < p.deltaU)
     (hE : p.M / 2 * ωc ^ 2 < ∫ s in δc..p.deltaU, (p.Pe s - p.Pm)) :
-    Tendsto φ atTop (𝓝 (mkState p.deltaS 0)) := by
-  set c := p.energy p.deltaS (mkState δc ωc)
+    Tendsto φ atTop (𝓝 (PhasePlane.mk p.deltaS 0)) := by
+  set c := p.energy p.deltaS (PhasePlane.mk δc ωc)
   have hA : ∫ s in δc..p.deltaU, (p.Pe s - p.Pm) =
       p.potential p.deltaS p.deltaU - p.potential p.deltaS δc := by
     rw [← p.Adec_eq_potential_sub p.deltaS δc p.deltaU, Adec]
   have hc1 : c < p.potential p.deltaS p.deltaU := by
-    simp only [c, energy, mkState_zero, mkState_one]; linarith
+    simp only [c, energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]; linarith
   have hc2 : c < p.potential p.deltaS (p.deltaU - 2 * Real.pi) := by
     rw [p.potential_sub_two_pi]
     have : 0 ≤ 2 * Real.pi * (p.Pm - p.k₁) := mul_nonneg (by positivity) (by linarith)
@@ -315,7 +317,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem dampedBolted_trajectory (hM : 0 < p.M) (hD : 0 < p.D)
     (hk₁ : p.k₁ = 0) (hk₂ : p.k₂ = 0) {φ : ℝ → State 2} {tf T δ₀ : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
-    (h0 : φ tf = mkState δ₀ 0) :
+    (h0 : φ tf = PhasePlane.mk δ₀ 0) :
     ∀ t ∈ Icc tf T, φ t 1 = p.Pm / p.D * (1 - Real.exp (-(p.D / p.M) * (t - tf))) ∧
       φ t 0 = δ₀ + p.Pm / p.D * ((t - tf) - p.M / p.D * (1 - Real.exp (-(p.D / p.M) * (t - tf)))) := by
   have hacc : ∀ x : State 2, p.field x 1 = (p.Pm - p.D * x 1) / p.M := by
@@ -346,7 +348,7 @@ private theorem dampedBolted_trajectory (hM : 0 < p.M) (hD : 0 < p.D)
   have hω : ∀ t ∈ Icc tf T, φ t 1 = p.Pm / p.D * (1 - Real.exp (-(p.D / p.M) * (t - tf))) := by
     intro t ht
     have h := h1 t ht
-    simp only [sub_self, mul_zero, Real.exp_zero, h0, mkState_one, zero_mul] at h
+    simp only [sub_self, mul_zero, Real.exp_zero, h0, PhasePlane.mk_apply_one, zero_mul] at h
     have hE : Real.exp (p.D / p.M * (t - tf)) ≠ 0 := (Real.exp_pos _).ne'
     have hinv : Real.exp (-(p.D / p.M) * (t - tf)) = (Real.exp (p.D / p.M * (t - tf)))⁻¹ := by
       rw [← Real.exp_neg]; ring_nf
@@ -387,7 +389,7 @@ private theorem dampedBolted_trajectory (hM : 0 < p.M) (hD : 0 < p.D)
   intro t ht
   refine ⟨hω t ht, ?_⟩
   have := h2 t ht
-  simp only [sub_self, mul_zero, Real.exp_zero, h0, mkState_zero] at this
+  simp only [sub_self, mul_zero, Real.exp_zero, h0, PhasePlane.mk_apply_zero] at this
   linarith
 
 end SwingParams
@@ -400,11 +402,11 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem clearing_energy_le {fault : SwingParams} (hM : 0 < fault.M)
     (hD : 0 ≤ fault.D) {φ : ℝ → State 2} {tf tc δ₀ : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc)) (htc : tf ≤ tc)
-    (h0 : φ tf = mkState δ₀ 0) :
+    (h0 : φ tf = PhasePlane.mk δ₀ 0) :
     fault.M / 2 * φ tc 1 ^ 2 ≤ fault.Aacc δ₀ (φ tc 0) := by
   have h := fault.energy_antitoneOn hM.ne' hD δ₀ (convex_Icc tf tc) hφ ⟨le_rfl, htc⟩
     ⟨htc, le_rfl⟩ htc
-  simp only [h0, SwingParams.energy, mkState_zero, mkState_one,
+  simp only [h0, SwingParams.energy, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one,
     SwingParams.potential_self, add_zero] at h
   rw [SwingParams.Aacc_eq_neg_potential]
   norm_num at h
@@ -420,14 +422,14 @@ private theorem faultTrajectory_firstSwing_of_areas {pre fault post : SwingParam
     (hφ : tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
       IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
       IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc))
-    (h0 : φ tf = mkState δ₀ 0)
+    (h0 : φ tf = PhasePlane.mk δ₀ 0)
     (hδc : φ tc 0 ≤ post.deltaU)
     (hA : fault.Aacc δ₀ (φ tc 0) ≤ post.Adec (φ tc 0) post.deltaU) :
     ∀ t ∈ Ici tc, φ t 0 ≤ post.deltaU := by
   have hE := clearing_energy_le (hMeq ▸ hM) hDf hφ.2.2.1 hφ.1 h0
   rw [hMeq] at hE
-  exact post.firstSwing_le_deltaU_of_damping hM hDp hk h hφ.2.2.2 (eq_mkState (φ tc)) hδc
-    (by rw [← SwingParams.Adec]; linarith)
+  exact post.firstSwing_le_deltaU_of_damping hM hDp hk h hφ.2.2.2
+    (PhasePlane.mk_coords (φ tc)).symm hδc (by rw [← SwingParams.Adec]; linarith)
 
 /-- **Strict area margin ⇒ asymptotic recovery** for the switched model: with `D ≥ 0` in the
 fault stage, `D > 0` post-fault, `P_m ≥ k₁`, a clearing angle inside the well window and
@@ -441,14 +443,14 @@ private theorem faultTrajectory_tendsto_of_areas {pre fault post : SwingParams}
     (hφ : tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
       IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
       IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc))
-    (h0 : φ tf = mkState δ₀ 0)
+    (h0 : φ tf = PhasePlane.mk δ₀ 0)
     (hwell : post.deltaU - 2 * Real.pi < φ tc 0) (hδc : φ tc 0 < post.deltaU)
     (hA : fault.Aacc δ₀ (φ tc 0) < post.Adec (φ tc 0) post.deltaU) :
-    Tendsto φ atTop (𝓝 (mkState post.deltaS 0)) := by
+    Tendsto φ atTop (𝓝 (PhasePlane.mk post.deltaS 0)) := by
   have hE := clearing_energy_le (hMeq ▸ hM) hDf hφ.2.2.1 hφ.1 h0
   rw [hMeq] at hE
-  exact post.tendsto_of_firstSwing_margin hM hDp hk h hPk hφ.2.2.2 (eq_mkState (φ tc)) hwell
-    hδc (by rw [← SwingParams.Adec]; linarith)
+  exact post.tendsto_of_firstSwing_margin hM hDp hk h hPk hφ.2.2.2
+    (PhasePlane.mk_coords (φ tc)).symm hwell hδc (by rw [← SwingParams.Adec]; linarith)
 
 /-- Clearing-angle margin of a damped bolted fault.  With `D > 0` during a bolted fault
 (`P_e^f ≡ 0`) and `δ_cc ∈ (δ₀, δ_u]` the zero of the undamped equal-area function
@@ -462,7 +464,7 @@ private theorem boltedFault_damped_clearingAngle {fault post : SwingParams}
     (hpos : ∀ x ∈ Ioo δ₀ post.deltaU, 0 < post.Pe x)
     (hcc : δcc ∈ Ioc δ₀ post.deltaU) (hg : eacG fault post δ₀ post.deltaU δcc = 0) :
     ∃ ε > 0, ∀ {φ : ℝ → State 2} {tf tc : ℝ}, tf ≤ tc →
-      IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) → φ tf = mkState δ₀ 0 →
+      IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) → φ tf = PhasePlane.mk δ₀ 0 →
       tc - tf ≤ Real.sqrt (2 * post.M * (δcc - δ₀) / post.Pm) + ε →
       δ₀ ≤ φ tc 0 ∧ φ tc 0 < δcc ∧ fault.Aacc δ₀ (φ tc 0) < post.Adec (φ tc 0) post.deltaU := by
   have hMf : 0 < fault.M := hMeq ▸ hM
@@ -582,7 +584,7 @@ private theorem boltedFault_damped_firstSwing {pre fault post : SwingParams}
       (tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
         IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
         IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc)) →
-      φ tf = mkState δ₀ 0 →
+      φ tf = PhasePlane.mk δ₀ 0 →
       tc - tf ≤ Real.sqrt (2 * post.M * (δcc - δ₀) / post.Pm) + ε →
       ∀ t ∈ Ici tc, φ t 0 ≤ post.deltaU := by
   obtain ⟨ε, hε, hmargin⟩ :=
@@ -609,9 +611,9 @@ private theorem boltedFault_damped_tendsto {pre fault post : SwingParams}
       (tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
         IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
         IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc)) →
-      φ tf = mkState δ₀ 0 →
+      φ tf = PhasePlane.mk δ₀ 0 →
       tc - tf ≤ Real.sqrt (2 * post.M * (δcc - δ₀) / post.Pm) + ε →
-      Tendsto φ atTop (𝓝 (mkState post.deltaS 0)) := by
+      Tendsto φ atTop (𝓝 (PhasePlane.mk post.deltaS 0)) := by
   obtain ⟨ε, hε, hmargin⟩ :=
     boltedFault_damped_clearingAngle hM hMeq hPm hPm0 hDf hk₁ hk₂ hpos hcc hg
   refine ⟨ε, hε, fun {φ tf tc} hφ h0 hle => ?_⟩

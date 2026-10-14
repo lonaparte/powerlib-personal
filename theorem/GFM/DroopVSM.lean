@@ -70,7 +70,6 @@ noncomputable section
 namespace powerlib.GFM
 open Set Matrix
 open powerlib.Dynamics (State)
-open powerlib.Synchronous (mkState state_ext)
 
 /-- Data of the droop + LPF / VSM comparison. -/
 structure DroopVSM where
@@ -86,11 +85,11 @@ variable (d : DroopVSM)
 
 /-- Droop + LPF closed loop on `(θ, P_f)`. -/
 def droopField (x : State 2) : State 2 :=
-  mkState (d.ωs - (x 1 - d.Pref) / d.KR) ((d.P (x 0) - x 1) / d.τp)
+  PhasePlane.mk (d.ωs - (x 1 - d.Pref) / d.KR) ((d.P (x 0) - x 1) / d.τp)
 
 /-- VSM closed loop on `(θ, ω)` with inertia `M` and damping `D`. -/
 def vsmField (M D : ℝ) (x : State 2) : State 2 :=
-  mkState (x 1) ((d.Pref - d.P (x 0) - D * (x 1 - d.ωs)) / M)
+  PhasePlane.mk (x 1) ((d.Pref - d.P (x 0) - D * (x 1 - d.ωs)) / M)
 
 /-- Linear part of the coordinate change. -/
 def coordMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, -1 / d.KR]
@@ -111,13 +110,13 @@ def coord (hK : d.KR ≠ 0) : State 2 ≃L[ℝ] State 2 :=
   Dynamics.matrixCoord d.coordMatrix (d.coordMatrix_isUnit hK)
 
 /-- Translation part of the coordinate change. -/
-def offset : State 2 := mkState 0 (d.ωs + d.Pref / d.KR)
+def offset : State 2 := PhasePlane.mk 0 (d.ωs + d.Pref / d.KR)
 
 /-- The new coordinates: `θ` and the droop frequency `ω = ω_s − (P_f − P_ref)/K_R`. -/
 @[powerlib_foundation] theorem affineCoord_apply (hK : d.KR ≠ 0) (x : State 2) :
     Dynamics.affineCoord (d.coord hK) d.offset x =
-      mkState (x 0) (d.ωs - (x 1 - d.Pref) / d.KR) := by
-  apply state_ext
+      PhasePlane.mk (x 0) (d.ωs - (x 1 - d.Pref) / d.KR) := by
+  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
   · simp [Dynamics.affineCoord, coord, offset, coordMatrix, PhasePlane.toEuclideanCLM_apply_zero]
   · simp [Dynamics.affineCoord, coord, offset, coordMatrix, PhasePlane.toEuclideanCLM_apply_one]
     ring
@@ -128,13 +127,13 @@ Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem vsmField_eq_transport (hK : d.KR ≠ 0) (hτ : d.τp ≠ 0) :
     d.vsmField (d.τp * d.KR) d.KR = Dynamics.transportField (d.coord hK) d.offset d.droopField := by
   funext y
-  have hinv : ∀ z : State 2, (d.coord hK).symm z = mkState (z 0) (-d.KR * z 1) := by
+  have hinv : ∀ z : State 2, (d.coord hK).symm z = PhasePlane.mk (z 0) (-d.KR * z 1) := by
     intro z
     simp only [coord, Dynamics.matrixCoord_symm_apply, d.coordMatrix_inv hK]
-    apply state_ext
+    refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
     · simp [PhasePlane.toEuclideanCLM_apply_zero]
     · simp [PhasePlane.toEuclideanCLM_apply_one]
-  apply state_ext
+  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
   · simp only [Dynamics.transportField, hinv]
     simp [coord, coordMatrix, offset, droopField, vsmField, PhasePlane.toEuclideanCLM_apply_zero]
     field_simp
@@ -179,7 +178,7 @@ droop + LPF is the canonical swing model `M = τ_p K_R`, `D = K_R`, `P_m = P_ref
     d.vsmField (d.τp * d.KR) d.KR =
       (⟨d.τp * d.KR, d.KR, d.Pref, 0, K0, 0⟩ : Synchronous.SwingParams).field := by
   funext x
-  apply state_ext
+  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
   · simp [vsmField]
   · simp [vsmField, Synchronous.SwingParams.accel, Synchronous.SwingParams.Pe, hP, hω]
 
@@ -225,7 +224,7 @@ namespace VSMModel
 
 /-- The VSM vector field on `(θ, ω)`. -/
 def vector (m : VSMModel) (x : State 2) : State 2 :=
-  mkState (x 1) ((m.Pref - m.P (x 0) - m.D * (x 1 - m.ωs)) / m.M)
+  PhasePlane.mk (x 1) ((m.Pref - m.P (x 0) - m.D * (x 1 - m.ωs)) / m.M)
 
 /-- The VSM field translated so that the selected state is the origin. -/
 def field (m : VSMModel) (z : State 2) : State 2 := m.vector (z + m.point)
@@ -239,12 +238,12 @@ def jacobian (m : VSMModel) (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   rw [contDiff_euclidean]
   intro i
   have hP : ContDiff ℝ 1 (fun x : State 2 => m.P (x 0)) :=
-    hs.comp (Synchronous.coord_contDiff 0)
+    hs.comp (Dynamics.contDiff_coord 0)
   fin_cases i
-  · simpa [vector] using Synchronous.coord_contDiff (k := 1) 1
-  · simp only [vector, Fin.mk_one, Fin.isValue, Synchronous.mkState_one]
+  · simpa [vector] using Dynamics.contDiff_coord (k := 1) 1
+  · simp only [vector, Fin.mk_one, Fin.isValue, PhasePlane.mk_apply_one]
     exact (((contDiff_const.sub hP).sub (contDiff_const.mul
-      ((Synchronous.coord_contDiff 1).sub contDiff_const))).div_const _)
+      ((Dynamics.contDiff_coord 1).sub contDiff_const))).div_const _)
 
 @[powerlib_foundation] theorem hasFDerivAt_vector (m : VSMModel) (hs : ContDiff ℝ 1 m.P)
     (x : State 2) :
@@ -257,12 +256,12 @@ def jacobian (m : VSMModel) (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   have hd : HasDerivAt m.P (deriv m.P (x 0)) (x 0) :=
     ((hs.differentiable one_ne_zero) (x 0)).hasDerivAt
   fin_cases i
-  · simp only [Fin.zero_eta, Fin.isValue, vector, Synchronous.mkState_zero]
+  · simp only [Fin.zero_eta, Fin.isValue, vector, PhasePlane.mk_apply_zero]
     convert h1 using 1
     · rfl
     apply ContinuousLinearMap.ext; intro v
     simp [jacobian, PhasePlane.toEuclideanCLM_apply_zero]
-  · simp only [Fin.mk_one, Fin.isValue, vector, Synchronous.mkState_one]
+  · simp only [Fin.mk_one, Fin.isValue, vector, PhasePlane.mk_apply_one]
     have hs := hd.comp_hasFDerivAt x h0
     have h := (((hasFDerivAt_const m.Pref x).sub hs).sub
       ((h1.sub_const m.ωs).const_mul m.D)).const_mul m.M⁻¹
@@ -278,12 +277,12 @@ def jacobian (m : VSMModel) (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   · intro h
     have h0 := congrArg (fun y : State 2 => y 0) h
     have h1 := congrArg (fun y : State 2 => y 1) h
-    simp only [vector, Synchronous.mkState_zero, Synchronous.mkState_one, PiLp.zero_apply] at h0 h1
+    simp only [vector, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, PiLp.zero_apply] at h0 h1
     refine ⟨h0, ?_⟩
     rw [h0, div_eq_zero_iff, or_iff_left hM] at h1
     linarith
   · rintro ⟨h0, h1⟩
-    apply state_ext <;> simp [vector, h0, h1]
+    refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;> simp [vector, h0, h1]
 
 end VSMModel
 
@@ -440,11 +439,11 @@ on every sentence. -/
   unfold powerlib.TMIO.Statement
   have hfield : m.field = Synchronous.Swing.Model.field ⟨⟨m.M, m.D, m.Pref, 0, K0, 0⟩, m.point 0⟩ := by
     funext z
-    have hpt : m.point = Synchronous.mkState (m.point 0) 0 :=
-      state_ext (by simp) (by simp [h1])
+    have hpt : m.point = PhasePlane.mk (m.point 0) 0 :=
+      PhasePlane.ext_iff'.2 ⟨by simp, by simp [h1]⟩
     simp only [VSMModel.field, Synchronous.Swing.Model.field, Synchronous.Swing.Model.point]
     rw [← hpt]
-    apply state_ext
+    refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
     · simp [VSMModel.vector]
     · simp [VSMModel.vector, Synchronous.SwingParams.accel, Synchronous.SwingParams.Pe, hP, hω]
   rw [Family.mem_den, Family.mem_den]

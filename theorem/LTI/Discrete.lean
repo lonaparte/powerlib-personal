@@ -31,6 +31,9 @@ Results (all trajectory-level, for every initial state):
   (spectral radius `< 1` of the complexification gives a contractive power, through the
   LeanForControl Gelfand-formula lemma) and `exists_pow_norm_le_exp` (a contractive power gives
   `‖P ^ n‖ ≤ C e^{-γ n}`); used by the Floquet criterion `theorem/Periodic/Floquet.lean`.
+* `prediction_closedForm`: the affine recursion `x⁺ = A x + B u + d` (any finite index types)
+  has `x[k+j] = A^j x[k] + Σ_{i<j} A^{j−1−i}(B u[k+i] + d)` (multi-step prediction of
+  theory/T-predictive-machine-control.md).
 
 Source: work-sync theory/T-numerical-integration.md §2.7 (discrete recursion
 `x_{n+1} = R(hA) x_n`), required as the discrete semantic layer for the A9 numerics
@@ -377,5 +380,33 @@ imaginary part of the complex eigenmode `μ^k v`) that does not converge to zero
     fun h => asymptoticallyStable_of_exponentiallyStable (exponentiallyStable_of_schurStable h)⟩
 
 end Converse
+
+section AffineRecursion
+
+open Finset
+
+/-- Closed form of the `j`-step prediction of the affine model `x⁺ = A x + B u + d`. -/
+@[powerlib_foundation] theorem prediction_closedForm {n m : Type*} [Fintype n] [DecidableEq n]
+    [Fintype m] (A : Matrix n n ℝ) (B : Matrix n m ℝ) (d : n → ℝ) (x : ℕ → n → ℝ)
+    (u : ℕ → m → ℝ) (hx : ∀ k, x (k + 1) = A *ᵥ x k + B *ᵥ u k + d) (k j : ℕ) :
+    x (k + j) = (A ^ j) *ᵥ x k +
+      ∑ i ∈ range j, (A ^ (j - 1 - i)) *ᵥ (B *ᵥ u (k + i) + d) := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    rw [← add_assoc, hx, ih, sum_range_succ, Matrix.mulVec_add, Matrix.mulVec_sum,
+      Matrix.mulVec_mulVec, ← pow_succ']
+    have hterm : ∀ i ∈ range j, A *ᵥ ((A ^ (j - 1 - i)) *ᵥ (B *ᵥ u (k + i) + d)) =
+        (A ^ (j + 1 - 1 - i)) *ᵥ (B *ᵥ u (k + i) + d) := by
+      intro i hi
+      rw [Matrix.mulVec_mulVec, ← pow_succ']
+      congr 2
+      have := mem_range.mp hi
+      omega
+    rw [sum_congr rfl hterm]
+    simp only [Nat.add_sub_cancel, Nat.sub_self, pow_zero, Matrix.one_mulVec]
+    abel
+
+end AffineRecursion
 
 end powerlib.LTI

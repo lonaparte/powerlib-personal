@@ -386,8 +386,7 @@ Static evidence on the model, not a connection conclusion. -/
   · simp [satField, Synchronous.SwingParams.field, SatModel.toSwing]
   · simp only [satField, Synchronous.SwingParams.field, SatModel.toSwing,
       Synchronous.SwingParams.accel, Synchronous.SwingParams.Pe]
-    simp only [PiLp.toLp_apply, Synchronous.mkState,
-      WithLp.equiv_symm_apply]
+    simp only [PiLp.toLp_apply, PhasePlane.mk]
     rw [show x 0 - (m.φ - Real.pi / 2) = (x 0 - m.φ) + Real.pi / 2 by ring,
       Real.sin_add_pi_div_two, zero_add]
 

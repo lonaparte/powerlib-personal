@@ -1,9 +1,9 @@
 import theorem.PH.Composition
 import theorem.PH.Nonlinear
 
-/-! # Small port-Hamiltonian instances: DC-link capacitor, dq LC filter, disturbance channels
+/-! # Small port-Hamiltonian instances: DC-link capacitor, dq LC filter
 
-Three independent models; each one uses a single power-direction convention
+Two independent models; each one uses a single power-direction convention
 (incoming-positive: `uᵀ y > 0` means power flows **into** the model).
 
 ## DC-link capacitor (`dcLink`)
@@ -32,15 +32,10 @@ Source: work-sync `theory/T-low-inertia-frequency.md` §1.4.
 * No PLL, no converter control, no switching, no grid impedance.
 Source: work-sync `theory/T-invariant-coordinates.md` §1.4 and "跟端口哈密顿建模的关系".
 
-## Disturbance channels (`gridDisturbance`)
-* A nonlinear pH model (`NonlinearModel`, P0b) driven by its own control port `u_S` and three
-  further deterministic input channels: a constant frequency channel `B_ω u_ω`, a
-  state-dependent voltage channel `B_v(x) u_v`, and a constant channel `B_T u_T`
-  (note (1.1)). Result: the pointwise energy balance (note (1.2)) split by channel,
-  `Ḣ = −∇Hᵀ R ∇H + y_Sᵀ u_S + y_ωᵀ u_ω + y_vᵀ u_v + y_Tᵀ u_T`, `y_k = B_kᵀ ∇H`.
-  No noise (the σ → 0 limit of the note), no Itô correction.
-Source: work-sync `theory/T-grid-disturbance.md` (1.1), §1.5 (1.2).
-The linear diagonal special case of (1.2) is `powerlib.PH.DiagonalPH.power_balance`.
+## Disturbance channels
+The deterministic disturbance-channel energy balance on a nonlinear pH model
+(`PH.gridDisturbance_field`, `PH.gridDisturbance_power_balance`) is in
+`theorem/PH/Nonlinear.lean`.
 
 ## Family and connection conclusions
 No new family. The DC link and the dq LC filter are diagonal port-Hamiltonian data
@@ -53,12 +48,11 @@ stability of the unforced filter (`dqLCPH_mem_den_lyapunovStable`), and conserva
 stored energy by both lossless models (`dcLinkPH_mem_den_conservative`,
 `dqLCPH_mem_den_conservative`). The rate equations, energies, supplies and power balances are
 static evidence; the trajectory-level energy balance of the DC link and the energy derivative of
-the filter along solutions are private implementation evidence. The disturbance-channel balance
-is a static identity for every nonlinear pH model.
+the filter along solutions are private implementation evidence.
 -/
 
 noncomputable section
-namespace powerlib.PH
+namespace powerlib.PH.Models
 open Matrix Set MeasureTheory
 open powerlib.Dynamics (State)
 
@@ -262,35 +256,4 @@ private theorem dqLC_trajectory_energy_derivative (p : DqLCParams)
     connection% (dqLCPH p ∈ Port.PortHamiltonian.family.den (.flow .conservative)) :=
   mem_den_conservative_of_lossless _ (DiagonalPH.toPH_R_eq_zero _ _ _ rfl)
 
-/-! ## Deterministic disturbance channels on a nonlinear pH model -/
-
-variable {n m a b c : ℕ}
-
-/-- Field (1.1) of T-grid-disturbance: the pH drift and control port of `M`, plus a constant
-frequency channel `Bω uω`, a state-dependent voltage channel `Bv(x) uv`, and a constant
-channel `BT uT`. -/
-def gridDisturbance_field (M : NonlinearModel n m) (Bω : Matrix (Fin n) (Fin a) ℝ)
-    (Bv : State n → Matrix (Fin n) (Fin b) ℝ) (BT : Matrix (Fin n) (Fin c) ℝ)
-    (x : State n) (uS : Fin m → ℝ) (uω : Fin a → ℝ) (uv : Fin b → ℝ)
-    (uT : Fin c → ℝ) : State n :=
-  M.field x uS + WithLp.toLp 2 (Bω *ᵥ uω + Bv x *ᵥ uv + BT *ᵥ uT)
-
-/-- Energy balance (1.2) split by channel:
-`Ḣ = y_Sᵀ u_S + y_ωᵀ u_ω + y_vᵀ u_v + y_Tᵀ u_T − ∇Hᵀ R ∇H`, `y_k = B_kᵀ ∇H`. -/
-@[powerlib_foundation] theorem gridDisturbance_power_balance (M : NonlinearModel n m)
-    (Bω : Matrix (Fin n) (Fin a) ℝ) (Bv : State n → Matrix (Fin n) (Fin b) ℝ)
-    (BT : Matrix (Fin n) (Fin c) ℝ) (x : State n) (uS : Fin m → ℝ)
-    (uω : Fin a → ℝ) (uv : Fin b → ℝ) (uT : Fin c → ℝ) :
-    fderiv ℝ M.H x (gridDisturbance_field M Bω Bv BT x uS uω uv uT) =
-      M.supply x uS + uω ⬝ᵥ (Bωᵀ *ᵥ WithLp.ofLp (M.dH x)) +
-        uv ⬝ᵥ ((Bv x)ᵀ *ᵥ WithLp.ofLp (M.dH x)) + uT ⬝ᵥ (BTᵀ *ᵥ WithLp.ofLp (M.dH x)) -
-        M.dampingPower x := by
-  have hport : ∀ {k : ℕ} (G : Matrix (Fin n) (Fin k) ℝ) (v : Fin k → ℝ),
-      WithLp.ofLp (M.dH x) ⬝ᵥ (G *ᵥ v) = v ⬝ᵥ (Gᵀ *ᵥ WithLp.ofLp (M.dH x)) := by
-    intro k G v
-    rw [dotProduct_mulVec, ← mulVec_transpose, dotProduct_comm]
-  rw [gridDisturbance_field, map_add, M.power_balance, M.fderiv_H_apply, WithLp.ofLp_toLp,
-    dotProduct_add, dotProduct_add, hport, hport, hport]
-  ring
-
-end powerlib.PH
+end powerlib.PH.Models
