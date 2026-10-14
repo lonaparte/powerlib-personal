@@ -1,7 +1,8 @@
 import theorem.Synchronous.EqualArea
 import theorem.Dynamics.ConverseLinearization
-import theorem.CurrentControl.SISO
+import theorem.Dynamics.Instability
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+import theorem.Dynamics.Calculus
 
 /-! # Andronov–Hopf virtual oscillator (AHO-VOC) at no load
 
@@ -234,7 +235,7 @@ private theorem normSq_formula (h : a.Admissible) {φ : ℝ → ℂ}
     Complex.continuous_normSq.comp_continuousOn hφ.continuousOn
   have hposAll : ∀ T : ℝ, 0 ≤ T → ∀ t ∈ Icc 0 T, 0 < normSq (φ t) := by
     intro T _
-    apply Synchronous.pos_on_Icc_of_propagate (hcontAll.mono Icc_subset_Ici_self) hy0
+    apply Dynamics.pos_on_Icc_of_propagate (hcontAll.mono Icc_subset_Ici_self) hy0
     intro t ht hbefore
     -- lower bound `1/Z` on `[0, t)`
     have hlow : ∀ s ∈ Ico 0 t, 1 / Z ≤ normSq (φ s) := by
@@ -458,13 +459,13 @@ def realJacobian (x : State 2) : Matrix (Fin 2) (Fin 2) ℝ :=
     convert h using 1
     · funext y; simp [realField]
     · apply ContinuousLinearMap.ext; intro v
-      simp [realJacobian, Synchronous.toEuclideanCLM_apply_zero]
+      simp [realJacobian, PhasePlane.toEuclideanCLM_apply_zero]
       ring
   · have h := (h0.const_mul a.ωs).add (hg.mul h1)
     convert h using 1
     · funext y; simp [realField]
     · apply ContinuousLinearMap.ext; intro v
-      simp [realJacobian, Synchronous.toEuclideanCLM_apply_one]
+      simp [realJacobian, PhasePlane.toEuclideanCLM_apply_one]
       ring
 
 @[simp, powerlib_foundation] theorem realField_zero : a.realField 0 = 0 := by

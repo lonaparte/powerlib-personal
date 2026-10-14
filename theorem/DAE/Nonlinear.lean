@@ -1,5 +1,6 @@
-import theorem.Flow.Linearization
+import theorem.Dynamics.Linearization
 import theorem.Dynamics.State
+import theorem.Dynamics.Locality
 import Mathlib.Analysis.Calculus.ImplicitContDiff
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 
@@ -22,8 +23,9 @@ Foundation results (categories B/C).
 * "Eliminate first, then linearize = Schur complement": the reduced field
   `F(x) = f(x, h(x))` has derivative `∂f/∂x - ∂f/∂y (∂g/∂y)⁻¹ ∂g/∂x` at `x₀`
   (`hasFDerivAt_reducedField`); `schurMatrix` is its matrix in the standard basis.
-* `locallyExponentiallyStable_of_eqOn_ball`: local exponential stability depends only on the
-  field near the equilibrium (bootstrap with `exp_bound_of_local`).
+* Local exponential stability depends only on the field near the equilibrium
+  (`Dynamics.locallyExponentiallyStable_of_eqOn_ball`, bootstrap with
+  `Dynamics.exp_bound_of_local`, in `theorem/Dynamics/Locality.lean`).
 
 Stability results (general semi-explicit index-1 DAEs such as network-constrained
 power-system models, as in the source notes). They hold for arbitrary `C¹` fields `f`, `g`, so
@@ -45,7 +47,7 @@ Architecture: generic mathematical support (no `Family`). The two stability theo
 `@[powerlib_domain]` in the former architecture; they are implications for every `f`, `g`
 (classification policy 4) and are now `@[powerlib_foundation]`. Behaviour is LeanForControl's
 `IsTrajectoryOn` / `LocallyExponentiallyStable`; the linearization step is
-`Flow.locallyExponentiallyStable_of_isHurwitz_jacobian`. The DAE solution notion lies outside
+`Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`. The DAE solution notion lies outside
 the Flow sentence language and is written out in the statements that use it: `(x, y)` is a
 solution segment of `ẋ = f(x, y)`, `0 = g(x, y)` on `[t₀, t₁]` when
 `∀ t ∈ Icc t₀ t₁, HasDerivWithinAt x (f (x t, y t)) (Icc t₀ t₁) t ∧ g (x t, y t) = 0`.
@@ -62,89 +64,6 @@ open Set Filter Topology Metric
 open powerlib.Dynamics (State)
 
 variable {n m : ℕ}
-
-/-! ## Local exponential stability is a local property of the field -/
-
-/-- Bootstrap: an exponential estimate for `G` transfers to every curve that solves
-`ẋ = G x` while it stays in the ball of radius `R`. -/
-@[powerlib_foundation] theorem exp_bound_of_local {G : State n → State n} {x₀ : State n}
-    {r C a R : ℝ} (hC : 1 ≤ C) (ha : 0 < a)
-    (hG : ∀ (t₀ t₁ : ℝ) (φ : ℝ → State n), IsTrajectoryOn φ G t₀ t₁ →
-      ‖φ t₀ - x₀‖ < r → ∀ t ∈ Icc t₀ t₁,
-        ‖φ t - x₀‖ ≤ C * Real.exp (-a * (t - t₀)) * ‖φ t₀ - x₀‖)
-    {φ : ℝ → State n} {t₀ t₁ : ℝ} (hcont : ContinuousOn φ (Icc t₀ t₁))
-    (hder : ∀ t ∈ Icc t₀ t₁, ‖φ t - x₀‖ < R → HasDerivWithinAt φ (G (φ t)) (Icc t₀ t₁) t)
-    (h0 : ‖φ t₀ - x₀‖ < min r (R / C)) :
-    ∀ t ∈ Icc t₀ t₁, ‖φ t - x₀‖ ≤ C * Real.exp (-a * (t - t₀)) * ‖φ t₀ - x₀‖ := by
-  have hCpos : 0 < C := by linarith
-  have h0r : ‖φ t₀ - x₀‖ < r := lt_of_lt_of_le h0 (min_le_left _ _)
-  have hK : C * ‖φ t₀ - x₀‖ < R := by
-    have := lt_of_lt_of_le h0 (min_le_right _ _)
-    rw [lt_div_iff₀ hCpos] at this
-    linarith
-  have hn0 := norm_nonneg (φ t₀ - x₀)
-  have hsub : ∀ s, s ≤ t₁ → (∀ τ ∈ Icc t₀ s, ‖φ τ - x₀‖ < R) →
-      IsTrajectoryOn φ G t₀ s := by
-    intro s hs hin τ hτ
-    have hτ' : τ ∈ Icc t₀ t₁ := ⟨hτ.1, hτ.2.trans hs⟩
-    exact (hder τ hτ' (hin τ hτ)).mono (Icc_subset_Icc le_rfl hs)
-  have hcontN : ContinuousOn (fun s => ‖φ s - x₀‖) (Icc t₀ t₁) :=
-    (hcont.sub continuousOn_const).norm
-  have hstay : ∀ t ∈ Icc t₀ t₁, ‖φ t - x₀‖ < R := by
-    by_contra hcon
-    push Not at hcon
-    obtain ⟨t, ht, htR⟩ := hcon
-    let S := Icc t₀ t₁ ∩ (fun s => ‖φ s - x₀‖) ⁻¹' Ici R
-    have hSc : IsClosed S := hcontN.preimage_isClosed_of_isClosed isClosed_Icc isClosed_Ici
-    have hSne : S.Nonempty := ⟨t, ht, htR⟩
-    have hSbdd : BddBelow S := ⟨t₀, fun y hy => hy.1.1⟩
-    have hsS : sInf S ∈ S := hSc.csInf_mem hSne hSbdd
-    have hsR : R ≤ ‖φ (sInf S) - x₀‖ := hsS.2
-    have hs0 : t₀ < sInf S := by
-      rcases eq_or_lt_of_le hsS.1.1 with h | h
-      · exfalso
-        rw [← h] at hsR
-        nlinarith
-      · exact h
-    have hbelow : ∀ τ ∈ Ico t₀ (sInf S), ‖φ τ - x₀‖ < R := by
-      intro τ hτ
-      by_contra hτR
-      push Not at hτR
-      have hmem : τ ∈ S := ⟨⟨hτ.1, hτ.2.le.trans hsS.1.2⟩, hτR⟩
-      have := csInf_le hSbdd hmem
-      linarith [hτ.2]
-    have hbound : ∀ τ ∈ Ico t₀ (sInf S), ‖φ τ - x₀‖ ≤ C * ‖φ t₀ - x₀‖ := by
-      intro τ hτ
-      have htraj := hsub τ (hτ.2.le.trans hsS.1.2)
-        (fun σ hσ => hbelow σ ⟨hσ.1, lt_of_le_of_lt hσ.2 hτ.2⟩)
-      have hb := hG t₀ τ φ htraj h0r τ ⟨hτ.1, le_rfl⟩
-      have hexp : Real.exp (-a * (τ - t₀)) ≤ 1 :=
-        Real.exp_le_one_iff.mpr (by nlinarith [hτ.1])
-      calc ‖φ τ - x₀‖ ≤ C * Real.exp (-a * (τ - t₀)) * ‖φ t₀ - x₀‖ := hb
-        _ ≤ C * 1 * ‖φ t₀ - x₀‖ := by gcongr
-        _ = C * ‖φ t₀ - x₀‖ := by ring
-    let T := Icc t₀ t₁ ∩ (fun s => ‖φ s - x₀‖) ⁻¹' Iic (C * ‖φ t₀ - x₀‖)
-    have hTc : IsClosed T := hcontN.preimage_isClosed_of_isClosed isClosed_Icc isClosed_Iic
-    have hsub2 : Ico t₀ (sInf S) ⊆ T := fun τ hτ =>
-      ⟨⟨hτ.1, hτ.2.le.trans hsS.1.2⟩, hbound τ hτ⟩
-    have hsT : sInf S ∈ T := by
-      have := closure_minimal hsub2 hTc
-      rw [closure_Ico hs0.ne] at this
-      exact this ⟨hs0.le, le_rfl⟩
-    have h2 : ‖φ (sInf S) - x₀‖ ≤ C * ‖φ t₀ - x₀‖ := hsT.2
-    linarith
-  exact hG t₀ t₁ φ (hsub t₁ le_rfl hstay) h0r
-
-/-- Two fields that agree on a ball around `x₀` have the same local exponential stability. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_of_eqOn_ball {F G : State n → State n}
-    {x₀ : State n} {R : ℝ} (hR : 0 < R) (hFG : ∀ x, ‖x - x₀‖ < R → F x = G x)
-    (hG : LocallyExponentiallyStable G x₀) :
-    LocallyExponentiallyStable F x₀ := by
-  obtain ⟨r, C, a, hr, hC, ha, hb⟩ := hG
-  refine ⟨min r (R / C), C, a, lt_min hr (div_pos hR (by linarith)), hC, ha, ?_⟩
-  intro t₀ t₁ φ hφ h0 t ht
-  exact exp_bound_of_local hC ha hb hφ.continuousOn
-    (fun τ hτ hτR => by rw [← hFG _ hτR]; exact hφ τ hτ) h0 t ht
 
 /-! ## The implicit (slow-manifold) map and the Schur-complement Jacobian -/
 
@@ -286,8 +205,8 @@ eliminated ODE `ẋ = f(x, h(x))` is locally exponentially stable at `x₀`. -/
       Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) (schurMatrix f g u) := by
     rw [hGF'.fderiv_eq, (hasFDerivAt_reducedField hf hg hinv).fderiv, schurMatrix,
       StarAlgEquiv.apply_symm_apply]
-  have hG := Flow.locallyExponentiallyStable_of_isHurwitz_jacobian _ hGc hGeq hJac hH
-  exact locallyExponentiallyStable_of_eqOn_ball hR (fun x hx => (hGF x hx).symm) hG
+  have hG := Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian _ hGc hGeq hJac hH
+  exact Dynamics.locallyExponentiallyStable_of_eqOn_ball hR (fun x hx => (hGF x hx).symm) hG
 
 /-- **DAE stability.** Under the hypotheses of `reducedODE_locallyExponentiallyStable`, every
 DAE solution segment (a pair `(x, y)` solving `ẋ = f(x, y)`, `0 = g(x, y)` on `[t₀, t₁]`) on the
@@ -313,7 +232,7 @@ and its algebraic part is `y = h(x)`. -/
     rw [hGF'.fderiv_eq, (hasFDerivAt_reducedField hf hg hinv).fderiv, schurMatrix,
       StarAlgEquiv.apply_symm_apply]
   obtain ⟨r, C, a, hr, hC, ha, hb⟩ :=
-    Flow.locallyExponentiallyStable_of_isHurwitz_jacobian _ hGc hGeq hJac hH
+    Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian _ hGc hGeq hJac hH
   have huniq : ∀ᶠ v in 𝓝 u.1 ×ˢ 𝓝 u.2, g v = 0 ↔ implicitMap g u hg hinv v.1 = v.2 := by
     rw [← nhds_prod_eq]
     exact implicitMap_unique hg hinv hgu
@@ -336,7 +255,7 @@ and its algebraic part is `y = h(x)`. -/
     rw [hGF (x t) (lt_of_lt_of_le hxt (min_le_left _ _))]
     have := (hsol t ht).1
     rwa [hbranch t ht hxt] at this
-  have hbound := exp_bound_of_local hC ha hb hcont hder h0
+  have hbound := Dynamics.exp_bound_of_local hC ha hb hcont hder h0
   intro t ht
   refine ⟨hbound t ht, hbranch t ht ?_⟩
   have hK : C * ‖x t₀ - u.1‖ < R := by

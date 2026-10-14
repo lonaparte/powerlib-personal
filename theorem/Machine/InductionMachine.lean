@@ -2,13 +2,14 @@ import dependencies.Mathlib
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import theorem.Dynamics.State
 import theorem.Flow.Certificate
-import theorem.Flow.Shift
+import theorem.Dynamics.Shift
 import theorem.Family.Basic
 import theorem.TMIO.ClaimElab
 import theorem.Criteria.Hurwitz2
 import theorem.Machine.SpaceVector
-import theorem.Criteria.Jacobian
-import theorem.CurrentControl.SISO
+import theorem.Dynamics.Coordinates
+import theorem.Dynamics.Lyapunov
+import theorem.Dynamics.Instability
 import theorem.Linear.Stability
 import theorem.Dynamics.ConverseLinearization
 
@@ -729,11 +730,11 @@ private theorem field_hasFDerivAt (d : Drive) (z : State2) :
     HasFDerivAt d.field (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (fluxMatrix d.p d.ωsl)) z := by
   set e := fluxEquilibrium d.p d.isd d.isq d.ωsl
   set k := d.p.rr / d.p.Lr with hk
-  have h0 := Criteria.hasFDerivAt_coord (0 : Fin 2) z
-  have h1 := Criteria.hasFDerivAt_coord (1 : Fin 2) z
-  refine Criteria.hasFDerivAt_toEuclideanCLM_of_components _
-    ![(-k) • Criteria.coord 0 + d.ωsl • Criteria.coord 1,
-      (-k) • Criteria.coord 1 - d.ωsl • Criteria.coord 0] ?_ ?_
+  have h0 := Dynamics.hasFDerivAt_coord (0 : Fin 2) z
+  have h1 := Dynamics.hasFDerivAt_coord (1 : Fin 2) z
+  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
+    ![(-k) • Dynamics.coord 0 + d.ωsl • Dynamics.coord 1,
+      (-k) • Dynamics.coord 1 - d.ωsl • Dynamics.coord 0] ?_ ?_
   · intro i
     fin_cases i
     · have h := (((h0.add_const (e 0)).sub_const (d.p.Lm * d.isd)).const_mul (-k)).add

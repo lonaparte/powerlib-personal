@@ -1,4 +1,6 @@
-import theorem.CurrentControl.SISO
+import theorem.Spectral.Family
+import theorem.LTI.Plant
+import theorem.Criteria.Hurwitz2
 
 /-! # Single-axis PI current loop of a converter (domain)
 
@@ -127,7 +129,7 @@ the model, not a connection conclusion. -/
     (characteristicMatrix p.model.A s).det =
       ((p.L : ℂ) * s ^ 2 + (p.R + p.Kp) * s + p.Ki) / p.L := by
   have hL' : (p.L : ℂ) ≠ 0 := by exact_mod_cast hL
-  simp only [model, det_characteristicMatrix_of]
+  simp only [model, LTI.det_characteristicMatrix_of]
   push_cast
   field_simp
   ring
@@ -182,7 +184,7 @@ connection conclusion. -/
       ((p.Ki / p.L : ℝ) : ℂ) * ((-1 : ℝ) : ℂ) ≠ 0 := by
     rw [hden]
     exact div_ne_zero hs hL'
-  rw [model, transfer_fin_two _ _ _ _ _ _ _ _ _ hden0, hden]
+  rw [model, LTI.transfer_fin_two _ _ _ _ _ _ _ _ _ hden0, hden]
   push_cast
   field_simp
   ring
@@ -405,8 +407,8 @@ private theorem tracks_reference (p : PIParams) (hL : 0 < p.L) (hR : 0 < p.R + p
     intro t
     rw [model_field]
     exact hx t
-  exact ⟨by simpa [equilibrium] using tendsto_equilibrium_apply p.model hA he hx' 0,
-    by simpa [equilibrium] using tendsto_equilibrium_apply p.model hA he hx' 1⟩
+  exact ⟨by simpa [equilibrium] using LTI.tendsto_equilibrium_apply p.model hA he hx' 0,
+    by simpa [equilibrium] using LTI.tendsto_equilibrium_apply p.model hA he hx' 1⟩
 
 end PIParams
 

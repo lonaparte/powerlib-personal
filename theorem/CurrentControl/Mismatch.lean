@@ -360,8 +360,8 @@ private theorem tracks_reference (hL : 0 < p.base.L)
     intro t
     rw [p.model_field hL.ne' v]
     exact hx t
-  exact ⟨by simpa [equilibrium] using tendsto_equilibrium_apply p.model hA he hx' 0,
-    by simpa [equilibrium] using tendsto_equilibrium_apply p.model hA he hx' 1⟩
+  exact ⟨by simpa [equilibrium] using LTI.tendsto_equilibrium_apply p.model hA he hx' 0,
+    by simpa [equilibrium] using LTI.tendsto_equilibrium_apply p.model hA he hx' 1⟩
 
 end MismatchParams
 

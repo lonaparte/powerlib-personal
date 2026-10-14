@@ -1,9 +1,10 @@
-import theorem.GFLParametric.Basic
+import theorem.Dynamics.Locality
 import theorem.Criteria.Hurwitz2
 import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
-import theorem.Flow.Shift
+import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
+import theorem.Dynamics.Coordinates
 
 /-! # Rate-coupled two-state GFL PLL (form-C-lite, frozen `I_d`)
 
@@ -135,7 +136,7 @@ def vq (θ x : ℝ) : ℝ := gridQ p θ + p.Lg * pllOut p θ x * p.Id
 def coordField (y : Fin 2 → ℝ) : Fin 2 → ℝ := ![pllOut p (y 0) (y 1), vq p (y 0) (y 1)]
 
 /-- The nonlinear two-state field on `Dynamics.State 2`. -/
-def field : Dynamics.State 2 → Dynamics.State 2 := lift (coordField p)
+def field : Dynamics.State 2 → Dynamics.State 2 := Dynamics.lift (coordField p)
 
 /-- The operating point `(θ, 0)`. -/
 def equilibrium (θ : ℝ) : Dynamics.State 2 := WithLp.toLp 2 ![θ, 0]
@@ -148,30 +149,30 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 @[powerlib_foundation] theorem field_equilibrium {θ : ℝ} (heq : p.V * Real.sin θ = p.Xg * p.Id) :
     field p (equilibrium θ) = 0 := by
   have hq : gridQ p θ = 0 := by unfold gridQ; linarith
-  apply lift_toLp_eq_zero
+  apply Dynamics.lift_toLp_eq_zero
   ext i
   fin_cases i <;> simp [coordField, vq, pllOut, hq]
 
 @[powerlib_foundation] theorem contDiff_field : ContDiff ℝ 1 (field p) := by
-  apply contDiff_lift
+  apply Dynamics.contDiff_lift
   apply contDiff_pi.2
   intro i
   fin_cases i <;> simp [coordField, vq, pllOut, gridQ] <;> fun_prop
 
 @[powerlib_foundation] theorem hasFDerivAt_coordField (hD0 : p.D0 ≠ 0) (y : Fin 2 → ℝ) :
     HasFDerivAt (coordField p) (Matrix.toLin' (jac p (y 0))).toContinuousLinearMap y := by
-  have h0 := hasFDerivAt_coord (0 : Fin 2) y
-  have h1 := hasFDerivAt_coord (1 : Fin 2) y
+  have h0 := hasFDerivAt_apply (𝕜 := ℝ) (0 : Fin 2) y
+  have h1 := hasFDerivAt_apply (𝕜 := ℝ) (1 : Fin 2) y
   have hq := (h0.sin.const_mul (-p.V)).add_const (p.Xg * p.Id)
   have hu := ((hq.const_mul p.kp).add (h1.const_mul p.ki)).mul_const p.D0⁻¹
   rw [hasFDerivAt_pi']
   intro i
   fin_cases i
-  · refine hasFDerivAt_of_eq hu (fun z => by simp [coordField, pllOut, gridQ, div_eq_mul_inv]) ?_
+  · refine Dynamics.hasFDerivAt_of_eq hu (fun z => by simp [coordField, pllOut, gridQ, div_eq_mul_inv]) ?_
     ext v
     simp [jac, dotProduct, Fin.sum_univ_two]
     field_simp
-  · refine hasFDerivAt_of_eq (hq.add ((hu.const_mul p.Lg).mul_const p.Id))
+  · refine Dynamics.hasFDerivAt_of_eq (hq.add ((hu.const_mul p.Lg).mul_const p.Id))
       (fun z => by simp [coordField, vq, pllOut, gridQ, div_eq_mul_inv]) ?_
     ext v
     simp [jac, dotProduct, Fin.sum_univ_two]
@@ -184,7 +185,7 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     fderiv ℝ (field p) (WithLp.toLp 2 ![θ, x]) =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (jac p θ) := by
   have := hasFDerivAt_coordField p hD0 ![θ, x]
-  exact fderiv_lift (by simpa using this)
+  exact Dynamics.fderiv_lift (by simpa using this)
 
 /-- Jacobian at an equilibrium in the source form
 `(1/D₀) [[−k_p V cos θ, k_i], [−V cos θ, k_i V sin θ / ω_s]]`. -/
@@ -549,14 +550,14 @@ private theorem not_les_of_D0_eq_zero {p : Params} (hD0 : p.D0 = 0) (x : Dynamic
   · intro h
     have := congrArg (fun L : Dynamics.State 2 →L[ℝ] ℝ => L (EuclideanSpace.single 0 1)) h
     simp at this
-  · simp [RatePLL.field, lift, coordField, pllOut, hD0]
+  · simp [RatePLL.field, Dynamics.lift, coordField, pllOut, hD0]
 
 /-- An equilibrium of the field at `(θ*, 0)` with `D₀ ≠ 0` is balanced, `V sin θ* = X_g I_d`. -/
 private theorem balance_of_field_eq_zero {p : Params} (hD0 : p.D0 ≠ 0) {θ : ℝ}
     (h : RatePLL.field p (equilibrium θ) = 0) : p.V * Real.sin θ = p.Xg * p.Id := by
   have h0 := congrArg (fun y : Dynamics.State 2 => y 0) h
   have h1 := congrArg (fun y : Dynamics.State 2 => y 1) h
-  simp [RatePLL.field, lift, coordField, equilibrium, pllOut, vq, hD0] at h0 h1
+  simp [RatePLL.field, Dynamics.lift, coordField, equilibrium, pllOut, vq, hD0] at h0 h1
   have hk : p.kp * gridQ p θ = 0 := by
     rcases h0 with h0 | h0 <;> simp [h0]
   rw [hk, zero_div, mul_zero, zero_mul, add_zero] at h1
@@ -634,7 +635,7 @@ def offEquilibrium : Model := ⟨⟨0, 1, 1, 0, 0, 1⟩, 0⟩
   unfold powerlib.TMIO.Statement
   refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero (contDiff_field _) fun h => ?_)
   have := congrArg (fun y : Dynamics.State 2 => y 1) h
-  simp [offEquilibrium, RatePLL.field, lift, coordField, equilibrium, vq, pllOut, gridQ,
+  simp [offEquilibrium, RatePLL.field, Dynamics.lift, coordField, equilibrium, vq, pllOut, gridQ,
     Params.D0, Params.Lg] at this
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
@@ -659,7 +660,7 @@ private theorem undampedPLL_field (z : Dynamics.State 2) :
     RatePLL.field undampedPLL.params z = WithLp.toLp 2 ![z 1, -Real.sin (z 0)] := by
   ext i
   fin_cases i <;>
-    simp [RatePLL.field, lift, coordField, undampedPLL, vq, pllOut, gridQ, Params.D0, Params.Lg]
+    simp [RatePLL.field, Dynamics.lift, coordField, undampedPLL, vq, pllOut, gridQ, Params.D0, Params.Lg]
 
 /-- The pendulum energy `1 − cos θ + x²/2`. -/
 private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 2) :

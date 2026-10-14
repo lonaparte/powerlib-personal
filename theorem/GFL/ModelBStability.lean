@@ -1,13 +1,15 @@
 import theorem.GFL.ReducedOrder
 import theorem.Criteria.Routh4
-import theorem.Criteria.Jacobian
-import theorem.Dynamics.Basin
+import theorem.Dynamics.Coordinates
+import theorem.Dynamics.LaSalle.Basin
 import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
-import theorem.Flow.Shift
+import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
-import theorem.CurrentControl.SISO
-import theorem.Dynamics.ModelBLocal
+import theorem.Dynamics.Instability
+import theorem.Spectral.Family
+import theorem.Dynamics.Degenerate.PlaneCollapse
+import theorem.Dynamics.Locality
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 /-! # GFL reduced-order model B: local stability by linearization (4×4 Routh–Hurwitz)
@@ -24,11 +26,12 @@ Level: local behaviour at an equilibrium (linearization), not a basin estimate.
 
 The field contains `1/V_dc` and is therefore not globally `C¹`; the powerlib linearization
 theorems need a globally `C¹` field. This module
-* proves that local exponential stability and instability only depend on the field on a ball
-  around the equilibrium (`locallyExponentiallyStable_of_eqOn_ball`, `unstable_of_eqOn_ball`,
-  first-exit argument on finite solution segments);
+* uses that local exponential stability and instability only depend on the field on a ball
+  around the equilibrium (`Dynamics.locallyExponentiallyStable_of_eqOn_ball`,
+  `Dynamics.unstable_of_eqOn_ball` in `theorem/Dynamics/Locality.lean`, first-exit argument on
+  finite solution segments);
 * builds a globally `C¹` field `regField` that coincides with `field` on `{V_dc > 3V_dc*/4}`
-  (the denominator `V_dc` is replaced by a smooth `regDen ≥ V_dc*/2`), which contains a ball
+  (the denominator `V_dc` is replaced by a smooth `Dynamics.regDen ≥ V_dc*/2`), which contains a ball
   around every equilibrium (equilibria have `V_dc = V_dc*`);
 * computes the Jacobian of `field` at any state with `V_dc ≠ 0` from the field with `fderiv`
   (`hasFDerivAt_field`, `jacobian`), with `c = cos Δθ`, `s = sin Δθ`, `i_d = i_d*(x)`,
@@ -98,10 +101,10 @@ Selected states on the singular plane that are not equilibria. With `P = pccP x*
   satisfies the segment-based local exponential estimate although it is not an equilibrium: near
   `x*`, `d(V_dc²)/dt = (2 I₀ V_dc + 3 P) / C_dc` is bounded below zero, so solution segments end
   before reaching the plane, after a time `O(V_dc(t₀)²)` (generic
-  `Dynamics.locallyExponentiallyStable_of_collapse`, `theorem/Dynamics/ModelBLocal.lean`). The
+  `Dynamics.Degenerate.locallyExponentiallyStable_of_collapse`, `theorem/Dynamics/Degenerate/PlaneCollapse.lean`). The
   estimate holds because solutions cease, not because they converge.
 * `mem_den_unstable_of_repel`: if `P / C_dc > 0` the state is unstable (`V_dc²` grows linearly;
-  generic `Dynamics.unstable_of_repel`).
+  generic `Dynamics.Degenerate.unstable_of_repel`).
 * `not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero_of_I0`: if `I₀ / C_dc = 0` (in particular
   `C_dc = 0`) no state on the plane is locally exponentially stable (the smooth field
   `(f₀, f₁, 0, f₃)` agrees with model B on the invariant plane).
@@ -146,148 +149,6 @@ open Set Filter Matrix
 open scoped Topology
 open powerlib.Dynamics (State)
 
-/-! ## Local stability notions depend only on the field near the equilibrium -/
-
-/-- First-exit argument: a curve continuous on `[t₀, t₁]` that starts strictly inside the ball of
-radius `ρ` and is strictly inside at every `s` up to which it has stayed in the closed ball,
-stays strictly inside on the whole interval. -/
-@[powerlib_foundation] theorem forall_norm_sub_lt_of_first_exit {n : ℕ} {φ : ℝ → State n}
-    {x : State n} {t₀ t₁ ρ : ℝ} (hφ : ContinuousOn φ (Icc t₀ t₁)) (h0 : ‖φ t₀ - x‖ < ρ)
-    (hstep : ∀ s ∈ Icc t₀ t₁, (∀ u ∈ Icc t₀ s, ‖φ u - x‖ ≤ ρ) → ‖φ s - x‖ < ρ) :
-    ∀ u ∈ Icc t₀ t₁, ‖φ u - x‖ < ρ := by
-  by_contra hcon
-  push Not at hcon
-  obtain ⟨u, hu, hu'⟩ := hcon
-  set A : Set ℝ := Icc t₀ t₁ ∩ φ ⁻¹' {y | ρ ≤ ‖y - x‖} with hAdef
-  have hAne : A.Nonempty := ⟨u, hu, hu'⟩
-  have hAclosed : IsClosed A :=
-    hφ.preimage_isClosed_of_isClosed isClosed_Icc
-      (isClosed_le continuous_const (continuous_norm.comp (continuous_sub_right x)))
-  have hAbdd : BddBelow A := ⟨t₀, fun t ht => ht.1.1⟩
-  have hτA : sInf A ∈ A := hAclosed.csInf_mem hAne hAbdd
-  have hbelow : ∀ t ∈ Ico t₀ (sInf A), ‖φ t - x‖ < ρ := by
-    intro t ht
-    by_contra h
-    push Not at h
-    have : sInf A ≤ t := csInf_le hAbdd ⟨⟨ht.1, ht.2.le.trans hτA.1.2⟩, h⟩
-    linarith [ht.2]
-  have hle : ∀ t ∈ Icc t₀ (sInf A), ‖φ t - x‖ ≤ ρ := by
-    intro t ht
-    rcases eq_or_lt_of_le ht.2 with h | h
-    · rcases eq_or_lt_of_le hτA.1.1 with h' | h'
-      · rw [h, ← h']; exact h0.le
-      · have hcl : IsClosed (Icc t₀ (sInf A) ∩ φ ⁻¹' {y | ‖y - x‖ ≤ ρ}) :=
-          (hφ.mono (Icc_subset_Icc le_rfl hτA.1.2)).preimage_isClosed_of_isClosed isClosed_Icc
-            (isClosed_le (continuous_norm.comp (continuous_sub_right x)) continuous_const)
-        have hsub : Ico t₀ (sInf A) ⊆ Icc t₀ (sInf A) ∩ φ ⁻¹' {y | ‖y - x‖ ≤ ρ} :=
-          fun t' ht' => ⟨Ico_subset_Icc_self ht', (hbelow t' ht').le⟩
-        have hcl' := hcl.closure_subset_iff.mpr hsub
-        rw [closure_Ico h'.ne] at hcl'
-        exact (hcl' ht).2
-    · exact (hbelow t ⟨ht.1, h⟩).le
-  exact absurd hτA.2 (not_le.mpr (hstep _ hτA.1 hle))
-
-/-- Local exponential stability only depends on the field on a ball around the equilibrium. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_of_eqOn_ball {n : ℕ}
-    {f g : State n → State n} {x : State n} {R : ℝ} (hR : 0 < R)
-    (hfg : ∀ y ∈ Metric.ball x R, f y = g y) (hg : LocallyExponentiallyStable g x) :
-    LocallyExponentiallyStable f x := by
-  obtain ⟨r, C, a, hr, hC, ha, hb⟩ := hg
-  have hC0 : 0 < C := by linarith
-  refine ⟨min r (R / (2 * C)), C, a, lt_min hr (by positivity), hC, ha, ?_⟩
-  intro t₀ t₁ φ hφ h0
-  have h0r : ‖φ t₀ - x‖ < r := lt_of_lt_of_le h0 (min_le_left _ _)
-  have h0R : C * ‖φ t₀ - x‖ < R / 2 := by
-    have h := lt_of_lt_of_le h0 (min_le_right _ _)
-    rw [lt_div_iff₀ (by positivity)] at h
-    linarith
-  have hexp : ∀ t, t₀ ≤ t →
-      C * Real.exp (-a * (t - t₀)) * ‖φ t₀ - x‖ ≤ C * ‖φ t₀ - x‖ := by
-    intro t ht
-    have h1 : Real.exp (-a * (t - t₀)) ≤ 1 := Real.exp_le_one_iff.mpr (by nlinarith)
-    have h2 : 0 ≤ C * ‖φ t₀ - x‖ := by positivity
-    calc C * Real.exp (-a * (t - t₀)) * ‖φ t₀ - x‖
-        = Real.exp (-a * (t - t₀)) * (C * ‖φ t₀ - x‖) := by ring
-      _ ≤ 1 * (C * ‖φ t₀ - x‖) := mul_le_mul_of_nonneg_right h1 h2
-      _ = C * ‖φ t₀ - x‖ := one_mul _
-  have key : ∀ s ∈ Icc t₀ t₁, (∀ u ∈ Icc t₀ s, ‖φ u - x‖ ≤ R / 2) →
-      ∀ t ∈ Icc t₀ s, ‖φ t - x‖ ≤ C * Real.exp (-a * (t - t₀)) * ‖φ t₀ - x‖ := by
-    intro s hs hin
-    have hseg : IsTrajectoryOn φ g t₀ s :=
-      Dynamics.isIntegralCurveOn_of_eq_on_curve (hφ.mono (Icc_subset_Icc le_rfl hs.2))
-        (fun u hu => hfg _ (by rw [Metric.mem_ball, dist_eq_norm]; linarith [hin u hu]))
-    exact hb t₀ s φ hseg h0r
-  have hC1 : ‖φ t₀ - x‖ ≤ C * ‖φ t₀ - x‖ := le_mul_of_one_le_left (norm_nonneg _) hC
-  have hstay := forall_norm_sub_lt_of_first_exit (x := x) (ρ := R / 2) hφ.continuousOn (by linarith)
-    (fun s hs hin => by
-      have := key s hs hin s ⟨hs.1, le_rfl⟩
-      linarith [hexp s hs.1])
-  intro t ht
-  exact key t₁ ⟨ht.1.trans ht.2, le_rfl⟩ (fun u hu => (hstay u hu).le) t ht
-
-/-- Lyapunov stability only depends on the field on a ball around the equilibrium. -/
-@[powerlib_foundation] theorem lyapunovStable_of_eqOn_ball {n : ℕ}
-    {f g : State n → State n} {x : State n} {R : ℝ} (hR : 0 < R)
-    (hfg : ∀ y ∈ Metric.ball x R, f y = g y) (hg : LyapunovStable g x) :
-    LyapunovStable f x := by
-  intro ε hε
-  obtain ⟨δ, hδ, hb⟩ := hg (min ε (R / 2)) (lt_min hε (by positivity))
-  refine ⟨min δ (min ε (R / 2)), lt_min hδ (lt_min hε (by positivity)), ?_⟩
-  intro t₀ t₁ φ hφ h0
-  have h0δ : ‖φ t₀ - x‖ < δ := lt_of_lt_of_le h0 (min_le_left _ _)
-  have h0ε : ‖φ t₀ - x‖ < min ε (R / 2) := lt_of_lt_of_le h0 (min_le_right _ _)
-  have hstay := forall_norm_sub_lt_of_first_exit hφ.continuousOn h0ε (fun s hs hin => by
-    have hseg : IsTrajectoryOn φ g t₀ s :=
-      Dynamics.isIntegralCurveOn_of_eq_on_curve (hφ.mono (Icc_subset_Icc le_rfl hs.2))
-        (fun u hu => hfg _ (by
-          rw [Metric.mem_ball, dist_eq_norm]
-          have := hin u hu
-          have : min ε (R / 2) ≤ R / 2 := min_le_right _ _
-          linarith))
-    exact hb t₀ s φ hseg h0δ s ⟨hs.1, le_rfl⟩)
-  intro t ht
-  exact lt_of_lt_of_le (hstay t ht) (min_le_left _ _)
-
-/-- Instability only depends on the field on a ball around the equilibrium. -/
-@[powerlib_foundation] theorem unstable_of_eqOn_ball {n : ℕ}
-    {f g : State n → State n} {x : State n} {R : ℝ} (hR : 0 < R)
-    (hfg : ∀ y ∈ Metric.ball x R, f y = g y) (hg : Unstable g x) :
-    Unstable f x := fun hf =>
-  hg (lyapunovStable_of_eqOn_ball hR (fun y hy => (hfg y hy).symm) hf)
-
-/-! ## A smooth positive denominator -/
-
-/-- Smooth denominator: `regDen V v = v` for `v ≥ 3V/4` and `regDen V v ≥ V/2` (`V > 0`). -/
-def regDen (V v : ℝ) : ℝ :=
-  Real.smoothTransition (4 * v / V - 2) * v +
-    (1 - Real.smoothTransition (4 * v / V - 2)) * (V / 2)
-
-@[powerlib_foundation] theorem regDen_eq {V v : ℝ} (hV : 0 < V) (hv : 3 * V / 4 ≤ v) :
-    regDen V v = v := by
-  have h : 1 ≤ 4 * v / V - 2 := by
-    rw [le_sub_iff_add_le, le_div_iff₀ hV]
-    linarith
-  simp [regDen, Real.smoothTransition.one_of_one_le h]
-
-@[powerlib_foundation] theorem half_le_regDen {V : ℝ} (hV : 0 < V) (v : ℝ) :
-    V / 2 ≤ regDen V v := by
-  unfold regDen
-  have hs0 := Real.smoothTransition.nonneg (4 * v / V - 2)
-  have hs1 := Real.smoothTransition.le_one (4 * v / V - 2)
-  by_cases hv : V / 2 ≤ v
-  · nlinarith
-  · have h : 4 * v / V - 2 ≤ 0 := by
-      rw [sub_nonpos, div_le_iff₀ hV]
-      linarith
-    rw [Real.smoothTransition.zero_of_nonpos h]
-    simp
-
-@[powerlib_foundation] theorem contDiff_regDen (V : ℝ) : ContDiff ℝ 1 (regDen V) := by
-  have h : ContDiff ℝ 1 (fun v : ℝ => Real.smoothTransition (4 * v / V - 2)) :=
-    (Real.smoothTransition.contDiff (n := 1)).comp (by fun_prop)
-  unfold regDen
-  exact (h.mul contDiff_id).add ((contDiff_const.sub h).mul contDiff_const)
-
 namespace ModelBParams
 
 variable (p : ModelBParams)
@@ -305,15 +166,15 @@ def regField (x : State 4) : State 4 :=
   WithLp.toLp 2 ![p.ωs - p.ωg + p.kp * p.vgq (x 0) id + p.ki * x 1,
     p.vgq (x 0) id,
     (p.I0 + 3 * (p.vgd (x 0) id * id + p.vgq (x 0) id * p.iq0) /
-      (2 * regDen p.VdcRef (x 2))) / p.Cdc,
+      (2 * Dynamics.regDen p.VdcRef (x 2))) / p.Cdc,
     p.VdcRef - x 2]
 
 @[powerlib_foundation] theorem contDiff_regField (hV : 0 < p.VdcRef) : ContDiff ℝ 1 p.regField := by
-  have hden : ContDiff ℝ 1 (fun y : State 4 => 2 * regDen p.VdcRef (y 2)) :=
-    contDiff_const.mul ((contDiff_regDen _).comp (Criteria.contDiff_coord 2))
-  have hden0 : ∀ y : State 4, 2 * regDen p.VdcRef (y 2) ≠ 0 := fun y => by
-    have := half_le_regDen hV (y 2)
-    have : 0 < regDen p.VdcRef (y 2) := lt_of_lt_of_le (by positivity) this
+  have hden : ContDiff ℝ 1 (fun y : State 4 => 2 * Dynamics.regDen p.VdcRef (y 2)) :=
+    contDiff_const.mul ((Dynamics.contDiff_regDen _).comp (Dynamics.contDiff_coord 2))
+  have hden0 : ∀ y : State 4, 2 * Dynamics.regDen p.VdcRef (y 2) ≠ 0 := fun y => by
+    have := Dynamics.half_le_regDen hV (y 2)
+    have : 0 < Dynamics.regDen p.VdcRef (y 2) := lt_of_lt_of_le (by positivity) this
     positivity
   have hP : ContDiff ℝ 1 p.pccP := by
     unfold pccP vgd vgq idRef
@@ -328,12 +189,12 @@ def regField (x : State 4) : State 4 :=
   have h1 : ContDiff ℝ 1 (fun y : State 4 => p.regField y 1) := hq
   have h2 : ContDiff ℝ 1 (fun y : State 4 => p.regField y 2) := by
     show ContDiff ℝ 1 (fun y : State 4 =>
-      (p.I0 + 3 * p.pccP y / (2 * regDen p.VdcRef (y 2))) / p.Cdc)
+      (p.I0 + 3 * p.pccP y / (2 * Dynamics.regDen p.VdcRef (y 2))) / p.Cdc)
     exact (contDiff_const.add ((contDiff_const.mul hP).div hden hden0)).div_const _
   have h3 : ContDiff ℝ 1 (fun y : State 4 => p.regField y 3) := by
     show ContDiff ℝ 1 (fun y : State 4 => p.VdcRef - y 2)
     fun_prop
-  apply Criteria.contDiff_of_components
+  apply Dynamics.contDiff_of_components
   intro i
   fin_cases i
   exacts [h0, h1, h2, h3]
@@ -342,7 +203,7 @@ def regField (x : State 4) : State 4 :=
 @[powerlib_foundation] theorem field_eq_regField {y : State 4} (hV : 0 < p.VdcRef)
     (hy : 3 * p.VdcRef / 4 ≤ y 2) : p.field y = p.regField y := by
   unfold field regField
-  rw [regDen_eq hV hy]
+  rw [Dynamics.regDen_eq hV hy]
 
 /-- Every point of the ball of radius `V_dc*/4` around a state with `V_dc = V_dc*` lies in the
 half-space where the two fields agree. -/
@@ -360,7 +221,7 @@ half-space where the two fields agree. -/
 
 /-- The linear functional `a v₀ + b v₁ + c v₂ + d v₃` on `State 4`. -/
 def row4 (a b c d : ℝ) : State 4 →L[ℝ] ℝ :=
-  a • Criteria.coord 0 + b • Criteria.coord 1 + c • Criteria.coord 2 + d • Criteria.coord 3
+  a • Dynamics.coord 0 + b • Dynamics.coord 1 + c • Dynamics.coord 2 + d • Dynamics.coord 3
 
 omit p in
 @[simp, powerlib_foundation] theorem row4_apply (a b c d : ℝ) (v : State 4) :
@@ -383,8 +244,8 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
 
 @[powerlib_foundation] theorem hasFDerivAt_idRef (x : State 4) :
     HasFDerivAt (fun y : State 4 => p.idRef (y 2) (y 3)) (row4 0 0 (-p.kpv) p.kiv) x := by
-  have h := (((Criteria.hasFDerivAt_coord 2 x).const_sub p.VdcRef).const_mul p.kpv).add
-    ((Criteria.hasFDerivAt_coord 3 x).const_mul p.kiv)
+  have h := (((Dynamics.hasFDerivAt_coord 2 x).const_sub p.VdcRef).const_mul p.kpv).add
+    ((Dynamics.hasFDerivAt_coord 3 x).const_mul p.kiv)
   refine h.congr_fderiv ?_
   ext v
   simp [row4]
@@ -392,7 +253,7 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
 @[powerlib_foundation] theorem hasFDerivAt_vgq (x : State 4) :
     HasFDerivAt (fun y : State 4 => p.vgq (y 0) (p.idRef (y 2) (y 3)))
       (row4 (-p.Vg * Real.cos (x 0)) 0 (p.Xg * p.kpv) (-(p.Xg * p.kiv))) x := by
-  have hs := (Real.hasDerivAt_sin (x 0)).comp_hasFDerivAt x (Criteria.hasFDerivAt_coord 0 x)
+  have hs := (Real.hasDerivAt_sin (x 0)).comp_hasFDerivAt x (Dynamics.hasFDerivAt_coord 0 x)
   have h := (hs.const_mul (-p.Vg)).sub (((p.hasFDerivAt_idRef x).const_mul p.Xg).add_const
     (p.Rg * p.iq0))
   refine h.congr_fderiv ?_
@@ -403,7 +264,7 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
 @[powerlib_foundation] theorem hasFDerivAt_vgd (x : State 4) :
     HasFDerivAt (fun y : State 4 => p.vgd (y 0) (p.idRef (y 2) (y 3)))
       (row4 (-p.Vg * Real.sin (x 0)) 0 (p.Rg * p.kpv) (-(p.Rg * p.kiv))) x := by
-  have hc := (Real.hasDerivAt_cos (x 0)).comp_hasFDerivAt x (Criteria.hasFDerivAt_coord 0 x)
+  have hc := (Real.hasDerivAt_cos (x 0)).comp_hasFDerivAt x (Dynamics.hasFDerivAt_coord 0 x)
   have h := (hc.const_mul p.Vg).sub (((p.hasFDerivAt_idRef x).const_mul p.Rg).sub_const
     (p.Xg * p.iq0))
   refine h.congr_fderiv ?_
@@ -430,7 +291,7 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
       (row4 (p.kp * (-p.Vg * Real.cos (x 0))) p.ki (p.kp * (p.Xg * p.kpv))
         (p.kp * (-(p.Xg * p.kiv)))) x := by
   have h := (((p.hasFDerivAt_vgq x).const_mul p.kp).const_add (p.ωs - p.ωg)).add
-    ((Criteria.hasFDerivAt_coord 1 x).const_mul p.ki)
+    ((Dynamics.hasFDerivAt_coord 1 x).const_mul p.ki)
   refine (h.congr_fderiv ?_).congr_of_eventuallyEq (Eventually.of_forall fun y => ?_)
   · ext v
     simp [row4]
@@ -452,7 +313,7 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
         (3 * p.kiv * (p.vgd (x 0) (p.idRef (x 2) (x 3)) - p.Rg * p.idRef (x 2) (x 3) -
           p.Xg * p.iq0) / (2 * x 2 * p.Cdc))) x := by
   have h2 : 2 * x 2 ≠ 0 := mul_ne_zero two_ne_zero hx
-  have hd := ((Criteria.hasFDerivAt_coord 2 x).const_mul (2 : ℝ))
+  have hd := ((Dynamics.hasFDerivAt_coord 2 x).const_mul (2 : ℝ))
   have hinv := (hasDerivAt_inv h2).comp_hasFDerivAt x hd
   have h := ((((p.hasFDerivAt_pccP x).const_mul 3).mul hinv).const_add p.I0).mul_const
     p.Cdc⁻¹
@@ -468,7 +329,7 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
 
 @[powerlib_foundation] theorem hasFDerivAt_field_three (x : State 4) :
     HasFDerivAt (fun y : State 4 => p.field y 3) (row4 0 0 (-1) 0) x := by
-  have h := (Criteria.hasFDerivAt_coord 2 x).const_sub p.VdcRef
+  have h := (Dynamics.hasFDerivAt_coord 2 x).const_sub p.VdcRef
   refine (h.congr_fderiv ?_).congr_of_eventuallyEq (Eventually.of_forall fun y => ?_)
   · ext v
     simp [row4]
@@ -478,7 +339,7 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
 `V_dc ≠ 0`. -/
 @[powerlib_foundation] theorem hasFDerivAt_field {x : State 4} (hx : x 2 ≠ 0) :
     HasFDerivAt p.field (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) (p.jacobian x)) x := by
-  refine Criteria.hasFDerivAt_toEuclideanCLM_of_components (p.jacobian x)
+  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components (p.jacobian x)
     (fun i => row4 (p.jacobian x i 0) (p.jacobian x i 1) (p.jacobian x i 2) (p.jacobian x i 3))
     ?_ ?_
   · intro i
@@ -533,8 +394,9 @@ private theorem modelB_locallyExponentiallyStable (hV : 0 < p.VdcRef) {x : State
   obtain ⟨hreg0, hJ⟩ := p.regField_equilibrium_jacobian hV hx
   have hreg := Criteria.locallyExponentiallyStable_of_jacobian_fin_four (p.jacobian x)
     (p.contDiff_regField hV) hreg0 hJ htr hm3 hdet hg
-  exact locallyExponentiallyStable_of_eqOn_ball (by positivity)
-    (fun y hy => p.field_eq_regField_of_mem_ball hV (p.equilibrium_Vdc hx) hy) hreg
+  exact Dynamics.locallyExponentiallyStable_of_eqOn_ball (by positivity)
+    (fun y hy => p.field_eq_regField_of_mem_ball hV (p.equilibrium_Vdc hx)
+      (mem_ball_iff_norm.mpr hy)) hreg
 
 /-- **Model B, instability.** At an equilibrium of model B (`V_dc* > 0`) with `det J < 0` the
 Jacobian has a positive real eigenvalue and the equilibrium is unstable. Implementation evidence
@@ -545,8 +407,9 @@ private theorem modelB_unstable_of_det_neg (hV : 0 < p.VdcRef) {x : State 4}
   obtain ⟨hreg0, hJ⟩ := p.regField_equilibrium_jacobian hV hx
   have hreg := Criteria.unstable_of_jacobian_det_neg_fin_four (p.jacobian x)
     (p.contDiff_regField hV) hreg0 hJ hdet
-  exact unstable_of_eqOn_ball (by positivity)
-    (fun y hy => p.field_eq_regField_of_mem_ball hV (p.equilibrium_Vdc hx) hy) hreg
+  exact Dynamics.unstable_of_eqOn_ball (by positivity)
+    (fun y hy => p.field_eq_regField_of_mem_ball hV (p.equilibrium_Vdc hx)
+      (mem_ball_iff_norm.mpr hy)) hreg
 
 /-- Concrete non-vacuous instance: the no-load operating point. With `I₀ = 0`, `R_g = 0`,
 `i_q0 = 0`, `V_dc* > 0`, `V_g > 0` and positive gains `k_p, k_i, k_pv, k_iv` and `C_dc > 0`
@@ -622,7 +485,7 @@ private theorem modelB_noLoad_locallyExponentiallyStable (hV : 0 < p.VdcRef)
 def nonzeroVdc : Set (State 4) := {x | x 2 ≠ 0}
 
 @[powerlib_foundation] theorem isOpen_nonzeroVdc : IsOpen nonzeroVdc :=
-  isOpen_ne_fun (Criteria.contDiff_coord (n := 4) (k := 0) 2).continuous continuous_const
+  isOpen_ne_fun (Dynamics.contDiff_coord (n := 4) (k := 0) 2).continuous continuous_const
 
 /-- Model B is `C¹` on `V_dc ≠ 0` (both signs of the DC-link voltage). -/
 @[powerlib_foundation] theorem field_contDiffOn : ContDiffOn ℝ 1 p.field nonzeroVdc := by
@@ -640,7 +503,7 @@ def nonzeroVdc : Set (State 4) := {x | x 2 ≠ 0}
   · simp only [field, PiLp.toLp_apply, Fin.reduceFinMk, Matrix.cons_val]
     apply ContDiffOn.div_const
     apply contDiffOn_const.add
-    apply ContDiffOn.div _ (contDiff_const.mul (Criteria.contDiff_coord 2)).contDiffOn
+    apply ContDiffOn.div _ (contDiff_const.mul (Dynamics.contDiff_coord 2)).contDiffOn
     · intro x hx
       exact mul_ne_zero two_ne_zero hx
     · apply ContDiff.contDiffOn
@@ -695,7 +558,7 @@ function `(2 I₀ V_dc + 3 P) / C_dc`. Static evidence on the model. -/
 @[powerlib_foundation] theorem contDiff_field_offDC :
     ContDiff ℝ 1 (fun y : State 4 => (WithLp.toLp 2 ![p.field y 0, p.field y 1, 0, p.field y 3] :
       State 4)) := by
-  apply Criteria.contDiff_of_components
+  apply Dynamics.contDiff_of_components
   intro i
   fin_cases i
   · show ContDiff ℝ 1 (fun y : State 4 =>
@@ -733,7 +596,7 @@ private theorem modelB_locallyExponentiallyStable_of_collapse {x : State 4} (hx 
     LocallyExponentiallyStable p.field x := by
   set g : State 4 → ℝ := fun y => (2 * p.I0 * y 2 + 3 * p.pccP y) / p.Cdc with hg
   have hgc : Continuous g :=
-    ((continuous_const.mul (Criteria.contDiff_coord (n := 4) (k := 1) 2).continuous).add
+    ((continuous_const.mul (Dynamics.contDiff_coord (n := 4) (k := 1) 2).continuous).add
       (continuous_const.mul p.contDiff_pccP.continuous)).div_const _
   have hgx : g x = 3 * (p.pccP x / p.Cdc) := by
     simp only [hg, hx, mul_zero, zero_add]
@@ -743,7 +606,7 @@ private theorem modelB_locallyExponentiallyStable_of_collapse {x : State 4} (hx 
   obtain ⟨ρ₁, hρ₁, hball⟩ := Metric.continuous_iff.mp hgc x a ha0
   obtain ⟨M, hM⟩ := (isCompact_closedBall x 1).exists_bound_of_continuousOn
     p.contDiff_field_offDC.continuous.continuousOn
-  refine Dynamics.locallyExponentiallyStable_of_collapse 2 hx (ρ := min ρ₁ 1) (a := a) (M := M)
+  refine Dynamics.Degenerate.locallyExponentiallyStable_of_collapse 2 hx (ρ := min ρ₁ 1) (a := a) (M := M)
     (lt_min hρ₁ one_pos) ha0 ?_ ?_ ?_
   · intro y hy hy2
     rw [p.two_mul_field_two hy2]
@@ -773,7 +636,7 @@ private theorem modelB_unstable_of_repel {x : State 4} (hx : x 2 = 0)
     (hP : 0 < p.pccP x / p.Cdc) : Unstable p.field x := by
   set g : State 4 → ℝ := fun y => (2 * p.I0 * y 2 + 3 * p.pccP y) / p.Cdc with hg
   have hgc : Continuous g :=
-    ((continuous_const.mul (Criteria.contDiff_coord (n := 4) (k := 1) 2).continuous).add
+    ((continuous_const.mul (Dynamics.contDiff_coord (n := 4) (k := 1) 2).continuous).add
       (continuous_const.mul p.contDiff_pccP.continuous)).div_const _
   have hgx : g x = 3 * (p.pccP x / p.Cdc) := by
     simp only [hg, hx, mul_zero, zero_add]
@@ -781,7 +644,7 @@ private theorem modelB_unstable_of_repel {x : State 4} (hx : x 2 = 0)
   set a := g x / 2 with ha
   have ha0 : 0 < a := by rw [ha, hgx]; linarith
   obtain ⟨ρ, hρ, hball⟩ := Metric.continuous_iff.mp hgc x a ha0
-  refine Dynamics.unstable_of_repel 2 hx hρ ha0 (fun y hy hy2 => ?_) (fun s hs => ?_)
+  refine Dynamics.Degenerate.unstable_of_repel 2 hx hρ ha0 (fun y hy hy2 => ?_) (fun s hs => ?_)
   · rw [p.two_mul_field_two hy2]
     have h1 := hball y (by rw [dist_eq_norm]; exact hy)
     rw [Real.dist_eq] at h1
@@ -789,36 +652,36 @@ private theorem modelB_unstable_of_repel {x : State 4} (hx : x 2 = 0)
     show a ≤ g y
     linarith
   · refine ⟨fun y => (WithLp.toLp 2 ![p.field y 0, p.field y 1,
-      (p.I0 + 3 * p.pccP y / (2 * regDen s (y 2))) / p.Cdc, p.field y 3] : State 4), ?_, ?_⟩
-    · have hden : ContDiff ℝ 1 (fun y : State 4 => 2 * regDen s (y 2)) :=
-        contDiff_const.mul ((contDiff_regDen _).comp (Criteria.contDiff_coord 2))
-      have hden0 : ∀ y : State 4, 2 * regDen s (y 2) ≠ 0 := fun y => by
-        have := half_le_regDen hs (y 2)
-        have : 0 < regDen s (y 2) := lt_of_lt_of_le (by positivity) this
+      (p.I0 + 3 * p.pccP y / (2 * Dynamics.regDen s (y 2))) / p.Cdc, p.field y 3] : State 4), ?_, ?_⟩
+    · have hden : ContDiff ℝ 1 (fun y : State 4 => 2 * Dynamics.regDen s (y 2)) :=
+        contDiff_const.mul ((Dynamics.contDiff_regDen _).comp (Dynamics.contDiff_coord 2))
+      have hden0 : ∀ y : State 4, 2 * Dynamics.regDen s (y 2) ≠ 0 := fun y => by
+        have := Dynamics.half_le_regDen hs (y 2)
+        have : 0 < Dynamics.regDen s (y 2) := lt_of_lt_of_le (by positivity) this
         positivity
       have hoff := p.contDiff_field_offDC
-      apply Criteria.contDiff_of_components
+      apply Dynamics.contDiff_of_components
       intro i
       fin_cases i
       · show ContDiff ℝ 1 (fun y : State 4 => p.field y 0)
-        have h := (Criteria.contDiff_coord (n := 4) (k := 1) 0).comp hoff
+        have h := (Dynamics.contDiff_coord (n := 4) (k := 1) 0).comp hoff
         exact h
       · show ContDiff ℝ 1 (fun y : State 4 => p.field y 1)
-        have h := (Criteria.contDiff_coord (n := 4) (k := 1) 1).comp hoff
+        have h := (Dynamics.contDiff_coord (n := 4) (k := 1) 1).comp hoff
         exact h
       · show ContDiff ℝ 1 (fun y : State 4 =>
-          (p.I0 + 3 * p.pccP y / (2 * regDen s (y 2))) / p.Cdc)
+          (p.I0 + 3 * p.pccP y / (2 * Dynamics.regDen s (y 2))) / p.Cdc)
         exact (contDiff_const.add ((contDiff_const.mul p.contDiff_pccP).div hden hden0)).div_const _
       · show ContDiff ℝ 1 (fun y : State 4 => p.field y 3)
-        have h := (Criteria.contDiff_coord (n := 4) (k := 1) 3).comp hoff
+        have h := (Dynamics.contDiff_coord (n := 4) (k := 1) 3).comp hoff
         exact h
     · intro y _ hy2
-      have hr : regDen s (y 2) = y 2 := regDen_eq hs (by linarith)
+      have hr : Dynamics.regDen s (y 2) = y 2 := Dynamics.regDen_eq hs (by linarith)
       ext i
       fin_cases i
       · rfl
       · rfl
-      · show (p.I0 + 3 * p.pccP y / (2 * regDen s (y 2))) / p.Cdc = p.field y 2
+      · show (p.I0 + 3 * p.pccP y / (2 * Dynamics.regDen s (y 2))) / p.Cdc = p.field y 2
         rw [hr]
         simp [field, pccP]
       · rfl
@@ -1027,8 +890,9 @@ model B on a ball around the equilibrium, and the quartic Routh–Hurwitz criter
     have hV : 0 < m.p.VdcRef := hI .positiveReference (by simp)
     obtain ⟨-, hJ⟩ := m.p.regField_equilibrium_jacobian hV hx
     have hles : LocallyExponentiallyStable m.p.regField m.x :=
-      locallyExponentiallyStable_of_eqOn_ball (by positivity)
-        (fun y hy => (m.p.field_eq_regField_of_mem_ball hV (m.p.equilibrium_Vdc hx) hy).symm)
+      Dynamics.locallyExponentiallyStable_of_eqOn_ball (by positivity)
+        (fun y hy => (m.p.field_eq_regField_of_mem_ball hV (m.p.equilibrium_Vdc hx)
+          (mem_ball_iff_norm.mpr hy)).symm)
         (mem_den_flow_iff.mp hd)
     have hA := Dynamics.isHurwitz_of_locallyExponentiallyStable _ (m.p.contDiff_regField hV) hJ
       hles
@@ -1269,7 +1133,7 @@ injection crosses the plane (`I₀ / C_dc ≠ 0`) is locally exponentially stabl
 semantics, although it is not an equilibrium (the DC-link component of the field is
 `I₀ / C_dc ≠ 0` there): near `x*`, `d(V_dc²)/dt = (2 I₀ V_dc + 3 P) / C_dc` is bounded below zero,
 so every solution segment reaches the plane at most at its end, after a time `O(V_dc(t₀)²)`, and
-moves by `O(‖x(t₀) − x*‖²)` (`Dynamics.locallyExponentiallyStable_of_collapse`). The estimate is
+moves by `O(‖x(t₀) − x*‖²)` (`Dynamics.Degenerate.locallyExponentiallyStable_of_collapse`). The estimate is
 met because the solutions cease to exist, not because they converge. -/
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_collapse (m : Model)
     (hx : m.x 2 = 0) (hP : m.p.pccP m.x / m.p.Cdc < 0) (hI : m.p.I0 / m.p.Cdc ≠ 0) :
@@ -1305,7 +1169,7 @@ equilibrium (`not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero`). -/
   have hplane : ∀ t ∈ Icc 0 T, ψ t 2 = 0 := by
     have hd : ∀ t ∈ Icc 0 T, HasDerivWithinAt (fun t => (ψ t 2 : ℝ)) (G (ψ t) 2 : ℝ)
         (Icc 0 T) t := fun t ht =>
-      (Criteria.coord 2 : State 4 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt t (hψ t ht)
+      (Dynamics.coord 2 : State 4 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt t (hψ t ht)
     have hb := norm_image_sub_le_of_norm_deriv_le_segment' hd (C := 0) (fun t _ => by simp [hG])
     intro t ht
     have := hb t ht
@@ -1329,7 +1193,7 @@ equilibrium (`not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero`). -/
 /-- **Repulsion from the singular plane.** A selected state with `V_dc* = 0` at which the power
 term pushes the DC-link voltage away from the plane (`P(x*) / C_dc > 0`) is unstable: near `x*`,
 `d(V_dc²)/dt` is bounded below by a positive rate, and the solution from `V_dc = s > 0` exists
-while it stays near `x*` (`Dynamics.unstable_of_repel`). -/
+while it stays near `x*` (`Dynamics.Degenerate.unstable_of_repel`). -/
 @[powerlib_domain] theorem mem_den_unstable_of_repel (m : Model) (hx : m.x 2 = 0)
     (hP : 0 < m.p.pccP m.x / m.p.Cdc) :
     connection% (m ∈ family.den (.flow .unstable)) := by

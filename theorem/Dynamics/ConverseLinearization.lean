@@ -1,8 +1,7 @@
 import theorem.Flow.Certificate
-import theorem.Flow.Linearization
+import theorem.Dynamics.Linearization
 import theorem.Linear.Stability
-import theorem.NormalForm.Scalar
-import theorem.DCLink.Locality
+import theorem.Dynamics.Locality
 
 /-! # Converse linearization: local exponential stability forces a Hurwitz Jacobian
 
@@ -23,7 +22,7 @@ hypothesis and no Lipschitz bound on the Jacobian are needed.
 * `isHurwitz_of_locallyExponentiallyStable` (**converse linearization**): local exponential
   stability gives a Hurwitz Jacobian.
 * `locallyExponentiallyStable_iff_isHurwitz_jacobian`: with the direct theorem
-  (`Flow.locallyExponentiallyStable_of_isHurwitz_jacobian`, LeanForControl), local exponential
+  (`Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`, LeanForControl), local exponential
   stability holds exactly when `x*` is an equilibrium with a Hurwitz Jacobian;
   `locallyExponentiallyStable_iff_isHurwitz_of_eq` at a known equilibrium.
 * `not_locallyExponentiallyStable_of_firstIntegral`: a `C¹` field with a nonzero linear first
@@ -35,11 +34,8 @@ hypothesis and no Lipschitz bound on the Jacobian are needed.
   with a `1/V_dc` factor): `isHurwitz_of_locallyExponentiallyStable_local`,
   `locallyExponentiallyStable_iff_isHurwitz_jacobian_local`, and
   `not_locallyExponentiallyStable_of_fderiv_apply_eq_zero_local` (a direction killed by the
-  Jacobian), through the locality lemmas `DCLink.locallyExponentiallyStable_congr_nhds` and
-  `DCLink.exists_contDiff_eventuallyEq` of `theorem/DCLink/Locality.lean`.
-* `lift_locallyExponentiallyStable_iff`: for a lifted `C¹` scalar field `ẋ = g(x)`
-  (`NormalForm.lift`), local exponential stability of `r` holds exactly when `g r = 0` and
-  `g'(r) < 0`.
+  Jacobian), through the locality lemmas `locallyExponentiallyStable_congr_nhds` and
+  `exists_contDiff_eventuallyEq` of `theorem/Dynamics/Locality.lean`.
 
 Proof (no converse Lyapunov theorem). A smooth cutoff makes `f` globally Lipschitz without changing
 it within distance one of `x*` (`Flow.exists_lipschitz_cutoff`), so the solution `ψ_ε` through
@@ -285,7 +281,7 @@ point is an equilibrium and the Jacobian is Hurwitz. -/
     LocallyExponentiallyStable f x_eq ↔ f x_eq = 0 ∧ IsHurwitz A :=
   ⟨fun h => ⟨isEquilibrium_of_locallyExponentiallyStable hf h,
       isHurwitz_of_locallyExponentiallyStable A hf hJac h⟩,
-    fun h => Flow.locallyExponentiallyStable_of_isHurwitz_jacobian A hf h.1 hJac h.2⟩
+    fun h => Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian A hf h.1 hJac h.2⟩
 
 /-- At an equilibrium of a `C¹` field, local exponential stability is equivalent to a Hurwitz
 Jacobian. -/
@@ -375,9 +371,9 @@ point of a `C¹` field the Jacobian is injective. -/
 /-! ## Fields that are `C¹` only near the point
 
 Local exponential stability depends only on the field near the point
-(`DCLink.locallyExponentiallyStable_congr_nhds`), and a field that is `C¹` on an open
+(`locallyExponentiallyStable_congr_nhds`), and a field that is `C¹` on an open
 neighbourhood agrees near the point with a globally `C¹` field
-(`DCLink.exists_contDiff_eventuallyEq`). The converse linearization therefore holds for fields
+(`exists_contDiff_eventuallyEq`). The converse linearization therefore holds for fields
 that are `C¹` only on an open neighbourhood of the point, e.g. power-balance fields with a
 `1/V_dc` factor. -/
 
@@ -387,9 +383,9 @@ that are `C¹` only on an open neighbourhood of the point, e.g. power-balance fi
     (hf : ContDiffOn ℝ 1 f U)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
     (h : LocallyExponentiallyStable f x_eq) : IsHurwitz A := by
-  obtain ⟨g, hg, hgf⟩ := DCLink.exists_contDiff_eventuallyEq hU hx hf
+  obtain ⟨g, hg, hgf⟩ := exists_contDiff_eventuallyEq hU hx hf
   exact isHurwitz_of_locallyExponentiallyStable A hg (by rw [hgf.fderiv_eq, hJac])
-    (DCLink.locallyExponentiallyStable_congr_nhds hgf h)
+    (locallyExponentiallyStable_congr_nhds hgf h)
 
 /-- Local exponential stability of a point of a field that is `C¹` on an open neighbourhood holds
 exactly when the point is an equilibrium with a Hurwitz Jacobian. -/
@@ -398,15 +394,15 @@ exactly when the point is an equilibrium with a Hurwitz Jacobian. -/
     (A : Matrix (Fin n) (Fin n) ℝ) (hf : ContDiffOn ℝ 1 f U)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A) :
     LocallyExponentiallyStable f x_eq ↔ f x_eq = 0 ∧ IsHurwitz A := by
-  obtain ⟨g, hg, hgf⟩ := DCLink.exists_contDiff_eventuallyEq hU hx hf
+  obtain ⟨g, hg, hgf⟩ := exists_contDiff_eventuallyEq hU hx hf
   constructor
   · intro h
-    have hgl := DCLink.locallyExponentiallyStable_congr_nhds hgf h
+    have hgl := locallyExponentiallyStable_congr_nhds hgf h
     refine ⟨?_, isHurwitz_of_locallyExponentiallyStable A hg (by rw [hgf.fderiv_eq, hJac]) hgl⟩
     rw [← hgf.eq_of_nhds]
     exact isEquilibrium_of_locallyExponentiallyStable hg hgl
   · rintro ⟨heq, hA⟩
-    exact DCLink.locallyExponentiallyStable_of_isHurwitz_jacobian_local hU hx A hf heq hJac hA
+    exact locallyExponentiallyStable_of_isHurwitz_jacobian_local hU hx A hf heq hJac hA
 
 /-- A direction killed by the Jacobian excludes local exponential stability, for a field that
 is `C¹` on an open neighbourhood of the point. -/
@@ -415,24 +411,10 @@ is `C¹` on an open neighbourhood of the point. -/
     (hf : ContDiffOn ℝ 1 f U) {v : ℝⁿ} (hv : v ≠ 0) (hker : fderiv ℝ f x_eq v = 0) :
     ¬ LocallyExponentiallyStable f x_eq := by
   intro h
-  obtain ⟨g, hg, hgf⟩ := DCLink.exists_contDiff_eventuallyEq hU hx hf
+  obtain ⟨g, hg, hgf⟩ := exists_contDiff_eventuallyEq hU hx hf
   have hinj := fderiv_injective_of_locallyExponentiallyStable hg
-    (DCLink.locallyExponentiallyStable_congr_nhds hgf h)
+    (locallyExponentiallyStable_congr_nhds hgf h)
   rw [hgf.fderiv_eq] at hinj
   exact hv (hinj (by rw [hker, map_zero]))
-
-/-! ## Scalar fields -/
-
-/-- A point of the lift of a `C¹` scalar field `ẋ = g x` is locally exponentially stable exactly
-when it is a zero with negative slope. -/
-@[powerlib_foundation] theorem lift_locallyExponentiallyStable_iff {g : ℝ → ℝ} {r : ℝ}
-    (hg : ContDiff ℝ 1 g) :
-    LocallyExponentiallyStable (NormalForm.lift g) (NormalForm.embed r) ↔
-      g r = 0 ∧ deriv g r < 0 := by
-  have hd : DifferentiableAt ℝ g r := hg.differentiable one_ne_zero r
-  have hJac := NormalForm.fderiv_lift (g := g) (x := NormalForm.embed r) (by simpa using hd)
-  simp only [NormalForm.embed_apply] at hJac
-  rw [locallyExponentiallyStable_iff_isHurwitz_jacobian _ (NormalForm.lift_contDiff hg) hJac,
-    NormalForm.lift_eq_zero_iff, NormalForm.isHurwitz_one_iff]
 
 end powerlib.Dynamics

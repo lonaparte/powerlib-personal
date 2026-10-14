@@ -1,7 +1,9 @@
 import theorem.Criteria.Routh3
 import theorem.Dynamics.ConverseLinearization
 import theorem.Synchronous.Swing
-import theorem.CurrentControl.SISO
+import theorem.Dynamics.Lyapunov
+import theorem.Dynamics.Instability
+import theorem.Spectral.Family
 
 /-! # Grid-forming VSM with a first-order power filter on an infinite bus (three states)
 
@@ -53,7 +55,7 @@ Family and connection conclusions.
   asymptotic translation is not exact even within positive `M, D, ω_c`
   (`VSMLPF.not_exactUnder_locallyAsymptoticallyStable`, in `theorem/GFM/VSMLPFHopf.lean`): on the
   Hopf boundary `K = D ω_c + D²/M` the Jacobian has a purely imaginary pair, and an explicit
-  quartic Lyapunov function (`Dynamics.WeakFocus.localAsymptoticStable_of_hopf_weakFocus`) shows
+  quartic Lyapunov function (`Dynamics.Degenerate.localAsymptoticStable_of_hopf_weakFocus`) shows
   that every physical boundary model is a weak stable focus
   (`VSMLPF.mem_den_locallyAsymptoticallyStable_of_hopf`; witness `VSMLPF.hopfBoundary`). Its exact
   denotation within positive `M, D, ω_c` is
@@ -645,7 +647,7 @@ private theorem unstable_of {m : Model} (hp : Meets m .physical) (hb : Meets m .
       rw [e1, e2]
       linarith
     obtain ⟨s, hs, hre⟩ := exists_cubic_root_re_pos_of_gap hgap
-    refine Flow.unstable_of_characteristic_root_re_pos (m.g.jacobian m.δ) m.g.contDiff_field heq
+    refine Dynamics.unstable_of_characteristic_root_re_pos (m.g.jacobian m.δ) m.g.contDiff_field heq
       (fderiv_point m) (s := s) ?_ hre
     rw [Criteria.det_characteristicMatrix_fin_three']
     exact hs
@@ -1122,14 +1124,14 @@ def equilibrium : State 2 := Synchronous.mkState (Real.arcsin (q.P0 / q.K0)) q.P
     convert h using 1
     · funext y; simp [field, div_eq_inv_mul]
     · apply ContinuousLinearMap.ext; intro v
-      simp [jacobian, Synchronous.toEuclideanCLM_apply_zero]
+      simp [jacobian, PhasePlane.toEuclideanCLM_apply_zero]
       ring
   · have hs := (Real.hasDerivAt_sin (x 0)).comp_hasFDerivAt x h0
     have h := ((hs.const_mul q.K0).sub h1).const_mul q.ωc
     convert h using 1
     · funext y; simp [field]
     · apply ContinuousLinearMap.ext; intro v
-      simp [jacobian, Synchronous.toEuclideanCLM_apply_one]
+      simp [jacobian, PhasePlane.toEuclideanCLM_apply_one]
       ring
 
 
@@ -1698,7 +1700,7 @@ dissipated energy keeps the solution, and there `P₀ ((P₀ − P_f)/ω_c + D �
         (fun z w hzw => ?_) fun z => ?_
       · have hz0 := congrArg (fun y : State 2 => y 0) hzw
         have hz1 := congrArg (fun y : State 2 => y 1) hzw
-        simp only [Synchronous.toEuclideanCLM_apply_zero, Synchronous.toEuclideanCLM_apply_one]
+        simp only [PhasePlane.toEuclideanCLM_apply_zero, PhasePlane.toEuclideanCLM_apply_one]
           at hz0 hz1
         simp at hz0 hz1
         refine Synchronous.state_ext ?_ hz1
@@ -1709,8 +1711,8 @@ dissipated energy keeps the solution, and there `P₀ ((P₀ − P_f)/ω_c + D �
           ring
         have hf1 : m.field z 1 = -(m.q.ωc * z 1) := by
           simp [Model.field, Model.point, field, hP, hK0]
-        simp only [PiLp.inner_apply, Fin.sum_univ_two, Synchronous.toEuclideanCLM_apply_zero,
-          Synchronous.toEuclideanCLM_apply_one, hf0, hf1, RCLike.inner_apply, conj_trivial]
+        simp only [PiLp.inner_apply, Fin.sum_univ_two, PhasePlane.toEuclideanCLM_apply_zero,
+          PhasePlane.toEuclideanCLM_apply_one, hf0, hf1, RCLike.inner_apply, conj_trivial]
         have hcancel : -(z 1 / m.q.D) + -1 / (m.q.D * m.q.ωc) * -(m.q.ωc * z 1) = 0 := by
           field_simp
           ring

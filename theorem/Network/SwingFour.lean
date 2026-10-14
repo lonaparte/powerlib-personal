@@ -896,7 +896,7 @@ reduced Jacobian. -/
     exact not_localAsymptoticStable_four m.params m.θ σ h13 hsp hp hH hLAS
   · rintro ⟨hp, hH⟩
     exact Flow.locallyExponentiallyStable_localAsymptoticStable
-      (Flow.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian m.params m.θ)
+      (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian m.params m.θ)
         (reducedField_contDiff m.params) (reducedField_equilibrium m.params m.θ hp)
         (hasFDerivAt_reducedField m.params m.θ).fderiv hH)
 

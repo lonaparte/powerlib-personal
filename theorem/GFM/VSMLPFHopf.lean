@@ -1,5 +1,5 @@
 import theorem.GFM.VSMLPF
-import theorem.Dynamics.WeakFocus
+import theorem.Dynamics.Degenerate.WeakFocus
 
 /-! # VSM with a power filter on its Hopf boundary: local asymptotic stability (three states)
 
@@ -19,7 +19,7 @@ On the Hopf boundary `K = D ω_c + D²/M` (at a balanced angle) the Jacobian has
 the loop is exactly `ȧ = b`, `ḃ = −H a − G`, `ċ = −λ c − G`, where
 `G = (ω_c/M) (K (sin x − x) + P₀ (cos x − 1))` and `x = δ − δ* = (λ a − b + c)/(H + λ²)`.
 Hence `g₂ = −ω_c P₀ / (2M)`, `g₃ = −ω_c K / (6M)` and the weak-focus coefficient of
-`Dynamics.WeakFocus.localAsymptoticStable_of_hopf_weakFocus` is
+`Dynamics.Degenerate.localAsymptoticStable_of_hopf_weakFocus` is
 `κ = (ω_c P₀ / M)² (8H + λ²)/2 + H λ ω_c K (4H + λ²)/(2M) > 0`: every physical boundary model is a
 weak stable focus (a supercritical Hopf point), at every load.
 
@@ -126,7 +126,7 @@ private theorem las_of_hopf {m : Model} (hM : 0 < m.g.M) (hD : 0 < m.g.D) (hω :
     rw [hopfCoord_apply_one, h0, mul_zero, zero_sub, neg_eq_zero, div_eq_zero_iff,
       or_iff_left hMne] at h1
     exact state3_ext (by rw [← h2]; rfl) (by rw [h0]; rfl) (by rw [h1]; rfl)
-  refine Dynamics.WeakFocus.localAsymptoticStable_of_hopf_weakFocus (T := hopfCoord m)
+  refine Dynamics.Degenerate.localAsymptoticStable_of_hopf_weakFocus (T := hopfCoord m)
     (G := fun z => m.g.ωc / m.g.M * (m.K * (Real.sin (z 0) - z 0) +
       m.g.P0 * (Real.cos (z 0) - 1)))
     (H := m.g.D * m.g.ωc / m.g.M) (lam := m.g.ωc + m.g.D / m.g.M)
@@ -178,13 +178,13 @@ private theorem las_of_hopf {m : Model} (hM : 0 < m.g.M) (hD : 0 < m.g.D) (hω :
           exact hs.trans (by linarith)
       _ = (|m.K| / 100 + |m.g.P0| * (5 / 96)) * x ^ 4 := by rw [hx4]; ring
   · have hKpos : 0 < m.K := by rw [hK]; positivity
-    have e : Dynamics.WeakFocus.hopfCoeff (m.g.D * m.g.ωc / m.g.M) (m.g.ωc + m.g.D / m.g.M)
+    have e : Dynamics.Degenerate.hopfCoeff (m.g.D * m.g.ωc / m.g.M) (m.g.ωc + m.g.D / m.g.M)
         (-(m.g.ωc / m.g.M * m.g.P0) / 2) (-(m.g.ωc / m.g.M * m.K) / 6) =
         (m.g.ωc / m.g.M * m.g.P0) ^ 2 / 2 *
             (8 * (m.g.D * m.g.ωc / m.g.M) + (m.g.ωc + m.g.D / m.g.M) ^ 2) +
           m.g.D * m.g.ωc / m.g.M * (m.g.ωc + m.g.D / m.g.M) * (m.g.ωc / m.g.M) * m.K / 2 *
             (4 * (m.g.D * m.g.ωc / m.g.M) + (m.g.ωc + m.g.D / m.g.M) ^ 2) := by
-      unfold Dynamics.WeakFocus.hopfCoeff; ring
+      unfold Dynamics.Degenerate.hopfCoeff; ring
     rw [e]
     have h1 : 0 ≤ (m.g.ωc / m.g.M * m.g.P0) ^ 2 / 2 *
         (8 * (m.g.D * m.g.ωc / m.g.M) + (m.g.ωc + m.g.D / m.g.M) ^ 2) := by positivity

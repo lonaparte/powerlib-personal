@@ -1,9 +1,10 @@
 import theorem.NormalForm.Scalar
 import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
-import theorem.Flow.Shift
+import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
-import theorem.CurrentControl.SISO
+import theorem.Dynamics.Lyapunov
+import theorem.Dynamics.Instability
 
 /-! # Power-synchronization control (PSC): quasi-static one-dimensional model and algebra
 
@@ -31,7 +32,7 @@ slope `K_p P_max cos δ* < 0`.  The local sentences translate into balance and a
 instability into balance and a positive slope, passivity into nothing (exact), the remaining
 sentences into the whole, inconsistent, language.  `PSC.chain_le_semantics` proves soundness;
 `PSC.exact_locallyExponentiallyStable` proves the local exponential translation exact (converse
-linearization of the scalar field, `Dynamics.lift_locallyExponentiallyStable_iff`); the
+linearization of the scalar field, `NormalForm.lift_locallyExponentiallyStable_iff`); the
 former domain theorems `locallyExponentiallyStable`, `unstable`, `locallyExponentiallyStable_arcsin`
 and `unstable_pi_sub_arcsin` are connection statements (members of the denotations), and
 `field_eq_zero_iff`, `exists_equilibrium_iff` are static evidence on the model. The instability
@@ -245,7 +246,7 @@ without requirement. -/
   ext m
   rw [TMIO.mem_realize, mem_den_flow_iff]
   change _ ↔ LocallyExponentiallyStable (NormalForm.lift m.c.rhs) _
-  rw [Dynamics.lift_locallyExponentiallyStable_iff m.c.rhs_contDiff,
+  rw [NormalForm.lift_locallyExponentiallyStable_iff m.c.rhs_contDiff,
     (m.c.hasDerivAt_rhs m.δ).deriv]
   simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
     forall_eq, Meets, rhs, neg_lt_zero]

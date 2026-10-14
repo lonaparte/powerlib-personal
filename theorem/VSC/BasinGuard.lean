@@ -1,6 +1,6 @@
 import theorem.Dynamics.Transport
 import theorem.Family.Basic
-import theorem.Flow.Shift
+import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic

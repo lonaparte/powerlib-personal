@@ -1,5 +1,5 @@
 import theorem.Synchronous.FaultSequence
-import theorem.Dynamics.Basin
+import theorem.Dynamics.LaSalle.Basin
 
 /-! # Equal-area criterion with damping: conservative sufficiency and the LaSalle basin of the
 potential well
@@ -13,7 +13,7 @@ trajectory level and quantify over every solution.  A three-stage trajectory is 
 in `FaultSequence.lean`: `tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
 IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
 IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc)`.  "`S` lies in the region of attraction
-of `x_eq`" is written out as in `theorem/Dynamics/Basin.lean`: from every initial state in `S` a
+of `x_eq`" is written out as in `theorem/Dynamics/LaSalle/Basin.lean`: from every initial state in `S` a
 forward solution on `[0, ∞)` exists and every forward solution from it converges to `x_eq`.
 
 Results.
@@ -65,8 +65,8 @@ theorems (`energy_antitoneOn`, `firstSwing_le_deltaU_of_damping`, `regionOfAttra
 `boltedFault_damped_tendsto`) are private implementation evidence; the local stability of
 `(δ_s, 0)` with `D > 0` is the connection conclusion `Swing.deltaS_mem_den_locallyExponentiallyStable`.
 The well geometry (`wellWindow`, compact sublevels, the only equilibrium in the window) and the
-elementary bounds `exp_neg_lt_quadratic`, `exp_neg_le_quadratic` are public foundation.  LaSalle is the generic `Dynamics.regionOfAttraction_of_lasalle_sublevel`
-(`theorem/Dynamics/Basin.lean`).
+elementary bounds `exp_neg_lt_quadratic`, `exp_neg_le_quadratic` are public foundation.  LaSalle is the generic `Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel`
+(`theorem/Dynamics/LaSalle/Basin.lean`).
 
 Source: work-sync theory/T-transient-stability.md §1.3, §1.5, §1.6, §1.8, §2.2.
 -/
@@ -293,11 +293,11 @@ private theorem regionOfAttraction_well (hM : 0 < p.M) (hD : 0 < p.D)
     rcases mul_eq_zero.mp this with h0 | h0
     · exact absurd h0 hD.ne'
     · exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp h0
-  refine Dynamics.regionOfAttraction_of_lasalle_sublevel p.isOpen_wellWindow p.contDiff_field
+  refine Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel p.isOpen_wellWindow p.contDiff_field
     (p.contDiff_energy _) (fun x _ => ?_) (p.isCompact_wellSublevel hM hc1 hc2) ?_
   · rw [p.energy_lie hM.ne']
     nlinarith [sq_nonneg (x 1)]
-  · refine Dynamics.lasalle_condition_of_lieDeriv p.contDiff_field (h := fun x : State 2 => x 1)
+  · refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv p.contDiff_field (h := fun x : State 2 => x 1)
       (coord_contDiff 1) ?_ ?_
     · intro x hx
       exact hω x hx.2
@@ -333,7 +333,7 @@ private theorem tendsto_of_firstSwing_margin (hM : 0 < p.M) (hD : 0 < p.D)
     rw [p.potential_sub_two_pi]
     have : 0 ≤ 2 * Real.pi * (p.Pm - p.k₁) := mul_nonneg (by positivity) (by linarith)
     linarith
-  refine Dynamics.RegionOfAttraction.tendsto (p.regionOfAttraction_well hM hD hk h hc1 hc2)
+  refine Dynamics.LaSalle.RegionOfAttraction.tendsto (p.regionOfAttraction_well hM hD hk h hc1 hc2)
     hφ ?_
   rw [h0]
   exact ⟨⟨by simpa using hwell, by simpa using hδc⟩, le_rfl⟩

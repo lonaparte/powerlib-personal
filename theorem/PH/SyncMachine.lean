@@ -3,7 +3,7 @@ import theorem.PH.Linearization
 import theorem.Criteria.Hurwitz2
 import theorem.Dynamics.ConverseLinearization
 import theorem.TMIO.ClaimElab
-import theorem.CurrentControl.SISO
+import theorem.Dynamics.Instability
 
 /-! # Synchronous machines as nonlinear port-Hamiltonian systems
 

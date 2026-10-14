@@ -33,7 +33,7 @@ all results remain public foundation support.
 -/
 
 noncomputable section
-namespace powerlib.PhasePlane
+namespace powerlib.Dynamics
 
 open Set Filter Topology NNReal
 
@@ -154,4 +154,4 @@ def lipschitzFlow (hf : LipschitzWith K f) : Flow ℝ≥0 E where
   Flow.isInvariant_omegaLimit atTop (lipschitzFlow hf) s
     (fun _ => tendsto_atTop_mono (fun _ => le_add_self) tendsto_id)
 
-end powerlib.PhasePlane
+end powerlib.Dynamics

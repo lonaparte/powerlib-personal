@@ -1,5 +1,7 @@
-import theorem.Flow.Linearization
+import theorem.Dynamics.Linearization
 import theorem.Dynamics.State
+import theorem.Dynamics.ConverseLinearization
+import theorem.Linear.Family
 
 /-! # One-dimensional vector fields as `State 1` systems
 
@@ -17,8 +19,11 @@ Contents.
 * Jacobian of the lifted field: `fderiv ℝ (lift g) (embed r) = toEuclideanCLM !![g' r]`.
 * Scalar linearization wrappers: `g r = 0`, `deriv g r < 0` ⇒ local exponential stability;
   `deriv g r > 0` ⇒ instability. They only repackage
-  `powerlib.Flow.locallyExponentiallyStable_of_isHurwitz_jacobian` and
-  `powerlib.Flow.unstable_of_jacobian_eigenvalue_re_pos` for `n = 1`.
+  `powerlib.Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian` and
+  `powerlib.Dynamics.unstable_of_jacobian_eigenvalue_re_pos` for `n = 1`;
+  `lift_locallyExponentiallyStable_iff`: with the converse linearization
+  (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`), local exponential stability of
+  `r` holds exactly when `g r = 0` and `g'(r) < 0`.
 * One-dimensional saddle-node hypersurface: `SaddleNodeCondition g ↔ ∃ x, g x = 0 ∧ deriv g x = 0`.
 
 Source: work-sync theory/T-bifurcation.md §1.1–1.2, theory/T-bifurcation-hypersurfaces.md §1.2
@@ -26,7 +31,7 @@ Source: work-sync theory/T-bifurcation.md §1.1–1.2, theory/T-bifurcation-hype
 
 Architecture: no model family is defined here. Every statement is generic in the scalar field
 `g` (behaviour is LeanForControl's predicates for the lifted field, linearization goes through
-`powerlib.Flow`'s Jacobian theorems), so all results are public foundation support.
+`powerlib.Dynamics`'s Jacobian theorems), so all results are public foundation support.
 -/
 
 noncomputable section
@@ -124,24 +129,6 @@ def coordCLM : State 1 →L[ℝ] ℝ := EuclideanSpace.proj 0
       Matrix.toEuclideanCLM (n := Fin 1) (𝕜 := ℝ) !![deriv g (x 0)] :=
   (hasFDerivAt_lift hg.hasDerivAt).fderiv
 
-/-- A `1 × 1` real matrix is Hurwitz iff its entry is negative. -/
-@[powerlib_foundation] theorem isHurwitz_one_iff (a : ℝ) :
-    LinearSystems.IsHurwitz (!![a] : Matrix (Fin 1) (Fin 1) ℝ) ↔ a < 0 := by
-  constructor
-  · intro h
-    have := h (a : ℂ) (fun _ => 1) (by intro h0; simpa using congrFun h0 0)
-      (by ext i; fin_cases i; simp [Matrix.mulVec, dotProduct])
-    simpa using this
-  · intro ha μ v hv heig
-    have hv0 : v 0 ≠ 0 := by
-      intro h0; apply hv; ext i; fin_cases i; simpa using h0
-    have h := congrFun heig 0
-    simp only [Matrix.mulVec, dotProduct, Fin.sum_univ_one, Matrix.map_apply,
-      Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_fin_one,
-      Pi.smul_apply, smul_eq_mul] at h
-    have hμ : μ = (a : ℂ) := (mul_right_cancel₀ hv0 h).symm
-    rw [hμ]; simpa using ha
-
 /-- The `1 × 1` matrix `(a)` with `a > 0` has the eigenpair `(a, 1)`. -/
 @[powerlib_foundation] theorem exists_eigenpair_one_of_pos {a : ℝ} (ha : 0 < a) :
     ∃ (μ : ℂ) (v : Fin 1 → ℂ), v ≠ 0 ∧
@@ -154,17 +141,29 @@ def coordCLM : State 1 →L[ℝ] ℝ := EuclideanSpace.proj 0
     (hg : ContDiff ℝ 1 g) (h0 : g r = 0) (hslope : deriv g r < 0) :
     LocallyExponentiallyStable (lift g) (embed r) := by
   have hd : DifferentiableAt ℝ g r := hg.differentiable (by norm_num) r
-  refine Flow.locallyExponentiallyStable_of_isHurwitz_jacobian !![deriv g r] (lift_contDiff hg)
-    ((lift_eq_zero_iff g r).mpr h0) ?_ ((isHurwitz_one_iff _).mpr hslope)
+  refine Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian !![deriv g r] (lift_contDiff hg)
+    ((lift_eq_zero_iff g r).mpr h0) ?_ ((Linear.isHurwitz_one_iff _).mpr hslope)
   have := fderiv_lift (g := g) (x := embed r) (by simpa using hd)
   simpa using this
+
+/-- A point of the lift of a `C¹` scalar field `ẋ = g x` is locally exponentially stable exactly
+when it is a zero with negative slope. -/
+@[powerlib_foundation] theorem lift_locallyExponentiallyStable_iff {g : ℝ → ℝ} {r : ℝ}
+    (hg : ContDiff ℝ 1 g) :
+    LocallyExponentiallyStable (NormalForm.lift g) (NormalForm.embed r) ↔
+      g r = 0 ∧ deriv g r < 0 := by
+  have hd : DifferentiableAt ℝ g r := hg.differentiable one_ne_zero r
+  have hJac := NormalForm.fderiv_lift (g := g) (x := NormalForm.embed r) (by simpa using hd)
+  simp only [NormalForm.embed_apply] at hJac
+  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ (NormalForm.lift_contDiff hg) hJac,
+    NormalForm.lift_eq_zero_iff, Linear.isHurwitz_one_iff]
 
 /-- Scalar linearization: an equilibrium with positive slope is unstable. -/
 @[powerlib_foundation] theorem lift_unstable {g : ℝ → ℝ} {r : ℝ}
     (hg : ContDiff ℝ 1 g) (h0 : g r = 0) (hslope : 0 < deriv g r) :
     Unstable (lift g) (embed r) := by
   have hd : DifferentiableAt ℝ g r := hg.differentiable (by norm_num) r
-  refine Flow.unstable_of_jacobian_eigenvalue_re_pos !![deriv g r] (lift_contDiff hg)
+  refine Dynamics.unstable_of_jacobian_eigenvalue_re_pos !![deriv g r] (lift_contDiff hg)
     ((lift_eq_zero_iff g r).mpr h0) ?_ (exists_eigenpair_one_of_pos hslope)
   have := fderiv_lift (g := g) (x := embed r) (by simpa using hd)
   simpa using this

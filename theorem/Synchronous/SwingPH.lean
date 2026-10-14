@@ -103,10 +103,10 @@ def momentumCoord : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, p.M]
     (p.linearPH δ₀ hM hD hK).plant.system.field x u =
       mkState (x 1 / p.M) (-p.syncCoeff δ₀ * x 0 - p.D * (x 1 / p.M) + u 0) := by
   apply state_ext
-  · simp [Linear.Plant.system, Port.PortHamiltonian.plant, linearPH, toEuclideanCLM_apply_zero,
+  · simp [Linear.Plant.system, Port.PortHamiltonian.plant, linearPH, PhasePlane.toEuclideanCLM_apply_zero,
       dotProduct]
     ring
-  · simp [Linear.Plant.system, Port.PortHamiltonian.plant, linearPH, toEuclideanCLM_apply_one,
+  · simp [Linear.Plant.system, Port.PortHamiltonian.plant, linearPH, PhasePlane.toEuclideanCLM_apply_one,
       dotProduct]
     ring
 

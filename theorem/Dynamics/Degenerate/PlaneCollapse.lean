@@ -1,4 +1,6 @@
-import theorem.Dynamics.Basin
+import theorem.Dynamics.Coordinates
+import theorem.Dynamics.Calculus
+import theorem.Dynamics.Locality
 
 /-! # Local tools for fields that are singular or only locally regular
 
@@ -18,11 +20,11 @@ Results.
 * `unstable_of_repel`: if instead the flow is repelled from the plane (`2 y_k f_k(y) ≥ a` off it)
   and agrees on every half ball `{y_k ≥ s}` with a `C¹` field, `x` is unstable: the solution from
   `x + s e_k` exists while it stays near `x` (globally Lipschitz cutoff of the `C¹` field, first
-  exit `forall_lt_of_first_exit`), and there `y_k²` grows linearly.
+  exit `Dynamics.forall_lt_of_first_exit`), and there `y_k²` grows linearly.
 * `unstable_of_cone`: instability from a cone `{σ y_k > 0, W ≥ 0}` at the plane that the field
   enters through its boundary and in which `σ y_k` grows at a positive rate (the degenerate case of
-  the plane where the power term vanishes at `x`); helpers `deriv_nonpos_of_isMinOn_right`,
-  `exists_pos_of_hasDerivAt`.
+  the plane where the power term vanishes at `x`); helpers `Dynamics.deriv_nonpos_of_isMinOn_right`,
+  `Dynamics.exists_pos_of_hasDerivAt` (`theorem/Dynamics/Calculus.lean`).
 * `locallyExponentiallyStable_of_spiral`: spiral collapse. If off the plane `y_k f_k = q` with a
   `C¹` function `q`, `q(x) = 0`, `dq/dt = g + h q / y_k`, and `h(x)² + 4 g(x) < 0`, while on the
   plane `f_k ≠ 0`, then `x` satisfies the local exponential estimate: in the time `dτ = dt / y_k`
@@ -33,7 +35,7 @@ Results.
 * `unstable_of_barriers`: instability from seeds arbitrarily close to `x`, each with a trapping
   region `{σ y_k ≥ σ y₀_k / 2, W₁, W₂, W₃ ≥ 0}` (three `C¹` barriers crossed inwards) in which
   `σ y_k` does not decrease and a bounded `C¹` function grows at a positive rate; generalizes
-  `unstable_of_cone` (helpers `eventually_pos_of_hasDerivAt`, `exists_lipschitz_bound`).
+  `unstable_of_cone` (helpers `Dynamics.eventually_pos_of_hasDerivAt`, `exists_lipschitz_bound`).
 * `unstable_of_degenerate_node`: in the setting of `locallyExponentiallyStable_of_spiral`, a double
   root `h(x)/2 ≠ 0` of `λ² − h(x)λ − g(x)` (`h(x)² + 4g(x) = 0`) with `C¹` coefficients `g, h`
   makes `x` unstable: on the side `σ = sign h(x)` the shrinking cone
@@ -43,16 +45,13 @@ Results.
   field off the `k`-th coordinate does not vanish at `x`, the local exponential estimate fails:
   under it the solution from `x + s³ e_k` stays `O(s³)`-close, so `q = O(s⁵)` and the solution
   lives for a time `≍ s³`, during which the drift carries it beyond the estimate.
-* `localAsymptoticStable_of_eqOn_ball`: local asymptotic stability depends only on the field on a
-  ball (first-exit argument), complementing the ball-locality lemmas of
-  `theorem/GFL/ModelBStability.lean`.
-* `localAsymptoticStable_of_lie_neg`: a `C¹` function, positive on a punctured ball and strictly
-  decreasing along a field continuous on that ball, gives local asymptotic stability. Unlike
-  LeanForControl's `lyapunov_local_asymptotic_stable` no global sublevel set has to be compact
-  (the Lyapunov stability part is LeanForControl's `lyapunov_stable`; attractivity is the standard
-  uniform-decay argument on a compact annulus, through `antitoneOn_V_add_linear`).
-* `norm_sub_smul_single_le`, `norm_le_norm_sub_smul_single_add`: norm bounds for the projection
-  removing one coordinate.
+
+The generic tools these constructions use are in the flat `Dynamics` modules: ball locality
+(`Dynamics.localAsymptoticStable_of_eqOn_ball`, `theorem/Dynamics/Locality.lean`), the local strict
+Lyapunov theorem (`Dynamics.localAsymptoticStable_of_lie_neg`, `theorem/Dynamics/Lyapunov.lean`),
+mean-value and interval bounds (`theorem/Dynamics/Calculus.lean`) and the norm bounds for the
+projection removing one coordinate (`Dynamics.norm_sub_smul_single_le`,
+`Dynamics.norm_le_norm_sub_smul_single_add`, `theorem/Dynamics/Coordinates.lean`).
 
 Source: Khalil, *Nonlinear Systems* (3rd ed.), Theorem 4.1 (local Lyapunov theorem); the collapse
 estimate is new (it answers the `V_dc* = 0` question of `theorem/GFL/ModelBStability.lean`).
@@ -63,30 +62,10 @@ model-specific conclusions are drawn in the GFL model-B modules.
 -/
 
 noncomputable section
-namespace powerlib.Dynamics
+namespace powerlib.Dynamics.Degenerate
 open Set Filter Topology
 
 variable {n : ℕ}
-
-/-- The coordinate projection killing the `k`-th coordinate does not increase the norm. -/
-@[powerlib_foundation] theorem norm_sub_smul_single_le (k : Fin n) (v : State n) :
-    ‖v - v k • EuclideanSpace.single k (1 : ℝ)‖ ≤ ‖v‖ := by
-  rw [EuclideanSpace.norm_eq, EuclideanSpace.norm_eq]
-  apply Real.sqrt_le_sqrt
-  apply Finset.sum_le_sum
-  intro i _
-  by_cases hi : i = k
-  · subst hi; simp [sq_nonneg]
-  · simp [hi]
-
-/-- A vector is bounded by its part off the `k`-th coordinate plus that coordinate. -/
-@[powerlib_foundation] theorem norm_le_norm_sub_smul_single_add (k : Fin n) (v : State n) :
-    ‖v‖ ≤ ‖v - v k • EuclideanSpace.single k (1 : ℝ)‖ + |v k| := by
-  have h := norm_add_le (v - v k • EuclideanSpace.single k (1 : ℝ))
-    (v k • EuclideanSpace.single k (1 : ℝ))
-  rw [sub_add_cancel, norm_smul, PiLp.norm_single, norm_one, mul_one,
-    Real.norm_eq_abs] at h
-  exact h
 
 /-- **Collapse onto a coordinate plane.** Let the point `x` lie on the plane `y_k = 0`. If near `x`
 the field drives `y_k²` down at a uniform rate off the plane (`2 y_k f_k(y) ≤ −a`), crosses the
@@ -235,158 +214,6 @@ holds with `C = 4` and rate `1`. The field need not be continuous on the plane. 
     _ ≤ 4 * Real.exp (-1 * (t - t₀)) * δ := by
         have := mul_le_mul_of_nonneg_right hexp hδ0; nlinarith
 
-/-- Local asymptotic stability only depends on the field on a ball around the point. -/
-@[powerlib_foundation] theorem localAsymptoticStable_of_eqOn_ball {f g : State n → State n} {x : State n} {R : ℝ}
-    (hR : 0 < R) (hfg : ∀ y, ‖y - x‖ < R → f y = g y) (hg : LocalAsymptoticStable g x) :
-    LocalAsymptoticStable f x := by
-  obtain ⟨hgs, c, hc, hconv⟩ := hg
-  have hfs : LyapunovStable f x := by
-    intro ε hε
-    obtain ⟨δ, hδ, hb⟩ := hgs (min ε (R / 2)) (lt_min hε (by positivity))
-    refine ⟨min δ (min ε (R / 2)), lt_min hδ (lt_min hε (by positivity)), ?_⟩
-    intro t₀ t₁ φ hφ h0
-    have h0' : ‖φ t₀ - x‖ < min ε (R / 2) := lt_of_lt_of_le h0 (min_le_right _ _)
-    intro t ht
-    by_contra hfar
-    push Not at hfar
-    have hfar' : min ε (R / 2) ≤ ‖φ t - x‖ := (min_le_left _ _).trans hfar
-    obtain ⟨τ, hτ, hτeq, hτin⟩ := exists_first_sphere_hit hφ.continuousOn h0' ht hfar'
-    have hseg : IsTrajectoryOn φ g t₀ τ :=
-      isIntegralCurveOn_of_eq_on_curve (hφ.mono (Icc_subset_Icc le_rfl hτ.2))
-        (fun u hu => hfg _ (lt_of_le_of_lt (hτin u hu)
-          (lt_of_le_of_lt (min_le_right _ _) (by linarith))))
-    have := hb t₀ τ φ hseg (lt_of_lt_of_le h0 (min_le_left _ _)) τ ⟨hτ.1, le_rfl⟩
-    linarith
-  refine ⟨hfs, ?_⟩
-  obtain ⟨δ, hδ, hb⟩ := hfs (R / 2) (by positivity)
-  refine ⟨min c δ, lt_min hc hδ, fun t₀ φ hφ h0 => ?_⟩
-  have hin : ∀ t ∈ Ici t₀, ‖φ t - x‖ < R / 2 := fun t ht =>
-    hb t₀ t φ (hφ.mono Icc_subset_Ici_self) (lt_of_lt_of_le h0 (min_le_right _ _)) t
-      ⟨ht, le_rfl⟩
-  refine hconv t₀ φ (isIntegralCurveOn_of_eq_on_curve hφ fun t ht => ?_)
-    (lt_of_lt_of_le h0 (min_le_left _ _))
-  exact hfg _ (by linarith [hin t ht])
-
-/-- **Local strict Lyapunov function.** A `C¹` function that vanishes at the point, is positive on
-a punctured ball around it and strictly decreases along a field continuous on that ball makes the
-point locally asymptotically stable. No hypothesis is made on the field outside the ball, and no
-global sublevel set needs to be compact. -/
-@[powerlib_foundation] theorem localAsymptoticStable_of_lie_neg (hn : 0 < n) {f : State n → State n} {x : State n}
-    {V : State n → ℝ} {R : ℝ} (hR : 0 < R) (hV : ContDiff ℝ 1 V)
-    (hf : ContinuousOn f (Metric.ball x R)) (hV0 : V x = 0)
-    (hpos : ∀ y, ‖y - x‖ < R → y ≠ x → 0 < V y)
-    (hLie : ∀ y, ‖y - x‖ < R → y ≠ x → fderiv ℝ V y (f y) < 0) :
-    LocalAsymptoticStable f x := by
-  have hVd : Differentiable ℝ V := hV.differentiable one_ne_zero
-  have hmin : IsLocalMin V x := by
-    filter_upwards [Metric.ball_mem_nhds x hR] with y hy
-    rw [Metric.mem_ball, dist_eq_norm] at hy
-    rcases eq_or_ne y x with rfl | hne
-    · exact le_rfl
-    · rw [hV0]; exact (hpos y hy hne).le
-  have hfd0 : fderiv ℝ V x = 0 := hmin.fderiv_eq_zero
-  have hLS : LyapunovStable f x := by
-    refine lyapunov_stable (D := Metric.ball x R) hn
-      ⟨Metric.isOpen_ball, Metric.mem_ball_self hR, hV.continuous, hVd, hV0,
-        fun y hy hne => hpos y (by rwa [Metric.mem_ball, dist_eq_norm] at hy) hne,
-        fun y hy => ?_⟩
-    rcases eq_or_ne y x with rfl | hne
-    · rw [hfd0]; simp
-    · exact (hLie y (by rwa [Metric.mem_ball, dist_eq_norm] at hy) hne).le
-  refine ⟨hLS, ?_⟩
-  obtain ⟨δ, hδ, hb⟩ := hLS (R / 2) (by positivity)
-  refine ⟨δ, hδ, fun t₀ φ hφ h0 => ?_⟩
-  have hin : ∀ t, t₀ ≤ t → ‖φ t - x‖ < R / 2 := fun t ht =>
-    hb t₀ t φ (hφ.mono Icc_subset_Ici_self) h0 t ⟨ht, le_rfl⟩
-  have hLc : ContinuousOn (fun y => fderiv ℝ V y (f y)) (Metric.ball x R) :=
-    ((hV.continuous_fderiv one_ne_zero).continuousOn).clm_apply hf
-  rw [Metric.tendsto_atTop]
-  intro η hη
-  obtain ⟨δη, hδη, hbη⟩ := hLS η hη
-  -- the solution enters the ball of radius `δη`
-  have henter : ∃ T, t₀ ≤ T ∧ ‖φ T - x‖ < δη := by
-    by_contra hno
-    push Not at hno
-    set K := {y : State n | δη ≤ ‖y - x‖ ∧ ‖y - x‖ ≤ R / 2} with hK
-    have hKc : IsCompact K := by
-      refine (isCompact_closedBall x (R / 2)).of_isClosed_subset ?_ fun y hy => ?_
-      · exact (isClosed_le continuous_const (continuous_norm.comp (continuous_sub_right x))).inter
-          (isClosed_le (continuous_norm.comp (continuous_sub_right x)) continuous_const)
-      · rw [Metric.mem_closedBall, dist_eq_norm]; exact hy.2
-    have hKR : K ⊆ Metric.ball x R := fun y hy => by
-      rw [Metric.mem_ball, dist_eq_norm]; linarith [hy.2]
-    have hφK : ∀ t, t₀ ≤ t → φ t ∈ K := fun t ht => ⟨hno t ht, (hin t ht).le⟩
-    obtain ⟨ym, hymK, hmax⟩ := hKc.exists_isMaxOn ⟨φ t₀, hφK t₀ le_rfl⟩ (hLc.mono hKR)
-    have hym0 : ym ≠ x := fun h => by
-      have := hymK.1; rw [h, sub_self, norm_zero] at this; linarith
-    have hγ : fderiv ℝ V ym (f ym) < 0 := hLie ym (by linarith [hymK.2]) hym0
-    set γ := -fderiv ℝ V ym (f ym) with hγdef
-    have hγ0 : 0 < γ := by linarith
-    have hanti := antitoneOn_V_add_linear (c := γ) hVd hV.continuous (convex_Ici t₀) hφ
-      (fun t ht => by
-        have := hmax (hφK t (interior_subset ht))
-        simp only [Set.mem_ofPred_eq] at this
-        linarith)
-    set T := t₀ + V (φ t₀) / γ + 1 with hT
-    have hVφ0 : 0 ≤ V (φ t₀) := by
-      rcases eq_or_ne (φ t₀) x with h | h
-      · rw [h, hV0]
-      · exact (hpos _ (by linarith [hin t₀ le_rfl]) h).le
-    have hT0 : t₀ ≤ T := by
-      have : 0 ≤ V (φ t₀) / γ := div_nonneg hVφ0 hγ0.le
-      linarith
-    have h1 := hanti (Set.mem_Ici.mpr le_rfl) (Set.mem_Ici.mpr hT0) hT0
-    simp only at h1
-    have hVT : 0 ≤ V (φ T) := by
-      rcases eq_or_ne (φ T) x with h | h
-      · rw [h, hV0]
-      · exact (hpos _ (by linarith [hin T hT0]) h).le
-    have : γ * T = γ * t₀ + V (φ t₀) + γ := by
-      rw [hT, mul_add, mul_add, mul_div_cancel₀ _ hγ0.ne', mul_one]
-    linarith
-  obtain ⟨T, hT, hTδ⟩ := henter
-  refine ⟨T, fun t ht => ?_⟩
-  rw [dist_eq_norm]
-  exact hbη T t φ (hφ.mono fun u hu => le_trans hT hu.1) hTδ t ⟨ht, le_rfl⟩
-
-/-- First-exit argument for a continuous function of a curve: if `Φ ∘ φ` starts below `c` and is
-below `c` at every `s` up to which it has stayed at most `c`, it stays below `c`. -/
-@[powerlib_foundation] theorem forall_lt_of_first_exit {E : Type*} [TopologicalSpace E] {φ : ℝ → E} {Φ : E → ℝ}
-    {t₀ t₁ c : ℝ} (hΦ : Continuous Φ) (hφ : ContinuousOn φ (Icc t₀ t₁)) (h0 : Φ (φ t₀) < c)
-    (hstep : ∀ s ∈ Icc t₀ t₁, (∀ u ∈ Icc t₀ s, Φ (φ u) ≤ c) → Φ (φ s) < c) :
-    ∀ u ∈ Icc t₀ t₁, Φ (φ u) < c := by
-  have hψ : ContinuousOn (fun t => Φ (φ t)) (Icc t₀ t₁) := hΦ.comp_continuousOn hφ
-  by_contra hcon
-  push Not at hcon
-  obtain ⟨u, hu, hu'⟩ := hcon
-  set A : Set ℝ := Icc t₀ t₁ ∩ (fun t => Φ (φ t)) ⁻¹' {y | c ≤ y} with hAdef
-  have hAne : A.Nonempty := ⟨u, hu, hu'⟩
-  have hAclosed : IsClosed A :=
-    hψ.preimage_isClosed_of_isClosed isClosed_Icc (isClosed_le continuous_const continuous_id)
-  have hAbdd : BddBelow A := ⟨t₀, fun t ht => ht.1.1⟩
-  have hτA : sInf A ∈ A := hAclosed.csInf_mem hAne hAbdd
-  have hbelow : ∀ t ∈ Ico t₀ (sInf A), Φ (φ t) < c := by
-    intro t ht
-    by_contra h
-    push Not at h
-    have : sInf A ≤ t := csInf_le hAbdd ⟨⟨ht.1, ht.2.le.trans hτA.1.2⟩, h⟩
-    linarith [ht.2]
-  have hle : ∀ t ∈ Icc t₀ (sInf A), Φ (φ t) ≤ c := by
-    intro t ht
-    rcases eq_or_lt_of_le ht.2 with h | h
-    · rcases eq_or_lt_of_le hτA.1.1 with h' | h'
-      · rw [h, ← h']; exact h0.le
-      · have hcl : IsClosed (Icc t₀ (sInf A) ∩ (fun t => Φ (φ t)) ⁻¹' {y | y ≤ c}) :=
-          (hψ.mono (Icc_subset_Icc le_rfl hτA.1.2)).preimage_isClosed_of_isClosed isClosed_Icc
-            (isClosed_le continuous_id continuous_const)
-        have hsub : Ico t₀ (sInf A) ⊆ Icc t₀ (sInf A) ∩ (fun t => Φ (φ t)) ⁻¹' {y | y ≤ c} :=
-          fun t' ht' => ⟨Ico_subset_Icc_self ht', (hbelow t' ht').le⟩
-        have hcl' := hcl.closure_subset_iff.mpr hsub
-        rw [closure_Ico h'.ne] at hcl'
-        exact (hcl' ht).2
-    · exact (hbelow t ⟨ht.1, h⟩).le
-  exact absurd hτA.2 (not_le.mpr (hstep _ hτA.1 hle))
-
 /-- **Repulsion from a coordinate plane.** Let `x` lie on the plane `y_k = 0`. If near `x` the
 field drives `y_k²` up at a uniform rate off the plane (`2 y_k f_k(y) ≥ a`), and on each half
 ball `{y_k ≥ s}` (`s > 0`) it agrees with a `C¹` field, then `x` is unstable: the solution from
@@ -497,32 +324,6 @@ ball `{y_k ≥ s}` (`s > 0`) it agrees with a `C¹` field, then `x` is unstable:
     nlinarith [sq_abs (ψ T k), abs_nonneg (ψ T k)]
   have h5 : a * T = ρ ^ 2 + a := by rw [hT]; field_simp
   nlinarith [sq_nonneg (ψ 0 k)]
-
-/-- A function with derivative `d` within `[a, b]` at the right end `b`, where it is minimal on
-`[a, b]`, has `d ≤ 0`. -/
-@[powerlib_foundation] theorem deriv_nonpos_of_isMinOn_right {φ : ℝ → ℝ} {d a b : ℝ} (hab : a < b)
-    (hd : HasDerivWithinAt φ d (Icc a b) b) (hmin : ∀ u ∈ Icc a b, φ b ≤ φ u) : d ≤ 0 := by
-  rw [hasDerivWithinAt_iff_tendsto_slope, Icc_sdiff_right, nhdsWithin_Ico_eq_nhdsLT hab] at hd
-  refine le_of_tendsto hd ?_
-  filter_upwards [Ioo_mem_nhdsLT hab] with u hu
-  rw [slope_def_field]
-  exact div_nonpos_of_nonneg_of_nonpos (by linarith [hmin u ⟨hu.1.le, hu.2.le⟩])
-    (by linarith [hu.2])
-
-/-- A function vanishing at `0` with positive derivative there is positive at some `t ∈ (0, ε)`. -/
-@[powerlib_foundation] theorem exists_pos_of_hasDerivAt {ψ : ℝ → ℝ} {d : ℝ} (hd : HasDerivAt ψ d 0) (h0 : ψ 0 = 0)
-    (hpos : 0 < d) {ε : ℝ} (hε : 0 < ε) : ∃ t ∈ Ioo 0 ε, 0 < ψ t := by
-  rw [hasDerivAt_iff_tendsto_slope] at hd
-  have h1 : Tendsto (slope ψ 0) (𝓝[>] 0) (𝓝 d) :=
-    hd.mono_left (nhdsWithin_mono _ fun t ht => ne_of_gt ht)
-  have h2 : ∀ᶠ t in 𝓝[>] (0 : ℝ), 0 < slope ψ 0 t ∧ t < ε :=
-    (h1.eventually (lt_mem_nhds hpos)).and (Ioo_mem_nhdsGT hε |> fun h =>
-      Filter.mem_of_superset h fun t ht => ht.2)
-  obtain ⟨t, ht, ht0⟩ := (h2.and self_mem_nhdsWithin).exists
-  refine ⟨t, ⟨ht0, ht.2⟩, ?_⟩
-  have := ht.1
-  rw [slope_def_field, h0, sub_zero, sub_zero] at this
-  exact (div_pos_iff_of_pos_right ht0).mp this
 
 /-- **Instability from an invariant cone at a coordinate plane.** Let `x` lie on the plane
 `y_k = 0`. Suppose that on one side `σ y_k > 0` (`σ = ±1`), near `x`, the sublevel `W ≥ 0` of a
@@ -836,34 +637,6 @@ def spiralLyap (ω hs K σ z Q : ℝ) : ℝ :=
   have hfin' : e / (2 * sV) * X ≤ -(e / 2) := le_of_mul_le_mul_right hfin hσz
   linarith
 
-/-- Mean-value lower bound on a subinterval: a function with derivative at least `m` inside
-`[c, d] ⊆ [a, b]` increases by at least `m (d − c)`. -/
-@[powerlib_foundation] theorem sub_ge_of_deriv_ge {u u' : ℝ → ℝ} {a b c d m : ℝ} (hcd : c ≤ d) (hca : a ≤ c)
-    (hdb : d ≤ b) (hu : ∀ s ∈ Icc a b, HasDerivWithinAt u (u' s) (Icc a b) s)
-    (hm : ∀ s ∈ Ioo c d, m ≤ u' s) : m * (d - c) ≤ u d - u c := by
-  have hmono : MonotoneOn (fun s => u s - m * s) (Icc c d) := by
-    refine monotoneOn_of_hasDerivWithinAt_nonneg (f' := fun s => u' s - m) (convex_Icc _ _)
-      (fun s hs => ((hu s ⟨hca.trans hs.1, hs.2.trans hdb⟩).continuousWithinAt.mono
-        (Icc_subset_Icc hca hdb)).sub (continuous_const.mul continuous_id).continuousWithinAt)
-      (fun s hs => ?_) (fun s hs => ?_)
-    · rw [interior_Icc] at hs
-      have h1 := (hu s ⟨hca.trans hs.1.le, hs.2.le.trans hdb⟩).hasDerivAt
-        (Icc_mem_nhds (lt_of_le_of_lt hca hs.1) (lt_of_lt_of_le hs.2 hdb))
-      exact (h1.fun_sub ((hasDerivAt_id s).const_mul m)).hasDerivWithinAt.congr_deriv (by simp)
-    · rw [interior_Icc] at hs
-      linarith [hm s hs]
-  have := hmono ⟨le_rfl, hcd⟩ ⟨hcd, le_rfl⟩ hcd
-  simp only at this
-  linarith
-
-/-- Mean-value upper bound on a subinterval. -/
-@[powerlib_foundation] theorem sub_le_of_deriv_le {u u' : ℝ → ℝ} {a b c d m : ℝ} (hcd : c ≤ d) (hca : a ≤ c)
-    (hdb : d ≤ b) (hu : ∀ s ∈ Icc a b, HasDerivWithinAt u (u' s) (Icc a b) s)
-    (hm : ∀ s ∈ Ioo c d, u' s ≤ m) : u d - u c ≤ m * (d - c) := by
-  have h := sub_ge_of_deriv_ge (u := fun s => -u s) (u' := fun s => -u' s) (m := -m) hcd hca hdb
-    (fun s hs => (hu s hs).neg) (fun s hs => by linarith [hm s hs])
-  linarith
-
 /-- **A solution segment touches the singular plane only where `q = 0`.** Near `x`, off the plane
 `y_k f_k(y) = q(y)` and on it `f_k ≠ 0`. If a nontrivial solution segment meets the plane at `τ`,
 then `q(φ τ) = 0`: otherwise `y_k²` would be monotone near `τ` with slope bounded away from zero
@@ -1066,24 +839,9 @@ then `q(φ τ) = 0`: otherwise `y_k²` would be monotone near `τ` with slope bo
     rw [h2, abs_mul]
     exact mul_le_mul_of_nonneg_right h1.le (abs_nonneg _)
 
-/-- `√(a² + b²) ≤ |a| + |b|`. -/
-@[powerlib_foundation] theorem sqrt_sq_add_sq_le (a b : ℝ) : Real.sqrt (a ^ 2 + b ^ 2) ≤ |a| + |b| := by
-  rw [Real.sqrt_le_left (by positivity)]
-  nlinarith [abs_nonneg a, abs_nonneg b, sq_abs a, sq_abs b, mul_nonneg (abs_nonneg a) (abs_nonneg b)]
-
 /-- The spiral function is nonnegative. -/
 @[powerlib_foundation] theorem spiralLyap_nonneg (ω hs K σ z Q : ℝ) : 0 ≤ spiralLyap ω hs K σ z Q :=
   mul_nonneg (Real.sqrt_nonneg _) (Real.exp_pos _).le
-
-/-- A closed upper bound on `[a, b)` extends to `b`. -/
-@[powerlib_foundation] theorem forall_Icc_of_forall_Ico {F : ℝ → ℝ} {a b B : ℝ} (hab : a < b)
-    (hF : ContinuousOn F (Icc a b)) (h : ∀ t ∈ Ico a b, F t ≤ B) : ∀ t ∈ Icc a b, F t ≤ B := by
-  have hcl : IsClosed (Icc a b ∩ F ⁻¹' Iic B) :=
-    hF.preimage_isClosed_of_isClosed isClosed_Icc isClosed_Iic
-  have hsub : Ico a b ⊆ Icc a b ∩ F ⁻¹' Iic B := fun t ht => ⟨Ico_subset_Icc_self ht, h t ht⟩
-  have := hcl.closure_subset_iff.mpr hsub
-  rw [closure_Ico hab.ne] at this
-  exact fun t ht => (this ht).2
 
 set_option maxHeartbeats 1000000 in
 /-- **Spiral collapse onto a coordinate plane.** Let `x` lie on the plane `y_k = 0`, and near `x`
@@ -1464,16 +1222,6 @@ most at its end, after a time `O(‖y(t₀) − x‖)`, and stays within `O(‖y
         linarith
 
 /-! ## Degenerate points of the plane: barriers, degenerate node, nilpotent drift -/
-
-/-- A function vanishing at `0` with positive derivative there is positive just to the right. -/
-@[powerlib_foundation] theorem eventually_pos_of_hasDerivAt {ψ : ℝ → ℝ} {d : ℝ} (hd : HasDerivAt ψ d 0)
-    (h0 : ψ 0 = 0) (hpos : 0 < d) : ∀ᶠ t in 𝓝[>] (0 : ℝ), 0 < ψ t := by
-  rw [hasDerivAt_iff_tendsto_slope] at hd
-  have h1 : Tendsto (slope ψ 0) (𝓝[>] 0) (𝓝 d) :=
-    hd.mono_left (nhdsWithin_mono _ fun t ht => ne_of_gt ht)
-  filter_upwards [h1.eventually (lt_mem_nhds hpos), self_mem_nhdsWithin] with t ht ht0
-  rw [slope_def_field, h0, sub_zero, sub_zero] at ht
-  exact (div_pos_iff_of_pos_right ht0).mp ht
 
 /-- **Instability from a trapping region with three barriers.** Let the field agree near `x` on
 every half ball `{σ y_k ≥ s}` (`s > 0`) with a `C¹` field. Suppose that arbitrarily close to `x` there are seeds `y₀` with `σ y₀_k > 0` and a
@@ -2226,4 +1974,4 @@ the drift `F ≈ F(x)` carries the solution to distance `2 C s³`. -/
   have hpos : 0 < F0 * (C * s ^ 3) := by positivity
   linarith only [hgrow, hup, hval, hpos]
 
-end powerlib.Dynamics
+end powerlib.Dynamics.Degenerate

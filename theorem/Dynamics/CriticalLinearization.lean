@@ -22,7 +22,7 @@ foundation support. Global asymptotic stability is `powerlib.Flow.GloballyAsympt
 -/
 
 noncomputable section
-namespace powerlib.Modal
+namespace powerlib.Dynamics
 open powerlib.Dynamics (State)
 
 variable {n : ℕ}
@@ -151,4 +151,4 @@ eigenvalues with zero real part), one globally asymptotically stable and one uns
     cubicField_zero _, cubicField_zero _, cubicField_jacobian _, cubicField_jacobian _,
     cubic_neg_globallyAsymptoticallyStable hn, cubic_pos_unstable hn⟩
 
-end powerlib.Modal
+end powerlib.Dynamics

@@ -17,11 +17,11 @@ Results.
   side `σ = sign H` the shrinking cone `q ≥ (|H(x*)|/2 − √w) w` (`w = σ V_dc`), cut down to a horn
   `‖y − x*‖ ≤ (K + 1) w`, traps solutions along which `w' ≥ |H(x*)|/4`: its margin `√w` dominates
   the Lipschitz variation `O(w)` of the `C¹` coefficients `G, H` (`contDiff_planeG`,
-  `contDiff_planeH`; `Dynamics.unstable_of_degenerate_node`). Witness `degenerateNode`
+  `contDiff_planeH`; `Dynamics.Degenerate.unstable_of_degenerate_node`). Witness `degenerateNode`
   (`degenerateNode_mem_den_unstable`, `G = −1/4`, `H = 1`).
 * `ModelB.not_mem_den_locallyExponentiallyStable_of_nilpotent`: `H(x*) = G(x*) = 0` (nilpotent) and
   a nonzero drift `(f_Δθ, f_pll, f_ξ)(x*) ≠ 0` ⇒ the local exponential estimate fails
-  (`Dynamics.not_locallyExponentiallyStable_of_nilpotent`): under it, the solution from
+  (`Dynamics.Degenerate.not_locallyExponentiallyStable_of_nilpotent`): under it, the solution from
   `x* + s³ e_{V_dc}` would stay `O(s³)`-close, so `q = O(s⁵)` and it lives long enough for the drift
   to carry it to distance `2 C s³`. Witness `nilpotentDrift`
   (`nilpotentDrift_not_mem_den_locallyExponentiallyStable`).
@@ -100,12 +100,12 @@ private theorem field_rel {y : State 4} (hy : y 2 ≠ 0) : y 2 * p.field y 2 = p
 /-- **Degenerate node on the singular plane: instability.** At a state `x` with `V_dc = 0`,
 `P(x) = 0`, `H² + 4G = 0` and `H ≠ 0`, the reduced linear system is a degenerate node with
 double root `H/2`; on the side `σ = sign H` a shrinking cone traps solutions moving away from the
-plane (`Dynamics.unstable_of_degenerate_node`). Implementation evidence for
+plane (`Dynamics.Degenerate.unstable_of_degenerate_node`). Implementation evidence for
 `ModelB.mem_den_unstable_of_disc_eq_zero`. -/
 private theorem modelB_unstable_of_degenerate_node {x : State 4} (hx : x 2 = 0)
     (hP : p.pccP x = 0) (hD : p.planeDisc x = 0) (hH : p.planeH x ≠ 0) :
     Unstable p.field x :=
-  Dynamics.unstable_of_degenerate_node 2 hx p.contDiff_planeQ (p.planeQ_eq_zero hx hP)
+  Dynamics.Degenerate.unstable_of_degenerate_node 2 hx p.contDiff_planeQ (p.planeQ_eq_zero hx hP)
     p.contDiff_planeG p.contDiff_planeH one_pos (fun y _ hy => p.field_rel hy)
     (fun y _ hy => p.planeQ_lie hy) (p.fderiv_planeQ_single x) hD hH
     (p.continuousAt_field_sub_single x)
@@ -115,13 +115,13 @@ private theorem modelB_unstable_of_degenerate_node {x : State 4} (hx : x 2 = 0)
 
 /-- **Nilpotent point of the singular plane with drift: no exponential estimate.** At a state
 `x` with `V_dc = 0`, `P(x) = 0`, `H(x) = G(x) = 0` and `(f₀, f₁, f₃)(x) ≠ 0`, the local
-exponential estimate fails (`Dynamics.not_locallyExponentiallyStable_of_nilpotent`).
+exponential estimate fails (`Dynamics.Degenerate.not_locallyExponentiallyStable_of_nilpotent`).
 Implementation evidence for `ModelB.not_mem_den_locallyExponentiallyStable_of_nilpotent`. -/
 private theorem modelB_not_locallyExponentiallyStable_of_nilpotent {x : State 4} (hx : x 2 = 0)
     (hP : p.pccP x = 0) (hH : p.planeH x = 0) (hG : p.planeG x = 0)
     (hF : p.field x 0 ≠ 0 ∨ p.field x 1 ≠ 0 ∨ p.field x 3 ≠ 0) :
     ¬ LocallyExponentiallyStable p.field x := by
-  refine Dynamics.not_locallyExponentiallyStable_of_nilpotent 2 hx p.contDiff_planeQ
+  refine Dynamics.Degenerate.not_locallyExponentiallyStable_of_nilpotent 2 hx p.contDiff_planeQ
     (p.planeQ_eq_zero hx hP) p.contDiff_planeG p.contDiff_planeH hG hH one_pos
     (fun y _ hy => p.field_rel hy) (fun y _ hy => p.planeQ_lie hy) p.fderiv_planeQ_single
     (p.continuousAt_field_sub_single x) ?_ ?_

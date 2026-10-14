@@ -1,16 +1,20 @@
 import theorem.Criteria.Hurwitz2
 import theorem.Dynamics.State
+import theorem.Dynamics.Coordinates
 
 /-! # Planar state-space helpers
 
 Foundation layer used by the phase-plane and planar normal-form modules.
 
 The planar state space is `State 2 = EuclideanSpace ℝ (Fin 2)` with coordinates `x 0`, `x 1`.
-`mk a b` is the state with `x 0 = a`, `x 1 = b`. The helper `hasFDerivAt_of_components`
-identifies the Fréchet derivative of a planar field with `Matrix.toEuclideanCLM A` from
-componentwise derivatives, which is the shape required by the linearization theorems
-`powerlib.Flow.locallyExponentiallyStable_of_isHurwitz_jacobian`,
+`mk a b` is the state with `x 0 = a`, `x 1 = b`. The coordinate maps and the identification of
+the Fréchet derivative of a field with `Matrix.toEuclideanCLM A` from componentwise derivatives
+(`Dynamics.coord`, `Dynamics.hasFDerivAt_toEuclideanCLM_of_components`, any dimension) are in
+`theorem/Dynamics/Coordinates.lean`; this is the shape required by the linearization theorems
+`powerlib.Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`,
 `powerlib.Criteria.locallyExponentiallyStable_of_jacobian_fin_two`, etc.
+`toEuclideanCLM_apply_zero`, `toEuclideanCLM_apply_one` read off the two components of a
+`2 × 2` matrix acting on a planar state.
 These are calculus utilities only; no model is fixed here (no model family, all results
 public foundation support).
 -/
@@ -61,53 +65,15 @@ def mk (a b : ℝ) : State 2 := WithLp.toLp 2 ![a, b]
 @[powerlib_foundation] theorem norm_mk (a b : ℝ) : ‖mk a b‖ = √(a ^ 2 + b ^ 2) := by
   rw [← norm_mk_sq, Real.sqrt_sq (norm_nonneg _)]
 
-@[powerlib_foundation] theorem abs_coord_le_norm (x : State 2) (i : Fin 2) : |x i| ≤ ‖x‖ := by
-  have h := norm_sq_eq x
-  have hn := norm_nonneg x
-  apply abs_le_of_sq_le_sq' _ hn |>.elim (fun h1 h2 => abs_le.mpr ⟨h1, h2⟩)
-  fin_cases i <;> simp <;> nlinarith [sq_nonneg (x 0), sq_nonneg (x 1)]
+@[powerlib_foundation] theorem toEuclideanCLM_apply_zero (A : Matrix (Fin 2) (Fin 2) ℝ)
+    (v : State 2) :
+    (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A v) 0 = A 0 0 * v 0 + A 0 1 * v 1 := by
+  simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
-/-- The `i`-th coordinate as a continuous linear functional. -/
-def coord (i : Fin 2) : State 2 →L[ℝ] ℝ := EuclideanSpace.proj i
-
-@[simp, powerlib_foundation] theorem coord_apply (i : Fin 2) (x : State 2) : coord i x = x i := rfl
-
-@[powerlib_foundation] theorem hasFDerivAt_coord (i : Fin 2) (x : State 2) :
-    HasFDerivAt (fun y : State 2 => y i) (coord i) x :=
-  (coord i).hasFDerivAt
-
-/-- Componentwise derivatives determine the Jacobian matrix of a planar field. -/
-@[powerlib_foundation] theorem hasFDerivAt_of_components {f : State 2 → State 2} {x : State 2}
-    (A : Matrix (Fin 2) (Fin 2) ℝ) (L : Fin 2 → State 2 →L[ℝ] ℝ)
-    (hL : ∀ i, HasFDerivAt (fun y => f y i) (L i) x)
-    (hA : ∀ i (v : State 2), L i v = A i 0 * v 0 + A i 1 * v 1) :
-    HasFDerivAt f (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A) x := by
-  rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
-  intro i
-  rw [hasFDerivWithinAt_univ]
-  convert hL i using 1
-  ext v
-  simp [hA, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
-
-@[powerlib_foundation] theorem fderiv_eq_of_components {f : State 2 → State 2} {x : State 2}
-    (A : Matrix (Fin 2) (Fin 2) ℝ) (L : Fin 2 → State 2 →L[ℝ] ℝ)
-    (hL : ∀ i, HasFDerivAt (fun y => f y i) (L i) x)
-    (hA : ∀ i (v : State 2), L i v = A i 0 * v 0 + A i 1 * v 1) :
-    fderiv ℝ f x = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A :=
-  (hasFDerivAt_of_components A L hL hA).fderiv
-
-/-- Smoothness of a planar field from smoothness of its two components. -/
-@[powerlib_foundation] theorem contDiff_of_components {f : State 2 → State 2} {k : WithTop ℕ∞}
-    (h0 : ContDiff ℝ k (fun y => f y 0)) (h1 : ContDiff ℝ k (fun y => f y 1)) :
-    ContDiff ℝ k f := by
-  rw [contDiff_euclidean]
-  intro i; fin_cases i
-  · exact h0
-  · exact h1
-
-@[fun_prop, powerlib_foundation] theorem contDiff_coord (i : Fin 2) {k : WithTop ℕ∞} :
-    ContDiff ℝ k (fun y : State 2 => y i) :=
-  (coord i).contDiff
+@[powerlib_foundation] theorem toEuclideanCLM_apply_one (A : Matrix (Fin 2) (Fin 2) ℝ)
+    (v : State 2) :
+    (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A v) 1 = A 1 0 * v 0 + A 1 1 * v 1 := by
+  simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
 /-- A planar curve is a solution iff its two coordinates satisfy the componentwise equations. -/
 @[powerlib_foundation] theorem hasDerivWithinAt_iff_components {φ : ℝ → State 2} {v : State 2}
@@ -116,8 +82,8 @@ def coord (i : Fin 2) : State 2 →L[ℝ] ℝ := EuclideanSpace.proj i
       HasDerivWithinAt (fun τ => φ τ 0) (v 0) s t ∧ HasDerivWithinAt (fun τ => φ τ 1) (v 1) s t := by
   constructor
   · intro h
-    exact ⟨(coord 0).hasFDerivAt.comp_hasDerivWithinAt t h,
-      (coord 1).hasFDerivAt.comp_hasDerivWithinAt t h⟩
+    exact ⟨(Dynamics.coord 0).hasFDerivAt.comp_hasDerivWithinAt t h,
+      (Dynamics.coord 1).hasFDerivAt.comp_hasDerivWithinAt t h⟩
   · rintro ⟨h0, h1⟩
     have hφ : φ = fun τ => (WithLp.linearEquiv 2 ℝ (Fin 2 → ℝ)).symm ![φ τ 0, φ τ 1] := by
       funext τ; ext i; fin_cases i <;> rfl

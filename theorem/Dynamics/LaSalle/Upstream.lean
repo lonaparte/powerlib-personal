@@ -2,7 +2,7 @@ import dependencies.LeanForControl
 import theorem.Dynamics.State
 import theorem.Flow.Certificate
 
-/-! # LaSalle invariance principle and Chetaev instability (LeanForControl interface)
+/-! # LaSalle invariance principle (LeanForControl interface)
 
 Thin powerlib-named wrappers. Every proof is a direct application of the upstream
 declaration named in its docstring; nothing is re-proved. Upstream modules (LeanForControl
@@ -13,8 +13,10 @@ rev `7507ed04`, imported through `dependencies.LeanForControl`):
   `_root_.LieDerivZeroSet`, `_root_.lasalle_invariance_principle`,
   `_root_.lasalle_local_asymptotic_stable` (Barbashin),
   `_root_.lasalle_global_asymptotic_stable` (Krasovskii).
-* `LeanForControl.Stability.LyapunovIndirect.Chetaev`:
-  `NonlinearInstability.unstable_of_exponential_chetaev`.
+
+The wrapper of LeanForControl's exponential Chetaev criterion
+(`NonlinearInstability.unstable_of_exponential_chetaev`) is `Dynamics.unstable_of_exponential_chetaev`
+in `theorem/Dynamics/Instability.lean`, with the other instability criteria.
 
 Their transitive LeanForControl imports are `Analysis.{Continuity, IntegralCurves, Integrals}`,
 `ODEs.{GronwallBellman, ODE_properties, PicardLindelof}`, `Stability.{Autonomous,
@@ -29,12 +31,10 @@ endpoints). `V̇ x` is `fderiv ℝ V x (f x)`.
 
 Hypotheses that differ from Khalil's textbook statements (inherited from upstream):
 * LaSalle requires `f` globally `LipschitzWith` **and** `ContDiff ℝ 1`
-  (`theorem/Dynamics/Basin.lean` removes the global Lipschitz requirement by a cutoff).
+  (`theorem/Dynamics/LaSalle/Basin.lean` removes the global Lipschitz requirement by a cutoff).
 * The target set `M` must contain every *positively* invariant subset of
   `LieDerivZeroSet f V Ω = {x ∈ Ω | V̇ x = 0}` (stronger than "largest invariant subset").
 * Barbashin needs the compact sublevel set to be positively invariant as a hypothesis.
-* Chetaev: exponential form `2 α V ≤ V̇` near the base point, with `|V| ≤ C ‖x - x_eq‖²`
-  and positive values of `V` accumulating at the base point.
 
 Connection architecture. Every theorem here is a generic semantic implication about an arbitrary
 field `f` and function `V`; no model family is defined or fixed. They are therefore foundation
@@ -58,7 +58,7 @@ Corollaries 4.1–4.2; Hahn, *Stability of Motion*, Chetaev's method). powerlib 
 -/
 
 noncomputable section
-namespace powerlib.Dynamics
+namespace powerlib.Dynamics.LaSalle
 open Set Filter Topology
 variable {n : ℕ}
 local notation "ℝⁿ" => State n
@@ -153,16 +153,4 @@ from the global Lipschitz bound, and the upstream trajectory predicate). -/
   ⟨heq, Flow.forwardComplete_of_lipschitzWith hf_lip,
     lasalle_global_asymptotic_stable hn hV_c1 hzero hpos hLie hradial hf_lip hf_c1 hLasalle⟩
 
-/-- Exponential Chetaev instability criterion.
-Upstream: `NonlinearInstability.unstable_of_exponential_chetaev`. -/
-@[powerlib_foundation] theorem unstable_of_exponential_chetaev
-    {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {x_eq : ℝⁿ}
-    (hf : ContDiff ℝ 1 f) (hV : ContDiff ℝ 1 V)
-    {ρ α C : ℝ} (hρ : 0 < ρ) (hα : 0 < α) (hC : 0 ≤ C)
-    (hbound : ∀ x, ‖x - x_eq‖ ≤ ρ → |V x| ≤ C * ‖x - x_eq‖ ^ 2)
-    (hgrowth : ∀ x, ‖x - x_eq‖ ≤ ρ → 2 * α * V x ≤ fderiv ℝ V x (f x))
-    (hseed : ∀ δ > 0, ∃ x, ‖x - x_eq‖ < min δ ρ ∧ 0 < V x) :
-    Unstable f x_eq :=
-  NonlinearInstability.unstable_of_exponential_chetaev hf hV hρ hα hC hbound hgrowth hseed
-
-end powerlib.Dynamics
+end powerlib.Dynamics.LaSalle

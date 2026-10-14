@@ -1,10 +1,10 @@
-import theorem.Flow.Linearization
+import theorem.Dynamics.Linearization
 import theorem.Dynamics.ConverseLinearization
-import theorem.Flow.Shift
+import theorem.Dynamics.Shift
 import theorem.Dynamics.State
 import theorem.Family.Basic
 import theorem.TMIO.ClaimElab
-import theorem.CurrentControl.SISO
+import theorem.Dynamics.Lyapunov
 import theorem.Network.WeightedLaplacian
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -34,7 +34,7 @@ nonlinear swing field is locally exponentially stable at the synchronous
 equilibrium (`reducedSwing_locallyExponentiallyStable`). The proof derives the Jacobian
 by `fderiv`, shows it is Hurwitz from the eigenvector identity
 `μ²uᴴMu + μuᴴDu + uᴴLu = 0` with `L` the Laplacian of `Bᵢⱼ cos(θ*ᵢ - θ*ⱼ)`, and applies
-`Flow.locallyExponentiallyStable_of_isHurwitz_jacobian`.
+`Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`.
 
 Family and connection conclusions.
 * System map: a model (`Model n`: the swing data `Params n` and a selected angle profile `θ*`)
@@ -642,20 +642,20 @@ private theorem reducedSwing_locallyExponentiallyStable (p : Params n)
     (hangle : ∀ i j, 0 < p.B i j → |θ i - θ j| < Real.pi / 2)
     (hconn : ∀ i j, Reach p.B i j) :
     LocallyExponentiallyStable (reducedField p) (equilibrium θ) :=
-  Flow.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian p θ)
+  Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian p θ)
     (reducedField_contDiff p) (reducedField_equilibrium p θ heq)
     (hasFDerivAt_reducedField p θ).fderiv (jacobian_isHurwitz_of_angle p θ hangle hconn)
 
 private theorem les_of_meets {m : Model n} (hp : Meets m .powerFlow)
     (hH : Meets m .jacobianStable) : m ∈ family.den (.flow .locallyExponentiallyStable) :=
-  mem_den_flow_iff.mpr (Flow.locallyExponentiallyStable_of_isHurwitz_jacobian
+  mem_den_flow_iff.mpr (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian
     (jacobian m.params m.θ) (reducedField_contDiff m.params)
     (reducedField_equilibrium m.params m.θ hp) (hasFDerivAt_reducedField m.params m.θ).fderiv hH)
 
 private theorem unstable_of_meets {m : Model n} (hp : Meets m .powerFlow)
     (hu : Meets m .jacobianUnstable) : m ∈ family.den (.flow .unstable) := by
   obtain ⟨s, hs, hre⟩ := hu
-  exact mem_den_flow_iff.mpr (Flow.unstable_of_characteristic_root_re_pos (jacobian m.params m.θ)
+  exact mem_den_flow_iff.mpr (Dynamics.unstable_of_characteristic_root_re_pos (jacobian m.params m.θ)
     (reducedField_contDiff m.params) (reducedField_equilibrium m.params m.θ hp)
     (hasFDerivAt_reducedField m.params m.θ).fderiv hs hre)
 

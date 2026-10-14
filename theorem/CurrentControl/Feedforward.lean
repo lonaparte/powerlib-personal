@@ -81,7 +81,7 @@ private lemma pole_ne {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
 @[powerlib_foundation] theorem lpf_transfer {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ} (hs : 1 + s * τ ≠ 0) :
     transfer (lpf τ) s 0 0 = 1 / (1 + s * τ) := by
   have hτ' : (τ : ℂ) ≠ 0 := by exact_mod_cast hτ
-  rw [lpf, transfer_fin_one _ _ _ _ (pole_ne hτ hs)]
+  rw [lpf, LTI.transfer_fin_one _ _ _ _ (pole_ne hτ hs)]
   push_cast
   field_simp
   ring
@@ -90,7 +90,7 @@ private lemma pole_ne {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
     (hs : 1 + s * τ ≠ 0) :
     transfer (residual τ) s 0 0 = s * τ / (1 + s * τ) := by
   have hτ' : (τ : ℂ) ≠ 0 := by exact_mod_cast hτ
-  rw [residual, transfer_fin_one _ _ _ _ (pole_ne hτ hs)]
+  rw [residual, LTI.transfer_fin_one _ _ _ _ (pole_ne hτ hs)]
   have hk : s - ((-1 / τ : ℝ) : ℂ) = (1 + s * τ) / τ := by
     push_cast
     field_simp
@@ -105,8 +105,8 @@ private lemma pole_ne {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
 /-- LPF view `ṽ − v`: `−s τ/(1 + s τ)`. -/
 @[powerlib_foundation] theorem residualLPF_transfer {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
     (hs : 1 + s * τ ≠ 0) :
-    transfer (negOutput (residual τ)) s 0 0 = -(s * τ / (1 + s * τ)) := by
-  rw [transfer_negOutput, Matrix.neg_apply, residual_transfer hτ hs]
+    transfer (LTI.negOutput (residual τ)) s 0 0 = -(s * τ / (1 + s * τ)) := by
+  rw [LTI.transfer_negOutput, Matrix.neg_apply, residual_transfer hτ hs]
 
 /-- High-pass gain on the imaginary axis: `|jωτ/(1 + jωτ)| = |ω| τ/√(1 + ω²τ²)`. -/
 @[powerlib_foundation] theorem residual_norm {τ : ℝ} (hτ : 0 < τ) (ω : ℝ) :
@@ -168,7 +168,7 @@ def lpfModel (τ : ℝ) : Plant 3 2 :=
 @[powerlib_foundation] theorem lpf_det_characteristicMatrix (τ : ℝ) (s : ℂ) :
     (characteristicMatrix (p.lpfModel τ).A s).det =
       (characteristicMatrix p.model.A s).det * (s + ((1 / τ : ℝ) : ℂ)) := by
-  simp only [model, det_characteristicMatrix_of]
+  simp only [model, LTI.det_characteristicMatrix_of]
   simp [characteristicMatrix, lpfModel, Matrix.det_fin_three]
   ring
 
@@ -309,8 +309,8 @@ private theorem lpf_tracks_reference (p : PIParams) (hL : 0 < p.L) (hR : 0 < p.R
     intro t
     rw [PIParams.lpfModel_field]
     exact hx t
-  exact ⟨by simpa [PIParams.lpfEquilibrium] using tendsto_equilibrium_apply _ hA he hx' 0,
-    by simpa [PIParams.lpfEquilibrium] using tendsto_equilibrium_apply _ hA he hx' 2⟩
+  exact ⟨by simpa [PIParams.lpfEquilibrium] using LTI.tendsto_equilibrium_apply _ hA he hx' 0,
+    by simpa [PIParams.lpfEquilibrium] using LTI.tendsto_equilibrium_apply _ hA he hx' 2⟩
 
 end LPFLoop
 

@@ -1,5 +1,5 @@
 import theorem.GFL.ModelBStability
-import theorem.Dynamics.ModelBLocal
+import theorem.Dynamics.Degenerate.PlaneCollapse
 
 /-! # GFL model B on the singular plane: the degenerate power balance
 
@@ -20,11 +20,11 @@ discriminant `D = H² + 4G` (`planeDisc`).
 Results.
 * `ModelB.mem_den_unstable_of_disc_pos`: `D > 0` ⇒ unstable. A root `λ₊ > 0` of `λ² − Hλ − G`
   on one side of the plane gives an invariant cone `{σ V_dc > 0, q ≥ μ σ V_dc}` in which
-  `σ V_dc` grows linearly (`Dynamics.unstable_of_cone`).
+  `σ V_dc` grows linearly (`Dynamics.Degenerate.unstable_of_cone`).
 * `ModelB.mem_den_locallyExponentiallyStable_of_disc_neg`: `D < 0` and `I₀ / C_dc ≠ 0` ⇒ the
   segment-based local exponential estimate holds although `x*` is not an equilibrium: the focus
   winds every solution segment into the plane within a time `O(‖x(t₀) − x*‖)`
-  (`Dynamics.locallyExponentiallyStable_of_spiral`). Witness `degenerateFocus`
+  (`Dynamics.Degenerate.locallyExponentiallyStable_of_spiral`). Witness `degenerateFocus`
   (`degenerateFocus_mem_den_locallyExponentiallyStable`, `D = −3`).
 * `ModelB.mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nondegenerate`: complete
   characterization of local exponential stability on the singular plane outside the degenerate set
@@ -91,7 +91,7 @@ def planeDisc (y : State 4) : ℝ := p.planeH y ^ 2 + 4 * p.planeG y
 @[powerlib_foundation] theorem hasFDerivAt_planeQ (y : State 4) :
     HasFDerivAt p.planeQ (row4 (3 / 2 * p.dP0 y / p.Cdc) 0 ((p.I0 + 3 / 2 * p.dP2 y) / p.Cdc)
       (3 / 2 * p.dP3 y / p.Cdc)) y := by
-  have h := (((Criteria.hasFDerivAt_coord 2 y).const_mul p.I0).add
+  have h := (((Dynamics.hasFDerivAt_coord 2 y).const_mul p.I0).add
     ((p.hasFDerivAt_pccP y).const_mul (3 / 2))).mul_const p.Cdc⁻¹
   refine (h.congr_fderiv ?_).congr_of_eventuallyEq (Eventually.of_forall fun z => ?_)
   · ext v
@@ -101,7 +101,7 @@ def planeDisc (y : State 4) : ℝ := p.planeH y ^ 2 + 4 * p.planeG y
 
 @[powerlib_foundation] theorem contDiff_planeQ : ContDiff ℝ 1 p.planeQ := by
   unfold planeQ
-  exact ((contDiff_const.mul (Criteria.contDiff_coord 2)).add
+  exact ((contDiff_const.mul (Dynamics.contDiff_coord 2)).add
     (contDiff_const.mul p.contDiff_pccP)).div_const _
 
 @[powerlib_foundation] theorem planeQ_eq_zero {x : State 4} (hx : x 2 = 0) (hP : p.pccP x = 0) :
@@ -142,43 +142,43 @@ denominator `V_dc` is replaced by `σ regDen s (σ V_dc)`. -/
       ∀ y : State 4, s ≤ σ * y 2 → g y = p.field y := by
   have hσ2 : σ * σ = 1 := by rcases hσ with rfl | rfl <;> norm_num
   refine ⟨fun y => (WithLp.toLp 2 ![p.field y 0, p.field y 1,
-      (p.I0 + 3 * p.pccP y / (2 * (σ * regDen s (σ * y 2)))) / p.Cdc, p.field y 3] : State 4),
+      (p.I0 + 3 * p.pccP y / (2 * (σ * Dynamics.regDen s (σ * y 2)))) / p.Cdc, p.field y 3] : State 4),
     ?_, ?_⟩
-  · have hden : ContDiff ℝ 1 (fun y : State 4 => 2 * (σ * regDen s (σ * y 2))) :=
-      contDiff_const.mul (contDiff_const.mul ((contDiff_regDen _).comp
-        (contDiff_const.mul (Criteria.contDiff_coord 2))))
-    have hden0 : ∀ y : State 4, 2 * (σ * regDen s (σ * y 2)) ≠ 0 := fun y => by
-      have h1 := half_le_regDen hs (σ * y 2)
-      have h2 : 0 < regDen s (σ * y 2) := lt_of_lt_of_le (by positivity) h1
+  · have hden : ContDiff ℝ 1 (fun y : State 4 => 2 * (σ * Dynamics.regDen s (σ * y 2))) :=
+      contDiff_const.mul (contDiff_const.mul ((Dynamics.contDiff_regDen _).comp
+        (contDiff_const.mul (Dynamics.contDiff_coord 2))))
+    have hden0 : ∀ y : State 4, 2 * (σ * Dynamics.regDen s (σ * y 2)) ≠ 0 := fun y => by
+      have h1 := Dynamics.half_le_regDen hs (σ * y 2)
+      have h2 : 0 < Dynamics.regDen s (σ * y 2) := lt_of_lt_of_le (by positivity) h1
       rcases hσ with rfl | rfl
       · positivity
-      · have : 0 < 2 * regDen s (-1 * y 2) := by positivity
+      · have : 0 < 2 * Dynamics.regDen s (-1 * y 2) := by positivity
         intro h; linarith
     have hoff := p.contDiff_field_offDC
-    apply Criteria.contDiff_of_components
+    apply Dynamics.contDiff_of_components
     intro i
     fin_cases i
     · show ContDiff ℝ 1 (fun y : State 4 => p.field y 0)
-      have h := (Criteria.contDiff_coord (n := 4) (k := 1) 0).comp hoff
+      have h := (Dynamics.contDiff_coord (n := 4) (k := 1) 0).comp hoff
       exact h
     · show ContDiff ℝ 1 (fun y : State 4 => p.field y 1)
-      have h := (Criteria.contDiff_coord (n := 4) (k := 1) 1).comp hoff
+      have h := (Dynamics.contDiff_coord (n := 4) (k := 1) 1).comp hoff
       exact h
     · show ContDiff ℝ 1 (fun y : State 4 =>
-        (p.I0 + 3 * p.pccP y / (2 * (σ * regDen s (σ * y 2)))) / p.Cdc)
+        (p.I0 + 3 * p.pccP y / (2 * (σ * Dynamics.regDen s (σ * y 2)))) / p.Cdc)
       exact (contDiff_const.add ((contDiff_const.mul p.contDiff_pccP).div hden hden0)).div_const _
     · show ContDiff ℝ 1 (fun y : State 4 => p.field y 3)
-      have h := (Criteria.contDiff_coord (n := 4) (k := 1) 3).comp hoff
+      have h := (Dynamics.contDiff_coord (n := 4) (k := 1) 3).comp hoff
       exact h
   · intro y hy
-    have hr : σ * regDen s (σ * y 2) = y 2 := by
-      rw [regDen_eq hs (by linarith)]
+    have hr : σ * Dynamics.regDen s (σ * y 2) = y 2 := by
+      rw [Dynamics.regDen_eq hs (by linarith)]
       rw [← mul_assoc, hσ2, one_mul]
     ext i
     fin_cases i
     · rfl
     · rfl
-    · show (p.I0 + 3 * p.pccP y / (2 * (σ * regDen s (σ * y 2)))) / p.Cdc = p.field y 2
+    · show (p.I0 + 3 * p.pccP y / (2 * (σ * Dynamics.regDen s (σ * y 2)))) / p.Cdc = p.field y 2
       rw [hr]
       simp [field, pccP]
     · rfl
@@ -188,7 +188,7 @@ state `x` with `V_dc = 0` and `P(x) = 0`, write `q = (I₀ V_dc + (3/2) P) / C_d
 the plane `V_dc V_dc' = q` and `q' = G + H q / V_dc` (`planeQ_lie`). If `H² + 4G > 0` at `x`, the
 quadratic `λ² − Hλ − G` has a root `λ₊ > 0` on the side `σ = sign H` (or on both sides if
 `G > 0`), and the cone `{σ V_dc > 0, q ≥ μ σ V_dc}` for `μ` slightly above `σH/2` is entered by
-the field and carries `σ V_dc' ≥ μ > 0` (`Dynamics.unstable_of_cone`). -/
+the field and carries `σ V_dc' ≥ μ > 0` (`Dynamics.Degenerate.unstable_of_cone`). -/
 private theorem modelB_unstable_of_disc_pos {x : State 4} (hx : x 2 = 0) (hP : p.pccP x = 0)
     (hD : 0 < p.planeDisc x) : Unstable p.field x := by
   obtain ⟨σ, hσ, hσH⟩ : ∃ σ : ℝ, (σ = 1 ∨ σ = -1) ∧ σ * p.planeH x = |p.planeH x| := by
@@ -231,19 +231,19 @@ private theorem modelB_unstable_of_disc_pos {x : State 4} (hx : x 2 = 0) (hP : p
   have hmargin' : 0 < p.planeG x + σ * p.planeH x * μ - μ ^ 2 := by rw [hσH]; exact hmargin
   obtain ⟨ρ, hρ, hball⟩ := Metric.continuous_iff.mp hcont x _ hmargin'
   have hWc : ContDiff ℝ 1 (fun y : State 4 => p.planeQ y - μ * σ * y 2) :=
-    p.contDiff_planeQ.sub (contDiff_const.mul (Criteria.contDiff_coord 2))
+    p.contDiff_planeQ.sub (contDiff_const.mul (Dynamics.contDiff_coord 2))
   have hWd : ∀ y : State 4, HasFDerivAt (fun y : State 4 => p.planeQ y - μ * σ * y 2)
       (row4 (3 / 2 * p.dP0 y / p.Cdc) 0 ((p.I0 + 3 / 2 * p.dP2 y) / p.Cdc - μ * σ)
         (3 / 2 * p.dP3 y / p.Cdc)) y := by
     intro y
-    have h := (p.hasFDerivAt_planeQ y).sub ((Criteria.hasFDerivAt_coord 2 y).const_mul (μ * σ))
+    have h := (p.hasFDerivAt_planeQ y).sub ((Dynamics.hasFDerivAt_coord 2 y).const_mul (μ * σ))
     refine h.congr_fderiv ?_
     ext v
-    simp only [row4_apply, _root_.sub_apply, _root_.smul_apply, Criteria.coord_apply,
+    simp only [row4_apply, _root_.sub_apply, _root_.smul_apply, Dynamics.coord_apply,
       smul_eq_mul]
     ring
   have hW0 : p.planeQ x - μ * σ * x 2 = 0 := by rw [p.planeQ_eq_zero hx hP, hx]; ring
-  refine Dynamics.unstable_of_cone 2 hσ hρ hμ hWc hx hW0 ?_ ?_
+  refine Dynamics.Degenerate.unstable_of_cone 2 hσ hρ hμ hWc hx hW0 ?_ ?_
     (WithLp.toLp 2 ![a0, 0, σ, a3]) ?_ ?_ ?_
   · intro y _ hy hWy
     have hy2 : y 2 ≠ 0 := by intro h; rw [h, mul_zero] at hy; exact lt_irrefl _ hy
@@ -293,14 +293,14 @@ state `x` with `V_dc = 0`, `P(x) = 0` and `I₀ / C_dc ≠ 0`, if `H² + 4G < 0`
 time `dτ = dt / V_dc` the pair `(V_dc, q)` is a linear focus near `x`: every solution segment
 reaches the plane at most at its end, after a time `O(‖x(t₀) − x‖)`, so the segment-based local
 exponential estimate holds although `x` is not an equilibrium
-(`Dynamics.locallyExponentiallyStable_of_spiral`). Implementation evidence for
+(`Dynamics.Degenerate.locallyExponentiallyStable_of_spiral`). Implementation evidence for
 `ModelB.mem_den_locallyExponentiallyStable_of_disc_neg`. -/
 private theorem modelB_locallyExponentiallyStable_of_disc_neg {x : State 4} (hx : x 2 = 0)
     (hP : p.pccP x = 0) (hI : p.I0 / p.Cdc ≠ 0) (hD : p.planeDisc x < 0) :
     LocallyExponentiallyStable p.field x := by
   obtain ⟨M, hM⟩ := (isCompact_closedBall x 1).exists_bound_of_continuousOn
     p.contDiff_field_offDC.continuous.continuousOn
-  refine Dynamics.locallyExponentiallyStable_of_spiral 2 hx p.contDiff_planeQ
+  refine Dynamics.Degenerate.locallyExponentiallyStable_of_spiral 2 hx p.contDiff_planeQ
     (p.planeQ_eq_zero hx hP) p.continuous_planeG.continuousAt p.continuous_planeH.continuousAt
     (ρ := 1) (M := M) one_pos ?_ ?_ ?_ hD ?_
   · intro y _ hy

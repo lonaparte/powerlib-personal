@@ -1,10 +1,10 @@
-import theorem.PhasePlane.Flow
+import theorem.Dynamics.LipschitzFlow
 import theorem.Dynamics.State
 
 /-! # Basins of attraction are open and invariant
 
 Foundation layer for the attractor/basin language, under the completeness premise of
-`PhasePlane/Flow.lean` (globally Lipschitz field, forward flow `φ_t`, `t ∈ ℝ≥0`).
+`theorem/Dynamics/LipschitzFlow.lean` (globally Lipschitz field, forward flow `φ_t`, `t ∈ ℝ≥0`).
 
 Basin. The basin of attraction of `x*` for the forward flow is `𝓑(x*) = {x | φ_t x → x* as
 t → ∞}`, written out in the statements as the set
@@ -23,7 +23,7 @@ attraction 是开集" (proved here for asymptotically stable equilibria of Lipsc
 -/
 
 noncomputable section
-namespace powerlib.PhasePlane
+namespace powerlib.Dynamics.LaSalle
 
 open Set Filter Topology NNReal
 
@@ -96,4 +96,4 @@ attraction `{x | φ_t x → x*}`. -/
     (by rw [(forwardSolution_spec hg y).1, ← dist_eq_norm]; exact hy)
   exact h.comp tendsto_nnreal_coe_atTop
 
-end powerlib.PhasePlane
+end powerlib.Dynamics.LaSalle

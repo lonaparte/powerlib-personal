@@ -1,5 +1,5 @@
 import theorem.PhasePlane.Duffing
-import theorem.Dynamics.Basin
+import theorem.Dynamics.LaSalle.Basin
 
 /-! # Damped Duffing: every solution converges to the equilibrium set (LaSalle)
 
@@ -10,7 +10,7 @@ state `(x, y) ∈ State 2`) with damping `δ > 0`, continuous time, no input.
 
 Result. `tendsto_equilibria`: every forward solution converges to the equilibrium set
 `{(0, 0), (1, 0), (−1, 0)}` (in the sense of `𝓝ˢ`). Proof: LaSalle's invariance principle in the
-`C¹` form of `theorem/Dynamics/Basin.lean` (`lasalle_invariance_principle_of_contDiff`) on the
+`C¹` form of `theorem/Dynamics/LaSalle/Basin.lean` (`lasalle_invariance_principle_of_contDiff`) on the
 compact, positively invariant energy sublevel set through the initial state; on `{Ė = 0} = {y = 0}`
 an invariant set must have `ẏ = −(x³ − x) = 0`, i.e. consist of equilibria.
 
@@ -40,8 +40,8 @@ def equilibria : Set (State 2) := {mk 0 0, mk 1 0, mk (-1) 0}
 @[powerlib_foundation] theorem energy_contDiff : ContDiff ℝ 1 energy := by
   have h : energy = fun y : State 2 => 1 * y 1 ^ 2 / 2 + potential (y 0) := rfl
   rw [h]
-  have h0 : ContDiff ℝ 1 (fun y : State 2 => y 0) := contDiff_coord 0
-  have h1 : ContDiff ℝ 1 (fun y : State 2 => y 1) := contDiff_coord 1
+  have h0 : ContDiff ℝ 1 (fun y : State 2 => y 0) := Dynamics.contDiff_coord 0
+  have h1 : ContDiff ℝ 1 (fun y : State 2 => y 1) := Dynamics.contDiff_coord 1
   unfold potential
   fun_prop
 
@@ -57,7 +57,7 @@ def equilibria : Set (State 2) := {mk 0 0, mk 1 0, mk (-1) 0}
 @[powerlib_foundation] theorem tendsto_equilibria {δ : ℝ} (hδ : 0 < δ) {φ : ℝ → State 2}
     (hφ : IsIntegralCurveOn φ (fun _ y => field δ y) (Ici 0)) :
     Tendsto φ atTop (𝓝ˢ equilibria) := by
-  refine Dynamics.lasalle_invariance_principle_of_contDiff (V := energy)
+  refine Dynamics.LaSalle.lasalle_invariance_principle_of_contDiff (V := energy)
     (Ω := {y | energy y ≤ energy (φ 0)}) (energy_sublevel_compact _)
     (sublevel_positivelyInvariant hδ.le _) (field_contDiff δ) energy_contDiff
     (fun x _ => energy_lie_nonpos hδ.le x) hφ (by simp) ?_
@@ -75,7 +75,7 @@ def equilibria : Set (State 2) := {mk 0 0, mk 1 0, mk (-1) 0}
   have hstay : ∀ t ∈ Icc 0 T, ψ t ∈ N := hNinv 0 T ψ hψ (hψ0 ▸ hx)
   have hmem0 : (0 : ℝ) ∈ Icc 0 T := ⟨le_rfl, hT.le⟩
   have hchain : HasDerivWithinAt (fun t => ψ t 1) (field δ (ψ 0) 1) (Icc 0 T) 0 :=
-    (coord 1).hasFDerivAt.comp_hasDerivWithinAt 0 (hψ 0 hmem0)
+    (Dynamics.coord 1).hasFDerivAt.comp_hasDerivWithinAt 0 (hψ 0 hmem0)
   have hconst : HasDerivWithinAt (fun t => ψ t 1) 0 (Icc 0 T) 0 :=
     (hasDerivWithinAt_const (0 : ℝ) _ (0 : ℝ)).congr (fun s hs => hzero _ (hstay s hs))
       (hzero _ (hstay 0 hmem0))

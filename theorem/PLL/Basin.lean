@@ -1,5 +1,5 @@
 import theorem.PLL.PH
-import theorem.Dynamics.Basin
+import theorem.Dynamics.LaSalle.Basin
 
 /-! # SRF-PLL regions of attraction (LaSalle, potential-well estimates)
 
@@ -12,7 +12,7 @@ Model boundary.
   (Ici 0)) ∧ ∀ φ, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
   Tendsto φ atTop (𝓝 x_eq)` (from every initial state in `S` a forward solution exists and every
   forward solution converges to `x_eq`), derived with the LaSalle invariance principle of
-  `theorem/Dynamics/Basin.lean` (no global Lipschitz bound is needed). Positive invariance of
+  `theorem/Dynamics/LaSalle/Basin.lean` (no global Lipschitz bound is needed). Positive invariance of
   the estimates is proved, not assumed.
 
 Two estimates.
@@ -141,13 +141,13 @@ private theorem srf_regionOfAttraction_hamiltonian {V Kp Ki : ℝ} (hV : 0 < V)
         rw [le_div_iff₀ hKi]
         nlinarith [le_abs_self c]
       nlinarith [sq_nonneg (x 1 - 2 * (δω / Ki))]
-  refine Dynamics.regionOfAttraction_of_lasalle_sublevel hW (contDiff_srfField V Kp Ki δω)
+  refine Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel hW (contDiff_srfField V Kp Ki δω)
     (contDiff_pllHamiltonian V Ki _) (fun x _ => by rw [hLie]; nlinarith [sq_nonneg (srfPD V (x 0))])
     hcompact ?_
-  refine Dynamics.lasalle_condition_of_lieDeriv (contDiff_srfField V Kp Ki δω) (contDiff_coord 0)
+  refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv (contDiff_srfField V Kp Ki δω) (contDiff_coord 0)
     (fun x hx => ?_) (fun x hx hd => ?_)
   · -- on the zero set of `Ḣ_s` inside the well, `θ = 0`
-    rw [Dynamics.lieDerivZeroSet_def] at hx
+    rw [Dynamics.LaSalle.lieDerivZeroSet_def] at hx
     obtain ⟨⟨hxW, -⟩, hz⟩ := hx
     rw [hLie] at hz
     have hs : Real.sin (x 0) = 0 := by
@@ -159,7 +159,7 @@ private theorem srf_regionOfAttraction_hamiltonian {V Kp Ki : ℝ} (hV : 0 < V)
       simp only [srfPD, neg_eq_zero, mul_eq_zero] at this
       exact this.resolve_left hV.ne'
     exact (Real.sin_eq_zero_iff_of_lt_of_lt (abs_lt.mp hxW).1 (abs_lt.mp hxW).2).mp hs
-  · rw [Dynamics.lieDerivZeroSet_def] at hx
+  · rw [Dynamics.LaSalle.lieDerivZeroSet_def] at hx
     obtain ⟨⟨hxW, -⟩, hz⟩ := hx
     rw [hLie] at hz
     have hθ : x 0 = 0 := by
@@ -315,16 +315,16 @@ private theorem xi_regionOfAttraction_pendulum {a b Δω : ℝ} (ha : 0 < a) (hb
       have : x 1 ^ 2 ≤ ((Real.sqrt (2 * |c|) + |Δω| + a) / b) ^ 2 := by
         rw [← sq_abs]; exact pow_le_pow_left₀ (abs_nonneg _) hξ 2
       linarith
-  refine Dynamics.regionOfAttraction_of_lasalle_sublevel hW (contDiff_xiField a b Δω)
+  refine Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel hW (contDiff_xiField a b Δω)
     (contDiff_pendulumEnergy a b Δω) (fun x hx => ?_) hcompact ?_
   · rw [pendulumEnergy_lie]
     have := mul_nonneg (mul_pos ha (hcosW x hx)).le (sq_nonneg (xiRate a b Δω x))
     linarith
   -- on the zero set of `Ė` inside the well, `θ̇ = 0`; then `θ = 0` and `ξ = −Δω/b`
-  have hzero : ∀ x ∈ Dynamics.LieDerivZeroSet (xiField a b Δω) E {x ∈ W | E x ≤ c},
+  have hzero : ∀ x ∈ Dynamics.LaSalle.LieDerivZeroSet (xiField a b Δω) E {x ∈ W | E x ≤ c},
       xiRate a b Δω x = 0 := by
     intro x hx
-    rw [Dynamics.lieDerivZeroSet_def] at hx
+    rw [Dynamics.LaSalle.lieDerivZeroSet_def] at hx
     obtain ⟨⟨hxW, -⟩, hz⟩ := hx
     rw [pendulumEnergy_lie] at hz
     have hpos : 0 < a * Real.cos (x 0) := mul_pos ha (hcosW x hxW)
@@ -332,10 +332,10 @@ private theorem xi_regionOfAttraction_pendulum {a b Δω : ℝ} (ha : 0 < a) (hb
     rcases this with h | h
     · exact absurd h hpos.ne'
     · exact pow_eq_zero_iff two_ne_zero |>.mp h
-  refine Dynamics.lasalle_condition_of_lieDeriv (contDiff_xiField a b Δω) (contDiff_xiRate a b Δω)
+  refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv (contDiff_xiField a b Δω) (contDiff_xiRate a b Δω)
     hzero (fun x hx hd => ?_)
   have hw := hzero x hx
-  rw [Dynamics.lieDerivZeroSet_def] at hx
+  rw [Dynamics.LaSalle.lieDerivZeroSet_def] at hx
   obtain ⟨⟨hxW, -⟩, -⟩ := hx
   have hxW' : |x 0| < Real.pi / 2 := hxW
   rw [(hasFDerivAt_xiRate a b Δω x).fderiv] at hd

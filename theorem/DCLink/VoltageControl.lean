@@ -1,9 +1,12 @@
-import theorem.Criteria.Jacobian
-import theorem.DCLink.Locality
-import theorem.CurrentControl.SISO
+import theorem.Dynamics.Coordinates
+import theorem.Dynamics.Locality
+import theorem.Spectral.Family
+import theorem.LTI.Plant
 import theorem.Dynamics.ConverseLinearization
-import theorem.Dynamics.DCLinkBoundary
-import theorem.Flow.Shift
+import theorem.Dynamics.Lyapunov
+import theorem.Dynamics.Instability
+import theorem.Dynamics.Shift
+import theorem.Criteria.Hurwitz2
 
 /-! # DC-link voltage of a grid-following VSC: open loop and PI outer loop (domain)
 
@@ -94,8 +97,8 @@ The closed loop within the physical range (`V_d, V_dc*, C > 0`) is decided exact
   Lyapunov translation is not exact within the physical range, witness `centerLoop`
   (`C = V_d = V_dc* = Ki = 1`, `Kp = i_ff = I_d0 = 0`; `centerLoop_mem_den_lyapunovStable`,
   `centerLoop_not_mem_den_locallyAsymptoticallyStable`).
-The degenerate-equilibrium tools for the locally `C¹` field are
-`theorem/Dynamics/DCLinkBoundary.lean`.
+The degenerate-equilibrium tools for the locally `C¹` field are in
+`theorem/Dynamics/Instability.lean` and `theorem/Dynamics/Lyapunov.lean`.
 The Jacobians, Hurwitz criteria and the small-signal transfer function are static evidence.
 
 Source: work-sync `theory/T-vsc-dc-voltage-control.md` §1.1, §1.3, §1.4;
@@ -154,8 +157,8 @@ def dcState (V0 : ℝ) : State 1 := WithLp.toLp 2 ![V0]
 private lemma hasFDerivAt_inv_coord {n : ℕ} (i : Fin n)
     {x : State n} (hx : x i ≠ 0) :
     HasFDerivAt (fun y : State n => (y i)⁻¹)
-      ((ContinuousLinearMap.toSpanSingleton ℝ (-((x i) ^ 2)⁻¹)).comp (Criteria.coord i)) x :=
-  (hasFDerivAt_inv hx).comp x (Criteria.hasFDerivAt_coord i x)
+      ((ContinuousLinearMap.toSpanSingleton ℝ (-((x i) ^ 2)⁻¹)).comp (Dynamics.coord i)) x :=
+  (hasFDerivAt_inv hx).comp x (Dynamics.hasFDerivAt_coord i x)
 
 @[powerlib_foundation] theorem openField_contDiffOn (C isrc P : ℝ) :
     ContDiffOn ℝ 1 (openField C isrc P) (posDC 1) := by
@@ -165,7 +168,7 @@ private lemma hasFDerivAt_inv_coord {n : ℕ} (i : Fin n)
   simp only [openField, PiLp.toLp_apply, Fin.zero_eta, Matrix.cons_val_zero]
   apply ContDiffOn.div_const
   apply contDiffOn_const.add
-  apply ContDiffOn.div contDiffOn_const (Criteria.contDiff_coord 0).contDiffOn
+  apply ContDiffOn.div contDiffOn_const (Dynamics.contDiff_coord 0).contDiffOn
   intro x hx
   exact (ne_of_gt hx)
 
@@ -175,9 +178,9 @@ private lemma hasFDerivAt_inv_coord {n : ℕ} (i : Fin n)
       Matrix.toEuclideanCLM (n := Fin 1) (𝕜 := ℝ) !![-(P / V0) / (C * V0)] := by
   have hx : (dcState V0) 0 ≠ 0 := by simpa [dcState] using hV
   have h := (((hasFDerivAt_inv_coord 0 hx).const_mul P).const_add isrc).mul_const C⁻¹
-  refine Criteria.fderiv_eq_toEuclideanCLM_of_components _
+  refine Dynamics.fderiv_eq_toEuclideanCLM_of_components _
     (fun _ => C⁻¹ • (P • (ContinuousLinearMap.toSpanSingleton ℝ (-((dcState V0) 0 ^ 2)⁻¹)).comp
-      (Criteria.coord 0))) ?_ ?_
+      (Dynamics.coord 0))) ?_ ?_
   · intro i
     fin_cases i
     convert h using 1
@@ -193,7 +196,7 @@ stable. Implementation evidence for `openLoop_mem_den_locallyExponentiallyStable
 private theorem openLoop_locallyExponentiallyStable {C P V0 : ℝ} (hC : 0 < C)
     (hV : 0 < V0) (hP : 0 < P / V0) :
     LocallyExponentiallyStable (openField C (-(P / V0)) P) (dcState V0) := by
-  refine locallyExponentiallyStable_of_isHurwitz_jacobian_local (isOpen_posDC 1)
+  refine Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local (isOpen_posDC 1)
     (by simpa [posDC, dcState] using hV) _ (openField_contDiffOn _ _ _)
     (openField_eq_zero hV.ne') (openJacobian hV.ne') ?_
   rw [isHurwitz_fin_one_iff, neg_div]
@@ -203,7 +206,7 @@ private theorem openLoop_locallyExponentiallyStable {C P V0 : ℝ} (hC : 0 < C)
 voltage is unstable. Implementation evidence for `openLoop_mem_den_unstable`. -/
 private theorem openLoop_unstable {C P V0 : ℝ} (hC : 0 < C) (hV : 0 < V0)
     (hP : P / V0 < 0) : Unstable (openField C (-(P / V0)) P) (dcState V0) := by
-  refine unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 1)
+  refine Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 1)
     (by simpa [posDC, dcState] using hV) _ (openField_contDiffOn _ _ _)
     (openField_eq_zero hV.ne') (openJacobian hV.ne')
     ⟨_, _, fun h => one_ne_zero (congrFun h 0), eigenpair_fin_one _, ?_⟩
@@ -280,7 +283,7 @@ def jacobian : Matrix (Fin 2) (Fin 2) ℝ := !![-(p.a * p.Kp + p.b), -(p.a * p.K
   · simp only [closedField, PiLp.toLp_apply, Fin.zero_eta, Matrix.cons_val_zero]
     apply ContDiffOn.div_const
     apply contDiffOn_const.add
-    apply ContDiffOn.div _ (Criteria.contDiff_coord 0).contDiffOn
+    apply ContDiffOn.div _ (Dynamics.contDiff_coord 0).contDiffOn
     · intro x hx
       exact ne_of_gt hx
     · apply ContDiff.contDiffOn
@@ -288,7 +291,7 @@ def jacobian : Matrix (Fin 2) (Fin 2) ℝ := !![-(p.a * p.Kp + p.b), -(p.a * p.K
       fun_prop
   · simp only [closedField, PiLp.toLp_apply, Fin.mk_one, Matrix.cons_val_one,
       Matrix.cons_val_zero]
-    exact ((Criteria.contDiff_coord 0).sub contDiff_const).contDiffOn
+    exact ((Dynamics.contDiff_coord 0).sub contDiff_const).contDiffOn
 
 /-- The Jacobian of the nonlinear closed loop, computed with `fderiv`. -/
 @[powerlib_foundation] theorem closedJacobian (hKi : p.Ki ≠ 0) (hV : p.Vref ≠ 0)
@@ -297,20 +300,20 @@ def jacobian : Matrix (Fin 2) (Fin 2) ℝ := !![-(p.a * p.Kp + p.b), -(p.a * p.K
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) p.jacobian := by
   have hx : p.eqState 0 ≠ 0 := by simpa [eqState] using hV
   have hid : HasFDerivAt p.idRef
-      (-p.Kp • Criteria.coord 0 - p.Ki • Criteria.coord 1) p.eqState := by
-    have h := (((Criteria.hasFDerivAt_coord 0 p.eqState).sub_const p.Vref).const_mul
-      (-p.Kp)).sub ((Criteria.hasFDerivAt_coord 1 p.eqState).const_mul p.Ki) |>.add_const p.iff
+      (-p.Kp • Dynamics.coord 0 - p.Ki • Dynamics.coord 1) p.eqState := by
+    have h := (((Dynamics.hasFDerivAt_coord 0 p.eqState).sub_const p.Vref).const_mul
+      (-p.Kp)).sub ((Dynamics.hasFDerivAt_coord 1 p.eqState).const_mul p.Ki) |>.add_const p.iff
     convert h using 1
     funext v
     simp only [idRef, Pi.sub_apply]
   have h0 := (((hid.const_mul p.Vd).mul (hasFDerivAt_inv_coord 0 hx)).const_add p.isrc).mul_const
     p.C⁻¹
-  have h1' := (Criteria.hasFDerivAt_coord 0 p.eqState).sub_const p.Vref
-  refine Criteria.fderiv_eq_toEuclideanCLM_of_components _
+  have h1' := (Dynamics.hasFDerivAt_coord 0 p.eqState).sub_const p.Vref
+  refine Dynamics.fderiv_eq_toEuclideanCLM_of_components _
     ![p.C⁻¹ • ((p.Vd * p.idRef p.eqState) •
-        (ContinuousLinearMap.toSpanSingleton ℝ (-(p.eqState 0 ^ 2)⁻¹)).comp (Criteria.coord 0) +
-      (p.eqState 0)⁻¹ • p.Vd • (-p.Kp • Criteria.coord 0 - p.Ki • Criteria.coord 1)),
-      Criteria.coord 0] ?_ ?_
+        (ContinuousLinearMap.toSpanSingleton ℝ (-(p.eqState 0 ^ 2)⁻¹)).comp (Dynamics.coord 0) +
+      (p.eqState 0)⁻¹ • p.Vd • (-p.Kp • Dynamics.coord 0 - p.Ki • Dynamics.coord 1)),
+      Dynamics.coord 0] ?_ ?_
   · intro i
     fin_cases i
     · convert h0 using 1
@@ -366,7 +369,7 @@ model, not a connection conclusion. -/
 private theorem closedLoop_locallyExponentiallyStable (hVd : 0 < p.Vd)
     (hV : 0 < p.Vref) (hC : 0 < p.C) (hkp : -(p.Idc0 / p.Vd) < p.Kp) (hki : 0 < p.Ki) :
     LocallyExponentiallyStable p.closedField p.eqState :=
-  locallyExponentiallyStable_of_isHurwitz_jacobian_local (isOpen_posDC 2)
+  Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local (isOpen_posDC 2)
     (by simpa [posDC, eqState] using hV) _ p.closedField_contDiffOn
     (p.closedField_eqState hki.ne' hV.ne') (p.closedJacobian hki.ne' hV.ne' hC.ne')
     ((p.closed_isHurwitz_iff hVd hV hC).2 ⟨hkp, hki⟩)
@@ -376,7 +379,7 @@ Implementation evidence for `closedLoop_mem_den_unstable_of_kp`. -/
 private theorem closedLoop_unstable_of_kp (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
     (hC : 0 < p.C) (hKi : p.Ki ≠ 0) (hkp : p.Kp < -(p.Idc0 / p.Vd)) :
     Unstable p.closedField p.eqState := by
-  refine unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 2)
+  refine Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 2)
     (by simpa [posDC, eqState] using hV) _ p.closedField_contDiffOn
     (p.closedField_eqState hKi hV.ne') (p.closedJacobian hKi hV.ne' hC.ne')
     (Criteria.exists_eigenvalue_re_pos_of_trace_pos _ ?_)
@@ -394,7 +397,7 @@ private theorem closedLoop_unstable_of_kp (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
 `closedLoop_mem_den_unstable_of_ki`. -/
 private theorem closedLoop_unstable_of_ki (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
     (hC : 0 < p.C) (hki : p.Ki < 0) : Unstable p.closedField p.eqState :=
-  unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 2)
+  Dynamics.unstable_of_jacobian_eigenvalue_re_pos_local (isOpen_posDC 2)
     (by simpa [posDC, eqState] using hV) _ p.closedField_contDiffOn
     (p.closedField_eqState hki.ne hV.ne') (p.closedJacobian hki.ne hV.ne' hC.ne')
     (Criteria.exists_eigenvalue_re_pos_of_det_neg _ (by
@@ -416,7 +419,7 @@ def smallSignal : Linear.Plant 2 1 :=
       s ^ 2 + (p.a * p.Kp + p.b) * s + p.a * p.Ki := by
     push_cast
     ring
-  rw [smallSignal, jacobian, CurrentControl.transfer_fin_two _ _ _ _ _ _ _ _ _ (by rwa [hden]),
+  rw [smallSignal, jacobian, LTI.transfer_fin_two _ _ _ _ _ _ _ _ _ (by rwa [hden]),
     hden]
   push_cast
   ring
@@ -594,7 +597,7 @@ def negativeCapacitance : OpenLoop := ⟨-1, -1, 1⟩
 @[powerlib_domain] theorem negativeCapacitance_mem_den_locallyExponentiallyStable :
     connection% (negativeCapacitance ∈ openFamily.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  refine open_mem_den_flow.mpr (locallyExponentiallyStable_of_isHurwitz_jacobian_local
+  refine open_mem_den_flow.mpr (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local
     (isOpen_posDC 1) (by simp [posDC, dcState, negativeCapacitance]) _
     (openField_contDiffOn _ _ _) (openField_eq_zero (by norm_num [negativeCapacitance]))
     (openJacobian (by norm_num [negativeCapacitance])) ?_)
@@ -673,7 +676,7 @@ def negativeCapacitanceLoop : DCParams := ⟨-1, 1, 1, -1, -1, 0, 0⟩
   have hKi : negativeCapacitanceLoop.Ki ≠ 0 := by norm_num [negativeCapacitanceLoop]
   have hV : negativeCapacitanceLoop.Vref ≠ 0 := by norm_num [negativeCapacitanceLoop]
   have hC : negativeCapacitanceLoop.C ≠ 0 := by norm_num [negativeCapacitanceLoop]
-  refine closed_mem_den_flow.mpr (locallyExponentiallyStable_of_isHurwitz_jacobian_local
+  refine closed_mem_den_flow.mpr (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local
     (isOpen_posDC 2) (by simp [posDC, DCParams.eqState, negativeCapacitanceLoop]) _
     negativeCapacitanceLoop.closedField_contDiffOn
     (negativeCapacitanceLoop.closedField_eqState hKi hV)
@@ -833,10 +836,10 @@ def centerEnergy (x : State 2) : ℝ :=
 
 @[powerlib_foundation] theorem hasFDerivAt_centerEnergy (x : State 2) :
     HasFDerivAt p.centerEnergy
-      ((p.Vref * (x 0 - p.Vref) + (x 0 - p.Vref) ^ 2) • Criteria.coord 0 +
-        (p.Vd * p.Ki / p.C * (x 1 - (p.iff - p.Id0) / p.Ki)) • Criteria.coord 1) x := by
-  have h0 := (Criteria.hasFDerivAt_coord 0 x).sub_const p.Vref
-  have h1 := (Criteria.hasFDerivAt_coord 1 x).sub_const ((p.iff - p.Id0) / p.Ki)
+      ((p.Vref * (x 0 - p.Vref) + (x 0 - p.Vref) ^ 2) • Dynamics.coord 0 +
+        (p.Vd * p.Ki / p.C * (x 1 - (p.iff - p.Id0) / p.Ki)) • Dynamics.coord 1) x := by
+  have h0 := (Dynamics.hasFDerivAt_coord 0 x).sub_const p.Vref
+  have h1 := (Dynamics.hasFDerivAt_coord 1 x).sub_const ((p.iff - p.Id0) / p.Ki)
   have h := (((h0.pow 2).const_mul (p.Vref / 2)).add ((h0.pow 3).const_mul (1 / 3))).add
     ((h1.pow 2).const_mul (p.Vd * p.Ki / (2 * p.C)))
   convert h using 1
@@ -850,7 +853,7 @@ def centerEnergy (x : State 2) : ℝ :=
     (hKi : p.Ki ≠ 0) (hkp : p.Kp = -(p.Idc0 / p.Vd)) {x : State 2} (hx : x 0 ≠ 0) :
     fderiv ℝ p.centerEnergy x (p.closedField x) = 0 := by
   rw [(p.hasFDerivAt_centerEnergy x).fderiv]
-  simp only [_root_.add_apply, _root_.smul_apply, Criteria.coord_apply, smul_eq_mul, closedField,
+  simp only [_root_.add_apply, _root_.smul_apply, Dynamics.coord_apply, smul_eq_mul, closedField,
     Matrix.cons_val_zero, Matrix.cons_val_one, idRef, isrc, Idc0]
   rw [hkp]
   simp only [Idc0]
@@ -985,11 +988,11 @@ private def driftEnergy (γ : ℝ) (x : State 2) : ℝ :=
 private theorem hasFDerivAt_driftEnergy (γ : ℝ) (x : State 2) :
     HasFDerivAt (p.driftEnergy γ)
       ((2 * (x 1 + γ * (p.Vref * (x 0 - p.Vref) + (x 0 - p.Vref) ^ 2 / 2)) *
-          (γ * (p.Vref + (x 0 - p.Vref))) + 2 * (x 0 - p.Vref)) • Criteria.coord 0 +
+          (γ * (p.Vref + (x 0 - p.Vref))) + 2 * (x 0 - p.Vref)) • Dynamics.coord 0 +
         (2 * (x 1 + γ * (p.Vref * (x 0 - p.Vref) + (x 0 - p.Vref) ^ 2 / 2))) •
-          Criteria.coord 1) x := by
-  have h0 := (Criteria.hasFDerivAt_coord 0 x).sub_const p.Vref
-  have h1 := Criteria.hasFDerivAt_coord 1 x
+          Dynamics.coord 1) x := by
+  have h0 := (Dynamics.hasFDerivAt_coord 0 x).sub_const p.Vref
+  have h1 := Dynamics.hasFDerivAt_coord 1 x
   have hin := h1.add (((h0.const_mul p.Vref).add ((h0.pow 2).const_mul (1 / 2))).const_mul γ)
   have h := (hin.pow 2).add (h0.pow 2)
   convert h using 1
@@ -1027,7 +1030,7 @@ private theorem closed_lyapunovStable_ki_zero (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
       positivity
   · have hx' : 0 < x 0 := hx
     rw [(p.hasFDerivAt_driftEnergy γ x).fderiv]
-    simp only [_root_.add_apply, _root_.smul_apply, Criteria.coord_apply, smul_eq_mul]
+    simp only [_root_.add_apply, _root_.smul_apply, Dynamics.coord_apply, smul_eq_mul]
     rw [p.closedField_zero_ki hKi hff hV.ne' hC.ne' (ne_of_gt hx'), p.closedField_one]
     have hconv : p.Vref + (x 0 - p.Vref) = x 0 := by ring
     rw [hconv]
@@ -1073,12 +1076,12 @@ private theorem closed_unstable_ki_zero_lt (hVd : 0 < p.Vd) (hV : 0 < p.Vref)
     positivity
   · have hx' : 0 < x 0 := hx
     have hd : HasFDerivAt (fun x : State 2 => (x 0 - p.Vref) ^ 2)
-        ((2 * (x 0 - p.Vref)) • Criteria.coord 0) x := by
-      have h := ((Criteria.hasFDerivAt_coord 0 x).sub_const p.Vref).pow 2
+        ((2 * (x 0 - p.Vref)) • Dynamics.coord 0) x := by
+      have h := ((Dynamics.hasFDerivAt_coord 0 x).sub_const p.Vref).pow 2
       convert h using 1
       ext v; simp
     rw [hd.fderiv]
-    simp only [_root_.smul_apply, Criteria.coord_apply, smul_eq_mul]
+    simp only [_root_.smul_apply, Dynamics.coord_apply, smul_eq_mul]
     rw [p.closedField_zero_ki hKi hff hV.ne' hC.ne' (ne_of_gt hx')]
     have hW' : 0 < (x 0 - p.Vref) ^ 2 := hW
     have : 0 < -(p.Vd * (p.Id0 + p.Vref * p.Kp)) * (x 0 - p.Vref) ^ 2 / (p.Vref * p.C * x 0) := by
@@ -1108,13 +1111,13 @@ private theorem closed_unstable_ki_zero_eq (hV : 0 < p.Vref) (hC : 0 < p.C) (hKi
     positivity
   · have hx' : 0 < x 0 := hx
     have hd : HasFDerivAt (fun x : State 2 => (x 0 - p.Vref) * x 1)
-        (x 1 • Criteria.coord 0 + (x 0 - p.Vref) • Criteria.coord 1) x := by
-      have h := ((Criteria.hasFDerivAt_coord 0 x).sub_const p.Vref).mul
-        (Criteria.hasFDerivAt_coord 1 x)
+        (x 1 • Dynamics.coord 0 + (x 0 - p.Vref) • Dynamics.coord 1) x := by
+      have h := ((Dynamics.hasFDerivAt_coord 0 x).sub_const p.Vref).mul
+        (Dynamics.hasFDerivAt_coord 1 x)
       convert h using 1
       ext v; simp; ring
     rw [hd.fderiv]
-    simp only [_root_.add_apply, _root_.smul_apply, Criteria.coord_apply, smul_eq_mul]
+    simp only [_root_.add_apply, _root_.smul_apply, Dynamics.coord_apply, smul_eq_mul]
     rw [p.closedField_zero_ki hKi hff hV.ne' hC.ne' (ne_of_gt hx'), p.closedField_one, hβ]
     have hv : x 0 - p.Vref ≠ 0 := by
       intro h

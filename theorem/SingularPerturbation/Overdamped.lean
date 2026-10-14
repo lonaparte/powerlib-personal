@@ -1,5 +1,5 @@
-import theorem.Flow.Linearization
-import theorem.Criteria.Jacobian
+import theorem.Dynamics.Linearization
+import theorem.Dynamics.Coordinates
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-! # Overdamped (Smoluchowski) limit: energy balance, Boltzmann density, rescaling
@@ -22,7 +22,7 @@ Results.
   `boltzmann_integral_eq_one`, `boltzmann_pos`: under the integrability premise
   `∫ e^{−V/D} < ∞` (which the note leaves implicit) `p` is a probability density.
 * `gradientFlow_locallyExponentiallyStable` (C: application of
-  `Flow.locallyExponentiallyStable_of_isHurwitz_jacobian`): the overdamped flow
+  `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`): the overdamped flow
   `θ̇ = −V'(θ)/γ` (`V ∈ C²`, `γ > 0`) is locally exponentially stable at every critical point with
   `V''(θ*) > 0`.
 * Correction (§1.3): with `κ = V''_max > 0`, `τ_V = γ/κ`, `ϑ(s) = θ(τ_V s)`, the exact rescaled
@@ -94,27 +94,27 @@ def gradField (V : ℝ → ℝ) (γ : ℝ) (y : Dynamics.State 1) : Dynamics.Sta
   have hdV : ContDiff ℝ 1 (deriv V) := h2.deriv'
   have hdiff : Differentiable ℝ (deriv V) := hdV.differentiable one_ne_zero
   have hcd : ContDiff ℝ 1 (gradField V γ) := by
-    apply Criteria.contDiff_of_components
+    apply Dynamics.contDiff_of_components
     intro i; fin_cases i
     simp only [gradField]
     simp
-    exact ((hdV.comp (Criteria.coord 0).contDiff).neg).div_const γ
+    exact ((hdV.comp (Dynamics.coord 0).contDiff).neg).div_const γ
   set xs : Dynamics.State 1 := WithLp.toLp 2 ![θs]
   have hc : HasFDerivAt (fun y : Dynamics.State 1 => deriv V (y 0))
-      ((deriv (deriv V) θs) • Criteria.coord 0) xs := by
+      ((deriv (deriv V) θs) • Dynamics.coord 0) xs := by
     have h1 : HasDerivAt (deriv V) (deriv (deriv V) θs) (xs 0) := (hdiff θs).hasDerivAt
-    have h := h1.comp_hasFDerivAt xs (Criteria.hasFDerivAt_coord 0 xs)
+    have h := h1.comp_hasFDerivAt xs (Dynamics.hasFDerivAt_coord 0 xs)
     exact h
-  refine Flow.locallyExponentiallyStable_of_isHurwitz_jacobian
+  refine Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian
     (!![-(deriv (deriv V) θs) / γ]) hcd ?_ ?_ ?_
   · ext i; fin_cases i; simp [gradField, xs, hcrit]
-  · refine Criteria.fderiv_eq_toEuclideanCLM_of_components _
-      ![γ⁻¹ • -((deriv (deriv V) θs) • Criteria.coord 0)] ?_ ?_
+  · refine Dynamics.fderiv_eq_toEuclideanCLM_of_components _
+      ![γ⁻¹ • -((deriv (deriv V) θs) • Dynamics.coord 0)] ?_ ?_
     · intro i; fin_cases i
       have h := hc.neg.const_smul γ⁻¹
       convert h using 1
       all_goals first | rfl | (funext y; simp [gradField]; ring)
-    · intro i v; fin_cases i; simp [Criteria.coord]; ring
+    · intro i v; fin_cases i; simp [Dynamics.coord]; ring
   · intro μ v hv heig
     have h0 := congrFun heig 0
     simp [Matrix.mulVec, dotProduct] at h0

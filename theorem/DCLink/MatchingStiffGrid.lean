@@ -70,8 +70,8 @@ Results.
   `mem_den_locallyAsymptoticallyStable`.
 * Trajectory level, in `theorem.DCLink.MatchingLaSalle` (private implementation evidence: set
   attraction and regions of attraction are outside the sentence language; the generic tools are
-  the foundation results of `theorem.Dynamics.PeriodicLaSalle`, LaSalle on the invariant cylinder
-  `(cos θ_dq, sin θ_dq, u_dc, i_dq)` with the `C¹` LaSalle of `theorem.Dynamics.Basin`):
+  the foundation results of `theorem.Dynamics.LaSalle.Periodic`, LaSalle on the invariant cylinder
+  `(cos θ_dq, sin θ_dq, u_dc, i_dq)` with the `C¹` LaSalle of `theorem.Dynamics.LaSalle.Basin`):
   `tendsto_equilibrium` (the source's LaSalle conclusion, also for the non-strict condition: with
   `margin ≥ 0`, `η ≠ 0`, `μ u* v₀ ≠ 0` every forward solution converges to one equilibrium
   `(j π, u*, î(j π))`, hence to `{ũ_dc = 0, ∇S = 0, ĩ_dq = 0}`, `tendsto_critical`),
@@ -783,7 +783,7 @@ private theorem les (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     unfold Model.N
     have := sq_nonneg m.ω0
     positivity
-  exact Flow.locallyExponentiallyStable_of_isHurwitz_jacobian m.jac (field_contDiff m)
+  exact Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian m.jac (field_contDiff m)
     (field_point m hN.ne') (hasFDerivAt_field_point m hL.ne').fderiv
     (jac_isHurwitz m hC hL hR hs hη hδ)
 

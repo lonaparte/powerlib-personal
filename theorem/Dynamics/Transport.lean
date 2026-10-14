@@ -1,5 +1,5 @@
 import theorem.Dynamics.State
-import theorem.Flow.Shift
+import theorem.Dynamics.Shift
 import theorem.Linear.Transfer
 
 /-! # Transport of the Flow sentences under changes of coordinates and of time scale
@@ -27,7 +27,7 @@ notions `Flow.ForwardComplete`, `Flow.GloballyAsymptoticallyStable`,
   forced systems (port passivity under linear coordinates is `Port.System.passive_conjugate`).
 
 Reuse. The proof of `holds_transport_iff` moves the equilibrium to the origin with
-`Flow.Property.holds_shift_iff` (`theorem/Flow/Shift.lean`) and conjugates by `T` at the origin.
+`Flow.Property.holds_shift_iff` (`theorem/Dynamics/Shift.lean`) and conjugates by `T` at the origin.
 Lyapunov stability, decay rates and conservation are conjugated by
 `Linear.lyapunovStable_conj`, `Linear.decay_conj` and `Linear.conservative_conj`
 (`theorem/Linear/Transfer.lean`), unchanged; the remaining sentences (local and global
@@ -465,8 +465,8 @@ invertible affine coordinate changes. -/
     {f : State n → State n} {x : State n} :
     GlobalAsymptoticStable (transportField T c f) (affineCoord T c x) ↔
       GlobalAsymptoticStable f x := by
-  rw [← Flow.globalAsymptoticStable_shift_iff (f := transportField T c f),
-    ← Flow.globalAsymptoticStable_shift_iff (f := f), transportField_shift]
+  rw [← Dynamics.globalAsymptoticStable_shift_iff (f := transportField T c f),
+    ← Dynamics.globalAsymptoticStable_shift_iff (f := f), transportField_shift]
   refine ⟨fun h => ?_, globalAsymptoticStable_conjEquiv⟩
   have h' := globalAsymptoticStable_conjEquiv (T := T.symm) h
   rwa [transportField_symm_zero] at h'

@@ -86,20 +86,20 @@ def energy : State 2 → ℝ := Conservative.energy 1 potential
 @[powerlib_foundation] theorem hasFDerivAt_field (δ : ℝ) (y : State 2) :
     HasFDerivAt (field δ)
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![0, 1; 1 - 3 * y 0 ^ 2, -δ]) y := by
-  refine hasFDerivAt_of_components _ ![coord 1, (1 - 3 * y 0 ^ 2) • coord 0 + (-δ) • coord 1]
+  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _ ![Dynamics.coord 1, (1 - 3 * y 0 ^ 2) • Dynamics.coord 0 + (-δ) • Dynamics.coord 1]
     ?_ ?_
   · intro i; fin_cases i
-    · exact hasFDerivAt_coord 1 y
+    · exact Dynamics.hasFDerivAt_coord 1 y
     · show HasFDerivAt (fun z => field δ z 1) _ y
-      have h0 := hasFDerivAt_coord 0 y
-      have h1 := hasFDerivAt_coord 1 y
+      have h0 := Dynamics.hasFDerivAt_coord 0 y
+      have h1 := Dynamics.hasFDerivAt_coord 1 y
       have h := ((h1.const_smul (-δ)).sub ((h0.pow 3).sub h0))
       have hf : (fun z => field δ z 1) = fun z : State 2 => (-δ) • z 1 - (z 0 ^ 3 - z 0) := by
         funext z; simp [field, force, smul_eq_mul]
       rw [hf]
       convert h using 1
       ext v; simp; ring
-  · intro i v; fin_cases i <;> simp
+  · intro i v; rw [Fin.sum_univ_two]; fin_cases i <;> simp
 
 /-- The characteristic roots at the saddle are `(−δ ± √(δ² + 4))/2`. -/
 @[powerlib_foundation] theorem saddle_eigenvalues (δ : ℝ) (σ : ℝ) (hσ : σ = 1 ∨ σ = -1) :

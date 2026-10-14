@@ -1,5 +1,5 @@
 import theorem.Linear.Family
-import theorem.Flow.Shift
+import theorem.Dynamics.Shift
 
 /-! # Frequency-response models: shared linear-plant interface (foundation)
 

@@ -1,5 +1,4 @@
-import theorem.Dynamics.Basin
-import theorem.CurrentControl.SISO
+import theorem.Dynamics.LaSalle.Basin
 
 /-! # Local asymptotic stability at degenerate minima (foundation)
 
@@ -18,7 +17,7 @@ then follows from LaSalle's invariance principle once no solution segment can st
   that stays in the ball inside `{Ẇ = 0}` starts at `x*` ⇒ local asymptotic stability. Lyapunov
   stability comes from LeanForControl's `lyapunov_stable` on the ball; attraction from LaSalle's
   principle for `C¹` fields (`regionOfAttraction_of_lasalle_sublevel`,
-  `lasalle_condition_of_trajectories`, `theorem/Dynamics/Basin.lean`) on a sublevel set inside the
+  `lasalle_condition_of_trajectories`, `theorem/Dynamics/LaSalle/Basin.lean`) on a sublevel set inside the
   ball built from the minimum of `W` on a compact annulus. No global compact sublevel set and no
   global Lipschitz bound are required.
 
@@ -30,7 +29,7 @@ Corollary 4.1) and Lyapunov's stability theorem (Theorem 4.1).
 -/
 
 noncomputable section
-namespace powerlib.Dynamics
+namespace powerlib.Dynamics.LaSalle
 open Set Filter Topology Metric
 
 variable {n : ℕ}
@@ -112,4 +111,4 @@ local notation "ℝⁿ" => State n
   rw [mem_ball, dist_eq_norm]
   exact hφ0.trans_le (min_le_right _ _)
 
-end powerlib.Dynamics
+end powerlib.Dynamics.LaSalle

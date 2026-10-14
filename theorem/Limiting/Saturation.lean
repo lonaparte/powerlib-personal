@@ -1,7 +1,7 @@
-import theorem.Criteria.Jacobian
-import theorem.CurrentControl.SISO
+import theorem.Dynamics.Coordinates
+import theorem.Spectral.Family
 import theorem.Dynamics.ConverseLinearization
-import theorem.Flow.Shift
+import theorem.Dynamics.Shift
 import theorem.Synchronous.Swing
 
 /-! # Grid-forming converter in current saturation: equilibria and the optimal current angle
@@ -166,7 +166,7 @@ def satJacobian (M D Psat φ δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 @[powerlib_foundation] theorem satField_contDiff (M D Pref Psat φ : ℝ) :
     ContDiff ℝ 1 (satField M D Pref Psat φ) := by
-  apply Criteria.contDiff_of_components
+  apply Dynamics.contDiff_of_components
   intro i
   fin_cases i <;> simp [satField] <;> fun_prop
 
@@ -174,13 +174,13 @@ def satJacobian (M D Psat φ δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     fderiv ℝ (satField M D Pref Psat φ) (angleState δ) =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (satJacobian M D Psat φ δ) := by
   set x := angleState δ
-  have h0 := Criteria.hasFDerivAt_coord 0 x
-  have h1 := Criteria.hasFDerivAt_coord 1 x
+  have h0 := Dynamics.hasFDerivAt_coord 0 x
+  have h1 := Dynamics.hasFDerivAt_coord 1 x
   have hc := ((h0.sub_const φ).cos.const_mul Psat)
   have hω := (((hc.const_sub Pref).sub (h1.const_mul D)).mul_const M⁻¹)
-  refine Criteria.fderiv_eq_toEuclideanCLM_of_components _
-    ![Criteria.coord 1, M⁻¹ • (-(Psat • -Real.sin (x 0 - φ) • Criteria.coord 0) -
-      D • Criteria.coord 1)] ?_ ?_
+  refine Dynamics.fderiv_eq_toEuclideanCLM_of_components _
+    ![Dynamics.coord 1, M⁻¹ • (-(Psat • -Real.sin (x 0 - φ) • Dynamics.coord 0) -
+      D • Dynamics.coord 1)] ?_ ?_
   · intro i
     fin_cases i
     · simpa [satField] using h1

@@ -3,7 +3,7 @@ import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import theorem.Dynamics.State
 import theorem.Family.Basic
-import theorem.Flow.Shift
+import theorem.Dynamics.Shift
 
 /-! # Nonlinear port-Hamiltonian systems
 

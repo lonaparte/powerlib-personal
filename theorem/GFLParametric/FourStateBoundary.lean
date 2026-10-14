@@ -1,6 +1,6 @@
 import theorem.GFLParametric.FourState
-import theorem.Dynamics.CascadeLyapunov
-import theorem.CurrentControl.SISO
+import theorem.Dynamics.Lyapunov
+import theorem.Dynamics.Instability
 
 /-! # Four-state GFL: the boundary of the quartic Routh region
 
@@ -48,8 +48,8 @@ All three are equilibria with `C ≠ 0` whose quartic lies on the boundary of th
   On the ball of radius `1/1000` the derivative of `W` is at most
   `−(3/64)(u² + η²)² − (1/2000)|ξ|²` (Taylor bounds `Real.sin_bound`, `Real.cos_bound`;
   private `lie_bound`), and `W ≥ (u² + η²)/4 + |ξ|²/1000` (private `wf_lower`), so
-  `Dynamics.localAsymptoticStable_of_strictLyapunov_ball` applies with the smooth
-  `FourState.regField` as `C¹` extension.
+  `Dynamics.localAsymptoticStable_of_lie_neg` applies (the field is continuous on the ball, where
+  it agrees with the smooth `FourState.regField`).
 * `not_exact_locallyAsymptoticallyStable`: the local asymptotic translation of the family
   (equilibrium and the strict quartic Routh conditions) is sound (`FourState.chain_le_semantics`)
   but not exact: for `weakFocus`, `a₁² + a₃² a₀ = a₃ a₂ a₁ = 3`.
@@ -427,7 +427,7 @@ private theorem wfLyap_hasFDerivAt (z : Dynamics.State 4) :
         (1 / 32 : ℝ))).add
     (((((hA.pow 2).const_mul (3 / 4 : ℝ)).sub ((hA.mul hB).const_mul (1 / 2 : ℝ))).add
       ((hB.pow 2).const_mul (7 / 4 : ℝ))).const_mul (1 / 500 : ℝ))
-  refine hasFDerivAt_of_eq hW (fun y => by simp [wfLyap]; ring) ?_
+  refine Dynamics.hasFDerivAt_of_eq hW (fun y => by simp [wfLyap]; ring) ?_
   apply ContinuousLinearMap.ext
   intro v
   simp
@@ -443,7 +443,7 @@ private theorem weakFocus_field (z : Dynamics.State 4) :
     weakFocus.field z = WithLp.toLp 2 ![-Real.sin (z 0) + z 3 + 2 * z 1, -Real.sin (z 0) + z 3,
       -(Real.cos (z 0) * z 3 * (z 2 + 1)⁻¹), z 2] := by
   ext i
-  fin_cases i <;> simp [Model.field, FourState.field, lift, coordField, opPoint, weakFocus, vq, idc,
+  fin_cases i <;> simp [Model.field, FourState.field, Dynamics.lift, coordField, opPoint, weakFocus, vq, idc,
     Params.γ]
   ring
 
@@ -499,9 +499,10 @@ first Lyapunov coefficient, certified by a composite Lyapunov function whose der
   have hg : ContDiff ℝ 1
       (fun z : Dynamics.State 4 => regField weakFocus.params (z + opPoint weakFocus.θ)) :=
     (contDiff_regField _).comp (contDiff_id.add contDiff_const)
-  refine Dynamics.localAsymptoticStable_of_strictLyapunov_ball (by norm_num)
-    (by norm_num : (0 : ℝ) < 1 / 1000) hg ?_ wfLyap_contDiff (by simp [wfLyap]) ?_ ?_
-  · intro z hz
+  refine Dynamics.localAsymptoticStable_of_lie_neg (by norm_num)
+    (by norm_num : (0 : ℝ) < 1 / 1000) wfLyap_contDiff
+    (hg.continuous.continuousOn.congr fun z hz' => ?_) (by simp [wfLyap]) ?_ ?_
+  · have hz : ‖z - 0‖ < 1 / 1000 := mem_ball_iff_norm.mp hz'
     show FourState.field _ (z + opPoint _) = _
     refine field_eq_regField_of_near (θ0 := weakFocus.θ) _ ?_
     rw [add_sub_cancel_right]
@@ -566,7 +567,7 @@ private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
 private theorem lyapunovStable_regField {p : Params} {θ0 : ℝ}
     (h : LyapunovStable (FourState.field p) (opPoint θ0)) :
     LyapunovStable (regField p) (opPoint θ0) :=
-  lyapunovStable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
+  Dynamics.lyapunovStable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
     (fun _ hy => (field_eq_regField_of_near p hy).symm) h
 
 private theorem localAsymptoticStable_regField {p : Params} {θ0 : ℝ}
@@ -618,7 +619,7 @@ private theorem unstable_regField_of_C_eq_zero {p : Params} (hC : p.C = 0) (θ0 
     have hne : y 2 - 1 ≠ 0 := fun h => by
       have : (y 2 - 1) * y 3 = 0 := by rw [h, zero_mul]
       linarith
-    simp [regField, lift, regCoordField, Params.γ, hC]
+    simp [regField, Dynamics.lift, regCoordField, Params.γ, hC]
     positivity
 
 /-- **Necessary condition (closed Routh region).** A Lyapunov stable model has `C ≠ 0`, its
@@ -677,7 +678,7 @@ def frozenPLL : Model := ⟨⟨1, 0, 0, 0, 0, 1, 1, 3 / 2, 0⟩, 0⟩
 @[powerlib_domain] theorem frozenPLL_mem_den_unstable :
     connection% (frozenPLL ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  refine mem_den_flow_iff'.mpr (unstable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
+  refine mem_den_flow_iff'.mpr (Dynamics.unstable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
     (fun y hy => field_eq_regField_of_near _ hy) ?_)
   have c0 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 0) := contDiff_piLp_apply 2
   have c1 : ContDiff ℝ 1 (fun z : Dynamics.State 4 => z 1) := contDiff_piLp_apply 2
@@ -708,7 +709,7 @@ def frozenPLL : Model := ⟨⟨1, 0, 0, 0, 0, 1, 1, 3 / 2, 0⟩, 0⟩
     have hs : Real.sin (y 0) ≠ 0 := fun h => by
       have : -(y 1 * Real.sin (y 0)) = 0 := by rw [h, mul_zero, neg_zero]
       linarith
-    simp [regField, lift, regCoordField, frozenPLL, vq, idc]
+    simp [regField, Dynamics.lift, regCoordField, frozenPLL, vq, idc]
     positivity
 
 /-- The undamped PLL with a damped dc loop is not locally asymptotically stable: the PLL is
@@ -738,7 +739,7 @@ decoupled (`X_g = 0`) and conserves the pendulum energy `1 − cos θ + x²/2`. 
     (fun y => (hd y).differentiableAt) (by norm_num : (0 : ℝ) < 1) (fun y _ => ?_)
     (fun ε hε => ?_) hg
   · rw [(hd y).fderiv]
-    simp [regField, lift, regCoordField, undampedPLL, vq, idc]
+    simp [regField, Dynamics.lift, regCoordField, undampedPLL, vq, idc]
     ring_nf
     rfl
   · refine ⟨opPoint undampedPLL.θ + WithLp.toLp 2 ![0, ε / 2, 0, 0], ?_, ?_⟩

@@ -1,6 +1,6 @@
 import theorem.Criteria.Hurwitz2
 import theorem.Circuits.LCL
-import theorem.Flow.Linearization
+import theorem.Dynamics.Linearization
 
 /-! # Routh–Hurwitz criterion for monic real cubics and real 3×3 matrices
 
@@ -20,11 +20,11 @@ Foundation layer (plus thin generic semantic corollaries at the end).
   `IsHurwitz A ↔ A.trace < 0 ∧ A.det < 0 ∧ A.trace * principalMinorSum A < A.det`.
 * Instability witnesses: `0 < det A` gives a positive real eigenvalue (real and complex
   eigenvectors); `0 < tr A` gives an eigenvalue with positive real part, in the shape of
-  `powerlib.Flow.unstable_of_jacobian_eigenvalue_re_pos`.
+  `powerlib.Dynamics.unstable_of_jacobian_eigenvalue_re_pos`.
 * Semantic corollaries: linearization at an equilibrium of a caller-supplied `ContDiff ℝ 1`
   field on `EuclideanSpace ℝ (Fin 3)`, and the attractive sentences of a three-state linear field
-  `x' = A (x - e)`. They only repackage `Flow.locallyExponentiallyStable_of_isHurwitz_jacobian`,
-  `Flow.unstable_of_jacobian_eigenvalue_re_pos` (LeanForControl's indirect method) and the linear
+  `x' = A (x - e)`. They only repackage `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`,
+  `Dynamics.unstable_of_jacobian_eigenvalue_re_pos` (LeanForControl's indirect method) and the linear
   hub `Linear.holds_iff_isHurwitz`; the model boundary is whatever field or matrix the caller
   supplies.
 
@@ -348,7 +348,7 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
   rw [Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at hzero
   exact (sub_eq_zero.mp hzero).symm
 
-/-- `0 < det A`: eigenpair shaped for `Flow.unstable_of_jacobian_eigenvalue_re_pos`. -/
+/-- `0 < det A`: eigenpair shaped for `Dynamics.unstable_of_jacobian_eigenvalue_re_pos`. -/
 @[powerlib_foundation] theorem exists_eigenvalue_re_pos_of_det_pos_fin_three
     (A : Matrix (Fin 3) (Fin 3) ℝ) (h : 0 < A.det) :
     ∃ (μ : ℂ) (v : Fin 3 → ℂ),
@@ -360,7 +360,7 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
   rw [det_characteristicMatrix_fin_three']
   exact cubic_real_root_complex hroot
 
-/-- `0 < tr A`: eigenpair shaped for `Flow.unstable_of_jacobian_eigenvalue_re_pos`. -/
+/-- `0 < tr A`: eigenpair shaped for `Dynamics.unstable_of_jacobian_eigenvalue_re_pos`. -/
 @[powerlib_foundation] theorem exists_eigenvalue_re_pos_of_trace_pos_fin_three
     (A : Matrix (Fin 3) (Fin 3) ℝ) (h : 0 < A.trace) :
     ∃ (μ : ℂ) (v : Fin 3 → ℂ),
@@ -391,7 +391,7 @@ local notation "ℝ³" => EuclideanSpace ℝ (Fin 3)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) A)
     (htr : A.trace < 0) (hdet : A.det < 0) (hg : A.trace * principalMinorSum A < A.det) :
     LocallyExponentiallyStable f x_eq :=
-  Flow.locallyExponentiallyStable_of_isHurwitz_jacobian A hf heq hJac
+  Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian A hf heq hJac
     (isHurwitz_fin_three_of htr hdet hg)
 
 /-- Linearization at an equilibrium of a `C¹` field on `ℝ³`: a Jacobian with `0 < det`
@@ -401,7 +401,7 @@ local notation "ℝ³" => EuclideanSpace ℝ (Fin 3)
     (A : Matrix (Fin 3) (Fin 3) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) A)
     (hdet : 0 < A.det) : Unstable f x_eq :=
-  Flow.unstable_of_jacobian_eigenvalue_re_pos A hf heq hJac
+  Dynamics.unstable_of_jacobian_eigenvalue_re_pos A hf heq hJac
     (exists_eigenvalue_re_pos_of_det_pos_fin_three A hdet)
 
 /-- Linearization at an equilibrium of a `C¹` field on `ℝ³`: a Jacobian with `0 < tr` gives
@@ -411,7 +411,7 @@ instability. -/
     (A : Matrix (Fin 3) (Fin 3) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) A)
     (htr : 0 < A.trace) : Unstable f x_eq :=
-  Flow.unstable_of_jacobian_eigenvalue_re_pos A hf heq hJac
+  Dynamics.unstable_of_jacobian_eigenvalue_re_pos A hf heq hJac
     (exists_eigenvalue_re_pos_of_trace_pos_fin_three A htr)
 
 /-- Three-state continuous-time linear field `x' = A (x - e)`: every attractive sentence of the

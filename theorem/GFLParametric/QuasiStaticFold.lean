@@ -1,5 +1,6 @@
 import theorem.GFLParametric.QuasiStatic
-import theorem.Dynamics.SaddleNodeHopf
+import theorem.Dynamics.Calculus
+import theorem.Dynamics.Instability
 
 /-! # Quasi-static three-state GFL: the fold of the Routh–Hurwitz region
 
@@ -381,15 +382,15 @@ section Members
 
 private theorem model_field0 (m : Model) (z : Dynamics.State 3) :
     m.field z 0 = m.params.kp * vq m.params (z 0 + m.θ) (z 2 + m.Id) + m.params.ki * z 1 := by
-  simp [Model.field, QuasiStatic.field, lift, coordField, point]
+  simp [Model.field, QuasiStatic.field, Dynamics.lift, coordField, point]
 
 private theorem model_field1 (m : Model) (z : Dynamics.State 3) :
     m.field z 1 = vq m.params (z 0 + m.θ) (z 2 + m.Id) := by
-  simp [Model.field, QuasiStatic.field, lift, coordField, point]
+  simp [Model.field, QuasiStatic.field, Dynamics.lift, coordField, point]
 
 private theorem model_field2 (m : Model) (z : Dynamics.State 3) :
     m.field z 2 = m.params.kP * (m.params.Pref - power m.params (z 0 + m.θ) (z 2 + m.Id)) := by
-  simp [Model.field, QuasiStatic.field, lift, coordField, point]
+  simp [Model.field, QuasiStatic.field, Dynamics.lift, coordField, point]
 
 private theorem vq_shift (p : Params) {θ Id : ℝ} (heq : p.Xg * Id = p.V * Real.sin θ)
     (φ ι : ℝ) : vq p (φ + θ) (ι + Id) =

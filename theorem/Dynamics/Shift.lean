@@ -5,13 +5,18 @@ import theorem.Flow.Basic
 Generic foundation, independent of any model: each behavioural sentence of the Flow semantics
 holds for `f` at `e` exactly when it holds for `z ↦ f (z + e)` at `0`
 (`Flow.Property.holds_shift_iff`). Model families read about a non-zero operating point use it to
-place the operating point at the origin, where the sentences of the library are interpreted. -/
+place the operating point at the origin, where the sentences of the library are interpreted.
+The per-predicate lemmas (`Dynamics.lyapunovStable_shift_iff`, …) live in `powerlib.Dynamics`;
+`Flow.Property.holds_shift_iff` keeps the namespace of the codex type `Flow.Property` it extends
+(dot notation). -/
 
 noncomputable section
 
-namespace powerlib.Flow
+namespace powerlib.Dynamics
 
 open Set Filter Topology
+open powerlib.Flow (ForwardComplete GloballyExponentiallyStable GloballyAsymptoticallyStable Decay
+  SampledContraction Conservative)
 
 variable {n : ℕ}
 
@@ -129,21 +134,29 @@ private theorem tendsto_shift_iff {e : ℝⁿ} {φ : ℝ → ℝⁿ} :
         simpa using hψ
       simpa using hcons t₀ t₁ (fun t => ψ t + e) hφ t ht
 
+end Shift
+
+end powerlib.Dynamics
+
+namespace powerlib.Flow
+
+variable {n : ℕ}
+
+local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
+
 /-- Every behavioural sentence of the Flow semantics is invariant under moving the equilibrium to
 the origin: the sentence holds for `f` at `e` exactly when it holds for `z ↦ f (z + e)` at `0`. -/
 @[powerlib_foundation] theorem Property.holds_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} (P : Property) :
     P.holds (fun z => f (z + e)) 0 ↔ P.holds f e := by
   cases P
-  case lyapunovStable => exact lyapunovStable_shift_iff
-  case locallyAsymptoticallyStable => exact localAsymptoticStable_shift_iff
-  case locallyExponentiallyStable => exact locallyExponentiallyStable_shift_iff
-  case globallyAsymptoticallyStable => exact globallyAsymptoticallyStable_shift_iff
-  case globallyExponentiallyStable => exact globallyExponentiallyStable_shift_iff
-  case unstable => exact unstable_shift_iff
-  case decay a => exact decay_shift_iff
-  case contractive => exact sampledContraction_shift_iff
-  case conservative => exact conservative_shift_iff
-
-end Shift
+  case lyapunovStable => exact Dynamics.lyapunovStable_shift_iff
+  case locallyAsymptoticallyStable => exact Dynamics.localAsymptoticStable_shift_iff
+  case locallyExponentiallyStable => exact Dynamics.locallyExponentiallyStable_shift_iff
+  case globallyAsymptoticallyStable => exact Dynamics.globallyAsymptoticallyStable_shift_iff
+  case globallyExponentiallyStable => exact Dynamics.globallyExponentiallyStable_shift_iff
+  case unstable => exact Dynamics.unstable_shift_iff
+  case decay a => exact Dynamics.decay_shift_iff
+  case contractive => exact Dynamics.sampledContraction_shift_iff
+  case conservative => exact Dynamics.conservative_shift_iff
 
 end powerlib.Flow

@@ -13,7 +13,7 @@ of the former `theorem/Hurwitz.lean`. -/
 
 noncomputable section
 
-namespace powerlib.Flow
+namespace powerlib.Dynamics
 
 open Matrix LinearSystems
 
@@ -61,4 +61,4 @@ instability. -/
   obtain ⟨v, hv, heig⟩ := Linear.exists_eigenvector_of_root hroot
   exact unstable_of_jacobian_eigenvalue_re_pos A hf heq hJac ⟨s, v, hv, heig, hs⟩
 
-end powerlib.Flow
+end powerlib.Dynamics

@@ -42,10 +42,10 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
 
 @[powerlib_foundation] theorem field_contDiff {m γ : ℝ} {dV : ℝ → ℝ} {k : WithTop ℕ∞}
     (hdV : ContDiff ℝ k dV) : ContDiff ℝ k (field m γ dV) := by
-  apply contDiff_of_components
-  · exact contDiff_coord 1
-  · have h0 : ContDiff ℝ k (fun y : State 2 => y 0) := contDiff_coord 0
-    have h1 : ContDiff ℝ k (fun y : State 2 => y 1) := contDiff_coord 1
+  refine Dynamics.contDiff_of_components (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
+  · exact Dynamics.contDiff_coord 1
+  · have h0 : ContDiff ℝ k (fun y : State 2 => y 0) := Dynamics.contDiff_coord 0
+    have h1 : ContDiff ℝ k (fun y : State 2 => y 1) := Dynamics.contDiff_coord 1
     exact (((h1.const_smul (-γ)).sub (hdV.comp h0)).div_const m)
 
 @[powerlib_foundation] theorem field_eq_zero_iff {m γ : ℝ} {dV : ℝ → ℝ} (hm : m ≠ 0) (y : State 2) :
@@ -62,9 +62,9 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
 
 @[powerlib_foundation] theorem hasFDerivAt_energy {m : ℝ} {V dV : ℝ → ℝ}
     (hV : ∀ x, HasDerivAt V (dV x) x) (y : State 2) :
-    HasFDerivAt (energy m V) (dV (y 0) • coord 0 + (m * y 1) • coord 1) y := by
-  have h0 := hasFDerivAt_coord 0 y
-  have h1 := hasFDerivAt_coord 1 y
+    HasFDerivAt (energy m V) (dV (y 0) • Dynamics.coord 0 + (m * y 1) • Dynamics.coord 1) y := by
+  have h0 := Dynamics.hasFDerivAt_coord 0 y
+  have h1 := Dynamics.hasFDerivAt_coord 1 y
   have h : HasFDerivAt (fun z : State 2 => m / 2 * z 1 ^ 2 + V (z 0)) _ y :=
     ((h1.pow 2).const_mul (m / 2)).add ((hV (y 0)).comp_hasFDerivAt y h0)
   have hf : energy m V = fun z : State 2 => m / 2 * z 1 ^ 2 + V (z 0) := by
@@ -84,7 +84,7 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
     (hV : ∀ x, HasDerivAt V (dV x) x) (y : State 2) :
     fderiv ℝ (energy m V) y (field m γ dV y) = -γ * y 1 ^ 2 := by
   rw [(hasFDerivAt_energy hV y).fderiv]
-  simp only [_root_.add_apply, _root_.smul_apply, coord_apply,
+  simp only [_root_.add_apply, _root_.smul_apply, Dynamics.coord_apply,
     field_apply_zero, field_apply_one, smul_eq_mul]
   field_simp
   ring
@@ -150,7 +150,7 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
   have hE := energy_differentiable (m := m) hV
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · have hc : Continuous fun y : State 2 => |y 0 - x₀| :=
-      ((coord 0).continuous.sub continuous_const).abs
+      ((Dynamics.coord 0).continuous.sub continuous_const).abs
     exact isOpen_lt hc continuous_const
   · simp [hr]
   · exact hE.continuous.sub continuous_const

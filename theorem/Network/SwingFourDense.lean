@@ -1374,7 +1374,7 @@ power-balance point with a Hurwitz reduced Jacobian. -/
   constructor
   · rintro ⟨hp, hH⟩
     exact Flow.locallyExponentiallyStable_localAsymptoticStable
-      (Flow.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian m.params m.θ)
+      (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian m.params m.θ)
         (reducedField_contDiff m.params) (reducedField_equilibrium m.params m.θ hp)
         (hasFDerivAt_reducedField m.params m.θ).fderiv hH)
   · intro hLAS
@@ -1402,7 +1402,7 @@ with a Hurwitz reduced Jacobian (no restriction on the lines). -/
     exact not_localAsymptoticStable_four_machines m.params m.θ hp hH hLAS
   · rintro ⟨hp, hH⟩
     exact Flow.locallyExponentiallyStable_localAsymptoticStable
-      (Flow.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian m.params m.θ)
+      (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian m.params m.θ)
         (reducedField_contDiff m.params) (reducedField_equilibrium m.params m.θ hp)
         (hasFDerivAt_reducedField m.params m.θ).fderiv hH)
 

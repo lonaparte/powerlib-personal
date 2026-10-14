@@ -177,11 +177,11 @@ private theorem exists_gt_deltaU (hM : 0 < p.M) (hD : p.D = 0) (hk : 0 < p.k₂)
   -- the frequency deviation stays positive
   have hpos : ∀ T ∈ Ici tc, ∀ t ∈ Icc tc T, 0 < φ t 1 := by
     intro T hT
-    apply pos_on_Icc_of_propagate ((p.coord_continuousOn hφ 1).mono Icc_subset_Ici_self)
+    apply Dynamics.pos_on_Icc_of_propagate ((p.coord_continuousOn hφ 1).mono Icc_subset_Ici_self)
       (by rw [hω0]; exact hω)
     intro t ht hbefore
     have hmono : MonotoneOn (fun τ => φ τ 0) (Icc tc t) :=
-      monotoneOn_Icc_of_hasDerivAt ((p.coord_continuousOn hφ 0).mono Icc_subset_Ici_self)
+      Dynamics.monotoneOn_Icc_of_hasDerivAt ((p.coord_continuousOn hφ 0).mono Icc_subset_Ici_self)
         (fun x hx => hderiv x hx.1) (fun x hx => (hbefore x ⟨hx.1.le, hx.2⟩).le)
     have hwin : φ t 0 ∈ Icc δc p.deltaU :=
       ⟨by simpa [hδ0] using hmono ⟨le_rfl, ht.1.le⟩ ⟨ht.1.le, le_rfl⟩ ht.1.le,
@@ -205,7 +205,7 @@ private theorem exists_gt_deltaU (hM : 0 < p.M) (hD : p.D = 0) (hk : 0 < p.k₂)
   have hωw : ∀ t ∈ Ici tc, w ≤ φ t 1 := by
     intro t ht
     have hmono : MonotoneOn (fun τ => φ τ 0) (Icc tc t) :=
-      monotoneOn_Icc_of_hasDerivAt ((p.coord_continuousOn hφ 0).mono Icc_subset_Ici_self)
+      Dynamics.monotoneOn_Icc_of_hasDerivAt ((p.coord_continuousOn hφ 0).mono Icc_subset_Ici_self)
         (fun x hx => hderiv x hx.1) (fun x hx => (hpos t ht x ⟨hx.1.le, hx.2.le⟩).le)
     have hwin : φ t 0 ∈ Icc δc p.deltaU :=
       ⟨by simpa [hδ0] using hmono ⟨le_rfl, ht⟩ ⟨ht, le_rfl⟩ ht, hno t ht⟩
@@ -221,7 +221,7 @@ private theorem exists_gt_deltaU (hM : 0 < p.M) (hD : p.D = 0) (hk : 0 < p.k₂)
     have : 0 ≤ (p.deltaU - δc) / w := div_nonneg (by linarith) hw.le
     linarith
   have hlin : MonotoneOn (fun τ => φ τ 0 - w * τ) (Icc tc T) :=
-    monotoneOn_Icc_of_hasDerivAt
+    Dynamics.monotoneOn_Icc_of_hasDerivAt
       (((p.coord_continuousOn hφ 0).mono Icc_subset_Ici_self).sub (by fun_prop))
       (fun x hx => (hderiv x hx.1).sub ((hasDerivAt_id x).const_mul w))
       (fun x hx => by simp only [mul_one]; linarith [hωw x hx.1.le])
@@ -344,7 +344,7 @@ private theorem time_in_window_le (hM : 0 < p.M) (hD : p.D = 0) {pmax δ₀ δcc
     fun x hx j => p.coord_hasDerivAt hφ' ⟨hx.1.le, hx.2.le⟩ (Icc_mem_nhds hx.1 hx.2) j
   have hc (j : Fin 2) : ContinuousOn (fun τ => φ τ j) (Icc tf t) := p.coord_continuousOn hφ' j
   have hω : MonotoneOn (fun τ => φ τ 1 - a * (τ - tf)) (Icc tf t) := by
-    apply monotoneOn_Icc_of_hasDerivAt ((hc 1).sub (by fun_prop))
+    apply Dynamics.monotoneOn_Icc_of_hasDerivAt ((hc 1).sub (by fun_prop))
       (fun x hx => (hder x hx 1).sub (((hasDerivAt_id x).sub_const tf).const_mul a))
     intro x hx
     have hb := hbound _ (hwin x ⟨hx.1.le, hx.2.le⟩)
@@ -357,7 +357,7 @@ private theorem time_in_window_le (hM : 0 < p.M) (hD : p.D = 0) {pmax δ₀ δcc
     simp [h0] at this
     linarith
   have hδ : MonotoneOn (fun τ => φ τ 0 - a / 2 * (τ - tf) ^ 2) (Icc tf t) := by
-    apply monotoneOn_Icc_of_hasDerivAt ((hc 0).sub (by fun_prop))
+    apply Dynamics.monotoneOn_Icc_of_hasDerivAt ((hc 0).sub (by fun_prop))
       (fun x hx => (hder x hx 0).sub ((((hasDerivAt_id x).sub_const tf).pow 2).const_mul (a / 2)))
     intro x hx
     have := hωlow x ⟨hx.1.le, hx.2.le⟩

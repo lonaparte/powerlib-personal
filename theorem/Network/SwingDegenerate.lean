@@ -1,5 +1,6 @@
 import theorem.Network.Swing
-import theorem.Dynamics.DegenerateMinimum
+import theorem.Dynamics.LaSalle.Ball
+import theorem.Dynamics.Instability
 
 /-! # Networked swing equations: energy, degenerate linearizations and local asymptotic stability
 
@@ -30,7 +31,7 @@ Results.
 * Complete membership characterization, every `n`: `mem_den_locallyAsymptoticallyStable_iff` (local
   asymptotic stability ⇔ power balance ∧ a strict local minimum of the potential in relative angles
   ∧ an isolated power-balance point). Sufficiency by LaSalle (`localAsymptoticStable_of_strictMin`,
-  via the new foundation `Dynamics.localAsymptoticStable_of_lasalle_ball`); necessity by the energy
+  via the new foundation `Dynamics.LaSalle.localAsymptoticStable_of_lasalle_ball`); necessity by the energy
   (`strictMin_of_localAsymptoticStable`, with `balance_of_isLocalMin`).
 * Exactness of the local asymptotic translation `{powerFlow, jacobianStable}`:
   `exact_locallyAsymptoticallyStable_two` (two machines, `n = 1`, via
@@ -805,7 +806,7 @@ private theorem exact_locallyAsymptoticallyStable_of
   constructor
   · rintro ⟨hp, hH⟩
     exact Flow.locallyExponentiallyStable_localAsymptoticStable
-      (Flow.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian m.params m.θ)
+      (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian m.params m.θ)
         (reducedField_contDiff m.params) (reducedField_equilibrium m.params m.θ hp)
         (hasFDerivAt_reducedField m.params m.θ).fderiv hH)
   · intro hLAS
@@ -1378,7 +1379,7 @@ field is locally asymptotically stable, whatever its linearization. -/
       ¬ ∀ k, p.P k = powerInjection p.B (θ + ground v) k) :
     LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
   have hE := energy_contDiff p
-  refine Dynamics.localAsymptoticStable_of_lasalle_ball (by omega) (reducedField_contDiff p)
+  refine Dynamics.LaSalle.localAsymptoticStable_of_lasalle_ball (by omega) (reducedField_contDiff p)
     (reducedField_equilibrium p θ hbal) (W := fun z => energy p z - energy p (equilibrium θ))
     (hE.sub contDiff_const) (sub_self _) hr ?_ ?_ ?_
   · intro x hx hne

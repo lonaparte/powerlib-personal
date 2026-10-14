@@ -112,13 +112,13 @@ def field (ζ ω₀ a F ωp t : ℝ) (y : State 2) : State 2 :=
     HasFDerivAt (field ζ ω₀ a F ωp t)
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ)
         !![0, 1; -(ω₀ ^ 2 + 2 * a * y 0), -(2 * ζ * ω₀)]) y := by
-  refine hasFDerivAt_of_components _
-    ![coord 1, (-(2 * ζ * ω₀)) • coord 1 - (ω₀ ^ 2 + 2 * a * y 0) • coord 0] ?_ ?_
+  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
+    ![Dynamics.coord 1, (-(2 * ζ * ω₀)) • Dynamics.coord 1 - (ω₀ ^ 2 + 2 * a * y 0) • Dynamics.coord 0] ?_ ?_
   · intro i; fin_cases i
-    · exact hasFDerivAt_coord 1 y
+    · exact Dynamics.hasFDerivAt_coord 1 y
     · show HasFDerivAt (fun z => field ζ ω₀ a F ωp t z 1) _ y
-      have h0 := hasFDerivAt_coord 0 y
-      have h1 := hasFDerivAt_coord 1 y
+      have h0 := Dynamics.hasFDerivAt_coord 0 y
+      have h1 := Dynamics.hasFDerivAt_coord 1 y
       have h := ((((h1.const_smul (-(2 * ζ * ω₀))).sub (h0.const_smul (ω₀ ^ 2))).sub
         ((h0.pow 2).const_smul a)).add_const (F * Real.cos (ωp * t)))
       have hf : (fun z => field ζ ω₀ a F ωp t z 1) = fun z : State 2 =>
@@ -127,7 +127,7 @@ def field (ζ ω₀ a F ωp t : ℝ) (y : State 2) : State 2 :=
       rw [hf]
       convert h using 1
       ext v; simp; ring
-  · intro i v; fin_cases i <;> simp; ring
+  · intro i v; rw [Fin.sum_univ_two]; fin_cases i <;> simp; ring
 
 /-- Without curvature (`a = 0`) the state Jacobian is the constant `A₀` at every state: the
 additive drive produces no periodic coefficient. -/

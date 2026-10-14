@@ -2,7 +2,10 @@ import theorem.PLL.Invariant
 import theorem.Dynamics.ConverseLinearization
 import theorem.PH.Nonlinear
 import theorem.TMIO.ClaimElab
-import theorem.CurrentControl.SISO
+import theorem.Dynamics.Lyapunov
+import theorem.Dynamics.Instability
+import theorem.Spectral.Family
+import theorem.Dynamics.Calculus
 
 /-! # SRF-PLL as a nonlinear port-Hamiltonian system
 
@@ -279,7 +282,7 @@ private theorem pllPH_lossless_firstIntegral {V Ki : ℝ} (hKi : Ki ≠ 0) (δω
     {φ : ℝ → State 2} {a b : ℝ} (hφ : IsTrajectoryOn φ (srfField V 0 Ki δω) a b) :
     ∀ t ∈ Set.Icc a b,
       pllHamiltonian V Ki (δω / Ki) (φ t) = pllHamiltonian V Ki (δω / Ki) (φ a) :=
-  firstIntegral_const (I := pllHamiltonian V Ki (δω / Ki))
+  Dynamics.firstIntegral_const (I := pllHamiltonian V Ki (δω / Ki))
     (pllPH V 0 Ki (δω / Ki) le_rfl).differentiable_H
     (fun x => by rw [pllHamiltonian_shifted_lie le_rfl hKi]; simp) hφ
 

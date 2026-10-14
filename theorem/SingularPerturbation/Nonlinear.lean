@@ -1,5 +1,5 @@
 import theorem.SingularPerturbation.Linear
-import theorem.Flow.Linearization
+import theorem.Dynamics.Linearization
 import theorem.Dynamics.State
 
 /-! # Nonlinear singularly perturbed systems: local exponential stability for small `ε`
@@ -26,7 +26,7 @@ Hurwitz and the reduced (Schur-complement) Jacobian `A₁₁ − A₁₂A₂₂�
 stable at `w₀`. Proof: the Jacobian of `F_ε` is `D_ε J = [[A₁₁, A₁₂], [A₂₁/ε, A₂₂/ε]]`
 (`fderiv_scaledField`), which is Hurwitz for small `ε` by Kokotović's theorem
 (`LinearSP.exists_epsStar_exponentiallyStable`), and the linearization theorem
-(`Flow.locallyExponentiallyStable_of_isHurwitz_jacobian`) applies. With explicit Lyapunov
+(`Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`) applies. With explicit Lyapunov
 solutions `P₀`, `P₂`, `ε*` is the explicit `LinearSP.epsStar P₀ P₂`.
 
 Model boundary: equilibrium-level (local) statement; `ε` fixed in `(0, ε*)`; no claim about
@@ -101,7 +101,7 @@ equilibrium for every `ε ∈ (0, ε*)`. -/
   obtain ⟨εs, hεs, h⟩ := (blocksSP J).exists_epsStar_exponentiallyStable hA22 hA0
   refine ⟨εs, hεs, fun ε hε hlt => ?_⟩
   have hH := (h ε hε hlt).1
-  refine Flow.locallyExponentiallyStable_of_isHurwitz_jacobian _ (scaledField_contDiff hΦ ε)
+  refine Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian _ (scaledField_contDiff hΦ ε)
     ?_ (fderiv_scaledField J (hΦ.differentiable one_ne_zero w₀) hJ ε) hH
   simp [scaledField, heq]
 

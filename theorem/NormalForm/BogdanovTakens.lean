@@ -175,22 +175,22 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 @[powerlib_foundation] theorem field_contDiff (p : Params) {k : WithTop ℕ∞} :
     ContDiff ℝ k (field p) := by
-  apply contDiff_of_components
-  · simpa [field] using contDiff_coord 1
+  refine Dynamics.contDiff_of_components (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
+  · simpa [field] using Dynamics.contDiff_coord (n := 2) 1
   · simp only [field, mk_apply_one]; fun_prop
 
 @[powerlib_foundation] theorem hasFDerivAt_field (p : Params) (y : State 2) :
     HasFDerivAt (field p)
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (jacobian p (y 0) (y 1))) y := by
-  refine hasFDerivAt_of_components _
-    ![coord 1, (p.β₂ + 2 * p.a * y 0 + p.b * y 1) • coord 0 + (p.b * y 0) • coord 1] ?_ ?_
+  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
+    ![Dynamics.coord 1, (p.β₂ + 2 * p.a * y 0 + p.b * y 1) • Dynamics.coord 0 + (p.b * y 0) • Dynamics.coord 1] ?_ ?_
   · intro i; fin_cases i
-    · show HasFDerivAt (fun y => field p y 0) (coord 1) y
-      simpa [field] using hasFDerivAt_coord 1 y
+    · show HasFDerivAt (fun y => field p y 0) (Dynamics.coord 1) y
+      simpa [field] using Dynamics.hasFDerivAt_coord 1 y
     · show HasFDerivAt (fun y => field p y 1)
-        ((p.β₂ + 2 * p.a * y 0 + p.b * y 1) • coord 0 + (p.b * y 0) • coord 1) y
-      have h0 := hasFDerivAt_coord 0 y
-      have h1 := hasFDerivAt_coord 1 y
+        ((p.β₂ + 2 * p.a * y 0 + p.b * y 1) • Dynamics.coord 0 + (p.b * y 0) • Dynamics.coord 1) y
+      have h0 := Dynamics.hasFDerivAt_coord 0 y
+      have h1 := Dynamics.hasFDerivAt_coord 1 y
       have h : HasFDerivAt
           (fun x : State 2 => p.β₁ + p.β₂ * x 0 + p.a * x 0 ^ 2 + p.b * x 0 * x 1) _ y :=
         ((((hasFDerivAt_const p.β₁ y).add (h0.const_mul p.β₂)).add
@@ -203,7 +203,7 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
       ext v
       simp
       ring
-  · intro i v; fin_cases i <;> simp [jacobian]
+  · intro i v; rw [Fin.sum_univ_two]; fin_cases i <;> simp [jacobian]
 
 @[powerlib_foundation] theorem fderiv_field (p : Params) (y : State 2) :
     fderiv ℝ (field p) y = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (jacobian p (y 0) (y 1)) :=

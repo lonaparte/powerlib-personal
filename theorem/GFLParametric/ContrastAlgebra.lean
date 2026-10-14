@@ -1,4 +1,4 @@
-import theorem.GFLParametric.Basic
+import theorem.Dynamics.Locality
 
 /-! # Algebra of the GFL/GFM tuning-knob comparison (§17)
 

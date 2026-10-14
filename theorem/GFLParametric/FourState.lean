@@ -1,9 +1,10 @@
-import theorem.GFLParametric.Basic
+import theorem.Dynamics.Locality
 import theorem.Criteria.Routh4
 import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
-import theorem.Flow.Shift
+import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
+import theorem.Dynamics.Coordinates
 
 /-! # Four-state GFL with PLL and dc-bus voltage loop
 
@@ -25,9 +26,9 @@ algebraic network, quasi-steady (ideal) current loop, continuous time.
 **The `1/V` term.** The physical field contains `P_abs / V`, so it is not globally `C¹`
 (Lean's `x / 0 = 0` makes it discontinuous at `V = 0`).  The powerlib linearization theorems
 need a globally `C¹` field, so they are applied to `regField`, where `V⁻¹` is replaced by the
-smooth `invExt V` (equal to `V⁻¹` for `V ≥ 1/2`); `regField` coincides with `field` on the
+smooth `Dynamics.invExt V` (equal to `V⁻¹` for `V ≥ 1/2`); `regField` coincides with `field` on the
 ball of radius `1/2` around the operating point, and the locality lemmas of
-`GFLParametric.Basic` transport local exponential stability / instability back to `field`.
+`Dynamics.Locality` transport local exponential stability / instability back to `field`.
 
 **Results.**
 * Equilibrium `(θ₀, 0, 1, 0)` iff `V₀ sin θ₀ = −X_g i_{d0}` and `I_dc0 = −(3/2) V₀ cos θ₀ i_{d0}`;
@@ -56,7 +57,7 @@ conditions; or `a₀ < 0`. The local sentences translate into the first two, ins
 first and the third, passivity into nothing, and the global sentences, decay rates, sampled
 contraction and conservation into the whole (inconsistent) language: unavailable translation
 coverage. `chain_le_semantics` proves every translation sound (linearization of the smooth
-`regField`, transported back through the locality lemmas of `GFLParametric.Basic`, then moved to
+`regField`, transported back through the locality lemmas of `Dynamics.Locality`, then moved to
 the origin); `exact_passive` proves the passivity translation exact. The former domain theorems
 are connection conclusions: `mem_den_locallyExponentiallyStable_of_routh`,
 `mem_den_unstable_of_cos_two_mul_neg`, and — the former necessary condition
@@ -143,15 +144,15 @@ def coordField (y : Fin 4 → ℝ) : Fin 4 → ℝ :=
     p.Idc0 / p.C + p.γ * (p.V0 * Real.cos (y 0) * idc p (y 2) (y 3)) / y 2, y 2 - 1]
 
 /-- The physical (nonlinear) four-state field. -/
-def field : Dynamics.State 4 → Dynamics.State 4 := lift (coordField p)
+def field : Dynamics.State 4 → Dynamics.State 4 := Dynamics.lift (coordField p)
 
 /-- Coordinate field with `V⁻¹` replaced by the smooth `invExt V`. -/
 def regCoordField (y : Fin 4 → ℝ) : Fin 4 → ℝ :=
   ![p.kp * vq p (y 0) (y 2) (y 3) + p.ki * y 1, vq p (y 0) (y 2) (y 3),
-    p.Idc0 / p.C + p.γ * (p.V0 * Real.cos (y 0) * idc p (y 2) (y 3)) * invExt (y 2), y 2 - 1]
+    p.Idc0 / p.C + p.γ * (p.V0 * Real.cos (y 0) * idc p (y 2) (y 3)) * Dynamics.invExt (y 2), y 2 - 1]
 
 /-- Globally smooth field agreeing with `field` for `V ≥ 1/2`. -/
-def regField : Dynamics.State 4 → Dynamics.State 4 := lift (regCoordField p)
+def regField : Dynamics.State 4 → Dynamics.State 4 := Dynamics.lift (regCoordField p)
 
 /-- The operating point `(θ₀, 0, 1, 0)`. -/
 def opPoint (θ0 : ℝ) : Dynamics.State 4 := WithLp.toLp 2 ![θ0, 0, 1, 0]
@@ -165,15 +166,15 @@ def vd0 (θ0 : ℝ) : ℝ := p.V0 * Real.cos θ0
 
 @[powerlib_foundation] theorem field_eq_regField {y : Dynamics.State 4}
     (hy : 1 / 2 ≤ WithLp.ofLp y 2) : field p y = regField p y := by
-  simp only [field, regField, lift]
+  simp only [field, regField, Dynamics.lift]
   congr 1
   ext i
-  fin_cases i <;> simp [coordField, regCoordField, invExt_eq hy, div_eq_mul_inv]
+  fin_cases i <;> simp [coordField, regCoordField, Dynamics.invExt_eq hy, div_eq_mul_inv]
 
 @[powerlib_foundation] theorem field_eq_regField_of_near {θ0 : ℝ} {y : Dynamics.State 4}
     (hy : ‖y - opPoint θ0‖ < 1 / 2) : field p y = regField p y := by
   apply field_eq_regField
-  have h := abs_coord_sub_le (opPoint θ0) y 2
+  have h := Dynamics.abs_coord_sub_le (opPoint θ0) y 2
   have h2 : (opPoint θ0) 2 = 1 := rfl
   rw [h2] at h
   have := (abs_lt.mp (lt_of_le_of_lt h hy)).1
@@ -187,7 +188,7 @@ def vd0 (θ0 : ℝ) : ℝ := p.V0 * Real.cos θ0
     have hc : ∀ i, coordField p ![θ0, 0, 1, 0] i = 0 := by
       intro i
       have := congrArg (fun w : Dynamics.State 4 => w i) h
-      simpa [field, lift, opPoint] using this
+      simpa [field, Dynamics.lift, opPoint] using this
     have h1 := hc 1
     have h2 := hc 2
     simp [coordField, vq, idc, Params.γ] at h1 h2
@@ -196,7 +197,7 @@ def vd0 (θ0 : ℝ) : ℝ := p.V0 * Real.cos θ0
     linarith
   · rintro ⟨h1, h2⟩
     have hq : vq p θ0 1 0 = 0 := by simp [vq, idc]; linarith
-    apply lift_toLp_eq_zero
+    apply Dynamics.lift_toLp_eq_zero
     ext i
     fin_cases i
     · simp [coordField, hq]
@@ -224,8 +225,8 @@ def vd0 (θ0 : ℝ) : ℝ := p.V0 * Real.cos θ0
     nlinarith
 
 @[powerlib_foundation] theorem contDiff_regField : ContDiff ℝ 1 (regField p) := by
-  have hinv : ContDiff ℝ 1 invExt := contDiff_invExt
-  apply contDiff_lift
+  have hinv : ContDiff ℝ 1 Dynamics.invExt := Dynamics.contDiff_invExt
+  apply Dynamics.contDiff_lift
   apply contDiff_pi.2
   intro i
   fin_cases i
@@ -233,7 +234,7 @@ def vd0 (θ0 : ℝ) : ℝ := p.V0 * Real.cos θ0
   · simp [regCoordField, vq, idc]; fun_prop
   · simp only [regCoordField]
     simp
-    have h2 : ContDiff ℝ 1 (fun y : Fin 4 → ℝ => invExt (y 2)) :=
+    have h2 : ContDiff ℝ 1 (fun y : Fin 4 → ℝ => Dynamics.invExt (y 2)) :=
       hinv.comp (contDiff_apply ℝ ℝ (2 : Fin 4))
     have h1 : ContDiff ℝ 1 (fun y : Fin 4 → ℝ =>
         p.γ * (p.V0 * Real.cos (y 0) * idc p (y 2) (y 3))) := by
@@ -267,40 +268,40 @@ def A0 (θ0 : ℝ) : Matrix (Fin 4) (Fin 4) ℝ :=
 @[powerlib_foundation] theorem hasFDerivAt_regCoordField {y : Fin 4 → ℝ} (hy : 1 / 2 < y 2) :
     HasFDerivAt (regCoordField p)
       (Matrix.toLin' (jacGen p (y 0) (y 2) (y 3))).toContinuousLinearMap y := by
-  have h0 := hasFDerivAt_coord (0 : Fin 4) y
-  have h1 := hasFDerivAt_coord (1 : Fin 4) y
-  have h2 := hasFDerivAt_coord (2 : Fin 4) y
-  have h3 := hasFDerivAt_coord (3 : Fin 4) y
+  have h0 := hasFDerivAt_apply (𝕜 := ℝ) (0 : Fin 4) y
+  have h1 := hasFDerivAt_apply (𝕜 := ℝ) (1 : Fin 4) y
+  have h2 := hasFDerivAt_apply (𝕜 := ℝ) (2 : Fin 4) y
+  have h3 := hasFDerivAt_apply (𝕜 := ℝ) (3 : Fin 4) y
   have hy0 : y 2 ≠ 0 := by linarith
   have hidc := ((h2.sub_const 1).const_mul p.kpv).const_sub p.id0 |>.sub (h3.const_mul p.kiv)
   have hq := (h0.sin.const_mul (-p.V0)).sub (hidc.const_mul p.Xg)
-  have hinvd : HasDerivAt invExt (-(y 2 ^ 2)⁻¹) (y 2) := by
-    have hev : invExt =ᶠ[nhds (y 2)] fun V => V⁻¹ := by
+  have hinvd : HasDerivAt Dynamics.invExt (-(y 2 ^ 2)⁻¹) (y 2) := by
+    have hev : Dynamics.invExt =ᶠ[nhds (y 2)] fun V => V⁻¹ := by
       filter_upwards [Ioi_mem_nhds hy] with V hV
-      exact invExt_eq (le_of_lt hV)
+      exact Dynamics.invExt_eq (le_of_lt hV)
     exact (hasDerivAt_inv hy0).congr_of_eventuallyEq hev
   have hinv := hinvd.comp_hasFDerivAt y h2
   rw [hasFDerivAt_pi']
   intro i
   fin_cases i
-  · refine hasFDerivAt_of_eq ((hq.const_mul p.kp).add (h1.const_mul p.ki))
+  · refine Dynamics.hasFDerivAt_of_eq ((hq.const_mul p.kp).add (h1.const_mul p.ki))
       (fun z => by simp [regCoordField, vq, idc]) ?_
     ext v
     simp [jacGen, dotProduct, Fin.sum_univ_four]
     ring
-  · refine hasFDerivAt_of_eq hq (fun z => by simp [regCoordField, vq, idc]) ?_
+  · refine Dynamics.hasFDerivAt_of_eq hq (fun z => by simp [regCoordField, vq, idc]) ?_
     ext v
     simp [jacGen, dotProduct, Fin.sum_univ_four]
     ring
   · have hP := ((h0.cos.const_mul p.V0).mul hidc).const_mul p.γ
-    refine hasFDerivAt_of_eq ((hP.mul hinv).const_add (p.Idc0 / p.C))
+    refine Dynamics.hasFDerivAt_of_eq ((hP.mul hinv).const_add (p.Idc0 / p.C))
       (fun z => by simp [regCoordField, idc]) ?_
     ext v
     simp [jacGen, dotProduct, Fin.sum_univ_four, idc,
-      invExt_eq (le_of_lt hy)]
+      Dynamics.invExt_eq (le_of_lt hy)]
     field_simp
     ring
-  · refine hasFDerivAt_of_eq (h2.sub_const 1) (fun z => by simp [regCoordField]) ?_
+  · refine Dynamics.hasFDerivAt_of_eq (h2.sub_const 1) (fun z => by simp [regCoordField]) ?_
     ext v
     simp [jacGen, dotProduct, Fin.sum_univ_four]
 
@@ -310,7 +311,7 @@ def A0 (θ0 : ℝ) : Matrix (Fin 4) (Fin 4) ℝ :=
       Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) (A0 p θ0) := by
   have := hasFDerivAt_regCoordField p (y := ![θ0, 0, 1, 0]) (by simp; norm_num)
   rw [← jacGen_opPoint]
-  exact fderiv_lift (by simpa [opPoint] using this)
+  exact Dynamics.fderiv_lift (by simpa [opPoint] using this)
 
 /-- The physical field has the same Jacobian `A₀` at the operating point. -/
 @[powerlib_foundation] theorem fderiv_field_opPoint (θ0 : ℝ) :
@@ -532,7 +533,7 @@ private theorem les_of_meets {m : Model} (he : Meets m .equilibrium) (hr : Meets
     m ∈ family.den (.flow .locallyExponentiallyStable) := by
   obtain ⟨heq, hC⟩ := he
   obtain ⟨h3, h1, h0, hg⟩ := hr
-  exact mem_den_flow_iff.mpr (locallyExponentiallyStable_of_eqOn_ball
+  exact mem_den_flow_iff.mpr (Dynamics.locallyExponentiallyStable_of_eqOn_ball
     (by norm_num : (0 : ℝ) < 1 / 2) (fun y hy => field_eq_regField_of_near m.params hy)
     (Criteria.locallyExponentiallyStable_of_jacobian_quartic (A0 m.params m.θ)
       (contDiff_regField m.params) (regField_opPoint m.params hC heq)
@@ -544,7 +545,7 @@ of the former public `unstable_of_cos_two_mul_neg`). -/
 private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
     (hn : Meets m .constNeg) : m ∈ family.den (.flow .unstable) := by
   obtain ⟨heq, hC⟩ := he
-  exact mem_den_flow_iff.mpr (unstable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
+  exact mem_den_flow_iff.mpr (Dynamics.unstable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
     (fun y hy => field_eq_regField_of_near m.params hy)
     (Criteria.unstable_of_jacobian_quartic_const_neg (A0 m.params m.θ)
       (contDiff_regField m.params) (regField_opPoint m.params hC heq)
@@ -688,16 +689,16 @@ private theorem not_les_regField_of_C_eq_zero {p : Params} (hC : p.C = 0) (x : D
   · intro h
     have := congrArg (fun L : Dynamics.State 4 →L[ℝ] ℝ => L (EuclideanSpace.single 2 1)) h
     simp at this
-  · simp [regField, lift, regCoordField, Params.γ, hC]
+  · simp [regField, Dynamics.lift, regCoordField, Params.γ, hC]
 
 /-- Local exponential stability of the physical field at `(θ₀, 0, 1, 0)` is that of the
 regularized field. -/
 private theorem les_field_iff_regField {p : Params} {θ0 : ℝ} :
     LocallyExponentiallyStable (FourState.field p) (opPoint θ0) ↔
       LocallyExponentiallyStable (regField p) (opPoint θ0) :=
-  ⟨locallyExponentiallyStable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
+  ⟨Dynamics.locallyExponentiallyStable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
       (fun y hy => (field_eq_regField_of_near p hy).symm),
-    locallyExponentiallyStable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
+    Dynamics.locallyExponentiallyStable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
       (fun y hy => field_eq_regField_of_near p hy)⟩
 
 /-- The local exponential translation is exact: a model is locally exponentially stable at
@@ -743,12 +744,12 @@ is the smooth `regField` near the point). -/
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  refine mem_den_flow_iff.mpr (unstable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
+  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
     (fun y hy => field_eq_regField_of_near _ hy)
     (Dynamics.unstable_of_ne_zero (contDiff_regField _) fun h => ?_))
   rw [← field_eq_regField _ (by simp [opPoint]; norm_num)] at h
   have := congrArg (fun y : Dynamics.State 4 => y 2) h
-  simp [offEquilibrium, FourState.field, lift, coordField, opPoint, Params.γ] at this
+  simp [offEquilibrium, FourState.field, Dynamics.lift, coordField, opPoint, Params.γ] at this
 
 /-- The instability translation is sound but not exact: instability is the failure of Lyapunov
 stability, so the non-equilibrium point `offEquilibrium` is unstable, while the translation asks
@@ -774,7 +775,7 @@ private theorem undampedPLL_field (y : Dynamics.State 4) :
     FourState.field undampedPLL.params y = WithLp.toLp 2 ![y 1, -Real.sin (y 0),
       Real.cos (y 0) * (-(y 2 - 1) - y 3) / y 2, y 2 - 1] := by
   ext i
-  fin_cases i <;> simp [FourState.field, lift, coordField, undampedPLL, vq, idc, Params.γ]
+  fin_cases i <;> simp [FourState.field, Dynamics.lift, coordField, undampedPLL, vq, idc, Params.γ]
   ring
 
 /-- The Lyapunov function `1 − cos θ + x²/2 + u² + u η + (3/2) η²`, `u = V − 1`. -/

@@ -406,7 +406,7 @@ def coordField (y : Fin 4 → ℝ) : Fin 4 → ℝ :=
     d.VdSol (y 0) (y 1) (y 2) (y 3), y 2 - 1]
 
 /-- The four-state field on `Dynamics.State 4`. -/
-def field : Dynamics.State 4 → Dynamics.State 4 := lift d.coordField
+def field : Dynamics.State 4 → Dynamics.State 4 := Dynamics.lift d.coordField
 
 /-- The rows of `coordField` solve the loop relations (where `D₀, D₁, V, C ≠ 0`). -/
 @[powerlib_foundation] theorem coordField_spec (y : Fin 4 → ℝ) (hD0 : d.D0 (y 2) (y 3) ≠ 0)

@@ -1,5 +1,7 @@
 import theorem.GFLParametric.RatePLL
-import theorem.Dynamics.SaddleNodeHopf
+import theorem.Dynamics.Calculus
+import theorem.Dynamics.Lyapunov
+import theorem.Dynamics.Instability
 
 /-! # Rate-coupled GFL PLL at the boundary angle: Hopf normal form
 
@@ -503,11 +505,11 @@ private theorem gridQ_shift (p : Params) {θ : ℝ} (heq : p.V * Real.sin θ = p
 
 private theorem model_field0 (m : Model) (z : Dynamics.State 2) :
     m.field z 0 = (m.params.kp * gridQ m.params (z 0 + m.θ) + m.params.ki * z 1) / m.params.D0 := by
-  simp [Model.field, RatePLL.field, lift, coordField, equilibrium, pllOut]
+  simp [Model.field, RatePLL.field, Dynamics.lift, coordField, equilibrium, pllOut]
 
 private theorem model_field1 (m : Model) (z : Dynamics.State 2) :
     m.field z 1 = gridQ m.params (z 0 + m.θ) + m.params.Lg * m.field z 0 * m.params.Id := by
-  simp [Model.field, RatePLL.field, lift, coordField, equilibrium, pllOut, vq]
+  simp [Model.field, RatePLL.field, Dynamics.lift, coordField, equilibrium, pllOut, vq]
 
 private theorem contDiff_model_field (m : Model) : ContDiff ℝ 1 m.field :=
   (contDiff_field m.params).comp (contDiff_id.add contDiff_const)

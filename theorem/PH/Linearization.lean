@@ -2,7 +2,7 @@ import Mathlib.Analysis.CStarAlgebra.Matrix
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import theorem.PH.Nonlinear
-import theorem.Flow.Linearization
+import theorem.Dynamics.Linearization
 
 /-! Smoothness and linearization of the zero-input nonlinear port-Hamiltonian field
 `f(x) = (J(x) − R(x)) ∇H(x)` of `powerlib.PH.NonlinearModel`.
@@ -31,7 +31,7 @@ Family and connection conclusions. No family: `NonlinearModel` is the generic fr
 `@[powerlib_domain]` theorems (`locallyExponentiallyStable_of_isHurwitz`,
 `unstable_of_eigenvalue_re_pos`) are generic implications for every nonlinear pH system and are
 relabeled `@[powerlib_foundation]` (the indirect method, LeanForControl's linearization theorems
-through `Flow.Linearization`). Concrete families built on `NonlinearModel` (for example the
+through `Dynamics.Linearization`). Concrete families built on `NonlinearModel` (for example the
 classical machine in `theorem/PH/SyncMachine.lean`) publish their connection conclusions through
 `Family.IsNonlinearPH.mem_den_flow_shift`.
 -/
@@ -132,7 +132,7 @@ stable equilibrium of the full zero-input field. -/
     (fun i j => ((hJ i j).differentiable (by norm_num)) xs)
     (fun i j => ((hR i j).differentiable (by norm_num)) xs)
     (hQ ▸ hdiff.hasFDerivAt) h0
-  exact Flow.locallyExponentiallyStable_of_isHurwitz_jacobian _
+  exact Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian _
     (M.contDiff_zeroInputField hJ hR hdH) (M.zeroInputField_eq_zero_of_dH_eq_zero h0) hJac hA
 
 /-- At a critical point `x*` of `H` with Hessian `Q`, an eigenvalue of `(J(x*) − R(x*)) Q`
@@ -151,7 +151,7 @@ with positive real part makes `x*` an unstable equilibrium of the full zero-inpu
     (fun i j => ((hJ i j).differentiable (by norm_num)) xs)
     (fun i j => ((hR i j).differentiable (by norm_num)) xs)
     (hQ ▸ hdiff.hasFDerivAt) h0
-  exact Flow.unstable_of_jacobian_eigenvalue_re_pos _
+  exact Dynamics.unstable_of_jacobian_eigenvalue_re_pos _
     (M.contDiff_zeroInputField hJ hR hdH) (M.zeroInputField_eq_zero_of_dH_eq_zero h0) hJac
     hunstable
 

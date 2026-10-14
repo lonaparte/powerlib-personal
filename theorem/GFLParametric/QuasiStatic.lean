@@ -1,9 +1,10 @@
-import theorem.GFLParametric.Basic
+import theorem.Dynamics.Locality
 import theorem.Criteria.Routh3
 import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
-import theorem.Flow.Shift
+import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
+import theorem.Dynamics.Coordinates
 
 /-! # Quasi-static three-state GFL: PLL + active-power dispatch loop
 
@@ -112,7 +113,7 @@ def coordField (y : Fin 3 → ℝ) : Fin 3 → ℝ :=
   ![p.kp * vq p (y 0) (y 2) + p.ki * y 1, vq p (y 0) (y 2), p.kP * (p.Pref - power p (y 0) (y 2))]
 
 /-- The nonlinear three-state field. -/
-def field : Dynamics.State 3 → Dynamics.State 3 := lift (coordField p)
+def field : Dynamics.State 3 → Dynamics.State 3 := Dynamics.lift (coordField p)
 
 /-- The state `(θ, 0, I_d)`. -/
 def point (θ Id : ℝ) : Dynamics.State 3 := WithLp.toLp 2 ![θ, 0, Id]
@@ -133,36 +134,36 @@ def PSN : ℝ := 3 * p.V ^ 2 / (4 * p.Xg)
     field p (point θ Id) = 0 := by
   obtain ⟨h1, h2⟩ := h
   have hq : vq p θ Id = 0 := by unfold vq; linarith
-  apply lift_toLp_eq_zero
+  apply Dynamics.lift_toLp_eq_zero
   ext i
   fin_cases i <;> simp [coordField, hq, ← h2]
 
 @[powerlib_foundation] theorem contDiff_field : ContDiff ℝ 1 (field p) := by
-  apply contDiff_lift
+  apply Dynamics.contDiff_lift
   apply contDiff_pi.2
   intro i
   fin_cases i <;> simp [coordField, vq, power] <;> fun_prop
 
 @[powerlib_foundation] theorem hasFDerivAt_coordField (y : Fin 3 → ℝ) :
     HasFDerivAt (coordField p) (Matrix.toLin' (jac p (y 0) (y 2))).toContinuousLinearMap y := by
-  have h0 := hasFDerivAt_coord (0 : Fin 3) y
-  have h1 := hasFDerivAt_coord (1 : Fin 3) y
-  have h2 := hasFDerivAt_coord (2 : Fin 3) y
+  have h0 := hasFDerivAt_apply (𝕜 := ℝ) (0 : Fin 3) y
+  have h1 := hasFDerivAt_apply (𝕜 := ℝ) (1 : Fin 3) y
+  have h2 := hasFDerivAt_apply (𝕜 := ℝ) (2 : Fin 3) y
   have hq := (h0.sin.const_mul (-p.V)).add (h2.const_mul p.Xg)
   rw [hasFDerivAt_pi']
   intro i
   fin_cases i
-  · refine hasFDerivAt_of_eq ((hq.const_mul p.kp).add (h1.const_mul p.ki))
+  · refine Dynamics.hasFDerivAt_of_eq ((hq.const_mul p.kp).add (h1.const_mul p.ki))
       (fun z => by simp [coordField, vq]) ?_
     ext v
     simp [jac, dotProduct, Fin.sum_univ_three]
     ring
-  · refine hasFDerivAt_of_eq hq (fun z => by simp [coordField, vq]) ?_
+  · refine Dynamics.hasFDerivAt_of_eq hq (fun z => by simp [coordField, vq]) ?_
     ext v
     simp [jac, dotProduct, Fin.sum_univ_three]
     ring
   · have hP := (((h0.cos.const_mul p.V).const_mul (3 / 2)).mul h2)
-    refine hasFDerivAt_of_eq ((hP.const_sub p.Pref).const_mul p.kP)
+    refine Dynamics.hasFDerivAt_of_eq ((hP.const_sub p.Pref).const_mul p.kP)
       (fun z => by simp [coordField, power]) ?_
     ext v
     simp [jac, dotProduct, Fin.sum_univ_three]
@@ -172,7 +173,7 @@ def PSN : ℝ := 3 * p.V ^ 2 / (4 * p.Xg)
     fderiv ℝ (field p) (WithLp.toLp 2 ![θ, x, Id]) =
       Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (jac p θ Id) := by
   have := hasFDerivAt_coordField p ![θ, x, Id]
-  exact fderiv_lift (by simpa using this)
+  exact Dynamics.fderiv_lift (by simpa using this)
 
 /-! ## Equilibria and the transmission limit -/
 
@@ -195,7 +196,7 @@ Static evidence on the model, not a connection conclusion. -/
     have hc : ∀ i, coordField p (WithLp.ofLp z) i = 0 := by
       intro i
       have := congrArg (fun w : Dynamics.State 3 => w i) hz
-      simpa [field, lift] using this
+      simpa [field, Dynamics.lift] using this
     have hq : vq p (z 0) (z 2) = 0 := by simpa [coordField] using hc 1
     have hP : p.Pref = power p (z 0) (z 2) := by
       have := hc 2
@@ -457,7 +458,7 @@ point. -/
     (h : field p (point θ Id) = 0) : IsEq p θ Id := by
   have h1 := congrArg (fun y : Dynamics.State 3 => y 1) h
   have h2 := congrArg (fun y : Dynamics.State 3 => y 2) h
-  simp [field, point, lift, coordField] at h1 h2
+  simp [field, point, Dynamics.lift, coordField] at h1 h2
   rcases h2 with h2 | h2
   · exact absurd h2 hkP
   · refine ⟨by unfold vq at h1; linarith, by linarith⟩
@@ -602,7 +603,7 @@ def offEquilibrium : Model := ⟨⟨0, 1, 0, 0, 0, 0⟩, 0, 1⟩
   unfold powerlib.TMIO.Statement
   refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero (contDiff_field _) fun h => ?_)
   have := congrArg (fun y : Dynamics.State 3 => y 1) h
-  simp [offEquilibrium, QuasiStatic.field, lift, coordField, point, vq] at this
+  simp [offEquilibrium, QuasiStatic.field, Dynamics.lift, coordField, point, vq] at this
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
 while the translation asks for an equilibrium. -/
@@ -625,7 +626,7 @@ def undampedPLL : Model := ⟨⟨1, 0, 0, 1, 0, 0⟩, 0, 0⟩
 private theorem undampedPLL_field (z : Dynamics.State 3) :
     QuasiStatic.field undampedPLL.params z = WithLp.toLp 2 ![z 1, -Real.sin (z 0), 0] := by
   ext i
-  fin_cases i <;> simp [QuasiStatic.field, lift, coordField, undampedPLL, vq, power]
+  fin_cases i <;> simp [QuasiStatic.field, Dynamics.lift, coordField, undampedPLL, vq, power]
 
 /-- The energy `1 − cos θ + x²/2 + I_d²/2`. -/
 private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 3) :

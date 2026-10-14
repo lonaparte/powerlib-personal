@@ -1,6 +1,8 @@
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import theorem.Upstream.LaSalle
+import theorem.Dynamics.LaSalle.Upstream
 import theorem.Flow.Certificate
+import theorem.Dynamics.Calculus
+import theorem.Dynamics.Locality
 
 /-! # Regions of attraction and LaSalle estimates
 
@@ -57,7 +59,7 @@ powerlib Phase 0, P0a.
 -/
 
 noncomputable section
-namespace powerlib.Dynamics
+namespace powerlib.Dynamics.LaSalle
 open Set Filter Topology Metric
 open scoped Pointwise
 variable {n : ℕ}
@@ -161,65 +163,6 @@ that starts in `S` converges. -/
     (hconv.comp (tendsto_atTop_add_const_right atTop (-t₀) tendsto_id))
 
 /-! ## Local tools: cutoff, curve transfer, continuous induction -/
-
-/-- A `C¹` field agrees on `‖x‖ ≤ R` with a `C¹`, globally Lipschitz field. -/
-@[powerlib_foundation] theorem exists_contDiff_lipschitz_extension {f : ℝⁿ → ℝⁿ}
-    (hf : ContDiff ℝ 1 f) (R : ℝ) :
-    ∃ g : ℝⁿ → ℝⁿ, ContDiff ℝ 1 g ∧ (∃ K, LipschitzWith K g) ∧
-      ∀ x, ‖x‖ ≤ R → g x = f x := by
-  let b : ContDiffBump (0 : ℝⁿ) :=
-    ⟨max R 1, max R 1 + 1, lt_of_lt_of_le (by norm_num) (le_max_right _ _), by linarith⟩
-  have hsmooth : ContDiff ℝ 1 (fun x => b x • f x) := b.contDiff.smul hf
-  refine ⟨fun x => b x • f x, hsmooth, ?_, ?_⟩
-  · exact ContDiff.lipschitzWith_of_hasCompactSupport b.hasCompactSupport.smul_right hsmooth
-      (by norm_num)
-  · intro x hx
-    have hb : b x = 1 := by
-      apply b.one_of_mem_closedBall
-      rw [mem_closedBall, dist_zero_right]
-      exact hx.trans (le_max_left _ _)
-    simp only [hb, one_smul]
-
-@[powerlib_foundation] theorem isIntegralCurveOn_of_eq_on_curve {f g : ℝⁿ → ℝⁿ}
-    {ψ : ℝ → ℝⁿ} {s : Set ℝ} (hψ : IsIntegralCurveOn ψ (fun _ x => g x) s)
-    (h : ∀ t ∈ s, g (ψ t) = f (ψ t)) : IsIntegralCurveOn ψ (fun _ x => f x) s := by
-  intro t ht
-  show HasDerivWithinAt ψ (f (ψ t)) s t
-  rw [← h t ht]
-  exact hψ t ht
-
-/-- Continuous induction on `[t₀, t₁]` for a closed target set. -/
-@[powerlib_foundation] theorem forall_mem_Icc_of_local_step {ψ : ℝ → ℝⁿ} {Ω : Set ℝⁿ}
-    {t₀ t₁ : ℝ} (hψ : ContinuousOn ψ (Icc t₀ t₁)) (hΩ : IsClosed Ω) (h0 : ψ t₀ ∈ Ω)
-    (hstep : ∀ x ∈ Ico t₀ t₁, ψ x ∈ Ω → ∃ y, x < y ∧ ∀ t ∈ Ioo x y, ψ t ∈ Ω) :
-    ∀ t ∈ Icc t₀ t₁, ψ t ∈ Ω := by
-  have hs : IsClosed ((ψ ⁻¹' Ω) ∩ Icc t₀ t₁) := by
-    rw [inter_comm]
-    exact hψ.preimage_isClosed_of_isClosed isClosed_Icc hΩ
-  have hsub := hs.Icc_subset_of_forall_mem_nhdsWithin (s := ψ ⁻¹' Ω) h0 (by
-    rintro x ⟨hx, hxI⟩
-    obtain ⟨y, hxy, hy⟩ := hstep x hxI hx
-    exact mem_of_superset (Ioo_mem_nhdsGT hxy) hy)
-  exact fun t ht => hsub ht
-
-/-- A curve continuous on `[t₀, t₁]` that is in an open set at `x ∈ [t₀, t₁)` stays in it on
-some `[x, y]` with `x < y ≤ t₁`. -/
-@[powerlib_foundation] theorem exists_Icc_mem_of_isOpen {ψ : ℝ → ℝⁿ} {U : Set ℝⁿ}
-    {t₀ t₁ x : ℝ} (hψ : ContinuousOn ψ (Icc t₀ t₁)) (hU : IsOpen U) (hx : x ∈ Ico t₀ t₁)
-    (hxU : ψ x ∈ U) : ∃ y, x < y ∧ y ≤ t₁ ∧ ∀ t ∈ Icc x y, ψ t ∈ U := by
-  have hIcc : Icc t₀ t₁ ∈ 𝓝[>] x :=
-    mem_of_superset (Ioo_mem_nhdsGT hx.2) fun t ht => ⟨hx.1.trans ht.1.le, ht.2.le⟩
-  have hpre : ψ ⁻¹' U ∈ 𝓝[>] x :=
-    nhdsWithin_le_of_mem hIcc
-      ((hψ x (Ico_subset_Icc_self hx)).preimage_mem_nhdsWithin (hU.mem_nhds hxU))
-  obtain ⟨u, hu, hsub⟩ := mem_nhdsGT_iff_exists_Ioo_subset.mp hpre
-  have hxu : x < u := hu
-  refine ⟨min ((x + u) / 2) t₁, lt_min (by linarith) hx.2, min_le_right _ _, ?_⟩
-  intro t ht
-  rcases eq_or_lt_of_le ht.1 with rfl | hlt
-  · exact hxU
-  · apply hsub
-    exact ⟨hlt, lt_of_le_of_lt (ht.2.trans (min_le_left _ _)) (by linarith)⟩
 
 /-- Positive invariance transfers to any field that agrees with `f` on an open neighbourhood
 `U` of the closed set `Ω`. -/
@@ -435,4 +378,4 @@ region of attraction. -/
   obtain ⟨-, hc, -, hconv⟩ := h
   exact fun x₀ _ => ⟨hc 0 x₀, fun φ _ hφ => hconv 0 φ hφ⟩
 
-end powerlib.Dynamics
+end powerlib.Dynamics.LaSalle

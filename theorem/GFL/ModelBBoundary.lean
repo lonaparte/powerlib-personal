@@ -1,5 +1,6 @@
 import theorem.GFL.ModelBStability
-import theorem.Dynamics.ModelBLocal
+import theorem.Dynamics.Degenerate.PlaneCollapse
+import theorem.Dynamics.Lyapunov
 
 /-! # GFL reduced-order model B on the 4×4 Routh boundary
 
@@ -117,8 +118,9 @@ private theorem unstable_of_violation {m : Model} (hV : 0 < m.p.VdcRef)
   obtain ⟨hreg0, hJ⟩ := m.p.regField_equilibrium_jacobian hV hx
   have hreg := Criteria.unstable_of_jacobian_violation_fin_four (m.p.jacobian m.x)
     (m.p.contDiff_regField hV) hreg0 hJ hviol
-  exact unstable_of_eqOn_ball (by positivity)
-    (fun y hy => m.p.field_eq_regField_of_mem_ball hV (m.p.equilibrium_Vdc hx) hy) hreg
+  exact Dynamics.unstable_of_eqOn_ball (by positivity)
+    (fun y hy => m.p.field_eq_regField_of_mem_ball hV (m.p.equilibrium_Vdc hx)
+      (mem_ball_iff_norm.mpr hy)) hreg
 
 /-- At an equilibrium with positive reference whose Jacobian violates the 4×4 Routh conditions
 strictly, model B is unstable. -/
@@ -213,10 +215,10 @@ def centerEnergy (σ : ℝ) (y : State 4) : ℝ :=
 @[powerlib_foundation] theorem hasFDerivAt_centerEnergy (σ : ℝ) (y : State 4) :
     HasFDerivAt (centerEnergy σ) (ModelBParams.row4 (Real.sin (y 0)) (y 1)
       (σ * ((y 2 - 1) + (y 2 - 1) ^ 2)) (σ * y 3)) y := by
-  have h0 := Criteria.hasFDerivAt_coord 0 y
-  have h1 := Criteria.hasFDerivAt_coord 1 y
-  have h2 := (Criteria.hasFDerivAt_coord 2 y).sub_const 1
-  have h3 := Criteria.hasFDerivAt_coord 3 y
+  have h0 := Dynamics.hasFDerivAt_coord 0 y
+  have h1 := Dynamics.hasFDerivAt_coord 1 y
+  have h2 := (Dynamics.hasFDerivAt_coord 2 y).sub_const 1
+  have h3 := Dynamics.hasFDerivAt_coord 3 y
   have hc := ((Real.hasDerivAt_cos (y 0)).comp_hasFDerivAt y h0).const_sub 1
   have h := (hc.add ((h1.pow 2).const_mul (1 / 2))).add
     (((((h3.pow 2).const_mul (1 / 2)).add ((h2.pow 2).const_mul (1 / 2))).add
@@ -504,7 +506,7 @@ integrator `ξ_v` drifts; Chetaev's function `(1 − V_dc) ξ_v` grows at the ra
   set W : State 4 → ℝ := fun y => (1 - y 2) * y 3 with hW
   have hWd : ∀ y : State 4, HasFDerivAt W (ModelBParams.row4 0 0 (-y 3) (1 - y 2)) y := by
     intro y
-    have h := ((Criteria.hasFDerivAt_coord 2 y).const_sub 1).mul (Criteria.hasFDerivAt_coord 3 y)
+    have h := ((Dynamics.hasFDerivAt_coord 2 y).const_sub 1).mul (Dynamics.hasFDerivAt_coord 3 y)
     refine h.congr_fderiv ?_
     ext v
     simp [ModelBParams.row4]
@@ -569,10 +571,10 @@ def dampedEnergy (y : State 4) : ℝ :=
     HasFDerivAt dampedEnergy (ModelBParams.row4 (3 * Real.sin (y 0) - y 1 * Real.cos (y 0))
       (y 1 - Real.sin (y 0)) (dcEnergyW (y 2 - 1) (y 3 - 1 / 2))
       (dcEnergyXi (y 2 - 1) (y 3 - 1 / 2))) y := by
-  have h0 := Criteria.hasFDerivAt_coord 0 y
-  have h1 := Criteria.hasFDerivAt_coord 1 y
-  have u := (Criteria.hasFDerivAt_coord 2 y).sub_const 1
-  have v := (Criteria.hasFDerivAt_coord 3 y).sub_const (1 / 2)
+  have h0 := Dynamics.hasFDerivAt_coord 0 y
+  have h1 := Dynamics.hasFDerivAt_coord 1 y
+  have u := (Dynamics.hasFDerivAt_coord 2 y).sub_const 1
+  have v := (Dynamics.hasFDerivAt_coord 3 y).sub_const (1 / 2)
   have hc := (((Real.hasDerivAt_cos (y 0)).comp_hasFDerivAt y h0).const_sub 1).const_mul 3
   have hs := (Real.hasDerivAt_sin (y 0)).comp_hasFDerivAt y h0
   have hP := (hc.add ((h1.pow 2).const_mul (1 / 2))).sub (h1.mul hs)

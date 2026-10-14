@@ -1,6 +1,7 @@
 import theorem.Dynamics.Transport
-import theorem.CurrentControl.SISO
-import theorem.Flow.Shift
+import theorem.Spectral.Family
+import theorem.LTI.Plant
+import theorem.Dynamics.Shift
 import Mathlib.Analysis.Real.Pi.Bounds
 
 /-! # DC-voltage based grid forming: DC energy balance, matching control, DC droop
@@ -266,7 +267,7 @@ def droopModel (C G K vref : ℝ) : Linear.Plant 1 1 :=
     push_cast at h
     field_simp at h
     linear_combination h
-  rw [droopModel, CurrentControl.transfer_fin_one _ _ _ _ hpole]
+  rw [droopModel, LTI.transfer_fin_one _ _ _ _ hpole]
   have e : s - ((-G / C : ℝ) : ℂ) = (C * s + G) / C := by
     push_cast
     field_simp

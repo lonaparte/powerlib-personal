@@ -88,12 +88,12 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
 @[powerlib_foundation] theorem hasFDerivAt_field (ω₀ : ℝ) (y : State 2) :
     HasFDerivAt (field ω₀)
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![0, 1; -(ω₀ ^ 2 * Real.cos (y 0)), 0]) y := by
-  refine hasFDerivAt_of_components _ ![coord 1, (-(ω₀ ^ 2 * Real.cos (y 0))) • coord 0] ?_ ?_
+  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _ ![Dynamics.coord 1, (-(ω₀ ^ 2 * Real.cos (y 0))) • Dynamics.coord 0] ?_ ?_
   · intro i; fin_cases i
-    · show HasFDerivAt (fun z => field ω₀ z 0) (coord 1) y
-      exact hasFDerivAt_coord 1 y
-    · show HasFDerivAt (fun z => field ω₀ z 1) ((-(ω₀ ^ 2 * Real.cos (y 0))) • coord 0) y
-      have h0 := hasFDerivAt_coord 0 y
+    · show HasFDerivAt (fun z => field ω₀ z 0) (Dynamics.coord 1) y
+      exact Dynamics.hasFDerivAt_coord 1 y
+    · show HasFDerivAt (fun z => field ω₀ z 1) ((-(ω₀ ^ 2 * Real.cos (y 0))) • Dynamics.coord 0) y
+      have h0 := Dynamics.hasFDerivAt_coord 0 y
       have h : HasFDerivAt (fun z : State 2 => -(ω₀ ^ 2 * Real.sin (z 0))) _ y :=
         ((Real.hasDerivAt_sin (y 0)).comp_hasFDerivAt y h0).const_mul (ω₀ ^ 2) |>.neg
       have hf : (fun z => field ω₀ z 1) = fun z : State 2 => -(ω₀ ^ 2 * Real.sin (z 0)) := by
@@ -101,7 +101,7 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
       rw [hf]
       convert h using 1
       ext v; simp; ring
-  · intro i v; fin_cases i <;> simp
+  · intro i v; rw [Fin.sum_univ_two]; fin_cases i <;> simp
 
 /-- The upper equilibrium `(π, 0)` is a saddle, hence unstable. -/
 @[powerlib_foundation] theorem top_unstable {ω₀ : ℝ} (hω : ω₀ ≠ 0) :
@@ -124,7 +124,7 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
   by_contra hle
   push Not at hle
   have hcont : ContinuousOn (fun s => |φ s 0|) (Icc a t) :=
-    (((coord 0).continuous.comp_continuousOn hφ.continuousOn).abs).mono
+    (((Dynamics.coord 0).continuous.comp_continuousOn hφ.continuousOn).abs).mono
       (Icc_subset_Icc_right ht.2)
   obtain ⟨s, hs, hseq⟩ := intermediate_value_Icc ht.1 hcont ⟨hθ.le, hle⟩
   have hsmem : s ∈ Icc a b := ⟨hs.1, hs.2.trans ht.2⟩
@@ -158,7 +158,7 @@ advances at least linearly. -/
     nlinarith
   refine ⟨hne, ?_⟩
   have hv1 : ContinuousOn (fun s => φ s 1) (Icc a b) :=
-    (coord 1).continuous.comp_continuousOn hφ.continuousOn
+    (Dynamics.coord 1).continuous.comp_continuousOn hφ.continuousOn
   -- the sign of `ω` is constant
   have hsign : (∀ t ∈ Icc a b, c ≤ φ t 1) ∨ ∀ t ∈ Icc a b, φ t 1 ≤ -c := by
     rcases lt_or_ge b a with hba | hab

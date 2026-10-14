@@ -1,5 +1,5 @@
 import theorem.GFLParametric.QuasiStaticFold
-import theorem.Dynamics.WeakFocus
+import theorem.Dynamics.Degenerate.WeakFocus
 
 /-! # Quasi-static three-state GFL: a supercritical Hopf point (gains of arbitrary sign)
 
@@ -33,9 +33,9 @@ fails). In the eigen-coordinates `c = M z` (`hopfQS_c1`, `hopfQS_c2`, `hopfQS_c3
 `≥ k` is `O(σ^k)` when `c₁, c₂ = O(σ)`, `c₃ = O(σ²)`; with `σ = |c₁| + |c₂| + √|c₃ − h₂|` the
 remainder is `O(σ⁵) = o(σ⁴)` and `W > 0`, `Ẇ < 0` on a punctured neighbourhood. No centre-manifold
 theorem is used; the term `32 (c₃ − h₂)²` absorbs the centre manifold. (A1's
-`WeakFocus.localAsymptoticStable_of_hopf_weakFocus` needs a nonlinearity entering through one
+`Dynamics.Degenerate.localAsymptoticStable_of_hopf_weakFocus` needs a nonlinearity entering through one
 scalar of one linear combination; the quasi-static field has two independent nonlinear channels,
-`v_q` and the bilinear power term, so the witness uses its own polynomial with `WeakFocus.poly3`.)
+`v_q` and the bilinear power term, so the witness uses its own polynomial with `Dynamics.Degenerate.poly3`.)
 
 **Connection conclusions.**
 * `supercriticalQS_mem_den_locallyAsymptoticallyStable`: the witness is locally asymptotically
@@ -56,7 +56,7 @@ only the Lyapunov argument is formal.
 
 noncomputable section
 namespace powerlib.GFLParametric.QuasiStatic
-open Filter Topology Asymptotics powerlib.Dynamics.WeakFocus
+open Filter Topology Asymptotics powerlib.Dynamics.Degenerate
 
 /-! ## Weighted bounds of polynomials (generic) -/
 

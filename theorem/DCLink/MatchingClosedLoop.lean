@@ -1,6 +1,6 @@
 import theorem.DCLink.Matching
 import theorem.Flow.Certificate
-import theorem.Dynamics.PeriodicLaSalle
+import theorem.Dynamics.LaSalle.Periodic
 
 /-! # Matching control in closed loop: global exponential stability in the rotating frame
 
@@ -95,7 +95,7 @@ Family and connection conclusions.
   below as implementation evidence.
 * Stationary-frame orbit attraction (Rules §3a: set attraction is outside the sentence language,
   so these are private implementation evidence; the generic transfer is the public foundation
-  `Dynamics.infDist_le_of_reduction'` of `theorem.Dynamics.PeriodicLaSalle`). The steady-state
+  `Dynamics.LaSalle.infDist_le_of_reduction'` of `theorem.Dynamics.LaSalle.Periodic`). The steady-state
   orbit is `O = range orbitPoint`, `orbitPoint θ = (θ, v*, R_θ i*_dq, R_θ v*_dq, R_θ s_dq)`;
   static: `reduce_orbitPoint` (`O` reduces to `x*`), `orbitPoint_load`, `rotD_rot`, `rotQ_rot`,
   `rot_dist_sq`, `rot_sub_rot_sq`, `norm_sub_orbitPoint` (with the model's load phasor,
@@ -1070,7 +1070,7 @@ there are `K ≥ 0`, `a > 0` such that every stationary-frame solution segment w
 `dist(X t, O) ≤ K e^{−a (t − t₀)} dist(X t₀, O)`, `O = range orbitPoint` the steady-state orbit.
 Proof: global exponential stability in the reduced coordinates (`ges`), the reduction of solutions
 (`reduce_isTrajectoryOn`, `load_const`), and the two-sided comparison `norm_sub_orbitPoint`,
-`norm_reduce_sub_le` through `Dynamics.infDist_le_of_reduction'`.
+`norm_reduce_sub_le` through `Dynamics.LaSalle.infDist_le_of_reduction'`.
 Implementation evidence: set attraction is outside the sentence language (Rules §3a). -/
 private theorem orbit_exponentiallyAttractive (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L)
     (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0)
@@ -1080,7 +1080,7 @@ private theorem orbit_exponentiallyAttractive (m : Model) (hCdc : 0 < m.Cdc) (hL
       ∀ t ∈ Set.Icc t₀ t₁, Metric.infDist (X t) (Set.range m.orbitPoint) ≤
         K * Real.exp (-a * (t - t₀)) * Metric.infDist (X t₀) (Set.range m.orbitPoint) := by
   have hges : Flow.GloballyExponentiallyStable (fun y => m.field y 0) m.point :=
-    Flow.globallyExponentiallyStable_shift_iff.mp (ges m hCdc hL hC hR hG he hδ)
+    Dynamics.globallyExponentiallyStable_shift_iff.mp (ges m hCdc hL hC hR hG he hδ)
   have hwl : m.withLoad m.sd m.sq = m := by cases m; rfl
   have hB : 0 ≤ 1 + Real.sqrt (1 + (m.idStar ^ 2 + m.iqStar ^ 2) +
       (m.vdStar ^ 2 + m.vqStar ^ 2) + (m.sd ^ 2 + m.sq ^ 2)) := by
@@ -1110,7 +1110,7 @@ private theorem orbit_exponentiallyAttractive (m : Model) (hCdc : 0 < m.Cdc) (hL
     rintro X ⟨hD, hQ⟩
     exact norm_reduce_sub_le m X hD hQ
   obtain ⟨K, a, hK, ha, h⟩ :=
-    Dynamics.infDist_le_of_reduction' zero_le_one hB hges hred hO hO'
+    Dynamics.LaSalle.infDist_le_of_reduction' zero_le_one hB hges hred hO hO'
   exact ⟨K, a, hK, ha, fun t₀ t₁ X hX hD hQ => h t₀ t₁ X hX ⟨hD, hQ⟩⟩
 
 /-- Every forward solution with the model's load phasor converges to the steady-state orbit.

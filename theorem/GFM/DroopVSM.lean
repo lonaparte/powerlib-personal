@@ -118,8 +118,8 @@ def offset : State 2 := mkState 0 (d.ωs + d.Pref / d.KR)
     Dynamics.affineCoord (d.coord hK) d.offset x =
       mkState (x 0) (d.ωs - (x 1 - d.Pref) / d.KR) := by
   apply state_ext
-  · simp [Dynamics.affineCoord, coord, offset, coordMatrix, Synchronous.toEuclideanCLM_apply_zero]
-  · simp [Dynamics.affineCoord, coord, offset, coordMatrix, Synchronous.toEuclideanCLM_apply_one]
+  · simp [Dynamics.affineCoord, coord, offset, coordMatrix, PhasePlane.toEuclideanCLM_apply_zero]
+  · simp [Dynamics.affineCoord, coord, offset, coordMatrix, PhasePlane.toEuclideanCLM_apply_one]
     ring
 
 /-- **Large-signal equivalence.** In the coordinates `(θ, ω)` the droop + LPF field is
@@ -132,15 +132,15 @@ Static evidence on the model, not a connection conclusion. -/
     intro z
     simp only [coord, Dynamics.matrixCoord_symm_apply, d.coordMatrix_inv hK]
     apply state_ext
-    · simp [Synchronous.toEuclideanCLM_apply_zero]
-    · simp [Synchronous.toEuclideanCLM_apply_one]
+    · simp [PhasePlane.toEuclideanCLM_apply_zero]
+    · simp [PhasePlane.toEuclideanCLM_apply_one]
   apply state_ext
   · simp only [Dynamics.transportField, hinv]
-    simp [coord, coordMatrix, offset, droopField, vsmField, Synchronous.toEuclideanCLM_apply_zero]
+    simp [coord, coordMatrix, offset, droopField, vsmField, PhasePlane.toEuclideanCLM_apply_zero]
     field_simp
     ring
   · simp only [Dynamics.transportField, hinv]
-    simp [coord, coordMatrix, offset, droopField, vsmField, Synchronous.toEuclideanCLM_apply_one]
+    simp [coord, coordMatrix, offset, droopField, vsmField, PhasePlane.toEuclideanCLM_apply_one]
     field_simp
     ring
 
@@ -261,7 +261,7 @@ def jacobian (m : VSMModel) (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     convert h1 using 1
     · rfl
     apply ContinuousLinearMap.ext; intro v
-    simp [jacobian, Synchronous.toEuclideanCLM_apply_zero]
+    simp [jacobian, PhasePlane.toEuclideanCLM_apply_zero]
   · simp only [Fin.mk_one, Fin.isValue, vector, Synchronous.mkState_one]
     have hs := hd.comp_hasFDerivAt x h0
     have h := (((hasFDerivAt_const m.Pref x).sub hs).sub
@@ -269,7 +269,7 @@ def jacobian (m : VSMModel) (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     convert h using 1
     · funext y; simp [div_eq_inv_mul]
     · apply ContinuousLinearMap.ext; intro v
-      simp [jacobian, Synchronous.toEuclideanCLM_apply_one]
+      simp [jacobian, PhasePlane.toEuclideanCLM_apply_one]
       ring
 
 @[powerlib_foundation] theorem vector_eq_zero_iff (m : VSMModel) (hM : m.M ≠ 0) (x : State 2) :

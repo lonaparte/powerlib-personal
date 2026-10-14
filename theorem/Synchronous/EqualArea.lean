@@ -1,4 +1,5 @@
 import theorem.Synchronous.Swing
+import theorem.Dynamics.Calculus
 
 /-! # Equal-area criterion for the single-machine infinite-bus swing equation: static part
 
@@ -48,42 +49,6 @@ noncomputable section
 namespace powerlib.Synchronous
 open Set Filter Topology intervalIntegral
 open powerlib.Dynamics (State)
-
-/-! ## A continuous-induction helper -/
-
-/-- If `g` is continuous on `[a, b]`, `g a > 0`, and positivity on `[a, t)` always propagates to
-`t`, then `g > 0` on `[a, b]`. -/
-@[powerlib_foundation] theorem pos_on_Icc_of_propagate {g : ℝ → ℝ} {a b : ℝ}
-    (hg : ContinuousOn g (Icc a b)) (ha : 0 < g a)
-    (h : ∀ t ∈ Ioc a b, (∀ s ∈ Ico a t, 0 < g s) → 0 < g t) :
-    ∀ t ∈ Icc a b, 0 < g t := by
-  by_contra hne
-  push Not at hne
-  obtain ⟨t₁, ht₁, hgt₁⟩ := hne
-  set S := Icc a b ∩ g ⁻¹' Iic 0 with hSdef
-  have hS : IsClosed S := hg.preimage_isClosed_of_isClosed isClosed_Icc isClosed_Iic
-  have hSne : S.Nonempty := ⟨t₁, ht₁, hgt₁⟩
-  have hbdd : BddBelow S := ⟨a, fun x hx => hx.1.1⟩
-  have hmem : sInf S ∈ S := hS.csInf_mem hSne hbdd
-  have hle : g (sInf S) ≤ 0 := hmem.2
-  have hat : a ≤ sInf S := hmem.1.1
-  have hne_a : sInf S ≠ a := by
-    intro he; rw [he] at hle; linarith
-  have hpos : 0 < g (sInf S) := by
-    refine h _ ⟨lt_of_le_of_ne hat (Ne.symm hne_a), hmem.1.2⟩ fun s hs => ?_
-    by_contra hs'
-    push Not at hs'
-    have : sInf S ≤ s := csInf_le hbdd ⟨⟨hs.1, hs.2.le.trans hmem.1.2⟩, hs'⟩
-    linarith [hs.2]
-  linarith
-
-/-- Monotonicity on `[a, b]` from a nonnegative derivative on `(a, b)`. -/
-@[powerlib_foundation] theorem monotoneOn_Icc_of_hasDerivAt {h h' : ℝ → ℝ} {a b : ℝ}
-    (hc : ContinuousOn h (Icc a b)) (hd : ∀ x ∈ Ioo a b, HasDerivAt h (h' x) x)
-    (hnn : ∀ x ∈ Ioo a b, 0 ≤ h' x) : MonotoneOn h (Icc a b) := by
-  apply monotoneOn_of_hasDerivWithinAt_nonneg (convex_Icc a b) hc
-  · rw [interior_Icc]; exact fun x hx => (hd x hx).hasDerivWithinAt
-  · rw [interior_Icc]; exact hnn
 
 namespace SwingParams
 
@@ -270,11 +235,11 @@ values at the endpoints. -/
     fun z _ => (p.hasDerivAt_potential δ₀ z).continuousAt.continuousWithinAt
   rcases le_or_gt p.deltaS δ with hs | hs
   · have hmono : MonotoneOn (p.potential δ₀) (Icc p.deltaS p.deltaU) :=
-      monotoneOn_Icc_of_hasDerivAt (hcont _ _) (fun z _ => p.hasDerivAt_potential δ₀ z)
+      Dynamics.monotoneOn_Icc_of_hasDerivAt (hcont _ _) (fun z _ => p.hasDerivAt_potential δ₀ z)
         (fun z hz => by linarith [p.Pm_lt_Pe_of_mem hk h hz])
     exact (hmono ⟨hs, hδ.2⟩ ⟨(p.deltaS_lt_deltaU hk h).le, le_rfl⟩ hδ.2).trans (le_max_right _ _)
   · have hanti : AntitoneOn (p.potential δ₀) (Icc δc p.deltaS) := by
-      have := monotoneOn_Icc_of_hasDerivAt (h := fun z => -p.potential δ₀ z)
+      have := Dynamics.monotoneOn_Icc_of_hasDerivAt (h := fun z => -p.potential δ₀ z)
         (h' := fun z => -(p.Pe z - p.Pm)) (a := δc) (b := p.deltaS)
         (fun z hz => ((p.hasDerivAt_potential δ₀ z).continuousAt.neg).continuousWithinAt)
         (fun z _ => (p.hasDerivAt_potential δ₀ z).neg)

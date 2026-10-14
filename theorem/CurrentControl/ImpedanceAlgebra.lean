@@ -26,7 +26,7 @@ counter-clockwise at the constant speed `ω` with generator `J = [[0, −1], [1,
   dq admittance is `sC I + ωC J`; the note's `Z_load = R/(1 + sRC) I` omits the cross term
   `ωC J`. `noteLoad_ne`: the two differ whenever `ωC ≠ 0`. With the corrected load,
   `Zext_eq`: `Z_ext = (Z_line⁻¹ + Y_load)⁻¹ = Z_line (I + Y_load Z_line)⁻¹`.
-* `Y^IN = −Y^OUT` is `CurrentControl.transfer_negOutput` (`SISO.lean`).
+* `Y^IN = −Y^OUT` is `LTI.transfer_negOutput` (`theorem/LTI/Plant.lean`).
 
 Source: work-sync `theory/T-gfl-impedance.md` §1.1, §1.3, §1.7, §2.2;
 `theory/T-gfl-control.md` §2.12; `theory/T-park-transformation.md` §1.4.

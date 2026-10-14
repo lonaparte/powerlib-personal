@@ -237,22 +237,4 @@ stable. -/
       GFL.PIPLL.family.den (.flow .unstable)) :=
   srf_mem_den_unstable_antiPhase (Kp := a) (by simpa using hb) (-Δω) k
 
-/-! ## First integrals (T-invariant-coordinates §1.1) -/
-
-/-- A differentiable `I` with `∇I · f ≡ 0` is constant along every solution segment of `f`
-(generic: any field, any differentiable `I`). -/
-@[powerlib_foundation] theorem firstIntegral_const {n : ℕ} {f : State n → State n}
-    {I : State n → ℝ} (hI : Differentiable ℝ I) (h0 : ∀ x, fderiv ℝ I x (f x) = 0)
-    {φ : ℝ → State n} {a b : ℝ} (hφ : IsTrajectoryOn φ f a b) :
-    ∀ t ∈ Set.Icc a b, I (φ t) = I (φ a) := by
-  intro t ht
-  have ha : a ∈ Set.Icc a b := ⟨le_rfl, ht.1.trans ht.2⟩
-  have h1 := antitoneOn_V_comp_traj hI hI.continuous (convex_Icc a b) hφ
-    (fun s _ => (h0 (φ s)).le) ha ht ht.1
-  have hneg : Differentiable ℝ (fun x => -I x) := hI.neg
-  have h2 := antitoneOn_V_comp_traj hneg hneg.continuous (convex_Icc a b) hφ
-    (fun s _ => by rw [fderiv_fun_neg, _root_.neg_apply, h0, neg_zero]) ha ht ht.1
-  simp only [Function.comp_apply] at h1 h2
-  linarith
-
 end powerlib.PLL

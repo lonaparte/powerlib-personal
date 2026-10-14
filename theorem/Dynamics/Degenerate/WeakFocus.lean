@@ -1,4 +1,4 @@
-import theorem.Dynamics.Basin
+import theorem.Dynamics.Lyapunov
 
 /-! # Weak foci: polynomial Lyapunov functions at a Hopf point (foundation)
 
@@ -9,34 +9,30 @@ delay, switching or time variation. `V̇ x = fderiv ℝ V x (f x)`. Behaviour is
 that start in a ball). Nothing here describes a physical system: every statement is a generic
 implication about an arbitrary field, function or polynomial, a foundation result.
 
-* `WeakFocus.localAsymptoticStable_of_lyapunov_ball`: a `C¹` function that vanishes at an
-  equilibrium of a `C¹` field and is positive with a negative Lie derivative on a punctured ball
-  gives local asymptotic stability. LeanForControl's `lyapunov_local_asymptotic_stable` asks for a
-  *global* sublevel set `{V ≤ c}` that is compact and inside the domain; here Lyapunov stability
-  comes from LeanForControl's `lyapunov_stable` on the ball and attraction from LaSalle's principle
-  for `C¹` fields (`Dynamics.regionOfAttraction_of_lasalle_sublevel`) on
-  `{x ∈ ball | V x ≤ c}`, `c` below the minimum of `V` on a sphere. So `V` may be a polynomial
-  that is indefinite far from the equilibrium.
-* Polynomials in three real variables. `WeakFocus.poly3 l a b c = Σ κ a^i b^j c^k` over a list
-  `l` of terms `(κ, i, j, k)`, its directional derivative `WeakFocus.dpoly3`, the derivative of
+* The strict Lyapunov theorem on a punctured ball that the weak-focus criterion below applies is
+  `Dynamics.localAsymptoticStable_of_lie_neg` (`theorem/Dynamics/Lyapunov.lean`): no global
+  sublevel set `{V ≤ c}` has to be compact, so `V` may be a polynomial that is indefinite far from
+  the equilibrium.
+* Polynomials in three real variables. `poly3 l a b c = Σ κ a^i b^j c^k` over a list
+  `l` of terms `(κ, i, j, k)`, its directional derivative `dpoly3`, the derivative of
   `z ↦ poly3 l (ℓa z) (ℓb z) (ℓc z)` for continuous linear functionals `ℓa, ℓb, ℓc`
-  (`WeakFocus.fderiv_poly3_apply`, `WeakFocus.contDiff_poly3`), linearity of the derivative in the
-  direction (`WeakFocus.dpoly3_add_smul`) and the bounds of homogeneous polynomials:
+  (`fderiv_poly3_apply`, `contDiff_poly3`), linearity of the derivative in the
+  direction (`dpoly3_add_smul`) and the bounds of homogeneous polynomials:
   `|poly3 l a b c| ≤ (Σ |κ|) N^d` for degree `d`, and
   `|dpoly3 l a b c da db dc| ≤ (Σ |κ| (d + 1)) N^d` for degree `d + 1`, when `|a|, |b|, |c| ≤ N`
-  and `|da|, |db|, |dc| ≤ 1` (`WeakFocus.abs_poly3_le`, `WeakFocus.abs_dpoly3_le`).
+  and `|da|, |db|, |dc| ≤ 1` (`abs_poly3_le`, `abs_dpoly3_le`).
 * A Hopf point with one stable real eigenvalue. In coordinates `w = (a, b, c)` the normal form is
   `ȧ = b`, `ḃ = −H a − G`, `ċ = −λ c − G` (`H, λ > 0`): the linearization has eigenvalues
   `±i√H` and `−λ`, and one scalar `G = g₂ ξ² + g₃ ξ³ + O(ξ⁴)` of `ξ = (λ a − b + c)/(H + λ²)`
   forces the oscillator and the stable mode. The explicit cubic and quartic polynomials
   `W₃ = WeakFocus.hopfW3`, `W₄ = WeakFocus.hopfW4` solve the homological equations
-  (`WeakFocus.hopfW3_homological`, `WeakFocus.hopfW4_homological`), so that for
+  (`hopfW3_homological`, `hopfW4_homological`), so that for
   `W = H a² + b² + c² + W₃ + W₄`, up to order four,
   `Ẇ = −2λ (c − h₂(a, b))² − κ / (4 H² λ (H + λ²)² (4H + λ²)) · (H a² + b²)²`, where
   `h₂ = WeakFocus.hopfH2` is the quadratic part of the centre manifold and
-  `κ = 2 g₂² (8H + λ²) − 3 H λ g₃ (4H + λ²)` (`WeakFocus.hopfCoeff`). The term `−2λ(c − h₂)²`
+  `κ = 2 g₂² (8H + λ²) − 3 H λ g₃ (4H + λ²)` (`hopfCoeff`). The term `−2λ(c − h₂)²`
   absorbs the centre manifold; no centre-manifold theorem is used.
-* `WeakFocus.localAsymptoticStable_of_hopf_weakFocus`: a `C¹` field conjugate, through an
+* `localAsymptoticStable_of_hopf_weakFocus`: a `C¹` field conjugate, through an
   injective linear map `T`, to this normal form with an `O(ξ⁴)` remainder has a locally
   asymptotically stable origin when `κ > 0`. The linearization is not Hurwitz, so the origin is a
   weak focus: asymptotically, not exponentially, stable. (`κ > 0` says that the averaged radial
@@ -54,92 +50,9 @@ Lyapunov coefficient, homological equations) for the construction. The coefficie
 -/
 
 noncomputable section
-namespace powerlib.Dynamics.WeakFocus
+namespace powerlib.Dynamics.Degenerate
 open Set Filter Topology Metric
 open scoped Pointwise
-
-section Ball
-
-variable {n : ℕ}
-local notation "ℝⁿ" => State n
-
-/-- **Strict Lyapunov function on a punctured ball.** A `C¹` function `V` with `V(x*) = 0`, positive
-and with a negative Lie derivative on `0 < ‖x − x*‖ < r`, makes an equilibrium `x*` of a `C¹`
-field locally asymptotically stable. No global sublevel set is required. -/
-@[powerlib_foundation] theorem localAsymptoticStable_of_lyapunov_ball {f : ℝⁿ → ℝⁿ}
-    {V : ℝⁿ → ℝ} {x_eq : ℝⁿ} {r : ℝ} (hn : 0 < n) (hf : ContDiff ℝ 1 f) (hV : ContDiff ℝ 1 V)
-    (hr : 0 < r) (heq : f x_eq = 0) (hV0 : V x_eq = 0)
-    (hpos : ∀ x, ‖x - x_eq‖ < r → x ≠ x_eq → 0 < V x)
-    (hLie : ∀ x, ‖x - x_eq‖ < r → x ≠ x_eq → fderiv ℝ V x (f x) < 0) :
-    LocalAsymptoticStable f x_eq := by
-  have hVd : Differentiable ℝ V := hV.differentiable one_ne_zero
-  have hLie' : ∀ x ∈ ball x_eq r, fderiv ℝ V x (f x) ≤ 0 := by
-    intro x hx
-    rw [mem_ball, dist_eq_norm] at hx
-    by_cases hxe : x = x_eq
-    · subst hxe; rw [heq, map_zero]
-    · exact (hLie x hx hxe).le
-  have hLS : LyapunovStable f x_eq :=
-    lyapunov_stable hn ⟨isOpen_ball, mem_ball_self hr, hVd.continuous, hVd, hV0,
-      fun x hx hne => hpos x (by rwa [mem_ball, dist_eq_norm] at hx) hne, hLie'⟩
-  refine ⟨hLS, ?_⟩
-  set ρ := r / 2 with hρ
-  have hρ0 : 0 < ρ := by positivity
-  have hρr : ρ < r := by linarith
-  have hne : (sphere x_eq ρ).Nonempty :=
-    ⟨x_eq + EuclideanSpace.single (⟨0, hn⟩ : Fin n) ρ, by
-      rw [mem_sphere, dist_eq_norm]; simp [PiLp.norm_single, abs_of_pos hρ0]⟩
-  obtain ⟨xm, hxm, hmin⟩ :=
-    (isCompact_sphere x_eq ρ).exists_isMinOn hne hV.continuous.continuousOn
-  have hxm' : ‖xm - x_eq‖ = ρ := by rwa [mem_sphere, dist_eq_norm] at hxm
-  have hm : 0 < V xm := hpos xm (by rw [hxm']; exact hρr) fun h => by
-    rw [h, sub_self, norm_zero] at hxm'; linarith
-  set c := V xm / 2 with hc
-  have hc0 : 0 < c := by positivity
-  have hΩeq : {x ∈ ball x_eq ρ | V x ≤ c} = closedBall x_eq ρ ∩ {x | V x ≤ c} := by
-    ext x
-    simp only [mem_inter_iff, mem_ball, mem_closedBall, mem_ofPred_eq]
-    constructor
-    · rintro ⟨h1, h2⟩; exact ⟨h1.le, h2⟩
-    · rintro ⟨h1, h2⟩
-      refine ⟨lt_of_le_of_ne h1 fun h => ?_, h2⟩
-      have : V xm ≤ V x := hmin (by rw [mem_sphere]; exact h)
-      linarith
-  have hΩc : IsCompact {x ∈ ball x_eq ρ | V x ≤ c} := by
-    rw [hΩeq]
-    exact (isCompact_closedBall x_eq ρ).inter_right (isClosed_le hV.continuous continuous_const)
-  have hroa := Dynamics.regionOfAttraction_of_lasalle_sublevel (f := f) (V := V)
-    (W := ball x_eq ρ) (c := c) (x_eq := x_eq) isOpen_ball hf hV
-    (fun x hx => hLie' x (ball_subset_ball hρr.le hx)) hΩc (by
-      intro N hN _ x hx
-      have hx' := hN hx
-      rw [Dynamics.lieDerivZeroSet_def] at hx'
-      obtain ⟨⟨hxW, -⟩, hx0⟩ := hx'
-      rw [mem_singleton_iff]
-      by_contra hxe
-      rw [mem_ball, dist_eq_norm] at hxW
-      have := hLie x (by linarith) hxe
-      rw [hx0] at this
-      exact lt_irrefl _ this)
-  obtain ⟨δ, hδ, hδV⟩ := Metric.continuousAt_iff.mp (hV.continuous.continuousAt (x := x_eq)) c hc0
-  refine ⟨min δ ρ, lt_min hδ hρ0, fun t₀ φ hφ hφ0 => ?_⟩
-  have hmem : φ t₀ ∈ {x ∈ ball x_eq ρ | V x ≤ c} := by
-    refine ⟨by rw [mem_ball, dist_eq_norm]; exact hφ0.trans_le (min_le_right _ _), ?_⟩
-    have h := hδV (x := φ t₀) (by rw [dist_eq_norm]; exact hφ0.trans_le (min_le_left _ _))
-    rw [Real.dist_eq, hV0, sub_zero] at h
-    exact (abs_lt.mp h).2.le
-  have hψ : IsIntegralCurveOn (fun s => φ (s + t₀)) (fun _ x => f x) (Ici 0) := by
-    have hset : -t₀ +ᵥ Ici t₀ = Ici (0 : ℝ) := by
-      ext x
-      simp only [mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, neg_neg, mem_Ici]
-      constructor <;> intro h <;> linarith
-    have h' := _root_.IsIntegralCurveOn.comp_add_autonomous hφ t₀
-    rwa [hset] at h'
-  have hconv := (hroa (φ t₀) hmem).2 (fun s => φ (s + t₀)) (by simp) hψ
-  exact Tendsto.congr (fun x => by simp)
-    (hconv.comp (tendsto_atTop_add_const_right atTop (-t₀) tendsto_id))
-
-end Ball
 
 /-! ## Polynomials in three real variables -/
 
@@ -816,8 +729,8 @@ a punctured ball. -/
           linarith
   have hTne : ∀ z : State 3, z ≠ 0 → 0 < ‖T z‖ := fun z hz =>
     norm_pos_iff.mpr fun h => hz (hT (by rw [h, map_zero]))
-  refine localAsymptoticStable_of_lyapunov_ball (V := V) (r := r) (by norm_num) hf hV hr0 hfeq
-    ?_ ?_ ?_
+  refine localAsymptoticStable_of_lie_neg (V := V) (R := r) (by norm_num) hr0 hV
+    hf.continuous.continuousOn ?_ ?_ ?_
   · show poly3 (hopfQ H) (ℓa 0) (ℓb 0) (ℓc 0) + poly3 (hopfW3 H lam g2) (ℓa 0) (ℓb 0) (ℓc 0) +
       poly3 (hopfW4 H lam g2 g3) (ℓa 0) (ℓb 0) (ℓc 0) = 0
     simp only [map_zero]
@@ -843,4 +756,4 @@ a punctured ball. -/
     have : 0 < ‖T z‖ ^ 4 * (m - CR * ‖T z‖) := mul_pos (pow_pos h2 4) (by linarith)
     linarith
 
-end powerlib.Dynamics.WeakFocus
+end powerlib.Dynamics.Degenerate

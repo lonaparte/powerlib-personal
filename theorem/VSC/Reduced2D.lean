@@ -2,7 +2,7 @@ import theorem.VSC.FullModel
 import theorem.GFL.PIPLLFamily
 import theorem.PH.Nonlinear
 import theorem.Dynamics.Transport
-import theorem.Flow.Shift
+import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
 
 /-! # The reduced 2-state GFL-PLL model of `vsc-stochastic-stability`: equilibria, local

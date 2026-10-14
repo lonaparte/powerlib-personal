@@ -33,7 +33,7 @@ variable (p : FourState.Params)
         p.kp * vq p (z 0) (z 2) (z 3) + p.ki * z 1 - ud ∧
       (fieldAngle p u ud z) 1 = vq p (z 0) (z 2) (z 3) ∧
       (fieldAngle p u ud z) 3 = z 2 - 1 := by
-  refine ⟨?_, ?_, ?_⟩ <;> simp [fieldAngle, field, lift, coordField]
+  refine ⟨?_, ?_, ?_⟩ <;> simp [fieldAngle, field, Dynamics.lift, coordField]
 
 @[powerlib_foundation] private theorem hasDerivAt_coord {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
     (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t) (i : Fin 4) (t : ℝ) :

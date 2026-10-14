@@ -1,11 +1,13 @@
 import theorem.Criteria.Hurwitz2
 import theorem.Dynamics.ConverseLinearization
 import theorem.Dynamics.State
+import theorem.PhasePlane.Planar
 import theorem.Flow.Certificate
-import theorem.Flow.Shift
+import theorem.Dynamics.Shift
 import theorem.Linear.Family
 import theorem.TMIO.ClaimElab
-import theorem.CurrentControl.SISO
+import theorem.Dynamics.Lyapunov
+import theorem.Dynamics.Instability
 
 /-! # The sinusoidally coupled swing equation (canonical single-machine model)
 
@@ -141,16 +143,6 @@ def mkState (δ ω : ℝ) : State 2 := (WithLp.equiv 2 (Fin 2 → ℝ)).symm ![�
 
 @[powerlib_foundation] theorem abs_coord_le (x : State 2) (j : Fin 2) : |x j| ≤ ‖x‖ := by
   simpa using PiLp.norm_apply_le x j
-
-@[powerlib_foundation] theorem toEuclideanCLM_apply_zero (A : Matrix (Fin 2) (Fin 2) ℝ)
-    (v : State 2) :
-    (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A v) 0 = A 0 0 * v 0 + A 0 1 * v 1 := by
-  simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
-
-@[powerlib_foundation] theorem toEuclideanCLM_apply_one (A : Matrix (Fin 2) (Fin 2) ℝ)
-    (v : State 2) :
-    (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A v) 1 = A 1 0 * v 0 + A 1 1 * v 1 := by
-  simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
 namespace SwingParams
 
@@ -1017,15 +1009,15 @@ conserved, `ω` decays), although its synchronizing coefficient is zero (the Jac
     fun z => ?_
   · have h0 := congrArg (fun y : State 2 => y 0) hzw
     have h1 := congrArg (fun y : State 2 => y 1) hzw
-    simp only [toEuclideanCLM_apply_zero, toEuclideanCLM_apply_one] at h0 h1
+    simp only [PhasePlane.toEuclideanCLM_apply_zero, PhasePlane.toEuclideanCLM_apply_one] at h0 h1
     simp at h0 h1
     exact state_ext (by linarith) h1
   · have hf0 : flatCurve.field z 0 = z 1 := by
       simp [Model.field, flatCurve, Model.point]
     have hf1 : flatCurve.field z 1 = -z 1 := by
       simp [Model.field, flatCurve, Model.point, SwingParams.accel, SwingParams.Pe]
-    simp only [PiLp.inner_apply, Fin.sum_univ_two, toEuclideanCLM_apply_zero,
-      toEuclideanCLM_apply_one, hf0, hf1, RCLike.inner_apply, conj_trivial]
+    simp only [PiLp.inner_apply, Fin.sum_univ_two, PhasePlane.toEuclideanCLM_apply_zero,
+      PhasePlane.toEuclideanCLM_apply_one, hf0, hf1, RCLike.inner_apply, conj_trivial]
     simp
     nlinarith [sq_nonneg (z 1)]
 
@@ -1213,7 +1205,7 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
         (fun z w hzw => ?_) fun z => ?_
       · have hz0 := congrArg (fun y : State 2 => y 0) hzw
         have hz1 := congrArg (fun y : State 2 => y 1) hzw
-        simp only [toEuclideanCLM_apply_zero, toEuclideanCLM_apply_one] at hz0 hz1
+        simp only [PhasePlane.toEuclideanCLM_apply_zero, PhasePlane.toEuclideanCLM_apply_one] at hz0 hz1
         simp at hz0 hz1
         refine state_ext ?_ hz1
         rw [hz1] at hz0
@@ -1224,8 +1216,8 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
             zero_mul, add_zero, hk1, sub_self, PiLp.add_apply, Model.point_one]
           field_simp
           ring
-        simp only [PiLp.inner_apply, Fin.sum_univ_two, toEuclideanCLM_apply_zero,
-          toEuclideanCLM_apply_one, hf0, hf1, RCLike.inner_apply, conj_trivial]
+        simp only [PiLp.inner_apply, Fin.sum_univ_two, PhasePlane.toEuclideanCLM_apply_zero,
+          PhasePlane.toEuclideanCLM_apply_one, hf0, hf1, RCLike.inner_apply, conj_trivial]
         simp
         have : 0 ≤ m.p.D / m.p.M := div_nonneg hD.le hM.le
         field_simp

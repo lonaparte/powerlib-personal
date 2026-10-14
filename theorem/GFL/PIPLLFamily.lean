@@ -1,10 +1,9 @@
 import theorem.GFL.PIPLL
 import theorem.Dynamics.ConverseLinearization
 import theorem.Family.Basic
-import theorem.Flow.Shift
+import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
-import theorem.PH.Observability
-import theorem.CurrentControl.SISO
+import theorem.Dynamics.LaSalle.Passivity
 
 /-! # The PI-PLL family
 
@@ -50,7 +49,7 @@ selected point is not phase-locked (`offEquilibrium`) is unstable
 (`offEquilibrium_mem_den_unstable`, `Dynamics.unstable_of_ne_zero`). The local asymptotic
 translation is not exact either (`not_exact_locallyAsymptoticallyStable`): the cubic detector is
 locally asymptotically stable (`cubicDetector_mem_den_locallyAsymptoticallyStable`, LaSalle's
-principle through `PH.tendsto_zero_of_lasalle_detectable`: the PLL energy decreases at the rate
+principle through `Dynamics.LaSalle.tendsto_zero_of_lasalle_detectable`: the PLL energy decreases at the rate
 `θ⁶`, and the only solution with `θ ≡ 0` is the locked point) although its slope is zero. -/
 
 noncomputable section
@@ -550,7 +549,7 @@ nothing. -/
   have hclosed : IsClosed {x : ℝ² | cubicEnergy x ≤ cubicEnergy (φ t₀)} :=
     isClosed_le hVd.continuous continuous_const
   have hinv : IsPositivelyInvariant {x | cubicEnergy x ≤ cubicEnergy (φ t₀)} f := by
-    have h := Dynamics.isPositivelyInvariant_sublevel_of_isOpen (f := f)
+    have h := Dynamics.LaSalle.isPositivelyInvariant_sublevel_of_isOpen (f := f)
       (c := cubicEnergy (φ t₀)) isOpen_univ hVd (fun x _ => hdec x) (by simpa using hclosed)
     simpa using h
   have hΩ : IsCompact {x : ℝ² | cubicEnergy x ≤ cubicEnergy (φ t₀)} := by
@@ -565,7 +564,7 @@ nothing. -/
       · simp [cubicEnergy]
       · exact (cubicEnergy_pos hx0).le
     nlinarith [norm_nonneg x]
-  have hconv := PH.tendsto_zero_of_lasalle_detectable hf cubicEnergy_contDiff
+  have hconv := Dynamics.LaSalle.tendsto_zero_of_lasalle_detectable hf cubicEnergy_contDiff
     (by simp [cubicEnergy]) (fun x hx => cubicEnergy_pos hx) hdec hdet hΩ hinv hψs (by simp)
   exact Filter.Tendsto.congr (fun x => by simp)
     (hconv.comp (Filter.tendsto_atTop_add_const_right Filter.atTop (-t₀) Filter.tendsto_id))
