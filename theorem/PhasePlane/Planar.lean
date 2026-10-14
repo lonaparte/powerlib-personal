@@ -4,19 +4,28 @@ import theorem.Dynamics.Coordinates
 
 /-! # Planar state-space helpers
 
-Foundation layer used by the phase-plane and planar normal-form modules.
+Coordinates and norms on the planar state space `State 2 = EuclideanSpace ℝ (Fin 2)`, used by the
+phase-plane and planar normal-form modules.
 
-The planar state space is `State 2 = EuclideanSpace ℝ (Fin 2)` with coordinates `x 0`, `x 1`.
-`mk a b` is the state with `x 0 = a`, `x 1 = b`. The coordinate maps and the identification of
-the Fréchet derivative of a field with `Matrix.toEuclideanCLM A` from componentwise derivatives
-(`Dynamics.coord`, `Dynamics.hasFDerivAt_toEuclideanCLM_of_components`, any dimension) are in
-`theorem/Dynamics/Coordinates.lean`; this is the shape required by the linearization theorems
-`powerlib.Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`,
-`powerlib.Criteria.locallyExponentiallyStable_of_jacobian_fin_two`, etc.
-`toEuclideanCLM_apply_zero`, `toEuclideanCLM_apply_one` read off the two components of a
-`2 × 2` matrix acting on a planar state.
-These are calculus utilities only; no model is fixed here (no model family, all results
-public foundation support).
+Scope.
+* The planar state space is `State 2 = EuclideanSpace ℝ (Fin 2)` with coordinates `x 0`, `x 1`.
+  The coordinate maps and the identification of the Fréchet derivative of a field with
+  `Matrix.toEuclideanCLM A` from componentwise derivatives (`Dynamics.coord`,
+  `Dynamics.hasFDerivAt_toEuclideanCLM_of_components`, any dimension) are in
+  `theorem/Dynamics/Coordinates.lean`; this is the shape required by the linearization theorems
+  `powerlib.Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`,
+  `powerlib.Criteria.locallyExponentiallyStable_of_jacobian_fin_two`, etc.
+* These are calculus utilities only; no model is fixed here (no model family, all results
+  public foundation support).
+
+Source: library infrastructure (no work-sync note).
+
+Results.
+* `mk a b` is the state with `x 0 = a`, `x 1 = b` (`mk_apply_zero`, `mk_apply_one`, `mk_coords`,
+  `ext_iff'`, `mk_eq_iff`, `mk_sub`); norms `norm_sq_eq`, `norm_mk_sq`, `norm_mk`.
+* `toEuclideanCLM_apply_zero`, `toEuclideanCLM_apply_one` read off the two components of a
+  `2 × 2` matrix acting on a planar state; `hasDerivWithinAt_iff_components` differentiates a
+  planar curve componentwise.
 -/
 
 noncomputable section

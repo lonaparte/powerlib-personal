@@ -3,45 +3,47 @@ import theorem.Attributes
 
 /-! # Weighted graph Laplacians and grounded Laplacians
 
-Foundation layer for network models. A network is a finite node set `ι` with an
-edge-weight matrix `W` (`W i j ≥ 0`, symmetric where stated); the diagonal of `W`
-is irrelevant. The Laplacian is `L = diag(∑ⱼ Wᵢⱼ) - W`, so
-`(L x)ᵢ = ∑ⱼ Wᵢⱼ (xᵢ - xⱼ)`. A grounding vector `g ≥ 0` (shunt conductance or,
-for the frequency divider, the coupling to machine buses) gives the grounded
-Laplacian `L + diag g`.
+Static foundation for network models: weighted and grounded Laplacians and the discrete minimum
+principle, no-shunt bus admittance matrices, the signed incidence matrix and Kron reduction.
 
-Sources: work-sync `theory/T-synchronization-manifold.md` §1.1 (weighted
-Laplacian, `L𝟙 = 0`, positive semidefinite), `theory/T-local-frequency.md` §1.4 and
-§2.7 (nonsingularity of `B_bb`), `theory/T-telegrapher-bergeron.md` §1.4.1 (EMTP
-nodal matrix). The key fact proved here, absent from Mathlib, is the discrete
-minimum principle: if every node reaches a grounded node through positive-weight
-edges then `(L + diag g) x ≥ 0` forces `x ≥ 0`. Consequences: `L + diag g` is
-invertible, its inverse is entrywise nonnegative (the M-matrix special case), and,
-for symmetric weights, it is positive definite exactly when every node has such a
-path to ground. On `Fin (n + 1)` the complex row identity `∑ₗ Lₖₗ ζₗ = ∑ₗ Wₖₗ (ζₖ − ζₗ)`
-(`complex_laplacian_sum`) and, for symmetric weights, `∑ₖ ∑ₗ Wₖₗ (ζₖ − ζₗ) = 0`
-(`complex_laplacian_total`) are the eigenvector manipulations of the networked swing Jacobian.
+Scope.
+* A network is a finite node set `ι` with an edge-weight matrix `W` (`W i j ≥ 0`, symmetric
+  where stated); the diagonal of `W` is irrelevant. The Laplacian is `L = diag(∑ⱼ Wᵢⱼ) - W`, so
+  `(L x)ᵢ = ∑ⱼ Wᵢⱼ (xᵢ - xⱼ)`. A grounding vector `g ≥ 0` (shunt conductance or, for the
+  frequency divider, the coupling to machine buses) gives the grounded Laplacian `L + diag g`.
+* Connectivity is the reflexive-transitive closure of the relation `0 < W i j`.
+* These are algebraic statements; no power-flow or dynamic claim is made here (the lossless
+  power-flow map and its Laplacian Jacobian are in `theorem/Network/PowerFlow.lean`).
 
-A bus admittance matrix built from branch admittances with no shunt (ground) branch
-(`ybusNoShunt`) is Laplacian-type, `Y 𝟏 = 0`, hence singular for every topology
-(`ybusNoShunt_det_eq_zero`; two-bus counterexample `ybus_two_bus_singular`, the correction of
-`theory/T-dae-systems.md` §2.1).
+Source: work-sync `theory/T-synchronization-manifold.md` §1.1 (weighted Laplacian, `L𝟙 = 0`,
+positive semidefinite), `theory/T-local-frequency.md` §1.4 and §2.7 (nonsingularity of `B_bb`),
+`theory/T-telegrapher-bergeron.md` §1.4.1 (EMTP nodal matrix), `theory/T-dae-systems.md` §2.1
+(no-shunt admittance matrix), `theory/T-ph.md` §1.6.bis (signed incidence),
+`theory/T-power-system-ph.md` §1.7 (Kron reduction).
 
-The signed node–branch incidence matrix `signedIncidence tail head` of a directed multigraph
-(`+1` at the tail, `−1` at the head) satisfies KVL, `(𝓑ᵀ v)_k = v(tail k) − v(head k)`
-(`signedIncidence_transpose_mulVec`), and every column sums to zero (`signedIncidence_col_sum`);
-source `theory/T-ph.md` §1.6.bis. The RL-network pH models built on it are in
-`theorem/PH/Models/RLNetwork.lean`, the multi-area tie-line graph in
-`theorem/Frequency/LFCNetwork.lean`.
-
-Kron reduction (`theory/T-power-system-ph.md` §1.7): eliminating internal nodes with zero
-injection from a linear resistive network `Y` gives `i_b = (Y_bb − Y_bi Y_ii⁻¹ Y_ib) v_b`
-(`kron_current`), conserves the port power (`kron_power`), and (Mathlib Schur complement) keeps
-a PSD network PSD (`kron_posSemidef`).
-
-Connectivity is the reflexive-transitive closure of the relation `0 < W i j`.
-These are algebraic statements; no power-flow or dynamic claim is made here (the lossless
-power-flow map and its Laplacian Jacobian are in `theorem/Network/PowerFlow.lean`).
+Results.
+* Discrete minimum principle (absent from Mathlib): if every node reaches a grounded node
+  through positive-weight edges then `(L + diag g) x ≥ 0` forces `x ≥ 0`
+  (`nonneg_of_grounded_mulVec_nonneg`). Consequences: `L + diag g` is invertible
+  (`grounded_isUnit`, `grounded_det_ne_zero`), its inverse is entrywise nonnegative (the
+  M-matrix special case, `grounded_inv_nonneg`), and, for symmetric weights, it is positive
+  definite exactly when every node has such a path to ground (`grounded_posDef_iff`).
+* On `Fin (n + 1)` the complex row identity `∑ₗ Lₖₗ ζₗ = ∑ₗ Wₖₗ (ζₖ − ζₗ)`
+  (`complex_laplacian_sum`) and, for symmetric weights, `∑ₖ ∑ₗ Wₖₗ (ζₖ − ζₗ) = 0`
+  (`complex_laplacian_total`) are the eigenvector manipulations of the networked swing Jacobian.
+* A bus admittance matrix built from branch admittances with no shunt (ground) branch
+  (`ybusNoShunt`) is Laplacian-type, `Y 𝟏 = 0`, hence singular for every topology
+  (`ybusNoShunt_det_eq_zero`; two-bus counterexample `ybus_two_bus_singular`, the correction of
+  `theory/T-dae-systems.md` §2.1).
+* The signed node–branch incidence matrix `signedIncidence tail head` of a directed multigraph
+  (`+1` at the tail, `−1` at the head) satisfies KVL, `(𝓑ᵀ v)_k = v(tail k) − v(head k)`
+  (`signedIncidence_transpose_mulVec`), and every column sums to zero
+  (`signedIncidence_col_sum`). The RL-network pH models built on it are in
+  `theorem/PH/Models/RLNetwork.lean`, the multi-area tie-line graph in
+  `theorem/Frequency/LFCNetwork.lean`.
+* Kron reduction: eliminating internal nodes with zero injection from a linear resistive network
+  `Y` gives `i_b = (Y_bb − Y_bi Y_ii⁻¹ Y_ib) v_b` (`kron_current`), conserves the port power
+  (`kron_power`), and (Mathlib Schur complement) keeps a PSD network PSD (`kron_posSemidef`).
 -/
 
 noncomputable section

@@ -6,7 +6,8 @@ import theorem.Dynamics.Degenerate.WeakFocus
 
 /-! # Rate-coupled GFL PLL at the boundary angle: Hopf normal form
 
-**Model boundary.** The model of `theorem/GFL/RatePLL.lean`, unchanged: a single
+Model boundary.
+The model of `theorem/GFL/RatePLL.lean`, unchanged: a single
 grid-following converter on an infinite bus of amplitude `V` behind a lossless inductive line
 `X_g = ω_s L_g`; three-phase balanced averaged dq model in the PLL frame, continuous time. States,
 in order: `θ` (PLL error angle), `x` (PLL integrator). Ideal current loop with the d-axis current
@@ -16,7 +17,13 @@ limiter, dc link, outer loop, line resistance or `L_f`. Every parameter is an ar
 in `RatePLL.family`. All statements are local, about the full nonlinear field translated to the
 selected point `(θ*, 0)` (`RatePLL.Model.field`).
 
-**Normal form (static).** Write `A = V cos θ*`, `B = V sin θ*`, `b = L_g I_d`, `α = k_i/D₀`,
+Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
+notes/concepts/contrast-conclusions.md` (推论二 `tan θ_H`, 推论五 GFL 速率耦合 Hopf 全参数亚临界,
+lyap1 网格); model `GFLRate` in `.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`.
+Normal form and `κ` derived in SymPy (Kuznetsov's planar `l₁` formula cross-checked numerically).
+
+Results.
+Normal form (static). Write `A = V cos θ*`, `B = V sin θ*`, `b = L_g I_d`, `α = k_i/D₀`,
 `β = k_p/D₀`, `φ = θ − θ*`, `w = x − b φ` and `N(φ) = A(φ − sin φ) + B(1 − cos φ)` (`hopfN`). At a
 balanced point the corrected integrator obeys `ẇ = −Aφ + N(φ)` exactly, and on the boundary
 `tr J = 0` (i.e. `k_i b = k_p A`, the angle `tan θ* = ω_s k_p/k_i` of `RatePLL`) the angle obeys
@@ -33,7 +40,7 @@ polynomials and their identities are generic, in `Dynamics.Degenerate`
   coordinates `(φ, w)`.
 Since `α/A = det J/A² > 0`, `κ > 0 ⇔ k_p k_i < 0`.
 
-**Connection conclusions.**
+Family and connection conclusions.
 * `mem_den_locallyAsymptoticallyStable_of_hopf`: on the boundary (balanced, `D₀ ≠ 0`, `tr J = 0`,
   `det J > 0`) with `k_p k_i < 0` the point is locally asymptotically stable — a supercritical
   Hopf point, decided by `hopfW` through `Dynamics.localAsymptoticStable_of_eventually_lyapunov`.
@@ -56,14 +63,9 @@ Since `α/A = det J/A² > 0`, `κ > 0 ⇔ k_p k_i < 0`.
   `tr J = 0`, `det J = 1`), locally asymptotically stable
   (`supercriticalPLL_mem_den_locallyAsymptoticallyStable`) with a trace-zero Jacobian.
 
-Scope: the source's numerical finding that the rate-coupled Hopf is subcritical over its whole
+Scope note: the source's numerical finding that the rate-coupled Hopf is subcritical over its whole
 (physical) parameter grid is proved here for every `k_p k_i > 0`; it does not extend to gains of
 opposite signs, which give a supercritical boundary.
-
-Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
-notes/concepts/contrast-conclusions.md` (推论二 `tan θ_H`, 推论五 GFL 速率耦合 Hopf 全参数亚临界,
-lyap1 网格); model `GFLRate` in `.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`.
-Normal form and `κ` derived in SymPy (Kuznetsov's planar `l₁` formula cross-checked numerically).
 -/
 
 noncomputable section

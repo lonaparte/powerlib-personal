@@ -1,15 +1,15 @@
 import theorem.CurrentControl.PILoop
 import theorem.Criteria.ComplexQuadratic
 
-/-! # Decoupled dq PI current loop with inductance mismatch (domain)
+/-! # Decoupled dq PI current loop with inductance mismatch
 
 Model boundary.
 * System: the two-axis (dq) converter current loop through one series R–L filter, in a frame
   rotating at the constant speed `ω` (PLL locked, `ω̂ = ω`: case A of T-decoupling-control
   §1.4), closed by per-axis PI control plus ideal PCC-voltage feedforward plus cross-decoupling
   computed with the controller's inductance estimate `L̂`. Continuous time, linear.
-* State order `(i_d, i_q, ξ_d, ξ_q) ∈ EuclideanSpace ℝ (Fin 4)`; currents IN-positive (`conventions.md` §D1);
-  `ξ_k = ∫ (i_k* − i_k) dt`.
+* State order `(i_d, i_q, ξ_d, ξ_q) ∈ EuclideanSpace ℝ (Fin 4)`; currents IN-positive
+  (`conventions.md` §D1); `ξ_k = ∫ (i_k* − i_k) dt`.
 * Plant (T-decoupling-control §1.2, true inductance `L > 0`):
   `L di_d/dt = v_d − v^conv_d − R i_d + ω L i_q`, `L di_q/dt = v_q − v^conv_q − R i_q − ω L i_d`.
 * Controller: `v^conv = v^PI + v^ff + v^dec` with `v^PI_k = −(Kp (i_k* − i_k) + Ki ξ_k)`,
@@ -18,6 +18,9 @@ Model boundary.
 * Inputs: references `(i_d*, i_q*)` and the PCC voltage `v` (which cancels exactly); the plant
   of the closed loop has the references as its two ports and the currents as outputs.
 * Excluded: PLL dynamics and `ω̂ ≠ ω`, feedforward low-pass, delay, PWM, limits, DC link.
+
+Source: work-sync `theory/T-decoupling-control.md` §1.2–§1.4, §2.2;
+`theory/T-gfl-control.md` §1.4.3–§1.4.4.
 
 Results.
 * `model_field`: the closed loop is `L i' = Kp (i* − i) + Ki ξ − R i − j ω ΔL i` in complex
@@ -29,8 +32,7 @@ Results.
 * `equilibrium_current` (static): every equilibrium has `i = i*` (the integrators absorb the
   mismatch bias).
 
-## Family and connection conclusions
-
+Family and connection conclusions.
 `family : Family MismatchParams Spectral.Requirement 4 2` reads a decoupled loop as the port
 system of its closed-loop plant (`Family.IsLinear`, `Spectral.linearFamily`); requirements: the
 monic coefficients `(R + Kp)/L`, `Ki/L` positive (`stable`) or `(R + Kp)/L` negative
@@ -39,7 +41,7 @@ monic coefficients `(R + Kp)/L`, `Ki/L` positive (`stable`) or `(R + Kp)/L` nega
   contraction carved out exactly.
 * `den_eq_base` (connection comparison): the attractive denotation of the mismatched family is
   the PI family's pulled back along `base` — the mismatch never changes the stability region.
-* `mem_den_iff` (formerly `exponentiallyStable_iff`): with `L > 0`, stable iff
+* `mem_den_iff`: with `L > 0`, stable iff
   `R + Kp > 0 ∧ Ki > 0`.
 * `tracks_reference` (`i → i*` for constant references) is a trajectory-level result outside the
   sentence language, kept as private implementation evidence.
@@ -48,9 +50,6 @@ Correction (T-decoupling-control §2.2 "ΔL ≠ 0 时 PI 仍能驱动稳态 i = 
 error needs closed-loop stability, which the note does not state. Here it is the exact premise
 `R + Kp > 0 ∧ Ki > 0`; without it the claim fails (`PIParams.mem_den_unstable_of_Ki_neg`, the
 `ΔL = 0` instance). The note's mismatch does not alter the stability region at all.
-
-Source: work-sync `theory/T-decoupling-control.md` §1.2–§1.4, §2.2;
-`theory/T-gfl-control.md` §1.4.3–§1.4.4.
 -/
 
 noncomputable section

@@ -6,39 +6,43 @@ import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-! # Subcritical-Hopf guard potential: exact identities
 
-Foundation layer. Every statement is an exact real-algebra or one-variable calculus identity
-about the explicit scalar functions below; none of them is a stability, escape-time or
-first-passage theorem about a power-electronic system.
+Exact real-algebra and one-variable calculus identities about the explicit scalar guard
+potential; none of them is a stability, escape-time or first-passage theorem about a
+power-electronic system.
 
-Objects (all real, one-dimensional, continuous time):
-* `guardDrift α l₁ r = -α r + l₁ r³` — the truncated radial normal form `ṙ = -α r + l₁ r³` of a
-  subcritical Hopf point in normal-form amplitude coordinates, with `α = -Re λ > 0` and
-  `l₁ = Re c₁ > 0`. No higher-order (quintic) normal-form term, no noise, no forcing.
-* `guardPotential α l₁ r = α r²/2 - l₁ r⁴/4`, the potential with `ṙ = -U'(r)`: the well is at
-  `r = 0`, the barrier top at `guardRadius α l₁ = √(α/l₁)`.
-* `barrierHeight α l₁ = α²/(4 l₁)` and the asymptotic prefactor `guardPrefactor`.
-
-Results:
-* `ṙ = -U'(r)`, `U'(r_c) = 0`, `ΔU = U(r_c) - U(0) = α²/(4 l₁)`, `U''(r_c) = -2α`,
-  `U'''(r) = -6 l₁ r` (so `U'''(r_c) ≠ 0`, the endpoint hypothesis of the endpoint Laplace
-  expansion), and `U(u r_c) - U(r_c) = -ΔU (u² - 1)²`, which equals `-9 ΔU` at `u = 2`.
-* The unstable Floquet exponent of the truncated normal form at the cycle radius:
-  `d(ṙ)/dr |_{r_c} = +2α`, independent of `l₁` (the leading-order `κ = 2α`).
-* `ln T = X + ln P` with `P = (√π/2) √(D̃ l₁)/α² = √π/(4 α √X)` for `X = ΔU/D̃`.
-* Lifetime sensitivity: for `T(α) = c α⁻² e^{α²/(4 l D)}` and `X = α²/(4 l D)`,
-  `T(α(1+ε))/T(α) = e^{X[(1+ε)²−1]}/(1+ε)²` (`lifetime_ratio`); at `X = 10`, `ε = 0.1` it lies
-  in `(6.74, 6.76)`, versus `8.16 < e^{2.1} < 8.17` for the exponential factor alone
-  (`lifetime_ratio_num`, `exp_tenth_bounds`, `exp_two_point_one_bounds`; work-sync
-  `theory/T-cramer-rao-bound.md` §1.6).
-
-The amplitude coordinate and the factor conventions are those of the source notes; the
-relation between this scalar normal form and any concrete converter model is not
-formalized here.
+Scope.
+* All objects are real, one-dimensional, continuous time:
+  * `guardDrift α l₁ r = -α r + l₁ r³` — the truncated radial normal form `ṙ = -α r + l₁ r³` of a
+    subcritical Hopf point in normal-form amplitude coordinates, with `α = -Re λ > 0` and
+    `l₁ = Re c₁ > 0`. No higher-order (quintic) normal-form term, no noise, no forcing.
+  * `guardPotential α l₁ r = α r²/2 - l₁ r⁴/4`, the potential with `ṙ = -U'(r)`: the well is at
+    `r = 0`, the barrier top at `guardRadius α l₁ = √(α/l₁)`.
+  * `barrierHeight α l₁ = α²/(4 l₁)` and the asymptotic prefactor `guardPrefactor`.
+* The amplitude coordinate and the factor conventions are those of the source notes; the
+  relation between this scalar normal form and any concrete converter model is not formalized
+  here.
 
 Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.2, §1.3, §1.5;
 projects/basin-guard/notes/concepts/stochastic-drive.md §3–§4 (the same `ΔU = α²/(4 l₁)`,
 proved once here); projects/gfl-gfm-stability-tree/notes/concepts/frozen-and-basin.md
-("κ 领头阶与潜伏对数律": `d ṙ/dr |_{r_c} = +2α`).
+("κ 领头阶与潜伏对数律": `d ṙ/dr |_{r_c} = +2α`); theory/T-cramer-rao-bound.md §1.6 (lifetime
+sensitivity).
+
+Results.
+* `hasDerivAt_guardPotential`, `guardDrift_guardRadius`, `guardPotential_barrier`,
+  `deriv2_guardPotential_guardRadius`, `deriv3_guardPotential_guardRadius_ne_zero`,
+  `guardPotential_scaled`, `guard_tail_cutoff_at_two` — `ṙ = -U'(r)`, `U'(r_c) = 0`,
+  `ΔU = U(r_c) - U(0) = α²/(4 l₁)`, `U''(r_c) = -2α`, `U'''(r) = -6 l₁ r` (so `U'''(r_c) ≠ 0`,
+  the endpoint hypothesis of the endpoint Laplace expansion), and
+  `U(u r_c) - U(r_c) = -ΔU (u² - 1)²`, which equals `-9 ΔU` at `u = 2`.
+* `deriv_guardDrift_guardRadius` — the unstable Floquet exponent of the truncated normal form at
+  the cycle radius: `d(ṙ)/dr |_{r_c} = +2α`, independent of `l₁` (the leading-order `κ = 2α`).
+* `guardPrefactor_eq`, `log_prefactor_mul_exp` — `ln T = X + ln P` with
+  `P = (√π/2) √(D̃ l₁)/α² = √π/(4 α √X)` for `X = ΔU/D̃`.
+* `lifetime_ratio` — lifetime sensitivity: for `T(α) = c α⁻² e^{α²/(4 l D)}` and
+  `X = α²/(4 l D)`, `T(α(1+ε))/T(α) = e^{X[(1+ε)²−1]}/(1+ε)²`; at `X = 10`, `ε = 0.1` it lies
+  in `(6.74, 6.76)`, versus `8.16 < e^{2.1} < 8.17` for the exponential factor alone
+  (`lifetime_ratio_num`, `exp_tenth_bounds`, `exp_two_point_one_bounds`).
 -/
 
 noncomputable section

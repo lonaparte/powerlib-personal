@@ -4,8 +4,11 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import theorem.PH.Nonlinear
 import theorem.Dynamics.Linearization
 
-/-! Smoothness and linearization of the zero-input nonlinear port-Hamiltonian field
-`f(x) = (J(x) − R(x)) ∇H(x)` of `powerlib.PH.NonlinearModel`.
+/-! # Linearization of nonlinear port-Hamiltonian systems
+
+Smoothness and linearization of the zero-input nonlinear port-Hamiltonian field
+`f(x) = (J(x) − R(x)) ∇H(x)` of `powerlib.PH.NonlinearModel`, and the Lyapunov indirect method
+at a critical point of `H`.
 
 Model boundary.
 * Same model as `theorem/PH/Nonlinear.lean`: state `State n`, continuous time, zero input
@@ -14,26 +17,36 @@ Model boundary.
 * Linearization point: a critical point `x*` of `H` (`∇H(x*) = 0`), hence an equilibrium.
   With `Q` the derivative of `∇H` at `x*` (the Hessian), the Jacobian of `f` at `x*` is
   `A = (J(x*) − R(x*)) Q`: the derivatives of `J` and `R` drop out because `∇H(x*) = 0`.
-* Conclusions: local exponential stability of `x*` when `A` is Hurwitz, and instability of
-  `x*` when `A` has an eigenvalue with positive real part, both for the full nonlinear
-  zero-input field (Lyapunov indirect method, via `theorem/Hurwitz.lean`).
 * Excluded: nonzero constant inputs / shifted Hamiltonians, critical points that are not
   equilibria of a forced system, PBC, delay, PWM, PLL, saturation.
 
 Source: work-sync `theory/T-ph.md` §1.10 (linearization (1.15), `A_ph = (J* − R*) Q`
 with `Q = ∇²H(x*)`).
-Correction: §1.10 requires `Q ≻ 0` to call (1.15) the linearization; the Jacobian identity
-holds for any critical point and any Hessian `Q`. Definiteness of `Q` is only relevant for
-stability, and is not assumed by the Hurwitz / instability statements here.
 
-Family and connection conclusions. No family: `NonlinearModel` is the generic framework of
-`theorem/PH/Nonlinear.lean`, which no family takes as its model type. The two former
-`@[powerlib_domain]` theorems (`locallyExponentiallyStable_of_isHurwitz`,
-`unstable_of_eigenvalue_re_pos`) are generic implications for every nonlinear pH system and are
-relabeled `@[powerlib_foundation]` (the indirect method, LeanForControl's linearization theorems
-through `Dynamics.Linearization`). Concrete families built on `NonlinearModel` (for example the
-classical machine in `theorem/Synchronous/PH.lean`) publish their connection conclusions through
-`Family.IsNonlinearPH.mem_den_flow_shift`.
+Results (generic foundation).
+* `NonlinearModel.contDiff_field`, `NonlinearModel.contDiff_zeroInputField` — entrywise `Cᵏ`
+  coefficients and a `Cᵏ` gradient give a `Cᵏ` field.
+* `NonlinearModel.hasFDerivAt_zeroInputField_of_dH_eq_zero`,
+  `NonlinearModel.fderiv_zeroInputField_of_dH_eq_zero` — the Jacobian at a critical point is
+  `(J(x*) − R(x*)) Q`.
+* `NonlinearModel.locallyExponentiallyStable_of_isHurwitz` — local exponential stability of
+  `x*` when `A` is Hurwitz; `NonlinearModel.unstable_of_eigenvalue_re_pos` — instability of `x*`
+  when `A` has an eigenvalue with positive real part; both for the full nonlinear zero-input
+  field (Lyapunov indirect method, LeanForControl's linearization theorems through
+  `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`,
+  `Dynamics.unstable_of_jacobian_eigenvalue_re_pos` in `theorem/Dynamics/Linearization.lean`).
+
+Family and connection conclusions.
+* No family: `NonlinearModel` is the generic framework of `theorem/PH/Nonlinear.lean`, which no
+  family takes as its model type. The two stability theorems above are generic implications for
+  every nonlinear pH system (foundation). Concrete families built on `NonlinearModel` (for
+  example the classical machine in `theorem/Synchronous/PH.lean`) publish their connection
+  conclusions through `Family.IsNonlinearPH.mem_den_flow_shift`.
+
+Correction.
+* §1.10 requires `Q ≻ 0` to call (1.15) the linearization; the Jacobian identity holds for any
+  critical point and any Hessian `Q`. Definiteness of `Q` is only relevant for stability, and is
+  not assumed by the Hurwitz / instability statements here.
 -/
 
 noncomputable section

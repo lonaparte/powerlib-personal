@@ -3,35 +3,41 @@ import theorem.Attributes
 import Mathlib.Analysis.Matrix.Order
 import theorem.Stochastic.LyapunovCovariance
 
-/-! # Algebra of the Itô generator for stochastic port-Hamiltonian systems (foundation)
+/-! # Algebra of the Itô generator for stochastic port-Hamiltonian systems
 
-Source: work-sync `theory/T-sph.md` §1.2 (generator `𝓛φ = fᵀ∇φ + ½ tr(h hᵀ ∇²φ)`),
+Algebraic identities and inequalities for the Itô generator expression of a stochastic
+port-Hamiltonian system: the energy balance, the weak-passivity criterion, the merged noise
+covariance and the fluctuation–dissipation relation of a linear RLC.
+
+Scope.
+* The generator is treated as the **second-order differential expression**
+  `genL f h g K = f ⬝ g + ½ tr(h hᵀ K)` evaluated at one state, with `g = ∇φ(x)`, `K = ∇²φ(x)`.
+  All results are algebraic identities / inequalities about this expression and about matrices.
+* That `genL` is the generator of the solution of an Itô SDE (Itô's formula), and any
+  expectation statement such as (1.7)/(1.8), are **not** formalized here.
+
+Source: work-sync theory/T-sph.md §1.2 (generator `𝓛φ = fᵀ∇φ + ½ tr(h hᵀ ∇²φ)`),
 §1.3 (energy balance `𝓛H = uᵀy − ∇Hᵀ R ∇H + ½ tr(h hᵀ ∇²H)`, eq. (1.5)–(1.6)),
 §1.4 (pointwise weak-passivity criterion (1.9)), §1.5 (Itô/Stratonovich), §1.13
 (Cholesky merge `Σ_tot = h_N h_Nᵀ + B_S σ_S σ_Sᵀ B_Sᵀ`), §2.7(a) (linear RLC, noise resonance).
 
-Scope (Rules §3).  The generator is treated as the **second-order differential expression**
-`genL f h g K = f ⬝ g + ½ tr(h hᵀ K)` evaluated at one state, with `g = ∇φ(x)`, `K = ∇²φ(x)`.
-All results are algebraic identities / inequalities about this expression and about matrices.
-That `genL` is the generator of the solution of an Itô SDE (Itô's formula), and any expectation
-statement such as (1.7)/(1.8), are **not** formalized here.
-
-Contents.
-* `genL_pH`: with `f = (J − R) g + G u` and `J` skew, `genL = u ⬝ y − g ⬝ R g + Δ`,
+Results.
+* `genL_pH` — with `f = (J − R) g + G u` and `J` skew, `genL = u ⬝ y − g ⬝ R g + Δ`,
   `y = Gᵀ g`, `Δ = ½ tr(h hᵀ K)`.
-* `itoCorrection_nonneg`: `K ⪰ 0 ⇒ Δ ≥ 0`; `genL_le_supply_iff`: the pointwise criterion
+* `itoCorrection_nonneg` — `K ⪰ 0 ⇒ Δ ≥ 0`; `genL_le_supply_iff`: the pointwise criterion
   `𝓛H ≤ uᵀy ⇔ Δ ≤ ∇Hᵀ R ∇H`.
-* `exists_factor_of_posSemidef`: every `Σ ⪰ 0` is `σ̃ σ̃ᵀ` (continuous functional calculus
+* `exists_factor_of_posSemidef` — every `Σ ⪰ 0` is `σ̃ σ̃ᵀ` (continuous functional calculus
   square root, i.e. the spectral construction); `mergedCov_eq`: the explicit block factor
   `[h_N | B_S σ_S]` of `Σ_tot`; `mergedCov_posSemidef`.
-* `rlc_fdt`: linear pH `A = (J − R) Q`, `h hᵀ = 2 T R`, `Q ≻ 0` ⇒ `P = T Q⁻¹` solves
+* `rlc_fdt` — linear pH `A = (J − R) Q`, `h hᵀ = 2 T R`, `Q ≻ 0` ⇒ `P = T Q⁻¹` solves
   `A P + P Aᵀ + h hᵀ = 0`, and `½ tr(Q P) = (n/2) T` (`= T` for the two-state RLC).
 
-Correction (T-sph §1.5).  The note says "the diffusion `h` is the same in (1.1) and (1.11)
-⇔ `∂ₓh · h = 0`".  In the Itô ↔ Stratonovich conversion the **diffusion coefficient is always
-the same** `h`; only the **drift** changes, by `c_k = ½ Σ_{j,ℓ} h_{ℓj} ∂_ℓ h_{kj}`.  Hence the
-correct statement is "the two drifts coincide ⇔ `c = 0`" (`itoDrift_eq_iff`); `∂ₓh·h = 0`
-is the condition for equal *drifts*, not for equal diffusions.
+Corrections.
+* T-sph §1.5: the note says "the diffusion `h` is the same in (1.1) and (1.11) ⇔ `∂ₓh · h = 0`".
+  In the Itô ↔ Stratonovich conversion the **diffusion coefficient is always the same** `h`;
+  only the **drift** changes, by `c_k = ½ Σ_{j,ℓ} h_{ℓj} ∂_ℓ h_{kj}`. Hence the correct
+  statement is "the two drifts coincide ⇔ `c = 0`" (`itoDrift_eq_iff`); `∂ₓh·h = 0` is the
+  condition for equal *drifts*, not for equal diffusions.
 -/
 
 noncomputable section

@@ -3,13 +3,20 @@ import dependencies.Mathlib
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 
-/-! # Adaptive fast/slow internal-voltage-source switching signal (foundation)
+/-! # Adaptive fast/slow internal-voltage-source switching signal
 
+Trigonometric facts (foundation) about the switching signal of the adaptive IVS scheme; the
+switching logic itself is not modelled.
+
+Model boundary.
 Wu–Wang (2023) current magnitude of a grid-forming converter before current limiting
 (work-sync T-dc-voltage-gfm §1.7): internal voltage `E∠δ` behind the total reactance
 `X = X_f + X_g` against the grid `V_g∠0`,
-`I_omag(δ) = √(E² + V_g² − 2 E V_g cos δ)/X` (`iMag`).
+`I_omag(δ) = √(E² + V_g² − 2 E V_g cos δ)/X` (`iMag`); a static formula, no converter dynamics.
 
+Source: work-sync `theory/T-dc-voltage-gfm.md` §1.7.
+
+Results.
 * `iMag_hasDerivAt`: `dI_omag/dδ = E V_g sin δ / (X² I_omag)` wherever `I_omag > 0` (the
   note's derivative).
 * `iMag_strictMonoOn`: for `E, V_g, X > 0`, `I_omag` is strictly increasing in `δ` on
@@ -19,10 +26,6 @@ Wu–Wang (2023) current magnitude of a grid-forming converter before current li
   every `V_g`, with equality at `V_g = E cos δ_th` (`iMag_at_worstCase`): the note's threshold
   `I_omag,th,min = E sin δ_th/(X_f + X_g)` is exactly the minimum over the grid voltage.
   (It is attained by a positive grid voltage iff `cos δ_th > 0`, i.e. `δ_th < π/2`.)
-
-These are trigonometric facts about the formula; the switching logic itself is not modelled.
-
-Source: work-sync `theory/T-dc-voltage-gfm.md` §1.7.
 -/
 
 noncomputable section

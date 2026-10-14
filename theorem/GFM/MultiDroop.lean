@@ -15,13 +15,17 @@ Model boundary.
   `P_f(t) ≡ P_{f0}` — an equilibrium of the closed loop in the frame rotating with the common
   frequency `ω`.
 
-Results: the rotating curve's initial state is a relative equilibrium — the field there is the
+Source: work-sync `theory/T-droop-control.md` §1.6–§1.8; `theory/T-gfm-control.md` §2.3.
+
+Results.
+The rotating curve's initial state is a relative equilibrium — the field there is the
 uniform rotation `(ω·1, 0)` — iff `P_{f0} = P(θ₀)` and every unit's droop frequency equals `ω`
 (`relativeEquilibrium_iff`); then every unit obeys `ΔP_k = −K_{R,k} (ω − ω_s)`
 (`synchronous_sharing`), the common frequency is `ω = ω_s − (P_L − Σ P*)/Σ K` (consensus
 formula), and the per-rating shares are equal iff `K_{R,k} ∝ S_{N,k}`.
 
-Family and connection conclusions: none.  A synchronous steady state is a relative equilibrium
+Family and connection conclusions.
+None.  A synchronous steady state is a relative equilibrium
 (an equilibrium of the closed loop in the frame rotating with `ω`), characterized by static
 conditions exactly as an equilibrium set is characterized; the sharing, frequency and
 proportional-sharing formulas take this static condition as their premise and are static
@@ -29,8 +33,6 @@ evidence on the model (foundation), not connection conclusions.  That the rotati
 a solution of the field (`synchronous_solution_iff`) is trajectory-level and kept as private
 implementation evidence (Rules §3a).  No stability of the synchronous state is claimed (the
 multi-machine closed loop has no family in the library, and its stability is not formalized).
-
-Source: work-sync theory/T-droop-control.md §1.6–§1.8; theory/T-gfm-control.md §2.3.
 -/
 
 noncomputable section

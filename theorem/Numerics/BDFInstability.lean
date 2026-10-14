@@ -3,24 +3,30 @@ import theorem.Criteria.SchurCohn
 
 /-! # Zero-instability of BDF`k` for every `k ≥ 7`
 
-Foundation layer (static algebra of the methods' coefficients; no time, no trajectories).
+The first characteristic polynomial of the `k`-step BDF has a root outside the closed unit disk
+for every `k ≥ 7`, so these methods are not zero-stable.
 
-Model boundary: the `k`-step linear multistep method `Σᵢ αᵢ x_{n+i} = h Σᵢ βᵢ f_{n+i}` of
-`theorem/Numerics/BDF.lean` with exact rational coefficients. Its first characteristic
-polynomial is `ρ(ζ) = Σᵢ αᵢ ζⁱ` over ℂ (`LMM.rho`), and the Dahlquist root condition
-(`LMM.RootCondition`) requires every root of `ρ` to lie in the closed unit disk, with the roots
-on the unit circle simple (`ρ'(ζ) ≠ 0`, `LMM.rhoDeriv`). The root condition is the algebraic
-definition of zero-stability; its equivalence with boundedness of the solutions of the
-homogeneous recurrence (and Dahlquist's equivalence theorem) is not formalized here.
+Model boundary.
+* Static algebra of the methods' coefficients; no time, no trajectories.
+* The `k`-step linear multistep method `Σᵢ αᵢ x_{n+i} = h Σᵢ βᵢ f_{n+i}` of
+  `theorem/Numerics/BDF.lean` with exact rational coefficients. Its first characteristic
+  polynomial is `ρ(ζ) = Σᵢ αᵢ ζⁱ` over ℂ (`LMM.rho`), and the Dahlquist root condition
+  (`LMM.RootCondition`) requires every root of `ρ` to lie in the closed unit disk, with the roots
+  on the unit circle simple (`ρ'(ζ) ≠ 0`, `LMM.rhoDeriv`). The root condition is the algebraic
+  definition of zero-stability; its equivalence with boundedness of the solutions of the
+  homogeneous recurrence (and Dahlquist's equivalence theorem) is not formalized here.
+* The `k`-step BDF has `σ(ζ) = β_k ζ^k` and `ρ_k(ζ) = β_k Σ_{j=1}^{k} (1/j) ζ^{k-j} (ζ - 1)^j`
+  with `β_k = 1 / H_k`, `H_k = Σ_{j=1}^{k} 1/j` (`bdfRhoSum k`, summed as `j + 1` over
+  `range k`; `bdfLMM k` is this method for every `k`, with `α_i = [ζⁱ] bdfRhoSum k / H_k`).
 
-The `k`-step BDF has `σ(ζ) = β_k ζ^k` and `ρ_k(ζ) = β_k Σ_{j=1}^{k} (1/j) ζ^{k-j} (ζ - 1)^j`
-with `β_k = 1 / H_k`, `H_k = Σ_{j=1}^{k} 1/j` (`bdfRhoSum k`, summed as `j + 1` over
-`range k`; `bdfLMM k` is this method for every `k`, with `α_i = [ζⁱ] bdfRhoSum k / H_k`).
+Source: work-sync theory/T-numerical-integration.md §1.5 (0-stability: all roots of `ρ` in
+`|ζ| ≤ 1`, those on `|ζ| = 1` simple), §1.6 (BDF table row "k ≥ 7: 0-不稳定") and §2.4
+("BDF7+ 不存在（0-不稳定）"). The note's claim is formalized for every `k ≥ 7`.
 
-Results:
-* Foundation (any LMM). The complex-polynomial root bounds used below — the Schur–Cohn
-  necessary condition `Criteria.norm_eval_le_of_roots_norm_le_one` and the second power-sum
-  bound `Criteria.norm_coeff_sq_sub_le_of_roots_norm_le_one` with its contrapositive
+Results.
+* Any LMM. The complex-polynomial root bounds used below — the Schur–Cohn necessary condition
+  `Criteria.norm_eval_le_of_roots_norm_le_one` and the second power-sum bound
+  `Criteria.norm_coeff_sq_sub_le_of_roots_norm_le_one` with its contrapositive
   `Criteria.exists_root_norm_gt_one_of_coeff` — are in `theorem/Criteria/SchurCohn.lean`.
   - `LMM.norm_rho_le_norm_rhoRev`: all roots of `ρ` in the closed unit disk (in particular a
     zero-stable method) ⇒ `‖ρ(w)‖ ≤ ‖ρ*(w)‖` for `0 < ‖w‖ ≤ 1`, where `ρ*(w) = Σᵢ αᵢ w^{k-i}`
@@ -40,9 +46,10 @@ Results:
     `1 < ‖ζ‖`; hence `bdfLMM_exists_root_norm_gt_one` and `bdfLMM_not_rootCondition`:
     **the `k`-step BDF is not zero-stable for every `k ≥ 7`**.
   - `bdf7`, `bdf8`, `bdf9`: the coefficient tables, each of exact order `k`
-    (`bdfk_exactOrder`), with `bdfk.rho = β_k · bdfRhoSum k` (`bdfk_rho_eq_sum`),
-    `bdfk_rho_eq_bdfLMM` (same `ρ` as `bdfLMM k`), `bdfk_exists_root_norm_gt_one`
-    (numerically `‖ζ‖ ≈ 1.0222, 1.1839, 1.3475`) and `bdfk_not_rootCondition`.
+    (`bdf7_exactOrder`), with `bdf7.rho = β_7 · bdfRhoSum 7` (`bdf7_rho_eq_sum`),
+    `bdf7_rho_eq_bdfLMM` (same `ρ` as `bdfLMM 7`), `bdf7_exists_root_norm_gt_one`
+    and `bdf7_not_rootCondition`, and likewise `bdf8_…`, `bdf9_…` (numerically the unstable
+    roots have `‖ζ‖ ≈ 1.0222, 1.1839, 1.3475` for `k = 7, 8, 9`).
 
 Proof method (exact, kernel-checked; no floating point, Rules §12). Two arguments.
 
@@ -67,13 +74,10 @@ Proof method (exact, kernel-checked; no floating point, Rules §12). Two argumen
 No argument principle, Rouché theorem or root asymptotics is needed: argument 1 only uses the
 top three coefficients of `ρ_k`.
 
-Not formalized: zero-stability of BDF1–BDF6 (all roots of `ρ_k` in the closed unit disk, the
-root `ζ = 1` simple), and exact order `k` of `bdfLMM k` for general `k` (checked for the tables
-`bdf7`–`bdf9` here and BDF1–BDF6 in `theorem/Numerics/BDF.lean`).
-
-Source: work-sync theory/T-numerical-integration.md §1.5 (0-stability: all roots of `ρ` in
-`|ζ| ≤ 1`, those on `|ζ| = 1` simple), §1.6 (BDF table row "k ≥ 7: 0-不稳定") and §2.4
-("BDF7+ 不存在（0-不稳定）"). The note's claim is formalized for every `k ≥ 7`. Foundation.
+Not formalized.
+* Zero-stability of BDF1–BDF6 (all roots of `ρ_k` in the closed unit disk, the root `ζ = 1`
+  simple), and exact order `k` of `bdfLMM k` for general `k` (checked for the tables
+  `bdf7`–`bdf9` here and BDF1–BDF6 in `theorem/Numerics/BDF.lean`).
 -/
 
 noncomputable section

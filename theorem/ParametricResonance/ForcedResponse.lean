@@ -4,10 +4,11 @@ import theorem.Dynamics.Coordinates
 
 /-! # Forced response of an LTI plant and the constant-Jacobian obstruction
 
-Foundation layer: generic linear-systems facts used by the parametric-resonance notes. No
+Generic linear-systems facts used by the parametric-resonance notes: the exact forced response of
+a Hurwitz LTI plant, and why a constant state Jacobian rules out parametric instability. No
 converter model is fixed here.
 
-Model boundary.
+Scope.
 * Forced LTI plant `ẋ = A₀ x + Re(b e^{jωt})` on `ℝⁿ = EuclideanSpace ℝ (Fin n)` (Euclidean
   norm, `A₀` acting as `Linear.op A₀`), constant real `A₀`, constant complex drive vector `b`
   (`b = f_u + jω f_{u̇}` in the source, which covers both the angle and the angle-rate entry),
@@ -17,40 +18,37 @@ Model boundary.
   `z` and all `u` (i.e. `D²_z f = 0` and `A₁ = ∂_u ∂_z f = 0`), with an arbitrary input signal
   `u : ℝ → U` and an arbitrary reference solution `z_orb` (for instance a forced periodic orbit);
   solutions are global: `∀ t, HasDerivAt z (f (z t) (u t)) t`.
-
-These solution conditions are written out in the statements (behavioural notions are defined only
-in the semantic layer, `theorem/Flow/Defs.lean`).
-
-Results.
-* `forcedOrbit_solves`: if `jω` is not an eigenvalue of `A₀`, `x₁(t) = Re(χ e^{jωt})` with
-  `χ = (jωI − A₀)⁻¹ b` solves the forced equation exactly (first-order forced response).
-* `forced_error_bound`: if `A₀` is Hurwitz, every solution converges exponentially to `x₁`
-  (`‖x(t) − x₁(t)‖ ≤ K e^{−rate t} ‖x(0) − x₁(0)‖`); `forced_periodic_unique`: `x₁` is the only
-  solution of period `T = 2π/ω` (unique attracting periodic solution).
-* `affine_of_const_jacobian`: a constant state Jacobian forces `f(z, u) = A₀ z + f(0, u)`;
-  the variational matrix along any orbit is `J(t) ≡ A₀` (`jacobian_along_orbit`), and
-  `orbitExponentiallyStable_iff`: every orbit is exponentially stable (all solutions converge to
-  it at a uniform exponential rate) iff `A₀` is Hurwitz — no parametric instability can arise.
-* `jacobian_additive_forcing`: for `f_ε(x, t) = f(x) + ε g(t)` the state Jacobian is `Df(x)` for
-  every `ε, t`; in particular the frozen Jacobian at a fixed operating point, and every quantity
-  computed from it (frozen damping ratio, frozen spectrum), does not depend on `ε` by
-  construction.
+* These solution conditions are written out in the statements (behavioural notions are defined
+  only in the semantic layer, `theorem/Flow/Defs.lean`).
 
 Source: work-sync projects/vsc-parametric-oscillation/notes/theory-draft.md §2.1.1
 (`x₁ = Re{χ e^{jω_p t}}`, `χ = (jω_pI − A₀)⁻¹ b`), §2.1.2 ("若系统在工作区内完全线性，并且扰动
 不直接改变 A₀，则 D²f = 0 且 A₁ = 0，于是 J(t) = A₀"); references/gfl-gfm-contrast/
-gfl-gfm-parametric-contrast.md §2. The uniqueness/attraction statement is the B-strengthening
-asked for in the task list. Additive forcing: projects/gfl-gfm-stability-tree/notes/concepts/
+gfl-gfm-parametric-contrast.md §2. The uniqueness/attraction statement is a strengthening asked
+for in the task list. Additive forcing: projects/gfl-gfm-stability-tree/notes/concepts/
 nonautonomous-criteria.md (加性强迫不进雅可比); projects/vsc-parametric-oscillation/references/
 gfl-gfm-contrast/archive/notes/concepts/forced-orbit-and-bandwidth.md (冻结 `ζ` 对 `ε` 恒定).
 
-Architecture: generic linear-systems facts with no model family; all results remain public
-foundation support. Decay and the converse (a uniform exponential bound on every global solution
-of `ẋ = A x` forces `A` Hurwitz; `LTI.exists_global_bound_of_isHurwitz`,
-`LTI.isHurwitz_of_global_bound` in `theorem/LTI/Decay.lean`) go through the linear stability hub
+Results.
+* `forcedOrbit_solves` — if `jω` is not an eigenvalue of `A₀`, `x₁(t) = Re(χ e^{jωt})` with
+  `χ = (jωI − A₀)⁻¹ b` solves the forced equation exactly (first-order forced response).
+* `forced_error_bound` — if `A₀` is Hurwitz, every solution converges exponentially to `x₁`
+  (`‖x(t) − x₁(t)‖ ≤ K e^{−rate t} ‖x(0) − x₁(0)‖`); `forced_periodic_unique`: `x₁` is the only
+  solution of period `T = 2π/ω` (unique attracting periodic solution).
+* `affine_of_const_jacobian` — a constant state Jacobian forces `f(z, u) = A₀ z + f(0, u)`;
+  the variational matrix along any orbit is `J(t) ≡ A₀` (`jacobian_along_orbit`), and
+  `orbitExponentiallyStable_iff`: every orbit is exponentially stable (all solutions converge to
+  it at a uniform exponential rate) iff `A₀` is Hurwitz — no parametric instability can arise.
+* `jacobian_additive_forcing` — for `f_ε(x, t) = f(x) + ε g(t)` the state Jacobian is `Df(x)`
+  for every `ε, t`; in particular the frozen Jacobian at a fixed operating point, and every
+  quantity computed from it (frozen damping ratio, frozen spectrum), does not depend on `ε` by
+  construction.
+
+Decay and the converse (a uniform exponential bound on every global solution of `ẋ = A x` forces
+`A` Hurwitz; `LTI.exists_global_bound_of_isHurwitz`, `LTI.isHurwitz_of_global_bound` in
+`theorem/LTI/Decay.lean`) go through the linear stability hub
 (`Linear.globallyExponentiallyStable_of_isHurwitz`, `Linear.holds_iff_isHurwitz`) applied to the
-field `LinearSystems.affineLinearVectorField A 0`; the former `LTI` trajectory and norm
-conventions are replaced by curves in `ℝⁿ`.
+field `LinearSystems.affineLinearVectorField A 0`.
 -/
 
 noncomputable section

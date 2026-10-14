@@ -2,15 +2,20 @@ import dependencies.Mathlib
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import theorem.Attributes
 
-/-! # Phase margin of the IMC current loop with a transport delay (foundation)
+/-! # Phase margin of the IMC current loop with a transport delay
 
-Model: one axis of the IMC-tuned current loop of `Drives.CascadeControl` (RL plant `1/(Ls + R)`,
+Frequency-domain identities only (foundation); no closed-loop stability statement for the delay
+system is claimed.
+
+Model boundary.
+One axis of the IMC-tuned current loop of `Drives.CascadeControl` (RL plant `1/(Ls + R)`,
 PI `K_p = Lα`, `K_i = Rα`, so the delay-free open loop is exactly `α/s`), in series with a pure
 transport delay `τ ≥ 0` lumping computation and PWM delay (`τ_d ≈ 1.5 T_s`).  Open-loop
 frequency response `L(jω) = (α/(jω)) e^{−jωτ}`, `α > 0`, continuous time, linear, no
 saturation.  The phase margin is `PM = π + arg L(jω_c)` at the unique gain crossover `ω_c`.
-These are frequency-domain identities only (no closed-loop stability statement for the delay
-system is claimed).
+
+Source: work-sync `theory/T-field-oriented-control.md` §2.4 ("严格 60° PM 上限
+`ω_b ≤ π/(3τ_d)`"), `theory/T-control-delay.md` §1.6.
 
 Results.
 * `imcDelayLoop_norm`, `imcDelayLoop_norm_eq_one_iff`: `|L(jω)| = α/ω`, so the gain
@@ -20,9 +25,6 @@ Results.
 * `imcDelayLoop_pm60_iff`: `PM ≥ 60°` (with `ατ < π/2`) iff `ω_b = α ≤ π/(6τ)`.
 * `imcDelayLoop_noteBound_pm`: at the note's bound `ω_b = π/(3τ)` the phase margin is
   `π/6` (30°), not 60°.
-
-Source: work-sync theory/T-field-oriented-control.md §2.4 ("严格 60° PM 上限
-`ω_b ≤ π/(3τ_d)`"), theory/T-control-delay.md §1.6.
 
 Correction: the "strict 60° phase-margin bound `ω_b τ_d ≤ π/3`" is not the 60° bound of the
 FOC current loop: with the IMC loop `α/s` (phase `−π/2`) the delay may only use

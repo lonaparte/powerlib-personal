@@ -4,13 +4,22 @@ import theorem.Dynamics.Lyapunov
 
 /-! # Instability criteria (foundation)
 
-Model boundary. Autonomous continuous-time ODE `ẋ = f x` on
-`Dynamics.State n = EuclideanSpace ℝ (Fin n)` (`ℝⁿ = EuclideanSpace ℝ (Fin n)`, the library's
-segment semantics); no input, delay, switching or time variation. `V̇ x = fderiv ℝ V x (f x)`.
-Every statement is a generic implication about an arbitrary field and function, a foundation
-result. Where the Jacobian is not Hurwitz the linearization does not decide local asymptotic or
-Lyapunov stability; these are the tools for the degenerate members of model families.
+Chetaev-type instability criteria and obstructions to local asymptotic stability. Where the
+Jacobian is not Hurwitz the linearization does not decide local asymptotic or Lyapunov stability;
+these are the tools for the degenerate members of model families.
 
+Scope.
+* Autonomous continuous-time ODE `ẋ = f x` on `Dynamics.State n = EuclideanSpace ℝ (Fin n)`
+  (`ℝⁿ = EuclideanSpace ℝ (Fin n)`, the library's segment semantics); no input, delay, switching
+  or time variation. `V̇ x = fderiv ℝ V x (f x)`.
+* Every statement is a generic implication about an arbitrary field and function, a foundation
+  result.
+
+Source: Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.3 (Chetaev) and Theorem 4.1, stated for
+`C¹` fields on a domain; Hahn, *Stability of Motion*, Chetaev's method (exponential form, from
+LeanForControl); needed by work-sync `theory/T-vsc-dc-voltage-control.md` §1.4.
+
+Results.
 * Classical forms for `C¹` fields: `unstable_of_chetaev` (Chetaev's instability theorem in its
   classical, non-exponential form, for degenerate points where LeanForControl's exponential
   criterion does not apply); `unstable_of_lie_nonpos_of_lie_pos` (its variant on the sublevel set
@@ -23,10 +32,11 @@ Lyapunov stability; these are the tools for the degenerate members of model fami
   (`NonlinearInstability.unstable_of_exponential_chetaev`: `2 α V ≤ V̇` near the base point, with
   `|V| ≤ C ‖x − x_eq‖²` and positive values of `V` accumulating at the base point).
 * Fields that are `C¹` only on an open set `U` containing the point (typically power-balance fields
-  with a `1/V_dc` factor, smooth on `V_dc > 0` only): `not_localAsymptoticStable_of_lie_nonpos_local`,
-  `unstable_of_chetaev_local`, `unstable_of_lie_nonpos_of_lie_pos_local`. The field is replaced near
-  the point by a globally `C¹` field (`exists_contDiff_ball`, a smooth bump) and the conclusions are
-  transported back with the locality lemmas of `theorem/Dynamics/Locality.lean`.
+  with a `1/V_dc` factor, smooth on `V_dc > 0` only):
+  `not_localAsymptoticStable_of_lie_nonpos_local`, `unstable_of_chetaev_local`,
+  `unstable_of_lie_nonpos_of_lie_pos_local`. The field is replaced near the point by a globally
+  `C¹` field (`exists_contDiff_ball`, a smooth bump) and the conclusions are transported back with
+  the locality lemmas of `theorem/Dynamics/Locality.lean`.
 * Hypotheses on a punctured neighbourhood (`∀ᶠ x in 𝓝[≠] x_eq`), as delivered by normal-form
   computations at a Hopf point or a saddle-node: `unstable_of_eventually_chetaev`,
   `not_localAsymptoticStable_of_eventually_lie_nonpos`, `unstable_of_eventually_lie_neg` (`Ė < 0`
@@ -36,9 +46,7 @@ Lyapunov stability; these are the tools for the degenerate members of model fami
   no globally asymptotically stable point `x` (the constant solution at `y` does not converge to
   `x`); with `2π`-periodic fields this rules out global attraction of any selected point.
 
-Source: Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.3 (Chetaev) and Theorem 4.1, stated for
-`C¹` fields on a domain; Hahn, *Stability of Motion*, Chetaev's method (exponential form, from
-LeanForControl); needed by work-sync `theory/T-vsc-dc-voltage-control.md` §1.4.
+The Lyapunov (stability) counterparts are in `theorem/Dynamics/Lyapunov.lean`.
 -/
 
 noncomputable section

@@ -5,30 +5,32 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-! # Phase of the pure delay and of its Padé approximants; relative phase-error bounds
 
-Foundation layer (category B).
+Closed-form phases of the pure delay and of its Padé approximants on the imaginary axis, and the
+frequency bands in which the approximants stay within a 5 % relative phase error.
 
-On the imaginary axis `s = jω` (`ω : ℝ`, `τ : ℝ`, `x = τ ω`), with `Complex.arg` the
-principal argument in `(-π, π]`:
-* pure delay: `arg (e^{-jωτ}) = -τω` whenever `-π ≤ τω < π`;
-* Padé(1,1): `arg (pade11 τ (jω)) = -2 arctan (τω/2)` for every `ω`;
-* Padé(2,2): `arg (pade22 τ (jω)) = -2 arctan ((τω/2) / (1 - (τω)²/12))` whenever
-  `(τω)² < 12`.
-
-Relative phase error. `relPhaseError G τ ω = (arg e^{-jωτ} - arg G(jω)) / arg e^{-jωτ}`,
-i.e. the phase deficit of the approximant relative to the exact linear phase lag `ωτ`.
-* `0 < τω < 1/2` ⇒ `0 ≤ relPhaseError pade11 < 1/20` (below 5 %);
-* `0 < τω < 3/2` ⇒ `0 ≤ relPhaseError pade22 < 1/20` (below 5 %).
-The first uses `u - u³/3 ≤ arctan u` (proved here by monotonicity); the second uses
-`d/dx [2 arctan (6x/(12 - x²))] = 12 (12 + x²)/(144 + 12x² + x⁴) > 19/20` on `(0, 3/2)`.
-
-Model boundary: scalar frequency responses of the delay models in `theorem.Delay.Pade`
-only; continuous time, constant delay, positive frequency branch `τω > 0`. No closed loop,
-plant, PWM or sampling is involved, and the bounds say nothing about stability margins of
-any converter.
+Model boundary.
+* Scalar frequency responses of the delay models in `theorem/Delay/Pade.lean` only; continuous
+  time, constant delay, positive frequency branch `τω > 0`. No closed loop, plant, PWM or
+  sampling is involved, and the bounds say nothing about stability margins of any converter.
+* On the imaginary axis `s = jω` (`ω : ℝ`, `τ : ℝ`, `x = τ ω`), with `Complex.arg` the
+  principal argument in `(-π, π]`.
+* Relative phase error: `relPhaseError G τ ω = (arg e^{-jωτ} - arg G(jω)) / arg e^{-jωτ}`, i.e.
+  the phase deficit of the approximant relative to the exact linear phase lag `ωτ`.
 
 Source: work-sync theory/T-control-delay.md §1.2 (`|G_del(jω)| = 1`, `∠G_del = -ωτ`),
 §1.3 (adaptation-band table: Padé(1,1) `< 5 %` for `ωτ < 0.5`, Padé(2,2) `< 5 %` for
 `ωτ < 1.5`); theory/T-gfl-impedance.md §1.2 (the same 5 % band).
+
+Results.
+* `arg_pureDelay_jω` — pure delay: `arg (e^{-jωτ}) = -τω` whenever `-π ≤ τω < π`.
+* `arg_pade11_jω` — Padé(1,1): `arg (pade11 τ (jω)) = -2 arctan (τω/2)` for every `ω`.
+* `arg_pade22_jω` — Padé(2,2): `arg (pade22 τ (jω)) = -2 arctan ((τω/2) / (1 - (τω)²/12))`
+  whenever `(τω)² < 12`.
+* `relPhaseError_pade11_lt` — `0 < τω < 1/2` ⇒ `0 ≤ relPhaseError pade11 < 1/20` (below 5 %);
+  it uses `u - u³/3 ≤ arctan u` (`sub_cube_div_three_le_arctan`, proved by monotonicity).
+* `relPhaseError_pade22_lt` — `0 < τω < 3/2` ⇒ `0 ≤ relPhaseError pade22 < 1/20` (below 5 %);
+  it uses `d/dx [2 arctan (6x/(12 - x²))] = 12 (12 + x²)/(144 + 12x² + x⁴) > 19/20` on
+  `(0, 3/2)`.
 -/
 
 noncomputable section

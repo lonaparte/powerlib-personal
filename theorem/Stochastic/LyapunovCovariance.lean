@@ -3,53 +3,65 @@ import dependencies.LeanForControl
 import theorem.Attributes
 import theorem.Linear.Transfer
 
-/-! # Covariance Lyapunov equation of a vector OU process (foundation)
+/-! # Covariance Lyapunov equation of a vector OU process
 
-Source: work-sync `theory/T-sde-systems.md` §1.8.2 (stationary covariance
+The algebraic and differential covariance Lyapunov equations of `dX = A X dt + B dW`: existence,
+uniqueness and semidefiniteness of the stationary covariance, convergence of the differential
+equation, the Gramian representation, and positive definiteness exactly under controllability.
+
+Scope.
+* Conventions (as in the note): drift `dX = A X dt + B dW` with a **plus** sign, `A` Hurwitz
+  means every complex eigenvalue has negative real part (`LinearSystems.IsHurwitz`). All objects
+  are real matrices `Matrix (Fin n) (Fin n) ℝ`; `B : Matrix (Fin n) (Fin m) ℝ`.
+* Linear-algebra / matrix-ODE facts about the covariance equations. That `P(t)` *is* the
+  covariance of the Itô solution of `dX = AX dt + B dW` is not proved here (it needs Itô
+  calculus); the results are not stochastic stability theorems.
+* Reuse (Rules §15). Existence and uniqueness for positive-definite forcing is
+  `LinearSystems.IsHurwitz.exists_posDef_unique_solution_continuous_lyapunov` (LeanForControl,
+  equation `P Aᵀᵀ + Aᵀ P = -Q`, applied to `Aᵀ`). LeanForControl requires `Q ≻ 0`; the
+  semidefinite forcing `B Bᵀ` is handled by linearity: `P_Q = P_{Q+I} - P_I`, and
+  `P_Q + ε P_I = P_{Q+εI} ≻ 0` for every `ε > 0` gives `P_Q ⪰ 0`. Transposition of Hurwitz
+  matrices goes through `powerlib.Linear.spectrallyStable_iff_isHurwitz`. The decay
+  `‖e^{tA}‖ → 0` is derived from LeanForControl's contraction block
+  `IsHurwitz.exists_norm_exp_nat_smul_lt_one`.
+* Controllability is LeanForControl's `LinearSystems.IsControllable` (reachability in `n`
+  steps); the proof reuses its rank characterization, reachable-subspace invariance
+  (Cayley–Hamilton) and `MatrixAlgebra.mulVec_kernel_trivial_iff_rank_eq_card_cols`.
+
+Source: work-sync theory/T-sde-systems.md §1.8.2 (stationary covariance
 `A P∞ + P∞ Aᵀ + B Bᵀ = 0`), §1.12.2 (differential Lyapunov equation
 `Ṗ = A P + P Aᵀ + B Bᵀ`), §2.5 ("A Hurwitz ⇔ P∞ exists, unique, positive definite").
 
-Conventions (as in the note): drift `dX = A X dt + B dW` with a **plus** sign, `A` Hurwitz means
-every complex eigenvalue has negative real part (`LinearSystems.IsHurwitz`).  All objects are
-real matrices `Matrix (Fin n) (Fin n) ℝ`; `B : Matrix (Fin n) (Fin m) ℝ`.
+Results.
+* `exists_unique_posSemidef_covLyapunov`, `exists_unique_posSemidef_stationaryCov` — `A` Hurwitz
+  ⇒ a unique solution of `A P + P Aᵀ + Q = 0` exists for `Q ⪰ 0` (in particular `Q = B Bᵀ`), and
+  it is positive *semi*definite.
+* `covSol_hasDerivAt`, `covODE_unique`, `covSol_tendsto_norm` — the differential Lyapunov
+  equation `Ṗ = A P + P Aᵀ + Q` has the unique solution `e^{tA} (P₀ - P∞) e^{tAᵀ} + P∞`
+  (`covSol`), which converges to `P∞` for Hurwitz `A`.
+* Controllability and the Gramian (T-sde-systems §2.5, corrected statement):
+  * `integral_gramian_eq`: if `A P + P Aᵀ + Q = 0` then
+    `∫₀ᵀ e^{tA} Q e^{tAᵀ} dt = P − e^{TA} P e^{TAᵀ}` for every `T` (fundamental theorem of
+    calculus; no stability assumption).
+  * `tendsto_integral_gramian`: for Hurwitz `A`, `∫₀ᵀ e^{tA} Q e^{tAᵀ} dt → P∞` as `T → ∞`,
+    i.e. `P∞ = ∫₀^∞ e^{tA} B Bᵀ e^{tAᵀ} dt` (improper integral) for `Q = B Bᵀ`.
+  * `posDef_of_isControllable`: `A` Hurwitz, `(A, B)` controllable ⇒ `P∞ ≻ 0` (the kernel of
+    `P∞` is `Aᵀ`-invariant and contained in `ker Bᵀ`; purely algebraic).
+  * `isControllable_of_posDef`: `A` Hurwitz and some `P ≻ 0` solves the equation ⇒ `(A, B)`
+    controllable (a vector orthogonal to the reachable subspace makes `xᵀ e^{tA} P e^{tAᵀ} x`
+    constant and positive, while it tends to `0`).
+  * `posDef_iff_isControllable`, `stationaryCov_gramian`: for Hurwitz `A`, `P∞ ≻ 0 ⇔ (A, B)`
+    controllable.
 
-Scope (Rules §3).  These are linear-algebra / matrix-ODE facts about the covariance equations.
-That `P(t)` *is* the covariance of the Itô solution of `dX = AX dt + B dW` is not proved here
-(it needs Itô calculus); the results are not stochastic stability theorems.
-
-Reuse (Rules §15).  Existence and uniqueness for positive-definite forcing is
-`LinearSystems.IsHurwitz.exists_posDef_unique_solution_continuous_lyapunov` (LeanForControl,
-equation `P Aᵀᵀ + Aᵀ P = -Q`, applied to `Aᵀ`).  LeanForControl requires `Q ≻ 0`; the
-semidefinite forcing `B Bᵀ` is handled by linearity: `P_Q = P_{Q+I} - P_I`, and
-`P_Q + ε P_I = P_{Q+εI} ≻ 0` for every `ε > 0` gives `P_Q ⪰ 0`.  Transposition of Hurwitz
-matrices goes through `powerlib.Linear.spectrallyStable_iff_isHurwitz`.  The decay
-`‖e^{tA}‖ → 0` is derived from LeanForControl's contraction block
-`IsHurwitz.exists_norm_exp_nat_smul_lt_one`.
-
-Correction (T-sde-systems §2.5, §1.12.2).  "A Hurwitz ⇔ P∞ exists, is unique and positive
-definite" is false in both directions without controllability:
-* `posDef_solution_not_imp_hurwitz`: `A = 0`, `B = 0`, `P = I` solves the equation with
-  `P ≻ 0` although `A` is not Hurwitz (and every matrix solves it, so uniqueness fails too);
-* `hurwitz_not_imp_posDef_solution`: `A = -I`, `B = 0` is Hurwitz but every solution is `0`.
-What holds is `exists_unique_posSemidef_covLyapunov`: `A` Hurwitz ⇒ a unique solution exists
-and it is positive *semi*definite; it is positive *definite* exactly when `(A, B)` is
-controllable (`posDef_iff_isControllable`, below).
-
-Controllability and the Gramian (T-sde-systems §2.5, corrected statement).
-* `integral_gramian_eq`: if `A P + P Aᵀ + Q = 0` then `∫₀ᵀ e^{tA} Q e^{tAᵀ} dt = P − e^{TA} P e^{TAᵀ}`
-  for every `T` (fundamental theorem of calculus; no stability assumption).
-* `tendsto_integral_gramian`: for Hurwitz `A`, `∫₀ᵀ e^{tA} Q e^{tAᵀ} dt → P∞` as `T → ∞`, i.e.
-  `P∞ = ∫₀^∞ e^{tA} B Bᵀ e^{tAᵀ} dt` (improper integral) for `Q = B Bᵀ`.
-* `posDef_of_isControllable`: `A` Hurwitz, `(A, B)` controllable ⇒ `P∞ ≻ 0` (the kernel of `P∞`
-  is `Aᵀ`-invariant and contained in `ker Bᵀ`; purely algebraic).
-* `isControllable_of_posDef`: `A` Hurwitz and some `P ≻ 0` solves the equation ⇒ `(A, B)`
-  controllable (a vector orthogonal to the reachable subspace makes `xᵀ e^{tA} P e^{tAᵀ} x`
-  constant and positive, while it tends to `0`).
-* `posDef_iff_isControllable`, `stationaryCov_gramian`: for Hurwitz `A`, `P∞ ≻ 0 ⇔ (A, B)`
-  controllable.
-Controllability is LeanForControl's `LinearSystems.IsControllable` (reachability in `n` steps);
-the proof reuses its rank characterization, reachable-subspace invariance (Cayley–Hamilton) and
-`MatrixAlgebra.mulVec_kernel_trivial_iff_rank_eq_card_cols`.
+Corrections.
+* T-sde-systems §2.5, §1.12.2: "A Hurwitz ⇔ P∞ exists, is unique and positive definite" is false
+  in both directions without controllability:
+  * `posDef_solution_not_imp_hurwitz`: `A = 0`, `B = 0`, `P = I` solves the equation with
+    `P ≻ 0` although `A` is not Hurwitz (and every matrix solves it, so uniqueness fails too);
+  * `hurwitz_not_imp_posDef_solution`: `A = -I`, `B = 0` is Hurwitz but every solution is `0`.
+  What holds is `exists_unique_posSemidef_covLyapunov`: `A` Hurwitz ⇒ a unique solution exists
+  and it is positive *semi*definite; it is positive *definite* exactly when `(A, B)` is
+  controllable (`posDef_iff_isControllable`).
 -/
 
 noncomputable section

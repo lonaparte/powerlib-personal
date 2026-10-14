@@ -4,20 +4,22 @@ import Mathlib.Analysis.CStarAlgebra.Basic
 
 /-! # QR factorization of an invertible matrix and invariance of the condition number
 
-Foundation layer (category B; general numerical linear algebra).
+Every invertible matrix has a QR factorization with positive diagonal, and the triangular factor
+has the same norm, inverse norm and condition number as the matrix.
 
-Source: work-sync `theory/T-linear-algebra.md` §1.3 (`A = QR`, `Q` orthogonal, `R` upper
+Scope.
+* General numerical linear algebra: real square invertible matrices indexed by `Fin k` (the
+  full-rank square case; the rectangular least-squares case is not formalized); spectral (`ℓ²`
+  operator) norms; exact arithmetic.
+
+Source: work-sync theory/T-linear-algebra.md §1.3 (`A = QR`, `Q` orthogonal, `R` upper
 triangular; "QR 反向稳定且不放大 κ（`κ(R) = κ(A)`）").
 
-Setting: real square invertible matrices indexed by `Fin k` (the full-rank square case; the
-rectangular least-squares case is not formalized); spectral (`ℓ²` operator) norms; exact
-arithmetic.
-
 Results.
-* `qr_exists`: `A = QR` with `Q ∈ O(k)` and `R` upper triangular with positive diagonal. The
+* `qr_exists` — `A = QR` with `Q ∈ O(k)` and `R` upper triangular with positive diagonal. The
   construction is the Cholesky factorization `AᵀA = RᵀR` (`theorem/LinearAlgebra/Cholesky.lean`),
   `Q = AR⁻¹` — the matrix form of Gram–Schmidt orthonormalization of the columns of `A`.
-* `norm_R_eq`, `cond_R_eq`: for any factorization `A = QR` with orthogonal `Q`,
+* `norm_R_eq`, `cond_R_eq` — for any factorization `A = QR` with orthogonal `Q`,
   `‖R‖ = ‖A‖`, `‖R⁻¹‖ = ‖A⁻¹‖`, hence `κ(R) = κ(A)`.
 -/
 

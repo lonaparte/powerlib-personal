@@ -4,42 +4,47 @@ import Mathlib.Probability.ConditionalProbability
 
 /-! # Bayes' theorem, sufficiency, sequential updating and the posterior kernel
 
-Source: work-sync `theory/T-bayesian-inference.md` §1.2 (Bayes' theorem), §1.3 (likelihood
-principle, Fisher–Neyman factorisation), §1.5 (posterior predictive), §1.6 (Bayes factor),
-§1.7 (sequential updating).
+Bayes' theorem at the density level and for Mathlib's posterior kernel, with the likelihood
+principle, sufficiency, sequential updating, the posterior predictive and the Bayes factor.
 
-Foundation (general probability), not an engineering result.
-
-Objects.
+Scope.
+* General probability, not an engineering result.
 * `bayesPosterior μ L = (∫ L dμ)⁻¹ • μ.withDensity L`: the normalised posterior for a prior
   measure `μ` on the parameter space and a likelihood `L : Θ → ℝ≥0∞` evaluated at the observed
   data. `evidence μ L = ∫ L dμ` is the marginal likelihood `p(D)`.
 * Mathlib's posterior kernel `κ†μ` (`ProbabilityTheory.posterior`), defined by disintegration of
   the joint law; it is unique only `κ ∘ₘ μ`-almost everywhere.
 
-Main results.
-* Thin wrappers (category C): `bayes_cond` (`ProbabilityTheory.cond_eq_inv_mul_cond_mul`),
+Source: work-sync theory/T-bayesian-inference.md §1.2 (Bayes' theorem), §1.3 (likelihood
+principle, Fisher–Neyman factorisation), §1.5 (posterior predictive), §1.6 (Bayes factor),
+§1.7 (sequential updating).
+
+Results.
+* Thin Mathlib wrappers: `bayes_cond` (`ProbabilityTheory.cond_eq_inv_mul_cond_mul`),
   `posterior_ae_eq_withDensity` (`ProbabilityTheory.posterior_eq_withDensity`),
   `posterior_comp_ae_eq` (`ProbabilityTheory.posterior_comp`: posterior through a composite
   channel `θ → x → y`).
-* `posterior_ae_eq_bayesPosterior`: for a dominated model `κ θ = ν.withDensity (p θ)` with jointly
-  measurable density, Mathlib's posterior is a.e. the density-level `bayesPosterior`
+* `posterior_ae_eq_bayesPosterior` — for a dominated model `κ θ = ν.withDensity (p θ)` with
+  jointly measurable density, Mathlib's posterior is a.e. the density-level `bayesPosterior`
   (Bayes' theorem in density form). `posterior_ae_eq_bayesPosterior_of_countable` specialises to
   countable data with `p θ x = κ θ {x}`.
-* Likelihood principle `bayesPosterior_const_mul`; prior scaling `bayesPosterior_smul`;
-  sufficiency `bayesPosterior_eq_of_statistic_eq` and its kernel form
-  `posterior_ae_eq_of_factorizesThrough`.
-* Sequential updating `bayesPosterior_bayesPosterior` and `posterior_prod_ae_eq_sequential`.
-* Posterior predictive `compProd_posteriorPredictive`.
-* Bayes factor `posterior_odds`, `posterior_odds_toReal`.
+* `bayesPosterior_const_mul`, `bayesPosterior_smul`, `bayesPosterior_eq_of_statistic_eq`,
+  `posterior_ae_eq_of_factorizesThrough` — likelihood principle; prior scaling; sufficiency and
+  its kernel form.
+* `bayesPosterior_bayesPosterior`, `posterior_prod_ae_eq_sequential` — sequential updating.
+* `compProd_posteriorPredictive` — posterior predictive.
+* `posterior_odds`, `posterior_odds_toReal` — Bayes factor.
 
-Correction (§1.7): the note writes the simplification condition as `d_n ⊥ θ D_{1:n-1}`. The
-correct condition is conditional independence of the new datum from the past data *given* `θ`,
-`d_n ⊥ D_{1:n-1} | θ`. Formally this is the product kernel `κ₁ ×ₖ κ₂` (the joint likelihood
-factorises as `p₁(d₁|θ) p₂(d₂|θ)`), which is the hypothesis of `posterior_prod_ae_eq_sequential`.
+Corrections.
+* §1.7: the note writes the simplification condition as `d_n ⊥ θ D_{1:n-1}`. The correct
+  condition is conditional independence of the new datum from the past data *given* `θ`,
+  `d_n ⊥ D_{1:n-1} | θ`. Formally this is the product kernel `κ₁ ×ₖ κ₂` (the joint likelihood
+  factorises as `p₁(d₁|θ) p₂(d₂|θ)`), which is the hypothesis of
+  `posterior_prod_ae_eq_sequential`.
 
-Not formalised: Cox's theorem (§1.1) and Bernstein–von Mises (§1.10); the note also omits their
-regularity hypotheses.
+Not formalized.
+* Cox's theorem (§1.1) and Bernstein–von Mises (§1.10); the note also omits their regularity
+  hypotheses.
 -/
 
 noncomputable section

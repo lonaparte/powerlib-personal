@@ -2,16 +2,22 @@ import theorem.Estimation.Conjugate
 
 /-! # Normal–Normal conjugacy (known observation variance)
 
-Source: work-sync `theory/T-bayesian-inference.md` §1.4.3.
+A Gaussian prior on a mean with Gaussian observations of known variance gives a Gaussian
+posterior with the boxed precision and mean formulas of the note.
 
-Foundation (general probability), not an engineering result.
+Scope.
+* General probability, not an engineering result.
+* Mean `θ ∈ ℝ` with prior `N(μ₀, τ)` (`τ ≠ 0` is the prior *variance*, the note's `τ₀²`);
+  observations `dᵢ ~ N(θ, v)` i.i.d. with known variance `v ≠ 0` (the note's `σ²`).
 
-Model: mean `θ ∈ ℝ` with prior `N(μ₀, τ)` (`τ ≠ 0` is the prior *variance*, the note's `τ₀²`);
-observations `dᵢ ~ N(θ, v)` i.i.d. with known variance `v ≠ 0` (the note's `σ²`).
-Result: the posterior is `N(μ_N, τ_N)` with precision `1/τ_N = 1/τ + N/v` and
-`μ_N = τ_N (μ₀/τ + ∑ dᵢ / v)` (`∑ dᵢ = N d̄`), exactly the boxed formula of the note.
-Density level: `bayesPosterior_normal_normal` (any `N`). Mathlib posterior kernel:
-`posterior_gaussianKernel_gaussianReal` (one observation, a.e. in the data).
+Source: work-sync theory/T-bayesian-inference.md §1.4.3.
+
+Results.
+* `bayesPosterior_normal_normal` — density level, any `N`: the posterior is `N(μ_N, τ_N)` with
+  precision `1/τ_N = 1/τ + N/v` and `μ_N = τ_N (μ₀/τ + ∑ dᵢ / v)` (`∑ dᵢ = N d̄`), exactly the
+  boxed formula of the note.
+* `posterior_gaussianKernel_gaussianReal` — Mathlib posterior kernel: one observation, a.e. in
+  the data.
 -/
 
 noncomputable section

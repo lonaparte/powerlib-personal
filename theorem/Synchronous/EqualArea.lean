@@ -3,31 +3,40 @@ import theorem.Dynamics.Calculus
 
 /-! # Equal-area criterion for the single-machine infinite-bus swing equation: static part
 
-Model boundary.  Each stage of the three-stage fault sequence (pre-fault, during-fault,
-post-fault) is one instance of the canonical swing model `SwingParams`
-(`theorem/Synchronous/Swing.lean`): state `(δ, ω)` (rotor angle, frequency deviation in
-rad/s), `M δ̈ + D δ̇ = P_m − (k₁ + k₂ sin(δ − k₃))`, constant `P_m`, generator OUT-positive
-(Kundur) convention, continuous time, no AVR / governor / PLL / limiter.
+Static and generic foundation for the equal-area criterion: closed-form areas, the critical
+clearing angle and trajectory calculus of the swing field.  The trajectory-level criteria are in
+`theorem/Synchronous/FaultSequence.lean` and `theorem/Synchronous/DampedEAC.lean`.
 
-Contents (all static or generic foundation).
-* Closed-form integrals of the power-angle curve; accelerating and decelerating areas
-  `A_acc`, `A_dec` in closed form, and their expression through the potential
-  (`Aacc_eq_neg_potential`, `Adec_eq_potential_sub`).
-* `g(δ_cc) = A_acc − A_dec`: derivative `g′ = P_e^post − P_e^f` and uniqueness/existence of the
-  critical clearing angle.
-* The sign of `P_e − P_m` between the equilibria and the bound of the potential on the well.
-* Trajectory calculus of the swing field (coordinate derivatives along an integral curve, the
-  constant solution at an equilibrium) and a continuous-induction helper, used by the
-  trajectory-level criteria.
+Model boundary.
+* Each stage of the three-stage fault sequence (pre-fault, during-fault, post-fault) is one
+  instance of the canonical swing model `SwingParams` (`theorem/Synchronous/Swing.lean`): state
+  `(δ, ω)` (rotor angle, frequency deviation in rad/s), `M δ̈ + D δ̇ = P_m − (k₁ + k₂ sin(δ − k₃))`,
+  constant `P_m`, generator OUT-positive (Kundur) convention, continuous time, no AVR / governor /
+  PLL / limiter.
 
-Family and connection conclusions.  None: the equal-area criterion, the critical clearing time and
-the three-stage (switched) fault sequence are trajectory-level results outside the sentence
-language of the swing family (`Synchronous.Swing.family`) (Rules §3a).  The exact first-swing
-criterion (`firstSwing_iff`), its sufficiency and necessity halves, energy conservation, the
-bolted-fault trajectory and clearing time, and the clearing-time bound (formerly public domain
-theorems of this module) are kept as private implementation evidence in
-`theorem/Synchronous/FaultSequence.lean`, next to the switched-model results that are proved from
-them (a private theorem cannot be used across modules).
+Source: work-sync `theory/T-transient-stability.md` §1.3–§1.6, §1.8.
+
+Results (all static or generic foundation).
+* Closed-form integrals of the power-angle curve (`integral_Pe`, `potential_eq_integral`);
+  accelerating and decelerating areas `A_acc`, `A_dec` in closed form (`Aacc_eq`, `Adec_eq`), and
+  their expression through the potential (`Aacc_eq_neg_potential`, `Adec_eq_potential_sub`).
+* `g(δ_cc) = A_acc − A_dec` (`eacG`): derivative `g′ = P_e^post − P_e^f` (`hasDerivAt_eacG`) and
+  uniqueness/existence of the critical clearing angle (`eacG_root_unique`, `exists_eacG_root`).
+* The sign of `P_e − P_m` between the equilibria (`Pm_lt_Pe_of_mem`, `Pe_lt_Pm_of_mem`,
+  `deltaS_lt_deltaU`, `deltaU_sub_two_pi_lt_deltaS`) and the bound of the potential on the well
+  (`potential_le_max`).
+* Trajectory calculus of the swing field: coordinate derivatives along an integral curve
+  (`coord_hasDerivAt`, `coord_continuousOn`) and the constant solution at an equilibrium
+  (`isIntegralCurveOn_const`), used by the trajectory-level criteria.
+
+Family and connection conclusions.
+* None: the equal-area criterion, the critical clearing time and the three-stage (switched) fault
+  sequence are trajectory-level results outside the sentence language of the swing family
+  (`Synchronous.Swing.family`) (Rules §3a).  The exact first-swing criterion (`firstSwing_iff`),
+  its sufficiency and necessity halves, energy conservation, the bolted-fault trajectory and
+  clearing time, and the clearing-time bound are private implementation evidence in
+  `theorem/Synchronous/FaultSequence.lean`, next to the switched-model results that are proved
+  from them (a private theorem cannot be used across modules).
 
 Corrections.
 * T-transient-stability §1.5 states `g′(δ_cc) = 2(P_m − P_e^f(δ_cc))`; the derivative of
@@ -41,8 +50,6 @@ Corrections.
   `time_in_window_le`) controls the time the trajectory spends inside `[δ₀, δ_cc]`.
 * §1.8 writes `A_dec^{D>0} = A_dec^{D=0} − ∫ D Δω² > A_dec^{D=0}`, which is self-contradictory
   (subtracting a positive quantity cannot increase it); see `theorem/Synchronous/DampedEAC.lean`.
-
-Source: work-sync theory/T-transient-stability.md §1.3–§1.6, §1.8.
 -/
 
 noncomputable section

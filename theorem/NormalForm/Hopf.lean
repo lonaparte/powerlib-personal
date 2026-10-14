@@ -3,28 +3,53 @@ import theorem.NormalForm.Logistic
 
 /-! # Truncated Hopf normal form
 
-Foundation layer: the cubic truncation of the Hopf normal form, not an engineering model.
+The linearization, polar form, invariant circle, super- and subcritical limit cycles and
+coordinate normalizations of the cubic truncation of the Hopf normal form.
 
-Model boundary. State `x = (x 0, x 1) ∈ State 2`, identified with `z = x 0 + i x 1`. Constant
-parameters `μ, ω₀` and cubic coefficient `c = l₁ + iκ` (`l₁ = Re c`, the first Lyapunov
-coefficient of the truncation). The vector field is exactly
-`ż = (μ + iω₀) z + c z |z|²` (`field_complex`), i.e.
-`ẋ₀ = μx₀ − ω₀x₁ + (l₁x₀ − κx₁)ρ`, `ẋ₁ = ω₀x₀ + μx₁ + (κx₀ + l₁x₁)ρ`, `ρ = x₀² + x₁²`,
-with no `O(|z|⁴)` remainder, continuous time, no input or noise.
+Model boundary.
+* State `x = (x 0, x 1) ∈ State 2`, identified with `z = x 0 + i x 1`. Constant parameters
+  `μ, ω₀` and cubic coefficient `c = l₁ + iκ` (`l₁ = Re c`, the first Lyapunov coefficient of the
+  truncation). The vector field is exactly
+  `ż = (μ + iω₀) z + c z |z|²` (`field_complex`), i.e.
+  `ẋ₀ = μx₀ − ω₀x₁ + (l₁x₀ − κx₁)ρ`, `ẋ₁ = ω₀x₀ + μx₁ + (κx₀ + l₁x₁)ρ`, `ρ = x₀² + x₁²`,
+  with no `O(|z|⁴)` remainder, continuous time, no input or noise. The `O(|z|⁴)` / `O(r⁵)`
+  remainder bookkeeping of §1.2 of the source is not formalized (truncated system only).
+* Periodic orbits and attracting limit cycles are written out in the statements (behaviour is
+  defined only in the semantic layer). A *periodic orbit* of `ẋ = f x` with period `T` is a curve
+  `γ : ℝ → State n` with `0 < T`, `∀ t, HasDerivAt γ (f (γ t)) t` (a solution defined for all
+  time), `∀ t, γ (t + T) = γ t` and `∃ t, γ t ≠ γ 0` (nonconstant). It is an *attracting limit
+  cycle* when, in addition, some open `U ⊇ range γ` is *orbitally attracted*: every
+  forward-complete solution `φ` (`IsIntegralCurveOn φ (fun _ x => f x) (Ici a)`) with `φ a ∈ U`
+  has `Metric.infDist (φ t) (range γ) → 0` as `t → ∞`.
+* A truncated normal form, not an engineering model, so no model family is defined; all results
+  remain public foundation support. Behaviour is LeanForControl's predicates and the
+  linearization theorems of `powerlib.Criteria` / `powerlib.Flow`.
+
+Source: work-sync theory/T-hopf-bifurcation.md §1.1–1.4, theory/T-bifurcation.md §1.4
+(Hopf normal form), theory/T-fold-critical-scaling.md §2.4 (Hopf linear rate);
+projects/gfl-gfm-stability-tree/notes/concepts/frozen-and-basin.md (幅值坐标声明: GH vs Kuznetsov
+"精确差因子 4", `r_c` 差因子 2); projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
+archive/notes/concepts/forced-orbit-and-bandwidth.md (`ℓ₁ ∝ ‖q‖²`).
 
 Results.
-* Linearization at the origin `!![μ, −ω₀; ω₀, μ]`: every eigenvalue has real part `μ`, and
-  `μ + iω₀` is one; for the linear part (`c = 0`) every solution has `‖x(t)‖ = e^{μ(t−a)}‖x(a)‖`,
+* Linearization at the origin `!![μ, −ω₀; ω₀, μ]` (`fderiv_field_zero`, `linPart`): every
+  eigenvalue has real part `μ`, and `μ + iω₀` is one (`eigenvalue_re`, `exists_eigenpair`); for
+  the linear part (`c = 0`) every solution has `‖x(t)‖ = e^{μ(t−a)}‖x(a)‖` (`linear_norm_eq`),
   so the linear decay rate is exactly `|μ|` when `μ < 0`. The origin of the nonlinear field is
-  locally exponentially stable for `μ < 0` and unstable for `μ > 0`.
+  locally exponentially stable for `μ < 0` and unstable for `μ > 0` (`origin_stable`,
+  `origin_unstable`).
 * Polar form: along every solution `ρ̇ = 2μρ + 2l₁ρ²`, `ṙ = μr + l₁r³` (`r > 0`) and
-  `x₀ẋ₁ − x₁ẋ₀ = (ω₀ + κρ)ρ`, i.e. `θ̇ = ω₀ + κr²`.
-* If `R² = −μ/l₁ > 0` the circle `|z| = R` is invariant and carries the periodic solution
-  `R (cos Ωt, sin Ωt)`, `Ω = ω₀ + κR²` (`Ω ≠ 0`); its range is the whole circle.
+  `x₀ẋ₁ − x₁ẋ₀ = (ω₀ + κρ)ρ`, i.e. `θ̇ = ω₀ + κr²` (`radial_identity`, `angular_identity`,
+  `normSq_isIntegralCurveOn`, `radius_hasDerivWithinAt`).
+* If `R² = −μ/l₁ > 0` the circle `|z| = R` is invariant (`circle_invariant`) and carries the
+  periodic solution `R (cos Ωt, sin Ωt)`, `Ω = ω₀ + κR²` (`Ω ≠ 0`; `cycle`,
+  `cycle_isPeriodicOrbit`); its range is the whole circle (`range_cycle`).
 * Supercritical (`μ > 0 > l₁`, `R = √(μ/|l₁|)`): the cycle is an attracting limit cycle; every
-  forward-complete solution with `x(a) ≠ 0` has `|z| → R` and distance to the cycle `→ 0`.
+  forward-complete solution with `x(a) ≠ 0` has `|z| → R` and distance to the cycle `→ 0`
+  (`supercritical_norm_tendsto`, `supercritical_isAttractingLimitCycle`).
 * Subcritical (`μ < 0 < l₁`, `R = √(−μ/l₁)`): the cycle is repelling,
-  `|1/|z|² − 1/R²|` grows like `e^{2|μ|(t−a)}`, and solutions starting inside converge to `0`.
+  `|1/|z|² − 1/R²|` grows like `e^{2|μ|(t−a)}` (`subcritical_repelling`), and solutions starting
+  inside converge to `0` (`subcritical_inside_tendsto_zero`).
 * Normal-form scaling (`normalForm_rescale`): if `z` solves `ż = λz + c z|z|²`, then `w = κ z`
   (`κ > 0`) solves `ẇ = λw + (c/κ²) w|w|²`. The Guckenheimer–Holmes planar coordinate
   `x − x* = T[Re w, −Im w]ᵀ = Re(v w)` and Kuznetsov's `x − x* = z q + z̄ q̄ = 2 Re(z q)` agree
@@ -35,25 +60,6 @@ Results.
   (`lyap1`), rescaling the eigenvector `q ↦ s q` (with `p` rescaled to keep `⟨p, q⟩ = 1`)
   multiplies `ℓ₁` by `|s|²`: `ℓ₁ ∝ ‖q‖²`, so values computed with different eigenvector
   normalizations are not comparable without renormalization.
-
-Periodic orbits and attracting limit cycles are written out in the statements (behaviour is
-defined only in the semantic layer). A *periodic orbit* of `ẋ = f x` with period `T` is a curve
-`γ : ℝ → State n` with `0 < T`, `∀ t, HasDerivAt γ (f (γ t)) t` (a solution defined for all time),
-`∀ t, γ (t + T) = γ t` and `∃ t, γ t ≠ γ 0` (nonconstant). It is an *attracting limit cycle* when,
-in addition, some open `U ⊇ range γ` is *orbitally attracted*: every forward-complete solution
-`φ` (`IsIntegralCurveOn φ (fun _ x => f x) (Ici a)`) with `φ a ∈ U` has
-`Metric.infDist (φ t) (range γ) → 0` as `t → ∞`.
-
-Source: work-sync theory/T-hopf-bifurcation.md §1.1–1.4, theory/T-bifurcation.md §1.4
-(Hopf normal form), theory/T-fold-critical-scaling.md §2.4 (Hopf linear rate);
-projects/gfl-gfm-stability-tree/notes/concepts/frozen-and-basin.md (幅值坐标声明: GH vs Kuznetsov
-"精确差因子 4", `r_c` 差因子 2); projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
-archive/notes/concepts/forced-orbit-and-bandwidth.md (`ℓ₁ ∝ ‖q‖²`).
-The `O(|z|⁴)` / `O(r⁵)` remainder bookkeeping of §1.2 is not formalized (truncated system only).
-
-Architecture: a truncated normal form, not an engineering model, so no model family is defined;
-all results remain public foundation support. Behaviour is LeanForControl's predicates and the
-linearization theorems of `powerlib.Criteria` / `powerlib.Flow`.
 -/
 
 noncomputable section

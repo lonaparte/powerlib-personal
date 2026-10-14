@@ -4,30 +4,38 @@ import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-! # Overdamped (Smoluchowski) limit: energy balance, Boltzmann density, rescaling
 
-Foundation layer (categories B and C).
+The energy identity of the damped Newton equation, the zero-flux Boltzmann density of the
+Smoluchowski equation, local stability of the overdamped gradient flow, and the corrected
+multiscale rescaling.
 
-Source: work-sync `theory/T-overdamped-limit.md` §1.2 (Smoluchowski equation, Boltzmann
+Model boundary.
+* Scalar Newton form `m θ̈ + γ θ̇ + V'(θ) = F(t)` with constant `m, γ`; potential `V`
+  differentiable (`C²` where stated); deterministic trajectories for the energy identity.
+* For the density statement, the Smoluchowski Fokker–Planck flux `J = −(V'/γ) p − (D/γ) p'` with
+  constant `D > 0` (no stochastic calculus is used: the claim is that the Boltzmann density
+  makes `J ≡ 0`).
+
+Source: work-sync theory/T-overdamped-limit.md §1.2 (Smoluchowski equation, Boltzmann
 stationary density `p ∝ exp(−V/D)`), §1.3 (multiscale rescaling), §1.5 (energy dissipation),
 §1.7 (stationary Fokker–Planck check).
 
-Model boundary: scalar Newton form `m θ̈ + γ θ̇ + V'(θ) = F(t)` with constant `m, γ`; potential `V`
-differentiable (`C²` where stated); deterministic trajectories for the energy identity; for the
-density statement, the Smoluchowski Fokker–Planck flux `J = −(V'/γ) p − (D/γ) p'` with constant
-`D > 0` (no stochastic calculus is used: the claim is that the Boltzmann density makes `J ≡ 0`).
-
 Results.
-* `energy_balance`: along every trajectory, `d/dt [½ m θ̇² + V(θ)] = −γ θ̇² + F θ̇`.
-* `boltzmann_hasDerivAt`, `boltzmann_flux_zero`: `p = e^{−V/D}/Z` has `p' = −(V'/D) p`, so the
+* `energy_balance` — along every trajectory, `d/dt [½ m θ̇² + V(θ)] = −γ θ̇² + F θ̇`.
+* `boltzmann_hasDerivAt`, `boltzmann_flux_zero` — `p = e^{−V/D}/Z` has `p' = −(V'/D) p`, so the
   probability flux vanishes identically (stationary, detailed balance);
   `boltzmann_integral_eq_one`, `boltzmann_pos`: under the integrability premise
   `∫ e^{−V/D} < ∞` (which the note leaves implicit) `p` is a probability density.
-* `gradientFlow_locallyExponentiallyStable` (C: application of
-  `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`): the overdamped flow
-  `θ̇ = −V'(θ)/γ` (`V ∈ C²`, `γ > 0`) is locally exponentially stable at every critical point with
-  `V''(θ*) > 0`.
-* Correction (§1.3): with `κ = V''_max > 0`, `τ_V = γ/κ`, `ϑ(s) = θ(τ_V s)`, the exact rescaled
-  equation is `ε² ϑ'' + ϑ' + V'(ϑ)/κ = F(τ_V s)/κ` with `ε² = mκ/γ²` (`rescaled_equation`); the
-  note's `ε = √(m/(γ² τ_V))` and `ε² ϑ'' + ε ϑ' + V'(ϑ) = F` are wrong: for `m = κ = 1`, `γ = 2`,
+* `gradientFlow_locallyExponentiallyStable` — an application of
+  `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`: the overdamped flow
+  `θ̇ = −V'(θ)/γ` (`V ∈ C²`, `γ > 0`) is locally exponentially stable at every critical point
+  with `V''(θ*) > 0`.
+* `rescaled_equation`, `note_rescaling_false` — the exact rescaled equation and the
+  counterexample to the note's rescaling (see Corrections).
+
+Corrections.
+* §1.3: with `κ = V''_max > 0`, `τ_V = γ/κ`, `ϑ(s) = θ(τ_V s)`, the exact rescaled equation is
+  `ε² ϑ'' + ϑ' + V'(ϑ)/κ = F(τ_V s)/κ` with `ε² = mκ/γ²` (`rescaled_equation`); the note's
+  `ε = √(m/(γ² τ_V))` and `ε² ϑ'' + ε ϑ' + V'(ϑ) = F` are wrong: for `m = κ = 1`, `γ = 2`,
   `V' = F = 0` the solution `θ = e^{−2t}` violates the note's equation (`note_rescaling_false`).
 -/
 

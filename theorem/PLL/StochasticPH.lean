@@ -5,14 +5,8 @@ import theorem.Transform.Park
 
 /-! # Itô correction of the SRF-PLL SPHS and its GFL form-B / grid-disturbance specializations
 
-Source: work-sync `theory/T-pll-sph.md` §1.1–§1.2 (noise coupling `h_noise = (K_p σ_v, σ_v)ᵀ`,
-Hessian `diag(𝒱'', K_i)`, `Δ_Itô = ½ σ_v²[K_p² 𝒱'' + K_i]` (1.6), saddle value and the
-`ζ = 1/2` threshold (1.7), frequency-channel supplement `½ σ_ω² 𝒱''`), `theory/T-pll-ph.md`
-(potential `𝒱(θ) = V_g(1 − cos θ)`), `theory/T-gfl-sph.md` §1.1–§1.3 (form-B `σ_v(θ_e)`),
-`theory/T-gfl-dynamics.md` §1.6–§1.7 (form-B quasi-steady line + LC algebraic equations),
-`theory/T-grid-disturbance-stochastic.md` §1.2.a (Park projection `σ_v^bare`).
-
-Model boundary.  State `(θ_e, η)` of the SRF-PLL (phase error, PI integrator), Hamiltonian
+Model boundary.
+State `(θ_e, η)` of the SRF-PLL (phase error, PI integrator), Hamiltonian
 `𝓗 = 𝒱(θ_e) + ½ K_i η²`.  The voltage disturbance `ξ_v = (ξ_d, ξ_q)` enters through the
 1×2 row `σ_v(θ_e)`: `dθ_e ∋ K_p σ_v dW_v`, `dη ∋ σ_v dW_v`.  The form-B specialization is the
 quasi-steady line + LC algebra of T-gfl-dynamics §1.6 (inner current loop and outer loops frozen,
@@ -20,6 +14,24 @@ quasi-steady line + LC algebra of T-gfl-dynamics §1.6 (inner current loop and o
 Everything here is **foundation**: the Itô correction is the algebraic expression
 `½ tr(h hᵀ ∇²𝓗)` at a state (see `SPH.itoCorrection`); no SDE solution, Itô formula,
 escape rate or stability claim is made (Rules §3).
+
+Source: work-sync `theory/T-pll-sph.md` §1.1–§1.2 (noise coupling `h_noise = (K_p σ_v, σ_v)ᵀ`,
+Hessian `diag(𝒱'', K_i)`, `Δ_Itô = ½ σ_v²[K_p² 𝒱'' + K_i]` (1.6), saddle value and the
+`ζ = 1/2` threshold (1.7), frequency-channel supplement `½ σ_ω² 𝒱''`), `theory/T-pll-ph.md`
+(potential `𝒱(θ) = V_g(1 − cos θ)`), `theory/T-gfl-sph.md` §1.1–§1.3 (form-B `σ_v(θ_e)`),
+`theory/T-gfl-dynamics.md` §1.6–§1.7 (form-B quasi-steady line + LC algebraic equations),
+`theory/T-grid-disturbance-stochastic.md` §1.2.a (Park projection `σ_v^bare`).
+
+Results.
+* `pllIto`: `Δ_Itô = ½ σ_v σ_vᵀ (K_p² 𝒱'' + K_i)` for the SRF-PLL noise coupling;
+  `pllIto_freq` adds the frequency channel `½ σ_ω² 𝒱''`.
+* `pllIto_saddle`, `pllIto_saddle_neg_iff`, `pllIto_saddle_pos_iff`, `pllIto_bottom_pos`: at the
+  saddle `θ_e = π` the correction is negative iff `ζ > 1/2`; at the well bottom it is positive.
+* `pllIto_bare`, `park_q_eq_sigmaBare`, `park_isotropic_cov`, `park_q_variance`: the bare
+  grid-disturbance coupling `σ_v^bare = (−sin θ, cos θ)` (unit norm) of the Park projection.
+* `lineResidual_eq_zero_iff`, `lineSolution_split`, `pllInput_noise_split`, `gflSigma_sq`,
+  `gflIto`: the form-B quasi-steady line + LC solution, its noise row `σ_v(θ_e)` and the form-B
+  Itô correction.
 
 Correction (T-gfl-sph §1.3 / T-pll-sph (1.6)).  `σ_v` is a **row vector**, so "σ_v²" must be
 read as `σ_v σ_vᵀ = σ_v ⬝ σ_v` (`pllNoise_mul_transpose`).  With that reading the closed forms of

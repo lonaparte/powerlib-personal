@@ -2,32 +2,44 @@ import theorem.SingularPerturbation.FrozenFast
 
 /-! # Linear singular perturbation: the finite-horizon `O(ε)` error (Tikhonov, linear case)
 
-Foundation layer (category B).
+On a finite horizon, the slow state of a linear singularly perturbed system stays `O(ε)` close to
+the reduced solution and the fast state to the quasi-steady state plus the boundary layer.
 
-System (continuous time, constant real matrices, `n` slow states `x`, `m` fast states `z`,
-small parameter `ε > 0`, no input; the same `LinearSP` data as
-`theorem.SingularPerturbation.Linear`):
+Model boundary.
+* Continuous time, constant real matrices, `n` slow states `x`, `m` fast states `z`, small
+  parameter `ε > 0`, no input; the same `LinearSP` data as
+  `theorem/SingularPerturbation/Linear.lean`:
 ```
 ẋ = A₁₁ x + A₁₂ z,        ε ż = A₂₁ x + A₂₂ z .
 ```
-Quasi-steady state `z = h(x) = −L x`, `L = A₂₂⁻¹A₂₁` (`LinearSP.gain`); reduced (slow) system
-`x̄' = A₀ x̄`, `A₀ = A₁₁ − A₁₂A₂₂⁻¹A₂₁` (`LinearSP.reducedMatrix`), `x̄(0) = x(0)`; boundary-layer
-system in the fast time `τ = t/ε`: `dz_b/dτ = A₂₂ z_b`, `z_b(0) = z(0) − h(x(0)) = z(0) + L x(0)`.
-Solutions are global coordinate solutions (`∀ t, HasDerivAt x (…) t`, which every solution of
-these linear equations is); `|v|² = v ⬝ᵥ v`.
+* Quasi-steady state `z = h(x) = −L x`, `L = A₂₂⁻¹A₂₁` (`LinearSP.gain`); reduced (slow) system
+  `x̄' = A₀ x̄`, `A₀ = A₁₁ − A₁₂A₂₂⁻¹A₂₁` (`LinearSP.reducedMatrix`), `x̄(0) = x(0)`;
+  boundary-layer system in the fast time `τ = t/ε`: `dz_b/dτ = A₂₂ z_b`,
+  `z_b(0) = z(0) − h(x(0)) = z(0) + L x(0)`.
+* Solutions are global coordinate solutions (`∀ t, HasDerivAt x (…) t`, which every solution of
+  these linear equations is); `|v|² = v ⬝ᵥ v`.
+* Linear, time invariant, autonomous, constant `ε`, finite horizon `[0, T]`; deterministic; no
+  inputs. Nonlinear Tikhonov estimates are not claimed here. No definitions; every statement is
+  about arbitrary matrices and their solutions.
 
-Main result (`LinearSP.exists_finiteHorizon_error`): if the boundary-layer matrix `A₂₂` is
-Hurwitz, then for every horizon `T` there are `ε₀ > 0` and `C` such that for all
-`ε ∈ (0, ε₀]`, all solutions and all `t ∈ [0, T]`
+Source: work-sync theory/T-tikhonov.md §1.1 (main statement, boundary-layer term),
+theory/T-singular-perturbation.md §1.5 (finite-horizon approximation); the linear estimate is
+Kokotović–Khalil–O'Reilly (1986) Ch. 2 / Khalil, *Nonlinear Systems*, Thm. 11.1, cited in both
+notes.
+
+Results.
+* `LinearSP.exists_finiteHorizon_error` — if the boundary-layer matrix `A₂₂` is Hurwitz, then
+  for every horizon `T` there are `ε₀ > 0` and `C` such that for all `ε ∈ (0, ε₀]`, all
+  solutions and all `t ∈ [0, T]`
 ```
 |x(t) − x̄(t)|²                       ≤ C ε² (|x(0)|² + |z(0)|²),
 |z(t) − (h(x̄(t)) + z_b(t/ε))|²        ≤ C ε² (|x(0)|² + |z(0)|²),
 ```
-i.e. both errors are `O(ε)` uniformly on `[0, T]`, including the initial layer. Stability of
-the reduced matrix `A₀` is **not** assumed (finite horizon); `ε₀ = 1/(K + 1)` and `C` are
-explicit in the proof (`K` from the Lyapunov solution of `A₂₂`).
+  i.e. both errors are `O(ε)` uniformly on `[0, T]`, including the initial layer. Stability of
+  the reduced matrix `A₀` is **not** assumed (finite horizon); `ε₀ = 1/(K + 1)` and `C` are
+  explicit in the proof (`K` from the Lyapunov solution of `A₂₂`).
 
-This is the corrected form of `T-tikhonov` §1.1 (see `theorem.SingularPerturbation.Tikhonov`,
+This is the corrected form of `T-tikhonov` §1.1 (see `theorem/SingularPerturbation/Tikhonov.lean`,
 Correction 1: without the boundary-layer term the bound fails at `t = 0`), proved here for the
 general linear system rather than the scalar test system.
 
@@ -43,17 +55,6 @@ solution of `A₂₂` (`BoundedCertificate`, from LeanForControl's Lyapunov equa
 4. `z − (h(x̄) + η_b) = e − L (x − x̄)`.
 The scalar comparison lemmas (`comparison_of_deriv_le`, `le_of_deriv_le_neg`,
 `le_of_deriv_le_pos`) and quadratic-form calculus are generic support.
-
-Model boundary: linear, time invariant, autonomous, constant `ε`, finite horizon `[0, T]`;
-deterministic; no inputs. Nonlinear Tikhonov estimates are not claimed here.
-
-Architecture: generic mathematical support (no `Family`, no definitions); every statement is
-about arbitrary matrices and their solutions, so the results are public foundation.
-
-Source: work-sync theory/T-tikhonov.md §1.1 (main statement, boundary-layer term),
-theory/T-singular-perturbation.md §1.5 (finite-horizon approximation); the linear estimate is
-Kokotović–Khalil–O'Reilly (1986) Ch. 2 / Khalil, *Nonlinear Systems*, Thm. 11.1, cited in both
-notes.
 -/
 
 noncomputable section

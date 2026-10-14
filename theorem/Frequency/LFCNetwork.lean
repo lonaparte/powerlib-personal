@@ -4,56 +4,58 @@ import theorem.LTI.Decay
 
 /-! # Multi-area load-frequency control on a tie-line graph
 
-Source: work-sync `theory/T-load-frequency-control.md` §1.1–§1.6 and the last paragraph of §1.7
-("进一步推广到 `N_a` 区 … `(3 N_a + N_t)` 维").
+The `N`-area LFC/AGC model on an arbitrary tie-line graph as a linear family: the
+non-interactive steady state, the zero mode of meshed graphs, and a gain condition that makes
+every radial graph exponentially stable (including the two-area model of `Frequency.LFC`).
 
-Model boundary. Same per-area model as `Frequency.LFC.plant` (continuous-time, linear, Kundur
-per-unit, governors instantaneous `T_g → 0`, one coherent machine per area, AGC integral on the
-tie-line-bias ACE, no dead-band / limits / HVDC / voltage dynamics), now for a finite set `α`
-of areas and a finite set `β` of tie lines, coupled by an arbitrary real matrix
-`𝓑 : Matrix α β ℝ`; the intended case is the signed incidence matrix
-`Network.signedIncidence tail head` of the directed tie-line graph (`+1` at the sending area).
+Model boundary.
+* Same per-area model as `Frequency.LFC.plant` (continuous-time, linear, Kundur per-unit,
+  governors instantaneous `T_g → 0`, one coherent machine per area, AGC integral on the
+  tie-line-bias ACE, no dead-band / limits / HVDC / voltage dynamics), for a finite set `α` of
+  areas and a finite set `β` of tie lines, coupled by an arbitrary real matrix
+  `𝓑 : Matrix α β ℝ`; the intended case is the signed incidence matrix
+  `Network.signedIncidence tail head` of the directed tie-line graph (`+1` at the sending area).
 * State index `α ⊕ (β ⊕ α)`: `inl a` = `Δω_a`, `inr (inl ℓ)` = line flow `ΔP_tie,ℓ`
   (from `tail ℓ` to `head ℓ`), `inr (inr a)` = `ΔP_C,a`. Input `ΔP_L : α → ℝ`.
 * Equations: `M_a Δω̇_a = ΔP_C,a − K_R,a Δω_a − ΔP_L,a − D_a Δω_a − (𝓑 ΔP_tie)_a`;
   `ΔṖ_tie,ℓ = ω_s T_ℓ (𝓑ᵀ Δω)_ℓ`; `ΔṖ_C,a = −K_I,a ((𝓑 ΔP_tie)_a + B_a Δω_a)`.
 
+Source: work-sync `theory/T-load-frequency-control.md` §1.1–§1.6 and the last paragraph of §1.7
+("进一步推广到 `N_a` 区 … `(3 N_a + N_t)` 维").
+
 Results.
-* `netModel_card` (foundation). Correction: with `T_g → 0` (the simplification used for §1.7)
-  the state dimension is `2 N_a + N_t`; the note's `3 N_a + N_t` counts one governor state per
-  area that the §1.7 model has eliminated.
+* `netModel_card` (foundation): the state dimension is `2 N_a + N_t`.
 * `netField x u = netA x + netB u` is the field under the constant loads `u`.
-* `netModel_isEquilibrium_iff` (foundation, static, §1.6 for `N_a` areas): if the tie-line graph is
-  connected (`ker 𝓑ᵀ` = constants), every column of `𝓑` sums to zero, `Σ_a B_a ≠ 0`,
+* `netModel_isEquilibrium_iff` (foundation, static, §1.6 for `N_a` areas): if the tie-line graph
+  is connected (`ker 𝓑ᵀ` = constants), every column of `𝓑` sums to zero, `Σ_a B_a ≠ 0`,
   `K_I,a ≠ 0`, `ω_s T_ℓ ≠ 0`, `M_a ≠ 0`, then the equilibria are exactly
   `Δω = 0`, net tie exports `𝓑 ΔP_tie = 0`, `ΔP_C,a = ΔP_L,a` (non-interactive control).
   `signedIncidence_isEquilibrium_iff` instantiates this for the signed incidence matrix of a
   connected graph (`TieConnected`); `isEquilibrium_iff_of_ker` gives the unique equilibrium
   `(0, 0, ΔP_L)` when `𝓑` has trivial kernel (radial tie-line graph).
-* `netModel_not_spectrallyStable` (foundation, static), `triangle_not_spectrallyStable`: if `𝓑` has a
-  nonzero kernel vector (a loop in the tie-line graph, e.g. three areas in a ring) the
+* `netModel_not_spectrallyStable` (foundation, static), `triangle_not_spectrallyStable`: if `𝓑`
+  has a nonzero kernel vector (a loop in the tie-line graph, e.g. three areas in a ring) the
   line-flow state matrix is singular (a circulating flow is a zero mode), so the model is
-  **never** asymptotically stable, for any gains. Correction: line flows are not independent
-  states on a meshed graph; a stable realization must use area angles or a spanning tree.
+  **never** asymptotically stable, for any gains.
 * `LTI.tendsto_of_spectrallyStable` (foundation, any matrices on a finite index type, by
   transport to `Fin N`; `theorem/LTI/Decay.lean`) and `netModel_tendsto` (private): on a radial
   tie-line graph, a spectrally stable state matrix (explicit premise) makes every trajectory
   under constant loads converge to `(0, 0, ΔP_L)`.
-* Gain condition (foundation, static; replaces the missing parametric Routh–Hurwitz condition by
-  a sufficient one that holds for every tie-line strength and every radial topology):
+* Gain condition (foundation, static; a sufficient condition in place of the missing parametric
+  Routh–Hurwitz condition, holding for every tie-line strength and every radial topology):
   `netA_spectrallyStable_of_gain` — if `𝓑` has trivial kernel (radial graph), every area has
   `M_a, K_I,a, B_a > 0` and **`K_I,a M_a ≤ D_a + K_R,a`**, and every line has `ω_s T_ℓ > 0`, the
-  state matrix is spectrally stable. Proof: in the coordinates `ξ_a = ΔP_C,a − K_I,a M_a Δω_a` the
-  tie-line flows drop out of the AGC rows (`netXi_mulVec`: `ξ̇ = K_I (g − B) Δω − K_I ξ`,
+  state matrix is spectrally stable. Proof: in the coordinates `ξ_a = ΔP_C,a − K_I,a M_a Δω_a`
+  the tie-line flows drop out of the AGC rows (`netXi_mulVec`: `ξ̇ = K_I (g − B) Δω − K_I ξ`,
   `g = D + K_R − K_I M ≥ 0`); the storage
   `E = Σ M Δω² + Σ ΔP_tie²/(ω_s T) + Σ ξ²/(K_I (g + B))` (`netEnergy`) has
   `E(z, A z) = −Σ ((ξ − g Δω)² + g B Δω²)/(g + B)` for every state `z` (`netEnergy_mulVec`, the
   tie-line terms cancel by `𝓑`/`𝓑ᵀ` duality); a real eigen-pair with nonnegative real part
   (`LTI.spectrallyStable_of_real_pairs`) must then have `ξ = 0`, `Δω = 0` (AGC rows), zero net
   exports (frequency rows) and zero line flows (trivial kernel). `plant_A_eq_reindex`,
-  `plant_isHurwitz_of_gain`: the five-state two-area matrix of `Frequency.LFC` is this matrix for
-  two areas and one line (`𝓑 = (1, −1)ᵀ`), relabelled, so the same condition makes it Hurwitz.
-  Only sufficiency is claimed (the exact two-area condition would be the fifth-order
+  `plant_isHurwitz_of_gain`: the five-state two-area matrix of `Frequency.LFC` is this matrix
+  for two areas and one line (`𝓑 = (1, −1)ᵀ`), relabelled, so the same condition makes it
+  Hurwitz. Only sufficiency is claimed (the exact two-area condition would be the fifth-order
   Hurwitz-determinant list, not formalized); the condition involves neither the tie-line
   coefficients nor the size of the frequency bias.
 
@@ -70,16 +72,24 @@ Family and connection conclusions.
 * Connection theorems, for `Fin N_a` areas and `Fin N_t` lines (the claim grammar quantifies
   over data, not over index types): `net_chain_le_semantics`, `net_exact_hurwitz`,
   `net_mem_den_globallyExponentiallyStable` (spectral stability of `netA`, explicit static
-  premise; formerly `netModel_tendsto`), `net_not_mem_den_attractive` (a loop in the tie-line
-  graph excludes every attractive sentence, for any gains) and `triangle_not_mem_den_attractive`.
-  Parametric connection conclusions: `net_mem_den_of_gain` (`N` areas, radial graph, gain
-  condition ⇒ every attractive sentence and sampled contraction) and `mem_den_of_gain` (the
-  two-area family `Frequency.LFC.family` under the same condition, replacing the Hurwitz premise
-  of `LFC.mem_den_globallyExponentiallyStable`).
-* The equilibrium characterizations and spectral statements (formerly `@[powerlib_domain]`) are
-  static evidence (`@[powerlib_foundation]`); `LTI.tendsto_of_spectrallyStable` is a generic
-  implication about arbitrary matrices (foundation). Private implementation evidence
-  (trajectory level, Rules §3a): `netModel_tendsto`.
+  premise), `net_not_mem_den_attractive` (a loop in the tie-line graph excludes every attractive
+  sentence, for any gains) and `triangle_not_mem_den_attractive`. Parametric connection
+  conclusions: `net_mem_den_of_gain` (`N` areas, radial graph, gain condition ⇒ every
+  attractive sentence and sampled contraction) and `mem_den_of_gain` (the two-area family
+  `Frequency.LFC.family` under the same condition, replacing the Hurwitz premise of
+  `LFC.mem_den_globallyExponentiallyStable`).
+* The equilibrium characterizations and spectral statements are static evidence
+  (`@[powerlib_foundation]`); `LTI.tendsto_of_spectrallyStable` is a generic implication about
+  arbitrary matrices (foundation). Private implementation evidence (trajectory level, Rules
+  §3a): `netModel_tendsto`.
+
+Corrections.
+* §1.7 dimension: with `T_g → 0` (the simplification used for §1.7) the state dimension is
+  `2 N_a + N_t` (`netModel_card`); the note's `3 N_a + N_t` counts one governor state per area
+  that the §1.7 model has eliminated.
+* Meshed graphs: line flows are not independent states on a meshed graph
+  (`netModel_not_spectrallyStable`); a stable realization must use area angles or a spanning
+  tree.
 -/
 
 noncomputable section

@@ -5,22 +5,24 @@ import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-! # Cholesky factorization of symmetric positive definite matrices
 
-Foundation layer (categories C and B; general numerical linear algebra).
+Every positive definite matrix has a unique lower triangular factor with positive diagonal.
 
-Source: work-sync `theory/T-linear-algebra.md` §1.4 ("`A` 对称正定 → 存在唯一下三角 `L` with 正对角,
-`A = L Lᵀ`").
+Scope.
+* General numerical linear algebra: real square matrices indexed by `Fin k`; "lower
+  triangular" is Mathlib's `Matrix.IsLowerTriangular` (`L i j = 0` for `i < j`); exact
+  arithmetic.
 
-Setting: real square matrices indexed by `Fin k`; "lower triangular" is Mathlib's
-`Matrix.IsLowerTriangular` (`L i j = 0` for `i < j`); exact arithmetic.
+Source: work-sync theory/T-linear-algebra.md §1.4 ("`A` 对称正定 → 存在唯一下三角 `L` with
+正对角, `A = L Lᵀ`").
 
 Results.
-* `cholesky_exists` (C: built on Mathlib's LDL decomposition `LDL.lower_conj_diag`,
+* `cholesky_exists` — built on Mathlib's LDL decomposition (`LDL.lower_conj_diag`,
   `LDL.diag_eq_lowerInv_conj`): every positive definite `S` has a lower triangular `L` with
   positive diagonal and `L Lᵀ = S`. (`L = L_LDL · diag(√dᵢ)`, columns re-signed so that the
   diagonal is positive.)
-* `cholesky_unique` (B): two lower triangular factors with positive diagonals and the same
-  product `L₁L₁ᵀ = L₂L₂ᵀ` are equal (the matrix `L₂⁻¹L₁` is lower triangular, orthogonal and
-  has positive diagonal, hence is `I`).
+* `cholesky_unique` — two lower triangular factors with positive diagonals and the same product
+  `L₁L₁ᵀ = L₂L₂ᵀ` are equal (the matrix `L₂⁻¹L₁` is lower triangular, orthogonal and has
+  positive diagonal, hence is `I`).
 -/
 
 noncomputable section

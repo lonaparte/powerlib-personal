@@ -2,38 +2,44 @@ import theorem.PLL.PIPLL
 
 /-! # Liénard (velocity) coordinates of the PI-PLL and the Bogdanov–Takens coefficients
 
-Foundation module on the model of `theorem/PLL/PIPLL.lean` (same boundary: state `(θ, η)`,
-`θ̇ = K_p h(θ) + K_i η − δω`, `η̇ = h(θ)`, continuous time, constant `δω`).
+Foundation module: a coordinate change and exact normal-form coefficients for the PI-PLL.
 
+Model boundary.
+The model of `theorem/PLL/PIPLL.lean`, with the same boundary: state `(θ, η)`,
+`θ̇ = K_p h(θ) + K_i η − δω`, `η̇ = h(θ)`, continuous time, constant `δω`.
+
+Source: work-sync `theory/T-bogdanov-takens-bifurcation.md` §1.2, §1.5–§1.6 (the note leaves
+`b ≠ 0` "to numerical verification"; here `b₁₁ = K_p h''(θ*)` is proved exactly);
+`theory/T-gfl-dynamics.md` §1.13; `projects/vsc-stochastic-stability/notes/concepts/
+equilibria-and-bifurcation.md` §9.
+
+Results.
 * Velocity coordinates `w = θ̇ = K_p h(θ) + K_i η − δω` (`piPLLVelocityCoord`). For `K_i ≠ 0`
   this is a bijection of `ℝ²` (`piPLLVelocityCoordInv`), and, for differentiable `h` with
   derivative `h'`, it maps solutions of the PI-PLL field to solutions of the Liénard field
   `θ̇ = w`, `ẇ = K_i h(θ) + K_p h'(θ) w` (`piPLLLienardField`) and back
   (`isIntegralCurveOn_piPLLVelocityCoord`, `isIntegralCurveOn_piPLLVelocityCoordInv`).
   The constant offset `δω` disappears from the Liénard form.
-* At a zero `θ*` of `h` with `h'(θ*) = 0` (the degenerate case of `piPLL_jacobian_nilpotent_of_
-  deriv_zero`) the equilibrium is `(θ*, 0)` in `(θ, w)`, the Jacobian of the Liénard field is the
-  Jordan block `[[0, 1], [0, 0]]`, and the second component
+* At a zero `θ*` of `h` with `h'(θ*) = 0` (the degenerate case of
+  `piPLL_jacobian_nilpotent_of_deriv_zero`) the equilibrium is `(θ*, 0)` in `(θ, w)`, the
+  Jacobian of the Liénard field is the Jordan block `[[0, 1], [0, 0]]`, and the second component
   `F(u, w) = K_i h(θ* + u) + K_p h'(θ* + u) w` has, exactly,
   `F_uu(0,0) = b₂₀ = K_i h''(θ*)`, `F_uw(0,0) = b₁₁ = K_p h''(θ*)`, `F_ww = b₀₂ = 0`
   (`bt_b20`, `bt_b11`, `bt_b02`). With the first equation exactly `u̇ = w`, the quadratic
   Bogdanov–Takens nondegeneracy coefficients are `a = b₂₀ / 2` and `b = b₁₁`; both are nonzero iff
   `h''(θ*) ≠ 0` (for `K_p, K_i ≠ 0`).
 
-Source: work-sync `theory/T-bogdanov-takens-bifurcation.md` §1.2, §1.5–§1.6 (the note leaves
-`b ≠ 0` "to numerical verification"; here `b₁₁ = K_p h''(θ*)` is proved exactly);
-`theory/T-gfl-dynamics.md` §1.13; `projects/vsc-stochastic-stability/notes/concepts/
-equilibria-and-bifurcation.md` §9.
+Family and connection conclusions.
+This module defines no family and states no behaviour of the
+PI-PLL family (`theorem/PLL/PIPLLFamily.lean`). The conjugacy of the integral curves of the raw
+PI-PLL field and the Liénard field is a change of coordinates for arbitrary `h`, `K_p`, `K_i`,
+`δω` (generic foundation, Mathlib integral curves); the Jacobian and BT coefficients are static.
+
 Caveat (not a correction of a formula): a Bogdanov–Takens *bifurcation* also needs a transversal
 two-parameter unfolding. For this family `K_i · tr J + K_p · det J = 0` holds identically
 (`piPLLJacobian_trace_det_relation`), so the pair `(tr, det)` of the linearization stays on one
 line through the origin; no claim about a versal unfolding, Hopf or homoclinic curves is made here
 (consistent with the narrowed statement of the vsc note §9).
-
-Family and connection conclusions. This module defines no family and states no behaviour of the
-PI-PLL family (`theorem/PLL/PIPLLFamily.lean`). The conjugacy of the integral curves of the raw
-PI-PLL field and the Liénard field is a change of coordinates for arbitrary `h`, `K_p`, `K_i`,
-`δω` (generic foundation, Mathlib integral curves); the Jacobian and BT coefficients are static.
 -/
 
 noncomputable section

@@ -3,25 +3,26 @@ import theorem.PhasePlane.Planar
 
 /-! # Teaching example: the forced oscillator with quadratic stiffness
 
-Foundation layer (a textbook example, not a converter model).
+A textbook example, not a converter model: an additive drive reappears as a periodic stiffness in
+the variational equation through the quadratic stiffness term.
 
-Model boundary. State `y = (q, q̇) = (y 0, y 1) ∈ State 2`, constant parameters `ζ, ω₀, a`, drive
-amplitude `F` (the source's `εF`) and pump frequency `ω_p`, continuous time:
-
+Model boundary.
+* State `y = (q, q̇) = (y 0, y 1) ∈ State 2`, constant parameters `ζ, ω₀, a`, drive amplitude `F`
+  (the source's `εF`) and pump frequency `ω_p`, continuous time:
   `q̈ + 2ζω₀ q̇ + ω₀² q + a q² = F cos(ω_p t)`   (`field`, time-dependent).
 
-Results.
-* First-order forced response (linear part, fixed equilibrium `q = 0`): with
-  `A₀ = !![0, 1; −ω₀², −2ζω₀]`, `b = (0, F)` and `D = ω₀² − ω_p² + 2jζω₀ω_p ≠ 0`, the state-space
-  amplitude is `χ = (Q, jω_p Q)` with `Q = F/D` (`forcedAmplitude_oscillator`), so
-  `q₁(t) = Re(Q e^{jω_p t})` solves `q̈ + 2ζω₀q̇ + ω₀²q = F cos(ω_p t)` (`forced_q_solves`).
-* Variational equation: the state Jacobian of the full field at `(q, q̇)` is
-  `!![0, 1; −(ω₀² + 2a q), −2ζω₀]` (`hasFDerivAt_field`); along a forced orbit `q_orb(t)` the
-  linearization is `ÿ + 2ζω₀ẏ + [ω₀² + 2a q_orb(t)] y = 0`: the additive drive reappears as a
-  periodic stiffness `2a q_orb(t)` through the curvature `a q²` (the `D²f[χ]` channel), and it is
-  absent when `a = 0` (`jacobian_indep_of_a_zero`).
-
 Source: work-sync projects/vsc-parametric-oscillation/notes/theory-draft.md §2.1.3.
+
+Results.
+* `forcedAmplitude_oscillator`, `forced_q_solves` — first-order forced response (linear part,
+  fixed equilibrium `q = 0`): with `A₀ = !![0, 1; −ω₀², −2ζω₀]`, `b = (0, F)` and
+  `D = ω₀² − ω_p² + 2jζω₀ω_p ≠ 0`, the state-space amplitude is `χ = (Q, jω_p Q)` with
+  `Q = F/D`, so `q₁(t) = Re(Q e^{jω_p t})` solves `q̈ + 2ζω₀q̇ + ω₀²q = F cos(ω_p t)`.
+* `hasFDerivAt_field`, `jacobian_indep_of_a_zero` — variational equation: the state Jacobian of
+  the full field at `(q, q̇)` is `!![0, 1; −(ω₀² + 2a q), −2ζω₀]`; along a forced orbit `q_orb(t)`
+  the linearization is `ÿ + 2ζω₀ẏ + [ω₀² + 2a q_orb(t)] y = 0`: the additive drive reappears as
+  a periodic stiffness `2a q_orb(t)` through the curvature `a q²` (the `D²f[χ]` channel), and it
+  is absent when `a = 0`.
 -/
 
 noncomputable section

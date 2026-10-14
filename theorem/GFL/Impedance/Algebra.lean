@@ -1,12 +1,21 @@
 import dependencies.Mathlib
 import theorem.Attributes
 
-/-! # dq impedance algebra of the GFL port (foundation, with Correction)
+/-! # dq impedance algebra of the GFL port
 
-Conventions: IN-positive port current (work-sync `conventions.md` §D1), dq frame rotating
-counter-clockwise at the constant speed `ω` with generator `J = [[0, −1], [1, 0]]` (§D4,
-`Transform.J`), complex 2×2 transfer matrices evaluated at a fixed Laplace variable `s`.
+Algebraic identities (foundation) of the dq impedances of the GFL port, with a Correction of the
+note's load model.
 
+Model boundary.
+Single L filter, grid line and shunt load of the GFL port; conventions: IN-positive port current
+(work-sync `conventions.md` §D1), dq frame rotating counter-clockwise at the constant speed `ω` with
+generator `J = [[0, −1], [1, 0]]` (§D4, `Transform.J`), complex 2×2 transfer matrices evaluated at a
+fixed Laplace variable `s`.
+
+Source: work-sync `theory/T-gfl-impedance.md` §1.1, §1.3, §1.7, §2.2;
+`theory/T-gfl-control.md` §2.12; `theory/T-park-transformation.md` §1.4.
+
+Results.
 * `Zoc_eq`, `det_Zoc`, `Zoc_inv`: filter open-circuit impedance
   `Z_oc(s) = (sL + R) I + ωL J = [[sL + R, −ωL], [ωL, sL + R]]`, its determinant
   `(sL + R)² + (ωL)²`, and its inverse `[[sL + R, ωL], [−ωL, sL + R]]/det`;
@@ -20,15 +29,14 @@ counter-clockwise at the constant speed `ω` with generator `J = [[0, −1], [1,
 * dq ↔ complex-vector (sequence) form (T-gfl-control §2.12): `Transform.toSeq` and its
   entries, decoupling criterion and return-difference invariance are in
   `theorem/Transform/ComplexImpedance.lean`.
-* Correction (T-gfl-impedance §1.7 parallel RC load): a shunt capacitor in the dq frame obeys
-  `C dv/dt = i − ω C J v` (`Transform.capacitor_dq`, derived from `C dv_αβ/dt = i_αβ` with
-  Park), so its dq admittance is `sC I + ωC J`; the note's `Z_load = R/(1 + sRC) I` omits the
-  cross term `ωC J`. `noteLoad_ne`: the two differ whenever `ωC ≠ 0`. With the corrected load,
-  `Zext_eq`: `Z_ext = (Z_line⁻¹ + Y_load)⁻¹ = Z_line (I + Y_load Z_line)⁻¹`.
+* `noteLoad_ne`, `Zext_eq`: the corrected shunt-capacitor load (Correction below) and
+  `Z_ext = (Z_line⁻¹ + Y_load)⁻¹ = Z_line (I + Y_load Z_line)⁻¹`.
 * `Y^IN = −Y^OUT` is `LTI.transfer_negOutput` (`theorem/LTI/Plant.lean`).
 
-Source: work-sync `theory/T-gfl-impedance.md` §1.1, §1.3, §1.7, §2.2;
-`theory/T-gfl-control.md` §2.12; `theory/T-park-transformation.md` §1.4.
+Correction (T-gfl-impedance §1.7 parallel RC load): a shunt capacitor in the dq frame obeys
+`C dv/dt = i − ω C J v` (`Transform.capacitor_dq`, derived from `C dv_αβ/dt = i_αβ` with Park), so
+its dq admittance is `sC I + ωC J`; the note's `Z_load = R/(1 + sRC) I` omits the cross term
+`ωC J`. `noteLoad_ne`: the two differ whenever `ωC ≠ 0`.
 -/
 
 noncomputable section

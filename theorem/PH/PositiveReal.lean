@@ -1,32 +1,40 @@
 import theorem.PH.Linear
 import theorem.Criteria.Hurwitz2
 
-/-! # Spectrum and positive realness of linear port-Hamiltonian systems (foundation layer)
+/-! # Spectrum and positive realness of linear port-Hamiltonian systems
 
-Model: the constant-coefficient pH system of `theorem/PH/Linear.lean` (P0b),
-`ẋ = (J − R) Q x + g u`, `y = gᵀ Q x`, as the linear plant `linearLTIModel J R g Q`
-(`A = (J − R) Q`, `B = g`, `C = gᵀ Q`, `D = 0`; a `Linear.Plant`), with `J` skew, `R ⪰ 0`,
-`Q ≻ 0`, all real.
-Transfer matrix `G(s) = C (sI − A)⁻¹ B` (`Linear.transfer`), the collocated port admittance
-(effort in, flow out) of T-ph (1.16).
+Static foundation: the spectrum of a linear pH system lies in the closed left half plane, and its
+collocated port admittance (and impedance) is positive real.
 
-* Spectrum (T-ph §1.10): every complex eigenvalue of `A_ph = (J − R) Q` has `Re λ ≤ 0`
-  (from the Lyapunov identity `Aᵀ Q + Q A = −2 Q R Q`, `linearStateMatrix_lyapunov` of P0b),
-  hence `sI − A` is invertible for `Re s > 0`.
-* Positive realness: `IsPositiveReal m` means: no pole and `Re uᴴ (G(s) + G(s)ᴴ) u ≥ 0` for every
-  `s` with `Re s > 0` and every complex `u`. For the linear pH system the key identity is
-  `Re uᴴ G(s) u = Re(s) xᴴ Q x + xᴴ Q R Q x` with `x = (sI − A)⁻¹ g u`, so
-  `uᴴ (G + Gᴴ) u = 2 Re(s) xᴴ Q x + 2 xᴴ Q R Q x ≥ 0`: `R ⪰ 0 ⇒ G` positive real.
-* Admittance / impedance: at a fixed `s`, an invertible `G` is positive real iff `G⁻¹` is.
-  Hence the port impedance `Z(s) = G(s)⁻¹` is positive real wherever `G(s)` is invertible.
+Model boundary.
+* The constant-coefficient pH system of `theorem/PH/Linear.lean`, `ẋ = (J − R) Q x + g u`,
+  `y = gᵀ Q x`, as the linear plant `linearLTIModel J R g Q` (`A = (J − R) Q`, `B = g`,
+  `C = gᵀ Q`, `D = 0`; a `Linear.Plant`), with `J` skew, `R ⪰ 0`, `Q ≻ 0`, all real.
+* Transfer matrix `G(s) = C (sI − A)⁻¹ B` (`Linear.transfer`), the collocated port admittance
+  (effort in, flow out) of T-ph (1.16).
 * Excluded: strict positive realness (`R ≻ 0`, note §1.10 last paragraph), behaviour on the
   imaginary axis, Nyquist arguments, nonlinear pH systems.
 
 Source: work-sync `theory/T-ph.md` §1.10 ((1.15), (1.16), "正实 … 导纳正实 ⇔ 阻抗也正实").
 
-Family and connection conclusions. None: every result here is static (spectral bounds, transfer
-matrix identities, positive realness at frequencies), all public foundation as before.
-`IsPositiveReal` is now stated for a `Linear.Plant` instead of the removed `LTI.Model`.
+Results.
+* Spectrum (T-ph §1.10): every complex eigenvalue of `A_ph = (J − R) Q` has `Re λ ≤ 0`
+  (`phSpectral_re_nonpos`, from the Lyapunov identity `Aᵀ Q + Q A = −2 Q R Q`,
+  `linearStateMatrix_lyapunov` of `theorem/PH/Linear.lean`), hence `sI − A` is invertible for
+  `Re s > 0` (`phSpectral_det_ne_zero`).
+* Positive realness: `IsPositiveReal m` means: no pole and `Re uᴴ (G(s) + G(s)ᴴ) u ≥ 0` for
+  every `s` with `Re s > 0` and every complex `u`. For the linear pH system the key identity is
+  `Re uᴴ G(s) u = Re(s) xᴴ Q x + xᴴ Q R Q x` with `x = (sI − A)⁻¹ g u`
+  (`linearLTIModel_transfer_re`), so `uᴴ (G + Gᴴ) u = 2 Re(s) xᴴ Q x + 2 xᴴ Q R Q x ≥ 0`:
+  `R ⪰ 0 ⇒ G` positive real (`linearLTIModel_isPositiveReal`).
+* Admittance / impedance: at a fixed `s`, an invertible `G` is positive real iff `G⁻¹` is
+  (`positiveRealAt_inv_iff`). Hence the port impedance `Z(s) = G(s)⁻¹` is positive real
+  wherever `G(s)` is invertible (`linearLTIModel_impedance_positiveRealAt`).
+
+Family and connection conclusions.
+* None: every result here is static (spectral bounds, transfer matrix identities, positive
+  realness at frequencies), all public foundation; `IsPositiveReal` is stated for a
+  `Linear.Plant`.
 -/
 
 noncomputable section

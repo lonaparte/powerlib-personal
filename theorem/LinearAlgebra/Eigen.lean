@@ -6,30 +6,33 @@ import Mathlib.LinearAlgebra.Matrix.Block
 
 /-! # Eigenvalue algorithms: multiplicities, shift-and-invert, one shifted QR step
 
-Foundation layer (categories B and C).
+Geometric versus algebraic multiplicity, the shift-and-invert spectral map, and one shifted QR
+step as a Hessenberg-preserving unitary similarity.
 
-Source: work-sync `theory/T-eigenvalue-analysis.md` §1.1 (`1 ≤ m_g ≤ m_a ≤ n`), §1.2 (shifted QR
+Scope.
+* Square matrices over a field (`ℂ` for the QR statements); exact arithmetic, no floating-point
+  or convergence-rate statements.
+
+Source: work-sync theory/T-eigenvalue-analysis.md §1.1 (`1 ≤ m_g ≤ m_a ≤ n`), §1.2 (shifted QR
 step `H − μI = QR`, `H⁺ = RQ + μI`, Hessenberg form preserved), §1.10 (shift-and-invert
 spectral map `μ = 1/(λ − s)`).
 
-Setting: square matrices over a field (`ℂ` for the QR statements); exact arithmetic, no
-floating-point or convergence-rate statements.
-
 Results.
-* C (Mathlib `LinearMap.finrank_eigenspace_le`): `geom_le_alg`: geometric multiplicity
-  `dim ker(A − λI) ≤` algebraic multiplicity (root multiplicity in `charpoly A`);
-  `one_le_geom` for an eigenvalue; `alg_le_card`: `m_a ≤ n`.
-* `shiftInvert_mulVec`, `eigen_of_shiftInvert`: for `s` not an eigenvalue, `A v = λ v` iff
+* `geom_le_alg`, `one_le_geom`, `alg_le_card` — Mathlib wrapper
+  (`LinearMap.finrank_eigenspace_le`): geometric multiplicity `dim ker(A − λI) ≤` algebraic
+  multiplicity (root multiplicity in `charpoly A`); `1 ≤ m_g` for an eigenvalue; `m_a ≤ n`.
+* `shiftInvert_mulVec`, `eigen_of_shiftInvert` — for `s` not an eigenvalue, `A v = λ v` iff
   `(A − sI)⁻¹ v = (λ − s)⁻¹ v`; every eigenvalue `μ` of `(A − sI)⁻¹` is nonzero and comes from
   the eigenvalue `s + μ⁻¹` of `A` with the same eigenvector.
-* `qrStep_similar`: with `Q` unitary and `H − μI = QR`, the update `RQ + μI = Qᴴ H Q` is a unitary
-  similarity (same spectrum); `qrStep_hessenberg`: if `H` is upper Hessenberg and `R` is
+* `qrStep_similar` — with `Q` unitary and `H − μI = QR`, the update `RQ + μI = Qᴴ H Q` is a
+  unitary similarity (same spectrum); `qrStep_hessenberg`: if `H` is upper Hessenberg and `R` is
   upper triangular and invertible, `RQ + μI` is again upper Hessenberg.
 
-Correction (`T-eigenvalue-analysis` §1.2, remark only, not formalized): the asymptotic cubic
-convergence of the Wilkinson-shift QR iteration holds for symmetric (Hermitian) matrices; for
-general nonsymmetric matrices the generic rate is quadratic. Convergence rates are outside the
-scope of this module.
+Corrections.
+* `T-eigenvalue-analysis` §1.2 (remark only, not formalized): the asymptotic cubic convergence
+  of the Wilkinson-shift QR iteration holds for symmetric (Hermitian) matrices; for general
+  nonsymmetric matrices the generic rate is quadratic. Convergence rates are outside the scope
+  of this module.
 -/
 
 noncomputable section

@@ -7,19 +7,26 @@ import Mathlib.Analysis.ODE.Gronwall
 
 /-! # Stochastic stability notions, moment Lyapunov exponents and the a.s. exponent bound
 
-Source: work-sync `theory/T-lyapunov-stability-stochastic.md` §1.1 (three stability notions),
+The three stochastic stability notions, the Gronwall step of the moment decay estimate,
+convexity of moment growth exponents, and the bound of the almost-sure exponent by the moment
+exponent.
+
+Scope.
+* The process is an arbitrary family of random variables `X : T → Ω → E` (continuous or
+  discrete time); no SDE is involved. The stability notions are written out in the statements
+  (behaviour is defined only in the semantic layer); the theorems are measure-theoretic or ODE
+  facts, not a stability theorem for a particular power system.
+* The Itô step of §1.2 (`d/dt E V(X_t) = E LV(X_t)`) is **not** formalized: only the
+  deterministic Gronwall step from `m' ≤ −c m` is (wrapper of Mathlib
+  `le_gronwallBound_of_liminf_deriv_right_le`).
+* The explicit GBM example where `λ_as < 0 < Λ(2)/2` (a.s. stable, second-moment unstable) is
+  `GBMSeparation.lean`.
+
+Source: work-sync theory/T-lyapunov-stability-stochastic.md §1.1 (three stability notions),
 §1.2 (`L V ≤ −c V ⇒ E V(X_t) ≤ V(X₀) e^{−ct}`, "by Itô + Gronwall"), §1.3 (`Λ(p) = limsup (1/t)
 log E‖X_t‖^p` is convex in `p`), §1.4 (`λ_a.s. ≤ Λ(p)/p`).
 
-Scope (Rules §3).  The process is an arbitrary family of random variables `X : T → Ω → E`
-(continuous or discrete time); no SDE is involved.  The stability notions are written out in
-the statements (behaviour is defined only in the semantic layer); the theorems are
-measure-theoretic or ODE facts.  The Itô step of §1.2 (`d/dt E V(X_t) =
-E LV(X_t)`) is **not** formalized: only the deterministic Gronwall step from
-`m' ≤ −c m` is (wrapper of Mathlib `le_gronwallBound_of_liminf_deriv_right_le`).  Foundation
-results, not a stability theorem for a particular power system.
-
-Main results.
+Results.
 * Stability notions (§1.1) for a family `X x₀ : ℝ≥0 → Ω → E` of processes indexed by the
   initial state `x₀`:
   - **stability in probability** of the zero solution: small initial states keep the whole path
@@ -27,25 +34,25 @@ Main results.
     `∀ ε > 0, ∀ r > 0, ∃ δ > 0, ∀ x₀, ‖x₀‖ < δ → P {ω | ∃ t, r ≤ ‖X x₀ t ω‖} ≤ ε`;
   - **almost-sure attractivity** of the path started at `x₀`:
     `∀ᵐ ω ∂P, Tendsto (fun t => X x₀ t ω) atTop (𝓝 0)`;
-  - **almost-sure asymptotic stability** (Khasminskii / Mao): stable in probability **and** a.s.
-    attractive for all small initial states (`∃ δ > 0, ∀ x₀, ‖x₀‖ < δ →` a.s. attractive);
+  - **almost-sure asymptotic stability** (Khasminskii / Mao): stable in probability **and**
+    a.s. attractive for all small initial states (`∃ δ > 0, ∀ x₀, ‖x₀‖ < δ →` a.s. attractive);
   - **`p`-th moment stability** of the path started at `x₀`: `E‖X x₀ t‖^p → 0`, i.e.
     `Tendsto (fun t => ∫⁻ ω, ‖X x₀ t ω‖ₑ ^ p ∂P) atTop (𝓝 0)`.
-* Correction (§1.1): the note defines a.s. stability by attractivity alone.
-  `attractive_not_stableInProbability`: a (deterministic) family whose every member tends to `0`
-  but with unit excursions from arbitrarily small initial states — attractivity does not give
-  stability in probability, so the standard a.s. asymptotic stability needs both halves.
-* `moment_exp_decay` (§1.2, Gronwall step).
-* `moment_holder`, `moment_growth_convex` (§1.3): `E f^{θp+(1−θ)q} ≤ (E f^p)^θ (E f^q)^{1−θ}`
+* `moment_exp_decay` — §1.2, Gronwall step.
+* `moment_holder`, `moment_growth_convex` — §1.3: `E f^{θp+(1−θ)q} ≤ (E f^p)^θ (E f^q)^{1−θ}`
   (Lyapunov's inequality, from Mathlib's Hölder `ENNReal.lintegral_mul_le_Lp_mul_Lq`); hence
   exponential growth bounds of moments are convex in `p` — the content of "`Λ(p)` is convex"
   (stated with eventual bounds, which avoids `limsup` arithmetic in `EReal`).
-* `as_exponent_le` (§1.4, discrete time): if `E‖X_n‖^p ≤ e^{an}` eventually, then almost surely
+* `as_exponent_le` — §1.4, discrete time: if `E‖X_n‖^p ≤ e^{an}` eventually, then almost surely
   `‖X_n‖ ≤ e^{γn}` eventually for every rational `γ > a/p` — i.e. `λ_a.s. ≤ Λ(p)/p` (Markov's
   inequality + first Borel–Cantelli lemma).
+* `attractive_not_stableInProbability` — attractivity alone is not stability (see Corrections).
 
-The explicit GBM example where `λ_as < 0 < Λ(2)/2` (a.s. stable, second-moment unstable) is
-`GBMSeparation.lean`.
+Corrections.
+* §1.1: the note defines a.s. stability by attractivity alone.
+  `attractive_not_stableInProbability`: a (deterministic) family whose every member tends to `0`
+  but with unit excursions from arbitrarily small initial states — attractivity does not give
+  stability in probability, so the standard a.s. asymptotic stability needs both halves.
 -/
 
 noncomputable section

@@ -1,32 +1,38 @@
 import theorem.Attributes
 import dependencies.Mathlib
 
-/-! Euler–Maruyama and Milstein steps: additive noise and the commutative-noise condition.
+/-! # Euler–Maruyama and Milstein steps: additive noise and the commutative-noise condition
 
-Model boundary: pathwise (deterministic) step maps driven by given standard-normal samples
-`ξ`; Wiener increments are `ΔW = √Δt ξ`.  The state lives in a real normed space `E`; the
-drift `μ(x, t)` and the diffusion columns `σ_k(x, t)` are arbitrary maps, and the Milstein
-correction uses the Fréchet derivative of the diffusion in `x`.  For several noise channels
-the iterated Itô integrals `I^{k₁k₂}` (including Lévy areas) are arbitrary given numbers.
-No probability, no convergence order and no implementation API is formalized.
+With additive noise the Milstein step coincides with the Euler–Maruyama step, and the note's
+commutative-noise condition is not sufficient.
 
-Results (foundation):
-* `milsteinStep_eq_emStep`: scalar noise, state-independent diffusion ⇒ the Milstein step
-  equals the Euler–Maruyama step for every sample; `milstein_trajectory_eq_em` lifts this to
-  whole trajectories driven by the same samples.
-* `milsteinMultiStep_eq_emMultiStep`: several additive channels ⇒ equality for every choice of
-  iterated integrals (no Lévy-area sampling needed).
-* `noteCommutative_not_sufficient`: correction to the commutative-noise condition.
+Model boundary.
+* Pathwise (deterministic) step maps driven by given standard-normal samples `ξ`; Wiener
+  increments are `ΔW = √Δt ξ`. The state lives in a real normed space `E`; the drift `μ(x, t)`
+  and the diffusion columns `σ_k(x, t)` are arbitrary maps, and the Milstein correction uses the
+  Fréchet derivative of the diffusion in `x`. For several noise channels the iterated Itô
+  integrals `I^{k₁k₂}` (including Lévy areas) are arbitrary given numbers.
+* No probability, no convergence order and no implementation API is formalized.
 
 Source: work-sync theory/T-sde-numerical.md §1.1–§1.2, §2.2–§2.3.
 
-Correction: the note writes the commutative-noise condition as
-`Σ_k Σ_{ik} ∂_{x_j} Σ_{lk} = Σ_k Σ_{lk} ∂_{x_j} Σ_{ik}`.  The correct (Kloeden–Platen)
-condition is `L^{k₁} σ_{i k₂} = L^{k₂} σ_{i k₁}` with `L^{k} = Σ_l Σ_{lk} ∂_{x_l}`, i.e.
-`Σ_l Σ_{l k₁} ∂_{x_l} Σ_{i k₂} = Σ_l Σ_{l k₂} ∂_{x_l} Σ_{i k₁}`.  For the scalar state with
-diffusion row `σ(x) = (1, x)` the note's condition holds trivially while the correct one
-fails (`noteCommutative_not_sufficient`), so the note's test would wrongly accept a
-non-commutative noise.
+Results.
+* `milsteinStep_eq_emStep` — scalar noise, state-independent diffusion ⇒ the Milstein step
+  equals the Euler–Maruyama step for every sample; `milstein_trajectory_eq_em` lifts this to
+  whole trajectories driven by the same samples.
+* `milsteinMultiStep_eq_emMultiStep` — several additive channels ⇒ equality for every choice of
+  iterated integrals (no Lévy-area sampling needed).
+* `noteCommutative_not_sufficient` — correction to the commutative-noise condition (see
+  Corrections).
+
+Corrections.
+* The note writes the commutative-noise condition as
+  `Σ_k Σ_{ik} ∂_{x_j} Σ_{lk} = Σ_k Σ_{lk} ∂_{x_j} Σ_{ik}`. The correct (Kloeden–Platen)
+  condition is `L^{k₁} σ_{i k₂} = L^{k₂} σ_{i k₁}` with `L^{k} = Σ_l Σ_{lk} ∂_{x_l}`, i.e.
+  `Σ_l Σ_{l k₁} ∂_{x_l} Σ_{i k₂} = Σ_l Σ_{l k₂} ∂_{x_l} Σ_{i k₁}`. For the scalar state with
+  diffusion row `σ(x) = (1, x)` the note's condition holds trivially while the correct one
+  fails (`noteCommutative_not_sufficient`), so the note's test would wrongly accept a
+  non-commutative noise.
 -/
 
 noncomputable section

@@ -11,9 +11,9 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-! # Networked swing equations: local exponential stability in relative angles
 
-Source: work-sync `theory/T-synchronization-manifold.md` §1.7 (swing network
-`Mᵢ θ̈ᵢ = P_{m,i} - ∑ⱼ Bᵢⱼ ViVj sin(θᵢ - θⱼ)`, with damping as in §2.2 and
-`theory/T-small-signal-stability.md`).
+The classical multi-machine swing network in relative-angle coordinates, read through a family
+about a selected angle profile: local exponential stability of the synchronous equilibrium and
+the exactness of each local translation.
 
 Model boundary.
 * `n + 1` machines, indices `Fin (n+1)`, machine `0` is the angle reference.
@@ -29,12 +29,22 @@ Model boundary.
 * Equilibrium: `θ*` with `Pₖ = ∑ⱼ Bₖⱼ sin(θ*ₖ - θ*ⱼ)` and `ω = 0`, all edge angle
   differences `|θ*ᵢ - θ*ⱼ| < π/2`, and the graph of `B` connected.
 
-Result (equilibrium / linearization level, with a nonlinear conclusion): the reduced
-nonlinear swing field is locally exponentially stable at the synchronous
-equilibrium (`reducedSwing_locallyExponentiallyStable`). The proof derives the Jacobian
-by `fderiv`, shows it is Hurwitz from the eigenvector identity
-`μ²uᴴMu + μuᴴDu + uᴴLu = 0` with `L` the Laplacian of `Bᵢⱼ cos(θ*ᵢ - θ*ⱼ)`, and applies
-`Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`.
+Source: work-sync `theory/T-synchronization-manifold.md` §1.7 (swing network
+`Mᵢ θ̈ᵢ = P_{m,i} - ∑ⱼ Bᵢⱼ ViVj sin(θᵢ - θⱼ)`, with damping as in §2.2 and
+`theory/T-small-signal-stability.md`).
+
+Results.
+* Equilibrium / linearization level, with a nonlinear conclusion: the reduced nonlinear swing
+  field is locally exponentially stable at the synchronous equilibrium
+  (`mem_den_locallyExponentiallyStable`; private implementation
+  `reducedSwing_locallyExponentiallyStable`). The proof derives the Jacobian by `fderiv`
+  (`hasFDerivAt_reducedField`), shows it is Hurwitz from the eigenvector identity
+  `μ²uᴴMu + μuᴴDu + uᴴLu = 0` with `L` the Laplacian of `Bᵢⱼ cos(θ*ᵢ - θ*ⱼ)`
+  (`jacobian_isHurwitz`, `jacobian_isHurwitz_of_angle`), and applies
+  `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`.
+* Static evidence: `fullField_equilibrium_shift`, `reducedField_reduce`,
+  `reducedField_equilibrium`, `jacobian_isHurwitz_of_angle`. Private implementation evidence
+  (trajectory level, Rules §3a): `reduce_trajectory`.
 
 Family and connection conclusions.
 * System map: a model (`Model n`: the swing data `Params n` and a selected angle profile `θ*`)
@@ -49,41 +59,37 @@ Family and connection conclusions.
   translate into `{powerFlow, jacobianStable}`, instability into `{powerFlow, jacobianUnstable}`,
   passivity into nothing; the global sentences, decay rates, sampled contraction and
   conservation, which a linearization cannot decide, into the whole (inconsistent) language.
-  The angle condition on a connected graph is a static sufficient condition for `jacobianStable`
-  (`jacobian_isHurwitz_of_angle`), not a necessary one in meshed networks; the local sentences
-  were formerly translated into `{powerFlow, angle, connected}`, a sound translation whose
-  exactness is not claimed. With the Hurwitz test the local exponential translation is exact
+  The angle condition on a connected graph is a static sufficient condition for
+  `jacobianStable` (`jacobian_isHurwitz_of_angle`), not a necessary one in meshed networks.
+  With the Hurwitz test the local exponential translation is exact
   (`exact_locallyExponentiallyStable`, by the converse linearization theorem
   `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`).
-* Connection theorems: `chain_le_semantics`, `exact_passive`, `exact_locallyExponentiallyStable`,
-  `mem_den_locallyExponentiallyStable` (the former `reducedSwing_locallyExponentiallyStable`) and
+* Connection theorems: `chain_le_semantics`, `exact_passive`,
+  `exact_locallyExponentiallyStable`, `mem_den_locallyExponentiallyStable` and
   `mem_den_unstable`. Boundary witness: the instability translation is not exact
   (`not_exact_unstable`): instability is the failure of Lyapunov stability, so an unbalanced
   network (`offEquilibrium`) is unstable (`offEquilibrium_mem_den_unstable`,
   `Dynamics.unstable_of_ne_zero`) while the translation asks for power balance.
 * Lyapunov translation: not exact for every network of at least two machines
-  (`not_exact_lyapunovStable`, `n + 2` machines): `n + 2` uncoupled machines (`uncoupledN`, `B = 0`)
-  are Lyapunov stable (`uncoupledN_mem_den_lyapunovStable`: in the block coordinates
+  (`not_exact_lyapunovStable`, `n + 2` machines): `n + 2` uncoupled machines (`uncoupledN`,
+  `B = 0`) are Lyapunov stable (`uncoupledN_mem_den_lyapunovStable`: in the block coordinates
   `(δᵢ + ω_{i+1} − ω₀, ω)`, built with `Fin.addCases`, the first block is conserved and the
   frequencies decay) while their reduced Jacobian has a zero column (`uncoupledN_not_isHurwitz`);
-  the two-machine instance `not_exact_lyapunovStable_two` (`uncoupled`) is kept. For a single machine
-  (`n = 0`) it is exact (`exact_lyapunovStable_zero`; `jacobian_isHurwitz_zero`).
+  the two-machine instance is `not_exact_lyapunovStable_two` (`uncoupled`). For a single
+  machine (`n = 0`) it is exact (`exact_lyapunovStable_zero`; `jacobian_isHurwitz_zero`).
 * Local asymptotic translation `{powerFlow, jacobianStable}`, decided per number of machines:
   exact for one machine (`exact_locallyAsymptoticallyStable_zero`, here), two machines
   (`exact_locallyAsymptoticallyStable_two`) and three machines
-  (`exact_locallyAsymptoticallyStable_three`) in `theorem/Network/Swing/Degenerate.lean`; not exact
-  for five or more machines (`not_exact_locallyAsymptoticallyStable`, `n + 5` machines, a five-machine
-  ring with a degenerate strict minimum of the network potential plus unit leaves) in
-  `theorem/Network/Swing/DegenerateRing.lean`. The complete membership characterization for every
-  `n` is `mem_den_locallyAsymptoticallyStable_iff` (power balance, a strict local minimum of the
-  network potential in relative angles, and an isolated power-balance point). Four machines
-  (`n = 3`): exact (`exact_locallyAsymptoticallyStable_four`,
+  (`exact_locallyAsymptoticallyStable_three`) in `theorem/Network/Swing/Degenerate.lean`; not
+  exact for five or more machines (`not_exact_locallyAsymptoticallyStable`, `n + 5` machines, a
+  five-machine ring with a degenerate strict minimum of the network potential plus unit leaves)
+  in `theorem/Network/Swing/DegenerateRing.lean`. The complete membership characterization for
+  every `n` is `mem_den_locallyAsymptoticallyStable_iff` (power balance, a strict local minimum
+  of the network potential in relative angles, and an isolated power-balance point). Four
+  machines (`n = 3`): exact (`exact_locallyAsymptoticallyStable_four`,
   `theorem/Network/Swing/FourDense.lean`; at most four lines already in
   `mem_den_locallyAsymptoticallyStable_iff_four`, `theorem/Network/Swing/Four.lean`). Hence the
   local asymptotic translation is exact for at most four machines and not exact from five.
-* Static evidence (formerly `@[powerlib_domain]`): `fullField_equilibrium_shift`,
-  `reducedField_reduce`, `reducedField_equilibrium`, and the new `jacobian_isHurwitz_of_angle`.
-  Private implementation evidence (trajectory level, Rules §3a): `reduce_trajectory`.
 -/
 
 noncomputable section
@@ -618,8 +624,8 @@ private theorem mem_den_flow_iff {m : Model n} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
   family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
 
-/-- Implementation evidence: the former public `reducedSwing_locallyExponentiallyStable`, at the
-selected point of the untranslated field. -/
+/-- Implementation evidence for `mem_den_locallyExponentiallyStable`, at the selected point of
+the untranslated field. -/
 private theorem reducedSwing_locallyExponentiallyStable (p : Params n)
     (θ : Fin (n + 1) → ℝ) (heq : ∀ k, p.P k = powerInjection p.B θ k)
     (hangle : ∀ i j, 0 < p.B i j → |θ i - θ j| < Real.pi / 2)

@@ -4,9 +4,18 @@ import theorem.Linear.Stability
 /-! # Hurwitz matrices and exponential decay of linear solutions (foundation)
 
 Library-owned LTI lemmas (the codex `Linear/` layer is not modified) relating a real square
-matrix `A` to the decay of the solutions of `ẋ = A x`. Every statement is about arbitrary
-matrices; nothing here describes a physical system.
+matrix `A` to the decay of the solutions of `ẋ = A x`.
 
+Scope.
+* Every statement is about arbitrary matrices; nothing here describes a physical system. Every
+  behavioural statement is a generic implication about an arbitrary matrix (Rules §3,
+  foundation); no family is defined.
+
+Source: standard linear-systems facts, used by work-sync theory/T-dae-systems.md §1.4,
+theory/T-small-signal-stability.md §1.3–§1.4 and the frequency / synchronization /
+parametric-resonance notes.
+
+Results.
 * Coordinate solutions (`x : ℝ → Fin k → ℝ` with `∀ t, HasDerivAt x (A *ᵥ x t) t`, Euclidean
   norm through `WithLp.toLp 2`): `isTrajectoryOn_toLp` links them to LeanForControl's affine
   linear field `affineLinearVectorField A 0`; `hasDerivAt_ofLp_solution`,
@@ -23,13 +32,6 @@ matrices; nothing here describes a physical system.
   Hurwitz); `spectrallyStable_of_real_pairs` (spectral stability from real eigen-pairs);
   `tendsto_of_spectrallyStable` (on any finite index type, a spectrally stable state matrix makes
   every constant-input forward solution converge to an equilibrium, by transport to `Fin N`).
-
-Every behavioural statement is a generic implication about an arbitrary matrix (Rules §3,
-foundation); no family is defined.
-
-Source: standard linear-systems facts, used by work-sync theory/T-dae-systems.md §1.4,
-theory/T-small-signal-stability.md §1.3–§1.4 and the frequency / synchronization /
-parametric-resonance notes.
 -/
 
 noncomputable section

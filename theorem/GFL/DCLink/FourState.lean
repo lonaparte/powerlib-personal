@@ -8,7 +8,8 @@ import theorem.Dynamics.Coordinates
 
 /-! # Four-state GFL with PLL and dc-bus voltage loop
 
-**Model boundary.** Single grid-following VSC on an infinite ac source of amplitude `V₀`
+Model boundary.
+Single grid-following VSC on an infinite ac source of amplitude `V₀`
 behind a lossless reactance `X_g`; three-phase balanced averaged dq model in the PLL frame,
 algebraic network, quasi-steady (ideal) current loop, continuous time.
 * States, in order: `θ` (PLL error angle `θ̂_g − θ_g`), `x` (PLL integrator), `V` (dc-bus
@@ -23,14 +24,19 @@ algebraic network, quasi-steady (ideal) current loop, continuous time.
 * No PWM, delay, limiter, line resistance, `L_f`, or current-loop dynamics.  Results are at
   the equilibrium (linearization) level for the full nonlinear four-state field.
 
-**The `1/V` term.** The physical field contains `P_abs / V`, so it is not globally `C¹`
+The `1/V` term. The physical field contains `P_abs / V`, so it is not globally `C¹`
 (Lean's `x / 0 = 0` makes it discontinuous at `V = 0`).  The powerlib linearization theorems
 need a globally `C¹` field, so they are applied to `regField`, where `V⁻¹` is replaced by the
 smooth `Dynamics.invExt V` (equal to `V⁻¹` for `V ≥ 1/2`); `regField` coincides with `field` on the
 ball of radius `1/2` around the operating point, and the locality lemmas of
 `Dynamics.Locality` transport local exponential stability / instability back to `field`.
 
-**Results.**
+Source: work-sync `projects/vsc-parametric-oscillation/notes/theory-draft.md` §1.2, §2.3;
+`.../references/gfm-driven-gfl-parametric-resonance/notes/concepts/
+gfl-four-state-parametric-resonance.md` (功率方向与工作点, 四态周期线性化, 特征多项式检查);
+`.../references/gfl-gfm-contrast/gfl-gfm-parametric-contrast.md` §14.
+
+Results.
 * Equilibrium `(θ₀, 0, 1, 0)` iff `V₀ sin θ₀ = −X_g i_{d0}` and `I_dc0 = −(3/2) V₀ cos θ₀ i_{d0}`;
   `θ₀ = arcsin(−X_g i_{d0}/V₀)` with `|X_g i_{d0}| < V₀` gives the principal branch
   (`cos θ₀ > 0`).
@@ -47,7 +53,8 @@ ball of radius `1/2` around the operating point, and the locality lemmas of
 * Angle input: in error-angle coordinates `θ_g` enters only additively through `−θ̇_g`, so
   the state Jacobian does not depend on the input (`A₁^GFL = 0`, `b(jω_p) = −jω_p e_θ`).
 
-**Family and connection conclusions.** A complete system (`Model`) is a parameter set with a
+Family and connection conclusions.
+A complete system (`Model`) is a parameter set with a
 selected angle `θ₀`; the system map reads it as the physical field (with its `1/V` term)
 translated so that the operating point `(θ₀, 0, 1, 0)` is the origin,
 `z ↦ field p (z + opPoint θ₀)` (every flow sentence is invariant under this translation,
@@ -58,11 +65,10 @@ first and the third, passivity into nothing, and the global sentences, decay rat
 contraction and conservation into the whole (inconsistent) language: unavailable translation
 coverage. `chain_le_semantics` proves every translation sound (linearization of the smooth
 `regField`, transported back through the locality lemmas of `Dynamics.Locality`, then moved to
-the origin); `exact_passive` proves the passivity translation exact. The former domain theorems
-are connection conclusions: `mem_den_locallyExponentiallyStable_of_routh`,
-`mem_den_unstable_of_cos_two_mul_neg`, and — the former necessary condition
-`cos_two_mul_nonneg_of_locallyExponentiallyStable`, which had a behavioural premise — its
-contrapositive `not_mem_den_locallyExponentiallyStable_of_cos_two_mul_neg` (with the stronger
+the origin); `exact_passive` proves the passivity translation exact. The stability results are
+connection conclusions: `mem_den_locallyExponentiallyStable_of_routh`,
+`mem_den_unstable_of_cos_two_mul_neg`, and the necessary condition `cos 2θ₀ ≥ 0` in
+contrapositive form, `not_mem_den_locallyExponentiallyStable_of_cos_two_mul_neg` (with the stronger
 `not_mem_den_lyapunovStable_of_cos_two_mul_neg`). The local exponential translation is exact
 (`exact_locallyExponentiallyStable`): the physical field agrees with `regField` on a ball around
 the operating point, and by the converse linearization theorem
@@ -86,10 +92,6 @@ for Lyapunov stability, local asymptotic stability or instability (`realize_ne_d
 with the same requirement profile on the Routh boundary fall on both sides. The angle-input field
 `fieldAngle` and its Jacobian identities are static.
 
-Source: work-sync `projects/vsc-parametric-oscillation/notes/theory-draft.md` §1.2, §2.3;
-`.../references/gfm-driven-gfl-parametric-resonance/notes/concepts/
-gfl-four-state-parametric-resonance.md` (功率方向与工作点, 四态周期线性化, 特征多项式检查);
-`.../references/gfl-gfm-contrast/gfl-gfm-parametric-contrast.md` §14.
 Correction: theory-draft §1.2 gives the equilibrium `θ₀ = arcsin(−X_g i_{d0}/V₀)` without
 any stability restriction; the formal statements show that local exponential stability
 requires `cos 2θ₀ ≥ 0` (`θ₀ ≤ 45°` on the branch) and that `cos 2θ₀ < 0` is unstable for all
@@ -527,8 +529,7 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (FourState.field m.params) (opPoint m.θ) :=
   family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
 
-/-- The quartic Routh conditions give local exponential stability of the physical field (the
-proof of the former public `locallyExponentiallyStable_of_routh`). -/
+/-- The quartic Routh conditions give local exponential stability of the physical field. -/
 private theorem les_of_meets {m : Model} (he : Meets m .equilibrium) (hr : Meets m .routh) :
     m ∈ family.den (.flow .locallyExponentiallyStable) := by
   obtain ⟨heq, hC⟩ := he
@@ -540,8 +541,7 @@ private theorem les_of_meets {m : Model} (he : Meets m .equilibrium) (hr : Meets
       (fderiv_regField_opPoint m.params m.θ) (det_characteristicMatrix_A0_quartic m.params heq.1)
       h3 h1 h0 hg))
 
-/-- `a₀ < 0` gives a positive real eigenvalue and instability of the physical field (the proof
-of the former public `unstable_of_cos_two_mul_neg`). -/
+/-- `a₀ < 0` gives a positive real eigenvalue and instability of the physical field. -/
 private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
     (hn : Meets m .constNeg) : m ∈ family.den (.flow .unstable) := by
   obtain ⟨heq, hC⟩ := he
@@ -642,9 +642,9 @@ positive real eigenvalue, and instability of the physical field, for all positiv
   rw [family_isAutonomous.mem_den_flow] at h ⊢
   exact h
 
-/-- Necessary condition (the former `cos_two_mul_nonneg_of_locallyExponentiallyStable`, in
-contrapositive form): if `cos 2θ₀ < 0` the operating point is not locally exponentially stable,
-i.e. local exponential stability forces `cos 2θ₀ ≥ 0` (`|θ₀| ≤ 45°` on the principal branch). -/
+/-- Necessary condition (`cos 2θ₀ ≥ 0`, in contrapositive form): if `cos 2θ₀ < 0` the operating
+point is not locally exponentially stable, i.e. local exponential stability forces
+`cos 2θ₀ ≥ 0` (`|θ₀| ≤ 45°` on the principal branch). -/
 @[powerlib_domain] theorem not_mem_den_locallyExponentiallyStable_of_cos_two_mul_neg (p : Params)
     (hC : 0 < p.C) (hki : 0 < p.ki) (hkiv : 0 < p.kiv) (hV0 : p.V0 ≠ 0) {θ0 : ℝ}
     (heq : IsEq p θ0) (hcos : Real.cos (2 * θ0) < 0) :

@@ -4,47 +4,52 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-! # Method of lines: the 1-D heat Laplacian, stencils, boundary closures, port coupling
 
-Foundation layer (category B).
-
-Source: work-sync `theory/T-method-of-lines.md` §1.2 + §1.2.1 (central-difference MoL of
-`u_t = ν u_xx` with Dirichlet data, tridiagonal `T`, eigenvalues `−4 sin²(kπ/2N)`, stiffness
-ratio `O(N²)`), §1.4.1 (stencil table), §1.7.2 (Neumann ghost cell / one-sided closure), §1.7.4
-(port coupling ⇒ DAE), §2.3 (Cauer RC chain = lumped 1-D heat MoL).
+The central-difference method of lines for the 1-D heat equation: spectrum, stability and
+stiffness of the semi-discrete system, stencil orders, boundary closures, the Cauer RC chain and
+port coupling.
 
 Model boundary.
 * Grid `x_j = jΔx`, `j = 0, …, N`, `N = M + 1`, `Δx = ℓ/N`; the `M` interior values
   `(u₁, …, u_M)` are the state (index `j : Fin M` is node `j + 1`), Dirichlet values at nodes
   `0` and `N`. `lapT M` is the `M × M` tridiagonal matrix `tridiag(1, −2, 1)`;
   `heatMOL ν Δx M` is the state matrix `(ν/Δx²) T` of the zero-Dirichlet autonomous model
-  `u̇ = (ν/Δx²) T u` (continuous time; inhomogeneous boundary data enter as an additive input and
-  do not affect stability).
+  `u̇ = (ν/Δx²) T u` (continuous time; inhomogeneous boundary data enter as an additive input
+  and do not affect stability).
 * Statements concern the semi-discrete system only; no claim of convergence to the PDE.
+* Stability is concluded in the Flow semantics through the linear hub
+  (`Linear.globallyExponentiallyStable_of_isHurwitz`).
+
+Source: work-sync theory/T-method-of-lines.md §1.2 + §1.2.1 (central-difference MoL of
+`u_t = ν u_xx` with Dirichlet data, tridiagonal `T`, eigenvalues `−4 sin²(kπ/2N)`, stiffness
+ratio `O(N²)`), §1.4.1 (stencil table), §1.7.2 (Neumann ghost cell / one-sided closure), §1.7.4
+(port coupling ⇒ DAE), §2.3 (Cauer RC chain = lumped 1-D heat MoL).
 
 Results.
-* `lapT_mulVec_eigvec`: `T vₖ = μₖ vₖ`, `(vₖ)_j = sin((j+1)kπ/N)`, `μₖ = −4 sin²(kπ/2N)`;
+* `lapT_mulVec_eigvec` — `T vₖ = μₖ vₖ`, `(vₖ)_j = sin((j+1)kπ/N)`, `μₖ = −4 sin²(kπ/2N)`;
   `eigenvalue_lapT`: every complex eigenvalue of `T` is one of `μ₁, …, μ_M` (the `M`
   eigenvectors have distinct eigenvalues, so no further eigenvalue fits in dimension `M`);
   `lapT_isHurwitz`, `heatMOL_exponentiallyStable` (`ν > 0`; global exponential stability of the
-  linear field `u ↦ (ν/Δx²) T u` in the Flow semantics, formerly `LTI.ExponentiallyStable`).
-* `stiffness_ratio_bounds`: `|μ_M|/|μ₁| = cot²(π/2N)` lies in `[2N²/π², 4N²/π²]` (`N ≥ 2`).
+  linear field `u ↦ (ν/Δx²) T u` in the Flow semantics).
+* `stiffness_ratio_bounds` — `|μ_M|/|μ₁| = cot²(π/2N)` lies in `[2N²/π², 4N²/π²]` (`N ≥ 2`).
 * Stencils (`T-method-of-lines` §1.4.1): exactness on polynomials of the stated degree and a
-  monomial of the next degree on which each stencil fails, i.e. the precise polynomial order.
-  Correction: the second-order upwind stencil `(3u_j − 4u_{j−1} + u_{j−2})/(2Δx)` listed in the
-  "fourth-order" column is only second order (`upwind2_cubic`: error `−2Δx²` on `x³`).
-* Ghost cell (`§1.7.2`). Correction: the central closure is `(u₁ − u₋₁)/(2Δx) = h`, i.e.
-  `u₋₁ = u₁ − 2Δx h` (`ghost_iff`), not `(u₁ − u₀)/(2Δx) = h`: the latter quotient tends to
-  `u'(0)/2` (`note_ghost_tendsto`), so it would impose `u'(0) = 2h`. The one-sided closure
-  `u₀ = (4u₁ − u₂ − 2Δx h)/3` is correct and exact on quadratics.
-* `cauer_eq_mol`: a uniform Cauer RC chain (`C = ρc_p AΔx`, `R = Δx/(κA)`) has exactly the MoL
+  monomial of the next degree on which each stencil fails, i.e. the precise polynomial order
+  (`central1_exact`, `central1_cubic`, …, `central2o4_sextic`).
+* `ghost_iff`, `oneSided_iff`, `oneSided_exact` — ghost cell and one-sided Neumann closures
+  (see Corrections); the one-sided closure `u₀ = (4u₁ − u₂ − 2Δx h)/3` is correct and exact on
+  quadratics.
+* `cauer_eq_mol` — a uniform Cauer RC chain (`C = ρc_p AΔx`, `R = Δx/(κA)`) has exactly the MoL
   dynamics `Ṫ_j = (κ/ρc_p)(T_{j+1} − 2T_j + T_{j−1})/Δx²`.
-* `portCoupled_isSolution_iff`: interior MoL ODE + linear port constraint
+* `portCoupled_isSolution_iff` — interior MoL ODE + linear port constraint
   `0 = G_x x + G_b u_bnd + G_e u_ext` is an index-1 DAE when `det G_b ≠ 0` (one-to-one with the
-  Schur-reduced ODE; `theorem.DAE.Linear`).
+  Schur-reduced ODE; `theorem/DAE/Linear.lean`).
 
-No family: every result is a foundation of the discretization (category B), all public foundation
-as before. The only change of statement is `heatMOL`, now the state matrix itself, with
-stability concluded in the Flow semantics through the linear hub
-(`Linear.globallyExponentiallyStable_of_isHurwitz`).
+Corrections.
+* Stencil table (§1.4.1): the second-order upwind stencil `(3u_j − 4u_{j−1} + u_{j−2})/(2Δx)`
+  listed in the "fourth-order" column is only second order (`upwind2_cubic`: error `−2Δx²` on
+  `x³`).
+* Ghost cell (§1.7.2): the central closure is `(u₁ − u₋₁)/(2Δx) = h`, i.e.
+  `u₋₁ = u₁ − 2Δx h` (`ghost_iff`), not `(u₁ − u₀)/(2Δx) = h`: the latter quotient tends to
+  `u'(0)/2` (`note_ghost_tendsto`), so it would impose `u'(0) = 2h`.
 -/
 
 noncomputable section

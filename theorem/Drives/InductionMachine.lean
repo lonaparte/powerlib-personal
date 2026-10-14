@@ -15,8 +15,10 @@ import theorem.Dynamics.ConverseLinearization
 
 /-! # Induction machine: rotor-flux algebra and indirect field orientation (IFOC)
 
-## Model boundary
+Rotor-flux algebra of the induction machine (torque, slip, flux models, corrected current model)
+and the IFOC rotor-flux dynamics of current-fed drives, read through the family `family`.
 
+Model boundary.
 * Machine: symmetric three-phase induction machine, dq (space-vector) model in a frame
   rotating at the electrical speed `ω_e`; the rotor turns at electrical speed `ω_r`, the slip
   speed is `ω_sl = ω_e − ω_r`. Linear magnetics, constant parameters `r_r, L_s, L_r, L_m`,
@@ -25,15 +27,7 @@ import theorem.Dynamics.ConverseLinearization
 * Flux–current relations: `ψ_s = L_s i_s + L_m i_r`, `ψ_r = L_m i_s + L_r i_r`.
 * Rotor voltage equation (short-circuited rotor): `0 = r_r i_r + dψ_r/dt + j ω_sl ψ_r`,
   i.e. componentwise `0 = r_r i_rd + ψ̇_rd − ω_sl ψ_rq`, `0 = r_r i_rq + ψ̇_rq + ω_sl ψ_rd`.
-
-Foundation part (algebra of §1.1–§1.4 of the FOC note): torque in rotor-flux form, the
-oriented torque `T_e = (3/2) np (L_m/L_r) ψ_r i_sq`, slip relation and `T_r ψ̇_r + ψ_r =
-L_m i_sd` under orientation, the voltage-model flux estimate, the stator current from
-stator/rotor flux (used by DTC), and the corrected current model.
-
-Domain part: **IFOC rotor-flux orientation**, read through the family `family` of current-fed
-drives (`ifocFlux_globallyExponentiallyStable`, `ifocFlux_decay`,
-`ifocFlux_tuned_globallyExponentiallyStable`, `ifocFlux_detuned_globallyExponentiallyStable`).
+IFOC rotor-flux dynamics (the family):
 * State: rotor flux `ψ_r = (ψ_rd, ψ_rq)` (order `d, q`) in `Dynamics.State 2`, expressed in
   the IFOC frame whose angle is `θ_e = ∫ (ω_r + ω̂_sl) dt` (encoder speed plus slip command).
 * Inputs/controller: **ideal stator-current tracking** — the stator current equals its
@@ -49,46 +43,58 @@ drives (`ifocFlux_globallyExponentiallyStable`, `ifocFlux_decay`,
 * Excluded: stator dynamics, current-loop error, PWM, sampling, flux/torque limits, magnetic
   saturation, parameter drift during the transient, mechanical dynamics.
 
-## Family and connection conclusions
+Source: work-sync `theory/T-field-oriented-control.md` §1.1–§1.4 (and §1.3 IFOC);
+`theory/T-direct-torque-control.md` §1.2 (stator current from fluxes);
+`theory/T-sensorless-machine-control.md` §1.2 / §1.9 (voltage / current model).
 
-`family : Family Drive Requirement 2 0` reads a drive — machine parameters, constant stator
-current commands `(i_sd*, i_sq*)` and slip command `ω̂_sl` — as its rotor-flux field translated
-so that the equilibrium `ψ_eq = L_m i_s / (1 + jω_sl T_r)` is the origin
-(`Flow.Property.holds_shift_iff` moves every sentence back to `ψ_eq`). Requirements:
-`positiveRotor` (`r_r > 0`, `L_r > 0`) and `decayRateAtMost a` (`r_r, L_r > 0` and
-`a ≤ 1/T_r`). The attractive sentences, sampled contraction and Lyapunov stability translate
-into `positiveRotor`, decay at the rate `a` into `decayRateAtMost a`, passivity into nothing,
-instability and conservation into the whole (inconsistent) language. Connection conclusions:
-`chain_le_semantics` (every translation sound, by the quadratic decay certificate
-`fluxCertificate`), `exact_passive`, `ifocFlux_globallyExponentiallyStable`, `ifocFlux_decay`
-(formerly the segment bound `ifocFlux_norm_bound`, kept with its constant `1` as private
-evidence), `ifocFlux_tuned_globallyExponentiallyStable` and
-`ifocFlux_detuned_globallyExponentiallyStable` (the stability half of the former
-`ifocFlux_detuned_orientationError`; its orientation half is the static
-`ifocFlux_detuned_orientation_iff`). Equilibria, the flux algebra and the dissipation identity
-are static evidence. Boundary witness (`not_exact`): only `r_r / L_r` enters the rotor-flux field,
-so the drive `negativeRotor` with `r_r = L_r = −1` has the field of the unit-rotor drive and
-satisfies every attractive sentence, sampled contraction and Lyapunov stability
-(`negativeRotor_mem_den`) without a positive rotor: those translations are sound but not exact.
-The physical requirement `r_r, L_r > 0` is kept as the translation. The attractive sentences
-are characterized exactly by a member equivalence (`mem_den_attractive_iff`): a drive satisfies
-local / global, asymptotic / exponential stability exactly when `r_r / L_r > 0` (the field is
-affine; an attractive equilibrium makes it linear with Jacobian `fluxMatrix`, Hurwitz only for a
-negative trace `−2 r_r/L_r`; conversely the drive with `|r_r|, |L_r|` has the same field). The
-Lyapunov sentence is characterized by `mem_den_lyapunovStable_iff`: `r_r / L_r > 0`, or
-`r_r / L_r = 0` with `ω_sl L_m i_s = 0` (a rotation about, or rest at, the selected point; with
-`r_r / L_r < 0` the flux deviation grows, Chetaev's theorem `Dynamics.unstable_of_chetaev`).
+Results.
+* Foundation (algebra of §1.1–§1.4 of the FOC note): torque in rotor-flux form
+  (`torque_rotorFlux`), the oriented torque `T_e = (3/2) np (L_m/L_r) ψ_r i_sq`
+  (`torque_oriented`), slip relation and `T_r ψ̇_r + ψ_r = L_m i_sd` under orientation
+  (`oriented_slip_and_flux`, `oriented_steadyState`), the voltage-model flux estimate
+  (`rotorFlux_voltageModel`), the stator current from stator/rotor flux (`statorCurrent_of_fluxes`,
+  used by DTC), and the corrected current model (`currentModel`).
+* IFOC rotor-flux orientation (connection statements of `family`):
+  `ifocFlux_globallyExponentiallyStable`, `ifocFlux_decay`,
+  `ifocFlux_tuned_globallyExponentiallyStable`, `ifocFlux_detuned_globallyExponentiallyStable`;
+  the orientation of the detuned equilibrium is the static `ifocFlux_detuned_orientation_iff`.
 
-Source: work-sync theory/T-field-oriented-control.md §1.1–§1.4 (and §1.3 IFOC);
-theory/T-direct-torque-control.md §1.2 (stator current from fluxes);
-theory/T-sensorless-machine-control.md §1.2 / §1.9 (voltage / current model).
+Family and connection conclusions.
+* `family : Family Drive Requirement 2 0` reads a drive — machine parameters, constant stator
+  current commands `(i_sd*, i_sq*)` and slip command `ω̂_sl` — as its rotor-flux field translated
+  so that the equilibrium `ψ_eq = L_m i_s / (1 + jω_sl T_r)` is the origin
+  (`Flow.Property.holds_shift_iff` moves every sentence back to `ψ_eq`). Requirements:
+  `positiveRotor` (`r_r > 0`, `L_r > 0`) and `decayRateAtMost a` (`r_r, L_r > 0` and
+  `a ≤ 1/T_r`). The attractive sentences, sampled contraction and Lyapunov stability translate
+  into `positiveRotor`, decay at the rate `a` into `decayRateAtMost a`, passivity into nothing,
+  instability and conservation into the whole (inconsistent) language.
+* Connection conclusions: `chain_le_semantics` (every translation sound, by the quadratic decay
+  certificate `fluxCertificate`), `exact_passive`, `ifocFlux_globallyExponentiallyStable`,
+  `ifocFlux_decay` (the segment bound with constant `1`, `ifocFlux_norm_bound`, is private
+  evidence), `ifocFlux_tuned_globallyExponentiallyStable` and
+  `ifocFlux_detuned_globallyExponentiallyStable`. Equilibria, the flux algebra and the
+  dissipation identity are static evidence.
+* Boundary witness (`not_exact`): only `r_r / L_r` enters the rotor-flux field, so the drive
+  `negativeRotor` with `r_r = L_r = −1` has the field of the unit-rotor drive and satisfies every
+  attractive sentence, sampled contraction and Lyapunov stability (`negativeRotor_mem_den`)
+  without a positive rotor: those translations are sound but not exact. The physical requirement
+  `r_r, L_r > 0` is kept as the translation.
+* The attractive sentences are characterized exactly by a member equivalence
+  (`mem_den_attractive_iff`): a drive satisfies local / global, asymptotic / exponential
+  stability exactly when `r_r / L_r > 0` (the field is affine; an attractive equilibrium makes it
+  linear with Jacobian `fluxMatrix`, Hurwitz only for a negative trace `−2 r_r/L_r`; conversely
+  the drive with `|r_r|, |L_r|` has the same field). The Lyapunov sentence is characterized by
+  `mem_den_lyapunovStable_iff`: `r_r / L_r > 0`, or `r_r / L_r = 0` with `ω_sl L_m i_s = 0` (a
+  rotation about, or rest at, the selected point; with `r_r / L_r < 0` the flux deviation grows,
+  Chetaev's theorem `Dynamics.unstable_of_chetaev`).
 
-Correction (T-field-oriented-control.md §1.4): the note's current model
-`T_r ψ̇_r + ψ_r = L_m i_s + j(ω_e − ω_r) T_r ψ_r` has the wrong sign of the `j` term. From the
-note's own §1.1 rotor equations, `T_r ψ̇_r + ψ_r = L_m i_s − j(ω_e − ω_r) T_r ψ_r`
-(`currentModel`). In the stationary frame (`ω_e = 0`) this is the
-`dψ_r/dt = (L_m/T_r) i_s − (1/T_r − jω_r) ψ_r` of the sensorless note, which is correct.
-Pole convention: the note writes `(3/2)(p/2)` with `p` = number of poles; here `np = p/2`.
+Correction (T-field-oriented-control.md §1.4).
+* The note's current model `T_r ψ̇_r + ψ_r = L_m i_s + j(ω_e − ω_r) T_r ψ_r` has the wrong sign of
+  the `j` term. From the note's own §1.1 rotor equations,
+  `T_r ψ̇_r + ψ_r = L_m i_s − j(ω_e − ω_r) T_r ψ_r` (`currentModel`,
+  `currentModel_noteSign_false`). In the stationary frame (`ω_e = 0`) this is the
+  `dψ_r/dt = (L_m/T_r) i_s − (1/T_r − jω_r) ψ_r` of the sensorless note, which is correct.
+* Pole convention: the note writes `(3/2)(p/2)` with `p` = number of poles; here `np = p/2`.
 -/
 
 noncomputable section

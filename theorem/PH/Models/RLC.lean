@@ -3,6 +3,9 @@ import theorem.Criteria.Hurwitz2
 
 /-! # Series RLC loop as a linear port-Hamiltonian system
 
+The series RLC loop as a linear port-Hamiltonian plant: passivity, Lyapunov stability, exponential
+stability iff `r > 0`, and the complex normal modes of an LC pair.
+
 Model boundary.
 * Circuit: one series loop of an inductor `L > 0`, a capacitor `C > 0`, a resistor `r ≥ 0`
   in series with the inductor branch, and an ideal voltage source `u` (one port).
@@ -16,36 +19,42 @@ Model boundary.
 * pH data: `J = !![0, −1; 1, 0]`, `R = diag(r, 0)`, `g = (1, 0)ᵀ`, i.e. the diagonal data
   `DiagonalPH` with `d = ![r, 0]`, `w = ![1/L, 1/C]`, `B = !![1; 0]`.
 
-Family and connection conclusions. The loop is a member of the linear port-Hamiltonian family
-`Port.PortHamiltonian.family` (`theorem/Port/PortHamiltonian.lean`) through
-`seriesRLCPH p : Port.PortHamiltonian 2 1` (states and port numbered in the order above); the
-system map is the plant's port system and the sentences are read at the origin, the unforced
-operating point. The plant's field is exactly the Kirchhoff field (`seriesRLCPH_field`).
-Connection conclusions: passivity and Lyapunov stability for every `r ≥ 0`
-(`seriesRLCPH_mem_den_passive`, `seriesRLCPH_mem_den_lyapunovStable`); every attractive sentence
-and sampled contraction hold **iff** `r > 0` (`seriesRLCPH_mem_den_iff`, the former
-`seriesRLC_exponentiallyStable_iff`); global exponential stability and a positive decay rate
-when `r > 0` (`seriesRLCPH_mem_den_globallyExponentiallyStable`, `seriesRLCPH_exists_decay`, the
-former trajectory-level `seriesRLC_trajectory_exponential_decay`); and for the lossless loop
-`r = 0`, conservation of `H` and failure of local asymptotic stability
-(`seriesRLCPH_mem_den_conservative`, `seriesRLCPH_not_mem_den_locallyAsymptoticallyStable`). The
-field, output, energy, power balance and state-matrix identities are static evidence.
-
-Complex normal modes of an LC pair (T-invariant-coordinates §1.4): `a± = √L Ī ± j √C V̄` give
-`|a₊|² + |a₋|² = 2(L|I|² + C|V|²) = 2η₊` (`normalMode_sum`) and
-`|a₊|² − |a₋|² = 4 √(LC) Im(Ī V̄*)` (`normalMode_diff`); identities for arbitrary phasors,
-foundation.
-
-Correction (T-invariant-coordinates §1.4): the difference of the normal-mode energies is
-`|a₊|² − |a₋|² = 4√(L_f C_f) Im(Ī V̄*)`; the note's "∝ Im(L_f Ī V̄*)" has the wrong scale
-factor (`L_f` instead of `√(L_f C_f)`, `normalMode_diff_ne_note`). The note also labels
-`|a₊|² + |a₋|² = 2η₊` "conserved": by `normalMode_sum` this is `4H` with
-`H = ½L|I|² + ½C|V|²`, so it is conserved exactly when `H` is, i.e. (energy balance
-`Ḣ = P_src − P_conv`, the dq LC model of `theorem/PH/Models/Instances.lean`) only while the port
-power vanishes, not in general.
-
 Source: work-sync `theory/T-ph.md` §1.6 (1.11) and §1.2 (energy balance (1.2));
 `theory/T-invariant-coordinates.md` §1.4 (normal modes).
+
+Results.
+* `seriesRLCPH_field`, `seriesRLC_field_eq_kirchhoff` — the plant's field is exactly the
+  Kirchhoff field; `seriesRLC_power_balance` — energy balance `Ḣ = u i − r i²`;
+  `seriesRLCPH_isHurwitz_iff` — the loop is Hurwitz iff `r > 0`.
+* Complex normal modes of an LC pair (T-invariant-coordinates §1.4): `a± = √L Ī ± j √C V̄` give
+  `|a₊|² + |a₋|² = 2(L|I|² + C|V|²) = 2η₊` (`normalMode_sum`) and
+  `|a₊|² − |a₋|² = 4 √(LC) Im(Ī V̄*)` (`normalMode_diff`); identities for arbitrary phasors,
+  foundation.
+
+Family and connection conclusions.
+* The loop is a member of the linear port-Hamiltonian family `Port.PortHamiltonian.family`
+  (`theorem/Port/PortHamiltonian.lean`) through `seriesRLCPH p : Port.PortHamiltonian 2 1`
+  (states and port numbered in the order above); the system map is the plant's port system and
+  the sentences are read at the origin, the unforced operating point.
+* Connection conclusions: passivity and Lyapunov stability for every `r ≥ 0`
+  (`seriesRLCPH_mem_den_passive`, `seriesRLCPH_mem_den_lyapunovStable`); every attractive
+  sentence and sampled contraction hold **iff** `r > 0` (`seriesRLCPH_mem_den_iff`); global
+  exponential stability and a positive decay rate when `r > 0`
+  (`seriesRLCPH_mem_den_globallyExponentiallyStable`, `seriesRLCPH_exists_decay`); and for the
+  lossless loop `r = 0`, conservation of `H` and failure of local asymptotic stability
+  (`seriesRLCPH_mem_den_conservative`, `seriesRLCPH_not_mem_den_locallyAsymptoticallyStable`).
+  The field, output, energy, power balance and state-matrix identities are static evidence.
+* The lossless case `r = 0` with `L = C = 1` is the loop `losslessLC` of
+  `theorem/PH/Observability.lean` (same `J`, `R = 0`, `g`, `Q = I`), the counterexample to
+  "passive and observable ⇒ asymptotically stable".
+
+Correction (T-invariant-coordinates §1.4).
+* The difference of the normal-mode energies is `|a₊|² − |a₋|² = 4√(L_f C_f) Im(Ī V̄*)`; the
+  note's "∝ Im(L_f Ī V̄*)" has the wrong scale factor (`L_f` instead of `√(L_f C_f)`,
+  `normalMode_diff_ne_note`). The note also labels `|a₊|² + |a₋|² = 2η₊` "conserved": by
+  `normalMode_sum` this is `4H` with `H = ½L|I|² + ½C|V|²`, so it is conserved exactly when `H`
+  is, i.e. (energy balance `Ḣ = P_src − P_conv`, the dq LC model of
+  `theorem/PH/Models/Instances.lean`) only while the port power vanishes, not in general.
 -/
 
 noncomputable section

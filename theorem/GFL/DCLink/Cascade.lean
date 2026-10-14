@@ -7,7 +7,7 @@ import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
 import theorem.Dynamics.Shift
 
-/-! # Current loop feeding the DC link: the full `ΔV_dc/Δi_d*` transfer (domain)
+/-! # Current loop feeding the DC link: the full `ΔV_dc/Δi_d*` transfer
 
 Model boundary.
 * System: the d-axis PI current loop of a grid-following VSC (the single-axis loop of
@@ -32,6 +32,9 @@ Model boundary.
   source current balancing it, `i_src = −I_dc0`, `I_dc0 = (V_d0 − R I_d0) I_d0 / V0`
   (`> 0` rectifier, `< 0` inverter).
 
+Source: work-sync `theory/T-vsc-dc-voltage-control.md` §1.1, §1.1.1, §1.4, §1.5;
+`theory/T-gfl-control.md` §1.4.1.
+
 Results.
 * `jacobian_eq`, `input_hasDerivAt`: the small-signal realization `model` (`A`, `B`) is the
   Jacobian of the nonlinear field and its derivative in `i_d*`, computed with `fderiv`.
@@ -43,23 +46,22 @@ Results.
 * `det_characteristicMatrix`, `isHurwitz_iff` (static): the realization is Hurwitz iff the
   current loop is (`R + Kp > 0 ∧ Ki > 0`) and `I_dc0 > 0` (rectifier).
 
-## Families and connection conclusions
-
+Family and connection conclusions.
 * `linearizedFamily : Family CascadeParams Spectral.Requirement 3 1` reads the parameters as the
   port system of the small-signal plant `model` (input `Δi_d*`, output `ΔV_dc`;
   `Spectral.linearFamily`). Requirements: the PI loop's positive monic coefficients and a
   positive DC-node coefficient `I_dc0/(C V0)` (`stable`), or a negative one of them
   (`unstable`). `linearizedChain_le_semantics`, `linearizedExact`; `linearizedDen_eq`: its
   attractive denotation is the PI family's pulled back along `pi`, cut by `I_dc0/(C V0) > 0`;
-  `linearized_mem_den_iff` (formerly `exponentiallyStable_iff`): with `L, C, V0 > 0`, stable iff
+  `linearized_mem_den_iff`: with `L, C, V0 > 0`, stable iff
   `R + Kp > 0 ∧ Ki > 0 ∧ I_dc0 > 0`.
 * `family : Family CascadeParams Spectral.Requirement 3 0` reads the parameters as the
   nonlinear field with `i_d* = I_d0` translated so that `eqState` is the origin
   (`Spectral.localFamily`, `Flow.Property.holds_shift_iff`). Requirements: `stable` —
   `L, C, V0 > 0`, `R + Kp > 0`, `Ki > 0`, `I_dc0 > 0`; `unstable` — `C, V0 > 0`, `Ki ≠ 0`,
-  `I_dc0 < 0`. `chain_le_semantics`, `exact_passive`; `mem_den_locallyExponentiallyStable`
-  (formerly `locallyExponentiallyStable`): rectifier mode with a stable current loop is locally
-  exponentially stable; `mem_den_unstable_of_inverter` (formerly `unstable_of_inverter`): in
+  `I_dc0 < 0`. `chain_le_semantics`, `exact_passive`; `mem_den_locallyExponentiallyStable`:
+  rectifier mode with a stable current loop is locally exponentially stable;
+  `mem_den_unstable_of_inverter`: in
   inverter mode (`I_dc0 < 0`) the plant is unstable, whatever the current-loop gains (the
   open-loop pole `−I_dc0/(C V0)` of §1.4 survives the inner loop).
   Within `L, C, V0 > 0` the local exponential translation is exact
@@ -101,9 +103,6 @@ Results.
 The degenerate-equilibrium tools for the locally `C¹` field are in
 `theorem/Dynamics/Instability.lean` and `theorem/Dynamics/Lyapunov.lean`.
 The Jacobian, the transfer function and its zeros are static evidence.
-
-Source: work-sync `theory/T-vsc-dc-voltage-control.md` §1.1, §1.1.1, §1.4, §1.5;
-`theory/T-gfl-control.md` §1.4.1.
 -/
 
 noncomputable section

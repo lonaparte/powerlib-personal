@@ -9,20 +9,25 @@ import Mathlib.Analysis.Complex.Convex
 
 /-! # Modified Bessel functions of the second kind `K₀`, `K₁`
 
-Source: work-sync `theory/T-cable.md` §1.2.2 (tubular conductors; Schelkunoff 1934, ref. 1 of the
-note). The exact tubular-conductor impedances need, besides `I₀`, `I₁`
+The exact tubular-conductor impedances need, besides `I₀`, `I₁`
 (`theorem/SpecialFunctions/BesselI.lean`), the second-kind functions `K₀`, `K₁`; Mathlib has
-neither kind.
+neither kind. They are defined here by their integral representation and analysed at small and
+large argument.
 
-Definitions (functions, not predicates). For `Re z > 0`:
-* `besselK0 z = ∫₀^∞ e^{−z cosh t} dt`, `besselK1 z = ∫₀^∞ e^{−z cosh t} cosh t dt` (the standard
+Scope.
+* Definitions (functions, not predicates). For `Re z > 0`:
+  `besselK0 z = ∫₀^∞ e^{−z cosh t} dt`, `besselK1 z = ∫₀^∞ e^{−z cosh t} cosh t dt` (the standard
   integral representation `K_ν(z) = ∫₀^∞ e^{−z cosh t} cosh νt dt`, `ν = 0, 1`). For `Re z ≤ 0`
   the integrals diverge and the definitions return Lean's junk value; every result below assumes
   `Re z > 0`.
 * `gaussHalf z = ∫₀^∞ e^{−z u²/2} du` (`= √(π/(2z))`, principal branch): the common
   large-argument scale, `I_ν(z) ≈ e^z G(z)/π`, `K_ν(z) ≈ e^{−z} G(z)`.
+* Static special-function analysis; no model family (foundation).
 
-Results (foundation; static special-function analysis, no model family).
+Source: work-sync `theory/T-cable.md` §1.2.2 (tubular conductors; Schelkunoff 1934, ref. 1 of the
+note).
+
+Results.
 * Integrability: `integrableOn_besselK0`, `integrableOn_besselK1` (`Re z > 0`).
 * Small argument: `integral_cexp_neg_mul_cosh_mul_sinh` (`∫₀^∞ e^{−z cosh t} sinh t = e^{−z}/z`),
   `besselK1_sub_exp_div` (`K₁(z) − e^{−z}/z = ∫₀^∞ e^{−z cosh t − t} dt`),
@@ -52,8 +57,6 @@ Results (foundation; static special-function analysis, no model family).
 * **Wronskian**: `besselI0_mul_besselK1_add_besselI1_mul_besselK0`
   (`I₀(z)K₁(z) + I₁(z)K₀(z) = 1/z`, `Re z > 0`): `z(I₀K₁ + I₁K₀)` has zero derivative
   (`hasDerivAt_wronskian`) on the convex half-plane and tends to `1` as `z → 0⁺`.
-
-Family and connection conclusions: none (static special-function analysis; no model family).
 -/
 
 noncomputable section

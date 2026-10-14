@@ -5,56 +5,62 @@ import theorem.Flow.Certificate
 /-! # LaSalle invariance principle (LeanForControl interface)
 
 Thin powerlib-named wrappers. Every proof is a direct application of the upstream
-declaration named in its docstring; nothing is re-proved. Upstream modules (LeanForControl
-rev `7507ed04`, imported through `dependencies.LeanForControl`):
+declaration named in its docstring; nothing is re-proved. The upstream module is
+`LeanForControl.Stability.LaSalle` (LeanForControl rev `7507ed04`, imported through
+`dependencies.LeanForControl`).
 
-* `LeanForControl.Stability.LaSalle`: `_root_.omegaLimitTraj`, `_root_.mem_omegaLimitTraj_iff`,
-  `_root_.isPositivelyInvariant_omegaLimitTraj`, `_root_.lieDeriv_eq_zero_on_omegaLimitTraj`,
-  `_root_.LieDerivZeroSet`, `_root_.lasalle_invariance_principle`,
-  `_root_.lasalle_local_asymptotic_stable` (Barbashin),
-  `_root_.lasalle_global_asymptotic_stable` (Krasovskii).
+Scope.
+* An arbitrary autonomous continuous-time ODE `ẋ = f x` on
+  `Dynamics.State n = EuclideanSpace ℝ (Fin n)`; no input, delay, switching, or
+  time-variation. Solutions are `IsIntegralCurveOn` curves (one-sided derivatives at
+  endpoints). `V̇ x` is `fderiv ℝ V x (f x)`.
+* Every theorem here is a generic semantic implication about an arbitrary field `f` and function
+  `V`; no model family is defined or fixed, so they are foundation results (Rules §3). The
+  predicates are LeanForControl's (`IsPositivelyInvariant`, `IsLocalLyapunovFunction`,
+  `SublevelSet`, `LocalAsymptoticStable`, `GlobalAsymptoticStable`, `Unstable`) used directly;
+  likewise the ω-limit set of a forward trajectory `φ` is LeanForControl's
+  `_root_.omegaLimitTraj φ` (the points `y` such that `φ t` is frequently in every neighbourhood
+  of `y` as `t → ∞`; Khalil's positive limit set `L⁺`), written directly in the statements
+  (behaviour is defined only in the semantic layer); `LocalAsymptoticStable` and `Unstable` are
+  exactly the Flow sentences `.locallyAsymptoticallyStable` and `.unstable`. Model families that
+  use these criteria publish their conclusions as connection statements.
+* Hypotheses that differ from Khalil's textbook statements (inherited from upstream):
+  LaSalle requires `f` globally `LipschitzWith` **and** `ContDiff ℝ 1`
+  (`theorem/Dynamics/LaSalle/Basin.lean` removes the global Lipschitz requirement by a cutoff);
+  the target set `M` must contain every *positively* invariant subset of
+  `LieDerivZeroSet f V Ω = {x ∈ Ω | V̇ x = 0}` (stronger than "largest invariant subset");
+  Barbashin needs the compact sublevel set to be positively invariant as a hypothesis.
+
+Source: LeanForControl (Khalil, *Nonlinear Systems*, 3rd ed., Lemma 4.1, Theorem 4.4,
+Corollaries 4.1–4.2; Hahn, *Stability of Motion*, Chetaev's method).
+
+Results.
+* Wrappers of `LeanForControl.Stability.LaSalle` (`_root_.omegaLimitTraj`,
+  `_root_.mem_omegaLimitTraj_iff`, `_root_.isPositivelyInvariant_omegaLimitTraj`,
+  `_root_.lieDeriv_eq_zero_on_omegaLimitTraj`, `_root_.LieDerivZeroSet`,
+  `_root_.lasalle_invariance_principle`, `_root_.lasalle_local_asymptotic_stable` (Barbashin),
+  `_root_.lasalle_global_asymptotic_stable` (Krasovskii)), under the upstream names in
+  `powerlib.Dynamics.LaSalle`: `LieDerivZeroSet` (`lieDerivZeroSet_def`),
+  `mem_omegaLimitTraj_iff`, `isPositivelyInvariant_omegaLimitTraj`,
+  `lieDeriv_eq_zero_on_omegaLimitTraj`, `lasalle_invariance_principle`,
+  `lasalle_local_asymptotic_stable`, `lasalle_global_asymptotic_stable`; `_root_.omegaLimitTraj`
+  itself is used directly.
+* `globallyAsymptoticallyStable_of_lasalle`: the upstream Krasovskii conclusion has no
+  solution-existence clause; this wrapper adds the equilibrium and forward completeness (from the
+  global Lipschitz bound, `Flow.forwardComplete_of_lipschitzWith`) to reach the Flow sentence
+  `Flow.GloballyAsymptoticallyStable`.
 
 The wrapper of LeanForControl's exponential Chetaev criterion
-(`NonlinearInstability.unstable_of_exponential_chetaev`) is `Dynamics.unstable_of_exponential_chetaev`
-in `theorem/Dynamics/Instability.lean`, with the other instability criteria.
+(`NonlinearInstability.unstable_of_exponential_chetaev`) is
+`Dynamics.unstable_of_exponential_chetaev` in `theorem/Dynamics/Instability.lean`, with the other
+instability criteria.
 
-Their transitive LeanForControl imports are `Analysis.{Continuity, IntegralCurves, Integrals}`,
+The transitive LeanForControl imports of the upstream module are
+`Analysis.{Continuity, IntegralCurves, Integrals}`,
 `ODEs.{GronwallBellman, ODE_properties, PicardLindelof}`, `Stability.{Autonomous,
 DefsAutonomous}`; none of `LeanForControl.axioms`, `Comparison.*`, `LyapunovBounds`,
 `KLCharacterization*`, `ClassKDecay` is involved, and `#print axioms` of every wrapped
 theorem is `[propext, Classical.choice, Quot.sound]`.
-
-Model boundary. Generic: an arbitrary autonomous continuous-time ODE `ẋ = f x` on
-`Dynamics.State n = EuclideanSpace ℝ (Fin n)`; no input, delay, switching, or
-time-variation. Solutions are `IsIntegralCurveOn` curves (one-sided derivatives at
-endpoints). `V̇ x` is `fderiv ℝ V x (f x)`.
-
-Hypotheses that differ from Khalil's textbook statements (inherited from upstream):
-* LaSalle requires `f` globally `LipschitzWith` **and** `ContDiff ℝ 1`
-  (`theorem/Dynamics/LaSalle/Basin.lean` removes the global Lipschitz requirement by a cutoff).
-* The target set `M` must contain every *positively* invariant subset of
-  `LieDerivZeroSet f V Ω = {x ∈ Ω | V̇ x = 0}` (stronger than "largest invariant subset").
-* Barbashin needs the compact sublevel set to be positively invariant as a hypothesis.
-
-Connection architecture. Every theorem here is a generic semantic implication about an arbitrary
-field `f` and function `V`; no model family is defined or fixed. They are therefore foundation
-results (Rules §3): the four former `@[powerlib_foundation]` wrappers (LaSalle, Barbashin, Krasovskii,
-Chetaev) are relabeled `@[powerlib_foundation]`, with unchanged statements. The predicates are
-LeanForControl's (`IsPositivelyInvariant`, `IsLocalLyapunovFunction`, `SublevelSet`,
-`LocalAsymptoticStable`, `GlobalAsymptoticStable`, `Unstable`) used directly, replacing the
-former `theorem/Dynamics` aliases; likewise the ω-limit set of a forward trajectory `φ` is
-LeanForControl's `_root_.omegaLimitTraj φ` (the points `y` such that `φ t` is frequently in every
-neighbourhood of `y` as `t → ∞`; Khalil's positive limit set `L⁺`), written directly in the
-statements (the former alias `Dynamics.omegaLimitTraj` is removed: behaviour is defined only in
-the semantic layer); `LocalAsymptoticStable` and `Unstable` are exactly the Flow
-sentences `.locallyAsymptoticallyStable` and `.unstable`. The upstream Krasovskii conclusion has no
-solution-existence clause; `globallyAsymptoticallyStable_of_lasalle` adds the equilibrium and
-forward completeness (from the global Lipschitz bound, `Flow.forwardComplete_of_lipschitzWith`)
-to reach the Flow sentence `Flow.GloballyAsymptoticallyStable`. Model families that use these
-criteria publish their conclusions as connection statements.
-
-Source: LeanForControl (Khalil, *Nonlinear Systems*, 3rd ed., Lemma 4.1, Theorem 4.4,
-Corollaries 4.1–4.2; Hahn, *Stability of Motion*, Chetaev's method). powerlib Phase 0, P0a.
 -/
 
 noncomputable section

@@ -5,6 +5,17 @@ import theorem.PLL.Model
 Coordinate and trajectory identities; the only stability claims are the two connection
 statements on the PI-PLL family at the end.
 
+Model boundary.
+* System: the SRF-PLL error model of `theorem/PLL/Model.lean` in the `(θ, ξ)` coordinates
+  (`xiField a b Δω`, `a = V K_p`, `b = V K_i`, constant frequency offset `Δω`): ideal balanced
+  grid, PI loop filter, VCO; no pre-filter, delay, PWM, current loop or saturation; continuous
+  time.
+* The amplitude–phase and normal-mode items are pointers to the modules that hold them.
+
+Source: work-sync `theory/T-invariant-coordinates.md` §1.2, §1.3, §1.4;
+`theory/T-gfl-multiscale-modeling.md` §1.8.
+
+Results.
 * Pendulum form (T-invariant-coordinates §1.2, T-gfl-multiscale §1.8). For the `(θ, ξ)` field
   `xiField a b Δω` (`θ̇ = Δω − a sin θ + b ξ`, `ξ̇ = −sin θ`, constant `Δω`, `a = V K_p`,
   `b = V K_i`): every solution has `θ ∈ C²` with
@@ -20,12 +31,10 @@ statements on the PI-PLL family at the end.
   the note's scale factor: `PH.Models.normalMode_sum`, `PH.Models.normalMode_diff`,
   `PH.Models.normalMode_diff_ne_note` in `theorem/PH/Models/RLC.lean`.
 
-Source: work-sync `theory/T-invariant-coordinates.md` §1.2, §1.3, §1.4;
-`theory/T-gfl-multiscale-modeling.md` §1.8.
-
-Family and connection conclusions. No new family: the `(θ_err, ξ)` model with gains `(a, b)`
+Family and connection conclusions.
+No new family: the `(θ_err, ξ)` model with gains `(a, b)`
 and offset `Δω`, read about `θ*`, is the member `PLL.PIPLL.srf 1 a b (−Δω) θ*` of the PI-PLL
-family (`xi_piPLLField`; its selected point is `(θ*, −Δω / b)`). The two former domain theorems
+family (`xi_piPLLField`; its selected point is `(θ*, −Δω / b)`). The two local-stability results
 are connection statements on that family (`xi_mem_den_locallyExponentiallyStable`,
 `xi_mem_den_unstable_antiPhase`). Everything else is foundation: the pendulum form holds for
 the stated (generic) signals and fields.

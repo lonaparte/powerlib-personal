@@ -6,22 +6,27 @@ import theorem.LTI.Decay
 
 /-! # Synchronization manifolds of diffusively coupled identical nodes
 
-Foundation layer (categories B and C).
+Generic results for networks of identical nodes with zero-row-sum coupling: Laplacian facts,
+invariance of the synchronization manifold, modal decoupling of the variational equation, the
+linear-node threshold and cluster synchronization.
+
+Scope.
+* `N` identical nodes indexed by a finite type `ι`, node state in a real normed space `E`, node
+  dynamics `f : E → E`, coupling output `H : E → E`, coupling matrix `L` with zero row sums
+  (`Σⱼ Lᵢⱼ = 0`, e.g. a weighted Laplacian), coupling strength `σ`; continuous time, autonomous,
+  deterministic. No delay, sampling or heterogeneity.
 
 Source: work-sync `theory/T-synchronization-manifold.md` §1.1 (network
 `ẋᵢ = f(xᵢ) − σ Σⱼ Lᵢⱼ H(xⱼ)`, `L𝟙 = 0`), §1.2 (invariance of `M_sync`), §1.3 (variational
 equation decoupled by the Laplacian spectrum), §1.5 (linear-node threshold `σ μ₂ > a`), §1.6
 (cluster synchronization under an equitable partition).
 
-Model boundary: `N` identical nodes indexed by a finite type `ι`, node state in a real normed
-space `E`, node dynamics `f : E → E`, coupling output `H : E → E`, coupling matrix `L` with zero
-row sums (`Σⱼ Lᵢⱼ = 0`, e.g. a weighted Laplacian), coupling strength `σ`; continuous time,
-autonomous, deterministic. No delay, sampling or heterogeneity.
-
 Results.
-* C (Mathlib wrappers for the unweighted Laplacian `SimpleGraph.lapMatrix`): `L𝟙 = 0`, positive
-  semidefinite, kernel = vectors constant on connected components, `dim ker L = #components`;
-  bridge `G.lapMatrix ℝ = Network.laplacian (G.adjMatrix ℝ)`.
+* Mathlib wrappers for the unweighted Laplacian `SimpleGraph.lapMatrix`: `L𝟙 = 0`, positive
+  semidefinite, kernel = vectors constant on connected components, `dim ker L = #components`
+  (`lapMatrix_mulVec_one`, `lapMatrix_posSemidef`, `lapMatrix_mulVec_eq_zero_iff_const`,
+  `card_components_eq_finrank_ker`); bridge `G.lapMatrix ℝ = Network.laplacian (G.adjMatrix ℝ)`
+  (`lapMatrix_eq_laplacian`).
 * `netField_diag`: on the diagonal the network field is `f` in every node (tangency);
   `sync_lift`: a node solution `s` gives the network solution `(s, …, s)`;
   `sync_invariant`: if the network field is globally Lipschitz, every network solution that
@@ -32,14 +37,19 @@ Results.
 * `transverse_isHurwitz_of_threshold` (through `LTI.isHurwitz_sub_smul_one`): with `H = Γ = I`,
   every transverse block `A − σμ_k I` (`k ≥ 2`) is Hurwitz as soon as `σ μ_k > a` where `a`
   bounds the real parts of the spectrum of `A` — in particular for all `k` once `σ μ₂ > a`,
-  `σ ≥ 0`.
+  `σ ≥ 0`.  For linear nodes the equivalence of exponential synchronization with these Hurwitz
+  blocks is `Network.Sync.expSync_iff` (`theorem/Network/LinearSync.lean`).
 * Cluster synchronization (`EquitablePartition`, `cluster_field`, `cluster_lift`,
   `cluster_invariant`): if every node of cluster `c` receives the same total coupling `Q c c'`
   from cluster `c'`, the cluster manifold `{X = Y ∘ π}` is invariant and carries the quotient
   dynamics `Ẏ_c = f(Y_c) − σ Σ_{c'} Q_{cc'} H(Y_{c'})`.
 
-Not formalized here: Master Stability Function / Lyapunov exponents, Kuramoto `K_c`, Fenichel
-persistence (near-identical nodes) — these are outside the algebraic/ODE core.
+Family and connection conclusions.
+* None: generic implications (no family, no connection statement).
+
+Not formalized here.
+* Master Stability Function / Lyapunov exponents, Kuramoto `K_c`, Fenichel persistence
+  (near-identical nodes) — these are outside the algebraic/ODE core.
 -/
 
 noncomputable section

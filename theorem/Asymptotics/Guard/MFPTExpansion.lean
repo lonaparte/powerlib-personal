@@ -4,60 +4,65 @@ import theorem.Asymptotics.EndpointLaplace
 
 /-! # Guard MFPT: the half-order term is present, with coefficient `1/√(πX)`
 
-Foundation layer: one-variable real analysis of the explicit MFPT double integral; nothing here is a
-stochastic statement (the integral is taken as the definition of the MFPT, as in the source note).
+One-variable real analysis of the explicit MFPT double integral: two-term expansions of
+`T_guard` and of the committed-to-guard ratio, which show that the `O(X^{−1/2})` rates are sharp.
+Nothing here is a stochastic statement (the integral is taken as the definition of the MFPT, as in
+the source note).
 
-Model boundary: exactly that of `Asymptotics/Guard/MFPT.lean` — truncated subcritical-Hopf potential
-`U(r) = αr²/2 − l₁r⁴/4` (`α, l₁ > 0`), barrier top `r_c = √(α/l₁)`, `ΔU = α²/(4l₁)`,
-`T(r_b) = D̃⁻¹ ∫₀^{r_b} (dy/y) e^{U(y)/D̃} ∫₀^y z e^{−U(z)/D̃} dz` (`guardMFPT`),
-`T_guard = T(r_c)`,
-`T_committed = T(r_b)` with any `r_b > r_c`, `P = guardPrefactor α l₁ D̃ = (√π/2)√(D̃l₁)/α²`,
-`X = ΔU/D̃`; asymptotic regime `D̃ → 0⁺` at fixed `α, l₁, r_b` (equivalently `X → ∞`).
+Model boundary.
+* Exactly that of `Asymptotics/Guard/MFPT.lean`: truncated subcritical-Hopf potential
+  `U(r) = αr²/2 − l₁r⁴/4` (`α, l₁ > 0`), barrier top `r_c = √(α/l₁)`, `ΔU = α²/(4l₁)`,
+  `T(r_b) = D̃⁻¹ ∫₀^{r_b} (dy/y) e^{U(y)/D̃} ∫₀^y z e^{−U(z)/D̃} dz` (`guardMFPT`),
+  `T_guard = T(r_c)`, `T_committed = T(r_b)` with any `r_b > r_c`,
+  `P = guardPrefactor α l₁ D̃ = (√π/2)√(D̃l₁)/α²`, `X = ΔU/D̃`; asymptotic regime `D̃ → 0⁺` at
+  fixed `α, l₁, r_b` (equivalently `X → ∞`).
+* Notation: `c = 2√l₁/(√π α)`, so that `c √D̃ = 1/√(πX)`.
 
-Results (`c = 2√l₁/(√π α)`, so that `c √D̃ = 1/√(πX)`):
-* `guardMFPT_guard_two_term`: `T_guard/(P e^X) = 1 + c√D̃ + O(D̃)`;
+Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.2 ("趋近 2 的方式本身是
+`1 + O(X^{−1/2})`"), §1.3 (`T_guard ∼ (√π/2)√(D̃l₁)/α² e^X (1 + O(X^{−1/2}))`, "修正确为半阶"),
+§1.5 (`× 2` for committed escape).
+
+Results.
+* `guardMFPT_guard_two_term` — `T_guard/(P e^X) = 1 + c√D̃ + O(D̃)`;
   `tendsto_guardMFPT_guard_sub_one_div_sqrt`: `(T_guard/(P e^X) − 1)/√D̃ → c`;
   `tendsto_guardMFPT_guard_mul_sqrt_atTop`: `√X (T_guard/(P e^X) − 1) → 1/√π`, i.e.
   `T_guard = P e^X (1 + 1/√(πX) + o(X^{−1/2}))`.
-* `guardMFPT_beyond_two_term`: `(T(r_b) − T_guard)/(P e^X) = 1 − c√D̃ + O(D̃)`.
-* `guardMFPT_ratio_two_term`: `T(r_b)/T(r_c) = 2 − 2c√D̃ + O(D̃)`;
+* `guardMFPT_beyond_two_term` — `(T(r_b) − T_guard)/(P e^X) = 1 − c√D̃ + O(D̃)`.
+* `guardMFPT_ratio_two_term` — `T(r_b)/T(r_c) = 2 − 2c√D̃ + O(D̃)`;
   `tendsto_guardMFPT_ratio_sub_two_div_sqrt`: `(T(r_b)/T(r_c) − 2)/√D̃ → −2c = −4√l₁/(√π α)`;
   `tendsto_guardMFPT_ratio_mul_sqrt_atTop`: `√X (T_committed/T_guard − 2) → −2/√π`, i.e.
   `T_committed/T_guard = 2 (1 − 1/√(πX) + o(X^{−1/2}))`.
-* The coefficient is nonzero (`guardHalfOrder_pos`), so the rates `O(√D̃)` of
+* `guardHalfOrder_pos` — the coefficient is nonzero, so the rates `O(√D̃)` of
   `guardMFPT_guard_isBigO` and `guardMFPT_ratio_sub_two_isBigO` are sharp:
   `guardMFPT_guard_sub_one_isTheta`, `guardMFPT_ratio_sub_two_isTheta` (`=Θ(√D̃)`),
   `not_guardMFPT_guard_sub_one_isLittleO`, `not_guardMFPT_ratio_sub_two_isLittleO` (`≠ o(√D̃)`).
   This settles for the integral itself what `Asymptotics/Guard/MFPT.lean` only had from the
   truncated table `endpointCorrection_ne_zero_iff`.
-* `guardMFPT_committed_two_term`, `guardMFPT_committed_two_term_atTop`:
-  `T_committed = 2 P e^X (1 + O(1/X))` — the half-order terms of the two halves of the barrier peak
-  cancel (committed escape integrates the full Gaussian, an interior Laplace integral), so the whole
-  half-order term of the ratio comes from `T_guard`. This sharpens the `O(X^{−1/2})` upper bound
-  `guardMFPT_committed_isBigO_atTop`; it is consistent with the source (§1.2: "极值成为内点 ⇒ 完整高斯").
+* `guardMFPT_committed_two_term`, `guardMFPT_committed_two_term_atTop` —
+  `T_committed = 2 P e^X (1 + O(1/X))`: the half-order terms of the two halves of the barrier
+  peak cancel (committed escape integrates the full Gaussian, an interior Laplace integral), so
+  the whole half-order term of the ratio comes from `T_guard`. This sharpens the `O(X^{−1/2})`
+  upper bound `guardMFPT_committed_isBigO_atTop`; it is consistent with the source (§1.2:
+  "极值成为内点 ⇒ 完整高斯").
 
 Route. Morse substitution `u = y² − r_c²` makes the barrier phase exactly Gaussian, because
 `U(y) = ΔU − (l₁/4)(y² − r_c²)²`:
 `∫_a^b y⁻¹ e^{U/D̃} dy = (e^X/2) ∫ (r_c² + u)⁻¹ e^{−l₁u²/(4D̃)} du`
-(`guard_weight_morse`; inside the top `guard_weight_inside_morse`, amplitude `(r_c² − u)⁻¹`; beyond
-it up to the reflected cut `ψ(a) = √(2r_c² − a²)`, `guard_weight_beyond_morse`, amplitude
+(`guard_weight_morse`; inside the top `guard_weight_inside_morse`, amplitude `(r_c² − u)⁻¹`;
+beyond it up to the reflected cut `ψ(a) = √(2r_c² − a²)`, `guard_weight_beyond_morse`, amplitude
 `(r_c² + u)⁻¹`). The generic two-term endpoint expansion `laplace_two_term_isBigO`
 (`Asymptotics/LaplaceTwoTerm.lean`) with `h₀ = r_c⁻²`, `h₁ = ±r_c⁻⁴` (Taylor remainders
 `inv_sub_taylor_le`, `inv_add_taylor_le`) and `β = l₁/(4D̃)` gives the two halves of the weight
 to `1 ± c√D̃ + O(D̃)` (`guard_weight_inside_two_term`, `guard_weight_beyond_two_term`). The inner
 integral and the tails enter only at relative order `O(D̃)`: deterministic sandwiches
 `guardMFPT_guard_weight_bounds`, `guardMFPT_beyond_weight_bounds` (from the bounds of
-`Asymptotics/Guard/MFPT.lean`: `guardInner_ge_gauss`, `guardInner_le_gauss`, `guard_inside_bounds`,
-`guard_tails_le`, `guardInner_reflect_le`). Cross-check with the truncated table
-(`guard_endpointCorrection_eq`): in `ξ = r_c − y`, `g₀ = 1/r_c`, `g₁ = 1/r_c²`, `φ₂ = 2α`,
-`φ₃ = −6l₁r_c` give `endpointCorrection = 2√l₁/(√π α) = c` (with `X` there `= 1/D̃`).
-Generic helpers: `tendsto_guardBeta`, `guardBeta_inv_isBigO`, `guard_weight_lead_eq`,
+`Asymptotics/Guard/MFPT.lean`: `guardInner_ge_gauss`, `guardInner_le_gauss`,
+`guard_inside_bounds`, `guard_tails_le`, `guardInner_reflect_le`). Cross-check with the truncated
+table (`guard_endpointCorrection_eq`): in `ξ = r_c − y`, `g₀ = 1/r_c`, `g₁ = 1/r_c²`,
+`φ₂ = 2α`, `φ₃ = −6l₁r_c` give `endpointCorrection = 2√l₁/(√π α) = c` (with `X` there
+`= 1/D̃`). Generic helpers: `tendsto_guardBeta`, `guardBeta_inv_isBigO`, `guard_weight_lead_eq`,
 `guard_weight_coeff_eq`, `mul_guardPrefactor_exp_eq`, `tendsto_div_sqrt_of_isBigO`,
 `tendsto_sqrt_mul_comp_div_atTop`, `isBigO_comp_div_atTop_inv`, `sqrt_barrierHeight_mul_halfOrder`.
-
-Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.2 ("趋近 2 的方式本身是
-`1 + O(X^{−1/2})`"), §1.3 (`T_guard ∼ (√π/2)√(D̃l₁)/α² e^X (1 + O(X^{−1/2}))`, "修正确为半阶"),
-§1.5 (`× 2` for committed escape).
 -/
 
 noncomputable section

@@ -11,6 +11,16 @@ stiff-grid matching closed loop of `theorem.GFM.Matching.StiffGrid`: the source'
 conclusion (convergence of every trajectory to the critical set of the synchronization potential)
 and an estimate of the region of attraction of the operating point.
 
+Model boundary.
+Exactly the closed loop `MatchingStiffGrid.Model.field` (averaged converter, L filter, stiff grid,
+grid `dq` frame; state `(θ_dq, u_dc, i_d, i_q) ∈ ℝ⁴`, continuous time, autonomous; no PWM, delay,
+PLL, limits). Solutions are `IsIntegralCurveOn` curves on `[0, ∞)`. Parameter ranges as stated in
+each result (`C_dc, L_s, R_s > 0` throughout).
+
+Source: work-sync `theory/T-dc-voltage-gfm.md` §1.2, `theory/T-gfm-control.md` §1.6,
+`theory/papers/@arghir2020matching.md`; equations from the TPEL author version as listed in
+`theorem.GFM.Matching.StiffGrid`.
+
 Provenance. C. Arghir, F. Dörfler, author version "Direct angle control and energy-shaping
 techniques for grid-connected converters" of IEEE Trans. Power Electron. 35(4) (2020) 4398–4410
 (ETH Research Collection, `bare_jrnl.pdf`), appendix "Energy-based stabilization of the eSM": under
@@ -18,36 +28,6 @@ techniques for grid-connected converters" of IEEE Trans. Power Electron. 35(4) (
 nonincreasing and, "by LaSalle", every trajectory converges to `{ũ_dc = 0, ∇S(θ_dq) = 0,
 ĩ_dq = 0}`. The work-sync notes (`theory/T-dc-voltage-gfm.md` §1.2, `theory/T-gfm-control.md`
 §1.6, `theory/papers/@arghir2020matching.md`) contain only the condition.
-
-Model boundary. Exactly the closed loop `MatchingStiffGrid.Model.field` (averaged converter,
-L filter, stiff grid, grid `dq` frame; state `(θ_dq, u_dc, i_d, i_q) ∈ ℝ⁴`, continuous time,
-autonomous; no PWM, delay, PLL, limits). Solutions are `IsIntegralCurveOn` curves on `[0, ∞)`.
-Parameter ranges as stated in each result (`C_dc, L_s, R_s > 0` throughout).
-
-Method (Rules §15: Mathlib/LeanForControl have no LaSalle principle for non-compact sublevel sets
-or modulo a period; the generic pieces are the foundation results of
-`theorem.Dynamics.LaSalle.Periodic`). The field is `2π`-periodic in `θ_dq`, so sublevel sets of `H`
-are unbounded in `ℝ⁴`. The cylinder map `cyl x = (cos θ, sin θ, u, i_d, i_q)` carries the closed
-loop to the polynomial field `cylField` on `ℝ⁵` (`fderiv_cyl_field`: a semiconjugacy), for which
-`c² + s²` is a first integral (`fderiv_circle_cylField`) and the energy `cylEnergy` (with
-`energy = cylEnergy ∘ cyl`, `energy_eq_cylEnergy`) has compact sublevel sets on the cylinder
-`c² + s² = 1` (`isCompact_cylSublevel`) and Lie derivative `≤ −margin ũ²` there (`cylLie_le`, from
-the appendix balance `energy_lie_le` through `cylLie_cyl`). LaSalle on the invariant cylinder
-(`Dynamics.LaSalle.lasalle_levelSet`, the `C¹` LaSalle of `theorem.Dynamics.LaSalle.Basin`, no global Lipschitz
-bound) with the LaSalle set `dH/dt = 0 ⇒ ũ = 0, ĩ = 0` (`cylLie_eq_zero`) and the DC row
-`ũ' = −κ sin θ / C_dc` there (`cylField_two_of_mem`, `κ = η k ≠ 0`) gives convergence of the
-cylinder image to `{sin θ = 0, ũ = 0, ĩ = 0}`; `Dynamics.LaSalle.exists_int_tendsto_of_tendsto_sin` (no
-drift between the zeros of `sin`) lifts it back to `ℝ⁴`.
-
-At the boundary `margin = 0` the dissipation `dH/dt = −margin ũ² − ‖2R_sN ĩ + μω₀L_s ũ z(θ)‖²/(4R_sN²)`
-(`cylLie_eq_zero_of_margin_eq_zero`) vanishes on the three-dimensional set
-`ĩ = −c ũ z(θ)`, `c = μω₀L_s/(2R_sN)`; there the energy is the pendulum energy
-`a ũ²/2 + k(1 − cos θ)`, `a = C_dc + L_s c²N` (`cylEnergy_of_rel`), and the DC row is a negatively
-damped pendulum `C_dc ũ' = g ũ − κ sin θ`, `g = (μω₀L_s)²/(4R_sN)` (`cylField_two_of_rel`). A
-solution segment staying in that set has `ũ ≡ 0` (where `ũ ≠ 0`, constant energy forces
-`a g ũ = (a − C_dc) κ sin θ`, its derivative then fixes `cos θ`, contradicting `θ' = η ũ ≠ 0`) and
-therefore starts at `{sin θ = 0, ũ = 0, ĩ = 0}` (`margin_zero_segment`, through
-`Dynamics.LaSalle.lasalle_condition_of_trajectories_mem`).
 
 Results.
 * Static (public foundation, about the model's maps, not connection conclusions): `cylField_cyl`,
@@ -77,13 +57,42 @@ Results.
   - `not_tendsto_critical_of_eta_eq_zero` (boundary): the hypothesis `η ≠ 0` cannot be dropped —
     for `η = 0` and `μ u* v₀ ≠ 0` the equilibrium `(π/2, u*, î(π/2))` is a constant solution that
     does not converge to the source's set (the source assumes `η > 0`).
+
+Method (Rules §15: Mathlib/LeanForControl have no LaSalle principle for non-compact sublevel sets
+or modulo a period; the generic pieces are the foundation results of
+`theorem.Dynamics.LaSalle.Periodic`). The field is `2π`-periodic in `θ_dq`, so sublevel sets of `H`
+are unbounded in `ℝ⁴`. The cylinder map `cyl x = (cos θ, sin θ, u, i_d, i_q)` carries the closed
+loop to the polynomial field `cylField` on `ℝ⁵` (`fderiv_cyl_field`: a semiconjugacy), for which
+`c² + s²` is a first integral (`fderiv_circle_cylField`) and the energy `cylEnergy` (with
+`energy = cylEnergy ∘ cyl`, `energy_eq_cylEnergy`) has compact sublevel sets on the cylinder
+`c² + s² = 1` (`isCompact_cylSublevel`) and Lie derivative `≤ −margin ũ²` there (`cylLie_le`, from
+the appendix balance `energy_lie_le` through `cylLie_cyl`). LaSalle on the invariant cylinder
+(`Dynamics.LaSalle.lasalle_levelSet`, the `C¹` LaSalle of `theorem.Dynamics.LaSalle.Basin`, no
+global Lipschitz bound) with the LaSalle set `dH/dt = 0 ⇒ ũ = 0, ĩ = 0` (`cylLie_eq_zero`) and the
+DC row `ũ' = −κ sin θ / C_dc` there (`cylField_two_of_mem`, `κ = η k ≠ 0`) gives convergence of the
+cylinder image to `{sin θ = 0, ũ = 0, ĩ = 0}`; `Dynamics.LaSalle.exists_int_tendsto_of_tendsto_sin`
+(no drift between the zeros of `sin`) lifts it back to `ℝ⁴`.
+
+At the boundary `margin = 0` the dissipation
+`dH/dt = −margin ũ² − ‖2R_sN ĩ + μω₀L_s ũ z(θ)‖²/(4R_sN²)`
+(`cylLie_eq_zero_of_margin_eq_zero`) vanishes on the three-dimensional set
+`ĩ = −c ũ z(θ)`, `c = μω₀L_s/(2R_sN)`; there the energy is the pendulum energy
+`a ũ²/2 + k(1 − cos θ)`, `a = C_dc + L_s c²N` (`cylEnergy_of_rel`), and the DC row is a negatively
+damped pendulum `C_dc ũ' = g ũ − κ sin θ`, `g = (μω₀L_s)²/(4R_sN)` (`cylField_two_of_rel`). A
+solution segment staying in that set has `ũ ≡ 0` (where `ũ ≠ 0`, constant energy forces
+`a g ũ = (a − C_dc) κ sin θ`, its derivative then fixes `cos θ`, contradicting `θ' = η ũ ≠ 0`) and
+therefore starts at `{sin θ = 0, ũ = 0, ĩ = 0}` (`margin_zero_segment`, through
+`Dynamics.LaSalle.lasalle_condition_of_trajectories_mem`).
+
+Family and connection conclusions.
 * Connection conclusions on `MatchingStiffGrid.family` (the sentence-level shadow of the basin):
   `mem_den_locallyAsymptoticallyStable_of_dissipative` (with `margin ≥ 0`, `C_dc, L_s, R_s > 0`,
   `μ u* v₀ > 0`, `η ≠ 0` the operating point is locally asymptotically stable: Lyapunov stable,
-  and a ball around it lies in the basin window), `boundaryModel_mem_den_locallyAsymptoticallyStable`
-  (a concrete model with `margin = 0`), and the boundary `not_exact_locallyAsymptoticallyStable`
-  (**REFUTED exactness**: the local asymptotic translation `{physical, synchronizing, damped,
-  matching}` is sound but not exact; `boundaryModel` violates `damped`).
+  and a ball around it lies in the basin window),
+  `boundaryModel_mem_den_locallyAsymptoticallyStable` (a concrete model with `margin = 0`), and the
+  boundary `not_exact_locallyAsymptoticallyStable` (**REFUTED exactness**: the local asymptotic
+  translation `{physical, synchronizing, damped, matching}` is sound but not exact; `boundaryModel`
+  violates `damped`).
 
 No synchronizing torque, `μ u* v₀ = 0` (outside the source's hypotheses; then `k = κ = 0`, `S` is
 constant, every `(θ, u*, î(θ))` is an equilibrium, `field_eq_zero_of_kappa_eq_zero`, and
@@ -107,27 +116,23 @@ constant, every `(θ, u*, î(θ))` is an equilibrium, `field_eq_zero_of_kappa_eq
   any `margin ≥ 0`) the deviation dynamics is `z' = (0, −margin z₁/C_dc, −R_s z₂/L_s, −R_s z₃/L_s)`,
   so `⟨z, z'⟩ ≤ 0`: Lyapunov stable (private `lyapunovStable_of_frozen`, connection
   `mem_den_lyapunovStable_of_frozen`), not asymptotically.
-* (c) `margin = 0`, `μ ≠ 0` (so `u* v₀ = 0`): `tendsto_error_of_no_sync_margin_zero` (private, LaSalle
-  on the cylinder with the LaSalle-set argument `no_sync_margin_zero_segment`: `ũ_dc, ĩ_dq → 0`) and
-  `tendsto_equilibrium_of_no_sync_margin_zero` (private: every forward solution converges to one
-  equilibrium, for every `η`). Method: the rotation-reduced error `red x = (ũ, R_θᵀ ĩ)` solves the
-  autonomous field `redField` (`red_field_identity`), whose Jacobian `redJac` is Hurwitz
-  (`redJac_isHurwitz`, Routh–Hurwitz of `theorem.Criteria.Routh3`); local exponential stability
-  then bounds `ũ` exponentially after the solution enters the ball, and
+* (c) `margin = 0`, `μ ≠ 0` (so `u* v₀ = 0`): `tendsto_error_of_no_sync_margin_zero` (private,
+  LaSalle on the cylinder with the LaSalle-set argument `no_sync_margin_zero_segment`:
+  `ũ_dc, ĩ_dq → 0`) and `tendsto_equilibrium_of_no_sync_margin_zero` (private: every forward
+  solution converges to one equilibrium, for every `η`). Method: the rotation-reduced error
+  `red x = (ũ, R_θᵀ ĩ)` solves the autonomous field `redField` (`red_field_identity`), whose
+  Jacobian `redJac` is Hurwitz (`redJac_isHurwitz`, Routh–Hurwitz of `theorem.Criteria.Routh3`);
+  local exponential stability then bounds `ũ` exponentially after the solution enters the ball, and
   `Dynamics.exists_tendsto_of_abs_deriv_le_exp` makes the angle converge. Lyapunov stability
   (private `lyapunovStable_of_no_sync_of_mu_ne_zero`, connection
-  `mem_den_lyapunovStable_of_no_sync_of_mu_ne_zero`, for every `margin ≥ 0`): starting near `x*`
-  the reduced error starts in the ball of local exponential stability (`red_bounds`), stays
+  `mem_den_lyapunovStable_of_no_sync_of_mu_ne_zero`, for every `margin ≥ 0`): starting near `x*` the
+  reduced error starts in the ball of local exponential stability (`red_bounds`), stays
   exponentially small, and the angle moves by at most `|η| C K₁ ‖x₀ − x*‖ / a`
   (`Dynamics.abs_sub_le_of_abs_deriv_le_exp`).
 * Decision (connection `mem_den_lyapunovStable_iff_of_no_sync`): with `C_dc, L_s, R_s > 0`,
   `μ u* v₀ = 0` and `margin ≥ 0`, the operating point is Lyapunov stable iff
   `margin > 0 ∨ μ ≠ 0 ∨ η = 0`; it is never locally asymptotically stable (continuum of
   equilibria), and in the remaining case `margin = 0, μ = 0, η ≠ 0` it is unstable.
-
-Source: work-sync `theory/T-dc-voltage-gfm.md` §1.2, `theory/T-gfm-control.md` §1.6,
-`theory/papers/@arghir2020matching.md`; equations from the TPEL author version as listed in
-`theorem.GFM.Matching.StiffGrid`.
 -/
 
 noncomputable section

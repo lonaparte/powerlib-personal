@@ -3,7 +3,8 @@ import theorem.Dynamics.Degenerate.WeakFocus
 
 /-! # VSM with a power filter on its Hopf boundary: local asymptotic stability (three states)
 
-Model boundary. The three-state family `VSMLPF.family` of `theorem/GFM/VSMLPF.lean`, unchanged:
+Model boundary.
+The three-state family `VSMLPF.family` of `theorem/GFM/VSMLPF.lean`, unchanged:
 state `z = (δ − δ*, ω, P_f − P₀)`, the field translated so that the selected point `(δ*, 0, P₀)` is
 the origin; continuous time, autonomous (grid angle `u = 0`),
 `δ̇ = ω`, `M ω̇ = P₀ − P_f − D ω`, `Ṗ_f = ω_c (K₀ sin δ − P_f)`; constant internal EMF, lossless
@@ -11,6 +12,11 @@ grid reactance, export-positive active power; no voltage / reactive-power loop, 
 voltage loops, current limiting, PLL, delay, PWM or network dynamics. `K = K₀ cos δ*`
 (`VSMLPF.Model.K`). The physical range is `M, D, ω_c > 0` (requirement `.physical`).
 
+Source: work-sync `projects/vsc-parametric-oscillation/…/gfm-driven-gfl-parametric-resonance/
+notes/concepts/gfm-periodic-source.md` ("三态局部候选"); `notes/theory-draft.md` §1.3. This module
+settles the Hopf-boundary case of `theorem/GFM/VSMLPF.lean`.
+
+Results.
 On the Hopf boundary `K = D ω_c + D²/M` (at a balanced angle) the Jacobian has the eigenvalues
 `±j√(D ω_c / M)` and `−(ω_c + D/M)`, so local exponential stability fails
 (`VSMLPF.exactUnder_locallyExponentiallyStable`) and the nonlinear terms decide. With
@@ -23,7 +29,8 @@ Hence `g₂ = −ω_c P₀ / (2M)`, `g₃ = −ω_c K / (6M)` and the weak-focus
 `κ = (ω_c P₀ / M)² (8H + λ²)/2 + H λ ω_c K (4H + λ²)/(2M) > 0`: every physical boundary model is a
 weak stable focus (a supercritical Hopf point), at every load.
 
-Results (connection conclusions on `VSMLPF.family`).
+Family and connection conclusions.
+No new family: connection conclusions on `VSMLPF.family`.
 * `VSMLPF.mem_den_locallyAsymptoticallyStable_of_hopf`: positive `M, D, ω_c`, a balanced angle and
   `K = D ω_c + D²/M` place a model in local asymptotic stability.
 * `VSMLPF.mem_den_locallyAsymptoticallyStable_iff_of_physical`: within positive `M, D, ω_c`, local
@@ -43,10 +50,8 @@ Results (connection conclusions on `VSMLPF.family`).
   parameters) local asymptotic stability holds iff `K ≤ D ω_c + D²/M`, the boundary included
   (compare `VSMLPF.locallyExponentiallyStable_iff`, which must exclude it).
 
-Source: work-sync projects/vsc-parametric-oscillation/…/gfm-driven-gfl-parametric-resonance/
-notes/concepts/gfm-periodic-source.md ("三态局部候选"); notes/theory-draft.md §1.3; the Hopf-boundary
-question left UNPROVED in `theorem/GFM/VSMLPF.lean`. A SymPy computation (untrusted, not a library
-result) gives the first Lyapunov coefficient on the boundary as a negative multiple of
+Scope note: a SymPy computation (untrusted, not a library result) gives the first Lyapunov
+coefficient on the boundary as a negative multiple of
 `D⁸ + 8D⁶M²h² + 14D⁴M⁴h⁴ + 8D²M⁶h⁶ + M⁸h⁸ + P₀² M² (D⁴ + 10 D²M²h² + M⁴h⁴)`, `h² = D ω_c / M`;
 the formal proof uses only the explicit Lyapunov function.
 -/

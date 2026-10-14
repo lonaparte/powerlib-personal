@@ -6,26 +6,30 @@ import Mathlib.Analysis.Matrix.Order
 
 /-! # Kalman prediction step: covariance propagation
 
-Source: work-sync `theory/T-kalman-filter.md` §1.2 (continuous-time prediction between
+The discrete prediction keeps the covariance positive semidefinite, and the time-invariant
+continuous prediction ODE has an explicit solution converging to the stationary covariance.
+
+Scope.
+* Linear algebra / matrix ODE, not an engineering result. These are statements about the
+  deterministic covariance recursion and ODE; that `P` is the conditional covariance of a
+  linear-Gaussian state-space model is not formalized.
+* Time-invariant `A`, `Q = Σ Σᵀ`.
+* The general variation-of-constants form `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ +
+  ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ` for time-varying `A(t)` (relative to a fundamental matrix
+  `Φ`), its constant-`A` instance without an algebraic solution `P∞`, and the Riccati integral
+  representation are in `theorem/Estimation/KalmanLTV.lean`.
+
+Source: work-sync theory/T-kalman-filter.md §1.2 (continuous-time prediction between
 measurements `Ṗ = A P + P Aᵀ + Σ Σᵀ`; discrete prediction `P_{k|k−1} = Φ_k P Φ_kᵀ + Q_k`),
 §1.3 (steady state / Lyapunov limit).
 
-Foundation (linear algebra / matrix ODE), not an engineering result.  These are statements about
-the deterministic covariance recursion and ODE; that `P` is the conditional covariance of a
-linear-Gaussian state-space model is not formalized.
-
-Main results (time-invariant `A`, `Q = Σ Σᵀ`).
-* `predict_posSemidef`: `P ⪰ 0`, `Q ⪰ 0` ⇒ `Φ P Φᵀ + Q ⪰ 0` (discrete prediction keeps PSD).
-* `predict_cov_ode_solution`: if `P∞` solves the algebraic equation `A P∞ + P∞ Aᵀ + Q = 0`, then
-  `P(t) = e^{tA} (P₀ − P∞) e^{tAᵀ} + P∞` (`Lyapunov.covSol`) solves `Ṗ = A P + P Aᵀ + Q`,
-  `P(0) = P₀`; `predict_cov_ode_unique`: it is the only solution.
-* `predict_cov_hurwitz`: for `A` Hurwitz and `Q ⪰ 0` such a `P∞ ⪰ 0` exists (uniquely), the
+Results.
+* `predict_posSemidef` — `P ⪰ 0`, `Q ⪰ 0` ⇒ `Φ P Φᵀ + Q ⪰ 0` (discrete prediction keeps PSD).
+* `predict_cov_ode_solution` — if `P∞` solves the algebraic equation `A P∞ + P∞ Aᵀ + Q = 0`,
+  then `P(t) = e^{tA} (P₀ − P∞) e^{tAᵀ} + P∞` (`Lyapunov.covSol`) solves
+  `Ṗ = A P + P Aᵀ + Q`, `P(0) = P₀`; `predict_cov_ode_unique`: it is the only solution.
+* `predict_cov_hurwitz` — for `A` Hurwitz and `Q ⪰ 0` such a `P∞ ⪰ 0` exists (uniquely), the
   prediction ODE has the explicit solution above and `P(t) → P∞`.
-
-The general variation-of-constants form `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ)
-Φ(t, τ)ᵀ dτ` for time-varying `A(t)` (relative to a fundamental matrix `Φ`), its constant-`A`
-instance without an algebraic solution `P∞`, and the Riccati integral representation are in
-`theorem/Estimation/KalmanLTV.lean`.
 -/
 
 noncomputable section

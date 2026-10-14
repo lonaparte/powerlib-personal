@@ -3,50 +3,64 @@ import theorem.Criteria.Hurwitz2
 
 /-! # Passivity, zero-state observability and asymptotic stability of linear pH systems
 
+Refutes the literal claim "passive and zero-state observable ⇒ asymptotically stable" on a lossless
+LC loop, and proves the corrected statement: damping injection on an observable linear pH system
+is exponentially stable.
+
+Model boundary.
+* The constant-coefficient pH system of `theorem/PH/Linear.lean` as the linear plant
+  `linearLTIModel J R g Q` (a `Linear.Plant`): `ẋ = (J − R) Q x + g u`, `y = gᵀ Q x`,
+  `H = ½ xᵀ Q x`, with `J` skew, `R ⪰ 0`, `Q ≻ 0`, real, continuous time.
+* For a linear system zero-state observability is observability of the pair
+  `(A, C) = ((J − R) Q, gᵀ Q)` (`LinearSystems.IsObservable`).
+* The counterexample is the lossless series `LC` loop `losslessLC`
+  (`J = [[0, −1], [1, 0]]`, `R = 0`, `g = (1, 0)ᵀ`, `Q = I`, output the loop current) — the
+  `r = 0`, `L = C = 1` case of the series RLC loop `seriesRLCPH` of
+  `theorem/PH/Models/RLC.lean`.
+* The corrected statement uses the output feedback `u = −k y` (`k > 0`), closed loop
+  `phOutputFeedback` with dissipation `R + k g gᵀ`.
+
 Source: work-sync `theory/T-ph.md` Part 2, "Passivity 不等于稳定": "(1.4) 给的是 input-output
 passivity … 需配合 zero-state observability + detectability（Khalil 2002 §6）才推出渐近稳定".
 
-Model: the constant-coefficient pH system of `theorem/PH/Linear.lean` (P0b) as the linear plant
-`linearLTIModel J R g Q` (a `Linear.Plant`): `ẋ = (J − R) Q x + g u`, `y = gᵀ Q x`, `H = ½ xᵀ Q x`, with `J`
-skew, `R ⪰ 0`, `Q ≻ 0`, real, continuous time. For a linear system zero-state observability is
-observability of the pair `(A, C) = ((J − R) Q, gᵀ Q)` (`LinearSystems.IsObservable`).
+Results.
+* The lossless loop is passive (`losslessLC_mem_den_passive`) and observable
+  (`losslessLC_observable`), but `x(t) = (cos t, sin t)` is an unforced trajectory that keeps
+  its energy (`losslessLC_trajectory`, `losslessLC_not_tendsto`), and its state matrix is not
+  Hurwitz (`losslessLC_not_isHurwitz`).
+* Corrected statement (`phOutputFeedback_isHurwitz`,
+  `phOutputFeedback_mem_den_globallyExponentiallyStable`): with damping injection `u = −k y`
+  (`k > 0`; the closed loop is the pH system with dissipation `R + k g gᵀ`, i.e. output strictly
+  passive, `Ḣ ≤ −k |y|²`) and `(A, C)` observable, the closed loop is Hurwitz, hence
+  exponentially stable. The proof is spectral (an eigenvector on the imaginary axis would have
+  `C v = 0` and be an eigenvector of `A`, contradicting observability,
+  `phCx_eq_zero_of_isObservable`); for linear systems this replaces the LaSalle argument.
+* Nonlinear LaSalle version: for an arbitrary passive system `ẋ = F(x, u)`, `y = H(x)` with a
+  `C¹` positive definite storage, zero-state detectability (or observability) and an output
+  feedback `u = −ψ(y)` with `⟪ψ(y), y⟫ > 0` give local / global asymptotic stability of the
+  closed loop (Khalil, *Nonlinear Systems*, 3rd ed., Lemma 6.7); these generic results are in
+  `theorem/Dynamics/LaSalle/Passivity.lean`. Together with the counterexample above, this is the
+  corrected nonlinear reading of the note: passivity and zero-state observability/detectability
+  give asymptotic stability once the output is fed back (or, equivalently, the system is output
+  strictly passive), not for the unforced passive system.
 
-Correction (refutation of the literal claim). Passivity together with zero-state observability
-does **not** give asymptotic stability of the unforced system: the lossless series `LC` loop
-(`J = [[0, −1], [1, 0]]`, `R = 0`, `g = (1, 0)ᵀ`, `Q = I`, output the loop current) is passive
-(`losslessLC_passive`) and observable (`losslessLC_observable`), but `x(t) = (cos t, sin t)` is an
-unforced trajectory that keeps its energy (`losslessLC_trajectory`, `losslessLC_not_tendsto`),
-and its state matrix is not Hurwitz (`losslessLC_not_isHurwitz`). Khalil's results need output
-strict passivity or an output feedback `u = −φ(y)`.
+Family and connection conclusions.
+* No new family: the lossless loop and the damped closed loop are linear port-Hamiltonian
+  plants (`losslessLC`, `phOutputFeedback`, via `toPortHamiltonian`), read through
+  `Port.PortHamiltonian.family` (sentences at the origin, the unforced state).
+* Connection conclusions: the loop is passive (`losslessLC_mem_den_passive`) and conservative
+  (`losslessLC_mem_den_conservative`) but not locally asymptotically stable
+  (`losslessLC_not_mem_den_locallyAsymptoticallyStable`); the literal claim "passive and
+  observable ⇒ asymptotically stable" is refuted on the semantics connection
+  (`passive_observable_not_asymptotic`); and damping injection on an observable pH plant is
+  globally exponentially stable (`phOutputFeedback_mem_den_globallyExponentiallyStable`).
+* Observability, Hurwitz and spectral facts are static evidence; the explicit unforced solution
+  `(cos t, sin t)` is private implementation evidence (`losslessLC_trajectory`).
 
-Corrected statement (`phOutputFeedback_isHurwitz`, `phOutputFeedback_mem_den_globallyExponentiallyStable`):
-with damping injection `u = −k y` (`k > 0`; the closed loop is the pH system with dissipation
-`R + k g gᵀ`, i.e. output strictly passive, `Ḣ ≤ −k |y|²`) and `(A, C)` observable, the closed
-loop is Hurwitz, hence exponentially stable. The proof is spectral (an eigenvector on the
-imaginary axis would have `C v = 0` and be an eigenvector of `A`, contradicting observability);
-for linear systems this replaces the LaSalle argument.
-
-Nonlinear LaSalle version: for an arbitrary passive system `ẋ = F(x, u)`, `y = H(x)` with a
-`C¹` positive definite storage, zero-state detectability (or observability) and an output
-feedback `u = −ψ(y)` with `⟪ψ(y), y⟫ > 0` give local / global asymptotic stability of the closed
-loop (Khalil, *Nonlinear Systems*, 3rd ed., Lemma 6.7); these generic results are in
-`theorem/Dynamics/LaSalle/Passivity.lean`. Together with the counterexample above, this is the
-corrected nonlinear reading of the note: passivity and zero-state observability/detectability give
-asymptotic stability once the output is fed back (or, equivalently, the system is output strictly
-passive), not for the unforced passive system.
-
-Family and connection conclusions. No new family: the lossless loop and the damped closed loop
-are linear port-Hamiltonian plants (`losslessLC`, `phOutputFeedback`, via `toPortHamiltonian`),
-read through `Port.PortHamiltonian.family` (sentences at the origin, the unforced state).
-Connection conclusions: the loop is passive (`losslessLC_mem_den_passive`) and conservative
-(`losslessLC_mem_den_conservative`) but not locally asymptotically stable
-(`losslessLC_not_mem_den_locallyAsymptoticallyStable`); the literal claim "passive and observable
-⇒ asymptotically stable" is refuted on the semantics connection
-(`passive_observable_not_asymptotic`); and damping injection on an observable pH plant is
-globally exponentially stable (`phOutputFeedback_mem_den_globallyExponentiallyStable`, formerly
-`phOutputFeedback_exponentiallyStable` on the removed `LTI` semantics). Observability, Hurwitz
-and spectral facts are static evidence; the explicit unforced solution `(cos t, sin t)` is
-private implementation evidence (`losslessLC_trajectory`).
+Correction (refutation of the literal claim).
+* Passivity together with zero-state observability does **not** give asymptotic stability of
+  the unforced system (the lossless loop above); Khalil's results need output strict passivity
+  or an output feedback `u = −φ(y)`.
 -/
 
 noncomputable section
@@ -115,7 +129,8 @@ def losslessG : Matrix (Fin 2) (Fin 1) ℝ := !![1; 0]
   simp [linearStateMatrix, losslessJ]
 
 /-- The lossless `LC` loop as a linear port-Hamiltonian plant: `J = losslessJ`, `R = 0`,
-`g = losslessG`, `Q = 1`. -/
+`g = losslessG`, `Q = 1`. These are the data of the series RLC loop `PH.Models.seriesRLCPH`
+(`theorem/PH/Models/RLC.lean`) with `r = 0`, `L = C = 1`. -/
 def losslessLC : Port.PortHamiltonian 2 1 :=
   toPortHamiltonian losslessJ 0 losslessG 1 losslessJ_skew PosSemidef.zero PosDef.one
 
@@ -144,8 +159,7 @@ Static evidence on the model, not a connection conclusion. -/
     Fin.sum_univ_two, Matrix.mul_apply] at h0 h1
   funext i; fin_cases i <;> simp [h0, h1]
 
-/-- Formerly the public `losslessLC_trajectory`: `x(t) = (cos t, sin t)` is an unforced solution
-of the lossless loop on every segment.
+/-- `x(t) = (cos t, sin t)` is an unforced solution of the lossless loop on every segment.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem losslessLC_trajectory (t₀ t₁ : ℝ) :
     IsTrajectoryOn (fun t => WithLp.toLp 2 ![Real.cos t, Real.sin t])

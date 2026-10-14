@@ -7,40 +7,45 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.RootsExtrema
 
 /-! # Conjugate gradients: Galerkin optimality and the polynomial (min–max) error bound
 
-Foundation layer (category B; general numerical linear algebra).
+The Galerkin iterate of conjugate gradients minimises the `A`-norm error, satisfies the
+polynomial min–max bound, and hence the Chebyshev bound in the condition number.
 
-Source: work-sync `theory/T-linear-algebra.md` §1.5–§1.6 (CG minimizes `‖x − x*‖_A` over
+Scope.
+* General numerical linear algebra: real symmetric positive semidefinite `A` (indexed by
+  `Fin k`), `‖u‖_A² = uᵀAu`, a solution `x*` of `Ax* = b`, the Krylov space
+  `K_m(A, r₀) = span{r₀, Ar₀, …, A^{m−1}r₀}` with `r₀ = b − Ax₀`.
+* The CG recursion itself is not formalized; its iterate is characterized by the Galerkin
+  condition `x_m ∈ x₀ + K_m`, `b − A x_m ⊥ K_m`, which is what CG computes.
+
+Source: work-sync theory/T-linear-algebra.md §1.5–§1.6 (CG minimizes `‖x − x*‖_A` over
 `x₀ + K_m`), §2.4 (polynomial characterization of the CG error).
 
-Setting: real symmetric positive semidefinite `A` (indexed by `Fin k`), `‖u‖_A² = uᵀAu`, a
-solution `x*` of `Ax* = b`, the Krylov space `K_m(A, r₀) = span{r₀, Ar₀, …, A^{m−1}r₀}` with
-`r₀ = b − Ax₀`. The CG recursion itself is not formalized; its iterate is characterized by the
-Galerkin condition `x_m ∈ x₀ + K_m`, `b − A x_m ⊥ K_m`, which is what CG computes.
-
 Results.
-* `galerkin_optimal`: any `x_m ∈ x₀ + S` whose residual is orthogonal to the subspace `S`
+* `galerkin_optimal` — any `x_m ∈ x₀ + S` whose residual is orthogonal to the subspace `S`
   minimizes `‖x − x*‖_A` over `x₀ + S` (A-norm optimality of CG).
-* `polyIterate_mem`: for a polynomial `p` with `p(0) = 1`, `deg p ≤ m`, the point
+* `polyIterate_mem` — for a polynomial `p` with `p(0) = 1`, `deg p ≤ m`, the point
   `x* + p(A)(x₀ − x*)` lies in `x₀ + K_m(A, r₀)`.
-* `aeval_conj`: `p(U diag(λ) Uᵀ) = U diag(p(λ)) Uᵀ` for orthogonal `U`.
-* `anorm_poly_le`: `‖p(A) e‖_A ≤ maxᵢ |p(λᵢ)| ‖e‖_A` (spectral theorem, Mathlib
+* `aeval_conj` — `p(U diag(λ) Uᵀ) = U diag(p(λ)) Uᵀ` for orthogonal `U`.
+* `anorm_poly_le` — `‖p(A) e‖_A ≤ maxᵢ |p(λᵢ)| ‖e‖_A` (spectral theorem, Mathlib
   `Matrix.IsHermitian.spectral_theorem`).
-* `cg_minmax`: the Galerkin iterate satisfies `‖x_m − x*‖_A² ≤ M² ‖x₀ − x*‖_A²` for every
+* `cg_minmax` — the Galerkin iterate satisfies `‖x_m − x*‖_A² ≤ M² ‖x₀ − x*‖_A²` for every
   `p(0) = 1`, `deg p ≤ m` with `|p(λᵢ)| ≤ M` on the spectrum.
-* `chebyshev_T_ge`: `T_m((u + u⁻¹)/2) ≥ uᵐ/2` for `u > 0` (Mathlib `Chebyshev.T_real_cosh`).
-* `exists_chebyshev_poly`: for `0 < lo` there is `p(0) = 1`, `deg p ≤ m`, with
+* `chebyshev_T_ge` — `T_m((u + u⁻¹)/2) ≥ uᵐ/2` for `u > 0` (Mathlib `Chebyshev.T_real_cosh`).
+* `exists_chebyshev_poly` — for `0 < lo` there is `p(0) = 1`, `deg p ≤ m`, with
   `|p(x)| ≤ 2((√κ−1)/(√κ+1))^m` on `[lo, hi]`, `κ = hi/lo` (shifted normalised Chebyshev
   polynomial; `|T_m| ≤ 1` on `[−1, 1]` is Mathlib `Chebyshev.abs_eval_T_real_le_one`).
-* `cg_chebyshev`, `cg_chebyshev_sqrt`: **CG Chebyshev bound** — if the spectrum of `A` lies in
+* `cg_chebyshev`, `cg_chebyshev_sqrt` — **CG Chebyshev bound**: if the spectrum of `A` lies in
   `[lo, hi]`, `0 < lo`, then `‖x_m − x*‖_A ≤ 2((√κ−1)/(√κ+1))^m ‖x₀ − x*‖_A`, `κ = hi/lo`.
-* `cg_chebyshev_cond`: the same with `κ = λ_max/λ_min` the spectral condition number of a positive
-  definite `A` (`k > 0`).
+* `cg_chebyshev_cond` — the same with `κ = λ_max/λ_min` the spectral condition number of a
+  positive definite `A` (`k > 0`).
 
-Correction (`T-linear-algebra` §2.4): the note states "CG 第 `m` 步残差 `≤ 2 · min_p max_λ |p(λ)| ‖r₀‖_A`".
-The correct statement is for the **error** in the `A`-norm and has **no factor 2**:
-`‖x_m − x*‖_A ≤ min_{p(0)=1, deg p ≤ m} max_{λ∈σ(A)} |p(λ)| · ‖x₀ − x*‖_A` (`cg_minmax`); the factor
-2 appears only after inserting the Chebyshev bound `min_p max |p| ≤ 2((√κ−1)/(√κ+1))^m` (§1.6),
-which gives `cg_chebyshev`.
+Corrections.
+* `T-linear-algebra` §2.4: the note states "CG 第 `m` 步残差
+  `≤ 2 · min_p max_λ |p(λ)| ‖r₀‖_A`". The correct statement is for the **error** in the
+  `A`-norm and has **no factor 2**:
+  `‖x_m − x*‖_A ≤ min_{p(0)=1, deg p ≤ m} max_{λ∈σ(A)} |p(λ)| · ‖x₀ − x*‖_A` (`cg_minmax`); the
+  factor 2 appears only after inserting the Chebyshev bound
+  `min_p max |p| ≤ 2((√κ−1)/(√κ+1))^m` (§1.6), which gives `cg_chebyshev`.
 -/
 
 noncomputable section

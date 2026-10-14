@@ -3,15 +3,23 @@ import theorem.SpecialFunctions.Sinusoid
 
 /-! # Equilibrium count, saddle-node surface and fold of the GFL-PLL model
 
-Domain module. Model boundary as in `theorem/GFL/LCLine/Reduced2D.lean` (reduced 2-state PLL model,
+Domain module.
+
+Model boundary.
+As in `theorem/GFL/LCLine/Reduced2D.lean` (reduced 2-state PLL model,
 `y 0 = θ_e`, `y 1 = η`, frozen `i_d*, i_q*`, rigid DC, quasi-steady current loop and LC/line, no
 PWM / delay / limiter, continuous time, `δω_g = 0`) and `theorem/GFL/LCLine/FullModel.lean`
 (complete 10-state field). Conclusions are equilibrium-level; physical parameters with `V_g > 0`,
 `ω_g C_f ≠ 0`, `Δ ≠ 0` (hence `A = V_g/√Δ > 0`), PLL gains `K_p, K_i > 0` where stated.
 
-Main results (per period window `[a, a + 2π)` of the angle `θ_e`).
+Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/equilibria-and-bifurcation.md`
+§2–§4, §7; `validity-boundary.md` §8(a).
+
+Results.
+Per period window `[a, a + 2π)` of the angle `θ_e`:
 * `two_equilibria_per_period` (`|c₀| < A`): exactly two equilibria `(θ_s, 0)`, `(θ_u, 0)`;
-  `(θ_s, 0)` is locally exponentially stable and `(θ_u, 0)` is unstable.
+  `two_equilibria_per_period_den`: `(θ_s, 0)` is locally exponentially stable and `(θ_u, 0)` is
+  unstable.
 * `fold_equilibrium_per_period` (`|c₀| = A`): exactly one equilibrium; its Jacobian is the
   nonzero nilpotent `[[0, K_i], [0, 0]]` (saddle-node / fold).
 * `no_equilibrium` (`|c₀| > A`): the reduced field has no equilibrium.
@@ -19,18 +27,15 @@ Main results (per period window `[a, a + 2π)` of the angle `θ_e`).
   (ω_g C_f V_g)² Δ` (and the corresponding strict inequalities).
 * `field10_exists_equilibrium_iff`: the complete 10-state field has an equilibrium iff `|c₀| ≤ A`.
 
-Family and connection conclusions. No new family: the stability conclusions are connection
+Family and connection conclusions.
+No new family: the stability conclusions are connection
 memberships of the reduced model's members `p.pllModel θ` of the PI-PLL family
-`PLL.PIPLL.family` (`theorem/GFL/LCLine/Reduced2D.lean`). The former `two_equilibria_per_period`
-is split into its static part (`two_equilibria_per_period`: the count and the explicit pair) and its
-connection part (`two_equilibria_per_period_den`: the stable root is locally exponentially stable,
-the saddle root unstable). The fold Jacobian (`fold_equilibrium_per_period`), the absence of
-equilibria (`no_equilibrium`) and the existence criteria of the 10-state field
-(`field10_exists_equilibrium_iff`, `field10_exists_equilibrium_iff_explicit`), all formerly
-domain-labelled, are static evidence on the model, not connection conclusions.
-
-Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/equilibria-and-bifurcation.md`
-§2–§4, §7; `validity-boundary.md` §8(a).
+`PLL.PIPLL.family` (`theorem/GFL/LCLine/Reduced2D.lean`): `two_equilibria_per_period_den` (the
+stable root is locally exponentially stable, the saddle root unstable). The count and the explicit
+pair (`two_equilibria_per_period`), the fold Jacobian (`fold_equilibrium_per_period`), the absence
+of equilibria (`no_equilibrium`) and the existence criteria of the 10-state field
+(`field10_exists_equilibrium_iff`, `field10_exists_equilibrium_iff_explicit`) are static evidence
+on the model, not connection conclusions.
 
 Correction (`equilibria-and-bifurcation.md` §2 and §7): the note allows "possibly four zeros per
 period (two stable, two saddles)" because of a `2θ_e` term and says that term makes the basin width

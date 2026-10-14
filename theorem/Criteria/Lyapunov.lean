@@ -3,8 +3,17 @@ import dependencies.LeanForControl
 
 /-! # Lyapunov-inequality criterion for the spectrum (foundation)
 
-Static linear algebra of one real square matrix `M`; nothing here describes a physical system.
+A strict Lyapunov inequality `wᵀ P (M w) < 0` with `P` positive definite places the spectrum of
+`M` in the open left half plane.
 
+Scope.
+* Static linear algebra of one real square matrix `M`; nothing here describes a physical system
+  and no model family is defined.
+
+Source: the standard Lyapunov-inequality argument, used by the composite Lyapunov proof of
+work-sync theory/T-singular-perturbation.md §1.1–§1.4.
+
+Results.
 * `re_neg_of_lyapunov`: if `P = Pᵀ` is positive definite and `wᵀ P (M w) < 0` for every
   `w ≠ 0`, every complex eigenvalue of `M` has negative real part (the real and imaginary parts
   of a complex eigenvector both satisfy the strict inequality, and their sum gives
@@ -15,9 +24,6 @@ Static linear algebra of one real square matrix `M`; nothing here describes a ph
 
 Used by the two-time-scale linear theorem (`theorem/SingularPerturbation/Linear.lean`) and the
 boundary-layer / frozen-fast / finite-horizon singular-perturbation modules.
-
-Source: the standard Lyapunov-inequality argument, used by the composite Lyapunov proof of
-work-sync theory/T-singular-perturbation.md §1.1–§1.4.
 -/
 
 noncomputable section

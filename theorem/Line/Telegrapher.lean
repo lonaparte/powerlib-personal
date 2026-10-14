@@ -4,16 +4,19 @@ import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 
 /-! # Telegrapher equations: second-order form and the distortionless line
 
-Foundation layer (category B).
+The second-order (damped wave) form of the lossy telegrapher equations, and the factorization
+of the operator on a distortionless line with its undistorted attenuated travelling waves.
 
-Sources: work-sync `theory/T-telegrapher-bergeron.md` §1.1 (elimination of `i` gives the
+Model boundary.
+* Single uniform conductor, constant `L', C' > 0`, `R', G' ≥ 0`, unknowns
+  `v, i : ℝ × ℝ → ℝ` of `(x, t)` on the whole plane (current along `+x`, the through convention
+  of `theorem/Line/Bergeron.lean`), continuous time, no frequency dependence.
+
+Source: work-sync `theory/T-telegrapher-bergeron.md` §1.1 (elimination of `i` gives the
 second-order lossy hyperbolic equation), §1.1.2 (distortionless line `R'/L' = G'/C'`,
 factorization and undistorted attenuated travelling waves); `theory/T-pde-systems.md` §1.4.5.
 
-Model boundary: single uniform conductor, constant `L', C' > 0`, `R', G' ≥ 0`, unknowns
-`v, i : ℝ × ℝ → ℝ` of `(x, t)` on the whole plane (current along `+x`, the through convention
-of `theorem/Line/Bergeron.lean`), continuous time, no frequency dependence.
-
+Results.
 * `dx F`, `dt F` are the partial derivatives `fderiv ℝ F p (1,0)`, `fderiv ℝ F p (0,1)`
   (`PDE.dx`, `PDE.dt`, with the mixed-partial lemmas, in `theorem/PDE/Partial.lean`).
 * `second_order_v` / `second_order_i`: if `v, i ∈ C²` solve `∂ₓv = −L'∂ₜi − R'i`,

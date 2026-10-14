@@ -3,7 +3,8 @@ import theorem.Dynamics.Degenerate.WeakFocus
 
 /-! # Quasi-static three-state GFL: a supercritical Hopf point (gains of arbitrary sign)
 
-**Model boundary.** The model of `theorem/GFL/PowerLoop/QuasiStatic.lean`, unchanged: a single
+Model boundary.
+The model of `theorem/GFL/PowerLoop/QuasiStatic.lean`, unchanged: a single
 grid-following converter on an infinite bus of amplitude `V` behind a lossless reactance `X_g`;
 three-phase balanced averaged dq model in the PLL frame, algebraic (quasi-static) network,
 continuous time. States, in order: `θ` (PLL error angle), `x` (PLL integrator), `I_d` (d-axis
@@ -13,7 +14,16 @@ dynamics, resistance, dc link, PWM, delay or limiter. `QuasiStatic.family` admit
 parameter set; the statements below concern one explicit member (with `k_p < 0`), locally, through
 the field translated to its selected point.
 
-**Witness.** `supercriticalQS`: `V = √5`, `X_g = 1`, `k_p = −1/4`, `k_i = 21/4`, `k_P = 4/3`,
+Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
+notes/concepts/contrast-conclusions.md` (推论二 准静态无 Hopf: stated for positive gains; the
+witness shows that the positivity of the gains is essential for both the absence of a Hopf pair
+and the exactness of the Routh–Hurwitz translation); model `GFLQuasiStatic` in
+`.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`. The first Lyapunov coefficient of the
+witness (`l₁ ≈ −0.51 < 0`, Kuznetsov's formula) and the normal form were computed in SymPy;
+only the Lyapunov argument is formal.
+
+Results.
+Witness. `supercriticalQS`: `V = √5`, `X_g = 1`, `k_p = −1/4`, `k_i = 21/4`, `k_P = 4/3`,
 `P_ref = 3`, `(θ*, 0, I_d*) = (arctan(1/2), 0, 1)` (`supercriticalQS_trig`: `V cos θ* = 2`,
 `V sin θ* = 1`; `supercriticalQS_isEq`). Its characteristic polynomial is
 `s³ + (7/2)s² + 9s + 63/2 = (s + 7/2)(s² + 9)`: eigenvalues `±3i`, `−7/2`
@@ -22,7 +32,7 @@ fails). In the eigen-coordinates `c = M z` (`hopfQS_c1`, `hopfQS_c2`, `hopfQS_c3
 `hopfQS_coords`) the linear part is a rotation of `(c₁, c₂)` with frequency `3` and the decay
 `ċ₃ = −(7/2)c₃`.
 
-**Normal form (static, SymPy-generated, kernel-checked).** `hopfQS_W` is the Lyapunov polynomial
+Normal form (static, SymPy-generated, kernel-checked). `hopfQS_W` is the Lyapunov polynomial
 `(c₁² + c₂²)/2 + W₃ + W₄ + 32 (c₃ − h₂(c₁, c₂))²` with the quadratic centre-manifold approximation
 `h₂ = hopfQS_h` (`hopfQS_W_eq`); `hopfQS_key` is the identity
 `Ẇ = w₄ + R + (sin φ − (φ − φ³/6)) K_S + (cos φ − (1 − φ²/2)) K_C` along the exact field, where
@@ -33,26 +43,19 @@ fails). In the eigen-coordinates `c = M z` (`hopfQS_c1`, `hopfQS_c2`, `hopfQS_c3
 `theorem/Dynamics/Degenerate/WeakFocus.lean`): a polynomial of weight `≥ k` is `O(σ^k)` when
 `c₁, c₂ = O(σ)`, `c₃ = O(σ²)`; with `σ = |c₁| + |c₂| + √|c₃ − h₂|` the remainder is
 `O(σ⁵) = o(σ⁴)` and `W > 0`, `Ẇ < 0` on a punctured neighbourhood. No centre-manifold
-theorem is used; the term `32 (c₃ − h₂)²` absorbs the centre manifold. (A1's
-`Dynamics.Degenerate.localAsymptoticStable_of_hopf_weakFocus` needs a nonlinearity entering through one
-scalar of one linear combination; the quasi-static field has two independent nonlinear channels,
-`v_q` and the bilinear power term, so the witness uses its own polynomial with `Dynamics.Degenerate.poly3`.)
+theorem is used; the term `32 (c₃ − h₂)²` absorbs the centre manifold. (The generic
+`Dynamics.Degenerate.localAsymptoticStable_of_hopf_weakFocus` needs a nonlinearity entering
+through one scalar of one linear combination; the quasi-static field has two independent
+nonlinear channels, `v_q` and the bilinear power term, so the witness uses its own polynomial
+with `Dynamics.Degenerate.poly3`.)
 
-**Connection conclusions.**
+Family and connection conclusions.
 * `supercriticalQS_mem_den_locallyAsymptoticallyStable`: the witness is locally asymptotically
   stable (a weak focus: asymptotically, not exponentially, stable).
 * `not_exact_locallyAsymptoticallyStable`: the local asymptotic translation of
   `QuasiStatic.family` (`{equilibrium, jacobianStable}`, strict Routh–Hurwitz) is **not exact**
   for gains of arbitrary sign. Within positive gains it is exact
   (`exactUnder_locallyAsymptoticallyStable`, `theorem/GFL/PowerLoop/QuasiStaticFold.lean`).
-
-Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
-notes/concepts/contrast-conclusions.md` (推论二 准静态无 Hopf: stated for positive gains; the
-witness shows that the positivity of the gains is essential for both the absence of a Hopf pair
-and the exactness of the Routh–Hurwitz translation); model `GFLQuasiStatic` in
-`.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`. The first Lyapunov coefficient of the
-witness (`l₁ ≈ −0.51 < 0`, Kuznetsov's formula) and the normal form were computed in SymPy;
-only the Lyapunov argument is formal.
 -/
 
 noncomputable section

@@ -2,52 +2,61 @@ import theorem.Frequency.SwingNadir
 
 /-! # Under-frequency load shedding (UFLS): conditions, estimates, corrected trip logic
 
+Conditions for successful single-stage load shedding on the swing + governor model, the load
+estimate from RoCoF, and the corrected (latched / confirmed) trip logic of the UFLS note.
+
+Model boundary.
+* The two-state swing + governor plant `Frequency.SwingGovernor.plant` (state `(Δω, ΔP_m)`,
+  continuous time, linear, Kundur per-unit, `M = 2H`, `Δω` per-unit, `f = f₀(1 + Δω)`), load
+  step applied at `t = 0` to the system at rest.
+* Shedding a fraction `p` of the pre-disturbance load `P⁰` turns the step `ΔP_L` into
+  `ΔP_L − p P⁰`; the statements below about the post-shedding system take that reduced step as
+  the model input (shedding at `t = 0`, the most favourable timing).
+* No turbine, AGC, PLL, delay, dead-band, voltage dynamics or frequency-dependent load beyond
+  `D`.
+
 Source: work-sync `theory/T-ufls.md` §1.1 (single-stage threshold shedding), §1.2 (staged
 shedding with confirmation delay), §1.4 ("切赢了" condition), §1.5 (load estimate from RoCoF).
-
-Model boundary for the domain statements: the two-state swing + governor model
-`Frequency.SwingGovernor.model` (state `(Δω, ΔP_m)`, continuous time, linear, Kundur per-unit,
-`M = 2H`, `Δω` per-unit, `f = f₀(1 + Δω)`), load step applied at `t = 0` to the system at rest.
-Shedding a fraction `p` of the pre-disturbance load `P⁰` turns the step `ΔP_L` into
-`ΔP_L − p P⁰`; the statements below about the post-shedding system take that reduced step as
-the model input (shedding at `t = 0`, the most favourable timing). No turbine, AGC, PLL, delay,
-dead-band, voltage dynamics or frequency-dependent load beyond `D`.
 
 Results.
 * `postShed_steadyState_above_iff` (foundation) and `postShed_necessary` (private): the
   post-shedding frequency can stay above the threshold `−Δf_th` only if
   `ΔP_L − p P⁰ ≤ (K_R + D) Δf_th / f₀` (strictly: the steady state is above the threshold iff
   `ΔP_L − p P⁰ < (K_R + D) Δf_th / f₀`).
-  Correction: §1.4 states the condition as `ΔP_L − p ΔP_L⁰ < D_eff Δf_th`; the primary
-  response `K_R` is missing and `Δf_th` [Hz] must be converted to per-unit (`/ f₀`).
 * `postShed_not_sufficient` (private): the condition is not sufficient: in the underdamped case
   there are thresholds for which the steady state is above `−Δf_th` while the frequency nadir
-  (`SwingGovernor.nadir`) still crosses it (overshoot).
+  (`theorem/Frequency/SwingNadir.lean`) still crosses it (overshoot).
 * `load_eq_of_rocof` (private, §1.5): the initial RoCoF determines the step exactly,
-  `ΔP_L = M |ḟ(0⁺)| / f₀`. Correction (`noteLoadEstimate_ne`): the note's
-  `ΔP_L ≈ M_eff |ḟ| · 2π` is wrong by the factor `2π f₀` (it would only be right for
-  `f₀ = 1/(2π)`).
-* Trip logic (foundation, §1.1–§1.2). The note's single-stage indicator `1[Δf(t) ≤ −Δf_th]`
-  is not latched: it re-connects the load as soon as the frequency recovers
-  (`instantTrip_not_latched`). The corrected latched indicator is
+  `ΔP_L = M |ḟ(0⁺)| / f₀`.
+* Trip logic (foundation, §1.1–§1.2): the latched indicator
   `1[min_{0 ≤ τ ≤ t} Δf(τ) ≤ −Δf_th]`, i.e. `∃ τ ∈ [0, t], Δf(τ) ≤ −Δf_th`
-  (`latchedTrip_iff_sInf`, `latchedTrip_mono`). The note's confirmation-delay rule
-  `1[inf_{τ∈[t−τ_d,t]} Δf(τ) ≤ −Δf_i]` trips on a single touch of the threshold
-  (`windowInfTrip_single_touch`), i.e. it provides no confirmation; the corrected rule requires
-  the whole window below the threshold, `1[sup_{τ∈[t−τ_d,t]} Δf(τ) ≤ −Δf_i]`, i.e.
-  `∀ τ ∈ [t − τ_d, t], Δf(τ) ≤ −Δf_i` (`confirmedTrip_iff_sSup`). These window conditions on
-  the record are written out in the statements (behavioural notions are defined only in the
-  semantic layer).
+  (`latchedTrip_iff_sInf`, `latchedTrip_mono`); the confirmed rule
+  `1[sup_{τ∈[t−τ_d,t]} Δf(τ) ≤ −Δf_i]`, i.e. `∀ τ ∈ [t − τ_d, t], Δf(τ) ≤ −Δf_i`
+  (`confirmedTrip_iff_sSup`, `confirmedTrip_imp`). These window conditions on the record are
+  written out in the statements (behavioural notions are defined only in the semantic layer).
 
-Family and connection conclusions. This module adds no family; the plant is the swing + governor
-plant of `Frequency.SwingGovernor`, whose family publishes the stability conclusions. The
-shedding statements quantify over forward solutions under a load step (eventual bounds,
-excursions, initial slope), which the sentence language does not express: `postShed_necessary`,
-`postShed_not_sufficient` and `load_eq_of_rocof` (formerly `@[powerlib_domain]`) are private
-implementation evidence (Rules §3a). They are derived from the generic
-`LTI.tendsto_apply_of_isHurwitz`, `LTI.trajectory_eq_osc2`,
-`LTI.hasDerivWithinAt_apply_zero` and static facts of the plant. The steady-state
-inequality, the corrected load estimate and the trip logic are foundation.
+Family and connection conclusions.
+* This module adds no family; the plant is the swing + governor plant of
+  `Frequency.SwingGovernor`, whose family publishes the stability conclusions.
+* The shedding statements quantify over forward solutions under a load step (eventual bounds,
+  excursions, initial slope), which the sentence language does not express:
+  `postShed_necessary`, `postShed_not_sufficient` and `load_eq_of_rocof` are private
+  implementation evidence (Rules §3a). They are derived from the generic
+  `LTI.tendsto_apply_of_isHurwitz`, `LTI.trajectory_eq_osc2`, `LTI.hasDerivWithinAt_apply_zero`
+  and static facts of the plant. The steady-state inequality, the corrected load estimate and
+  the trip logic are foundation.
+
+Corrections.
+* §1.4 states the condition as `ΔP_L − p ΔP_L⁰ < D_eff Δf_th`; the primary response `K_R` is
+  missing and `Δf_th` [Hz] must be converted to per-unit (`/ f₀`).
+* §1.5 (`noteLoadEstimate_ne`): the note's `ΔP_L ≈ M_eff |ḟ| · 2π` is wrong by the factor
+  `2π f₀` (it would only be right for `f₀ = 1/(2π)`).
+* §1.1: the note's single-stage indicator `1[Δf(t) ≤ −Δf_th]` is not latched: it re-connects
+  the load as soon as the frequency recovers (`instantTrip_not_latched`); the corrected latched
+  indicator is the one above.
+* §1.2: the note's confirmation-delay rule `1[inf_{τ∈[t−τ_d,t]} Δf(τ) ≤ −Δf_i]` trips on a
+  single touch of the threshold (`windowInfTrip_single_touch`), i.e. it provides no
+  confirmation; the corrected rule requires the whole window below the threshold (above).
 -/
 
 noncomputable section

@@ -1,19 +1,25 @@
 import dependencies.Mathlib
 import theorem.Attributes
 
-/-! # Scalar V/f control of the induction machine: steady-state torque algebra (foundation)
+/-! # Scalar V/f control of the induction machine: steady-state torque algebra
 
-Model: induction machine in sinusoidal steady state, Steinmetz single-phase equivalent
-circuit with stator resistance `r_s ≥ 0`, rotor resistance referred to the stator `r_r > 0`,
-total leakage reactance `X = X_ls + X_lr'` at the supply frequency, magnetising branch
-neglected for the torque expression (as in the note's §1.6 formula), three phases, phase
-voltage `V`, synchronous electrical speed `ω_s = 2πf`, slip `s > 0`:
-`T_e(s) = (3V²/ω_s) (r_r/s) / ((r_s + r_r/s)² + X²)`.
-`np` pole pairs (`P/2` in the note), rigid shaft with inertia `J`. These are algebraic
-steady-state statements; the open-loop V/f drive dynamics (e.g. sub-harmonic oscillation)
-are not modelled.
+Static foundation for scalar V/f control: the frequency-ramp limit, the pull-out torque, and its
+dependence on frequency in the constant-V/f and field-weakening regions.
 
-Contents.
+Model boundary.
+* Induction machine in sinusoidal steady state, Steinmetz single-phase equivalent circuit with
+  stator resistance `r_s ≥ 0`, rotor resistance referred to the stator `r_r > 0`, total leakage
+  reactance `X = X_ls + X_lr'` at the supply frequency, magnetising branch neglected for the
+  torque expression (as in the note's §1.6 formula), three phases, phase voltage `V`,
+  synchronous electrical speed `ω_s = 2πf`, slip `s > 0`:
+  `T_e(s) = (3V²/ω_s) (r_r/s) / ((r_s + r_r/s)² + X²)`.
+* `np` pole pairs (`P/2` in the note), rigid shaft with inertia `J`.
+* These are algebraic steady-state statements; the open-loop V/f drive dynamics (e.g.
+  sub-harmonic oscillation) are not modelled.
+
+Source: work-sync `theory/T-scalar-vf-control.md` §1.5–§1.7.
+
+Results.
 * `rampRate_eq`, `rampRate_le`: if the rotor follows the synchronous speed,
   `Ω = 2πf/np` and `J Ω̇ = T`, then `ḟ = np T /(2πJ)`; the admissible ramp is
   `ḟ ≤ np T_avail/(2πJ)`.
@@ -27,11 +33,10 @@ Contents.
   (`maxTorque_fieldWeakening`) and `T_max(f)·Ω(f)` is strictly decreasing
   (`fieldWeakening_power_strictAnti`).
 
-Source: work-sync theory/T-scalar-vf-control.md §1.5–§1.7.
-
 Corrections.
 * §1.5: the ramp limit `ḟ_max = T_avail/(2πJ_eq) · (P/2)/f_n` has an extra `1/f_n`; the
-  dimensionally consistent limit is `ḟ ≤ (P/2) T_avail/(2πJ_eq)` (`rampRate_le`).
+  dimensionally consistent limit is `ḟ ≤ (P/2) T_avail/(2πJ_eq)` (`rampRate_le`,
+  `noteRamp_ne`).
 * §1.7: "constant-power region `T_max·Ω_r ≈ const`" contradicts the stated `T_max ∝ 1/f²`;
   under the note's own model `T_max·Ω ∝ 1/f` strictly decreases
   (`fieldWeakening_power_strictAnti`). Constant power is only reachable below `T_max`

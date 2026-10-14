@@ -4,7 +4,8 @@ import theorem.Dynamics.Instability
 
 /-! # Quasi-static three-state GFL: the fold of the Routh–Hurwitz region
 
-**Model boundary.** The model of `theorem/GFL/PowerLoop/QuasiStatic.lean`, unchanged: a single
+Model boundary.
+The model of `theorem/GFL/PowerLoop/QuasiStatic.lean`, unchanged: a single
 grid-following converter on an infinite bus of amplitude `V` behind a lossless reactance `X_g`;
 three-phase balanced averaged dq model in the PLL frame, algebraic (quasi-static) network,
 continuous time. States, in order: `θ` (PLL error angle), `x` (PLL integrator), `I_d` (d-axis
@@ -14,7 +15,12 @@ current); `I_q = 0`; OUT-positive current, export-positive power `P = (3/2) V co
 limiter. All statements are local, about the full nonlinear field translated to the selected point
 `(θ*, 0, I_d*)` (`QuasiStatic.Model.field`).
 
-**The fold (static).** At a balanced point write `A = V cos θ*`, `B = V sin θ* = X_g I_d*`,
+Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
+notes/concepts/contrast-conclusions.md` (差别二 `P_SN = 3V²/(4X_g)`, 折叠角 45°; 推论二 准静态无
+Hopf); model `GFLQuasiStatic` in `.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`.
+
+Results.
+The fold (static). At a balanced point write `A = V cos θ*`, `B = V sin θ* = X_g I_d*`,
 `κ = (3/2) k_P`, `ι' = X_g (I_d − I_d*)`. On the fold `cos 2θ* = 0` (`B² = A²`, the transmission
 limit `P_ref = ±P_SN`) the Jacobian `[[−k_pA, k_i, k_p], [−A, 0, 1], [κA², 0, −κA]]` (coordinates
 `(φ, x, ι')`) has the left null vector `(0, κA, 1)`: `u = κA x + ι'` has
@@ -27,7 +33,7 @@ singular Lyapunov equation, `fold_quad_identity`:
 `k_p, k_i, k_P > 0`, while `U(t(B, 0, AB/X_g)) = −t B² − t² B² < 0`. `hasFDerivAt_foldU`,
 `contDiff_foldU` give its derivative.
 
-**Connection conclusions.**
+Family and connection conclusions.
 * `mem_den_unstable_of_fold`: positive gains, balanced point, `V cos θ* > 0`, `cos 2θ* = 0` ⇒
   unstable (`Dynamics.unstable_of_eventually_lie_neg`); `mem_den_unstable_of_pi_div_four` at
   `θ* = π/4`, `V > 0`. Together with `mem_den_unstable_of_cos_two_mul_neg` the whole closed fold
@@ -36,21 +42,17 @@ singular Lyapunov equation, `fold_quad_identity`:
   context `positiveGains` (`k_p, k_i, k_P > 0`) the local asymptotic and Lyapunov translations
   (`{equilibrium, jacobianStable}`) are exact: with positive gains every selected point that is not
   an equilibrium with a strict Routh–Hurwitz Jacobian is unstable — non-equilibria; `V = 0` (the
-  integrator or current drifts linearly, Chetaev with `θx` or `X_g x ι`); `V cos θ* < 0` (`tr J > 0`);
-  `cos θ* = 0` or `cos 2θ* < 0` (`det J > 0`); and the fold. On `V cos θ* > 0`, `cos 2θ* > 0`
-  the strict Routh–Hurwitz conditions hold (`a₂a₁ − a₀ > 0` from `a2_mul_a1_sub_a0`).
-Outside positive gains the local asymptotic translation is not exact
-(`QuasiStatic.not_exact_locallyAsymptoticallyStable`,
-`theorem/GFL/PowerLoop/QuasiStaticFoldHopf.lean`).
+  integrator or current drifts linearly, Chetaev with `θx` or `X_g x ι`); `V cos θ* < 0`
+  (`tr J > 0`); `cos θ* = 0` or `cos 2θ* < 0` (`det J > 0`); and the fold. On `V cos θ* > 0`,
+  `cos 2θ* > 0` the strict Routh–Hurwitz conditions hold (`a₂a₁ − a₀ > 0` from `a2_mul_a1_sub_a0`).
+  Outside positive gains the local asymptotic translation is not exact
+  (`QuasiStatic.not_exact_locallyAsymptoticallyStable`,
+  `theorem/GFL/PowerLoop/QuasiStaticFoldHopf.lean`).
 
 Correction: the source attributes a Bogdanov–Takens (double-zero, "BT 型退化") degeneracy to the
 quasi-static boundary, following its form-B reference; in this three-state model with positive
 gains the fold has a simple zero eigenvalue (`a₀ = 0`, `a₁ = V k_i cos θ* > 0`, `a₂ > 0`): it is a
 saddle-node, and it is unstable.
-
-Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
-notes/concepts/contrast-conclusions.md` (差别二 `P_SN = 3V²/(4X_g)`, 折叠角 45°; 推论二 准静态无
-Hopf); model `GFLQuasiStatic` in `.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`.
 -/
 
 noncomputable section

@@ -5,19 +5,26 @@ import theorem.Drives.PMSM
 
 /-! # Direct torque control: flux estimation, load-angle torque, switching geometry
 
-Foundation layer (no closed-loop claim; DTC hysteresis loops are not formalized).
+Static foundation for direct torque control: the voltage-model flux estimate, the load-angle
+torque formulas and the geometry of the switching table.  No closed-loop claim is made.
 
-Model: symmetric three-phase machine, complex space vectors in the stationary αβ frame,
-motor convention, amplitude-invariant transform, `np` = number of **pole pairs**. Stator
-voltage equation `dψ_s/dt = v_s − r_s i_s`. Induction-machine flux relations as in
-`InductionMachine`; PMSM in the rotor frame as in `PMSM`.
+Model boundary.
+* Symmetric three-phase machine, complex space vectors in the stationary αβ frame, motor
+  convention, amplitude-invariant transform, `np` = number of **pole pairs**. Stator voltage
+  equation `dψ_s/dt = v_s − r_s i_s`. Induction-machine flux relations as in
+  `theorem/Drives/InductionMachine.lean`; PMSM in the rotor frame as in
+  `theorem/Drives/PMSM.lean`.
+* Excluded: the DTC hysteresis loops (not formalized), PWM and sampling.
 
-Contents.
+Source: work-sync `theory/T-direct-torque-control.md` §1.1–§1.6.
+
+Results.
 * `fluxVoltageModel`: `ψ_s(t) = ψ_s(0) + ∫₀ᵗ (v_s − r_s i_s)` (needs only `r_s`).
 * `normSq_flux_hasDerivAt`: `d|ψ_s|²/dt = 2 Re(conj ψ_s · (v_s − r_s i_s))` — only the radial
   component of the applied voltage changes the flux magnitude.
 * `torque_loadAngle_IM`: `T_e = (3/2) np (L_m/(σ L_s L_r)) |ψ_s||ψ_r| sin(θ_s − θ_r)`, with the
-  load angle `δ_sr = θ_s − θ_r` (stator flux leading the rotor flux is motoring).
+  load angle `δ_sr = θ_s − θ_r` (stator flux leading the rotor flux is motoring); `cross_polar`
+  is the polar cross-product identity behind it.
 * `torque_loadAngle_PMSM`: `T_e = (3/2) np (ψ_f |ψ_s| sin δ / L_d + |ψ_s|² (L_d − L_q) sin 2δ /
   (2 L_d L_q))`, `δ` the stator-flux angle in the rotor frame (the note's "reluctance term"
   made explicit).
@@ -30,11 +37,10 @@ Contents.
   radial component of `v_{k+1}` vanishes exactly at the lower boundary `φ = −π/6` and that of
   `v_{k+2}` exactly at the upper boundary `φ = π/6`.
 
-Source: work-sync theory/T-direct-torque-control.md §1.1–§1.6.
-
-Correction (§1.2): with `p` = pole pairs the torque is `T_e = (3/2) p Im{conj ψ_s · i_s}`
-(`Transform.SpaceVector.torque`, `Transform.SpaceVector.torque_coefficient_unique`), not
-`(3/2)(p/2)…`.
+Correction (§1.2).
+* With `p` = pole pairs the torque is `T_e = (3/2) p Im{conj ψ_s · i_s}`
+  (`Transform.SpaceVector.torque`, `Transform.SpaceVector.torque_coefficient_unique`), not
+  `(3/2)(p/2)…`.
 -/
 
 noncomputable section

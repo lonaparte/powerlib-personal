@@ -5,29 +5,32 @@ import Mathlib.Probability.Kernel.Invariance
 
 /-! # Bayesian information identities and Metropolis–Hastings on a finite parameter space
 
-Source: work-sync `theory/T-bayesian-inference.md` §1.12 (information gain
+The information gain of a Bayesian update, the ELBO identity of variational inference, and
+invariance of the posterior under the Metropolis–Hastings chain, on a finite parameter space.
+
+Scope.
+* Probability theory, not an engineering result.
+* Finite parameter set `Θ` (`Fintype ι`), strictly positive prior `π` (`Σ π = 1`) and
+  likelihood values `L θ = p(D | θ) > 0` at the observed data; evidence `Z = Σ π L`, posterior
+  `post = π L / Z`. `klSum` is the discrete relative entropy of
+  `theorem/Information/Finite.lean`. The Metropolis–Hastings chain is a stochastic matrix on `ι`.
+
+Source: work-sync theory/T-bayesian-inference.md §1.12 (information gain
 `KL(p(θ|D) ‖ p(θ)) = E_{θ|D}[log p(D|θ)] − log p(D)`), §1.14 (a) Metropolis–Hastings acceptance
 `α = min{1, p(θ*|D) q(θ|θ*) / (p(θ|D) q(θ*|θ))}`, chain invariant measure = posterior;
 (b) variational inference: `ELBO(q) = E_q[log p(θ, D)] − E_q[log q]`, `ELBO ≤ log p(D)`,
 gap `= KL(q ‖ p(θ|D))`.
 
-Foundation (probability), not an engineering result.
-
-Setting.  Finite parameter set `Θ` (`Fintype ι`), strictly positive prior `π` (`Σ π = 1`) and
-likelihood values `L θ = p(D | θ) > 0` at the observed data; evidence `Z = Σ π L`, posterior
-`post = π L / Z`.  `klSum` is the discrete relative entropy of `theorem/Information/Finite.lean`.
-The Metropolis–Hastings chain is a stochastic matrix on `ι`.
-
-Main results.
-* `kl_posterior_prior`: `KL(post ‖ π) = Σ post log L − log Z` (§1.12).
-* `elbo_add_kl`: `log Z = ELBO(q) + KL(q ‖ post)` for every probability vector `q`;
+Results.
+* `kl_posterior_prior` — `KL(post ‖ π) = Σ post log L − log Z` (§1.12).
+* `elbo_add_kl` — `log Z = ELBO(q) + KL(q ‖ post)` for every probability vector `q`;
   `elbo_le_log_evidence`, `elbo_eq_log_evidence_iff`: `ELBO ≤ log Z` with equality iff
   `q = post` (§1.14 (b)).
-* `invariant_of_detailedBalance`: detailed balance `π_i P_ij = π_j P_ji` of a stochastic matrix
+* `invariant_of_detailedBalance` — detailed balance `π_i P_ij = π_j P_ji` of a stochastic matrix
   implies invariance `Σ_i π_i P_ij = π_j`; `mh_detailedBalance`, `mh_stochastic`,
   `mh_invariant`: the Metropolis–Hastings matrix built from any stochastic proposal satisfies
   detailed balance w.r.t. a positive target, hence leaves it invariant (§1.14 (a)).
-* `reversible_invariant` (wrapper of Mathlib `ProbabilityTheory.Kernel.IsReversible.invariant`):
+* `reversible_invariant` — wrapper of Mathlib `ProbabilityTheory.Kernel.IsReversible.invariant`:
   the same implication for general Markov kernels.
 -/
 

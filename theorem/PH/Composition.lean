@@ -2,57 +2,65 @@ import theorem.Port.PortHamiltonian
 import theorem.Linear.Coordinates
 import theorem.Criteria.Lyapunov
 
-/-! # Composition of port-Hamiltonian systems (foundation layer)
+/-! # Composition of port-Hamiltonian systems
 
+Diagonal linear port-Hamiltonian data, their power-preserving interconnection and block
+structure, read through the linear port-Hamiltonian family `Port.PortHamiltonian.family`.
+
+Model boundary.
 * Diagonal linear port-Hamiltonian data (`DiagonalPH ι κ`): a constant skew interconnection
   `J`, diagonal damping `R = diag d ≥ 0`, diagonal energy weights `Q = diag w > 0`
   (`H = Σ wᵢ xᵢ² / 2`) and an input matrix `B`, on arbitrary finite state and port index types;
   field `ẋ = (J − R) ∇H + B u`, collocated output `y = Bᵀ ∇H`, incoming-positive port power
   `uᵀ y`. Continuous time, constant matrices; no switching, delay, saturation or controller.
-  The data are static: their behaviour is the behaviour of the linear port-Hamiltonian plant
+* The data are static: their behaviour is the behaviour of the linear port-Hamiltonian plant
   `toPH e e' : Port.PortHamiltonian n p` obtained by numbering the states by `e : ι ≃ Fin n` and
-  the ports by `e' : κ ≃ Fin p`. Its field, output, supplied power and stored energy are those
-  of the data read through the numbering (`toPH_field`, `toPH_output`, `toPH_supply`,
-  `toPH_storage`), and data related by a coordinate change give similar plants (`toPH_similar`).
-* Power-preserving interconnection (T-ph §1.5, (1.9)–(1.10)). Two diagonal models
+  the ports by `e' : κ ≃ Fin p`.
+* Power-preserving interconnection (T-ph §1.5, (1.9)–(1.10)): two diagonal models
   `m₁ : DiagonalPH ι₁ κ₁`, `m₂ : DiagonalPH ι₂ κ₂` are coupled by
   `u₁ = −Mᵀ y₂ + g₁ u`, `u₂ = M y₁ + g₂ u` (`M : κ₂ × κ₁`, external input `u : κ → ℝ`).
-  The composite is again a `DiagonalPH (ι₁ ⊕ ι₂) κ` with
+
+Source: work-sync `theory/T-ph.md` §1.5 (1.9)–(1.10);
+`theory/T-power-system-ph.md` §1.2, §1.4, §1.5, §1.5.2, §1.7, §1.8.
+
+Results.
+* Numbering: the field, output, supplied power and stored energy of `toPH e e'` are those of the
+  data read through the numbering (`toPH_field`, `toPH_output`, `toPH_supply`,
+  `toPH_storage`), and data related by a coordinate change give similar plants (`toPH_similar`).
+* Interconnection (`interconnect`): the composite is again a `DiagonalPH (ι₁ ⊕ ι₂) κ` with
   `J = [[J₁, −B₁ Mᵀ B₂ᵀ], [B₂ M B₁ᵀ, J₂]]`, `R = blkdiag(R₁, R₂)`, `H = H₁ + H₂`,
-  `B = [B₁ g₁; B₂ g₂]`; its field restricts to the two subsystem fields under the coupling law,
-  and it is passive (compositionality).
-* Block structure (T-power-system-ph §1.4–§1.5.2): block-diagonal PSD dissipation, adding
-  skew pairs keeps `J` skew, adding a nonnegative diagonal (constant-impedance loads) keeps
-  `R ⪰ 0`.
-* Frame rotation (T-power-system-ph §1.2, `v·i` is frame invariant):
-  `Transform.frameRotation_power_invariant` in `theorem/Transform/Park.lean`.
-* Kron reduction (T-power-system-ph §1.7): `Network.kron_current`, `Network.kron_power`,
-  `Network.kron_posSemidef` in `theorem/Network/WeightedLaplacian.lean`.
+  `B = [B₁ g₁; B₂ g₂]`; its field restricts to the two subsystem fields under the coupling law
+  (`interconnect_field_inl`, `interconnect_field_inr`), and it is passive (compositionality).
+* Block structure (T-power-system-ph §1.4–§1.5.2): block-diagonal PSD dissipation
+  (`blockDiag_posSemidef`), adding skew pairs keeps `J` skew (`skew_add`,
+  `skew_add_sum_skewPair`), adding a nonnegative diagonal (constant-impedance loads) keeps
+  `R ⪰ 0` (`posSemidef_add_diagonal`).
 * Strictly damped diagonal models: the energy `H = Σ wᵢ xᵢ² / 2` is `C¹` with derivative
   `∇H · v` (`energy_hasFDerivAt`, `fderiv_energy_apply`, `energy_contDiff`), the unforced
   field is `C¹` (`zeroInput_contDiff`), and a model whose every state is damped is globally
   exponentially stable in every numbering (`toPH_mem_den_globallyExponentiallyStable`).
-* State dimension (T-power-system-ph §1.8, `7N + ℓ + n_C`): `Synchronous.powerSystem_state_dim`
-  in `theorem/Synchronous/SMIB11PH.lean`.
+* Related results elsewhere: frame rotation (T-power-system-ph §1.2, `v·i` is frame invariant)
+  is `Transform.frameRotation_power_invariant` in `theorem/Transform/Park.lean`; Kron reduction
+  (§1.7) is `Network.kron_current`, `Network.kron_power`, `Network.kron_posSemidef` in
+  `theorem/Network/WeightedLaplacian.lean`; the state dimension (§1.8, `7N + ℓ + n_C`) is
+  `Synchronous.powerSystem_state_dim` in `theorem/Synchronous/SMIB11PH.lean`.
 
-Family and connection conclusions. No new family is introduced: every numbered model is a
-member of the linear port-Hamiltonian family `Port.PortHamiltonian.family`
-(`theorem/Port/PortHamiltonian.lean`), whose system map reads a plant as its port system and
-whose sentences are interpreted at the origin. The connection conclusions here are memberships
-in its denotations, valid for every linear port-Hamiltonian plant: strictly positive dissipation
-places a plant in every attractive sentence and in sampled contraction
-(`mem_den_of_dissipation_pos`, `mem_den_globallyExponentiallyStable_of_dissipation_pos`, through
-the strict Lyapunov inequality `xᵀ Q A x = −(Q x)ᵀ R (Q x)`, `Criteria.isHurwitz_of_lyapunov`); no
-dissipation places it in conservation (`mem_den_conservative_of_lossless`); strict dissipation
-excludes conservation (`not_mem_den_conservative_of_dissipation_pos`); similar plants share every
-sentence (`mem_den_iff_of_similar`); and every numbering of an interconnection is passive and
-Lyapunov stable (`interconnect_mem_den_passive`, `interconnect_mem_den_lyapunovStable`). The
-former public trajectory projections `interconnect_trajectory_inl`/`_inr` are private
-implementation evidence (trajectory-level, outside the sentence language). All other results
-are static algebra.
-
-Source: work-sync `theory/T-ph.md` §1.5 (1.9)–(1.10);
-`theory/T-power-system-ph.md` §1.2, §1.4, §1.5, §1.5.2, §1.7, §1.8.
+Family and connection conclusions.
+* No new family is introduced: every numbered model is a member of the linear port-Hamiltonian
+  family `Port.PortHamiltonian.family` (`theorem/Port/PortHamiltonian.lean`), whose system map
+  reads a plant as its port system and whose sentences are interpreted at the origin.
+* The connection conclusions here are memberships in its denotations, valid for every linear
+  port-Hamiltonian plant: strictly positive dissipation places a plant in every attractive
+  sentence and in sampled contraction (`mem_den_of_dissipation_pos`,
+  `mem_den_globallyExponentiallyStable_of_dissipation_pos`, through the strict Lyapunov
+  inequality `xᵀ Q A x = −(Q x)ᵀ R (Q x)`, `Criteria.isHurwitz_of_lyapunov`); no dissipation
+  places it in conservation (`mem_den_conservative_of_lossless`); strict dissipation excludes
+  conservation (`not_mem_den_conservative_of_dissipation_pos`); similar plants share every
+  sentence (`mem_den_iff_of_similar`); and every numbering of an interconnection is passive and
+  Lyapunov stable (`interconnect_mem_den_passive`, `interconnect_mem_den_lyapunovStable`).
+* The trajectory projections `interconnect_trajectory_inl`, `interconnect_trajectory_inr` are
+  private implementation evidence (trajectory-level, outside the sentence language). All other
+  results are static algebra.
 -/
 
 noncomputable section
@@ -586,8 +594,8 @@ private theorem ofLp_restrict {α β : Type*} {n' : ℕ} (f : α → β) (e : β
     (e₁ : α ≃ Fin n') (x : EuclideanSpace ℝ (Fin n)) :
     WithLp.ofLp (restrict f e e₁ x) = (WithLp.ofLp x ∘ e ∘ f) ∘ e₁.symm := rfl
 
-/-- Formerly the public `interconnect_trajectory_inl`: solutions of the composite project to
-solutions of the first subsystem under the coupling input `u₁ = −Mᵀ y₂ + g₁ u`.
+/-- Solutions of the composite project to solutions of the first subsystem under the coupling
+input `u₁ = −Mᵀ y₂ + g₁ u`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem interconnect_trajectory_inl {n₁ p₁ : ℕ} (e : ι₁ ⊕ ι₂ ≃ Fin n) (e' : κ ≃ Fin p)
     (e₁ : ι₁ ≃ Fin n₁) (e₁' : κ₁ ≃ Fin p₁) {u : ℝ → Fin p → ℝ}
@@ -609,8 +617,8 @@ private theorem interconnect_trajectory_inl {n₁ p₁ : ℕ} (e : ι₁ ⊕ ι�
   rw [h]
   congr 1 <;> funext j <;> simp [Function.comp_assoc]
 
-/-- Formerly the public `interconnect_trajectory_inr`: solutions of the composite project to
-solutions of the second subsystem under the coupling input `u₂ = M y₁ + g₂ u`.
+/-- Solutions of the composite project to solutions of the second subsystem under the coupling
+input `u₂ = M y₁ + g₂ u`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem interconnect_trajectory_inr {n₂ p₂ : ℕ} (e : ι₁ ⊕ ι₂ ≃ Fin n) (e' : κ ≃ Fin p)
     (e₂ : ι₂ ≃ Fin n₂) (e₂' : κ₂ ≃ Fin p₂) {u : ℝ → Fin p → ℝ}

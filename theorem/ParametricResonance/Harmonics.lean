@@ -2,22 +2,27 @@ import theorem.ParametricResonance.ForcedResponse
 
 /-! # Harmonic bookkeeping of the single-tone pump (third-order continuation)
 
-Foundation layer: exact trigonometric identities used by the order-by-order harmonic balance of
-the source (§10), and solvability of every harmonic equation.
+Exact trigonometric identities used by the order-by-order harmonic balance of the source (§10),
+and solvability of every harmonic equation.
 
-With `e = e^{jω_p t}` and `u = δ cos(ω_p t)`:
-* `u = (δ/2)(e + e⁻¹)`, so `u|_{e¹} = δ/2`;
-* `u² = δ² [1/2 + (e² + e⁻²)/4]`;
-* `u³ = δ³ [(3/8)(e + e⁻¹) + (1/8)(e³ + e⁻³)]`, so `u³|_{e¹} = 3δ³/8`, `u³|_{e³} = δ³/8`.
-* `harmonic_solvable`: for a Hurwitz `A₀` every harmonic equation
-  `(jhω_p I − A₀) X = R` (`h ∈ ℤ`, any right-hand side) has the unique solution
-  `X = (jhω_p I − A₀)⁻¹ R`; no denominator `jhω_p − λ_k` vanishes.
-
-The full third-order coefficient formulas (`Y₁`, `P₃`, `Y₃`, `P₃₃`) of the source are not
-formalized (multilinear bookkeeping without a stated property).
+Scope.
+* Single-tone pump `u = δ cos(ω_p t)` with `e = e^{jω_p t}`; Hurwitz state matrix `A₀` for the
+  harmonic equations.
 
 Source: work-sync projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
 gfl-gfm-parametric-contrast.md §10.
+
+Results.
+* `u = (δ/2)(e + e⁻¹)`, so `u|_{e¹} = δ/2`.
+* `u² = δ² [1/2 + (e² + e⁻²)/4]`.
+* `u³ = δ³ [(3/8)(e + e⁻¹) + (1/8)(e³ + e⁻³)]`, so `u³|_{e¹} = 3δ³/8`, `u³|_{e³} = δ³/8`.
+* `harmonic_solvable` — for a Hurwitz `A₀` every harmonic equation
+  `(jhω_p I − A₀) X = R` (`h ∈ ℤ`, any right-hand side) has the unique solution
+  `X = (jhω_p I − A₀)⁻¹ R`; no denominator `jhω_p − λ_k` vanishes.
+
+Not formalized.
+* The full third-order coefficient formulas (`Y₁`, `P₃`, `Y₃`, `P₃₃`) of the source
+  (multilinear bookkeeping without a stated property).
 -/
 
 noncomputable section

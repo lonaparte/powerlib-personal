@@ -6,29 +6,36 @@ import theorem.Drives.CascadeControl
 import theorem.SpecialFunctions.Elementary
 import theorem.Transform.Park
 
-/-! # Sensorless machine control: observer algebra (foundation)
+/-! # Sensorless machine control: observer algebra
 
-Foundation layer; no closed-loop observer convergence is claimed.
+Static foundation for sensorless control: back-EMF angle recovery, sliding-mode observer
+inequalities, high-frequency injection demodulation, induction-machine flux models and the
+angle-tracking loop.  No closed-loop observer convergence is claimed.
 
-Models and conventions: PMSM / IM space vectors, motor convention, amplitude-invariant
-transform, electrical angles. Surface PMSM in the stationary frame:
-`v = r i + L di/dt + e`, back-EMF `e = ωψ_f (−sin θ, cos θ)`. IPMSM in the rotor frame:
-`ψ_dq = diag(L_d, L_q) i_dq`; an estimated frame lagging by `Δθ = θ − θ̂` sees
-`x̂ = R(Δθ) x_dq` (`R` = `Transform.rot`). High-frequency injection neglects resistance and
-rotation (`ω_h ≫ ω_r`), the "LPF" is the average over one carrier period.
+Model boundary.
+* PMSM / IM space vectors, motor convention, amplitude-invariant transform, electrical angles.
+* Surface PMSM in the stationary frame: `v = r i + L di/dt + e`, back-EMF
+  `e = ωψ_f (−sin θ, cos θ)`.
+* IPMSM in the rotor frame: `ψ_dq = diag(L_d, L_q) i_dq`; an estimated frame lagging by
+  `Δθ = θ − θ̂` sees `x̂ = R(Δθ) x_dq` (`R` = `Transform.rot`).
+* High-frequency injection neglects resistance and rotation (`ω_h ≫ ω_r`), the "LPF" is the
+  average over one carrier period.
 
-Contents.
+Source: work-sync `theory/T-sensorless-machine-control.md` §1.1, §1.4, §1.5, §1.9, §2.7.
+
+Results.
 * `backEMF_estimate`, `angle_of_backEMF` (atan2 / `Complex.arg` recovers `θ` on `(−π, π]`
   for `ωψ_f > 0`), `norm_backEMF` (`‖e‖/ψ_f = |ω|`), `arctan_formula_wrong`.
 * SMO: error dynamics of the observer `dî/dt = (v − r î)/L + K sgn(i − î)`
   (`smo_error_dynamics`), the Lyapunov inequality
-  `Σ s ṡ ≤ −(K − max|e|/L) Σ|s|` (`smo_lyapunov_bound`), and the equivalent control
-  `K sgn_eq = −e/L` (`smo_equivalentControl`).
-* HF injection: estimated-frame inverse inductance
-  `R(Δθ) diag(1/L_d, 1/L_q) R(−Δθ) = [[Σ + Δ' cos 2Δθ, Δ' sin 2Δθ], [Δ' sin 2Δθ, Σ − Δ' cos 2Δθ]]`
-  (`Σ = (1/L_d + 1/L_q)/2`, `Δ' = (1/L_d − 1/L_q)/2`), the HF currents
-  `î_d = (V_h/ω_h)(Σ + Δ' cos 2Δθ) sin ω_h t` (`= V_h/(ω_h L_d)` at `Δθ = 0`),
-  `î_q = (V_h/ω_h) Δ' sin 2Δθ sin ω_h t`, and the demodulated error
+  `Σ s ṡ ≤ −(K − max|e|/L) Σ|s|` (`smo_lyapunov_bound`, reaching condition `smo_reaching`),
+  and the equivalent control `K sgn_eq = −e/L` (`smo_equivalentControl`).
+* HF injection: estimated-frame inverse inductance (`estInvInductance_eq`, `estCurrent_eq`)
+  `R(Δθ) diag(1/L_d, 1/L_q) R(−Δθ) =
+  [[Σ + Δ' cos 2Δθ, Δ' sin 2Δθ], [Δ' sin 2Δθ, Σ − Δ' cos 2Δθ]]`
+  (`Σ = (1/L_d + 1/L_q)/2`, `Δ' = (1/L_d − 1/L_q)/2`), the HF currents (`hf_current`,
+  `hf_current_aligned`) `î_d = (V_h/ω_h)(Σ + Δ' cos 2Δθ) sin ω_h t` (`= V_h/(ω_h L_d)` at
+  `Δθ = 0`), `î_q = (V_h/ω_h) Δ' sin 2Δθ sin ω_h t`, and the demodulated error
   `(V_h/(4ω_h))(1/L_d − 1/L_q) sin 2Δθ` (`hf_demodulation`).
 * IM: voltage model (`InductionMachine.rotorFlux_voltageModel`), stationary-frame current model
   `dψ_r/dt = (L_m/T_r) i_s − (1/T_r − jω_r) ψ_r` (`currentModel_stationary`).
@@ -36,17 +43,15 @@ Contents.
   `θ̂/θ = k_ε (K_p s + K_i)/(s² + k_ε K_p s + k_ε K_i)` (`trackingLoop_transfer`), and the
   small-signal gain of `K sin 2Δθ` is `2K` (`demod_smallSignal_gain`).
 
-Source: work-sync theory/T-sensorless-machine-control.md §1.1, §1.4, §1.5, §1.9, §2.7.
-
 Corrections.
 * §1.1: `θ̂ = arctan(−ê_α/ê_β)` loses the quadrant whenever `cos θ < 0`
   (`arctan_formula_wrong`); use `atan2(−ê_α, ê_β)`; `‖ê‖/ψ_f` gives only `|ω|`.
 * §1.4: with the attractive observer the equivalent control is `K sgn_eq = −e/L`, i.e.
   `ê = −L · LPF[K sgn(i − î)]`; the note's `+` sign (and the `−ê` term inside its observer) is
   inconsistent with its own `V̇` derivation, which uses the observer without `ê`.
-* §1.5: the note's `î_d` has `−Δ' cos 2Δθ` (giving `1/L_q` at `Δθ = 0`, `hf_note_d_axis_wrong`)
-  and the demodulated amplitude `V_h/(2ω_h)(…)` is too large by a factor 2 (and has the
-  opposite sign for `Δθ = θ − θ̂`).
+* §1.5: the note's `î_d` has `−Δ' cos 2Δθ` (giving `1/L_q` at `Δθ = 0`,
+  `hf_note_d_axis_wrong`) and the demodulated amplitude `V_h/(2ω_h)(…)` is too large by a
+  factor 2 (and has the opposite sign for `Δθ = θ − θ̂`).
 * §2.7: the tracking-loop transfer function omits the demodulation gain; with
   `ε = k_ε Δθ` it is `k_ε(K_p s + K_i)/(s² + k_ε K_p s + k_ε K_i)`.
 -/

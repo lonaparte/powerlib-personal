@@ -1,32 +1,36 @@
 import theorem.Numerics.LinearSchemes
 
-/-! Local truncation errors of forward Euler, backward Euler and the trapezoidal rule, and
-first-order global convergence of forward Euler.
+/-! # Local truncation errors of one-step schemes and first-order convergence of forward Euler
 
-Model boundary: a curve `x : ℝ → E` in a real normed space with an explicit chain of
-derivatives `x' = x₁, x₁' = x₂, …` on `[t, t + h]` and a uniform bound on the last
-derivative.  When `x` solves `ẋ = f(x)`, `x₁ = f ∘ x` and the residuals below are exactly
-the residuals of the schemes in `LinearSchemes` evaluated on the exact solution.
+Local truncation errors of forward Euler, backward Euler and the trapezoidal rule with explicit
+constants, and first-order global convergence of forward Euler.
 
-Results (foundation):
-* `norm_le_of_hasDerivAt_le_pow`: if `φ 0 = 0` and `‖φ' s‖ ≤ M sᵐ` on `[0, h]` then
+Model boundary.
+* A curve `x : ℝ → E` in a real normed space with an explicit chain of derivatives
+  `x' = x₁, x₁' = x₂, …` on `[t, t + h]` and a uniform bound on the last derivative. When `x`
+  solves `ẋ = f(x)`, `x₁ = f ∘ x` and the residuals below are exactly the residuals of the
+  schemes in `LinearSchemes` evaluated on the exact solution.
+* The sign of the BE coefficient is relative to the residual convention
+  `τ = x(t_{n+1}) - Φ(x(t_n))` with the implicit update evaluated on the exact solution.
+
+Source: work-sync theory/T-numerical-integration.md §1.1–§1.3 (LTE `±h²ẍ/2`, `-h³x‴/12`,
+convergence order).
+
+Results.
+* `norm_le_of_hasDerivAt_le_pow` — if `φ 0 = 0` and `‖φ' s‖ ≤ M sᵐ` on `[0, h]` then
   `‖φ s‖ ≤ M s^(m+1)/(m+1)` (comparison with a boundary function; Mathlib
   `image_norm_le_of_norm_deriv_right_le_deriv_boundary`).
-* Taylor bounds of order one, two and three (`taylor_one_bound`, …).
-* `forwardEuler_lte`: `‖τ_FE - (h²/2) x₂(t)‖ ≤ M₃ h³/6`, `τ_FE = x(t+h) - x(t) - h x₁(t)`.
-* `backwardEuler_lte`: `‖τ_BE + (h²/2) x₂(t)‖ ≤ (2/3) M₃ h³`,
+* `taylor_one_bound`, `taylor_two_bound`, `taylor_three_bound` — Taylor bounds of order one, two
+  and three.
+* `forwardEuler_lte` — `‖τ_FE - (h²/2) x₂(t)‖ ≤ M₃ h³/6`, `τ_FE = x(t+h) - x(t) - h x₁(t)`.
+* `backwardEuler_lte` — `‖τ_BE + (h²/2) x₂(t)‖ ≤ (2/3) M₃ h³`,
   `τ_BE = x(t+h) - x(t) - h x₁(t+h)`.
-* `trapezoidal_lte`: `‖τ_T + (h³/12) x₃(t)‖ ≤ M₄ h⁴/8`,
+* `trapezoidal_lte` — `‖τ_T + (h³/12) x₃(t)‖ ≤ M₄ h⁴/8`,
   `τ_T = x(t+h) - x(t) - (h/2)(x₁(t) + x₁(t+h))`.
-* `forwardEuler_global_error`: for a `K`-Lipschitz field and an exact solution with
+* `forwardEuler_global_error` — for a `K`-Lipschitz field and an exact solution with
   `‖ẍ‖ ≤ M` on `[0, T]`, `T = N h`, every forward-Euler trajectory started at `x(0)` obeys
   `‖y_n - x(n h)‖ ≤ (M T / 2) e^{K T} h` for `n ≤ N` (first-order convergence; discrete
   Grönwall recursion `e_{n+1} ≤ (1 + hK) e_n + M h²/2`).
-
-Source: work-sync theory/T-numerical-integration.md §1.1–§1.3 (LTE `±h²ẍ/2`, `-h³x‴/12`,
-convergence order).  Note: the sign of the BE coefficient is relative to the residual
-convention `τ = x(t_{n+1}) - Φ(x(t_n))` with the implicit update evaluated on the exact
-solution.
 -/
 
 noncomputable section

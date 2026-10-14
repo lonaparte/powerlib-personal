@@ -6,26 +6,31 @@ import Mathlib.Probability.Moments.Covariance
 
 /-! # Multi-constraint MaxEnt dual: gradient and Hessian
 
-Source: work-sync `theory/T-maximum-entropy.md` §1.1 (dual `D(λ) = log Z(λ) + λ · F`,
+The gradient of the multi-constraint MaxEnt dual is the moment mismatch and its Hessian is the
+covariance matrix of the constraint functions, so the dual is convex.
+
+Scope.
+* Probability theory, not an engineering result.
+* Along a line `s ↦ λ + s u` the dual equals a constant plus the one-constraint dual of the
+  direction statistic `g_u = ∑ u_k f_k` under the Gibbs measure `p_λ = gibbs m f λ`
+  (`dualVec_line`), because `exp(−∑ (λ + s u)_k f_k) = exp(−∑ λ_k f_k) · exp(−s g_u)`; the
+  one-dimensional results `deriv_dual` / `iteratedDeriv_two_dual` (Mathlib
+  `integral_tilted_mul_self`, `variance_tilted_mul`) then apply.
+* Hypotheses: `Z(λ) < ∞` and `Z(λ + s u) < ∞` for `s` near `0` (interior of the natural
+  parameter domain along `u`). Directional (Gateaux) derivatives are used instead of a Fréchet
+  gradient on `ι → ℝ`; for the smooth function at hand they carry the same information.
+
+Source: work-sync theory/T-maximum-entropy.md §1.1 (dual `D(λ) = log Z(λ) + λ · F`,
 `Z(λ) = ∫ exp(−∑ λ_k f_k) dm`; `∂_k D = F_k − E_{p_λ}[f_k]`;
 `∂_k ∂_l D = Cov_{p_λ}(f_k, f_l) ⪰ 0`, so the dual is convex).
 
-Foundation (probability), not an engineering result.
-
-Approach.  Along a line `s ↦ λ + s u` the dual equals a constant plus the one-constraint dual
-of the direction statistic `g_u = ∑ u_k f_k` under the Gibbs measure `p_λ = gibbs m f λ`
-(`dualVec_line`), because `exp(−∑ (λ + s u)_k f_k) = exp(−∑ λ_k f_k) · exp(−s g_u)`.  The
-one-dimensional results `deriv_dual` / `iteratedDeriv_two_dual` (Mathlib
-`integral_tilted_mul_self`, `variance_tilted_mul`) then give
-* `deriv_dualVec_line`: the directional derivative `⟨∇D(λ), u⟩ = u · F − E_{p_λ}[g_u]`,
-  and `deriv_dualVec_line_eq_sum`: `= ∑ u_k (F_k − E_{p_λ}[f_k])` (gradient formula);
-* `iteratedDeriv_two_dualVec_line`: the second directional derivative `uᵀ ∇²D(λ) u =
-  Var_{p_λ}[g_u]`, `iteratedDeriv_two_dualVec_line_eq_sum`: `= ∑_{k,l} u_k u_l Cov(f_k, f_l)`
-  (Hessian = covariance matrix), and `iteratedDeriv_two_dualVec_line_nonneg` (convexity).
-
-Hypotheses: `Z(λ) < ∞` and `Z(λ + s u) < ∞` for `s` near `0` (interior of the natural parameter
-domain along `u`).  Directional (Gateaux) derivatives are used instead of a Fréchet gradient on
-`ι → ℝ`; for the smooth function at hand they carry the same information.
+Results.
+* `deriv_dualVec_line` — the directional derivative `⟨∇D(λ), u⟩ = u · F − E_{p_λ}[g_u]`, and
+  `deriv_dualVec_line_eq_sum`: `= ∑ u_k (F_k − E_{p_λ}[f_k])` (gradient formula).
+* `iteratedDeriv_two_dualVec_line` — the second directional derivative
+  `uᵀ ∇²D(λ) u = Var_{p_λ}[g_u]`, `iteratedDeriv_two_dualVec_line_eq_sum`:
+  `= ∑_{k,l} u_k u_l Cov(f_k, f_l)` (Hessian = covariance matrix), and
+  `iteratedDeriv_two_dualVec_line_nonneg` (convexity).
 -/
 
 noncomputable section

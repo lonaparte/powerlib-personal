@@ -3,7 +3,8 @@ import theorem.SpecialFunctions.TrigZeros
 
 /-! # GFL form-B reduction: quasi-steady algebra and the phase-detector characteristic
 
-Model boundary. Grid-following VSC with LC filter and an `R_g`–`L_g` line to an infinite bus
+Model boundary.
+Grid-following VSC with LC filter and an `R_g`–`L_g` line to an infinite bus
 `(V_g, 0)` (system dq frame rotating at the constant grid frequency `ω_g`), SRF-PLL with PI gains
 `K_p, K_i`, current references `i_d*, i_q*` frozen (outer loops frozen), IN-positive currents
 (`conventions.md` §D1), Park matrix `T(θ) = [[cos θ, sin θ], [−sin θ, cos θ]]`. What is
@@ -18,23 +19,34 @@ The singular-perturbation (Tikhonov) justification of the reduction and its erro
 formalized; the reduced 2D model is `piPLLField p.formBChar K_p K_i δω` of
 `theorem/PLL/PIPLL.lean`, valid as a model only under the note's assumptions (strong grid,
 time-scale separation, frozen outer loops). Continuous time; no saturation, PWM or delay.
-
-Results.
-* `cc_projection` (B): the current-loop part of `ω_g C_f v_cq^c` is identically `−i_d*`.
-* `pllInput_expansion` (B): for any line solution `i_g = α + β sin θ + γ cos θ`, the double-angle
-  expansion with exactly the coefficients `c₀ … c₄` of §1.7.
-* `quasiSteady_iff` (B): with `ω_g C_f ≠ 0` and the added premise
-  `R_g² + (ω_g L_g − 1/(ω_g C_f))² ≠ 0`, the quasi-steady equations have exactly one solution,
-  given in closed form.
-* `lineCurrent_rotational` (B): that solution has `γ_q = −β_d`, `γ_d = β_q`, hence `c₃ = c₄ = 0`.
-* `pllInput_of_quasiSteady` (B): along the quasi-steady manifold the PLL input is exactly
-  `formBChar θ = (1/(ω_g C_f)) [c₀ + c₁ sin θ + c₂ cos θ]` (first-order trigonometric).
-* `formB_equilibria_ncard_le_two` (A): the reduced form-B GFL-PLL has at most two equilibria
-  per `2π` window of `θ` (for `V_g ≠ 0`, `K_i ≠ 0`).
+The same reduction, written in the OUT-positive current convention of the
+`vsc-stochastic-stability` project, is `theorem/GFL/LCLine/Reduction.lean` (`h_eq`,
+`h_eq_polar`).
 
 Source: work-sync `theory/T-gfl-dynamics.md` §1.0 (frame rotations), §1.4–§1.9, §1.11, §1.14.
-Already in powerlib: the two rotation matrices are mutually inverse — `Transform.park_mul_rot`,
-`Transform.rot_mul_park` (`T(θ) = park θ`, `T(−θ) = rot θ`); not repeated here.
+
+Results.
+* `cc_projection`: the current-loop part of `ω_g C_f v_cq^c` is identically `−i_d*`.
+* `pllInput_expansion`: for any line solution `i_g = α + β sin θ + γ cos θ`, the double-angle
+  expansion with exactly the coefficients `c₀ … c₄` of §1.7.
+* `quasiSteady_iff`: with `ω_g C_f ≠ 0` and the added premise
+  `R_g² + (ω_g L_g − 1/(ω_g C_f))² ≠ 0`, the quasi-steady equations have exactly one solution,
+  given in closed form.
+* `lineCurrent_rotational`: that solution has `γ_q = −β_d`, `γ_d = β_q`, hence `c₃ = c₄ = 0`.
+* `pllInput_of_quasiSteady`: along the quasi-steady manifold the PLL input is exactly
+  `formBChar θ = (1/(ω_g C_f)) [c₀ + c₁ sin θ + c₂ cos θ]` (first-order trigonometric).
+* `formB_equilibria_ncard_le_two`: the reduced form-B GFL-PLL has at most two equilibria
+  per `2π` window of `θ` (for `V_g ≠ 0`, `K_i ≠ 0`).
+* The two rotation matrices are mutually inverse: `Transform.park_mul_rot`,
+  `Transform.rot_mul_park` (`T(θ) = park θ`, `T(−θ) = rot θ`), not repeated here.
+
+Family and connection conclusions.
+This module states no behaviour and defines no family: every
+result is algebra of the reduction or a count of zeros of the reduced field. The equilibrium count
+`formB_equilibria_ncard_le_two` is static evidence on the model, not a
+connection conclusion. Behavioural conclusions about the reduced 2D model go through the PI-PLL
+family of `theorem/PLL/PIPLLFamily.lean` with `h = formBChar` (`contDiff_formBChar`).
+
 Correction (§1.6, added premise): the line/LC algebraic system is uniquely solvable only when
 `R_g² + (ω_g L_g − 1/(ω_g C_f))² ≠ 0` (and `ω_g C_f ≠ 0`); the note does not state it.
 Correction (§1.7–§1.8, §1.9 table, §1.11, §1.14 region E): the exact quasi-steady line solution
@@ -46,12 +58,6 @@ there are at most 2 equilibria per period. (The general double-angle bookkeeping
 only its conclusion that `c₃, c₄` are generically nonzero is wrong.)
 Not formalized: §1.11 "every bounded trajectory is attracted by some basin" (not proved in the
 note and possibly false); the Tikhonov error estimates.
-
-Family and connection conclusions. This module states no behaviour and defines no family: every
-result is algebra of the reduction or a count of zeros of the reduced field. The equilibrium count
-`formB_equilibria_ncard_le_two` (formerly a domain theorem) is static evidence on the model, not a
-connection conclusion. Behavioural conclusions about the reduced 2D model go through the PI-PLL
-family of `theorem/PLL/PIPLLFamily.lean` with `h = formBChar` (`contDiff_formBChar`).
 -/
 
 noncomputable section

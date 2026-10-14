@@ -32,28 +32,29 @@ Model boundary.
   made here about time-scale separation or about how well the reduced model approximates
   trajectories (the project notes show the LC/line step is averaging, not a slow manifold).
 
-Main results.
-* `fast_eq_zero_iff` : the eight fast rows (current, capacitor, line, current-loop integrators)
+Nondegeneracy hypotheses: `L_f, C_f, L_g ≠ 0`, `ω_g C_f ≠ 0`, `Δ ≠ 0`, `K_i^cc ≠ 0`
+(and `K_i ≠ 0` for the equilibrium statement).
+
+Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/reduction-pipeline.md`
+§1–§5; `validity-boundary.md` §2 (D1: "10D equilibrium equations ⇔ `h(θ*) = 0`") and §8(a);
+`equilibria-and-bifurcation.md` §1.
+
+Results.
+* `fastAtRest_iff` : the eight fast rows (current, capacitor, line, current-loop integrators)
   vanish iff the state lies on the explicit quasi-steady set `qssState θ_e η`
   (`i = T(−θ_e) i*`, capacitor and corrected line solution, `ξ = R_f i*/K_i^cc`).
-* `field10_eq_zero_iff` (A3, `validity-boundary.md` §2 D1 / §8(a)): for `K_i ≠ 0`,
+* `field10_eq_zero_iff` (`validity-boundary.md` §2 D1 / §8(a)): for `K_i ≠ 0`,
   `x` is an equilibrium of the 10-state field iff `x = qssState θ* 0` with `h(θ*) = 0`.
 * `reducedField` is *defined* as the slow rows `(θ̇_e, η̇)` of the 10-state field evaluated on the
   quasi-steady set; `reducedField_apply` shows it equals `(K_p h(θ) + K_i η, h(θ))` with the
   closed-form `h` of `theorem/GFL/LCLine/Reduction.lean`.
 
-Family and connection conclusions. The module states no behaviour of the 10-state field: it has
+Family and connection conclusions.
+The module states no behaviour of the 10-state field: it has
 no Family, and every result is static. The equilibrium characterizations `field10_eq_zero_iff`
-and `field10_equilibria_eq` (formerly domain-labelled) are static evidence on the model, not
+and `field10_equilibria_eq` are static evidence on the model, not
 connection conclusions; behavioural conclusions about the reduced model are made through the
 family of `theorem/GFL/LCLine/Reduced2D.lean`.
-
-Nondegeneracy hypotheses: `L_f, C_f, L_g ≠ 0`, `ω_g C_f ≠ 0`, `Δ ≠ 0`, `K_i^cc ≠ 0`
-(and `K_i ≠ 0` for the equilibrium statement).
-
-Sources: work-sync `projects/vsc-stochastic-stability/notes/concepts/reduction-pipeline.md`
-§1–§5; `validity-boundary.md` §2 (D1: "10D equilibrium equations ⇔ `h(θ*) = 0`") and §8(a);
-`equilibria-and-bifurcation.md` §1.
 -/
 
 noncomputable section
@@ -269,7 +270,7 @@ def FastAtRest (x : State 10) : Prop := ∀ i : Fin 10, i.val < 8 → p.field10 
       rw [hic1, sub_self]
     all_goals simp at hi
 
-/-! ### Equilibria of the 10-state field (A3) -/
+/-! ### Equilibria of the 10-state field -/
 
 /-- `validity-boundary.md` §2 (D1) / §8(a): the equilibria of the complete 10-state field are
 exactly the quasi-steady states `qssState θ* 0` with `h(θ*) = 0`. This is an exact statement;

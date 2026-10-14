@@ -8,8 +8,9 @@ import Mathlib.Analysis.Complex.RealDeriv
 
 /-! # Frequency-domain line: propagation, ABCD chain matrix, port impedances
 
-Sources: work-sync `theory/T-telegrapher-bergeron.md` §1.2, §1.3, §1.3.1, §1.3.2,
-§1.7.2, §1.8; `theory/T-pde-systems.md` §1.4.5.
+The phasor line equations at one complex frequency: exact propagation solution, the ABCD chain
+matrix and its cascade law, port impedances, the exact Π equivalent, and the multi-conductor
+second-order equations.
 
 Model boundary.
 * Uniform single-conductor line at one fixed complex frequency `s`; per-unit-length
@@ -23,11 +24,20 @@ Model boundary.
   exists (`exists_params`) with the principal square root `Z_c = (Z/Y)^{1/2}`; the sign of
   the square root is immaterial for every identity below.
 
-Results: exact solution of the line ODE (`propagation_solves`) and its uniqueness
-(`eq_propagation`); the ABCD relation `[V₁; I₁] = T [V₂; I₂]`, `det T = 1`, `A = D`,
-`BC = sinh²`, cascade `T(ℓ₁)T(ℓ₂) = T(ℓ₁+ℓ₂)`; short/open-circuit impedances and parameter
-inversion; exact Π equivalent and its short-line limit; input impedance with a load;
-multi-conductor second-order equations.
+Source: work-sync `theory/T-telegrapher-bergeron.md` §1.2, §1.3, §1.3.1, §1.3.2, §1.7.2, §1.8;
+`theory/T-pde-systems.md` §1.4.5.
+
+Results.
+* Exact solution of the line ODE (`propagation_solves`) and its uniqueness (`eq_propagation`).
+* The ABCD relation `[V₁; I₁] = T [V₂; I₂]` (`chain_relation`), `det T = 1` (`det_chain`),
+  `A = D` (`chain_A_eq_D`), `BC = sinh²` (`chain_B_mul_C`), cascade `T(ℓ₁)T(ℓ₂) = T(ℓ₁+ℓ₂)`
+  (`chain_mul`, `cascade_relation`).
+* Short/open-circuit impedances and parameter inversion (`shortCircuit`, `openCircuit`,
+  `Zsc_mul_Zoc`, `Zsc_div_Zoc`, `exp_two_mul_gammaL`, `two_mul_gammaL_eq_log_add`).
+* Exact Π equivalent and its short-line limit (`piChain_exact`, `piSeries_shortLine`,
+  `piShunt_shortLine`); input impedance with a load (`input_relation`,
+  `inputImpedance_tanh`, `matched_inputImpedance`, `lossless_quarterWave`).
+* Multi-conductor second-order equations (`multiconductor_second_order`).
 
 Corrections.
 * Parameter inversion (§1.3.1): `γℓ = ½ ln((1+ρ)/(1-ρ))` holds only modulo `iπℤ`

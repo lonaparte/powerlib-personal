@@ -9,24 +9,25 @@ import Mathlib.Probability.Moments.Variance
 
 /-! # Linearized stochastic COI swing: stationary covariance, moment equations, lag covariance
 
+Deterministic moment objects of the linearized stochastic center-of-inertia swing: the
+stationary covariance (Lyapunov equation), convergence of the moment equations, the lag
+covariance of the speed, and the windowed-ROCOF variance.
+
+Model boundary.
+* Linearized COI swing around the operating point `(δ*, 0)` (raw rad/s units): state
+  `x = (δ̃, ω̃)` (index `0` = angle deviation, index `1` = speed deviation), drift matrix
+  `A = [[0, 1], [−k/M, −D/M]]` with `M = M_COI`, `D = D_COI`, `k = V''(δ*)`, and constant noise
+  matrix `Σ = [[0, 0], [σ_ω/M, σ_v/M]]` (two independent Wiener channels; the voltage channel is
+  frozen at the operating point). Continuous time.
+* The COI aggregation and the linearization themselves are taken as given; no PLL, delay,
+  limiter or network detail is modelled.
+
 Source: work-sync `theory/T-frequency-stability-stochastic.md` §1.3 (linearization (1.5),
 `ω_n`, `ζ` (1.6), Lyapunov equation (1.7), closed forms (1.8)–(1.9)), §1.4 (moment equations
-(1.11) and their limit), §1.5 (lag covariance of `ω̃` and the windowed ROCOF (1.12)).
+(1.11) and their limit), §1.5 (lag covariance of `ω̃` and the windowed ROCOF (1.12));
+`theory/T-sde-systems.md` §2.2.2 (noisy swing as an OU process).
 
-Model boundary.  Linearized COI swing around the operating point `(δ*, 0)` (raw rad/s units):
-state `x = (δ̃, ω̃)` (index `0` = angle deviation, index `1` = speed deviation), drift matrix
-`A = [[0, 1], [−k/M, −D/M]]` with `M = M_COI`, `D = D_COI`, `k = V''(δ*)`, and constant noise
-matrix `Σ = [[0, 0], [σ_ω/M, σ_v/M]]` (two independent Wiener channels; the voltage channel is
-frozen at the operating point).  Continuous time.  The COI aggregation and the linearization
-themselves are taken as given; no PLL, delay, limiter or network detail is modelled.
-
-Scope (Rules §3).  Everything here is a statement about the deterministic moment objects:
-the algebraic Lyapunov equation `A P + P Aᵀ + Σ Σᵀ = 0`, the differential Lyapunov equation
-`Ṗ = A P + P Aᵀ + Σ Σᵀ`, the mean `e^{tA} m₀` and the lag function `C(τ) = e^{τA} P∞`.
-That these are the moments / autocovariance of the Itô solution of (1.5) is **not** proved
-(Itô calculus is out of scope); these are foundation results, not stochastic stability theorems.
-
-Main results.
+Results.
 * `swingCov_solves`, `swingCov_unique`: for `M, D, k > 0` the unique solution of (1.7) is
   `p₁₂ = 0`, `p₂₂ = s²/(2MD)`, `p₁₁ = s²/(2Dk)` with `s² = σ_ω² + σ_v²` ((1.8), (1.9));
   `swingCov_angle_eq`: `Var δ̃ = Var ω̃ / ω_n²`.
@@ -38,15 +39,29 @@ Main results.
 * `swing_lagCov_speed`: for the underdamped case `D² < 4Mk`,
   `(e^{τA} P∞)_{ω ω} = Var(ω̃) e^{−ζω_n τ} [cos ω_d τ − (ζω_n/ω_d) sin ω_d τ]`, the boxed formula
   of §1.5 (`ζω_n = D/(2M)`, `ω_d² = k/M − D²/(4M²)`).
+* `variance_rocof`, `variance_rocof_stationary`: the variance of the windowed ROCOF
+  `(ω(t+Δt) − ω(t))/Δt` from the speed variance and lag covariance (see the correction).
 * `swing_ouStatVar`, `swing_ouVar_tendsto` (`theory/T-sde-systems.md` §2.2.2): the scalar noisy
   swing `M dΔω = −DΔω dt + β dW` read as an Ornstein–Uhlenbeck process (`θ = D/M`, `σ = β/M`,
   the OU moment functions of `theorem/Stochastic/OUMoments.lean`) has stationary variance
   `β²/(2DM)`, and its variance function tends to it for `D, M > 0`.
 
-Correction (§1.5, eq. (1.12)).  The windowed ROCOF is `(ω(t+Δt) − ω(t))/Δt`, so
-`Var(ROCOF) = (2 Var ω̃ − 2 Cov(ω̃(t), ω̃(t+Δt)))/Δt²` (`variance_rocof`,
-`variance_rocof_stationary`).  Formula (1.12) carries an extra factor `1/M_COI`; the speed
-variance already contains the inertia, so that factor is wrong.
+Family and connection conclusions.
+* None: everything here is a statement about deterministic moment objects (foundation), not a
+  stochastic stability theorem.
+
+Correction (§1.5, eq. (1.12)).
+* The windowed ROCOF is `(ω(t+Δt) − ω(t))/Δt`, so
+  `Var(ROCOF) = (2 Var ω̃ − 2 Cov(ω̃(t), ω̃(t+Δt)))/Δt²` (`variance_rocof`,
+  `variance_rocof_stationary`).  Formula (1.12) carries an extra factor `1/M_COI`; the speed
+  variance already contains the inertia, so that factor is wrong.
+
+Scope notes (Rules §3).
+* Everything here is a statement about the deterministic moment objects: the algebraic Lyapunov
+  equation `A P + P Aᵀ + Σ Σᵀ = 0`, the differential Lyapunov equation `Ṗ = A P + P Aᵀ + Σ Σᵀ`,
+  the mean `e^{tA} m₀` and the lag function `C(τ) = e^{τA} P∞`. That these are the moments /
+  autocovariance of the Itô solution of (1.5) is **not** proved (Itô calculus is out of scope);
+  these are foundation results, not stochastic stability theorems.
 -/
 
 noncomputable section

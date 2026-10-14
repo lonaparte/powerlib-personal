@@ -3,9 +3,11 @@ import theorem.Attributes
 
 /-! # Predictive current control of a PMSM: forward-Euler model, deadbeat, FCS-MPC
 
-## Model boundary of the domain results (`deadbeat_tracks_next_sample`,
-`deadbeat_delayCompensated_tracks`)
+The forward-Euler prediction model of PMSM stator currents, deadbeat control on that model, and
+the existence of a finite-control-set (FCS-MPC) minimiser.
 
+Model boundary (deadbeat tracking: `deadbeat_tracks_next_sample`,
+`deadbeat_delayCompensated_tracks`).
 * Plant: PMSM stator currents in the rotor dq frame, state order `(i_d, i_q)`, motor
   convention, `L_d di_d/dt = v_d − r_s i_d + ω_e L_q i_q`,
   `L_q di_q/dt = v_q − r_s i_q − ω_e L_d i_d − ω_e ψ_f` (FOC note §1.6). Parameters `r_s`,
@@ -21,9 +23,14 @@ import theorem.Attributes
   no parameter mismatch. Conclusion: trajectory-level exact tracking of an arbitrary
   reference sequence after one (resp. two) samples.
 
-Foundation results.
+Source: work-sync `theory/T-predictive-machine-control.md` §1.1–§1.4.
+
+Results (foundation).
 * `eulerStep_eq_note` / `eulerStep_eq_affine`: the note's discrete model is exactly the
   forward-Euler step `x⁺ = A_d x + B_d u + d_0`.
+* `Bd_mulVec_deadbeat`, `eulerStep_deadbeat`: the explicit deadbeat law satisfies
+  `B_d u = i* − A_d i − d_0`, and one deadbeat step reaches the reference exactly on the Euler
+  model.
 * `LTI.prediction_closedForm` (`theorem/LTI/Discrete.lean`): multi-step prediction
   `x[k+j] = A^j x[k] + Σ A^{j−1−i}(B u[k+i] + d)`.
 * `fcs_argmin_exists` (wrapper of `Finset.exists_min_image`): every finite nonempty candidate
@@ -32,7 +39,11 @@ Foundation results.
   sampling of `ẋ = A x + c` with constant `c` over one period,
   `x(T) = e^{TA} x(0) + ∫₀ᵀ e^{σA} c dσ`.
 
-Source: work-sync theory/T-predictive-machine-control.md §1.1–§1.4.
+Family and connection conclusions.
+* None: the two sampled-data tracking results (`deadbeat_tracks_next_sample`,
+  `deadbeat_delayCompensated_tracks`) are discrete-time behaviour, outside the continuous-time
+  sentence language of Rules §3a. They are kept as private implementation evidence; the public
+  results of this module are static foundation.
 
 Corrections.
 * §1.1 labels the discrete model "zero-order hold or trapezoidal"; the displayed formulas are
@@ -40,10 +51,6 @@ Corrections.
   exponential (`Dynamics.zoh_exact`).
 * §1.5 calls the CCS-MPC problem with `|u| ≤ V_dc/√3` a QP; that constraint is a second-order
   cone (`u_d² + u_q² ≤ V_dc²/3`), so the problem is an SOCP (not formalized here).
-
-Connection architecture: the two sampled-data tracking results are discrete-time behaviour,
-outside the continuous-time sentence language of Rules §3a. They are kept as private
-implementation evidence; the public results of this module are static foundation.
 -/
 
 noncomputable section

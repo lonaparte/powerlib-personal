@@ -3,11 +3,7 @@ import theorem.TMIO.ClaimElab
 
 /-! # SI ↔ per-unit equivalence of linear models
 
-Source: work-sync `theory/T-PU.md` §1.2 / §1.6 (state and time bases, conventions (A) and (B)),
-§1.11 (per-unit impedance and loop gain), §2.8 (SI and p.u. implementations must agree);
-`codes/README.md` "three-mode consistency" (SI / PU + SI time / PU + PU time) is the numerical
-counterpart of these theorems.
-
+Scope.
 Per-unit transformation of a continuous-time linear model:
 * state bases `b : ι → ℝ` (all nonzero): `x_SI = diag(b) x̂`;
 * time base `ω_B > 0`: `τ = ω_B t`. Convention (A) (time in SI seconds) is `ω_B = 1`;
@@ -17,11 +13,17 @@ Per-unit transformation of a continuous-time linear model:
 The per-unit matrices are `Â = ω_B⁻¹ D_x⁻¹ A D_x`, `B̂ = ω_B⁻¹ D_x⁻¹ B D_u`, `Ĉ = D_y⁻¹ C D_x`,
 `D̂ = D_y⁻¹ D D_u`.
 
+Source: work-sync `theory/T-PU.md` §1.2 / §1.6 (state and time bases, conventions (A) and (B)),
+§1.11 (per-unit impedance and loop gain), §2.8 (SI and p.u. implementations must agree);
+`codes/README.md` "three-mode consistency" (SI / PU + SI time / PU + PU time) is the numerical
+counterpart of these theorems.
+
+Results.
 Foundation results (generic, any matrices): solutions correspond exactly
 (`solves_puMatrix_iff`, for curves given by their derivative at every time); spectral stability
 and the Hurwitz property are invariant (`spectrallyStable_puMatrix_iff`,
 `isHurwitz_puMatrix_iff`), hence every attractive sentence of the zero-input linear field
-(`holds_puMatrix_iff`, formerly `exponentiallyStable_puModel_iff`); the per-unit transfer matrix
+(`holds_puMatrix_iff`); the per-unit transfer matrix
 is `Ĝ(ŝ) = D_y⁻¹ G(ω_B ŝ) D_u` (`transfer_puIO`). For a source–load interconnection
 (`Circuits.Interconnection`) with voltage/current port bases, the return difference is only
 re-parametrised (`returnDifference_perUnit`), so `ImpedanceStable` is invariant
@@ -29,9 +31,8 @@ re-parametrised (`returnDifference_perUnit`), so `ImpedanceStable` is invariant
 the SI one (`closedLoopBlocks_perUnit`), with the same Hurwitz property
 (`isHurwitz_closedLoop_perUnit_iff`). These are change-of-units statements (static evidence).
 
-## Connection conclusion
-
-`den_perUnit` (formerly `closedLoop_exponentiallyStable_perUnit_iff`): on the interconnection
+Family and connection conclusions.
+`den_perUnit`: on the interconnection
 family `Circuits.Interconnection.family`, the denotation of every attractive sentence and of
 sampled contraction is its own pull-back along the per-unit transformation
 `ic ↦ perUnit ic b₁ b₂ vb ib ω_B` (nonzero state and port bases, positive time base; conventions

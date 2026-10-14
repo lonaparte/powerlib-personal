@@ -2,21 +2,28 @@ import theorem.Linear.Family
 import theorem.Dynamics.Shift
 import theorem.LTI.Plant
 
-/-! # Frequency-response models: shared load-step input (foundation)
+/-! # Frequency-response models: shared load-step input
 
 Shared by the `powerlib.Frequency` modules: `load ΔP_L`, the constant scalar input of a one-port
-plant (a load step applied at `t = 0`), and its evaluation `load_apply`. Nothing here describes
-a specific engineering model; the frequency-response models (state order, signs, parameter
-ranges) and their families are fixed in the modules that use them.
+plant (a load step applied at `t = 0`), and its evaluation `load_apply`.
 
-The generic constant-input plant lemmas these modules use (`LTI.inputField_apply`,
-`LTI.trajectory_eq_solution_Ici`, `LTI.solution_hasDerivAt`, `LTI.solution_continuous`,
-`LTI.tendsto_equilibrium`, `LTI.tendsto_apply_of_isHurwitz`, `LTI.hasDerivWithinAt_apply_zero`)
-are in `theorem/LTI/Plant.lean`, imported here.
+Scope.
+* Nothing here describes a specific engineering model; the frequency-response models (state
+  order, signs, parameter ranges) and their families are fixed in the modules that use them.
+* The generic constant-input plant lemmas these modules use (`LTI.inputField_apply`,
+  `LTI.trajectory_eq_solution_Ici`, `LTI.solution_hasDerivAt`, `LTI.solution_continuous`,
+  `LTI.tendsto_equilibrium`, `LTI.tendsto_apply_of_isHurwitz`, `LTI.hasDerivWithinAt_apply_zero`)
+  are in `theorem/LTI/Plant.lean`, imported here.
 
-Family and connection conclusions. This module defines no family and states no behaviour
-(Rules §3, foundation). The model modules publish their engineering conclusions as connection
-statements on their own families. -/
+Source: library infrastructure (no work-sync note).
+
+Results.
+* `load` — the constant load-step input `ΔP_L`; `load_apply` — its evaluation.
+
+Family and connection conclusions.
+* None: this module defines no family and states no behaviour (Rules §3, foundation). The model
+  modules publish their engineering conclusions as connection statements on their own families.
+-/
 
 noncomputable section
 namespace powerlib.Frequency

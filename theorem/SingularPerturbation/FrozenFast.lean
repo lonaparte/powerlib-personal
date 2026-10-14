@@ -3,38 +3,41 @@ import theorem.Linear.Certificate
 
 /-! # Frozen fast subsystems: uniform exponential stability over a compact set
 
-Foundation layer (category B).
+A continuous family of Hurwitz matrices over a compact set of frozen slow states has one
+exponential decay estimate for all its linear fast subsystems.
 
-Sources: work-sync `theory/T-slow-manifold.md` §1.5 and `theory/T-singular-perturbation.md` §1.4
+Scope.
+* A continuous family of real `m × m` matrices `A(x)` indexed by the frozen slow state `x`
+  ranging over a compact space `X` (for a compact subset `K` of the slow state space take `X = K`
+  with the subspace topology); the frozen *linearized* fast systems `ẏ = A(x) y` in the fast time
+  scale; continuous time.
+* `|y|² = y ⬝ᵥ y` (`sqNorm_eq_dotProduct`); trajectories are global coordinate solutions
+  `∀ t, HasDerivAt y (M *ᵥ y t) t`. `BoundedCertificate` is a `Linear.Certificate` with explicit
+  coordinate bounds.
+* The nonlinear boundary-layer system is treated in
+  `theorem/SingularPerturbation/BoundaryLayer.lean` (`boundaryLayer_uniform_exponentialStability`,
+  `boundaryLayer_uniform_exponentialStability_tx`), which builds on `dissipation_of_close`
+  here.
+
+Source: work-sync theory/T-slow-manifold.md §1.5 and theory/T-singular-perturbation.md §1.4
 (attractivity of the slow manifold: the frozen fast subsystem `dy/dτ = A_y(x) y`,
 `A_y(x) = ∂g/∂y (x, h(x))`, must be exponentially stable "uniformly in `x`").
 
-Model boundary: a continuous family of real `m × m` matrices `A(x)` indexed by the frozen slow
-state `x` ranging over a compact space `X` (for a compact subset `K` of the slow state space take
-`X = K` with the subspace topology); the frozen *linearized* fast systems `ẏ = A(x) y` in the
-fast time scale; continuous time. The nonlinear boundary-layer system is not treated (its local
-uniform stability follows from this estimate by the usual linearization argument, which is
-not formalized here).
-
-Results (`|y|² = y ⬝ᵥ y`, trajectories are global coordinate solutions
-`∀ t, HasDerivAt y (M *ᵥ y t) t`).
-* `nonempty_boundedCertificate_of_isHurwitz`: a Hurwitz matrix has a Lyapunov certificate
+Results.
+* `nonempty_boundedCertificate_of_isHurwitz` — a Hurwitz matrix has a Lyapunov certificate
   (`Linear.Certificate`, from LeanForControl's Lyapunov equation) together with explicit bounds
   `lo|y|² ≤ yᵀPy ≤ hi|y|²` (`Linear.Certificate.exists_energy_bounds`).
-* `dissipation_of_close`: the certificate of `A₀` is a dissipation certificate for every nearby
+* `dissipation_of_close` — the certificate of `A₀` is a dissipation certificate for every nearby
   matrix `M` (`yᵀ P M y ≤ −|y|²/4`); reused for the nonlinear boundary layer in
-  `theorem.SingularPerturbation.BoundaryLayer`.
-* `decay_of_close`: if `c` is a Lyapunov certificate for `A₀` (`A₀ᵀP + PA₀ = −I`, `lo|y|² ≤ yᵀPy ≤
-  hi|y|²`) and `Σᵢⱼ |Mᵢⱼ − A₀ᵢⱼ| ≤ 1/(4 Σᵢⱼ|Pᵢⱼ| + 4)`, every trajectory of `ẏ = M y` satisfies
-  `|y(t)|² ≤ (hi/lo) e^{−t/(2 hi)} |y(0)|²` — the same `P` works for all nearby matrices.
-* `uniform_frozen_exponentialStability`: if `A` is continuous on the compact space `X` and every
+  `theorem/SingularPerturbation/BoundaryLayer.lean`.
+* `decay_of_close` — if `c` is a Lyapunov certificate for `A₀` (`A₀ᵀP + PA₀ = −I`,
+  `lo|y|² ≤ yᵀPy ≤ hi|y|²`) and `Σᵢⱼ |Mᵢⱼ − A₀ᵢⱼ| ≤ 1/(4 Σᵢⱼ|Pᵢⱼ| + 4)`, every trajectory of
+  `ẏ = M y` satisfies `|y(t)|² ≤ (hi/lo) e^{−t/(2 hi)} |y(0)|²` — the same `P` works for all
+  nearby matrices.
+* `uniform_frozen_exponentialStability` — if `A` is continuous on the compact space `X` and every
   `A(x)` is Hurwitz, there are `C > 0`, `α > 0` such that for **every** `x`, every trajectory of
   `ẏ = A(x) y` satisfies `|y(t)|² ≤ C e^{−αt} |y(0)|²` (uniform rate `α`, i.e. the spectral
   abscissa is uniformly negative in the sense of decay estimates).
-
-Architecture: generic mathematical support (no `Family`). The former `LTI.Accepted` certificate
-is `BoundedCertificate`, a `Linear.Certificate` with explicit coordinate bounds; the former
-`LTI.sqNorm` is written as `y ⬝ᵥ y`.
 -/
 
 noncomputable section

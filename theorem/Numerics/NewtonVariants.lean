@@ -2,44 +2,49 @@ import theorem.Numerics.Newton
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.InnerProductSpace.Adjoint
 
-/-! Variants of Newton's method: chord (frozen Jacobian), inexact Newton, Broyden's secant
-update, Armijo backtracking for damped Newton, and the Levenberg–Marquardt limits.
+/-! # Variants of Newton's method: chord, inexact Newton, Broyden, Armijo, Levenberg–Marquardt
 
-Model boundary: deterministic iterations for a nonlinear equation `F(x) = 0`; every linear
-system is either solved exactly or with an explicitly stated residual; no rounding, no
-step-size heuristics other than the ones stated.  General results are on a real Banach space
-`E` with a derivative field `J` (`HasFDerivAt F (J z) z`); the Armijo / merit-function and
-Levenberg–Marquardt results use a real inner-product space (complete for the adjoint);
-Broyden's update is stated for real matrices on `Fin n → ℝ`.
+Chord (frozen Jacobian) iteration, inexact Newton, Broyden's secant update, Armijo backtracking
+for damped Newton, and the Levenberg–Marquardt limits.
 
-Results (foundation):
+Model boundary.
+* Deterministic iterations for a nonlinear equation `F(x) = 0`; every linear system is either
+  solved exactly or with an explicitly stated residual; no rounding, no step-size heuristics
+  other than the ones stated.
+* General results are on a real Banach space `E` with a derivative field `J`
+  (`HasFDerivAt F (J z) z`); the Armijo / merit-function and Levenberg–Marquardt results use a
+  real inner-product space (complete for the adjoint); Broyden's update is stated for real
+  matrices on `Fin n → ℝ`.
+
+Source: work-sync theory/T-newton-method.md §1.4 (Armijo), §1.5 (chord), §1.6 (Broyden),
+§1.7 (Levenberg–Marquardt), §1.8 (inexact Newton, `η_k = O(‖F‖)` ⇒ quadratic).
+
+Results.
 * Chord: `chordStep_lipschitz` (`‖C x − C y‖ ≤ ‖A⁻¹‖ c ‖x − y‖` when `‖J z − A‖ ≤ c` on a
   convex set), `chord_contractingWith` (the chord map is a `ContractingWith` self-map of a
   closed ball around the root), `chord_iterates_converge` (linear convergence
   `‖x_k − x*‖ ≤ qᵏ ‖x₀ − x*‖`), `chord_rate_of_lipschitz` (with `A = J(x₀)` and an
   `L`-Lipschitz `J` on `ball x* r` one may take `c = 2Lr`).
-* Inexact Newton: `inexactNewton_step_le` — if the linear residual satisfies
+* `inexactNewton_step_le` — inexact Newton: if the linear residual satisfies
   `‖J(x)δ + F(x)‖ ≤ η‖F(x)‖` with forcing term `η ≤ c‖F(x)‖` (i.e. `η = O(‖F‖)`), the step is
   still quadratic: `‖x + δ − x*‖ ≤ ‖J(x)⁻¹‖ (L/2 + c M²) ‖x − x*‖²`.
-* Broyden: `broydenUpdate_secant` (`B⁺ Δx = ΔF`) and `broydenUpdate_orthogonal`
-  (`B⁺ v = B v` for `v ⊥ Δx`).
+* `broydenUpdate_secant`, `broydenUpdate_orthogonal` — Broyden: `B⁺ Δx = ΔF` and `B⁺ v = B v`
+  for `v ⊥ Δx`.
 * Armijo: `armijo_exists` (sufficient decrease holds for all small step lengths along a
   descent direction), `armijo_backtracking_terminates` (`α = ρᵐ` for some `m`),
   `newtonDirection_descent` (the Newton direction is a descent direction of
   `φ = ½‖F‖²` with `φ'(x) δ = −‖F(x)‖²`), `dampedNewton_armijo_terminates`.
-* Levenberg–Marquardt `(JᵀJ + μI) δ = −Jᵀ r`: `lmStep_unique` (`μ > 0`),
-  `lmStep_exists` (`μ > 0`, finite dimension), `lmStep_norm_le` (`‖δ‖ ≤ ‖Jᵀ r‖/μ`),
-  `lmStep_tendsto_zero` and `lmStep_smul_tendsto` (`δ(μ) → 0`, `μ δ(μ) → −Jᵀ r`, the
-  steepest-descent direction of `½‖r‖²`, as `μ → ∞`), `lmStep_zero_eq_newton`
-  (`μ = 0` with square invertible `J` is the Newton step `−J⁻¹ r`).
+* Levenberg–Marquardt `(JᵀJ + μI) δ = −Jᵀ r`: `lmStep_unique` (`μ > 0`), `lmStep_exists`
+  (`μ > 0`, finite dimension), `lmStep_norm_le` (`‖δ‖ ≤ ‖Jᵀ r‖/μ`), `lmStep_tendsto_zero` and
+  `lmStep_smul_tendsto` (`δ(μ) → 0`, `μ δ(μ) → −Jᵀ r`, the steepest-descent direction of
+  `½‖r‖²`, as `μ → ∞`), `lmStep_zero_eq_newton` (`μ = 0` with square invertible `J` is the
+  Newton step `−J⁻¹ r`).
 
-Source: work-sync theory/T-newton-method.md §1.4 (Armijo), §1.5 (chord), §1.6 (Broyden),
-§1.7 (Levenberg–Marquardt), §1.8 (inexact Newton, `η_k = O(‖F‖)` ⇒ quadratic).
-
-Notes on the source: §1.5's "speed coefficient `∝ L ‖x⁽⁰⁾ − x*‖`" is formalized in the
-weaker but rigorous form `q = 2 L r ‖J(x₀)⁻¹‖` on `ball x* r` (`chord_rate_of_lipschitz`).
-The Broyden superlinear rate (Dennis–Moré) and the Eisenstat–Walker forcing rule are not
-formalized.
+Scope notes.
+* §1.5's "speed coefficient `∝ L ‖x⁽⁰⁾ − x*‖`" is formalized in the weaker but rigorous form
+  `q = 2 L r ‖J(x₀)⁻¹‖` on `ball x* r` (`chord_rate_of_lipschitz`).
+* The Broyden superlinear rate (Dennis–Moré) and the Eisenstat–Walker forcing rule are not
+  formalized.
 -/
 
 noncomputable section

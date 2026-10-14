@@ -1,24 +1,28 @@
 import theorem.Attributes
 import dependencies.Mathlib
 
-/-! Von Neumann (Fourier) analysis of two explicit finite-difference schemes.
+/-! # Von Neumann (Fourier) analysis of two explicit finite-difference schemes
 
-Model boundary: schemes act on complex grid functions `u : ℤ → ℂ` (infinite uniform grid,
-no boundary), one explicit time step:
-* FTCS for `u_t = ν u_xx`: `u_j ↦ u_j + λ (u_{j+1} - 2u_j + u_{j-1})`, `λ = νΔt/Δx²`;
-* first-order upwind for `u_t + c u_x = 0`, `c > 0`:
-  `u_j ↦ u_j - σ (u_j - u_{j-1})`, `σ = cΔt/Δx`.
-Fourier modes `e^{ijθ}` are eigenfunctions; the growth factors are derived from the stencils
-(`ftcs_mode`, `upwind_mode`), not assumed.  The von Neumann conditions characterize when no
-mode is amplified; the `ℓ²`-norm stability of the full scheme (Parseval) is not formalized.
+Growth factors of the FTCS heat scheme and the first-order upwind advection scheme, derived from
+the stencils, and the von Neumann conditions under which no Fourier mode is amplified.
 
-Results (foundation):
-* `ftcs_growthFactor_bound_iff`: `(∀ θ, |ξ(θ)| ≤ 1) ↔ 0 ≤ λ ≤ 1/2`, `ξ = 1 - 4λ sin²(θ/2)`.
-* `upwind_growthFactor_bound_iff`: `(∀ θ, ‖ξ(θ)‖ ≤ 1) ↔ 0 ≤ σ ≤ 1`, with
-  `‖ξ‖² = 1 - 2σ(1-σ)(1 - cos θ)`.
-* `ftcs_iterate_mode`, `upwind_iterate_mode`: `n` steps multiply a mode by `ξⁿ`.
+Model boundary.
+* Schemes act on complex grid functions `u : ℤ → ℂ` (infinite uniform grid, no boundary), one
+  explicit time step:
+  * FTCS for `u_t = ν u_xx`: `u_j ↦ u_j + λ (u_{j+1} - 2u_j + u_{j-1})`, `λ = νΔt/Δx²`;
+  * first-order upwind for `u_t + c u_x = 0`, `c > 0`: `u_j ↦ u_j - σ (u_j - u_{j-1})`,
+    `σ = cΔt/Δx`.
+* Fourier modes `e^{ijθ}` are eigenfunctions; the growth factors are derived from the stencils
+  (`ftcs_mode`, `upwind_mode`), not assumed. The von Neumann conditions characterize when no
+  mode is amplified; the `ℓ²`-norm stability of the full scheme (Parseval) is not formalized.
 
 Source: work-sync theory/T-method-of-lines.md §1.5.4 (examples 1 and 2).
+
+Results.
+* `ftcs_growthFactor_bound_iff` — `(∀ θ, |ξ(θ)| ≤ 1) ↔ 0 ≤ λ ≤ 1/2`, `ξ = 1 - 4λ sin²(θ/2)`.
+* `upwind_growthFactor_bound_iff` — `(∀ θ, ‖ξ(θ)‖ ≤ 1) ↔ 0 ≤ σ ≤ 1`, with
+  `‖ξ‖² = 1 - 2σ(1-σ)(1 - cos θ)`.
+* `ftcs_iterate_mode`, `upwind_iterate_mode` — `n` steps multiply a mode by `ξⁿ`.
 -/
 
 noncomputable section

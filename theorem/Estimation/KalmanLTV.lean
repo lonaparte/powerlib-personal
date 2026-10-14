@@ -4,47 +4,53 @@ import Mathlib.Analysis.Matrix.Normed
 
 /-! # Kalman covariance for time-varying systems: variation-of-constants and Riccati forms
 
-Source: work-sync `theory/T-kalman-filter.md` §1.2 (continuous-time prediction between
+The variation-of-constants form of the time-varying prediction covariance and the closed-loop
+integral representation, symmetry and positivity of the filter Riccati solution, relative to an
+abstract fundamental matrix.
+
+Scope.
+* Linear algebra / matrix ODE, not an engineering result. Statements are about the
+  deterministic covariance ODEs; that `P(t)` is the conditional covariance of a continuous-time
+  linear-Gaussian model needs Itô/Kalman–Bucy filtering theory and is not formalized.
+* Matrices are real `n × n` (`p × n` for `C`), coefficients `A(t), C(t), Q(t), R(t)` are
+  continuous in `t ∈ ℝ`; norms are Frobenius norms (local instances, as in
+  `theorem/Stochastic/LyapunovCovariance.lean`).
+* Transition matrix. `Φ : ℝ → ℝ → Matrix` is a fundamental matrix of `ẋ = A(t) x`, assumed via
+  its defining properties `∂_t Φ(t, s) = A(t) Φ(t, s)` (all `t, s`) and `Φ(s, s) = I` — exactly
+  the content of LeanForControl's Peano–Baker theorem for `LinearSystems.stateTransitionMatrix`
+  (Theorem 5.1, P5.1). This module keeps `Φ` abstract (and imports only Mathlib); for constant
+  `A` the hypothesis is discharged by `Φ(t, s) = e^{(t−s)A}` (`expFund_hasDerivAt`,
+  `expFund_self`), and for continuous time-varying `A` by LeanForControl's state-transition
+  matrix in `theorem/Estimation/KalmanLTVTransition.lean`.
+* The time-invariant prediction with an algebraic solution `P∞` is
+  `theorem/Estimation/KalmanPredict.lean`.
+
+Source: work-sync theory/T-kalman-filter.md §1.2 (continuous-time prediction between
 measurements `Ṗ = A P + P Aᵀ + Q`; discrete analogue `P_{k|k−1} = Φ_k P Φ_kᵀ + Q_k`), §1.4
 (continuous-time filter Riccati equation `Ṗ = A P + P Aᵀ + Q − P Cᵀ R⁻¹ C P`, gain
-`K = P Cᵀ R⁻¹`).  The time-invariant prediction with an algebraic solution `P∞` is
-`theorem/Estimation/KalmanPredict.lean`.
+`K = P Cᵀ R⁻¹`).
 
-Foundation (linear algebra / matrix ODE), not an engineering result.  Statements are about the
-deterministic covariance ODEs; that `P(t)` is the conditional covariance of a continuous-time
-linear-Gaussian model needs Itô/Kalman–Bucy filtering theory and is not formalized.  Matrices are
-real `n × n` (`p × n` for `C`), coefficients `A(t), C(t), Q(t), R(t)` are continuous in `t ∈ ℝ`;
-norms are Frobenius norms (local instances, as in `theorem/Stochastic/LyapunovCovariance.lean`).
-
-Transition matrix.  `Φ : ℝ → ℝ → Matrix` is a fundamental matrix of `ẋ = A(t) x`, assumed via
-its defining properties `∂_t Φ(t, s) = A(t) Φ(t, s)` (all `t, s`) and `Φ(s, s) = I` — exactly the
-content of LeanForControl's Peano–Baker theorem for `LinearSystems.stateTransitionMatrix`
-(Theorem 5.1, P5.1).  This module keeps `Φ` abstract (and imports only Mathlib); for constant `A`
-the hypothesis is discharged by `Φ(t, s) = e^{(t−s)A}` (`expFund_hasDerivAt`, `expFund_self`), and
-for continuous time-varying `A` by LeanForControl's state-transition matrix in
-`theorem/Estimation/KalmanLTVTransition.lean`.
-
-Main results.
-* `eq_zero_of_norm_deriv_le`: Grönwall uniqueness on all of `ℝ` (both time directions), from
+Results.
+* `eq_zero_of_norm_deriv_le` — Grönwall uniqueness on all of `ℝ` (both time directions), from
   Mathlib's `eq_zero_of_abs_deriv_le_mul_abs_self_of_eq_zero_right`.
-* `fund_cocycle`, `fund_mul_inv`, `fund_continuous_snd`: `Φ(t, s) Φ(s, τ) = Φ(t, τ)`,
+* `fund_cocycle`, `fund_mul_inv`, `fund_continuous_snd` — `Φ(t, s) Φ(s, τ) = Φ(t, τ)`,
   `Φ(t, s) Φ(s, t) = I`, continuity in the second argument (derived, not assumed).
-* `hasDerivAt_ltvCov`, `ltvCov_self`, `ltvCov_unique` (**LTV prediction covariance**):
+* `hasDerivAt_ltvCov`, `ltvCov_self`, `ltvCov_unique` — **LTV prediction covariance**:
   `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ` (`ltvCov`) solves
   `Ṗ = A(t) P + P A(t)ᵀ + Q(t)`, `P(t₀) = P₀`, and is its only differentiable solution.
-* `lti_cov_integral_form`: constant `A`, continuous `Q(t)`, no Hurwitz assumption:
+* `lti_cov_integral_form` — constant `A`, continuous `Q(t)`, no Hurwitz assumption:
   `P(t) = e^{(t−t₀)A} P₀ e^{(t−t₀)A}ᵀ + ∫_{t₀}^t e^{(t−τ)A} Q(τ) e^{(t−τ)A}ᵀ dτ`.
-* `ltvCov_posSemidef`: `P₀ ⪰ 0`, `Q ⪰ 0`, `t ≥ t₀` ⇒ `P(t) ⪰ 0`.
-* `riccati_joseph_form` (**integral representation of the Riccati solution**): a symmetric
+* `ltvCov_posSemidef` — `P₀ ⪰ 0`, `Q ⪰ 0`, `t ≥ t₀` ⇒ `P(t) ⪰ 0`.
+* `riccati_joseph_form` — **integral representation of the Riccati solution**: a symmetric
   solution of `Ṗ = A P + P Aᵀ + Q − P Cᵀ R⁻¹ C P` equals
   `Φ_K(t, t₀) P(t₀) Φ_K(t, t₀)ᵀ + ∫_{t₀}^t Φ_K(t, τ) (Q + K R Kᵀ)(τ) Φ_K(t, τ)ᵀ dτ`, where
   `K = P Cᵀ R⁻¹` and `Φ_K` is a fundamental matrix of the closed-loop matrix `A − K C`
   (an implicit representation: `Φ_K` depends on `P`).
-* `riccati_symm`: symmetric `P(t₀)`, `Q`, `R` ⇒ the Riccati solution stays symmetric.
-* `riccati_posSemidef`: `P(t₀) ⪰ 0`, `Q ⪰ 0`, `R ≻ 0` ⇒ `P(t) ⪰ 0` for `t ≥ t₀`.
+* `riccati_symm` — symmetric `P(t₀)`, `Q`, `R` ⇒ the Riccati solution stays symmetric.
+* `riccati_posSemidef` — `P(t₀) ⪰ 0`, `Q ⪰ 0`, `R ≻ 0` ⇒ `P(t) ⪰ 0` for `t ≥ t₀`.
 
-Not proved: existence of Riccati solutions on a given interval (global existence for `R ≻ 0`,
-`Q ⪰ 0`).
+Not formalized.
+* Existence of Riccati solutions on a given interval (global existence for `R ≻ 0`, `Q ⪰ 0`).
 -/
 
 noncomputable section

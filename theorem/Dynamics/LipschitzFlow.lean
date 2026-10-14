@@ -6,13 +6,18 @@ import Mathlib.Dynamics.OmegaLimit
 
 /-! # The forward flow of a globally Lipschitz autonomous ODE
 
-Foundation layer: the flow-semigroup language of dynamical systems, made rigorous under the
-completeness premise that the note leaves implicit.
+The flow-semigroup language of dynamical systems, made rigorous under the completeness premise
+that the note leaves implicit.
 
-Setting. `ẋ = f(x)` on a real Banach space `E` with `f` globally Lipschitz (constant `K`), so
-every initial state has a unique forward solution on `[0, ∞)` (LeanForControl
-`exists_isIntegralCurveOn_Ici`, applied directly). Time is `ℝ≥0` (forward flow); backward
-solutions are not used.
+Scope.
+* `ẋ = f(x)` on a real Banach space `E` with `f` globally Lipschitz (constant `K`), so every
+  initial state has a unique forward solution on `[0, ∞)` (LeanForControl
+  `exists_isIntegralCurveOn_Ici`, applied directly). Time is `ℝ≥0` (forward flow); backward
+  solutions are not used.
+* Generic dynamical-systems foundation on an arbitrary Banach space, no model family.
+
+Source: work-sync theory/T-dynamical-systems.md §1.1 (flow, `φ₀ = Id`, `φ_{t+s} = φ_t ∘ φ_s`),
+§1.2 (ω-limit set).
 
 Results.
 * `lipschitzFlow hf : Flow ℝ≥0 E` — a Mathlib `Flow`: jointly continuous, `φ₀ = id`,
@@ -23,13 +28,9 @@ Results.
 * `isInvariant_omegaLimit`: the ω-limit set `ω(s)` (Mathlib `omegaLimit` along `atTop`) is
   invariant under the flow (Mathlib `Flow.isInvariant_omegaLimit`).
 
-Source: work-sync theory/T-dynamical-systems.md §1.1 (flow, `φ₀ = Id`, `φ_{t+s} = φ_t ∘ φ_s`),
-§1.2 (ω-limit set). Correction: the note states the group law for all `t, s ∈ ℝ` for any `C¹`
-field; without global existence (completeness) the flow is only local. Here completeness is
-supplied by the global Lipschitz bound and only forward times are claimed.
-
-Architecture: generic dynamical-systems foundation on an arbitrary Banach space, no model family;
-all results remain public foundation support.
+Corrections. The note states the group law for all `t, s ∈ ℝ` for any `C¹` field; without global
+existence (completeness) the flow is only local. Here completeness is supplied by the global
+Lipschitz bound and only forward times are claimed.
 -/
 
 noncomputable section

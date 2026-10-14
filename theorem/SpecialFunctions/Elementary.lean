@@ -7,8 +7,20 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 /-! # Elementary real inequalities and identities (foundation)
 
 Small facts about `exp`, `cos`, `sin`, `sign` and polynomials of real numbers that Mathlib does
-not state in this form. Nothing here describes a physical system.
+not state in this form.
 
+Scope.
+* Static real and complex analysis; nothing here describes a physical system and no model family
+  is defined.
+
+Source: elementary analysis, used by the swing-equation damping estimates
+(`theorem/Synchronous/DampedEAC.lean`), the model-B boundary analysis
+(`theorem/GFL/DCLink/ModelBBoundary.lean`), the sensorless drive averaging
+(`theorem/Drives/Sensorless.lean`), the Thévenin modulation map
+(`theorem/GFL/Parametric/ModulationTransfer.lean`) and the SFR nadir-time correction
+(`theorem/Frequency/SFR.lean`).
+
+Results.
 * Exponential: `exp_neg_lt_quadratic` (`e^{−u} < 1 − u + u²/2` for `u > 0`, by strict
   monotonicity of `1 − x + x²/2 − e^{−x}` on `[0, ∞)`), `exp_neg_le_quadratic` (`≤` for `u ≥ 0`).
 * Trigonometric: `one_sub_cos_le_sin_sq` (`1 − cos θ ≤ sin² θ` where `cos θ ≥ 0`),
@@ -21,13 +33,6 @@ not state in this form. Nothing here describes a physical system.
   `im_logDeriv_affine_exp`
   (`Im(a j e^{jδ}/(a e^{jδ} + b)) = (a² + ab cos δ)/(a² + b² + 2ab cos δ)`).
 * Complex argument: `arg_eq_arctan` (`arg (x + j y) = arctan (y / x)` for `x > 0`).
-
-Source: elementary analysis, used by the swing-equation damping estimates
-(`theorem/Synchronous/DampedEAC.lean`), the model-B boundary analysis
-(`theorem/GFL/DCLink/ModelBBoundary.lean`), the sensorless drive averaging
-(`theorem/Drives/Sensorless.lean`), the Thévenin modulation map
-(`theorem/GFL/Parametric/ModulationTransfer.lean`) and the SFR nadir-time correction
-(`theorem/Frequency/SFR.lean`).
 -/
 
 noncomputable section

@@ -2,9 +2,17 @@ import theorem.GFL.DCLink.FourState
 
 /-! # Frozen PLL sub-block of the four-state GFL model
 
-Foundation layer: closed forms for the PLL block of `GFL.DCLink.FourState`, i.e. the
-`(θ, x)` block of `A₀` with the dc-loop feedback `X_g k_pv Ṽ + X_g k_iv η̃` frozen.
+Closed forms (foundation) for the PLL block of `GFL.DCLink.FourState`.
 
+Model boundary.
+The `(θ, x)` block of `A₀` with the dc-loop feedback `X_g k_pv Ṽ + X_g k_iv η̃` frozen; linear,
+continuous time.
+
+Source: work-sync `projects/vsc-parametric-oscillation/notes/theory-draft.md` §1.2 (冻结 PLL
+子块), §3.2; `.../references/gfl-gfm-contrast/gfl-gfm-parametric-contrast.md` §14, §17 (GFL 部分);
+`.../gfl-gfm-contrast/archive/notes/concepts/contrast-conclusions.md` 差别一.
+
+Results.
 * `pllBlock v k_p k_i`: a two-state single-input single-output `Linear.Plant 2 1` whose state matrix
   is the PLL block `[[−k_p v, k_i], [−v, 0]]` of `A₀` (`pllBlock_A_eq_A0`).  Realization:
   state `(ξ, x)` with `ξ = θ + θ_g` the estimated grid angle, input `θ_g` (grid angle),
@@ -21,14 +29,11 @@ Foundation layer: closed forms for the PLL block of `GFL.DCLink.FourState`, i.e.
   decreasing in `k_p > 0` (`norm_T_strictAnti`).  This is a statement about the frozen block
   only; in the full four-state model the victim mode moves at `O(Γ)`.
 
-Family and connection conclusions. No family and no connection conclusion: transfer-function and
+Family and connection conclusions.
+No family and no connection conclusion: transfer-function and
 characteristic-polynomial identities of the frozen block. The frozen block is a
-`Linear.Plant 2 1` (formerly an `LTI.Model (Fin 2) (Fin 1)`); `pllBlock_field` states its state
+`Linear.Plant 2 1`; `pllBlock_field` states its state
 and output equations with explicit matrix-vector products.
-
-Source: work-sync `projects/vsc-parametric-oscillation/notes/theory-draft.md` §1.2 (冻结 PLL
-子块), §3.2; `.../references/gfl-gfm-contrast/gfl-gfm-parametric-contrast.md` §14, §17 (GFL 部分);
-`.../gfl-gfm-contrast/archive/notes/concepts/contrast-conclusions.md` 差别一.
 -/
 
 noncomputable section

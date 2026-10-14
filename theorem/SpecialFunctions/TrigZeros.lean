@@ -9,8 +9,22 @@ import Mathlib.Topology.Order.IntermediateValue
 
 /-! # Zeros of first- and second-order trigonometric polynomials (foundation)
 
-`trigPoly2 c₀ c₁ s₁ c₂ s₂ θ = c₀ + c₁ cos θ + s₁ sin θ + c₂ cos 2θ + s₂ sin 2θ`.
+Bounds and parity for the number of zeros per period of
+`trigPoly2 c₀ c₁ s₁ c₂ s₂ θ = c₀ + c₁ cos θ + s₁ sin θ + c₂ cos 2θ + s₂ sin 2θ` and of its
+first-order counterpart.
 
+Scope.
+* A foundation module: it states nothing about any power system and defines no model family. It
+  is used for counting equilibria of reduced PLL models whose phase-detector characteristic is a
+  trigonometric polynomial of order two (`T-gfl-dynamics` §1.8–§1.9, `T-gfl-ph` §1.5,
+  `T-pll-dynamics` §1.13).
+
+Source: work-sync `theory/T-gfl-dynamics.md` §1.8–§1.9 and §1.14 (counts 2 or 4 per period),
+`theory/T-gfl-ph.md` §1.5, `theory/T-pll-dynamics.md` §1.13(a). The notes state the counts
+("2 or 4", "two stable and two saddles") without proof; this module proves the general bound
+(at most 4) and the parity (even when all zeros are simple).
+
+Results.
 * `trigPoly2_eval_cexp`: with `z = e^{jθ}`, `z² · h(θ) = P(z)` for the degree-≤-4 complex
   polynomial `P = trigPoly2Poly …` (the substitution `z = e^{jθ}`).
 * `trigPoly2_zeroSet_finite`, `trigPoly2_ncard_zeroSet_le_four`: if the five coefficients are not
@@ -28,16 +42,9 @@ import Mathlib.Topology.Order.IntermediateValue
 * `deriv_mul_neg_of_consecutive_simple_zeros`: at two consecutive simple zeros of a continuous
   function the derivatives have opposite signs (alternation of `h' < 0` / `h' > 0`).
 
-This is a foundation module: it states nothing about any power system. It is used for counting
-equilibria of reduced PLL models whose phase-detector characteristic is a trigonometric
-polynomial of order two (`T-gfl-dynamics` §1.8–§1.9, `T-gfl-ph` §1.5, `T-pll-dynamics` §1.13).
-
-Source: work-sync `theory/T-gfl-dynamics.md` §1.8–§1.9 and §1.14 (counts 2 or 4 per period),
-`theory/T-gfl-ph.md` §1.5, `theory/T-pll-dynamics.md` §1.13(a). The notes state the counts
-("2 or 4", "two stable and two saddles") without proof; this module proves the general bound
-(at most 4) and the parity (even when all zeros are simple). It does not prove that 4 zeros
-actually occur for the GFL form-B characteristic (see `theorem/GFL/LCLine/FormB.lean`: for the exact
-quasi-steady line solution the `2θ` coefficients vanish).
+Scope notes. The module does not prove that 4 zeros actually occur for the GFL form-B
+characteristic (see `theorem/GFL/LCLine/FormB.lean`: for the exact quasi-steady line solution the
+`2θ` coefficients vanish).
 -/
 
 noncomputable section

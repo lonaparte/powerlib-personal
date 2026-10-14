@@ -5,10 +5,10 @@ import theorem.Dynamics.Transport
 import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
 
-/-! # The reduced 2-state GFL-PLL model of `vsc-stochastic-stability`: equilibria, local
-stability, port-Hamiltonian form, and the code-frame conjugacy
+/-! # Reduced 2-state GFL-PLL model: equilibria, stability, port-Hamiltonian form, code frame
 
-Domain module.
+Domain module of the `vsc-stochastic-stability` project: equilibria, local stability, the
+port-Hamiltonian form, and the conjugacy with the project's code frame.
 
 Model boundary.
 * State `y : State 2`, coordinates in this order: `y 0 = θ_e` (PLL angle error,
@@ -16,7 +16,7 @@ Model boundary.
 * Field (`reducedField`, defined in `theorem/GFL/LCLine/FullModel.lean` as the slow rows of the
   10-state field on its quasi-steady set): `θ̇_e = K_p h(θ_e) + K_i η`, `η̇ = h(θ_e)`, with
   `h(θ) = c₀ − A sin(θ + φ)` the exact closed form of `theorem/GFL/LCLine/Reduction.lean`.
-  It coincides with A1b's general `PLL.piPLLField h K_p K_i 0` (`reducedField_eq`).
+  It coincides with the general PI-PLL field `PLL.piPLLField h K_p K_i 0` (`reducedField_eq`).
 * Reduced 2-state PLL model only: frozen `i_d*, i_q*`, rigid DC source, current loop and
   LC/line taken at their quasi-steady algebraic values (no claim about the approximation error),
   no grid-frequency drift (`δω_g = 0`; the port-Hamiltonian form below also carries `δω_g` as a
@@ -26,9 +26,13 @@ Model boundary.
   balance along solutions.
 * Direction: converter current OUT-positive (`decisions.md` §D1.6), as in `Reduction.lean`.
 
-Main results.
+Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/reduced-2d-equation.md`
+§2–§4; `equilibria-and-bifurcation.md` §1, §3; `decisions.md` §D1.1–§D1.4;
+code reference `simulation/src/.../models.py` (`vcqc_exact`, `dynamics_v1`).
+
+Results.
 * `reducedField_eq_zero_iff` : equilibria are exactly `(θ*, 0)` with `h(θ*) = 0` (`K_i ≠ 0`).
-* `reduced_locallyExponentiallyStable` / `reduced_unstable` (`K_p, K_i > 0`):
+* `reduced_mem_den_locallyExponentiallyStable` / `reduced_mem_den_unstable` (`K_p, K_i > 0`):
   `h′(θ*) = −A cos(θ* + φ) < 0` ⇒ locally exponentially stable; `> 0` ⇒ unstable;
   `reduced_jacobian_nilpotent` : `h′(θ*) = 0` ⇒ the Jacobian is the nonzero nilpotent
   `[[0, K_i], [0, 0]]`. All by instantiating `theorem/PLL/PIPLL.lean`.
@@ -37,14 +41,16 @@ Main results.
   (`V′ = −h`); its zero-input field is `reducedField` and its input field is
   `piPLLField h K_p K_i δω_g`. `reduced_energy_rate` : `Ḣ = −K_p h(θ)² ≤ 0`;
   `energy_rate_with_drift` : `Ḣ = h δω_g − K_p h²`.
-  `H` is not bounded below when `c₀ ≠ 0` (tilted washboard), so only the dissipative-storage
-  interface applies, not `PassiveWithStorage`.
+  `H` is not bounded below when `c₀ ≠ 0` (tilted washboard), so it is not a nonnegative storage
+  and no passivity claim follows from it. Related port-Hamiltonian constructions of the PI-PLL:
+  `theorem/PLL/PH.lean` (SRF detector) and `theorem/PLL/PIPLLPH.lean` (general detector `h`).
 * `codeField_eq_transport` (`decisions.md` §D1.4): the project code frame
   (`θ̇ = −K_p h_c(θ) − K_i η`, `η̇ = h_c(θ)`, with `h_c` built by the code's own formulas,
   `hCode_eq : h_c(θ) = h(−θ)`) is the text-frame field transported by the reflection
-  `(θ, η) ↦ (−θ, η)`; stability and instability transfer (`code_locallyExponentiallyStable_iff`).
+  `(θ, η) ↦ (−θ, η)`; every sentence transfers (`code_mem_den_iff`).
 
-Family and connection conclusions. No new family for the text frame: the reduced model with a
+Family and connection conclusions.
+No new family for the text frame: the reduced model with a
 selected angle `θ*` is the member `p.pllModel θ*` of the PI-PLL family `PLL.PIPLL.family`
 (`h = p.h`, gains `K_p, K_i`, `δω = 0`), whose system map reads the field translated so that
 `(θ*, 0)` is the origin; `pllModel_field` identifies that translated field with `reducedField`.
@@ -56,18 +62,13 @@ point, with the PI-PLL requirement language pulled back along `CodeModel.toText`
 (`θ_text* = −θ_code*`). The corrected §D1.4 conjugacy is the connection equality
 `codeFamily_den`: every denotation of the code family is the preimage of the PI-PLL denotation,
 for every sentence (all nine flow sentences, by the affine transport law, and passivity); hence
-`codeFamily_chain_le_semantics` and `code_mem_den_iff`, which replace the former
-`code_locallyExponentiallyStable_iff` / `code_unstable_iff` (now for every sentence).
+`codeFamily_chain_le_semantics` and `code_mem_den_iff` (for every sentence).
 Static evidence on the model, not connection conclusions: the equilibrium set
 (`reducedField_eq_zero_iff`), the fold Jacobian (`reduced_jacobian_nilpotent`) and the energy
-rates (`reduced_energy_rate`, `reduced_energy_rate_nonpos`, `energy_rate_with_drift`), all formerly
-domain-labelled. The decrease of `H` along solution segments (`hamiltonian_antitoneOn`) is a
-trajectory-level result outside the sentence language and is kept as private implementation
-evidence. No passivity claim is made for the port `δω_g` (`H` is unbounded below for `c₀ ≠ 0`).
-
-Sources: work-sync `projects/vsc-stochastic-stability/notes/concepts/reduced-2d-equation.md`
-§2–§4; `equilibria-and-bifurcation.md` §1, §3; `decisions.md` §D1.1–§D1.4;
-code reference `simulation/src/.../models.py` (`vcqc_exact`, `dynamics_v1`).
+rates (`reduced_energy_rate`, `reduced_energy_rate_nonpos`, `energy_rate_with_drift`). The decrease
+of `H` along solution segments (`hamiltonian_antitoneOn`) is a trajectory-level result outside the
+sentence language and is kept as private implementation evidence. No passivity claim is made for the
+port `δω_g` (`H` is unbounded below for `c₀ ≠ 0`).
 
 Correction (`decisions.md` §D1.4): the translation table says the code frame has "the same
 `θ_e`, opposite `η`". With the code's own Park convention (`i^c = R(−θ) i`), the code angle is the
@@ -90,12 +91,12 @@ variable (p : Params)
 
 /-! ### Identification with the general PI-PLL field -/
 
-/-- The reduced field is A1b's PI-PLL field with `h = p.h` and `δω = 0`. -/
+/-- The reduced field is the general PI-PLL field with `h = p.h` and `δω = 0`. -/
 @[powerlib_foundation] theorem reducedField_eq : p.reducedField = piPLLField p.h p.Kp p.Ki 0 := by
   funext y
   rw [reducedField_apply, piPLLField, sub_zero]
 
-/-- Equilibria of the reduced model (A1): `(θ*, 0)` with `h(θ*) = 0`.
+/-- Equilibria of the reduced model: `(θ*, 0)` with `h(θ*) = 0`.
 Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem reducedField_eq_zero_iff (hKi : p.Ki ≠ 0) (y : State 2) :
     p.reducedField y = 0 ↔ p.h (y 0) = 0 ∧ y 1 = 0 := by
@@ -458,8 +459,8 @@ soundness of the PI-PLL family. -/
   exact hs ((TMIO.mem_realize _ _ _).mpr fun q hq =>
     ((TMIO.mem_realize _ _ _).mp hm) q hq)
 
-/-- Every sentence transfers between the two frames (mirror points): this replaces the former
-`code_locallyExponentiallyStable_iff` and `code_unstable_iff`. -/
+/-- Every sentence transfers between the two frames (mirror points), in particular local
+exponential stability and instability. -/
 @[powerlib_domain] theorem code_mem_den_iff (m : CodeModel) (s : Sentence) :
     connection% (m ∈ codeFamily.den s ↔ m.toText ∈ PLL.PIPLL.family.den s) := by
   unfold powerlib.TMIO.Statement

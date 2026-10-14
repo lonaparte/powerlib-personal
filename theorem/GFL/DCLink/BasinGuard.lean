@@ -7,9 +7,11 @@ import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 
 /-! # The `basin-guard` GFL carrier: direction-convention algebra
 
-Model boundary (domain module; per-unit, continuous time).
+Model boundary.
+Domain module; per-unit, continuous time.
 * State `x : State 4`, coordinates in this order: `x 0 = θ_e` (PLL angle error),
-  `x 1 = x_p` (PLL integrator), `x 2 = V_dc` (DC-link voltage), `x 3 = ξ` (DC-voltage PI integrator).
+  `x 1 = x_p` (PLL integrator), `x 2 = V_dc` (DC-link voltage), `x 3 = ξ` (DC-voltage PI
+  integrator).
 * Network: a **frozen** reactance `X_g` between the infinite bus `V e^{-jθ_e}` (converter frame)
   and the converter, no line resistance and no line-current dynamics; the converter current is
   ideal, `i = i_d* + j I_q*` with `i_d* = K_p^dvc (1 − V_dc) + K_i^dvc ξ` and exogenous `I_q*`
@@ -22,21 +24,26 @@ Model boundary (domain module; per-unit, continuous time).
   reference `1`: `ξ̇ = 1 − V_dc`.
 * `P_ac = (3/2) Re{v_g ī}` is written from the complex power `S̄ = V̄ Ī*` (`conventions.md` §D0).
 
+Source: work-sync `projects/basin-guard/notes/_MOC.md` (§方向约定, 卡点 5) and
+`derivation-log.md` §2 (P_ac invariance, mirror at `I_q* = 0`) and §3 (`K_p^{dvc,*} = I_d0`);
+code reference `simulation/src/basin_guard_sim/models.py` (GFL carrier).
+
 Results.
 * `Pac_eq` : `P_ac = (3/2)(V cos θ_e · i_d* − V sin θ_e · I_q*)` for both signs `s`
   (the `X_g` cross terms cancel in `Re S̄`); `Pac_flip_invariant`.
 * `carrierField_reflect` : for `I_q* = 0`, the involution
   `S(θ_e, x_p, V_dc, ξ) = (−θ_e, −x_p, V_dc, ξ)` conjugates the two writings,
   `F_{s=−1} ∘ S = S ∘ F_{s=1}`; `carrierField_neg_eq_transport` expresses this as a coordinate
-  transport, so equilibria, local exponential stability and instability correspond
-  (`carrier_locallyExponentiallyStable_iff`, `carrier_unstable_iff`) and the Jacobians are
-  similar with equal characteristic polynomials (`carrier_jacobian_charpoly`).
+  transport, so equilibria correspond (`carrier_equilibrium_iff`), every sentence holds at
+  mirror points alike (`BasinGuard.flip_mem_den_iff`, below) and the Jacobians are similar with
+  equal characteristic polynomials (`carrier_jacobian_charpoly`).
 * `dcNode_partial_Vdc` : the DC-node diagonal Jacobian entry at `V_dc = 1` is
   `−(3/(2C))(V cos θ_e (K_p^dvc + I_d0) − V sin θ_e I_q*)`, `I_d0 = i_d*|_{V_dc = 1}`;
   for `I_q* = 0` it vanishes iff `K_p^dvc = −I_d0` (`dcNode_partial_Vdc_eq_zero_iff`),
   independently of `X_g` and `C` (and of `V cos θ_e ≠ 0`).
 
-Family and connection conclusions. A complete system (`BasinGuard.Model`) is a carrier
+Family and connection conclusions.
+A complete system (`BasinGuard.Model`) is a carrier
 parameter set, a drop sign `s` and a selected operating point `x*`; the system map reads it as the
 carrier field translated so that `x*` is the origin, `z ↦ carrierField q s (z + x*)` (every flow
 sentence is invariant under this translation, `Flow.Property.holds_shift_iff`). The module proves
@@ -45,15 +52,9 @@ requirement and every flow sentence is translated into it: unavailable translati
 sound by `BasinGuard.chain_le_semantics`; passivity is translated exactly
 (`BasinGuard.exact_passive`). The connection content is the frame flip: for `I_q* = 0` the
 flipped model `Model.flip ⟨q, s, x*⟩ = ⟨q, −s, S x*⟩` satisfies exactly the sentences of the
-original (`BasinGuard.flip_mem_den_iff`, every sentence, every drop sign `s`), which replaces the
-former `carrier_locallyExponentiallyStable_iff` and `carrier_unstable_iff` (`s = 1`, local
-exponential stability and instability only). The mirror equilibria (`carrier_equilibrium_iff`,
-formerly domain-labelled), the Jacobian similarity, `P_ac` and the DC-node entry are static
-evidence.
-
-Source: work-sync `projects/basin-guard/notes/_MOC.md` (§方向约定, 卡点 5) and
-`derivation-log.md` §2 (P_ac invariance, mirror at `I_q* = 0`) and §3 (`K_p^{dvc,*} = I_d0`);
-code reference `simulation/src/basin_guard_sim/models.py` (GFL carrier).
+original (`BasinGuard.flip_mem_den_iff`, every sentence, every drop sign `s`). The mirror
+equilibria (`carrier_equilibrium_iff`), the Jacobian similarity, `P_ac` and the DC-node entry are
+static evidence.
 
 Correction (`derivation-log.md` §3): `K_p^{dvc,*} = I_d0` is the statement in the OUT-positive
 frame of the sister project (`GFLDC`); in this IN-positive carrier it reads `K_p^{dvc,*} = −I_d0`
@@ -361,9 +362,8 @@ private theorem flip_holds_iff {m : Model} (hIq : m.params.Iq = 0) (P : Flow.Pro
   exact Dynamics.holds_transport_iff carrierReflect 0 P
 
 /-- `I_q* = 0`: the two writings of the reactance drop agree on every sentence at mirror points —
-the flipped model `⟨q, −s, S x*⟩` satisfies exactly the sentences of `⟨q, s, x*⟩`. For `s = 1`
-this is the former `carrier_locallyExponentiallyStable_iff` / `carrier_unstable_iff`, now for
-every sentence. -/
+the flipped model `⟨q, −s, S x*⟩` satisfies exactly the sentences of `⟨q, s, x*⟩`, for every
+sentence (in particular local exponential stability and instability at `s = 1`). -/
 @[powerlib_domain] theorem flip_mem_den_iff (m : Model) (hIq : m.params.Iq = 0) (s : Sentence) :
     connection% (m.flip ∈ family.den s ↔ m ∈ family.den s) := by
   unfold powerlib.TMIO.Statement

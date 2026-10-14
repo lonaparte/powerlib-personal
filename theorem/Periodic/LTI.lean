@@ -2,21 +2,27 @@ import theorem.Periodic.Transition
 
 /-! # The LTI special case of the monodromy matrix
 
-Foundation layer. For a constant state matrix `A` (the unforced case `ε = 0` of a periodically
-forced orbit, whose variational matrix is the constant Jacobian at the equilibrium):
-* `transition_const`: `Φ(t, s) = exp ((t - s) • A)` for `t ≥ s` (uniqueness of the matrix
-  solution, Mathlib `hasDerivAt_exp_smul_const'`);
-* `monodromy_const`: `monodromy (fun _ => A) T s = exp (T • A)`;
-* `exp_mulVec_of_eigen`, `monodromy_const_mulVec_eigen`: an eigenpair `(μ, v)` of the
-  complexified `A` gives the Floquet multiplier `e^{μ T}` with the same eigenvector;
-* `norm_exp_mul_eq`, `log_norm_exp_div`: `|e^{μ T}| = e^{Re μ · T}`, so the Floquet rate
-  `σ = ln |ρ| / T` of the unforced orbit equals `Re μ` (`= -α` for the victim mode
-  `μ = -α ± jω`).
+For a constant state matrix the monodromy matrix is a matrix exponential, and the Floquet rate of
+the unforced orbit is the real part of the eigenvalue.
+
+Scope.
+* Constant state matrix `A`: the unforced case `ε = 0` of a periodically forced orbit, whose
+  variational matrix is the constant Jacobian at the equilibrium.
 
 Source: work-sync projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
 notes/concepts/forced-orbit-and-bandwidth.md, block B (`σ_fp(ε = 0) = -α`; at `ε = 0` both
 multipliers are `e^{-αT}`); theory/T-harmonic-linearization.md §1.6 (LTI check
 `A(t) = A₀`).
+
+Results.
+* `transition_const` — `Φ(t, s) = exp ((t - s) • A)` for `t ≥ s` (uniqueness of the matrix
+  solution, Mathlib `hasDerivAt_exp_smul_const'`).
+* `monodromy_const` — `monodromy (fun _ => A) T s = exp (T • A)`.
+* `exp_mulVec_of_eigen`, `monodromy_const_mulVec_eigen` — an eigenpair `(μ, v)` of the
+  complexified `A` gives the Floquet multiplier `e^{μ T}` with the same eigenvector.
+* `norm_exp_mul_eq`, `log_norm_exp_div` — `|e^{μ T}| = e^{Re μ · T}`, so the Floquet rate
+  `σ = ln |ρ| / T` of the unforced orbit equals `Re μ` (`= -α` for the victim mode
+  `μ = -α ± jω`).
 -/
 
 noncomputable section

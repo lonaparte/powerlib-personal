@@ -6,34 +6,38 @@ import Mathlib.Topology.Algebra.Module.Cardinality
 
 /-! # Convergence in distribution on `ℝ` ⇔ convergence of distribution functions
 
-Source: work-sync `theory/T-convergence-stochastic.md` §1.4 (convergence in distribution:
-`F_n(x) → F(x)` at every continuity point `x` of `F`, equivalently `∫ f dμ_n → ∫ f dμ` for bounded
-continuous `f`).
+Weak convergence of probability measures on `ℝ` is equivalent to convergence of the
+distribution functions at atom-free points; Skorokhod representation by quantile coupling.
 
-Foundation (probability), not an engineering result.
+Scope.
+* Probability theory, not an engineering result.
+* Probability measures on `ℝ` with the weak topology (`ProbabilityMeasure ℝ`); the distribution
+  function is Mathlib's `ProbabilityTheory.cdf`. A point `x` with `ν {x} = 0` is exactly a
+  continuity point of `F = cdf ν` (the jump of `F` at `x` is `ν {x}`); the statements use the
+  measure-zero form.
 
-Setting: probability measures on `ℝ` with the weak topology (`ProbabilityMeasure ℝ`); the
-distribution function is Mathlib's `ProbabilityTheory.cdf`.  A point `x` with `ν {x} = 0` is
-exactly a continuity point of `F = cdf ν` (the jump of `F` at `x` is `ν {x}`); the statements use
-the measure-zero form.
-* `cdf_tendsto_of_tendsto` (forward direction): weak convergence ⇒ `F_n(x) → F(x)` whenever
+Source: work-sync theory/T-convergence-stochastic.md §1.4 (convergence in distribution:
+`F_n(x) → F(x)` at every continuity point `x` of `F`, equivalently `∫ f dμ_n → ∫ f dμ` for
+bounded continuous `f`).
+
+Results.
+* `cdf_tendsto_of_tendsto` — forward direction: weak convergence ⇒ `F_n(x) → F(x)` whenever
   `ν {x} = 0` (portmanteau, `frontier (Iic x) = {x}`).
-* `tendsto_of_cdf_tendsto` (reverse direction): `F_n(x) → F(x)` at every `x` with `ν {x} = 0`
-  ⇒ weak convergence.  Proof: the half-open intervals `(a, b]` with atom-free endpoints form a
+* `tendsto_of_cdf_tendsto` — reverse direction: `F_n(x) → F(x)` at every `x` with `ν {x} = 0`
+  ⇒ weak convergence. Proof: the half-open intervals `(a, b]` with atom-free endpoints form a
   π-system containing arbitrarily small neighbourhoods of every point (atoms of a finite measure
   are countable, so atom-free points are dense), and their masses converge; Mathlib's criterion
   `IsPiSystem.tendsto_probabilityMeasure_of_tendsto_of_mem` concludes.
-* `tendsto_iff_cdf_tendsto`: the equivalence.
-
-Skorokhod representation on `ℝ` (`T-convergence-stochastic.md`, stretch item), by the quantile
-coupling on `((0, 1), Lebesgue)` (`unifI`):
-* `quantile μ u = inf {x | u ≤ F_μ(x)}`; `quantile_le_iff`: `Q(u) ≤ x ↔ u ≤ F(x)` for `u ∈ (0, 1)`
-  (right-continuity of `F`); `quantile_monotoneOn`;
-* `map_quantile`: `Q_μ(U) ∼ μ` for `U` uniform on `(0, 1)`;
-* `tendsto_quantile`, `ae_tendsto_quantile`: `F_n → F` at atom-free points ⇒ `Q_n(u) → Q(u)` at
-  every continuity point `u` of `Q`, hence for a.e. `u` (countably many discontinuities);
-* `skorokhod_representation`: if `μ_n → μ` weakly, then `Y_n = Q_{μ_n}`, `Y = Q_μ` on `(0, 1)`
-  have laws `μ_n`, `μ` and `Y_n → Y` almost surely.
+* `tendsto_iff_cdf_tendsto` — the equivalence.
+* Skorokhod representation on `ℝ` (`T-convergence-stochastic.md`, stretch item), by the
+  quantile coupling on `((0, 1), Lebesgue)` (`unifI`):
+  * `quantile μ u = inf {x | u ≤ F_μ(x)}`; `quantile_le_iff`: `Q(u) ≤ x ↔ u ≤ F(x)` for
+    `u ∈ (0, 1)` (right-continuity of `F`); `quantile_monotoneOn`;
+  * `map_quantile`: `Q_μ(U) ∼ μ` for `U` uniform on `(0, 1)`;
+  * `tendsto_quantile`, `ae_tendsto_quantile`: `F_n → F` at atom-free points ⇒ `Q_n(u) → Q(u)`
+    at every continuity point `u` of `Q`, hence for a.e. `u` (countably many discontinuities);
+  * `skorokhod_representation`: if `μ_n → μ` weakly, then `Y_n = Q_{μ_n}`, `Y = Q_μ` on `(0, 1)`
+    have laws `μ_n`, `μ` and `Y_n → Y` almost surely.
 -/
 
 noncomputable section

@@ -2,43 +2,50 @@ import theorem.PhasePlane.Planar
 
 /-! # Bogdanov–Takens: Jordan structure and the truncated normal form
 
-Foundation layer: linear algebra of the double-zero eigenvalue and equilibrium-level facts of
-the truncated planar normal form. No engineering model is formalized here.
+Linear algebra of the double-zero eigenvalue and equilibrium-level facts of the truncated planar
+Bogdanov–Takens normal form.
 
-Linear algebra (any real `2 × 2` matrix `J`).
-* `tr J = det J = 0 ∧ J ≠ 0` iff `J` is similar to the single Jordan block `!![0, 1; 0, 0]`
-  (`J P = P N` with `det P ≠ 0`); together with `powerlib.Criteria` this is also equivalent to
-  `J` being nonzero nilpotent.
-* Structural form `!![g₁, g₂; g₃, 0]`: `tr = g₁`, `det = −g₂ g₃`. For the special shape
-  `!![k g, κ; g, 0]` with `κ ≠ 0` both vanish exactly at `g = 0`, where the matrix is a single
-  Jordan block.
-
-Truncated BT normal form (model boundary). State `y = (y₁, y₂) = (y 0, y 1)` in `State 2`,
-constant parameters `β₁, β₂` and coefficients `a, b`, continuous time, no remainder term:
-`ẏ₁ = y₂`, `ẏ₂ = β₁ + β₂ y₁ + a y₁² + b y₁ y₂`. Conclusions are about equilibria, their
-Jacobians and the local stability of hyperbolic equilibria; the homoclinic curve `P` and the
-limit-cycle statements of the source note are not formalized.
-* Equilibria: `y₂ = 0` and `a y₁² + β₂ y₁ + β₁ = 0`; one exists iff `β₂² − 4 a β₁ ≥ 0`
-  (`a ≠ 0`), and the equilibrium is unique iff `(β₁, β₂)` lies on the curve
-  `T : β₂² = 4 a β₁`, in which case it is `y₁ = −β₂ / (2a)` and its Jacobian is singular.
-* Jacobian at `(y₁, 0)`: `!![0, 1; β₂ + 2 a y₁, b y₁]`, `tr = b y₁`, `det = −(β₂ + 2 a y₁)`.
-* (`b ≠ 0`) an equilibrium with `tr = 0, det > 0` exists iff `β₁ = 0 ∧ β₂ < 0` (the Hopf line
-  `H`); `tr = det = 0` at an equilibrium iff `β₁ = β₂ = 0` and the equilibrium is the origin,
-  whose Jacobian is the Jordan block.
-* Equilibria with `β₂ + 2 a y₁ > 0` are saddles (unstable); with `β₂ + 2 a y₁ < 0` and
-  `b y₁ < 0` they are locally exponentially stable.
-
-Correction (T-bogdanov-takens-bifurcation §1.3(a)): on `T` the equilibrium is the double root
-`y₁ = −β₂ / (2a)`, not `y₁ = ±√(|β₁| / a)` (`equilibrium_on_T_iff`). The sign of the first
-Lyapunov coefficient and the region table (sign `l₁ = sign(a b)` versus the stability labels)
-are not formalized here.
+Model boundary.
+* Linear algebra: any real `2 × 2` matrix `J`.
+* Truncated BT normal form: state `y = (y₁, y₂) = (y 0, y 1)` in `State 2`, constant parameters
+  `β₁, β₂` and coefficients `a, b`, continuous time, no remainder term:
+  `ẏ₁ = y₂`, `ẏ₂ = β₁ + β₂ y₁ + a y₁² + b y₁ y₂`. Conclusions are about equilibria, their
+  Jacobians and the local stability of hyperbolic equilibria; the homoclinic curve `P` and the
+  limit-cycle statements of the source note are not formalized.
+* A truncated normal form, not an engineering model, so no model family is defined; all results
+  remain public foundation support. Behaviour is LeanForControl's predicates and the
+  linearization theorems of `powerlib.Criteria` / `powerlib.Flow`.
 
 Source: work-sync theory/T-bogdanov-takens-bifurcation.md §1.1–1.5 (§1.6, the GFL-PLL model, is
 not included).
 
-Architecture: a truncated normal form, not an engineering model, so no model family is defined;
-all results remain public foundation support. Behaviour is LeanForControl's predicates and the
-linearization theorems of `powerlib.Criteria` / `powerlib.Flow`.
+Results.
+* `trace_det_zero_iff_similar_jordanBlock`: `tr J = det J = 0 ∧ J ≠ 0` iff `J` is similar to the
+  single Jordan block `!![0, 1; 0, 0]` (`jordanBlock`; `J P = P N` with `det P ≠ 0`); together
+  with `powerlib.Criteria` this is also equivalent to `J` being nonzero nilpotent
+  (`isNilpotent_ne_zero_iff_similar_jordanBlock`).
+* Structural form `!![g₁, g₂; g₃, 0]`: `tr = g₁`, `det = −g₂ g₃` (`structural_trace_det`). For the
+  special shape `!![k g, κ; g, 0]` with `κ ≠ 0` both vanish exactly at `g = 0`, where the matrix is
+  a single Jordan block (`proportional_trace_det_zero_iff`, `proportional_jordan_at_zero`).
+* Equilibria (`field_eq_zero_iff`): `y₂ = 0` and `a y₁² + β₂ y₁ + β₁ = 0`; one exists iff
+  `β₂² − 4 a β₁ ≥ 0` (`a ≠ 0`, `exists_equilibrium_iff`), and the equilibrium is unique iff
+  `(β₁, β₂)` lies on the curve `T : β₂² = 4 a β₁` (`existsUnique_equilibrium_iff`), in which case
+  it is `y₁ = −β₂ / (2a)` (`equilibrium_on_T_iff`) and its Jacobian is singular
+  (`det_jacobian_on_T`).
+* Jacobian at `(y₁, 0)`: `!![0, 1; β₂ + 2 a y₁, b y₁]`, `tr = b y₁`, `det = −(β₂ + 2 a y₁)`
+  (`fderiv_field`, `trace_jacobian`, `det_jacobian`).
+* (`b ≠ 0`) an equilibrium with `tr = 0, det > 0` exists iff `β₁ = 0 ∧ β₂ < 0` (the Hopf line
+  `H`, `hopf_condition_iff`); `tr = det = 0` at an equilibrium iff `β₁ = β₂ = 0` and the
+  equilibrium is the origin (`bt_point_iff`), whose Jacobian is the Jordan block
+  (`jacobian_bt_point`).
+* Equilibria with `β₂ + 2 a y₁ > 0` are saddles (unstable, `saddle_unstable`); with
+  `β₂ + 2 a y₁ < 0` and `b y₁ < 0` they are locally exponentially stable
+  (`node_or_focus_stable`).
+
+Corrections. (T-bogdanov-takens-bifurcation §1.3(a)): on `T` the equilibrium is the double root
+`y₁ = −β₂ / (2a)`, not `y₁ = ±√(|β₁| / a)` (`equilibrium_on_T_iff`). The sign of the first
+Lyapunov coefficient and the region table (sign `l₁ = sign(a b)` versus the stability labels)
+are not formalized here.
 -/
 
 noncomputable section

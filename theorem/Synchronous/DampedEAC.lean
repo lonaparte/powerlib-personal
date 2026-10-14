@@ -2,20 +2,27 @@ import theorem.Synchronous.FaultSequence
 import theorem.Dynamics.LaSalle.Basin
 import theorem.SpecialFunctions.Elementary
 
-/-! # Equal-area criterion with damping: conservative sufficiency and the LaSalle basin of the
-potential well
+/-! # Equal-area criterion with damping: conservative sufficiency and the potential-well basin
 
-Model boundary.  The canonical swing model `SwingParams` (`theorem/Synchronous/Swing.lean`),
-state `(δ, ω) : Dynamics.State 2`, `M δ̈ + D δ̇ = P_m − (k₁ + k₂ sin(δ − k₃))`, constant `P_m`,
-generator OUT-positive convention, continuous time, no AVR / governor / PLL / limiter; for the
-switched model the three-stage trajectories of `theorem/Synchronous/FaultSequence.lean`.
-Damping is now allowed: `D ≥ 0` (sufficiency) or `D > 0` (convergence).  Statements are at
-trajectory level and quantify over every solution.  A three-stage trajectory is written out as
-in `FaultSequence.lean`: `tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
-IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
-IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc)`.  "`S` lies in the region of attraction
-of `x_eq`" is written out as in `theorem/Dynamics/LaSalle/Basin.lean`: from every initial state in `S` a
-forward solution on `[0, ∞)` exists and every forward solution from it converges to `x_eq`.
+Trajectory-level equal-area results for the damped single-machine infinite-bus swing model: the
+undamped area condition stays sufficient for every `D ≥ 0`, a strict margin gives convergence for
+`D > 0`, and damping strictly delays the critical clearing time of a bolted fault.
+
+Model boundary.
+* The canonical swing model `SwingParams` (`theorem/Synchronous/Swing.lean`), state
+  `(δ, ω) : Dynamics.State 2`, `M δ̈ + D δ̇ = P_m − (k₁ + k₂ sin(δ − k₃))`, constant `P_m`,
+  generator OUT-positive convention, continuous time, no AVR / governor / PLL / limiter; for the
+  switched model the three-stage trajectories of `theorem/Synchronous/FaultSequence.lean`.
+* Damping is allowed: `D ≥ 0` (sufficiency) or `D > 0` (convergence).  Statements are at
+  trajectory level and quantify over every solution.  A three-stage trajectory is written out as
+  in `FaultSequence.lean`: `tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
+  IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
+  IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc)`.
+* "`S` lies in the region of attraction of `x_eq`" is written out as in
+  `theorem/Dynamics/LaSalle/Basin.lean`: from every initial state in `S` a forward solution on
+  `[0, ∞)` exists and every forward solution from it converges to `x_eq`.
+
+Source: work-sync `theory/T-transient-stability.md` §1.3, §1.5, §1.6, §1.8, §2.2.
 
 Results.
 * `energy_antitoneOn` (`D ≥ 0`): the energy `W = ½ M ω² + U(δ)` is non-increasing along every
@@ -44,8 +51,28 @@ Results.
   `boltedFault_damped_firstSwing` (`D_post ≥ 0`): all those clearing times keep the first swing
   below `δ_u`; `boltedFault_damped_tendsto` (`D_post > 0`, `P_m ≥ k₁`, `δ_u − 2π < δ₀`): all of
   them give convergence to `(δ_s, 0)`.  Since without damping the first swing stays below `δ_u`
-  exactly for `t_c − t_f ≤ t_cc^EAC` (`FaultSequence.boltedFault_firstSwing_iff`), the true
-  (damped) critical clearing time is at least `t_cc^EAC + ε`, strictly larger than the EAC value.
+  exactly for `t_c − t_f ≤ t_cc^EAC` (`boltedFault_firstSwing_iff`, `FaultSequence.lean`), the
+  true (damped) critical clearing time is at least `t_cc^EAC + ε`, strictly larger than the EAC
+  value.
+* Public foundation: the well geometry (`wellWindow`, `isOpen_wellWindow`,
+  `isCompact_wellSublevel`, `potential_le_energy`, `eq_deltaS_of_field_eq_zero`: the only
+  equilibrium in the window).
+
+Family and connection conclusions.
+* None: energy dissipation along solutions, first-swing bounds, region-of-attraction estimates
+  (LaSalle on the well) and convergence of switched trajectories are outside the sentence
+  language of `Synchronous.Swing.family` (Rules §3a).  The trajectory theorems
+  (`energy_antitoneOn`, `firstSwing_le_deltaU_of_damping`, `regionOfAttraction_well`,
+  `tendsto_of_firstSwing_margin`, `clearing_energy_le`, `faultTrajectory_firstSwing_of_areas`,
+  `faultTrajectory_tendsto_of_areas`) and the bolted-fault clearing-time results
+  (`dampedBolted_trajectory`, `boltedFault_damped_clearingAngle`, `boltedFault_damped_firstSwing`,
+  `boltedFault_damped_tendsto`) are private implementation evidence.
+* The local stability of `(δ_s, 0)` with `D > 0` is the connection conclusion
+  `Swing.deltaS_mem_den_locallyExponentiallyStable`.
+* The elementary bounds `SpecialFunctions.exp_neg_lt_quadratic`,
+  `SpecialFunctions.exp_neg_le_quadratic` are in `theorem/SpecialFunctions/Elementary.lean`;
+  LaSalle is the generic `Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel`
+  (`theorem/Dynamics/LaSalle/Basin.lean`).
 
 Correction.
 * T-transient-stability §1.8 writes `A_dec^{D>0} = A_dec^{D=0} − ∫ D Δω² dt > A_dec^{D=0}`,
@@ -56,23 +83,6 @@ Correction.
   for the bolted fault (`boltedFault_damped_firstSwing`, `boltedFault_damped_tendsto`, with a
   uniform `ε > 0`); for a general during-fault curve (no closed-form undamped trajectory) it is
   not formalized.
-
-Family and connection conclusions.  None: energy dissipation along solutions, first-swing bounds,
-region-of-attraction estimates (LaSalle on the well) and convergence of switched trajectories are
-outside the sentence language of `Synchronous.Swing.family` (Rules §3a).  The seven former domain
-theorems (`energy_antitoneOn`, `firstSwing_le_deltaU_of_damping`, `regionOfAttraction_well`,
-`tendsto_of_firstSwing_margin`, `clearing_energy_le`, `faultTrajectory_firstSwing_of_areas`,
-`faultTrajectory_tendsto_of_areas`) and the bolted-fault clearing-time results
-(`dampedBolted_trajectory`, `boltedFault_damped_clearingAngle`, `boltedFault_damped_firstSwing`,
-`boltedFault_damped_tendsto`) are private implementation evidence; the local stability of
-`(δ_s, 0)` with `D > 0` is the connection conclusion `Swing.deltaS_mem_den_locallyExponentiallyStable`.
-The well geometry (`wellWindow`, compact sublevels, the only equilibrium in the window) is public
-foundation; the elementary bounds `SpecialFunctions.exp_neg_lt_quadratic`,
-`SpecialFunctions.exp_neg_le_quadratic` are in `theorem/SpecialFunctions/Elementary.lean`.
-LaSalle is the generic `Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel`
-(`theorem/Dynamics/LaSalle/Basin.lean`).
-
-Source: work-sync theory/T-transient-stability.md §1.3, §1.5, §1.6, §1.8, §2.2.
 -/
 
 noncomputable section

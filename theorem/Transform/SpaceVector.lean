@@ -2,13 +2,14 @@ import dependencies.Mathlib
 import theorem.Attributes
 import theorem.Transform.ParkABC
 
-/-! # Space vectors for three-phase machines (foundation)
+/-! # Space vectors for three-phase machines
 
 Foundation layer for the `theorem/Drives/` family. Nothing here is a statement about a
 particular machine or controller; the results are algebraic identities about complex space
 vectors that the machine modules reuse.
 
-Conventions (shared by every `Drives` module unless a module states otherwise).
+Scope.
+Conventions (shared by every `Drives` module unless a module states otherwise):
 * A three-phase quantity `(x_a, x_b, x_c)` has the **amplitude-invariant** space vector
   `clarke x_a x_b x_c = (2/3) (x_a + a x_b + a² x_c)`, `a = e^{j2π/3}`. A balanced sinusoid of
   peak `X` maps to a vector of modulus `X`; three-phase power is `(3/2) Re(v · conj i)`.
@@ -17,7 +18,10 @@ Conventions (shared by every `Drives` module unless a module states otherwise).
   (work-sync `conventions §D` default). The synchronous-machine module is the only exception.
 * `np` is the number of **pole pairs** (mechanical speed `Ω_m = ω / np`).
 
-Contents.
+Source: work-sync `theory/T-direct-torque-control.md` §1.2–§1.3 (torque expression, inverter
+voltage vectors), `theory/T-field-oriented-control.md` §1.1 / §1.9 (complex-vector form).
+
+Results.
 * `a`, `1 + a + a² = 0`, the components of `clarke`, and its common-mode invariance.
 * The eight two-level inverter switching states give the six active vectors
   `(2/3) V_dc e^{j(k-1)π/3}` and two zero vectors (DTC / FCS-MPC voltage set).
@@ -25,9 +29,6 @@ Contents.
 * Power balance `Re(v conj i) = r|i|² + Re(ψ̇ conj i) + ω Im(conj ψ i)` and the torque
   coefficient: `T_e = (3/2) np Im(conj ψ · i)` is the unique coefficient for which
   `T_e · Ω_m` equals the speed-voltage power.
-
-Source: work-sync theory/T-direct-torque-control.md §1.2–§1.3 (torque expression, inverter
-voltage vectors), theory/T-field-oriented-control.md §1.1 / §1.9 (complex-vector form).
 
 Correction (T-direct-torque-control.md §1.2): the note defines `p` as the number of pole
 pairs but writes `T_e = (3/2)(p/2) Im{i ψ*}`. With pole pairs the coefficient is `(3/2) p`;

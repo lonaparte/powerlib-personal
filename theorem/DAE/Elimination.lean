@@ -2,39 +2,42 @@ import theorem.Linear.Transfer
 
 /-! # Elimination of DAG-ordered algebraic variables (semi-explicit index-1 DAEs)
 
-Foundation layer (category B).
+DAG-ordered algebraic constraints are solved by sequential substitution, which turns the DAE into
+an equivalent ODE on the differential states; such DAEs have index 1.
 
-System (continuous time; `X` any type of differential states, `m` algebraic variables):
+Model boundary.
+* Continuous time; `X` any type of differential states, `m` algebraic variables:
 ```
 ẋ = f(x, y),      y = φ(x, y)      (constraint g(x, y) = y - φ(x, y) = 0),
 ```
-where `φ` is *DAG-ordered* (`IsDAG φ`): the `k`-th component of `φ(x, y)` depends only on
-`x` and on `y_j` with `j < k` (`y₁ = φ₁(x)`, `y₂ = φ₂(x, y₁)`, …).
-
-Results.
-* Sequential substitution: `solveDAG φ x` (obtained by `m` passes of `y ↦ φ(x, y)`) is the
-  unique solution of `y = φ(x, y)`, for every `x` (global, no implicit-function argument).
-* Global trajectory equivalence: `(x, y)` solves the DAE on all of `ℝ`, i.e.
-  `∀ t, HasDerivAt x (f (x t) (y t)) t ∧ y t = φ (x t) (y t)` (written out in the statement),
-  iff `x` solves the ODE `ẋ = f(x, solveDAG φ x)` and `y(t) = solveDAG φ (x(t))` for every `t`.
-* Index 1: if `φ(x, ·)` is differentiable, its Jacobian is strictly lower triangular, hence
-  `∂g/∂y = I - ∂φ/∂y` is unit lower triangular with determinant `1` (in particular
-  invertible: the DAE is index 1).
-* Explicit algebraic layer (`isIntegralCurveOn_dae_iff`): a pair `(x, z)` solves
-  `ẋ = F(x, z)`, `z = G(x)` on a set `s` iff `z = G ∘ x` on `s` and `x` is an integral curve of
-  `ẋ = F(x, G(x))` on `s` (Mathlib's `IsIntegralCurveOn`; any DAG of explicit assignments composes
-  into one such `G`).
-* The d–q decoupling cancellation of §2.2 (`u_d = +ω̂ L̂ i_q`, `u_q = −ω̂ L̂ i_d` give zero
-  decoupling power) is `CurrentControl.decoupling_power_cancel`.
-
-Model boundary: deterministic, unforced (inputs and parameters may be absorbed into `f`,
-`φ`); no switching; the solution notion is a global-in-time `HasDerivAt` trajectory
-(`isIntegralCurveOn_dae_iff`: `HasDerivWithinAt` on an arbitrary time set `s`).
+  where `φ` is *DAG-ordered* (`IsDAG φ`): the `k`-th component of `φ(x, y)` depends only on `x`
+  and on `y_j` with `j < k` (`y₁ = φ₁(x)`, `y₂ = φ₂(x, y₁)`, …).
+* Deterministic, unforced (inputs and parameters may be absorbed into `f`, `φ`); no switching;
+  the solution notion is a global-in-time `HasDerivAt` trajectory (`isIntegralCurveOn_dae_iff`:
+  `HasDerivWithinAt` on an arbitrary time set `s`).
 
 Source: work-sync theory/T-dae-elimination.md §1.3 (DAG substitution, boxed reduced ODE),
 §1.4 (pointwise equivalence of DAE and ODE trajectories), §2.2 (d–q cancellation);
 theory/T-dae-systems.md §1.3 (index-1 condition `det ∂g/∂y ≠ 0`);
 theory/T-gfl-reduced-order-dynamics.md §1.2.8 (explicit algebraic layer, DAE → ODE).
+
+Results.
+* `solveDAG_spec`, `fixed_iff` — sequential substitution: `solveDAG φ x` (obtained by `m` passes
+  of `y ↦ φ(x, y)`) is the unique solution of `y = φ(x, y)`, for every `x` (global, no
+  implicit-function argument).
+* `isDAGSolution_iff` — global trajectory equivalence: `(x, y)` solves the DAE on all of `ℝ`,
+  i.e. `∀ t, HasDerivAt x (f (x t) (y t)) t ∧ y t = φ (x t) (y t)` (written out in the
+  statement), iff `x` solves the ODE `ẋ = f(x, solveDAG φ x)` and `y(t) = solveDAG φ (x(t))` for
+  every `t`.
+* `jacobian_strictLower`, `det_constraint_jacobian_eq_one` — index 1: if `φ(x, ·)` is
+  differentiable, its Jacobian is strictly lower triangular, hence `∂g/∂y = I - ∂φ/∂y` is unit
+  lower triangular with determinant `1` (in particular invertible: the DAE is index 1).
+* `isIntegralCurveOn_dae_iff` — explicit algebraic layer: a pair `(x, z)` solves
+  `ẋ = F(x, z)`, `z = G(x)` on a set `s` iff `z = G ∘ x` on `s` and `x` is an integral curve of
+  `ẋ = F(x, G(x))` on `s` (Mathlib's `IsIntegralCurveOn`; any DAG of explicit assignments
+  composes into one such `G`).
+* The d–q decoupling cancellation of §2.2 (`u_d = +ω̂ L̂ i_q`, `u_q = −ω̂ L̂ i_d` give zero
+  decoupling power) is `CurrentControl.decoupling_power_cancel`.
 -/
 
 noncomputable section

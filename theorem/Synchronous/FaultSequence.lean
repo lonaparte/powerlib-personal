@@ -1,7 +1,9 @@
 import theorem.Synchronous.EqualArea
 
 /-! # Equal-area criterion and the three-stage fault sequence of the SMIB swing model
-(trajectory level)
+
+Trajectory-level equal-area criterion and critical clearing time for the switched
+(pre-fault / during-fault / post-fault) single-machine infinite-bus swing model.
 
 Model boundary.
 * Three instances of the canonical swing model `SwingParams` (`theorem/Synchronous/Swing.lean`):
@@ -16,26 +18,28 @@ Model boundary.
   derivatives at the switching instants.  It is written out in each statement as the
   conjunction `tf ≤ tc ∧ IsIntegralCurveOn φ (fun _ x => pre.field x) (Iic tf) ∧
   IsIntegralCurveOn φ (fun _ x => fault.field x) (Icc tf tc) ∧
-  IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc)` (the former structure
-  `IsFaultTrajectory` with fields `le`, `onPre`, `onFault`, `onPost` is removed: behaviour is
-  defined only in the semantic layer).
+  IsIntegralCurveOn φ (fun _ x => post.field x) (Ici tc)` (behaviour is defined only in the
+  semantic layer, so there is no trajectory structure).
 * Single-stage statements: a post-fault statement starts from the clearing state `(δ_c, ω_c)` at
   the clearing time `t_c`, a during-fault statement from the pre-fault equilibrium `(δ₀, 0)` at
   the fault time `t_f`.  Every statement quantifies over every solution of the relevant stage on
   the stated time set.
 
-Results (all private implementation evidence: trajectory-level results outside the sentence
-language of `Synchronous.Swing.family`, Rules §3a; the static areas are in
-`theorem/Synchronous/EqualArea.lean`).
-* Single stage (formerly public in `EqualArea.lean`, moved here so that the switched-model proofs
-  can use them): energy conservation for `D = 0` (`energy_conserved`) and the **exact first-swing
-  equal-area criterion** (`firstSwing_iff`, with `firstSwing_le_deltaU`, `exists_gt_deltaU`): a
-  post-fault trajectory starting at `(δ_c, ω_c)`, `ω_c > 0`, `δ_u − 2π < δ_c ≤ δ_u`, never
-  exceeds the unstable equilibrium angle `δ_u` iff `½ M ω_c² ≤ ∫_{δ_c}^{δ_u} (P_e − P_m)`;
-  bolted three-phase fault (`P_e^f ≡ 0`, `D = 0`): explicit during-fault trajectory
-  (`boltedFault_trajectory`) and the exact critical clearing time
-  `t_cc = √(2M(δ_cc − δ₀)/P_m)` (`boltedFault_clearingTime`); general during-fault curve: time
-  spent in `[δ₀, δ_cc]` is at most `√(2M(δ_cc − δ₀)/(P_m − max P_e^f))` (`time_in_window_le`).
+Source: work-sync `theory/T-transient-stability.md` §1.1, §1.3–§1.6.
+
+Results.
+All are private implementation evidence (trajectory-level results outside the sentence language
+of `Synchronous.Swing.family`, Rules §3a); the static areas are in
+`theorem/Synchronous/EqualArea.lean`.
+* Single stage (kept next to the switched-model proofs that use them): energy conservation for
+  `D = 0` (`energy_conserved`) and the **exact first-swing equal-area criterion**
+  (`firstSwing_iff`, with `firstSwing_le_deltaU`, `exists_gt_deltaU`): a post-fault trajectory
+  starting at `(δ_c, ω_c)`, `ω_c > 0`, `δ_u − 2π < δ_c ≤ δ_u`, never exceeds the unstable
+  equilibrium angle `δ_u` iff `½ M ω_c² ≤ ∫_{δ_c}^{δ_u} (P_e − P_m)`; bolted three-phase fault
+  (`P_e^f ≡ 0`, `D = 0`): explicit during-fault trajectory (`boltedFault_trajectory`) and the
+  exact critical clearing time `t_cc = √(2M(δ_cc − δ₀)/P_m)` (`boltedFault_clearingTime`);
+  general during-fault curve: time spent in `[δ₀, δ_cc]` is at most
+  `√(2M(δ_cc − δ₀)/(P_m − max P_e^f))` (`time_in_window_le`).
 * `exists_faultTrajectory`, `faultTrajectory_unique`: from a pre-fault equilibrium the switched
   model has a three-stage trajectory resting at the equilibrium before the fault, and every
   such trajectory agrees with it after the fault (global Lipschitz bound of each stage, generic
@@ -51,19 +55,17 @@ language of `Synchronous.Swing.family`, Rules §3a; the static areas are in
   `t_c − t_f ≤ √(2M(δ_cc − δ₀)/P_m)`; `boltedFault_firstSwing_iff_classical` discharges the
   positivity side condition for the classical lossless curve `P_e^post = P_max sin δ`.
 
-Family and connection conclusions.  None: no sentence of the library (a flow property of one
-autonomous field at an equilibrium, or passivity) expresses a first-swing bound, a clearing time
-or a switched trajectory.  The local stability of the post-fault equilibria themselves is a
-connection conclusion of `Synchronous.Swing.family` (`Swing.deltaS_mem_den_*`,
-`Swing.deltaU_mem_den_unstable`).
+Family and connection conclusions.
+* None: no sentence of the library (a flow property of one autonomous field at an equilibrium, or
+  passivity) expresses a first-swing bound, a clearing time or a switched trajectory.  The local
+  stability of the post-fault equilibria themselves is a connection conclusion of
+  `Synchronous.Swing.family` (`Swing.deltaS_mem_den_*`, `Swing.deltaU_mem_den_unstable`).
 
 Corrections (beyond `theorem/Synchronous/EqualArea.lean`).
 * T-transient-stability §1.5–§1.6 present `t_cc` and the equal-area criterion for the switched
   system without stating the gluing of the three stages; here the trajectory notion is made
   explicit (the conjunction above) and the criterion is proved for every glued trajectory.  The
   boundary case `A_acc = A_dec` belongs to the stable ("does not cross `δ_u`") side.
-
-Source: work-sync theory/T-transient-stability.md §1.1, §1.3–§1.6.
 -/
 
 noncomputable section

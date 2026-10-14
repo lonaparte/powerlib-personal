@@ -3,21 +3,25 @@ import theorem.Dynamics.Degenerate.PlaneCollapse
 
 /-! # GFL model B on the singular plane: the degenerate power balance
 
-Model boundary. The model-B family `ModelB.family` of `theorem/GFL/DCLink/ModelBStability.lean`
+Model boundary.
+The model-B family `ModelB.family` of `theorem/GFL/DCLink/ModelBStability.lean`
 (field `ModelBParams.field`, state `(Δθ, x_pll, V_dc, ξ_v)`, continuous-time autonomous, constant
 grid frequency, inner current loop eliminated, reactive current frozen, no saturation, PWM, delay or
 filters), read at a selected state `x*` on the singular plane `V_dc* = 0`, where the field is read
 with Lean's `x / 0 = 0` (DC-link component `I₀ / C_dc`). This module settles the case left open in
 `theorem/GFL/DCLink/ModelBStability.lean`: the degenerate power balance `P(x*) = 0` (`P = pccP`).
 
+Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (model B); the reduction is new
+(answers the residual case of the `V_dc* = 0` question). Candidate analysis checked numerically
+(untrusted); Lean proves every statement.
+
+Results.
 Reduction. With `q = (I₀ V_dc + (3/2) P) / C_dc` (`planeQ`) the field satisfies, off the plane,
 `V_dc V_dc' = q` (`field_two_eq_planeQ_div`) and `q' = G + H q / V_dc` (`planeQ_lie`), with the
 continuous coefficients `G = (3/2)(∂_Δθ P · f_Δθ + ∂_ξ P · f_ξ) / C_dc` (`planeG`) and
 `H = (I₀ + (3/2) ∂_{V_dc} P) / C_dc` (`planeH`). In the time `dτ = dt / V_dc` this is the linear
 system `(V_dc, q)' = [[0, 1], [G, H]] (V_dc, q)`, whose type at `x*` is decided by the
 discriminant `D = H² + 4G` (`planeDisc`).
-
-Results.
 * `ModelB.mem_den_unstable_of_disc_pos`: `D > 0` ⇒ unstable. A root `λ₊ > 0` of `λ² − Hλ − G`
   on one side of the plane gives an invariant cone `{σ V_dc > 0, q ≥ μ σ V_dc}` in which
   `σ V_dc` grows linearly (`Dynamics.Degenerate.unstable_of_cone`).
@@ -33,22 +37,18 @@ Results.
   `planeG`, `planeH`, `planeDisc`, `hasFDerivAt_planeQ`, `planeQ_lie`, `field_two_eq_planeQ_div`,
   `continuous_planeG`, `continuous_planeH`, `exists_contDiff_eq_field_of_sign`.
 
-The degenerate discriminant `D = 0` (with `P(x*) = 0`, `I₀ / C_dc ≠ 0`) is treated in
-`theorem/GFL/DCLink/ModelBCollapseDegenerate.lean`: `H ≠ 0` ⇒ unstable, `H = G = 0` with nonzero
-drift `(f₀, f₁, f₃)(x*)` ⇒ not locally exponentially stable; it leaves (UNPROVED) only the residual
-set `{P = 0, I₀ / C_dc ≠ 0, H = 0, f₀ = f₁ = f₃ = 0}`, which forces `V_dc,ref = 0`.
-
-Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (model B); the reduction is new
-(answers the residual case of the `V_dc* = 0` question). Candidate analysis checked numerically
-(untrusted); Lean proves every statement.
-
-## Family and connection conclusions
+Family and connection conclusions.
 Connection conclusions on `ModelB.family`: `mem_den_unstable_of_disc_pos`,
 `mem_den_locallyExponentiallyStable_of_disc_neg`,
 `degenerateFocus_mem_den_locallyExponentiallyStable`,
 `mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nondegenerate`. The plane coefficients and
 their identities are foundation; the trajectory-level statements are private implementation
 evidence.
+
+The degenerate discriminant `D = 0` (with `P(x*) = 0`, `I₀ / C_dc ≠ 0`) is treated in
+`theorem/GFL/DCLink/ModelBCollapseDegenerate.lean`: `H ≠ 0` ⇒ unstable, `H = G = 0` with nonzero
+drift `(f₀, f₁, f₃)(x*)` ⇒ not locally exponentially stable; it leaves (UNPROVED) only the residual
+set `{P = 0, I₀ / C_dc ≠ 0, H = 0, f₀ = f₁ = f₃ = 0}`, which forces `V_dc,ref = 0`.
 -/
 
 noncomputable section

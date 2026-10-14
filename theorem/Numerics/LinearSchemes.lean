@@ -1,37 +1,40 @@
 import theorem.LTI.Discrete
 
-/-! One-step time-integration schemes for an autonomous vector field, and their exact
-reduction to discrete LTI recursions when the field is linear.
+/-! # One-step schemes for an autonomous field and their linear-field reduction
+
+One-step time-integration schemes for an autonomous vector field, their exact reduction to
+discrete LTI recursions when the field is linear, and the stability of those recursions.
 
 Model boundary.
-* The continuous model is an autonomous field `f : E → E` (`ẋ = f x`), with a fixed step
-  `h`.  For the linear results `E = Fin n → ℝ` and `f = linearField A`, i.e. `ẋ = A x`;
-  inputs, if any, are already set to zero (perturbation coordinates).
-* Schemes are trajectory predicates written directly from the update rule:
-  forward Euler `x_{k+1} = x_k + h f(x_k)`, backward Euler `x_{k+1} = x_k + h f(x_{k+1})`,
-  trapezoidal rule `x_{k+1} = x_k + (h/2)(f(x_k) + f(x_{k+1}))`.  No step-size control, no
-  Newton iteration error: the implicit equation is assumed solved exactly.
+* The continuous model is an autonomous field `f : E → E` (`ẋ = f x`), with a fixed step `h`.
+  For the linear results `E = Fin n → ℝ` and `f = linearField A`, i.e. `ẋ = A x`; inputs, if
+  any, are already set to zero (perturbation coordinates).
+* Schemes are trajectory predicates written directly from the update rule: forward Euler
+  `x_{k+1} = x_k + h f(x_k)`, backward Euler `x_{k+1} = x_k + h f(x_{k+1})`, trapezoidal rule
+  `x_{k+1} = x_k + (h/2)(f(x_k) + f(x_{k+1}))`. No step-size control, no Newton iteration
+  error: the implicit equation is assumed solved exactly.
 * For a linear field the predicates are proved equivalent to the discrete recursions with
   matrices `1 + hA`, `(1 - hA)⁻¹` and `(1 - (h/2)A)⁻¹ (1 + (h/2)A)` (the latter two whenever
   the implicit matrix is invertible).
 * Stability statements are about the discretized recursion, not the continuous system.
 
-Main results.
-* `isUnit_det_one_sub_smul_of_isHurwitz`: for a Hurwitz `A` and any `c > 0`, `1 - cA` is
+Source: work-sync theory/T-numerical-integration.md §1.2, §1.3, §1.7, §2.7;
+theory/T-emt-simulation.md §1.3–§1.5 (trapezoidal discretization).
+
+Results.
+* `isUnit_det_one_sub_smul_of_isHurwitz` — for a Hurwitz `A` and any `c > 0`, `1 - cA` is
   invertible, so backward Euler and the trapezoidal rule are uniquely solvable for every
   `h > 0`.
-* `trapezoidal_schurStable_iff_isHurwitz`: when well posed, the trapezoidal recursion is
-  Schur stable exactly when `A` is Hurwitz (A-stability with an exact stability region,
-  through the Cayley map `μ = (1 + hlam/2)/(1 - hlam/2)`).
-* `backwardEuler_schurStable_of_isHurwitz`: Hurwitz implies Schur stability of backward
-  Euler (one direction only: backward Euler also damps some unstable modes).
-* `forwardEuler_schurStable_iff`: forward Euler is Schur stable exactly when every
-  eigenvalue `λ` satisfies `‖1 + hlam‖ < 1`.
-* `trapezoidal_exponentiallyStable_of_isHurwitz`, `backwardEuler_exponentiallyStable_of_isHurwitz`:
-  trajectory-level geometric decay of every scheme trajectory.
-
-Source: work-sync theory/T-numerical-integration.md §1.2, §1.3, §1.7, §2.7;
-theory/T-emt-simulation.md §1.3–§1.5 (trapezoidal discretization).  Foundation results.
+* `trapezoidal_schurStable_iff_isHurwitz` — when well posed, the trapezoidal recursion is Schur
+  stable exactly when `A` is Hurwitz (A-stability with an exact stability region, through the
+  Cayley map `μ = (1 + hlam/2)/(1 - hlam/2)`).
+* `backwardEuler_schurStable_of_isHurwitz` — Hurwitz implies Schur stability of backward Euler
+  (one direction only: backward Euler also damps some unstable modes).
+* `forwardEuler_schurStable_iff` — forward Euler is Schur stable exactly when every eigenvalue
+  `λ` satisfies `‖1 + hlam‖ < 1`.
+* `trapezoidal_exponentiallyStable_of_isHurwitz`,
+  `backwardEuler_exponentiallyStable_of_isHurwitz` — trajectory-level geometric decay of every
+  scheme trajectory.
 -/
 
 noncomputable section

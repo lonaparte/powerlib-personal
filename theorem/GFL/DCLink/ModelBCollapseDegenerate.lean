@@ -2,7 +2,8 @@ import theorem.GFL.DCLink.ModelBCollapse
 
 /-! # GFL model B on the singular plane: the degenerate discriminant `D = 0`
 
-Model boundary. The model-B family `ModelB.family` of `theorem/GFL/DCLink/ModelBStability.lean`
+Model boundary.
+The model-B family `ModelB.family` of `theorem/GFL/DCLink/ModelBStability.lean`
 (field `ModelBParams.field`, state `(Δθ, x_pll, V_dc, ξ_v)`, continuous-time autonomous, constant
 grid frequency, inner current loop eliminated, reactive current frozen, no saturation, PWM, delay or
 filters), read at a selected state `x*` on the singular plane `V_dc* = 0` with the degenerate power
@@ -10,6 +11,10 @@ balance `P(x*) = 0` (`P = pccP`), where the field is read with Lean's `x / 0 = 0
 treats the discriminant `D = H² + 4G = 0` (`planeDisc`) left open in
 `theorem/GFL/DCLink/ModelBCollapse.lean`, with `q = planeQ`, `G = planeG`, `H = planeH` as there
 (`V_dc V_dc' = q`, `q' = G + H q / V_dc` off the plane).
+
+Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (model B); the analysis is new
+(answers the residual case of the `V_dc* = 0` question). Candidate behaviour checked numerically
+(untrusted); Lean proves every statement.
 
 Results.
 * `ModelB.mem_den_unstable_of_disc_eq_zero`: `D = 0` and `H(x*) ≠ 0` (a degenerate node of the
@@ -34,21 +39,17 @@ Results.
 * Static support (foundation): `contDiff_planeG`, `contDiff_planeH`, `fderiv_planeQ_single`,
   `field_sub_single`.
 
-Remaining (UNPROVED): the residual set above (nilpotent reduced system without drift; it forces
-`V_dc,ref = 0`, `v_q(x*) = 0` and `ω_s − ω_g + k_i x_pll* = 0`). There the whole state is slow near
-`x*` and local exponential stability is decided by higher-order terms of the field.
-
-Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (model B); the analysis is new
-(answers the residual case of the `V_dc* = 0` question). Candidate behaviour checked numerically
-(untrusted); Lean proves every statement.
-
-## Family and connection conclusions
+Family and connection conclusions.
 Connection conclusions on `ModelB.family`: `mem_den_unstable_of_disc_eq_zero`,
 `degenerateNode_mem_den_unstable`, `not_mem_den_locallyExponentiallyStable_of_nilpotent`,
 `nilpotentDrift_not_mem_den_locallyExponentiallyStable`,
 `mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nonresidual`,
 `mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_VdcRef`. The coefficient regularity is
 foundation; the trajectory-level statements are private implementation evidence.
+
+Remaining (UNPROVED): the residual set above (nilpotent reduced system without drift; it forces
+`V_dc,ref = 0`, `v_q(x*) = 0` and `ω_s − ω_g + k_i x_pll* = 0`). There the whole state is slow near
+`x*` and local exponential stability is decided by higher-order terms of the field.
 -/
 
 noncomputable section

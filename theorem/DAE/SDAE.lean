@@ -2,33 +2,34 @@ import theorem.DAE.Linear
 
 /-! # Linear SDAE with additive noise: Schur-complement reduction keeps the diffusion
 
-Foundation layer (category B).
+For a linear index-1 SDAE with additive noise in the differential equations, Schur-complement
+elimination reduces the drift and leaves the diffusion unchanged.
 
-System (pathwise integral form, `q` noise channels, additive noise only in the differential
-equations — the standing assumption of the source note):
+Model boundary.
+* Pathwise integral form, `q` noise channels, additive noise only in the differential
+  equations — the standing assumption of the source note:
 ```
 X(t) = X(0) + ∫₀ᵗ (Axx X + Axy Y + Bx u) ds + G (W(t) - W(0)),
 0    = Ayx X(t) + Ayy Y(t) + By u(t)          for all t.
 ```
-`W` is an arbitrary driving path (e.g. a Brownian sample path; for additive constant `G` the
-Itô integral `∫₀ᵗ G dW` equals `G (W(t) - W(0))` pathwise, so no stochastic calculus is
-needed). The drift integrals are interval integrals of `Fin n → ℝ`-valued functions.
-
-A path of the SDAE is a pair `(X, Y)` satisfying both lines for every `t` (written out in the
-statement of `isSDAEPath_iff`; there is no separate path predicate, by the single-semantics
-rule).
-
-Result (index 1, `Ayy` invertible): `(X, Y)` is a path of the SDAE iff
-`X(t) = X(0) + ∫₀ᵗ (A_red X + B_red u) ds + G (W(t) - W(0))` and
-`Y(t) = -Ayy⁻¹ (Ayx X(t) + By u(t))`: the drift is reduced by the Schur complement
-(`LinearDAE.schurA`, `LinearDAE.schurB`) and the diffusion is unchanged, `G_red = G`.
-
-Model boundary: linear, additive noise entering only the differential equations, noise not
-in the algebraic constraint, index 1. State-dependent diffusion or noisy constraints (the
-exceptions listed in the note) are not covered; covariance (Lyapunov) results are elsewhere.
+  `W` is an arbitrary driving path (e.g. a Brownian sample path; for additive constant `G` the
+  Itô integral `∫₀ᵗ G dW` equals `G (W(t) - W(0))` pathwise, so no stochastic calculus is
+  needed). The drift integrals are interval integrals of `Fin n → ℝ`-valued functions.
+* A path of the SDAE is a pair `(X, Y)` satisfying both lines for every `t` (written out in the
+  statement of `isSDAEPath_iff`; there is no separate path predicate, by the single-semantics
+  rule).
+* Linear, additive noise entering only the differential equations, noise not in the algebraic
+  constraint, index 1. State-dependent diffusion or noisy constraints (the exceptions listed in
+  the note) are not covered; covariance (Lyapunov) results are elsewhere.
 
 Source: work-sync theory/T-sdae-systems.md §1.0–§1.1 (Schur complement `A_red` and
 `G_red = G`).
+
+Results.
+* `isSDAEPath_iff` — index 1, `Ayy` invertible: `(X, Y)` is a path of the SDAE iff
+  `X(t) = X(0) + ∫₀ᵗ (A_red X + B_red u) ds + G (W(t) - W(0))` and
+  `Y(t) = -Ayy⁻¹ (Ayx X(t) + By u(t))`: the drift is reduced by the Schur complement
+  (`LinearDAE.schurA`, `LinearDAE.schurB`) and the diffusion is unchanged, `G_red = G`.
 -/
 
 noncomputable section

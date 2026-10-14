@@ -25,7 +25,12 @@ Model boundary.
   line dynamics, outer loops, saturation, delay, PWM, measurement filters, noise. The stochastic
   extension is not modelled.
 
-Results (all static).
+Source: work-sync `theory/T-gfl-dynamics.md` §1.7 (boxed 2D ODE), §1.9 (equilibria), §1.10
+(Jacobian and local stability), §1.12 (`Σ_FD`); `theory/T-bogdanov-takens-bifurcation.md` §1.6;
+`theory/T-gfl-ph.md` (1.1); `projects/vsc-stochastic-stability/notes/concepts/
+equilibria-and-bifurcation.md` §1, §3 (written with `δω = 0`).
+
+Results.
 * Equilibria (`K_i ≠ 0`): exactly `{(θ*, δω / K_i) : h(θ*) = 0}`, for **every** constant `δω`.
   Hence existence of an equilibrium does not depend on `δω`. With `K_i = 0` an equilibrium needs
   `δω = 0` (`piPLLField_point_eq_zero_iff` covers both cases at the selected point).
@@ -34,17 +39,6 @@ Results (all static).
 * `h'(θ*) = 0` (`K_i ≠ 0`): the Jacobian is a nonzero nilpotent matrix (loss of hyperbolicity;
   linearization decides nothing).
 
-Source: work-sync `theory/T-gfl-dynamics.md` §1.7 (boxed 2D ODE), §1.9 (equilibria), §1.10
-(Jacobian and local stability), §1.12 (`Σ_FD`); `theory/T-bogdanov-takens-bifurcation.md` §1.6;
-`theory/T-gfl-ph.md` (1.1); `projects/vsc-stochastic-stability/notes/concepts/
-equilibria-and-bifurcation.md` §1, §3 (written with `δω = 0`).
-
-Sign conventions of the sources. `T-gfl-dynamics` §1.7, `T-gfl-ph` (1.1) and this module use
-`θ̇ = K_p h + K_i η − δω`. The vsc note and `T-bogdanov-takens` §1.6 drop `δω` (take `δω = 0`).
-`T-gfl-dynamics` §1.12 writes `θ̇ = −K_p h − K_i η − δω`; with `η̇ = h` that field is this one with
-`h` replaced by `−h` and `η` by `−η` (so its stability condition would read `h' > 0`); §1.12 is
-inconsistent with §1.7–§1.10 and this module follows §1.7.
-
 Correction (`T-gfl-dynamics` §1.12, `Σ_FD`, and §1.14 region D): the note claims that when
 `|δω| > K_p max |h|` "the system loses all equilibria". This is false for the reduced model of
 §1.7: the PI integrator absorbs any constant frequency offset, the equilibria are
@@ -52,6 +46,12 @@ Correction (`T-gfl-dynamics` §1.12, `Σ_FD`, and §1.14 region D): the note cla
 `piPLL_frequencyDriftBoundary_refuted` state this statically; the connection conclusions
 `PIPLL.frequencyDriftBoundary_refuted` and `PIPLL.frequencyDriftBoundary_stable` of
 `PIPLLFamily` refute the claim through the family's requirement and semantics connections.
+
+Sign conventions of the sources. `T-gfl-dynamics` §1.7, `T-gfl-ph` (1.1) and this module use
+`θ̇ = K_p h + K_i η − δω`. The vsc note and `T-bogdanov-takens` §1.6 drop `δω` (take `δω = 0`).
+`T-gfl-dynamics` §1.12 writes `θ̇ = −K_p h − K_i η − δω`; with `η̇ = h` that field is this one with
+`h` replaced by `−h` and `η` by `−η` (so its stability condition would read `h' > 0`); §1.12 is
+inconsistent with §1.7–§1.10 and this module follows §1.7.
 -/
 
 noncomputable section

@@ -6,42 +6,51 @@ import Mathlib.Probability.Moments.Variance
 
 /-! # Quadratic variation of Brownian motion in `L²`
 
-Source: work-sync `theory/T-sde-systems.md` §1.2 (quadratic variation `[W]_t = t`:
+The quadratic sums of Brownian motion along deterministic partitions converge to the elapsed
+time in `L²`; along path-dependent partitions they need not.
+
+Scope.
+* `W` is Mathlib's `IsPreBrownianReal` (finite-dimensional laws of Brownian motion; path
+  continuity is not used). Everything is proved from independence of increments and the
+  Gaussian moments `E X² = v`, `E X⁴ = 3v²` (the fourth moment is obtained from the moment
+  generating function `exp(v s²/2)`).
+* A result about Brownian motion, not an engineering stability conclusion.
+
+Source: work-sync theory/T-sde-systems.md §1.2 (quadratic variation `[W]_t = t`:
 `∑ (W_{t_{i+1}} − W_{t_i})² → t` as the mesh of the partition of `[0, t]` tends to `0`).
 
-Scope (Rules §3).  `W` is Mathlib's `IsPreBrownianReal` (finite-dimensional laws of Brownian
-motion; path continuity is not used).  Everything is proved from independence of increments
-and the Gaussian moments `E X² = v`, `E X⁴ = 3v²` (the fourth moment is obtained from the
-moment generating function `exp(v s²/2)`).  Foundation result about Brownian motion, not an
-engineering stability conclusion.
-
-Main results.
-* `integral_pow_four_gaussianReal_zero`: `∫ x⁴ dN(0, v) = 3 v²`;
+Results.
+* `integral_pow_four_gaussianReal_zero` — `∫ x⁴ dN(0, v) = 3 v²`;
   `variance_sq_of_hasLaw_gaussian`: `Var(X²) = 2v²` for `X ~ N(0, v)`.
-* `qvSum_mean`: `E ∑ (ΔW_i)² = t_n − t_0`.
-* `qvSum_L2_identity`: `E[(∑ (ΔW_i)² − (t_n − t_0))²] = 2 ∑ (Δt_i)²` for every monotone
+* `qvSum_mean` — `E ∑ (ΔW_i)² = t_n − t_0`.
+* `qvSum_L2_identity` — `E[(∑ (ΔW_i)² − (t_n − t_0))²] = 2 ∑ (Δt_i)²` for every monotone
   partition (independent increments + Gaussian fourth moment).
-* `qvSum_L2_le`: if every step is `≤ δ`, the `L²` error is `≤ 2 δ (t_n − t_0)`.
-* `qv_tendsto_L2`: for partitions of `[0, T]` with mesh `δ_k → 0` the `L²` error tends to `0`;
+* `qvSum_L2_le` — if every step is `≤ δ`, the `L²` error is `≤ 2 δ (t_n − t_0)`.
+* `qv_tendsto_L2` — for partitions of `[0, T]` with mesh `δ_k → 0` the `L²` error tends to `0`;
   `qv_tendsto_inProbability`: hence convergence in probability (Chebyshev).
 
-Correction (T-sde-systems §1.2).  The quadratic-variation limit holds in `L²` (hence in
-probability) for **arbitrary deterministic** partitions with vanishing mesh, which is what is
-proved here.  "`∑ (ΔW)² → t` almost surely along any partitions with mesh → 0" is false once the
-partitions may depend on the path; formal counterexample:
-* `greedyPartition B T k ω`: start from the dyadic grid of `[0, T]` with `2^(k+1)` steps and delete
-  the midpoint `t_{2j+1}` of each pair exactly when the two half-increments have the same strict
-  sign (encoded as a time sequence with a repeated point); `greedyPartition_spec`: a partition of
-  `[0, T]` with mesh `≤ T / 2^k`; `qvSum_greedyPartition`: its quadratic sum is
-  `∑_j g(a_j, b_j)`, `g(a, b) = (a + b)²` if `ab > 0` and `a² + b²` otherwise;
-* `greedyQV_mean`: `E = T (1 + 2m²)` with `m = E[Z⁺] > 0` (`posPartMean_pos`; Gaussian scaling
-  and independence of the half-increments); `greedyQV_variance_le`: `Var ≤ 12 T² / 2^k`;
-* `greedyQV_tendstoInMeasure`: the sums converge in probability to `T (1 + 2m²) ≠ T`;
-* `qv_pathDependent_not_ae`: for `T > 0`, for `P`-almost every path the quadratic sums along these
-  path-dependent partitions with mesh `→ 0` do **not** converge to `T`.
-(`m = 1/√(2π)`, so the limit is `T (1 + 1/π)`; the exact value is not needed and not formalized.)
-Whether `a.s.` convergence can fail along **deterministic** partitions with mesh `→ 0` (it can,
-for slowly shrinking non-nested meshes) is not formalized.
+Corrections.
+* T-sde-systems §1.2: the quadratic-variation limit holds in `L²` (hence in probability) for
+  **arbitrary deterministic** partitions with vanishing mesh, which is what is proved here.
+  "`∑ (ΔW)² → t` almost surely along any partitions with mesh → 0" is false once the partitions
+  may depend on the path; formal counterexample:
+  * `greedyPartition B T k ω`: start from the dyadic grid of `[0, T]` with `2^(k+1)` steps and
+    delete the midpoint `t_{2j+1}` of each pair exactly when the two half-increments have the
+    same strict sign (encoded as a time sequence with a repeated point);
+    `greedyPartition_spec`: a partition of `[0, T]` with mesh `≤ T / 2^k`;
+    `qvSum_greedyPartition`: its quadratic sum is `∑_j g(a_j, b_j)`, `g(a, b) = (a + b)²` if
+    `ab > 0` and `a² + b²` otherwise;
+  * `greedyQV_mean`: `E = T (1 + 2m²)` with `m = E[Z⁺] > 0` (`posPartMean_pos`; Gaussian scaling
+    and independence of the half-increments); `greedyQV_variance_le`: `Var ≤ 12 T² / 2^k`;
+  * `greedyQV_tendstoInMeasure`: the sums converge in probability to `T (1 + 2m²) ≠ T`;
+  * `qv_pathDependent_not_ae`: for `T > 0`, for `P`-almost every path the quadratic sums along
+    these path-dependent partitions with mesh `→ 0` do **not** converge to `T`.
+  (`m = 1/√(2π)`, so the limit is `T (1 + 1/π)`; the exact value is not needed and not
+  formalized.)
+
+Not formalized.
+* Whether `a.s.` convergence can fail along **deterministic** partitions with mesh `→ 0` (it
+  can, for slowly shrinking non-nested meshes).
 -/
 
 noncomputable section

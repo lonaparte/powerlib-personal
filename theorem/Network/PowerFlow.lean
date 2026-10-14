@@ -4,13 +4,25 @@ import theorem.Network.WeightedLaplacian
 
 /-! # Power flow: the lossless injection map, two-bus line powers, the decoupling rotation
 
-Foundation: the lossless active-power injection map of a network, and identities and derivatives
-of the complex power `S̄ = V̄ Ī*` carried by one line between two voltage phasors. No model family
-is defined and no behavioural sentence is stated.
+Static foundation: the lossless active-power injection map of a network, and identities and
+derivatives of the complex power `S̄ = V̄ Ī*` carried by one line between two voltage phasors.
+No model family is defined and no behavioural sentence is stated.
 
-* `powerInjection`: the lossless injections `Pᵢ(θ) = ∑ⱼ bᵢⱼ sin(θᵢ − θⱼ)` (constant voltage
-  magnitudes absorbed into `bᵢⱼ = VᵢVⱼ/Xᵢⱼ`); its Jacobian is the weighted Laplacian
-  (`theorem/Network/WeightedLaplacian.lean`) of the linearization weights
+Model boundary.
+* Network: lossless lines, constant voltage magnitudes absorbed into `bᵢⱼ = VᵢVⱼ/Xᵢⱼ`, active
+  power only.
+* One line: source `E ∠ δ` through `Z = R + jX` into `V ∠ 0`; the converter-side and grid-side
+  identities use a purely reactive line `X` from `V e^{jθ}` to `V_g` (export current
+  `Ī = (V e^{jθ} − V_g)/(jX)`).
+* Phasor (steady-state) level: no line or machine dynamics.
+
+Source: work-sync `theory/T-droop-control.md` §1.2, §1.5;
+`theory/T-power-synchronization-control.md` §1.1; the injection map as in
+`theory/T-synchronization-manifold.md` §1.7 and `theory/T-local-frequency.md` §1.2–§1.5.
+
+Results.
+* `powerInjection`: the lossless injections `Pᵢ(θ) = ∑ⱼ bᵢⱼ sin(θᵢ − θⱼ)`; its Jacobian is the
+  weighted Laplacian (`theorem/Network/WeightedLaplacian.lean`) of the linearization weights
   `flowWeights b θ = bᵢⱼ cos(θᵢ − θⱼ)` (`hasFDerivAt_powerInjection`). Used by the networked
   swing equations (`theorem/Network/Swing/`) and the frequency divider
   (`theorem/Network/FrequencyDivider.lean`).
@@ -21,17 +33,11 @@ is defined and no behavioural sentence is stated.
   `sin θ_l = X/|Z|`), diagonalizes that Jacobian; inductive line (`θ_l = π/2`): `R(β) = I`
   (`rotation_inductive`, classical P–f / Q–V droop); resistive line (`θ_l = 0`):
   `(P̂, Q̂) = (−Q, P)` (`rotation_resistive`, inverse droop).
-* Purely reactive line `X` from `V e^{jθ}` to `V_g` (export current
-  `Ī = (V e^{jθ} − V_g)/(jX)`): the converter-side power `S̄ = V̄_conv Ī*`, `P = V V_g sin θ / X`,
+* Purely reactive line: the converter-side power `S̄ = V̄_conv Ī*`, `P = V V_g sin θ / X`,
   `Q_conv = (V² − V V_g cos θ)/X` (`converterSide_power`), and the power received at the grid
   bus `S̄_g = V̄_g Ī*`, `Q_g = (V V_g cos θ − V_g²)/X` (`gridSide_power`).
-
-The rotated droop of `theorem/GFM/DroopAlgebra.lean` and the reactive-power correction of
-`theorem/GFM/PSC.lean` refer to these identities.
-
-Source: work-sync theory/T-droop-control.md §1.2, §1.5; theory/T-power-synchronization-control.md
-§1.1; the injection map as in theory/T-synchronization-manifold.md §1.7 and
-theory/T-local-frequency.md §1.2–§1.5.
+* The rotated droop of `theorem/GFM/DroopAlgebra.lean` and the reactive-power correction of
+  `theorem/GFM/PSC.lean` refer to these identities.
 -/
 
 noncomputable section

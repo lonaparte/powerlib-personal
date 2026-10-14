@@ -2,56 +2,65 @@ import theorem.Network.Swing.Basic
 import theorem.Dynamics.LaSalle.Ball
 import theorem.Dynamics.Instability
 
-/-! # Networked swing equations: energy, degenerate linearizations and local asymptotic stability
+/-! # Networked swing equations: energy, degenerate linearizations, local asymptotic stability
+
+The energy function of the swing network, its Taylor expansion at a power-balance point, and the
+complete characterization of local asymptotic stability, which decides the exactness of the local
+asymptotic translation for two and three machines.
+
+Model boundary.
+* Exactly the model of `theorem/Network/Swing/Basic.lean` (`Swing.family`): `n + 1` machines,
+  reduced state `(δ, ω)` of order `Fin (n + (n + 1))` (relative angles `δᵢ = θ_{i+1} − θ₀`, then
+  all frequency deviations), positive inertia and damping, constant power, symmetric nonnegative
+  couplings, lossless Kron-reduced network, constant voltages; no governor, AVR, PLL, converter
+  control, delay or PWM; continuous time. Statements concern the selected angle profile `θ*` of
+  a model.
 
 Source: work-sync `theory/T-synchronization-manifold.md` §1.7 and §2.2 (swing network
-`Mᵢ θ̈ᵢ = P_{m,i} − Dᵢ θ̇ᵢ − ∑ⱼ Bᵢⱼ sin(θᵢ − θⱼ)` and its energy function); the model is
-`theorem/Network/Swing/Basic.lean` (`Swing.family`).
-
-Model boundary. Exactly the model of `theorem/Network/Swing/Basic.lean`: `n + 1` machines, reduced
-state `(δ, ω)` of order `Fin (n + (n + 1))` (relative angles `δᵢ = θ_{i+1} − θ₀`, then all frequency
-deviations), positive inertia and damping, constant power, symmetric nonnegative couplings, lossless
-Kron-reduced network, constant voltages; no governor, AVR, PLL, converter control, delay or PWM;
-continuous time. Statements concern the selected angle profile `θ*` of a model.
+`Mᵢ θ̈ᵢ = P_{m,i} − Dᵢ θ̇ᵢ − ∑ⱼ Bᵢⱼ sin(θᵢ − θⱼ)` and its energy function).
 
 Results.
-* Energy (static foundation): `potential` `U(θ) = −∑ Pₖθₖ − ½∑ₖ∑ⱼ Bₖⱼ cos(θₖ − θⱼ)` with gradient
-  `Pₖ(θ) − Pₖ` (`hasFDerivAt_potential`), `energy` (kinetic plus potential of the absolute angles)
-  and the energy balance `lie_energy` (`Ė = −∑ Dₖωₖ² + ω₀ ∑ Pₖ`, so `Ė ≤ 0` at a power-balance point,
-  `lie_energy_nonpos`).
-* Edge form and Taylor expansion: `potential_add_sub` (`U(θ + u) − U(θ) = ½∑ Bₖⱼ g(θₖ − θⱼ, uₖ − uⱼ)`),
-  `edgeIncrement_taylor`, `exists_potential_lt` (a direction with `A₂ < 0`, or `A₂ = 0` and `A₃ ≠ 0`,
-  lowers the potential at arbitrarily small steps).
+* Energy (static foundation): `potential` `U(θ) = −∑ Pₖθₖ − ½∑ₖ∑ⱼ Bₖⱼ cos(θₖ − θⱼ)` with
+  gradient `Pₖ(θ) − Pₖ` (`hasFDerivAt_potential`), `energy` (kinetic plus potential of the
+  absolute angles) and the energy balance `lie_energy` (`Ė = −∑ Dₖωₖ² + ω₀ ∑ Pₖ`, so `Ė ≤ 0` at a
+  power-balance point, `lie_energy_nonpos`).
+* Edge form and Taylor expansion: `potential_add_sub`
+  (`U(θ + u) − U(θ) = ½∑ Bₖⱼ g(θₖ − θⱼ, uₖ − uⱼ)`, `g = edgeIncrement`; `B g` is the line
+  potential `CycleMinimum.edgeG` of `theorem/Network/Swing/CycleMinimum.lean`),
+  `edgeIncrement_taylor`, `exists_potential_lt` (a direction with `A₂ < 0`, or `A₂ = 0` and
+  `A₃ ≠ 0`, lowers the potential at arbitrarily small steps).
 * Necessary conditions for local asymptotic stability (generic in `n`):
   `not_localAsymptoticStable_of_potential_lt` (a non-minimum of the potential),
   `not_localAsymptoticStable_of_balance_line` (a continuum of equilibria),
   `not_localAsymptoticStable_of_forms` (saddle or fold direction).
-* Hurwitz test with signed weights: `jacobian_isHurwitz_of_hessForm` (the reduced Jacobian is Hurwitz
-  when `A₂` is positive on grounded directions), `exists_hessForm_nonpos`.
-* Complete membership characterization, every `n`: `mem_den_locallyAsymptoticallyStable_iff` (local
-  asymptotic stability ⇔ power balance ∧ a strict local minimum of the potential in relative angles
-  ∧ an isolated power-balance point). Sufficiency by LaSalle (`localAsymptoticStable_of_strictMin`,
-  via the new foundation `Dynamics.LaSalle.localAsymptoticStable_of_lasalle_ball`); necessity by the energy
+* Hurwitz test with signed weights: `jacobian_isHurwitz_of_hessForm` (the reduced Jacobian is
+  Hurwitz when `A₂` is positive on grounded directions), `exists_hessForm_nonpos`.
+* Complete membership characterization, every `n`: `mem_den_locallyAsymptoticallyStable_iff`
+  (local asymptotic stability ⇔ power balance ∧ a strict local minimum of the potential in
+  relative angles ∧ an isolated power-balance point). Sufficiency by LaSalle
+  (`localAsymptoticStable_of_strictMin`, via the foundation
+  `Dynamics.LaSalle.localAsymptoticStable_of_lasalle_ball`); necessity by the energy
   (`strictMin_of_localAsymptoticStable`, with `balance_of_isLocalMin`).
 * Exactness of the local asymptotic translation `{powerFlow, jacobianStable}`:
   `exact_locallyAsymptoticallyStable_two` (two machines, `n = 1`, via
-  `not_localAsymptoticStable_two`) and `exact_locallyAsymptoticallyStable_three` (three machines,
-  `n = 2`, via `not_localAsymptoticStable_three`, `triangle_cubic_ne_zero`,
+  `not_localAsymptoticStable_two`) and `exact_locallyAsymptoticallyStable_three` (three
+  machines, `n = 2`, via `not_localAsymptoticStable_three`, `triangle_cubic_ne_zero`,
   `sin_mul_cos_same_sign`, `node_open_or_antiphase`, `balance_line_of_edges`): on at most three
   machines every singular positive semidefinite Hessian is a fold (nonzero cubic term along the
   null direction) or comes with a continuum of equilibria. For five or more machines the
   translation is not exact (`theorem/Network/Swing/DegenerateRing.lean`).
-* Four machines (`n = 3`): `theorem/Network/Swing/Four.lean` proves exactness for every network with
-  at most four lines (`mem_den_locallyAsymptoticallyStable_iff_four`; two uncoupled machine pairs:
-  a subgraph of a four-cycle, the cubic term by superadditivity of `tan`, or of a triangle with a
-  pendant line) and the cut and flat-direction tests for every `n`;
+* Four machines (`n = 3`): `theorem/Network/Swing/Four.lean` proves exactness for every network
+  with at most four lines (`mem_den_locallyAsymptoticallyStable_iff_four`; two uncoupled machine
+  pairs: a subgraph of a four-cycle, the cubic term by superadditivity of `tan`, or of a triangle
+  with a pendant line) and the cut and flat-direction tests for every `n`;
   `theorem/Network/Swing/FourDense.lean` decides the diamond and the complete graph and proves
   `exact_locallyAsymptoticallyStable_four` (exact for every four-machine network) and
   `mem_den_locallyAsymptoticallyStable_iff_four_machines`.
 
-Connection architecture. The family is `Swing.family`; the public model conclusions are
-`connection%` statements on its generated denotations. Energy, Taylor and Hurwitz lemmas are static
-or generic implications (foundation); trajectory facts stay inside the generic dynamics tools.
+Family and connection conclusions.
+* The family is `Swing.family`; the public model conclusions are `connection%` statements on its
+  generated denotations. Energy, Taylor and Hurwitz lemmas are static or generic implications
+  (foundation); trajectory facts stay inside the generic dynamics tools.
 -/
 
 noncomputable section
@@ -367,7 +376,9 @@ equilibrium. -/
 
 /-! ## Taylor expansion of the potential at a power-balance point -/
 
-/-- Edge increment of the potential, `g(φ, x) = cos φ − cos(φ + x) − x sin φ`. -/
+/-- Edge increment of the potential, `g(φ, x) = cos φ − cos(φ + x) − x sin φ`. Multiplied by the
+line coupling `B` it is the line potential `CycleMinimum.edgeG (B cos φ) (B sin φ) x` of
+`theorem/Network/Swing/CycleMinimum.lean`. -/
 def edgeIncrement (φ x : ℝ) : ℝ := Real.cos φ - Real.cos (φ + x) - x * Real.sin φ
 
 /-- **Edge form of the potential.** At a power-balance point

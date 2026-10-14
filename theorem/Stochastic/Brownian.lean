@@ -8,27 +8,40 @@ import Mathlib.Probability.ConditionalExpectation
 
 /-! # Brownian motion: Mathlib interface, martingales of the natural filtration, GBM moments
 
-Source: work-sync `theory/T-sde-systems.md` §1.2 (Wiener process: `W₀ = 0`, independent
+Mathlib's Brownian motion with its basic laws, the three classical martingales of its natural
+filtration, and the moments of geometric Brownian motion.
+
+Scope.
+* Brownian motion is Mathlib's `ProbabilityTheory.IsPreBrownianReal` / `IsBrownianReal`
+  (finite-dimensional laws of BM, resp. plus a.s. continuous paths) on a probability space; time
+  is `ℝ≥0`. The natural filtration is `Filtration.natural B`, which needs each `B t` to be
+  (strongly) measurable — an explicit hypothesis.
+* No Itô integral is used: the martingale statements are proved from independence of increments
+  (`indepFun_shift`, the weak Markov property) and `condExp_indep_eq`.
+* GBM is treated as the explicit functional `X₀ exp((μ − σ²/2)t + σW_t)` of `W`; that it solves
+  the SDE `dX = μX dt + σX dW` is **not** claimed (Itô calculus).
+
+Source: work-sync theory/T-sde-systems.md §1.2 (Wiener process: `W₀ = 0`, independent
 Gaussian increments `W_t − W_s ~ N(0, t − s)`, `Cov(W_s, W_t) = min(s, t)`), §1.9 (geometric
 Brownian motion `X_t = X₀ exp((μ − σ²/2)t + σW_t)`);
-`theory/T-martingales-stopping-times.md` §1.2 (`W_t` and `W_t² − t` are martingales), §1.6.2
-(`exp(θW_t − θ²t/2)` is a martingale); `theory/T-markov-processes.md` §1.6 item 2 (Brownian
+theory/T-martingales-stopping-times.md §1.2 (`W_t` and `W_t² − t` are martingales), §1.6.2
+(`exp(θW_t − θ²t/2)` is a martingale); theory/T-markov-processes.md §1.6 item 2 (Brownian
 motion: the future increment is independent of the past).
 
-Scope (Rules §3).  Brownian motion is Mathlib's `ProbabilityTheory.IsPreBrownianReal` /
-`IsBrownianReal` (finite-dimensional laws of BM, resp. plus a.s. continuous paths) on a
-probability space; time is `ℝ≥0`.  The natural filtration is `Filtration.natural B`, which needs
-each `B t` to be (strongly) measurable — an explicit hypothesis.  No Itô integral is used: the
-martingale statements are proved from independence of increments (`indepFun_shift`, the weak
-Markov property) and `condExp_indep_eq`.  GBM is treated as the explicit functional
-`X₀ exp((μ − σ²/2)t + σW_t)` of `W`; that it solves the SDE `dX = μX dt + σX dW` is **not**
-claimed (Itô calculus).  Foundation results.
-
-Category C wrappers (Mathlib declarations in brackets): `brownian_hasLaw` [`hasLaw_eval`],
-`brownian_mean` [`integral_eval`], `brownian_cov` [`covariance_eval`],
-`brownian_indepIncrements` [`hasIndepIncrements`], `brownian_increment_hasLaw` [`hasLaw_sub`],
-`brownian_weakMarkov` [`IsPreBrownianReal.indepFun_shift`], `brownian_scaling`
-[`IsBrownianReal.smul`].
+Results.
+* Mathlib wrappers (Mathlib declarations in brackets): `brownian_hasLaw` [`hasLaw_eval`],
+  `brownian_mean` [`integral_eval`], `brownian_cov` [`covariance_eval`],
+  `brownian_indepIncrements` [`hasIndepIncrements`], `brownian_increment_hasLaw` [`hasLaw_sub`],
+  `brownian_weakMarkov` [`IsPreBrownianReal.indepFun_shift`], `brownian_scaling`
+  [`IsBrownianReal.smul`].
+* `condExp_increment`, `condExp_increment_zero` — increments are independent of the past:
+  `E[f(W_t − W_s) | 𝓕_s] = E f(W_t − W_s)` a.s., in particular `E[W_t − W_s | 𝓕_s] = 0`.
+* `martingale_brownian`, `martingale_brownian_sq`, `martingale_brownian_exp` — `W_t`,
+  `W_t² − t` and `exp(θ W_t − θ² t/2)` are martingales for the natural filtration.
+* `gbm_mean`, `gbm_second_moment`, `gbm_variance`, `gbm_log_second_moment` — for
+  `gbm` `X_t = x₀ exp((μ − σ²/2) t + σ W_t)`: `E X_t = x₀ e^{μ t}`,
+  `E X_t² = x₀² e^{(2μ + σ²) t}`, `Var X_t = x₀² e^{2μt} (e^{σ² t} − 1)`, and the second-moment
+  Lyapunov exponent `Λ(2) = 2μ + σ²` (from `integral_exp_brownian`, `E[e^{c W_t}] = e^{c² t/2}`).
 -/
 
 noncomputable section
@@ -39,7 +52,7 @@ open scoped NNReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
 
-/-! ## Category C: Mathlib's Brownian motion -/
+/-! ## Mathlib wrappers: Brownian motion -/
 
 /-- `W_t ~ N(0, t)` (Mathlib `IsPreBrownianReal.hasLaw_eval`). -/
 @[powerlib_foundation] theorem brownian_hasLaw (hB : IsPreBrownianReal B P) (t : ℝ≥0) :

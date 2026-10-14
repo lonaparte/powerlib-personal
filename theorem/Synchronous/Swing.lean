@@ -11,6 +11,10 @@ import theorem.Dynamics.Instability
 
 /-! # The sinusoidally coupled swing equation (canonical single-machine model)
 
+The canonical single-machine swing model `SwingParams` with its equilibrium set, linearization and
+energy function, read through two families: the nonlinear field about a selected angle
+(`Swing.family`) and its linearization (`Swing.Linearized.family`).
+
 Model boundary.
 * State `x = (δ, ω) : Dynamics.State 2`, in this order: `δ` is the internal (rotor or virtual)
   angle relative to the synchronously rotating reference of an ideal infinite bus (rad), `ω`
@@ -29,6 +33,23 @@ Model boundary.
   exponential stability, instability, Lyapunov stability via the energy function) and about
   the LTI linearization; global existence of solutions (forward completeness) follows from
   a global Lipschitz bound.
+
+Source: work-sync `theory/T-vsg-control.md` §1.2, §1.10; `theory/T-sync-machine.md` §1.9;
+`theory/T-transient-stability.md` §1.3, §1.4, §1.7;
+`projects/vsc-stochastic-stability/notes/concepts/damping-class-dichotomy.md` §1–§3
+(overdamping threshold).
+
+Results (static evidence on the model).
+* `exists_equilibrium_iff`, `field_eq_zero_iff_branches` — equilibria exist iff the power-angle
+  curve reaches `P_m`; the equilibrium set is `ω = 0`, `δ ∈ {δ_s + 2nπ} ∪ {δ_u + 2nπ}`, with
+  `syncCoeff_deltaS_pos`, `syncCoeff_deltaU_neg` on the two branches.
+* `characteristic_polynomial`, `isHurwitz_jacobian_iff`, `eigenvalues_real_iff` — the
+  linearization has `M det(sI − J) = M s² + D s + K`, `K = k₂ cos(δ₀ − k₃)`; it is Hurwitz iff
+  `D > 0` and `K > 0`; exact overdamping threshold.
+* `energy_lie`, `potential_pos` — the energy `W = ½ M ω² + U(δ)` has `Ẇ = −D ω²`, and the
+  potential is positive on a punctured neighbourhood of an equilibrium angle where the
+  synchronizing coefficient stays positive.
+* `lipschitzWith_field` — the field is globally Lipschitz.
 
 Family and connection conclusions.
 * A complete system (`Swing.Model`) is a parameter set `p : SwingParams` together with a selected
@@ -53,8 +74,8 @@ Family and connection conclusions.
   (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`) local exponential stability of
   `(δ*, 0)` holds exactly when it is an equilibrium (power balance) with a Hurwitz Jacobian
   (`D > 0`, `K > 0`). Within positive inertia the local asymptotic translation is exact as well
-  (`Swing.exactUnder_locallyAsymptoticallyStable`), although the linearization does not decide the
-  degenerate slopes: an undamped machine conserves its energy, a flat power-angle curve
+  (`Swing.exactUnder_locallyAsymptoticallyStable`), although the linearization does not decide
+  the degenerate slopes: an undamped machine conserves its energy, a flat power-angle curve
   (`k₂ = 0`) has a continuum of equilibria, and at a fold of the curve the dissipated energy is
   negative on one side of `(δ*, 0)` (`Swing.potential_fold`,
   `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). The Lyapunov translation is not exact even
@@ -63,38 +84,31 @@ Family and connection conclusions.
   (`Swing.flatCurve_mem_den_lyapunovStable`). Within positive inertia its denotation is
   `Swing.mem_den_lyapunovStable_iff_of_inertia`: a balanced angle with `D ≥ 0` and `K > 0`, or a
   flat curve with `D > 0`; a fold of the curve is unstable for every `D ≥ 0`
-  (`Swing.Pe_fold`, `Dynamics.unstable_of_lie_nonpos_of_lie_pos`) and an undamped flat curve drifts
-  (`Dynamics.unstable_of_chetaev`). The instability translation is not exact (`Swing.not_exact_unstable`):
-  instability is the failure of Lyapunov stability, so an unbalanced model
-  (`Swing.offEquilibrium`) is unstable (`Swing.offEquilibrium_mem_den_unstable`,
+  (`Swing.Pe_fold`, `Dynamics.unstable_of_lie_nonpos_of_lie_pos`) and an undamped flat curve
+  drifts (`Dynamics.unstable_of_chetaev`). The instability translation is not exact
+  (`Swing.not_exact_unstable`): instability is the failure of Lyapunov stability, so an
+  unbalanced model (`Swing.offEquilibrium`) is unstable (`Swing.offEquilibrium_mem_den_unstable`,
   `Dynamics.unstable_of_ne_zero`) while the translation asks for power balance.
 * The linearization at the selected angle is a second family on the same models
-  (`Swing.Linearized.family`, the linear plant of the Jacobian). Within positive inertia its
-  attractive sentences and sampled contraction are translated exactly
+  (`Swing.Linearized.family`, the linear plant `Swing.Linearized.plant` of the Jacobian;
+  `fderiv_point_eq_plant` identifies it with the Jacobian of the nonlinear field). Within
+  positive inertia its attractive sentences and sampled contraction are translated exactly
   (`Swing.Linearized.exactUnder_hurwitz`): `M s² + D s + K` is Hurwitz iff `D > 0` and `K > 0`
-  (`Swing.Linearized.mem_den_iff`, formerly `linearModel_exponentiallyStable_iff`).
-* The former public behavioural theorems on the untranslated field (`locallyExponentiallyStable_*`,
+  (`Swing.Linearized.mem_den_iff`).
+* The behavioural theorems on the untranslated field (`locallyExponentiallyStable_*`,
   `unstable_*`, `lyapunovStable_*`, `forwardComplete`) are private implementation evidence; their
   conclusions are published as the connection statements `Swing.mem_den_*`,
   `Swing.deltaS_mem_den_*`, `Swing.deltaU_mem_den_unstable`. The equilibrium-set theorems are
   static evidence on the model. Forward completeness is not a sentence; other modules obtain it
-  from the public Lipschitz bound `lipschitzWith_field` and `Flow.forwardComplete_of_lipschitzWith`.
-* The former LTI object `linearModel` is replaced by the linear plant `Swing.Linearized.plant`;
-  `fderiv_point_eq_plant` identifies it with the Jacobian of the nonlinear field.
-
-Instances (`theorem/Synchronous/Instances.lean`): VSG / VSM on an infinite bus
-(`k₁ = 0, k₃ = 0, k₂ = E V_g / X_g`), the classical SMIB model (`k₂ = E' V_∞ / X_d'`), and the
-post-fault SMIB curve with line resistance.
-
-The same classical machine on an infinite bus, written as a nonlinear port-Hamiltonian system in
-`(δ, p = M ω)` with `P_e = b sin δ`, is the family `ClassicalSM.family` of
-`theorem/Synchronous/PH.lean`; the two families are kept side by side (different requirement
-languages and sentence sets), not merged.
-
-Source: work-sync theory/T-vsg-control.md §1.2, §1.10; theory/T-sync-machine.md §1.9;
-theory/T-transient-stability.md §1.3, §1.4, §1.7;
-projects/vsc-stochastic-stability/notes/concepts/damping-class-dichotomy.md §1–§3
-(overdamping threshold).
+  from the public Lipschitz bound `lipschitzWith_field` and
+  `Flow.forwardComplete_of_lipschitzWith`.
+* Instances (`theorem/Synchronous/Instances.lean`): VSG / VSM on an infinite bus
+  (`k₁ = 0, k₃ = 0, k₂ = E V_g / X_g`), the classical SMIB model (`k₂ = E' V_∞ / X_d'`), and the
+  post-fault SMIB curve with line resistance.
+* The same classical machine on an infinite bus, written as a nonlinear port-Hamiltonian system
+  in `(δ, p = M ω)` with `P_e = b sin δ`, is the family `ClassicalSM.family` of
+  `theorem/Synchronous/PH.lean`; the two families are kept side by side (different requirement
+  languages and sentence sets), not merged.
 -/
 
 noncomputable section
@@ -1392,8 +1406,7 @@ swing equation are translated exactly: `M s² + D s + K` is Hurwitz iff `D > 0` 
     · exact hK
     · exact hM
 
-/-- The linearization is exponentially stable iff `D > 0` and `K > 0` (`M > 0`); formerly
-`linearModel_exponentiallyStable_iff`. -/
+/-- The linearization is exponentially stable iff `D > 0` and `K > 0` (`M > 0`). -/
 @[powerlib_domain] theorem mem_den_iff (m : Model) (hM : 0 < m.p.M) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔
       m ∈ {m : Model | 0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ}) := by

@@ -2,8 +2,19 @@ import theorem.Criteria.Routh3
 
 /-! # Routh–Hurwitz criterion for monic real quartics and real 4×4 matrices
 
-Foundation layer (plus thin generic semantic corollaries at the end).
+The degree-four Routh–Hurwitz criterion in both directions, its instability witnesses and its
+matrix form in any state dimension, with thin generic semantic corollaries at the end.
 
+Scope.
+* No model family is defined or fixed here. Every statement is static algebra about real
+  polynomials and matrices, or a generic semantic implication about an arbitrary field, so all of
+  them are foundation results (Rules §3). Model families that use these criteria publish their
+  engineering conclusions as connection statements (pattern: `theorem/PLL/PIPLLFamily.lean`).
+
+Source: standard Routh–Hurwitz criterion for degree four (shared criteria interface for the
+work-sync formalization).
+
+Results.
 * Monic real quartic `s ^ 4 + a3 * s ^ 3 + a2 * s ^ 2 + a1 * s + a0`. Every complex root has
   negative real part **iff** `0 < a3`, `0 < a1`, `0 < a0` and
   `a1 ^ 2 + a3 ^ 2 * a0 < a3 * a2 * a1` (`quartic_hurwitz_iff`). These are the Routh-array
@@ -31,11 +42,15 @@ Foundation layer (plus thin generic semantic corollaries at the end).
   `RouthViolationFin4 J` its strict violation (each disjunct places a characteristic root in the
   open right half plane, `exists_eigenvalue_re_pos_of_violation_fin_four`).
 * Semantic corollaries: linearization at an equilibrium of a caller-supplied `ContDiff ℝ 1`
-  field on `EuclideanSpace ℝ (Fin n)` (any dimension, quartic characteristic polynomial) or
-  `EuclideanSpace ℝ (Fin 4)`, and the attractive sentences of a linear field `x' = A (x - e)`
-  (both directions: `holds_affine_iff_of_det_characteristicMatrix_quartic`,
-  `holds_affine_fin_four_iff`). They only repackage
-  `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`,
+  field on `EuclideanSpace ℝ (Fin n)` (any dimension, quartic characteristic polynomial:
+  `locallyExponentiallyStable_of_jacobian_quartic`, `unstable_of_jacobian_quartic_const_neg`,
+  `unstable_of_jacobian_quartic_violation`) or `EuclideanSpace ℝ (Fin 4)`
+  (`locallyExponentiallyStable_of_jacobian_fin_four`, `unstable_of_jacobian_det_neg_fin_four`,
+  `unstable_of_jacobian_violation_fin_four`, `unstable_of_jacobian_trace_pos_fin_four`), and the
+  attractive sentences of a linear field `x' = A (x - e)`, for every attractive sentence
+  (`holds_affine_of_det_characteristicMatrix_quartic`; both directions:
+  `holds_affine_iff_of_det_characteristicMatrix_quartic`, `holds_affine_fin_four_iff`). They only
+  repackage `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`,
   `Dynamics.unstable_of_jacobian_eigenvalue_re_pos` and `Linear.holds_iff_isHurwitz`.
 
 Proof of the sufficient direction: for a root `x + i y` with `x ≥ 0`, the imaginary part forces
@@ -49,19 +64,6 @@ leaves a real cubic, which has a real root `r'`, giving the factor `(s − r)(s 
 factor's roots are roots of the quartic, so the quadratic criterion
 `quadratic_roots_re_neg_iff` gives `b, c, p, q > 0`; then `a3, a1, a0 > 0` and the Hurwitz
 determinant identity gives the last condition.
-
-Connection architecture. No model family is defined or fixed here. Every statement is static
-algebra about real polynomials and matrices, or a generic semantic implication about an arbitrary
-field, so all of them are foundation results (Rules §3); the former `@[powerlib_domain]`
-corollaries are generic and are relabeled foundation. Model families that use these criteria
-publish their engineering conclusions as connection statements (pattern:
-`theorem/PLL/PIPLLFamily.lean`). The former LTI corollary
-`exponentiallyStable_of_det_characteristicMatrix_quartic` on `LTI.AutonomousModel n` is restated
-as `holds_affine_of_det_characteristicMatrix_quartic` on the affine linear field, for every
-attractive sentence.
-
-Source: standard Routh–Hurwitz criterion for degree four (powerlib Phase 0, P0a, shared
-criteria interface for the work-sync formalization).
 -/
 
 noncomputable section
@@ -616,8 +618,7 @@ characteristic polynomial with negative constant term: instability. -/
 
 /-- Continuous-time linear field `x' = A (x - e)` whose state matrix has a quartic
 characteristic polynomial satisfying the Routh conditions: every attractive sentence of the Flow
-semantics (in particular global exponential stability) holds at `e`. Replaces the former
-`exponentiallyStable_of_det_characteristicMatrix_quartic` on `LTI.AutonomousModel n`. -/
+semantics (in particular global exponential stability) holds at `e`. -/
 @[powerlib_foundation] theorem holds_affine_of_det_characteristicMatrix_quartic
     (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) {P : Flow.Property} (hP : P.Attractive)
     {a3 a2 a1 a0 : ℝ}

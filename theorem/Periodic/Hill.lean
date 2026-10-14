@@ -3,45 +3,15 @@ import Mathlib.Analysis.Fourier.AddCircle
 
 /-! # LTI checks of the harmonic-linearization framework
 
-Foundation layer: three exact statements about **linear time-invariant** systems that the
-harmonic-linearization note uses as sanity checks (items 1–3), and the gauge symmetry of
-general (time-periodic) Hill matrices (item 4).
+Three exact statements about **linear time-invariant** systems that the harmonic-linearization
+note uses as sanity checks, and the gauge symmetry of general (time-periodic) Hill matrices.
 
-1. Truncated Hill matrix of an LTI system. For a constant state matrix `A₀` the lifted Hill
-   matrix `𝓗_K = 𝓐_K − 𝓝_K` (harmonics `h = −K, …, K`, `𝓝 = diag(jhω_s I)`) is block diagonal
-   with blocks `A₀ − jhω_s I` (`hillLTI`). Its characteristic determinant factorizes
-   (`det_hillLTI`), so `s` is an eigenvalue of `𝓗_K` iff `s + jhω_s` is an eigenvalue of `A₀` for
-   some `|h| ≤ K`, i.e. `eig(𝓗_K) = {λ − jhω_s}` (`hillLTI_root_iff`).
-2. Sequence injection in the αβ frame (amplitude-invariant Clarke, `Transform.clarke`): a
-   negative-sequence three-phase signal `V cos(θ + φ − 2πk/3·(−1))` maps to the αβ vector
-   `V(cos(θ + φ), −sin(θ + φ))`, i.e. `V e^{−j(θ+φ)}` (`Transform.clarke_mulVec_negSeq`, with
-   `Transform.negSeq` and `Transform.toComplex_clarke_negSeq`, in `theorem/Transform/Park.lean`).
-   The positive-sequence counterpart `V e^{j(θ+φ)}` is `Transform.clarke_mulVec_balanced`.
-3. No mirror coupling for LTI. For a (real-coefficient) LTI model driven by complex tones, a
-   tone at `jω` produces exactly `G(jω) U e^{jωt}` (`tone_solves`), tones superpose, and the
-   coefficients of distinct exponentials are unique (`exp_coeff_unique`). Hence for the mirror
-   pair `ω_p`, `ω_c = 2ω_s − ω_p` with `ω_p ≠ ω_s` (so `ω_c ≠ ω_p`), the steady-state output
-   coefficient at `ω_p` is `G(jω_p) V(ω_p)` and at `ω_c` is `G(jω_c) V(ω_c)`
-   (`mirror_coupling_zero`): the off-diagonal entries `Y₁₂`, `Y₂₁` vanish.
-4. Hill gauge symmetry `φ_m ↦ (−1)^m φ_m`. For a general truncated Hill matrix
-   `𝓗[J]` (`hillMatrix`: block `(m, m')` is `J_{m − m'} − δ_{mm'} j(m + ν)ω I`, `ν = 1/2` for the
-   half-integer ansatz `w = ∑ φ_m e^{j(m + 1/2)ω_p t}`), conjugation by the involutive gauge
-   `G = diag((−1)^m I)` (`hillGauge`, `hillGauge_mul_self`) multiplies the band `Δm = h` by `(−1)^h`
-   and leaves the diagonal blocks unchanged (`hillGauge_conj`). Hence coefficient families with
-   `J'_h = (−1)^h J_h` give similar Hill matrices (`hillMatrix_gauge_similar`) with the same
-   characteristic polynomial, determinant `det(sI − 𝓗)`, spectrum and gauge-mapped eigenvectors
-   (`hillMatrix_charpoly_eq`, `hillMatrix_det_eq`, `hillMatrix_spectrum_eq`,
-   `hillMatrix_gauge_eigenvector`); `hillLTI` is the case `J_0 = A₀`, `ν = 0`
-   (`hillLTI_eq_hillMatrix`). For the third-order truncated Hill matrix of the source
-   (`hillCoeff3`: `J₀ = A₀ + δ̂₁²Q₀`, `J₁ = (δ̂₁/2)P + δ̂₁³P₃`, `J₂ = δ̂₁²Q₂`, `J₃ = δ̂₁³P₃₃`,
-   `J_{−h} = conj J_h`) `δ̂₁ ↦ −δ̂₁` flips the first- and third-order bands and keeps the
-   second-order band (`hillBand3_neg`, `hillCoeff3_neg`), so the Hill matrices at `±δ̂₁` are
-   gauge-similar and their spectra coincide (`hill3_neg_similar`). For the exact Hill matrix built
-   from Fourier coefficients on `ℝ/Tℤ`, a half-period shift multiplies the `h`-th coefficient by
-   `(−1)^h` (`fourierCoeff_add_half`, `fourierCoeffMatrix_half_shift`), so `J'(t) = J(t + T/2)`
-   (what the half-period symmetry `u(t + T/2) = −u(t)` turns `δ̂₁ ↦ −δ̂₁` into) gives
-   gauge-similar exact Hill matrices (`exactHill_half_shift`). The passage from the converter
-   model to `J(t)` is not formalized.
+Scope.
+* Static linear algebra and complex-signal calculus; no model family.
+* The LTI system of the mirror-coupling check is given by its state-space matrices `A B C D`
+  (state index `ι`, `p` inputs and outputs), with the characteristic matrix and transfer function
+  of `powerlib.Linear` (`Linear.characteristicMatrix`, `Linear.transferOf`).
+* The passage from the converter model to the periodic Jacobian `J(t)` is not formalized.
 
 Source: work-sync theory/T-harmonic-linearization.md §1.2 (sequence injection
 `δv₊^{αβ} = V_p e^{jω_p t}`, `δv₋^{αβ} = V_n e^{−jω_p t}`), §1.3 ("纯 LTI 系统 `Y₁₂ = Y₂₁ = 0`";
@@ -50,10 +20,41 @@ the premise `ω_p ≠ ω_s` is added: at `ω_p = ω_s` the mirror pair collapses
 projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/gfl-gfm-parametric-contrast.md §11
 ("半周期对称性（恒等式）…Hill 层对应规范 `φ_m → (−1)^m φ_m`（一阶块变号、二阶块不变、三阶块变号）").
 
-Architecture: static linear algebra and complex-signal calculus with no model family; all
-results remain public foundation support. The LTI system of item 3 is given by its state-space
-matrices `A B C D` (state index `ι`, `p` inputs and outputs), with the characteristic matrix and
-transfer function of `powerlib.Linear` (`Linear.characteristicMatrix`, `Linear.transferOf`).
+Results.
+* Truncated Hill matrix of an LTI system. For a constant state matrix `A₀` the lifted Hill
+  matrix `𝓗_K = 𝓐_K − 𝓝_K` (harmonics `h = −K, …, K`, `𝓝 = diag(jhω_s I)`) is block diagonal
+  with blocks `A₀ − jhω_s I` (`hillLTI`). Its characteristic determinant factorizes
+  (`det_hillLTI`), so `s` is an eigenvalue of `𝓗_K` iff `s + jhω_s` is an eigenvalue of `A₀` for
+  some `|h| ≤ K`, i.e. `eig(𝓗_K) = {λ − jhω_s}` (`hillLTI_root_iff`).
+* Sequence injection in the αβ frame (amplitude-invariant Clarke, `Transform.clarke`): a
+  negative-sequence three-phase signal `V cos(θ + φ − 2πk/3·(−1))` maps to the αβ vector
+  `V(cos(θ + φ), −sin(θ + φ))`, i.e. `V e^{−j(θ+φ)}` (`Transform.clarke_mulVec_negSeq`, with
+  `Transform.negSeq` and `Transform.toComplex_clarke_negSeq`, in `theorem/Transform/Park.lean`).
+  The positive-sequence counterpart `V e^{j(θ+φ)}` is `Transform.clarke_mulVec_balanced`.
+* No mirror coupling for LTI. For a (real-coefficient) LTI model driven by complex tones, a
+  tone at `jω` produces exactly `G(jω) U e^{jωt}` (`tone_solves`), tones superpose, and the
+  coefficients of distinct exponentials are unique (`exp_coeff_unique`). Hence for the mirror
+  pair `ω_p`, `ω_c = 2ω_s − ω_p` with `ω_p ≠ ω_s` (so `ω_c ≠ ω_p`), the steady-state output
+  coefficient at `ω_p` is `G(jω_p) V(ω_p)` and at `ω_c` is `G(jω_c) V(ω_c)`
+  (`mirror_coupling_zero`): the off-diagonal entries `Y₁₂`, `Y₂₁` vanish.
+* Hill gauge symmetry `φ_m ↦ (−1)^m φ_m`. For a general truncated Hill matrix
+  `𝓗[J]` (`hillMatrix`: block `(m, m')` is `J_{m − m'} − δ_{mm'} j(m + ν)ω I`, `ν = 1/2` for the
+  half-integer ansatz `w = ∑ φ_m e^{j(m + 1/2)ω_p t}`), conjugation by the involutive gauge
+  `G = diag((−1)^m I)` (`hillGauge`, `hillGauge_mul_self`) multiplies the band `Δm = h` by `(−1)^h`
+  and leaves the diagonal blocks unchanged (`hillGauge_conj`). Hence coefficient families with
+  `J'_h = (−1)^h J_h` give similar Hill matrices (`hillMatrix_gauge_similar`) with the same
+  characteristic polynomial, determinant `det(sI − 𝓗)`, spectrum and gauge-mapped eigenvectors
+  (`hillMatrix_charpoly_eq`, `hillMatrix_det_eq`, `hillMatrix_spectrum_eq`,
+  `hillMatrix_gauge_eigenvector`); `hillLTI` is the case `J_0 = A₀`, `ν = 0`
+  (`hillLTI_eq_hillMatrix`). For the third-order truncated Hill matrix of the source
+  (`hillCoeff3`: `J₀ = A₀ + δ̂₁²Q₀`, `J₁ = (δ̂₁/2)P + δ̂₁³P₃`, `J₂ = δ̂₁²Q₂`, `J₃ = δ̂₁³P₃₃`,
+  `J_{−h} = conj J_h`) `δ̂₁ ↦ −δ̂₁` flips the first- and third-order bands and keeps the
+  second-order band (`hillBand3_neg`, `hillCoeff3_neg`), so the Hill matrices at `±δ̂₁` are
+  gauge-similar and their spectra coincide (`hill3_neg_similar`). For the exact Hill matrix built
+  from Fourier coefficients on `ℝ/Tℤ`, a half-period shift multiplies the `h`-th coefficient by
+  `(−1)^h` (`fourierCoeff_add_half`, `fourierCoeffMatrix_half_shift`), so `J'(t) = J(t + T/2)`
+  (what the half-period symmetry `u(t + T/2) = −u(t)` turns `δ̂₁ ↦ −δ̂₁` into) gives
+  gauge-similar exact Hill matrices (`exactHill_half_shift`).
 -/
 
 noncomputable section

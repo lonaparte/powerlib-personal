@@ -14,22 +14,18 @@ Model boundary.
 * Constant `P_ref`, damping reference frequency `= ω_s`, `K_R ≠ 0`, `τ_p ≠ 0`; continuous time;
   no voltage loop, inner loops, PLL, delay, PWM or limiter.
 
-Theorem: under the invertible affine change of coordinates
+Source: work-sync `theory/T-vsg-control.md` §1.9; `theory/T-gfm-control.md` §1.2, §1.4, §1.8;
+`theory/T-droop-control.md` §1.4; `projects/vsc-stochastic-stability/notes/concepts/
+damping-class-dichotomy.md` §1 (item 1: `M = τ/m_p`, `D = 1/m_p`).
+
+Results.
+Under the invertible affine change of coordinates
 `(θ, P_f) ↦ (θ, ω_s − (P_f − P_ref)/K_R)` the droop + LPF field is exactly the VSM field with
 `M = τ_p K_R`, `D = K_R` (`vsmField_eq_transport`).  Hence the two closed loops have the same
 trajectories (mapped one-to-one) and the same Lyapunov stability, local exponential stability,
 local asymptotic stability and instability of corresponding equilibria.  On an infinite bus
 (`P = K₀ sin θ`, `ω_s = 0`) the droop + LPF loop is the canonical swing model
 `⟨τ_p K_R, K_R, P_ref, 0, K₀, 0⟩`.
-
-Corrections.
-* T-gfm-control §1.8: "droop+LPF 单独是一阶；与 swing 端 θ̇ = ω 串联后无二阶动态" is wrong —
-  droop + LPF closed with `θ̇ = ω` is second order and is the VSM with `M = τ_p K_R`.
-* T-droop-control §1.4 (and T-gfm-control §1.4): droop + LPF is *not* the zero-inertia limit
-  of the VSM; it is the VSM with inertia `M = τ_p K_R > 0`.  The zero-inertia limit is pure
-  proportional droop (`τ_p → 0`).
-* The transfer-function equality (T-vsg-control §1.9) is only the linear shadow
-  (`droop_transfer_eq_vsm_transfer`, foundation).
 
 Family and connection conclusions.
 * `DroopVSM.vsmFamily`: a complete system (`VSMModel`) is a VSM closed loop `θ̇ = ω`,
@@ -50,7 +46,7 @@ Family and connection conclusions.
   (`semantics_eq_comap`), i.e. every sentence denotes the preimage of its VSM denotation
   (`den_eq_preimage`); the proof is `vsmField_eq_transport` with the generic
   `Dynamics.holds_transport_iff` (all nine flow sentences are invariant under the affine
-  coordinate change).  The former per-sentence equivalences (`locallyExponentiallyStable_iff`,
+  coordinate change).  The per-sentence equivalences (`locallyExponentiallyStable_iff`,
   `lyapunovStable_iff`, `unstable_iff`, `localAsymptoticStable_iff`) are member-equivalences of
   the two families.  Consequently the droop translation is sound
   (`droopFamily_chain_le_semantics`).
@@ -61,9 +57,14 @@ Family and connection conclusions.
   identity and an equilibrium correspondence).  The trajectory maps `isTrajectoryOn_vsm_of_droop`,
   `isTrajectoryOn_droop_of_vsm` are private implementation evidence (trajectory level).
 
-Source: work-sync theory/T-vsg-control.md §1.9; theory/T-gfm-control.md §1.2, §1.4, §1.8;
-theory/T-droop-control.md §1.4; projects/vsc-stochastic-stability/notes/concepts/
-damping-class-dichotomy.md §1 (item 1: `M = τ/m_p`, `D = 1/m_p`).
+Corrections.
+* T-gfm-control §1.8: "droop+LPF 单独是一阶；与 swing 端 θ̇ = ω 串联后无二阶动态" is wrong —
+  droop + LPF closed with `θ̇ = ω` is second order and is the VSM with `M = τ_p K_R`.
+* T-droop-control §1.4 (and T-gfm-control §1.4): droop + LPF is *not* the zero-inertia limit
+  of the VSM; it is the VSM with inertia `M = τ_p K_R > 0`.  The zero-inertia limit is pure
+  proportional droop (`τ_p → 0`).
+* The transfer-function equality (T-vsg-control §1.9) is only the linear shadow
+  (`droop_transfer_eq_vsm_transfer`, foundation).
 -/
 
 noncomputable section
@@ -568,7 +569,7 @@ droop + LPF family is the semantics connection of the VSM family read through `t
 /-- Droop + LPF on an infinite bus (`P = K₀ sin`): every equilibrium with `K₀ cos θ₀ > 0` is
 locally exponentially stable for all `K_R, τ_p > 0` (transported from the VSM image; in the
 synchronous frame `ω_s = 0` that image is the swing model `⟨τ_p K_R, K_R, P_ref, 0, K₀, 0⟩`,
-`vsm_mem_den_iff_swing`).  The former hypothesis `ω_s = 0` is not needed. -/
+`vsm_mem_den_iff_swing`).  It holds for every `ω_s`, not only `ω_s = 0`. -/
 @[powerlib_domain] theorem infiniteBus_locallyExponentiallyStable (m : DroopModel) (K0 : ℝ)
     (hP : m.d.P = fun θ => K0 * Real.sin θ) (hK : 0 < m.d.KR)
     (hτ : 0 < m.d.τp) (heq : m.d.droopField m.point = 0) (hcos : 0 < K0 * Real.cos (m.point 0)) :

@@ -4,8 +4,8 @@ import theorem.PDE.Partial
 
 /-! # Telegrapher equations: characteristics, d'Alembert form and the Bergeron relations
 
-Sources: work-sync `theory/T-telegrapher-bergeron.md` §1.1, §1.1.1, §1.4, §1.4.1;
-`theory/T-pde-systems.md` §1.4.4 (transport equation), §1.4.5, §1.6.5.
+Time-domain lossless line: Riemann invariants along the characteristics, the Bergeron (EMTP
+companion) relations for every C¹ solution, and the d'Alembert travelling-wave form.
 
 Model boundary.
 * Single-conductor line, uniform constants `L', C' > 0` (and `R', G'` where stated),
@@ -13,7 +13,8 @@ Model boundary.
 * Unknowns `v, i : ℝ × ℝ → ℝ` as functions of `(x, t)`; `i(x, t)` is the conductor
   current in the `+x` direction. A solution on the strip `[a, b] × ℝ` is a pair with
   partial derivatives (Fréchet derivative within the strip, so C¹ up to the
-  boundary) satisfying `∂ₓv = -L'∂ₜi - R'i`, `∂ₓi = -C'∂ₜv - G'v` at every point.
+  boundary) satisfying `∂ₓv = -L'∂ₜi - R'i`, `∂ₓi = -C'∂ₜv - G'v` at every point
+  (`IsTelegrapherSolution`).
 * Port current convention: **both ends use the inflow (node-injection) convention**,
   `i₁(t) = i(0, t)` flows into the line at end 1 and `i₂(t) = -i(ℓ, t)` flows into the
   line at end 2. (T-telegrapher-bergeron uses the through convention for `i₂` and
@@ -22,20 +23,24 @@ Model boundary.
 * `c = 1/√(L'C')`, `Z_c = √(L'/C')`, `τ = ℓ/c`. The identities `c Z_c C' = 1` and
   `c L' = Z_c` (`c_mul_Zc_mul_C`, `c_mul_L`) are what make `v ± Z_c i` invariant.
 
+Source: work-sync `theory/T-telegrapher-bergeron.md` §1.1, §1.1.1, §1.4, §1.4.1;
+`theory/T-pde-systems.md` §1.4.4 (transport equation), §1.4.5, §1.6.5.
+
 Results.
-* Riemann invariants: for every C¹ solution of the lossless equations,
-  `v + Z_c i` is constant along `x - ct = const` and `v - Z_c i` along `x + ct = const`.
-* Bergeron relations (any C¹ solution, no d'Alembert ansatz):
+* Riemann invariants (`forward_invariant`, `backward_invariant`): for every C¹ solution of the
+  lossless equations, `v + Z_c i` is constant along `x - ct = const` and `v - Z_c i` along
+  `x + ct = const`.
+* Bergeron relations (`bergeron_forward`, `bergeron_backward`, `bergeron_companion`; any C¹
+  solution, no d'Alembert ansatz):
   `v₂(t) - Z_c i₂(t) = v₁(t-τ) + Z_c i₁(t-τ)` and `v₁(t) - Z_c i₁(t) = v₂(t-τ) + Z_c i₂(t-τ)`,
   i.e. the EMTP companion `iₖ(t) = (vₖ(t) - eₖ(t))/Z_c` with history source
   `eₖ(t) = v_{k'}(t-τ) + Z_c i_{k'}(t-τ)`.
 * d'Alembert: `v = f(x-ct) + g(x+ct)`, `i = (f(x-ct) - g(x+ct))/Z_c` solves the lossless
-  system for differentiable `f, g`; conversely every C¹ solution on the whole plane has
-  this form.
-
-The partial-derivative predicate `PDE.HasPartialsWithin`, the strip `PDE.strip` and
-`PDE.const_along_segment` are in `theorem/PDE/Partial.lean`; the transport equation
-`u_t + a u_x = 0` is in `theorem/PDE/Transport.lean`.
+  system for differentiable `f, g` (`travelling_isSolution`); conversely every C¹ solution on
+  the whole plane has this form (`eq_travelling`).
+* The partial-derivative predicate `PDE.HasPartialsWithin`, the strip `PDE.strip` and
+  `PDE.const_along_segment` are in `theorem/PDE/Partial.lean`; the transport equation
+  `u_t + a u_x = 0` is in `theorem/PDE/Transport.lean`.
 -/
 
 noncomputable section

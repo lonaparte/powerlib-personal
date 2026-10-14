@@ -8,7 +8,8 @@ import theorem.Dynamics.Coordinates
 
 /-! # Rate-coupled two-state GFL PLL (form-C-lite, frozen `I_d`)
 
-**Model boundary.** Single grid-following converter on an infinite bus of amplitude `V`
+Model boundary.
+Single grid-following converter on an infinite bus of amplitude `V`
 behind a lossless inductive line `X_g = ω_s L_g`; three-phase balanced, averaged dq model in
 the PLL frame, continuous time.
 * States, in order: `θ` (PLL error angle `θ̂_g − θ_g`), `x` (PLL integrator state).
@@ -24,10 +25,17 @@ the PLL frame, continuous time.
 * Equilibria: `x = 0`, `V sin θ = X_g I_d`.  Results are at the equilibrium (linearization)
   level: local exponential stability / instability of the full nonlinear two-state field.
 
-**Results.**
+Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
+notes/concepts/contrast-conclusions.md` (推论二 `tan θ_H`, 推论四 ζ 比),
+`.../archive/notes/concepts/disturbance-layer.md` (`X_g` 精确消去, `tan θ_H = ω_s ζ₀/(π f_{n0})`),
+`projects/gfl-gfm-stability-tree/notes/concepts/nonautonomous-criteria.md` (N1 冻结阈 `ε_frozen`);
+model `GFLRate` in `.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`.
+
+Results.
 * `jacobian_eq`: the Jacobian at an equilibrium is
   `(1/D₀) [[−k_p V cos θ, k_i], [−V cos θ, k_i V sin θ / ω_s]]` (derived with `fderiv`).
-* `locallyExponentiallyStable_of_tan_lt` / `unstable_of_tan_gt`: for `V, k_p, k_i, ω_s > 0`,
+* `mem_den_locallyExponentiallyStable_of_tan_lt` / `mem_den_unstable_of_tan_gt` (connection
+  memberships, below): for `V, k_p, k_i, ω_s > 0`,
   `D₀ > 0`, `cos θ > 0`: `tan θ < ω_s k_p / k_i` ⇒ locally exponentially stable,
   `tan θ > ω_s k_p / k_i` ⇒ unstable.  `det J = k_i V cos θ / D₀ > 0` always holds, so
   `tan θ_H = ω_s k_p / k_i` is the stability boundary; on it the Jacobian has the purely
@@ -47,7 +55,8 @@ the PLL frame, continuous time.
   stability of the linear time-varying (periodic) system, and the source note exhibits
   parametric resonance below `ε_frozen`.
 
-**Family and connection conclusions.** A complete system (`Model`) is a parameter set with a
+Family and connection conclusions.
+A complete system (`Model`) is a parameter set with a
 selected angle `θ*`; the system map reads it as the autonomous field translated so that the
 operating point `(θ*, 0)` is the origin, `z ↦ field p (z + (θ*, 0))` (every flow sentence is
 invariant under this translation, `Flow.Property.holds_shift_iff`). The requirement language is
@@ -57,7 +66,7 @@ the closed-form Jacobian `jac p θ*` (proved to be the `fderiv`) has `tr < 0`, `
 first and the third, passivity into nothing, and the global sentences, decay rates, sampled
 contraction and conservation into the whole (inconsistent) language: unavailable translation
 coverage. `chain_le_semantics` proves every translation sound; `exact_passive` proves the
-passivity translation exact. The former domain theorems are now connection memberships:
+passivity translation exact. The stability results are connection memberships:
 `mem_den_locallyExponentiallyStable_of_tan_lt` and `mem_den_unstable_of_tan_gt`, together with
 `not_mem_den_lyapunovStable_of_tan_gt`. The local exponential translation is exact
 (`exact_locallyExponentiallyStable`): by the converse linearization theorem
@@ -83,12 +92,6 @@ coordinate, `k_p = 0` on the boundary a conserved energy). The boundary pair, da
 elimination and the
 frozen-coefficient threshold remain static foundation results (`frozen_hurwitz_forall_iff` is
 about constant matrices, not the time-varying system).
-
-Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
-notes/concepts/contrast-conclusions.md` (推论二 `tan θ_H`, 推论四 ζ 比),
-`.../archive/notes/concepts/disturbance-layer.md` (`X_g` 精确消去, `tan θ_H = ω_s ζ₀/(π f_{n0})`),
-`projects/gfl-gfm-stability-tree/notes/concepts/nonautonomous-criteria.md` (N1 冻结阈 `ε_frozen`);
-model `GFLRate` in `.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`.
 -/
 
 noncomputable section
@@ -465,16 +468,14 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (RatePLL.field m.params) (equilibrium m.θ) :=
   family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
 
-/-- Linearization at `(θ*, 0)`: a stable Jacobian gives local exponential stability (the proof
-of the former public `locallyExponentiallyStable_of_tan_lt`). -/
+/-- Linearization at `(θ*, 0)`: a stable Jacobian gives local exponential stability. -/
 private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
     (hs : Meets m .jacobianStable) : m ∈ family.den (.flow .locallyExponentiallyStable) :=
   mem_den_flow_iff.mpr (Criteria.locallyExponentiallyStable_of_jacobian_fin_two
     (jac m.params m.θ) (contDiff_field m.params) (field_equilibrium m.params he.1)
     (fderiv_field m.params he.2 m.θ 0) hs.1 hs.2)
 
-/-- Linearization at `(θ*, 0)`: an unstable Jacobian gives instability (the proof of the former
-public `unstable_of_tan_gt`). -/
+/-- Linearization at `(θ*, 0)`: an unstable Jacobian gives instability. -/
 private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
     (hs : Meets m .jacobianUnstable) : m ∈ family.den (.flow .unstable) := by
   refine mem_den_flow_iff.mpr ?_

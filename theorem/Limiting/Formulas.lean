@@ -3,20 +3,28 @@ import dependencies.Mathlib
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 
-/-! # Closed-form current-limiting design formulas (foundation)
+/-! # Closed-form current-limiting design formulas
 
-All statements are algebraic or trigonometric facts about the formulas of work-sync
+All statements are algebraic or trigonometric facts (foundation) about the formulas of work-sync
 T-current-limiting / T-gfm-control §1.10; none asserts stability of a converter.
 
+Model boundary.
+Static formulas only: a voltage source `E∠δ` behind `R + jX` against the grid `V∠0` (exit
+angle), the grid-code power references, the adaptive virtual resistance and the HAC barrier
+factor, each as a function of its arguments; no converter dynamics, mode switching or control
+loop.
+
+Source: work-sync `theory/T-current-limiting.md` §1.4–§1.7; `theory/T-gfm-control.md` §1.10.
+
+Results.
 * Exit angle of the current-limiting mode (T-current-limiting §1.6, Lyu et al. 2024). A voltage
   source `E∠δ` behind `R + jX` against the grid `V∠0` carries the current magnitude
   `|E e^{jδ} − V|/|R + jX|` (`currentMag`), and `currentMag_sq`:
   `|E e^{jδ} − V|² = E² + V² − 2 E V cos δ` (law of cosines).
   `deltaExit_current`: at `δ_exit = arccos((E² + V² − I_max²(R² + X²))/(2 E V))` the current
-  equals `I_max`; `current_lt_iff`: on `[0, π]` the current is below `I_max` iff `δ < δ_exit`.
-  Correction: the note omits the domain premise of `arccos`; it is
-  `|E − V| ≤ I_max |Z| ≤ E + V` (`deltaExit_domain_iff`). Outside it there is no exit angle:
-  `current_lt_of_large_limit` (`I_max |Z| > E + V`: the limit is never reached).
+  equals `I_max`; `current_lt_iff`: on `[0, π]` the current is below `I_max` iff `δ < δ_exit`;
+  `deltaExit_domain_iff`, `current_lt_of_large_limit`: the domain of the exit angle (Correction
+  below).
 * Grid-code power-reference rewrite (§1.5): `qStar` (`Q* = S_new` for `V_pu ≤ 0.5`,
   `2 S_new (1 − V_pu)` for `0.5 < V_pu ≤ 0.9`) satisfies `0 ≤ Q* ≤ S_new`, so
   `P* = √(S_new² − Q*²)` is real and `P*² + Q*² = S_new²` (`snew_circle`); the two segments
@@ -29,7 +37,9 @@ T-current-limiting / T-gfm-control §1.10; none asserts stability of a converter
   (1 + (1 − D_min)(e^{β(‖i‖ − i_th)} − 1))` takes values in `(0, 1)` for `0 < D_min < 1`,
   is strictly increasing in `‖i‖` for `β > 0`, and equals `1 − D_min` at `‖i‖ = i_th`.
 
-Source: work-sync `theory/T-current-limiting.md` §1.4–§1.7; `theory/T-gfm-control.md` §1.10.
+Correction (T-current-limiting §1.6, exit angle): the note omits the domain premise of
+`arccos`; it is `|E − V| ≤ I_max |Z| ≤ E + V` (`deltaExit_domain_iff`). Outside it there is no
+exit angle: `current_lt_of_large_limit` (`I_max |Z| > E + V`: the limit is never reached).
 -/
 
 noncomputable section

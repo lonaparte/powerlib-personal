@@ -9,33 +9,37 @@ import Mathlib.Probability.Kernel.Composition.Comp
 
 /-! # Markov property: event form ⇔ conditional-expectation form
 
-Source: work-sync `theory/T-markov-processes.md` §1.1 (Markov property in event form
+The event form and the conditional-expectation form of the Markov property are equivalent; the
+semigroup (Chapman–Kolmogorov) relation does not imply the Markov property.
+
+Scope.
+* Probability theory, not an engineering result.
+
+Source: work-sync theory/T-markov-processes.md §1.1 (Markov property in event form
 `P(X_t ∈ A | 𝓕_s) = P(X_t ∈ A | X_s)`), §1.3 (conditional-expectation form
-`E[f(X_t) | 𝓕_s] = E[f(X_t) | X_s]` for bounded measurable `f`; "the two forms are equivalent").
+`E[f(X_t) | 𝓕_s] = E[f(X_t) | X_s]` for bounded measurable `f`; "the two forms are
+equivalent").
 
-Foundation (probability), not an engineering result.
-
-Main results.
-* `condExp_eq_condExp_iff_aestronglyMeasurable`: for sub-σ-algebras `m₂ ≤ m₁`,
+Results.
+* `condExp_eq_condExp_iff_aestronglyMeasurable` — for sub-σ-algebras `m₂ ≤ m₁`,
   `E[Y | m₁] = E[Y | m₂]` a.e. iff `E[Y | m₁]` is a.e. `m₂`-measurable.
-* `condExp_eq_condExp_of_indicator`: if `E[1_A(Z) | m₁] = E[1_A(Z) | m₂]` for every measurable
+* `condExp_eq_condExp_of_indicator` — if `E[1_A(Z) | m₁] = E[1_A(Z) | m₂]` for every measurable
   `A`, then `E[g(Z) | m₁] = E[g(Z) | m₂]` for every bounded measurable `g` (simple-function
   induction + conditional dominated convergence in `L¹` + closedness of the a.e.
   `m₂`-measurable functions in `L¹`).
-* `MarkovEvent` and `markovEvent_iff_markovCondExp`: for an adapted process with values in a
+* `MarkovEvent`, `markovEvent_iff_markovCondExp` — for an adapted process with values in a
   measurable space, the event form and the conditional-expectation form of the Markov property
-  (`E[g(X_t) | 𝓕_s] = E[g(X_t) | X_s]` a.s. for `s ≤ t` and bounded measurable `g`, written out in
-  the statement) are equivalent (any index order, any state space).
-
-Counterexample: semigroup ⇏ Markov (`theory/T-markov-processes.md` §1.2, "Markov ⇔ semigroup").
-* `semigroup_not_markov` (Feller's example): on `Ω = (Fin 3)²` with the uniform probability, the
-  three-step process `X₀ = a`, `X₁ = b`, `X₂ = −(a + b) (mod 3)` has, for every pair of times
-  `i ≠ j`, the elementary transition probabilities `P(X_j = b | X_i = a) = 1/3`, i.e. the constant
-  uniform kernel `K`, and `K ∘ K = K` — the transition kernels satisfy Chapman–Kolmogorov (they are
-  those of an i.i.d. uniform sequence) — yet `X` is **not** Markov in event form for any filtration
-  to which it is adapted: `X₂` is a function of `(X₀, X₁)`.  Hence the semigroup
-  (Chapman–Kolmogorov) relation of the two-dimensional transition laws does not imply the Markov
-  property.
+  (`E[g(X_t) | 𝓕_s] = E[g(X_t) | X_s]` a.s. for `s ≤ t` and bounded measurable `g`, written out
+  in the statement) are equivalent (any index order, any state space).
+* `semigroup_not_markov` — counterexample: semigroup ⇏ Markov
+  (`theory/T-markov-processes.md` §1.2, "Markov ⇔ semigroup"), Feller's example: on
+  `Ω = (Fin 3)²` with the uniform probability, the three-step process `X₀ = a`, `X₁ = b`,
+  `X₂ = −(a + b) (mod 3)` has, for every pair of times `i ≠ j`, the elementary transition
+  probabilities `P(X_j = b | X_i = a) = 1/3`, i.e. the constant uniform kernel `K`, and
+  `K ∘ K = K` — the transition kernels satisfy Chapman–Kolmogorov (they are those of an i.i.d.
+  uniform sequence) — yet `X` is **not** Markov in event form for any filtration to which it is
+  adapted: `X₂` is a function of `(X₀, X₁)`. Hence the semigroup (Chapman–Kolmogorov) relation
+  of the two-dimensional transition laws does not imply the Markov property.
   Supporting facts: `feller_pair` (every pair `(X_i, X_j)` is uniform on `(Fin 3)²`),
   `feller_marginal`, `feller_transition`, `unifKernel_comp`, `feller_not_markov`.
 -/

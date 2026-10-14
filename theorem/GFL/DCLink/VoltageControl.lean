@@ -8,7 +8,7 @@ import theorem.Dynamics.Instability
 import theorem.Dynamics.Shift
 import theorem.Criteria.Hurwitz2
 
-/-! # DC-link voltage of a grid-following VSC: open loop and PI outer loop (domain)
+/-! # DC-link voltage of a grid-following VSC: open loop and PI outer loop
 
 Model boundary.
 * System: the DC-link capacitor of a two-level VSC whose AC side is an ideal current source.
@@ -27,10 +27,13 @@ Model boundary.
   `I_dc0 = V_d I_d0 / V0 = P_ac0 / V0` (`> 0` rectifier, `< 0` inverter); the source current is
   `i_src = −I_dc0`.
 
+Source: work-sync `theory/T-vsc-dc-voltage-control.md` §1.1, §1.3, §1.4;
+`theory/T-gfl-reduced-order-dynamics.md` §1.2.1, §1.2.4.
+
+Results.
 Open loop (`openField`, state `(V_dc)`, `i_d = I_d0` frozen): the Jacobian is
-`−I_dc0 / (C V0)` (the pole `s_ol` of §1.4). `openLoop_mem_den_locallyExponentiallyStable`
-(formerly `openLoop_locallyExponentiallyStable`): rectifier (`I_dc0 > 0`) ⇒ locally
-exponentially stable; `openLoop_mem_den_unstable` (formerly `openLoop_unstable`): inverter
+`−I_dc0 / (C V0)` (the pole `s_ol` of §1.4). `openLoop_mem_den_locallyExponentiallyStable`:
+rectifier (`I_dc0 > 0`) ⇒ locally exponentially stable; `openLoop_mem_den_unstable`: inverter
 (`I_dc0 < 0`, the VSC is a constant-power load on the DC side) ⇒ unstable.
 
 PI outer loop (`closedField`, state order `(V_dc, ζ)` with `ζ = ∫ (V_dc − V_dc*) dt`):
@@ -39,16 +42,14 @@ PI outer loop (`closedField`, state order `(V_dc, ζ)` with `ζ = ∫ (V_dc − 
   `b = I_dc0/(V_dc* C)`, computed with `fderiv` from the nonlinear field.
 * `closed_isHurwitz_iff` (static): with `V_d > 0`, `C > 0`, `V_dc* > 0`:
   Hurwitz ⇔ `Kp > −I_dc0/V_d ∧ Ki > 0` (§1.4 boxed, plus `Ki > 0` made explicit).
-* `closedLoop_mem_den_locallyExponentiallyStable` (formerly
-  `closedLoop_locallyExponentiallyStable`): then the nonlinear closed loop is locally
+* `closedLoop_mem_den_locallyExponentiallyStable`: then the nonlinear closed loop is locally
   exponentially stable at `(V_dc*, ζ0)`; `closedLoop_mem_den_unstable_of_kp`,
   `closedLoop_mem_den_unstable_of_ki`: `Kp < −I_dc0/V_d` or `Ki < 0` ⇒ unstable.
 * `smallSignal_transfer`: the linearized loop with input `ΔV_dc*` has transfer
   `a (Kp s + Ki)/(s² + (a Kp + b) s + a Ki)`; `naturalFrequency_damping`:
   `ω_n = √(a Ki)`, `2 ζ ω_n = a Kp + b`.
 
-## Families and connection conclusions
-
+Family and connection conclusions.
 Both loops are local spectral families (`Spectral.localFamily`): every complete system is read
 as its nonlinear field translated so that the selected operating point is the origin
 (`Flow.Property.holds_shift_iff` moves every sentence back to the operating point).
@@ -101,9 +102,6 @@ The closed loop within the physical range (`V_d, V_dc*, C > 0`) is decided exact
 The degenerate-equilibrium tools for the locally `C¹` field are in
 `theorem/Dynamics/Instability.lean` and `theorem/Dynamics/Lyapunov.lean`.
 The Jacobians, Hurwitz criteria and the small-signal transfer function are static evidence.
-
-Source: work-sync `theory/T-vsc-dc-voltage-control.md` §1.1, §1.3, §1.4;
-`theory/T-gfl-reduced-order-dynamics.md` §1.2.1, §1.2.4.
 -/
 
 noncomputable section

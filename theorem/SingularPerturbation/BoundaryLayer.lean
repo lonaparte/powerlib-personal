@@ -2,58 +2,60 @@ import theorem.SingularPerturbation.FiniteHorizon
 
 /-! # Nonlinear boundary layer: exponential stability uniform in the frozen slow variables
 
-Foundation layer (category B).
+The Tikhonov boundary-layer hypothesis: local exponential stability of the frozen nonlinear
+boundary-layer system with one rate, constant and radius for all frozen slow variables.
 
-Sources: work-sync `theory/T-tikhonov.md` §1.1–§1.2 (Tikhonov hypothesis: the boundary-layer
+Scope.
+* A parameter space `X` (the frozen slow variables `p = (t, x)`, e.g. a compact time interval
+  times a compact set of slow states, with the product topology) assumed compact; the frozen
+  boundary-layer field `g p : ℝᵐ → ℝᵐ` in the fast time `τ` (no `ε`, the slow variables are
+  frozen); an equilibrium branch `h p`; the Jacobian at the equilibrium `A p = ∂g/∂z (p, h p)`
+  continuous in `p` and Hurwitz for every `p`.
+* Forward solutions are Mathlib integral curves on `[0, ∞)`
+  (`IsIntegralCurveOn y (fun _ v => g p v) (Ici 0)`, one-sided at `τ = 0`); no existence claim
+  is made. `|v|² = v ⬝ᵥ v`, `‖·‖` is the sup norm of `Fin m → ℝ`.
+* No definitions; every statement is about an arbitrary parametrized field.
+
+Source: work-sync theory/T-tikhonov.md §1.1–§1.2 (Tikhonov hypothesis: the boundary-layer
 system `dz/dτ = g(t, x, z)` is exponentially stable at `z = h(t, x)` uniformly in `(t, x)`;
-linearized form `Re λ(∂g/∂z) < 0`), `theory/T-singular-perturbation.md` §1.4,
-`theory/T-slow-manifold.md` §1.5 (attractivity uniform in `x`).
-
-Model boundary. A parameter space `X` (the frozen slow variables `p = (t, x)`, e.g. a compact
-time interval times a compact set of slow states, with the product topology) assumed compact;
-the frozen boundary-layer field `g p : ℝᵐ → ℝᵐ` in the fast time `τ` (no `ε`, the slow variables
-are frozen); an equilibrium branch `h p`; the Jacobian at the equilibrium `A p = ∂g/∂z (p, h p)`
-continuous in `p` and Hurwitz for every `p`. Forward solutions are Mathlib integral curves on
-`[0, ∞)` (`IsIntegralCurveOn y (fun _ v => g p v) (Ici 0)`, one-sided at `τ = 0`); no existence
-claim is made. `|v|² = v ⬝ᵥ v`, `‖·‖` is the sup norm of `Fin m → ℝ`.
+linearized form `Re λ(∂g/∂z) < 0`), theory/T-singular-perturbation.md §1.4,
+theory/T-slow-manifold.md §1.5 (attractivity uniform in `x`).
 
 Results.
-* `exists_uniform_dissipation`: one pair of energy bounds `lo, hi` and one bound on `Σ|Pᵢⱼ|`
+* `exists_uniform_dissipation` — one pair of energy bounds `lo, hi` and one bound on `Σ|Pᵢⱼ|`
   serve all parameters: for every `p` there is a symmetric `P` with `lo|v|² ≤ vᵀPv ≤ hi|v|²` and
   `vᵀ P A(p) v ≤ −|v|²/4` (finite subcover of the certificates of `FrozenFast`, via
   `dissipation_of_close`).
-* `boundaryLayer_uniform_exponentialStability_of_certificates`: the same conclusion for an
+* `boundaryLayer_uniform_exponentialStability_of_certificates` — the same conclusion for an
   arbitrary (not necessarily compact or topological) parameter set, given uniform Lyapunov
   certificates of the linearizations as a hypothesis (Khalil's uniform form: one `lo`, `hi`, one
   bound on `Σ|Pᵢⱼ|`, `vᵀ P A(p) v ≤ −|v|²/4`).
-* `boundaryLayer_uniform_exponentialStability`: under the uniform linearization hypothesis
+* `boundaryLayer_uniform_exponentialStability` — under the uniform linearization hypothesis
   `∀ κ > 0, ∃ ρ > 0, ∀ p w, |w|² ≤ ρ → |g p (h p + w) − A p w|² ≤ κ |w|²`, there are
   `r, C, α > 0`, independent of `p`, such that every forward solution with `|y(0) − h p|² < r`
   satisfies `|y(τ) − h p|² ≤ C e^{−ατ} |y(0) − h p|²` for all `τ ≥ 0` (uniform local exponential
   stability; `C = hi/lo`, `α = 1/(8 hi)`, `r = lo ρ/hi`). The proof is a barrier argument
   (Mathlib `image_le_of_deriv_right_lt_deriv_boundary`) for `V = wᵀPw`, which keeps the
   solution in the region where the linearization dominates.
-* `uniform_linearization_of_jacobian`, `boundaryLayer_uniform_exponentialStability_of_jacobian`:
-  the hypothesis follows from a Jacobian `J p z = ∂g/∂z (p, z)` (`HasFDerivAt (g p) (J p z) z`)
+* `uniform_linearization_of_jacobian`, `boundaryLayer_uniform_exponentialStability_of_jacobian`
+  — the hypothesis follows from a Jacobian `J p z = ∂g/∂z (p, z)` (`HasFDerivAt (g p) (J p z) z`)
   equal to `A p` at `h p` and uniformly continuous there
   (`∀ κ > 0, ∃ ρ > 0, ∀ p z, ‖z − h p‖ ≤ ρ → ‖J p z − J p (h p)‖ ≤ κ`), by the mean value
   inequality; this is the nonlinear, uniform-in-`(t, x)` version of the frozen linearized
   statement `uniform_frozen_exponentialStability`.
-* `uniform_jacobian_of_lipschitz`: a Jacobian Lipschitz at the equilibrium with one constant `L`
+* `uniform_jacobian_of_lipschitz` — a Jacobian Lipschitz at the equilibrium with one constant `L`
   (`‖J p z − J p (h p)‖ ≤ L ‖z − h p‖`) satisfies that uniform continuity hypothesis.
-* `boundaryLayer_uniform_exponentialStability_tx`: the Tikhonov hypothesis in its `(t, x)` form —
-  `g(t, x, ·)` with `(t, x)` frozen in a compact `S ⊆ ℝ × ℝⁿ`, `g(t, x, h(t, x)) = 0`,
+* `boundaryLayer_uniform_exponentialStability_tx` — the Tikhonov hypothesis in its `(t, x)`
+  form: `g(t, x, ·)` with `(t, x)` frozen in a compact `S ⊆ ℝ × ℝⁿ`, `g(t, x, h(t, x)) = 0`,
   `∂g/∂z(t, x, h(t, x)) = A(t, x)` continuous and Hurwitz on `S`, Jacobian Lipschitz at `h` with
   one constant: one `r, C, α` serve every `(t, x) ∈ S`.
 
-Excluded: the full Tikhonov approximation theorem for the nonlinear slow–fast system (only its
-boundary-layer hypothesis is established here), global (non-local) stability, existence of
-solutions; on non-compact parameter sets only the certificate form is provided (deriving uniform
-certificates from a uniform spectral bound `Re λ(A(p)) ≤ −c` with `‖A(p)‖` bounded needs the
-continuity of eigenvalues, not formalized here).
-
-Architecture: generic mathematical support (no `Family`, no definitions); every statement is
-about an arbitrary parametrized field, so the results are public foundation.
+Scope notes.
+* Excluded: the full Tikhonov approximation theorem for the nonlinear slow–fast system (only its
+  boundary-layer hypothesis is established here), global (non-local) stability, existence of
+  solutions; on non-compact parameter sets only the certificate form is provided (deriving
+  uniform certificates from a uniform spectral bound `Re λ(A(p)) ≤ −c` with `‖A(p)‖` bounded
+  needs the continuity of eigenvalues, not formalized here).
 -/
 
 noncomputable section

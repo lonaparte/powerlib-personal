@@ -2,47 +2,54 @@ import theorem.Linear.Transfer
 
 /-! # Pure transport delay and its Padé(1,1) / Padé(2,2) rational approximants
 
-Foundation layer (category B of the work-sync formalization) together with the
-state-space realization of Padé(1,1) used by the GFL impedance note.
+The exact transcendental delay, its Padé(1,1) and Padé(2,2) approximants, their all-pass,
+non-minimum-phase and Taylor-order properties, and a state-space realization of Padé(1,1).
 
-Objects (all transfer functions are complex functions of the Laplace variable `s`;
-`τ : ℝ` is the equivalent delay, normally `τ > 0`):
-* `pureDelay τ s = exp (-(τ s))`, the exact transcendental delay `e^{-τ s}`;
-* `pade11 τ s = (1 - τ s / 2) / (1 + τ s / 2)`;
-* `pade22 τ s = (1 - τ s / 2 + (τ s)² / 12) / (1 + τ s / 2 + (τ s)² / 12)`;
-* `pade11Model τ`, the SISO realization `(A, B, C, D) = (-2/τ, 1, 4/τ, -1)` as a
-  `powerlib.Linear.Plant 1 1`;
-* `pade11DqModel τ`, the same realization on both axes of a dq frame
-  (`Linear.Plant 2 2`, matrices `(-2/τ) I₂, I₂, (4/τ) I₂, -I₂`).
-
-Results.
-* Delay cascade: `pureDelay (τ₁ + τ₂) = pureDelay τ₁ · pureDelay τ₂`, the finite-product
-  version, and the "1.5 Tₛ" total of three half-period delays.
-* Frequency response on the imaginary axis `s = jω` (`ω : ℝ`): `|e^{-jωτ}| = 1`,
-  `|pade11 τ (jω)| = 1`, `|pade22 τ (jω)| = 1` (all-pass).
-* Non-minimum phase: the Padé(1,1) numerator vanishes exactly at `s = 2/τ`; the Padé(2,2)
-  numerator factors as `(τs - (3 + √3 j))(τs - (3 - √3 j))/12`; every such zero lies in the
-  open right half-plane when `τ > 0`, while the denominators do not vanish there.
-* Taylor matching orders with explicit constants on the unit disc `‖τ s‖ ≤ 1`:
-  `‖e^{-τ s} - pade11 τ s‖ ≤ 2 ‖τ s‖³` and `‖e^{-τ s} - pade22 τ s‖ ≤ ‖τ s‖⁵ / 10`
-  (i.e. `O((τ s)³)` and `O((τ s)⁵)`).
-* The realization `pade11Model τ` has `Linear.transfer = pade11 τ s` for `s ≠ -2/τ`, and its
-  zero-input dynamics (the affine linear field of its state matrix, Flow semantics) are
-  globally exponentially stable for `τ > 0`; the dq version has transfer `pade11 τ s • I₂`
-  (per-axis delay, no cross coupling).
-
-Model boundary. These are statements about the delay operator models only: continuous
-time, linear time invariant, constant delay `τ`. No plant, PLL, PWM switching, sampling
-or closed loop is included; the stability statements concern only the internal state of
-the Padé realization. The real transcendental closed loop with `e^{-τ s}` is not treated.
-
-Architecture: generic mathematical support (no `Family`); the realizations are
-`Linear.Plant` values and their zero-input behaviour is the generic Flow semantics of the
-affine linear field.
+Model boundary.
+* Statements about the delay operator models only: continuous time, linear time invariant,
+  constant delay `τ`. No plant, PLL, PWM switching, sampling or closed loop is included; the
+  stability statements concern only the internal state of the Padé realization. The real
+  transcendental closed loop with `e^{-τ s}` is not treated.
+* All transfer functions are complex functions of the Laplace variable `s`; `τ : ℝ` is the
+  equivalent delay, normally `τ > 0`:
+  * `pureDelay τ s = exp (-(τ s))`, the exact transcendental delay `e^{-τ s}`;
+  * `pade11 τ s = (1 - τ s / 2) / (1 + τ s / 2)`;
+  * `pade22 τ s = (1 - τ s / 2 + (τ s)² / 12) / (1 + τ s / 2 + (τ s)² / 12)`;
+  * `pade11Model τ`, the SISO realization `(A, B, C, D) = (-2/τ, 1, 4/τ, -1)` as a
+    `powerlib.Linear.Plant 1 1`;
+  * `pade11DqModel τ`, the same realization on both axes of a dq frame
+    (`Linear.Plant 2 2`, matrices `(-2/τ) I₂, I₂, (4/τ) I₂, -I₂`).
+* The realizations are `Linear.Plant` values and their zero-input behaviour is the generic Flow
+  semantics of the affine linear field.
 
 Source: work-sync theory/T-control-delay.md §1.1 (cascade, 1.5 Tₛ), §1.2 (pure delay),
 §1.3 (Padé(1,1), Padé(2,2)), §1.7 (dq delay matrix `G_del · I₂`);
 theory/T-gfl-impedance.md §1.2 (Padé(1,1) used with the delay realization).
+
+Results.
+* `pureDelay_add`, `prod_pureDelay`, `pureDelay_three_half_periods` — delay cascade:
+  `pureDelay (τ₁ + τ₂) = pureDelay τ₁ · pureDelay τ₂`, the finite-product version, and the
+  "1.5 Tₛ" total of three half-period delays.
+* `norm_pureDelay_jω`, `norm_pade11_jω`, `norm_pade22_jω` — frequency response on the imaginary
+  axis `s = jω` (`ω : ℝ`): `|e^{-jωτ}| = 1`, `|pade11 τ (jω)| = 1`, `|pade22 τ (jω)| = 1`
+  (all-pass).
+* `pade11Num_eq_zero_iff`, `pade22Num_factor`, `pade11_rhp_zero`, `pade22_rhp_zeros` —
+  non-minimum phase: the Padé(1,1) numerator vanishes exactly at `s = 2/τ`; the Padé(2,2)
+  numerator factors as `(τs - (3 + √3 j))(τs - (3 - √3 j))/12`; every such zero lies in the
+  open right half-plane when `τ > 0`, while the denominators do not vanish there.
+* `norm_pureDelay_sub_pade11_le`, `norm_pureDelay_sub_pade22_le` — Taylor matching orders with
+  explicit constants on the unit disc `‖τ s‖ ≤ 1`: `‖e^{-τ s} - pade11 τ s‖ ≤ 2 ‖τ s‖³` and
+  `‖e^{-τ s} - pade22 τ s‖ ≤ ‖τ s‖⁵ / 10` (i.e. `O((τ s)³)` and `O((τ s)⁵)`).
+* `transfer_pade11Model`, `pade11Model_exponentiallyStable`, `transfer_pade11DqModel` — the
+  realization `pade11Model τ` has `Linear.transfer = pade11 τ s` for `s ≠ -2/τ`, and its
+  zero-input dynamics (the affine linear field of its state matrix, Flow semantics) are
+  globally exponentially stable for `τ > 0`; the dq version has transfer `pade11 τ s • I₂`
+  (per-axis delay, no cross coupling).
+
+Scope notes.
+* The GFL impedance module `theorem/GFL/Impedance/Admittance.lean` does not use `pade11`: it
+  defines its own delay factor `Gdel` with `G_del = (1 − a s)/(1 + a s)`, `a = τ_d/2`
+  (`Gdel_eq`), the same Padé(1,1) form.
 -/
 
 noncomputable section

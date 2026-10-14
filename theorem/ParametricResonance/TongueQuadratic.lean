@@ -2,17 +2,28 @@ import theorem.ParametricResonance.SlowFlow
 
 /-! # The second-order slow flow and the tongue-centre quadratic
 
-Foundation layer: exact real-algebra statements **inside the second-order slow flow**. They are
-not Floquet stability boundaries of a converter: the coefficients `α₀`, `c_α`, `c_ω`, `|𝒢|²`
-are treated as given real numbers, and the passage from a periodic orbit of a converter model to
-this slow flow (projection, averaging, truncation at second order) is not formalized.
+Exact real-algebra statements **inside the second-order slow flow**: the corrected stability
+criterion, the tongue-centre quadratic with its corollaries, the detuned flip boundary and the
+two-circle criterion. They are not Floquet stability boundaries of a converter.
 
-Model boundary. Second-order slow flow (source §6–§7): the first-order slow flow of
-`SlowFlow.lean` with amplitude-dependent damping and detuning,
-`Ȧ = −(a(y) + j(Δ + c_ω y)) A + g A*`, `a(y) = α₀ − c_α y`, `|g|² = |𝒢|² y / 4`,
-`y = δ̂₁²` the squared modulation amplitude (`secondOrderMatrix`, and the linear field
-`secondOrderSystem` on `ℝ²`). We write `g2 = |𝒢|² > 0`,
-`S = c_α² + c_ω²`, `Q = g2/4 + 2α₀c_α`.
+Model boundary.
+* Second-order slow flow (source §6–§7): the first-order slow flow of `SlowFlow.lean` with
+  amplitude-dependent damping and detuning, `Ȧ = −(a(y) + j(Δ + c_ω y)) A + g A*`,
+  `a(y) = α₀ − c_α y`, `|g|² = |𝒢|² y / 4`, `y = δ̂₁²` the squared modulation amplitude
+  (`secondOrderMatrix`, and the linear field `secondOrderSystem` on `ℝ²`). We write
+  `g2 = |𝒢|² > 0`, `S = c_α² + c_ω²`, `Q = g2/4 + 2α₀c_α`.
+* The coefficients `α₀`, `c_α`, `c_ω`, `|𝒢|²` are treated as given real numbers; the passage
+  from a periodic orbit of a converter model to this slow flow (projection, averaging,
+  truncation at second order) is not formalized.
+* Real algebra inside an averaged model, no model family. Exponential stability of the
+  second-order slow flow is `Flow.GloballyExponentiallyStable` of its linear field (through
+  `slowFlow_exponentiallyStable_iff`).
+
+Source: work-sync projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
+gfl-gfm-parametric-contrast.md §6 (corrected criterion), §7 (two exponents), §8 (tongue-centre
+quadratic, all corollaries, detuned boundary, including the low-gain `c_α > 0` branch and the
+continuity of `Δ_sup` at `c_α = 0`), §9 (two-circle criterion). The note's §8 is
+recorded as hand-checked; every identity is re-proved here.
 
 Results.
 * §6–§7: `det` of the second-order slow flow is `a² + (Δ + c_ω y)² − g2 y/4`; at the tongue
@@ -43,16 +54,6 @@ Results.
   `R² < 2Λ_α ∨ 2R² > 1 + 2Λ_α` (`yMinus_lt_y0_iff`); `c_α < 0` and `Λ* < 1` force every root
   above `y₀`, i.e. `e(0) < 0` (`y0_lt_root_of_calpha_neg`); `t = y₋/y₀` solves
   `R² t² − (1 + 2Λ_α) t + 1 = 0`.
-
-Source: work-sync projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
-gfl-gfm-parametric-contrast.md §6 (corrected criterion), §7 (two exponents), §8 (tongue-centre
-quadratic, all corollaries, detuned boundary, including the low-gain `c_α > 0` branch and the
-continuity of `Δ_sup` at `c_α = 0`), §9 (two-circle criterion). The note's §8 is
-recorded as hand-checked; every identity is re-proved here.
-
-Architecture: real algebra inside an averaged model, no model family; all results remain public
-foundation support. Exponential stability of the second-order slow flow is
-`Flow.GloballyExponentiallyStable` of its linear field (through `slowFlow_exponentiallyStable_iff`).
 -/
 
 noncomputable section

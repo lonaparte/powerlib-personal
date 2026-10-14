@@ -2,16 +2,23 @@ import theorem.Dynamics.State
 
 /-! # Coordinates on `Dynamics.State n`
 
-Foundation layer: calculus utilities on the Euclidean state space
-`Dynamics.State n = EuclideanSpace ℝ (Fin n)`; no model is fixed here.
-
+Calculus utilities on the Euclidean state space `Dynamics.State n = EuclideanSpace ℝ (Fin n)`.
 The linearization theorems (`Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`,
 `Criteria.locallyExponentiallyStable_of_jacobian_fin_two`, …) take a field
 `f : Dynamics.State n → Dynamics.State n` (`EuclideanSpace ℝ (Fin n)`), the hypothesis
 `ContDiff ℝ 1 f`, and the identification
-`fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A`.
-This module reduces both to the scalar component functions `fun y => f y i`:
+`fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A`; this module reduces both to the
+scalar component functions `fun y => f y i`.
 
+Scope.
+* Every statement is generic calculus about an arbitrary field or about the explicit example
+  fields; no model is fixed, no model family is involved and no behavioural sentence is stated
+  (foundation results, Rules §3).
+
+Source: library infrastructure (no work-sync note): the shared criteria interface of the
+work-sync formalization.
+
+Results.
 * `hasFDerivAt_toEuclideanCLM_of_components` / `fderiv_eq_toEuclideanCLM_of_components`:
   if each component has derivative `L i` with `L i v = ∑ j, A i j * v j`, the Jacobian is `A`
   (any dimension); `toEuclideanCLM_injective_fin_two`: a planar Jacobian determines its matrix.
@@ -35,12 +42,6 @@ This module reduces both to the scalar component functions `fun y => f y i`:
   `HasDerivWithinAt.euclidean_coord`, `tendsto_euclidean_of_coord` (curves are differentiated,
   and converge, coordinatewise); `hasDerivAt_of_coords`, `hasDerivAt_iff_coords` (the same for
   `HasDerivAt`).
-
-Every statement is generic calculus about an arbitrary field or about the explicit example fields;
-no model family is involved and no behavioural sentence is stated, so the module stays
-foundation under the connection architecture (Rules §3).
-
-Source: powerlib Phase 0, P0a (shared criteria interface for the work-sync formalization).
 -/
 
 noncomputable section

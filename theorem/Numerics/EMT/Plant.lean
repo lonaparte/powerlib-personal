@@ -1,61 +1,63 @@
 import theorem.Numerics.LinearSchemes
 import theorem.Circuits.LCL
 
-/-! Stability of the discretized (EMT-style) models of two canonical plants.
+/-! # Stability of the discretized (EMT-style) models of two canonical plants
 
-This module is about **discrete-time numerical models**, not about the physical circuits.
-It applies the trapezoidal rule (the EMT companion-model integrator) and backward Euler with
-a fixed step `h > 0` to the continuous plant vector fields already formalized in powerlib:
+Trapezoidal and backward-Euler discretizations of the RL branch and the ideal LCL filter decay
+geometrically exactly when the plant is damped. This module is about **discrete-time numerical
+models**, not about the physical circuits.
 
-* the single-port RL branch of `theorem/Circuits/RL.lean` (`Circuits.RL.Impedance`): state
-  `x 0 = i` (inductor current, physical coordinate), terminal voltage `v` held constant (zero in
-  perturbation coordinates), continuous field `i' = -a i + b v` with `a = R / L`, `b = 1 / L`,
-  read off the plant of the RL family (`RL.Impedance.plant`);
-* the ideal three-state LCL filter of `theorem/Circuits/LCL.lean` (`Circuits.LCL.Circuit`):
-  state order `(x 0, x 1, x 2) = (i₁, v_C, i₂)` (converter-side current, capacitor voltage,
-  grid-side current), stationary scalar phase variables, both terminal voltages `u, v_g` held
-  constant, read off the plant of the LCL family (`LCL.Circuit.plant`, inputs `(u, v_g)`).
-
-Model boundary (inherited from `Circuits.RL` / `Circuits.LCL` and narrowed here): no controller,
-no PLL, no PWM or switching, no sampling or computation delay, no grid impedance beyond the
-second branch, no saturation, constant parameters, exact solution of each implicit step
-(no Newton or linear-solver error), fixed step size.  Time is discrete (`k : ℕ`).  The
-results are trajectory-level statements about the discrete recursion for every initial
-state; with constant inputs they hold for deviations from any equilibrium of the
-continuous field (which is also a fixed point of both schemes).  Sign convention: the plant
-modules' own convention (branch currents flowing from the converter terminal towards the
-grid terminal; voltages are inputs).
-
-Main results.
-* `rlPlant_trapezoidalDiscretization_exponentiallyStable`,
-  `rlPlant_backwardEulerDiscretization_exponentiallyStable`: for a positive resistance and
-  every `h > 0` the implicit step is uniquely solvable and every discrete trajectory decays
-  geometrically.
-* `rlPlant_trapezoidalDiscretization_exponentiallyStable_iff`: for a well-posed trapezoidal
-  step, geometric decay of the discretized RL model holds exactly when `R > 0`.
-* `idealLCLPlant_trapezoidalDiscretization_exponentiallyStable`,
-  `idealLCLPlant_backwardEulerDiscretization_exponentiallyStable`: same for a passive,
-  damped ideal LCL plant (`R₁, R₂ ≥ 0`, not both zero).
-* `idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_iff`: for a passive plant
-  and a well-posed trapezoidal step, discrete geometric decay holds exactly when the plant
-  is damped.
-* `idealLCLPlant_trapezoidal_deviation_decay`, `rlPlant_trapezoidal_deviation_decay`:
-  constant-input versions about any equilibrium.
-
-Architecture. `Circuits.RL.Impedance` and `Circuits.LCL.Circuit` are the model types of the RL
-and LCL families, and the discretized models are built from those families' plants. The
-discrete-time conclusions lie outside the Flow sentence language (continuous time), so the
-results listed above — formerly public domain theorems — and the trajectory identity
-`rlPlant_isTrapezoidalTrajectory_iff` are private implementation evidence (Rules §3a). The
-public statements are static: the identification of the discretized fields with the family
-plants' state matrices (`rlField_eq_linearField`, `lclField_eq_linearField`, the deviation
-identities) and the Hurwitz property of those matrices (`rlMatrix_isHurwitz_iff`,
-`lclMatrix_isHurwitz`). The continuous-time behaviour of the same models is the connection
-interface of `Circuits.RL.family` and `Circuits.LCL.family`.
+Model boundary.
+* The trapezoidal rule (the EMT companion-model integrator) and backward Euler with a fixed step
+  `h > 0`, applied to the continuous plant vector fields already formalized in powerlib:
+  * the single-port RL branch of `theorem/Circuits/RL.lean` (`Circuits.RL.Impedance`): state
+    `x 0 = i` (inductor current, physical coordinate), terminal voltage `v` held constant (zero
+    in perturbation coordinates), continuous field `i' = -a i + b v` with `a = R / L`,
+    `b = 1 / L`, read off the plant of the RL family (`RL.Impedance.plant`);
+  * the ideal three-state LCL filter of `theorem/Circuits/LCL.lean` (`Circuits.LCL.Circuit`):
+    state order `(x 0, x 1, x 2) = (i₁, v_C, i₂)` (converter-side current, capacitor voltage,
+    grid-side current), stationary scalar phase variables, both terminal voltages `u, v_g` held
+    constant, read off the plant of the LCL family (`LCL.Circuit.plant`, inputs `(u, v_g)`).
+* Inherited from `Circuits.RL` / `Circuits.LCL` and narrowed here: no controller, no PLL, no PWM
+  or switching, no sampling or computation delay, no grid impedance beyond the second branch, no
+  saturation, constant parameters, exact solution of each implicit step (no Newton or
+  linear-solver error), fixed step size. Time is discrete (`k : ℕ`).
+* The results are trajectory-level statements about the discrete recursion for every initial
+  state; with constant inputs they hold for deviations from any equilibrium of the continuous
+  field (which is also a fixed point of both schemes).
+* Sign convention: the plant modules' own convention (branch currents flowing from the converter
+  terminal towards the grid terminal; voltages are inputs).
 
 Source: work-sync theory/T-emt-simulation.md §1.3–§1.5, §2.3 (trapezoidal companion
 discretization in EMT); theory/T-numerical-integration.md §1.3, §2.7 (A-stability,
 `x_{n+1} = R(hA) x_n`).
+
+Results.
+* `rlPlant_trapezoidalDiscretization_exponentiallyStable`,
+  `rlPlant_backwardEulerDiscretization_exponentiallyStable` — for a positive resistance and
+  every `h > 0` the implicit step is uniquely solvable and every discrete trajectory decays
+  geometrically.
+* `rlPlant_trapezoidalDiscretization_exponentiallyStable_iff` — for a well-posed trapezoidal
+  step, geometric decay of the discretized RL model holds exactly when `R > 0`.
+* `idealLCLPlant_trapezoidalDiscretization_exponentiallyStable`,
+  `idealLCLPlant_backwardEulerDiscretization_exponentiallyStable` — same for a passive, damped
+  ideal LCL plant (`R₁, R₂ ≥ 0`, not both zero).
+* `idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_iff` — for a passive plant and a
+  well-posed trapezoidal step, discrete geometric decay holds exactly when the plant is damped.
+* `idealLCLPlant_trapezoidal_deviation_decay`, `rlPlant_trapezoidal_deviation_decay` —
+  constant-input versions about any equilibrium.
+
+Family and connection conclusions.
+* `Circuits.RL.Impedance` and `Circuits.LCL.Circuit` are the model types of the RL and LCL
+  families, and the discretized models are built from those families' plants.
+* The discrete-time conclusions lie outside the Flow sentence language (continuous time), so
+  the results listed above and the trajectory identity `rlPlant_isTrapezoidalTrajectory_iff` are
+  private implementation evidence (Rules §3a). The public statements are static: the
+  identification of the discretized fields with the family plants' state matrices
+  (`rlField_eq_linearField`, `lclField_eq_linearField`, the deviation identities) and the
+  Hurwitz property of those matrices (`rlMatrix_isHurwitz_iff`, `lclMatrix_isHurwitz`).
+* The continuous-time behaviour of the same models is the connection interface of
+  `Circuits.RL.family` and `Circuits.LCL.family`.
 -/
 
 noncomputable section

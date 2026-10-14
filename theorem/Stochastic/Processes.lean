@@ -7,44 +7,48 @@ import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 /-! # Filtrations, stopping times, hitting times and optional stopping
 
-Source: work-sync `theory/T-process-foundations-stochastic.md` §1.1 (filtered space, usual
-conditions), §1.2 (adapted processes); `theory/T-martingales-stopping-times.md` §1.1
+Stopping times, hitting and exit times, stopped martingales and optional stopping in discrete and
+continuous time; a Markov process need not be a martingale.
+
+Scope.
+* Probability theory, not an engineering result.
+* Related modules: `OptionalStoppingUI.lean` (optional stopping for uniformly integrable stopped
+  martingales), `MartingaleNotMarkov.lean` (a martingale that is not Markov),
+  `ProcessFoundations.lean` (adapted / progressive / predictable, finite-dimensional laws).
+
+Source: work-sync theory/T-process-foundations-stochastic.md §1.1 (filtered space, usual
+conditions), §1.2 (adapted processes); theory/T-martingales-stopping-times.md §1.1
 (martingales, discrete increment form), §1.3 (stopping times, hitting times
 `τ_a = inf{t ≥ 0 : X_t ≥ a}` are stopping times), §1.4 (stopped processes), §1.5 (optional
-stopping), §1.6.1 (Brownian hitting time); `theory/T-first-passage-time.md`
-(`τ_exit = inf{t ≥ 0 : X_t ∉ 𝒟}`); `theory/T-process-foundations-stochastic.md` §1.4
+stopping), §1.6.1 (Brownian hitting time); theory/T-first-passage-time.md
+(`τ_exit = inf{t ≥ 0 : X_t ∉ 𝒟}`); theory/T-process-foundations-stochastic.md §1.4
 ("Markov need not be a martingale").
 
-Foundation (probability), not an engineering result.
-
-Category C wrappers (Mathlib declaration in brackets): `discrete_hitting_isStoppingTime`
-[`MeasureTheory.Adapted.isStoppingTime_hittingAfter`], `optional_stopping_bounded`
-[`Submartingale.expected_stoppedValue_mono`], `optional_stopping_iff`
-[`submartingale_iff_expected_stoppedValue_mono`], `martingale_stoppedValue_condExp`
-[`Martingale.stoppedValue_ae_eq_condExp_of_le_const`], `submartingale_stopped`
-[`Submartingale.stoppedProcess`].
-
-Category B.
-* `martingale_stoppedProcess`: a stopped (discrete-time, real) martingale is a martingale
+Results.
+* Mathlib wrappers (Mathlib declaration in brackets): `discrete_hitting_isStoppingTime`
+  [`MeasureTheory.Adapted.isStoppingTime_hittingAfter`], `optional_stopping_bounded`
+  [`Submartingale.expected_stoppedValue_mono`], `optional_stopping_iff`
+  [`submartingale_iff_expected_stoppedValue_mono`], `martingale_stoppedValue_condExp`
+  [`Martingale.stoppedValue_ae_eq_condExp_of_le_const`], `submartingale_stopped`
+  [`Submartingale.stoppedProcess`].
+* `martingale_stoppedProcess` — a stopped (discrete-time, real) martingale is a martingale
   (from the sub/supermartingale cases).
-* `hittingAfter_le_iff_of_continuous`, `continuous_hitting_isStoppingTime`: in **continuous time**
-  `ℝ≥0`, the hitting time of a **closed** set by an adapted process with continuous paths is a
-  stopping time (no usual conditions needed); `continuous_exit_isStoppingTime`: the exit time of
-  an **open** domain `𝒟` is a stopping time.
-* `UsualConditions` (complete + right-continuous filtration) and `UsualConditions.null_mem`.
-* `deterministic_markov_not_martingale`: the deterministic process `X_n = n` is Markov (in the
+* `hittingAfter_le_iff_of_continuous`, `continuous_hitting_isStoppingTime` — in **continuous
+  time** `ℝ≥0`, the hitting time of a **closed** set by an adapted process with continuous paths
+  is a stopping time (no usual conditions needed); `continuous_exit_isStoppingTime`: the exit
+  time of an **open** domain `𝒟` is a stopping time.
+* `UsualConditions`, `UsualConditions.null_mem` — usual conditions (complete + right-continuous
+  filtration); every null set is measurable at every time.
+* `deterministic_markov_not_martingale` — the deterministic process `X_n = n` is Markov (in the
   conditional-expectation sense, written out in the statement: for bounded measurable `g`,
   `E[g(X_{n+1}) | 𝓕_n] = E[g(X_{n+1}) | σ(X_n)]` a.s.) but is not a martingale.
 
-Correction (T-martingales §1.6.1).  "`W_{t∧τ_a}` is bounded" is false for a one-sided level:
-a stopped path is only bounded on the side of the level (`oneSided_stopped_unbounded`: the path
-`w(t) = −t` never reaches `a > 0`, so `w(t ∧ τ_a) = −t` is unbounded).  The bounded-stopping
-argument needs the **two-sided** exit time from `(a, b)`: then `w(t ∧ τ) ∈ [a, b]` for every
-continuous path started in `[a, b]` (`twoSided_stopped_mem`).
-
-Related modules: `OptionalStoppingUI.lean` (optional stopping for uniformly integrable stopped
-martingales), `MartingaleNotMarkov.lean` (a martingale that is not Markov),
-`ProcessFoundations.lean` (adapted / progressive / predictable, finite-dimensional laws).
+Corrections.
+* T-martingales §1.6.1: "`W_{t∧τ_a}` is bounded" is false for a one-sided level: a stopped path
+  is only bounded on the side of the level (`oneSided_stopped_unbounded`: the path `w(t) = −t`
+  never reaches `a > 0`, so `w(t ∧ τ_a) = −t` is unbounded). The bounded-stopping argument needs
+  the **two-sided** exit time from `(a, b)`: then `w(t ∧ τ) ∈ [a, b]` for every continuous path
+  started in `[a, b]` (`twoSided_stopped_mem`).
 -/
 
 noncomputable section
@@ -55,7 +59,7 @@ open scoped NNReal ENNReal Topology
 
 variable {Ω : Type*} {m : MeasurableSpace Ω}
 
-/-! ## Category C wrappers (discrete time) -/
+/-! ## Mathlib wrappers (discrete time) -/
 
 section Discrete
 

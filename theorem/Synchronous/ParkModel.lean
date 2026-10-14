@@ -2,23 +2,29 @@ import dependencies.Mathlib
 import theorem.Attributes
 import theorem.Transform.ParkABC
 
-/-! # Synchronous machine: Park-transform algebra of the stator (foundation)
+/-! # Synchronous machine: Park-transform algebra of the stator
 
-Model and conventions.
+Static foundation for the three-phase synchronous machine: Park transformation of the stator
+inductances, the dq0 voltage equations, power and torque.  SMIB stability and pH passivity are
+formalized elsewhere (`theorem/Synchronous/Swing.lean`, `theorem/Synchronous/PH.lean`).
+
+Model boundary.
 * Three-phase salient-pole synchronous machine, electrical rotor angle `θ` (`θ̇ = ω`), linear
   magnetics, sinusoidally distributed windings. Phase axes `φ_a = 0`, `φ_b = 2π/3`,
   `φ_c = −2π/3`.
 * Stator self/mutual inductances (Kundur Ch. 3 form):
   `l_xy(θ) = L_ℓ δ_xy + L_A cos(φ_x − φ_y) + L_B cos(2θ − φ_x − φ_y)`
-  (`statorInductance_apply`), i.e. `l_aa = L_aa0 + L_aa2 cos 2θ`, `l_ab = −L_ab0 + L_aa2 cos(2θ − 2π/3)`
-  with `L_aa0 = L_ℓ + L_A`, `L_ab0 = L_A/2`, `L_aa2 = L_B`.
+  (`statorInductance_apply`), i.e. `l_aa = L_aa0 + L_aa2 cos 2θ`,
+  `l_ab = −L_ab0 + L_aa2 cos(2θ − 2π/3)` with `L_aa0 = L_ℓ + L_A`, `L_ab0 = L_A/2`, `L_aa2 = L_B`.
 * Power-invariant Park matrix `T_P(θ)` with rows `√(2/3) cos(θ − φ_x)`, `−√(2/3) sin(θ − φ_x)`,
   `1/√3` (work-sync conventions §4): `Transform.parkMatrix` in `theorem/Transform/ParkABC.lean`.
 * **Direction**: generator (OUT-positive) stator current, Kundur convention — the single
   exception to the work-sync IN-positive default (conventions §D2). Stator voltage
   `v_abc = dψ_abc/dt − r_s i_abc` (`e = pψ − R i`), flux `ψ_d = −L_d i_d + …`.
 
-Contents.
+Source: work-sync `theory/T-sync-machine.md` §1.1–§1.5, §1.8, §1.9 (machine algebra only).
+
+Results.
 * `Transform.parkMatrix_mul_transpose`: `T_P T_Pᵀ = I` (orthogonality; `T_P⁻¹ = T_Pᵀ`).
 * `park_statorInductance`: `T_P(θ) L(θ) T_P(θ)ᵀ = diag(L_d, L_q, L_0)` with
   `L_d = L_ℓ + (3/2)(L_A + L_B)`, `L_q = L_ℓ + (3/2)(L_A − L_B)`, `L_0 = L_ℓ`, **independent
@@ -26,15 +32,13 @@ Contents.
   `park_mutual_q`).
 * `Transform.parkMatrix_mul_deriv_transpose`: `T_P (dT_P/dθ)ᵀ = J₀` (`J₀` = 90° rotation in the
   dq plane); the opposite order is not `J₀` (`Transform.deriv_transpose_mul_parkMatrix_ne`).
-* `park_flux_hasDerivAt`, `dq0_voltage_equations`: from `v_abc = dψ_abc/dt − r i_abc`,
-  `v_d = ψ̇_d − ω ψ_q − r i_d`, `v_q = ψ̇_q + ω ψ_d − r i_q`, `v_0 = ψ̇_0 − r i_0`.
+* `park_apply_flux_derivative`, `park_flux_hasDerivAt`, `dq0_voltage_equations`: from
+  `v_abc = dψ_abc/dt − r i_abc`, `v_d = ψ̇_d − ω ψ_q − r i_d`, `v_q = ψ̇_q + ω ψ_d − r i_q`,
+  `v_0 = ψ̇_0 − r i_0`.
 * `Transform.park_power_invariant`, `power_dq0`: `v_abc·i_abc = v_dq0·i_dq0
   = Σ ψ̇ i − r|i|² + ω(ψ_d i_q − ψ_q i_d)`; the speed-voltage power defines
-  `T_e = ψ_d i_q − ψ_q i_d`.
-* `twoAxis_power`, `classical_power`, `classical_power_linearization`.
-
-Source: work-sync theory/T-sync-machine.md §1.1–§1.5, §1.8, §1.9 (machine algebra only; SMIB
-stability and pH passivity are formalized elsewhere).
+  `T_e = ψ_d i_q − ψ_q i_d` (`torque`).
+* `twoAxis_power`, `twoAxis_noteSign_ne`, `classical_power`, `classical_power_linearization`.
 
 Corrections.
 * §1.1/§1.4: `v_abc = −r i − dψ/dt` together with §1.3's `ψ_d = −L_d i_d + …` mixes two sign
@@ -45,7 +49,7 @@ Corrections.
   holds, `d(T_P⁻¹)/dt · T_P` does not (`Transform.deriv_transpose_mul_parkMatrix_ne`).
 * §1.8: with the two-axis stator equations (`r_s = 0`) `v_d = E_d' + X_q' i_q`,
   `v_q = E_q' − X_d' i_d`, the reluctance term is `(X_q' − X_d') i_d i_q`, not
-  `(X_d' − X_q') i_d i_q` (`twoAxis_power`).
+  `(X_d' − X_q') i_d i_q` (`twoAxis_power`, `twoAxis_noteSign_ne`).
 * §1.9: the linearisation is `sin δ ≈ sin δ₀ + cos δ₀ Δδ` (`classical_power_linearization`), not
   `δ − δ₀ + cos δ₀ Δδ`.
 -/

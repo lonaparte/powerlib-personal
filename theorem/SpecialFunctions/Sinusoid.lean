@@ -6,18 +6,24 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-! # Zeros of a shifted sinusoid `c − A sin(θ + φ)` in one period (foundation)
 
-For `A > 0` and a period window `[a, a + 2π)`:
-* `|c| < A`: exactly two zeros, `stableRoot` (where the derivative `−A cos(θ + φ)` is negative)
-  and `saddleRoot` (where it is positive), and they differ;
-* `|c| = A`: exactly one zero, where the derivative vanishes;
-* `|c| > A`: no zero.
+The number and position of the zeros of `c − A sin(θ + φ)` in a period window `[a, a + 2π)`, for
+`A > 0`.
 
-Explicitly `stableRoot ≡ arcsin(c/A) − φ` and `saddleRoot ≡ π − arcsin(c/A) − φ (mod 2π)`.
-This is pure trigonometry; it is used for the reduced GFL-PLL model whose phase-detector
-characteristic is exactly of this form (`theorem/GFL/LCLine/Reduction.lean`, `h_eq_polar`).
+Scope.
+* Pure trigonometry; no model family. It is used for the reduced GFL-PLL model whose
+  phase-detector characteristic is exactly of this form (`theorem/GFL/LCLine/Reduction.lean`,
+  `h_eq_polar`).
 
 Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/equilibria-and-bifurcation.md`
 §2 (number of equilibria per period).
+
+Results.
+* `|c| < A`: exactly two zeros (`ncard_sinusoidZeros_of_lt`), `stableRoot` (where the derivative
+  `−A cos(θ + φ)` is negative) and `saddleRoot` (where it is positive), and they differ
+  (`stableRoot_ne_saddleRoot`).
+* `|c| = A`: exactly one zero, where the derivative vanishes (`ncard_sinusoidZeros_of_eq`).
+* `|c| > A`: no zero (`sinusoidZeros_eq_empty`).
+* Explicitly `stableRoot ≡ arcsin(c/A) − φ` and `saddleRoot ≡ π − arcsin(c/A) − φ (mod 2π)`.
 -/
 
 noncomputable section

@@ -3,22 +3,24 @@ import theorem.Dynamics.LaSalle.Basin
 
 /-! # Damped Duffing: every solution converges to the equilibrium set (LaSalle)
 
-Foundation layer (a canonical textbook system, not a power-system model).
+The "bounded orbits converge to the set of equilibria" statement of the phase-plane note for the
+damped double well (all orbits are bounded there since the energy is coercive).
 
-Model boundary. The Duffing field `PhasePlane.Duffing.field δ` (`ẋ = y`, `ẏ = x − x³ − δy`,
-state `(x, y) ∈ State 2`) with damping `δ > 0`, continuous time, no input.
-
-Result. `tendsto_equilibria`: every forward solution converges to the equilibrium set
-`{(0, 0), (1, 0), (−1, 0)}` (in the sense of `𝓝ˢ`). Proof: LaSalle's invariance principle in the
-`C¹` form of `theorem/Dynamics/LaSalle/Basin.lean` (`lasalle_invariance_principle_of_contDiff`) on the
-compact, positively invariant energy sublevel set through the initial state; on `{Ė = 0} = {y = 0}`
-an invariant set must have `ẏ = −(x³ − x) = 0`, i.e. consist of equilibria.
-
-This is the "bounded orbits converge to the set of equilibria" statement of the phase-plane note
-for the damped double well (all orbits are bounded there since the energy is coercive).
+Model boundary.
+* The Duffing field `PhasePlane.Duffing.field δ` (`ẋ = y`, `ẏ = x − x³ − δy`, state
+  `(x, y) ∈ State 2`) with damping `δ > 0`, continuous time, no input.
+* A canonical textbook system, not a power-system model: no model family; foundation results.
 
 Source: work-sync theory/T-nonlinear-phase-plane.md §1.7 (damped systems: trajectories shrink to
 the equilibria; stretch item "有界轨道收敛到平衡点集").
+
+Results.
+* `tendsto_equilibria`: every forward solution converges to the equilibrium set
+  `{(0, 0), (1, 0), (−1, 0)}` (`equilibria`, in the sense of `𝓝ˢ`). Proof: LaSalle's invariance
+  principle in the `C¹` form of `theorem/Dynamics/LaSalle/Basin.lean`
+  (`lasalle_invariance_principle_of_contDiff`) on the compact, positively invariant energy
+  sublevel set through the initial state (`sublevel_positivelyInvariant`); on
+  `{Ė = 0} = {y = 0}` an invariant set must have `ẏ = −(x³ − x) = 0`, i.e. consist of equilibria.
 -/
 
 noncomputable section

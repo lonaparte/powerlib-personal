@@ -3,16 +3,25 @@ import theorem.Attributes
 
 /-! # Variation of constants for linear time-varying systems (LeanForControl wrappers)
 
-Foundation layer (category C: direct reuse of upstream theorems, Rules §15–§16).
+The variation-of-constants formula for continuous-time LTV systems, by direct reuse of upstream
+theorems (Rules §15–§16), and exact zero-order-hold sampling of a constant-input linear system.
 
-System (continuous time, finite state index `X`, input index `U`, real coefficients):
-`ẋ = A(t) x + B(t) u(t)` with continuous `A : ℝ → Matrix X X ℝ`, `B : ℝ → Matrix X U ℝ` and
-input `u : ℝ → U → ℝ`. The state transition matrix `Φ(t, t₀)` is LeanForControl's Peano–Baker
-series `LinearSystems.stateTransitionMatrix`; the forced response is LeanForControl's
-`LinearSystems.forcedResponse A B u t₀ x₀ t = Φ(t, t₀) x₀ + ∫_{t₀}^{t} Φ(t, τ) B(τ) u(τ) dτ`
-(Hespanha, *Linear Systems Theory*, Thm. 5.2).
+Scope.
+* Continuous time, finite state index `X`, input index `U`, real coefficients:
+  `ẋ = A(t) x + B(t) u(t)` with continuous `A : ℝ → Matrix X X ℝ`, `B : ℝ → Matrix X U ℝ` and
+  input `u : ℝ → U → ℝ`. The state transition matrix `Φ(t, t₀)` is LeanForControl's Peano–Baker
+  series `LinearSystems.stateTransitionMatrix`; the forced response is LeanForControl's
+  `LinearSystems.forcedResponse A B u t₀ x₀ t = Φ(t, t₀) x₀ + ∫_{t₀}^{t} Φ(t, τ) B(τ) u(τ) dτ`
+  (Hespanha, *Linear Systems Theory*, Thm. 5.2).
+* Generic mathematical support (no `Family`, no definitions); the statements are about arbitrary
+  continuous coefficient maps, so they are public foundation.
 
-Results (each a thin wrapper that invokes the upstream theorem; no upstream proof is copied):
+Source: work-sync theory/T-singular-perturbation.md and theory/T-tikhonov.md use the linear
+solution formula for the slow and boundary-layer subsystems; the formula itself is Hespanha,
+Ch. 5, Thm. 5.2, as formalized upstream.
+
+Results (each upstream item a thin wrapper that invokes the upstream theorem; no upstream proof is
+copied).
 * `forcedResponse_hasDerivAt`: the forced response solves the state equation at every time
   (upstream `LinearSystems.ContinuousLinearSystem.isTrajectory_forcedResponse`, applied to the
   system `(A, B, 0, 0)`).
@@ -24,27 +33,24 @@ Results (each a thin wrapper that invokes the upstream theorem; no upstream proo
   and the uniqueness theorem `LinearSystems.variationOfConstants_unique`).
 * `eq_variationOfConstants_of_hasDerivAt`: the variation-of-constants formula for every global
   solution, written out with `Φ`.
+* `zoh_exact` (proved directly, not an upstream wrapper): exact zero-order-hold sampling of
+  `ẋ = A x + c` with constant `c` on a Banach space over one period,
+  `x(T) = e^{TA} x(0) + ∫₀ᵀ e^{σA} c dσ` (operator exponential; used by the predictive
+  machine-control note theory/T-predictive-machine-control.md §1.1).
 
 The only additional step is the compactness bound `‖A s‖ ≤ M` on the segment (operator `L∞`
 norm, `Matrix.Norms.Operator`, the norm of the upstream track) required by the upstream
 hypotheses.
 
-Also here (proved directly, not an upstream wrapper): `zoh_exact`, exact zero-order-hold
-sampling of `ẋ = A x + c` with constant `c` on a Banach space over one period,
-`x(T) = e^{TA} x(0) + ∫₀ᵀ e^{σA} c dσ` (operator exponential; used by the predictive
-machine-control note theory/T-predictive-machine-control.md §1.1).
+`theorem/Periodic/Transition.lean` builds a second LTV transition matrix,
+`Periodic.transition A t s`, as a forward-time construction for uniformly bounded `A` (monodromy
+and Floquet multipliers of periodic systems); the library does not identify it with the
+Peano–Baker `LinearSystems.stateTransitionMatrix` used here.
 
 Dependency note: LeanForControl's `LinearSystems/Solutions/CtsLTV.lean` did not build against the
 pinned Mathlib; `dependencies/LeanForControl-4.34.1.patch` contains the minimal compatibility diff
 (three proof-local changes, no statement changes) and `dependencies/LeanForControl.lean` imports
 the module.
-
-Architecture: generic mathematical support (no `Family`, no definitions); the statements are
-about arbitrary continuous coefficient maps, so they are public foundation.
-
-Source: work-sync theory/T-singular-perturbation.md and theory/T-tikhonov.md use the linear
-solution formula for the slow and boundary-layer subsystems; the formula itself is Hespanha,
-Ch. 5, Thm. 5.2, as formalized upstream.
 -/
 
 noncomputable section

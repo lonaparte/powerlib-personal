@@ -4,13 +4,8 @@ import Mathlib.MeasureTheory.Integral.Prod
 
 /-! # Escape analysis of the reduced 2D GFL–PLL model: algebraic and calculus facts
 
-Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/escape-quasipotential.md`
-§0 (Lyapunov erratum: `𝓗 = ½ K_i η² + 𝒱`, `𝒱 = −∫h`, `𝓗̇ = −K_p h²`; the old pairing
-`𝒱 = −K_i ∫h` fails), §2 (frequency channel: `B Bᵀ = 2 T_eff R`, `ρ∞ = e^{−𝓗/T_eff}`),
-§5b–§5c (Langer factor `λ_b/ω_b = √(1 + ζ_b²) + ζ_b`, saddle Jacobian), §5b (right-truncated
-exponential mean `E[X | X < T] = μ − T e^{−T/μ}/(1 − e^{−T/μ})`).
-
-Model boundary.  Same 2D slow model as `theorem/GFL/Noise/Embedding.lean`: state
+Model boundary.
+Same 2D slow model as `theorem/GFL/Noise/Embedding.lean`: state
 `(θ_e, η)`, drift `(K_p h(θ_e) + K_i η, h(θ_e))`, `h : ℝ → ℝ` the reduced phase-detector
 characteristic (assumed differentiable where stated), `𝒱' = −h`.  Only the frequency noise channel
 `(−ε, 0)ᵀ` is used for the stationary density.  Continuous time.  Foundation results (Rules §3):
@@ -19,6 +14,24 @@ characteristic (assumed differentiable where stated), `𝒱' = −h`.  Only the 
   pointwise (a PDE identity); that it is the law of the SDE solution is not claimed;
 * the Langer statement is an eigenvalue computation of the saddle Jacobian;
 * the truncated-mean statement is a calculus identity for the exponential density.
+
+Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/escape-quasipotential.md`
+§0 (Lyapunov erratum: `𝓗 = ½ K_i η² + 𝒱`, `𝒱 = −∫h`, `𝓗̇ = −K_p h²`; the old pairing
+`𝒱 = −K_i ∫h` fails), §2 (frequency channel: `B Bᵀ = 2 T_eff R`, `ρ∞ = e^{−𝓗/T_eff}`),
+§5b–§5c (Langer factor `λ_b/ω_b = √(1 + ζ_b²) + ζ_b`, saddle Jacobian), §5b (right-truncated
+exponential mean `E[X | X < T] = μ − T e^{−T/μ}/(1 − e^{−T/μ})`).
+
+Results.
+* `H_hasDerivAt_along`: along a trajectory, `𝓗 = ½ K_i η² + 𝒱(θ)` decreases at rate `K_p h²`
+  (§0); `Hold_hasDerivAt_along`, `Hold_deriv_pos_somewhere`: the old pairing (Corrections).
+* `fpFreq_gibbs` (with `gibbs2_hasDerivAt_θ`, `gibbs2_hasDerivAt_η`): if `ε² = 2 K_p T`
+  (`B Bᵀ = 2 T R`, `T = T_eff`), then `e^{−𝓗/T}` solves the stationary Fokker–Planck equation
+  pointwise; `gibbs2_not_integrable`: it is not normalizable in general (Corrections).
+* `saddleJac_partials`, `saddleJac_det_sub`, `saddleJac_eigen`, `saddle_stable_eigen_neg`,
+  `langer_factor`, `langer_factor_gt_one`, `langer_factor_mul_textbook`: the saddle Jacobian, its
+  eigenvalues and the Langer factor `λ_b/ω_b = √(1 + ζ_b²) + ζ_b`.
+* `truncExp_mean`, `truncExp_mean_lt`: `E[X | X < T] = μ − T e^{−T/μ}/(1 − e^{−T/μ}) < μ` for
+  the exponential density with mean `μ`.
 
 Corrections.
 * (§0, recorded in the note) The old pairing `𝓗_old = ½ K_i η² − K_i ∫h` does **not** satisfy

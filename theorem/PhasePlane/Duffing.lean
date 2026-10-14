@@ -4,35 +4,44 @@ import theorem.Flow.Certificate
 
 /-! # The bistable Duffing oscillator `ẍ + δẋ − x + x³ = 0`
 
-Foundation layer (a canonical textbook system, not a power-system model).
+Equilibria, the saddle at the origin, the stable wells, forward completeness and the absence of
+attractors in the conservative case, for the canonical bistable textbook oscillator.
 
-Model boundary. State `(x, y) = (y 0, y 1) ∈ State 2`, `y = ẋ`, constant damping `δ`, continuous
-time, no input or noise. The field is `Conservative.field 1 δ (x³ − x)`, i.e. `ẋ = y`,
-`ẏ = x − x³ − δy`, with the double-well potential `V(x) = x⁴/4 − x²/2` (`V' = x³ − x`) and energy
-`E = y²/2 + V(x)`.
-
-Results.
-* Equilibria: exactly `(0, 0)` and `(±1, 0)` (`field_eq_zero_iff`).
-* Jacobian at `(x, 0)`: `!![0, 1; 1 − 3x², −δ]`.
-* Saddle at the origin: characteristic roots `(−δ ± √(δ² + 4))/2` (`saddle_eigenvalues`), and
-  the origin is unstable for every `δ` (`origin_unstable`, `det = −1 < 0`).
-* Wells `(±1, 0)`: locally exponentially stable for `δ > 0` (`tr = −δ`, `det = 2`); Lyapunov
-  stable for every `δ ≥ 0` (strict minima of `V`, energy as Lyapunov function).
-* Forward completeness for `δ ≥ 0` (`forwardComplete`): the energy has compact sublevel sets and
-  is nonincreasing (powerlib `forwardComplete_of_compact_sublevel`).
-* Conservative case `δ = 0`: energy is conserved, and a forward solution whose energy differs from
-  `E(±1, 0) = −1/4` can never converge to `(±1, 0)` (`not_tendsto_of_energy_ne`); points with
-  this property exist arbitrarily close to the wells (`energy_off_well`). Hence the wells are not
-  locally asymptotically stable (`not_localAsymptoticStable_conservative`): there is no attractor.
-
-Correction (T-nonlinear-phase-plane.md §1.4): the note says the figure-eight separatrix of the
-(undamped) double well "划分吸引域" (separates basins of attraction). For the conservative system
-there are no attractors at all (`not_tendsto_of_energy_ne`); basins only appear with damping
-`δ > 0`, where the wells become locally exponentially stable (`well_locallyExponentiallyStable`).
+Model boundary.
+* State `(x, y) = (y 0, y 1) ∈ State 2`, `y = ẋ`, constant damping `δ`, continuous time, no
+  input or noise. The field is `Conservative.field 1 δ (x³ − x)`, i.e. `ẋ = y`,
+  `ẏ = x − x³ − δy`, with the double-well potential `V(x) = x⁴/4 − x²/2` (`V' = x³ − x`) and
+  energy `E = y²/2 + V(x)`.
+* A canonical textbook system, not a power-system model: no model family; foundation results.
 
 Source: work-sync theory/T-nonlinear-phase-plane.md §1.4, §1.6–1.7;
 theory/T-attractors-basins.md (codes example (b): bistable Duffing, saddle eigenvalues
 `(−δ ± √(δ² + 4))/2`); theory/T-dynamical-systems.md.
+
+Results.
+* Equilibria: exactly `(0, 0)` and `(±1, 0)` (`field_eq_zero_iff`).
+* Jacobian at `(x, 0)`: `!![0, 1; 1 − 3x², −δ]` (`hasFDerivAt_field`).
+* Saddle at the origin: characteristic roots `(−δ ± √(δ² + 4))/2` (`saddle_eigenvalues`), and
+  the origin is unstable for every `δ` (`origin_unstable`, `det = −1 < 0`).
+* Wells `(±1, 0)`: locally exponentially stable for `δ > 0` (`tr = −δ`, `det = 2`;
+  `well_locallyExponentiallyStable`); Lyapunov stable for every `δ ≥ 0` (strict minima of `V`,
+  energy as Lyapunov function; `well_lyapunovStable`).
+* Forward completeness for `δ ≥ 0` (`forwardComplete`): the energy has compact sublevel sets and
+  is nonincreasing (powerlib `forwardComplete_of_compact_sublevel`).
+* Conservative case `δ = 0`: energy is conserved (`energy_conserved`), and a forward solution
+  whose energy differs from `E(±1, 0) = −1/4` can never converge to `(±1, 0)`
+  (`not_tendsto_of_energy_ne`); points with this property exist arbitrarily close to the wells
+  (`energy_off_well`). Hence the wells are not locally asymptotically stable
+  (`not_localAsymptoticStable_conservative`): there is no attractor.
+
+Potential shapes: `V(x) = x⁴/4 − x²/2` is the double well of `theorem/Potential/Wells.lean` with
+`a = b = 1` (wells `±1`, barrier `a²/4b = 1/4`); the same quartic shape is the supercritical
+pitchfork potential of `theorem/NormalForm/Pitchfork.lean` at `μ = 1`.
+
+Corrections. (T-nonlinear-phase-plane.md §1.4): the note says the figure-eight separatrix of the
+(undamped) double well "划分吸引域" (separates basins of attraction). For the conservative system
+there are no attractors at all (`not_tendsto_of_energy_ne`); basins only appear with damping
+`δ > 0`, where the wells become locally exponentially stable (`well_locallyExponentiallyStable`).
 -/
 
 noncomputable section

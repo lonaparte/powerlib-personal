@@ -5,24 +5,29 @@ import Mathlib.Probability.StrongLaw
 
 /-! # Geometric Brownian motion: almost-sure versus moment exponents
 
-Source: work-sync `theory/T-lyapunov-stability-stochastic.md` (almost-sure Lyapunov exponent
+Scalar geometric Brownian motion can be almost surely stable while its second moment diverges:
+almost-sure stability does not imply moment stability.
+
+Scope.
+* GBM is the explicit functional `X_t = x₀ exp((a − b²/2) t + b W_t)` of a Mathlib pre-Brownian
+  motion `W` (`Stochastic.BM.gbm`); that it solves the SDE is not claimed.
+* The almost-sure exponent is taken along integer times `t = n` (the discrete-time exponent
+  used in `Stochastic.StochStab.as_exponent_le`).
+* A result about an explicit process, not an engineering stability conclusion.
+
+Source: work-sync theory/T-lyapunov-stability-stochastic.md (almost-sure Lyapunov exponent
 `λ_as = lim (1/t) log |X_t|` versus moment exponent `Λ(p) = lim (1/t) log E|X_t|^p`, `λ_as ≤
 Λ(p)/p`; scalar GBM `dX = a X dt + b X dW` has `λ_as = a − b²/2` and `Λ(2) = 2a + b²`, so for
 `a − b²/2 < 0 < a + b²/2` it is almost surely stable but second-moment unstable).
 
-Scope (Rules §3).  GBM is the explicit functional `X_t = x₀ exp((a − b²/2) t + b W_t)` of a
-Mathlib pre-Brownian motion `W` (`Brownian.gbm`); that it solves the SDE is not claimed.  The
-almost-sure exponent is taken along integer times `t = n` (the discrete-time exponent used in
-`StochStability.as_exponent_le`).  Foundation result about an explicit process, not an
-engineering stability conclusion.
-
-Main results.
-* `brownian_div_tendsto_zero`: `W_n / n → 0` a.s. (strong law of large numbers for the i.i.d.
+Results.
+* `brownian_div_tendsto_zero` — `W_n / n → 0` a.s. (strong law of large numbers for the i.i.d.
   `N(0,1)` unit increments, Mathlib `strong_law_ae`).
-* `gbm_as_exponent`: `(1/n) log |X_n| → a − b²/2` a.s.
-* `gbm_as_stable_moment_unstable`: if `a − b²/2 < 0 < a + b²/2`, then `X_n → 0` a.s. while
-  `E X_n² → ∞` (indeed `Λ(2) = 2a + b² > 0`, `Brownian.gbm_log_second_moment`): the inequality
-  `λ_as ≤ Λ(2)/2` holds with opposite signs, so a.s. stability does not imply moment stability.
+* `gbm_as_exponent` — `(1/n) log |X_n| → a − b²/2` a.s.
+* `gbm_as_stable_moment_unstable` — if `a − b²/2 < 0 < a + b²/2`, then `X_n → 0` a.s. while
+  `E X_n² → ∞` (indeed `Λ(2) = 2a + b² > 0`, `Stochastic.BM.gbm_log_second_moment`): the
+  inequality `λ_as ≤ Λ(2)/2` holds with opposite signs, so a.s. stability does not imply moment
+  stability.
 -/
 
 noncomputable section

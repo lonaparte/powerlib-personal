@@ -4,51 +4,52 @@ import theorem.Linear.Realization
 import Mathlib.Analysis.Meromorphic.Order
 import Mathlib.Analysis.Analytic.Constructions
 
-/-! # Poles of a minimal realization are exactly the eigenvalues (foundation)
+/-! # Poles of a minimal realization are exactly the eigenvalues
 
-Foundation layer (category B; matrix / transfer-function level, no model family).
+For every minimal realization the pole set of the transfer matrix equals the spectrum of the
+state matrix; minimality cannot be dropped.
 
-Source: work-sync `theory/T-small-signal-stability.md` §1.9 (transfer-function poles versus
-eigenvalues; minimal realizations), `theory/T-participation-factor.md` §2.5 (hidden modes).
-`theorem/Modal/Spectral.lean` (`transfer_pole_iff`) proves the statement only for diagonalisable
-`A` with simple eigenvalues and modal PBH data; here the general case is proved.
+Scope.
+* Matrix / transfer-function level, no model family: transfer functions and spectra, no
+  trajectories. Static evidence on the plant, not a connection conclusion.
+* A real LTI plant `m : Linear.Plant n p` (`ẋ = A x + B u`, `y = C x + D u`, state `ℝⁿ`, `p`
+  inputs and outputs, continuous time, no delay), its transfer matrix
+  `G(s) = Linear.transfer m s = C (sI − A)⁻¹ B + D` over `s ∈ ℂ`, and minimality
+  `Linear.Plant.Minimal m` = LeanForControl's `IsControllable A B ∧ IsObservable A C` (real rank
+  conditions).
+* A **pole** of `G` at `μ ∈ ℂ` means: some entry `G_ij` is unbounded on every punctured
+  neighbourhood of `μ` (`¬ IsBoundedUnder (≤) (𝓝[≠] μ) ‖G_ij‖`); for the rational entries of `G`
+  this is the usual notion of a (non-removable) pole. Eigenvalues are the complex spectrum
+  `σ(A) = spectrum ℂ (complexify A)`; `Modal.mem_spectrum_iff_exists_eigvec` identifies it with
+  the set of eigenvalues.
+* `theorem/Modal/Spectral.lean` (`transfer_pole_iff`) proves the statement only for
+  diagonalisable `A` with simple eigenvalues and modal PBH data; here the general case is proved.
 
-Setting: a real LTI plant `m : Linear.Plant n p` (`ẋ = A x + B u`, `y = C x + D u`, state
-`ℝⁿ`, `p` inputs and outputs, continuous time, no delay), its transfer matrix
-`G(s) = Linear.transfer m s = C (sI − A)⁻¹ B + D` over `s ∈ ℂ`, and minimality
-`Linear.Plant.Minimal m` = LeanForControl's `IsControllable A B ∧ IsObservable A C` (real
-rank conditions). A **pole** of `G` at `μ ∈ ℂ` means: some entry `G_ij` is unbounded on every
-punctured neighbourhood of `μ` (`¬ IsBoundedUnder (≤) (𝓝[≠] μ) ‖G_ij‖`); for the rational entries
-of `G` this is the usual notion of a (non-removable) pole. Eigenvalues are the complex spectrum
-`σ(A) = spectrum ℂ (complexify A)`; `Modal.mem_spectrum_iff_exists_eigvec` identifies it with the
-set of eigenvalues.
+Source: work-sync theory/T-small-signal-stability.md §1.9 (transfer-function poles versus
+eigenvalues; minimal realizations), theory/T-participation-factor.md §2.5 (hidden modes).
 
 Results.
-* `transfer_isBoundedUnder_of_not_mem_spectrum`: off `σ(A)` every entry of `G` is bounded near
+* `transfer_isBoundedUnder_of_not_mem_spectrum` — off `σ(A)` every entry of `G` is bounded near
   `μ` (any realization; `G` is continuous there).
-* `transfer_not_isBoundedUnder_of_mem_spectrum`: for a minimal realization, every `μ ∈ σ(A)` is a
-  pole. Proof: if all entries of `C (sI − A)⁻¹ B` were bounded near `μ`, so would be
-  `C q(A) (sI − A)⁻¹ B` for every polynomial `q` (`A (sI − A)⁻¹ = s (sI − A)⁻¹ − I`). Writing the
-  minimal polynomial as `π = (X − μ) φ`, `Φ = Aⁱ φ(A) Aʲ` satisfies `Φ A = μ Φ`, hence
+* `transfer_not_isBoundedUnder_of_mem_spectrum` — for a minimal realization, every `μ ∈ σ(A)` is
+  a pole. Proof: if all entries of `C (sI − A)⁻¹ B` were bounded near `μ`, so would be
+  `C q(A) (sI − A)⁻¹ B` for every polynomial `q` (`A (sI − A)⁻¹ = s (sI − A)⁻¹ − I`). Writing
+  the minimal polynomial as `π = (X − μ) φ`, `Φ = Aⁱ φ(A) Aʲ` satisfies `Φ A = μ Φ`, hence
   `C Φ (sI − A)⁻¹ B = C Φ B / (s − μ)`, which is bounded only if `C Aⁱ φ(A) Aʲ B = 0`.
-  Observability and controllability (transferred from the real predicates to complex vectors) then
-  give `φ(A) = 0`, contradicting `deg φ < deg π`.
-* `minimal_pole_iff`, `minimal_poles_eq_spectrum`: **the pole set of `G` equals `σ(A)`** for every
-  minimal realization.
-* `minimal_pole_tendsto_iff`: strong form — `μ ∈ σ(A)` iff `‖G_ij(s)‖ → ∞` (`s → μ`, `s ≠ μ`) for
-  some entry. Each entry is meromorphic (`meromorphicAt_transfer`: analytic numerator
+  Observability and controllability (transferred from the real predicates to complex vectors)
+  then give `φ(A) = 0`, contradicting `deg φ < deg π`.
+* `minimal_pole_iff`, `minimal_poles_eq_spectrum` — **the pole set of `G` equals `σ(A)`** for
+  every minimal realization.
+* `minimal_pole_tendsto_iff` — strong form: `μ ∈ σ(A)` iff `‖G_ij(s)‖ → ∞` (`s → μ`, `s ≠ μ`)
+  for some entry. Each entry is meromorphic (`meromorphicAt_transfer`: analytic numerator
   `C adj(sI − A) B` over `det(sI − A)`), so an unbounded entry tends to infinity
   (`tendsto_norm_transfer_of_not_isBoundedUnder`, Mathlib `meromorphicOrderAt`).
-* `hiddenMode_eigenvalue_not_pole`: minimality cannot be dropped (`Linear.hiddenMode`, `A = 1`,
+* `hiddenMode_eigenvalue_not_pole` — minimality cannot be dropped (`Linear.hiddenMode`, `A = 1`,
   `B = C = D = 0`: eigenvalue `1`, `G ≡ 0`).
 * Supporting facts: `analyticAt_det`, `analyticAt_adjugate`, `analyticAt_characteristicMatrix`,
   `eventually_det_characteristicMatrix_ne_zero`, `mul_resolvent`,
   `mul_resolvent_of_mul_eq`, `eq_zero_of_isBigO_inv_sub`, `complexify_pow`,
   `complexify_mulVec_re/im`, `eq_zero_of_isObservable`, `eq_zero_of_isControllable`.
-
-Architecture: static frequency-domain foundation (transfer functions and spectra, no trajectories);
-no Family, all results public `@[powerlib_foundation]`. Static evidence on the plant, not a
-connection conclusion.
 -/
 
 noncomputable section

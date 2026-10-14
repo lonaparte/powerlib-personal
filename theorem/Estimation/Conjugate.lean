@@ -7,20 +7,29 @@ import Mathlib.Probability.Distributions.Gaussian.Real
 
 /-! # Conjugate Bayesian updates
 
-Source: work-sync `theory/T-bayesian-inference.md` §1.4.1 (Beta–Binomial), §1.4.2
+The general conjugacy lemma and the Beta–Binomial update, at the density level and for
+Mathlib's posterior kernel.
+
+Scope.
+* General probability, not an engineering result.
+* Parameter space `ℝ` with Mathlib's `betaMeasure`, `gammaMeasure` (shape `a`, rate `r`),
+  `gaussianReal` (mean, variance in `ℝ≥0`). Models: `binomialKernel N θ = Bin(N, clamp θ)` on
+  `ℕ`, `clamp = projIcc 0 1` (the Beta prior lives on `(0,1)`, where `clamp θ = θ`); the
+  i.i.d. Poisson model `poissonIIDKernel` is in `GammaPoisson.lean`, the Gaussian model
+  `gaussianKernel` in `NormalNormal.lean`.
+* Results are stated both for the density-level `bayesPosterior` and, through
+  `posterior_ae_eq_bayesPosterior`, for Mathlib's posterior kernel `κ†μ` (a.e. in the data).
+
+Source: work-sync theory/T-bayesian-inference.md §1.4.1 (Beta–Binomial), §1.4.2
 (Gamma–Poisson), §1.4.3 (Normal–Normal, known variance), §1.4.5 (exponential family).
 
-Foundation (general probability), not an engineering result.
-
-Parameter space `ℝ` with Mathlib's `betaMeasure`, `gammaMeasure` (shape `a`, rate `r`),
-`gaussianReal` (mean, variance in `ℝ≥0`). Models:
-* `binomialKernel N θ = Bin(N, clamp θ)` on `ℕ`, `clamp = projIcc 0 1` (the Beta prior lives on
-  `(0,1)`, where `clamp θ = θ`);
-* `poissonIIDKernel N θ = ⊗ᵢ Po(max θ 0)` on `Fin N → ℕ` (i.i.d. counts);
-* `gaussianKernel v θ = N(θ, v)` on `ℝ`, `v ≠ 0` known.
-
-Results are stated both for the density-level `bayesPosterior` and, through
-`posterior_ae_eq_bayesPosterior`, for Mathlib's posterior kernel `κ†μ` (a.e. in the data).
+Results.
+* `bayesPosterior_withDensity_eq` — conjugacy lemma: if prior density × likelihood is (a.e.) a
+  constant multiple of a normalised density `g`, the posterior is `ν.withDensity g`.
+* `bayesPosterior_beta_binomial` — Beta–Binomial conjugacy (density level): after `k` successes
+  in `N` trials, `Beta(α, β) ↦ Beta(α + k, β + N - k)`.
+* `posterior_binomialKernel_betaMeasure` — the same for Mathlib's posterior kernel, a.e. in the
+  data.
 -/
 
 noncomputable section

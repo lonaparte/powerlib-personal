@@ -9,11 +9,16 @@ Foundation module. Everything here is algebra or calculus about the reduced PLL 
 `A P + P Aᵀ + B Bᵀ = 0`; they are *not* asserted here to be stationary covariances of any
 stochastic process (no stochastic model is formalized).
 
-Conventions. The linearization is written in the project-code convention of
+Model boundary.
+The reduced PLL field above and its linearization at a stable point. Conventions: the
+linearization is written in the project-code convention of
 `sn-critical-scaling.md` §2: `A = [[−K_p g, −K_i], [g, 0]]` with `g > 0` at a stable point.
 It is the text-convention Jacobian `piPLLJacobian K_p K_i h′` with `h′ = −g`, conjugated by
 `diag(1, −1)` (`linA_eq_conj`). Voltage-channel input `B_v = (−K_p σ, σ)ᵀ` (unit intensity,
 sensitivity `σ`), frequency-channel input `B_ω = (−1, 0)ᵀ`.
+
+Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/sn-critical-scaling.md`
+§1–§3.
 
 Results.
 * `oscillator_form` (`sn-critical-scaling.md` §1): along any solution,
@@ -27,8 +32,7 @@ Results.
   (`Params.sigma_q_eq`), the q-channel value is `(K_i + K_p² g)/(2 K_p V_g²)`, which has the finite
   limit `K_i/(2 K_p V_g²)` as `g → 0` (saddle-node).
 
-Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/sn-critical-scaling.md`
-§1–§3. Correction: the note checks the closed forms against a numerical Lyapunov solver and the
+Correction: the note checks the closed forms against a numerical Lyapunov solver and the
 gauge identity to `1e−5`; here both are exact.
 -/
 

@@ -4,19 +4,36 @@ import theorem.Linear.Transfer
 
 /-! # Transport of the Flow sentences under changes of coordinates and of time scale
 
-Generic foundation, independent of any model. Setting: autonomous continuous-time fields
-`f : State n → State n` on `State n = EuclideanSpace ℝ (Fin n)`, read through the Flow semantics
-(`theorem/Flow/Defs.lean`: LeanForControl's finite forward solution segments, and the global
-notions `Flow.ForwardComplete`, `Flow.GloballyAsymptoticallyStable`,
-`Flow.GloballyExponentiallyStable`). No linearization is involved.
+Every behavioural sentence of the library is invariant under invertible affine changes of
+coordinates and under constant positive time scaling.
 
+Scope.
+* Generic foundation, independent of any model. Autonomous continuous-time fields
+  `f : State n → State n` on `State n = EuclideanSpace ℝ (Fin n)`, read through the Flow semantics
+  (`theorem/Flow/Defs.lean`: LeanForControl's finite forward solution segments, and the global
+  notions `Flow.ForwardComplete`, `Flow.GloballyAsymptoticallyStable`,
+  `Flow.GloballyExponentiallyStable`). No linearization is involved.
+* Excluded: time-varying coordinate changes (e.g. the rotating abc → dq Park transform `T(θ(t))`),
+  nonlinear diffeomorphisms, state-dependent time scaling, and transport of non-autonomous or
+  forced systems (port passivity under linear coordinates is `Port.System.passive_conjugate`).
+* These are transport laws (foundation results); they do not by themselves assert a property of
+  any particular power system. A model family whose field is the transport of another family's
+  field uses `holds_transport_iff` to identify the denotations of the two families sentence by
+  sentence.
+
+Source: work-sync `theory/T-PU.md` §1.2 / §1.5 (per-unit scaling of states = constant diagonal
+change of coordinates), §1.6 (time base `t̂ = ω_B t`, `d/dt = ω_B d/dt̂`, i.e. the per-unit-time
+field is `ω_B⁻¹ • f`); equilibrium shift to error coordinates as used in
+`theory/T-pll-dynamics.md` / `theory/T-invariant-coordinates.md`.
+
+Results.
 * Affine coordinate change `y = φ(x) = T x + c` (`affineCoord`), `T : State n ≃L[ℝ] State n`
   invertible (every invertible linear map of `ℝⁿ` is continuous), `c` arbitrary. The field in the
   new coordinates is `g(y) = T f(φ⁻¹ y) = T f(T⁻¹ (y − c))` (`transportField`). Solutions,
   equilibria, smoothness and the Jacobian (`T ∘ Df(x*) ∘ T⁻¹`) are transported, and **every**
   behavioural sentence of the library holds for `f` at `x*` exactly when it holds for `g` at
   `φ(x*)` (`holds_transport_iff`); forward completeness is invariant as well. The per-sentence
-  forms of the former module (`lyapunovStable_transport_iff`, …) are corollaries.
+  forms (`lyapunovStable_transport_iff`, …) are corollaries.
 * Matrix form: `T = P` for an invertible matrix `P` (`IsUnit P`), acting through
   `Matrix.toEuclideanCLM` (`matrixCoord`); the Jacobian matrix becomes `P A P⁻¹`. Example: the
   planar scaling `(θ, v) ↦ (θ, η v)`, `η ≠ 0` (`scaleMatrix`, `scaleCoord`, `scaleCoord_apply`,
@@ -24,9 +41,6 @@ notions `Flow.ForwardComplete`, `Flow.GloballyAsymptoticallyStable`,
 * Time scaling `τ = t / c`, `c > 0` (e.g. a per-unit time base): `f` and `c • f` have the same
   Lyapunov stability, instability, local exponential stability (the rate scales by `c`), and
   local asymptotic stability.
-* Excluded: time-varying coordinate changes (e.g. the rotating abc → dq Park transform `T(θ(t))`),
-  nonlinear diffeomorphisms, state-dependent time scaling, and transport of non-autonomous or
-  forced systems (port passivity under linear coordinates is `Port.System.passive_conjugate`).
 
 Reuse. The proof of `holds_transport_iff` moves the equilibrium to the origin with
 `Flow.Property.holds_shift_iff` (`theorem/Dynamics/Shift.lean`) and conjugates by `T` at the origin.
@@ -35,17 +49,8 @@ Lyapunov stability, decay rates and conservation are conjugated by
 (`theorem/Linear/Transfer.lean`), unchanged; the remaining sentences (local and global
 exponential and asymptotic stability, forward completeness, sampled contraction) are conjugated
 here, for arbitrary nonlinear fields (`*_conjEquiv`, collected in `holds_conjEquiv_iff`). The
-equilibrium-shift lemmas of the former module are exactly
-`Flow.*_shift_iff` and are not restated.
-
-These are transport laws (foundation results); they do not by themselves assert a property of any
-particular power system. A model family whose field is the transport of another family's field
-uses `holds_transport_iff` to identify the denotations of the two families sentence by sentence.
-
-Source: work-sync `theory/T-PU.md` §1.2 / §1.5 (per-unit scaling of states = constant diagonal
-change of coordinates), §1.6 (time base `t̂ = ω_B t`, `d/dt = ω_B d/dt̂`, i.e. the per-unit-time
-field is `ω_B⁻¹ • f`); equilibrium shift to error coordinates as used in
-`theory/T-pll-dynamics.md` / `theory/T-invariant-coordinates.md`.
+equilibrium-shift lemmas (`Dynamics.*_shift_iff`, `Flow.Property.holds_shift_iff`) are those of
+`theorem/Dynamics/Shift.lean` and are not restated.
 -/
 
 noncomputable section

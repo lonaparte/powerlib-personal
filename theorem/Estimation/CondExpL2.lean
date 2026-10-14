@@ -6,23 +6,27 @@ import Mathlib.MeasureTheory.Function.L2Space
 
 /-! # Conditional expectation is the `L²` projection (posterior mean is Bayes-optimal)
 
-Source: work-sync `theory/T-bayesian-inference.md` §1.9 (under squared loss the Bayes estimator
+The conditional expectation is the orthogonal projection onto data-measurable square-integrable
+functions, so the posterior mean minimises the Bayes risk under squared loss.
+
+Scope.
+* Probability theory, not an engineering result.
+* A finite measure space `(Ω, μ)` (a probability space in the application), a sub-σ-algebra
+  `m` (the information carried by the data `D`), a square-integrable quantity `f` (the
+  parameter `θ`), and estimators `g` that are (a.e.) `m`-measurable and square integrable.
+* Complements `Estimation.integral_sq_sub_mean_le` (the same statement for one fixed
+  posterior measure on `ℝ`).
+
+Source: work-sync theory/T-bayesian-inference.md §1.9 (under squared loss the Bayes estimator
 is the posterior mean `E[θ | D]`; "the conditional expectation is the `L²` projection onto
 data-measurable functions").
 
-Foundation (probability), not an engineering result.
-
-Setting: a finite measure space `(Ω, μ)` (a probability space in the application), a sub-σ-algebra
-`m` (the information carried by the data `D`), a square-integrable quantity `f` (the parameter
-`θ`), and estimators `g` that are (a.e.) `m`-measurable and square integrable.
-* `condExp_orthogonal`: `E[(f − E[f | m]) · h] = 0` for every `m`-measurable `h ∈ L²`.
-* `condExp_pythagoras`: `E(f − g)² = E(f − E[f | m])² + E(E[f | m] − g)²`.
-* `condExp_L2_optimal`: `E(f − E[f | m])² ≤ E(f − g)²` (posterior mean minimises the Bayes risk
-  under squared loss among all data-measurable estimators), and `condExp_L2_optimal_eq_iff`:
-  equality iff `g = E[f | m]` a.e.
-
-Complements `PointEstimate.integral_sq_sub_mean_le` (the same statement for one fixed posterior
-measure on `ℝ`).
+Results.
+* `condExp_orthogonal` — `E[(f − E[f | m]) · h] = 0` for every `m`-measurable `h ∈ L²`.
+* `condExp_pythagoras` — `E(f − g)² = E(f − E[f | m])² + E(E[f | m] − g)²`.
+* `condExp_L2_optimal` — `E(f − E[f | m])² ≤ E(f − g)²` (posterior mean minimises the Bayes
+  risk under squared loss among all data-measurable estimators), and
+  `condExp_L2_optimal_eq_iff`: equality iff `g = E[f | m]` a.e.
 -/
 
 noncomputable section

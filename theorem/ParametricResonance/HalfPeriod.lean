@@ -4,24 +4,29 @@ import theorem.Periodic.Floquet
 
 /-! # Half-period symmetry of the single-tone pump
 
-Foundation layer (exact identity, no expansion).
+An exact identity (no expansion): reversing the sign of a single-tone pump is a half-period time
+shift, so forced orbits, Floquet multipliers and the flip threshold are invariant under `δ ↦ −δ`.
 
-Model boundary. Any plant `ż = f(z, u(t))` on `ℝⁿ = EuclideanSpace ℝ (Fin n)` driven by the single-tone pump
-`u_δ(t) = δ cos(ω_p t)` (`pump`), `T = 2π/ω_p`, continuous time; no assumption on `f`.
-
-Results.
-* `pump_add_half`: `u_δ(t + T/2) = u_{−δ}(t)`, so `δ ↦ −δ` is a time shift by `T/2`.
-* `drivenTrajectory_half_shift`: every solution for `δ` shifted by `T/2` is a solution for `−δ`
-  (forced orbits correspond).
-* `floquetUnstable_half_shift`: if the variational matrix for `−δ` is the `T/2`-shift of the one for
-  `δ` (as it is along corresponding forced orbits), the Floquet multipliers coincide
-  (`Periodic.spectrum_monodromy_shift`); in particular "some multiplier outside the unit circle"
-  holds for `δ` iff it holds for `−δ`: monodromy spectrum and flip threshold are invariant.
-
-The Hill-level gauge `φ_m ↦ (−1)^m φ_m` of the source is not formalized.
+Scope.
+* Any plant `ż = f(z, u(t))` on `ℝⁿ = EuclideanSpace ℝ (Fin n)` driven by the single-tone pump
+  `u_δ(t) = δ cos(ω_p t)` (`pump`), `T = 2π/ω_p`, continuous time; no assumption on `f`.
 
 Source: work-sync projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
 gfl-gfm-parametric-contrast.md §11 (半周期对称性).
+
+Results.
+* `pump_add_half` — `u_δ(t + T/2) = u_{−δ}(t)`, so `δ ↦ −δ` is a time shift by `T/2`.
+* `drivenTrajectory_half_shift` — every solution for `δ` shifted by `T/2` is a solution for `−δ`
+  (forced orbits correspond).
+* `floquetUnstable_half_shift` — if the variational matrix for `−δ` is the `T/2`-shift of the one
+  for `δ` (as it is along corresponding forced orbits), the Floquet multipliers coincide
+  (`Periodic.spectrum_monodromy_shift`); in particular "some multiplier outside the unit circle"
+  holds for `δ` iff it holds for `−δ`: monodromy spectrum and flip threshold are invariant.
+
+The Hill-level gauge `φ_m ↦ (−1)^m φ_m` of the source is proved in `theorem/Periodic/Hill.lean`:
+`hillGauge_conj` (the gauge flips the odd bands), `hill3_neg_similar` (third-order Hill matrices at
+`±δ̂₁` are gauge-similar) and `exactHill_half_shift` (a half-period shift of `J(t)` gives
+gauge-similar exact Hill matrices).
 -/
 
 noncomputable section

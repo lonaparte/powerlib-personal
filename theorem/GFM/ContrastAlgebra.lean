@@ -5,6 +5,18 @@ import theorem.Dynamics.Locality
 Foundation layer: polynomial and calculus identities used by the GFL/GFM parametric-contrast
 note.  None of these is an engineering conclusion by itself.
 
+Model boundary.
+The three-state VSM + low-pass field `(δ, ω, P_f)` of the contrast note's `GFM` model
+(`gfmField`: `δ̇ = ω`, `M ω̇ = P_ref − P_f − D ω`, `Ṗ_f = ω_c (E(δ) V sin δ / X − P_f)`, emf
+law `E(δ)` with PCC or internal-emf Q-sensing), its characteristic polynomial
+`(s + ω_c)(M s² + D s) + ω_c K` and the transfer `T_exact`; polynomial identities over `ℂ`.
+
+Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
+gfl-gfm-parametric-contrast.md` §17; `.../gfl-gfm-contrast/archive/notes/concepts/
+contrast-conclusions.md` 推论三 (`K_q = 0` 严格零), model `GFM` in
+`.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`.
+
+Results.
 * `beta3_family`: for `α₀ > 0`, `ν > 0` and `β₃ > 2(α₀ + ν)` there are positive `D, K, ω_c`
   (any `M > 0`) with `(s + ω_c)(M s² + D s) + ω_c K = M (s + β₃)(s² + 2α₀ s + ν²)` for every
   complex `s`: the three-state VSM + low-pass characteristic polynomial (`/M`) has spectrum
@@ -21,11 +33,6 @@ note.  None of these is an engineering conclusion by itself.
 * `gfm_field_indep_Qref`: with zero reactive-power droop gain (`K_q = m_q = 0`) the internal
   emf of the droop law is `E₀` for either Q-sensing convention, so the VSM + low-pass field does
   not depend on `Q_ref` at all (its Jacobian and spectrum are exactly `Q_ref`-independent).
-
-Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
-gfl-gfm-parametric-contrast.md` §17; `.../gfl-gfm-contrast/archive/notes/concepts/
-contrast-conclusions.md` 推论三 (`K_q = 0` 严格零), model `GFM` in
-`.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`.
 -/
 
 noncomputable section

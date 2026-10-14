@@ -2,8 +2,16 @@ import theorem.Flow.Defs
 
 /-! # State space notation
 
-`State n` abbreviates the state space `ℝⁿ = EuclideanSpace ℝ (Fin n)` of the Flow semantics. It is
-reducible notation only: it introduces no structure, definition of behaviour or semantics. -/
+The state space of the Flow semantics, as reducible notation.
+
+Scope.
+* Reducible notation only: it introduces no structure, definition of behaviour or semantics.
+
+Source: library infrastructure (no work-sync note).
+
+Results.
+* `State n` — abbreviates the state space `ℝⁿ = EuclideanSpace ℝ (Fin n)` of the Flow semantics.
+-/
 
 namespace powerlib.Dynamics
 

@@ -8,9 +8,18 @@ Algebraic and linear-system facts about the reduction of the SRF-PLL in
 T-gfl-multiscale-modeling §1.5; no claim about the accuracy of the reduction itself — the
 Tikhonov/Fenichel error estimates are not formalized.
 
-Setting: `(θ, ξ)` coordinates of `theorem/PLL/Model.lean` (`xiField a b Δω`:
-`θ̇ = Δω − a sin θ + b ξ`, `ξ̇ = −sin θ`), `a = V K_p`, `b = V K_i`, `Δω = ω_s − ω_g`.
+Model boundary.
+* System: the SRF-PLL of `theorem/PLL/Model.lean` (ideal balanced grid, PI loop filter, VCO;
+  no pre-filter, delay, PWM, current loop or saturation; continuous time) in its `(θ, ξ)`
+  coordinates (`xiField a b Δω`: `θ̇ = Δω − a sin θ + b ξ`, `ξ̇ = −sin θ`), `a = V K_p`,
+  `b = V K_i`, `Δω = ω_s − ω_g`.
+* `ReducedSlow.family`: the reduced slow equation as the autonomous linear one-state field
+  `ẏ = −(b/a) y`, `y = ξ − ξ*` (origin = reduced equilibrium); parameters `(a, b)` real.
 
+Source: work-sync `theory/T-gfl-multiscale-modeling.md` §1.5, §1.7, §1.8;
+`theory/T-invariant-coordinates.md` §1.2 (overdamped limit).
+
+Results.
 * Slow manifold (quasi-steady state of the `θ` equation with `ξ` frozen): on the domain
   `|Δω + b ξ| < a` the branch `θ*(ξ) = arcsin((Δω + b ξ)/a)` solves `Δω − a sin θ + b ξ = 0`,
   lies in `(−π/2, π/2)`, and has normal Jacobian `∂_θ(Δω − a sin θ + bξ) = −a cos θ* < 0`.
@@ -26,22 +35,20 @@ Setting: `(θ, ξ)` coordinates of `theorem/PLL/Model.lean` (`xiField a b Δω`:
   `λ₊ ∈ [−2b/a, −b/a]` (`Criteria.eigen_real_iff`, `eigen_roots`, `eigen_ratio`,
   `eigen_bounds`).
 
-Source: work-sync `theory/T-gfl-multiscale-modeling.md` §1.5, §1.7, §1.8;
-`theory/T-invariant-coordinates.md` §1.2 (overdamped limit).
+Family and connection conclusions.
+`ReducedSlow.family` reads a pair `(a, b)` as the autonomous
+one-state field `ẏ = −(b/a) y` (`y = ξ − ξ*`, origin = reduced equilibrium). Its requirements are
+static (`b/a > 0` or `b/a < 0`). Connection conclusions: soundness of every translation
+(`chain_le_semantics`), exactness for the attractive sentences and sampled contraction
+(`exact_hurwitz`), the global exponential stability equivalence
+(`mem_den_globallyExponentiallyStable_iff`) and exact passivity (`exact_passive`). The slow
+manifold and eigenvalue results are static.
 
 Correction (§1.5): the reduced equation `ξ̇ = −(Δω + V K_i ξ)/(V K_p)` is stated without its
 domain; it is valid only where the slow manifold exists, `|Δω + b ξ| < a` (on `|·| = a` the
 manifold folds, `cos θ* = 0`, and normal hyperbolicity is lost). Also `ε_od = |λ₊/λ₋|` is not
 exactly `b/a²`: the exact ratio is `4ε/(1 + √(1 − 4ε))²`, which lies between `ε` and `4ε`
 and is `ε + O(ε²)`.
-
-Family and connection conclusions. `ReducedSlow.family` reads a pair `(a, b)` as the autonomous
-one-state field `ẏ = −(b/a) y` (`y = ξ − ξ*`, origin = reduced equilibrium). Its requirements are
-static (`b/a > 0` or `b/a < 0`). Connection conclusions: soundness of every translation
-(`chain_le_semantics`), exactness for the attractive sentences and sampled contraction
-(`exact_hurwitz`), the membership form of the former `reducedModel_exponentiallyStable_iff`
-(`mem_den_globallyExponentiallyStable_iff`) and exact passivity (`exact_passive`). The slow
-manifold and eigenvalue results are static.
 -/
 
 noncomputable section

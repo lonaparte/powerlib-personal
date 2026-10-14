@@ -5,40 +5,42 @@ import Mathlib.Analysis.ODE.Gronwall
 
 /-! # First-order periodic averaging (Krylov–Bogoliubov–Mitropolsky)
 
-Foundation layer: the first-order averaging theorem for a fast periodic forcing, with an explicit
-error constant. No engineering model is fixed here.
+The first-order averaging theorem for a fast periodic forcing, with an explicit error constant.
+No engineering model is fixed here.
 
-Setting. `ẋ = ε f(x, t)` on a real Banach space `E`, with `f` jointly continuous, `T`-periodic in
-`t` (`T > 0`), globally Lipschitz in `x` (constant `ℓ ≥ 0`, uniformly in `t`) and bounded by `M`.
-These hypotheses on the fast-periodic field are written out in every statement as the single
-hypothesis `hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
-(∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M` (the former structure
-`PeriodicField` with fields `hT`, `hℓ`, `cont`, `per`, `lip`, `bound` is removed: its fields
-quantify over time, and behaviour is defined only in the semantic layer; the namespace lemmas
-`PeriodicField.continuous_snd`, `PeriodicField.M_nonneg` keep their names). The averaged field
-is `f̄(x) = (1/T) ∫₀ᵀ f(x, s) ds` (`fieldAverage`) and the averaged system is `x̄̇ = ε f̄(x̄)`.
-Solutions are global solutions (they exist under the global Lipschitz bound); only the window
-`[0, L/ε]` is used.
-
-Results.
-* `periodIntegral_eq`: `∫ₐ^{a+T} f(y, s) ds = T f̄(y)` for every `a` (periodicity);
-  `norm_fieldAverage_le`, `fieldAverage_lipschitz`: `‖f̄‖ ≤ M`, `f̄` is `ℓ`-Lipschitz.
-* `norm_integral_osc_le`: the oscillating part `g(s) = f(x̄(s), s) − f̄(x̄(s))` has
-  `‖∫₀ᵗ g‖ ≤ 2ℓMLT + 2MT` whenever `0 ≤ t` and `εt ≤ L` (period-by-period cancellation plus the
-  slow drift `‖x̄(s) − x̄(r)‖ ≤ εM|s − r|`).
-* `kbm_first_order`: if `x(0) = x̄(0)`, then for every `t ∈ [0, L/ε]`
-  `‖x(t) − x̄(t)‖ ≤ (2ℓMLT + 2MT) e^{ℓL} ε` — the `O(ε)` error on the `O(1/ε)` time window
-  (Grönwall applied to `x − x̄ − ε∫₀ᵗ g`).
-
-Not formalized: the almost-periodic case, higher-order averaging, and the domain-restricted
-(local Lipschitz, `x̄` staying in a compact set with margin) version; here the bounds are global.
-
-Correction (T-averaging-method.md §1.9 / §1.7, recorded only): in the almost-periodic case the
-error is in general only `O(δ(ε))` with `δ(ε) → 0` (not `O(ε)`); the second-order averaged field
-of §1.7 omits the `∂_ε f` contribution.
+Scope.
+* `ẋ = ε f(x, t)` on a real Banach space `E`, with `f` jointly continuous, `T`-periodic in `t`
+  (`T > 0`), globally Lipschitz in `x` (constant `ℓ ≥ 0`, uniformly in `t`) and bounded by `M`.
+* These hypotheses on the fast-periodic field are written out in every statement as the single
+  hypothesis `hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
+  (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M` (behaviour is defined only in
+  the semantic layer); `PeriodicField.continuous_snd` and `PeriodicField.M_nonneg` read off
+  continuity in `t` and `0 ≤ M` from it.
+* The averaged field is `f̄(x) = (1/T) ∫₀ᵀ f(x, s) ds` (`fieldAverage`) and the averaged system
+  is `x̄̇ = ε f̄(x̄)`. Solutions are global solutions (they exist under the global Lipschitz
+  bound); only the window `[0, L/ε]` is used.
 
 Source: work-sync theory/T-averaging-method.md §1.1–1.3 (standard form, averaged field, KBM
 first-order theorem `‖x(t) − x̄(t)‖ ≤ Cε` on `[0, L/ε]`), §1.8.
+
+Results.
+* `periodIntegral_eq` — `∫ₐ^{a+T} f(y, s) ds = T f̄(y)` for every `a` (periodicity);
+  `norm_fieldAverage_le`, `fieldAverage_lipschitz`: `‖f̄‖ ≤ M`, `f̄` is `ℓ`-Lipschitz.
+* `norm_integral_osc_le` — the oscillating part `g(s) = f(x̄(s), s) − f̄(x̄(s))` has
+  `‖∫₀ᵗ g‖ ≤ 2ℓMLT + 2MT` whenever `0 ≤ t` and `εt ≤ L` (period-by-period cancellation plus the
+  slow drift `‖x̄(s) − x̄(r)‖ ≤ εM|s − r|`).
+* `kbm_first_order` — if `x(0) = x̄(0)`, then for every `t ∈ [0, L/ε]`
+  `‖x(t) − x̄(t)‖ ≤ (2ℓMLT + 2MT) e^{ℓL} ε` — the `O(ε)` error on the `O(1/ε)` time window
+  (Grönwall applied to `x − x̄ − ε∫₀ᵗ g`).
+
+Corrections.
+* T-averaging-method.md §1.9 / §1.7 (recorded only): in the almost-periodic case the error is in
+  general only `O(δ(ε))` with `δ(ε) → 0` (not `O(ε)`); the second-order averaged field of §1.7
+  omits the `∂_ε f` contribution.
+
+Not formalized.
+* The almost-periodic case, higher-order averaging, and the domain-restricted (local Lipschitz,
+  `x̄` staying in a compact set with margin) version; here the bounds are global.
 -/
 
 noncomputable section

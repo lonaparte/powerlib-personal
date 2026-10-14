@@ -2,9 +2,10 @@ import theorem.Circuits.Interconnection
 import theorem.GFL.Impedance.Algebra
 import theorem.Transform.Park
 
-/-! # State-space realization of the grid-side impedance `Z_ext` (foundation)
+/-! # State-space realization of the grid-side impedance `Z_ext`
 
-Model: the network seen from the PCC of a grid-following converter (work-sync
+Model boundary.
+The network seen from the PCC of a grid-following converter (work-sync
 T-gfl-impedance §1.7): series line `L_g, R_g` to a stiff grid (voltage perturbation zero) in
 parallel with a shunt `R_l ∥ C` load at the PCC, dq frame rotating at `ω`, small-signal,
 continuous time. State order `(w_d, w_q, i_line,d, i_line,q)` (block index `Fin 2 ⊕ Fin 2`, read
@@ -14,6 +15,9 @@ converter (IN-positive), output `w = −v_PCC`:
 `C w' = u − i_line − w/R_l − ωC J w`, `L_g i_line' = w − R_g i_line − ωL_g J i_line`.
 The capacitor carries the dq cross term `ωC J` (`Transform.capacitor_dq`), which the note omits.
 
+Source: work-sync `theory/T-gfl-impedance.md` §1.7; `theory/T-gfl-control.md` §1.7.
+
+Results.
 * `networkModel_D`: the realization has no feedthrough (strictly proper).
 * `networkBlocks_field`: the block equations are the PCC KCL and the line KVL.
 * `networkModel_transfer`: off the characteristic roots and with `det Z_line ≠ 0`, its transfer
@@ -25,8 +29,6 @@ The capacitor carries the dq cross term `ωC J` (`Transform.capacitor_dq`), whic
 
 These are realization identities (static evidence); the behaviour of the interconnection is
 that of the family `Circuits.Interconnection.family`, not restated here.
-
-Source: work-sync `theory/T-gfl-impedance.md` §1.7; `theory/T-gfl-control.md` §1.7.
 -/
 
 noncomputable section

@@ -6,25 +6,33 @@ import theorem.Attributes
 
 /-! # Gaussian moments used by the Laplace and slow-passage notes
 
-Foundation layer, thin wrappers. The closed forms are Mathlib's Gaussian and Gamma
-integrals:
-* `integral_gaussian` (`∫ exp (-b x²) = √(π/b)`),
-* `integral_gaussian_Ioi` (`∫_{x>0} exp (-b x²) = √(π/b)/2`),
-* `integral_rpow_mul_exp_neg_mul_rpow`
-  (`∫_{x>0} x^q exp (-b x^p) = b^{-(q+1)/p} (1/p) Γ((q+1)/p)`),
-* `integral_neg_eq_self` / `integral_comp_abs` (reflection and evenness on `ℝ`).
+Thin wrappers specializing Mathlib's Gaussian and Gamma integrals to the moments used by the
+endpoint Laplace table, the fold slow-passage solvability condition and the guard first-passage
+asymptotics. No asymptotic statement is made here.
 
-The statements below only specialize these to the half-line moments
-`∫_0^∞ ξⁿ e^{-b ξ²/2} dξ` (`n = 0, 1, 3`) of the endpoint Laplace table and to the
-full-line weight `e^{-τ²}` of the fold slow-passage solvability condition, and give the
-half-line moments `∫_0^∞ ξⁿ e^{−cξ²}` (`gaussMoment1`, `gaussMoment3`, `gaussMoment5`), the
-finite-interval bounds `intervalIntegral_le_integral_Ioi`, `integral_exp_neg_mul_sq_ge`
-(`∫_0^L e^{−cξ²} ≥ √(π/c)/2 − 1/(2cL)`) and the closed form `integral_mul_exp_neg_sq_div`
-used by the guard first-passage asymptotics. No asymptotic statement is made here.
+Scope.
+* The closed forms are Mathlib's Gaussian and Gamma integrals: `integral_gaussian`
+  (`∫ exp (-b x²) = √(π/b)`), `integral_gaussian_Ioi` (`∫_{x>0} exp (-b x²) = √(π/b)/2`),
+  `integral_rpow_mul_exp_neg_mul_rpow`
+  (`∫_{x>0} x^q exp (-b x^p) = b^{-(q+1)/p} (1/p) Γ((q+1)/p)`), `integral_neg_eq_self` /
+  `integral_comp_abs` (reflection and evenness on `ℝ`).
 
 Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.1 (moment table);
 theory/T-fold-slow-passage.md §1.2–§1.3 (`∫ e^{-τ²} = √π`, odd weights vanish);
 projects/basin-guard/notes/concepts/fold-slow-passage.md §2.
+
+Results.
+* `halfMoment0`, `halfMoment1`, `halfMoment3` — the half-line moments
+  `∫_0^∞ ξⁿ e^{-b ξ²/2} dξ` (`n = 0, 1, 3`) of the endpoint Laplace table.
+* `integral_exp_neg_sq`, `integral_sq_mul_exp_neg_sq`, `integral_exp_neg_sq_mul_odd`,
+  `integral_odd_moments_vanish` — the full-line weight `e^{-τ²}` of the fold slow-passage
+  solvability condition: `∫ e^{-τ²} = √π`, `∫ τ² e^{-τ²} = √π/2`, odd integrands vanish.
+* `gaussMoment1`, `gaussMoment3`, `gaussMoment5` — the half-line moments `∫_0^∞ ξⁿ e^{−cξ²}`
+  (`n = 1, 3, 5`) used by the guard first-passage asymptotics.
+* `intervalIntegral_le_integral_Ioi`, `integral_exp_neg_mul_sq_ge` — finite-interval bounds,
+  `∫_0^L e^{−cξ²} ≥ √(π/c)/2 − 1/(2cL)`.
+* `integral_mul_exp_neg_sq_div` — the closed form
+  `∫_0^y z e^{−αz²/(2D̃)} dz = (D̃/α)(1 − e^{−αy²/(2D̃)})`.
 -/
 
 noncomputable section

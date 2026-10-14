@@ -4,37 +4,49 @@ import Mathlib.LinearAlgebra.Eigenspace.Zero
 
 /-! # Sensitivity of a simple eigenpair: eigenvalue and eigenvector derivatives
 
-Foundation layer (category B).
+Derivatives of a simple eigenvalue and of its eigenvector along a parameter, and the existence
+of differentiable eigenpair branches (implicit function theorem); scalar root branches.
 
-Sources: work-sync `theory/T-participation-factor.md` (eigenvector sensitivity, simple
-eigenvalue premise), `theory/T-eigenvalue-analysis.md` §1.9 and
-`theory/T-small-signal-stability.md` §1.8 (`dλ/dα = ψᵀ (∂A/∂α) v`).
+Scope.
+* Finite-dimensional complex matrices, real (Banach-space) parameters, local (germ) statements
+  at a simple eigenvalue only; no claim for repeated eigenvalues (where branches need not be
+  differentiable), and no global continuation of the branch.
+* A parameter-dependent complex matrix `A(α)` (entrywise differentiable at `α₀`), the modal data
+  `mb : ModalBasis (A α₀)` (diagonalisable at `α₀`, biorthonormal `ψⱼᵀ vₖ = δⱼₖ`) and a
+  **simple** eigenvalue `λᵢ` (`λⱼ ≠ λᵢ` for `j ≠ i`). The first group of formulas is stated
+  along a given differentiable eigen-branch `A(α) v(α) = λ(α) v(α)` through `(λᵢ, vᵢ)`
+  (globally, or only near `α₀`: the `…_of_eventually` versions). The second group proves that
+  such a branch **exists** (implicit function theorem), so the formulas hold unconditionally for
+  `C¹` matrix families.
 
-Setting: a parameter-dependent complex matrix `A(α)` (entrywise differentiable at `α₀`), the
-modal data `mb : ModalBasis (A α₀)` (diagonalisable at `α₀`, biorthonormal `ψⱼᵀ vₖ = δⱼₖ`) and a
-**simple** eigenvalue `λᵢ` (`λⱼ ≠ λᵢ` for `j ≠ i`). The first group of formulas is stated along
-a given differentiable eigen-branch `A(α) v(α) = λ(α) v(α)` through `(λᵢ, vᵢ)` (globally, or only
-near `α₀`: the `_of_eventually` versions). The second group proves that such a branch **exists**
-(implicit function theorem), so the formulas hold unconditionally for `C¹` matrix families.
+Source: work-sync theory/T-participation-factor.md (eigenvector sensitivity, simple
+eigenvalue premise), theory/T-eigenvalue-analysis.md §1.9 and
+theory/T-small-signal-stability.md §1.8 (`dλ/dα = ψᵀ (∂A/∂α) v`); scalar root branches:
+projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/gfl-gfm-parametric-contrast.md
+§17.
 
-Results along a given branch.
-* `eigen_branch_deriv(_of_eventually)`: `A' vᵢ + A v' = λ' vᵢ + λᵢ v'`.
-* `eigenvalue_deriv(_of_eventually)`: `λ'(α₀) = ψᵢᵀ A' vᵢ`.
-* `eigenvector_deriv_coeff(_of_eventually)`: for `j ≠ i`, `ψⱼᵀ v' = ψⱼᵀ A' vᵢ / (λᵢ − λⱼ)`.
-* `eigenvector_deriv(_of_eventually)`: `v' = Σ_{j≠i} (ψⱼᵀ A' vᵢ)/(λᵢ − λⱼ) vⱼ + (ψᵢᵀ v') vᵢ`;
-  the component along `vᵢ` is fixed by the normalisation of the branch (e.g. `ψᵢᵀ v(α) ≡ 1`
-  gives `ψᵢᵀ v' = 0`).
+Results.
 
-Existence of branches.
-* `contDiffAt_charpoly_eval`: `(p, z) ↦ det(zI − A(p))` is `C¹` when the entries of `A` are.
-* `exists_eigenvalue_branch`: a `C¹` **eigenvalue** branch through a simple eigenvalue (IFT on
-  `det(zI − A(p))`, whose `z`-derivative is `χ'(λ₀) ≠ 0`), locally the only eigenvalue near `λ₀`.
-* `eq_smul_of_mulVec_sub_eq_smul`: at an eigenvalue of algebraic multiplicity one there is no
+Along a given branch:
+* `eigen_branch_deriv`, `eigen_branch_deriv_of_eventually` — `A' vᵢ + A v' = λ' vᵢ + λᵢ v'`.
+* `eigenvalue_deriv`, `eigenvalue_deriv_of_eventually` — `λ'(α₀) = ψᵢᵀ A' vᵢ`.
+* `eigenvector_deriv_coeff`, `eigenvector_deriv_coeff_of_eventually` — for `j ≠ i`,
+  `ψⱼᵀ v' = ψⱼᵀ A' vᵢ / (λᵢ − λⱼ)`.
+* `eigenvector_deriv`, `eigenvector_deriv_of_eventually` —
+  `v' = Σ_{j≠i} (ψⱼᵀ A' vᵢ)/(λᵢ − λⱼ) vⱼ + (ψᵢᵀ v') vᵢ`; the component along `vᵢ` is fixed by
+  the normalisation of the branch (e.g. `ψᵢᵀ v(α) ≡ 1` gives `ψᵢᵀ v' = 0`).
+
+Existence of branches:
+* `contDiffAt_charpoly_eval` — `(p, z) ↦ det(zI − A(p))` is `C¹` when the entries of `A` are.
+* `exists_eigenvalue_branch` — a `C¹` **eigenvalue** branch through a simple eigenvalue (IFT on
+  `det(zI − A(p))`, whose `z`-derivative is `χ'(λ₀) ≠ 0`), locally the only eigenvalue near
+  `λ₀`.
+* `eq_smul_of_mulVec_sub_eq_smul` — at an eigenvalue of algebraic multiplicity one there is no
   Jordan chain of length two: `(A₀ − λ₀) x ∈ span v₀ ⇒ x ∈ span v₀` (via Mathlib's
   `LinearMap.finrank_genEigenspace_le`: `dim ker (A₀ − λ₀)² ≤ rootMultiplicity = 1`).
-* `bordered_injective`: hence the bordered matrix `[[A₀ − λ₀ I, −v₀], [wᵀ, 0]]` is injective
+* `bordered_injective` — hence the bordered matrix `[[A₀ − λ₀ I, −v₀], [wᵀ, 0]]` is injective
   whenever `wᵀ v₀ ≠ 0`.
-* `exists_eigenvector_branch`: **differentiable eigenvector branch** — for a parameter `p` in a
+* `exists_eigenvector_branch` — **differentiable eigenvector branch**: for a parameter `p` in a
   real Banach space `E`, entries of `A(p)` `C¹` at `p₀`, `λ₀` a simple eigenvalue of `A(p₀)`
   (root multiplicity one in `charpoly`), `A(p₀) v₀ = λ₀ v₀` and any `w` with `wᵀ v₀ ≠ 0`, there
   are `v(p)`, `λ(p)`, `C¹` at `p₀`, with `v(p₀) = v₀`, `λ(p₀) = λ₀`, and near `p₀`
@@ -45,25 +57,19 @@ Existence of branches.
   the adjugate route, which needs `adj(λ₀ I − A₀) ≠ 0`). The normalisation is the bilinear
   `wᵀ v` (not `wᴴ v`), so the map is complex-polynomial. `exists_eigenvector_branch_of_ne_zero`
   chooses `w = e_k` with `v₀ k ≠ 0`.
-* `exists_eigenpair_branch_deriv` (one real parameter, no diagonalisability): the branch has
+* `exists_eigenpair_branch_deriv` — one real parameter, no diagonalisability: the branch has
   derivatives `v'`, `λ'` with `A' v₀ + A₀ v' = λ' v₀ + λ₀ v'`, `wᵀ v' = 0`, and
   `λ' (uᵀ v₀) = uᵀ A' v₀` for **every** left eigenvector `uᵀ A₀ = λ₀ uᵀ`.
-* `eigenpair_deriv_of_simple`, `eigenvalue_deriv_of_simple`: **unconditional** versions of
-  `eigenvalue_deriv` / `eigenvector_deriv` — for `A(α)` with `C¹` entries, a modal basis at `α₀`
+* `eigenpair_deriv_of_simple`, `eigenvalue_deriv_of_simple` — **unconditional** versions of
+  `eigenvalue_deriv` / `eigenvector_deriv`: for `A(α)` with `C¹` entries, a modal basis at `α₀`
   and a simple `λᵢ`, there is a branch with `ψᵢᵀ v(α) ≡ 1`, `λ'(α₀) = ψᵢᵀ A' vᵢ` and
   `v'(α₀) = Σ_{j≠i} (ψⱼᵀ A' vᵢ)/(λᵢ − λⱼ) vⱼ`; no branch is assumed.
 
-Scalar root branches.
-* `root_branch_deriv`, `exists_root_branch`: a simple root `λ₀` of `P(s) + c K₀ = 0`
+Scalar root branches:
+* `root_branch_deriv`, `exists_root_branch` — a simple root `λ₀` of `P(s) + c K₀ = 0`
   (`P : ℂ → ℂ`, `P'(λ₀) ≠ 0`) continues to a differentiable root branch `λ(K)` of one real
   parameter (inverse function theorem), and every differentiable branch through it has
-  `dλ/dK = −c / P'(λ)` (used for the VSM cubic of `theorem/GFM/ContrastAlgebra.lean`; source:
-  work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
-  gfl-gfm-parametric-contrast.md` §17).
-
-Model boundary: finite-dimensional complex matrices, real (Banach-space) parameters, local
-(germ) statements at a simple eigenvalue only; no claim for repeated eigenvalues (where branches
-need not be differentiable), and no global continuation of the branch.
+  `dλ/dK = −c / P'(λ)` (used for the VSM cubic of `theorem/GFM/ContrastAlgebra.lean`).
 -/
 
 noncomputable section

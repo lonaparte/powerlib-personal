@@ -8,11 +8,8 @@ import theorem.SpecialFunctions.Elementary
 
 /-! # Network modulation transfer: Thévenin map of a GFM–grid node seen by GFL branches
 
-Foundation layer (category B).
-
-Source: work-sync `projects/vsc-parametric-oscillation/references/gfm-driven-gfl-parametric-resonance/
-notes/concepts/network-modulation-transfer.md` (sections "开路戴维南映射", "幅值和相角通道",
-"小摆幅与有限摆幅", "带载单机与多机映射").
+Quasi-static phasor algebra (foundation) of the network node shared by a GFM unit, the grid and
+GFL branches.
 
 Model boundary.
 * Balanced three-phase, positive-sequence fundamental phasors, lossless purely reactive
@@ -20,8 +17,13 @@ Model boundary.
 * Topology: the GFM internal EMF `E e^{jδ}` (`E` real) connects through `jX₂` to a common node
   `c`, the infinite bus `V_∞` (real) through `jX₃`, and GFL unit `i` through its own branch
   `jX_{1i}`. Currents `I_i` flow **into** GFL `i` (IN-positive), so the branch law is
-  `V_i = V_c - jX_{1i} I_i` and KCL at `c` reads `Σᵢ I_i + (V_c - E e^{jδ})/(jX₂) + (V_c - V_∞)/(jX₃) = 0`.
+  `V_i = V_c - jX_{1i} I_i` and KCL at `c` reads
+  `Σᵢ I_i + (V_c - E e^{jδ})/(jX₂) + (V_c - V_∞)/(jX₃) = 0`.
 * `δ` is a parameter (the GFM angle); its own dynamics are not modelled here.
+
+Source: work-sync `projects/vsc-parametric-oscillation/references/
+gfm-driven-gfl-parametric-resonance/notes/concepts/network-modulation-transfer.md` (sections
+"开路戴维南映射", "幅值和相角通道", "小摆幅与有限摆幅", "带载单机与多机映射").
 
 Results.
 * `vth_eq`: `V_th(δ) = a_V e^{jδ} + b_V = (X₃ E e^{jδ} + X₂ V_∞)/(X₂ + X₃)` with

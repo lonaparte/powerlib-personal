@@ -3,16 +3,16 @@ import Mathlib.LinearAlgebra.Matrix.Circulant
 
 /-! # Cyclically symmetric three-phase lines: constant Clarke modal decoupling
 
-Foundation layer (category B).
+Frequency-domain modal algebra (foundation) of cyclically symmetric three-phase lines.
+
+Model boundary.
+A three-phase line (no ground wires) whose per-unit-length matrices `R', L', G', C'` are 3 × 3,
+symmetric (reciprocity) and circulant (cyclic phase symmetry, e.g. a fully transposed line). Phases
+`a, b, c` in this order; the modal transformation is the power-invariant Clarke matrix `clarkePI` of
+`theorem/Transform/Park.lean` (rows `α, β, 0`). Frequency-domain algebra only.
 
 Source: work-sync `theory/T-telegrapher-bergeron.md` §1.7, §1.7.1 ("三相对称线（`L', C'` 循环对称）：
 Karrenbauer / Clarke 变换是频率无关常数阵——直接 αβ0 三模独立").
-
-Model boundary: a three-phase line (no ground wires) whose per-unit-length matrices
-`R', L', G', C'` are 3 × 3, symmetric (reciprocity) and circulant (cyclic phase symmetry, e.g. a
-fully transposed line). Phases `a, b, c` in this order; the modal transformation is the
-power-invariant Clarke matrix `clarkePI` of `theorem/Transform/Park.lean` (rows `α, β, 0`).
-Frequency-domain algebra only.
 
 Results.
 * `circulant_symm_iff`: a 3 × 3 circulant matrix is symmetric iff it is `symCirc a b =

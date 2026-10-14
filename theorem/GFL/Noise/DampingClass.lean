@@ -7,7 +7,7 @@ Foundation module (pH structure, matrix algebra of noise ports, linearization in
 No stochastic statement is made: `B Bᵀ = 2 T R` is stated only as a matrix identity
 (the fluctuation–dissipation *structure*), not as a theorem about stationary densities.
 
-Models.
+Model boundary.
 * Class B: the reduced GFL-PLL of `theorem/GFL/LCLine/Reduced2D.lean`, state `(θ_e, η)`,
   `J = [[0, 1], [−1, 0]]`, `R = diag(K_p, 0)` (`Params.pHModel`).
 * Class A: single-machine infinite-bus swing equation (or droop / VSM with first-order filter,
@@ -16,6 +16,9 @@ Models.
   `H = p²/(2M) + V(δ)`, `V(δ) = −P_m δ − P_max cos δ`; `J = [[0, 1], [−1, 0]]`, `R = diag(0, D)`,
   input port `(0, 1)ᵀ` (mechanical-power / torque perturbation). Constant damping `D`; classical
   `P_e = P_max sin δ`; continuous time; no exciter, governor, saturation or network dynamics.
+
+Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/damping-class-dichotomy.md`
+§1–§3; `sn-critical-scaling.md` §1.
 
 Results.
 * `swingPH` and `swingPH_zeroInputField`, `swing_energy_rate` (`Ḣ = −D (p/M)²`).
@@ -33,14 +36,12 @@ Results.
   `g → 0⁺`; near the fold the class-A eigenvalues are real (`classA_eigenvalues_real_of_le`)
   and the class-B eigenvalues are non-real (`classB_eigenvalue_nonreal_of_lt`).
 
-Family and connection conclusions. No family and no connection conclusion: the module contains
+Family and connection conclusions.
+No family and no connection conclusion: the module contains
 pH constructions, energy-rate identities, matrix identities of the noise ports and linearization
-invariants only (static foundation, as before the migration). The class-B behavioural conclusions
+invariants only (static foundation). The class-B behavioural conclusions
 are made through the members `p.pllModel θ` of `PLL.PIPLL.family`
 (`theorem/GFL/LCLine/Reduced2D.lean`).
-
-Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/damping-class-dichotomy.md`
-§1–§3; `sn-critical-scaling.md` §1.
 -/
 
 noncomputable section

@@ -2,15 +2,19 @@ import theorem.Estimation.Conjugate
 
 /-! # Gamma–Poisson conjugacy (i.i.d. counts)
 
-Source: work-sync `theory/T-bayesian-inference.md` §1.4.2.
+A Gamma prior on a Poisson rate is updated to `Gamma(a + ∑ dᵢ, b + N)` by `N` i.i.d. counts.
 
-Foundation (general probability), not an engineering result.
+Scope.
+* General probability, not an engineering result.
+* Rate `θ ∈ ℝ` with prior `gammaMeasure a b` (shape `a > 0`, rate `b > 0`, supported on
+  `[0, ∞)`); data `d : Fin N → ℕ`, i.i.d. `Po(max θ 0)` given `θ` (`poissonIIDKernel N`).
 
-Model: rate `θ ∈ ℝ` with prior `gammaMeasure a b` (shape `a > 0`, rate `b > 0`, supported on
-`[0, ∞)`); data `d : Fin N → ℕ`, i.i.d. `Po(max θ 0)` given `θ` (`poissonIIDKernel N`).
-Result: the posterior is `Gamma(a + ∑ dᵢ, b + N)`, at density level
-(`bayesPosterior_gamma_poisson`) and for Mathlib's posterior kernel
-(`posterior_poissonIIDKernel_gammaMeasure`, a.e. in the data).
+Source: work-sync theory/T-bayesian-inference.md §1.4.2.
+
+Results.
+* `bayesPosterior_gamma_poisson` — the posterior is `Gamma(a + ∑ dᵢ, b + N)` at density level.
+* `posterior_poissonIIDKernel_gammaMeasure` — the same for Mathlib's posterior kernel, a.e. in
+  the data.
 -/
 
 noncomputable section

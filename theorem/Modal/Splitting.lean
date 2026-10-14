@@ -5,37 +5,41 @@ import Mathlib.LinearAlgebra.Eigenspace.Zero
 import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import Mathlib.Algebra.DirectSum.Module
 
-/-! # Real spectral splitting `ℝⁿ = E^s ⊕ E^c ⊕ E^u` (foundation)
+/-! # Real spectral splitting `ℝⁿ = E^s ⊕ E^c ⊕ E^u`
 
-Foundation layer (category B; linear algebra of a real state matrix, no dynamics, no Family).
+The stable, center and unstable subspaces of a real state matrix are invariant, form an internal
+direct sum of `ℝⁿ`, have the expected dimensions and carry the expected eigenvalues.
 
-Source: work-sync `theory/T-invariant-manifolds.md` §1.2 (spectral splitting
-`ℝⁿ = E^s ⊕ E^c ⊕ E^u` of the linearization, `σ(A|_{E^s}) ⊂ {Re λ < 0}` etc., `n_s + n_c + n_u = n`),
-`theory/T-eigenvalue-analysis.md` §1.1 (algebraic multiplicities).
+Scope.
+* Linear algebra of a real state matrix: no dynamics, no time, no model family; definitions are
+  subspaces. The dynamical meaning (solutions of `ẋ = A x` in `E^s` decay, etc.) is not stated
+  here.
+* A real square matrix `A : Matrix (Fin n) (Fin n) ℝ` acting on `ℝⁿ = Fin n → ℝ` by
+  `x ↦ A *ᵥ x`. Eigenvalues are complex: `A_ℂ = A.map (algebraMap ℝ ℂ)` acts on `ℂⁿ` as the
+  endomorphism `endC A`, with generalized eigenspaces `V_μ = ker (A_ℂ − μ)^∞`
+  (`Module.End.maxGenEigenspace`). For a set `S ⊆ ℂ`: `cSpec A S = ⨆_{μ ∈ S} V_μ` (complex
+  spectral subspace); `rSpec A S = {x ∈ ℝⁿ | x_ℂ ∈ cSpec A S}` (its real part).
+* The **stable / center / unstable subspaces** are `rSpec` of `{Re μ < 0}`, `{Re μ = 0}`,
+  `{Re μ > 0}` (`stableSubspace`, `centerSubspace`, `unstableSubspace`). The algebraic
+  multiplicity of `μ` is its root multiplicity in `charpoly A_ℂ` (`= (charpoly A).map`).
 
-Setting: a real square matrix `A : Matrix (Fin n) (Fin n) ℝ` acting on `ℝⁿ = Fin n → ℝ` by
-`x ↦ A *ᵥ x`. Eigenvalues are complex: `A_ℂ = A.map (algebraMap ℝ ℂ)` acts on `ℂⁿ` as the
-endomorphism `endC A`, with generalized eigenspaces `V_μ = ker (A_ℂ − μ)^∞`
-(`Module.End.maxGenEigenspace`). For a set `S ⊆ ℂ`:
-* `cSpec A S = ⨆_{μ ∈ S} V_μ` (complex spectral subspace);
-* `rSpec A S = {x ∈ ℝⁿ | x_ℂ ∈ cSpec A S}` (its real part).
-The **stable / center / unstable subspaces** are `rSpec` of `{Re μ < 0}`, `{Re μ = 0}`,
-`{Re μ > 0}` (`stableSubspace`, `centerSubspace`, `unstableSubspace`). The algebraic multiplicity of
-`μ` is its root multiplicity in `charpoly A_ℂ` (`= (charpoly A).map`).
+Source: work-sync theory/T-invariant-manifolds.md §1.2 (spectral splitting
+`ℝⁿ = E^s ⊕ E^c ⊕ E^u` of the linearization, `σ(A|_{E^s}) ⊂ {Re λ < 0}` etc.,
+`n_s + n_c + n_u = n`), theory/T-eigenvalue-analysis.md §1.1 (algebraic multiplicities).
 
 Results.
-* `stableSubspace_invariant`, `centerSubspace_invariant`, `unstableSubspace_invariant`:
-  each is `A`-invariant (generic: `mulVec_mem_rSpec`).
-* `stable_sup_center_sup_unstable`: `E^s + E^c + E^u = ℝⁿ`;
+* `stableSubspace_invariant`, `centerSubspace_invariant`, `unstableSubspace_invariant` — each is
+  `A`-invariant (generic: `mulVec_mem_rSpec`).
+* `stable_sup_center_sup_unstable` — `E^s + E^c + E^u = ℝⁿ`;
   `isInternal_stable_center_unstable`: `ℝⁿ = E^s ⊕ E^c ⊕ E^u` is an internal direct sum
   (`DirectSum.IsInternal`: independent and spanning).
-* `finrank_stableSubspace`, `finrank_centerSubspace`, `finrank_unstableSubspace`:
-  `dim E^s = Σ_{Re μ < 0} m_a(μ)`, and likewise for `E^c`, `E^u` (sums over the distinct complex
-  eigenvalues in the half-plane / axis of their algebraic multiplicities).
-* `re_lt_of_eigvec_mem_stable`, `re_eq_of_eigvec_mem_center`, `re_gt_of_eigvec_mem_unstable`:
-  `σ(A|_{E^s}) ⊂ {Re λ < 0}`, `σ(A|_{E^c}) ⊂ {Re λ = 0}`, `σ(A|_{E^u}) ⊂ {Re λ > 0}` — every
-  eigenvector of `A_ℂ` in the complexification `span_ℂ E^•` has its eigenvalue in the corresponding
-  set (`span_rSpec_eq_cSpec`: the complexification of `rSpec A S` is `cSpec A S`;
+* `finrank_stableSubspace`, `finrank_centerSubspace`, `finrank_unstableSubspace` —
+  `dim E^s = Σ_{Re μ < 0} m_a(μ)`, and likewise for `E^c`, `E^u` (sums over the distinct
+  complex eigenvalues in the half-plane / axis of their algebraic multiplicities).
+* `re_lt_of_eigvec_mem_stable`, `re_eq_of_eigvec_mem_center`, `re_gt_of_eigvec_mem_unstable` —
+  `σ(A|_{E^s}) ⊂ {Re λ < 0}`, `σ(A|_{E^c}) ⊂ {Re λ = 0}`, `σ(A|_{E^u}) ⊂ {Re λ > 0}`: every
+  eigenvector of `A_ℂ` in the complexification `span_ℂ E^•` has its eigenvalue in the
+  corresponding set (`span_rSpec_eq_cSpec`: the complexification of `rSpec A S` is `cSpec A S`;
   `mem_of_eigvec_mem_cSpec`).
 * Generic tools: `rSpec_union` (for conjugation-closed `S`, `T`:
   `rSpec A S + rSpec A T = rSpec A (S ∪ T)`; proof by taking real parts, since `cSpec A S` is
@@ -44,12 +48,8 @@ Results.
   `rSpec_univ` (`= ℝⁿ`, Mathlib `Module.End.iSup_maxGenEigenspace_eq_top` over `ℂ`),
   `finrank_cSpec` (`dim_ℂ = Σ m_a`, Mathlib `LinearMap.finrank_maxGenEigenspace_eq`),
   `finrank_rSpec` (`dim_ℝ rSpec = dim_ℂ cSpec` for conjugation-closed `S`: real independence
-  persists over `ℂ` (`linearIndependent_ofRealVec`) and the two complementary dimension counts both
-  add up to `n`), `finrank_biSup_finset`.
-
-Architecture: static linear-algebra foundation; definitions are subspaces (no behaviour, no time),
-all theorems public `@[powerlib_foundation]`. The dynamical meaning (solutions of `ẋ = A x` in
-`E^s` decay, etc.) is not stated here.
+  persists over `ℂ` (`linearIndependent_ofRealVec`) and the two complementary dimension counts
+  both add up to `n`), `finrank_biSup_finset`.
 -/
 
 noncomputable section

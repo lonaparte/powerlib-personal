@@ -3,35 +3,43 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
-/-! # Degenerate strict minima of a cycle potential (foundation)
+/-! # Degenerate strict minima of a cycle potential
 
-Model boundary. Pure static analysis of real functions; no dynamics, no model family. A cycle of
-`m + 1` lines is described by line data `(Wₑ, fₑ)` (weight `W = B cos φ`, flow `f = B sin φ`,
-amplitude `B = √(W² + f²)`). On closed-loop angle increments `x` (`∑ₑ xₑ = 0`) the cycle potential
-is `∑ₑ Gₑ(xₑ)` with `G(x) = W (1 − cos x) + f (sin x − x)` (`edgeG`), the line potential increment
-`B[cos φ − cos(φ + x) − x sin φ]` of a lossless line, and its critical points are the points with
-equal flow increments `G'(x) = W sin x + f (cos x − 1)` (`edgeD`) on every line.
+Static foundation: a sufficient condition for a degenerate strict local minimum (possibly
+singular Hessian) of the potential of a cycle of lossless lines, applied to swing rings in
+`theorem/Network/Swing/DegenerateRing.lean`.
+
+Scope.
+* Pure static analysis of real functions; no dynamics, no model family.
+* A cycle of `m + 1` lines is described by line data `(Wₑ, fₑ)` (weight `W = B cos φ`, flow
+  `f = B sin φ`, amplitude `B = √(W² + f²)`). On closed-loop angle increments `x`
+  (`∑ₑ xₑ = 0`) the cycle potential is `∑ₑ Gₑ(xₑ)` with `G(x) = W (1 − cos x) + f (sin x − x)`
+  (`edgeG`), the line potential increment `B[cos φ − cos(φ + x) − x sin φ]` of a lossless line
+  (`B` times `Network.Swing.edgeIncrement φ x` of `theorem/Network/Swing/Degenerate.lean`), and
+  its critical points are the points with equal flow increments
+  `G'(x) = W sin x + f (cos x − 1)` (`edgeD`) on every line.
+
+Source: elementary calculus (mean value theorem, inverse sine); the loop-flow parametrization of
+cycle equilibria follows the lossless power-flow literature (e.g. the winding-cell analysis of
+meshed networks).
 
 Results.
-* Per line: `hasDerivAt_edgeG`, `hasDerivAt_edgeD`, the inverse flow increments `invPos` (positive
-  weight) and `invNeg` (negative weight) with `edgeD_invPos`, `edgeD_invNeg`, `invPos_edgeD`,
-  `invNeg_edgeD`, their derivatives `±1/√(W² − 2fμ − μ²)` (`hasDerivAt_invPos`,
+* Per line: `hasDerivAt_edgeG`, `hasDerivAt_edgeD`, the inverse flow increments `invPos`
+  (positive weight) and `invNeg` (negative weight) with `edgeD_invPos`, `edgeD_invNeg`,
+  `invPos_edgeD`, `invNeg_edgeD`, their derivatives `±1/√(W² − 2fμ − μ²)` (`hasDerivAt_invPos`,
   `hasDerivAt_invNeg`), and the supporting line of a positive-weight line potential
   (`edgeG_tangent`, mean value theorem).
 * `cycle_strictMin`: if line `0` has negative weight, the others positive weight, and
-  `∑ᵢ 1/√qᵢ(μ) < 1/√q₀(μ)` for `0 < |μ| ≤ ρ` (`qₑ(μ) = Wₑ² − 2fₑμ − μ²`), then `0` is a strict local
-  minimum and an isolated critical point of the cycle potential. The Hessian at `0` may be
+  `∑ᵢ 1/√qᵢ(μ) < 1/√q₀(μ)` for `0 < |μ| ≤ ρ` (`qₑ(μ) = Wₑ² − 2fₑμ − μ²`), then `0` is a strict
+  local minimum and an isolated critical point of the cycle potential. The Hessian at `0` may be
   singular (`∑ₑ 1/Wₑ = 0`). Proof: along the critical curve `xₑ = Xₑ(μ)` the closing angle
   `closure` decreases strictly (`closure_sign`) and the curve potential `curvePot` (derivative
   `−closure`) is positive (`curvePot_pos`); supporting lines bound the potential below by
   `curvePot` at `μ = G₀'(x₀)`.
 
-Connection architecture. Foundation only: `theorem/Network/Swing/DegenerateRing.lean` applies it to
-a swing network whose coupling graph is a cycle.
-
-Source: elementary calculus (mean value theorem, inverse sine); the loop-flow parametrization of
-cycle equilibria follows the lossless power-flow literature (e.g. the winding-cell analysis of
-meshed networks).
+Family and connection conclusions.
+* None: foundation only; `theorem/Network/Swing/DegenerateRing.lean` applies it to a swing
+  network whose coupling graph is a cycle.
 -/
 
 noncomputable section
@@ -39,7 +47,8 @@ namespace powerlib.Network.Swing.CycleMinimum
 open Set Real
 
 /-- Potential increment of one line, `G(x) = W (1 − cos x) + f (sin x − x)` (weight `W = B cos φ`,
-flow `f = B sin φ`). -/
+flow `f = B sin φ`); `edgeG (B cos φ) (B sin φ) x = B * Network.Swing.edgeIncrement φ x`
+(`theorem/Network/Swing/Degenerate.lean`). -/
 def edgeG (W f x : ℝ) : ℝ := W * (1 - Real.cos x) + f * (Real.sin x - x)
 
 /-- Flow increment of one line, `G'(x) = W sin x + f (cos x − 1)`. -/

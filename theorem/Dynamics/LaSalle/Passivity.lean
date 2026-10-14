@@ -2,14 +2,24 @@ import theorem.Dynamics.LaSalle.Basin
 
 /-! # Passivity and detectability: asymptotic stability by LaSalle (foundation)
 
-Model boundary: an arbitrary continuous-time input-affine or general system `ẋ = F(x, u)`,
-`y = H(x)` on `EuclideanSpace ℝ (Fin n)` with `m` ports, no delay, switching or time variation;
-passivity is the static dissipation inequality `V̇(x, u) = DV(x)·F(x, u) ≤ ⟪u, y⟫` for a `C¹`
-storage `V` that is positive definite (`V(0) = 0`, `V > 0` elsewhere); `F(0, 0) = 0`; zero-state
-detectability: every unforced forward solution (`u ≡ 0`) with `y ≡ 0` converges to `0`. The loop
-is closed by an output feedback `u = −ψ(y)` with `ψ(0) = 0` and `⟪ψ(y), y⟫ > 0` for `y ≠ 0`
-(damping injection `ψ(y) = k y`, `k > 0`), and the closed-loop field is assumed `C¹`.
+Output-feedback damping of a passive, zero-state-detectable system gives asymptotic stability,
+by LaSalle's invariance principle.
 
+Scope.
+* An arbitrary continuous-time input-affine or general system `ẋ = F(x, u)`, `y = H(x)` on
+  `EuclideanSpace ℝ (Fin n)` with `m` ports, no delay, switching or time variation; passivity is
+  the static dissipation inequality `V̇(x, u) = DV(x)·F(x, u) ≤ ⟪u, y⟫` for a `C¹` storage `V`
+  that is positive definite (`V(0) = 0`, `V > 0` elsewhere); `F(0, 0) = 0`; zero-state
+  detectability: every unforced forward solution (`u ≡ 0`) with `y ≡ 0` converges to `0`.
+* The loop is closed by an output feedback `u = −ψ(y)` with `ψ(0) = 0` and `⟪ψ(y), y⟫ > 0` for
+  `y ≠ 0` (damping injection `ψ(y) = k y`, `k > 0`), and the closed-loop field is assumed `C¹`.
+* These are generic implications about arbitrary fields, hence foundation results (no model
+  family).
+
+Source: Khalil, *Nonlinear Systems*, 3rd ed., Lemma 6.7 with zero-state detectability; work-sync
+`theory/T-ph.md` Part 2, "Passivity 不等于稳定".
+
+Results.
 * `tendsto_zero_of_lasalle_detectable`: LaSalle's principle (via
   `lasalle_invariance_principle_of_contDiff`) with detectability on `{V̇ = 0}` — every forward
   solution from a compact positively invariant set converges to `0` (a positively invariant subset
@@ -25,13 +35,9 @@ is closed by an output feedback `u = −ψ(y)` with `ψ(0) = 0` and `⟪ψ(y), y
 * `detectable_of_observable`, `globallyAsymptoticallyStable_of_passive_observable`: the
   zero-state-observable special case.
 
-These are generic implications about arbitrary fields, hence foundation results (no model
-family). The linear port-Hamiltonian counterexample (passive and observable but not asymptotically
-stable without output feedback) and the spectral proof for linear pH plants are in
+The linear port-Hamiltonian counterexample (passive and observable but not asymptotically stable
+without output feedback) and the spectral proof for linear pH plants are in
 `theorem/PH/Observability.lean`.
-
-Source: Khalil, *Nonlinear Systems*, 3rd ed., Lemma 6.7 with zero-state detectability; work-sync
-`theory/T-ph.md` Part 2, "Passivity 不等于稳定".
 -/
 
 noncomputable section

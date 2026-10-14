@@ -4,42 +4,51 @@ import theorem.Dynamics.Linearization
 
 /-! # Routh–Hurwitz criterion for monic real cubics and real 3×3 matrices
 
-Foundation layer (plus thin generic semantic corollaries at the end).
+The degree-three Routh–Hurwitz criterion in both directions, its instability witnesses and its
+matrix form, with thin generic semantic corollaries at the end.
 
+Scope.
+* No model family is defined or fixed here. Every statement is static algebra about real
+  polynomials and matrices, or a generic semantic implication about an arbitrary field, so all of
+  them are foundation results (Rules §3). Model families that use these criteria publish their
+  engineering conclusions as connection statements (pattern: `theorem/PLL/PIPLLFamily.lean`).
+
+Source: standard Routh–Hurwitz criterion for degree three (shared criteria interface for the
+work-sync formalization).
+
+Results.
 * Monic real cubic `s ^ 3 + a2 * s ^ 2 + a1 * s + a0`: every complex root has negative real
-  part iff `0 < a2 ∧ 0 < a0 ∧ a0 < a2 * a1` (both directions; `0 < a1` is then implied).
+  part iff `0 < a2 ∧ 0 < a0 ∧ a0 < a2 * a1` (both directions, `cubic_roots_re_neg_iff`;
+  `0 < a1` is then implied, `cubic_linear_coeff_pos`).
   The sufficient direction reuses `powerlib.Circuits.LCL.cubic_hurwitz` with `a3 = 1`.
   The necessary direction factors out a real root (intermediate value theorem) and applies
   the quadratic criterion `Criteria.quadratic_roots_re_neg_iff` to the quotient.
-* Real roots: every real cubic has a real root; `a0 < 0` gives a positive real root;
-  `a2 < 0` gives a root with positive real part; a strict violation `a2 a1 < a0` of the gap
-  condition gives a root with positive real part (`exists_cubic_root_re_pos_of_gap`).
+* Real roots: every real cubic has a real root (`exists_cubic_real_root`); `a0 < 0` gives a
+  positive real root (`exists_cubic_root_pos_of_const_neg`); `a2 < 0` gives a root with positive
+  real part (`exists_cubic_root_re_pos_of_quadratic_coeff_neg`); a strict violation `a2 a1 < a0`
+  of the gap condition gives a root with positive real part (`exists_cubic_root_re_pos_of_gap`).
 * `A : Matrix (Fin 3) (Fin 3) ℝ`:
-  `det (s • 1 - A) = s ^ 3 - tr A * s ^ 2 + principalMinorSum A * s - det A`, i.e.
+  `det (s • 1 - A) = s ^ 3 - tr A * s ^ 2 + principalMinorSum A * s - det A`
+  (`det_characteristicMatrix_fin_three`), i.e.
   `a2 = -tr A`, `a1 = principalMinorSum A` (sum of principal 2×2 minors), `a0 = -det A`;
-  the same coefficients are read off `A.charpoly`.
-  `IsHurwitz A ↔ A.trace < 0 ∧ A.det < 0 ∧ A.trace * principalMinorSum A < A.det`.
+  the same coefficients are read off `A.charpoly` (`charpoly_fin_three`).
+  `IsHurwitz A ↔ A.trace < 0 ∧ A.det < 0 ∧ A.trace * principalMinorSum A < A.det`
+  (`isHurwitz_fin_three_iff`; `spectrallyStable_fin_three_iff`, companion form
+  `isHurwitz_companion_three_iff`).
 * Instability witnesses: `0 < det A` gives a positive real eigenvalue (real and complex
-  eigenvectors); `0 < tr A` gives an eigenvalue with positive real part, in the shape of
+  eigenvectors; `exists_pos_real_eigenvector_of_det_pos_fin_three`,
+  `exists_eigenvalue_re_pos_of_det_pos_fin_three`); `0 < tr A` gives an eigenvalue with positive
+  real part (`exists_eigenvalue_re_pos_of_trace_pos_fin_three`), in the shape of
   `powerlib.Dynamics.unstable_of_jacobian_eigenvalue_re_pos`.
 * Semantic corollaries: linearization at an equilibrium of a caller-supplied `ContDiff ℝ 1`
-  field on `EuclideanSpace ℝ (Fin 3)`, and the attractive sentences of a three-state linear field
-  `x' = A (x - e)`. They only repackage `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`,
-  `Dynamics.unstable_of_jacobian_eigenvalue_re_pos` (LeanForControl's indirect method) and the linear
-  hub `Linear.holds_iff_isHurwitz`; the model boundary is whatever field or matrix the caller
-  supplies.
-
-Connection architecture. No model family is defined or fixed here. Every statement is static
-algebra about real polynomials and matrices, or a generic semantic implication about an arbitrary
-field, so all of them are foundation results (Rules §3); the former `@[powerlib_domain]`
-corollaries are generic and are relabeled foundation. Model families that use these criteria
-publish their engineering conclusions as connection statements (pattern:
-`theorem/PLL/PIPLLFamily.lean`). The former LTI corollary
-`exponentiallyStable_fin_three_iff` on `LTI.AutonomousModel 3` is restated as
-`holds_affine_fin_three_iff` on the affine linear field, for every attractive sentence.
-
-Source: standard Routh–Hurwitz criterion for degree three (powerlib Phase 0, P0a, shared
-criteria interface for the work-sync formalization).
+  field on `EuclideanSpace ℝ (Fin 3)` (`locallyExponentiallyStable_of_jacobian_fin_three`,
+  `unstable_of_jacobian_det_pos_fin_three`, `unstable_of_jacobian_trace_pos_fin_three`), and the
+  attractive sentences of a three-state linear field `x' = A (x - e)`, for every attractive
+  sentence (`holds_affine_fin_three_iff`). They only repackage
+  `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`,
+  `Dynamics.unstable_of_jacobian_eigenvalue_re_pos` (LeanForControl's indirect method) and the
+  linear hub `Linear.holds_iff_isHurwitz`; the model boundary is whatever field or matrix the
+  caller supplies.
 -/
 
 noncomputable section
@@ -444,8 +453,7 @@ instability. -/
 
 /-- Three-state continuous-time linear field `x' = A (x - e)`: every attractive sentence of the
 Flow semantics (in particular global exponential stability) holds at `e` iff the strict 3×3
-Routh–Hurwitz conditions hold (the linear hub `Linear.holds_iff_isHurwitz`). Replaces the former
-`exponentiallyStable_fin_three_iff` on `LTI.AutonomousModel 3`. -/
+Routh–Hurwitz conditions hold (the linear hub `Linear.holds_iff_isHurwitz`). -/
 @[powerlib_foundation] theorem holds_affine_fin_three_iff (A : Matrix (Fin 3) (Fin 3) ℝ)
     (e : ℝ³) {P : Flow.Property} (hP : P.Attractive) :
     P.holds (LinearSystems.affineLinearVectorField A e) e ↔

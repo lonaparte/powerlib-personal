@@ -6,42 +6,61 @@ import Mathlib.MeasureTheory.Integral.IntegrableOn
 
 /-! # One-dimensional potential shapes: single well, double well, washboard
 
-Foundation layer: algebraic and calculus facts about three scalar potentials `V : ℝ → ℝ`.
-No dynamics, noise model or engineering system is formalized here; the Boltzmann weight
-`e^{−V/D}` (`D > 0`) is only used as a function of `θ`.
+Critical points, minima, barriers, curvatures and Boltzmann weights of three scalar potentials
+`V : ℝ → ℝ`.
 
-Single well `V = kθ²/2` (`k > 0`) and the anharmonic well `kθ²/2 + λθ⁴/4` (`λ ≥ 0`): unique
-critical point and strict global minimum at `0`; Gaussian normalization
-`∫ e^{−kθ²/(2D)} dθ = √(2πD/k)` (Mathlib `integral_gaussian`).
+Scope.
+* Algebraic and calculus facts about the potentials; no dynamics, noise model or engineering
+  system is formalized here (no model family). The Boltzmann weight `e^{−V/D}` (`D > 0`) is only
+  used as a function of `θ`.
 
-Double well `V = −aθ²/2 + bθ⁴/4` (`a, b > 0`):
-* critical points `0, ±√(a/b)`; `V'' = −a` at `0`, `2a` at `±√(a/b)`;
-* identity `V = (a²/4b) [1 − bθ²/a]² − a²/4b` and global minimum value `−a²/4b`, attained
-  exactly at `±√(a/b)`; barrier `V(0) − V(±√(a/b)) = a²/4b`;
-* for every `D > 0` the weight `e^{−V/D}` is strictly increasing on `(−∞, −r]`, decreasing on
-  `[−r, 0]`, increasing on `[0, r]` and decreasing on `[r, ∞)` (`r = √(a/b)`): it stays bimodal.
+Source: work-sync theory/T-potential-wells.md §1.1–1.5, §1.7 (assumptions on the tilted
+washboard), theory/T-kramers-escape.md §1.4, §1.7–1.8, theory/T-nonlinear-phase-plane.md §1.4–1.5.
 
-Washboard `V = V₀ (−cos θ − αθ)` (`V₀ > 0`):
-* `V' = V₀ (sin θ − α)`; a critical point exists iff `|α| ≤ 1`; `α > 1 ⇒ V' < 0`;
-  at `α = 1` the critical points are `π/2 + 2πk`, where also `V'' = 0` (well and barrier merge);
-* `V(θ + 2π) = V(θ) − 2πV₀α`: all wells are translates, with identical barrier heights;
-* for `|α| ≤ 1`, with `θ_min = arcsin α`, `θ_max = π − arcsin α`:
-  `ΔV₊ = V₀[2√(1−α²) + α(2 arcsin α − π)]`, `ΔV₋ = V₀[2√(1−α²) + α(π + 2 arcsin α)]`,
-  `ΔV₊ = ΔV₋ = 2V₀` at `α = 0`, `ΔV₊ → 0` and `ΔV₋ → 2πV₀` as `α → 1⁻`;
-* curvatures `V''(θ_min) = V₀√(1−α²)`, `V''(θ_max) = −V₀√(1−α²)`, so the Kramers prefactor is
-  `2πγ / √(V''(θ_min) |V''(θ_max)|) = 2πγ / (V₀√(1−α²))`;
-* for `α ≠ 0` the weight `e^{−V/D}` is not integrable on `ℝ`.
+Results.
+* Single well `V = kθ²/2` (`k > 0`, `singleWell`) and the anharmonic well `kθ²/2 + λθ⁴/4`
+  (`λ ≥ 0`, `anharmonicWell`): unique critical point and strict global minimum at `0`
+  (`singleWell_min`, `anharmonicWell_unique_min`); Gaussian normalization
+  `∫ e^{−kθ²/(2D)} dθ = √(2πD/k)` (Mathlib `integral_gaussian`; `singleWell_normalization`).
+* Double well `V = −aθ²/2 + bθ⁴/4` (`a, b > 0`, `doubleWell`): critical points `0, ±√(a/b)`
+  (`doubleWell_critical_iff`); `V'' = −a` at `0`, `2a` at `±√(a/b)` (`doubleWell_curvatures`);
+  identity `V = (a²/4b) [1 − bθ²/a]² − a²/4b` (`doubleWell_identity`) and global minimum value
+  `−a²/4b`, attained exactly at `±√(a/b)` (`doubleWell_min`); barrier
+  `V(0) − V(±√(a/b)) = a²/4b` (`doubleWell_barrier`); for every `D > 0` the weight `e^{−V/D}` is
+  strictly increasing on `(−∞, −r]`, decreasing on `[−r, 0]`, increasing on `[0, r]` and
+  decreasing on `[r, ∞)` (`r = √(a/b)`): it stays bimodal (`doubleWell_weight_bimodal`).
+* Washboard `V = V₀ (−cos θ − αθ)` (`V₀ > 0`, `washboard`):
+  `V' = V₀ (sin θ − α)`; a critical point exists iff `|α| ≤ 1` (`washboard_critical_exists_iff`);
+  `α > 1 ⇒ V' < 0` (`washboard_deriv_neg`); at `α = 1` the critical points are `π/2 + 2πk`, where
+  also `V'' = 0` (well and barrier merge; `washboard_critical_merge`).
+* `V(θ + 2π) = V(θ) − 2πV₀α` (`washboard_shift`): all wells are translates, with identical
+  barrier heights (`washboard_barrier_translate`).
+* For `|α| ≤ 1`, with `θ_min = arcsin α`, `θ_max = π − arcsin α`:
+  `ΔV₊ = V₀[2√(1−α²) + α(2 arcsin α − π)]`, `ΔV₋ = V₀[2√(1−α²) + α(π + 2 arcsin α)]`
+  (`barrierForward`, `barrierBackward`, `washboard_barrier_forward`, `washboard_barrier_backward`),
+  `ΔV₊ = ΔV₋ = 2V₀` at `α = 0` (`barrier_at_zero`), `ΔV₊ → 0` and `ΔV₋ → 2πV₀` as `α → 1⁻`
+  (`barrier_tendsto_one`).
+* Curvatures `V''(θ_min) = V₀√(1−α²)`, `V''(θ_max) = −V₀√(1−α²)` (`washboard_curvatures`), so
+  the Kramers prefactor is `2πγ / √(V''(θ_min) |V''(θ_max)|) = 2πγ / (V₀√(1−α²))`
+  (`washboard_kramers_prefactor`).
+* For `α ≠ 0` the weight `e^{−V/D}` is not integrable on `ℝ`
+  (`washboard_weight_not_integrable`).
 
-Corrections (T-potential-wells §1.2–1.3):
+Potential shapes elsewhere: the washboard barrier with a phase shift, `V(θ) = −cθ − A cos(θ + φ)`,
+its minimum over the two saddles and its fold asymptotics are in `theorem/Potential/Barrier.lean`;
+the double well with `a = b = 1` is the Duffing potential (`theorem/PhasePlane/Duffing.lean`), the
+washboard with `V₀ = A`, `α = B/A` that of the Adler equation (`theorem/PhasePlane/Adler.lean`);
+the fold and pitchfork normal forms carry the potentials `−μx + x³/3`
+(`theorem/NormalForm/Fold.lean`) and `−μx²/2 + x⁴/4` (`theorem/NormalForm/Pitchfork.lean`, the
+double well with `a = μ`, `b = 1`).
+
+Corrections. (T-potential-wells §1.2–1.3):
 * the double-well identity has the opposite sign: `V = +(a²/4b)[1 − (θ/√(a/b))²]² + const`
   (`doubleWell_identity`), not `−(a²/4b)[…]² + const`;
 * "if `D ~ ΔV` the two peaks merge into one" is false: `e^{−V/D}` is bimodal for every `D > 0`
   (`doubleWell_weight_bimodal`);
 * "for `0 < α < 1` the wells have different depths" is false: `V(θ + 2π) = V(θ) − 2πV₀α`, so every
   well has the same barriers `ΔV±` (`washboard_barrier_translate`).
-
-Source: work-sync theory/T-potential-wells.md §1.1–1.5, §1.7 (assumptions on the tilted
-washboard), theory/T-kramers-escape.md §1.4, §1.7–1.8, theory/T-nonlinear-phase-plane.md §1.4–1.5.
 -/
 
 noncomputable section

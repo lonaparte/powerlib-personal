@@ -2,11 +2,19 @@ import theorem.PDE.Partial
 
 /-! # The transport equation `u_t + a u_x = 0` (foundation)
 
+Existence by the travelling-wave formula and uniqueness along characteristics.
+
+Model boundary.
+* The one-dimensional transport equation `u_t + a u_x = 0` on the whole plane with constant speed
+  `a`; differentiable initial profile `u₀`, C¹ solutions.
+* A canonical PDE, not an engineering model: no model family; foundation results.
+
+Source: work-sync `theory/T-pde-systems.md` §1.4.4 (transport equation).
+
+Results.
 * `transport_solution`: `u₀(x − at)` solves the transport equation for differentiable `u₀`.
 * `transport_eq_initial`: uniqueness — every C¹ solution on the plane is constant along the
   characteristics, `u(x, t) = u(x − at, 0)` (through `const_along_segment`).
-
-Source: work-sync `theory/T-pde-systems.md` §1.4.4 (transport equation).
 -/
 
 noncomputable section

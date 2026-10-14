@@ -2,57 +2,74 @@ import theorem.PH.Linear
 import theorem.Flow.Certificate
 import theorem.TMIO.ClaimElab
 
-/-! # Structural results for port-Hamiltonian systems (foundation layer)
+/-! # Structural results for port-Hamiltonian systems
 
-All statements are about the abstract objects below; none of them is an engineering claim
-about a specific power system.
+Generic structural results for port-Hamiltonian systems — Dirac structures, pH-DAE, strict output
+passivity, IDA-PBC and zero-input global stability — and the tilted double-well counterexample
+to the LaSalle corollary of T-ph §1.2, with its family `LaSalle.family`.
 
-* Dirac structures (T-ph §1.3): flow and effort spaces are both `ι → ℝ` (`ι` finite),
-  pairing `⟪(f₁,e₁),(f₂,e₂)⟫ = f₁·e₂ + f₂·e₁`. A Dirac structure is a set `D` with
-  `D^⊥ = D`. Results: power conservation `eᵀ f = 0` on `D` (1.6); the graph of a skew `J`
-  is a Dirac structure (the explicit form (1.1) is a special case); with storage, resistive
-  and control ports, `D` plus the constitutive relations (1.7) gives the energy balance (1.2).
-* pH-DAE (§1.4): a Lagrange-multiplier term `G(x) λ` with `G(x)ᵀ ∇H(x) = 0` does no work.
-* Strict output passivity (§1.2): uniformly positive definite `R(x)` plus a uniformly bounded
-  `g(x)` give `Ḣ ≤ uᵀ y − ε |y|²`.
-  Correction: the note states "R ≻ 0 ⇒ strictly output passive". A uniform lower bound
-  `R(x) ⪰ ρ I` (ρ > 0) and a uniform bound `|g(x)ᵀ w|² ≤ γ |w|²` are needed for a uniform `ε`.
-* IDA-PBC (§1.9): the matching equation (1.13) makes the closed loop the target pH system,
-  whose Hamiltonian `H_d` is nonincreasing; a strict local minimum of `H_d` is Lyapunov stable.
-  The control law (1.14) solves (1.13) exactly when the bracket lies in `range g(x)` and
-  `g(x)ᵀ g(x)` is invertible; outside `range g(x)` no input solves (1.13).
-* Zero-input stability (§1.2 corollary).
-  Correction: the corollary "argmin H = {x*} and R ≻ 0 on {∇H ≠ 0} ⇒ (LaSalle) GAS" is false.
-  Counterexample (`phLaSalle_counterexample_*`): the gradient system `J = 0, R = I` on `ℝ²` with
-  the tilted double well `H = x₀⁴/4 + x₀³/3 − x₀² + x₁²/2` has the unique global minimizer
-  `(−2, 0)` and `R ≻ 0` everywhere, but the second critical point `(1, 0)` is an equilibrium,
-  so `(−2, 0)` is not globally attractive. Corrected version (`phGAS_of_unique_critical`):
-  add "∇H = 0 only at x*" and "H radially unbounded" (plus `C¹` regularity); then
-  `H − H(x*)` is a strict radially unbounded Lyapunov function and GAS follows without LaSalle.
-* Discrete gradient method (§2.5): `theorem/Numerics/DiscreteGradient.lean`
-  (`Numerics.DiscreteGradient`, `Numerics.discreteGradient_energy_step`).
+Scope.
+* All generic statements are about the abstract objects below (Dirac structures, and
+  implications for every `NonlinearModel`, the generic framework of
+  `theorem/PH/Nonlinear.lean`); none of them is an engineering claim about a specific power
+  system.
+* Dirac structures (T-ph §1.3): flow and effort spaces are both `ι → ℝ` (`ι` finite), pairing
+  `⟪(f₁,e₁),(f₂,e₂)⟫ = f₁·e₂ + f₂·e₁`; a Dirac structure is a set `D` with `D^⊥ = D`.
 
-Family and connection conclusions. The structural results are generic (Dirac structures and
-implications for every `NonlinearModel`, the generic framework of
-`theorem/PH/Nonlinear.lean`, which no family takes as model type); they remain public foundation,
-including the generic IDA-PBC stability theorems and the corrected GAS criterion
-`phGAS_of_unique_critical` (now concluding `Flow.GloballyAsymptoticallyStable`, which includes
-forward completeness, through LeanForControl's `asymptotic_implies_strict` and
-`Flow.globallyAsymptoticallyStable_of_strictLyapunov`). The single concrete model, the tilted
-double-well counterexample, gets a family `LaSalle.family`: a complete system is the
-counterexample read about a selected point (`LaSalle.Model`; system map: the pH system centred
-there, `NonlinearModel.shift`); its requirement language has the note's hypothesis "the point is
-the unique global minimizer of `H`" (static); Lyapunov stability translates into it, passivity
-into nothing (exact: `H` is bounded below), all other sentences into the whole inconsistent
-language. Connection conclusions: `LaSalle.chain_le_semantics`, `LaSalle.exact_passive`,
-`LaSalle.mem_den_lyapunovStable` (the minimizer is Lyapunov stable) and the refutation in
-connection form — the minimizer is not globally asymptotically stable
-(`LaSalle.not_mem_den_globallyAsymptoticallyStable`, formerly the raw
-`phLaSalle_counterexample_not_GAS`), so the unique-minimizer requirement does not translate
-global asymptotic stability soundly (`LaSalle.uniqueMin_not_sound_globallyAsymptoticallyStable`).
+Model boundary (the counterexample family `LaSalle.family`).
+* The gradient system `J = 0, R = I` on `ℝ²` (state `(x₀, x₁)`, continuous time, zero input)
+  with the tilted double well `H = x₀⁴/4 + x₀³/3 − x₀² + x₁²/2` (`phLaSalle_counterexample`):
+  unique global minimizer `(−2, 0)`, a second critical point `(1, 0)`.
+* A complete system is the counterexample read about a selected point (`LaSalle.Model`; system
+  map: the pH system centred there, `NonlinearModel.shift`).
 
 Source: work-sync `theory/T-ph.md` §1.2, §1.3 (1.5)–(1.7), §1.4 (1.8), §1.9 (1.13)–(1.14),
 §2.5.
+
+Results.
+* Dirac structures: power conservation `eᵀ f = 0` on `D` (1.6, `dirac_power_conserving`); the
+  graph of a skew `J` is a Dirac structure (`dirac_graph_skew`; the explicit form (1.1) is a
+  special case); with storage, resistive and control ports, `D` plus the constitutive relations
+  (1.7) gives the energy balance (1.2) (`dirac_energy_balance`, `dirac_dissipation_inequality`).
+* pH-DAE (§1.4): a Lagrange-multiplier term `G(x) λ` with `G(x)ᵀ ∇H(x) = 0` does no work
+  (`phDAE_field`, `phDAE_power_balance`).
+* Strict output passivity (§1.2): uniformly positive definite `R(x)` plus a uniformly bounded
+  `g(x)` give `Ḣ ≤ uᵀ y − ε |y|²` (`strictOutputPassive_of_uniform`).
+* IDA-PBC (§1.9): the matching equation (1.13) makes the closed loop the target pH system
+  (`idaPbc_closedLoop`), whose Hamiltonian `H_d` is nonincreasing (`idaPbc_lie_nonpos`); a
+  strict local minimum of `H_d` is Lyapunov stable (`idaPbc_lyapunovStable`,
+  `idaPbc_law_lyapunovStable`). The control law (1.14) solves (1.13) exactly when the bracket
+  lies in `range g(x)` and `g(x)ᵀ g(x)` is invertible (`idaPbc_law_matches`); outside
+  `range g(x)` no input solves (1.13) (`idaPbc_no_matching`).
+* Zero-input stability (§1.2 corollary): the counterexample (`phLaSalle_counterexample_*`) and
+  the corrected criterion `phGAS_of_unique_critical`: add "∇H = 0 only at x*" and "H radially
+  unbounded" (plus `C¹` regularity); then `H − H(x*)` is a strict radially unbounded Lyapunov
+  function and global asymptotic stability (`Flow.GloballyAsymptoticallyStable`, which includes
+  forward completeness) follows without LaSalle, through LeanForControl's
+  `asymptotic_implies_strict` and `Flow.globallyAsymptoticallyStable_of_strictLyapunov`.
+* Discrete gradient method (§2.5): `theorem/Numerics/DiscreteGradient.lean`
+  (`Numerics.DiscreteGradient`, `Numerics.discreteGradient_energy_step`).
+
+Family and connection conclusions.
+* The structural results are generic and remain public foundation, including the generic
+  IDA-PBC stability theorems and the corrected GAS criterion `phGAS_of_unique_critical`.
+* `LaSalle.family`: its requirement language has the note's hypothesis "the point is the unique
+  global minimizer of `H`" (static); Lyapunov stability translates into it, passivity into
+  nothing (exact: `H` is bounded below), all other sentences into the whole inconsistent
+  language.
+* Connection conclusions: `LaSalle.chain_le_semantics`, `LaSalle.exact_passive`,
+  `LaSalle.mem_den_lyapunovStable` (the minimizer is Lyapunov stable) and the refutation in
+  connection form — the minimizer is not globally asymptotically stable
+  (`LaSalle.not_mem_den_globallyAsymptoticallyStable`), so the unique-minimizer requirement does
+  not translate global asymptotic stability soundly
+  (`LaSalle.uniqueMin_not_sound_globallyAsymptoticallyStable`).
+
+Corrections.
+* §1.2: the note states "R ≻ 0 ⇒ strictly output passive". A uniform lower bound
+  `R(x) ⪰ ρ I` (ρ > 0) and a uniform bound `|g(x)ᵀ w|² ≤ γ |w|²` are needed for a uniform `ε`.
+* §1.2 corollary: "argmin H = {x*} and R ≻ 0 on {∇H ≠ 0} ⇒ (LaSalle) GAS" is false. In the
+  counterexample above `(−2, 0)` is the unique global minimizer and `R ≻ 0` everywhere, but the
+  second critical point `(1, 0)` is an equilibrium, so `(−2, 0)` is not globally attractive.
 -/
 
 noncomputable section

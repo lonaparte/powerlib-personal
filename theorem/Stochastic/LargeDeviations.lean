@@ -11,71 +11,73 @@ import Mathlib.Probability.ConditionalProbability
 
 /-! # Large deviations: definitions, Chernoff bound, Freidlin–Wentzell action, quasi-potential
 
-Source: work-sync `theory/T-large-deviations.md` (LDP definition with rate function `I`, upper
-bound over `cl A`, lower bound over `int A`; Cramér / Chernoff), `theory/T-freidlin-wentzell.md`
-(action `S_{0T}(φ) = ½ ∫₀ᵀ ‖φ̇ − b(φ)‖²_{a(φ)⁻¹} dt`, `a = σσᵀ`), `theory/T-quasi-potential.md`
+The large-deviation principle, the Chernoff upper bound, Cramér's lower bound for i.i.d. sums,
+the Freidlin–Wentzell action and the quasi-potential of a gradient drift.
+
+Scope.
+* Probability theory / calculus of variations, not an engineering result.
+* No statement here asserts that a particular diffusion satisfies an LDP (Freidlin–Wentzell's
+  theorem is not formalized); the action and the quasi-potential are deterministic variational
+  objects.
+
+Source: work-sync theory/T-large-deviations.md (LDP definition with rate function `I`, upper
+bound over `cl A`, lower bound over `int A`; Cramér / Chernoff), theory/T-freidlin-wentzell.md
+(action `S_{0T}(φ) = ½ ∫₀ᵀ ‖φ̇ − b(φ)‖²_{a(φ)⁻¹} dt`, `a = σσᵀ`), theory/T-quasi-potential.md
 (`V_qp(x) = inf_{T, φ(0) ∈ 𝒜, φ(T) = x} S_{0T}(φ)`).
 
-Foundation (probability / calculus of variations), not an engineering result.  No statement here
-asserts that a particular diffusion satisfies an LDP (Freidlin–Wentzell's theorem is not
-formalized); the action and the quasi-potential are deterministic variational objects.
-
-Main results.
-* Large-deviation principle with speed `ε → 0⁺` for a family of measures on a topological space,
-  with the bounds stated for **Borel** sets `A` and a **lower semicontinuous** rate function (the
-  hypotheses the note leaves implicit; written out in the statement, see the section header);
-  `dirac_satisfiesLDP`: the constant family `δ_{x₀}` satisfies it with rate `0` at `x₀` and `∞`
-  elsewhere (non-vacuity check).
-* `chernoff_bound` (wrapper of Mathlib `ProbabilityTheory.measure_ge_le_exp_mul_mgf`) and
-  `chernoff_iid`: `P(Σ_{i<n} Xᵢ ≥ n a) ≤ (e^{−ta} M(t))ⁿ` for independent summands with common
+Results.
+* Large-deviation principle with speed `ε → 0⁺` for a family of measures on a topological
+  space, with the bounds stated for **Borel** sets `A` and a **lower semicontinuous** rate
+  function (the hypotheses the note leaves implicit; written out in the statement, see the
+  section header); `dirac_satisfiesLDP`: the constant family `δ_{x₀}` satisfies it with rate `0`
+  at `x₀` and `∞` elsewhere (non-vacuity check).
+* `chernoff_bound` (wrapper of Mathlib `ProbabilityTheory.measure_ge_le_exp_mul_mgf`),
+  `chernoff_iid` — `P(Σ_{i<n} Xᵢ ≥ n a) ≤ (e^{−ta} M(t))ⁿ` for independent summands with common
   moment generating function — the exponential (Cramér) upper bound.
-* `fwAction`, `fwAction_nonneg`: the Freidlin–Wentzell action for `C¹` paths with a positive
+* `fwAction`, `fwAction_nonneg` — the Freidlin–Wentzell action for `C¹` paths with a positive
   definite diffusion matrix (the note's hypothesis "`a` invertible, `φ` absolutely continuous"
   is replaced by the explicit `C¹`/positive-definite class used here).
-* `gradient_action_identity`, `gradient_action_ge`, `gradient_action_eq_iff`: for a gradient drift
-  `b = −∇U` and unit diffusion, completing the square gives
+* `gradient_action_identity`, `gradient_action_ge`, `gradient_action_eq_iff` — for a gradient
+  drift `b = −∇U` and unit diffusion, completing the square gives
   `S_{0T}(φ) = ½∫‖φ̇ − ∇U(φ)‖² + 2(U(φ(T)) − U(φ(0)))`, hence `S ≥ 2ΔU` with equality iff `φ`
   follows the reversed gradient flow; `quasiPotential_ge`: `V_qp(x) ≥ 2(U(x) − U(x_𝒜))`.
-* `quasiPotential_le_of_heteroclinic`, `quasiPotential_eq_of_heteroclinic`: the matching upper
+* `quasiPotential_le_of_heteroclinic`, `quasiPotential_eq_of_heteroclinic` — the matching upper
   bound, hence `V_qp(x) = 2(U(x) − U(x_𝒜))`, when an uphill orbit of the reversed gradient flow
   `ψ̇ = ∇U(ψ)` runs from `x_𝒜` (at `s → −∞`) to `x` (at `s → +∞`) — the minimum-to-saddle case,
-  where the optimal path needs infinite time at both ends.  The proof builds explicit
+  where the optimal path needs infinite time at both ends. The proof builds explicit
   near-optimal finite-time paths: smooth (`Real.smoothTransition`) corrections on `[0, 1]` and
-  `[T − 1, T]` glued to a long piece of the orbit; the action excess is at most `n ε₀²`, with `ε₀`
-  controlled by the continuity of `∇U` at the two endpoints.  Hypotheses: `U` differentiable with
-  continuous gradient `gU`; no Lipschitz or nondegeneracy assumption.
+  `[T − 1, T]` glued to a long piece of the orbit; the action excess is at most `n ε₀²`, with
+  `ε₀` controlled by the continuity of `∇U` at the two endpoints. Hypotheses: `U` differentiable
+  with continuous gradient `gU`; no Lipschitz or nondegeneracy assumption.
   `doubleWell_quasiPotential` (non-vacuity): for `U(y) = y⁴/4 − y²/2` the explicit orbit
   `ψ(s) = 1/√(1 + e^{2s})` gives `V_qp(1 → 0) = 1/2`.
-
 * Cramér lower bound at **exposed points** (exponential tilting + Chebyshev under the tilted
-  law, no change of measure on path space): for i.i.d. `Xᵢ` with cumulant generating function `Λ`,
-  `θ` interior to the effective domain and `x = Λ'(θ)`,
+  law, no change of measure on path space): for i.i.d. `Xᵢ` with cumulant generating function
+  `Λ`, `θ` interior to the effective domain and `x = Λ'(θ)`,
   `cramer_lower_exposed`: `x ∈ G` open ⇒ eventually `(1/n) log P(S_n/n ∈ G) ≥ −(θx − Λ(θ)) − ε`;
   `cramerRate` (Legendre transform of `Λ` over its effective domain), `cgf_tangent_le`
   (`Λ(t) ≥ Λ(θ) + (t − θ)Λ'(θ)`), `cramerRate_eq` (`I(Λ'(θ)) = θΛ'(θ) − Λ(θ)`);
   `cramer_lower_bound`: `−inf {I(x) : x ∈ G exposed} ≤ liminf (1/n) log P(S_n/n ∈ G)`.
-
-* Bounded summands (`|X₀| ≤ C` a.s.): `exists_deriv_cgf_eq` — every `x` with `P(X₀ < x) > 0` and
-  `P(X₀ > x) > 0` is exposed (`Λ` is finite and analytic on `ℝ`, `E[(X₀ − x) e^{θX₀}]` changes sign,
-  intermediate value theorem); `cramer_lower_bound_bounded` (interior points of the hull);
-  the endpoint cases `P(X₀ > x) = 0` / `P(X₀ < x) = 0` (which contain every point outside the
-  hull) via `P(S_n/n ∈ G) ≥ P(X₀ ∈ (x − δ, x])ⁿ` and `I(x) ≥ −log P(X₀ ∈ (x − δ, x])`
-  (no boundedness needed there) and the reflection `X ↦ −X`;
+* Bounded summands (`|X₀| ≤ C` a.s.): `exists_deriv_cgf_eq` — every `x` with `P(X₀ < x) > 0`
+  and `P(X₀ > x) > 0` is exposed (`Λ` is finite and analytic on `ℝ`, `E[(X₀ − x) e^{θX₀}]`
+  changes sign, intermediate value theorem); `cramer_lower_bound_bounded` (interior points of
+  the hull); the endpoint cases `P(X₀ > x) = 0` / `P(X₀ < x) = 0` (which contain every point
+  outside the hull) via `P(S_n/n ∈ G) ≥ P(X₀ ∈ (x − δ, x])ⁿ` and
+  `I(x) ≥ −log P(X₀ ∈ (x − δ, x])` (no boundedness needed there) and the reflection `X ↦ −X`;
   **`cramer_lower_bound_of_bounded`**: Cramér's lower bound
   `−inf_{x ∈ G} I(x) ≤ liminf (1/n) log P(S_n/n ∈ G)` for every open `G` (written
   `⨆ x ∈ G, −I(x) ≤ liminf …`).
-
 * General i.i.d. summands (no boundedness or moment assumption; Dembo–Zeitouni Thm 2.2.3):
-  **`cramer_lower_bound_general`**: `−inf_{x ∈ G} I(x) ≤ liminf (1/n) log P(S_n/n ∈ G)` for every
-  open `G`, at every `x` (non-exposed points, non-steep `Λ`, `Λ = ∞` off `0`, `I(x) = ∞`
-  included).  Proof by truncation: for each level `M`, `cramer_lower_bound_of_bounded` is applied
+  **`cramer_lower_bound_general`**: `−inf_{x ∈ G} I(x) ≤ liminf (1/n) log P(S_n/n ∈ G)` for
+  every open `G`, at every `x` (non-exposed points, non-steep `Λ`, `Λ = ∞` off `0`, `I(x) = ∞`
+  included). Proof by truncation: for each level `M`, `cramer_lower_bound_of_bounded` is applied
   to i.i.d. copies of `X₀` conditioned on `|X₀| ≤ M` (coordinates of the product measure
   `Measure.infinitePi` of the conditioned law `ProbabilityTheory.cond`), and
   `P(S_n/n ∈ G) ≥ P(|X₀| ≤ M)ⁿ ν_M^{⊗n}(S_n/n ∈ G)` (product measure restricted to the box);
-  this yields tilts `t` with `E[e^{t(X₀ − x)}; |X₀| ≤ M] ≤ e^{ℓ + ε}` (`ℓ` the `liminf`).  When
+  this yields tilts `t` with `E[e^{t(X₀ − x)}; |X₀| ≤ M] ≤ e^{ℓ + ε}` (`ℓ` the `liminf`). When
   both `P(X₀ < x)` and `P(X₀ > x)` are positive the truncated exponential moments are coercive
   in `t` uniformly in `M`, so the sublevel sets are nested nonempty compacts; their common point
-  `t` satisfies `E[e^{t(X₀ − x)}] ≤ e^ℓ` by monotone convergence `M → ∞`, i.e. `−I(x) ≤ ℓ`.  The
+  `t` satisfies `E[e^{t(X₀ − x)}] ≤ e^ℓ` by monotone convergence `M → ∞`, i.e. `−I(x) ≤ ℓ`. The
   remaining cases `P(X₀ > x) = 0` / `P(X₀ < x) = 0` are the endpoint lemmas above.
   The rate `I = cramerRate X₀` is the Legendre transform over the effective domain, i.e. the
   classical `sup_{t ∈ ℝ} (t x − Λ(t))` with `Λ = +∞` off the domain.

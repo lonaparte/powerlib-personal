@@ -2,34 +2,39 @@ import theorem.Attributes
 import dependencies.Mathlib
 import Mathlib.Analysis.Matrix.Normed
 
-/-! "Numerically stable ⇔ every `hλᵢ` lies in the stability region": the correct version.
+/-! # "Numerically stable ⇔ every `hλᵢ` lies in the stability region": the correct version
 
-Model boundary: complex linear recursions `x_{k+1} = Φ x_k` on `Fin n → ℂ` (a real system is
-the special case of real entries), with boundedness of every trajectory as the stability
-notion: "bounded trajectories" means `∀ x₀, ∃ C, ∀ k, ‖Φ^k x₀‖ ≤ C` (every trajectory
-`x_k = Φ^k x₀` of the recursion is bounded), written out in each statement.  The stability
-region is the closed set `‖R(z)‖ ≤ 1`.
+Bounded trajectories of a linear recursion force every eigenvalue into the closed unit disk;
+the converse holds for diagonalizable matrices and fails for a Jordan block.
 
-Results (foundation):
-* `norm_le_one_of_boundedTrajectories`: bounded trajectories ⇒ every eigenvalue of `Φ` has
-  modulus `≤ 1` (the "⇒" direction holds for every matrix).
-* `boundedTrajectories_iff_of_diagonalizable`: if `Φ = P diag(d) P⁻¹`, bounded trajectories ⇔
-  `‖dᵢ‖ ≤ 1` for all `i`.
-* `forwardEuler_boundedTrajectories_iff`: for a diagonalizable `A = P diag(λ) P⁻¹`, the forward
-  Euler recursion `1 + hA` has bounded trajectories ⇔ `‖1 + hλᵢ‖ ≤ 1` for all `i`
-  (i.e. every `hλᵢ` in the forward-Euler region).
-* `jordan_counterexample`: without diagonalizability the "⇐" direction fails: for the Jordan
-  block `A = [[0,1],[0,0]]` the only eigenvalue gives `R(hλ) = R(0) = 1` (on the boundary of
-  the region), yet the forward-Euler trajectory from `(0, 1)` is `(kh, 1)`, unbounded.
+Model boundary.
+* Complex linear recursions `x_{k+1} = Φ x_k` on `Fin n → ℂ` (a real system is the special case
+  of real entries), with boundedness of every trajectory as the stability notion: "bounded
+  trajectories" means `∀ x₀, ∃ C, ∀ k, ‖Φ^k x₀‖ ≤ C` (every trajectory `x_k = Φ^k x₀` of the
+  recursion is bounded), written out in each statement. The stability region is the closed set
+  `‖R(z)‖ ≤ 1`.
 
 Source: work-sync theory/T-numerical-integration.md §1.7 ("数值解不爆炸 ⇔ hλ ∈ S") and §2.7
 ("数值稳定 ⇔ ρ(R(hA)) ≤ 1 ⇔ hλᵢ ∈ S").
 
-Correction: the note states the equivalence without conditions.  "⇒" is true; "⇐" needs the
-eigenvalues with `‖R(hλᵢ)‖ = 1` to be semisimple; the formalized version assumes
-diagonalizability, and `jordan_counterexample` refutes the unconditional statement.  The
-strict version (`‖R‖ < 1` for every eigenvalue ⇔ geometric decay) needs no such assumption;
-see `powerlib.LTI.exponentiallyStable_iff_schurStable`.
+Results.
+* `norm_le_one_of_boundedTrajectories` — bounded trajectories ⇒ every eigenvalue of `Φ` has
+  modulus `≤ 1` (the "⇒" direction holds for every matrix).
+* `boundedTrajectories_iff_of_diagonalizable` — if `Φ = P diag(d) P⁻¹`, bounded trajectories ⇔
+  `‖dᵢ‖ ≤ 1` for all `i`.
+* `forwardEuler_boundedTrajectories_iff` — for a diagonalizable `A = P diag(λ) P⁻¹`, the forward
+  Euler recursion `1 + hA` has bounded trajectories ⇔ `‖1 + hλᵢ‖ ≤ 1` for all `i` (i.e. every
+  `hλᵢ` in the forward-Euler region).
+* `jordan_counterexample` — without diagonalizability the "⇐" direction fails: for the Jordan
+  block `A = [[0,1],[0,0]]` the only eigenvalue gives `R(hλ) = R(0) = 1` (on the boundary of the
+  region), yet the forward-Euler trajectory from `(0, 1)` is `(kh, 1)`, unbounded.
+
+Corrections.
+* The note states the equivalence without conditions. "⇒" is true; "⇐" needs the eigenvalues
+  with `‖R(hλᵢ)‖ = 1` to be semisimple; the formalized version assumes diagonalizability, and
+  `jordan_counterexample` refutes the unconditional statement. The strict version (`‖R‖ < 1`
+  for every eigenvalue ⇔ geometric decay) needs no such assumption; see
+  `powerlib.LTI.exponentiallyStable_iff_schurStable`.
 -/
 
 noncomputable section

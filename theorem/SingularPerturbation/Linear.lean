@@ -3,48 +3,43 @@ import theorem.Criteria.Lyapunov
 
 /-! # Linear singularly perturbed systems: Kokotović's two-time-scale stability theorem
 
-Foundation layer (category B).
+A linear two-time-scale system with Hurwitz boundary-layer and reduced matrices is exponentially
+stable for all sufficiently small `ε`, with an explicit `ε*`.
 
-System (continuous time, constant matrices, `n` slow states `x`, `m` fast states `z`,
-small parameter `ε > 0`, no input):
+Model boundary.
+* Continuous time, constant matrices, `n` slow states `x`, `m` fast states `z`, small parameter
+  `ε > 0`, no input:
 ```
 ẋ = A₁₁ x + A₁₂ z,        ε ż = A₂₁ x + A₂₂ z .
 ```
-`LinearSP.blockMatrix ε = [[A₁₁, A₁₂], [A₂₁/ε, A₂₂/ε]]` on `Fin n ⊕ Fin m`;
-`LinearSP.stateMatrix ε` is the same matrix with the state ordered `(x₁, …, xₙ, z₁, …, z_m)`
-(reindexed by `finSumFinEquiv`). Its behaviour is the Flow semantics of LeanForControl's affine
-linear field `affineLinearVectorField (stateMatrix ε) 0` on `EuclideanSpace ℝ (Fin (n + m))`.
-
-Main result (`exists_epsStar_exponentiallyStable`): if the boundary-layer matrix `A₂₂` is
-Hurwitz and the reduced (Schur-complement) matrix `A₀ = A₁₁ - A₁₂ A₂₂⁻¹ A₂₁` is Hurwitz,
-there is `ε* > 0` such that for every `ε ∈ (0, ε*)` the full matrix is Hurwitz and the
-zero-input system is globally exponentially stable (`Flow.GloballyExponentiallyStable` of the
-affine linear field, through `Linear.globallyExponentiallyStable_of_isHurwitz`).
-
-The proof is Kokotović's composite Lyapunov argument, not spectral continuity: in the
-coordinates `η = z + A₂₂⁻¹ A₂₁ x`, `V = xᵀ P₀ x + ηᵀ P₂ η` with `P₀ A₀ + A₀ᵀ P₀ = -I`,
-`P₂ A₂₂ + A₂₂ᵀ P₂ = -I` (LeanForControl's Lyapunov solutions). Given these, `ε*` is explicit:
-`epsStar P₀ P₂ = 1 / (2 c + 1)` with
-`c = S (2S + 1)/2 + S₃`, `S = |P₀ A₁₂|₁ + |P₂ L A₀|₁`, `S₃ = |P₂ L A₁₂|₁`, `L = A₂₂⁻¹ A₂₁`,
-and `|N|₁ = Σᵢⱼ |Nᵢⱼ|` (`isHurwitz_of_lt_epsStar`). Along the way:
-`V̇ ≤ -|x|²/4 - |η|²/2`.
-
-Also provided: `isUnit_det_of_isHurwitz`. The general Lyapunov-inequality criterion
-(`Criteria.re_neg_of_lyapunov`: symmetric positive definite `P` with `wᵀ P M w < 0` for `w ≠ 0`
-forces every complex eigenvalue of `M` into the open left half-plane) is in
-`theorem/Criteria/Lyapunov.lean`.
-
-Model boundary: linear, time invariant, autonomous, constant `ε`; the theorem is about the
-full two-time-scale linear system, not about any particular converter. Nonlinear and
-finite-horizon approximation statements are in other modules.
-
-Architecture: this is generic mathematical support (no `Family`); every statement is about
-arbitrary matrices, and the behavioural conclusion is the generic Flow semantics of the affine
-linear field. The former `LTI.AutonomousModel` wrapper `LinearSP.model` is removed.
+* `LinearSP.blockMatrix ε = [[A₁₁, A₁₂], [A₂₁/ε, A₂₂/ε]]` on `Fin n ⊕ Fin m`;
+  `LinearSP.stateMatrix ε` is the same matrix with the state ordered `(x₁, …, xₙ, z₁, …, z_m)`
+  (reindexed by `finSumFinEquiv`). Its behaviour is the Flow semantics of LeanForControl's affine
+  linear field `affineLinearVectorField (stateMatrix ε) 0` on `EuclideanSpace ℝ (Fin (n + m))`.
+* Linear, time invariant, autonomous, constant `ε`; the theorem is about the full two-time-scale
+  linear system, not about any particular converter; every statement is about arbitrary
+  matrices. Nonlinear and finite-horizon approximation statements are in other modules.
 
 Source: work-sync theory/T-singular-perturbation.md §1.1–§1.4, theory/T-tikhonov.md §1.1–§1.2
 (the stability hypotheses `Re λ(A_y) < 0` and the reduced slow system); the linear
 two-time-scale theorem is Kokotović–Khalil–O'Reilly (1986) Ch. 2, cited in both notes.
+
+Results.
+* `exists_epsStar_exponentiallyStable` — if the boundary-layer matrix `A₂₂` is Hurwitz and the
+  reduced (Schur-complement) matrix `A₀ = A₁₁ - A₁₂ A₂₂⁻¹ A₂₁` is Hurwitz, there is `ε* > 0` such
+  that for every `ε ∈ (0, ε*)` the full matrix is Hurwitz and the zero-input system is globally
+  exponentially stable (`Flow.GloballyExponentiallyStable` of the affine linear field, through
+  `Linear.globallyExponentiallyStable_of_isHurwitz`).
+* `isHurwitz_of_lt_epsStar` — the proof is Kokotović's composite Lyapunov argument, not spectral
+  continuity: in the coordinates `η = z + A₂₂⁻¹ A₂₁ x`, `V = xᵀ P₀ x + ηᵀ P₂ η` with
+  `P₀ A₀ + A₀ᵀ P₀ = -I`, `P₂ A₂₂ + A₂₂ᵀ P₂ = -I` (LeanForControl's Lyapunov solutions). Given
+  these, `ε*` is explicit: `epsStar P₀ P₂ = 1 / (2 c + 1)` with
+  `c = S (2S + 1)/2 + S₃`, `S = |P₀ A₁₂|₁ + |P₂ L A₀|₁`, `S₃ = |P₂ L A₁₂|₁`, `L = A₂₂⁻¹ A₂₁`,
+  and `|N|₁ = Σᵢⱼ |Nᵢⱼ|`. Along the way: `V̇ ≤ -|x|²/4 - |η|²/2`.
+* `isUnit_det_of_isHurwitz` — a Hurwitz matrix is invertible. The general Lyapunov-inequality
+  criterion (`Criteria.re_neg_of_lyapunov`: symmetric positive definite `P` with `wᵀ P M w < 0`
+  for `w ≠ 0` forces every complex eigenvalue of `M` into the open left half-plane) is in
+  `theorem/Criteria/Lyapunov.lean`.
 -/
 
 noncomputable section

@@ -1,15 +1,20 @@
 import dependencies.Mathlib
 import theorem.Attributes
 
-/-! # Power-invariant three-phase Park transform (foundation)
+/-! # Power-invariant three-phase Park transform
 
-Conventions.
+Algebraic identities (foundation) of the power-invariant three-phase Park transform.
+
+Scope.
+Conventions:
 * Phase axes `φ_a = 0`, `φ_b = 2π/3`, `φ_c = −2π/3` (`phase`); `cvec θ = (cos(θ − φ_x))_x`,
   `svec θ = (sin(θ − φ_x))_x`.
 * Power-invariant Park matrix `T_P(θ)` with rows `√(2/3) cos(θ − φ_x)`, `−√(2/3) sin(θ − φ_x)`,
   `1/√3` (work-sync conventions §4); `k = √(2/3)` is the row scale.
 
-Contents.
+Source: work-sync `theory/T-sync-machine.md` §1.1–§1.5 (Park-transform algebra of the stator).
+
+Results.
 * Three-phase constants `√3² = 3`, `cos(2π/3) = −1/2`, `sin(2π/3) = √3/2`; dot products and sums
   of `cvec`, `svec`.
 * `parkMatrix_mul_transpose`: `T_P T_Pᵀ = I` (orthogonality; `T_P⁻¹ = T_Pᵀ`).
@@ -19,8 +24,6 @@ Contents.
 
 The synchronous-machine stator model built on this transform is
 `theorem/Synchronous/ParkModel.lean`.
-
-Source: work-sync theory/T-sync-machine.md §1.1–§1.5 (Park-transform algebra of the stator).
 
 Correction (§1.4): "`Ṫ_P⁻¹ T_P = ω J`" has the product in the wrong order:
 `T_P · d(T_P⁻¹)/dt = ω J₀` holds, `d(T_P⁻¹)/dt · T_P` does not

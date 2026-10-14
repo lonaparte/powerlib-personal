@@ -7,9 +7,9 @@ import theorem.LTI.Decay
 
 /-! # Single-area swing + first-order governor (two-state frequency model)
 
-Source: work-sync `theory/T-frequency-stability.md` §1.4–§1.8 (model §1.7/§1.8, RoCoF §1.5,
-quasi-steady-state deviation §1.6, characteristic polynomial / `ω_n` / `ζ_n` §1.7, damping trend
-§2.5).
+The two-state swing + governor frequency model as a linear family (RoCoF, quasi-steady state,
+damping trend, exact Hurwitz translation), and its singular-perturbation limit `T_g → 0` to the
+first-order swing with static droop.
 
 Model boundary.
 * Continuous-time, linear, small-signal model around a nominal operating point, Kundur
@@ -26,8 +26,18 @@ Model boundary.
   valve saturation, converter inner loops, PLL, delays, PWM, voltage dynamics, nonlinear swing.
 * Parameter ranges are stated per theorem (typically `0 < M`, `0 < T_g`, `0 ≤ D`,
   `0 < K_R + D`); the family's models carry `0 < M` and `0 < T_g`.
+* Singular-perturbation limit `T_g → 0` (the governor becomes the static droop
+  `ΔP_m = −K_R Δω`). Reduced model: the first-order swing `M Δω̇ = −(K_R + D) Δω − ΔP_L`
+  (`reducedPlant`, state `Δω`, input `ΔP_L`, output `Δω`; it is
+  `LowInertia.firstOrderModel M (K_R + D)`). Two-time-scale form `twoTimeScale`
+  (`SingularPerturbation.LinearSP 1 1`): slow `Δω`, fast `ΔP_m`, `ε = T_g`.
 
-Static results (foundation).
+Source: work-sync `theory/T-frequency-stability.md` §1.4–§1.8 (model §1.7/§1.8, RoCoF §1.5,
+quasi-steady-state deviation §1.6, characteristic polynomial / `ω_n` / `ζ_n` §1.7, damping trend
+§2.5).
+
+Results.
+Two-state model (static, foundation):
 * `field_swing`, `field_governor`: the state equations are exactly the §1.7 pair.
 * `transfer_apply`: `Linear.transfer` from `ΔP_L` to `Δω` is
   `−(1 + T_g s)/(M T_g s² + (M + D T_g) s + (D + K_R))` (§1.7).
@@ -37,12 +47,37 @@ Static results (foundation).
   `(−ΔP_L/(K_R + D), K_R ΔP_L/(K_R + D))` (§1.6).
 * `isHurwitz_iff`: for `0 < M`, `0 < T_g` the state matrix is Hurwitz iff `0 < M + D T_g` and
   `0 < K_R + D`; with `0 ≤ D` this is `0 < K_R + D` (`isHurwitz_iff_of_nonneg`).
+Singular-perturbation limit:
+* Static (foundation): `plant_A_eq_stateMatrix` (the state matrix is the generic
+  two-time-scale matrix at `ε = T_g`), `twoTimeScale_gain` (quasi-steady state
+  `ΔP_m = −K_R Δω`), `twoTimeScale_reducedMatrix` (the Schur complement is `−(K_R + D)/M`),
+  `twoTimeScale_A22_isHurwitz`; `field_quasiSteady` (on `ΔP_m = −K_R Δω` the governor row
+  vanishes and the swing row is the first-order field).
+* Eigenvalues: `eigDisc`, `slowEig`, `fastEig` (the real roots of
+  `M T_g s² + (M + D T_g) s + (D + K_R)`, slow root rationalized), `slowEig_root`,
+  `fastEig_root`, `slowEig_eq`, Vieta (`slowEig_add_fastEig`, `slowEig_mul_fastEig`),
+  `slowEig_sub_fastEig`, `det_characteristicMatrix_eq_mul` /
+  `det_characteristicMatrix_eq_zero_iff` (for a nonnegative discriminant the spectrum is
+  `{λ_s, λ_f}`), `plant_mulVec_slowEigvec` (slow eigenvector `(1, M λ_s + D)`). Limits:
+  `eventually_eigDisc_pos` (real distinct roots for small `T_g`), `eventually_rootSum_pos`,
+  `slowEig_zero`, `tendsto_slowEig` (`λ_s → −(K_R + D)/M`, continuous at `T_g = 0`),
+  `tendsto_slowSlope` (the invariant slow line `ΔP_m = (M λ_s + D) Δω` tends to
+  `ΔP_m = −K_R Δω`), `tendsto_mul_fastEig` (`T_g λ_f → −1`, with `mul_fastEig`),
+  `tendsto_fastEig_atBot` (`λ_f → −∞` as `T_g → 0⁺`), `tendsto_dampingRatio_atTop`
+  (`ζ_n → ∞`: overdamped in the limit).
+* Transfer function: `reduced_field_apply`, `reduced_transfer_apply` (`−1/(M s + K_R + D)`),
+  `tendsto_transfer` (pointwise convergence off the first-order pole).
+* Stability (static): `reduced_isHurwitz_iff` (`0 < K_R + D`), `isHurwitz_iff_reduced`
+  (Hurwitz iff the reduction is, whenever `0 < M + D T_g`), `eventually_isHurwitz_iff_reduced`;
+  `rateMargin_iff`, `reduced_rateMargin_iff`, `eventually_rateMargin_iff_reduced` (off the pole
+  `a M = K_R + D` the rate margins agree for small `T_g`); generic `LTI.not_decay_of_eigenvector`
+  (a real eigenvalue `μ > −a` excludes decay at the rate `a`).
 
 Family and connection conclusions.
 * System map: a model (`Model`: `M, D, K_R, T_g` with `0 < M`, `0 < T_g`) is read as the port
   system of its plant (`Family.IsLinear`): port input the load deviation `ΔP_L`, port output
-  `Δω`. The flow sentences therefore speak about the zero-load operating point; since the plant is
-  linear, the same attractive sentences hold at the quasi-steady state of every constant load
+  `Δω`. The flow sentences therefore speak about the zero-load operating point; since the plant
+  is linear, the same attractive sentences hold at the quasi-steady state of every constant load
   step (`Linear.holds_input_iff` with `steadyState_isEquilibrium`).
 * Requirements (static): `stable` (`0 < M + D T_g`, `0 < K_R + D`: Jacobian trace `< 0`,
   determinant `> 0`), `unstable` (`K_R + D < 0` or `M + D T_g < 0`), `rate a`
@@ -55,59 +90,35 @@ Family and connection conclusions.
   (§1.6: `0 ≤ D`, `0 < K_R + D` give global exponential stability), `mem_den_unstable`, and
   `not_mem_den_passive` (with `0 < K_R + D`, a constant load draws energy out of the
   `(ΔP_L, Δω)` port at the quasi-steady state, so the model is not passive).
-* Implementation evidence (private, trajectory level, outside the sentence language): the
+* Static evidence (foundation): `isEquilibrium_iff`, `steadyState_isEquilibrium`.
+  Implementation evidence (private, trajectory level, outside the sentence language): the
   initial RoCoF `Δω̇(0⁺) = −ΔP_L / M_eff` (`rocof`, `rocof_hz`, §1.5), the global exponential
   stability of the quasi-steady state of the load step (`exponentiallyConvergesTo_steadyState`)
   and the convergence `Δω(t) → −ΔP_L/(K_R + D)` of every forward solution under the load step
-  (`tendsto_freq`, §1.6). The former `@[powerlib_domain]` labels of `isEquilibrium_iff` and
-  `steadyState_isEquilibrium` are now `@[powerlib_foundation]` (static evidence).
-
-Singular-perturbation limit `T_g → 0` (the governor becomes the static droop `ΔP_m = −K_R Δω`).
-Reduced model: the first-order swing `M Δω̇ = −(K_R + D) Δω − ΔP_L` (`reducedPlant`, state `Δω`,
-input `ΔP_L`, output `Δω`; it is `LowInertia.firstOrderModel M (K_R + D)`). Two-time-scale form
-`twoTimeScale` (`SingularPerturbation.LinearSP 1 1`): slow `Δω`, fast `ΔP_m`, `ε = T_g`.
-* Static (foundation): `plant_A_eq_stateMatrix` (the state matrix is the generic two-time-scale
-  matrix at `ε = T_g`), `twoTimeScale_gain` (quasi-steady state `ΔP_m = −K_R Δω`),
-  `twoTimeScale_reducedMatrix` (the Schur complement is `−(K_R + D)/M`),
-  `twoTimeScale_A22_isHurwitz`; `field_quasiSteady` (on `ΔP_m = −K_R Δω` the governor row vanishes
-  and the swing row is the first-order field).
-* Eigenvalues: `eigDisc`, `slowEig`, `fastEig` (the real roots of
-  `M T_g s² + (M + D T_g) s + (D + K_R)`, slow root rationalized), `slowEig_root`, `fastEig_root`,
-  `slowEig_eq`, Vieta (`slowEig_add_fastEig`, `slowEig_mul_fastEig`), `slowEig_sub_fastEig`,
-  `det_characteristicMatrix_eq_mul` / `det_characteristicMatrix_eq_zero_iff` (for a nonnegative
-  discriminant the spectrum is `{λ_s, λ_f}`), `plant_mulVec_slowEigvec` (slow eigenvector
-  `(1, M λ_s + D)`). Limits: `eventually_eigDisc_pos` (real distinct roots for small `T_g`),
-  `eventually_rootSum_pos`, `slowEig_zero`, `tendsto_slowEig` (`λ_s → −(K_R + D)/M`,
-  continuous at `T_g = 0`), `tendsto_slowSlope` (the invariant slow line `ΔP_m = (M λ_s + D) Δω` tends to `ΔP_m = −K_R Δω`), `tendsto_mul_fastEig`
-  (`T_g λ_f → −1`, with `mul_fastEig`), `tendsto_fastEig_atBot` (`λ_f → −∞` as `T_g → 0⁺`),
-  `tendsto_dampingRatio_atTop` (`ζ_n → ∞`: overdamped in the limit).
-* Transfer function: `reduced_field_apply`, `reduced_transfer_apply` (`−1/(M s + K_R + D)`),
-  `tendsto_transfer` (pointwise convergence off the first-order pole).
-* Stability (static): `reduced_isHurwitz_iff` (`0 < K_R + D`), `isHurwitz_iff_reduced` (Hurwitz
-  iff the reduction is, whenever `0 < M + D T_g`), `eventually_isHurwitz_iff_reduced`;
-  `rateMargin_iff`, `reduced_rateMargin_iff`, `eventually_rateMargin_iff_reduced` (off the pole
-  `a M = K_R + D` the rate margins agree for small `T_g`); generic `LTI.not_decay_of_eigenvector`
-  (a real eigenvalue `μ > −a` excludes decay at the rate `a`).
-* First-order family `reducedFamily` (`ReducedModel`: `M > 0`, `D`, `K_R`; requirements `stable`
-  `0 < K_R + D`, `unstable` `K_R + D < 0`, `rate a` `a M ≤ K_R + D`; `Model.reduce` forgets `T_g`,
-  `reduce_plant`): `reducedFamily_isLinear`, `reduced_realize_univ`,
-  `reduced_chain_le_semantics`, `reduced_exact_hurwitz`, `reduced_exact_decay` (the decay translation is exact at every rate: the solutions are
-  `e^{−(K_R + D) t/M}`).
-* Connection conclusions of the limit: `mem_den_iff_reduce` (for `0 < M + D T_g` a model satisfies
-  an attractive sentence or sampled contraction exactly when its reduction does),
+  (`tendsto_freq`, §1.6).
+* First-order family `reducedFamily` (`ReducedModel`: `M > 0`, `D`, `K_R`; requirements
+  `stable` `0 < K_R + D`, `unstable` `K_R + D < 0`, `rate a` `a M ≤ K_R + D`; `Model.reduce`
+  forgets `T_g`, `reduce_plant`): `reducedFamily_isLinear`, `reduced_realize_univ`,
+  `reduced_chain_le_semantics`, `reduced_exact_hurwitz`, `reduced_exact_decay` (the decay
+  translation is exact at every rate: the solutions are `e^{−(K_R + D) t/M}`).
+* Connection conclusions of the limit: `mem_den_iff_reduce` (for `0 < M + D T_g` a model
+  satisfies an attractive sentence or sampled contraction exactly when its reduction does),
   `mem_den_iff_reduce_of_nonneg` (every `T_g` when `0 ≤ D`),
-  `exists_unstable_reduce_globallyExponentiallyStable` (boundary: `M = 1`, `D = −1`, `K_R = 2`,
-  `T_g = 2` is unstable while its reduction is globally exponentially stable, so with negative
-  damping the transfer needs a small `T_g`), `not_mem_den_decay_of_slowEig` (the slow root bounds
-  every decay rate), `exists_threshold_mem_den_decay_iff_reduce` (for a rate off the pole there is a
-  threshold `τ > 0` below which the model decays at that rate exactly when its reduction does).
-* Implementation evidence (private, trajectory level): `finiteHorizon_reduce` — for every horizon
-  `T` and `T_g ≤ ε₀`, `|Δω(t) − Δω̄(t)|² ≤ C T_g² |x(0) − x^∞|²` and
+  `exists_unstable_reduce_globallyExponentiallyStable` (boundary: `M = 1`, `D = −1`,
+  `K_R = 2`, `T_g = 2` is unstable while its reduction is globally exponentially stable, so with
+  negative damping the transfer needs a small `T_g`), `not_mem_den_decay_of_slowEig` (the slow
+  root bounds every decay rate), `exists_threshold_mem_den_decay_iff_reduce` (for a rate off the
+  pole there is a threshold `τ > 0` below which the model decays at that rate exactly when its
+  reduction does).
+* Implementation evidence of the limit (private, trajectory level): `finiteHorizon_reduce` —
+  for every horizon `T` and `T_g ≤ ε₀`, `|Δω(t) − Δω̄(t)|² ≤ C T_g² |x(0) − x^∞|²` and
   `|ΔP_m(t) − (−K_R Δω̄(t) + e^{−t/T_g}(ΔP_m(0) + K_R Δω(0)))|² ≤ C T_g² |x(0) − x^∞|²` on
   `[0, T]` under any constant load (`K_R + D ≠ 0`), from the generic
   `SingularPerturbation.LinearSP.exists_finiteHorizon_error`.
-Not claimed: the decay translation of the full model at the boundary rate `a M = K_R + D`
-(the slow root may lie on either side), uniform-in-time (infinite horizon) trajectory estimates.
+
+Not formalized.
+* The decay translation of the full model at the boundary rate `a M = K_R + D` (the slow root
+  may lie on either side), uniform-in-time (infinite horizon) trajectory estimates.
 -/
 
 noncomputable section
@@ -544,9 +555,9 @@ private theorem tendsto_freq (m : Model) (hD : 0 ≤ m.D) (hKD : 0 < m.K + m.D) 
   simpa using h
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
-§1.6 at the trajectory level (formerly `exponentiallyConvergesTo_steadyState`): every solution
-under the load step converges exponentially to the quasi-steady state, read from the connection
-theorem `mem_den_globallyExponentiallyStable` and linearity (`Linear.holds_input_iff`). -/
+§1.6 at the trajectory level: every solution under the load step converges exponentially to the
+quasi-steady state, read from the connection theorem `mem_den_globallyExponentiallyStable` and
+linearity (`Linear.holds_input_iff`). -/
 private theorem exponentiallyConvergesTo_steadyState (m : Model) (hD : 0 ≤ m.D)
     (hKD : 0 < m.K + m.D) (ΔPL : ℝ) :
     Flow.GloballyExponentiallyStable (m.plant.inputField (load ΔPL))

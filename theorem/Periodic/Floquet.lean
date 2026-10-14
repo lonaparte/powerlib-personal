@@ -3,28 +3,32 @@ import theorem.LTI.Discrete
 
 /-! # Floquet sufficient criterion for periodic linear time-varying systems
 
-Foundation layer. System: `ẋ = A(t) x`, `x ∈ ℝ^X` (sup norm), with a continuous real
-`T`-periodic state matrix `A` (`T > 0`), continuous time, forward solutions only. The
-monodromy matrix is `monodromy A T 0 = Φ(T, 0)` of `theorem/Periodic/Transition.lean`; its
-complex spectrum is the set of Floquet multipliers.
+A monodromy matrix with spectral radius below one makes a periodic linear time-varying system
+uniformly exponentially stable.
 
-Main results:
-* `uniformlyExponentiallyStable_of_spectralRadius_lt_one`: if the spectral radius of the
-  complexified monodromy matrix is `< 1`, then there are `K` and `β > 0` with
-  `‖Φ(t, s)‖ ≤ K e^{-β (t - s)}` for **all** `s ≤ t` (uniform in the initial time).
-* `trajectory_decay_of_spectralRadius_lt_one`: the same bound for every forward solution,
-  `‖x(t)‖ ≤ K e^{-β (t - s)} ‖x(s)‖`.
-
-Only the sufficient direction is proved (no converse, no instability statement);
-`FloquetUnstable A T` names the opposite situation (some Floquet multiplier strictly outside the
-unit circle). The
-contractive power `‖M^m‖ < 1` is LeanForControl's
-`exists_pow_norm_lt_one_of_spectralRadius_lt_one` (Gelfand's formula), applied to the
-complexified monodromy matrix with the `L∞` operator norm; the matrix-power lemmas
-(`LTI.exists_pow_norm_lt_one`, `LTI.exists_pow_norm_le_exp`) are in `theorem/LTI/Discrete.lean`.
+Scope.
+* System `ẋ = A(t) x`, `x ∈ ℝ^X` (sup norm), with a continuous real `T`-periodic state matrix `A`
+  (`T > 0`), continuous time, forward solutions only.
+* The monodromy matrix is `monodromy A T 0 = Φ(T, 0)` of `theorem/Periodic/Transition.lean`; its
+  complex spectrum is the set of Floquet multipliers.
+* Only the sufficient direction is proved (no converse, no instability statement);
+  `FloquetUnstable A T` names the opposite situation (some Floquet multiplier strictly outside
+  the unit circle).
 
 Source: work-sync theory/T-harmonic-linearization.md §1.6 (`|ρ_i| < 1` stability criterion);
 projects/basin-guard/notes/concepts/guard-object.md §3 (`max |μ_i| = 1` as the threshold).
+
+Results.
+* `uniformlyExponentiallyStable_of_spectralRadius_lt_one` — if the spectral radius of the
+  complexified monodromy matrix is `< 1`, then there are `K` and `β > 0` with
+  `‖Φ(t, s)‖ ≤ K e^{-β (t - s)}` for **all** `s ≤ t` (uniform in the initial time).
+* `trajectory_decay_of_spectralRadius_lt_one` — the same bound for every forward solution,
+  `‖x(t)‖ ≤ K e^{-β (t - s)} ‖x(s)‖`.
+
+The contractive power `‖M^m‖ < 1` is LeanForControl's
+`exists_pow_norm_lt_one_of_spectralRadius_lt_one` (Gelfand's formula), applied to the
+complexified monodromy matrix with the `L∞` operator norm; the matrix-power lemmas
+(`LTI.exists_pow_norm_lt_one`, `LTI.exists_pow_norm_le_exp`) are in `theorem/LTI/Discrete.lean`.
 -/
 
 noncomputable section

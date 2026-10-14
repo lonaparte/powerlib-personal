@@ -6,56 +6,55 @@ import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 
 /-! # Nonlinear index-1 DAEs: implicit slow manifold, Schur-complement Jacobian, local stability
 
-System (continuous time, autonomous, inputs fixed and absorbed into `f`, `g`):
+The implicit algebraic branch of a nonlinear index-1 DAE, the Schur-complement Jacobian of the
+reduced field, and local exponential stability of the reduced ODE and of the DAE itself.
+
+Model boundary.
+* Continuous time, autonomous, inputs fixed and absorbed into `f`, `g`:
 ```
 ẋ = f(x, y),      0 = g(x, y),      x ∈ ℝⁿ (differential), y ∈ ℝᵐ (algebraic),
 ```
-`f : ℝⁿ × ℝᵐ → ℝⁿ`, `g : ℝⁿ × ℝᵐ → ℝᵐ` globally `C¹` (`Dynamics.State k` =
-`EuclideanSpace ℝ (Fin k)`), with an equilibrium `u = (x₀, y₀)`: `f u = 0`, `g u = 0`, and the
-index-1 condition: `∂g/∂y (u)` is invertible. State order: `x` then `y`. No delay, PWM,
-switching or limiter is part of the abstract model; any controller must be inside `f`, `g`.
-
-Foundation results (categories B/C).
-* `implicitMap`: the local solution `y = h(x)` of `g(x, y) = 0` through `u` (Mathlib
-  `ContDiffAt.implicitFunction`), with `h x₀ = y₀`, `C¹` at `x₀`, local uniqueness
-  (`g v = 0 ↔ h v.1 = v.2` near `u`) and derivative `Dh(x₀) = -(∂g/∂y)⁻¹ ∂g/∂x` — thin
-  wrappers of the upstream theorems.
-* "Eliminate first, then linearize = Schur complement": the reduced field
-  `F(x) = f(x, h(x))` has derivative `∂f/∂x - ∂f/∂y (∂g/∂y)⁻¹ ∂g/∂x` at `x₀`
-  (`hasFDerivAt_reducedField`); `schurMatrix` is its matrix in the standard basis.
-* Local exponential stability depends only on the field near the equilibrium
-  (`Dynamics.locallyExponentiallyStable_of_eqOn_ball`, bootstrap with
-  `Dynamics.exp_bound_of_local`, in `theorem/Dynamics/Locality.lean`).
-
-Stability results (general semi-explicit index-1 DAEs such as network-constrained
-power-system models, as in the source notes). They hold for arbitrary `C¹` fields `f`, `g`, so
-they are generic foundation results rather than conclusions about one formalized model.
-* `reducedODE_locallyExponentiallyStable`: if `schurMatrix` is Hurwitz, the reduced ODE
-  `ẋ = f(x, h(x))` is locally exponentially stable at `x₀`. The reduced field is only
-  meaningful near `x₀`; the proof applies the linearization theorem to a `C¹` field equal to
-  `F` on a ball (smooth bump cutoff) and transfers the estimate back.
-* `dae_locallyExponentiallyStable`: the same estimate holds for the DAE itself: there is a
-  neighbourhood `V` of `y₀` (the selected algebraic branch) such that every DAE solution
-  segment with `y(t) ∈ V` and `x(t₀)` close to `x₀` satisfies
-  `‖x(t) - x₀‖ ≤ C e^{-a (t - t₀)} ‖x(t₀) - x₀‖`, and `y(t) = h(x(t))`. Solutions on another
-  branch of `g = 0` are excluded by `V`.
-
-Conclusions are equilibrium-level (local, small-signal); nothing is claimed about large
-disturbances or about index ≥ 2 systems.
-
-Architecture: generic mathematical support (no `Family`). The two stability theorems were
-`@[powerlib_domain]` in the former architecture; they are implications for every `f`, `g`
-(classification policy 4) and are now `@[powerlib_foundation]`. Behaviour is LeanForControl's
-`IsTrajectoryOn` / `LocallyExponentiallyStable`; the linearization step is
-`Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`. The DAE solution notion lies outside
-the Flow sentence language and is written out in the statements that use it: `(x, y)` is a
-solution segment of `ẋ = f(x, y)`, `0 = g(x, y)` on `[t₀, t₁]` when
-`∀ t ∈ Icc t₀ t₁, HasDerivWithinAt x (f (x t, y t)) (Icc t₀ t₁) t ∧ g (x t, y t) = 0`.
+  `f : ℝⁿ × ℝᵐ → ℝⁿ`, `g : ℝⁿ × ℝᵐ → ℝᵐ` globally `C¹` (`Dynamics.State k` =
+  `EuclideanSpace ℝ (Fin k)`), with an equilibrium `u = (x₀, y₀)`: `f u = 0`, `g u = 0`, and the
+  index-1 condition: `∂g/∂y (u)` is invertible. State order: `x` then `y`. No delay, PWM,
+  switching or limiter is part of the abstract model; any controller must be inside `f`, `g`.
+* General semi-explicit index-1 DAEs such as network-constrained power-system models, as in the
+  source notes. Every statement holds for arbitrary `C¹` fields `f`, `g`, so the results are
+  generic rather than conclusions about one formalized model.
+* Conclusions are equilibrium-level (local, small-signal); nothing is claimed about large
+  disturbances or about index ≥ 2 systems.
+* Behaviour is LeanForControl's `IsTrajectoryOn` / `LocallyExponentiallyStable`; the
+  linearization step is `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`. The DAE
+  solution notion lies outside the Flow sentence language and is written out in the statements
+  that use it: `(x, y)` is a solution segment of `ẋ = f(x, y)`, `0 = g(x, y)` on `[t₀, t₁]` when
+  `∀ t ∈ Icc t₀ t₁, HasDerivWithinAt x (f (x t, y t)) (Icc t₀ t₁) t ∧ g (x t, y t) = 0`.
 
 Source: work-sync theory/T-small-signal-stability.md §1.1–§1.4 (nonlinear DAE, index-1
 reduction, Schur complement); theory/T-dae-systems.md §1.3–§1.4, §1.9;
 theory/T-slow-manifold.md §1.1, §1.3 (implicit construction of `h` and `∂h/∂x`);
 theory/T-singular-perturbation.md §1.3.
+
+Results.
+* `implicitMap` — the local solution `y = h(x)` of `g(x, y) = 0` through `u` (Mathlib
+  `ContDiffAt.implicitFunction`), with `h x₀ = y₀`, `C¹` at `x₀`, local uniqueness
+  (`g v = 0 ↔ h v.1 = v.2` near `u`) and derivative `Dh(x₀) = -(∂g/∂y)⁻¹ ∂g/∂x` — thin wrappers
+  of the upstream theorems (`implicitMap_self`, `implicitMap_spec`, `implicitMap_unique`,
+  `hasStrictFDerivAt_implicitMap`).
+* `hasFDerivAt_reducedField` — "eliminate first, then linearize = Schur complement": the
+  reduced field `F(x) = f(x, h(x))` has derivative `∂f/∂x - ∂f/∂y (∂g/∂y)⁻¹ ∂g/∂x` at `x₀`;
+  `schurMatrix` is its matrix in the standard basis.
+* Local exponential stability depends only on the field near the equilibrium
+  (`Dynamics.locallyExponentiallyStable_of_eqOn_ball`, bootstrap with
+  `Dynamics.exp_bound_of_local`, in `theorem/Dynamics/Locality.lean`).
+* `reducedODE_locallyExponentiallyStable` — if `schurMatrix` is Hurwitz, the reduced ODE
+  `ẋ = f(x, h(x))` is locally exponentially stable at `x₀`. The reduced field is only
+  meaningful near `x₀`; the proof applies the linearization theorem to a `C¹` field equal to
+  `F` on a ball (smooth bump cutoff) and transfers the estimate back.
+* `dae_locallyExponentiallyStable` — the same estimate holds for the DAE itself: there is a
+  neighbourhood `V` of `y₀` (the selected algebraic branch) such that every DAE solution
+  segment with `y(t) ∈ V` and `x(t₀)` close to `x₀` satisfies
+  `‖x(t) - x₀‖ ≤ C e^{-a (t - t₀)} ‖x(t₀) - x₀‖`, and `y(t) = h(x(t))`. Solutions on another
+  branch of `g = 0` are excluded by `V`.
 -/
 
 noncomputable section

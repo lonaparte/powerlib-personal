@@ -4,11 +4,20 @@ import theorem.Dynamics.Locality
 
 /-! # Local tools for fields that are singular or only locally regular
 
-Generic foundation, independent of any model, written for GFL model B
-(`theorem/GFL/DCLink/ModelBStability.lean`, `theorem/GFL/DCLink/ModelBBoundary.lean`), whose field
-contains `1 / V_dc`. Model boundary: an arbitrary autonomous field `f : ℝⁿ → ℝⁿ` (continuous time,
-no inputs), read through the Flow semantics of `theorem/Flow/Defs.lean` (solution segments, i.e.
-Mathlib integral curves on `[t₀, t₁]`). No global regularity of `f` is assumed.
+Stability and instability criteria at points where the field collapses onto, or is repelled from,
+a coordinate plane; written for GFL model B (`theorem/GFL/DCLink/ModelBStability.lean`,
+`theorem/GFL/DCLink/ModelBBoundary.lean`), whose field contains `1 / V_dc`.
+
+Scope.
+* Generic foundation, independent of any model: an arbitrary autonomous field `f : ℝⁿ → ℝⁿ`
+  (continuous time, no inputs), read through the Flow semantics of `theorem/Flow/Defs.lean`
+  (solution segments, i.e. Mathlib integral curves on `[t₀, t₁]`). No global regularity of `f` is
+  assumed.
+* This module defines no family. All results are generic semantic implications (foundation);
+  model-specific conclusions are drawn in the GFL model-B modules.
+
+Source: Khalil, *Nonlinear Systems* (3rd ed.), Theorem 4.1 (local Lyapunov theorem); the collapse
+estimate is new (it answers the `V_dc* = 0` question of `theorem/GFL/DCLink/ModelBStability.lean`).
 
 Results.
 * `locallyExponentiallyStable_of_collapse`: if the flow collapses onto a coordinate plane
@@ -52,13 +61,6 @@ Lyapunov theorem (`Dynamics.localAsymptoticStable_of_lie_neg`, `theorem/Dynamics
 mean-value and interval bounds (`theorem/Dynamics/Calculus.lean`) and the norm bounds for the
 projection removing one coordinate (`Dynamics.norm_sub_smul_single_le`,
 `Dynamics.norm_le_norm_sub_smul_single_add`, `theorem/Dynamics/Coordinates.lean`).
-
-Source: Khalil, *Nonlinear Systems* (3rd ed.), Theorem 4.1 (local Lyapunov theorem); the collapse
-estimate is new (it answers the `V_dc* = 0` question of `theorem/GFL/DCLink/ModelBStability.lean`).
-
-## Family and connection conclusions
-None: this module defines no family. All results are generic semantic implications (foundation);
-model-specific conclusions are drawn in the GFL model-B modules.
 -/
 
 noncomputable section

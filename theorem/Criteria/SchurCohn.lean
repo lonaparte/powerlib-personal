@@ -4,9 +4,17 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-! # Schur–Cohn root bounds for complex polynomials (foundation)
 
-Static algebra of an arbitrary complex polynomial `p : ℂ[X]` and its roots; nothing here
-describes a physical system or a numerical method.
+Necessary conditions for all roots of a complex polynomial to lie in the closed unit disk, and
+their contrapositive root witnesses.
 
+Scope.
+* Static algebra of an arbitrary complex polynomial `p : ℂ[X]` and its roots; nothing here
+  describes a physical system or a numerical method.
+
+Source: standard Schur–Cohn / Vieta root bounds; used for work-sync
+theory/T-numerical-integration.md §1.5–§1.6.
+
+Results.
 * `norm_sub_le_norm_one_sub_conj_mul`: Blaschke-factor bound `‖w - ζ‖ ≤ ‖1 - w̄ ζ‖` in the
   closed unit disk, from `‖1 - w̄ ζ‖² - ‖w - ζ‖² = (1 - ‖w‖²)(1 - ‖ζ‖²)`;
   `norm_prod_sub_le` is its multiset product form.
@@ -20,9 +28,6 @@ describes a physical system or a numerical method.
   (`(Σ x)² = Σ x² + 2 e₂`).
 
 Used by the zero-instability proof of BDF`k`, `k ≥ 7` (`theorem/Numerics/BDFInstability.lean`).
-
-Source: standard Schur–Cohn / Vieta root bounds; used for work-sync
-theory/T-numerical-integration.md §1.5–§1.6.
 -/
 
 noncomputable section

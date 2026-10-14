@@ -3,46 +3,43 @@ import theorem.Periodic.LTI
 
 /-! # The first-order 2:1 slow flow as a real two-state LTI system
 
-Foundation layer: exact statements **inside the averaged (slow-flow) model**. Nothing here is a
-Floquet stability boundary of a voltage-source converter; the passage from a converter model to
-this slow flow (projection on the victim mode, averaging, truncation) is not formalized.
+Exact statements **inside the averaged (slow-flow) model**: the stability threshold of the
+first-order 2:1 slow flow. Nothing here is a Floquet stability boundary of a voltage-source
+converter.
 
-Model boundary. Complex slow amplitude `A(t) ∈ ℂ` of the victim mode in the frame rotating at
-half the pump frequency, continuous time, constant real damping `α₀`, constant detuning
-`Δ = ω_p/2 − ω_cr`, and constant complex pump coefficient `g` (in the source `g = ε 𝒢 / 2`,
-`ε` the modulation depth, `𝒢` the projected pump gain):
-
-  `Ȧ = −(α₀ + jΔ) A + g A*`   (`slowFlowField`).
-
-In the real coordinates `(Re A, Im A)` (`toReal`, Mathlib's orthonormal basis `{1, I}` of `ℂ`
-onto `ℝ² = EuclideanSpace ℝ (Fin 2)`) this is the two-state linear field
-`slowFlowSystem α₀ Δ g = LinearSystems.affineLinearVectorField (slowFlowMatrix α₀ Δ g) 0` with
-state matrix `!![−α₀ + Re g, Δ + Im g; −Δ + Im g, −α₀ − Re g]` (`slowFlowMatrix`).
-
-Results.
-* `toReal_slowFlowField`, `isIntegralCurveOn_slowFlow_iff`, `hasDerivAt_slowFlow_iff`: the real
-  field is exactly the complex slow flow (solutions on any time set, and global solutions,
-  correspond one-to-one).
-* `trace_slowFlowMatrix = −2α₀`, `det_slowFlowMatrix = α₀² + Δ² − |g|²`; characteristic
-  polynomial `s² + 2α₀ s + α₀² + Δ² − |g|²`, whose roots are `−α₀ ± √(|g|² − Δ²)`
-  (`slowFlow_root_iff`, real when `Δ² ≤ |g|²`).
-* `slowFlow_holds_iff`, `slowFlow_exponentiallyStable_iff`: every attractive sentence of the
-  Flow semantics at `0` (in particular global exponential stability) holds iff `α₀ > 0` and
-  `|g|² < α₀² + Δ²`; with `g = ε𝒢/2`, `ε ≥ 0`, `α₀ > 0`: iff `ε |𝒢| < 2 √(α₀² + Δ²)`
-  (`slowFlow_threshold_iff`), i.e. `ε_crit = 2√(α₀² + Δ²)/|𝒢|`.
-* `exp_victim_tuned`, `monodromy_victim_tuned`: at zero pump amplitude and perfect tuning
-  (`ω_cr T = π`, `T = 2π/ω_p`) the victim eigenvalues `−α₀ ± jω_cr` of a constant state matrix
-  give the Floquet multiplier `−e^{−α₀T}` (a real negative double multiplier, by the LTI
-  spectral mapping `Periodic.monodromy_const_mulVec_eigen`).
+Model boundary.
+* Complex slow amplitude `A(t) ∈ ℂ` of the victim mode in the frame rotating at half the pump
+  frequency, continuous time, constant real damping `α₀`, constant detuning `Δ = ω_p/2 − ω_cr`,
+  and constant complex pump coefficient `g` (in the source `g = ε 𝒢 / 2`, `ε` the modulation
+  depth, `𝒢` the projected pump gain): `Ȧ = −(α₀ + jΔ) A + g A*`   (`slowFlowField`).
+* In the real coordinates `(Re A, Im A)` (`toReal`, Mathlib's orthonormal basis `{1, I}` of `ℂ`
+  onto `ℝ² = EuclideanSpace ℝ (Fin 2)`) this is the two-state linear field
+  `slowFlowSystem α₀ Δ g = LinearSystems.affineLinearVectorField (slowFlowMatrix α₀ Δ g) 0` with
+  state matrix `!![−α₀ + Re g, Δ + Im g; −Δ + Im g, −α₀ − Re g]` (`slowFlowMatrix`).
+* Averaged mathematical model, no model family. The passage from a converter model to this slow
+  flow (projection on the victim mode, averaging, truncation) is not formalized.
 
 Source: work-sync projects/vsc-parametric-oscillation/notes/theory-draft.md §2.2 (slow flow,
 `ε_crit = 2√(α₀² + Δ²)/|𝒢|`); projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
 gfl-gfm-parametric-contrast.md §5 (slow flow and leading criterion), §7 (`σ_± = −a ± h`,
 multiplier `μ = −e^{−α₀T}` at `δ̂₁ = 0` with perfect tuning `ω_cr T = π`).
 
-Architecture: the slow flow is an averaged mathematical model with no model family; all results
-remain public foundation support. The former LTI-model form is replaced by the linear field on
-`ℝ²` and the linear stability hub (`Criteria.holds_affine_fin_two_iff`).
+Results.
+* `toReal_slowFlowField`, `isIntegralCurveOn_slowFlow_iff`, `hasDerivAt_slowFlow_iff` — the real
+  field is exactly the complex slow flow (solutions on any time set, and global solutions,
+  correspond one-to-one).
+* `trace_slowFlowMatrix`, `det_slowFlowMatrix`, `slowFlow_root_iff` — trace `−2α₀`, determinant
+  `α₀² + Δ² − |g|²`; characteristic polynomial `s² + 2α₀ s + α₀² + Δ² − |g|²`, whose roots are
+  `−α₀ ± √(|g|² − Δ²)` (real when `Δ² ≤ |g|²`).
+* `slowFlow_holds_iff`, `slowFlow_exponentiallyStable_iff` — every attractive sentence of the
+  Flow semantics at `0` (in particular global exponential stability) holds iff `α₀ > 0` and
+  `|g|² < α₀² + Δ²`; with `g = ε𝒢/2`, `ε ≥ 0`, `α₀ > 0`: iff `ε |𝒢| < 2 √(α₀² + Δ²)`
+  (`slowFlow_threshold_iff`), i.e. `ε_crit = 2√(α₀² + Δ²)/|𝒢|`. Stability goes through the
+  linear stability hub (`Criteria.holds_affine_fin_two_iff`).
+* `exp_victim_tuned`, `monodromy_victim_tuned` — at zero pump amplitude and perfect tuning
+  (`ω_cr T = π`, `T = 2π/ω_p`) the victim eigenvalues `−α₀ ± jω_cr` of a constant state matrix
+  give the Floquet multiplier `−e^{−α₀T}` (a real negative double multiplier, by the LTI
+  spectral mapping `Periodic.monodromy_const_mulVec_eigen`).
 -/
 
 noncomputable section

@@ -2,28 +2,29 @@ import theorem.Periodic.Transition
 
 /-! # A periodic orbit of an autonomous system has the Floquet multiplier `1`
 
-Foundation layer.
+The velocity of a non-constant periodic orbit is an eigenvector of its monodromy matrix with
+eigenvalue `1` (the trivial Floquet multiplier).
 
-Model boundary. Autonomous ODE `ẋ = f(x)` on `ℝ^X` (`X → ℝ`, sup norm), `f` of class `C¹`
-(globally), continuous time. `x_p` is a global solution with period `T > 0`
-(`x_p(t + T) = x_p(t)`). The variational (first-variation) equation along `x_p` is
-`ẏ = A(t) y` with `A(t) = Df(x_p(t))` written as a matrix (`variationalMatrix`); it is continuous
-and `T`-periodic, so its transition and monodromy matrices are those of
-`Periodic/Transition.lean`.
-
-Results.
-* `variationalMatrix_continuous`, `variationalMatrix_periodic`: the hypotheses of the Floquet
-  theory hold for `A(t)`.
-* `velocity_solves_variational`: the velocity `y(t) = ẋ_p(t) = f(x_p(t))` solves the variational
-  equation (chain rule).
-* `monodromy_mulVec_velocity`: `Φ(T, 0) f(x_p(0)) = f(x_p(0))`.
-* `one_mem_spectrum_monodromy`: if the orbit is not an equilibrium (`f(x_p(0)) ≠ 0`), `1` is a
-  Floquet multiplier (an eigenvalue of the complexified monodromy matrix).
+Scope.
+* Autonomous ODE `ẋ = f(x)` on `ℝ^X` (`X → ℝ`, sup norm), `f` of class `C¹` (globally),
+  continuous time. `x_p` is a global solution with period `T > 0` (`x_p(t + T) = x_p(t)`).
+* The variational (first-variation) equation along `x_p` is `ẏ = A(t) y` with
+  `A(t) = Df(x_p(t))` written as a matrix (`variationalMatrix`); it is continuous and
+  `T`-periodic, so its transition and monodromy matrices are those of `Periodic/Transition.lean`.
 
 Source: work-sync projects/basin-guard/notes/concepts/guard-object.md (trivial multiplier of an
 autonomous periodic orbit); projects/vsc-parametric-oscillation/references/
 gfm-driven-gfl-parametric-resonance/notes/concepts/coupled-parametric-resonance.md §2
 (`Φ' = JΦ`, `Φ(0) = I`).
+
+Results.
+* `variationalMatrix_continuous`, `variationalMatrix_periodic` — the hypotheses of the Floquet
+  theory hold for `A(t)`.
+* `velocity_solves_variational` — the velocity `y(t) = ẋ_p(t) = f(x_p(t))` solves the
+  variational equation (chain rule).
+* `monodromy_mulVec_velocity` — `Φ(T, 0) f(x_p(0)) = f(x_p(0))`.
+* `one_mem_spectrum_monodromy` — if the orbit is not an equilibrium (`f(x_p(0)) ≠ 0`), `1` is a
+  Floquet multiplier (an eigenvalue of the complexified monodromy matrix).
 -/
 
 noncomputable section

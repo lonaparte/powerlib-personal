@@ -2,35 +2,46 @@ import theorem.Asymptotics.GaussianMoments
 
 /-! # Fold slow passage: the inner Riccati problem and its solvability condition
 
-Foundation layer. The objects are the rescaled scalar inner problems of the fold slow-passage
-note, written as explicit real ODEs in the inner time `τ`:
-* grazing (quadratic-tangency) inner problem `X' = λ - τ² + X²` (`riccatiGraze`);
-* constant-rate ramp inner problem `X' = λ + τ + X²` (`riccatiRamp`).
+The rescaled scalar inner problems of the fold slow-passage note, written as explicit real ODEs
+in the inner time `τ`, their exact linearization along the separatrix, the solvability functional
+and the escape threshold.
 
-`λ` is the rescaled margin parameter (not an eigenvalue), `X` the rescaled fast variable.
-These are formal scalar ODEs; their derivation from a particular converter fold, the
-`ν`-expansion `ε_c/ε_qs = 1 + ν + C₂ ν² + O(ν³)` and the value `C₂ = 3/8` are **not**
-formalized here. The escape threshold `λ^{(0)} = 1` of the unperturbed grazing problem is
-(last group of results below).
+Scope.
+* The objects are
+  the grazing (quadratic-tangency) inner problem `X' = λ - τ² + X²` (`riccatiGraze`) and
+  the constant-rate ramp inner problem `X' = λ + τ + X²` (`riccatiRamp`).
+* `λ` is the rescaled margin parameter (not an eigenvalue), `X` the rescaled fast variable.
+  These are formal scalar ODEs; their derivation from a particular converter fold, the
+  `ν`-expansion `ε_c/ε_qs = 1 + ν + C₂ ν² + O(ν³)` and the value `C₂ = 3/8` are **not**
+  formalized here. The escape threshold `λ^{(0)} = 1` of the unperturbed grazing problem is
+  (last item of the results below).
+* Two different `λ*` values appear in the note and must not be confused. `λ* = 1` is the escape
+  threshold of the **unperturbed** inner problem `X' = λ − τ² + X²` (the first-order term `1` of
+  the expansion); the solvability functional also returns `1` for every odd perturbation
+  (`solvabilityShift_odd`). `λ* = 1/2` is the value of the solvability functional for the **even
+  test perturbation** `φ = τ²` (`solvabilityShift_sq`), i.e. the shifted threshold of a perturbed
+  inner problem; it is not a threshold of the unperturbed problem.
+* Foundation results; no model family.
 
-Two different `λ*` values appear in the note and must not be confused. `λ* = 1` is the escape
-threshold of the **unperturbed** inner problem `X' = λ − τ² + X²` (the first-order term `1` of the
-expansion); the solvability functional also returns `1` for every odd perturbation
-(`solvabilityShift_odd`). `λ* = 1/2` is the value of the solvability functional for the **even
-test perturbation** `φ = τ²` (`solvabilityShift_sq`), i.e. the shifted threshold of a perturbed
-inner problem; it is not a threshold of the unperturbed problem.
+Source: work-sync theory/T-fold-slow-passage.md §1.1–§1.3, §2.3;
+projects/basin-guard/notes/concepts/fold-slow-passage.md §2 and "作用域 (a)".
+The note's error-propagation remark (§1.5: a 0.2 % error on `F ≈ 1.1` at `ν = 0.1`) is
+arithmetic, not a theorem; it is not stated here.
 
-Results:
+Results.
 * `X = τ` solves the grazing problem iff `λ = 1` (`id_solves_riccatiGraze_iff`).
 * Exact linearization along the separatrix: `X = τ + η` solves it iff
-  `η' = 2τη + (λ - 1) + η²` (so in the pure inner problem `φ = η²`).
-* The adjoint weight `ζ = e^{-τ²}` solves `ζ' = -2τζ`, `∫ e^{-τ²} = √π`.
-* The solvability functional `λ* = 1 - π^{-1/2} ∫ e^{-τ²} φ(τ) dτ`: equals `1` for every odd
-  `φ`, equals `1/2` for `φ = τ²`.
+  `η' = 2τη + (λ - 1) + η²` (`riccatiGraze_shift_iff`; so in the pure inner problem `φ = η²`).
+* The adjoint weight `ζ = e^{-τ²}` solves `ζ' = -2τζ` (`hasDerivAt_adjointWeight`),
+  `∫ e^{-τ²} = √π`.
+* The solvability functional `λ* = 1 - π^{-1/2} ∫ e^{-τ²} φ(τ) dτ` (`solvabilityShift`): equals
+  `1` for every odd `φ`, equals `1/2` for `φ = τ²`.
 * Constant-rate ramp: time translation `τ ↦ τ + λ` maps solutions of `X' = τ + X²` onto
-  solutions of `X' = λ + τ + X²` and back, so `λ` cannot act as a threshold parameter.
+  solutions of `X' = λ + τ + X²` and back (`riccatiRamp_shift`, `riccatiRamp_unshift`), so `λ`
+  cannot act as a threshold parameter.
 * Riccati–Schrödinger link: if `u ≠ 0` solves `-u'' + τ² u = λ u`, then `X = -u'/u` solves the
-  grazing problem; the ground state `u = e^{-τ²/2}` has `λ = 1` and gives `X = τ`.
+  grazing problem (`riccatiGraze_of_schrodinger`); the ground state `u = e^{-τ²/2}` has `λ = 1`
+  and gives `X = τ` (`groundState_schrodinger`, `groundState_logDeriv`).
 * Escape threshold `λ* = 1` (trajectory level). Along every solution the adjoint-weighted
   deviation obeys `(e^{−τ²}(X − τ))' = e^{−τ²}(λ − 1 + (X − τ)²)` (`hasDerivAt_weighted_deviation`).
   For a solution leaving the attracting branch (`X(τ) − τ → 0` as `τ → −∞`):
@@ -40,10 +51,9 @@ Results:
   (`riccatiGraze_critical_eq`); a global such solution forces `λ ≤ 1`
   (`le_one_of_global_branch`). Existence of the branch solution for `λ < 1` is not formalized.
 
-Source: work-sync theory/T-fold-slow-passage.md §1.1–§1.3, §2.3;
-projects/basin-guard/notes/concepts/fold-slow-passage.md §2 and "作用域 (a)".
-The note's error-propagation remark (§1.5: a 0.2 % error on `F ≈ 1.1` at `ν = 0.1`) is
-arithmetic, not a theorem; it is not stated here.
+Related fold modules: `theorem/NormalForm/DynamicFold.lean` rescales the linearly swept fold
+`ẋ = μ₀ − εt − x²` to `y' = −s − y²`, which is the ramp problem `X' = τ + X²` (`λ = 0`) for
+`X = −y`; `theorem/Stochastic/NoiseFold.lean` is the noisy swept fold.
 -/
 
 noncomputable section

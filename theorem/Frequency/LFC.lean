@@ -4,9 +4,9 @@ import theorem.TMIO.ClaimElab
 
 /-! # Two-area load-frequency control (LFC) with AGC
 
-Source: work-sync `theory/T-load-frequency-control.md` §1.1 (area swing), §1.2 (tie-line
-linearization), §1.3 (governor), §1.4 (ACE, `B^Hz = B/f₀`, sign of `ACE_b`), §1.5 (AGC
-integral), §1.6 (steady state / non-interactive control), §1.7 (two-area state matrix).
+The two-area LFC/AGC small-signal model (five states with instantaneous governors, seven states
+with governors kept) as linear families: tie-line linearization, non-interactive steady state, and
+global exponential convergence to it under a Hurwitz state matrix.
 
 Model boundary.
 * Continuous-time, linear, small-signal model around an operating point; Kundur per-unit
@@ -27,6 +27,10 @@ Model boundary.
 * Excluded: dead-bands, rate limits, generation limits / saturation, HVDC ties, voltage
   dynamics, delays, nonlinear tie-line power beyond the linearization, AGC filters.
 
+Source: work-sync `theory/T-load-frequency-control.md` §1.1 (area swing), §1.2 (tie-line
+linearization), §1.3 (governor), §1.4 (ACE, `B^Hz = B/f₀`, sign of `ACE_b`), §1.5 (AGC
+integral), §1.6 (steady state / non-interactive control), §1.7 (two-area state matrix).
+
 Results.
 * `tiePower_hasDerivAt`, `tieFlow_hasDerivAt` (foundation, §1.2): `T = V_a V_b cos δ⁰/X` is the
   slope of `V_a V_b sin δ / X`, and the linearised flow obeys `ΔṖ_tie = ω_s T (Δω_a − Δω_b)`.
@@ -41,35 +45,36 @@ Results.
 * If the state matrix is Hurwitz, every trajectory converges exponentially to that equilibrium.
   In this module Hurwitz is an explicit (static) premise; a parametric sufficient condition —
   `K_I M ≤ D + K_R` in both areas with `M, K_I, B, ω_s T > 0` — is proved in
-  `Frequency.LFCNetwork` (`plant_isHurwitz_of_gain`, connection `mem_den_of_gain`), by reading the
-  five-state matrix as the two-area case of the radial `N`-area matrix. Correction: the note's §1.6 "设稳态存在" assumes convergence; the
-  steady-state analysis alone does not establish it.
+  `Frequency.LFCNetwork` (`plant_isHurwitz_of_gain`, connection `mem_den_of_gain`), by reading
+  the five-state matrix as the two-area case of the radial `N`-area matrix.
 
 Family and connection conclusions.
 * System maps: a two-area model (`Model`: areas `a`, `b`, `ω_s`, `T`) is read as the port
   system of its five-state plant, and `Model7` as that of its seven-state plant
   (`Family.IsLinear`): port input the area loads, port output the area frequencies. The steady
   state `(0, 0, 0, ΔP_L)` is an equilibrium of every constant load `u`, and the plant field in
-  deviation coordinates about it is the zero-input field (`inputField_steadyState`); so the flow
-  sentences about the origin are exactly the sentences about the non-interactive steady state of
-  every constant load (`Flow.Property.holds_shift_iff`).
+  deviation coordinates about it is the zero-input field; so the flow sentences about the origin
+  are exactly the sentences about the non-interactive steady state of every constant load
+  (`Linear.holds_input_iff`, `Flow.Property.holds_shift_iff`).
 * Requirements (static): `hurwitz` (the state matrix is Hurwitz), `rhpRoot` (a characteristic
   root in the open right half plane), `rate a` (`Linear.RateMargin`). Lyapunov stability and the
   attractive sentences translate into `hurwitz`, instability into `rhpRoot`, decay into its
   margin; conservation and passivity into the whole (inconsistent) language.
 * Connection theorems: `chain_le_semantics`, `exact_hurwitz`,
-  `mem_den_globallyExponentiallyStable` (Hurwitz premise; formerly
-  `exponentiallyConvergesTo_of_isHurwitz`) and the same three for the seven-state family
-  (`chain_le_semantics7`, `exact_hurwitz7`, `mem_den_globallyExponentiallyStable7`, formerly
-  `model7_exponentiallyConvergesTo_of_isHurwitz`).
+  `mem_den_globallyExponentiallyStable` (Hurwitz premise) and the same three for the
+  seven-state family (`chain_le_semantics7`, `exact_hurwitz7`,
+  `mem_den_globallyExponentiallyStable7`).
 * The matrix requirement language (`MeetsMatrix`) and its soundness and exactness for any linear
   family read through it (`sound_of_meetsMatrix`, `exact_of_meetsMatrix`) are generic
   foundation, reused by the multi-area family of `Frequency.LFCNetwork`.
-* Static evidence (formerly `@[powerlib_domain]`): `isEquilibrium_iff`,
-  `steadyState_isEquilibrium`, `plant7_isEquilibrium_iff`, `plant7_steadyState_isEquilibrium`.
-  Private implementation evidence (trajectory level, Rules §3a): `tendsto_of_isHurwitz`,
-  `exponentiallyConvergesTo_of_isHurwitz`, `plant7_exponentiallyConvergesTo_of_isHurwitz`.
-  `model7_*` are renamed `plant7_*`.
+* Static evidence: `isEquilibrium_iff`, `steadyState_isEquilibrium`, `plant7_isEquilibrium_iff`,
+  `plant7_steadyState_isEquilibrium`. Private implementation evidence (trajectory level, Rules
+  §3a): `tendsto_of_isHurwitz`, `exponentiallyConvergesTo_of_isHurwitz`,
+  `plant7_exponentiallyConvergesTo_of_isHurwitz`.
+
+Correction.
+* The note's §1.6 "设稳态存在" assumes convergence; the steady-state analysis alone does not
+  establish it (convergence needs the Hurwitz premise above).
 -/
 
 noncomputable section
@@ -527,8 +532,8 @@ private theorem tendsto_of_isHurwitz (m : Model) (hA : IsHurwitz m.plant.A) (u :
   exact LTI.tendsto_equilibrium m.plant hmem (steadyState_isEquilibrium u) hx
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
-Formerly `exponentiallyConvergesTo_of_isHurwitz`: with a Hurwitz state matrix every solution
-under constant loads converges exponentially to the non-interactive steady state. -/
+With a Hurwitz state matrix every solution under constant loads converges exponentially to the
+non-interactive steady state. -/
 private theorem exponentiallyConvergesTo_of_isHurwitz (m : Model) (hA : IsHurwitz m.plant.A)
     (u : Fin 2 → ℝ) :
     Flow.GloballyExponentiallyStable (m.plant.inputField u) (steadyState u) :=
@@ -536,7 +541,7 @@ private theorem exponentiallyConvergesTo_of_isHurwitz (m : Model) (hA : IsHurwit
     (P := .globallyExponentiallyStable) (by simp)).2 hA
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
-Formerly `model7_exponentiallyConvergesTo_of_isHurwitz`: the seven-state version. -/
+The seven-state version of `exponentiallyConvergesTo_of_isHurwitz`. -/
 private theorem plant7_exponentiallyConvergesTo_of_isHurwitz (m : Model7)
     (hA : IsHurwitz m.plant.A) (u : Fin 2 → ℝ) :
     Flow.GloballyExponentiallyStable (m.plant.inputField u) (steadyState7 u) :=

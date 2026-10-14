@@ -8,44 +8,47 @@ import Mathlib.Probability.Moments.Variance
 
 /-! # Markov processes: Chapman–Kolmogorov, invariance, the Gaussian (OU) semigroup
 
-Source: work-sync `theory/T-markov-processes.md` §1.1 (Markov property, transition kernel
+Chapman–Kolmogorov for kernel iterates and (almost surely) for Markov processes, the
+Ornstein–Uhlenbeck Gaussian semigroup, and why "Markov ⇔ semigroup" is too strong.
+
+Scope.
+* Probability theory, not an engineering result.
+* The Brownian weak Markov property is `theorem/Stochastic/Brownian.lean`
+  (`brownian_weakMarkov`). The equivalence of the event form and the conditional-expectation
+  form of the Markov property (bounded measurable test functions) is
+  `theorem/Stochastic/MarkovForms.lean` (`markovEvent_iff_markovCondExp`).
+
+Source: work-sync theory/T-markov-processes.md §1.1 (Markov property, transition kernel
 `K_{s,t}`), §1.2 (Chapman–Kolmogorov `K_{t+s} = K_t K_s`, "Markov ⇔ semigroup"), §1.3
 (conditional-expectation form `E[f(X_t) | 𝓕_s] = P_{t−s} f(X_s)`), §1.6 (discrete chains,
-Brownian motion, OU process); `theory/T-sde-systems.md` §1.8.1 (OU transition law).
+Brownian motion, OU process); theory/T-sde-systems.md §1.8.1 (OU transition law).
 
-Foundation (probability), not an engineering result.
-
-Category C wrappers (Mathlib declaration in brackets): `kernel_comp_assoc`
-[`ProbabilityTheory.Kernel.comp_assoc`], `invariant_comp` [`Kernel.Invariant.comp`],
-`ionescuTulcea_next` [`Kernel.map_traj_succ_self`: the trajectory law built by the
-Ionescu–Tulcea theorem has the prescribed one-step kernel], `ionescuTulcea_marginal`
-[`Kernel.traj_map_frestrictLe`].  The Brownian weak Markov property is
-`theorem/Stochastic/Brownian.lean` (`brownian_weakMarkov`).
-
-Category B.
-* `kpow`, `kpow_add`: discrete-time Chapman–Kolmogorov `K^{m+n} = K^m ∘ K^n` for the iterates of
-  a kernel; `kpow_invariant`: an invariant measure is invariant for every iterate.
-* `chapmanKolmogorov_ae`: the Markov property in conditional-expectation form with transition
-  kernels `K s t` (any time set; written out as the hypothesis: for `s ≤ t` and bounded measurable
-  `g`, `E[g(X_t) | 𝓕_s] = ∫ g dK_{s,t}(X_s)` a.s.) implies
+Results.
+* Mathlib wrappers (Mathlib declaration in brackets): `kernel_comp_assoc`
+  [`ProbabilityTheory.Kernel.comp_assoc`], `invariant_comp` [`Kernel.Invariant.comp`],
+  `ionescuTulcea_next` [`Kernel.map_traj_succ_self`: the trajectory law built by the
+  Ionescu–Tulcea theorem has the prescribed one-step kernel], `ionescuTulcea_marginal`
+  [`Kernel.traj_map_frestrictLe`].
+* `kpow`, `kpow_add` — discrete-time Chapman–Kolmogorov `K^{m+n} = K^m ∘ K^n` for the iterates
+  of a kernel; `kpow_invariant`: an invariant measure is invariant for every iterate.
+* `chapmanKolmogorov_ae` — the Markov property in conditional-expectation form with transition
+  kernels `K s t` (any time set; written out as the hypothesis: for `s ≤ t` and bounded
+  measurable `g`, `E[g(X_t) | 𝓕_s] = ∫ g dK_{s,t}(X_s)` a.s.) implies
   `K_{s,u}(X_s, A) = ∫ K_{t,u}(y, A) K_{s,t}(X_s, dy)` **almost surely**, i.e. only for
   `P_{X_s}`-almost every starting point.
-* `gaussian_bind`: `∫ N(c y, v) N(m, w)(dy) = N(c m, c² w + v)`; `ou_chapmanKolmogorov`: the OU
+* `gaussian_bind` — `∫ N(c y, v) N(m, w)(dy) = N(c m, c² w + v)`; `ou_chapmanKolmogorov`: the OU
   transition kernels `N(e^{−θt} x, σ²(1 − e^{−2θt})/(2θ))` form a semigroup (OU is Markov with
   these Gaussian kernels).
-* `ou_increment_not_indep`: for the exact OU step `X' = aX + Z` (`a = e^{−θh} ≠ 1`, `X ~ N(0, v₀)`,
-  `v₀ > 0`, `Z` independent), the increment `X' − X` is **not** independent of `X` — OU does not
-  have independent increments (unlike Brownian motion).
+* `ou_increment_not_indep` — for the exact OU step `X' = aX + Z` (`a = e^{−θh} ≠ 1`,
+  `X ~ N(0, v₀)`, `v₀ > 0`, `Z` independent), the increment `X' − X` is **not** independent of
+  `X` — OU does not have independent increments (unlike Brownian motion).
 
-Correction (§1.2).  "Markov ⇔ semigroup relation" is too strong: the Markov property only gives
-Chapman–Kolmogorov `P_{X_s}`-a.e. (`chapmanKolmogorov_ae`), and the converse direction
-(semigroup ⇒ Markov) is false: it is refuted by Feller's three-step example
-`semigroup_not_markov` in `theorem/Stochastic/MarkovForms.lean` (transition kernels forming a
-Chapman–Kolmogorov semigroup, process not Markov).
-
-The equivalence of the event form and the conditional-expectation form of the Markov property
-(bounded measurable test functions) is `theorem/Stochastic/MarkovForms.lean`
-(`markovEvent_iff_markovCondExp`).
+Corrections.
+* §1.2: "Markov ⇔ semigroup relation" is too strong: the Markov property only gives
+  Chapman–Kolmogorov `P_{X_s}`-a.e. (`chapmanKolmogorov_ae`), and the converse direction
+  (semigroup ⇒ Markov) is false: it is refuted by Feller's three-step example
+  `semigroup_not_markov` in `theorem/Stochastic/MarkovForms.lean` (transition kernels forming a
+  Chapman–Kolmogorov semigroup, process not Markov).
 -/
 
 noncomputable section
@@ -54,7 +57,7 @@ namespace powerlib.Stochastic.Markov
 open MeasureTheory ProbabilityTheory Filter Real
 open scoped ENNReal NNReal
 
-/-! ## Category C: kernels -/
+/-! ## Mathlib wrappers: kernels -/
 
 section Kernels
 

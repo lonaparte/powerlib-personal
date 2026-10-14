@@ -10,10 +10,18 @@ in the PLL frame, current loop, PLL, dc balance); the statements solve those rel
 No time-scale (Tikhonov) or convergence statement is made: the note's numerical claims
 ("`ω_cc → ∞` second-order convergence", "8 states collapse to 4 to `10⁻⁵ %`") are not formalized.
 
-Common boundary: single GFL converter, infinite bus `v_g = (V_g cos θ, −V_g sin θ)` in the PLL
+Model boundary.
+Common to every layer: single GFL converter, infinite bus `v_g = (V_g cos θ, −V_g sin θ)` in the PLL
 frame (`θ` = PLL error angle), frame speed `ω₁ = ω₀ + u`, SRF-PLL `u = k_p v_q + k_i x`,
 `J i = (−i_q, i_d)`, averaged model, continuous time, no PWM / delay / limiter.
 
+Source: work-sync `projects/gfl-gfm-stability-tree/notes/concepts/model-layers.md`
+(I1 放开一级: 6 态与 `L_g u I_d` 的真身, 性质 3; `R_g` 在 GFL 侧 (2 态载体); 目标载体的推导:
+两个代数环与 `i_q ≠ 0` 的补项; `D₁` 的方向约定); `projects/vsc-parametric-oscillation/references/
+gfm-driven-gfl-parametric-resonance/notes/concepts/gfl-four-state-parametric-resonance.md`
+(`P_abs`, `Q_abs`); code reference `simulation/src/.../models_extended.py`.
+
+Results.
 * Six-state carrier (`CCParams`, `GFLRateCC` with `R_f = R_g = 0`; states
   `(θ, x, i_d, i_q, ξ_d, ξ_q)`, OUT-positive current): L filter `L_f i̇ = e − v − ω₁ L_f J i`,
   line `v = v_g + ω₁ L_g J i + L_g i̇`, current loop with ideal PCC feed-forward and nominal
@@ -28,11 +36,11 @@ frame (`θ` = PLL error angle), frame speed `ω₁ = ω₀ + u`, SRF-PLL `u = k_
   the `R_g`-free model for every `R_g` (exact insensitivity, not small sensitivity).
 * Four-state dc carrier (`DCParams`, `GFLDCFormC`; states `(θ, x, V_dc, η)`, ideal current loop
   `i = i*`, `i_d* = i_{d0} + s_K (k_pv (V − 1) + k_iv η)`, constant `i_q`, constant-current dc
-  source `C V̇ = I_src + s_P P / V`, `P = (3/2)(v_d i_d + v_q i_q)` from `S̄ = V̄ Ī*`). The line keeps
-  `L_g i̇_d` and the speed EMF. `rel_iff`: the relations are solved sequentially — first the PLL
-  loop `D₀ = 1 − k_p s_L L_g i_d`, then the dc loop `D₁ = 1 − s_K s_P s_L (3/2) k_pv L_g i_d/(C V)`;
-  `i_q` enters neither loop factor (`D1_indep_iq`). `coordField` / `field` is the resulting
-  four-state field.
+  source `C V̇ = I_src + s_P P / V`, `P = (3/2)(v_d i_d + v_q i_q)` from `S̄ = V̄ Ī*`). The line
+  keeps `L_g i̇_d` and the speed EMF. `rel_iff`: the relations are solved sequentially — first the
+  PLL loop `D₀ = 1 − k_p s_L L_g i_d`, then the dc loop
+  `D₁ = 1 − s_K s_P s_L (3/2) k_pv L_g i_d/(C V)`; `i_q` enters neither loop factor (`D1_indep_iq`).
+  `coordField` / `field` is the resulting four-state field.
 * Direction convention: OUT-positive writing `s_L = 1, s_P = −1, s_K = 1` (`outConv`); the
   complete §D8 translation negates both currents and all three flags (`inConv`).
   `loopFactor_flip_all`, `D1_inConv`: `D₁` is invariant; `field_inConv`, `fderiv_field_inConv`:
@@ -42,16 +50,11 @@ frame (`θ` = PLL error angle), frame speed `ω₁ = ω₀ + u`, SRF-PLL `u = k_
 * Four-state model of `theorem/GFL/DCLink/FourState.lean`: `fourState_power`: `P_abs`, `Q_abs` are
   `(3/2) Re / Im (V̄ Ī*)` with `V̄ = v_d + j v_q`, `Ī = i_d + j 0` (IN-positive).
 
-Family and connection conclusions. No family and no connection conclusion: the module solves
+Family and connection conclusions.
+No family and no connection conclusion: the module solves
 algebraic loop relations and proves field identities; it states no behaviour. The behavioural
 conclusions about the rate-coupled carrier and the four-state model are made through
 `RatePLL.family` and `FourState.family`.
-
-Source: work-sync `projects/gfl-gfm-stability-tree/notes/concepts/model-layers.md`
-(I1 放开一级: 6 态与 `L_g u I_d` 的真身, 性质 3; `R_g` 在 GFL 侧 (2 态载体); 目标载体的推导:
-两个代数环与 `i_q ≠ 0` 的补项; `D₁` 的方向约定); `projects/vsc-parametric-oscillation/references/
-gfm-driven-gfl-parametric-resonance/notes/concepts/gfl-four-state-parametric-resonance.md`
-(`P_abs`, `Q_abs`); code reference `simulation/src/.../models_extended.py`.
 -/
 
 noncomputable section

@@ -4,33 +4,38 @@ import Mathlib.Analysis.ODE.ExistUnique
 
 /-! # Slow manifolds as invariant graphs: the invariance equation, `h₁`, and `M₀`
 
-Foundation layer (category B).
+The invariance equation characterizes invariant graphs of a slow–fast system, determines the
+first-order correction `h₁`, and shows that the critical manifold `M₀` is not invariant.
 
-Sources: work-sync `theory/T-slow-manifold.md` §1.1 (`ẋ = f(x,y)`, `εẏ = g(x,y)`), §1.4 (claimed
+Scope.
+* Autonomous slow–fast system on real normed spaces, slow state `x ∈ E`, fast state `y ∈ F`,
+  fixed `ε > 0` unless stated; continuous time; classical (everywhere differentiable) solutions.
+* The implicit construction of `h` itself (Mathlib implicit function theorem) is in
+  `theorem/DAE/Nonlinear.lean` (`implicitMap`, `hasStrictFDerivAt_implicitMap`).
+
+Source: work-sync theory/T-slow-manifold.md §1.1 (`ẋ = f(x,y)`, `εẏ = g(x,y)`), §1.4 (claimed
 strict invariance of `M₀ = {g = 0}`), §1.6 (first-order correction `h₁`);
-`theory/T-singular-perturbation.md` §1.3, §1.8.
-
-Model boundary: autonomous slow–fast system on real normed spaces, slow state `x ∈ E`, fast
-state `y ∈ F`, fixed `ε > 0` unless stated; continuous time; classical (everywhere
-differentiable) solutions. The implicit construction of `h` itself (Mathlib implicit function
-theorem) is in `theorem/DAE/Nonlinear.lean` (`implicitMap`, `hasStrictFDerivAt_implicitMap`).
+theory/T-singular-perturbation.md §1.3, §1.8.
 
 Results.
-* `graph_lift` / `graph_invariant_of_eq`: if `H` satisfies the invariance equation
+* `graph_lift`, `graph_invariant_of_eq` — if `H` satisfies the invariance equation
   `ε DH(x)·f(x, H x) = g(x, H x)` (`IsInvariantGraph`), every solution of the reduced equation
   `ẋ = f(x, H x)` lifts to a solution `(x, H x)` of the full system; with a globally Lipschitz
   full field, every full solution starting on the graph stays on it.
-* `invarianceEq_of_solution_on_graph`: conversely, if a full solution stays on the graph
-  `y = H(x)` near `t₀`, the invariance equation holds at `x(t₀)`; hence a graph that is invariant
-  through every point satisfies the equation everywhere (`isInvariantGraph_of_forall`).
-* `h1_equation`: if a family of invariant graphs `H(ε, ·)` is differentiable in `ε` at `0`
+* `invarianceEq_of_solution_on_graph` — conversely, if a full solution stays on the graph
+  `y = H(x)` near `t₀`, the invariance equation holds at `x(t₀)`; hence a graph that is
+  invariant through every point satisfies the equation everywhere (`isInvariantGraph_of_forall`).
+* `h1_equation` — if a family of invariant graphs `H(ε, ·)` is differentiable in `ε` at `0`
   (`H(0,·) = h₀`, `∂_ε H(0,·) = h₁`) and the derivative of `H` in `x` is continuous in `ε`, then
-  `∂_y g · h₁ + ∂_ε g = Dh₀ · f(x, h₀ x)`, i.e. `A_y h₁ = ∂ₓh₀·f − ∂_ε g` (`T-slow-manifold` §1.6,
-  autonomous case; conditional on the existence of such a family).
-* Correction (`T-slow-manifold` §1.4: "`M₀` 严格不变"): false. For `ẋ = 1`, `εẏ = x − y`
-  (`h(x) = x`, `∂g/∂t = 0`), the solution from `(0, 0) ∈ M₀` is `x = t`,
-  `y = t − ε(1 − e^{−t/ε})`, and `y − h(x) = −ε(1 − e^{−t/ε}) ≠ 0` for `t ≠ 0`
-  (`M0_not_invariant`): the note's own computation `d(y − h)/dt = −∂h/∂x · f_s` does not vanish.
+  `∂_y g · h₁ + ∂_ε g = Dh₀ · f(x, h₀ x)`, i.e. `A_y h₁ = ∂ₓh₀·f − ∂_ε g` (`T-slow-manifold`
+  §1.6, autonomous case; conditional on the existence of such a family).
+* `M0_not_invariant` — the critical manifold is not invariant (see Corrections).
+
+Corrections.
+* `T-slow-manifold` §1.4 ("`M₀` 严格不变"): false. For `ẋ = 1`, `εẏ = x − y` (`h(x) = x`,
+  `∂g/∂t = 0`), the solution from `(0, 0) ∈ M₀` is `x = t`, `y = t − ε(1 − e^{−t/ε})`, and
+  `y − h(x) = −ε(1 − e^{−t/ε}) ≠ 0` for `t ≠ 0` (`M0_not_invariant`): the note's own computation
+  `d(y − h)/dt = −∂h/∂x · f_s` does not vanish.
 -/
 
 noncomputable section

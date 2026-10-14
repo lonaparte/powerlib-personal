@@ -2,22 +2,27 @@ import theorem.Periodic.Transition
 
 /-! # Commuting state matrices: the transition matrix is an ordinary exponential
 
-Foundation layer for `ẋ = A(t) x` (continuous, uniformly bounded `A : ℝ → Matrix X X ℝ`,
-`L∞` operator norm), as in `Periodic/Transition.lean`.
+When the state matrices at different times commute, the transition matrix of `ẋ = A(t) x` is the
+exponential of the integrated state matrix.
 
-Results.
-* `commute_intervalIntegral`: an interval integral of a family commuting with `N` commutes with
-  `N` (the integral is pushed through left and right multiplication, Mathlib
-  `ContinuousLinearMap.intervalIntegral_comp_comm`).
-* `transition_eq_exp_integral`: if `A(t₁) A(t₂) = A(t₂) A(t₁)` for all `t₁, t₂`, then
-  `Φ(t, s) = exp(∫ₛᵗ A)` for `s ≤ t`; in particular the monodromy matrix is `exp(∫₀ᵀ A)`.
-* `transition_smul`: the special case `A(t) = a(t) N` gives `Φ(t, s) = exp((∫ₛᵗ a) N)`.
-
-Correction (T-harmonic-linearization.md §1.6): the note says the ordinary exponential formula
-holds "仅当 (only if) `[A(t₁), A(t₂)] = 0` for all `t₁, t₂`". Pairwise commutation is a
-**sufficient** condition (proved here); it is not shown, and not claimed here, to be necessary.
+Scope.
+* `ẋ = A(t) x` with continuous, uniformly bounded `A : ℝ → Matrix X X ℝ` (`L∞` operator norm),
+  as in `Periodic/Transition.lean`.
 
 Source: work-sync theory/T-harmonic-linearization.md §1.6.
+
+Results.
+* `commute_intervalIntegral` — an interval integral of a family commuting with `N` commutes with
+  `N` (the integral is pushed through left and right multiplication, Mathlib
+  `ContinuousLinearMap.intervalIntegral_comp_comm`).
+* `transition_eq_exp_integral` — if `A(t₁) A(t₂) = A(t₂) A(t₁)` for all `t₁, t₂`, then
+  `Φ(t, s) = exp(∫ₛᵗ A)` for `s ≤ t`; in particular the monodromy matrix is `exp(∫₀ᵀ A)`.
+* `transition_smul` — the special case `A(t) = a(t) N` gives `Φ(t, s) = exp((∫ₛᵗ a) N)`.
+
+Corrections.
+* T-harmonic-linearization.md §1.6 says the ordinary exponential formula holds "仅当 (only if)
+  `[A(t₁), A(t₂)] = 0` for all `t₁, t₂`". Pairwise commutation is a **sufficient** condition
+  (proved here); it is not shown, and not claimed here, to be necessary.
 -/
 
 noncomputable section

@@ -1,27 +1,11 @@
 import theorem.GFM.Matching.Matching
 
-/-! # Matching control on a stiff grid with energy shaping: what the "global stability condition" proves
+/-! # Energy-shaping matching control on a stiff grid: what the "global stability condition" proves
 
 The work-sync notes quote, as the global stability condition of matching control,
 `(G_dc + K_p)/η² > L_s² μ² v*²/(4 R_s ‖Z_s‖²)`. This module formalizes the closed loop that
 condition belongs to, its energy balance, and the stability conclusions that can be stated in
 the sentence language, and records what the source's LaSalle argument does and does not give.
-
-Provenance. Equations from C. Arghir, F. Dörfler, author version "Direct angle control and
-energy-shaping techniques for grid-connected converters" of "The electronic realization of
-synchronous machines: model matching, angle tracking, and energy shaping techniques", IEEE Trans.
-Power Electron. 35(4) (2020) 4398–4410 (ETH Research Collection, `bare_jrnl.pdf`, text read):
-the converter model (4), modulation `m_αβ = μ (−sin θ, cos θ)` (11), matching `θ' = η u_dc` (12),
-the stiff grid `v_g = v₀ (−sin θ_g, cos θ_g)`, `θ_g' = ω₀` (Fig. 5), the internal model
-`î_s = Z_s⁻¹ (v_g − μ u*_dc (−sin θ, cos θ))` (14), `î_x = −m_αβᵀ î_s` (15), the synchronization
-potential `S = î_sᵀ L_s î_s / 2` (16)–(17), the control
-`i_dc = −K_p (u_dc − u*_dc) + G_dc u*_dc + î_x(θ_dq) − η ∇S(θ_dq)` (18), `η∇S = (μ v₀ ω₀ L_s/‖Z_s‖²)
-sin θ_dq` (20), the energy `H = C_dc ũ_dc²/2 + S(θ_dq) + ĩ_dqᵀ L_s ĩ_dq/2` (22) and the appendix
-("Energy-based stabilization of the eSM"): error system (42),
-`dH/dt = −(G_dc+K_p) ũ_dc² − ĩᵀR_s ĩ − ĩᵀ T(θ_dq) ũ_dc`, `T = μ ω₀ L_s Z_s⁻¹ (cos θ_dq, sin θ_dq)`,
-and the condition `(G_dc+K_p)/η² > L_s²μ²u*_dc²/(4R_s‖Z_s‖²)`, from which the source concludes by
-LaSalle that all trajectories converge to the set `{ũ_dc = 0, ∇S(θ_dq) = 0, ĩ_dq = 0}`. None of
-these equations is written in the work-sync notes, which contain only the condition.
 
 Model boundary.
 * Averaged converter (no PWM or delay), DC capacitor `C_dc`, DC conductance `G_dc`, switching
@@ -41,6 +25,25 @@ Model boundary.
   of §IV and the time-scale-separated pendulum (21).
 * Parameter ranges: `C_dc, L_s, R_s > 0`; `G_dc`, `K_p`, `η`, `μ`, `u*_dc`, `v₀` real.
 
+Source: work-sync `theory/T-dc-voltage-gfm.md` §1.2, `theory/T-gfm-control.md` §1.6,
+`theory/papers/@arghir2020matching.md`; equations from the TPEL author version as listed above.
+
+Provenance. Equations from C. Arghir, F. Dörfler, author version "Direct angle control and
+energy-shaping techniques for grid-connected converters" of "The electronic realization of
+synchronous machines: model matching, angle tracking, and energy shaping techniques", IEEE Trans.
+Power Electron. 35(4) (2020) 4398–4410 (ETH Research Collection, `bare_jrnl.pdf`, text read):
+the converter model (4), modulation `m_αβ = μ (−sin θ, cos θ)` (11), matching `θ' = η u_dc` (12),
+the stiff grid `v_g = v₀ (−sin θ_g, cos θ_g)`, `θ_g' = ω₀` (Fig. 5), the internal model
+`î_s = Z_s⁻¹ (v_g − μ u*_dc (−sin θ, cos θ))` (14), `î_x = −m_αβᵀ î_s` (15), the synchronization
+potential `S = î_sᵀ L_s î_s / 2` (16)–(17), the control
+`i_dc = −K_p (u_dc − u*_dc) + G_dc u*_dc + î_x(θ_dq) − η ∇S(θ_dq)` (18), `η∇S = (μ v₀ ω₀ L_s/‖Z_s‖²)
+sin θ_dq` (20), the energy `H = C_dc ũ_dc²/2 + S(θ_dq) + ĩ_dqᵀ L_s ĩ_dq/2` (22) and the appendix
+("Energy-based stabilization of the eSM"): error system (42),
+`dH/dt = −(G_dc+K_p) ũ_dc² − ĩᵀR_s ĩ − ĩᵀ T(θ_dq) ũ_dc`, `T = μ ω₀ L_s Z_s⁻¹ (cos θ_dq, sin θ_dq)`,
+and the condition `(G_dc+K_p)/η² > L_s²μ²u*_dc²/(4R_s‖Z_s‖²)`, from which the source concludes by
+LaSalle that all trajectories converge to the set `{ũ_dc = 0, ∇S(θ_dq) = 0, ĩ_dq = 0}`. None of
+these equations is written in the work-sync notes, which contain only the condition.
+
 Results.
 * Static (source link): `potential_eq` (the potential is (16)), `potential_sub_potential_zero`
   (`S(θ) − S(0) = k (1 − cos θ)`, `k = L_s μ u* v₀/N`), `eta_mul_k` (`η ∇S` is the
@@ -50,6 +53,8 @@ Results.
   `H − S(0)` along the closed-loop field), `energy_lie_le` (`dH/dt ≤ −margin ũ_dc²`, by completing
   the square with `‖T‖² = μ²ω₀²L_s²/N`), `margin_pos_iff` (for `η ≠ 0`, `margin > 0` is exactly the
   source's (and the note's) condition).
+
+Family and connection conclusions.
 * Family `family : Family Model Requirement 4 0`: the closed loop about `x*`. Requirements
   `physical` (`C_dc, L_s, R_s > 0`), `synchronizing` (`μ u* v₀ > 0`, so that `θ_dq = 0` is the
   minimum of `S`), `dissipative` (`margin ≥ 0`), `antiSynchronizing` (`μ u* v₀ < 0`), `damped`
@@ -96,18 +101,15 @@ Corrections.
   stability condition of the operating point: it makes `H` nonincreasing (dissipation in
   `(ũ_dc, ĩ_dq)` only), which gives Lyapunov stability of `θ_dq = 0` (with `μ u* v₀ > 0`),
   local exponential stability (with `η ≠ 0`, `mem_den_locallyExponentiallyStable`) and LaSalle
-  convergence to `{ũ_dc = 0, ∇S = 0, ĩ_dq = 0}` (`theorem.GFM.Matching.LaSalle`). That set contains the saddle
-  equilibria `θ_dq = π` (`field_eq_zero_of_sin_eq_zero`), and no point is globally
-  asymptotically stable on `ℝ⁴` (`exact_globallyAsymptoticallyStable`).
+  convergence to `{ũ_dc = 0, ∇S = 0, ĩ_dq = 0}` (`theorem.GFM.Matching.LaSalle`). That set
+  contains the saddle equilibria `θ_dq = π` (`field_eq_zero_of_sin_eq_zero`), and no point is
+  globally asymptotically stable on `ℝ⁴` (`exact_globallyAsymptoticallyStable`).
 * The note attributes the condition to "[[@arghir2020matching]] Theorem 3" inside a section
   headed "Arghir-Jouini-Dörfler 2018 Automatica"; in the author version it is an unnumbered
   appendix argument of the 2020 TPEL paper, and the Automatica closed-loop condition is a
   different inequality (`theorem.GFM.Matching.ClosedLoop`, `margin_pos_iff` there).
 * Source typo (not in the notes): the caption of Fig. 7 writes the pendulum damping as
   `(C_dc + K_p)/η²`; from (21b) it is `(G_dc + K_p)/η²`.
-
-Source: work-sync `theory/T-dc-voltage-gfm.md` §1.2, `theory/T-gfm-control.md` §1.6,
-`theory/papers/@arghir2020matching.md`; equations from the TPEL author version as listed above.
 -/
 
 noncomputable section

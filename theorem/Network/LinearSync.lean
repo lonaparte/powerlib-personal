@@ -3,40 +3,42 @@ import theorem.Linear.Stability
 
 /-! # Linear node networks: exponential synchronization ⇔ transverse blocks Hurwitz
 
-Foundation layer (category B).
+For identical linear nodes coupled through a symmetric matrix, uniform exponential
+synchronization is equivalent to the Hurwitz property of every transverse block `A − σ μ_k Γ`
+(the Master Stability Function for linear nodes).
+
+Scope.
+* `N` identical linear nodes `ẋᵢ = A xᵢ − σ Σⱼ Lᵢⱼ Γ xⱼ` (`xᵢ ∈ ℝᵈ`), constant matrices,
+  symmetric coupling matrix `L` with an orthonormal eigenbasis `V` (`L V = V diag μ`,
+  `V Vᵀ = I`) one of whose columns (`k₀`, the synchronous mode, `μ_{k₀} = 0` for a Laplacian) is
+  constant; continuous time. Synchronization is measured by the pairwise differences in the
+  Euclidean norm.
+* Behaviour written out: a global solution of the linear network is a curve
+  `X : ℝ → Fin N → Fin d → ℝ` with `∀ t, HasDerivAt X (linNetField A Γ L σ (X t)) t`. Uniform
+  exponential synchronization is
+  `∃ K > 0, ∃ r > 0, ∀ X, (X is a global solution) → ∀ t, 0 ≤ t → ∀ i j,
+    ‖euclidean (X t i - X t j)‖ ≤ K * Real.exp (-(r * t)) * ∑ l, ‖euclidean (X 0 l)‖`.
+  Both are written out in the statements (behaviour is defined only in the semantic layer).
 
 Source: work-sync `theory/T-synchronization-manifold.md` §1.3 (variational equation decoupled by
 the Laplacian spectrum), §1.4–§1.5 (synchronization ⇔ every transverse mode `k ≥ 2` stable; for
 linear nodes the Master Stability Function reduces to the Hurwitz property of
 `A − σ μ_k Γ`).
 
-Model boundary: `N` identical linear nodes `ẋᵢ = A xᵢ − σ Σⱼ Lᵢⱼ Γ xⱼ` (`xᵢ ∈ ℝᵈ`), constant
-matrices, symmetric coupling matrix `L` with an orthonormal eigenbasis `V` (`L V = V diag μ`,
-`V Vᵀ = I`) one of whose columns (`k₀`, the synchronous mode, `μ_{k₀} = 0` for a Laplacian) is
-constant; continuous time. Synchronization is measured by the pairwise differences in the
-Euclidean norm.
+Results.
+* `expSync_iff`: the network synchronizes exponentially (uniformly over all solutions,
+  `‖xᵢ(t) − xⱼ(t)‖ ≤ K e^{−rt} Σₗ ‖xₗ(0)‖`) iff `A − σ μ_k Γ` is Hurwitz for every transverse
+  mode `k ≠ k₀`. Together with `transverse_isHurwitz_of_threshold`
+  (`theorem/Network/Synchronization.lean`, `Γ = I`) this gives the threshold `σ μ₂ > a`.
+* The two linear facts used per mode, for global solutions of `ẏ = M y` on `Fin d → ℝ`, are
+  `LTI.linear_decay_of_isHurwitz` and `LTI.isHurwitz_of_linear_decay` (`theorem/LTI/Decay.lean`,
+  from the linear hub `Linear.globallyExponentiallyStable_of_isHurwitz` and the non-decaying
+  eigenmodes `Linear.eigenmode`).
 
-Result (`expSync_iff`): the network synchronizes exponentially (uniformly over all solutions,
-`‖xᵢ(t) − xⱼ(t)‖ ≤ K e^{−rt} Σₗ ‖xₗ(0)‖`) iff `A − σ μ_k Γ` is Hurwitz for every transverse
-mode `k ≠ k₀`. Together with `transverse_isHurwitz_of_threshold` (`Γ = I`) this gives the
-threshold `σ μ₂ > a`.
-
-The two linear facts used per mode, for global solutions of `ẏ = M y` on `Fin d → ℝ`, are
-`LTI.linear_decay_of_isHurwitz` and `LTI.isHurwitz_of_linear_decay` (`theorem/LTI/Decay.lean`,
-from the linear hub `Linear.globallyExponentiallyStable_of_isHurwitz` and the non-decaying
-eigenmodes `Linear.eigenmode`).
-
-Family and connection conclusions. Foundation module (generic in `A`, `Γ`, `L`, `σ`): no family,
-no connection statement. The synchronization notion concerns pairwise differences of network
-solutions, outside the sentence language; every statement is a generic implication.
-
-Behaviour written out. A global solution of the linear network is a curve
-`X : ℝ → Fin N → Fin d → ℝ` with `∀ t, HasDerivAt X (linNetField A Γ L σ (X t)) t`. Uniform
-exponential synchronization is
-`∃ K > 0, ∃ r > 0, ∀ X, (X is a global solution) → ∀ t, 0 ≤ t → ∀ i j,
-  ‖euclidean (X t i - X t j)‖ ≤ K * Real.exp (-(r * t)) * ∑ l, ‖euclidean (X 0 l)‖`.
-Both are written out in the statements (the former definitions `IsNetSolution` / `ExpSync` are
-removed: behaviour is defined only in the semantic layer).
+Family and connection conclusions.
+* None: foundation module (generic in `A`, `Γ`, `L`, `σ`), no family, no connection statement.
+  The synchronization notion concerns pairwise differences of network solutions, outside the
+  sentence language; every statement is a generic implication.
 -/
 
 noncomputable section

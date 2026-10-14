@@ -2,11 +2,11 @@ import dependencies.Mathlib
 import theorem.Attributes
 import Mathlib.LinearAlgebra.UnitaryGroup
 
-/-! Clarke and Park coordinate transformations (foundation).
+/-! # Clarke and Park coordinate transformations
 
-Source: work-sync `theory/T-park-transformation.md` §1.2–§1.4 and `conventions.md` §4 / §D4
-(Park matrix SSoT), `theory/T-impedance-modeling.md` §1.1 (power-invariant Clarke).
+Coordinate identities (foundation) of the Clarke and Park transformations.
 
+Scope.
 Conventions fixed by this module:
 * A planar (αβ or dq) vector is `Fin 2 → ℝ`, component `0` = α (resp. d), component `1` = β
   (resp. q). Its complex form is `toComplex x = x 0 + x 1 * I`.
@@ -26,18 +26,21 @@ Conventions fixed by this module:
   (`conventions.md` §4). `clarkePI` is the 3 × 3 power-invariant Clarke matrix with the
   zero-sequence row (`T-impedance-modeling.md` §1.1); it is orthogonal.
 
+Source: work-sync `theory/T-park-transformation.md` §1.2–§1.4 and `conventions.md` §4 / §D4
+(Park matrix SSoT), `theory/T-impedance-modeling.md` §1.1 (power-invariant Clarke).
+
+Results.
 * `parkABC θ = park θ · clarke` is the amplitude-invariant three-phase Park of `T-PU.md` §1.7;
   `balanced V φ θ` is the balanced positive-sequence signal `V cos(θ − 2πk/3 + φ)`;
   `negSeq V φ θ` is the negative-sequence signal (phases `b`, `c` swapped), which is
   `V e^{−j(θ+φ)}` in αβ (`clarke_mulVec_negSeq`, `toComplex_clarke_negSeq`).
-
-The chain rule (`hasDerivAt_rot_mulVec`, `hasDerivAt_mul_cexp`) holds for every differentiable
-frame angle `θ(t)`, constant or time-varying. Its first-order form at `θ = 0`
-(`hasDerivAt_park_zero`: `d/dθ (park θ · x)|₀ = −J x`) gives the PLL frame projections of
-`T-gfl-impedance.md` §1.3, and its consequence for a shunt capacitor (`capacitor_dq`:
-`C dv/dt = i − ω C J v` in the dq frame) the cross term of §1.7. The αβ / dq KVL of one series
-R–L branch and its trajectory correspondence under Park (`alphaBetaRL_iff_dqRL`) are in
-`theorem/CurrentControl/DqRL.lean`. Everything here is a coordinate identity (foundation).
+* The chain rule (`hasDerivAt_rot_mulVec`, `hasDerivAt_mul_cexp`) holds for every differentiable
+  frame angle `θ(t)`, constant or time-varying. Its first-order form at `θ = 0`
+  (`hasDerivAt_park_zero`: `d/dθ (park θ · x)|₀ = −J x`) gives the PLL frame projections of
+  `T-gfl-impedance.md` §1.3, and its consequence for a shunt capacitor (`capacitor_dq`:
+  `C dv/dt = i − ω C J v` in the dq frame) the cross term of §1.7.
+* The αβ / dq KVL of one series R–L branch and its trajectory correspondence under Park
+  (`alphaBetaRL_iff_dqRL`) are in `theorem/CurrentControl/DqRL.lean`.
 
 Correction (`T-park-transformation.md` §1.5): the note says a fundamental positive-sequence
 vector is "DC in the αβ frame". It is the reverse: `clarke_mulVec_balanced` shows it is the

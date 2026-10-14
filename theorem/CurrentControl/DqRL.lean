@@ -4,10 +4,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 /-! # Single series R–L branch in the αβ and dq frames
 
-Source: work-sync `theory/T-park-transformation.md` §1.4 (dq-frame KVL with `±ωL` cross terms)
-and `theory/T-impedance-modeling.md` §1.7 (dq impedance of an R–L grid branch).
-
-Model boundary:
+Model boundary.
 * System: ONE series R–L branch (one inductor `L`, one resistor `R`, balanced, identical in
   both phases), driven by a branch voltage `v`. Current direction IN-positive
   (`conventions.md` §D1). No converter, controller, PLL, delay, PWM or saturation.
@@ -20,6 +17,11 @@ Model boundary:
   case `ω = 0`.
 * `dqRLPlant` is the input-driven dq model (input `v`, output `i`); its transfer matrix is the
   inverse of the dq impedance `Z_dq(s) = (sL + R) I + ωL J` (`T-impedance-modeling.md` §1.7).
+
+Source: work-sync `theory/T-park-transformation.md` §1.4 (dq-frame KVL with `±ωL` cross terms)
+and `theory/T-impedance-modeling.md` §1.7 (dq impedance of an R–L grid branch).
+
+Results.
 * Rotating-frame KVL for any differentiable frame angle `θ` (`T-park-transformation.md` §1.4,
   chain rule of `theorem/Transform/Park.lean`): `dqRL_field_apply`, `dqRL_of_alphaBetaRL`,
   `alphaBetaRL_of_dqRL`, `alphaBetaRL_iff_dqRL` (Park maps αβ and dq trajectories one to one, no
@@ -29,27 +31,20 @@ Model boundary:
   cancel in `d/dt(½|I|²)`), `hasDerivAt_arg_current`, `hasDerivAt_phase`
   (`φ̇ = (1/(L|I|²))[(V_q I_d − V_d I_q) − (V_q^c I_d − V_d^c I_q)] − ω` for `φ = arg I`).
 
-## Family and connection conclusions
-
+Family and connection conclusions.
 `family : Family DqBranch Spectral.Requirement 2 2` reads a branch `(R, L, ω)` as the port
 system of `dqRLPlant` (`Spectral.linearFamily`); a flow sentence speaks about the zero-input
 branch at the origin. Requirements: `R/L > 0` (`stable`, eigenvalues `−R/L ± jω`) and
 `R/L < 0` (`unstable`). The αβ branch is the member `DqBranch.alphaBeta m = (R, L, 0)`.
 * `chain_le_semantics`, `exact`: every translation sound; the attractive sentences and sampled
   contraction are carved out exactly by `R/L > 0`.
-* `mem_den_iff` (formerly `dqRL_exponentiallyStable_iff`) and `mem_den_iff_resistance_pos`
-  (formerly `dqRL_exponentiallyStable_iff_resistance_pos`): stable iff `R/L > 0`, iff `R > 0`
-  when `L > 0`.
-* `den_eq_alphaBeta` (connection comparison; formerly `alphaBeta_exponentiallyStable_iff_dq`
-  with its two directions): the attractive denotation of the dq family is its own pull-back
-  along `DqBranch.alphaBeta` — the αβ and dq descriptions are stable together, at every frame
-  speed. The former proof transported trajectories through the norm-preserving rotation
-  (`alphaBetaRL_of_dqRL`, `dqRL_of_alphaBetaRL`); the comparison is
-  now read from the spectra (`spectrallyStable_dqRLMatrix_iff`), which do not depend on `ω`.
-The spectra, the field identity and the dq impedance are static evidence. The former adapters
-`isTrajectory_dqRLModel_iff`, `isTrajectory_alphaBetaRLModel_iff` between the deleted
-`LTI.IsTrajectory` and the KVL predicates have no counterpart: the trajectory form of the
-dq KVL is `dqRL_of_alphaBetaRL`, and the plant's field is `dqRLPlant_field`.
+* `mem_den_iff` and `mem_den_iff_resistance_pos`: stable iff `R/L > 0`, iff `R > 0` when `L > 0`.
+* `den_eq_alphaBeta` (connection comparison): the attractive denotation of the dq family is its
+  own pull-back along `DqBranch.alphaBeta` — the αβ and dq descriptions are stable together, at
+  every frame speed. The comparison is read from the spectra
+  (`spectrallyStable_dqRLMatrix_iff`), which do not depend on `ω`.
+The spectra, the field identity and the dq impedance are static evidence. The trajectory form of
+the dq KVL is `dqRL_of_alphaBetaRL`, and the plant's field is `dqRLPlant_field`.
 -/
 
 noncomputable section

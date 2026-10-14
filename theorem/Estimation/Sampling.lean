@@ -6,32 +6,36 @@ import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 
 /-! # Rare-event Monte Carlo: importance sampling and subset simulation
 
-Source: work-sync `theory/T-importance-sampling.md` (head: `P_F = E_q[1_F(X) π(X)/q(X)]`, weight
+The importance-sampling identity (and its absolute-continuity premise), unbiasedness and the
+strong law for plain Monte Carlo, the zero-variance proposal, and the subset-simulation product.
+
+Scope.
+* Probability theory, not an engineering result.
+
+Source: work-sync theory/T-importance-sampling.md (head: `P_F = E_q[1_F(X) π(X)/q(X)]`, weight
 `w = π/q` gives an unbiased estimator, the zero-variance proposal is proportional to `1_F π`),
-`theory/T-subset-simulation.md` (head: `P(F_m) = P(F_1) Π_{k=2}^m P(F_k | F_{k−1})` for nested
+theory/T-subset-simulation.md (head: `P(F_m) = P(F_1) Π_{k=2}^m P(F_k | F_{k−1})` for nested
 events).
 
-Foundation (probability), not an engineering result.
-
-Main results.
-* `importance_sampling_identity` (wrapper of Mathlib `Measure.setLIntegral_rnDeriv`):
+Results.
+* `importance_sampling_identity` — wrapper of Mathlib `Measure.setLIntegral_rnDeriv`:
   `π(F) = ∫_F (dπ/dq) dq` **provided `π ≪ q`**; `importance_sampling_needs_ac`: without absolute
   continuity the identity fails (`π = δ₀`, `q = δ₁`, `F = {0}`).
-* `mc_mean_unbiased`, `mc_strong_law` (wrapper of Mathlib `ProbabilityTheory.strong_law_ae`):
-  the plain Monte Carlo average is unbiased and converges almost surely for pairwise independent,
-  identically distributed, integrable samples.
-* `zero_variance_proposal`: with densities, the proposal `q* = 1_F p / P_F` makes the weighted
+* `mc_mean_unbiased`, `mc_strong_law` — wrapper of Mathlib `ProbabilityTheory.strong_law_ae`:
+  the plain Monte Carlo average is unbiased and converges almost surely for pairwise
+  independent, identically distributed, integrable samples.
+* `zero_variance_proposal` — with densities, the proposal `q* = 1_F p / P_F` makes the weighted
   indicator equal to `P_F` wherever `q* > 0`, so the estimator has zero variance.
-* `subset_simulation_product`: `μ(F_m) = μ(F_0) Π_{k<m} μ(F_{k+1} | F_k)` for a decreasing chain
-  of measurable events (induction on `ProbabilityTheory.cond_mul_eq_inter`).
+* `subset_simulation_product` — `μ(F_m) = μ(F_0) Π_{k<m} μ(F_{k+1} | F_k)` for a decreasing
+  chain of measurable events (induction on `ProbabilityTheory.cond_mul_eq_inter`).
 
 Corrections.
-* (importance sampling, frontmatter) The weight is `dπ/dq` (target over proposal); the
-  frontmatter's `dQ/dP` (proposal over target) is its reciprocal.  The identity needs `π ≪ q`
+* Importance sampling, frontmatter: the weight is `dπ/dq` (target over proposal); the
+  frontmatter's `dQ/dP` (proposal over target) is its reciprocal. The identity needs `π ≪ q`
   (every set the target charges must be reachable by the proposal), which the note omits.
-* (subset simulation) The note indexes the chain both as `F = F_0 ⊃ F_1 ⊃ ⋯ ⊃ F_m` (assumptions)
-  and as `F_1 ⊃ ⋯ ⊃ F_m` with target `F_m` (formula).  Here one indexing is fixed: `F 0 ⊇ F 1 ⊇ ⋯`,
-  target `F m`.
+* Subset simulation: the note indexes the chain both as `F = F_0 ⊃ F_1 ⊃ ⋯ ⊃ F_m`
+  (assumptions) and as `F_1 ⊃ ⋯ ⊃ F_m` with target `F_m` (formula). Here one indexing is fixed:
+  `F 0 ⊇ F 1 ⊇ ⋯`, target `F m`.
 -/
 
 noncomputable section

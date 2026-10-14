@@ -4,25 +4,30 @@ import Mathlib.Analysis.Matrix.Order
 
 /-! # Kalman measurement update: Joseph form, optimal gain, information form
 
-Source: work-sync `theory/T-kalman-filter.md` §1.1 (measurement update `S = H P Hᵀ + R`,
-`K = P Hᵀ S⁻¹`, `P⁺ = (I − K H) P`, Joseph form `(I − KH) P (I − KH)ᵀ + K R Kᵀ`, "symmetric PSD by
-construction"), §1.3 (Joseph form equals the short form at the exact gain), §1.8 (information form
-`Ω⁺ = Ω⁻ + Σⱼ Hⱼᵀ Rⱼ⁻¹ Hⱼ` for independent sensors).
+Matrix identities and Loewner inequalities for one Kalman measurement update: the Joseph form,
+optimality of the Kalman gain, and the information form.
 
-Foundation (linear algebra), not an engineering result.  All statements are matrix identities /
-Loewner inequalities for one measurement update with real matrices: prior covariance
-`P : n × n`, observation matrix `H : p × n`, noise covariance `R : p × p`, gain `K : n × p`.
-That `P⁺` is the conditional covariance of a linear-Gaussian model is proved only in the scalar
-case, in `theorem/Estimation/KalmanGaussian.lean` (`kalman_condExp_eq`, `kalman_condVar_eq`).
+Scope.
+* Linear algebra, not an engineering result. One measurement update with real matrices: prior
+  covariance `P : n × n`, observation matrix `H : p × n`, noise covariance `R : p × p`, gain
+  `K : n × p`.
+* That `P⁺` is the conditional covariance of a linear-Gaussian model is proved in
+  `theorem/Estimation/KalmanGaussian.lean` (scalar, `kalman_condExp_eq`, `kalman_condVar_eq`)
+  and `theorem/Estimation/KalmanGaussianVector.lean` (vector).
 
-Main results.
-* `joseph_posSemidef`: for **any** gain `K`, `P ⪰ 0`, `R ⪰ 0` ⇒ Joseph form `⪰ 0`.
-* `joseph_eq_short`: if `K S = P Hᵀ` (exact gain), the Joseph form equals `(I − K H) P`.
-* `joseph_eq_optimal_add`: for symmetric `P, R`, `J(K) = J(K*) + (K − K*) S (K − K*)ᵀ`; hence
+Source: work-sync theory/T-kalman-filter.md §1.1 (measurement update `S = H P Hᵀ + R`,
+`K = P Hᵀ S⁻¹`, `P⁺ = (I − K H) P`, Joseph form `(I − KH) P (I − KH)ᵀ + K R Kᵀ`, "symmetric PSD
+by construction"), §1.3 (Joseph form equals the short form at the exact gain), §1.8 (information
+form `Ω⁺ = Ω⁻ + Σⱼ Hⱼᵀ Rⱼ⁻¹ Hⱼ` for independent sensors).
+
+Results.
+* `joseph_posSemidef` — for **any** gain `K`, `P ⪰ 0`, `R ⪰ 0` ⇒ Joseph form `⪰ 0`.
+* `joseph_eq_short` — if `K S = P Hᵀ` (exact gain), the Joseph form equals `(I − K H) P`.
+* `joseph_eq_optimal_add` — for symmetric `P, R`, `J(K) = J(K*) + (K − K*) S (K − K*)ᵀ`; hence
   `joseph_optimal_le`: the Kalman gain minimizes the posterior covariance in the Loewner order.
-* `information_form`: `(P⁻¹ + Hᵀ R⁻¹ H)⁻¹ = (I − K H) P` (Woodbury, Mathlib
+* `information_form` — `(P⁻¹ + Hᵀ R⁻¹ H)⁻¹ = (I − K H) P` (Woodbury, Mathlib
   `Matrix.add_mul_mul_inv_eq_sub`), and `gain_information_form`: `K = P⁺ Hᵀ R⁻¹`.
-* `information_add_two_sensors`: stacked independent sensors add their information.
+* `information_add_two_sensors` — stacked independent sensors add their information.
 -/
 
 noncomputable section

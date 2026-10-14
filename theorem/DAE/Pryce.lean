@@ -4,29 +4,47 @@ import Mathlib.LinearAlgebra.Matrix.Permutation
 
 /-! # Structural index analysis: Pryce signature method, transversals, Hall's theorem
 
-Foundation layer (category B).
+Weak duality and tightness for signature offsets, structural nonsingularity via transversals and
+Hall's theorem, termination of Pryce's fixed-point iteration, and two corrections of the note.
 
-A *signature* of a square DAE with equations and variables both indexed by `ι` records
-`occurs i j` (variable `j` appears in equation `i`) and `order i j : ℕ` (highest derivative
-order of `j` in `i`; meaningful where `occurs i j`). Offsets `c d : ι → ℕ` are *dual feasible*
-if `order i j + c i ≤ d j` wherever `occurs i j`, and *tight* on a transversal `σ` if
-`order i (σ i) + c i = d (σ i)`.
+Model boundary.
+* Structural (sparsity/order pattern) analysis and two concrete DAEs; no claim about numerical
+  rank (structural regularity is an assumption of the method, not proved), and no formalization
+  of `ν_d = ν_S` in general. The Pantelides algorithm is `theorem/DAE/Pantelides.lean`; the
+  Weierstrass form and the Kronecker (= differentiation) index of linear constant-coefficient
+  DAEs are `theorem/DAE/Weierstrass.lean` and `theorem/DAE/KroneckerIndex.lean`.
+* A *signature* of a square DAE with equations and variables both indexed by `ι` records
+  `occurs i j` (variable `j` appears in equation `i`) and `order i j : ℕ` (highest derivative
+  order of `j` in `i`; meaningful where `occurs i j`). Offsets `c d : ι → ℕ` are *dual
+  feasible* if `order i j + c i ≤ d j` wherever `occurs i j`, and *tight* on a transversal `σ`
+  if `order i (σ i) + c i = d (σ i)`.
+
+Source: work-sync theory/T-pantelides-index-reduction.md §1.3 (bipartite matching),
+§1.5 (signature matrix, offsets, fixed-point iteration, index formula, HVT-tight identity,
+pendulum example), §1.9 Case A.
 
 Results.
-* Weak duality: for every transversal `σ` and dual-feasible `(c, d)`,
-  `value σ + Σ c ≤ Σ d` (`value σ = Σᵢ order i (σ i)`); tightness gives equality
-  `Σ d - Σ c = value σ` (the "HVT-tight" identity), and then `σ` is a highest-value
-  transversal.
-* Structural nonsingularity: some real matrix with the sparsity pattern of `occurs` is
-  nonsingular iff a perfect matching (transversal) exists; and (Hall, wrapper of
-  `Finset.all_card_le_biUnion_card_iff_exists_injective`) a transversal exists iff every set
-  of `k` equations involves at least `k` variables.
-* Pryce fixed-point iteration (`pryceStep`: `d_j ← max_{i ∋ j} (c_i + order i j)`,
-  `c_i ← d_{σ i} - order i (σ i)` truncated at `0`, started at `0`): if some dual-feasible
-  offsets tight on `σ` exist, the iteration reaches a fixed point after at most
-  `Σ c* + Σ d*` steps; the fixed point is dual feasible, tight on `σ`, and componentwise
-  below every such solution (the least offsets).
-* Correction (index formula, T-pantelides-index-reduction §1.5): the note's rule
+* `value_add_le`, `value_add_eq`, `value_le_of_tight` — weak duality: for every transversal `σ`
+  and dual-feasible `(c, d)`, `value σ + Σ c ≤ Σ d` (`value σ = Σᵢ order i (σ i)`); tightness
+  gives equality `Σ d - Σ c = value σ` (the "HVT-tight" identity), and then `σ` is a
+  highest-value transversal.
+* `structurallyNonsingular_iff`, `exists_transversal_iff_hall` — structural nonsingularity: some
+  real matrix with the sparsity pattern of `occurs` is nonsingular iff a perfect matching
+  (transversal) exists; and (Hall, wrapper of
+  `Finset.all_card_le_biUnion_card_iff_exists_injective`) a transversal exists iff every set of
+  `k` equations involves at least `k` variables.
+* `pryce_iteration_terminates` — Pryce fixed-point iteration (`pryceStep`:
+  `d_j ← max_{i ∋ j} (c_i + order i j)`, `c_i ← d_{σ i} - order i (σ i)` truncated at `0`,
+  started at `0`): if some dual-feasible offsets tight on `σ` exist, the iteration reaches a
+  fixed point after at most `Σ c* + Σ d*` steps; the fixed point is dual feasible, tight on
+  `σ`, and componentwise below every such solution (the least offsets).
+* `example_noteIndex`, `example_pryceIndex`, `example_hidden_constraint`,
+  `example_inconsistent_initial`, `example_one_differentiation`, `pendulum_offsets`,
+  `synchronous_constraint_compatibility`, `synchronous_constraint_no_solution` — the index
+  formula and Case A corrections (see Corrections).
+
+Corrections.
+* Index formula, T-pantelides-index-reduction §1.5: the note's rule
   `ν_S = max c + 1{∃ i: max_j Σ_ij = 0}` is wrong; Pryce's indicator is "some variable
   offset `d_j = 0`". Counterexample `ẋ₁ = y, ẋ₂ = x₁ - y, ẋ₁ + 2ẋ₂ = 0`: offsets
   `c = 0, d = (1, 1, 0)`; the note's formula gives `0`, the corrected one gives `1`, and the
@@ -35,19 +53,10 @@ Results.
   the explicit ODE `ẏ = 2 y`. A solution of the example is a triple `x₁ x₂ y : ℝ → ℝ` with
   `∀ t, HasDerivAt x₁ (y t) t ∧ HasDerivAt x₂ (x₁ t - y t) t ∧ deriv x₁ t + 2 * deriv x₂ t = 0`,
   written out in each statement. For the pendulum both formulas give `3`.
-* Correction (§1.9 Case A): adding `ω₁ = ω₂` to two independent swing equations makes the
-  system overdetermined (three equations, two unknowns), not "index raised": solutions exist
-  only under a compatibility condition on the data, and e.g. distinct constant
-  accelerations admit no solution at all.
-
-Model boundary: structural (sparsity/order pattern) analysis and two concrete DAEs; no claim
-about numerical rank (structural regularity is an assumption of the method, not proved), and
-no formalization of the Pantelides algorithm itself, Weierstrass/Kronecker forms or of
-`ν_d = ν_S` in general.
-
-Source: work-sync theory/T-pantelides-index-reduction.md §1.3 (bipartite matching),
-§1.5 (signature matrix, offsets, fixed-point iteration, index formula, HVT-tight identity,
-pendulum example), §1.9 Case A.
+* §1.9 Case A: adding `ω₁ = ω₂` to two independent swing equations makes the system
+  overdetermined (three equations, two unknowns), not "index raised": solutions exist only under
+  a compatibility condition on the data, and e.g. distinct constant accelerations admit no
+  solution at all.
 -/
 
 noncomputable section

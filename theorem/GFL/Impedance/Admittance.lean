@@ -2,15 +2,16 @@ import theorem.GFL.Impedance.GridImpedance
 import theorem.Transform.ComplexPower
 import theorem.LTI.Plant
 
-/-! # 10-state small-signal GFL port realization and its closed-form dq admittance (foundation)
+/-! # 10-state small-signal GFL port realization and its closed-form dq admittance
 
 Realization of the block diagram of work-sync T-gfl-impedance §1.1–§1.5 as a `Linear.Plant`, and
 proof that its transfer matrix is exactly the boxed closed form
 `Y_dq^gfl = [I − G_id G_del Φ_full K]⁻¹ [Z_oc⁻¹ + G_id G_del Θ_full K]` with `K = I`.
 
-Model (small-signal, linear, continuous time; all quantities are perturbations around a fixed
-operating point; system dq frame rotating at the constant `ω = ω_s`; port current IN-positive,
-work-sync `conventions.md` §D1; per-unit P/Q Jacobians without `3/2`):
+Model boundary.
+Small-signal, linear, continuous time; all quantities are perturbations around a fixed operating
+point; system dq frame rotating at the constant `ω = ω_s`; port current IN-positive, work-sync
+`conventions.md` §D1; per-unit P/Q Jacobians without `3/2`.
 * State order `(I_d, I_q, z_d, z_q, Δθ, η, ξcc_d, ξcc_q, ξpc_P, ξpc_Q)` (`lin`): filter current
   in the system frame, the two Padé(1,1) delay states, the PLL angle deviation and integrator,
   the current-loop and power-loop PI integrators. Input `ΔV^sys = (ΔV_d, ΔV_q)` (PCC voltage),
@@ -31,6 +32,9 @@ work-sync `conventions.md` §D1; per-unit P/Q Jacobians without `3/2`):
 * Excluded: current / modulation limits, DC-link and source dynamics, LCL resonance, grid
   frequency variation, large-signal PLL behaviour.
 
+Source: work-sync `theory/T-gfl-impedance.md` §1.1–§1.5, §1.7;
+`theory/T-gfl-control.md` §1.5–§1.6; `theory/T-pll-dynamics.md` §1.11 (`G_pll`).
+
 Results.
 * `lin_eq_mulVec`: `model` (`A`, `B`) is exactly the linear map `lin` of these block equations.
 * `Ygfl_spec`: the closed form `Ygfl` solves `Z_oc Y + V_dc G_del (Φ Y + Θ) = I`.
@@ -43,9 +47,6 @@ Results.
   and the return difference of the GFL–grid interconnection is `det (I + Z_ext Y_gfl)`.
 These are realization identities (foundation, static evidence); no stability claim is made. The
 behaviour of the interconnection is that of the family `Circuits.Interconnection.family`.
-
-Source: work-sync `theory/T-gfl-impedance.md` §1.1–§1.5, §1.7;
-`theory/T-gfl-control.md` §1.5–§1.6; `theory/T-pll-dynamics.md` §1.11 (`G_pll`).
 -/
 
 noncomputable section

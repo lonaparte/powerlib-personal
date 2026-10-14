@@ -3,24 +3,36 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.Analysis.Real.Pi.Bounds
 
-/-! # Low-inertia frequency dynamics: foundation results
+/-! # Low-inertia frequency dynamics: time scales, critical inertia, frequency variance
+
+Static foundation results (identities, an inversion, integrals, inequalities) for low-inertia
+frequency dynamics: rotating-frame network equations, the critical inertia of a RoCoF limit, and
+the inertia dependence of the frequency variance under stochastic load.
+
+Model boundary.
+* Continuous-time, linear, single-area, Kundur per-unit; no turbine, PLL, delay,
+  voltage–frequency coupling.
+* Stochastic statements are about the stationary variance integral
+  `σ² = ∫₀^∞ |H(jω)|² S(ω) dω` of the note, not about a stochastic differential equation.
+* The first-order plant `firstOrderModel` is a `Linear.Plant 1 1` (state, input and output
+  `Δω`, `ΔP_L`, `Δω`). The only trajectory-level statement, `rocof_le_iff_criticalInertia`,
+  reads the critical-inertia condition off the initial slope of a forward solution of the
+  `Frequency.SwingGovernor` plant.
 
 Source: work-sync `theory/T-low-inertia-frequency.md` §1.1 (time scales), §1.3 (dq network
 equations), §1.5 (critical inertia), §1.7 (frequency variance under stochastic load).
 
-These are foundation results (identities, an inversion, integrals, inequalities). The only
-trajectory-level statement is `rocof_le_iff_criticalInertia`, which reads the critical-inertia
-condition off the initial slope of a forward solution of the `Frequency.SwingGovernor` plant.
-
+Results.
 * `rotatingFrame_hasDerivAt`, `dq_firstOrder`, `dq_firstOrder_re`, `dq_firstOrder_im` (§1.3):
   for a stationary-frame element `X ẋ_αβ = s_αβ − Y x_αβ` (series `R–L` line: `X = L`, `Y = R`,
   `s = v_i − v_j`; node capacitor: `X = C`, `Y = 0`, `s` = net injected current), the
   rotating-frame quantity `x_dq = e^{−j ω_s t} x_αβ` obeys
   `X ẋ_dq = s_dq − Y x_dq − j ω_s X x_dq`, i.e. `X ẋ_d = s_d − Y x_d + ω_s X x_q`,
   `X ẋ_q = s_q − Y x_q − ω_s X x_d` (product rule, `ω_s` constant).
-* `criticalInertia`, `rocof_le_iff_criticalInertia` (§1.5): with the two-state model's initial
-  RoCoF `|ḟ(0⁺)| = |ΔP_L| f₀/(2H)`, `|ḟ(0⁺)| ≤ ḟ_max ⇔ H ≥ H_crit = |ΔP_L| f₀/(2 ḟ_max)`;
-  `criticalInertia_example`: `1 Hz/s`, `0.1 pu`, `50 Hz` give `2.5 s`.
+* `criticalInertia`, `rocof_bound_iff`, `rocof_le_iff_criticalInertia` (§1.5): with the
+  two-state model's initial RoCoF `|ḟ(0⁺)| = |ΔP_L| f₀/(2H)`,
+  `|ḟ(0⁺)| ≤ ḟ_max ⇔ H ≥ H_crit = |ΔP_L| f₀/(2 ḟ_max)`; `criticalInertia_example`:
+  `1 Hz/s`, `0.1 pu`, `50 Hz` give `2.5 s`.
 * `firstOrderModel`, `firstOrder_transfer`, `firstOrder_normSq_transfer` (§1.7): the
   swing + droop model `M Δω̇ = −ΔP_L − (K_R + D) Δω` has `H(s) = −1/(M s + β)`,
   `β = K_R + D`, and `|H(jω)|² = 1/(β² + M² ω²)`; `normSq_tendsto_zero`,
@@ -37,31 +49,28 @@ condition off the initial slope of a forward solution of the `Frequency.SwingGov
   most `p = 2`.
 * `variance_tendsto_zero`, `twoPointExponent_tendsto_zero` (§1.7, `p = 0` end): for an
   integrable nonnegative PSD with `∫ S > 0`, `σ²(M) → (∫ S)/β²` as `M → 0` (all noise below the
-  corner `ω_c = β/M`), so the two-point exponent `p(M, κM) = ln(σ²(M)/σ²(κM))/ln κ` tends to `0`.
-  `mul_variance_tendsto_atTop`, `twoPointExponent_tendsto_two` (`p = 2` end): if `S(ω)/ω²` is
-  integrable with positive integral, `M² σ²(M) → ∫ S/ω²` as `M → ∞` (all noise above the
+  corner `ω_c = β/M`), so the two-point exponent `p(M, κM) = ln(σ²(M)/σ²(κM))/ln κ` tends to
+  `0`. `mul_variance_tendsto_atTop`, `twoPointExponent_tendsto_two` (`p = 2` end): if `S(ω)/ω²`
+  is integrable with positive integral, `M² σ²(M) → ∫ S/ω²` as `M → ∞` (all noise above the
   corner), so `p(M, κM) → 2`. Both by dominated convergence. Together with
   `powerLaw_exponent_mem` this makes `[0, 2]` the exact range of the exponent: both ends are
-  attained asymptotically, low-frequency noise at small inertia and high-frequency noise at large
-  inertia (the note's "low-frequency OU noise ⇒ `p = 0`, high-frequency noise ⇒ `p = 2`"; the
-  note's band statements are regimes of `M` relative to the noise band, not exact power laws).
-* Correction (§1.1): the electromechanical time constant `T_em = 2H/ω_s` is about 25 ms for
-  `H = 4 s` at 50 Hz (`electromechanicalTime_example`), not "几秒"; the seconds-scale constant
-  is `M = 2H` itself (the time constant of the per-unit swing equation).
+  attained asymptotically, low-frequency noise at small inertia and high-frequency noise at
+  large inertia (the note's "low-frequency OU noise ⇒ `p = 0`, high-frequency noise ⇒ `p = 2`";
+  the note's band statements are regimes of `M` relative to the noise band, not exact power
+  laws).
 
-Model boundary for the domain-flavoured parts: continuous-time, linear, single-area, Kundur
-per-unit; no turbine, PLL, delay, voltage–frequency coupling; stochastic statements are about
-the stationary variance integral `σ² = ∫₀^∞ |H(jω)|² S(ω) dω` of the note, not about a
-stochastic differential equation. The first-order plant `firstOrderModel` is a
-`Linear.Plant 1 1` (state, input and output `Δω`, `ΔP_L`, `Δω`).
+Family and connection conclusions.
+* None: this module defines no family; its results are identities, transfer functions,
+  integrals and inequalities (foundation; the swing + governor stability conclusions are the
+  connection statements of `Frequency.SwingGovernor.family`).
+* `rocof_le_iff_criticalInertia` quantifies over a forward solution and its initial slope,
+  outside the sentence language: it is private implementation evidence (Rules §3a), derived
+  from the generic `LTI.hasDerivWithinAt_apply_zero` and the static `SwingGovernor.field_apply`.
 
-Family and connection conclusions. This module defines no family: its results are identities,
-transfer functions, integrals and inequalities (foundation; the swing + governor stability
-conclusions are the connection statements of `Frequency.SwingGovernor.family`).
-`rocof_le_iff_criticalInertia` (formerly `@[powerlib_domain]`) quantifies over a forward solution
-and its initial slope, outside the sentence language: it is private implementation evidence
-(Rules §3a), derived from the generic `LTI.hasDerivWithinAt_apply_zero` and the static
-`SwingGovernor.field_apply`.
+Correction (§1.1).
+* The electromechanical time constant `T_em = 2H/ω_s` is about 25 ms for `H = 4 s` at 50 Hz
+  (`electromechanicalTime_example`), not "几秒"; the seconds-scale constant is `M = 2H` itself
+  (the time constant of the per-unit swing equation).
 -/
 
 noncomputable section

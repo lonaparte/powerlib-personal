@@ -3,7 +3,9 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import theorem.PH.Nonlinear
 import theorem.PH.Composition
 
-/-! Quadratic Hamiltonians and constant-coefficient port-Hamiltonian systems as instances of
+/-! # Constant-coefficient port-Hamiltonian systems
+
+Quadratic Hamiltonians and constant-coefficient port-Hamiltonian systems as instances of
 `powerlib.PH.NonlinearModel`, and the bridge to linear port-Hamiltonian plants.
 
 Model boundary.
@@ -13,34 +15,40 @@ Model boundary.
   gradient `Q x`.
 * Field `ẋ = (J − R) Q x + g u`, output `y = gᵀ Q x`; state matrix `A = (J − R) Q`.
   Lyapunov identity `Aᵀ Q + Q A = −2 Q R Q ⪯ 0`.
-* The linear plant of the system is `linearLTIModel J R g Q : Linear.Plant n m`
-  (`A = (J − R) Q`, `B = g`, `C = gᵀ Q`, `D = 0`; formerly an `LTI.Model`), and the port
-  system of the pH model **is** the port system of that plant (`linear_system_eq`).
-* With `Q ≻ 0` the model is the linear port-Hamiltonian plant `toPortHamiltonian J R g Q`
-  (`theorem/Port/PortHamiltonian.lean`; it replaces the former collocated passivity certificate
-  `linearCollocatedCertificate`, whose role is played by the plant's KYP certificate `Q`).
-* Diagonal data (`DiagonalPH (Fin n) (Fin m)`, `theorem/PH/Composition.lean`: constant `J`,
-  diagonal damping `d ≥ 0`, diagonal weights `w > 0`, `H = Σ wᵢ xᵢ²/2`) are the special case
-  `R = diag d`, `Q = diag w` (`ofDiagonal`, formerly `ofPortHamiltonian` of the removed diagonal
-  `PortHamiltonian.Model`); the two vector fields, outputs, energies, damping powers and port
-  systems coincide under the coordinate identification `WithLp.ofLp : State n → (Fin n → ℝ)`.
 * Excluded: state-dependent matrices (see `NonlinearModel`), linearization of a nonlinear
   pH system (the Hessian bridge of T-ph §1.10), transfer functions and positive realness,
   delay, PWM, PLL, saturation.
 
-Family and connection conclusions. No new family. `NonlinearModel` is the generic framework
-(no family takes it as model type), so the generic Lyapunov-stability theorem
-`linear_lyapunovStable` for every constant-coefficient pH system with `Q ≻ 0` is a public
-foundation result (formerly `@[powerlib_domain]`). The connection conclusions are memberships of
-`toPortHamiltonian J R g Q` in the existing linear port-Hamiltonian family
-`Port.PortHamiltonian.family`: passivity and Lyapunov stability
-(`toPortHamiltonian_mem_den_passive`, `toPortHamiltonian_mem_den_lyapunovStable`), reached through
-`linear_system_eq` and `toPortHamiltonian_plant`. The former trajectory correspondence
-`ofPortHamiltonian_isTrajectory_iff` is replaced by the equality of port systems
-`ofDiagonal_system` (every solution notion of the Port semantics transfers by rewriting).
-
 Source: work-sync `theory/T-ph.md` §1.10 (linear pH form (1.15), `A_ph = (J − R) Q` and its
 Lyapunov inequality), §1.6 (RLC instance of constant-coefficient pH).
+
+Results.
+* `linearStateMatrix_lyapunov`, `linearStateMatrix_lyapunov_negSemidef` — the Lyapunov identity
+  above; `linear_lyapunovStable` — every constant-coefficient pH system with `Q ≻ 0` is Lyapunov
+  stable (generic, public foundation).
+* The linear plant of the system is `linearLTIModel J R g Q : Linear.Plant n m`
+  (`A = (J − R) Q`, `B = g`, `C = gᵀ Q`, `D = 0`), and the port system of the pH model **is**
+  the port system of that plant (`linear_system_eq`).
+* With `Q ≻ 0` the model is the linear port-Hamiltonian plant `toPortHamiltonian J R g Q`
+  (`theorem/Port/PortHamiltonian.lean`; its passivity certificate is the plant's KYP
+  certificate `Q`); `quadraticEnergy_eq_storage` — the quadratic Hamiltonian is its stored
+  energy.
+* Diagonal data (`DiagonalPH (Fin n) (Fin m)`, `theorem/PH/Composition.lean`: constant `J`,
+  diagonal damping `d ≥ 0`, diagonal weights `w > 0`, `H = Σ wᵢ xᵢ²/2`) are the special case
+  `R = diag d`, `Q = diag w` (`ofDiagonal`); the two vector fields, outputs, energies, damping
+  powers and port systems coincide under the coordinate identification
+  `WithLp.ofLp : State n → (Fin n → ℝ)` (`ofDiagonal_field`, `ofDiagonal_system`).
+
+Family and connection conclusions.
+* No new family. `NonlinearModel` is the generic framework (no family takes it as model type),
+  so the generic Lyapunov-stability theorem `linear_lyapunovStable` is a public foundation
+  result.
+* The connection conclusions are memberships of `toPortHamiltonian J R g Q` in the existing
+  linear port-Hamiltonian family `Port.PortHamiltonian.family`: passivity and Lyapunov stability
+  (`toPortHamiltonian_mem_den_passive`, `toPortHamiltonian_mem_den_lyapunovStable`), reached
+  through `linear_system_eq` and `toPortHamiltonian_plant`. Solutions of the diagonal data and
+  of the plant correspond through the equality of port systems `ofDiagonal_system` (every
+  solution notion of the Port semantics transfers by rewriting).
 -/
 
 noncomputable section
@@ -258,8 +266,7 @@ def toPortHamiltonian (J R : Matrix (Fin n) (Fin n) ℝ) (g : Matrix (Fin n) (Fi
       (toPortHamiltonian J R g Q hJ hR hQ).plant.system := by
   rw [toPortHamiltonian_plant, linear_system_eq]
 
-/-- The quadratic Hamiltonian is the stored energy of the linear port-Hamiltonian plant
-(replacing the former identification with the removed `StateSpacePassivity.energy`). -/
+/-- The quadratic Hamiltonian is the stored energy of the linear port-Hamiltonian plant. -/
 @[powerlib_foundation] theorem quadraticEnergy_eq_storage {J R : Matrix (Fin n) (Fin n) ℝ}
     {g : Matrix (Fin n) (Fin m) ℝ} {Q : Matrix (Fin n) (Fin n) ℝ} (hJ : Jᵀ = -J)
     (hR : R.PosSemidef) (hQ : Q.PosDef) (x : State n) :

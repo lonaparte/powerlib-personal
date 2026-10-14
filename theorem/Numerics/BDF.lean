@@ -1,21 +1,29 @@
 import theorem.Attributes
 import dependencies.Mathlib
 
-/-! Linear multistep methods: Dahlquist order conditions and the BDF coefficient table.
+/-! # Linear multistep methods: Dahlquist order conditions and the BDF coefficient table
 
-Model boundary: a `k`-step linear multistep method `Σᵢ αᵢ x_{n+i} = h Σᵢ βᵢ f_{n+i}` with
-exact rational coefficients (`α_k = 1`).  Order is the classical algebraic notion: the error
-constants `C_q = Σᵢ αᵢ iᵠ - q Σᵢ βᵢ i^{q-1}` vanish for `q ≤ p`, which is equivalent to the
-method being exact on all monomials `t^q`, `q ≤ p` (`residual_monomial`), and `C_{p+1} ≠ 0`
-makes the order exactly `p`.  Consistency (`ρ(1) = 0`, `ρ'(1) = σ(1)`) is order `≥ 1`.
+Order of a linear multistep method as an algebraic condition on its coefficients, and the exact
+order of BDF1–BDF6.
 
-Results: BDF1–BDF6 with the coefficients of the source table (BDF5/BDF6 completed, the table
-lists only `β_k`) have exact order `k`.
+Model boundary.
+* A `k`-step linear multistep method `Σᵢ αᵢ x_{n+i} = h Σᵢ βᵢ f_{n+i}` with exact rational
+  coefficients (`α_k = 1`). Order is the classical algebraic notion: the error constants
+  `C_q = Σᵢ αᵢ iᵠ - q Σᵢ βᵢ i^{q-1}` vanish for `q ≤ p`, which is equivalent to the method being
+  exact on all monomials `t^q`, `q ≤ p` (`residual_monomial`), and `C_{p+1} ≠ 0` makes the order
+  exactly `p`. Consistency (`ρ(1) = 0`, `ρ'(1) = σ(1)`) is order `≥ 1`
+  (`consistent_iff_hasOrder_one`).
 
-Source: work-sync theory/T-numerical-integration.md §1.5–§1.6 (BDF table).  Foundation.
-Not formalized here: zero-stability of BDF1–6. Failure of zero-stability (a root of `ρ` outside
-the closed unit disk) is proved for every `k ≥ 7` in `theorem/Numerics/BDFInstability.lean`
-(`bdfLMM_not_rootCondition`; coefficient tables `bdf7`–`bdf9`).
+Source: work-sync theory/T-numerical-integration.md §1.5–§1.6 (BDF table).
+
+Results.
+* `bdf1_exactOrder`, …, `bdf6_exactOrder` — BDF1–BDF6 with the coefficients of the source table
+  (BDF5/BDF6 completed, the table lists only `β_k`) have exact order `k`; `bdf_consistent`.
+
+Not formalized.
+* Zero-stability of BDF1–6. Failure of zero-stability (a root of `ρ` outside the closed unit
+  disk) is proved for every `k ≥ 7` in `theorem/Numerics/BDFInstability.lean`
+  (`bdfLMM_not_rootCondition`; coefficient tables `bdf7`–`bdf9`).
 -/
 
 noncomputable section

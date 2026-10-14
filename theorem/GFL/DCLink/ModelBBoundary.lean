@@ -5,7 +5,8 @@ import theorem.SpecialFunctions.Elementary
 
 /-! # GFL reduced-order model B on the 4×4 Routh boundary
 
-Model boundary. The model-B family `ModelB.family` of `theorem/GFL/DCLink/ModelBStability.lean`: the
+Model boundary.
+The model-B family `ModelB.family` of `theorem/GFL/DCLink/ModelBStability.lean`: the
 field `ModelBParams.field` of `theorem/GFL/DCLink/ReducedOrder.lean` (T-gfl-reduced-order-dynamics
 §1.6), continuous-time autonomous, state order `x = (Δθ, x_pll, V_dc, ξ_v)`, constant grid
 frequency, infinite bus behind `R_g + j X_g`, inner current loop eliminated, reactive current frozen
@@ -19,6 +20,11 @@ the 4×4 Routh conditions on the Jacobian. That translation is sound but not exa
 equilibria with positive reference: on the Routh boundary (Jacobian neither Routh nor strictly
 violating it: an eigenvalue on the imaginary axis and none to its right) the linearization decides
 nothing, and every behaviour occurs. Off the boundary it is exact.
+
+Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (model B), §1.7 (equilibria); the
+local-stability question is the item "4×4 Routh–Hurwitz of model B" (the note states no stability
+condition). Lyapunov's and Chetaev's theorems: Khalil, *Nonlinear Systems* (3rd ed.), Thm 4.1,
+Thm 4.3. Candidate Lyapunov functions were computed with SymPy (untrusted); Lean checks them.
 
 Results.
 * `exactUnder_offBoundary_lyapunovStable`, `exactUnder_offBoundary_locallyAsymptoticallyStable`:
@@ -47,17 +53,7 @@ Results.
   `not_exactUnder_locallyAsymptoticallyStable` (witness `hopfDamped`), context
   `{equilibrium, positiveReference}`.
 
-Not characterized: which boundary equilibria are (asymptotically) stable in general. This needs a
-center-manifold reduction or Lyapunov coefficients over the 13-parameter family (and higher-order
-coefficients where they vanish); the exact set on which the translation fails is the Routh
-boundary itself.
-
-Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (model B), §1.7 (equilibria); the
-local-stability question is the item "4×4 Routh–Hurwitz of model B" (the note states no stability
-condition). Lyapunov's and Chetaev's theorems: Khalil, *Nonlinear Systems* (3rd ed.), Thm 4.1,
-Thm 4.3. Candidate Lyapunov functions were computed with SymPy (untrusted); Lean checks them.
-
-## Family and connection conclusions
+Family and connection conclusions.
 Connection conclusions on `ModelB.family`: `exactUnder_offBoundary_lyapunovStable`,
 `exactUnder_offBoundary_locallyAsymptoticallyStable`, `not_exactUnder_lyapunovStable`,
 `not_exactUnder_locallyAsymptoticallyStable`, `mem_den_unstable_of_violation` and the witness
@@ -65,6 +61,11 @@ memberships above; `boundaryWitnesses_mem_realize`,
 `boundaryWitnesses_not_mem_realize_offBoundary` are static facts about the requirement spaces. The
 field formulas, energies, their derivatives and the elementary inequalities are foundation; the
 trajectory-level statements behind the memberships are private implementation evidence.
+
+Not characterized: which boundary equilibria are (asymptotically) stable in general. This needs a
+center-manifold reduction or Lyapunov coefficients over the 13-parameter family (and higher-order
+coefficients where they vanish); the exact set on which the translation fails is the Routh
+boundary itself.
 -/
 
 noncomputable section

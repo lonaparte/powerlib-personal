@@ -7,37 +7,41 @@ import Mathlib.Analysis.Real.Pi.Bounds
 
 /-! # DC-voltage based grid forming: DC energy balance, matching control, DC droop
 
+Model boundary.
 Directions (work-sync T-dc-voltage-gfm §1.0): `v` is the DC-link voltage, `i_dc` the source
 current injected into the capacitor (IN-positive), `i_x` the current the converter draws from
 the capacitor to the AC side (positive when exporting), `G` the DC-link conductance; AC power
 export-positive (`v i_x = P_ac,export`, lossless converter). Continuous time, per-unit or SI.
+* Matching control (§1.2, Arghir–Jouini–Dörfler): state order `(θ, v)` (converter modulation
+  angle, DC voltage); matching law `θ' = η v`; DC node `C v' = i_dc − i_x(θ, v) − G v` with an
+  **arbitrary** load-current law `i_x` (the AC network, filter and grid are hidden in `i_x`; no
+  current limits, no PLL, no inner loops); `η, C ≠ 0`. Swing model: state `(θ, ω)`,
+  `θ' = ω`, `M ω' = τ − P_e(θ, ω) − D ω`.
+* DC-voltage droop (§1.4): `ω − ω_s = K (v − v*)` on the linearized DC node
+  `C Δv' = −(3/2) ΔP_export / v* − G Δv`.
 
-Foundation.
+Source: work-sync `theory/T-dc-voltage-gfm.md` §1.0–§1.2, §1.4, §2.2;
+`theory/T-vsc-dc-voltage-control.md` §1.7; `theory/T-gfm-control.md` §1.6 (`matching_swing`).
+
+Results.
 * `dcEnergy_balance`: along any solution of `C v' = i_dc − i_x − G v` the capacitor energy
   `H = C v²/2` satisfies `H' = P_src − P_ac − G v²` (`P_src = v i_dc`, `P_ac = v i_x`) (§1.1).
-* `droop_transfer`, `droop_dcGain`: DC-voltage droop `ω − ω_s = K (v − v*)` on the linearized
-  DC node `C Δv' = −(3/2) ΔP_export / v* − G Δv` has `Δω/ΔP_export = −(3/2) K /(v* (C s + G))`;
+* `droop_transfer`, `droop_dcGain`: the droop has `Δω/ΔP_export = −(3/2) K /(v* (C s + G))`;
   its DC gain `−(3/2) K /(G v*)` needs `G ≠ 0` (§1.4).
-* `droopFamily : Family DroopNode Spectral.Requirement 1 1` reads the droop small-signal model as
-  the port system of its plant (`Spectral.linearFamily`; requirements: the sign of `G/C`).
-  `droopChain_le_semantics`, `droopExact`; `droop_mem_den_iff` (formerly
-  `droop_exponentiallyStable_iff`): with `C > 0` the small-signal model satisfies an attractive
-  sentence iff `G > 0`.
-
-Domain: matching control (§1.2, Arghir–Jouini–Dörfler).
-* Model boundary: state order `(θ, v)` (converter modulation angle, DC voltage); matching law
-  `θ' = η v`; DC node `C v' = i_dc − i_x(θ, v) − G v` with an **arbitrary** load-current law
-  `i_x` (the AC network, filter and grid are hidden in `i_x`; no current limits, no PLL, no
-  inner loops); `η, C ≠ 0`. Swing model: state `(θ, ω)`,
-  `θ' = ω`, `M ω' = τ − P_e(θ, ω) − D ω`.
 * `matching_eq_swing`: with `M = C/η²`, `D = G/η²`, `τ = i_dc/η`,
   `P_e(θ, ω) = i_x(θ, ω/η)/η`, the swing field is exactly the matching field in the
   coordinates `(θ, ω) = (θ, η v)`.
 * `matching_equilibrium_iff` (static): equilibria correspond.
 * `matching_swing`: along a solution, the converter frequency `ω = η u_dc` obeys
   `(C/η²) ω̇ = i_dc/η − (G/η²) ω − i_x/η` (T-gfm-control §1.6 table).
-* Families: `matchingFamily : Family MatchingModel Spectral.Requirement 2 0` reads a matching
-  model together with a selected point `(θ*, v*)` as its field translated to that point;
+
+Family and connection conclusions.
+* `droopFamily : Family DroopNode Spectral.Requirement 1 1` reads the droop small-signal model as
+  the port system of its plant (`Spectral.linearFamily`; requirements: the sign of `G/C`).
+  `droopChain_le_semantics`, `droopExact`; `droop_mem_den_iff`: with `C > 0` the small-signal
+  model satisfies an attractive sentence iff `G > 0`.
+* `matchingFamily : Family MatchingModel Spectral.Requirement 2 0` reads a matching model
+  together with a selected point `(θ*, v*)` as its field translated to that point;
   `swingFamily : Family SwingModel Spectral.Requirement 2 0` does the same for a swing model and
   a selected point `(θ*, ω*)`. Neither has a requirement language of its own (both conditions
   are `False`): every flow translation is unavailable coverage, sound because it is empty
@@ -47,30 +51,29 @@ Domain: matching control (§1.2, Arghir–Jouini–Dörfler).
   family's denotation is the swing family's pulled back along `MatchingModel.toSwing`
   (`M = C/η²`, `D = G/η²`, `τ = i_dc/η`, `P_e(θ, ω) = i_x(θ, ω/η)/η`, point `(θ*, η v*)`):
   the coordinate change `(θ, v) ↦ (θ, η v)` (`Dynamics.scaleCoord`) transports every sentence
-  (`Dynamics.holds_transport_iff`). This replaces the former sentence-by-sentence
-  `matching_locallyExponentiallyStable_iff`, `matching_unstable_iff`, kept as private
-  implementation evidence together with the solution correspondence `matching_trajectory_iff`
-  (a trajectory-level statement outside the sentence language).
-
-Global stability (Arghir–Dörfler 2020, quoted in T-dc-voltage-gfm §1.2 and T-gfm-control §1.6:
-`(G_dc + K_p)/η² > L_s² μ² v*²/(4 R_s ‖Z_s‖²)` ⇒ global stability via a shifted Hamiltonian and
-LaSalle). The work-sync notes quote only the condition; the closed loops are not written there
-and are not obtainable from `matching_den_eq` (the two-state model hides the AC side in `i_x`).
-They are formalized from the sources in separate modules: `theorem.GFM.Matching.ClosedLoop`
-(Arghir–Jouini–Dörfler, Automatica 2018: the converter with filter, DC P-control and load, global
-exponential stability of the steady state in the `θ`-free `dq` coordinates, and the absence of
-global attraction in the stationary frame) and `theorem.GFM.Matching.StiffGrid` (the TPEL
-appendix the quoted condition comes from: Lyapunov stability of the operating point, no global
-asymptotic stability, LaSalle set convergence not formalized). Formalized boundary for the
-two-state model here
-(connection): for every load law `i_x` that is `2π`-periodic in the angle (any AC network seen
-through `e^{jθ}`), the shifted points `(θ* + 2π, v*)` are equilibria too, so the selected point is
-never globally asymptotically or exponentially stable on `ℝ²`
-(`matching_not_mem_den_globallyAsymptoticallyStable`,
-`matching_not_mem_den_globallyExponentiallyStable`; generic lemma
-`Dynamics.not_globallyAsymptoticallyStable_of_equilibrium_ne`). The source's "global" result is
-stability of the set of equilibria modulo `2π` (a set-stability notion outside the sentence
-language).
+  (`Dynamics.holds_transport_iff`). The sentence-by-sentence equivalences
+  `matching_locallyExponentiallyStable_iff`, `matching_unstable_iff` are private implementation
+  evidence, together with the solution correspondence `matching_trajectory_iff` (a
+  trajectory-level statement outside the sentence language).
+* Global stability (Arghir–Dörfler 2020, quoted in T-dc-voltage-gfm §1.2 and T-gfm-control §1.6:
+  `(G_dc + K_p)/η² > L_s² μ² v*²/(4 R_s ‖Z_s‖²)` ⇒ global stability via a shifted Hamiltonian
+  and LaSalle). The work-sync notes quote only the condition; the closed loops are not written
+  there and are not obtainable from `matching_den_eq` (the two-state model hides the AC side in
+  `i_x`). They are formalized from the sources in separate modules:
+  `theorem.GFM.Matching.ClosedLoop` (Arghir–Jouini–Dörfler, Automatica 2018: the converter with
+  filter, DC P-control and load, global exponential stability of the steady state in the
+  `θ`-free `dq` coordinates, and the absence of global attraction in the stationary frame) and
+  `theorem.GFM.Matching.StiffGrid` (the TPEL appendix the quoted condition comes from: Lyapunov
+  stability of the operating point, no global asymptotic stability; LaSalle set convergence in
+  `theorem.GFM.Matching.LaSalle`). Formalized boundary for the two-state model here
+  (connection): for every load law `i_x` that is `2π`-periodic in the angle (any AC network seen
+  through `e^{jθ}`), the shifted points `(θ* + 2π, v*)` are equilibria too, so the selected point
+  is never globally asymptotically or exponentially stable on `ℝ²`
+  (`matching_not_mem_den_globallyAsymptoticallyStable`,
+  `matching_not_mem_den_globallyExponentiallyStable`; generic lemma
+  `Dynamics.not_globallyAsymptoticallyStable_of_equilibrium_ne`). The source's "global" result is
+  stability of the set of equilibria modulo `2π` (a set-stability notion outside the sentence
+  language).
 
 Correction (T-dc-voltage-gfm §2.2 ROCOF). Exactly, `ω' = η v' = η (i_dc − i_x − G v)/C`; a
 step `ΔP` of exported power from equilibrium gives the initial ROCOF `−η ΔP/(C v*)`
@@ -79,9 +82,6 @@ step `ΔP` of exported power from equilibrium gives the initial ROCOF `−η ΔP
 `∼10⁴ rad/s²`. The note's own formula `ΔP ω_s²/(C v*³)` evaluates to `400π²/27 ≈ 146`
 (`note_formula_value`) but is dimensionally inconsistent (one factor `η = ω_s/v*` too many).
 The ViSynC equivalence of §1.3 is not derived in the note and is not formalized.
-
-Source: work-sync `theory/T-dc-voltage-gfm.md` §1.0–§1.2, §1.4, §2.2;
-`theory/T-vsc-dc-voltage-control.md` §1.7; `theory/T-gfm-control.md` §1.6 (`matching_swing`).
 -/
 
 noncomputable section

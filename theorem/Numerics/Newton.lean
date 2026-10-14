@@ -1,39 +1,41 @@
 import theorem.Numerics.LocalError
 
-/-! Local quadratic convergence of Newton's method (corrected statement) and a refutation of
-the bound boxed in the source note.
+/-! # Local quadratic convergence of Newton's method
 
-Model boundary: `F : E → E` on a real Banach space, an explicit derivative field
-`J : E → (E →L[ℝ] E)` with `HasFDerivAt F (J z) z` on a ball around a root `x*`, `J`
-`L`-Lipschitz on that ball and `J x*` invertible.  The Newton step is
-`N(x) = x - J(x)⁻¹ F(x)` (`Ring.inverse` in the operator algebra; the linear system is solved
-exactly — no inexact solve, no damping).
+Local quadratic convergence of Newton's method (corrected statement), and a refutation of the
+bound boxed in the source note.
 
-Results (foundation):
-* `norm_sub_sub_apply_le`: `‖F y - F x - J x (y - x)‖ ≤ (L/2)‖y - x‖²` on a convex set.
-* `isUnit_of_norm_inverse_mul_le`: `‖A⁻¹‖ ‖B - A‖ ≤ 1/2` ⇒ `B` invertible and
-  `‖B⁻¹‖ ≤ 2 ‖A⁻¹‖` (Neumann series).
-* `newtonStep_sub_le`: `‖N(x) - x*‖ ≤ (L/2) ‖J(x)⁻¹‖ ‖x - x*‖²` (the `½` belongs to the
-  `‖J(x_k)⁻¹‖` version).
-* `newton_local_quadratic`: there is `r > 0` such that on `ball x* r` the Jacobian is
-  invertible, `N` maps the ball into itself and `‖N(x) - x*‖ ≤ L ‖J(x*)⁻¹‖ ‖x - x*‖²`
-  (no `½` in the `‖J(x*)⁻¹‖` version).
-* `newton_iterates_converge`: from any start in that ball the iterates stay in the ball,
-  converge to `x*`, and satisfy the quadratic error recursion.
-* `newton_boxed_bound_false`: for `F(x) = x + x²/2` (`J` 1-Lipschitz, `J(0) = 1`) and every
-  `ε ∈ (0, 1)`, `N(-ε) = ε²/(2(1-ε)) > (L ‖J(0)⁻¹‖/2) ε²`; hence the boxed bound fails on
-  every neighbourhood of the root.
+Model boundary.
+* `F : E → E` on a real Banach space, an explicit derivative field `J : E → (E →L[ℝ] E)` with
+  `HasFDerivAt F (J z) z` on a ball around a root `x*`, `J` `L`-Lipschitz on that ball and `J x*`
+  invertible. The Newton step is `N(x) = x - J(x)⁻¹ F(x)` (`Ring.inverse` in the operator
+  algebra; the linear system is solved exactly — no inexact solve, no damping).
 
 Source: work-sync theory/T-newton-method.md §1.1–§1.2.
 
-Corrections:
+Results.
+* `norm_sub_sub_apply_le` — `‖F y - F x - J x (y - x)‖ ≤ (L/2)‖y - x‖²` on a convex set.
+* `isUnit_of_norm_inverse_mul_le` — `‖A⁻¹‖ ‖B - A‖ ≤ 1/2` ⇒ `B` invertible and
+  `‖B⁻¹‖ ≤ 2 ‖A⁻¹‖` (Neumann series).
+* `newtonStep_sub_le` — `‖N(x) - x*‖ ≤ (L/2) ‖J(x)⁻¹‖ ‖x - x*‖²` (the `½` belongs to the
+  `‖J(x_k)⁻¹‖` version).
+* `newton_local_quadratic` — there is `r > 0` such that on `ball x* r` the Jacobian is
+  invertible, `N` maps the ball into itself and `‖N(x) - x*‖ ≤ L ‖J(x*)⁻¹‖ ‖x - x*‖²`
+  (no `½` in the `‖J(x*)⁻¹‖` version).
+* `newton_iterates_converge` — from any start in that ball the iterates stay in the ball,
+  converge to `x*`, and satisfy the quadratic error recursion.
+* `newton_boxed_bound_false` — for `F(x) = x + x²/2` (`J` 1-Lipschitz, `J(0) = 1`) and every
+  `ε ∈ (0, 1)`, `N(-ε) = ε²/(2(1-ε)) > (L ‖J(0)⁻¹‖/2) ε²`; hence the boxed bound fails on
+  every neighbourhood of the root.
+
+Corrections.
 * The boxed estimate `‖e_{k+1}‖ ≤ (L ‖J(x*)⁻¹‖ / 2) ‖e_k‖²` is false
   (`newton_boxed_bound_false`); correct versions are `newtonStep_sub_le` (`‖J(x_k)⁻¹‖`, with
-  `½`) and `newton_local_quadratic` (`‖J(x*)⁻¹‖`, without `½`).  The note's proof sketch
+  `½`) and `newton_local_quadratic` (`‖J(x*)⁻¹‖`, without `½`). The note's proof sketch
   silently replaces `‖J(x_k)⁻¹‖` by `‖J(x*)⁻¹‖`.
-* The note calls this result a "Newton–Kantorovich theorem (simplified)".  It is the
-  standard local convergence theorem: it assumes a root and an invertible `J(x*)`, whereas
-  Kantorovich's theorem proves existence of a root from conditions at `x₀` alone.
+* The note calls this result a "Newton–Kantorovich theorem (simplified)". It is the standard
+  local convergence theorem: it assumes a root and an invertible `J(x*)`, whereas Kantorovich's
+  theorem proves existence of a root from conditions at `x₀` alone.
 -/
 
 noncomputable section

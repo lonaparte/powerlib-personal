@@ -1,18 +1,25 @@
 import dependencies.Mathlib
 import theorem.Attributes
 
-/-! # Frequency-response aggregation identities (foundation)
+/-! # Frequency-response aggregation identities
+
+Static foundation: algebraic and differential identities between frequency-response signals (COI
+aggregation, droop aggregation, virtual inertia, kinetic energy, current-limited power), with the
+premises the source notes leave implicit.  They do not by themselves claim stability of any
+system.
+
+Model boundary.
+* Conventions: Kundur per-unit (`Δω` per-unit, `M = 2H` [s]); generator-side balance
+  `M Δω̇ = ΔP_m − ΔP_e − D Δω` (power delivered to the network positive, as in the source
+  notes).
+* Identities between signals; no network, controller or limiter dynamics beyond the stated
+  equations.
 
 Source: work-sync `theory/T-frequency-stability.md` §1.1–§1.4 (single-machine swing, COI
 aggregation, droop aggregation, virtual inertia), `theory/T-synthetic-inertia-ffr.md` §1.2–§1.3
 (kinetic energy, VSM merged into `M_eff`, current-limit power bound).
 
-These are foundation results: algebraic and differential identities between signals. They do
-not by themselves claim stability of any system. Conventions: Kundur per-unit (`Δω` per-unit,
-`M = 2H` [s]); generator-side balance `M Δω̇ = ΔP_m − ΔP_e − D Δω` (power delivered to the
-network positive, as in the source notes).
-
-Results and the premises the note leaves implicit.
+Results (and the premises the note leaves implicit).
 * `coi_swing_of_proportional_damping` (§1.2): summing the machine swing equations gives the
   boxed COI swing `M_sys Δω̇_COI = ΔP_m − ΔP_L − D_sys Δω_COI` **only** under two extra premises
   that the note uses silently: network power conservation `Σ ΔP_e,k = ΔP_L + ΔP_loss` (the
@@ -21,16 +28,19 @@ Results and the premises the note leaves implicit.
   `coi_damping_counterexample` shows the damping step fails without such a premise.
 * `droop_aggregate` (§1.3): with one common `T_g`, the aggregate `ΔP_m = Σ ΔP_m,k` obeys
   `T_g ΔṖ_m = −ΔP_m − (Σ K_R,k) Δω`.
-* `virtualInertia_merge`, `virtualInertia_rate` (§1.4, `T-synthetic-inertia-ffr.md` §1.3): linear
-  inertia/damping injections `−K_d Δω̇ − K_R^inv Δω` merge into `M_eff`, `D_eff`; solving for
-  `Δω̇` needs `M_eff ≠ 0`.
+* `virtualInertia_merge`, `virtualInertia_rate` (§1.4, `T-synthetic-inertia-ffr.md` §1.3):
+  linear inertia/damping injections `−K_d Δω̇ − K_R^inv Δω` merge into `M_eff`, `D_eff`; solving
+  for `Δω̇` needs `M_eff ≠ 0`.
 * `kineticEnergy_expansion` (`T-synthetic-inertia-ffr.md` §1.2): exact
   `½ J (ω_s + Δω)² = ½ J ω_s² + J ω_s Δω + ½ J Δω²`; the note's "≈" drops the remainder
-  `½ J Δω²`.
-* `activePower_abs_le` / `deltaPower_counterexample` (`T-synthetic-inertia-ffr.md` §1.3):
-  from `S̄ = 3 V̄ Ī*` (`|V_LL| = √3 |V̄|`), a current limit `|Ī| ≤ i_max` bounds the **total**
-  active power, `|P| ≤ |S̄| ≤ √3 V_LL i_max`. Correction: the note writes the bound for `ΔP`;
-  `deltaPower_counterexample` shows a power *change* can reach `2 √3 V_LL i_max`.
+  `½ J Δω²` (`kineticEnergy_remainder_nonneg`).
+* `activePower_abs_le` (`T-synthetic-inertia-ffr.md` §1.3): from `S̄ = 3 V̄ Ī*`
+  (`|V_LL| = √3 |V̄|`), a current limit `|Ī| ≤ i_max` bounds the **total** active power,
+  `|P| ≤ |S̄| ≤ √3 V_LL i_max`.
+
+Correction (`T-synthetic-inertia-ffr.md` §1.3).
+* The note writes the current-limit bound for `ΔP`; `deltaPower_counterexample` shows a power
+  *change* can reach `2 √3 V_LL i_max`.
 -/
 
 noncomputable section

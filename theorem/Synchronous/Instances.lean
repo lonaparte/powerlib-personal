@@ -1,14 +1,16 @@
 import theorem.Synchronous.Swing
 import Mathlib.Analysis.Real.Pi.Bounds
 
-/-! # Instances of the canonical swing model: VSG on an infinite bus, classical SMIB,
-post-fault SMIB with line resistance
+/-! # Instances of the canonical swing model: VSG, classical SMIB, post-fault SMIB with resistance
 
-All three are instances of `SwingParams` (`theorem/Synchronous/Swing.lean`); the state is
-`(δ, ω)` with `ω` the angular-frequency deviation in rad/s, continuous time, constant
-mechanical / reference power, no PLL, delay, PWM, current limiting, excitation or governor
-dynamics, ideal infinite bus.
+Three engineering models read as instances of `SwingParams` (`theorem/Synchronous/Swing.lean`):
+a VSG on an infinite bus, the classical synchronous machine on an infinite bus, and a post-fault
+SMIB with line resistance.
 
+Model boundary.
+* Common to all three: state `(δ, ω)` with `ω` the angular-frequency deviation in rad/s,
+  continuous time, constant mechanical / reference power, no PLL, delay, PWM, current limiting,
+  excitation or governor dynamics, ideal infinite bus.
 * `VSGInfiniteBus`: VSG / VSM with virtual inertia constant `H` (s), per-unit damping `D_p`,
   reference power `P_ref`, internal EMF `E`, grid voltage `V_g`, grid reactance `X_g`, nominal
   frequency `ω_s`, on a lossless line.  Export-positive power (GFM family exception,
@@ -21,12 +23,19 @@ dynamics, ideal infinite bus.
   power-angle curve `P_e = G_e E'² + (E' V_g / |Z_e|) sin(δ − α)` is derived from the complex
   power `S̄ = Ē' Ī*` (generator OUT-positive, T-transient-stability §1.2).
 
-Corrections.
-* T-vsg-control §1.10 writes `Δθ̇ = Δω`, `2H Δω̇ = −K_E Δθ − D_p Δω` with `Δω` in per unit and
-  `Δθ` in rad, which drops the factor `ω_s`.  The correct characteristic polynomial is
-  `2H s² + D_p s + ω_s K_E`, so `ω_n² = ω_s K_E / (2H)` and `ζ = D_p / (2 √(2H ω_s K_E))`;
-  with the note's data (`H = 2 s`, `K_E = 8`, `ω_s = 2π·50`) `ω_n ≈ 25.07 rad/s`, not
-  `1.41 rad/s` (`vsg_naturalFrequency_numeric`).
+Source: work-sync `theory/T-vsg-control.md` §1.1, §1.2, §1.10; `theory/T-sync-machine.md` §1.9;
+`theory/T-transient-stability.md` §1.2, §1.4;
+`projects/vsc-stochastic-stability/notes/concepts/damping-class-dichotomy.md` §1, §3.
+
+Results (static evidence on the models; foundation).
+* `VSGInfiniteBus.exists_equilibrium_iff` — equilibria exist iff `|P_ref| ≤ E V_g / X_g`.
+* `VSGInfiniteBus.characteristic_polynomial`, `naturalFrequency_sq`, `dampingRatio_sq` — the
+  corrected characteristic polynomial `2H s² + D_p s + ω_s K_E`, natural frequency and damping
+  ratio; `naturalFrequency_numeric` — the note's data give `ω_n ≈ 25.07 rad/s`.
+* `ClassicalSMIB.eigenvalues_real_iff` — exact overdamping threshold at the stable equilibrium.
+* `electricalPower_eq` — the electrical power from the complex power `S̄ = Ē' Ī*`,
+  `Ī = (Ē' − V̄_g)/Z_e`; `PostFaultSMIB.Pe_eq_complexPower` — the post-fault power-angle curve is
+  its real part.
 
 Family and connection conclusions.
 * No new family: each instance is read through the swing family `Synchronous.Swing.family`
@@ -36,17 +45,16 @@ Family and connection conclusions.
   or a caller-supplied equilibrium angle).
 * Connection conclusions: `VSGInfiniteBus.locallyExponentiallyStable`, `unstable`,
   `lyapunovStable` (members of the nonlinear denotations), `VSGInfiniteBus.linearModel_mem_den_iff`
-  (formerly `linearModel_exponentiallyStable_iff`: a member of the linearized global exponential
-  denotation iff `D_p > 0 ∧ K_E > 0`), `ClassicalSMIB.locallyExponentiallyStable`, `unstable`,
+  (a member of the linearized global exponential denotation iff `D_p > 0 ∧ K_E > 0`),
+  `ClassicalSMIB.locallyExponentiallyStable`, `unstable`,
   `PostFaultSMIB.deltaS_stable_deltaU_unstable`, `deltaS_lyapunovStable`.
-* Static evidence on the model: `VSGInfiniteBus.exists_equilibrium_iff`,
-  `ClassicalSMIB.eigenvalues_real_iff` (exact overdamping threshold); the corrected
-  characteristic polynomial, natural frequency and damping ratio, and the complex-power
-  derivation are foundation.
 
-Source: work-sync theory/T-vsg-control.md §1.1, §1.2, §1.10; theory/T-sync-machine.md §1.9;
-theory/T-transient-stability.md §1.2, §1.4;
-projects/vsc-stochastic-stability/notes/concepts/damping-class-dichotomy.md §1, §3.
+Corrections.
+* T-vsg-control §1.10 writes `Δθ̇ = Δω`, `2H Δω̇ = −K_E Δθ − D_p Δω` with `Δω` in per unit and
+  `Δθ` in rad, which drops the factor `ω_s`.  The correct characteristic polynomial is
+  `2H s² + D_p s + ω_s K_E`, so `ω_n² = ω_s K_E / (2H)` and `ζ = D_p / (2 √(2H ω_s K_E))`;
+  with the note's data (`H = 2 s`, `K_E = 8`, `ω_s = 2π·50`) `ω_n ≈ 25.07 rad/s`, not
+  `1.41 rad/s` (`VSGInfiniteBus.naturalFrequency_numeric`).
 -/
 
 noncomputable section
@@ -164,8 +172,7 @@ stable (energy function). -/
   field_simp
 
 /-- Linearized VSG about the angle `δ₀`: globally exponentially stable iff `D_p > 0` and
-`K_E > 0` (all coefficients of `2H s² + D_p s + ω_s K_E` positive); formerly
-`linearModel_exponentiallyStable_iff`. -/
+`K_E > 0` (all coefficients of `2H s² + D_p s + ω_s K_E` positive). -/
 @[powerlib_domain] theorem linearModel_mem_den_iff (h : v.Pos) (δ₀ : ℝ) :
     connection% (Swing.Model.mk v.toSwing δ₀ ∈
         Swing.Linearized.family.den (.flow .globallyExponentiallyStable) ↔

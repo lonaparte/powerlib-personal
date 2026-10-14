@@ -1,10 +1,17 @@
 import theorem.Transform.Park
 import theorem.Transform.PerUnit
 
-/-! Per-unit dq quantities and the two Park amplitude conventions (foundation).
+/-! # Per-unit dq quantities and the two Park amplitude conventions
+
+Exact identities (foundation) between dq quantities, three-phase power and per-unit dq bases.
+
+Scope.
+Three-phase signals with zero-sequence-free current, the amplitude- and power-invariant Park
+transforms, and explicitly given dq voltage, current and power bases; no physical model.
 
 Source: work-sync `theory/T-PU.md` §1.7 and §2.4; `conventions.md` §8 (dq base default).
 
+Results.
 * `parkABC θ = park θ · clarke` is the amplitude-invariant three-phase Park `T^A`
   (`theorem/Transform/Park.lean`); `parkABCPI θ = √(3/2) T^A` is the power-invariant `T^P`
   (zero-sequence row omitted). `T^P` has orthonormal rows; `T^A T^Aᵀ = (2/3) I`.

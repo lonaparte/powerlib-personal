@@ -4,45 +4,55 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-! # Transcritical and pitchfork normal forms
 
-Foundation layer: truncated one-dimensional normal forms, not engineering models.
+Equilibria, exchange of stability, the degenerate cubic point, the `ℤ₂` symmetry, the basin of
+the supercritical branch and the pitchfork barrier of the truncated one-dimensional normal forms.
 
-Model boundary. One state `x` (coordinate `x 0` of `State 1`), constant parameter `μ ∈ ℝ`,
-continuous time, no input, noise, delay or saturation. The vector fields are exactly
-* transcritical `ẋ = μ x − x²`,
-* supercritical pitchfork `ẋ = μ x − x³`,
-* subcritical pitchfork `ẋ = μ x + x³`,
-with no higher-order remainder. Conclusions are equilibrium sets and trajectory-level
-stability of those equilibria for the lifted `State 1` systems.
-
-Results.
-* Transcritical: equilibria `0, μ`; exchange of stability (`f_x(0) = μ`, `f_x(μ) = −μ`).
-* Supercritical pitchfork: equilibria `0` and `±√μ` (`μ > 0`); `f_x(0) = μ`,
-  `f_x(±√μ) = −2μ`; `0` is locally exponentially stable for `μ < 0` and unstable for
-  `μ > 0`, where `±√μ` are locally exponentially stable.
-* At `μ = 0`: the origin of `ẋ = −x³` is globally asymptotically stable (`V = x²`,
-  `V̇ = −2x⁴`) but **not** locally exponentially stable (the solution
-  `x₀ / √(1 + 2 x₀² t)` decays only algebraically).
-* Subcritical pitchfork: equilibria `0` and `±√(−μ)` (`μ < 0`), the side branches are unstable
-  (`f_x = −2μ > 0`); the origin is locally exponentially stable for `μ < 0` and unstable for
-  `μ > 0`.
-* `ℤ₂` symmetry: an odd field `f(−x) = −f(x)` has `f(0) = 0` and all even-order derivatives
-  vanish at `0`; both pitchfork fields are odd.
-* Basin of the supercritical branch: for `μ > 0` every forward-complete solution with
-  `x(t₀) > 0` converges to `√μ` (explicit Bernoulli solution of `w = 1/x²`).
-* Potential barrier of the supercritical pitchfork, `V(x) = −μx²/2 + x⁴/4`:
-  `V(0) − V(±√μ) = μ²/4`.
-
-Correction (T-fold-critical-scaling §2.3 contrasts the fold barrier exponent `3/2` with
-"`1` (pitchfork)"): for the pitchfork normal form the barrier is `μ²/4`, so the exponent is `2`,
-not `1` (`barrier`).
+Model boundary.
+* One state `x` (coordinate `x 0` of `State 1`), constant parameter `μ ∈ ℝ`, continuous time, no
+  input, noise, delay or saturation. The vector fields are exactly
+  transcritical `ẋ = μ x − x²` (`transField`), supercritical pitchfork `ẋ = μ x − x³`
+  (`superField`), subcritical pitchfork `ẋ = μ x + x³` (`subField`),
+  with no higher-order remainder. Conclusions are equilibrium sets and trajectory-level
+  stability of those equilibria for the lifted `State 1` systems.
+* Truncated normal forms, no model family; all results remain public foundation support. Global
+  asymptotic stability is `powerlib.Flow.GloballyAsymptoticallyStable` (equilibrium, forward
+  completeness and LeanForControl's `GlobalAsymptoticStable`).
 
 Source: work-sync theory/T-pitchfork-bifurcation.md §1.1–1.3, theory/T-bifurcation.md §1.4,
 theory/T-attractors-basins.md (codes example (a): 1D pitchfork bistable, basin boundary 0),
 theory/T-fold-critical-scaling.md §2.3.
 
-Architecture: truncated normal forms, no model family; all results remain public foundation
-support. Global asymptotic stability is `powerlib.Flow.GloballyAsymptoticallyStable`
-(equilibrium, forward completeness and LeanForControl's `GlobalAsymptoticStable`).
+Results.
+* Transcritical: equilibria `0, μ` (`transField_eq_zero_iff`); exchange of stability
+  (`f_x(0) = μ`, `f_x(μ) = −μ`; `trans_stability_neg`, `trans_stability_pos`).
+* Supercritical pitchfork: equilibria `0` and `±√μ` (`μ > 0`, `superField_eq_zero_iff`);
+  `f_x(0) = μ`, `f_x(±√μ) = −2μ` (`super_slopes`); `0` is locally exponentially stable for
+  `μ < 0` and unstable for `μ > 0` (`super_origin_stable`, `super_origin_unstable`), where `±√μ`
+  are locally exponentially stable (`super_branch_stable`).
+* At `μ = 0`: the origin of `ẋ = −x³` is globally asymptotically stable (`V = x²`,
+  `V̇ = −2x⁴`; `super_zero_globallyAsymptoticallyStable`) but **not** locally exponentially stable
+  (the solution `x₀ / √(1 + 2 x₀² t)` decays only algebraically;
+  `super_zero_not_locallyExponentiallyStable`).
+* Subcritical pitchfork: equilibria `0` and `±√(−μ)` (`μ < 0`, `subField_eq_zero_iff`), the side
+  branches are unstable (`f_x = −2μ > 0`, `sub_branch_unstable`); the origin is locally
+  exponentially stable for `μ < 0` and unstable for `μ > 0` (`sub_origin_stable`,
+  `sub_origin_unstable`).
+* `ℤ₂` symmetry: an odd field `f(−x) = −f(x)` has `f(0) = 0` and all even-order derivatives
+  vanish at `0` (`odd_apply_zero`, `odd_iteratedDeriv_even_zero`); both pitchfork fields are odd
+  (`superField_odd`, `subField_odd`).
+* Basin of the supercritical branch: for `μ > 0` every forward-complete solution with
+  `x(t₀) > 0` converges to `√μ` (explicit Bernoulli solution of `w = 1/x²`; `super_bernoulli`,
+  `super_tendsto_sqrt`).
+* Potential barrier of the supercritical pitchfork, `V(x) = −μx²/2 + x⁴/4`:
+  `V(0) − V(±√μ) = μ²/4` (`barrier`).
+
+Potential shapes: `−μx²/2 + x⁴/4` is the double well of `theorem/Potential/Wells.lean` with
+`a = μ`, `b = 1` (barrier `a²/4b = μ²/4`); the fold potential `−μx + x³/3` and its barrier
+`(4/3) μ^{3/2}` are in `theorem/NormalForm/Fold.lean`.
+
+Corrections. (T-fold-critical-scaling §2.3 contrasts the fold barrier exponent `3/2` with
+"`1` (pitchfork)"): for the pitchfork normal form the barrier is `μ²/4`, so the exponent is `2`,
+not `1` (`barrier`).
 -/
 
 noncomputable section

@@ -1,14 +1,20 @@
 import theorem.PLL.PIPLL
 
-/-! # Linearization structure of the PI-PLL with general phase detector (foundation)
+/-! # Linearization structure of the PI-PLL with general phase detector
 
 Matrix-level facts about the Jacobian `J = [[K_p g, K_i], [g, 0]]` (`g = h'(θ*)`) of
 `piPLLField h K_p K_i δω` (`theorem/PLL/PIPLL.lean`), and their transfer to the Jacobian of the
-field itself through `fderiv`. These are linearization facts (static foundation); the model boundary is
-the one of `theorem/PLL/PIPLL.lean`. The module states no behaviour: the family and its connection
-conclusions are in `theorem/PLL/PIPLLFamily.lean`. Every result here is static evidence on the
-model, not a connection conclusion.
+field itself through `fderiv`. These are linearization facts (static foundation).
 
+Model boundary.
+The one of `theorem/PLL/PIPLL.lean` (state `(θ, η)`, general phase detector `h`, PI gains,
+constant `δω`, continuous time; no current loop, filter, line, delay or PWM dynamics).
+
+Source: work-sync `theory/T-gfl-dynamics.md` §1.10 (node/focus table), §1.12 (`Σ_DOC`), §1.13
+("no Hopf in form B"); `theory/T-bogdanov-takens-bifurcation.md` §1.5–§1.6;
+`projects/vsc-stochastic-stability/notes/concepts/equilibria-and-bifurcation.md` §3.
+
+Results.
 * Node / focus: for `g < 0`, `K_p ≠ 0`, all eigenvalues are real iff `|g| ≥ 4 K_i / K_p²`
   (discriminant `tr² − 4 det = K_p² g² + 4 K_i g`); otherwise there is a non-real eigenvalue.
 * No nonzero purely imaginary eigenvalue (`K_p ≠ 0`), at every equilibrium and in fact at every
@@ -17,9 +23,11 @@ model, not a connection conclusion.
   never meets the Hopf curve, because `tr J = K_p g` and `det J = −K_i g` are both proportional
   to `g`.
 
-Source: work-sync `theory/T-gfl-dynamics.md` §1.10 (node/focus table), §1.12 (`Σ_DOC`), §1.13
-("no Hopf in form B"); `theory/T-bogdanov-takens-bifurcation.md` §1.5–§1.6;
-`projects/vsc-stochastic-stability/notes/concepts/equilibria-and-bifurcation.md` §3.
+Family and connection conclusions.
+The module states no behaviour: the family and its connection conclusions are in
+`theorem/PLL/PIPLLFamily.lean`. Every result here is static evidence on the model, not a
+connection conclusion.
+
 Correction (precondition): the "no Hopf / no purely imaginary eigenvalue" claim needs
 `K_p ≠ 0`; the notes leave it implicit (`K_p > 0` throughout). The absence of Hopf is shown here
 only at the level of the linearization (no eigenvalue crossing at `± jω`, `ω ≠ 0`); nothing is

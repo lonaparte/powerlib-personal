@@ -3,10 +3,12 @@ import theorem.PH.Nonlinear
 
 /-! # Small port-Hamiltonian instances: DC-link capacitor, dq LC filter
 
-Two independent models; each one uses a single power-direction convention
-(incoming-positive: `uᵀ y > 0` means power flows **into** the model).
+Two independent lossless circuit models as diagonal port-Hamiltonian data, read through the
+linear port-Hamiltonian family; each uses the incoming-positive power convention (`uᵀ y > 0`
+means power flows **into** the model).
 
-## DC-link capacitor (`dcLink`)
+Model boundary.
+DC-link capacitor (`dcLink`, T-low-inertia-frequency §1.4):
 * State `x = (q)`, `q = C_dc V_dc` the capacitor charge; `C_dc > 0`. `H = q² / (2 C_dc)
   = ½ C_dc V_dc²`.
 * Inputs `u = (i_in, i_out)`: current into the positive rail from the source side and current
@@ -15,40 +17,48 @@ Two independent models; each one uses a single power-direction convention
   Output `y = (V_dc, −V_dc)`, so `uᵀ y = V_dc (i_in − i_out)`.
 * Lumped, continuous time; the converter switching, its controller and the AC side are not
   modelled (they only enter through the two current inputs).
-Source: work-sync `theory/T-low-inertia-frequency.md` §1.4.
-
-## dq LC filter (`dqLC`)
+dq LC filter (`dqLC`, T-invariant-coordinates §1.4):
 * Rotating dq frame at a **constant** angular frequency `ω` (any real number); `L_f, C_f > 0`;
   lossless (`R_f = 0`). Topology of the note: `C_f` from the PCC node to ground, `L_f` from
   the PCC to the converter terminal; the PCC voltage is the capacitor state.
-* Energy variables: state order `x = (φ_d, φ_q, q_d, q_q) = (L_f I_d, L_f I_q, C_f V_d, C_f V_q)`.
+* Energy variables: state order
+  `x = (φ_d, φ_q, q_d, q_q) = (L_f I_d, L_f I_q, C_f V_d, C_f V_q)`.
   `H = ½ L_f |I|² + ½ C_f |V|²`.
 * Inputs `u = (V_d^conv, V_q^conv, I_d^src, I_q^src)`. Dynamics (note §1.4):
   `L_f İ_d = V_d − V_d^conv + ω L_f I_q`, `L_f İ_q = V_q − V_q^conv − ω L_f I_d`,
   `C_f V̇_d = I_d^src − I_d + ω C_f V_q`, `C_f V̇_q = I_q^src − I_q − ω C_f V_d`.
 * pH data: constant skew `J` containing the frame-rotation entries `± ω L_f`, `± ω C_f` and the
   inductor/capacitor coupling `± 1`; no damping; `B = diag(−1, −1, 1, 1)`.
-  Result: `Ḣ = P_src − P_conv` with `P_src = V·I^src`, `P_conv = V^conv·I`.
 * No PLL, no converter control, no switching, no grid impedance.
-Source: work-sync `theory/T-invariant-coordinates.md` §1.4 and "跟端口哈密顿建模的关系".
 
-## Disturbance channels
-The deterministic disturbance-channel energy balance on a nonlinear pH model
-(`PH.gridDisturbance_field`, `PH.gridDisturbance_power_balance`) is in
-`theorem/PH/Nonlinear.lean`.
+Source: work-sync `theory/T-low-inertia-frequency.md` §1.4 (DC link);
+`theory/T-invariant-coordinates.md` §1.4 and "跟端口哈密顿建模的关系" (dq LC filter).
 
-## Family and connection conclusions
-No new family. The DC link and the dq LC filter are diagonal port-Hamiltonian data
-(`DiagonalPH`, `theorem/PH/Composition.lean`), numbered in the state and port order above into
-linear port-Hamiltonian plants `dcLinkPH C hC : Port.PortHamiltonian 1 2` and
-`dqLCPH p : Port.PortHamiltonian 4 4`, members of the existing family `Port.PortHamiltonian.family`
-(system map: the plant's port system; sentences at the origin, the unforced state). Connection
-conclusions: passivity of both (`dcLinkPH_mem_den_passive`, `dqLCPH_mem_den_passive`), Lyapunov
-stability of the unforced filter (`dqLCPH_mem_den_lyapunovStable`), and conservation of the
-stored energy by both lossless models (`dcLinkPH_mem_den_conservative`,
-`dqLCPH_mem_den_conservative`). The rate equations, energies, supplies and power balances are
-static evidence; the trajectory-level energy balance of the DC link and the energy derivative of
-the filter along solutions are private implementation evidence.
+Results (static evidence on the models).
+* `dcLink_field`, `dcLink_supply`, `dcLink_energy_sub` — the pH field is
+  `C_dc V̇_dc = i_in − i_out`, the port power is `V_dc (i_in − i_out)`, and
+  `ΔE_dc = ½ C_dc (V_dc² − V_dc,0²)`.
+* `dqLC_field_eq_kirchhoff` — the pH field reproduces the dq LC rate equations exactly;
+  `dqLC_power_balance` — `Ḣ = P_src − P_conv` with `P_src = V·I^src`, `P_conv = V^conv·I`.
+* The deterministic disturbance-channel energy balance on a nonlinear pH model
+  (`PH.gridDisturbance_field`, `PH.gridDisturbance_power_balance`) is in
+  `theorem/PH/Nonlinear.lean`.
+
+Family and connection conclusions.
+* No new family. The DC link and the dq LC filter are diagonal port-Hamiltonian data
+  (`DiagonalPH`, `theorem/PH/Composition.lean`), numbered in the state and port order above into
+  linear port-Hamiltonian plants `dcLinkPH C hC : Port.PortHamiltonian 1 2` and
+  `dqLCPH p : Port.PortHamiltonian 4 4`, members of the existing family
+  `Port.PortHamiltonian.family` (system map: the plant's port system; sentences at the origin,
+  the unforced state).
+* Connection conclusions: passivity of both (`dcLinkPH_mem_den_passive`,
+  `dqLCPH_mem_den_passive`), Lyapunov stability of the unforced filter
+  (`dqLCPH_mem_den_lyapunovStable`), and conservation of the stored energy by both lossless
+  models (`dcLinkPH_mem_den_conservative`, `dqLCPH_mem_den_conservative`).
+* The rate equations, energies, supplies and power balances are static evidence; the
+  trajectory-level energy balance of the DC link (`dcLink_energy_balance`) and the energy
+  derivative of the filter along solutions (`dqLC_trajectory_energy_derivative`) are private
+  implementation evidence.
 -/
 
 noncomputable section
@@ -117,9 +127,8 @@ private theorem hasDerivWithinAt_storage_of_lossless {n p : ℕ} (h : Port.PortH
   rw [Function.comp_def, fderiv_storage_field, hR] at hd
   simpa using hd
 
-/-- Formerly the public `dcLink_energy_balance`: the DC link is lossless, so along every solution
-segment the energy change equals the integral of the port power `V_dc (i_in − i_out)` (equality,
-not only the passivity inequality).
+/-- The DC link is lossless, so along every solution segment the energy change equals the
+integral of the port power `V_dc (i_in − i_out)` (equality, not only the passivity inequality).
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem dcLink_energy_balance (C : ℝ) (hC : 0 < C)
     {u : ℝ → (Fin 2 → ℝ)} {x : ℝ → EuclideanSpace ℝ (Fin 1)} {t₀ t₁ : ℝ} (hle : t₀ ≤ t₁)
@@ -223,8 +232,7 @@ ports `(V_d^conv, V_q^conv, I_d^src, I_q^src)` numbered in order. -/
 def dqLCPH (p : DqLCParams) : Port.PortHamiltonian 4 4 :=
   (dqLC p).toPH (Equiv.refl _) (Equiv.refl _)
 
-/-- Formerly the public `dqLC_trajectory_energy_derivative`: along every solution segment,
-`d/dt H = P_src − P_conv`.
+/-- Along every solution segment, `d/dt H = P_src − P_conv`.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem dqLC_trajectory_energy_derivative (p : DqLCParams)
     {u : ℝ → (Fin 4 → ℝ)} {x : ℝ → EuclideanSpace ℝ (Fin 4)} {t₀ t₁ t : ℝ}

@@ -2,19 +2,27 @@ import theorem.NormalForm.Scalar
 
 /-! # The scalar Bernoulli (logistic) amplitude equation `ρ̇ = 2μρ + 2lρ²`
 
-Foundation layer: explicit solution of the squared-amplitude equation of the truncated Hopf
-normal form (and, with `ρ = x²`, of the pitchfork). This is a scalar ODE fact, not a model.
+Explicit solution of the squared-amplitude equation of the truncated Hopf normal form (and, with
+`ρ = x²`, of the pitchfork).
 
-For a solution `ρ > 0` on `[a, b]` and `μ ≠ 0`, the quantity `(1/ρ + l/μ) e^{2μ(t − a)}` is
-constant, i.e. `1/ρ(t) + l/μ = (1/ρ(a) + l/μ) e^{−2μ(t − a)}`. Consequences:
-* positivity is preserved (`ρ = 0` is an equilibrium);
-* if `R² := −μ/l > 0`, the level `ρ = R²` is invariant;
-* `μ > 0`, `l < 0`: every forward-complete positive solution converges to `R² = μ/|l|`;
-* `μ < 0`, `l > 0`: the distance `|1/ρ − 1/R²|` grows like `e^{2|μ|(t − a)}` (repelling level),
-  and solutions below the level converge to `0`.
+Scope.
+* The scalar ODE `ρ̇ = 2μρ + 2lρ²` (`field`) on solution segments; a scalar ODE fact, not a model,
+  and no model family.
 
 Source: work-sync theory/T-hopf-bifurcation.md §1.2–1.3 (amplitude equation `ṙ = μr + l₁r³`,
 written for `ρ = r²`); task note: "取 ρ = |z|² 得 logistic 方程，可显式求解".
+
+Results.
+* `reciprocal_formula`: for a solution `ρ > 0` on `[a, b]` and `μ ≠ 0`, the quantity
+  `(1/ρ + l/μ) e^{2μ(t − a)}` is constant, i.e.
+  `1/ρ(t) + l/μ = (1/ρ(a) + l/μ) e^{−2μ(t − a)}`.
+* Positivity is preserved (`ρ = 0` is an equilibrium; `pos`).
+* If `R² := −μ/l > 0`, the level `ρ = R²` is invariant (`level_invariant`).
+* `μ > 0`, `l < 0`: every forward-complete positive solution converges to `R² = μ/|l|`
+  (`tendsto_level`).
+* `μ < 0`, `l > 0`: the distance `|1/ρ − 1/R²|` grows like `e^{2|μ|(t − a)}` (repelling level,
+  `deviation_growth`), and solutions below the level converge to `0`
+  (`tendsto_zero_of_lt_level`).
 -/
 
 noncomputable section

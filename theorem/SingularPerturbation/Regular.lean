@@ -4,26 +4,29 @@ import Mathlib.Analysis.ODE.Basic
 
 /-! # Regular perturbation: `O(ε)` trajectory error on a finite horizon
 
-Foundation layer (category B).
+When the small parameter enters only the right-hand side, perturbed and unperturbed solutions
+stay `O(ε)` apart on a finite horizon, with an explicit Grönwall constant.
 
-System: a family of autonomous fields `F ε : E → E` on a real normed space `E`, with the
-small parameter only in the right-hand side (regular, not singular, perturbation):
-`ż = F ε z`. Assume the unperturbed field `F 0` is globally `K`-Lipschitz and
-`‖F ε z - F 0 z‖ ≤ C ε` uniformly in `z`. Then two solution segments on `[a, b]` with the same
-initial value satisfy (Grönwall, Mathlib `dist_le_of_approx_trajectories_ODE`)
-`‖z_ε(t) - z₀(t)‖ ≤ gronwallBound 0 K (C ε) (t - a) = (C ε / K)(e^{K (t - a)} - 1)`
-(`K ≠ 0`), and `‖z_ε(t) - z₀(t)‖ ≤ C ε (t - a)` when `K = 0`. On a fixed horizon `T` this is
-`O(ε)` with the explicit constant `(C/K)(e^{KT} - 1)`.
-
-Solution segments are Mathlib integral curves on `Icc a b`
-(`IsIntegralCurveOn φ (fun _ x => f x) (Icc a b)`, one-sided derivatives at the endpoints),
-the same notion as LeanForControl's `IsTrajectoryOn`, here on a general normed space `E`.
-
-Model boundary: deterministic, autonomous, global Lipschitz bound on `F 0`; the singular case
-`ε ẏ = g` is *not* covered (see `theorem.SingularPerturbation.Tikhonov`).
+Scope.
+* A family of autonomous fields `F ε : E → E` on a real normed space `E`, with the small
+  parameter only in the right-hand side (regular, not singular, perturbation): `ż = F ε z`. The
+  unperturbed field `F 0` is globally `K`-Lipschitz and `‖F ε z - F 0 z‖ ≤ C ε` uniformly in `z`.
+* Solution segments are Mathlib integral curves on `Icc a b`
+  (`IsIntegralCurveOn φ (fun _ x => f x) (Icc a b)`, one-sided derivatives at the endpoints),
+  the same notion as LeanForControl's `IsTrajectoryOn`, here on a general normed space `E`.
+* Deterministic, autonomous, global Lipschitz bound on `F 0`; the singular case `ε ẏ = g` is
+  *not* covered (see `theorem/SingularPerturbation/Tikhonov.lean`).
 
 Source: work-sync theory/T-singular-perturbation.md §1.6 (regular perturbation
 `ż = F(z, ε)`, solution continuous in `ε`, expansion `z₀ + ε z₁ + …`).
+
+Results.
+* `norm_sub_le_gronwallBound` — two solution segments on `[a, b]` with the same initial value
+  satisfy (Grönwall, Mathlib `dist_le_of_approx_trajectories_ODE`)
+  `‖z_ε(t) - z₀(t)‖ ≤ gronwallBound 0 K (C ε) (t - a)`, which is `C ε (t - a)` when `K = 0`.
+* `norm_sub_le_exp` — for `K ≠ 0`: `‖z_ε(t) - z₀(t)‖ ≤ (C ε / K)(e^{K (t - a)} - 1)`.
+* `norm_sub_le_const_mul` — on a fixed horizon `[a, a + T]` this is `O(ε)` with the explicit
+  constant `(C/K)(e^{KT} - 1)`.
 -/
 
 noncomputable section

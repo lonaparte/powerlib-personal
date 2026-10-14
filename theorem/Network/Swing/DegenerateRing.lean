@@ -3,39 +3,45 @@ import theorem.Network.Swing.CycleMinimum
 
 /-! # Networked swing equations: a degenerate strict minimum (five machines and more)
 
-Source: work-sync `theory/T-synchronization-manifold.md` §1.7, §2.2 (swing network and its energy);
-the model is `theorem/Network/Swing/Basic.lean` (`Swing.family`); the characterization of local
-asymptotic stability is `theorem/Network/Swing/Degenerate.lean`
-(`mem_den_locallyAsymptoticallyStable_iff`).
+A five-machine ring (extended by leaves to every larger network) whose potential has a degenerate
+strict minimum: locally asymptotically stable with a non-Hurwitz Jacobian, so the local
+asymptotic translation of `Swing.family` is not exact from five machines on.
 
-Model boundary. The model of `theorem/Network/Swing/Basic.lean`: `n + 1` machines, reduced state
-`(δ, ω)`, unit inertia and damping in the witnesses, constant power, symmetric nonnegative lossless
-couplings, constant voltages, continuous time; no governor, AVR, PLL, converter control, delay or
-PWM.
+Model boundary.
+* The model of `theorem/Network/Swing/Basic.lean`: `n + 1` machines, reduced state `(δ, ω)`, unit
+  inertia and damping in the witnesses, constant power, symmetric nonnegative lossless
+  couplings, constant voltages, continuous time; no governor, AVR, PLL, converter control, delay
+  or PWM.
+* The witness. Five machines on a ring `0 → 1 → 2 → 3 → 4 → 0` (`Ring5`): line weights
+  `W = (−12, 36, 54, 54, 54)` and line flows `f = (−4, −36, −108, −108, −27)` (line `e` joins
+  machines `e` and `e + 1`; `Wₑ = Bₑ cos(θₑ − θₑ₊₁)`, `fₑ = Bₑ sin(θₑ − θₑ₊₁)`,
+  `Bₑ = √(Wₑ² + fₑ²)`), power `Pₖ = fₖ − fₖ₋₁`, angles `θₖ = arg wₖ` of the Gaussian-integer
+  node phasors `w₀ = 1`, `wₖ₊₁ = wₖ conj(zₖ)`, `zₑ = Wₑ + i fₑ` (the product of the `zₑ` is real
+  positive, so the ring closes). For more machines, unit leaves are attached to machine `0`
+  (`addLeaf`, `degenerate_addLeaf`).
 
-The witness. Five machines on a ring `0 → 1 → 2 → 3 → 4 → 0` (`Ring5`): line weights
-`W = (−12, 36, 54, 54, 54)` and line flows `f = (−4, −36, −108, −108, −27)` (line `e` joins machines
-`e` and `e + 1`; `Wₑ = Bₑ cos(θₑ − θₑ₊₁)`, `fₑ = Bₑ sin(θₑ − θₑ₊₁)`, `Bₑ = √(Wₑ² + fₑ²)`), power
-`Pₖ = fₖ − fₖ₋₁`, angles `θₖ = arg wₖ` of the Gaussian-integer node phasors `w₀ = 1`,
-`wₖ₊₁ = wₖ conj(zₖ)`, `zₑ = Wₑ + i fₑ` (the product of the `zₑ` is real positive, so the ring closes).
-Since `∑ 1/Wₑ = 0` the Hessian of the potential in relative angles is singular (null direction
-`(9, 6, 4, 2)`, `kernel_ring`), so the reduced Jacobian is not Hurwitz; since moreover
-`∑ fₑ/Wₑ³ = 0` the cubic term vanishes along it, and the quartic term is positive: the potential
-has a degenerate strict minimum and an isolated critical point (`ring_strictMin`, from
-`CycleMinimum.cycle_strictMin` and the flow-shift inequality `ring_gamma`). For more
-machines, unit leaves are attached to machine `0` (`addLeaf`, `degenerate_addLeaf`).
+Source: work-sync `theory/T-synchronization-manifold.md` §1.7, §2.2 (swing network and its
+energy); the characterization of local asymptotic stability is
+`theorem/Network/Swing/Degenerate.lean` (`mem_den_locallyAsymptoticallyStable_iff`).
 
 Results.
+* Since `∑ 1/Wₑ = 0` the Hessian of the potential in relative angles is singular (null direction
+  `(9, 6, 4, 2)`, `kernel_ring`), so the reduced Jacobian is not Hurwitz; since moreover
+  `∑ fₑ/Wₑ³ = 0` the cubic term vanishes along it, and the quartic term is positive: the
+  potential has a degenerate strict minimum and an isolated critical point (`ring_strictMin`,
+  from `CycleMinimum.cycle_strictMin` and the flow-shift inequality `ring_gamma`).
 * `ring5_mem_den_locallyAsymptoticallyStable`: the five-machine ring is locally asymptotically
-  stable (connection statement), while `ring5_not_isHurwitz`: its reduced Jacobian is not Hurwitz.
+  stable (connection statement), while `ring5_not_isHurwitz`: its reduced Jacobian is not
+  Hurwitz.
 * `not_exact_locallyAsymptoticallyStable`: for every number of machines `n + 5 ≥ 5` the local
   asymptotic translation `{powerFlow, jacobianStable}` of `Swing.family` is not exact.
 * Static evidence: `norm_mul_cos_arg_sub` (line angles from node phasors), `Ring5.balance`,
   `Ring5.potential_ring`, `Ring5.crit_ring`, `Ring5.kernel_ring`, `Ring5.ring_gamma`,
   `Ring5.ring_strictMin`, `degenerate_addLeaf`, `exists_degenerate`, `not_isHurwitz_of_kernel`.
 
-Connection architecture. Public behavioural conclusions are `connection%` statements on
-`Swing.family`; everything else is static evidence on the models or generic foundation.
+Family and connection conclusions.
+* Public behavioural conclusions are `connection%` statements on `Swing.family`; everything else
+  is static evidence on the models or generic foundation.
 -/
 
 noncomputable section

@@ -2,18 +2,7 @@ import theorem.CurrentControl.PILoop
 
 /-! # PCC-voltage feedforward with a dedicated low-pass filter
 
-Foundation part (T-voltage-feedforward §1.3–§1.4, §2.2).
-* `lpf_transfer`: the first-order filter `τ dṽ/dt = v − ṽ` as a linear plant has transfer
-  `1/(1 + s τ)`.
-* `residual_transfer`: the net uncancelled disturbance `v − ṽ` that enters the IN-positive
-  closed loop has the high-pass transfer `s τ/(1 + s τ)`; the "LPF view" `ṽ − v` has
-  `−s τ/(1 + s τ)` (`residualLPF_transfer`, the opposite output sign).
-* `residual_norm`: on the imaginary axis the residual gain is `|ω| τ/√(1 + ω² τ²)` (`τ > 0`).
-* `idealFeedforward_field`: with an unfiltered, exact measurement (`v^ff = v`) the disturbance
-  cancels identically — the closed loop does not depend on `v` and equals the PI loop of
-  `PILoop.lean`.
-
-Domain part — model boundary.
+Model boundary.
 * Single-axis PI current loop as in `PILoop.lean` (series R–L branch, `L > 0`, IN-positive
   current `i`, PLL-aligned axis, ideal decoupling, no delay / PWM / limits, continuous time),
   plus the feedforward filter state.
@@ -23,31 +12,37 @@ Domain part — model boundary.
   filter `τ dṽ/dt = v − ṽ` with an exact measurement `v^meas = v` (noise excluded).
 * Inputs `(i*, v)`, outputs `(i, ṽ)`; held constant in the tracking statement.
 
+Source: work-sync `theory/T-voltage-feedforward.md` §1.3, §1.4, §2.2;
+`theory/T-gfl-control.md` §1.4.2, §1.4.4; `theory/T-gfl-reduced-order-dynamics.md` §1.2.7.
+
 Results.
+* `lpf_transfer`: the first-order filter `τ dṽ/dt = v − ṽ` as a linear plant has transfer
+  `1/(1 + s τ)`.
+* `residual_transfer`: the net uncancelled disturbance `v − ṽ` that enters the IN-positive
+  closed loop has the high-pass transfer `s τ/(1 + s τ)`; the "LPF view" `ṽ − v` has
+  `−s τ/(1 + s τ)` (`residualLPF_transfer`, the opposite output sign).
+* `residual_norm`: on the imaginary axis the residual gain is `|ω| τ/√(1 + ω² τ²)` (`τ > 0`).
+* `idealFeedforward_field`: with an unfiltered, exact measurement (`v^ff = v`) the disturbance
+  cancels identically — the closed loop does not depend on `v` and equals the PI loop of
+  `PILoop.lean`.
 * `lpf_det_characteristicMatrix`: the closed loop is block triangular; its characteristic
   polynomial is the PI-loop polynomial times `(s + 1/τ)`, so the spectrum is the PI spectrum
   together with `−1/τ` (`characteristic_root_iff`).
 * `lpf_isHurwitz_iff` (static): the state matrix is Hurwitz iff the PI loop's is and `τ > 0`.
 
-## Family and connection conclusions
-
+Family and connection conclusions.
 `lpfFamily : Family LPFLoop Spectral.Requirement 3 2` reads a PI loop with filter time constant
 `τ` as the port system of its plant (`Family.IsLinear`, `Spectral.linearFamily`); its
 requirements are the PI loop's monic coefficient conditions together with the sign of `τ`.
 * `lpfChain_le_semantics`, `lpfExact`: every translation is sound; the attractive sentences and
   sampled contraction are carved out exactly.
-* `lpfDen_eq` (formerly `lpf_exponentiallyStable_iff_pi`): adding the low-pass feedforward
-  does not change the stability of the PI loop — the attractive denotation of the feedforward
-  family is the pull-back of the PI family's along `LPFLoop.pi`, cut by `τ > 0`.
-* `lpf_mem_den_iff` (formerly `lpf_exponentiallyStable_iff`): with `L > 0`, stable iff
-  `R + Kp > 0 ∧ Ki > 0 ∧ τ > 0`.
+* `lpfDen_eq`: adding the low-pass feedforward does not change the stability of the PI loop —
+  the attractive denotation of the feedforward family is the pull-back of the PI family's along
+  `LPFLoop.pi`, cut by `τ > 0`.
+* `lpf_mem_den_iff`: with `L > 0`, stable iff `R + Kp > 0 ∧ Ki > 0 ∧ τ > 0`.
 * `lpf_tracks_reference` (`i → i*`, `ṽ → v` for constant `i*`, `v`) is a trajectory-level
   result outside the sentence language, kept as private implementation evidence.
-
 Transfer functions, residual gains and the ideal-feedforward identity are static evidence.
-
-Source: work-sync `theory/T-voltage-feedforward.md` §1.3, §1.4, §2.2;
-`theory/T-gfl-control.md` §1.4.2, §1.4.4; `theory/T-gfl-reduced-order-dynamics.md` §1.2.7.
 -/
 
 noncomputable section

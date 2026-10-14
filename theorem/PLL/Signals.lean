@@ -2,11 +2,15 @@ import theorem.Transform.Park
 import theorem.Criteria.Hurwitz2
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
-/-! # SRF-PLL phase detector and pre-filters: signal-level identities (foundation)
+/-! # SRF-PLL phase detector and pre-filters: signal-level identities
 
 All results here are coordinate / signal identities (foundation layer). They describe what
 the SRF-PLL phase detector and its pre-filters compute from a *given* voltage signal; they
 make no stability claim about any closed loop.
+
+Model boundary.
+Continuous time, ideal signals (no sampling, quantization, PWM, noise model, or measurement
+delay). The PLL frame angle `θ̂` is an arbitrary real number here.
 
 Conventions (shared by every `powerlib.PLL` module).
 * A planar vector `Fin 2 → ℝ` has component `0` = α (resp. d) and `1` = β (resp. q).
@@ -18,7 +22,9 @@ Conventions (shared by every `powerlib.PLL` module).
   Phase error `θ̃ = θ̂ − θ_g` (swing sign, `conventions.md` §D5).
 * Negative-sequence component of amplitude `A` and angle `α`: `A (cos α, −sin α)` in αβ.
 
-Contents.
+Source: work-sync `theory/T-pll-dynamics.md` §1.2, §1.6, §1.7, §1.8, §1.9.
+
+Results.
 * Clarke of the balanced three-phase voltage, Park projection
   `V_dq = V (cos(θ_g − θ̂), sin(θ_g − θ̂))`, phase-detector characteristic `V_q = −V sin θ̃`,
   and the perturbation projection `V_q^p = −V sin θ_e + (−sin θ_e, cos θ_e)·(δv_d, δv_q)`
@@ -33,13 +39,9 @@ Contents.
   `H_maf(jω) e^{jωt}`; with window `T_w = 2π/ω_s` it annihilates every nonzero integer
   multiple of `ω_s`.
 
-Model boundary: continuous time, ideal signals (no sampling, quantization, PWM, noise model,
-or measurement delay). The PLL frame angle `θ̂` is an arbitrary real number here.
-
-Family and connection conclusions: none. This module defines no family and states no behaviour;
-every result is a signal identity, a transfer function or a static matrix test.
-
-Source: work-sync `theory/T-pll-dynamics.md` §1.2, §1.6, §1.7, §1.8, §1.9.
+Family and connection conclusions.
+None. This module defines no family and states no behaviour; every result is a signal identity,
+a transfer function or a static matrix test.
 
 Correction (§1.6): the note writes the negative-sequence contribution to `V_q` as
 `V⁻ sin(2θ_g − θ̂_g + φ⁻)`; locked (`θ̂ = θ_g`) this has the fundamental frequency, which

@@ -4,30 +4,33 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
 
 /-! # Zero-order hold and sample-and-hold frequency responses (integral definitions)
 
-Foundation layer (category B).
+The zero-order hold and the normalized sample-and-hold defined as Laplace integrals of
+rectangular windows, their closed forms, and their frequency responses on the imaginary axis.
 
-Definitions (Laplace transforms of rectangular windows, period `T : ℝ`):
-* `zoh T s = ∫₀ᵀ e^{-s t} dt` — the zero-order hold, i.e. the Laplace transform of the
-  unit pulse of width `T` (output reconstruction, DC gain `T`);
-* `sampleHold T s = zoh T s / T` — the normalized sample-and-hold average (input ADC
-  averaging, DC gain `1`).
-
-Results.
-* `zoh T s = (1 - e^{-sT}) / s` for `s ≠ 0` (closed form from the integral).
-* On `s = jω`: `zoh T (jω) = e^{-jωT/2} · T · sinc (ωT/2)` and, for `T ≠ 0`,
-  `sampleHold T (jω) = e^{-jωT/2} · sinc (ωT/2)`; here `sinc` is Mathlib's `Real.sinc`
-  (`sin x / x`, value `1` at `0`). The factor `e^{-jωT/2}` is exactly the half-period delay
-  `pureDelay (T/2)`.
-* DC gains `zoh T 0 = T`, `sampleHold T 0 = 1`; magnitude `‖zoh T (jω)‖ = |T| |sinc (ωT/2)|`;
-  at the Nyquist frequency `ωT = π` the magnitude is `2T/π` (nonzero), and the first null
-  is at `ωT = 2π`.
-
-Model boundary: linear time-invariant description of an ideal hold; no quantization,
-switching ripple, jitter or aliasing of the sampled signal is modelled.
+Model boundary.
+* Linear time-invariant description of an ideal hold; no quantization, switching ripple, jitter
+  or aliasing of the sampled signal is modelled.
+* Laplace transforms of rectangular windows, period `T : ℝ`:
+  * `zoh T s = ∫₀ᵀ e^{-s t} dt` — the zero-order hold, i.e. the Laplace transform of the
+    unit pulse of width `T` (output reconstruction, DC gain `T`);
+  * `sampleHold T s = zoh T s / T` — the normalized sample-and-hold average (input ADC
+    averaging, DC gain `1`).
 
 Source: work-sync theory/T-control-delay.md §1.1 item 1 (`G_sh(s) = (1 - e^{-T s})/(T s)`,
 average delay `T/2`) and §1.4 (ZOH `G_ZOH(s) = (1 - e^{-T s})/s`,
 `G_ZOH(jω) = e^{-jωT/2} T sinc(ωT/2)`, Nyquist value `2T/π`, first zero at `ω = ω_s`).
+
+Results.
+* `zoh_eq` — `zoh T s = (1 - e^{-sT}) / s` for `s ≠ 0` (closed form from the integral).
+* `zoh_jω`, `sampleHold_jω`, `zoh_jω_eq_halfDelay` — on `s = jω`:
+  `zoh T (jω) = e^{-jωT/2} · T · sinc (ωT/2)` and, for `T ≠ 0`,
+  `sampleHold T (jω) = e^{-jωT/2} · sinc (ωT/2)`; here `sinc` is Mathlib's `Real.sinc`
+  (`sin x / x`, value `1` at `0`). The factor `e^{-jωT/2}` is exactly the half-period delay
+  `pureDelay (T/2)`.
+* `zoh_zero`, `sampleHold_zero`, `norm_zoh_jω`, `norm_zoh_nyquist`, `zoh_eq_zero_of_two_pi` —
+  DC gains `zoh T 0 = T`, `sampleHold T 0 = 1`; magnitude `‖zoh T (jω)‖ = |T| |sinc (ωT/2)|`;
+  at the Nyquist frequency `ωT = π` the magnitude is `2T/π` (nonzero), and the first null
+  is at `ωT = 2π`.
 -/
 
 noncomputable section

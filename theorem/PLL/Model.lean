@@ -36,6 +36,10 @@ Model boundary.
   Jacobian computed by `fderiv` from the field. The Jacobian at the in-phase equilibrium is
   `linA` of `theorem/PLL/Linear.lean` (state matrix of the linear models there).
 
+Source: work-sync `theory/T-pll-dynamics.md` §1.2–§1.4; `theory/T-invariant-coordinates.md`
+§1.2; `theory/T-gfl-multiscale-modeling.md` §1.3, §1.8; `theory/T-frequency-measurement.md`
+§1.1; `theory/T-pll-ph.md` §1.1.
+
 Results.
 * Equilibria (`V ≠ 0`, `K_i ≠ 0`): exactly `(kπ, δω / K_i)`, `k ∈ ℤ`, for every constant
   frequency offset (the integrator absorbs any offset; T-pll-dynamics §1.4).
@@ -44,15 +48,7 @@ Results.
   Hurwitz iff `V K_p > 0 ∧ V K_i > 0`.
 * Anti-phase equilibria `((2k+1)π, δω/K_i)`: unstable (saddle) whenever `V K_i > 0`.
 
-Source: work-sync `theory/T-pll-dynamics.md` §1.2–§1.4; `theory/T-invariant-coordinates.md`
-§1.2; `theory/T-gfl-multiscale-modeling.md` §1.3, §1.8; `theory/T-frequency-measurement.md`
-§1.1; `theory/T-pll-ph.md` §1.1.
-
-Sign note: `T-pll-dynamics` §1.3 writes the linearized error equation with
-`Δθ̃̇ = −Δω_g − V(K_p Δθ̃ + K_i ξ)`, `ξ̇ = Δθ̃` (normalized integrator `ξ = −η / V`); this module
-uses the raw integrator `η` of §1.2 (same closed loop). T-pll-ph's `δω_g` is this `δω`.
-
-## Family and connection conclusions
+Family and connection conclusions.
 No new family: the SRF-PLL read about a selected phase `θ*` is the member
 `PLL.PIPLL.srf V K_p K_i δω θ*` of the PI-PLL family `PLL.PIPLL.family`
 (`theorem/PLL/PIPLLFamily.lean`), whose detector is `srfPD V` (`srf_h`) and whose system map is
@@ -60,7 +56,7 @@ No new family: the SRF-PLL read about a selected phase `θ*` is the member
 versions are the same models: the `(θ_err, ξ)` field with gains `(a, b)` and offset `Δω` is
 `srfField 1 a b (−Δω)` (`xiField_eq_srfField`), i.e. the member `srf 1 a b (−Δω) θ*`, and the
 `(e_θ, x_I)` field is an affine image of `srfField` (`transport_meas_srfField`). Connection
-conclusions on the family's semantics connection: the four former local-stability theorems
+conclusions on the family's semantics connection: the four local-stability results
 (`srf_mem_den_locallyExponentiallyStable_inPhase`, `srf_mem_den_unstable_inPhase_of_mul_neg`,
 `srf_mem_den_unstable_inPhase_of_trace`, `srf_mem_den_unstable_antiPhase`) and amplitude
 invariance of every flow sentence (`srf_mem_den_iff_unitAmplitude`: amplitude `V` with gains
@@ -68,6 +64,10 @@ invariance of every flow sentence (`srf_mem_den_iff_unitAmplitude`: amplitude `V
 (`srfField_eq_zero_iff`, `srf_equilibria_eq`, `srf_exists_equilibrium`,
 `measField_eq_zero_iff`) are static evidence on the model, not connection conclusions; the
 coordinate conjugacies are foundation.
+
+Sign note: `T-pll-dynamics` §1.3 writes the linearized error equation with
+`Δθ̃̇ = −Δω_g − V(K_p Δθ̃ + K_i ξ)`, `ξ̇ = Δθ̃` (normalized integrator `ξ = −η / V`); this module
+uses the raw integrator `η` of §1.2 (same closed loop). T-pll-ph's `δω_g` is this `δω`.
 -/
 
 noncomputable section

@@ -4,19 +4,22 @@ import Mathlib.LinearAlgebra.Matrix.Block
 
 /-! # LU factorization with partial pivoting
 
-Foundation layer (category B; general numerical linear algebra).
+Every invertible matrix has a partial-pivoting factorization `PA = LU` with multipliers bounded
+by one.
 
-Source: work-sync `theory/T-linear-algebra.md` §1.2 ("任一可逆 `A` 可分解为 `PA = LU`：`P` 行置换（部分主元），
-`L` 单位下三角，`|l_ij| ≤ 1`，`U` 上三角").
+Scope.
+* General numerical linear algebra: real square invertible matrices indexed by `Fin k`; exact
+  arithmetic (no growth-factor or backward-error statement).
 
-Setting: real square invertible matrices indexed by `Fin k`; exact arithmetic (no growth-factor
-or backward-error statement).
+Source: work-sync theory/T-linear-algebra.md §1.2 ("任一可逆 `A` 可分解为 `PA = LU`：`P` 行置换
+（部分主元），`L` 单位下三角，`|l_ij| ≤ 1`，`U` 上三角").
 
-Result (`lu_partialPivot`): for every invertible `A` there are a row permutation `σ`, a unit
-lower triangular `L` with all entries `|L i j| ≤ 1`, and an upper triangular `U` such that
-`A.submatrix σ id = L U` (i.e. `PA = LU`). The proof follows Gaussian elimination: pick the
-largest pivot `|a_{p0}|` in the first column, swap it to the top, eliminate with multipliers
-`l_i = a_{i0}/a_{p0}` (`|l_i| ≤ 1`), and recurse on the Schur complement, which is invertible.
+Results.
+* `lu_partialPivot` — for every invertible `A` there are a row permutation `σ`, a unit lower
+  triangular `L` with all entries `|L i j| ≤ 1`, and an upper triangular `U` such that
+  `A.submatrix σ id = L U` (i.e. `PA = LU`). The proof follows Gaussian elimination: pick the
+  largest pivot `|a_{p0}|` in the first column, swap it to the top, eliminate with multipliers
+  `l_i = a_{i0}/a_{p0}` (`|l_i| ≤ 1`), and recurse on the Schur complement, which is invertible.
 -/
 
 noncomputable section

@@ -1,25 +1,30 @@
 import theorem.Numerics.StabilityFunctions
 
-/-! Explicit Runge–Kutta methods: the stability function is a polynomial, hence no
-consistent explicit Runge–Kutta method is A-stable.
+/-! # Explicit Runge–Kutta methods: polynomial stability function, no A-stability
 
-Model boundary: an `s`-stage explicit Runge–Kutta tableau (`a` strictly lower triangular,
-weights `b`) applied to an arbitrary autonomous field with fixed step `h`; the stage
-equations are a predicate (`IsStages`), so the step is defined from the method itself.  For
-the Dahlquist test field the stage vector exists, is unique, and equals `λ x pᵢ(hλ)` for
-explicit stage polynomials `pᵢ`, which yields the stability polynomial
-`R(z) = 1 + z Σ bᵢ pᵢ(z)` with `R(0) = 1` and `R'(0) = Σ bᵢ`.
+The stability function of an explicit Runge–Kutta method is a polynomial, hence no consistent
+explicit Runge–Kutta method is A-stable.
 
-Main results.
-* `ExplicitRK.trajectory_testEquation`: every RK trajectory of `ẋ = λ x` satisfies
-  `x_{n+1} = R(hλ) x_n`.
-* `ExplicitRK.not_aStable`: if `Σ bᵢ = 1`, `R` is not A-stable.
-* `ExplicitRK.exists_stable_mode_divergent`: there is a decaying test mode (`Re λ < 0`)
-  for which every nonzero numerical trajectory with `h = 1` diverges.
+Model boundary.
+* An `s`-stage explicit Runge–Kutta tableau (`a` strictly lower triangular, weights `b`) applied
+  to an arbitrary autonomous field with fixed step `h`; the stage equations are a predicate
+  (`IsStages`), so the step is defined from the method itself. For the Dahlquist test field the
+  stage vector exists, is unique, and equals `λ x pᵢ(hλ)` for explicit stage polynomials `pᵢ`,
+  which yields the stability polynomial `R(z) = 1 + z Σ bᵢ pᵢ(z)` with `R(0) = 1` and
+  `R'(0) = Σ bᵢ`.
 
 Source: work-sync theory/T-numerical-integration.md §1.4, §1.7 ("显式 RK 的稳定域有限——没有
-显式 A-stable 单步法"), §2.4.  Foundation.  Dahlquist and Butcher order barriers are not
-formalized here.
+显式 A-stable 单步法"), §2.4.
+
+Results.
+* `ExplicitRK.trajectory_testEquation` — every RK trajectory of `ẋ = λ x` satisfies
+  `x_{n+1} = R(hλ) x_n`.
+* `ExplicitRK.not_aStable` — if `Σ bᵢ = 1`, `R` is not A-stable.
+* `ExplicitRK.exists_stable_mode_divergent` — there is a decaying test mode (`Re λ < 0`) for
+  which every nonzero numerical trajectory with `h = 1` diverges.
+
+Not formalized.
+* Dahlquist and Butcher order barriers.
 -/
 
 noncomputable section

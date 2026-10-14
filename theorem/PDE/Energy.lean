@@ -4,25 +4,28 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 
 /-! # Energy method: uniqueness for the heat equation, energy conservation for the wave equation
 
-Foundation layer (category B).
+Energy identities for classical solutions of the one-dimensional heat and lossless wave equations
+with homogeneous Dirichlet data.
+
+Model boundary.
+* One space dimension, `x ∈ [0, ℓ]` (`ℓ > 0`), homogeneous Dirichlet data
+  `u(0,t) = u(ℓ,t) = 0`, constant coefficients `ν > 0`, `c`; classical solutions that extend to
+  `C²` functions on the whole plane (`ContDiff ℝ 2` on `ℝ × ℝ`, coordinates `(x, t)`); partial
+  derivatives `dx`, `dt` from `theorem/PDE/Partial.lean`; the PDE is required on the closed
+  strip `[0, ℓ] × [0, ∞)` (heat) or `[0, ℓ] × ℝ` (wave).
+* Canonical PDEs, not an engineering model: no model family; foundation results.
 
 Source: work-sync `theory/T-pde-systems.md` §1.8.2 (heat equation: `E(t) = ½∫u²`,
 `Ė = −ν∫u_x² ≤ 0` ⇒ uniqueness), §1.8.3 (lossless wave equation: `E(t) = ½∫(u_t² + c²u_x²)`
 is conserved).
 
-Model boundary: one space dimension, `x ∈ [0, ℓ]` (`ℓ > 0`), homogeneous Dirichlet data
-`u(0,t) = u(ℓ,t) = 0`, constant coefficients `ν > 0`, `c`; classical solutions that extend to
-`C²` functions on the whole plane (`ContDiff ℝ 2` on `ℝ × ℝ`, coordinates `(x, t)`); partial
-derivatives `dx`, `dt` from `theorem/PDE/Partial.lean`; the PDE is required on the closed
-strip `[0, ℓ] × [0, ∞)` (heat) or `[0, ℓ] × ℝ` (wave).
-
 Results.
 * `hasDerivAt_integral_param`: differentiation under `∫₀^ℓ` for jointly continuous integrands
   with a jointly continuous `t`-derivative (Mathlib's dominated version, bound by compactness).
-* `heat_energy_deriv`: `d/dt ∫₀^ℓ u² = −2ν ∫₀^ℓ u_x² ≤ 0` (integration by parts, boundary terms
-  vanish); `heat_zero_of_zero_data` / `heat_unique`: the solution with zero initial data is
-  identically zero on `[0, ℓ] × [0, ∞)`, so two classical solutions with the same initial and
-  boundary data coincide.
+* `hasDerivAt_energy`, `heat_energy_identity`: `d/dt ∫₀^ℓ u² = 2∫₀^ℓ u u_t = −2ν ∫₀^ℓ u_x² ≤ 0`
+  (integration by parts, boundary terms vanish); `heat_zero_of_zero_data` / `heat_unique`: the
+  solution with zero initial data is identically zero on `[0, ℓ] × [0, ∞)`, so two classical
+  solutions with the same initial and boundary data coincide.
 * `wave_energy_conserved`: `E(t) = ½∫₀^ℓ (u_t² + c² u_x²)` is constant in `t`.
 -/
 

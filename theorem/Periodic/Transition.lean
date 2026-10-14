@@ -4,37 +4,43 @@ import theorem.Attributes
 
 /-! # Periodic linear time-varying systems: transition and monodromy matrices
 
-Foundation layer for the linear time-varying system `ẋ = A(t) x` with a continuous real state
-matrix `A : ℝ → Matrix X X ℝ` that is uniformly bounded, `‖A t‖ ≤ M` (operator `L∞` norm,
-`Matrix.Norms.Operator`; vectors carry the sup norm). Every `T`-periodic continuous `A` is
-uniformly bounded (`exists_bound_of_periodic`).
+The forward transition matrix of a bounded linear time-varying system, its monodromy matrix for a
+periodic state matrix, and the independence of the Floquet multipliers from the initial time.
 
-Construction. `transition A t s` is the forward solution `Y` of the matrix equation
-`Ẏ = A(t) Y`, `Y(s) = I` on `[s, ∞)`; it is chosen from the global existence theorem for
-globally Lipschitz time-dependent fields (LeanForControl `exists_isIntegralCurveOn_Ici`, applied
-directly), and pinned down by uniqueness (LeanForControl `eqOn_of_isIntegralCurveOn_Icc`). Only forward times `t ≥ s` are used.
-LeanForControl's Peano–Baker state-transition matrix (`LinearSystems/Solutions/CtsLTV.lean`)
-does not build against the pinned Mathlib, so it is not imported; no proof of it is copied.
-
-Results:
-* `transition_spec`, `transition_unique`, `trajectory_eq`: existence; every forward matrix or
-  vector solution is `Φ(t, s) C`, resp. `Φ(t, s) x(s)`.
-* `transition_trans`: `Φ(t, s) Φ(s, τ) = Φ(t, τ)` for `τ ≤ s ≤ t`.
-* `norm_transition_le`: `‖Φ(t, s)‖ ≤ ‖I‖ e^{M (t - s)}` (Grönwall).
-* `transition_add_period`: `Φ(t + T, s + T) = Φ(t, s)` for a `T`-periodic `A` (any real period).
-* `monodromy A T s = Φ(s + T, s)`; `transition_add_nat_mul_period`: `Φ(s + nT, s) = M_s^n`;
-  `monodromy_add_int_mul`: `M_{s + kT} = M_s`.
-* `charpoly_monodromy`, `spectrum_monodromy`: the characteristic polynomial and the complex
-  spectrum (Floquet multipliers) of `M_s` do not depend on the initial time `s`
-  (`M_0 = Q P`, `M_s = P Q` with `P = Φ(s, 0)`, `Q = Φ(T, s)`).
+Scope.
+* The linear time-varying system `ẋ = A(t) x` with a continuous real state matrix
+  `A : ℝ → Matrix X X ℝ` that is uniformly bounded, `‖A t‖ ≤ M` (operator `L∞` norm,
+  `Matrix.Norms.Operator`; vectors carry the sup norm). Every `T`-periodic continuous `A` is
+  uniformly bounded (`exists_bound_of_periodic`).
+* No model family; every statement is generic in the state matrix `A`.
+* Construction. `transition A t s` is the forward solution `Y` of the matrix equation
+  `Ẏ = A(t) Y`, `Y(s) = I` on `[s, ∞)`; it is chosen from the global existence theorem for
+  globally Lipschitz time-dependent fields (LeanForControl `exists_isIntegralCurveOn_Ici`,
+  applied directly), and pinned down by uniqueness (LeanForControl
+  `eqOn_of_isIntegralCurveOn_Icc`). Only forward times `t ≥ s` are used.
+* LeanForControl's Peano–Baker state-transition matrix `LinearSystems.stateTransitionMatrix`
+  (`LinearSystems/Solutions/CtsLTV.lean`) is imported through `dependencies/LeanForControl.lean`;
+  `theorem/Dynamics/VariationOfConstants.lean` wraps its variation-of-constants formula for
+  continuous `A`. `transition` here is a separate forward-time construction for uniformly
+  bounded `A`; the library does not identify the two transition matrices.
 
 Source: work-sync theory/T-harmonic-linearization.md §1.6 (monodromy `Φ(T, 0)`, multipliers);
 projects/basin-guard/notes/concepts/guard-object.md §1, §5; projects/vsc-parametric-oscillation/
 references/gfm-driven-gfl-parametric-resonance/notes/concepts/coupled-parametric-resonance.md §2
 (`Φ' = J Φ`, `Φ(0) = I`).
 
-Architecture: no model family is defined here; every statement is generic in the state matrix
-`A`, so all results are public foundation support.
+Results.
+* `transition_spec`, `transition_unique`, `trajectory_eq` — existence; every forward matrix or
+  vector solution is `Φ(t, s) C`, resp. `Φ(t, s) x(s)`.
+* `transition_trans` — `Φ(t, s) Φ(s, τ) = Φ(t, τ)` for `τ ≤ s ≤ t`.
+* `norm_transition_le` — `‖Φ(t, s)‖ ≤ ‖I‖ e^{M (t - s)}` (Grönwall).
+* `transition_add_period` — `Φ(t + T, s + T) = Φ(t, s)` for a `T`-periodic `A` (any real
+  period).
+* `monodromy`, `transition_add_nat_mul_period`, `monodromy_add_int_mul` —
+  `monodromy A T s = Φ(s + T, s)`; `Φ(s + nT, s) = M_s^n`; `M_{s + kT} = M_s`.
+* `charpoly_monodromy`, `spectrum_monodromy` — the characteristic polynomial and the complex
+  spectrum (Floquet multipliers) of `M_s` do not depend on the initial time `s`
+  (`M_0 = Q P`, `M_s = P Q` with `P = Φ(s, 0)`, `Q = Φ(T, s)`).
 -/
 
 noncomputable section

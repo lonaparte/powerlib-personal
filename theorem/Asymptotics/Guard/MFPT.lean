@@ -4,15 +4,16 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 
 /-! # Guard versus committed escape: `T_committed / T_guard → 2`, rate and `T_guard ~ P e^X`
 
-Foundation layer: one-variable real analysis of an explicit double integral. Nothing here is a
+One-variable real analysis of an explicit double integral: the committed-to-guard ratio of mean
+first-passage times tends to `2` at rate `O(X^{−1/2})`, and `T_guard ~ P e^X`. Nothing here is a
 stochastic statement; the integral is *taken* as the definition of the mean first-passage time
 (MFPT), exactly as the source note does, and no Fokker–Planck / backward-Kolmogorov derivation of
 it is formalized.
 
 Model boundary.
 * Potential: the truncated subcritical-Hopf potential `U(r) = α r²/2 − l₁ r⁴/4` of
-  `Asymptotics/Guard/Potential.lean` (`guardPotential`), `α, l₁ > 0`, well at `r = 0`, barrier top
-  at `r_c = √(α/l₁)` (`guardRadius`), barrier height `ΔU = α²/(4 l₁)`.
+  `Asymptotics/Guard/Potential.lean` (`guardPotential`), `α, l₁ > 0`, well at `r = 0`, barrier
+  top at `r_c = √(α/l₁)` (`guardRadius`), barrier height `ΔU = α²/(4 l₁)`.
 * MFPT (source §1.2, two-dimensional amplitude measure, natural reflection at `r = 0`):
   `T(r_b) = D̃⁻¹ ∫₀^{r_b} (dy/y) e^{U(y)/D̃} ∫₀^y z e^{−U(z)/D̃} dz` (`guardMFPT α l₁ D̃ r_b`).
   `T_guard = T(r_c)` is the first arrival at the barrier top; `T_committed = T(r_b)` with any
@@ -20,8 +21,13 @@ Model boundary.
 * Asymptotic regime: noise intensity `D̃ → 0⁺` at fixed `α, l₁, r_b`, equivalently
   `X = ΔU/D̃ → ∞`.
 
+Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.2 ("逃逸时间的两种边界，比值恰为 2",
+`T_committed / T_guard → 2` and "趋近 2 的方式本身是 `1 + O(X^{−1/2})`"), §1.3 (the potential
+`U = αr²/2 − l₁r⁴/4` and `T_guard ∼ (√π/2) √(D̃ l₁)/α² e^X (1 + O(X^{−1/2}))`), §1.5 (`× 2` for
+committed escape).
+
 Results.
-* `tendsto_guardMFPT_ratio`: `T(r_b)/T(r_c) → 2` as `D̃ → 0⁺`, for every `r_b > r_c`
+* `tendsto_guardMFPT_ratio` — `T(r_b)/T(r_c) → 2` as `D̃ → 0⁺`, for every `r_b > r_c`
   (the source's `U(r_b) ≪ U(r_c)` placement is not needed for the limit);
   `tendsto_guardMFPT_ratio_atTop`: the same along `X = ΔU/D̃ → ∞`;
   `tendsto_guardMFPT_ratio_inv`: `T_guard/T_committed → 1/2`.
@@ -64,31 +70,27 @@ Results.
   (1 + ε)(1 + 16 l₁D̃/α²)(1 + 17√(D̃/α)/(√π a)) P e^X` (`D̃ ≤ a²` for the upper bound).
   Route, following the source's assembly "阱 · 垒 · 1/D̃": the inner integral is a Gaussian mass,
   `(D̃/α)(1 − e^{−αa²/(2D̃)}) ≤ K(a) ≤ K(r_c) ≤ (D̃/α)(1 + 16 l₁D̃/α²)` (`guardInner_ge_gauss`,
-  `guardInner_le_gauss`; relative error `O(1/X)`), and the weight integral is an endpoint Gaussian,
-  `r_c⁻¹ e^X √(πD̃/α)/2 · (1 + O(√D̃))` (`guard_weight_ge_gauss`, `guard_weight_le_gauss`; relative
-  error `O(X^{−1/2})`, the endpoint half order), from
+  `guardInner_le_gauss`; relative error `O(1/X)`), and the weight integral is an endpoint
+  Gaussian, `r_c⁻¹ e^X √(πD̃/α)/2 · (1 + O(√D̃))` (`guard_weight_ge_gauss`,
+  `guard_weight_le_gauss`; relative error `O(X^{−1/2})`, the endpoint half order), from
   `ΔU − α(r_c − y)² ≤ U(y)` and `e^{−s} ≤ e^{−cξ²} + (l₁ r_c ξ³/D̃) e^{−cξ²/4}` in `ξ = r_c − y`;
-  the generic Laplace theorems `laplace_endpoint_rate` are not used because the integral is over a
-  finite interval with a non-global quadratic phase. Generic Gaussian facts (in
+  the generic Laplace theorems `laplace_endpoint_rate` are not used because the integral is over
+  a finite interval with a non-global quadratic phase. Generic Gaussian facts (in
   `theorem/Asymptotics/GaussianMoments.lean`): `gaussMoment1`, `gaussMoment3`, `gaussMoment5`
   (`∫_0^∞ ξⁿ e^{−cξ²}`, `n = 1, 3, 5`), `integral_exp_neg_mul_sq_ge`
   (`∫_0^L e^{−cξ²} ≥ √(π/c)/2 − 1/(2cL)`), `intervalIntegral_le_integral_Ioi`.
-  The `T_guard` rate is sharp: `T_guard = P e^X (1 + 1/√(πX) + O(1/X))` (`guardMFPT_guard_two_term`,
-  `tendsto_guardMFPT_guard_mul_sqrt_atTop`, `guardMFPT_guard_sub_one_isTheta` in
-  `Asymptotics/Guard/MFPTExpansion.lean`). The committed rate is not: the half-order terms of the
-  two halves of the peak cancel and `T_committed = 2 P e^X (1 + O(1/X))`
-  (`guardMFPT_committed_two_term`, `guardMFPT_committed_two_term_atTop`).
+  The `T_guard` rate is sharp: `T_guard = P e^X (1 + 1/√(πX) + O(1/X))`
+  (`guardMFPT_guard_two_term`, `tendsto_guardMFPT_guard_mul_sqrt_atTop`,
+  `guardMFPT_guard_sub_one_isTheta` in `Asymptotics/Guard/MFPTExpansion.lean`). The committed
+  rate is not: the half-order terms of the two halves of the peak cancel and
+  `T_committed = 2 P e^X (1 + O(1/X))` (`guardMFPT_committed_two_term`,
+  `guardMFPT_committed_two_term_atTop`).
 * Two-term expansions (`Asymptotics/Guard/MFPTExpansion.lean`) use the bounds of this module made
   public for that purpose: `guard_inside_bounds`, `guard_tails_le`, `guardInner_reflect_le`,
   `guardKappa_nonneg`, `guardEps_nonneg`, `guard_exists_cut`, `intervalIntegrable_guardWeight`.
 * Supporting facts: `U(z) = ΔU − (l₁/4)(z² − r_c²)²` (`guardPotential_eq_barrier_sub`),
   monotonicity / integrability / two-sided bounds of the inner integral `K` (`guardInner_*`) and
   of the outer integrand (`guardIntegrand_*`).
-
-Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.2 ("逃逸时间的两种边界，比值恰为 2",
-`T_committed / T_guard → 2` and "趋近 2 的方式本身是 `1 + O(X^{−1/2})`"), §1.3 (the potential
-`U = αr²/2 − l₁r⁴/4` and `T_guard ∼ (√π/2) √(D̃ l₁)/α² e^X (1 + O(X^{−1/2}))`), §1.5 (`× 2` for
-committed escape).
 -/
 
 noncomputable section

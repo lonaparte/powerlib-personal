@@ -5,8 +5,10 @@ import theorem.Numerics.StabilityFunctions
 
 /-! # Machine-drive cascade loops: IMC current loop, speed loop, forward-Euler limit
 
-## Model boundary of the IMC current-loop family
+The IMC-tuned stator current loop of a machine drive as a linear family, with the speed-loop
+transfer function, the forward-Euler stability limit and the complex-vector current equation.
 
+Model boundary (IMC current-loop family).
 * Plant: one axis of the decoupled stator current loop, an RL load
   `L di/dt = v − R i` with `L > 0`, `R > 0` (for a machine: `L = σL_s` or `L_d`/`L_q`,
   `R = r_s'`, after ideal cross-coupling and back-EMF feedforward, see
@@ -16,38 +18,46 @@ import theorem.Numerics.StabilityFunctions
 * State order `(i, ξ) ∈ EuclideanSpace ℝ (Fin 2)`; the closed loop is the linear plant `imcModel`
   with input `i*` and output `i`. No PWM, sampling, delay, voltage saturation or anti-windup;
   parameters exact (controller `L, R` equal the plant's).
+* The speed loop and the complex-vector equation are static transfer-function / algebra results
+  (ideal transparent current loop, rigid mechanics `J ω̇ = K_t i_q`).
 
-## Family and connection conclusions
+Source: work-sync `theory/T-field-oriented-control.md` §1.5 (IMC tuning), §1.8 (speed loop),
+§1.9 (forward Euler, complex-vector form); `theory/T-gfl-control.md` (same IMC rule).
 
-`family : Family IMCLoop Spectral.Requirement 2 1` reads a parameter triple `(L, R, α)` as the
-port system of `imcModel` (`Family.IsLinear`, `Spectral.linearFamily`); a flow sentence speaks
-about the loop at the equilibrium `(i*, i*/α)` of every constant reference
-(`Linear.holds_input_iff`). Requirements: the monic characteristic coefficients `α + R/L` and
-`R α / L` positive (`stable`) or one of them negative (`unstable`).
-* `chain_le_semantics`, `exact`: every translation sound; the attractive sentences and sampled
-  contraction carved out exactly.
-* `mem_den` (formerly `imcModel_exponentiallyStable`): for `L, R, α > 0` the loop satisfies
-  every attractive sentence (closed-loop eigenvalues `−α`, `−R/L`).
-* The exponential tracking estimate of every closed-loop trajectory and `i(t) → i*`
-  (`imcLoop_exponentiallyStable_tracking`, `imcLoop_current_tendsto`) are trajectory-level
-  results outside the sentence language, kept as private implementation evidence.
-
-Foundation results.
+Results (foundation).
 * `siso2_transfer`: transfer function of a two-state SISO realization (adjugate formula).
 * `imcModel_transfer`: the IMC closed loop is **exactly** `α/(s + α)` at every `s` that is not
   a closed-loop eigenvalue (`s ≠ −α`, `s ≠ −R/L`); the plant pole `−R/L` is cancelled by the
   PI zero, so it stays an (unobservable from the transfer function) eigenvalue of the
   realization.
+* `imcModel_isHurwitz_iff`, `imcModel_exists_root`: the loop is Hurwitz iff the monic
+  coefficients `α + R/L`, `Rα/L` are positive; a negative one gives a right-half-plane root.
 * `speedLoop_transfer`: speed PI around an ideal (transparent) current loop and the rigid
-  mechanics `J ω̇ = K_t i_q`: `ω/ω* = K_t (K_p s + K_i) / (J s² + K_t K_p s + K_t K_i)`.
+  mechanics `J ω̇ = K_t i_q`: `ω/ω* = K_t (K_p s + K_i) / (J s² + K_t K_p s + K_t K_i)`;
+  `speedLoop_denominator_tuned`: pole placement with `K_p = 2ζω_n J/K_t`, `K_i = ω_n² J/K_t`.
 * Forward-Euler discretization of the target first-order loop `ė = −α e` with period `T_s`
   converges for every initial error iff `0 < α T_s < 2`
   (`Numerics.eulerFirstOrder_tendsto_zero_iff`, `theorem/Numerics/StabilityFunctions.lean`).
 * `complexVector_iff`: the complex-vector current equation
   `σL_s di/dt = v − r' i − jω_e σL_s i + e` is the pair of real dq equations of FOC note §1.5.
 
-Source: work-sync theory/T-field-oriented-control.md §1.5 (IMC tuning), §1.8 (speed loop),
-§1.9 (forward Euler, complex-vector form); theory/T-gfl-control.md (same IMC rule).
+Family and connection conclusions.
+* `family : Family IMCLoop Spectral.Requirement 2 1` reads a parameter triple `(L, R, α)` as the
+  port system of `imcModel` (`Family.IsLinear`, `Spectral.linearFamily`); a flow sentence speaks
+  about the loop at the equilibrium `(i*, i*/α)` of every constant reference
+  (`Linear.holds_input_iff`). Requirements: the monic characteristic coefficients `α + R/L` and
+  `R α / L` positive (`stable`) or one of them negative (`unstable`).
+* `chain_le_semantics`, `exact`: every translation sound; the attractive sentences and sampled
+  contraction carved out exactly.
+* `mem_den`: for `L, R, α > 0` the loop satisfies every attractive sentence (closed-loop
+  eigenvalues `−α`, `−R/L`).
+* The exponential tracking estimate of every closed-loop trajectory and `i(t) → i*`
+  (`imcLoop_exponentiallyStable_tracking`, `imcLoop_current_tendsto`) are trajectory-level
+  results outside the sentence language, kept as private implementation evidence.
+* The same IMC rule on the converter current loop (IN-positive R–L branch, bandwidth `ω_b`) is
+  `CurrentControl.imc` in `theorem/CurrentControl/IMC.lean` (`imc_transfer_eq`,
+  `imc_mem_den_iff`), read through the single-axis PI-loop family `CurrentControl.PIParams.family`
+  of `theorem/CurrentControl/PILoop.lean`; `IMCLoop` is the machine-drive form of that loop.
 
 Corrections.
 * FOC note §1.8: the "bandwidth-separated" speed loop
@@ -174,7 +184,9 @@ def imcEquilibrium (α iref : ℝ) : ℝ² := WithLp.toLp 2 ![iref, iref / α]
 
 /-! ### The IMC current-loop family -/
 
-/-- An IMC-tuned current loop: plant inductance and resistance, bandwidth. -/
+/-- An IMC-tuned current loop: plant inductance and resistance, bandwidth. The converter-side
+form of the same loop is `CurrentControl.imc` (`theorem/CurrentControl/IMC.lean`) on
+`CurrentControl.PIParams` (`theorem/CurrentControl/PILoop.lean`). -/
 @[ext] structure IMCLoop where
   L : ℝ
   R : ℝ

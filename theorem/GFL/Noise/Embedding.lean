@@ -5,14 +5,8 @@ import theorem.PLL.StochasticPH
 
 /-! # SPHS embedding of the reduced 2D GFL–PLL equation: port geometry and the generator
 
-Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/sphs-embedding.md` §2 (Itô
-form, `h_noise` with columns `(d, q, ω)`), §2b (invariant noise coordinates: rank-1 voltage block
-`(K_p, 1)ᵀ(σ_d, g)` plus the transverse frequency column `(−1, 0)ᵀ`; per-channel FDT), §3
-(`𝓛𝓗 = −K_p h² + Δ_Itô`, sign correction), §4 (port split); and
-`escape-quasipotential.md` §0 (constant-structure pH form `ẋ = (J − R)∇𝓗`,
-`J = [[0, 1], [−1, 0]]`, `R = diag(K_p, 0)`).
-
-Model boundary.  State `x = (θ_e, η)` (index `0` = PLL phase error, `1` = PI integrator state)
+Model boundary.
+State `x = (θ_e, η)` (index `0` = PLL phase error, `1` = PI integrator state)
 of the reduced 2D slow model (form B / 2D-CP layer, inner loops frozen, rigid DC link in the
 `(h, σ_v)` reading).  `h : ℝ → ℝ` is the reduced phase-detector characteristic, `𝒱' = −h`,
 `𝓗 = ½ K_i η² + 𝒱(θ_e)`.  Drift `f = (K_p h + K_i η, h)`.  Noise matrix (one state, white-noise
@@ -20,6 +14,26 @@ idealization): voltage columns `σ_d (K_p, 1)ᵀ` (amplitude) and `g (K_p, 1)ᵀ
 phase), frequency column `(−ε, 0)ᵀ`.  All statements are algebraic identities at one state
 (gradient `g = ∇𝓗(x)`, Hessian `K = ∇²𝓗(x) = diag(𝒱'', K_i)`), foundation only (Rules §3): no SDE
 solution, stationary density or escape statement is made here.
+
+Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/sphs-embedding.md` §2 (Itô
+form, `h_noise` with columns `(d, q, ω)`), §2b (invariant noise coordinates: rank-1 voltage block
+`(K_p, 1)ᵀ(σ_d, g)` plus the transverse frequency column `(−1, 0)ᵀ`; per-channel FDT), §3
+(`𝓛𝓗 = −K_p h² + Δ_Itô`, sign correction), §4 (port split); and
+`escape-quasipotential.md` §0 (constant-structure pH form `ẋ = (J − R)∇𝓗`,
+`J = [[0, 1], [−1, 0]]`, `R = diag(K_p, 0)`).
+
+Results.
+* `embDrift_eq_pH`, `embDrift_dot_grad`, `embJ_skew`, `embR_posSemidef`: the drift is the pH
+  field `(J − R)∇𝓗` with skew `J` and `R ⪰ 0` (`K_p ≥ 0`).
+* `voltageBlock_eq_vecMulVec`, `voltageBlock_det`, `voltageBlock_rank_le`: the voltage block is
+  the rank-one matrix `(K_p, 1)ᵀ(σ_d, g)`.
+* `freqNoise_fdt`: the frequency channel satisfies `B Bᵀ = 2 T_eff R`, `T_eff = ε²/(2K_p)`
+  (exact FDT); `voltage_alignment`, `voltage_alignment_lt_one`, `freq_alignment`: the voltage
+  channel is structurally non-FDT (normalized alignment `K_p²/(1 + K_p²) < 1` with `R`), the
+  frequency column has alignment one.
+* `ito_emb`, `genL_emb`, `genL_emb_pH`, `ito_freq_only`: the Itô correction
+  `Δ_Itô = ½ (σ_d² + g²)(K_p² 𝒱'' + K_i) + ½ ε² 𝒱''` and the generator `𝓛𝓗 = −K_p h² + Δ_Itô`.
+* `ito_emb_neg_iff`, `ito_emb_sign_indefinite`: the sign of `Δ_Itô` (Correction below).
 
 Correction (sphs-embedding §3, already noted there on 2026-08-13).  `Δ_Itô` is **not** a
 nonnegative function: it is affine in `𝒱''(θ_e)` with positive slope, hence negative wherever

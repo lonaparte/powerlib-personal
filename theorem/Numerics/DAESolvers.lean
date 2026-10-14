@@ -3,52 +3,53 @@ import theorem.Criteria.Hurwitz2
 import theorem.LTI.Decay
 import Mathlib.Analysis.InnerProductSpace.Adjoint
 
-/-! Algebra of DAE solvers: the BDF/Newton Jacobian, its Schur-complement determinant,
-Baumgarte and GGL stabilization.
+/-! # Algebra of DAE solvers: BDF/Newton Jacobian, Schur-complement determinant, stabilization
+
+The Newton Jacobian of one BDF step on a DAE and its Schur-complement determinant, Baumgarte and
+GGL stabilization, and exactness of BDF on an index-2 example.
 
 Model boundary.
 * Fully implicit DAE `F(z, ż) = 0` on a real normed space, one BDF step with
-  `ż_{n+k} = c z_{n+k} + d`, `c = α_k/(hβ_k)`, `d = r_n/(hβ_k)` (history term).  Semi-explicit
-  DAE `ẋ = f(x, y)`, `0 = g(x, y)`.  Only the algebra of one Newton step is formalized; no
+  `ż_{n+k} = c z_{n+k} + d`, `c = α_k/(hβ_k)`, `d = r_n/(hβ_k)` (history term). Semi-explicit
+  DAE `ẋ = f(x, y)`, `0 = g(x, y)`. Only the algebra of one Newton step is formalized; no
   step-size control, no error estimate, no convergence of the time stepping.
 * Baumgarte: the constraint residual `e(t) = g(q(t))` of one scalar constraint obeys
   `ë + 2αė + β²e = 0` (continuous time, exact solution); conclusion at trajectory level
   (exponential decay of `(e, ė)`), via the 2×2 state matrix `baumgarteModel`, whose affine
   linear field is globally exponentially stable (Flow semantics); the coordinate decay of
-  `(e, ė)` uses `LTI.linear_decay_of_isHurwitz`.  The
-  multibody model behind it (`M q̈ + Gᵀλ = F`, `G q̈ = −Ġq̇ − 2αGq̇ − β²g`) is used only to
-  show that `λ` is an algebraic function of `(q, q̇)` (`baumgarte_index_one`).
+  `(e, ė)` uses `LTI.linear_decay_of_isHurwitz`. The multibody model behind it
+  (`M q̈ + Gᵀλ = F`, `G q̈ = −Ġq̇ − 2αGq̇ − β²g`) is used only to show that `λ` is an algebraic
+  function of `(q, q̇)` (`baumgarte_index_one`).
 * GGL: exact solutions of `q̇ = v − G(q)ᵀμ`, `g(q) = 0`, `G(q)v = 0` on real inner-product
   spaces (complete, for the adjoint `Gᵀ`).
-All results are general mathematics: foundation.
-
-Results.
-* `bdfResidual_hasFDerivAt`: `∂Φ/∂z = ∂F/∂z + c ∂F/∂ż` for `Φ(z) = F(z, cz + d)`.
-* `semiExplicitBDFResidual_hasFDerivAt`: for the semi-explicit DAE the Newton Jacobian is
-  `(u, w) ↦ (c u − f'(u, w), g'(u, w))`, i.e. `[[cI − f_x, −f_y], [g_x, g_y]]`.
-* `daeJacobian_det` (wrapper of Mathlib `Matrix.det_fromBlocks₂₂`):
-  `det 𝒥 = det A_yy · det(cI − (A_xx − A_xy A_yy⁻¹ A_yx))`; `daeJacobian_isUnit_iff`.
-* `baumgarteModel_isHurwitz`, `baumgarteModel_exponentiallyStable`,
-  `baumgarte_constraint_exponentialDecay`,
-  `baumgarte_constraint_tendsto_zero`: for `α > 0`, `β ≠ 0` the constraint residual decays
-  exponentially.
-* `baumgarte_index_one`: for `M ≻ 0` and `G` of full row rank, the stabilized acceleration
-  constraint determines the multiplier `λ` uniquely and algebraically from `(q, q̇)`.
-* `ggl_projection_vanishes`, `ggl_multiplier_eq_zero`: along exact GGL solutions
-  `G(q)ᵀμ = 0` (so `q̇ = v`, the original kinematics), and `μ = 0` when `G(q)ᵀ` is injective.
-* `bdf_index2_exact`: on the index-2 DAE `ẋ = y`, `0 = x − p(t)`, BDF`k` of order `k`
-  reproduces the algebraic variable exactly, `y_k = p'(t_k)`, for every polynomial `p` of
-  degree `≤ k` (no order reduction); it applies to BDF1–BDF6 through `bdfk_exactOrder.1`,
-  e.g. `bdf2_index2_exact`.
+* All results are general mathematics.
 
 Source: work-sync theory/T-dae-solvers.md §1.2 (BDF residual, Newton Jacobian, Schur
 determinant), §1.3 (order vs. index), §1.6 (Baumgarte), §1.7 (GGL), §2.4 (comparison table).
+
+Results.
+* `bdfResidual_hasFDerivAt` — `∂Φ/∂z = ∂F/∂z + c ∂F/∂ż` for `Φ(z) = F(z, cz + d)`.
+* `semiExplicitBDFResidual_hasFDerivAt` — for the semi-explicit DAE the Newton Jacobian is
+  `(u, w) ↦ (c u − f'(u, w), g'(u, w))`, i.e. `[[cI − f_x, −f_y], [g_x, g_y]]`.
+* `daeJacobian_det` — wrapper of Mathlib `Matrix.det_fromBlocks₂₂`:
+  `det 𝒥 = det A_yy · det(cI − (A_xx − A_xy A_yy⁻¹ A_yx))`; `daeJacobian_isUnit_iff`.
+* `baumgarteModel_isHurwitz`, `baumgarteModel_exponentiallyStable`,
+  `baumgarte_constraint_exponentialDecay`, `baumgarte_constraint_tendsto_zero` — for `α > 0`,
+  `β ≠ 0` the constraint residual decays exponentially.
+* `baumgarte_index_one` — for `M ≻ 0` and `G` of full row rank, the stabilized acceleration
+  constraint determines the multiplier `λ` uniquely and algebraically from `(q, q̇)`.
+* `ggl_projection_vanishes`, `ggl_multiplier_eq_zero` — along exact GGL solutions
+  `G(q)ᵀμ = 0` (so `q̇ = v`, the original kinematics), and `μ = 0` when `G(q)ᵀ` is injective.
+* `bdf_index2_exact` — on the index-2 DAE `ẋ = y`, `0 = x − p(t)`, BDF`k` of order `k`
+  reproduces the algebraic variable exactly, `y_k = p'(t_k)`, for every polynomial `p` of
+  degree `≤ k` (no order reduction); it applies to BDF1–BDF6 through the exact-order facts of
+  `theorem/Numerics/BDF.lean` (`bdf2_exactOrder.1`, …), e.g. `bdf2_index2_exact`.
 
 Corrections.
 * §1.3: "BDF`k` has order `p = k` **if and only if** index `≤ 1`" is wrong in the "only if"
   direction: `bdf_index2_exact` shows BDF`k` without order reduction on an index-2 DAE (the
   note's own next sentence also keeps `O(hᵏ)` on index-2 differential variables).
-* §2.4 table: "Baumgarte: still index 3" is wrong.  After Baumgarte stabilization the
+* §2.4 table: "Baumgarte: still index 3" is wrong. After Baumgarte stabilization the
   multiplier solves the linear equation `(G M⁻¹ Gᵀ) λ = …` with an invertible matrix
   (`baumgarte_index_one`), so the stabilized DAE has index 1.
 -/

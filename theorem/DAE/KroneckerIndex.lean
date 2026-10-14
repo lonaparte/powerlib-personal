@@ -4,63 +4,62 @@ import theorem.DAE.Pryce
 
 /-! # Kronecker index = differentiation index for linear constant-coefficient DAEs
 
-Foundation layer (category B of the work-sync formalization).
+For a regular linear constant-coefficient DAE, the nilpotency class of the Weierstrass form is
+the derivative-array differentiation index, at the level of matrices and of solutions.
 
-Object: the linear DAE `E x' = A x + f` with `E A : Matrix ι ι K` (`K` a field, `ι` finite).
-
-Index definitions used. Neither `theorem.DAE.Linear` nor `theorem.DAE.Pryce` defines a
-differentiation index for general linear DAEs: `Linear` treats the semi-explicit index-1 case
-(`IsUnit Ayy.det`, one differentiation of the constraint, with the correction "index `k` = `k`
-differentiations"), and `Pryce` defines structural index formulas (`noteIndex`, `pryceIndex`) of a
-signature. The differentiation index here is Campbell's derivative-array index:
-* The derivative array of order `μ` consists of the DAE and its first `μ` derivatives,
-  `E x^(r+1) = A x^(r) + f^(r)`, `r = 0, …, μ`, viewed as linear equations for
-  `x', …, x^(μ+1)` given `x` and `f, …, f^(μ)`. It is *1-full* (`OneFull E A μ`) when it determines
-  `x'` uniquely: every solution `w` of the homogeneous array (`E w₀ = 0`,
-  `E w_{r+1} = A w_r` for `r < μ`) has `w₀ = 0`.
-* `IsDiffIndex E A ν`: the array is 1-full at order `ν` and at no smaller order (the number of
-  differentiations needed to determine `x'`; index `0` = explicit ODE, `isDiffIndex_zero_iff`).
-Solution-level meaning over `ℝ` (`oneFull_iff_velocity_determined`): the array of order `μ` is
-1-full iff, for all solutions that are `μ + 1` times differentiable with `μ` times
-differentiable inputs, equal states and equal input jets `f^(r)(t)`, `r ≤ μ`, at an instant
-force equal velocities there (`velocity_eq_of_oneFull`); otherwise a polynomial solution with the
-data of the zero solution and nonzero velocity exists (`exists_solution_of_not_oneFull`).
-
-Results.
-* `oneFull_equiv_iff`: 1-fullness is invariant under `(E, A) ↦ (P E Q, P A Q)` with invertible
-  `P`, `Q` (rectangular index sets allowed).
-* `oneFull_blocks_iff`: on the Weierstrass form `(diag(I, N), diag(J, I))`, 1-fullness of
-  order `μ` holds iff `N ^ μ = 0`.
-* **`WeierstrassForm.isDiffIndex_iff`** (Kronecker index = differentiation index): for every
-  Weierstrass form of `(E, A)`, `IsDiffIndex E A ν ↔ ν = nilpotencyClass N`.
-  `kroneckerIndex_eq` (the nilpotency class does not depend on the chosen Weierstrass form) and
-  `exists_isDiffIndex` (every regular pencil over an infinite field has a differentiation index).
-* On solutions (`WeierstrassForm.velocity_determined_iff`): state and input jet of order `μ`
-  determine the velocity iff `μ ≥ nilpotencyClass N`; the Kronecker index is the least number of
-  differentiations of the DAE that determines `x'`.
-* Alignment with `theorem.DAE.Linear`: a semi-explicit linear DAE with invertible `Ayy` and
-  `m > 0` algebraic variables has differentiation index exactly `1`
-  (`LinearDAE.isDiffIndex_one`), matching the corrected count of that module.
-* Alignment with `theorem.DAE.Pryce`: the correction example `ẋ₁ = y, ẋ₂ = x₁ - y,
-  ẋ₁ + 2ẋ₂ = 0` (as the linear DAE `pryceExampleE`, `pryceExampleA`, whose signature is
-  `exampleSig`) has differentiation index `1` (`pryceExample_isDiffIndex`), equal to Pryce's
-  corrected formula and not to the note's formula (`pryceExample_index_vs_formulas`).
-
-Source claim (T-pantelides-index-reduction §1.1, §1.6): "`ν` (the nilpotency index of `N`) is the
-Kronecker index, and for linear DAEs it coincides with the differentiation index." Formalized
-with the regularity premise of `theorem.DAE.Weierstrass` and the derivative-array definition
-above.
-
-Model boundary: constant coefficients, regular square pencils; the index is the
-derivative-array (1-fullness) index; no claim about time-varying or nonlinear DAEs, about the
-geometric index, or about consistent initialization beyond the determination of `x'`.
-
-Architecture: generic mathematical support (no `Family`). `OneFull` and `IsDiffIndex` are static
-linear-algebra conditions on matrices (sequences indexed by `ℕ`, not by time); the solution-level
-statements write the trajectories and their derivatives out in the theorems.
+Model boundary.
+* Object: the linear DAE `E x' = A x + f` with `E A : Matrix ι ι K` (`K` a field, `ι` finite).
+* Constant coefficients, regular square pencils; the index is the derivative-array (1-fullness)
+  index; no claim about time-varying or nonlinear DAEs, about the geometric index, or about
+  consistent initialization beyond the determination of `x'`.
+* `OneFull` and `IsDiffIndex` are static linear-algebra conditions on matrices (sequences
+  indexed by `ℕ`, not by time); the solution-level statements write the trajectories and their
+  derivatives out in the theorems.
+* Index definitions used. Neither `theorem/DAE/Linear.lean` nor `theorem/DAE/Pryce.lean` defines
+  a differentiation index for general linear DAEs: `Linear` treats the semi-explicit index-1
+  case (`IsUnit Ayy.det`, one differentiation of the constraint, with the correction "index `k`
+  = `k` differentiations"), and `Pryce` defines structural index formulas (`noteIndex`,
+  `pryceIndex`) of a signature. The differentiation index here is Campbell's derivative-array
+  index:
+  * The derivative array of order `μ` consists of the DAE and its first `μ` derivatives,
+    `E x^(r+1) = A x^(r) + f^(r)`, `r = 0, …, μ`, viewed as linear equations for
+    `x', …, x^(μ+1)` given `x` and `f, …, f^(μ)`. It is *1-full* (`OneFull E A μ`) when it
+    determines `x'` uniquely: every solution `w` of the homogeneous array (`E w₀ = 0`,
+    `E w_{r+1} = A w_r` for `r < μ`) has `w₀ = 0`.
+  * `IsDiffIndex E A ν`: the array is 1-full at order `ν` and at no smaller order (the number of
+    differentiations needed to determine `x'`; index `0` = explicit ODE, `isDiffIndex_zero_iff`).
+  Solution-level meaning over `ℝ` (`oneFull_iff_velocity_determined`): the array of order `μ` is
+  1-full iff, for all solutions that are `μ + 1` times differentiable with `μ` times
+  differentiable inputs, equal states and equal input jets `f^(r)(t)`, `r ≤ μ`, at an instant
+  force equal velocities there (`velocity_eq_of_oneFull`); otherwise a polynomial solution with
+  the data of the zero solution and nonzero velocity exists (`exists_solution_of_not_oneFull`).
 
 Source: work-sync theory/T-pantelides-index-reduction.md §1.1, §1.6;
-theory/T-dae-systems.md §1.3 (index as number of differentiations), §1.6.2.
+theory/T-dae-systems.md §1.3 (index as number of differentiations), §1.6.2. Source claim
+(T-pantelides-index-reduction §1.1, §1.6): "`ν` (the nilpotency index of `N`) is the Kronecker
+index, and for linear DAEs it coincides with the differentiation index." Formalized with the
+regularity premise of `theorem/DAE/Weierstrass.lean` and the derivative-array definition above.
+
+Results.
+* `oneFull_equiv_iff` — 1-fullness is invariant under `(E, A) ↦ (P E Q, P A Q)` with invertible
+  `P`, `Q` (rectangular index sets allowed).
+* `oneFull_blocks_iff` — on the Weierstrass form `(diag(I, N), diag(J, I))`, 1-fullness of
+  order `μ` holds iff `N ^ μ = 0`.
+* **`WeierstrassForm.isDiffIndex_iff`** — Kronecker index = differentiation index: for every
+  Weierstrass form of `(E, A)`, `IsDiffIndex E A ν ↔ ν = nilpotencyClass N`.
+  `kroneckerIndex_eq` (the nilpotency class does not depend on the chosen Weierstrass form) and
+  `exists_isDiffIndex` (every regular pencil over an infinite field has a differentiation
+  index).
+* `WeierstrassForm.velocity_determined_iff` — on solutions: state and input jet of order `μ`
+  determine the velocity iff `μ ≥ nilpotencyClass N`; the Kronecker index is the least number
+  of differentiations of the DAE that determines `x'`.
+* `LinearDAE.isDiffIndex_one` — alignment with `theorem/DAE/Linear.lean`: a semi-explicit linear
+  DAE with invertible `Ayy` and `m > 0` algebraic variables has differentiation index exactly
+  `1`, matching the corrected count of that module.
+* `pryceExample_isDiffIndex`, `pryceExample_index_vs_formulas` — alignment with
+  `theorem/DAE/Pryce.lean`: the correction example `ẋ₁ = y, ẋ₂ = x₁ - y, ẋ₁ + 2ẋ₂ = 0` (as the
+  linear DAE `pryceExampleE`, `pryceExampleA`, whose signature is `exampleSig`) has
+  differentiation index `1`, equal to Pryce's corrected formula and not to the note's formula.
 -/
 
 noncomputable section

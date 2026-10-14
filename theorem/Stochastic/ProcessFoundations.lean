@@ -6,26 +6,31 @@ import Mathlib.Probability.Process.FiniteDimensionalLaws
 
 /-! # Adapted, progressive and predictable processes; finite-dimensional laws
 
-Source: work-sync `theory/T-process-foundations-stochastic.md` §1.1 (filtrations, natural
+The measurability classes of stochastic processes and the determination of a process law by its
+finite-dimensional distributions, as thin wrappers of Mathlib.
+
+Scope.
+* Probability theory, not an engineering result.
+* Every result is a thin Mathlib wrapper (the Mathlib declaration is given in brackets).
+
+Source: work-sync theory/T-process-foundations-stochastic.md §1.1 (filtrations, natural
 filtration), §1.2 (measurability classes of processes: predictable ⇒ progressive ⇒ adapted;
 continuous adapted ⇒ progressive), §1.3 (the law of a process is determined by its
 finite-dimensional distributions; modifications have the same law).
 
-Foundation (probability), not an engineering result.
-
-Category C wrappers (Mathlib declaration in brackets):
-* `progressive_adapted` [`MeasureTheory.IsProgressive.adapted`];
-* `stronglyProgressive_stronglyAdapted` [`MeasureTheory.IsStronglyProgressive.stronglyAdapted`];
-* `predictable_progressive` [`MeasureTheory.IsStronglyPredictable.isStronglyProgressive`];
-* `predictable_adapted` (predictable real process is adapted in the measurable sense; from the
-  previous two and `StronglyAdapted.adapted`);
-* `predictable_discrete_previsible` [`IsStronglyPredictable.measurable_add_one`]: in discrete time
-  `u (n + 1)` is `𝓕 n`-measurable;
+Results.
+* `progressive_adapted` [`MeasureTheory.IsProgressive.adapted`].
+* `stronglyProgressive_stronglyAdapted` [`MeasureTheory.IsStronglyProgressive.stronglyAdapted`].
+* `predictable_progressive` [`MeasureTheory.IsStronglyPredictable.isStronglyProgressive`].
+* `predictable_adapted` — a predictable real process is adapted in the measurable sense (from
+  the previous two and `StronglyAdapted.adapted`).
+* `predictable_discrete_previsible` [`IsStronglyPredictable.measurable_add_one`] — in discrete
+  time `u (n + 1)` is `𝓕 n`-measurable.
 * `continuous_adapted_progressive`
-  [`MeasureTheory.StronglyAdapted.isStronglyProgressive_of_continuous`];
-* `discrete_adapted_progressive` [`StronglyAdapted.isStronglyProgressive_of_discrete`];
-* `natural_adapted` [`MeasureTheory.Filtration.stronglyAdapted_natural`];
-* `law_eq_iff_fdd_eq` [`ProbabilityTheory.map_eq_iff_forall_finset_map_restrict_eq`];
+  [`MeasureTheory.StronglyAdapted.isStronglyProgressive_of_continuous`].
+* `discrete_adapted_progressive` [`StronglyAdapted.isStronglyProgressive_of_discrete`].
+* `natural_adapted` [`MeasureTheory.Filtration.stronglyAdapted_natural`].
+* `law_eq_iff_fdd_eq` [`ProbabilityTheory.map_eq_iff_forall_finset_map_restrict_eq`].
 * `law_eq_of_modification` [`ProbabilityTheory.map_eq_of_forall_ae_eq`].
 -/
 

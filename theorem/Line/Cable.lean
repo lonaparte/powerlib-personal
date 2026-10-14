@@ -9,7 +9,9 @@ import Mathlib.Analysis.Calculus.Deriv.Slope
 
 /-! # Single-core coaxial cable: geometric identities and the two-loop port relation
 
-Source: work-sync `theory/T-cable.md` §1.2.1, §1.2.2, §1.2.3, §1.4, §1.5, §1.6, §1.8, §1.8.1, §1.9, §2.3.
+Geometric and loop-impedance identities of a single-core coaxial cable (GMR, earth-return
+logarithms, the dielectric product), the ideal-screen two-loop port relation with single-point
+bonding, and the low- and high-frequency limits of the Wedepohl–Wilcox tube impedances.
 
 Model boundary.
 * Single-phase concentric cable: core radius `r_c`, insulation outer radius `r_in`
@@ -23,9 +25,9 @@ Model boundary.
   open at end 1 (`I_s(0) = 0`), bonded through `R_b` at end 2, core loaded by `Z_L` at end 2.
   The theorems are algebraic identities of this closed-form model; the `O(η)` error with
   respect to the coupled 4-state model is *not* formalized.
-* Bessel impedances: the solid-conductor surface impedance `ρm/(2πr) · I₀(mr)/I₁(mr)` (§1.2.1),
-  its low-frequency limit (DC resistance plus internal inductance `μ/(8π)`, with an `O(m⁴)`
-  remainder) and its high-frequency (skin-effect) limit (`Z/(ρm/(2πr)) → 1`,
+* Bessel impedances: the solid-conductor surface impedance `ρm/(2πr) · I₀(mr)/I₁(mr)`
+  (§1.2.1), its low-frequency limit (DC resistance plus internal inductance `μ/(8π)`, with an
+  `O(m⁴)` remainder) and its high-frequency (skin-effect) limit (`Z/(ρm/(2πr)) → 1`,
   `Z = ρm/(2πr) + O(1)` along `m = (1 + j)s`) are in `theorem/Line/CableBessel.lean` (modified
   Bessel functions defined by their power series, integral representation, Laplace estimate in
   `theorem/SpecialFunctions/BesselI.lean`). The exact tubular (Schelkunoff) impedances, with
@@ -39,6 +41,9 @@ Model boundary.
   `1` at low frequency, the inner and outer ratios also at high frequency, while the transfer
   ratio tends to `(a + b)/(2√(ab)) > 1` (Correction there). High frequency is the physical ray
   `m = (1 + j)s`, `s = 1/δ → ∞`.
+
+Source: work-sync `theory/T-cable.md` §1.2.1, §1.2.2, §1.2.3, §1.4, §1.5, §1.6, §1.8, §1.8.1,
+§1.9, §2.3.
 
 Results.
 * GMR: `ln D_s(r_in, r_sh) → ln r_sh - 1/4` as `r_in → 0` (solid conductor) and
@@ -62,6 +67,9 @@ Results.
   (`Z_in/(ρm/(2πa)) → 1`, `Z_out/(ρm/(2πb)) → 1`, surface impedances); from
   `tendsto_cosh_div_sinh` (`coth w → 1`) and `tendsto_exp_div_sinh` (`csch w · e^w → 2`) as
   `Re w → ∞`.
+
+Family and connection conclusions.
+* None: static identities and limits of a closed-form model (no model family).
 
 Correction.
 * §1.2.2 writes `csch(mt) ∼ e^{−mt}` at high frequency; the asymptotic equivalent is

@@ -11,63 +11,59 @@ import Mathlib.Algebra.Polynomial.Roots
 
 /-! # Weierstrass canonical form of a regular matrix pencil
 
-Foundation layer (category B of the work-sync formalization).
+Every regular square matrix pencil over an infinite field has a Weierstrass canonical form, and
+regularity is necessary.
 
-Object: a square matrix pencil `s E - A` with `E A : Matrix ι ι K` over a field `K` (any finite
-index type `ι`), i.e. the coefficient pair of the constant-coefficient linear DAE
-`E x' = A x + f`. The pencil is *regular* when its determinant polynomial
-`det (X E - A) ∈ K[X]` (`pencilPoly`) is not the zero polynomial (`Regular`). Over an infinite
-field this is equivalent to `det (c E - A) ≠ 0` for some `c ∈ K`
-(`regular_iff_exists_det_ne_zero`).
-
-A *Weierstrass form* (`WeierstrassForm E A`) consists of a split `k + l` of the coordinates,
-matrices `P : Matrix (Fin k ⊕ Fin l) ι K`, `Q : Matrix ι (Fin k ⊕ Fin l) K` with two-sided
-inverses `P'`, `Q'`,
-a matrix `J` (size `k`) and a nilpotent `N` (size `l`) with
+Model boundary.
+* Object: a square matrix pencil `s E - A` with `E A : Matrix ι ι K` over a field `K` (any
+  finite index type `ι`), i.e. the coefficient pair of the constant-coefficient linear DAE
+  `E x' = A x + f`. The pencil is *regular* when its determinant polynomial
+  `det (X E - A) ∈ K[X]` (`pencilPoly`) is not the zero polynomial (`Regular`). Over an
+  infinite field this is equivalent to `det (c E - A) ≠ 0` for some `c ∈ K`
+  (`regular_iff_exists_det_ne_zero`).
+* A *Weierstrass form* (`WeierstrassForm E A`) consists of a split `k + l` of the coordinates,
+  matrices `P : Matrix (Fin k ⊕ Fin l) ι K`, `Q : Matrix ι (Fin k ⊕ Fin l) K` with two-sided
+  inverses `P'`, `Q'`, a matrix `J` (size `k`) and a nilpotent `N` (size `l`) with
 ```
 P E Q = diag(I, N),     P A Q = diag(J, I),   hence   P (s E - A) Q = diag(s I - J, s N - I).
 ```
-`P`, `Q` are indexed by `Fin k ⊕ Fin l` on the canonical side, so that the block structure is
-literal (`Matrix.fromBlocks`); their inverses make them invertible changes of equations and of
-variables.
-
-Results.
-* `fitting_matrix` (Fitting decomposition in matrix form, from Mathlib's
-  `LinearMap.eventually_isCompl_ker_pow_range_pow`): every square matrix is similar, by an
-  explicit invertible change of basis, to `diag(M₁, M₀)` with `M₁` invertible and `M₀`
-  nilpotent.
-* `exists_weierstrassForm_of_det_ne_zero`: if `det (c E - A) ≠ 0` for one `c`, a Weierstrass form
-  exists. Construction: `R = (c E - A)⁻¹`, Fitting decomposition of `R E = diag(M₁, M₀)`, then
-  `R A = c R E - I`, `J = c I - M₁⁻¹`, `N = (c M₀ - I)⁻¹ M₀` (nilpotent because the two factors
-  commute), `P = diag(M₁⁻¹, (c M₀ - I)⁻¹) P₀ R`, `Q = Q₀`.
-* `weierstrass`: every regular pencil over an infinite field has a Weierstrass form.
-* `WeierstrassForm.pencil_eq`: `P (s E - A) Q = diag(s I - J, s N - I)` for every `s`.
-* `WeierstrassForm.det_eq_zero_iff`: the finite generalized eigenvalues of the pencil are
-  exactly the eigenvalues of `J` (`det (s N - I)` is a unit because `s N` is nilpotent).
-* `regular_iff_nonempty_weierstrassForm`: over an infinite field a pencil has a Weierstrass
-  form iff it is regular.
-
-Correction (T-pantelides-index-reduction §1.1, T-dae-systems §1.6.2): the note asserts the
-Weierstrass form for every linear DAE `E ż = A z` with singular `E` and omits the regularity
-premise. Regularity is necessary (`regular_of_weierstrassForm`); the zero pencil `E = A = 0` of
-size one is a singular DAE with no Weierstrass form (`zero_pencil_no_weierstrassForm`). The note
-also names the pencil `E - λ A` while writing the normal form of `s E - A`; the formal statement
-uses `s E - A`, consistent with the displayed blocks.
-
-The Kronecker index (nilpotency class of `N`) and its equality with the differentiation index
-are in `theorem.DAE.KroneckerIndex`.
-
-Model boundary: constant coefficients; square pencils. Existence is proved over every infinite
-field (in particular `ℝ`, `ℂ`), and over any field once a point `c` with `det (c E - A) ≠ 0` is
-given; no claim about singular (rectangular or non-regular) pencils beyond the counterexample,
-and no Jordan form of `J` (only that `J` is some matrix). Static linear algebra: no solution
-notion is involved.
-
-Architecture: generic mathematical support (no `Family`); every theorem is a static matrix
-identity or existence statement, `@[powerlib_foundation]`.
+  `P`, `Q` are indexed by `Fin k ⊕ Fin l` on the canonical side, so that the block structure is
+  literal (`Matrix.fromBlocks`); their inverses make them invertible changes of equations and of
+  variables.
+* Constant coefficients; square pencils. Existence is proved over every infinite field (in
+  particular `ℝ`, `ℂ`), and over any field once a point `c` with `det (c E - A) ≠ 0` is given;
+  no claim about singular (rectangular or non-regular) pencils beyond the counterexample, and no
+  Jordan form of `J` (only that `J` is some matrix). Static linear algebra: no solution notion
+  is involved.
+* The Kronecker index (nilpotency class of `N`) and its equality with the differentiation index
+  are in `theorem/DAE/KroneckerIndex.lean`.
 
 Source: work-sync theory/T-pantelides-index-reduction.md §1.1, §1.6 (Weierstrass form and
 Kronecker index); theory/T-dae-systems.md §1.6.2 ("Kronecker 正则形式（仅线性 DAE）").
+
+Results.
+* `fitting_matrix` — Fitting decomposition in matrix form, from Mathlib's
+  `LinearMap.eventually_isCompl_ker_pow_range_pow`: every square matrix is similar, by an
+  explicit invertible change of basis, to `diag(M₁, M₀)` with `M₁` invertible and `M₀`
+  nilpotent.
+* `exists_weierstrassForm_of_det_ne_zero` — if `det (c E - A) ≠ 0` for one `c`, a Weierstrass
+  form exists. Construction: `R = (c E - A)⁻¹`, Fitting decomposition of `R E = diag(M₁, M₀)`,
+  then `R A = c R E - I`, `J = c I - M₁⁻¹`, `N = (c M₀ - I)⁻¹ M₀` (nilpotent because the two
+  factors commute), `P = diag(M₁⁻¹, (c M₀ - I)⁻¹) P₀ R`, `Q = Q₀`.
+* `weierstrass` — every regular pencil over an infinite field has a Weierstrass form.
+* `WeierstrassForm.pencil_eq` — `P (s E - A) Q = diag(s I - J, s N - I)` for every `s`.
+* `WeierstrassForm.det_eq_zero_iff` — the finite generalized eigenvalues of the pencil are
+  exactly the eigenvalues of `J` (`det (s N - I)` is a unit because `s N` is nilpotent).
+* `regular_iff_nonempty_weierstrassForm` — over an infinite field a pencil has a Weierstrass
+  form iff it is regular.
+
+Corrections.
+* T-pantelides-index-reduction §1.1, T-dae-systems §1.6.2: the note asserts the Weierstrass form
+  for every linear DAE `E ż = A z` with singular `E` and omits the regularity premise.
+  Regularity is necessary (`regular_of_weierstrassForm`); the zero pencil `E = A = 0` of size
+  one is a singular DAE with no Weierstrass form (`zero_pencil_no_weierstrassForm`). The note
+  also names the pencil `E - λ A` while writing the normal form of `s E - A`; the formal
+  statement uses `s E - A`, consistent with the displayed blocks.
 -/
 
 noncomputable section

@@ -17,7 +17,11 @@ Model boundary.
   instantiating `theorem/PLL/PIPLL.lean`; zero counting from
   `theorem/SpecialFunctions/TrigZeros.lean`).
 
-Results (T-pll-dynamics §1.13.1).
+Source: work-sync `theory/T-pll-dynamics.md` §1.13 (§1.13.1 zero count and alternation,
+§1.13.5 `Σ_SN`). The table of "typical `N`" by dominant coefficient in §1.13.1 is heuristic and is
+not formalized; only the general bound `N ≤ 4` and the parity (`N` even for simple zeros) are.
+
+Results.
 * Equilibria (`K_i ≠ 0`) with `θ_e` in a window `[α, α + 2π)` are exactly `(θ*, δω/K_i)` with
   `h(θ*) = 0`; there are at most 4 of them when the coefficients are not all zero, and their number
   is `0`, `2` or `4` when every zero of `h` is simple (`h' ≠ 0`).
@@ -27,11 +31,8 @@ Results (T-pll-dynamics §1.13.1).
 * `h(θ*) = h'(θ*) = 0` (the saddle-node set `Σ_SN` of §1.13.5): the Jacobian is a nonzero nilpotent
   matrix (non-hyperbolic).
 
-Source: work-sync `theory/T-pll-dynamics.md` §1.13 (§1.13.1 zero count and alternation,
-§1.13.5 `Σ_SN`). The table of "typical `N`" by dominant coefficient in §1.13.1 is heuristic and is
-not formalized; only the general bound `N ≤ 4` and the parity (`N` even for simple zeros) are.
-
-Family and connection conclusions. No new family: the trigonometric-detector PLL read about a
+Family and connection conclusions.
+No new family: the trigonometric-detector PLL read about a
 selected phase `θ*` is the member `trigModel a b c d e K_p K_i δω θ*` of the PI-PLL family
 `PLL.PIPLL.family` (field translated so that `(θ*, δω / K_i)` is the origin). Local exponential
 stability, instability and the stable/saddle alternation are connection statements on that

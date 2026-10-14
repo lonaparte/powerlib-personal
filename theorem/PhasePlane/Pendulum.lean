@@ -2,24 +2,28 @@ import theorem.PhasePlane.Conservative
 
 /-! # The undamped pendulum `θ̈ + ω₀² sin θ = 0`
 
-Foundation layer (a canonical textbook system, not a power-system model).
+Energy conservation, the stable bottom and unstable top equilibria, the separatrix energy and the
+libration / rotation dichotomy of the canonical textbook pendulum.
 
-Model boundary. State `(θ, ω) = (y 0, y 1) ∈ State 2` with the angle `θ ∈ ℝ` unwrapped (not on
-the circle), constant `ω₀ ≠ 0`, no damping, input or noise; continuous time. The field is
-`Conservative.field 1 0 (ω₀² sin)`, i.e. `θ̇ = ω`, `ω̇ = −ω₀² sin θ`, with potential
-`V(θ) = ω₀² (1 − cos θ)` (engineering convention `V_min = 0`) and energy `E = ω²/2 + V(θ)`.
-
-Results.
-* Energy is conserved along every solution.
-* `(0, 0)` is Lyapunov stable (strict minimum of `V` on `(−π, π)`).
-* `(π, 0)` is unstable: the Jacobian there is `!![0, 1; ω₀², 0]` with `det = −ω₀² < 0` (saddle).
-* Separatrix energy `E(π, 0) = 2ω₀²`.
-* Libration/rotation dichotomy on every solution segment: if `E < 2ω₀²` and `|θ(a)| < π` then
-  `|θ(t)| < π` throughout; if `E > 2ω₀²` then `ω` never vanishes, keeps its sign, and
-  `|θ(t) − θ(a)| ≥ √(2(E − 2ω₀²)) (t − a)` (the angle runs away linearly).
+Model boundary.
+* State `(θ, ω) = (y 0, y 1) ∈ State 2` with the angle `θ ∈ ℝ` unwrapped (not on the circle),
+  constant `ω₀ ≠ 0`, no damping, input or noise; continuous time. The field is
+  `Conservative.field 1 0 (ω₀² sin)`, i.e. `θ̇ = ω`, `ω̇ = −ω₀² sin θ`, with potential
+  `V(θ) = ω₀² (1 − cos θ)` (engineering convention `V_min = 0`) and energy `E = ω²/2 + V(θ)`.
+* A canonical textbook system, not a power-system model: no model family; foundation results.
 
 Source: work-sync theory/T-nonlinear-phase-plane.md §1.2–1.3, theory/T-dynamical-systems.md
 (codes example: pendulum equilibria, energy).
+
+Results.
+* Energy is conserved along every solution (`energy_conserved`).
+* `(0, 0)` is Lyapunov stable (strict minimum of `V` on `(−π, π)`; `origin_lyapunovStable`).
+* `(π, 0)` is unstable: the Jacobian there is `!![0, 1; ω₀², 0]` with `det = −ω₀² < 0` (saddle;
+  `top_unstable`).
+* Separatrix energy `E(π, 0) = 2ω₀²` (`separatrix_energy`).
+* Libration/rotation dichotomy on every solution segment: if `E < 2ω₀²` and `|θ(a)| < π` then
+  `|θ(t)| < π` throughout (`libration`); if `E > 2ω₀²` then `ω` never vanishes, keeps its sign,
+  and `|θ(t) − θ(a)| ≥ √(2(E − 2ω₀²)) (t − a)` (the angle runs away linearly; `rotation`).
 -/
 
 noncomputable section

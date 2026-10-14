@@ -3,70 +3,71 @@ import theorem.LTI.Decay
 
 /-! # Linear semi-explicit DAEs: Schur-complement reduction, matrix pencil, stability
 
-Foundation layer (category B of the work-sync formalization).
+Index-1 linear semi-explicit DAEs reduce to their Schur-complement ODE: solution sets, pencil
+eigenvalues, exponential stability, consistent initial values and the differentiation count.
 
-System (continuous time, constant matrices, `n` differential states, `m` algebraic
-variables, `p` inputs; state order `x` then `y`):
+Model boundary.
+* Continuous time, constant matrices, `n` differential states, `m` algebraic variables, `p`
+  inputs; state order `x` then `y`:
 ```
 ẋ = Axx x + Axy y + Bx u,      0 = Ayx x + Ayy y + By u .
 ```
-A solution for the input signal `u` is a pair `(x, y)` such that for every `t : ℝ`, `x` has
-derivative `Axx x(t) + Axy y(t) + Bx u(t)` and the algebraic constraint holds at `t`:
+* A solution for the input signal `u` is a pair `(x, y)` such that for every `t : ℝ`, `x` has
+  derivative `Axx x(t) + Axy y(t) + Bx u(t)` and the algebraic constraint holds at `t`:
 ```
 ∀ t, HasDerivAt x (d.Axx *ᵥ x t + d.Axy *ᵥ y t + d.Bx *ᵥ u t) t ∧
   d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ u t = 0
 ```
-(zero input: `u = 0`, written `d.Bx *ᵥ 0`, `d.By *ᵥ 0`). No regularity of `y` is assumed.
-Solutions are global in time, with coordinate-vector states `Fin n → ℝ`. This solution notion
-and the exponential stability below are written out in each statement that uses them; they are
-not separate definitions (single-semantics rule: behaviour is defined only in the semantic
-layer).
-
-Index-1 reduction (`Ayy` invertible, i.e. `IsUnit Ayy.det`):
-* `isSolution_iff`: `(x, y)` solves the DAE iff `x` solves the reduced ODE
-  `ẋ = A_red x + B_red u` with Schur complements `A_red = Axx - Axy Ayy⁻¹ Ayx`,
-  `B_red = Bx - Axy Ayy⁻¹ By`, and `y = -Ayy⁻¹ (Ayx x + By u)` pointwise. This is a
-  one-to-one correspondence of solution sets (the algebraic trajectory is a function of
-  the differential one).
-* Matrix pencil: with `E = diag(I, 0)` and `J` the block Jacobian,
-  `det (s E - J) = det (-Ayy) · det (s I - A_red)` (`Matrix.det_fromBlocks₂₂`), so the finite
-  generalized eigenvalues are exactly the eigenvalues of `A_red`.
-* Exponential stability of the DAE (zero input): for some `K > 0`, `r > 0`, every solution
-  satisfies `‖x t‖ ≤ K e^{-r t} ‖x 0‖` and `‖y t‖ ≤ K e^{-r t} ‖x 0‖` for `t ≥ 0` (Euclidean
-  norms). Under index 1 this holds iff `IsHurwitz A_red` (`exponentiallyStable_iff_isHurwitz`).
-* Consistent initial values: every solution satisfies the constraint at `t = 0`; under
-  index 1 the consistent `y(0)` is unique, and every `x(0)` has a solution.
-* One differentiation: under index 1 every solution has differentiable `y` and the stacked
-  state `(x, y)` satisfies an explicit linear ODE (constraint differentiated once), while for
-  `m > 0` the undifferentiated system is not an ODE (some initial point has no solution).
-
-Corrections (source vs. formal statement).
-* Correction (index count, T-dae-systems §1.3): the note defines the index as the minimal
-  number of differentiations of `g = 0` needed to obtain an explicit ODE, but its list says
-  "index k: differentiate k − 1 times" — off by one. Formalized: for an index-1 system one
-  differentiation is necessary and sufficient (`isSolution_stacked_ode`,
-  `not_solution_of_inconsistent`); the list should read "index k: k differentiations".
-* Correction (T-dae-systems §2.1, "Ybus connected ⇒ nonsingular"): a network admittance
-  matrix with no shunt (ground) branches is Laplacian-type, `Y 𝟏 = 0`, hence singular for
-  every topology, connected or not (`Network.ybusNoShunt_det_eq_zero`); the two-bus line is a
-  connected counterexample (`Network.ybus_two_bus_singular`). Nonsingularity needs a shunt path.
-  Both are in `theorem/Network/WeightedLaplacian.lean`.
-
-Model boundary: constant-coefficient linear DAE only; no switching, delay, PWM or PLL;
-the semantic predicates are about the given matrices. Nonlinear index-1 DAEs are in
-`theorem.DAE.Nonlinear`.
-
-Architecture: generic mathematical support (no `Family`). The DAE solution notion and its
-exponential stability lie outside the Flow sentence language, which concerns explicit ODEs; they
-are connected to that language through the reduced ODE. Coordinate solutions of
-`ẋ = A x` are linked to LeanForControl's affine linear field on `EuclideanSpace ℝ (Fin k)`
-(`LTI.isTrajectoryOn_toLp`), whose Hurwitz theory gives both directions of the coordinate decay
-test (`LTI.linear_decay_of_isHurwitz`, `LTI.isHurwitz_of_linear_decay`, in
-`theorem/LTI/Decay.lean`). The former `LTI.AutonomousModel`
-wrapper `LinearDAE.reduced` is removed; its trajectory predicate is written out.
+  (zero input: `u = 0`, written `d.Bx *ᵥ 0`, `d.By *ᵥ 0`). No regularity of `y` is assumed.
+  Solutions are global in time, with coordinate-vector states `Fin n → ℝ`. This solution notion
+  and the exponential stability below are written out in each statement that uses them; they
+  are not separate definitions (single-semantics rule: behaviour is defined only in the semantic
+  layer).
+* Constant-coefficient linear DAE only; no switching, delay, PWM or PLL; the semantic predicates
+  are about the given matrices. Nonlinear index-1 DAEs are in `theorem/DAE/Nonlinear.lean`.
+* The DAE solution notion and its exponential stability lie outside the Flow sentence language,
+  which concerns explicit ODEs; they are connected to that language through the reduced ODE.
+  Coordinate solutions of `ẋ = A x` are linked to LeanForControl's affine linear field on
+  `EuclideanSpace ℝ (Fin k)` (`LTI.isTrajectoryOn_toLp`), whose Hurwitz theory gives both
+  directions of the coordinate decay test (`LTI.linear_decay_of_isHurwitz`,
+  `LTI.isHurwitz_of_linear_decay`, in `theorem/LTI/Decay.lean`).
 
 Source: work-sync theory/T-dae-systems.md §1.2–§1.4, §1.7, §1.9, §2.1;
 theory/T-small-signal-stability.md §1.3–§1.4; theory/T-sdae-systems.md §1.1 (drift part).
+
+Results.
+* `isSolution_iff` — index-1 reduction (`Ayy` invertible, i.e. `IsUnit Ayy.det`): `(x, y)`
+  solves the DAE iff `x` solves the reduced ODE `ẋ = A_red x + B_red u` with Schur complements
+  `A_red = Axx - Axy Ayy⁻¹ Ayx`, `B_red = Bx - Axy Ayy⁻¹ By`, and `y = -Ayy⁻¹ (Ayx x + By u)`
+  pointwise. This is a one-to-one correspondence of solution sets (the algebraic trajectory is
+  a function of the differential one).
+* `det_pencil`, `det_pencil_eq_zero_iff` — matrix pencil, under index 1: with `E = diag(I, 0)`
+  and `J` the block Jacobian, `det (s E - J) = det (-Ayy) · det (s I - A_red)`
+  (`Matrix.det_fromBlocks₂₂`), so the finite generalized eigenvalues are exactly the eigenvalues
+  of `A_red`.
+* `exponentiallyStable_iff_isHurwitz` — exponential stability of the DAE (zero input): for some
+  `K > 0`, `r > 0`, every solution satisfies `‖x t‖ ≤ K e^{-r t} ‖x 0‖` and
+  `‖y t‖ ≤ K e^{-r t} ‖x 0‖` for `t ≥ 0` (Euclidean norms). Under index 1 this holds iff
+  `IsHurwitz A_red`.
+* `initial_consistent`, `exists_unique_consistent` — consistent initial values: every solution
+  satisfies the constraint at `t = 0`; under index 1 the consistent `y(0)` is unique, and every
+  `x(0)` has a solution.
+* `isSolution_stacked_ode`, `exists_inconsistent_initial` — one differentiation: under index 1
+  every solution has differentiable `y` and the stacked state `(x, y)` satisfies an explicit
+  linear ODE (constraint differentiated once), while for `m > 0` the undifferentiated system is
+  not an ODE (some initial point has no solution).
+
+Corrections.
+* Index count, T-dae-systems §1.3: the note defines the index as the minimal number of
+  differentiations of `g = 0` needed to obtain an explicit ODE, but its list says "index k:
+  differentiate k − 1 times" — off by one. Formalized: for an index-1 system one differentiation
+  is necessary and sufficient (`isSolution_stacked_ode`, `not_solution_of_inconsistent`); the
+  list should read "index k: k differentiations".
+* T-dae-systems §2.1, "Ybus connected ⇒ nonsingular": a network admittance matrix with no shunt
+  (ground) branches is Laplacian-type, `Y 𝟏 = 0`, hence singular for every topology, connected
+  or not (`Network.ybusNoShunt_det_eq_zero`); the two-bus line is a connected counterexample
+  (`Network.ybus_two_bus_singular`). Nonsingularity needs a shunt path. Both are in
+  `theorem/Network/WeightedLaplacian.lean`.
 -/
 
 noncomputable section

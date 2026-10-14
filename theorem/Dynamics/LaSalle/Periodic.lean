@@ -7,18 +7,28 @@ import theorem.Dynamics.Calculus
 
 /-! # LaSalle through a periodic coordinate, angle lifts and attraction through a reduction
 
-Model boundary. Generic: autonomous continuous-time ODEs `ẋ = f x` on
-`Dynamics.State n = EuclideanSpace ℝ (Fin n)`; no input, delay, switching or time-variation.
-Solutions are `IsIntegralCurveOn` curves (one-sided derivatives at endpoints), `V̇ x` is
-`fderiv ℝ V x (f x)`. No model family is defined or fixed: every theorem is a generic
-implication about arbitrary fields, maps and functions, hence a foundation result (Rules §3).
+A field that is `2π`-periodic in an angle `θ` has unbounded sublevel sets of every periodic energy,
+so the compact-set hypothesis of LaSalle's principle fails on `ℝⁿ`. The standard remedy is to map
+the state through a `C¹` map `P` (for an angle, `θ ↦ (cos θ, sin θ)`) that carries solutions of
+`f` to solutions of a field `g` on which the image of the dynamics lies in an invariant level set
+`{h = c₀}` (the cylinder `c² + s² = 1`) of a first integral `h`, where the energy sublevel sets
+are compact. The results below are the generic pieces of that argument.
 
-Purpose. A field that is `2π`-periodic in an angle `θ` has unbounded sublevel sets of every
-periodic energy, so the compact-set hypothesis of LaSalle's principle fails on `ℝⁿ`. The standard
-remedy is to map the state through a `C¹` map `P` (for an angle, `θ ↦ (cos θ, sin θ)`) that
-carries solutions of `f` to solutions of a field `g` on which the image of the dynamics lies in an
-invariant level set `{h = c₀}` (the cylinder `c² + s² = 1`) of a first integral `h`, where the
-energy sublevel sets are compact. The results below are the generic pieces of that argument.
+Scope.
+* Autonomous continuous-time ODEs `ẋ = f x` on `Dynamics.State n = EuclideanSpace ℝ (Fin n)`; no
+  input, delay, switching or time-variation. Solutions are `IsIntegralCurveOn` curves (one-sided
+  derivatives at endpoints), `V̇ x` is `fderiv ℝ V x (f x)`.
+* No model family is defined or fixed: every theorem is a generic implication about arbitrary
+  fields, maps and functions, hence a foundation result (Rules §3). The predicates are
+  LeanForControl's `IsPositivelyInvariant`, `IsTrajectoryOn`, `LieDerivZeroSet` and the Flow
+  sentence `Flow.GloballyExponentiallyStable`, used in hypotheses; conclusions are integral-curve,
+  convergence and distance statements about the arbitrary data. Set attraction and regions of
+  attraction are outside the sentence language of the library; model families that use these
+  tools keep their trajectory-level conclusions as private implementation evidence.
+
+Source: Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.4 (LaSalle) applied on the cylinder
+`S¹ × ℝⁿ⁻¹`, as in the energy-shaping argument of Arghir–Dörfler (IEEE TPEL 35(4), 2020,
+appendix); interface for `theorem.GFM.Matching.LaSalle` and `theorem.GFM.Matching.ClosedLoop`.
 
 Results. (The calculus of curves in `State n` it uses — `fderiv_apply_eq_of_hasDerivAt_line`,
 `hasDerivWithinAt_euclidean_of_coord`, `tendsto_euclidean_of_coord`, `norm_le_sum_abs` — is in
@@ -42,7 +52,7 @@ Results. (The calculus of curves in `State n` it uses — `fderiv_apply_eq_of_ha
   `lasalle_condition_of_trajectories` (solution segments staying in `E` start in `M`).
 * `tendsto_zero_of_tendsto_nhdsSet`: convergence to a set `M` gives convergence to `0` of every
   continuous function vanishing on `M`.
-* `abs_sub_le_of_abs_lt_pi_div_two` (`|x| ≤ (π/2) |sin x|` for `|x| < π/2`) and
+* `abs_le_of_abs_le_pi_div_two` (`|x| ≤ (π/2) |sin x|` for `|x| ≤ π/2`) and
   `exists_int_tendsto_of_tendsto_sin`: a continuous angle whose sine tends to `0` converges to a
   single multiple `j π` (no drift between the zeros of `sin`).
 * `exists_cos_sin`, `exists_angle_lift`: a point of the unit circle has an angle; a solution
@@ -54,13 +64,6 @@ Results. (The calculus of curves in `State n` it uses — `fderiv_apply_eq_of_ha
   solution of `F` starting in `L` approaches `O` exponentially (stationary-frame attraction of a
   steady-state orbit from global exponential stability in rotating coordinates).
 
-Connection architecture. Generic implications only (no Family): `@[powerlib_foundation]`. The
-predicates are LeanForControl's `IsPositivelyInvariant`, `IsTrajectoryOn`, `LieDerivZeroSet` and
-the Flow sentence `Flow.GloballyExponentiallyStable`, used in hypotheses; conclusions are
-integral-curve, convergence and distance statements about the arbitrary data. Set attraction and
-regions of attraction are outside the sentence language of the library; model families that use
-these tools keep their trajectory-level conclusions as private implementation evidence.
-
 Searched and not found (Rules §15): Mathlib and LeanForControl have no LaSalle principle on an
 invariant manifold or modulo a period, no ω-limit result for non-compact sublevel sets, no angle
 lift for ODE solutions on the circle, and no set-attraction transfer through a reduction.
@@ -70,10 +73,6 @@ this library's `lasalle_invariance_principle_of_contDiff`, `exists_globalization
 `Real.mul_le_sin`, `Real.sin_sub_int_mul_pi`, `intermediate_value_Icc`, `Complex.cos_arg`,
 `Continuous.integral_hasStrictDerivAt`, `constant_of_has_deriv_right_zero`,
 `Continuous.tendsto_nhdsSet_nhds`.
-
-Source: Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.4 (LaSalle) applied on the cylinder
-`S¹ × ℝⁿ⁻¹`, as in the energy-shaping argument of Arghir–Dörfler (IEEE TPEL 35(4), 2020,
-appendix); interface for `theorem.GFM.Matching.LaSalle` and `theorem.GFM.Matching.ClosedLoop`.
 -/
 
 noncomputable section

@@ -1,29 +1,38 @@
 import theorem.CurrentControl.Decoupling
 
-/-! # IMC-tuned PI current loop and the IN/OUT sign of the current controller (domain)
+/-! # IMC-tuned PI current loop and the IN/OUT sign of the current controller
 
-Model boundary: the single-axis PI current loop of `PILoop.lean` (state `(i, ξ)`, series R–L
-branch with `L > 0`, IN-positive current, PLL-aligned dq axis, ideal feedforward and
-decoupling, no delay / PWM / limits, continuous time, reference `i*` as input), read through
-its family `PIParams.family`: the closed-loop plant as a port system, whose flow sentences speak
-about the loop at the equilibrium of every constant reference.
+Model boundary.
+* IMC tuning: the single-axis PI current loop of `PILoop.lean` (state `(i, ξ)`, series R–L
+  branch with `L > 0`, IN-positive current, PLL-aligned dq axis, ideal feedforward and
+  decoupling, no delay / PWM / limits, continuous time, reference `i*` as input), read through
+  its family `PIParams.family`: the closed-loop plant as a port system, whose flow sentences
+  speak about the loop at the equilibrium of every constant reference. IMC gains `Kp = L ω_b`,
+  `Ki = R ω_b` with bandwidth `ω_b > 0` (`imc`).
+* Controller sign: IN-positive duty-cycle plant `L di/dt = −R i − V_dc d` (from
+  `ΔI = Z_oc⁻¹ (ΔV − V_dc ΔD)` with `ΔV = 0`, scalar, no dq coupling and no delay), controller
+  `d = σ (Kp (i* − i) + Ki ξ)`.
+* The same IMC-tuned loop in a machine drive (RL plant, bandwidth `α`) is the family on
+  `Drives.CascadeControl.IMCLoop` (`theorem/Drives/CascadeControl.lean`).
 
-## IMC tuning (T-gfl-control §1.4.1, Harnefors–Nee 1998)
-`Kp = L ω_b`, `Ki = R ω_b` with bandwidth `ω_b > 0` (`imc`).
+Source: work-sync `theory/T-gfl-control.md` §1.4.1; `theory/T-gfl-impedance.md` §1.4 (sign
+paragraph and sanity check).
+
+Results.
+IMC tuning (T-gfl-control §1.4.1, Harnefors–Nee 1998):
 * `imc_charPoly`: `L s² + (R + L ω_b) s + R ω_b = (L s + R)(s + ω_b)`.
 * `imc_transfer_eq`: off the two roots the closed-loop transfer is **exactly**
   `ω_b/(s + ω_b)` (the note writes `≈`): the plant pole `−R/L` is cancelled by the PI zero
   (`imc_numerator_root`), but it remains a characteristic root of the realization
   (`imc_cancelled_pole_root`).
-* `imc_mem_den_iff` (connection, formerly `imc_exponentiallyStable_iff`): internal (state)
-  stability — every attractive sentence — holds iff `R/L > 0`, whatever `ω_b > 0`.
+* `imc_mem_den_iff` (connection): internal (state) stability — every attractive sentence —
+  holds iff `R/L > 0`, whatever `ω_b > 0`.
 * `imc_transfer_stable_insufficient` (connection): for `R ≤ 0` the transfer is still the stable
   first-order lag `ω_b/(s + ω_b)` (`imc_transfer_eq`, static) but the loop satisfies no
-  attractive sentence — the hidden-mode pattern of `Circuits.Interconnection.portData_not_certified`.
+  attractive sentence — the hidden-mode pattern of
+  `Circuits.Interconnection.portData_not_certified`.
 
-## Sign of the current controller (T-gfl-impedance §1.4)
-IN-positive duty-cycle plant `L di/dt = −R i − V_dc d` (from `ΔI = Z_oc⁻¹ (ΔV − V_dc ΔD)` with
-`ΔV = 0`, scalar, no dq coupling and no delay), controller `d = σ (Kp (i* − i) + Ki ξ)`.
+Sign of the current controller (T-gfl-impedance §1.4):
 * `signedField_correct`: `σ = −1` (the IN translation `−G_ci ε` of the note) is the PI loop
   with gains `V_dc Kp, V_dc Ki`: characteristic polynomial `L s² + (R + V_dc Kp) s + V_dc Ki`.
 * `signedField_copied`: `σ = +1` (the OUT-literature form `+G_ci ε` copied unchanged) is the PI
@@ -32,14 +41,15 @@ IN-positive duty-cycle plant `L di/dt = −R i − V_dc d` (from `ΔI = Z_oc⁻�
 * Negation theorems: with `V_dc > 0`, `Ki > 0` the copied form has a positive real
   characteristic root (`copied_exists_pos_root`, static), is unstable
   (`copied_mem_den_unstable`, connection) and satisfies no attractive sentence
-  (`copied_not_mem_den`, connection, formerly `copied_not_exponentiallyStable`). That it has a
-  solution whose current does not track (`copied_not_tracks`) is a trajectory-level result
-  outside the sentence language, kept as private implementation evidence.
+  (`copied_not_mem_den`, connection).
 
-The transfer functions, characteristic polynomials and field identities are static evidence.
-
-Source: work-sync `theory/T-gfl-control.md` §1.4.1; `theory/T-gfl-impedance.md` §1.4 (sign
-paragraph and sanity check).
+Family and connection conclusions.
+No new family: both models are read through `PIParams.family` of `PILoop.lean`; the connection
+statements are `imc_mem_den_iff`, `imc_transfer_stable_insufficient`, `copied_mem_den_unstable`
+and `copied_not_mem_den`. The transfer functions, characteristic polynomials and field identities
+are static evidence. That the copied form has a solution whose current does not track
+(`copied_not_tracks`) is a trajectory-level result outside the sentence language, kept as private
+implementation evidence.
 -/
 
 noncomputable section

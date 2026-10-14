@@ -2,7 +2,7 @@ import theorem.Spectral.Family
 import theorem.LTI.Plant
 import theorem.Criteria.Hurwitz2
 
-/-! # Single-axis PI current loop of a converter (domain)
+/-! # Single-axis PI current loop of a converter
 
 Model boundary.
 * System: one axis of the converter-side current loop, a single series R–L branch with
@@ -24,8 +24,16 @@ Model boundary.
 * Excluded: PLL dynamics, the other axis (perfect decoupling), the feedforward low-pass
   (`Feedforward.lean`), decoupling mismatch (`Mismatch.lean`), computation/PWM delay, PWM
   switching, current or modulation limits, DC-link dynamics.
+* The IMC-tuned instance is `theorem/CurrentControl/IMC.lean`; the same IMC loop in a machine
+  drive is the family on `Drives.CascadeControl.IMCLoop` (`theorem/Drives/CascadeControl.lean`).
 
-Static results.
+Source: work-sync `theory/T-gfl-control.md` §1.4.1, §1.4.4; `theory/T-gfl-impedance.md` §1.4
+(scalar sanity check); `theory/T-gfl-reduced-order-dynamics.md` §1.3 (`A_ci`);
+`projects/vsc-stochastic-stability/notes/concepts/reduction-pipeline.md` §2;
+`projects/gfl-gfm-stability-tree/notes/concepts/frozen-and-basin.md` (PI 环 `O(ω_cc⁻²)` vs
+一阶滞后 `O(ω_cc⁻¹)`, current-loop order).
+
+Results.
 * `isHurwitz_iff`: with `L > 0` the closed-loop state matrix is Hurwitz iff `R + Kp > 0 ∧ Ki > 0`
   (equivalently `(R + Kp)/L > 0 ∧ Ki/L > 0`, `isHurwitz_iff_div` for every `L`).
 * `equilibrium_current`: every equilibrium for a constant reference has `i = i*`.
@@ -47,8 +55,7 @@ Static results.
   `ω² (1 − G_PI(s)) → s²` as `ω → ∞`: the low-frequency error is of exact order `ω⁻¹` for the lag
   and `ω⁻²` for the PI loop.
 
-## Families and connection conclusions
-
+Family and connection conclusions.
 * `family : Family PIParams Spectral.Requirement 2 1` reads a parameter set as the port system
   of its closed-loop plant `model` (input `i*`, output `i`; `Family.IsLinear`), so a flow
   sentence speaks about the zero-reference loop at the origin, which is the behaviour about the
@@ -62,17 +69,11 @@ Static results.
 
 Connection conclusions: `chain_le_semantics`, `refChain_le_semantics` (every translation
 sound), `exact`, `refExact` (the attractive sentences and sampled contraction are carved out
-exactly), and the membership equivalences `mem_den_iff` (formerly `exponentiallyStable_iff`),
+exactly), and the membership equivalences `mem_den_iff`,
 `withGain_mem_den_iff`, `refFeedback_mem_den_iff`, `qLoop_mem_den_iff`. The Hurwitz criteria,
 equilibria, transfer function and parameter identities are static evidence. Reference tracking
 (`tracks_reference`) is a trajectory-level result outside the sentence language and is kept as
 private implementation evidence.
-
-Source: work-sync `theory/T-gfl-control.md` §1.4.1, §1.4.4; `theory/T-gfl-impedance.md` §1.4
-(scalar sanity check); `theory/T-gfl-reduced-order-dynamics.md` §1.3 (`A_ci`);
-`projects/vsc-stochastic-stability/notes/concepts/reduction-pipeline.md` §2;
-`projects/gfl-gfm-stability-tree/notes/concepts/frozen-and-basin.md` (PI 环 `O(ω_cc⁻²)` vs
-一阶滞后 `O(ω_cc⁻¹)`, current-loop order).
 -/
 
 noncomputable section

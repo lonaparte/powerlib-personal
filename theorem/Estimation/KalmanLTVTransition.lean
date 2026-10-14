@@ -3,27 +3,31 @@ import theorem.Estimation.KalmanLTV
 
 /-! # LTV Kalman covariance with LeanForControl's state-transition matrix
 
-Source: work-sync `theory/T-kalman-filter.md` §1.2, §1.4 (as in `theorem/Estimation/KalmanLTV.lean`).
+The fundamental-matrix hypothesis of `theorem/Estimation/KalmanLTV.lean`, discharged for every
+continuous time-varying `A(t)` with LeanForControl's Peano–Baker state-transition matrix.
 
-Foundation (linear algebra / matrix ODE), not an engineering result.  This module discharges the
-fundamental-matrix hypothesis of `theorem/Estimation/KalmanLTV.lean` for every continuous
-time-varying `A(t)` with LeanForControl's Peano–Baker state-transition matrix
-`LinearSystems.stateTransitionMatrix` (Hespanha, *Linear Systems Theory*, Ch. 5), reused directly
-through the dependency interface (`dependencies/LeanForControl.lean` imports
-`LeanForControl.LinearSystems.Solutions.CtsLTV`).  The upstream norm on matrices is the
-`L∞`-operator norm (`Matrix.Norms.Operator`), used here only to supply its segment bounds.
+Scope.
+* Linear algebra / matrix ODE, not an engineering result.
+* The state-transition matrix is `LinearSystems.stateTransitionMatrix` (Hespanha, *Linear
+  Systems Theory*, Ch. 5), reused directly through the dependency interface
+  (`dependencies/LeanForControl.lean` imports `LeanForControl.LinearSystems.Solutions.CtsLTV`).
+  The upstream norm on matrices is the `L∞`-operator norm (`Matrix.Norms.Operator`), used here
+  only to supply its segment bounds.
 
-Main results.
-* `stm_hasDerivAt`, `stm_self`: `∂_t Φ(t, s) = A(t) Φ(t, s)` at every `t ∈ ℝ` (the upstream
-  theorem `hasDerivAt_stateTransitionMatrix` holds on open segments `(s, t₁)`; the anchor is moved
-  with `stateTransitionMatrix_comp`, `stateTransitionMatrix_comp_of_mem`,
+Source: work-sync theory/T-kalman-filter.md §1.2, §1.4 (as in
+`theorem/Estimation/KalmanLTV.lean`).
+
+Results.
+* `stm_hasDerivAt`, `stm_self` — `∂_t Φ(t, s) = A(t) Φ(t, s)` at every `t ∈ ℝ` (the upstream
+  theorem `hasDerivAt_stateTransitionMatrix` holds on open segments `(s, t₁)`; the anchor is
+  shifted with `stateTransitionMatrix_comp`, `stateTransitionMatrix_comp_of_mem`,
   `stateTransitionMatrix_inv`) and `Φ(s, s) = I`.
-* `ltv_cov_stateTransition` (**LTV prediction covariance**): for continuous `A(t)`, `Q(t)`,
+* `ltv_cov_stateTransition` — **LTV prediction covariance**: for continuous `A(t)`, `Q(t)`,
   `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ` is the unique solution of
   `Ṗ = A(t) P + P A(t)ᵀ + Q(t)`, `P(t₀) = P₀`.
-* `riccati_joseph_form_stateTransition`: a symmetric Riccati solution equals its closed-loop
+* `riccati_joseph_form_stateTransition` — a symmetric Riccati solution equals its closed-loop
   (Joseph) integral representation with `Φ_K` the state-transition matrix of `A − P Cᵀ R⁻¹ C`.
-* `riccati_posSemidef_of_continuous`: `Q ⪰ 0`, `R ≻ 0`, `P(t₀) ⪰ 0` ⇒ the Riccati solution is
+* `riccati_posSemidef_of_continuous` — `Q ⪰ 0`, `R ≻ 0`, `P(t₀) ⪰ 0` ⇒ the Riccati solution is
   `⪰ 0` for `t ≥ t₀` (no fundamental-matrix hypothesis left).
 -/
 

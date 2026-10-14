@@ -2,23 +2,27 @@ import theorem.Periodic.Transition
 
 /-! # Time shifts of a periodic linear system and Floquet exponents
 
-Foundation layer for `ẋ = A(t) x` (continuous, uniformly bounded `A`, sup norm), as in
-`Periodic/Transition.lean`.
+A time shift does not change the Floquet multipliers, and Floquet exponents are determined by
+the multipliers up to harmonic aliases.
 
-Results.
-* `transition_shift`: for the time-shifted matrix `A_c(t) = A(t + c)`,
-  `Φ_c(t, s) = Φ(t + c, s + c)` (`s ≤ t`); `monodromy_shift`: `M_{A_c}(s) = M_A(s + c)`.
-* `spectrum_monodromy_shift`: for a `T`-periodic `A` the Floquet multipliers of `A_c` and `A`
-  coincide, for every shift `c` (the monodromy matrix from a shifted start is similar).
-* Floquet exponents: for a multiplier `ρ ≠ 0` and `T > 0`, `μ = log ρ / T` satisfies
-  `e^{μT} = ρ` (`exp_floquetExponent`), `|ρ| < 1 ↔ Re μ < 0` (`norm_lt_one_iff_re_neg`), and the
-  harmonic aliases `μ + jkω_s` (`ω_s T = 2π`, `k ∈ ℤ`) give the same multiplier
-  (`exp_alias`); hence only `Re μ` matters for stability.
+Scope.
+* `ẋ = A(t) x` with continuous, uniformly bounded `A` (sup norm), as in
+  `Periodic/Transition.lean`.
 
 Source: work-sync theory/T-harmonic-linearization.md §1.6 (`ρ_i = λ_i(Φ(T, 0))`,
 `|ρ_i| < 1 ⇔ Re μ_i < 0`, `μ_i` unique modulo `jω_s`);
 projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/gfl-gfm-parametric-contrast.md
 §11 (half-period symmetry; used by `ParametricResonance/HalfPeriod.lean`).
+
+Results.
+* `transition_shift` — for the time-shifted matrix `A_c(t) = A(t + c)`,
+  `Φ_c(t, s) = Φ(t + c, s + c)` (`s ≤ t`); `monodromy_shift`: `M_{A_c}(s) = M_A(s + c)`.
+* `spectrum_monodromy_shift` — for a `T`-periodic `A` the Floquet multipliers of `A_c` and `A`
+  coincide, for every shift `c` (the monodromy matrix from a shifted start is similar).
+* `exp_floquetExponent`, `norm_lt_one_iff_re_neg`, `exp_alias` — Floquet exponents: for a
+  multiplier `ρ ≠ 0` and `T > 0`, `μ = log ρ / T` satisfies `e^{μT} = ρ`, `|ρ| < 1 ↔ Re μ < 0`,
+  and the harmonic aliases `μ + jkω_s` (`ω_s T = 2π`, `k ∈ ℤ`) give the same multiplier; hence
+  only `Re μ` matters for stability.
 -/
 
 noncomputable section

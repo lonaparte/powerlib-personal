@@ -7,36 +7,40 @@ import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 
 /-! # Eigenvalue perturbation: Bauer–Fike, first-order sensitivity, spectral condition number
 
-Foundation layer (category B).
+The Bauer–Fike bounds (diagonalisable, Hermitian and normal matrices), the first-order
+eigenvalue sensitivity along a differentiable branch, and its bound by the spectral condition
+number.
 
-Sources: work-sync `theory/T-eigenvalue-analysis.md` §1.4 (Bauer–Fike, normal matrices),
+Scope.
+* Complex square matrices, spectral (`ℓ²` operator) norms (`Matrix.Norms.L2Operator`), vectors in
+  `EuclideanSpace ℂ n` acted on by `LinearAlgebra.act A = Matrix.toEuclideanCLM A`.
+
+Source: work-sync theory/T-eigenvalue-analysis.md §1.4 (Bauer–Fike, normal matrices),
 §1.8 (first-order perturbation `λ̃ = λ + ψᵀEv/(ψᵀv)`, spectral condition number),
-§1.9 (sensitivity `dλ/dα = ψᵀ (∂A/∂α) v`); `theory/T-small-signal-stability.md` §1.8;
-`theory/T-participation-factor.md` (left/right eigenvectors).
-
-Setting: complex square matrices, spectral (`ℓ²` operator) norms
-(`Matrix.Norms.L2Operator`), vectors in `EuclideanSpace ℂ n` acted on by
-`LinearAlgebra.act A = Matrix.toEuclideanCLM A`.
+§1.9 (sensitivity `dλ/dα = ψᵀ (∂A/∂α) v`); theory/T-small-signal-stability.md §1.8;
+theory/T-participation-factor.md (left/right eigenvectors).
 
 Results.
-* `bauerFike`: if `A = V Λ V⁻¹` (`Λ = diag λ`), every eigenvalue `μ` of `A + E` satisfies
+* `bauerFike` — if `A = V Λ V⁻¹` (`Λ = diag λ`), every eigenvalue `μ` of `A + E` satisfies
   `minᵢ |μ − λᵢ| ≤ ‖V‖ ‖V⁻¹‖ ‖E‖`; `ModalBasis.bauerFike` is the same with the modal data
   (`V⁻¹ = Wᵀ`).
-* `bauerFike_hermitian` (normal-matrix corollary, Hermitian case via Mathlib's spectral theorem
-  `Matrix.IsHermitian.spectral_theorem`, unitary `V`, `‖V‖ = ‖V⁻¹‖ = 1`): `minᵢ |μ − λᵢ| ≤ ‖E‖`.
-* `bauerFike_normal`: **Bauer–Fike for a general normal matrix** (`Aᴴ A = A Aᴴ`): every eigenvalue
-  `μ` of `A + E` has some `ν ∈ σ(A)` with `|μ − ν| ≤ ‖E‖`. No diagonalisation is assumed: for
-  `μ ∉ σ(A)` the resolvent `R = (μI − A)⁻¹` is normal, so its spectral norm equals its spectral
-  radius (Mathlib `IsStarNormal.spectralRadius_eq_nnnorm`; complex matrices with the `ℓ²` operator
-  norm form a C⋆-algebra), which is attained at some `1/(μ − ν)`, `ν ∈ σ(A)`
+* `bauerFike_hermitian` — normal-matrix corollary, Hermitian case via Mathlib's spectral theorem
+  `Matrix.IsHermitian.spectral_theorem`, unitary `V`, `‖V‖ = ‖V⁻¹‖ = 1`:
+  `minᵢ |μ − λᵢ| ≤ ‖E‖`.
+* `bauerFike_normal` — **Bauer–Fike for a general normal matrix** (`Aᴴ A = A Aᴴ`): every
+  eigenvalue `μ` of `A + E` has some `ν ∈ σ(A)` with `|μ − ν| ≤ ‖E‖`. No diagonalisation is
+  assumed: for `μ ∉ σ(A)` the resolvent `R = (μI − A)⁻¹` is normal, so its spectral norm equals
+  its spectral radius (Mathlib `IsStarNormal.spectralRadius_eq_nnnorm`; complex matrices with
+  the `ℓ²` operator norm form a C⋆-algebra), which is attained at some `1/(μ − ν)`, `ν ∈ σ(A)`
   (`spectrum.exists_nnnorm_eq_spectralRadius`); `x = R E x` gives `1 ≤ ‖R‖ ‖E‖`.
   `mem_spectrum_iff_exists_eigvec`: `σ(M)` is the set of eigenvalues of a complex matrix.
   `bauerFike_normal_spectrum`: the same with `μ ∈ σ(A + E)` (spectrum form).
-* `eigenvalue_sensitivity`: along a differentiable eigen-branch `A(α) v(α) = λ(α) v(α)` with a
+* `eigenvalue_sensitivity` — along a differentiable eigen-branch `A(α) v(α) = λ(α) v(α)` with a
   left eigenvector `ψ` of `A(α₀)` (`ψᵀ v(α₀) ≠ 0`), `λ'(α₀) = ψᵀ A'(α₀) v(α₀) / (ψᵀ v(α₀))`
   (`= ψᵀ A' v` under the normalisation `ψᵀ v = 1`). The existence of a differentiable branch
-  (simple eigenvalue, implicit function theorem) is assumed, not proved.
-* `abs_sensitivity_le`: `|λ'(α₀)| ≤ κ(λ) ‖A'(α₀)‖` with the spectral condition number
+  (simple eigenvalue, implicit function theorem) is assumed here; it is proved in
+  `theorem/Modal/Sensitivity.lean` (`exists_eigenvector_branch`).
+* `abs_sensitivity_le` — `|λ'(α₀)| ≤ κ(λ) ‖A'(α₀)‖` with the spectral condition number
   `κ(λ) = ‖ψ‖ ‖v‖ / |ψᵀ v|` (first-order form of `|λ̃ − λ| ≤ κ(λ)‖E‖ + O(‖E‖²)`).
 -/
 

@@ -1,36 +1,40 @@
 import dependencies.Mathlib
 import theorem.Attributes
 
-/-! # PMSM steady-state algebra: torque, MTPA, voltage ellipse (foundation)
+/-! # PMSM steady-state algebra: torque, MTPA, voltage ellipse
 
-Model: permanent-magnet synchronous machine in the rotor dq frame (d-axis on the magnet),
-motor convention, constant `r_s, L_d, L_q, ψ_f`, `np` pole pairs, amplitude-invariant
-transform:
-`v_d = r_s i_d + L_d di_d/dt − ω L_q i_q`, `v_q = r_s i_q + L_q di_q/dt + ω L_d i_d + ω ψ_f`,
-`T_e = (3/2) np (ψ_f i_q + (L_d − L_q) i_d i_q)`.
-These are steady-state / algebraic statements (no dynamics, no controller); saturation,
-cross-saturation and temperature effects are excluded.
+Static foundation for the permanent-magnet synchronous machine: torque, maximum torque per ampere
+(MTPA) for surface and interior machines, and the steady-state voltage ellipse.
 
-Contents.
-* SPMSM (`L_d = L_q`): torque `(3/2) np ψ_f i_q`; on the current disk `|i| ≤ I` the torque is
-  maximised exactly at `(0, I)` (`spmsm_mtpa`), and a given torque is produced with least
-  current exactly at `i_d = 0` (`spmsm_minCurrent`). Hence `i_d* = 0`.
+Model boundary.
+* Permanent-magnet synchronous machine in the rotor dq frame (d-axis on the magnet), motor
+  convention, constant `r_s, L_d, L_q, ψ_f`, `np` pole pairs, amplitude-invariant transform:
+  `v_d = r_s i_d + L_d di_d/dt − ω L_q i_q`, `v_q = r_s i_q + L_q di_q/dt + ω L_d i_d + ω ψ_f`,
+  `T_e = (3/2) np (ψ_f i_q + (L_d − L_q) i_d i_q)`.
+* These are steady-state / algebraic statements (no dynamics, no controller); saturation,
+  cross-saturation and temperature effects are excluded.
+
+Source: work-sync `theory/T-field-oriented-control.md` §1.6 (torque, SPMSM, IPMSM MTPA),
+§1.7 (voltage ellipse).
+
+Results.
+* SPMSM (`L_d = L_q`): torque `(3/2) np ψ_f i_q` (`torque_surface`); on the current disk
+  `|i| ≤ I` the torque is maximised exactly at `(0, I)` (`spmsm_mtpa`), and a given torque is
+  produced with least current exactly at `i_d = 0` (`spmsm_minCurrent`). Hence `i_d* = 0`.
 * IPMSM (`ΔL = L_q − L_d > 0`, `ψ_f > 0`): the MTPA point is
-  `i_d = ψ_f/(4ΔL) − √(ψ_f²/(16ΔL²) + I²/2)`, `i_q = √(I² − i_d²)`; it is the **unique**
-  torque maximiser on the disk `i_d² + i_q² ≤ I²` (`ipmsm_mtpa_unique_max`), and in terms of
-  `i_q` it is `i_d = ψ_f/(2ΔL) − √(ψ_f²/(4ΔL²) + i_q²)` (`ipmsm_mtpa_id_of_iq`).
+  `i_d = ψ_f/(4ΔL) − √(ψ_f²/(16ΔL²) + I²/2)`, `i_q = √(I² − i_d²)` (`mtpaId`, `mtpaIq`); it is
+  the **unique** torque maximiser on the disk `i_d² + i_q² ≤ I²` (`ipmsm_mtpa_unique_max`), and
+  in terms of `i_q` it is `i_d = ψ_f/(2ΔL) − √(ψ_f²/(4ΔL²) + i_q²)` (`ipmsm_mtpa_id_of_iq`).
 * Voltage ellipse: in steady state with `r_s = 0`, `v_d² + v_q² ≤ V²` iff
   `(L_d i_d + ψ_f)² + (L_q i_q)² ≤ (V/ω)²` (`voltageEllipse_iff`).
 
-Source: work-sync theory/T-field-oriented-control.md §1.6 (torque, SPMSM, IPMSM MTPA),
-§1.7 (voltage ellipse).
-
-Correction (FOC note §1.6): the note's MTPA formula
-`i_d = ψ_f/(2(L_q − L_d)) − √(ψ_f²/(4(L_q − L_d)²) + i_s²/2)` mixes the `|i_s|`-form and the
-`i_q`-form. The correct `|i_s|`-form is `ψ_f/(4ΔL) − √(ψ_f²/(16ΔL²) + i_s²/2)` and the correct
-`i_q`-form is `ψ_f/(2ΔL) − √(ψ_f²/(4ΔL²) + i_q²)`. `noteMTPA_not_optimal` exhibits
-`ψ_f = ΔL = 1`, `|i_s| = 2`, where the note's formula gives `i_d = −1` while the MTPA value is
-`(1 − √33)/4 ≈ −1.186`, and the note's point produces strictly less torque.
+Correction (FOC note §1.6).
+* The note's MTPA formula `i_d = ψ_f/(2(L_q − L_d)) − √(ψ_f²/(4(L_q − L_d)²) + i_s²/2)` mixes
+  the `|i_s|`-form and the `i_q`-form. The correct `|i_s|`-form is
+  `ψ_f/(4ΔL) − √(ψ_f²/(16ΔL²) + i_s²/2)` and the correct `i_q`-form is
+  `ψ_f/(2ΔL) − √(ψ_f²/(4ΔL²) + i_q²)`. `noteMTPA_not_optimal` exhibits `ψ_f = ΔL = 1`,
+  `|i_s| = 2`, where the note's formula gives `i_d = −1` while the MTPA value is
+  `(1 − √33)/4 ≈ −1.186`, and the note's point produces strictly less torque.
 -/
 
 noncomputable section

@@ -3,10 +3,32 @@ import theorem.Attributes
 
 /-! # Tikhonov's theorem: corrections of the uniform `O(ε)` claim and of the boundary layer
 
-Foundation layer (category B): two counterexamples with the corrected statements.
+Two counterexamples to statements of the Tikhonov note, with the corrected statements proved on
+a scalar test system.
 
-Test system (continuous time, scalar): slow `ẋ = 0`, fast `ε ẏ = -y`, so `g(x, y) = -y`,
-slow manifold `h ≡ 0`, boundary-layer matrix `-1` (exponentially attracting).
+Model boundary.
+* Test system (continuous time, scalar): slow `ẋ = 0`, fast `ε ẏ = -y`, so `g(x, y) = -y`, slow
+  manifold `h ≡ 0`, boundary-layer matrix `-1` (exponentially attracting).
+* Solution notion: a fast solution for the parameter `ε` is a global-in-time function
+  `y : ℝ → ℝ` with `∀ t, HasDerivAt y (-(y t) / ε) t` (the fast state of `ε ẏ = -y`); it is
+  written out in each statement that uses it.
+* Scalar linear test systems that exhibit the logical errors; no general Tikhonov theorem is
+  claimed here (the linear stability theorem is in `theorem/SingularPerturbation/Linear.lean`,
+  the regular `O(ε)` estimate in `theorem/SingularPerturbation/Regular.lean`).
+
+Source: work-sync theory/T-tikhonov.md §1.1 (main statement, boundary-layer system),
+§1.3 (initial-layer correction); theory/T-singular-perturbation.md §1.5.
+
+Results.
+* `fastSolution_exp`, `fastSolution_eq` — every fast solution is `y(t) = y(0) e^{-t/ε}`.
+* `tikhonov_uniform_claim_false` — the uniform `O(ε)` claim fails at `t = 0` (Correction 1).
+* `fastSolution_le_after_layer` — for `t ≥ t_b > 0`, `|y(t) - h| ≤ (|y(0)| / t_b) ε`.
+* `mixed_boundary_layer_tendsto`, `mixed_boundary_layer_not_tendsto_zero` — the note's mixed
+  boundary-layer equation converges to `x̄`, not to `0` (Correction 2).
+* `shifted_boundary_layer`, `shifted_boundary_layer_tendsto_zero` — `ỹ = y - h(x̄)` solves
+  `dỹ/dτ = g(x̄, ỹ + h(x̄))`, and for `g(x̄, y) = x̄ - y` it decays to `0`.
+
+Corrections.
 * Correction 1 (T-tikhonov §1.1 main statement, also T-singular-perturbation §1.5):
   "`‖y(t) - h(x_s(t))‖ = O(ε)` on all of `[0, t_f]`" is false whenever `y(0) ≠ h(x(0))`: it
   already fails at `t = 0` (`tikhonov_uniform_claim_false`). Correct statement (formalized for
@@ -19,17 +41,6 @@ slow manifold `h ≡ 0`, boundary-layer matrix `-1` (exponentially attracting).
   limit). For `g(x̄, y) = x̄ - y` (`h(x̄) = x̄`), solutions of the written equation converge to
   `x̄`, not to `0` (`mixed_boundary_layer_tendsto`). Correct form: `ỹ = y - h(x̄)` satisfies
   `dỹ/dτ = g(x̄, ỹ + h(x̄))`, `ỹ(0) = y₀ - h(x₀)`, and then `ỹ → 0`.
-
-Solution notion: a fast solution for the parameter `ε` is a global-in-time function
-`y : ℝ → ℝ` with `∀ t, HasDerivAt y (-(y t) / ε) t` (the fast state of `ε ẏ = -y`); it is
-written out in each statement that uses it.
-
-Model boundary: scalar linear test systems that exhibit the logical errors; no general
-Tikhonov theorem is claimed here (the linear stability theorem is in
-`theorem.SingularPerturbation.Linear`, the regular `O(ε)` estimate in `...Regular`).
-
-Source: work-sync theory/T-tikhonov.md §1.1 (main statement, boundary-layer system),
-§1.3 (initial-layer correction); theory/T-singular-perturbation.md §1.5.
 -/
 
 noncomputable section

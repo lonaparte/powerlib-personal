@@ -6,40 +6,42 @@ import Mathlib.Analysis.Calculus.LHopital
 
 /-! # Laplace's method: leading order, interior and endpoint minima
 
-Foundation layer: one-dimensional real analysis. Mathlib has no Laplace method; this module
+One-dimensional real analysis: the leading-order Laplace asymptotics at an interior and at an
+endpoint minimum, with explicit correction orders. Mathlib has no Laplace method; this module
 proves the leading-order statement by the scaling `y = u/√X` and dominated convergence.
 
-Setting. A phase `φ : ℝ → ℝ` with its minimum at `0`: `φ(0) = 0`, a global quadratic lower bound
-`φ(y) ≥ b y²` (`b > 0`), and quadratic behaviour at the minimum `φ(y)/y² → a` as `y → 0`
-(then `a ≥ b > 0`; `a = φ''(0)/2`; `quadLimit_of_deriv` derives this from `φ'(0) = 0`,
-`φ''(0) = 2a`).
-An amplitude `g` that is continuous and bounded.
+Scope.
+* A phase `φ : ℝ → ℝ` with its minimum at `0`: `φ(0) = 0`, a global quadratic lower bound
+  `φ(y) ≥ b y²` (`b > 0`), and quadratic behaviour at the minimum `φ(y)/y² → a` as `y → 0`
+  (then `a ≥ b > 0`; `a = φ''(0)/2`; `quadLimit_of_deriv` derives this from `φ'(0) = 0`,
+  `φ''(0) = 2a`).
+* An amplitude `g` that is continuous and bounded.
+
+Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.1 (interior vs endpoint Laplace,
+prefactor ½, relative corrections `O(X^{−1})` vs `O(X^{−1/2})`).
 
 Results.
-* `laplace_interior`: `√X ∫_ℝ g(y) e^{−Xφ(y)} dy → g(0) √(π/a) = g(0) √(2π/φ''(0))` as
+* `laplace_interior` — `√X ∫_ℝ g(y) e^{−Xφ(y)} dy → g(0) √(π/a) = g(0) √(2π/φ''(0))` as
   `X → ∞`, i.e. `∫ g e^{−Xφ} ~ g(0) √(2π/(Xφ''(0)))`.
-* `laplace_endpoint`: `√X ∫_{y>0} g(y) e^{−Xφ(y)} dy → g(0) √(π/a)/2`: at an endpoint minimum with
-  vanishing slope the prefactor is exactly one half of the interior one.
-
-* Correction orders. `laplace_interior_rate`: if moreover `|g(y) − g(0) − g₁y| ≤ G₂y²` (all `y`)
-  and `|φ(y) − ay² − cy³| ≤ My⁴` on `|y| ≤ δ`, then `|√X ∫ g e^{−Xφ} − g(0)√(π/a)| ≤ C/X` for all
-  `X ≥ 1`, i.e. the interior expansion is `1 + O(1/X)` (`laplace_interior_isBigO`, `g(0) ≠ 0`):
-  the `X^{−1/2}` terms `g₁u`, `cu³` are odd and integrate to zero against the even Gaussian.
-  `laplace_endpoint_rate`: with hypotheses only on the integration side `y ≥ 0`
-  (`|g(y) − g(0)| ≤ G₁y`, `|φ(y) − ay²| ≤ My³` on `[0, δ]`, `φ ≥ by²`, `g` bounded),
-  `|√X ∫_{y>0} g e^{−Xφ} − g(0)√(π/a)/2| ≤ C/√X`, i.e. `1 + O(X^{−1/2})`
-  (`laplace_endpoint_isBigO`). Pointwise expansions of the scaled integrand:
-  `scaledIntegrand_interior_bound`, `scaledIntegrand_endpoint_bound` (dominated by
-  `(1 + u⁸) e^{−min(a,b) u²}`, `integrable_laplaceWeight`); elementary bounds
-  `abs_exp_sub_one_le_mul`, `abs_exp_sub_one_sub_le_mul`.
+* `laplace_endpoint` — `√X ∫_{y>0} g(y) e^{−Xφ(y)} dy → g(0) √(π/a)/2`: at an endpoint minimum
+  with vanishing slope the prefactor is exactly one half of the interior one.
+* `laplace_interior_rate`, `laplace_interior_isBigO` — if moreover `|g(y) − g(0) − g₁y| ≤ G₂y²`
+  (all `y`) and `|φ(y) − ay² − cy³| ≤ My⁴` on `|y| ≤ δ`, then
+  `|√X ∫ g e^{−Xφ} − g(0)√(π/a)| ≤ C/X` for all `X ≥ 1`, i.e. the interior expansion is
+  `1 + O(1/X)` (`g(0) ≠ 0` for the `IsBigO` form): the `X^{−1/2}` terms `g₁u`, `cu³` are odd and
+  integrate to zero against the even Gaussian.
+* `laplace_endpoint_rate`, `laplace_endpoint_isBigO` — with hypotheses only on the integration
+  side `y ≥ 0` (`|g(y) − g(0)| ≤ G₁y`, `|φ(y) − ay²| ≤ My³` on `[0, δ]`, `φ ≥ by²`, `g`
+  bounded), `|√X ∫_{y>0} g e^{−Xφ} − g(0)√(π/a)/2| ≤ C/√X`, i.e. `1 + O(X^{−1/2})`.
+* Pointwise expansions of the scaled integrand: `scaledIntegrand_interior_bound`,
+  `scaledIntegrand_endpoint_bound` (dominated by `(1 + u⁸) e^{−min(a,b) u²}`,
+  `integrable_laplaceWeight`); elementary bounds `abs_exp_sub_one_le_mul`,
+  `abs_exp_sub_one_sub_le_mul`.
 
 That the endpoint `X^{−1/2}` term is generically present (coefficient
 `√(2/π)(g₁/g₀ − φ₃/(3φ₂))/√φ₂` of the truncated moment table, absent exactly when
 `g₁/g₀ = φ₃/(3φ₂)`) is `endpointTable_eq` / `endpointCorrection_ne_zero_iff` in
 `Asymptotics/EndpointLaplace.lean`; the rates here are upper bounds.
-
-Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.1 (interior vs endpoint Laplace,
-prefactor ½, relative corrections `O(X^{−1})` vs `O(X^{−1/2})`).
 -/
 
 noncomputable section

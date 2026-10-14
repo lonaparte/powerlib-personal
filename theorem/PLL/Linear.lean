@@ -6,13 +6,13 @@ import theorem.TMIO.ClaimElab
 
 /-! # Linearized SRF-PLL: state-space models, transfer functions and tuning
 
-Model boundary (all models in this module).
-* System: three-phase SRF-PLL (Park projection on the PLL frame + PI loop filter + VCO) on an
-  ideal balanced sinusoidal grid of constant amplitude `V`, **linearized** at the locked
-  operating point `θ̃ = θ̂ − θ_g = 0` (phase-detector slope `∂V_q/∂θ̃ = −V`). No pre-filter
-  (SOGI/DDSRF/MAF), sampling, delay, PWM, current loop, LCL filter, saturation or
-  anti-windup. Continuous time. Parameters `V, K_p, K_i` are real numbers; every hypothesis
-  is stated in each theorem.
+Model boundary.
+* System (every model of this module): three-phase SRF-PLL (Park projection on the PLL frame + PI
+  loop filter + VCO) on an ideal balanced sinusoidal grid of constant amplitude `V`, **linearized**
+  at the locked operating point `θ̃ = θ̂ − θ_g = 0` (phase-detector slope `∂V_q/∂θ̃ = −V`). No
+  pre-filter (SOGI/DDSRF/MAF), sampling, delay, PWM, current loop, LCL filter, saturation or
+  anti-windup. Continuous time. Parameters `V, K_p, K_i` are real numbers; every hypothesis is
+  stated in each theorem.
 * State order `(θ, η)`: `θ` = PLL angle deviation (phase model, port model) or phase error
   `θ̃` (frequency model); `η = ∫ V_q dt` = raw PI integrator state (V·s).
   All three models share the state matrix `linA = [[−V K_p, K_i], [−V, 0]]`, which is the
@@ -33,6 +33,10 @@ Model boundary (all models in this module).
   §D1; only the PLL term, ideal current loop, no outer loops). `rot_linearization` derives the
   output gain `I_d0` from the frame rotation `I^sys = rot(Δθ̂) I^pll`.
 
+Source: work-sync `theory/T-pll-dynamics.md` §1.3, §1.4, §1.5, §1.11;
+`theory/T-invariant-coordinates.md` §1.2 (ζ algebra, raw-voltage tuning);
+`theory/T-gfl-impedance.md` §1.3 (`G_i^pll`), §1.6; `theory/T-frequency-measurement.md` §1.1.
+
 Results.
 * `det(sI − linA) = s² + V K_p s + V K_i`; `linA` Hurwitz iff `V K_p > 0 ∧ V K_i > 0`; the
   same condition is necessary and sufficient for global exponential stability of the linear PLL
@@ -47,16 +51,7 @@ Results.
   `Re G_pll(jω) > 0 ∀ω ⇔ K_i ≤ V K_p² ⇔ ζ ≥ 1/2`; with `I_d0 < 0` (exporting active power)
   this gives `Re Y_qq^pll(jω) < 0 ∀ω` (negative conductance).
 
-Source: work-sync `theory/T-pll-dynamics.md` §1.3, §1.4, §1.5, §1.11;
-`theory/T-invariant-coordinates.md` §1.2 (ζ algebra, raw-voltage tuning);
-`theory/T-gfl-impedance.md` §1.3 (`G_i^pll`), §1.6; `theory/T-frequency-measurement.md` §1.1.
-
-Correction (T-pll-dynamics §1.11 / T-gfl-impedance §1.3, "phase near 0° ⇒ real part > 0"):
-`Re G_pll(jω) > 0` at **every** frequency holds exactly when `K_i ≤ V K_p²` (`ζ ≥ 1/2`); for
-`ζ < 1/2` it becomes negative at high frequency (`re_transfer_portModel_pos_iff`), so the
-sign of `Re Y_qq^pll` is guaranteed only under that tuning condition.
-
-## Family and connection conclusions
+Family and connection conclusions.
 `LinearPLL.family` reads a complete system `LinearPLL.Model` — amplitude `V`, PI gains `K_p`,
 `K_i` and the input-output channel (phase, frequency, port, or admittance with current `I_d0`) —
 as the port system (`Linear.Plant.system`) of the corresponding plant of this module; every
@@ -64,13 +59,17 @@ channel has the state matrix `linA`, so the flow sentences (about the origin, th
 depend only on `V K_p` and `V K_i`. Requirements are static: positive proportional loop gain
 `V K_p > 0`, positive integral loop gain `V K_i > 0`, or a negative loop gain. Connection
 conclusions: soundness of every translation (`chain_le_semantics`), exactness for the attractive
-sentences and sampled contraction (`exact_hurwitz`), the membership form of the former
-`*_exponentiallyStable_iff` theorems (`mem_den_globallyExponentiallyStable_iff`, for every
-channel), and the boundaries `not_exact_lyapunovStable`, `not_exact_unstable`,
-`not_exact_conservative` (zero-gain and Jordan-block witnesses). Decay rates, conservation and
-passivity have no available translation (the inconsistent whole language). The frequency-domain
-results (transfer functions, `Re G_pll`, `admittanceModel_re_neg`) are static evidence on the
-plants, not connection conclusions.
+sentences and sampled contraction (`exact_hurwitz`), the global exponential stability
+equivalence (`mem_den_globallyExponentiallyStable_iff`, for every channel), and the boundaries
+`not_exact_lyapunovStable`, `not_exact_unstable`, `not_exact_conservative` (zero-gain and
+Jordan-block witnesses). Decay rates, conservation and passivity have no available translation (the
+inconsistent whole language). The frequency-domain results (transfer functions, `Re G_pll`,
+`admittanceModel_re_neg`) are static evidence on the plants, not connection conclusions.
+
+Correction (T-pll-dynamics §1.11 / T-gfl-impedance §1.3, "phase near 0° ⇒ real part > 0"):
+`Re G_pll(jω) > 0` at **every** frequency holds exactly when `K_i ≤ V K_p²` (`ζ ≥ 1/2`); for
+`ζ < 1/2` it becomes negative at high frequency (`re_transfer_portModel_pos_iff`), so the
+sign of `Re Y_qq^pll` is guaranteed only under that tuning condition.
 -/
 
 noncomputable section

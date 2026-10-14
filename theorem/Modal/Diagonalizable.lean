@@ -5,23 +5,27 @@ import Mathlib.Algebra.DirectSum.Module
 
 /-! # Diagonalizability ⇔ geometric multiplicity = algebraic multiplicity
 
-Foundation layer (category B).
+A complex square matrix has a modal basis exactly when every geometric multiplicity equals the
+algebraic multiplicity.
 
-Source: work-sync `theory/T-eigenvalue-analysis.md` §1.1 ("若对所有 `λ` 都有 `m_g = m_a`，`A` 可对角化
-… 否则称 `A` defective").
+Scope.
+* Complex square matrices. "Diagonalizable" means that modal data exist: a `ModalBasis A`
+  (`theorem/Modal/Participation.lean`: `A V = V diag(λ)`, `Wᵀ V = I`), i.e. an invertible matrix
+  of right eigenvectors.
 
-Setting: complex square matrices. "Diagonalizable" means that modal data exist: a
-`ModalBasis A` (`theorem/Modal/Participation.lean`: `A V = V diag(λ)`, `Wᵀ V = I`), i.e. an
-invertible matrix of right eigenvectors.
+Source: work-sync theory/T-eigenvalue-analysis.md §1.1 ("若对所有 `λ` 都有 `m_g = m_a`，`A` 可
+对角化 … 否则称 `A` defective").
 
-Result (`nonempty_modalBasis_iff`): `A` has a modal basis iff for every `μ ∈ ℂ`,
-`dim ker(A − μI) = rootMultiplicity μ (charpoly A)`.
-* (⇒) the eigenvector columns with eigenvalue `μ` are linearly independent and lie in the
-  eigenspace, and their number is the algebraic multiplicity (`ModalBasis.rootMultiplicity_eq_card`).
-* (⇐) `m_g = m_a` forces each eigenspace to equal the generalized eigenspace (same dimension,
-  Mathlib `finrank_maxGenEigenspace_eq`), generalized eigenspaces span `ℂⁿ`
-  (`iSup_maxGenEigenspace_eq_top`), eigenspaces are independent, so collecting bases of the
-  eigenspaces gives an eigenvector basis, hence `V`.
+Results.
+* `nonempty_modalBasis_iff` — `A` has a modal basis iff for every `μ ∈ ℂ`,
+  `dim ker(A − μI) = rootMultiplicity μ (charpoly A)`.
+  * `ModalBasis.geom_eq_alg` (⇒): the eigenvector columns with eigenvalue `μ` are linearly
+    independent and lie in the eigenspace, and their number is the algebraic multiplicity
+    (`ModalBasis.rootMultiplicity_eq_card`).
+  * `nonempty_modalBasis_of_geom_eq_alg` (⇐): `m_g = m_a` forces each eigenspace to equal the
+    generalized eigenspace (same dimension, Mathlib `finrank_maxGenEigenspace_eq`), generalized
+    eigenspaces span `ℂⁿ` (`iSup_maxGenEigenspace_eq_top`), eigenspaces are independent, so
+    collecting bases of the eigenspaces gives an eigenvector basis, hence `V`.
 -/
 
 noncomputable section

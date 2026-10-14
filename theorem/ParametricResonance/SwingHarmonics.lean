@@ -2,31 +2,37 @@ import dependencies.Mathlib
 import theorem.Attributes
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
-/-! # Swing harmonics: mean and Fourier coefficients of `F(δ₀ + δ̂ cos φ)` (foundation)
+/-! # Swing harmonics: mean and Fourier coefficients of `F(δ₀ + δ̂ cos φ)`
 
-For the periodic swing `δ(φ) = δ₀ + δ̂ cos φ` (`φ = ω_p t`, one period `[0, 2π]`) and an amplitude
-map `F : ℝ → ℝ`: `swingMean` `V̄ = (1/2π)∫ F(δ(φ)) dφ`, `swingCoeff`
-`V_n = (1/2π)∫ F(δ(φ)) e^{−jnφ} dφ`, `harmonicRatio` `ε_n = 2|V_n|/V̄` (`ε_V = ε_1`). Nothing here
-describes a physical system: `F` is any continuous map (the Thévenin amplitude `|V_th|` seen by a
-GFL branch is one instance, `theorem/GFL/Parametric/ModulationTransfer.lean`).
+Mean, Fourier coefficients and harmonic ratios of an amplitude map evaluated along a periodic
+swing, with explicit small-swing constants and finite-swing bounds.
 
-* `swingCoeff_eq`, `harmonicRatio_eq`: the swing is even in `φ` (`integral_sin_moment_eq_zero`),
+Scope.
+* For the periodic swing `δ(φ) = δ₀ + δ̂ cos φ` (`φ = ω_p t`, one period `[0, 2π]`) and an
+  amplitude map `F : ℝ → ℝ`: `swingMean` `V̄ = (1/2π)∫ F(δ(φ)) dφ`, `swingCoeff`
+  `V_n = (1/2π)∫ F(δ(φ)) e^{−jnφ} dφ`, `harmonicRatio` `ε_n = 2|V_n|/V̄` (`ε_V = ε_1`).
+* Nothing here describes a physical system: `F` is any continuous map (the Thévenin amplitude
+  `|V_th|` seen by a GFL branch is one instance, `theorem/GFL/Parametric/ModulationTransfer.lean`).
+
+Source: work-sync projects/vsc-parametric-oscillation/references/
+gfm-driven-gfl-parametric-resonance/notes/concepts/network-modulation-transfer.md (section
+"小摆幅与有限摆幅"); the estimates were stated there for the Thévenin amplitude and hold verbatim
+for any `F`.
+
+Results.
+* `swingCoeff_eq`, `harmonicRatio_eq` — the swing is even in `φ` (`integral_sin_moment_eq_zero`),
   so `V_n = a_n/2` is real (`cosCoeff` `a_n = (1/π)∫ F(δ(φ)) cos nφ dφ`) and `ε_n = |a_n|/V̄`.
 * Small swing, explicit constants: under a Taylor bound `|F(δ₀+h) − F(δ₀) − F' h| ≤ C h²`
   (`|h| ≤ h₀`; `exists_taylor_bound` derives it from `F ∈ C²` with `F' = F'(δ₀)`),
   `|V̄ − F(δ₀)| ≤ C δ̂²` (`swingMean_sub_le`), `|a_n − F' δ̂ [n = 1]| ≤ 2C δ̂²`
   (`cosCoeff_sub_le`), hence `|ε₁ − (|F'|/F(δ₀)) δ̂| ≤ (4C/F(δ₀) + 2|F'|C h₀/F(δ₀)²) δ̂²`
   (`harmonicRatio_one_sub_le`) and `ε_n ≤ (4C/F(δ₀)) δ̂²` for `n ≥ 2` (`harmonicRatio_le`).
-* `harmonicRatio_one_isBigO`: `ε₁ = (|F'(δ₀)|/F(δ₀)) δ̂ + O(δ̂²)` as `δ̂ → 0⁺`;
+* `harmonicRatio_one_isBigO` — `ε₁ = (|F'(δ₀)|/F(δ₀)) δ̂ + O(δ̂²)` as `δ̂ → 0⁺`;
   `harmonicRatio_isBigO`: `ε_n = O(δ̂²)` for every `n ≥ 2` (only the second-order rate is proved,
   not the sharper `O(δ̂ⁿ)`).
-* Finite swing (every amplitude): `harmonicRatio_le_two`: `0 ≤ ε_n ≤ 2`;
-  `cosCoeff_odd_eq_zero`, `harmonicRatio_odd_eq_zero`: at a symmetric operating point
+* `harmonicRatio_le_two` — finite swing (every amplitude): `0 ≤ ε_n ≤ 2`.
+* `cosCoeff_odd_eq_zero`, `harmonicRatio_odd_eq_zero` — at a symmetric operating point
   (`F(δ₀ + h) = F(δ₀ − h)`) every odd harmonic vanishes, `ε_{2k+1} = 0`.
-
-Source: work-sync `projects/vsc-parametric-oscillation/references/gfm-driven-gfl-parametric-resonance/
-notes/concepts/network-modulation-transfer.md` (section "小摆幅与有限摆幅"); the estimates were
-stated there for the Thévenin amplitude and hold verbatim for any `F`.
 -/
 
 noncomputable section

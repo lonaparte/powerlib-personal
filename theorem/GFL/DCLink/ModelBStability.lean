@@ -14,7 +14,8 @@ import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 /-! # GFL reduced-order model B: local stability by linearization (4×4 Routh–Hurwitz)
 
-Model boundary. The system is `ModelBParams.field` of `theorem/GFL/DCLink/ReducedOrder.lean`
+Model boundary.
+The system is `ModelBParams.field` of `theorem/GFL/DCLink/ReducedOrder.lean`
 (T-gfl-reduced-order-dynamics §1.6): continuous-time autonomous field on `State 4`, state order
 `x = (Δθ, x_pll, V_dc, ξ_v)` (PLL phase error `θ̂ − θ_g`, swing sign; PLL integrator; DC-link
 voltage; DC-voltage-loop integrator), constant grid frequency `ω_g`, infinite bus `V_g` behind
@@ -31,32 +32,35 @@ theorems need a globally `C¹` field. This module
   `Dynamics.unstable_of_eqOn_ball` in `theorem/Dynamics/Locality.lean`, first-exit argument on
   finite solution segments);
 * builds a globally `C¹` field `regField` that coincides with `field` on `{V_dc > 3V_dc*/4}`
-  (the denominator `V_dc` is replaced by a smooth `Dynamics.regDen ≥ V_dc*/2`), which contains a ball
-  around every equilibrium (equilibria have `V_dc = V_dc*`);
+  (the denominator `V_dc` is replaced by a smooth `Dynamics.regDen ≥ V_dc*/2`), which contains a
+  ball around every equilibrium (equilibria have `V_dc = V_dc*`);
 * computes the Jacobian of `field` at any state with `V_dc ≠ 0` from the field with `fderiv`
   (`hasFDerivAt_field`, `jacobian`), with `c = cos Δθ`, `s = sin Δθ`, `i_d = i_d*(x)`,
   `v_d = v_{g,d}(x)`, `P = v_d i_d + v_q i_q0`:
   `[[−k_p V_g c, k_i, k_p X_g k_pv, −k_p X_g k_iv],`
   ` [−V_g c, 0, X_g k_pv, −X_g k_iv],`
-  ` [3(−V_g s i_d − V_g c i_q0)/(2 V_dc C_dc), 0, 3(k_pv(R_g i_d − v_d + X_g i_q0) V_dc − P)/(2 V_dc² C_dc),`
+  ` [3(−V_g s i_d − V_g c i_q0)/(2 V_dc C_dc), 0,`
+  `  3(k_pv(R_g i_d − v_d + X_g i_q0) V_dc − P)/(2 V_dc² C_dc),`
   `  3 k_iv (v_d − R_g i_d − X_g i_q0)/(2 V_dc C_dc)],`
   ` [0, 0, −1, 0]]`.
-
-Results (`modelB_locallyExponentiallyStable`, `modelB_unstable_of_det_neg`): at an equilibrium,
-the 4×4 Routh conditions on the Jacobian (`tr < 0`, `m₃ < 0`, `det > 0`,
-`m₃² + tr² det < tr m₂ m₃`, i.e. `a3, a1, a0 > 0`, `a1² + a3² a0 < a3 a2 a1` for the characteristic
-polynomial `s⁴ + a3 s³ + a2 s² + a1 s + a0`) give local exponential stability; `det J < 0` gives
-instability. The trigonometric values `cos Δθ*`, `sin Δθ*` enter as exact real numbers (no
-floating point). Only the sufficient direction of Routh–Hurwitz is used.
-Non-vacuity (`modelB_noLoad_locallyExponentiallyStable`): at the no-load point (`I₀ = 0`, `R_g = 0`,
-`i_q0 = 0`, positive gains, `V_g, V_dc*, C_dc > 0`) the equilibrium `(0, (ω_g − ω_s)/k_i, V_dc*, 0)`
-satisfies the Routh conditions and is locally exponentially stable.
 
 Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (model B), §1.7 (equilibria);
 local-stability statement requested as the "4×4 Routh–Hurwitz of model B" item (the note itself
 states no stability condition for model B).
 
-## Family and connection conclusions
+Results.
+`modelB_locallyExponentiallyStable`, `modelB_unstable_of_det_neg` (private; their public forms
+are the memberships below): at an equilibrium,
+the 4×4 Routh conditions on the Jacobian (`tr < 0`, `m₃ < 0`, `det > 0`,
+`m₃² + tr² det < tr m₂ m₃`, i.e. `a3, a1, a0 > 0`, `a1² + a3² a0 < a3 a2 a1` for the characteristic
+polynomial `s⁴ + a3 s³ + a2 s² + a1 s + a0`) give local exponential stability; `det J < 0` gives
+instability. The trigonometric values `cos Δθ*`, `sin Δθ*` enter as exact real numbers (no
+floating point). Only the sufficient direction of Routh–Hurwitz is used.
+Non-vacuity (`modelB_noLoad_locallyExponentiallyStable`, private): at the no-load point (`I₀ = 0`,
+`R_g = 0`, `i_q0 = 0`, positive gains, `V_g, V_dc*, C_dc > 0`) the equilibrium
+`(0, (ω_g − ω_s)/k_i, V_dc*, 0)` satisfies the Routh conditions and is locally exponentially stable.
+
+Family and connection conclusions.
 `ModelB.family` reads a complete system `ModelB.Model` — the model-B parameters `p` and a
 selected state `x*` — as the autonomous field `z ↦ p.field (z + x*)`, so that the library
 semantics at the origin speaks about `x*` (`Flow.Property.holds_shift_iff`). Requirements are
@@ -65,8 +69,8 @@ static: `x*` is a zero of the field, `V_dc* > 0`, the 4×4 Routh conditions on `
 context). The local sentences translate into the first three, instability into the
 first two and the determinant condition, passivity into nothing; the global sentences, decay
 rates, sampled contraction and conservation into the whole (inconsistent) language. Connection
-conclusions: soundness (`chain_le_semantics`), exact passivity (`exact_passive`), and the former
-domain theorems as memberships (`mem_den_locallyExponentiallyStable`,
+conclusions: soundness (`chain_le_semantics`), exact passivity (`exact_passive`), and the
+stability results as memberships (`mem_den_locallyExponentiallyStable`,
 `mem_den_unstable_of_det_neg`, `noLoad_mem_den_locallyExponentiallyStable`). At equilibria with
 positive reference the local exponential translation is exact
 (`exactUnder_locallyExponentiallyStable`, context `{equilibrium, positiveReference}`): by the
@@ -101,8 +105,9 @@ Selected states on the singular plane that are not equilibria. With `P = pccP x*
   satisfies the segment-based local exponential estimate although it is not an equilibrium: near
   `x*`, `d(V_dc²)/dt = (2 I₀ V_dc + 3 P) / C_dc` is bounded below zero, so solution segments end
   before reaching the plane, after a time `O(V_dc(t₀)²)` (generic
-  `Dynamics.Degenerate.locallyExponentiallyStable_of_collapse`, `theorem/Dynamics/Degenerate/PlaneCollapse.lean`). The
-  estimate holds because solutions cease, not because they converge.
+  `Dynamics.Degenerate.locallyExponentiallyStable_of_collapse`,
+  `theorem/Dynamics/Degenerate/PlaneCollapse.lean`). The estimate holds because solutions cease, not
+  because they converge.
 * `mem_den_unstable_of_repel`: if `P / C_dc > 0` the state is unstable (`V_dc²` grows linearly;
   generic `Dynamics.Degenerate.unstable_of_repel`).
 * `not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero_of_I0`: if `I₀ / C_dc = 0` (in particular
@@ -133,14 +138,14 @@ Selected states on the singular plane that are not equilibria. With `P = pccP x*
   context is that of an equilibrium with positive reference
   (`exactUnder_locallyExponentiallyStable`).
 
-The local asymptotic and Lyapunov translations are not exact (`not_exact_locallyAsymptoticallyStable`,
-`not_exact_lyapunovStable`, the same witness). At equilibria with positive reference they are exact
-off the 4×4 Routh boundary and not exact on it: requirement `Requirement.offBoundary` (Routh
-conditions or a strict violation `Criteria.RouthViolationFin4`), with the conclusions
-`exactUnder_offBoundary_lyapunovStable`, `exactUnder_offBoundary_locallyAsymptoticallyStable`,
-`not_exactUnder_lyapunovStable`, `not_exactUnder_locallyAsymptoticallyStable` and three boundary
-witnesses (asymptotically stable, stable but not attractive, unstable) in
-`theorem/GFL/DCLink/ModelBBoundary.lean`.
+The local asymptotic and Lyapunov translations are not exact
+(`not_exact_locallyAsymptoticallyStable`, `not_exact_lyapunovStable`, the same witness). At
+equilibria with positive reference they are exact off the 4×4 Routh boundary and not exact on it:
+requirement `Requirement.offBoundary` (Routh conditions or a strict violation
+`Criteria.RouthViolationFin4`), with the conclusions `exactUnder_offBoundary_lyapunovStable`,
+`exactUnder_offBoundary_locallyAsymptoticallyStable`, `not_exactUnder_lyapunovStable`,
+`not_exactUnder_locallyAsymptoticallyStable` and three boundary witnesses (asymptotically stable,
+stable but not attractive, unstable) in `theorem/GFL/DCLink/ModelBBoundary.lean`.
 -/
 
 noncomputable section

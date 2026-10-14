@@ -4,33 +4,35 @@ import theorem.Dynamics.State
 
 /-! # Nonlinear singularly perturbed systems: local exponential stability for small `ε`
 
-Foundation layer (category B).
+A nonlinear slow–fast system whose boundary-layer and reduced Jacobians are Hurwitz is locally
+exponentially stable at its equilibrium for all sufficiently small `ε`.
 
-Sources: work-sync `theory/T-singular-perturbation.md` §1.3–§1.4 (reduced slow system on the
-slow manifold, attractivity `Re λ(∂g/∂y) < 0`), `theory/T-tikhonov.md` §1.2 (linearized form of
-the stability conditions), `theory/T-small-signal-stability.md` §1.4 (Schur complement).
-
-System (continuous time, autonomous):
+Model boundary.
+* Continuous time, autonomous:
 ```
 ẋ = f(x, z),      ε ż = g(x, z),      x ∈ ℝⁿ (slow), z ∈ ℝᵐ (fast),
 ```
-written as one field `Φ = (f, g) : ℝⁿ⁺ᵐ → ℝⁿ⁺ᵐ` (`Dynamics.State (n + m)`, state order: the `n`
-slow coordinates, then the `m` fast ones, via `finSumFinEquiv`), globally `C¹`, with an
-equilibrium `w₀` (`Φ w₀ = 0`). The `ε`-system is `F_ε = D_ε Φ`, `D_ε = diag(Iₙ, ε⁻¹ Iₘ)`.
-Let `J` be the block Jacobian of `Φ` at `w₀` (`A₁₁ = ∂f/∂x`, `A₁₂ = ∂f/∂z`, `A₂₁ = ∂g/∂x`,
-`A₂₂ = ∂g/∂z`).
+  written as one field `Φ = (f, g) : ℝⁿ⁺ᵐ → ℝⁿ⁺ᵐ` (`Dynamics.State (n + m)`, state order: the
+  `n` slow coordinates, then the `m` fast ones, via `finSumFinEquiv`), globally `C¹`, with an
+  equilibrium `w₀` (`Φ w₀ = 0`). The `ε`-system is `F_ε = D_ε Φ`, `D_ε = diag(Iₙ, ε⁻¹ Iₘ)`.
+* `J` is the block Jacobian of `Φ` at `w₀` (`A₁₁ = ∂f/∂x`, `A₁₂ = ∂f/∂z`, `A₂₁ = ∂g/∂x`,
+  `A₂₂ = ∂g/∂z`).
+* Equilibrium-level (local) statement; `ε` fixed in `(0, ε*)`; no claim about the size of the
+  basin, its uniformity in `ε`, or finite-horizon `O(ε)` approximation.
 
-Result (`exists_epsStar_locallyExponentiallyStable`): if the boundary-layer Jacobian `A₂₂` is
-Hurwitz and the reduced (Schur-complement) Jacobian `A₁₁ − A₁₂A₂₂⁻¹A₂₁` is Hurwitz, there is
-`ε* > 0` such that for every `ε ∈ (0, ε*)` the full nonlinear system is locally exponentially
-stable at `w₀`. Proof: the Jacobian of `F_ε` is `D_ε J = [[A₁₁, A₁₂], [A₂₁/ε, A₂₂/ε]]`
-(`fderiv_scaledField`), which is Hurwitz for small `ε` by Kokotović's theorem
-(`LinearSP.exists_epsStar_exponentiallyStable`), and the linearization theorem
-(`Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`) applies. With explicit Lyapunov
-solutions `P₀`, `P₂`, `ε*` is the explicit `LinearSP.epsStar P₀ P₂`.
+Source: work-sync theory/T-singular-perturbation.md §1.3–§1.4 (reduced slow system on the
+slow manifold, attractivity `Re λ(∂g/∂y) < 0`), theory/T-tikhonov.md §1.2 (linearized form of
+the stability conditions), theory/T-small-signal-stability.md §1.4 (Schur complement).
 
-Model boundary: equilibrium-level (local) statement; `ε` fixed in `(0, ε*)`; no claim about
-the size of the basin, its uniformity in `ε`, or finite-horizon `O(ε)` approximation.
+Results.
+* `exists_epsStar_locallyExponentiallyStable` — if the boundary-layer Jacobian `A₂₂` is Hurwitz
+  and the reduced (Schur-complement) Jacobian `A₁₁ − A₁₂A₂₂⁻¹A₂₁` is Hurwitz, there is `ε* > 0`
+  such that for every `ε ∈ (0, ε*)` the full nonlinear system is locally exponentially stable at
+  `w₀`. Proof: the Jacobian of `F_ε` is `D_ε J = [[A₁₁, A₁₂], [A₂₁/ε, A₂₂/ε]]`
+  (`fderiv_scaledField`), which is Hurwitz for small `ε` by Kokotović's theorem
+  (`LinearSP.exists_epsStar_exponentiallyStable`), and the linearization theorem
+  (`Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`) applies. With explicit Lyapunov
+  solutions `P₀`, `P₂`, `ε*` is the explicit `LinearSP.epsStar P₀ P₂`.
 -/
 
 noncomputable section

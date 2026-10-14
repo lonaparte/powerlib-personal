@@ -6,18 +6,9 @@ import theorem.Synchronous.Swing
 
 /-! # Grid-forming converter in current saturation: equilibria and the optimal current angle
 
-Foundation (`phiOpt_*`, T-current-limiting §1.3 / T-gfm-control §1.10).
-The unsaturated power–angle curve is `P = P_max sin δ`, the saturated one
-`P = P_sat cos(δ − φ)` (`P_sat = V_e I_maxSAT`). With the note's
-`φ_opt = arccos(P₀/P_sat) + arcsin(P₀/P_max)` and `δ₀ = arcsin(P₀/P_max)`:
-`phiOpt_intersection` — both curves pass through `(δ₀, P₀)`.
-Correction: the note states the formula without premises; it needs
-`|P₀| ≤ min(P_sat, P_max)` (`P_sat, P_max > 0`) for `arccos`/`arcsin` to be inverse
-functions. `saturated_no_intersection`: if `P_sat < |P₀|` no angle `δ`, `φ` gives
-`P_sat cos(δ − φ) = P₀`.
-
-Domain — model boundary (saturated current-source GFM, export-positive P as in the GFM family,
-work-sync `conventions.md` §D9):
+Model boundary.
+Saturated current-source GFM, export-positive P as in the GFM family (work-sync
+`conventions.md` §D9):
 * State order `(δ, ω)`: `δ` the angle of the converter's internal reference relative to the
   stiff grid voltage, `ω` its frequency deviation; continuous time.
 * Outer loop: VSM / swing-type `δ' = ω`, `M ω' = P_ref − P_e − D ω` with `M > 0`, `D > 0`.
@@ -25,12 +16,19 @@ work-sync `conventions.md` §D9):
   `I_maxSAT` at the controlled angle `φ` relative to its reference, so
   `P_e = P_sat cos(δ − φ)` (T-current-limiting §1.3). No mode switching (the converter is
   assumed to stay saturated), no inner-loop, PWM, delay or grid dynamics.
-Results:
+
+Source: work-sync `theory/T-current-limiting.md` §1.3, §1.9; `theory/T-gfm-control.md` §1.10.
+
+Results.
+* Optimal current angle (`phiOpt_*`, T-current-limiting §1.3 / T-gfm-control §1.10, static): the
+  unsaturated power–angle curve is `P = P_max sin δ`, the saturated one `P = P_sat cos(δ − φ)`
+  (`P_sat = V_e I_maxSAT`). With the note's `φ_opt = arccos(P₀/P_sat) + arcsin(P₀/P_max)` and
+  `δ₀ = arcsin(P₀/P_max)`: `phiOpt_intersection` — both curves pass through `(δ₀, P₀)`; its
+  premises are in the Correction below.
 * `satField_eq_zero_iff`: equilibria are `(δ, 0)` with `P_sat cos(δ − φ) = P_ref`;
   `saturated_equilibrium_exists_iff`: an equilibrium exists iff `|P_ref| ≤ P_sat` (static).
 
-## Family and connection conclusions
-
+Family and connection conclusions.
 `family : Family SatModel Spectral.Requirement 2 0` reads a saturated model together with a
 selected angle `δ*` as its field translated so that `(δ*, 0)` is the origin
 (`Spectral.localFamily`, `Flow.Property.holds_shift_iff`). Requirements (static, on the
@@ -65,7 +63,10 @@ Jacobian `[[0, 1], [P_sat sin(δ* − φ)/M, −D/M]]`): `stable` — `(δ*, 0)`
   an unbalanced model (`offEquilibrium`) is unstable (`offEquilibrium_mem_den_unstable`,
   `Dynamics.unstable_of_ne_zero`) while the instability condition asks for an equilibrium.
 
-Source: work-sync `theory/T-current-limiting.md` §1.3, §1.9; `theory/T-gfm-control.md` §1.10.
+Correction (T-current-limiting §1.3, `φ_opt`): the note states the formula without premises; it
+needs `|P₀| ≤ min(P_sat, P_max)` (`P_sat, P_max > 0`) for `arccos`/`arcsin` to be inverse
+functions. `saturated_no_intersection`: if `P_sat < |P₀|` no angle `δ`, `φ` gives
+`P_sat cos(δ − φ) = P₀`.
 -/
 
 noncomputable section

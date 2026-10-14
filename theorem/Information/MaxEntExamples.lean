@@ -5,20 +5,28 @@ import Mathlib.Analysis.SpecificLimits.Normed
 
 /-! # Closed-form MaxEnt examples: geometric, exponential, Gaussian
 
-Source: work-sync `theory/T-maximum-entropy.md` §1.2 (Gauss), §1.4 (exponential), §1.5
+The geometric, exponential and Gaussian laws as closed-form maximum-entropy solutions.
+
+Scope.
+* General probability, not an engineering result.
+
+Source: work-sync theory/T-maximum-entropy.md §1.2 (Gauss), §1.4 (exponential), §1.5
 (geometric).
 
-Foundation (general probability), not an engineering result.
-
-* Geometric (§1.5): on `k ∈ {1, 2, …}` with counting reference, `q = e^{-λ} ∈ (0,1)`:
-  `Z = ∑_{k≥1} q^k = q/(1-q)`, Gibbs masses `q^k / Z = (1-q) q^{k-1}`, mean `∑ k (1-q) q^{k-1}
-  = 1/(1-q)`, hence `q = 1 - 1/k̄`. Indices are shifted: `k = n + 1`, `n : ℕ`.
-* Exponential (§1.4): reference Lebesgue on `(0, ∞)`, `λ > 0`: `Z = ∫ e^{-λx} = 1/λ`,
-  `∫ x e^{-λx} = 1/λ²`, so the Gibbs mean is `1/λ` and the density is `λ e^{-λx}`.
-* Gaussian (§1.2): reference Lebesgue on `ℝ`; the Gibbs measure of the tilt
-  `-(x-μ)²/(2v)` is `gaussianReal μ v`, and it maximises the differential entropy among all
-  probability laws `p ≪ Lebesgue` with `E_p x = μ`, `E_p x² = μ² + v` (uniquely). Its relative
-  entropy against Lebesgue is `-(1/2) - log √(2πv)`.
+Results.
+* `geometric_partition`, `geometric_gibbs_mass`, `geometric_mean`, `geometric_q_of_mean` —
+  geometric (§1.5): on `k ∈ {1, 2, …}` with counting reference, `q = e^{-λ} ∈ (0,1)`:
+  `Z = ∑_{k≥1} q^k = q/(1-q)`, Gibbs masses `q^k / Z = (1-q) q^{k-1}`, mean
+  `∑ k (1-q) q^{k-1} = 1/(1-q)`, hence `q = 1 - 1/k̄`. Indices are shifted: `k = n + 1`, `n : ℕ`.
+* `exponential_partition`, `exponential_first_moment`, `exponential_gibbs_mean`,
+  `exponential_gibbs_density` — exponential (§1.4): reference Lebesgue on `(0, ∞)`, `λ > 0`:
+  `Z = ∫ e^{-λx} = 1/λ`, `∫ x e^{-λx} = 1/λ²`, so the Gibbs mean is `1/λ` and the density is
+  `λ e^{-λx}`.
+* `tilted_gaussTilt`, `gaussianReal_maxEnt`, `relEntropy_gaussianReal` — Gaussian (§1.2):
+  reference Lebesgue on `ℝ`; the Gibbs measure of the tilt `-(x-μ)²/(2v)` is `gaussianReal μ v`,
+  and it maximises the differential entropy among all probability laws `p ≪ Lebesgue` with
+  `E_p x = μ`, `E_p x² = μ² + v` (uniquely). Its relative entropy against Lebesgue is
+  `-(1/2) - log √(2πv)`.
 -/
 
 noncomputable section

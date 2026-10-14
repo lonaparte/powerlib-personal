@@ -4,22 +4,37 @@ import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 
 /-! # One-dimensional Fokker–Planck operator: adjointness, probability flux, stationary solutions
 
-Source: work-sync `theory/T-fokker-planck.md` §1.1 (`L* p = −∇·(μ p) + ½ ∂ᵢ∂ⱼ[(ΣΣᵀ)ᵢⱼ p]` obtained
-by integrating by parts against test functions), §1.3 (probability flux
+The one-dimensional Fokker–Planck operator is the formal adjoint of the generator expression,
+equals minus the derivative of the probability flux, and has the zero-flux and Gibbs densities as
+stationary solutions.
+
+Scope.
+* Statements about the **differential operators** on `ℝ`: `L φ = μ φ' + ½ a φ''` (generator
+  expression `gen1`, `a = σ²` the diffusion coefficient), `L* p = −(μ p)' + ½ (a p)''` (`fp1`)
+  and the flux `J = μ p − ½ (a p)'` (`flux1`).
+* That `L*` governs the density of an Itô diffusion (Itô's formula) is **not** formalized.
+
+Source: work-sync theory/T-fokker-planck.md §1.1 (`L* p = −∇·(μ p) + ½ ∂ᵢ∂ⱼ[(ΣΣᵀ)ᵢⱼ p]`
+obtained by integrating by parts against test functions), §1.3 (probability flux
 `J = μ p − ½ ∇·(ΣΣᵀ p)`), §1.4 (one-dimensional zero-flux stationary density
 `p∞ = (C/D) exp(∫ μ/D)` and the Gibbs form `p∞ ∝ exp(−V/D)` for `μ = −V'`, `D` constant).
 
-Scope (Rules §3).  These are statements about the **differential operators** on `ℝ`:
-`L φ = μ φ' + ½ a φ''` (generator expression, `a = σ²` the diffusion coefficient) and
-`L* p = −(μ p)' + ½ (a p)''`.  We prove that `L*` is the formal adjoint of `L` against compactly
-supported `C²` test functions, that `L* p = −J'`, and that the zero-flux / Gibbs densities are
-stationary solutions of `L* p = 0`.  That `L*` governs the density of an Itô diffusion (Itô's
-formula) is **not** formalized.  Foundation results only.
+Results.
+* `integral_gen1_eq_integral_fp1` — `L*` is the formal adjoint of `L`: for compactly supported
+  `C²` test functions `φ`, `∫ p (L φ) = ∫ (L* p) φ`, provided `μ p ∈ C¹` and `a p ∈ C²`.
+* `fp1_eq_neg_deriv_flux` — `L* p = −J'`.
+* `zeroFlux_hasDerivAt`, `zeroFlux_flux`, `zeroFlux_stationary` — for `dX = μ dt + √(2D) dW`,
+  `p = (C/D) e^{Φ}` with `Φ' = μ/D` has zero flux and solves `L* p = 0`.
+* `gibbs_stationary`, `gibbs_flux` — the Gibbs form: for `μ = −V'`, constant `D > 0`,
+  `p = e^{−V/D}` has zero flux and solves `L* p = 0`.
+* `gibbs_normalized`, `gibbs_not_integrable` — normalization (see Corrections).
 
-Correction / missing hypothesis (§1.4).  `exp(−V/D)` solves `L* p = 0` pointwise for every `V`,
-but it is a stationary **probability density** only after normalization, which needs
-`Z = ∫ exp(−V/D) < ∞` (`gibbs_normalized`); for a periodic or tilted-washboard potential on `ℝ`
-`Z = ∞` and there is no normalizable stationary density on the line.
+Corrections.
+* Missing hypothesis (§1.4): `exp(−V/D)` solves `L* p = 0` pointwise for every `V`, but it is a
+  stationary **probability density** only after normalization, which needs
+  `Z = ∫ exp(−V/D) < ∞` (`gibbs_normalized`); for a periodic or tilted-washboard potential on
+  `ℝ` `Z = ∞` and there is no normalizable stationary density on the line
+  (`gibbs_not_integrable`).
 -/
 
 noncomputable section

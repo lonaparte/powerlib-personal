@@ -2,23 +2,28 @@ import theorem.GFL.DCLink.FourState
 
 /-! # Integrator time-average constraints on periodic solutions
 
-Foundation layer (fundamental theorem of calculus) for the angle-driven four-state GFL field
-`FourState.fieldAngle` (state `(θ, x, V, η)`, IN-positive, grid angle `θ_g` entering only as
-`−θ̇_g`).  For any solution `φ` over `[0, T]` that returns to its initial state, with a grid
-angle `θ_g` that also returns to its initial value and has a continuous rate:
-* `∫₀ᵀ (V − 1) = 0` (from `η̇ = V − 1`), i.e. `⟨V⟩ = 1`;
-* `∫₀ᵀ v_q = 0` (from `ẋ = v_q`);
-* `k_i ∫₀ᵀ x = 0` (from `θ̇ = k_p v_q + k_i x − θ̇_g`), so `⟨x⟩ = 0` when `k_i ≠ 0`.
-Nothing is assumed about the existence or stability of the periodic solution.
+Integral identities (foundation; fundamental theorem of calculus) for periodic solutions of the
+angle-driven four-state GFL field.
 
-Family and connection conclusions. No new family and no connection conclusion. The integral
-identities concern solutions of the input-driven field `fieldAngle` of this specific model, which
-lies outside the autonomous sentence language of `FourState.family`; they are kept as private
-implementation evidence (Rules §3a). The public result is the static component form
-`fieldAngle_apply`.
+Model boundary.
+The angle-driven four-state GFL field `FourState.fieldAngle` (state `(θ, x, V, η)`, IN-positive,
+grid angle `θ_g` entering only as `−θ̇_g`). Any solution `φ` over `[0, T]` that returns to its
+initial state, with a grid angle `θ_g` that also returns to its initial value and has a
+continuous rate. Nothing is assumed about the existence or stability of the periodic solution.
 
 Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
 gfl-gfm-parametric-contrast.md` §14 (积分器约束).
+
+Results.
+* `∫₀ᵀ (V − 1) = 0` (from `η̇ = V − 1`), i.e. `⟨V⟩ = 1`;
+* `∫₀ᵀ v_q = 0` (from `ẋ = v_q`);
+* `k_i ∫₀ᵀ x = 0` (from `θ̇ = k_p v_q + k_i x − θ̇_g`), so `⟨x⟩ = 0` when `k_i ≠ 0`.
+
+Family and connection conclusions.
+No new family and no connection conclusion. The integral identities concern solutions of the
+input-driven field `fieldAngle` of this specific model, which lies outside the autonomous sentence
+language of `FourState.family`; they are kept as private implementation evidence (Rules §3a). The
+public result is the static component form `fieldAngle_apply`.
 -/
 
 noncomputable section

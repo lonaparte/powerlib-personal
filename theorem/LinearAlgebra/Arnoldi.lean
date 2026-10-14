@@ -4,24 +4,27 @@ import Mathlib.Analysis.InnerProductSpace.Orthonormal
 
 /-! # Arnoldi process: the orthogonalization step, the Arnoldi relation, the Ritz residual
 
-Foundation layer (category B; general numerical linear algebra).
+One Arnoldi step keeps the basis orthonormal, the Arnoldi relation holds in coordinates, and the
+Ritz residual norm is read off the Hessenberg matrix.
 
-Sources: work-sync `theory/T-eigenvalue-analysis.md` §1.3 (Arnoldi recursion,
+Scope.
+* General numerical linear algebra: a linear operator `T` on an inner product space `E` over
+  `𝕜 = ℝ` or `ℂ` (inner product linear in the second argument, Mathlib convention); exact
+  arithmetic.
+
+Source: work-sync theory/T-eigenvalue-analysis.md §1.3 (Arnoldi recursion,
 `A Q_m = Q_m H_m + h_{m+1,m} q_{m+1} e_mᵀ`, Ritz residual `‖A u − θ u‖ = |h_{m+1,m}| |e_mᵀ y|`),
-`theory/T-linear-algebra.md` §1.7 (`A V_m = V_{m+1} H̃_m`).
-
-Setting: a linear operator `T` on an inner product space `E` over `𝕜 = ℝ` or `ℂ` (inner product
-linear in the second argument, Mathlib convention); exact arithmetic.
+theory/T-linear-algebra.md §1.7 (`A V_m = V_{m+1} H̃_m`).
 
 Results.
-* `inner_arnoldiResidual`: one Arnoldi step — for an orthonormal family `q₀, …, q_k`,
+* `inner_arnoldiResidual` — one Arnoldi step: for an orthonormal family `q₀, …, q_k`,
   `w = T q_k − Σᵢ ⟨qᵢ, T q_k⟩ qᵢ` is orthogonal to every `qᵢ`; `arnoldi_step`: if `w ≠ 0`,
   appending `q_{k+1} = w/‖w‖` keeps the family orthonormal and
   `T q_k = Σᵢ hᵢₖ qᵢ + ‖w‖ q_{k+1}` (`h_{k+1,k} = ‖w‖`).
-* `arnoldi_coeff_eq`: in any relation `T q_j = Σᵢ H_{ij} qᵢ` with orthonormal `qᵢ`, the
+* `arnoldi_coeff_eq` — in any relation `T q_j = Σᵢ H_{ij} qᵢ` with orthonormal `qᵢ`, the
   coefficients are `H_{ij} = ⟨qᵢ, T q_j⟩`; `matrix_relation`: in coordinates this is
   `A V_m = V_{m+1} H̃_m`.
-* `ritz_residual` / `norm_ritz_residual`: if `H_m y = θ y` (`H_m` the square part of `H̃_m`) and
+* `ritz_residual`, `norm_ritz_residual` — if `H_m y = θ y` (`H_m` the square part of `H̃_m`) and
   `u = V_m y`, then `T u − θ u = (Σ_j H_{m+1,j} y_j) q_{m+1}`, so for Hessenberg `H̃_m`,
   `‖T u − θ u‖ = |h_{m+1,m}| |y_m|` (`norm_ritz_residual_hessenberg`).
 -/

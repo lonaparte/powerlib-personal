@@ -3,17 +3,26 @@ import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import theorem.Transform.SpaceVector
 
-/-! # Two-level inverter modulation limits (foundation)
+/-! # Two-level inverter modulation limits
 
-Model: ideal two-level three-phase inverter, DC link `V_dc > 0`; each leg voltage (with respect to
-the negative rail, averaged over a switching period) lies in `[0, V_dc]`; the output space vector is
-the amplitude-invariant Clarke vector of the three leg voltages (`Transform.SpaceVector.clarke`).
-Dead time, device drops, ripple and DC-link variation are excluded.
+Static foundation: the linear-modulation range `|u| ≤ V_dc/√3` of a two-level inverter, SPWM and
+six-step limits, and the DC-bus utilisation of the three schemes.
 
-Contents.
+Model boundary.
+* Ideal two-level three-phase inverter, DC link `V_dc > 0`; each leg voltage (with respect to
+  the negative rail, averaged over a switching period) lies in `[0, V_dc]`; the output space
+  vector is the amplitude-invariant Clarke vector of the three leg voltages
+  (`Transform.SpaceVector.clarke`).
+* Excluded: dead time, device drops, ripple and DC-link variation.
+
+Source: work-sync `theory/T-scalar-vf-control.md` §1.8 (modulation utilisation),
+`theory/T-field-oriented-control.md` §1.7 (`V_max = V_dc/√3`),
+`theory/T-predictive-machine-control.md` §1.5 (`|u| ≤ V_dc/√3`).
+
+Results.
 * `linearRange_projection_le`: for **any** leg voltages in `[0, V_dc]` (any PWM pattern, any
   zero-sequence injection) the projection of the output vector on the hexagon apothem
-  direction `e^{jπ/6}` is at most `V_dc/√3`.
+  direction `e^{jπ/6}` (`apothemProjection`) is at most `V_dc/√3`.
 * `svpwm_linearRange`: conversely every vector with `|u| ≤ V_dc/√3` is produced by some leg
   voltages in `[0, V_dc]` (min–max zero-sequence injection). Together:
   `V_max = V_dc/√3` is the largest circle (`maxCircle_radius_le`), the bound used for
@@ -24,11 +33,7 @@ Contents.
   50 % duty is `2V_dc/π` (`sixStep_fundamental`), and the line-to-line fundamental is `√3`
   times a leg fundamental (`sin_sub_sin_two_pi_div_three`).
 * Utilisation (line-to-line rms / `V_dc`): SPWM `√6/4 ≈ 0.612`, SVPWM `1/√2 ≈ 0.707`, six-step
-  `√6/π ≈ 0.780` (`utilisation_bounds`).
-
-Source: work-sync theory/T-scalar-vf-control.md §1.8 (modulation utilisation),
-theory/T-field-oriented-control.md §1.7 (`V_max = V_dc/√3`),
-theory/T-predictive-machine-control.md §1.5 (`|u| ≤ V_dc/√3`).
+  `√6/π ≈ 0.780` (`utilisation_values`, `utilisation_bounds`).
 -/
 
 noncomputable section

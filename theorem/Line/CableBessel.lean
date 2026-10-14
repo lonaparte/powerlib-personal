@@ -9,45 +9,52 @@ import theorem.SpecialFunctions.BesselI
 
 /-! # Bessel surface impedance of a solid conductor: low- and high-frequency limits
 
+Static special-function analysis of Schelkunoff's surface impedance of a solid round conductor:
+the DC resistance plus internal inductance at low frequency and the skin-effect surface impedance
+at high frequency.
+
+Model boundary.
+* A straight solid round conductor of radius `r > 0` and resistivity `ρ ≥ 0`, axially symmetric
+  current, quasi-static field inside the conductor (displacement current neglected), sinusoidal
+  steady state at angular frequency `ω`; the propagation constant of the diffusion equation is
+  `m = √(jωμ/ρ)` (any complex `m`; the physical one is `m = (1 + j)√(ωμ/(2ρ))`, argument
+  `π/4`).
+* The per-unit-length surface (internal) impedance is Schelkunoff's
+  `Z(m) = (ρ m/(2π r)) I₀(m r)/I₁(m r)` (`coreImpedance`). No proximity effect, no earth
+  return, no insulation or screen.
+* Modified Bessel functions: the power series `SpecialFunctions.besselI0`,
+  `SpecialFunctions.besselI1` (through `besselSeries0`, `besselSeries1` at `w = z²/4`), their
+  small-argument bounds, integral representation, Laplace estimates and the large-argument
+  limit `I₀(z)/I₁(z) → 1` in a sector are in `theorem/SpecialFunctions/BesselI.lean`.
+
 Source: work-sync `theory/T-cable.md` §1.2.1 ("严格解是 Bessel 比值
 `ρ m/(2π r_c) · I₀(m r_c)/I₁(m r_c)` … 低频退化为直流电阻 `ρ_c/(π r_c²)` + 内电感 `μ₀/(8π)`；
 高频退化为趋肤表面阻抗 `ρ_c m/(2π r_c)`"), §1.2.2 (tubular conductors).
-
-Model boundary. A straight solid round conductor of radius `r > 0` and resistivity `ρ ≥ 0`,
-axially symmetric current, quasi-static field inside the conductor (displacement current
-neglected), sinusoidal steady state at angular frequency `ω`; the propagation constant of the
-diffusion equation is `m = √(jωμ/ρ)` (any complex `m`; the physical one is
-`m = (1 + j)√(ωμ/(2ρ))`, argument `π/4`). The per-unit-length surface (internal) impedance is
-Schelkunoff's `Z(m) = (ρ m/(2π r)) I₀(m r)/I₁(m r)` (`coreImpedance`). No proximity effect, no
-earth return, no insulation or screen.
-
-Modified Bessel functions. The power series `SpecialFunctions.besselI0`,
-`SpecialFunctions.besselI1` (through `besselSeries0`, `besselSeries1` at `w = z²/4`), their
-small-argument bounds, integral representation, Laplace estimates and the large-argument limit
-`I₀(z)/I₁(z) → 1` in a sector are in `theorem/SpecialFunctions/BesselI.lean`.
 
 Results (foundation).
 * `coreImpedance_eq`: `Z(m) = (ρ/(π r²)) f₀(w)/f₁(w)`, `w = (m r)²/4` (`m ≠ 0`).
 * **Low-frequency limit**: `coreImpedance_lowFrequency_le`
   (`‖Z − ρ/(π r²) − ρ m²/(8π)‖ ≤ (3ρ r²/(8π)) ‖m‖⁴` for `‖m‖ r ≤ 1`), `coreImpedance_isBigO`
-  (`Z = ρ/(π r²) + ρ m²/(8π) + O(m⁴)` as `m → 0`), `coreImpedance_tendsto_dc` (`Z → ρ/(π r²)`),
-  and `internalInductance`: with `m² = jωμ/ρ` the second-order term is `jω μ/(8π)` — the note's
-  DC resistance plus internal inductance `μ/(8π)` per unit length, exactly.
+  (`Z = ρ/(π r²) + ρ m²/(8π) + O(m⁴)` as `m → 0`), `coreImpedance_tendsto_dc`
+  (`Z → ρ/(π r²)`), and `internalInductance`: with `m² = jωμ/ρ` the second-order term is
+  `jω μ/(8π)` — the note's DC resistance plus internal inductance `μ/(8π)` per unit length,
+  exactly.
 * **High-frequency (skin-effect) limit**: `coreImpedance_div_surface`
-  (`Z(m)/(ρ m/(2π r)) = I₀(mr)/I₁(mr)`), `coreImpedance_tendsto_surface` (along `m = (1 + i)s`,
-  `s → ∞`: `Z/(ρ m/(2π r)) → 1`), `coreImpedance_sub_surface_isBigO`
-  (`Z(m) = ρ m/(2π r) + O(1)` along the same ray), `coreImpedance_tendsto_surface_omega` (the same
-  limit as `ω → ∞` for `m(ω) = (1 + i)√(ωμ/(2ρ))`, with `m² = jωμ/ρ` by `one_add_I_mul_sqrt_sq`).
+  (`Z(m)/(ρ m/(2π r)) = I₀(mr)/I₁(mr)`), `coreImpedance_tendsto_surface` (along
+  `m = (1 + i)s`, `s → ∞`: `Z/(ρ m/(2π r)) → 1`), `coreImpedance_sub_surface_isBigO`
+  (`Z(m) = ρ m/(2π r) + O(1)` along the same ray), `coreImpedance_tendsto_surface_omega` (the
+  same limit as `ω → ∞` for `m(ω) = (1 + i)√(ωμ/(2ρ))`, with `m² = jωμ/ρ` by
+  `one_add_I_mul_sqrt_sq`).
+* Tubular conductors (§1.2.2): the exact (Schelkunoff) tubular-conductor impedances need the
+  second-kind functions `K₀`, `K₁` in addition to `I₀`, `I₁`; they are defined (integral
+  representation), with their small/large-argument behaviour, derivatives and the Wronskian
+  `I₀K₁ + I₁K₀ = 1/z`, in `theorem/SpecialFunctions/BesselK.lean`. The exact inner, outer and
+  transfer impedances, their low-frequency (DC resistance) and high-frequency (surface
+  impedance, complete screening) limits and their comparison with the Wedepohl–Wilcox
+  `coth`/`csch` formulas of `theorem/Line/Cable.lean` are in `theorem/Line/CableSchelkunoff.lean`.
 
-Tubular conductors (§1.2.2). The exact (Schelkunoff) tubular-conductor impedances need the
-second-kind functions `K₀`, `K₁` in addition to `I₀`, `I₁`; they are defined (integral
-representation), with their small/large-argument behaviour, derivatives and the Wronskian
-`I₀K₁ + I₁K₀ = 1/z`, in `theorem/SpecialFunctions/BesselK.lean`. The exact inner, outer and
-transfer impedances, their low-frequency (DC resistance) and high-frequency (surface impedance,
-complete screening) limits and their comparison with the Wedepohl–Wilcox `coth`/`csch` formulas of
-`theorem/Line/Cable.lean` are in `theorem/Line/CableSchelkunoff.lean`.
-
-Family and connection conclusions: none (static special-function analysis; no model family).
+Family and connection conclusions.
+* None: static special-function analysis; no model family.
 -/
 
 noncomputable section

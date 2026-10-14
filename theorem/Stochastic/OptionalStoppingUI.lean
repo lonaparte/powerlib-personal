@@ -5,22 +5,28 @@ import Mathlib.MeasureTheory.Function.UniformIntegrable
 
 /-! # Optional stopping for uniformly integrable stopped martingales
 
-Source: work-sync `theory/T-martingales-stopping-times.md` §1.5 (optional stopping theorem,
+The optional stopping theorem in discrete time for an almost surely finite stopping time whose
+stopped martingale is uniformly integrable.
+
+Scope.
+* Probability theory, not an engineering result. Discrete time `ℕ`, real martingale `M` on a
+  probability space.
+
+Source: work-sync theory/T-martingales-stopping-times.md §1.5 (optional stopping theorem,
 discrete time: if `τ ≤ N` a.s. **or** `(M_{n∧τ})_n` is uniformly integrable, then
 `E[M_τ] = E[M_0]`).
 
-Foundation (probability), not an engineering result.
-
-Main results (discrete time `ℕ`, real martingale `M` on a probability space).
-* `martingale_integral_eq`: `E M_n = E M_0`.
-* `stoppedProcess_tendsto_stoppedValue`: if `τ < ∞` a.s. then `M_{n∧τ} → M_τ` a.s.
-* `optional_stopping_UI`: if `τ` is a stopping time with `τ < ∞` a.s. and the stopped process
+Results.
+* `martingale_integral_eq` — `E M_n = E M_0`.
+* `stoppedProcess_tendsto_stoppedValue` — if `τ < ∞` a.s. then `M_{n∧τ} → M_τ` a.s.
+* `optional_stopping_UI` — if `τ` is a stopping time with `τ < ∞` a.s. and the stopped process
   `(M_{n∧τ})_n` is uniformly integrable, then `M_τ` is integrable and `E[M_τ] = E[M_0]`
   (bounded optional stopping for `M_{n∧τ}` + Vitali convergence theorem).
 
-Correction (§1.5, condition 2).  "`(M_{n∧τ})` UI ⇒ `E[M_τ] = E[M_0]`" needs `τ < ∞` a.s. (or a
-definition of `M_∞`): on `{τ = ∞}` the value `M_τ` is not defined by the note.  The formal
-statement assumes `τ < ∞` a.s. explicitly.
+Corrections.
+* §1.5, condition 2: "`(M_{n∧τ})` UI ⇒ `E[M_τ] = E[M_0]`" needs `τ < ∞` a.s. (or a definition
+  of `M_∞`): on `{τ = ∞}` the value `M_τ` is not defined by the note. The formal statement
+  assumes `τ < ∞` a.s. explicitly.
 -/
 
 noncomputable section

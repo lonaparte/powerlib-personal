@@ -2,55 +2,61 @@ import theorem.Network.Swing.Degenerate
 
 /-! # Networked swing equations: four machines
 
-Source: work-sync `theory/T-synchronization-manifold.md` §1.7 and §2.2 (swing network
-`Mᵢ θ̈ᵢ = P_{m,i} − Dᵢ θ̇ᵢ − ∑ⱼ Bᵢⱼ sin(θᵢ − θⱼ)` and its energy function); the model is
-`theorem/Network/Swing/Basic.lean` (`Swing.family`); the potential, the Hessian and cubic forms and
-the characterization of local asymptotic stability are in `theorem/Network/Swing/Degenerate.lean`.
+Cut and flat-direction tests for local asymptotic stability of the swing network (every number of
+machines), and exactness of the local asymptotic translation for four machines with at most four
+lines.
 
-Model boundary. Exactly the model of `theorem/Network/Swing/Basic.lean`: `n + 1` machines, reduced
-state `(δ, ω)`, positive inertia and damping, constant power, symmetric nonnegative lossless
-couplings, constant voltages; no governor, AVR, PLL, converter control, delay or PWM; continuous
-time. Statements concern the selected angle profile `θ*` of a model. The four-machine results are
-for `n = 3`; the cut lemmas hold for every `n`.
+Model boundary.
+* Exactly the model of `theorem/Network/Swing/Basic.lean` (`Swing.family`): `n + 1` machines,
+  reduced state `(δ, ω)`, positive inertia and damping, constant power, symmetric nonnegative
+  lossless couplings, constant voltages; no governor, AVR, PLL, converter control, delay or PWM;
+  continuous time. Statements concern the selected angle profile `θ*` of a model. The
+  four-machine results are for `n = 3`; the cut lemmas hold for every `n`.
+
+Source: work-sync `theory/T-synchronization-manifold.md` §1.7 and §2.2 (swing network
+`Mᵢ θ̈ᵢ = P_{m,i} − Dᵢ θ̇ᵢ − ∑ⱼ Bᵢⱼ sin(θᵢ − θⱼ)` and its energy function); the potential, the
+Hessian and cubic forms and the characterization of local asymptotic stability are in
+`theorem/Network/Swing/Degenerate.lean`.
 
 Results.
 * Necessary conditions for local asymptotic stability, every number of machines:
   `not_localAsymptoticStable_of_cut` (a nonempty proper group `X` of machines whose lines to the
   rest have total linearization weight `W = ∑ Bᵢⱼ cos(θᵢ − θⱼ) ≤ 0`: turning `X` rigidly changes
   the potential by `W (1 − cos t) + K (sin t − t)` (`potential_add_groupIndicator`), a saddle if
-  `W < 0` (`hessForm_groupIndicator`), a fold if `W = 0` and the flow `K` out of `X` is nonzero, a
-  non-strict minimum otherwise), its special case `not_localAsymptoticStable_of_zero_cut` (every
-  line of the cut has zero weight), and `not_localAsymptoticStable_of_flat` (a non-constant
-  direction carrying no linearized flow `Bᵢⱼ cos(θᵢ − θⱼ)(uᵢ − uⱼ)` on any line);
+  `W < 0` (`hessForm_groupIndicator`), a fold if `W = 0` and the flow `K` out of `X` is nonzero,
+  a non-strict minimum otherwise), its special case `not_localAsymptoticStable_of_zero_cut`
+  (every line of the cut has zero weight), and `not_localAsymptoticStable_of_flat` (a
+  non-constant direction carrying no linearized flow `Bᵢⱼ cos(θᵢ − θⱼ)(uᵢ − uⱼ)` on any line);
   `hessForm_nonneg_of_localAsymptoticStable` and `cubicForm_eq_zero_of_localAsymptoticStable`
   (positive semidefinite Hessian form, cubic form vanishing on its null directions).
-* The four-cycle (superadditivity of `tan`): `tan_add_tan_lt`, `sq_sum_le_mul` (Cauchy–Schwarz),
-  `tan_sum_mul_sq_lt` (three angles in `(−π/2, π/2)` summing past `π/2`:
+* The four-cycle (superadditivity of `tan`): `tan_add_tan_lt`, `sq_sum_le_mul`
+  (Cauchy–Schwarz), `tan_sum_mul_sq_lt` (three angles in `(−π/2, π/2)` summing past `π/2`:
   `tan(∑β)(∑a)² < ∑ a² tan β`), `exists_rep_of_cos_pos`, `quad_tan_ne_zero`,
   `quad_cubic_ne_zero` and `ring_cubic_ne_zero` (a circulation `κ ≠ 0` through four lines whose
-  weights have nonnegative pairwise sums has a nonzero cubic term: exactly one weight is negative,
-  and with representatives `βᵢ ∈ (−π/2, π/2)` of the three positive lines the cubic term is `κ³`
-  times `∑ aᵢ² tan βᵢ − tan(∑βᵢ)(∑aᵢ)² ≠ 0`, `aᵢ = 1/Wᵢ`).
-* Four machines in a labelled order `σ`: `hessForm_four`, `cubicForm_four` (the forms as six line
-  terms, `weightOf`, `flowOf`), `null_four` (node balances of a null direction),
-  `not_localAsymptoticStable_four`: if two machine pairs are uncoupled — the lines form a subgraph
-  of a four-cycle, or of a triangle with a pendant line — every power-balance point with a
-  non-Hurwitz reduced Jacobian fails local asymptotic stability.
-* Family conclusion: `mem_den_locallyAsymptoticallyStable_iff_four` — for four machines with at
-  most four lines (two uncoupled pairs, labelled by `σ`), local asymptotic stability holds exactly
-  when the profile is a power-balance point with a Hurwitz reduced Jacobian: on this class the
-  local asymptotic translation `{powerFlow, jacobianStable}` is exact.
+  weights have nonnegative pairwise sums has a nonzero cubic term: exactly one weight is
+  negative, and with representatives `βᵢ ∈ (−π/2, π/2)` of the three positive lines the cubic
+  term is `κ³` times `∑ aᵢ² tan βᵢ − tan(∑βᵢ)(∑aᵢ)² ≠ 0`, `aᵢ = 1/Wᵢ`).
+* Four machines in a labelled order `σ`: `hessForm_four`, `cubicForm_four` (the forms as six
+  line terms, `weightOf`, `flowOf`), `null_four` (node balances of a null direction),
+  `not_localAsymptoticStable_four`: if two machine pairs are uncoupled — the lines form a
+  subgraph of a four-cycle, or of a triangle with a pendant line — every power-balance point
+  with a non-Hurwitz reduced Jacobian fails local asymptotic stability.
 * The remaining four-machine networks (at least five lines: the diamond and the complete graph)
   are decided in `theorem/Network/Swing/FourDense.lean` (`diamond_cubic_ne_zero` by a branch
   identity, `sorted_cubic_ne_zero` by sorted lifted angles and cycle bounds from
-  `tan_sum_mul_sq_lt`); the family conclusion there, `exact_locallyAsymptoticallyStable_four`,
-  states that the local asymptotic translation of `family (n := 3)` is exact, and
-  `mem_den_locallyAsymptoticallyStable_iff_four_machines` drops the line restriction of
-  `mem_den_locallyAsymptoticallyStable_iff_four`. No UNPROVED residual remains for `n = 3`.
+  `tan_sum_mul_sq_lt`). No UNPROVED residual remains for `n = 3`.
 
-Connection architecture. The family is `Swing.family`; the public model conclusion is a
-`connection%` statement on its generated denotation. The cut, form and trigonometric lemmas are
-static or generic implications (foundation).
+Family and connection conclusions.
+* `mem_den_locallyAsymptoticallyStable_iff_four` — for four machines with at most four lines
+  (two uncoupled pairs, labelled by `σ`), local asymptotic stability holds exactly when the
+  profile is a power-balance point with a Hurwitz reduced Jacobian: on this class the local
+  asymptotic translation `{powerFlow, jacobianStable}` is exact. In `FourDense.lean`,
+  `exact_locallyAsymptoticallyStable_four` states that the local asymptotic translation of
+  `family (n := 3)` is exact, and `mem_den_locallyAsymptoticallyStable_iff_four_machines` drops
+  the line restriction.
+* The family is `Swing.family`; the public model conclusion is a `connection%` statement on its
+  generated denotation. The cut, form and trigonometric lemmas are static or generic
+  implications (foundation).
 -/
 
 noncomputable section

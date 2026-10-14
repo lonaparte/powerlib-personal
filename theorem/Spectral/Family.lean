@@ -8,7 +8,20 @@ Many model families of the converter modules are decided by the spectrum of one 
 static parameter condition makes it Hurwitz, another places a characteristic root in the open
 right half plane. `Spectral` packages that shape once, for an arbitrary type `X` of complete
 systems, with the generic requirement language `Spectral.Requirement` (`stable`, `unstable`)
-whose satisfaction is supplied by the static conditions `S` and `U` of the model:
+whose satisfaction is supplied by the static conditions `S` and `U` of the model.
+
+Scope.
+* A generic template, not a model: the families are parametrized by an arbitrary type `X` of
+  complete systems, a plant or field map and the static conditions `S`, `U`; nothing here
+  describes a physical system. These are generic statements about arbitrary families of the two
+  shapes: foundation results.
+* The single-input single-output plant algebra the converter modules use with these templates is
+  in `theorem/LTI/Plant.lean`.
+
+Source: generic `Family` templates for the converter modules (work-sync `theory/T-gfl-control.md`
+§1.4, `theory/T-gfl-impedance.md` §1.4–§1.5, `theory/T-vsc-dc-voltage-control.md` §1.4).
+
+Results.
 * `Spectral.linearFamily plant S U` reads every complete system as the port system of its linear
   plant (`Family.IsLinear`). Its translation sends the attractive sentences, sampled contraction
   and Lyapunov stability to `stable`, instability to `unstable`, and decay at a prescribed rate,
@@ -30,18 +43,17 @@ whose satisfaction is supplied by the static conditions `S` and `U` of the model
   stability condition that also fixes physical signs (positive inertia, capacitance, …) is not of
   this form; such families publish the exact membership within the physical range and a
   witness that the translation itself is not exact.
+* Inexactness passes along translations (`Spectral.not_exact_of_den_subset`): if a sound
+  translation of `s` is not exact and a sentence `s'` with the same translation has a larger
+  denotation, the translation of `s'` is not exact either; for local families a boundary witness
+  of the local exponential translation is one of the local asymptotic and Lyapunov translations
+  (`Spectral.local_not_exact_of_not_exact_les`).
 
-Inexactness passes along translations (`Spectral.not_exact_of_den_subset`): if a sound translation
-of `s` is not exact and a sentence `s'` with the same translation has a larger denotation, the
-translation of `s'` is not exact either; for local families a boundary witness of the local
-exponential translation is one of the local asymptotic and Lyapunov translations
-(`Spectral.local_not_exact_of_not_exact_les`).
-
-These are generic statements about arbitrary families of the two shapes: foundation results. A
-model module instantiates them and publishes its conclusions as connection statements.
-
-Source: generic `Family` templates for the converter modules (work-sync `theory/T-gfl-control.md`
-§1.4, `theory/T-gfl-impedance.md` §1.4–§1.5, `theory/T-vsc-dc-voltage-control.md` §1.4).
+Family and connection conclusions.
+* The module defines the two family templates `Spectral.linearFamily` and `Spectral.localFamily`
+  and proves their soundness and exactness laws once; it states no `connection%` conclusion of
+  its own. A model module instantiates them and publishes its conclusions as connection
+  statements.
 -/
 
 noncomputable section

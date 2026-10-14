@@ -1,13 +1,20 @@
 import dependencies.Mathlib
 import theorem.Attributes
 
-/-! Per-unit bases and per-unit identities (foundation).
+/-! # Per-unit bases and per-unit identities
+
+Exact SI ↔ per-unit identities (foundation).
+
+Scope.
+All statements are exact identities between SI quantities and per-unit quantities for
+explicitly given bases; there is no physical model or approximation in this module.
+The swing equations and the telegrapher system are differential equations along signals; they
+are written out in the statements that use them (no separate solution predicate), since
+behavioural notions are defined only in the semantic layer (`theorem/Flow/Defs.lean`).
 
 Source: work-sync `theory/T-PU.md` §1.2–§1.6, §1.8–§1.10, §1.12, §1.13.
 
-All statements are exact identities between SI quantities and per-unit quantities for
-explicitly given bases; there is no physical model or approximation in this module.
-
+Results.
 * `Base`: a single-phase base pair `{S_B, V_B}` with `I_B = S_B / V_B`, `Z_B = V_B² / S_B`.
   Ohm's law and complex power keep their form in per unit (`ohm_pu_iff`, `power_pu_iff`).
 * Three-phase bases (§1.3): `V_LN = V_LL / √3`, `I_B = S_B / (√3 V_LL)`,
@@ -25,10 +32,6 @@ explicitly given bases; there is no physical model or approximation in this modu
   solutions to solutions with `R̂' = R' z_B / Z_B`, `L̂' = ω_B L' z_B / Z_B`, `Ĝ' = G' z_B Z_B`,
   `Ĉ' = ω_B C' z_B Z_B` (`telegrapher_pu_iff`).
 * DC side (§1.12) and PI gains (§1.13).
-
-The swing equations and the telegrapher system are differential equations along signals; they
-are written out in the statements that use them (no separate solution predicate), since
-behavioural notions are defined only in the semantic layer (`theorem/Flow/Defs.lean`).
 
 Correction (`T-PU.md` §1.12): the note concludes `Ŵ_dc = H_dc V̂_dc²` for the energy base
 `S_B / ω_B`. With that base the exact value is `Ŵ_dc = ω_B H_dc V̂_dc²`

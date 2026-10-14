@@ -4,25 +4,30 @@ import Mathlib.Algebra.BigOperators.Field
 
 /-! # Finite-state maximum entropy, Gibbs inequality and the Boltzmann–Gibbs law
 
-Source: work-sync `theory/T-maximum-entropy.md` head (boxed MaxEnt form with reference measure
-`m`), §1.3 (Boltzmann–Gibbs), §1.6 (exponential family); `theory/T-maximum-caliber.md` uses the
+On a finite index set: the Gibbs inequality, the Pythagorean identity of relative entropy, the
+unique MaxEnt (Gibbs) solution, and the Boltzmann–Gibbs law as the Shannon-entropy maximiser.
+
+Scope.
+* General probability, not an engineering result.
+* A finite index type `ι` (states, or whole paths). A probability vector `p` (nonnegative,
+  `∑ p = 1`), a strictly positive reference weight `q` (not necessarily normalised; `q = 1` is
+  the counting measure), and a log-tilt `g`. The Gibbs vector is
+  `gibbsVec q g i = q i exp(g i) / Z`, `Z = ∑ q exp g`. For one constraint `E[f] = F` with
+  multiplier `λ`, `g = -λ f`.
+* `klSum p q = ∑ p log (p / q)` is the discrete relative entropy (`0 · log 0 = 0` holds by
+  Lean's convention `0 * x = 0`). `shannon p = ∑ -p log p`.
+
+Source: work-sync theory/T-maximum-entropy.md head (boxed MaxEnt form with reference measure
+`m`), §1.3 (Boltzmann–Gibbs), §1.6 (exponential family); theory/T-maximum-caliber.md uses the
 same statement on a finite path space (see `theorem/Information/MaxCaliber.lean`).
 
-Foundation (general probability), not an engineering result.
-
-Setting: a finite index type `ι` (states, or whole paths). A probability vector `p` (nonnegative,
-`∑ p = 1`), a strictly positive reference weight `q` (not necessarily normalised; `q = 1` is the
-counting measure), and a log-tilt `g`. The Gibbs vector is `gibbsVec q g i = q i exp(g i) / Z`,
-`Z = ∑ q exp g`. For one constraint `E[f] = F` with multiplier `λ`, `g = -λ f`.
-
-`klSum p q = ∑ p log (p / q)` is the discrete relative entropy (`0 · log 0 = 0` holds by
-Lean's convention `0 * x = 0`). `shannon p = ∑ -p log p`.
-
-Main results: `klSum_nonneg`/`klSum_eq_zero_iff` (Gibbs inequality on a finite set),
-`klSum_eq_klSum_gibbsVec_add` (Pythagorean identity), `klSum_gibbsVec_le` and
-`klSum_eq_klSum_gibbsVec_iff` (unique MaxEnt solution), `shannon_le_shannon_boltzmann` and
-`shannon_eq_shannon_boltzmann_iff` (Boltzmann–Gibbs maximises Shannon entropy at fixed mean
-energy), `shannon_boltzmann` (`S = β⟨E⟩ + log Z`).
+Results.
+* `klSum_nonneg`, `klSum_eq_zero_iff` — Gibbs inequality on a finite set.
+* `klSum_eq_klSum_gibbsVec_add` — Pythagorean identity.
+* `klSum_gibbsVec_le`, `klSum_eq_klSum_gibbsVec_iff` — unique MaxEnt solution.
+* `shannon_le_shannon_boltzmann`, `shannon_eq_shannon_boltzmann_iff` — Boltzmann–Gibbs
+  maximises Shannon entropy at fixed mean energy.
+* `shannon_boltzmann` — `S = β⟨E⟩ + log Z`.
 -/
 
 noncomputable section

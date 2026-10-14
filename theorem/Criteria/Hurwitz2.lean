@@ -2,45 +2,60 @@ import theorem.Linear.Realization
 
 /-! # Hurwitz criteria for monic quadratics and real 2×2 matrices
 
-Foundation layer (plus thin generic semantic corollaries at the end).
+Hurwitz and instability criteria for real quadratics and `2 × 2` matrices, with thin generic
+semantic corollaries at the end.
 
+Scope.
 * `LinearSystems.IsHurwitz A` is the LeanForControl eigenpair predicate: every complex
   eigenpair `(μ, v)`, `v ≠ 0`, of the complexified matrix `A.map (algebraMap ℝ ℂ)` has
   `μ.re < 0`.
 * `Linear.SpectrallyStable A` is the powerlib characteristic-root predicate:
   `det (s • 1 - A) = 0 → s.re < 0` (`theorem/Linear/Transfer.lean`).
+* Both are statements about one fixed real matrix; they say nothing about a physical model
+  until a Jacobian or state matrix of a formalized system is identified with `A`. No model family
+  is defined: static algebra and generic semantic implications only (foundation results,
+  Rules §3).
 
-Both are statements about one fixed real matrix; they say nothing about a physical model
-until a Jacobian or state matrix of a formalized system is identified with `A`.
+Source: standard Routh–Hurwitz criterion for degree two (shared criteria interface for the
+work-sync formalization).
 
-Contents.
-* Any dimension: characteristic roots ↔ eigenpairs, and `¬ IsHurwitz` as an explicit
-  eigenpair with nonnegative real part.
+Results.
+* Any dimension: characteristic roots ↔ eigenpairs
+  (`det_characteristicMatrix_eq_zero_iff_exists_eigenpair`, `isHurwitz_iff_characteristic_roots`,
+  `isHurwitz_iff_charpoly_roots`), and `¬ IsHurwitz` as an explicit eigenpair with nonnegative
+  real part (`not_isHurwitz_iff`).
 * Monic real quadratic `s ^ 2 + a1 * s + a0`: all complex roots in the open left half-plane
-  iff `0 < a1 ∧ 0 < a0` (both directions); explicit root witnesses with `0 ≤ re` / `0 < re`;
-  all roots real iff `0 ≤ a1 ^ 2 - 4 * a0`. For a real quadratic `a x² + b x + c` with `a > 0`:
-  negative exactly strictly between the two roots (`quad_neg_iff`), and `(−b ± √D)/(2a)` are
-  its roots when `D ≥ 0` (`quad_root`). For `λ² + aλ + b` with `a > 0`, `0 ≤ b`, `4b ≤ a²`
-  (`ε = b/a²`): real roots iff `ε ≤ 1/4` (`eigen_real_iff`), `λ± = −(a/2)(1 ∓ √(1 − 4ε))`
-  (`eigen_roots`), `λ₊/λ₋ = 4ε/(1 + √(1 − 4ε))² ∈ [ε, 4ε]` (`eigen_ratio`),
-  `λ₋ ∈ [−a, −a/2]`, `λ₊ ∈ [−2b/a, −b/a]` (`eigen_bounds`).
-* `A : Matrix (Fin 2) (Fin 2) ℝ`: `det (s • 1 - A) = s ^ 2 - tr A * s + det A`;
-  `IsHurwitz A ↔ A.trace < 0 ∧ 0 < A.det` (also for `SpectrallyStable`, for the literal
-  `!![a, b; c, d]`, and for the companion form `!![0, 1; -a0, -a1]`).
+  iff `0 < a1 ∧ 0 < a0` (both directions, `quadratic_roots_re_neg_iff`); explicit root witnesses
+  with `0 ≤ re` / `0 < re` (`exists_quadratic_root_re_nonneg`,
+  `exists_quadratic_root_pos_of_const_neg`, `exists_quadratic_root_re_pos_of_linear_neg`);
+  all roots real iff `0 ≤ a1 ^ 2 - 4 * a0` (`quadratic_roots_real_iff`). For a real quadratic
+  `a x² + b x + c` with `a > 0`: negative exactly strictly between the two roots (`quad_neg_iff`),
+  and `(−b ± √D)/(2a)` are its roots when `D ≥ 0` (`quad_root`). For `λ² + aλ + b` with `a > 0`,
+  `0 ≤ b`, `4b ≤ a²` (`ε = b/a²`): real roots iff `ε ≤ 1/4` (`eigen_real_iff`),
+  `λ± = −(a/2)(1 ∓ √(1 − 4ε))` (`eigen_roots`), `λ₊/λ₋ = 4ε/(1 + √(1 − 4ε))² ∈ [ε, 4ε]`
+  (`eigen_ratio`), `λ₋ ∈ [−a, −a/2]`, `λ₊ ∈ [−2b/a, −b/a]` (`eigen_bounds`).
+* `A : Matrix (Fin 2) (Fin 2) ℝ`: `det (s • 1 - A) = s ^ 2 - tr A * s + det A`
+  (`det_characteristicMatrix_fin_two`); `IsHurwitz A ↔ A.trace < 0 ∧ 0 < A.det`
+  (`isHurwitz_fin_two_iff`; also for `SpectrallyStable`, `spectrallyStable_fin_two_iff`, for the
+  literal `!![a, b; c, d]`, `isHurwitz_fin_two_of_iff`, and for the companion form
+  `!![0, 1; -a0, -a1]`, `isHurwitz_companion_two_iff`).
 * Instability witnesses: `A.det < 0` gives a positive real eigenvalue (with real and complex
-  eigenvectors); `0 < A.trace` gives an eigenvalue with positive real part. The conclusion
-  shape matches LeanForControl's `unstable_of_exists_complex_eigenvalue_re_pos`.
-* Discriminant: all eigenvalues real iff `0 ≤ tr² − 4 det`; nilpotency:
-  `A ^ 2 = 0 ↔ tr A = 0 ∧ det A = 0` and `IsNilpotent A ↔ tr A = 0 ∧ det A = 0`.
+  eigenvectors; `exists_pos_real_eigenvalue_of_det_neg`, `exists_pos_real_eigenvector_of_det_neg`,
+  `exists_eigenvalue_re_pos_of_det_neg`); `0 < A.trace` gives an eigenvalue with positive real
+  part (`exists_eigenvalue_re_pos_of_trace_pos`). The conclusion shape matches LeanForControl's
+  `unstable_of_exists_complex_eigenvalue_re_pos`.
+* Discriminant: all eigenvalues real iff `0 ≤ tr² − 4 det`
+  (`eigenvalues_real_iff_discriminant_nonneg`); nilpotency: `A ^ 2 = 0 ↔ tr A = 0 ∧ det A = 0`
+  (`sq_eq_zero_iff_trace_det_eq_zero_fin_two`) and `IsNilpotent A ↔ tr A = 0 ∧ det A = 0`
+  (`isNilpotent_iff_trace_det_eq_zero_fin_two`).
 * Semantic corollaries: linearization at an equilibrium of a `ContDiff ℝ 1` vector field on
-  `EuclideanSpace ℝ (Fin 2)` (local exponential stability / instability) and the attractive
-  sentences of a two-state linear field. These only repackage LeanForControl's
+  `EuclideanSpace ℝ (Fin 2)` (local exponential stability / instability:
+  `locallyExponentiallyStable_of_jacobian_fin_two`, `unstable_of_jacobian_det_neg_fin_two`,
+  `unstable_of_jacobian_trace_pos_fin_two`) and the attractive sentences of a two-state linear
+  field (`holds_affine_fin_two_iff`). These only repackage LeanForControl's
   `hurwitz_linearization_locally_exponentially_stable`,
   `unstable_of_exists_complex_eigenvalue_re_pos` and the linear hub
   `Linear.holds_iff_isHurwitz`; the model boundary is whatever vector field the caller supplies.
-
-Source: standard Routh–Hurwitz criterion for degree two (powerlib Phase 0, P0a, shared
-criteria interface for the work-sync formalization).
 -/
 
 noncomputable section

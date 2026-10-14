@@ -3,26 +3,25 @@ import theorem.Attributes
 
 /-! # Sliding Fourier coefficients (generalized averaging)
 
-Foundation layer: an exact calculus identity for the sliding-window Fourier coefficients of
-generalized averaging (Sanders et al. 1991). No converter model is fixed here.
+An exact calculus identity for the sliding-window Fourier coefficients of generalized averaging
+(Sanders et al. 1991). No converter model is fixed here.
 
-Definitions. For a window length `T > 0`, a harmonic frequency `ω` (in the source `ω = 2π/T`;
-the identities below hold for every real `ω`), an integer harmonic `k` and a complex signal
-`x : ℝ → ℂ`,
-
-  `⟨x⟩_k(t) = (1/T) ∫_{t−T}^{t} x(τ) e^{−jkωτ} dτ`   (`slidingCoeff`).
-
-Results.
-* `hasDerivAt_slidingCoeff`: if `x` is `C¹` (derivative `x'` continuous), then
-  `d⟨x⟩_k/dt = ⟨ẋ⟩_k − jkω ⟨x⟩_k` (fundamental theorem of calculus for the moving window plus
-  integration by parts).
-* `hasDerivAt_slidingCoeff_of_ode`: along a solution of `ẋ = f(x, t)` with continuous
-  `t ↦ f(x(t), t)`, `d⟨x⟩_k/dt = ⟨f(x, t)⟩_k − jkω⟨x⟩_k` (the generalized-averaging equation).
-* `slidingCoeff_zero_demod`: `⟨x e^{−jωt}⟩₀ = ⟨x⟩₁` (demodulation by the fundamental turns the
-  first harmonic into the zeroth one: dynamic phasor ↔ rotating-frame average).
+Scope.
+* For a window length `T > 0`, a harmonic frequency `ω` (in the source `ω = 2π/T`; the
+  identities below hold for every real `ω`), an integer harmonic `k` and a complex signal
+  `x : ℝ → ℂ`: `⟨x⟩_k(t) = (1/T) ∫_{t−T}^{t} x(τ) e^{−jkωτ} dτ`   (`slidingCoeff`).
 
 Source: work-sync theory/T-averaging-method.md §1.6 (sliding Fourier coefficient and its
 evolution equation), §2.3 (dq frame = rotating-frame average), §2.8 (dynamic phasor).
+
+Results.
+* `hasDerivAt_slidingCoeff` — if `x` is `C¹` (derivative `x'` continuous), then
+  `d⟨x⟩_k/dt = ⟨ẋ⟩_k − jkω ⟨x⟩_k` (fundamental theorem of calculus for the moving window plus
+  integration by parts).
+* `hasDerivAt_slidingCoeff_of_ode` — along a solution of `ẋ = f(x, t)` with continuous
+  `t ↦ f(x(t), t)`, `d⟨x⟩_k/dt = ⟨f(x, t)⟩_k − jkω⟨x⟩_k` (the generalized-averaging equation).
+* `slidingCoeff_zero_demod` — `⟨x e^{−jωt}⟩₀ = ⟨x⟩₁` (demodulation by the fundamental turns the
+  first harmonic into the zeroth one: dynamic phasor ↔ rotating-frame average).
 -/
 
 noncomputable section

@@ -8,7 +8,8 @@ import theorem.Dynamics.Coordinates
 
 /-! # Quasi-static three-state GFL: PLL + active-power dispatch loop
 
-**Model boundary.** Single grid-following converter on an infinite bus of amplitude `V`
+Model boundary.
+Single grid-following converter on an infinite bus of amplitude `V`
 behind a lossless reactance `X_g`; three-phase balanced averaged dq model in the PLL frame,
 algebraic (quasi-static) network, continuous time.
 * States, in order: `θ` (PLL error angle), `x` (PLL integrator), `I_d` (d-axis current).
@@ -19,14 +20,20 @@ algebraic (quasi-static) network, continuous time.
 * Ideal current loop, no line dynamics, no line resistance, no dc link, no PWM, delay or
   limiter.  Results are at the equilibrium (linearization) level.
 
-**Results.**
+Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
+notes/concepts/contrast-conclusions.md` (差别二 `P_SN = 3V_g²/(4X_g)`, 折叠角 45°;
+推论二 准静态无 Hopf); model `GFLQuasiStatic` in `.../archive/simulation/src/
+gfl_gfm_contrast_sim/models.py` (with `I_q = 0`).
+
+Results.
 * `equilibrium_exists_iff`: an equilibrium exists iff `|P_ref| ≤ 3V²/(4X_g)`; the power
   curve is `P(θ) = (3V²/(4X_g)) sin 2θ`, maximal exactly at the fold angle `θ = π/4` on the
   branch `|θ| < π/2` (`power_eq_PSN_iff`).
 * Characteristic polynomial of the Jacobian (derived with `fderiv`):
   `s³ + a₂ s² + a₁ s + a₀`, `a₂ = (V cos θ/2)(3k_P + 2k_p)`,
   `a₁ = (V/2)(3V k_P k_p cos 2θ + 2k_i cos θ)`, `a₀ = (3/2)V² k_P k_i cos 2θ`, and
-  `a₂a₁ − a₀ = (V²/4)[(9V k_P² k_p + 6V k_P k_p²) cos θ cos 2θ + 4k_i k_p cos² θ + 6k_P k_i sin² θ]`.
+  `a₂a₁ − a₀ =`
+  `(V²/4)[(9V k_P² k_p + 6V k_P k_p²) cos θ cos 2θ + 4k_i k_p cos² θ + 6k_P k_i sin² θ]`.
 * "No-Hopf theorem" (exact form): for all positive gains, `cos θ > 0`:
   `cos 2θ > 0` (i.e. `|θ| < 45°`) ⇒ locally exponentially stable;
   `cos 2θ < 0` (`45° < |θ| < 90°`) ⇒ a positive real eigenvalue, unstable;
@@ -35,7 +42,8 @@ algebraic (quasi-static) network, continuous time.
   model is covered; the generalisations claimed in the source (PI outer loop, resistance,
   normalised PLL) are not formalized.
 
-**Family and connection conclusions.** A complete system (`Model`) is a parameter set with a
+Family and connection conclusions.
+A complete system (`Model`) is a parameter set with a
 selected operating point `(θ*, 0, I_d*)`; the system map reads it as the field translated so that
 this point is the origin, `z ↦ field p (z + point θ* I_d*)` (every flow sentence is invariant
 under this translation, `Flow.Property.holds_shift_iff`). The requirement language is static:
@@ -43,39 +51,34 @@ the point is an equilibrium (`IsEq p θ* I_d*`); the closed-form Jacobian `jac p
 to be the `fderiv`) satisfies the strict 3×3 Routh–Hurwitz conditions (`tr < 0`, `det < 0`,
 `tr · m₂ < det`); or it has `det > 0` or `tr > 0`; and the context requirement `positiveGains`
 (`k_p, k_i, k_P > 0`), into which no sentence is translated. The local sentences translate into the
-first two, instability into the first and the third, passivity into nothing, and the global sentences,
-decay rates, sampled contraction and conservation into the whole (inconsistent) language:
+first two, instability into the first and the third, passivity into nothing, and the global
+sentences, decay rates, sampled contraction and conservation into the whole (inconsistent) language:
 unavailable translation coverage. `chain_le_semantics` proves every translation sound;
-`exact_passive` proves the passivity translation exact. The former domain theorems are connection
+`exact_passive` proves the passivity translation exact. The stability results are connection
 memberships (`mem_den_locallyExponentiallyStable_of_cos_two_mul_pos`, `…_of_abs_lt`,
 `mem_den_unstable_of_cos_two_mul_neg`, `…_of_pi_div_four_lt`, with
-`not_mem_den_lyapunovStable_of_cos_two_mul_neg`); `equilibrium_exists_iff` (formerly
-domain-labelled) is static evidence on the model. The local exponential translation is exact
-(`exact_locallyExponentiallyStable`): by the converse linearization theorem
-(`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`) local exponential stability of the
-selected point holds exactly when it is an equilibrium with a Hurwitz Jacobian (the strict 3×3
-Routh–Hurwitz conditions; a Hurwitz Jacobian has `k_P ≠ 0`, so the field's equilibrium is an
-`IsEq` point). The instability translation is not exact (`not_exact_unstable`): instability is
-the failure of Lyapunov stability, so a model whose selected point is not an equilibrium
-(`offEquilibrium`) is unstable (`offEquilibrium_mem_den_unstable`). The Lyapunov translation is not
-exact (`not_exact_lyapunovStable`): the undamped PLL with a frozen dispatch loop `undampedPLL`
-(`k_p = k_P = 0`) is Lyapunov stable through the conserved energy `1 − cos θ + x²/2 + I_d²/2`
-(`undampedPLL_mem_den_lyapunovStable`) with a trace-zero Jacobian. The local asymptotic translation
-is not exact for gains of arbitrary sign (`not_exact_locallyAsymptoticallyStable`, in
-`theorem/GFL/PowerLoop/QuasiStaticFoldHopf.lean`): the witness `supercriticalQS` (`k_p = −1/4 < 0`)
-sits on the Hopf boundary `a₂a₁ = a₀` with eigenvalues `±3i`, `−7/2` and is locally asymptotically
-stable (a supercritical weak focus, decided by an explicit normal-form polynomial). Within positive
-gains both the local asymptotic and the Lyapunov translations are exact
-(`exactUnder_locallyAsymptoticallyStable`, `exactUnder_lyapunovStable`, in
+`not_mem_den_lyapunovStable_of_cos_two_mul_neg`); `equilibrium_exists_iff` is static evidence on the
+model. The local exponential translation is exact (`exact_locallyExponentiallyStable`): by the
+converse linearization theorem (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`) local
+exponential stability of the selected point holds exactly when it is an equilibrium with a Hurwitz
+Jacobian (the strict 3×3 Routh–Hurwitz conditions; a Hurwitz Jacobian has `k_P ≠ 0`, so the field's
+equilibrium is an `IsEq` point). The instability translation is not exact (`not_exact_unstable`):
+instability is the failure of Lyapunov stability, so a model whose selected point is not an
+equilibrium (`offEquilibrium`) is unstable (`offEquilibrium_mem_den_unstable`). The Lyapunov
+translation is not exact (`not_exact_lyapunovStable`): the undamped PLL with a frozen dispatch loop
+`undampedPLL` (`k_p = k_P = 0`) is Lyapunov stable through the conserved energy
+`1 − cos θ + x²/2 + I_d²/2` (`undampedPLL_mem_den_lyapunovStable`) with a trace-zero Jacobian. The
+local asymptotic translation is not exact for gains of arbitrary sign
+(`not_exact_locallyAsymptoticallyStable`, in `theorem/GFL/PowerLoop/QuasiStaticFoldHopf.lean`): the
+witness `supercriticalQS` (`k_p = −1/4 < 0`) sits on the Hopf boundary `a₂a₁ = a₀` with eigenvalues
+`±3i`, `−7/2` and is locally asymptotically stable (a supercritical weak focus, decided by an
+explicit normal-form polynomial). Within positive gains both the local asymptotic and the Lyapunov
+translations are exact (`exactUnder_locallyAsymptoticallyStable`, `exactUnder_lyapunovStable`, in
 `theorem/GFL/PowerLoop/QuasiStaticFold.lean`): the boundary of the Routh–Hurwitz region is the fold
 `cos 2θ* = 0` (no Hopf pair, `no_imaginary_eigenvalue`), a saddle-node that is unstable
 (`mem_den_unstable_of_fold`, explicit fold function, no centre-manifold theorem), and every other
 non-Hurwitz point with positive gains is unstable as well.
 
-Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
-notes/concepts/contrast-conclusions.md` (差别二 `P_SN = 3V_g²/(4X_g)`, 折叠角 45°;
-推论二 准静态无 Hopf); model `GFLQuasiStatic` in `.../archive/simulation/src/
-gfl_gfm_contrast_sim/models.py` (with `I_q = 0`).
 Correction: the source states the no-Hopf criterion as `cos θ_e / √(cos 2θ_e) ≥ 1`; the
 formal statement used here is the direct one (`a₂a₁ − a₀ > 0` on `cos 2θ ≥ 0`, `a₀ < 0` on
 `cos 2θ < 0`), valid for every positive gain triple.
@@ -377,15 +380,14 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
   family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
 
 /-- Linearization at the selected point: a Routh–Hurwitz Jacobian gives local exponential
-stability (the proof of the former public `locallyExponentiallyStable_of_cos_two_mul_pos`). -/
+stability. -/
 private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
     (hs : Meets m .jacobianStable) : m ∈ family.den (.flow .locallyExponentiallyStable) :=
   mem_den_flow_iff.mpr (Criteria.locallyExponentiallyStable_of_jacobian_fin_three
     (jac m.params m.θ m.Id) (contDiff_field m.params) (field_point_eq_zero m.params he)
     (fderiv_field m.params m.θ 0 m.Id) hs.1 hs.2.1 hs.2.2)
 
-/-- Linearization at the selected point: `det > 0` or `tr > 0` gives instability (the proof of
-the former public `unstable_of_cos_two_mul_neg`). -/
+/-- Linearization at the selected point: `det > 0` or `tr > 0` gives instability. -/
 private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
     (hs : Meets m .jacobianUnstable) : m ∈ family.den (.flow .unstable) := by
   refine mem_den_flow_iff.mpr ?_

@@ -4,31 +4,49 @@ import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Independence.Integration
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 
-/-! # Exact mean-square recursions of Euler–Maruyama steps (foundation)
+/-! # Exact mean-square recursions of Euler–Maruyama steps
 
-Source: work-sync `theory/T-sde-systems.md` §1.14.1 (Euler–Maruyama step),
+Exact second-moment recursions of explicit and drift-implicit Euler–Maruyama steps on the scalar
+test equations, and their mean-square stability conditions.
+
+Model boundary.
+* One scalar EM step with Gaussian increment `ΔW ~ N(0, h)` independent of the current state
+  `X` (a real random variable on a probability space). We compute the exact second moment of the
+  next state:
+  * multiplicative-noise test equation `dX = -λX dt + βX dW` (explicit EM):
+    `E[X_{n+1}²] = ((1-λh)² + β²h) E[X_n²]` (`em_multiplicative_step`);
+  * the same equation, drift-implicit EM `X_{n+1} = (X_n + βX_nΔW)/(1+λh)`:
+    `E[X_{n+1}²] = (1+β²h)/(1+λh)² · E[X_n²]` (`driftImplicit_multiplicative_step`);
+  * additive-noise test equation `dX = -λX dt + β dW` (explicit EM):
+    `E[X_{n+1}²] = (1-λh)² E[X_n²] + β²h` (`em_additive_step`).
+  The resulting deterministic recursions are then analysed.
+* These are statements about the discrete scheme only; nothing is claimed about the
+  continuous-time SDE.
+
+Source: work-sync theory/T-sde-systems.md §1.14.1 (Euler–Maruyama step),
 §1.14.5 (mean-square stability regions of explicit and drift-implicit EM).
 
-Model boundary.  One scalar EM step with Gaussian increment `ΔW ~ N(0, h)` independent of the
-current state `X` (a real random variable on a probability space).  We compute the exact
-second moment of the next state:
-* multiplicative-noise test equation `dX = -λX dt + βX dW` (explicit EM):
-  `E[X_{n+1}²] = ((1-λh)² + β²h) E[X_n²]`;
-* the same equation, drift-implicit EM `X_{n+1} = (X_n + βX_nΔW)/(1+λh)`:
-  `E[X_{n+1}²] = (1+β²h)/(1+λh)² · E[X_n²]`;
-* additive-noise test equation `dX = -λX dt + β dW` (explicit EM):
-  `E[X_{n+1}²] = (1-λh)² E[X_n²] + β²h`.
-The resulting deterministic recursions are then analysed.  These are statements about the
-discrete scheme only; nothing is claimed about the continuous-time SDE (Rules §3).
+Results.
+* `em_multiplicative_ms_tendsto_zero_iff`, `msFactorEM_lt_one_iff` — explicit EM on the
+  multiplicative-noise equation is mean-square stable iff `(1-λh)² + β²h < 1`, i.e. (for
+  `h > 0`) iff `λ²h < 2λ - β²`: a step-size restriction.
+* `em_additive_secondMoment_ge`, `em_additive_not_tendsto_zero`,
+  `em_additive_secondMoment_tendsto` — additive noise with `β ≠ 0`: the second moment is at
+  least `β²h` after one step, so it never tends to `0`; when `(1-λh)² < 1` it converges to
+  `β²h / (1 - (1-λh)²)` whatever the initial value.
+* `driftImplicit_msFactor_lt_one`, `driftImplicit_msFactor_counterexample` — drift-implicit EM:
+  when the SDE is mean-square stable (`β² < 2λ`, `λ > 0`) the factor is `< 1` for every step
+  `h > 0`; without `β² < 2λ` this fails (`λ = 1`, `β = 2`, `h = 1`).
 
-Correction (T-sde-systems §1.14.5).  The note states the criterion
-`|1-λΔt|² + β²Δt < 1` for the *additive*-noise test equation `dX = -λX dt + β dW`.  That
-criterion is the mean-square criterion of the *multiplicative*-noise equation
-`dX = -λX dt + βX dW` (`em_multiplicative_ms_tendsto_zero_iff`).  For additive noise with
-`β ≠ 0` the second moment never tends to `0` (`em_additive_secondMoment_ge`); it converges to
-`β²h / (1 - (1-λh)²)` iff `|1-λh| < 1` (`em_additive_secondMoment_tendsto`).  Likewise the
-drift-implicit "A-stability" holds for every step `h > 0` exactly when the SDE itself is
-mean-square stable, `β² < 2λ` (`driftImplicit_msFactor_lt_one`), not for arbitrary `β`.
+Corrections.
+* T-sde-systems §1.14.5: the note states the criterion `|1-λΔt|² + β²Δt < 1` for the
+  *additive*-noise test equation `dX = -λX dt + β dW`. That criterion is the mean-square
+  criterion of the *multiplicative*-noise equation `dX = -λX dt + βX dW`
+  (`em_multiplicative_ms_tendsto_zero_iff`). For additive noise with `β ≠ 0` the second moment
+  never tends to `0` (`em_additive_secondMoment_ge`); it converges to `β²h / (1 - (1-λh)²)` iff
+  `|1-λh| < 1` (`em_additive_secondMoment_tendsto`). Likewise the drift-implicit "A-stability"
+  holds for every step `h > 0` exactly when the SDE itself is mean-square stable, `β² < 2λ`
+  (`driftImplicit_msFactor_lt_one`), not for arbitrary `β`.
 -/
 
 noncomputable section

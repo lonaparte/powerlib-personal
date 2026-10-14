@@ -3,13 +3,27 @@ import theorem.Dynamics.Calculus
 
 /-! # Weak foci: polynomial Lyapunov functions at a Hopf point (foundation)
 
-Model boundary. Autonomous continuous-time ODE `ẋ = f x` on
-`Dynamics.State n = EuclideanSpace ℝ (Fin n)` with a `C¹` field supplied by the caller; no input,
-delay, switching or time variation. `V̇ x = fderiv ℝ V x (f x)`. Behaviour is LeanForControl's
-`LocalAsymptoticStable` (Lyapunov stability plus convergence of the forward-complete solutions
-that start in a ball). Nothing here describes a physical system: every statement is a generic
-implication about an arbitrary field, function or polynomial, a foundation result.
+Local asymptotic stability at a Hopf point, where the linearization is not Hurwitz, from explicit
+polynomial Lyapunov functions that solve the homological equations of the normal form.
 
+Scope.
+* Autonomous continuous-time ODE `ẋ = f x` on `Dynamics.State n = EuclideanSpace ℝ (Fin n)` with
+  a `C¹` field supplied by the caller; no input, delay, switching or time variation.
+  `V̇ x = fderiv ℝ V x (f x)`. Behaviour is LeanForControl's `LocalAsymptoticStable` (Lyapunov
+  stability plus convergence of the forward-complete solutions that start in a ball).
+* Nothing here describes a physical system: every statement is a generic implication about an
+  arbitrary field, function or polynomial, a foundation result. No model family is defined or
+  fixed here; model families apply these criteria inside their own connection proofs
+  (`theorem/GFM/VSMLPFHopf.lean`, `theorem/GFL/RatePLLHopf.lean`,
+  `theorem/GFL/PowerLoop/QuasiStaticFoldHopf.lean`).
+
+Source: Khalil, *Nonlinear Systems* (3rd ed.), Theorem 4.1 (local Lyapunov theorem) and Theorem 4.4
+(LaSalle); Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.5 and §5.4 (first
+Lyapunov coefficient, homological equations) for the construction. The coefficients of
+`hopfW3`, `hopfW4`, `hopfH2` were computed with SymPy (untrusted) and are checked by the kernel
+(`field_simp; ring`).
+
+Results.
 * The strict Lyapunov theorem on a punctured ball that the weak-focus criterion below applies is
   `Dynamics.localAsymptoticStable_of_lie_neg` (`theorem/Dynamics/Lyapunov.lean`): no global
   sublevel set `{V ≤ c}` has to be compact, so `V` may be a polynomial that is indefinite far from
@@ -51,16 +65,6 @@ implication about an arbitrary field, function or polynomial, a foundation resul
   `hopf_lie_poly`: along the cubic truncation its derivative is `−κ (φ² + (α/A) w²)²` up to eight
   monomials of degree five and six, `κ = hopfκ A B β = −β(A² + B²)/(16A)` (coefficients from
   SymPy, checked by `field_simp; ring`).
-
-Connection architecture. No model family is defined or fixed here; model families apply these
-criteria inside their own connection proofs (`theorem/GFM/VSMLPFHopf.lean`,
-`theorem/GFL/RatePLLHopf.lean`, `theorem/GFL/PowerLoop/QuasiStaticFoldHopf.lean`).
-
-Source: Khalil, *Nonlinear Systems* (3rd ed.), Theorem 4.1 (local Lyapunov theorem) and Theorem 4.4
-(LaSalle); Kuznetsov, *Elements of Applied Bifurcation Theory* (3rd ed.), §3.5 and §5.4 (first
-Lyapunov coefficient, homological equations) for the construction. The coefficients of
-`hopfW3`, `hopfW4`, `hopfH2` were computed with SymPy (untrusted) and are checked by the kernel
-(`field_simp; ring`).
 -/
 
 noncomputable section

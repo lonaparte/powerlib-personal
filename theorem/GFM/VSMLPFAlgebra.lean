@@ -2,11 +2,20 @@ import theorem.GFM.VSMLPF
 
 /-! # Reduced-layer algebra of the GFM VSM + power-filter model
 
-Foundation identities for the three-state model of `theorem/GFM/VSMLPF.lean` (state
-`(δ, ω, P_f)`, `δ̇ = ω`, `M ω̇ = P₀ − P_f − D ω`, `Ṗ_f = ω_c (K₀ sin(δ − u) − P_f)`,
-`K₀ = E V_g / X_g`, export-positive active power, continuous time).  None of them is a
-stability statement; the domain results live in `VSMLPF.lean`.
+Foundation identities for the three-state VSM + power-filter model.  None of them is a stability
+statement; the domain results live in `VSMLPF.lean`.
 
+Model boundary.
+The three-state model of `theorem/GFM/VSMLPF.lean` (state `(δ, ω, P_f)`, `δ̇ = ω`,
+`M ω̇ = P₀ − P_f − D ω`, `Ṗ_f = ω_c (K₀ sin(δ − u) − P_f)`, `K₀ = E V_g / X_g`, export-positive
+active power, continuous time), with the grid-angle or `P_ref` modulation `u` as input.
+
+Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
+gfl-gfm-parametric-contrast.md` §15 ("摆动二阶约化", "混合张量"); `notes/theory-draft.md` §2.4,
+§1.3 (GFM model); GFM channels: `projects/gfl-gfm-stability-tree/notes/concepts/
+nonautonomous-criteria.md` (GFM `P_ref` 通道 `A_u = 0`).
+
+Results.
 * `hasDerivAt_powerAngle`, `K_eq_deriv`: `K = ∂P/∂δ = E V_g cos δ₀ / X_g`;
   `exists_equilibrium_iff_EVX`: equilibria exist iff `|P₀| ≤ E V_g / X_g`.
 * `texact_denominator_expansion`: the exact identity
@@ -25,14 +34,9 @@ stability statement; the domain results live in `VSMLPF.lean`.
   enters through `K₀ sin(δ − u)`, whose mixed partial `∂_u ∂_δ = ω_c K₀ sin(δ − u)` is nonzero at
   a loaded operating point (`sin δ₀ ≠ 0`).
 
-Family and connection conclusions: none.  The stability conclusions of the model are the
-connection statements of `VSMLPF.family` (`theorem/GFM/VSMLPF.lean`); the former domain theorem
-`exists_equilibrium_iff_EVX` is static evidence on the model.
-
-Source: work-sync projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
-gfl-gfm-parametric-contrast.md §15 ("摆动二阶约化", "混合张量"); notes/theory-draft.md §2.4,
-§1.3 (GFM model); GFM channels: projects/gfl-gfm-stability-tree/notes/concepts/
-nonautonomous-criteria.md (GFM `P_ref` 通道 `A_u = 0`).
+Family and connection conclusions.
+None.  The stability conclusions of the model are the connection statements of `VSMLPF.family`
+(`theorem/GFM/VSMLPF.lean`); `exists_equilibrium_iff_EVX` is static evidence on the model.
 -/
 
 noncomputable section

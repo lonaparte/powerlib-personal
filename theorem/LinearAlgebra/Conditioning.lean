@@ -5,23 +5,27 @@ import Mathlib.Analysis.Normed.Ring.Units
 
 /-! # Condition number and perturbation bounds for linear systems
 
-Foundation layer (category B; general numerical linear algebra).
+The condition number bounds the relative error of a linear system under right-hand-side and
+matrix perturbations.
 
-Source: work-sync `theory/T-linear-algebra.md` §1.1 (`‖Δx‖/‖x‖ ≤ κ(A)‖Δb‖/‖b‖` and the bound with
-a perturbed matrix, valid for `‖ΔA‖/‖A‖ < 1/κ(A)`).
+Scope.
+* General numerical linear algebra: `A : Matrix n n 𝕜` (`𝕜 = ℝ` or `ℂ`) acting on
+  `EuclideanSpace 𝕜 n` through `Matrix.toEuclideanCLM`; matrix norms are the spectral (`ℓ²`
+  operator) norms (`Matrix.Norms.L2Operator`, Mathlib `Matrix.l2_opNorm_*`).
+  `cond A = ‖A‖ ‖A⁻¹‖` (`= σ_max/σ_min` for invertible `A`).
+* Exact arithmetic: these are the mathematical sensitivity bounds, not floating-point error
+  analysis.
 
-Setting: `A : Matrix n n 𝕜` (`𝕜 = ℝ` or `ℂ`) acting on `EuclideanSpace 𝕜 n` through
-`Matrix.toEuclideanCLM`; matrix norms are the spectral (`ℓ²` operator) norms
-(`Matrix.Norms.L2Operator`, Mathlib `Matrix.l2_opNorm_*`). `cond A = ‖A‖ ‖A⁻¹‖`
-(`= σ_max/σ_min` for invertible `A`). Exact arithmetic: these are the mathematical sensitivity
-bounds, not floating-point error analysis.
+Source: work-sync theory/T-linear-algebra.md §1.1 (`‖Δx‖/‖x‖ ≤ κ(A)‖Δb‖/‖b‖` and the bound
+with a perturbed matrix, valid for `‖ΔA‖/‖A‖ < 1/κ(A)`).
 
 Results.
-* `one_le_cond`: `κ(A) ≥ 1` for invertible `A` (nonempty index type).
-* `rhs_perturbation`: `A x = b`, `A (x + Δx) = b + Δb`, `b ≠ 0` ⇒ `‖Δx‖/‖x‖ ≤ κ(A) ‖Δb‖/‖b‖`.
-* `isUnit_add_of_norm_lt` (Neumann series, Mathlib `Units.add`): `‖A⁻¹‖ ‖ΔA‖ < 1` ⇒ `A + ΔA` is
+* `one_le_cond` — `κ(A) ≥ 1` for invertible `A` (nonempty index type).
+* `rhs_perturbation` — `A x = b`, `A (x + Δx) = b + Δb`, `b ≠ 0` ⇒
+  `‖Δx‖/‖x‖ ≤ κ(A) ‖Δb‖/‖b‖`.
+* `isUnit_add_of_norm_lt` — Neumann series, Mathlib `Units.add`: `‖A⁻¹‖ ‖ΔA‖ < 1` ⇒ `A + ΔA` is
   invertible, so the perturbed system has a unique solution.
-* `matrix_perturbation`: with also `(A + ΔA)(x + Δx) = b + Δb` and `κ ‖ΔA‖/‖A‖ < 1`,
+* `matrix_perturbation` — with also `(A + ΔA)(x + Δx) = b + Δb` and `κ ‖ΔA‖/‖A‖ < 1`,
   `‖Δx‖/‖x‖ ≤ κ/(1 − κ‖ΔA‖/‖A‖) · (‖ΔA‖/‖A‖ + ‖Δb‖/‖b‖)`.
 -/
 

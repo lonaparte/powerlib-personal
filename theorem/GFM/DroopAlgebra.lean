@@ -2,11 +2,21 @@ import theorem.Attributes
 import dependencies.Mathlib
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
-/-! # Algebraic identities of droop, VSM and matching control (foundation)
+/-! # Algebraic identities of droop, VSM and matching control
 
 Every statement here is an algebraic identity, a Laplace-domain relation or a
-fundamental-theorem-of-calculus identity; none asserts a stability property of a power system.
+fundamental-theorem-of-calculus identity (foundation); none asserts a stability property of a
+power system.
 
+Scope.
+Static droop laws, the governor and inertia conversions, multi-unit droop sharing and the
+virtual-inertia energy, each as an identity in its parameters and signals; the line-power,
+complex-power and matching-control identities are pointers to the modules that hold them.
+
+Source: work-sync `theory/T-vsg-control.md` §1.0–§1.2; `theory/T-gfm-control.md` §1.4, §1.6,
+§2.3, §2.4; `theory/T-droop-control.md` §1.1–§1.8.
+
+Results.
 * Complex power `S̄ = V̄ Ī*` in `dq` components (IN-positive current) and the export-positive
   translation `P^ext = −P^abs`, `Q^ext = −Q^abs` (T-vsg-control §1.1): `Transform.complexPower_dq`,
   `Transform.exportPower_dq` (`theorem/Transform/ComplexPower.lean`).
@@ -30,11 +40,8 @@ fundamental-theorem-of-calculus identity; none asserts a stability property of a
   `(P̂, Q̂) = (−Q, P)` (T-droop-control §1.5): `Network.rotation_inductive`,
   `Network.rotation_resistive`.
 
-Family and connection conclusions: none.  The module has no behavioural content; every statement
-is public foundation (Rules §3).
-
-Source: work-sync theory/T-vsg-control.md §1.0–§1.2; theory/T-gfm-control.md §1.4, §1.6, §2.3,
-§2.4; theory/T-droop-control.md §1.1–§1.8.
+Family and connection conclusions.
+None.  The module has no behavioural content; every statement is public foundation (Rules §3).
 -/
 
 noncomputable section

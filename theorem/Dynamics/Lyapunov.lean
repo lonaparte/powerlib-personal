@@ -3,12 +3,23 @@ import theorem.Dynamics.Locality
 
 /-! # Local Lyapunov criteria (foundation)
 
-Model boundary. Autonomous continuous-time ODE `ẋ = f x` on
-`Dynamics.State n = EuclideanSpace ℝ (Fin n)`; no input, delay, switching or time variation.
-Solutions are `IsIntegralCurveOn` curves, `V̇ x = fderiv ℝ V x (f x)`. Nothing here describes a
-physical system: every statement is a generic implication about an arbitrary field and function,
-a foundation result.
+Lyapunov theorems for local asymptotic and Lyapunov stability in the local forms needed near
+degenerate points: punctured-ball and eventual hypotheses, fields regular only near the point,
+and composite energies.
 
+Scope.
+* Autonomous continuous-time ODE `ẋ = f x` on `Dynamics.State n = EuclideanSpace ℝ (Fin n)`; no
+  input, delay, switching or time variation. Solutions are `IsIntegralCurveOn` curves,
+  `V̇ x = fderiv ℝ V x (f x)`.
+* Nothing here describes a physical system: every statement is a generic implication about an
+  arbitrary field and function, a foundation result.
+
+Source: Khalil, *Nonlinear Systems* (3rd ed.), Theorems 4.1 and 4.3 (local forms); the Hopf and
+saddle-node normal forms (Guckenheimer–Holmes, §3.4, §3.1) only motivate the eventual form of the
+hypotheses; infrastructure for work-sync `projects/vsc-parametric-oscillation` (four-state GFL weak
+focus) and `theory/T-vsc-dc-voltage-control.md` §1.4.
+
+Results.
 * `localAsymptoticStable_of_lie_neg`: a `C¹` function `V` vanishing at the point, positive on the
   punctured ball `0 < ‖x − x₀‖ < R` and strictly decreasing along a field that is only continuous
   on that ball makes the point locally asymptotically stable. Unlike LeanForControl's
@@ -37,11 +48,6 @@ a foundation result.
 
 The instability counterparts (Chetaev in its classical, local, eventual and exponential forms, and
 the obstructions to local asymptotic stability) are in `theorem/Dynamics/Instability.lean`.
-
-Source: Khalil, *Nonlinear Systems* (3rd ed.), Theorems 4.1 and 4.3 (local forms); the Hopf and
-saddle-node normal forms (Guckenheimer–Holmes, §3.4, §3.1) only motivate the eventual form of the
-hypotheses; infrastructure for work-sync `projects/vsc-parametric-oscillation` (four-state GFL weak
-focus) and `theory/T-vsc-dc-voltage-control.md` §1.4.
 -/
 
 noncomputable section

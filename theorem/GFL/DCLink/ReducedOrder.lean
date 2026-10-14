@@ -3,54 +3,64 @@ import theorem.Dynamics.State
 
 /-! # GFL reduced-order models with DC link: algebra and model-B equilibria
 
+Algebraic identities of the GFL reduced-order models (foundation) and the equilibrium set of
+model B.
+
+Model boundary.
+* L-filter closed loop in the PLL frame (§1.2.6): the frame rotates at the PLL speed `ω̂`, so the
+  KVL cross-coupling is `ω̂ L_f i` and the decoupling uses `ω̂ L̂_f i`.
+* Model B (§1.6–§1.7): continuous-time autonomous model on `State 4`, state order
+  `x = (Δθ, x_pll, V_dc, ξ_v)`: PLL phase error `Δθ = θ̂ − θ_g` (swing sign, `conventions.md`
+  §D5), PLL integrator, DC-link voltage, DC-voltage-loop integrator. Inner current loop eliminated
+  (`i = i*`), reactive loop frozen (`i_q* = i_q0` constant), feed-forward LPF and decoupling
+  mismatch removed (assumptions (S1)–(S3) of §1.2.9), `P_bridge` replaced by the PCC power,
+  constant grid frequency `ω_g`, infinite bus `V_g` behind `Z_g = R_g + j X_g`, IN-positive
+  currents. No saturation, no PWM, no delay. The field contains `1 / V_dc`; at `V_dc = 0` Lean's
+  convention `1/0 = 0` applies, and only equilibrium-level statements are made here (no
+  linearization, so global smoothness is not needed).
+
 Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.1 (complex power), §1.2.6
 (closed loop with feed-forward LPF and decoupling mismatch), §1.2.8 (d–q cancellation in
 `P_bridge`, DAE → ODE), §1.6–§1.7 (model B and its steady state).
 
-## Foundation part (§1.1, §1.2.6, §1.2.8)
+Results.
 * Complex power from `S̄ = V̄ Ī*` (`conventions.md` §D0, IN-positive / absorb-positive):
   `P = (3/2)(v_d i_d + v_q i_q)`, `Q = (3/2)(v_q i_d − v_d i_q)` is
   `Transform.complexPower_expand` (`theorem/Transform/ComplexPower.lean`).
-* Closed loop of the L filter in the PLL frame. The frame rotates at the PLL speed `ω̂`, so the
-  KVL cross-coupling is `ω̂ L_f i` and the decoupling uses `ω̂ L̂_f i`.
-  Correction (§1.2.6): the note writes the residual as `(ω L_f − ω̂ L̂_f) i_q` and says it reduces
-  to `ω̂ ΔL_f i_q` only "when the PLL is locked (`ω̂ ≈ ω`)". In the PLL-frame model of §1.2.2
-  (whose cross term is `L_f ω̂ i_q`) the residual is exactly `ω̂ ΔL_f i_q`, `ΔL_f = L_f − L̂_f`,
-  with no locking assumption (`closedLoop_d`, `closedLoop_q`).
+* `closedLoop_d`, `closedLoop_q`: in the PLL-frame model the residual of the decoupling is
+  exactly `ω̂ ΔL_f i_q`, `ΔL_f = L_f − L̂_f`, with no locking assumption (Correction below).
 * d–q duality: the decoupling terms cancel exactly in the bridge power
   (`bridgePower_decoupling_cancel`).
 * An explicit algebraic layer (index-1 DAE whose algebraic variables are given by a DAG of
   explicit formulas) has the same solutions as the ODE obtained by substitution: the generic
   statement is `DAE.isIntegralCurveOn_dae_iff` (`theorem/DAE/Elimination.lean`).
+* Model B, necessary equilibrium conditions (`equilibrium_necessary`): `v_q = 0`,
+  `V_dc = V_dc*`, `x_pll = (ω_g − ω_s)/k_i`.
+* Model B with `R_g = 0`, `i_q0 = 0`: at an equilibrium `I₀ V_dc* = (3 V_g² / (4 X_g)) sin 2Δθ`
+  (`equilibrium_powerAngle`), so an equilibrium exists iff `|I₀| V_dc* ≤ 3 V_g² / (4 X_g)`
+  (`ModelBParams.exists_equilibrium_iff`), and at the fold `|I₀| V_dc* = 3 V_g²/(4 X_g)` one has
+  `|X_g i_d| = V_g / √2` (`fold_current`).
 
-## Domain part: model B (§1.6–§1.7)
-Model boundary. Continuous-time autonomous model on `State 4`, state order
-`x = (Δθ, x_pll, V_dc, ξ_v)`: PLL phase error `Δθ = θ̂ − θ_g` (swing sign, `conventions.md`
-§D5), PLL integrator, DC-link voltage, DC-voltage-loop integrator. Inner current loop eliminated
-(`i = i*`), reactive loop frozen (`i_q* = i_q0` constant), feed-forward LPF and decoupling
-mismatch removed (assumptions (S1)–(S3) of §1.2.9), `P_bridge` replaced by the PCC power,
-constant grid frequency `ω_g`, infinite bus `V_g` behind `Z_g = R_g + j X_g`, IN-positive
-currents. No saturation, no PWM, no delay. The field contains `1 / V_dc`; at `V_dc = 0` Lean's
-convention `1/0 = 0` applies, and only equilibrium-level statements are made here (no
-linearization, so global smoothness is not needed).
-* Necessary equilibrium conditions: `v_q = 0`, `V_dc = V_dc*`, `x_pll = (ω_g − ω_s)/k_i`.
-* With `R_g = 0`, `i_q0 = 0`: at an equilibrium `I₀ V_dc* = (3 V_g² / (4 X_g)) sin 2Δθ`, so an
-  equilibrium exists iff `|I₀| V_dc* ≤ 3 V_g² / (4 X_g)` (`ModelBParams.exists_equilibrium_iff`), and
-  at the fold `|I₀| V_dc* = 3 V_g²/(4 X_g)` one has `|X_g i_d| = V_g / √2`.
-Correction (§1.7): the note's boundary `|X_g i_d*| ≤ V_g` is only the solvability of
-`sin Δθ = −X_g i_d / V_g` for a *given* `i_d`; in model B `i_d` is fixed by the DC power balance,
-the existence boundary is `|I₀| V_dc* = 3 V_g² / (4 X_g)`, and the fold sits at
-`|X_g i_d| = V_g / √2`, not at `|X_g i_d| = V_g`.
-Not formalized: model A (§1.4) contains the implicit loop `Q ↔ i_q* ↔ |v_g|` (a DAE) and is
-excluded. The 4×4 Routh–Hurwitz local stability of model B is in
-`theorem/GFL/DCLink/ModelBStability.lean`.
-
-## Family and connection conclusions
+Family and connection conclusions.
 This module states no behaviour and defines no family. The equilibrium results of model B
 (`equilibrium_necessary`, `equilibrium_powerAngle`, `exists_equilibrium_iff`, `fold_current`) are
 algebraic facts about the zero set of `ModelBParams.field`; they are static evidence on the model,
 not connection conclusions, and are labelled foundation. The model-B family and its connection
-conclusions (local stability through the Jacobian) are in `theorem/GFL/DCLink/ModelBStability.lean`.
+conclusions (local stability through the Jacobian, 4×4 Routh–Hurwitz) are in
+`theorem/GFL/DCLink/ModelBStability.lean`.
+
+Correction (§1.2.6): the note writes the residual as `(ω L_f − ω̂ L̂_f) i_q` and says it reduces
+to `ω̂ ΔL_f i_q` only "when the PLL is locked (`ω̂ ≈ ω`)". In the PLL-frame model of §1.2.2
+(whose cross term is `L_f ω̂ i_q`) the residual is exactly `ω̂ ΔL_f i_q`, `ΔL_f = L_f − L̂_f`,
+with no locking assumption (`closedLoop_d`, `closedLoop_q`).
+
+Correction (§1.7): the note's boundary `|X_g i_d*| ≤ V_g` is only the solvability of
+`sin Δθ = −X_g i_d / V_g` for a *given* `i_d`; in model B `i_d` is fixed by the DC power balance,
+the existence boundary is `|I₀| V_dc* = 3 V_g² / (4 X_g)`, and the fold sits at
+`|X_g i_d| = V_g / √2`, not at `|X_g i_d| = V_g`.
+
+Not formalized: model A (§1.4) contains the implicit loop `Q ↔ i_q* ↔ |v_g|` (a DAE) and is
+excluded.
 -/
 
 noncomputable section

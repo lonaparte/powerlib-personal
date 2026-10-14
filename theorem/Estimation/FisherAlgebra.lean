@@ -5,25 +5,29 @@ import Mathlib.Analysis.SpecialFunctions.Exponential
 
 /-! # Cramér–Rao algebra: nuisance bound, bandwidth cancellation, lifetime sensitivity
 
-Source: work-sync `theory/T-cramer-rao-bound.md` §1.3 (bandwidth cancellation
+Matrix and scalar algebra behind the Cramér–Rao note: Loewner antitonicity of the inverse, the
+nuisance-parameter bound, and the cancellation of the sampling bandwidth.
+
+Scope.
+* Linear algebra / real analysis, not an engineering result.
+* The lifetime sensitivity of §1.6 (`Asymptotics.Guard.lifetime_ratio`,
+  `Asymptotics.Guard.lifetime_ratio_num`: the closed-form ratio and its value `6.74 < … < 6.76`
+  at `X = 10`, `ε = 0.1`, the note's `6.75`) is in `theorem/Asymptotics/Guard/Potential.lean`.
+
+Source: work-sync theory/T-cramer-rao-bound.md §1.3 (bandwidth cancellation
 `σ_n² = S_n² f_s/2`), §1.5 (conditional vs nuisance bound: the honest bound is the
 `(α, ω₀)` block of the inverse full Fisher matrix), §1.6 (lifetime sensitivity
 `T(α(1+ε))/T(α) = e^{X[(1+ε)²−1]}/(1+ε)²`, `X = 10`, `ε = 0.1` gives `6.7…`, the exponential
-factor alone `8.17`); `projects/basin-guard/notes/concepts/detection-tolerance.md` §2–§4.
+factor alone `8.17`); projects/basin-guard/notes/concepts/detection-tolerance.md §2–§4.
 
-Foundation (linear algebra / real analysis), not an engineering result.
-
-Main results.
-* `inv_sub_inv_posSemidef`: Loewner antitonicity of the inverse, `S ⪯ A` (both `≻ 0`) ⇒
+Results.
+* `inv_sub_inv_posSemidef` — Loewner antitonicity of the inverse, `S ⪯ A` (both `≻ 0`) ⇒
   `A⁻¹ ⪯ S⁻¹`.
-* `nuisance_block_inv`, `nuisance_bound`: for a positive definite Fisher matrix in block form
-  `I = [[I_θθ, I_θφ], [I_φθ, I_φφ]]`, `(I⁻¹)_θθ = (I_θθ − I_θφ I_φφ⁻¹ I_φθ)⁻¹ ⪰ I_θθ⁻¹`: the bound
-  with nuisance parameters is never smaller than the conditional bound.
-* `bandwidth_cancel`: with `σ_n² = S_n² f_s/2`, the CRB prefactor `σ_n²/(f_s g_s²)` equals
+* `nuisance_block_inv`, `nuisance_bound` — for a positive definite Fisher matrix in block form
+  `I = [[I_θθ, I_θφ], [I_φθ, I_φφ]]`, `(I⁻¹)_θθ = (I_θθ − I_θφ I_φφ⁻¹ I_φθ)⁻¹ ⪰ I_θθ⁻¹`: the
+  bound with nuisance parameters is never smaller than the conditional bound.
+* `bandwidth_cancel` — with `σ_n² = S_n² f_s/2`, the CRB prefactor `σ_n²/(f_s g_s²)` equals
   `S_n²/(2 g_s²)`, independent of `f_s`.
-* The lifetime sensitivity of §1.6 (`Asymptotics.Guard.lifetime_ratio`,
-  `Asymptotics.Guard.lifetime_ratio_num`: the closed-form ratio and its value `6.74 < … < 6.76` at
-  `X = 10`, `ε = 0.1`, the note's `6.75`) is in `theorem/Asymptotics/Guard/Potential.lean`.
 -/
 
 noncomputable section

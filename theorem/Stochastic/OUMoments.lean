@@ -5,26 +5,38 @@ import Mathlib.Probability.Moments.Covariance
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 
-/-! # Scalar Ornstein–Uhlenbeck moment functions and the exact Gaussian AR(1) step (foundation)
+/-! # Scalar Ornstein–Uhlenbeck moment functions and the exact Gaussian AR(1) step
 
-Source: work-sync `theory/T-sde-systems.md` §1.8.1 (scalar OU mean / variance, limit
+The scalar OU mean and variance as unique solutions of their moment ODEs, the stationarity of
+the exact Gaussian one-step transition, and the stationary autocovariance and power spectrum.
+
+Scope.
+* The mean and variance functions are treated as solutions of the scalar affine ODEs
+  `m' = -θ (m - μ∞)` and `v' = -2θ v + σ²`. That these ODEs are the moment equations of the Itô
+  SDE `dX = -θ(X - μ∞)dt + σ dW` is **not** proved here (it needs Itô calculus, out of scope).
+* The exact one-step Gaussian transition `X ↦ e^{-θh} X + Z`, `Z ~ N(0, v(h))` independent of
+  `X`, is a statement about Gaussian laws.
+* The PSD is a real-analysis identity about the autocovariance *function*.
+* None of these is a stochastic stability conclusion.
+* The noisy-swing specialisation of §2.2.2 (`M dΔω = -DΔω dt + β dW`, stationary variance
+  `β²/(2DM)`) is in `theorem/Frequency/StochasticCOI.lean` (`Frequency.FreqCov.swing_ouStatVar`,
+  `Frequency.FreqCov.swing_ouVar_tendsto`).
+
+Source: work-sync theory/T-sde-systems.md §1.8.1 (scalar OU mean / variance, limit
 `σ²/(2θ)`), §1.8.3 (stationary autocovariance `e^{-θ|τ|}σ∞²` and PSD `σ²/(θ²+ω²)`).
-The noisy-swing specialisation of §2.2.2 (`M dΔω = -DΔω dt + β dW`, stationary variance
-`β²/(2DM)`) is in `theorem/Frequency/StochasticCOI.lean` (`Frequency.FreqCov.swing_ouStatVar`,
-`Frequency.FreqCov.swing_ouVar_tendsto`).
 
-Scope and classification (Rules §3).  Every statement here is a **foundation** fact:
-* the mean and variance functions are treated as solutions of the scalar affine ODEs
-  `m' = -θ (m - μ∞)` and `v' = -2θ v + σ²`.  We prove that the closed forms solve these ODEs,
-  that they are the *unique* differentiable solutions with the given initial value, and their
-  `t → ∞` limits.  That these ODEs are the moment equations of the Itô SDE
-  `dX = -θ(X - μ∞)dt + σ dW` is **not** proved here (it needs Itô calculus, out of scope);
-* the exact one-step Gaussian transition `X ↦ e^{-θh} X + Z`, `Z ~ N(0, v(h))` independent of `X`,
-  is a statement about Gaussian laws: it preserves `N(0, σ²/(2θ))`, and the lag covariance from a
-  stationary state is `e^{-θτ} σ²/(2θ)`;
-* the PSD is the Fourier integral `∫ e^{-θ|τ|} σ∞² e^{-iωτ} dτ = σ²/(θ² + ω²)`, a real-analysis
-  identity about the autocovariance *function*.
-None of these is a stochastic stability conclusion.
+Results.
+* `affineSol_hasDerivAt`, `affineSol_unique`, `affineSol_tendsto` — the closed form
+  `b/a + (y₀ - b/a) e^{-a t}` is the unique everywhere-differentiable solution of
+  `y' = -a y + b`, `y(0) = y₀`, and its `t → ∞` limit.
+* `ouMean_hasDerivAt`, `ouMean_unique`, `ouMean_tendsto`, `ouVar_hasDerivAt`, `ouVar_unique`,
+  `ouVar_tendsto` — the OU mean `ouMean` and variance `ouVar` solve their moment ODEs, are the
+  unique such solutions with the given initial value, and `Var[X_t] → σ²/(2θ)` (`ouStatVar`).
+* `ou_exactStep_fixed`, `gaussian_step_stationary`, `ou_exactStep_stationary` — the exact OU
+  transition over a step `h ≥ 0` preserves the stationary law `N(0, σ²/(2θ))`.
+* `cov_exactStep`, `cov_ouExactStep` — from a stationary state the lag covariance is
+  `e^{-θτ} σ²/(2θ)` (`ouAutocov`).
+* `ou_psd` — `∫ e^{-θ|τ|} σ∞² e^{-iωτ} dτ = σ²/(θ² + ω²)` for `θ > 0`.
 -/
 
 noncomputable section

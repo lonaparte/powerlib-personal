@@ -2,26 +2,61 @@ import theorem.Network.Swing.Four
 
 /-! # Networked swing equations: four machines with five or six lines
 
+The diamond and the complete four-machine graph: the cubic form is nonzero along every null
+direction, so the local asymptotic translation of `Swing.family` is exact for every four-machine
+network.
+
+Model boundary.
+* Exactly the model of `theorem/Network/Swing/Basic.lean` (`Swing.family`) for four machines
+  (`n = 3`): reduced state `(δ, ω)` of order `Fin (3 + (3 + 1))` (relative angles
+  `θ_{i+1} − θ₀`, then the frequency deviations), positive inertia and damping, constant power,
+  symmetric nonnegative lossless couplings, constant voltages; no governor, AVR, PLL, converter
+  control, delay or PWM; continuous time. Statements concern the selected angle profile `θ*` of
+  a model.
+
 Source: work-sync `theory/T-synchronization-manifold.md` §1.7 and §2.2 (swing network
-`Mᵢ θ̈ᵢ = P_{m,i} − Dᵢ θ̇ᵢ − ∑ⱼ Bᵢⱼ sin(θᵢ − θⱼ)` and its energy function); the model is
-`theorem/Network/Swing/Basic.lean` (`Swing.family`); the potential, the Hessian and cubic forms and
-the characterization of local asymptotic stability are in `theorem/Network/Swing/Degenerate.lean`;
-the cut, flat-direction and four-cycle results are in `theorem/Network/Swing/Four.lean`.
+`Mᵢ θ̈ᵢ = P_{m,i} − Dᵢ θ̇ᵢ − ∑ⱼ Bᵢⱼ sin(θᵢ − θⱼ)` and its energy function); the potential, the
+Hessian and cubic forms and the characterization of local asymptotic stability are in
+`theorem/Network/Swing/Degenerate.lean`; the cut, flat-direction and four-cycle results are in
+`theorem/Network/Swing/Four.lean`.
 
-Model boundary. Exactly the model of `theorem/Network/Swing/Basic.lean` for four machines (`n = 3`):
-reduced state `(δ, ω)` of order `Fin (3 + (3 + 1))` (relative angles `θ_{i+1} − θ₀`, then the
-frequency deviations), positive inertia and damping, constant power, symmetric nonnegative
-lossless couplings, constant voltages; no governor, AVR, PLL, converter control, delay or PWM;
-continuous time. Statements concern the selected angle profile `θ*` of a model.
+Results.
+* Static foundation: `branch_identity`, `branch_nonneg`, `diamond_cubic_ne_zero`,
+  `cubic_pos_of_monotone`, `cubic_pos_three_neg`, `cubic_pos_cross`, `cubic_pos_two_neg`,
+  `tan_neg_of_pi_div_two_lt_of_lt_pi`, `order_of_nonneg`, `order_of_neg_02`,
+  `order_of_neg_02_13`, the four `psd_reduce_*`, `cos_pos_of_nonneg_of_lt`, `flow_eq_tan`,
+  `sorted_case_nonneg`, `sorted_case_neg`, `sorted_case_neg_neg`, `sorted_cubic_pos`,
+  `sorted_cubic_ne_zero` (four coupled machines in sorted lifted angles: the cubic form is
+  nonzero along every non-constant null direction of a positive semidefinite Hessian form with
+  positive cuts), `exists_sorted_lift`, `eq_of_labelled_eq`, `exists_perm_zero_three`.
+* Implementation evidence (private, model level): `not_localAsymptoticStable_diamond`,
+  `not_localAsymptoticStable_complete`, `not_localAsymptoticStable_four_machines` (with
+  `not_localAsymptoticStable_four` of `theorem/Network/Swing/Four.lean` for two uncoupled pairs)
+  and the labelled-form helpers `cut_pos_of_localAsymptoticStable`,
+  `labelled_nonneg_of_localAsymptoticStable`, `exists_null_of_localAsymptoticStable`.
 
-Mathematical content. At a power-balance point the Hessian form of the network potential is
-`A₂(u) = ∑ wᵢⱼ (uᵢ − uⱼ)²` with signed weights `wᵢⱼ = Bᵢⱼ cos(θᵢ − θⱼ)` and the cubic form is
-`A₃(u) = ∑ Bᵢⱼ sin(θᵢ − θⱼ)(uᵢ − uⱼ)³`. Local asymptotic stability with a non-Hurwitz reduced
-Jacobian leaves a non-constant null direction `u` of the positive semidefinite form `A₂` with
-`A₃(u) = 0` (`hessForm_nonneg_of_localAsymptoticStable`,
-`cubicForm_eq_zero_of_localAsymptoticStable`). The four-machine networks not covered by
-`mem_den_locallyAsymptoticallyStable_iff_four` (at most four lines) are the diamond (exactly one
-uncoupled pair) and the complete graph; on both, `A₃(u) ≠ 0`.
+Family and connection conclusions.
+* `exact_locallyAsymptoticallyStable_four` — for four machines the local asymptotic translation
+  `{powerFlow, jacobianStable}` of `Swing.family` is exact; and
+  `mem_den_locallyAsymptoticallyStable_iff_four_machines` — every four-machine model is locally
+  asymptotically stable exactly when its profile is a power-balance point with a Hurwitz reduced
+  Jacobian (no restriction on the lines). With `exact_locallyAsymptoticallyStable_zero`, `_two`,
+  `_three` and `not_exact_locallyAsymptoticallyStable` (five or more machines) the local
+  asymptotic translation is decided for every number of machines: exact up to four machines, not
+  exact from five.
+* The family is `Swing.family`; the public model conclusions are `connection%` statements on its
+  generated denotation. The identities, orderings, cycle bounds and the lift are static real
+  arithmetic (foundation); the behavioural fold arguments on the model stay private.
+
+Proof outline.
+* At a power-balance point the Hessian form of the network potential is
+  `A₂(u) = ∑ wᵢⱼ (uᵢ − uⱼ)²` with signed weights `wᵢⱼ = Bᵢⱼ cos(θᵢ − θⱼ)` and the cubic form is
+  `A₃(u) = ∑ Bᵢⱼ sin(θᵢ − θⱼ)(uᵢ − uⱼ)³`. Local asymptotic stability with a non-Hurwitz reduced
+  Jacobian leaves a non-constant null direction `u` of the positive semidefinite form `A₂` with
+  `A₃(u) = 0` (`hessForm_nonneg_of_localAsymptoticStable`,
+  `cubicForm_eq_zero_of_localAsymptoticStable`). The four-machine networks not covered by
+  `mem_den_locallyAsymptoticallyStable_iff_four` (at most four lines) are the diamond (exactly
+  one uncoupled pair) and the complete graph; on both, `A₃(u) ≠ 0`.
 * The diamond, uncoupled pair `σ0 σ3`, hub `σ1 σ2`. Each two-line branch `σ1 – σk – σ2`
   (`k = 0, 3`) with balanced middle machine and positive degree `s` satisfies the identity
   `s³ (d cos Φ · A₂ᵇ + sin Φ · A₃ᵇ) = d³ P Q |P cos²a + Q cos²b · e^{iΦ}|²` (`branch_identity`;
@@ -32,44 +67,17 @@ uncoupled pair) and the complete graph; on both, `A₃(u) ≠ 0`.
   `3π/2` (`exists_sorted_lift`). Positive cuts force `γᵢ < π/2`; a null direction forces the
   extreme line `03` negative; the lines `02`, `13` are positive, of zero weight or negative.
   Reductions at the middle machines (Schur complements: `psd_reduce_one_zero`,
-  `psd_reduce_one_three`, `psd_reduce_two_zero`, `psd_reduce_two_three`) order the null direction
-  (`order_of_nonneg`, `order_of_neg_02`, `order_of_neg_02_13`): with `u₀ < u₃` it increases with
-  the lifted angle, up to one adjacent transposition (`0 < 2 < 1 < 3` when only `03` is negative,
-  `0 < 1 < 3 < 2` when `02, 03` are negative). The circulation then splits into directed cycles,
-  each with exactly one negative line, and every cycle term is positive by the superadditivity of
-  `tan` (`tan_sum_mul_sq_lt`): `cubic_pos_of_monotone`, `cubic_pos_cross`, `cubic_pos_two_neg`,
-  `cubic_pos_three_neg`. Cases `sorted_case_nonneg`, `sorted_case_neg` (its mirror image, reversed
-  machines and negated direction, covers `13` negative with `02` nonnegative),
-  `sorted_case_neg_neg`, collected in `sorted_cubic_pos`; `sorted_cubic_ne_zero` adds the case
-  `u₀ = u₃` (no flow on `03`: the diamond identity) and the reflection `u ↦ −u`.
-
-Results.
-* Static foundation: `branch_identity`, `branch_nonneg`, `diamond_cubic_ne_zero`,
-  `cubic_pos_of_monotone`, `cubic_pos_three_neg`, `cubic_pos_cross`, `cubic_pos_two_neg`,
-  `tan_neg_of_pi_div_two_lt_of_lt_pi`, `order_of_nonneg`, `order_of_neg_02`, `order_of_neg_02_13`,
-  the four `psd_reduce_*`, `cos_pos_of_nonneg_of_lt`, `flow_eq_tan`, `sorted_case_nonneg`,
-  `sorted_case_neg`, `sorted_case_neg_neg`, `sorted_cubic_pos`, `sorted_cubic_ne_zero`
-  (four coupled machines in sorted lifted angles: the cubic form is nonzero along every
-  non-constant null direction of a positive semidefinite Hessian form with positive cuts),
-  `exists_sorted_lift`, `eq_of_labelled_eq`, `exists_perm_zero_three`.
-* Family conclusions: `exact_locallyAsymptoticallyStable_four` — for four machines the local
-  asymptotic translation `{powerFlow, jacobianStable}` of `Swing.family` is exact; and
-  `mem_den_locallyAsymptoticallyStable_iff_four_machines` — every four-machine model is locally
-  asymptotically stable exactly when its profile is a power-balance point with a Hurwitz reduced
-  Jacobian (no restriction on the lines). With `exact_locallyAsymptoticallyStable_zero`, `_two`,
-  `_three` and `not_exact_locallyAsymptoticallyStable` (five or more machines) the local asymptotic
-  translation is decided for every number of machines: exact up to four machines, not exact from
-  five.
-* Implementation evidence (private, model level): `not_localAsymptoticStable_diamond`,
-  `not_localAsymptoticStable_complete`, `not_localAsymptoticStable_four_machines` (with
-  `not_localAsymptoticStable_four` of `Swing/Four` for two uncoupled pairs) and the labelled-form
-  helpers `cut_pos_of_localAsymptoticStable`, `labelled_nonneg_of_localAsymptoticStable`,
-  `exists_null_of_localAsymptoticStable`.
-
-Connection architecture. The family is `Swing.family`; the public model conclusions are
-`connection%` statements on its generated denotation. The identities, orderings, cycle bounds and
-the lift are static real arithmetic (foundation); the behavioural fold arguments on the model stay
-private.
+  `psd_reduce_one_three`, `psd_reduce_two_zero`, `psd_reduce_two_three`) order the null
+  direction (`order_of_nonneg`, `order_of_neg_02`, `order_of_neg_02_13`): with `u₀ < u₃` it
+  increases with the lifted angle, up to one adjacent transposition (`0 < 2 < 1 < 3` when only
+  `03` is negative, `0 < 1 < 3 < 2` when `02, 03` are negative). The circulation then splits
+  into directed cycles, each with exactly one negative line, and every cycle term is positive by
+  the superadditivity of `tan` (`tan_sum_mul_sq_lt`): `cubic_pos_of_monotone`,
+  `cubic_pos_cross`, `cubic_pos_two_neg`, `cubic_pos_three_neg`. Cases `sorted_case_nonneg`,
+  `sorted_case_neg` (its mirror image, reversed machines and negated direction, covers `13`
+  negative with `02` nonnegative), `sorted_case_neg_neg`, collected in `sorted_cubic_pos`;
+  `sorted_cubic_ne_zero` adds the case `u₀ = u₃` (no flow on `03`: the diamond identity) and the
+  reflection `u ↦ −u`.
 -/
 
 noncomputable section

@@ -6,18 +6,23 @@ For `p(s) = s² + α s + β` with complex coefficients `α, β`:
 all roots satisfy `Re s < 0` iff `Re α > 0` and
 `(Re α)² Re β + Re α · Im α · Im β − (Im β)² > 0`.
 
-The proof uses Vieta's relations for a root pair `s₁, s₂ = −α − s₁`:
-`(Re α)² Re β + Re α Im α Im β − (Im β)² = Re s₁ · Re s₂ · ((Re s₁ + Re s₂)² + (Im s₁ − Im s₂)²)`
-(`vieta_discriminant`). Both directions are proved; existence of a root comes from the
-algebraic closedness of `ℂ`.
-
-Special case used for the decoupled current loop with inductance mismatch
-(`theorem/CurrentControl/Mismatch.lean`): if `β = c` is real then the condition is
-`Re α > 0 ∧ c > 0`, independently of `Im α` (`complexQuadratic_realConst_roots_re_neg_iff`).
+Scope.
+* Static algebra of complex quadratic polynomials; nothing here describes a physical system and
+  no model family is defined.
 
 Source: needed by work-sync `theory/T-decoupling-control.md` §1.4 / §2.2 (characteristic
 polynomial `L s² + (R + Kp + jωΔL) s + Ki` of the mismatched decoupled PI loop); the criterion
 is the degree-two case of the Hermite–Biehler / Bilharz test for complex polynomials.
+
+Results.
+* `complexQuadratic_roots_re_neg_iff`: the criterion above, both directions; existence of a root
+  comes from the algebraic closedness of `ℂ`. The proof uses Vieta's relations for a root pair
+  `s₁, s₂ = −α − s₁` (`quadratic_partner`):
+  `(Re α)² Re β + Re α Im α Im β − (Im β)² = Re s₁ · Re s₂ · ((Re s₁ + Re s₂)² + (Im s₁ − Im s₂)²)`
+  (`vieta_discriminant`).
+* `complexQuadratic_realConst_roots_re_neg_iff`: special case used for the decoupled current loop
+  with inductance mismatch (`theorem/CurrentControl/Mismatch.lean`): if `β = c` is real then the
+  condition is `Re α > 0 ∧ c > 0`, independently of `Im α`.
 -/
 
 noncomputable section

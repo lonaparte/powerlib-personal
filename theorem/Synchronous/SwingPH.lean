@@ -3,27 +3,37 @@ import theorem.Port.PortHamiltonian
 
 /-! # The linearized swing equation as a port-Hamiltonian model
 
-Model boundary: the LTI linearization of the canonical swing model
-(`theorem/Synchronous/Swing.lean`) at an equilibrium angle `δ₀` with synchronizing
-coefficient `K = k₂ cos(δ₀ − k₃) > 0`, written in the coordinates `(Δδ, M Δω)` (angle deviation,
-momentum deviation) with one input `u` entering the momentum equation (a power perturbation,
-export-positive) and the collocated output `y = Δω`.  Continuous time; no PLL, delay or PWM.
-In these coordinates it is exactly a linear port-Hamiltonian plant `Port.PortHamiltonian 2 1`
-(`theorem/Port/PortHamiltonian.lean`) with `J = [[0, 1], [−1, 0]]`, dissipation
-`R = diag(0, D)`, energy matrix `Q = diag(K, 1/M)` and `B = (0, 1)ᵀ`, i.e.
-`H = ½ K Δδ² + (M Δω)² / (2M)`.
+The linearized canonical swing model, in momentum coordinates, as a linear port-Hamiltonian
+plant; its passivity and stability are read from the port-Hamiltonian family.
 
-Family and connection conclusions. No new family: the plant is a member of the
-port-Hamiltonian family `Port.PortHamiltonian.family`. Passivity and Lyapunov stability are not
-re-proved: they are the family's `mem_den_passive` and `mem_den_lyapunovStable` applied to this
-plant (`linearPH_passive`, `linearPH_lyapunovStable`, connection statements; reuse).
-`stateMatrix_mul` identifies the pH state matrix with the swing Jacobian under the change of
-coordinates `diag(1, M)`; through it every flow sentence of the pH plant is the same sentence of
-the linearized swing family `Synchronous.Swing.Linearized.family` at `(p, δ₀)`
-(`linearPH_mem_den_flow_iff`, a comparison of the two families' denotations).
+Model boundary.
+* The LTI linearization of the canonical swing model (`theorem/Synchronous/Swing.lean`) at an
+  equilibrium angle `δ₀` with synchronizing coefficient `K = k₂ cos(δ₀ − k₃) > 0`, written in the
+  coordinates `(Δδ, M Δω)` (angle deviation, momentum deviation) with one input `u` entering the
+  momentum equation (a power perturbation, export-positive) and the collocated output `y = Δω`.
+  Continuous time; no PLL, delay or PWM.
+* In these coordinates it is exactly a linear port-Hamiltonian plant `Port.PortHamiltonian 2 1`
+  (`theorem/Port/PortHamiltonian.lean`) with `J = [[0, 1], [−1, 0]]`, dissipation
+  `R = diag(0, D)`, energy matrix `Q = diag(K, 1/M)` and `B = (0, 1)ᵀ`, i.e.
+  `H = ½ K Δδ² + (M Δω)² / (2M)`.
 
-Source: work-sync theory/T-vsg-control.md §2.9 (pH form `H = ½ J ω² + ½ K_E δ²`, `R = D_p`);
-projects/vsc-stochastic-stability/notes/concepts/damping-class-dichotomy.md §2.
+Source: work-sync `theory/T-vsg-control.md` §2.9 (pH form `H = ½ J ω² + ½ K_E δ²`, `R = D_p`);
+`projects/vsc-stochastic-stability/notes/concepts/damping-class-dichotomy.md` §2.
+
+Results.
+* `linearPH` — the pH plant; `linearPH_field` — its field reproduces the linearized swing
+  equation `d(Δδ)/dt = Δω`, `d(M Δω)/dt = −K Δδ − D Δω + u`.
+* `stateMatrix_mul`, `stateMatrix_eq_conj` — the pH state matrix is the swing Jacobian under the
+  change of coordinates `diag(1, M)` (`momentumCoord`).
+
+Family and connection conclusions.
+* No new family: the plant is a member of the port-Hamiltonian family
+  `Port.PortHamiltonian.family`. Passivity and Lyapunov stability are not re-proved: they are the
+  family's `mem_den_passive` and `mem_den_lyapunovStable` applied to this plant
+  (`linearPH_passive`, `linearPH_lyapunovStable`, connection statements; reuse).
+* Through `stateMatrix_mul` every flow sentence of the pH plant is the same sentence of the
+  linearized swing family `Synchronous.Swing.Linearized.family` at `(p, δ₀)`
+  (`linearPH_mem_den_flow_iff`, a comparison of the two families' denotations).
 -/
 
 noncomputable section

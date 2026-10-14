@@ -3,35 +3,38 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-! # Two-term endpoint Laplace expansion for an exact Gaussian phase
 
-Foundation layer: one-variable real analysis, no model.
+One-variable real analysis, no model: the endpoint Laplace integral with an exactly quadratic
+phase, expanded to two terms with a controlled remainder.
 
-Setting. `J(β) = ∫_0^L h(u) e^{−βu²} du` with `L > 0`, `h` continuous on `[0, L]` and a first-order
-Taylor bound `|h(u) − h₀ − h₁ u| ≤ M u²` on `[0, L]`. The phase `βu²` is exactly quadratic with its
-minimum at the endpoint `u = 0`; a nondegenerate endpoint minimum of a general phase takes this form
-after the Morse change of variables `u² = φ(y) − φ(y*)`, the Jacobian being absorbed into `h`
-(this is how `Asymptotics/Guard/MFPTExpansion.lean` uses it). Large parameter `β → ∞`.
-
-Results.
-* `gaussMoment2_Ioi`: `∫_0^∞ u² e^{−βu²} du = √(π/β)/(4β)`.
-* `integral_mul_exp_neg_mul_sq_interval`: `∫_0^L u e^{−βu²} du = (1 − e^{−βL²})/(2β)`.
-* `integral_exp_neg_mul_sq_interval_bounds`:
-  `√(π/β)/2 − e^{−βL²}/(2βL) ≤ ∫_0^L e^{−βu²} du ≤ √(π/β)/2`.
-* `exp_neg_le_inv`: `e^{−x} ≤ 1/x` for `x > 0`.
-* `laplace_two_term_bound` (explicit, every `β > 0`):
-  `|J(β) − h₀ √(π/β)/2 − h₁/(2β)| ≤ M √(π/β)/(4β) + (|h₀|/L + |h₁|)/(2β²L²)`.
-* `laplace_two_term_isBigO` (`h₀ ≠ 0`, `β → ∞`):
-  `J(β)/(h₀ √(π/β)/2) − 1 − (h₁/h₀)/√(πβ) = O(1/β)`, i.e.
-  `J(β) = h₀ (√(π/β)/2) (1 + (h₁/h₀)(πβ)^{−1/2} + O(β^{−1}))`.
-* `laplace_two_term_tendsto`: `√β (J(β)/(h₀ √(π/β)/2) − 1) → (h₁/h₀)/√π`; the half-order term is
-  present exactly when `h₁ ≠ 0` (`laplace_two_term_coeff_ne_zero_iff`).
-
-Relation to the truncated table `Asymptotics/EndpointLaplace.lean`: there the half-order coefficient
-`√(2/π)(g₁/g₀ − φ₃/(3φ₂))/√φ₂` is read off the first three Taylor terms without a remainder
-estimate; here the phase has been normalized, the remainder is controlled and the coefficient is
-`(h₁/h₀)/√π`.
+Scope.
+* `J(β) = ∫_0^L h(u) e^{−βu²} du` with `L > 0`, `h` continuous on `[0, L]` and a first-order
+  Taylor bound `|h(u) − h₀ − h₁ u| ≤ M u²` on `[0, L]`. Large parameter `β → ∞`.
+* The phase `βu²` is exactly quadratic with its minimum at the endpoint `u = 0`; a
+  nondegenerate endpoint minimum of a general phase takes this form after the Morse change of
+  variables `u² = φ(y) − φ(y*)`, the Jacobian being absorbed into `h` (this is how
+  `Asymptotics/Guard/MFPTExpansion.lean` uses it).
 
 Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.1 (endpoint Laplace, relative
 correction of order `X^{−1/2}`).
+
+Results.
+* `gaussMoment2_Ioi` — `∫_0^∞ u² e^{−βu²} du = √(π/β)/(4β)`.
+* `integral_mul_exp_neg_mul_sq_interval` — `∫_0^L u e^{−βu²} du = (1 − e^{−βL²})/(2β)`.
+* `integral_exp_neg_mul_sq_interval_bounds` —
+  `√(π/β)/2 − e^{−βL²}/(2βL) ≤ ∫_0^L e^{−βu²} du ≤ √(π/β)/2`.
+* `exp_neg_le_inv` — `e^{−x} ≤ 1/x` for `x > 0`.
+* `laplace_two_term_bound` — explicit, every `β > 0`:
+  `|J(β) − h₀ √(π/β)/2 − h₁/(2β)| ≤ M √(π/β)/(4β) + (|h₀|/L + |h₁|)/(2β²L²)`.
+* `laplace_two_term_isBigO` — `h₀ ≠ 0`, `β → ∞`:
+  `J(β)/(h₀ √(π/β)/2) − 1 − (h₁/h₀)/√(πβ) = O(1/β)`, i.e.
+  `J(β) = h₀ (√(π/β)/2) (1 + (h₁/h₀)(πβ)^{−1/2} + O(β^{−1}))`.
+* `laplace_two_term_tendsto` — `√β (J(β)/(h₀ √(π/β)/2) − 1) → (h₁/h₀)/√π`; the half-order term
+  is present exactly when `h₁ ≠ 0` (`laplace_two_term_coeff_ne_zero_iff`).
+
+Relation to the truncated table `Asymptotics/EndpointLaplace.lean`: there the half-order
+coefficient `√(2/π)(g₁/g₀ − φ₃/(3φ₂))/√φ₂` is read off the first three Taylor terms without a
+remainder estimate; here the phase has been normalized, the remainder is controlled and the
+coefficient is `(h₁/h₀)/√π`.
 -/
 
 noncomputable section

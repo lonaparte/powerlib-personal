@@ -2,33 +2,41 @@ import theorem.CurrentControl.PILoop
 
 /-! # Cross-decoupling algebra and the stability premise of zero steady-state error
 
-Foundation part (algebra of the decoupling term, T-decoupling-control §1.3–§1.5).
-* `residual_general`, `residual_caseA`, `residual_caseB` (+ q-axis forms): with the
-  IN-positive plant `L i_d' = v_d − u_d − R i_d + ω L i_q` and the decoupling command
-  `u_d^dec = +ω̂ L̂ i_q`, `u_q^dec = −ω̂ L̂ i_d`, the coupling left in the `L`-equation is
-  `(ω L − ω̂ L̂) i_q` on d and `−(ω L − ω̂ L̂) i_d` on q; it is `ω ΔL i` when `ω̂ = ω` (case A,
-  `ΔL = L − L̂`) and `(ω − ω̂) L i` when `L̂ = L` (case B). `residual_rate` is the
-  `di/dt` form (divided by `L`).
-* `decoupling_power_cancel`: the decoupling terms contribute nothing to the bridge power
-  `u_d i_d + u_q i_q`, for either sign convention (`decoupling_power_cancel_out`).
+Algebra of the dq cross-decoupling term (foundation), and the closed-loop stability premise that
+the "integral action removes the steady-state error" argument needs (one connection statement).
 
-Domain part (Correction).
-* Model = the single-axis PI loop of `PILoop.lean` (state `(i, ξ)`, input the reference `i*`,
-  `L > 0`), read through its family `PIParams.family` (the closed-loop plant as a port system).
-* `PIParams.mem_den_unstable_of_Ki_neg` (connection): if `Ki < 0` the loop is unstable — a
-  negative monic coefficient `Ki/L` places a real characteristic root in the open right half
-  plane. Correction (T-decoupling-control §2.2, T-gfl-control §2.2 "积分项消静差"): "the PI loop
-  drives the steady state to `i = i*`" requires closed-loop stability; the notes omit this
-  premise. Under the exact premise `R + Kp > 0 ∧ Ki > 0` the loop is stable
-  (`PIParams.mem_den_iff`); every *equilibrium* has `i = i*` unconditionally
-  (`PIParams.equilibrium_current`, static).
-* The trajectory form of the correction — with `Ki < 0` some solution with a constant reference
-  has `i(t) ↛ i*`, diverging exponentially along a real unstable mode
-  (`PIParams.not_tracks_of_Ki_neg`) — is outside the sentence language and is kept as private
-  implementation evidence.
+Model boundary.
+* Decoupling algebra: IN-positive dq plant `L i_d' = v_d − u_d − R i_d + ω L i_q` with the
+  decoupling command `u_d^dec = +ω̂ L̂ i_q`, `u_q^dec = −ω̂ L̂ i_d`; parameters and currents are
+  arbitrary reals.
+* Stability premise: the single-axis PI loop of `PILoop.lean` (state `(i, ξ)`, input the
+  reference `i*`, `L > 0`), read through its family `PIParams.family` (the closed-loop plant as
+  a port system).
 
 Source: work-sync `theory/T-decoupling-control.md` §1.3–§1.5, §2.2;
 `theory/T-gfl-control.md` §1.4.3; `theory/T-dae-elimination.md` §2.2 (uses the cancellation).
+
+Results.
+* `residual_general`, `residual_caseA`, `residual_caseB` (+ q-axis forms): the coupling left in
+  the `L`-equation is `(ω L − ω̂ L̂) i_q` on d and `−(ω L − ω̂ L̂) i_d` on q; it is `ω ΔL i` when
+  `ω̂ = ω` (case A, `ΔL = L − L̂`) and `(ω − ω̂) L i` when `L̂ = L` (case B). `residual_rate` is
+  the `di/dt` form (divided by `L`).
+* `decoupling_power_cancel`: the decoupling terms contribute nothing to the bridge power
+  `u_d i_d + u_q i_q`, for either sign convention (`decoupling_power_cancel_out`).
+
+Family and connection conclusions.
+* `PIParams.mem_den_unstable_of_Ki_neg` (connection): if `Ki < 0` the loop is unstable — a
+  negative monic coefficient `Ki/L` places a real characteristic root in the open right half
+  plane. Under the exact premise `R + Kp > 0 ∧ Ki > 0` the loop is stable
+  (`PIParams.mem_den_iff`); every *equilibrium* has `i = i*` unconditionally
+  (`PIParams.equilibrium_current`, static).
+* The trajectory form — with `Ki < 0` some solution with a constant reference has `i(t) ↛ i*`,
+  diverging exponentially along a real unstable mode (`PIParams.not_tracks_of_Ki_neg`) — is
+  outside the sentence language and is kept as private implementation evidence.
+
+Correction (T-decoupling-control §2.2, T-gfl-control §2.2 "积分项消静差"): "the PI loop drives
+the steady state to `i = i*`" requires closed-loop stability; the notes omit this premise
+(`PIParams.mem_den_unstable_of_Ki_neg` is the counterexample for `Ki < 0`).
 -/
 
 noncomputable section

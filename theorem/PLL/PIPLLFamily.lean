@@ -7,7 +7,12 @@ import theorem.Dynamics.LaSalle.Passivity
 
 /-! # The PI-PLL family
 
-Model boundary. A complete system is a PI phase-locked loop with a general phase-detector
+The family of PI phase-locked loops with a general phase-detector characteristic and its
+connection conclusions; the static model (field, Jacobian, equilibria) is
+`theorem/PLL/PIPLL.lean`.
+
+Model boundary.
+A complete system is a PI phase-locked loop with a general phase-detector
 characteristic, read about one selected operating point:
 * parameters `h : ℝ → ℝ` (phase-detector characteristic, `C¹` on all of `ℝ`), PI gains `K_p`,
   `K_i` (any reals), constant grid-frequency offset `δω` (constant input), and the selected phase
@@ -21,6 +26,19 @@ characteristic, read about one selected operating point:
   (`Sentence.holds (.flow P) s = P.holds s.zeroInput 0`). Every flow sentence is invariant under
   this translation (`Flow.Property.holds_shift_iff`), so the sentences speak about `x*` itself.
 
+Source: work-sync `theory/T-gfl-dynamics.md` §1.7 (boxed 2D ODE), §1.9 (equilibria), §1.10
+(Jacobian and local stability), §1.12 (`Σ_FD`).
+
+Results.
+Static evidence on the members (the behavioural results are the connection conclusions below):
+* `family_isAutonomous`, `Model.hasDerivAt`: the system map is the translated autonomous field.
+* `realize_univ`: the whole requirement language is inconsistent.
+* `srf_deriv`, `linearModel_field`, `cubicDetector_field`, `cubicDetector_slope`: the SRF, linear
+  (`h = −θ`) and cubic (`h = −θ³`) detector members.
+* `cubicEnergy_hasFDerivAt`, `cubicEnergy_lie`, `cubicEnergy_contDiff`, `cubicEnergy_pos`,
+  `norm_sq_le_cubicEnergy`: the PLL energy `θ⁴/4 + η²/2` of the cubic detector.
+
+Family and connection conclusions.
 The requirement language is static: `x*` is an equilibrium (`h θ* = 0`, and `K_i ≠ 0` or
 `δω = 0`); the slope-gain products of the Jacobian `[[K_p g, K_i], [g, 0]]`, `g = h'(θ*)`, are
 negative (trace `< 0`, determinant `> 0`); or one of them is positive (determinant `< 0` or trace
@@ -49,8 +67,9 @@ selected point is not phase-locked (`offEquilibrium`) is unstable
 (`offEquilibrium_mem_den_unstable`, `Dynamics.unstable_of_ne_zero`). The local asymptotic
 translation is not exact either (`not_exact_locallyAsymptoticallyStable`): the cubic detector is
 locally asymptotically stable (`cubicDetector_mem_den_locallyAsymptoticallyStable`, LaSalle's
-principle through `Dynamics.LaSalle.tendsto_zero_of_lasalle_detectable`: the PLL energy decreases at the rate
-`θ⁶`, and the only solution with `θ ≡ 0` is the locked point) although its slope is zero. -/
+principle through `Dynamics.LaSalle.tendsto_zero_of_lasalle_detectable`: the PLL energy decreases at
+the rate `θ⁶`, and the only solution with `θ ≡ 0` is the locked point) although its slope is zero.
+-/
 
 noncomputable section
 
@@ -125,16 +144,16 @@ def family : Family Model Requirement 2 0 :=
 
 /-! ### Implementation evidence (private)
 
-The old public behavioural theorems of the PI-PLL module, at the selected point of the
-untranslated field, are kept as private helpers; the public conclusions are the connection
-statements below. -/
+Behavioural statements at the selected point of the untranslated field, used as private
+helpers; the public conclusions are the connection statements below. -/
 
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected point. -/
 private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (piPLLField m.h m.Kp m.Ki m.δω) m.point :=
   family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
 
-/-- Formerly the public `piPLL_locallyExponentiallyStable_of_mul_neg`. -/
+/-- At an equilibrium with both slope-gain products negative (`K_p g < 0`, `K_i g < 0`) the
+untranslated field is locally exponentially stable. -/
 private theorem piPLL_locallyExponentiallyStable_of_mul_neg {h : ℝ → ℝ}
     {Kp Ki δω θ g : ℝ} (hh : ContDiff ℝ 1 h) (hzero : h θ = 0) (hderiv : HasDerivAt h g θ)
     (hKpg : Kp * g < 0) (hKig : Ki * g < 0) :
@@ -150,9 +169,8 @@ private theorem piPLL_locallyExponentiallyStable_of_mul_neg {h : ℝ → ℝ}
   · rw [piPLLJacobian_det]
     linarith
 
-/-- Formerly the public `piPLL_unstable_of_mul_pos` and `piPLL_unstable_of_trace_pos`, with the
-equilibrium hypothesis generalized from `K_i ≠ 0`: at an equilibrium, a negative determinant or a
-positive trace of the Jacobian gives instability. -/
+/-- At an equilibrium (no hypothesis `K_i ≠ 0` needed), a negative determinant or a positive
+trace of the Jacobian gives instability. -/
 private theorem piPLL_unstable_of_slope {h : ℝ → ℝ} {Kp Ki δω θ g : ℝ}
     (hh : ContDiff ℝ 1 h) (heq : piPLLField h Kp Ki δω (PhasePlane.mk θ (δω / Ki)) = 0)
     (hderiv : HasDerivAt h g θ) (hg : 0 < Ki * g ∨ 0 < Kp * g) :

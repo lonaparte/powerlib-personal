@@ -6,9 +6,9 @@ import theorem.SpecialFunctions.Elementary
 
 /-! # Reheat-turbine system frequency response (SFR) model
 
-Source: work-sync `theory/T-sfr-model.md` §1.2–§1.8 (turbine `G_turb`, governor, third-order
-SFR transfer function §1.4, second-order reduction §1.5, nadir §1.6, RoCoF / steady state §1.7,
-state-space form §1.8).
+The third-order reheat-turbine SFR model and its second-order reduction as linear families: the
+corrected state matrix, a Routh–Hurwitz stability condition, and the exact nadir of the reduced
+model.
 
 Model boundary (both models).
 * Continuous-time, linear, small-signal single-area model (the note's "one equivalent machine"
@@ -18,41 +18,67 @@ Model boundary (both models).
   (`ΔP_C = 0`), dead-band, rate limit, valve saturation, PLL, delay, PWM, voltage dynamics.
 * Reheat steam turbine with `T_CH` neglected: `G_turb(s) = (1 + s F T_R)/(1 + s T_R)`
   (`F = F_HP`, `T_R = T_RH`); governor `T_g ΔṖ_v = −ΔP_v − K_R Δω`.
+* Third-order model (`plant`, state `x = (Δω, ΔP_m, ΔP_v)` in `EuclideanSpace ℝ (Fin 3)`),
+  state matrix (corrected §1.8)
+  `A = [[−D/M, 1/M, 0], [−F K_R/T_g, −1/T_R, 1/T_R − F/T_g], [−K_R/T_g, 0, −1/T_g]]`.
+* Second-order reduction (`reducedPlant`, `T_g → 0`, state `x = (Δω, ΔP_RH)`): the governor is
+  static (`ΔP_v = −K_R Δω`) and `G_turb` is realised with the reheat (low pressure) state
+  `ΔP_RH = ΔP_m + F K_R Δω`, `T_R ΔṖ_RH = −ΔP_RH − (1 − F) K_R Δω`. The reduction `T_g → 0`
+  itself (a singular-perturbation limit) is not formalized: the reduced model is a separate
+  model, checked against the note's §1.5 equations and transfer function. It is
+  `SwingGovernor.plant M (D + F K_R) ((1 − F) K_R) T_R`, so the exact nadir closed form of
+  `Frequency.SwingNadir` applies, and with `0 < M`, `0 < T_R` it is a member of
+  `SwingGovernor.family` (`reducedModel`).
 
-## Third-order model (`plant`, state `x = (Δω, ΔP_m, ΔP_v)` in `EuclideanSpace ℝ (Fin 3)`)
-State matrix (corrected §1.8)
-`A = [[−D/M, 1/M, 0], [−F K_R/T_g, −1/T_R, 1/T_R − F/T_g], [−K_R/T_g, 0, −1/T_g]]`.
+Source: work-sync `theory/T-sfr-model.md` §1.2–§1.8 (turbine `G_turb`, governor, third-order
+SFR transfer function §1.4, second-order reduction §1.5, nadir §1.6, RoCoF / steady state §1.7,
+state-space form §1.8).
+
+Results.
+Third-order model:
 * `field_swing`, `field_governor`, `field_turbine`: the three rows are the swing equation, the
   governor, and the time-domain form `T_R ΔṖ_m + ΔP_m = ΔP_v + F T_R ΔṖ_v` of `G_turb`.
-* `transfer_apply` (foundation): `Linear.transfer` equals the §1.4 third-order transfer function.
+* `transfer_apply` (foundation): `Linear.transfer` equals the §1.4 third-order transfer
+  function.
 * `routhQuantity_eq`, `isHurwitz_iff`, `isHurwitz_of_hp_fraction`: with
   `a₃ = M T_g T_R`, `a₂ = M (T_g + T_R) + D T_g T_R`, `a₁ = M + D (T_g + T_R) + K_R F T_R`,
   `a₀ = D + K_R`, the Routh quantity is
   `a₂ a₁ − a₃ a₀ = M²(T_g+T_R) + M D (T_g+T_R)² + M K_R T_R [F (T_g+T_R) − T_g]
      + D² T_g T_R (T_g+T_R) + D K_R F T_g T_R²`,
-  so `F ≥ T_g/(T_g + T_R)` (with `D, K_R ≥ 0`, `K_R + D > 0`) makes the model Hurwitz. The note
-  states no stability condition; this one is added.
+  so `F ≥ T_g/(T_g + T_R)` (with `D, K_R ≥ 0`, `K_R + D > 0`) makes the model Hurwitz. The
+  note states no stability condition; this one is added.
 * `isEquilibrium_iff` (foundation, static): unique equilibrium
   `(−ΔP_L/(K_R+D), K_R ΔP_L/(K_R+D), K_R ΔP_L/(K_R+D))` for the load step.
 * `rocof`, `tendsto_freq` (private implementation evidence): initial RoCoF `−ΔP_L/M`;
   `Δω → −ΔP_L/(K_R + D)` along every forward solution (§1.7).
-
-## Second-order reduction (`reducedPlant`, `T_g → 0`, state `x = (Δω, ΔP_RH)`)
-The governor is static (`ΔP_v = −K_R Δω`) and `G_turb` is realised with the reheat (low
-pressure) state `ΔP_RH = ΔP_m + F K_R Δω`, `T_R ΔṖ_RH = −ΔP_RH − (1 − F) K_R Δω`. The
-reduction `T_g → 0` itself (a singular-perturbation limit) is not formalized: the reduced model
-is a separate model, checked against the note's §1.5 equations and transfer function.
-It is `SwingGovernor.plant M (D + F K_R) ((1 − F) K_R) T_R`, so the exact nadir closed form of
-`Frequency.SwingNadir` applies, and with `0 < M`, `0 < T_R` it is a member of
-`SwingGovernor.family` (`reducedModel`).
+Second-order reduction:
 * `reduced_field_swing`, `reduced_field_turbine`, `reduced_transfer_apply`,
   `reduced_natFreq_sq`, `reduced_two_mul_dampingRatio_mul_natFreq`: the §1.5 equations,
   transfer function, `ω_n² = (K_R + D)/(M T_R)` and `2 ζ ω_n = (M + (D + K_R F) T_R)/(M T_R)`.
 * `reduced_nadir` (private implementation evidence): for `ζ < 1` and a load increase, `Δω` has
-  its global minimum over
-  `t ≥ 0` at `t_n = atan2(ω_d T_R, ζ ω_n T_R − 1)/ω_d` (`atan2(y, x) = arg (x + j y)`), is
-  strictly decreasing before it, and the exact minimum is
+  its global minimum over `t ≥ 0` at `t_n = atan2(ω_d T_R, ζ ω_n T_R − 1)/ω_d`
+  (`atan2(y, x) = arg (x + j y)`), is strictly decreasing before it, and the exact minimum is
   `−ΔP_L/(K_R + D) · [1 + √(1 − 2 ζ ω_n T_R + ω_n² T_R²) e^{−ζ ω_n t_n}]`.
+
+Family and connection conclusions.
+* System map: a third-order model (`Model`: `M, D, K_R, F, T_g, T_R` with `M, T_g, T_R > 0`) is
+  read as the port system of its plant (`Family.IsLinear`): port input the load deviation,
+  port output `Δω`. Flow sentences concern the zero-load operating point; by linearity the
+  attractive sentences hold at the steady state of every constant load step exactly when they
+  hold there (`Linear.holds_input_iff`).
+* Requirements (static): `stable` (`a₂ > 0`, `a₀ = K_R + D > 0`, `a₂ a₁ − a₃ a₀ > 0`, the
+  Routh–Hurwitz conditions), `unstable` (`a₀ < 0` or `a₂ < 0`: determinant `> 0` or trace `> 0`
+  of the state matrix), `rate a`. Translation as in `SwingGovernor`: Lyapunov stability and the
+  attractive sentences into `stable`, instability into `unstable`, decay into its margin,
+  conservation and passivity into the whole (inconsistent) language.
+* Connection theorems: `chain_le_semantics`, `exact_hurwitz` (Routh–Hurwitz is the exact
+  translation of the attractive sentences and sampled contraction), `mem_den_attractive_iff`,
+  `mem_den_globallyExponentiallyStable` (the added condition `F ≥ T_g/(T_g + T_R)`),
+  `mem_den_unstable`, `not_mem_den_passive` and, for the reduced model as a member of
+  `SwingGovernor.family`, `reduced_mem_den_globallyExponentiallyStable`.
+* Static evidence: `isEquilibrium_iff`, `steadyState_isEquilibrium`. Private implementation
+  evidence (trajectory level, Rules §3a): `rocof`, `exponentiallyConvergesTo_steadyState`,
+  `tendsto_freq`, `reduced_nadir`, `reduced_rocof`, `reduced_tendsto_freq`.
 
 Corrections.
 * §1.8 state matrix: the note's second row `[−F K_R/(T_R T_g), −1/T_R, (1 − F)/T_R]` does not
@@ -69,27 +95,6 @@ Corrections.
   `reduced_nadir` is exact for the reduced model. The note's amplitude
   `α e^{−ζω_n t_n} sin(ω_d t_n + φ)` with `φ = ω_d t_n` is replaced by the exact
   `√(1 − 2 ζ ω_n T_R + ω_n² T_R²) e^{−ζ ω_n t_n}`.
-
-## Family and connection conclusions
-* System map: a third-order model (`Model`: `M, D, K_R, F, T_g, T_R` with `M, T_g, T_R > 0`) is
-  read as the port system of its plant (`Family.IsLinear`): port input the load deviation,
-  port output `Δω`. Flow sentences concern the zero-load operating point; by linearity the
-  attractive sentences hold at the steady state of every constant load step exactly when they
-  hold there (`Linear.holds_input_iff`).
-* Requirements (static): `stable` (`a₂ > 0`, `a₀ = K_R + D > 0`, `a₂ a₁ − a₃ a₀ > 0`, the
-  Routh–Hurwitz conditions), `unstable` (`a₀ < 0` or `a₂ < 0`: determinant `> 0` or trace `> 0`
-  of the state matrix), `rate a`. Translation as in `SwingGovernor`: Lyapunov stability and the
-  attractive sentences into `stable`, instability into `unstable`, decay into its margin,
-  conservation and passivity into the whole (inconsistent) language.
-* Connection theorems: `chain_le_semantics`, `exact_hurwitz` (Routh–Hurwitz is the exact
-  translation of the attractive sentences and sampled contraction), `mem_den_attractive_iff`,
-  `mem_den_globallyExponentiallyStable` (the added condition `F ≥ T_g/(T_g + T_R)`),
-  `mem_den_unstable`, `not_mem_den_passive` and, for the reduced model as a member of
-  `SwingGovernor.family`, `reduced_mem_den_globallyExponentiallyStable`.
-* Static evidence (formerly `@[powerlib_domain]`): `isEquilibrium_iff`,
-  `steadyState_isEquilibrium`. Private implementation evidence (trajectory level, Rules §3a):
-  `rocof`, `exponentiallyConvergesTo_steadyState`, `tendsto_freq`, `reduced_nadir`,
-  `reduced_rocof`, `reduced_tendsto_freq`. `noteModel_*` are renamed `notePlant_*`.
 -/
 
 noncomputable section
@@ -790,9 +795,9 @@ private theorem reduced_tendsto_freq (hM : 0 < M) (hTR : 0 < TR) (hD : 0 ≤ D +
   exact h
 
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
-Formerly `exponentiallyConvergesTo_steadyState`: under the Routh–Hurwitz conditions every
-solution under the load step converges exponentially to the steady state (the connection
-theorem `mem_den_attractive_iff` and linearity, `Linear.holds_input_iff`). -/
+Under the Routh–Hurwitz conditions every solution under the load step converges exponentially to
+the steady state (the connection theorem `mem_den_attractive_iff` and linearity,
+`Linear.holds_input_iff`). -/
 private theorem exponentiallyConvergesTo_steadyState (m : Model)
     (h2 : 0 < coeff2 m.M m.D m.Tg m.TR) (hKD : 0 < m.K + m.D) (hR : 0 < routhQuantity m.M m.D m.K m.F m.Tg m.TR) (ΔPL : ℝ) :
     Flow.GloballyExponentiallyStable (m.plant.inputField (load ΔPL))

@@ -4,47 +4,50 @@ import Mathlib.Analysis.Calculus.ImplicitContDiff
 
 /-! # Bifurcation hypersurfaces: crossing behaviour of `Σ_SN`, `Σ_WS`, `Σ_DOC`
 
-Foundation layer: generic statements about parameter families, not an engineering model.
+What happens to the equilibria and their stability when a parameter family crosses the fold, the
+Hopf-type and the node–focus hypersurfaces, and the continuation of a nondegenerate equilibrium.
 
-1. One-dimensional `Σ_SN` crossing (`fold_crossing`). For a scalar family `ẋ = f(x, μ)` with a
-   fold at `(x₀, μ₀)` — on a box `[x₀ − r, x₀ + r] × [μ₀ − ε, μ₀ + ε]` the map `x ↦ f(x, μ)` is
-   strictly convex for every `μ` (the local form of `f_xx > 0`), `μ ↦ f(x, μ)` is strictly
-   increasing for every `x` (the local form of `f_μ > 0`), `f` is continuous, and
-   `f(x₀, μ₀) = 0` is the minimum of `f(·, μ₀)` (`f_x(x₀, μ₀) = 0`) — the number of equilibria in
-   `[x₀ − r, x₀ + r]` is `0` for `μ ∈ (μ₀, μ₀ + ε]` and exactly `2` for `μ` in some
-   `(μ₀ − ε', μ₀)`: crossing `Σ_SN` changes the count `2 → 0`. The box conditions follow from
-   `C²` fold data by continuity: `fold_box_of_partials` (continuous `f` with partial derivatives
-   `f_x`, `f_xx`, `f_μ`, the last two continuous at the fold point, `f = f_x = 0`, `f_xx > 0`,
-   `f_μ > 0`) and `fold_box_of_contDiff` (`f ∈ C²(ℝ²)`, partials as `deriv`); combined:
-   `fold_crossing_of_contDiff`. The sign cases `f_xx < 0` or `f_μ < 0` reduce to this one by
-   `f ↦ −f`, `μ ↦ −μ` (not stated separately).
-2. `Σ_WS` with transversality (`ws_crossing_trace`, `ws_crossing_det`): for a planar family with
-   equilibrium Jacobian `A(μ)` (derived with `fderiv`), if `det A > 0` near `μ₀`, `tr A(μ₀) = 0`
-   and `d tr/dμ > 0` at `μ₀` (Hopf type), the equilibrium is locally exponentially stable just
-   below `μ₀` and unstable just above; similarly for `det A` crossing zero downwards with
-   `tr A < 0` (saddle-node type).
-3. `Σ_DOC` is not a stability boundary (`exponentiallyStable_node_and_focus`): for planar linear
-   fields `x' = A (x − e)` global exponential stability (indeed every attractive sentence of the
-   Flow semantics) is `tr < 0 ∧ det > 0` irrespective of the discriminant sign; a stable node and
-   a stable focus are both exponentially stable.
-4. Equilibrium continuation (wrapper of Mathlib's implicit function theorem,
-   `ContDiffAt.implicitFunction`): if `f(μ₀, x₀) = 0` and the state Jacobian
-   `∂ₓf(μ₀, x₀)` is invertible (e.g. a matrix with `det A(μ₀) ≠ 0`), there is a `Cⁿ` branch
-   `x = ψ(μ)` with `ψ(μ₀) = x₀`, `f(μ, ψ(μ)) = 0` near `μ₀`, and near `(μ₀, x₀)` these are the only
-   equilibria (`equilibrium_branch`, `equilibrium_branch_matrix`).
-
-Correction (T-bifurcation-hypersurfaces.md §1.1–1.2): "多个 `Σ_•` 的并把 `𝒫` 切成拓扑等价的连通
-区域" is false as stated when `Σ_DOC` is included: crossing `Σ_DOC` (node ↔ focus) keeps the
-equilibrium exponentially stable (item 3), so `Σ_DOC` separates convergence styles, not stability
-types; it is not a codimension-one bifurcation boundary in the sense of §1.1.
+Scope.
+* Generic statements about arbitrary parameter families, not an engineering model, so no model
+  family is defined; all results remain public foundation support.
 
 Source: work-sync theory/T-bifurcation-hypersurfaces.md §1.1–1.2; theory/T-bifurcation.md §1.2
 (`det A(μ*) ≠ 0` ⇒ smooth continuation of the equilibrium branch), §1.4.
 
-Architecture: generic statements about arbitrary parameter families, so no model family is
-defined; all results remain public foundation support. The former LTI-model form of item 3 now
-uses the linear field `LinearSystems.affineLinearVectorField A e` and the linear stability hub
-(`Criteria.holds_affine_fin_two_iff`).
+Results.
+* One-dimensional `Σ_SN` crossing (`fold_crossing`). For a scalar family `ẋ = f(x, μ)` with a
+  fold at `(x₀, μ₀)` — on a box `[x₀ − r, x₀ + r] × [μ₀ − ε, μ₀ + ε]` the map `x ↦ f(x, μ)` is
+  strictly convex for every `μ` (the local form of `f_xx > 0`), `μ ↦ f(x, μ)` is strictly
+  increasing for every `x` (the local form of `f_μ > 0`), `f` is continuous, and
+  `f(x₀, μ₀) = 0` is the minimum of `f(·, μ₀)` (`f_x(x₀, μ₀) = 0`) — the number of equilibria in
+  `[x₀ − r, x₀ + r]` is `0` for `μ ∈ (μ₀, μ₀ + ε]` and exactly `2` for `μ` in some
+  `(μ₀ − ε', μ₀)`: crossing `Σ_SN` changes the count `2 → 0`. The box conditions follow from
+  `C²` fold data by continuity: `fold_box_of_partials` (continuous `f` with partial derivatives
+  `f_x`, `f_xx`, `f_μ`, the last two continuous at the fold point, `f = f_x = 0`, `f_xx > 0`,
+  `f_μ > 0`) and `fold_box_of_contDiff` (`f ∈ C²(ℝ²)`, partials as `deriv`); combined:
+  `fold_crossing_of_contDiff`. The sign cases `f_xx < 0` or `f_μ < 0` reduce to this one by
+  `f ↦ −f`, `μ ↦ −μ` (not stated separately).
+* `Σ_WS` with transversality (`ws_crossing_trace`, `ws_crossing_det`): for a planar family with
+  equilibrium Jacobian `A(μ)` (derived with `fderiv`), if `det A > 0` near `μ₀`, `tr A(μ₀) = 0`
+  and `d tr/dμ > 0` at `μ₀` (Hopf type), the equilibrium is locally exponentially stable just
+  below `μ₀` and unstable just above; similarly for `det A` crossing zero downwards with
+  `tr A < 0` (saddle-node type).
+* `Σ_DOC` is not a stability boundary (`exponentiallyStable_node_and_focus`): for planar linear
+  fields `x' = A (x − e)` (the linear field `LinearSystems.affineLinearVectorField A e`, through
+  the linear stability hub `Criteria.holds_affine_fin_two_iff`) global exponential stability
+  (indeed every attractive sentence of the Flow semantics) is `tr < 0 ∧ det > 0` irrespective of
+  the discriminant sign; a stable node and a stable focus are both exponentially stable.
+* Equilibrium continuation (wrapper of Mathlib's implicit function theorem,
+  `ContDiffAt.implicitFunction`): if `f(μ₀, x₀) = 0` and the state Jacobian
+  `∂ₓf(μ₀, x₀)` is invertible (e.g. a matrix with `det A(μ₀) ≠ 0`), there is a `Cⁿ` branch
+  `x = ψ(μ)` with `ψ(μ₀) = x₀`, `f(μ, ψ(μ)) = 0` near `μ₀`, and near `(μ₀, x₀)` these are the only
+  equilibria (`equilibrium_branch`, `equilibrium_branch_matrix`).
+
+Corrections. (T-bifurcation-hypersurfaces.md §1.1–1.2): "多个 `Σ_•` 的并把 `𝒫` 切成拓扑等价的连通
+区域" is false as stated when `Σ_DOC` is included: crossing `Σ_DOC` (node ↔ focus) keeps the
+equilibrium exponentially stable (`exponentiallyStable_node_and_focus`), so `Σ_DOC` separates
+convergence styles, not stability types; it is not a codimension-one bifurcation boundary in the
+sense of §1.1.
 -/
 
 noncomputable section

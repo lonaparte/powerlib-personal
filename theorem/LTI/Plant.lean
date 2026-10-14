@@ -4,8 +4,18 @@ import theorem.Linear.Stability
 /-! # Single-input single-output plant helpers (foundation)
 
 Library-owned LTI plant lemmas (the codex `Linear/` layer is not modified), shared by the converter
-current-loop, DC-link and feedforward modules. Nothing here describes a physical system.
+current-loop, DC-link and feedforward modules.
 
+Scope.
+* Generic plant algebra about arbitrary `Linear.Plant` data, not a model: nothing here describes a
+  physical system and no family is defined. It is the common template layer of the converter
+  modules; the spectral `Family` templates built on these plants are in
+  `theorem/Spectral/Family.lean`.
+
+Source: standard state-space algebra, used by work-sync `theory/T-gfl-control.md` §1.4,
+`theory/T-gfl-impedance.md` §1.4–§1.5, `theory/T-voltage-feedforward.md` §2.2.
+
+Results.
 * `transfer_fin_one`, `transfer_fin_two`: closed forms of `Linear.transfer` for one- and
   two-state single-input single-output plants `⟨A, B, C, D⟩` (one port), off the
   characteristic roots. These are plain resolvent computations (adjugate of a 1×1 / 2×2
@@ -18,8 +28,7 @@ current-loop, DC-link and feedforward modules. Nothing here describes a physical
 * `tendsto_equilibrium`: under a constant input with an equilibrium `e`, every forward-complete
   solution of a plant with a Hurwitz state matrix converges to `e` (the hub's global asymptotic
   stability, `Linear.globallyAsymptoticallyStable_of_isHurwitz`, about the shifted
-  equilibrium). It replaces the former `isTrajectory_sub_equilibrium`,
-  `tendsto_of_exponentiallyStable` and `tendsto_equilibrium` on the deleted `LTI` models.
+  equilibrium).
 * Constant inputs (a forward solution from `t = 0` is a Mathlib integral curve on `[0, ∞)`,
   `IsIntegralCurveOn x (fun _ y => M.inputField u y) (Ici 0)`): `inputField_apply`;
   `trajectory_eq_solution_Ici` (every forward solution is the matrix-exponential solution
@@ -31,18 +40,12 @@ current-loop, DC-link and feedforward modules. Nothing here describes a physical
   equilibrium the field is the zero-input field); `exists_not_tendsto_of_eigenvector` (a real
   eigenvector of a positive eigenvalue gives a solution through the equilibrium that converges
   to no value along every component where the eigenvector is nonzero).
-
 * Derivative output: `derivModel` (`(A, B, C A, C B)`) — along any input–state solution of a
   strictly proper plant its output is the time derivative of `C x + D u` (`hasDerivAt_output`),
   and its transfer matrix is `s G(s)` (`transfer_derivModel`).
 * Common input: `plantOutput` (`C x + D u`); `tendsto_sub_of_isHurwitz`: two forward solutions of
   a plant with Hurwitz state matrix under the same input signal converge to each other,
   componentwise (their difference solves the zero-input field).
-
-The spectral `Family` templates built on these plants are in `theorem/Spectral/Family.lean`.
-
-Source: standard state-space algebra, used by work-sync `theory/T-gfl-control.md` §1.4,
-`theory/T-gfl-impedance.md` §1.4–§1.5, `theory/T-voltage-feedforward.md` §2.2.
 -/
 
 noncomputable section

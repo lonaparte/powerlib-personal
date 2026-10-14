@@ -7,43 +7,49 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 
 /-! # Probabilistic safety / reachability of a discrete-time Markov chain by dynamic programming
 
-Source: work-sync `theory/T-reachability-stochastic.md` (reach / safety probability
+Dynamic-programming recursions for the safety and reach-avoid probabilities of a discrete-time
+Markov process, and the verification direction of the deterministic HJB equation.
+
+Scope.
+* Probability theory, not an engineering result.
+* A process `X` adapted to a filtration `𝓕` on a probability space that is Markov with kernels
+  `K s t` (conditional-expectation form, written out as the hypothesis `h` of each theorem: for
+  `s ≤ t` and bounded measurable `g`, `E[g(X_t) | 𝓕_s] = ∫ g dK_{s,t}(X_s)` a.s.) and
+  time-homogeneous one-step kernel `Q = K k (k+1)`; a measurable safe set `A`.
+* `safeValue Q A N`: the value function `V_0 = 1`, `V_{N+1}(x) = ∫ 1_A(y) V_N(y) Q(x, dy)`
+  (`0 ≤ V_N ≤ 1`, measurable); `stayIn X A k N = ∏_{i<N} 1_A(X_{k+1+i})`: indicator that the
+  path stays in `A` during the next `N` steps after time `k`.
+
+Source: work-sync theory/T-reachability-stochastic.md (reach / safety probability
 `r(x, t)` of a Markov process, Abate et al. 2008 dynamic programming recursion for discrete-time
 Markov kernels: `V_N = 1`, `V_k(x) = ∫ 1_A(y) V_{k+1}(y) Q(x, dy)`).
 
-Foundation (probability), not an engineering result.
-
-Setting: a process `X` adapted to a filtration `𝓕` on a probability space that is Markov with
-kernels `K s t` (conditional-expectation form, written out as the hypothesis `h` of each theorem:
-for `s ≤ t` and bounded measurable `g`, `E[g(X_t) | 𝓕_s] = ∫ g dK_{s,t}(X_s)` a.s.) and
-time-homogeneous one-step kernel `Q = K k (k+1)`; a measurable safe set `A`.
-* `safeValue Q A N`: the value function `V_0 = 1`, `V_{N+1}(x) = ∫ 1_A(y) V_N(y) Q(x, dy)`
-  (`0 ≤ V_N ≤ 1`, measurable).
-* `stayIn X A k N = ∏_{i<N} 1_A(X_{k+1+i})`: indicator that the path stays in `A` during the next
-  `N` steps after time `k`.
-* `safety_dp`: `P(X_{k+1}, …, X_{k+N} ∈ A | 𝓕_k) = V_N(X_k)` a.s. (dynamic programming).
-* `safety_prob_eq`: `P(X_1, …, X_N ∈ A) = E[V_N(X_0)]`; the hitting probability of `Aᶜ`
+Results.
+* `safety_dp` — `P(X_{k+1}, …, X_{k+N} ∈ A | 𝓕_k) = V_N(X_k)` a.s. (dynamic programming).
+* `safety_prob_eq` — `P(X_1, …, X_N ∈ A) = E[V_N(X_0)]`; the hitting probability of `Aᶜ`
   within `N` steps is `1 − E[V_N(X_0)]`.
-* Reach-avoid (the note's `r(x, t) = P_x(τ_T ≤ t, τ_∂D > τ_T)` in discrete time):
-  `reachAvoid X T D k N` is defined by the recursion `R_{k,0} = 1_T(X_k)`,
-  `R_{k,N+1} = 1_T(X_k) + 1_{D∖T}(X_k) R_{k+1,N}`, and `reachAvoid_eq_indicator` shows it is the
+* `reachAvoid_eq_indicator`, `reachAvoid_dp` — reach-avoid (the note's
+  `r(x, t) = P_x(τ_T ≤ t, τ_∂D > τ_T)` in discrete time): `reachAvoid X T D k N` is defined by
+  the recursion `R_{k,0} = 1_T(X_k)`, `R_{k,N+1} = 1_T(X_k) + 1_{D∖T}(X_k) R_{k+1,N}`, and is the
   indicator of `{∃ j ≤ N, X_{k+j} ∈ T ∧ ∀ i < j, X_{k+i} ∈ D ∖ T}`; `reachValue` is
-  `W_0 = 1_T`, `W_{N+1} = 1_T + 1_{D∖T} ∫ W_N dQ` (`0 ≤ W_N ≤ 1`), and `reachAvoid_dp`:
+  `W_0 = 1_T`, `W_{N+1} = 1_T + 1_{D∖T} ∫ W_N dQ` (`0 ≤ W_N ≤ 1`), and
   `P(reach-avoid within N | 𝓕_k) = W_N(X_k)` a.s. (Abate et al. 2008 recursion).
+* Continuous-time HJB (deterministic optimal control; verification direction):
+  * `hjb_le_cost`: a `C¹` function `V` satisfying the HJB inequality
+    `∂ₜV + D_yV · f(t, y, w) + L(t, y, w) ≥ 0` (all states `y`, all admissible `w`) and
+    `V(T, ·) = g` is a lower bound for the cost of every admissible pair from `x(0)`;
+  * `hjb_eq_cost`: equality along a pair on which the HJB expression vanishes;
+  * `hjb_verification`: hence `V(0, x₀)` is the least admissible cost (the value) and a pair
+    attaining the minimum in the HJB equation along its trajectory is optimal;
+  * `lq_value` (non-vacuity): for `ẋ = u`, cost `∫₀ᵀ (x² + u²)`, the Riccati solution
+    `V(t, x) = tanh(T − t) x²` verifies HJB and the minimal cost from `x₀` is `tanh(T) x₀²`.
+  Proof: chain rule for `t ↦ V(t, x(t))` and the integral comparison
+  `intervalIntegral.sub_le_integral_of_hasDeriv_right_of_le` / FTC.
 
-Continuous-time HJB (deterministic optimal control; verification direction).
-* `hjb_le_cost`: a `C¹` function `V` satisfying the HJB inequality
-  `∂ₜV + D_yV · f(t, y, w) + L(t, y, w) ≥ 0` (all states `y`, all admissible `w`) and `V(T, ·) = g`
-  is a lower bound for the cost of every admissible pair from `x(0)`;
-* `hjb_eq_cost`: equality along a pair on which the HJB expression vanishes;
-* `hjb_verification`: hence `V(0, x₀)` is the least admissible cost (the value) and a pair
-  attaining the minimum in the HJB equation along its trajectory is optimal;
-* `lq_value` (non-vacuity): for `ẋ = u`, cost `∫₀ᵀ (x² + u²)`, the Riccati solution
-  `V(t, x) = tanh(T − t) x²` verifies HJB and the minimal cost from `x₀` is `tanh(T) x₀²`.
-Proof: chain rule for `t ↦ V(t, x(t))` and the integral comparison
-`intervalIntegral.sub_le_integral_of_hasDeriv_right_of_le` / FTC.  The converse direction (the
-value function, when `C¹`, satisfies HJB) and the stochastic HJB `∂ₜr + sup_u Lᵘ r = 0` of the note
-are not formalized (the latter needs the generator of a controlled diffusion / Itô calculus).
+Not formalized.
+* The converse direction (the value function, when `C¹`, satisfies HJB) and the stochastic HJB
+  `∂ₜr + sup_u Lᵘ r = 0` of the note (the latter needs the generator of a controlled diffusion /
+  Itô calculus).
 -/
 
 noncomputable section

@@ -6,11 +6,31 @@ import theorem.Dynamics.Locality
 
 /-! # Regions of attraction and LaSalle estimates
 
-Model boundary. Autonomous continuous-time ODE `ẋ = f x` on
-`Dynamics.State n = EuclideanSpace ℝ (Fin n)` (the complete closed-loop field supplied by the
-caller); no input, delay, switching, or time-variation. Solutions are `IsIntegralCurveOn` curves
-on `[0, ∞)` (one-sided derivative at `0`). `V̇ x = fderiv ℝ V x (f x)`.
+Region-of-attraction estimates from LaSalle's invariance principle, for `C¹` fields without the
+global Lipschitz hypothesis of the upstream theorem.
 
+Scope.
+* Autonomous continuous-time ODE `ẋ = f x` on `Dynamics.State n = EuclideanSpace ℝ (Fin n)` (the
+  complete closed-loop field supplied by the caller); no input, delay, switching, or
+  time-variation. Solutions are `IsIntegralCurveOn` curves on `[0, ∞)` (one-sided derivative at
+  `0`). `V̇ x = fderiv ℝ V x (f x)`.
+* Every theorem here is a generic implication about an arbitrary field `f` (and function `V`); no
+  model family is defined or fixed, so they are foundation results (Rules §3). The semantic
+  predicates are the Flow / LeanForControl ones: `IsPositivelyInvariant`, `IsTrajectoryOn`,
+  `LocalAsymptoticStable` from LeanForControl, `Flow.ForwardComplete` and
+  `Flow.GloballyAsymptoticallyStable` (equilibrium, forward completeness and LeanForControl's
+  `GlobalAsymptoticStable`) from `theorem/Flow/Defs.lean`; forward completeness of a globally
+  Lipschitz field is `Flow.forwardComplete_of_lipschitzWith`.
+* A region-of-attraction estimate is outside the sentence language of the library (a basin is a
+  set of initial states, not a sentence about the equilibrium); model families that use it keep
+  their conclusions as connection statements on the sentences it implies, or as private
+  implementation evidence.
+
+Source: work-sync `theory/T-lyapunov-function-method.md` §1.4 (LaSalle invariance principle);
+interface for later work-sync formalizations (PLL potential-well basins, equal-area estimates);
+LaSalle from LeanForControl (Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.4).
+
+Results.
 * Region-of-attraction estimate. "**`S` is contained in the region of attraction** of `x_eq`"
   is written out in every statement as
   `∀ x₀ ∈ S, (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
@@ -20,10 +40,9 @@ on `[0, ∞)` (one-sided derivative at `0`). `V̇ x = fderiv ℝ V x (f x)`.
   solution from such an initial state converges to `x_eq`. The region of attraction itself, the
   largest such set, is `{x₀ | ∀ x ∈ ({x₀} : Set ℝⁿ), …}` (the same condition for the singleton
   `{x₀}`; `regionOfAttraction_iff_subset`). No stability (in the sense of Lyapunov) and no
-  equilibrium property of `x_eq` is part of this condition. (The former definitions
-  `RegionOfAttraction` / `regionOfAttraction` are removed: behaviour is defined only in the
-  semantic layer, `theorem/Flow/Defs.lean`; the namespace lemmas `RegionOfAttraction.mono`,
-  `.union`, `.tendsto` keep their names and are applied by full name.)
+  equilibrium property of `x_eq` is part of this condition. (Behaviour is defined only in the
+  semantic layer, `theorem/Flow/Defs.lean`, so the condition is not a definition; the lemmas
+  `RegionOfAttraction.mono`, `.union`, `.tendsto` are applied by full name.)
 * `lasalle_invariance_principle_of_contDiff`: LaSalle's principle for a `C¹` field **without**
   the global Lipschitz hypothesis of the upstream theorem; the field is globalized by a smooth
   cutoff that agrees with it near the compact set `Ω`.
@@ -39,23 +58,6 @@ on `[0, ∞)` (one-sided derivative at `0`). `V̇ x = fderiv ℝ V x (f x)`.
 * Links: `LocalAsymptoticStable` plus forward completeness gives a ball inside the region of
   attraction; `GloballyAsymptoticallyStable` puts the whole space `univ` in the region of
   attraction.
-
-Connection architecture. Every theorem here is a generic implication about an arbitrary field `f`
-(and function `V`); no model family is defined or fixed, so they are foundation results
-(Rules §3, port policy §4): the seven former `@[powerlib_domain]` labels are relabeled
-`@[powerlib_foundation]`, with unchanged statements. The semantic predicates are the Flow /
-LeanForControl ones: `IsPositivelyInvariant`, `IsTrajectoryOn`, `LocalAsymptoticStable` from
-LeanForControl, `Flow.ForwardComplete` and `Flow.GloballyAsymptoticallyStable` (equilibrium,
-forward completeness and LeanForControl's `GlobalAsymptoticStable`) from `theorem/Flow/Defs.lean`;
-forward completeness of a globally Lipschitz field is `Flow.forwardComplete_of_lipschitzWith`.
-A region-of-attraction estimate is outside the sentence language of the library (a basin is a
-set of initial states, not a sentence about the equilibrium); model families that use it keep
-their conclusions as connection statements on the sentences it implies, or as private
-implementation evidence.
-
-Source: interface for later work-sync formalizations (PLL potential-well basins, equal-area
-estimates); LaSalle from LeanForControl (Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.4).
-powerlib Phase 0, P0a.
 -/
 
 noncomputable section

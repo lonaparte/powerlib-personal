@@ -2,26 +2,40 @@ import dependencies.Mathlib
 import theorem.Attributes
 import theorem.Stochastic.SPH
 
-/-! # Itô correction of the synchronous-machine SPHS (foundation)
+/-! # Itô correction of the synchronous-machine SPHS
+
+Static foundation: the Itô correction `½ tr(Σ Σᵀ ∇²H)` of the seven-state synchronous-machine
+pH model under sparse, state-independent terminal and torque noise.
+
+Model boundary.
+* Seven-state SM pH model `x = (Ψ_d, Ψ_q, Ψ_f, Ψ_kd, Ψ_kq, p, δ)`,
+  `H = ½ Ψᵀ L⁻¹ Ψ + p²/(2M) + V_el(δ)`, constant diffusion columns `σ_{v,d} e_{Ψd}`,
+  `σ_{v,q} e_{Ψq}`, `σ_T e_p`.
+* The Itô correction is the algebraic expression `½ tr(Σ Σᵀ ∇²H)`
+  (`Stochastic.SPH.itoCorrection`); nothing about SDE solutions or expectations is claimed.
+* For the magnetic block we use the axis-separated (block-diagonal) inductance
+  `L = diag(L_d-block (d, f, kd), L_q-block (q, kq))`, written with Mathlib's `fromBlocks`.
 
 Source: work-sync `theory/T-sync-machine-stochastic.md` §1.1 (sparse diffusion `Σ_v`, `Σ_T`,
 eq. (1.2)), §1.3 (eqs. (1.4)–(1.6): `Δ_Itô^SM = ½[σ_{v,d}² (∇²H)_{Ψd Ψd} + σ_{v,q}² (∇²H)_{Ψq Ψq}
 + σ_T² (∇²H)_{pp}]`, `(L⁻¹)_{qq} = 1/L_q^eff`, `L_q^eff = L_q − L_aq²/L_kqkq`), and
-`T-grid-disturbance-stochastic.md` §1.2.b (SM terminal noise is state-independent).
+`theory/T-grid-disturbance-stochastic.md` §1.2.b (SM terminal noise is state-independent).
 
-Model boundary.  Seven-state SM pH model `x = (Ψ_d, Ψ_q, Ψ_f, Ψ_kd, Ψ_kq, p, δ)`,
-`H = ½ Ψᵀ L⁻¹ Ψ + p²/(2M) + V_el(δ)`, constant diffusion columns `σ_{v,d} e_{Ψd}`,
-`σ_{v,q} e_{Ψq}`, `σ_T e_p`.  The Itô correction is the algebraic expression
-`½ tr(Σ Σᵀ ∇²H)` (`Stochastic.SPH.itoCorrection`); nothing about SDE solutions or expectations is
-claimed.
-For the magnetic block we use the axis-separated (block-diagonal) inductance
-`L = diag(L_d-block (d, f, kd), L_q-block (q, kq))`, written with Mathlib's `fromBlocks`.
+Results.
+* `itoCorrection_sparseNoise` — for a sparse diffusion with distinct target coordinates the Itô
+  correction only sees the diagonal Hessian entries, `½ Σ_j σ_j² K_{c_j c_j}`; `smIto` — the SM
+  correction (1.5) involves only the three entries at `Ψ_d`, `Ψ_q`, `p` (independent of `V_el`).
+* `smIto_nonneg`, `smIto_nonneg_of_diag`, `inv_diag_pos` — `Δ_Itô^SM ≥ 0` for a positive
+  semidefinite Hessian, or from positive diagonal entries of `L⁻¹` (`L ≻ 0`) and `1/M > 0`.
+* `qBlock_inv_00` — Schur complement `(L_qblock⁻¹)_{qq} = 1/(L_q − L_aq²/L_kqkq)`;
+  `qBlock_effective_lt` — with a coupled damper `L_q^eff < L_q`; `fromBlocks_inv_q` — the
+  `(Ψ_q, Ψ_q)` entry of `L⁻¹` is the `(0,0)` entry of the q-block inverse.
 
-Correction (T-sync-machine-stochastic §1.3).  The note first writes
-"`(∇²H)_{Ψq Ψq} = (L⁻¹)_{qq} = 1/L_q` because `Ψ_q` is decoupled", and later uses
-`L_q^eff = L_q − L_aq²/L_kqkq`.  The first statement is wrong whenever the q damper is coupled:
-`(L⁻¹)_{qq} = 1/(L_q − L_aq²/L_kqkq)` (`qBlock_inv_00`), and it equals `1/L_q` iff
-`L_aq = 0` (`qBlock_inv_00_eq_inv_Lq_iff`).
+Correction (T-sync-machine-stochastic §1.3).
+* The note first writes "`(∇²H)_{Ψq Ψq} = (L⁻¹)_{qq} = 1/L_q` because `Ψ_q` is decoupled", and
+  later uses `L_q^eff = L_q − L_aq²/L_kqkq`.  The first statement is wrong whenever the q damper
+  is coupled: `(L⁻¹)_{qq} = 1/(L_q − L_aq²/L_kqkq)` (`qBlock_inv_00`), and it equals `1/L_q` iff
+  `L_aq = 0` (`qBlock_inv_00_eq_inv_Lq_iff`).
 -/
 
 noncomputable section

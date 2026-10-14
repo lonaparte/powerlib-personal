@@ -2,39 +2,42 @@ import theorem.LTI.Plant
 
 /-! # Closed-form flow of a real 2×2 system with complex eigenvalues (foundation)
 
-For a real matrix `A : Matrix (Fin 2) (Fin 2) ℝ` with `tr A = −2σ`, `det A = σ² + ω_d²` and
-`ω_d ≠ 0` (eigenvalues `−σ ± j ω_d`), the explicit candidate
+The explicit flow of `ẏ = A y` for a real `2 × 2` matrix with eigenvalues `−σ ± j ω_d`, its use as
+the time-domain closed form of two-state linear plants, and the matching matrix exponential in
+any dimension.
 
-`osc2 A σ ω_d p t = e^{−σ t} (cos(ω_d t) p + (sin(ω_d t)/ω_d) (A + σ I) p)`
+Scope.
+* A real matrix `A : Matrix (Fin 2) (Fin 2) ℝ` with `tr A = −2σ`, `det A = σ² + ω_d²` and
+  `ω_d ≠ 0` (eigenvalues `−σ ± j ω_d`); the matrix-exponential results hold in any size `n`.
+* Foundation only: `osc2` is an explicit closed form, and `trajectory_eq_osc2` is a generic
+  implication about an arbitrary caller-supplied two-state plant (Rules §3). It defines no
+  family. No Laplace inversion is imported.
 
-solves `ẏ = A y`, `y(0) = p` (`hasDerivAt_osc2`, `osc2_zero`). The proof uses only the 2×2
-Cayley–Hamilton identity `(A + σ I)² = −ω_d² I` (`shift_sq_mulVec`). Uniqueness of global
-solutions (Mathlib `ODE_solution_unique_univ`) then gives the flow law
-`osc2 p (s + t) = osc2 (osc2 p s) t` (`osc2_add`), and the half-period law
-`osc2 p (t + π/ω_d) = −e^{−σπ/ω_d} osc2 p t` (`osc2_add_half_period`) is a direct trigonometric
-identity.
+Source: work-sync `theory/T-frequency-stability.md` §1.7 (underdamped frequency response
+`e^{−σt}(cos ω_d t − α sin ω_d t)` and its nadir) and `theory/T-sfr-model.md` §1.5–§1.6
+(second-order SFR model and its nadir closed form).
 
-`trajectory_eq_osc2` connects this to any two-state linear plant (`Linear.Plant 2 p`) whose
-state matrix has that trace and determinant: every forward solution from `t = 0` under a constant
-input `u` with equilibrium `e` is `e + osc2 A σ ω_d (x 0 − e) t` for `t ≥ 0` (explicit candidate
-+ uniqueness of solution segments of the affine linear field, `Linear.trajectory_unique`). This
-is the time-domain closed form used by the frequency-nadir results; no Laplace inversion is
-imported.
-
-`one_add_ratio_sin_le_exp` is the elementary inequality
-`e^{−σu}(cos(ω_d u) + (σ/ω_d) sin(ω_d u)) ≤ 1` for `σ ≥ 0`, `ω_d > 0`, `u ≥ 0`, which bounds
-every later excursion of a damped response by its first extremum.
-
-Matrix exponential (any size `n`): `exp_smul_eq_of_hasDerivAt` (a differentiable `E` with
-`Ė = A E`, `E 0 = 1` is `t ↦ e^{tA}`) and `exp_smul_of_sq_eq` (if `B = A + a I` satisfies
-`B² = −w² I`, `w ≠ 0`, then `e^{tA} = e^{−at} (cos(wt) I + (sin(wt)/w) B)`, the matrix form of
-`osc2`); used by the lag covariance of the stochastic COI swing
-(`theorem/Frequency/StochasticCOI.lean`).
-
-Family and connection conclusions. This module is foundation only: `osc2` is an explicit closed
-form, and `trajectory_eq_osc2` is a generic implication about an arbitrary caller-supplied
-two-state plant (Rules §3). It defines no family. The former `@[powerlib_domain]` label of
-`trajectory_eq_osc2` (stated for an arbitrary `LTI.Model`) is now `@[powerlib_foundation]`.
+Results.
+* `osc2 A σ ω_d p t = e^{−σ t} (cos(ω_d t) p + (sin(ω_d t)/ω_d) (A + σ I) p)` solves `ẏ = A y`,
+  `y(0) = p` (`hasDerivAt_osc2`, `osc2_zero`). The proof uses only the 2×2 Cayley–Hamilton
+  identity `(A + σ I)² = −ω_d² I` (`shift_sq_mulVec`). Uniqueness of global solutions (Mathlib
+  `ODE_solution_unique_univ`) then gives the flow law `osc2 p (s + t) = osc2 (osc2 p s) t`
+  (`osc2_add`), and the half-period law `osc2 p (t + π/ω_d) = −e^{−σπ/ω_d} osc2 p t`
+  (`osc2_add_half_period`) is a direct trigonometric identity.
+* `trajectory_eq_osc2` connects this to any two-state linear plant (`Linear.Plant 2 p`) whose
+  state matrix has that trace and determinant: every forward solution from `t = 0` under a
+  constant input `u` with equilibrium `e` is `e + osc2 A σ ω_d (x 0 − e) t` for `t ≥ 0` (explicit
+  candidate + uniqueness of solution segments of the affine linear field,
+  `Linear.trajectory_unique`). This is the time-domain closed form used by the frequency-nadir
+  results.
+* `one_add_ratio_sin_le_exp` is the elementary inequality
+  `e^{−σu}(cos(ω_d u) + (σ/ω_d) sin(ω_d u)) ≤ 1` for `σ ≥ 0`, `ω_d > 0`, `u ≥ 0`, which bounds
+  every later excursion of a damped response by its first extremum.
+* Matrix exponential (any size `n`): `exp_smul_eq_of_hasDerivAt` (a differentiable `E` with
+  `Ė = A E`, `E 0 = 1` is `t ↦ e^{tA}`) and `exp_smul_of_sq_eq` (if `B = A + a I` satisfies
+  `B² = −w² I`, `w ≠ 0`, then `e^{tA} = e^{−at} (cos(wt) I + (sin(wt)/w) B)`, the matrix form of
+  `osc2`); used by the lag covariance of the stochastic COI swing
+  (`theorem/Frequency/StochasticCOI.lean`).
 -/
 
 noncomputable section

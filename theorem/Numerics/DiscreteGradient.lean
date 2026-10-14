@@ -1,20 +1,26 @@
 import theorem.PH.Nonlinear
 
-/-! # Discrete gradient method for port-Hamiltonian energies (foundation)
+/-! # Discrete gradient method for port-Hamiltonian energies
 
-* A discrete gradient of `H : (Fin n → ℝ) → ℝ` is a map `∇̄H(x, y)` with
-  `H y − H x = ∇̄H(x, y) · (y − x)` (`DiscreteGradient`).
-* Any discrete gradient makes the implicit step `x⁺ − x = h((J − R) ∇̄H + g u)` (`J` skew)
-  satisfy `H(x⁺) − H(x) = h(uᵀ gᵀ∇̄H − ∇̄Hᵀ R ∇̄H)` (`discreteGradient_energy_step`); in particular
-  `H` is conserved **exactly** when `R = 0, u = 0` (`discreteGradient_conserves`), and with
-  `h ≥ 0`, `R ⪰ 0` the discrete dissipation inequality holds (`discreteGradient_dissipation`).
-* The midpoint (average-vector-field) discrete gradient of a quadratic `H = ½ xᵀ Q x`, `Q`
-  symmetric, is `Q (x + y) / 2` (`midpointDiscreteGradient`).
+A discrete-gradient step reproduces the port-Hamiltonian energy balance exactly: conservation
+without dissipation and inputs, and a discrete dissipation inequality otherwise.
 
-Statements about arbitrary matrices and energies (foundation); the continuous-time
-port-Hamiltonian framework is `theorem/PH/Nonlinear.lean`.
+Scope.
+* Statements about arbitrary matrices and energies; the continuous-time port-Hamiltonian
+  framework is `theorem/PH/Nonlinear.lean`.
 
-Source: work-sync `theory/T-ph.md` §2.5.
+Source: work-sync theory/T-ph.md §2.5.
+
+Results.
+* `DiscreteGradient` — a discrete gradient of `H : (Fin n → ℝ) → ℝ` is a map `∇̄H(x, y)` with
+  `H y − H x = ∇̄H(x, y) · (y − x)`.
+* `discreteGradient_energy_step` — any discrete gradient makes the implicit step
+  `x⁺ − x = h((J − R) ∇̄H + g u)` (`J` skew) satisfy
+  `H(x⁺) − H(x) = h(uᵀ gᵀ∇̄H − ∇̄Hᵀ R ∇̄H)`; in particular `H` is conserved **exactly** when
+  `R = 0, u = 0` (`discreteGradient_conserves`), and with `h ≥ 0`, `R ⪰ 0` the discrete
+  dissipation inequality holds (`discreteGradient_dissipation`).
+* `midpointDiscreteGradient` — the midpoint (average-vector-field) discrete gradient of a
+  quadratic `H = ½ xᵀ Q x`, `Q` symmetric, is `Q (x + y) / 2`.
 -/
 
 noncomputable section

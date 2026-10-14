@@ -5,45 +5,53 @@ import Mathlib.Analysis.Calculus.LocalExtr.Basic
 
 /-! # Multi-parameter Cramér–Rao bound: `Cov_θ(T) ⪰ J 𝓘(θ)⁻¹ Jᵀ`
 
-Source: work-sync `theory/T-cramer-rao-bound.md` §1.1 (`Cov(θ̂) ⪰ 𝓘⁻¹` for unbiased estimators of a
-finite-dimensional parameter, Fisher matrix `𝓘_ij = E[∂_iℓ ∂_jℓ]`), §1.5 (vector parameters with
-nuisance components); `projects/basin-guard/notes/concepts/detection-tolerance.md` §2.  The scalar
-Gaussian-location bound and the discrete Gaussian Fisher matrix are in
-`theorem/Estimation/CramerRao.lean`; the block (nuisance) inequality is in
-`theorem/Estimation/FisherAlgebra.lean`.
+The multi-parameter Cramér–Rao inequality on finite sample spaces (complete proof) and on
+general probability spaces and density families (with the regularity premises stated
+explicitly).
 
-Foundation (probability / statistics), not an engineering result.  The parameter is `θ ∈ ℝ^p`
-(`Fin p → ℝ`), the statistic `T` takes values in `ℝ^k`, `ψ(θ) = E_θ[T]` has Jacobian `J`
-(`k × p`, `LinearMap.toMatrix'`); for an unbiased estimator `k = p`, `ψ = id`, `J = I`.
+Scope.
+* Probability / statistics, not an engineering result.
+* The parameter is `θ ∈ ℝ^p` (`Fin p → ℝ`), the statistic `T` takes values in `ℝ^k`,
+  `ψ(θ) = E_θ[T]` has Jacobian `J` (`k × p`, `LinearMap.toMatrix'`); for an unbiased estimator
+  `k = p`, `ψ = id`, `J = I`.
+* Finite sample space (sums in place of integrals, so differentiation under the sum is
+  automatic): `pmf θ ω` are probability vectors, differentiable in `θ` at the true parameter,
+  nonnegative and normalized for `θ'` near `θ` (zero probabilities are allowed: there the
+  derivative vanishes because `θ` is a local minimum). Definitions: `scoreFin`
+  (`s_i = ∂_i p_θ / p_θ`, equal to `∂_i log p_θ` where `p_θ > 0`, `scoreFin_eq_fderiv_log`),
+  `fisherFin` (`𝓘_ij = E_θ[s_i s_j]`), `meanFin`, `covFin`.
+* The scalar Gaussian-location bound and the discrete Gaussian Fisher matrix are in
+  `theorem/Estimation/CramerRao.lean`; the block (nuisance) inequality is in
+  `theorem/Estimation/FisherAlgebra.lean`.
 
-Finite sample space (complete proof, sums in place of integrals, so differentiation under the sum
-is automatic).  `pmf θ ω` are probability vectors, differentiable in `θ` at the true parameter,
-nonnegative and normalized for `θ'` near `θ` (zero probabilities are allowed: there the derivative
-vanishes because `θ` is a local minimum).  Definitions: `scoreFin` (`s_i = ∂_i p_θ / p_θ`, equal to
-`∂_i log p_θ` where `p_θ > 0`, `scoreFin_eq_fderiv_log`), `fisherFin` (`𝓘_ij = E_θ[s_i s_j]`),
-`meanFin`, `covFin`.
-* `crb_fin`: if `E_θ'[T] = ψ(θ')` near `θ` and `𝓘(θ) ≻ 0`, then `Cov_θ(T) − J 𝓘(θ)⁻¹ Jᵀ ⪰ 0`.
-* `crb_fin_unbiased`: unbiased near `θ` ⇒ `Cov_θ(T) − 𝓘(θ)⁻¹ ⪰ 0`.
+Source: work-sync theory/T-cramer-rao-bound.md §1.1 (`Cov(θ̂) ⪰ 𝓘⁻¹` for unbiased estimators of
+a finite-dimensional parameter, Fisher matrix `𝓘_ij = E[∂_iℓ ∂_jℓ]`), §1.5 (vector parameters
+with nuisance components); projects/basin-guard/notes/concepts/detection-tolerance.md §2.
 
-General probability space.
-* `gramMatrix_posSemidef`: the second-moment matrix of square-integrable variables is `⪰ 0`.
-* `crb_of_regular`: the covariance-inequality form.  With the regularity conditions taken as
-  explicit premises in integrated form, `E[S_i] = 0` and `E[T_j S_i] = J_ji`, a positive definite
-  `𝓘 = E[S Sᵀ]` gives `Cov(T) ⪰ J 𝓘⁻¹ Jᵀ`.
-* `crb_density`: densities `p_θ` with respect to any measure `μ`.  The regularity premise is the
+Results.
+* `crb_fin` — finite sample space: if `E_θ'[T] = ψ(θ')` near `θ` and `𝓘(θ) ≻ 0`, then
+  `Cov_θ(T) − J 𝓘(θ)⁻¹ Jᵀ ⪰ 0`.
+* `crb_fin_unbiased` — unbiased near `θ` ⇒ `Cov_θ(T) − 𝓘(θ)⁻¹ ⪰ 0`.
+* `gramMatrix_posSemidef` — general probability space: the second-moment matrix of
+  square-integrable variables is `⪰ 0`.
+* `crb_of_regular` — the covariance-inequality form. With the regularity conditions taken as
+  explicit premises in integrated form, `E[S_i] = 0` and `E[T_j S_i] = J_ji`, a positive
+  definite `𝓘 = E[S Sᵀ]` gives `Cov(T) ⪰ J 𝓘⁻¹ Jᵀ`.
+* `crb_density` — densities `p_θ` with respect to any measure `μ`. The regularity premise is the
   differentiation of `θ' ↦ ∫ p_θ' dμ` and `θ' ↦ ∫ p_θ' T_j dμ` under the integral sign, stated
   explicitly as `HasFDerivAt` hypotheses with derivatives `∫ ∂_θ p_θ dμ` and `∫ T_j ∂_θ p_θ dμ`
-  (together with integrability of those derivatives and square integrability of `T` and the score
-  under `P_θ = p_θ μ`); the conclusion is `Cov_θ(T) ⪰ J 𝓘(θ)⁻¹ Jᵀ`.
+  (together with integrability of those derivatives and square integrability of `T` and the
+  score under `P_θ = p_θ μ`); the conclusion is `Cov_θ(T) ⪰ J 𝓘(θ)⁻¹ Jᵀ`.
 
-Proof (all versions).  The joint Gram matrix of `(T − E T, S)` is the positive semidefinite block
+Proof (all versions). The joint Gram matrix of `(T − E T, S)` is the positive semidefinite block
 matrix `[[Cov, J], [Jᵀ, 𝓘]]`; Mathlib's Schur-complement criterion
-`Matrix.PosDef.fromBlocks₂₂` gives `Cov − J 𝓘⁻¹ Jᵀ ⪰ 0`.  The cross block is `J` because
-`Σ_ω ∂p_θ(ω) = 0` and `Σ_ω T(ω) ∂p_θ(ω) = ∂ψ` (derivatives of the normalization and of the mean;
-uniqueness of Fréchet derivatives).
+`Matrix.PosDef.fromBlocks₂₂` gives `Cov − J 𝓘⁻¹ Jᵀ ⪰ 0`. The cross block is `J` because
+`Σ_ω ∂p_θ(ω) = 0` and `Σ_ω T(ω) ∂p_θ(ω) = ∂ψ` (derivatives of the normalization and of the
+mean; uniqueness of Fréchet derivatives).
 
-Not proved: sufficient conditions (domination) that discharge the interchange premise of
-`crb_density` for concrete continuous families such as the multi-parameter Gaussian model.
+Not formalized.
+* Sufficient conditions (domination) that discharge the interchange premise of `crb_density`
+  for concrete continuous families such as the multi-parameter Gaussian model.
 -/
 
 noncomputable section

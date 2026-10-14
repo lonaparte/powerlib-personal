@@ -1,14 +1,20 @@
 import theorem.Attributes
 import dependencies.Mathlib
 
-/-! # Filter power balance and the rectifier right-half-plane zero (foundation)
+/-! # Filter power balance and the rectifier right-half-plane zero
 
-Setting: one series R–L filter between the PCC and the converter bridge, dq frame rotating at
+These are identities (foundation), not stability statements about a closed loop.
+
+Model boundary.
+One series R–L filter between the PCC and the converter bridge, dq frame rotating at
 `ω`, IN-positive current (work-sync `conventions.md` §D1), per-unit (multiply every power by
 `3/2` for SI amplitude-invariant quantities; `pcc_eq_bridge_add_losses_si`):
 `L di_d/dt = v_d − v^conv_d − R i_d + ω L i_q`, `L di_q/dt = v_q − v^conv_q − R i_q − ω L i_d`.
 `P_PCC = v_d i_d + v_q i_q`, `P_bridge = v^conv_d i_d + v^conv_q i_q`.
 
+Source: work-sync `theory/T-vsc-dc-voltage-control.md` §1.1.1, §1.5, §2.5.
+
+Results.
 * `pcc_eq_bridge_add_losses`: along any differentiable current trajectory satisfying the KVL,
   `P_PCC = P_bridge + R |i|² + L d(|i|²/2)/dt` exactly (the rotation terms
   `ω L (i_q i_d − i_d i_q)` cancel). T-vsc-dc-voltage-control §1.1.1 boxed.
@@ -22,10 +28,6 @@ Setting: one series R–L filter between the PCC and the converter bridge, dq fr
   the open right half-plane iff `I_d0 > 0` (rectifier mode; inverter mode `I_d0 < 0` gives a
   left-half-plane zero). `bridgeZero_with_R`: with `R ≠ 0` the zero moves to
   `(V_d0 − 2 R I_d0)/(L I_d0)` (the note neglects `R`).
-
-These are identities (foundation), not stability statements about a closed loop.
-
-Source: work-sync `theory/T-vsc-dc-voltage-control.md` §1.1.1, §1.5, §2.5.
 -/
 
 noncomputable section

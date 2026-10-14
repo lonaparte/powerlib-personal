@@ -3,9 +3,9 @@ import theorem.Frequency.SFR
 
 /-! # Latched single-stage UFLS in closed loop with a linear frequency-response model
 
-Source: work-sync `theory/T-ufls.md` §1.1 (single-stage shedding added to the swing equation),
-with the corrected latched trip rule of `Frequency.UFLS` (`∃ τ ∈ [0, t], Δω(τ) ≤ −θ`,
-`latchedTrip_iff_sInf`), and §1.4 (state after shedding).
+The closed loop of a linear frequency-response plant with a latched single-stage load-shedding
+relay: representation, existence, uniqueness and convergence of latched trajectories, and their
+instances on the swing + governor and reheat SFR plants.
 
 Model boundary.
 * Plant: any continuous-time linear plant `m : Linear.Plant n 1` (states in
@@ -24,15 +24,19 @@ Model boundary.
   `ContinuousOn x (Ici 0) ∧ ∀ t, 0 ≤ t → HasDerivWithinAt x (m.inputField (load (ΔPL −
   {s | ∃ τ ∈ Icc 0 s, x τ i₀ ≤ -θ}.indicator (fun _ => shed) t)) (x t)) (Ici t) t`.
 
+Source: work-sync `theory/T-ufls.md` §1.1 (single-stage shedding added to the swing equation),
+with the corrected latched trip rule of `Frequency.UFLS` (`∃ τ ∈ [0, t], Δω(τ) ≤ −θ`,
+`latchedTrip_iff_sInf`), and §1.4 (state after shedding).
+
 Results.
-* `latched_representation_noTrip`, `latched_representation_trip` (foundation, any plant): every
-  latched trajectory equals the unshed response (`Linear.solution`) until the first time that
-  response reaches `−θ`, and the post-shedding response from that state afterwards.
+* `latched_representation_noTrip`, `latched_representation_trip` (foundation, any plant):
+  every latched trajectory equals the unshed response (`Linear.solution`) until the first time
+  that response reaches `−θ`, and the post-shedding response from that state afterwards.
 * `latched_unique`, `latched_exists` (foundation, any plant): the closed loop has exactly one
   solution from every initial state (piecewise solution exists and is unique).
-* `latched_tendsto_of_trip`, `latched_tendsto_of_noTrip` (foundation, any plant): with a Hurwitz
-  state matrix, a trajectory that trips converges to the post-shedding equilibrium, one that
-  never trips to the pre-shedding equilibrium.
+* `latched_tendsto_of_trip`, `latched_tendsto_of_noTrip` (foundation, any plant): with a
+  Hurwitz state matrix, a trajectory that trips converges to the post-shedding equilibrium, one
+  that never trips to the pre-shedding equilibrium.
 * `swingGovernor_latched_trip` (private): two-state swing + governor plant from rest,
   underdamped, `ΔP_L > 0`: if the unprotected nadir is at or below `−θ`, the relay trips and
   `Δω(t) → −(ΔP_L − p P⁰)/(K_R + D)` (§1.4 post-shedding steady state).
@@ -40,15 +44,16 @@ Results.
   `SFR.isHurwitz_of_hp_fraction`: a trajectory that trips converges to
   `Δω = −(ΔP_L − p P⁰)/(K_R + D)`.
 
-Family and connection conclusions. The latched closed loop is a switched system with a
-state-dependent, latched input; it is outside the sentence language (no family). The
-representation, existence, uniqueness and convergence statements are generic implications about
-an arbitrary caller-supplied plant (formerly `@[powerlib_domain]`, now `@[powerlib_foundation]`,
-Rules §3). The two instances on the swing + governor and SFR plants are trajectory-level results
-about specific engineering models: private implementation evidence (Rules §3a), derived from the
-generic statements, the generic closed form `LTI.trajectory_eq_osc2` and static facts of
-`SwingGovernor`, `SwingNadir` and `SFR`. The stability of the two plants themselves is published
-by `SwingGovernor.family` and `SFR.family`.
+Family and connection conclusions.
+* None: the latched closed loop is a switched system with a state-dependent, latched input; it
+  is outside the sentence language (no family). The representation, existence, uniqueness and
+  convergence statements are generic implications about an arbitrary caller-supplied plant
+  (foundation, Rules §3).
+* The two instances on the swing + governor and SFR plants are trajectory-level results about
+  specific engineering models: private implementation evidence (Rules §3a), derived from the
+  generic statements, the generic closed form `LTI.trajectory_eq_osc2` and static facts of
+  `SwingGovernor`, `SwingNadir` and `SFR`. The stability of the two plants themselves is
+  published by `SwingGovernor.family` and `SFR.family`.
 -/
 
 noncomputable section

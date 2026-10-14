@@ -8,12 +8,13 @@ import theorem.Dynamics.Shift
 /-! # Nonlinear port-Hamiltonian systems
 
 Nonlinear input-state-output port-Hamiltonian systems with a general, not necessarily quadratic,
-Hamiltonian, read in the Port semantics of the library (`theorem/Port/Defs.lean`).
+Hamiltonian, read in the Port semantics of the library (`theorem/Port/Defs.lean`); the generic
+framework on which concrete pH families are built.
 
-Model boundary.
-* State: `x : State n = EuclideanSpace ℝ (Fin n)`, the state space of the Flow and Port semantics.
-  The order and physical meaning of the coordinates is fixed by each concrete instance; this module
-  is coordinate-agnostic.
+Scope.
+* State: `x : State n = EuclideanSpace ℝ (Fin n)`, the state space of the Flow and Port
+  semantics. The order and physical meaning of the coordinates is fixed by each concrete
+  instance; this module is coordinate-agnostic.
 * Input: `u : Fin m → ℝ`, an arbitrary (possibly time-varying) port effort.
   Output: `y = g(x)ᵀ ∇H(x)`, the collocated conjugate flow.
 * Dynamics, continuous time: `ẋ = (J(x) − R(x)) ∇H(x) + g(x) u`.
@@ -34,60 +35,66 @@ Model boundary.
   (Lyapunov stability of a strict local minimum of `H` under zero input).
 
 Source: work-sync `theory/T-ph.md` §1.1 (form (1.1), structure assumptions 1–2, 4),
-§1.2 (power balance (1.2), integral balance (1.3), passivity (1.4), zero-input corollary).
-Correction: §1.0/§1.1 list `H ≥ H_min > −∞` as a structural assumption. It is not needed
-for (1.2), (1.3), the dissipation inequality, or Lyapunov stability; it is used here only for
-the passivity statement (1.4), where the storage is `H − H_min`. The §1.2 corollary claim
-"global asymptotic stability by LaSalle" is not formalized here (LaSalle is out of scope).
+§1.2 (power balance (1.2), integral balance (1.3), passivity (1.4), zero-input corollary);
+`theory/T-grid-disturbance.md` (1.1), §1.5 (1.2) (disturbance channels).
 
-Deterministic disturbance channels (`gridDisturbance_field`, `gridDisturbance_power_balance`):
-a nonlinear pH model driven by its own control port `u_S` and three further deterministic input
-channels, a constant frequency channel `B_ω u_ω`, a state-dependent voltage channel `B_v(x) u_v`
-and a constant channel `B_T u_T` (T-grid-disturbance (1.1)). Result: the pointwise energy balance
-(T-grid-disturbance §1.5 (1.2)) split by channel,
-`Ḣ = −∇Hᵀ R ∇H + y_Sᵀ u_S + y_ωᵀ u_ω + y_vᵀ u_v + y_Tᵀ u_T`, `y_k = B_kᵀ ∇H`; no noise (the
-σ → 0 limit of the note), no Itô correction. A static identity for every nonlinear pH model; the
-linear diagonal special case of (1.2) is `powerlib.PH.DiagonalPH.power_balance`.
-Source: work-sync `theory/T-grid-disturbance.md` (1.1), §1.5 (1.2).
+Results (generic foundation for every nonlinear pH system).
+* Power balance (1.2) and its integral (1.3) (`power_balance`, `integral_power_balance`,
+  `trajectory_energy_derivative`), the dissipation inequality (`dissipation_inequality`,
+  `integral_dissipation`) and the zero-input corollary (`zeroInput_power_balance`,
+  `zeroInput_energy_antitone`), along the finite solution segments of the Port semantics
+  (`Port.System.IsTrajectoryOn`).
+* Passivity with storage `H − c` under a lower bound `c ≤ H` (`passiveWith_sub`,
+  `passive_of_bddBelow`); Lyapunov stability of a strict local minimum of `H` under zero input
+  (`IsStrictLocalMin.lyapunovStable`).
+* Shift to an operating point (`shift`, `shift_field`, `shift_H`, `holds_flow_shift_iff`,
+  `holds_passive_shift`, `isStrictLocalMin_shift_iff`).
+* Deterministic disturbance channels (`gridDisturbance_field`, `gridDisturbance_power_balance`):
+  a nonlinear pH model driven by its own control port `u_S` and three further deterministic
+  input channels, a constant frequency channel `B_ω u_ω`, a state-dependent voltage channel
+  `B_v(x) u_v` and a constant channel `B_T u_T` (T-grid-disturbance (1.1)). Result: the
+  pointwise energy balance (T-grid-disturbance §1.5 (1.2)) split by channel,
+  `Ḣ = −∇Hᵀ R ∇H + y_Sᵀ u_S + y_ωᵀ u_ω + y_vᵀ u_v + y_Tᵀ u_T`, `y_k = B_kᵀ ∇H`; no noise (the
+  σ → 0 limit of the note), no Itô correction. A static identity for every nonlinear pH model;
+  the linear diagonal special case of (1.2) is `powerlib.PH.DiagonalPH.power_balance`.
 
-## Port semantics and the connection interface
+Family and connection conclusions.
+* `NonlinearModel` is a generic framework — the class of all nonlinear pH systems — not a model
+  family. Its system map `NonlinearModel.system : Port.System n m` (state dynamics `field`,
+  output `y = g(x)ᵀ ∇H(x)`, supply `uᵀ y`) reads it in the Port semantics, and the theorems here
+  are generic implications for every pH system, hence foundation results (Rules §3, port
+  policy §4).
+* Downstream concrete models (GFL, PLL, VSC, synchronous machines, …) build their own `Family`
+  on this framework and publish connection statements; **no `Family` may take
+  `NonlinearModel n m` itself as its model type**, since admission would then treat every
+  generic theorem here as model-specific. The pattern is:
+  1. a structure `Model` (parameters, a selected operating point `point`, smoothness), and a map
+     `toPH : Model → NonlinearModel n m`;
+  2. `family : Family Model Requirement n m` with system map
+     `fun m => ((toPH m).shift m.point).system` — the pH system in coordinates centred at the
+     operating point, because the library reads flow sentences at the origin
+     (`Sentence.holds (.flow P) s = P.holds s.zeroInput 0`); without an operating point use
+     `(toPH m).system`;
+  3. `Family.IsNonlinearPH family (fun m => (toPH m).shift m.point)` holds by `fun _ => rfl`;
+  4. connection conclusions from the generic theorems:
+     * passivity — `connection% (m ∈ family.den .passive)` by
+       `hF.mem_den_passive (bddBelow_range_shift_H.mpr hH)` or
+       `hF.mem_den_passive_of_lowerBound c hc` (a lower bound on the Hamiltonian; the `.passive`
+       sentence is translation-invariant, so the bound may be stated on `toPH m` itself);
+     * Lyapunov stability — `connection% (m ∈ family.den (.flow .lyapunovStable))` by
+       `hF.mem_den_lyapunovStable_shift h` with `h : (toPH m).IsStrictLocalMin m.point`;
+     * any other flow sentence — `hF.mem_den_flow_shift` reduces `m ∈ family.den (.flow P)` to
+       `P.holds (toPH m).zeroInputField m.point`, the operating point of the untranslated
+       field;
+     * refutation of passivity — `Port.System.not_passive_of_equilibrium` /
+       `Port.System.not_passive_of_cycle` on `(toPH m).system`, published as
+       `connection% (m ∉ family.den .passive)`.
 
-`NonlinearModel` is a generic framework — the class of all nonlinear pH systems — not a model
-family. Its system map `NonlinearModel.system : Port.System n m` (state dynamics `field`, output
-`y = g(x)ᵀ ∇H(x)`, supply `uᵀ y`; formerly `toSystem` of the removed `Passivity` interface) reads
-it in the Port semantics, and the theorems here are generic implications for every pH system:
-passivity with storage `H − c` under a lower bound `c ≤ H` (`passiveWith_sub`,
-`passive_of_bddBelow`), Lyapunov stability of a strict local minimum of `H` under zero input
-(`IsStrictLocalMin.lyapunovStable`), and the power balance along solution segments. They are
-foundation results (Rules §3, port policy §4): the ten former `@[powerlib_domain]` labels are
-relabeled `@[powerlib_foundation]`; the trajectory results now use the finite solution segments of
-the Port semantics (`Port.System.IsTrajectoryOn`) instead of rays from time `0`, which is a
-strengthening.
-
-Downstream concrete models (GFL, PLL, VSC, synchronous machines, …) build their own `Family` on
-this framework and publish connection statements; **no `Family` may take `NonlinearModel n m`
-itself as its model type**, since admission would then treat every generic theorem here as
-model-specific. The pattern is:
-1. a structure `Model` (parameters, a selected operating point `point`, smoothness), and a map
-   `toPH : Model → NonlinearModel n m`;
-2. `family : Family Model Requirement n m` with system map
-   `fun m => ((toPH m).shift m.point).system` — the pH system in coordinates centred at the
-   operating point, because the library reads flow sentences at the origin
-   (`Sentence.holds (.flow P) s = P.holds s.zeroInput 0`); without an operating point use
-   `(toPH m).system`;
-3. `Family.IsNonlinearPH family (fun m => (toPH m).shift m.point)` holds by `fun _ => rfl`;
-4. connection conclusions from the generic theorems:
-   * passivity — `connection% (m ∈ family.den .passive)` by
-     `hF.mem_den_passive (bddBelow_range_shift_H.mpr hH)` or
-     `hF.mem_den_passive_of_lowerBound c hc` (a lower bound on the Hamiltonian; the `.passive`
-     sentence is translation-invariant, so the bound may be stated on `toPH m` itself);
-   * Lyapunov stability — `connection% (m ∈ family.den (.flow .lyapunovStable))` by
-     `hF.mem_den_lyapunovStable_shift h` with `h : (toPH m).IsStrictLocalMin m.point`;
-   * any other flow sentence — `hF.mem_den_flow_shift` reduces `m ∈ family.den (.flow P)` to
-     `P.holds (toPH m).zeroInputField m.point`, the operating point of the untranslated field;
-   * refutation of passivity — `Port.System.not_passive_of_equilibrium` /
-     `Port.System.not_passive_of_cycle` on `(toPH m).system`, published as
-     `connection% (m ∉ family.den .passive)`.
+Correction.
+* §1.0/§1.1 list `H ≥ H_min > −∞` as a structural assumption. It is not needed for (1.2), (1.3),
+  the dissipation inequality, or Lyapunov stability; it is used here only for the passivity
+  statement (1.4), where the storage is `H − H_min`. The §1.2 corollary claim "global asymptotic
+  stability by LaSalle" is not formalized here (LaSalle is out of scope).
 -/
 
 noncomputable section

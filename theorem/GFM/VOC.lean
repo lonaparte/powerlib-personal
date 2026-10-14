@@ -19,15 +19,17 @@ Model boundary.
 * Excluded: output current coupling `−κ_i i` (zero load), filters, inner loops, PWM, delays,
   multi-converter networks (no dVOC network result is claimed).
 
-Results (trajectory level, every solution on `[0, ∞)` with `v(0) ≠ 0`):
+Source: work-sync `theory/T-voc-dvoc.md` §1.2, §1.3, §1.8; `theory/T-gfm-control.md` §1.5.
+
+Results.
+Trajectory level, every solution on `[0, ∞)` with `v(0) ≠ 0`:
 * `r*` is the unique positive zero of the radial field `(κ_v (v*² − r²) − σ) r`.
 * `|v|²` solves the logistic equation `y' = 2 (c − κ_v y) y` and equals
   `1 / (κ_v/c + (1/|v(0)|² − κ_v/c) e^{−2ct})`; in particular `v(t) ≠ 0` for all `t ≥ 0`.
 * `|v(t)| → r*`.
 * Phase: `v(t) = (|v(t)| / |v(0)|) e^{j ω_s t} v(0)` — the phase rotates uniformly at `ω_s`.
 * The circle `|v| = r*` is invariant and carries exactly the solutions `r* e^{j(ω_s t + φ₀)}`.
-
-Algebra (foundation): polar decomposition of the loaded AHO and the dVOC complex frequency.
+* Algebra (foundation): polar decomposition of the loaded AHO and the dVOC complex frequency.
 
 Family and connection conclusions.
 * `AHO.family`: a complete system is the AHO parameter set itself, read as the no-load field in
@@ -52,14 +54,14 @@ Family and connection conclusions.
   `c = 0` the energy obeys `d|v|²/dt = −2 κ_v |v|⁴`, a strict Lyapunov function for `κ_v > 0`,
   conserved for `κ_v = 0` (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`) and growing for
   `κ_v < 0` (`Dynamics.unstable_of_chetaev`).
-* New connection conclusion for the module's own regime: under the standing assumptions the
+* Connection conclusion for the module's own regime: under the standing assumptions the
   origin is unstable (`Admissible.mem_den_unstable`): solutions leave the origin, towards the limit
   cycle of the trajectory-level results.
 * The limit-cycle results above (`normSq_formula`, `norm_tendsto_rstar`, `phase_rotation`,
   `norm_eq_rstar_of_start`, `limitCycle_isSolution`) are trajectory level and outside the sentence
   language (Rules §3a): they are private implementation evidence, as is the explicit logistic
-  formula `inv_normSq_eq` (formerly public foundation; the parameter type `AHO` now carries a
-  family, so its public behavioural statements must be connection statements).  `radial_zero_iff`
+  formula `inv_normSq_eq` (the parameter type `AHO` carries a family, so its public behavioural
+  statements must be connection statements).  `radial_zero_iff`
   is static evidence on the model; the pointwise chain rules `hasDerivWithinAt_normSq`,
   `hasDerivWithinAt_norm` stay public foundation.
 
@@ -69,8 +71,6 @@ Corrections.
   the correct expression is `v̇/v = jω_s + η e_θ / v + η α (v*² − |v|²)` (`dvoc_complexFrequency`).
 * The dVOC control law of §1.3 differs from Colombino et al. 2019; no dVOC multi-converter
   statement is formalized.
-
-Source: work-sync theory/T-voc-dvoc.md §1.2, §1.3, §1.8; theory/T-gfm-control.md §1.5.
 -/
 
 noncomputable section

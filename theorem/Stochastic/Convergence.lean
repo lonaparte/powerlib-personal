@@ -12,33 +12,37 @@ import Mathlib.Analysis.PSeries
 
 /-! # Modes of stochastic convergence: implications (Mathlib) and separating counterexamples
 
-Source: work-sync `theory/T-convergence-stochastic.md` §1.1–§1.4 (a.s., `L^p`, in probability, in
+The implication chain between almost-sure, `L^p`, in-probability and in-distribution
+convergence, and counterexamples separating the modes.
+
+Scope.
+* Probability theory, not an engineering result; each counterexample is on a concrete
+  probability space.
+* The distribution-function characterization of convergence in distribution (both directions)
+  is `ConvergenceCDF.lean`.
+
+Source: work-sync theory/T-convergence-stochastic.md §1.1–§1.4 (a.s., `L^p`, in probability, in
 distribution), §1.5 (implication chain, Markov's inequality), §1.6 (three counterexamples),
 §1.7 (in probability + uniform integrability ⇒ `L^p`; subsequence criterion).
 
-Foundation (probability), not an engineering result.
-
-Category C wrappers (Mathlib declaration in brackets): `ae_imp_inProbability`
-[`tendstoInMeasure_of_tendsto_ae`], `Lp_imp_inProbability` [`tendstoInMeasure_of_tendsto_eLpNorm`],
-`inProbability_imp_inDistribution` [`TendstoInMeasure.tendstoInDistribution`],
-`inProbability_subseq_ae` [`TendstoInMeasure.exists_seq_tendsto_ae`],
-`inProbability_UI_imp_Lp` [`tendsto_Lp_finite_of_tendstoInMeasure`], `markov_inequality`
-[`mul_meas_ge_le_lintegral₀`].
-
-Category B counterexamples (§1.6), each on a concrete probability space:
-* `ae_not_L1`: on `[0,1]`, `X_n = (n+1) 1_{[0, 1/(n+1))}` tends to `0` a.e. but `E|X_n| = 1`.
-* `inProbability_not_ae`: on `[0,1]^ℕ` (product of uniform laws), the indicators of the
+Results.
+* Mathlib wrappers (Mathlib declaration in brackets): `ae_imp_inProbability`
+  [`tendstoInMeasure_of_tendsto_ae`], `Lp_imp_inProbability`
+  [`tendstoInMeasure_of_tendsto_eLpNorm`], `inProbability_imp_inDistribution`
+  [`TendstoInMeasure.tendstoInDistribution`], `inProbability_subseq_ae`
+  [`TendstoInMeasure.exists_seq_tendsto_ae`], `inProbability_UI_imp_Lp`
+  [`tendsto_Lp_finite_of_tendstoInMeasure`], `markov_inequality` [`mul_meas_ge_le_lintegral₀`].
+* `ae_not_L1` — on `[0,1]`, `X_n = (n+1) 1_{[0, 1/(n+1))}` tends to `0` a.e. but `E|X_n| = 1`.
+* `inProbability_not_ae` — on `[0,1]^ℕ` (product of uniform laws), the indicators of the
   independent events `A_n = {ω_n ≤ 1/(n+1)}` tend to `0` in probability but not a.s. (second
   Borel–Cantelli, Mathlib `measure_limsup_eq_one`).
-* `inDistribution_not_inProbability`: for `X ~ N(0,1)`, the constant sequence `X` converges in
+* `inDistribution_not_inProbability` — for `X ~ N(0,1)`, the constant sequence `X` converges in
   distribution to `−X` but not in probability.
 
-Correction (§1.2).  "`L^p` convergence automatically gives `X_n, X ∈ L^p`" is false: the
-distance `E|X_n − X|^p` can vanish while `X ∉ L^p` (the note's suggestion: `X_n = X` Cauchy).
-`Lp_conv_not_memLp`: on `[0,1]`, `X_n = X = 1/u` has `‖X_n − X‖_p = 0` but `X ∉ L¹`.
-
-The distribution-function characterization of convergence in distribution (both directions)
-is `ConvergenceCDF.lean`.
+Corrections.
+* §1.2: "`L^p` convergence automatically gives `X_n, X ∈ L^p`" is false: the distance
+  `E|X_n − X|^p` can vanish while `X ∉ L^p` (the note's suggestion: `X_n = X` Cauchy).
+  `Lp_conv_not_memLp`: on `[0,1]`, `X_n = X = 1/u` has `‖X_n − X‖_p = 0` but `X ∉ L¹`.
 -/
 
 noncomputable section
@@ -47,7 +51,7 @@ namespace powerlib.Stochastic.Conv
 open MeasureTheory ProbabilityTheory Filter Set unitInterval
 open scoped ENNReal NNReal Topology
 
-/-! ## Category C: implications -/
+/-! ## Mathlib wrappers: implications -/
 
 section Implications
 

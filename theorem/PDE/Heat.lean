@@ -3,21 +3,25 @@ import theorem.Attributes
 
 /-! # The backward heat equation is ill-posed
 
-Foundation layer (category B).
+Hadamard's counterexample: arbitrarily small initial data of the backward heat equation produce
+arbitrarily large solutions after any positive time.
+
+Model boundary.
+* One space dimension, `x ∈ [0, π]`, homogeneous Dirichlet data, constant diffusivity `ν > 0`,
+  classical (smooth) solutions; the statement is about continuous dependence on the initial data
+  in the sup norm.
+* A canonical PDE, not an engineering model: no model family; foundation results.
 
 Source: work-sync `theory/T-pde-systems.md` §1.8.2 ("反向时间 … `u_t = −ν u_xx`，高频成分指数爆炸 ⇒
 反向 ill-posed").
 
-Model boundary: one space dimension, `x ∈ [0, π]`, homogeneous Dirichlet data, constant
-diffusivity `ν > 0`, classical (smooth) solutions; the statement is about continuous dependence
-on the initial data in the sup norm.
-
-Hadamard's counterexample: `uₙ(x, t) = e^{νn²t} sin(nx)/n` solves the backward heat equation
-`∂ₜu = −ν ∂ₓₓu` with `uₙ(0, t) = uₙ(π, t) = 0` (`backward_heat_solution`, `boundary_zero`). Its
-initial data satisfy `|uₙ(x, 0)| ≤ 1/n → 0` (`initial_small`), yet for every `t > 0`,
-`uₙ(π/(2n), t) = e^{νn²t}/n → ∞` (`blowup`): arbitrarily small initial data produce
-arbitrarily large solutions after any positive time, so the solution does not depend
-continuously on the data (`not_continuous_dependence`).
+Results.
+* `backward_heat_solution`, `boundary_zero`: `uₙ(x, t) = e^{νn²t} sin(nx)/n` (`hadamard`) solves
+  the backward heat equation `∂ₜu = −ν ∂ₓₓu` with `uₙ(0, t) = uₙ(π, t) = 0`.
+* `initial_small`: its initial data satisfy `|uₙ(x, 0)| ≤ 1/n → 0`.
+* `blowup`: for every `t > 0`, `uₙ(π/(2n), t) = e^{νn²t}/n → ∞`.
+* `not_continuous_dependence`: arbitrarily small initial data produce arbitrarily large solutions
+  after any positive time, so the solution does not depend continuously on the data.
 -/
 
 noncomputable section

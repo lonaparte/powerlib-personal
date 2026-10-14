@@ -2,92 +2,96 @@ import theorem.DAE.Pryce
 
 /-! # Pantelides' index-reduction algorithm: termination under structural nonsingularity
 
-Foundation layer (category B of the work-sync formalization).
+Pantelides' algorithm, in offset form, terminates on every run exactly when the occurrence
+pattern is structurally nonsingular, and every terminating run ends with Pryce's canonical
+offsets.
 
-Object: the structural description of a square DAE from `theorem.DAE.Pryce` — a `Signature ι`
-with `occurs i j` (variable `x_j` appears in equation `F_i`) and `order i j` (highest derivative
-order of `x_j` in `F_i`); equations and variables are both indexed by the finite type `ι`.
-
-Algorithm (Pantelides 1988, written in offset form). A state (`PantelidesState`) records
-`c i` (how often `F_i` has been differentiated), `d j` (the highest derivative `x_j^(d j)` present
-in the extended system) and a partial assignment `assign : ι → Option ι` of equations to
-variables. The current version `F_i^(c i)` contains `x_j^(order i j + c i)`; the
-*highest-derivative graph* (`Tight`) joins `F_i` to `x_j` when `occurs i j` and
-`order i j + c i = d j`, i.e. when `F_i^(c i)` contains the current highest derivative of `x_j`
-(Pantelides' `AUGMENTPATH` ignores the variables that already have a derivative).
-* Initial state (`initial`): `c = 0`, `d j = max_i order i j`, nothing assigned.
-* Search from an unassigned equation `i` (`reachWithin`, `Reach`): the coloured equations are `i`
-  and, recursively, every equation assigned to a variable adjacent (in the highest-derivative
-  graph) to a coloured equation — Pantelides' colouring of the alternating search.
-* Step (`Step`), for any unassigned equation `i`:
-  - `augment` (path found: some variable adjacent to a coloured equation is unassigned): the
-    assignment becomes a matching of the same highest-derivative graph that covers the previously
-    assigned equations and `i`. The augmenting-path update of the algorithm is one such matching
-    (`exists_step` constructs it by switching along the alternating path, `exists_switch`); the
-    step allows any of them.
-  - `differentiate` (no path: `SearchFails`): every coloured equation is differentiated
-    (`c ← c + 1`) and every coloured variable — the highest-derivative neighbours of coloured
-    equations — receives its next derivative (`d ← d + 1`); assignments are carried to the
-    derivatives (`ASSIGN(A(j)) := B(ASSIGN(j))`). By `differentiate_d_eq_max`, this is the same as
-    the note's formulation "add `dF_k/dt` for every equation on the path and `dz_j/dt` for every
-    variable in it": the new highest derivative of `x_j` is the maximum of the old one and the
-    orders occurring in the differentiated coloured equations.
-  The equation `i` processed at each step is arbitrary, so the results cover Pantelides'
-  sequential order (process `F_1, F_2, …` and keep working on `F_i` until it is assigned).
-* Terminal state (`PantelidesState.IsFinal`): every equation is assigned.
-
-Results.
-* Invariant (`Valid`, `Step.valid`): the offsets are dual feasible
-  (`order i j + c i ≤ d j` wherever `occurs i j`, Pryce's `IsDualFeasible`) and `assign` is a
-  matching of the highest-derivative graph.
-* Measure (`potential σ`, for a transversal `σ`): number of unassigned equations plus
-  `Σ d - (Σ c + value σ)`, which is a natural number by weak duality (`value_add_le`). An
-  augmentation assigns one more equation; a failed search colours one more equation than
-  variables (`card_coloured_lt`: every coloured variable is assigned to a coloured equation other
-  than `i`), so a differentiation lowers `Σ d - Σ c` (`Step.potential_lt`).
-* Progress (`exists_step`): every valid state with an unassigned equation has a step.
-* **Termination** (`pantelides_terminates`): if the occurrence pattern has a transversal
-  (structural nonsingularity), every run from the initial state has at most
-  `|ι| + Σ_j d⁰_j` steps, and some run reaches a terminal state; its assignment is a transversal
-  `σ` on which the final offsets are dual feasible and tight — Pryce's conditions — so `σ` is a
-  highest-value transversal and `Σ d - Σ c = value σ`.
-* Necessity (`exists_infinite_run`, `pantelides_terminates_iff`): if no transversal exists, there
-  is an infinite run; hence "every run terminates" is equivalent to structural nonsingularity
-  (`StructurallyNonsingular`, a nonsingular real matrix with the occurrence pattern).
-* Relation to Pryce — **equality, for every run** (§1.5 of the note). `pryce_le_pantelides`: at
-  a reachable state with assignment `σ`, Pryce's least offsets for `σ` are componentwise at most
-  Pantelides' counts `(c, d)`. Conversely (`differentiate_le`, `le_of_reaches`), along every run
-  the counts stay below every pair of offsets that is dual feasible and tight on some transversal
-  (every optimal dual solution of the assignment problem): a failed search can only colour
-  equations and variables whose optimal offsets are strictly above the current counts. Hence
-  `pryce_eq_pantelides`: Pryce's offsets on the final assignment *equal* `(c, d)`;
-  `pryce_eq_pantelides_of_highestValue`: the same holds for Pryce's offsets on any
-  highest-value transversal. Uniqueness question: the step relation is nondeterministic (choice
-  of the processed equation, choice of the augmenting matching) and different runs may end with
-  different assignments, but `pantelides_offsets_unique` shows that all terminating runs end with
-  the same counts `(c, d)` — the componentwise least optimal dual offsets (Pryce's canonical
-  offsets). So the correct form of the note's claim is "all runs give Pryce's offsets", not
-  merely "some run does" (`pantelides_eq_of_least` computes the counts from least offsets).
-* Examples: termination on the pendulum and on the index-formula counterexample of
-  `theorem.DAE.Pryce` (`pendulum_pantelides_terminates`, `example_pantelides_terminates`); every
-  terminating run on the pendulum ends with `c = (1,1,0,0,2)`, `d = (2,2,1,1,0)`
-  (`pendulum_offsets_least`, `pendulum_pantelides_counts`); on the counterexample no run ever
-  differentiates (`example_pantelides_counts`); an infinite run on a structurally singular
-  pattern (`singular_pantelides_nonterminating`).
-
-Model boundary: structural (occurrence/order pattern) analysis only. No claim is made that the
-number of differentiations equals the differentiation index (the note's "key lemma"
-`ν_S = max differentiations + 1`, and its structural-regularity premise), that the output system
-has index 1, about Hopcroft–Karp complexity, or about dummy derivatives (§1.4). The augmentation
-step is the abstract "some augmenting matching" rather than one specific path search.
-
-Architecture: generic mathematical support (no `Family`); the algorithm state is static
-combinatorial data (no time, no solution notion), all results `@[powerlib_foundation]`.
+Model boundary.
+* Structural (occurrence/order pattern) analysis only. No claim is made that the number of
+  differentiations equals the differentiation index (the note's "key lemma"
+  `ν_S = max differentiations + 1`, and its structural-regularity premise), that the output
+  system has index 1, about Hopcroft–Karp complexity, or about dummy derivatives (§1.4). The
+  augmentation step is the abstract "some augmenting matching" rather than one specific path
+  search.
+* The algorithm state is static combinatorial data (no time, no solution notion).
+* Object: the structural description of a square DAE from `theorem/DAE/Pryce.lean` — a
+  `Signature ι` with `occurs i j` (variable `x_j` appears in equation `F_i`) and `order i j`
+  (highest derivative order of `x_j` in `F_i`); equations and variables are both indexed by the
+  finite type `ι`.
+* Algorithm (Pantelides 1988, written in offset form). A state (`PantelidesState`) records
+  `c i` (how often `F_i` has been differentiated), `d j` (the highest derivative `x_j^(d j)`
+  present in the extended system) and a partial assignment `assign : ι → Option ι` of equations
+  to variables. The current version `F_i^(c i)` contains `x_j^(order i j + c i)`; the
+  *highest-derivative graph* (`Tight`) joins `F_i` to `x_j` when `occurs i j` and
+  `order i j + c i = d j`, i.e. when `F_i^(c i)` contains the current highest derivative of
+  `x_j` (Pantelides' `AUGMENTPATH` ignores the variables that already have a derivative).
+  * Initial state (`initial`): `c = 0`, `d j = max_i order i j`, nothing assigned.
+  * Search from an unassigned equation `i` (`reachWithin`, `Reach`): the coloured equations are
+    `i` and, recursively, every equation assigned to a variable adjacent (in the
+    highest-derivative graph) to a coloured equation — Pantelides' colouring of the alternating
+    search.
+  * Step (`Step`), for any unassigned equation `i`:
+    - `augment` (path found: some variable adjacent to a coloured equation is unassigned): the
+      assignment becomes a matching of the same highest-derivative graph that covers the
+      previously assigned equations and `i`. The augmenting-path update of the algorithm is one
+      such matching (`exists_step` constructs it by switching along the alternating path,
+      `exists_switch`); the step allows any of them.
+    - `differentiate` (no path: `SearchFails`): every coloured equation is differentiated
+      (`c ← c + 1`) and every coloured variable — the highest-derivative neighbours of coloured
+      equations — receives its next derivative (`d ← d + 1`); assignments are carried to the
+      derivatives (`ASSIGN(A(j)) := B(ASSIGN(j))`). By `differentiate_d_eq_max`, this is the
+      same as the note's formulation "add `dF_k/dt` for every equation on the path and
+      `dz_j/dt` for every variable in it": the new highest derivative of `x_j` is the maximum
+      of the old one and the orders occurring in the differentiated coloured equations.
+    The equation `i` processed at each step is arbitrary, so the results cover Pantelides'
+    sequential order (process `F_1, F_2, …` and keep working on `F_i` until it is assigned).
+  * Terminal state (`PantelidesState.IsFinal`): every equation is assigned.
 
 Source: work-sync theory/T-pantelides-index-reduction.md §1.3 (Pantelides algorithm,
 bipartite matching, augmenting paths, differentiation of the equations on the path), §1.5
 (offsets, HVT, relation of Pantelides' counts to Pryce's offsets); Pantelides, SIAM J. Sci.
 Stat. Comput. 9 (1988) 213–231; Pryce, BIT 41 (2001) 364–394, §5.
+
+Results.
+* `Valid`, `Step.valid` — invariant: the offsets are dual feasible
+  (`order i j + c i ≤ d j` wherever `occurs i j`, Pryce's `IsDualFeasible`) and `assign` is a
+  matching of the highest-derivative graph.
+* `potential`, `Step.potential_lt` — measure (`potential σ`, for a transversal `σ`): number of
+  unassigned equations plus `Σ d - (Σ c + value σ)`, which is a natural number by weak duality
+  (`value_add_le`). An augmentation assigns one more equation; a failed search colours one more
+  equation than variables (`card_coloured_lt`: every coloured variable is assigned to a coloured
+  equation other than `i`), so a differentiation lowers `Σ d - Σ c`.
+* `exists_step` — progress: every valid state with an unassigned equation has a step.
+* **`pantelides_terminates`** — termination: if the occurrence pattern has a transversal
+  (structural nonsingularity), every run from the initial state has at most `|ι| + Σ_j d⁰_j`
+  steps, and some run reaches a terminal state; its assignment is a transversal `σ` on which the
+  final offsets are dual feasible and tight — Pryce's conditions — so `σ` is a highest-value
+  transversal and `Σ d - Σ c = value σ`.
+* `exists_infinite_run`, `pantelides_terminates_iff` — necessity: if no transversal exists,
+  there is an infinite run; hence "every run terminates" is equivalent to structural
+  nonsingularity (`StructurallyNonsingular`, a nonsingular real matrix with the occurrence
+  pattern).
+* Relation to Pryce — **equality, for every run** (§1.5 of the note). `pryce_le_pantelides`: at
+  a reachable state with assignment `σ`, Pryce's least offsets for `σ` are componentwise at most
+  Pantelides' counts `(c, d)`. Conversely (`differentiate_le`, `le_of_reaches`), along every run
+  the counts stay below every pair of offsets that is dual feasible and tight on some
+  transversal (every optimal dual solution of the assignment problem): a failed search can only
+  colour equations and variables whose optimal offsets are strictly above the current counts.
+  Hence `pryce_eq_pantelides`: Pryce's offsets on the final assignment *equal* `(c, d)`;
+  `pryce_eq_pantelides_of_highestValue`: the same holds for Pryce's offsets on any
+  highest-value transversal. Uniqueness question: the step relation is nondeterministic (choice
+  of the processed equation, choice of the augmenting matching) and different runs may end with
+  different assignments, but `pantelides_offsets_unique` shows that all terminating runs end
+  with the same counts `(c, d)` — the componentwise least optimal dual offsets (Pryce's
+  canonical offsets). So the correct form of the note's claim is "all runs give Pryce's
+  offsets", not merely "some run does" (`pantelides_eq_of_least` computes the counts from least
+  offsets).
+* Examples: termination on the pendulum and on the index-formula counterexample of
+  `theorem/DAE/Pryce.lean` (`pendulum_pantelides_terminates`, `example_pantelides_terminates`);
+  every terminating run on the pendulum ends with `c = (1,1,0,0,2)`, `d = (2,2,1,1,0)`
+  (`pendulum_offsets_least`, `pendulum_pantelides_counts`); on the counterexample no run ever
+  differentiates (`example_pantelides_counts`); an infinite run on a structurally singular
+  pattern (`singular_pantelides_nonterminating`).
 -/
 
 noncomputable section

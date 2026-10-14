@@ -4,40 +4,45 @@ import Mathlib.Probability.Moments.Tilted
 
 /-! # Maximum entropy: the Gibbs (tilted) measure is the unique I-projection
 
-Source: work-sync `theory/T-maximum-entropy.md` — boxed MaxEnt form (head), §1.1 (dual and its
+The Gibbs (tilted) measure minimises relative entropy on the moment class, uniquely, and is the
+I-projection of the reference measure onto the linear moment family; the one-constraint dual.
+
+Scope.
+* General probability, not an engineering result.
+* `m` is a σ-finite reference measure on an arbitrary measurable space (it need not be finite,
+  e.g. Lebesgue measure). A log-tilt `g : α → ℝ` with `∫ exp g dm < ∞` defines the Gibbs /
+  MaxEnt measure `m.tilted g = m · exp g / Z`, `Z = ∫ exp g dm`. For constraints `E[f_k] = F_k`
+  the tilt is `g = -∑ λ_k f_k`, see `gibbs`.
+* Jaynes maximises `H[p‖m] = -∫ log (dp/dm) dp`. We work with
+  `relEntropy p m = ∫ log (dp/dm) dp` (`= -H[p‖m]`), which is a real number for every
+  probability `p ≪ m` and is the Kullback–Leibler divergence when `m` is itself a probability
+  measure. Mathlib's `klDiv` is used only between probability measures, where it is the usual
+  divergence.
+
+Source: work-sync theory/T-maximum-entropy.md — boxed MaxEnt form (head), §1.1 (dual and its
 derivatives), §1.6 (exponential families are MaxEnt solutions), §1.7 (I-projection).
 
-This is general probability (foundation), not an engineering result.
-
-Setting. `m` is a σ-finite reference measure on an arbitrary measurable space (it need not be
-finite, e.g. Lebesgue measure). A log-tilt `g : α → ℝ` with `∫ exp g dm < ∞` defines the
-Gibbs / MaxEnt measure `m.tilted g = m · exp g / Z`, `Z = ∫ exp g dm`. For constraints
-`E[f_k] = F_k` the tilt is `g = -∑ λ_k f_k`, see `gibbs`.
-
-Jaynes maximises `H[p‖m] = -∫ log (dp/dm) dp`. We work with `relEntropy p m = ∫ log (dp/dm) dp`
-(`= -H[p‖m]`), which is a real number for every probability `p ≪ m` and is the Kullback–Leibler
-divergence when `m` is itself a probability measure. Mathlib's `klDiv` is used only between
-probability measures, where it is the usual divergence.
-
-Main results.
-* `relEntropy_eq_klDiv_tilted_add` (Pythagorean identity): if `E_p g = E_{p_λ} g` then
+Results.
+* `relEntropy_eq_klDiv_tilted_add` — Pythagorean identity: if `E_p g = E_{p_λ} g` then
   `relEntropy p m = KL(p‖p_λ) + relEntropy p_λ m`.
-* `relEntropy_tilted_le`, `relEntropy_eq_relEntropy_tilted_iff`: `p_λ` minimises relative
+* `relEntropy_tilted_le`, `relEntropy_eq_relEntropy_tilted_iff` — `p_λ` minimises relative
   entropy (maximises `H[·‖m]`) on the moment class, uniquely.
-* `gibbs_isIProjection`: for finitely many constraints, the Gibbs measure whose multipliers
+* `gibbs_isIProjection` — for finitely many constraints, the Gibbs measure whose multipliers
   close the constraints is the unique I-projection of `m` onto the linear moment family.
-* `gibbs_isIProjection_own_moments`: every exponential-family member is the MaxEnt solution
+* `gibbs_isIProjection_own_moments` — every exponential-family member is the MaxEnt solution
   for its own moments (§1.6).
-* `klDiv_eq_klDiv_tilted_add`: the same identity in `klDiv` form when `m` is a probability measure.
-* `hasDerivAt_dual`/`deriv_dual`/`iteratedDeriv_two_dual` (one constraint): the dual
-  `D(λ) = log Z(λ) + λ F` has `D' = F - E_{p_λ}[f]` and `D'' = Var_{p_λ}[f] ≥ 0`. These are thin
-  wrappers of Mathlib `ProbabilityTheory.integral_tilted_mul_self` and
-  `ProbabilityTheory.variance_tilted_mul`.
+* `klDiv_eq_klDiv_tilted_add` — the same identity in `klDiv` form when `m` is a probability
+  measure.
+* `deriv_dual`, `deriv_dual_eq_zero_iff`, `iteratedDeriv_two_dual`,
+  `iteratedDeriv_two_dual_nonneg` — one constraint: the dual `D(λ) = log Z(λ) + λ F` has
+  `D' = F - E_{p_λ}[f]` and `D'' = Var_{p_λ}[f] ≥ 0`. These are thin wrappers of Mathlib
+  `ProbabilityTheory.integral_tilted_mul_self` and `ProbabilityTheory.variance_tilted_mul`.
 
-Correction: the note states the maximiser exists whenever "the constraints close". The formal
-statement makes the closure hypothesis explicit: the multipliers must satisfy
-`E_{p_λ}[f_k] = F_k`, `exp(-∑ λ_k f_k)` must be `m`-integrable and the constraint functions must
-be integrable under both measures. Existence of such `λ` is not proved here.
+Corrections.
+* The note states the maximiser exists whenever "the constraints close". The formal statement
+  makes the closure hypothesis explicit: the multipliers must satisfy `E_{p_λ}[f_k] = F_k`,
+  `exp(-∑ λ_k f_k)` must be `m`-integrable and the constraint functions must be integrable under
+  both measures. Existence of such `λ` is not proved here.
 -/
 
 noncomputable section

@@ -4,22 +4,25 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
 /-! # Frequency nadir of the swing + governor model (exact closed form)
 
+The exact time and value of the frequency nadir of the underdamped swing + governor model after a
+load step, without Laplace inversion; the nadir magnitude, which the note leaves to "Kundur
+§11.1.6", is derived here.
+
+Model boundary.
+* Exactly the plant of `Frequency.SwingGovernor` (`SwingGovernor.plant`; state `(Δω, ΔP_m)`,
+  continuous time, linear, Kundur per-unit, load step `ΔP_L` applied at `t = 0` to the system
+  at rest `x(0) = 0`; no turbine/reheat, AGC, dead-band, rate limit, PLL, delay or PWM).
+* Parameters: `0 < M`, `0 < T_g`, `0 ≤ D`, `0 < K_R + D`, a load *increase* `0 < ΔP_L`, and the
+  underdamped case `ζ_n < 1`. The conclusions are trajectory-level (every trajectory of the
+  model with `x(0) = 0`).
+* Notation (`σ = ζ_n ω_n`, `ω_d = ω_n √(1 − ζ_n²)`, the §1.7 `ω_n`, `ζ_n`):
+  `nadirTime = atan2(ω_d, σ − 1/T_g)/ω_d`, with `atan2(y, x) := Complex.arg (x + j y)`;
+  `nadirValue = −ΔP_L/(K_R + D) · [1 + √(1 − 2σT_g + ω_n²T_g²) · e^{−σ t_nadir}]`.
+
 Source: work-sync `theory/T-frequency-stability.md` §1.7 (boxed `t_nadir` with atan2 and the
-step response `Δω(t) = −ΔP_L/(K_R + D)[1 − e^{−σt}(cos ω_d t − α sin ω_d t)]`); the nadir
-magnitude, which the note leaves to "Kundur §11.1.6", is derived here.
+step response `Δω(t) = −ΔP_L/(K_R + D)[1 − e^{−σt}(cos ω_d t − α sin ω_d t)]`).
 
-Model boundary: exactly `Frequency.SwingGovernor.model` (state `(Δω, ΔP_m)`, continuous time,
-linear, Kundur per-unit, load step `ΔP_L` applied at `t = 0` to the system at rest
-`x(0) = 0`; no turbine/reheat, AGC, dead-band, rate limit, PLL, delay or PWM). Parameters:
-`0 < M`, `0 < T_g`, `0 ≤ D`, `0 < K_R + D`, a load *increase* `0 < ΔP_L`, and the
-underdamped case `ζ_n < 1`. The conclusions are trajectory-level (every trajectory of the
-model with `x(0) = 0`).
-
-Notation (`σ = ζ_n ω_n`, `ω_d = ω_n √(1 − ζ_n²)`, the §1.7 `ω_n`, `ζ_n`):
-* `nadirTime = atan2(ω_d, σ − 1/T_g)/ω_d`, with `atan2(y, x) := Complex.arg (x + j y)`;
-* `nadirValue = −ΔP_L/(K_R + D) · [1 + √(1 − 2σT_g + ω_n²T_g²) · e^{−σ t_nadir}]`.
-
-Main results.
+Results.
 * `nadir` (implementation evidence, private): `0 < t_nadir`; `Δω` is strictly decreasing on
   `[0, t_nadir]`; `Δω(t_nadir)` is the minimum of `Δω` over all `t ≥ 0`; and it equals
   `nadirValue`.
@@ -29,24 +32,24 @@ Main results.
   vanishes again and the deviation from the quasi-steady state is multiplied by
   `(−e^{−σπ/ω_d})^k`.
 
-Proof chain (no Laplace inversion is assumed): the explicit closed form `osc2` solves the
-state equations (`hasDerivAt_osc2`), trajectory uniqueness identifies it with every trajectory
-(`trajectory_eq_osc2`); its first component is the scalar `respC`, whose derivative is
-`−(ΔP_L ρ/(M ω_d)) e^{−σt} sin(θ − ω_d t)` with `θ = ω_d t_nadir`, `ρ = |σ − 1/T_g + j ω_d|`;
-this gives the first critical point and the strict decrease before it. After it, the
-critical-point shift identity `damped_shift` writes the deviation as
-`(Δω(t_nadir) − Δω^∞)·e^{−σu}(cos ω_d u + (σ/ω_d) sin ω_d u)`, which is bounded by its first
-value via `one_add_ratio_sin_le_exp`.
+Family and connection conclusions.
+* This module adds no family: the model is the swing + governor family of
+  `Frequency.SwingGovernor`. The scalar core (`respC`, `rateC`, `tCrit`, …), the closed-form
+  identity `osc2_freq` (the first component of the explicit solution from rest is `respC`, a
+  static identity of closed forms), `respC_nadirTime` and `nadirValue_lt` are foundation.
+* The nadir statements quantify over forward solutions and their extrema in time, which the
+  sentence language does not express: `trajectory_freq_eq`, `nadir` and `nadir_successive` are
+  private implementation evidence (Rules §3a). Modules that need a nadir of a forward solution
+  re-derive it from the generic `LTI.trajectory_eq_osc2`, `osc2_freq` and the scalar core.
 
-Family and connection conclusions. This module adds no family: the model is the swing +
-governor family of `Frequency.SwingGovernor`. The scalar core (`respC`, `rateC`, `tCrit`, …),
-the closed-form identity `osc2_freq` (the first component of the explicit solution from rest is
-`respC`, a static identity of closed forms), `respC_nadirTime` and `nadirValue_lt` are
-foundation. The nadir statements quantify over forward solutions and their extrema in time,
-which the sentence language does not express: `trajectory_freq_eq`, `nadir` and
-`nadir_successive` (formerly `@[powerlib_domain]`) are private implementation evidence (Rules
-§3a). Modules that need a nadir of a forward solution re-derive it from the generic
-`LTI.trajectory_eq_osc2`, `osc2_freq` and the scalar core.
+Proof outline (no Laplace inversion is assumed).
+* The explicit closed form `osc2` solves the state equations (`hasDerivAt_osc2`), trajectory
+  uniqueness identifies it with every trajectory (`trajectory_eq_osc2`); its first component is
+  the scalar `respC`, whose derivative is `−(ΔP_L ρ/(M ω_d)) e^{−σt} sin(θ − ω_d t)` with
+  `θ = ω_d t_nadir`, `ρ = |σ − 1/T_g + j ω_d|`; this gives the first critical point and the
+  strict decrease before it. After it, the critical-point shift identity `damped_shift` writes
+  the deviation as `(Δω(t_nadir) − Δω^∞)·e^{−σu}(cos ω_d u + (σ/ω_d) sin ω_d u)`, which is
+  bounded by its first value via `one_add_ratio_sin_le_exp`.
 -/
 
 noncomputable section

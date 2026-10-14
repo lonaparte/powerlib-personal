@@ -21,13 +21,22 @@ Model boundary.
 * Excluded: voltage / reactive-power loop (constant `E`), inner current and voltage loops,
   current limiting, PLL, delays, PWM, network dynamics.  `M, D, ω_c` are independent (the
   droop+LPF limit `M → 0` is the separate two-state model `DroopLPF` below).
-* Conclusions: equilibrium set and existence (`|P₀| ≤ K₀`), local exponential stability /
-  instability of the loading equilibrium `(δ₀, 0, P₀)`, `δ₀ = arcsin(P₀/K₀)`, from the
-  Jacobian computed by `fderiv` and the three-state Routh–Hurwitz criterion.  With
-  `K = K₀ cos δ₀`: `ω_c > K/D − D/M` ⇒ stable, `ω_c < K/D − D/M` ⇒ unstable, hence (boundary
-  excluded) stable ⇔ `K < D ω_c + D²/M` — light loading (large `K`) is the dangerous side.  On the
-  boundary itself the equilibrium is asymptotically, not exponentially, stable (a supercritical
-  Hopf point; `theorem/GFM/VSMLPFHopf.lean`).
+* Level: equilibrium set and local exponential stability / instability of an equilibrium, from
+  the Jacobian computed by `fderiv` and the three-state Routh–Hurwitz criterion.
+
+Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
+gfl-gfm-parametric-contrast.md` §15–§16; `…/gfm-driven-gfl-parametric-resonance/notes/concepts/
+gfm-periodic-source.md` ("三态局部候选"); `notes/theory-draft.md` §1.3, §2.4;
+`references/gfl-gfm-contrast/archive/notes/concepts/contrast-conclusions.md` (推论一, 推论二).
+
+Results.
+* Equilibrium set and existence (`field_eq_zero_iff`, `exists_equilibrium_iff`,
+  `field_equilibrium`): an equilibrium exists iff `|P₀| ≤ K₀`; the loading equilibrium is
+  `(δ₀, 0, P₀)`, `δ₀ = arcsin(P₀/K₀)`.
+* With `K = K₀ cos δ₀`: `ω_c > K/D − D/M` ⇒ locally exponentially stable, `ω_c < K/D − D/M` ⇒
+  unstable, hence (boundary excluded) stable ⇔ `K < D ω_c + D²/M` — light loading (large `K`) is
+  the dangerous side.  On the boundary itself the equilibrium is asymptotically, not
+  exponentially, stable (a supercritical Hopf point; `theorem/GFM/VSMLPFHopf.lean`).
 
 Family and connection conclusions.
 * `VSMLPF.family`: a complete system (`VSMLPF.Model`) is a parameter set with a selected angle
@@ -48,23 +57,23 @@ Family and connection conclusions.
   is not exact (`VSMLPF.not_exact_unstable`): instability is the failure of Lyapunov stability,
   so an unbalanced model (`VSMLPF.offEquilibrium`) is unstable
   (`VSMLPF.offEquilibrium_mem_den_unstable`, `Dynamics.unstable_of_ne_zero`). The local
-  asymptotic and Lyapunov translations are not exact (`VSMLPF.not_exact_locallyAsymptoticallyStable`,
-  `VSMLPF.not_exact_lyapunovStable`, the negative-inertia model, via
-  `Spectral.not_exact_of_den_subset`); the Lyapunov translation is not exact even within positive
-  `M, D, ω_c` (`VSMLPF.not_exactUnder_lyapunovStable`: the flat curve `VSMLPF.flatCurve`,
-  `K₀ = P₀ = 0`, is Lyapunov stable, `VSMLPF.flatCurve_mem_den_lyapunovStable`). The local
-  asymptotic translation is not exact even within positive `M, D, ω_c`
+  asymptotic and Lyapunov translations are not exact
+  (`VSMLPF.not_exact_locallyAsymptoticallyStable`, `VSMLPF.not_exact_lyapunovStable`, the
+  negative-inertia model, via `Spectral.not_exact_of_den_subset`); the Lyapunov translation is not
+  exact even within positive `M, D, ω_c` (`VSMLPF.not_exactUnder_lyapunovStable`: the flat curve
+  `VSMLPF.flatCurve`, `K₀ = P₀ = 0`, is Lyapunov stable, `VSMLPF.flatCurve_mem_den_lyapunovStable`).
+  The local asymptotic translation is not exact even within positive `M, D, ω_c`
   (`VSMLPF.not_exactUnder_locallyAsymptoticallyStable`, in `theorem/GFM/VSMLPFHopf.lean`): on the
-  Hopf boundary `K = D ω_c + D²/M` the Jacobian has a purely imaginary pair, and an explicit
-  quartic Lyapunov function (`Dynamics.Degenerate.localAsymptoticStable_of_hopf_weakFocus`) shows
-  that every physical boundary model is a weak stable focus
+  Hopf boundary `K = D ω_c + D²/M` the Jacobian has a purely imaginary pair, and an explicit quartic
+  Lyapunov function (`Dynamics.Degenerate.localAsymptoticStable_of_hopf_weakFocus`) shows that every
+  physical boundary model is a weak stable focus
   (`VSMLPF.mem_den_locallyAsymptoticallyStable_of_hopf`; witness `VSMLPF.hopfBoundary`). Its exact
   denotation within positive `M, D, ω_c` is
   `VSMLPF.mem_den_locallyAsymptoticallyStable_iff_of_physical`: a balanced angle with
   `0 < K ≤ D ω_c + D²/M`.
 * Connection conclusions at the loading angle (`VSMLPF.atLoading`): `locallyExponentiallyStable`,
   `unstable`, and the exact boundary `locallyExponentiallyStable_iff` (a member-equivalence:
-  local exponential stability iff `K < D ω_c + D²/M`, boundary excluded); new:
+  local exponential stability iff `K < D ω_c + D²/M`, boundary excluded),
   `unstable_atAntiLoading` (the second equilibrium `π − δ₀` is a saddle) and, in
   `theorem/GFM/VSMLPFHopf.lean`, `locallyAsymptoticallyStable_iff` (local asymptotic stability iff
   `K ≤ D ω_c + D²/M`, boundary included).
@@ -75,30 +84,25 @@ Family and connection conclusions.
   instability translation is not exact, `DroopLPF.not_exact_unstable` with the unbalanced
   `DroopLPF.offEquilibrium`); within positive `D, ω_c` the local asymptotic translation is exact too
   (`DroopLPF.exactUnder_locallyAsymptoticallyStable`: the loop is the swing equation
-  `(D/ω_c) δ̈ + D δ̇ = P₀ − K₀ sin δ` with the dissipated energy `DroopLPF.energy`; a vanishing power
-  curve has a continuum of equilibria and a fold leaves the energy below its value on one side,
-  `DroopLPF.energy_fold`), and the Lyapunov denotation is
-  `DroopLPF.mem_den_lyapunovStable_iff_of_physical` (balanced with `K₀ cos δ* > 0` or `K₀ = 0`; a fold
-  is unstable, `Dynamics.unstable_of_lie_nonpos_of_lie_pos`), so the Lyapunov translation is not
-  exact within that range (`DroopLPF.not_exactUnder_lyapunovStable`, `DroopLPF.flatCurve`); without
-  it neither translation is exact (`DroopLPF.not_exact_locallyAsymptoticallyStable`,
+  `(D/ω_c) δ̈ + D δ̇ = P₀ − K₀ sin δ` with the dissipated energy `DroopLPF.energy`; a vanishing
+  power curve has a continuum of equilibria and a fold leaves the energy below its value on one
+  side, `DroopLPF.energy_fold`), and the Lyapunov denotation is
+  `DroopLPF.mem_den_lyapunovStable_iff_of_physical` (balanced with `K₀ cos δ* > 0` or `K₀ = 0`; a
+  fold is unstable, `Dynamics.unstable_of_lie_nonpos_of_lie_pos`), so the Lyapunov translation is
+  not exact within that range (`DroopLPF.not_exactUnder_lyapunovStable`, `DroopLPF.flatCurve`);
+  without it neither translation is exact (`DroopLPF.not_exact_locallyAsymptoticallyStable`,
   `DroopLPF.not_exact_lyapunovStable`, the negative-damping model);
-  `DroopLPF.locallyExponentiallyStable` (no Hopf boundary) is a connection conclusion; new:
-  `DroopLPF.unstable_atAntiLoading`.
+  `DroopLPF.locallyExponentiallyStable` (no Hopf boundary) and `DroopLPF.unstable_atAntiLoading` are
+  connection conclusions.
 * Static evidence on the model: the equilibrium theorems `field_eq_zero_iff`,
   `exists_equilibrium_iff`, `field_equilibrium`.  The transfer functions, the boundary frequency,
   the first-order modulation `A₁`, the periodic time averages and the second-order reduction
-  algebra are foundation, as before.
+  algebra are foundation.
 
 Corrections.
-* projects/vsc-parametric-oscillation/…/gfl-gfm-parametric-contrast.md §15:
-  `A₁^GFM = ω_c P₀ e_{P_f} e_δᵀ` is nonzero only when `P₀ ≠ 0` (`A₁_ne_zero_iff`); at zero
+* `projects/vsc-parametric-oscillation/…/gfl-gfm-parametric-contrast.md` §15:
+  `A₁^GFM = ω_c P₀ e_{P_f} e_δᵀ` is nonzero only when `P₀ ≠ 0` (`A1_ne_zero_iff`); at zero
   load the grid-angle perturbation does not modulate the Jacobian to first order.
-
-Source: work-sync projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
-gfl-gfm-parametric-contrast.md §15–§16; …/gfm-driven-gfl-parametric-resonance/notes/concepts/
-gfm-periodic-source.md ("三态局部候选"); notes/theory-draft.md §1.3, §2.4;
-references/gfl-gfm-contrast/archive/notes/concepts/contrast-conclusions.md (推论一, 推论二).
 -/
 
 noncomputable section

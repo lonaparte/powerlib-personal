@@ -12,10 +12,13 @@ Model boundary.
   (Ici 0)) ∧ ∀ φ, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
   Tendsto φ atTop (𝓝 x_eq)` (from every initial state in `S` a forward solution exists and every
   forward solution converges to `x_eq`), derived with the LaSalle invariance principle of
-  `theorem/Dynamics/LaSalle/Basin.lean` (no global Lipschitz bound is needed). Positive invariance of
-  the estimates is proved, not assumed.
+  `theorem/Dynamics/LaSalle/Basin.lean` (no global Lipschitz bound is needed). Positive invariance
+  of the estimates is proved, not assumed.
 
-Two estimates.
+Source: work-sync `theory/T-pll-ph.md` §1.1–§1.2; `theory/T-invariant-coordinates.md` Part 2
+"与 LaSalle / Lyapunov 分析的衔接"; `theory/T-gfl-multiscale-modeling.md` §1.8.
+
+Results.
 1. Port-Hamiltonian energy (T-pll-ph): coordinates `(θ, η)`, field `srfField V K_p K_i δω`,
    `V, K_p, K_i > 0`, equilibrium `(0, δω/K_i)`, shifted Hamiltonian
    `H_s = V(1 − cos θ) + ½K_i(η − δω/K_i)²` with `Ḣ_s = −K_p V² sin²θ ≤ 0` everywhere.
@@ -32,13 +35,11 @@ The sublevel sets are `2π`-periodic in `θ`; each estimate uses the single pote
 around `θ = 0` (for `c` below the stated bounds the sublevel set splits into disjoint copies of
 this piece around `2kπ`, and the piece used here is the one containing the equilibrium).
 
-Source: work-sync `theory/T-pll-ph.md` §1.1–§1.2; `theory/T-invariant-coordinates.md` Part 2
-"与 LaSalle / Lyapunov 分析的衔接"; `theory/T-gfl-multiscale-modeling.md` §1.8.
-
-Family and connection conclusions. A region-of-attraction estimate (every forward solution from
+Family and connection conclusions.
+A region-of-attraction estimate (every forward solution from
 a set converges to the equilibrium) is not a sentence of the library's language (flow sentences
-about the origin and passivity), so no connection statement is made here: the four former domain
-theorems (`srf_regionOfAttraction_hamiltonian`, `srf_regionOfAttraction_hamiltonian_lt`,
+about the origin and passivity), so no connection statement is made here: the four estimates
+(`srf_regionOfAttraction_hamiltonian`, `srf_regionOfAttraction_hamiltonian_lt`,
 `xi_regionOfAttraction_pendulum`, `xi_regionOfAttraction_pendulum_lt`) are private
 implementation evidence. Their models are the SRF members of the PI-PLL family
 (`PLL.PIPLL.srf V K_p K_i δω 0`, and `srf 1 a b (−Δω) 0` in `(θ, ξ)` coordinates); the local

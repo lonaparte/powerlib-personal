@@ -2,13 +2,20 @@ import theorem.Transform.Park
 import theorem.Linear.Transfer
 import Mathlib.RingTheory.Complex
 
-/-! Complex-symmetric dq matrices, complex transfer functions and the dq ↔ αβ frequency shift
-(foundation).
+/-! # Complex-symmetric dq matrices, complex transfer functions and the dq ↔ αβ frequency shift
+
+These are algebraic / calculus identities (foundation); no stability claim is made here.
+
+Scope.
+Real and complex 2 × 2 matrices, real linear plants and complex-coefficient state-space models
+(`CModel`) in dq / αβ / sequence coordinates; transfer functions at complex Laplace variables
+that are not poles; continuous time.
 
 Source: work-sync `theory/T-impedance-modeling.md` §1.4 (complex transfer function
 `Z(s) = Z_dd(s) + j Z_qd(s)` under `Z_dd = Z_qq`, `Z_dq = −Z_qd`) and §2.2 (frequency shift
 `s ↔ s ± jω₁` between dq and αβ descriptions).
 
+Results.
 * `complexSymm a b = [[a, −b], [b, a]]` over any commutative ring. Over `ℝ` it is the matrix of
   multiplication by `a + jb` (`complexSymm_eq_leftMulMatrix` wraps Mathlib's
   `Algebra.leftMulMatrix_complex`). Over `ℂ` (entries evaluated at a complex Laplace variable)
@@ -31,8 +38,6 @@ Source: work-sync `theory/T-impedance-modeling.md` §1.4 (complex transfer funct
   `toSeq_offDiag_eq_zero_iff`: no ± coupling iff `Y_dd = Y_qq ∧ Y_dq = −Y_qd`;
   `returnDifference_toSeq`: `det(I + Z Y)` (hence the generalized Nyquist test) is the same in
   both forms.
-
-These are algebraic / calculus identities; no stability claim is made here.
 -/
 
 noncomputable section

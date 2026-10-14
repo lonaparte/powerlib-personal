@@ -1,12 +1,20 @@
 import theorem.Attributes
 import dependencies.Mathlib
 
-/-! # Complex power, P/Q in dq, current references and the P/Q Jacobians (foundation)
+/-! # Complex power, P/Q in dq, current references and the P/Q Jacobians
 
+Algebraic identities (foundation) of three-phase complex power in dq components.
+
+Scope.
 Derivation method of work-sync `conventions.md` §D0: start from `S̄ = V̄ Ī*` with
 `V̄ = v_d + j v_q`, `Ī = i_d + j i_q`, `i` IN-positive (§D1), load convention (§D3): `P > 0`
 absorbed by the converter.
 
+Source: work-sync `theory/T-gfl-control.md` §1.5; `theory/T-gfl-impedance.md` §1.5;
+`theory/T-dc-voltage-gfm.md` §1.1 (same expansion); `theory/T-vsg-control.md` §1.1;
+`conventions.md` §D0–§D3.
+
+Results.
 * `complexPower_expand`: `V̄ Ī* = (v_d i_d + v_q i_q) + j (v_q i_d − v_d i_q)`; the same
   expansion with `Complex.I` (`complexPower_dq`) and the export-positive translation
   `S̄^ext = −S̄^abs`, i.e. `P^ext = −P^abs`, `Q^ext = −Q^abs` (`exportPower_dq`,
@@ -23,10 +31,6 @@ absorbed by the converter.
   `∂(P,Q)/∂(v_d,v_q) = [[i_d0, i_q0], [−i_q0, i_d0]]`, with the exact expansion
   `Δ(P,Q) = G_i Δi + G_v Δv + (P,Q)(Δv, Δi)` (T-gfl-control §1.5, T-gfl-impedance §1.5).
   `pq_hasFDerivAt`: the same Jacobian as a Fréchet derivative.
-
-Source: work-sync `theory/T-gfl-control.md` §1.5; `theory/T-gfl-impedance.md` §1.5;
-`theory/T-dc-voltage-gfm.md` §1.1 (same expansion); `theory/T-vsg-control.md` §1.1;
-`conventions.md` §D0–§D3.
 -/
 
 noncomputable section

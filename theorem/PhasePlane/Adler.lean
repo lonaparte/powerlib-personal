@@ -3,26 +3,32 @@ import theorem.Attributes
 
 /-! # The overdamped washboard (Adler equation) `θ̇ = B − A sin θ`
 
-Foundation layer (a canonical scalar ODE: overdamped tilted washboard / Adler phase equation;
-not a power-system model).
+Equilibrium existence, Adler's period formula and the mean running velocity of the canonical
+scalar phase equation (overdamped tilted washboard); not a power-system model.
 
-Model boundary. Scalar phase `θ ∈ ℝ` (unwrapped), constant real parameters `A` (restoring
-amplitude) and `B` (tilt / frequency mismatch), continuous time:
-`θ̇ = B − A sin θ = −V'(θ)` with `V(θ) = −A cos θ − Bθ`. No inertia, noise or input.
+Model boundary.
+* Scalar phase `θ ∈ ℝ` (unwrapped), constant real parameters `A` (restoring amplitude) and `B`
+  (tilt / frequency mismatch), continuous time: `θ̇ = B − A sin θ = −V'(θ)` with
+  `V(θ) = −A cos θ − Bθ`. No inertia, noise or input.
+* A canonical textbook system: no model family; foundation results.
+
+Source: work-sync theory/T-nonlinear-phase-plane.md §1.5 (washboard; `B > A` ⇒ no barrier,
+monotone running) and its code check "Adler running velocity = √(B² − A²)".
 
 Results.
 * `adler_equilibrium_iff`: an equilibrium exists iff `|B| ≤ |A|` (for `A > 0`: iff `|B| ≤ A`).
 * `hasDerivAt_adlerPrimitive`: for `B > |A|`, with `s = √(B² − A²)`, the smooth function
   `G(θ) = (θ − 2 arctan(A cos θ / (B + s − A sin θ)))/s` satisfies `G' = 1/(B − A sin θ)` on
-  all of `ℝ`, and `G(θ + 2π) = G(θ) + 2π/s`.
+  all of `ℝ`, and `G(θ + 2π) = G(θ) + 2π/s` (`adlerPrimitive_add_two_pi`).
 * `adler_integral` (Adler's formula): `∫₀^{2π} dθ/(B − A sin θ) = 2π/√(B² − A²)`.
 * Running solutions (`B > |A|`): along every solution, `G(θ(t)) − t` is constant
   (`adler_time`); the time needed to advance by `2π` is exactly `T = 2π/√(B² − A²)`
-  (`adler_slip_time`); `|θ(t) − θ(0) − √(B² − A²) t| ≤ 2π`, hence the average angular velocity is
-  `lim θ(t)/t = √(B² − A²)` (`adler_mean_velocity`).
+  (`adler_slip_time`); `|θ(t) − θ(0) − √(B² − A²) t| ≤ 2π` (`adler_deviation`), hence the
+  average angular velocity is `lim θ(t)/t = √(B² − A²)` (`adler_mean_velocity`).
 
-Source: work-sync theory/T-nonlinear-phase-plane.md §1.5 (washboard; `B > A` ⇒ no barrier,
-monotone running) and its code check "Adler running velocity = √(B² − A²)".
+Potential shapes: `V(θ) = −A cos θ − Bθ` is the washboard of `theorem/Potential/Wells.lean`
+(`V₀ = A`, `α = B/A`); for `|B| < A` its barriers are those of `theorem/Potential/Barrier.lean`
+with `φ = 0`, `c = B`.
 -/
 
 noncomputable section

@@ -7,10 +7,18 @@ import theorem.Dynamics.State
 
 Local exponential stability, Lyapunov stability, local asymptotic stability and instability of an
 equilibrium depend only on the vector field near the equilibrium; the indirect method therefore
-holds for fields that are `C¹` only near the point. Generic facts about autonomous ODEs
-`ẋ = f x` on `Dynamics.State n = EuclideanSpace ℝ (Fin n)` (continuous time, no input; the
-library's segment semantics), not engineering conclusions.
+holds for fields that are `C¹` only near the point.
 
+Scope.
+* Generic facts about autonomous ODEs `ẋ = f x` on `Dynamics.State n = EuclideanSpace ℝ (Fin n)`
+  (continuous time, no input; the library's segment semantics), not engineering conclusions.
+
+Source: standard (Khalil, *Nonlinear Systems*, Thm 4.7 is stated for `C¹` on a domain);
+needed by work-sync `theory/T-vsc-dc-voltage-control.md` §1.1, §1.4, and as infrastructure for
+work-sync `projects/vsc-parametric-oscillation` and `projects/gfl-gfm-stability-tree` (ball form,
+`invExt`, `regDen`).
+
+Results.
 * Neighbourhood (filter) form: `locallyExponentiallyStable_congr_nhds`, `lyapunovStable_congr_nhds`,
   `unstable_congr_nhds`, `localAsymptoticStable_congr_nhds`: if `f = g` on a neighbourhood of
   `x_eq` the properties transfer (first-exit argument with `exists_first_sphere_hit`).
@@ -34,11 +42,6 @@ library's segment semantics), not engineering conclusions.
 * Smooth regularizations of a denominator away from zero: `invDen`, `invExt` (a globally smooth
   function equal to `V⁻¹` for `V ≥ 1/2`) and `regDen V` (equal to `v` for `v ≥ 3V/4`, at least
   `V/2` everywhere).
-
-Source: standard (Khalil, *Nonlinear Systems*, Thm 4.7 is stated for `C¹` on a domain);
-needed by work-sync `theory/T-vsc-dc-voltage-control.md` §1.1, §1.4, and as infrastructure for
-work-sync `projects/vsc-parametric-oscillation` and `projects/gfl-gfm-stability-tree` (ball form,
-`invExt`, `regDen`).
 -/
 
 noncomputable section

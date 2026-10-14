@@ -2,27 +2,38 @@ import theorem.NormalForm.Fold
 
 /-! # Dynamic fold: exact scaling of a linearly swept saddle-node
 
-Foundation layer: deterministic scaling identities only (no noise; the stochastic scaling of
-the source note belongs elsewhere).
+Deterministic scaling identities of the fold normal form under a linear parameter sweep.
 
-Model boundary. Scalar state `x(t)`, the fold normal form with a linearly decreasing parameter
-`μ(t) = μ₀ − εt` (`ε > 0`): `ẋ = μ₀ − εt − x²`, continuous time, no noise.
-
-Results.
-* Exact scaling: with `c = ε^{1/3}` (`c³ = ε`), `τ = t − μ₀/ε`, `x = c y`, `s = c τ`, a function
-  `x` solves the swept fold at time `t` iff `y(s) = x(μ₀/ε + s/c)/c` solves the parameter-free
-  Riccati equation `y' = −s − y²` at `s = c(t − μ₀/ε)` (pointwise, both directions).
-* Along the sweep `μ(t) = −ε^{2/3} s(t)`; the initial time `t = 0` corresponds to
-  `s₀ = −μ₀ ε^{−2/3}` and `y(s₀) = ε^{−1/3} x(0)`. Hence any characteristic event of the scaled
-  equation (e.g. the escape time `S(s₀, y₀)` of `y' = −s − y²`) occurs at
-  `μ* = −ε^{2/3} S(−μ₀ε^{−2/3}, ε^{−1/3}x(0))`; there is no further approximation.
-* Static parts at frozen `μ > 0`: the Kramers prefactor `2π / √|f_x(x₊) f_x(x₋)| = π/√μ` and the
-  barrier `ΔV = (4/3) μ^{3/2}` (`Fold.barrier`).
-* Correction (T-fold-critical-scaling §2.5): with `τ(μ) = 1/(2√μ)`, the breakdown criterion
-  `|μ̇|/μ > 1/τ` is `|μ̇| > 2 μ^{3/2}`, not `|μ̇| > μ^{1/2}`.
+Model boundary.
+* Scalar state `x(t)`, the fold normal form with a linearly decreasing parameter
+  `μ(t) = μ₀ − εt` (`ε > 0`): `ẋ = μ₀ − εt − x²` (`sweptField`), continuous time, no noise.
+* Deterministic scaling identities only; the stochastic scaling of the source note is
+  `theorem/Stochastic/NoiseFold.lean`.
 
 Source: work-sync theory/T-noise-induced-bifurcation.md §1.1–1.2, §1.5,
 theory/T-fold-critical-scaling.md §1.2, §1.4, §2.5.
+
+Results.
+* Exact scaling: with `c = ε^{1/3}` (`c³ = ε`, `cbrt_pow`), `τ = t − μ₀/ε`, `x = c y`, `s = c τ`,
+  a function `x` solves the swept fold at time `t` iff `y(s) = x(μ₀/ε + s/c)/c` solves the
+  parameter-free Riccati equation `y' = −s − y²` at `s = c(t − μ₀/ε)` (pointwise, both directions:
+  `rescale_hasDerivAt`, `unscale_hasDerivAt`, `unscale_rescale`).
+* Along the sweep `μ(t) = −ε^{2/3} s(t)` (`parameter_eq`, `parameter_eq_rpow`); the initial time
+  `t = 0` corresponds to `s₀ = −μ₀ ε^{−2/3}` and `y(s₀) = ε^{−1/3} x(0)` (`initial_data`). Hence
+  any characteristic event of the scaled equation (e.g. the escape time `S(s₀, y₀)` of
+  `y' = −s − y²`) occurs at `μ* = −ε^{2/3} S(−μ₀ε^{−2/3}, ε^{−1/3}x(0))`; there is no further
+  approximation.
+* Static parts at frozen `μ > 0`: the Kramers prefactor `2π / √|f_x(x₊) f_x(x₋)| = π/√μ`
+  (`kramers_prefactor`) and the barrier `ΔV = (4/3) μ^{3/2}` (`Fold.barrier`).
+
+Related fold modules: `theorem/Stochastic/NoiseFold.lean` is the noisy counterpart (additive noise
+`σ w`, read pathwise) with the same `c = ε^{1/3}` scaling, the noise rescaling to a Brownian
+motion of intensity `η = σ/√ε`; `theorem/NormalForm/FoldSlowPassage.lean` treats the inner Riccati
+problems of the slow passage through a fold — with `X = −y`, the scaled equation `y' = −s − y²`
+here is its constant-rate ramp problem `X' = λ + τ + X²` at `λ = 0` (`τ = s`).
+
+Corrections. (T-fold-critical-scaling §2.5): with `τ(μ) = 1/(2√μ)`, the breakdown criterion
+`|μ̇|/μ > 1/τ` is `|μ̇| > 2 μ^{3/2}`, not `|μ̇| > μ^{1/2}` (`breakdown_criterion`).
 -/
 
 noncomputable section

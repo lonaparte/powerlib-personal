@@ -24,6 +24,11 @@ Model boundary.
 * Level: power balance and passivity (trajectory / dissipation level), Lyapunov function and
   Lyapunov stability of the locked equilibrium, local exponential stability / instability of
   `(2kπ, 0)` / `(π + 2kπ, 0)` under zero input (equilibrium level, via `Model.lean`).
+* Related port-Hamiltonian constructions of the PI-PLL: `theorem/PLL/PIPLLPH.lean` (general
+  phase detector `h`, T-gfl-ph) and `theorem/GFL/LCLine/Reduced2D.lean` (`pHModel` of the
+  reduced 2-state GFL-PLL, detector `h(θ) = c₀ − A sin(θ + φ)`).
+
+Source: work-sync `theory/T-pll-ph.md` §1.0–§1.2.
 
 Results.
 * `Ḣ = u·h(θ) − K_p h(θ)²` (T-pll-ph §1.2); `H ≥ 0` for `V, K_i ≥ 0`, hence passivity
@@ -34,14 +39,10 @@ Results.
   local minimum of `H_s`, hence Lyapunov stable.
 * Zero input: `(2kπ, 0)` locally exponentially stable (`V K_p > 0`, `V K_i > 0`);
   `(π + 2kπ, 0)` unstable (`V K_i > 0`).
-* Structure (B): `rank R = 1` (`K_p ≠ 0`); `B` does not depend on the state.
+* PLL-specific structure (T-pll-ph §1.2 (a), (b)): `rank R = 1` (`K_p ≠ 0`); `B` does not depend
+  on the state.
 
-Source: work-sync `theory/T-pll-ph.md` §1.0–§1.2.
-Sign note: T-pll-ph writes the integrator equilibrium as `η_eq = Δω/K_i`; with its input
-`δω_g` entering through `B = (−1, 0)ᵀ` this is `δω_g/K_i`, `δω_g = ω_g − ω_s`
-(the opposite sign of the `Δω = ω_s − ω_g` of T-invariant-coordinates).
-
-## Family and connection conclusions
+Family and connection conclusions.
 `PLLPH.family` follows the pattern of `theorem/PH/Nonlinear.lean`: a complete system
 `PLLPH.Model` consists of `V`, `K_p ≥ 0`, `K_i`, an integrator set point `η*` (the constant
 frequency offset is `δω = K_i η*`) and a selected phase `θ*`; its pH system
@@ -53,10 +54,9 @@ autonomous PI-PLL family `PLL.PIPLL.family` (it has a port); on flow sentences t
 (`mem_den_flow_iff_srf`, a comparison of the two semantics connections). Requirements are
 static: `V, K_i ≥ 0`; a well bottom (`V, K_i > 0`, `cos θ* = 1`); positive loop gains at a well
 bottom; or `V K_i > 0` at an anti-phase point (`cos θ* = −1`). Connection conclusions: soundness
-(`chain_le_semantics`), passivity from nonnegative energy (`mem_den_passive`, formerly
-`pllPH_passive`), Lyapunov stability of a well bottom from the shifted Hamiltonian
-(`mem_den_lyapunovStable`, the behavioural part of the former `pllPH_shifted_lyapunov`, now at
-every well bottom and every `K_p ≥ 0`), and the former zero-input linearization results
+(`chain_le_semantics`), passivity from nonnegative energy (`mem_den_passive`), Lyapunov
+stability of a well bottom from the shifted Hamiltonian (`mem_den_lyapunovStable`, at every well
+bottom and every `K_p ≥ 0`), and the zero-input linearization results
 (`mem_den_locallyExponentiallyStable`, `mem_den_unstable_antiPhase`). Within nonnegative energy
 the local exponential translation is exact (`exactUnder_locallyExponentiallyStable`, by the converse
 linearization theorem `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`); without it
@@ -77,6 +77,10 @@ facts are static (`pllHamiltonian_shifted_lyapunovFunction`); the first integral
 loop along solution segments (`pllPH_lossless_firstIntegral`) is private implementation evidence
 (a trajectory statement; the shifted energy is periodic in `θ`, so it is not a conservation
 sentence with a strict global minimum).
+
+Sign note: T-pll-ph writes the integrator equilibrium as `η_eq = Δω/K_i`; with its input
+`δω_g` entering through `B = (−1, 0)ᵀ` this is `δω_g/K_i`, `δω_g = ω_g − ω_s`
+(the opposite sign of the `Δω = ω_s − ω_g` of T-invariant-coordinates).
 -/
 
 noncomputable section

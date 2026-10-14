@@ -7,7 +7,7 @@ import Mathlib.Topology.MetricSpace.Sequences
 Domain module (`vsc-stochastic-stability`, reduced model of `theorem/GFL/LCLine/Reduced2D.lean`).
 
 Model boundary.
-* General part: A1b's PI-PLL field `piPLLField h K_p K_i 0` (`theorem/PLL/PIPLL.lean`), state
+* General part: the PI-PLL field `piPLLField h K_p K_i 0` (`theorem/PLL/PIPLL.lean`), state
   `x 0 = θ` (PLL angle error), `x 1 = η` (PLL integrator), `θ̇ = K_p h(θ) + K_i η`, `η̇ = h(θ)`,
   no grid-frequency drift (`δω = 0`), continuous time, autonomous. Hypotheses on the phase
   detector: `h` globally Lipschitz, an antiderivative `V` of `−h` (`V′ = −h`), isolated zeros.
@@ -18,8 +18,11 @@ Model boundary.
 * Solutions are `IsIntegralCurveOn` curves on `[0, ∞)`. Level: trajectory (ω-limit) level for the
   convergence theorem; linearization level for the node / focus classification.
 
+Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/reduced-2d-equation.md` §4
+("所有有界轨迹被某盆地吸引"), `equilibria-and-bifurcation.md` §3 (结点 / 焦点判据) and §6.
+
 Results.
-* `piPLL_tendsto_of_bounded` (A2): every solution that stays bounded on `[0, ∞)` converges to a
+* `piPLL_tendsto_of_bounded`: every solution that stays bounded on `[0, ∞)` converges to a
   single equilibrium `(θ*, 0)` with `h(θ*) = 0`. Proof: the storage
   `H = ½ K_i η² + V(θ)` is nonincreasing (`Ḣ = −K_p h²`) and bounded below on the bounded
   trajectory; since `t ↦ h(θ(t))` is Lipschitz in `t`, `h(θ(t)) → 0` (Barbalat-type argument);
@@ -27,21 +30,19 @@ Results.
   theorem force `θ(t) → θ*`, and `θ(t + 1) − θ(t) − K_i η(t) → 0` gives `η(t) → 0`.
   (The LeanForControl LaSalle principle is not used: it needs a compact positively invariant set,
   and the sublevel sets of `H` are unbounded for `c₀ ≠ 0`.)
-* `Params.reduced_tendsto_equilibrium_of_bounded` (A2, instantiation), with
+* `Params.reduced_tendsto_equilibrium_of_bounded` (instantiation), with
   `Params.lipschitzWith_h`, `Params.h_zero_isolated`.
-* `Params.reduced_node_iff` (A1): at a slope `g = h′(θ*) < 0` the Jacobian (from `fderiv`) is
+* `Params.reduced_node_iff`: at a slope `g = h′(θ*) < 0` the Jacobian (from `fderiv`) is
   `[[K_p g, K_i], [g, 0]]`; it has only real eigenvalues (stable node) iff `|g| ≥ 4 K_i / K_p²`,
   otherwise a non-real pair (stable focus) — instantiating `theorem/PLL/PIPLLLinear.lean`.
 
-Family and connection conclusions. No family and no connection conclusion. The convergence of
+Family and connection conclusions.
+No family and no connection conclusion. The convergence of
 bounded solutions is a trajectory-level result (ω-limit level, on the forward ray of one
 solution) outside the sentence language: `piPLL_tendsto_of_bounded` and its instantiation
-`Params.reduced_tendsto_equilibrium_of_bounded`, formerly domain-labelled, are kept as private
+`Params.reduced_tendsto_equilibrium_of_bounded` are kept as private
 implementation evidence. The Lipschitz bound, isolation of the zeros of `h` and the node / focus
 classification of the Jacobian remain static foundation results.
-
-Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/reduced-2d-equation.md` §4
-("所有有界轨迹被某盆地吸引"), `equilibria-and-bifurcation.md` §3 (结点 / 焦点判据) and §6.
 
 Correction (`equilibria-and-bifurcation.md` §6, `reduced-2d-equation.md` §4): the notes say every
 bounded trajectory "is attracted by some basin" and that there is no "free divergence" on all of

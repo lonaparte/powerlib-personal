@@ -1,36 +1,42 @@
 import theorem.Attributes
 import dependencies.Mathlib
 
-/-! Trapezoidal companion models and the EMT nodal equation.
+/-! # Trapezoidal companion models and the EMT nodal equation
 
-Model boundary: a lumped network with `N` non-ground nodes and a finite set of two-terminal
-branches; every branch is a linear resistor, inductor or capacitor with a constant parameter
-(no switches, no controlled sources, no mutual coupling, no transmission lines), fixed step
-`h`.  Each branch runs from terminal `p` to terminal `q` (a node or ground); branch voltage
-`v_b = V_p - V_q`, branch current `i_b` flows from `p` to `q` (passive sign convention).
-KCL at node `k`: the branch currents leaving `k` sum to the external injection `J_k`.
-Time is discrete (`n : ℕ`); the element laws are the trapezoidal rule applied to
-`L di/dt = v` and `C dv/dt = i` (resistor laws are algebraic at every step).
+The trapezoidal rule on R, L, C branches is exactly the companion form, and the network
+discretization is the constant symmetric nodal equation, positive definite when every node is
+grounded through positive conductances.
 
-Results (foundation):
-* `inductor_companion_iff`, `capacitor_companion_iff`: the trapezoidal rule on the branch
-  ODE is exactly the companion form `i_{n+1} = G v_{n+1} + i_h` with `G_L = h/(2L)`,
-  `i_h^L = i_n + G_L v_n` and `G_C = 2C/h`, `i_h^C = -(i_n + G_C v_n)` (coefficients checked).
-* `trapezoidalNetwork_iff_companion`: trapezoidal branch laws + KCL at every step ⇔ the nodal
-  companion equation `G_n V_{n+1} = J_{n+1} - Σ_b i_h,b a_b` plus the branch-current update.
-  The matrix `G_n = Σ_b G_b a_b a_bᵀ` does not depend on the step index (constant matrix).
-* `nodalMatrix_transpose`: `G_n` is symmetric (every branch stamp `G_b a_b a_bᵀ` is).
-* `nodalMatrix_posSemidef`: nonnegative branch conductances ⇒ `G_n ⪰ 0`.
-* `nodalMatrix_posDef`: if additionally every node is joined to ground by a chain of
-  positive-conductance branches, `G_n ≻ 0`; `network_nodalMatrix_posDef` applies this to
-  positive `R, L, C` and `h > 0`, so every implicit EMT step is uniquely solvable.
+Model boundary.
+* A lumped network with `N` non-ground nodes and a finite set of two-terminal branches; every
+  branch is a linear resistor, inductor or capacitor with a constant parameter (no switches, no
+  controlled sources, no mutual coupling, no transmission lines), fixed step `h`.
+* Each branch runs from terminal `p` to terminal `q` (a node or ground); branch voltage
+  `v_b = V_p - V_q`, branch current `i_b` flows from `p` to `q` (passive sign convention). KCL
+  at node `k`: the branch currents leaving `k` sum to the external injection `J_k`.
+* Time is discrete (`n : ℕ`); the element laws are the trapezoidal rule applied to
+  `L di/dt = v` and `C dv/dt = i` (resistor laws are algebraic at every step).
 
 Source: work-sync theory/T-emt-simulation.md §1.2–§1.6, §2.2.
 
-Correction (T-emt-simulation.md §2.2): the note attributes the symmetry of `G_n^disc` to
-"`G_L = G_C⁻¹`".  That relation is false in general (`G_L G_C = L⁻¹ C`, not `1`) and is
-irrelevant: `G_n` is symmetric because each branch contributes the symmetric stamp
-`G_b a_b a_bᵀ` (`nodalMatrix_transpose`), for any real branch conductances.
+Results.
+* `inductor_companion_iff`, `capacitor_companion_iff` — the trapezoidal rule on the branch ODE is
+  exactly the companion form `i_{n+1} = G v_{n+1} + i_h` with `G_L = h/(2L)`,
+  `i_h^L = i_n + G_L v_n` and `G_C = 2C/h`, `i_h^C = -(i_n + G_C v_n)` (coefficients checked).
+* `trapezoidalNetwork_iff_companion` — trapezoidal branch laws + KCL at every step ⇔ the nodal
+  companion equation `G_n V_{n+1} = J_{n+1} - Σ_b i_h,b a_b` plus the branch-current update.
+  The matrix `G_n = Σ_b G_b a_b a_bᵀ` does not depend on the step index (constant matrix).
+* `nodalMatrix_transpose` — `G_n` is symmetric (every branch stamp `G_b a_b a_bᵀ` is).
+* `nodalMatrix_posSemidef` — nonnegative branch conductances ⇒ `G_n ⪰ 0`.
+* `nodalMatrix_posDef` — if additionally every node is joined to ground by a chain of
+  positive-conductance branches, `G_n ≻ 0`; `network_nodalMatrix_posDef` applies this to
+  positive `R, L, C` and `h > 0`, so every implicit EMT step is uniquely solvable.
+
+Corrections.
+* T-emt-simulation.md §2.2: the note attributes the symmetry of `G_n^disc` to "`G_L = G_C⁻¹`".
+  That relation is false in general (`G_L G_C = L⁻¹ C`, not `1`) and is irrelevant: `G_n` is
+  symmetric because each branch contributes the symmetric stamp `G_b a_b a_bᵀ`
+  (`nodalMatrix_transpose`), for any real branch conductances.
 -/
 
 noncomputable section

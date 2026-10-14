@@ -3,15 +3,23 @@ import theorem.PH.Nonlinear
 
 /-! # Port-Hamiltonian form of the reduced GFL PI-PLL (`T-gfl-ph`)
 
-Model boundary. The system is `piPLLField h K_p K_i δω` of
+Model boundary.
+The system is `piPLLField h K_p K_i δω` of
 `theorem/PLL/PIPLL.lean`: state `x = (θ, η)` (`x 0 = θ = θ̂_g − θ_g`, swing sign, `x 1 = η` PI
 integrator), continuous time, `θ̇ = K_p h(θ) + K_i η − δω`, `η̇ = h(θ)`. Here `δω` is the port
 input (allowed to be time-varying along trajectories, `u(t) = δω(t)`), `K_p ≥ 0`, `K_i` real,
 `h` an arbitrary phase-detector characteristic with a chosen primitive `V`, `V' = −h`.
 No current loop, LC, line, outer loop, saturation, delay or PWM dynamics (they are eliminated
 in the form-B reduction, which is not formalized here). Power sign: `u y` is the power entering
-through the port (incoming-positive, matching `theorem/PH/Nonlinear.lean`).
+through the port (incoming-positive, matching `theorem/PH/Nonlinear.lean`). Related
+port-Hamiltonian constructions of the PI-PLL: `theorem/PLL/PH.lean` (SRF detector
+`h = −V sin`, family `PLLPH.family`) and `theorem/GFL/LCLine/Reduced2D.lean` (`pHModel` of the
+reduced 2-state GFL-PLL, detector `h(θ) = c₀ − A sin(θ + φ)`).
 
+Source: work-sync `theory/T-gfl-ph.md` (1.1)–(1.4), §1.2 "复用 [[T-pll-ph]] 的所有结构性结论",
+§1.3 bare-PLL degeneration; parent `theory/T-ph.md` assumption 3.
+
+Results.
 pH data (T-gfl-ph (1.2)): `H(θ, η) = V(θ) + (K_i / 2) η²`, `∇H = (−h(θ), K_i η)`,
 `J = [[0, 1], [−1, 0]]`, `R = diag(K_p, 0) ⪰ 0`, `B = (−1, 0)ᵀ`, output `y = Bᵀ ∇H = h(θ)`.
 * `gflPH_field`: `(J − R) ∇H + B δω` is exactly the PI-PLL field.
@@ -22,25 +30,24 @@ pH data (T-gfl-ph (1.2)): `H(θ, η) = V(θ) + (K_i / 2) η²`, `∇H = (−h(θ
   `−∫₀^θ h`), and the fact that for `c₀ ≠ 0` the Hamiltonian is **unbounded below**
   (`formBHamiltonian_not_bddBelow`); hence for no constant `c` is `H − c` a nonnegative storage,
   and passivity cannot be obtained with storage `H − c`
-  (`formB_not_passiveWithStorage`, private). This violates assumption 3 (`H ≥ H_min`) of the parent note
-  `T-ph`, which `T-gfl-ph` §1.2 claims to inherit.
+  (`formB_not_passiveWithStorage`, private). This violates assumption 3 (`H ≥ H_min`) of the parent
+  note `T-ph`, which `T-gfl-ph` §1.2 claims to inherit.
 
-Source: work-sync `theory/T-gfl-ph.md` (1.1)–(1.4), §1.2 "复用 [[T-pll-ph]] 的所有结构性结论",
-§1.3 bare-PLL degeneration; parent `theory/T-ph.md` assumption 3.
-Correction (§1.2): "能量平衡与无源…无需重新证明" — the power balance holds, but passivity with a
-nonnegative storage fails whenever `c₀ ≠ 0`: `H` contains `−c₀ θ / (ω_g C_f)`.
-Correction (§1.3): the bare-PLL degeneration `c₁ = −V_g` gives `h = −V_g sin θ / (ω_g C_f)`, not
-`−V_g sin θ`; the correct choice is `c₁ = −V_g ω_g C_f` (`formBH_barePLL`).
-
-Family and connection conclusions. No family is defined here (and none may take
+Family and connection conclusions.
+No family is defined here (and none may take
 `PH.NonlinearModel` itself as its model type): the autonomous behaviour of this model with
 constant `δω` is the PI-PLL family `PLL.PIPLL.family` (`gflPH_field` identifies the fields). The
-former domain theorems are re-classified: the field identity (`gflPH_field`), the pointwise power
+field identity (`gflPH_field`), the pointwise power
 balance (`gflPH_power_balance`) and the unboundedness of the form-B Hamiltonian
 (`formBHamiltonian_not_bddBelow`) are static evidence on the model, not connection conclusions;
 the energy identity along solutions (`gflPH_trajectory_energy`) and the failure of passivity with
 the particular storages `H − c` (`formB_not_passiveWithStorage`, a statement about one storage,
 not the passivity sentence) are private implementation evidence.
+
+Correction (§1.2): "能量平衡与无源…无需重新证明" — the power balance holds, but passivity with a
+nonnegative storage fails whenever `c₀ ≠ 0`: `H` contains `−c₀ θ / (ω_g C_f)`.
+Correction (§1.3): the bare-PLL degeneration `c₁ = −V_g` gives `h = −V_g sin θ / (ω_g C_f)`, not
+`−V_g sin θ`; the correct choice is `c₁ = −V_g ω_g C_f` (`formBH_barePLL`).
 -/
 
 noncomputable section

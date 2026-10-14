@@ -1,33 +1,41 @@
 import theorem.Linear.Transfer
 
-/-! Modal decomposition data and participation factors (foundation).
+/-! # Modal decomposition data and participation factors
 
-Source: work-sync `theory/T-participation-factor.md` §1.1–§1.6, §1.10, §2.4–§2.5;
-`theory/T-small-signal-stability.md` §1.5, §1.7, §1.9; `conventions.md` §2.
+Modal data of a diagonalisable matrix and the participation factors: their sums, their role as
+residues of the resolvent and transfer channels, invariance under state scaling, the geometric
+form, and the PBH meaning of a vanishing residue.
 
-Setting: a complex square matrix `A` (for a real state matrix, `Linear.complexify A`).
-`ModalBasis A` records a diagonalisation: the columns `v i` of `V` are right eigenvectors, the
-columns `ψ i` of `W` are left eigenvectors, and the biorthonormality `Wᵀ V = I`
-(`ψ_iᵀ v_j = δ_ij`) holds. The existence of such data is exactly diagonalisability of `A`;
-it is a hypothesis of every statement here (defective matrices are excluded).
+Scope.
+* A complex square matrix `A` (for a real state matrix, `Linear.complexify A`). `ModalBasis A`
+  records a diagonalisation: the columns `v i` of `V` are right eigenvectors, the columns `ψ i`
+  of `W` are left eigenvectors, and the biorthonormality `Wᵀ V = I` (`ψ_iᵀ v_j = δ_ij`) holds.
+  The existence of such data is exactly diagonalisability of `A`; it is a hypothesis of every
+  statement here (defective matrices are excluded).
+* Matrix-level statements with no model family. The real LTI system of the transfer expansion is
+  given by its matrices `A B C D` (state index `n`, `p` inputs and outputs) and
+  `Linear.transferOf`.
 
-* `pf k i = v_{ki} ψ_{ki}` (Pérez-Arriaga). Row and column sums are `1` (§1.2).
-* Resolvent partial fractions: `(sI − A)⁻¹ = Σ_i (s − λ_i)⁻¹ v_i ψ_iᵀ`; the `(k,k)` entry is
+Source: work-sync theory/T-participation-factor.md §1.1–§1.6, §1.10, §2.4–§2.5;
+theory/T-small-signal-stability.md §1.5, §1.7, §1.9; conventions.md §2.
+
+Results.
+* `pf`, `sum_pf_modes`, `sum_pf_states` — `pf k i = v_{ki} ψ_{ki}` (Pérez-Arriaga). Row and
+  column sums are `1` (§1.2).
+* `resolvent_eq`, `pf_eq_residue`, `io_expansion`, `transfer_expansion` — resolvent partial
+  fractions: `(sI − A)⁻¹ = Σ_i (s − λ_i)⁻¹ v_i ψ_iᵀ`; the `(k,k)` entry is
   `Σ_i p_{ki} / (s − λ_i)`, i.e. `p_{ki}` is the residue of the `(k,k)` channel (§1.1).
   Input/output residues `R^{(i)}_{ℓj} = (C v_i)_ℓ (ψ_iᵀ B)_j` and the expansion of a real LTI
   transfer matrix `G(s) = Σ_i R^{(i)} / (s − λ_i) + D` (§1.5, small-signal §1.9).
-* Diagonal state scaling `x̃ = T x` gives a modal basis of `T A T⁻¹` with the same
-  participation factors (§1.6). The "weighted PF" of §1.4 with diagonal weights is
-  identically the original PF (`weightedPF_eq`, as the note itself observes); grouped PFs sum
-  to `1` over a partition of the states (`sum_groupPF`).
-* Geometric PF (§1.10): `|p_{ki}| = ‖v_i‖ ‖ψ_i‖ g_{ki}` with `0 ≤ g_{ki} ≤ 1`.
-* For a simple eigenvalue, the SISO residue `(c v_i)(ψ_iᵀ b)` vanishes iff the mode is
-  uncontrollable from `b` or unobservable from `c` in the PBH (Hautus) eigenvector sense
-  (§2.5, `residue_eq_zero_iff`).
-
-Architecture: matrix-level foundation with no model family; all results remain public. The real
-LTI system of the transfer expansion is given by its matrices `A B C D` (state index `n`, `p`
-inputs and outputs) and `Linear.transferOf`.
+* `scale_pf`, `weightedPF_eq`, `sum_groupPF` — diagonal state scaling `x̃ = T x` gives a modal
+  basis of `T A T⁻¹` with the same participation factors (§1.6). The "weighted PF" of §1.4 with
+  diagonal weights is identically the original PF (as the note itself observes); grouped PFs sum
+  to `1` over a partition of the states.
+* `norm_pf_eq`, `geomPF_nonneg`, `geomPF_le_one` — geometric PF (§1.10):
+  `|p_{ki}| = ‖v_i‖ ‖ψ_i‖ g_{ki}` with `0 ≤ g_{ki} ≤ 1`.
+* `residue_eq_zero_iff` — for a simple eigenvalue, the SISO residue `(c v_i)(ψ_iᵀ b)` vanishes
+  iff the mode is uncontrollable from `b` or unobservable from `c` in the PBH (Hautus)
+  eigenvector sense (§2.5).
 -/
 
 noncomputable section

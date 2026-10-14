@@ -2,13 +2,29 @@ import theorem.Flow.Basic
 
 /-! # Moving an equilibrium to the origin
 
-Generic foundation, independent of any model: each behavioural sentence of the Flow semantics
-holds for `f` at `e` exactly when it holds for `z ↦ f (z + e)` at `0`
-(`Flow.Property.holds_shift_iff`). Model families read about a non-zero operating point use it to
-place the operating point at the origin, where the sentences of the library are interpreted.
-The per-predicate lemmas (`Dynamics.lyapunovStable_shift_iff`, …) live in `powerlib.Dynamics`;
-`Flow.Property.holds_shift_iff` keeps the namespace of the codex type `Flow.Property` it extends
-(dot notation). -/
+Each behavioural sentence of the Flow semantics holds for `f` at `e` exactly when it holds for
+`z ↦ f (z + e)` at `0` (`Flow.Property.holds_shift_iff`). Model families read about a non-zero
+operating point use it to place the operating point at the origin, where the sentences of the
+library are interpreted.
+
+Scope.
+* Generic foundation, independent of any model: autonomous fields `f : ℝⁿ → ℝⁿ` on
+  `ℝⁿ = EuclideanSpace ℝ (Fin n)`, read through the Flow semantics.
+
+Source: work-sync `theory/T-dynamical-systems.md` §1.3 (deviation coordinates `ξ = x − x*` about
+an equilibrium).
+
+Results.
+* `Flow.Property.holds_shift_iff`: every behavioural sentence is invariant under moving the
+  equilibrium to the origin. It keeps the namespace of the codex type `Flow.Property` it extends
+  (dot notation).
+* The per-predicate lemmas live in `powerlib.Dynamics`: `isIntegralCurveOn_shift_iff`,
+  `isEquilibrium_shift_iff`, `lyapunovStable_shift_iff`, `locallyExponentiallyStable_shift_iff`,
+  `unstable_shift_iff`, `localAsymptoticStable_shift_iff`, `globalAsymptoticStable_shift_iff`,
+  `forwardComplete_shift_iff`, `decay_shift_iff`, `sampledContraction_shift_iff`,
+  `globallyExponentiallyStable_shift_iff`, `globallyAsymptoticallyStable_shift_iff`,
+  `conservative_shift_iff`.
+-/
 
 noncomputable section
 

@@ -4,42 +4,50 @@ import Mathlib.Probability.BrownianMotion.Basic
 
 /-! # Noisy swept fold: exact Brownian rescaling and corrected static exponents
 
-Source: work-sync `theory/T-noise-induced-bifurcation.md` §1.1 (`dx = (μ(t) − x²) dt + σ dW`,
+The pathwise rescaling of a noisy linearly swept fold to a parameter-free problem driven by a
+Brownian motion, and the corrected static Kramers exponent and noise-induced advance.
+
+Model boundary.
+* Scalar state, fold normal form with linearly swept parameter, additive noise. Because the
+  noise is additive, the SDE is understood **pathwise** as the integral equation
+  `x(t) = x(0) + ∫₀ᵗ (μ₀ − ε r − x(r)²) dr + σ w(t)` for a given continuous driving path `w`
+  (`w(0) = 0`); no Itô integral is needed. Time `t ≥ 0`, continuous.
+* We do not prove existence, uniqueness or non-explosion of solutions, and we do not compute the
+  escape law.
+* The pathwise solution notions are written out in the statements (behaviour is defined only in
+  the semantic layer): `x` solves the swept problem driven by `w` when
+  `∀ t ≥ 0, x(t) = x(0) + ∫₀ᵗ (μ₀ − ε r − x(r)²) dr + σ w(t)`, and `y` solves the rescaled
+  problem driven by `w̃` when `∀ s ≥ 0, y(s) = y(0) + ∫₀ˢ (s₀ − r − y(r)²) dr + η w̃(s)`.
+* Related fold modules: `theorem/NormalForm/DynamicFold.lean` is the deterministic (`σ = 0`)
+  counterpart — the same swept fold `ẋ = μ₀ − εt − x²` with the same `c = ε^{1/3}` scaling
+  (there with the time origin moved to `t = μ₀/ε`), pointwise in time;
+  `theorem/NormalForm/FoldSlowPassage.lean` treats the inner Riccati problem of the slow passage
+  through a fold and its solvability condition. Here only the stochastic part.
+
+Source: work-sync theory/T-noise-induced-bifurcation.md §1.1 (`dx = (μ(t) − x²) dt + σ dW`,
 `μ(t) = μ₀ − εt`), §1.3 (`η = σ/√ε`, strong-noise advance), §1.5 (static Kramers law
-`τ ∼ (π/√μ) exp(4μ^{3/2}/(3σ²))`).  The deterministic scaling is formalized separately in
-`theorem/NormalForm/DynamicFold.lean` (A7a); here only the stochastic part.
+`τ ∼ (π/√μ) exp(4μ^{3/2}/(3σ²))`).
 
-Model boundary.  Scalar state, fold normal form with linearly swept parameter, additive noise.
-Because the noise is additive, the SDE is understood **pathwise** as the integral equation
-`x(t) = x(0) + ∫₀ᵗ (μ₀ − ε r − x(r)²) dr + σ w(t)` for a given continuous driving path `w`
-(`w(0) = 0`); no Itô integral is needed.  Time `t ≥ 0`, continuous.  Foundation results: we do
-not prove existence, uniqueness or non-explosion of solutions, and we do not compute the escape
-law.
-
-The pathwise solution notions are written out in the statements (behaviour is defined only in
-the semantic layer): `x` solves the swept problem driven by `w` when
-`∀ t ≥ 0, x(t) = x(0) + ∫₀ᵗ (μ₀ − ε r − x(r)²) dr + σ w(t)`, and `y` solves the rescaled problem
-driven by `w̃` when `∀ s ≥ 0, y(s) = y(0) + ∫₀ˢ (s₀ − r − y(r)²) dr + η w̃(s)`.
-
-Main results.
-* `sweptFold_rescale_iff`: with `ε = c³` (`c > 0`), `x` solves the swept problem driven by `w`
+Results.
+* `sweptFold_rescale_iff` — with `ε = c³` (`c > 0`), `x` solves the swept problem driven by `w`
   iff `y(s) = x(s/c)/c` solves the parameter-free problem
   `y(s) = y(0) + ∫₀ˢ (s₀ − r − y(r)²) dr + η w̃(s)` driven by `w̃(s) = √c · w(s/c)`, with
   `s₀ = μ₀/c² = μ₀ ε^{−2/3}` and `η = σ/c^{3/2} = σ/√ε`.
-* `rescaled_noise_isBrownian`: if `B` is a Brownian motion then `w̃_s = √c B_{s/c}` is again a
+* `rescaled_noise_isBrownian` — if `B` is a Brownian motion then `w̃_s = √c B_{s/c}` is again a
   Brownian motion (Mathlib `IsBrownianReal.smul`); `rescaled_path_eq` identifies its paths.
   Consequently, for every sample path the original and rescaled problems correspond, and the
-  rescaled problem is driven by a Brownian motion: any crossing statistic of the swept problem is
-  `μ* = c² × (a functional of the rescaled problem)`, whose law depends only on `(s₀, η, y(0))`
-  — the precise form of "`μ* = ε^{2/3} F(η)` in distribution" (`parameter_rescale`).
+  rescaled problem is driven by a Brownian motion: any crossing statistic of the swept problem
+  is `μ* = c² × (a functional of the rescaled problem)`, whose law depends only on
+  `(s₀, η, y(0))` — the precise form of "`μ* = ε^{2/3} F(η)` in distribution"
+  (`parameter_rescale`).
 
 Corrections.
-* (§1.5) For `V(x) = x³/3 − μx` the barrier is `ΔV = (4/3)μ^{3/2}` and the noise temperature of
+* §1.5: for `V(x) = x³/3 − μx` the barrier is `ΔV = (4/3)μ^{3/2}` and the noise temperature of
   `σ dW` is `D = σ²/2`, so the Arrhenius exponent is `ΔV/D = 8μ^{3/2}/(3σ²)`
   (`kramers_exponent`), twice the note's `4μ^{3/2}/(3σ²)`.
-* (§1.3, segment 3) Balancing `ΔV/D` against an order-one constant `κ` gives
-  `μ = (3κ/8)^{2/3} σ^{4/3}` (`advance_scale`): the noise-induced advance scales as `σ^{4/3}`, not
-  `σ^{2/3}`.
+* §1.3, segment 3: balancing `ΔV/D` against an order-one constant `κ` gives
+  `μ = (3κ/8)^{2/3} σ^{4/3}` (`advance_scale`): the noise-induced advance scales as `σ^{4/3}`,
+  not `σ^{2/3}`.
 -/
 
 noncomputable section

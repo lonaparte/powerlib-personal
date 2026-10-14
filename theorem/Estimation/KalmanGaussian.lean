@@ -7,21 +7,27 @@ import Mathlib.Probability.ConditionalExpectation
 
 /-! # Kalman update = conditional mean in the scalar linear-Gaussian model
 
-Source: work-sync `theory/T-kalman-filter.md` §1.1 (measurement update `K = P Hᵀ S⁻¹`,
-`x̂⁺ = x̂ + K (y − H x̂)`, `P⁺ = (I − K H) P`; "for linear-Gaussian models the Kalman update is the
-exact conditional mean and covariance").
+In the scalar linear-Gaussian model the Kalman update is the conditional mean and the Kalman
+posterior variance is the conditional variance.
 
-Foundation (probability), not an engineering result.  Scalar state and scalar measurement:
-`X ~ N(m, p)`, `V ~ N(0, r)` independent, `Y = h X + V`, gain `k = p h / (h² p + r)`.
-* `kalman_innovation_indep` (Gaussian conditioning lemma): the estimation error
+Scope.
+* Probability theory, not an engineering result. Scalar state and scalar measurement:
+  `X ~ N(m, p)`, `V ~ N(0, r)` independent, `Y = h X + V`, gain `k = p h / (h² p + r)`.
+* The vector case (matrix gain, Gaussian vectors) is
+  `theorem/Estimation/KalmanGaussianVector.lean`.
+
+Source: work-sync theory/T-kalman-filter.md §1.1 (measurement update `K = P Hᵀ S⁻¹`,
+`x̂⁺ = x̂ + K (y − H x̂)`, `P⁺ = (I − K H) P`; "for linear-Gaussian models the Kalman update is
+the exact conditional mean and covariance").
+
+Results.
+* `kalman_innovation_indep` — Gaussian conditioning lemma: the estimation error
   `Z = X − m − k (Y − h m)` is independent of `Y` (jointly Gaussian and uncorrelated; Mathlib
   `HasGaussianLaw.indepFun_of_covariance_eq_zero`).
-* `kalman_condExp_eq`: `E[X | Y] = m + k (Y − h m)` a.s. — the Kalman update is the conditional
+* `kalman_condExp_eq` — `E[X | Y] = m + k (Y − h m)` a.s.: the Kalman update is the conditional
   mean.
-* `kalman_condVar_eq`: `E[(X − E[X|Y])² | Y] = (1 − k h) p` a.s. — the Kalman posterior variance
-  is the (deterministic) conditional variance.
-
-The vector case (matrix gain, Gaussian vectors) is `theorem/Estimation/KalmanGaussianVector.lean`.
+* `kalman_condVar_eq` — `E[(X − E[X|Y])² | Y] = (1 − k h) p` a.s.: the Kalman posterior
+  variance is the (deterministic) conditional variance.
 -/
 
 noncomputable section

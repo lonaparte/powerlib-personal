@@ -3,16 +3,18 @@ import theorem.LTI.Plant
 
 /-! # Frequency measurement by SRF-PLL: bandwidth, phase, ROCOF
 
-Exact frequency-response identities for the formalized
-linearized SRF-PLL of `theorem/PLL/Linear.lean` (`frequencyModel`, transfer
-`H(s) = (a s + b)/(s² + a s + b)`, `a = V K_p`, `b = V K_i`; with `V = 1` this is
-T-frequency-measurement §1.1's `(K_p s + K_i)/(s² + K_p s + K_i)`).
-No stability claim is made here; the stability of these models is in `Linear.lean`
-(`LinearPLL.family`). This module defines no family and states no behaviour of a family's
-models: every result is a frequency-response identity. The PMU window estimator and the ROCOF
-trip probability are in `theorem/Frequency/Measurement.lean`.
+Exact frequency-response identities of the linearized SRF-PLL used as a frequency meter. The PMU
+window estimator and the ROCOF trip probability are in `theorem/Frequency/Measurement.lean`.
 
-Contents.
+Model boundary.
+* System: the formalized linearized SRF-PLL of `theorem/PLL/Linear.lean` (`frequencyModel`,
+  transfer `H(s) = (a s + b)/(s² + a s + b)`, `a = V K_p`, `b = V K_i`; with `V = 1` this is
+  T-frequency-measurement §1.1's `(K_p s + K_i)/(s² + K_p s + K_i)`), with the boundary stated
+  there (locked operating point, no pre-filter, sampling, delay or PWM; continuous time).
+
+Source: work-sync `theory/T-frequency-measurement.md` §1.1–§1.5.
+
+Results.
 * −3 dB bandwidth: for `V K_i > 0`, on `ω ≥ 0`, `|H(jω)|² = 1/2` holds exactly at
   `ω_b = ω_n √(1 + 2ζ² + √((1 + 2ζ²)² + 1))` (`ω_n = √(V K_i)`, `ζ = V K_p/(2ω_n)`), with
   `|H|² > 1/2` below and `< 1/2` above (`V K_p ≠ 0`).
@@ -23,7 +25,10 @@ Contents.
   output (`theorem/LTI/Plant.lean`); for the PLL `rocofModel` has transfer `s H(s)` and
   `|s H(jω)|² = ω² |H(jω)|²` (noise PSD amplified by `ω²`).
 
-Source: work-sync `theory/T-frequency-measurement.md` §1.1–§1.5.
+Family and connection conclusions.
+No family and no connection conclusion: every result is a frequency-response identity, not a
+behaviour of a family's models. The stability of these models is in `theorem/PLL/Linear.lean`
+(`LinearPLL.family`).
 
 Correction (§1.1 bandwidth): the note gives `ω_b ≈ 2ω_n √(1 − 2ζ² + √(4ζ⁴ − 4ζ² + 2))`
 (the formula of a pure second-order low-pass `ω_n²/(s² + 2ζω_n s + ω_n²)`, with an extra

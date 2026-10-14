@@ -2,38 +2,39 @@ import theorem.Asymptotics.GaussianMoments
 
 /-! # Endpoint versus interior Laplace: the truncated moment table
 
-Foundation layer. This module formalizes the *term table* of the endpoint Laplace note: the
-three leading contributions of `∫ g(y) e^{-X φ(y)} dy` after the Taylor substitution
-`y = y* + ξ`, `g = g₀ + g₁ ξ + …`, `φ = φ* + φ₂ ξ²/2 + φ₃ ξ³/6 + …`, namely
+The *term table* of the endpoint Laplace note: the three leading contributions of
+`∫ g(y) e^{-X φ(y)} dy`, summed over the half line (endpoint minimum) and over the full line
+(interior minimum).
 
+Scope.
+* After the Taylor substitution `y = y* + ξ`, `g = g₀ + g₁ ξ + …`,
+  `φ = φ* + φ₂ ξ²/2 + φ₃ ξ³/6 + …`, the table is
   `g₀ ∫ e^{-bξ²/2}`, `g₁ ∫ ξ e^{-bξ²/2}`, `-g₀ (X φ₃/6) ∫ ξ³ e^{-bξ²/2}`, with `b = X φ₂`,
-
-integrated over the half line (endpoint minimum) or the full line (interior minimum). The
-common factor `e^{-X φ*}` is omitted.
-
-Results:
-* `endpointTable_eq`: on the half line the table sums to
-  `½ g₀ √(2π/(X φ₂)) (1 + c X^{-1/2})` with
-  `c = √(2/π) (g₁/g₀ - φ₃/(3 φ₂)) / √φ₂`; the prefactor `½` is the half Gaussian, and both
-  odd terms contribute at relative order `X^{-1/2}`.
-* `endpointCorrection_ne_zero_iff`: the half-order term is present iff
-  `g₁/g₀ ≠ φ₃/(3 φ₂)`.
-* `interiorTable_eq`: on the full line the odd terms vanish identically and the table is
-  `g₀ √(2π/(X φ₂))`, with no `X^{-1/2}` term.
-
-Scope: this is an exact statement about the truncated table, not the Laplace asymptotic
-theorem itself (no remainder estimate for the discarded Taylor terms is proved here). The
-remainder-controlled correction orders — interior `1 + O(1/X)`, endpoint `1 + O(X^{−1/2})` —
-are `laplace_interior_rate` / `laplace_endpoint_rate` (and their `IsBigO` forms) in
-`Asymptotics/LaplaceMethod.lean`.
-
-Correction: the note states "端点处……修正从 `O(X^{-1})` 变成 `O(X^{-1/2})`" and, for the
-guard barrier, "修正确为半阶" from `U''' ≠ 0` alone. The half-order coefficient is
-`√(2/π)(g₁/g₀ - φ₃/(3φ₂))/√φ₂`, so `φ₃ ≠ 0` is not sufficient: the half-order term is absent
-exactly when `g₁/g₀ = φ₃/(3φ₂)`. The formal statement carries this extra hypothesis.
+  integrated over the half line or the full line. The common factor `e^{-X φ*}` is omitted.
+* This is an exact statement about the truncated table, not the Laplace asymptotic theorem
+  itself (no remainder estimate for the discarded Taylor terms is proved here). The
+  remainder-controlled correction orders — interior `1 + O(1/X)`, endpoint `1 + O(X^{−1/2})` —
+  are `laplace_interior_rate` / `laplace_endpoint_rate` (and their `IsBigO` forms) in
+  `Asymptotics/LaplaceMethod.lean`.
 
 Source: work-sync theory/T-endpoint-laplace-asymptotics.md §1.1 (moment table and the
 `X^{-1/2}` vs `X^{-1}` comparison).
+
+Results.
+* `endpointTable_eq` — on the half line the table sums to
+  `½ g₀ √(2π/(X φ₂)) (1 + c X^{-1/2})` with
+  `c = √(2/π) (g₁/g₀ - φ₃/(3 φ₂)) / √φ₂`; the prefactor `½` is the half Gaussian, and both
+  odd terms contribute at relative order `X^{-1/2}`.
+* `endpointCorrection_ne_zero_iff` — the half-order term is present iff
+  `g₁/g₀ ≠ φ₃/(3 φ₂)`.
+* `interiorTable_eq` — on the full line the odd terms vanish identically and the table is
+  `g₀ √(2π/(X φ₂))`, with no `X^{-1/2}` term.
+
+Corrections.
+* The note states "端点处……修正从 `O(X^{-1})` 变成 `O(X^{-1/2})`" and, for the guard barrier,
+  "修正确为半阶" from `U''' ≠ 0` alone. The half-order coefficient is
+  `√(2/π)(g₁/g₀ - φ₃/(3φ₂))/√φ₂`, so `φ₃ ≠ 0` is not sufficient: the half-order term is absent
+  exactly when `g₁/g₀ = φ₃/(3φ₂)`. The formal statement carries this extra hypothesis.
 -/
 
 noncomputable section

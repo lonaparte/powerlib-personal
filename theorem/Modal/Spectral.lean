@@ -1,36 +1,42 @@
 import theorem.Modal.Participation
 
-/-! Modal response, residues, poles and repeated-eigenvalue participation (foundation).
+/-! # Modal response, residues, poles and repeated-eigenvalue participation
 
-Source: work-sync `theory/T-small-signal-stability.md` §1.5 (modal decomposition and free
+The modal free response, conjugate-pair contributions, modal residues, the characteristic
+polynomial in modal form, basis-independent subspace participation for repeated eigenvalues, and
+poles of a modally controllable and observable realization.
+
+Scope.
+* All statements assume a `ModalBasis` (diagonalisable state matrix); defective matrices are
+  excluded.
+* Matrix-level statements with no model family.
+
+Source: work-sync theory/T-small-signal-stability.md §1.5 (modal decomposition and free
 response), §1.9 (transfer-function poles versus eigenvalues);
-`theory/T-participation-factor.md` §1.1 (PF as residue), §1.3 (conjugate-pair contribution),
-§1.8 (repeated eigenvalues: subspace participation); `theory/T-eigenvalue-analysis.md` §1.1.
+theory/T-participation-factor.md §1.1 (PF as residue), §1.3 (conjugate-pair contribution),
+§1.8 (repeated eigenvalues: subspace participation); theory/T-eigenvalue-analysis.md §1.1.
 
-All statements assume a `ModalBasis` (diagonalisable state matrix); defective matrices are
-excluded.
-
-* `modal_free_response`: every global solution of the real linear system `ẋ = A x` on
+Results.
+* `modal_free_response` — every global solution of the real linear system `ẋ = A x` on
   `ℝᴺ = EuclideanSpace ℝ (Fin N)` satisfies `x(t) = Σ_i e^{λ_i t} (ψ_iᵀ x(0)) v_i`, and so does
   every solution segment of the field `LinearSystems.affineLinearVectorField A 0` from time `0`
   (`modal_free_response_on`); with `x(0) = e_k`, `x_k(t) = Σ_i p_{ki} e^{λ_i t}`
   (`pf_free_response`): the PF is the modal weight of the `(k,k)` free-response channel.
-* `conj_pair_contribution`: `p e^{λt} + p̄ e^{λ̄t} = 2|p| e^{σt} cos(ωt + arg p)`.
-* `tendsto_resolvent_residue`, `tendsto_io_residue`: at a simple eigenvalue, `(s − λ_i)` times
+* `conj_pair_contribution` — `p e^{λt} + p̄ e^{λ̄t} = 2|p| e^{σt} cos(ωt + arg p)`.
+* `tendsto_resolvent_residue`, `tendsto_io_residue` — at a simple eigenvalue, `(s − λ_i)` times
   the resolvent / transfer channel tends to the modal residue.
-* `det_sub_eq_prod`, `charpoly_eq_prod`, `rootMultiplicity_eq_card`: the characteristic
+* `det_sub_eq_prod`, `charpoly_eq_prod`, `rootMultiplicity_eq_card` — the characteristic
   polynomial is `Π_i (X − λ_i)`, so the algebraic multiplicity of `μ` is the number of modal
   indices with `λ_i = μ`.
-* `spectralProj`: `E_μ = Σ_{λ_i = μ} v_i ψ_iᵀ`. It does not depend on the chosen modal basis
-  (`spectralProj_eq`); hence the subspace participation `P_{k,μ} = Σ_{λ_i = μ} p_{ki}` is
-  basis independent (`subspacePF_eq`) even though individual `p_{ki}` are not, and
-  `Σ_k P_{k,μ}` is the algebraic multiplicity of `μ` (`sum_subspacePF`).
-* Poles: for a real LTI system `(A, B, C, D)` with diagonalisable state matrix, simple
-  eigenvalues and modal (PBH) controllability/observability, `G = Linear.transferOf A B C D`
-  has a simple pole with nonzero residue at exactly the eigenvalues (`transfer_pole_iff`); away
-  from the spectrum `G` is continuous.
-
-Architecture: matrix-level foundation with no model family; all results remain public.
+* `spectralProj`, `spectralProj_eq`, `subspacePF_eq`, `sum_subspacePF` —
+  `E_μ = Σ_{λ_i = μ} v_i ψ_iᵀ` does not depend on the chosen modal basis; hence the subspace
+  participation `P_{k,μ} = Σ_{λ_i = μ} p_{ki}` is basis independent even though individual
+  `p_{ki}` are not, and `Σ_k P_{k,μ}` is the algebraic multiplicity of `μ`.
+* `transfer_pole_iff` — for a real LTI system `(A, B, C, D)` with diagonalisable state matrix,
+  simple eigenvalues and modal (PBH) controllability/observability,
+  `G = Linear.transferOf A B C D` has a simple pole with nonzero residue at exactly the
+  eigenvalues; away from the spectrum `G` is continuous (`transfer_continuousAt`). The general
+  minimal-realization statement is `theorem/Modal/Poles.lean`.
 -/
 
 noncomputable section

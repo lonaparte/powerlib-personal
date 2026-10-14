@@ -3,33 +3,39 @@ import theorem.Line.Cable
 
 /-! # Exact (Schelkunoff) tubular-conductor impedances: frequency limits and Wedepohl–Wilcox
 
+Static special-function analysis of the exact Bessel-function impedances of a tubular conductor:
+their low- and high-frequency limits and rates, and their comparison with the Wedepohl–Wilcox
+`coth`/`csch` formulas.
+
+Model boundary.
+* A straight homogeneous tubular conductor (inner radius `a > 0`, outer radius `b > a`,
+  thickness `t = b − a`, resistivity `ρ`), axially symmetric current, quasi-static field in the
+  metal (displacement current neglected), sinusoidal steady state; `m = √(jωμ/ρ)` is the
+  propagation constant of the diffusion equation, any complex `m` with `Re m > 0` (the physical
+  one is `m = (1 + j)s`, `s = √(ωμ/(2ρ)) = 1/δ`).
+* Per unit length, with `D(m) = I₁(mb)K₁(ma) − I₁(ma)K₁(mb)` (`tubeDet`):
+  `exactZin = (ρm/(2πa)) (I₀(ma)K₁(mb) + K₀(ma)I₁(mb))/D` — inner-surface impedance (return
+  current inside the tube); `exactZout = (ρm/(2πb)) (I₀(mb)K₁(ma) + K₀(mb)I₁(ma))/D` —
+  outer-surface impedance; `exactZmut = ρ/(2πab D)` — transfer (screening) impedance.
+* `I₀`, `I₁` are the power series of `theorem/SpecialFunctions/BesselI.lean`; `K₀`, `K₁` the
+  integrals `∫₀^∞ e^{−z cosh t}(1, cosh t) dt` of `theorem/SpecialFunctions/BesselK.lean`. The
+  formulas are the definitions here (the field solution behind them is not derived). No
+  proximity effect, no earth return, no insulation; the Wedepohl–Wilcox comparisons use
+  `Cable.tubeZin`, `tubeZout`, `tubeZmut` of `theorem/Line/Cable.lean`.
+
 Source: work-sync `theory/T-cable.md` §1.2.2 ("管状导体（屏蔽层）的三个阻抗" — the note states
 the Wedepohl–Wilcox `coth`/`csch` forms and their limits: "低频 → 管的直流电阻（无屏蔽），高频
 `csch(mt) ∼ e^{−mt} → 0`（完全屏蔽）"); §1.2 heading "Schelkunoff / Wedepohl–Wilcox"; ref. 1
 (Schelkunoff 1934, the exact Bessel-function solution).
 
-Model boundary. A straight homogeneous tubular conductor (inner radius `a > 0`, outer radius
-`b > a`, thickness `t = b − a`, resistivity `ρ`), axially symmetric current, quasi-static field
-in the metal (displacement current neglected), sinusoidal steady state; `m = √(jωμ/ρ)` is the
-propagation constant of the diffusion equation, any complex `m` with `Re m > 0` (the physical
-one is `m = (1 + j)s`, `s = √(ωμ/(2ρ)) = 1/δ`). Per unit length, with
-`D(m) = I₁(mb)K₁(ma) − I₁(ma)K₁(mb)` (`tubeDet`):
-* `exactZin  = (ρm/(2πa)) (I₀(ma)K₁(mb) + K₀(ma)I₁(mb))/D` — inner-surface impedance (return
-  current inside the tube),
-* `exactZout = (ρm/(2πb)) (I₀(mb)K₁(ma) + K₀(mb)I₁(ma))/D` — outer-surface impedance,
-* `exactZmut = ρ/(2πab D)` — transfer (screening) impedance.
-`I₀`, `I₁` are the power series of `theorem/SpecialFunctions/BesselI.lean`; `K₀`, `K₁` the
-integrals `∫₀^∞ e^{−z cosh t}(1, cosh t) dt` of `theorem/SpecialFunctions/BesselK.lean`. The
-formulas are the definitions here (the field solution behind them is not derived). No proximity effect, no
-earth return, no insulation; the Wedepohl–Wilcox comparisons use `Cable.tubeZin`, `tubeZout`,
-`tubeZmut` of `theorem/Line/Cable.lean`.
-
-Results (foundation; static special-function analysis, no model family). Limits are proved
-along any filter (`m → 0` with `Re m > 0`, in a sector `‖m‖ ≤ K Re m` where needed; or
-`Re m → ∞` in a sector), then specialized to the physical ray `m = (1 + j)s` and to `ω`.
+Results (foundation; static special-function analysis).
+Limits are proved along any filter (`m → 0` with `Re m > 0`, in a sector `‖m‖ ≤ K Re m` where
+needed; or `Re m → ∞` in a sector), then specialized to the physical ray `m = (1 + j)s` and to
+`ω`.
 * Low frequency, DC resistance `ρ/(π(b² − a²))`: `tendsto_tubeDet_zero`
-  (`D → (b² − a²)/(2ab)`), `tendsto_exactZmut_dc`, `tendsto_exactZin_dc`, `tendsto_exactZout_dc`;
-  ray `s → 0⁺`: `exactZmut_tendsto_dc`, `exactZin_tendsto_dc`, `exactZout_tendsto_dc`.
+  (`D → (b² − a²)/(2ab)`), `tendsto_exactZmut_dc`, `tendsto_exactZin_dc`,
+  `tendsto_exactZout_dc`; ray `s → 0⁺`: `exactZmut_tendsto_dc`, `exactZin_tendsto_dc`,
+  `exactZout_tendsto_dc`.
 * High frequency: normalized forms `tubeDet_eq_norm`, `numIn_eq_norm`, `numOut_eq_norm`,
   `exactZin_div_surface_eq`, `exactZout_div_surface_eq`, `exactZmut_eq_norm` (from
   `I_ν(z) = e^z G(z) Î_ν(z)/π`, `K_ν(z) = e^{−z} G(z) K̂_ν(z)`, `Î, K̂ → 1`,
@@ -52,6 +58,9 @@ along any filter (`m → 0` with `Re m > 0`, in a sector `‖m‖ ≤ K Re m` wh
   `tendsto_exactZmut_div_tubeZmut`, `exactZmut_div_tubeZmut_tendsto_hf`:
   `Z_mut/Z_mut^{WW} → (a + b)/(2√(ab))`, with `one_lt_wwMutFactor` (`> 1` for `a < b`).
 
+Family and connection conclusions.
+* None: static special-function analysis; no model family.
+
 Correction (to reading the §1.2.2 boxed formulas as the tube's impedances).
 * The Wedepohl–Wilcox transfer impedance `(ρ m/(π(a + b))) csch(mt)` is not asymptotically
   equivalent to the exact one at high frequency: both decay like `e^{−mt}` (so the note's
@@ -60,8 +69,6 @@ Correction (to reading the §1.2.2 boxed formulas as the tube's impedances).
   geometric mean `√(ab)` of the radii by the arithmetic mean `(a + b)/2` and is asymptotically
   exact only in the thin-wall limit. The inner and outer impedances are asymptotically
   equivalent at both ends (ratios `→ 1`).
-
-Family and connection conclusions: none (static special-function analysis; no model family).
 -/
 
 noncomputable section

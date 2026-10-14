@@ -6,11 +6,21 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-! # Potential barrier of the tilted washboard `V(θ) = −c θ − A cos(θ + φ)` (foundation)
 
-`V` is an antiderivative of `−(c − A sin(θ + φ))`; for the reduced GFL-PLL model
-(`theorem/GFL/LCLine/Reduced2D.lean`) it is the potential part of the Hamiltonian with `c = c₀`.
-For `A > 0`, `|c| < A`, write `s = c/A`, `ψ_s = arcsin s` and
-* `θ_s = ψ_s − φ` (stable zero, `cos(θ_s + φ) > 0`),
-* `θ_u⁺ = π − ψ_s − φ`, `θ_u⁻ = −π − ψ_s − φ` (the two neighbouring saddles).
+The barrier heights from the stable zero to the two neighbouring saddles of the tilted washboard,
+their minimum, and their two-sided fold asymptotics.
+
+Scope.
+* `V` is an antiderivative of `−(c − A sin(θ + φ))`; for the reduced GFL-PLL model
+  (`theorem/GFL/LCLine/Reduced2D.lean`) it is the potential part of the Hamiltonian with
+  `c = c₀`. For `A > 0`, `|c| < A`, write `s = c/A`, `ψ_s = arcsin s` and
+  `θ_s = ψ_s − φ` (stable zero, `cos(θ_s + φ) > 0`; `thetaS`),
+  `θ_u⁺ = π − ψ_s − φ`, `θ_u⁻ = −π − ψ_s − φ` (the two neighbouring saddles; `thetaUp`,
+  `thetaDown`).
+* Static calculus of one scalar potential: no dynamics, noise model or model family.
+
+Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/equilibria-and-bifurcation.md`
+§5, §7 (basin depth = potential barrier), `sn-critical-scaling.md` §4 (exponents `g ∝ δ^{1/2}`,
+`ΔH ∝ δ^{3/2}`; the note obtains them from a numerical log–log fit and a normal-form argument).
 
 Results.
 * `potential_sub_eq_neg_integral` : `V(θ₂) − V(θ₁) = −∫_{θ₁}^{θ₂} (c − A sin(t + φ)) dt`.
@@ -19,8 +29,8 @@ Results.
   `barrierDown_eq` : `V(θ_u⁻) − V(θ_s) = 2√(A² − c²) + 2c·arccos(−c/A)`;
   `barrierDown_sub_barrierUp` : their difference is the tilt per period `2πc`.
 * `min_barrier_eq` : the lower of the two barriers is
-  `ΔV = 2√(A² − c²) − 2|c|·arccos(|c|/A)` — the closed form proposed in the previous review round is
-  correct (as the *minimum* over the two neighbouring saddles).
+  `ΔV = 2√(A² − c²) − 2|c|·arccos(|c|/A)` (this closed form is the *minimum* over the two
+  neighbouring saddles).
 * `barrierUp_pos`, `barrierDown_pos` : both barriers are positive.
 * Fold asymptotics, with `u = arccos(|c|/A)`: `ΔV = A (2 sin u − 2u cos u)`,
   `(2/3)u³ − u⁵/15 ≤ 2 sin u − 2u cos u ≤ (2/3)u³` (`washboard_bounds`); the restoring slope at the
@@ -28,9 +38,10 @@ Results.
   `(u²/2)(1 − u²/24)² ≤ δ/A ≤ u²/2` (`foldDistance_bounds`). Hence `g ∝ δ^{1/2}` and
   `ΔV ∝ δ^{3/2}` near the fold, with explicit two-sided bounds.
 
-Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/equilibria-and-bifurcation.md`
-§5, §7 (basin depth = potential barrier), `sn-critical-scaling.md` §4 (exponents `g ∝ δ^{1/2}`,
-`ΔH ∝ δ^{3/2}`; the note obtains them from a numerical log–log fit and a normal-form argument).
+Potential shapes: for `φ = 0`, `A = V₀`, `c = V₀α` this is the washboard of
+`theorem/Potential/Wells.lean` (`barrierUp` is its `ΔV₊`); the overdamped motion in it is the
+Adler equation (`theorem/PhasePlane/Adler.lean`, `c = B`); the exponent `3/2` near the fold is
+that of the fold normal-form barrier `(4/3) μ^{3/2}` (`theorem/NormalForm/Fold.lean`).
 -/
 
 noncomputable section

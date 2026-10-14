@@ -3,29 +3,44 @@ import theorem.Attributes
 
 /-! # Mean first-passage time of an overdamped 1D diffusion: the Kramers double integral
 
-Source: work-sync `theory/T-kramers-escape.md` §1.1 (first-passage time `τ_c`), §1.2 (backward
+The Kramers double integral solves the backward boundary-value problem of the mean first-passage
+time, uniquely; the Kramers prefactor algebra; the adjoint form of the note is wrong.
+
+Model boundary.
+* Overdamped scalar Smoluchowski dynamics `γ dθ = −V'(θ) dt + √(2Dγ) dW` (washboard / well
+  potentials belong to `theorem/Potential/Wells.lean`, not here); generator
+  `L = (1/γ)(−V' d/dθ + D d²/dθ²)`. Reflecting boundary at `θ_r` (`T'(θ_r) = 0`), absorbing
+  boundary at `θ_c` (`T(θ_c) = 0`). We work on the whole line with these two point conditions.
+* The MFPT is treated as the solution of the backward boundary-value problem
+  `D T'' − V' T' = −γ`, `T(θ_c) = 0`, `T'(θ_r) = 0` (an ODE statement). That this solution equals
+  `E[τ_c]` for the diffusion requires Dynkin's formula / Itô calculus and is **not** formalized.
+  The high-barrier Laplace asymptotics of §1.4 are not formalized either; only the algebra that
+  combines the two Gaussian factors into the prefactor.
+
+Source: work-sync theory/T-kramers-escape.md §1.1 (first-passage time `τ_c`), §1.2 (backward
 equation for the MFPT, reflecting / absorbing boundary conditions), §1.3 (double-integral
 solution), §1.4 (prefactor algebra `(γ/D)·√(2πD/|V''_b|)·√(2πD/V''_a) = 2πγ/√(V''_a |V''_b|)`);
-`theory/T-first-passage-time.md` (`L m = −1`, `m = 0` on the absorbing boundary;
+theory/T-first-passage-time.md (`L m = −1`, `m = 0` on the absorbing boundary;
 hit probability `h = 1 − s`).
 
-Model boundary.  Overdamped scalar Smoluchowski dynamics `γ dθ = −V'(θ) dt + √(2Dγ) dW`
-(washboard / well potentials belong to `theorem/Potential/Wells.lean`, not here); generator
-`L = (1/γ)(−V' d/dθ + D d²/dθ²)`.  Reflecting boundary at `θ_r` (`T'(θ_r) = 0`), absorbing
-boundary at `θ_c` (`T(θ_c) = 0`).  We work on the whole line with these two point conditions.
+Results.
+* `kramersT_ode`, `kramersT_absorbing`, `kramersT_reflecting` — the Kramers double integral
+  `kramersT`, `T(θ) = (γ/D) ∫_θ^{θ_c} e^{V(y)/D} ∫_{θ_r}^{y} e^{−V(z)/D} dz dy`, solves
+  `D T'' − V' T' = −γ` with `T(θ_c) = 0`, `T'(θ_r) = 0`.
+* `kramersT_unique` — any twice-differentiable solution of that boundary-value problem is the
+  Kramers double integral; `kramersT_pos`: `T(θ) > 0` for `θ_r < θ < θ_c` (`γ, D > 0`).
+* `kramers_prefactor` — `(γ/D) √(2πD/κ_b) √(2πD/κ_a) = 2πγ/√(κ_a κ_b)`; `D` cancels.
+* `mfpt_free_diffusion` — pure diffusion between two absorbing points: `m(θ) = (θ − a)(b − θ)/(2D)`
+  solves `D m'' = −1`, `m(a) = m(b) = 0`.
+* `hit_eq_one_sub_survival` — the hit probability before `T` is `h = 1 − s`.
 
-Scope (Rules §3).  The MFPT is treated as the solution of the backward boundary-value problem
-`D T'' − V' T' = −γ`, `T(θ_c) = 0`, `T'(θ_r) = 0` (an ODE statement).  That this solution equals
-`E[τ_c]` for the diffusion requires Dynkin's formula / Itô calculus and is **not** formalized.
-The high-barrier Laplace asymptotics of §1.4 are not formalized either; only the algebra that
-combines the two Gaussian factors into the prefactor.
-
-Correction (§1.2).  The note writes the MFPT equation in the **adjoint** form
-`−1 = −(1/γ)(V' T)' + (D/γ) T''`.  The correct backward equation is
-`−(V'/γ) T' + (D/γ) T'' = −1` (generator applied to `T`).  The two differ by `−V'' T/γ`
-(`adjointForm_residual`), so the adjoint form fails wherever `V'' T ≠ 0`, e.g. inside the well
-(`adjointForm_ne`).  The double integral of §1.3 is the solution of the correct (backward) form
-(`kramersT_ode`).
+Corrections.
+* §1.2: the note writes the MFPT equation in the **adjoint** form
+  `−1 = −(1/γ)(V' T)' + (D/γ) T''`. The correct backward equation is
+  `−(V'/γ) T' + (D/γ) T'' = −1` (generator applied to `T`). The two differ by `−V'' T/γ`
+  (`adjointForm_residual`), so the adjoint form fails wherever `V'' T ≠ 0`, e.g. inside the well
+  (`adjointForm_ne`). The double integral of §1.3 is the solution of the correct (backward) form
+  (`kramersT_ode`).
 -/
 
 noncomputable section

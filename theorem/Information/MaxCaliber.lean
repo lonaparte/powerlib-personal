@@ -4,13 +4,11 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-! # Maximum caliber on finite path spaces, tilted transition matrices, OU action
 
-Source: work-sync `theory/T-maximum-caliber.md` — boxed path MaxEnt form (head), §1.1 (finite
-path enumeration with reference `P₀`), §1.2 (Onsager–Machlup action, OU example), §1.3
-(transfer-matrix construction of the MaxCal transition matrix).
-
-Foundation (general probability / calculus), not an engineering result.
+Maximum caliber on a finite path space, the MaxCal transition matrix built from a tilted
+transfer matrix, and the Onsager–Machlup action of the OU mean path.
 
 Model boundary.
+* General probability / calculus, not an engineering result.
 * Path MaxEnt: a *finite* path space `Γ = Fin (n+1) → S` with `S` finite, a strictly positive
   reference path weight `P₀`, a path functional `F` and multiplier `λ`. The caliber is
   `-klSum P P₀`. Continuous-time path measures (Wiener measure, Girsanov densities) are not
@@ -22,6 +20,19 @@ Model boundary.
   `(ẋ - μ(x))² / (2σ²)` with `μ(x) = -θ x`, tube (Jacobian-corrected) Lagrangian adds
   `μ'(x)/2 = -θ/2`. Time horizon `[0, T]`, continuous time. No stochastic integral appears: the
   action is evaluated on the deterministic mean path only.
+
+Source: work-sync theory/T-maximum-caliber.md — boxed path MaxEnt form (head), §1.1 (finite
+path enumeration with reference `P₀`), §1.2 (Onsager–Machlup action, OU example), §1.3
+(transfer-matrix construction of the MaxCal transition matrix).
+
+Results.
+* `tiltedPath_maxCaliber` — among all path distributions with the same mean path functional
+  `⟨F⟩`, the tilted path weight `tiltedPath` has the largest caliber.
+* `tiltedTransition_stochastic`, `prod_tiltedTransition` — `P(λ)` is a stochastic matrix, and
+  its path probabilities are the tilted path weights up to the boundary factor
+  `u(s_n) / (ρⁿ u(s_0))`.
+* `ou_girsanovAction_mean`, `ou_tubeAction_mean` — on the OU mean path the Girsanov action
+  vanishes, and the tube action (Jacobian term `μ'(x)/2 = -θ/2` included) is `S = -θ T / 2`.
 -/
 
 noncomputable section

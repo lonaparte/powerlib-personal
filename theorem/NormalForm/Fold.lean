@@ -2,33 +2,39 @@ import theorem.NormalForm.Scalar
 
 /-! # Fold (saddle-node) normal form `ẋ = μ − x²`
 
-Foundation layer: a truncated one-dimensional normal form, not an engineering model.
+The equilibria, their stability, the semistable merger and the potential barrier of the truncated
+one-dimensional fold normal form.
 
 Model boundary.
 * State: the single coordinate `x` (stored as `x 0` of `State 1`, see `NormalForm.lift`).
 * Parameter: `μ ∈ ℝ`, constant in time (frozen-parameter, static bifurcation picture).
 * Vector field: exactly `ẋ = μ − x²` (no higher-order remainder, no noise, no input,
   continuous time). Conclusions are about equilibria and their trajectory-level stability.
-
-Results.
-* Equilibria: `μ − x² = 0 ↔ 0 ≤ μ ∧ (x = √μ ∨ x = −√μ)`; there are `2 / 1 / 0` equilibria for
-  `μ > 0 / μ = 0 / μ < 0`.
-* `μ > 0`: `√μ` is locally exponentially stable and `−√μ` is unstable (scalar linearization,
-  `f_x = −2x`).
-* `μ = 0`: the merged equilibrium is unstable; solutions are `x₀ / (1 + x₀ (t − t₀))`, so every
-  solution starting at `x₀ > 0` decays to `0` (attraction from the right) and every solution
-  starting at `x₀ < 0` cannot exist for a time `1 / |x₀|` (finite-time escape on the left):
-  the equilibrium is semistable.
-* Recovery rate `|f_x(√μ)| = 2√μ`; with the potential `V(x) = −μx + x³/3` (`V' = −f`), the barrier
-  is `V(−√μ) − V(√μ) = (4/3) μ^{3/2}`.
-* One-dimensional `Σ_SN` (`f = f_x = 0`) holds exactly at `μ = 0`.
+* A truncated normal form, not an engineering model: no model family; all results remain public
+  foundation support. Behaviour is LeanForControl's predicates (`LocallyExponentiallyStable`,
+  `Unstable`, `unstable_of_fixed_escape`).
 
 Source: work-sync theory/T-fold-bifurcation.md §1.1–1.4, theory/T-bifurcation.md §1.4,
 theory/T-fold-critical-scaling.md §1.1–1.4, theory/T-bifurcation-hypersurfaces.md §1.2.
 
-Architecture: this truncated normal form has no model family (it is a mathematical normal
-form, not an engineering model); all results remain public foundation support. Behaviour is
-LeanForControl's predicates (`LocallyExponentiallyStable`, `Unstable`, `unstable_of_fixed_escape`).
+Results.
+* Equilibria: `μ − x² = 0 ↔ 0 ≤ μ ∧ (x = √μ ∨ x = −√μ)` (`field_eq_zero_iff`); there are
+  `2 / 1 / 0` equilibria for `μ > 0 / μ = 0 / μ < 0` (`equilibria_ncard`).
+* `μ > 0`: `√μ` is locally exponentially stable and `−√μ` is unstable (scalar linearization,
+  `f_x = −2x`; `upper_locallyExponentiallyStable`, `lower_unstable`).
+* `μ = 0`: the merged equilibrium is unstable (`critical_unstable`); solutions are
+  `x₀ / (1 + x₀ (t − t₀))`, so every solution starting at `x₀ > 0` decays to `0` (attraction from
+  the right, `critical_tendsto_zero_of_pos`) and every solution starting at `x₀ < 0` cannot exist
+  for a time `1 / |x₀|` (finite-time escape on the left, `critical_escape_of_neg`): the
+  equilibrium is semistable.
+* Recovery rate `|f_x(√μ)| = 2√μ` (`recovery_rate`); with the potential `V(x) = −μx + x³/3`
+  (`V' = −f`), the barrier is `V(−√μ) − V(√μ) = (4/3) μ^{3/2}` (`barrier`).
+* One-dimensional `Σ_SN` (`f = f_x = 0`) holds exactly at `μ = 0` (`saddleNodeCondition_iff`).
+
+Potential shapes: the barrier `(4/3) μ^{3/2}` is the local fold form of the tilted-washboard
+barrier `ΔV ∝ δ^{3/2}` (`theorem/Potential/Barrier.lean`); the pitchfork potential
+`−μx²/2 + x⁴/4` is in `theorem/NormalForm/Pitchfork.lean` and the general single / double well and
+washboard shapes in `theorem/Potential/Wells.lean`.
 -/
 
 noncomputable section

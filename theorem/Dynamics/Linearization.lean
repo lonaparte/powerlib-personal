@@ -2,14 +2,27 @@ import theorem.Linear.Transfer
 
 /-! # Linearization of nonlinear fields
 
-Generic foundation, independent of any model: LeanForControl's indirect method for a `C¹` field
-`f : ℝⁿ → ℝⁿ` with an equilibrium `x*` whose Jacobian, computed by `fderiv`, is the matrix `A`.
-A Hurwitz `A` gives local exponential stability; an eigenvalue, or a root of the characteristic
-polynomial `det (s I - A)`, in the open right half plane gives instability. The proofs are the
-upstream theorems `hurwitz_linearization_locally_exponentially_stable` and
-`unstable_of_exists_complex_eigenvalue_re_pos`, unchanged; the root form only converts a root of
-`Linear.characteristicMatrix` into an eigenvector. These statements replace the Jacobian wrappers
-of the former `theorem/Hurwitz.lean`. -/
+LeanForControl's indirect method for a `C¹` field `f : ℝⁿ → ℝⁿ` with an equilibrium `x*` whose
+Jacobian, computed by `fderiv`, is the matrix `A`.
+
+Scope.
+* Generic foundation, independent of any model. The proofs are the upstream theorems
+  `hurwitz_linearization_locally_exponentially_stable` and
+  `unstable_of_exists_complex_eigenvalue_re_pos`, unchanged; the root form only converts a root of
+  `Linear.characteristicMatrix` into an eigenvector.
+
+Source: work-sync `theory/T-dynamical-systems.md` §1.3 (first-order linearization at an
+equilibrium) and `theory/T-small-signal-stability.md` §1.3, §1.6 (local stability from the
+eigenvalues); Khalil, *Nonlinear Systems* (3rd ed.), Theorem 4.7, as formalized in LeanForControl.
+
+Results.
+* `locallyExponentiallyStable_of_isHurwitz_jacobian`,
+  `locallyExponentiallyStable_of_spectrallyStable_jacobian`: a Hurwitz (spectrally stable) `A`
+  gives local exponential stability.
+* `unstable_of_jacobian_eigenvalue_re_pos`, `unstable_of_characteristic_root_re_pos`: an
+  eigenvalue, or a root of the characteristic polynomial `det (s I - A)`, in the open right half
+  plane gives instability.
+-/
 
 noncomputable section
 

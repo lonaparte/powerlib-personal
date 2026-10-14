@@ -5,8 +5,15 @@ import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 /-! # Partial derivatives on `ℝ × ℝ` (foundation)
 
 Calculus tools for functions `F : ℝ × ℝ → ℝ` of `(x, t)`, shared by the one-dimensional PDE
-modules; nothing here describes a physical system.
+modules.
 
+Scope.
+* Generic calculus; nothing here describes a physical system and no model family is defined.
+
+Source: work-sync `theory/T-pde-systems.md` §1.4.4–§1.4.5, `theory/T-telegrapher-bergeron.md`
+§1.1 (the partial-derivative notation of the telegrapher equations).
+
+Results.
 * `HasPartialsWithin U Ux Ut S q`: `U` has partial derivatives `Ux`, `Ut` (in `x` and `t`) within
   `S` at `q` (a Fréchet derivative within `S`, so C¹ up to the boundary of a strip);
   `strip a b = [a, b] × ℝ`.
@@ -16,9 +23,6 @@ modules; nothing here describes a physical system.
   `hasFDerivAt_fderiv_apply`, `differentiable_dx`, `differentiable_dt` (for `C²` functions),
   `dx_dt_comm` (mixed partials commute, Mathlib `ContDiffAt.isSymmSndFDerivAt`), `fderiv_combo`
   (the partial derivative of `a·F − b·G`).
-
-Source: work-sync `theory/T-pde-systems.md` §1.4.4–§1.4.5, `theory/T-telegrapher-bergeron.md`
-§1.1 (the partial-derivative notation of the telegrapher equations).
 -/
 
 noncomputable section

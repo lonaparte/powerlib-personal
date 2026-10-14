@@ -21,12 +21,20 @@ Model boundary.
 * Constant `P_dc`, no modulation limit, no switching or sampling delay, continuous time,
   `δω_g = 0`. Level: equilibrium set, plus algebraic identities of the bridge power.
 
+Nondegeneracy: `L_f, C_f, L_g ≠ 0`, `ω_g C_f ≠ 0`, `Δ ≠ 0`, `K_i^cc ≠ 0`, `K_i ≠ 0`,
+`K_i^dc ≠ 0`, `ω_f ≠ 0`, `C_dc ≠ 0`, `v_dc^ref ≠ 0`.
+
+Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/dc-link-dynamics.md` §1, §2,
+§7.2; code reference `simulation/src/.../models_dc.py` (`full_dynamics_dc`, `_alg_chain`,
+`_idref_const_power`).
+
 Results.
 * `bridge_power_invariant` : `u = v_c + (R_f + jω L_f) i ⇒ u·i = v_c·i + R_f |i|²`.
-* `Pbr_qss` / `PbrAlg_eq` : on the quasi-steady set `P_br = (3/2)[(R_f + R_g/Δ)(i_d*² + i_q*²) +
+* `bridgePower_qss` / `PbrAlg_eq` : on the quasi-steady set
+  `P_br = (3/2)[(R_f + R_g/Δ)(i_d*² + i_q*²) +
   (V_g/Δ)(i_d*((1 − b)cos θ − a sin θ) − i_q*((1 − b) sin θ + a cos θ))]`, a polynomial of degree
   exactly two in `i_d*` when `R_f + R_g/Δ ≠ 0` (`PbrAlg_quadratic`).
-* `field13_eq_zero_iff` (A): `x` is an equilibrium iff `x = qss13 θ i` with `h(θ, i) = 0`,
+* `field13_eq_zero_iff` : `x` is an equilibrium iff `x = qss13 θ i` with `h(θ, i) = 0`,
   `P_br(θ, i) = P_dc` (constant-power equilibrium; `v_dc = v_f = v_dc^ref`, `ξ_dc = i/K_i^dc`).
 * `PbrAlg_eq_Pdc_iff` : for fixed `θ` the power balance has no real `i_d*` when the
   discriminant is negative, and otherwise exactly the two roots `r₊(θ), r₋(θ)`;
@@ -35,18 +43,12 @@ Results.
 * `cp_energy_rate` : on the 2D constant-power layer, wherever a local potential `V` with
   `V′ = −h_cp` exists, `Ḣ_cp = −K_p h_cp² ≤ 0` (no claim where `h_cp` is undefined).
 
-Family and connection conclusions. The module states no behaviour of the 13-state field: it has
+Family and connection conclusions.
+The module states no behaviour of the 13-state field: it has
 no Family, and every result is static. The equilibrium characterizations `field13_eq_zero_iff`
-and `field13_exists_equilibrium_iff` (formerly domain-labelled) are static evidence on the model,
+and `field13_exists_equilibrium_iff` are static evidence on the model,
 not connection conclusions. `cp_energy_rate` is a pointwise derivative identity for an arbitrary
 phase-detector signal.
-
-Nondegeneracy: `L_f, C_f, L_g ≠ 0`, `ω_g C_f ≠ 0`, `Δ ≠ 0`, `K_i^cc ≠ 0`, `K_i ≠ 0`,
-`K_i^dc ≠ 0`, `ω_f ≠ 0`, `C_dc ≠ 0`, `v_dc^ref ≠ 0`.
-
-Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/dc-link-dynamics.md` §1, §2,
-§7.2; code reference `simulation/src/.../models_dc.py` (`full_dynamics_dc`, `_alg_chain`,
-`_idref_const_power`).
 -/
 
 noncomputable section

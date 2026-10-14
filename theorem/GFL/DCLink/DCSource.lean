@@ -2,14 +2,23 @@ import theorem.GFL.DCLink.FourState
 
 /-! # dc-source stiffness convention (switch W9)
 
-Foundation layer.  The dc bus `C V̇ = (source) + P_abs(V)/V` is linearized at `V = 1` for two
-ideal dc sources:
+Derivative identities (foundation) of the dc-bus right-hand side for two ideal dc sources.
+
+Model boundary.
+The dc bus `C V̇ = (source) + P_abs(V)/V` is linearized at `V = 1` for two ideal dc sources:
 * constant current: `C V̇ = I₀ + P_abs(V)/V`;
 * constant power: `C V̇ = (P₀ + P_abs(V))/V`.
 Here `P_abs` is the absorbed ac power (IN-positive), so the exported power at the operating
 point is `P = −P_abs(1)` (`= I₀ = P₀` at the equilibrium).  The dc-voltage loop enters through
 `P_abs(V) = (3/2) v_{d0} (i_{d0} − k_pv (V − 1) − k_iv η)`.
 
+The source writes the same formulas in its OUT-positive convention; both `A₃₃` values are
+convention invariant (`P` is the exported power in both).
+
+Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
+notes/concepts/convention-gates.md` 开关一 (W9).
+
+Results.
 * `hasDerivAt_constCurrent`, `hasDerivAt_constPower`: the diagonal entries are
   `(P_abs'(1) − P_abs(1))/C` and `P_abs'(1)/C`; their difference is exactly `P/C`
   (`a33_sub`).
@@ -19,14 +28,9 @@ point is `P = −P_abs(1)` (`= I₀ = P₀` at the equilibrium).  The dc-voltage
 * `a33_constCurrent_eq_A0`: the constant-current value is the `(V, V)` entry of the
   four-state `A₀`.
 
-The source writes the same formulas in its OUT-positive convention; both `A₃₃` values are
-convention invariant (`P` is the exported power in both).
-
-Family and connection conclusions. No family and no connection conclusion: derivative identities
+Family and connection conclusions.
+No family and no connection conclusion: derivative identities
 of scalar dc-bus right-hand sides only.
-
-Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
-notes/concepts/convention-gates.md` 开关一 (W9).
 -/
 
 noncomputable section

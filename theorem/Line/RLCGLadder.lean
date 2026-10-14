@@ -2,10 +2,9 @@ import theorem.PH.Composition
 
 /-! # Staggered-grid RLCG ladder as a port-Hamiltonian model
 
-Source: work-sync `theory/T-method-of-lines.md` §1.3 (staggered grid,
-`L' i̇_{j+1/2} = -(v_{j+1}-v_j)/Δx - R' i_{j+1/2}`,
-`C' v̇_j = -(i_{j+1/2}-i_{j-1/2})/Δx - G' v_j`), and the passivity remark of
-`theory/T-pde-systems.md` §2.7.
+The method-of-lines (staggered-grid) RLCG ladder of a transmission line as diagonal
+port-Hamiltonian data: passivity, Lyapunov stability, exponential stability of the lossy ladder
+and energy conservation only in the lossless case.
 
 Model boundary.
 * A uniform line cut into `N` cells of length `Δx > 0`. Cell `k` (`k = 0, …, N-1`)
@@ -22,27 +21,38 @@ Model boundary.
   no delay, no controller, continuous time. The theorems concern this finite
   lumped ladder only: nothing here claims convergence to the telegrapher PDE.
 
-Correction (T-pde-systems §2.7 "电报方程满足能量守恒"): the lossy ladder does
-not conserve energy. Energy is conserved only in the lossless case `R' = G' = 0`.
+Source: work-sync `theory/T-method-of-lines.md` §1.3 (staggered grid,
+`L' i̇_{j+1/2} = -(v_{j+1}-v_j)/Δx - R' i_{j+1/2}`,
+`C' v̇_j = -(i_{j+1/2}-i_{j-1/2})/Δx - G' v_j`), and the passivity remark of
+`theory/T-pde-systems.md` §2.7.
 
-Family and connection conclusions. The ladder is diagonal port-Hamiltonian data
-(`Ladder.model : DiagonalPH (Fin N ⊕ Fin N) (Fin 2)`, `theorem/PH/Composition.lean`); numbering
-the state `(φ, q)` by `finSumFinEquiv` gives the linear port-Hamiltonian plant
-`Ladder.ladderPH p N : Port.PortHamiltonian (N + N) 2`, a member of the existing family
-`Port.PortHamiltonian.family` (system map: the plant's port system; sentences read at the
-origin, the unforced state with `v₁ = 0`, `i₂ = 0`). Connection conclusions: passivity and
-Lyapunov stability (`ladderPH_mem_den_passive`, `ladderPH_mem_den_lyapunovStable`); global
-exponential stability of the lossy ladder `R' > 0`, `G' > 0`
-(`lossyLadder_mem_den_globallyExponentiallyStable`, an instance of the general
-`PH.toPH_mem_den_globallyExponentiallyStable` for strictly damped diagonal models,
-`theorem/PH/Composition.lean`); the correction in sentence form — the lossy ladder with at least one
-cell conserves **no** positive definite energy (`lossyLadder_not_mem_den_conservative`) — and
-conservation in the lossless case (`losslessLadder_mem_den_conservative`). The KVL/KCL fields and
-the port supply are static evidence. The former trajectory-level statements about the stored energy
-itself — strict decrease along nonzero lossy solutions and constancy along lossless solutions — are
-private implementation evidence (`lossyLadder_energy_strictly_decreases`,
-`losslessLadder_energy_conserved`). The former energy certificate `PHStrict.certificate` is replaced
-by the generic `PH.exists_quadraticDecay`.
+Results (static evidence on the model).
+* `field_flux`, `field_charge` — the KVL/KCL rows of the ladder; `supply_eq` — the port supply
+  `v₁ i_0 - v_{N-1} i₂`; `ladderPH_dissipation_pos` — the lossy ladder is strictly damped.
+
+Family and connection conclusions.
+* The ladder is diagonal port-Hamiltonian data
+  (`Ladder.model : DiagonalPH (Fin N ⊕ Fin N) (Fin 2)`, `theorem/PH/Composition.lean`);
+  numbering the state `(φ, q)` by `finSumFinEquiv` gives the linear port-Hamiltonian plant
+  `Ladder.ladderPH p N : Port.PortHamiltonian (N + N) 2`, a member of the existing family
+  `Port.PortHamiltonian.family` (system map: the plant's port system; sentences read at the
+  origin, the unforced state with `v₁ = 0`, `i₂ = 0`).
+* Connection conclusions: passivity and Lyapunov stability (`ladderPH_mem_den_passive`,
+  `ladderPH_mem_den_lyapunovStable`); global exponential stability of the lossy ladder
+  `R' > 0`, `G' > 0` (`lossyLadder_mem_den_globallyExponentiallyStable`, an instance of the
+  general `PH.toPH_mem_den_globallyExponentiallyStable` for strictly damped diagonal models,
+  `theorem/PH/Composition.lean`); the correction in sentence form — the lossy ladder with at least
+  one cell conserves **no** positive definite energy (`lossyLadder_not_mem_den_conservative`) —
+  and conservation in the lossless case (`losslessLadder_mem_den_conservative`).
+* The KVL/KCL fields and the port supply are static evidence. The trajectory-level statements
+  about the stored energy itself — strict decrease along nonzero lossy solutions and constancy
+  along lossless solutions — are private implementation evidence
+  (`lossyLadder_energy_strictly_decreases`, from the generic energy certificate
+  `PH.exists_quadraticDecay`, and `losslessLadder_energy_conserved`).
+
+Correction (T-pde-systems §2.7 "电报方程满足能量守恒").
+* The lossy ladder does not conserve energy. Energy is conserved only in the lossless case
+  `R' = G' = 0`.
 -/
 
 noncomputable section
@@ -290,8 +300,8 @@ conserves no positive definite energy. -/
 
 /-! ### The stored energy along solutions (implementation evidence) -/
 
-/-- Formerly the public `lossyLadder_energy_strictly_decreases`: with losses, the stored energy
-strictly decreases along every zero-input solution segment that does not start at 0.
+/-- With losses, the stored energy strictly decreases along every zero-input solution segment
+that does not start at 0.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem lossyLadder_energy_strictly_decreases
     (hR : 0 < p.R') (hG : 0 < p.G') {φ : ℝ → EuclideanSpace ℝ (Fin (N + N))} {a b t : ℝ}
@@ -314,8 +324,8 @@ private theorem lossyLadder_energy_strictly_decreases
         mul_lt_mul_of_pos_right hexp hpos
     _ = _ := one_mul _
 
-/-- Formerly the public `losslessLadder_energy_conserved`: in the lossless case `R' = G' = 0`
-the stored energy is constant along every zero-input solution segment.
+/-- In the lossless case `R' = G' = 0` the stored energy is constant along every zero-input
+solution segment.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem losslessLadder_energy_conserved
     (hR : p.R' = 0) (hG : p.G' = 0) {φ : ℝ → EuclideanSpace ℝ (Fin (N + N))} {a b : ℝ}

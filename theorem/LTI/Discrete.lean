@@ -2,9 +2,12 @@ import dependencies.Mathlib
 import dependencies.LeanForControl
 import theorem.Attributes
 
-/-! Discrete-time autonomous linear time-invariant systems `x (k+1) = Φ x k`.
+/-! # Discrete-time autonomous linear time-invariant systems `x (k+1) = Φ x k`
 
-Model boundary.
+Schur stability of the state matrix and geometric decay of every trajectory of a discrete-time
+autonomous linear recursion, and the closed form of an affine recursion.
+
+Scope.
 * Time is discrete: `k : ℕ`.  The state is `Fin n → ℝ` in the submitted coordinate order.
 * There is no input, no noise, no switching, no delay and no nonlinear remainder; any
   controller or numerical scheme must already be folded into the single real matrix `Φ`.
@@ -18,8 +21,13 @@ Model boundary.
 * `SchurStable Φ` is stated through complex eigenpairs of the complexification, exactly like
   `LinearSystems.IsHurwitz`.  `schurStable_iff_spectralRadius_lt_one` connects it with the
   Banach-algebra spectral radius.
+* These are general mathematics: foundation results.
 
-Results (all trajectory-level, for every initial state):
+Source: work-sync theory/T-numerical-integration.md §2.7 (discrete recursion
+`x_{n+1} = R(hA) x_n`), required as the discrete semantic layer for the numerics formalization
+(`theorem/Numerics/`).
+
+Results (all trajectory-level, for every initial state).
 * `exponentiallyStable_of_schurStable`: Schur stability gives `‖x k‖ ≤ C ρ^k ‖x 0‖` with
   `ρ < 1`, via the LeanForControl Gelfand-formula lemma
   `exists_pow_norm_lt_one_of_spectralRadius_lt_one`.
@@ -34,10 +42,6 @@ Results (all trajectory-level, for every initial state):
 * `prediction_closedForm`: the affine recursion `x⁺ = A x + B u + d` (any finite index types)
   has `x[k+j] = A^j x[k] + Σ_{i<j} A^{j−1−i}(B u[k+i] + d)` (multi-step prediction of
   theory/T-predictive-machine-control.md).
-
-Source: work-sync theory/T-numerical-integration.md §2.7 (discrete recursion
-`x_{n+1} = R(hA) x_n`), required as the discrete semantic layer for the A9 numerics
-formalization.  These are general mathematics: foundation results.
 -/
 
 noncomputable section

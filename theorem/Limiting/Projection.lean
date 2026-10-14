@@ -2,12 +2,19 @@ import theorem.Attributes
 import dependencies.Mathlib
 import Mathlib.Analysis.InnerProductSpace.Basic
 
-/-! # Circular current-reference limiter (CSA radial projection), foundation
+/-! # Circular current-reference limiter (CSA radial projection)
 
+Properties of a static map (foundation); the dynamics of a limited converter are not modelled
+here.
+
+Model boundary.
 `radialLimit I x = x` if `‖x‖ ≤ I`, otherwise `(I/‖x‖) x` — the current saturation algorithm
 `i* ← I i*/|i*|` of work-sync T-current-limiting §1.1 / T-gfm-control §1.10, on any real inner
 product space (in particular dq or αβ current vectors `EuclideanSpace ℝ (Fin 2)`).
 
+Source: work-sync `theory/T-current-limiting.md` §1.1, `theory/T-gfm-control.md` §1.10.
+
+Results.
 * `norm_radialLimit_le`, `norm_radialLimit_of_lt`: the output never exceeds `I` and saturates
   exactly at `I` when the input exceeds it.
 * `radialLimit_of_norm_le`: no action inside the limit.
@@ -19,11 +26,6 @@ product space (in particular dq or αβ current vectors `EuclideanSpace ℝ (Fin
   rotation; hence circular limiting in the αβ frame and in any dq frame give the same physical
   current (T-current-limiting §1.1 "αβ 圆形限幅"). Component-wise clipping does not have this
   property (`clamp_not_rotation_invariant` in `DAxisPriority.lean`).
-
-These are properties of a static map (foundation); the dynamics of a limited converter are
-not modelled here.
-
-Source: work-sync `theory/T-current-limiting.md` §1.1, `theory/T-gfm-control.md` §1.10.
 -/
 
 noncomputable section

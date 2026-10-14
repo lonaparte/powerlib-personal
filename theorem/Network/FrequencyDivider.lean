@@ -2,8 +2,9 @@ import theorem.Network.WeightedLaplacian
 
 /-! # Frequency divider: bus frequencies as convex combinations of machine frequencies
 
-Source: work-sync `theory/T-local-frequency.md` §1.2–§1.5, §2.6, §2.7
-(Milano–Ortega frequency divider `Δω_b = -B_bb⁻¹ B_bg Δω_g`).
+Static foundation for the Milano–Ortega frequency divider `Δω_b = −B_bb⁻¹ B_bg Δω_g`: when the
+grounded block is nonsingular, and why the bus frequencies are convex combinations of the machine
+frequencies.
 
 Model boundary.
 * Buses `β ⊕ γ`: `inl b` are the non-machine buses, `inr g` the machine buses.
@@ -18,19 +19,28 @@ Model boundary.
 * Algebraic / small-signal level: no machine dynamics, PLL, measurement filter or
   voltage-magnitude dynamics (§1.7 complex frequency is excluded).
 
+Source: work-sync `theory/T-local-frequency.md` §1.2–§1.5, §2.6, §2.7
+(Milano–Ortega frequency divider `Δω_b = -B_bb⁻¹ B_bg Δω_g`).
+
 Results.
-* `B_bb = L_bb + diag(∑_g W_bg)` is a grounded Laplacian; it is nonsingular iff
-  every non-machine bus is connected to some machine bus
-  (`Bbb_det_ne_zero_iff`). Correction of §2.7 ("环网可能病态"): meshed (loopy)
-  networks are never singular under this connectivity condition; singularity
-  occurs exactly when a non-machine component is isolated from all machines.
-* `Δθ_b = D_fd Δθ_g` and, along differentiable angle trajectories, the frequency
-  divider `Δω_b = D_fd Δω_g` with `D_fd = -B_bb⁻¹ B_bg`.
-* `D_fd ≥ 0` entrywise and each row sums to 1 (§1.4). Correction: the note says the
-  weights are "正" (positive); they are only nonnegative in general (a machine not
-  connected to the component of bus `b` has weight 0).
+* `B_bb = L_bb + diag(∑_g W_bg)` is a grounded Laplacian (`Bbb_eq_grounded`); it is nonsingular
+  iff every non-machine bus is connected to some machine bus (`Bbb_det_ne_zero_iff`,
+  `MachineConnected`).
+* `Δθ_b = D_fd Δθ_g` (`nonMachine_angles`) and, along differentiable angle trajectories, the
+  frequency divider `Δω_b = D_fd Δω_g` with `D_fd = -B_bb⁻¹ B_bg` (`frequencyDivider`).
+* `D_fd ≥ 0` entrywise and each row sums to 1 (§1.4; `Dfd_nonneg`, `Dfd_row_sum`).
 * Each bus frequency deviation lies between the smallest and the largest machine
-  frequency deviation; in common mode all bus frequencies equal the COI frequency.
+  frequency deviation (`le_busFrequency`, `busFrequency_le`); in common mode all bus
+  frequencies equal the COI frequency (`busFrequency_commonMode`,
+  `busFrequency_sub_coi_commonMode`); a machine mode shape `v` appears at the buses as `D_fd v`
+  (`busFrequency_modal`).
+
+Corrections.
+* §2.7 ("环网可能病态"): meshed (loopy) networks are never singular under the connectivity
+  condition; singularity occurs exactly when a non-machine component is isolated from all
+  machines (`Bbb_det_ne_zero_iff`).
+* §1.4: the note says the weights are "正" (positive); they are only nonnegative in general (a
+  machine not connected to the component of bus `b` has weight 0).
 -/
 
 noncomputable section

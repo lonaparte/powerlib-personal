@@ -8,20 +8,6 @@ This module formalizes the closed loop of the grid-forming *matching control* of
 and Dörfler, together with the model reduction behind its global stability claim, and proves that
 claim (strengthened from asymptotic to exponential) in the reduced coordinates.
 
-Provenance. The equations are taken from C. Arghir, T. Jouini, F. Dörfler, "Grid-forming control
-for power converters based on matching of synchronous machines", *Automatica* 95 (2018) 273–282,
-arXiv:1706.09495v3 (source read): the averaged converter model (§2.2), the matching modulation
-`m_αβ = μ (−sin θ, cos θ)`, `θ' = η v_dc` (§3), the `dq` model in the frame of `θ` (§3.1), the
-theorem "Strict passivity in dq-frame" and its storage `V₁ = C_dc ṽ_dc²/2 + L ‖ĩ_dq‖²/2 +
-C ‖ṽ_dq‖²/2`, the DC-side P-control `i_dc = i_dc,ref − K_p (v_dc − v_dc,ref)` and the load of
-Assumption 1, `i_l = (G_l I + B_l J) v_αβ + s_l`, `s_l' = ω J s_l`, `ω = η v_dc` (§3.2), and the
-corollary "Closed-loop stability with DC-side P-control":
-`C²‖v_dq*‖²/(4(G+G_l)) + L²‖i_dq*‖²/(4R) < (G_dc+K_p)/η²` ⇒ the steady state `x*` is unique and
-globally asymptotically stable "for stationary loads `s_l,dq = s*`". The work-sync notes
-(`theory/T-dc-voltage-gfm.md` §1.0–§1.2, `theory/T-gfm-control.md` §1.6,
-`theory/papers/@arghir2020matching.md`) contain only the matching law, the swing analogy and a
-stability *condition*; none of the equations below comes from the notes.
-
 Model boundary.
 * Averaged two-level three-phase converter (no PWM, switching ripple, dead time or delay), with a
   controllable DC current source, DC capacitor `C_dc`, DC conductance `G_dc`, AC inductor `L`
@@ -54,7 +40,25 @@ Model boundary.
   K_p, η > 0`, `μ ∈ [0, 1]`). The selected point `x* = (v*, i_d*, i_q*, v_d*, v_q*)` is part of the
   model; its being an equilibrium is a static requirement.
 
-Reduction (static and generic results; Rules §5).
+Source: work-sync `theory/T-dc-voltage-gfm.md` §1.0–§1.2; `theory/T-gfm-control.md` §1.6;
+`theory/papers/@arghir2020matching.md`; equations from arXiv:1706.09495v3 as listed above.
+
+Provenance. The equations are taken from C. Arghir, T. Jouini, F. Dörfler, "Grid-forming control
+for power converters based on matching of synchronous machines", *Automatica* 95 (2018) 273–282,
+arXiv:1706.09495v3 (source read): the averaged converter model (§2.2), the matching modulation
+`m_αβ = μ (−sin θ, cos θ)`, `θ' = η v_dc` (§3), the `dq` model in the frame of `θ` (§3.1), the
+theorem "Strict passivity in dq-frame" and its storage `V₁ = C_dc ṽ_dc²/2 + L ‖ĩ_dq‖²/2 +
+C ‖ṽ_dq‖²/2`, the DC-side P-control `i_dc = i_dc,ref − K_p (v_dc − v_dc,ref)` and the load of
+Assumption 1, `i_l = (G_l I + B_l J) v_αβ + s_l`, `s_l' = ω J s_l`, `ω = η v_dc` (§3.2), and the
+corollary "Closed-loop stability with DC-side P-control":
+`C²‖v_dq*‖²/(4(G+G_l)) + L²‖i_dq*‖²/(4R) < (G_dc+K_p)/η²` ⇒ the steady state `x*` is unique and
+globally asymptotically stable "for stationary loads `s_l,dq = s*`". The work-sync notes
+(`theory/T-dc-voltage-gfm.md` §1.0–§1.2, `theory/T-gfm-control.md` §1.6,
+`theory/papers/@arghir2020matching.md`) contain only the matching law, the swing analogy and a
+stability *condition*; none of the equations below comes from the notes.
+
+Results.
+Reduction (static and generic results; Rules §5):
 * `hasDerivWithinAt_rot` (generic): the rotating-frame chain rule
   `(R_θᵀ z)' = R_θᵀ z' − θ' J R_θᵀ z`, for arbitrary differentiable `θ`, `z`.
 * `field_reduce` (static): the reduced field at `reduce X = (v_dc, R_θᵀ i_αβ, R_θᵀ v_αβ)`, with
@@ -95,8 +99,9 @@ Family and connection conclusions.
   below as implementation evidence.
 * Stationary-frame orbit attraction (Rules §3a: set attraction is outside the sentence language,
   so these are private implementation evidence; the generic transfer is the public foundation
-  `Dynamics.LaSalle.infDist_le_of_reduction'` of `theorem.Dynamics.LaSalle.Periodic`). The steady-state
-  orbit is `O = range orbitPoint`, `orbitPoint θ = (θ, v*, R_θ i*_dq, R_θ v*_dq, R_θ s_dq)`;
+  `Dynamics.LaSalle.infDist_le_of_reduction'` of `theorem.Dynamics.LaSalle.Periodic`). The
+  steady-state orbit is `O = range orbitPoint`,
+  `orbitPoint θ = (θ, v*, R_θ i*_dq, R_θ v*_dq, R_θ s_dq)`;
   static: `reduce_orbitPoint` (`O` reduces to `x*`), `orbitPoint_load`, `rotD_rot`, `rotQ_rot`,
   `rot_dist_sq`, `rot_sub_rot_sq`, `norm_sub_orbitPoint` (with the model's load phasor,
   `‖X − orbitPoint (X θ)‖ = ‖reduce X − x*‖`), `norm_orbitPoint_sub_le` (`O` is Lipschitz in `θ`).
@@ -127,9 +132,6 @@ Corrections (to the work-sync notes).
   (`full_not_mem_den_globallyAsymptoticallyStable`, `full_mem_den_unstable`; for the
   two-state abstraction also `matching_not_mem_den_globallyAsymptoticallyStable` in
   `theorem.GFM.Matching.Matching`).
-
-Source: work-sync `theory/T-dc-voltage-gfm.md` §1.0–§1.2; `theory/T-gfm-control.md` §1.6;
-`theory/papers/@arghir2020matching.md`; equations from arXiv:1706.09495v3 as listed above.
 -/
 
 noncomputable section

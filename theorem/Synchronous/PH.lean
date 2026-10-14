@@ -8,9 +8,11 @@ import theorem.Dynamics.Coordinates
 
 /-! # Synchronous machines as nonlinear port-Hamiltonian systems
 
-Two models, both instances of `powerlib.PH.NonlinearModel` (P0b), continuous time.
+The classical machine on an infinite bus and the seven-state dq machine as instances of
+`powerlib.PH.NonlinearModel`, each with its family (`ClassicalSM.family`, `SyncMachine7.family`).
 
-## Classical machine (`classicalSM`, T-ph §1.7 (1.12))
+Model boundary.
+Classical machine (`classicalSM`, T-ph §1.7 (1.12)), continuous time:
 * State order `x = (δ, p)`: rotor angle `δ` (electrical radians, relative to the infinite bus)
   and angular momentum `p = M ω` (`ω` the speed deviation). Parameters `M > 0`, `D ≥ 0`,
   synchronizing coefficient `b > 0` (`b = E V / X`), mechanical power `P_m ∈ ℝ`.
@@ -24,19 +26,7 @@ Two models, both instances of `powerlib.PH.NonlinearModel` (P0b), continuous tim
 * The same machine in swing-equation form `(δ, ω)` (`k₁ = k₃ = 0`, `k₂ = b`) is the family
   `Swing.family` of `theorem/Synchronous/Swing.lean`; the two families are kept side by side
   (different requirement languages and sentence sets), not merged.
-* Correction (T-ph §1.1, structural assumption 3 `H ≥ H_min > −∞`): this `H` contains
-  `−P_m δ` and is **not bounded below** whenever `P_m ≠ 0`
-  (`classicalSM_hamiltonian_not_bddBelow`), so (1.12) violates assumption 3 and the global
-  passivity inequality (1.4) with storage `H − H_min` is unavailable; the dissipation
-  inequality (`classicalSM_integral_dissipation`) still holds.
-* Local stability uses `H − H(x*)` as a local Lyapunov function on the strip
-  `|δ| < π/2` around a stable equilibrium `δ* ∈ (−π/2, π/2)`, `b sin δ* = P_m`, `p* = 0`, and
-  transports it by whole turns to every equilibrium with `cos δ* > 0`.
-  (`H − H(x*)` is in general **not** positive on all of `|δ − δ*| < π`: it changes sign
-  beyond the unstable equilibrium `π − δ*`; positivity is only claimed on `|δ| < π/2`.)
-  Further: `D > 0, cos δ* > 0` ⇒ local exponential stability; `cos δ* < 0` ⇒ instability.
-
-## Seven-state dq machine (`syncMachine7`, T-sync-machine §1.13)
+Seven-state dq machine (`syncMachine7`, T-sync-machine §1.13), continuous time:
 * State order `x = (Ψ_d, Ψ_q, Ψ_f, Ψ_kd, Ψ_kq, p, δ) ∈ ℝ⁷` (`Ψ_0` omitted, three-wire);
   rotor dq frame; **absolute** rotor angle with `δ̇ = ω_r`; `p = M ω_r`.
 * Direction convention: stator currents are **IN-positive** (motor convention), obtained from
@@ -50,13 +40,28 @@ Two models, both instances of `powerlib.PH.NonlinearModel` (P0b), continuous tim
   `J(x)` state dependent and skew, `R = diag(r_s, r_s, r_f, r_kd, r_kq, D, 0) ⪰ 0`,
   damping acting on `ω_r` (not on `ω_r − ω_s`).
 * Not modelled: network, AVR/exciter dynamics, governor, saturation, zero sequence.
-  Not an instance of `PortHamiltonian.Model` (`J` depends on the state, `H` is not diagonal).
-* Results: the pH field reproduces every rate equation of §1.13; the energy balance
+  Not an instance of `Port.PortHamiltonian` (`J` depends on the state, `H` is not diagonal).
+
+Source: work-sync `theory/T-ph.md` §1.7 (1.12); `theory/T-sync-machine.md` §1.13.
+
+Results.
+* Classical machine: `H` is not bounded below for `P_m ≠ 0`
+  (`classicalSM_hamiltonian_not_bddBelow`), while the dissipation inequality
+  `H(x(t₁)) − H(x(t₀)) ≤ ∫ u ω` holds on every solution segment (private
+  `classicalSM_integral_dissipation`).
+* Classical machine, local stability: `H − H(x*)` is a local Lyapunov function on the strip
+  `|δ| < π/2` around a stable equilibrium `δ* ∈ (−π/2, π/2)`, `b sin δ* = P_m`, `p* = 0`
+  (`classicalSM_isStrictLocalMin`), transported by whole turns to every equilibrium with
+  `cos δ* > 0`.  (`H − H(x*)` is in general **not** positive on all of `|δ − δ*| < π`: it changes
+  sign beyond the unstable equilibrium `π − δ*`; positivity is only claimed on `|δ| < π/2`.)
+  Further: `D > 0, cos δ* > 0` ⇒ local exponential stability; `cos δ* < 0` ⇒ instability.
+* Seven-state machine: the pH field reproduces every rate equation of §1.13
+  (`syncMachine7_field`); the energy balance (`syncMachine7_power_balance`)
   `Ḣ = (v_d i_d + v_q i_q + v_f i_f + T_m ω_r) − (r_s(i_d²+i_q²) + r_f i_f² + r_kd i_kd² +
-  r_kq i_kq² + D ω_r²)`; `H ≥ 0`; trajectory-level `PassiveWithStorage` with storage `H`.
+  r_kq i_kq² + D ω_r²)`; `H ≥ 0` (`syncMachine7_H_nonneg`); passivity with storage `H`
+  (`SyncMachine7.mem_den_passive`).
 
-## Families and connection conclusions
-
+Family and connection conclusions.
 * `ClassicalSM.family`: a complete system is the classical machine together with a selected
   rotor angle `δ*` (`ClassicalSM.Model`, operating point `x* = (δ*, 0)`); the system map reads
   the pH system in coordinates centred at `x*` (`NonlinearModel.shift`), because the library
@@ -65,53 +70,53 @@ Two models, both instances of `powerlib.PH.NonlinearModel` (P0b), continuous tim
   `cos δ* > 0` (invariant under whole turns), strict damping with `cos δ* > 0`, the unstable
   branch `cos δ* < 0`, and zero mechanical power (`P_m = 0`, which bounds `H` below). Lyapunov
   stability translates into an equilibrium on the stable branch, the local attractive sentences
-  into a damped equilibrium with
-  `cos δ* > 0`, instability into an equilibrium on the unstable branch, passivity into
-  `P_m = 0`; the global sentences, decay rates, sampled contraction and conservation have no
-  translation (the whole, inconsistent, language). The chain lies below the semantics
-  (`ClassicalSM.chain_le_semantics`). The passivity translation is exact
-  (`ClassicalSM.exact_passive`): for `P_m ≠ 0` the machine is not passive
-  (`ClassicalSM.not_mem_den_passive`) — a slow spin `ω₀ = P_m / (2 (D + 1))`, held at constant
-  speed by the port, draws `2π |P_m|` minus the damping loss per revolution, so the energy drawn
-  over many revolutions exceeds every nonnegative storage. The local exponential translation is
-  exact (`ClassicalSM.exact_locallyExponentiallyStable`): by the converse linearization theorem
-  (`Dynamics.isHurwitz_of_locallyExponentiallyStable`) local exponential stability forces an
-  equilibrium whose Jacobian `[[0, 1/M], [−b cos δ*, −D/M]]` is Hurwitz, i.e. `D > 0`,
-  `cos δ* > 0`. The instability translation is not exact (`ClassicalSM.not_exact_unstable`):
-  instability is the failure of Lyapunov stability, so the unbalanced machine
-  `ClassicalSM.offEquilibrium` (`P_m = 2 > b = 1`) is unstable
-  (`ClassicalSM.offEquilibrium_mem_den_unstable`). The local asymptotic translation is exact
-  (`ClassicalSM.exact_locallyAsymptoticallyStable`), although the linearization does not decide the
-  degenerate cases: an undamped machine conserves `H`, and at a fold (`cos δ* = 0`) the Hamiltonian
-  `p²/(2M) − P_m (s − sin s)` (`classicalSM_H_fold`) is below its value at `(δ*, 0)` on one side, where
-  the dissipated `H` keeps every solution away (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`).
-  The Lyapunov translation is exact (`ClassicalSM.exact_lyapunovStable`): its denotation is
+  into a damped equilibrium with `cos δ* > 0`, instability into an equilibrium on the unstable
+  branch, passivity into `P_m = 0`; the global sentences, decay rates, sampled contraction and
+  conservation have no translation (the whole, inconsistent, language). The chain lies below the
+  semantics (`ClassicalSM.chain_le_semantics`).
+* The passivity translation is exact (`ClassicalSM.exact_passive`): for `P_m ≠ 0` the machine is
+  not passive (`ClassicalSM.not_mem_den_passive`) — a slow spin `ω₀ = P_m / (2 (D + 1))`, held at
+  constant speed by the port, draws `2π |P_m|` minus the damping loss per revolution, so the
+  energy drawn over many revolutions exceeds every nonnegative storage.
+* The local exponential translation is exact (`ClassicalSM.exact_locallyExponentiallyStable`):
+  by the converse linearization theorem (`Dynamics.isHurwitz_of_locallyExponentiallyStable`)
+  local exponential stability forces an equilibrium whose Jacobian
+  `[[0, 1/M], [−b cos δ*, −D/M]]` is Hurwitz, i.e. `D > 0`, `cos δ* > 0`.
+* The instability translation is not exact (`ClassicalSM.not_exact_unstable`): instability is
+  the failure of Lyapunov stability, so the unbalanced machine `ClassicalSM.offEquilibrium`
+  (`P_m = 2 > b = 1`) is unstable (`ClassicalSM.offEquilibrium_mem_den_unstable`).
+* The local asymptotic translation is exact (`ClassicalSM.exact_locallyAsymptoticallyStable`),
+  although the linearization does not decide the degenerate cases: an undamped machine conserves
+  `H`, and at a fold (`cos δ* = 0`) the Hamiltonian `p²/(2M) − P_m (s − sin s)`
+  (`classicalSM_H_fold`) is below its value at `(δ*, 0)` on one side, where the dissipated `H`
+  keeps every solution away (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`).
+* The Lyapunov translation is exact (`ClassicalSM.exact_lyapunovStable`): its denotation is
   `ClassicalSM.mem_den_lyapunovStable_iff` (`b sin δ* = P_m`, `cos δ* > 0`, every `D ≥ 0`): up to
   whole turns `H − H(x*)` is a local Lyapunov function (`zeroInputField` is `2π`-periodic in `δ`),
   the unstable branch is unstable, and a fold is unstable for every `D ≥ 0`
-  (`classicalSM_accel_fold`, `Dynamics.unstable_of_lie_nonpos_of_lie_pos`).
-  Translation-defect repair (a defect of the translation, not of the source note): the
-  stable-branch requirement used to be `|δ*| < π/2`, which is not invariant under whole turns, so
-  the Lyapunov translation was sound but not exact (former `ClassicalSM.not_exact_lyapunovStable`,
-  witness `ClassicalSM.wrapped`: `M = b = 1`, `D = P_m = 0`, `δ* = 2π`, Lyapunov stable without
-  meeting it). The requirement is now `cos δ* > 0`; the witness, which only served the former
-  refutation, is removed. The local attractive sentences translate through `damped`
-  (`D > 0 ∧ cos δ* > 0`), which was already turn invariant, so their exactness is unaffected.
+  (`classicalSM_accel_fold`, `Dynamics.unstable_of_lie_nonpos_of_lie_pos`).  The stable-branch
+  requirement must be invariant under whole turns: with `|δ*| < π/2` instead of `cos δ* > 0` the
+  Lyapunov translation would be sound but not exact (`M = b = 1`, `D = P_m = 0`, `δ* = 2π` is
+  Lyapunov stable without meeting it).  The local attractive sentences translate through
+  `damped` (`D > 0 ∧ cos δ* > 0`), which is turn invariant as well.
 * `SyncMachine7.family`: a complete system is the seven-state machine (`SyncMachine7Params`),
   read as its pH port system at the origin (the unforced state, an equilibrium). Passivity is
   translated into no requirement and is exact (`H ≥ 0`); flow sentences have no translation.
+* Connection conclusions: `ClassicalSM.mem_den_lyapunovStable`,
+  `ClassicalSM.mem_den_locallyExponentiallyStable`, `ClassicalSM.mem_den_unstable`,
+  `ClassicalSM.mem_den_passive_of_Pm_zero`, `SyncMachine7.mem_den_passive`, plus the chain
+  soundness and `realize_univ` of both families.
+* The rate equations, energies, damping powers, supplies, power balances, equilibrium
+  characterization, unboundedness of `H` and the linearization are static evidence; the
+  trajectory-level dissipation inequality of the classical machine and the energy derivative of
+  the seven-state machine are private implementation evidence.
 
-Connection conclusions: `ClassicalSM.mem_den_lyapunovStable`,
-`ClassicalSM.mem_den_locallyExponentiallyStable`, `ClassicalSM.mem_den_unstable` (formerly the
-raw `classicalSM_lyapunovStable`, `classicalSM_locallyExponentiallyStable`, `classicalSM_unstable`),
-`ClassicalSM.mem_den_passive_of_Pm_zero`, `SyncMachine7.mem_den_passive` (formerly
-`syncMachine7_passiveWithStorage`), plus the chain soundness and `realize_univ` of both
-families. The rate equations, energies, damping powers, supplies, power balances, equilibrium
-characterization, unboundedness of `H` and the linearization are static evidence; the
-trajectory-level dissipation inequality of the classical machine and the energy derivative of the
-seven-state machine are private implementation evidence.
-
-Source: work-sync `theory/T-ph.md` §1.7 (1.12); `theory/T-sync-machine.md` §1.13.
+Correction.
+* T-ph §1.1, structural assumption 3 `H ≥ H_min > −∞`: the classical-machine `H` contains
+  `−P_m δ` and is **not bounded below** whenever `P_m ≠ 0`
+  (`classicalSM_hamiltonian_not_bddBelow`), so (1.12) violates assumption 3 and the global
+  passivity inequality (1.4) with storage `H − H_min` is unavailable; the dissipation
+  inequality (`classicalSM_integral_dissipation`) still holds.
 -/
 
 noncomputable section
@@ -210,8 +215,8 @@ so T-ph §1.1 structural assumption 3 fails for (1.12). -/
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] at hx
   nlinarith [p.b_pos]
 
-/-- Formerly the public `classicalSM_integral_dissipation`: dissipation inequality without any
-lower bound on `H`, `H(x(t₁)) − H(x(t₀)) ≤ ∫ u ω`, on every solution segment.
+/-- Dissipation inequality without any lower bound on `H`, `H(x(t₁)) − H(x(t₀)) ≤ ∫ u ω`, on
+every solution segment.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem classicalSM_integral_dissipation (p : ClassicalSMParams)
     {u : ℝ → (Fin 1 → ℝ)} {x : ℝ → State 2} {t₀ t₁ : ℝ}
@@ -323,7 +328,7 @@ def classicalSM_equilibrium (δs : ℝ) : State 2 := WithLp.toLp 2 ![δs, 0]
     have : 0 ≤ 1 / (2 * p.M) * x 1 ^ 2 := by positivity
     linarith
 
-/-- Formerly the public `classicalSM_lyapunovStable`; see `ClassicalSM.mem_den_lyapunovStable`. -/
+/-- Implementation evidence for `ClassicalSM.mem_den_lyapunovStable`. -/
 private theorem classicalSM_lyapunovStable (p : ClassicalSMParams) {δs : ℝ}
     (hδs : δs ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2)) (heq : p.b * Real.sin δs = p.Pm) :
     LyapunovStable (classicalSM p).zeroInputField (classicalSM_equilibrium δs) :=
@@ -446,8 +451,7 @@ private theorem classicalSM_lyapunovStable_of_cos_pos (p : ClassicalSMParams) {�
     simp [classicalSM, Matrix.diagonal_vec2]
   all_goals ring
 
-/-- Formerly the public `classicalSM_locallyExponentiallyStable`; see
-`ClassicalSM.mem_den_locallyExponentiallyStable`. -/
+/-- Implementation evidence for `ClassicalSM.mem_den_locallyExponentiallyStable`. -/
 private theorem classicalSM_locallyExponentiallyStable (p : ClassicalSMParams)
     {δs : ℝ} (hD : 0 < p.D) (heq : p.b * Real.sin δs = p.Pm) (hcos : 0 < Real.cos δs) :
     LocallyExponentiallyStable (classicalSM p).zeroInputField (classicalSM_equilibrium δs) := by
@@ -468,7 +472,7 @@ private theorem classicalSM_locallyExponentiallyStable (p : ClassicalSMParams)
   · have : 0 < 1 / p.M * (p.b * Real.cos δs) := by positivity
     nlinarith
 
-/-- Formerly the public `classicalSM_unstable`; see `ClassicalSM.mem_den_unstable`. -/
+/-- Implementation evidence for `ClassicalSM.mem_den_unstable`. -/
 private theorem classicalSM_unstable (p : ClassicalSMParams) {δs : ℝ}
     (heq : p.b * Real.sin δs = p.Pm) (hcos : Real.cos δs < 0) :
     Unstable (classicalSM p).zeroInputField (classicalSM_equilibrium δs) := by
@@ -905,10 +909,9 @@ Hamiltonian keeps the solution, and there `P_m (p + D δ)` grows at the rate
 
 /-- The Lyapunov translation is exact: the classical machine is Lyapunov stable at `(δ*, 0)`
 exactly when `b sin δ* = P_m` and `cos δ* > 0` (`mem_den_lyapunovStable_iff`), for every
-`D ≥ 0`. Translation-defect repair: the stable-branch requirement was `|δ*| < π/2`, which is not
-invariant under whole turns (at `δ* = 2π`, `M = b = 1`, `D = P_m = 0` the machine is Lyapunov
-stable without meeting it, so that translation was sound but not exact); it is now
-`cos δ* > 0`. -/
+`D ≥ 0`. The stable-branch requirement `cos δ* > 0` is invariant under whole turns; `|δ*| < π/2`
+would not be (at `δ* = 2π`, `M = b = 1`, `D = P_m = 0` the machine is Lyapunov stable without
+meeting it, so that translation would be sound but not exact). -/
 @[powerlib_domain] theorem exact_lyapunovStable :
     connection% (family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -1275,8 +1278,7 @@ electromagnetic-torque terms cancel. -/
   have hM := p.M_pos
   positivity
 
-/-- Formerly the public `syncMachine7_trajectory_energy_derivative`: along every solution segment
-the energy balance of §1.13 holds pointwise in time.
+/-- Along every solution segment the energy balance of §1.13 holds pointwise in time.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem syncMachine7_trajectory_energy_derivative (p : SyncMachine7Params)
     {u : ℝ → (Fin 4 → ℝ)} {x : ℝ → State 7} {t₀ t₁ t : ℝ}

@@ -8,7 +8,21 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-! # Invariant sets and invariant manifolds: the provable core
 
-Foundation layer: generic statements about autonomous ODEs `ẋ = f(x)`; no engineering model.
+Invariance and tangency, the homological (Sylvester) equations of centre-manifold and normal-form
+computations, and heteroclinic orbits as intersections of stable and unstable sets.
+
+Scope.
+* Generic statements about autonomous ODEs `ẋ = f(x)` on a normed space; no engineering model,
+  so no model family is defined; all results remain public foundation support. Solution segments
+  are Mathlib integral curves on `Icc`; uniqueness is LeanForControl's
+  `eqOn_of_isIntegralCurveOn_Icc`, applied directly.
+* Invariant-set definitions are already available: LeanForControl's `IsPositivelyInvariant` and
+  Mathlib's `IsInvariant` / `IsForwardInvariant` for flows. The real spectral decomposition
+  `ℝⁿ = E^s ⊕ E^c ⊕ E^u`, the stable/unstable/center manifold theorems and NHIM persistence are
+  not formalized.
+
+Source: work-sync theory/T-invariant-manifolds.md §1.1 (invariance ⇔ tangency), §1.5.1
+(order-by-order solvability under the spectral gap), §1.8 (heteroclinic ⇔ `W^u ∩ W^s`).
 
 Results.
 * Invariance ⇒ tangency (`vectorField_mem_tangentCone`): if a forward solution segment starting
@@ -17,9 +31,9 @@ Results.
   tangent cone is the tangent space, so this is `f(p) ∈ T_p𝓜`.
 * Homological (Sylvester) equations (`sylvester_eq_zero`, `sylvester_unique`): for complex
   matrices `T`, `S` with disjoint spectra, `T X − X S = R` has exactly one solution `X` for every
-  `R`. This generalizes LeanForControl's `bilinear_eq_zero_of_no_resonance` (one operator acting
-  on both arguments) to two operators; it is the solvability statement for the order-by-order
-  equations of center-manifold / normal-form computations.
+  `R`. This generalizes LeanForControl's `MatrixAlgebra.bilinear_eq_zero_of_no_resonance` (one
+  operator acting on both arguments) to two operators; it is the solvability statement for the
+  order-by-order equations of center-manifold / normal-form computations.
 * Order-`α` coefficient equations (`homological_coeff_unique`): if `σ(A_c) ⊂ jℝ` (eigenvalues
   `λᵢ` with `Re λᵢ = 0`) and the hyperbolic block `A_h` has no eigenvalue on `jℝ` (spectral gap),
   then `(A_h − (α·λ) I) h_α = R_α` is uniquely solvable for every multi-index `α`.
@@ -28,23 +42,12 @@ Results.
   forwards, resp. to `a` backwards; written out in the statements), a global solution `γ` is
   heteroclinic from `a` to `b` iff `γ(0) ∈ W^u(a) ∩ W^s(b)`, for a globally Lipschitz field
   (uniqueness in both time directions); the forward implication needs no uniqueness, and then
-  every point of the orbit lies in `W^u(a) ∩ W^s(b)`.
+  every point of the orbit lies in `W^u(a) ∩ W^s(b)` (`heteroclinic_mem`).
 
-Invariant-set definitions are already available: LeanForControl's `IsPositivelyInvariant` and Mathlib's `IsInvariant` / `IsForwardInvariant` for flows. The real spectral
-decomposition `ℝⁿ = E^s ⊕ E^c ⊕ E^u`, the stable/unstable/center manifold theorems and NHIM
-persistence are not formalized.
-
-Correction (T-invariant-manifolds.md, recorded only): the NHIM rate inequalities of §1.7 are
+Corrections. (T-invariant-manifolds.md, recorded only): the NHIM rate inequalities of §1.7 are
 inconsistent as written (`α_s, α_u > rβ` together with `0 < α_s < β < α_u`), and the reduction
 principle of §1.5 needs `E^u = {0}` for "the local asymptotic behaviour is determined by the
 reduced field".
-
-Source: work-sync theory/T-invariant-manifolds.md §1.1 (invariance ⇔ tangency), §1.5.1
-(order-by-order solvability under the spectral gap), §1.8 (heteroclinic ⇔ `W^u ∩ W^s`).
-
-Architecture: generic statements about arbitrary fields on a normed space, so no model family is
-defined; all results remain public foundation support. Solution segments are Mathlib integral
-curves on `Icc`; uniqueness is LeanForControl's `eqOn_of_isIntegralCurveOn_Icc`, applied directly.
 -/
 
 noncomputable section

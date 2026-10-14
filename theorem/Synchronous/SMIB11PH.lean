@@ -3,6 +3,10 @@ import theorem.TMIO.ClaimElab
 
 /-! # Single machine, node capacitor, RL link and infinite bus: an 11-state pH system
 
+The seven-state dq machine connected through a capacitive node and an RL link to an infinite bus,
+as a nonlinear port-Hamiltonian system; the note's model and its relative-angle correction each
+get a passivity family.
+
 Model boundary (T-power-system-ph §1.5.1).
 * One seven-state dq synchronous machine (the `syncMachine7` model of
   `theorem/Synchronous/PH.lean`: linear magnetics, inverse inductance `Γ ≻ 0`, IN-positive
@@ -21,43 +25,45 @@ Model boundary (T-power-system-ph §1.5.1).
   The kernel checks `J^tot = −(J^tot)ᵀ` and that `(J − R)∇H + B u` reproduces every one of the
   eleven state equations of §1.5.1 (replacing the note's sympy check).
 * Not modelled: AVR, governor, loads, more machines or nodes, saturation, zero sequence.
-* `H` does not depend on `δ`; it is nonnegative but **not** positive definite
-  (`smib11_no_quadraticStorage`, formerly stated as the absence of a quadratic storage of the
-  removed `Passivity` interface), while passivity with storage `H` holds.
-
-Correction (hard obstruction). The parent model T-sync-machine §1.13 uses the **absolute**
-rotor angle, `δ̇ = ω_r`, and §1.5.1 keeps `δ̇ = ω_r` while using `δ` as the angle between the
-rotor frame and the DQ frame rotating at `ω_s`. These are inconsistent: the angle between the
-two frames obeys `δ̇ = ω_r − ω_s`. With the note's equation every equilibrium has `ω_r = 0`
-(`smib11_speed_eq_zero_of_equilibrium`), so synchronous operation `ω_r = ω_s ≠ 0` is never an
-equilibrium. We formalize
-* `smib11`: the note's ODE verbatim (`δ̇ = ω_r`); its energy balance and passivity still hold;
-* `smib11Rel`: the corrected relative-angle ODE `δ̇ = ω_r − ω_s`, obtained by adding the drift
-  `−ω_s e_δ`. Since `∂H/∂δ = 0` this drift does no work, so the same energy balance and the
-  same passivity statement hold, and every equilibrium now has `ω_r = ω_s`.
-
-Families and connection conclusions. Two families on the parameters `SMIB11Params`, both read
-at the origin (the unforced state; for the note's model an equilibrium):
-* `SMIB11.family`: the note's model, system map the pH port system `(smib11 p).system`;
-* `SMIB11Rel.family`: the corrected model, system map `smib11Rel_system p` (field
-  `smib11Rel_field`, the same output and supplied power).
-Passivity is translated into no requirement and is exact for both (`H ≥ 0`); flow sentences have
-no translation (the whole, inconsistent, language), since no operating point is selected here
-and the corrected model's origin is not an equilibrium when `ω_s ≠ 0`. Connection conclusions:
-`SMIB11.mem_den_passive` and `SMIB11Rel.mem_den_passive` (formerly `smib11_passiveWithStorage`
-and `smib11Rel_passiveWithStorage`), exactness and chain soundness of both families. The state
-equations, damping power, supply, power balances, `H` identities and the equilibrium
-corrections are static evidence. The former `smib11Rel_storage` (a storage structure of the
-removed `Passivity` interface) is replaced by the passivity proof through
-`Port.System.passiveWith_of_rate`.
-
-State dimension of the multi-machine system (T-power-system-ph §1.8):
-`powerSystem_state_dim` (`N` seven-state machines, `ℓ` branch fluxes and `n_C` node charges give
-`7N + ℓ + n_C` states; ZIP loads add none).
 
 Source: work-sync `theory/T-power-system-ph.md` §1.5.1 (11-state `J^tot`, `R^tot`, `B`,
 state equations, energy balance), §1.4 (block-sum Hamiltonian), §1.8 (state dimension); parent
 `theory/T-sync-machine.md` §1.13.
+
+Results.
+* `smib11`: the note's ODE verbatim (`δ̇ = ω_r`); its energy balance (`smib11_power_balance`)
+  and passivity hold.
+* `smib11Rel_field`: the corrected relative-angle ODE `δ̇ = ω_r − ω_s`, obtained by adding the
+  drift `−ω_s e_δ`. Since `∂H/∂δ = 0` this drift does no work, so the same energy balance
+  (`smib11Rel_power_balance`) and the same passivity statement hold, and every equilibrium has
+  `ω_r = ω_s` (`smib11Rel_speed_eq_of_equilibrium`).
+* `H` does not depend on `δ`; it is nonnegative (`smib11_H_nonneg`) but **not** positive definite
+  (`smib11_no_quadraticStorage`: it vanishes along the rotor-angle axis), while passivity with
+  storage `H` holds.
+* `powerSystem_state_dim` (T-power-system-ph §1.8): `N` seven-state machines, `ℓ` branch fluxes
+  and `n_C` node charges give `7N + ℓ + n_C` states; ZIP loads add none.
+
+Family and connection conclusions.
+* Two families on the parameters `SMIB11Params`, both read at the origin (the unforced state; for
+  the note's model an equilibrium): `SMIB11.family`, the note's model, system map the pH port
+  system `(smib11 p).system`; `SMIB11Rel.family`, the corrected model, system map
+  `smib11Rel_system p` (field `smib11Rel_field`, the same output and supplied power).
+* Passivity is translated into no requirement and is exact for both (`H ≥ 0`); flow sentences
+  have no translation (the whole, inconsistent, language), since no operating point is selected
+  here and the corrected model's origin is not an equilibrium when `ω_s ≠ 0`.
+* Connection conclusions: `SMIB11.mem_den_passive` and `SMIB11Rel.mem_den_passive`, exactness
+  and chain soundness of both families; the corrected model's passivity is proved through
+  `Port.System.passiveWith_of_rate`.  The state equations, damping power, supply, power
+  balances, `H` identities and the equilibrium corrections are static evidence.
+
+Correction (hard obstruction).
+* The parent model T-sync-machine §1.13 uses the **absolute** rotor angle, `δ̇ = ω_r`, and
+  §1.5.1 keeps `δ̇ = ω_r` while using `δ` as the angle between the rotor frame and the DQ frame
+  rotating at `ω_s`. These are inconsistent: the angle between the two frames obeys
+  `δ̇ = ω_r − ω_s`. With the note's equation every equilibrium has `ω_r = 0`
+  (`smib11_speed_eq_zero_of_equilibrium`), so synchronous operation `ω_r = ω_s ≠ 0` is never an
+  equilibrium (`smib11_not_equilibrium_of_synchronous`).  Both the verbatim model `smib11` and
+  the corrected `smib11Rel_field` are formalized.
 -/
 
 noncomputable section

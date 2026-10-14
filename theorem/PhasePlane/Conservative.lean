@@ -2,24 +2,30 @@ import theorem.PhasePlane.Planar
 
 /-! # Second-order mechanical systems `m ẍ + γ ẋ + V'(x) = 0`
 
-Foundation layer for the phase-plane examples (pendulum, Duffing, washboard).
+The common phase-plane model behind the pendulum, Duffing and washboard examples: energy balance,
+equilibria and Lyapunov stability at strict minima of the potential.
 
-Model boundary. State `y = (x, v) = (y 0, y 1) ∈ State 2` with `v = ẋ`; constant mass `m > 0`,
-constant linear damping `γ` (`γ = 0` conservative), potential `V : ℝ → ℝ` with everywhere
-derivative `dV = V'`. The vector field is exactly `ẋ = v`, `v̇ = (−γ v − V'(x)) / m`
-(continuous time, no input, noise or saturation). Energy `E = m v²/2 + V(x)`.
-
-Results.
-* Phase-trajectory slope: where a trajectory is locally a graph `v = Φ(x)` with `v ≠ 0`,
-  `Φ'(x) = v̇ / v = f(x, v) / v`.
-* Energy balance `dE/dt = −γ v²` along every solution; conservation for `γ = 0`, monotone decay for
-  `γ ≥ 0`.
-* Equilibria are `(x*, 0)` with `V'(x*) = 0`.
-* A strict local minimum `x*` of `V` gives a Lyapunov-stable equilibrium `(x*, 0)` for `γ ≥ 0`
-  (energy as local Lyapunov function; LeanForControl `lyapunov_stable`).
+Model boundary.
+* State `y = (x, v) = (y 0, y 1) ∈ State 2` with `v = ẋ`; constant mass `m > 0`, constant linear
+  damping `γ` (`γ = 0` conservative), potential `V : ℝ → ℝ` with everywhere derivative
+  `dV = V'`. The vector field is exactly `ẋ = v`, `v̇ = (−γ v − V'(x)) / m` (`field`; continuous
+  time, no input, noise or saturation). Energy `E = m v²/2 + V(x)` (`energy`).
+* A canonical textbook system with a caller-supplied potential: no model family; foundation
+  results.
 
 Source: work-sync theory/T-nonlinear-phase-plane.md §1.1, §1.2, §1.7,
 theory/T-dynamical-systems.md §1.2.
+
+Results.
+* Phase-trajectory slope (`phase_slope`): where a trajectory is locally a graph `v = Φ(x)` with
+  `v ≠ 0`, `Φ'(x) = v̇ / v = f(x, v) / v`.
+* Energy balance `dE/dt = −γ v²` along every solution (`energy_lie`,
+  `energy_hasDerivWithinAt`); conservation for `γ = 0` (`energy_conserved`), monotone decay for
+  `γ ≥ 0` (`energy_antitone`).
+* Equilibria are `(x*, 0)` with `V'(x*) = 0` (`field_eq_zero_iff`).
+* A strict local minimum `x*` of `V` gives a Lyapunov-stable equilibrium `(x*, 0)` for `γ ≥ 0`
+  (energy as local Lyapunov function; LeanForControl `lyapunov_stable`;
+  `center_lyapunovStable`).
 -/
 
 noncomputable section

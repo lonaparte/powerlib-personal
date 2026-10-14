@@ -4,18 +4,27 @@ import Mathlib.Data.Matrix.Mul
 
 /-! # Exponential families and their conjugate priors
 
-Source: work-sync `theory/T-bayesian-inference.md` §1.4.5 (general exponential family → conjugate
-family, update `χ_N = χ₀ + ∑ T(dᵢ)`, `ν_N = ν₀ + N`), §1.3 (exponential families have the
-finite-dimensional sufficient statistic `∑ T(dᵢ)`).
+Exponential-family likelihoods factorise through the sufficient statistic `∑ T(dᵢ)`, and the
+conjugate prior is updated by `(χ, n) ↦ (χ + ∑ T(dᵢ), n + N)`.
 
-Foundation (general probability), not an engineering result.
+Scope.
+* General probability, not an engineering result.
+* Parameter space `Θ` with a base measure `ν`; natural parameter `η : Θ → ℝᵏ`, log-partition
+  `A : Θ → ℝ`; data space `𝓧` with base density `h > 0` and sufficient statistic
+  `T : 𝓧 → ℝᵏ`. One observation has likelihood `h(d) exp(η(θ)·T(d) - A(θ))`; `N` observations
+  `d : Fin N → 𝓧` are conditionally i.i.d. (product likelihood `expFamLik`). The conjugate prior
+  is `conjPrior ν η A χ n ∝ exp(η(θ)·χ - n A(θ)) ν(dθ)`. The normalising constant of the prior
+  is assumed positive and finite.
 
-Model. Parameter space `Θ` with a base measure `ν`; natural parameter `η : Θ → ℝᵏ`,
-log-partition `A : Θ → ℝ`; data space `𝓧` with base density `h > 0` and sufficient statistic
-`T : 𝓧 → ℝᵏ`. One observation has likelihood `h(d) exp(η(θ)·T(d) - A(θ))`; `N` observations
-`d : Fin N → 𝓧` are conditionally i.i.d. (product likelihood `expFamLik`). The conjugate prior is
-`conjPrior ν η A χ n ∝ exp(η(θ)·χ - n A(θ)) ν(dθ)`. The normalising constant of the prior is assumed
-positive and finite.
+Source: work-sync theory/T-bayesian-inference.md §1.4.5 (general exponential family →
+conjugate family, update `χ_N = χ₀ + ∑ T(dᵢ)`, `ν_N = ν₀ + N`), §1.3 (exponential families have
+the finite-dimensional sufficient statistic `∑ T(dᵢ)`).
+
+Results.
+* `expFamLik_eq`, `expFamLik_factorizesThrough` — exponential-family likelihoods factorise
+  through the sufficient statistic `∑ T(dᵢ)` (Fisher–Neyman).
+* `bayesPosterior_conjPrior` — conjugate update of an exponential family:
+  `(χ, n) ↦ (χ + ∑ T(dᵢ), n + N)`.
 -/
 
 noncomputable section

@@ -6,23 +6,25 @@ import Mathlib.MeasureTheory.Integral.Prod
 
 /-! # A martingale that is not Markov
 
-Source: work-sync `theory/T-process-foundations-stochastic.md` §1.4 ("Markov and martingale are
-independent notions: neither implies the other").  The direction "Markov ⇏ martingale" is
-`Processes.deterministic_markov_not_martingale`; this module gives "martingale ⇏ Markov".
+Markov and martingale are independent notions; this module gives "martingale ⇏ Markov" (the
+direction "Markov ⇏ martingale" is `Stochastic.Proc.deterministic_markov_not_martingale`).
 
-Foundation (probability), not an engineering result.
+Scope.
+* Probability theory, not an engineering result.
+* Construction (two fair coins, `Ω = Bool × Bool` with the uniform product law). Let
+  `ξ₁ ∈ {0, 1}` and `ξ₂ ∈ {−1, 1}` be the two coordinates and `X₀ = X₁ = 0`, `X_n = ξ₁ ξ₂` for
+  `n ≥ 2`, with the filtration `𝓕₀ = {∅, Ω}`, `𝓕₁ = σ(ξ₁)`, `𝓕_n = σ(ξ₁, ξ₂)` (`n ≥ 2`).
 
-Construction (two fair coins, `Ω = Bool × Bool` with the uniform product law).  Let
-`ξ₁ ∈ {0, 1}` and `ξ₂ ∈ {−1, 1}` be the two coordinates and
-`X₀ = X₁ = 0`, `X_n = ξ₁ ξ₂` for `n ≥ 2`, with the filtration `𝓕₀ = {∅, Ω}`, `𝓕₁ = σ(ξ₁)`,
-`𝓕_n = σ(ξ₁, ξ₂)` (`n ≥ 2`).
-* `cm_martingale`: `X` is an `𝓕`-martingale (`E[ξ₁ ξ₂ | ξ₁] = ξ₁ E ξ₂ = 0`).
-* `cm_not_markov`: `X` is not Markov w.r.t. `𝓕` (conditional-expectation form, written out in
+Source: work-sync theory/T-process-foundations-stochastic.md §1.4 ("Markov and martingale are
+independent notions: neither implies the other").
+
+Results.
+* `cm_martingale` — `X` is an `𝓕`-martingale (`E[ξ₁ ξ₂ | ξ₁] = ξ₁ E ξ₂ = 0`).
+* `cm_not_markov` — `X` is not Markov w.r.t. `𝓕` (conditional-expectation form, written out in
   the statement: it is false that `E[g(X_{n+1}) | 𝓕_n] = E[g(X_{n+1}) | σ(X_n)]` a.s. for every
-  `n` and every bounded measurable `g`): for the bounded test
-  function `g = 1_{x ≠ 0}`, `E[g(X₂) | 𝓕₁] = ξ₁` while `E[g(X₂) | σ(X₁)] = E ξ₁ = 1/2`, since `X₁`
-  is constant; the future of `X` depends on information (`ξ₁`) that its present value does not
-  carry.
+  `n` and every bounded measurable `g`): for the bounded test function `g = 1_{x ≠ 0}`,
+  `E[g(X₂) | 𝓕₁] = ξ₁` while `E[g(X₂) | σ(X₁)] = E ξ₁ = 1/2`, since `X₁` is constant; the
+  future of `X` depends on information (`ξ₁`) that its present value does not carry.
 -/
 
 noncomputable section

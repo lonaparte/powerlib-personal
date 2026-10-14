@@ -11,8 +11,14 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 Mathlib has no modified Bessel functions; they are defined here by their power series:
 `besselI0 z = Σ_k (z/2)^{2k}/(k!)²`, `besselI1 z = Σ_k (z/2)^{2k+1}/(k!(k+1)!)`
 (`besselI0_eq`, `besselI1_eq`), through the entire series `besselSeries0 w = Σ w^k/(k!)²` and
-`besselSeries1 w = Σ w^k/(k!(k+1)!)` at `w = z²/4`. Static special-function analysis; nothing
-here describes a physical system.
+`besselSeries1 w = Σ w^k/(k!(k+1)!)` at `w = z²/4`.
+
+Scope.
+* Static special-function analysis; nothing here describes a physical system and no model family
+  is defined.
+
+Source: work-sync `theory/T-cable.md` §1.2.1 (the Bessel ratio `I₀(m r_c)/I₁(m r_c)` of the
+solid-conductor surface impedance).
 
 Results.
 * `hasSum_exp_tail`, `norm_tsum_sub_two_le`: a series dominated termwise by the exponential series
@@ -42,9 +48,6 @@ Results.
 
 The second-kind functions `K₀`, `K₁` are in `theorem/SpecialFunctions/BesselK.lean`; the solid
 conductor surface impedance built on `I₀/I₁` is in `theorem/Line/CableBessel.lean`.
-
-Source: work-sync `theory/T-cable.md` §1.2.1 (the Bessel ratio `I₀(m r_c)/I₁(m r_c)` of the
-solid-conductor surface impedance).
 -/
 
 noncomputable section

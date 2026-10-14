@@ -1,36 +1,48 @@
 import theorem.Numerics.LinearSchemes
 
-/-! Stability functions of one-step methods on the Dahlquist test equation.
+/-! # Stability functions of one-step methods on the Dahlquist test equation
 
-Model boundary: the test equation `ẋ = λ x` with complex `λ` and complex scalar state
-(`testField`), fixed real step `h`.  The stability functions are *derived* by applying each
-scheme predicate of `LinearSchemes` (and the classical RK4 step `rk4Step`, written for an
-arbitrary vector field) to `testField` and are not postulated.  All results are general
-numerical-analysis facts (foundation).
+The stability functions of forward Euler, backward Euler, the trapezoidal rule and RK4, derived
+from the schemes, with their A- and L-stability properties and stability regions.
 
-Contents.
-* Derivations: forward Euler `R(z) = 1 + z`, backward Euler `R(z) = (1 - z)⁻¹`, trapezoidal
-  rule `R(z) = (1 + z/2)/(1 - z/2)`, RK4 `R(z) = 1 + z + z²/2 + z³/6 + z⁴/24`.
-* Trapezoidal rule: `‖R(z)‖ ≤ 1 ↔ Re z ≤ 0` (exact stability region; A-stable), `R → -1` at
-  infinity (not L-stable), and the real-axis ringing statement: for `hλ < -2` every nonzero
-  trajectory alternates sign, with per-step multiplier tending to `-1` as `hλ → -∞`.
-* Backward Euler: A-stable and `R → 0` at infinity (L-stable); real multiplier in `(0, 1)`.
-* Forward Euler: for `λ = -α + iω`, `‖1 + hλ‖ ≤ 1 ↔ h ≤ 2α/(α² + ω²)`; purely imaginary
-  nonzero `λ` admits no stable step; real `λ < 0`: `|1 + hλ| < 1 ↔ h < 2/|λ|`.
-  For the real recursion `e[k+1] = e[k] + T_s(−α e[k])`: `e[k] = (1 − α T_s)^k e[0]`
-  (`eulerFirstOrder_closedForm`), and every trajectory tends to `0` iff `0 < α T_s < 2`
-  (`eulerFirstOrder_tendsto_zero_iff`).
-* RK4 on the imaginary axis: `‖R(iy)‖ ≤ 1 ↔ |y| ≤ 2√2` (exact).
-* A polynomial stability function with `R'(0) = 1` is never A-stable.
+Model boundary.
+* The test equation `ẋ = λ x` with complex `λ` and complex scalar state (`testField`), fixed
+  real step `h`. The stability functions are *derived* by applying each scheme predicate of
+  `LinearSchemes` (and the classical RK4 step `rk4Step`, written for an arbitrary vector field)
+  to `testField` and are not postulated.
+* All results are general numerical-analysis facts.
 
 Source: work-sync theory/T-numerical-integration.md §1.3, §1.7, §2.1, §2.3;
 theory/T-method-of-lines.md §1.5.2–§1.5.3; theory/T-emt-simulation.md §2.3;
 theory/T-sde-numerical.md §2.6.
 
-Correction (T-method-of-lines.md §1.5.3 table): the forward-Euler stability region is
-`|1 + Δtλ| ≤ 1` (disk centred at `-1`), not `|Δtλ| ≤ 1`; the two sets differ in both
-directions (`forwardEuler_region_ne_unitDisk`).  The same table's RK4 value "≈ 2.83" is
-`2√2` exactly.
+Results.
+* `forwardEuler_testEquation`, `backwardEuler_testEquation`, `trapezoidal_testEquation`,
+  `rk4Step_testEquation` — derivations: forward Euler `R(z) = 1 + z`, backward Euler
+  `R(z) = (1 - z)⁻¹`, trapezoidal rule `R(z) = (1 + z/2)/(1 - z/2)`, RK4
+  `R(z) = 1 + z + z²/2 + z³/6 + z⁴/24`.
+* `stabTrap_norm_le_one_iff`, `trapezoidal_aStable`, `trapezoidal_not_lStable`,
+  `trapezoidal_ringing` — trapezoidal rule: `‖R(z)‖ ≤ 1 ↔ Re z ≤ 0` (exact stability region;
+  A-stable), `R → -1` at infinity (not L-stable), and the real-axis ringing statement: for
+  `hλ < -2` every nonzero trajectory alternates sign, with per-step multiplier tending to `-1`
+  as `hλ → -∞`.
+* `backwardEuler_aStable`, `backwardEuler_lStable`, `backwardEuler_real_multiplier_mem` —
+  backward Euler: A-stable and `R → 0` at infinity (L-stable); real multiplier in `(0, 1)`.
+* `forwardEuler_stable_iff`, `forwardEuler_imaginary_unstable`, `forwardEuler_real_stable_iff` —
+  forward Euler: for `λ = -α + iω`, `‖1 + hλ‖ ≤ 1 ↔ h ≤ 2α/(α² + ω²)`; purely imaginary nonzero
+  `λ` admits no stable step; real `λ < 0`: `|1 + hλ| < 1 ↔ h < 2/|λ|`.
+* `eulerFirstOrder_closedForm`, `eulerFirstOrder_tendsto_zero_iff` — for the real recursion
+  `e[k+1] = e[k] + T_s(−α e[k])`: `e[k] = (1 − α T_s)^k e[0]`, and every trajectory tends to `0`
+  iff `0 < α T_s < 2`.
+* `rk4_imaginaryAxis_stable_iff` — RK4 on the imaginary axis: `‖R(iy)‖ ≤ 1 ↔ |y| ≤ 2√2`
+  (exact).
+* `polynomial_not_aStable` — a polynomial stability function with `R'(0) = 1` is never
+  A-stable.
+
+Corrections.
+* T-method-of-lines.md §1.5.3 table: the forward-Euler stability region is `|1 + Δtλ| ≤ 1`
+  (disk centred at `-1`), not `|Δtλ| ≤ 1`; the two sets differ in both directions
+  (`forwardEuler_region_ne_unitDisk`). The same table's RK4 value "≈ 2.83" is `2√2` exactly.
 -/
 
 noncomputable section

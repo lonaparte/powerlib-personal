@@ -15,34 +15,34 @@ Model boundary.
   `ẋ = A x + B u`, in plain coordinates) with an arbitrary initial state, written out in each
   statement as `∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x (M.A *ᵥ x t + M.B *ᵥ u t) (Ici 0) t` for the
   plant `M` and input signal `u`; for the error dynamics `M = frequencyModel V K_p K_i` and
-  `u t = ![w t]` with the grid-frequency deviation `w(t) = ω_g(t) − ω_s`. (The former definitions
-  `IsForwardTrajectory` / `IsErrorTrajectory` are removed: behaviour is defined only in the
-  semantic layer.) Conclusions are limits as `t → ∞` of every such solution. They are derived
-  in the time domain by subtracting an explicit particular solution and using global
-  exponential stability of the error dynamics (`V K_p > 0`, `V K_i > 0`, the linear hub
-  `Linear.globallyExponentiallyStable_of_isHurwitz`); the Laplace final-value theorem is not used.
+  `u t = ![w t]` with the grid-frequency deviation `w(t) = ω_g(t) − ω_s`. Conclusions are limits as
+  `t → ∞` of every such solution. They are derived in the time domain by subtracting an explicit
+  particular solution and using global exponential stability of the error dynamics (`V K_p > 0`,
+  `V K_i > 0`, the linear hub `Linear.globallyExponentiallyStable_of_isHurwitz`); the Laplace
+  final-value theorem is not used.
 
-Results (T-pll-dynamics §1.4 table).
+Source: work-sync `theory/T-pll-dynamics.md` §1.3, §1.4.
+
+Results.
 * Phase step: `Δθ̂ → Δφ` (zero phase error).
 * Frequency step `w ≡ c`: `θ̃ → 0`, `η → c/K_i`, frequency error `Δω̂ − w → 0`.
 * Frequency ramp `w = ρ t` (ROCOF): `θ̃ → −ρ/(V K_i)`, frequency error `→ 0`.
 * Second-order frequency ramp `w = α t²`, `α ≠ 0`: `|θ̃| → ∞`.
 
-Source: work-sync `theory/T-pll-dynamics.md` §1.3, §1.4.
-
-Correction (§1.4 table, ramp row): the steady-state phase error for a frequency ramp
-`Δω_g = ρ t` is `θ̃(∞) = −ρ/(V K_i)` (the PLL lags a rising grid frequency, `θ̂ < θ_g`), not
-`+ρ/(V K_i)`; `frequencyRamp_limit_ne_note` refutes the table value for `ρ ≠ 0`.
-
-Family and connection conclusions. The stability of the linearized PLL is the family
+Family and connection conclusions.
+The stability of the linearized PLL is the family
 `LinearPLL.family` of `theorem/PLL/Linear.lean`. The tracking limits here are statements about
 solutions under time-varying inputs (limits of tracking errors, unbounded phase error), which the
 sentence language (flow sentences about the origin of the zero-input field, passivity) cannot
-express: the five former domain theorems (`phaseStep_tracking`, `frequencyStep_tracking`,
+express: the five tracking results (`phaseStep_tracking`, `frequencyStep_tracking`,
 `frequencyRamp_tracking`, `frequencyRamp_limit_ne_note`, `frequencyQuadratic_unbounded`) are kept
 as private implementation evidence. The generic convergence lemma `LTI.tendsto_sub_of_isHurwitz`
 (any plant with Hurwitz state matrix, `theorem/LTI/Plant.lean`) and the explicit particular
 solutions remain foundation.
+
+Correction (§1.4 table, ramp row): the steady-state phase error for a frequency ramp
+`Δω_g = ρ t` is `θ̃(∞) = −ρ/(V K_i)` (the PLL lags a rising grid frequency, `θ̂ < θ_g`), not
+`+ρ/(V K_i)`; `frequencyRamp_limit_ne_note` refutes the table value for `ρ ≠ 0`.
 -/
 
 noncomputable section

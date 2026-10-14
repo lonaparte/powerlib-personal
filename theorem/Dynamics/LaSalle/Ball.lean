@@ -2,30 +2,31 @@ import theorem.Dynamics.LaSalle.Basin
 
 /-! # Local asymptotic stability at degenerate minima (foundation)
 
-Model boundary. Autonomous continuous-time ODE `ẋ = f x` on `Dynamics.State n =
-EuclideanSpace ℝ (Fin n)` with a `C¹` field supplied by the caller; no input, delay, switching or
-time variation. `V̇ x = fderiv ℝ V x (f x)`. Nothing here describes a physical system: every
-statement is a generic implication about an arbitrary field and function, a foundation result.
-
 At a degenerate minimum of an energy (a singular Hessian), the linearization decides nothing and a
 strict Lyapunov function is not available: the energy only satisfies `V̇ ≤ 0`. Asymptotic stability
 then follows from LaSalle's invariance principle once no solution segment can stay in
 `{V̇ = 0}` near the point unless it starts there.
 
+Scope.
+* Autonomous continuous-time ODE `ẋ = f x` on `Dynamics.State n = EuclideanSpace ℝ (Fin n)` with
+  a `C¹` field supplied by the caller; no input, delay, switching or time variation.
+  `V̇ x = fderiv ℝ V x (f x)`.
+* Nothing here describes a physical system: every statement is a generic implication about an
+  arbitrary field and function, a foundation result. No model family is defined or fixed here;
+  `theorem/Network/Swing/Degenerate.lean` applies the criterion inside its connection proofs.
+
+Source: LaSalle's invariance principle (Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.4 and
+Corollary 4.1) and Lyapunov's stability theorem (Theorem 4.1).
+
+Results.
 * `localAsymptoticStable_of_lasalle_ball`: `f(x*) = 0`, a `C¹` function `W` with `W(x*) = 0`,
   `W > 0` on a punctured ball, `Ẇ ≤ 0` on the ball, and every solution segment of positive length
   that stays in the ball inside `{Ẇ = 0}` starts at `x*` ⇒ local asymptotic stability. Lyapunov
   stability comes from LeanForControl's `lyapunov_stable` on the ball; attraction from LaSalle's
   principle for `C¹` fields (`regionOfAttraction_of_lasalle_sublevel`,
-  `lasalle_condition_of_trajectories`, `theorem/Dynamics/LaSalle/Basin.lean`) on a sublevel set inside the
-  ball built from the minimum of `W` on a compact annulus. No global compact sublevel set and no
-  global Lipschitz bound are required.
-
-Connection architecture. No model family is defined or fixed here;
-`theorem/Network/Swing/Degenerate` applies the criterion inside its connection proofs.
-
-Source: LaSalle's invariance principle (Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.4 and
-Corollary 4.1) and Lyapunov's stability theorem (Theorem 4.1).
+  `lasalle_condition_of_trajectories`, `theorem/Dynamics/LaSalle/Basin.lean`) on a sublevel set
+  inside the ball built from the minimum of `W` on a compact annulus. No global compact sublevel
+  set and no global Lipschitz bound are required.
 -/
 
 noncomputable section

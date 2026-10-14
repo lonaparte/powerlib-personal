@@ -2,22 +2,26 @@ import theorem.Criteria.Hurwitz2
 
 /-! # Classification of planar equilibria by trace and determinant (algebra)
 
-Foundation layer: the characteristic roots of a real `2 × 2` matrix `A`
-(`det(sI − A) = s² − tr A · s + det A`) classified by `tr`, `det` and the discriminant
-`Δ = tr² − 4 det`. These are the algebraic facts behind the node / focus / saddle / center
-labels of a planar linearization; the semantic stability consequences are the `Criteria`
-theorems (`locallyExponentiallyStable_of_jacobian_fin_two`, `unstable_of_jacobian_*`).
+The characteristic roots of a real `2 × 2` matrix `A` (`det(sI − A) = s² − tr A · s + det A`)
+classified by `tr`, `det` and the discriminant `Δ = tr² − 4 det`: the algebraic facts behind the
+node / focus / saddle / center labels of a planar linearization.
 
+Scope.
+* Static algebra of one real `2 × 2` matrix; no model family. The semantic stability
+  consequences are the `Criteria` theorems (`locallyExponentiallyStable_of_jacobian_fin_two`,
+  `unstable_of_jacobian_*`).
+
+Source: work-sync theory/T-nonlinear-phase-plane.md §1.6 (eigenvalue-based classification of
+singular points); theory/T-bifurcation.md (2×2 eigenvalues real ⇔ `tr² − 4 det ≥ 0`, already
+`Criteria.eigenvalues_real_iff_discriminant_nonneg`).
+
+Results.
 * `saddle_roots`: `det < 0` ⇒ two real roots of opposite signs.
 * `node_roots`: `det > 0`, `Δ ≥ 0` ⇒ all roots real, with the sign of `tr`
   (stable node for `tr < 0`, unstable node for `tr > 0`).
 * `focus_roots`: `Δ < 0` ⇒ all roots nonreal with real part `tr/2`
   (stable focus `tr < 0`, unstable focus `tr > 0`).
 * `center_roots`: `tr = 0`, `det > 0` ⇒ the roots are `±j√det` (purely imaginary).
-
-Source: work-sync theory/T-nonlinear-phase-plane.md §1.6 (eigenvalue-based classification of
-singular points); theory/T-bifurcation.md (2×2 eigenvalues real ⇔ `tr² − 4 det ≥ 0`, already
-`Criteria.eigenvalues_real_iff_discriminant_nonneg`).
 -/
 
 noncomputable section

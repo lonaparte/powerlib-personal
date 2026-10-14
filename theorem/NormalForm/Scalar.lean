@@ -5,33 +5,36 @@ import theorem.Linear.Family
 
 /-! # One-dimensional vector fields as `State 1` systems
 
-Foundation layer for the scalar normal forms (fold, transcritical, pitchfork).
+The representation of scalar autonomous ODEs on the powerlib state space, shared by the scalar
+normal forms (fold, transcritical, pitchfork).
 
-A scalar autonomous ODE `ẋ = g x`, `x ∈ ℝ`, is represented on the powerlib state space
-`State 1 = EuclideanSpace ℝ (Fin 1)` by the lifted field `lift g x = single 0 (g (x 0))`.
-The only state variable is the coordinate `x 0`. Time is continuous; there is no input,
-delay, PWM, PLL, saturation or noise. All stability predicates below are the powerlib /
-LeanForControl trajectory predicates for the lifted field.
-
-Contents.
-* `embed`, `lift`: the embedding `ℝ → State 1` and the lifted field; norms and trajectories
-  of the lifted system are exactly those of the scalar ODE (`isTrajectoryOn_lift_iff`).
-* Jacobian of the lifted field: `fderiv ℝ (lift g) (embed r) = toEuclideanCLM !![g' r]`.
-* Scalar linearization wrappers: `g r = 0`, `deriv g r < 0` ⇒ local exponential stability;
-  `deriv g r > 0` ⇒ instability. They only repackage
-  `powerlib.Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian` and
-  `powerlib.Dynamics.unstable_of_jacobian_eigenvalue_re_pos` for `n = 1`;
-  `lift_locallyExponentiallyStable_iff`: with the converse linearization
-  (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`), local exponential stability of
-  `r` holds exactly when `g r = 0` and `g'(r) < 0`.
-* One-dimensional saddle-node hypersurface: `SaddleNodeCondition g ↔ ∃ x, g x = 0 ∧ deriv g x = 0`.
+Scope.
+* A scalar autonomous ODE `ẋ = g x`, `x ∈ ℝ`, is represented on the powerlib state space
+  `State 1 = EuclideanSpace ℝ (Fin 1)` by the lifted field `lift g x = single 0 (g (x 0))`.
+  The only state variable is the coordinate `x 0`. Time is continuous; there is no input,
+  delay, PWM, PLL, saturation or noise. All stability predicates below are the powerlib /
+  LeanForControl trajectory predicates for the lifted field.
+* No model family is defined here. Every statement is generic in the scalar field `g`
+  (behaviour is LeanForControl's predicates for the lifted field, linearization goes through
+  `powerlib.Dynamics`'s Jacobian theorems), so all results are public foundation support.
 
 Source: work-sync theory/T-bifurcation.md §1.1–1.2, theory/T-bifurcation-hypersurfaces.md §1.2
 (the 1D `Σ_SN` statement), theory/T-fold-bifurcation.md §1.2.
 
-Architecture: no model family is defined here. Every statement is generic in the scalar field
-`g` (behaviour is LeanForControl's predicates for the lifted field, linearization goes through
-`powerlib.Dynamics`'s Jacobian theorems), so all results are public foundation support.
+Results.
+* `embed`, `lift`: the embedding `ℝ → State 1` and the lifted field; norms and trajectories
+  of the lifted system are exactly those of the scalar ODE (`isTrajectoryOn_lift_iff`).
+* Jacobian of the lifted field: `fderiv ℝ (lift g) (embed r) = toEuclideanCLM !![g' r]`
+  (`fderiv_lift`).
+* Scalar linearization wrappers: `g r = 0`, `deriv g r < 0` ⇒ local exponential stability
+  (`lift_locallyExponentiallyStable`); `deriv g r > 0` ⇒ instability (`lift_unstable`). They only
+  repackage `powerlib.Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian` and
+  `powerlib.Dynamics.unstable_of_jacobian_eigenvalue_re_pos` for `n = 1`;
+  `lift_locallyExponentiallyStable_iff`: with the converse linearization
+  (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`), local exponential stability of
+  `r` holds exactly when `g r = 0` and `g'(r) < 0`.
+* One-dimensional saddle-node hypersurface: `SaddleNodeCondition g ↔ ∃ x, g x = 0 ∧ deriv g x = 0`
+  (`saddleNodeCondition_iff`).
 -/
 
 noncomputable section

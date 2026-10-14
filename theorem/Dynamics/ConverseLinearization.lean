@@ -5,13 +5,23 @@ import theorem.Dynamics.Locality
 
 /-! # Converse linearization: local exponential stability forces a Hurwitz Jacobian
 
-Generic foundation, independent of any model. Setting: an autonomous continuous-time field
-`f : ℝⁿ → ℝⁿ` on `ℝⁿ = EuclideanSpace ℝ (Fin n)`, `C¹` on all of `ℝⁿ` (`ContDiff ℝ 1 f`), a point
-`x*` and a matrix `A` with `fderiv ℝ f x* = A` (acting through `Matrix.toEuclideanCLM`). Local
-exponential stability is LeanForControl's `LocallyExponentiallyStable` — the Flow sentence
-`.locallyExponentiallyStable`, quantified over finite forward solution segments. No `C²`
-hypothesis and no Lipschitz bound on the Jacobian are needed.
+The converse half of Lyapunov's indirect method, proved by a direct Grönwall comparison instead of
+a converse Lyapunov function; with the direct half it makes the linearization exact for local
+exponential stability.
 
+Scope.
+* Generic foundation, independent of any model. An autonomous continuous-time field
+  `f : ℝⁿ → ℝⁿ` on `ℝⁿ = EuclideanSpace ℝ (Fin n)`, `C¹` on all of `ℝⁿ` (`ContDiff ℝ 1 f`), a point
+  `x*` and a matrix `A` with `fderiv ℝ f x* = A` (acting through `Matrix.toEuclideanCLM`).
+* Local exponential stability is LeanForControl's `LocallyExponentiallyStable` — the Flow
+  sentence `.locallyExponentiallyStable`, quantified over finite forward solution segments.
+* No `C²` hypothesis and no Lipschitz bound on the Jacobian are needed.
+
+Source: Khalil, *Nonlinear Systems* (3rd ed.), Theorem 4.15 (the converse part: exponential
+stability of `x*` implies that the linearization is Hurwitz); the proof here replaces the converse
+Lyapunov function of Khalil by a direct Grönwall comparison.
+
+Results.
 * `isEquilibrium_of_lyapunovStable`, `isEquilibrium_of_locallyExponentiallyStable`: a Lyapunov
   stable (in particular a locally exponentially stable) point of a `C¹` field is an equilibrium;
   `unstable_of_ne_zero`: every other point is unstable (instability is the failure of Lyapunov
@@ -42,22 +52,19 @@ it within distance one of `x*` (`Flow.exists_lipschitz_cutoff`), so the solution
 `x* + ε w` exists for all forward time (`Flow.forwardComplete_of_lipschitzWith`, LeanForControl's
 Picard–Lindelöf). Grönwall's comparison of exact solutions (Mathlib's
 `dist_le_of_trajectories_ODE`) keeps it within `ε ‖w‖ e^{K T}` of `x*` on `[0, T]`, so for small
-`ε` it is a solution segment of `f` itself and lies where `f(x) = A (x − x*) + o(‖x − x*‖)` is within
-`η ‖x − x*‖` of its linear part. Grönwall's comparison of approximate solutions (Mathlib's
+`ε` it is a solution segment of `f` itself and lies where `f(x) = A (x − x*) + o(‖x − x*‖)` is
+within `η ‖x − x*‖` of its linear part. Grönwall's comparison of approximate solutions (Mathlib's
 `dist_le_of_approx_trajectories_ODE`) then bounds the distance from `ψ_ε(T)` to the linear solution
 `x* + ε e^{T A} w` by `ε η` times a constant independent of `ε`. Dividing the exponential estimate
 for `ψ_ε` by `ε` and letting `η → 0` gives the estimate for `e^{T A} w`. The linear field
 `y' = A (y − x*)` is then locally exponentially stable, hence `A` is Hurwitz by the linear hub
 (`Linear.holds_iff_isHurwitz`, a non-decaying eigenmode).
 
-Boundaries. Only local exponential stability is decided by the linearization: local asymptotic
+Scope notes. Only local exponential stability is decided by the linearization: local asymptotic
 stability is not (the cubic field `x' = −x³` is globally asymptotically stable with Jacobian `0`),
 and neither is instability at a spectrum on the imaginary axis. Model families publish the
 resulting exactness of their local exponential translations as connection statements.
-
-Source: Khalil, *Nonlinear Systems* (3rd ed.), Theorem 4.15 (the converse part: exponential
-stability of `x*` implies that the linearization is Hurwitz); the proof here replaces the converse
-Lyapunov function of Khalil by a direct Grönwall comparison. -/
+-/
 
 noncomputable section
 

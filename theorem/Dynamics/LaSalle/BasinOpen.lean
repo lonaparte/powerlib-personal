@@ -3,13 +3,18 @@ import theorem.Dynamics.State
 
 /-! # Basins of attraction are open and invariant
 
-Foundation layer for the attractor/basin language, under the completeness premise of
+The attractor/basin language of the forward flow, under the completeness premise of
 `theorem/Dynamics/LipschitzFlow.lean` (globally Lipschitz field, forward flow `φ_t`, `t ∈ ℝ≥0`).
 
-Basin. The basin of attraction of `x*` for the forward flow is `𝓑(x*) = {x | φ_t x → x* as
-t → ∞}`, written out in the statements as the set
-`{x | Tendsto (fun t : ℝ≥0 => lipschitzFlow hf t x) atTop (𝓝 xs)}` (the former definition
-`basin` is removed: behaviour is defined only in the semantic layer).
+Scope.
+* Basin. The basin of attraction of `x*` for the forward flow is `𝓑(x*) = {x | φ_t x → x* as
+  t → ∞}`, written out in the statements as the set
+  `{x | Tendsto (fun t : ℝ≥0 => lipschitzFlow hf t x) atTop (𝓝 xs)}` (behaviour is defined only
+  in the semantic layer, so the basin is not a definition).
+* Generic statements about an arbitrary globally Lipschitz field; no model family.
+
+Source: work-sync theory/T-attractors-basins.md §1.2 (`𝓑(A)`), and its premise "basin of
+attraction 是开集" (proved here for asymptotically stable equilibria of Lipschitz fields).
 
 Results.
 * `basin_isInvariant`: `φ_s(𝓑) ⊆ 𝓑` for every `s ≥ 0` (Mathlib `IsInvariant`).
@@ -17,9 +22,6 @@ Results.
   open; the proof uses only the continuity of `φ_T` (continuous dependence on initial data).
 * `basin_isOpen_of_localAsymptoticStable`: on `State n`, local asymptotic stability
   (LeanForControl `LocalAsymptoticStable`) of `x*` gives local attraction, so its basin is open.
-
-Source: work-sync theory/T-attractors-basins.md §1.2 (`𝓑(A)`), and its premise "basin of
-attraction 是开集" (proved here for asymptotically stable equilibria of Lipschitz fields).
 -/
 
 noncomputable section

@@ -3,9 +3,18 @@ import theorem.Attributes
 
 /-! # Multiplicative versus additive drive: discriminants, extended coordinates, amplitudes
 
-Foundation layer: calculus and multilinear-algebra facts about a vector field `F(x, u)` on
-`W = E × ℝ` with a scalar drive parameter `u` (state `x ∈ E`, any real normed space). No
-engineering model is fixed here.
+When a scalar drive enters a vector field affinely, and what that implies for the Taylor tensors,
+the cross-saturation coefficient in extended coordinates and the amplitude conventions.
+
+Scope.
+* Calculus and multilinear-algebra facts about a vector field `F(x, u)` on `W = E × ℝ` with a
+  scalar drive parameter `u` (state `x ∈ E`, any real normed space). No engineering model is
+  fixed here and no model family is defined.
+
+Source: work-sync theory/T-multiplicative-drive-normal-form.md §1.1–1.5;
+projects/basin-guard/notes/concepts/erosion-coefficients.md §1, §3, §4 (discriminants, `u²`
+counterexample, extended coordinates, `I_dc` oracle), projects/basin-guard/notes/concepts/
+guard-object.md §3 (`a*₍₂₎ = 2√(α/c_x)`).
 
 Results.
 * Global discriminant (B) (`affine_in_drive_iff`): on a convex open domain `Ω`, with `F`
@@ -26,15 +35,11 @@ Results.
   components of `χ̃ = (χ, 1)`, `χ̃' = (χ', 1)` irrelevant: the extended (multiplicative) value
   equals the additive one (`(χ, 0)`), exactly. This is the bit-exact oracle of an affine
   channel such as the dc-source current `I_dc`.
-* Amplitude conventions: `u = a cos ωt = û e^{jωt} + û* e^{−jωt}` with `û = a/2`, `|û|² = a²/4`;
-  the mean square over a period is `a²/2`; the erosion `α_eff = α − c_x a²/4` vanishes at the
-  leading-order threshold `a*₍₂₎ = 2√(α/c_x)`; tone-wise erosion `c_x a²/4` is one half of
-  `c_x` times the spectral mass `a²/2`.
-
-Source: work-sync theory/T-multiplicative-drive-normal-form.md §1.1–1.5;
-projects/basin-guard/notes/concepts/erosion-coefficients.md §1, §3, §4 (discriminants, `u²`
-counterexample, extended coordinates, `I_dc` oracle), projects/basin-guard/notes/concepts/
-guard-object.md §3 (`a*₍₂₎ = 2√(α/c_x)`).
+* Amplitude conventions: `u = a cos ωt = û e^{jωt} + û* e^{−jωt}` with `û = a/2`, `|û|² = a²/4`
+  (`tone_coefficient`); the mean square over a period is `a²/2` (`tone_meanSquare`); the erosion
+  `α_eff = α − c_x a²/4` vanishes at the leading-order threshold `a*₍₂₎ = 2√(α/c_x)`
+  (`erosion_threshold`); tone-wise erosion `c_x a²/4` is one half of `c_x` times the spectral
+  mass `a²/2` (`multitone_erosion`).
 -/
 
 noncomputable section

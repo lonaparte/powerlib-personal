@@ -1,24 +1,27 @@
 import theorem.Flow.Certificate
 import theorem.Dynamics.State
 
-/-! Linearization is inconclusive at `σ = 0` (foundation, negative result).
+/-! # Linearization is inconclusive at `σ = 0`
+
+A pair of systems with the same equilibrium and the same (zero) Jacobian whose nonlinear
+stability differs: a negative result for every criterion that depends only on the Jacobian.
+
+Scope.
+* A generic counterexample pair of fields, no model family; all results are foundation support.
+  Global asymptotic stability is `powerlib.Flow.GloballyAsymptoticallyStable`.
 
 Source: work-sync `theory/T-small-signal-stability.md` §1.6: "`σ_i = 0` 是临界情形——线性分析
-不结论". Formalised as a pair of systems with the same equilibrium and the same (zero)
-Jacobian whose nonlinear stability differs.
+不结论".
 
-`cubicField c x = (c ‖x‖²) x` on `ℝⁿ` (`n ≥ 1`); for `n = 1` this is `ẋ = c x³`.
-* Both fields are `C¹`, vanish at `0`, and have Jacobian `0` at `0` (every eigenvalue has real
-  part `0`).
+Results.
+* `cubicField c x = (c ‖x‖²) x` on `ℝⁿ` (`n ≥ 1`); for `n = 1` this is `ẋ = c x³`. Both fields
+  are `C¹`, vanish at `0`, and have Jacobian `0` at `0` (every eigenvalue has real part `0`).
 * `c = −1`: the origin is globally asymptotically stable (`cubic_neg_globallyAsymptoticallyStable`,
   strict Lyapunov function `‖x‖²`).
 * `c = +1`: the origin is unstable (`cubic_pos_unstable`): from `x₀ = r e`, the explicit
   solution `x(t) = (1 − 2r²t)^{−1/2} x₀` reaches norm `1` at `t = (1 − r²)/(2r²)`.
 * `linearization_inconclusive` packages both: no criterion that depends only on the Jacobian
   at the equilibrium can decide stability when the spectrum lies on the imaginary axis.
-
-Architecture: a generic counterexample pair of fields, no model family; all results remain public
-foundation support. Global asymptotic stability is `powerlib.Flow.GloballyAsymptoticallyStable`.
 -/
 
 noncomputable section

@@ -5,19 +5,28 @@ import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-! # Bayes-optimal point estimates: posterior mean and posterior median
 
-Source: work-sync `theory/T-bayesian-inference.md` §1.9 and §1.13 (squared loss → posterior mean,
+Under squared loss the posterior mean, and under absolute loss any posterior median, minimises
+the posterior expected loss.
+
+Scope.
+* General probability, not an engineering result.
+* `ν` is any probability measure on `ℝ` (in the application, the posterior `p(θ | D)` of a
+  scalar parameter); the action `a ∈ ℝ` is a point estimate; the posterior expected loss is
+  `∫ ℓ(θ, a) dν(θ)`.
+
+Source: work-sync theory/T-bayesian-inference.md §1.9 and §1.13 (squared loss → posterior mean,
 absolute loss → posterior median).
 
-Foundation (general probability), not an engineering result.
+Results.
+* `integral_sq_sub_eq`, `integral_sq_sub_mean_le`, `integral_sq_sub_eq_iff` — squared loss:
+  `∫ (θ - a)² dν = ∫ (θ - m)² dν + (m - a)²` with `m = ∫ θ dν`, so the posterior mean is the
+  unique minimiser (needs a finite second moment).
+* `integral_abs_sub_median_le` — absolute loss: any median `m` (`ν(-∞, m] ≥ 1/2` and
+  `ν[m, ∞) ≥ 1/2`) minimises `∫ |θ - a| dν` (needs a finite first moment). Medians need not be
+  unique, so no uniqueness is claimed.
 
-Setting: `ν` is any probability measure on `ℝ` (in the application, the posterior `p(θ | D)` of a
-scalar parameter); the action `a ∈ ℝ` is a point estimate; the posterior expected loss is
-`∫ ℓ(θ, a) dν(θ)`.
-* Squared loss: `∫ (θ - a)² dν = ∫ (θ - m)² dν + (m - a)²` with `m = ∫ θ dν`, so the posterior mean
-  is the unique minimiser (needs a finite second moment).
-* Absolute loss: any median `m` (`ν(-∞, m] ≥ 1/2` and `ν[m, ∞) ≥ 1/2`) minimises `∫ |θ - a| dν`
-  (needs a finite first moment). Medians need not be unique, so no uniqueness is claimed.
-The 0–1 loss / MAP statement is not formalised (it needs a density and a limit argument).
+Not formalized.
+* The 0–1 loss / MAP statement (it needs a density and a limit argument).
 -/
 
 noncomputable section

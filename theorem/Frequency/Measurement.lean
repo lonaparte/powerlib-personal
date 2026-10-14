@@ -3,26 +3,37 @@ import Mathlib.Probability.Distributions.Gaussian.Real
 
 /-! # Frequency measurement by PMU: window estimator and ROCOF trip probability
 
-Identities of the ideal noise-free continuous-time PMU window estimator on a given signal and
-of a Gaussian ROCOF error model (formerly the second half of `theorem/PLL/Measurement.lean`).
-This module defines no family and states no behaviour of a family's models: every result is an
-identity of the window estimator on a given signal, or a probability of a Gaussian estimate.
+Identities of the ideal noise-free continuous-time PMU window estimator on a given signal and of
+a Gaussian ROCOF error model. The SRF-PLL used as a frequency meter is in
+`theorem/PLL/Measurement.lean`.
 
-Contents.
-* PMU window estimator on the complex positive-sequence (analytic) signal
-  `x(τ) = A e^{j(ωτ + φ)}`: with the one-window demodulated phasor
-  `X(t) = (1/T)∫_{t−T}^t x(τ) e^{−jω₀τ} dτ`, `f̂ = f₀ + arg(X(t)/X(t−T))/(2πT)` equals
-  `f = ω/2π` exactly whenever `|ω − ω₀| T < π` (`pmu_frequency_exact`; the window average of
-  the demodulated exponential is computed with the MAF transfer `PLL.mafTF`,
-  `PLL.movingAverage_exp` of `theorem/PLL/Signals.lean`).
-* ROCOF trip probability for a Gaussian estimate `N(μ, σ²)`:
-  `P(X ≤ −a) = Φ((−a − μ)/σ)`, and the probability is the same in Hz/s and rad/s².
+Model boundary.
+* Ideal, noise-free, continuous-time PMU window estimator applied to a given complex
+  positive-sequence (analytic) signal `x(τ) = A e^{j(ωτ + φ)}`; one window of length `T`,
+  demodulation at `ω₀`.
+* ROCOF error: a Gaussian estimate `N(μ, σ²)`; no estimator dynamics.
 
 Source: work-sync `theory/T-frequency-measurement.md` §1.1–§1.5.
 
-Correction (§1.5): the note writes `P(ω̂̇ ≤ −ḟ_th)` with an angular-acceleration estimate and a
-Hz/s threshold. The consistent statement uses one unit: `P(ḟ̂ ≤ −ḟ_th) = Φ((−ḟ_th − ḟ)/σ_ḟ)`,
-equivalently `Φ((−2πḟ_th − ω̇)/σ_ω̇)` with `ω̇ = 2πḟ`, `σ_ω̇ = 2πσ_ḟ` (`trip_unit_invariant`).
+Results.
+* PMU window estimator: with the one-window demodulated phasor
+  `X(t) = (1/T)∫_{t−T}^t x(τ) e^{−jω₀τ} dτ` (`windowPhasor`),
+  `f̂ = f₀ + arg(X(t)/X(t−T))/(2πT)` equals `f = ω/2π` exactly whenever `|ω − ω₀| T < π`
+  (`pmu_frequency_exact`; the window average of the demodulated exponential is computed with the
+  MAF transfer `PLL.mafTF`, `PLL.movingAverage_exp` of `theorem/PLL/Signals.lean`).
+* ROCOF trip probability for a Gaussian estimate `N(μ, σ²)`: `P(X ≤ −a) = Φ((−a − μ)/σ)`
+  (`trip_probability`), and the probability is the same in Hz/s and rad/s²
+  (`trip_unit_invariant`).
+
+Family and connection conclusions.
+* None: this module defines no family and states no behaviour of a family's models; every result
+  is an identity of the window estimator on a given signal, or a probability of a Gaussian
+  estimate.
+
+Correction (§1.5).
+* The note writes `P(ω̂̇ ≤ −ḟ_th)` with an angular-acceleration estimate and a Hz/s threshold.
+  The consistent statement uses one unit: `P(ḟ̂ ≤ −ḟ_th) = Φ((−ḟ_th − ḟ)/σ_ḟ)`, equivalently
+  `Φ((−2πḟ_th − ω̇)/σ_ω̇)` with `ω̇ = 2πḟ`, `σ_ω̇ = 2πσ_ḟ` (`trip_unit_invariant`).
 -/
 
 noncomputable section

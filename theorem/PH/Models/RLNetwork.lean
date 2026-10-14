@@ -3,14 +3,18 @@ import theorem.Network.WeightedLaplacian
 
 /-! # Lumped RL networks (with optional node capacitors) as port-Hamiltonian systems
 
+RL networks on an arbitrary (possibly weighted) incidence matrix, with or without node
+capacitors, as diagonal port-Hamiltonian data; passivity, stability and invariance under branch
+rescaling (ideal-transformer referral).
+
 Model boundary.
 * Topology: a finite directed multigraph with node type `ν` and branch type `β` (`Fintype`,
   `DecidableEq`). The signed incidence matrix `signedIncidence tail head : Matrix ν β ℝ`
   (`Network.signedIncidence`, `theorem/Network/WeightedLaplacian.lean`) has entry `+1` at the
-  tail of a branch (branch current leaves the node), `−1` at the head, `0` otherwise (a self-loop
-  gives a zero column). Mathlib's `incMatrix` is unsigned and is not used. Every model below is
-  stated for an **arbitrary** real matrix `𝓑 : Matrix ν β ℝ`, so weighted (ideal-transformer)
-  incidence columns are included.
+  tail of a branch (branch current leaves the node), `−1` at the head, `0` otherwise (a
+  self-loop gives a zero column). Mathlib's `incMatrix` is unsigned and is not used. Every model
+  below is stated for an **arbitrary** real matrix `𝓑 : Matrix ν β ℝ`, so weighted
+  (ideal-transformer) incidence columns are included.
 * Branches: series `L_k > 0`, `r_k ≥ 0`; state is the branch flux `φ_k = L_k i_k`;
   `H = Σ φ_k² / (2 L_k)`. Lumped, linear, continuous time, single phase or one axis of a
   stationary frame (no dq rotation terms), no switching, no controller.
@@ -22,35 +26,46 @@ Model boundary.
   (constant-impedance load, which enters `R`, cf. T-power-system-ph §1.7); input = current
   injected into each node by an external source, output = node voltage.
   `J = [[0, 𝓑ᵀ], [−𝓑, 0]]`, `R = diag(r, G)`, `B = [0; I]`.
-* Branch rescaling (transformer form): rescaling branch states by nonzero factors `c_k`
-  maps the network `(L, r, 𝓑)` to `(c² L, c² r, 𝓑 · diag c)`, with the same node port
-  behaviour and the same energy.
-  Correction (note §1.6.ter "变压器"): the note states that an ideal `n_T : 1` transformer
-  is equivalent to `L_k → L_k / n_T²` together with scaling the incidence column by `1/n_T`,
-  and that the pH structure is unchanged. The structure is indeed unchanged (the model is
-  stated for any `𝓑`), but the equivalence of the scaled model also requires the branch
-  resistance to scale the same way, `r_k → r_k / n_T²`; this is the `c_k = 1 / n_T` case
-  of `rlNetwork_scale_*`.
 * Nothing is claimed about a particular grid.
-
-Family and connection conclusions. The networks are diagonal port-Hamiltonian data
-(`DiagonalPH`, `theorem/PH/Composition.lean`); with `m` branches `Fin m` and `k` nodes `Fin k`
-they are numbered into linear port-Hamiltonian plants (`rlNetworkPH : Port.PortHamiltonian m k`,
-`rlcNetworkPH : Port.PortHamiltonian (m + k) k`, states `(φ, q)` numbered by
-`finSumFinEquiv`) and read through the existing family `Port.PortHamiltonian.family` (system
-map: the plant's port system; sentences at the origin, which is the unforced operating point of
-both networks). Connection conclusions: passivity and Lyapunov stability of both networks
-(`rlNetworkPH_mem_den_passive`, `rlNetworkPH_mem_den_lyapunovStable`,
-`rlcNetworkPH_mem_den_passive`, `rlcNetworkPH_mem_den_lyapunovStable`); global exponential
-stability of the unforced RL network when every branch is resistive
-(`rlNetworkPH_mem_den_globallyExponentiallyStable`); and invariance of every sentence under
-branch rescaling (`rlNetworkPH_scale_mem_den_iff`), the sentence-level form of the
-transformer referral. The pointwise KVL/KCL fields, outputs, energies and power balances are
-static evidence on the model; the former public trajectory transport
-`rlNetwork_scale_trajectory` is private implementation evidence.
 
 Source: work-sync `theory/T-ph.md` §1.6.bis (RL network pH form and energy check),
 §1.6.ter (node capacitors, transformers, constant-impedance loads).
+
+Results (static evidence on the models).
+* `signedIncidence_mulVec` (KCL), `rlNetwork_field_signedIncidence` (KVL around each branch),
+  `rlNetwork_power_balance` — `Ḣ = i_nodeᵀ v_node − Σ r_k i_k²`; `rlcNetwork_field_branch`,
+  `rlcNetwork_field_node`, `rlcNetwork_power_balance` —
+  `Ḣ = Σ u_j v_j − Σ r_k i_k² − Σ G_j v_j²`.
+* Branch rescaling (transformer form): rescaling branch states by nonzero factors `c_k`
+  maps the network `(L, r, 𝓑)` to `(c² L, c² r, 𝓑 · diag c)`, with the same node port
+  behaviour and the same energy (`rlNetwork_scale_field`, `rlNetwork_scale_output`,
+  `rlNetwork_scale_energy`, `rlNetwork_scale_similar_data`).
+
+Family and connection conclusions.
+* The networks are diagonal port-Hamiltonian data (`DiagonalPH`, `theorem/PH/Composition.lean`);
+  with `m` branches `Fin m` and `k` nodes `Fin k` they are numbered into linear port-Hamiltonian
+  plants (`rlNetworkPH : Port.PortHamiltonian m k`,
+  `rlcNetworkPH : Port.PortHamiltonian (m + k) k`, states `(φ, q)` numbered by
+  `finSumFinEquiv`) and read through the existing family `Port.PortHamiltonian.family` (system
+  map: the plant's port system; sentences at the origin, which is the unforced operating point
+  of both networks).
+* Connection conclusions: passivity and Lyapunov stability of both networks
+  (`rlNetworkPH_mem_den_passive`, `rlNetworkPH_mem_den_lyapunovStable`,
+  `rlcNetworkPH_mem_den_passive`, `rlcNetworkPH_mem_den_lyapunovStable`); global exponential
+  stability of the unforced RL network when every branch is resistive
+  (`rlNetworkPH_mem_den_globallyExponentiallyStable`); and invariance of every sentence under
+  branch rescaling (`rlNetworkPH_scale_mem_den_iff`), the sentence-level form of the
+  transformer referral.
+* The pointwise KVL/KCL fields, outputs, energies and power balances are static evidence on the
+  model; the trajectory transport `rlNetwork_scale_trajectory` is private implementation
+  evidence.
+
+Correction (note §1.6.ter "变压器").
+* The note states that an ideal `n_T : 1` transformer is equivalent to `L_k → L_k / n_T²`
+  together with scaling the incidence column by `1/n_T`, and that the pH structure is
+  unchanged. The structure is indeed unchanged (the model is stated for any `𝓑`), but the
+  equivalence of the scaled model also requires the branch resistance to scale the same way,
+  `r_k → r_k / n_T²`; this is the `c_k = 1 / n_T` case of `rlNetwork_scale_*`.
 -/
 
 noncomputable section
@@ -294,9 +309,8 @@ private theorem ofLp_scaleCLM (c : Fin m → ℝ) (x : EuclideanSpace ℝ (Fin m
   funext j
   exact mulVec_diagonal c _ j
 
-/-- Formerly the public `rlNetwork_scale_trajectory`: rescaling any solution segment of the
-original network gives a solution segment of the rescaled network driven by the same node
-potentials, with identical node currents.
+/-- Rescaling any solution segment of the original network gives a solution segment of the
+rescaled network driven by the same node potentials, with identical node currents.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
 private theorem rlNetwork_scale_trajectory (p : RLBranchParams (Fin m))
     (𝓑 : Matrix (Fin k) (Fin m) ℝ) (c : Fin m → ℝ) (hc : ∀ j, c j ≠ 0)

@@ -3,9 +3,17 @@ import theorem.Dynamics.State
 
 /-! # Scalar calculus for the stability toolbox
 
-Foundation layer: real-variable calculus used by the Lyapunov, LaSalle and degenerate-equilibrium
-modules of `theorem/Dynamics/`; no model is fixed here and no behavioural sentence is stated.
+Real-variable calculus used by the Lyapunov, LaSalle and degenerate-equilibrium modules of
+`theorem/Dynamics/` and by the equal-area (`theorem/Synchronous/EqualArea.lean`) and PLL
+port-Hamiltonian (`theorem/PLL/PH.lean`) modules.
 
+Scope.
+* Foundation results only: no model is fixed here and no behavioural sentence is stated.
+
+Source: library infrastructure (no work-sync note); standard real analysis (Grönwall, mean-value
+theorem, Taylor bounds).
+
+Results.
 * Interval induction: `forall_mem_Icc_of_local_step` (continuous induction on `[t₀, t₁]` for a
   closed target set), `exists_Icc_mem_of_isOpen` (a continuous curve stays a little while in an
   open set), `pos_on_Icc_of_propagate` (positivity that propagates along `[a, b]`),
@@ -27,9 +35,6 @@ modules of `theorem/Dynamics/`; no model is fixed here and no behavioural senten
   `Real.sin_bound`, `Real.cos_bound`, `Real.one_sub_sq_div_two_le_cos`.
 * `firstIntegral_const`: a differentiable `I` with `∇I · f ≡ 0` is constant along every solution
   segment of `f` (LeanForControl's `antitoneOn_V_comp_traj` applied to `±I`).
-
-Source: standard real analysis (Grönwall, mean-value theorem, Taylor bounds); collected from the
-stability modules of `theorem/Dynamics/` and the equal-area and PLL invariant modules.
 -/
 
 noncomputable section

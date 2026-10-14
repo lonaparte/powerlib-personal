@@ -3,56 +3,59 @@ import Mathlib.Analysis.ODE.Gronwall
 
 /-! # Middlebrook–Ćuk state-space averaging: the switched model stays `O(T_sw)` close
 
-**Model boundary.** An ideal two-topology switched linear converter in continuous conduction
-mode: the state `x ∈ ℝ^X` (inductor currents / capacitor voltages, any fixed order; sup norm)
-obeys `ẋ = A₁ x` during the ON interval `[kT, kT + dT]` and `ẋ = A₂ x` during the OFF interval
-`[kT + dT, (k+1)T]` of every switching period, with a fixed duty ratio `d ∈ [0, 1]` and switching
-period `T = T_sw ∈ (0, 1]`. CCM is the statement that only these two topologies occur
-(no discontinuous-conduction third topology). Switches are ideal (instantaneous, lossless
-transitions); continuous time; no PWM carrier or modulator dynamics beyond the fixed duty ratio,
-no control loop, no delay. A constant input `u` is covered by appending `u` as a state with
-`u̇ = 0`, which turns `ẋ = A_i x + B_i u` into the homogeneous form used here (the augmented
-averaged matrix is the augmentation of `d A₁ + (1 − d) A₂`, `d B₁ + (1 − d) B₂`).
-The state-space averaged model is the LTI system `x̄̇ = Ā x̄`, `Ā = d A₁ + (1 − d) A₂`.
+The trajectory of an ideal two-topology switched linear converter stays within `O(T_sw)` of the
+state-space averaged LTI model, at every instant of a finite horizon.
 
-**Results.**
-* `norm_exp_smul_le`, `norm_exp_smul_sub_one_le` (Banach algebras with `‖1‖ = 1`):
-  `‖e^{sX}‖ ≤ e^{‖X‖s}`, `‖e^{sX} − 1‖ ≤ ‖X‖ s e^{‖X‖s}` (Grönwall / mean value).
-* `periodMap_sub_exp_le`: one period of the switched system versus the averaged one,
-  `‖e^{(1−d)TA₂} e^{dTA₁} − e^{TĀ}‖ ≤ c T²` for `0 ≤ T ≤ 1` (first-order agreement).
-* `norm_pow_sub_pow_le`: `‖M^k − P^k‖ ≤ k B^k ‖M − P‖` when `‖M‖, ‖P‖ ≤ B`, `B ≥ 1`.
-* `switched_sample`: every switched trajectory satisfies `x(kT) = (e^{(1−d)TA₂} e^{dTA₁})^k x(0)`
-  (uniqueness of linear ODE solutions on each subinterval).
-* `averaged_solves`: `x̄(t) = e^{tĀ} x₀` solves the averaged model.
-* `stateSpaceAveraging_error`: for every horizon `L ≥ 0` there is `C` such that for all
-  `T ∈ (0, 1]`, every switched trajectory with `x(0) = x₀`, and every switching instant
-  `kT ≤ L`: `‖x(kT) − x̄(kT)‖ ≤ C T ‖x₀‖`.
-* `switched_ripple` (intra-period ripple): there is `c`, depending only on `A₁`, `A₂`, such that
-  for every `T ∈ (0, 1]`, every switched trajectory, every period `k` and every
-  `t ∈ [kT, (k + 1)T]`: `‖x(t) − x(kT)‖ ≤ c T ‖x(kT)‖` (from `norm_exp_smul_sub_one_le` on the
-  ON and OFF subintervals).
-* `stateSpaceAveraging_error_uniform`: the averaging error is `O(T)` at **every** instant, not
-  only at the switching instants: for every horizon `L ≥ 0` there is `C` with
-  `‖x(t) − x̄(t)‖ ≤ C T ‖x₀‖` for all `t ∈ [0, L]` (sampled error + ripple + the drift
-  `‖e^{sĀ} − 1‖ = O(s)` of the averaged model within the partial period). Auxiliary:
-  `norm_avgMatrix_le`, `norm_periodMap_le`, `exp_smul_bounds`, `exp_add_smul`.
-
-Architecture: generic mathematical support (no `Family`). `stateSpaceAveraging_error` was
-`@[powerlib_domain]` in the former architecture; it holds for arbitrary matrices `A₁`, `A₂`,
-duty ratio and state index (no particular converter is formalized), so it is a generic
-foundation result (classification policy 4). Switched trajectories are Mathlib integral curves
-on each closed subinterval; uniqueness is LeanForControl's `eqOn_of_isIntegralCurveOn_Icc`. A
-trajectory of the ideal two-topology switched system with duty ratio `d` and period `T`
-(`ẋ = A₁ x` on `[kT, kT + dT]`, `ẋ = A₂ x` on `[kT + dT, (k + 1)T]`, one-sided derivatives at
-the switching instants) is written out in the statements as
-`∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A₁ *ᵥ y) (Icc (k * T) (k * T + d * T)) ∧
-IsIntegralCurveOn x (fun _ y => A₂ *ᵥ y) (Icc (k * T + d * T) ((k + 1) * T))` (the former
-definition `IsSwitchedTrajectory` is removed: behaviour is defined only in the semantic
-layer).
+Model boundary.
+* An ideal two-topology switched linear converter in continuous conduction mode: the state
+  `x ∈ ℝ^X` (inductor currents / capacitor voltages, any fixed order; sup norm) obeys `ẋ = A₁ x`
+  during the ON interval `[kT, kT + dT]` and `ẋ = A₂ x` during the OFF interval
+  `[kT + dT, (k+1)T]` of every switching period, with a fixed duty ratio `d ∈ [0, 1]` and
+  switching period `T = T_sw ∈ (0, 1]`.
+* CCM is the statement that only these two topologies occur (no discontinuous-conduction third
+  topology). Switches are ideal (instantaneous, lossless transitions); continuous time; no PWM
+  carrier or modulator dynamics beyond the fixed duty ratio, no control loop, no delay.
+* A constant input `u` is covered by appending `u` as a state with `u̇ = 0`, which turns
+  `ẋ = A_i x + B_i u` into the homogeneous form used here (the augmented averaged matrix is the
+  augmentation of `d A₁ + (1 − d) A₂`, `d B₁ + (1 − d) B₂`).
+* The state-space averaged model is the LTI system `x̄̇ = Ā x̄`, `Ā = d A₁ + (1 − d) A₂`.
+* Every statement holds for arbitrary matrices `A₁`, `A₂`, duty ratio and state index (no
+  particular converter is formalized).
+* Switched trajectories are Mathlib integral curves on each closed subinterval; uniqueness is
+  LeanForControl's `eqOn_of_isIntegralCurveOn_Icc`. A trajectory of the ideal two-topology
+  switched system with duty ratio `d` and period `T` (`ẋ = A₁ x` on `[kT, kT + dT]`, `ẋ = A₂ x`
+  on `[kT + dT, (k + 1)T]`, one-sided derivatives at the switching instants) is written out in
+  the statements as
+  `∀ k : ℕ, IsIntegralCurveOn x (fun _ y => A₁ *ᵥ y) (Icc (k * T) (k * T + d * T)) ∧
+  IsIntegralCurveOn x (fun _ y => A₂ *ᵥ y) (Icc (k * T + d * T) ((k + 1) * T))` (behaviour is
+  defined only in the semantic layer).
 
 Source: work-sync theory/T-averaging-method.md §1.5 (state-space averaging, `O(ε)` agreement on
 the slow time scale; the intra-period ripple bound completes the `O(T)` comparison at every
 instant).
+
+Results.
+* `norm_exp_smul_le`, `norm_exp_smul_sub_one_le` (Banach algebras with `‖1‖ = 1`) —
+  `‖e^{sX}‖ ≤ e^{‖X‖s}`, `‖e^{sX} − 1‖ ≤ ‖X‖ s e^{‖X‖s}` (Grönwall / mean value).
+* `periodMap_sub_exp_le` — one period of the switched system versus the averaged one,
+  `‖e^{(1−d)TA₂} e^{dTA₁} − e^{TĀ}‖ ≤ c T²` for `0 ≤ T ≤ 1` (first-order agreement).
+* `norm_pow_sub_pow_le` — `‖M^k − P^k‖ ≤ k B^k ‖M − P‖` when `‖M‖, ‖P‖ ≤ B`, `B ≥ 1`.
+* `switched_sample` — every switched trajectory satisfies
+  `x(kT) = (e^{(1−d)TA₂} e^{dTA₁})^k x(0)` (uniqueness of linear ODE solutions on each
+  subinterval).
+* `averaged_solves` — `x̄(t) = e^{tĀ} x₀` solves the averaged model.
+* `stateSpaceAveraging_error` — for every horizon `L ≥ 0` there is `C` such that for all
+  `T ∈ (0, 1]`, every switched trajectory with `x(0) = x₀`, and every switching instant
+  `kT ≤ L`: `‖x(kT) − x̄(kT)‖ ≤ C T ‖x₀‖`.
+* `switched_ripple` — intra-period ripple: there is `c`, depending only on `A₁`, `A₂`, such that
+  for every `T ∈ (0, 1]`, every switched trajectory, every period `k` and every
+  `t ∈ [kT, (k + 1)T]`: `‖x(t) − x(kT)‖ ≤ c T ‖x(kT)‖` (from `norm_exp_smul_sub_one_le` on the
+  ON and OFF subintervals).
+* `stateSpaceAveraging_error_uniform` — the averaging error is `O(T)` at **every** instant, not
+  only at the switching instants: for every horizon `L ≥ 0` there is `C` with
+  `‖x(t) − x̄(t)‖ ≤ C T ‖x₀‖` for all `t ∈ [0, L]` (sampled error + ripple + the drift
+  `‖e^{sĀ} − 1‖ = O(s)` of the averaged model within the partial period). Auxiliary:
+  `norm_avgMatrix_le`, `norm_periodMap_le`, `exp_smul_bounds`, `exp_add_smul`.
 -/
 
 noncomputable section

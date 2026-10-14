@@ -4,7 +4,8 @@ import theorem.Dynamics.Instability
 
 /-! # Four-state GFL: the boundary of the quartic Routh region
 
-**Model boundary.** The four-state GFL family `GFL.DCLink.FourState.family`: a single
+Model boundary.
+The four-state GFL family `GFL.DCLink.FourState.family`: a single
 grid-following VSC on an infinite ac source of amplitude `V₀` behind a lossless reactance `X_g`,
 balanced averaged dq model in the PLL frame, algebraic network, ideal current loop, constant grid
 angle, continuous time; states in order `θ` (PLL error angle), `x` (PLL integrator), `V` (dc-bus
@@ -22,7 +23,12 @@ resistance or current-loop dynamics. The named members, all at `θ₀ = 0` with 
 All three are equilibria with `C ≠ 0` whose quartic lies on the boundary of the Routh region
 (closed conditions hold, a strict one fails).
 
-**Results.**
+Source: work-sync `projects/vsc-parametric-oscillation/notes/theory-draft.md` §1.2, §2.3 (the
+four-state model); the first Lyapunov coefficient and the averaging correction were computed by
+averaging over the dc oscillation (local SymPy note), and every inequality is checked here by the
+Lean kernel.
+
+Results.
 * `closedRouth_of_mem_den_lyapunovStable` (and
   `closedRouth_of_mem_den_locallyAsymptoticallyStable`): every Lyapunov stable model has
   `C ≠ 0` (otherwise `W = (V − 1) η` is a Chetaev function), an equilibrium at the selected
@@ -68,6 +74,11 @@ All three are equilibria with `C ≠ 0` whose quartic lies on the boundary of th
   `FourState.not_exact_lyapunovStable`, `FourState.not_exact_unstable` and
   `not_exact_locallyAsymptoticallyStable` are instances.
 
+Family and connection conclusions.
+No new family: all results are connection statements on `FourState.family` (memberships and
+inclusions of its generated denotations, comparisons with the generated requirement spaces); the
+polynomial estimates are private implementation evidence.
+
 Remaining exact set (not characterized here). Let `S` be the translation set
 `{IsEq, C ≠ 0, strict Routh conditions}` and `B = {IsEq, C ≠ 0, closed Routh conditions} \ S`
 the Routh boundary. For `P` Lyapunov or local asymptotic stability, `den P = S ∪ (den P ∩ B)`,
@@ -75,15 +86,6 @@ and the instability denotation is the complement of the Lyapunov one. On `B` mem
 decided by the nonlinear terms (first Lyapunov coefficients at Hopf points, centre-manifold
 reductions at zero eigenvalues, higher codimension); `den P ∩ B` and `B \ den P` are both
 nonempty for both sentences, and the requirement language cannot separate them.
-
-Family and connection conclusions: all results are connection statements on
-`FourState.family` (memberships and inclusions of its generated denotations, comparisons with
-the generated requirement spaces); the polynomial estimates are private implementation evidence.
-
-Source: work-sync `projects/vsc-parametric-oscillation/notes/theory-draft.md` §1.2, §2.3 (the
-four-state model); the first Lyapunov coefficient and the averaging correction were computed by
-averaging over the dc oscillation (local SymPy note), and every inequality is checked here by the
-Lean kernel.
 -/
 
 noncomputable section

@@ -13,7 +13,9 @@ Model boundary.
   (`theorem/PLL/PIPLLFamily.lean`).
 * Level: equilibrium set and local behaviour at equilibria (linearization).
 
-Results (T-pll-dynamics §1.13.2).
+Source: work-sync `theory/T-pll-dynamics.md` §1.13.2.
+
+Results.
 * `|μ| > V`: no equilibrium at all (frequency-drift / loss of lock).
 * `|μ| < V`: in every period window `[−π/2, 3π/2)` the zeros of `h` are exactly
   `θ₁ = arcsin(μ/V)` and `θ₂ = π − arcsin(μ/V)`, `θ₁ ≠ θ₂`; with `K_p, K_i > 0` the
@@ -22,9 +24,8 @@ Results (T-pll-dynamics §1.13.2).
 * `|μ| = V` (fold): `θ* = ±π/2` is a double zero (`h' = 0`) and the Jacobian at the
   equilibrium is a nonzero nilpotent matrix (non-hyperbolic).
 
-Source: work-sync `theory/T-pll-dynamics.md` §1.13.2.
-
-Family and connection conclusions. No new family: the biased PLL is the member
+Family and connection conclusions.
+No new family: the biased PLL is the member
 `biasedModel V μ K_p K_i δω θ*` of the PI-PLL family `PLL.PIPLL.family`, whose system map reads
 the field translated so that the selected point `(θ*, δω / K_i)` is the origin. The stable and
 saddle equilibria are connection statements on that family's semantics connection

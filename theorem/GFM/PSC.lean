@@ -9,7 +9,7 @@ import theorem.SpecialFunctions.Elementary
 
 /-! # Power-synchronization control (PSC): quasi-static one-dimensional model and algebra
 
-Model boundary (domain part).
+Model boundary.
 * Quasi-static PSC: the converter is a voltage source `V ∠ θ` behind the line reactance
   `X = ω₁ L` to an infinite bus `V_g ∠ θ_g`, `θ_g = ω₁ t + θ_{g0}`; the line current is
   quasi-static (no inductor dynamics), so `P = P_max sin(θ − θ_g)`, `P_max = V V_g / (ω₁ L)`.
@@ -20,12 +20,21 @@ Model boundary (domain part).
   T-power-synchronization-control §1.4), DC-link loop, current limiting / PLL backup, delay, PWM.
 * Power is export-positive (GFM family exception).
 
-Results: equilibria `⇔ |P*| ≤ P_max`; equilibria with `cos δ₀ > 0` are locally exponentially
-stable and with `cos δ₀ < 0` unstable (`K_p, P_max > 0`), via the scalar linearization
-wrappers of `theorem/NormalForm/Scalar.lean`; `absoluteAngle_iff` shows that the original law in
-the absolute angle `θ` is equivalent, pointwise in time, to the `δ`-equation.
+Source: work-sync `theory/T-power-synchronization-control.md` §1.1–§1.3, §1.10;
+`theory/T-vsg-control.md` §1.7; `theory/T-gfm-control.md` §1.4.
 
-Family and connection conclusions.  `PSC.family`: a complete system (`PSC.Model`) is a parameter
+Results.
+* Equilibria `⇔ |P*| ≤ P_max`; equilibria with `cos δ₀ > 0` are locally exponentially stable and
+  with `cos δ₀ < 0` unstable (`K_p, P_max > 0`), via the scalar linearization wrappers of
+  `theorem/NormalForm/Scalar.lean`; `absoluteAngle_iff` shows that the original law in the
+  absolute angle `θ` is equivalent, pointwise in time, to the `δ`-equation.
+* Algebra (foundation): the steady-state active power, the converter-side reactive power and
+  the grid-side received reactive power from `S̄ = V̄ Ī*` (`Network.converterSide_power`,
+  `Network.gridSide_power`, `theorem/Network/PowerFlow.lean`); the active-resistance high-pass
+  `R_a (H(s) − 1) = −R_a s/(s + ω_b)`; PSC as pure droop with `D = 1/K_p`.
+
+Family and connection conclusions.
+`PSC.family`: a complete system (`PSC.Model`) is a parameter
 set with a selected angle `δ*`, read as the scalar field translated so that `δ*` is the origin
 (`Flow.Property.holds_shift_iff`).  Static requirements: balance `P_max sin δ* = P*`, a negative
 slope `K_p P_max cos δ* > 0` (i.e. `d/dδ [K_p (P* − P_max sin δ)] < 0` at `δ*`), or a positive
@@ -34,7 +43,7 @@ instability into balance and a positive slope, passivity into nothing (exact), t
 sentences into the whole, inconsistent, language.  `PSC.chain_le_semantics` proves soundness;
 `PSC.exact_locallyExponentiallyStable` proves the local exponential translation exact (converse
 linearization of the scalar field, `NormalForm.lift_locallyExponentiallyStable_iff`); the
-former domain theorems `locallyExponentiallyStable`, `unstable`, `locallyExponentiallyStable_arcsin`
+stability theorems `locallyExponentiallyStable`, `unstable`, `locallyExponentiallyStable_arcsin`
 and `unstable_pi_sub_arcsin` are connection statements (members of the denotations), and
 `field_eq_zero_iff`, `exists_equilibrium_iff` are static evidence on the model. The instability
 translation is not exact (`PSC.not_exact_unstable`): instability is the failure of Lyapunov
@@ -44,18 +53,13 @@ The local asymptotic translation is exact (`PSC.exact_locallyAsymptoticallyStabl
 linearization does not decide the degenerate slope `K_p P_max cos δ* = 0`: there the model's
 structure does. A vanishing gain or curve (`K_p = 0`, or `P_max = P* = 0`) makes every state an
 equilibrium (`Dynamics.not_localAsymptoticStable_of_equilibria`), and at a balanced fold angle
-(`cos δ* = 0`) the field is `k (1 − cos(δ − δ*))`, `k = K_p P_max sin δ*` (`PSC.rhs_eq_fold`), of one
-sign on both sides, so the coordinate `k δ` never decreases
+(`cos δ* = 0`) the field is `k (1 − cos(δ − δ*))`, `k = K_p P_max sin δ*` (`PSC.rhs_eq_fold`), of
+one sign on both sides, so the coordinate `k δ` never decreases
 (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`). The Lyapunov translation is not exact
 (`PSC.not_exact_lyapunovStable`: the frozen loop `PSC.frozen`, `K_p = 0`, is Lyapunov stable,
 `PSC.frozen_mem_den_lyapunovStable`); its denotation is `PSC.mem_den_lyapunovStable_iff`: a balanced
 angle with a negative slope, or a vanishing scalar field (the fold angle is unstable by Chetaev's
 theorem, `Dynamics.unstable_of_chetaev`).
-
-Algebra (foundation): the steady-state active power, the converter-side reactive power and the
-grid-side received reactive power from `S̄ = V̄ Ī*` (`Network.converterSide_power`,
-`Network.gridSide_power`, `theorem/Network/PowerFlow.lean`); the active-resistance high-pass
-`R_a (H(s) − 1) = −R_a s/(s + ω_b)`; PSC as pure droop with `D = 1/K_p`.
 
 Corrections.
 * T-power-synchronization-control §1.1 calls `Q₀ = (V V_g cos θ₀ − V_g²)/(ω₁ L)` the reactive
@@ -65,9 +69,6 @@ Corrections.
 * The same section declares the current IN-positive (into the converter) while the line equation
   `L dĪ/dt = V̄_conv − V̄_g − jω₁ L Ī` makes `Ī` flow from the converter to the grid; here `Ī` is
   the converter-to-grid (export) current.
-
-Source: work-sync theory/T-power-synchronization-control.md §1.1–§1.3, §1.10;
-theory/T-vsg-control.md §1.7; theory/T-gfm-control.md §1.4.
 -/
 
 noncomputable section

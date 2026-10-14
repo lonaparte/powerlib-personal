@@ -6,31 +6,37 @@ import Mathlib.Probability.Moments.Variance
 
 /-! # Cramér–Rao bound for Gaussian models: Fisher information by definition and a proved bound
 
-Source: work-sync `theory/T-cramer-rao-bound.md` §1.1 (real scalar samples
+The Fisher matrix of sampled Gaussian measurements computed from its definition, and the scalar
+Cramér–Rao bound for the Gaussian location family.
+
+Scope.
+* Probability theory, not an engineering result.
+* The general multi-parameter bound `Cov(θ̂) ⪰ 𝓘⁻¹` (finite sample spaces; general probability
+  spaces and density families with the differentiation-under-the-integral premise stated
+  explicitly) is `theorem/Estimation/CramerRaoMatrix.lean`.
+
+Source: work-sync theory/T-cramer-rao-bound.md §1.1 (real scalar samples
 `y_k = g_s ρ_k(θ) + n_k`, `n_k ~ N(0, σ_n²)` independent, log-likelihood
 `ℓ = −Σ (y_k − g_s ρ_k)²/(2σ_n²)`, Fisher matrix `𝓘_ij = (g_s²/σ_n²) Σ_k ∂_iρ_k ∂_jρ_k`,
-`Cov(θ̂) ⪰ 𝓘⁻¹`, prefactor `1` for real samples); `projects/basin-guard/notes/concepts/
-detection-tolerance.md` §2 (same derivation, "the prefactor is derived, not copied").
+`Cov(θ̂) ⪰ 𝓘⁻¹`, prefactor `1` for real samples); projects/basin-guard/notes/concepts/
+detection-tolerance.md §2 (same derivation, "the prefactor is derived, not copied").
 
-Foundation (probability), not an engineering result.
-
-What is proved.
-* `score_hasDerivAt`, `fisherDiscrete_eq`: for the sampled model the score is
-  `∂_iℓ = (g/σ²) Σ_k n_k ∂_iρ_k` (derivative of the log-likelihood along parameter direction `i`),
-  and its second moment under independent `N(0, σ²)` noise (`Measure.pi`) is exactly
+Results.
+* `score_hasDerivAt`, `fisherDiscrete_eq` — for the sampled model the score is
+  `∂_iℓ = (g/σ²) Σ_k n_k ∂_iρ_k` (derivative of the log-likelihood along parameter direction
+  `i`), and its second moment under independent `N(0, σ²)` noise (`Measure.pi`) is exactly
   `(g²/σ²) Σ_k ∂_iρ_k ∂_jρ_k`: the Fisher matrix computed from its definition.
-* `gaussian_location_fisher`: for the scalar Gaussian location family `N(θ, v)` the Fisher
+* `gaussian_location_fisher` — for the scalar Gaussian location family `N(θ, v)` the Fisher
   information is `1/v`.
-* `gaussian_location_crb`: **Cramér–Rao bound for the scalar Gaussian location family** — every
+* `gaussian_location_crb` — **Cramér–Rao bound for the scalar Gaussian location family**: every
   estimator `T` that is unbiased for all `θ` and square integrable satisfies
-  `E_θ[(T − θ)²] ≥ v = 1/𝓘(θ)`.  The proof is the Hammersley–Chapman–Robbins argument (finite
+  `E_θ[(T − θ)²] ≥ v = 1/𝓘(θ)`. The proof is the Hammersley–Chapman–Robbins argument (finite
   shifts `θ ↦ θ + h` and Cauchy–Schwarz, `h² ≤ Var(T)(e^{h²/v} − 1)`, then `h → 0`), so no
   differentiation under the integral sign is needed.
 
-The general multi-parameter bound `Cov(θ̂) ⪰ 𝓘⁻¹` (finite sample spaces; general probability
-spaces and density families with the differentiation-under-the-integral premise stated explicitly)
-is `theorem/Estimation/CramerRaoMatrix.lean`.  Not proved: the multi-parameter Gaussian instance
-with that premise discharged (Mathlib has no Fisher-information theory).
+Not formalized.
+* The multi-parameter Gaussian instance with the differentiation-under-the-integral premise
+  discharged (Mathlib has no Fisher-information theory).
 -/
 
 noncomputable section

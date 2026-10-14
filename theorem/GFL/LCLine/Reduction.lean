@@ -11,7 +11,7 @@ LC filter, series R–L line and infinite bus). Everything in this module is an 
 identity about the quasi-steady algebra of the 10-state model; no dynamical approximation
 (Tikhonov, averaging) is asserted or used.
 
-Model boundary of the algebra.
+Model boundary.
 * Frames. System dq frame (aligned with the nominal grid EMF) and controller (PLL) dq frame.
   System → controller is the Park matrix `T(θ_e) = [[cos θ_e, sin θ_e], [−sin θ_e, cos θ_e]]`
   (`conventions.md` §D4, project `decisions.md` §D1.2); controller → system is `T(−θ_e)`. Their
@@ -33,11 +33,18 @@ Model boundary of the algebra.
   `[[1 − b, −a], [a, 1 − b]] i_g = (i_d + ω_g C_f E_q, i_q − ω_g C_f E_d)`.
 * `h(θ_e) := v_cq^c` on that algebraic set (`reduced-2d-equation.md` §2), with the nominal EMF
   `(E_d, E_q) = (V_g, 0)`; `hE` keeps a general EMF for the noise-sensitivity identities.
+* The same reduction in the workspace's IN-positive convention (`T-gfl-dynamics` form B) is
+  `theorem/GFL/LCLine/FormB.lean` (`formBChar`, `pllInput_of_quasiSteady`); both find no `2θ`
+  term in the PLL error signal.
 
-Main results.
+Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/reduction-pipeline.md`
+§1–§4; `reduced-2d-equation.md` §1–§2; `sn-critical-scaling.md` §3.
+
+Results.
 * `h_eq` : `h θ = c₀ − (V_g/Δ)((1 − b) sin θ + a cos θ)`,
   `c₀ = [((1 − b) i_d* + a i_q*)/Δ − i_d*]/(ω_g C_f)`.
-* `h_eq_polar` : `h θ = c₀ − A sin(θ + φ)`, `A = V_g/√Δ`, `φ = arg((1 − b) + j a)` (`= atan2(a, 1 − b)`).
+* `h_eq_polar` : `h θ = c₀ − A sin(θ + φ)`, `A = V_g/√Δ`, `φ = arg((1 − b) + j a)`
+  (`= atan2(a, 1 − b)`).
 * `hasDerivAt_h`, `contDiff_h`.
 * `hE_rotate` : rotating the grid EMF by `α` is the same as shifting `θ_e` by `α`
   (rotational covariance of the whole algebraic chain).
@@ -45,20 +52,17 @@ Main results.
   (with `g := −h′ > 0` at a stable point this is `σ_q = g/V_g`); `hasDerivAt_hE_d` with
   `σ_d = −c₀/V_g` at every equilibrium.
 
-Sources: work-sync `projects/vsc-stochastic-stability/notes/concepts/reduction-pipeline.md`
-§1–§4; `reduced-2d-equation.md` §1–§2; `sn-critical-scaling.md` §3.
-
 Correction (`reduction-pipeline.md` §4): the boxed line system is printed with (2,1) entry `−a`.
 The correct entry is `+a` (`lineMatrix`); with `−a` the line and capacitor equations force
 `a · i_gd = 0` (`noteLineSystem_forces`). The project code `models.py::_ig_at_thetae` uses the
 correct sign.
 
 Correction (`reduced-2d-equation.md` §1–§2): the note states
-`−sin θ · i_q − cos θ · i_d = −i_d* cos 2θ − i_q* sin 2θ` on `i = T(−θ) i*`. In fact the left side is
-identically `−i_d*` (`current_part`); the double-angle form is false whenever `i_d* ≠ 0`
+`−sin θ · i_q − cos θ · i_d = −i_d* cos 2θ − i_q* sin 2θ` on `i = T(−θ) i*`. In fact the left side
+is identically `−i_d*` (`current_part`); the double-angle form is false whenever `i_d* ≠ 0`
 (`current_part_ne_doubleAngle`). Hence `h` has no `2θ` term: it is exactly a shifted sinusoid
-(`h_eq_polar`). The note's "`2θ` term makes `h` non-sinusoidal / basin asymmetric" does not hold
-for this model.
+(`h_eq_polar`). The note's "`2θ` term makes `h` non-sinusoidal / basin asymmetric" does not hold for
+this model.
 
 Correction (`sn-critical-scaling.md` §3): the note supports `σ_q = g/V_g` by a numerical check
 `|σ_q V_g/g − 1| < 1e−5`; here it is an exact identity.
