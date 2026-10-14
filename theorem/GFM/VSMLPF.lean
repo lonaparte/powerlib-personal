@@ -4,6 +4,7 @@ import theorem.Synchronous.Swing
 import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
 import theorem.Spectral.Family
+import theorem.SpecialFunctions.Elementary
 
 /-! # Grid-forming VSM with a first-order power filter on an infinite bus (three states)
 
@@ -103,60 +104,7 @@ references/gfl-gfm-contrast/archive/notes/concepts/contrast-conclusions.md (推�
 noncomputable section
 namespace powerlib.GFM
 open Set Matrix
-open powerlib.Dynamics (State)
-
-/-- The state `(a, b, c)`. -/
-def mk3 (a b c : ℝ) : State 3 := (WithLp.equiv 2 (Fin 3 → ℝ)).symm ![a, b, c]
-
-@[simp, powerlib_foundation] theorem mk3_zero (a b c : ℝ) : mk3 a b c 0 = a := by simp [mk3]
-@[simp, powerlib_foundation] theorem mk3_one (a b c : ℝ) : mk3 a b c 1 = b := by simp [mk3]
-@[simp, powerlib_foundation] theorem mk3_two (a b c : ℝ) : mk3 a b c 2 = c := by simp [mk3]
-
-@[powerlib_foundation] theorem state3_ext {x y : State 3} (h0 : x 0 = y 0) (h1 : x 1 = y 1)
-    (h2 : x 2 = y 2) : x = y := by
-  ext i
-  fin_cases i
-  · exact h0
-  · exact h1
-  · exact h2
-
-@[fun_prop, powerlib_foundation] theorem coord3_contDiff {k : WithTop ℕ∞} (j : Fin 3) :
-    ContDiff ℝ k (fun x : State 3 => x j) :=
-  (PiLp.proj 2 (fun _ : Fin 3 => ℝ) j : State 3 →L[ℝ] ℝ).contDiff
-
-@[powerlib_foundation] theorem toEuclideanCLM_apply3 (A : Matrix (Fin 3) (Fin 3) ℝ)
-    (v : State 3) (i : Fin 3) :
-    (Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) A v) i =
-      A i 0 * v 0 + A i 1 * v 1 + A i 2 * v 2 := by
-  simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_succ]
-  ring
-
-/-- If `a₂ a₁ < a₀`, the monic cubic `s³ + a₂ s² + a₁ s + a₀` has a root with positive real
-part (strict violation of the Routh gap condition). -/
-@[powerlib_foundation] theorem exists_cubic_root_re_pos_of_gap {a2 a1 a0 : ℝ}
-    (h : a2 * a1 < a0) :
-    ∃ s : ℂ, s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 ∧ 0 < s.re := by
-  obtain ⟨r, hr⟩ := Criteria.exists_cubic_real_root a2 a1 a0
-  by_cases hr0 : 0 < r
-  · exact ⟨r, Criteria.cubic_real_root_complex hr, by rw [Complex.ofReal_re]; exact hr0⟩
-  push Not at hr0
-  set b := a2 + r with hb
-  set c := a1 + r * a2 + r ^ 2 with hc
-  have ha0 : a0 = -r * c := by rw [hc]; linear_combination hr
-  have hgap : b * (c - r * b + r ^ 2) < 0 := by
-    have : a0 - a2 * a1 = -(b * (c - r * b + r ^ 2)) := by rw [ha0, hb, hc]; ring
-    linarith
-  rcases lt_trichotomy b 0 with hbn | hb0 | hbp
-  · obtain ⟨s, hs, hre⟩ := Criteria.exists_quadratic_root_re_pos_of_linear_neg (a0 := c) hbn
-    exact ⟨s, by rw [Criteria.cubic_factor_of_root hr, hs, mul_zero], hre⟩
-  · rw [hb0] at hgap; simp at hgap
-  · have hcn : c < 0 := by
-      have : c - r * b + r ^ 2 < 0 := by
-        by_contra hn; push Not at hn; nlinarith
-      nlinarith [mul_nonpos_of_nonpos_of_nonneg hr0 hbp.le, sq_nonneg r]
-    obtain ⟨q, hq, hqroot⟩ := Criteria.exists_quadratic_root_pos_of_const_neg (a1 := b) hcn
-    refine ⟨q, ?_, by rw [Complex.ofReal_re]; exact hq⟩
-    rw [Criteria.cubic_factor_of_root hr, Criteria.quadratic_real_root_complex hqroot, mul_zero]
+open powerlib.Dynamics (State mk3 mk3_zero state3_ext toEuclideanCLM_apply3)
 
 /-- Parameters of the three-state VSM + power-filter model. -/
 structure VSMLPF where
@@ -200,7 +148,7 @@ def jacobian (δ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
   rw [contDiff_euclidean]
   intro i
   fin_cases i
-  · simpa using coord3_contDiff (k := k) 1
+  · simpa using Dynamics.contDiff_coord (k := k) 1
   · simp only [Fin.mk_one, Fin.isValue, field_apply_one]; fun_prop
   · simp only [Fin.reduceFinMk, Fin.isValue, field_apply_two]; fun_prop
 
@@ -646,7 +594,7 @@ private theorem unstable_of {m : Model} (hp : Meets m .physical) (hb : Meets m .
         unfold Model.K; ring
       rw [e1, e2]
       linarith
-    obtain ⟨s, hs, hre⟩ := exists_cubic_root_re_pos_of_gap hgap
+    obtain ⟨s, hs, hre⟩ := Criteria.exists_cubic_root_re_pos_of_gap hgap
     refine Dynamics.unstable_of_characteristic_root_re_pos (m.g.jacobian m.δ) m.g.contDiff_field heq
       (fderiv_point m) (s := s) ?_ hre
     rw [Criteria.det_characteristicMatrix_fin_three']
@@ -1476,19 +1424,10 @@ Static evidence on the model, not a connection conclusion. -/
   rw [Real.sin_add, hcos, ← hb]
   ring
 
-private theorem norm_state2_le (x : State 2) : ‖x‖ ≤ |x 0| + |x 1| :=
-  Synchronous.norm_state_le x
-
 private theorem norm_mkState_sub_point (m : Model) (s t : ℝ) :
     ‖Synchronous.mkState (m.δ + s) (m.q.P0 + t) - m.point‖ ≤ |s| + |t| := by
-  refine (norm_state2_le _).trans (le_of_eq ?_)
+  refine (Dynamics.norm_le_abs_add_abs_two _).trans (le_of_eq ?_)
   simp [Model.point]
-
-private theorem sin_ne_zero_of_cos {δ₀ : ℝ} (hcos : Real.cos δ₀ = 0) : Real.sin δ₀ ≠ 0 := by
-  intro h
-  have := Real.sin_sq_add_cos_sq δ₀
-  rw [h, hcos] at this
-  norm_num at this
 
 /-- At a fold the energy takes values below its value at the operating point arbitrarily close
 to it. -/
@@ -1498,7 +1437,8 @@ private theorem fold_seeds {m : Model} (hb : m.q.K0 * Real.sin m.δ = m.q.P0)
   intro ε hε
   have hE0 : m.q.energy m.δ m.point = 0 := by simp [energy, Model.point]
   rw [hE0]
-  have hP : m.q.P0 ≠ 0 := by rw [← hb]; exact mul_ne_zero hK (sin_ne_zero_of_cos hcos)
+  have hP : m.q.P0 ≠ 0 := by
+    rw [← hb]; exact mul_ne_zero hK (SpecialFunctions.sin_ne_zero_of_cos hcos)
   have hε2 : 0 < ε / 2 := by linarith
   have hsin := Real.sin_lt hε2
   rcases lt_or_gt_of_ne hP with hneg | hpos
@@ -1685,7 +1625,8 @@ dissipated energy keeps the solution, and there `P₀ ((P₀ − P_f)/ω_c + D �
           refine (Real.cos_eq_one_iff_of_lt_of_lt ?_ ?_).mp h
           · linarith [neg_abs_le s₀, Real.two_le_pi]
           · linarith [le_abs_self s₀, Real.two_le_pi]
-        have ha0 : a ≠ 0 := fun h0 => mul_ne_zero hK0 (sin_ne_zero_of_cos hc) (hb.trans h0)
+        have ha0 : a ≠ 0 := fun h0 =>
+          mul_ne_zero hK0 (SpecialFunctions.sin_ne_zero_of_cos hc) (hb.trans h0)
         have : 0 < a * a := mul_self_pos.mpr ha0
         nlinarith
     · exact Or.inl hK

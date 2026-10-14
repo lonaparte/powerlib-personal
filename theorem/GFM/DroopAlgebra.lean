@@ -1,4 +1,5 @@
-import theorem.Synchronous.Swing
+import theorem.Attributes
+import dependencies.Mathlib
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-! # Algebraic identities of droop, VSM and matching control (foundation)
@@ -7,12 +8,14 @@ Every statement here is an algebraic identity, a Laplace-domain relation or a
 fundamental-theorem-of-calculus identity; none asserts a stability property of a power system.
 
 * Complex power `S̄ = V̄ Ī*` in `dq` components (IN-positive current) and the export-positive
-  translation `P^ext = −P^abs`, `Q^ext = −Q^abs` (T-vsg-control §1.1).
+  translation `P^ext = −P^abs`, `Q^ext = −Q^abs` (T-vsg-control §1.1): `Transform.complexPower_dq`,
+  `Transform.exportPower_dq` (`theorem/Transform/ComplexPower.lean`).
 * Inertia conversions `K_d = J ω_s / S_b`, `H = ½ J ω_s² / S_b`, `M_vsm = 2H/ω_s = K_d`
   (T-vsg-control §1.0, §1.2; T-gfm-control §1.4).
 * Line powers (export from the source `E ∠ δ` through `R + jX` into `V ∠ 0`) from `S̄ = Ē Ī*`,
   their partial derivatives at `δ = 0, E = V`, and the rotation `R(β)`, `β = π/2 − θ_l`,
-  that diagonalizes this Jacobian (T-droop-control §1.2).
+  that diagonalizes this Jacobian (T-droop-control §1.2): `Network.linePower`, `Network.lineP`,
+  `Network.lineQ`, `Network.rotation_diagonalizes` (`theorem/Network/PowerFlow.lean`).
 * Static droop `u = u* − K (y − y*)`: DC gain `−K`; shared `Δu` gives
   `Δy_k / Δy_l = K_l / K_k` (T-droop-control §1.1).
 * Governor `T_g ΔṖ_m = −ΔP_m − K_R Δω` ⇒ `ΔP_m = −K_R/(1 + T_g s) Δω` (T-droop-control §1.3).
@@ -21,9 +24,11 @@ fundamental-theorem-of-calculus identity; none asserts a stability property of a
   consensus formula (T-droop-control §1.6–§1.8; T-gfm-control §2.3).
 * Virtual-inertia energy `∫ K_d ω̇ ω = ½ K_d (ω(t)² − ω(t₀)²)` (T-gfm-control §2.4).
 * Matching control `θ̇ = η u_dc`, `C u̇_dc = i_dc − G u_dc − i_x`: the frequency obeys a swing
-  equation with `M = C/η²`, `D = G/η²`, torque `i_dc/η` (T-gfm-control §1.6 table).
+  equation with `M = C/η²`, `D = G/η²`, torque `i_dc/η` (T-gfm-control §1.6 table):
+  `GFM.Matching.matching_swing` (`theorem/GFM/Matching/Matching.lean`).
 * Rotated droop limits: inductive line `θ_l = π/2` ⇒ `R(β) = I`; resistive line `θ_l = 0` ⇒
-  `(P̂, Q̂) = (−Q, P)` (T-droop-control §1.5).
+  `(P̂, Q̂) = (−Q, P)` (T-droop-control §1.5): `Network.rotation_inductive`,
+  `Network.rotation_resistive`.
 
 Family and connection conclusions: none.  The module has no behavioural content; every statement
 is public foundation (Rules §3).
@@ -36,122 +41,12 @@ noncomputable section
 namespace powerlib.GFM
 open Complex
 
-/-! ## Complex power -/
-
-/-- `S̄ = (V_d + jV_q)(I_d + jI_q)* = (V_d I_d + V_q I_q) + j (V_q I_d − V_d I_q)`. -/
-@[powerlib_foundation] theorem complexPower_dq (Vd Vq Id Iq : ℝ) :
-    ((Vd : ℂ) + Vq * I) * (starRingEnd ℂ) ((Id : ℂ) + Iq * I) =
-      ((Vd * Id + Vq * Iq : ℝ) : ℂ) + ((Vq * Id - Vd * Iq : ℝ) : ℂ) * I := by
-  apply Complex.ext
-  · simp
-  · simp; ring
-
-/-- Export-positive translation: `S̄^ext = −S̄^abs`, i.e. `P^ext = −(V_d I_d + V_q I_q)` and
-`Q^ext = −(V_q I_d − V_d I_q)` with the IN-positive current. -/
-@[powerlib_foundation] theorem exportPower_dq (Vd Vq Id Iq : ℝ) :
-    -(((Vd : ℂ) + Vq * I) * (starRingEnd ℂ) ((Id : ℂ) + Iq * I)) =
-      ((-(Vd * Id + Vq * Iq) : ℝ) : ℂ) + ((-(Vq * Id - Vd * Iq) : ℝ) : ℂ) * I := by
-  rw [complexPower_dq]; push_cast; ring
-
 /-! ## Inertia conversions -/
 
 /-- `M_vsm = 2H/ω_s` equals `K_d = J ω_s / S_b` when `H = ½ J ω_s² / S_b`. -/
 @[powerlib_foundation] theorem Mvsm_eq_Kd {J ωs Sb : ℝ} (hω : ωs ≠ 0) (hS : Sb ≠ 0) :
     2 * (J * ωs ^ 2 / (2 * Sb)) / ωs = J * ωs / Sb := by
   field_simp
-
-/-! ## Line powers and the decoupling rotation -/
-
-/-- Export power from `E ∠ δ` through `Z = R + jX` into `V ∠ 0`, from `S̄ = Ē Ī*`. -/
-@[powerlib_foundation] theorem linePower (E V δ R X : ℝ) (hZ : R ^ 2 + X ^ 2 ≠ 0) :
-    (E : ℂ) * exp (δ * I) *
-        (starRingEnd ℂ) (((E : ℂ) * exp (δ * I) - (V : ℂ)) / ((R : ℂ) + (X : ℂ) * I)) =
-      (((R * (E ^ 2 - E * V * Real.cos δ) + X * E * V * Real.sin δ) / (R ^ 2 + X ^ 2) : ℝ) : ℂ) +
-        (((X * (E ^ 2 - E * V * Real.cos δ) - R * E * V * Real.sin δ) / (R ^ 2 + X ^ 2) : ℝ) : ℂ) *
-          I := by
-  have hZ' : R * R + X * X ≠ 0 := by simpa [sq] using hZ
-  have hsc := Real.sin_sq_add_cos_sq δ
-  apply Complex.ext <;>
-    simp only [Complex.mul_re, Complex.mul_im, Complex.conj_re, Complex.conj_im,
-      Complex.div_re, Complex.div_im, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
-      Complex.ofReal_im, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im, Complex.add_re,
-      Complex.add_im, Complex.I_re, Complex.I_im, Complex.normSq_apply, mul_zero, zero_mul,
-      sub_zero, add_zero, zero_add, mul_one] <;>
-    field_simp
-  · linear_combination (E ^ 2 * R) * hsc
-  · linear_combination (E ^ 2 * X) * hsc
-
-/-- Active line power `P(δ, E)`. -/
-def lineP (V R X : ℝ) (δ E : ℝ) : ℝ :=
-  (R * (E ^ 2 - E * V * Real.cos δ) + X * E * V * Real.sin δ) / (R ^ 2 + X ^ 2)
-
-/-- Reactive line power `Q(δ, E)`. -/
-def lineQ (V R X : ℝ) (δ E : ℝ) : ℝ :=
-  (X * (E ^ 2 - E * V * Real.cos δ) - R * E * V * Real.sin δ) / (R ^ 2 + X ^ 2)
-
-@[powerlib_foundation] theorem lineP_deriv_delta (V R X : ℝ) :
-    HasDerivAt (fun δ => lineP V R X δ V) (X * V ^ 2 / (R ^ 2 + X ^ 2)) 0 := by
-  have h := ((((Real.hasDerivAt_cos 0).const_mul (V * V)).const_sub (V ^ 2)).const_mul R).add
-    ((Real.hasDerivAt_sin 0).const_mul (X * V * V)) |>.div_const (R ^ 2 + X ^ 2)
-  convert h using 1
-  · funext δ; simp only [lineP, Pi.add_apply]
-  · simp; ring
-
-@[powerlib_foundation] theorem lineP_deriv_E (V R X : ℝ) :
-    HasDerivAt (fun E => lineP V R X 0 E) (R * V / (R ^ 2 + X ^ 2)) V := by
-  have h := ((((hasDerivAt_id V).pow 2).sub ((hasDerivAt_id V).mul_const V)).const_mul R)
-    |>.div_const (R ^ 2 + X ^ 2)
-  convert h using 1
-  · funext E; simp [lineP]
-  · simp; ring
-
-@[powerlib_foundation] theorem lineQ_deriv_delta (V R X : ℝ) :
-    HasDerivAt (fun δ => lineQ V R X δ V) (-(R * V ^ 2) / (R ^ 2 + X ^ 2)) 0 := by
-  have h := ((((Real.hasDerivAt_cos 0).const_mul (V * V)).const_sub (V ^ 2)).const_mul X).sub
-    ((Real.hasDerivAt_sin 0).const_mul (R * V * V)) |>.div_const (R ^ 2 + X ^ 2)
-  convert h using 1
-  · funext δ; simp only [lineQ, Pi.sub_apply]
-  · simp; ring
-
-@[powerlib_foundation] theorem lineQ_deriv_E (V R X : ℝ) :
-    HasDerivAt (fun E => lineQ V R X 0 E) (X * V / (R ^ 2 + X ^ 2)) V := by
-  have h := ((((hasDerivAt_id V).pow 2).sub ((hasDerivAt_id V).mul_const V)).const_mul X)
-    |>.div_const (R ^ 2 + X ^ 2)
-  convert h using 1
-  · funext E; simp [lineQ]
-  · simp; ring
-
-/-- The rotation `R(β)`, `β = π/2 − θ_l` with `cos θ_l = R/|Z|`, `sin θ_l = X/|Z|`,
-diagonalizes the line Jacobian `[[X V², R V], [−R V², X V]] / |Z|²`:
-`R(β) J = (V/|Z|) diag(V, 1)`. -/
-@[powerlib_foundation] theorem rotation_diagonalizes {V R X z θl : ℝ} (hz : 0 < z)
-    (hz2 : z ^ 2 = R ^ 2 + X ^ 2) (hc : Real.cos θl = R / z) (hs : Real.sin θl = X / z) :
-    !![Real.cos (Real.pi / 2 - θl), -Real.sin (Real.pi / 2 - θl);
-        Real.sin (Real.pi / 2 - θl), Real.cos (Real.pi / 2 - θl)] *
-      !![X * V ^ 2 / (R ^ 2 + X ^ 2), R * V / (R ^ 2 + X ^ 2);
-        -(R * V ^ 2) / (R ^ 2 + X ^ 2), X * V / (R ^ 2 + X ^ 2)] =
-      !![V / z * V, 0; 0, V / z] := by
-  rw [Real.cos_pi_div_two_sub, Real.sin_pi_div_two_sub, hc, hs, ← hz2]
-  have hz' := hz.ne'
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two] <;> field_simp
-  · linear_combination (-V ^ 2) * hz2
-  · ring
-  · ring
-  · linear_combination (-V) * hz2
-
-/-- Inductive line (`θ_l = π/2`): the rotation is the identity (classical P–f / Q–V droop). -/
-@[powerlib_foundation] theorem rotation_inductive :
-    !![Real.cos (Real.pi / 2 - Real.pi / 2), -Real.sin (Real.pi / 2 - Real.pi / 2);
-        Real.sin (Real.pi / 2 - Real.pi / 2), Real.cos (Real.pi / 2 - Real.pi / 2)] =
-      (1 : Matrix (Fin 2) (Fin 2) ℝ) := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp
-
-/-- Resistive line (`θ_l = 0`): `(P̂, Q̂) = R(π/2)(P, Q) = (−Q, P)` (inverse droop). -/
-@[powerlib_foundation] theorem rotation_resistive (P Q : ℝ) :
-    Matrix.mulVec !![Real.cos (Real.pi / 2 - 0), -Real.sin (Real.pi / 2 - 0);
-        Real.sin (Real.pi / 2 - 0), Real.cos (Real.pi / 2 - 0)] ![P, Q] = ![-Q, P] := by
-  ext i; fin_cases i <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
 /-! ## Static droop and sharing -/
 
@@ -211,7 +106,7 @@ frequency `ω = ω_s − (P_L − Σ P*_k)/Σ K_k`. -/
   field_simp
   linarith
 
-/-! ## Virtual-inertia energy and matching duality -/
+/-! ## Virtual-inertia energy -/
 
 /-- `∫_{t₀}^{t} K_d ω̇ ω = ½ K_d (ω(t)² − ω(t₀)²)` for a `C¹` frequency deviation. -/
 @[powerlib_foundation] theorem virtualInertia_energy {ω ω' : ℝ → ℝ} (Kd t₀ t : ℝ)
@@ -226,14 +121,5 @@ frequency `ω = ω_s − (P_L − Σ P*_k)/Σ K_k`. -/
   rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hF
     ((by fun_prop : Continuous fun s => Kd * ω' s * ω s).intervalIntegrable _ _)]
   ring
-
-/-- Matching control: `θ̇ = η u_dc`, `C u̇_dc = i_dc − G u_dc − i_x` makes the converter
-frequency `ω = η u_dc` obey `(C/η²) ω̇ = i_dc/η − (G/η²) ω − i_x/η`. -/
-@[powerlib_foundation] theorem matching_swing {η C G idc : ℝ} {u : ℝ → ℝ} {ix : ℝ → ℝ} {t : ℝ}
-    (hη : η ≠ 0) (hC : C ≠ 0) (hu : HasDerivAt u ((idc - G * u t - ix t) / C) t) :
-    HasDerivAt (fun s => η * u s)
-      ((idc / η - G / η ^ 2 * (η * u t) - ix t / η) / (C / η ^ 2)) t := by
-  convert hu.const_mul η using 1
-  field_simp
 
 end powerlib.GFM

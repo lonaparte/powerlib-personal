@@ -12,7 +12,8 @@ Foundation layer (plus thin generic semantic corollaries at the end).
   The necessary direction factors out a real root (intermediate value theorem) and applies
   the quadratic criterion `Criteria.quadratic_roots_re_neg_iff` to the quotient.
 * Real roots: every real cubic has a real root; `a0 < 0` gives a positive real root;
-  `a2 < 0` gives a root with positive real part.
+  `a2 < 0` gives a root with positive real part; a strict violation `a2 a1 < a0` of the gap
+  condition gives a root with positive real part (`exists_cubic_root_re_pos_of_gap`).
 * `A : Matrix (Fin 3) (Fin 3) ℝ`:
   `det (s • 1 - A) = s ^ 3 - tr A * s ^ 2 + principalMinorSum A * s - det A`, i.e.
   `a2 = -tr A`, `a1 = principalMinorSum A` (sum of principal 2×2 minors), `a0 = -det A`;
@@ -198,6 +199,33 @@ def cubicEval (a2 a1 a0 x : ℝ) : ℝ := x ^ 3 + a2 * x ^ 2 + a1 * x + a0
   rw [← cubic_roots_re_neg_iff] at h
   push Not at h
   exact h
+
+/-- If `a₂ a₁ < a₀`, the monic cubic `s³ + a₂ s² + a₁ s + a₀` has a root with positive real
+part (strict violation of the Routh gap condition). -/
+@[powerlib_foundation] theorem exists_cubic_root_re_pos_of_gap {a2 a1 a0 : ℝ}
+    (h : a2 * a1 < a0) :
+    ∃ s : ℂ, s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 ∧ 0 < s.re := by
+  obtain ⟨r, hr⟩ := Criteria.exists_cubic_real_root a2 a1 a0
+  by_cases hr0 : 0 < r
+  · exact ⟨r, Criteria.cubic_real_root_complex hr, by rw [Complex.ofReal_re]; exact hr0⟩
+  push Not at hr0
+  set b := a2 + r with hb
+  set c := a1 + r * a2 + r ^ 2 with hc
+  have ha0 : a0 = -r * c := by rw [hc]; linear_combination hr
+  have hgap : b * (c - r * b + r ^ 2) < 0 := by
+    have : a0 - a2 * a1 = -(b * (c - r * b + r ^ 2)) := by rw [ha0, hb, hc]; ring
+    linarith
+  rcases lt_trichotomy b 0 with hbn | hb0 | hbp
+  · obtain ⟨s, hs, hre⟩ := Criteria.exists_quadratic_root_re_pos_of_linear_neg (a0 := c) hbn
+    exact ⟨s, by rw [Criteria.cubic_factor_of_root hr, hs, mul_zero], hre⟩
+  · rw [hb0] at hgap; simp at hgap
+  · have hcn : c < 0 := by
+      have : c - r * b + r ^ 2 < 0 := by
+        by_contra hn; push Not at hn; nlinarith
+      nlinarith [mul_nonpos_of_nonpos_of_nonneg hr0 hbp.le, sq_nonneg r]
+    obtain ⟨q, hq, hqroot⟩ := Criteria.exists_quadratic_root_pos_of_const_neg (a1 := b) hcn
+    refine ⟨q, ?_, by rw [Complex.ofReal_re]; exact hq⟩
+    rw [Criteria.cubic_factor_of_root hr, Criteria.quadratic_real_root_complex hqroot, mul_zero]
 
 end Cubic
 

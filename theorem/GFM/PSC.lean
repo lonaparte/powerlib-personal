@@ -5,6 +5,7 @@ import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
+import theorem.SpecialFunctions.Elementary
 
 /-! # Power-synchronization control (PSC): quasi-static one-dimensional model and algebra
 
@@ -52,14 +53,15 @@ angle with a negative slope, or a vanishing scalar field (the fold angle is unst
 theorem, `Dynamics.unstable_of_chetaev`).
 
 Algebra (foundation): the steady-state active power, the converter-side reactive power and the
-grid-side received reactive power from `S̄ = V̄ Ī*`; the active-resistance high-pass
+grid-side received reactive power from `S̄ = V̄ Ī*` (`Network.converterSide_power`,
+`Network.gridSide_power`, `theorem/Network/PowerFlow.lean`); the active-resistance high-pass
 `R_a (H(s) − 1) = −R_a s/(s + ω_b)`; PSC as pure droop with `D = 1/K_p`.
 
 Corrections.
 * T-power-synchronization-control §1.1 calls `Q₀ = (V V_g cos θ₀ − V_g²)/(ω₁ L)` the reactive
   power exported by the converter; that expression is the reactive power *received at the grid
   bus*.  The converter-side output reactive power is `(V² − V V_g cos θ₀)/(ω₁ L)`
-  (`converterSide_power`, `gridSide_power`).
+  (`Network.converterSide_power`, `Network.gridSide_power`).
 * The same section declares the current IN-positive (into the converter) while the line equation
   `L dĪ/dt = V̄_conv − V̄_g − jω₁ L Ī` makes `Ī` flow from the converter to the grid; here `Ī` is
   the converter-to-grid (export) current.
@@ -365,19 +367,13 @@ private theorem not_las_of_rhs_zero {c : PSC} (h : ∀ z, c.rhs z = 0) (δ₀ : 
     linarith
   · rw [field, NormalForm.lift_embed, h, NormalForm.embed_zero]
 
-private theorem sin_ne_zero_of_cos {δ₀ : ℝ} (hcos : Real.cos δ₀ = 0) : Real.sin δ₀ ≠ 0 := by
-  intro h
-  have := Real.sin_sq_add_cos_sq δ₀
-  rw [h, hcos] at this
-  norm_num at this
-
 /-- A balanced fold angle with `K_p P_max ≠ 0` is not locally asymptotically stable: the
 coordinate `−k δ` never increases along the field and is below its value at `δ₀` on one side. -/
 private theorem not_las_fold {c : PSC} {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
     (hcos : Real.cos δ₀ = 0) (hk : c.Kp * c.Pmax ≠ 0) :
     ¬ LocalAsymptoticStable c.field (embed δ₀) := by
   set k := c.Kp * c.Pmax * Real.sin δ₀ with hkdef
-  have hk0 : k ≠ 0 := mul_ne_zero hk (sin_ne_zero_of_cos hcos)
+  have hk0 : k ≠ 0 := mul_ne_zero hk (SpecialFunctions.sin_ne_zero_of_cos hcos)
   refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := fun z : State 1 => -k * z 0)
     (ρ := 1) (NormalForm.lift_contDiff c.rhs_contDiff)
     (fun z => (hasFDerivAt_coord (-k) z).differentiableAt) one_pos (fun z _ => ?_)
@@ -404,7 +400,7 @@ private theorem unstable_fold {c : PSC} {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ
     (hcos : Real.cos δ₀ = 0) (hk : c.Kp * c.Pmax ≠ 0) :
     Unstable c.field (embed δ₀) := by
   set k := c.Kp * c.Pmax * Real.sin δ₀ with hkdef
-  have hk0 : k ≠ 0 := mul_ne_zero hk (sin_ne_zero_of_cos hcos)
+  have hk0 : k ≠ 0 := mul_ne_zero hk (SpecialFunctions.sin_ne_zero_of_cos hcos)
   have hW : ContDiff ℝ 1 fun z : State 1 => k * z 0 - k * δ₀ :=
     (contDiff_const.mul (NormalForm.coordCLM.contDiff)).sub contDiff_const
   refine Dynamics.unstable_of_chetaev (W := fun z : State 1 => k * z 0 - k * δ₀) (r := 1)
@@ -579,38 +575,6 @@ while the translation asks for a balanced one. -/
 end PSC
 
 /-! ## Algebra (foundation) -/
-
-/-- Converter-side complex power `S̄ = V̄_conv Ī*`, `Ī = (V e^{jθ} − V_g)/(jX)` (export current):
-`P = V V_g sin θ / X`, `Q_conv = (V² − V V_g cos θ)/X`. -/
-@[powerlib_foundation] theorem converterSide_power (V Vg θ X : ℝ) (hX : X ≠ 0) :
-    (V : ℂ) * Complex.exp (θ * Complex.I) *
-        (starRingEnd ℂ) (((V : ℂ) * Complex.exp (θ * Complex.I) - (Vg : ℂ)) /
-          ((X : ℂ) * Complex.I)) =
-      ((V * Vg * Real.sin θ / X : ℝ) : ℂ) +
-        ((V ^ 2 - V * Vg * Real.cos θ) / X : ℝ) * Complex.I := by
-  rw [show V ^ 2 - V * Vg * Real.cos θ =
-      V ^ 2 * (Real.sin θ ^ 2 + Real.cos θ ^ 2) - V * Vg * Real.cos θ by
-    rw [Real.sin_sq_add_cos_sq]; ring]
-  apply Complex.ext <;>
-    simp only [Complex.mul_re, Complex.mul_im, Complex.conj_re, Complex.conj_im,
-      Complex.div_re, Complex.div_im, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
-      Complex.ofReal_im, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im, Complex.add_re,
-      Complex.add_im, Complex.I_re, Complex.I_im, Complex.normSq_apply] <;>
-    field_simp <;> ring
-
-/-- Grid-side received complex power `S̄_g = V̄_g Ī*`: `P = V V_g sin θ / X`,
-`Q_g = (V V_g cos θ − V_g²)/X` (the note's `Q₀`). -/
-@[powerlib_foundation] theorem gridSide_power (V Vg θ X : ℝ) (hX : X ≠ 0) :
-    (Vg : ℂ) * (starRingEnd ℂ) (((V : ℂ) * Complex.exp (θ * Complex.I) - (Vg : ℂ)) /
-          ((X : ℂ) * Complex.I)) =
-      ((V * Vg * Real.sin θ / X : ℝ) : ℂ) +
-        ((V * Vg * Real.cos θ - Vg ^ 2) / X : ℝ) * Complex.I := by
-  apply Complex.ext <;>
-    simp only [Complex.mul_re, Complex.mul_im, Complex.conj_re, Complex.conj_im,
-      Complex.div_re, Complex.div_im, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
-      Complex.ofReal_im, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im, Complex.add_re,
-      Complex.add_im, Complex.I_re, Complex.I_im, Complex.normSq_apply] <;>
-    field_simp <;> ring
 
 /-- Active resistance: with `H(s) = ω_b/(s + ω_b)`, `R_a (H(s) − 1) = −R_a s/(s + ω_b)`. -/
 @[powerlib_foundation] theorem activeResistance_highPass (Ra ωb : ℝ) (s : ℂ)

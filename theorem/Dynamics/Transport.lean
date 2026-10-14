@@ -18,7 +18,9 @@ notions `Flow.ForwardComplete`, `Flow.GloballyAsymptoticallyStable`,
   `φ(x*)` (`holds_transport_iff`); forward completeness is invariant as well. The per-sentence
   forms of the former module (`lyapunovStable_transport_iff`, …) are corollaries.
 * Matrix form: `T = P` for an invertible matrix `P` (`IsUnit P`), acting through
-  `Matrix.toEuclideanCLM` (`matrixCoord`); the Jacobian matrix becomes `P A P⁻¹`.
+  `Matrix.toEuclideanCLM` (`matrixCoord`); the Jacobian matrix becomes `P A P⁻¹`. Example: the
+  planar scaling `(θ, v) ↦ (θ, η v)`, `η ≠ 0` (`scaleMatrix`, `scaleCoord`, `scaleCoord_apply`,
+  `scaleCoord_symm_apply`).
 * Time scaling `τ = t / c`, `c > 0` (e.g. a per-unit time base): `f` and `c • f` have the same
   Lyapunov stability, instability, local exponential stability (the rate scales by `c`), and
   local asymptotic stability.
@@ -568,6 +570,45 @@ variable (P : Matrix (Fin n) (Fin n) ℝ) (hP : IsUnit P)
   rfl
 
 end MatrixCoord
+
+/-! ### Scaling one coordinate: `(θ, v) ↦ (θ, η v)` -/
+
+section Scale
+
+open Matrix
+
+/-- Scaling matrix `(θ, v) ↦ (θ, η v)`. -/
+def scaleMatrix (η : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, η]
+
+@[powerlib_foundation] theorem scaleMatrix_isUnit {η : ℝ} (hη : η ≠ 0) :
+    IsUnit (scaleMatrix η) := by
+  rw [Matrix.isUnit_iff_isUnit_det]
+  simpa [scaleMatrix, Matrix.det_fin_two] using hη
+
+private lemma scaleMatrix_inv {η : ℝ} (hη : η ≠ 0) :
+    (scaleMatrix η)⁻¹ = !![1, 0; 0, η⁻¹] := by
+  apply Matrix.inv_eq_left_inv
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [scaleMatrix, hη]
+
+/-- The coordinate change `(θ, v) ↦ (θ, η v)`. -/
+def scaleCoord {η : ℝ} (hη : η ≠ 0) : State 2 ≃L[ℝ] State 2 :=
+  matrixCoord (scaleMatrix η) (scaleMatrix_isUnit hη)
+
+@[simp, powerlib_foundation] theorem scaleCoord_apply {η : ℝ} (hη : η ≠ 0) (x : State 2) :
+    scaleCoord hη x = WithLp.toLp 2 ![x 0, η * x 1] := by
+  ext i
+  fin_cases i <;>
+    simp [scaleCoord, scaleMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+
+@[simp, powerlib_foundation] theorem scaleCoord_symm_apply {η : ℝ} (hη : η ≠ 0) (y : State 2) :
+    (scaleCoord hη).symm y = WithLp.toLp 2 ![y 0, y 1 / η] := by
+  ext i
+  fin_cases i <;>
+    simp [scaleCoord, scaleMatrix_inv hη, Matrix.mulVec, dotProduct, Fin.sum_univ_two,
+      div_eq_inv_mul]
+
+end Scale
 
 /-! ### Time scaling -/
 

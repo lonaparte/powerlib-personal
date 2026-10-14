@@ -20,6 +20,9 @@ This module reduces both to the scalar component functions `fun y => f y i`:
 * `contDiff_field_mk_two_example`: a `fun_prop` demonstration for a planar field built from
   `Real.sin` / `Real.cos` (pendulum / swing / PLL shape); `fderiv_field_mk_two_example_zero`
   computes the Jacobian of such a field with the component helper.
+* Three states: `mk3` (the state `(a, b, c)`, with `mk3_zero`, `mk3_one`, `mk3_two`),
+  `state3_ext` (extensionality by coordinates), `toEuclideanCLM_apply3` (a `3 × 3` matrix acting
+  on a state, coordinatewise).
 * `lift F`: a field on plain coordinates `Fin n → ℝ` transported to `Dynamics.State n`; its
   Fréchet derivative is `toEuclideanCLM A` whenever the coordinate field has derivative
   `toLin' A` (`hasFDerivAt_lift`, `fderiv_lift`, `contDiff_lift`); `hasFDerivAt_of_eq` replaces a
@@ -129,6 +132,36 @@ pendulum, swing equation or reduced PLL in `(angle, rate)` coordinates) is smoot
     ring
 
 end Jacobian
+
+/-! ## Three-dimensional states -/
+
+section Three
+
+open Matrix
+
+/-- The state `(a, b, c)`. -/
+def mk3 (a b c : ℝ) : State 3 := (WithLp.equiv 2 (Fin 3 → ℝ)).symm ![a, b, c]
+
+@[simp, powerlib_foundation] theorem mk3_zero (a b c : ℝ) : mk3 a b c 0 = a := by simp [mk3]
+@[simp, powerlib_foundation] theorem mk3_one (a b c : ℝ) : mk3 a b c 1 = b := by simp [mk3]
+@[simp, powerlib_foundation] theorem mk3_two (a b c : ℝ) : mk3 a b c 2 = c := by simp [mk3]
+
+@[powerlib_foundation] theorem state3_ext {x y : State 3} (h0 : x 0 = y 0) (h1 : x 1 = y 1)
+    (h2 : x 2 = y 2) : x = y := by
+  ext i
+  fin_cases i
+  · exact h0
+  · exact h1
+  · exact h2
+
+@[powerlib_foundation] theorem toEuclideanCLM_apply3 (A : Matrix (Fin 3) (Fin 3) ℝ)
+    (v : State 3) (i : Fin 3) :
+    (Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) A v) i =
+      A i 0 * v 0 + A i 1 * v 1 + A i 2 * v 2 := by
+  simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_succ]
+  ring
+
+end Three
 
 /-! ## Fields on plain coordinates -/
 

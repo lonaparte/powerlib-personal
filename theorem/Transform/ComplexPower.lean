@@ -7,7 +7,10 @@ Derivation method of work-sync `conventions.md` §D0: start from `S̄ = V̄ Ī*`
 `V̄ = v_d + j v_q`, `Ī = i_d + j i_q`, `i` IN-positive (§D1), load convention (§D3): `P > 0`
 absorbed by the converter.
 
-* `complexPower_expand`: `V̄ Ī* = (v_d i_d + v_q i_q) + j (v_q i_d − v_d i_q)`;
+* `complexPower_expand`: `V̄ Ī* = (v_d i_d + v_q i_q) + j (v_q i_d − v_d i_q)`; the same
+  expansion with `Complex.I` (`complexPower_dq`) and the export-positive translation
+  `S̄^ext = −S̄^abs`, i.e. `P^ext = −P^abs`, `Q^ext = −Q^abs` (`exportPower_dq`,
+  T-vsg-control §1.1);
   `activePower_eq_re`, `reactivePower_eq_im`: `P = (3/2) Re S̄`, `Q = (3/2) Im S̄` (SI,
   amplitude-invariant Park; the per-unit forms drop `3/2`).
 * `currentRef_spec`, `currentRef_unique`: in the PLL-aligned frame (`v_q = 0`, `v_d ≠ 0`) the
@@ -22,7 +25,8 @@ absorbed by the converter.
   `pq_hasFDerivAt`: the same Jacobian as a Fréchet derivative.
 
 Source: work-sync `theory/T-gfl-control.md` §1.5; `theory/T-gfl-impedance.md` §1.5;
-`theory/T-dc-voltage-gfm.md` §1.1 (same expansion); `conventions.md` §D0–§D3.
+`theory/T-dc-voltage-gfm.md` §1.1 (same expansion); `theory/T-vsg-control.md` §1.1;
+`conventions.md` §D0–§D3.
 -/
 
 noncomputable section
@@ -36,6 +40,29 @@ open Matrix ComplexConjugate
   · simp [Complex.mul_re]
   · simp [Complex.mul_im]
     ring
+
+/-! ### `dq` components with `Complex.I`; export-positive translation -/
+
+section DqExport
+
+open Complex
+
+/-- `S̄ = (V_d + jV_q)(I_d + jI_q)* = (V_d I_d + V_q I_q) + j (V_q I_d − V_d I_q)`. -/
+@[powerlib_foundation] theorem complexPower_dq (Vd Vq Id Iq : ℝ) :
+    ((Vd : ℂ) + Vq * I) * (starRingEnd ℂ) ((Id : ℂ) + Iq * I) =
+      ((Vd * Id + Vq * Iq : ℝ) : ℂ) + ((Vq * Id - Vd * Iq : ℝ) : ℂ) * I := by
+  apply Complex.ext
+  · simp
+  · simp; ring
+
+/-- Export-positive translation: `S̄^ext = −S̄^abs`, i.e. `P^ext = −(V_d I_d + V_q I_q)` and
+`Q^ext = −(V_q I_d − V_d I_q)` with the IN-positive current. -/
+@[powerlib_foundation] theorem exportPower_dq (Vd Vq Id Iq : ℝ) :
+    -(((Vd : ℂ) + Vq * I) * (starRingEnd ℂ) ((Id : ℂ) + Iq * I)) =
+      ((-(Vd * Id + Vq * Iq) : ℝ) : ℂ) + ((-(Vq * Id - Vd * Iq) : ℝ) : ℂ) * I := by
+  rw [complexPower_dq]; push_cast; ring
+
+end DqExport
 
 /-- Active power `P = (3/2)(v_d i_d + v_q i_q)` (IN-positive, absorbed). -/
 def activePower (vd vq id iq : ℝ) : ℝ := 3 / 2 * (vd * id + vq * iq)

@@ -13,6 +13,7 @@ not state in this form. Nothing here describes a physical system.
   monotonicity of `1 − x + x²/2 − e^{−x}` on `[0, ∞)`), `exp_neg_le_quadratic` (`≤` for `u ≥ 0`).
 * Trigonometric: `one_sub_cos_le_sin_sq` (`1 − cos θ ≤ sin² θ` where `cos θ ≥ 0`),
   `cos_nonneg_of_abs_lt_one`, `eq_zero_of_cos_eq_one` (`cos θ = 1`, `|θ| < 1` force `θ = 0`),
+  `sin_ne_zero_of_cos` (`cos θ = 0` forces `sin θ ≠ 0`),
   `carrier_mean_sin_sq` (the mean of `A sin²(ω t)` over one period `2π/ω` is `A/2`).
 * Absolute values and signs: `mul_sign_eq_abs` (`x · sign x = |x|`), `abs_mul_pow_le`
   (`|w^i ξ^j| ≤ m^(i+j)` when `|w|, |ξ| ≤ m`), `sq_max_abs_le` (`max(|w|, |ξ|)² ≤ w² + ξ²`).
@@ -94,6 +95,14 @@ end Exponential
   have := Real.two_le_pi
   have := abs_lt.mp h
   exact (Real.cos_eq_one_iff_of_lt_of_lt (by linarith) (by linarith)).mp hc
+
+/-- `cos θ = 0` forces `sin θ ≠ 0`. -/
+@[powerlib_foundation] theorem sin_ne_zero_of_cos {δ₀ : ℝ} (hcos : Real.cos δ₀ = 0) :
+    Real.sin δ₀ ≠ 0 := by
+  intro h
+  have := Real.sin_sq_add_cos_sq δ₀
+  rw [h, hcos] at this
+  norm_num at this
 
 /-- Mean of `A sin²(ω t)` over one carrier period is `A/2`. -/
 @[powerlib_foundation] theorem carrier_mean_sin_sq (A ω : ℝ) (hω : 0 < ω) :

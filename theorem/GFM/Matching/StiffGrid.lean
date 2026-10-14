@@ -1,4 +1,4 @@
-import theorem.DCLink.Matching
+import theorem.GFM.Matching.Matching
 
 /-! # Matching control on a stiff grid with energy shaping: what the "global stability condition" proves
 
@@ -68,7 +68,7 @@ Results.
   `margin > 0`, `μ u* v₀ > 0`, `η ≠ 0`; eigenvector form of the energy argument), giving the
   connection results `mem_den_locallyExponentiallyStable` and
   `mem_den_locallyAsymptoticallyStable`.
-* Trajectory level, in `theorem.DCLink.MatchingLaSalle` (private implementation evidence: set
+* Trajectory level, in `theorem.GFM.Matching.LaSalle` (private implementation evidence: set
   attraction and regions of attraction are outside the sentence language; the generic tools are
   the foundation results of `theorem.Dynamics.LaSalle.Periodic`, LaSalle on the invariant cylinder
   `(cos θ_dq, sin θ_dq, u_dc, i_dq)` with the `C¹` LaSalle of `theorem.Dynamics.LaSalle.Basin`):
@@ -96,13 +96,13 @@ Corrections.
   stability condition of the operating point: it makes `H` nonincreasing (dissipation in
   `(ũ_dc, ĩ_dq)` only), which gives Lyapunov stability of `θ_dq = 0` (with `μ u* v₀ > 0`),
   local exponential stability (with `η ≠ 0`, `mem_den_locallyExponentiallyStable`) and LaSalle
-  convergence to `{ũ_dc = 0, ∇S = 0, ĩ_dq = 0}` (`theorem.DCLink.MatchingLaSalle`). That set contains the saddle
+  convergence to `{ũ_dc = 0, ∇S = 0, ĩ_dq = 0}` (`theorem.GFM.Matching.LaSalle`). That set contains the saddle
   equilibria `θ_dq = π` (`field_eq_zero_of_sin_eq_zero`), and no point is globally
   asymptotically stable on `ℝ⁴` (`exact_globallyAsymptoticallyStable`).
 * The note attributes the condition to "[[@arghir2020matching]] Theorem 3" inside a section
   headed "Arghir-Jouini-Dörfler 2018 Automatica"; in the author version it is an unnumbered
   appendix argument of the 2020 TPEL paper, and the Automatica closed-loop condition is a
-  different inequality (`theorem.DCLink.MatchingClosedLoop`, `margin_pos_iff` there).
+  different inequality (`theorem.GFM.Matching.ClosedLoop`, `margin_pos_iff` there).
 * Source typo (not in the notes): the caption of Fig. 7 writes the pendulum damping as
   `(C_dc + K_p)/η²`; from (21b) it is `(G_dc + K_p)/η²`.
 
@@ -111,7 +111,7 @@ Source: work-sync `theory/T-dc-voltage-gfm.md` §1.2, `theory/T-gfm-control.md` 
 -/
 
 noncomputable section
-namespace powerlib.DCLink.MatchingStiffGrid
+namespace powerlib.GFM.Matching.MatchingStiffGrid
 open powerlib.Dynamics (State)
 
 /-- Parameters of the stiff-grid matching closed loop: DC capacitance and conductance, DC P-gain,
@@ -898,7 +898,7 @@ private theorem k_pos (m : Model) (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : 0 < m.μ
   rw [mem_den_flow]
   intro h
   change Flow.GloballyAsymptoticallyStable _ _ at h
-  refine not_globallyAsymptoticallyStable_of_equilibrium_ne
+  refine Dynamics.not_globallyAsymptoticallyStable_of_equilibrium_ne
     (y := WithLp.toLp 2 ![0 + 2 * Real.pi, m.ustar, m.iHatD 0, m.iHatQ 0]) ?_ ?_ h
   · rw [field_add_two_pi]
     exact h.1
@@ -976,4 +976,4 @@ linearization is Hurwitz (`jac_isHurwitz`). -/
   rw [mem_den_flow]
   exact Flow.locallyExponentiallyStable_localAsymptoticStable (les m hC hL hR hs hη hδ)
 
-end powerlib.DCLink.MatchingStiffGrid
+end powerlib.GFM.Matching.MatchingStiffGrid

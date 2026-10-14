@@ -1,4 +1,4 @@
-import theorem.DCLink.MatchingStiffGrid
+import theorem.GFM.Matching.StiffGrid
 import theorem.Dynamics.LaSalle.Periodic
 import theorem.Criteria.Routh3
 import theorem.Dynamics.Lyapunov
@@ -7,7 +7,7 @@ import theorem.Dynamics.Instability
 /-! # Stiff-grid matching control: LaSalle convergence and a basin estimate
 
 This module completes the trajectory-level part of the energy-shaping argument for the
-stiff-grid matching closed loop of `theorem.DCLink.MatchingStiffGrid`: the source's LaSalle
+stiff-grid matching closed loop of `theorem.GFM.Matching.StiffGrid`: the source's LaSalle
 conclusion (convergence of every trajectory to the critical set of the synchronization potential)
 and an estimate of the region of attraction of the operating point.
 
@@ -127,11 +127,11 @@ constant, every `(θ, u*, î(θ))` is an equilibrium, `field_eq_zero_of_kappa_eq
 
 Source: work-sync `theory/T-dc-voltage-gfm.md` §1.2, `theory/T-gfm-control.md` §1.6,
 `theory/papers/@arghir2020matching.md`; equations from the TPEL author version as listed in
-`theorem.DCLink.MatchingStiffGrid`.
+`theorem.GFM.Matching.StiffGrid`.
 -/
 
 noncomputable section
-namespace powerlib.DCLink.MatchingStiffGrid
+namespace powerlib.GFM.Matching.MatchingStiffGrid
 open powerlib.Dynamics (State)
 open Set Filter Topology
 
@@ -2042,11 +2042,6 @@ def Model.redJac (m : Model) : Matrix (Fin 3) (Fin 3) ℝ :=
      -(m.μ * m.ω0 * m.Rs / m.N), -m.Rs / m.Ls, m.ω0;
      -(m.μ * m.Rs ^ 2 / (m.N * m.Ls)), -m.ω0, -m.Rs / m.Ls]
 
-private theorem toEuclideanCLM_apply3 (A : Matrix (Fin 3) (Fin 3) ℝ) (v : State 3) (i : Fin 3) :
-    (Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) A v) i =
-      A i 0 * v 0 + A i 1 * v 1 + A i 2 * v 2 := by
-  simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
-
 /-- Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem redField_contDiff (m : Model) : ContDiff ℝ 1 m.redField := by
   have h0 := proj_contDiff (n := 3) 0
@@ -2081,7 +2076,7 @@ private theorem toEuclideanCLM_apply3 (A : Matrix (Fin 3) (Fin 3) ℝ) (v : Stat
     · apply ContinuousLinearMap.ext
       intro v
       simp only [ContinuousLinearMap.comp_apply, PiLp.proj_apply]
-      rw [toEuclideanCLM_apply3]
+      rw [Dynamics.toEuclideanCLM_apply3]
       simp [Model.redJac]
       ring
   · have h := (((h1.const_mul m.Rs).sub (h2.const_mul (m.ω0 * m.Ls))).neg.mul_const m.Ls⁻¹).sub
@@ -2092,7 +2087,7 @@ private theorem toEuclideanCLM_apply3 (A : Matrix (Fin 3) (Fin 3) ℝ) (v : Stat
     · apply ContinuousLinearMap.ext
       intro v
       simp only [ContinuousLinearMap.comp_apply, PiLp.proj_apply]
-      rw [toEuclideanCLM_apply3]
+      rw [Dynamics.toEuclideanCLM_apply3]
       simp [Model.redJac]
       field_simp
       ring
@@ -2104,7 +2099,7 @@ private theorem toEuclideanCLM_apply3 (A : Matrix (Fin 3) (Fin 3) ℝ) (v : Stat
     · apply ContinuousLinearMap.ext
       intro v
       simp only [ContinuousLinearMap.comp_apply, PiLp.proj_apply]
-      rw [toEuclideanCLM_apply3]
+      rw [Dynamics.toEuclideanCLM_apply3]
       simp [Model.redJac]
       field_simp
       ring
@@ -2546,4 +2541,4 @@ unstable (`mem_den_unstable_of_mu_eq_zero`). -/
         unfold powerlib.TMIO.Statement at this
         exact this
 
-end powerlib.DCLink.MatchingStiffGrid
+end powerlib.GFM.Matching.MatchingStiffGrid

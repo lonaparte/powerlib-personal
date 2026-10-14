@@ -73,7 +73,7 @@ this library's `lasalle_invariance_principle_of_contDiff`, `exists_globalization
 
 Source: Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.4 (LaSalle) applied on the cylinder
 `S¹ × ℝⁿ⁻¹`, as in the energy-shaping argument of Arghir–Dörfler (IEEE TPEL 35(4), 2020,
-appendix); interface for `theorem.DCLink.MatchingLaSalle` and `theorem.DCLink.MatchingClosedLoop`.
+appendix); interface for `theorem.GFM.Matching.LaSalle` and `theorem.GFM.Matching.ClosedLoop`.
 -/
 
 noncomputable section

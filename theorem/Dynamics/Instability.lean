@@ -32,6 +32,9 @@ Lyapunov stability; these are the tools for the degenerate members of model fami
   `not_localAsymptoticStable_of_eventually_lie_nonpos`, `unstable_of_eventually_lie_neg` (`Ė < 0`
   on a punctured neighbourhood of an equilibrium and `E < E(x*)` arbitrarily close to it: the
   saddle-node criterion).
+* `not_globallyAsymptoticallyStable_of_equilibrium_ne`: a field with an equilibrium `y ≠ x` has
+  no globally asymptotically stable point `x` (the constant solution at `y` does not converge to
+  `x`); with `2π`-periodic fields this rules out global attraction of any selected point.
 
 Source: Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.3 (Chetaev) and Theorem 4.1, stated for
 `C¹` fields on a domain; Hahn, *Stability of Motion*, Chetaev's method (exponential form, from
@@ -397,5 +400,26 @@ is unstable (`Dynamics.unstable_of_lie_nonpos_of_lie_pos` with `W = −E`). -/
     exact hball x (by linarith) hne
 
 end Eventually
+
+/-! ## Obstructions to global attraction -/
+
+section Global
+
+open Filter Topology
+
+/-- A field with an equilibrium `y ≠ x` has no globally asymptotically stable point `x`: the
+constant solution at `y` does not converge to `x`. Generic. -/
+@[powerlib_foundation] theorem not_globallyAsymptoticallyStable_of_equilibrium_ne {n : ℕ}
+    {f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)} {x y : EuclideanSpace ℝ (Fin n)}
+    (hy : f y = 0) (hne : y ≠ x) : ¬ Flow.GloballyAsymptoticallyStable f x := by
+  rintro ⟨-, -, -, hconv⟩
+  have hc : IsIntegralCurveOn (fun _ : ℝ => y) (fun _ z => f z) (Set.Ici 0) := by
+    intro t _
+    show HasDerivWithinAt (fun _ => y) (f y) (Set.Ici 0) t
+    rw [hy]
+    exact hasDerivWithinAt_const t (Set.Ici 0) y
+  exact hne (tendsto_nhds_unique tendsto_const_nhds (hconv 0 _ hc))
+
+end Global
 
 end powerlib.Dynamics

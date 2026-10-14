@@ -55,7 +55,7 @@ noncomputable section
 namespace powerlib.GFM
 namespace VSMLPF
 open Set Matrix
-open powerlib.Dynamics (State)
+open powerlib.Dynamics (State mk3 mk3_zero mk3_one mk3_two state3_ext toEuclideanCLM_apply3)
 
 private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.g.field m.point :=

@@ -26,7 +26,7 @@ Source: work-sync `theory/T-dc-voltage-gfm.md` §1.7.
 -/
 
 noncomputable section
-namespace powerlib.DCLink
+namespace powerlib.Limiting
 
 /-- `I_omag(δ) = √(E² + V² − 2 E V cos δ)/X`. -/
 def iMag (E V X δ : ℝ) : ℝ := Real.sqrt (E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ) / X
@@ -94,4 +94,4 @@ def iMag (E V X δ : ℝ) : ℝ := Real.sqrt (E ^ 2 + V ^ 2 - 2 * E * V * Real.c
   ⟨⟨E * Real.cos δ, iMag_at_worstCase hE hδ0 hδπ⟩,
     by rintro _ ⟨V, rfl⟩; exact iMag_worstCase hE hX hδ0 hδπ V⟩
 
-end powerlib.DCLink
+end powerlib.Limiting

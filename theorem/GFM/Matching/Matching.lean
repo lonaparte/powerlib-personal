@@ -1,4 +1,5 @@
 import theorem.Dynamics.Transport
+import theorem.Dynamics.Instability
 import theorem.Spectral.Family
 import theorem.LTI.Plant
 import theorem.Dynamics.Shift
@@ -33,6 +34,8 @@ Domain: matching control (§1.2, Arghir–Jouini–Dörfler).
   `P_e(θ, ω) = i_x(θ, ω/η)/η`, the swing field is exactly the matching field in the
   coordinates `(θ, ω) = (θ, η v)`.
 * `matching_equilibrium_iff` (static): equilibria correspond.
+* `matching_swing`: along a solution, the converter frequency `ω = η u_dc` obeys
+  `(C/η²) ω̇ = i_dc/η − (G/η²) ω − i_x/η` (T-gfm-control §1.6 table).
 * Families: `matchingFamily : Family MatchingModel Spectral.Requirement 2 0` reads a matching
   model together with a selected point `(θ*, v*)` as its field translated to that point;
   `swingFamily : Family SwingModel Spectral.Requirement 2 0` does the same for a swing model and
@@ -43,7 +46,7 @@ Domain: matching control (§1.2, Arghir–Jouini–Dörfler).
 * `matching_den_eq` (connection comparison): for **every** behavioural sentence the matching
   family's denotation is the swing family's pulled back along `MatchingModel.toSwing`
   (`M = C/η²`, `D = G/η²`, `τ = i_dc/η`, `P_e(θ, ω) = i_x(θ, ω/η)/η`, point `(θ*, η v*)`):
-  the coordinate change `(θ, v) ↦ (θ, η v)` transports every sentence
+  the coordinate change `(θ, v) ↦ (θ, η v)` (`Dynamics.scaleCoord`) transports every sentence
   (`Dynamics.holds_transport_iff`). This replaces the former sentence-by-sentence
   `matching_locallyExponentiallyStable_iff`, `matching_unstable_iff`, kept as private
   implementation evidence together with the solution correspondence `matching_trajectory_iff`
@@ -53,10 +56,10 @@ Global stability (Arghir–Dörfler 2020, quoted in T-dc-voltage-gfm §1.2 and T
 `(G_dc + K_p)/η² > L_s² μ² v*²/(4 R_s ‖Z_s‖²)` ⇒ global stability via a shifted Hamiltonian and
 LaSalle). The work-sync notes quote only the condition; the closed loops are not written there
 and are not obtainable from `matching_den_eq` (the two-state model hides the AC side in `i_x`).
-They are formalized from the sources in separate modules: `theorem.DCLink.MatchingClosedLoop`
+They are formalized from the sources in separate modules: `theorem.GFM.Matching.ClosedLoop`
 (Arghir–Jouini–Dörfler, Automatica 2018: the converter with filter, DC P-control and load, global
 exponential stability of the steady state in the `θ`-free `dq` coordinates, and the absence of
-global attraction in the stationary frame) and `theorem.DCLink.MatchingStiffGrid` (the TPEL
+global attraction in the stationary frame) and `theorem.GFM.Matching.StiffGrid` (the TPEL
 appendix the quoted condition comes from: Lyapunov stability of the operating point, no global
 asymptotic stability, LaSalle set convergence not formalized). Formalized boundary for the
 two-state model here
@@ -65,7 +68,7 @@ through `e^{jθ}`), the shifted points `(θ* + 2π, v*)` are equilibria too, so 
 never globally asymptotically or exponentially stable on `ℝ²`
 (`matching_not_mem_den_globallyAsymptoticallyStable`,
 `matching_not_mem_den_globallyExponentiallyStable`; generic lemma
-`not_globallyAsymptoticallyStable_of_equilibrium_ne`). The source's "global" result is
+`Dynamics.not_globallyAsymptoticallyStable_of_equilibrium_ne`). The source's "global" result is
 stability of the set of equilibria modulo `2π` (a set-stability notion outside the sentence
 language).
 
@@ -78,11 +81,11 @@ step `ΔP` of exported power from equilibrium gives the initial ROCOF `−η ΔP
 The ViSynC equivalence of §1.3 is not derived in the note and is not formalized.
 
 Source: work-sync `theory/T-dc-voltage-gfm.md` §1.0–§1.2, §1.4, §2.2;
-`theory/T-vsc-dc-voltage-control.md` §1.7.
+`theory/T-vsc-dc-voltage-control.md` §1.7; `theory/T-gfm-control.md` §1.6 (`matching_swing`).
 -/
 
 noncomputable section
-namespace powerlib.DCLink
+namespace powerlib.GFM.Matching
 open Matrix Filter
 open scoped Topology
 open powerlib.Dynamics LinearSystems
@@ -108,37 +111,6 @@ def matchingField (C G η idc : ℝ) (ix : ℝ → ℝ → ℝ) (x : State 2) : 
 /-- Swing field, state `(θ, ω)`: `M ω' = τ − P_e(θ, ω) − D ω`. -/
 def swingField (M D τ : ℝ) (Pe : ℝ → ℝ → ℝ) (y : State 2) : State 2 :=
   WithLp.toLp 2 ![y 1, (τ - Pe (y 0) (y 1) - D * y 1) / M]
-
-/-- Scaling matrix `(θ, v) ↦ (θ, η v)`. -/
-def scaleMatrix (η : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, η]
-
-@[powerlib_foundation] theorem scaleMatrix_isUnit {η : ℝ} (hη : η ≠ 0) :
-    IsUnit (scaleMatrix η) := by
-  rw [Matrix.isUnit_iff_isUnit_det]
-  simpa [scaleMatrix, Matrix.det_fin_two] using hη
-
-private lemma scaleMatrix_inv {η : ℝ} (hη : η ≠ 0) :
-    (scaleMatrix η)⁻¹ = !![1, 0; 0, η⁻¹] := by
-  apply Matrix.inv_eq_left_inv
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [scaleMatrix, hη]
-
-/-- The coordinate change `(θ, v) ↦ (θ, η v)`. -/
-def scaleCoord {η : ℝ} (hη : η ≠ 0) : State 2 ≃L[ℝ] State 2 :=
-  matrixCoord (scaleMatrix η) (scaleMatrix_isUnit hη)
-
-@[simp, powerlib_foundation] theorem scaleCoord_apply {η : ℝ} (hη : η ≠ 0) (x : State 2) :
-    scaleCoord hη x = WithLp.toLp 2 ![x 0, η * x 1] := by
-  ext i
-  fin_cases i <;>
-    simp [scaleCoord, scaleMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
-
-@[simp, powerlib_foundation] theorem scaleCoord_symm_apply {η : ℝ} (hη : η ≠ 0) (y : State 2) :
-    (scaleCoord hη).symm y = WithLp.toLp 2 ![y 0, y 1 / η] := by
-  ext i
-  fin_cases i <;>
-    simp [scaleCoord, scaleMatrix_inv hη, Matrix.mulVec, dotProduct, Fin.sum_univ_two,
-      div_eq_inv_mul]
 
 /-- Swing parameters of the matching law: `M = C/η²`, `D = G/η²`, `τ = i_dc/η`,
 `P_e(θ, ω) = i_x(θ, ω/η)/η`. -/
@@ -208,6 +180,15 @@ private theorem matching_unstable_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : �
       Unstable (matchingField C G η idc ix) x := by
   rw [← matching_eq_swing hC hη, ← affineCoord_scale hη]
   exact unstable_transport_iff _ _
+
+/-- Matching control: `θ̇ = η u_dc`, `C u̇_dc = i_dc − G u_dc − i_x` makes the converter
+frequency `ω = η u_dc` obey `(C/η²) ω̇ = i_dc/η − (G/η²) ω − i_x/η`. -/
+@[powerlib_foundation] theorem matching_swing {η C G idc : ℝ} {u : ℝ → ℝ} {ix : ℝ → ℝ} {t : ℝ}
+    (hη : η ≠ 0) (hC : C ≠ 0) (hu : HasDerivAt u ((idc - G * u t - ix t) / C) t) :
+    HasDerivAt (fun s => η * u s)
+      ((idc / η - G / η ^ 2 * (η * u t) - ix t / η) / (C / η ^ 2)) t := by
+  convert hu.const_mul η using 1
+  field_simp
 
 /-! ## ROCOF of the matching law (Correction) -/
 
@@ -457,19 +438,6 @@ in `θ`. Static evidence on the model, not a connection conclusion. -/
       matchingField C G η idc ix (WithLp.toLp 2 ![θ, v]) := by
   simp [matchingField, hper]
 
-/-- A field with an equilibrium `y ≠ x` has no globally asymptotically stable point `x`: the
-constant solution at `y` does not converge to `x`. Generic. -/
-@[powerlib_foundation] theorem not_globallyAsymptoticallyStable_of_equilibrium_ne {n : ℕ}
-    {f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)} {x y : EuclideanSpace ℝ (Fin n)}
-    (hy : f y = 0) (hne : y ≠ x) : ¬ Flow.GloballyAsymptoticallyStable f x := by
-  rintro ⟨-, -, -, hconv⟩
-  have hc : IsIntegralCurveOn (fun _ : ℝ => y) (fun _ z => f z) (Set.Ici 0) := by
-    intro t _
-    show HasDerivWithinAt (fun _ => y) (f y) (Set.Ici 0) t
-    rw [hy]
-    exact hasDerivWithinAt_const t (Set.Ici 0) y
-  exact hne (tendsto_nhds_unique tendsto_const_nhds (hconv 0 _ hc))
-
 /-- **Boundary of the global matching claim** (T-dc-voltage-gfm §1.2, Arghir–Dörfler, Theorem 3).
 A load law `2π`-periodic in the modulation angle — every AC network seen through `e^{jθ}` — gives
 the matching model the equilibria `(θ* + 2πk, v*)`, so no selected point is globally
@@ -503,4 +471,4 @@ of the *set* of equilibria (the angle modulo `2π`), which is not a sentence of 
   rw [matching_mem_den_flow] at this
   exact this hgas
 
-end powerlib.DCLink
+end powerlib.GFM.Matching

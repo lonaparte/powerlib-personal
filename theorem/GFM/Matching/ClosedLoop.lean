@@ -1,4 +1,4 @@
-import theorem.DCLink.Matching
+import theorem.GFM.Matching.Matching
 import theorem.Flow.Certificate
 import theorem.Dynamics.LaSalle.Periodic
 
@@ -122,18 +122,18 @@ Corrections (to the work-sync notes).
   Collection), for a different closed loop (stiff grid behind `R_s + jω₀L_s`, steady-state
   feedforward and synchronizing torque `−η∇S`); its conclusion there is LaSalle convergence to the
   set `{ũ_dc = 0, ∇S = 0, ĩ_dq = 0}`, which contains the saddle points `θ_dq = π`, not global
-  stability of the operating point (see `theorem.DCLink.MatchingStiffGrid`).
+  stability of the operating point (see `theorem.GFM.Matching.StiffGrid`).
 * "Global" stability of matching control holds only in the `θ`-free reduced coordinates
   (`full_not_mem_den_globallyAsymptoticallyStable`, `full_mem_den_unstable`; for the
   two-state abstraction also `matching_not_mem_den_globallyAsymptoticallyStable` in
-  `theorem.DCLink.Matching`).
+  `theorem.GFM.Matching.Matching`).
 
 Source: work-sync `theory/T-dc-voltage-gfm.md` §1.0–§1.2; `theory/T-gfm-control.md` §1.6;
 `theory/papers/@arghir2020matching.md`; equations from arXiv:1706.09495v3 as listed above.
 -/
 
 noncomputable section
-namespace powerlib.DCLink.MatchingClosedLoop
+namespace powerlib.GFM.Matching.MatchingClosedLoop
 open powerlib.Dynamics (State)
 
 /-- Parameters of the reduced matching closed loop and a selected point
@@ -900,7 +900,7 @@ one). -/
   rw [full_mem_den_flow]
   intro h
   change Flow.GloballyAsymptoticallyStable _ _ at h
-  refine not_globallyAsymptoticallyStable_of_equilibrium_ne
+  refine Dynamics.not_globallyAsymptoticallyStable_of_equilibrium_ne
     (y := WithLp.toLp 2 ![M.θ + 2 * Real.pi, M.v, M.iα, M.iβ, M.uα, M.uβ, M.sα, M.sβ]) ?_ ?_ h
   · rw [abField_add_two_pi]
     exact h.1
@@ -1151,4 +1151,4 @@ private theorem orbit_invariant (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L)
     le_antisymm hle Metric.infDist_nonneg
   exact ((isClosed_orbit m).mem_iff_infDist_zero (Set.range_nonempty m.orbitPoint)).mpr h0'
 
-end powerlib.DCLink.MatchingClosedLoop
+end powerlib.GFM.Matching.MatchingClosedLoop

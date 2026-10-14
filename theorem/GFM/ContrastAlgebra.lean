@@ -14,10 +14,10 @@ note.  None of these is an engineering conclusion by itself.
   `T_exact = ω_c K / p(s) = β₃ ν² / ((s + β₃)(s² + 2α₀ s + ν²))` (`Texact_family`).
 * `hasDerivAt_log_norm_Texact`: `∂_{β₃} ln |T_exact(2jω)| = 4ω² / [β₃(β₃² + 4ω²)]` (victim pair
   and `ω` held fixed).
-* `exists_root_branch`, `root_branch_deriv`: a simple root `λ₀` of `P(s) + c K₀ = 0`
-  (`P'(λ₀) ≠ 0`) continues to a differentiable root branch `λ(K)` with
-  `dλ/dK = −c / P'(λ)` (inverse function theorem); for the VSM cubic `c = ω_c`, and on the
-  `β₃` family `P'(−α₀ + jω_cr) = 2jMω_cr(β₃ − α₀ + jω_cr)` (`gfm_victim_derivative`).
+* `Modal.exists_root_branch`, `Modal.root_branch_deriv` (`theorem/Modal/Sensitivity.lean`): a
+  simple root `λ₀` of `P(s) + c K₀ = 0` (`P'(λ₀) ≠ 0`) continues to a differentiable root branch
+  `λ(K)` with `dλ/dK = −c / P'(λ)` (inverse function theorem); for the VSM cubic `c = ω_c`, and
+  on the `β₃` family `P'(−α₀ + jω_cr) = 2jMω_cr(β₃ − α₀ + jω_cr)` (`gfm_victim_derivative`).
 * `gfm_field_indep_Qref`: with zero reactive-power droop gain (`K_q = m_q = 0`) the internal
   emf of the droop law is `E₀` for either Q-sensing convention, so the VSM + low-pass field does
   not depend on `Q_ref` at all (its Jacobian and spectrum are exactly `Q_ref`-independent).
@@ -29,7 +29,7 @@ contrast-conclusions.md` 推论三 (`K_q = 0` 严格零), model `GFM` in
 -/
 
 noncomputable section
-namespace powerlib.GFLParametric.ContrastAlgebra
+namespace powerlib.GFM.ContrastAlgebra
 open Filter Topology
 
 /-! ## The `β₃` parameter family -/
@@ -140,51 +140,6 @@ def Texact (α0 ν β : ℝ) (s : ℂ) : ℂ :=
 
 /-! ## Simple-root continuation: `dλ/dK = −c / P'(λ)` -/
 
-/-- Any differentiable root branch of `P(λ) + cK = 0` through a simple root has
-`dλ/dK = −c / P'(λ)`. -/
-@[powerlib_foundation] theorem root_branch_deriv {P : ℂ → ℂ} {P' c lam' : ℂ} {lam : ℝ → ℂ}
-    {K0 : ℝ} (hP : HasDerivAt P P' (lam K0)) (hlam : HasDerivAt lam lam' K0)
-    (hroot : ∀ᶠ K in 𝓝 K0, P (lam K) + c * K = 0) (hP' : P' ≠ 0) :
-    lam' = -c / P' := by
-  have h1 : HasDerivAt (fun K : ℝ => P (lam K) + c * K) (P' * lam' + c) K0 := by
-    have := (hP.comp K0 hlam).add ((hasDerivAt_id K0).ofReal_comp.const_mul c)
-    convert this using 1
-    · funext K; simp
-    · simp
-  have h2 : HasDerivAt (fun K : ℝ => P (lam K) + c * K) 0 K0 :=
-    (hasDerivAt_const K0 (0 : ℂ)).congr_of_eventuallyEq hroot
-  have := h1.unique h2
-  field_simp
-  linear_combination this
-
-/-- A simple root continues to a differentiable root branch (inverse function theorem), with
-`dλ/dK = −c / P'(λ₀)`. -/
-@[powerlib_foundation] theorem exists_root_branch {P : ℂ → ℂ} {P' lam0 c : ℂ} {K0 : ℝ}
-    (hP : HasStrictDerivAt P P' lam0) (hP' : P' ≠ 0) (hroot : P lam0 + c * K0 = 0) :
-    ∃ lam : ℝ → ℂ, lam K0 = lam0 ∧ (∀ᶠ K in 𝓝 K0, P (lam K) + c * K = 0) ∧
-      HasDerivAt lam (-c / P') K0 := by
-  set g : ℝ → ℂ := fun K => -c * K
-  have hg0 : g K0 = P lam0 := by simp only [g]; linear_combination -hroot
-  have hgd : HasDerivAt g (-c) K0 := by
-    simpa [g] using (hasDerivAt_id K0).ofReal_comp.const_mul (-c)
-  set L := hP.localInverse P P' lam0 hP'
-  refine ⟨fun K => L (g K), ?_, ?_, ?_⟩
-  · show L (g K0) = lam0
-    rw [hg0]
-    exact (hP.eventually_left_inverse hP').self_of_nhds
-  · have hcont : Tendsto g (𝓝 K0) (𝓝 (P lam0)) := by
-      rw [← hg0]; exact hgd.continuousAt.tendsto
-    filter_upwards [hcont.eventually (hP.eventually_right_inverse hP')] with K hK
-    rw [hK]
-    simp only [g]
-    ring
-  · have hL := (hP.to_localInverse hP').hasDerivAt
-    rw [← hg0] at hL
-    have := hL.comp K0 hgd
-    convert this using 1
-    · rfl
-    · rw [div_eq_inv_mul]
-
 /-- VSM cubic on the `β₃` family: `P(s) = (s + ω_c)(M s² + D s)` has
 `P'(−α₀ + jω_cr) = 2jMω_cr(β₃ − α₀ + jω_cr)`. -/
 @[powerlib_foundation] theorem gfm_victim_derivative {α0 ωcr β3 M D K ωc : ℝ}
@@ -247,4 +202,4 @@ def gfmField (E : ℝ → ℝ) (M D ωc Pref V X : ℝ) (y : Fin 3 → ℝ) : Fi
   funext y
   simp [gfmField, emfPCC_zero]
 
-end powerlib.GFLParametric.ContrastAlgebra
+end powerlib.GFM.ContrastAlgebra

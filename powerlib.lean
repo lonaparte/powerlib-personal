@@ -55,8 +55,6 @@ import theorem.DAE.Linear
 import theorem.DAE.Nonlinear
 import theorem.DAE.Pryce
 import theorem.DAE.SDAE
-import theorem.DCLink.IVS
-import theorem.DCLink.Matching
 import theorem.Delay.Pade
 import theorem.Delay.Phase
 import theorem.Delay.SampleHold
@@ -137,9 +135,13 @@ import theorem.GFL.PowerLoop.QuasiStaticFold
 import theorem.GFL.PowerLoop.QuasiStaticFoldHopf
 import theorem.GFL.RatePLL
 import theorem.GFL.RatePLLHopf
-import theorem.GFLParametric.ContrastAlgebra
+import theorem.GFM.ContrastAlgebra
 import theorem.GFM.DroopAlgebra
 import theorem.GFM.DroopVSM
+import theorem.GFM.Matching.ClosedLoop
+import theorem.GFM.Matching.LaSalle
+import theorem.GFM.Matching.Matching
+import theorem.GFM.Matching.StiffGrid
 import theorem.GFM.MultiDroop
 import theorem.GFM.PSC
 import theorem.GFM.VOC
@@ -152,6 +154,7 @@ import theorem.Information.MaxEntDual
 import theorem.Information.MaxEntExamples
 import theorem.Limiting.DAxisPriority
 import theorem.Limiting.Formulas
+import theorem.Limiting.IVS
 import theorem.Limiting.Projection
 import theorem.Limiting.Saturation
 import theorem.Line.ABCD
@@ -184,6 +187,7 @@ import theorem.Modal.Sensitivity
 import theorem.Modal.Spectral
 import theorem.Network.FrequencyDivider
 import theorem.Network.LinearSync
+import theorem.Network.PowerFlow
 import theorem.Network.Swing
 import theorem.Network.Synchronization
 import theorem.Network.WeightedLaplacian
@@ -321,11 +325,8 @@ import theorem.Numerics.BDFInstability
 import theorem.SingularPerturbation.BoundaryLayer
 import theorem.SingularPerturbation.FiniteHorizon
 import theorem.Line.CableSchelkunoff
-import theorem.DCLink.MatchingClosedLoop
-import theorem.DCLink.MatchingStiffGrid
 import theorem.Asymptotics.Guard.MFPTExpansion
 import theorem.Asymptotics.LaplaceTwoTerm
-import theorem.DCLink.MatchingLaSalle
 import theorem.Dynamics.DegenerateMinimumCycle
 import theorem.Dynamics.Degenerate.PlaneCollapse
 import theorem.Dynamics.Degenerate.WeakFocus
