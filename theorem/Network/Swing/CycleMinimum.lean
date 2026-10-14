@@ -26,8 +26,8 @@ Results.
   `−closure`) is positive (`curvePot_pos`); supporting lines bound the potential below by
   `curvePot` at `μ = G₀'(x₀)`.
 
-Connection architecture. Foundation only: `theorem/Network/SwingDegenerateRing.lean` applies it to a
-swing network whose coupling graph is a cycle.
+Connection architecture. Foundation only: `theorem/Network/Swing/DegenerateRing.lean` applies it to
+a swing network whose coupling graph is a cycle.
 
 Source: elementary calculus (mean value theorem, inverse sine); the loop-flow parametrization of
 cycle equilibria follows the lossless power-flow literature (e.g. the winding-cell analysis of
@@ -35,7 +35,7 @@ meshed networks).
 -/
 
 noncomputable section
-namespace powerlib.Dynamics.CycleMinimum
+namespace powerlib.Network.Swing.CycleMinimum
 open Set Real
 
 /-- Potential increment of one line, `G(x) = W (1 − cos x) + f (sin x − x)` (weight `W = B cos φ`,
@@ -517,4 +517,4 @@ condition is put on the Hessian at `0`, which may be singular. -/
 
 end Cycle
 
-end powerlib.Dynamics.CycleMinimum
+end powerlib.Network.Swing.CycleMinimum

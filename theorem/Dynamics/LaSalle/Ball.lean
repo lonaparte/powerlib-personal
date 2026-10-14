@@ -21,8 +21,8 @@ then follows from LaSalle's invariance principle once no solution segment can st
   ball built from the minimum of `W` on a compact annulus. No global compact sublevel set and no
   global Lipschitz bound are required.
 
-Connection architecture. No model family is defined or fixed here; `theorem/Network/SwingDegenerate`
-applies the criterion inside its connection proofs.
+Connection architecture. No model family is defined or fixed here;
+`theorem/Network/Swing/Degenerate` applies the criterion inside its connection proofs.
 
 Source: LaSalle's invariance principle (Khalil, *Nonlinear Systems*, 3rd ed., Theorem 4.4 and
 Corollary 4.1) and Lyapunov's stability theorem (Theorem 4.1).

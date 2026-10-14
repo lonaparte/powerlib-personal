@@ -1,17 +1,17 @@
-import theorem.Network.SwingDegenerate
+import theorem.Network.Swing.Degenerate
 
 /-! # Networked swing equations: four machines
 
 Source: work-sync `theory/T-synchronization-manifold.md` §1.7 and §2.2 (swing network
 `Mᵢ θ̈ᵢ = P_{m,i} − Dᵢ θ̇ᵢ − ∑ⱼ Bᵢⱼ sin(θᵢ − θⱼ)` and its energy function); the model is
-`theorem/Network/Swing.lean` (`Swing.family`); the potential, the Hessian and cubic forms and the
-characterization of local asymptotic stability are in `theorem/Network/SwingDegenerate.lean`.
+`theorem/Network/Swing/Basic.lean` (`Swing.family`); the potential, the Hessian and cubic forms and
+the characterization of local asymptotic stability are in `theorem/Network/Swing/Degenerate.lean`.
 
-Model boundary. Exactly the model of `theorem/Network/Swing.lean`: `n + 1` machines, reduced state
-`(δ, ω)`, positive inertia and damping, constant power, symmetric nonnegative lossless couplings,
-constant voltages; no governor, AVR, PLL, converter control, delay or PWM; continuous time.
-Statements concern the selected angle profile `θ*` of a model. The four-machine results are for
-`n = 3`; the cut lemmas hold for every `n`.
+Model boundary. Exactly the model of `theorem/Network/Swing/Basic.lean`: `n + 1` machines, reduced
+state `(δ, ω)`, positive inertia and damping, constant power, symmetric nonnegative lossless
+couplings, constant voltages; no governor, AVR, PLL, converter control, delay or PWM; continuous
+time. Statements concern the selected angle profile `θ*` of a model. The four-machine results are
+for `n = 3`; the cut lemmas hold for every `n`.
 
 Results.
 * Necessary conditions for local asymptotic stability, every number of machines:
@@ -41,7 +41,7 @@ Results.
   when the profile is a power-balance point with a Hurwitz reduced Jacobian: on this class the
   local asymptotic translation `{powerFlow, jacobianStable}` is exact.
 * The remaining four-machine networks (at least five lines: the diamond and the complete graph)
-  are decided in `theorem/Network/SwingFourDense.lean` (`diamond_cubic_ne_zero` by a branch
+  are decided in `theorem/Network/Swing/FourDense.lean` (`diamond_cubic_ne_zero` by a branch
   identity, `sorted_cubic_ne_zero` by sorted lifted angles and cycle bounds from
   `tan_sum_mul_sq_lt`); the family conclusion there, `exact_locallyAsymptoticallyStable_four`,
   states that the local asymptotic translation of `family (n := 3)` is exact, and

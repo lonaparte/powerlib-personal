@@ -1,11 +1,19 @@
 import theorem.Attributes
 import dependencies.Mathlib
+import theorem.Network.WeightedLaplacian
 
-/-! # Power carried by a line: two-bus line powers, their derivatives, the decoupling rotation
+/-! # Power flow: the lossless injection map, two-bus line powers, the decoupling rotation
 
-Foundation: identities and derivatives of the complex power `S̄ = V̄ Ī*` carried by one line
-between two voltage phasors. No model family is defined and no behavioural sentence is stated.
+Foundation: the lossless active-power injection map of a network, and identities and derivatives
+of the complex power `S̄ = V̄ Ī*` carried by one line between two voltage phasors. No model family
+is defined and no behavioural sentence is stated.
 
+* `powerInjection`: the lossless injections `Pᵢ(θ) = ∑ⱼ bᵢⱼ sin(θᵢ − θⱼ)` (constant voltage
+  magnitudes absorbed into `bᵢⱼ = VᵢVⱼ/Xᵢⱼ`); its Jacobian is the weighted Laplacian
+  (`theorem/Network/WeightedLaplacian.lean`) of the linearization weights
+  `flowWeights b θ = bᵢⱼ cos(θᵢ − θⱼ)` (`hasFDerivAt_powerInjection`). Used by the networked
+  swing equations (`theorem/Network/Swing/`) and the frequency divider
+  (`theorem/Network/FrequencyDivider.lean`).
 * `linePower`: the power exported from the source `E ∠ δ` through `Z = R + jX` into `V ∠ 0`;
   its active and reactive parts `lineP`, `lineQ` and their partial derivatives at `δ = 0`,
   `E = V` (`lineP_deriv_delta`, `lineP_deriv_E`, `lineQ_deriv_delta`, `lineQ_deriv_E`).
@@ -22,11 +30,59 @@ The rotated droop of `theorem/GFM/DroopAlgebra.lean` and the reactive-power corr
 `theorem/GFM/PSC.lean` refer to these identities.
 
 Source: work-sync theory/T-droop-control.md §1.2, §1.5; theory/T-power-synchronization-control.md
-§1.1.
+§1.1; the injection map as in theory/T-synchronization-manifold.md §1.7 and
+theory/T-local-frequency.md §1.2–§1.5.
 -/
 
 noncomputable section
 namespace powerlib.Network
+
+/-! ## Linearized power flow -/
+
+section Injection
+
+open Matrix
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- Lossless active-power injections `Pᵢ(θ) = ∑ⱼ bᵢⱼ sin(θᵢ - θⱼ)` (voltage magnitudes,
+held constant, are absorbed into `bᵢⱼ = VᵢVⱼ/Xᵢⱼ`). -/
+def powerInjection (b : Matrix ι ι ℝ) (θ : ι → ℝ) (i : ι) : ℝ :=
+  ∑ j, b i j * Real.sin (θ i - θ j)
+
+/-- Linearization weights `bᵢⱼ cos(θᵢ⁰ - θⱼ⁰)`. -/
+def flowWeights (b : Matrix ι ι ℝ) (θ : ι → ℝ) : Matrix ι ι ℝ :=
+  Matrix.of fun i j => b i j * Real.cos (θ i - θ j)
+
+/-- The Jacobian of the lossless power-flow map is the weighted Laplacian of
+`bᵢⱼ cos(θᵢ - θⱼ)`. -/
+@[powerlib_foundation] theorem hasFDerivAt_powerInjection (b : Matrix ι ι ℝ) (θ : ι → ℝ) :
+    HasFDerivAt (powerInjection b)
+      (Matrix.toLin' (laplacian (flowWeights b θ))).toContinuousLinearMap θ := by
+  rw [hasFDerivAt_pi']
+  intro i
+  have hterm : ∀ j ∈ (Finset.univ : Finset ι), HasFDerivAt
+      (fun φ : ι → ℝ => b i j * Real.sin (φ i - φ j))
+      ((b i j * Real.cos (θ i - θ j)) •
+        (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι => ℝ) i -
+          ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι => ℝ) j)) θ := by
+    intro j _
+    have hd := ((hasFDerivAt_apply (𝕜 := ℝ) (F' := fun _ : ι => ℝ) i θ).sub
+      (hasFDerivAt_apply (𝕜 := ℝ) (F' := fun _ : ι => ℝ) j θ)).sin.const_mul (b i j)
+    convert hd using 1
+    ext v
+    simp [smul_eq_mul]
+    ring
+  convert HasFDerivAt.fun_sum hterm using 1
+  · rfl
+  · ext v
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply,
+      LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply, laplacian_mulVec_apply,
+      flowWeights, of_apply, ContinuousLinearMap.coe_sum', Finset.sum_apply,
+      ContinuousLinearMap.coe_smul', Pi.smul_apply, ContinuousLinearMap.coe_sub', Pi.sub_apply,
+      smul_eq_mul]
+
+end Injection
 
 /-! ## Two-bus line power and the decoupling rotation -/
 

@@ -18,7 +18,9 @@ minimum principle: if every node reaches a grounded node through positive-weight
 edges then `(L + diag g) x ≥ 0` forces `x ≥ 0`. Consequences: `L + diag g` is
 invertible, its inverse is entrywise nonnegative (the M-matrix special case), and,
 for symmetric weights, it is positive definite exactly when every node has such a
-path to ground.
+path to ground. On `Fin (n + 1)` the complex row identity `∑ₗ Lₖₗ ζₗ = ∑ₗ Wₖₗ (ζₖ − ζₗ)`
+(`complex_laplacian_sum`) and, for symmetric weights, `∑ₖ ∑ₗ Wₖₗ (ζₖ − ζₗ) = 0`
+(`complex_laplacian_total`) are the eigenvector manipulations of the networked swing Jacobian.
 
 A bus admittance matrix built from branch admittances with no shunt (ground) branch
 (`ybusNoShunt`) is Laplacian-type, `Y 𝟏 = 0`, hence singular for every topology
@@ -27,8 +29,10 @@ A bus admittance matrix built from branch admittances with no shunt (ground) bra
 
 The signed node–branch incidence matrix `signedIncidence tail head` of a directed multigraph
 (`+1` at the tail, `−1` at the head) satisfies KVL, `(𝓑ᵀ v)_k = v(tail k) − v(head k)`
-(`signedIncidence_transpose_mulVec`); source `theory/T-ph.md` §1.6.bis. The RL-network pH
-models built on it are in `theorem/PH/Models/RLNetwork.lean`.
+(`signedIncidence_transpose_mulVec`), and every column sums to zero (`signedIncidence_col_sum`);
+source `theory/T-ph.md` §1.6.bis. The RL-network pH models built on it are in
+`theorem/PH/Models/RLNetwork.lean`, the multi-area tie-line graph in
+`theorem/Frequency/LFCNetwork.lean`.
 
 Kron reduction (`theory/T-power-system-ph.md` §1.7): eliminating internal nodes with zero
 injection from a linear resistive network `Y` gives `i_b = (Y_bb − Y_bi Y_ii⁻¹ Y_ib) v_b`
@@ -36,7 +40,8 @@ injection from a linear resistive network `Y` gives `i_b = (Y_bb − Y_bi Y_ii�
 a PSD network PSD (`kron_posSemidef`).
 
 Connectivity is the reflexive-transitive closure of the relation `0 < W i j`.
-These are algebraic statements; no power-flow or dynamic claim is made here.
+These are algebraic statements; no power-flow or dynamic claim is made here (the lossless
+power-flow map and its Laplacian Jacobian are in `theorem/Network/PowerFlow.lean`).
 -/
 
 noncomputable section
@@ -192,6 +197,29 @@ def Reach (W : Matrix ι ι ℝ) : ι → ι → Prop := Relation.ReflTransGen f
     · exact absurd h hab.ne'
     · exact sub_eq_zero.mp (Complex.normSq_eq_zero.mp h)
   exact eq_of_reach hedge (hconn i j)
+
+section ComplexLaplacian
+
+variable {n : ℕ}
+
+@[powerlib_foundation] theorem complex_laplacian_sum (W : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
+    (ζ : Fin (n + 1) → ℂ) (k : Fin (n + 1)) :
+    ∑ l, ((laplacian W k l : ℝ) : ℂ) * ζ l = ∑ l, (W k l : ℂ) * (ζ k - ζ l) := by
+  simp only [laplacian_apply, Complex.ofReal_sub, sub_mul, mul_sub, Finset.sum_sub_distrib]
+  congr 1
+  rw [← Finset.sum_mul, Finset.sum_eq_single k]
+  · simp
+  · intro j _ hj; simp [Ne.symm hj]
+  · simp
+
+@[powerlib_foundation] theorem complex_laplacian_total {W : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    (hW : ∀ i j, W i j = W j i) (ζ : Fin (n + 1) → ℂ) :
+    ∑ k, ∑ l, (W k l : ℂ) * (ζ k - ζ l) = 0 := by
+  simp only [mul_sub, Finset.sum_sub_distrib]
+  rw [sub_eq_zero, Finset.sum_comm]
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by rw [hW]
+
+end ComplexLaplacian
 
 /-! ## Grounded Laplacians -/
 
@@ -372,45 +400,6 @@ positive-weight path to a grounded node. -/
       rw [eq_of_reach hedge hk, hxk]
       rfl
 
-/-! ## Linearized power flow -/
-
-/-- Lossless active-power injections `Pᵢ(θ) = ∑ⱼ bᵢⱼ sin(θᵢ - θⱼ)` (voltage magnitudes,
-held constant, are absorbed into `bᵢⱼ = VᵢVⱼ/Xᵢⱼ`). -/
-def powerInjection (b : Matrix ι ι ℝ) (θ : ι → ℝ) (i : ι) : ℝ :=
-  ∑ j, b i j * Real.sin (θ i - θ j)
-
-/-- Linearization weights `bᵢⱼ cos(θᵢ⁰ - θⱼ⁰)`. -/
-def flowWeights (b : Matrix ι ι ℝ) (θ : ι → ℝ) : Matrix ι ι ℝ :=
-  Matrix.of fun i j => b i j * Real.cos (θ i - θ j)
-
-/-- The Jacobian of the lossless power-flow map is the weighted Laplacian of
-`bᵢⱼ cos(θᵢ - θⱼ)`. -/
-@[powerlib_foundation] theorem hasFDerivAt_powerInjection (b : Matrix ι ι ℝ) (θ : ι → ℝ) :
-    HasFDerivAt (powerInjection b)
-      (Matrix.toLin' (laplacian (flowWeights b θ))).toContinuousLinearMap θ := by
-  rw [hasFDerivAt_pi']
-  intro i
-  have hterm : ∀ j ∈ (Finset.univ : Finset ι), HasFDerivAt
-      (fun φ : ι → ℝ => b i j * Real.sin (φ i - φ j))
-      ((b i j * Real.cos (θ i - θ j)) •
-        (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι => ℝ) i -
-          ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι => ℝ) j)) θ := by
-    intro j _
-    have hd := ((hasFDerivAt_apply (𝕜 := ℝ) (F' := fun _ : ι => ℝ) i θ).sub
-      (hasFDerivAt_apply (𝕜 := ℝ) (F' := fun _ : ι => ℝ) j θ)).sin.const_mul (b i j)
-    convert hd using 1
-    ext v
-    simp [smul_eq_mul]
-    ring
-  convert HasFDerivAt.fun_sum hterm using 1
-  · rfl
-  · ext v
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply,
-      LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply, laplacian_mulVec_apply,
-      flowWeights, of_apply, ContinuousLinearMap.coe_sum', Finset.sum_apply,
-      ContinuousLinearMap.coe_smul', Pi.smul_apply, ContinuousLinearMap.coe_sub', Pi.sub_apply,
-      smul_eq_mul]
-
 /-! ## Bus admittance matrices without shunt branches are singular -/
 
 section Ybus
@@ -462,6 +451,18 @@ omit [Fintype β] [DecidableEq β] in
   simp [signedIncidence, mulVec, dotProduct, sub_mul, Finset.sum_sub_distrib, ite_mul]
 
 end Incidence
+
+section IncidenceSum
+
+variable {α β : Type} [Fintype α] [DecidableEq α] [Fintype β]
+
+omit [Fintype β] in
+@[powerlib_foundation] theorem signedIncidence_col_sum (tail head : β → α) (ℓ : β) :
+    ∑ a, Network.signedIncidence tail head a ℓ = 0 := by
+  have h := Network.signedIncidence_transpose_mulVec tail head (fun _ => (1 : ℝ)) ℓ
+  simpa [mulVec, dotProduct] using h
+
+end IncidenceSum
 
 /-! ## Kron reduction -/
 

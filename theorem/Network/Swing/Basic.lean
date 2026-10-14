@@ -5,7 +5,7 @@ import theorem.Dynamics.State
 import theorem.Family.Basic
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Lyapunov
-import theorem.Network.WeightedLaplacian
+import theorem.Network.PowerFlow
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
@@ -71,15 +71,15 @@ Family and connection conclusions.
 * Local asymptotic translation `{powerFlow, jacobianStable}`, decided per number of machines:
   exact for one machine (`exact_locallyAsymptoticallyStable_zero`, here), two machines
   (`exact_locallyAsymptoticallyStable_two`) and three machines
-  (`exact_locallyAsymptoticallyStable_three`) in `theorem/Network/SwingDegenerate.lean`; not exact
+  (`exact_locallyAsymptoticallyStable_three`) in `theorem/Network/Swing/Degenerate.lean`; not exact
   for five or more machines (`not_exact_locallyAsymptoticallyStable`, `n + 5` machines, a five-machine
   ring with a degenerate strict minimum of the network potential plus unit leaves) in
-  `theorem/Network/SwingDegenerateRing.lean`. The complete membership characterization for every
+  `theorem/Network/Swing/DegenerateRing.lean`. The complete membership characterization for every
   `n` is `mem_den_locallyAsymptoticallyStable_iff` (power balance, a strict local minimum of the
   network potential in relative angles, and an isolated power-balance point). Four machines
   (`n = 3`): exact (`exact_locallyAsymptoticallyStable_four`,
-  `theorem/Network/SwingFourDense.lean`; at most four lines already in
-  `mem_den_locallyAsymptoticallyStable_iff_four`, `theorem/Network/SwingFour.lean`). Hence the
+  `theorem/Network/Swing/FourDense.lean`; at most four lines already in
+  `mem_den_locallyAsymptoticallyStable_iff_four`, `theorem/Network/Swing/Four.lean`). Hence the
   local asymptotic translation is exact for at most four machines and not exact from five.
 * Static evidence (formerly `@[powerlib_domain]`): `fullField_equilibrium_shift`,
   `reducedField_reduce`, `reducedField_equilibrium`, and the new `jacobian_isHurwitz_of_angle`.
@@ -365,23 +365,6 @@ def jacobian (p : Params n) (θ : Fin (n + 1) → ℝ) : Matrix (Fin (n + (n + 1
     flowWeights p.B θ i j = flowWeights p.B θ j i := by
   simp only [flowWeights, of_apply, p.B_symm i j]
   rw [← Real.cos_neg, neg_sub]
-
-@[powerlib_foundation] theorem complex_laplacian_sum (W : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
-    (ζ : Fin (n + 1) → ℂ) (k : Fin (n + 1)) :
-    ∑ l, ((laplacian W k l : ℝ) : ℂ) * ζ l = ∑ l, (W k l : ℂ) * (ζ k - ζ l) := by
-  simp only [laplacian_apply, Complex.ofReal_sub, sub_mul, mul_sub, Finset.sum_sub_distrib]
-  congr 1
-  rw [← Finset.sum_mul, Finset.sum_eq_single k]
-  · simp
-  · intro j _ hj; simp [Ne.symm hj]
-  · simp
-
-@[powerlib_foundation] theorem complex_laplacian_total {W : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (hW : ∀ i j, W i j = W j i) (ζ : Fin (n + 1) → ℂ) :
-    ∑ k, ∑ l, (W k l : ℂ) * (ζ k - ζ l) = 0 := by
-  simp only [mul_sub, Finset.sum_sub_distrib]
-  rw [sub_eq_zero, Finset.sum_comm]
-  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by rw [hW]
 
 /-- The reduced swing Jacobian is Hurwitz when the linearization weights are
 nonnegative and their positive edges connect all machines. -/

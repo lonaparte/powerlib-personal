@@ -1,14 +1,15 @@
-import theorem.Network.SwingDegenerate
-import theorem.Dynamics.DegenerateMinimumCycle
+import theorem.Network.Swing.Degenerate
+import theorem.Network.Swing.CycleMinimum
 
 /-! # Networked swing equations: a degenerate strict minimum (five machines and more)
 
 Source: work-sync `theory/T-synchronization-manifold.md` §1.7, §2.2 (swing network and its energy);
-the model is `theorem/Network/Swing.lean` (`Swing.family`); the characterization of local asymptotic
-stability is `theorem/Network/SwingDegenerate.lean` (`mem_den_locallyAsymptoticallyStable_iff`).
+the model is `theorem/Network/Swing/Basic.lean` (`Swing.family`); the characterization of local
+asymptotic stability is `theorem/Network/Swing/Degenerate.lean`
+(`mem_den_locallyAsymptoticallyStable_iff`).
 
-Model boundary. The model of `theorem/Network/Swing.lean`: `n + 1` machines, reduced state `(δ, ω)`,
-unit inertia and damping in the witnesses, constant power, symmetric nonnegative lossless
+Model boundary. The model of `theorem/Network/Swing/Basic.lean`: `n + 1` machines, reduced state
+`(δ, ω)`, unit inertia and damping in the witnesses, constant power, symmetric nonnegative lossless
 couplings, constant voltages, continuous time; no governor, AVR, PLL, converter control, delay or
 PWM.
 
@@ -21,7 +22,7 @@ Since `∑ 1/Wₑ = 0` the Hessian of the potential in relative angles is singul
 `(9, 6, 4, 2)`, `kernel_ring`), so the reduced Jacobian is not Hurwitz; since moreover
 `∑ fₑ/Wₑ³ = 0` the cubic term vanishes along it, and the quartic term is positive: the potential
 has a degenerate strict minimum and an isolated critical point (`ring_strictMin`, from
-`Dynamics.CycleMinimum.cycle_strictMin` and the flow-shift inequality `ring_gamma`). For more
+`CycleMinimum.cycle_strictMin` and the flow-shift inequality `ring_gamma`). For more
 machines, unit leaves are attached to machine `0` (`addLeaf`, `degenerate_addLeaf`).
 
 Results.
@@ -41,7 +42,7 @@ noncomputable section
 namespace powerlib.Network.Swing
 open Matrix Finset Filter Topology Metric ComplexConjugate
 open powerlib.Dynamics (State)
-open powerlib.Dynamics.CycleMinimum (edgeG edgeD edgeQ amp)
+open powerlib.Network.Swing.CycleMinimum (edgeG edgeD edgeQ amp)
 
 variable {n : ℕ}
 
@@ -383,7 +384,7 @@ theorem abs_ground_le (v : Fin 4 → ℝ) (k : Fin (4 + 1)) : |ground v k| ≤ �
 theorem ring_strictMin : ∃ r > 0, ∀ v : Fin 4 → ℝ, v ≠ 0 → ‖v‖ < r →
     potential params θr < potential params (θr + ground v) ∧
       ¬ ∀ k, params.P k = powerInjection params.B (θr + ground v) k := by
-  obtain ⟨rc, hrc, hcyc⟩ := Dynamics.CycleMinimum.cycle_strictMin (m := 4) (W := Wr) (f := fr)
+  obtain ⟨rc, hrc, hcyc⟩ := CycleMinimum.cycle_strictMin (m := 4) (W := Wr) (f := fr)
     (by simp [Wr]) (fun i => by fin_cases i <;> simp [Wr]) (ρ := 1 / 2) hq_ring
     (fun μ h0 h => ring_gamma h0 h) (by norm_num)
   refine ⟨rc / 2, by positivity, fun v hv0 hv => ?_⟩

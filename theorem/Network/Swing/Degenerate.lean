@@ -1,4 +1,4 @@
-import theorem.Network.Swing
+import theorem.Network.Swing.Basic
 import theorem.Dynamics.LaSalle.Ball
 import theorem.Dynamics.Instability
 
@@ -6,10 +6,10 @@ import theorem.Dynamics.Instability
 
 Source: work-sync `theory/T-synchronization-manifold.md` §1.7 and §2.2 (swing network
 `Mᵢ θ̈ᵢ = P_{m,i} − Dᵢ θ̇ᵢ − ∑ⱼ Bᵢⱼ sin(θᵢ − θⱼ)` and its energy function); the model is
-`theorem/Network/Swing.lean` (`Swing.family`).
+`theorem/Network/Swing/Basic.lean` (`Swing.family`).
 
-Model boundary. Exactly the model of `theorem/Network/Swing.lean`: `n + 1` machines, reduced state
-`(δ, ω)` of order `Fin (n + (n + 1))` (relative angles `δᵢ = θ_{i+1} − θ₀`, then all frequency
+Model boundary. Exactly the model of `theorem/Network/Swing/Basic.lean`: `n + 1` machines, reduced
+state `(δ, ω)` of order `Fin (n + (n + 1))` (relative angles `δᵢ = θ_{i+1} − θ₀`, then all frequency
 deviations), positive inertia and damping, constant power, symmetric nonnegative couplings, lossless
 Kron-reduced network, constant voltages; no governor, AVR, PLL, converter control, delay or PWM;
 continuous time. Statements concern the selected angle profile `θ*` of a model.
@@ -40,12 +40,12 @@ Results.
   `sin_mul_cos_same_sign`, `node_open_or_antiphase`, `balance_line_of_edges`): on at most three
   machines every singular positive semidefinite Hessian is a fold (nonzero cubic term along the
   null direction) or comes with a continuum of equilibria. For five or more machines the
-  translation is not exact (`theorem/Network/SwingDegenerateRing.lean`).
-* Four machines (`n = 3`): `theorem/Network/SwingFour.lean` proves exactness for every network with
+  translation is not exact (`theorem/Network/Swing/DegenerateRing.lean`).
+* Four machines (`n = 3`): `theorem/Network/Swing/Four.lean` proves exactness for every network with
   at most four lines (`mem_den_locallyAsymptoticallyStable_iff_four`; two uncoupled machine pairs:
   a subgraph of a four-cycle, the cubic term by superadditivity of `tan`, or of a triangle with a
   pendant line) and the cut and flat-direction tests for every `n`;
-  `theorem/Network/SwingFourDense.lean` decides the diamond and the complete graph and proves
+  `theorem/Network/Swing/FourDense.lean` decides the diamond and the complete graph and proves
   `exact_locallyAsymptoticallyStable_four` (exact for every four-machine network) and
   `mem_den_locallyAsymptoticallyStable_iff_four_machines`.
 

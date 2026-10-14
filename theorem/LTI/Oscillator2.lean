@@ -25,6 +25,12 @@ imported.
 `e^{−σu}(cos(ω_d u) + (σ/ω_d) sin(ω_d u)) ≤ 1` for `σ ≥ 0`, `ω_d > 0`, `u ≥ 0`, which bounds
 every later excursion of a damped response by its first extremum.
 
+Matrix exponential (any size `n`): `exp_smul_eq_of_hasDerivAt` (a differentiable `E` with
+`Ė = A E`, `E 0 = 1` is `t ↦ e^{tA}`) and `exp_smul_of_sq_eq` (if `B = A + a I` satisfies
+`B² = −w² I`, `w ≠ 0`, then `e^{tA} = e^{−at} (cos(wt) I + (sin(wt)/w) B)`, the matrix form of
+`osc2`); used by the lag covariance of the stochastic COI swing
+(`theorem/Frequency/StochasticCOI.lean`).
+
 Family and connection conclusions. This module is foundation only: `osc2` is an explicit closed
 form, and `trajectory_eq_osc2` is a generic implication about an arbitrary caller-supplied
 two-state plant (Rules §3). It defines no family. The former `@[powerlib_domain]` label of
@@ -185,5 +191,85 @@ form. -/
       ≤ Real.exp (-(σ * u)) * Real.exp (σ * u) :=
         mul_le_mul_of_nonneg_left (by linarith) hpos.le
     _ = 1 := hprod
+
+/-! ## The matrix exponential as the solution of `Ė = A E` -/
+
+section MatrixExp
+
+open scoped Matrix.Norms.Frobenius
+
+variable {n : ℕ}
+
+/-- Uniqueness of the matrix exponential: a differentiable `E` with `Ė = A E`, `E 0 = 1` is
+`t ↦ e^{tA}`. -/
+@[powerlib_foundation] theorem exp_smul_eq_of_hasDerivAt {A : Matrix (Fin n) (Fin n) ℝ}
+    {E : ℝ → Matrix (Fin n) (Fin n) ℝ} (h0 : E 0 = 1) (hE : ∀ t, HasDerivAt E (A * E t) t)
+    (t : ℝ) : E t = NormedSpace.exp (t • A) := by
+  set F : ℝ → Matrix (Fin n) (Fin n) ℝ := fun s => NormedSpace.exp (s • (-A)) * E s with hF
+  have hFd : ∀ s, HasDerivAt F 0 s := by
+    intro s
+    have h := (hasDerivAt_exp_smul_const' (-A) s).mul (hE s)
+    have c1 : A * NormedSpace.exp (s • (-A)) = NormedSpace.exp (s • (-A)) * A :=
+      ((((Commute.refl A).neg_right).smul_right s).exp_right).eq
+    have hval : -A * NormedSpace.exp (s • (-A)) * E s +
+        NormedSpace.exp (s • (-A)) * (A * E s) = 0 := by
+      rw [← mul_assoc, ← c1, neg_mul, neg_mul, neg_add_cancel]
+    convert! h using 1
+    exact hval.symm
+  have hFc : F t = F 0 :=
+    is_const_of_deriv_eq_zero (fun s => (hFd s).differentiableAt) (fun s => (hFd s).deriv) t 0
+  have hF0 : F 0 = 1 := by simp [hF, h0, NormedSpace.exp_zero]
+  have hinv : NormedSpace.exp (t • A) * NormedSpace.exp (t • (-A)) = 1 := by
+    rw [← Matrix.exp_add_of_commute _ _ ((((Commute.refl A).neg_right).smul_left t).smul_right t)]
+    simp [NormedSpace.exp_zero]
+  calc E t = NormedSpace.exp (t • A) * F t := by
+        simp only [hF, ← mul_assoc, hinv, one_mul]
+    _ = NormedSpace.exp (t • A) := by rw [hFc, hF0, mul_one]
+
+/-- Closed form of `e^{tA}` when `B = A + a I` satisfies `B² = −w² I` (`w ≠ 0`):
+`e^{tA} = e^{−at} (cos(wt) I + (sin(wt)/w) B)`. -/
+@[powerlib_foundation] theorem exp_smul_of_sq_eq {A : Matrix (Fin n) (Fin n) ℝ} {a w : ℝ}
+    (hw : w ≠ 0) (hB : (A + a • 1) * (A + a • 1) = -(w ^ 2) • (1 : Matrix (Fin n) (Fin n) ℝ))
+    (t : ℝ) :
+    NormedSpace.exp (t • A) = (Real.exp (-a * t) * Real.cos (w * t)) • (1 : Matrix _ _ ℝ) +
+      (Real.exp (-a * t) * Real.sin (w * t) / w) • (A + a • 1) := by
+  set B := A + a • (1 : Matrix (Fin n) (Fin n) ℝ) with hBdef
+  set f1 : ℝ → ℝ := fun s => Real.exp (-a * s) * Real.cos (w * s) with hf1
+  set f2 : ℝ → ℝ := fun s => Real.exp (-a * s) * Real.sin (w * s) / w with hf2
+  have hd1 : ∀ s, HasDerivAt f1 (-a * f1 s - w ^ 2 * f2 s) s := by
+    intro s
+    have he : HasDerivAt (fun s => Real.exp (-a * s)) (Real.exp (-a * s) * (-a)) s := by
+      have := ((hasDerivAt_id s).const_mul (-a)).exp
+      simpa using this
+    have hc : HasDerivAt (fun s => Real.cos (w * s)) (-Real.sin (w * s) * w) s := by
+      have := ((hasDerivAt_id s).const_mul w).cos
+      simpa [mul_comm] using this
+    convert! he.mul hc using 1
+    simp only [hf1, hf2]
+    field_simp
+    ring
+  have hd2 : ∀ s, HasDerivAt f2 (f1 s - a * f2 s) s := by
+    intro s
+    have he : HasDerivAt (fun s => Real.exp (-a * s)) (Real.exp (-a * s) * (-a)) s := by
+      have := ((hasDerivAt_id s).const_mul (-a)).exp
+      simpa using this
+    have hs : HasDerivAt (fun s => Real.sin (w * s)) (Real.cos (w * s) * w) s := by
+      have := ((hasDerivAt_id s).const_mul w).sin
+      simpa [mul_comm] using this
+    convert! (he.mul hs).div_const w using 1
+    simp only [hf1, hf2]
+    field_simp
+    ring
+  have hA : A = B - a • (1 : Matrix (Fin n) (Fin n) ℝ) := by rw [hBdef]; abel
+  have key := exp_smul_eq_of_hasDerivAt (A := A)
+    (E := fun s => f1 s • (1 : Matrix (Fin n) (Fin n) ℝ) + f2 s • B)
+    (by simp [hf1, hf2]) (fun s => by
+      have h := ((hd1 s).smul_const (1 : Matrix (Fin n) (Fin n) ℝ)).add ((hd2 s).smul_const B)
+      convert! h using 1
+      simp only [hA, sub_mul, mul_add, mul_smul_comm, smul_mul_assoc, mul_one, one_mul, hB]
+      module) t
+  rw [← key]
+
+end MatrixExp
 
 end powerlib.LTI

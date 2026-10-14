@@ -262,12 +262,6 @@ def TieConnected (tail head : β → α) : Prop :=
     (fun x y => ∃ ℓ, (tail ℓ = x ∧ head ℓ = y) ∨ (tail ℓ = y ∧ head ℓ = x)) a c
 
 omit [Fintype β] in
-@[powerlib_foundation] theorem signedIncidence_col_sum (tail head : β → α) (ℓ : β) :
-    ∑ a, Network.signedIncidence tail head a ℓ = 0 := by
-  have h := Network.signedIncidence_transpose_mulVec tail head (fun _ => (1 : ℝ)) ℓ
-  simpa [mulVec, dotProduct] using h
-
-omit [Fintype β] in
 @[powerlib_foundation] theorem signedIncidence_const_of_connected {tail head : β → α}
     (hconn : TieConnected tail head) (w : α → ℝ)
     (hw : ∀ ℓ, ∑ c, Network.signedIncidence tail head c ℓ * w c = 0) (a c : α) : w a = w c := by
@@ -294,7 +288,7 @@ evidence on the model, not a connection conclusion. -/
       (∀ a, e (.inl a) = 0) ∧
         (∀ a, ∑ ℓ, Network.signedIncidence tail head a ℓ * e (.inr (.inl ℓ)) = 0) ∧
         ∀ a, e (.inr (.inr a)) = u a :=
-  netModel_isEquilibrium_iff hM hKI hT hB (signedIncidence_col_sum tail head)
+  netModel_isEquilibrium_iff hM hKI hT hB (Network.signedIncidence_col_sum tail head)
     (signedIncidence_const_of_connected hconn) u e
 
 /-! ## Meshed tie-line graphs: circulating flows -/

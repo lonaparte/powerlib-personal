@@ -3,6 +3,8 @@ import dependencies.LeanForControl
 import theorem.Attributes
 import theorem.Criteria.Hurwitz2
 import theorem.Stochastic.LyapunovCovariance
+import theorem.Stochastic.OUMoments
+import theorem.LTI.Oscillator2
 import Mathlib.Probability.Moments.Variance
 
 /-! # Linearized stochastic COI swing: stationary covariance, moment equations, lag covariance
@@ -30,11 +32,16 @@ Main results.
   `swingCov_angle_eq`: `Var δ̃ = Var ω̃ / ω_n²`.
 * `swing_cov_tendsto`, `swing_mean_tendsto`: every solution of the moment ODEs converges to
   `(0, P∞)`.
-* `exp_smul_eq_of_hasDerivAt` (uniqueness of the matrix exponential as the solution of
-  `Ė = A E`, `E 0 = 1`) and `exp_smul_of_sq_eq` (closed form when `(A + a I)² = −w² I`).
+* The matrix exponential tools `LTI.exp_smul_eq_of_hasDerivAt` (uniqueness of the matrix
+  exponential as the solution of `Ė = A E`, `E 0 = 1`) and `LTI.exp_smul_of_sq_eq` (closed form
+  when `(A + a I)² = −w² I`) are in `theorem/LTI/Oscillator2.lean`.
 * `swing_lagCov_speed`: for the underdamped case `D² < 4Mk`,
   `(e^{τA} P∞)_{ω ω} = Var(ω̃) e^{−ζω_n τ} [cos ω_d τ − (ζω_n/ω_d) sin ω_d τ]`, the boxed formula
   of §1.5 (`ζω_n = D/(2M)`, `ω_d² = k/M − D²/(4M²)`).
+* `swing_ouStatVar`, `swing_ouVar_tendsto` (`theory/T-sde-systems.md` §2.2.2): the scalar noisy
+  swing `M dΔω = −DΔω dt + β dW` read as an Ornstein–Uhlenbeck process (`θ = D/M`, `σ = β/M`,
+  the OU moment functions of `theorem/Stochastic/OUMoments.lean`) has stationary variance
+  `β²/(2DM)`, and its variance function tends to it for `D, M > 0`.
 
 Correction (§1.5, eq. (1.12)).  The windowed ROCOF is `(ω(t+Δt) − ω(t))/Δt`, so
 `Var(ROCOF) = (2 Var ω̃ − 2 Cov(ω̃(t), ω̃(t+Δt)))/Δt²` (`variance_rocof`,
@@ -43,7 +50,7 @@ variance already contains the inertia, so that factor is wrong.
 -/
 
 noncomputable section
-namespace powerlib.Stochastic.FreqCov
+namespace powerlib.Frequency.FreqCov
 
 open Matrix Filter MeasureTheory ProbabilityTheory
 open scoped Matrix.Norms.Frobenius Topology
@@ -156,78 +163,6 @@ stationary covariance (1.8)–(1.9). -/
   rw [tendsto_zero_iff_norm_tendsto_zero]
   exact squeeze_zero (fun t => norm_nonneg _) (fun t => abs_entry_le_norm _ i j) hE
 
-/-! ## The matrix exponential as the solution of `Ė = A E` -/
-
-/-- Uniqueness of the matrix exponential: a differentiable `E` with `Ė = A E`, `E 0 = 1` is
-`t ↦ e^{tA}`. -/
-@[powerlib_foundation] theorem exp_smul_eq_of_hasDerivAt {A : Matrix (Fin n) (Fin n) ℝ}
-    {E : ℝ → Matrix (Fin n) (Fin n) ℝ} (h0 : E 0 = 1) (hE : ∀ t, HasDerivAt E (A * E t) t)
-    (t : ℝ) : E t = NormedSpace.exp (t • A) := by
-  set F : ℝ → Matrix (Fin n) (Fin n) ℝ := fun s => NormedSpace.exp (s • (-A)) * E s with hF
-  have hFd : ∀ s, HasDerivAt F 0 s := by
-    intro s
-    have h := (hasDerivAt_exp_smul_const' (-A) s).mul (hE s)
-    have c1 : A * NormedSpace.exp (s • (-A)) = NormedSpace.exp (s • (-A)) * A :=
-      ((((Commute.refl A).neg_right).smul_right s).exp_right).eq
-    have hval : -A * NormedSpace.exp (s • (-A)) * E s +
-        NormedSpace.exp (s • (-A)) * (A * E s) = 0 := by
-      rw [← mul_assoc, ← c1, neg_mul, neg_mul, neg_add_cancel]
-    convert! h using 1
-    exact hval.symm
-  have hFc : F t = F 0 :=
-    is_const_of_deriv_eq_zero (fun s => (hFd s).differentiableAt) (fun s => (hFd s).deriv) t 0
-  have hF0 : F 0 = 1 := by simp [hF, h0, NormedSpace.exp_zero]
-  have hinv : NormedSpace.exp (t • A) * NormedSpace.exp (t • (-A)) = 1 := by
-    rw [← Matrix.exp_add_of_commute _ _ ((((Commute.refl A).neg_right).smul_left t).smul_right t)]
-    simp [NormedSpace.exp_zero]
-  calc E t = NormedSpace.exp (t • A) * F t := by
-        simp only [hF, ← mul_assoc, hinv, one_mul]
-    _ = NormedSpace.exp (t • A) := by rw [hFc, hF0, mul_one]
-
-/-- Closed form of `e^{tA}` when `B = A + a I` satisfies `B² = −w² I` (`w ≠ 0`):
-`e^{tA} = e^{−at} (cos(wt) I + (sin(wt)/w) B)`. -/
-@[powerlib_foundation] theorem exp_smul_of_sq_eq {A : Matrix (Fin n) (Fin n) ℝ} {a w : ℝ}
-    (hw : w ≠ 0) (hB : (A + a • 1) * (A + a • 1) = -(w ^ 2) • (1 : Matrix (Fin n) (Fin n) ℝ))
-    (t : ℝ) :
-    NormedSpace.exp (t • A) = (Real.exp (-a * t) * Real.cos (w * t)) • (1 : Matrix _ _ ℝ) +
-      (Real.exp (-a * t) * Real.sin (w * t) / w) • (A + a • 1) := by
-  set B := A + a • (1 : Matrix (Fin n) (Fin n) ℝ) with hBdef
-  set f1 : ℝ → ℝ := fun s => Real.exp (-a * s) * Real.cos (w * s) with hf1
-  set f2 : ℝ → ℝ := fun s => Real.exp (-a * s) * Real.sin (w * s) / w with hf2
-  have hd1 : ∀ s, HasDerivAt f1 (-a * f1 s - w ^ 2 * f2 s) s := by
-    intro s
-    have he : HasDerivAt (fun s => Real.exp (-a * s)) (Real.exp (-a * s) * (-a)) s := by
-      have := ((hasDerivAt_id s).const_mul (-a)).exp
-      simpa using this
-    have hc : HasDerivAt (fun s => Real.cos (w * s)) (-Real.sin (w * s) * w) s := by
-      have := ((hasDerivAt_id s).const_mul w).cos
-      simpa [mul_comm] using this
-    convert! he.mul hc using 1
-    simp only [hf1, hf2]
-    field_simp
-    ring
-  have hd2 : ∀ s, HasDerivAt f2 (f1 s - a * f2 s) s := by
-    intro s
-    have he : HasDerivAt (fun s => Real.exp (-a * s)) (Real.exp (-a * s) * (-a)) s := by
-      have := ((hasDerivAt_id s).const_mul (-a)).exp
-      simpa using this
-    have hs : HasDerivAt (fun s => Real.sin (w * s)) (Real.cos (w * s) * w) s := by
-      have := ((hasDerivAt_id s).const_mul w).sin
-      simpa [mul_comm] using this
-    convert! (he.mul hs).div_const w using 1
-    simp only [hf1, hf2]
-    field_simp
-    ring
-  have hA : A = B - a • (1 : Matrix (Fin n) (Fin n) ℝ) := by rw [hBdef]; abel
-  have key := exp_smul_eq_of_hasDerivAt (A := A)
-    (E := fun s => f1 s • (1 : Matrix (Fin n) (Fin n) ℝ) + f2 s • B)
-    (by simp [hf1, hf2]) (fun s => by
-      have h := ((hd1 s).smul_const (1 : Matrix (Fin n) (Fin n) ℝ)).add ((hd2 s).smul_const B)
-      convert! h using 1
-      simp only [hA, sub_mul, mul_add, mul_smul_comm, smul_mul_assoc, mul_one, one_mul, hB]
-      module) t
-  rw [← key]
-
 /-! ## Lag covariance of the speed (§1.5) -/
 
 /-- `B = A + (D/2M) I` squares to `−ω_d² I` with `ω_d² = k/M − D²/(4M²)`. -/
@@ -257,7 +192,7 @@ stationary covariance (1.8)–(1.9). -/
   have hB : (swingA M D k + a • (1 : Matrix (Fin 2) (Fin 2) ℝ)) *
       (swingA M D k + a • (1 : Matrix (Fin 2) (Fin 2) ℝ)) = -(w ^ 2) • 1 := by
     rw [hw2, ha]; exact swingA_shift_sq hM.ne'
-  rw [exp_smul_of_sq_eq hw0 hB τ, Matrix.mul_apply, Fin.sum_univ_two]
+  rw [LTI.exp_smul_of_sq_eq hw0 hB τ, Matrix.mul_apply, Fin.sum_univ_two]
   simp [swingCov, swingA]
   simp only [ha]
   field_simp
@@ -293,4 +228,25 @@ lagged moment equation). -/
   rw [variance_rocof hX hY, hvX, hvY, covariance_comm, hc]
   ring
 
-end powerlib.Stochastic.FreqCov
+/-! ## Noisy swing equation (T-sde-systems §2.2.2) -/
+
+section NoisySwing
+
+open powerlib.Stochastic.OU (ouStatVar ouVar ouVar_tendsto)
+
+/-- Writing `M dΔω = -DΔω dt + β dW` as an OU with `θ = D/M`, `σ = β/M`, the stationary
+variance `σ²/(2θ)` equals `β²/(2DM)` (algebraic part only). -/
+@[powerlib_foundation] theorem swing_ouStatVar {M D : ℝ} (hM : M ≠ 0) (hD : D ≠ 0) (β : ℝ) :
+    ouStatVar (D / M) (β / M) = β ^ 2 / (2 * D * M) := by
+  unfold ouStatVar
+  field_simp
+
+/-- The variance function of the noisy swing tends to `β²/(2DM)` when `D, M > 0`. -/
+@[powerlib_foundation] theorem swing_ouVar_tendsto {M D : ℝ} (hM : 0 < M) (hD : 0 < D) (β : ℝ) :
+    Tendsto (ouVar (D / M) (β / M)) atTop (𝓝 (β ^ 2 / (2 * D * M))) := by
+  rw [← swing_ouStatVar hM.ne' hD.ne']
+  exact ouVar_tendsto (div_pos hD hM) _
+
+end NoisySwing
+
+end powerlib.Frequency.FreqCov

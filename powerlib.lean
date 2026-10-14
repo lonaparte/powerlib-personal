@@ -96,6 +96,7 @@ import theorem.Frequency.LFCNetwork
 import theorem.Frequency.LowInertia
 import theorem.Frequency.Measurement
 import theorem.Frequency.SFR
+import theorem.Frequency.StochasticCOI
 import theorem.Frequency.SwingGovernor
 import theorem.Frequency.SwingNadir
 import theorem.Frequency.UFLS
@@ -160,7 +161,6 @@ import theorem.Limiting.Saturation
 import theorem.Line.ABCD
 import theorem.Line.Bergeron
 import theorem.Line.Cable
-import theorem.Line.Circulant
 import theorem.Line.RLCGLadder
 import theorem.Line.Telegrapher
 import theorem.LinearAlgebra.Arnoldi
@@ -186,7 +186,7 @@ import theorem.Modal.Spectral
 import theorem.Network.FrequencyDivider
 import theorem.Network.LinearSync
 import theorem.Network.PowerFlow
-import theorem.Network.Swing
+import theorem.Network.Swing.Basic
 import theorem.Network.Synchronization
 import theorem.Network.WeightedLaplacian
 import theorem.NormalForm.BogdanovTakens
@@ -275,7 +275,6 @@ import theorem.Stochastic.Brownian
 import theorem.Stochastic.Convergence
 import theorem.Stochastic.ConvergenceCDF
 import theorem.Stochastic.FokkerPlanck
-import theorem.Stochastic.FrequencyCov
 import theorem.Stochastic.GBMSeparation
 import theorem.Stochastic.LargeDeviations
 import theorem.Stochastic.LyapunovCovariance
@@ -302,6 +301,7 @@ import theorem.Synchronous.SMIB11PH
 import theorem.Synchronous.StochasticPH
 import theorem.Synchronous.Swing
 import theorem.Synchronous.SwingPH
+import theorem.Transform.Circulant
 import theorem.Transform.ComplexImpedance
 import theorem.Transform.ComplexPower
 import theorem.Transform.Park
@@ -329,11 +329,11 @@ import theorem.SingularPerturbation.FiniteHorizon
 import theorem.Line.CableSchelkunoff
 import theorem.Asymptotics.Guard.MFPTExpansion
 import theorem.Asymptotics.LaplaceTwoTerm
-import theorem.Dynamics.DegenerateMinimumCycle
+import theorem.Network.Swing.CycleMinimum
 import theorem.Dynamics.Degenerate.PlaneCollapse
 import theorem.Dynamics.Degenerate.WeakFocus
 import theorem.GFM.VSMLPFHopf
-import theorem.Network.SwingDegenerate
-import theorem.Network.SwingDegenerateRing
-import theorem.Network.SwingFour
-import theorem.Network.SwingFourDense
+import theorem.Network.Swing.Degenerate
+import theorem.Network.Swing.DegenerateRing
+import theorem.Network.Swing.Four
+import theorem.Network.Swing.FourDense

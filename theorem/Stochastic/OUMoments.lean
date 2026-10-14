@@ -8,8 +8,10 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 /-! # Scalar Ornstein–Uhlenbeck moment functions and the exact Gaussian AR(1) step (foundation)
 
 Source: work-sync `theory/T-sde-systems.md` §1.8.1 (scalar OU mean / variance, limit
-`σ²/(2θ)`), §1.8.3 (stationary autocovariance `e^{-θ|τ|}σ∞²` and PSD `σ²/(θ²+ω²)`),
-§2.2.2 (noisy swing `M dΔω = -DΔω dt + β dW`, stationary variance `β²/(2DM)`).
+`σ²/(2θ)`), §1.8.3 (stationary autocovariance `e^{-θ|τ|}σ∞²` and PSD `σ²/(θ²+ω²)`).
+The noisy-swing specialisation of §2.2.2 (`M dΔω = -DΔω dt + β dW`, stationary variance
+`β²/(2DM)`) is in `theorem/Frequency/StochasticCOI.lean` (`Frequency.FreqCov.swing_ouStatVar`,
+`Frequency.FreqCov.swing_ouVar_tendsto`).
 
 Scope and classification (Rules §3).  Every statement here is a **foundation** fact:
 * the mean and variance functions are treated as solutions of the scalar affine ODEs
@@ -166,21 +168,6 @@ def ouStatVar (θ σ : ℝ) : ℝ := σ ^ 2 / (2 * θ)
 
 @[powerlib_foundation] theorem ouStatVar_nonneg {θ : ℝ} (hθ : 0 < θ) (σ : ℝ) :
     0 ≤ ouStatVar θ σ := div_nonneg (sq_nonneg σ) (by linarith)
-
-/-! ## Noisy swing equation (T-sde-systems §2.2.2) -/
-
-/-- Writing `M dΔω = -DΔω dt + β dW` as an OU with `θ = D/M`, `σ = β/M`, the stationary
-variance `σ²/(2θ)` equals `β²/(2DM)` (algebraic part only). -/
-@[powerlib_foundation] theorem swing_ouStatVar {M D : ℝ} (hM : M ≠ 0) (hD : D ≠ 0) (β : ℝ) :
-    ouStatVar (D / M) (β / M) = β ^ 2 / (2 * D * M) := by
-  unfold ouStatVar
-  field_simp
-
-/-- The variance function of the noisy swing tends to `β²/(2DM)` when `D, M > 0`. -/
-@[powerlib_foundation] theorem swing_ouVar_tendsto {M D : ℝ} (hM : 0 < M) (hD : 0 < D) (β : ℝ) :
-    Tendsto (ouVar (D / M) (β / M)) atTop (𝓝 (β ^ 2 / (2 * D * M))) := by
-  rw [← swing_ouStatVar hM.ne' hD.ne']
-  exact ouVar_tendsto (div_pos hD hM) _
 
 /-! ## Exact Gaussian AR(1) step -/
 

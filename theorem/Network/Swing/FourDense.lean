@@ -1,14 +1,14 @@
-import theorem.Network.SwingFour
+import theorem.Network.Swing.Four
 
 /-! # Networked swing equations: four machines with five or six lines
 
 Source: work-sync `theory/T-synchronization-manifold.md` §1.7 and §2.2 (swing network
 `Mᵢ θ̈ᵢ = P_{m,i} − Dᵢ θ̇ᵢ − ∑ⱼ Bᵢⱼ sin(θᵢ − θⱼ)` and its energy function); the model is
-`theorem/Network/Swing.lean` (`Swing.family`); the potential, the Hessian and cubic forms and the
-characterization of local asymptotic stability are in `theorem/Network/SwingDegenerate.lean`; the
-cut, flat-direction and four-cycle results are in `theorem/Network/SwingFour.lean`.
+`theorem/Network/Swing/Basic.lean` (`Swing.family`); the potential, the Hessian and cubic forms and
+the characterization of local asymptotic stability are in `theorem/Network/Swing/Degenerate.lean`;
+the cut, flat-direction and four-cycle results are in `theorem/Network/Swing/Four.lean`.
 
-Model boundary. Exactly the model of `theorem/Network/Swing.lean` for four machines (`n = 3`):
+Model boundary. Exactly the model of `theorem/Network/Swing/Basic.lean` for four machines (`n = 3`):
 reduced state `(δ, ω)` of order `Fin (3 + (3 + 1))` (relative angles `θ_{i+1} − θ₀`, then the
 frequency deviations), positive inertia and damping, constant power, symmetric nonnegative
 lossless couplings, constant voltages; no governor, AVR, PLL, converter control, delay or PWM;
@@ -62,7 +62,7 @@ Results.
   five.
 * Implementation evidence (private, model level): `not_localAsymptoticStable_diamond`,
   `not_localAsymptoticStable_complete`, `not_localAsymptoticStable_four_machines` (with
-  `not_localAsymptoticStable_four` of `SwingFour` for two uncoupled pairs) and the labelled-form
+  `not_localAsymptoticStable_four` of `Swing/Four` for two uncoupled pairs) and the labelled-form
   helpers `cut_pos_of_localAsymptoticStable`, `labelled_nonneg_of_localAsymptoticStable`,
   `exists_null_of_localAsymptoticStable`.
 

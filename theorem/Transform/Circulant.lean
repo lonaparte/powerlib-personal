@@ -27,8 +27,8 @@ Results.
 -/
 
 noncomputable section
-namespace powerlib.Line.Circulant
-open Matrix powerlib.Transform
+namespace powerlib.Transform
+open Matrix
 
 /-- Symmetric circulant `[[a, b, b], [b, a, b], [b, b, a]]`. -/
 def symCirc {R : Type*} [Ring R] (a b : R) : Matrix (Fin 3) (Fin 3) R := circulant ![a, b, b]
@@ -119,4 +119,4 @@ the same constant `T` diagonalises `ZY`, with modal `γ_k²` equal to `(z_s − 
   simp only [symCirc_apply]
   ext i j; fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_three] <;> ring
 
-end powerlib.Line.Circulant
+end powerlib.Transform

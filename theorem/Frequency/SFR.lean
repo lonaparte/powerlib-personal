@@ -2,6 +2,7 @@ import theorem.Frequency.SwingNadir
 import theorem.Criteria.Routh3
 import theorem.Linear.Rate
 import theorem.TMIO.ClaimElab
+import theorem.SpecialFunctions.Elementary
 
 /-! # Reheat-turbine system frequency response (SFR) model
 
@@ -643,20 +644,6 @@ member of the swing + governor family. -/
     apply Complex.ext <;> simp <;> field_simp
   rw [h, Complex.arg_real_mul _ (by positivity)]
 
-/-- `arg (x + j y) = arctan (y / x)` for `x > 0`. -/
-@[powerlib_foundation] theorem arg_eq_arctan {x y : ℝ} (hx : 0 < x) :
-    Complex.arg ⟨x, y⟩ = Real.arctan (y / x) := by
-  have hz : (⟨x, y⟩ : ℂ) ≠ 0 := by
-    intro h; have := congrArg Complex.re h; simp at this; linarith
-  have habs : |Complex.arg ⟨x, y⟩| < Real.pi / 2 :=
-    Complex.abs_arg_lt_pi_div_two_iff.2 (Or.inl hx)
-  have hn : 0 < ‖(⟨x, y⟩ : ℂ)‖ := norm_pos_iff.2 hz
-  have htan : Real.tan (Complex.arg ⟨x, y⟩) = y / x := by
-    rw [Real.tan_eq_sin_div_cos, Complex.sin_arg, Complex.cos_arg hz]
-    simp only
-    field_simp
-  rw [← htan, Real.arctan_tan (abs_lt.1 habs).1 (abs_lt.1 habs).2]
-
 /-- The note's §1.6 nadir time `arctan(ω_d T_R/(1 − σ T_R))/ω_d`. -/
 def noteNadirTime (σ ωd TR : ℝ) : ℝ := Real.arctan (ωd * TR / (1 - σ * TR)) / ωd
 
@@ -667,7 +654,7 @@ true first-minimum time `arg (σ − 1/T_R + j ω_d)/ω_d`. -/
     noteNadirTime σ ωd TR = -(Complex.arg ⟨σ - 1 / TR, ωd⟩ / ωd) ∧
       noteNadirTime σ ωd TR < 0 := by
   have harg : Complex.arg ⟨σ - 1 / TR, ωd⟩ = Real.arctan (ωd * TR / (σ * TR - 1)) := by
-    rw [arg_scale hTR, arg_eq_arctan (by linarith)]
+    rw [arg_scale hTR, SpecialFunctions.arg_eq_arctan (by linarith)]
   have heq : noteNadirTime σ ωd TR = -(Complex.arg ⟨σ - 1 / TR, ωd⟩ / ωd) := by
     rw [harg, noteNadirTime, show ωd * TR / (1 - σ * TR) = -(ωd * TR / (σ * TR - 1)) by
       rw [← div_neg, neg_sub], Real.arctan_neg, neg_div]

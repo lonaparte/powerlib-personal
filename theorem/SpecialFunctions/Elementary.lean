@@ -20,12 +20,14 @@ not state in this form. Nothing here describes a physical system.
 * Complex exponential: `normSq_affine_exp` (`|a e^{jδ} + b|² = a² + b² + 2ab cos δ`),
   `im_logDeriv_affine_exp`
   (`Im(a j e^{jδ}/(a e^{jδ} + b)) = (a² + ab cos δ)/(a² + b² + 2ab cos δ)`).
+* Complex argument: `arg_eq_arctan` (`arg (x + j y) = arctan (y / x)` for `x > 0`).
 
 Source: elementary analysis, used by the swing-equation damping estimates
 (`theorem/Synchronous/DampedEAC.lean`), the model-B boundary analysis
 (`theorem/GFL/DCLink/ModelBBoundary.lean`), the sensorless drive averaging
-(`theorem/Drives/Sensorless.lean`) and the Thévenin modulation map
-(`theorem/GFL/Parametric/ModulationTransfer.lean`).
+(`theorem/Drives/Sensorless.lean`), the Thévenin modulation map
+(`theorem/GFL/Parametric/ModulationTransfer.lean`) and the SFR nadir-time correction
+(`theorem/Frequency/SFR.lean`).
 -/
 
 noncomputable section
@@ -172,5 +174,21 @@ open Complex
   nlinarith [hs]
 
 end ComplexExp
+
+/-! ## Complex argument -/
+
+/-- `arg (x + j y) = arctan (y / x)` for `x > 0`. -/
+@[powerlib_foundation] theorem arg_eq_arctan {x y : ℝ} (hx : 0 < x) :
+    Complex.arg ⟨x, y⟩ = Real.arctan (y / x) := by
+  have hz : (⟨x, y⟩ : ℂ) ≠ 0 := by
+    intro h; have := congrArg Complex.re h; simp at this; linarith
+  have habs : |Complex.arg ⟨x, y⟩| < Real.pi / 2 :=
+    Complex.abs_arg_lt_pi_div_two_iff.2 (Or.inl hx)
+  have hn : 0 < ‖(⟨x, y⟩ : ℂ)‖ := norm_pos_iff.2 hz
+  have htan : Real.tan (Complex.arg ⟨x, y⟩) = y / x := by
+    rw [Real.tan_eq_sin_div_cos, Complex.sin_arg, Complex.cos_arg hz]
+    simp only
+    field_simp
+  rw [← htan, Real.arctan_tan (abs_lt.1 habs).1 (abs_lt.1 habs).2]
 
 end powerlib.SpecialFunctions
