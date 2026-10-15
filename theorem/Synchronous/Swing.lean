@@ -13,7 +13,10 @@ import theorem.Dynamics.Instability
 
 The canonical single-machine swing model `SwingParams` with its equilibrium set, linearization and
 energy function, read through two families: the nonlinear field about a selected angle
-(`Swing.family`) and its linearization (`Swing.Linearized.family`).
+(`Swing.family`) and its linearization (`Swing.Linearized.family`). `Swing.family` is the
+canonical family of the classical single machine on an infinite bus: the port-Hamiltonian
+classical machine (`ClassicalSM.family`, `theorem/Synchronous/PH.lean`) takes its flow
+conclusions from it.
 
 Model boundary.
 * State `x = (δ, ω) : Dynamics.State 2`, in this order: `δ` is the internal (rotor or virtual)
@@ -105,10 +108,18 @@ Family and connection conclusions.
 * Instances (`theorem/Synchronous/Instances.lean`): VSG / VSM on an infinite bus
   (`k₁ = 0, k₃ = 0, k₂ = E V_g / X_g`), the classical SMIB model (`k₂ = E' V_∞ / X_d'`), and the
   post-fault SMIB curve with line resistance.
-* The same classical machine on an infinite bus, written as a nonlinear port-Hamiltonian system
-  in `(δ, p = M ω)` with `P_e = b sin δ`, is the family `ClassicalSM.family` of
-  `theorem/Synchronous/PH.lean`; the two families are kept side by side (different requirement
-  languages and sentence sets), not merged.
+* The classical machine on an infinite bus written as a nonlinear port-Hamiltonian system in
+  `(δ, p = M ω)` with `P_e = b sin δ` and a mechanical-power port (`ClassicalSM.family`,
+  `theorem/Synchronous/PH.lean`) is read through this family, the canonical one: its swing reading
+  `ClassicalSM.Model.toSwing` is `⟨⟨M, D, P_m, 0, b, 0⟩, δ*⟩` (`M > 0`, `D ≥ 0`, `b > 0`), and on
+  every flow sentence its denotation and its translation are the pullbacks of this family's
+  (`ClassicalSM.den_flow_eq_preimage`, `ClassicalSM.mem_den_flow_iff_swing`,
+  `ClassicalSM.realize_translate_flow_eq_preimage`, `ClassicalSM.exact_flow_iff`; the zero-input
+  pH field is the swing field under `diag(1, M)`, `Dynamics.holds_transport_iff`). Its flow
+  conclusions are derived from `Swing.chain_le_semantics`, `Swing.mem_den_*`,
+  `Swing.exactUnder_*` and `Swing.mem_den_lyapunovStable_iff_of_inertia`. Only passivity differs:
+  the pH machine is passive exactly when `P_m = 0`, while this family has no port
+  (`ClassicalSM.not_den_eq_preimage`).
 -/
 
 noncomputable section

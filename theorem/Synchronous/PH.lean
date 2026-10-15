@@ -1,15 +1,18 @@
 import theorem.PH.Linear
 import theorem.PH.Linearization
-import theorem.Criteria.Hurwitz2
+import theorem.Synchronous.Swing
+import theorem.Dynamics.Transport
 import theorem.Dynamics.ConverseLinearization
 import theorem.TMIO.ClaimElab
-import theorem.Dynamics.Instability
-import theorem.Dynamics.Coordinates
 
 /-! # Synchronous machines as nonlinear port-Hamiltonian systems
 
 The classical machine on an infinite bus and the seven-state dq machine as instances of
 `powerlib.PH.NonlinearModel`, each with its family (`ClassicalSM.family`, `SyncMachine7.family`).
+The classical machine is the canonical swing model of `theorem/Synchronous/Swing.lean` in momentum
+coordinates with a mechanical-power port: its flow sentences are those of the swing family
+`Swing.family` read through `ClassicalSM.Model.toSwing`, and only its port-Hamiltonian content
+(Hamiltonian, structure matrices, passivity) is proved here.
 
 Model boundary.
 Classical machine (`classicalSM`, T-ph §1.7 (1.12)), continuous time:
@@ -23,9 +26,11 @@ Classical machine (`classicalSM`, T-ph §1.7 (1.12)), continuous time:
   Dynamics `δ̇ = ω`, `ṗ = P_m − b sin δ − D ω + u` (swing equation).
 * Not modelled: flux dynamics, AVR, governor, network beyond the single infinite bus,
   saturation, delay. Equilibrium-level and trajectory-level results under zero input `u = 0`.
-* The same machine in swing-equation form `(δ, ω)` (`k₁ = k₃ = 0`, `k₂ = b`) is the family
-  `Swing.family` of `theorem/Synchronous/Swing.lean`; the two families are kept side by side
-  (different requirement languages and sentence sets), not merged.
+* Swing reading: the swing parameters `ClassicalSMParams.toSwing` are `M, D, P_m`, `k₁ = k₃ = 0`,
+  `k₂ = b`; under zero input the pH field is that swing field in the coordinates
+  `(δ, p) = (δ, M ω)` (`classicalSM_zeroInputField_eq_transport`, `T = diag(1, M)`). The swing
+  family has free parameters and no port; the image of `ClassicalSM.Model.toSwing` is the part
+  with `M > 0`, `D ≥ 0`, `k₁ = k₃ = 0`, `k₂ > 0`.
 Seven-state dq machine (`syncMachine7`, T-sync-machine §1.13), continuous time:
 * State order `x = (Ψ_d, Ψ_q, Ψ_f, Ψ_kd, Ψ_kq, p, δ) ∈ ℝ⁷` (`Ψ_0` omitted, three-wire);
   rotor dq frame; **absolute** rotor angle with `δ̇ = ω_r`; `p = M ω_r`.
@@ -48,13 +53,17 @@ Results.
 * Classical machine: `H` is not bounded below for `P_m ≠ 0`
   (`classicalSM_hamiltonian_not_bddBelow`), while the dissipation inequality
   `H(x(t₁)) − H(x(t₀)) ≤ ∫ u ω` holds on every solution segment (private
-  `classicalSM_integral_dissipation`).
-* Classical machine, local stability: `H − H(x*)` is a local Lyapunov function on the strip
-  `|δ| < π/2` around a stable equilibrium `δ* ∈ (−π/2, π/2)`, `b sin δ* = P_m`, `p* = 0`
-  (`classicalSM_isStrictLocalMin`), transported by whole turns to every equilibrium with
-  `cos δ* > 0`.  (`H − H(x*)` is in general **not** positive on all of `|δ − δ*| < π`: it changes
-  sign beyond the unstable equilibrium `π − δ*`; positivity is only claimed on `|δ| < π/2`.)
-  Further: `D > 0, cos δ* > 0` ⇒ local exponential stability; `cos δ* < 0` ⇒ instability.
+  `classicalSM_integral_dissipation`); energy balance `Ḣ = u ω − D ω²`
+  (`classicalSM_power_balance`); equilibria `b sin δ = P_m`, `p = 0`
+  (`classicalSM_isEquilibrium_iff`).
+* Classical machine, local structure of `H`: `H − H(x*)` has a strict local minimum at a stable
+  equilibrium `δ* ∈ (−π/2, π/2)`, `b sin δ* = P_m`, `p* = 0` (`classicalSM_isStrictLocalMin`,
+  `classicalSM_potential_pos`). (`H − H(x*)` is in general **not** positive on all of
+  `|δ − δ*| < π`: it changes sign beyond the unstable equilibrium `π − δ*`; positivity is only
+  claimed on `|δ| < π/2`.) Hessian `diag(b cos δ, 1/M)` (`classicalSM_hasFDerivAt_dH`) and
+  linearization `(J − R) ∇²H = [[0, 1/M], [−b cos δ*, −D/M]]` (`classicalSM_linearization`); at a
+  fold `cos δ* = 0` the Hamiltonian and the accelerating power (`ClassicalSM.classicalSM_H_fold`,
+  `ClassicalSM.classicalSM_accel_fold`).
 * Seven-state machine: the pH field reproduces every rate equation of §1.13
   (`syncMachine7_field`); the energy balance (`syncMachine7_power_balance`)
   `Ḣ = (v_d i_d + v_q i_q + v_f i_f + T_m ω_r) − (r_s(i_d²+i_q²) + r_f i_f² + r_kd i_kd² +
@@ -72,44 +81,50 @@ Family and connection conclusions.
   stability translates into an equilibrium on the stable branch, the local attractive sentences
   into a damped equilibrium with `cos δ* > 0`, instability into an equilibrium on the unstable
   branch, passivity into `P_m = 0`; the global sentences, decay rates, sampled contraction and
-  conservation have no translation (the whole, inconsistent, language). The chain lies below the
-  semantics (`ClassicalSM.chain_le_semantics`).
-* The passivity translation is exact (`ClassicalSM.exact_passive`): for `P_m ≠ 0` the machine is
-  not passive (`ClassicalSM.not_mem_den_passive`) — a slow spin `ω₀ = P_m / (2 (D + 1))`, held at
-  constant speed by the port, draws `2π |P_m|` minus the damping loss per revolution, so the
-  energy drawn over many revolutions exceeds every nonnegative storage.
-* The local exponential translation is exact (`ClassicalSM.exact_locallyExponentiallyStable`):
-  by the converse linearization theorem (`Dynamics.isHurwitz_of_locallyExponentiallyStable`)
-  local exponential stability forces an equilibrium whose Jacobian
-  `[[0, 1/M], [−b cos δ*, −D/M]]` is Hurwitz, i.e. `D > 0`, `cos δ* > 0`.
-* The instability translation is not exact (`ClassicalSM.not_exact_unstable`): instability is
-  the failure of Lyapunov stability, so the unbalanced machine `ClassicalSM.offEquilibrium`
+  conservation have no translation (the whole, inconsistent, language).
+* Equivalence with the swing family. The canonical family is `Swing.family`; on every flow
+  sentence `ClassicalSM.family` is its pullback through `ClassicalSM.Model.toSwing`
+  (`⟨⟨M, D, P_m, 0, b, 0⟩, δ*⟩`), for both connections: the denotations
+  (`ClassicalSM.den_flow_eq_preimage`, member form `ClassicalSM.mem_den_flow_iff_swing`; every
+  flow sentence is invariant under `diag(1, M)`, `Dynamics.holds_transport_iff`) and the
+  translations (`ClassicalSM.realize_translate_flow_eq_preimage`: on the image positive inertia
+  and nonnegative damping always hold, `locked` is `balanced`, `stableBranch` is `synchronizing`,
+  `damped` is `damped` with `synchronizing`, `unstableBranch` is `destabilizing`). Hence a flow
+  translation is exact exactly when it is for `Swing.family.comap ClassicalSM.Model.toSwing`
+  (`ClassicalSM.exact_flow_iff`). Passivity is outside the equivalence: the pH family has a port
+  and is passive exactly when `P_m = 0`, the swing family has none and every model is passive, so
+  the sentence-by-sentence equivalence fails (`ClassicalSM.not_den_eq_preimage`).
+* Flow conclusions, all read off the swing family through the equivalence: chain soundness
+  (`ClassicalSM.chain_le_semantics`, from `Swing.chain_le_semantics`; passivity from
+  `ClassicalSM.mem_den_passive_of_Pm_zero`); members `ClassicalSM.mem_den_lyapunovStable`,
+  `ClassicalSM.mem_den_locallyExponentiallyStable`, `ClassicalSM.mem_den_unstable` (from
+  `Swing.mem_den_*`). The local exponential and local asymptotic translations are exact
+  (`ClassicalSM.exact_locallyExponentiallyStable`, `ClassicalSM.exact_locallyAsymptoticallyStable`,
+  from `Swing.exactUnder_*`: every swing reading has positive inertia; the degenerate cases, an
+  undamped machine and a fold `cos δ* = 0`, are decided by the energy `H`). The Lyapunov denotation
+  is `ClassicalSM.mem_den_lyapunovStable_iff` (`b sin δ* = P_m`, `cos δ* > 0`, every `D ≥ 0`;
+  from `Swing.mem_den_lyapunovStable_iff_of_inertia`, whose flat-curve alternative `k₂ = 0` is
+  excluded by `b > 0`), so the Lyapunov translation is exact (`ClassicalSM.exact_lyapunovStable`).
+  The stable-branch requirement must be invariant under whole turns: with `|δ*| < π/2` instead
+  of `cos δ* > 0` the Lyapunov translation would be sound but not exact (`M = b = 1`,
+  `D = P_m = 0`, `δ* = 2π` is Lyapunov stable without meeting it). The instability translation is
+  not exact (`ClassicalSM.not_exact_unstable`): the unbalanced machine `ClassicalSM.offEquilibrium`
   (`P_m = 2 > b = 1`) is unstable (`ClassicalSM.offEquilibrium_mem_den_unstable`).
-* The local asymptotic translation is exact (`ClassicalSM.exact_locallyAsymptoticallyStable`),
-  although the linearization does not decide the degenerate cases: an undamped machine conserves
-  `H`, and at a fold (`cos δ* = 0`) the Hamiltonian `p²/(2M) − P_m (s − sin s)`
-  (`classicalSM_H_fold`) is below its value at `(δ*, 0)` on one side, where the dissipated `H`
-  keeps every solution away (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`).
-* The Lyapunov translation is exact (`ClassicalSM.exact_lyapunovStable`): its denotation is
-  `ClassicalSM.mem_den_lyapunovStable_iff` (`b sin δ* = P_m`, `cos δ* > 0`, every `D ≥ 0`): up to
-  whole turns `H − H(x*)` is a local Lyapunov function (`zeroInputField` is `2π`-periodic in `δ`),
-  the unstable branch is unstable, and a fold is unstable for every `D ≥ 0`
-  (`classicalSM_accel_fold`, `Dynamics.unstable_of_lie_nonpos_of_lie_pos`).  The stable-branch
-  requirement must be invariant under whole turns: with `|δ*| < π/2` instead of `cos δ* > 0` the
-  Lyapunov translation would be sound but not exact (`M = b = 1`, `D = P_m = 0`, `δ* = 2π` is
-  Lyapunov stable without meeting it).  The local attractive sentences translate through
-  `damped` (`D > 0 ∧ cos δ* > 0`), which is turn invariant as well.
+* Passivity, the port-Hamiltonian conclusion: the translation is exact
+  (`ClassicalSM.exact_passive`): with `P_m = 0` the Hamiltonian is bounded below
+  (`ClassicalSM.mem_den_passive_of_Pm_zero`); for `P_m ≠ 0` the machine is not passive
+  (`ClassicalSM.not_mem_den_passive`) — a slow spin `ω₀ = P_m / (2 (D + 1))`, held at constant
+  speed by the port, draws `2π |P_m|` minus the damping loss per revolution, so the energy drawn
+  over many revolutions exceeds every nonnegative storage.
 * `SyncMachine7.family`: a complete system is the seven-state machine (`SyncMachine7Params`),
   read as its pH port system at the origin (the unforced state, an equilibrium). Passivity is
-  translated into no requirement and is exact (`H ≥ 0`); flow sentences have no translation.
-* Connection conclusions: `ClassicalSM.mem_den_lyapunovStable`,
-  `ClassicalSM.mem_den_locallyExponentiallyStable`, `ClassicalSM.mem_den_unstable`,
-  `ClassicalSM.mem_den_passive_of_Pm_zero`, `SyncMachine7.mem_den_passive`, plus the chain
-  soundness and `realize_univ` of both families.
+  translated into no requirement and is exact (`H ≥ 0`, `SyncMachine7.mem_den_passive`); flow
+  sentences have no translation; the chain lies below the semantics
+  (`SyncMachine7.chain_le_semantics`).
 * The rate equations, energies, damping powers, supplies, power balances, equilibrium
-  characterization, unboundedness of `H` and the linearization are static evidence; the
-  trajectory-level dissipation inequality of the classical machine and the energy derivative of
-  the seven-state machine are private implementation evidence.
+  characterization, unboundedness of `H`, the linearization and the swing reading are static
+  evidence; the trajectory-level dissipation inequality of the classical machine and the energy
+  derivative of the seven-state machine are private implementation evidence.
 
 Correction.
 * T-ph §1.1, structural assumption 3 `H ≥ H_min > −∞`: the classical-machine `H` contains
@@ -328,84 +343,6 @@ def classicalSM_equilibrium (δs : ℝ) : State 2 := WithLp.toLp 2 ![δs, 0]
     have : 0 ≤ 1 / (2 * p.M) * x 1 ^ 2 := by positivity
     linarith
 
-/-- Implementation evidence for `ClassicalSM.mem_den_lyapunovStable`. -/
-private theorem classicalSM_lyapunovStable (p : ClassicalSMParams) {δs : ℝ}
-    (hδs : δs ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2)) (heq : p.b * Real.sin δs = p.Pm) :
-    LyapunovStable (classicalSM p).zeroInputField (classicalSM_equilibrium δs) :=
-  (classicalSM_isStrictLocalMin p hδs heq).lyapunovStable
-
-/-- The zero-input field is `2π`-periodic in the rotor angle. -/
-private theorem zeroInputField_add_period (p : ClassicalSMParams) (k : ℤ) (x : State 2) :
-    (classicalSM p).zeroInputField (x + WithLp.toLp 2 ![k * (2 * Real.pi), 0]) =
-      (classicalSM p).zeroInputField x := by
-  apply WithLp.ofLp_injective 2
-  simp only [NonlinearModel.zeroInputField]
-  rw [classicalSM_field, classicalSM_field]
-  ext i
-  fin_cases i <;> simp [Real.sin_add_int_mul_two_pi]
-
-private theorem lyapunovStable_add_period (p : ClassicalSMParams) (δs : ℝ) (k : ℤ) :
-    LyapunovStable (classicalSM p).zeroInputField
-        (classicalSM_equilibrium (δs + k * (2 * Real.pi))) ↔
-      LyapunovStable (classicalSM p).zeroInputField (classicalSM_equilibrium δs) := by
-  have hfun : (fun z => (classicalSM p).zeroInputField
-        (z + classicalSM_equilibrium (δs + k * (2 * Real.pi)))) =
-      fun z => (classicalSM p).zeroInputField (z + classicalSM_equilibrium δs) := by
-    funext z
-    have hz : z + classicalSM_equilibrium (δs + k * (2 * Real.pi)) =
-        (z + classicalSM_equilibrium δs) + WithLp.toLp 2 ![k * (2 * Real.pi), 0] := by
-      ext i
-      fin_cases i
-      · simp [classicalSM_equilibrium]
-        ring
-      · simp [classicalSM_equilibrium]
-    rw [hz, zeroInputField_add_period]
-  have h1 := Flow.Property.holds_shift_iff (f := (classicalSM p).zeroInputField)
-    (e := classicalSM_equilibrium (δs + k * (2 * Real.pi))) Flow.Property.lyapunovStable
-  have h2 := Flow.Property.holds_shift_iff (f := (classicalSM p).zeroInputField)
-    (e := classicalSM_equilibrium δs) Flow.Property.lyapunovStable
-  rw [hfun] at h1
-  exact h1.symm.trans h2
-
-/-- Lyapunov stability at every equilibrium with `cos δ* > 0`, for every `D ≥ 0`: up to whole
-turns `δ* = δ' + k · 2π` with `|δ'| < π/2`, where `H − H(x*)` is a local Lyapunov function, and
-the zero-input field is `2π`-periodic in `δ`. -/
-private theorem classicalSM_lyapunovStable_of_cos_pos (p : ClassicalSMParams) {δs : ℝ}
-    (heq : p.b * Real.sin δs = p.Pm) (hc : 0 < Real.cos δs) :
-    LyapunovStable (classicalSM p).zeroInputField (classicalSM_equilibrium δs) := by
-  -- reduce to `|δ'| < π/2`, `δ* = δ' + k · 2π`
-  set k : ℤ := round (δs / (2 * Real.pi)) with hk
-  set δ' := δs - k * (2 * Real.pi) with hδ'
-  have hpi := Real.pi_pos
-  have habs : |δ'| ≤ Real.pi := by
-    have h := abs_sub_round (δs / (2 * Real.pi))
-    have : δ' = 2 * Real.pi * (δs / (2 * Real.pi) - round (δs / (2 * Real.pi))) := by
-      rw [hδ', hk]; field_simp
-    rw [this, abs_mul, abs_of_pos (by positivity)]
-    nlinarith
-  have hcos' : Real.cos δ' = Real.cos δs := by
-    rw [hδ', Real.cos_sub_int_mul_two_pi]
-  have hsin' : Real.sin δ' = Real.sin δs := by
-    rw [hδ', Real.sin_sub_int_mul_two_pi]
-  have hmem : δ' ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2) := by
-    constructor
-    · by_contra h
-      push Not at h
-      have : Real.cos δ' ≤ 0 := by
-        rw [← Real.cos_neg]
-        exact Real.cos_nonpos_of_pi_div_two_le_of_le (by linarith)
-          (by linarith [neg_abs_le δ'])
-      linarith
-    · by_contra h
-      push Not at h
-      have : Real.cos δ' ≤ 0 :=
-        Real.cos_nonpos_of_pi_div_two_le_of_le h (by linarith [le_abs_self δ'])
-      linarith
-  have hls := classicalSM_lyapunovStable p hmem (by rw [hsin']; exact heq)
-  have hδs : δs = δ' + k * (2 * Real.pi) := by rw [hδ']; ring
-  rw [hδs, lyapunovStable_add_period]
-  exact hls
-
 @[powerlib_foundation] theorem classicalSM_contDiff_dH (p : ClassicalSMParams) :
     ContDiff ℝ 1 (classicalSM p).dH := by
   rw [contDiff_euclidean]
@@ -451,48 +388,31 @@ private theorem classicalSM_lyapunovStable_of_cos_pos (p : ClassicalSMParams) {�
     simp [classicalSM, Matrix.diagonal_vec2]
   all_goals ring
 
-/-- Implementation evidence for `ClassicalSM.mem_den_locallyExponentiallyStable`. -/
-private theorem classicalSM_locallyExponentiallyStable (p : ClassicalSMParams)
-    {δs : ℝ} (hD : 0 < p.D) (heq : p.b * Real.sin δs = p.Pm) (hcos : 0 < Real.cos δs) :
-    LocallyExponentiallyStable (classicalSM p).zeroInputField (classicalSM_equilibrium δs) := by
-  have hM := p.M_pos
-  have hb := p.b_pos
-  have h0 : (classicalSM p).dH (classicalSM_equilibrium δs) = 0 := by
-    apply WithLp.ofLp_injective 2
-    ext i
-    fin_cases i <;> simp [classicalSM, classicalSM_dH, classicalSM_equilibrium, heq]
-  have hQ := (classicalSM_hasFDerivAt_dH p (classicalSM_equilibrium δs)).fderiv
-  simp only [classicalSM_equilibrium, PiLp.toLp_apply, Matrix.cons_val_zero] at hQ
-  refine (classicalSM p).locallyExponentiallyStable_of_isHurwitz (fun _ _ => contDiff_const)
-    (fun _ _ => contDiff_const) (classicalSM_contDiff_dH p) hQ h0 ?_
-  rw [classicalSM_linearization, Criteria.isHurwitz_fin_two_of_iff]
-  constructor
-  · have : 0 < p.D / p.M := div_pos hD hM
-    linarith
-  · have : 0 < 1 / p.M * (p.b * Real.cos δs) := by positivity
-    nlinarith
+/-! ### The swing reading -/
 
-/-- Implementation evidence for `ClassicalSM.mem_den_unstable`. -/
-private theorem classicalSM_unstable (p : ClassicalSMParams) {δs : ℝ}
-    (heq : p.b * Real.sin δs = p.Pm) (hcos : Real.cos δs < 0) :
-    Unstable (classicalSM p).zeroInputField (classicalSM_equilibrium δs) := by
-  have hM := p.M_pos
-  have hb := p.b_pos
-  have h0 : (classicalSM p).dH (classicalSM_equilibrium δs) = 0 := by
-    apply WithLp.ofLp_injective 2
-    ext i
-    fin_cases i <;> simp [classicalSM, classicalSM_dH, classicalSM_equilibrium, heq]
-  have hQ := (classicalSM_hasFDerivAt_dH p (classicalSM_equilibrium δs)).fderiv
-  simp only [classicalSM_equilibrium, PiLp.toLp_apply, Matrix.cons_val_zero] at hQ
-  refine (classicalSM p).unstable_of_eigenvalue_re_pos (fun _ _ => contDiff_const)
-    (fun _ _ => contDiff_const) (classicalSM_contDiff_dH p) hQ h0 ?_
-  rw [classicalSM_linearization]
-  apply Criteria.exists_eigenvalue_re_pos_of_det_neg
-  rw [Matrix.det_fin_two_of]
-  have : 0 < 1 / p.M * (p.b * -Real.cos δs) := by
-    have : 0 < -Real.cos δs := by linarith
-    positivity
-  nlinarith
+/-- The classical machine as the canonical swing model
+`M ω̇ = P_m − (k₁ + k₂ sin(δ − k₃)) − D ω` (`theorem/Synchronous/Swing.lean`) with `k₁ = k₃ = 0`,
+`k₂ = b`. -/
+def ClassicalSMParams.toSwing (p : ClassicalSMParams) : SwingParams := ⟨p.M, p.D, p.Pm, 0, p.b, 0⟩
+
+/-- Under zero input the pH field is the swing field of `toSwing` in the momentum coordinates
+`(δ, p) = (δ, M ω)`: `f_pH = T ∘ f_swing ∘ T⁻¹` with `T = diag(1, M)` (`Dynamics.scaleCoord`).
+Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem classicalSM_zeroInputField_eq_transport (p : ClassicalSMParams) :
+    (classicalSM p).zeroInputField =
+      Dynamics.transportField (Dynamics.scaleCoord p.M_pos.ne') 0 p.toSwing.field := by
+  funext x
+  have hM := p.M_pos.ne'
+  apply WithLp.ofLp_injective 2
+  rw [show WithLp.ofLp ((classicalSM p).zeroInputField x) =
+    ![x 1 / p.M, p.Pm - p.b * Real.sin (x 0) - p.D * (x 1 / p.M) + 0] from
+    classicalSM_field p x 0]
+  ext i
+  fin_cases i
+  · simp [Dynamics.transportField, ClassicalSMParams.toSwing, SwingParams.field, PhasePlane.mk]
+  · simp [Dynamics.transportField, ClassicalSMParams.toSwing, SwingParams.field, PhasePlane.mk,
+      SwingParams.accel, SwingParams.Pe]
+    field_simp
 
 /-! ### The classical-machine family -/
 
@@ -510,6 +430,9 @@ def Model.point (m : Model) : State 2 := classicalSM_equilibrium m.δs
 
 /-- The pH system centred at the operating point. -/
 def Model.toPH (m : Model) : NonlinearModel 2 1 := (classicalSM m.p).shift m.point
+
+/-- The swing reading: the canonical swing model `toSwing` about the same angle `δ*`. -/
+def Model.toSwing (m : Model) : Swing.Model := ⟨m.p.toSwing, m.δs⟩
 
 /-- Requirements on the classical machine, all static. -/
 inductive Requirement
@@ -565,27 +488,178 @@ language is inconsistent. -/
   have h2 : Meets m .unstableBranch := h .unstableBranch
   exact lt_asymm h1.2 h2
 
+/-! #### Equivalence with the swing family -/
+
+private theorem toSwing_Pe (m : Model) : m.toSwing.p.Pe m.toSwing.δ = m.p.b * Real.sin m.δs := by
+  simp [Model.toSwing, ClassicalSMParams.toSwing, SwingParams.Pe]
+
+private theorem toSwing_syncCoeff (m : Model) :
+    m.toSwing.p.syncCoeff m.toSwing.δ = m.p.b * Real.cos m.δs := by
+  simp [Model.toSwing, ClassicalSMParams.toSwing, SwingParams.syncCoeff]
+
+/-- **Flow equivalence with the swing family.** A classical-machine model satisfies a flow
+sentence exactly when its swing reading does: under zero input the pH field is the swing field in
+the coordinates `(δ, M ω)` (`classicalSM_zeroInputField_eq_transport`), the operating point
+`(δ*, 0)` is fixed by that change, and every flow sentence is invariant under it
+(`Dynamics.holds_transport_iff`). -/
+@[powerlib_domain] theorem mem_den_flow_iff_swing (m : Model) (P : Flow.Property) :
+    connection% (m ∈ family.den (.flow P) ↔ m.toSwing ∈ Swing.family.den (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  have hpt : m.point =
+      Dynamics.affineCoord (Dynamics.scaleCoord m.p.M_pos.ne') 0 m.toSwing.point := by
+    ext i
+    fin_cases i <;> simp [Model.point, classicalSM_equilibrium, Swing.Model.point,
+      Model.toSwing, Dynamics.affineCoord, PhasePlane.mk]
+  rw [mem_den_flow_iff, Swing.family_isAutonomous.mem_den_flow,
+    classicalSM_zeroInputField_eq_transport, hpt, Dynamics.holds_transport_iff]
+  exact (Flow.Property.holds_shift_iff P).symm
+
+/-- Every flow sentence of the classical-machine family denotes the preimage of its swing
+denotation under `Model.toSwing`: on the flow sentences the semantics connection of the family is
+that of `Swing.family.comap Model.toSwing`. -/
+@[powerlib_domain] theorem den_flow_eq_preimage :
+    connection% (∀ P : Flow.Property,
+      family.den (.flow P) = Model.toSwing ⁻¹' Swing.family.den (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  intro P
+  ext m
+  have h := mem_den_flow_iff_swing m P
+  unfold powerlib.TMIO.Statement at h
+  exact h
+
+/-- The translation of every flow sentence carves out the preimage of the space of its swing
+translation. On the image of `toSwing` positive inertia and nonnegative damping always hold;
+`locked` is `balanced`, `stableBranch` is `synchronizing` (`b > 0`), `damped` is `damped` with
+`synchronizing`, `unstableBranch` is `destabilizing` (`D ≥ 0`); the global sentences, decay rates,
+sampled contraction and conservation have the empty space on both sides. -/
+@[powerlib_foundation] theorem realize_translate_flow_eq_preimage :
+    connection% (∀ P : Flow.Property, TMIO.realize family.meets (family.translate (.flow P)) =
+      Model.toSwing ⁻¹' TMIO.realize Swing.family.meets (Swing.family.translate (.flow P))) := by
+  unfold powerlib.TMIO.Statement
+  intro P
+  have hu := realize_univ
+  have hsu := Swing.realize_univ
+  unfold powerlib.TMIO.Statement at hu hsu
+  ext m
+  have hM := m.p.M_pos
+  have hD := m.p.D_nonneg
+  have hb := m.p.b_pos
+  cases P
+  case lyapunovStable =>
+    simp only [Set.mem_preimage, TMIO.mem_realize, family, translate, Swing.family,
+      Swing.translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq,
+      Meets, Swing.Meets, toSwing_Pe, toSwing_syncCoeff]
+    constructor
+    · rintro ⟨hl, hc⟩
+      exact ⟨hl, hM, hD, mul_pos hb hc⟩
+    · rintro ⟨hl, -, -, hK⟩
+      exact ⟨hl, pos_of_mul_pos_right hK hb.le⟩
+  case locallyAsymptoticallyStable | locallyExponentiallyStable =>
+    simp only [Set.mem_preimage, TMIO.mem_realize, family, translate, Swing.family,
+      Swing.translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq,
+      Meets, Swing.Meets, toSwing_Pe, toSwing_syncCoeff]
+    constructor
+    · rintro ⟨hl, hd, hc⟩
+      exact ⟨hl, hM, hd, mul_pos hb hc⟩
+    · rintro ⟨hl, -, hd, hK⟩
+      exact ⟨hl, hd, pos_of_mul_pos_right hK hb.le⟩
+  case unstable =>
+    simp only [Set.mem_preimage, TMIO.mem_realize, family, translate, Swing.family,
+      Swing.translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq,
+      Meets, Swing.Meets, toSwing_Pe, toSwing_syncCoeff]
+    constructor
+    · rintro ⟨hl, hc⟩
+      exact ⟨hl, hM, Or.inl (mul_neg_of_pos_of_neg hb hc)⟩
+    · rintro ⟨hl, -, hK | hDn⟩
+      · exact ⟨hl, neg_of_mul_neg_right hK hb.le⟩
+      · exact absurd hD (not_le.mpr hDn)
+  all_goals
+    change m ∈ TMIO.realize Meets Set.univ ↔ m.toSwing ∈ TMIO.realize Swing.Meets Set.univ
+    rw [hu, hsu]
+    simp
+
+/-- On the flow sentences the classical-machine family is the swing family read through
+`Model.toSwing` for both connections: a flow translation is exact exactly when the swing
+translation is exact on the image of `toSwing`. -/
+@[powerlib_domain] theorem exact_flow_iff :
+    connection% (∀ P : Flow.Property,
+      family.Exact (.flow P) ↔ (Swing.family.comap Model.toSwing).Exact (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  intro P
+  have hr := realize_translate_flow_eq_preimage
+  have hd := den_flow_eq_preimage
+  unfold powerlib.TMIO.Statement at hr hd
+  unfold Family.Exact
+  rw [Family.realize_comap, Family.den_comap, hr P, hd P]
+  rfl
+
+/-- A swing translation exact within positive inertia is exact on the image of `toSwing`, where
+the inertia `M > 0` always holds. -/
+private theorem comap_exact_of_exactUnder {P : Flow.Property}
+    (h : Swing.family.ExactUnder {.inertia} (.flow P)) :
+    (Swing.family.comap Model.toSwing).Exact (.flow P) := by
+  unfold Family.ExactUnder TMIO.ExactUnder at h
+  rw [TMIO.realize_union] at h
+  unfold Family.Exact
+  rw [Family.realize_comap, Family.den_comap]
+  ext m
+  have hI : m.toSwing ∈ TMIO.realize Swing.family.meets {.inertia} := by
+    rw [TMIO.mem_realize]
+    intro q hq
+    rw [Set.mem_singleton_iff] at hq
+    subst hq
+    exact m.p.M_pos
+  simp only [Set.mem_preimage]
+  constructor
+  · intro hm
+    have h' : m.toSwing ∈ TMIO.realize Swing.family.meets (Swing.family.translate (.flow P)) ∩
+        TMIO.realize Swing.family.meets {.inertia} := ⟨hm, hI⟩
+    rw [h] at h'
+    exact h'.1
+  · intro hm
+    have h' : m.toSwing ∈ Swing.family.den (.flow P) ∩
+        TMIO.realize Swing.family.meets {.inertia} := ⟨hm, hI⟩
+    rw [← h] at h'
+    exact h'.1
+
+/-! #### Members of the flow denotations -/
+
 /-- Lyapunov stability of the stable equilibrium `(δ*, 0)`, `b sin δ* = P_m`, `cos δ* > 0`, of
-the unforced classical machine, for every `D ≥ 0` (`H − H(x*)` as local Lyapunov function after
-removing whole turns of `δ*`). -/
+the unforced classical machine, for every `D ≥ 0`: the swing reading is balanced with a positive
+synchronizing coefficient `b cos δ*` (`Swing.mem_den_lyapunovStable`, whose energy
+`½ M ω² + U(δ)` is `H − H(x*)` in swing coordinates). -/
 @[powerlib_domain] theorem mem_den_lyapunovStable (m : Model)
     (heq : m.p.b * Real.sin m.δs = m.p.Pm) (hcos : 0 < Real.cos m.δs) :
-    connection% (m ∈ family.den (.flow .lyapunovStable)) :=
-  mem_den_flow_iff.mpr (classicalSM_lyapunovStable_of_cos_pos m.p heq hcos)
+    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
+  have hsw := mem_den_flow_iff_swing m .lyapunovStable
+  have hs := Swing.mem_den_lyapunovStable m.toSwing m.p.M_pos m.p.D_nonneg
+    ((toSwing_Pe m).trans heq) (by rw [toSwing_syncCoeff]; exact mul_pos m.p.b_pos hcos)
+  unfold powerlib.TMIO.Statement at hsw hs ⊢
+  exact hsw.mpr hs
 
 /-- `D > 0`, `b sin δ* = P_m`, `cos δ* > 0`: the equilibrium `(δ*, 0)` of the full nonlinear
-unforced classical machine is locally exponentially stable. -/
+unforced classical machine is locally exponentially stable
+(`Swing.mem_den_locallyExponentiallyStable` on the swing reading). -/
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model) (hD : 0 < m.p.D)
     (heq : m.p.b * Real.sin m.δs = m.p.Pm) (hcos : 0 < Real.cos m.δs) :
-    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) :=
-  mem_den_flow_iff.mpr (classicalSM_locallyExponentiallyStable m.p hD heq hcos)
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  have hsw := mem_den_flow_iff_swing m .locallyExponentiallyStable
+  have hs := Swing.mem_den_locallyExponentiallyStable m.toSwing m.p.M_pos hD
+    ((toSwing_Pe m).trans heq) (by rw [toSwing_syncCoeff]; exact mul_pos m.p.b_pos hcos)
+  unfold powerlib.TMIO.Statement at hsw hs ⊢
+  exact hsw.mpr hs
 
 /-- `b sin δ* = P_m`, `cos δ* < 0` (the unstable branch): the equilibrium `(δ*, 0)` of the full
-nonlinear unforced classical machine is unstable, for every `D ≥ 0`. -/
+nonlinear unforced classical machine is unstable, for every `D ≥ 0` (`Swing.mem_den_unstable` on
+the swing reading, a saddle). -/
 @[powerlib_domain] theorem mem_den_unstable (m : Model) (heq : m.p.b * Real.sin m.δs = m.p.Pm)
     (hcos : Real.cos m.δs < 0) :
-    connection% (m ∈ family.den (.flow .unstable)) :=
-  mem_den_flow_iff.mpr (classicalSM_unstable m.p heq hcos)
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  have hsw := mem_den_flow_iff_swing m .unstable
+  have hs := Swing.mem_den_unstable m.toSwing m.p.M_pos ((toSwing_Pe m).trans heq)
+    (by rw [toSwing_syncCoeff]; exact mul_neg_of_pos_of_neg m.p.b_pos hcos)
+  unfold powerlib.TMIO.Statement at hsw hs ⊢
+  exact hsw.mpr hs
 
 /-- With no mechanical power the Hamiltonian `p²/(2M) − b cos δ ≥ −b` is bounded below, so the
 machine is passive. -/
@@ -602,109 +676,43 @@ machine is passive. -/
   simp only [classicalSM, classicalSM_H, hPm, zero_mul, sub_zero]
   nlinarith
 
-/-- Every translation of the classical-machine family is sound. -/
+/-- Every translation of the classical-machine family is sound: the flow translations are the
+swing translations read through `toSwing` (`realize_translate_flow_eq_preimage`,
+`den_flow_eq_preimage`, `Swing.chain_le_semantics`); passivity from `P_m = 0`. -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
-  unfold powerlib.TMIO.Statement
+  have hs := Swing.chain_le_semantics
+  have hr := realize_translate_flow_eq_preimage
+  have hd := den_flow_eq_preimage
+  unfold powerlib.TMIO.Statement at hs hr hd ⊢
+  have hsound := Family.chain_le_semantics_iff.mp hs
   refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  have hnone : (∀ q, Meets m q) → False := fun h => by
-    have hm' : m ∈ TMIO.realize Meets Set.univ := (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    rw [realize_univ] at hm'
-    exact hm'
   rcases s with P | _
-  · cases P
-    case lyapunovStable =>
-      exact mem_den_lyapunovStable m (hm .locked (by simp [translate]))
-        (hm .stableBranch (by simp [translate]))
-    case locallyAsymptoticallyStable =>
-      have hd : Meets m .damped := hm .damped (by simp [translate])
-      have h := mem_den_locallyExponentiallyStable m hd.1 (hm .locked (by simp [translate])) hd.2
-      unfold powerlib.TMIO.Statement at h
-      rw [mem_den_flow_iff] at h ⊢
-      exact Flow.locallyExponentiallyStable_localAsymptoticStable h
-    case locallyExponentiallyStable =>
-      have hd : Meets m .damped := hm .damped (by simp [translate])
-      exact mem_den_locallyExponentiallyStable m hd.1 (hm .locked (by simp [translate])) hd.2
-    case unstable =>
-      exact mem_den_unstable m (hm .locked (by simp [translate]))
-        (hm .unstableBranch (by simp [translate]))
-    all_goals exact (hnone fun q => hm q trivial).elim
-  · exact mem_den_passive_of_Pm_zero m (hm .noPower rfl)
+  · have hm' : m ∈ Model.toSwing ⁻¹'
+        TMIO.realize Swing.family.meets (Swing.family.translate (.flow P)) := by
+      rw [← hr P]
+      exact hm
+    rw [hd P]
+    exact hsound (.flow P) hm'
+  · rw [TMIO.mem_realize] at hm
+    exact mem_den_passive_of_Pm_zero m (hm .noPower rfl)
 
-/-! #### Exactness of the local exponential translation -/
-
-private theorem zeroInputField_contDiff (p : ClassicalSMParams) :
-    ContDiff ℝ 1 (classicalSM p).zeroInputField :=
-  (classicalSM p).contDiff_zeroInputField (fun _ _ => contDiff_const) (fun _ _ => contDiff_const)
-    (classicalSM_contDiff_dH p)
+/-! #### Exactness of the local translations -/
 
 /-- The local exponential translation is exact: the classical machine is locally exponentially
-stable at `(δ*, 0)` exactly when `b sin δ* = P_m`, `D > 0` and `cos δ* > 0`. Converse
-linearization: local exponential stability of the `C¹` zero-input field forces an equilibrium
-whose Jacobian `(J − R) ∇²H = [[0, 1/M], [−b cos δ*, −D/M]]` is Hurwitz. -/
+stable at `(δ*, 0)` exactly when `b sin δ* = P_m`, `D > 0` and `cos δ* > 0`. Within positive
+inertia the swing translation is exact (`Swing.exactUnder_locallyExponentiallyStable`, converse
+linearization: the Jacobian `[[0, 1], [−K/M, −D/M]]`, conjugate by `diag(1, M)` to
+`(J − R) ∇²H = [[0, 1/M], [−b cos δ*, −D/M]]`, `classicalSM_linearization`), and every swing
+reading has positive inertia (`exact_flow_iff`). -/
 @[powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  ext m
-  rw [TMIO.mem_realize]
-  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
-    forall_eq]
-  constructor
-  · rintro ⟨hl, hd⟩
-    exact mem_den_locallyExponentiallyStable m hd.1 hl hd.2
-  · intro h
-    have hles : LocallyExponentiallyStable (classicalSM m.p).zeroInputField m.point :=
-      mem_den_flow_iff.mp h
-    have hcd := zeroInputField_contDiff m.p
-    have heq := Dynamics.isEquilibrium_of_locallyExponentiallyStable hcd hles
-    rw [classicalSM_isEquilibrium_iff] at heq
-    have hl : m.p.b * Real.sin m.δs = m.p.Pm := by
-      simpa [Model.point, classicalSM_equilibrium] using heq.1
-    have h0 : (classicalSM m.p).dH m.point = 0 := by
-      apply WithLp.ofLp_injective 2
-      ext i
-      fin_cases i <;> simp [classicalSM, classicalSM_dH, Model.point, classicalSM_equilibrium, hl]
-    have hQ := classicalSM_hasFDerivAt_dH m.p m.point
-    simp only [Model.point, classicalSM_equilibrium, PiLp.toLp_apply, Matrix.cons_val_zero] at hQ
-    have hJac := (classicalSM m.p).fderiv_zeroInputField_of_dH_eq_zero
-      (fun _ _ => differentiableAt_const _) (fun _ _ => differentiableAt_const _) hQ h0
-    have hA := Dynamics.isHurwitz_of_locallyExponentiallyStable _ hcd hJac hles
-    have hlin : ((classicalSM m.p).J (WithLp.toLp 2 ![m.δs, 0]) -
-        (classicalSM m.p).R (WithLp.toLp 2 ![m.δs, 0])) *
-          !![m.p.b * Real.cos m.δs, 0; 0, 1 / m.p.M] =
-        !![0, 1 / m.p.M; -(m.p.b * Real.cos m.δs), -(m.p.D / m.p.M)] :=
-      classicalSM_linearization m.p m.δs
-    rw [hlin, Criteria.isHurwitz_fin_two_of_iff] at hA
-    obtain ⟨htr, hdet⟩ := hA
-    have hM := m.p.M_pos
-    have hb := m.p.b_pos
-    refine ⟨hl, show 0 < m.p.D ∧ 0 < Real.cos m.δs from ⟨?_, ?_⟩⟩
-    · have : 0 < m.p.D / m.p.M := by linarith
-      exact (div_pos_iff_of_pos_right hM).mp this
-    · have : 0 < 1 / m.p.M * (m.p.b * Real.cos m.δs) := by linarith
-      have h2 : 0 < m.p.b * Real.cos m.δs := pos_of_mul_pos_right this (by positivity)
-      exact pos_of_mul_pos_right h2 hb.le
+  have he := exact_flow_iff
+  have hs := Swing.exactUnder_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at he hs ⊢
+  exact (he _).mpr (comap_exact_of_exactUnder hs)
 
 /-! #### The local asymptotic and Lyapunov translations -/
-
-private theorem norm_seed_sub (δs s w : ℝ) :
-    ‖(WithLp.toLp 2 ![δs + s, w] : State 2) - classicalSM_equilibrium δs‖ ≤ |s| + |w| := by
-  refine (Dynamics.norm_le_abs_add_abs_two _).trans (le_of_eq ?_)
-  simp [classicalSM_equilibrium]
-
-private theorem H_contDiff (p : ClassicalSMParams) : ContDiff ℝ 1 (classicalSM_H p) := by
-  unfold classicalSM_H
-  fun_prop
-
-/-- Under zero input the Hamiltonian decreases at the damping rate `D ω²`. -/
-private theorem H_lie (p : ClassicalSMParams) (x : State 2) :
-    fderiv ℝ (classicalSM_H p) x ((classicalSM p).zeroInputField x) =
-      -(p.D * (x 1 / p.M) ^ 2) := by
-  have h := (classicalSM p).zeroInput_power_balance x
-  rw [classicalSM_dampingPower] at h
-  exact h
 
 /-- At a fold of the machine (`b sin δ* = P_m`, `cos δ* = 0`) the Hamiltonian relative to
 `(δ*, 0)` is `p² / (2M) − P_m (s − sin s)` at `(δ* + s, p)`.
@@ -726,186 +734,41 @@ Static evidence on the model, not a connection conclusion. -/
   rw [Real.sin_add, hcos, ← heq]
   ring
 
-private theorem Pm_ne_zero_of_fold (p : ClassicalSMParams) {δs : ℝ}
-    (heq : p.b * Real.sin δs = p.Pm) (hcos : Real.cos δs = 0) : p.Pm ≠ 0 := by
-  intro h0
-  rw [h0] at heq
-  have hs : Real.sin δs = 0 := (mul_eq_zero.mp heq).resolve_left p.b_pos.ne'
-  have := Real.sin_sq_add_cos_sq δs
-  rw [hs, hcos] at this
-  norm_num at this
-
-/-- At a fold the Hamiltonian takes values below `H(δ*, 0)` arbitrarily close to it. -/
-private theorem fold_seeds (p : ClassicalSMParams) {δs : ℝ} (heq : p.b * Real.sin δs = p.Pm)
-    (hcos : Real.cos δs = 0) : ∀ ε > 0, ∃ x, ‖x - classicalSM_equilibrium δs‖ < ε ∧
-      classicalSM_H p x < classicalSM_H p (classicalSM_equilibrium δs) := by
-  intro ε hε
-  have hε2 : 0 < ε / 2 := by linarith
-  have hP := Pm_ne_zero_of_fold p heq hcos
-  have hsin := Real.sin_lt hε2
-  rcases lt_or_gt_of_ne hP with hneg | hpos
-  · refine ⟨WithLp.toLp 2 ![δs + -(ε / 2), 0], ?_, ?_⟩
-    · refine (norm_seed_sub _ _ _).trans_lt ?_
-      rw [abs_neg, abs_of_pos hε2, abs_zero, add_zero]
-      linarith
-    · have h := classicalSM_H_fold p heq hcos (-(ε / 2)) 0
-      rw [Real.sin_neg] at h
-      nlinarith
-  · refine ⟨WithLp.toLp 2 ![δs + ε / 2, 0], ?_, ?_⟩
-    · refine (norm_seed_sub _ _ _).trans_lt ?_
-      rw [abs_of_pos hε2, abs_zero, add_zero]
-      linarith
-    · have h := classicalSM_H_fold p heq hcos (ε / 2) 0
-      nlinarith
-
-/-- Local asymptotic stability of `(δ*, 0)` forces `b sin δ* = P_m`, `D > 0` and `cos δ* > 0`:
-an undamped machine conserves `H`, the unstable branch is unstable, and at a fold `H` is below
-its value at `(δ*, 0)` on one side, where the dissipated `H` keeps every solution away. -/
-private theorem las_requirements {m : Model}
-    (hlas : LocalAsymptoticStable (classicalSM m.p).zeroInputField m.point) :
-    m.p.b * Real.sin m.δs = m.p.Pm ∧ 0 < m.p.D ∧ 0 < Real.cos m.δs := by
-  have hcd := zeroInputField_contDiff m.p
-  have heq := Dynamics.isEquilibrium_of_lyapunovStable hcd hlas.1
-  rw [classicalSM_isEquilibrium_iff] at heq
-  have hl : m.p.b * Real.sin m.δs = m.p.Pm := by
-    simpa [Model.point, classicalSM_equilibrium] using heq.1
-  have hM := m.p.M_pos
-  have hHd : Differentiable ℝ (classicalSM_H m.p) := (H_contDiff m.p).differentiable one_ne_zero
-  have hD : 0 < m.p.D := by
-    rcases eq_or_lt_of_le m.p.D_nonneg with hD | hD
-    · exfalso
-      refine Dynamics.not_localAsymptoticStable_of_lie_nonpos
-        (V := fun x => -classicalSM_H m.p x) (ρ := 1) hcd hHd.neg one_pos (fun x _ => ?_)
-        (fun ε hε => ⟨WithLp.toLp 2 ![m.δs + 0, ε / 2], ?_, ?_⟩) hlas
-      · rw [fderiv_fun_neg, _root_.neg_apply, H_lie, ← hD]
-        simp
-      · refine (norm_seed_sub _ _ _).trans_lt ?_
-        rw [abs_zero, zero_add, abs_of_pos (by linarith)]
-        linarith
-      · simp only [Model.point, classicalSM_H, classicalSM_equilibrium, PiLp.toLp_apply,
-          Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, add_zero]
-        have : 0 < 1 / (2 * m.p.M) * (ε / 2) ^ 2 := by positivity
-        linarith
-    · exact hD
-  refine ⟨hl, hD, ?_⟩
-  rcases lt_trichotomy (Real.cos m.δs) 0 with hc | hc | hc
-  · exact absurd hlas.1 (classicalSM_unstable m.p hl hc)
-  · exfalso
-    refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := classicalSM_H m.p) (ρ := 1)
-      hcd hHd one_pos (fun x _ => ?_) (fold_seeds m.p hl hc) hlas
-    rw [H_lie]
-    have := m.p.D_nonneg
-    nlinarith [sq_nonneg (x 1 / m.p.M)]
-  · exact hc
-
 /-- The local asymptotic translation is exact: the classical machine is locally asymptotically
-stable at `(δ*, 0)` exactly when `b sin δ* = P_m`, `D > 0` and `cos δ* > 0`. The linearization
-does not decide the degenerate cases, the model's structure does: an undamped machine conserves
-`H`, and at a fold (`cos δ* = 0`) the Hamiltonian `p²/(2M) − P_m (s − sin s)`
-(`classicalSM_H_fold`) is below its value at `(δ*, 0)` on one side, where the dissipated `H`
-keeps every solution away (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
+stable at `(δ*, 0)` exactly when `b sin δ* = P_m`, `D > 0` and `cos δ* > 0`
+(`Swing.exactUnder_locallyAsymptoticallyStable` on the swing readings, all of positive inertia).
+The linearization does not decide the degenerate cases, the model's structure does: an undamped
+machine conserves `H`, and at a fold (`cos δ* = 0`) the Hamiltonian `p²/(2M) − P_m (s − sin s)`
+(`classicalSM_H_fold`; `Swing.potential_fold` in swing coordinates) is below its value at
+`(δ*, 0)` on one side, where the dissipated energy keeps every solution away
+(`Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
 @[powerlib_domain] theorem exact_locallyAsymptoticallyStable :
     connection% (family.Exact (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  ext m
-  rw [TMIO.mem_realize]
-  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
-    forall_eq]
-  constructor
-  · rintro ⟨hl, hd⟩
-    have h := mem_den_locallyExponentiallyStable m hd.1 hl hd.2
-    unfold powerlib.TMIO.Statement at h
-    exact mem_den_flow_iff.mpr
-      (Flow.locallyExponentiallyStable_localAsymptoticStable (mem_den_flow_iff.mp h))
-  · intro h
-    obtain ⟨hl, hD, hc⟩ := las_requirements (mem_den_flow_iff.mp h)
-    exact ⟨hl, hD, hc⟩
+  have he := exact_flow_iff
+  have hs := Swing.exactUnder_locallyAsymptoticallyStable
+  unfold powerlib.TMIO.Statement at he hs ⊢
+  exact (he _).mpr (comap_exact_of_exactUnder hs)
 
 /-- Lyapunov stability holds exactly at the equilibria with `cos δ* > 0` (every damping
-`D ≥ 0`): the stable branch up to whole turns. The unstable branch is unstable, and a fold
-(`cos δ* = 0`) is unstable for every `D ≥ 0`: below the level of `(δ*, 0)` the dissipated
-Hamiltonian keeps the solution, and there `P_m (p + D δ)` grows at the rate
-`P_m² (1 − cos(δ − δ*))` (`Dynamics.unstable_of_lie_nonpos_of_lie_pos`). -/
+`D ≥ 0`): the stable branch up to whole turns. This is the Lyapunov denotation of the swing
+family within positive inertia (`Swing.mem_den_lyapunovStable_iff_of_inertia`) on the swing
+reading, whose flat-curve alternative `k₂ = 0` is excluded by `b > 0`: the unstable branch is
+unstable, and a fold (`cos δ* = 0`) is unstable for every `D ≥ 0`, the accelerating power being
+`P_m (1 − cos(δ − δ*))` (`classicalSM_accel_fold`; `Swing.Pe_fold` in swing coordinates). -/
 @[powerlib_domain] theorem mem_den_lyapunovStable_iff (m : Model) :
     connection% (m ∈ family.den (.flow .lyapunovStable) ↔
       m ∈ {m : Model | m.p.b * Real.sin m.δs = m.p.Pm ∧ 0 < Real.cos m.δs}) := by
-  unfold powerlib.TMIO.Statement
-  rw [Set.mem_ofPred_eq, mem_den_flow_iff]
-  have hcd := zeroInputField_contDiff m.p
-  have hM := m.p.M_pos
+  have hsw := mem_den_flow_iff_swing m .lyapunovStable
+  have hiff := Swing.mem_den_lyapunovStable_iff_of_inertia m.toSwing m.p.M_pos
+  unfold powerlib.TMIO.Statement at hsw hiff ⊢
+  rw [hsw, hiff, Set.mem_ofPred_eq, Set.mem_ofPred_eq, toSwing_Pe, toSwing_syncCoeff]
+  have hb := m.p.b_pos
   constructor
-  · intro hls
-    have heq := Dynamics.isEquilibrium_of_lyapunovStable hcd hls
-    rw [classicalSM_isEquilibrium_iff] at heq
-    have hl : m.p.b * Real.sin m.δs = m.p.Pm := by
-      simpa [Model.point, classicalSM_equilibrium] using heq.1
-    refine ⟨hl, ?_⟩
-    rcases lt_trichotomy (Real.cos m.δs) 0 with hc | hc | hc
-    · exact absurd hls (classicalSM_unstable m.p hl hc)
-    · exfalso
-      set a := m.p.Pm with ha
-      have h0 := fun x : State 2 => (smCoord (n := 2) 0).hasFDerivAt (x := x)
-      have h1 := fun x : State 2 => (smCoord (n := 2) 1).hasFDerivAt (x := x)
-      have hW : ContDiff ℝ 1 fun x : State 2 => a * (x 1 + m.p.D * x 0) :=
-        contDiff_const.mul ((smCoord (n := 2) 1).contDiff.add
-          (contDiff_const.mul (smCoord (n := 2) 0).contDiff))
-      refine Dynamics.unstable_of_lie_nonpos_of_lie_pos (E := classicalSM_H m.p)
-        (W := fun x : State 2 => a * (x 1 + m.p.D * x 0)) (r := 1) hcd (H_contDiff m.p) hW
-        one_pos (fun x _ => ?_) (fold_seeds m.p hl hc) (fun x hx hEx => ?_) hls
-      · rw [H_lie]
-        have := m.p.D_nonneg
-        nlinarith [sq_nonneg (x 1 / m.p.M)]
-      · have hd : HasFDerivAt (fun y : State 2 => a * (y 1 + m.p.D * y 0))
-            (a • (smCoord (n := 2) 1 + m.p.D • smCoord (n := 2) 0)) x :=
-          ((h1 x).add ((h0 x).const_mul m.p.D)).const_mul a
-        rw [hd.fderiv]
-        have hf := classicalSM_field m.p x 0
-        have hf0 : ((classicalSM m.p).zeroInputField x) 0 = x 1 / m.p.M := by
-          have := congrFun hf 0
-          simpa [NonlinearModel.zeroInputField] using this
-        have hf1 : ((classicalSM m.p).zeroInputField x) 1 =
-            m.p.Pm - m.p.b * Real.sin (x 0) - m.p.D * (x 1 / m.p.M) := by
-          have := congrFun hf 1
-          simpa [NonlinearModel.zeroInputField] using this
-        simp only [_root_.smul_apply, _root_.add_apply, smCoord, PiLp.proj_apply, smul_eq_mul,
-          hf0, hf1]
-        set s₀ := x 0 - m.δs with hs₀
-        have hx0 : x 0 = m.δs + s₀ := by rw [hs₀]; ring
-        have hrate : m.p.Pm - m.p.b * Real.sin (x 0) - m.p.D * (x 1 / m.p.M) +
-            m.p.D * (x 1 / m.p.M) = a * (1 - Real.cos s₀) := by
-          rw [hx0, ← classicalSM_accel_fold m.p hl hc]
-          ring
-        rw [hrate]
-        have hs1 : |s₀| ≤ 1 := by
-          have h' := PiLp.norm_apply_le (x - classicalSM_equilibrium m.δs) 0
-          have he : (x - classicalSM_equilibrium m.δs) 0 = s₀ := by
-            simp [classicalSM_equilibrium, hs₀]
-          rw [he, Real.norm_eq_abs] at h'
-          exact h'.trans hx
-        have hs0 : s₀ ≠ 0 := by
-          intro h
-          have hx' : x = WithLp.toLp 2 ![m.δs + 0, x 1] := by
-            ext i
-            fin_cases i
-            · simp [hx0, h]
-            · simp
-          have hfold := classicalSM_H_fold m.p hl hc 0 (x 1)
-          rw [← hx'] at hfold
-          change classicalSM_H m.p x < classicalSM_H m.p (classicalSM_equilibrium m.δs) at hEx
-          have : 0 ≤ 1 / (2 * m.p.M) * x 1 ^ 2 := by positivity
-          simp only [sub_zero, Real.sin_zero, mul_zero] at hfold
-          linarith
-        have hcos1 : Real.cos s₀ < 1 := by
-          refine lt_of_le_of_ne (Real.cos_le_one _) fun h => hs0 ?_
-          refine (Real.cos_eq_one_iff_of_lt_of_lt ?_ ?_).mp h
-          · linarith [neg_abs_le s₀, Real.two_le_pi]
-          · linarith [le_abs_self s₀, Real.two_le_pi]
-        have ha0 : a ≠ 0 := Pm_ne_zero_of_fold m.p hl hc
-        have : 0 < a * a := mul_self_pos.mpr ha0
-        nlinarith
-    · exact hc
+  · rintro ⟨hl, (⟨-, hK⟩ | ⟨hk, -⟩)⟩
+    · exact ⟨hl, pos_of_mul_pos_right hK hb.le⟩
+    · exact absurd hk hb.ne'
   · rintro ⟨hl, hc⟩
-    exact classicalSM_lyapunovStable_of_cos_pos m.p hl hc
+    exact ⟨hl, Or.inl ⟨m.p.D_nonneg, mul_pos hb hc⟩⟩
 
 /-- The Lyapunov translation is exact: the classical machine is Lyapunov stable at `(δ*, 0)`
 exactly when `b sin δ* = P_m` and `cos δ* > 0` (`mem_den_lyapunovStable_iff`), for every
@@ -1049,6 +912,11 @@ mechanical power, `P_m = 0`. -/
 
 /-! #### Instability away from equilibrium -/
 
+private theorem zeroInputField_contDiff (p : ClassicalSMParams) :
+    ContDiff ℝ 1 (classicalSM p).zeroInputField :=
+  (classicalSM p).contDiff_zeroInputField (fun _ _ => contDiff_const) (fun _ _ => contDiff_const)
+    (classicalSM_contDiff_dH p)
+
 /-- A model whose selected point is not an equilibrium: `M = b = 1`, `D = 0`, `P_m = 2`,
 `δ* = 0`. -/
 def offEquilibrium : Model := ⟨⟨1, 0, 1, 2, one_pos, le_rfl, one_pos⟩, 0⟩
@@ -1073,6 +941,22 @@ while the translation asks for an equilibrium. -/
   rw [← h, TMIO.mem_realize] at hmem
   have hl : Meets offEquilibrium .locked := hmem .locked (by simp [family, translate])
   simp [Meets, offEquilibrium] at hl
+
+/-! #### Boundary of the equivalence: passivity -/
+
+/-- The equivalence with the swing family does not extend to passivity: the classical machine has
+a mechanical-power port and is passive only for `P_m = 0` (`exact_passive`), while the swing family
+has no port and every model is passive. The unbalanced machine `offEquilibrium` (`P_m = 2`) is
+not passive although its swing reading is. -/
+@[powerlib_domain] theorem not_den_eq_preimage :
+    connection% (¬ ∀ s, family.den s = Model.toSwing ⁻¹' Swing.family.den s) := by
+  unfold powerlib.TMIO.Statement
+  intro h
+  have hn := not_mem_den_passive offEquilibrium (by norm_num [offEquilibrium])
+  unfold powerlib.TMIO.Statement at hn
+  apply hn
+  rw [h .passive, Set.mem_preimage, Swing.family_isAutonomous.den_passive]
+  trivial
 
 end ClassicalSM
 
