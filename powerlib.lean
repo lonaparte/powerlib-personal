@@ -29,12 +29,14 @@ import theorem.Criteria.ComplexQuadratic
 import theorem.Criteria.SchurCohn
 import theorem.Criteria.Lyapunov
 import theorem.CurrentControl.Decoupling
+import theorem.CurrentControl.DigitalPI
 import theorem.CurrentControl.DqRL
 import theorem.CurrentControl.Feedforward
 import theorem.CurrentControl.IMC
 import theorem.CurrentControl.LoopDelay
 import theorem.CurrentControl.Mismatch
 import theorem.CurrentControl.PILoop
+import theorem.CurrentControl.VoltageLimit
 import theorem.LTI.Plant
 import theorem.LTI.Decay
 import theorem.LTI.Discrete

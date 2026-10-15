@@ -86,9 +86,17 @@ producers (`Stack.refutes`) and, through realization soundness, for some realize
 * A theorem about records along a stack is an O result, stated with `infer`, `certified`,
   `truth` (T–O) or `predicted` (O–I).
 
-Generic modules supply the tools of each layer without belonging to it: the delay, sampling,
-averaging, modulation and EMT discretization modules for implementations, and the estimation
-modules for records.
+Generic modules supply the tools of each layer without belonging to it: the delay, sampling and
+modulation modules for implementations, and the estimation modules for records. The model
+families of the library are idealized: their model boundaries list delay, PWM, sampling and
+saturation among the exclusions, which are the realistic constraints of the implementation
+layer.
+
+The semantic layer reads continuous-time autonomous flows and port systems. A discrete-time
+recursion (an EMT discretization, `Numerics/EMT`; a discrete LTI system, `LTI/Discrete`) or a
+periodically switched system (`Averaging/StateSpaceAveraging`) is therefore not a family, and its
+results remain static or generic statements outside the layers until the semantic layer reads
+discrete time or switching.
 
 `dependencies/tests/lean/Library/TMIOIndex.lean` files every connection statement under one
 category by the constants of its proposition. It recognizes implementation families by the
@@ -106,7 +114,9 @@ The categories are `translation`, `denotation` (T–M), `requirementSpace` (M), 
 (I), `realization` (M–I), `data` (records: T–O and O–I) and `observation` (the codex observation
 relations on models).
 
-## Pilot: a grid-forming VSM on a test platform
+## Implementation families
+
+### Pilot: a grid-forming VSM on a test platform
 
 `theorem/GFM/VSMLPFRig.lean` builds the four layers for the VSM with a first-order power filter
 on an infinite bus.
@@ -130,3 +140,25 @@ on an infinite bus.
   `slowRig` supports stability of the models while its producer is unstable. A slow-filter record
   supports instability of models and platforms and lies outside the records predicted by platform
   stability.
+
+### Current loops: tolerance, digital realization, voltage limit
+
+The single-axis PI current loop `CurrentControl.PIParams.family` (M) has three implementations.
+
+* Parameter tolerance (`CurrentControl/Mismatch.lean`): the dq loop whose decoupling uses an
+  inductance estimate. The attractive sentences are realized exactly without constraints; the
+  estimate never changes the stability region.
+* Digital realization (`CurrentControl/DigitalPI.lean`): computation delay and zero-order hold,
+  together `τ = 1.5 Tₛ` (`Delay/SampleHold`, `Delay/Pade`), realized by a Padé(1,1) state. The
+  attractive sentences are realized soundly when `3 Kp Tₛ ≤ L` and `3 Ki Tₛ ≤ R + Kp`, completely
+  for every `Tₛ > 0`, and not soundly without that constraint. For the IMC tuning the platform is
+  stable exactly when `3 ω_b Tₛ < 4`. The pure delay `e^{−sτ}` gives `ω_b Tₛ < π/3`
+  (`CurrentControl/LoopDelay.lean`): the Padé(1,1) implementation model overestimates the stable
+  range by `4/π`, so an implementation family is itself a model of the platform and carries its
+  own approximation.
+* Voltage limit (`CurrentControl/VoltageLimit.lean`): the applied voltage saturates at the
+  linear modulation limit `V_dc/√3` (`Drives/Modulation`), a hardware constraint. With headroom at
+  the operating point the local sentences are realized exactly (the limit is inactive nearby,
+  `Dynamics/Locality`); under overload the operating point is not an equilibrium and the platform
+  is unstable whatever its design; global exponential stability holds for no platform, so it is
+  not realized soundly even with headroom.
