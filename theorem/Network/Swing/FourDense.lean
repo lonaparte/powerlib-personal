@@ -30,10 +30,13 @@ Results.
   nonzero along every non-constant null direction of a positive semidefinite Hessian form with
   positive cuts), `exists_sorted_lift`, `eq_of_labelled_eq`, `exists_perm_zero_three`.
 * Implementation evidence (private, model level): `not_localAsymptoticStable_diamond`,
-  `not_localAsymptoticStable_complete`, `not_localAsymptoticStable_four_machines` (with
-  `not_localAsymptoticStable_four` of `theorem/Network/Swing/Four.lean` for two uncoupled pairs)
-  and the labelled-form helpers `cut_pos_of_localAsymptoticStable`,
-  `labelled_nonneg_of_localAsymptoticStable`, `exists_null_of_localAsymptoticStable`.
+  `not_localAsymptoticStable_complete`, `not_localAsymptoticStable_four_machines` (with the
+  connection statement `not_localAsymptoticStable_four` of `theorem/Network/Swing/Four.lean` for
+  two uncoupled pairs) and the labelled-form helpers `cut_pos_of_localAsymptoticStable`,
+  `labelled_nonneg_of_localAsymptoticStable`, `exists_null_of_localAsymptoticStable`, which use
+  the connection statements of `Four.lean` (`not_localAsymptoticStable_of_cut`,
+  `not_localAsymptoticStable_of_hessForm_neg`, `not_localAsymptoticStable_of_cubicForm_ne_zero`)
+  through the family's autonomous and shift lemmas.
 
 Family and connection conclusions.
 * `exact_locallyAsymptoticallyStable_four` — for four machines the local asymptotic translation
@@ -53,8 +56,8 @@ Proof outline.
   `A₂(u) = ∑ wᵢⱼ (uᵢ − uⱼ)²` with signed weights `wᵢⱼ = Bᵢⱼ cos(θᵢ − θⱼ)` and the cubic form is
   `A₃(u) = ∑ Bᵢⱼ sin(θᵢ − θⱼ)(uᵢ − uⱼ)³`. Local asymptotic stability with a non-Hurwitz reduced
   Jacobian leaves a non-constant null direction `u` of the positive semidefinite form `A₂` with
-  `A₃(u) = 0` (`hessForm_nonneg_of_localAsymptoticStable`,
-  `cubicForm_eq_zero_of_localAsymptoticStable`). The four-machine networks not covered by
+  `A₃(u) = 0` (`not_localAsymptoticStable_of_hessForm_neg`,
+  `not_localAsymptoticStable_of_cubicForm_ne_zero`). The four-machine networks not covered by
   `mem_den_locallyAsymptoticallyStable_iff_four` (at most four lines) are the diamond (exactly
   one uncoupled pair) and the complete graph; on both, `A₃(u) ≠ 0`.
 * The diamond, uncoupled pair `σ0 σ3`, hub `σ1 σ2`. Each two-line branch `σ1 – σk – σ2`
@@ -1125,6 +1128,15 @@ theorem exists_sorted_lift (θ : Fin 4 → ℝ) : ∃ (σ : Equiv.Perm (Fin 4)) 
 
 /-! ## The model: four machines with five or six lines (implementation evidence) -/
 
+private theorem mem_den_flow_iff_dense {m : Model n} {P : Flow.Property} :
+    m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
+  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+
+private theorem mem_den_of_localAsymptoticStable_dense {p : Params 3} {θ : Fin (3 + 1) → ℝ}
+    (h : LocalAsymptoticStable (reducedField p) (equilibrium θ)) :
+    (⟨p, θ⟩ : Model 3) ∈ family.den (.flow .locallyAsymptoticallyStable) :=
+  mem_den_flow_iff_dense.mpr h
+
 /-- **A cut of the labelled machines has positive weight at a locally asymptotically stable point.**
 `c` is the indicator (in labelled order) of a nonempty proper group of machines. -/
 private theorem cut_pos_of_localAsymptoticStable {p : Params 3} {θ : Fin (3 + 1) → ℝ}
@@ -1146,8 +1158,9 @@ private theorem cut_pos_of_localAsymptoticStable {p : Params 3} {θ : Fin (3 + 1
   simp only [Equiv.symm_apply_apply] at h2
   by_contra hle
   push Not at hle
-  exact not_localAsymptoticStable_of_cut hbal X (by linarith) (i₀ := σ i₀) (j₀ := σ j₀)
-    (by simp [hX, hi]) (by simp [hX, hj]) hLAS
+  have hW : ∑ i ∈ X, ∑ j ∈ Xᶜ, p.B i j * Real.cos (θ i - θ j) ≤ 0 := by linarith
+  exact not_localAsymptoticStable_of_cut ⟨p, θ⟩ hbal X hW (i₀ := σ i₀) (j₀ := σ j₀)
+    (by simp [hX, hi]) (by simp [hX, hj]) (mem_den_of_localAsymptoticStable_dense hLAS)
 
 /-- The Hessian form in labelled coordinates is positive semidefinite at a locally asymptotically
 stable power-balance point. -/
@@ -1158,7 +1171,9 @@ private theorem labelled_nonneg_of_localAsymptoticStable {p : Params 3} {θ : Fi
     0 ≤ weightOf p θ σ 0 1 * (g₀ - g₁) ^ 2 + weightOf p θ σ 0 2 * (g₀ - g₂) ^ 2 +
       weightOf p θ σ 0 3 * (g₀ - g₃) ^ 2 + weightOf p θ σ 1 2 * (g₁ - g₂) ^ 2 +
       weightOf p θ σ 1 3 * (g₁ - g₃) ^ 2 + weightOf p θ σ 2 3 * (g₂ - g₃) ^ 2 := by
-  have := hessForm_nonneg_of_localAsymptoticStable hbal hLAS (fun k => ![g₀, g₁, g₂, g₃] (σ.symm k))
+  have : 0 ≤ hessForm p θ (fun k => ![g₀, g₁, g₂, g₃] (σ.symm k)) := not_lt.mp fun h =>
+    not_localAsymptoticStable_of_hessForm_neg ⟨p, θ⟩ hbal _ h
+      (mem_den_of_localAsymptoticStable_dense hLAS)
   rw [hessForm_four p θ _ σ] at this
   simp only [Equiv.symm_apply_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two, Matrix.cons_val_three, Matrix.tail_cons, Matrix.head_cons] at this
@@ -1172,9 +1187,13 @@ private theorem exists_null_of_localAsymptoticStable {p : Params 3} {θ : Fin (3
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
     ∃ u : Fin (3 + 1) → ℝ, (∃ k, u k ≠ u 0) ∧ hessForm p θ u = 0 ∧ cubicForm p θ u = 0 := by
   obtain ⟨u, hu0, hu, hle⟩ := exists_hessForm_nonpos hH
-  have hQ0 : hessForm p θ u = 0 :=
-    le_antisymm hle (hessForm_nonneg_of_localAsymptoticStable hbal hLAS u)
-  refine ⟨u, ?_, hQ0, cubicForm_eq_zero_of_localAsymptoticStable hbal hLAS u hQ0⟩
+  have hmem := mem_den_of_localAsymptoticStable_dense hLAS
+  have hQ0 : hessForm p θ u = 0 := le_antisymm hle (not_lt.mp fun h =>
+    not_localAsymptoticStable_of_hessForm_neg ⟨p, θ⟩ hbal u h hmem)
+  have hC0 : cubicForm p θ u = 0 := by
+    by_contra h
+    exact not_localAsymptoticStable_of_cubicForm_ne_zero ⟨p, θ⟩ hbal u hQ0 h hmem
+  refine ⟨u, ?_, hQ0, hC0⟩
   by_contra h
   push Not at h
   apply hu
@@ -1341,8 +1360,9 @@ private theorem not_localAsymptoticStable_four_machines (p : Params 3) (θ : Fin
   by_cases h12 : 0 < p.B (σ 1) (σ 2)
   · exact not_localAsymptoticStable_diamond p θ σ (by rw [hσ0, hσ3]; exact h0) h12 hbal hH
   have h12' : p.B (σ 1) (σ 2) = 0 := le_antisymm (not_lt.mp h12) (p.B_nonneg _ _)
-  refine not_localAsymptoticStable_four p θ ((Equiv.swap (2 : Fin 4) 3).trans σ) ?_ (Or.inl ?_)
-    hbal hH
+  intro hLAS
+  refine not_localAsymptoticStable_four ⟨p, θ⟩ ((Equiv.swap (2 : Fin 4) 3).trans σ) ?_ (Or.inl ?_)
+    hbal hH (mem_den_of_localAsymptoticStable_dense hLAS)
   · have e1 : (Equiv.swap (2 : Fin 4) 3) 1 = 1 := by decide
     have e3 : (Equiv.swap (2 : Fin 4) 3) 3 = 2 := by decide
     simp only [Equiv.trans_apply, e1, e3]
@@ -1353,10 +1373,6 @@ private theorem not_localAsymptoticStable_four_machines (p : Params 3) (θ : Fin
     exact h0
 
 /-! ## The family: exactness for four machines -/
-
-private theorem mem_den_flow_iff_dense {m : Model n} {P : Flow.Property} :
-    m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
 
 private theorem powerFlow_of_equilibrium_dense {p : Params n} {θ : Fin (n + 1) → ℝ}
     (h : reducedField p (equilibrium θ) = 0) : ∀ k, p.P k = powerInjection p.B θ k := by

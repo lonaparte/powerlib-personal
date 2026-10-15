@@ -63,6 +63,7 @@ import theorem.Dynamics.Coordinates
 import theorem.Dynamics.Locality
 import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
+import theorem.Dynamics.Mechanical
 import theorem.Dynamics.CriticalLinearization
 import theorem.Dynamics.LipschitzFlow
 import theorem.Dynamics.LaSalle.Upstream

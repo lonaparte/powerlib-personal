@@ -1,6 +1,5 @@
 import theorem.Network.Swing.Basic
-import theorem.Dynamics.LaSalle.Ball
-import theorem.Dynamics.Instability
+import theorem.Dynamics.Mechanical
 
 /-! # Networked swing equations: energy, degenerate linearizations, local asymptotic stability
 
@@ -24,43 +23,54 @@ Results.
   gradient `Pₖ(θ) − Pₖ` (`hasFDerivAt_potential`), `energy` (kinetic plus potential of the
   absolute angles) and the energy balance `lie_energy` (`Ė = −∑ Dₖωₖ² + ω₀ ∑ Pₖ`, so `Ė ≤ 0` at a
   power-balance point, `lie_energy_nonpos`).
+* Mechanical structure (static): `reducedField_eq_mechanical` — with zero total power the reduced
+  field is the damped mechanical field `Dynamics.Mechanical.field relRate M D (U ∘ ground)` of
+  `theorem/Dynamics/Mechanical.lean` (positions the relative angles, velocities the frequency
+  deviations, `relRate ω = (ωᵢ₊₁ − ω₀)ᵢ`); `equilibrium_eq_point`,
+  `potential_ground_relAngles_add` (the potential in relative angles about `relAngles θ` is
+  `U(θ + ground v)`), `critical_iff_balance` (its critical points along the reachable directions
+  are the power-balance points), `fderiv_potential_comp_ground_relRate`.
 * Edge form and Taylor expansion: `potential_add_sub`
   (`U(θ + u) − U(θ) = ½∑ Bₖⱼ g(θₖ − θⱼ, uₖ − uⱼ)`, `g = edgeIncrement`; `B g` is the line
   potential `CycleMinimum.edgeG` of `theorem/Network/Swing/CycleMinimum.lean`),
   `edgeIncrement_taylor`, `exists_potential_lt` (a direction with `A₂ < 0`, or `A₂ = 0` and
   `A₃ ≠ 0`, lowers the potential at arbitrarily small steps).
-* Necessary conditions for local asymptotic stability (generic in `n`):
-  `not_localAsymptoticStable_of_potential_lt` (a non-minimum of the potential),
-  `not_localAsymptoticStable_of_balance_line` (a continuum of equilibria),
-  `not_localAsymptoticStable_of_forms` (saddle or fold direction).
 * Hurwitz test with signed weights: `jacobian_isHurwitz_of_hessForm` (the reduced Jacobian is
   Hurwitz when `A₂` is positive on grounded directions), `exists_hessForm_nonpos`.
-* Complete membership characterization, every `n`: `mem_den_locallyAsymptoticallyStable_iff`
-  (local asymptotic stability ⇔ power balance ∧ a strict local minimum of the potential in
-  relative angles ∧ an isolated power-balance point). Sufficiency by LaSalle
-  (`localAsymptoticStable_of_strictMin`, via the foundation
-  `Dynamics.LaSalle.localAsymptoticStable_of_lasalle_ball`); necessity by the energy
-  (`strictMin_of_localAsymptoticStable`, with `balance_of_isLocalMin`).
-* Exactness of the local asymptotic translation `{powerFlow, jacobianStable}`:
-  `exact_locallyAsymptoticallyStable_two` (two machines, `n = 1`, via
-  `not_localAsymptoticStable_two`) and `exact_locallyAsymptoticallyStable_three` (three
-  machines, `n = 2`, via `not_localAsymptoticStable_three`, `triangle_cubic_ne_zero`,
-  `sin_mul_cos_same_sign`, `node_open_or_antiphase`, `balance_line_of_edges`): on at most three
-  machines every singular positive semidefinite Hessian is a fold (nonzero cubic term along the
-  null direction) or comes with a continuum of equilibria. For five or more machines the
-  translation is not exact (`theorem/Network/Swing/DegenerateRing.lean`).
+* Three-machine arithmetic (static): `triangle_cubic_ne_zero`, `sin_mul_cos_same_sign`,
+  `node_open_or_antiphase`, `balance_line_of_edges`: on at most three machines every singular
+  positive semidefinite Hessian is a fold (nonzero cubic term along the null direction) or comes
+  with a continuum of equilibria.
 * Four machines (`n = 3`): `theorem/Network/Swing/Four.lean` proves exactness for every network
   with at most four lines (`mem_den_locallyAsymptoticallyStable_iff_four`; two uncoupled machine
   pairs: a subgraph of a four-cycle, the cubic term by superadditivity of `tan`, or of a triangle
   with a pendant line) and the cut and flat-direction tests for every `n`;
   `theorem/Network/Swing/FourDense.lean` decides the diamond and the complete graph and proves
   `exact_locallyAsymptoticallyStable_four` (exact for every four-machine network) and
-  `mem_den_locallyAsymptoticallyStable_iff_four_machines`.
+  `mem_den_locallyAsymptoticallyStable_iff_four_machines`. For five or more machines the
+  translation is not exact (`theorem/Network/Swing/DegenerateRing.lean`).
 
 Family and connection conclusions.
-* The family is `Swing.family`; the public model conclusions are `connection%` statements on its
-  generated denotations. Energy, Taylor and Hurwitz lemmas are static or generic implications
-  (foundation); trajectory facts stay inside the generic dynamics tools.
+* The family is `Swing.family`; the public behavioural conclusions are `connection%` statements on
+  its generated denotations, with static premises.
+* `not_localAsymptoticStable_of_forms` — at a power-balance point a relative-angle direction with
+  `A₂ < 0`, or `A₂ = 0` and `A₃ ≠ 0` (a saddle or a fold), puts the model outside the local
+  asymptotic denotation.
+* `not_localAsymptoticStable_two`, `not_localAsymptoticStable_three` — two or three machines at a
+  power-balance point with a non-Hurwitz reduced Jacobian are not locally asymptotically stable;
+  hence `exact_locallyAsymptoticallyStable_two` (`n = 1`) and
+  `exact_locallyAsymptoticallyStable_three` (`n = 2`): the local asymptotic translation
+  `{powerFlow, jacobianStable}` is exact.
+* `mem_den_locallyAsymptoticallyStable_iff` — complete membership characterization, every `n`:
+  local asymptotic stability ⇔ power balance ∧ a strict local minimum of the potential in relative
+  angles ∧ an isolated power-balance point. Sufficiency by LaSalle
+  (`Dynamics.Mechanical.localAsymptoticStable_of_strictMin`), necessity by the energy
+  (`Dynamics.Mechanical.strictMin_of_localAsymptoticStable`), through `reducedField_eq_mechanical`.
+* The generic obstructions — a non-minimum of the potential, a continuum of equilibria — are the
+  foundation results `Dynamics.Mechanical.not_localAsymptoticStable_of_potential_lt` and
+  `Dynamics.Mechanical.not_localAsymptoticStable_of_critical_line`, applied through
+  `reducedField_eq_mechanical`. Their field-level instances and the field-level forms of the
+  statements above are private implementation evidence.
 -/
 
 noncomputable section
@@ -148,7 +158,8 @@ def potentialGrad (p : Params n) (θ : Fin (n + 1) → ℝ) : (Fin (n + 1) → �
   simp only [sub_mul, Finset.sum_sub_distrib]
   linarith
 
-@[powerlib_foundation] theorem potential_contDiff (p : Params n) : ContDiff ℝ 1 (potential p) := by
+@[powerlib_foundation] theorem potential_contDiff (p : Params n) {N : WithTop ℕ∞} :
+    ContDiff ℝ N (potential p) := by
   unfold potential
   apply ContDiff.sub
   · exact (ContDiff.sum fun k _ => contDiff_const.mul (contDiff_apply ℝ ℝ k)).neg
@@ -319,60 +330,191 @@ def ground (v : Fin n → ℝ) : Fin (n + 1) → ℝ := Fin.cons 0 v
   rw [lie_energy, sum_P_of_balance hbal, mul_zero, add_zero, neg_nonpos]
   exact Finset.sum_nonneg fun k _ => mul_nonneg (p.D_pos k).le (sq_nonneg _)
 
+/-! ## The reduced field as a damped mechanical system -/
+
+@[powerlib_foundation] theorem angleMap_eq_ground (w : State (n + (n + 1))) :
+    angleMap w = ground fun i => w (dIdx i) := by
+  funext k
+  refine Fin.cases ?_ (fun i => ?_) k <;> simp
+
+@[powerlib_foundation] theorem norm_le_of_dIdx (w : State (n + (n + 1))) :
+    ‖(fun i => w (dIdx i) : Fin n → ℝ)‖ ≤ ‖w‖ :=
+  (pi_norm_le_iff_of_nonneg (norm_nonneg w)).mpr fun i => PiLp.norm_apply_le w (dIdx i)
+
+/-- `ground` as a continuous linear map. -/
+def groundCLM : (Fin n → ℝ) →L[ℝ] (Fin (n + 1) → ℝ) :=
+  LinearMap.toContinuousLinearMap
+    { toFun := ground
+      map_add' := fun v w => by
+        funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp
+      map_smul' := fun c v => by
+        funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp }
+
+@[simp, powerlib_foundation] theorem groundCLM_apply (v : Fin n → ℝ) : groundCLM v = ground v :=
+  rfl
+
+/-- The relative angle rates `ωᵢ₊₁ − ω₀` of the frequency deviations. -/
+def relRate : (Fin (n + 1) → ℝ) →L[ℝ] (Fin n → ℝ) :=
+  ContinuousLinearMap.pi fun i =>
+    ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) => ℝ) i.succ -
+      ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) => ℝ) 0
+
+@[simp, powerlib_foundation] theorem relRate_apply (w : Fin (n + 1) → ℝ) (i : Fin n) :
+    relRate w i = w i.succ - w 0 := by
+  simp [relRate]
+
+/-- The relative angles `θᵢ₊₁ − θ₀` of an angle profile. -/
+def relAngles (θ : Fin (n + 1) → ℝ) : Fin n → ℝ := fun i => θ i.succ - θ 0
+
+@[powerlib_foundation] theorem ground_relAngles_add (θ : Fin (n + 1) → ℝ) (v : Fin n → ℝ) :
+    ground (relAngles θ + v) = fun k => (θ + ground v) k + -θ 0 := by
+  funext k
+  refine Fin.cases ?_ (fun i => ?_) k
+  · simp
+  · simp only [ground_succ, Pi.add_apply, relAngles]
+    ring
+
+/-- The selected point is the rest point at the relative angles of the profile. -/
+@[powerlib_foundation] theorem equilibrium_eq_point (θ : Fin (n + 1) → ℝ) :
+    equilibrium θ = Dynamics.Mechanical.point (relAngles θ) := by
+  apply state_ext
+  · intro i
+    rw [Dynamics.Mechanical.point_qIdx]
+    simp [equilibrium, relAngles]
+  · intro k
+    rw [Dynamics.Mechanical.point_vIdx]
+    simp [equilibrium]
+
+/-- At a power-balance point the potential in relative angles, about the relative angles of
+`θ`, is the network potential of the displaced profile. -/
+@[powerlib_foundation] theorem potential_ground_relAngles_add {p : Params n}
+    (hP : ∑ k, p.P k = 0) (θ : Fin (n + 1) → ℝ) (v : Fin n → ℝ) :
+    potential p (ground (relAngles θ + v)) = potential p (θ + ground v) := by
+  rw [ground_relAngles_add, potential_add_const, hP, mul_zero, sub_zero]
+
+@[powerlib_foundation] theorem potential_ground_relAngles {p : Params n}
+    (hP : ∑ k, p.P k = 0) (θ : Fin (n + 1) → ℝ) :
+    potential p (ground (relAngles θ)) = potential p θ := by
+  simpa [ground_zero_vec] using potential_ground_relAngles_add hP θ 0
+
+@[powerlib_foundation] theorem hasFDerivAt_potential_comp_ground (p : Params n)
+    (q : Fin n → ℝ) :
+    HasFDerivAt (fun q => potential p (ground q))
+      ((potentialGrad p (ground q)).comp groundCLM) q :=
+  (hasFDerivAt_potential p (groundCLM q)).comp q groundCLM.hasFDerivAt
+
+@[powerlib_foundation] theorem potential_comp_ground_contDiff (p : Params n) :
+    ContDiff ℝ 2 (fun q : Fin n → ℝ => potential p (ground q)) :=
+  (potential_contDiff p).comp groundCLM.contDiff
+
+/-- The generalized force of the potential in relative angles: at a network with zero total
+power, `dU(q)(relRate w) = ∑ₖ (Pₖ(θ) − Pₖ) wₖ` with `θ = ground q`. -/
+@[powerlib_foundation] theorem fderiv_potential_comp_ground_relRate {p : Params n}
+    (hP : ∑ k, p.P k = 0) (q : Fin n → ℝ) (w : Fin (n + 1) → ℝ) :
+    fderiv ℝ (fun q => potential p (ground q)) q (relRate w) =
+      ∑ k, (powerInjection p.B (ground q) k - p.P k) * w k := by
+  rw [(hasFDerivAt_potential_comp_ground p q).fderiv, ContinuousLinearMap.comp_apply,
+    groundCLM_apply, potentialGrad_apply]
+  have hg : ground (relRate w) = fun k => w k - w 0 := by
+    funext k
+    refine Fin.cases ?_ (fun i => ?_) k <;> simp
+  have hs : ∑ k, (powerInjection p.B (ground q) k - p.P k) = 0 := by
+    rw [Finset.sum_sub_distrib, sum_powerInjection, hP, sub_zero]
+  rw [hg]
+  simp only [mul_sub, Finset.sum_sub_distrib, ← Finset.sum_mul, hs, zero_mul, sub_zero]
+
+/-- **The reduced swing field of a network with zero total power is a damped mechanical system**
+(`Dynamics.Mechanical.field`): positions the relative angles, velocities the frequency deviations,
+`relRate` the velocity-to-position map, inertias as masses, dampings, and the network potential
+in relative angles `q ↦ U(ground q)`. Static identity: the dynamics results of
+`theorem/Dynamics/Mechanical.lean` apply to the swing network at every power-balance point. -/
+@[powerlib_foundation] theorem reducedField_eq_mechanical {p : Params n}
+    (hP : ∑ k, p.P k = 0) :
+    reducedField p =
+      Dynamics.Mechanical.field relRate p.M p.D (fun q => potential p (ground q)) := by
+  funext z
+  have hpos : Dynamics.Mechanical.pos z = fun i => z (dIdx i) := by
+    ext i
+    simp
+  apply state_ext
+  · intro i
+    rw [reducedField_dIdx, Dynamics.Mechanical.field_qIdx]
+    simp
+  · intro k
+    rw [reducedField_wIdx, Dynamics.Mechanical.field_vIdx, fderiv_potential_comp_ground_relRate hP,
+      angleMap_eq_ground, hpos]
+    have hsum : ∑ l, (powerInjection p.B (ground fun i => z (dIdx i)) l - p.P l) *
+        (Pi.single k (1 : ℝ) : Fin (n + 1) → ℝ) l =
+          powerInjection p.B (ground fun i => z (dIdx i)) k - p.P k := by
+      simp [Pi.single_apply]
+    rw [hsum]
+    ring
+
+/-- At a network with zero total power, the critical points of the potential in relative angles
+along the reachable directions are the power-balance points. -/
+@[powerlib_foundation] theorem critical_iff_balance {p : Params n} (hP : ∑ k, p.P k = 0)
+    (θ : Fin (n + 1) → ℝ) (v : Fin n → ℝ) :
+    (fderiv ℝ (fun q => potential p (ground q)) (relAngles θ + v)).comp relRate = 0 ↔
+      ∀ k, p.P k = powerInjection p.B (θ + ground v) k := by
+  have hinj : ∀ k, powerInjection p.B (ground (relAngles θ + v)) k =
+      powerInjection p.B (θ + ground v) k := by
+    intro k
+    rw [ground_relAngles_add, powerInjection_add_const]
+  constructor
+  · intro h k
+    have := congrArg (fun T : (Fin (n + 1) → ℝ) →L[ℝ] ℝ => T (Pi.single k 1)) h
+    simp only [ContinuousLinearMap.comp_apply, fderiv_potential_comp_ground_relRate hP, hinj,
+      _root_.zero_apply] at this
+    simp [Pi.single_apply] at this
+    linarith
+  · intro h
+    ext w
+    simp only [ContinuousLinearMap.comp_apply, fderiv_potential_comp_ground_relRate hP, hinj,
+      _root_.zero_apply]
+    simp [← h]
+
+@[powerlib_foundation] theorem critical_iff_balance_zero {p : Params n} (hP : ∑ k, p.P k = 0)
+    (θ : Fin (n + 1) → ℝ) :
+    (fderiv ℝ (fun q => potential p (ground q)) (relAngles θ)).comp relRate = 0 ↔
+      ∀ k, p.P k = powerInjection p.B θ k := by
+  simpa [ground_zero_vec] using critical_iff_balance hP θ 0
+
 /-! ## Necessary conditions for local asymptotic stability -/
 
-/-- **A non-minimum of the potential is not asymptotically stable.** At a power-balance point,
-relative-angle displacements arbitrarily close to it with a lower potential rule out local
-asymptotic stability: the energy does not increase, so a solution started there cannot reach
-the selected point. -/
-@[powerlib_foundation] theorem not_localAsymptoticStable_of_potential_lt {p : Params n}
+private theorem mem_den_flow_iff' {m : Model n} {P : Flow.Property} :
+    m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
+  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+
+/-- Implementation evidence: `Dynamics.Mechanical.not_localAsymptoticStable_of_potential_lt` on the
+reduced field (`reducedField_eq_mechanical`). At a power-balance point, relative-angle
+displacements arbitrarily close to it with a lower potential rule out local asymptotic
+stability. -/
+private theorem reducedSwing_not_localAsymptoticStable_of_potential_lt {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hseed : ∀ ε > 0, ∃ v : Fin n → ℝ, ‖angleState v‖ < ε ∧
       potential p (θ + ground v) < potential p θ) :
     ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
-  refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := energy p) (ρ := 1)
-    (reducedField_contDiff p) ((energy_contDiff p).differentiable one_ne_zero) one_pos
-    (fun x _ => lie_energy_nonpos hbal x) fun ε hε => ?_
+  have hP := sum_P_of_balance hbal
+  rw [reducedField_eq_mechanical hP, equilibrium_eq_point]
+  refine Dynamics.Mechanical.not_localAsymptoticStable_of_potential_lt
+    (potential_comp_ground_contDiff p) (fun j => (p.M_pos j).ne') (fun j => (p.D_pos j).le)
+    fun ε hε => ?_
   obtain ⟨v, hv, hlt⟩ := hseed ε hε
-  refine ⟨equilibrium θ + angleState v, by simpa using hv, ?_⟩
-  rw [energy_equilibrium_add_angleState hbal, energy_equilibrium hbal]
-  exact hlt
+  refine ⟨v, lt_of_le_of_lt ?_ hv, ?_⟩
+  · simpa using norm_le_of_dIdx (angleState v)
+  · rwa [potential_ground_relAngles_add hP, potential_ground_relAngles hP]
 
-/-- **A continuum of equilibria is not asymptotically stable.** If the network stays power
-balanced along the relative-angle displacements `t • v` (`v ≠ 0`), every point of that line is an
-equilibrium. -/
-@[powerlib_foundation] theorem not_localAsymptoticStable_of_balance_line {p : Params n}
+/-- Implementation evidence: `Dynamics.Mechanical.not_localAsymptoticStable_of_critical_line` on the
+reduced field. If the network stays power balanced along the relative-angle displacements `t • v`
+(`v ≠ 0`), every point of that line is an equilibrium. -/
+private theorem reducedSwing_not_localAsymptoticStable_of_balance_line {p : Params n}
     {θ : Fin (n + 1) → ℝ} {v : Fin n → ℝ} (hv : v ≠ 0)
     (hline : ∀ t : ℝ, ∀ k, p.P k = powerInjection p.B (θ + ground (t • v)) k) :
     ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
-  refine Dynamics.not_localAsymptoticStable_of_equilibria fun ε hε => ?_
-  have hpos : 0 < ‖angleState v‖ := norm_pos_iff.mpr ((angleState_eq_zero_iff v).not.mpr hv)
-  set t := ε / (2 * ‖angleState v‖) with ht
-  have ht0 : 0 < t := by positivity
-  refine ⟨equilibrium θ + angleState (t • v), ?_, ?_, ?_⟩
-  · intro h
-    have h' : angleState (t • v) = 0 := by
-      have := congrArg (fun y => y - equilibrium θ) h
-      simpa using this
-    rw [angleState_eq_zero_iff, smul_eq_zero] at h'
-    rcases h' with h' | h'
-    · exact ht0.ne' h'
-    · exact hv h'
-  · rw [add_sub_cancel_left, angleState_smul, norm_smul, Real.norm_of_nonneg ht0.le, ht]
-    field_simp
-    linarith
-  · apply state_ext
-    · intro i; simp [reducedField_dIdx, equilibrium_wIdx]
-    · intro k
-      rw [reducedField_wIdx]
-      have ha : angleMap (equilibrium θ + angleState (t • v)) =
-          fun j => (θ + ground (t • v)) j + -θ 0 := by
-        rw [map_add, angleMap_equilibrium, angleMap_angleState]
-        funext j
-        simp only [Pi.add_apply]
-        ring
-      rw [ha, powerInjection_add_const, ← hline t k]
-      simp [equilibrium_wIdx]
+  have hP : ∑ k, p.P k = 0 := sum_P_of_balance (hline 0)
+  rw [reducedField_eq_mechanical hP, equilibrium_eq_point]
+  exact Dynamics.Mechanical.not_localAsymptoticStable_of_critical_line hv fun t =>
+    (critical_iff_balance hP θ (t • v)).mpr (hline t)
 
 /-! ## Taylor expansion of the potential at a power-balance point -/
 
@@ -759,14 +901,14 @@ nonzero cubic coefficient, makes `t² a/2 − t³ b/6 + t⁴ C` negative at arbi
 
 /-! ## Necessary conditions from the Hessian and cubic forms -/
 
-/-- **Second- and third-order test.** At a power-balance point, a relative-angle direction `v`
-with `A₂ < 0`, or with `A₂ = 0` and `A₃ ≠ 0` (a fold), rules out local asymptotic stability. -/
-@[powerlib_foundation] theorem not_localAsymptoticStable_of_forms {p : Params n}
+/-- Implementation evidence for `not_localAsymptoticStable_of_forms`, at the selected point of the
+untranslated field. -/
+private theorem reducedSwing_not_localAsymptoticStable_of_forms {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k) (v : Fin n → ℝ)
     (h : hessForm p θ (ground v) < 0 ∨
       (hessForm p θ (ground v) = 0 ∧ cubicForm p θ (ground v) ≠ 0)) :
     ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
-  refine not_localAsymptoticStable_of_potential_lt hbal fun ε hε => ?_
+  refine reducedSwing_not_localAsymptoticStable_of_potential_lt hbal fun ε hε => ?_
   have hN : 0 < ‖angleState v‖ + 1 := by positivity
   obtain ⟨t, -, ht, hlt⟩ := exists_potential_lt hbal (ground v) h (div_pos hε hN)
   refine ⟨t • v, ?_, by rwa [ground_smul]⟩
@@ -776,6 +918,18 @@ with `A₂ < 0`, or with `A₂ = 0` and `A₃ ≠ 0` (a fold), rules out local a
     _ < ε / (‖angleState v‖ + 1) * (‖angleState v‖ + 1) :=
         mul_lt_mul_of_pos_right ht hN
     _ = ε := by field_simp
+
+/-- **Second- and third-order test.** At a power-balance point, a relative-angle direction `v`
+with `A₂ < 0`, or with `A₂ = 0` and `A₃ ≠ 0` (a fold), rules out local asymptotic stability:
+the model is not in the denotation of the local asymptotic sentence. -/
+@[powerlib_domain] theorem not_localAsymptoticStable_of_forms (m : Model n)
+    (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) (v : Fin n → ℝ)
+    (h : hessForm m.params m.θ (ground v) < 0 ∨
+      (hessForm m.params m.θ (ground v) = 0 ∧ cubicForm m.params m.θ (ground v) ≠ 0)) :
+    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [mem_den_flow_iff']
+  exact reducedSwing_not_localAsymptoticStable_of_forms hbal v h
 
 /-- A non-Hurwitz reduced Jacobian leaves a nonzero grounded direction with a nonpositive
 Hessian form. -/
@@ -787,10 +941,6 @@ Hessian form. -/
   exact h (jacobian_isHurwitz_of_hessForm p θ fun u h0 hu => hne u h0 hu)
 
 /-! ## The family: exactness of the local asymptotic translation for small networks -/
-
-private theorem mem_den_flow_iff' {m : Model n} {P : Flow.Property} :
-    m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
 
 private theorem powerFlow_of_equilibrium' {p : Params n} {θ : Fin (n + 1) → ℝ}
     (h : reducedField p (equilibrium θ) = 0) : ∀ k, p.P k = powerInjection p.B θ k := by
@@ -852,11 +1002,9 @@ private theorem powerInjection_two_of_B (p : Params 1) (hB : p.B 0 1 = 0)
   · simp [hB]
   · rw [Subsingleton.elim i 0]; simp [hB']
 
-/-- **Two machines (`n = 1`).** At a power-balance point with a non-Hurwitz reduced Jacobian the
-selected point is not locally asymptotically stable: the line weight `B₀₁ cos(θ₀ − θ₁)` is
-negative (a saddle of the potential), or zero with a coupled line (a fold, nonzero cubic term),
-or the machines are uncoupled (a continuum of equilibria). -/
-@[powerlib_foundation] theorem not_localAsymptoticStable_two (p : Params 1) (θ : Fin (1 + 1) → ℝ)
+/-- Implementation evidence for `not_localAsymptoticStable_two`, at the selected point of the
+untranslated field. -/
+private theorem reducedSwing_not_localAsymptoticStable_two (p : Params 1) (θ : Fin (1 + 1) → ℝ)
     (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
     ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
@@ -877,11 +1025,12 @@ or the machines are uncoupled (a continuum of equilibria). -/
     have : 0 < 2 * (p.B 0 1 * Real.cos (θ 0 - θ 1)) * u 1 ^ 2 := by positivity
     linarith
   rcases hW.lt_or_eq with hW | hW
-  · refine not_localAsymptoticStable_of_forms hbal v (Or.inl ?_)
+  · refine reducedSwing_not_localAsymptoticStable_of_forms hbal v (Or.inl ?_)
     rw [hessForm_two p θ _ hg0, hg1]
     linarith
   · by_cases hB : p.B 0 1 = 0
-    · refine not_localAsymptoticStable_of_balance_line (v := v) (fun h => ?_) fun t k => ?_
+    · refine reducedSwing_not_localAsymptoticStable_of_balance_line (v := v) (fun h => ?_)
+        fun t k => ?_
       · have := congrFun h 0
         simp [hv] at this
       · rw [powerInjection_two_of_B p hB, hbal, powerInjection_two_of_B p hB]
@@ -894,18 +1043,30 @@ or the machines are uncoupled (a continuum of equilibria). -/
         have := Real.sin_sq_add_cos_sq (θ 0 - θ 1)
         rw [hs, hc] at this
         norm_num at this
-      refine not_localAsymptoticStable_of_forms hbal v (Or.inr ⟨?_, ?_⟩)
+      refine reducedSwing_not_localAsymptoticStable_of_forms hbal v (Or.inr ⟨?_, ?_⟩)
       · rw [hessForm_two p θ _ hg0, hW]; ring
       · rw [cubicForm_two p θ _ hg0, hg1]
         simp only [one_pow, mul_one]
         exact mul_ne_zero (by norm_num) (mul_ne_zero hB hs)
+
+/-- **Two machines (`n = 1`).** At a power-balance point with a non-Hurwitz reduced Jacobian the
+model is not locally asymptotically stable: the line weight `B₀₁ cos(θ₀ − θ₁)` is negative (a
+saddle of the potential), or zero with a coupled line (a fold, nonzero cubic term), or the
+machines are uncoupled (a continuum of equilibria). -/
+@[powerlib_domain] theorem not_localAsymptoticStable_two (m : Model 1)
+    (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k)
+    (hH : ¬ LinearSystems.IsHurwitz (jacobian m.params m.θ)) :
+    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [mem_den_flow_iff']
+  exact reducedSwing_not_localAsymptoticStable_two m.params m.θ hbal hH
 
 /-- **For two machines the local asymptotic translation is exact.** -/
 @[powerlib_domain] theorem exact_locallyAsymptoticallyStable_two :
     connection% ((family (n := 1)).Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact exact_locallyAsymptoticallyStable_of fun m hp hH =>
-    not_localAsymptoticStable_two m.params m.θ hp hH
+    reducedSwing_not_localAsymptoticStable_two m.params m.θ hp hH
 
 /-! ## Three machines -/
 
@@ -1119,16 +1280,9 @@ private theorem eq_ground_three (u : Fin (2 + 1) → ℝ) (hu0 : u 0 = 0) :
   · rfl
   · rfl
 
-/-- **Three machines (`n = 2`).** At a power-balance point with a non-Hurwitz reduced Jacobian the
-selected point is not locally asymptotically stable. With `a, b, c` the linearization weights of the
-lines `01, 12, 02`, the Hessian form is `a s² + c t² + b (s − t)²` on grounded directions
-`(0, s, t)`. A negative value is a saddle. Otherwise a null direction exists; if its circulation
-`κ = b(s − t)` is nonzero, exactly one weight is negative and, since the three line angles sum to
-zero, the cubic term has one strict sign (`triangle_cubic_ne_zero`): a fold. If `κ = 0` the null
-direction turns one machine against the other two through two zero-weight lines, whose cubic terms
-cancel only if both lines are open (a continuum of equilibria) or the third line is in antiphase,
-which contradicts the positive Hessian along it. -/
-@[powerlib_foundation] theorem not_localAsymptoticStable_three (p : Params 2)
+/-- Implementation evidence for `not_localAsymptoticStable_three`, at the selected point of the
+untranslated field. -/
+private theorem reducedSwing_not_localAsymptoticStable_three (p : Params 2)
     (θ : Fin (2 + 1) → ℝ) (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
     ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
@@ -1138,7 +1292,7 @@ which contradicts the positive Hessian along it. -/
     intro s t
     by_contra hneg
     push Not at hneg
-    exact not_localAsymptoticStable_of_forms hbal ![s, t]
+    exact reducedSwing_not_localAsymptoticStable_of_forms hbal ![s, t]
       (Or.inl (by rw [hessForm_three]; linarith)) hLAS
   have hK : ∀ s t, p.B 0 1 * Real.cos (θ 0 - θ 1) * s ^ 2 +
       p.B 0 2 * Real.cos (θ 0 - θ 2) * t ^ 2 + p.B 1 2 * Real.cos (θ 1 - θ 2) * (s - t) ^ 2 = 0 →
@@ -1146,13 +1300,13 @@ which contradicts the positive Hessian along it. -/
         p.B 1 2 * Real.sin (θ 1 - θ 2) * (s - t) ^ 3 = 0 := by
     intro s t h0
     by_contra hne
-    refine not_localAsymptoticStable_of_forms hbal ![s, t] (Or.inr ⟨?_, ?_⟩) hLAS
+    refine reducedSwing_not_localAsymptoticStable_of_forms hbal ![s, t] (Or.inr ⟨?_, ?_⟩) hLAS
     · rw [hessForm_three, h0, mul_zero]
     · rw [cubicForm_three]
       exact mul_ne_zero two_ne_zero hne
   have hline : ∀ v : Fin 2 → ℝ, v ≠ 0 → ¬ ∀ k j, p.B k j = 0 ∨ ground v k = ground v j :=
-    fun v hv h => not_localAsymptoticStable_of_balance_line hv (balance_line_of_edges hbal v h)
-      hLAS
+    fun v hv h => reducedSwing_not_localAsymptoticStable_of_balance_line hv
+      (balance_line_of_edges hbal v h) hLAS
   obtain ⟨u, hu0, hu, hle⟩ := exists_hessForm_nonpos hH
   have hug := eq_ground_three u hu0
   have hst : ¬ (u 1 = 0 ∧ u 2 = 0) := by
@@ -1327,23 +1481,31 @@ which contradicts the positive Hessian along it. -/
     linarith
 
 
+/-- **Three machines (`n = 2`).** At a power-balance point with a non-Hurwitz reduced Jacobian the
+model is not locally asymptotically stable. With `a, b, c` the linearization weights of the
+lines `01, 12, 02`, the Hessian form is `a s² + c t² + b (s − t)²` on grounded directions
+`(0, s, t)`. A negative value is a saddle. Otherwise a null direction exists; if its circulation
+`κ = b(s − t)` is nonzero, exactly one weight is negative and, since the three line angles sum to
+zero, the cubic term has one strict sign (`triangle_cubic_ne_zero`): a fold. If `κ = 0` the null
+direction turns one machine against the other two through two zero-weight lines, whose cubic terms
+cancel only if both lines are open (a continuum of equilibria) or the third line is in antiphase,
+which contradicts the positive Hessian along it. -/
+@[powerlib_domain] theorem not_localAsymptoticStable_three (m : Model 2)
+    (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k)
+    (hH : ¬ LinearSystems.IsHurwitz (jacobian m.params m.θ)) :
+    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [mem_den_flow_iff']
+  exact reducedSwing_not_localAsymptoticStable_three m.params m.θ hbal hH
+
 /-- **For three machines the local asymptotic translation is exact.** -/
 @[powerlib_domain] theorem exact_locallyAsymptoticallyStable_three :
     connection% ((family (n := 2)).Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact exact_locallyAsymptoticallyStable_of fun m hp hH =>
-    not_localAsymptoticStable_three m.params m.θ hp hH
+    reducedSwing_not_localAsymptoticStable_three m.params m.θ hp hH
 
 /-! ## Local asymptotic stability at a strict, isolated minimum of the potential -/
-
-@[powerlib_foundation] theorem angleMap_eq_ground (w : State (n + (n + 1))) :
-    angleMap w = ground fun i => w (dIdx i) := by
-  funext k
-  refine Fin.cases ?_ (fun i => ?_) k <;> simp
-
-@[powerlib_foundation] theorem norm_le_of_dIdx (w : State (n + (n + 1))) :
-    ‖(fun i => w (dIdx i) : Fin n → ℝ)‖ ≤ ‖w‖ :=
-  (pi_norm_le_iff_of_nonneg (norm_nonneg w)).mpr fun i => PiLp.norm_apply_le w (dIdx i)
 
 /-- The energy relative to the selected point, at a displacement `w`: kinetic energy of `w` plus
 the potential increment of its relative angles. -/
@@ -1380,113 +1542,24 @@ field. -/
     rw [ha, powerInjection_add_const, ← hv k]
     simp [equilibrium_wIdx]
 
-/-- **LaSalle at a strict isolated minimum.** At a power-balance point whose relative angles are
-a strict local minimum of the potential and an isolated power-balance point, the reduced swing
+/-- Implementation evidence: `Dynamics.Mechanical.localAsymptoticStable_of_strictMin` (LaSalle) on
+the reduced field (`reducedField_eq_mechanical`). At a power-balance point whose relative angles
+are a strict local minimum of the potential and an isolated power-balance point, the reduced swing
 field is locally asymptotically stable, whatever its linearization. -/
-@[powerlib_foundation] theorem localAsymptoticStable_of_strictMin {p : Params n}
+private theorem reducedSwing_localAsymptoticStable_of_strictMin {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k) {r : ℝ} (hr : 0 < r)
     (hmin : ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r → potential p θ < potential p (θ + ground v))
     (hcrit : ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r →
       ¬ ∀ k, p.P k = powerInjection p.B (θ + ground v) k) :
     LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
-  have hE := energy_contDiff p
-  refine Dynamics.LaSalle.localAsymptoticStable_of_lasalle_ball (by omega) (reducedField_contDiff p)
-    (reducedField_equilibrium p θ hbal) (W := fun z => energy p z - energy p (equilibrium θ))
-    (hE.sub contDiff_const) (sub_self _) hr ?_ ?_ ?_
-  · intro x hx hne
-    have e := energy_equilibrium_add hbal (x - equilibrium θ)
-    rw [add_sub_cancel] at e
-    show 0 < energy p x - energy p (equilibrium θ)
-    rw [e]
-    set δ : Fin n → ℝ := fun i => (x - equilibrium θ) (dIdx i) with hδ
-    have hkin : 0 ≤ (∑ k, p.M k * (x - equilibrium θ) (wIdx k) ^ 2) / 2 :=
-      div_nonneg (Finset.sum_nonneg fun k _ => mul_nonneg (p.M_pos k).le (sq_nonneg _))
-        zero_le_two
-    by_cases hδ0 : δ = 0
-    · rw [hδ0, ground_zero_vec, add_zero, sub_self, add_zero]
-      have hw : ∃ k, (x - equilibrium θ) (wIdx k) ≠ 0 := by
-        by_contra hall
-        push Not at hall
-        apply hne
-        rw [← sub_eq_zero]
-        apply state_ext
-        · intro i
-          have := congrFun hδ0 i
-          simp only [hδ, Pi.zero_apply, PiLp.sub_apply] at this
-          simpa using this
-        · intro k; simpa using hall k
-      obtain ⟨k₀, hk₀⟩ := hw
-      have : 0 < ∑ k, p.M k * (x - equilibrium θ) (wIdx k) ^ 2 :=
-        Finset.sum_pos' (fun k _ => mul_nonneg (p.M_pos k).le (sq_nonneg _))
-          ⟨k₀, Finset.mem_univ _, mul_pos (p.M_pos k₀) (by positivity)⟩
-      linarith
-    · have := hmin δ hδ0 ((norm_le_of_dIdx _).trans_lt hx)
-      linarith
-  · intro x _
-    rw [fderiv_sub_const]
-    exact lie_energy_nonpos hbal x
-  · intro T φ hT hφ hin
-    have hzero : ∀ t ∈ Set.Icc 0 T, ∀ k, φ t (wIdx k) = 0 := by
-      intro t ht k
-      have h0 := (hin t ht).2
-      rw [fderiv_sub_const, lie_energy, sum_P_of_balance hbal, mul_zero, add_zero,
-        neg_eq_zero] at h0
-      have hterm := (Finset.sum_eq_zero_iff_of_nonneg fun j _ =>
-        mul_nonneg (p.D_pos j).le (sq_nonneg (φ t (wIdx j)))).mp h0 k (Finset.mem_univ k)
-      rcases mul_eq_zero.mp hterm with h | h
-      · exact absurd h (p.D_pos k).ne'
-      · exact pow_eq_zero_iff (two_ne_zero) |>.mp h
-    have hmem0 : (0 : ℝ) ∈ Set.Icc 0 T := ⟨le_rfl, hT.le⟩
-    -- the frequency equations at the initial state: power balance
-    have hfw : ∀ k, reducedField p (φ 0) (wIdx k) = 0 := by
-      intro k
-      have hd : HasDerivWithinAt (fun t => φ t (wIdx k)) (reducedField p (φ 0) (wIdx k))
-          (Set.Icc 0 T) 0 := by
-        have := (PiLp.proj (𝕜 := ℝ) 2 (fun _ : Fin (n + (n + 1)) => ℝ)
-          (wIdx k)).hasFDerivAt.comp_hasDerivWithinAt 0 (hφ 0 hmem0)
-        exact this
-      have hc : HasDerivWithinAt (fun t => φ t (wIdx k)) 0 (Set.Icc 0 T) 0 :=
-        (hasDerivWithinAt_const (0 : ℝ) _ (0 : ℝ)).congr (fun s hs => hzero s hs k)
-          (hzero 0 hmem0 k)
-      exact (uniqueDiffOn_Icc hT 0 hmem0).eq_deriv _ hd hc
-    set w := φ 0 - equilibrium θ with hw
-    set δ : Fin n → ℝ := fun i => w (dIdx i) with hδ
-    have hbalδ : ∀ k, p.P k = powerInjection p.B (θ + ground δ) k := by
-      intro k
-      have h := hfw k
-      rw [reducedField_wIdx, hzero 0 hmem0 k, mul_zero, sub_zero, div_eq_zero_iff,
-        or_iff_left (p.M_pos k).ne'] at h
-      have ha : angleMap (φ 0) = fun j => (θ + ground δ) j + -θ 0 := by
-        have : φ 0 = equilibrium θ + w := by rw [hw]; abel
-        rw [this, map_add, angleMap_equilibrium, angleMap_eq_ground]
-        funext j
-        simp only [Pi.add_apply]
-        ring
-      rw [ha, powerInjection_add_const] at h
-      linarith
-    have hδ0 : δ = 0 := by
-      by_contra hne
-      exact hcrit δ hne ((norm_le_of_dIdx w).trans_lt (by simpa [hw] using (hin 0 hmem0).1))
-        hbalδ
-    rw [← sub_eq_zero]
-    apply state_ext
-    · intro i
-      have := congrFun hδ0 i
-      simp only [hδ, hw, Pi.zero_apply, PiLp.sub_apply] at this
-      simpa using this
-    · intro k; simp [hzero 0 hmem0 k, equilibrium_wIdx]
-
-/-- `ground` as a continuous linear map. -/
-def groundCLM : (Fin n → ℝ) →L[ℝ] (Fin (n + 1) → ℝ) :=
-  LinearMap.toContinuousLinearMap
-    { toFun := ground
-      map_add' := fun v w => by
-        funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp
-      map_smul' := fun c v => by
-        funext k; refine Fin.cases ?_ (fun i => ?_) k <;> simp }
-
-@[simp, powerlib_foundation] theorem groundCLM_apply (v : Fin n → ℝ) : groundCLM v = ground v :=
-  rfl
+  have hP := sum_P_of_balance hbal
+  rw [reducedField_eq_mechanical hP, equilibrium_eq_point]
+  refine Dynamics.Mechanical.localAsymptoticStable_of_strictMin (by omega)
+    (potential_comp_ground_contDiff p) p.M_pos p.D_pos ((critical_iff_balance_zero hP θ).mpr hbal)
+    hr (fun v hv0 hv => ?_)
+    (fun v hv0 hv hc => hcrit v hv0 hv ((critical_iff_balance hP θ v).mp hc))
+  rw [potential_ground_relAngles_add hP, potential_ground_relAngles hP]
+  exact hmin v hv0 hv
 
 /-- `angleState` as a continuous linear map. -/
 def angleStateCLM : (Fin n → ℝ) →L[ℝ] State (n + (n + 1)) :=
@@ -1527,68 +1600,31 @@ vanishes). -/
   · linarith
   · linarith [hi i]
 
-/-- **The selected point of a locally asymptotically stable network is a strict, isolated
-minimum of the potential.** -/
-@[powerlib_foundation] theorem strictMin_of_localAsymptoticStable {p : Params n}
+/-- Implementation evidence: `Dynamics.Mechanical.strictMin_of_localAsymptoticStable` on the
+reduced field. The selected point of a locally asymptotically stable network is a strict, isolated
+minimum of the potential. -/
+private theorem reducedSwing_strictMin_of_localAsymptoticStable {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hLAS : LocalAsymptoticStable (reducedField p) (equilibrium θ)) :
     ∃ r > 0, ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r →
       potential p θ < potential p (θ + ground v) ∧
         ¬ ∀ k, p.P k = powerInjection p.B (θ + ground v) k := by
-  -- a local minimum
-  obtain ⟨ε₁, hε₁, hmin⟩ : ∃ ε > 0, ∀ v : Fin n → ℝ, ‖angleState v‖ < ε →
-      potential p θ ≤ potential p (θ + ground v) := by
-    by_contra hne
-    push Not at hne
-    exact not_localAsymptoticStable_of_potential_lt hbal hne hLAS
-  -- an isolated power-balance point
-  obtain ⟨ε₂, hε₂, hiso⟩ : ∃ ε > 0, ∀ v : Fin n → ℝ, ‖angleState v‖ < ε →
-      (∀ k, p.P k = powerInjection p.B (θ + ground v) k) → v = 0 := by
-    by_contra hne
-    push Not at hne
-    refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε => ?_) hLAS
-    obtain ⟨v, hv, hcrit, hv0⟩ := hne ε hε
-    refine ⟨equilibrium θ + angleState v, ?_, by simpa using hv,
-      reducedField_equilibrium_add_angleState hcrit⟩
-    intro h
-    have : angleState v = 0 := by simpa using congrArg (· - equilibrium θ) h
-    exact hv0 ((angleState_eq_zero_iff v).mp this)
-  -- pass to a sup-norm ball
-  have hev : ∀ᶠ v in 𝓝 (0 : Fin n → ℝ), ‖angleState v‖ < min ε₁ ε₂ := by
-    have := (angleStateCLM (n := n)).continuous.tendsto 0
-    rw [map_zero] at this
-    exact this.eventually (Metric.ball_mem_nhds _ (lt_min hε₁ hε₂)) |>.mono fun v hv => by
-      simpa using hv
-  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.mp hev
-  refine ⟨r / 2, by positivity, fun v hv0 hv => ⟨?_, fun hcrit => ?_⟩⟩
-  · have hvr : dist v 0 < r := by rw [dist_zero_right]; linarith
-    have hle := hmin v ((hball hvr).trans_le (min_le_left _ _))
-    rcases hle.lt_or_eq with hlt | heq
-    · exact hlt
-    · exfalso
-      apply hv0
-      refine hiso v ((hball hvr).trans_le (min_le_right _ _)) (balance_of_isLocalMin hbal ?_)
-      refine Filter.eventually_of_mem (Metric.ball_mem_nhds v (by positivity : (0 : ℝ) < r / 2))
-        fun w hw => ?_
-      have hwr : dist w 0 < r := by
-        rw [Metric.mem_ball, dist_eq_norm] at hw
-        rw [dist_zero_right]
-        calc ‖w‖ = ‖(w - v) + v‖ := by rw [sub_add_cancel]
-          _ ≤ ‖w - v‖ + ‖v‖ := norm_add_le _ _
-          _ < r := by linarith
-      show potential p (θ + ground v) ≤ potential p (θ + ground w)
-      rw [← heq]
-      exact hmin w ((hball hwr).trans_le (min_le_left _ _))
-  · have hvr : dist v 0 < r := by rw [dist_zero_right]; linarith
-    exact hv0 (hiso v ((hball hvr).trans_le (min_le_right _ _)) hcrit)
-
+  have hP := sum_P_of_balance hbal
+  rw [reducedField_eq_mechanical hP, equilibrium_eq_point] at hLAS
+  obtain ⟨r, hr, h⟩ := Dynamics.Mechanical.strictMin_of_localAsymptoticStable
+    (potential_comp_ground_contDiff p) (fun j => (p.M_pos j).ne') (fun j => (p.D_pos j).le) hLAS
+  refine ⟨r, hr, fun v hv0 hv => ?_⟩
+  obtain ⟨h1, h2⟩ := h v hv0 hv
+  rw [potential_ground_relAngles_add hP, potential_ground_relAngles hP] at h1
+  exact ⟨h1, fun hc => h2 ((critical_iff_balance hP θ v).mpr hc)⟩
 
 /-- **Membership in local asymptotic stability, for every number of machines.** A swing network is
 locally asymptotically stable at its selected angle profile exactly when the profile is a
 power-balance point, a strict local minimum of the network potential in relative angles, and an
 isolated power-balance point. The conditions are static: they do not mention solutions, and the
-linearization is not involved (`localAsymptoticStable_of_strictMin` by LaSalle,
-`strictMin_of_localAsymptoticStable` by the energy). -/
+linearization is not involved (LaSalle, `Dynamics.Mechanical.localAsymptoticStable_of_strictMin`,
+and the energy, `Dynamics.Mechanical.strictMin_of_localAsymptoticStable`, through
+`reducedField_eq_mechanical`). -/
 @[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff (m : Model n) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
       (∀ k, m.params.P k = powerInjection m.params.B m.θ k) ∧
@@ -1602,9 +1638,9 @@ linearization is not involved (`localAsymptoticStable_of_strictMin` by LaSalle,
   · intro h
     have hp := powerFlow_of_equilibrium' (Dynamics.isEquilibrium_of_lyapunovStable
       (reducedField_contDiff _) h.1)
-    exact ⟨hp, strictMin_of_localAsymptoticStable hp h⟩
+    exact ⟨hp, reducedSwing_strictMin_of_localAsymptoticStable hp h⟩
   · rintro ⟨hp, r, hr, hv⟩
-    exact localAsymptoticStable_of_strictMin hp hr (fun v h0 h1 => (hv v h0 h1).1)
+    exact reducedSwing_localAsymptoticStable_of_strictMin hp hr (fun v h0 h1 => (hv v h0 h1).1)
       (fun v h0 h1 => (hv v h0 h1).2)
 
 end powerlib.Network.Swing
