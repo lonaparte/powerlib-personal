@@ -32,7 +32,8 @@ Model boundary.
 
 Four layers. `VSMLPF.stack` is a stack of `theorem/Stack/Basic.lean`: T = the sentences,
 M = `VSMLPF.family` (`theorem/GFM/VSMLPF.lean`), I = `VSMLPF.rigFamily`, O = `VSMLPF.Record`; a
-platform realizes its design model (`Stack.ofDesign Rig.design`) and may produce the records of
+platform realizes its design model (`Implementation.ofDesign Rig.design`) and may produce the
+records of
 `Produces`. Data-driven inference (`Stack.infer`, the whole backward traversal) is a conclusion
 about the realized design models and reuses the model-layer theorems; it becomes a conclusion
 about the platform (`Stack.truth`) only through realization soundness, which needs the
@@ -69,7 +70,7 @@ Family and connection conclusions.
   local exponential translation is exact.
 * M–I (realization). `realizationSoundUnder_locallyExponentiallyStable`: within
   `{design physical, lag, fastLag}` a platform with a locally exponentially stable design is
-  locally exponentially stable, by the static reduction `Stack.realizationSoundUnder_of_requirements`
+  locally exponentially stable, by the static reduction `Implementation.realizationSoundUnder_of_requirements`
   (the M-layer `exactUnder_locallyExponentiallyStable`, the I-layer `rig_chain_le_semantics` and
   one algebraic obligation, fast filter and fast delay give `H > 0`);
   `realizationCompleteUnder_locallyExponentiallyStable`: within `{design physical, lag}`, for every
@@ -481,7 +482,8 @@ def Produces (y : Rig) (v : Record) : Prop :=
 /-- The VSM four-layer stack: the sentences, the VSM + power-filter models, the platforms realizing
 their design models, and the identification records they may produce. -/
 def stack : Stack Model Requirement Rig RigRequirement Record 3 0 4 0 :=
-  ⟨family, rigFamily, Stack.ofDesign Rig.design, {p | Produces p.1 p.2}⟩
+  { model := family, impl := rigFamily, realizes := Implementation.ofDesign Rig.design
+    produces := {p | Produces p.1 p.2} }
 
 private theorem stack_model : stack.model = family := rfl
 
@@ -515,7 +517,7 @@ private theorem mem_realizes {x : Model} {y : Rig} : (x, y) ∈ stack.realizes �
 
 private theorem certify_realizes (P : Set Model) :
     TMIO.certify stack.realizes P = Rig.design ⁻¹' P :=
-  Stack.certify_ofDesign _ P
+  Implementation.certify_ofDesign _ P
 
 /-- The worst-corner fast-filter check places every producer's design in the translation of
 local exponential stability. -/
@@ -692,7 +694,7 @@ private theorem fastLag_of_lagCheck {y : Rig} {v : Record} (hv : v.ModelCheck) (
 /-- Implementation soundness of local exponential stability: a platform whose design is a
 physical, locally exponentially stable model and whose positive delay is fast against the design
 margin is locally exponentially stable. The proof is the static reduction
-`Stack.realizationSoundUnder_of_requirements`: the design side is the exact M-layer translation
+`Implementation.realizationSoundUnder_of_requirements`: the design side is the exact M-layer translation
 (`exactUnder_locallyExponentiallyStable`: balanced, `K > 0`, fast filter), the platform side the
 sound I-layer translation (`rig_chain_le_semantics`), and between them one algebraic obligation,
 fast filter and fast delay give the platform Routh condition `H > 0`. -/
@@ -756,7 +758,7 @@ unstable. -/
 @[powerlib_domain] theorem not_realizationSoundUnder_locallyExponentiallyStable :
     connection% (¬ stack.RealizationSoundUnder {.design .physical, .lag}
       (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement Stack.RealizationSoundUnder
+  unfold powerlib.TMIO.Statement Implementation.RealizationSoundUnder
   intro h
   have hd := slowRig_design_mem_den
   have hu := slowRig_mem_den_unstable
@@ -782,7 +784,7 @@ operating point off equilibrium; a slow filter gives `H < 0`; `K < 0` gives `det
 @[powerlib_domain] theorem realizationSoundUnder_unstable :
     connection% (stack.RealizationSoundUnder {.design .physical, .design .destabilizing, .lag}
       (.flow .unstable)) := by
-  unfold powerlib.TMIO.Statement Stack.RealizationSoundUnder
+  unfold powerlib.TMIO.Statement Implementation.RealizationSoundUnder
   rintro y ⟨-, hΔ⟩
   rw [TMIO.mem_realize] at hΔ
   have hp : Meets y.design .physical := hΔ (.design .physical) (by simp)

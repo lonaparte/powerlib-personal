@@ -12,15 +12,15 @@ records produced by implementations (O).
   records along a stack. `P` mentions `Stack.infer`, `Stack.certified`, `Stack.truth`,
   `Stack.inferOrganized`, `Stack.certifiedOrganized` or `Stack.predicted`.
 * `realization` (M–I): implementations against the models they realize. `P` mentions
-  `Stack.RealizationSoundUnder`, `Stack.RealizationCompleteUnder` or
-  `Stack.RealizationExactUnder`.
+  `Implementation.RealizationSoundUnder`, `Implementation.RealizationCompleteUnder`,
+  `Implementation.RealizationExactUnder` or `Implementation.uTI`.
 * `observation` (the codex encoding, observation relations on models): what observations certify
   or predict about models, or the observation closure. `P` mentions a member of `TMIO.Seed`
   (`u₃`, `uTO`, …), `TMIO.certify`, `TMIO.possibly` or `TMIO.predict`.
 * `implementation` (I): translation, denotation or requirement space of an implementation family,
-  a family whose system type is the implementation type of some `Stack` declared in the library.
-  The implementation types are read from the types of the library's `Stack` constants, never from
-  names or tags.
+  a family whose system type is the implementation type of some `Implementation` or `Stack`
+  declared in the library. The implementation types are read from the types of the library's
+  `Implementation` and `Stack` constants, never from names or tags.
 * `translation` (T–M, organization): the requirement translation of a model family compared with
   the semantics (exactness, soundness, the translation chain against the semantics connection).
   `P` mentions `Family.chain`, `Family.Exact`, `Family.ExactUnder`, `Family.Sound`,
@@ -96,8 +96,9 @@ def dataMarkers : Array Name :=
     ``powerlib.Stack.predicted]
 
 def realizationMarkers : Array Name :=
-  #[``powerlib.Stack.RealizationSoundUnder, ``powerlib.Stack.RealizationCompleteUnder,
-    ``powerlib.Stack.RealizationExactUnder]
+  #[``powerlib.Implementation.RealizationSoundUnder,
+    ``powerlib.Implementation.RealizationCompleteUnder,
+    ``powerlib.Implementation.RealizationExactUnder, ``powerlib.Implementation.uTI]
 
 def translationMarkers : Array Name :=
   #[``powerlib.Family.chain, ``powerlib.Family.Exact, ``powerlib.Family.ExactUnder,
@@ -145,7 +146,8 @@ def statementProp? : Expr → Option Expr
   | e => if e.isAppOf ``powerlib.TMIO.Statement then e.getAppArgs[0]? else none
 
 /-- The implementation types of the library: the system type `Y` of every constant of type
-`Stack X Q Y R V n p m q` (under its parameters) in a `theorem.*` module. -/
+`Implementation X Q Y R n p m q` or `Stack X Q Y R V n p m q` (under its parameters) in a
+`theorem.*` module. -/
 def implementationTypes (env : Environment) : Array Expr := Id.run do
   let mut out := #[]
   for i in [:env.header.moduleNames.size] do
@@ -154,7 +156,7 @@ def implementationTypes (env : Environment) : Array Expr := Id.run do
       let some info := env.find? name | continue
       let mut ty := info.type
       while ty.isForall do ty := ty.bindingBody!
-      if ty.isAppOf ``powerlib.Stack then
+      if ty.isAppOf ``powerlib.Stack || ty.isAppOf ``powerlib.Implementation then
         if let some y := ty.getAppArgs[2]? then
           unless y.hasLooseBVars || out.contains y do out := out.push y
   return out

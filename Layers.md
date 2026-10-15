@@ -4,7 +4,8 @@
 infimum-preserving semantic map per adjacent edge pointing back to the earlier layer, and
 forward maps generated as unique lower adjoints ([Architecture.md](Architecture.md)). This
 document fixes what the four layers mean in powerlib, how a result is placed in one of them, and
-how the Lean interface carries each layer. The interface is `theorem/Stack/Basic.lean`.
+how the Lean interface carries each layer. The interface is `theorem/Stack/Implementation.lean`
+and `theorem/Stack/Basic.lean`.
 
 ## Definitions
 
@@ -28,37 +29,42 @@ records supports a set of sentences exactly when every record is certified for t
 
 ## The Lean interface
 
-A `Stack X Q Y R V n p m q` consists of
+Two structures carry the layers. An `Implementation X Q Y R n p m q`
+(`theorem/Stack/Implementation.lean`) is the T–M–I part:
 
 * `model : Family X Q n p`: models `X` with their requirement language `Q` and translation;
 * `impl : Family Y R m q`: implementations `Y` with their own system map, and the requirement
   language `R` of their realistic constraints;
 * `realizes : SetRel X Y`: the implementation realizes the model (for a design map,
-  `Stack.ofDesign`);
-* `produces : SetRel Y V`: the implementation may produce the record.
+  `Implementation.ofDesign`).
 
-Its seed `Stack.seed` has the semantic maps `model.semantics`, `possibly realizes` and
-`possibly produces`. The organized seed `Stack.organized` replaces the first map by the
-translation chain `model.chain`, the theory as the requirement language organizes it. The derived
-operations are
+A `Stack X Q Y R V n p m q` (`theorem/Stack/Basic.lean`) extends an `Implementation` by
+`produces : SetRel Y V`, the implementation may produce the record.
 
 | Operation | Meaning | Lean |
 | --- | --- | --- |
+| Composite through the realized models | Sentences every model realized by the given implementations satisfies | `Implementation.uTI` |
+| Realization soundness | Within constraints `Δ`, an implementation whose realized models all satisfy `s` satisfies `s` | `RealizationSoundUnder Δ s` |
+| Realization completeness | Within `Δ`, an implementation satisfying `s` realizes only models of `s` | `RealizationCompleteUnder Δ s` |
+| Realization exactness | Both: within `Δ`, an implementation satisfies `s` exactly when its realized models do | `RealizationExactUnder Δ s` |
 | Data-driven inference | Sentences satisfied by every model realized by a possible producer of the records | `Stack.infer` (`seed.uTO`) |
 | Theory-driven certification | Records all of whose possible producers realize only models of the sentences | `Stack.certified` (generated `uTO`) |
 | Inference through the requirement language | The same, checking the translation instead of the semantics | `Stack.inferOrganized`, `Stack.certifiedOrganized` |
 | Implementation truth | Sentences satisfied by every possible producer itself | `Stack.truth` |
 | Prediction | Records some implementation satisfying `s` may produce | `Stack.predicted` |
-| Realization soundness | Within constraints `Δ`, an implementation whose realized models all satisfy `s` satisfies `s` | `Stack.RealizationSoundUnder Δ s` |
-| Realization completeness | Within `Δ`, an implementation satisfying `s` realizes only models of `s` | `Stack.RealizationCompleteUnder Δ s` |
-| Realization exactness | Both: within `Δ`, an implementation satisfies `s` exactly when its realized models do | `Stack.RealizationExactUnder Δ s` |
+
+The seed `Stack.seed` has the semantic maps `model.semantics`, `possibly realizes` and
+`possibly produces`; the organized seed `Stack.organized` replaces the first map by the
+translation chain `model.chain`, the theory as the requirement language organizes it.
 
 Realization soundness compares two connections from sentences to implementations, the
-composite through the realized models (`seed.uTI`) and the implementations' own semantics, just
-as the soundness of a translation compares the translation chain with the semantics one layer
-up. It reduces to static obligations on requirements
-(`Stack.realizationSoundUnder_of_requirements`): an exact model translation, a sound
-implementation translation, and an implication between the two requirement languages.
+composite through the realized models (`uTI`) and the implementations' own semantics, just as
+the soundness of a translation compares the translation chain with the semantics one layer up.
+It reduces to static obligations on requirements
+(`Implementation.realizationSoundUnder_of_requirements`): an exact model translation, a sound
+implementation translation, and an implication between the two requirement languages. A
+realization by a design map whose implementation denotation is the model denotation pulled back
+is exact (`Implementation.realizationExactUnder_of_den_eq_preimage`).
 Data-driven inference reaches conclusions about the realized models. They become conclusions
 about the producing implementations through realization soundness, for records certified for the
 constraints (`Stack.infer_true`, `Stack.infer_subset_truth`), and completeness gives the converse
@@ -86,7 +92,8 @@ modules for records.
 
 `dependencies/tests/lean/Library/TMIOIndex.lean` files every connection statement under one
 category by the constants of its proposition. It recognizes implementation families by the
-implementation type of a `Stack` declared in the library, not by names or tags:
+implementation type of an `Implementation` or `Stack` declared in the library, not by names or
+tags:
 
 ```
 import dependencies.tests.lean.Library.TMIOIndex

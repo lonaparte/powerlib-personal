@@ -1,4 +1,4 @@
-import theorem.Family.Basic
+import theorem.Stack.Implementation
 
 /-! # Four-layer stacks: theory, models, implementations and records
 
@@ -28,9 +28,10 @@ averaged model, nominal parameters) belongs to the model; one imposed by hardwar
 (a hardware limit, switching, an EMT discretization, a tolerance set) belongs to the
 implementation.
 
-A `Stack` adds two relations to a model family and an implementation family: `realizes`
-(implementation `y` realizes model `x`) and `produces` (implementation `y` may produce record
-`v`). Its TMIO seed has the semantic maps
+A `Stack` extends an `Implementation` (`theorem/Stack/Implementation.lean`: a model family, an
+implementation family and the realization `realizes` of models by implementations) by the
+production relation `produces` (implementation `y` may produce record `v`). Its TMIO seed has the
+semantic maps
 * `u₁ = model.semantics : (Set X)ᵒᵈ → Set Sentence` (the sentences all given models satisfy),
 * `u₂ = possibly realizes : (Set Y)ᵒᵈ → (Set X)ᵒᵈ` (the models some given implementation
   realizes),
@@ -49,14 +50,12 @@ with its translation is one T–M connection, and every connection conclusion of
 keeps that organization: its first edge is the translation chain `model.chain` instead of the
 semantics.
 
-Implementations carry their own truth, `impl.semantics`. Comparing it with the composite through
-the realized models, `seed.uTI`, gives realization soundness and exactness, the I-level analogue of
-the soundness and exactness of a translation: an implementation all of whose realized models
-satisfy a sentence satisfies it itself, within a context of realistic constraints; completeness
-is the converse. Data-driven
-conclusions of the whole backward traversal are conclusions about the realized models; they
-become conclusions about the producing implementation through realization soundness
-(`infer_true`), and refutation runs the same edge backwards (`refutes_realized`).
+Implementations carry their own truth, `impl.semantics`. Its comparison with the composite through
+the realized models (`seed.uTI`, the implementation layer's `uTI`) is realization soundness,
+completeness and exactness, defined on `Implementation`. Data-driven conclusions of the whole
+backward traversal are conclusions about the realized models; they become conclusions about the
+producing implementation through realization soundness (`infer_true`), and refutation runs the
+same edge backwards (`refutes_realized`).
 
 Source: TMIO v0.3 (`theorem/TMIO/Derived.lean`, `theorem/TMIO/Relation.lean`); the model family
 interface (`theorem/Family/Basic.lean`).
@@ -66,21 +65,16 @@ Results.
   (`infer`, `mem_infer`) and theory-driven certification (`certified`, `certified_eq`,
   `mem_certified`), the whole-chain Galois connection (`subset_certified_iff`), its monotonicity
   in both directions (`infer_antitone`, `certified_antitone`).
-* Truth at the implementation layer (`truth`, `mem_truth`); realization soundness, completeness
-  and exactness (`RealizationSoundUnder`, `RealizationCompleteUnder`, `RealizationExactUnder`,
-  `realizationExactUnder_iff`, monotone in the constraints), their reading as comparisons of the
-  generated connections (`realizationSoundUnder_empty_iff_generate`,
-  `realizationCompleteUnder_empty_iff_generate`); the reduction of realization soundness to static
-  requirement obligations (`realizationSoundUnder_of_requirements`); transfer of data-driven
-  conclusions to the producing implementations (`infer_true`, `infer_subset_truth`), and back
-  under realization completeness (`mem_infer_of_truth`).
+* Truth at the implementation layer (`truth`, `mem_truth`); the seed's composite through the
+  realized models is the implementation layer's (`seed_uTI`); transfer of data-driven conclusions
+  to the producing implementations under realization soundness (`infer_true`,
+  `infer_subset_truth`), and back under realization completeness (`mem_infer_of_truth`).
 * Prediction at the implementation layer (`predicted`, `mem_predicted`); refutation of the
   implementation by a record outside the predicted records (`refutes`) and of its realized models
   (`refutes_realized`).
 * The organized seed below the semantic seed when translations are sound
-  (`mem_infer_of_organized`, `organizedCertified_subset`), equal when they are exact
-  (`organized_eq_seed_of_exact`).
-* Realization by a design map (`ofDesign`, `certify_ofDesign`, `mem_ofDesign`). -/
+  (`mem_infer_of_organized`, `certifiedOrganized_subset`), equal when they are exact
+  (`organized_eq_seed_of_exact`). -/
 
 noncomputable section
 
@@ -88,16 +82,9 @@ namespace powerlib
 
 open TMIO OrderDual
 
-/-- A four-layer stack: models organized by a family, implementations with their own family,
-realization of models by implementations, and production of records by implementations. -/
-structure Stack (X Q Y R V : Type*) (n p m q : ℕ) where
-  /-- The model layer: models of a situation and their requirement language. -/
-  model : Family X Q n p
-  /-- The implementation layer: implementations with their own behaviour and the requirement
-  language of their realistic constraints. -/
-  impl : Family Y R m q
-  /-- `(x, y) ∈ realizes`: the implementation `y` realizes the model `x`. -/
-  realizes : SetRel X Y
+/-- A four-layer stack: an implementation layer over a model layer
+(`theorem/Stack/Implementation.lean`) and the production of records by implementations. -/
+structure Stack (X Q Y R V : Type*) (n p m q : ℕ) extends Implementation X Q Y R n p m q where
   /-- `(y, v) ∈ produces`: the implementation `y` may produce the record `v`. -/
   produces : SetRel Y V
 
@@ -207,23 +194,10 @@ a set of sentences exactly when every record is certified for them. -/
     S.certified Ψ ⊆ S.certified Φ :=
   (gc_generate S.seed.uTO).monotone_l h
 
-/-! ## Realization soundness, completeness and exactness -/
+/-- The seed's composite from implementations to sentences is the implementation layer's. -/
+@[powerlib_foundation] theorem seed_uTI : S.seed.uTI = S.uTI := rfl
 
-/-- Within the realistic constraints `Δ`, every implementation all of whose realized models
-satisfy `s` satisfies `s` itself. -/
-def RealizationSoundUnder (Δ : Set R) (s : Sentence) : Prop :=
-  certify S.realizes (S.model.den s) ∩ realize S.impl.meets Δ ⊆ S.impl.den s
-
-/-- Within the realistic constraints `Δ`, every implementation satisfying `s` realizes only
-models of `s`. -/
-def RealizationCompleteUnder (Δ : Set R) (s : Sentence) : Prop :=
-  S.impl.den s ∩ realize S.impl.meets Δ ⊆ certify S.realizes (S.model.den s)
-
-/-- Within the realistic constraints `Δ`, an implementation satisfies `s` exactly when all of its
-realized models do. -/
-def RealizationExactUnder (Δ : Set R) (s : Sentence) : Prop :=
-  certify S.realizes (S.model.den s) ∩ realize S.impl.meets Δ =
-    S.impl.den s ∩ realize S.impl.meets Δ
+/-! ## Prediction and realization along the stack -/
 
 /-- The records predicted by `s` at the implementation layer: those some implementation
 satisfying `s` may produce. -/
@@ -233,80 +207,6 @@ def predicted (s : Sentence) : Set V := predict S.produces (S.impl.den s)
     v ∈ S.predicted s ↔ ∃ y, y ∈ S.impl.den s ∧ (y, v) ∈ S.produces := by
   rw [predicted, predict_eq_image]
   rfl
-
-/-- The composite through the realized models, generated at one sentence. -/
-@[powerlib_foundation] theorem generate_uTI_singleton (s : Sentence) :
-    ofDual (generate S.seed.uTI {s}) = certify S.realizes (S.model.den s) := by
-  rw [Seed.generate_uTI]
-  simp only [Function.comp_apply, Seed.l₁, Seed.l₂, seed]
-  rw [congrFun (generate_possibly S.realizes)]
-  rfl
-
-/-- Realization soundness without constraints is the implementation semantics lying below the
-composite through the realized models at the sentence: its generated value is a larger family
-of implementations. -/
-@[powerlib_foundation] theorem realizationSoundUnder_empty_iff_generate {s : Sentence} :
-    S.RealizationSoundUnder ∅ s ↔ generate S.impl.semantics {s} ≤ generate S.seed.uTI {s} := by
-  unfold RealizationSoundUnder
-  rw [realize_empty, Set.inter_univ, ← generate_uTI_singleton]
-  rfl
-
-/-- Realization completeness without constraints is the reverse order of the two generated
-values. -/
-@[powerlib_foundation] theorem realizationCompleteUnder_empty_iff_generate {s : Sentence} :
-    S.RealizationCompleteUnder ∅ s ↔ generate S.seed.uTI {s} ≤ generate S.impl.semantics {s} := by
-  unfold RealizationCompleteUnder
-  rw [realize_empty, Set.inter_univ, ← generate_uTI_singleton]
-  rfl
-
-/-- Exactness is soundness and completeness. -/
-@[powerlib_foundation] theorem realizationExactUnder_iff {Δ : Set R} {s : Sentence} :
-    S.RealizationExactUnder Δ s ↔ S.RealizationSoundUnder Δ s ∧ S.RealizationCompleteUnder Δ s := by
-  constructor
-  · intro h
-    refine ⟨fun y hy => (h ▸ hy).1, fun y hy => (h.symm ▸ hy).1⟩
-  · rintro ⟨hs, hc⟩
-    exact Set.Subset.antisymm (fun y hy => ⟨hs hy, hy.2⟩) (fun y hy => ⟨hc hy, hy.2⟩)
-
-variable {S} in
-@[powerlib_foundation] theorem RealizationExactUnder.soundUnder {Δ : Set R} {s : Sentence}
-    (h : S.RealizationExactUnder Δ s) : S.RealizationSoundUnder Δ s :=
-  (S.realizationExactUnder_iff.mp h).1
-
-variable {S} in
-@[powerlib_foundation] theorem RealizationExactUnder.completeUnder {Δ : Set R} {s : Sentence}
-    (h : S.RealizationExactUnder Δ s) : S.RealizationCompleteUnder Δ s :=
-  (S.realizationExactUnder_iff.mp h).2
-
-variable {S} in
-/-- Soundness survives more constraints. -/
-@[powerlib_foundation] theorem RealizationSoundUnder.mono {Δ Δ' : Set R} {s : Sentence}
-    (h : S.RealizationSoundUnder Δ s) (hΔ : Δ ⊆ Δ') : S.RealizationSoundUnder Δ' s :=
-  fun _ hy => h ⟨hy.1, realize_antitone _ hΔ hy.2⟩
-
-variable {S} in
-/-- Completeness survives more constraints. -/
-@[powerlib_foundation] theorem RealizationCompleteUnder.mono {Δ Δ' : Set R} {s : Sentence}
-    (h : S.RealizationCompleteUnder Δ s) (hΔ : Δ ⊆ Δ') : S.RealizationCompleteUnder Δ' s :=
-  fun _ hy => h ⟨hy.1, realize_antitone _ hΔ hy.2⟩
-
-/-- Realization soundness reduces to static obligations on requirements. If the model translation
-of `s` is exact within the model context `ΔM`, the implementation translation of `s` is sound,
-the constraints `Δ` place every realized model in `ΔM`, and an implementation within `Δ` whose
-realized models meet the translation of `s` and `ΔM` meets its own translation of `s`, then `s`
-is realized soundly within `Δ`. -/
-@[powerlib_foundation] theorem realizationSoundUnder_of_requirements {ΔM : Set Q} {Δ : Set R}
-    {s : Sentence} (hM : S.model.ExactUnder ΔM s) (hI : S.impl.Sound s)
-    (hctx : realize S.impl.meets Δ ⊆ certify S.realizes (realize S.model.meets ΔM))
-    (hreq : certify S.realizes (realize S.model.meets (S.model.translate s ∪ ΔM)) ∩
-      realize S.impl.meets Δ ⊆ realize S.impl.meets (S.impl.translate s)) :
-    S.RealizationSoundUnder Δ s := by
-  rintro y ⟨hd, hΔ⟩
-  refine hI (hreq ⟨(mem_certify _ _ _).mpr fun x hx => ?_, hΔ⟩)
-  have hM' : realize S.model.meets (S.model.translate s ∪ ΔM) =
-      S.model.den s ∩ realize S.model.meets ΔM := hM
-  rw [hM']
-  exact ⟨(mem_certify _ _ _).mp hd x hx, (mem_certify _ _ _).mp (hctx hΔ) x hx⟩
 
 /-- Data-driven conclusions become conclusions about the producing implementation: under
 realization soundness, an implementation within the constraints that may produce a record of
@@ -389,21 +289,6 @@ refuting `s` for an implementation within the constraints exhibits a realized mo
     S.organized = S.seed := by
   unfold organized seed
   rw [Family.chain_eq_semantics_iff.mpr h]
-
-/-! ## Realization by a design map -/
-
-/-- The realization relation of a design map: each implementation realizes its design model. -/
-def ofDesign (design : Y → X) : SetRel X Y := {p | design p.2 = p.1}
-
-@[simp, powerlib_foundation] theorem mem_ofDesign {design : Y → X} {x : X} {y : Y} :
-    (x, y) ∈ ofDesign design ↔ design y = x := Iff.rfl
-
-/-- Certification against a design map is its preimage. -/
-@[powerlib_foundation] theorem certify_ofDesign (design : Y → X) (P : Set X) :
-    certify (ofDesign design) P = design ⁻¹' P := by
-  ext y
-  simp only [mem_certify, mem_ofDesign, Set.mem_preimage]
-  exact ⟨fun h => h _ rfl, fun h x hx => hx ▸ h⟩
 
 end Stack
 
