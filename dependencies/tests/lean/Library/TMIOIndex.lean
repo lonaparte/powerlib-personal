@@ -8,11 +8,12 @@ category, read from the constants occurring in its proposition `P` (the implicit
 (T), models organized for a situation (M), implementations under realistic constraints (I), and
 records produced by implementations (O).
 
-* `data` (T–O, the whole chain): data-driven inference and theory-driven certification along a
-  stack. `P` mentions `Stack.infer`, `Stack.certified`, `Stack.truth`, `Stack.inferOrganized` or
-  `Stack.certifiedOrganized`.
+* `data` (T–O and O–I): data-driven inference, theory-driven certification and prediction of
+  records along a stack. `P` mentions `Stack.infer`, `Stack.certified`, `Stack.truth`,
+  `Stack.inferOrganized`, `Stack.certifiedOrganized` or `Stack.predicted`.
 * `realization` (M–I): implementations against the models they realize. `P` mentions
-  `Stack.RealizationSoundUnder` or `Stack.RealizationExactUnder`.
+  `Stack.RealizationSoundUnder`, `Stack.RealizationCompleteUnder` or
+  `Stack.RealizationExactUnder`.
 * `observation` (the codex encoding, observation relations on models): what observations certify
   or predict about models, or the observation closure. `P` mentions a member of `TMIO.Seed`
   (`u₃`, `uTO`, …), `TMIO.certify`, `TMIO.possibly` or `TMIO.predict`.
@@ -72,7 +73,7 @@ def Category.label : Category → String
   | .denotation => "denotation"
 
 def Category.layer : Category → String
-  | .data => "T–O"
+  | .data => "O"
   | .realization => "M–I"
   | .observation => "codex"
   | .implementation => "I"
@@ -81,7 +82,7 @@ def Category.layer : Category → String
   | .denotation => "T–M"
 
 def Category.meaning : Category → String
-  | .data => "inference from records and certification of records along a stack"
+  | .data => "records along a stack: inference, certification, prediction"
   | .realization => "implementations against the models they realize"
   | .observation => "observation relations on models (codex encoding)"
   | .implementation => "implementation families: translation, denotation, requirement space"
@@ -91,10 +92,12 @@ def Category.meaning : Category → String
 
 def dataMarkers : Array Name :=
   #[``powerlib.Stack.infer, ``powerlib.Stack.certified, ``powerlib.Stack.truth,
-    ``powerlib.Stack.inferOrganized, ``powerlib.Stack.certifiedOrganized]
+    ``powerlib.Stack.inferOrganized, ``powerlib.Stack.certifiedOrganized,
+    ``powerlib.Stack.predicted]
 
 def realizationMarkers : Array Name :=
-  #[``powerlib.Stack.RealizationSoundUnder, ``powerlib.Stack.RealizationExactUnder]
+  #[``powerlib.Stack.RealizationSoundUnder, ``powerlib.Stack.RealizationCompleteUnder,
+    ``powerlib.Stack.RealizationExactUnder]
 
 def translationMarkers : Array Name :=
   #[``powerlib.Family.chain, ``powerlib.Family.Exact, ``powerlib.Family.ExactUnder,

@@ -52,7 +52,8 @@ semantics.
 Implementations carry their own truth, `impl.semantics`. Comparing it with the composite through
 the realized models, `seed.uTI`, gives realization soundness and exactness, the I-level analogue of
 the soundness and exactness of a translation: an implementation all of whose realized models
-satisfy a sentence satisfies it itself, within a context of realistic constraints. Data-driven
+satisfy a sentence satisfies it itself, within a context of realistic constraints; completeness
+is the converse. Data-driven
 conclusions of the whole backward traversal are conclusions about the realized models; they
 become conclusions about the producing implementation through realization soundness
 (`infer_true`), and refutation runs the same edge backwards (`refutes_realized`).
@@ -65,14 +66,17 @@ Results.
   (`infer`, `mem_infer`) and theory-driven certification (`certified`, `certified_eq`,
   `mem_certified`), the whole-chain Galois connection (`subset_certified_iff`), its monotonicity
   in both directions (`infer_antitone`, `certified_antitone`).
-* Truth at the implementation layer (`truth`, `mem_truth`); realization soundness and exactness
-  (`RealizationSoundUnder`, `RealizationExactUnder`), their reading as comparisons of the generated
-  connections (`realizationSoundUnder_empty_iff_generate`), and transfer of data-driven
+* Truth at the implementation layer (`truth`, `mem_truth`); realization soundness, completeness
+  and exactness (`RealizationSoundUnder`, `RealizationCompleteUnder`, `RealizationExactUnder`,
+  `realizationExactUnder_iff`, monotone in the constraints), their reading as comparisons of the
+  generated connections (`realizationSoundUnder_empty_iff_generate`,
+  `realizationCompleteUnder_empty_iff_generate`); the reduction of realization soundness to static
+  requirement obligations (`realizationSoundUnder_of_requirements`); transfer of data-driven
   conclusions to the producing implementations (`infer_true`, `infer_subset_truth`), and back
-  under realization exactness (`mem_infer_of_truth`).
-* Refutation of the realized models by a record outside the predicted records of an
-  implementation sentence (`refutes_realized`); refutation of the implementation itself
-  (`refutes`).
+  under realization completeness (`mem_infer_of_truth`).
+* Prediction at the implementation layer (`predicted`, `mem_predicted`); refutation of the
+  implementation by a record outside the predicted records (`refutes`) and of its realized models
+  (`refutes_realized`).
 * The organized seed below the semantic seed when translations are sound
   (`mem_infer_of_organized`, `organizedCertified_subset`), equal when they are exact
   (`organized_eq_seed_of_exact`).
@@ -203,18 +207,32 @@ a set of sentences exactly when every record is certified for them. -/
     S.certified Ψ ⊆ S.certified Φ :=
   (gc_generate S.seed.uTO).monotone_l h
 
-/-! ## Realization soundness and exactness -/
+/-! ## Realization soundness, completeness and exactness -/
 
 /-- Within the realistic constraints `Δ`, every implementation all of whose realized models
 satisfy `s` satisfies `s` itself. -/
 def RealizationSoundUnder (Δ : Set R) (s : Sentence) : Prop :=
   certify S.realizes (S.model.den s) ∩ realize S.impl.meets Δ ⊆ S.impl.den s
 
+/-- Within the realistic constraints `Δ`, every implementation satisfying `s` realizes only
+models of `s`. -/
+def RealizationCompleteUnder (Δ : Set R) (s : Sentence) : Prop :=
+  S.impl.den s ∩ realize S.impl.meets Δ ⊆ certify S.realizes (S.model.den s)
+
 /-- Within the realistic constraints `Δ`, an implementation satisfies `s` exactly when all of its
 realized models do. -/
 def RealizationExactUnder (Δ : Set R) (s : Sentence) : Prop :=
   certify S.realizes (S.model.den s) ∩ realize S.impl.meets Δ =
     S.impl.den s ∩ realize S.impl.meets Δ
+
+/-- The records predicted by `s` at the implementation layer: those some implementation
+satisfying `s` may produce. -/
+def predicted (s : Sentence) : Set V := predict S.produces (S.impl.den s)
+
+@[powerlib_foundation] theorem mem_predicted {s : Sentence} {v : V} :
+    v ∈ S.predicted s ↔ ∃ y, y ∈ S.impl.den s ∧ (y, v) ∈ S.produces := by
+  rw [predicted, predict_eq_image]
+  rfl
 
 /-- The composite through the realized models, generated at one sentence. -/
 @[powerlib_foundation] theorem generate_uTI_singleton (s : Sentence) :
@@ -233,11 +251,62 @@ of implementations. -/
   rw [realize_empty, Set.inter_univ, ← generate_uTI_singleton]
   rfl
 
+/-- Realization completeness without constraints is the reverse order of the two generated
+values. -/
+@[powerlib_foundation] theorem realizationCompleteUnder_empty_iff_generate {s : Sentence} :
+    S.RealizationCompleteUnder ∅ s ↔ generate S.seed.uTI {s} ≤ generate S.impl.semantics {s} := by
+  unfold RealizationCompleteUnder
+  rw [realize_empty, Set.inter_univ, ← generate_uTI_singleton]
+  rfl
+
+/-- Exactness is soundness and completeness. -/
+@[powerlib_foundation] theorem realizationExactUnder_iff {Δ : Set R} {s : Sentence} :
+    S.RealizationExactUnder Δ s ↔ S.RealizationSoundUnder Δ s ∧ S.RealizationCompleteUnder Δ s := by
+  constructor
+  · intro h
+    refine ⟨fun y hy => (h ▸ hy).1, fun y hy => (h.symm ▸ hy).1⟩
+  · rintro ⟨hs, hc⟩
+    exact Set.Subset.antisymm (fun y hy => ⟨hs hy, hy.2⟩) (fun y hy => ⟨hc hy, hy.2⟩)
+
+variable {S} in
 @[powerlib_foundation] theorem RealizationExactUnder.soundUnder {Δ : Set R} {s : Sentence}
-    (h : S.RealizationExactUnder Δ s) : S.RealizationSoundUnder Δ s := by
-  unfold RealizationSoundUnder
-  rw [h]
-  exact Set.inter_subset_left
+    (h : S.RealizationExactUnder Δ s) : S.RealizationSoundUnder Δ s :=
+  (S.realizationExactUnder_iff.mp h).1
+
+variable {S} in
+@[powerlib_foundation] theorem RealizationExactUnder.completeUnder {Δ : Set R} {s : Sentence}
+    (h : S.RealizationExactUnder Δ s) : S.RealizationCompleteUnder Δ s :=
+  (S.realizationExactUnder_iff.mp h).2
+
+variable {S} in
+/-- Soundness survives more constraints. -/
+@[powerlib_foundation] theorem RealizationSoundUnder.mono {Δ Δ' : Set R} {s : Sentence}
+    (h : S.RealizationSoundUnder Δ s) (hΔ : Δ ⊆ Δ') : S.RealizationSoundUnder Δ' s :=
+  fun _ hy => h ⟨hy.1, realize_antitone _ hΔ hy.2⟩
+
+variable {S} in
+/-- Completeness survives more constraints. -/
+@[powerlib_foundation] theorem RealizationCompleteUnder.mono {Δ Δ' : Set R} {s : Sentence}
+    (h : S.RealizationCompleteUnder Δ s) (hΔ : Δ ⊆ Δ') : S.RealizationCompleteUnder Δ' s :=
+  fun _ hy => h ⟨hy.1, realize_antitone _ hΔ hy.2⟩
+
+/-- Realization soundness reduces to static obligations on requirements. If the model translation
+of `s` is exact within the model context `ΔM`, the implementation translation of `s` is sound,
+the constraints `Δ` place every realized model in `ΔM`, and an implementation within `Δ` whose
+realized models meet the translation of `s` and `ΔM` meets its own translation of `s`, then `s`
+is realized soundly within `Δ`. -/
+@[powerlib_foundation] theorem realizationSoundUnder_of_requirements {ΔM : Set Q} {Δ : Set R}
+    {s : Sentence} (hM : S.model.ExactUnder ΔM s) (hI : S.impl.Sound s)
+    (hctx : realize S.impl.meets Δ ⊆ certify S.realizes (realize S.model.meets ΔM))
+    (hreq : certify S.realizes (realize S.model.meets (S.model.translate s ∪ ΔM)) ∩
+      realize S.impl.meets Δ ⊆ realize S.impl.meets (S.impl.translate s)) :
+    S.RealizationSoundUnder Δ s := by
+  rintro y ⟨hd, hΔ⟩
+  refine hI (hreq ⟨(mem_certify _ _ _).mpr fun x hx => ?_, hΔ⟩)
+  have hM' : realize S.model.meets (S.model.translate s ∪ ΔM) =
+      S.model.den s ∩ realize S.model.meets ΔM := hM
+  rw [hM']
+  exact ⟨(mem_certify _ _ _).mp hd x hx, (mem_certify _ _ _).mp (hctx hΔ) x hx⟩
 
 /-- Data-driven conclusions become conclusions about the producing implementation: under
 realization soundness, an implementation within the constraints that may produce a record of
@@ -247,38 +316,36 @@ realization soundness, an implementation within the constraints that may produce
     {y : Y} (hy : (y, v) ∈ S.produces) (hΔ : y ∈ realize S.impl.meets Δ) : y ∈ S.impl.den s :=
   hS ⟨(mem_certify _ _ _).mpr fun x hx => S.mem_infer.mp hs v hv y hy x hx, hΔ⟩
 
-/-- When every possible producer of `D` lies within the constraints, the inferred sentences with
-sound realization are true sentences of the implementations. -/
+/-- When the records are certified for the constraints (every possible producer lies within
+`Δ`; the generated observation map at the constraint space), the inferred sentences with sound
+realization are true sentences of the implementations. -/
 @[powerlib_foundation] theorem infer_subset_truth {Δ : Set R} {D : Set V}
-    (hΔ : ∀ v ∈ D, ∀ y, (y, v) ∈ S.produces → y ∈ realize S.impl.meets Δ)
+    (hΔ : D ⊆ certify S.produces (realize S.impl.meets Δ))
     {s : Sentence} (hS : S.RealizationSoundUnder Δ s) (hs : s ∈ S.infer D) : s ∈ S.truth D :=
-  S.mem_truth.mpr fun v hv y hy => S.infer_true hS hs hv hy (hΔ v hv y hy)
+  S.mem_truth.mpr fun _ hv y hy =>
+    S.infer_true hS hs hv hy ((mem_certify _ _ _).mp (hΔ hv) y hy)
 
-/-- Conversely, under realization exactness, a sentence true of every possible producer of `D`
-within the constraints is inferred from `D`. -/
+/-- Conversely, under realization completeness, a sentence true of every possible producer of
+records certified for the constraints is inferred from them. -/
 @[powerlib_foundation] theorem mem_infer_of_truth {Δ : Set R} {D : Set V}
-    (hΔ : ∀ v ∈ D, ∀ y, (y, v) ∈ S.produces → y ∈ realize S.impl.meets Δ)
-    {s : Sentence} (hS : S.RealizationExactUnder Δ s) (hs : s ∈ S.truth D) : s ∈ S.infer D := by
-  refine S.mem_infer.mpr fun v hv y hy x hx => ?_
-  have hy' : y ∈ certify S.realizes (S.model.den s) ∩ realize S.impl.meets Δ := by
-    rw [hS]
-    exact ⟨S.mem_truth.mp hs v hv y hy, hΔ v hv y hy⟩
-  exact (mem_certify _ _ _).mp hy'.1 x hx
+    (hΔ : D ⊆ certify S.produces (realize S.impl.meets Δ))
+    {s : Sentence} (hS : S.RealizationCompleteUnder Δ s) (hs : s ∈ S.truth D) : s ∈ S.infer D :=
+  S.mem_infer.mpr fun v hv y hy x hx =>
+    (mem_certify _ _ _).mp (hS ⟨S.mem_truth.mp hs v hv y hy,
+      (mem_certify _ _ _).mp (hΔ hv) y hy⟩) x hx
 
-/-- A record outside the possible records of the implementations satisfying `s` refutes `s` for
-every implementation that may produce it. -/
+/-- A record outside the records predicted by `s` refutes `s` for every implementation that may
+produce it. -/
 @[powerlib_foundation] theorem refutes {s : Sentence} {y : Y} {v : V} (hy : (y, v) ∈ S.produces)
-    (hv : v ∉ predict S.produces (S.impl.den s)) : y ∉ S.impl.den s := by
-  intro hs
-  rw [predict_eq_image] at hv
-  exact hv ⟨y, hs, hy⟩
+    (hv : v ∉ S.predicted s) : y ∉ S.impl.den s :=
+  fun hs => hv (S.mem_predicted.mpr ⟨y, hs, hy⟩)
 
 /-- Refutation runs back through the realization edge: under realization soundness, a record
 refuting `s` for an implementation within the constraints exhibits a realized model violating
 `s`. -/
 @[powerlib_foundation] theorem refutes_realized {Δ : Set R} {s : Sentence}
     (hS : S.RealizationSoundUnder Δ s) {y : Y} {v : V} (hy : (y, v) ∈ S.produces)
-    (hΔ : y ∈ realize S.impl.meets Δ) (hv : v ∉ predict S.produces (S.impl.den s)) :
+    (hΔ : y ∈ realize S.impl.meets Δ) (hv : v ∉ S.predicted s) :
     ∃ x, (x, y) ∈ S.realizes ∧ x ∉ S.model.den s := by
   by_contra hno
   push Not at hno

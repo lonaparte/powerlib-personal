@@ -335,6 +335,7 @@ import theorem.Network.Swing.CycleMinimum
 import theorem.Dynamics.Degenerate.PlaneCollapse
 import theorem.Dynamics.Degenerate.WeakFocus
 import theorem.GFM.VSMLPFHopf
+import theorem.GFM.VSMLPFRig
 import theorem.Network.Swing.Degenerate
 import theorem.Network.Swing.DegenerateRing
 import theorem.Network.Swing.Four

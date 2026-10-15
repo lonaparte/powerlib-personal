@@ -48,15 +48,22 @@ operations are
 | Theory-driven certification | Records all of whose possible producers realize only models of the sentences | `Stack.certified` (generated `uTO`) |
 | Inference through the requirement language | The same, checking the translation instead of the semantics | `Stack.inferOrganized`, `Stack.certifiedOrganized` |
 | Implementation truth | Sentences satisfied by every possible producer itself | `Stack.truth` |
+| Prediction | Records some implementation satisfying `s` may produce | `Stack.predicted` |
 | Realization soundness | Within constraints `Δ`, an implementation whose realized models all satisfy `s` satisfies `s` | `Stack.RealizationSoundUnder Δ s` |
-| Realization exactness | Within `Δ`, an implementation satisfies `s` exactly when its realized models do | `Stack.RealizationExactUnder Δ s` |
+| Realization completeness | Within `Δ`, an implementation satisfying `s` realizes only models of `s` | `Stack.RealizationCompleteUnder Δ s` |
+| Realization exactness | Both: within `Δ`, an implementation satisfies `s` exactly when its realized models do | `Stack.RealizationExactUnder Δ s` |
 
 Realization soundness compares two connections from sentences to implementations, the
 composite through the realized models (`seed.uTI`) and the implementations' own semantics, just
 as the soundness of a translation compares the translation chain with the semantics one layer
-up. Data-driven inference reaches conclusions about the realized models. They become
-conclusions about the producing implementations through realization soundness
-(`Stack.infer_true`, `Stack.infer_subset_truth`). Refutation runs the same edge backwards
+up. It reduces to static obligations on requirements
+(`Stack.realizationSoundUnder_of_requirements`): an exact model translation, a sound
+implementation translation, and an implication between the two requirement languages.
+Data-driven inference reaches conclusions about the realized models. They become conclusions
+about the producing implementations through realization soundness, for records certified for the
+constraints (`Stack.infer_true`, `Stack.infer_subset_truth`), and completeness gives the converse
+(`Stack.mem_infer_of_truth`). A record outside the predicted records refutes the sentence for its
+producers (`Stack.refutes`) and, through realization soundness, for some realized model
 (`Stack.refutes_realized`). Sound translations let inference use the requirement language
 (`Stack.mem_infer_of_organized`, `Stack.certifiedOrganized_subset`).
 
@@ -69,9 +76,9 @@ conclusions about the producing implementations through realization soundness
 * An implementation is a second family. Its own conclusions have the same three shapes and are
   I results; its realistic constraints are requirements of its language.
 * A theorem relating implementations to the models they realize is an M–I result, stated with
-  `RealizationSoundUnder` or `RealizationExactUnder`.
-* A theorem about records along a stack is a T–O result, stated with `infer`, `certified` or
-  `truth`.
+  `RealizationSoundUnder`, `RealizationCompleteUnder` or `RealizationExactUnder`.
+* A theorem about records along a stack is an O result, stated with `infer`, `certified`,
+  `truth` (T–O) or `predicted` (O–I).
 
 Generic modules supply the tools of each layer without belonging to it: the delay, sampling,
 averaging, modulation and EMT discretization modules for implementations, and the estimation
@@ -89,5 +96,30 @@ import dependencies.tests.lean.Library.TMIOIndex
 ```
 
 The categories are `translation`, `denotation` (T–M), `requirementSpace` (M), `implementation`
-(I), `realization` (M–I), `data` (T–O) and `observation` (the codex observation relations on
-models).
+(I), `realization` (M–I), `data` (records: T–O and O–I) and `observation` (the codex observation
+relations on models).
+
+## Pilot: a grid-forming VSM on a test platform
+
+`theorem/GFM/VSMLPFRig.lean` builds the four layers for the VSM with a first-order power filter
+on an infinite bus.
+
+* M: `GFM.VSMLPF.family` (three states), unchanged.
+* I: `VSMLPF.Rig`, a design model with an execution delay `τ` (the first-order equivalent of the
+  computation delay and PWM update), four states. Its requirement language adds the platform
+  Routh condition `H > 0` and the constraint `fastLag`, a delay fast against the design margin.
+  Within a physical design and a positive delay its translation of local exponential stability
+  is exact.
+* O: `VSMLPF.Record`, an identification result (parameter intervals and a delay bound), produced
+  by every platform running at its balanced operating point with parameters in the intervals.
+* M–I: local exponential stability is realized soundly within `fastLag`, by the static reduction
+  above, and completely for every delay (a delay never stabilizes). Without `fastLag` it is not
+  realized soundly: `slowRig` has a stable design (`K = 1 < 2`) and is unstable at `τ = 1`.
+  Instability of a destabilizing design is realized for every delay.
+* T–O: a record passing the worst-corner fast-filter check supports local exponential stability
+  of every realized model, inferred through the model family's requirement language and its
+  soundness. Only with the worst-corner delay check as well does the sentence hold for every
+  producing platform. `lagFreeRecord_infer_not_truth` shows the gap: a record produced by
+  `slowRig` supports stability of the models while its producer is unstable. A slow-filter record
+  supports instability of models and platforms and lies outside the records predicted by platform
+  stability.
