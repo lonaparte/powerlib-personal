@@ -108,6 +108,14 @@ boundary `ω_b τ = 2` lies far outside the band where Padé(1,1) is accurate. E
 this module is about the Padé platform, not about the transcendental delay loop. The sufficient
 condition `fastSampling` keeps an IMC design at `ω_b τ ≤ 1/2`, inside the accuracy band of
 Padé(1,1) and inside the pure-delay bound `ω_b τ < π/2`.
+
+The sampled loop itself (zero-order hold, one-sample computation delay, a discrete controller) is
+exactly its lifted map at the sampling instants (`theorem/LTI/Sampling.lean`,
+`LTI.sampledLoop_exponentialDecay_iff`, `LTI.delayedLoopMatrix`). With the proportional part
+alone on a lossless inductor its boundary is `ω_b Tₛ < 1` (`LTI.schurStable_integratorDelay_iff`);
+numerically the IMC boundary is about `1 + R Tₛ/(2L)` for small `R Tₛ/L`. For `ω_b Tₛ` between
+that boundary and `4/3` the Padé platform is stable and the sampled loop is not; `fastSampling`
+lies below both.
 -/
 
 noncomputable section

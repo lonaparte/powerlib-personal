@@ -22,6 +22,7 @@ import theorem.Asymptotics.LaplaceMethod
 import theorem.Averaging.KBM
 import theorem.Averaging.SlidingFourier
 import theorem.Averaging.StateSpaceAveraging
+import theorem.Averaging.SwitchedStability
 import theorem.Criteria.Hurwitz2
 import theorem.Criteria.Routh3
 import theorem.Criteria.Routh4
@@ -40,6 +41,7 @@ import theorem.CurrentControl.VoltageLimit
 import theorem.LTI.Plant
 import theorem.LTI.Decay
 import theorem.LTI.Discrete
+import theorem.LTI.Sampling
 import theorem.LTI.Oscillator2
 import theorem.SpecialFunctions.BesselI
 import theorem.SpecialFunctions.BesselK
