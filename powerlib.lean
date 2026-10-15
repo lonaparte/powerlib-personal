@@ -50,6 +50,7 @@ import theorem.PDE.Heat
 import theorem.PDE.Energy
 import theorem.Potential.Barrier
 import theorem.Spectral.Family
+import theorem.Stack.Basic
 import theorem.DAE.Elimination
 import theorem.DAE.Linear
 import theorem.DAE.Nonlinear

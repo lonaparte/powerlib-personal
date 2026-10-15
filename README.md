@@ -29,7 +29,8 @@ Mathlib v4.34.1, and Agda 2.8.0. Adapt dependencies to these pins with minimal,
 provenance-preserving changes, and accept them only after the complete build and
 proof checks pass. See [Rules.md](Rules.md) for the formal requirements and
 [Architecture.md](Architecture.md) for generated connections, admission and
-proved completion boundaries.
+proved completion boundaries. [Layers.md](Layers.md) defines the theory, model,
+implementation and observation layers and how results are placed in them.
 
 Public model results use `connection% (ordinary proposition)`. The resulting
 `TMIO.Statement` carries a kernel-checked certificate that the conclusion evaluates

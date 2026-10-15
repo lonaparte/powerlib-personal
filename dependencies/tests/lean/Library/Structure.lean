@@ -21,18 +21,21 @@ Structural checks of the `theorem/` library beyond admission, read from the buil
   statements (universe parameters compared by position).
 
 The layer table is the structural specification: moving a module across layers or adding a
-directory changes this file. -/
+directory changes this file. It classifies knowledge (shared framework, generic mathematics,
+engineering content), not TMIO layers: an engineering module may organize models (M) or
+implementations under realistic constraints (I), and `Library/TMIOIndex.lean` files its
+connection statements by TMIO layer. -/
 
 namespace LibraryStructure
 
 open Lean Meta Elab Command
 
 inductive Layer where
-  | codex | generic | model
+  | codex | generic | engineering
   deriving BEq, Inhabited
 
 def Layer.label : Layer → String
-  | .codex => "codex" | .generic => "generic" | .model => "model"
+  | .codex => "codex" | .generic => "generic" | .engineering => "engineering"
 
 /-! ## Layer table -/
 
@@ -69,7 +72,8 @@ in it) or a single module.
 * `PH`: generic port-Hamiltonian theory, including the mathematical counterexample family of
   `PH/Structure` (a tilted double well) and the lossless LC counterexample of `PH/Observability`;
   concrete circuit instances are in `PH/Models/`.
-* `Spectral`: the spectral family template, parametrized by an arbitrary model type. -/
+* `Spectral`: the spectral family template, parametrized by an arbitrary model type.
+* `Stack`: the four-layer stack of models, implementations and records over arbitrary families. -/
 def genericEntries : Array Name := #[
   `theorem.Asymptotics, `theorem.Asymptotics.Guard, `theorem.Averaging, `theorem.Criteria,
   `theorem.DAE, `theorem.Delay, `theorem.Dynamics, `theorem.Dynamics.Degenerate,
@@ -78,11 +82,12 @@ def genericEntries : Array Name := #[
   `theorem.Network.LinearSync, `theorem.Network.Synchronization, `theorem.Network.WeightedLaplacian,
   `theorem.NormalForm, `theorem.Numerics, `theorem.PDE, `theorem.PH, `theorem.ParametricResonance,
   `theorem.Periodic, `theorem.PhasePlane, `theorem.Potential, `theorem.SingularPerturbation,
-  `theorem.SpecialFunctions, `theorem.Spectral, `theorem.Stochastic, `theorem.Transform]
+  `theorem.SpecialFunctions, `theorem.Spectral, `theorem.Stack, `theorem.Stochastic,
+  `theorem.Transform]
 
 /-- Engineering models of power electronics and power systems: model families, their connection
 conclusions and the static evidence about them. -/
-def modelEntries : Array Name := #[
+def engineeringEntries : Array Name := #[
   `theorem.CurrentControl, `theorem.Drives, `theorem.Frequency,
   `theorem.GFL, `theorem.GFL.DCLink, `theorem.GFL.Impedance, `theorem.GFL.LCLine,
   `theorem.GFL.Noise, `theorem.GFL.Parametric, `theorem.GFL.PowerLoop,
@@ -91,11 +96,11 @@ def modelEntries : Array Name := #[
   `theorem.Numerics.EMT, `theorem.PH.Models, `theorem.PLL, `theorem.Synchronous]
 
 /-- The registrations of a module: its own name in any table, or its directory in the generic
-or model table. -/
+or engineering table. -/
 def registrations (m : Name) : Array Layer := Id.run do
   let mut out := #[]
   if codexModules.contains m then out := out.push .codex
-  for (layer, entries) in #[(Layer.generic, genericEntries), (Layer.model, modelEntries)] do
+  for (layer, entries) in #[(Layer.generic, genericEntries), (Layer.engineering, engineeringEntries)] do
     if entries.contains m then out := out.push layer
     if entries.contains m.getPrefix then out := out.push layer
   return out
@@ -186,8 +191,10 @@ def headerGaps (doc : String) (definesFamily : Bool) : Array String := Id.run do
     gaps := gaps.push "Family and connection conclusions"
   return gaps
 
-/-- A definition whose value is a model family. -/
+/-- A definition whose value is a model family (structure projections, such as the families of
+a `Stack`, are not values). -/
 def isFamilyValue (name : Name) : MetaM Bool := do
+  if (← getEnv).isProjectionFn name then return false
   let some (.defnInfo v) := (← getEnv).find? name | return false
   forallTelescopeReducing v.type fun _ body => return (← whnf body).isAppOf ``powerlib.Family
 
@@ -232,18 +239,18 @@ run_cmd do
   for (_, m) in modules do
     match registrations m with
     | #[layer] =>
-      let k := match layer with | .codex => 0 | .generic => 1 | .model => 2
+      let k := match layer with | .codex => 0 | .generic => 1 | .engineering => 2
       counts := counts.modify k (· + 1)
     | #[] => violations := violations.push s!"{m}: unregistered (add its directory to a layer)"
     | layers => violations := violations.push s!"{m}: registered in {layers.map (·.label)}"
   -- Every entry names an existing module or directory.
   let names := modules.map (·.2)
-  for entry in codexModules ++ genericEntries ++ modelEntries do
+  for entry in codexModules ++ genericEntries ++ engineeringEntries do
     unless names.any (fun m => m == entry || m.getPrefix == entry) do
       violations := violations.push s!"{entry}: registered but no such module or directory"
   report "Library modules outside the layer table" violations
   logInfo m!"POWERLIB_LIBRARY_LAYERS_OK: {modules.size} modules; codex {counts[0]!}, \
-    generic {counts[1]!}, model {counts[2]!}"
+    generic {counts[1]!}, engineering {counts[2]!}"
 
 run_cmd do
   let env ← getEnv
@@ -253,10 +260,10 @@ run_cmd do
     unless layerOf? m == some .generic do continue
     generic := generic + 1
     for imp in env.header.moduleData[i]!.imports do
-      if layerOf? imp.module == some .model then
+      if layerOf? imp.module == some .engineering then
         violations := violations.push s!"{m} imports {imp.module}"
   report "Generic modules importing engineering models" violations
-  logInfo m!"POWERLIB_LIBRARY_DEPENDENCIES_OK: {generic} generic modules import no model module"
+  logInfo m!"POWERLIB_LIBRARY_DEPENDENCIES_OK: {generic} generic modules import no engineering module"
 
 run_cmd liftTermElabM do
   let env ← getEnv
@@ -277,7 +284,7 @@ run_cmd liftTermElabM do
   let mut modelModules : Std.HashSet Nat := {}
   let mut scanned : Nat := 0
   for (i, m) in libraryModules env do
-    if layerOf? m == some .model then modelModules := modelModules.insert i
+    if layerOf? m == some .engineering then modelModules := modelModules.insert i
   let isModel (c : Name) : Bool := (env.getModuleIdxFor? c).any (modelModules.contains ·.toNat)
   let mut violations := #[]
   for (i, m) in libraryModules env do
