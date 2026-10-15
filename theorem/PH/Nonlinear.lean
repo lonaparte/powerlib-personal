@@ -337,7 +337,7 @@ zero-input field. -/
 /-- The passivity sentence of the library holds for a pH system whose Hamiltonian is bounded
 below. -/
 @[powerlib_foundation] theorem holds_passive (hH : BddBelow (range M.H)) :
-    Sentence.passive.holds M.system :=
+    Sentence.passive.holds (.continuous M.system) :=
   M.passive_of_bddBelow hH
 
 /-! ### Equilibria and Lyapunov stability at a strict minimum of `H` -/
@@ -473,20 +473,20 @@ def shift (xs : State n) : NonlinearModel n m where
 /-- Every flow sentence of the centred system at the origin is the sentence of the zero-input
 field at the operating point. -/
 @[powerlib_foundation] theorem holds_flow_shift_iff (P : Flow.Property) (xs : State n) :
-    (Sentence.flow P).holds (M.shift xs).system ↔ P.holds M.zeroInputField xs := by
+    (Sentence.flow P).holds (.continuous (M.shift xs).system) ↔ P.holds M.zeroInputField xs := by
   rw [Sentence.holds_flow, system_zeroInput, shift_zeroInputField]
   exact Flow.Property.holds_shift_iff P
 
 /-- Passivity does not depend on the centre of the coordinates. -/
 @[powerlib_foundation] theorem holds_passive_shift (xs : State n) (hH : BddBelow (range M.H)) :
-    Sentence.passive.holds (M.shift xs).system :=
+    Sentence.passive.holds (.continuous (M.shift xs).system) :=
   (M.shift xs).holds_passive ((M.bddBelow_range_shift_H).mpr hH)
 
 /-- Lyapunov stability of a strict local minimum, as the library sentence of the centred
 system. -/
 @[powerlib_foundation] theorem IsStrictLocalMin.holds_lyapunovStable {xs : State n}
     (h : M.IsStrictLocalMin xs) :
-    (Sentence.flow .lyapunovStable).holds (M.shift xs).system :=
+    (Sentence.flow .lyapunovStable).holds (.continuous (M.shift xs).system) :=
   (M.holds_flow_shift_iff .lyapunovStable xs).mpr h.lyapunovStable
 
 end NonlinearModel

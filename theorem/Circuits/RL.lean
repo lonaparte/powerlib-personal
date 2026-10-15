@@ -301,7 +301,7 @@ negative one, conservation by a lossless branch, and decay at the rate `a` by a 
   refine Family.chain_eq_semantics_iff.mpr fun s => ?_
   ext m
   rw [Family.mem_den, mem_realize]
-  change (∀ q ∈ translate s, Meets m q) ↔ s.holds m.plant.system
+  change (∀ q ∈ translate s, Meets m q) ↔ s.holds (.continuous m.plant.system)
   rcases s with P | _
   · rw [Sentence.holds_flow, Linear.Plant.system_zeroInput]
     cases P

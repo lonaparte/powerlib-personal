@@ -448,7 +448,8 @@ on every sentence. -/
     · simp [VSMModel.vector]
     · simp [VSMModel.vector, Synchronous.SwingParams.accel, Synchronous.SwingParams.Pe, hP, hω]
   rw [Family.mem_den, Family.mem_den]
-  change s.holds (Port.System.autonomous m.field) ↔ s.holds (Port.System.autonomous _)
+  change s.holds (.continuous (Port.System.autonomous m.field)) ↔
+    s.holds (.continuous (Port.System.autonomous _))
   rw [hfield]
 
 /-! ## The droop + LPF family and the large-signal equivalence -/

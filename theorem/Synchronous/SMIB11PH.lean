@@ -421,7 +421,7 @@ namespace SMIB11Rel
 
 /-- The corrected relative-angle model, read as its port system at the origin. -/
 def family : Family SMIB11Params SMIB11.Requirement 11 4 :=
-  ⟨smib11Rel_system, SMIB11.Meets, SMIB11.translate⟩
+  ⟨fun p => .continuous (smib11Rel_system p), SMIB11.Meets, SMIB11.translate⟩
 
 /-- The corrected model is passive with storage `H^tot`: the frame drift does no work.
 Implementation evidence for `mem_den_passive`. -/

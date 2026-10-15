@@ -6,21 +6,25 @@ open Lean Meta Elab Command
 
 -- Single-semantics audit.
 /-! Every behavioural notion of the library is defined once, in the semantic layer
-(`theorem.Flow.Defs`, `theorem.Port.Defs`); every other declaration reaches behaviour only through
-it. The audit takes nothing but the semantic layer as input — no list of notions or names.
+(`theorem.Flow.Defs`, `theorem.Map.Defs`, `theorem.Port.Defs`); every other declaration reaches
+behaviour only through it. The audit takes nothing but the semantic layer as input — no list of
+notions or names.
 
 * Time and signals are read from the semantic layer: time is the type over which its notions
   quantify both instants and functions; the signal spaces are the codomains of its quantified
   functions of time. A signal is a function from time — or from a subtype of or a wrapper around
   time — into values containing a signal-space value; functions, structures, subtypes and sets of
-  signals carry signals.
-* A predicate is behavioural when it is a statement about signals, or refers to a behavioural
-  predicate of the ambient libraries or of the semantic layer. This is computed over the actual
+  signals carry signals. A sequence indexed by steps `ℕ` into such values is a discrete signal.
+* Discrete evolution is an iterate of a self-map of values containing a signal-space value, or the
+  one-step update of a discrete-time system.
+* A predicate is behavioural when it is a statement about signals or discrete evolution, or refers
+  to a behavioural predicate of the ambient libraries or of the semantic layer. This is computed over the actual
   definitions of Mathlib and LeanForControl, transitively.
 
 Every declaration of the library outside the semantic layer must satisfy three rules:
 
-* A. No proposition mentions a signal, bound, constructed or passed.
+* A. No proposition mentions a signal, bound, constructed or passed, or evolves a state
+  discretely.
 * B. No reference to a behavioural predicate of the ambient libraries: behaviour is reached
   through the semantic layer.
 * T. No notion — the value of a predicate declaration, a proposition field of a structure, a
@@ -29,8 +33,8 @@ Every declaration of the library outside the semantic layer must satisfy three r
 
 The positive control is the semantic layer itself: each of its modules defines notions the
 classification recognizes as behavioural. The negative controls are fixtures stating behaviour in
-sixteen different ways, all rejected, and fixtures pulling the semantics back or stating static
-conditions, all accepted. -/
+twenty different ways, continuous and discrete, all rejected, and fixtures pulling the semantics
+back or stating static conditions, all accepted. -/
 
 noncomputable section
 
@@ -90,6 +94,19 @@ structure Instant where
 
 def wrappedTime (f : ℝ² → ℝ²) : Prop := ∀ φ : Instant → ℝ², f (φ ⟨0⟩) = 0
 
+/-- Discrete behaviour through iterates of the state map. -/
+def ownOrbits (F : ℝ² → ℝ²) : Prop := ∀ y, Tendsto (fun k : ℕ => F^[k] y) atTop (𝓝 0)
+
+/-- Discrete behaviour through an iterate evaluated at a fixed number of steps. -/
+def twoSteps (F : ℝ² → ℝ²) : Prop := ∀ y, ‖F^[2] y‖ ≤ ‖y‖
+
+/-- Discrete behaviour through sequences of states. -/
+def ownSequences (F : ℝ² → ℝ²) : Prop :=
+  ∀ x : ℕ → ℝ², (∀ k, x (k + 1) = F (x k)) → Tendsto x atTop (𝓝 0)
+
+/-- Discrete behaviour through the one-step update of a discrete system. -/
+def ownDissipation (s : Map.System 2 1) : Prop := ∀ x u, ‖s.step x u‖ ≤ ‖x‖
+
 /-! Notions that only pull the semantic layer back, or say nothing about time; each must pass. -/
 
 def closedFormSolution (x₀ : ℝ²) : ℝ → ℝ² := fun t => Real.exp (-t) • x₀
@@ -113,9 +130,18 @@ structure Gain where
 
 def window (r : ℝ) : Set ℝ := Set.Icc (r - 1) (r + 1)
 
+def pulledBackMap (A : Matrix (Fin 2) (Fin 2) ℝ) : Prop :=
+  Flow.Property.globallyExponentiallyStable.holdsMap 1 (Matrix.toEuclideanLin A) 0
+
+def fixedPoint (F : ℝ² → ℝ²) : Prop := F 0 = 0
+
 /-- A statement naming a behavioural notion directly rather than through a denotation. -/
 @[powerlib_foundation] theorem bypass (f : ℝ² → ℝ²) (h : LyapunovStable f 0) :
     LyapunovStable f 0 := h
+
+/-- The same for a discrete notion. -/
+@[powerlib_foundation] theorem bypassMap (F : ℝ² → ℝ²) (h : Map.LyapunovStable F 0) :
+    Map.LyapunovStable F 0 := h
 
 end SemanticFixture
 
@@ -158,12 +184,15 @@ run_meta do
       ``SemanticFixture.upstreamValue, ``SemanticFixture.upstreamDecided,
       ``SemanticFixture.closedForm, ``SemanticFixture.closedFormLimit,
       ``SemanticFixture.closedFormEventually, ``SemanticFixture.scalarSolutions,
-      ``SemanticFixture.Reach, ``SemanticFixture.wrappedTime] do
+      ``SemanticFixture.Reach, ``SemanticFixture.wrappedTime, ``SemanticFixture.ownOrbits,
+      ``SemanticFixture.twoSteps, ``SemanticFixture.ownSequences,
+      ``SemanticFixture.ownDissipation] do
     if (← scanDecl ctx (outside ctx) c).isNone then
       throwError "The audit accepted a behavioural definition: {c}"
   for c in #[``SemanticFixture.closedFormSolution, ``SemanticFixture.pulledBack,
       ``SemanticFixture.StaticCertificate, ``SemanticFixture.equilibrium, ``SemanticFixture.margin,
-      ``SemanticFixture.Gain, ``SemanticFixture.window] do
+      ``SemanticFixture.Gain, ``SemanticFixture.window, ``SemanticFixture.pulledBackMap,
+      ``SemanticFixture.fixedPoint] do
     if let some reason ← scanDecl ctx (outside ctx) c then
       throwError "The audit rejected a non-behavioural definition: {c}: {reason}"
   -- No bypass: a domain theorem of the library reaches behaviour only through a denotation, never
@@ -178,7 +207,7 @@ run_meta do
       bypasses := bypasses.push s!"{name}: {reason}"
   unless bypasses.isEmpty do
     throwError "Domain theorems naming behaviour directly:\n{"\n".intercalate bypasses.toList}"
-  for c in #[``SemanticFixture.bypass] do
+  for c in #[``SemanticFixture.bypass, ``SemanticFixture.bypassMap] do
     let used := (← getConstInfo c).type.getUsedConstants
     unless ← used.anyM fun d => return (← (classify ctx).const d).isSome do
       throwError "The bypass audit accepted a statement naming behaviour directly: {c}"
@@ -200,8 +229,15 @@ example {n : ℕ} : Flow.Property.holds (n := n) .unstable = Unstable := rfl
 
 -- The sentences of a system with ports read its zero-input field, and passivity its ports.
 example {n p : ℕ} (P : Flow.Property) (s : Port.System n p) :
-    (Sentence.flow P).holds s = P.holds s.zeroInput 0 := rfl
-example {n p : ℕ} (s : Port.System n p) : Sentence.passive.holds s = s.Passive := rfl
+    (Sentence.flow P).holds (s : Behaviour n p) = P.holds s.zeroInput 0 := rfl
+example {n p : ℕ} (s : Port.System n p) : Sentence.passive.holds (s : Behaviour n p) = s.Passive :=
+  rfl
+
+-- On a discrete-time system they read its zero-input map with its step length.
+example {n p : ℕ} (P : Flow.Property) (s : Map.System n p) :
+    (Sentence.flow P).holds (Behaviour.discrete s) = P.holdsMap s.period s.zeroInput 0 := rfl
+example {n : ℕ} (T a : ℝ) (F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)) :
+    Flow.Property.holdsMap (.decay a) T F 0 = Map.Decay F 0 (a * T) := rfl
 
 -- A family's denotation is the semantics connection's generated value, and a linear family's
 -- flow sentences are the hub's sentences of its zero-input plants.
@@ -304,6 +340,25 @@ def boundaryFamily : Family Unit Unit 1 0 :=
   rw [Nonlinear.Cubic.family_isAutonomous.mem_den_flow]
   exact (Nonlinear.Cubic.family_isAutonomous.mem_den_flow.mp
     (Nonlinear.Cubic.mem_den_globallyExponentiallyStable α)).globallyAsymptoticallyStable
+
+-- A discrete family: the one-state map `x ↦ a x` with unit step length. Its sentences are read by
+-- the map semantics, and its contraction is a public connection conclusion.
+structure ScalarMap where
+  a : ℝ
+
+def mapFamily : Family ScalarMap Unit 1 0 :=
+  ⟨fun g => .discrete (Map.System.autonomous 1 fun x => g.a • x), fun _ _ => False,
+    fun _ => Set.univ⟩
+
+@[powerlib_foundation] theorem mapFamily_isAutonomousMap :
+    mapFamily.IsAutonomousMap (fun _ => 1) (fun g x => g.a • x) := fun _ => rfl
+
+@[powerlib_domain] theorem contracting_mem_den (g : ScalarMap) (h : |g.a| < 1) :
+    connection% (g ∈ mapFamily.den (.flow .globallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [mapFamily_isAutonomousMap.mem_den_flow]
+  refine ⟨by simp, 1, |g.a|, le_rfl, abs_nonneg _, h, fun y k => ?_⟩
+  simp [smul_iterate, norm_smul]
 
 -- The observation boundary: equal transfer functions with opposite stability, and the hidden
 -- mode is exactly what minimality excludes.

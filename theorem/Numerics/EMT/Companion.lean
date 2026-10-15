@@ -234,30 +234,22 @@ def GroundConnected (p q : β → Terminal N) (G : β → ℝ) : Prop :=
   rw [nodalMatrix_mulVec, eq_sub_iff_add_eq, ← Finset.sum_add_distrib]
   simp only [add_smul]
 
-/-- A trapezoidal EMT network trajectory: element step laws for every branch and KCL at every
-new step. -/
-def IsTrapezoidalNetwork (h : ℝ) (e : β → Element) (p q : β → Terminal N)
-    (V : ℕ → Fin N → ℝ) (I : ℕ → β → ℝ) (J : ℕ → Fin N → ℝ) : Prop :=
-  ∀ n, (∀ b, (e b).StepLaw h (I n b) (incidence p q b ⬝ᵥ V n) (I (n + 1) b)
-      (incidence p q b ⬝ᵥ V (n + 1))) ∧
-    ∑ b, I (n + 1) b • incidence p q b = J (n + 1)
-
-/-- Companion nodal equations: the constant matrix `G_n` times the new node voltages equals
-the injections minus the history sources, and branch currents follow the companion law. -/
-def IsCompanionNetwork (h : ℝ) (e : β → Element) (p q : β → Terminal N)
-    (V : ℕ → Fin N → ℝ) (I : ℕ → β → ℝ) (J : ℕ → Fin N → ℝ) : Prop :=
-  ∀ n, nodalMatrix p q (fun b => (e b).conductance h) *ᵥ V (n + 1) =
-      J (n + 1) - ∑ b, (e b).history h (I n b) (incidence p q b ⬝ᵥ V n) • incidence p q b ∧
-    ∀ b, I (n + 1) b = (e b).conductance h * (incidence p q b ⬝ᵥ V (n + 1)) +
-      (e b).history h (I n b) (incidence p q b ⬝ᵥ V n)
-
 /-- The companion nodal formulation is exactly the trapezoidal discretization of the
-network. -/
+network: a trapezoidal network trajectory (element step laws for every branch and KCL at every
+new step) is exactly a solution of the companion nodal equations (the constant matrix `G_n` times
+the new node voltages equals the injections minus the history sources, and branch currents follow
+the companion law). Discrete trajectories are written out, not defined: discrete behaviour is
+defined only in the semantic layer. -/
 @[powerlib_foundation] theorem trapezoidalNetwork_iff_companion {h : ℝ} (hh : h ≠ 0)
     (e : β → Element) (he : ∀ b, (e b).Valid) (p q : β → Terminal N) (V : ℕ → Fin N → ℝ)
     (I : ℕ → β → ℝ) (J : ℕ → Fin N → ℝ) :
-    IsTrapezoidalNetwork h e p q V I J ↔ IsCompanionNetwork h e p q V I J := by
-  simp only [IsTrapezoidalNetwork, IsCompanionNetwork]
+    (∀ n, (∀ b, (e b).StepLaw h (I n b) (incidence p q b ⬝ᵥ V n) (I (n + 1) b)
+        (incidence p q b ⬝ᵥ V (n + 1))) ∧
+      ∑ b, I (n + 1) b • incidence p q b = J (n + 1)) ↔
+    ∀ n, nodalMatrix p q (fun b => (e b).conductance h) *ᵥ V (n + 1) =
+        J (n + 1) - ∑ b, (e b).history h (I n b) (incidence p q b ⬝ᵥ V n) • incidence p q b ∧
+      ∀ b, I (n + 1) b = (e b).conductance h * (incidence p q b ⬝ᵥ V (n + 1)) +
+        (e b).history h (I n b) (incidence p q b ⬝ᵥ V n) := by
   refine forall_congr' fun n => ?_
   simp only [fun b => Element.stepLaw_iff_companion hh (e b) (he b)]
   constructor

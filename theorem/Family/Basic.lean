@@ -5,8 +5,9 @@ import theorem.TMIO.Representation
 /-! # Model families
 
 A model family enters the library through three semantic maps and nothing else: its system map,
-reading each complete system as a system with ports; the satisfaction relation of its
-requirement language; and the translation of every sentence into requirements.
+reading each complete system as a system of one of the kinds the semantic layer reads (a
+continuous-time or a discrete-time system with ports, `Behaviour`); the satisfaction relation of
+its requirement language; and the translation of every sentence into requirements.
 
 Two connections between sentences and complete systems are generated from them. The semantics
 connection (`semantics`) sends a family of complete systems to the sentences they all satisfy;
@@ -32,8 +33,8 @@ open TMIO OrderDual
 /-- A model family: complete systems `X` read as systems with `n` states and `p` ports, the
 satisfaction relation of a requirement language `Q`, and the translation of every sentence. -/
 structure Family (X Q : Type*) (n p : ℕ) where
-  /-- The system map. -/
-  system : X → Port.System n p
+  /-- The system map, to a continuous-time or a discrete-time system. -/
+  system : X → Behaviour n p
   /-- Satisfaction of a requirement by a complete system. -/
   meets : X → Q → Prop
   /-- The requirements each sentence translates into. -/
@@ -269,7 +270,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- Every complete system of the family is the autonomous field `field x`. -/
 def IsAutonomous (F : Family X Q n 0) (field : X → ℝⁿ → ℝⁿ) : Prop :=
-  ∀ x, F.system x = Port.System.autonomous (field x)
+  ∀ x, F.system x = .continuous (Port.System.autonomous (field x))
 
 @[powerlib_foundation] theorem IsAutonomous.mem_den_flow {F : Family X Q n 0}
     {field : X → ℝⁿ → ℝⁿ} (hF : F.IsAutonomous field) {P : Flow.Property} {x : X} :
@@ -285,6 +286,34 @@ def IsAutonomous (F : Family X Q n 0) (field : X → ℝⁿ → ℝⁿ) : Prop :
   exact Port.System.autonomous_passive _
 
 end Autonomous
+
+/-! ## Families of autonomous maps -/
+
+section AutonomousMap
+
+local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
+
+/-- Every complete system of the family is the autonomous map `map x` with step length
+`period x`. -/
+def IsAutonomousMap (F : Family X Q n 0) (period : X → ℝ) (map : X → ℝⁿ → ℝⁿ) : Prop :=
+  ∀ x, F.system x = .discrete (Map.System.autonomous (period x) (map x))
+
+@[powerlib_foundation] theorem IsAutonomousMap.mem_den_flow {F : Family X Q n 0}
+    {period : X → ℝ} {map : X → ℝⁿ → ℝⁿ} (hF : F.IsAutonomousMap period map)
+    {P : Flow.Property} {x : X} : x ∈ F.den (.flow P) ↔ P.holdsMap (period x) (map x) 0 := by
+  rw [mem_den, hF x]
+  rfl
+
+/-- A discrete system without ports is passive. -/
+@[powerlib_foundation] theorem IsAutonomousMap.den_passive {F : Family X Q n 0}
+    {period : X → ℝ} {map : X → ℝⁿ → ℝⁿ} (hF : F.IsAutonomousMap period map) :
+    F.den .passive = Set.univ := by
+  ext x
+  simp only [mem_den, Set.mem_univ, iff_true, hF x, Sentence.holds_passive_discrete]
+  exact ⟨fun _ => 0, fun _ => le_rfl, fun _ u => by
+    simp [Map.System.supply, Map.System.autonomous, Subsingleton.elim u 0]⟩
+
+end AutonomousMap
 
 end Family
 

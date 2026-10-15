@@ -140,7 +140,8 @@ private theorem rlPlant_trapezoidalDiscretization_exponentiallyStable_iff
     (m : RL.Impedance) {h : ℝ} (hh : 0 < h)
     (hP : IsUnit (1 - (h / 2) • rlMatrix m).det) :
     (∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
-      ∀ x, LTI.IsTrajectory ⟨trapezoidalMatrix h (rlMatrix m)⟩ x →
+      ∀ x : ℕ → LTI.State 1,
+        (∀ k, x (k + 1) = LTI.Model.step ⟨trapezoidalMatrix h (rlMatrix m)⟩ (x k)) →
         ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔ 0 < m.resistance := by
   rw [LTI.exponentiallyStable_iff_schurStable, trapezoidal_schurStable_iff_isHurwitz hh hP,
     rlMatrix_isHurwitz_iff]
@@ -151,7 +152,7 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem rlPlant_isTrapezoidalTrajectory_iff (m : RL.Impedance)
     {h : ℝ} (hP : IsUnit (1 - (h / 2) • rlMatrix m).det) (x : ℕ → Fin 1 → ℝ) :
     IsTrapezoidalTrajectory (rlField m) h x ↔
-      LTI.IsTrajectory ⟨trapezoidalMatrix h (rlMatrix m)⟩ x := by
+      ∀ k, x (k + 1) = LTI.Model.step ⟨trapezoidalMatrix h (rlMatrix m)⟩ (x k) := by
   rw [rlField_eq_linearField]
   exact isTrapezoidalTrajectory_iff _ h hP x
 
@@ -225,7 +226,8 @@ private theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_iff
     (m : LCL.Circuit) (hp : m.Passive) {h : ℝ} (hh : 0 < h)
     (hP : IsUnit (1 - (h / 2) • m.plant.A).det) :
     (∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
-      ∀ x, LTI.IsTrajectory ⟨trapezoidalMatrix h m.plant.A⟩ x →
+      ∀ x : ℕ → LTI.State 3,
+        (∀ k, x (k + 1) = LTI.Model.step ⟨trapezoidalMatrix h m.plant.A⟩ (x k)) →
         ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔
       m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0 := by
   rw [LTI.exponentiallyStable_iff_schurStable, trapezoidal_schurStable_iff_isHurwitz hh hP,

@@ -21,6 +21,14 @@ translation. `Family.semantics` is the satisfaction connection generated from
 to the generic connection comparisons in `TMIO.Compare`. Certification,
 refutation, representation changes and requirement extensions use this interface.
 
+The system map returns a `Behaviour`: a continuous-time system with ports (`Flow.Defs`,
+`Port.Defs`) or a discrete-time system with ports (`Map.Defs`), each interpreted once by
+`Sentence.holds`. Discrete notions are stated through iterates of the state map and
+one-step inequalities, so the semantic layer keeps one time axis. The single-semantics
+audit recognizes discrete behaviour — a sequence indexed by steps into a state space, an
+iterate of a state map, the step of a discrete system — inside the semantic layer and
+rejects it outside, as it does for signals of time.
+
 Representation transport preserves the semantic and generated maps, and now
 also transports closed and interior fixed points. `closedTransport`,
 `interiorTransport` and `fixedPointsIso_transport` prove that the fixed-point

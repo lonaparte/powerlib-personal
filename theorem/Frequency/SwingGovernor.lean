@@ -502,10 +502,10 @@ load `ΔP_L = 1` the quasi-steady state is an equilibrium at which the port supp
 @[powerlib_domain] theorem not_mem_den_passive (m : Model) (hKD : 0 < m.K + m.D) :
     connection% (m ∉ family.den .passive) := by
   unfold powerlib.TMIO.Statement
-  rw [Family.mem_den, Sentence.holds_passive]
+  rw [Family.mem_den, family_isLinear m, Sentence.holds_passive]
   refine Port.System.not_passive_of_equilibrium _ (x₀ := steadyState m.D m.K 1) (u₀ := load 1)
     (steadyState_isEquilibrium m.M_pos.ne' m.Tg_pos.ne' hKD.ne') ?_
-  have hsupply : (family.system m).supply (steadyState m.D m.K 1) (load 1) = -1 / (m.K + m.D) := by
+  have hsupply : m.plant.system.supply (steadyState m.D m.K 1) (load 1) = -1 / (m.K + m.D) := by
     simp [Port.System.supply, family, Model.plant, plant, Linear.Plant.system, load, steadyState,
       dotProduct, Fin.sum_univ_two]
   rw [hsupply]

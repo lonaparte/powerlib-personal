@@ -42,6 +42,8 @@ import theorem.LTI.Plant
 import theorem.LTI.Decay
 import theorem.LTI.Discrete
 import theorem.LTI.Sampling
+import theorem.Map.Basic
+import theorem.Map.Linearization
 import theorem.LTI.Oscillator2
 import theorem.SpecialFunctions.BesselI
 import theorem.SpecialFunctions.BesselK

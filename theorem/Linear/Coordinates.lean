@@ -63,7 +63,7 @@ open Matrix
 
 /-- Similar plants agree on the complete sentence language, including passivity. -/
 @[powerlib_foundation] theorem Similar.sentence_iff {m m' : Plant n p} (h : Similar m m')
-    (s : Sentence) : s.holds m'.system ↔ s.holds m.system := by
+    (s : Sentence) : s.holds (.continuous m'.system) ↔ s.holds (.continuous m.system) := by
   cases s with
   | flow P =>
     simp only [Sentence.holds_flow, Plant.system_zeroInput]

@@ -486,7 +486,7 @@ def translate : Sentence → Set Requirement
   | .passive => {.physical, .equilibrium, .damping}
 
 /-- The reduced matching closed-loop family. -/
-def family : Family Model Requirement 5 3 := ⟨Model.system, Meets, translate⟩
+def family : Family Model Requirement 5 3 := ⟨fun m => .continuous m.system, Meets, translate⟩
 
 /-- The whole requirement language is inconsistent (`r ≤ 0` fails at `r = 1`). -/
 @[powerlib_foundation] theorem realize_univ :
@@ -506,6 +506,7 @@ def family : Family Model Requirement 5 3 := ⟨Model.system, Meets, translate�
   rw [TMIO.mem_realize] at hm
   change ∀ q ∈ translate s, Meets m q at hm
   rw [Family.mem_den]
+  change s.holds (.continuous m.system)
   have key : (∀ q ∈ ({.physical, .equilibrium, .damping} : Set Requirement), Meets m q) →
       Flow.GloballyExponentiallyStable m.system.zeroInput 0 ∧ m.system.Passive := by
     intro h

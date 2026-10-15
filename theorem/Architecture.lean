@@ -9,8 +9,9 @@ open Lean Meta Elab Command
 
 namespace SemanticAudit
 
-/-- The declared semantic definitions, from which signal spaces are inferred. -/
-def semanticLayer : Array Name := #[`theorem.Flow.Defs, `theorem.Port.Defs]
+/-- The declared semantic definitions, from which signal spaces are inferred: continuous time
+(`Flow`), discrete time (`Map`) and systems with ports (`Port`). -/
+def semanticLayer : Array Name := #[`theorem.Flow.Defs, `theorem.Map.Defs, `theorem.Port.Defs]
 
 def moduleOf? (env : Environment) (c : Name) : Option Name :=
   (env.getModuleIdxFor? c).map fun i => env.header.moduleNames[i.toNat]!
@@ -103,8 +104,12 @@ partial def containsSpace (ctx : Ctx) (ty : Expr) (stack : Array Expr) : MetaM B
   if ← isSpace ctx ty then return true
   anyField ctx.contains (← whnfD ty) stack (containsSpace ctx)
 
-/-- Whether a value of type `ty` carries a signal: a function from time into values containing a
-signal-space value, or a function, structure or inductive value containing one. -/
+/-- The step counter of discrete time: the type of the iteration count of `Nat.iterate`. -/
+def isStep (d : Expr) : MetaM Bool := return (← whnfD d).isConstOf ``Nat
+
+/-- Whether a value of type `ty` carries a signal: a function from time, or a sequence indexed by
+steps (a discrete signal), into values containing a signal-space value, or a function, structure
+or inductive value containing one. -/
 partial def carriesSignalAux (ctx : Ctx) (ty : Expr) (stack : Array Expr) : MetaM Bool := do
   let ty ← whnfD ty
   match ty with
@@ -113,10 +118,18 @@ partial def carriesSignalAux (ctx : Ctx) (ty : Expr) (stack : Array Expr) : Meta
     withLocalDecl n bi d fun x => do
       let body := b.instantiate1 x
       if ← isTypeFamily body <||> isPredicateType body then carriesSignalAux ctx d stack
-      else if ← isTime ctx.time d then
+      else if ← isTime ctx.time d <||> isStep d then
         containsSpace ctx body #[] <||> carriesSignalAux ctx body stack
       else carriesSignalAux ctx d stack <||> carriesSignalAux ctx body stack
   | _ => anyField ctx.signals ty stack (carriesSignalAux ctx)
+
+/-- Discrete evolution: an iterate of a self-map of values containing a signal-space value, or the
+one-step update of a discrete-time system. -/
+def evolvesDiscretely (ctx : Ctx) (e : Expr) : MetaM Bool := do
+  if e.isAppOf ``powerlib.Map.System.step then return true
+  unless e.isAppOf ``Nat.iterate do return false
+  let some α := e.getAppArgs[0]? | return false
+  containsSpace ctx α #[]
 
 /-- A function from time. -/
 def isTimeFunction (ctx : Ctx) (ty : Expr) : MetaM Bool := do
@@ -265,6 +278,7 @@ partial def classify (ctx : Ctx) : Rules where
     return none
   term e ty := do
     if ← carriesSignal ctx ty then return some s!"contains the signal {← ppExpr e}"
+    if ← evolvesDiscretely ctx e then return some s!"evolves a state discretely: {← ppExpr e}"
     return none
   const c := do
     let info ← getConstInfo c
@@ -291,6 +305,7 @@ def outside (ctx : Ctx) : Rules where
     return none
   term e ty := do
     if ← carriesSignal ctx ty then return some s!"contains the signal {← ppExpr e}"
+    if ← evolvesDiscretely ctx e then return some s!"evolves a state discretely: {← ppExpr e}"
     return none
   const c := do
     if inLibrary (← getEnv) c then return none

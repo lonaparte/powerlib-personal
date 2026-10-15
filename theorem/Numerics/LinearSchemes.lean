@@ -96,16 +96,16 @@ variable (A : Matrix (Fin n) (Fin n) ℝ) (h : ℝ)
 /-- Forward Euler on a linear field is the recursion with `1 + hA`. -/
 @[powerlib_foundation] theorem isForwardEulerTrajectory_iff (x : ℕ → Fin n → ℝ) :
     IsForwardEulerTrajectory (linearField A) h x ↔
-      LTI.IsTrajectory ⟨forwardEulerMatrix h A⟩ x := by
-  simp only [IsForwardEulerTrajectory, LTI.IsTrajectory, LTI.Model.step,
+      ∀ k, x (k + 1) = LTI.Model.step ⟨forwardEulerMatrix h A⟩ (x k) := by
+  simp only [IsForwardEulerTrajectory, LTI.Model.step,
     forwardEulerMatrix, linearField, one_add_smul_mulVec]
 
 /-- Backward Euler on a linear field is the recursion with `(1 - hA)⁻¹`. -/
 @[powerlib_foundation] theorem isBackwardEulerTrajectory_iff (hP : IsUnit (1 - h • A).det)
     (x : ℕ → Fin n → ℝ) :
     IsBackwardEulerTrajectory (linearField A) h x ↔
-      LTI.IsTrajectory ⟨backwardEulerMatrix h A⟩ x := by
-  simp only [IsBackwardEulerTrajectory, LTI.IsTrajectory, LTI.Model.step,
+      ∀ k, x (k + 1) = LTI.Model.step ⟨backwardEulerMatrix h A⟩ (x k) := by
+  simp only [IsBackwardEulerTrajectory, LTI.Model.step,
     backwardEulerMatrix, linearField]
   refine forall_congr' fun k => ?_
   rw [eq_inv_mulVec_iff hP, one_sub_smul_mulVec, sub_eq_iff_eq_add]
@@ -115,8 +115,8 @@ variable (A : Matrix (Fin n) (Fin n) ℝ) (h : ℝ)
 @[powerlib_foundation] theorem isTrapezoidalTrajectory_iff (hP : IsUnit (1 - (h / 2) • A).det)
     (x : ℕ → Fin n → ℝ) :
     IsTrapezoidalTrajectory (linearField A) h x ↔
-      LTI.IsTrajectory ⟨trapezoidalMatrix h A⟩ x := by
-  simp only [IsTrapezoidalTrajectory, LTI.IsTrajectory, LTI.Model.step,
+      ∀ k, x (k + 1) = LTI.Model.step ⟨trapezoidalMatrix h A⟩ (x k) := by
+  simp only [IsTrapezoidalTrajectory, LTI.Model.step,
     trapezoidalMatrix, linearField]
   refine forall_congr' fun k => ?_
   rw [← Matrix.mulVec_mulVec, eq_inv_mulVec_iff hP, one_sub_smul_mulVec, one_add_smul_mulVec,
@@ -395,7 +395,7 @@ step `h > 0`. -/
       LTI.response_zero _ _⟩, ?_⟩
   rintro y ⟨hy, hy0⟩
   funext k
-  rw [((isTrapezoidalTrajectory_iff A h hP y).mp hy).eq_response k, hy0]
+  rw [LTI.eq_response ((isTrapezoidalTrajectory_iff A h hP y).mp hy) k, hy0]
 
 /-- A well-posed backward-Euler step has exactly one trajectory from each initial state. -/
 @[powerlib_foundation] theorem backwardEuler_existsUnique (hP : IsUnit (1 - h • A).det)
@@ -406,7 +406,7 @@ step `h > 0`. -/
       LTI.response_zero _ _⟩, ?_⟩
   rintro y ⟨hy, hy0⟩
   funext k
-  rw [((isBackwardEulerTrajectory_iff A h hP y).mp hy).eq_response k, hy0]
+  rw [LTI.eq_response ((isBackwardEulerTrajectory_iff A h hP y).mp hy) k, hy0]
 
 end Semantic
 

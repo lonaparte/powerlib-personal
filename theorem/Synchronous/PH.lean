@@ -860,19 +860,19 @@ solution segment from a fixed state the supplied energy falls below minus every 
     have hκ0 : κ ≠ 0 := hκ.ne
     rw [hT_def]
     field_simp
-  have htraj : (family.system m).IsTrajectoryOn (spinInput m ω₀) (spin m ω₀) 0 T := by
+  have htraj : m.toPH.system.IsTrajectoryOn (spinInput m ω₀) (spin m ω₀) 0 T := by
     intro t _
     show HasDerivWithinAt (spin m ω₀) (m.toPH.system.field (spin m ω₀ t) (spinInput m ω₀ t))
       (Set.Icc 0 T) t
     rw [spin_field]
     exact (spin_hasDerivAt m ω₀ t).hasDerivWithinAt
-  have hsupply : (fun t => (family.system m).supply (spin m ω₀ t) (spinInput m ω₀ t)) =
+  have hsupply : (fun t => m.toPH.system.supply (spin m ω₀ t) (spinInput m ω₀ t)) =
       fun t => ω₀ * (-m.p.Pm + m.p.b * Real.sin (ω₀ * t + m.δs) + m.p.D * ω₀) :=
     funext (spin_supply m ω₀)
   have hcont : Continuous fun t : ℝ =>
       ω₀ * (-m.p.Pm + m.p.b * Real.sin (ω₀ * t + m.δs) + m.p.D * ω₀) := by fun_prop
   have hint : IntervalIntegrable
-      (fun t => (family.system m).supply (spin m ω₀ t) (spinInput m ω₀ t)) MeasureTheory.volume
+      (fun t => m.toPH.system.supply (spin m ω₀ t) (spinInput m ω₀ t)) MeasureTheory.volume
         0 T := by
     rw [hsupply]
     exact hcont.intervalIntegrable 0 T

@@ -15,7 +15,7 @@ Scope.
   finite-dimensional space are equivalent, so exponential decay does not depend on this choice
   (only the constant `C` does).
 * Exponential stability (uniform geometric decay of every trajectory) is
-  `∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x, IsTrajectory m x → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖`;
+  `∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖`;
   it quantifies real constants, so it is written out in each statement that uses it rather
   than defined (single-semantics rule).
 * `SchurStable Φ` is stated through complex eigenpairs of the complexification, exactly like
@@ -59,10 +59,6 @@ variable {n : ℕ}
 
 def Model.step (m : Model n) (x : State n) : State n := m.Φ *ᵥ x
 
-/-- A forward trajectory of the recursion. -/
-def IsTrajectory (m : Model n) (x : ℕ → State n) : Prop :=
-  ∀ k, x (k + 1) = m.step (x k)
-
 /-- The explicit forward solution. -/
 def response (m : Model n) (initial : State n) (k : ℕ) : State n :=
   (m.Φ ^ k) *ᵥ initial
@@ -71,14 +67,15 @@ def response (m : Model n) (initial : State n) (k : ℕ) : State n :=
     response m initial 0 = initial := by
   simp [response]
 
+/-- The explicit response solves the recursion. -/
 @[powerlib_foundation] theorem response_isTrajectory (m : Model n) (initial : State n) :
-    IsTrajectory m (response m initial) := by
+    ∀ k, response m initial (k + 1) = m.step (response m initial k) := by
   intro k
   simp [response, Model.step, pow_succ', Matrix.mulVec_mulVec]
 
 /-- Every trajectory is the explicit response of its initial state. -/
-@[powerlib_foundation] theorem IsTrajectory.eq_response {m : Model n} {x : ℕ → State n}
-    (hx : IsTrajectory m x) (k : ℕ) : x k = response m (x 0) k := by
+@[powerlib_foundation] theorem eq_response {m : Model n} {x : ℕ → State n}
+    (hx : ∀ k, x (k + 1) = m.step (x k)) (k : ℕ) : x k = response m (x 0) k := by
   induction k with
   | zero => simp
   | succ k ih =>
@@ -88,10 +85,6 @@ def response (m : Model n) (initial : State n) (k : ℕ) : State n :=
 /-- Schur stability: every complex eigenvalue lies in the open unit disk. -/
 def SchurStable (Φ : Matrix (Fin n) (Fin n) ℝ) : Prop :=
   ∀ (μ : ℂ) (v : Fin n → ℂ), v ≠ 0 → Φ.map (algebraMap ℝ ℂ) *ᵥ v = μ • v → ‖μ‖ < 1
-
-/-- Every trajectory converges to the origin. -/
-def AsymptoticallyStable (m : Model n) : Prop :=
-  ∀ x, IsTrajectory m x → Tendsto x atTop (𝓝 0)
 
 section Spectral
 
@@ -300,10 +293,10 @@ open scoped Matrix.Norms.Operator
 @[powerlib_foundation] theorem exponentiallyStable_of_schurStable {m : Model n}
     (h : SchurStable m.Φ) :
     ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
-      ∀ x, IsTrajectory m x → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖ := by
+      ∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖ := by
   obtain ⟨C, hC, ρ, hρ0, hρ1, hb⟩ := h.exists_pow_bound
   refine ⟨C, hC, ρ, hρ0.le, hρ1, fun x hx k => ?_⟩
-  rw [hx.eq_response k, response]
+  rw [eq_response hx k, response]
   exact (Matrix.linfty_opNorm_mulVec _ _).trans
     (mul_le_mul_of_nonneg_right (hb k) (norm_nonneg _))
 
@@ -315,14 +308,15 @@ section Converse
 imaginary part of the complex eigenmode `μ^k v`) that does not converge to zero. -/
 @[powerlib_foundation] theorem exists_trajectory_not_tendsto_zero {m : Model n} {μ : ℂ}
     {v : Fin n → ℂ} (hv : v ≠ 0) (heig : m.Φ.map (algebraMap ℝ ℂ) *ᵥ v = μ • v)
-    (hμ : 1 ≤ ‖μ‖) : ∃ x, IsTrajectory m x ∧ ¬ Tendsto x atTop (𝓝 0) := by
+    (hμ : 1 ≤ ‖μ‖) :
+    ∃ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) ∧ ¬ Tendsto x atTop (𝓝 0) := by
   let x : ℕ → State n := fun k j => (μ ^ k * v j).re
   let y : ℕ → State n := fun k j => (μ ^ k * v j).im
-  have hx : IsTrajectory m x := by
+  have hx : ∀ k, x (k + 1) = m.step (x k) := by
     intro k
     have h := MatrixAlgebra.matrixMulVec_re_smul_eigenpair m.Φ μ (μ ^ k) v heig
     simpa [x, Model.step, pow_succ] using h
-  have hy : IsTrajectory m y := by
+  have hy : ∀ k, y (k + 1) = m.step (y k) := by
     intro k
     have h := MatrixAlgebra.matrixMulVec_im_smul_eigenpair m.Φ μ (μ ^ k) v heig
     simpa [y, Model.step, pow_succ] using h
@@ -353,8 +347,9 @@ imaginary part of the complex eigenmode `μ^k v`) that does not converge to zero
   obtain ⟨k, hk⟩ := hev.exists
   exact absurd (hlow k) (not_le.mpr hk)
 
+/-- Convergence of every trajectory forces a Schur matrix. -/
 @[powerlib_foundation] theorem schurStable_of_asymptoticallyStable {m : Model n}
-    (h : AsymptoticallyStable m) : SchurStable m.Φ := by
+    (h : (∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → Tendsto x atTop (𝓝 0))) : SchurStable m.Φ := by
   intro μ v hv heig
   by_contra hμ
   obtain ⟨x, hx, hnot⟩ := exists_trajectory_not_tendsto_zero hv heig (not_lt.mp hμ)
@@ -363,7 +358,8 @@ imaginary part of the complex eigenmode `μ^k v`) that does not converge to zero
 /-- Uniform exponential decay of every trajectory implies convergence of every trajectory. -/
 @[powerlib_foundation] theorem asymptoticallyStable_of_exponentiallyStable {m : Model n}
     (h : ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
-      ∀ x, IsTrajectory m x → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) : AsymptoticallyStable m := by
+      ∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) :
+    (∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → Tendsto x atTop (𝓝 0)) := by
   obtain ⟨C, -, ρ, hρ0, hρ1, hb⟩ := h
   intro x hx
   have hlim : Tendsto (fun k : ℕ => C * ρ ^ k * ‖x 0‖) atTop (𝓝 0) := by
@@ -374,12 +370,12 @@ imaginary part of the complex eigenmode `μ^k v`) that does not converge to zero
 `0 ≤ ρ < 1`) holds exactly for a Schur matrix. -/
 @[powerlib_foundation] theorem exponentiallyStable_iff_schurStable (m : Model n) :
     (∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
-      ∀ x, IsTrajectory m x → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔ SchurStable m.Φ :=
+      ∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔ SchurStable m.Φ :=
   ⟨fun h => schurStable_of_asymptoticallyStable (asymptoticallyStable_of_exponentiallyStable h),
     exponentiallyStable_of_schurStable⟩
 
 @[powerlib_foundation] theorem asymptoticallyStable_iff_schurStable (m : Model n) :
-    AsymptoticallyStable m ↔ SchurStable m.Φ :=
+    (∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → Tendsto x atTop (𝓝 0)) ↔ SchurStable m.Φ :=
   ⟨schurStable_of_asymptoticallyStable,
     fun h => asymptoticallyStable_of_exponentiallyStable (exponentiallyStable_of_schurStable h)⟩
 

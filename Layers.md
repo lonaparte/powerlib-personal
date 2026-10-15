@@ -92,11 +92,13 @@ families of the library are idealized: their model boundaries list delay, PWM, s
 saturation among the exclusions, which are the realistic constraints of the implementation
 layer.
 
-The semantic layer reads continuous-time autonomous flows and port systems. A discrete-time
-recursion (an EMT discretization, `Numerics/EMT`; a discrete LTI system, `LTI/Discrete`) or a
-periodically switched system (`Averaging/StateSpaceAveraging`) is therefore not a family, and its
-results remain static or generic statements outside the layers until the semantic layer reads
-discrete time or switching.
+The semantic layer reads two kinds of systems (`Behaviour`): continuous-time systems with ports
+(`theorem/Flow/Defs.lean`, `theorem/Port/Defs.lean`) and discrete-time systems with ports
+(`theorem/Map/Defs.lean`). A digital controller, a sampled-data loop read at its sampling instants
+(`LTI/Sampling`), the period map of a switched converter (`Averaging/SwitchedStability`) and a
+numerical integration scheme (`Numerics/EMT`) are discrete-time implementation families of
+continuous-time models. Hybrid behaviour (state-dependent switching) is not yet read; see
+[ImplementationLayer.md](ImplementationLayer.md).
 
 `dependencies/tests/lean/Library/TMIOIndex.lean` files every connection statement under one
 category by the constants of its proposition. It recognizes implementation families by the

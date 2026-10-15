@@ -722,7 +722,7 @@ makes the switched period map `e^{(1−d)TA₂} e^{dTA₁}` Schur stable for eve
     refine ⟨?_, ?_⟩
     · apply (LTI.exponentiallyStable_iff_schurStable ⟨M⟩).mp
       refine ⟨C, hC, ρ, hρ0.le, hρ1, fun x hx k => ?_⟩
-      rw [hx.eq_response k, LTI.response]
+      rw [LTI.eq_response hx k, LTI.response]
       exact (Matrix.linfty_opNorm_mulVec _ _).trans
         (mul_le_mul_of_nonneg_right (hpow k) (norm_nonneg _))
     · obtain ⟨j, hj⟩ := exists_pow_lt_of_lt_one (inv_pos.mpr hC) hρ1

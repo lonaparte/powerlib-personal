@@ -125,7 +125,7 @@ def translate : Sentence → Set Requirement
 
 /-- The cubic family: every gain read as its autonomous field. -/
 def family : Family Gain Requirement n 0 :=
-  ⟨fun α => Port.System.autonomous (field α.1), Meets, translate⟩
+  ⟨fun α => .continuous (Port.System.autonomous (field α.1)), Meets, translate⟩
 
 @[powerlib_foundation] theorem family_isAutonomous :
     (family (n := n)).IsAutonomous fun α => field α.1 := fun _ => rfl

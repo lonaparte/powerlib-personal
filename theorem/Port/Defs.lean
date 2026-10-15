@@ -1,4 +1,5 @@
 import theorem.Flow.Basic
+import theorem.Map.Defs
 
 /-! # Port semantics
 
@@ -11,9 +12,13 @@ zero the system is the autonomous field `zeroInput`, whose behaviour is the Flow
 Passivity is dissipativity with respect to the supplied power: a nonnegative storage whose
 increase on every solution segment is bounded by the energy supplied through the ports.
 
-The sentences of the library are the Flow sentences of the zero-input field about the origin and
-passivity; their interpretation on systems with ports is fixed here once (`Sentence.holds`). An
-autonomous field is the system without ports. -/
+A complete system is read by the semantic layer in one of two kinds (`Behaviour`): a
+continuous-time system with ports, interpreted here and in `theorem/Flow/Defs.lean`, or a
+discrete-time system with ports, interpreted in `theorem/Map/Defs.lean`.
+
+The sentences of the library are the Flow sentences of the zero-input dynamics about the origin
+and passivity; their interpretation on both kinds of systems is fixed here once
+(`Sentence.holds`). An autonomous field or map is the system without ports. -/
 
 noncomputable section
 
@@ -62,15 +67,27 @@ end Port
 
 variable {n p : ℕ}
 
-/-- The sentences of the library: a behavioural sentence of the zero-input field about the
+/-- A complete system as the semantic layer reads it: a continuous-time system with ports or a
+discrete-time system with ports. -/
+inductive Behaviour (n p : ℕ)
+  /-- A continuous-time system (`theorem/Flow/Defs.lean`). -/
+  | continuous (s : Port.System n p)
+  /-- A discrete-time system (`theorem/Map/Defs.lean`). -/
+  | discrete (s : Map.System n p)
+
+instance : Coe (Port.System n p) (Behaviour n p) := ⟨Behaviour.continuous⟩
+
+/-- The sentences of the library: a behavioural sentence of the zero-input dynamics about the
 origin, or passivity. -/
 inductive Sentence
   | flow (P : Flow.Property)
   | passive
 
-/-- The interpretation of every sentence on systems with ports, fixed once. -/
-def Sentence.holds : Sentence → Port.System n p → Prop
-  | .flow P, s => P.holds s.zeroInput 0
-  | .passive, s => s.Passive
+/-- The interpretation of every sentence on both kinds of systems, fixed once. -/
+def Sentence.holds : Sentence → Behaviour n p → Prop
+  | .flow P, .continuous s => P.holds s.zeroInput 0
+  | .passive, .continuous s => s.Passive
+  | .flow P, .discrete s => P.holdsMap s.period s.zeroInput 0
+  | .passive, .discrete s => s.Passive
 
 end powerlib

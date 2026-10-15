@@ -51,6 +51,7 @@ def codexModules : Array Name := #[
   `theorem.Linear.Jordan, `theorem.Linear.Plant, `theorem.Linear.Positive, `theorem.Linear.Rate,
   `theorem.Linear.Rational, `theorem.Linear.Realization, `theorem.Linear.Stability,
   `theorem.Linear.Synthesis, `theorem.Linear.Transfer, `theorem.Linear.VerifiedSynthesis,
+  `theorem.Map.Defs,
   `theorem.Nonlinear.Cubic, `theorem.Nonlinear.Polynomial2,
   `theorem.Port.Basic, `theorem.Port.Defs, `theorem.Port.Linear, `theorem.Port.PortHamiltonian,
   `theorem.TMIO.Claim, `theorem.TMIO.ClaimElab, `theorem.TMIO.Compare, `theorem.TMIO.Derived,
@@ -73,12 +74,14 @@ in it) or a single module.
   `PH/Structure` (a tilted double well) and the lossless LC counterexample of `PH/Observability`;
   concrete circuit instances are in `PH/Models/`.
 * `Spectral`: the spectral family template, parametrized by an arbitrary model type.
-* `Stack`: the four-layer stack of models, implementations and records over arbitrary families. -/
+* `Stack`: the four-layer stack of models, implementations and records over arbitrary families.
+* `Map.Basic`, `Map.Linearization`: general facts of the discrete-time semantic layer
+  (`Map.Defs`, codex layer), registered module by module. -/
 def genericEntries : Array Name := #[
   `theorem.Asymptotics, `theorem.Asymptotics.Guard, `theorem.Averaging, `theorem.Criteria,
   `theorem.DAE, `theorem.Delay, `theorem.Dynamics, `theorem.Dynamics.Degenerate,
   `theorem.Dynamics.LaSalle, `theorem.Estimation, `theorem.Information, `theorem.LTI,
-  `theorem.LinearAlgebra, `theorem.Modal,
+  `theorem.LinearAlgebra, `theorem.Map.Basic, `theorem.Map.Linearization, `theorem.Modal,
   `theorem.Network.LinearSync, `theorem.Network.Synchronization, `theorem.Network.WeightedLaplacian,
   `theorem.NormalForm, `theorem.Numerics, `theorem.PDE, `theorem.PH, `theorem.ParametricResonance,
   `theorem.Periodic, `theorem.PhasePlane, `theorem.Potential, `theorem.SingularPerturbation,
@@ -273,7 +276,13 @@ run_cmd liftTermElabM do
       ``LocallyExponentiallyStable, ``Unstable, ``powerlib.Flow.GloballyAsymptoticallyStable,
       ``powerlib.Flow.GloballyExponentiallyStable, ``powerlib.Flow.Decay,
       ``powerlib.Flow.SampledContraction, ``powerlib.Flow.Conservative,
-      ``powerlib.Port.System.Passive, ``powerlib.Port.System.PassiveWith] do
+      ``powerlib.Port.System.Passive, ``powerlib.Port.System.PassiveWith,
+      ``powerlib.Flow.Property.holdsMap, ``powerlib.Map.LyapunovStable,
+      ``powerlib.Map.LocalAsymptoticStable, ``powerlib.Map.LocallyExponentiallyStable,
+      ``powerlib.Map.GloballyAsymptoticallyStable, ``powerlib.Map.GloballyExponentiallyStable,
+      ``powerlib.Map.Unstable, ``powerlib.Map.Decay, ``powerlib.Map.SampledContraction,
+      ``powerlib.Map.Conservative, ``powerlib.Map.System.Passive,
+      ``powerlib.Map.System.PassiveWith, ``powerlib.Sentence.holds] do
     unless notions.contains c do throwError "Behavioural predicate not recognized: {c}"
   -- Controls: a closed field is detected, a quantified one is not.
   let fixture := ``fixtureField

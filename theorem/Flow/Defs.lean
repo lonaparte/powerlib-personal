@@ -3,12 +3,14 @@ import theorem.Attributes
 
 /-! # Flow semantics
 
-The single definition of the behaviour of autonomous systems. Every model family of the library
-is read through these definitions and nothing else.
+The single definition of the behaviour of continuous-time autonomous systems. Every model family
+whose complete systems evolve in continuous time is read through these definitions and nothing
+else; discrete-time systems are read through `theorem/Map/Defs.lean`.
 
 A system is a complete autonomous vector field `f : ℝⁿ → ℝⁿ` on `ℝⁿ = EuclideanSpace ℝ (Fin n)`,
 after inputs are fixed and feedback is closed: continuous time, no delay, sampling, PWM or
-switching. Solutions are Mathlib integral curves on finite forward segments (LeanForControl's
+switching (a sampled-data loop or a switched converter is read as a discrete-time system at its
+sampling instants or through its period map). Solutions are Mathlib integral curves on finite forward segments (LeanForControl's
 `IsTrajectoryOn`), so finite-time escape never makes a property vacuous. The local notions —
 Lyapunov stability, local asymptotic and local exponential stability, instability — are
 LeanForControl's definitions, reused unchanged. The two global notions are defined here because

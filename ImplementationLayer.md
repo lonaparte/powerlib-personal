@@ -1,8 +1,8 @@
 # Building the implementation layer
 
-Status: design proposal. The semantic-layer changes below touch the shared codex layer and
-await the maintainer's decision; the generic bridges and the continuous-time implementation
-families are already in the library.
+Status: the discrete-time kind of the semantic layer (§3.1–3.2), the generic bridges (§3.5) and
+the continuous-time implementation families are in the library. The limit sentences (§3.3), the
+approximation relation (§3.4) and the hybrid kind are proposals awaiting decisions (§5).
 
 [Layers.md](Layers.md) defines the implementation layer: a model under realistic constraints
 (digitization, switching, physical limits, tolerances, numerical integration), with its own
@@ -13,10 +13,11 @@ staged plan.
 
 ## 1. The obstacle
 
-The semantic layer (`theorem/Flow/Defs.lean`, `theorem/Port/Defs.lean`) reads complete
-autonomous vector fields in continuous time; its header excludes delay, sampling, PWM and
-switching. A family's system map returns a `Port.System`, so a discrete-time controller, a
-numerical scheme or a switched converter cannot be an implementation family. The library model
+Before the discrete kind (§3.1), the semantic layer (`theorem/Flow/Defs.lean`,
+`theorem/Port/Defs.lean`) read only complete autonomous vector fields in continuous time; its
+header excludes delay, sampling, PWM and switching. A family's system map returned a
+`Port.System`, so a discrete-time controller, a numerical scheme or a switched converter could
+not be an implementation family. The library model
 families confirm the gap from the other side: their model boundaries list delay, PWM, sampling
 and saturation among the exclusions.
 
@@ -59,25 +60,28 @@ A family's system map returns one of a closed set of system kinds, each interpre
 semantic layer by the same sentence language:
 
 ```lean
+-- theorem/Port/Defs.lean
 inductive Behaviour (n p : ℕ)
-  | continuous (s : Port.System n p)   -- existing
-  | discrete (s : Map.System n p)      -- x⁺ = F(x, u), sampling period T
-  -- later: periodic, hybrid, stochastic
-def Sentence.holds : Sentence → Behaviour n p → Prop   -- by cases, fixed once
+  | continuous (s : Port.System n p)   -- Flow semantics
+  | discrete (s : Map.System n p)      -- Map semantics: step x u, output, period T
+def Sentence.holds : Sentence → Behaviour n p → Prop
+  | .flow P, .continuous s => P.holds s.zeroInput 0
+  | .passive, .continuous s => s.Passive
+  | .flow P, .discrete s => P.holdsMap s.period s.zeroInput 0
+  | .passive, .discrete s => s.Passive
 ```
 
-`Family.system : X → Behaviour n p`, with a coercion from `Port.System`. Everything built on
-families — TMIO connections, `Family.den`, translation exactness, admission's inference of model
-types from `Family` definitions, `Implementation` and `Stack` — works unchanged, and a
+`Family.system : X → Behaviour n p`, with a coercion from `Port.System`; `Family.IsAutonomous`
+reads continuous autonomous families and `Family.IsAutonomousMap` discrete ones. Everything built
+on families — TMIO connections, `Family.den`, translation exactness, admission's inference of
+model types from `Family` definitions, `Implementation` and `Stack` — works unchanged, and a
 continuous model family can be realized by a discrete implementation family directly.
 
-The prototype (scratch `poc-sem`, compiled, not in the repository) measured the fallout: of about
-60 family definitions, the lambda-style ones pass through the coercion, families built through
-`Spectral`, `extend` or `comap` are untouched, and two point-free definitions need a lambda
-(`GFM/Matching/ClosedLoop.lean`, `Synchronous/SMIB11PH.lean`); roughly 15–30 rewrites of
-`Sentence.holds` in proofs change mechanically. The codex files that change are `Port/Defs`,
-`Port/Basic`, `Family/Basic`, `Linear/Family`, `Linear/Coordinates`, `Architecture` and the
-architecture tests; a new semantic module `Map/Defs` is added. `TMIO/*` does not change.
+The migration changed `Port/Defs`, `Port/Basic`, `Family/Basic`, `Architecture` and the
+architecture tests, added the semantic module `Map/Defs`, and needed an explicit
+`.continuous` where the coercion does not fire (a few family definitions and proofs); `TMIO/*`
+did not change. Later kinds (periodic, hybrid, stochastic) extend `Behaviour` and
+`Sentence.holds` the same way.
 
 ### 3.2 Discrete time without a second time axis
 
@@ -88,12 +92,14 @@ dissipation inequality `V (F x u) − V x ≤ u ⬝ y`. The architecture's time-
 still reports the single axis `ℝ` (prototype: Flow + Port + Map definitions give `{ℝ}`; a
 sequence-quantifying definition gives `{ℝ, ℕ}`, as intended).
 
-Findings of the prototype that the extension must carry:
+What the extension carries:
 
-* The behaviour recognizer of the architecture does not recognize iterate-based notions (zero
-  behavioural notions found in the map definitions). Without a rule for them, discrete behaviour
-  would be invisible to admission, a bypass. The semantic layer needs an explicit recognition
-  rule for predicates of state maps, added together with the definitions.
+* Recognition of discrete behaviour. The audit recognized behaviour only through signals, so
+  iterate-based notions were invisible to it (a bypass). It now also recognizes a sequence indexed
+  by steps into a state space (a discrete signal) and discrete evolution (an iterate of a self-map
+  of a state space, or the step of a discrete system): such notions are behavioural inside the
+  semantic layer and rejected outside it. The two discrete notions previously defined outside
+  (`LTI.IsTrajectory`, `LTI.AsymptoticallyStable`) were inlined into their statements.
 * `decay a` must mean the same rate in both kinds; the discrete system therefore carries its
   sampling period `T`, and `decay a` reads as `e^{−a T k}`. The other sentences are scale-free.
 * The first theorem of the discrete layer is proved: a map differentiable at a fixed point with
@@ -149,7 +155,7 @@ mathematics, independent of the semantic decision:
 | Hurwitz iff the sampled exponential `e^{TA}` is Schur; exact ZOH discretization; sampled-data closed loop: uniform exponential decay, between samples included, iff the lifted matrix is Schur; computation delay by augmentation | `LTI/Sampling` |
 | Averaged model Hurwitz implies uniform exponential decay of the switched system, ripple included, for `T ≤ T₀`; conversely a `T`-uniform decay forces the average Hurwitz; averaging error `O(T)` on the whole half line | `Averaging/SwitchedStability` |
 | Slow switching breaks the transfer: two Hurwitz topologies with a Hurwitz average switch into an unstable system (a period-doubling flip, multiplier `−4 e^{−1/2}` at `T = 5`) | `Averaging/SwitchedStability` |
-| Discrete linearization (Schur Jacobian) | prototype, proved |
+| Discrete linearization (Schur Jacobian); instability when every eigenvalue lies outside the closed unit disk | `Map/Linearization` |
 | Instability for every small `T` when the average has an eigenvalue with positive real part | to do |
 | Quantized loops: ultimate bound from a Lyapunov decrease outside a ball | to do |
 | Saturated loops: region of attraction from a Lyapunov sublevel set | to do |
@@ -168,7 +174,7 @@ dynamics.
    loop with tolerance, Padé-delayed digital loop, voltage limit) and the generic bridges of §3.5
    (done: sampling and switching).
 1. Discrete-time kind: `Behaviour`, `Map/Defs` with its recognition rule, the discrete
-   linearization theorem. First families: the exact digital PI loop (ZOH, computation delay,
+   linearization theorem (`Map/Linearization`) — done. First families: the exact digital PI loop (ZOH, computation delay,
    Euler or Tustin integrator; its lifted matrix is `LTI.delayedLoopMatrix`) realizing the PI
    design, replacing the Padé surrogate; the EMT
    trapezoidal and backward-Euler discretizations realizing the RL and LCL plants (their stability
@@ -185,6 +191,6 @@ dynamics.
 ## 5. Decisions
 
 * Extending the shared semantic layer with system kinds (§3.1–3.2), including the recognition
-  rule for discrete behaviour.
+  rule for discrete behaviour: decided and done for the discrete kind.
 * Adding parameterized limit sentences to the sentence language (§3.3).
 * Later: hybrid time, which changes the single-time-axis rule.

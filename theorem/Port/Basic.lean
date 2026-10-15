@@ -112,9 +112,18 @@ end Port
 
 /-- A sentence about the flow holds on a system exactly when it holds for its zero-input field. -/
 @[simp, powerlib_foundation] theorem Sentence.holds_flow {n p : ℕ} (P : Flow.Property)
-    (s : Port.System n p) : (Sentence.flow P).holds s ↔ P.holds s.zeroInput 0 := Iff.rfl
+    (s : Port.System n p) : (Sentence.flow P).holds (s : Behaviour n p) ↔ P.holds s.zeroInput 0 :=
+  Iff.rfl
 
 @[simp, powerlib_foundation] theorem Sentence.holds_passive {n p : ℕ} (s : Port.System n p) :
-    Sentence.passive.holds s ↔ s.Passive := Iff.rfl
+    Sentence.passive.holds (s : Behaviour n p) ↔ s.Passive := Iff.rfl
+
+@[simp, powerlib_foundation] theorem Sentence.holds_flow_discrete {n p : ℕ} (P : Flow.Property)
+    (s : Map.System n p) :
+    (Sentence.flow P).holds (Behaviour.discrete s) ↔ P.holdsMap s.period s.zeroInput 0 :=
+  Iff.rfl
+
+@[simp, powerlib_foundation] theorem Sentence.holds_passive_discrete {n p : ℕ}
+    (s : Map.System n p) : Sentence.passive.holds (Behaviour.discrete s) ↔ s.Passive := Iff.rfl
 
 end powerlib
