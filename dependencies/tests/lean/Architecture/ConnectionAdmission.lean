@@ -1,6 +1,6 @@
 import theorem.Circuits.RL
 import theorem.Architecture
-import dependencies.tests.lean.ConnectionFamilyFixture
+import dependencies.tests.lean.Architecture.ConnectionFamilyFixture
 
 open powerlib powerlib.TMIO
 

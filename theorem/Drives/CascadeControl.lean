@@ -8,7 +8,8 @@ import theorem.Numerics.StabilityFunctions
 The IMC-tuned stator current loop of a machine drive as a linear family, with the speed-loop
 transfer function, the forward-Euler stability limit and the complex-vector current equation.
 
-Model boundary (IMC current-loop family).
+Model boundary.
+The IMC current-loop family:
 * Plant: one axis of the decoupled stator current loop, an RL load
   `L di/dt = v − R i` with `L > 0`, `R > 0` (for a machine: `L = σL_s` or `L_d`/`L_q`,
   `R = r_s'`, after ideal cross-coupling and back-EMF feedforward, see

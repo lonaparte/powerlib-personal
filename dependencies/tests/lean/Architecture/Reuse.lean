@@ -1,6 +1,6 @@
 import theorem.TMIO.ClaimElab
 import powerlib
-import dependencies.tests.lean.RegistryFixture
+import dependencies.tests.lean.Architecture.RegistryFixture
 
 -- Registered theorem discovery.
 namespace RegistryCurrent
@@ -66,7 +66,7 @@ run_cmd do
     throwError "Imported attribute metadata was omitted"
   let some imported := powerlib.Search.describe env `RegistryFixture.envelope |
     throwError "An imported tagged theorem lost its metadata"
-  unless imported.moduleName == `dependencies.tests.lean.RegistryFixture &&
+  unless imported.moduleName == `dependencies.tests.lean.Architecture.RegistryFixture &&
       imported.kind == some .foundation && imported.levelParams.length == 1 do
     throwError "Imported theorem origin, classification, or universe metadata changed"
   for (consumer, sources) in #[

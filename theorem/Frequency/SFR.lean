@@ -10,7 +10,8 @@ The third-order reheat-turbine SFR model and its second-order reduction as linea
 corrected state matrix, a Routh–Hurwitz stability condition, and the exact nadir of the reduced
 model.
 
-Model boundary (both models).
+Model boundary.
+Common to both models:
 * Continuous-time, linear, small-signal single-area model (the note's "one equivalent machine"
   premise), Kundur per-unit: `Δω` per-unit, `M = M_eff = 2 H_eq` [s], powers in system-base
   per-unit, generation-side balance `M Δω̇ = ΔP_m − ΔP_L − D Δω` (load increase positive).

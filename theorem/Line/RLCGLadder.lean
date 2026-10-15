@@ -341,15 +341,6 @@ private theorem losslessLadder_energy_conserved
   have h := (ladderPH p N).kyp.storage_conserved (lossless_lyapunov _ hR0) hφ t ht
   simpa only [ladderPH, DiagonalPH.toPH_storage] using h
 
-@[powerlib_foundation] theorem const_of_hasDerivWithinAt_Icc_zero {f : ℝ → ℝ} {a b : ℝ}
-    (hf : ∀ t ∈ Set.Icc a b, HasDerivWithinAt f 0 (Set.Icc a b) t) :
-    ∀ t ∈ Set.Icc a b, f t = f a := by
-  apply constant_of_has_deriv_right_zero
-  · exact fun t ht => (hf t ht).continuousWithinAt
-  · intro t ht
-    apply (hf t ⟨ht.1, ht.2.le⟩).mono_of_mem_nhdsWithin
-    exact Filter.mem_of_superset (Icc_mem_nhdsGE ht.2) (Set.Icc_subset_Icc_left ht.1)
-
 end Ladder
 
 end powerlib.Line

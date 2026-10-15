@@ -6,8 +6,8 @@ import theorem.Attributes
 The forward-Euler prediction model of PMSM stator currents, deadbeat control on that model, and
 the existence of a finite-control-set (FCS-MPC) minimiser.
 
-Model boundary (deadbeat tracking: `deadbeat_tracks_next_sample`,
-`deadbeat_delayCompensated_tracks`).
+Model boundary.
+Deadbeat tracking (`deadbeat_tracks_next_sample`, `deadbeat_delayCompensated_tracks`):
 * Plant: PMSM stator currents in the rotor dq frame, state order `(i_d, i_q)`, motor
   convention, `L_d di_d/dt = v_d − r_s i_d + ω_e L_q i_q`,
   `L_q di_q/dt = v_q − r_s i_q − ω_e L_d i_d − ω_e ψ_f` (FOC note §1.6). Parameters `r_s`,

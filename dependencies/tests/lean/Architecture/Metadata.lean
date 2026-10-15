@@ -135,7 +135,7 @@ run_cmd do
   unless powerlib.Registry.kindOf? env `Nat.add_assoc |>.isNone do
     throwError "An upstream theorem was relabeled"
   unless !powerlib.Registry.isFirstPartyModule `External.Consumer &&
-      powerlib.Registry.isFirstPartyModule `dependencies.tests.lean.Metadata do
+      powerlib.Registry.isFirstPartyModule `dependencies.tests.lean.Architecture.Metadata do
     throwError "First-party classification enforcement has the wrong scope"
   for name in names do
     unless powerlib.Registry.kindOf? env name == some .foundation do

@@ -7,7 +7,8 @@ The seven-state dq machine connected through a capacitive node and an RL link to
 as a nonlinear port-Hamiltonian system; the note's model and its relative-angle correction each
 get a passivity family.
 
-Model boundary (T-power-system-ph §1.5.1).
+Model boundary.
+As in T-power-system-ph §1.5.1:
 * One seven-state dq synchronous machine (the `syncMachine7` model of
   `theorem/Synchronous/PH.lean`: linear magnetics, inverse inductance `Γ ≻ 0`, IN-positive
   stator currents, damping `D` on `ω_r`), one network node with shunt capacitance `C > 0`
