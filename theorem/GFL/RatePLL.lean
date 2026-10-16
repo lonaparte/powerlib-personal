@@ -6,6 +6,7 @@ import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Coordinates
 import theorem.Spectral.Local
+import theorem.Dynamics.Pendulum
 
 /-! # Rate-coupled two-state GFL PLL (form-C-lite, frozen `I_d`)
 
@@ -655,8 +656,8 @@ private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 2) :
   ring
 
 /-- The undamped PLL is Lyapunov stable at `θ* = 0`: the pendulum energy `1 − cos θ + x²/2` is
-conserved and has a strict minimum on `|θ| < π`. Its Jacobian `[[0, 1], [−1, 0]]` has trace `0`,
-so it meets no stable-Jacobian requirement. -/
+conserved and has a strict minimum on `|θ| < π` (`Dynamics.pendulumEnergy_pos`). Its Jacobian
+`[[0, 1], [−1, 0]]` has trace `0`, so it meets no stable-Jacobian requirement. -/
 @[powerlib_domain] theorem undampedPLL_mem_den_lyapunovStable :
     connection% (undampedPLL ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -675,24 +676,10 @@ so it meets no stable-Jacobian requirement. -/
       fun y => (pendulumEnergy_hasFDerivAt y).differentiableAt, by simp,
       fun y hy hne => ?_, fun y _ => ?_⟩
   · have hy' : |y 0| < Real.pi := hy
-    by_cases h0 : y 0 = 0
-    · have h1 : y 1 ≠ 0 := by
-        intro h1
-        apply hne
-        ext i
-        fin_cases i
-        · exact h0
-        · exact h1
-      have : 0 < 1 / 2 * y 1 ^ 2 := by positivity
-      simp only [h0, Real.cos_zero, sub_self, zero_add]
-      exact this
-    · have hcos : Real.cos (y 0) < 1 := by
-        refine lt_of_le_of_ne (Real.cos_le_one _) fun h => h0 ?_
-        refine (Real.cos_eq_one_iff_of_lt_of_lt ?_ ?_).mp h
-        · linarith [neg_abs_le (y 0), Real.pi_pos]
-        · linarith [le_abs_self (y 0), Real.pi_pos]
-      have : 0 ≤ 1 / 2 * y 1 ^ 2 := by positivity
-      linarith
+    have hw : 1 / 2 * (‖y - 0‖ ^ 2 - y 0 ^ 2) ≤ 1 / 2 * y 1 ^ 2 := by
+      simp [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
+    exact Dynamics.pendulumEnergy_pos 0 one_half_pos (by simp) hw
+      (by linarith [Real.pi_pos]) hne
   · rw [(pendulumEnergy_hasFDerivAt y).fderiv, undampedPLL_field]
     simp [mul_comm]
 

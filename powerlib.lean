@@ -84,6 +84,7 @@ import theorem.Dynamics.LaSalle.Periodic
 import theorem.Dynamics.LaSalle.Passivity
 import theorem.Dynamics.State
 import theorem.Dynamics.Transport
+import theorem.Dynamics.Pendulum
 import theorem.Estimation.Bayes
 import theorem.Estimation.BayesKL
 import theorem.Estimation.CondExpL2

@@ -6,6 +6,7 @@ import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
 import theorem.Spectral.Family
 import theorem.Dynamics.Calculus
+import theorem.Spectral.Hub
 
 /-! # SRF-PLL as a nonlinear port-Hamiltonian system
 
@@ -54,12 +55,15 @@ autonomous PI-PLL family `PLL.PIPLL.family` (it has a port); on flow sentences t
 (`mem_den_flow_iff_srf`, a comparison of the two semantics connections). Requirements are
 static: `V, K_i ≥ 0`; a well bottom (`V, K_i > 0`, `cos θ* = 1`); positive loop gains at a well
 bottom; or `V K_i > 0` at an anti-phase point (`cos θ* = −1`). Connection conclusions: soundness
-(`chain_le_semantics`), passivity from nonnegative energy (`mem_den_passive`), Lyapunov
+(`chain_le_semantics`; local exponential stability and instability from the PI-PLL's soundness
+through the hub, `Spectral.realize_subset_den_of_hub`), passivity from nonnegative energy
+(`mem_den_passive`), Lyapunov
 stability of a well bottom from the shifted Hamiltonian (`mem_den_lyapunovStable`, at every well
 bottom and every `K_p ≥ 0`), and the zero-input linearization results
 (`mem_den_locallyExponentiallyStable`, `mem_den_unstable_antiPhase`). Within nonnegative energy
-the local exponential translation is exact (`exactUnder_locallyExponentiallyStable`, by the converse
-linearization theorem `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`); without it
+the local exponential translation is exact (`exactUnder_locallyExponentiallyStable`: the PI-PLL's
+exactness `PIPLL.exact_locallyExponentiallyStable`, by the converse linearization theorem, carried
+through the hub with `Spectral.exactUnder_of_hub`); without it
 the translation is not exact (`not_exact_locallyExponentiallyStable`: with `V = −1`,
 `K_p = K_i = 1` the anti-phase point `θ* = π` is locally exponentially stable). The instability
 translation is not exact (`not_exact_unstable`): instability is the failure of Lyapunov
@@ -399,37 +403,119 @@ same phase does. A comparison of the two semantics connections at the two member
   rw [Flow.Property.holds_shift_iff, srf_piPLLField, mul_div_cancel_left₀ _ hKi]
   rfl
 
+/-! ### Reading through the PI-PLL hub -/
+
+/-- The hub model of a pH model: the SRF member of the PI-PLL family with offset `K_i η*` about the
+same phase. -/
+private def toSRF (m : Model) : PIPLL.Model := srf m.V m.Kp m.Ki (m.Ki * m.ηs) m.θ
+
+/-- The reading through the hub holds for every model: for `K_i ≠ 0` it is `mem_den_flow_iff_srf`;
+for `K_i = 0` both fields ignore the integrator state, so the selected points `(θ*, η*)` and
+`(θ*, 0)` satisfy the same flow sentences. -/
+private theorem mem_den_flow_iff_toSRF (m : Model) (P : Flow.Property) :
+    m ∈ family.den (.flow P) ↔ toSRF m ∈ PIPLL.family.den (.flow P) := by
+  rcases ne_or_eq m.Ki 0 with hKi | hKi
+  · exact mem_den_flow_iff_srf m hKi P
+  rw [mem_den_flow_iff, PIPLL.family_isAutonomous.mem_den_flow, ← Flow.Property.holds_shift_iff]
+  congr! 1
+  funext z
+  ext i
+  fin_cases i <;>
+    simp [toSRF, srf, PIPLL.Model.field, PIPLL.Model.point, Model.point, hKi, mul_assoc]
+
+/-- The slope of the SRF member: `h'(θ*) = −V cos θ*`. -/
+private theorem toSRF_deriv (m : Model) :
+    deriv (toSRF m).h (toSRF m).θ = -m.V * Real.cos m.θ :=
+  PIPLL.srf_deriv _ _ _ _ _
+
 private theorem sin_eq_zero_of_cos_sq {θ : ℝ} (h : Real.cos θ ^ 2 = 1) : Real.sin θ = 0 := by
   have := Real.sin_sq_add_cos_sq θ
   exact pow_eq_zero_iff two_ne_zero |>.mp (by linarith)
 
+/-- With `V K_i > 0` at a well bottom or an anti-phase point (`cos² θ* = 1`) the SRF member is
+phase-locked. -/
+private theorem toSRF_phaseLocked {m : Model} (hVKi : 0 < m.V * m.Ki)
+    (hθ : Real.cos m.θ ^ 2 = 1) : PIPLL.Meets (toSRF m) .phaseLocked := by
+  refine ⟨show -m.V * Real.sin m.θ = 0 by rw [sin_eq_zero_of_cos_sq hθ, mul_zero], Or.inl ?_⟩
+  show m.Ki ≠ 0
+  rintro h0
+  rw [h0, mul_zero] at hVKi
+  exact lt_irrefl 0 hVKi
+
+/-- Positive loop gains at a well bottom give the PI-PLL's requirements of local exponential
+stability for the SRF member: phase-locked, with both slope-gain products `K_p (−V cos θ*)` and
+`K_i (−V cos θ*)` negative. -/
+private theorem toSRF_of_slopeStable {m : Model} (h : m ∈ TMIO.realize Meets {.slopeStable}) :
+    toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked, .slopeStable} := by
+  obtain ⟨hVKp, hVKi, hθ⟩ : Meets m .slopeStable := (TMIO.mem_realize _ _ _).mp h _ rfl
+  rw [TMIO.mem_realize]
+  rintro q (rfl | rfl)
+  · exact toSRF_phaseLocked hVKi (by rw [hθ]; norm_num)
+  · show m.Kp * deriv (toSRF m).h (toSRF m).θ < 0 ∧ m.Ki * deriv (toSRF m).h (toSRF m).θ < 0
+    rw [toSRF_deriv, hθ]
+    constructor <;> linarith [mul_comm m.V m.Kp, mul_comm m.V m.Ki]
+
+/-- Within nonnegative energy the converse holds: `K_i (−V cos θ*) < 0` with `V, K_i ≥ 0` gives
+`V > 0` and `cos θ* > 0`, so the phase-locked point is a well bottom with positive loop gains. -/
+private theorem slopeStable_of_toSRF {m : Model} (hn : Meets m .nonnegativeEnergy)
+    (h : toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked, .slopeStable}) :
+    m ∈ TMIO.realize Meets {.slopeStable} := by
+  obtain ⟨hV, hKi⟩ := hn
+  rw [TMIO.mem_realize] at h
+  have h0 : -m.V * Real.sin m.θ = 0 := (h .phaseLocked (by simp)).1
+  obtain ⟨h1, h2⟩ : m.Kp * deriv (toSRF m).h (toSRF m).θ < 0 ∧
+      m.Ki * deriv (toSRF m).h (toSRF m).θ < 0 := h .slopeStable (by simp)
+  rw [toSRF_deriv] at h1 h2
+  have hVpos : 0 < m.V := lt_of_le_of_ne hV fun hV0 => by rw [← hV0] at h2; simp at h2
+  have hcos : 0 < Real.cos m.θ := by
+    by_contra hc
+    have := mul_nonneg hKi (mul_nonneg hVpos.le (neg_nonneg.mpr (not_lt.mp hc)))
+    linarith
+  have hs : Real.sin m.θ = 0 :=
+    (mul_eq_zero.mp (show m.V * Real.sin m.θ = 0 by linarith)).resolve_left hVpos.ne'
+  have hc1 : Real.cos m.θ = 1 := by
+    have := Real.sin_sq_add_cos_sq m.θ
+    rw [hs] at this
+    nlinarith
+  rw [hc1] at h1 h2
+  rw [TMIO.mem_realize]
+  rintro q rfl
+  exact ⟨by linarith [mul_comm m.V m.Kp], by linarith [mul_comm m.V m.Ki], hc1⟩
+
+/-- A saddle gives the PI-PLL's requirements of instability for the SRF member: phase-locked,
+with the slope-gain product `K_i (−V cos θ*) = V K_i` positive. -/
+private theorem toSRF_of_saddle {m : Model} (h : m ∈ TMIO.realize Meets {.saddle}) :
+    toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked, .slopeUnstable} := by
+  obtain ⟨hVKi, hθ⟩ : Meets m .saddle := (TMIO.mem_realize _ _ _).mp h _ rfl
+  rw [TMIO.mem_realize]
+  rintro q (rfl | rfl)
+  · exact toSRF_phaseLocked hVKi (by rw [hθ]; norm_num)
+  · show 0 < m.Ki * deriv (toSRF m).h (toSRF m).θ ∨ 0 < m.Kp * deriv (toSRF m).h (toSRF m).θ
+    rw [toSRF_deriv, hθ]
+    exact Or.inl (by linarith [mul_comm m.V m.Ki])
+
+/-- Positive loop gains at a well bottom give local exponential stability through the hub: the
+SRF member meets the PI-PLL's translated requirements, which are sound
+(`PIPLL.chain_le_semantics`). -/
+private theorem les_sound :
+    TMIO.realize Meets {.slopeStable} ⊆ family.den (.flow .locallyExponentiallyStable) :=
+  Spectral.realize_subset_den_of_hub (F := family) (G := PIPLL.family) toSRF
+    (fun _ => toSRF_of_slopeStable) (fun m _ => (mem_den_flow_iff_toSRF m _).mpr)
+    (Family.chain_le_semantics_iff.mp PIPLL.chain_le_semantics (.flow .locallyExponentiallyStable))
+
+/-- A saddle gives instability through the hub. -/
+private theorem unstable_sound : TMIO.realize Meets {.saddle} ⊆ family.den (.flow .unstable) :=
+  Spectral.realize_subset_den_of_hub (F := family) (G := PIPLL.family) toSRF
+    (fun _ => toSRF_of_saddle) (fun m _ => (mem_den_flow_iff_toSRF m _).mpr)
+    (Family.chain_le_semantics_iff.mp PIPLL.chain_le_semantics (.flow .unstable))
+
 private theorem les_of_meets {m : Model} (h : Meets m .slopeStable) :
-    m ∈ family.den (.flow .locallyExponentiallyStable) := by
-  obtain ⟨hVKp, hVKi, hθ⟩ := h
-  have hKi : m.Ki ≠ 0 := by rintro h0; rw [h0, mul_zero] at hVKi; exact lt_irrefl 0 hVKi
-  have hs : Real.sin m.θ = 0 := sin_eq_zero_of_cos_sq (by rw [hθ]; norm_num)
-  refine (mem_den_flow_iff_srf m hKi _).mpr
-    (PIPLL.mem_den_locallyExponentiallyStable _ ?_ ?_ ?_)
-  · change -m.V * Real.sin m.θ = 0
-    rw [hs, mul_zero]
-  · rw [PIPLL.srf_deriv, hθ]
-    show m.Kp * (-m.V * 1) < 0
-    linarith [mul_comm m.V m.Kp]
-  · rw [PIPLL.srf_deriv, hθ]
-    show m.Ki * (-m.V * 1) < 0
-    linarith [mul_comm m.V m.Ki]
+    m ∈ family.den (.flow .locallyExponentiallyStable) :=
+  les_sound (by simpa using h)
 
 private theorem unstable_of_meets {m : Model} (h : Meets m .saddle) :
-    m ∈ family.den (.flow .unstable) := by
-  obtain ⟨hVKi, hθ⟩ := h
-  have hKi : m.Ki ≠ 0 := by rintro h0; rw [h0, mul_zero] at hVKi; exact lt_irrefl 0 hVKi
-  have hs : Real.sin m.θ = 0 := sin_eq_zero_of_cos_sq (by rw [hθ]; norm_num)
-  refine (mem_den_flow_iff_srf m hKi _).mpr (PIPLL.mem_den_unstable _ ?_ ?_)
-  · change -m.V * Real.sin m.θ = 0
-    rw [hs, mul_zero]
-  · rw [PIPLL.srf_deriv, hθ]
-    show 0 < m.Ki * (-m.V * -1)
-    linarith [mul_comm m.V m.Ki]
+    m ∈ family.den (.flow .unstable) :=
+  unstable_sound (by simpa using h)
 
 private theorem passive_of_meets {m : Model} (h : Meets m .nonnegativeEnergy) :
     m ∈ family.den .passive :=
@@ -444,28 +530,20 @@ private theorem lyapunovStable_of_meets {m : Model} (h : Meets m .wellBottom) :
 /-- Every translation of the SRF-PLL pH family is sound: nonnegative energy proves passivity
 (storage `H`), a well bottom proves Lyapunov stability (strict local minimum of `H`), positive
 loop gains at a well bottom prove local exponential stability and a saddle proves instability
-(the linearization theorems through the PI-PLL family). -/
+(the soundness of the PI-PLL family, `PIPLL.chain_le_semantics`, read through the hub,
+`Spectral.realize_subset_den_of_hub`). -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  have hnone : (∀ q, Meets m q) → False := fun h => by
-    have hm' : m ∈ TMIO.realize Meets Set.univ := (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    rw [realize_univ] at hm'
-    exact hm'
+  refine Spectral.chain_le_semantics_of_localTable (Rl := {Requirement.wellBottom})
+    (Rs := {Requirement.slopeStable}) (Ru := {Requirement.saddle})
+    (Rp := {Requirement.nonnegativeEnergy}) (fun s => ?_) realize_univ
+    (fun m hm => lyapunovStable_of_meets ((TMIO.mem_realize _ _ _).mp hm .wellBottom rfl))
+    les_sound unstable_sound
+    fun m hm => passive_of_meets ((TMIO.mem_realize _ _ _).mp hm .nonnegativeEnergy rfl)
   rcases s with P | _
-  · cases P
-    case lyapunovStable => exact lyapunovStable_of_meets (hm .wellBottom rfl)
-    case locallyAsymptoticallyStable =>
-      have h := les_of_meets (hm .slopeStable rfl)
-      rw [family_isNonlinearPH.mem_den_flow] at h ⊢
-      exact Flow.locallyExponentiallyStable_localAsymptoticStable h
-    case locallyExponentiallyStable => exact les_of_meets (hm .slopeStable rfl)
-    case unstable => exact unstable_of_meets (hm .saddle rfl)
-    all_goals exact (hnone fun q => hm q trivial).elim
-  · exact passive_of_meets (hm .nonnegativeEnergy rfl)
+  · cases P <;> rfl
+  · rfl
 
 /-- Passivity of the SRF-PLL from the frequency-offset port to `y = h(θ)`, with storage `H ≥ 0`
 (`V, K_i ≥ 0`, `K_p ≥ 0`), at every set point and selected phase. -/
@@ -495,77 +573,20 @@ loop gains at a well bottom prove local exponential stability and a saddle prove
 
 /-! ### Exactness of the local exponential translation -/
 
-/-- Converse linearization at `(θ*, η*)`: local exponential stability holds exactly when
-`V sin θ* = 0` and both slope-gain products `K_p V cos θ*`, `K_i V cos θ*` are positive. -/
-private theorem mem_den_les_iff {m : Model} :
-    m ∈ family.den (.flow .locallyExponentiallyStable) ↔
-      m.V * Real.sin m.θ = 0 ∧ 0 < m.Kp * (m.V * Real.cos m.θ) ∧
-        0 < m.Ki * (m.V * Real.cos m.θ) := by
-  rw [mem_den_flow_iff]
-  change LocallyExponentiallyStable _ _ ↔ _
-  have hJac := fderiv_srfField m.V m.Kp m.Ki (m.Ki * m.ηs) m.point
-  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ (contDiff_srfField _ _ _ _)
-    hJac, piPLLJacobian_isHurwitz_iff]
-  have hp0 : m.point 0 = m.θ := by simp [Model.point, PhasePlane.mk]
-  have hp1 : m.point 1 = m.ηs := by simp [Model.point, PhasePlane.mk]
-  have hz : srfField m.V m.Kp m.Ki (m.Ki * m.ηs) m.point = 0 ↔ m.V * Real.sin m.θ = 0 := by
-    constructor
-    · intro h
-      have h1 := congrArg (fun y : State 2 => y 1) h
-      simp only [srfField_apply_one, hp0, PiLp.zero_apply, neg_eq_zero] at h1
-      exact h1
-    · intro h
-      ext i
-      fin_cases i
-      · simp [hp0, hp1, mul_assoc, h]
-      · simp [hp0, h]
-  rw [hz, hp0]
-  constructor
-  · rintro ⟨h0, h1, h2⟩
-    exact ⟨h0, by linarith, by linarith⟩
-  · rintro ⟨h0, h1, h2⟩
-    exact ⟨h0, by linarith, by linarith⟩
-
 /-- Within nonnegative energy (`V, K_i ≥ 0`), local exponential stability is translated exactly:
 a model is locally exponentially stable at `(θ*, η*)` exactly when `V K_p > 0`, `V K_i > 0` and
-`cos θ* = 1`. -/
+`cos θ* = 1`. The exactness of the PI-PLL's translation (`PIPLL.exact_locallyExponentiallyStable`,
+converse linearization) passes through the hub (`Spectral.exactUnder_of_hub`): within nonnegative
+energy these are exactly the PI-PLL's requirements on the SRF member. -/
 @[powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
     connection% (family.ExactUnder {.nonnegativeEnergy} (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
-  change TMIO.realize Meets ({.slopeStable} ∪ {.nonnegativeEnergy}) = _
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_singleton_iff, Set.mem_inter_iff]
-  constructor
-  · intro h
-    obtain ⟨hVKp, hVKi, hθ⟩ : Meets m .slopeStable := h .slopeStable (by simp)
-    have hn : Meets m .nonnegativeEnergy := h .nonnegativeEnergy (by simp)
-    refine ⟨mem_den_les_iff.mpr ⟨?_, ?_, ?_⟩, fun q hq => by rw [hq]; exact hn⟩
-    · rw [sin_eq_zero_of_cos_sq (by rw [hθ]; norm_num), mul_zero]
-    · rw [hθ]; linarith [mul_comm m.V m.Kp]
-    · rw [hθ]; linarith [mul_comm m.V m.Ki]
-  · rintro ⟨hd, hI⟩ q hq
-    have hn : Meets m .nonnegativeEnergy := hI .nonnegativeEnergy rfl
-    obtain ⟨hV, hKi⟩ := hn
-    obtain ⟨h0, h1, h2⟩ := mem_den_les_iff.mp hd
-    have hKp := m.damping
-    have hVpos : 0 < m.V := by
-      rcases hV.lt_or_eq with h | h
-      · exact h
-      · rw [← h] at h1; simp at h1
-    have hcos : 0 < Real.cos m.θ := by
-      by_contra hc
-      have hle : m.V * Real.cos m.θ ≤ 0 := mul_nonpos_of_nonneg_of_nonpos hVpos.le (not_lt.mp hc)
-      nlinarith
-    have hs : Real.sin m.θ = 0 := (mul_eq_zero.mp h0).resolve_left hVpos.ne'
-    have hc1 : Real.cos m.θ = 1 := by
-      have := Real.sin_sq_add_cos_sq m.θ
-      rw [hs] at this
-      nlinarith
-    rcases hq with rfl | rfl
-    · show 0 < m.V * m.Kp ∧ 0 < m.V * m.Ki ∧ Real.cos m.θ = 1
-      rw [hc1] at h1 h2
-      exact ⟨by linarith [mul_comm m.V m.Kp], by linarith [mul_comm m.V m.Ki], hc1⟩
-    · exact ⟨hV, hKi⟩
+  have hG := PIPLL.exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hG ⊢
+  exact Spectral.exactUnder_of_hub (G := PIPLL.family) (ΔG := ∅) toSRF (fun _ _ => by simp)
+    (fun m _ => mem_den_flow_iff_toSRF m _)
+    (fun m hm => ⟨toSRF_of_slopeStable,
+      slopeStable_of_toSRF ((TMIO.mem_realize _ _ _).mp hm .nonnegativeEnergy rfl)⟩)
+    (Family.exactUnder_empty_iff.mpr hG)
 
 /-- A negative amplitude reverses the stable branch: `V = −1`, `K_p = K_i = 1` at the anti-phase
 point `θ* = π`. -/
@@ -575,7 +596,9 @@ def reversedAmplitude : Model := ⟨-1, 1, 1, 0, Real.pi, zero_le_one⟩
 @[powerlib_domain] theorem reversedAmplitude_mem_den_locallyExponentiallyStable :
     connection% (reversedAmplitude ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  refine mem_den_les_iff.mpr ⟨?_, ?_, ?_⟩ <;> simp [reversedAmplitude]
+  refine (mem_den_flow_iff_toSRF _ _).mpr (PIPLL.mem_den_locallyExponentiallyStable _ ?_ ?_ ?_)
+  · simp [toSRF, srf, reversedAmplitude]
+  all_goals rw [toSRF_deriv]; simp [toSRF, srf, reversedAmplitude]
 
 /-- Without the context of nonnegative energy the local exponential translation is sound but not
 exact: the reversed-amplitude model is locally exponentially stable at an anti-phase point. -/
@@ -686,24 +709,12 @@ conserves the Hamiltonian `V (1 − cos θ) + ½ K_i (η − η*)²`
 (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
 @[powerlib_domain] theorem exactUnder_locallyAsymptoticallyStable :
     connection% (family.ExactUnder {.nonnegativeEnergy} (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
-  change TMIO.realize Meets ({.slopeStable} ∪ {.nonnegativeEnergy}) = _
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_singleton_iff, Set.mem_inter_iff]
-  constructor
-  · intro h
-    have hs : Meets m .slopeStable := h .slopeStable (by simp)
-    have hn : Meets m .nonnegativeEnergy := h .nonnegativeEnergy (by simp)
-    have hles := les_of_meets hs
-    refine ⟨?_, fun q hq => by rw [hq]; exact hn⟩
-    rw [family_isNonlinearPH.mem_den_flow] at hles ⊢
-    exact Flow.locallyExponentiallyStable_localAsymptoticStable hles
-  · rintro ⟨hd, hI⟩ q hq
-    have hn : Meets m .nonnegativeEnergy := hI .nonnegativeEnergy rfl
-    have hs := las_requirements hn (mem_den_flow_iff.mp hd)
-    rcases hq with rfl | rfl
-    · exact hs
-    · exact hn
+  unfold powerlib.TMIO.Statement
+  refine Spectral.exactUnder_iff_forall.mpr fun m hm => ⟨fun h =>
+    Spectral.den_locallyExponentiallyStable_subset_las (les_sound h), fun h => ?_⟩
+  show m ∈ TMIO.realize Meets {.slopeStable}
+  simpa using las_requirements ((TMIO.mem_realize _ _ _).mp hm .nonnegativeEnergy rfl)
+    (mem_den_flow_iff.mp h)
 
 /-- Without the context of nonnegative energy the local asymptotic translation is sound but not
 exact: the reversed-amplitude model is locally exponentially, hence asymptotically, stable at an
@@ -768,8 +779,8 @@ def offEquilibrium : Model := ⟨1, 0, 1, 0, Real.pi / 2, le_rfl⟩
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero (contDiff_srfField _ _ _ _)
-    fun h => ?_)
+  refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff)
+    (contDiff_srfField _ _ _ _) fun h => ?_
   have := congrArg (fun y : State 2 => y 1) h
   simp [offEquilibrium, Model.point, PhasePlane.mk] at this
 

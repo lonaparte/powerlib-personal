@@ -6,6 +6,7 @@ import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Coordinates
 import theorem.Spectral.Local
+import theorem.Dynamics.Pendulum
 
 /-! # Four-state GFL with PLL and dc-bus voltage loop
 
@@ -786,7 +787,8 @@ private theorem lsEnergy_hasFDerivAt (z : Dynamics.State 4) :
 energy `1 − cos θ + x²/2` of the PLL is conserved, and the dc quadratic `u² + u η + (3/2) η²`
 (`u = V − 1`) does not increase while the loop gain `cos θ / V` stays in `[3/4, 5/4]`
 (`|θ| < 1/2`, `|V − 1| < 1/10`). The cascade coupling `cos θ` therefore needs no separate
-input-to-state argument: the sum is a local Lyapunov function. -/
+input-to-state argument: the sum is a local Lyapunov function, positive away from the point
+(`Dynamics.pendulumEnergy_pos`). -/
 @[powerlib_domain] theorem undampedPLL_mem_den_lyapunovStable :
     connection% (undampedPLL ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -804,40 +806,14 @@ input-to-state argument: the sum is a local Lyapunov function. -/
       continuous_iff_continuousAt.mpr fun y => (lsEnergy_hasFDerivAt y).continuousAt,
       fun y => (lsEnergy_hasFDerivAt y).differentiableAt,
       by simp [lsEnergy, opPoint, undampedPLL], fun y hy hne => ?_, fun y hy => ?_⟩
-  · obtain ⟨hy0, hy2⟩ := hy
-    have hq : 0 ≤ (y 2 - 1) ^ 2 + (y 2 - 1) * y 3 + 3 / 2 * y 3 ^ 2 := by
-      nlinarith [sq_nonneg (y 2 - 1 + y 3 / 2), sq_nonneg (y 3)]
-    have hcos : Real.cos (y 0) ≤ 1 := Real.cos_le_one _
-    have h1 : 0 ≤ 1 / 2 * y 1 ^ 2 := by positivity
+  · have hy0 : |y 0| < 1 / 2 := hy.1
+    have hw : 1 / 2 * (‖y - opPoint undampedPLL.θ‖ ^ 2 - y 0 ^ 2) ≤
+        1 / 2 * y 1 ^ 2 + ((y 2 - 1) ^ 2 + (y 2 - 1) * y 3 + 3 / 2 * y 3 ^ 2) := by
+      simp [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four, opPoint, undampedPLL]
+      nlinarith [sq_nonneg (y 2 - 1 + y 3), sq_nonneg (y 3)]
     unfold lsEnergy
-    by_cases h0 : y 0 = 0
-    · by_cases h1' : y 1 = 0
-      · have h23 : y 2 - 1 ≠ 0 ∨ y 3 ≠ 0 := by
-          by_contra h
-          push Not at h
-          apply hne
-          ext i
-          fin_cases i
-          · simp [opPoint, undampedPLL, h0]
-          · simp [opPoint, undampedPLL, h1']
-          · simp [opPoint, undampedPLL]; linarith [h.1]
-          · simp [opPoint, undampedPLL, h.2]
-        have hq' : 0 < (y 2 - 1) ^ 2 + (y 2 - 1) * y 3 + 3 / 2 * y 3 ^ 2 := by
-          rcases h23 with h | h
-          · have : 0 < (y 2 - 1) ^ 2 := by positivity
-            nlinarith [sq_nonneg (y 2 - 1 + y 3 / 2), sq_nonneg (y 3)]
-          · have : 0 < y 3 ^ 2 := by positivity
-            nlinarith [sq_nonneg (y 2 - 1 + y 3 / 2), sq_nonneg (y 3)]
-        linarith
-      · have : 0 < 1 / 2 * y 1 ^ 2 := by positivity
-        linarith
-    · have hlt : Real.cos (y 0) < 1 := by
-        have := Real.one_sub_sq_div_two_lt_cos h0
-        refine lt_of_le_of_ne hcos fun h => h0 ?_
-        refine (Real.cos_eq_one_iff_of_lt_of_lt ?_ ?_).mp h
-        · linarith [neg_abs_le (y 0), Real.two_le_pi]
-        · linarith [le_abs_self (y 0), Real.two_le_pi]
-      linarith
+    linarith [Dynamics.pendulumEnergy_pos 0 one_half_pos (by simp [opPoint, undampedPLL]) hw
+      (by linarith [Real.two_le_pi]) hne]
   · obtain ⟨hy0, hy2⟩ := hy
     rw [(lsEnergy_hasFDerivAt y).fderiv, undampedPLL_field]
     simp

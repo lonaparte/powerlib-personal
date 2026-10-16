@@ -6,6 +6,7 @@ import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Coordinates
 import theorem.Spectral.Local
+import theorem.Dynamics.Pendulum
 
 /-! # Quasi-static three-state GFL: PLL + active-power dispatch loop
 
@@ -630,8 +631,9 @@ private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 3) :
   ring
 
 /-- The undamped PLL with a frozen dispatch loop is Lyapunov stable: the energy
-`1 − cos θ + x²/2 + I_d²/2` is conserved and has a strict minimum on `|θ| < π`. Its Jacobian has
-trace `0`, so it meets no Routh–Hurwitz requirement. -/
+`1 − cos θ + x²/2 + I_d²/2` is conserved and has a strict minimum on `|θ| < π`
+(`Dynamics.pendulumEnergy_pos`). Its Jacobian has trace `0`, so it meets no Routh–Hurwitz
+requirement. -/
 @[powerlib_domain] theorem undampedPLL_mem_den_lyapunovStable :
     connection% (undampedPLL ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -651,30 +653,11 @@ trace `0`, so it meets no Routh–Hurwitz requirement. -/
       fun y => (pendulumEnergy_hasFDerivAt y).differentiableAt, by simp,
       fun y hy hne => ?_, fun y _ => ?_⟩
   · have hy' : |y 0| < Real.pi := hy
-    have h1 : 0 ≤ 1 / 2 * y 1 ^ 2 := by positivity
-    have h2 : 0 ≤ 1 / 2 * y 2 ^ 2 := by positivity
-    by_cases h0 : y 0 = 0
-    · have h12 : y 1 ≠ 0 ∨ y 2 ≠ 0 := by
-        by_contra h
-        push Not at h
-        apply hne
-        ext i
-        fin_cases i
-        · exact h0
-        · exact h.1
-        · exact h.2
-      rw [h0, Real.cos_zero, sub_self, zero_add]
-      rcases h12 with h | h
-      · have : 0 < 1 / 2 * y 1 ^ 2 := by positivity
-        linarith
-      · have : 0 < 1 / 2 * y 2 ^ 2 := by positivity
-        linarith
-    · have hcos : Real.cos (y 0) < 1 := by
-        refine lt_of_le_of_ne (Real.cos_le_one _) fun h => h0 ?_
-        refine (Real.cos_eq_one_iff_of_lt_of_lt ?_ ?_).mp h
-        · linarith [neg_abs_le (y 0), Real.pi_pos]
-        · linarith [le_abs_self (y 0), Real.pi_pos]
+    have hw : 1 / 2 * (‖y - 0‖ ^ 2 - y 0 ^ 2) ≤ 1 / 2 * y 1 ^ 2 + 1 / 2 * y 2 ^ 2 := by
+      simp [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three]
       linarith
+    linarith [Dynamics.pendulumEnergy_pos 0 one_half_pos (by simp) hw
+      (by linarith [Real.pi_pos]) hne]
   · rw [(pendulumEnergy_hasFDerivAt y).fderiv, undampedPLL_field]
     simp [mul_comm]
 
