@@ -13,7 +13,10 @@ Results.
 * `Map.System.autonomous_passive`: a discrete system without ports is passive.
 * `Map.LyapunovStable.fixed`: a Lyapunov stable point is fixed.
 * `Map.LocallyExponentiallyStable.lyapunovStable`, `.localAsymptoticStable`: geometric decay
-  gives Lyapunov and local asymptotic stability. -/
+  gives Lyapunov and local asymptotic stability.
+* `Map.GloballyExponentiallyStable.locallyExponentiallyStable`, `.globallyAsymptoticallyStable`,
+  `.sampledContraction`: a global geometric estimate gives the local one, global asymptotic
+  stability and sampled contraction (the discrete counterparts of `theorem/Flow/Basic.lean`). -/
 
 noncomputable section
 
@@ -69,6 +72,35 @@ open Filter Topology
     have := (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1).const_mul C
     simpa using this.mul_const ‖y - x‖
   exact squeeze_zero (fun _ => norm_nonneg _) (fun k => hb y hy k) hlim
+
+/-- A global geometric estimate is in particular a local one. -/
+@[powerlib_foundation] theorem GloballyExponentiallyStable.locallyExponentiallyStable
+    {F : ℝⁿ → ℝⁿ} {x : ℝⁿ} (h : GloballyExponentiallyStable F x) :
+    LocallyExponentiallyStable F x := by
+  obtain ⟨-, C, ρ, hC, hρ0, hρ1, hb⟩ := h
+  exact ⟨1, C, ρ, one_pos, hC, hρ0, hρ1, fun y _ k => hb y k⟩
+
+/-- A global geometric estimate gives global asymptotic stability. -/
+@[powerlib_foundation] theorem GloballyExponentiallyStable.globallyAsymptoticallyStable
+    {F : ℝⁿ → ℝⁿ} {x : ℝⁿ} (h : GloballyExponentiallyStable F x) :
+    GloballyAsymptoticallyStable F x := by
+  refine ⟨h.1, h.locallyExponentiallyStable.lyapunovStable, fun y => ?_⟩
+  obtain ⟨-, C, ρ, -, hρ0, hρ1, hb⟩ := h
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  have hlim : Tendsto (fun k : ℕ => C * ρ ^ k * ‖y - x‖) atTop (𝓝 0) := by
+    have := (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1).const_mul C
+    simpa using this.mul_const ‖y - x‖
+  exact squeeze_zero (fun _ => norm_nonneg _) (fun k => hb y k) hlim
+
+/-- A global geometric estimate gives sampled contraction: the overshoot `C` is eventually beaten
+by `ρ^k`. -/
+@[powerlib_foundation] theorem GloballyExponentiallyStable.sampledContraction {F : ℝⁿ → ℝⁿ}
+    {x : ℝⁿ} (h : GloballyExponentiallyStable F x) : SampledContraction F x := by
+  obtain ⟨-, C, ρ, -, hρ0, hρ1, hb⟩ := h
+  have hlim : Tendsto (fun k : ℕ => C * ρ ^ k) atTop (𝓝 0) := by
+    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1).const_mul C
+  obtain ⟨k, hk⟩ := ((eventually_gt_atTop 0).and (hlim.eventually (gt_mem_nhds one_pos))).exists
+  exact ⟨k, hk.1, C * ρ ^ k, hk.2, fun y => hb y k⟩
 
 end Map
 

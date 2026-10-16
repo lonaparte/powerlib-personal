@@ -131,10 +131,6 @@ def matchedSwing (C G η idc : ℝ) (ix : ℝ → ℝ → ℝ) : State 2 → Sta
   · simp [transportField, matchingField, matchedSwing, swingField]
     field_simp
 
-private lemma affineCoord_scale {η : ℝ} (hη : η ≠ 0) (x : State 2) :
-    affineCoord (scaleCoord hη) 0 x = scaleCoord hη x := by
-  simp [affineCoord]
-
 /-- Solutions correspond one to one: `φ = (θ, v)` solves the matching model on `[a, b]` iff
 `(θ, η v)` solves the matched swing model.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
@@ -146,12 +142,12 @@ private theorem matching_trajectory_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη :
   · intro h
     have h' := isTrajectoryOn_transport (scaleCoord hη) 0 h
     rw [matching_eq_swing hC hη] at h'
-    simpa [affineCoord_scale] using h'
+    simpa [affineCoord_zero_apply] using h'
   · intro h
     have h1 : IsTrajectoryOn (fun t => affineCoord (scaleCoord hη) 0 (φ t))
         (transportField (scaleCoord hη) 0 (matchingField C G η idc ix)) a b := by
       rw [matching_eq_swing hC hη]
-      simp only [affineCoord_scale]
+      simp only [affineCoord_zero_apply]
       exact h
     have h2 := isTrajectoryOn_transport (scaleCoord hη).symm (-((scaleCoord hη).symm 0)) h1
     rw [transportField_symm_transportField] at h2
@@ -161,7 +157,7 @@ private theorem matching_trajectory_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη :
 @[powerlib_foundation] theorem matching_equilibrium_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
     (ix : ℝ → ℝ → ℝ) (x : State 2) :
     matchedSwing C G η idc ix (scaleCoord hη x) = 0 ↔ matchingField C G η idc ix x = 0 := by
-  rw [← matching_eq_swing hC hη, ← affineCoord_scale hη]
+  rw [← matching_eq_swing hC hη, ← affineCoord_zero_apply (T := scaleCoord hη)]
   exact transportField_affineCoord_eq_zero_iff _ _ _ _
 
 /-- Local exponential stability transfers between the matching and swing models.
@@ -170,7 +166,7 @@ private theorem matching_locallyExponentiallyStable_iff {C G η idc : ℝ}
     (hC : C ≠ 0) (hη : η ≠ 0) (ix : ℝ → ℝ → ℝ) (x : State 2) :
     LocallyExponentiallyStable (matchedSwing C G η idc ix) (scaleCoord hη x) ↔
       LocallyExponentiallyStable (matchingField C G η idc ix) x := by
-  rw [← matching_eq_swing hC hη, ← affineCoord_scale hη]
+  rw [← matching_eq_swing hC hη, ← affineCoord_zero_apply (T := scaleCoord hη)]
   exact locallyExponentiallyStable_transport_iff _ _
 
 /-- Instability transfers between the matching and swing models.
@@ -179,7 +175,7 @@ private theorem matching_unstable_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : �
     (ix : ℝ → ℝ → ℝ) (x : State 2) :
     Unstable (matchedSwing C G η idc ix) (scaleCoord hη x) ↔
       Unstable (matchingField C G η idc ix) x := by
-  rw [← matching_eq_swing hC hη, ← affineCoord_scale hη]
+  rw [← matching_eq_swing hC hη, ← affineCoord_zero_apply (T := scaleCoord hη)]
   exact unstable_transport_iff _ _
 
 /-- Matching control: `θ̇ = η u_dc`, `C u̇_dc = i_dc − G u_dc − i_x` makes the converter
@@ -420,7 +416,7 @@ point `(θ*, η v*)`. -/
   ext m
   rw [Set.mem_preimage, matching_mem_den_flow, swing_mem_den_flow]
   have hpt : (m.toSwing).point = affineCoord (scaleCoord m.η_ne) 0 m.point := by
-    rw [affineCoord_scale]
+    rw [affineCoord_zero_apply]
     simp [SwingModel.point, MatchingModel.toSwing, MatchingModel.point]
   have hfield : swingField m.toSwing.M m.toSwing.D m.toSwing.τ m.toSwing.Pe =
       transportField (scaleCoord m.η_ne) 0 (matchingField m.C m.G m.η m.idc m.ix) := by

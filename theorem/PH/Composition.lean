@@ -144,15 +144,15 @@ omit [Fintype κ] [DecidableEq ι] in
 
 variable {n p : ℕ}
 
-omit [DecidableEq ι] in
-@[powerlib_foundation] theorem reindex_mulVec (e : ι ≃ Fin n) (M : Matrix ι ι ℝ)
-    (x : Fin n → ℝ) : reindex e e M *ᵥ x = (M *ᵥ (x ∘ e)) ∘ e.symm := by
-  rw [reindex_apply, submatrix_mulVec_equiv, Equiv.symm_symm]
-
 omit [Fintype ι] [DecidableEq ι] in
 @[powerlib_foundation] theorem reindex_mulVec' (e : ι ≃ Fin n) (e' : κ ≃ Fin p)
     (M : Matrix ι κ ℝ) (u : Fin p → ℝ) : reindex e e' M *ᵥ u = (M *ᵥ (u ∘ e')) ∘ e.symm := by
   rw [reindex_apply, submatrix_mulVec_equiv, Equiv.symm_symm]
+
+omit [DecidableEq ι] in
+@[powerlib_foundation] theorem reindex_mulVec (e : ι ≃ Fin n) (M : Matrix ι ι ℝ)
+    (x : Fin n → ℝ) : reindex e e M *ᵥ x = (M *ᵥ (x ∘ e)) ∘ e.symm :=
+  reindex_mulVec' e e M x
 
 omit [DecidableEq ι] in
 @[powerlib_foundation] theorem dotProduct_reindex_mulVec (e : ι ≃ Fin n) (M : Matrix ι ι ℝ)

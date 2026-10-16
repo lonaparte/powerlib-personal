@@ -1,5 +1,6 @@
 import theorem.Criteria.Hurwitz2
 import theorem.PhasePlane.Planar
+import theorem.Linear.EigenMap
 
 /-! # PI phase-locked loop with a general phase-detector characteristic: the static model
 
@@ -190,26 +191,18 @@ def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki;
     IsNilpotent (piPLLJacobian Kp Ki 0) :=
   ⟨2, piPLLJacobian_zero_sq Kp Ki⟩
 
-/-- Every (complex) eigenvalue of the `g = 0` Jacobian is zero. -/
+/-- Every (complex) eigenvalue of the `g = 0` Jacobian is zero: `J² = 0`, so `μ² v = J² v = 0`
+(`Linear.mulVec_pow_of_eigen`). -/
 @[powerlib_foundation] theorem piPLLJacobian_zero_eigenvalue_eq_zero (Kp Ki : ℝ) {μ : ℂ}
     {v : Fin 2 → ℂ} (hv : v ≠ 0)
     (heig : (piPLLJacobian Kp Ki 0).map (algebraMap ℝ ℂ) *ᵥ v = μ • v) : μ = 0 := by
-  set A := (piPLLJacobian Kp Ki 0).map (algebraMap ℝ ℂ) with hA
-  have hsq : A * A = 0 := by
-    have h2 := piPLLJacobian_zero_sq Kp Ki
-    rw [pow_two] at h2
-    rw [hA, ← Matrix.map_mul, h2, Matrix.map_zero _ (map_zero _)]
-  have h2 : A *ᵥ (A *ᵥ v) = (μ * μ) • v := by
-    rw [heig, Matrix.mulVec_smul, heig, smul_smul]
-  rw [Matrix.mulVec_mulVec, hsq, Matrix.zero_mulVec] at h2
+  have h2 := Linear.mulVec_pow_of_eigen heig 2
+  rw [← Matrix.map_pow, piPLLJacobian_zero_sq, Matrix.map_zero _ (map_zero _),
+    Matrix.zero_mulVec] at h2
   obtain ⟨i, hi⟩ := Function.ne_iff.mp hv
   have := congrFun h2 i
   simp only [Pi.zero_apply, Pi.smul_apply, smul_eq_mul] at this
-  have hμμ : μ * μ = 0 := by
-    rcases mul_eq_zero.mp this.symm with h | h
-    · exact h
-    · exact absurd h hi
-  exact mul_self_eq_zero.mp hμμ
+  exact pow_eq_zero_iff two_ne_zero |>.mp ((mul_eq_zero.mp this.symm).resolve_right hi)
 
 /-! ## Equilibria -/
 

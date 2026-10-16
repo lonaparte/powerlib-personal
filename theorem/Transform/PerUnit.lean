@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.Transform.ParkABC
 
 /-! # Per-unit bases and per-unit identities
 
@@ -138,9 +139,6 @@ def Z : ℝ := b.VLL ^ 2 / b.S
 
 @[powerlib_foundation] private lemma sqrt3_pos : 0 < Real.sqrt 3 := by positivity
 
-@[powerlib_foundation] private lemma sqrt3_sq : Real.sqrt 3 ^ 2 = 3 :=
-  Real.sq_sqrt (by norm_num)
-
 /-- `Z_B = V_LL² / S_B = V_LN² / (S_B / 3)`: line and phase pairings give the same base. -/
 @[powerlib_foundation] theorem Z_eq_phase : b.Z = b.VLN ^ 2 / (b.S / 3) := by
   have := b.S_pos.ne'; have := sqrt3_pos.ne'
@@ -196,14 +194,16 @@ impedance referred through the transformer (`Z₁ = a² Z₂`) has the same per-
     i / (Sn / Vn) = (i / (So / Vo)) * (So / Sn) * (Vn / Vo) := by
   field_simp
 
+/-- Power on a new base: the rule of `voltage_change_base` (one base quantity in the
+denominator). -/
 @[powerlib_foundation] theorem power_change_base {p So Sn : ℝ} (hSo : So ≠ 0) (hSn : Sn ≠ 0) :
-    p / Sn = (p / So) * (So / Sn) := by
-  field_simp
+    p / Sn = (p / So) * (So / Sn) :=
+  voltage_change_base hSo hSn
 
 /-- Inertia constant `H = W_kin / S_B` on a new power base: `H_new = H_old S_old / S_new`. -/
 @[powerlib_foundation] theorem inertia_change_base {W So Sn : ℝ} (hSo : So ≠ 0) (hSn : Sn ≠ 0) :
-    W / Sn = (W / So) * (So / Sn) := by
-  field_simp
+    W / Sn = (W / So) * (So / Sn) :=
+  voltage_change_base hSo hSn
 
 /-- The §1.5 example: `8 s` on a 600 MVA machine base is `48 s` on a 100 MVA system base. -/
 @[powerlib_foundation] theorem inertia_change_example {W : ℝ} (h : W / 600 = 8) : W / 100 = 48 := by

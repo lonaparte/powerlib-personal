@@ -7,6 +7,7 @@ import theorem.Dynamics.Instability
 import theorem.Spectral.Family
 import theorem.Dynamics.Calculus
 import theorem.Spectral.Hub
+import theorem.Spectral.Equilibrium
 
 /-! # SRF-PLL as a nonlinear port-Hamiltonian system
 
@@ -72,12 +73,12 @@ the translation is not exact (`not_exact_locallyExponentiallyStable`: with `V = 
 translation is not exact (`not_exact_unstable`): instability is the failure of Lyapunov
 stability, so the non-equilibrium phase `θ* = π/2` (`offEquilibrium`) is unstable
 (`offEquilibrium_mem_den_unstable`, `Dynamics.unstable_of_ne_zero`). Within nonnegative energy the
-local asymptotic translation is exact (`exactUnder_locallyAsymptoticallyStable`): with positive
-gains the equilibrium is hyperbolic and the PI-PLL's linearization decides through the hub
-(`PIPLL.mem_den_las_iff_of_nondegenerate`), while the degenerate gains are decided here by the
-model's structure: a dead grid (`V = 0`) or a missing integrator (`K_i = 0`) has a continuum of
-equilibria through `(θ*, η*)`, and a lossless loop (`K_p = 0`) conserves its Hamiltonian; without
-that context it is not exact
+local asymptotic translation is exact (`exactUnder_locallyAsymptoticallyStable`, from the
+equilibrium guard `Spectral.exactUnder_of_equilibrium`): with positive gains an equilibrium is a
+well bottom or a saddle (`mem_den_unstable_antiPhase`), while the degenerate gains are decided
+here by the model's structure: a dead grid (`V = 0`) or a missing integrator (`K_i = 0`) has a
+continuum of equilibria through `(θ*, η*)`, and a lossless loop (`K_p = 0`) conserves its
+Hamiltonian; without that context it is not exact
 (`not_exact_locallyAsymptoticallyStable`, the reversed amplitude). The Lyapunov translation is not
 exact (`not_exact_lyapunovStable`, the reversed amplitude), not even within nonnegative energy
 (`not_exactUnder_lyapunovStable`: the dead-grid loop `deadGrid`, `V = K_i = 0`, is Lyapunov stable,
@@ -643,19 +644,17 @@ private theorem hamiltonian_lie (m : Model) (x : State 2) :
   rw [pllPH_zeroInputField, pllPH_dampingPower] at h
   exact h
 
-/-- Within nonnegative energy, local asymptotic stability of `(θ*, η*)` forces positive loop
-gains at a well bottom. The degenerate gains are decided by the model's structure: a dead grid
-(`V = 0`) or a missing integrator (`K_i = 0`) has a continuum of equilibria through `(θ*, η*)`,
-and a lossless loop (`K_p = 0`) conserves its Hamiltonian. With `V, K_p, K_i > 0` the equilibrium
-has `cos θ* = ±1`, the SRF member is hyperbolic there and the PI-PLL's linearization decides
-(`PIPLL.mem_den_las_iff_of_nondegenerate`; an anti-phase point is a saddle). -/
-private theorem las_requirements {m : Model} (hn : Meets m .nonnegativeEnergy)
-    (hd : m ∈ family.den (.flow .locallyAsymptoticallyStable)) : Meets m .slopeStable := by
+/-- Within nonnegative energy, local asymptotic stability at an equilibrium `(θ*, η*)` forces
+positive gains at a well bottom. The degenerate gains are decided by the model's structure: a dead
+grid (`V = 0`) or a missing integrator (`K_i = 0`) has a continuum of equilibria through
+`(θ*, η*)`, and a lossless loop (`K_p = 0`) conserves its Hamiltonian. With `V, K_p, K_i > 0` the
+equilibrium has `sin θ* = 0`, and an anti-phase point (`cos θ* = −1`) is a saddle. -/
+private theorem las_guard {m : Model} (hn : Meets m .nonnegativeEnergy)
+    (heq : srfField m.V m.Kp m.Ki (m.Ki * m.ηs) m.point = 0)
+    (hlas : LocalAsymptoticStable (srfField m.V m.Kp m.Ki (m.Ki * m.ηs)) m.point) :
+    0 < m.V ∧ 0 < m.Ki ∧ 0 < m.Kp ∧ Real.cos m.θ = 1 := by
   obtain ⟨hV, hKi⟩ := hn
-  have hlas := mem_den_flow_iff.mp hd
   have hC := contDiff_srfField m.V m.Kp m.Ki (m.Ki * m.ηs)
-  have heq : srfField m.V m.Kp m.Ki (m.Ki * m.ηs) m.point = 0 :=
-    Dynamics.isEquilibrium_of_lyapunovStable hC hlas.1
   have hp0 : m.point 0 = m.θ := by simp [Model.point, PhasePlane.mk]
   have hVs : m.V * Real.sin m.θ = 0 := by
     have h1 := congrArg (fun y : State 2 => y 1) heq
@@ -703,35 +702,37 @@ private theorem las_requirements {m : Model} (hn : Meets m .nonnegativeEnergy)
         add_zero, add_sub_cancel_left, sub_self]
       have : 0 < m.Ki / 2 * (ε / 2) ^ 2 := by positivity
       nlinarith
-  have hcos : Real.cos m.θ ≠ 0 := fun hc => by
+  refine ⟨hVpos, hKipos, hKppos, ?_⟩
+  have hc : Real.cos m.θ * Real.cos m.θ = 1 := by
     have := Real.sin_sq_add_cos_sq m.θ
-    rw [hs, hc] at this
-    norm_num at this
-  have hg : deriv (toSRF m).h (toSRF m).θ ≠ 0 := by
-    rw [toSRF_deriv]
-    exact mul_ne_zero (neg_ne_zero.mpr hVpos.ne') hcos
-  have hiff := PIPLL.mem_den_las_iff_of_nondegenerate (toSRF m) (mul_ne_zero hKppos.ne' hg)
-    (mul_ne_zero hKipos.ne' hg)
-  unfold powerlib.TMIO.Statement at hiff
-  exact (TMIO.mem_realize _ _ _).mp (slopeStable_of_toSRF ⟨hV, hKi⟩
-    (hiff.mp ((mem_den_flow_iff_toSRF m _).mp hd))) _ rfl
+    rw [hs] at this
+    nlinarith
+  rcases mul_self_eq_one_iff.mp hc with hc1 | hc1
+  · exact hc1
+  · exact absurd hlas.1 (mem_den_flow_iff.mp (unstable_of_meets ⟨mul_pos hVpos hKipos, hc1⟩))
 
 /-- Within nonnegative energy (`V, K_i ≥ 0`) the local asymptotic translation is exact: a model
 is locally asymptotically stable at `(θ*, η*)` exactly when `V K_p > 0`, `V K_i > 0` and
-`cos θ* = 1`. With positive gains the equilibrium is hyperbolic and the PI-PLL's linearization
-decides through the hub (`PIPLL.mem_den_las_iff_of_nondegenerate`). The linearization does not
-decide the degenerate gains, the model's structure does: a dead grid (`V = 0`) or a missing
-integrator (`K_i = 0`) has a continuum of equilibria through the point
+`cos θ* = 1`. A locally asymptotically stable point of the `C¹` field is an equilibrium, so the
+guard `V, K_i, K_p > 0`, `cos θ* = 1` decides (`Spectral.exactUnder_of_equilibrium`). The
+linearization does not decide the degenerate gains, the model's structure does: a dead grid
+(`V = 0`) or a missing integrator (`K_i = 0`) has a continuum of equilibria through the point
 (`Dynamics.not_localAsymptoticStable_of_equilibria`), and a lossless loop (`K_p = 0`) conserves the
-Hamiltonian `V (1 − cos θ) + ½ K_i (η − η*)²` (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`).
--/
+Hamiltonian `V (1 − cos θ) + ½ K_i (η − η*)²` (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`);
+with positive gains an anti-phase equilibrium is a saddle (`mem_den_unstable_antiPhase`). -/
 @[powerlib_domain] theorem exactUnder_locallyAsymptoticallyStable :
     connection% (family.ExactUnder {.nonnegativeEnergy} (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  refine Spectral.exactUnder_iff_forall.mpr fun m hm => ⟨fun h =>
-    Spectral.den_locallyExponentiallyStable_subset_las (les_sound h), fun h => ?_⟩
-  show m ∈ TMIO.realize Meets {.slopeStable}
-  simpa using las_requirements ((TMIO.mem_realize _ _ _).mp hm .nonnegativeEnergy rfl) h
+  refine Spectral.exactUnder_of_equilibrium (fun m P => mem_den_flow_iff) (Or.inr (Or.inl rfl))
+    {.nonnegativeEnergy} (fun m => 0 < m.V ∧ 0 < m.Ki ∧ 0 < m.Kp ∧ Real.cos m.θ = 1)
+    (fun m _ h => Spectral.den_locallyExponentiallyStable_subset_las (les_sound h))
+    (fun m _ => contDiff_srfField _ _ _ _) (fun m hm heq hG hd => ?_)
+    fun m _ _ ⟨hV, hKi, hKp, hθ⟩ => ?_
+  · exact hG (las_guard ((TMIO.mem_realize _ _ _).mp hm .nonnegativeEnergy rfl) heq
+      (mem_den_flow_iff.mp hd))
+  · rw [TMIO.mem_realize]
+    rintro q rfl
+    exact ⟨mul_pos hV hKp, mul_pos hV hKi, hθ⟩
 
 /-- Without the context of nonnegative energy the local asymptotic translation is sound but not
 exact: the reversed-amplitude model is locally exponentially, hence asymptotically, stable at an

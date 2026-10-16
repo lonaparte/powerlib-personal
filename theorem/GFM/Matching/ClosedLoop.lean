@@ -200,11 +200,8 @@ def dissipation (z : State 5) : ℝ :=
 
 end Model
 
-private theorem coord_smooth' {n : ℕ} (j : Fin n) : ContDiff ℝ 1 (fun x : State n => x j) :=
-  (PiLp.proj 2 (fun _ : Fin n => ℝ) j : State n →L[ℝ] ℝ).contDiff
-
 private theorem coord_smooth (j : Fin 5) : ContDiff ℝ 1 (fun x : State 5 => x j) :=
-  coord_smooth' j
+  Dynamics.contDiff_coord j
 
 /-- Components of the reduced field. Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem field_apply (m : Model) (x : State 5) (w : Fin 3 → ℝ) :
@@ -709,32 +706,15 @@ equals the rotating-frame chain rule applied to the stationary field, with the l
   · ring
   · ring
 
-private theorem coord_hasDerivWithinAt {n : ℕ} {φ : ℝ → State n} {φ' : State n} {s : Set ℝ}
-    {t : ℝ} (h : HasDerivWithinAt φ φ' s t) (i : Fin n) :
-    HasDerivWithinAt (fun τ => φ τ i) (φ' i) s t :=
-  (PiLp.proj 2 (fun _ : Fin n => ℝ) i : State n →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt t h
-
-private theorem hasDerivWithinAt_of_coord {n : ℕ} {φ : ℝ → State n} {φ' : State n}
-    {s : Set ℝ} {t : ℝ} (h : ∀ i, HasDerivWithinAt (fun τ => φ τ i) (φ' i) s t) :
-    HasDerivWithinAt φ φ' s t := by
-  have h1 : HasDerivWithinAt (fun τ => (φ τ).ofLp) φ'.ofLp s t := hasDerivWithinAt_pi.mpr h
-  have h2 := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm.hasFDerivAt.comp_hasDerivWithinAt
-    t h1
-  have e : (⇑(PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm ∘ fun τ => (φ τ).ofLp) = φ := by
-    funext τ
-    simp
-  rw [e] at h2
-  simpa using h2
-
 private theorem abField_smooth (m : Model) : ContDiff ℝ 1 m.abField := by
-  have h0 : ContDiff ℝ 1 (fun x : State 8 => x 0) := coord_smooth' 0
-  have h1 : ContDiff ℝ 1 (fun x : State 8 => x 1) := coord_smooth' 1
-  have h2 : ContDiff ℝ 1 (fun x : State 8 => x 2) := coord_smooth' 2
-  have h3 : ContDiff ℝ 1 (fun x : State 8 => x 3) := coord_smooth' 3
-  have h4 : ContDiff ℝ 1 (fun x : State 8 => x 4) := coord_smooth' 4
-  have h5 : ContDiff ℝ 1 (fun x : State 8 => x 5) := coord_smooth' 5
-  have h6 : ContDiff ℝ 1 (fun x : State 8 => x 6) := coord_smooth' 6
-  have h7 : ContDiff ℝ 1 (fun x : State 8 => x 7) := coord_smooth' 7
+  have h0 : ContDiff ℝ 1 (fun x : State 8 => x 0) := Dynamics.contDiff_coord 0
+  have h1 : ContDiff ℝ 1 (fun x : State 8 => x 1) := Dynamics.contDiff_coord 1
+  have h2 : ContDiff ℝ 1 (fun x : State 8 => x 2) := Dynamics.contDiff_coord 2
+  have h3 : ContDiff ℝ 1 (fun x : State 8 => x 3) := Dynamics.contDiff_coord 3
+  have h4 : ContDiff ℝ 1 (fun x : State 8 => x 4) := Dynamics.contDiff_coord 4
+  have h5 : ContDiff ℝ 1 (fun x : State 8 => x 5) := Dynamics.contDiff_coord 5
+  have h6 : ContDiff ℝ 1 (fun x : State 8 => x 6) := Dynamics.contDiff_coord 6
+  have h7 : ContDiff ℝ 1 (fun x : State 8 => x 7) := Dynamics.contDiff_coord 7
   have hs : ContDiff ℝ 1 (fun X : State 8 => ![
     m.η * X 1,
     (-m.Gdc * X 1 + m.idcRef - m.Kp * (X 1 - m.vdcRef)
@@ -758,7 +738,7 @@ private theorem load_const (m : Model) {X : ℝ → State 8} {a b : ℝ}
       rotQ (X t 0) (X t 6) (X t 7) = rotQ (X a 0) (X a 6) (X a 7) := by
   have hc : ∀ t ∈ Set.Icc a b, ∀ k : Fin 8,
       HasDerivWithinAt (fun τ => X τ k) (m.abField (X t) k) (Set.Icc a b) t :=
-    fun t ht k => coord_hasDerivWithinAt (hX t ht) k
+    fun t ht k => Dynamics.HasDerivWithinAt.euclidean_coord (hX t ht) k
   have hrot : ∀ t ∈ Set.Icc a b, ∀ j k : Fin 8,
       HasDerivWithinAt (fun τ => rotD (X τ 0) (X τ j) (X τ k))
           (rotD (X t 0) (m.abField (X t) j) (m.abField (X t) k) +
@@ -797,7 +777,7 @@ private theorem reduce_isTrajectoryOn (m : Model) {X : ℝ → State 8} {a b : �
         y 0) a b := by
   have hc : ∀ t ∈ Set.Icc a b, ∀ k : Fin 8,
       HasDerivWithinAt (fun τ => X τ k) (m.abField (X t) k) (Set.Icc a b) t :=
-    fun t ht k => coord_hasDerivWithinAt (hX t ht) k
+    fun t ht k => Dynamics.HasDerivWithinAt.euclidean_coord (hX t ht) k
   have hrot : ∀ t ∈ Set.Icc a b, ∀ j k : Fin 8,
       HasDerivWithinAt (fun τ => rotD (X τ 0) (X τ j) (X τ k))
           (rotD (X t 0) (m.abField (X t) j) (m.abField (X t) k) +
@@ -832,7 +812,7 @@ private theorem reduce_isTrajectoryOn (m : Model) {X : ℝ → State 8} {a b : �
       ((m.withLoad (rotD (X a 0) (X a 6) (X a 7)) (rotQ (X a 0) (X a 6) (X a 7))).field
         (reduce (X t)) 0 4) (Set.Icc a b) t := by
     rw [f4]; simpa [reduce] using (hrot t ht 4 5).2
-  apply hasDerivWithinAt_of_coord
+  apply Dynamics.hasDerivWithinAt_euclidean_of_coord
   intro i
   fin_cases i
   exacts [d0, d1, d2, d3, d4]

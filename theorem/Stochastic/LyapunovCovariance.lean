@@ -2,6 +2,7 @@ import dependencies.Mathlib
 import dependencies.LeanForControl
 import theorem.Attributes
 import theorem.Linear.Transfer
+import theorem.Linear.EigenMap
 
 /-! # Covariance Lyapunov equation of a vector OU process
 
@@ -91,17 +92,10 @@ def SolvesCovLyapunov (A P Q : Matrix (Fin n) (Fin n) ℝ) : Prop :=
   · intro h; rw [eq_neg_iff_add_eq_zero, ← h]; abel
   · intro h; rw [add_comm (A * P), h]; abel
 
-/-- Transposition preserves the Hurwitz property. -/
+/-- Transposition preserves the Hurwitz property (`Linear.isHurwitz_transpose_iff`). -/
 @[powerlib_foundation] theorem isHurwitz_transpose {A : Matrix (Fin n) (Fin n) ℝ}
-    (h : LinearSystems.IsHurwitz A) : LinearSystems.IsHurwitz Aᵀ := by
-  rw [← powerlib.Linear.spectrallyStable_iff_isHurwitz] at h ⊢
-  intro s hs
-  apply h s
-  have e : powerlib.Linear.characteristicMatrix Aᵀ s =
-      (powerlib.Linear.characteristicMatrix A s)ᵀ := by
-    ext i j
-    simp [powerlib.Linear.characteristicMatrix, Matrix.one_apply, eq_comm]
-  rwa [e, det_transpose] at hs
+    (h : LinearSystems.IsHurwitz A) : LinearSystems.IsHurwitz Aᵀ :=
+  Linear.isHurwitz_transpose_iff.mpr h
 
 @[powerlib_foundation] theorem solvesCovLyapunov_add {A P P' Q Q' : Matrix (Fin n) (Fin n) ℝ}
     (h : SolvesCovLyapunov A P Q) (h' : SolvesCovLyapunov A P' Q') :

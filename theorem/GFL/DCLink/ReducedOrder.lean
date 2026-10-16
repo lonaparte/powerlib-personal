@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Dynamics.State
+import theorem.SpecialFunctions.Sinusoid
 
 /-! # GFL reduced-order models with DC link: algebra and model-B equilibria
 
@@ -229,13 +230,14 @@ Static evidence on the model, not a connection conclusion. -/
   · intro hle
     set K := 3 * p.Vg ^ 2 / (4 * p.Xg) with hKdef
     set s := p.I0 * p.VdcRef / K with hs
-    have hs1 : |s| ≤ 1 := by
-      rw [hs, abs_div, abs_of_pos hK, div_le_one hK, abs_mul, abs_of_pos hV]
-      exact hle
-    set Δθ := Real.arcsin s / 2 with hΔθ
+    -- a zero `φ` of the sinusoid `I₀ V_dc* − K sin φ` gives the angle `Δθ = φ/2`
+    obtain ⟨φ, hφ⟩ := (SpecialFunctions.exists_sinusoid_zero_iff (c := p.I0 * p.VdcRef)
+      (φ := 0) hK).mpr (by rwa [abs_mul, abs_of_pos hV])
+    set Δθ := φ / 2 with hΔθ
     have hsin2 : Real.sin (2 * Δθ) = s := by
-      rw [hΔθ, mul_div_cancel₀ _ (two_ne_zero)]
-      exact Real.sin_arcsin (abs_le.mp hs1).1 (abs_le.mp hs1).2
+      rw [hΔθ, mul_div_cancel₀ _ (two_ne_zero), hs, eq_div_iff hK.ne']
+      rw [add_zero] at hφ
+      linarith
     set id := -p.Vg * Real.sin Δθ / p.Xg with hid
     refine ⟨WithLp.toLp 2 ![Δθ, (p.ωg - p.ωs) / p.ki, p.VdcRef, id / p.kiv], ?_⟩
     have hidRef : p.idRef p.VdcRef (id / p.kiv) = id := by

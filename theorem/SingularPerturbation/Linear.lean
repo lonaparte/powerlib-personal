@@ -1,5 +1,6 @@
 import theorem.Linear.Stability
 import theorem.Criteria.Lyapunov
+import theorem.Criteria.Hurwitz
 
 /-! # Linear singularly perturbed systems: Kokotović's two-time-scale stability theorem
 
@@ -36,7 +37,8 @@ Results.
   these, `ε*` is explicit: `epsStar P₀ P₂ = 1 / (2 c + 1)` with
   `c = S (2S + 1)/2 + S₃`, `S = |P₀ A₁₂|₁ + |P₂ L A₀|₁`, `S₃ = |P₂ L A₁₂|₁`, `L = A₂₂⁻¹ A₂₁`,
   and `|N|₁ = Σᵢⱼ |Nᵢⱼ|`. Along the way: `V̇ ≤ -|x|²/4 - |η|²/2`.
-* `isUnit_det_of_isHurwitz` — a Hurwitz matrix is invertible. The general Lyapunov-inequality
+* `isUnit_det_of_isHurwitz` — a Hurwitz matrix is invertible (the case `r = 0` of
+  `Criteria.det_smul_sub_ne_zero_of_isHurwitz`). The general Lyapunov-inequality
   criterion (`Criteria.re_neg_of_lyapunov`: symmetric positive definite `P` with `wᵀ P M w < 0`
   for `w ≠ 0` forces every complex eigenvalue of `M` into the open left half-plane) is in
   `theorem/Criteria/Lyapunov.lean`.
@@ -48,24 +50,12 @@ open Matrix
 
 /-! ## A Hurwitz matrix is invertible -/
 
-/-- A Hurwitz matrix is invertible. -/
+/-- A Hurwitz matrix is invertible: `det(0 · 1 − A) ≠ 0`
+(`Criteria.det_smul_sub_ne_zero_of_isHurwitz`). -/
 @[powerlib_foundation] theorem isUnit_det_of_isHurwitz {k : ℕ} {A : Matrix (Fin k) (Fin k) ℝ}
-    (hA : LinearSystems.IsHurwitz A) : IsUnit A.det := by
-  rw [isUnit_iff_ne_zero]
-  intro hdet
-  obtain ⟨v, hv, hAv⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr hdet
-  have hvc : (fun i => (v i : ℂ)) ≠ 0 := by
-    intro h
-    apply hv
-    funext i
-    simpa using congrFun h i
-  have := hA 0 (fun i => (v i : ℂ)) hvc (by
-    funext i
-    have := congrFun hAv i
-    simp only [mulVec, dotProduct, Matrix.map_apply, Complex.coe_algebraMap, Pi.zero_apply,
-      zero_smul] at this ⊢
-    exact_mod_cast this)
-  simp at this
+    (hA : LinearSystems.IsHurwitz A) : IsUnit A.det :=
+  isUnit_iff_ne_zero.mpr fun h0 => Criteria.det_smul_sub_ne_zero_of_isHurwitz hA le_rfl (by
+    rw [zero_smul, zero_sub, det_neg, h0, mul_zero])
 
 /-! ## Elementary quadratic bounds -/
 

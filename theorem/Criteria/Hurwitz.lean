@@ -269,11 +269,11 @@ section Matrix
 variable {n : ℕ}
 
 /-- The characteristic determinant is the complex evaluation of the real characteristic
-polynomial. -/
+polynomial (`Linear.det_characteristicMatrix_eq_eval`). -/
 @[powerlib_foundation] theorem det_characteristicMatrix_eq_aeval (A : Matrix (Fin n) (Fin n) ℝ)
     (s : ℂ) : (Linear.characteristicMatrix A s).det = aeval s A.charpoly := by
-  rw [← eval_map_algebraMap, ← charpoly_map, eval_charpoly, Linear.characteristicMatrix,
-    scalar_apply, smul_one_eq_diagonal]
+  rw [Linear.det_characteristicMatrix_eq_eval, Linear.complexify, charpoly_map,
+    eval_map_algebraMap]
 
 /-- **The Hurwitz interface.** `A` is Hurwitz exactly when every zero of a function with the zeros
 of its characteristic determinant lies in the open left half plane. -/

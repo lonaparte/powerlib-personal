@@ -25,8 +25,8 @@ open Matrix LinearSystems
 variable {n n' p : ℕ}
 
 @[powerlib_foundation] theorem det_characteristicMatrix (A : Matrix (Fin n) (Fin n) ℝ) (s : ℂ) :
-    (characteristicMatrix A s).det = (complexify A).charpoly.eval s := by
-  rw [Matrix.eval_charpoly, characteristicMatrix, Matrix.scalar_apply, Matrix.smul_one_eq_diagonal]
+    (characteristicMatrix A s).det = (complexify A).charpoly.eval s :=
+  det_characteristicMatrix_eq_eval A s
 
 @[powerlib_foundation] theorem transfer_eq_adjugate (m : Plant n p) (s : ℂ) :
     transfer m s = ((characteristicMatrix m.A s).det)⁻¹ •

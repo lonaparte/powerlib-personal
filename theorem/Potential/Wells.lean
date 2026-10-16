@@ -1,5 +1,6 @@
 import theorem.Attributes
 import theorem.Potential.Barrier
+import theorem.SpecialFunctions.Sinusoid
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
@@ -297,17 +298,14 @@ def washboard (V₀ α θ : ℝ) : ℝ := Barrier.washboard (V₀ * α) V₀ 0 �
     HasDerivAt (fun θ => V₀ * (Real.sin θ - α)) (V₀ * Real.cos θ) θ := by
   simpa using ((Real.hasDerivAt_sin θ).sub_const α).const_mul V₀
 
-/-- A critical point of the washboard exists iff `|α| ≤ 1`. -/
+/-- A critical point of the washboard exists iff `|α| ≤ 1`: the zeros of the sinusoid
+`α − sin θ` (`SpecialFunctions.exists_sinusoid_zero_iff`). -/
 @[powerlib_foundation] theorem washboard_critical_exists_iff {V₀ : ℝ} (hV : 0 < V₀) (α : ℝ) :
     (∃ θ, V₀ * (Real.sin θ - α) = 0) ↔ |α| ≤ 1 := by
-  constructor
-  · rintro ⟨θ, h⟩
-    have : Real.sin θ = α := by
-      have := (mul_eq_zero.mp h).resolve_left hV.ne'; linarith
-    rw [← this]; exact Real.abs_sin_le_one θ
-  · intro h
-    rw [abs_le] at h
-    exact ⟨Real.arcsin α, by rw [Real.sin_arcsin h.1 h.2]; ring⟩
+  rw [← SpecialFunctions.exists_sinusoid_zero_iff (c := α) (φ := 0) one_pos]
+  refine exists_congr fun θ => ?_
+  rw [mul_eq_zero, or_iff_right hV.ne', add_zero, one_mul, sub_eq_zero, sub_eq_zero]
+  exact eq_comm
 
 /-- Strong tilt `α > 1`: the washboard is strictly decreasing (`V' < 0` everywhere). -/
 @[powerlib_foundation] theorem washboard_deriv_neg {V₀ α : ℝ} (hV : 0 < V₀) (hα : 1 < α) (θ : ℝ) :

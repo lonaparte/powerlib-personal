@@ -1,5 +1,6 @@
 import theorem.PH.PositiveReal
 import theorem.Criteria.Hurwitz2
+import theorem.Modal.Poles
 
 /-! # Passivity, zero-state observability and asymptotic stability of linear pH systems
 
@@ -34,7 +35,9 @@ Results.
   passive, `Ḣ ≤ −k |y|²`) and `(A, C)` observable, the closed loop is Hurwitz, hence
   exponentially stable. The proof is spectral (an eigenvector on the imaginary axis would have
   `C v = 0` and be an eigenvector of `A`, contradicting observability,
-  `phCx_eq_zero_of_isObservable`); for linear systems this replaces the LaSalle argument.
+  `phCx_eq_zero_of_isObservable`, from `Modal.eq_zero_of_isObservable`); for linear systems this
+  replaces the LaSalle argument.
+* `phCx_mulVec_re`, `phCx_mulVec_im`: the instances of `Modal.complexify_mulVec_re`/`_im`.
 * Nonlinear LaSalle version: for an arbitrary passive system `ẋ = F(x, u)`, `y = H(x)` with a
   `C¹` positive definite storage, zero-state detectability (or observability) and an output
   feedback `u = −ψ(y)` with `⟪ψ(y), y⟫ > 0` give local / global asymptotic stability of the
@@ -75,43 +78,23 @@ variable {n m : ℕ}
 
 @[powerlib_foundation] theorem phCx_mulVec_re {p : ℕ} (M : Matrix (Fin p) (Fin n) ℝ)
     (v : Fin n → ℂ) (i : Fin p) :
-    ((Linear.complexify M *ᵥ v) i).re = (M *ᵥ fun j => (v j).re) i := by
-  simp [mulVec, dotProduct, Complex.re_sum, Complex.mul_re]
+    ((Linear.complexify M *ᵥ v) i).re = (M *ᵥ fun j => (v j).re) i :=
+  Modal.complexify_mulVec_re M v i
 
 @[powerlib_foundation] theorem phCx_mulVec_im {p : ℕ} (M : Matrix (Fin p) (Fin n) ℝ)
     (v : Fin n → ℂ) (i : Fin p) :
-    ((Linear.complexify M *ᵥ v) i).im = (M *ᵥ fun j => (v j).im) i := by
-  simp [mulVec, dotProduct, Complex.im_sum, Complex.mul_im]
+    ((Linear.complexify M *ᵥ v) i).im = (M *ᵥ fun j => (v j).im) i :=
+  Modal.complexify_mulVec_im M v i
 
-/-- A complex eigenvector of a real `A` lying in `ker C` contradicts observability of `(A, C)`. -/
+/-- A complex eigenvector of a real `A` lying in `ker C` contradicts observability of `(A, C)`:
+`C Aᵏ v = μᵏ C v = 0` for every `k` (`Linear.mulVec_pow_of_eigen`,
+`Modal.eq_zero_of_isObservable`). -/
 @[powerlib_foundation] theorem phCx_eq_zero_of_isObservable {p : ℕ} {A : Matrix (Fin n) (Fin n) ℝ}
     {C : Matrix (Fin p) (Fin n) ℝ} (hobs : LinearSystems.IsObservable A C) {μ : ℂ}
     {v : Fin n → ℂ} (heig : Linear.complexify A *ᵥ v = μ • v) (hC : Linear.complexify C *ᵥ v = 0) :
-    v = 0 := by
-  have hpow : ∀ k : ℕ, Linear.complexify (C * A ^ k) *ᵥ v = 0 := by
-    intro k
-    have hA : ∀ j : ℕ, Linear.complexify (A ^ j) *ᵥ v = μ ^ j • v := by
-      intro j
-      induction j with
-      | zero => simp [Linear.complexify]
-      | succ j ih =>
-        rw [pow_succ, Linear.complexify_mul, ← mulVec_mulVec, heig, mulVec_smul, ih, smul_smul,
-          pow_succ, mul_comm]
-    rw [Linear.complexify_mul, ← mulVec_mulVec, hA, mulVec_smul, hC, smul_zero]
-  have hre := hobs (fun j => (v j).re) fun k => by
-    funext i
-    have := congrFun (hpow k) i
-    rw [← phCx_mulVec_re, this]
-    simp
-  have him := hobs (fun j => (v j).im) fun k => by
-    funext i
-    have := congrFun (hpow k) i
-    rw [← phCx_mulVec_im, this]
-    simp
-  funext j
-  apply Complex.ext
-  · simpa using congrFun hre j
-  · simpa using congrFun him j
+    v = 0 :=
+  Modal.eq_zero_of_isObservable hobs fun k => by
+    rw [← mulVec_mulVec, Linear.mulVec_pow_of_eigen heig, mulVec_smul, hC, smul_zero]
 
 /-! ## Counterexample: the lossless `LC` loop -/
 

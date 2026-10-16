@@ -1,6 +1,7 @@
 import theorem.GFL.PowerLoop.QuasiStatic
 import theorem.Dynamics.Calculus
 import theorem.Dynamics.Instability
+import theorem.Spectral.Equilibrium
 
 /-! # Quasi-static three-state GFL: the fold of the Routh–Hurwitz region
 
@@ -526,17 +527,12 @@ private theorem unstable_of_V_eq_zero {m : Model} (heq : IsEq m.params m.θ m.Id
       mul_self_pos.mpr (mul_ne_zero hXg hz2)
     nlinarith
 
-/-- With positive gains a Lyapunov stable selected point is an equilibrium with a strict
-Routh–Hurwitz Jacobian: every other point is unstable (non-equilibrium; `V = 0`; `V cos θ* < 0`,
-`tr J > 0`; `cos θ* = 0` or `cos 2θ* < 0`, `det J > 0`; the fold `cos 2θ* = 0`). -/
-private theorem meets_of_lyapunovStable {m : Model} (hpos : Meets m .positiveGains)
-    (h : LyapunovStable m.field 0) : Meets m .equilibrium ∧ Meets m .jacobianStable := by
+/-- With positive gains a Lyapunov stable equilibrium has a strict Routh–Hurwitz Jacobian: every
+other equilibrium is unstable (`V = 0`; `V cos θ* < 0`, `tr J > 0`; `cos θ* = 0` or
+`cos 2θ* < 0`, `det J > 0`; the fold `cos 2θ* = 0`). -/
+private theorem jacobianStable_of_lyapunovStable {m : Model} (hpos : Meets m .positiveGains)
+    (heq : IsEq m.params m.θ m.Id) (h : LyapunovStable m.field 0) : Meets m .jacobianStable := by
   obtain ⟨hkp, hki, hkP⟩ := hpos
-  have hf0 : m.field 0 = 0 := by
-    by_contra hne
-    exact Dynamics.unstable_of_ne_zero (contDiff_model_field m) hne h
-  have heq : IsEq m.params m.θ m.Id :=
-    isEq_of_field_eq_zero hkP.ne' (by simpa [Model.field] using hf0)
   have hunst : Meets m .jacobianUnstable → False := fun hu => by
     have hd := mem_den_of_meets (m := m) (s := .flow .unstable) (by
       intro q hq
@@ -546,7 +542,6 @@ private theorem meets_of_lyapunovStable {m : Model} (hpos : Meets m .positiveGai
       · exact hu)
     rw [family_isAutonomous.mem_den_flow] at hd
     exact hd h
-  refine ⟨heq, ?_⟩
   have htr := trace_jac m.params m.θ m.Id
   have hm2 := principalMinorSum_jac m.params heq.1
   have hdet := det_jac m.params heq.1
@@ -602,6 +597,32 @@ private theorem meets_of_lyapunovStable {m : Model} (hpos : Meets m .positiveGai
         linarith
       refine ⟨by linarith, by linarith, by nlinarith⟩
 
+/-- Within positive gains the translations of Lyapunov and local asymptotic stability,
+`{equilibrium, jacobianStable}`, are exact: a Lyapunov stable point of the `C¹` field is an
+equilibrium, and the strict Routh–Hurwitz guard decides (`Spectral.exactUnder_of_equilibrium`). -/
+private theorem exactUnder_of_routh {P : Flow.Property}
+    (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
+    family.ExactUnder {.positiveGains} (.flow P) := by
+  have ht : family.translate (.flow P) = {.equilibrium, .jacobianStable} := by
+    rcases hP with rfl | rfl <;> rfl
+  refine Spectral.exactUnder_of_equilibrium (fun m P => family_isAutonomous.mem_den_flow)
+    (hP.imp_right Or.inl) {.positiveGains} (fun m => Meets m .jacobianStable)
+    (fun m _ h => mem_den_of_meets ((TMIO.mem_realize _ _ _).mp h))
+    (fun m _ => contDiff_model_field m) (fun m hm heq hG hd => hG ?_) fun m hm heq hG => ?_
+  · have hpos : Meets m .positiveGains := (TMIO.mem_realize _ _ _).mp hm .positiveGains rfl
+    have hls : LyapunovStable m.field 0 := by
+      have h := family_isAutonomous.mem_den_flow.mp hd
+      rcases hP with rfl | rfl
+      · exact h
+      · exact h.1
+    exact jacobianStable_of_lyapunovStable hpos
+      (isEq_of_field_eq_zero hpos.2.2.ne' (by simpa [Model.field] using heq)) hls
+  · have hpos : Meets m .positiveGains := (TMIO.mem_realize _ _ _).mp hm .positiveGains rfl
+    rw [ht, TMIO.mem_realize]
+    rintro q (rfl | rfl)
+    · exact isEq_of_field_eq_zero hpos.2.2.ne' (by simpa [Model.field] using heq)
+    · exact hG
+
 end Members
 
 /-! ### Connection conclusions at the fold and within positive gains -/
@@ -633,50 +654,13 @@ Routh–Hurwitz Jacobian; in particular the fold `cos 2θ* = 0` (no Hopf pair,
 @[powerlib_domain] theorem exactUnder_locallyAsymptoticallyStable :
     connection% (family.ExactUnder {.positiveGains} (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  unfold Family.ExactUnder TMIO.ExactUnder
-  change TMIO.realize Meets ({.equilibrium, .jacobianStable} ∪ {.positiveGains}) = _
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
-    Set.mem_inter_iff]
-  constructor
-  · intro h
-    refine ⟨mem_den_of_meets fun q hq => h q (Or.inl ?_), fun q hq => ?_⟩
-    · simpa [translate] using hq
-    · rw [hq]
-      exact h _ (Or.inr rfl)
-  · rintro ⟨hd, hΔ⟩ q hq
-    have hpos : Meets m .positiveGains := hΔ .positiveGains rfl
-    rw [family_isAutonomous.mem_den_flow] at hd
-    obtain ⟨he, hs⟩ := meets_of_lyapunovStable hpos hd.1
-    rcases hq with (rfl | rfl) | rfl
-    · exact he
-    · exact hs
-    · exact hpos
+  exact exactUnder_of_routh (Or.inr rfl)
 
 /-- **Within positive gains the Lyapunov translation is exact**: every non-Hurwitz point with
 positive gains is unstable (the undamped witness of `not_exact_lyapunovStable` has `k_p = k_P = 0`). -/
 @[powerlib_domain] theorem exactUnder_lyapunovStable :
     connection% (family.ExactUnder {.positiveGains} (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  unfold Family.ExactUnder TMIO.ExactUnder
-  change TMIO.realize Meets ({.equilibrium, .jacobianStable} ∪ {.positiveGains}) = _
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
-    Set.mem_inter_iff]
-  constructor
-  · intro h
-    refine ⟨mem_den_of_meets fun q hq => h q (Or.inl ?_), fun q hq => ?_⟩
-    · simpa [translate] using hq
-    · rw [hq]
-      exact h _ (Or.inr rfl)
-  · rintro ⟨hd, hΔ⟩ q hq
-    have hpos : Meets m .positiveGains := hΔ .positiveGains rfl
-    rw [family_isAutonomous.mem_den_flow] at hd
-    obtain ⟨he, hs⟩ := meets_of_lyapunovStable hpos hd
-    rcases hq with (rfl | rfl) | rfl
-    · exact he
-    · exact hs
-    · exact hpos
-
+  exact exactUnder_of_routh (Or.inl rfl)
 
 end powerlib.GFL.PowerLoop.QuasiStatic

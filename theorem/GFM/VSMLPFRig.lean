@@ -1,6 +1,7 @@
 import theorem.GFM.VSMLPF
 import theorem.Criteria.Routh4
 import theorem.Stack.Basic
+import theorem.Dynamics.Coordinates
 
 /-! # VSM + power filter on an experimental platform: implementation and observation layers
 
@@ -159,7 +160,7 @@ def Rig.field (y : Rig) (z : State 4) : State 4 := rigField y (z + y.point)
 private theorem toEuclideanCLM_apply4 (A : Matrix (Fin 4) (Fin 4) ℝ) (v : State 4) (i : Fin 4) :
     (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) A v) i =
       A i 0 * v 0 + A i 1 * v 1 + A i 2 * v 2 + A i 3 * v 3 := by
-  simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_four]
+  rw [Dynamics.toEuclideanCLM_apply, Fin.sum_univ_four]
 
 /-- Static evidence on the implementation, not a connection conclusion. -/
 @[powerlib_foundation] theorem contDiff_rigField (y : Rig) {k : WithTop ℕ∞} :

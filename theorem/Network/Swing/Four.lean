@@ -169,14 +169,18 @@ the lines leaving `X`. -/
   by_cases hk : k ∈ X <;> by_cases hj : j ∈ X <;> simp [hk, hj]
   rw [p.B_symm, show θ j - θ k = -(θ k - θ j) by ring, Real.cos_neg]
 
-/-- The grounded relative-angle direction that turns a group `X` rigidly. -/
-@[powerlib_foundation] theorem ground_groupIndicator (X : Finset (Fin (n + 1))) :
-    ground (fun i : Fin n => groupIndicator X i.succ - groupIndicator X 0) =
-      fun k => groupIndicator X k + -groupIndicator X 0 := by
+@[powerlib_foundation] theorem ground_sub_zero (u : Fin (n + 1) → ℝ) :
+    ground (fun i => u i.succ - u 0) = fun k => u k + -u 0 := by
   funext k
   refine Fin.cases ?_ (fun i => ?_) k
   · simp [ground]
   · simp only [ground_succ]; ring
+
+/-- The grounded relative-angle direction that turns a group `X` rigidly. -/
+@[powerlib_foundation] theorem ground_groupIndicator (X : Finset (Fin (n + 1))) :
+    ground (fun i : Fin n => groupIndicator X i.succ - groupIndicator X 0) =
+      fun k => groupIndicator X k + -groupIndicator X 0 :=
+  ground_sub_zero (groupIndicator X)
 
 /-- Implementation evidence for `not_localAsymptoticStable_of_cut`, at the selected point of the
 untranslated field. -/
@@ -334,13 +338,6 @@ off by zero-weight lines, so the model is not locally asymptotically stable. -/
 @[powerlib_foundation] theorem cubicForm_add_const (p : Params n) (θ u : Fin (n + 1) → ℝ)
     (c : ℝ) : cubicForm p θ (fun k => u k + c) = cubicForm p θ u := by
   simp [cubicForm]
-
-@[powerlib_foundation] theorem ground_sub_zero (u : Fin (n + 1) → ℝ) :
-    ground (fun i => u i.succ - u 0) = fun k => u k + -u 0 := by
-  funext k
-  refine Fin.cases ?_ (fun i => ?_) k
-  · simp [ground]
-  · simp only [ground_succ]; ring
 
 /-- Implementation evidence: at a locally asymptotically stable power-balance point the Hessian
 form is positive semidefinite. -/

@@ -3,6 +3,7 @@ import theorem.Attributes
 import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import theorem.SpecialFunctions.Sinusoid
 
 /-! # Potential barrier of the tilted washboard `V(θ) = −c θ − A cos(θ + φ)` (foundation)
 
@@ -148,37 +149,26 @@ def barrierDown (c A φ : ℝ) : ℝ :=
   · rw [min_eq_right (by nlinarith [pi_pos]), barrierDown_eq hA, abs_of_neg hc, neg_div]
     ring
 
-/-- `θ_s` is the only zero strictly between the two neighbouring saddles. -/
+/-- `θ_s` is the only zero strictly between the two neighbouring saddles: the period window
+`[θ_u⁻, θ_u⁻ + 2π) = [θ_u⁻, θ_u⁺)` holds the two zeros of the sinusoid
+(`SpecialFunctions.sinusoidZeros_subset`), the stable zero `θ_s` and the left end `θ_u⁻`. -/
 @[powerlib_foundation] theorem zero_mem_Ioo_iff (hA : 0 < A) (hc : |c| < A) {θ : ℝ}
     (hθ : θ ∈ Ioo (thetaDown c A φ) (thetaUp c A φ)) :
     c - A * sin (θ + φ) = 0 ↔ θ = thetaS c A φ := by
-  constructor
-  · intro hz
-    have hs : |c / A| < 1 := by rw [abs_div, abs_of_pos hA, div_lt_one hA]; exact hc
-    have h1 : arcsin (c / A) < π / 2 := arcsin_lt_pi_div_two.mpr (abs_lt.mp hs).2
-    have h2 : -(π / 2) < arcsin (c / A) := neg_pi_div_two_lt_arcsin.mpr (abs_lt.mp hs).1
-    have hsin : sin (θ + φ) = sin (arcsin (c / A)) := by
-      rw [sin_arcsin (abs_lt.mp hs).1.le (abs_lt.mp hs).2.le]; field_simp; linarith
-    obtain ⟨hlo, hhi⟩ := hθ
-    simp only [thetaDown, thetaUp] at hlo hhi
-    have hpi := pi_pos
-    obtain ⟨k, hk | hk⟩ := Real.sin_eq_sin_iff.mp hsin
-    · -- arcsin s = 2kπ + θ + φ
-      have hk0 : (k : ℝ) = 0 := by
-        have a1 : (-1 : ℝ) < k := by nlinarith
-        have a2 : (k : ℝ) < 1 := by nlinarith
-        have b1 : (-1 : ℤ) < k := by exact_mod_cast a1
-        have b2 : k < (1 : ℤ) := by exact_mod_cast a2
-        have : k = 0 := by omega
-        simp [this]
-      rw [thetaS]; rw [hk0] at hk; linarith
-    · exfalso
-      have a1 : (-1 : ℝ) < k := by nlinarith
-      have a2 : (k : ℝ) < 0 := by nlinarith
-      have b1 : (-1 : ℤ) < k := by exact_mod_cast a1
-      have b2 : k < (0 : ℤ) := by exact_mod_cast a2
-      omega
-  · rintro rfl; exact thetaS_zero hA hc.le
+  refine ⟨fun hz => ?_, by rintro rfl; exact thetaS_zero hA hc.le⟩
+  have hs : |c / A| < 1 := by rw [abs_div, abs_of_pos hA, div_lt_one hA]; exact hc
+  have h1 : arcsin (c / A) < π / 2 := arcsin_lt_pi_div_two.mpr (abs_lt.mp hs).2
+  have h2 : -(π / 2) < arcsin (c / A) := neg_pi_div_two_lt_arcsin.mpr (abs_lt.mp hs).1
+  have hup : thetaUp c A φ = thetaDown c A φ + 2 * π := by simp only [thetaUp, thetaDown]; ring
+  have hw : θ ∈ SpecialFunctions.sinusoidZeros c A φ (thetaDown c A φ) :=
+    ⟨⟨hθ.1.le, by rw [← hup]; exact hθ.2⟩, hz⟩
+  rcases SpecialFunctions.sinusoidZeros_subset hA hw with h | h
+  · rw [h, SpecialFunctions.stableRoot, (toIcoMod_eq_self two_pi_pos).mpr, thetaS]
+    simp only [thetaDown, mem_Ico]
+    constructor <;> linarith [pi_pos]
+  · rw [SpecialFunctions.saddleRoot, show π - arcsin (c / A) - φ = thetaDown c A φ + 2 * π by
+      simp only [thetaDown]; ring, toIcoMod_add_right, toIcoMod_apply_left] at h
+    exact absurd h hθ.1.ne'
 
 /-! ### Positivity and fold asymptotics -/
 

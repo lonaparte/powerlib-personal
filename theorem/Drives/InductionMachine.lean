@@ -8,6 +8,7 @@ import theorem.TMIO.ClaimElab
 import theorem.Criteria.Hurwitz2
 import theorem.Transform.SpaceVector
 import theorem.Dynamics.Coordinates
+import theorem.PhasePlane.Planar
 import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
 import theorem.Linear.Stability
@@ -383,7 +384,7 @@ intermediate evidence only. -/
 
 @[powerlib_foundation] theorem coordinate_smooth (j : Fin 2) :
     ContDiff ℝ 1 (fun x : State2 => x j) :=
-  (PiLp.proj 2 (fun _ : Fin 2 => ℝ) j : State2 →L[ℝ] ℝ).contDiff
+  Dynamics.contDiff_coord j
 
 @[powerlib_foundation] theorem fluxField_smooth (p : Params) (isd isq ωsl : ℝ) :
     ContDiff ℝ 1 (fluxField p isd isq ωsl) := by
@@ -403,9 +404,8 @@ intermediate evidence only. -/
       fun_prop
   exact (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin 2 => ℝ)).symm.contDiff.comp hs
 
-@[powerlib_foundation] theorem norm_sq_state2 (x : State2) : ‖x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 := by
-  rw [PiLp.norm_sq_eq_of_L2]
-  simp [Fin.sum_univ_succ, sq_abs]
+@[powerlib_foundation] theorem norm_sq_state2 (x : State2) : ‖x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 :=
+  PhasePlane.norm_sq_eq x
 
 @[powerlib_foundation] theorem inner_state2 (x y : State2) :
     inner ℝ x y = x 0 * y 0 + x 1 * y 1 := by
@@ -641,16 +641,6 @@ term rotates the flux error and does no work). -/
   unfold powerlib.TMIO.Statement
   exact mem_den_flow.mpr (decay_of hrr hLr)
 
-/-- **IFOC field orientation with exact parameters.** With ideal current tracking, constant
-commands `(i_sd*, i_sq*)`, `i_sd* ≠ 0`, and the slip command computed with the true rotor time
-constant, the rotor flux converges globally exponentially (rate `1/T_r`) to its equilibrium,
-which is the oriented value `(L_m i_sd*, 0)` (`fluxEquilibrium_tuned`). -/
-@[powerlib_domain] theorem ifocFlux_tuned_globallyExponentiallyStable (p : Params)
-    (hrr : 0 < p.rr) (hLr : 0 < p.Lr) (isd isq : ℝ) :
-    connection% (⟨p, isd, isq, isq / (p.Tr * isd)⟩ ∈
-      family.den (.flow .globallyExponentiallyStable)) :=
-  ifocFlux_globallyExponentiallyStable ⟨p, isd, isq, isq / (p.Tr * isd)⟩ hrr hLr
-
 /-- The detuned IFOC drive, whose slip command uses an estimate `T̂_r`, is still globally
 exponentially stable; its equilibrium is oriented only when `T̂_r = T_r`
 (`ifocFlux_detuned_orientation_iff`). -/
@@ -659,6 +649,16 @@ exponentially stable; its equilibrium is oriented only when `T̂_r = T_r`
     connection% (⟨p, isd, isq, isq / (Tr_hat * isd)⟩ ∈
       family.den (.flow .globallyExponentiallyStable)) :=
   ifocFlux_globallyExponentiallyStable ⟨p, isd, isq, isq / (Tr_hat * isd)⟩ hrr hLr
+
+/-- **IFOC field orientation with exact parameters.** With ideal current tracking, constant
+commands `(i_sd*, i_sq*)`, `i_sd* ≠ 0`, and the slip command computed with the true rotor time
+constant, the rotor flux converges globally exponentially (rate `1/T_r`) to its equilibrium,
+which is the oriented value `(L_m i_sd*, 0)` (`fluxEquilibrium_tuned`). -/
+@[powerlib_domain] theorem ifocFlux_tuned_globallyExponentiallyStable (p : Params)
+    (hrr : 0 < p.rr) (hLr : 0 < p.Lr) (isd isq : ℝ) :
+    connection% (⟨p, isd, isq, isq / (p.Tr * isd)⟩ ∈
+      family.den (.flow .globallyExponentiallyStable)) :=
+  ifocFlux_detuned_globallyExponentiallyStable p hrr hLr isd isq p.Tr
 
 /-! ## Boundary witness: a negative rotor -/
 

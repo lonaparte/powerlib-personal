@@ -1,5 +1,6 @@
 import theorem.LTI.Discrete
 import theorem.Linear.EigenMap
+import theorem.Criteria.Hurwitz
 
 /-! # One-step schemes for an autonomous field and their linear-field reduction
 
@@ -164,17 +165,14 @@ private lemma one_sub_smul_eq (c : ℝ) :
     (1 : Matrix (Fin n) (Fin n) ℝ) - c • A = (-c) • A + (1 : ℝ) • 1 := by
   rw [neg_smul, one_smul, neg_add_eq_sub]
 
-/-- For a Hurwitz matrix and any `c > 0`, the implicit matrix `1 - cA` is invertible. -/
+/-- For a Hurwitz matrix and any `c > 0`, the implicit matrix `1 - cA = c (c⁻¹ - A)` is
+invertible (`Criteria.det_smul_sub_ne_zero_of_isHurwitz`). -/
 @[powerlib_foundation] theorem isUnit_det_one_sub_smul_of_isHurwitz (hA : IsHurwitz A) {c : ℝ}
     (hc : 0 < c) : IsUnit (1 - c • A).det := by
-  rw [one_sub_smul_eq]
-  refine Linear.isUnit_det_affine_of_forall_eigen (neg_ne_zero.mpr hc.ne')
-    fun lam v hv heig h0 => ?_
-  have hre := Linear.isHurwitz_iff_forall_eigen.mp hA lam v hv heig
-  have h1 := congrArg Complex.re h0
-  simp only [Complex.add_re, Complex.re_ofReal_mul, Complex.one_re, Complex.ofReal_one,
-    Complex.zero_re] at h1
-  nlinarith
+  rw [isUnit_iff_ne_zero, show 1 - c • A = c • (c⁻¹ • (1 : Matrix (Fin n) (Fin n) ℝ) - A) by
+    rw [smul_sub, smul_smul, mul_inv_cancel₀ hc.ne', one_smul], det_smul]
+  exact mul_ne_zero (pow_ne_zero _ hc.ne')
+    (Criteria.det_smul_sub_ne_zero_of_isHurwitz hA (inv_nonneg.mpr hc.le))
 
 /-- The trapezoidal matrix is the Möbius image `(1 - (h/2) A)⁻¹ (1 + (h/2) A)` of `A`. -/
 private lemma trapezoidal_mobius (hP : IsUnit (1 - (h / 2) • A).det) :

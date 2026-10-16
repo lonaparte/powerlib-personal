@@ -1,4 +1,5 @@
 import theorem.Circuits.Interconnection
+import theorem.Dynamics.Calculus
 import theorem.Dynamics.Transport
 import theorem.Linear.EigenMap
 import theorem.LTI.Plant
@@ -209,10 +210,10 @@ characteristic polynomial, `Linear.spectrallyStable_conj`). -/
   spectrallyStable_conj hST A
 
 omit [DecidableEq ι] in
+/-- The square instance of `Dynamics.hasDerivAt_mulVec`. -/
 @[powerlib_foundation] theorem hasDerivAt_mulVec (M : Matrix ι ι ℝ) {x : ℝ → ι → ℝ} {x' : ι → ℝ}
-    {t : ℝ} (hx : HasDerivAt x x' t) : HasDerivAt (fun s => M *ᵥ x s) (M *ᵥ x') t := by
-  have h := (LinearMap.toContinuousLinearMap (Matrix.mulVecLin M)).hasFDerivAt.comp_hasDerivAt t hx
-  simpa [Function.comp_def] using h
+    {t : ℝ} (hx : HasDerivAt x x' t) : HasDerivAt (fun s => M *ᵥ x s) (M *ᵥ x') t :=
+  Dynamics.hasDerivAt_mulVec M hx
 
 /-- **The return difference does not see the port bases.** For voltage coordinates `T_v` with
 inverse `S_v` and current coordinates `T_i` with left inverse `S_i`, over any commutative ring

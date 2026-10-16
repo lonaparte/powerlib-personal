@@ -1,6 +1,7 @@
 import theorem.Linear.Transfer
 import theorem.Linear.Stability
 import theorem.Linear.EigenMap
+import theorem.Criteria.Lyapunov
 
 /-! # Hurwitz matrices and exponential decay of linear solutions (foundation)
 
@@ -265,41 +266,19 @@ then `A − c I` is Hurwitz. -/
 
 /-- Spectral stability from real eigen-pairs: if every real pair `(a, b)` with
 `A a = x a − y b`, `A b = y a + x b` and `x ≥ 0` vanishes, then `A` is spectrally stable
-(`a ± i b` would be an eigenvector for `x ± i y`). Generic. -/
+(`a ± i b` would be an eigenvector for `x ± i y`; the real and imaginary parts of a complex
+eigenpair are `Criteria.mulVec_re_im_of_eigenpair`). Generic. -/
 @[powerlib_foundation] theorem spectrallyStable_of_real_pairs {ι : Type*} [Fintype ι]
     [DecidableEq ι] (A : Matrix ι ι ℝ)
     (h : ∀ (x y : ℝ) (a b : ι → ℝ), A *ᵥ a = x • a - y • b → A *ᵥ b = y • a + x • b →
       0 ≤ x → a = 0 ∧ b = 0) : Linear.SpectrallyStable A := by
-  intro s hs
-  obtain ⟨v, hv, hmv⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr hs
-  have heig : Linear.complexify A *ᵥ v = s • v := by
-    rw [Linear.characteristicMatrix, sub_mulVec, smul_mulVec, one_mulVec, sub_eq_zero] at hmv
-    exact hmv.symm
+  refine Linear.spectrallyStable_iff_forall_eigen.mpr fun s v hv heig => ?_
   by_contra hre
   push Not at hre
-  have hcomp : ∀ i, (Linear.complexify A *ᵥ v) i =
-      ((A *ᵥ fun j => (v j).re) i : ℂ) + ((A *ᵥ fun j => (v j).im) i : ℂ) * Complex.I := by
-    intro i
-    apply Complex.ext <;>
-      simp [mulVec, dotProduct, Complex.re_sum, Complex.im_sum, Complex.mul_re, Complex.mul_im]
-  have hre_eq : A *ᵥ (fun j => (v j).re) =
-      s.re • (fun j => (v j).re) - s.im • (fun j => (v j).im) := by
-    funext i
-    have := congrArg Complex.re ((hcomp i).symm.trans (congrFun heig i))
-    simpa [Complex.mul_re] using this
-  have him_eq : A *ᵥ (fun j => (v j).im) =
-      s.im • (fun j => (v j).re) + s.re • (fun j => (v j).im) := by
-    funext i
-    have := congrArg Complex.im ((hcomp i).symm.trans (congrFun heig i))
-    simp [Complex.mul_im] at this
-    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-    linarith
-  obtain ⟨ha, hb⟩ := h s.re s.im _ _ hre_eq him_eq hre
-  apply hv
-  funext j
-  apply Complex.ext
-  · simpa using congrFun ha j
-  · simpa using congrFun hb j
+  obtain ⟨h1, h2⟩ := Criteria.mulVec_re_im_of_eigenpair heig
+  obtain ⟨ha, hb⟩ := h s.re s.im _ _ h1 h2 hre
+  exact hv (funext fun j => Complex.ext (by simpa using congrFun ha j)
+    (by simpa using congrFun hb j))
 
 section Reindex
 

@@ -1,6 +1,7 @@
 import theorem.Modal.Spectral
 import theorem.Modal.Perturbation
 import theorem.Linear.Realization
+import theorem.Linear.EigenMap
 import Mathlib.Analysis.Meromorphic.Order
 import Mathlib.Analysis.Analytic.Constructions
 
@@ -259,17 +260,7 @@ of `G(s) = C (sI − A)⁻¹ B + D` is unbounded on every punctured neighbourhoo
   -- `μ` is a root of the minimal polynomial `π = (X − μ) φ`
   have hroot : (minpoly ℂ Ac).IsRoot μ := by
     obtain ⟨w, hw, hAw⟩ := mem_spectrum_iff_exists_eigvec.mp hμ
-    have hq : ∀ q : ℂ[X], aeval Ac q *ᵥ w = q.eval μ • w := by
-      intro q
-      induction q using Polynomial.induction_on with
-      | C a => simp [Algebra.algebraMap_eq_smul_one, Matrix.smul_mulVec]
-      | add p q hp hq => simp [Matrix.add_mulVec, hp, hq, add_smul]
-      | monomial k a ih =>
-        rw [pow_succ, ← mul_assoc, map_mul, aeval_X, ← Matrix.mulVec_mulVec, hAw,
-          Matrix.mulVec_smul, ih, smul_smul]
-        simp only [eval_mul, eval_C, eval_pow, eval_X]
-        ring_nf
-    have h0 := hq (minpoly ℂ Ac)
+    have h0 := mulVec_aeval_of_eigen hAw (minpoly ℂ Ac)
     rw [minpoly.aeval, Matrix.zero_mulVec] at h0
     by_contra hne
     exact hw ((smul_eq_zero.mp h0.symm).resolve_left hne)

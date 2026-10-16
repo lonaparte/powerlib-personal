@@ -29,6 +29,13 @@ def characteristicMatrix {ι : Type*} [Fintype ι] [DecidableEq ι] (A : Matrix 
 def SpectrallyStable {ι : Type*} [Fintype ι] [DecidableEq ι] (A : Matrix ι ι ℝ) : Prop :=
   ∀ s : ℂ, (characteristicMatrix A s).det = 0 → s.re < 0
 
+/-- The characteristic determinant is the characteristic polynomial of the complexified matrix,
+on any finite index. -/
+@[powerlib_foundation] theorem det_characteristicMatrix_eq_eval {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (A : Matrix ι ι ℝ) (s : ℂ) :
+    (characteristicMatrix A s).det = (complexify A).charpoly.eval s := by
+  rw [Matrix.eval_charpoly, characteristicMatrix, Matrix.scalar_apply, Matrix.smul_one_eq_diagonal]
+
 /-- Pole stability does not depend on the labelling of the states. -/
 @[powerlib_foundation] theorem spectrallyStable_reindex {ι ι' : Type*} [Fintype ι]
     [DecidableEq ι] [Fintype ι'] [DecidableEq ι'] (e : ι ≃ ι') (A : Matrix ι ι ℝ) :

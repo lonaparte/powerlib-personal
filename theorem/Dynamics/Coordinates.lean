@@ -21,21 +21,24 @@ work-sync formalization.
 Results.
 * `hasFDerivAt_toEuclideanCLM_of_components` / `fderiv_eq_toEuclideanCLM_of_components`:
   if each component has derivative `L i` with `L i v = ∑ j, A i j * v j`, the Jacobian is `A`
-  (any dimension); `toEuclideanCLM_injective_fin_two`: a planar Jacobian determines its matrix.
+  (any dimension); `toEuclideanCLM_apply`: a matrix acts on a state coordinatewise,
+  `(A v) i = ∑ j, A i j * v j` (any dimension); `toEuclideanCLM_injective_fin_two`: a planar
+  Jacobian determines its matrix.
 * `coord`, `hasFDerivAt_coord`, `contDiff_coord` (`fun_prop`): coordinates are smooth linear maps.
 * `contDiff_of_components`: smoothness of `f` from smoothness of its components.
 * `contDiff_field_mk_two_example`: a `fun_prop` demonstration for a planar field built from
   `Real.sin` / `Real.cos` (pendulum / swing / PLL shape); `fderiv_field_mk_two_example_zero`
   computes the Jacobian of such a field with the component helper.
 * Three states: `mk3` (the state `(a, b, c)`, with `mk3_zero`, `mk3_one`, `mk3_two`),
-  `state3_ext` (extensionality by coordinates), `toEuclideanCLM_apply3` (a `3 × 3` matrix acting
-  on a state, coordinatewise).
+  `state3_ext` (extensionality by coordinates), `toEuclideanCLM_apply3` (the instance of
+  `toEuclideanCLM_apply` for a `3 × 3` matrix).
 * `lift F`: a field on plain coordinates `Fin n → ℝ` transported to `Dynamics.State n`; its
   Fréchet derivative is `toEuclideanCLM A` whenever the coordinate field has derivative
   `toLin' A` (`hasFDerivAt_lift`, `fderiv_lift`, `contDiff_lift`); `hasFDerivAt_of_eq` replaces a
   function and its derivative by provably equal ones.
-* Norms and coordinates: `abs_apply_le_norm`, `abs_coord_sub_le`, `norm_le_abs_add_abs_two`,
-  `norm_le_abs_add_abs_three`, `norm_le_sum_abs`, `sqrt_sq_add_sq_le`, and the projection
+* Norms and coordinates: `abs_apply_le_norm`, `abs_coord_sub_le`, `norm_le_sum_abs` with its
+  instances `norm_le_abs_add_abs_two`, `norm_le_abs_add_abs_three`, `sqrt_sq_add_sq_le`, and the
+  projection
   removing one coordinate (`norm_sub_smul_single_le`, `norm_le_norm_sub_smul_single_add`).
 * Curves in `State n`: `fderiv_apply_eq_of_hasDerivAt_line` (a directional derivative is the
   derivative along the line), `hasDerivWithinAt_euclidean_of_coord`,
@@ -88,6 +91,12 @@ def coord (i : Fin n) : Dynamics.State n →L[ℝ] ℝ := EuclideanSpace.proj i
     (hA : ∀ i (v : Dynamics.State n), L i v = ∑ j, A i j * v j) :
     fderiv ℝ f x = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A :=
   (hasFDerivAt_toEuclideanCLM_of_components A L hL hA).fderiv
+
+/-- A matrix acts on a state coordinatewise (any dimension). -/
+@[powerlib_foundation] theorem toEuclideanCLM_apply (A : Matrix (Fin n) (Fin n) ℝ)
+    (v : Dynamics.State n) (i : Fin n) :
+    (Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A v) i = ∑ j, A i j * v j := by
+  simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct]
 
 @[powerlib_foundation] theorem toEuclideanCLM_injective_fin_two :
     Function.Injective (fun A : Matrix (Fin 2) (Fin 2) ℝ =>
@@ -159,8 +168,7 @@ def mk3 (a b c : ℝ) : State 3 := (WithLp.equiv 2 (Fin 3 → ℝ)).symm ![a, b,
     (v : State 3) (i : Fin 3) :
     (Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) A v) i =
       A i 0 * v 0 + A i 1 * v 1 + A i 2 * v 2 := by
-  simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_succ]
-  ring
+  rw [toEuclideanCLM_apply, Fin.sum_univ_three]
 
 end Three
 
@@ -237,30 +245,23 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 @[powerlib_foundation] theorem abs_apply_le_norm (x : ℝⁿ) (i : Fin n) : |x i| ≤ ‖x‖ := by
   simpa using PiLp.norm_apply_le x i
 
+/-- The norm of a vector of `State n` is at most the sum of the absolute values of its
+coordinates. -/
+@[powerlib_foundation] theorem norm_le_sum_abs (v : State n) : ‖v‖ ≤ ∑ i, |v i| := by
+  rw [EuclideanSpace.norm_eq, Real.sqrt_le_left (Finset.sum_nonneg fun i _ => abs_nonneg _)]
+  simp only [Real.norm_eq_abs]
+  exact Finset.sum_sq_le_sq_sum_of_nonneg fun i _ => abs_nonneg _
+
 /-- The Euclidean norm of a planar state is bounded by the sum of the absolute coordinates. -/
 @[powerlib_foundation] theorem norm_le_abs_add_abs_two (x : EuclideanSpace ℝ (Fin 2)) :
-    ‖x‖ ≤ |x 0| + |x 1| := by
-  have h0 := abs_nonneg (x 0)
-  have h1 := abs_nonneg (x 1)
-  have h : ‖x‖ ^ 2 ≤ (|x 0| + |x 1|) ^ 2 := by
-    rw [PiLp.norm_sq_eq_of_L2]
-    simp only [Fin.sum_univ_two, Real.norm_eq_abs, sq_abs]
-    nlinarith [sq_abs (x 0), sq_abs (x 1), mul_nonneg h0 h1]
-  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp h
+    ‖x‖ ≤ |x 0| + |x 1| :=
+  (norm_le_sum_abs x).trans_eq (Fin.sum_univ_two _)
 
 /-- The Euclidean norm of a three-dimensional state is bounded by the sum of the absolute
 coordinates. -/
 @[powerlib_foundation] theorem norm_le_abs_add_abs_three (x : EuclideanSpace ℝ (Fin 3)) :
-    ‖x‖ ≤ |x 0| + |x 1| + |x 2| := by
-  have h0 := abs_nonneg (x 0)
-  have h1 := abs_nonneg (x 1)
-  have h2 := abs_nonneg (x 2)
-  have h : ‖x‖ ^ 2 ≤ (|x 0| + |x 1| + |x 2|) ^ 2 := by
-    rw [PiLp.norm_sq_eq_of_L2]
-    simp only [Fin.sum_univ_three, Real.norm_eq_abs, sq_abs]
-    nlinarith [sq_abs (x 0), sq_abs (x 1), sq_abs (x 2), mul_nonneg h0 h1, mul_nonneg h0 h2,
-      mul_nonneg h1 h2]
-  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp h
+    ‖x‖ ≤ |x 0| + |x 1| + |x 2| :=
+  (norm_le_sum_abs x).trans_eq (Fin.sum_univ_three _)
 
 /-- The coordinate projection killing the `k`-th coordinate does not increase the norm. -/
 @[powerlib_foundation] theorem norm_sub_smul_single_le (k : Fin n) (v : State n) :
@@ -333,13 +334,6 @@ coordinates. -/
   have h1 : Tendsto (fun t => (φ t).ofLp) l (𝓝 y.ofLp) := tendsto_pi_nhds.mpr h
   have h2 := ((PiLp.continuous_toLp 2 (fun _ : Fin n => ℝ)).tendsto y.ofLp).comp h1
   simpa [Function.comp_def] using h2
-
-/-- The norm of a vector of `State n` is at most the sum of the absolute values of its
-coordinates. -/
-@[powerlib_foundation] theorem norm_le_sum_abs {n : ℕ} (v : State n) : ‖v‖ ≤ ∑ i, |v i| := by
-  rw [EuclideanSpace.norm_eq, Real.sqrt_le_left (Finset.sum_nonneg fun i _ => abs_nonneg _)]
-  simp only [Real.norm_eq_abs]
-  exact Finset.sum_sq_le_sq_sum_of_nonneg fun i _ => abs_nonneg _
 
 end Curves
 

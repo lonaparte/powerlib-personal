@@ -33,6 +33,8 @@ Results.
 * Taylor remainders at `0`: `one_sub_cos_isBigO` (`1 − cos x = O(x²)`), `sin_sub_self_isBigO`
   (`sin x − x = O(x³)`), `one_sub_cos_sub_isBigO` (`1 − cos x − x²/2 = O(x⁴)`), from Mathlib's
   `Real.sin_bound`, `Real.cos_bound`, `Real.one_sub_sq_div_two_le_cos`.
+* `hasDerivAt_mulVec`: a matrix (rectangular, any finite index types) maps a differentiable
+  curve to a differentiable curve, `(M x)' = M x'`.
 * `firstIntegral_const`: a differentiable `I` with `∇I · f ≡ 0` is constant along every solution
   segment of `f` (LeanForControl's `antitoneOn_V_comp_traj` applied to `±I`).
 -/
@@ -461,6 +463,17 @@ open Set Filter Topology Metric Asymptotics
   linarith
 
 end Asymptotic
+
+/-! ## Curves through a matrix -/
+
+open Matrix in
+/-- A matrix maps a differentiable curve to a differentiable curve: `(M x)' = M x'` (rectangular
+`M`, any finite index types). -/
+@[powerlib_foundation] theorem hasDerivAt_mulVec {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (M : Matrix ι κ ℝ) {x : ℝ → κ → ℝ} {x' : κ → ℝ} {t : ℝ} (hx : HasDerivAt x x' t) :
+    HasDerivAt (fun s => M *ᵥ x s) (M *ᵥ x') t := by
+  have h := (LinearMap.toContinuousLinearMap (Matrix.mulVecLin M)).hasFDerivAt.comp_hasDerivAt t hx
+  simpa [Function.comp_def] using h
 
 /-! ## First integrals -/
 

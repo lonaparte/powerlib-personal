@@ -25,7 +25,7 @@ Results.
 * Denotations: `den_globallyExponentiallyStable_subset_gas`,
   `den_globallyExponentiallyStable_subset_les`,
   `den_globallyExponentiallyStable_subset_contractive` (for every family, continuous or
-  discrete; the discrete cases are proved here from the map semantics).
+  discrete: `theorem/Flow/Basic.lean` and `theorem/Map/Basic.lean`).
 * Requirement spaces: `mem_realize_singleton` (the space of one requirement);
   `realize_univ_subset_of_eq_empty` (the whole, inconsistent, language realizes into every set).
 * The table: `globalTable Rs Rg Ru Rc Rp Rd` (the local sentences to `Rs`, the global sentences
@@ -46,44 +46,9 @@ noncomputable section
 
 namespace powerlib.Spectral
 
-open TMIO Set Filter Topology
+open TMIO Set
 
 variable {X Q : Type*} {n p : ℕ}
-
-/-! ## The discrete global exponential estimate -/
-
-section Map
-
-local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
-
-/-- A global geometric estimate is in particular a local one. -/
-private theorem map_les_of_ges {F : ℝⁿ → ℝⁿ} {x : ℝⁿ} (h : Map.GloballyExponentiallyStable F x) :
-    Map.LocallyExponentiallyStable F x := by
-  obtain ⟨-, C, ρ, hC, hρ0, hρ1, hb⟩ := h
-  exact ⟨1, C, ρ, one_pos, hC, hρ0, hρ1, fun y _ k => hb y k⟩
-
-/-- A global geometric estimate gives global asymptotic stability. -/
-private theorem map_gas_of_ges {F : ℝⁿ → ℝⁿ} {x : ℝⁿ} (h : Map.GloballyExponentiallyStable F x) :
-    Map.GloballyAsymptoticallyStable F x := by
-  refine ⟨h.1, (map_les_of_ges h).lyapunovStable, fun y => ?_⟩
-  obtain ⟨-, C, ρ, -, hρ0, hρ1, hb⟩ := h
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  have hlim : Tendsto (fun k : ℕ => C * ρ ^ k * ‖y - x‖) atTop (𝓝 0) := by
-    have := (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1).const_mul C
-    simpa using this.mul_const ‖y - x‖
-  exact squeeze_zero (fun _ => norm_nonneg _) (fun k => hb y k) hlim
-
-/-- A global geometric estimate gives sampled contraction: the overshoot `C` is eventually beaten
-by `ρ^k`. -/
-private theorem map_contractive_of_ges {F : ℝⁿ → ℝⁿ} {x : ℝⁿ}
-    (h : Map.GloballyExponentiallyStable F x) : Map.SampledContraction F x := by
-  obtain ⟨-, C, ρ, -, hρ0, hρ1, hb⟩ := h
-  have hlim : Tendsto (fun k : ℕ => C * ρ ^ k) atTop (𝓝 0) := by
-    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1).const_mul C
-  obtain ⟨k, hk⟩ := ((eventually_gt_atTop 0).and (hlim.eventually (gt_mem_nhds one_pos))).exists
-  exact ⟨k, hk.1, C * ρ ^ k, hk.2, fun y => hb y k⟩
-
-end Map
 
 /-! ## Denotations of the global sentences -/
 
@@ -105,7 +70,7 @@ variable {F : Family X Q n p}
   | discrete s =>
     rw [h, Sentence.holds_flow_discrete] at hx
     rw [Sentence.holds_flow_discrete]
-    exact map_gas_of_ges hx
+    exact Map.GloballyExponentiallyStable.globallyAsymptoticallyStable hx
 
 /-- Global exponential stability gives local exponential stability, for every family. -/
 @[powerlib_foundation] theorem den_globallyExponentiallyStable_subset_les :
@@ -121,7 +86,7 @@ variable {F : Family X Q n p}
   | discrete s =>
     rw [h, Sentence.holds_flow_discrete] at hx
     rw [Sentence.holds_flow_discrete]
-    exact map_les_of_ges hx
+    exact Map.GloballyExponentiallyStable.locallyExponentiallyStable hx
 
 /-- Global exponential stability gives sampled contraction, for every family. -/
 @[powerlib_foundation] theorem den_globallyExponentiallyStable_subset_contractive :
@@ -136,7 +101,7 @@ variable {F : Family X Q n p}
   | discrete s =>
     rw [h, Sentence.holds_flow_discrete] at hx
     rw [Sentence.holds_flow_discrete]
-    exact map_contractive_of_ges hx
+    exact Map.GloballyExponentiallyStable.sampledContraction hx
 
 end Denotation
 

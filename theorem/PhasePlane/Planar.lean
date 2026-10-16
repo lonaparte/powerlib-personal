@@ -24,8 +24,8 @@ Results.
 * `mk a b` is the state with `x 0 = a`, `x 1 = b` (`mk_apply_zero`, `mk_apply_one`, `mk_coords`,
   `ext_iff'`, `mk_eq_iff`, `mk_sub`); norms `norm_sq_eq`, `norm_mk_sq`, `norm_mk`.
 * `toEuclideanCLM_apply_zero`, `toEuclideanCLM_apply_one` read off the two components of a
-  `2 × 2` matrix acting on a planar state; `hasDerivWithinAt_iff_components` differentiates a
-  planar curve componentwise.
+  `2 × 2` matrix acting on a planar state (instances of `Dynamics.toEuclideanCLM_apply`);
+  `hasDerivWithinAt_iff_components` differentiates a planar curve componentwise.
 -/
 
 noncomputable section
@@ -77,12 +77,12 @@ def mk (a b : ℝ) : State 2 := WithLp.toLp 2 ![a, b]
 @[powerlib_foundation] theorem toEuclideanCLM_apply_zero (A : Matrix (Fin 2) (Fin 2) ℝ)
     (v : State 2) :
     (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A v) 0 = A 0 0 * v 0 + A 0 1 * v 1 := by
-  simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+  rw [Dynamics.toEuclideanCLM_apply, Fin.sum_univ_two]
 
 @[powerlib_foundation] theorem toEuclideanCLM_apply_one (A : Matrix (Fin 2) (Fin 2) ℝ)
     (v : State 2) :
     (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) A v) 1 = A 1 0 * v 0 + A 1 1 * v 1 := by
-  simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+  rw [Dynamics.toEuclideanCLM_apply, Fin.sum_univ_two]
 
 /-- A planar curve is a solution iff its two coordinates satisfy the componentwise equations. -/
 @[powerlib_foundation] theorem hasDerivWithinAt_iff_components {φ : ℝ → State 2} {v : State 2}

@@ -1,5 +1,7 @@
 import theorem.GFM.Matching.Matching
 import theorem.Spectral.Global
+import theorem.Criteria.Lyapunov
+import theorem.Dynamics.Coordinates
 
 /-! # Energy-shaping matching control on a stiff grid: what the "global stability condition" proves
 
@@ -210,15 +212,6 @@ end Model
     simp [Model.iHatQ]
   · ring
 
-private theorem fderiv_eq_of_line {n : ℕ} {V : State n → ℝ} {x v : State n} {d : ℝ}
-    (hV : DifferentiableAt ℝ V x) (h : HasDerivAt (fun t : ℝ => V (x + t • v)) d 0) :
-    fderiv ℝ V x v = d := by
-  have hl : HasDerivAt (fun t : ℝ => x + t • v) v 0 := by
-    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const v).const_add x
-  have hV' : HasFDerivAt V (fderiv ℝ V x) (x + (0 : ℝ) • v) := by
-    simpa using hV.hasFDerivAt
-  exact (hV'.comp_hasDerivAt (0 : ℝ) hl).unique h
-
 /-- Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem energy_differentiable (m : Model) : Differentiable ℝ m.energy := by
   have h := fun j : Fin 4 => (PiLp.proj 2 (fun _ : Fin 4 => ℝ) j : State 4 →L[ℝ] ℝ).differentiable
@@ -241,7 +234,7 @@ private theorem fderiv_eq_of_line {n : ℕ} {V : State n → ℝ} {x v : State n
           (x 3 - m.iHatQ (x 0)) *
             (v 3 - m.μ * m.ustar * (m.Rs * Real.sin (x 0) - m.ω0 * m.Ls * Real.cos (x 0)) / m.N *
               v 0)) := by
-  apply fderiv_eq_of_line ((energy_differentiable m) x)
+  apply Dynamics.fderiv_apply_eq_of_hasDerivAt_line ((energy_differentiable m) x)
   have hlin : ∀ j : Fin 4, HasDerivAt (fun t : ℝ => x j + t * v j) (v j) 0 := fun j => by
     simpa using ((hasDerivAt_id (0 : ℝ)).mul_const (v j)).const_add (x j)
   have hθ := hlin 0
@@ -518,14 +511,12 @@ private theorem eigen_re_im {A : Matrix (Fin 4) (Fin 4) ℝ} {lam : ℂ} {v : Fi
         lam.re * (v i).re - lam.im * (v i).im ∧
       A i 0 * (v 0).im + A i 1 * (v 1).im + A i 2 * (v 2).im + A i 3 * (v 3).im =
         lam.im * (v i).re + lam.re * (v i).im := by
-  have hi := congrFun h i
-  simp only [Matrix.mulVec, dotProduct, Fin.sum_univ_four, Matrix.map_apply, Pi.smul_apply,
-    smul_eq_mul] at hi
-  constructor
-  · have := congrArg Complex.re hi
-    simpa [Complex.mul_re] using this
-  · have := congrArg Complex.im hi
-    simpa [Complex.mul_im, add_comm] using this
+  obtain ⟨hr, hi⟩ := Criteria.mulVec_re_im_of_eigenpair h
+  have hr := congrFun hr i
+  have hi := congrFun hi i
+  simp only [Matrix.mulVec, dotProduct, Fin.sum_univ_four, Pi.sub_apply, Pi.add_apply,
+    Pi.smul_apply, smul_eq_mul] at hr hi
+  exact ⟨hr, hi⟩
 
 /-- **The linearization at the operating point is Hurwitz** under the source's strict condition
 (`margin > 0`), `C_dc, L_s, R_s > 0`, `μ u* v₀ > 0` and `η ≠ 0`. Proof: along a complex eigenvector
@@ -676,7 +667,7 @@ boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC ro
 private theorem toEuclideanCLM_apply4 (A : Matrix (Fin 4) (Fin 4) ℝ) (v : State 4) (i : Fin 4) :
     (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) A v) i =
       A i 0 * v 0 + A i 1 * v 1 + A i 2 * v 2 + A i 3 * v 3 := by
-  simp [Matrix.ofLp_toEuclideanCLM, Matrix.mulVec, dotProduct, Fin.sum_univ_four]
+  rw [Dynamics.toEuclideanCLM_apply, Fin.sum_univ_four]
 
 /-- Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem field_contDiff (m : Model) : ContDiff ℝ 1 m.field := by
@@ -844,8 +835,10 @@ private theorem mem_den_flow {m : Model} {P : Flow.Property} :
   have h2 : m.μ * m.ustar * m.v0 < 0 := h2
   linarith
 
-private theorem k_pos (m : Model) (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : 0 < m.μ * m.ustar * m.v0) :
-    0 < m.k := by
+/-- The synchronizing coefficient is positive (`L_s, R_s > 0`, `μ u* v₀ > 0`).
+Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem k_pos (m : Model) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+    (hs : 0 < m.μ * m.ustar * m.v0) : 0 < m.k := by
   have hN : 0 < m.N := by
     unfold Model.N
     have := sq_nonneg m.ω0

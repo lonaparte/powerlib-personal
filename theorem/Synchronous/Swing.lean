@@ -9,6 +9,9 @@ import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
 import theorem.Spectral.Local
+import theorem.Spectral.LinearNamed
+import theorem.Spectral.Equilibrium
+import theorem.SpecialFunctions.Sinusoid
 
 /-! # The sinusoidally coupled swing equation (canonical single-machine model)
 
@@ -103,8 +106,9 @@ Family and connection conclusions.
   (`Swing.offEquilibrium_mem_den_unstable`), while the translation asks for power balance.
 * The linearization at the selected angle is a second family on the same models
   (`Swing.Linearized.family`, the linear plant `Swing.Linearized.plant` of the Jacobian;
-  `fderiv_point_eq_plant` identifies it with the Jacobian of the nonlinear field). Within
-  positive inertia its attractive sentences and sampled contraction are translated exactly
+  `fderiv_point_eq_plant` identifies it with the Jacobian of the nonlinear field); its
+  translation is the linear table (`Spectral.linearTable`). Within positive inertia its
+  attractive sentences and sampled contraction are translated exactly
   (`Swing.Linearized.exactUnder_hurwitz`): `M s² + D s + K` is Hurwitz iff `D > 0` and `K > 0`
   (`Swing.Linearized.mem_den_iff`).
 * The behavioural theorems on the untranslated field (`locallyExponentiallyStable_*`,
@@ -237,26 +241,24 @@ Static evidence on the model, not a connection conclusion. -/
     · simp [accel, h0, h1]
 
 /-- Equilibrium existence: the power-angle curve reaches the mechanical power,
-`|P_m − k₁| ≤ k₂` (`k₂ > 0`). Static evidence on the model, not a connection conclusion. -/
+`|P_m − k₁| ≤ k₂` (`k₂ > 0`): the zeros of the sinusoid `P_m − k₁ − k₂ sin(δ − k₃)`
+(`SpecialFunctions.exists_sinusoid_zero_iff`). Static evidence on the model, not a connection
+conclusion. -/
 @[powerlib_foundation] theorem exists_equilibrium_iff (hM : p.M ≠ 0) (hk : 0 < p.k₂) :
     (∃ x, p.field x = 0) ↔ |p.Pm - p.k₁| ≤ p.k₂ := by
+  rw [← SpecialFunctions.exists_sinusoid_zero_iff (φ := -p.k₃) hk]
   constructor
   · rintro ⟨x, hx⟩
     obtain ⟨-, hP⟩ := (p.field_eq_zero_iff hM x).mp hx
-    have hP' : p.Pm - p.k₁ = p.k₂ * Real.sin (x 0 - p.k₃) := by
-      simp only [Pe] at hP; linarith
-    rw [hP', abs_mul, abs_of_pos hk]
-    exact mul_le_of_le_one_right hk.le (Real.abs_sin_le_one _)
-  · intro h
-    have ha : |(p.Pm - p.k₁) / p.k₂| ≤ 1 := by
-      rw [abs_div, abs_of_pos hk, div_le_one hk]; exact h
-    refine ⟨PhasePlane.mk (Real.arcsin ((p.Pm - p.k₁) / p.k₂) + p.k₃) 0, ?_⟩
-    rw [p.field_eq_zero_iff hM]
-    refine ⟨by simp, ?_⟩
-    simp only [PhasePlane.mk_apply_zero, Pe, add_sub_cancel_right]
-    rw [Real.sin_arcsin (abs_le.mp ha).1 (abs_le.mp ha).2]
-    field_simp
-    ring
+    refine ⟨x 0, ?_⟩
+    rw [← sub_eq_add_neg]
+    simp only [Pe] at hP
+    linarith
+  · rintro ⟨δ, hδ⟩
+    refine ⟨PhasePlane.mk δ 0, (p.field_eq_zero_iff hM _).mpr ⟨by simp, ?_⟩⟩
+    rw [← sub_eq_add_neg] at hδ
+    simp only [PhasePlane.mk_apply_zero, Pe]
+    linarith
 
 /-- Normalized load `a = (P_m − k₁) / k₂`. -/
 def loadRatio : ℝ := (p.Pm - p.k₁) / p.k₂
@@ -294,13 +296,8 @@ def deltaU : ℝ := Real.pi - Real.arcsin p.loadRatio + p.k₃
 /-- `cos(δ_s − k₃) = √(1 − a²) > 0` strictly inside the loadability limit. -/
 @[powerlib_foundation] theorem syncCoeff_deltaS_pos (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
     0 < p.syncCoeff p.deltaS := by
-  have ha := p.abs_loadRatio_lt hk h
   simp only [syncCoeff, deltaS, add_sub_cancel_right, Real.cos_arcsin]
-  apply mul_pos hk
-  apply Real.sqrt_pos.mpr
-  have : p.loadRatio ^ 2 < 1 := by
-    rw [← sq_abs]; nlinarith [abs_nonneg p.loadRatio]
-  linarith
+  exact mul_pos hk (SpecialFunctions.sqrt_one_sub_sq_pos h hk)
 
 /-- `cos(δ_u − k₃) = −√(1 − a²) < 0` strictly inside the loadability limit. -/
 @[powerlib_foundation] theorem syncCoeff_deltaU_neg (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
@@ -675,6 +672,11 @@ private theorem point_eq_zero {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m
     m.p.field m.point = 0 :=
   (m.p.field_eq_zero_iff hM.ne' _).mpr ⟨by simp, by simpa using hb⟩
 
+/-- An equilibrium at the selected point is a balanced angle. -/
+private theorem balanced_of {m : Model} (hM : m.p.M ≠ 0) (heq : m.p.field m.point = 0) :
+    m.p.Pe m.δ = m.p.Pm := by
+  simpa using ((m.p.field_eq_zero_iff hM _).mp heq).2
+
 private theorem les_of {m : Model} (hM : 0 < m.p.M) (hD : 0 < m.p.D)
     (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
     LocallyExponentiallyStable m.p.field m.point :=
@@ -785,9 +787,8 @@ leaves it (`Spectral.mem_den_unstable_of_ne_zero`). -/
 @[powerlib_domain] theorem mem_den_unstable_of_not_balanced (m : Model) (hM : m.p.M ≠ 0)
     (hb : m.p.Pe m.δ ≠ m.p.Pm) : connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff) m.p.contDiff_field
-    fun h => hb ?_
-  simpa using ((m.p.field_eq_zero_iff hM _).mp h).2
+  exact Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff) m.p.contDiff_field
+    fun h => hb (balanced_of hM h)
 
 /-- The closed-form stable equilibrium `(δ_s, 0)` is locally exponentially stable
 (`M, D, k₂ > 0`, `|P_m − k₁| < k₂`). -/
@@ -827,12 +828,10 @@ an equilibrium whose Jacobian `[[0, 1], [−K/M, −D/M]]` is Hurwitz. -/
       (hm .damped (by simp [family, translate])) (hm .balanced (by simp [family, translate]))
       (hm .synchronizing (by simp [family, translate])))
   have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
-  rw [m.p.field_eq_zero_iff hM.ne'] at heq
   rw [m.p.isHurwitz_jacobian_iff hM] at hH
   rw [TMIO.mem_realize]
   rintro q (rfl | rfl | rfl | rfl)
-  · show m.p.Pe m.δ = m.p.Pm
-    simpa [Model.point] using heq.2
+  · exact balanced_of hM.ne' heq
   · exact hM
   · exact hH.1
   · exact hH.2
@@ -879,19 +878,15 @@ private theorem energy_mkState (p : SwingParams) (δ₀ s : ℝ) :
     p.energy δ₀ (PhasePlane.mk (δ₀ + s) 0) = p.potential δ₀ (δ₀ + s) := by
   simp [SwingParams.energy]
 
-/-- Within positive inertia, local asymptotic stability of `(δ*, 0)` forces balance, positive
+/-- Within positive inertia, local asymptotic stability at a balanced angle forces positive
 damping and a positive synchronizing coefficient. Negative damping or synchronization is unstable;
 an undamped machine conserves its energy; a flat power-angle curve has a continuum of
 equilibria; and at a fold of the curve the dissipated energy takes negative values next to
 `(δ*, 0)`. -/
-private theorem las_requirements {m : Model} (hM : 0 < m.p.M)
+private theorem las_guard {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm)
     (hlas : LocalAsymptoticStable m.p.field m.point) :
-    m.p.Pe m.δ = m.p.Pm ∧ 0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ := by
+    0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ := by
   have hC : ContDiff ℝ 1 m.p.field := m.p.contDiff_field
-  have heq : m.p.field m.point = 0 :=
-    Dynamics.isEquilibrium_of_lyapunovStable hC hlas.1
-  have hb : m.p.Pe m.δ = m.p.Pm := by
-    simpa using ((m.p.field_eq_zero_iff hM.ne' _).mp heq).2
   have hEd : Differentiable ℝ (m.p.energy m.δ) :=
     (m.p.contDiff_energy (k := 1) _).differentiable one_ne_zero
   have hE0 : m.p.energy m.δ m.point = 0 := by simp [SwingParams.energy, Model.point]
@@ -913,7 +908,7 @@ private theorem las_requirements {m : Model} (hM : 0 < m.p.M)
           SwingParams.potential_self]
         positivity
     · exact hD
-  refine ⟨hb, hD, ?_⟩
+  refine ⟨hD, ?_⟩
   rcases lt_trichotomy (m.p.syncCoeff m.δ) 0 with hK | hK | hK
   · exact absurd hlas.1 (unstable_of hM hb (Or.inl hK))
   · exfalso
@@ -962,24 +957,28 @@ positive energy converges; a flat power-angle curve (`k₂ = 0`) has a continuum
 at a fold of the curve (`k₂ cos(δ* − k₃) = 0`, `k₂ ≠ 0`) the potential `−(P_m − k₁)(s − sin s)`
 (`potential_fold`) is negative on one side of `δ*`, where the dissipated energy keeps every
 solution away (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`); negative damping or a negative
-synchronizing coefficient is unstable. -/
+synchronizing coefficient is unstable. A locally asymptotically stable point of the `C¹` field is
+an equilibrium, so the guard `D > 0`, `K > 0` decides (`Spectral.exactUnder_of_equilibrium`). -/
 @[powerlib_domain] theorem exactUnder_locallyAsymptoticallyStable :
     connection% (family.ExactUnder {.inertia} (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  refine Spectral.exactUnder_iff_forall.mpr fun m hI => ⟨fun hm => ?_, fun hd => ?_⟩
+  refine Spectral.exactUnder_of_equilibrium (fun m P => mem_den_flow_iff) (Or.inr (Or.inl rfl))
+    {.inertia} (fun m => 0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ) (fun m _ hm => ?_)
+    (fun m _ => m.p.contDiff_field) (fun m hI heq hG hd => ?_) fun m hI heq hG => ?_
   · rw [TMIO.mem_realize] at hm
     exact Spectral.den_locallyExponentiallyStable_subset_las (mem_den_flow_iff.mpr
       (les_of (hm .inertia (by simp [family, translate])) (hm .damped (by simp [family, translate]))
         (hm .balanced (by simp [family, translate]))
         (hm .synchronizing (by simp [family, translate]))))
-  have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
-  obtain ⟨hb, hD, hK⟩ := las_requirements hM (mem_den_flow_iff.mp hd)
-  rw [TMIO.mem_realize]
-  rintro q (rfl | rfl | rfl | rfl)
-  · exact hb
-  · exact hM
-  · exact hD
-  · exact hK
+  · have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
+    exact hG (las_guard hM (balanced_of hM.ne' heq) (mem_den_flow_iff.mp hd))
+  · have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
+    rw [TMIO.mem_realize]
+    rintro q (rfl | rfl | rfl | rfl)
+    · exact balanced_of hM.ne' heq
+    · exact hM
+    · exact hG.1
+    · exact hG.2
 
 /-- A flat power-angle curve: `M = D = 1`, `P_m = k₁ = k₂ = k₃ = 0`, `δ* = 0`. Every angle is
 balanced; the field is `δ̇ = ω`, `ω̇ = −ω`. -/
@@ -1088,9 +1087,8 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
   constructor
   · intro hm
     have hls : LyapunovStable m.p.field m.point := mem_den_flow_iff.mp hm
-    have heq : m.p.field m.point = 0 := Dynamics.isEquilibrium_of_lyapunovStable hC hls
-    have hb : m.p.Pe m.δ = m.p.Pm := by
-      simpa using ((m.p.field_eq_zero_iff hM.ne' _).mp heq).2
+    have hb : m.p.Pe m.δ = m.p.Pm :=
+      balanced_of hM.ne' (Dynamics.isEquilibrium_of_lyapunovStable hC hls)
     refine ⟨hb, ?_⟩
     have hD : 0 ≤ m.p.D := by
       by_contra hD
@@ -1301,9 +1299,24 @@ def family : Family Model Requirement 2 0 := ⟨fun m => (plant m).system, Meets
 
 @[powerlib_foundation] theorem family_isLinear : family.IsLinear plant := fun _ => rfl
 
+/-- The translation is the linear table (`Spectral.linearTable`). -/
+private theorem translate_eq (s : Sentence) :
+    family.translate s = Spectral.linearTable {.inertia, .damped, .synchronizing}
+      {.inertia, .destabilizing} {.inertia, .synchronizing, .undamped} ∅ (fun _ => Set.univ) s := by
+  rcases s with P | _
+  · cases P <;> rfl
+  · rfl
+
 private theorem isHurwitz_iff {m : Model} (hM : 0 < m.p.M) :
     LinearSystems.IsHurwitz (plant m).A ↔ 0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ :=
   m.p.isHurwitz_jacobian_iff hM m.δ
+
+private theorem mem_realize_stable {m : Model} :
+    m ∈ TMIO.realize Meets {.inertia, .damped, .synchronizing} ↔
+      0 < m.p.M ∧ 0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ := by
+  simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
+    forall_eq]
+  rfl
 
 /-- The energy matrix `diag(K, M)` is conserved by the undamped linearization. -/
 private theorem conserved {m : Model} (hD : m.p.D = 0) (hM : m.p.M ≠ 0) :
@@ -1314,103 +1327,74 @@ private theorem conserved {m : Model} (hD : m.p.D = 0) (hM : m.p.M ≠ 0) :
     simp [plant, SwingParams.jacobian, hD, Matrix.mul_apply, Fin.sum_univ_two] <;> field_simp <;>
     ring
 
-private theorem unstable_of {m : Model} (hM : 0 < m.p.M)
+/-- A destabilizing sign gives a characteristic root in the open right half plane: `K < 0` makes
+`det J < 0` (a positive real eigenvalue), `D < 0` makes `tr J > 0`. -/
+private theorem exists_root {m : Model} (hM : 0 < m.p.M)
     (hs : m.p.syncCoeff m.δ < 0 ∨ m.p.D < 0) :
-    Unstable (LinearSystems.affineLinearVectorField (plant m).A 0) 0 := by
-  obtain ⟨μ, v, hv, heig, hre⟩ : ∃ (μ : ℂ) (v : Fin 2 → ℂ),
-      v ≠ 0 ∧ (plant m).A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re := by
-    rcases hs with hK | hD
-    · exact Criteria.exists_eigenvalue_re_pos_of_det_neg _
-        (by rw [show (plant m).A = m.p.jacobian m.δ from rfl, SwingParams.det_jacobian]
-            exact div_neg_of_neg_of_pos hK hM)
-    · exact Criteria.exists_eigenvalue_re_pos_of_trace_pos _
-        (by rw [show (plant m).A = m.p.jacobian m.δ from rfl, SwingParams.trace_jacobian, neg_div]
-            exact neg_pos.mpr (div_neg_of_neg_of_pos hD hM))
-  exact Linear.unstable_of_eigenvalue 0 hv heig hre
+    ∃ s : ℂ, (Linear.characteristicMatrix (plant m).A s).det = 0 ∧ 0 < s.re := by
+  rcases hs with hK | hD
+  · obtain ⟨μ, v, hv, heig, hre⟩ := Criteria.exists_eigenvalue_re_pos_of_det_neg (plant m).A
+      (by rw [show (plant m).A = m.p.jacobian m.δ from rfl, SwingParams.det_jacobian]
+          exact div_neg_of_neg_of_pos hK hM)
+    exact ⟨μ, Criteria.det_characteristicMatrix_eq_zero_of_eigenpair _ hv heig, hre⟩
+  · exact Criteria.exists_root_re_pos_of_trace_pos _
+      (by rw [show (plant m).A = m.p.jacobian m.δ from rfl, SwingParams.trace_jacobian, neg_div]
+          exact neg_pos.mpr (div_neg_of_neg_of_pos hD hM))
 
 /-- The decay requirement is the whole language: damped and undamped are inconsistent. -/
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) :=
   Swing.realize_univ
 
-/-- Every translation of the linearized swing family is sound: Hurwitz gives every attractive
-sentence, sampled contraction and Lyapunov stability; a destabilizing sign gives an eigenvalue in
-the open right half plane; the energy `½ K Δδ² + ½ M Δω²` is conserved without damping; a system
-without ports is passive. -/
+/-- Every translation of the linearized swing family is sound (the linear table,
+`Spectral.chain_le_semantics_of_linearTable`): positive inertia, damping and synchronization make
+the Jacobian Hurwitz; a destabilizing sign gives a characteristic root in the open right half
+plane; the energy `½ K Δδ² + ½ M Δω²` is conserved without damping; a system without ports is
+passive; decay rates go to the inconsistent whole language. -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  rcases s with P | _
-  · have hH : Meets m .inertia → Meets m .damped → Meets m .synchronizing →
-        LinearSystems.IsHurwitz (plant m).A := fun hM hD hK => (isHurwitz_iff hM).mpr ⟨hD, hK⟩
-    cases P
-    case unstable =>
-      exact family_isLinear.mem_den_flow.mpr
-        (unstable_of (hm .inertia (by simp [translate])) (hm .destabilizing (by simp [translate])))
-    case conservative =>
-      have hM : 0 < m.p.M := hm .inertia (by simp [translate])
-      have hK : 0 < m.p.syncCoeff m.δ := hm .synchronizing (by simp [translate])
-      have hD : m.p.D = 0 := hm .undamped (by simp [translate])
-      refine family_isLinear.mem_den_conservative (by ext i j; fin_cases i <;> fin_cases j <;> simp)
-        (fun v hv => ?_) (conserved hD hM.ne')
-      have hv' : v 0 ≠ 0 ∨ v 1 ≠ 0 := by
-        by_contra hc
-        push Not at hc
-        exact hv (funext fun i => by fin_cases i <;> simp [hc.1, hc.2])
-      simp only [Matrix.mulVec, dotProduct, Fin.sum_univ_two, Matrix.of_apply,
-        Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val',
-        Matrix.cons_val_fin_one]
-      rcases hv' with h0 | h1
-      · have : 0 < v 0 * v 0 := mul_self_pos.mpr h0
-        nlinarith [mul_self_nonneg (v 1)]
-      · have : 0 < v 1 * v 1 := mul_self_pos.mpr h1
-        nlinarith [mul_self_nonneg (v 0)]
-    case decay a =>
-      have h1 : 0 < m.p.D := hm .damped trivial
-      have h2 : m.p.D = 0 := hm .undamped trivial
-      exact absurd h2 h1.ne'
-    case lyapunovStable =>
-      exact family_isLinear.mem_den_flow.mpr (Linear.lyapunovStable_of_isHurwitz 0
-        (hH (hm .inertia (by simp [translate])) (hm .damped (by simp [translate]))
-          (hm .synchronizing (by simp [translate]))))
-    all_goals
-      rw [family_isLinear.den_hurwitz (by simp)]
-      exact hH (hm .inertia (by simp [translate])) (hm .damped (by simp [translate]))
-        (hm .synchronizing (by simp [translate]))
-  · exact family.mem_den.mpr (Port.System.passive_of_noPorts _)
+  refine Spectral.chain_le_semantics_of_linearTable (F := family)
+    (Rs := {.inertia, .damped, .synchronizing}) (Ru := {.inertia, .destabilizing})
+    (Rc := {.inertia, .synchronizing, .undamped}) (Rp := ∅) (Rd := fun _ => Set.univ)
+    family_isLinear translate_eq (fun m hm => ?_) (fun m hm => ?_)
+    (fun _ => Spectral.realize_univ_subset_of_eq_empty realize_univ _) (fun m hm => ?_)
+    fun m _ => family.mem_den.mpr (Port.System.passive_of_noPorts _)
+  · obtain ⟨hM, hD, hK⟩ := mem_realize_stable.mp hm
+    exact (isHurwitz_iff hM).mpr ⟨hD, hK⟩
+  · rw [TMIO.mem_realize] at hm
+    exact exists_root (hm .inertia (by simp)) (hm .destabilizing (by simp))
+  · rw [TMIO.mem_realize] at hm
+    have hM : 0 < m.p.M := hm .inertia (by simp)
+    have hD : m.p.D = 0 := hm .undamped (by simp)
+    refine family_isLinear.mem_den_conservative (by ext i j; fin_cases i <;> fin_cases j <;> simp)
+      (fun v hv => ?_) (conserved hD hM.ne')
+    have hK : 0 < m.p.syncCoeff m.δ := hm .synchronizing (by simp)
+    have hv' : v 0 ≠ 0 ∨ v 1 ≠ 0 := by
+      by_contra hc
+      push Not at hc
+      exact hv (funext fun i => by fin_cases i <;> simp [hc.1, hc.2])
+    simp only [Matrix.mulVec, dotProduct, Fin.sum_univ_two, Matrix.of_apply,
+      Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val',
+      Matrix.cons_val_fin_one]
+    rcases hv' with h0 | h1
+    · have : 0 < v 0 * v 0 := mul_self_pos.mpr h0
+      nlinarith [mul_self_nonneg (v 1)]
+    · have : 0 < v 1 * v 1 := mul_self_pos.mpr h1
+      nlinarith [mul_self_nonneg (v 0)]
 
 /-- Within positive inertia, the attractive sentences and sampled contraction of the linearized
-swing equation are translated exactly: `M s² + D s + K` is Hurwitz iff `D > 0` and `K > 0`. -/
+swing equation are translated exactly: `M s² + D s + K` is Hurwitz iff `D > 0` and `K > 0`
+(`Spectral.exactUnder_of_linearTable`). -/
 @[powerlib_domain] theorem exactUnder_hurwitz {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.ExactUnder {.inertia} (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  have ht : translate (.flow P) = {.inertia, .damped, .synchronizing} := by
-    rcases hP with hP | rfl
-    · cases P <;> first | rfl | exact absurd hP id
-    · rfl
-  unfold Family.ExactUnder TMIO.ExactUnder
-  change TMIO.realize Meets (translate (.flow P) ∪ {.inertia}) = _
-  rw [ht, family_isLinear.den_hurwitz hP]
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
-    Set.mem_inter_iff, Set.mem_ofPred_eq]
-  constructor
-  · intro h
-    have hM : 0 < m.p.M := h .inertia (by simp)
-    exact ⟨(isHurwitz_iff hM).mpr ⟨h .damped (by simp), h .synchronizing (by simp)⟩,
-      fun q hq => by rw [hq]; exact hM⟩
-  · rintro ⟨hH, hI⟩ q hq
-    have hM : 0 < m.p.M := hI .inertia rfl
-    obtain ⟨hD, hK⟩ := (isHurwitz_iff hM).mp hH
-    rcases hq with ((rfl | rfl | rfl) | rfl)
-    · exact hM
-    · exact hD
-    · exact hK
-    · exact hM
+  refine Spectral.exactUnder_of_linearTable family_isLinear translate_eq {.inertia}
+    (fun m hI => mem_realize_stable.trans ?_) hP
+  have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
+  rw [isHurwitz_iff hM]
+  exact ⟨fun h => h.2, fun h => ⟨hM, h⟩⟩
 
 /-- The linearization is exponentially stable iff `D > 0` and `K > 0` (`M > 0`). -/
 @[powerlib_domain] theorem mem_den_iff (m : Model) (hM : 0 < m.p.M) :

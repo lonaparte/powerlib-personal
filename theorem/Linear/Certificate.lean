@@ -1,6 +1,5 @@
 import theorem.Linear.Stability
 import theorem.Flow.Certificate
-import theorem.Criteria.Lyapunov
 
 /-! # Lyapunov certificates
 
@@ -50,18 +49,88 @@ structure Certificate (A : Matrix (Fin n) (Fin n) ℝ) where
     2 * (z ⬝ᵥ (P *ᵥ (A *ᵥ z))) = -(z ⬝ᵥ z) := by
   rw [← quadratic_sym hP, hL, Matrix.neg_mulVec, Matrix.one_mulVec, dotProduct_neg]
 
-/-- A certificate proves the matrix Hurwitz: `2 xᵀ P A x = -‖x‖² < 0` is a strict Lyapunov
-inequality (`Criteria.isHurwitz_of_lyapunov`). -/
+/-- A certificate proves the matrix Hurwitz. -/
 @[powerlib_foundation, aesop safe forward]
 theorem Certificate.isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
-    (c : Certificate A) : IsHurwitz A :=
-  Criteria.isHurwitz_of_lyapunov c.symmetric c.positive fun w hw => by
-    have h := quadratic_lyapunov c.symmetric c.lyapunov w
-    have hpos : 0 < w ⬝ᵥ w := by
-      obtain ⟨j, hj⟩ := Function.ne_iff.mp hw
-      exact Finset.sum_pos' (fun k _ => mul_self_nonneg (w k))
-        ⟨j, Finset.mem_univ _, mul_self_pos.mpr hj⟩
+    (c : Certificate A) : IsHurwitz A := by
+  intro μ v hv heig
+  let x : Fin n → ℝ := fun j => (v j).re
+  let y : Fin n → ℝ := fun j => (v j).im
+  have hcomp (j : Fin n) : ∑ k, (A j k : ℂ) * v k = μ * v j := by
+    have hj := congrFun heig j
+    simpa [Matrix.mulVec, dotProduct, Matrix.map_apply] using hj
+  have hAx : A *ᵥ x = μ.re • x - μ.im • y := by
+    funext j
+    have h := congrArg Complex.re (hcomp j)
+    simp only [Complex.re_sum, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
+      sub_zero] at h
+    simp only [Matrix.mulVec, dotProduct, x, y, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
     linarith
+  have hAy : A *ᵥ y = μ.im • x + μ.re • y := by
+    funext j
+    have h := congrArg Complex.im (hcomp j)
+    simp only [Complex.im_sum, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
+      add_zero] at h
+    simp only [Matrix.mulVec, dotProduct, x, y, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    linarith
+  have hx := quadratic_lyapunov c.symmetric c.lyapunov x
+  have hy := quadratic_lyapunov c.symmetric c.lyapunov y
+  rw [hAx, Matrix.mulVec_sub, Matrix.mulVec_smul, Matrix.mulVec_smul, dotProduct_sub,
+    dotProduct_smul, dotProduct_smul, smul_eq_mul, smul_eq_mul] at hx
+  rw [hAy, Matrix.mulVec_add, Matrix.mulVec_smul, Matrix.mulVec_smul, dotProduct_add,
+    dotProduct_smul, dotProduct_smul, smul_eq_mul, smul_eq_mul] at hy
+  have hcross : y ⬝ᵥ (c.P *ᵥ x) = x ⬝ᵥ (c.P *ᵥ y) := by
+    rw [Matrix.dotProduct_mulVec, dotProduct_comm]
+    congr 1
+    conv_lhs => rw [← c.symmetric]
+    rw [Matrix.vecMul_transpose]
+  rw [hcross] at hy
+  have hxy : x ≠ 0 ∨ y ≠ 0 := by
+    by_contra h
+    push Not at h
+    apply hv
+    funext j
+    apply Complex.ext
+    · exact congrFun h.1 j
+    · exact congrFun h.2 j
+  have hq : 0 < x ⬝ᵥ (c.P *ᵥ x) + y ⬝ᵥ (c.P *ᵥ y) := by
+    have hqx : 0 ≤ x ⬝ᵥ (c.P *ᵥ x) := by
+      by_cases h0 : x = 0
+      · simp [h0]
+      · exact (c.positive x h0).le
+    have hqy : 0 ≤ y ⬝ᵥ (c.P *ᵥ y) := by
+      by_cases h0 : y = 0
+      · simp [h0]
+      · exact (c.positive y h0).le
+    rcases hxy with h | h
+    · linarith [c.positive x h]
+    · linarith [c.positive y h]
+  have hnn : 0 ≤ x ⬝ᵥ x + y ⬝ᵥ y := by
+    have h1 : 0 ≤ x ⬝ᵥ x := Finset.sum_nonneg fun j _ => mul_self_nonneg (x j)
+    have h2 : 0 ≤ y ⬝ᵥ y := Finset.sum_nonneg fun j _ => mul_self_nonneg (y j)
+    linarith
+  have hsum : 2 * μ.re * (x ⬝ᵥ (c.P *ᵥ x) + y ⬝ᵥ (c.P *ᵥ y)) = -(x ⬝ᵥ x + y ⬝ᵥ y) := by
+    linarith
+  have : μ.re < 0 := by
+    by_contra hμ
+    push Not at hμ
+    have : 0 ≤ 2 * μ.re * (x ⬝ᵥ (c.P *ᵥ x) + y ⬝ᵥ (c.P *ᵥ y)) := by positivity
+    have hpos : 0 < x ⬝ᵥ x + y ⬝ᵥ y := by
+      rcases hxy with h | h
+      · have : 0 < x ⬝ᵥ x := by
+          obtain ⟨j, hj⟩ := Function.ne_iff.mp h
+          exact Finset.sum_pos' (fun k _ => mul_self_nonneg (x k))
+            ⟨j, Finset.mem_univ _, mul_self_pos.mpr hj⟩
+        have : 0 ≤ y ⬝ᵥ y := Finset.sum_nonneg fun j _ => mul_self_nonneg (y j)
+        linarith
+      · have : 0 < y ⬝ᵥ y := by
+          obtain ⟨j, hj⟩ := Function.ne_iff.mp h
+          exact Finset.sum_pos' (fun k _ => mul_self_nonneg (y k))
+            ⟨j, Finset.mem_univ _, mul_self_pos.mpr hj⟩
+        have : 0 ≤ x ⬝ᵥ x := Finset.sum_nonneg fun j _ => mul_self_nonneg (x j)
+        linarith
+    linarith
+  simpa using this
 
 /-- A certificate exists exactly when the matrix is Hurwitz (LeanForControl's Lyapunov
 equation for the converse). -/

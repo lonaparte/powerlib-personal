@@ -60,7 +60,8 @@ Lyapunov stability, decay rates and conservation are conjugated by
 `Linear.lyapunovStable_conj`, `Linear.decay_conj` and `Linear.conservative_conj`
 (`theorem/Linear/Transfer.lean`), unchanged; the remaining sentences (local and global
 exponential and asymptotic stability, forward completeness, sampled contraction) are conjugated
-here, for arbitrary nonlinear fields (`*_conjEquiv`, collected in `holds_conjEquiv_iff`). The
+here, for arbitrary nonlinear fields (`*_conjEquiv`, collected in `holds_conjEquiv_iff`; forward
+completeness is the case `c = 0` of `forwardComplete_transport_iff`). The
 equilibrium-shift lemmas (`Dynamics.*_shift_iff`, `Flow.Property.holds_shift_iff`) are those of
 `theorem/Dynamics/Shift.lean` and are not restated.
 -/
@@ -127,6 +128,18 @@ variable (T : State n ≃L[ℝ] State n) (c : State n)
     {φ : ℝ → State n} {a b : ℝ} (hφ : IsTrajectoryOn φ f a b) :
     IsTrajectoryOn (fun t => affineCoord T c (φ t)) (transportField T c f) a b :=
   isIntegralCurveOn_transport T c hφ
+
+/-- Forward completeness is invariant under invertible affine coordinate changes. -/
+@[powerlib_foundation] theorem forwardComplete_transport_iff {f : State n → State n} :
+    Flow.ForwardComplete (transportField T c f) ↔ Flow.ForwardComplete f := by
+  have key : ∀ (S : State n ≃L[ℝ] State n) (d : State n) (g : State n → State n),
+      Flow.ForwardComplete g → Flow.ForwardComplete (transportField S d g) := by
+    intro S d g h a y₀
+    obtain ⟨φ, hφa, hφ⟩ := h a (affineCoord S.symm (-(S.symm d)) y₀)
+    exact ⟨fun t => affineCoord S d (φ t), by simp [hφa], isIntegralCurveOn_transport S d hφ⟩
+  refine ⟨fun h => ?_, key T c f⟩
+  have h' := key T.symm (-(T.symm c)) _ h
+  rwa [transportField_symm_transportField] at h'
 
 /-- Equilibria correspond under the affine coordinate change. -/
 @[powerlib_foundation] theorem transportField_affineCoord_eq_zero_iff
@@ -212,10 +225,6 @@ private lemma isIntegralCurveOn_back {g : State n → State n} {χ : ℝ → Sta
   rw [transportField_symm_zero] at h
   simpa only [affineCoord_zero_apply] using h
 
-private lemma norm_symm_le (y : State n) :
-    ‖T.symm y‖ ≤ ‖(T.symm : State n →L[ℝ] State n)‖ * ‖y‖ := by
-  simpa using (T.symm : State n →L[ℝ] State n).le_opNorm y
-
 private lemma norm_apply_le (x : State n) :
     ‖T x‖ ≤ ‖(T : State n →L[ℝ] State n)‖ * ‖x‖ := by
   simpa using (T : State n →L[ℝ] State n).le_opNorm x
@@ -246,11 +255,8 @@ private lemma tendsto_of_back {χ : ℝ → State n}
   exact Linear.conservative_conj _ _ symm_apply_coe apply_symm_coe h
 
 @[powerlib_foundation] theorem forwardComplete_conjEquiv {g : State n → State n}
-    (h : Flow.ForwardComplete g) : Flow.ForwardComplete (transportField T 0 g) := by
-  intro t₀ z₀
-  obtain ⟨φ, hφ0, hφ⟩ := h t₀ (T.symm z₀)
-  refine ⟨fun t => T (φ t), by simp [hφ0], ?_⟩
-  simpa only [affineCoord_zero_apply] using isIntegralCurveOn_transport T 0 hφ
+    (h : Flow.ForwardComplete g) : Flow.ForwardComplete (transportField T 0 g) :=
+  (forwardComplete_transport_iff T 0).mpr h
 
 @[powerlib_foundation] theorem locallyExponentiallyStable_conjEquiv {g : State n → State n}
     (h : LocallyExponentiallyStable g 0) :
@@ -265,7 +271,7 @@ private lemma tendsto_of_back {χ : ℝ → State n}
   intro t₀ t₁ χ hχ h0 t ht
   simp only [sub_zero] at h0 ⊢
   have hψ : IsTrajectoryOn (fun t => T.symm (χ t)) g t₀ t₁ := isIntegralCurveOn_back hχ
-  have hψ0 : ‖T.symm (χ t₀)‖ ≤ K' * ‖χ t₀‖ := norm_symm_le _
+  have hψ0 : ‖T.symm (χ t₀)‖ ≤ K' * ‖χ t₀‖ := norm_apply_le (T := T.symm) _
   have h0' : ‖T.symm (χ t₀) - 0‖ < r := by
     rw [sub_zero]
     calc _ ≤ K' * ‖χ t₀‖ := hψ0
@@ -294,7 +300,7 @@ private lemma tendsto_of_back {χ : ℝ → State n}
   rw [sub_zero] at h0
   have h0' : ‖T.symm (χ t₀) - 0‖ < ρ := by
     rw [sub_zero]
-    calc _ ≤ K' * ‖χ t₀‖ := norm_symm_le _
+    calc _ ≤ K' * ‖χ t₀‖ := norm_apply_le (T := T.symm) _
       _ ≤ K' * (ρ / (K' + 1)) := mul_le_mul_of_nonneg_left h0.le hK'
       _ < ρ := mul_div_add_one_lt hK' hρ
   exact tendsto_of_back (hattr t₀ _ (isIntegralCurveOn_back hχ) h0')
@@ -322,7 +328,7 @@ private lemma tendsto_of_back {χ : ℝ → State n}
   intro t₀ t₁ χ hχ t ht
   rw [sub_zero, sub_zero]
   have hψ : IsTrajectoryOn (fun t => T.symm (χ t)) g t₀ t₁ := isIntegralCurveOn_back hχ
-  have hψ0 : ‖T.symm (χ t₀)‖ ≤ K' * ‖χ t₀‖ := norm_symm_le _
+  have hψ0 : ‖T.symm (χ t₀)‖ ≤ K' * ‖χ t₀‖ := norm_apply_le (T := T.symm) _
   have hψt := hdecay t₀ t₁ _ hψ t ht
   simp only [sub_zero] at hψt
   have hE : 0 ≤ C * Real.exp (-a * (t - t₀)) :=
@@ -384,7 +390,7 @@ private lemma tendsto_of_back {χ : ℝ → State n}
     _ ≤ ‖(T : State n →L[ℝ] State n)‖ *
           (max c 0 ^ m * (‖(T.symm : State n →L[ℝ] State n)‖ * ‖χ t₀‖)) := by
         gcongr
-        exact norm_symm_le _
+        exact norm_apply_le (T := T.symm) _
     _ = K * max c 0 ^ m * ‖χ t₀‖ := by ring
 
 @[powerlib_foundation] theorem lyapunovStable_conjEquiv_iff {g : State n → State n} :
@@ -489,18 +495,6 @@ invertible affine coordinate changes. -/
   refine ⟨fun h => ?_, globalAsymptoticStable_conjEquiv⟩
   have h' := globalAsymptoticStable_conjEquiv (T := T.symm) h
   rwa [transportField_symm_zero] at h'
-
-/-- Forward completeness is invariant under invertible affine coordinate changes. -/
-@[powerlib_foundation] theorem forwardComplete_transport_iff {f : State n → State n} :
-    Flow.ForwardComplete (transportField T c f) ↔ Flow.ForwardComplete f := by
-  have key : ∀ (S : State n ≃L[ℝ] State n) (d : State n) (g : State n → State n),
-      Flow.ForwardComplete g → Flow.ForwardComplete (transportField S d g) := by
-    intro S d g h a y₀
-    obtain ⟨φ, hφa, hφ⟩ := h a (affineCoord S.symm (-(S.symm d)) y₀)
-    exact ⟨fun t => affineCoord S d (φ t), by simp [hφa], isIntegralCurveOn_transport S d hφ⟩
-  refine ⟨fun h => ?_, key T c f⟩
-  have h' := key T.symm (-(T.symm c)) _ h
-  rwa [transportField_symm_transportField] at h'
 
 variable {T c}
 

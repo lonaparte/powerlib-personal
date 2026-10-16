@@ -204,11 +204,11 @@ variable {n m : ℕ}
   linarith
 
 
-/-- Derivative of `N y(t)`. -/
+/-- Derivative of `N y(t)` (`Dynamics.hasDerivAt_mulVec`). -/
 @[powerlib_foundation] theorem hasDerivAt_mulVec {k l : ℕ} (N : Matrix (Fin k) (Fin l) ℝ) {y : ℝ → Fin l → ℝ}
     {dy : Fin l → ℝ} {t : ℝ} (hy : HasDerivAt y dy t) :
     HasDerivAt (fun s => N *ᵥ y s) (N *ᵥ dy) t :=
-  (LinearMap.toContinuousLinearMap (Matrix.toLin' N)).hasFDerivAt.comp_hasDerivAt t hy
+  Dynamics.hasDerivAt_mulVec N hy
 
 /-- `|a v|² = a² |v|²`. -/
 @[powerlib_foundation] theorem smul_dotProduct_smul_self {k : Type*} [Fintype k] (a : ℝ) (v : k → ℝ) :

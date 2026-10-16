@@ -176,7 +176,7 @@ def cyl (x : State 4) : State 5 :=
   WithLp.toLp 2 ![Real.cos (x 0), Real.sin (x 0), x 1, x 2, x 3]
 
 private theorem proj_contDiff {n : ℕ} (j : Fin n) : ContDiff ℝ 1 (fun x : State n => x j) :=
-  (PiLp.proj 2 (fun _ : Fin n => ℝ) j : State n →L[ℝ] ℝ).contDiff
+  Dynamics.contDiff_coord j
 
 /-- The cylinder field at the image of a state is the cylinder image of the closed loop.
 Static evidence on the model, not a connection conclusion. -/
@@ -848,13 +848,6 @@ private theorem exists_solution (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR
       rw [hF] at h
       simpa using h
 
-private theorem k_pos' (m : Model) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
-    (hs : 0 < m.μ * m.ustar * m.v0) : 0 < m.k := by
-  unfold Model.k
-  have : m.Ls * m.μ * m.ustar * m.v0 = m.Ls * (m.μ * m.ustar * m.v0) := by ring
-  rw [this]
-  exact div_pos (mul_pos hL hs) (N_pos m hR)
-
 private theorem energy_ge (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (x : State 4) :
     m.k * (1 - Real.cos (x 0)) ≤ m.energy x := by
   unfold Model.energy
@@ -877,7 +870,7 @@ private theorem basin (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.R
   rintro x₀ ⟨hθ0, hE0⟩
   refine ⟨exists_solution m hC hL hR hδ x₀, fun φ hφ0 hφ => ?_⟩
   have hπ := Real.pi_pos
-  have hk := k_pos' m hL hR hs
+  have hk := k_pos m hL hR hs
   -- the energy is nonincreasing along the solution
   have hanti : AntitoneOn (m.energy ∘ φ) (Ici 0) :=
     antitoneOn_V_comp_traj (energy_differentiable m) (energy_differentiable m).continuous
@@ -1013,7 +1006,7 @@ semidefinite); the LaSalle set argument on the cylinder covers it. -/
     unfold powerlib.TMIO.Statement at h
     exact mem_den_flow'.mp h
   refine ⟨hLS, ?_⟩
-  have hk := k_pos' m hL hR hs
+  have hk := k_pos m hL hR hs
   have hW : IsOpen {x : State 4 | |x 0| < Real.pi ∧ m.energy x < 2 * m.k} :=
     (isOpen_lt (continuous_abs.comp (proj_contDiff (n := 4) 0).continuous) continuous_const).inter
       (isOpen_lt (energy_differentiable m).continuous continuous_const)

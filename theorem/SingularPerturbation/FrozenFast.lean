@@ -102,8 +102,7 @@ structure BoundedCertificate (A : Matrix (Fin m) (Fin m) ℝ) extends Linear.Cer
 @[powerlib_foundation] theorem hasDerivAt_quadratic (P : Matrix (Fin m) (Fin m) ℝ)
     {y : ℝ → Fin m → ℝ} {dy : Fin m → ℝ} {t : ℝ} (hy : HasDerivAt y dy t) :
     HasDerivAt (fun s => y s ⬝ᵥ (P *ᵥ y s)) (dy ⬝ᵥ (P *ᵥ y t) + y t ⬝ᵥ (P *ᵥ dy)) t := by
-  have hP : HasDerivAt (fun s => P *ᵥ y s) (P *ᵥ dy) t :=
-    (LinearMap.toContinuousLinearMap (Matrix.toLin' P)).hasFDerivAt.comp_hasDerivAt t hy
+  have hP : HasDerivAt (fun s => P *ᵥ y s) (P *ᵥ dy) t := Dynamics.hasDerivAt_mulVec P hy
   rw [← hasDerivWithinAt_univ] at hy hP ⊢
   exact Linear.dotProduct_hasDerivWithinAt hy hP
 

@@ -61,10 +61,6 @@ open Set Filter Matrix
 open scoped Topology
 open powerlib.Dynamics (State)
 
-@[powerlib_foundation] private lemma norm_sq_state (x : State 2) : ‖x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 := by
-  rw [EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, Real.norm_eq_abs, Real.norm_eq_abs, sq_abs,
-    sq_abs]
-
 @[powerlib_foundation] private lemma isCompact_of_bounds {S : Set (State 2)} (hS : IsClosed S)
     {M : ℝ} (hM : ∀ x ∈ S, x 0 ^ 2 + x 1 ^ 2 ≤ M) : IsCompact S := by
   refine Metric.isCompact_of_isClosed_isBounded hS ?_
@@ -72,12 +68,12 @@ open powerlib.Dynamics (State)
   refine ⟨Real.sqrt (max M 0), fun x hx => ?_⟩
   rw [Metric.mem_closedBall, dist_zero_right]
   apply Real.le_sqrt_of_sq_le
-  rw [norm_sq_state]
+  rw [PhasePlane.norm_sq_eq]
   exact (hM x hx).trans (le_max_left _ _)
 
 @[powerlib_foundation] private lemma contDiff_coord (i : Fin 2) :
     ContDiff ℝ 1 (fun x : State 2 => x i) :=
-  (PiLp.proj 2 (fun _ : Fin 2 => ℝ) i : State 2 →L[ℝ] ℝ).contDiff
+  Dynamics.contDiff_coord i
 
 @[powerlib_foundation] private lemma fderiv_coord (i : Fin 2) (x v : State 2) :
     fderiv ℝ (fun y : State 2 => y i) x v = v i := by

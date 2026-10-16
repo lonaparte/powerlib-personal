@@ -5,6 +5,7 @@ import theorem.TMIO.ClaimElab
 import theorem.SingularPerturbation.FiniteHorizon
 import theorem.LTI.Decay
 import theorem.Spectral.LinearNamed
+import theorem.Dynamics.Coordinates
 
 /-! # Single-area swing + first-order governor (two-state frequency model)
 
@@ -1179,11 +1180,6 @@ reduction does (i.e. exactly when `a M ≤ K_R + D`). -/
 
 /-! ### Implementation evidence (private, trajectory level): solutions converge -/
 
-private theorem hasDerivAt_apply' {n : ℕ} {x : ℝ → EuclideanSpace ℝ (Fin n)}
-    {v : EuclideanSpace ℝ (Fin n)} {s : ℝ} (h : HasDerivAt x v s) (i : Fin n) :
-    HasDerivAt (fun t => x t i) (v i) s :=
-  (PiLp.proj 2 (fun _ : Fin n => ℝ) i).hasFDerivAt.comp_hasDerivAt s h
-
 /-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
 **Solutions converge to the first-order model as `T_g → 0`** (Tikhonov's theorem, finite
 horizon, from the generic `SingularPerturbation.LinearSP.exists_finiteHorizon_error` applied to
@@ -1230,7 +1226,7 @@ private theorem finiteHorizon_reduce (hKD : K + D ≠ 0) (T : ℝ) :
   have hX : ∀ s, HasDerivAt X (sp.A11 *ᵥ X s + sp.A12 *ᵥ Z s) s := by
     intro s
     refine hasDerivAt_pi.2 fun i => ?_
-    have h := (hasDerivAt_apply' (hx s) 0).sub_const w
+    have h := (Dynamics.hasDerivAt_iff_coords.mp (hx s) 0).sub_const w
     rw [field_apply] at h
     convert h using 1
     simp [sp, twoTimeScale, X, Z, dotProduct]
@@ -1238,7 +1234,7 @@ private theorem finiteHorizon_reduce (hKD : K + D ≠ 0) (T : ℝ) :
   have hZ : ∀ s, HasDerivAt Z (Tg⁻¹ • (sp.A21 *ᵥ X s + sp.A22 *ᵥ Z s)) s := by
     intro s
     refine hasDerivAt_pi.2 fun i => ?_
-    have h := (hasDerivAt_apply' (hx s) 1).sub_const q
+    have h := (Dynamics.hasDerivAt_iff_coords.mp (hx s) 1).sub_const q
     rw [field_apply] at h
     convert h using 1
     simp [sp, twoTimeScale, X, Z, dotProduct]
@@ -1247,7 +1243,7 @@ private theorem finiteHorizon_reduce (hKD : K + D ≠ 0) (T : ℝ) :
   have hXb : ∀ s, HasDerivAt Xb (sp.reducedMatrix *ᵥ Xb s) s := by
     intro s
     refine hasDerivAt_pi.2 fun i => ?_
-    have h := (hasDerivAt_apply' (hxbar s) 0).sub_const w
+    have h := (Dynamics.hasDerivAt_iff_coords.mp (hxbar s) 0).sub_const w
     rw [reduced_field_apply] at h
     convert h using 1
     rw [twoTimeScale_reducedMatrix]

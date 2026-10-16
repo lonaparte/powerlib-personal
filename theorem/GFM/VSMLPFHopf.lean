@@ -363,13 +363,6 @@ locally asymptotically stable. -/
   have hf : Meets hopfBoundary .fastFilter := h' .fastFilter (by simp [family, translate])
   norm_num [Meets, hopfBoundary, Model.K] at hf
 
-private theorem sin_δ0' {g : VSMLPF} (hK0 : 0 < g.K0) (h : |g.P0| ≤ g.K0) :
-    g.K0 * Real.sin g.δ0 = g.P0 := by
-  have ha : |g.P0 / g.K0| ≤ 1 := by rw [abs_div, abs_of_pos hK0, div_le_one hK0]; exact h
-  simp only [δ0]
-  rw [Real.sin_arcsin (abs_le.mp ha).1 (abs_le.mp ha).2]
-  field_simp
-
 /-- At the loading angle (`|P₀| < K₀`, positive parameters) the equilibrium is locally
 asymptotically stable iff `K ≤ D ω_c + D²/M`: the Hopf boundary is included. -/
 @[powerlib_domain] theorem locallyAsymptoticallyStable_iff {g : VSMLPF} (hp : g.Pos)
@@ -381,7 +374,7 @@ asymptotically stable iff `K ≤ D ω_c + D²/M`: the Hopf boundary is included.
   rw [hiff, Set.mem_ofPred_eq, Set.mem_ofPred_eq]
   constructor
   · exact fun h' => h'.2.2
-  · exact fun hK => ⟨sin_δ0' hp.K0 h.le, g.K_pos hp.K0 h, hK⟩
+  · exact fun hK => ⟨g.sin_δ0 hp.K0 h.le, g.K_pos hp.K0 h, hK⟩
 
 end VSMLPF
 end powerlib.GFM

@@ -8,6 +8,7 @@ import theorem.Dynamics.Coordinates
 import theorem.Spectral.Local
 import theorem.Dynamics.Pendulum
 import theorem.Dynamics.Transport
+import theorem.SpecialFunctions.Sinusoid
 
 /-! # Quasi-static three-state GFL: PLL + active-power dispatch loop
 
@@ -245,7 +246,8 @@ change sign. -/
   ring
 
 /-- Quasi-static GFL: an equilibrium exists iff `|P_ref| ≤ 3V²/(4X_g)` (for either sign of the
-absorbed reference).
+absorbed reference; the zeros of the sinusoid `−P_ref − P_SN sin 2θ`,
+`SpecialFunctions.exists_sinusoid_zero_iff`).
 Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem equilibrium_exists_iff (hX : 0 < p.Xg)
     (hkP : p.kP ≠ 0) :
@@ -271,18 +273,14 @@ Static evidence on the model, not a connection conclusion. -/
     by_cases h0 : PSN p = 0
     · have hP0 : p.Pref = 0 := by rw [h0] at h; exact abs_nonpos_iff.mp h
       refine ⟨point 0 0, field_point_eq_zero p ⟨by simp, by simp [power, hP0]⟩⟩
-    · have hpos : 0 < PSN p := lt_of_le_of_ne hPSN (Ne.symm h0)
-      have hr : |-p.Pref / PSN p| ≤ 1 := by
-        rw [abs_div, abs_neg, abs_of_pos hpos, div_le_one hpos]; exact h
-      set θ := Real.arcsin (-p.Pref / PSN p) / 2
-      have hs : Real.sin (2 * θ) = -p.Pref / PSN p := by
-        rw [show 2 * θ = Real.arcsin (-p.Pref / PSN p) by simp [θ]; ring,
-          Real.sin_arcsin (abs_le.mp hr).1 (abs_le.mp hr).2]
-      have hXI : -(p.Xg * -(p.V * Real.sin θ / p.Xg)) = p.V * Real.sin θ := by
+    · -- a zero `φ` of the sinusoid `−P_ref − P_SN sin φ` gives the angle `θ = φ/2`
+      obtain ⟨φ, hφ⟩ := (SpecialFunctions.exists_sinusoid_zero_iff (φ := 0)
+        (lt_of_le_of_ne hPSN (Ne.symm h0))).mpr (by rwa [abs_neg])
+      have hXI : -(p.Xg * -(p.V * Real.sin (φ / 2) / p.Xg)) = p.V * Real.sin (φ / 2) := by
         field_simp
-      refine ⟨point θ (-(p.V * Real.sin θ / p.Xg)), field_point_eq_zero p ⟨hXI, ?_⟩⟩
-      rw [power_of_isEq p hX.ne' hXI, hs]
-      field_simp
+      refine ⟨point (φ / 2) (-(p.V * Real.sin (φ / 2) / p.Xg)), field_point_eq_zero p ⟨hXI, ?_⟩⟩
+      rw [power_of_isEq p hX.ne' hXI, show 2 * (φ / 2) = φ + 0 by ring]
+      linarith
 
 /-- On the branch `|θ| < π/2` the exported power `−P = P_SN sin 2θ` (`power_of_isEq`) reaches
 `P_SN` exactly at the fold angle `θ = π/4`. -/

@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.Transform.ParkABC
 import Mathlib.LinearAlgebra.UnitaryGroup
 
 /-! # Clarke and Park coordinate transformations
@@ -463,15 +464,6 @@ angle `θ`: `x_k = V cos(θ − 2πk/3 + φ)`, `k = a, b, c`. -/
 def balanced (V φ θ : ℝ) : Fin 3 → ℝ :=
   ![V * Real.cos (θ + φ), V * Real.cos (θ - 2 * Real.pi / 3 + φ),
     V * Real.cos (θ + 2 * Real.pi / 3 + φ)]
-
-@[powerlib_foundation] private lemma cos_two_pi_div_three : Real.cos (2 * Real.pi / 3) = -(1 / 2) := by
-  have h : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring
-  rw [h, Real.cos_pi_sub, Real.cos_pi_div_three]
-
-@[powerlib_foundation] private lemma sin_two_pi_div_three :
-    Real.sin (2 * Real.pi / 3) = Real.sqrt 3 / 2 := by
-  have h : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring
-  rw [h, Real.sin_pi_sub, Real.sin_pi_div_three]
 
 /-- The balanced signal has no zero-sequence component. -/
 @[powerlib_foundation] theorem balanced_sum (V φ θ : ℝ) :

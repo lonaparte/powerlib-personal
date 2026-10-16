@@ -6,6 +6,7 @@ import theorem.Dynamics.Instability
 import theorem.Spectral.Family
 import theorem.Spectral.Hub
 import theorem.SpecialFunctions.Elementary
+import theorem.SpecialFunctions.Sinusoid
 
 /-! # Grid-forming VSM with a first-order power filter on an infinite bus (three states)
 
@@ -239,41 +240,42 @@ Static evidence on the model, not a connection conclusion. -/
   · rintro ⟨h1, h2, h3⟩
     apply state3_ext <;> simp [h1, h2, h3]
 
-/-- Equilibria exist iff `|P₀| ≤ K₀ = E V_g / X_g`.
+/-- Equilibria exist iff `|P₀| ≤ K₀ = E V_g / X_g`: the zeros of the sinusoid `P₀ − K₀ sin δ`
+(`SpecialFunctions.exists_sinusoid_zero_iff`).
 Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem exists_equilibrium_iff (hM : g.M ≠ 0) (hω : g.ωc ≠ 0)
     (hK0 : 0 < g.K0) : (∃ x, g.field x = 0) ↔ |g.P0| ≤ g.K0 := by
+  rw [← SpecialFunctions.exists_sinusoid_zero_iff (φ := 0) hK0]
   constructor
   · rintro ⟨x, hx⟩
     obtain ⟨-, -, h3⟩ := (g.field_eq_zero_iff hM hω x).mp hx
-    rw [← h3, abs_mul, abs_of_pos hK0]
-    exact mul_le_of_le_one_right hK0.le (Real.abs_sin_le_one _)
-  · intro h
-    refine ⟨g.equilibrium, (g.field_eq_zero_iff hM hω _).mpr ⟨by simp [equilibrium],
-      by simp [equilibrium], ?_⟩⟩
-    have ha : |g.P0 / g.K0| ≤ 1 := by rw [abs_div, abs_of_pos hK0, div_le_one hK0]; exact h
-    simp only [equilibrium, mk3_zero, δ0]
-    rw [Real.sin_arcsin (abs_le.mp ha).1 (abs_le.mp ha).2]
-    field_simp
+    exact ⟨x 0, by rw [add_zero, h3, sub_self]⟩
+  · rintro ⟨δ, hδ⟩
+    refine ⟨mk3 δ 0 g.P0, (g.field_eq_zero_iff hM hω _).mpr ⟨by simp, by simp, ?_⟩⟩
+    rw [add_zero] at hδ
+    rw [mk3_zero]
+    linarith
+
+/-- The loading angle balances the power: `K₀ sin δ₀ = P₀` (`|P₀| ≤ K₀`).
+Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem sin_δ0 (hK0 : 0 < g.K0) (h : |g.P0| ≤ g.K0) :
+    g.K0 * Real.sin g.δ0 = g.P0 := by
+  have ha : |g.P0 / g.K0| ≤ 1 := by rw [abs_div, abs_of_pos hK0, div_le_one hK0]; exact h
+  rw [δ0, Real.sin_arcsin (abs_le.mp ha).1 (abs_le.mp ha).2]
+  field_simp
 
 /-- The loading point `(δ₀, 0, P₀)` is an equilibrium when `|P₀| ≤ K₀`.
 Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem field_equilibrium (hM : g.M ≠ 0) (hω : g.ωc ≠ 0) (hK0 : 0 < g.K0)
-    (h : |g.P0| ≤ g.K0) : g.field g.equilibrium = 0 := by
-  obtain ⟨x, hx⟩ := (g.exists_equilibrium_iff hM hω hK0).mpr h
-  have ha : |g.P0 / g.K0| ≤ 1 := by rw [abs_div, abs_of_pos hK0, div_le_one hK0]; exact h
-  refine (g.field_eq_zero_iff hM hω _).mpr ⟨by simp [equilibrium], by simp [equilibrium], ?_⟩
-  simp only [equilibrium, mk3_zero, δ0]
-  rw [Real.sin_arcsin (abs_le.mp ha).1 (abs_le.mp ha).2]
-  field_simp
+    (h : |g.P0| ≤ g.K0) : g.field g.equilibrium = 0 :=
+  (g.field_eq_zero_iff hM hω _).mpr ⟨by simp [equilibrium], by simp [equilibrium], by
+    rw [equilibrium, mk3_zero]; exact g.sin_δ0 hK0 h⟩
 
-/-- Strictly inside the loadability limit the synchronizing coefficient is positive. -/
+/-- Strictly inside the loadability limit the synchronizing coefficient is positive
+(`cos δ₀ = √(1 − (P₀/K₀)²) > 0`, `SpecialFunctions.sqrt_one_sub_sq_pos`). -/
 @[powerlib_foundation] theorem K_pos (hK0 : 0 < g.K0) (h : |g.P0| < g.K0) : 0 < g.K := by
-  have ha : |g.P0 / g.K0| < 1 := by rw [abs_div, abs_of_pos hK0, div_lt_one hK0]; exact h
   simp only [K, δ0, Real.cos_arcsin]
-  apply mul_pos hK0 (Real.sqrt_pos.mpr _)
-  have : (g.P0 / g.K0) ^ 2 < 1 := by rw [← sq_abs]; nlinarith [abs_nonneg (g.P0 / g.K0)]
-  linarith
+  exact mul_pos hK0 (SpecialFunctions.sqrt_one_sub_sq_pos h hK0)
 
 /-! ## Physical parameters -/
 
@@ -415,9 +417,7 @@ def A1 : Matrix (Fin 3) (Fin 3) ℝ := !![0, 0, 0; 0, 0, 0; g.ωc * g.P0, 0, 0]
 @[powerlib_foundation] theorem hasDerivAt_jacobian_u (hK0 : 0 < g.K0) (h : |g.P0| ≤ g.K0)
     (i j : Fin 3) :
     HasDerivAt (fun u => g.jacobian (g.δ0 - u) i j) (g.A1 i j) 0 := by
-  have ha : |g.P0 / g.K0| ≤ 1 := by rw [abs_div, abs_of_pos hK0, div_le_one hK0]; exact h
-  have hsin : g.K0 * Real.sin g.δ0 = g.P0 := by
-    simp only [δ0]; rw [Real.sin_arcsin (abs_le.mp ha).1 (abs_le.mp ha).2]; field_simp
+  have hsin : g.K0 * Real.sin g.δ0 = g.P0 := g.sin_δ0 hK0 h
   have h1 : HasDerivAt (fun u : ℝ => g.δ0 - u) (-1) 0 := by
     simpa using (hasDerivAt_id (0 : ℝ)).const_sub g.δ0
   have key : HasDerivAt (fun u => g.ωc * (g.K0 * Real.cos (g.δ0 - u))) (g.ωc * g.P0) 0 := by
@@ -733,13 +733,6 @@ def atAntiLoading (g : VSMLPF) : Model := ⟨g, Real.pi - g.δ0⟩
 
 @[simp, powerlib_foundation] theorem atLoading_K (g : VSMLPF) : (atLoading g).K = g.K := rfl
 
-private theorem sin_δ0 (hK0 : 0 < g.K0) (h : |g.P0| ≤ g.K0) :
-    g.K0 * Real.sin g.δ0 = g.P0 := by
-  have ha : |g.P0 / g.K0| ≤ 1 := by rw [abs_div, abs_of_pos hK0, div_le_one hK0]; exact h
-  simp only [δ0]
-  rw [Real.sin_arcsin (abs_le.mp ha).1 (abs_le.mp ha).2]
-  field_simp
-
 private theorem fast_iff (hp : g.Pos) :
     g.K / g.D - g.D / g.M < g.ωc ↔ g.K < g.D * g.ωc + g.D ^ 2 / g.M := by
   have hM := hp.M; have hD := hp.D
@@ -758,7 +751,7 @@ private theorem slow_iff (hp : g.Pos) :
 @[powerlib_domain] theorem locallyExponentiallyStable (hp : g.Pos) (h : |g.P0| < g.K0)
     (hω : g.K / g.D - g.D / g.M < g.ωc) :
     connection% (atLoading g ∈ family.den (.flow .locallyExponentiallyStable)) :=
-  mem_den_locallyExponentiallyStable _ hp.M hp.D hp.ωc (sin_δ0 hp.K0 h.le) (g.K_pos hp.K0 h)
+  mem_den_locallyExponentiallyStable _ hp.M hp.D hp.ωc (g.sin_δ0 hp.K0 h.le) (g.K_pos hp.K0 h)
     ((fast_iff hp).mp hω)
 
 /-- `ω_c < K/D − D/M` ⇒ the loading equilibrium is unstable (a characteristic root crosses
@@ -766,7 +759,7 @@ into the open right half-plane). -/
 @[powerlib_domain] theorem unstable (hp : g.Pos) (h : |g.P0| < g.K0)
     (hω : g.ωc < g.K / g.D - g.D / g.M) :
     connection% (atLoading g ∈ family.den (.flow .unstable)) :=
-  mem_den_unstable _ hp.M hp.D hp.ωc (sin_δ0 hp.K0 h.le) ((slow_iff hp).mp hω)
+  mem_den_unstable _ hp.M hp.D hp.ωc (g.sin_δ0 hp.K0 h.le) ((slow_iff hp).mp hω)
 
 /-- Exact stability boundary (boundary `K = D ω_c + D²/M` excluded): the loading equilibrium
 is locally exponentially stable iff `K < D ω_c + D²/M`.  Since `K = K₀ cos δ₀` decreases with
@@ -794,7 +787,7 @@ positive `M, D, ω_c` and `|P₀| < K₀`. -/
     connection% (atAntiLoading g ∈ family.den (.flow .unstable)) := by
   refine mem_den_unstable_of_K_neg _ hp.M hp.D hp.ωc ?_ ?_
   · simp only [atAntiLoading, Real.sin_pi_sub]
-    exact sin_δ0 hp.K0 h.le
+    exact g.sin_δ0 hp.K0 h.le
   · have := g.K_pos hp.K0 h
     simp only [Model.K, atAntiLoading, Real.cos_pi_sub]
     simp only [K] at this
@@ -1291,9 +1284,8 @@ locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): n
   have hsin : q.K0 * Real.sin (Real.arcsin (q.P0 / q.K0)) = q.P0 := by
     rw [Real.sin_arcsin (abs_lt.mp ha).1.le (abs_lt.mp ha).2.le]; field_simp
   have hcos : 0 < Real.cos (Real.arcsin (q.P0 / q.K0)) := by
-    rw [Real.cos_arcsin]; apply Real.sqrt_pos.mpr
-    have : (q.P0 / q.K0) ^ 2 < 1 := by rw [← sq_abs]; nlinarith [abs_nonneg (q.P0 / q.K0)]
-    linarith
+    rw [Real.cos_arcsin]
+    exact SpecialFunctions.sqrt_one_sub_sq_pos h hK0
   have hm := Synchronous.Swing.mem_den_locallyExponentiallyStable q.atLoading.toSwing
     (div_pos hD hω) hD ((swing_meets_iff q.atLoading).1.mpr hsin)
     ((swing_meets_iff q.atLoading).2.2.2.1.mpr (mul_pos hK0 hcos))
@@ -1310,9 +1302,8 @@ locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): n
   have hsin : q.K0 * Real.sin (Real.pi - Real.arcsin (q.P0 / q.K0)) = q.P0 := by
     rw [Real.sin_pi_sub, Real.sin_arcsin (abs_lt.mp ha).1.le (abs_lt.mp ha).2.le]; field_simp
   have hcos : Real.cos (Real.pi - Real.arcsin (q.P0 / q.K0)) < 0 := by
-    rw [Real.cos_pi_sub, Real.cos_arcsin, neg_lt_zero]; apply Real.sqrt_pos.mpr
-    have : (q.P0 / q.K0) ^ 2 < 1 := by rw [← sq_abs]; nlinarith [abs_nonneg (q.P0 / q.K0)]
-    linarith
+    rw [Real.cos_pi_sub, Real.cos_arcsin, neg_lt_zero]
+    exact SpecialFunctions.sqrt_one_sub_sq_pos h hK0
   have hm := Synchronous.Swing.mem_den_unstable q.atAntiLoading.toSwing (div_pos hD hω)
     ((swing_meets_iff q.atAntiLoading).1.mpr hsin)
     (by simpa [Model.toSwing, swingParams, Synchronous.SwingParams.syncCoeff, atAntiLoading]

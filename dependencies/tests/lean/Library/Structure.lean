@@ -8,7 +8,8 @@ Structural checks of the `theorem/` library beyond admission, read from the buil
 * `LAYERS`: every `theorem.*` module belongs to exactly one layer of the table below: the codex
   shared layer, generic mathematics, or engineering models. A new module is registered by its
   directory or by its own name; a new directory must be registered before it builds.
-* `DEPENDENCIES`: a generic module imports no engineering-model module directly.
+* `DEPENDENCIES`: a generic module imports no engineering-model module directly, and a codex
+  module imports only codex modules (the shared layer stays self-contained).
 * `BARE_BEHAVIOUR`: no public theorem outside `TMIO.Statement` applies a behavioural predicate of
   the semantic layer (`theorem/Flow/Defs.lean`, `theorem/Port/Defs.lean`, and the upstream
   predicates they are built from) to an argument mentioning a constant of an engineering-model
@@ -262,14 +263,20 @@ run_cmd do
   let env ← getEnv
   let mut violations := #[]
   let mut generic : Nat := 0
+  let mut codex : Nat := 0
   for (i, m) in libraryModules env do
-    unless layerOf? m == some .generic do continue
-    generic := generic + 1
+    let some layer := layerOf? m | continue
+    if layer == .generic then generic := generic + 1
+    if layer == .codex then codex := codex + 1
     for imp in env.header.moduleData[i]!.imports do
-      if layerOf? imp.module == some .engineering then
+      let target := layerOf? imp.module
+      if layer == .generic && target == some .engineering then
         violations := violations.push s!"{m} imports {imp.module}"
-  report "Generic modules importing engineering models" violations
-  logInfo m!"POWERLIB_LIBRARY_DEPENDENCIES_OK: {generic} generic modules import no engineering module"
+      if layer == .codex && (target == some .generic || target == some .engineering) then
+        violations := violations.push s!"{m} (codex) imports {imp.module}"
+  report "Modules importing a higher layer" violations
+  logInfo m!"POWERLIB_LIBRARY_DEPENDENCIES_OK: {generic} generic modules import no engineering \
+    module; {codex} codex modules import only codex modules"
 
 run_cmd liftTermElabM do
   let env ← getEnv

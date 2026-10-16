@@ -3,7 +3,6 @@ import theorem.Family.Basic
 import theorem.Flow.Certificate
 import theorem.Linear.Synthesis
 import theorem.Linear.Transfer
-import theorem.Spectral.Global
 
 /-! # Two-state polynomial fields with sum-of-squares certificates
 
@@ -620,9 +619,11 @@ def family : Family Model Requirement 2 0 :=
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  refine Spectral.realize_univ_eq_empty_of .linearizationHurwitz .linearizationUnstable
-    fun model (hH : IsHurwitz model.linearization) hU => ?_
-  obtain ⟨s, hs, hre⟩ := hU
+  ext model
+  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
+  intro h
+  obtain ⟨s, hs, hre⟩ := h .linearizationUnstable
+  have hH : IsHurwitz model.linearization := h .linearizationHurwitz
   exact absurd ((Linear.spectrallyStable_iff_isHurwitz _).mpr hH s hs) (not_lt.mpr hre.le)
 
 /-- An equilibrium with a Hurwitz linearization is locally exponentially stable (LeanForControl's
@@ -644,29 +645,47 @@ indirect method). -/
     (model.field_eq_zero h) (hasFDerivAt_field_zero model).fderiv ⟨s, v, hv, heig, hre⟩
 
 /-- Every translation of the polynomial family is sound: its translation chain lies below its
-semantics connection (the global table, `Spectral.chain_le_semantics_of_globalTable`). -/
+semantics connection. -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Spectral.chain_le_semantics_of_globalTable (F := family)
-    (Rs := {.equilibrium, .linearizationHurwitz}) (Rg := {.certified})
-    (Ru := {.equilibrium, .linearizationUnstable}) (Rc := Set.univ) (Rp := ∅)
-    (Rd := fun a => {.decayRateAtLeast a}) (fun s => ?_) (fun model hm => ?_)
-    (fun model hm => ?_) (fun a model hm => ?_) (fun model hm => ?_)
-    (Spectral.realize_univ_subset_of_eq_empty realize_univ _)
-    (fun model _ => by rw [family_isAutonomous.den_passive]; trivial)
-  · rcases s with P | _
-    · cases P <;> rfl
-    · rfl
-  all_goals rw [TMIO.mem_realize] at hm; rw [family_isAutonomous.mem_den_flow]
-  · exact locallyExponentiallyStable_of_linearization model (hm .equilibrium (by simp))
-      (hm .linearizationHurwitz (by simp))
-  · obtain ⟨c⟩ := hm .certified rfl
-    exact c.globallyExponentiallyStable
-  · obtain ⟨c, hc⟩ := hm (.decayRateAtLeast a) rfl
-    exact c.quadraticDecay.decay.mono hc
-  · obtain ⟨s, hs, hre⟩ := hm .linearizationUnstable (by simp)
-    exact unstable_of_linearization model (hm .equilibrium (by simp)) hs hre
+  refine Family.chain_le_semantics_iff.mpr fun s model hm => ?_
+  rw [TMIO.mem_realize] at hm
+  change ∀ q ∈ translate s, Meets model q at hm
+  have hlocal : ∀ (Γ : Set Requirement), Γ = {.equilibrium, .linearizationHurwitz} →
+      (∀ q ∈ Γ, Meets model q) → LocallyExponentiallyStable model.field 0 := by
+    rintro Γ rfl h
+    exact locallyExponentiallyStable_of_linearization model (h .equilibrium (by simp))
+      (h .linearizationHurwitz (by simp))
+  rcases s with P | _
+  · rw [family_isAutonomous.mem_den_flow]
+    cases P
+    case lyapunovStable => exact (hlocal _ rfl hm).lyapunovStable
+    case locallyAsymptoticallyStable =>
+      exact Flow.locallyExponentiallyStable_localAsymptoticStable (hlocal _ rfl hm)
+    case locallyExponentiallyStable => exact hlocal _ rfl hm
+    case unstable =>
+      obtain ⟨s, hs, hre⟩ := hm .linearizationUnstable (by simp [translate])
+      exact unstable_of_linearization model (hm .equilibrium (by simp [translate])) hs hre
+    case decay a =>
+      obtain ⟨c, hc⟩ := hm (.decayRateAtLeast a) rfl
+      exact c.quadraticDecay.decay.mono hc
+    case conservative =>
+      have : model ∈ TMIO.realize Meets Set.univ :=
+        (TMIO.mem_realize _ _ _).mpr fun q _ => hm q trivial
+      rw [realize_univ] at this
+      exact this.elim
+    case globallyAsymptoticallyStable =>
+      obtain ⟨c⟩ := hm .certified rfl
+      exact c.globallyExponentiallyStable.globallyAsymptoticallyStable
+    case globallyExponentiallyStable =>
+      obtain ⟨c⟩ := hm .certified rfl
+      exact c.globallyExponentiallyStable
+    case contractive =>
+      obtain ⟨c⟩ := hm .certified rfl
+      exact c.globallyExponentiallyStable.sampledContraction
+  · rw [family_isAutonomous.den_passive]
+    trivial
 
 /-! ## Where the connections part -/
 

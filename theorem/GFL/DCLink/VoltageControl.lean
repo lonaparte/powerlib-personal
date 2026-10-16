@@ -112,19 +112,6 @@ open powerlib.Dynamics LinearSystems
 
 /-! ## Scalar helpers -/
 
-private lemma isHurwitz_fin_one_iff (a : ℝ) :
-    LinearSystems.IsHurwitz !![a] ↔ a < 0 := by
-  rw [Criteria.isHurwitz_iff_characteristic_roots]
-  have hdet : ∀ s : ℂ, (Linear.characteristicMatrix !![a] s).det = s - a := by
-    intro s
-    simp [Linear.characteristicMatrix, Matrix.det_unique]
-  simp only [hdet, sub_eq_zero]
-  constructor
-  · intro h
-    simpa using h a rfl
-  · rintro h s rfl
-    simpa using h
-
 private lemma eigenpair_fin_one (a : ℝ) :
     (!![a] : Matrix (Fin 1) (Fin 1) ℝ).map (algebraMap ℝ ℂ) *ᵥ (fun _ => (1 : ℂ)) =
       (a : ℂ) • (fun _ => (1 : ℂ)) := by
@@ -198,7 +185,7 @@ private theorem openLoop_locallyExponentiallyStable {C P V0 : ℝ} (hC : 0 < C)
   refine Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian_local (isOpen_posDC 1)
     (by simpa [posDC, dcState] using hV) _ (openField_contDiffOn _ _ _)
     (openField_eq_zero hV.ne') (openJacobian hV.ne') ?_
-  rw [isHurwitz_fin_one_iff, neg_div]
+  rw [Linear.isHurwitz_one_iff, neg_div]
   exact neg_neg_of_pos (div_pos hP (mul_pos hC hV))
 
 /-- Inverter (`I_dc0 = P/V0 < 0`, constant-power load on the DC side): the open-loop DC
@@ -581,7 +568,7 @@ stable exactly in rectifier operation, `P/V0 > 0`. -/
   change LocallyExponentiallyStable _ _ ↔ _
   rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local (isOpen_posDC 1)
     (by simpa [posDC, dcState] using hV) _ (openField_contDiffOn _ _ _) (openJacobian hV.ne'),
-    isHurwitz_fin_one_iff, neg_div, neg_lt_zero]
+    Linear.isHurwitz_one_iff, neg_div, neg_lt_zero]
   have hCV : 0 < m.C * m.V0 := mul_pos hC hV
   constructor
   · rintro ⟨-, h⟩
@@ -600,7 +587,7 @@ def negativeCapacitance : OpenLoop := ⟨-1, -1, 1⟩
     (isOpen_posDC 1) (by simp [posDC, dcState, negativeCapacitance]) _
     (openField_contDiffOn _ _ _) (openField_eq_zero (by norm_num [negativeCapacitance]))
     (openJacobian (by norm_num [negativeCapacitance])) ?_)
-  rw [isHurwitz_fin_one_iff]
+  rw [Linear.isHurwitz_one_iff]
   norm_num [negativeCapacitance]
 
 /-- The local exponential translation of the open-loop family is sound but not exact: the

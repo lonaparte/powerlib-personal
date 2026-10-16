@@ -3,7 +3,7 @@ import theorem.Transform.Park
 import theorem.Linear.Family
 import theorem.Linear.Jordan
 import theorem.TMIO.ClaimElab
-import theorem.Spectral.Local
+import theorem.Spectral.LinearNamed
 
 /-! # Linearized SRF-PLL: state-space models, transfer functions and tuning
 
@@ -58,9 +58,10 @@ Family and connection conclusions.
 as the port system (`Linear.Plant.system`) of the corresponding plant of this module; every
 channel has the state matrix `linA`, so the flow sentences (about the origin, the locked point)
 depend only on `V K_p` and `V K_i`. Requirements are static: positive proportional loop gain
-`V K_p > 0`, positive integral loop gain `V K_i > 0`, or a negative loop gain. Connection
-conclusions: soundness of every translation (`chain_le_semantics`), exactness for the attractive
-sentences and sampled contraction (`exact_hurwitz`), the global exponential stability
+`V K_p > 0`, positive integral loop gain `V K_i > 0`, or a negative loop gain; the translation
+is the linear table of `theorem/Spectral/LinearNamed.lean`. Connection conclusions: soundness of
+every translation (`chain_le_semantics`), exactness for the attractive sentences and sampled
+contraction (`exact_hurwitz`), the global exponential stability
 equivalence (`mem_den_globallyExponentiallyStable_iff`, for every channel), and the boundaries
 `not_exact_lyapunovStable`, `not_exact_unstable`, `not_exact_conservative` (zero-gain and
 Jordan-block witnesses). Decay rates, conservation and passivity have no available translation (the
@@ -479,67 +480,54 @@ private theorem isHurwitz_plant_iff (m : Model) :
     LinearSystems.IsHurwitz m.plant.A ↔ 0 < m.V * m.Kp ∧ 0 < m.V * m.Ki := by
   rw [Model.plant_A, isHurwitz_linA_iff]
 
+/-- The translation is the linear table: both positive loop gains for Lyapunov stability, the
+attractive sentences and sampled contraction, a negative loop gain for instability, the whole
+language for decay rates, conservation and passivity. -/
+private theorem translate_eq (s : Sentence) :
+    family.translate s = Spectral.linearTable {.proportional, .integral} {.negativeGain}
+      Set.univ Set.univ (fun _ => Set.univ) s := by
+  rcases s with P | _
+  · cases P <;> rfl
+  · rfl
+
+/-- Both positive loop gains are the Hurwitz property of the state matrix. -/
+private theorem mem_realize_iff_isHurwitz (m : Model) :
+    m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A := by
+  simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
+    forall_eq, isHurwitz_plant_iff]
+  rfl
+
 /-- A negative loop gain gives a characteristic root in the open right half plane. -/
-private theorem unstable_of_negativeGain {m : Model} (h : m.V * m.Kp < 0 ∨ m.V * m.Ki < 0) :
-    m ∈ family.den (.flow .unstable) := by
-  refine family_isLinear.mem_den_flow.mpr ?_
+private theorem root_of_negativeGain {m : Model} (h : m.V * m.Kp < 0 ∨ m.V * m.Ki < 0) :
+    ∃ s : ℂ, (Linear.characteristicMatrix m.plant.A s).det = 0 ∧ 0 < s.re := by
   rw [Model.plant_A]
-  obtain ⟨s, hs, hre⟩ : ∃ s : ℂ, (Linear.characteristicMatrix (linA m.V m.Kp m.Ki) s).det = 0 ∧
-      0 < s.re := by
-    rcases h with h | h
-    · exact Criteria.exists_characteristic_root_re_pos_of_trace_pos _ (by rw [trace_linA]; linarith)
-    · exact Criteria.exists_characteristic_root_re_pos_of_det_neg _ (by rw [det_linA]; exact h)
-  exact Linear.unstable_of_root 0 hs hre
+  rcases h with h | h
+  · exact Criteria.exists_characteristic_root_re_pos_of_trace_pos _ (by rw [trace_linA]; linarith)
+  · exact Criteria.exists_characteristic_root_re_pos_of_det_neg _ (by rw [det_linA]; exact h)
 
 /-- Every translation of the linearized PLL family is sound: its translation chain lies below its
-semantics connection. Both positive loop gains make the state matrix Hurwitz (the linear hub), a
-negative loop gain gives a right-half-plane root (LeanForControl's eigenvalue instability). -/
+semantics connection. The translation is the linear table (`Spectral.linearTable`): both positive
+loop gains make the state matrix Hurwitz (the linear hub), a negative loop gain gives a
+right-half-plane root (LeanForControl's eigenvalue instability), and the whole language of the
+remaining sentences is inconsistent. -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  have hnone : (∀ q, Meets m q) → False := fun h => by
-    have hm' : m ∈ TMIO.realize Meets Set.univ := (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    rw [realize_univ] at hm'
-    exact hm'
-  have hhur : (∀ q ∈ ({.proportional, .integral} : Set Requirement), Meets m q) →
-      LinearSystems.IsHurwitz m.plant.A := fun h =>
-    (isHurwitz_plant_iff m).mpr ⟨h .proportional (by simp), h .integral (by simp)⟩
-  rcases s with P | _
-  · have hden : P.Attractive ∨ P = .contractive →
-        translate (.flow P) = {.proportional, .integral} → m ∈ family.den (.flow P) := by
-      intro hP ht
-      rw [family_isLinear.den_hurwitz hP, Set.mem_ofPred_eq]
-      exact hhur (ht ▸ hm)
-    cases P
-    case lyapunovStable =>
-      exact family_isLinear.mem_den_flow.mpr (Linear.lyapunovStable_of_isHurwitz 0 (hhur hm))
-    case unstable => exact unstable_of_negativeGain (hm .negativeGain rfl)
-    case decay a => exact (hnone fun q => hm q trivial).elim
-    case conservative => exact (hnone fun q => hm q trivial).elim
-    case contractive => exact hden (Or.inr rfl) rfl
-    all_goals exact hden (Or.inl trivial) rfl
-  · exact (hnone fun q => hm q trivial).elim
+  have hU := realize_univ
+  unfold powerlib.TMIO.Statement at hU
+  exact Spectral.chain_le_semantics_of_linearTable_univ family_isLinear translate_eq
+    (fun m hm => (mem_realize_iff_isHurwitz m).mp hm)
+    (fun m hm => root_of_negativeGain ((TMIO.mem_realize _ _ _).mp hm .negativeGain rfl))
+    (fun _ => Spectral.realize_univ_subset_of_eq_empty hU _)
 
 /-- On the attractive sentences and sampled contraction the chain agrees with the semantics: both
-positive loop gains are their exact translation, for every channel. -/
+positive loop gains are their exact translation, for every channel
+(`Spectral.exact_of_linearTable`). -/
 @[powerlib_domain] theorem exact_hurwitz {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  have ht : translate (.flow P) = {.proportional, .integral} := by
-    rcases hP with hP | rfl
-    · cases P <;> first | rfl | exact absurd hP id
-    · rfl
-  unfold Family.Exact
-  change TMIO.realize Meets (translate (.flow P)) = _
-  rw [ht, family_isLinear.den_hurwitz hP]
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
-    forall_eq, Set.mem_ofPred_eq, isHurwitz_plant_iff]
-  rfl
+  exact Spectral.exact_of_linearTable family_isLinear translate_eq mem_realize_iff_isHurwitz hP
 
 /-- Linear SRF-PLL (every channel; they share the state matrix): global exponential stability of
 the locked point iff `V K_p > 0 ∧ V K_i > 0`. -/

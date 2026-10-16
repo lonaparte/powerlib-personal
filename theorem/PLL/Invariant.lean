@@ -46,10 +46,6 @@ open Matrix
 open powerlib.Dynamics (State)
 open powerlib.PLL.PIPLL (srf)
 
-@[powerlib_foundation] private lemma hasDerivAt_coord {φ : ℝ → State 2} {φ' : State 2} {t : ℝ}
-    (h : HasDerivAt φ φ' t) (i : Fin 2) : HasDerivAt (fun τ => φ τ i) (φ' i) t :=
-  (PiLp.proj 2 (fun _ : Fin 2 => ℝ) i : State 2 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivAt t h
-
 @[powerlib_foundation] private lemma hasDerivAt_state {f g : ℝ → ℝ} {f' g' t : ℝ}
     (hf : HasDerivAt f f' t) (hg : HasDerivAt g g' t) :
     HasDerivAt (fun τ => PhasePlane.mk (f τ) (g τ)) (PhasePlane.mk f' g') t := by
@@ -70,8 +66,8 @@ open powerlib.PLL.PIPLL (srf)
       HasDerivAt (fun τ => Δω - a * Real.sin (φ τ 0) + b * φ τ 1)
         (-(a * Real.cos (φ t 0) * (Δω - a * Real.sin (φ t 0) + b * φ t 1)) -
           b * Real.sin (φ t 0)) t := by
-  have h0 := hasDerivAt_coord (hφ t) 0
-  have h1 := hasDerivAt_coord (hφ t) 1
+  have h0 := Dynamics.hasDerivAt_iff_coords.mp (hφ t) 0
+  have h1 := Dynamics.hasDerivAt_iff_coords.mp (hφ t) 1
   simp only [xiField] at h0 h1
   refine ⟨by simpa using h0, ?_⟩
   have hs := (h0.sin.const_mul a)

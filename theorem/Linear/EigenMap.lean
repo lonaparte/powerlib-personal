@@ -272,11 +272,6 @@ section Charpoly
 
 variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
 
-private lemma det_characteristicMatrix_eq_eval (A : Matrix ι ι ℝ) (s : ℂ) :
-    (characteristicMatrix A s).det = (A.charpoly.map (algebraMap ℝ ℂ)).eval s := by
-  rw [← Matrix.charpoly_map, Matrix.eval_charpoly, characteristicMatrix, Matrix.scalar_apply,
-    Matrix.smul_one_eq_diagonal]
-
 /-- Spectral stability read through eigenpairs, on any finite index type. -/
 @[powerlib_foundation] theorem spectrallyStable_iff_forall_eigen {A : Matrix ι ι ℝ} :
     SpectrallyStable A ↔
@@ -296,7 +291,7 @@ spectrally stable together. -/
 @[powerlib_foundation] theorem spectrallyStable_congr_charpoly {A : Matrix ι ι ℝ}
     {B : Matrix κ κ ℝ} (h : A.charpoly = B.charpoly) :
     SpectrallyStable A ↔ SpectrallyStable B := by
-  simp only [SpectrallyStable, det_characteristicMatrix_eq_eval, h]
+  simp only [SpectrallyStable, det_characteristicMatrix_eq_eval, complexify, Matrix.charpoly_map, h]
 
 @[powerlib_foundation] theorem isHurwitz_congr_charpoly {n m : ℕ} {A : Matrix (Fin n) (Fin n) ℝ}
     {B : Matrix (Fin m) (Fin m) ℝ} (h : A.charpoly = B.charpoly) : IsHurwitz A ↔ IsHurwitz B := by
