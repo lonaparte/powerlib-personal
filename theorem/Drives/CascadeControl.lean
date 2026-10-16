@@ -62,7 +62,7 @@ Family and connection conclusions.
   of `theorem/CurrentControl/PILoop.lean`; `IMCLoop` is the machine-drive form of that loop. For
   `L ≠ 0` the two are the same plant (`imcModel_eq`), so every sentence of the drive loop is read
   through the converter family (`mem_den_iff_imc`, a connection statement), and `mem_den` is the
-  converter result `imc_mem_den_iff` read back.
+  converter result `imc_mem_den_iff` read back. Scaffold: `theorem/IMCCurrentLoop.agda`.
 
 Corrections.
 * FOC note §1.8: the "bandwidth-separated" speed loop

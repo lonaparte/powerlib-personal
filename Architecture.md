@@ -73,7 +73,15 @@ narrow bridge of Rules §11 and is checked by Lean (`theorem/generated/`).
 | `theorem/ImpedanceInterconnection.agda` | source and load → closed loop; covariance under state coordinates | `Circuits/Interconnection` (generated `ImpedanceInterconnection`) |
 | `theorem/TMIO/Representation.agda` | representation changes transport satisfaction structures and generated spaces | `TMIO/Representation` (`generate_transport`, `Seed.transport_whole`) |
 | `theorem/Rebase.agda` | changes of bases of an interconnection: state coordinates, per-unit bases, current direction, time base | `Transform/Rebase`; per-unit instance `Transform/PerUnitLTI` |
-| `theorem/Hub.agda` | a spoke family read through a hub family: readings by conjugacy, pullback of satisfaction, transfer of exactness and soundness | `Spectral/Hub`; instances in `GFM/VSMLPF` (`DroopLPF`), `Limiting/Saturation`, `Synchronous/PH` (`ClassicalSM`), `PLL/PH`, `Drives/CascadeControl` |
+| `theorem/FamilyReading.agda` | the generic pattern: a spoke family read through a hub family (readings by conjugacy or equality, contexts, transfer of exactness and soundness, composition) | `Spectral/Hub` |
+| `theorem/FlowSemantics.agda` | the semantic layer the readings use: fields at a point, affine changes of coordinates, the local sentence kinds and table | `Dynamics/Transport` (`holds_transport_iff`), `Spectral/Local` (`localTable`) |
+| `theorem/Swing.agda` | the swing hub: models, requirements, translation and the laws its spokes read | `Synchronous/Swing` |
+| `theorem/DroopSwing.agda` | the droop loop with a power filter read as a swing machine (`P_f = P₀ − D ω`, within `D, ω_c > 0`) | `GFM/VSMLPF` (`DroopLPF.mem_den_iff_swing`) |
+| `theorem/SaturationSwing.agda` | the current-saturated converter read as a swing machine (same field, within positive inertia) | `Limiting/Saturation` (`mem_den_flow_iff_swing`) |
+| `theorem/ClassicalMachineSwing.agda` | the classical machine read as a swing machine (momentum `p = M ω`, flow sentences) | `Synchronous/PH` (`ClassicalSM.mem_den_flow_iff_swing`) |
+| `theorem/PortHamiltonianPLL.agda` | the port-Hamiltonian SRF-PLL read as a PI-PLL (flow sentences, within nonnegative energy) | `PLL/PH` (`PLLPH.mem_den_flow_iff_srf`) |
+| `theorem/IMCCurrentLoop.agda` | the drive IMC current loop read as the converter PI loop with IMC tuning (same plant, `L ≠ 0`) | `Drives/CascadeControl` (`mem_den_iff_imc`) |
+| `theorem/CurrentDirection.agda` | OUT-positive and IN-positive writings of a model related by the reversal of currents and powers (conventions §D) | `GFL/PowerLoop/QuasiStatic`, `GFL/RatePLL` (literature forms) |
 
 The rebasing scaffold shows the division of labour. Univalence turns the equivalences of the
 six spaces of an interconnection into a path, so the closed loop commutes with every change of

@@ -22,10 +22,13 @@ Scope.
 * Readings and requirement correspondences are hypotheses on a context of the spoke, so a reading
   that needs nonzero gains (an invertible coordinate change) is used only where they hold.
 
-Source: Agda scaffold `theorem/Hub.agda` (a spoke read through a hub: univalence turns the
-readings into a path from the spoke's semantics to the hub's pulled back along the map, and
-exactness and soundness pass under a correspondence of requirement languages on a context);
-`Family.comap` (`theorem/Family/Basic.lean`) is the case of a spoke that keeps the hub's language.
+Source: Agda scaffold `theorem/FamilyReading.agda`, the generic pattern (a spoke read through a hub:
+univalence turns the readings into a path from the spoke's semantics to the hub's pulled back
+along the map, and exactness and soundness pass under a correspondence of requirement languages on
+a context); each reading has its own scaffold named after its two families (`DroopSwing`,
+`SaturationSwing`, `ClassicalMachineSwing`, `PortHamiltonianPLL`, `IMCCurrentLoop`,
+`CurrentDirection`). `Family.comap` (`theorem/Family/Basic.lean`) is the case of a spoke that keeps
+the hub's language.
 
 Results.
 * `realize_subset_den_of_hub` (a requirement obligation `realize A ⊆ den s` of the spoke from the

@@ -29,6 +29,14 @@ A connection is built in three steps:
 3. The scaffold stays in `theorem/` as the design record of the connection, and the
    header of the Lean module cites it. Only data passes between Agda and Lean (§11).
 
+A scaffold is named after the contents it connects: a reading of one family through
+another after the two families (`DroopSwing.agda`: the droop loop read as a swing
+machine), a change of representation after the representations or the change
+(`Conversion.agda`, `Rebase.agda`, `CurrentDirection.agda`). One scaffold records one
+connection. A construction shared by several connections is a scaffold of its own,
+named after the construction (`FamilyReading.agda`), and content shared by several
+readings of one hub is named after the hub (`Swing.agda`).
+
 Markdown derivations, Python computations, Mathematica or SymPy results,
 numerical experiments, and Agda-only proofs are not admitted theorems.
 

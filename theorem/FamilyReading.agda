@@ -1,26 +1,28 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
-module theorem.Hub where
+module theorem.FamilyReading where
 
--- Scaffold of the hub connections: a spoke family read through a hub family.
+-- Scaffold of family readings, the generic pattern: a spoke family read through a hub family.
+-- Each reading of the library has its own scaffold, named after its two families
+-- (`DroopSwing`, `SaturationSwing`, `ClassicalMachineSwing`, `PortHamiltonianPLL`,
+-- `IMCCurrentLoop`, `CurrentDirection`; hub content `Swing`, semantic layer `FlowSemantics`).
 --
 -- A hub is a family whose laws are proved once (the swing equation, the PI-PLL); a spoke is a
 -- family whose models are read as hub models: a map of models and, for every model, a reading
--- under which its system and the system of its image satisfy the same sentences (an affine
--- change of state coordinates in the library). Univalence turns the readings into a path from
--- the spoke's satisfaction structure to the hub's pulled back along the map
--- (`readPath`), so every construction over satisfaction structures — denotations, legal spaces,
--- generated connections — is the hub's pulled back (`comap`, Lean's `Family.comap`). A reading
--- comes from a conjugacy under which satisfaction is invariant (`viaConjugacy`). What a spoke still has to supply is the
--- correspondence of its own requirement language with the hub's on a context; then exactness
--- and soundness pass from the hub to the spoke (`exactUnder-pullback`, `sound-pullback`).
--- Readings compose (`compose`), so a spoke of a spoke reads through the hub.
+-- under which its system and the system of its image satisfy the same sentences (an affine change
+-- of state coordinates, or an equality of systems). Univalence turns the readings into a path from
+-- the spoke's satisfaction structure to the hub's pulled back along the map (`readPath`), so every
+-- construction over satisfaction structures — denotations, legal spaces, generated connections —
+-- is the hub's pulled back (`comap`, Lean's `Family.comap`). A reading comes from a conjugacy
+-- under which satisfaction is invariant (`viaConjugacy`, `partialConjugacy` for the sentences of
+-- a predicate) or from an equality of systems (`viaEquality`). What a spoke still has to supply is
+-- the correspondence of its requirement language with the hub's on a context — a set of its
+-- requirements (`restrict`) or a predicate on its parameters (`restrictBy`); then exactness and
+-- soundness pass from the hub to the spoke (`exactUnder-pullback`, `exact-pullback`,
+-- `sound-pullback`). Readings compose (`compose`), so a spoke of a spoke reads through the hub.
 --
 -- The Lean connection is `theorem/Spectral/Hub.lean` (`exactUnder_of_hub`, `exact_of_hub`,
 -- `sound_of_hub`, `realize_subset_den_of_hub`; readings by conjugacy
--- `mem_den_flow_iff_of_transport`), with the readings proved per spoke
--- (`DroopLPF.mem_den_iff_swing`, `ClassicalSM.mem_den_flow_iff_swing`,
--- `Limiting.mem_den_flow_iff_swing`, `PLLPH.mem_den_flow_iff_srf`,
--- `CascadeControl.mem_den_iff_imc`). Nothing here is exported.
+-- `mem_den_flow_iff_of_transport`). Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv
@@ -45,7 +47,7 @@ record Semantics : Type₁ where
     System Sentence : Type
     holds : System → Sentence → Type
 
-module _ (S : Semantics) where
+module Readings (S : Semantics) where
   open Semantics S
 
   -- A family: models, their systems, a requirement language and its translation.
@@ -70,6 +72,24 @@ module _ (S : Semantics) where
 
   Sound : (F : Family) → Sentence → Type
   Sound F s = (x : Model F) → realize F (translate F s) x → den F s x
+
+  Exact : (F : Family) → Sentence → Type
+  Exact F s = (x : Model F) → realize F (translate F s) x ↔ den F s x
+
+  -- The subfamily of the models in a context; exactness within the context is its exactness.
+  restrict : (F : Family) → (Req F → Type) → Family
+  restrict F Δ = record
+    { Model = Σ (Model F) (realize F Δ) ; Req = Req F
+    ; system = λ x → system F (fst x) ; meets = λ x → meets F (fst x) ; translate = translate F }
+
+  exactUnder-restrict : (F : Family) (Δ : Req F → Type) (s : Sentence) →
+    Exact (restrict F Δ) s → ExactUnder F Δ s
+  exactUnder-restrict F Δ s h x hx = h (x , hx)
+
+  sound-restrict : (F : Family) (Δ : Req F → Type) (s : Sentence) →
+    ((x : Model F) → realize F (translate F s) x → realize F Δ x) →
+    Sound (restrict F Δ) s → Sound F s
+  sound-restrict F Δ s hΔ h x hx = h (x , hΔ x hx) hx
 
   -- The semantics of a family as a satisfaction structure.
   semantics : Family → SatContext Sentence
@@ -98,6 +118,28 @@ module _ (S : Semantics) where
     a ≡ Invariance.act I c b → Reading a b
   conjugateReading I {a} {b} c p s =
     compEquiv (pathToEquiv (cong (λ z → holds z s) p)) (Invariance.invariant I c b s)
+
+  -- A reading of the sentences satisfying `P` only (e.g. the flow sentences, when the spoke has a
+  -- port and the hub has none).
+  record PartialHub (P : Sentence → Type) (F G : Family) : Type where
+    field
+      map : Model F → Model G
+      read : (x : Model F) (s : Sentence) → P s → holds (system F x) s ≃ holds (system G (map x)) s
+
+  module _ {P : Sentence → Type} {F G : Family} (h : PartialHub P F G) where
+    open PartialHub h
+
+    exact-pullback : {ΔG : Req G → Type} {s : Sentence} → P s →
+      ((x : Model F) → realize G ΔG (map x)) →
+      ((x : Model F) → realize F (translate F s) x ↔ realize G (translate G s) (map x)) →
+      ExactUnder G ΔG s → Exact F s
+    exact-pullback {s = s} ps hΔ corr hG x =
+      ↔-trans (corr x) (↔-trans (hG (map x) (hΔ x)) (↔-of-≃ (invEquiv (read x s ps))))
+
+    sound-pullback-partial : {s : Sentence} → P s →
+      ((x : Model F) → realize F (translate F s) x → realize G (translate G s) (map x)) →
+      Sound G s → Sound F s
+    sound-pullback-partial {s = s} ps corr hG x hx = invEq (read x s ps) (hG (map x) (corr x hx))
 
   -- A spoke `F` read through a hub `G`.
   record Hub (F G : Family) : Type where
@@ -146,6 +188,40 @@ module _ (S : Semantics) where
     ((x : Model F) → system F x ≡ Invariance.act I (conj x) (system G (map x))) → Hub F G
   viaConjugacy I map conj p = record
     { map = map ; read = λ x → conjugateReading I (conj x) (p x) }
+
+  -- A spoke whose systems are its images' systems reads through the hub (the same plant written
+  -- with other parameters).
+  viaEquality : {F G : Family} (map : Model F → Model G) →
+    ((x : Model F) → system F x ≡ system G (map x)) → Hub F G
+  viaEquality map p = record
+    { map = map ; read = λ x s → pathToEquiv (cong (λ a → holds a s) (p x)) }
+
+  -- The subfamily of the models satisfying a predicate that is not a requirement of the family
+  -- (a context on the parameters, such as positive inertia or a nonzero inductance).
+  restrictBy : (F : Family) → (Model F → Type) → Family
+  restrictBy F C = record
+    { Model = Σ (Model F) C ; Req = Req F
+    ; system = λ x → system F (fst x) ; meets = λ x → meets F (fst x) ; translate = translate F }
+
+  -- A member characterization of the spoke from exactness of the subfamily.
+  den-of-restrictBy : (F : Family) (C : Model F → Type) (s : Sentence) →
+    Exact (restrictBy F C) s → (x : Model F) → C x → realize F (translate F s) x ↔ den F s x
+  den-of-restrictBy F C s h x c = h (x , c)
+
+  -- A reading of every sentence reads the sentences of any `P`.
+  partial : {F G : Family} (P : Sentence → Type) → Hub F G → PartialHub P F G
+  partial P h = record { map = Hub.map h ; read = λ x s _ → Hub.read h x s }
+
+  -- A reading of the sentences of `P` from a conjugacy that holds for them.
+  partialConjugacy : {F G : Family} (I : Invariance) (P : Sentence → Type)
+    (map : Model F → Model G) (conj : Model F → Invariance.Conj I) →
+    ((x : Model F) (s : Sentence) → P s →
+      holds (system F x) s ≃ holds (Invariance.act I (conj x) (system G (map x))) s) →
+    PartialHub P F G
+  partialConjugacy {G = G} I P map conj p = record
+    { map = map
+    ; read = λ x s ps →
+        compEquiv (p x s ps) (Invariance.invariant I (conj x) (system G (map x)) s) }
 
   -- Readings compose: a spoke of a spoke reads through the hub.
   compose : {F G H : Family} → Hub F G → Hub G H → Hub F H
