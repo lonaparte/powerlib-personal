@@ -98,6 +98,8 @@ run_cmd do
       (`powerlib.Circuits.Interconnection.portData_not_certified, `powerlib.TMIO.mem_certify),
       (`powerlib.Nonlinear.Cubic.chain_eq_semantics, `powerlib.Family.chain_eq_semantics_iff),
       (`powerlib.Nonlinear.Polynomial2.chain_le_semantics,
+        `powerlib.Spectral.chain_le_semantics_of_globalTable),
+      (`powerlib.Spectral.chain_le_semantics_of_globalTable,
         `powerlib.Family.chain_le_semantics_iff),
       (`powerlib.Data.Analysis.generate_distributedEdge,
         `powerlib.Data.Analysis.distributedEdge_eq_centralEdge),
