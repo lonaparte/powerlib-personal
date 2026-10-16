@@ -1,4 +1,5 @@
 import theorem.NormalForm.Fold
+import theorem.NormalForm.Logistic
 import theorem.Flow.Certificate
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
@@ -41,8 +42,9 @@ Results.
   vanish at `0` (`odd_apply_zero`, `odd_iteratedDeriv_even_zero`); both pitchfork fields are odd
   (`superField_odd`, `subField_odd`).
 * Basin of the supercritical branch: for `μ > 0` every forward-complete solution with
-  `x(t₀) > 0` converges to `√μ` (explicit Bernoulli solution of `w = 1/x²`; `super_bernoulli`,
-  `super_tendsto_sqrt`).
+  `x(t₀) > 0` converges to `√μ`: the square `x²` solves the logistic equation
+  (`super_sq_isIntegralCurveOn`), whose explicit solution and limit in
+  `theorem/NormalForm/Logistic.lean` give `super_bernoulli` (`w = 1/x²`) and `super_tendsto_sqrt`.
 * Potential barrier of the supercritical pitchfork, `V(x) = −μx²/2 + x⁴/4`:
   `V(0) − V(±√μ) = μ²/4` (`barrier`).
 
@@ -274,80 +276,40 @@ def superSystem (μ : ℝ) : State 1 → State 1 := lift (superField μ)
 
 /-! ### Basin of the positive branch -/
 
-/-- For `μ > 0`, every solution with `x(a) > 0` satisfies `1/x² − 1/μ = (1/x(a)² − 1/μ) e^{−2μ(t−a)}`. -/
+/-- The square `ρ = x²` of a solution of `ẋ = μx − x³` solves the logistic amplitude equation
+`ρ̇ = 2μρ − 2ρ²` (`Logistic.field μ (−1)`). -/
+@[powerlib_foundation] theorem super_sq_isIntegralCurveOn {μ : ℝ} {ψ : ℝ → ℝ} {s : Set ℝ}
+    (hψ : IsIntegralCurveOn ψ (fun _ r => superField μ r) s) :
+    IsIntegralCurveOn (fun t => ψ t ^ 2) (fun _ r => Logistic.field μ (-1) r) s := by
+  intro t ht
+  convert (hψ t ht).pow 2 using 1
+  simp only [Logistic.field, superField]
+  push_cast; ring
+
+/-- For `μ > 0`, every solution with `x(a) > 0` satisfies
+`1/x² − 1/μ = (1/x(a)² − 1/μ) e^{−2μ(t−a)}` (`Logistic.reciprocal_formula` for `ρ = x²`,
+`l = −1`). -/
 @[powerlib_foundation] theorem super_bernoulli {μ : ℝ} (hμ : 0 < μ) {ψ : ℝ → ℝ} {a b : ℝ}
     (hψ : IsIntegralCurveOn ψ (fun _ r => superField μ r) (Icc a b)) (ha : 0 < ψ a) :
     ∀ t ∈ Icc a b, 1 / ψ t ^ 2 - 1 / μ = (1 / ψ a ^ 2 - 1 / μ) * Real.exp (-2 * μ * (t - a)) := by
-  have hpos := pos_of_pos (superField_contDiff μ) (by simp [superField]) hψ ha
-  have hconst := eq_of_hasDerivWithinAt_zero
-    (F := fun t => ((ψ t ^ 2)⁻¹ - 1 / μ) * Real.exp (2 * μ * (t - a))) (a := a) (b := b)
-    (by
-      intro t ht
-      have hne : ψ t ≠ 0 := (hpos t ht).ne'
-      have hd : HasDerivWithinAt ψ (μ * ψ t - ψ t ^ 3) (Icc a b) t := by
-        simpa [superField] using hψ t ht
-      have h2 : HasDerivWithinAt (fun s => ψ s ^ 2) (2 * ψ t * (μ * ψ t - ψ t ^ 3)) (Icc a b) t := by
-        convert hd.pow 2 using 1; push_cast; ring
-      have h3 : HasDerivWithinAt (fun s => (ψ s ^ 2)⁻¹)
-          (-(2 * ψ t * (μ * ψ t - ψ t ^ 3)) / (ψ t ^ 2) ^ 2) (Icc a b) t :=
-        h2.inv (pow_ne_zero 2 hne)
-      have hw : HasDerivWithinAt (fun s => (ψ s ^ 2)⁻¹ - 1 / μ)
-          (-(2 * ψ t * (μ * ψ t - ψ t ^ 3)) / (ψ t ^ 2) ^ 2) (Icc a b) t :=
-        h3.sub_const (1 / μ)
-      have he : HasDerivWithinAt (fun s => Real.exp (2 * μ * (s - a)))
-          (Real.exp (2 * μ * (t - a)) * (2 * μ)) (Icc a b) t := by
-        have : HasDerivAt (fun s => 2 * μ * (s - a)) (2 * μ) t := by
-          simpa using ((hasDerivAt_id t).sub_const a).const_mul (2 * μ)
-        exact this.exp.hasDerivWithinAt
-      convert hw.mul he using 1
-      field_simp
-      ring)
   intro t ht
-  have h := hconst t ht
-  simp only [sub_self, mul_zero, Real.exp_zero, mul_one, ← one_div] at h
-  have hexp : Real.exp (2 * μ * (t - a)) * Real.exp (-2 * μ * (t - a)) = 1 := by
-    rw [← Real.exp_add]; simp
-  calc 1 / ψ t ^ 2 - 1 / μ
-      = (1 / ψ t ^ 2 - 1 / μ) * Real.exp (2 * μ * (t - a)) * Real.exp (-2 * μ * (t - a)) := by
-        rw [mul_assoc, hexp, mul_one]
-    _ = _ := by rw [h]
+  have h := Logistic.reciprocal_formula hμ.ne' (super_sq_isIntegralCurveOn hψ) (by positivity)
+    t ht
+  simpa [sub_eq_add_neg, neg_div] using h
 
 /-- For `μ > 0` the positive half-line lies in the basin of `√μ`: every forward-complete
-solution with `x(a) > 0` converges to `√μ`. -/
+solution with `x(a) > 0` converges to `√μ` (`Logistic.tendsto_level` for `ρ = x²`). -/
 @[powerlib_foundation] theorem super_tendsto_sqrt {μ : ℝ} (hμ : 0 < μ) {ψ : ℝ → ℝ} {a : ℝ}
     (hψ : IsIntegralCurveOn ψ (fun _ r => superField μ r) (Ici a)) (ha : 0 < ψ a) :
     Tendsto ψ atTop (𝓝 √μ) := by
-  have hpos : ∀ t, a ≤ t → 0 < ψ t := fun t ht =>
-    pos_of_pos (superField_contDiff μ) (by simp [superField]) (hψ.mono Icc_subset_Ici_self) ha
-      t ⟨ht, le_rfl⟩
-  have hw : ∀ t, a ≤ t → 1 / ψ t ^ 2 = 1 / μ + (1 / ψ a ^ 2 - 1 / μ) * Real.exp (-2 * μ * (t - a)) :=
-    fun t ht => by
-      have := super_bernoulli hμ (hψ.mono Icc_subset_Ici_self) ha t ⟨ht, le_rfl⟩
-      linarith
-  have hexp : Tendsto (fun t => Real.exp (-2 * μ * (t - a))) atTop (𝓝 0) := by
-    have h1 : Tendsto (fun t : ℝ => 2 * μ * (t - a)) atTop atTop :=
-      Tendsto.const_mul_atTop (show (0 : ℝ) < 2 * μ by positivity)
-        (tendsto_atTop_add_const_right _ (-a) tendsto_id) |>.congr
-        (fun t => by simp only [id]; ring)
-    exact (Real.tendsto_exp_neg_atTop_nhds_zero.comp h1).congr (fun t => by simp [neg_mul])
-  have hlimw : Tendsto (fun t => 1 / μ + (1 / ψ a ^ 2 - 1 / μ) * Real.exp (-2 * μ * (t - a)))
-      atTop (𝓝 (1 / μ)) := by
-    have := (hexp.const_mul (1 / ψ a ^ 2 - 1 / μ)).const_add (1 / μ)
-    rwa [mul_zero, add_zero] at this
-  -- `ψ = (1/ψ²)^{-1/2}` on the forward ray
-  have hψeq : ∀ t, a ≤ t → ψ t = 1 / √(1 / ψ t ^ 2) := by
-    intro t ht
-    rw [Real.sqrt_div' 1 (sq_nonneg _), Real.sqrt_sq (hpos t ht).le]; simp
-  have hcont : ContinuousAt (fun w : ℝ => 1 / √w) (1 / μ) := by
-    have : √(1 / μ) ≠ 0 := (Real.sqrt_pos.mpr (by positivity)).ne'
-    exact continuousAt_const.div Real.continuous_sqrt.continuousAt this
-  have hval : 1 / √(1 / μ) = √μ := by
-    rw [Real.sqrt_div' 1 hμ.le, Real.sqrt_one, one_div_one_div]
-  have := (hcont.tendsto.comp hlimw)
-  rw [hval] at this
-  refine this.congr' (eventually_atTop.mpr ⟨a, fun t ht => ?_⟩)
-  simp only [Function.comp]
-  rw [← hw t ht, ← hψeq t ht]
+  have hlim := Logistic.tendsto_level hμ (by norm_num) (super_sq_isIntegralCurveOn hψ)
+    (by positivity)
+  rw [div_neg, div_one, neg_neg] at hlim
+  refine ((Real.continuous_sqrt.tendsto μ).comp hlim).congr'
+    (eventually_atTop.mpr ⟨a, fun t ht => ?_⟩)
+  have hpos := pos_of_pos (superField_contDiff μ) (by simp [superField])
+    (hψ.mono Icc_subset_Ici_self) ha t ⟨ht, le_rfl⟩
+  simp [Real.sqrt_sq hpos.le]
 
 /-! ## Subcritical pitchfork `ẋ = μ x + x³` -/
 

@@ -19,15 +19,18 @@ work-sync `projects/vsc-parametric-oscillation` and `projects/gfl-gfm-stability-
 `invExt`, `regDen`).
 
 Results.
+* Curve transfer: `isIntegralCurveOn_of_eq_on_curve` (an integral curve of `g` along which
+  `g = f` is one of `f`), `isTrajectoryOn_of_eqOn` (its solution-segment instance), and
+  `eventuallyEq_of_eqOn_ball` (agreement on a ball is agreement near its centre).
 * Neighbourhood (filter) form: `locallyExponentiallyStable_congr_nhds`, `lyapunovStable_congr_nhds`,
   `unstable_congr_nhds`, `localAsymptoticStable_congr_nhds`: if `f = g` on a neighbourhood of
   `x_eq` the properties transfer (first-exit argument with `exists_first_sphere_hit`).
-* Ball form: `locallyExponentiallyStable_of_eqOn_ball`, `lyapunovStable_of_eqOn_ball`,
-  `unstable_of_eqOn_ball`, `localAsymptoticStable_of_eqOn_ball` (`f = g` on `‖y − x‖ < ρ`), with
-  the first-exit and bootstrap arguments on finite solution segments `forall_lt_of_first_exit`,
+* Ball form, the corollaries for `f = g` on `‖y − x‖ < ρ`:
+  `locallyExponentiallyStable_of_eqOn_ball`, `lyapunovStable_of_eqOn_ball`,
+  `unstable_of_eqOn_ball`, `localAsymptoticStable_of_eqOn_ball`.
+* First-exit and bootstrap arguments on finite solution segments: `forall_lt_of_first_exit`,
   `forall_norm_sub_lt_of_bootstrap`, `exp_bound_of_local` (an exponential estimate transfers to a
-  curve that solves `ẋ = G x` while it stays in a ball) and the curve transfers
-  `isTrajectoryOn_of_eqOn`, `isIntegralCurveOn_of_eq_on_curve`.
+  curve that solves `ẋ = G x` while it stays in a ball).
 * Extensions: `exists_contDiff_eventuallyEq`, `exists_contDiff_ball` (a field that is `C¹` on an
   open set `U ∋ x` agrees near `x` with a globally `C¹` field: multiply by a smooth bump supported
   in `U`), `exists_contDiff_lipschitz_extension` (a `C¹` field agrees on a ball with a `C¹`,
@@ -47,6 +50,39 @@ Results.
 noncomputable section
 namespace powerlib.Dynamics
 
+/-! ## Curve transfer -/
+
+section Transfer
+
+open Set Filter Topology Metric
+
+variable {n : ℕ}
+local notation "ℝⁿ" => State n
+
+/-- An integral curve of `g` along which `g` and `f` coincide is an integral curve of `f`. -/
+@[powerlib_foundation] theorem isIntegralCurveOn_of_eq_on_curve {f g : ℝⁿ → ℝⁿ}
+    {ψ : ℝ → ℝⁿ} {s : Set ℝ} (hψ : IsIntegralCurveOn ψ (fun _ x => g x) s)
+    (h : ∀ t ∈ s, g (ψ t) = f (ψ t)) : IsIntegralCurveOn ψ (fun _ x => f x) s := by
+  intro t ht
+  show HasDerivWithinAt ψ (f (ψ t)) s t
+  rw [← h t ht]
+  exact hψ t ht
+
+/-- A solution segment of `f` along which `f` and `g` coincide is a solution segment of `g`. -/
+@[powerlib_foundation] theorem isTrajectoryOn_of_eqOn {f g : Dynamics.State n → Dynamics.State n}
+    {φ : ℝ → Dynamics.State n} {a b : ℝ} (hφ : IsTrajectoryOn φ f a b)
+    (h : ∀ t ∈ Icc a b, f (φ t) = g (φ t)) : IsTrajectoryOn φ g a b :=
+  isIntegralCurveOn_of_eq_on_curve hφ h
+
+/-- Agreement on the ball `‖y − x‖ < ρ` is agreement near `x`. -/
+@[powerlib_foundation] theorem eventuallyEq_of_eqOn_ball {E F : Type*} [SeminormedAddCommGroup E]
+    {f g : E → F} {x : E} {ρ : ℝ} (hρ : 0 < ρ) (hfg : ∀ y, ‖y - x‖ < ρ → f y = g y) :
+    f =ᶠ[𝓝 x] g :=
+  Filter.eventually_of_mem (Metric.ball_mem_nhds x hρ) fun y hy =>
+    hfg y (by simpa [dist_eq_norm] using hy)
+
+end Transfer
+
 /-! ## Locality in a neighbourhood -/
 
 section Nhds
@@ -56,14 +92,6 @@ open scoped Topology
 
 variable {n : ℕ}
 local notation "Sₙ" => Dynamics.State n
-
-private lemma isTrajectoryOn_of_eqOn_near {f g : Sₙ → Sₙ}
-    {x : Sₙ} {ρ : ℝ} (hfg : ∀ y, ‖y - x‖ < ρ → f y = g y) {φ : ℝ → Sₙ}
-    {t₀ t₁ τ : ℝ} (hφ : IsTrajectoryOn φ f t₀ t₁) (hτ : τ ≤ t₁)
-    (hin : ∀ s ∈ Icc t₀ τ, ‖φ s - x‖ < ρ) : IsTrajectoryOn φ g t₀ τ := by
-  intro s hs
-  have h := (hφ s ⟨hs.1, hs.2.trans hτ⟩).mono (Icc_subset_Icc_right hτ)
-  simpa [hfg _ (hin s hs)] using h
 
 /-- Local exponential stability depends only on the field near the equilibrium. -/
 @[powerlib_foundation] theorem locallyExponentiallyStable_congr_nhds {f g : Sₙ → Sₙ}
@@ -89,7 +117,8 @@ private lemma isTrajectoryOn_of_eqOn_near {f g : Sₙ → Sₙ}
     obtain ⟨τ, hτ, hτeq, hτin⟩ :=
       _root_.exists_first_sphere_hit hφ.continuousOn hρ0 hs hfar
     have hg' : IsTrajectoryOn φ g t₀ τ :=
-      isTrajectoryOn_of_eqOn_near hfg' hφ hτ.2 fun s hs => (hτin s hs).trans_lt (by linarith)
+      isTrajectoryOn_of_eqOn (hφ.mono (Icc_subset_Icc_right hτ.2)) fun s hs =>
+        hfg' _ ((hτin s hs).trans_lt (by linarith))
     have hbound := hb t₀ τ φ hg' h0r τ ⟨hτ.1, le_rfl⟩
     have hexp : Real.exp (-a * (τ - t₀)) ≤ 1 := Real.exp_le_one_iff.mpr
       (by nlinarith [hτ.1])
@@ -101,7 +130,7 @@ private lemma isTrajectoryOn_of_eqOn_near {f g : Sₙ → Sₙ}
         _ = ρ / 2 := hCρ
     linarith
   have hg' : IsTrajectoryOn φ g t₀ t₁ :=
-    isTrajectoryOn_of_eqOn_near hfg' hφ le_rfl fun s hs => (hstay s hs).trans (by linarith)
+    isTrajectoryOn_of_eqOn hφ fun s hs => hfg' _ ((hstay s hs).trans (by linarith))
   exact hb t₀ t₁ φ hg' h0r t ht
 
 /-- Lyapunov stability depends only on the field near the equilibrium. -/
@@ -124,7 +153,8 @@ private lemma isTrajectoryOn_of_eqOn_near {f g : Sₙ → Sₙ}
     have hfar := not_lt.mp hfar0
     obtain ⟨τ, hτ, hτeq, hτin⟩ := _root_.exists_first_sphere_hit hφ.continuousOn h0ε hs hfar
     have hg' : IsTrajectoryOn φ g t₀ τ :=
-      isTrajectoryOn_of_eqOn_near hfg' hφ hτ.2 fun s hs => (hτin s hs).trans_lt hερ
+      isTrajectoryOn_of_eqOn (hφ.mono (Icc_subset_Icc_right hτ.2)) fun s hs =>
+        hfg' _ ((hτin s hs).trans_lt hερ)
     have := hb t₀ τ φ hg' h0δ τ ⟨hτ.1, le_rfl⟩
     linarith
   exact (hstay t ht).trans_le (min_le_left _ _)
@@ -208,19 +238,13 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
   refine ⟨hfLS, min c δ, lt_min hc hδ, fun t₀ φ hφ h0 => ?_⟩
   have hin : ∀ t, t₀ ≤ t → ‖φ t - x‖ < ρ := fun t ht =>
     hb t₀ t φ (hφ.mono Icc_subset_Ici_self) (h0.trans_le (min_le_right _ _)) t ⟨ht, le_rfl⟩
-  have hφg : IsIntegralCurveOn φ (fun _ y => g y) (Ici t₀) := by
-    intro t ht
-    have h := hφ t ht
-    have hfg' : f (φ t) = g (φ t) := hball (by rw [dist_eq_norm]; exact hin t ht)
-    simp only at h ⊢
-    rw [← hfg']
-    exact h
-  exact hconv t₀ φ hφg (h0.trans_le (min_le_left _ _))
+  exact hconv t₀ φ (isIntegralCurveOn_of_eq_on_curve hφ fun t ht =>
+    hball (by rw [dist_eq_norm]; exact hin t ht)) (h0.trans_le (min_le_left _ _))
 
 /-- A field that is `C¹` on an open neighbourhood `U` of `x` agrees near `x` with a globally `C¹`
 field, on a ball contained in `U`. -/
-@[powerlib_foundation] theorem exists_contDiff_ball {f : ℝⁿ → ℝⁿ} {U : Set ℝⁿ} (hU : IsOpen U) {x : ℝⁿ}
-    (hx : x ∈ U) (hf : ContDiffOn ℝ 1 f U) :
+@[powerlib_foundation] theorem exists_contDiff_ball {f : ℝⁿ → ℝⁿ} {U : Set ℝⁿ} (hU : IsOpen U)
+    {x : ℝⁿ} (hx : x ∈ U) (hf : ContDiffOn ℝ 1 f U) :
     ∃ g : ℝⁿ → ℝⁿ, ContDiff ℝ 1 g ∧ g =ᶠ[𝓝 x] f ∧
       ∃ σ > 0, ∀ y, ‖y - x‖ < σ → g y = f y ∧ y ∈ U := by
   obtain ⟨g, hg, hgf⟩ := exists_contDiff_eventuallyEq hU hx hf
@@ -229,7 +253,7 @@ field, on a ball contained in `U`. -/
 
 end NhdsLAS
 
-/-! ## Curve transfer and globally Lipschitz cutoff -/
+/-! ## Globally Lipschitz cutoff -/
 
 section Cutoff
 
@@ -238,14 +262,6 @@ open scoped Pointwise
 
 variable {n : ℕ}
 local notation "ℝⁿ" => State n
-
-@[powerlib_foundation] theorem isIntegralCurveOn_of_eq_on_curve {f g : ℝⁿ → ℝⁿ}
-    {ψ : ℝ → ℝⁿ} {s : Set ℝ} (hψ : IsIntegralCurveOn ψ (fun _ x => g x) s)
-    (h : ∀ t ∈ s, g (ψ t) = f (ψ t)) : IsIntegralCurveOn ψ (fun _ x => f x) s := by
-  intro t ht
-  show HasDerivWithinAt ψ (f (ψ t)) s t
-  rw [← h t ht]
-  exact hψ t ht
 
 /-- A `C¹` field agrees on `‖x‖ ≤ R` with a `C¹`, globally Lipschitz field. -/
 @[powerlib_foundation] theorem exists_contDiff_lipschitz_extension {f : ℝⁿ → ℝⁿ}
@@ -277,8 +293,9 @@ variable {n : ℕ}
 
 /-- First-exit argument for a continuous function of a curve: if `Φ ∘ φ` starts below `c` and is
 below `c` at every `s` up to which it has stayed at most `c`, it stays below `c`. -/
-@[powerlib_foundation] theorem forall_lt_of_first_exit {E : Type*} [TopologicalSpace E] {φ : ℝ → E} {Φ : E → ℝ}
-    {t₀ t₁ c : ℝ} (hΦ : Continuous Φ) (hφ : ContinuousOn φ (Icc t₀ t₁)) (h0 : Φ (φ t₀) < c)
+@[powerlib_foundation] theorem forall_lt_of_first_exit {E : Type*} [TopologicalSpace E]
+    {φ : ℝ → E} {Φ : E → ℝ} {t₀ t₁ c : ℝ} (hΦ : Continuous Φ) (hφ : ContinuousOn φ (Icc t₀ t₁))
+    (h0 : Φ (φ t₀) < c)
     (hstep : ∀ s ∈ Icc t₀ t₁, (∀ u ∈ Icc t₀ s, Φ (φ u) ≤ c) → Φ (φ s) < c) :
     ∀ u ∈ Icc t₀ t₁, Φ (φ u) < c := by
   have hψ : ContinuousOn (fun t => Φ (φ t)) (Icc t₀ t₁) := hΦ.comp_continuousOn hφ
@@ -355,79 +372,26 @@ never leaves the full ball. -/
   have hle : ‖φ τ - x‖ ≤ R / 2 := (hcl ⟨hτ0.le, le_rfl⟩).2
   linarith
 
-/-- A solution segment of `f` along which `f` and `g` coincide is a solution segment of `g`. -/
-@[powerlib_foundation] theorem isTrajectoryOn_of_eqOn {f g : Dynamics.State n → Dynamics.State n}
-    {φ : ℝ → Dynamics.State n} {a b : ℝ} (hφ : IsTrajectoryOn φ f a b)
-    (h : ∀ t ∈ Icc a b, f (φ t) = g (φ t)) : IsTrajectoryOn φ g a b := by
-  intro t ht
-  show HasDerivWithinAt φ (g (φ t)) (Icc a b) t
-  rw [← h t ht]
-  exact hφ t ht
-
-/-- Local exponential stability depends only on the field near the equilibrium. -/
+/-- Local exponential stability depends only on the field on a ball around the equilibrium. -/
 @[powerlib_foundation] theorem locallyExponentiallyStable_of_eqOn_ball
     {f g : Dynamics.State n → Dynamics.State n} {x : Dynamics.State n} {ρ : ℝ} (hρ : 0 < ρ)
     (hfg : ∀ y, ‖y - x‖ < ρ → f y = g y) (hg : LocallyExponentiallyStable g x) :
-    LocallyExponentiallyStable f x := by
-  obtain ⟨r, C, a, hr, hC, ha, hbound⟩ := hg
-  have hCpos : 0 < C := by linarith
-  refine ⟨min r (ρ / (2 * C)), C, a, lt_min hr (by positivity), hC, ha, ?_⟩
-  intro t₀ t₁ φ hφ hφ0
-  have hφr : ‖φ t₀ - x‖ < r := hφ0.trans_le (min_le_left _ _)
-  have hφC : C * ‖φ t₀ - x‖ ≤ ρ / 2 := by
-    have h1 : ‖φ t₀ - x‖ < ρ / (2 * C) := hφ0.trans_le (min_le_right _ _)
-    rw [lt_div_iff₀ (by positivity)] at h1
-    nlinarith
-  have hstay : ∀ t ∈ Icc t₀ t₁, ‖φ t - x‖ < ρ := by
-    refine forall_norm_sub_lt_of_bootstrap (φ := φ) hφ.continuousOn ?_ ?_
-    · have : 1 * ‖φ t₀ - x‖ ≤ C * ‖φ t₀ - x‖ :=
-        mul_le_mul_of_nonneg_right hC (norm_nonneg _)
-      linarith
-    · intro s hs hin
-      have hgs : IsTrajectoryOn φ g t₀ s :=
-        isTrajectoryOn_of_eqOn (hφ.mono (Icc_subset_Icc le_rfl hs.2))
-          (fun u hu => hfg _ (hin u hu))
-      have hb := hbound t₀ s φ hgs hφr s ⟨hs.1, le_rfl⟩
-      have hexp : Real.exp (-a * (s - t₀)) ≤ 1 := by
-        rw [Real.exp_le_one_iff]
-        have : 0 ≤ s - t₀ := by linarith [hs.1]
-        nlinarith
-      have : C * Real.exp (-a * (s - t₀)) * ‖φ t₀ - x‖ ≤ C * ‖φ t₀ - x‖ := by
-        have h0 : 0 ≤ C * ‖φ t₀ - x‖ := by positivity
-        calc C * Real.exp (-a * (s - t₀)) * ‖φ t₀ - x‖
-            = Real.exp (-a * (s - t₀)) * (C * ‖φ t₀ - x‖) := by ring
-          _ ≤ 1 * (C * ‖φ t₀ - x‖) := mul_le_mul_of_nonneg_right hexp h0
-          _ = C * ‖φ t₀ - x‖ := one_mul _
-      linarith
-  exact hbound t₀ t₁ φ (isTrajectoryOn_of_eqOn hφ fun u hu => hfg _ (hstay u hu)) hφr
+    LocallyExponentiallyStable f x :=
+  locallyExponentiallyStable_congr_nhds (eventuallyEq_of_eqOn_ball hρ hfg) hg
 
-/-- Lyapunov stability depends only on the field near the equilibrium. -/
+/-- Lyapunov stability depends only on the field on a ball around the equilibrium. -/
 @[powerlib_foundation] theorem lyapunovStable_of_eqOn_ball
     {f g : Dynamics.State n → Dynamics.State n} {x : Dynamics.State n} {ρ : ℝ} (hρ : 0 < ρ)
     (hfg : ∀ y, ‖y - x‖ < ρ → f y = g y) (hg : LyapunovStable g x) :
-    LyapunovStable f x := by
-  intro ε hε
-  have hε' : 0 < min ε ρ := lt_min hε hρ
-  obtain ⟨δ, hδ, hδb⟩ := hg (min ε ρ / 2) (by positivity)
-  refine ⟨min δ (min ε ρ / 2), lt_min hδ (by positivity), ?_⟩
-  intro t₀ t₁ φ hφ hφ0 t ht
-  have hstay : ∀ t ∈ Icc t₀ t₁, ‖φ t - x‖ < min ε ρ := by
-    refine forall_norm_sub_lt_of_bootstrap (φ := φ) hφ.continuousOn ?_ ?_
-    · have := hφ0.trans_le (min_le_right _ _)
-      linarith
-    · intro s hs hin
-      have hgs : IsTrajectoryOn φ g t₀ s :=
-        isTrajectoryOn_of_eqOn (hφ.mono (Icc_subset_Icc le_rfl hs.2))
-          (fun u hu => hfg _ ((hin u hu).trans_le (min_le_right _ _)))
-      exact (hδb t₀ s φ hgs (hφ0.trans_le (min_le_left _ _)) s ⟨hs.1, le_rfl⟩).le
-  exact (hstay t ht).trans_le (min_le_left _ _)
+    LyapunovStable f x :=
+  lyapunovStable_congr_nhds (eventuallyEq_of_eqOn_ball hρ hfg) hg
 
-/-- Instability depends only on the field near the equilibrium. -/
+/-- Instability depends only on the field on a ball around the equilibrium. -/
 @[powerlib_foundation] theorem unstable_of_eqOn_ball
     {f g : Dynamics.State n → Dynamics.State n} {x : Dynamics.State n} {ρ : ℝ} (hρ : 0 < ρ)
     (hfg : ∀ y, ‖y - x‖ < ρ → f y = g y) (hg : Unstable g x) :
     Unstable f x :=
-  fun hf => hg (lyapunovStable_of_eqOn_ball hρ (fun y hy => (hfg y hy).symm) hf)
+  (unstable_congr_nhds (eventuallyEq_of_eqOn_ball hρ hfg)).mpr hg
 
 /-- Linearization through a local `C¹` extension: if `f` agrees near `x_eq` with a globally
 `C¹` field `g` whose Jacobian at `x_eq` is Hurwitz, then `f` is locally exponentially stable. -/
@@ -523,36 +487,10 @@ never leaves the full ball. -/
   exact hG t₀ t₁ φ (hsub t₁ le_rfl hstay) h0r
 
 /-- Local asymptotic stability only depends on the field on a ball around the point. -/
-@[powerlib_foundation] theorem localAsymptoticStable_of_eqOn_ball {f g : State n → State n} {x : State n} {R : ℝ}
-    (hR : 0 < R) (hfg : ∀ y, ‖y - x‖ < R → f y = g y) (hg : LocalAsymptoticStable g x) :
-    LocalAsymptoticStable f x := by
-  obtain ⟨hgs, c, hc, hconv⟩ := hg
-  have hfs : LyapunovStable f x := by
-    intro ε hε
-    obtain ⟨δ, hδ, hb⟩ := hgs (min ε (R / 2)) (lt_min hε (by positivity))
-    refine ⟨min δ (min ε (R / 2)), lt_min hδ (lt_min hε (by positivity)), ?_⟩
-    intro t₀ t₁ φ hφ h0
-    have h0' : ‖φ t₀ - x‖ < min ε (R / 2) := lt_of_lt_of_le h0 (min_le_right _ _)
-    intro t ht
-    by_contra hfar
-    push Not at hfar
-    have hfar' : min ε (R / 2) ≤ ‖φ t - x‖ := (min_le_left _ _).trans hfar
-    obtain ⟨τ, hτ, hτeq, hτin⟩ := exists_first_sphere_hit hφ.continuousOn h0' ht hfar'
-    have hseg : IsTrajectoryOn φ g t₀ τ :=
-      isIntegralCurveOn_of_eq_on_curve (hφ.mono (Icc_subset_Icc le_rfl hτ.2))
-        (fun u hu => hfg _ (lt_of_le_of_lt (hτin u hu)
-          (lt_of_le_of_lt (min_le_right _ _) (by linarith))))
-    have := hb t₀ τ φ hseg (lt_of_lt_of_le h0 (min_le_left _ _)) τ ⟨hτ.1, le_rfl⟩
-    linarith
-  refine ⟨hfs, ?_⟩
-  obtain ⟨δ, hδ, hb⟩ := hfs (R / 2) (by positivity)
-  refine ⟨min c δ, lt_min hc hδ, fun t₀ φ hφ h0 => ?_⟩
-  have hin : ∀ t ∈ Ici t₀, ‖φ t - x‖ < R / 2 := fun t ht =>
-    hb t₀ t φ (hφ.mono Icc_subset_Ici_self) (lt_of_lt_of_le h0 (min_le_right _ _)) t
-      ⟨ht, le_rfl⟩
-  refine hconv t₀ φ (isIntegralCurveOn_of_eq_on_curve hφ fun t ht => ?_)
-    (lt_of_lt_of_le h0 (min_le_left _ _))
-  exact hfg _ (by linarith [hin t ht])
+@[powerlib_foundation] theorem localAsymptoticStable_of_eqOn_ball {f g : State n → State n}
+    {x : State n} {R : ℝ} (hR : 0 < R) (hfg : ∀ y, ‖y - x‖ < R → f y = g y)
+    (hg : LocalAsymptoticStable g x) : LocalAsymptoticStable f x :=
+  localAsymptoticStable_congr_nhds (eventuallyEq_of_eqOn_ball hR hfg) hg
 
 end Ball
 

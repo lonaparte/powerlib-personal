@@ -62,34 +62,16 @@ namespace powerlib.SingularPerturbation
 open Matrix Set
 
 /-- Comparison lemma: `f' ≤ k f + β` on `[0, T]` with `k ≠ 0` gives
-`f t + β/k ≤ e^{k t} (f 0 + β/k)` on `[0, T]`. -/
+`f t + β/k ≤ e^{k t} (f 0 + β/k)` on `[0, T]` (Grönwall, `Dynamics.le_exp_mul_of_hasDerivWithinAt`,
+for `f + β/k`). -/
 @[powerlib_foundation] theorem comparison_of_deriv_le {f f' : ℝ → ℝ} {k β T : ℝ} (hk : k ≠ 0)
     (hf : ∀ t, HasDerivAt f (f' t) t) (hb : ∀ t ∈ Icc 0 T, f' t ≤ k * f t + β) :
     ∀ t ∈ Icc 0 T, f t + β / k ≤ Real.exp (k * t) * (f 0 + β / k) := by
-  set g : ℝ → ℝ := fun s => Real.exp (-(k * s)) * (f s + β / k) with hg
-  have hgd : ∀ s, HasDerivAt g (Real.exp (-(k * s)) * (f' s - k * f s - β)) s := by
-    intro s
-    have h1 : HasDerivAt (fun s => Real.exp (-(k * s))) (Real.exp (-(k * s)) * (-k)) s := by
-      have := ((hasDerivAt_id s).const_mul k).neg.exp
-      simpa using this
-    have h2 := (hf s).add_const (β / k)
-    convert h1.mul h2 using 1
-    field_simp
-    ring
-  have hanti : AntitoneOn g (Icc 0 T) := by
-    apply antitoneOn_of_deriv_nonpos (convex_Icc 0 T)
-    · exact fun s _ => (hgd s).continuousAt.continuousWithinAt
-    · exact fun s _ => (hgd s).differentiableAt.differentiableWithinAt
-    · intro s hs
-      rw [interior_Icc] at hs
-      rw [(hgd s).deriv]
-      have := hb s (Ioo_subset_Icc_self hs)
-      exact mul_nonpos_of_nonneg_of_nonpos (Real.exp_pos _).le (by linarith)
   intro t ht
-  have h := hanti (left_mem_Icc.mpr (le_trans ht.1 ht.2)) ht ht.1
-  simp only [g, mul_zero, neg_zero, Real.exp_zero, one_mul] at h
-  have := mul_le_mul_of_nonneg_left h (Real.exp_pos (k * t)).le
-  rwa [← mul_assoc, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_mul] at this
+  have h := Dynamics.le_exp_mul_of_hasDerivWithinAt (g := fun s => f s + β / k) (ρ := -k)
+    (fun s _ => ((hf s).add_const (β / k)).hasDerivWithinAt)
+    (fun s hs => by rw [neg_neg, mul_add, mul_div_cancel₀ β hk]; exact hb s hs) t ht
+  simpa only [neg_neg, sub_zero] using h
 
 /-- Decay form: `f' ≤ -α f + β` (`α > 0`, `β ≥ 0`) gives `f t ≤ e^{-αt} f 0 + β/α`. -/
 @[powerlib_foundation] theorem le_of_deriv_le_neg {f f' : ℝ → ℝ} {α β T : ℝ} (hα : 0 < α) (hβ : 0 ≤ β)

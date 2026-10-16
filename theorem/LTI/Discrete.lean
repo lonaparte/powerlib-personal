@@ -34,11 +34,17 @@ Results (all trajectory-level, for every initial state).
 * `exists_trajectory_not_tendsto_zero`: one eigenvalue with `‖μ‖ ≥ 1` yields a real
   trajectory that does not converge to zero.
 * `exponentiallyStable_iff_schurStable`, `asymptoticallyStable_iff_schurStable`.
+* Powers in blocks, in any seminormed ring: `norm_pow_le_of_block` (`‖x^m‖ ≤ e^{−γ}` and
+  `‖x^r‖ ≤ B` for `r < m` give `‖x^k‖ ≤ B e^{γ} (e^{−γ/m})^k`), from the scalar
+  `exp_neg_pow_div_le`; also used for the switched period map
+  (`theorem/Averaging/SwitchedStability.lean`) and the linearization of maps
+  (`theorem/Map/Linearization.lean`).
 * Matrix powers on any finite index type (`L∞` operator norm): `norm_map_algebraMap`
   (complexification preserves the norm), `norm_pow_le_norm_one_mul`, `exists_pow_norm_lt_one`
   (spectral radius `< 1` of the complexification gives a contractive power, through the
   LeanForControl Gelfand-formula lemma) and `exists_pow_norm_le_exp` (a contractive power gives
   `‖P ^ n‖ ≤ C e^{-γ n}`); used by the Floquet criterion `theorem/Periodic/Floquet.lean`.
+  `SchurStable.exists_pow_bound` is their composite for a Schur matrix.
 * `prediction_closedForm`: the affine recursion `x⁺ = A x + B u + d` (any finite index types)
   has `x[k+j] = A^j x[k] + Σ_{i<j} A^{j−1−i}(B u[k+i] + d)` (multi-step prediction of
   theory/T-predictive-machine-control.md).
@@ -132,6 +138,56 @@ complexification in the Banach algebra of complex matrices). -/
 
 end Spectral
 
+section Blocks
+
+/-- Whole blocks of `m` steps decay per step: `(e^{−γ})^{⌊k/m⌋} ≤ e^{γ} (e^{−γ/m})^k` for
+`γ ≥ 0`, `m > 0`. -/
+@[powerlib_foundation] theorem exp_neg_pow_div_le {γ : ℝ} (hγ : 0 ≤ γ) {m : ℕ} (hm : 0 < m)
+    (k : ℕ) : Real.exp (-γ) ^ (k / m) ≤ Real.exp γ * Real.exp (-(γ / m)) ^ k := by
+  rw [← Real.exp_nat_mul, ← Real.exp_nat_mul, ← Real.exp_add, Real.exp_le_exp]
+  have hmR : (0 : ℝ) < m := Nat.cast_pos.mpr hm
+  have h1 : (k : ℝ) < m * ((k / m : ℕ) + 1) := by
+    have : k < m * (k / m + 1) := by
+      rw [mul_add, mul_one]
+      exact lt_of_lt_of_le (Nat.lt_div_mul_add hm) (by rw [mul_comm])
+    exact_mod_cast this
+  have h2 : (k : ℝ) / m - 1 ≤ (k / m : ℕ) := by
+    rw [div_sub_one hmR.ne', div_le_iff₀ hmR]
+    linarith
+  have h3 : γ * ((k : ℝ) / m - 1) ≤ γ * (k / m : ℕ) := mul_le_mul_of_nonneg_left h2 hγ
+  have e : (k : ℝ) * -(γ / m) = -(γ * ((k : ℝ) / m)) := by ring
+  rw [e]
+  linarith
+
+/-- **Block bound for powers.** In a seminormed ring, a bound `‖x^m‖ ≤ e^{−γ}` (`γ ≥ 0`) on one
+block of `m > 0` steps and a bound `B` on the shorter powers give
+`‖x^k‖ ≤ B e^{γ} (e^{−γ/m})^k` for every `k`. -/
+@[powerlib_foundation] theorem norm_pow_le_of_block {R : Type*} [SeminormedRing R] {x : R}
+    {m : ℕ} (hm : 0 < m) {γ B : ℝ} (hγ : 0 ≤ γ) (hx : ‖x ^ m‖ ≤ Real.exp (-γ))
+    (hB : ∀ r < m, ‖x ^ r‖ ≤ B) (k : ℕ) :
+    ‖x ^ k‖ ≤ B * Real.exp γ * Real.exp (-(γ / m)) ^ k := by
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 hm)
+  have hblock : ‖x ^ k‖ ≤ Real.exp (-γ) ^ (k / m) * B := by
+    rcases Nat.eq_zero_or_pos (k / m) with h0 | h0
+    · have hk : k < m := by
+        by_contra h
+        exact absurd h0 (Nat.div_pos (not_lt.mp h) hm).ne'
+      rw [h0, pow_zero, one_mul]
+      exact hB k hk
+    calc ‖x ^ k‖ = ‖(x ^ m) ^ (k / m) * x ^ (k % m)‖ := by
+          rw [← pow_mul, ← pow_add, Nat.div_add_mod]
+      _ ≤ ‖x ^ m‖ ^ (k / m) * ‖x ^ (k % m)‖ :=
+          (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (norm_pow_le' _ h0) (norm_nonneg _))
+      _ ≤ Real.exp (-γ) ^ (k / m) * B :=
+          mul_le_mul (pow_le_pow_left₀ (norm_nonneg _) hx _) (hB _ (Nat.mod_lt k hm))
+            (norm_nonneg _) (pow_nonneg (Real.exp_pos _).le _)
+  calc ‖x ^ k‖ ≤ Real.exp (-γ) ^ (k / m) * B := hblock
+    _ ≤ Real.exp γ * Real.exp (-(γ / m)) ^ k * B :=
+        mul_le_mul_of_nonneg_right (exp_neg_pow_div_le hγ hm k) hB0
+    _ = B * Real.exp γ * Real.exp (-(γ / m)) ^ k := by ring
+
+end Blocks
+
 section MatrixPowers
 
 open scoped Matrix.Norms.Operator
@@ -171,56 +227,24 @@ variable {X : Type*} [Fintype X] [DecidableEq X]
     rw [← norm_map_algebraMap, hmap]
     exact hlt
 
-/-- A contractive power gives geometric decay of all powers. -/
+/-- A contractive power gives geometric decay of all powers (`norm_pow_le_of_block` with
+`e^{−γ} = max ‖P^m‖ (1/2)` and `B = Σ_{r<m} ‖P^r‖`). -/
 @[powerlib_foundation] theorem exists_pow_norm_le_exp {P : Matrix X X ℝ} {m : ℕ} (hm : 0 < m)
     (hq : ‖P ^ m‖ < 1) :
     ∃ C γ : ℝ, 0 ≤ C ∧ 0 < γ ∧ ∀ n : ℕ, ‖P ^ n‖ ≤ C * Real.exp (-(γ * n)) := by
   set q : ℝ := max ‖P ^ m‖ (1 / 2) with hq_def
   have hq0 : 0 < q := lt_of_lt_of_le (by norm_num) (le_max_right _ _)
-  have hq1 : q < 1 := max_lt hq (by norm_num)
-  set γ₀ : ℝ := -Real.log q with hγ₀
-  have hγ₀pos : 0 < γ₀ := by
-    have := Real.log_neg hq0 hq1
-    linarith
+  have hγ : 0 < -Real.log q := neg_pos.mpr (Real.log_neg hq0 (max_lt hq (by norm_num)))
   set C₀ : ℝ := ∑ r ∈ Finset.range m, ‖P ^ r‖ with hC₀
   have hC₀nn : 0 ≤ C₀ := Finset.sum_nonneg fun _ _ => norm_nonneg _
-  have hmR : (0 : ℝ) < m := Nat.cast_pos.mpr hm
-  refine ⟨‖(1 : Matrix X X ℝ)‖ * C₀ * Real.exp γ₀, γ₀ / m, by positivity,
-    div_pos hγ₀pos hmR, fun n => ?_⟩
-  set k := n / m
-  set r := n % m
-  have hn : n = m * k + r := (Nat.div_add_mod n m).symm
-  have hr : r < m := Nat.mod_lt n hm
-  have hPn : P ^ n = (P ^ m) ^ k * P ^ r := by rw [hn, pow_add, pow_mul]
-  have hPr : ‖P ^ r‖ ≤ C₀ :=
-    Finset.single_le_sum (f := fun r => ‖P ^ r‖) (fun _ _ => norm_nonneg _)
-      (Finset.mem_range.mpr hr)
-  have hqk : ‖P ^ m‖ ^ k ≤ q ^ k :=
-    pow_le_pow_left₀ (norm_nonneg _) (le_max_left _ _) k
-  have hqexp : q ^ k = Real.exp (-(γ₀ * k)) := by
-    rw [hγ₀, neg_mul, neg_neg, mul_comm, Real.exp_nat_mul, Real.exp_log hq0]
-  have hkge : (n : ℝ) / m - 1 ≤ k := by
-    have h1 : (n : ℝ) < m * (k + 1) := by
-      have : n < m * (k + 1) := by rw [hn]; nlinarith
-      exact_mod_cast this
-    rw [div_sub_one hmR.ne', div_le_iff₀ hmR]
-    linarith
-  have hexp : Real.exp (-(γ₀ * k)) ≤ Real.exp γ₀ * Real.exp (-(γ₀ / m * n)) := by
-    rw [← Real.exp_add]
-    apply Real.exp_le_exp.mpr
-    have : γ₀ * ((n : ℝ) / m - 1) ≤ γ₀ * k := mul_le_mul_of_nonneg_left hkge hγ₀pos.le
-    have e : γ₀ / m * n = γ₀ * ((n : ℝ) / m) := by ring
-    rw [e]
-    linarith
-  calc ‖P ^ n‖ = ‖(P ^ m) ^ k * P ^ r‖ := by rw [hPn]
-    _ ≤ ‖(P ^ m) ^ k‖ * ‖P ^ r‖ := norm_mul_le _ _
-    _ ≤ (‖(1 : Matrix X X ℝ)‖ * ‖P ^ m‖ ^ k) * C₀ :=
-        mul_le_mul (norm_pow_le_norm_one_mul k) hPr (norm_nonneg _) (by positivity)
-    _ ≤ (‖(1 : Matrix X X ℝ)‖ * Real.exp (-(γ₀ * k))) * C₀ := by
-        rw [← hqexp]; gcongr
-    _ ≤ (‖(1 : Matrix X X ℝ)‖ * (Real.exp γ₀ * Real.exp (-(γ₀ / m * n)))) * C₀ := by
-        gcongr
-    _ = ‖(1 : Matrix X X ℝ)‖ * C₀ * Real.exp γ₀ * Real.exp (-(γ₀ / m * n)) := by ring
+  refine ⟨C₀ * Real.exp (-Real.log q), -Real.log q / m, mul_nonneg hC₀nn (Real.exp_pos _).le,
+    div_pos hγ (Nat.cast_pos.mpr hm), fun n => ?_⟩
+  have h := norm_pow_le_of_block hm hγ.le
+    (by rw [neg_neg, Real.exp_log hq0]; exact le_max_left _ _)
+    (fun r hr => Finset.single_le_sum (f := fun r => ‖P ^ r‖) (fun _ _ => norm_nonneg _)
+      (Finset.mem_range.mpr hr)) n
+  rwa [← Real.exp_nat_mul, show (n : ℝ) * -(-Real.log q / m) = -(-Real.log q / m * n) by ring]
+    at h
 
 end MatrixPowers
 
@@ -228,65 +252,19 @@ section Decay
 
 open scoped Matrix.Norms.Operator
 
-/-- A power of a Schur matrix has operator norm below one. -/
-@[powerlib_foundation] private lemma exists_pow_norm_lt_one_of_schurStable
-    {Φ : Matrix (Fin n) (Fin n) ℝ} (h : SchurStable Φ) : ∃ m : ℕ, 0 < m ∧ ‖Φ ^ m‖ < 1 := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · exact ⟨1, one_pos, by rw [Subsingleton.elim (Φ ^ 1) 0]; simp⟩
-  · have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
-    obtain ⟨m, hm, hlt⟩ := exists_pow_norm_lt_one_of_spectralRadius_lt_one
-      (Φ.map (algebraMap ℝ ℂ)) ((schurStable_iff_spectralRadius_lt_one Φ).mp h)
-    refine ⟨m, hm, ?_⟩
-    rw [← norm_map_algebraMap, Matrix.map_pow]
-    exact hlt
-
-/-- Geometric bound on all powers of a Schur matrix. -/
+/-- Geometric bound on all powers of a Schur matrix (`exists_pow_norm_lt_one`,
+`exists_pow_norm_le_exp`). -/
 @[powerlib_foundation] theorem SchurStable.exists_pow_bound {Φ : Matrix (Fin n) (Fin n) ℝ}
     (h : SchurStable Φ) :
     ∃ C > 0, ∃ ρ : ℝ, 0 < ρ ∧ ρ < 1 ∧ ∀ k : ℕ, ‖Φ ^ k‖ ≤ C * ρ ^ k := by
-  obtain ⟨m, hm, hlt⟩ := exists_pow_norm_lt_one_of_schurStable h
-  set q : ℝ := max ‖Φ ^ m‖ (1 / 2) with hq
-  have hq0 : 0 < q := lt_max_of_lt_right (by norm_num)
-  have hq1 : q < 1 := max_lt hlt (by norm_num)
-  set ρ : ℝ := q ^ ((m : ℝ)⁻¹) with hρ
-  have hρ0 : 0 < ρ := Real.rpow_pos_of_pos hq0 _
-  have hρm : ρ ^ m = q := Real.rpow_inv_natCast_pow hq0.le (Nat.pos_iff_ne_zero.mp hm)
-  have hρ1 : ρ < 1 := by
-    by_contra hge
-    have : (1 : ℝ) ≤ ρ ^ m := one_le_pow₀ (not_lt.mp hge)
-    linarith
-  set M : ℝ := ∑ r ∈ Finset.range m, ‖Φ ^ r‖ with hM
-  have hM0 : 0 ≤ M := Finset.sum_nonneg fun r _ => norm_nonneg _
-  refine ⟨M / q + 1, by positivity, ρ, hρ0, hρ1, fun k => ?_⟩
-  have hk : k = m * (k / m) + k % m := (Nat.div_add_mod k m).symm
-  have hr : k % m < m := Nat.mod_lt k hm
-  have hrM : ‖Φ ^ (k % m)‖ ≤ M := Finset.single_le_sum (f := fun r => ‖Φ ^ r‖)
-    (fun r _ => norm_nonneg _) (Finset.mem_range.mpr hr)
-  have hpow : ‖Φ ^ k‖ ≤ q ^ (k / m) * M := by
-    rcases Nat.eq_zero_or_pos (k / m) with h0 | h0
-    · have hkr : k = k % m := by
-        have h' := hk
-        rw [h0, mul_zero, zero_add] at h'
-        exact h'
-      rw [h0, pow_zero, one_mul, hkr]
-      exact hrM
-    calc ‖Φ ^ k‖ = ‖(Φ ^ m) ^ (k / m) * Φ ^ (k % m)‖ := by
-          rw [← pow_mul, ← pow_add, ← hk]
-      _ ≤ ‖(Φ ^ m) ^ (k / m)‖ * ‖Φ ^ (k % m)‖ := norm_mul_le _ _
-      _ ≤ q ^ (k / m) * M := by
-          apply mul_le_mul _ hrM (norm_nonneg _) (pow_nonneg hq0.le _)
-          exact (norm_pow_le' _ h0).trans
-            (pow_le_pow_left₀ (norm_nonneg _) (le_max_left _ _) _)
-  have hρk : q ^ (k / m) ≤ ρ ^ k / q := by
-    rw [le_div_iff₀ hq0, ← hρm, ← pow_mul, ← pow_add]
-    apply pow_le_pow_of_le_one hρ0.le hρ1.le
-    omega
-  calc ‖Φ ^ k‖ ≤ q ^ (k / m) * M := hpow
-    _ ≤ ρ ^ k / q * M := mul_le_mul_of_nonneg_right hρk hM0
-    _ = M / q * ρ ^ k := by ring
-    _ ≤ (M / q + 1) * ρ ^ k := by
-        have : 0 ≤ ρ ^ k := pow_nonneg hρ0.le _
-        nlinarith
+  obtain ⟨m, hm, hlt⟩ :=
+    exists_pow_norm_lt_one Φ ((schurStable_iff_spectralRadius_lt_one Φ).mp h)
+  obtain ⟨C, γ, hC, hγ, hb⟩ := exists_pow_norm_le_exp hm hlt
+  refine ⟨C + 1, by linarith, Real.exp (-γ), Real.exp_pos _,
+    Real.exp_lt_one_iff.mpr (by linarith), fun k => ?_⟩
+  calc ‖Φ ^ k‖ ≤ C * Real.exp (-(γ * k)) := hb k
+    _ = C * Real.exp (-γ) ^ k := by rw [← Real.exp_nat_mul]; congr 2; ring
+    _ ≤ (C + 1) * Real.exp (-γ) ^ k := by gcongr; linarith
 
 /-- Schur stability implies uniform exponential decay of every trajectory:
 `‖x k‖ ≤ C ρ^k ‖x 0‖` with `C > 0`, `0 ≤ ρ < 1`. -/

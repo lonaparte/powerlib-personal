@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.Estimation.KalmanGaussianVector
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Moments.Covariance
@@ -13,8 +14,10 @@ posterior variance is the conditional variance.
 Scope.
 * Probability theory, not an engineering result. Scalar state and scalar measurement:
   `X ~ N(m, p)`, `V ~ N(0, r)` independent, `Y = h X + V`, gain `k = p h / (h² p + r)`.
-* The vector case (matrix gain, Gaussian vectors) is
-  `theorem/Estimation/KalmanGaussianVector.lean`.
+* This is the case `n = p = 1` of the vector model (matrix gain, Gaussian vectors) of
+  `theorem/Estimation/KalmanGaussianVector.lean`, and the three conditioning results are read from
+  it: `(X, Y)` is a Gaussian vector of `ℝ¹ × ℝ¹`, the scalar gain solves `K Σ_YY = Σ_XY`, and the
+  σ-algebra of `Y` is that of the vector `(Y)`.
 
 Source: work-sync theory/T-kalman-filter.md §1.1 (measurement update `K = P Hᵀ S⁻¹`,
 `x̂⁺ = x̂ + K (y − H x̂)`, `P⁺ = (I − K H) P`; "for linear-Gaussian models the Kalman update is
@@ -22,12 +25,14 @@ the exact conditional mean and covariance").
 
 Results.
 * `kalman_innovation_indep` — Gaussian conditioning lemma: the estimation error
-  `Z = X − m − k (Y − h m)` is independent of `Y` (jointly Gaussian and uncorrelated; Mathlib
-  `HasGaussianLaw.indepFun_of_covariance_eq_zero`).
+  `Z = X − m − k (Y − h m)` is independent of `Y` (jointly Gaussian and uncorrelated;
+  `gaussian_error_indep`).
 * `kalman_condExp_eq` — `E[X | Y] = m + k (Y − h m)` a.s.: the Kalman update is the conditional
-  mean.
+  mean (`gaussian_condExp_eq`).
 * `kalman_condVar_eq` — `E[(X − E[X|Y])² | Y] = (1 − k h) p` a.s.: the Kalman posterior
-  variance is the (deterministic) conditional variance.
+  variance is the (deterministic) conditional variance (`gaussian_condCov_eq`).
+* `kalman_error_moments` — the error has mean `0` and second moment `(1 − k h) p`; `cov_lin_indep`
+  computes covariances of linear combinations of independent variables.
 -/
 
 noncomputable section
@@ -66,48 +71,77 @@ omit [MeasurableSpace Ω] in
     kgain p h r * (h ^ 2 * p + r) = p * h := by
   unfold kgain; rw [div_mul_cancel₀ _ hS]
 
+/-- The scalar model is the vector model with `n = p = 1`: `(X, Y)` is a Gaussian vector of
+`ℝ¹ × ℝ¹`. -/
+private theorem hasGaussianLaw_fin_one (hX : HasLaw X (gaussianReal m p) P)
+    (hV : HasLaw V (gaussianReal 0 r) P) (hXV : IndepFun X V P) :
+    HasGaussianLaw (fun ω => (fun _ : Fin 1 => X ω, fun _ : Fin 1 => h * X ω + V ω)) P := by
+  have hJ : HasGaussianLaw (fun ω => (X ω, V ω)) P :=
+    IndepFun.hasGaussianLaw hX.hasGaussianLaw hV.hasGaussianLaw hXV
+  let L : ℝ × ℝ →L[ℝ] (Fin 1 → ℝ) × (Fin 1 → ℝ) :=
+    (ContinuousLinearMap.pi fun _ => ContinuousLinearMap.fst ℝ ℝ ℝ).prod
+      (ContinuousLinearMap.pi fun _ =>
+        h • ContinuousLinearMap.fst ℝ ℝ ℝ + ContinuousLinearMap.snd ℝ ℝ ℝ)
+  convert hJ.map_fun L using 2 with ω
+  ext <;> simp [L]
+
+/-- In the one-dimensional vector model the scalar gain solves `K Σ_YY = Σ_XY`. -/
+private theorem gain_fin_one (hX : HasLaw X (gaussianReal m p) P)
+    (hV : HasLaw V (gaussianReal 0 r) P) (hXV : IndepFun X V P)
+    (hS : h ^ 2 * (p : ℝ) + r ≠ 0) (i _j : Fin 1) :
+    ∑ l, (Matrix.of fun _ _ => kgain p h r : Matrix (Fin 1) (Fin 1) ℝ) i l *
+        cov[fun ω => h * X ω + V ω, fun ω => h * X ω + V ω; P] =
+      cov[X, fun ω => h * X ω + V ω; P] := by
+  have hP : IsProbabilityMeasure P := hX.isProbabilityMeasure
+  have hX2 : MemLp X 2 P := hX.memLp (memLp_id_gaussianReal 2)
+  have hV2 : MemLp V 2 P := hV.memLp (memLp_id_gaussianReal 2)
+  have hYY := cov_lin_indep hX2 hV2 hXV h 1 h 1
+  have hXY := cov_lin_indep hX2 hV2 hXV 1 0 h 1
+  simp only [one_mul, zero_mul, add_zero] at hYY hXY
+  rw [hX.variance_eq, hV.variance_eq, variance_id_gaussianReal, variance_id_gaussianReal] at hYY
+  rw [hX.variance_eq, variance_id_gaussianReal] at hXY
+  rw [Fin.sum_univ_one, Matrix.of_apply, hYY, show X = fun ω => X ω from rfl, hXY]
+  linear_combination kgain_spec (p := p) (r := r) hS
+
+/-- The σ-algebra of the measurement does not depend on reading it as a vector of `ℝ¹`. -/
+private theorem comap_fin_one (Y : Ω → ℝ) :
+    MeasurableSpace.comap (fun ω (_ : Fin 1) => Y ω) inferInstance =
+      MeasurableSpace.comap Y inferInstance := by
+  apply le_antisymm
+  · rw [show (fun ω (_ : Fin 1) => Y ω) = (fun (y : ℝ) (_ : Fin 1) => y) ∘ Y from rfl,
+      ← MeasurableSpace.comap_comp]
+    exact MeasurableSpace.comap_mono (measurable_pi_iff.mpr fun _ => measurable_id).comap_le
+  · rw [show Y = (fun z : Fin 1 → ℝ => z 0) ∘ (fun ω (_ : Fin 1) => Y ω) from rfl,
+      ← MeasurableSpace.comap_comp]
+    exact MeasurableSpace.comap_mono (measurable_pi_apply 0).comap_le
+
+/-- The means of the state and of the measurement. -/
+private theorem integral_state_meas (hX : HasLaw X (gaussianReal m p) P)
+    (hV : HasLaw V (gaussianReal 0 r) P) :
+    ∫ ω, X ω ∂P = m ∧ ∫ ω, (h * X ω + V ω) ∂P = h * m := by
+  have hP : IsProbabilityMeasure P := hX.isProbabilityMeasure
+  have hXi : Integrable X P := (hX.memLp (memLp_id_gaussianReal 2)).integrable one_le_two
+  have hVi : Integrable V P := (hV.memLp (memLp_id_gaussianReal 2)).integrable one_le_two
+  have hEX : ∫ ω, X ω ∂P = m := by rw [hX.integral_eq, integral_id_gaussianReal]
+  refine ⟨hEX, ?_⟩
+  rw [integral_add (hXi.const_mul h) hVi, integral_const_mul, hEX, hV.integral_eq,
+    integral_id_gaussianReal, add_zero]
+
 /-- **Gaussian conditioning lemma**: the estimation error `X − m − k (Y − h m)` is independent of
-the measurement `Y = h X + V`. -/
+the measurement `Y = h X + V` (`gaussian_error_indep` for `n = p = 1`). -/
 @[powerlib_foundation] theorem kalman_innovation_indep (hX : HasLaw X (gaussianReal m p) P)
     (hV : HasLaw V (gaussianReal 0 r) P) (hXV : IndepFun X V P)
     (hS : h ^ 2 * (p : ℝ) + r ≠ 0) :
     IndepFun (fun ω => X ω - m - kgain p h r * (h * X ω + V ω - h * m))
       (fun ω => h * X ω + V ω) P := by
-  set k := kgain p h r with hk
-  have hP : IsProbabilityMeasure P := hX.isProbabilityMeasure
-  -- centred state
-  have hX' : HasLaw (fun ω => X ω - m) (gaussianReal 0 p) P := by
-    have hmap : HasLaw (fun x : ℝ => x - m) (gaussianReal 0 p) (gaussianReal m p) :=
-      ⟨by fun_prop, by rw [gaussianReal_map_sub_const, sub_self]⟩
-    exact hmap.comp hX
-  have hX'V : IndepFun (fun ω => X ω - m) V P :=
-    hXV.comp (measurable_id.sub_const m) measurable_id
-  have hJ : HasGaussianLaw (fun ω => (X ω - m, V ω)) P :=
-    IndepFun.hasGaussianLaw hX'.hasGaussianLaw hV.hasGaussianLaw hX'V
-  set L : ℝ × ℝ →L[ℝ] ℝ × ℝ :=
-    ((1 - k * h) • ContinuousLinearMap.fst ℝ ℝ ℝ - k • ContinuousLinearMap.snd ℝ ℝ ℝ).prod
-      (h • ContinuousLinearMap.fst ℝ ℝ ℝ + ContinuousLinearMap.snd ℝ ℝ ℝ) with hL
-  have hJ2 : HasGaussianLaw (fun ω => ((1 - k * h) * (X ω - m) + (-k) * V ω,
-      h * (X ω - m) + 1 * V ω)) P := by
-    have := hJ.map_fun L
-    convert this using 2 with ω
-    ext
-    all_goals simp [hL]
-    all_goals ring
-  have hX2 : MemLp (fun ω => X ω - m) 2 P := hX'.memLp (memLp_id_gaussianReal 2)
-  have hV2 : MemLp V 2 P := hV.memLp (memLp_id_gaussianReal 2)
-  have hcov : cov[fun ω => (1 - k * h) * (X ω - m) + (-k) * V ω,
-      fun ω => h * (X ω - m) + 1 * V ω; P] = 0 := by
-    rw [cov_lin_indep hX2 hV2 hX'V, hX'.variance_eq, hV.variance_eq, variance_id_gaussianReal,
-      variance_id_gaussianReal]
-    have := kgain_spec (p := p) (r := r) hS
-    rw [← hk] at this
-    linear_combination (-1 : ℝ) * this
-  have hind := hJ2.indepFun_of_covariance_eq_zero hcov
-  have hcomp := hind.comp measurable_id (measurable_id.add_const (h * m))
-  convert hcomp using 1
-  · funext ω; simp only [Function.comp_apply, id]; ring
-  · funext ω; simp only [Function.comp_apply, id]; ring
+  have hind := (gaussian_error_indep (hasGaussianLaw_fin_one hX hV hXV)
+    (gain_fin_one hX hV hXV hS)).comp (measurable_pi_apply 0 |>.sub_const
+      (m - kgain p h r * (h * m))) (measurable_pi_apply 0)
+  convert hind using 1
+  · funext ω
+    simp only [Function.comp_apply, Fin.sum_univ_one, Matrix.of_apply]
+    ring
+  · rfl
 
 /-- Decomposition of the estimation error as a linear combination of the centred state and the
 noise. -/
@@ -159,71 +193,42 @@ noise. -/
   rw [← hk] at this
   linear_combination k * this
 
-/-- **The Kalman update is the conditional mean**: `E[X | Y] = m + k (Y − h m)` a.s. -/
+/-- **The Kalman update is the conditional mean**: `E[X | Y] = m + k (Y − h m)` a.s.
+(`gaussian_condExp_eq` for `n = p = 1`). -/
 @[powerlib_foundation] theorem kalman_condExp_eq (hX : HasLaw X (gaussianReal m p) P)
     (hV : HasLaw V (gaussianReal 0 r) P) (hXV : IndepFun X V P)
     (hS : h ^ 2 * (p : ℝ) + r ≠ 0) (hXm : Measurable X) (hVm : Measurable V) :
     P[X | MeasurableSpace.comap (fun ω => h * X ω + V ω) inferInstance] =ᵐ[P]
       fun ω => m + kgain p h r * (h * X ω + V ω - h * m) := by
-  set k := kgain p h r with hk
-  have hP : IsProbabilityMeasure P := hX.isProbabilityMeasure
-  have hind := kalman_innovation_indep hX hV hXV hS
-  obtain ⟨hZ2, hZmean, -⟩ := kalman_error_moments hX hV hXV hS
-  set Y : Ω → ℝ := fun ω => h * X ω + V ω with hY
-  set Z : Ω → ℝ := fun ω => X ω - m - k * (h * X ω + V ω - h * m) with hZ
-  have hYm : Measurable Y := (hXm.const_mul h).add hVm
-  have hZm : Measurable Z :=
-    (hXm.sub_const m).sub (((hXm.const_mul h).add hVm).sub_const (h * m) |>.const_mul k)
-  have hZi : Integrable Z P := hZ2.integrable one_le_two
-  have hle₂ : MeasurableSpace.comap Y inferInstance ≤ mΩ := hYm.comap_le
-  have hle₁ : MeasurableSpace.comap Z inferInstance ≤ mΩ := hZm.comap_le
-  have hcZ : P[Z | MeasurableSpace.comap Y inferInstance] =ᵐ[P] fun _ => ∫ ω, Z ω ∂P :=
-    condExp_indep_eq hle₁ hle₂ (comap_measurable Z).stronglyMeasurable
-      ((IndepFun_iff_Indep _ _ _).mp hind)
-  set f : Ω → ℝ := fun ω => m + k * (Y ω - h * m) with hf
-  have hfm : StronglyMeasurable[MeasurableSpace.comap Y inferInstance] f :=
-    ((measurable_const.add (measurable_const.mul (measurable_id.sub_const (h * m)))).comp
-      (comap_measurable Y)).stronglyMeasurable
-  have hXi : Integrable X P := hX.integrable (memLp_one_iff_integrable.mp (by
-      simpa using memLp_id_gaussianReal (μ := m) (v := p) 1))
-  have hfi : Integrable f P := by
-    have : f = fun ω => X ω - Z ω := by funext ω; simp only [hf, hZ, hY]; ring
-    rw [this]; exact hXi.sub hZi
-  have hdec : X = f + Z := by funext ω; simp only [Pi.add_apply, hf, hZ]; ring
-  have hadd := condExp_add hfi hZi (MeasurableSpace.comap Y inferInstance) (μ := P)
-  rw [condExp_of_stronglyMeasurable hle₂ hfm hfi] at hadd
-  rw [hdec]
-  filter_upwards [hadd, hcZ] with ω h1 h2
-  rw [h1, Pi.add_apply, h2, hZmean, add_zero]
+  have hc := gaussian_condExp_eq (hasGaussianLaw_fin_one hX hV hXV) (fun _ => hXm)
+    (fun _ => (hXm.const_mul h).add hVm) (gain_fin_one hX hV hXV hS) 0
+  obtain ⟨hEX, hEY⟩ := integral_state_meas (h := h) hX hV
+  rw [comap_fin_one] at hc
+  simpa only [hEX, hEY, Fin.sum_univ_one, Matrix.of_apply] using hc
 
 /-- **The Kalman posterior variance is the conditional variance**:
-`E[(X − E[X|Y])² | Y] = (1 − k h) p` a.s. -/
+`E[(X − E[X|Y])² | Y] = (1 − k h) p` a.s. (`gaussian_condCov_eq` for `n = p = 1`). -/
 @[powerlib_foundation] theorem kalman_condVar_eq (hX : HasLaw X (gaussianReal m p) P)
     (hV : HasLaw V (gaussianReal 0 r) P) (hXV : IndepFun X V P)
     (hS : h ^ 2 * (p : ℝ) + r ≠ 0) (hXm : Measurable X) (hVm : Measurable V) :
     P[fun ω => (X ω - (m + kgain p h r * (h * X ω + V ω - h * m))) ^ 2 |
         MeasurableSpace.comap (fun ω => h * X ω + V ω) inferInstance] =ᵐ[P]
       fun _ => (1 - kgain p h r * h) * p := by
-  set k := kgain p h r with hk
   have hP : IsProbabilityMeasure P := hX.isProbabilityMeasure
-  have hind := kalman_innovation_indep hX hV hXV hS
-  obtain ⟨-, -, hsq⟩ := kalman_error_moments hX hV hXV hS
-  set Y : Ω → ℝ := fun ω => h * X ω + V ω with hY
-  set Z : Ω → ℝ := fun ω => X ω - m - k * (h * X ω + V ω - h * m) with hZ
-  have hYm : Measurable Y := (hXm.const_mul h).add hVm
-  have hZm : Measurable Z :=
-    (hXm.sub_const m).sub (((hXm.const_mul h).add hVm).sub_const (h * m) |>.const_mul k)
-  have e : (fun ω => (X ω - (m + k * (h * X ω + V ω - h * m))) ^ 2) = fun ω => Z ω ^ 2 := by
-    funext ω; simp only [hZ]; ring
-  rw [e]
-  have hle₂ : MeasurableSpace.comap Y inferInstance ≤ mΩ := hYm.comap_le
-  have hle₁ : MeasurableSpace.comap Z inferInstance ≤ mΩ := hZm.comap_le
-  have hc := condExp_indep_eq hle₁ hle₂
-    (((comap_measurable Z).pow_const 2).stronglyMeasurable (f := fun ω => Z ω ^ 2))
-    ((IndepFun_iff_Indep _ _ _).mp hind) (μ := P)
-  refine hc.trans (Filter.EventuallyEq.of_eq ?_)
-  funext _
-  exact hsq
+  have hc := gaussian_condCov_eq (hasGaussianLaw_fin_one hX hV hXV) (fun _ => hXm)
+    (fun _ => (hXm.const_mul h).add hVm) (gain_fin_one hX hV hXV hS) 0 0
+  obtain ⟨hEX, hEY⟩ := integral_state_meas (h := h) hX hV
+  rw [comap_fin_one] at hc
+  simp only [hEX, hEY, Fin.sum_univ_one, Matrix.of_apply, ← sq] at hc
+  refine hc.trans (Filter.EventuallyEq.of_eq (funext fun _ => ?_))
+  have hX2 : MemLp X 2 P := hX.memLp (memLp_id_gaussianReal 2)
+  have hV2 : MemLp V 2 P := hV.memLp (memLp_id_gaussianReal 2)
+  have hXX := cov_lin_indep hX2 hV2 hXV 1 0 1 0
+  have hXY := cov_lin_indep hX2 hV2 hXV 1 0 h 1
+  simp only [one_mul, zero_mul, add_zero] at hXX hXY
+  rw [hX.variance_eq, variance_id_gaussianReal] at hXX hXY
+  rw [hXX, hXY]
+  ring
 
 end Model
 

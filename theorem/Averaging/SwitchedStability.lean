@@ -64,7 +64,8 @@ Results.
   `exists_norm_exp_smul_le_quarter` (a contractive block `‖e^{HĀ}‖ < 1` gives `‖e^{H'Ā}‖ ≤ 1/4`);
   `exists_periodMap_pow_le` (block contraction: for `T ≤ T₀` there is `N` with
   `H ≤ N T ≤ H + 1` and `‖M_T^N‖ ≤ 3/4`, from `‖M_T^N − e^{NTĀ}‖ ≤ N e^{aNT} c T² = O(T)`);
-  `exists_periodMap_pow_decay` (`‖M_T^k‖ ≤ C e^{−α k T}` with `C`, `α` independent of `T`);
+  `exists_periodMap_pow_decay` (`‖M_T^k‖ ≤ C e^{−α k T}` with `C`, `α` independent of `T`, from
+  the block bound `LTI.norm_pow_le_of_block`);
   `exists_periodMap_pow_sub_le` (`‖M_T^k − e^{kTĀ}‖ ≤ C T` for **every** `k`, through the
   telescoping identity `pow_sub_pow_eq_sum` and both decays). Auxiliary: `exp_natCast_mul_smul`,
   `avgMatrix_self`, `periodMap_self`, `exp_smul_sqZero_sub_smul_one`
@@ -249,53 +250,32 @@ every switching period `T ∈ (0, T₀]` and every `k`:
   obtain ⟨N, hN0, -, hNT, hMN⟩ := hblock T hT
   have hT0 : 0 < T := hT.1
   set M := periodMap d T A₁ A₂ with hMdef
-  have hk : k = N * (k / N) + k % N := (Nat.div_add_mod k N).symm
-  have hr : k % N < N := Nat.mod_lt k hN0
-  have hMk : M ^ k = (M ^ N) ^ (k / N) * M ^ (k % N) := by
-    rw [← pow_mul, ← pow_add, ← hk]
-  have hMr : ‖M ^ (k % N)‖ ≤ Real.exp (a * (H' + 1)) := by
-    calc ‖M ^ (k % N)‖ ≤ ‖M‖ ^ (k % N) := norm_pow_le _ _
-      _ ≤ Real.exp (a * T) ^ (k % N) :=
+  -- `LTI.norm_pow_le_of_block`: one block of `N` periods contracts by `3/4 = e^{−γ}`, shorter
+  -- products grow by at most `e^{a (H' + 1)}`
+  have hMr : ∀ r < N, ‖M ^ r‖ ≤ Real.exp (a * (H' + 1)) := fun r hr => by
+    calc ‖M ^ r‖ ≤ ‖M‖ ^ r := norm_pow_le _ _
+      _ ≤ Real.exp (a * T) ^ r :=
           pow_le_pow_left₀ (norm_nonneg _) (norm_periodMap_le hd0 hd1 A₁ A₂ hT0.le) _
-      _ = Real.exp ((k % N : ℕ) * (a * T)) := (Real.exp_nat_mul _ _).symm
+      _ = Real.exp (r * (a * T)) := (Real.exp_nat_mul _ _).symm
       _ ≤ Real.exp (a * (H' + 1)) := by
           apply Real.exp_le_exp.mpr
-          have h1 : ((k % N : ℕ) : ℝ) ≤ N := by exact_mod_cast hr.le
-          have h2 : ((k % N : ℕ) : ℝ) * T ≤ H' + 1 :=
-            (mul_le_mul_of_nonneg_right h1 hT0.le).trans hNT
+          have h1 : (r : ℝ) ≤ N := by exact_mod_cast hr.le
+          have h2 : (r : ℝ) * T ≤ H' + 1 := (mul_le_mul_of_nonneg_right h1 hT0.le).trans hNT
           nlinarith
-  have hqpow : ‖(M ^ N) ^ (k / N)‖ ≤ Real.exp (-(γ * (k / N : ℕ))) := by
-    calc ‖(M ^ N) ^ (k / N)‖ ≤ ‖M ^ N‖ ^ (k / N) := norm_pow_le _ _
-      _ ≤ (3 / 4) ^ (k / N) := pow_le_pow_left₀ (norm_nonneg _) hMN _
-      _ = Real.exp (-(γ * (k / N : ℕ))) := by
-          rw [show -(γ * ((k / N : ℕ) : ℝ)) = ((k / N : ℕ) : ℝ) * (-γ) by ring,
-            Real.exp_nat_mul, Real.exp_neg, hγdef, Real.exp_log (by norm_num)]
-          norm_num
-  have hqk : (k : ℝ) * T / (H' + 1) - 1 ≤ ((k / N : ℕ) : ℝ) := by
-    have h1 : k < N * (k / N + 1) := by
-      conv_lhs => rw [hk]
-      rw [mul_add, mul_one]
-      exact Nat.add_lt_add_left hr _
-    have h1' : (k : ℝ) < N * (((k / N : ℕ) : ℝ) + 1) := by exact_mod_cast h1
-    have h2 : (k : ℝ) * T < (N * T) * (((k / N : ℕ) : ℝ) + 1) := by
-      have := mul_lt_mul_of_pos_right h1' hT0
-      linarith
-    have h3 : (N * T) * (((k / N : ℕ) : ℝ) + 1) ≤ (H' + 1) * (((k / N : ℕ) : ℝ) + 1) :=
-      mul_le_mul_of_nonneg_right hNT (by positivity)
-    rw [sub_le_iff_le_add, div_le_iff₀ (by positivity)]
-    linarith
-  calc ‖M ^ k‖ = ‖(M ^ N) ^ (k / N) * M ^ (k % N)‖ := by rw [hMk]
-    _ ≤ ‖(M ^ N) ^ (k / N)‖ * ‖M ^ (k % N)‖ := norm_mul_le _ _
-    _ ≤ Real.exp (-(γ * (k / N : ℕ))) * Real.exp (a * (H' + 1)) :=
-        mul_le_mul hqpow hMr (norm_nonneg _) (Real.exp_pos _).le
-    _ ≤ Real.exp (γ + -(γ / (H' + 1) * (k * T))) * Real.exp (a * (H' + 1)) := by
+  have hMN' : ‖M ^ N‖ ≤ Real.exp (-γ) := by
+    rw [Real.exp_neg, hγdef, Real.exp_log (by norm_num)]; norm_num; exact hMN
+  -- `γ k T / (H' + 1) ≤ γ k / N` because `N T ≤ H' + 1`
+  have hrate : γ / (H' + 1) * (k * T) ≤ γ / N * k := by
+    rw [div_mul_eq_mul_div, div_mul_eq_mul_div,
+      div_le_div_iff₀ (by positivity) (Nat.cast_pos.mpr hN0)]
+    have := mul_le_mul_of_nonneg_left hNT (mul_nonneg hγ.le (Nat.cast_nonneg k))
+    nlinarith
+  calc ‖M ^ k‖ ≤ Real.exp (a * (H' + 1)) * Real.exp γ * Real.exp (-(γ / N)) ^ k :=
+        LTI.norm_pow_le_of_block hN0 hγ.le hMN' hMr k
+    _ ≤ Real.exp (a * (H' + 1)) * Real.exp γ * Real.exp (-(γ / (H' + 1) * (k * T))) := by
+        rw [← Real.exp_nat_mul]
         gcongr
-        have h := mul_le_mul_of_nonneg_left hqk hγ.le
-        have e : γ * ((k : ℝ) * T / (H' + 1) - 1) = γ / (H' + 1) * (k * T) - γ := by
-          field_simp
         linarith
-    _ = Real.exp (a * (H' + 1)) * Real.exp γ * Real.exp (-(γ / (H' + 1) * (k * T))) := by
-        rw [Real.exp_add]; ring
 
 omit [NormOneClass 𝔸] in
 /-- `e^{s(N − ε)} = e^{−εs} (1 + sN)` for a square-zero element `N` (`N² = 0`). -/

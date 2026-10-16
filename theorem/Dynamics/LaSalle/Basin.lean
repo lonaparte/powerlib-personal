@@ -283,24 +283,19 @@ upstream `_root_.lasalle_invariance_principle` is removed by a cutoff. -/
       (hφ0 ▸ hx₀) hLasalle
     rwa [nhdsSet_singleton] at h
 
-/-- Same estimate with a globally Lipschitz field (direct use of the upstream theorem). -/
+/-- Same estimate with a globally Lipschitz field (the Lipschitz hypothesis is not needed:
+`regionOfAttraction_of_lasalle`). -/
 @[powerlib_foundation] theorem regionOfAttraction_of_lasalle_lipschitz
     {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {Ω : Set ℝⁿ} {x_eq : ℝⁿ} {K : NNReal}
     (hΩ_compact : IsCompact Ω) (hΩ_inv : IsPositivelyInvariant Ω f)
-    (hf_lip : LipschitzWith K f) (hf_c1 : ContDiff ℝ 1 f) (hV_c1 : ContDiff ℝ 1 V)
+    (_hf_lip : LipschitzWith K f) (hf_c1 : ContDiff ℝ 1 f) (hV_c1 : ContDiff ℝ 1 V)
     (hLie : ∀ x ∈ Ω, fderiv ℝ V x (f x) ≤ 0)
     (hLasalle : ∀ N ⊆ LieDerivZeroSet f V Ω, IsPositivelyInvariant N f → N ⊆ {x_eq}) :
     ∀ x₀ ∈ Ω,
       (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
       ∀ φ : ℝ → ℝⁿ, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
-        Tendsto φ atTop (𝓝 x_eq) := by
-  intro x₀ hx₀
-  refine ⟨?_, fun φ hφ0 hφ => ?_⟩
-  · obtain ⟨φ, hφ0, hφ⟩ := Flow.forwardComplete_of_lipschitzWith hf_lip 0 x₀
-    exact ⟨φ, hφ0, hφ⟩
-  · have h := lasalle_invariance_principle hΩ_compact hΩ_inv hf_lip hf_c1 hV_c1 hLie hφ
-      (hφ0 ▸ hx₀) hLasalle
-    rwa [nhdsSet_singleton] at h
+        Tendsto φ atTop (𝓝 x_eq) :=
+  regionOfAttraction_of_lasalle hΩ_compact hΩ_inv hf_c1 hV_c1 hLie hLasalle
 
 /-- **Potential-well estimate.** `W` open, `V̇ ≤ 0` on `W`, `Ω = {x ∈ W | V x ≤ c}` compact,
 and the LaSalle condition on `Ω` ⇒ `Ω` lies in the region of attraction of `x_eq`.

@@ -1,5 +1,6 @@
 import theorem.SingularPerturbation.Linear
 import theorem.Linear.Certificate
+import theorem.Dynamics.Calculus
 
 /-! # Frozen fast subsystems: uniform exponential stability over a compact set
 
@@ -154,27 +155,17 @@ structure BoundedCertificate (A : Matrix (Fin m) (Fin m) ℝ) extends Linear.Cer
     convert this using 1
     rw [Criteria.dotProduct_mulVec_comm_of_symm hP (M *ᵥ y s) (y s)]
     ring
-  -- `exp(s/(2 hi)) V(y s)` is antitone
-  set F := fun s => Real.exp (s / (2 * c.upper)) * (y s ⬝ᵥ (c.P *ᵥ y s))
-  have hF : ∀ s, HasDerivAt F (Real.exp (s / (2 * c.upper)) *
-      ((y s ⬝ᵥ (c.P *ᵥ y s)) / (2 * c.upper) + 2 * (y s ⬝ᵥ (c.P *ᵥ (M *ᵥ y s))))) s := by
-    intro s
-    have := (((hasDerivAt_id' s).div_const (2 * c.upper)).exp).mul (hderiv s)
-    exact this.congr_deriv (by ring)
-  have hmono : Antitone F := antitone_of_hasDerivAt_nonpos hF (by
-    intro s
-    apply mul_nonpos_of_nonneg_of_nonpos (Real.exp_pos _).le
-    have hup := c.upper_bound (y s)
-    have hd := hdiss (y s)
-    have hu := c.upper_pos
-    have : (y s ⬝ᵥ (c.P *ᵥ y s)) / (2 * c.upper) ≤ (y s ⬝ᵥ y s) / 2 := by
-      rw [div_le_div_iff₀ (by positivity) (by norm_num)]; nlinarith
-    linarith)
-  have h := hmono ht
-  simp only [F, zero_div, Real.exp_zero, one_mul] at h
+  -- Grönwall: `V' ≤ -V/(2 hi)`
   have hV : (y t ⬝ᵥ (c.P *ᵥ y t)) ≤ Real.exp (-(t / (2 * c.upper))) * (y 0 ⬝ᵥ (c.P *ᵥ y 0)) := by
-    have h' := mul_le_mul_of_nonneg_left h (Real.exp_pos (-(t / (2 * c.upper)))).le
-    rwa [← mul_assoc, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_mul] at h'
+    have h := Dynamics.le_exp_mul_of_hasDerivWithinAt (g := fun s => y s ⬝ᵥ (c.P *ᵥ y s))
+      (ρ := 1 / (2 * c.upper)) (fun s _ => (hderiv s).hasDerivWithinAt) (fun s _ => by
+        have hup := c.upper_bound (y s)
+        have hd := hdiss (y s)
+        have hu := c.upper_pos
+        have : 1 / (2 * c.upper) * (y s ⬝ᵥ (c.P *ᵥ y s)) ≤ (y s ⬝ᵥ y s) / 2 := by
+          rw [one_div_mul_eq_div, div_le_div_iff₀ (by positivity) (by norm_num)]; nlinarith
+        linarith) t ⟨ht, le_rfl⟩
+    rwa [sub_zero, neg_mul, one_div_mul_eq_div] at h
   have hlow := c.lower_bound (y t)
   have hup0 := c.upper_bound (y 0)
   have hlo := c.lower_pos

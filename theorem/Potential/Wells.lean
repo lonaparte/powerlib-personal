@@ -1,4 +1,5 @@
 import theorem.Attributes
+import theorem.Potential.Barrier
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
@@ -29,7 +30,8 @@ Results.
   `V(0) − V(±√(a/b)) = a²/4b` (`doubleWell_barrier`); for every `D > 0` the weight `e^{−V/D}` is
   strictly increasing on `(−∞, −r]`, decreasing on `[−r, 0]`, increasing on `[0, r]` and
   decreasing on `[r, ∞)` (`r = √(a/b)`): it stays bimodal (`doubleWell_weight_bimodal`).
-* Washboard `V = V₀ (−cos θ − αθ)` (`V₀ > 0`, `washboard`):
+* Washboard `V = V₀ (−cos θ − αθ)` (`V₀ > 0`, `washboard`; defined as the washboard of
+  `theorem/Potential/Barrier.lean` with `c = V₀α`, `A = V₀`, `φ = 0`, `washboard_eq`):
   `V' = V₀ (sin θ − α)`; a critical point exists iff `|α| ≤ 1` (`washboard_critical_exists_iff`);
   `α > 1 ⇒ V' < 0` (`washboard_deriv_neg`); at `α = 1` the critical points are `π/2 + 2πk`, where
   also `V'' = 0` (well and barrier merge; `washboard_critical_merge`).
@@ -277,16 +279,19 @@ global maxima exactly at `±√(a/b)` and a strict local minimum at `0`. -/
 
 /-! ## Washboard -/
 
-/-- Tilted washboard `V₀ (−cos θ − αθ)`. -/
-def washboard (V₀ α θ : ℝ) : ℝ := V₀ * (-Real.cos θ - α * θ)
+/-- Tilted washboard `V₀ (−cos θ − αθ)`: the washboard `−cθ − A cos(θ + φ)` of
+`theorem/Potential/Barrier.lean` with tilt `c = V₀α`, amplitude `A = V₀` and phase `φ = 0`. -/
+def washboard (V₀ α θ : ℝ) : ℝ := Barrier.washboard (V₀ * α) V₀ 0 θ
+
+@[powerlib_foundation] theorem washboard_eq (V₀ α θ : ℝ) :
+    washboard V₀ α θ = V₀ * (-Real.cos θ - α * θ) := by
+  simp only [washboard, Barrier.washboard, add_zero]; ring
 
 @[powerlib_foundation] theorem hasDerivAt_washboard (V₀ α θ : ℝ) :
     HasDerivAt (washboard V₀ α) (V₀ * (Real.sin θ - α)) θ := by
-  have h : HasDerivAt (fun y => V₀ * (-Real.cos y - α * y)) (V₀ * (-(-Real.sin θ) - α * 1)) θ :=
-    ((Real.hasDerivAt_cos θ).neg.sub ((hasDerivAt_id' θ).const_mul α)).const_mul V₀
-  unfold washboard
-  convert h using 1
-  ring
+  convert Barrier.hasDerivAt_washboard (c := V₀ * α) (A := V₀) (φ := 0) θ using 1
+  · rfl
+  · rw [add_zero]; ring
 
 @[powerlib_foundation] theorem hasDerivAt_washboard_deriv (V₀ α θ : ℝ) :
     HasDerivAt (fun θ => V₀ * (Real.sin θ - α)) (V₀ * Real.cos θ) θ := by
@@ -331,11 +336,11 @@ def washboard (V₀ α θ : ℝ) : ℝ := V₀ * (-Real.cos θ - α * θ)
 /-- `V(θ + 2π) = V(θ) − 2πV₀α`: the tilted washboard is a periodic potential plus a ramp. -/
 @[powerlib_foundation] theorem washboard_shift (V₀ α θ : ℝ) :
     washboard V₀ α (θ + 2 * π) = washboard V₀ α θ - 2 * π * V₀ * α := by
-  simp only [washboard, Real.cos_add_two_pi]; ring
+  simp only [washboard_eq, Real.cos_add_two_pi]; ring
 
 @[powerlib_foundation] theorem washboard_shift_int (V₀ α θ : ℝ) (k : ℤ) :
     washboard V₀ α (θ + k * (2 * π)) = washboard V₀ α θ - k * (2 * π * V₀ * α) := by
-  simp only [washboard, Real.cos_add_int_mul_two_pi]; ring
+  simp only [washboard_eq, Real.cos_add_int_mul_two_pi]; ring
 
 /-- Correction: all wells are congruent — every barrier height is the same in every well. -/
 @[powerlib_foundation] theorem washboard_barrier_translate (V₀ α x y : ℝ) (k : ℤ) :
@@ -347,7 +352,7 @@ def washboard (V₀ α θ : ℝ) : ℝ := V₀ * (-Real.cos θ - α * θ)
 @[powerlib_foundation] theorem washboard_barrier_forward {V₀ α : ℝ} :
     washboard V₀ α (π - Real.arcsin α) - washboard V₀ α (Real.arcsin α) =
       V₀ * (2 * √(1 - α ^ 2) + α * (2 * Real.arcsin α - π)) := by
-  simp only [washboard, Real.cos_pi_sub, Real.cos_arcsin]; ring
+  simp only [washboard_eq, Real.cos_pi_sub, Real.cos_arcsin]; ring
 
 /-- Backward barrier `ΔV₋ = V(π − arcsin α − 2π) − V(arcsin α)`. -/
 @[powerlib_foundation] theorem washboard_barrier_backward {V₀ α : ℝ} :
@@ -424,7 +429,7 @@ def barrierBackward (V₀ α : ℝ) : ℝ := V₀ * (2 * √(1 - α ^ 2) + α * 
       have hcos := Real.neg_one_le_cos θ
       have := hpos θ hθ
       rw [div_le_div_iff_of_pos_right hD]
-      simp only [washboard]
+      simp only [washboard_eq]
       nlinarith
     rw [integrableOn_const_iff] at hconst
     rcases hconst with h | h

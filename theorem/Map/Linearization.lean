@@ -16,9 +16,11 @@ Source: the map semantics (`theorem/Map/Defs.lean`); work-sync `theory/T-numeric
 
 Results.
 * `pow_bound_toEuclideanCLM`, `exists_pow_norm_toEuclideanCLM_lt_one`: Schur stability of `A`
-  gives `‖A^k‖ ≤ C ρ^k` as operators on `ℝⁿ`, hence a power of norm below one.
+  gives `‖A^k‖ ≤ C ρ^k` as operators on `ℝⁿ` (`LTI.SchurStable.exists_pow_bound`), hence a power
+  of norm below one.
 * `locallyExponentiallyStable_of_pow_norm_lt_one`: a map differentiable at a fixed point whose
-  derivative has a contractive power is locally exponentially stable (abstract form).
+  derivative has a contractive power is locally exponentially stable (abstract form; the
+  contraction of one block of steps is spread over the steps by `LTI.exp_neg_pow_div_le`).
 * `locallyExponentiallyStable_of_schurStable` (main): `HasFDerivAt F A x`, `F x = x`, `A` Schur
   ⇒ `Map.LocallyExponentiallyStable F x`; `holds_locallyExponentiallyStable` reads it for the
   zero-input map of a discrete system.
@@ -43,27 +45,25 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 /-- The operator of a matrix on `ℝⁿ`. -/
 abbrev op (A : Matrix (Fin n) (Fin n) ℝ) : ℝⁿ →L[ℝ] ℝⁿ := Matrix.toEuclideanCLM (𝕜 := ℝ) A
 
-/-- Schur stability gives a geometric bound on the operator norms of the powers. -/
+open scoped Matrix.Norms.Operator in
+/-- Schur stability gives a geometric bound on the operator norms of the powers (the matrix bound
+`LTI.SchurStable.exists_pow_bound` read through the coordinate equivalence of `ℝⁿ`). -/
 @[powerlib_foundation] theorem pow_bound_toEuclideanCLM {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : LTI.SchurStable A) :
     ∃ C ρ : ℝ, 0 ≤ C ∧ 0 ≤ ρ ∧ ρ < 1 ∧ ∀ k : ℕ, ‖op A ^ k‖ ≤ C * ρ ^ k := by
-  obtain ⟨C, hC, ρ, hρ0, hρ1, hb⟩ := LTI.exponentiallyStable_of_schurStable (m := ⟨A⟩) hA
+  obtain ⟨C, hC, ρ, hρ0, hρ1, hb⟩ := hA.exists_pow_bound
   let e₁ : ℝⁿ →L[ℝ] (Fin n → ℝ) := (EuclideanSpace.equiv (Fin n) ℝ : ℝⁿ →L[ℝ] (Fin n → ℝ))
   let e₂ : (Fin n → ℝ) →L[ℝ] ℝⁿ :=
     ((EuclideanSpace.equiv (Fin n) ℝ).symm : (Fin n → ℝ) →L[ℝ] ℝⁿ)
-  refine ⟨‖e₂‖ * C * ‖e₁‖, ρ, by positivity, hρ0, hρ1, fun k => ?_⟩
+  refine ⟨‖e₂‖ * C * ‖e₁‖, ρ, by positivity, hρ0.le, hρ1, fun k => ?_⟩
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w => ?_
   have hw : (op A ^ k) w = e₂ ((A ^ k) *ᵥ e₁ w) := by
     rw [op, ← map_pow]
     rfl
-  have hv : ‖(A ^ k) *ᵥ e₁ w‖ ≤ C * ρ ^ k * ‖e₁ w‖ := by
-    have h := hb (LTI.response ⟨A⟩ (e₁ w)) (LTI.response_isTrajectory _ _) k
-    simpa [LTI.response] using h
   calc ‖(op A ^ k) w‖ = ‖e₂ ((A ^ k) *ᵥ e₁ w)‖ := by rw [hw]
-    _ ≤ ‖e₂‖ * ‖(A ^ k) *ᵥ e₁ w‖ := e₂.le_opNorm _
-    _ ≤ ‖e₂‖ * (C * ρ ^ k * (‖e₁‖ * ‖w‖)) := by
-        gcongr
-        exact hv.trans (by gcongr; exact e₁.le_opNorm w)
+    _ ≤ ‖e₂‖ * (‖A ^ k‖ * ‖e₁ w‖) :=
+        (e₂.le_opNorm _).trans (by gcongr; exact Matrix.linfty_opNorm_mulVec _ _)
+    _ ≤ ‖e₂‖ * (C * ρ ^ k * (‖e₁‖ * ‖w‖)) := by gcongr; exacts [hb k, e₁.le_opNorm w]
     _ = ‖e₂‖ * C * ‖e₁‖ * ρ ^ k * ‖w‖ := by ring
 
 /-- Schur stability gives a power of operator norm below one. -/
@@ -120,15 +120,14 @@ locally exponentially stable there. -/
         (Finset.mem_range.mpr j.isLt)
     linarith
   obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.mp (hcon.and hbd)
-  set ρ : ℝ := q ^ ((m : ℝ)⁻¹) with hρ
-  have hρ0 : 0 < ρ := Real.rpow_pos_of_pos hq0 _
-  have hρm : ρ ^ m = q := Real.rpow_inv_natCast_pow hq0.le (Nat.pos_iff_ne_zero.mp hm)
-  have hρ1 : ρ < 1 := by
-    by_contra hge
-    have : (1 : ℝ) ≤ ρ ^ m := one_le_pow₀ (not_lt.mp hge)
-    linarith
-  refine ⟨r, K / q, ρ, hr, ?_, hρ0.le, hρ1, fun y hy k => ?_⟩
-  · rw [le_div_iff₀ hq0]; nlinarith
+  -- `q = e^{−γ}`; a block of `m` steps contracts by `e^{−γ}`, one step by `e^{−γ/m}`
+  set γ : ℝ := -Real.log q with hγ
+  have hγ0 : 0 < γ := neg_pos.mpr (Real.log_neg hq0 hq1)
+  have hqγ : Real.exp (-γ) = q := by rw [hγ, neg_neg, Real.exp_log hq0]
+  refine ⟨r, K * Real.exp γ, Real.exp (-(γ / m)), hr,
+    one_le_mul_of_one_le_of_one_le hK1 (Real.one_le_exp hγ0.le), (Real.exp_pos _).le,
+    Real.exp_lt_one_iff.mpr (neg_lt_zero.mpr (div_pos hγ0 (Nat.cast_pos.mpr hm))),
+    fun y hy k => ?_⟩
   -- the orbit at multiples of `m`
   have hmul : ∀ i : ℕ, ‖F^[m * i] y - x‖ ≤ q ^ i * ‖y - x‖ ∧ dist (F^[m * i] y) x < r := by
     intro i
@@ -152,13 +151,12 @@ locally exponentially stable there. -/
     rw [Function.iterate_add_apply]
     calc ‖F^[j] (F^[m * i] y) - x‖ ≤ K * ‖F^[m * i] y - x‖ := (hball (hmul i).2).2 ⟨j, hj⟩
       _ ≤ K * (q ^ i * ‖y - x‖) := by gcongr; exact (hmul i).1
-  have h2 : q ^ i ≤ ρ ^ (j + m * i) / q := by
-    rw [le_div_iff₀ hq0, ← hρm, ← pow_mul, ← pow_add]
-    apply pow_le_pow_of_le_one hρ0.le hρ1.le
-    nlinarith
+  have h2 : q ^ i ≤ Real.exp γ * Real.exp (-(γ / m)) ^ (j + m * i) := by
+    have := LTI.exp_neg_pow_div_le hγ0.le hm (j + m * i)
+    rwa [hqγ, Nat.add_mul_div_left j i hm, Nat.div_eq_of_lt hj, zero_add] at this
   calc ‖F^[j + m * i] y - x‖ ≤ K * (q ^ i * ‖y - x‖) := h1
-    _ ≤ K * (ρ ^ (j + m * i) / q * ‖y - x‖) := by gcongr
-    _ = K / q * ρ ^ (j + m * i) * ‖y - x‖ := by ring
+    _ ≤ K * (Real.exp γ * Real.exp (-(γ / m)) ^ (j + m * i) * ‖y - x‖) := by gcongr
+    _ = K * Real.exp γ * Real.exp (-(γ / m)) ^ (j + m * i) * ‖y - x‖ := by ring
 
 /-- **Linearization of maps.** A map with a fixed point `x`, differentiable at `x` with a Schur
 stable Jacobian matrix `A`, is locally exponentially stable at `x`. -/
