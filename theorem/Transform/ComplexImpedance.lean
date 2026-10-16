@@ -1,4 +1,5 @@
 import theorem.Transform.Park
+import theorem.Transform.Rebase
 import theorem.Linear.Transfer
 import Mathlib.RingTheory.Complex
 
@@ -37,7 +38,8 @@ Results.
   `Y± = ((Y_dd + Y_qq) ± j(Y_qd − Y_dq))/2` on the diagonal and the mirror couplings off it;
   `toSeq_offDiag_eq_zero_iff`: no ± coupling iff `Y_dd = Y_qq ∧ Y_dq = −Y_qd`;
   `returnDifference_toSeq`: `det(I + Z Y)` (hence the generalized Nyquist test) is the same in
-  both forms.
+  both forms; the sequence form is a complex change of port bases, and this is the port-basis
+  invariance `Rebase.det_one_add_mul_rebase` of `theorem/Transform/Rebase.lean`.
 -/
 
 noncomputable section
@@ -336,15 +338,10 @@ def toSeq (Y : Matrix (Fin 2) (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
     · rw [h1, h2]; ring
     · rw [h1, h2]; ring
 
-/-- The return difference `det(I + Z Y)` is the same in dq and complex-vector form. -/
+/-- The return difference `det(I + Z Y)` is the same in dq and complex-vector form: the sequence
+form is the change of port bases `seqMatrix` on both ports (`Rebase.det_one_add_mul_rebase`). -/
 @[powerlib_foundation] theorem returnDifference_toSeq (Z Y : Matrix (Fin 2) (Fin 2) ℂ) :
-    (1 + toSeq Z * toSeq Y).det = (1 + Z * Y).det := by
-  have h : 1 + toSeq Z * toSeq Y = seqMatrix * (1 + Z * Y) * seqMatrixInv := by
-    simp only [toSeq, Matrix.mul_add, Matrix.add_mul, Matrix.mul_one]
-    rw [seqMatrix_mul_inv]
-    simp only [Matrix.mul_assoc]
-    rw [← Matrix.mul_assoc seqMatrixInv seqMatrix, seqMatrixInv_mul, Matrix.one_mul]
-  rw [h, Matrix.det_mul, Matrix.det_mul, mul_comm (seqMatrix.det), mul_assoc,
-    ← Matrix.det_mul, seqMatrix_mul_inv, Matrix.det_one, mul_one]
+    (1 + toSeq Z * toSeq Y).det = (1 + Z * Y).det :=
+  Rebase.det_one_add_mul_rebase seqMatrix_mul_inv seqMatrixInv_mul seqMatrixInv_mul Z Y
 
 end powerlib.Transform

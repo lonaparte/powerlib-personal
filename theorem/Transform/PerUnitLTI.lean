@@ -41,8 +41,10 @@ sampled contraction is its own pull-back along the per-unit transformation
 `ic ↦ perUnit ic b₁ b₂ vb ib ω_B` (nonzero state and port bases, positive time base; conventions
 (A) and (B) alike): SI and per-unit descriptions are stable together, with no premise on the
 subsystems. `den_perUnit_unitTime`: with time in SI seconds (convention (A), `ω_B = 1`), every flow
-sentence. Decay rates scale with `ω_B` and port passivity depends on the port bases; neither is
-claimed.
+sentence. `den_perUnit_timeScale`: with any positive time base (convention (B) included), every flow
+sentence with its decay rate scaled by `ω_B` (`Flow.Property.timeScale`): the per-unit model decays
+at the rate `a` per unit of per-unit time exactly when the SI model decays at the rate `ω_B a` per
+second. Port passivity depends on the port bases and is not claimed.
 -/
 
 noncomputable section
@@ -237,5 +239,19 @@ every flow sentence together. -/
       (fun ic => perUnit ic b₁ b₂ vb ib 1) ⁻¹' Interconnection.family.den (.flow P)) :=
   den_rebase_unitTime (diagonal_mul_inv hb₁) (diagonal_mul_inv hb₂) (diagonal_mul_inv hv)
     (diagonal_mul_inv hi) rfl P
+
+open powerlib.Circuits in
+/-- With any positive time base (conventions (A) and (B) alike), the per-unit description satisfies
+a flow sentence `P` exactly when the SI description satisfies `P.timeScale ω_B`: decay at the rate
+`a` per unit of `τ = ω_B t` is decay at the rate `ω_B a` per second, and every other sentence is
+unchanged. -/
+@[powerlib_domain] theorem den_perUnit_timeScale {n₁ n₂ : ℕ} {b₁ : Fin n₁ → ℝ} {b₂ : Fin n₂ → ℝ}
+    {vb ib : Fin p → ℝ} {ωB : ℝ} (hb₁ : ∀ i, b₁ i ≠ 0) (hb₂ : ∀ i, b₂ i ≠ 0)
+    (hv : ∀ k, vb k ≠ 0) (hi : ∀ k, ib k ≠ 0) (hω : 0 < ωB) (P : Flow.Property) :
+    connection% ((Interconnection.family (n₁ := n₁) (n₂ := n₂) (p := p)).den
+        (.flow (P.timeScale ωB)) =
+      (fun ic => perUnit ic b₁ b₂ vb ib ωB) ⁻¹' Interconnection.family.den (.flow P)) :=
+  den_rebase_timeScale (β := perUnitBases b₁ b₂ vb ib ωB) (diagonal_mul_inv hb₁)
+    (diagonal_mul_inv hb₂) (diagonal_mul_inv hv) (diagonal_mul_inv hi) hω P
 
 end powerlib.Transform.PerUnit

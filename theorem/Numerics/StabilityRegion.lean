@@ -1,5 +1,6 @@
 import theorem.Attributes
 import dependencies.Mathlib
+import theorem.Linear.EigenMap
 import Mathlib.Analysis.Matrix.Normed
 
 /-! # "Numerically stable ⇔ every `hλᵢ` lies in the stability region": the correct version
@@ -44,12 +45,10 @@ open scoped Matrix.Norms.Operator
 
 variable {n : ℕ}
 
+/-- The powers of an eigenvalue are eigenvalues of the powers (`Linear.mulVec_pow_of_eigen`). -/
 @[powerlib_foundation] theorem pow_mulVec_eigen {Φ : Matrix (Fin n) (Fin n) ℂ} {μ : ℂ}
-    {v : Fin n → ℂ} (heig : Φ *ᵥ v = μ • v) (k : ℕ) : (Φ ^ k) *ᵥ v = μ ^ k • v := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [pow_succ, ← Matrix.mulVec_mulVec, heig, Matrix.mulVec_smul, ih, smul_smul, ← pow_succ']
+    {v : Fin n → ℂ} (heig : Φ *ᵥ v = μ • v) (k : ℕ) : (Φ ^ k) *ᵥ v = μ ^ k • v :=
+  Linear.mulVec_pow_of_eigen heig k
 
 /-- Bounded trajectories (every trajectory `Φ^k x₀` of `x_{k+1} = Φ x_k` is bounded) force
 every eigenvalue into the closed unit disk. -/

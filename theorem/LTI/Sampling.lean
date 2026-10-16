@@ -1,4 +1,5 @@
 import theorem.LTI.Discrete
+import theorem.Linear.EigenMap
 import theorem.Periodic.LTI
 import theorem.Averaging.StateSpaceAveraging
 
@@ -42,9 +43,9 @@ delay bound on the bandwidth of a digital current loop), theory/T-numerical-inte
 
 Results.
 * `isHurwitz_iff_schurStable_exp`: for `T > 0`, `A` is Hurwitz iff `e^{TA}` is Schur stable
-  (forward through the LeanForControl spectral-mapping lemma
-  `spectralRadius_exp_complexification_lt_one`, backward through `e^{TA} v = e^{μT} v`,
-  `Periodic.monodromy_const_mulVec_eigen`).
+  (forward through the positive scaling `Linear.isHurwitz_smul_iff` and the LeanForControl
+  spectral-mapping lemma `spectralRadius_exp_complexification_lt_one`, backward through
+  `e^{TA} v = e^{μT} v`, `Periodic.monodromy_const_mulVec_eigen`).
 * `zohGamma`, `hasDerivAt_exp_smul_mul`, `mul_zohGamma_add`: `Γ(T) = ∫₀ᵀ e^{sA} B ds` and
   `A Γ(s) + B = e^{sA} B`; `zohGamma_zero`: `Γ(T) = T B` for `A = 0`.
 * `zoh_solution`, `zoh_step`: on an interval where the input is held at `u`, every solution is
@@ -94,24 +95,6 @@ section Spectral
 
 variable {n : ℕ}
 
-/-- Scaling by a positive time keeps a matrix Hurwitz. -/
-@[powerlib_foundation]
-private lemma isHurwitz_smul {A : Matrix (Fin n) (Fin n) ℝ} (hA : LinearSystems.IsHurwitz A)
-    {T : ℝ} (hT : 0 < T) : LinearSystems.IsHurwitz (T • A) := by
-  intro μ v hv heig
-  have hmap : (T • A).map (algebraMap ℝ ℂ) = (T : ℂ) • A.map (algebraMap ℝ ℂ) := by
-    ext i j; simp [Matrix.map_apply]
-  rw [hmap, Matrix.smul_mulVec] at heig
-  have hT0 : (T : ℂ) ≠ 0 := by exact_mod_cast hT.ne'
-  have h2 : A.map (algebraMap ℝ ℂ) *ᵥ v = (μ / T) • v := by
-    have := congrArg (fun w => (T : ℂ)⁻¹ • w) heig
-    simp only [smul_smul, inv_mul_cancel₀ hT0, one_smul] at this
-    rw [this, div_eq_inv_mul]
-  have hre := hA _ v hv h2
-  rw [Complex.div_ofReal_re] at hre
-  simp only [neg_zero] at hre ⊢
-  exact (div_neg_iff.mp hre).elim (fun h => absurd h.2 (not_lt.mpr hT.le)) (fun h => h.1)
-
 /-- **Exact sampling preserves exactly the stability of an LTI system.** For a sampling period
 `T > 0`, `A` is Hurwitz exactly when `e^{TA}` is Schur stable. -/
 @[powerlib_foundation] theorem isHurwitz_iff_schurStable_exp (A : Matrix (Fin n) (Fin n) ℝ)
@@ -120,7 +103,8 @@ private lemma isHurwitz_smul {A : Matrix (Fin n) (Fin n) ℝ} (hA : LinearSystem
   constructor
   · intro hA
     rw [schurStable_iff_spectralRadius_lt_one, MatrixAlgebra.complexification_exp]
-    exact LinearSystems.spectralRadius_exp_complexification_lt_one (isHurwitz_smul hA hT)
+    exact LinearSystems.spectralRadius_exp_complexification_lt_one
+      ((Linear.isHurwitz_smul_iff hT A).2 hA)
   · intro hS μ v hv heig
     have h := Periodic.monodromy_const_mulVec_eigen A hT.le 0 heig
     rw [Periodic.monodromy_const A hT.le] at h

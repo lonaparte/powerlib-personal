@@ -124,15 +124,13 @@ end Derivation
     ← Complex.normSq_eq_norm_sq, ← Complex.normSq_eq_norm_sq]
   constructor <;> intro h <;> linarith
 
+/-- The trapezoidal stability region is the Cayley image of the open left half plane
+(`norm_one_add_div_one_sub_lt_one_iff`). -/
 @[powerlib_foundation] theorem stabTrap_norm_lt_one_iff {z : ℂ} (hz : z ≠ 2) :
     ‖stabTrap z‖ < 1 ↔ z.re < 0 := by
   have hd : 1 - z / 2 ≠ 0 := by
     intro h0; apply hz; linear_combination -2 * h0
-  have hpos : 0 < ‖1 - z / 2‖ := norm_pos_iff.mpr hd
-  have key := normSq_one_add_sub_normSq_one_sub (z / 2)
-  rw [Complex.div_ofNat_re] at key
-  rw [stabTrap, norm_div, div_lt_one hpos, ← sq_lt_sq₀ (norm_nonneg _) hpos.le,
-    ← Complex.normSq_eq_norm_sq, ← Complex.normSq_eq_norm_sq]
+  rw [stabTrap, norm_one_add_div_one_sub_lt_one_iff hd, Complex.div_ofNat_re]
   constructor <;> intro h <;> linarith
 
 /-- The trapezoidal rule is A-stable. -/

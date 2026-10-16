@@ -5,7 +5,8 @@ import theorem.Linear.Transfer
 /-! # Transport of the Flow sentences under changes of coordinates and of time scale
 
 Every behavioural sentence of the library is invariant under invertible affine changes of
-coordinates and under constant positive time scaling.
+coordinates. Under a constant positive time scaling every sentence keeps its form with its time
+parameters rescaled: decay rates scale with the time base, sampling horizons inversely.
 
 Scope.
 * Generic foundation, independent of any model. Autonomous continuous-time fields
@@ -38,9 +39,20 @@ Results.
   `Matrix.toEuclideanCLM` (`matrixCoord`); the Jacobian matrix becomes `P A P⁻¹`. Example: the
   planar scaling `(θ, v) ↦ (θ, η v)`, `η ≠ 0` (`scaleMatrix`, `scaleCoord`, `scaleCoord_apply`,
   `scaleCoord_symm_apply`).
-* Time scaling `τ = t / c`, `c > 0` (e.g. a per-unit time base): `f` and `c • f` have the same
-  Lyapunov stability, instability, local exponential stability (the rate scales by `c`), and
-  local asymptotic stability.
+* Time scaling `τ = t / c`, `c > 0` (e.g. a per-unit time base): the solutions of `c • f` are the
+  solutions of `f` read at `t = c τ` (`isTrajectoryOn_timeScale`,
+  `isIntegralCurveOn_Ici_timeScale`).
+  Equilibria, forward completeness, Lyapunov stability, instability, local and global asymptotic
+  stability, local and global exponential stability (the rate of the estimate scales by `c`) and
+  conservation are invariant (`*_smul_iff`); decay at the rate `a` becomes decay at the rate `c a`
+  (`decay_smul_iff`); a contraction over the horizon `T` of `c • f` is a contraction over the
+  horizon `c T` of `f` (`contraction_smul_iff`), so sampled contraction of `c • f` is contraction of
+  `f` over a horizon `c k`, `k` a positive integer (`sampledContraction_smul_iff`); `c k` need not
+  be an integer, so this is not the sentence `contractive` of `f` in general. Collected:
+  `Flow.Property.timeScale c` (the sentence with its decay rate scaled by `c`) and
+  `holds_timeScale_iff` (`P` of `f` is `P.timeScale c` of `c • f`, every `P` but sampled
+  contraction). For linear fields every sentence, sampled contraction included (it is the Hurwitz
+  property): `holds_timeScale_linear_iff`.
 
 Reuse. The proof of `holds_transport_iff` moves the equilibrium to the origin with
 `Flow.Property.holds_shift_iff` (`theorem/Dynamics/Shift.lean`) and conjugates by `T` at the origin.
@@ -726,6 +738,225 @@ forward-complete solution of `ẋ = f(x)` from `c s₀`. -/
   have h' := LocalAsymptoticStable.timeScale (inv_pos.mpr hc) h
   rwa [inv_smul_smul_field hc] at h'
 
+/-- Time scaling by `c ≠ 0` keeps the equilibria. -/
+@[powerlib_foundation] theorem isEquilibrium_smul_iff {f : State n → State n} {x : State n}
+    {c : ℝ} (hc : c ≠ 0) : IsEquilibrium (c • f) x ↔ IsEquilibrium f x := by
+  simp [IsEquilibrium, hc]
+
+/-- A forward-complete solution of `f` from `c t₀`, read at time `c τ`, is a forward-complete
+solution of `c • f` from `t₀`. -/
+@[powerlib_foundation] theorem ForwardComplete.timeScale {f : State n → State n} {c : ℝ}
+    (hc : 0 < c) (h : Flow.ForwardComplete f) : Flow.ForwardComplete (c • f) := by
+  intro t₀ x₀
+  obtain ⟨φ, hφ0, hφ⟩ := h (c * t₀) x₀
+  have hφ' : IsIntegralCurveOn φ (fun _ y => (c⁻¹ • (c • f)) y) (Ici (c * t₀)) := by
+    rwa [inv_smul_smul_field hc]
+  have hψ := isIntegralCurveOn_Ici_timeScale (inv_pos.mpr hc) hφ'
+  rw [inv_inv, inv_mul_cancel_left₀ hc.ne'] at hψ
+  exact ⟨fun t => φ (t * c), by show φ (t₀ * c) = x₀; rw [mul_comm]; exact hφ0, hψ⟩
+
+/-- Time scaling by `c > 0` preserves forward completeness. -/
+@[powerlib_foundation] theorem forwardComplete_smul_iff {f : State n → State n} {c : ℝ}
+    (hc : 0 < c) : Flow.ForwardComplete (c • f) ↔ Flow.ForwardComplete f := by
+  refine ⟨fun h => ?_, ForwardComplete.timeScale hc⟩
+  have h' := ForwardComplete.timeScale (inv_pos.mpr hc) h
+  rwa [inv_smul_smul_field hc] at h'
+
+@[powerlib_foundation] theorem GlobalAsymptoticStable.timeScale {f : State n → State n}
+    {x : State n} {c : ℝ} (hc : 0 < c) (h : GlobalAsymptoticStable f x) :
+    GlobalAsymptoticStable (c • f) x := by
+  refine ⟨LyapunovStable.timeScale hc h.1, fun s₀ χ hχ => ?_⟩
+  have hlim := h.2 (c * s₀) _ (isIntegralCurveOn_Ici_timeScale hc hχ)
+  have hχ_eq : χ = (fun t => χ (t * c⁻¹)) ∘ fun s => c * s := by
+    funext s
+    simp [mul_inv_cancel_time hc]
+  rw [hχ_eq]
+  exact hlim.comp (tendsto_id.const_mul_atTop hc)
+
+/-- Time scaling by `c > 0` preserves LeanForControl's global asymptotic stability. -/
+@[powerlib_foundation] theorem globalAsymptoticStable_smul_iff {f : State n → State n}
+    {x : State n} {c : ℝ} (hc : 0 < c) :
+    GlobalAsymptoticStable (c • f) x ↔ GlobalAsymptoticStable f x := by
+  refine ⟨fun h => ?_, GlobalAsymptoticStable.timeScale hc⟩
+  have h' := GlobalAsymptoticStable.timeScale (inv_pos.mpr hc) h
+  rwa [inv_smul_smul_field hc] at h'
+
+/-- Time scaling by `c > 0` preserves global asymptotic stability with global existence. -/
+@[powerlib_foundation] theorem globallyAsymptoticallyStable_smul_iff {f : State n → State n}
+    {x : State n} {c : ℝ} (hc : 0 < c) :
+    Flow.GloballyAsymptoticallyStable (c • f) x ↔ Flow.GloballyAsymptoticallyStable f x := by
+  simp only [Flow.GloballyAsymptoticallyStable]
+  rw [isEquilibrium_smul_iff hc.ne', forwardComplete_smul_iff hc,
+    globalAsymptoticStable_smul_iff hc]
+
+/-- An exponential estimate `C e^{-a (t - t₀)}` on every solution segment of `f` is the estimate
+`C e^{-c a (s - s₀)}` on every solution segment of `c • f`. -/
+private lemma bound_timeScale {f : State n → State n} {x : State n} {c C a : ℝ} (hc : 0 < c)
+    (h : ∀ (t₀ t₁ : ℝ) (φ : ℝ → State n), IsTrajectoryOn φ f t₀ t₁ →
+      ∀ t ∈ Icc t₀ t₁, ‖φ t - x‖ ≤ C * Real.exp (-a * (t - t₀)) * ‖φ t₀ - x‖) :
+    ∀ (s₀ s₁ : ℝ) (χ : ℝ → State n), IsTrajectoryOn χ (c • f) s₀ s₁ →
+      ∀ s ∈ Icc s₀ s₁, ‖χ s - x‖ ≤ C * Real.exp (-(c * a) * (s - s₀)) * ‖χ s₀ - x‖ := by
+  intro s₀ s₁ χ hχ s hs
+  have hs' : c * s ∈ Icc (c * s₀) (c * s₁) :=
+    ⟨mul_le_mul_of_nonneg_left hs.1 hc.le, mul_le_mul_of_nonneg_left hs.2 hc.le⟩
+  have := h (c * s₀) (c * s₁) _ (isTrajectoryOn_timeScale hc hχ) (c * s) hs'
+  simp only [mul_inv_cancel_time hc] at this
+  have hexp : -a * (c * s - c * s₀) = -(c * a) * (s - s₀) := by ring
+  rwa [hexp] at this
+
+@[powerlib_foundation] theorem Decay.timeScale {f : State n → State n} {x : State n}
+    {c a : ℝ} (hc : 0 < c) (h : Flow.Decay f x a) : Flow.Decay (c • f) x (c * a) := by
+  obtain ⟨C, hC⟩ := h
+  exact ⟨C, bound_timeScale hc hC⟩
+
+/-- **Decay rates scale with time.** For `c > 0`, `f` decays at the rate `a` exactly when `c • f`
+decays at the rate `c a`. -/
+@[powerlib_foundation] theorem decay_smul_iff {f : State n → State n} {x : State n} {c a : ℝ}
+    (hc : 0 < c) : Flow.Decay (c • f) x (c * a) ↔ Flow.Decay f x a := by
+  refine ⟨fun h => ?_, Decay.timeScale hc⟩
+  have h' := Decay.timeScale (inv_pos.mpr hc) h
+  rwa [inv_smul_smul_field hc, inv_mul_cancel_left₀ hc.ne'] at h'
+
+@[powerlib_foundation] theorem GloballyExponentiallyStable.timeScale {f : State n → State n}
+    {x : State n} {c : ℝ} (hc : 0 < c) (h : Flow.GloballyExponentiallyStable f x) :
+    Flow.GloballyExponentiallyStable (c • f) x := by
+  obtain ⟨heq, hfc, C, a, hC, ha, hdecay⟩ := h
+  exact ⟨(isEquilibrium_smul_iff hc.ne').mpr heq, ForwardComplete.timeScale hc hfc, C, c * a, hC,
+    mul_pos hc ha, bound_timeScale hc hdecay⟩
+
+/-- Time scaling by `c > 0` preserves global exponential stability (the rate scales by `c`). -/
+@[powerlib_foundation] theorem globallyExponentiallyStable_smul_iff {f : State n → State n}
+    {x : State n} {c : ℝ} (hc : 0 < c) :
+    Flow.GloballyExponentiallyStable (c • f) x ↔ Flow.GloballyExponentiallyStable f x := by
+  refine ⟨fun h => ?_, GloballyExponentiallyStable.timeScale hc⟩
+  have h' := GloballyExponentiallyStable.timeScale (inv_pos.mpr hc) h
+  rwa [inv_smul_smul_field hc] at h'
+
+@[powerlib_foundation] theorem Conservative.timeScale {f : State n → State n} {x : State n}
+    {c : ℝ} (hc : 0 < c) (h : Flow.Conservative f x) : Flow.Conservative (c • f) x := by
+  obtain ⟨V, hV, hmin, hcons⟩ := h
+  refine ⟨V, hV, hmin, fun s₀ s₁ χ hχ s hs => ?_⟩
+  have hs' : c * s ∈ Icc (c * s₀) (c * s₁) :=
+    ⟨mul_le_mul_of_nonneg_left hs.1 hc.le, mul_le_mul_of_nonneg_left hs.2 hc.le⟩
+  have := hcons (c * s₀) (c * s₁) _ (isTrajectoryOn_timeScale hc hχ) (c * s) hs'
+  simpa [mul_inv_cancel_time hc] using this
+
+/-- Time scaling by `c > 0` preserves conservation, with the same energy. -/
+@[powerlib_foundation] theorem conservative_smul_iff {f : State n → State n} {x : State n}
+    {c : ℝ} (hc : 0 < c) : Flow.Conservative (c • f) x ↔ Flow.Conservative f x := by
+  refine ⟨fun h => ?_, Conservative.timeScale hc⟩
+  have h' := Conservative.timeScale (inv_pos.mpr hc) h
+  rwa [inv_smul_smul_field hc] at h'
+
+private lemma contraction_timeScale {f : State n → State n} {x : State n} {c T ρ : ℝ}
+    (hc : 0 < c)
+    (h : ∀ (t₀ : ℝ) (φ : ℝ → State n), IsTrajectoryOn φ f t₀ (t₀ + c * T) →
+      ‖φ (t₀ + c * T) - x‖ ≤ ρ * ‖φ t₀ - x‖) :
+    ∀ (s₀ : ℝ) (χ : ℝ → State n), IsTrajectoryOn χ (c • f) s₀ (s₀ + T) →
+      ‖χ (s₀ + T) - x‖ ≤ ρ * ‖χ s₀ - x‖ := by
+  intro s₀ χ hχ
+  have hψ := isTrajectoryOn_timeScale hc hχ
+  rw [mul_add] at hψ
+  have := h (c * s₀) _ hψ
+  have e : (c * s₀ + c * T) * c⁻¹ = s₀ + T := by rw [← mul_add]; exact mul_inv_cancel_time hc _
+  simpa only [e, mul_inv_cancel_time hc] using this
+
+/-- **Sampling horizons scale inversely with time.** For `c > 0` the solutions of `c • f` contract
+by the factor `ρ` over the horizon `T` exactly when the solutions of `f` contract by `ρ` over the
+horizon `c T`: a contraction horizon `T` of `f` is the horizon `T / c` of `c • f`. -/
+@[powerlib_foundation] theorem contraction_smul_iff {f : State n → State n} {x : State n} {c : ℝ}
+    (hc : 0 < c) (T ρ : ℝ) :
+    (∀ (s₀ : ℝ) (χ : ℝ → State n), IsTrajectoryOn χ (c • f) s₀ (s₀ + T) →
+        ‖χ (s₀ + T) - x‖ ≤ ρ * ‖χ s₀ - x‖) ↔
+      ∀ (t₀ : ℝ) (φ : ℝ → State n), IsTrajectoryOn φ f t₀ (t₀ + c * T) →
+        ‖φ (t₀ + c * T) - x‖ ≤ ρ * ‖φ t₀ - x‖ := by
+  refine ⟨fun h => ?_, contraction_timeScale hc⟩
+  have h' := contraction_timeScale (f := c • f) (T := c * T) (inv_pos.mpr hc)
+    (by rwa [inv_mul_cancel_left₀ hc.ne'])
+  rwa [inv_smul_smul_field hc] at h'
+
+/-- **Sampled contraction under time scaling.** For `c > 0`, sampled contraction of `c • f` is
+contraction of the solutions of `f` over a horizon `c k`, `k` a positive integer. -/
+@[powerlib_foundation] theorem sampledContraction_smul_iff {f : State n → State n} {x : State n}
+    {c : ℝ} (hc : 0 < c) :
+    Flow.SampledContraction (c • f) x ↔ ∃ k : ℕ, 0 < k ∧ ∃ ρ < 1, ∀ (t₀ : ℝ) (φ : ℝ → State n),
+      IsTrajectoryOn φ f t₀ (t₀ + c * k) → ‖φ (t₀ + c * k) - x‖ ≤ ρ * ‖φ t₀ - x‖ :=
+  exists_congr fun k => and_congr_right fun _ => exists_congr fun ρ =>
+    and_congr_right fun _ => contraction_smul_iff hc k ρ
+
 end TimeScale
+
+end powerlib.Dynamics
+
+/-! ### The time-scaled sentence -/
+
+namespace powerlib.Flow
+
+/-- The sentence `P` read in the time `τ = t / c`: a decay rate `a` becomes `c a`; every other
+sentence keeps its form. -/
+def Property.timeScale (c : ℝ) : Property → Property
+  | .decay a => .decay (c * a)
+  | P => P
+
+@[simp, powerlib_foundation] theorem Property.timeScale_decay (c a : ℝ) :
+    (Property.decay a).timeScale c = .decay (c * a) := rfl
+
+@[simp, powerlib_foundation] theorem Property.timeScale_one (P : Property) : P.timeScale 1 = P := by
+  cases P <;> simp [Property.timeScale]
+
+@[simp, powerlib_foundation] theorem Property.timeScale_timeScale (P : Property) (c d : ℝ) :
+    (P.timeScale c).timeScale d = P.timeScale (d * c) := by
+  cases P <;> simp [Property.timeScale, mul_assoc]
+
+/-- Time scaling keeps the attractive sentences. -/
+@[simp, powerlib_foundation] theorem Property.attractive_timeScale (P : Property) (c : ℝ) :
+    (P.timeScale c).Attractive ↔ P.Attractive := by
+  cases P <;> rfl
+
+end powerlib.Flow
+
+namespace powerlib.Dynamics
+
+variable {n : ℕ}
+
+/-- **Time scaling law.** For `c > 0`, every behavioural sentence `P` other than sampled
+contraction holds for `f` at `x` exactly when its time-scaled form `P.timeScale c` holds for
+`c • f` (the field in the time `τ = t / c`): Lyapunov stability, instability, local and global
+asymptotic and exponential stability and conservation are invariant, and decay at the rate `a`
+is decay at the rate `c a`. Sampled contraction: `sampledContraction_smul_iff`. -/
+@[powerlib_foundation] theorem holds_timeScale_iff {f : State n → State n} {x : State n} {c : ℝ}
+    (hc : 0 < c) {P : Flow.Property} (hP : P ≠ .contractive) :
+    (P.timeScale c).holds (c • f) x ↔ P.holds f x := by
+  cases P with
+  | lyapunovStable => exact lyapunovStable_smul_iff hc
+  | locallyAsymptoticallyStable => exact localAsymptoticStable_smul_iff hc
+  | locallyExponentiallyStable => exact locallyExponentiallyStable_smul_iff hc
+  | globallyAsymptoticallyStable => exact globallyAsymptoticallyStable_smul_iff hc
+  | globallyExponentiallyStable => exact globallyExponentiallyStable_smul_iff hc
+  | unstable => exact unstable_smul_iff hc
+  | decay a => exact decay_smul_iff hc
+  | contractive => exact absurd rfl hP
+  | conservative => exact conservative_smul_iff hc
+
+/-- **Time scaling of linear fields.** For `c > 0` every flow sentence `P` holds for the linear
+field of `A` at its centre exactly when `P.timeScale c` holds for the linear field of `c A`;
+sampled contraction is invariant here, since for linear fields it is the Hurwitz property. -/
+@[powerlib_foundation] theorem holds_timeScale_linear_iff {c : ℝ} (hc : 0 < c)
+    (A : Matrix (Fin n) (Fin n) ℝ) (e : State n) (P : Flow.Property) :
+    (P.timeScale c).holds (LinearSystems.affineLinearVectorField (c • A) e) e ↔
+      P.holds (LinearSystems.affineLinearVectorField A e) e := by
+  have hfield : LinearSystems.affineLinearVectorField (c • A) e =
+      c • LinearSystems.affineLinearVectorField A e := by
+    funext y
+    simp [LinearSystems.affineLinearVectorField]
+  by_cases hP : P = .contractive
+  · subst hP
+    change Flow.SampledContraction _ e ↔ Flow.SampledContraction _ e
+    rw [Linear.sampledContraction_iff_isHurwitz, Linear.sampledContraction_iff_isHurwitz,
+      ← Linear.holds_iff_isHurwitz e Flow.Property.attractive_locallyExponentiallyStable,
+      ← Linear.holds_iff_isHurwitz e Flow.Property.attractive_locallyExponentiallyStable, hfield]
+    exact locallyExponentiallyStable_smul_iff hc
+  · rw [hfield]
+    exact holds_timeScale_iff hc hP
 
 end powerlib.Dynamics

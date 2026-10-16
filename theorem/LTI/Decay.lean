@@ -1,5 +1,6 @@
 import theorem.Linear.Transfer
 import theorem.Linear.Stability
+import theorem.Linear.EigenMap
 
 /-! # Hurwitz matrices and exponential decay of linear solutions (foundation)
 
@@ -29,7 +30,8 @@ Results.
 * `not_decay_of_eigenvector`: a real eigenvector `A v = μ v`, `v ≠ 0`, with `−a < μ` excludes
   `Flow.Decay` of the linear field at the rate `a`.
 * Spectral facts: `isHurwitz_sub_smul_one` (if every eigenvalue has real part `< c`, `A − c I` is
-  Hurwitz); `spectrallyStable_of_real_pairs` (spectral stability from real eigen-pairs);
+  Hurwitz; the shift is the Möbius map `λ ↦ λ − c`, `Linear.isHurwitz_mobius_iff`);
+  `spectrallyStable_of_real_pairs` (spectral stability from real eigen-pairs);
   `tendsto_of_spectrallyStable` (on any finite index type, a spectrally stable state matrix makes
   every constant-input forward solution converge to an equilibrium, by transport to `Fin N`).
 -/
@@ -252,14 +254,13 @@ then `A − c I` is Hurwitz. -/
 @[powerlib_foundation] theorem isHurwitz_sub_smul_one {d : ℕ} {A : Matrix (Fin d) (Fin d) ℝ}
     {c : ℝ} (h : ∀ (lam : ℂ) (v : Fin d → ℂ), v ≠ 0 → A.map (algebraMap ℝ ℂ) *ᵥ v = lam • v →
       lam.re < c) : LinearSystems.IsHurwitz (A - c • 1) := by
+  rw [Linear.isHurwitz_mobius_iff (A := A) (α := 1) (β := -c) (γ := 0) (δ := 1) (by norm_num)
+    (by simp) (by rw [zero_smul, zero_add, one_smul, Matrix.one_mul, one_smul, neg_smul,
+      sub_eq_add_neg])]
   intro lam v hv heig
-  have hmap : (A - c • (1 : Matrix (Fin d) (Fin d) ℝ)).map (algebraMap ℝ ℂ) =
-      A.map (algebraMap ℝ ℂ) - (c : ℂ) • 1 := by
-    ext i j; simp [Matrix.one_apply]; split_ifs <;> simp
-  rw [hmap, sub_mulVec, smul_mulVec, one_mulVec, sub_eq_iff_eq_add, ← add_smul] at heig
-  have := h _ v hv heig
-  simp only [Complex.add_re, Complex.ofReal_re] at this
-  simp only [neg_zero]
+  have := h lam v hv heig
+  simp only [Complex.ofReal_one, Complex.ofReal_zero, Complex.ofReal_neg, one_mul, zero_mul,
+    zero_add, div_one, Complex.add_re, Complex.neg_re, Complex.ofReal_re]
   linarith
 
 /-- Spectral stability from real eigen-pairs: if every real pair `(a, b)` with

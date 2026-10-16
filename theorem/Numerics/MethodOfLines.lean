@@ -1,5 +1,6 @@
 import theorem.DAE.Linear
 import theorem.Linear.Stability
+import theorem.Linear.EigenMap
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-! # Method of lines: the 1-D heat Laplacian, stencils, boundary closures, port coupling
@@ -257,27 +258,10 @@ def eigval (M k : ℕ) : ℝ := -4 * Real.sin (k * π / (2 * (M + 1))) ^ 2
 /-- The state matrix of the zero-Dirichlet MoL of `u_t = ν u_xx`: `u̇ = (ν/Δx²) T u`. -/
 def heatMOL (ν Δx : ℝ) (M : ℕ) : Matrix (Fin M) (Fin M) ℝ := (ν / Δx ^ 2) • lapT M
 
+/-- A positive multiple of the Hurwitz matrix `T` (`Linear.isHurwitz_smul_iff`). -/
 @[powerlib_foundation] theorem heatMOL_isHurwitz {ν Δx : ℝ} (hν : 0 < ν) (hΔ : Δx ≠ 0) (M : ℕ) :
-    LinearSystems.IsHurwitz (heatMOL ν Δx M) := by
-  intro lam x hx heig
-  have hc : (0 : ℝ) < ν / Δx ^ 2 := by positivity
-  have hc' : ((ν / Δx ^ 2 : ℝ) : ℂ) ≠ 0 := by exact_mod_cast hc.ne'
-  have hmap : ((ν / Δx ^ 2) • lapT M).map (algebraMap ℝ ℂ) =
-      ((ν / Δx ^ 2 : ℝ) : ℂ) • (lapT M).map (algebraMap ℝ ℂ) := by
-    ext i j; simp
-  have heig' : (lapT M).map (algebraMap ℝ ℂ) *ᵥ x = (lam / (ν / Δx ^ 2 : ℝ)) • x := by
-    have h := heig
-    simp only [heatMOL] at h
-    rw [hmap, smul_mulVec] at h
-    rw [← inv_smul_smul₀ hc' ((lapT M).map (algebraMap ℝ ℂ) *ᵥ x), h, smul_smul,
-      ← div_eq_inv_mul]
-  obtain ⟨k, hk⟩ := eigenvalue_lapT hx heig'
-  have hneg := eigval_neg (M := M) (k := k + 1) (by omega) (by omega)
-  have hlam : lam = ((ν / Δx ^ 2 * eigval M (k + 1) : ℝ) : ℂ) := by
-    rw [div_eq_iff hc'] at hk
-    rw [hk]; push_cast; ring
-  rw [hlam, Complex.ofReal_re]
-  simpa using mul_neg_of_pos_of_neg hc hneg
+    LinearSystems.IsHurwitz (heatMOL ν Δx M) :=
+  (Linear.isHurwitz_smul_iff (by positivity) (lapT M)).2 (lapT_isHurwitz M)
 
 /-- The zero-Dirichlet semi-discrete heat equation is globally exponentially stable. -/
 @[powerlib_foundation] theorem heatMOL_exponentiallyStable {ν Δx : ℝ} (hν : 0 < ν) (hΔ : Δx ≠ 0)

@@ -1,4 +1,7 @@
 import theorem.Circuits.Interconnection
+import theorem.Dynamics.Transport
+import theorem.Linear.EigenMap
+import theorem.LTI.Plant
 import theorem.TMIO.ClaimElab
 
 /-! # Changes of bases of linear port models
@@ -33,7 +36,11 @@ Results.
   (`solves_rebaseMatrix_iff`, `τ = w t`, `x̂ = T x`); spectral stability, the Hurwitz property and
   the attractive sentences are invariant for `w > 0` (`spectrallyStable_rebaseMatrix_iff`,
   `isHurwitz_rebaseMatrix_iff`, `holds_rebaseMatrix_iff`), every flow sentence for `w = 1`
-  (`holds_rebaseMatrix_one_iff`); `transfer_rebase`: `Ĝ(ŝ) = T_y G(w ŝ) S_u`.
+  (`holds_rebaseMatrix_one_iff`), and for every `w > 0` every flow sentence with its decay rate
+  scaled by `w` (`holds_rebaseMatrix_timeScale_iff`, through the time-scaling law
+  `Dynamics.holds_timeScale_linear_iff`); `transfer_rebase`: `Ĝ(ŝ) = T_y G(w ŝ) S_u`. Scaling and
+  similarity of spectra are the generic eigenvalue maps of `theorem/Linear/EigenMap.lean`
+  (`spectrallyStable_smul_iff`, `spectrallyStable_conj_iff`).
 * Interconnections: the closed-loop state, input and output blocks of the rebased components are
   the rebased blocks (`closedLoopBlocks_rebase`, `inputBlocks_rebase`, `outputBlocks_rebase`; only
   the port bases need inverses), hence the closed loop is the rebased closed loop
@@ -46,14 +53,23 @@ Results.
   direction convention `flipCurrent` reverses the injected current and leaves the closed-loop
   state matrix unchanged (`closedLoop_flipCurrent`), negates the source impedance and the load
   admittance (`sourceImpedance_flipCurrent`, `loadAdmittance_flipCurrent`) and keeps the return
-  difference (`returnDifference_flipCurrent`). Port passivity is not preserved by a change of port
-  bases (reversing the current reverses the supplied power) and is not claimed.
+  difference (`returnDifference_flipCurrent`). Reversing the output sign of one plant,
+  `LTI.negOutput` (`Y^IN = −Y^OUT`), is the output basis `−1` (`plant_negOutput`). Port passivity
+  is not preserved by a change of port bases (reversing the current reverses the supplied power)
+  and is not claimed.
+* Port bases over any commutative ring: `det_one_add_mul_rebase`, `det(1 + (T_v Z S_i)(T_i Y S_v))
+  = det(1 + Z Y)`; complex bases such as the dq ↔ sequence form
+  (`Transform.returnDifference_toSeq`) are instances.
 
 Family and connection conclusions.
 * `den_rebase`: on the interconnection family, the denotation of every attractive sentence and of
   sampled contraction is its own pull-back along any change of bases with invertible bases and
   positive time base.
 * `den_rebase_unitTime`: with the time base `1`, every flow sentence.
+* `den_rebase_timeScale`: with any positive time base `w`, every flow sentence, rescaled: the
+  rebased interconnections satisfying `P` are those whose original satisfies `P.timeScale w` (a
+  decay rate `a` per unit of `τ = w t` is the rate `w a` per unit of `t`; the other sentences are
+  unchanged).
 * `den_flipCurrent`: the two current direction conventions denote the same interconnections for
   every flow sentence.
 -/
@@ -162,25 +178,20 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
     Matrix.one_apply, smul_eq_mul, Complex.coe_algebraMap]
   split_ifs <;> push_cast <;> field_simp
 
-/-- Scaling the state matrix by a positive constant does not change spectral stability. -/
+/-- Scaling the state matrix by a positive constant does not change spectral stability (the
+eigenvalues scale, `Linear.forall_eigen_smul_iff`). -/
 @[powerlib_foundation] theorem spectrallyStable_smul_iff {c : ℝ} (hc : 0 < c) (A : Matrix ι ι ℝ) :
     SpectrallyStable (c • A) ↔ SpectrallyStable A := by
-  have hc' : (c : ℂ) ≠ 0 := by exact_mod_cast hc.ne'
-  have hdet (s : ℂ) : (characteristicMatrix (c • A) s).det = 0 ↔
-      (characteristicMatrix A (s / c)).det = 0 := by
-    rw [characteristicMatrix_smul hc.ne', Matrix.det_smul]
-    simp [hc']
+  rw [spectrallyStable_iff_forall_eigen, spectrallyStable_iff_forall_eigen]
+  refine (forall_eigen_smul_iff hc.ne' A fun μ => μ.re < 0).trans
+    (forall₄_congr fun lam v _ _ => ?_)
+  show ((c : ℂ) * lam).re < 0 ↔ lam.re < 0
+  rw [Complex.re_ofReal_mul]
   constructor
-  · intro h s hs
-    have h1 := h (s * c) ((hdet _).2 (by rwa [mul_div_cancel_right₀ _ hc']))
-    have hre : (s * (c : ℂ)).re = s.re * c := by simp
-    rw [hre] at h1
-    exact (mul_neg_iff.mp h1).elim (fun h => absurd h.2 (not_lt.mpr hc.le)) (fun h => h.1)
-  · intro h s hs
-    have h1 := h _ ((hdet s).1 hs)
-    have hre : (s / (c : ℂ)).re = s.re / c := by simp [Complex.div_ofReal_re]
-    rw [hre] at h1
-    exact (div_neg_iff.mp h1).elim (fun h => absurd h.2 (not_lt.mpr hc.le)) (fun h => h.1)
+  · intro h
+    by_contra h'
+    exact absurd h (not_lt.mpr (mul_nonneg hc.le (not_lt.mp h')))
+  · exact mul_neg_of_pos_of_neg hc
 
 /-- A similarity on an arbitrary finite index conjugates the characteristic matrix. -/
 @[powerlib_foundation] theorem characteristicMatrix_conj' {T S : Matrix ι ι ℝ} (hTS : T * S = 1)
@@ -190,18 +201,29 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
   simp only [characteristicMatrix, Matrix.map_mul, Matrix.mul_sub, Matrix.sub_mul,
     Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one, complexify_mul_eq_one hTS]
 
-/-- A similarity on an arbitrary finite index preserves spectral stability. -/
-@[powerlib_foundation] theorem spectrallyStable_conj_iff {T S : Matrix ι ι ℝ} (hTS : T * S = 1)
+/-- A similarity on an arbitrary finite index preserves spectral stability (it keeps the
+characteristic polynomial, `Linear.spectrallyStable_conj`). -/
+@[powerlib_foundation] theorem spectrallyStable_conj_iff {T S : Matrix ι ι ℝ} (_hTS : T * S = 1)
     (hST : S * T = 1) (A : Matrix ι ι ℝ) :
-    SpectrallyStable (T * A * S) ↔ SpectrallyStable A := by
-  simp only [SpectrallyStable, characteristicMatrix_conj' hTS,
-    Matrix.det_conj_of_mul_eq_one (complexify_mul_eq_one hTS) (complexify_mul_eq_one hST)]
+    SpectrallyStable (T * A * S) ↔ SpectrallyStable A :=
+  spectrallyStable_conj hST A
 
 omit [DecidableEq ι] in
 @[powerlib_foundation] theorem hasDerivAt_mulVec (M : Matrix ι ι ℝ) {x : ℝ → ι → ℝ} {x' : ι → ℝ}
     {t : ℝ} (hx : HasDerivAt x x' t) : HasDerivAt (fun s => M *ᵥ x s) (M *ᵥ x') t := by
   have h := (LinearMap.toContinuousLinearMap (Matrix.mulVecLin M)).hasFDerivAt.comp_hasDerivAt t hx
   simpa [Function.comp_def] using h
+
+/-- **The return difference does not see the port bases.** For voltage coordinates `T_v` with
+inverse `S_v` and current coordinates `T_i` with left inverse `S_i`, over any commutative ring
+(complex bases included), `det(1 + (T_v Z S_i)(T_i Y S_v)) = det(1 + Z Y)`. -/
+@[powerlib_foundation] theorem det_one_add_mul_rebase {R : Type*} [CommRing R]
+    {Tv Sv Ti Si : Matrix ι ι R} (hTv : Tv * Sv = 1) (hSv : Sv * Tv = 1) (hi : Si * Ti = 1)
+    (Z Y : Matrix ι ι R) : (1 + Tv * Z * Si * (Ti * Y * Sv)).det = (1 + Z * Y).det := by
+  have hconj : 1 + Tv * Z * Si * (Ti * Y * Sv) = Tv * (1 + Z * Y) * Sv := by
+    simp only [Matrix.mul_add, Matrix.add_mul, Matrix.mul_one, Matrix.mul_assoc, hTv]
+    rw [← Matrix.mul_assoc Si Ti, hi, Matrix.one_mul]
+  rw [hconj, Matrix.det_conj_of_mul_eq_one hTv hSv]
 
 /-! ## The rebased state matrix -/
 
@@ -283,6 +305,18 @@ and every positive time base. -/
   rw [rebaseMatrix, inv_one, one_smul]
   exact holds_conj P hTS hST A
 
+/-- For every positive time base, every flow sentence of the linear field is the rebased one with
+its decay rate scaled by `w`: `P` holds for the rebased field exactly when `P.timeScale w` holds
+for the original. -/
+@[powerlib_foundation] theorem holds_rebaseMatrix_timeScale_iff (hTS : T * S = 1)
+    (hST : S * T = 1) (hw : 0 < w) (A : Matrix (Fin n) (Fin n) ℝ) (P : Flow.Property) :
+    P.holds (affineLinearVectorField (rebaseMatrix T S w A) 0) 0 ↔
+      (P.timeScale w).holds (affineLinearVectorField A 0) 0 := by
+  have h := Dynamics.holds_timeScale_linear_iff (inv_pos.mpr hw) (T * A * S) 0 (P.timeScale w)
+  rw [Flow.Property.timeScale_timeScale, inv_mul_cancel₀ hw.ne', Flow.Property.timeScale_one] at h
+  rw [rebaseMatrix, h]
+  exact holds_conj _ hTS hST A
+
 @[powerlib_foundation] theorem characteristicMatrix_rebaseMatrix (hTS : T * S = 1) (hw : w ≠ 0)
     (A : Matrix (Fin n) (Fin n) ℝ) (s : ℂ) :
     characteristicMatrix (rebaseMatrix T S w A) s =
@@ -300,6 +334,13 @@ def plant (m : Plant n p) (T S : Matrix (Fin n) (Fin n) ℝ) (w : ℝ)
 private lemma complexify_smul (c : ℝ) {m' n' : Type*} (M : Matrix m' n' ℝ) :
     complexify (c • M) = (c : ℂ) • complexify M := by
   ext i j; simp
+
+/-- Reversing the output sign of a plant (`LTI.negOutput`, read with the output as a port current
+the `Y^IN = −Y^OUT` translation) is the change of output basis `−1` with unit time base; its
+transfer matrix is `transfer_rebase` at this basis. -/
+@[powerlib_foundation] theorem plant_negOutput (m : Plant n p) :
+    plant m 1 1 1 1 (-1) = LTI.negOutput m := by
+  ext : 1 <;> simp [plant, rebaseMatrix, LTI.negOutput]
 
 /-- The transfer matrix in new bases: `Ĝ(ŝ) = T_y G(w ŝ) S_u`. -/
 @[powerlib_foundation] theorem transfer_rebase (hTS : T * S = 1) (hST : S * T = 1) (hw : w ≠ 0)
@@ -552,19 +593,10 @@ bases need inverses. -/
     (h₂ : β.S₂ * β.T₂ = 1) (hv : β.Sv * β.Tv = 1) (hi : β.Si * β.Ti = 1) (hw : β.w ≠ 0)
     (s : ℂ) :
     (interconnection ic β).returnDifference s = ic.returnDifference (s * β.w) := by
-  have hTv : complexify β.Tv * complexify β.Sv = 1 :=
-    complexify_mul_eq_one (mul_eq_one_comm.mp hv)
-  have hSv : complexify β.Sv * complexify β.Tv = 1 := complexify_mul_eq_one hv
-  have hSi : complexify β.Si * complexify β.Ti = 1 := complexify_mul_eq_one hi
   simp only [Interconnection.returnDifference, sourceImpedance_rebase h₁ hw,
     loadAdmittance_rebase h₂ hw]
-  have hconj : 1 + complexify β.Tv * ic.sourceImpedance (s * β.w) * complexify β.Si *
-      (complexify β.Ti * ic.loadAdmittance (s * β.w) * complexify β.Sv) =
-      complexify β.Tv *
-        (1 + ic.sourceImpedance (s * β.w) * ic.loadAdmittance (s * β.w)) * complexify β.Sv := by
-    simp only [Matrix.mul_add, Matrix.add_mul, Matrix.mul_one, Matrix.mul_assoc, hTv]
-    rw [← Matrix.mul_assoc (complexify β.Si) (complexify β.Ti), hSi, Matrix.one_mul]
-  rw [hconj, Matrix.det_conj_of_mul_eq_one hTv hSv]
+  exact det_one_add_mul_rebase (complexify_mul_eq_one (mul_eq_one_comm.mp hv))
+    (complexify_mul_eq_one hv) (complexify_mul_eq_one hi) _ _
 
 /-- The impedance criterion is invariant under every change of bases with positive time base. -/
 @[powerlib_foundation] theorem impedanceStable_rebase_iff (h₁ : β.S₁ * β.T₁ = 1)
@@ -673,6 +705,25 @@ invertible bases. -/
   exact (holds_rebaseMatrix_one_iff
     (blockCoordinates_inv (mul_eq_one_comm.mp h₁) (mul_eq_one_comm.mp h₂))
     (blockCoordinates_inv h₁ h₂) _ P).symm
+
+/-- Stable together in every bases, every sentence: on the interconnection family, for any change
+of bases with invertible bases and positive time base `w`, the rebased interconnections that
+satisfy a flow sentence `P` are those whose original satisfies `P.timeScale w` (decay at the rate
+`a` per unit of the rebased time `τ = w t` is decay at the rate `w a` per unit of `t`; every other
+sentence is unchanged). -/
+@[powerlib_domain] theorem den_rebase_timeScale {β : Bases n₁ n₂ p} (h₁ : β.S₁ * β.T₁ = 1)
+    (h₂ : β.S₂ * β.T₂ = 1) (hv : β.Sv * β.Tv = 1) (hi : β.Si * β.Ti = 1) (hw : 0 < β.w)
+    (P : Flow.Property) :
+    connection% ((Interconnection.family (n₁ := n₁) (n₂ := n₂) (p := p)).den
+        (.flow (P.timeScale β.w)) =
+      (fun ic => interconnection ic β) ⁻¹' Interconnection.family.den (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  ext ic
+  rw [Set.mem_preimage, Interconnection.family_isLinear.mem_den_flow,
+    Interconnection.family_isLinear.mem_den_flow, closedLoop_rebase hv hi]
+  exact (holds_rebaseMatrix_timeScale_iff
+    (blockCoordinates_inv (mul_eq_one_comm.mp h₁) (mul_eq_one_comm.mp h₂))
+    (blockCoordinates_inv h₁ h₂) hw _ P).symm
 
 /-- The two current direction conventions denote the same interconnections for every flow
 sentence. -/

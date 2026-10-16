@@ -1,4 +1,5 @@
 import theorem.LTI.Discrete
+import theorem.Linear.EigenMap
 
 /-! # One-step schemes for an autonomous field and their linear-field reduction
 
@@ -27,7 +28,10 @@ Results.
   `h > 0`.
 * `trapezoidal_schurStable_iff_isHurwitz` — when well posed, the trapezoidal recursion is Schur
   stable exactly when `A` is Hurwitz (A-stability with an exact stability region, through the
-  Cayley map `μ = (1 + hlam/2)/(1 - hlam/2)`).
+  Cayley map `μ = (1 + hlam/2)/(1 - hlam/2)`; `norm_one_add_div_one_sub_lt_one_iff`).
+* The matrix statements read the eigenvalues of the three one-step matrices through the generic
+  Möbius eigenvalue map `Linear.schurStable_mobius_iff` (`theorem/Linear/EigenMap.lean`): `1 + hλ`,
+  `1/(1 - hλ)` and `(1 + hλ/2)/(1 - hλ/2)`.
 * `backwardEuler_schurStable_of_isHurwitz` — Hurwitz implies Schur stability of backward Euler
   (one direction only: backward Euler also damps some unstable modes).
 * `forwardEuler_schurStable_iff` — forward Euler is Schur stable exactly when every eigenvalue
@@ -130,30 +134,6 @@ open LinearSystems
 
 variable {A : Matrix (Fin n) (Fin n) ℝ} {h : ℝ}
 
-@[powerlib_foundation] private lemma map_one_sub_smul (A : Matrix (Fin n) (Fin n) ℝ) (c : ℝ) :
-    (1 - c • A).map (algebraMap ℝ ℂ) = 1 - (c : ℂ) • A.map (algebraMap ℝ ℂ) := by
-  ext i j
-  by_cases hij : i = j <;> simp [hij]
-
-@[powerlib_foundation] private lemma map_one_add_smul (A : Matrix (Fin n) (Fin n) ℝ) (c : ℝ) :
-    (1 + c • A).map (algebraMap ℝ ℂ) = 1 + (c : ℂ) • A.map (algebraMap ℝ ℂ) := by
-  ext i j
-  by_cases hij : i = j <;> simp [hij]
-
-@[powerlib_foundation] private lemma complexify_mulVec (A : Matrix (Fin n) (Fin n) ℝ)
-    (v : Fin n → ℝ) :
-    A.map (algebraMap ℝ ℂ) *ᵥ (fun i => (v i : ℂ)) = fun i => ((A *ᵥ v) i : ℂ) := by
-  ext i
-  simp [Matrix.mulVec, dotProduct]
-
-@[powerlib_foundation] private lemma cmulVec_one_sub (M : Matrix (Fin n) (Fin n) ℂ) (c : ℂ)
-    (w : Fin n → ℂ) : (1 - c • M) *ᵥ w = w - c • (M *ᵥ w) := by
-  rw [Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec]
-
-@[powerlib_foundation] private lemma cmulVec_one_add (M : Matrix (Fin n) (Fin n) ℂ) (c : ℂ)
-    (w : Fin n → ℂ) : (1 + c • M) *ᵥ w = w + c • (M *ᵥ w) := by
-  rw [Matrix.add_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec]
-
 /-- Real part of the Cayley-type quotient `(w - 1)/(w + 1)`. -/
 @[powerlib_foundation] theorem re_sub_one_div_add_one (w : ℂ) :
     ((w - 1) / (w + 1)).re = (Complex.normSq w - 1) / Complex.normSq (w + 1) := by
@@ -162,75 +142,6 @@ variable {A : Matrix (Fin n) (Fin n) ℝ} {h : ℝ}
     Complex.one_im, sub_zero, add_zero, Complex.normSq_apply]
   ring
 
-/-- For a Hurwitz matrix and any `c > 0`, the implicit matrix `1 - cA` is invertible. -/
-@[powerlib_foundation] theorem isUnit_det_one_sub_smul_of_isHurwitz (hA : IsHurwitz A) {c : ℝ}
-    (hc : 0 < c) : IsUnit (1 - c • A).det := by
-  rw [isUnit_iff_ne_zero]
-  intro hdet
-  obtain ⟨v, hv, hz⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr hdet
-  rw [one_sub_smul_mulVec, sub_eq_zero] at hz
-  have hAv : A *ᵥ v = c⁻¹ • v := by
-    conv_rhs => rw [hz]
-    rw [smul_smul, inv_mul_cancel₀ hc.ne', one_smul]
-  have hw : (fun i => (v i : ℂ)) ≠ 0 := by
-    intro h0
-    apply hv
-    ext i
-    have := congrFun h0 i
-    simpa using this
-  have heig : A.map (algebraMap ℝ ℂ) *ᵥ (fun i => (v i : ℂ)) =
-      ((c⁻¹ : ℝ) : ℂ) • (fun i => (v i : ℂ)) := by
-    rw [complexify_mulVec, hAv]
-    ext i
-    simp
-  have hre := hA _ _ hw heig
-  simp only [Complex.ofReal_re, neg_zero] at hre
-  exact absurd hre (not_lt.mpr (inv_pos.mpr hc).le)
-
-/-- Trapezoidal rule: Hurwitz implies Schur stability for every `h > 0`. -/
-@[powerlib_foundation] theorem trapezoidal_schurStable_of_isHurwitz (hA : IsHurwitz A)
-    (hh : 0 < h) : LTI.SchurStable (trapezoidalMatrix h A) := by
-  have hP := isUnit_det_one_sub_smul_of_isHurwitz hA (half_pos hh)
-  intro μ v hv heig
-  have hPΦ : (1 - (h / 2) • A) * trapezoidalMatrix h A = 1 + (h / 2) • A := by
-    rw [trapezoidalMatrix, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hP, Matrix.one_mul]
-  have hc := congrArg (fun M => M.map (algebraMap ℝ ℂ) *ᵥ v) hPΦ
-  simp only [Matrix.map_mul, map_one_sub_smul, map_one_add_smul] at hc
-  rw [← Matrix.mulVec_mulVec, heig, cmulVec_one_sub, cmulVec_one_add, Matrix.mulVec_smul] at hc
-  set c : ℂ := ((h / 2 : ℝ) : ℂ) with hcdef
-  set u := A.map (algebraMap ℝ ℂ) *ᵥ v with hu
-  have hc0 : c ≠ 0 := by
-    rw [hcdef]; exact_mod_cast (half_pos hh).ne'
-  have hrel : (μ - 1) • v = (c * (μ + 1)) • u := by
-    have : μ • v - c • μ • u = v + c • u := hc
-    rw [sub_smul, one_smul, mul_smul, add_smul, one_smul, smul_add]
-    rw [smul_comm c μ u] at this
-    linear_combination (norm := module) this
-  have hμ1 : μ + 1 ≠ 0 := by
-    intro h0
-    have hm : μ - 1 = -2 := by linear_combination h0
-    rw [h0, mul_zero, zero_smul, hm] at hrel
-    exact hv (by simpa using hrel)
-  have hcμ : c * (μ + 1) ≠ 0 := mul_ne_zero hc0 hμ1
-  have hlam : u = ((μ - 1) / (c * (μ + 1))) • v := by
-    rw [div_eq_inv_mul, mul_smul, hrel, ← mul_smul, inv_mul_cancel₀ hcμ, one_smul]
-  have hre := hA _ v hv hlam
-  rw [neg_zero, div_mul_eq_div_div_swap, hcdef, Complex.div_ofReal_re,
-    re_sub_one_div_add_one] at hre
-  have hq : (Complex.normSq μ - 1) / Complex.normSq (μ + 1) < 0 := by
-    have := (div_lt_iff₀ (half_pos hh)).mp hre
-    simpa using this
-  have hns : 0 < Complex.normSq (μ + 1) := Complex.normSq_pos.mpr hμ1
-  have hlt : Complex.normSq μ < 1 := by
-    have := (div_lt_iff₀ hns).mp hq
-    linarith
-  rw [Complex.normSq_eq_norm_sq] at hlt
-  nlinarith [norm_nonneg μ]
-
-@[powerlib_foundation] private lemma map_one_complex :
-    (1 : Matrix (Fin n) (Fin n) ℝ).map (algebraMap ℝ ℂ) = 1 :=
-  Matrix.map_one _ (map_zero _) (map_one _)
-
 /-- `‖1 + w‖² - ‖1 - w‖² = 4 Re w`. -/
 @[powerlib_foundation] theorem normSq_one_add_sub_normSq_one_sub (w : ℂ) :
     Complex.normSq (1 + w) - Complex.normSq (1 - w) = 4 * w.re := by
@@ -238,100 +149,95 @@ variable {A : Matrix (Fin n) (Fin n) ℝ} {h : ℝ}
     Complex.add_im, Complex.sub_im, Complex.one_im]
   ring
 
+/-- The Cayley map `z ↦ (1 + z)/(1 - z)` sends the open left half plane onto the open unit disk:
+for `1 - z ≠ 0`, `‖(1 + z)/(1 - z)‖ < 1` exactly when `Re z < 0`. -/
+@[powerlib_foundation] theorem norm_one_add_div_one_sub_lt_one_iff {z : ℂ} (hz : 1 - z ≠ 0) :
+    ‖(1 + z) / (1 - z)‖ < 1 ↔ z.re < 0 := by
+  have hpos : 0 < ‖1 - z‖ := norm_pos_iff.mpr hz
+  have key := normSq_one_add_sub_normSq_one_sub z
+  rw [norm_div, div_lt_one hpos, ← sq_lt_sq₀ (norm_nonneg _) hpos.le,
+    ← Complex.normSq_eq_norm_sq, ← Complex.normSq_eq_norm_sq]
+  constructor <;> intro h <;> linarith
+
+/-- `1 - cA = (-c) A + 1`, the denominator of the implicit schemes in Möbius form. -/
+private lemma one_sub_smul_eq (c : ℝ) :
+    (1 : Matrix (Fin n) (Fin n) ℝ) - c • A = (-c) • A + (1 : ℝ) • 1 := by
+  rw [neg_smul, one_smul, neg_add_eq_sub]
+
+/-- For a Hurwitz matrix and any `c > 0`, the implicit matrix `1 - cA` is invertible. -/
+@[powerlib_foundation] theorem isUnit_det_one_sub_smul_of_isHurwitz (hA : IsHurwitz A) {c : ℝ}
+    (hc : 0 < c) : IsUnit (1 - c • A).det := by
+  rw [one_sub_smul_eq]
+  refine Linear.isUnit_det_affine_of_forall_eigen (neg_ne_zero.mpr hc.ne')
+    fun lam v hv heig h0 => ?_
+  have hre := Linear.isHurwitz_iff_forall_eigen.mp hA lam v hv heig
+  have h1 := congrArg Complex.re h0
+  simp only [Complex.add_re, Complex.re_ofReal_mul, Complex.one_re, Complex.ofReal_one,
+    Complex.zero_re] at h1
+  nlinarith
+
+/-- The trapezoidal matrix is the Möbius image `(1 - (h/2) A)⁻¹ (1 + (h/2) A)` of `A`. -/
+private lemma trapezoidal_mobius (hP : IsUnit (1 - (h / 2) • A).det) :
+    ((-(h / 2)) • A + (1 : ℝ) • 1) * trapezoidalMatrix h A = (h / 2) • A + (1 : ℝ) • 1 := by
+  rw [← one_sub_smul_eq, trapezoidalMatrix, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hP,
+    Matrix.one_mul, one_smul, add_comm]
+
+/-- The trapezoidal recursion is Schur stable exactly when `A` is Hurwitz (for `h > 0` and a
+well-posed implicit step): the Cayley map `λ ↦ (1 + hλ/2)/(1 - hλ/2)` of the eigenvalues
+(`Linear.schurStable_mobius_iff`, `norm_one_add_div_one_sub_lt_one_iff`). -/
+@[powerlib_foundation] theorem trapezoidal_schurStable_iff_isHurwitz (hh : 0 < h)
+    (hP : IsUnit (1 - (h / 2) • A).det) :
+    LTI.SchurStable (trapezoidalMatrix h A) ↔ IsHurwitz A := by
+  have hQ : IsUnit ((-(h / 2)) • A + (1 : ℝ) • 1).det := by rwa [← one_sub_smul_eq]
+  have hM := trapezoidal_mobius hP
+  rw [Linear.schurStable_mobius_iff (by linarith) hQ hM, Linear.isHurwitz_iff_forall_eigen]
+  refine forall₄_congr fun lam v hv heig => ?_
+  have hz := (Linear.eigen_mobius hQ hM hv heig).1
+  have e : ((h / 2 : ℝ) : ℂ) * lam + ((1 : ℝ) : ℂ) = 1 + ((h / 2 : ℝ) : ℂ) * lam := by
+    push_cast; ring
+  have e' : ((-(h / 2) : ℝ) : ℂ) * lam + ((1 : ℝ) : ℂ) = 1 - ((h / 2 : ℝ) : ℂ) * lam := by
+    push_cast; ring
+  rw [e'] at hz
+  rw [e, e', norm_one_add_div_one_sub_lt_one_iff hz, Complex.re_ofReal_mul]
+  constructor
+  · intro h1
+    by_contra h2
+    exact absurd h1 (not_lt.mpr (mul_nonneg (half_pos hh).le (not_lt.mp h2)))
+  · exact mul_neg_of_pos_of_neg (half_pos hh)
+
+/-- Trapezoidal rule: Hurwitz implies Schur stability for every `h > 0`. -/
+@[powerlib_foundation] theorem trapezoidal_schurStable_of_isHurwitz (hA : IsHurwitz A)
+    (hh : 0 < h) : LTI.SchurStable (trapezoidalMatrix h A) :=
+  (trapezoidal_schurStable_iff_isHurwitz hh
+    (isUnit_det_one_sub_smul_of_isHurwitz hA (half_pos hh))).2 hA
+
 /-- Trapezoidal rule, converse: a well-posed Schur-stable trapezoidal recursion comes from a
 Hurwitz matrix.  Together with `trapezoidal_schurStable_of_isHurwitz` the trapezoidal rule
 neither creates nor destroys stability of `ẋ = A x`. -/
 @[powerlib_foundation] theorem isHurwitz_of_trapezoidal_schurStable (hh : 0 < h)
     (hP : IsUnit (1 - (h / 2) • A).det) (hS : LTI.SchurStable (trapezoidalMatrix h A)) :
-    IsHurwitz A := by
-  intro lam v hv heig
-  set c : ℂ := ((h / 2 : ℝ) : ℂ) with hcdef
-  set Ac := A.map (algebraMap ℝ ℂ) with hAc
-  set Pinv := ((1 - (h / 2) • A)⁻¹).map (algebraMap ℝ ℂ) with hPinv
-  have hPiP : Pinv * (1 - c • Ac) = 1 := by
-    rw [hPinv, hcdef, hAc, ← map_one_sub_smul, ← Matrix.map_mul, Matrix.nonsing_inv_mul _ hP,
-      map_one_complex]
-  have hPv : (1 - c • Ac) *ᵥ v = (1 - c * lam) • v := by
-    rw [cmulVec_one_sub, heig, smul_smul, sub_smul, one_smul]
-  have hQv : (1 + c • Ac) *ᵥ v = (1 + c * lam) • v := by
-    rw [cmulVec_one_add, heig, smul_smul, add_smul, one_smul]
-  have hback : ∀ w : Fin n → ℂ, w = Pinv *ᵥ ((1 - c • Ac) *ᵥ w) := by
-    intro w
-    rw [Matrix.mulVec_mulVec, hPiP, Matrix.one_mulVec]
-  have hd : 1 - c * lam ≠ 0 := by
-    intro h0
-    apply hv
-    rw [hback v, hPv, h0, zero_smul, Matrix.mulVec_zero]
-  have hPiv : Pinv *ᵥ v = (1 - c * lam)⁻¹ • v := by
-    have h1 := hback v
-    rw [hPv, Matrix.mulVec_smul] at h1
-    calc Pinv *ᵥ v = (1 - c * lam)⁻¹ • ((1 - c * lam) • Pinv *ᵥ v) := by
-          rw [smul_smul, inv_mul_cancel₀ hd, one_smul]
-      _ = (1 - c * lam)⁻¹ • v := by rw [← h1]
-  have hΦv : (trapezoidalMatrix h A).map (algebraMap ℝ ℂ) *ᵥ v =
-      ((1 + c * lam) / (1 - c * lam)) • v := by
-    rw [trapezoidalMatrix, Matrix.map_mul, ← hPinv, map_one_add_smul, ← hcdef, ← hAc,
-      ← Matrix.mulVec_mulVec, hQv, Matrix.mulVec_smul, hPiv, smul_smul, div_eq_mul_inv,
-      mul_comm (1 + c * lam)]
-  have hlt := hS _ v hv hΦv
-  rw [norm_div, div_lt_one (norm_pos_iff.mpr hd)] at hlt
-  have hsq : Complex.normSq (1 + c * lam) < Complex.normSq (1 - c * lam) := by
-    rw [Complex.normSq_eq_norm_sq, Complex.normSq_eq_norm_sq]
-    exact pow_lt_pow_left₀ hlt (norm_nonneg _) two_ne_zero
-  have hkey := normSq_one_add_sub_normSq_one_sub (c * lam)
-  rw [hcdef, Complex.re_ofReal_mul] at hkey
-  have : h / 2 * lam.re < 0 := by linarith
-  rw [neg_zero]
-  nlinarith [half_pos hh]
+    IsHurwitz A :=
+  (trapezoidal_schurStable_iff_isHurwitz hh hP).1 hS
 
-/-- The trapezoidal recursion is Schur stable exactly when `A` is Hurwitz (for `h > 0` and a
-well-posed implicit step). -/
-@[powerlib_foundation] theorem trapezoidal_schurStable_iff_isHurwitz (hh : 0 < h)
-    (hP : IsUnit (1 - (h / 2) • A).det) :
-    LTI.SchurStable (trapezoidalMatrix h A) ↔ IsHurwitz A :=
-  ⟨isHurwitz_of_trapezoidal_schurStable hh hP,
-    fun hA => trapezoidal_schurStable_of_isHurwitz hA hh⟩
-
-/-- Backward Euler: Hurwitz implies Schur stability for every `h > 0`. -/
+/-- Backward Euler: Hurwitz implies Schur stability for every `h > 0` (the eigenvalues map to
+`1/(1 - hλ)`, `Linear.schurStable_mobius_iff`). -/
 @[powerlib_foundation] theorem backwardEuler_schurStable_of_isHurwitz (hA : IsHurwitz A)
     (hh : 0 < h) : LTI.SchurStable (backwardEulerMatrix h A) := by
   have hP := isUnit_det_one_sub_smul_of_isHurwitz hA hh
-  intro μ v hv heig
-  have hPΦ : (1 - h • A) * backwardEulerMatrix h A = 1 := Matrix.mul_nonsing_inv _ hP
-  have hc := congrArg (fun M => M.map (algebraMap ℝ ℂ) *ᵥ v) hPΦ
-  simp only [Matrix.map_mul, map_one_sub_smul, map_one_complex] at hc
-  rw [← Matrix.mulVec_mulVec, heig, cmulVec_one_sub, Matrix.mulVec_smul,
-    Matrix.one_mulVec] at hc
-  set c : ℂ := (h : ℂ) with hcdef
-  set u := A.map (algebraMap ℝ ℂ) *ᵥ v with hu
-  have hc0 : c ≠ 0 := by rw [hcdef]; exact_mod_cast hh.ne'
-  have hrel : (μ - 1) • v = (c * μ) • u := by
-    have : μ • v - c • μ • u = v := hc
-    rw [sub_smul, one_smul, mul_smul]
-    rw [smul_comm c μ u] at this
-    linear_combination (norm := module) this
-  have hμ0 : μ ≠ 0 := by
-    intro h0
-    rw [h0, mul_zero, zero_smul, zero_sub, neg_smul, one_smul, neg_eq_zero] at hrel
-    exact hv hrel
-  have hcμ : c * μ ≠ 0 := mul_ne_zero hc0 hμ0
-  have hlam : u = ((μ - 1) / (c * μ)) • v := by
-    rw [div_eq_inv_mul, mul_smul, hrel, ← mul_smul, inv_mul_cancel₀ hcμ, one_smul]
-  have hre := hA _ v hv hlam
-  rw [neg_zero, div_mul_eq_div_div_swap, hcdef, Complex.div_ofReal_re] at hre
-  have hq : ((μ - 1) / μ).re < 0 := by
-    have := (div_lt_iff₀ hh).mp hre
-    simpa using this
-  have hsplit : (μ - 1) / μ = 1 - μ⁻¹ := by field_simp
-  rw [hsplit, Complex.sub_re, Complex.one_re, Complex.inv_re] at hq
-  have hns : 0 < Complex.normSq μ := Complex.normSq_pos.mpr hμ0
-  have h1 : Complex.normSq μ < μ.re := by
-    have := (lt_div_iff₀ hns).mp (by linarith : 1 < μ.re / Complex.normSq μ)
-    linarith
-  have h2 : μ.re ≤ ‖μ‖ := Complex.re_le_norm μ
-  rw [Complex.normSq_eq_norm_sq] at h1
-  have hpos : 0 < ‖μ‖ := norm_pos_iff.mpr hμ0
-  nlinarith
+  have hM : ((-h) • A + (1 : ℝ) • 1) * backwardEulerMatrix h A = (0 : ℝ) • A + (1 : ℝ) • 1 := by
+    rw [← one_sub_smul_eq, backwardEulerMatrix, Matrix.mul_nonsing_inv _ hP, zero_smul, zero_add,
+      one_smul]
+  rw [Linear.schurStable_mobius_iff (by simpa using hh.ne') (by rwa [← one_sub_smul_eq]) hM]
+  intro lam v hv heig
+  have hre := Linear.isHurwitz_iff_forall_eigen.mp hA lam v hv heig
+  have h1 : 1 < (((-h : ℝ) : ℂ) * lam + ((1 : ℝ) : ℂ)).re := by
+    simp only [Complex.add_re, Complex.re_ofReal_mul, Complex.ofReal_re]
+    nlinarith
+  have h2 := h1.trans_le (Complex.re_le_norm _)
+  simp only [Complex.ofReal_one] at h2
+  simp only [Complex.ofReal_zero, zero_mul, zero_add, Complex.ofReal_one, norm_div, norm_one]
+  rw [div_lt_one (by linarith)]
+  exact h2
 
 /-- Forward Euler is Schur stable exactly when every eigenvalue `λ` of `A` has
 `‖1 + hλ‖ < 1` (that is, `hλ` is in the open forward-Euler disk). -/
@@ -339,21 +245,10 @@ well-posed implicit step). -/
     LTI.SchurStable (forwardEulerMatrix h A) ↔
       ∀ (lam : ℂ) (v : Fin n → ℂ), v ≠ 0 → A.map (algebraMap ℝ ℂ) *ᵥ v = lam • v →
         ‖1 + (h : ℂ) * lam‖ < 1 := by
-  have hmap : (forwardEulerMatrix h A).map (algebraMap ℝ ℂ) =
-      1 + (h : ℂ) • A.map (algebraMap ℝ ℂ) := map_one_add_smul A h
-  constructor
-  · intro hS lam v hv heig
-    apply hS _ v hv
-    rw [hmap, cmulVec_one_add, heig, smul_smul, add_smul, one_smul]
-  · intro hF μ v hv heig
-    rw [hmap, cmulVec_one_add] at heig
-    have hc0 : (h : ℂ) ≠ 0 := by exact_mod_cast hh
-    have hlam : A.map (algebraMap ℝ ℂ) *ᵥ v = ((μ - 1) / (h : ℂ)) • v := by
-      have h1 : (h : ℂ) • (A.map (algebraMap ℝ ℂ) *ᵥ v) = (μ - 1) • v := by
-        rw [sub_smul, one_smul, ← heig]; abel
-      rw [div_eq_inv_mul, mul_smul, ← h1, smul_smul, inv_mul_cancel₀ hc0, one_smul]
-    have := hF _ v hv hlam
-    rwa [mul_div_cancel₀ _ hc0, add_sub_cancel] at this
+  rw [Linear.schurStable_mobius_iff (A := A) (α := h) (β := 1) (γ := 0) (δ := 1)
+    (by simpa using hh) (by simp) (by simp [forwardEulerMatrix, add_comm])]
+  refine forall₄_congr fun lam v _ _ => ?_
+  simp [add_comm]
 
 end Spectral
 
