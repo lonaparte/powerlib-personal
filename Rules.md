@@ -4,16 +4,33 @@ These rules define what PowerLib admits, how results are checked, and what its
 automation claims mean. They apply to the library, bridges, synthesizers,
 discovery tools, examples, tests, and public documentation.
 
-## 1. Agda foundation and Lean 4 theorem layer
+## 1. Agda scaffolding and the Lean 4 theorem layer
 
-Agda is the foundation. It supports underlying structures, representations,
-representation conversions, equivalences, and transport between models.
-Lean 4 is the public theorem layer. Every formal domain result exposed by
-PowerLib must ultimately be a named theorem checked by the Lean kernel.
-Agda can support Lean; an Agda proof cannot replace the final Lean theorem.
+Agda is the scaffolding between the different contents of the library: models,
+representations and layers. Every connection between them is first constructed
+in Agda, which fixes the statement of the connection, its generality, and the
+structure it must preserve. Lean 4 is the only theorem layer. It proves every
+connection independently, and every formal result exposed by PowerLib, foundation
+or domain, is a named theorem checked by the Lean kernel. The library builds and
+checks without Agda. An Agda proof is not a PowerLib theorem and cannot replace one.
+
+A connection is built in three steps:
+
+1. The Agda scaffold states the two contents, the equivalence or relation between
+   them, and the structure it preserves. For an equivalence of representations,
+   univalence transports every construction along it, so the scaffold fixes the
+   general statement, and the operations the equivalence must preserve are what
+   Lean has to prove. For a relation that holds only for some sentences, under
+   constraints or in one direction, the scaffold records the shape of the
+   connection (relation, sentences, constraints, direction, composition); its
+   analytic content is proved in Lean alone.
+2. Lean proves the connection, in the generality the scaffold fixes, by its own
+   means.
+3. The scaffold stays in `theorem/` as the design record of the connection, and the
+   header of the Lean module cites it. Only data passes between Agda and Lean (§11).
 
 Markdown derivations, Python computations, Mathematica or SymPy results,
-numerical experiments, and Agda-only proofs are not admitted domain theorems.
+numerical experiments, and Agda-only proofs are not admitted theorems.
 
 ## 2. Formalization directory
 
@@ -31,8 +48,8 @@ Directory structure must enforce this distinction.
 
 Foundation results include algebraic identities, conversion involutions,
 representation equivalences, transport laws, and auxiliary lemmas. They may
-be proved manually and checked by the Lean or Agda kernel. Not every lemma
-requires synthesis.
+be proved manually and are checked by the Lean kernel; an Agda scaffold may have
+established the same fact first (§1). Not every lemma requires synthesis.
 
 Domain results express engineering conclusions about power systems or power
 electronics, such as small-signal stability, impedance stability, or closed-loop
@@ -250,7 +267,7 @@ Hashes establish artifact identity, not mathematical correctness.
 | Status | Meaning and required evidence |
 | --- | --- |
 | Note | Nonformal derivation, computation, or experiment; no admitted domain claim. |
-| Foundation | Kernel-checked Lean/Agda infrastructure such as conversion, equivalence, or algebraic lemmas. |
+| Foundation | Kernel-checked Lean infrastructure such as conversion, equivalence, or algebraic lemmas. An Agda scaffold is a design record, not a foundation result. |
 | Lean theorem | A formally modeled domain conclusion expressed as a public, kernel-checked Lean theorem. |
 | S-level | Witness-free input leads to automatic witness synthesis, kernel-checked certificate admission, and a final semantic Lean theorem. |
 | ATD-discovered | The system also generates the conjecture itself and proves or refutes it; the conjectures were not manually fixed in advance. |

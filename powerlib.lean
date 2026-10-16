@@ -318,6 +318,7 @@ import theorem.Transform.ParkABC
 import theorem.Transform.PerUnit
 import theorem.Transform.PerUnitDq
 import theorem.Transform.PerUnitLTI
+import theorem.Transform.Rebase
 import theorem.Transform.SpaceVector
 import theorem.Asymptotics.Guard.MFPT
 import theorem.DAE.KroneckerIndex

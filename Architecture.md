@@ -41,6 +41,30 @@ aliases, PortHamiltonian had only raw semantic conclusions, some reuse consumers
 had raw flow conclusions, and the coordinate theorem omitted passivity.
 Those gaps are addressed by the interfaces and checks below.
 
+## Scaffolds
+
+Every connection between contents of the library is first built as an Agda scaffold
+([Rules.md](Rules.md) §1) and then proved in Lean. The scaffolds are kept in `theorem/` as
+design records; the Lean build does not read them. Data generated from a scaffold passes the
+narrow bridge of Rules §11 and is checked by Lean (`theorem/generated/`).
+
+| Scaffold | Connection | Lean |
+| --- | --- | --- |
+| `theorem/Conversion.agda` | RL branch: impedance parameters ↔ state-space parameters | `Circuits/RL` (generated `Conversion`) |
+| `theorem/LCLConversion.agda` | LCL filter: circuit parameters ↔ state-space parameters | `Circuits/LCL` (generated `LCLConversion`) |
+| `theorem/ImpedanceInterconnection.agda` | source and load → closed loop; covariance under state coordinates | `Circuits/Interconnection` (generated `ImpedanceInterconnection`) |
+| `theorem/TMIO/Representation.agda` | representation changes transport satisfaction structures and generated spaces | `TMIO/Representation` (`generate_transport`, `Seed.transport_whole`) |
+| `theorem/Rebase.agda` | changes of bases of an interconnection: state coordinates, per-unit bases, current direction, time base | `Transform/Rebase`; per-unit instance `Transform/PerUnitLTI` |
+
+The rebasing scaffold shows the division of labour. Univalence turns the equivalences of the
+six spaces of an interconnection into a path, so the closed loop commutes with every change of
+bases at once (`closedLoop-natural`), and the scaffold names what is left to prove: the
+equivalences must preserve the additive operations (`Preserves`, `closedLoop-rebased`). Lean
+proves the same statement in the same generality through typed constructions and one
+naturality theorem (`Construction.eval_rebase`), where linearity supplies the preservation and
+only the invertibility of the bases the constructions pass through remains as a hypothesis.
+Coordinates, per-unit bases and the current direction are then instances, not separate proofs.
+
 ## Public admission
 
 The first admission implementation used endpoint tags and domain classifications.
@@ -135,10 +159,10 @@ proved separating models rather than an unsupported completeness claim.
 
 `lake build` checks the library, examples and admission/discovery/reuse/architecture
 tests. The independent LeanForControl profile checks direct imported theorem
-reuse and rejection of an actual upstream custom-axiom consequence. All four
-Agda modules were checked with Agda 2.8.0 and cubical 0.9; their sources are
-unchanged by the typed-admission change. Dependency oleans were reused without
-building Mathlib from source.
+reuse and rejection of an actual upstream custom-axiom consequence. The Agda
+scaffolds are checked with Agda 2.8.0 and cubical 0.9 (`agda theorem/<Module>.agda`
+from the repository root); the Lean build does not depend on them. Dependency
+oleans were reused without building Mathlib from source.
 
 The completed main admission checks 56 built modules, 705 proof declarations and
 85 typed connection statements, including private rejection fixtures. The

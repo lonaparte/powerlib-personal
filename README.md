@@ -1,6 +1,6 @@
 # powerlib
 
-powerlib is a theorem library for power systems and power electronics, built on Lean 4 and Agda.
+powerlib is a theorem library for power systems and power electronics. Its theorems are proved in Lean 4; Agda is the scaffolding between its different contents.
 
 Development takes place first in the private repository with the maintainer and Codex, and is periodically synchronized to the public repository.
 
@@ -9,9 +9,10 @@ Development takes place first in the private repository with the maintainer and 
 - **ATP (Automated Theorem Proving):** automatically prove given propositions, especially **synthesis of certificates**.
 - **ATD (Automated Theorem Discovery):** discover new conjectures from models and existing knowledge, prove them, and add the results to the library.
 
-We are exploring a combination in which Agda serves as the foundation for
-conversions between modeling approaches, while Lean 4 supports everyday
-reasoning. We draw inspiration from
+Agda is the scaffolding between the different contents of the library: models,
+representations and layers. Every connection between them is first constructed
+in Agda, which fixes its statement, its generality and the structure it must
+preserve; Lean 4 then proves the connection independently. We draw inspiration from
 [mathlib](https://github.com/leanprover-community/mathlib4) and
 [LeanForControl](https://github.com/AnandGokhale/LeanForControl).
 
@@ -23,8 +24,10 @@ level and exploring the potential of ATD.
 
 ## Structure
 
-Agda supplies foundational structures and conversions; Lean 4 exposes every
-admitted domain result as a kernel-checked theorem. The project pins Lean 4.34.1,
+Lean 4 is the only theorem layer: it proves every admitted result, and the library
+builds and checks without Agda. The Agda scaffolds stay in `theorem/` as the design
+records of the connections they built; only data passes between Agda and Lean, and
+Lean checks it independently. The project pins Lean 4.34.1,
 Mathlib v4.34.1, and Agda 2.8.0. Adapt dependencies to these pins with minimal,
 provenance-preserving changes, and accept them only after the complete build and
 proof checks pass. See [Rules.md](Rules.md) for the formal requirements and
