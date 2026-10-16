@@ -4,6 +4,7 @@ import theorem.Synchronous.Swing
 import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
 import theorem.Spectral.Family
+import theorem.Spectral.Hub
 import theorem.SpecialFunctions.Elementary
 
 /-! # Grid-forming VSM with a first-order power filter on an infinite bus (three states)
@@ -94,6 +95,10 @@ Family and connection conclusions.
   `DroopLPF.not_exact_lyapunovStable`, the negative-damping model);
   `DroopLPF.locallyExponentiallyStable` (no Hopf boundary) and `DroopLPF.unstable_atAntiLoading` are
   connection conclusions.
+  The loop is the swing machine `⟨D/ω_c, D, P₀, 0, K₀, 0⟩` in the coordinates `P_f = P₀ − D ω`
+  (`DroopLPF.field_eq_transport`), so for `D, ω_c ≠ 0` every sentence is read through the swing
+  family (`DroopLPF.mem_den_iff_swing`), and the laws above are the swing family's, carried over
+  within `D, ω_c > 0` by the hub transfer of `theorem/Spectral/Hub.lean`.
 * Static evidence on the model: the equilibrium theorems `field_eq_zero_iff`,
   `exists_equilibrium_iff`, `field_equilibrium`.  The transfer functions, the boundary frequency,
   the first-order modulation `A₁`, the periodic time averages and the second-order reduction
@@ -1108,80 +1113,142 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.q.field m.point :=
   family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
 
-private theorem point_eq_zero {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced) :
-    m.q.field m.point = 0 :=
-  (m.q.field_eq_zero_iff hp.1.ne' hp.2.ne' _).mpr
-    ⟨by simp [Model.point],
-      by have hb' : m.q.K0 * Real.sin m.δ = m.q.P0 := hb; simpa [Model.point] using hb'⟩
+/-! ### The swing reading -/
 
-private theorem fderiv_point (m : Model) :
-    fderiv ℝ m.q.field m.point = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (m.q.jacobian m.δ) := by
-  rw [(m.q.hasFDerivAt_field _).fderiv]
-  simp [Model.point]
+/-- The swing parameters of the loop: inertia `M = D/ω_c`, damping `D`, mechanical power `P₀` and
+the power curve `K₀ sin δ` (`k₁ = k₃ = 0`). -/
+def swingParams : Synchronous.SwingParams := ⟨q.D / q.ωc, q.D, q.P0, 0, q.K0, 0⟩
 
-private theorem trace_jacobian (m : Model) : (m.q.jacobian m.δ).trace = -m.q.ωc := by
-  simp [jacobian, Matrix.trace_fin_two]
+/-- A droop + LPF model read as the swing model of its parameters at the same angle. -/
+def Model.toSwing (m : Model) : Synchronous.Swing.Model := ⟨m.q.swingParams, m.δ⟩
 
-private theorem det_jacobian (m : Model) :
-    (m.q.jacobian m.δ).det = m.q.ωc * (m.q.K0 * Real.cos m.δ) / m.q.D := by
-  simp [jacobian, Matrix.det_fin_two]; ring
+/-- **Large-signal equivalence.** In the coordinates `P_f = P₀ − D ω` the swing field of
+`swingParams` is the droop + LPF field (`D, ω_c ≠ 0`): the loop is the swing equation
+`(D/ω_c) δ̈ + D δ̇ = P₀ − K₀ sin δ`. Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem field_eq_transport (hD : q.D ≠ 0) (hω : q.ωc ≠ 0) :
+    q.field = Dynamics.transportField (Dynamics.scaleCoord (neg_ne_zero.mpr hD))
+      (PhasePlane.mk 0 q.P0) q.swingParams.field := by
+  funext y
+  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
+  · simp [Dynamics.transportField, field, swingParams, Synchronous.SwingParams.field]
+    field_simp
+    ring
+  · simp [Dynamics.transportField, field, swingParams, Synchronous.SwingParams.field,
+      Synchronous.SwingParams.accel, Synchronous.SwingParams.Pe]
+    field_simp
+    ring
 
-private theorem les_of {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced)
-    (hK : Meets m .synchronizing) : LocallyExponentiallyStable m.q.field m.point :=
-  Criteria.locallyExponentiallyStable_of_jacobian_fin_two _ m.q.contDiff_field
-    (point_eq_zero hp hb) (fderiv_point m) (by rw [trace_jacobian]; linarith [hp.2])
-    (by rw [det_jacobian]; exact div_pos (mul_pos hp.2 hK) hp.1)
+/-- The operating point is the image of the swing model's. -/
+private theorem point_eq_affineCoord (m : Model) (hD : m.q.D ≠ 0) :
+    m.point = Dynamics.affineCoord (Dynamics.scaleCoord (neg_ne_zero.mpr hD))
+      (PhasePlane.mk 0 m.q.P0) m.toSwing.point := by
+  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;>
+    simp [Dynamics.affineCoord, Model.point, Model.toSwing, Synchronous.Swing.Model.point]
 
-private theorem unstable_of {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced)
-    (hK : Meets m .antiSynchronizing) : Unstable m.q.field m.point :=
-  Criteria.unstable_of_jacobian_det_neg_fin_two _ m.q.contDiff_field (point_eq_zero hp hb)
-    (fderiv_point m) (by
-      rw [det_jacobian]
-      exact div_neg_of_neg_of_pos (mul_neg_of_pos_of_neg hp.2 hK) hp.1)
+/-- With nonzero droop gain and bandwidth a droop + LPF model satisfies exactly the sentences of
+its swing reading (`field_eq_transport`, `Spectral.mem_den_flow_iff_of_transport`). A comparison
+of the two semantics connections at the two members. -/
+@[powerlib_domain] theorem mem_den_iff_swing (m : Model) (hD : m.q.D ≠ 0) (hω : m.q.ωc ≠ 0)
+    (s : Sentence) :
+    connection% (m ∈ family.den s ↔ m.toSwing ∈ Synchronous.Swing.family.den s) := by
+  unfold powerlib.TMIO.Statement
+  refine Spectral.mem_den_iff_of_flow (g := Model.toSwing) family_isAutonomous
+    Synchronous.Swing.family_isAutonomous (fun P => ?_) s
+  exact Spectral.mem_den_flow_iff_of_transport (f := fun m : Model => m.q.field)
+    (pt := Model.point) (φ := fun y : Synchronous.Swing.Model => y.p.field)
+    (ψ := Synchronous.Swing.Model.point) (g := Model.toSwing) (fun _ _ => mem_den_flow_iff)
+    (fun _ P => Synchronous.Swing.family_isAutonomous.mem_den_flow.trans
+      (Flow.Property.holds_shift_iff P)) _ _ (m.q.field_eq_transport hD hω)
+    (point_eq_affineCoord m hD) P
+
+private theorem den_iff_swing {m : Model} (hp : Meets m .physical) (s : Sentence) :
+    m ∈ family.den s ↔ m.toSwing ∈ Synchronous.Swing.family.den s := by
+  have h := mem_den_iff_swing m hp.1.ne' hp.2.ne' s
+  unfold powerlib.TMIO.Statement at h
+  exact h
+
+/-- The requirements of the swing reading in the loop's terms. -/
+private theorem swing_meets_iff (m : Model) :
+    (Synchronous.Swing.Meets m.toSwing .balanced ↔ m.q.K0 * Real.sin m.δ = m.q.P0) ∧
+      (Synchronous.Swing.Meets m.toSwing .inertia ↔ 0 < m.q.D / m.q.ωc) ∧
+      (Synchronous.Swing.Meets m.toSwing .damped ↔ 0 < m.q.D) ∧
+      (Synchronous.Swing.Meets m.toSwing .synchronizing ↔ 0 < m.q.K0 * Real.cos m.δ) ∧
+      (Synchronous.Swing.Meets m.toSwing .destabilizing ↔
+        m.q.K0 * Real.cos m.δ < 0 ∨ m.q.D < 0) := by
+  simp [Synchronous.Swing.Meets, Model.toSwing, swingParams, Synchronous.SwingParams.Pe,
+    Synchronous.SwingParams.syncCoeff]
+
+private theorem physical_of {m : Model} {A : Set Requirement} (hA : .physical ∈ A)
+    (hm : m ∈ TMIO.realize Meets A) : Meets m .physical :=
+  (TMIO.mem_realize _ _ _).mp hm _ hA
+
+/-- Positive droop gain and bandwidth give the swing reading positive inertia. -/
+private theorem toSwing_mem_inertia {m : Model} (hm : m ∈ TMIO.realize Meets {.physical}) :
+    m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.inertia} := by
+  have hp := physical_of (Set.mem_singleton _) hm
+  rw [TMIO.mem_realize]
+  intro r hr
+  rw [Set.mem_singleton_iff] at hr
+  subst hr
+  exact (swing_meets_iff m).2.1.mpr (div_pos hp.1 hp.2)
+
+/-- Within positive droop gain and bandwidth the local requirements are those of the swing
+reading. -/
+private theorem realize_local_iff {m : Model} (hp : Meets m .physical) :
+    m ∈ TMIO.realize Meets {.balanced, .physical, .synchronizing} ↔
+      m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets
+        {.balanced, .inertia, .damped, .synchronizing} := by
+  obtain ⟨hb, hI, hd, hs, -⟩ := swing_meets_iff m
+  simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
+    forall_eq, hb, hI, hd, hs]
+  exact ⟨fun h => ⟨h.1, div_pos hp.1 hp.2, hp.1, h.2.2⟩, fun h => ⟨h.1, hp, h.2.2.2⟩⟩
+
+/-- Within positive droop gain and bandwidth the instability requirements give the swing
+reading's. -/
+private theorem realize_unstable_toSwing {m : Model}
+    (hm : m ∈ TMIO.realize Meets {.balanced, .physical, .antiSynchronizing}) :
+    m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced, .inertia, .destabilizing} := by
+  obtain ⟨hb, hI, -, -, hs⟩ := swing_meets_iff m
+  simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
+    forall_eq, hb, hI, hs] at hm ⊢
+  obtain ⟨h1, hp, h3⟩ := hm
+  exact ⟨h1, div_pos hp.1 hp.2, Or.inl h3⟩
 
 /-- The whole requirement language is inconsistent: the synchronizing coefficient cannot be
 both positive and negative. -/
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
-  have h1 : 0 < m.q.K0 * Real.cos m.δ := h .synchronizing
-  have h2 : m.q.K0 * Real.cos m.δ < 0 := h .antiSynchronizing
+  refine Spectral.realize_univ_eq_empty_of Requirement.synchronizing
+    Requirement.antiSynchronizing fun m h1 h2 => ?_
+  have h1 : 0 < m.q.K0 * Real.cos m.δ := h1
+  have h2 : m.q.K0 * Real.cos m.δ < 0 := h2
   linarith
 
-/-- Every translation of the droop + LPF family is sound (`tr J = −ω_c < 0`,
-`det J = ω_c K / D`, linearization at the selected point). -/
+/-- Every translation of the droop + LPF family is sound: within `D, ω_c > 0` its requirements
+are those of its swing reading (`mem_den_iff_swing`, `Synchronous.Swing.chain_le_semantics`). -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  have hnone : (∀ q, Meets m q) → False := fun h => by
-    have hm' : m ∈ TMIO.realize Meets Set.univ := (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    rw [realize_univ] at hm'
-    exact hm'
+  have hsw := Synchronous.Swing.chain_le_semantics
+  unfold powerlib.TMIO.Statement at hsw
+  have hsound := Family.chain_le_semantics_iff.mp hsw
+  have hS : TMIO.realize family.meets {.balanced, .physical, .synchronizing} ⊆
+      family.den (.flow .locallyExponentiallyStable) :=
+    Spectral.realize_subset_den_of_hub (F := family) (G := Synchronous.Swing.family) Model.toSwing
+      (fun _ hm => (realize_local_iff (physical_of (by simp) hm)).mp hm)
+      (fun _ hm => (den_iff_swing (physical_of (by simp) hm) _).mpr)
+      (hsound (.flow .locallyExponentiallyStable))
+  have hU : TMIO.realize family.meets {.balanced, .physical, .antiSynchronizing} ⊆
+      family.den (.flow .unstable) :=
+    Spectral.realize_subset_den_of_hub (F := family) (G := Synchronous.Swing.family) Model.toSwing
+      (fun _ hm => realize_unstable_toSwing hm)
+      (fun _ hm => (den_iff_swing (physical_of (by simp) hm) _).mpr) (hsound (.flow .unstable))
+  refine Spectral.chain_le_semantics_of_localTable_same (fun s => ?_) realize_univ hS hU
+    family_isAutonomous.den_passive
   rcases s with P | _
-  · rw [mem_den_flow_iff]
-    cases P
-    case unstable =>
-      exact unstable_of (hm .physical (by simp [translate])) (hm .balanced (by simp [translate]))
-        (hm .antiSynchronizing (by simp [translate]))
-    case lyapunovStable =>
-      exact (les_of (hm .physical (by simp [translate])) (hm .balanced (by simp [translate]))
-        (hm .synchronizing (by simp [translate]))).lyapunovStable
-    case locallyAsymptoticallyStable =>
-      exact Flow.locallyExponentiallyStable_localAsymptoticStable
-        (les_of (hm .physical (by simp [translate])) (hm .balanced (by simp [translate]))
-          (hm .synchronizing (by simp [translate])))
-    case locallyExponentiallyStable =>
-      exact les_of (hm .physical (by simp [translate])) (hm .balanced (by simp [translate]))
-        (hm .synchronizing (by simp [translate]))
-    all_goals exact (hnone fun q => hm q trivial).elim
-  · rw [family_isAutonomous.den_passive]
-    trivial
+  · cases P <;> rfl
+  · rfl
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
@@ -1192,36 +1259,17 @@ both positive and negative. -/
 exactly: a model with `D, ω_c > 0` is locally exponentially stable at `(δ*, P₀)` exactly when the
 angle is balanced and synchronizing (`K₀ cos δ* > 0`). Converse linearization: local exponential
 stability of the `C¹` field forces an equilibrium with a Hurwitz Jacobian
-(`tr = −ω_c`, `det = ω_c K₀ cos δ* / D`). -/
+(`tr = −ω_c`, `det = ω_c K₀ cos δ* / D`). Proved on the swing reading
+(`Synchronous.Swing.exactUnder_locallyExponentiallyStable`, `Spectral.exactUnder_of_hub`). -/
 @[powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
     connection% (family.ExactUnder {.physical} (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
-  change TMIO.realize Meets ({.balanced, .physical, .synchronizing} ∪ {.physical}) = _
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
-    Set.mem_inter_iff]
-  constructor
-  · intro h
-    have hp : Meets m .physical := h .physical (by simp)
-    exact ⟨mem_den_flow_iff.mpr (les_of hp (h .balanced (by simp)) (h .synchronizing (by simp))),
-      fun q hq => by rw [hq]; exact hp⟩
-  · rintro ⟨hd, hI⟩ q hq
-    have hp : Meets m .physical := hI .physical rfl
-    obtain ⟨hD, hω⟩ := hp
-    have hles : LocallyExponentiallyStable m.q.field m.point := mem_den_flow_iff.mp hd
-    rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ m.q.contDiff_field
-      (fderiv_point m), m.q.field_eq_zero_iff hD.ne' hω.ne', Criteria.isHurwitz_fin_two_iff,
-      trace_jacobian, det_jacobian] at hles
-    obtain ⟨⟨-, hb⟩, -, hdet⟩ := hles
-    have hK : 0 < m.q.K0 * Real.cos m.δ := by
-      rw [lt_div_iff₀ hD, zero_mul] at hdet
-      exact pos_of_mul_pos_right hdet hω.le
-    rcases hq with ((rfl | rfl | rfl) | rfl)
-    · show m.q.K0 * Real.sin m.δ = m.q.P0
-      simpa [Model.point] using hb
-    · exact ⟨hD, hω⟩
-    · exact hK
-    · exact ⟨hD, hω⟩
+  unfold powerlib.TMIO.Statement
+  have hsw := Synchronous.Swing.exactUnder_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hsw
+  exact Spectral.exactUnder_of_hub (F := family) (G := Synchronous.Swing.family) Model.toSwing
+    (fun _ hm => toSwing_mem_inertia hm)
+    (fun _ hm => den_iff_swing (physical_of (Set.mem_singleton _) hm) _)
+    (fun _ hm => realize_local_iff (physical_of (Set.mem_singleton _) hm)) hsw
 
 /-- The model read about its loading angle `arcsin(P₀/K₀)`. -/
 def atLoading : Model := ⟨q, Real.arcsin (q.P0 / q.K0)⟩
@@ -1244,7 +1292,11 @@ locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): n
     rw [Real.cos_arcsin]; apply Real.sqrt_pos.mpr
     have : (q.P0 / q.K0) ^ 2 < 1 := by rw [← sq_abs]; nlinarith [abs_nonneg (q.P0 / q.K0)]
     linarith
-  exact mem_den_flow_iff.mpr (les_of ⟨hD, hω⟩ hsin (mul_pos hK0 hcos))
+  have hm := Synchronous.Swing.mem_den_locallyExponentiallyStable q.atLoading.toSwing
+    (div_pos hD hω) hD ((swing_meets_iff q.atLoading).1.mpr hsin)
+    ((swing_meets_iff q.atLoading).2.2.2.1.mpr (mul_pos hK0 hcos))
+  unfold powerlib.TMIO.Statement at hm
+  exact (den_iff_swing ⟨hD, hω⟩ _).mpr hm
 
 /-- The second equilibrium `(π − arcsin(P₀/K₀), P₀)` of droop + LPF is a saddle, hence unstable
 (`D, ω_c, K₀ > 0`, `|P₀| < K₀`). -/
@@ -1259,7 +1311,12 @@ locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): n
     rw [Real.cos_pi_sub, Real.cos_arcsin, neg_lt_zero]; apply Real.sqrt_pos.mpr
     have : (q.P0 / q.K0) ^ 2 < 1 := by rw [← sq_abs]; nlinarith [abs_nonneg (q.P0 / q.K0)]
     linarith
-  exact mem_den_flow_iff.mpr (unstable_of ⟨hD, hω⟩ hsin (mul_neg_of_pos_of_neg hK0 hcos))
+  have hm := Synchronous.Swing.mem_den_unstable q.atAntiLoading.toSwing (div_pos hD hω)
+    ((swing_meets_iff q.atAntiLoading).1.mpr hsin)
+    (by simpa [Model.toSwing, swingParams, Synchronous.SwingParams.syncCoeff, atAntiLoading]
+      using mul_neg_of_pos_of_neg hK0 hcos)
+  unfold powerlib.TMIO.Statement at hm
+  exact (den_iff_swing ⟨hD, hω⟩ _).mpr hm
 
 /-! ### Instability away from equilibrium -/
 
@@ -1281,12 +1338,10 @@ while the translation asks for a balanced angle. -/
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
   have hmem := offEquilibrium_mem_den_unstable
   unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have hb : Meets offEquilibrium .balanced := hmem .balanced (by simp [family, translate])
-  simp [Meets, offEquilibrium] at hb
+  exact Spectral.not_exact_of_witness hmem (q := Requirement.balanced)
+    (by simp [family, translate]) (by simp [family, Meets, offEquilibrium])
 
 /-! ### Boundary witness: negative damping -/
 
@@ -1295,31 +1350,28 @@ while the translation asks for a balanced angle. -/
 def negativeDamping : Model := ⟨⟨-1, 1, 0, -1⟩, 0⟩
 
 /-- The negative-damping model is locally exponentially stable: its Jacobian has `tr = −1` and
-`det = ω_c K₀ cos δ* / D = 1`. -/
+`det = ω_c K₀ cos δ* / D = 1` (its swing reading is `Synchronous.Swing.negativeInertia`). -/
 @[powerlib_domain] theorem negativeDamping_mem_den_locallyExponentiallyStable :
     connection% (negativeDamping ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  refine mem_den_flow_iff.mpr (Criteria.locallyExponentiallyStable_of_jacobian_fin_two _
-    negativeDamping.q.contDiff_field ((negativeDamping.q.field_eq_zero_iff
-      (by norm_num [negativeDamping]) (by norm_num [negativeDamping]) _).mpr
-      (by simp [negativeDamping, Model.point])) (fderiv_point negativeDamping) ?_ ?_)
-  · rw [trace_jacobian]
-    norm_num [negativeDamping]
-  · rw [det_jacobian]
-    norm_num [negativeDamping]
+  have hm := Synchronous.Swing.negativeInertia_mem_den_locallyExponentiallyStable
+  have hr := mem_den_iff_swing negativeDamping (by norm_num [negativeDamping])
+    (by norm_num [negativeDamping]) (.flow .locallyExponentiallyStable)
+  unfold powerlib.TMIO.Statement at hm hr
+  have he : negativeDamping.toSwing = Synchronous.Swing.negativeInertia := by
+    norm_num [negativeDamping, Model.toSwing, swingParams, Synchronous.Swing.negativeInertia]
+  rw [hr, he]
+  exact hm
 
 /-- Without positive damping and bandwidth the local exponential translation is sound but not
 exact: the negative-damping model is locally exponentially stable. -/
 @[powerlib_domain] theorem not_exact_locallyExponentiallyStable :
     connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
   have hmem := negativeDamping_mem_den_locallyExponentiallyStable
   unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have hp : Meets negativeDamping .physical := hmem .physical (by simp [family, translate])
-  have := hp.1
-  norm_num [negativeDamping] at this
+  exact Spectral.not_exact_of_witness hmem (q := Requirement.physical)
+    (by simp [family, translate]) (by norm_num [family, Meets, negativeDamping])
 
 /-! ### The local asymptotic and Lyapunov translations -/
 
@@ -1382,271 +1434,67 @@ Static evidence on the model, not a connection conclusion. -/
   rw [Real.sin_add, hcos, ← hb]
   ring
 
-private theorem norm_mkState_sub_point (m : Model) (s t : ℝ) :
-    ‖PhasePlane.mk (m.δ + s) (m.q.P0 + t) - m.point‖ ≤ |s| + |t| := by
-  refine (Dynamics.norm_le_abs_add_abs_two _).trans (le_of_eq ?_)
-  simp [Model.point]
-
-/-- At a fold the energy takes values below its value at the operating point arbitrarily close
-to it. -/
-private theorem fold_seeds {m : Model} (hb : m.q.K0 * Real.sin m.δ = m.q.P0)
-    (hcos : Real.cos m.δ = 0) (hK : m.q.K0 ≠ 0) :
-    ∀ ε > 0, ∃ x, ‖x - m.point‖ < ε ∧ m.q.energy m.δ x < m.q.energy m.δ m.point := by
-  intro ε hε
-  have hE0 : m.q.energy m.δ m.point = 0 := by simp [energy, Model.point]
-  rw [hE0]
-  have hP : m.q.P0 ≠ 0 := by
-    rw [← hb]; exact mul_ne_zero hK (SpecialFunctions.sin_ne_zero_of_cos hcos)
-  have hε2 : 0 < ε / 2 := by linarith
-  have hsin := Real.sin_lt hε2
-  rcases lt_or_gt_of_ne hP with hneg | hpos
-  · refine ⟨PhasePlane.mk (m.δ + -(ε / 2)) (m.q.P0 + 0), ?_, ?_⟩
-    · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
-      rw [abs_zero, add_zero, abs_neg, abs_of_pos hε2]
-      linarith
-    · rw [add_zero, m.q.energy_fold hb hcos, Real.sin_neg]
-      nlinarith
-  · refine ⟨PhasePlane.mk (m.δ + ε / 2) (m.q.P0 + 0), ?_, ?_⟩
-    · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
-      rw [abs_zero, add_zero, abs_of_pos hε2]
-      linarith
-    · rw [add_zero, m.q.energy_fold hb hcos]
-      nlinarith
-
-/-- With `D, ω_c > 0`, an equilibrium at the selected point is balanced. -/
-private theorem balanced_of_eq {m : Model} (hp : Meets m .physical)
-    (heq : m.q.field m.point = 0) : m.q.K0 * Real.sin m.δ = m.q.P0 := by
-  simpa [Model.point] using ((m.q.field_eq_zero_iff hp.1.ne' hp.2.ne' _).mp heq).2
-
-/-- A vanishing power curve (`K₀ = 0`) at a balanced angle (`P₀ = 0`): every `(δ, 0)` is an
-equilibrium. -/
-private theorem field_flat {m : Model} (hK : m.q.K0 = 0) (hP : m.q.P0 = 0) (δ : ℝ) :
-    m.q.field (PhasePlane.mk δ m.q.P0) = 0 := by
-  refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩ <;> simp [field, hK, hP]
-
-/-- Within positive droop damping and bandwidth, local asymptotic stability of `(δ*, P₀)` forces
-balance and synchronization. A negative synchronizing coefficient is a saddle; a vanishing power
-curve has a continuum of equilibria; and at a fold the dissipated energy is below its value at
-the operating point on one side. -/
-private theorem las_requirements {m : Model} (hp : Meets m .physical)
-    (hlas : LocalAsymptoticStable m.q.field m.point) :
-    Meets m .balanced ∧ Meets m .synchronizing := by
-  have hC : ContDiff ℝ 1 m.q.field := m.q.contDiff_field
-  have hb := balanced_of_eq hp (Dynamics.isEquilibrium_of_lyapunovStable hC hlas.1)
-  refine ⟨hb, ?_⟩
-  show 0 < m.q.K0 * Real.cos m.δ
-  rcases lt_trichotomy (m.q.K0 * Real.cos m.δ) 0 with hK | hK | hK
-  · exact absurd hlas.1 (unstable_of hp hb hK)
-  · exfalso
-    rcases mul_eq_zero.mp hK with hK0 | hc
-    · have hP : m.q.P0 = 0 := by rw [← hb, hK0, zero_mul]
-      refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
-        ⟨PhasePlane.mk (m.δ + ε / 2) (m.q.P0 + 0), fun h => ?_, ?_, ?_⟩) hlas
-      · have := congrArg (fun y : State 2 => y 0) h
-        simp [Model.point] at this
-        linarith
-      · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
-        rw [abs_zero, add_zero, abs_of_pos (by linarith)]
-        linarith
-      · rw [add_zero]
-        exact field_flat hK0 hP _
-    · by_cases hK0 : m.q.K0 = 0
-      · have hP : m.q.P0 = 0 := by rw [← hb, hK0, zero_mul]
-        refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
-          ⟨PhasePlane.mk (m.δ + ε / 2) (m.q.P0 + 0), fun h => ?_, ?_, ?_⟩) hlas
-        · have := congrArg (fun y : State 2 => y 0) h
-          simp [Model.point] at this
-          linarith
-        · refine (norm_mkState_sub_point m _ 0).trans_lt ?_
-          rw [abs_zero, add_zero, abs_of_pos (by linarith)]
-          linarith
-        · rw [add_zero]
-          exact field_flat hK0 hP _
-      refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := m.q.energy m.δ) (ρ := 1) hC
-        ((m.q.contDiff_energy _).differentiable one_ne_zero) one_pos (fun x _ => ?_)
-        (fold_seeds hb hc hK0) hlas
-      rw [m.q.energy_lie hp.1.ne' hp.2.ne']
-      have : 0 ≤ (m.q.P0 - x 1) ^ 2 / m.q.D := div_nonneg (sq_nonneg _) hp.1.le
-      linarith
-  · exact hK
-
 /-- Within positive droop damping and bandwidth the local asymptotic translation is exact: a
 model with `D, ω_c > 0` is locally asymptotically stable at `(δ*, P₀)` exactly when the angle is
 balanced and synchronizing (`K₀ cos δ* > 0`). The linearization does not decide `K₀ cos δ* = 0`,
 the model's structure does: a vanishing power curve has a continuum of equilibria, and at a fold
 the energy `(P₀ − P_f)²/(2 D ω_c) + U(δ)`, dissipated at the rate `(P₀ − P_f)²/D`, is
 `−P₀ (s − sin s)` at `(δ* + s, P₀)` (`energy_fold`), below its value at the operating point on
-one side (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
+one side. Proved once on the swing reading
+(`Synchronous.Swing.exactUnder_locallyAsymptoticallyStable`, `Spectral.exactUnder_of_hub`). -/
 @[powerlib_domain] theorem exactUnder_locallyAsymptoticallyStable :
     connection% (family.ExactUnder {.physical} (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
-  change TMIO.realize Meets ({.balanced, .physical, .synchronizing} ∪ {.physical}) = _
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
-    Set.mem_inter_iff]
-  constructor
-  · intro h
-    have hp : Meets m .physical := h .physical (by simp)
-    exact ⟨mem_den_flow_iff.mpr (Flow.locallyExponentiallyStable_localAsymptoticStable
-      (les_of hp (h .balanced (by simp)) (h .synchronizing (by simp)))),
-      fun q hq => by rw [hq]; exact hp⟩
-  · rintro ⟨hd, hI⟩ r hr
-    have hp : Meets m .physical := hI .physical rfl
-    obtain ⟨hb, hK⟩ := las_requirements hp (mem_den_flow_iff.mp hd)
-    rcases hr with ((rfl | rfl | rfl) | rfl)
-    · exact hb
-    · exact hp
-    · exact hK
-    · exact hp
+  unfold powerlib.TMIO.Statement
+  have hsw := Synchronous.Swing.exactUnder_locallyAsymptoticallyStable
+  unfold powerlib.TMIO.Statement at hsw
+  exact Spectral.exactUnder_of_hub (F := family) (G := Synchronous.Swing.family) Model.toSwing
+    (fun _ hm => toSwing_mem_inertia hm)
+    (fun _ hm => den_iff_swing (physical_of (Set.mem_singleton _) hm) _)
+    (fun _ hm => realize_local_iff (physical_of (Set.mem_singleton _) hm)) hsw
 
 /-- Within positive droop damping and bandwidth, Lyapunov stability of `(δ*, P₀)` holds exactly
 at a balanced angle that is synchronizing (`K₀ cos δ* > 0`) or has a vanishing power curve
 (`K₀ = 0`, where `δ − P_f/(D ω_c)` is conserved and `P_f` decays). A negative synchronizing
 coefficient is a saddle, and a fold is unstable: below the level of the operating point the
 dissipated energy keeps the solution, and there `P₀ ((P₀ − P_f)/ω_c + D δ)` grows at the rate
-`P₀² (1 − cos(δ − δ*))` (`Dynamics.unstable_of_lie_nonpos_of_lie_pos`). -/
+`P₀² (1 − cos(δ − δ*))`. Proved once on the swing reading
+(`Synchronous.Swing.mem_den_lyapunovStable_iff_of_inertia`). -/
 @[powerlib_domain] theorem mem_den_lyapunovStable_iff_of_physical (m : Model) (hD : 0 < m.q.D)
     (hω : 0 < m.q.ωc) :
     connection% (m ∈ family.den (.flow .lyapunovStable) ↔
       m ∈ {m : Model | m.q.K0 * Real.sin m.δ = m.q.P0 ∧
         (0 < m.q.K0 * Real.cos m.δ ∨ m.q.K0 = 0)}) := by
   unfold powerlib.TMIO.Statement
-  rw [Set.mem_ofPred_eq]
-  have hp : Meets m .physical := ⟨hD, hω⟩
-  have hC : ContDiff ℝ 1 m.q.field := m.q.contDiff_field
+  have hiff := Synchronous.Swing.mem_den_lyapunovStable_iff_of_inertia m.toSwing (div_pos hD hω)
+  unfold powerlib.TMIO.Statement at hiff
+  rw [den_iff_swing ⟨hD, hω⟩, hiff, Set.mem_ofPred_eq, Set.mem_ofPred_eq]
+  simp only [Model.toSwing, swingParams, Synchronous.SwingParams.Pe,
+    Synchronous.SwingParams.syncCoeff, zero_add, sub_zero]
   constructor
-  · intro hm
-    have hls : LyapunovStable m.q.field m.point := mem_den_flow_iff.mp hm
-    have hb := balanced_of_eq hp (Dynamics.isEquilibrium_of_lyapunovStable hC hls)
-    refine ⟨hb, ?_⟩
-    by_cases hK0 : m.q.K0 = 0
-    · exact Or.inr hK0
-    rcases lt_trichotomy (m.q.K0 * Real.cos m.δ) 0 with hK | hK | hK
-    · exact absurd hls (unstable_of hp hb hK)
-    · exfalso
-      have hc : Real.cos m.δ = 0 := (mul_eq_zero.mp hK).resolve_left hK0
-      set a := m.q.P0 with ha
-      have h0 := fun x : State 2 =>
-        (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
-      have h1 := fun x : State 2 =>
-        (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
-      have hW : ContDiff ℝ 1 fun x : State 2 => a * ((a - x 1) / m.q.ωc + m.q.D * x 0) := by
-        fun_prop
-      refine Dynamics.unstable_of_lie_nonpos_of_lie_pos (E := m.q.energy m.δ)
-        (W := fun x : State 2 => a * ((a - x 1) / m.q.ωc + m.q.D * x 0)) (r := 1) hC
-        (m.q.contDiff_energy _) hW one_pos (fun x _ => ?_) (fold_seeds hb hc hK0)
-        (fun x hx hEx => ?_) hls
-      · rw [m.q.energy_lie hD.ne' hω.ne']
-        have : 0 ≤ (m.q.P0 - x 1) ^ 2 / m.q.D := div_nonneg (sq_nonneg _) hD.le
-        linarith
-      · have hd : HasFDerivAt (fun y : State 2 => a * ((a - y 1) / m.q.ωc + m.q.D * y 0))
-            (a • ((-1 / m.q.ωc) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) :
-                State 2 →L[ℝ] ℝ) +
-              m.q.D • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ))) x := by
-          have h := ((((h1 x).const_sub a).mul_const m.q.ωc⁻¹).add
-            ((h0 x).const_mul m.q.D)).const_mul a
-          convert h using 1
-          · funext y
-            simp only [Pi.add_apply, PiLp.proj_apply]
-            ring
-          · apply ContinuousLinearMap.ext
-            intro v
-            simp
-            ring
-        rw [hd.fderiv]
-        simp only [_root_.smul_apply, _root_.add_apply, PiLp.proj_apply, smul_eq_mul, field,
-          PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
-        set s₀ := x 0 - m.δ with hs₀
-        have hx0 : x 0 = m.δ + s₀ := by rw [hs₀]; ring
-        have hrate : -1 / m.q.ωc * (m.q.ωc * (m.q.K0 * Real.sin (x 0) - x 1)) +
-            m.q.D * ((m.q.P0 - x 1) / m.q.D) = a * (1 - Real.cos s₀) := by
-          rw [hx0, ← m.q.restoring_fold hb hc]
-          field_simp
-          ring
-        rw [hrate]
-        have hs1 : |s₀| ≤ 1 := by
-          have := Dynamics.abs_apply_le_norm (x - m.point) 0
-          simp only [PiLp.sub_apply, Model.point, PhasePlane.mk_apply_zero] at this
-          rw [← hs₀] at this
-          exact this.trans hx
-        have hs0 : s₀ ≠ 0 := by
-          intro h
-          have hE0 : m.q.energy m.δ m.point = 0 := by simp [energy, Model.point]
-          rw [hE0] at hEx
-          have hx' : x 0 = m.δ := by rw [hx0, h, add_zero]
-          simp only [energy, hx', sub_self, mul_zero] at hEx
-          have : 0 ≤ (m.q.P0 - x 1) ^ 2 / (2 * m.q.D * m.q.ωc) :=
-            div_nonneg (sq_nonneg _) (by positivity)
-          linarith
-        have hcos1 : Real.cos s₀ < 1 := by
-          refine lt_of_le_of_ne (Real.cos_le_one _) fun h => hs0 ?_
-          refine (Real.cos_eq_one_iff_of_lt_of_lt ?_ ?_).mp h
-          · linarith [neg_abs_le s₀, Real.two_le_pi]
-          · linarith [le_abs_self s₀, Real.two_le_pi]
-        have ha0 : a ≠ 0 := fun h0 =>
-          mul_ne_zero hK0 (SpecialFunctions.sin_ne_zero_of_cos hc) (hb.trans h0)
-        have : 0 < a * a := mul_self_pos.mpr ha0
-        nlinarith
-    · exact Or.inl hK
+  · rintro ⟨hb, (⟨-, hK⟩ | ⟨hK0, -⟩)⟩
+    exacts [⟨hb, Or.inl hK⟩, ⟨hb, Or.inr hK0⟩]
   · rintro ⟨hb, (hK | hK0)⟩
-    · exact mem_den_flow_iff.mpr (les_of hp hb hK).lyapunovStable
-    · -- a vanishing power curve: `(δ − P_f/(D ω_c))² + P_f²` does not increase
-      have hP : m.q.P0 = 0 := by rw [← hb, hK0, zero_mul]
-      rw [family_isAutonomous.mem_den_flow]
-      have hDw : m.q.D * m.q.ωc ≠ 0 := mul_ne_zero hD.ne' hω.ne'
-      refine Dynamics.lyapunovStable_of_inner_nonpos two_pos
-        (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![1, -1 / (m.q.D * m.q.ωc); 0, 1])
-        (fun z w hzw => ?_) fun z => ?_
-      · have hz0 := congrArg (fun y : State 2 => y 0) hzw
-        have hz1 := congrArg (fun y : State 2 => y 1) hzw
-        simp only [PhasePlane.toEuclideanCLM_apply_zero, PhasePlane.toEuclideanCLM_apply_one]
-          at hz0 hz1
-        simp at hz0 hz1
-        refine PhasePlane.ext_iff'.2 ⟨?_, hz1⟩
-        rw [hz1] at hz0
-        linarith
-      · have hf0 : m.field z 0 = -(z 1 / m.q.D) := by
-          simp [Model.field, Model.point, field, hP]
-          ring
-        have hf1 : m.field z 1 = -(m.q.ωc * z 1) := by
-          simp [Model.field, Model.point, field, hP, hK0]
-        simp only [PiLp.inner_apply, Fin.sum_univ_two, PhasePlane.toEuclideanCLM_apply_zero,
-          PhasePlane.toEuclideanCLM_apply_one, hf0, hf1, RCLike.inner_apply, conj_trivial]
-        have hcancel : -(z 1 / m.q.D) + -1 / (m.q.D * m.q.ωc) * -(m.q.ωc * z 1) = 0 := by
-          field_simp
-          ring
-        simp only [Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
-          Matrix.cons_val_fin_one, Matrix.of_apply, one_mul, zero_mul, zero_add]
-        simp only [hcancel]
-        nlinarith [sq_nonneg (z 1), hω]
+    exacts [⟨hb, Or.inl ⟨hD.le, hK⟩⟩, ⟨hb, Or.inr ⟨hK0, hD⟩⟩]
 
 /-- Without positive damping and bandwidth the local asymptotic translation is sound but not
 exact (the negative-damping model). -/
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hsound := chain_le_semantics
-  have hles := not_exact_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hsound hles
-  refine Spectral.not_exact_of_den_subset (s := .flow .locallyExponentiallyStable)
-    (s' := .flow .locallyAsymptoticallyStable) rfl
-    (Family.chain_le_semantics_iff.mp hsound _) (fun m hm => ?_) hles
-  rw [family_isAutonomous.mem_den_flow] at hm ⊢
-  exact Flow.locallyExponentiallyStable_localAsymptoticStable hm
+  have hmem := negativeDamping_mem_den_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hmem
+  exact Spectral.not_exact_of_les_witness hmem (Or.inr rfl) (q := Requirement.physical)
+    (by simp [family, translate]) (by norm_num [family, Meets, negativeDamping])
 
 /-- Without positive damping and bandwidth the Lyapunov translation is sound but not exact (the
 negative-damping model). -/
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  have hsound := chain_le_semantics
-  have hles := not_exact_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hsound hles
-  refine Spectral.not_exact_of_den_subset (s := .flow .locallyExponentiallyStable)
-    (s' := .flow .lyapunovStable) rfl
-    (Family.chain_le_semantics_iff.mp hsound _) (fun m hm => ?_) hles
-  rw [family_isAutonomous.mem_den_flow] at hm ⊢
-  exact hm.lyapunovStable
+  have hmem := negativeDamping_mem_den_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hmem
+  exact Spectral.not_exact_of_les_witness hmem (Or.inl rfl) (q := Requirement.physical)
+    (by simp [family, translate]) (by norm_num [family, Meets, negativeDamping])
 
 /-- A vanishing power curve: `D = ω_c = 1`, `P₀ = K₀ = 0`, `δ* = 0`. -/
 def flatCurve : Model := ⟨⟨1, 1, 0, 0⟩, 0⟩
@@ -1657,24 +1505,12 @@ droop loop is Lyapunov stable with a zero synchronizing coefficient. -/
     connection% (¬ family.ExactUnder {.physical} (.flow .lyapunovStable)) := by
   have hmem := mem_den_lyapunovStable_iff_of_physical flatCurve one_pos one_pos
   unfold powerlib.TMIO.Statement at hmem ⊢
-  unfold Family.ExactUnder TMIO.ExactUnder
-  intro h
-  have hls : flatCurve ∈ family.den (.flow .lyapunovStable) :=
-    hmem.mpr ⟨by simp [flatCurve], Or.inr rfl⟩
-  have hI : flatCurve ∈ TMIO.realize family.meets {.physical} := by
-    rw [TMIO.mem_realize]
-    intro q hq
-    rw [Set.mem_singleton_iff] at hq
-    subst hq
-    show 0 < (1 : ℝ) ∧ 0 < (1 : ℝ)
-    norm_num
-  have h' : flatCurve ∈ TMIO.realize family.meets (family.translate (.flow .lyapunovStable) ∪
-      {.physical}) := by
-    rw [h]
-    exact ⟨hls, hI⟩
-  rw [TMIO.mem_realize] at h'
-  have hs : Meets flatCurve .synchronizing := h' .synchronizing (by simp [family, translate])
-  simp [Meets, flatCurve] at hs
+  refine Spectral.not_exactUnder_of_witness (x := flatCurve) (q := Requirement.synchronizing)
+    ((TMIO.mem_realize _ _ _).mpr fun r hr => ?_) (hmem.mpr ⟨by simp [flatCurve], Or.inr rfl⟩)
+    (by simp [family, translate]) (by simp [family, Meets, flatCurve])
+  rw [Set.mem_singleton_iff] at hr
+  subst hr
+  exact ⟨one_pos, one_pos⟩
 
 end DroopLPF
 

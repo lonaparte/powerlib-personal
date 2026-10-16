@@ -1,4 +1,5 @@
 import theorem.Spectral.Family
+import theorem.CurrentControl.IMC
 import theorem.Transform.SpaceVector
 import theorem.Criteria.Hurwitz2
 import theorem.Numerics.StabilityFunctions
@@ -58,7 +59,10 @@ Family and connection conclusions.
 * The same IMC rule on the converter current loop (IN-positive R–L branch, bandwidth `ω_b`) is
   `CurrentControl.imc` in `theorem/CurrentControl/IMC.lean` (`imc_transfer_eq`,
   `imc_mem_den_iff`), read through the single-axis PI-loop family `CurrentControl.PIParams.family`
-  of `theorem/CurrentControl/PILoop.lean`; `IMCLoop` is the machine-drive form of that loop.
+  of `theorem/CurrentControl/PILoop.lean`; `IMCLoop` is the machine-drive form of that loop. For
+  `L ≠ 0` the two are the same plant (`imcModel_eq`), so every sentence of the drive loop is read
+  through the converter family (`mem_den_iff_imc`, a connection statement), and `mem_den` is the
+  converter result `imc_mem_den_iff` read back.
 
 Corrections.
 * FOC note §1.8: the "bandwidth-separated" speed loop
@@ -210,6 +214,27 @@ def family : Family IMCLoop Spectral.Requirement 2 1 :=
 @[powerlib_foundation] theorem family_isLinear : family.IsLinear IMCLoop.plant :=
   Spectral.linearFamily_isLinear _ _ _
 
+/-! ### The converter PI-loop reading -/
+
+/-- The IMC loop is the converter PI loop with IMC tuning: for `L ≠ 0` its plant is the plant of
+`CurrentControl.imc L R α` (`K_p = Lα`, `K_i = Rα`). Static evidence on the model, not a
+connection conclusion. -/
+@[powerlib_foundation] theorem imcModel_eq (L R α : ℝ) (hL : L ≠ 0) :
+    imcModel L R α = (CurrentControl.imc L R α).model := by
+  ext i j <;> fin_cases i <;> fin_cases j <;>
+    simp [imcModel, siso2, CurrentControl.PIParams.model, CurrentControl.imc] <;> field_simp
+  ring
+
+/-- For `L ≠ 0` an IMC current loop satisfies exactly the sentences of the converter PI loop with
+IMC tuning `CurrentControl.imc L R α`: the two families read the same plant (`imcModel_eq`). A
+comparison of the two semantics connections at the two members. -/
+@[powerlib_domain] theorem mem_den_iff_imc (m : IMCLoop) (hL : m.L ≠ 0) (s : Sentence) :
+    connection% (m ∈ family.den s ↔
+      CurrentControl.imc m.L m.R m.α ∈ CurrentControl.PIParams.family.den s) := by
+  unfold powerlib.TMIO.Statement
+  rw [Family.mem_den, Family.mem_den, family_isLinear m, CurrentControl.PIParams.family_isLinear _]
+  simp only [IMCLoop.plant, imcModel_eq _ _ _ hL]
+
 /-- Every translation of the IMC family is sound. -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
@@ -225,16 +250,15 @@ positive monic coefficients. -/
   exact Spectral.linear_exact (fun m => (imcModel_isHurwitz_iff _ _ _).symm) hP
 
 /-- For `L, R, α > 0` the IMC current loop satisfies every attractive sentence (closed-loop
-eigenvalues `−α`, `−R/L`), in particular global exponential stability. -/
+eigenvalues `−α`, `−R/L`), in particular global exponential stability; read from the converter
+loop (`mem_den_iff_imc`, `CurrentControl.imc_mem_den_iff`). -/
 @[powerlib_domain] theorem mem_den (L R α : ℝ) (hL : 0 < L) (hR : 0 < R) (hα : 0 < α)
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (⟨L, R, α⟩ ∈ family.den (.flow P)) := by
-  unfold powerlib.TMIO.Statement
-  rw [family_isLinear.den_hurwitz hP]
-  change IsHurwitz (imcModel L R α).A
-  rw [imcModel_isHurwitz_iff]
-  have : 0 < R / L := div_pos hR hL
-  exact ⟨by linarith, by positivity⟩
+  have hr := mem_den_iff_imc ⟨L, R, α⟩ hL.ne' (.flow P)
+  have hc := CurrentControl.imc_mem_den_iff (R := R) hL hα hP
+  unfold powerlib.TMIO.Statement at hr hc ⊢
+  exact hr.mpr (hc.mpr (div_pos hR hL))
 
 /-- **IMC current loop: exponential tracking of a constant reference.** For `L, R, α > 0` there
 are uniform constants `K, rate > 0` such that every closed-loop trajectory satisfies

@@ -5,6 +5,7 @@ import theorem.Dynamics.Transport
 import theorem.Dynamics.ConverseLinearization
 import theorem.TMIO.ClaimElab
 import theorem.Spectral.Local
+import theorem.Spectral.Hub
 
 /-! # Synchronous machines as nonlinear port-Hamiltonian systems
 
@@ -87,7 +88,7 @@ Family and connection conclusions.
   sentence `ClassicalSM.family` is its pullback through `ClassicalSM.Model.toSwing`
   (`⟨⟨M, D, P_m, 0, b, 0⟩, δ*⟩`), for both connections: the denotations
   (`ClassicalSM.den_flow_eq_preimage`, member form `ClassicalSM.mem_den_flow_iff_swing`; every
-  flow sentence is invariant under `diag(1, M)`, `Dynamics.holds_transport_iff`) and the
+  flow sentence is invariant under `diag(1, M)`, `Spectral.mem_den_flow_iff_of_transport`) and the
   translations (`ClassicalSM.realize_translate_flow_eq_preimage`: on the image positive inertia
   and nonnegative damping always hold, `locked` is `balanced`, `stableBranch` is `synchronizing`,
   `damped` is `damped` with `synchronizing`, `unstableBranch` is `destabilizing`). Hence a flow
@@ -95,15 +96,17 @@ Family and connection conclusions.
   (`ClassicalSM.exact_flow_iff`). Passivity is outside the equivalence: the pH family has a port
   and is passive exactly when `P_m = 0`, the swing family has none and every model is passive, so
   the sentence-by-sentence equivalence fails (`ClassicalSM.not_den_eq_preimage`).
-* Flow conclusions, all read off the swing family through the equivalence: chain soundness
-  (`ClassicalSM.chain_le_semantics`, from `Swing.chain_le_semantics`; passivity from
+* Flow conclusions, all read off the swing family through the equivalence by the hub transfers
+  of `theorem/Spectral/Hub.lean`: chain soundness (`ClassicalSM.chain_le_semantics`, from
+  `Swing.chain_le_semantics` by `Spectral.sound_of_hub`; passivity from
   `ClassicalSM.mem_den_passive_of_Pm_zero`); members `ClassicalSM.mem_den_lyapunovStable`,
   `ClassicalSM.mem_den_locallyExponentiallyStable`, `ClassicalSM.mem_den_unstable` (from
   `Swing.mem_den_*`). The local exponential and local asymptotic translations are exact
   (`ClassicalSM.exact_locallyExponentiallyStable`, `ClassicalSM.exact_locallyAsymptoticallyStable`,
-  from `Swing.exactUnder_*`: every swing reading has positive inertia; the degenerate cases, an
-  undamped machine and a fold `cos δ* = 0`, are decided by the energy `H`). The Lyapunov denotation
-  is `ClassicalSM.mem_den_lyapunovStable_iff` (`b sin δ* = P_m`, `cos δ* > 0`, every `D ≥ 0`;
+  from `Swing.exactUnder_*` by `Spectral.exact_of_hub`: every swing reading has positive
+  inertia; the degenerate cases, an undamped machine and a fold `cos δ* = 0`, are decided by the
+  energy `H`). The Lyapunov denotation is `ClassicalSM.mem_den_lyapunovStable_iff`
+  (`b sin δ* = P_m`, `cos δ* > 0`, every `D ≥ 0`;
   from `Swing.mem_den_lyapunovStable_iff_of_inertia`, whose flat-curve alternative `k₂ = 0` is
   excluded by `b > 0`), so the Lyapunov translation is exact (`ClassicalSM.exact_lyapunovStable`).
   The stable-branch requirement must be invariant under whole turns: with `|δ*| < π/2` instead
@@ -500,18 +503,20 @@ private theorem toSwing_syncCoeff (m : Model) :
 sentence exactly when its swing reading does: under zero input the pH field is the swing field in
 the coordinates `(δ, M ω)` (`classicalSM_zeroInputField_eq_transport`), the operating point
 `(δ*, 0)` is fixed by that change, and every flow sentence is invariant under it
-(`Dynamics.holds_transport_iff`). -/
+(`Spectral.mem_den_flow_iff_of_transport`, `Dynamics.holds_transport_iff`). -/
 @[powerlib_domain] theorem mem_den_flow_iff_swing (m : Model) (P : Flow.Property) :
     connection% (m ∈ family.den (.flow P) ↔ m.toSwing ∈ Swing.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
+  have hdenG : ∀ (y : Swing.Model) (P : Flow.Property),
+      y ∈ Swing.family.den (.flow P) ↔ P.holds y.p.field y.point := fun _ P =>
+    Swing.family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
   have hpt : m.point =
       Dynamics.affineCoord (Dynamics.scaleCoord m.p.M_pos.ne') 0 m.toSwing.point := by
     ext i
     fin_cases i <;> simp [Model.point, classicalSM_equilibrium, Swing.Model.point,
       Model.toSwing, Dynamics.affineCoord, PhasePlane.mk]
-  rw [mem_den_flow_iff, Swing.family_isAutonomous.mem_den_flow,
-    classicalSM_zeroInputField_eq_transport, hpt, Dynamics.holds_transport_iff]
-  exact (Flow.Property.holds_shift_iff P).symm
+  exact Spectral.mem_den_flow_iff_of_transport (g := Model.toSwing) (fun _ _ => mem_den_flow_iff)
+    hdenG (Dynamics.scaleCoord m.p.M_pos.ne') 0 (classicalSM_zeroInputField_eq_transport m.p) hpt P
 
 /-- Every flow sentence of the classical-machine family denotes the preimage of its swing
 denotation under `Model.toSwing`: on the flow sentences the semantics connection of the family is
@@ -592,34 +597,25 @@ translation is exact on the image of `toSwing`. -/
   rw [Family.realize_comap, Family.den_comap, hr P, hd P]
   rfl
 
-/-- A swing translation exact within positive inertia is exact on the image of `toSwing`, where
-the inertia `M > 0` always holds. -/
-private theorem comap_exact_of_exactUnder {P : Flow.Property}
-    (h : Swing.family.ExactUnder {.inertia} (.flow P)) :
-    (Swing.family.comap Model.toSwing).Exact (.flow P) := by
-  unfold Family.ExactUnder TMIO.ExactUnder at h
-  rw [TMIO.realize_union] at h
-  unfold Family.Exact
-  rw [Family.realize_comap, Family.den_comap]
-  ext m
-  have hI : m.toSwing ∈ TMIO.realize Swing.family.meets {.inertia} := by
-    rw [TMIO.mem_realize]
-    intro q hq
+/-- Every swing reading has positive inertia: it lies in the swing family's context
+`{inertia}`. -/
+private theorem toSwing_mem_inertia (m : Model) :
+    m.toSwing ∈ TMIO.realize Swing.family.meets {.inertia} :=
+  (TMIO.mem_realize _ _ _).mpr fun q hq => by
     rw [Set.mem_singleton_iff] at hq
     subst hq
     exact m.p.M_pos
-  simp only [Set.mem_preimage]
-  constructor
-  · intro hm
-    have h' : m.toSwing ∈ TMIO.realize Swing.family.meets (Swing.family.translate (.flow P)) ∩
-        TMIO.realize Swing.family.meets {.inertia} := ⟨hm, hI⟩
-    rw [h] at h'
-    exact h'.1
-  · intro hm
-    have h' : m.toSwing ∈ Swing.family.den (.flow P) ∩
-        TMIO.realize Swing.family.meets {.inertia} := ⟨hm, hI⟩
-    rw [← h] at h'
-    exact h'.1
+
+/-- A swing translation exact within positive inertia is exact for the classical machine
+(`Spectral.exact_of_hub`): every swing reading has positive inertia, and on every flow sentence
+the reading (`mem_den_flow_iff_swing`) and the requirement correspondence
+(`realize_translate_flow_eq_preimage`) hold. -/
+private theorem exact_of_exactUnder {P : Flow.Property}
+    (h : Swing.family.ExactUnder {.inertia} (.flow P)) : family.Exact (.flow P) := by
+  have hr := realize_translate_flow_eq_preimage
+  unfold powerlib.TMIO.Statement at hr
+  exact Spectral.exact_of_hub Model.toSwing toSwing_mem_inertia
+    (fun m => mem_den_flow_iff_swing m P) (fun m => Set.ext_iff.mp (hr P) m) h
 
 /-! #### Members of the flow denotations -/
 
@@ -676,24 +672,20 @@ machine is passive. -/
   nlinarith
 
 /-- Every translation of the classical-machine family is sound: the flow translations are the
-swing translations read through `toSwing` (`realize_translate_flow_eq_preimage`,
-`den_flow_eq_preimage`, `Swing.chain_le_semantics`); passivity from `P_m = 0`. -/
+swing translations read through `toSwing` (`Spectral.sound_of_hub` from
+`Swing.chain_le_semantics`, with `realize_translate_flow_eq_preimage` and
+`mem_den_flow_iff_swing`); passivity from `P_m = 0`. -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   have hs := Swing.chain_le_semantics
   have hr := realize_translate_flow_eq_preimage
-  have hd := den_flow_eq_preimage
-  unfold powerlib.TMIO.Statement at hs hr hd ⊢
-  have hsound := Family.chain_le_semantics_iff.mp hs
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
+  unfold powerlib.TMIO.Statement at hs hr ⊢
+  refine Family.chain_le_semantics_iff.mpr fun s => ?_
   rcases s with P | _
-  · have hm' : m ∈ Model.toSwing ⁻¹'
-        TMIO.realize Swing.family.meets (Swing.family.translate (.flow P)) := by
-      rw [← hr P]
-      exact hm
-    rw [hd P]
-    exact hsound (.flow P) hm'
-  · rw [TMIO.mem_realize] at hm
+  · exact Spectral.sound_of_hub Model.toSwing (fun m hm => (Set.ext_iff.mp (hr P) m).mp hm)
+      (fun m _ => (mem_den_flow_iff_swing m P).mpr) (Family.chain_le_semantics_iff.mp hs (.flow P))
+  · intro m hm
+    rw [TMIO.mem_realize] at hm
     exact mem_den_passive_of_Pm_zero m (hm .noPower rfl)
 
 /-! #### Exactness of the local translations -/
@@ -703,13 +695,11 @@ stable at `(δ*, 0)` exactly when `b sin δ* = P_m`, `D > 0` and `cos δ* > 0`. 
 inertia the swing translation is exact (`Swing.exactUnder_locallyExponentiallyStable`, converse
 linearization: the Jacobian `[[0, 1], [−K/M, −D/M]]`, conjugate by `diag(1, M)` to
 `(J − R) ∇²H = [[0, 1/M], [−b cos δ*, −D/M]]`, `classicalSM_linearization`), and every swing
-reading has positive inertia (`exact_flow_iff`). -/
+reading has positive inertia (`Spectral.exact_of_hub`). -/
 @[powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
-  have he := exact_flow_iff
-  have hs := Swing.exactUnder_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at he hs ⊢
-  exact (he _).mpr (comap_exact_of_exactUnder hs)
+  unfold powerlib.TMIO.Statement
+  exact exact_of_exactUnder Swing.exactUnder_locallyExponentiallyStable
 
 /-! #### The local asymptotic and Lyapunov translations -/
 
@@ -735,7 +725,8 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- The local asymptotic translation is exact: the classical machine is locally asymptotically
 stable at `(δ*, 0)` exactly when `b sin δ* = P_m`, `D > 0` and `cos δ* > 0`
-(`Swing.exactUnder_locallyAsymptoticallyStable` on the swing readings, all of positive inertia).
+(`Swing.exactUnder_locallyAsymptoticallyStable` on the swing readings, all of positive inertia,
+`Spectral.exact_of_hub`).
 The linearization does not decide the degenerate cases, the model's structure does: an undamped
 machine conserves `H`, and at a fold (`cos δ* = 0`) the Hamiltonian `p²/(2M) − P_m (s − sin s)`
 (`classicalSM_H_fold`; `Swing.potential_fold` in swing coordinates) is below its value at
@@ -743,10 +734,8 @@ machine conserves `H`, and at a fold (`cos δ* = 0`) the Hamiltonian `p²/(2M) �
 (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
 @[powerlib_domain] theorem exact_locallyAsymptoticallyStable :
     connection% (family.Exact (.flow .locallyAsymptoticallyStable)) := by
-  have he := exact_flow_iff
-  have hs := Swing.exactUnder_locallyAsymptoticallyStable
-  unfold powerlib.TMIO.Statement at he hs ⊢
-  exact (he _).mpr (comap_exact_of_exactUnder hs)
+  unfold powerlib.TMIO.Statement
+  exact exact_of_exactUnder Swing.exactUnder_locallyAsymptoticallyStable
 
 /-- Lyapunov stability holds exactly at the equilibria with `cos δ* > 0` (every damping
 `D ≥ 0`): the stable branch up to whole turns. This is the Lyapunov denotation of the swing
@@ -924,8 +913,8 @@ def offEquilibrium : Model := ⟨⟨1, 0, 1, 2, one_pos, le_rfl, one_pos⟩, 0�
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero
-    (zeroInputField_contDiff offEquilibrium.p) fun h => ?_)
+  refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff)
+    (zeroInputField_contDiff offEquilibrium.p) fun h => ?_
   have h' := (classicalSM_isEquilibrium_iff offEquilibrium.p _).mp h
   simp [offEquilibrium, Model.point, classicalSM_equilibrium] at h'
 

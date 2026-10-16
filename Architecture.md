@@ -38,6 +38,15 @@ that keep their own requirement languages. A model family then supplies only its
 which requirements give local exponential stability or instability, and the converse algebra of
 its Jacobian.
 
+Families that are other families in disguise are read through a hub instead of re-proving its
+laws: the droop loop with a power filter, the saturated converter and the classical machine through
+the swing family, the port-Hamiltonian PLL through the PI-PLL, the drive IMC loop through the
+converter PI loop. A spoke supplies a map of models, a reading (usually an affine change of state
+coordinates, `Spectral.mem_den_flow_iff_of_transport`) and the correspondence of its requirement
+language with the hub's on a context; `theorem/Spectral/Hub.lean` then carries exactness within the
+context, soundness and requirement obligations from the hub (`exactUnder_of_hub`, `exact_of_hub`,
+`sound_of_hub`, `realize_subset_den_of_hub`).
+
 Representation transport preserves the semantic and generated maps, and now
 also transports closed and interior fixed points. `closedTransport`,
 `interiorTransport` and `fixedPointsIso_transport` prove that the fixed-point
@@ -64,6 +73,7 @@ narrow bridge of Rules §11 and is checked by Lean (`theorem/generated/`).
 | `theorem/ImpedanceInterconnection.agda` | source and load → closed loop; covariance under state coordinates | `Circuits/Interconnection` (generated `ImpedanceInterconnection`) |
 | `theorem/TMIO/Representation.agda` | representation changes transport satisfaction structures and generated spaces | `TMIO/Representation` (`generate_transport`, `Seed.transport_whole`) |
 | `theorem/Rebase.agda` | changes of bases of an interconnection: state coordinates, per-unit bases, current direction, time base | `Transform/Rebase`; per-unit instance `Transform/PerUnitLTI` |
+| `theorem/Hub.agda` | a spoke family read through a hub family: readings by conjugacy, pullback of satisfaction, transfer of exactness and soundness | `Spectral/Hub`; instances in `GFM/VSMLPF` (`DroopLPF`), `Limiting/Saturation`, `Synchronous/PH` (`ClassicalSM`), `PLL/PH`, `Drives/CascadeControl` |
 
 The rebasing scaffold shows the division of labour. Univalence turns the equivalences of the
 six spaces of an interconnection into a path, so the closed loop commutes with every change of

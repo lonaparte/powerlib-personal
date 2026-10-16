@@ -57,6 +57,7 @@ import theorem.PDE.Energy
 import theorem.Potential.Barrier
 import theorem.Spectral.Family
 import theorem.Spectral.Local
+import theorem.Spectral.Hub
 import theorem.Stack.Implementation
 import theorem.Stack.Basic
 import theorem.DAE.Elimination
