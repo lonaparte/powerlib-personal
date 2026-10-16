@@ -51,9 +51,16 @@ Family and connection conclusions.
   `lyapunovStable_iff`, `unstable_iff`, `localAsymptoticStable_iff`) are member-equivalences of
   the two families.  Consequently the droop translation is sound
   (`droopFamily_chain_le_semantics`).
-* On an infinite bus (`P = K₀ sin`, `ω_s = 0`, `ω* = 0`) the VSM family agrees with the swing
-  family `Synchronous.Swing.family` sentence by sentence (`vsm_mem_den_iff_swing`), and
-  `infiniteBus_locallyExponentiallyStable` is a connection conclusion on the droop family.
+* On a sinusoidal power curve (`P = k₁ + k₂ sin(θ − k₃)`, any `ω_s`, `ω* = 0`) the VSM family
+  agrees with the swing family `Synchronous.Swing.family` sentence by sentence: the model is the
+  swing model `⟨M, D, P_ref + D ω_s, k₁, k₂, k₃⟩` about `θ*`
+  (`vsm_mem_den_iff_swing_of_sinusoid`; on an infinite bus in the synchronous frame
+  `vsm_mem_den_iff_swing`). Through it `infiniteBus_locallyExponentiallyStable`, a connection
+  conclusion on the droop family, is the swing family's local exponential stability
+  (`Synchronous.Swing.mem_den_locallyExponentiallyStable`). The VSM family keeps its own laws
+  (`vsmFamily_chain_le_semantics`, `vsm_mem_den_locallyExponentiallyStable`): they hold for an
+  arbitrary `C¹` power map `P` and a selected state with `ω* ≠ 0`, which the swing family, with
+  its sinusoidal curve and selected point `(δ*, 0)`, does not cover.
 * `vsmField_eq_transport` and `equilibrium_iff` are static evidence on the model (a field
   identity and an equilibrium correspondence).  The trajectory maps `isTrajectoryOn_vsm_of_droop`,
   `isTrajectoryOn_droop_of_vsm` are private implementation evidence (trajectory level).
@@ -416,16 +423,18 @@ place a VSM model in local exponential stability. -/
   unfold powerlib.TMIO.Statement
   exact vsm_mem_den_flow_iff.mpr (vsm_les hs ⟨hω, hb⟩ hM hD hK)
 
-/-- On an infinite bus in the synchronous frame (`P = K₀ sin`, `ω_s = 0`) a VSM model at a state
-with `ω* = 0` is the swing model `⟨M, D, P_ref, 0, K₀, 0⟩` read about `θ*`: the two families agree
-on every sentence. -/
-@[powerlib_domain] theorem vsm_mem_den_iff_swing (m : VSMModel) (K0 : ℝ)
-    (hP : m.P = fun θ => K0 * Real.sin θ) (hω : m.ωs = 0) (h1 : m.point 1 = 0) (s : Sentence) :
+/-- On a sinusoidal power curve `P(θ) = k₁ + k₂ sin(θ − k₃)`, in any rotating frame, a VSM model
+at a state with `ω* = 0` is the swing model `⟨M, D, P_ref + D ω_s, k₁, k₂, k₃⟩` read about `θ*`
+(the damping reference `ω_s` shifts the mechanical power to `P_ref + D ω_s`): the two families
+agree on every sentence, because the two translated fields are equal. -/
+@[powerlib_domain] theorem vsm_mem_den_iff_swing_of_sinusoid (m : VSMModel) (k₁ k₂ k₃ : ℝ)
+    (hP : m.P = fun θ => k₁ + k₂ * Real.sin (θ - k₃)) (h1 : m.point 1 = 0) (s : Sentence) :
     connection% (m ∈ vsmFamily.den s ↔
-      Synchronous.Swing.Model.mk ⟨m.M, m.D, m.Pref, 0, K0, 0⟩ (m.point 0) ∈
+      Synchronous.Swing.Model.mk ⟨m.M, m.D, m.Pref + m.D * m.ωs, k₁, k₂, k₃⟩ (m.point 0) ∈
         Synchronous.Swing.family.den s) := by
   unfold powerlib.TMIO.Statement
-  have hfield : m.field = Synchronous.Swing.Model.field ⟨⟨m.M, m.D, m.Pref, 0, K0, 0⟩, m.point 0⟩ := by
+  have hfield : m.field = Synchronous.Swing.Model.field
+      ⟨⟨m.M, m.D, m.Pref + m.D * m.ωs, k₁, k₂, k₃⟩, m.point 0⟩ := by
     funext z
     have hpt : m.point = PhasePlane.mk (m.point 0) 0 :=
       PhasePlane.ext_iff'.2 ⟨by simp, by simp [h1]⟩
@@ -433,11 +442,25 @@ on every sentence. -/
     rw [← hpt]
     refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
     · simp [VSMModel.vector]
-    · simp [VSMModel.vector, Synchronous.SwingParams.accel, Synchronous.SwingParams.Pe, hP, hω]
+    · simp only [VSMModel.vector, Synchronous.SwingParams.field_apply_one,
+        Synchronous.SwingParams.accel, Synchronous.SwingParams.Pe, PhasePlane.mk_apply_one, hP]
+      ring
   rw [Family.mem_den, Family.mem_den]
   change s.holds (.continuous (Port.System.autonomous m.field)) ↔
     s.holds (.continuous (Port.System.autonomous _))
   rw [hfield]
+
+/-- On an infinite bus in the synchronous frame (`P = K₀ sin`, `ω_s = 0`) a VSM model at a state
+with `ω* = 0` is the swing model `⟨M, D, P_ref, 0, K₀, 0⟩` read about `θ*`: the two families agree
+on every sentence (`vsm_mem_den_iff_swing_of_sinusoid` with `k₁ = k₃ = 0`). -/
+@[powerlib_domain] theorem vsm_mem_den_iff_swing (m : VSMModel) (K0 : ℝ)
+    (hP : m.P = fun θ => K0 * Real.sin θ) (hω : m.ωs = 0) (h1 : m.point 1 = 0) (s : Sentence) :
+    connection% (m ∈ vsmFamily.den s ↔
+      Synchronous.Swing.Model.mk ⟨m.M, m.D, m.Pref, 0, K0, 0⟩ (m.point 0) ∈
+        Synchronous.Swing.family.den s) := by
+  have h := vsm_mem_den_iff_swing_of_sinusoid m 0 K0 0 (by rw [hP]; simp) h1 s
+  unfold powerlib.TMIO.Statement at h ⊢
+  rw [h, hω, mul_zero, add_zero]
 
 /-! ## The droop + LPF family and the large-signal equivalence -/
 
@@ -555,17 +578,15 @@ droop + LPF family is the semantics connection of the VSM family read through `t
   rw [hd]; rfl
 
 /-- Droop + LPF on an infinite bus (`P = K₀ sin`): every equilibrium with `K₀ cos θ₀ > 0` is
-locally exponentially stable for all `K_R, τ_p > 0` (transported from the VSM image; in the
-synchronous frame `ω_s = 0` that image is the swing model `⟨τ_p K_R, K_R, P_ref, 0, K₀, 0⟩`,
-`vsm_mem_den_iff_swing`).  It holds for every `ω_s`, not only `ω_s = 0`. -/
+locally exponentially stable for all `K_R, τ_p > 0`, in every rotating frame. Its VSM image is the
+swing model `⟨τ_p K_R, K_R, P_ref + K_R ω_s, 0, K₀, 0⟩` about `θ₀`
+(`vsm_mem_den_iff_swing_of_sinusoid`), balanced with positive inertia, damping and synchronizing
+coefficient (`Synchronous.Swing.mem_den_locallyExponentiallyStable`). -/
 @[powerlib_domain] theorem infiniteBus_locallyExponentiallyStable (m : DroopModel) (K0 : ℝ)
     (hP : m.d.P = fun θ => K0 * Real.sin θ) (hK : 0 < m.d.KR)
     (hτ : 0 < m.d.τp) (heq : m.d.droopField m.point = 0) (hcos : 0 < K0 * Real.cos (m.point 0)) :
     connection% (m ∈ droopFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
   have hiff := locallyExponentiallyStable_iff m
-  unfold powerlib.TMIO.Statement at hiff
-  rw [hiff]
   have hy0 : m.toVSM.point 0 = m.point 0 := by
     simp [DroopModel.toVSM, m.d.affineCoord_apply m.KR_ne]
   have hzero : m.toVSM.vector m.toVSM.point = 0 := by
@@ -573,18 +594,18 @@ synchronous frame `ω_s = 0` that image is the swing model `⟨τ_p K_R, K_R, P_
     exact (m.d.equilibrium_iff m.KR_ne m.τp_ne m.point).mpr heq
   have hM : 0 < m.toVSM.M := mul_pos hτ hK
   obtain ⟨h1, hb⟩ := (m.toVSM.vector_eq_zero_iff hM.ne' _).mp hzero
-  have hd : deriv m.toVSM.P (m.toVSM.point 0) = K0 * Real.cos (m.point 0) := by
-    rw [hy0]
-    change deriv m.d.P (m.point 0) = _
+  have hP' : m.toVSM.P = fun θ => 0 + K0 * Real.sin (θ - 0) := by
+    change m.d.P = _
     rw [hP]
-    exact ((Real.hasDerivAt_sin (m.point 0)).const_mul K0).deriv
-  have hsm : ContDiff ℝ 1 m.toVSM.P := by
-    change ContDiff ℝ 1 m.d.P
-    rw [hP]
-    exact contDiff_const.mul Real.contDiff_sin
-  have hv := vsm_mem_den_locallyExponentiallyStable _ hsm h1 hb hM hK (by rw [hd]; exact hcos)
-  unfold powerlib.TMIO.Statement at hv
-  exact hv
+    simp
+  have hr := vsm_mem_den_iff_swing_of_sinusoid m.toVSM 0 K0 0 hP' h1
+    (.flow .locallyExponentiallyStable)
+  have hs := Synchronous.Swing.mem_den_locallyExponentiallyStable
+    ⟨⟨m.toVSM.M, m.toVSM.D, m.toVSM.Pref + m.toVSM.D * m.toVSM.ωs, 0, K0, 0⟩, m.toVSM.point 0⟩
+    hM hK (by simpa [Synchronous.SwingParams.Pe, hP'] using hb)
+    (by simpa [Synchronous.SwingParams.syncCoeff, hy0] using hcos)
+  unfold powerlib.TMIO.Statement at hiff hr hs ⊢
+  exact hiff.mpr (hr.mpr hs)
 
 end DroopVSM
 end powerlib.GFM

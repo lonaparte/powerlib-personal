@@ -51,7 +51,12 @@ The translation chain lies below the semantics connection (`chain_le_semantics`)
 linearization theorems, applied to the field at `x*` and moved to the origin. Passivity is exact
 (`exact_passive`). Members are placed in the local denotations by slope and gain conditions alone
 (`mem_den_locallyExponentiallyStable`, `mem_den_unstable`, …), and the synchronous-reference-frame
-detector `h = −V sin` gives a stable and an unstable member for every `δω`. The frequency-drift
+detector `h = −V sin` gives a stable and an unstable member for every `δω`. A negative slope with
+`K_p ≥ 0`, `K_i > 0` gives Lyapunov stability through the PLL energy `U(θ) + ½ K_i (η − δω/K_i)²`,
+`U = −∫_{θ*} h`, also for the lossless loop `K_p = 0` whose linearization is a centre
+(`mem_den_lyapunovStable_of_slope`). At a hyperbolic slope (`K_p h'(θ*) ≠ 0`, `K_i h'(θ*) ≠ 0`)
+local asymptotic stability is decided by the linearization: it holds exactly at a phase-locked
+point with both products negative (`mem_den_las_iff_of_nondegenerate`). The frequency-drift
 boundary `Σ_FD` of `T-gfl-dynamics` §1.12 is refuted on both the requirement connection and the
 semantics connection (`frequencyDriftBoundary_refuted`, `frequencyDriftBoundary_stable`). The
 global sentences have no available translation: the linear detector `h = −θ` is globally
@@ -252,6 +257,36 @@ Jacobian `[[K_p g, K_i], [g, 0]]`. -/
   · exact heq
   · exact hH
 
+/-- At a hyperbolic slope — both slope-gain products nonzero, so that the Jacobian
+`[[K_p g, K_i], [g, 0]]` has nonzero trace and determinant and no eigenvalue on the imaginary
+axis — local asymptotic stability is decided by the linearization: a model is locally
+asymptotically stable at its selected point exactly when the point is phase-locked with both
+products negative (a Hurwitz Jacobian). A locally asymptotically stable point of the `C¹` field is
+an equilibrium (`Dynamics.isEquilibrium_of_lyapunovStable`), and at an equilibrium a positive
+determinant-side product (`K_i g > 0`, a saddle) or a positive trace (`K_p g > 0`) is unstable. -/
+@[powerlib_domain] theorem mem_den_las_iff_of_nondegenerate (m : Model)
+    (hKp : m.Kp * deriv m.h m.θ ≠ 0) (hKi : m.Ki * deriv m.h m.θ ≠ 0) :
+    connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
+      m ∈ TMIO.realize Meets {.phaseLocked, .slopeStable}) := by
+  unfold powerlib.TMIO.Statement
+  constructor
+  · intro hd
+    have hlas := mem_den_flow_iff.mp hd
+    have heq : piPLLField m.h m.Kp m.Ki m.δω m.point = 0 :=
+      Dynamics.isEquilibrium_of_lyapunovStable (contDiff_piPLLField m.smooth) hlas.1
+    have hneg : ∀ {c : ℝ}, c ≠ 0 → (0 < c → Unstable (piPLLField m.h m.Kp m.Ki m.δω) m.point) →
+        c < 0 := fun hc hu =>
+      (lt_or_gt_of_ne hc).resolve_right fun hpos => hu hpos hlas.1
+    rw [TMIO.mem_realize]
+    rintro q (rfl | rfl)
+    · exact piPLLField_point_eq_zero_iff.mp heq
+    · exact ⟨hneg hKp fun h => piPLL_unstable_of_slope m.smooth heq (m.hasDerivAt m.θ) (Or.inr h),
+        hneg hKi fun h => piPLL_unstable_of_slope m.smooth heq (m.hasDerivAt m.θ) (Or.inl h)⟩
+  · intro hm
+    rw [TMIO.mem_realize] at hm
+    exact Spectral.den_locallyExponentiallyStable_subset_las
+      (les_of_meets (hm .phaseLocked (by simp)) (hm .slopeStable (by simp)))
+
 /-! ### Members of the local denotations -/
 
 /-- Slope and gain conditions alone place a model in local exponential stability: at a zero
@@ -300,6 +335,114 @@ in instability; no sign condition on `K_p`. -/
     (hzero : m.h m.θ = 0) (hg : 0 < deriv m.h m.θ) :
     connection% (m ∈ family.den (.flow .unstable)) :=
   mem_den_unstable m hzero (mul_pos hKi hg)
+
+/-! ### Lyapunov stability at a negative slope: the PLL energy
+
+At a zero `θ*` of `h` with `h'(θ*) < 0`, `K_p ≥ 0` and `K_i > 0` the PLL energy
+`E(θ, η) = U(θ) + ½ K_i (η − δω/K_i)²`, `U(θ) = −∫_{θ*}^{θ} h`, is a local Lyapunov function of
+the untranslated field at the selected point: `Ė = −K_p h(θ)² ≤ 0`, and `U > 0` near `θ*` off
+`θ*`, because `h` decreases through zero there. The lossless loop `K_p = 0` is included, where the
+linearization (a centre) decides nothing. Implementation evidence; the public conclusion is
+`mem_den_lyapunovStable_of_slope`. -/
+
+/-- The detector potential about the selected phase, `U(θ) = −∫_{θ*}^{θ} h`. -/
+private def potential (m : Model) (θ : ℝ) : ℝ := -∫ s in m.θ..θ, m.h s
+
+private theorem hasDerivAt_potential (m : Model) (θ : ℝ) :
+    HasDerivAt (potential m) (-m.h θ) θ :=
+  (m.smooth.continuous.integral_hasStrictDerivAt m.θ θ).hasDerivAt.neg
+
+/-- The PLL energy `E(θ, η) = U(θ) + ½ K_i (η − δω/K_i)²`. -/
+private def energy (m : Model) (x : ℝ²) : ℝ :=
+  potential m (x 0) + m.Ki / 2 * (x 1 - m.δω / m.Ki) ^ 2
+
+private theorem hasFDerivAt_energy (m : Model) (x : ℝ²) :
+    HasFDerivAt (energy m)
+      ((-m.h (x 0)) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : ℝ² →L[ℝ] ℝ) +
+        (m.Ki * (x 1 - m.δω / m.Ki)) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : ℝ² →L[ℝ] ℝ)) x := by
+  have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : ℝ² →L[ℝ] ℝ).hasFDerivAt (x := x)
+  have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : ℝ² →L[ℝ] ℝ).hasFDerivAt (x := x)
+  have h := ((hasDerivAt_potential m (x 0)).comp_hasFDerivAt x h0).add
+    (((h1.sub_const (m.δω / m.Ki)).pow 2).const_mul (m.Ki / 2))
+  refine h.congr_fderiv ?_
+  ext v
+  simp
+  ring
+
+/-- The energy decreases at the damping rate: `Ė = −K_p h(θ)²` (`K_i ≠ 0`). -/
+private theorem energy_lie (m : Model) (hKi : m.Ki ≠ 0) (x : ℝ²) :
+    fderiv ℝ (energy m) x (piPLLField m.h m.Kp m.Ki m.δω x) = -(m.Kp * m.h (x 0) ^ 2) := by
+  rw [(hasFDerivAt_energy m x).fderiv]
+  simp only [_root_.add_apply, _root_.smul_apply, PiLp.proj_apply,
+    smul_eq_mul, piPLLField_apply_zero, piPLLField_apply_one]
+  field_simp
+  ring
+
+/-- Near a zero `θ*` of `h` where the slope stays negative the potential is positive off `θ*`:
+`h > 0` before `θ*` and `h < 0` after it. -/
+private theorem potential_pos (m : Model) (hzero : m.h m.θ = 0) {r : ℝ}
+    (hr : ∀ θ, |θ - m.θ| < r → deriv m.h θ < 0) {θ : ℝ} (hθ : |θ - m.θ| < r) (hne : θ ≠ m.θ) :
+    0 < potential m θ := by
+  have hanti : StrictAntiOn m.h (Set.Ioo (m.θ - r) (m.θ + r)) := by
+    refine strictAntiOn_of_deriv_neg (convex_Ioo _ _) m.smooth.continuous.continuousOn
+      fun s hs => ?_
+    rw [interior_Ioo] at hs
+    exact hr s (abs_lt.mpr ⟨by linarith [hs.1], by linarith [hs.2]⟩)
+  obtain ⟨hθ1, hθ2⟩ := abs_lt.mp hθ
+  have hmem : m.θ ∈ Set.Ioo (m.θ - r) (m.θ + r) := ⟨by linarith, by linarith⟩
+  have hint : ∀ a b, IntervalIntegrable m.h MeasureTheory.volume a b := fun a b =>
+    m.smooth.continuous.intervalIntegrable a b
+  rcases lt_or_gt_of_ne hne with hlt | hgt
+  · rw [potential, ← intervalIntegral.integral_symm]
+    refine intervalIntegral.intervalIntegral_pos_of_pos_on (hint _ _) (fun s hs => ?_) hlt
+    have := hanti ⟨by linarith [hs.1], by linarith [hs.2]⟩ hmem hs.2
+    rwa [hzero] at this
+  · rw [potential, ← intervalIntegral.integral_neg]
+    refine intervalIntegral.intervalIntegral_pos_of_pos_on (hint _ _).neg (fun s hs => ?_) hgt
+    have := hanti hmem ⟨by linarith [hs.1], by linarith [hs.2]⟩ hs.1
+    rw [hzero] at this
+    exact neg_pos.mpr this
+
+/-- At a zero of `h` with negative slope, `K_p ≥ 0` and `K_i > 0`, the untranslated field is
+Lyapunov stable at the selected point (the PLL energy, LeanForControl's `lyapunov_stable`). -/
+private theorem lyapunovStable_of_slope {m : Model} (hzero : m.h m.θ = 0) (hKp : 0 ≤ m.Kp)
+    (hKi : 0 < m.Ki) (hg : deriv m.h m.θ < 0) :
+    LyapunovStable (piPLLField m.h m.Kp m.Ki m.δω) m.point := by
+  obtain ⟨r, hr0, hr⟩ := Metric.isOpen_iff.mp
+    (isOpen_lt (m.smooth.continuous_deriv le_rfl) continuous_const) m.θ hg
+  have hr' : ∀ θ, |θ - m.θ| < r → deriv m.h θ < 0 := fun θ hθ =>
+    hr (by simpa [Real.dist_eq] using hθ)
+  have hp0 : m.point 0 = m.θ := by simp [Model.point]
+  have hp1 : m.point 1 = m.δω / m.Ki := by simp [Model.point]
+  have hEd : Differentiable ℝ (energy m) := fun x => (hasFDerivAt_energy m x).differentiableAt
+  apply lyapunov_stable (D := {x : ℝ² | |x 0 - m.θ| < r}) (V := energy m) (by norm_num)
+  refine ⟨?_, ?_, hEd.continuous, hEd, ?_, fun x hx hne => ?_, fun x _ => ?_⟩
+  · exact isOpen_lt (by fun_prop) continuous_const
+  · show |m.point 0 - m.θ| < r
+    simpa [hp0] using hr0
+  · simp [energy, potential, hp0, hp1]
+  · have hx' : |x 0 - m.θ| < r := hx
+    have hq : 0 ≤ m.Ki / 2 * (x 1 - m.δω / m.Ki) ^ 2 := by positivity
+    by_cases h0 : x 0 = m.θ
+    · have h1 : x 1 - m.δω / m.Ki ≠ 0 := fun h1 => hne (PhasePlane.ext_iff'.2
+        ⟨by rw [h0, hp0], by rw [hp1]; linarith⟩)
+      have : 0 < m.Ki / 2 * (x 1 - m.δω / m.Ki) ^ 2 := by positivity
+      simpa [energy, potential, h0] using this
+    · have hU := potential_pos m hzero hr' hx' h0
+      simp only [energy]
+      linarith
+  · rw [energy_lie m hKi.ne']
+    nlinarith [sq_nonneg (m.h (x 0))]
+
+/-- At a zero `θ*` of `h` with negative slope `h'(θ*) < 0`, a nonnegative proportional gain and a
+positive integral gain place a model in Lyapunov stability, for every constant offset `δω`: the PLL
+energy `U(θ) + ½ K_i (η − δω/K_i)²`, `U = −∫_{θ*} h`, decreases at the rate `K_p h(θ)²`. With
+`K_p = 0` (a lossless loop, a centre of the linearization) the energy is conserved. -/
+@[powerlib_domain] theorem mem_den_lyapunovStable_of_slope (m : Model) (hzero : m.h m.θ = 0)
+    (hKp : 0 ≤ m.Kp) (hKi : 0 < m.Ki) (hg : deriv m.h m.θ < 0) :
+    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  exact mem_den_flow_iff.mpr (lyapunovStable_of_slope hzero hKp hKi hg)
 
 /-! ### The synchronous-reference-frame detector -/
 

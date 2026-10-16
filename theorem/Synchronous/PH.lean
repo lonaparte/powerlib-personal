@@ -49,6 +49,9 @@ Seven-state dq machine (`syncMachine7`, T-sync-machine §1.13), continuous time:
 * Not modelled: network, AVR/exciter dynamics, governor, saturation, zero sequence.
   Not an instance of `Port.PortHamiltonian` (`J` depends on the state, `H` is not diagonal).
 
+Scaffold of the reading of `ClassicalSM` through the swing family:
+`theorem/ClassicalMachineSwing.agda`.
+
 Source: work-sync `theory/T-ph.md` §1.7 (1.12); `theory/T-sync-machine.md` §1.13.
 
 Results.
@@ -105,15 +108,16 @@ Family and connection conclusions.
   (`ClassicalSM.exact_locallyExponentiallyStable`, `ClassicalSM.exact_locallyAsymptoticallyStable`,
   from `Swing.exactUnder_*` by `Spectral.exact_of_hub`: every swing reading has positive
   inertia; the degenerate cases, an undamped machine and a fold `cos δ* = 0`, are decided by the
-  energy `H`). The Lyapunov denotation is `ClassicalSM.mem_den_lyapunovStable_iff`
-  (`b sin δ* = P_m`, `cos δ* > 0`, every `D ≥ 0`;
-  from `Swing.mem_den_lyapunovStable_iff_of_inertia`, whose flat-curve alternative `k₂ = 0` is
-  excluded by `b > 0`), so the Lyapunov translation is exact (`ClassicalSM.exact_lyapunovStable`).
+  energy `H`). The Lyapunov translation is exact (`ClassicalSM.exact_lyapunovStable`, from
+  `Swing.exactUnder_lyapunovStable` by `Spectral.exact_of_hub`: every swing reading has positive
+  inertia and a curved power-angle curve, `k₂ = b > 0`), so the Lyapunov denotation is
+  `ClassicalSM.mem_den_lyapunovStable_iff` (`b sin δ* = P_m`, `cos δ* > 0`, every `D ≥ 0`).
   The stable-branch requirement must be invariant under whole turns: with `|δ*| < π/2` instead
   of `cos δ* > 0` the Lyapunov translation would be sound but not exact (`M = b = 1`,
   `D = P_m = 0`, `δ* = 2π` is Lyapunov stable without meeting it). The instability translation is
   not exact (`ClassicalSM.not_exact_unstable`): the unbalanced machine `ClassicalSM.offEquilibrium`
-  (`P_m = 2 > b = 1`) is unstable (`ClassicalSM.offEquilibrium_mem_den_unstable`).
+  (`P_m = 2 > b = 1`) is unstable (`ClassicalSM.offEquilibrium_mem_den_unstable`, its swing
+  reading is unbalanced, `Swing.mem_den_unstable_of_not_balanced`).
 * Passivity, the port-Hamiltonian conclusion: the translation is exact
   (`ClassicalSM.exact_passive`): with `P_m = 0` the Hamiltonian is bounded below
   (`ClassicalSM.mem_den_passive_of_Pm_zero`); for `P_m ≠ 0` the machine is not passive
@@ -597,24 +601,27 @@ translation is exact on the image of `toSwing`. -/
   rw [Family.realize_comap, Family.den_comap, hr P, hd P]
   rfl
 
-/-- Every swing reading has positive inertia: it lies in the swing family's context
-`{inertia}`. -/
-private theorem toSwing_mem_inertia (m : Model) :
-    m.toSwing ∈ TMIO.realize Swing.family.meets {.inertia} :=
+/-- Every swing reading has positive inertia and a curved power-angle curve (`k₂ = b > 0`): it
+lies in the swing family's context `{inertia, curved}`. -/
+private theorem toSwing_mem_context (m : Model) :
+    m.toSwing ∈ TMIO.realize Swing.family.meets {.inertia, .curved} :=
   (TMIO.mem_realize _ _ _).mpr fun q hq => by
-    rw [Set.mem_singleton_iff] at hq
-    subst hq
-    exact m.p.M_pos
+    rcases hq with rfl | rfl
+    · exact m.p.M_pos
+    · exact m.p.b_pos.ne'
 
-/-- A swing translation exact within positive inertia is exact for the classical machine
-(`Spectral.exact_of_hub`): every swing reading has positive inertia, and on every flow sentence
-the reading (`mem_den_flow_iff_swing`) and the requirement correspondence
-(`realize_translate_flow_eq_preimage`) hold. -/
-private theorem exact_of_exactUnder {P : Flow.Property}
-    (h : Swing.family.ExactUnder {.inertia} (.flow P)) : family.Exact (.flow P) := by
+/-- A swing translation exact within a context of positive inertia and a curved power-angle curve
+is exact for the classical machine (`Spectral.exact_of_hub`): every swing reading lies in that
+context, and on every flow sentence the reading (`mem_den_flow_iff_swing`) and the requirement
+correspondence (`realize_translate_flow_eq_preimage`) hold. -/
+private theorem exact_of_exactUnder {Δ : Set Swing.Requirement} {P : Flow.Property}
+    (hΔ : Δ ⊆ {.inertia, .curved}) (h : Swing.family.ExactUnder Δ (.flow P)) :
+    family.Exact (.flow P) := by
   have hr := realize_translate_flow_eq_preimage
   unfold powerlib.TMIO.Statement at hr
-  exact Spectral.exact_of_hub Model.toSwing toSwing_mem_inertia
+  exact Spectral.exact_of_hub Model.toSwing
+    (fun m => (TMIO.mem_realize _ _ _).mpr fun q hq =>
+      (TMIO.mem_realize _ _ _).mp (toSwing_mem_context m) q (hΔ hq))
     (fun m => mem_den_flow_iff_swing m P) (fun m => Set.ext_iff.mp (hr P) m) h
 
 /-! #### Members of the flow denotations -/
@@ -699,7 +706,7 @@ reading has positive inertia (`Spectral.exact_of_hub`). -/
 @[powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact exact_of_exactUnder Swing.exactUnder_locallyExponentiallyStable
+  exact exact_of_exactUnder (by simp) Swing.exactUnder_locallyExponentiallyStable
 
 /-! #### The local asymptotic and Lyapunov translations -/
 
@@ -735,41 +742,32 @@ machine conserves `H`, and at a fold (`cos δ* = 0`) the Hamiltonian `p²/(2M) �
 @[powerlib_domain] theorem exact_locallyAsymptoticallyStable :
     connection% (family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact exact_of_exactUnder Swing.exactUnder_locallyAsymptoticallyStable
-
-/-- Lyapunov stability holds exactly at the equilibria with `cos δ* > 0` (every damping
-`D ≥ 0`): the stable branch up to whole turns. This is the Lyapunov denotation of the swing
-family within positive inertia (`Swing.mem_den_lyapunovStable_iff_of_inertia`) on the swing
-reading, whose flat-curve alternative `k₂ = 0` is excluded by `b > 0`: the unstable branch is
-unstable, and a fold (`cos δ* = 0`) is unstable for every `D ≥ 0`, the accelerating power being
-`P_m (1 − cos(δ − δ*))` (`classicalSM_accel_fold`; `Swing.Pe_fold` in swing coordinates). -/
-@[powerlib_domain] theorem mem_den_lyapunovStable_iff (m : Model) :
-    connection% (m ∈ family.den (.flow .lyapunovStable) ↔
-      m ∈ {m : Model | m.p.b * Real.sin m.δs = m.p.Pm ∧ 0 < Real.cos m.δs}) := by
-  have hsw := mem_den_flow_iff_swing m .lyapunovStable
-  have hiff := Swing.mem_den_lyapunovStable_iff_of_inertia m.toSwing m.p.M_pos
-  unfold powerlib.TMIO.Statement at hsw hiff ⊢
-  rw [hsw, hiff, Set.mem_ofPred_eq, Set.mem_ofPred_eq, toSwing_Pe, toSwing_syncCoeff]
-  have hb := m.p.b_pos
-  constructor
-  · rintro ⟨hl, (⟨-, hK⟩ | ⟨hk, -⟩)⟩
-    · exact ⟨hl, pos_of_mul_pos_right hK hb.le⟩
-    · exact absurd hk hb.ne'
-  · rintro ⟨hl, hc⟩
-    exact ⟨hl, Or.inl ⟨m.p.D_nonneg, mul_pos hb hc⟩⟩
+  exact exact_of_exactUnder (by simp) Swing.exactUnder_locallyAsymptoticallyStable
 
 /-- The Lyapunov translation is exact: the classical machine is Lyapunov stable at `(δ*, 0)`
-exactly when `b sin δ* = P_m` and `cos δ* > 0` (`mem_den_lyapunovStable_iff`), for every
-`D ≥ 0`. The stable-branch requirement `cos δ* > 0` is invariant under whole turns; `|δ*| < π/2`
-would not be (at `δ* = 2π`, `M = b = 1`, `D = P_m = 0` the machine is Lyapunov stable without
-meeting it, so that translation would be sound but not exact). -/
+exactly when `b sin δ* = P_m` and `cos δ* > 0`, for every `D ≥ 0`. Within positive inertia and a
+curved power-angle curve the swing translation is exact (`Swing.exactUnder_lyapunovStable`: the
+unstable branch is a saddle, and a fold `cos δ* = 0` is unstable for every `D ≥ 0`, the
+accelerating power being `P_m (1 − cos(δ − δ*))`, `classicalSM_accel_fold`; `Swing.Pe_fold` in
+swing coordinates), and every swing reading lies in that context (`M > 0`, `k₂ = b > 0`;
+`Spectral.exact_of_hub`). The stable-branch requirement `cos δ* > 0` is invariant under whole
+turns; `|δ*| < π/2` would not be (at `δ* = 2π`, `M = b = 1`, `D = P_m = 0` the machine is Lyapunov
+stable without meeting it, so that translation would be sound but not exact). -/
 @[powerlib_domain] theorem exact_lyapunovStable :
     connection% (family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  have h := mem_den_lyapunovStable_iff m
-  unfold powerlib.TMIO.Statement at h
-  rw [TMIO.mem_realize, h]
+  exact exact_of_exactUnder subset_rfl Swing.exactUnder_lyapunovStable
+
+/-- Lyapunov stability holds exactly at the equilibria with `cos δ* > 0` (every damping
+`D ≥ 0`): the stable branch up to whole turns. This is the exact Lyapunov translation
+(`exact_lyapunovStable`). -/
+@[powerlib_domain] theorem mem_den_lyapunovStable_iff (m : Model) :
+    connection% (m ∈ family.den (.flow .lyapunovStable) ↔
+      m ∈ {m : Model | m.p.b * Real.sin m.δs = m.p.Pm ∧ 0 < Real.cos m.δs}) := by
+  have h := exact_lyapunovStable
+  unfold powerlib.TMIO.Statement at h ⊢
+  unfold Family.Exact at h
+  rw [← h, TMIO.mem_realize]
   simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
     forall_eq, Set.mem_ofPred_eq]
   rfl
@@ -900,23 +898,20 @@ mechanical power, `P_m = 0`. -/
 
 /-! #### Instability away from equilibrium -/
 
-private theorem zeroInputField_contDiff (p : ClassicalSMParams) :
-    ContDiff ℝ 1 (classicalSM p).zeroInputField :=
-  (classicalSM p).contDiff_zeroInputField (fun _ _ => contDiff_const) (fun _ _ => contDiff_const)
-    (classicalSM_contDiff_dH p)
-
 /-- A model whose selected point is not an equilibrium: `M = b = 1`, `D = 0`, `P_m = 2`,
 `δ* = 0`. -/
 def offEquilibrium : Model := ⟨⟨1, 0, 1, 2, one_pos, le_rfl, one_pos⟩, 0⟩
 
-/-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+/-- A point that is not an equilibrium is unstable: the solution through it leaves it. Its swing
+reading is unbalanced (`b sin 0 = 0 ≠ 2 = P_m`, `Swing.mem_den_unstable_of_not_balanced`). -/
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
-  unfold powerlib.TMIO.Statement
-  refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff)
-    (zeroInputField_contDiff offEquilibrium.p) fun h => ?_
-  have h' := (classicalSM_isEquilibrium_iff offEquilibrium.p _).mp h
-  simp [offEquilibrium, Model.point, classicalSM_equilibrium] at h'
+  have hsw := mem_den_flow_iff_swing offEquilibrium .unstable
+  have hs := Swing.mem_den_unstable_of_not_balanced offEquilibrium.toSwing
+    offEquilibrium.p.M_pos.ne' (by rw [toSwing_Pe]; norm_num [offEquilibrium, Model.toSwing,
+      ClassicalSMParams.toSwing])
+  unfold powerlib.TMIO.Statement at hsw hs ⊢
+  exact hsw.mpr hs
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
 while the translation asks for an equilibrium. -/

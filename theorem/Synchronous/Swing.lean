@@ -38,6 +38,10 @@ Model boundary.
   the LTI linearization; global existence of solutions (forward completeness) follows from
   a global Lipschitz bound.
 
+Scaffold: `theorem/Swing.agda` (the hub content its spokes read: models, requirements,
+translation, published laws); the readings through it are `theorem/DroopSwing.agda`,
+`theorem/SaturationSwing.agda` and `theorem/ClassicalMachineSwing.agda`.
+
 Source: work-sync `theory/T-vsg-control.md` §1.2, §1.10; `theory/T-sync-machine.md` §1.9;
 `theory/T-transient-stability.md` §1.3, §1.4, §1.7;
 `projects/vsc-stochastic-stability/notes/concepts/damping-class-dichotomy.md` §1–§3
@@ -62,8 +66,9 @@ Family and connection conclusions.
   sentence is invariant under this translation (`Flow.Property.holds_shift_iff`), so the sentences
   speak about `(δ*, 0)` itself.
 * The requirement language is static: power balance `P_e(δ*) = P_m`, positive inertia, positive or
-  nonnegative damping, positive synchronizing coefficient `K = k₂ cos(δ* − k₃)`, and a
-  destabilizing sign (`K < 0` or `D < 0`). Local exponential and local asymptotic stability
+  nonnegative damping, positive synchronizing coefficient `K = k₂ cos(δ* − k₃)`, a destabilizing
+  sign (`K < 0` or `D < 0`) and a curved power-angle curve (`k₂ ≠ 0`, a context of exactness that
+  no local sentence translates into). Local exponential and local asymptotic stability
   translate into balance, inertia, damping and synchronization; Lyapunov stability into the same
   with nonnegative damping (the energy function, including the undamped machine); instability
   into balance, inertia and a destabilizing sign; passivity into nothing (exact); the global
@@ -89,10 +94,13 @@ Family and connection conclusions.
   `Swing.mem_den_lyapunovStable_iff_of_inertia`: a balanced angle with `D ≥ 0` and `K > 0`, or a
   flat curve with `D > 0`; a fold of the curve is unstable for every `D ≥ 0`
   (`Swing.Pe_fold`, `Dynamics.unstable_of_lie_nonpos_of_lie_pos`) and an undamped flat curve
-  drifts (`Dynamics.unstable_of_chetaev`). The instability translation is not exact
-  (`Swing.not_exact_unstable`): instability is the failure of Lyapunov stability, so an
-  unbalanced model (`Swing.offEquilibrium`) is unstable (`Swing.offEquilibrium_mem_den_unstable`,
-  `Dynamics.unstable_of_ne_zero`) while the translation asks for power balance.
+  drifts (`Dynamics.unstable_of_chetaev`). Within positive inertia and a curved power-angle curve
+  the flat alternative is excluded and the Lyapunov translation is exact
+  (`Swing.exactUnder_lyapunovStable`). The instability translation is not exact
+  (`Swing.not_exact_unstable`): instability is the failure of Lyapunov stability, so every
+  unbalanced model with `M ≠ 0` is unstable (`Swing.mem_den_unstable_of_not_balanced`,
+  `Dynamics.unstable_of_ne_zero`), for instance `Swing.offEquilibrium`
+  (`Swing.offEquilibrium_mem_den_unstable`), while the translation asks for power balance.
 * The linearization at the selected angle is a second family on the same models
   (`Swing.Linearized.family`, the linear plant `Swing.Linearized.plant` of the Jacobian;
   `fderiv_point_eq_plant` identifies it with the Jacobian of the nonlinear field). Within
@@ -117,8 +125,8 @@ Family and connection conclusions.
   (`ClassicalSM.den_flow_eq_preimage`, `ClassicalSM.mem_den_flow_iff_swing`,
   `ClassicalSM.realize_translate_flow_eq_preimage`, `ClassicalSM.exact_flow_iff`; the zero-input
   pH field is the swing field under `diag(1, M)`, `Dynamics.holds_transport_iff`). Its flow
-  conclusions are derived from `Swing.chain_le_semantics`, `Swing.mem_den_*`,
-  `Swing.exactUnder_*` and `Swing.mem_den_lyapunovStable_iff_of_inertia`. Only passivity differs:
+  conclusions are derived from `Swing.chain_le_semantics`, `Swing.mem_den_*` and
+  `Swing.exactUnder_*` (every reading has `M > 0` and `k₂ = b ≠ 0`). Only passivity differs:
   the pH machine is passive exactly when `P_m = 0`, while this family has no port
   (`ClassicalSM.not_den_eq_preimage`).
 -/
@@ -621,6 +629,8 @@ inductive Requirement
   | synchronizing
   /-- A destabilizing sign: `K < 0` (saddle) or `D < 0` (negative damping). -/
   | destabilizing
+  /-- A curved power-angle curve: amplitude `k₂ ≠ 0` (the curve is not flat). -/
+  | curved
 
 /-- Satisfaction of a requirement by a model. -/
 def Meets (m : Model) : Requirement → Prop
@@ -631,6 +641,7 @@ def Meets (m : Model) : Requirement → Prop
   | .undamped => m.p.D = 0
   | .synchronizing => 0 < m.p.syncCoeff m.δ
   | .destabilizing => m.p.syncCoeff m.δ < 0 ∨ m.p.D < 0
+  | .curved => m.p.k₂ ≠ 0
 
 /-- The translation of the sentences for the nonlinear swing field: local exponential and local
 asymptotic stability into balance, inertia, damping and synchronization; Lyapunov stability into
@@ -767,6 +778,16 @@ every synchronizing coefficient. -/
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   exact mem_den_flow_iff.mpr (unstable_of hM hb (Or.inr hD))
+
+/-- A swing model with nonzero inertia whose selected angle is not balanced, `P_e(δ*) ≠ P_m`, is
+unstable: `(δ*, 0)` is not an equilibrium of the `C¹` swing field, so the solution through it
+leaves it (`Spectral.mem_den_unstable_of_ne_zero`). -/
+@[powerlib_domain] theorem mem_den_unstable_of_not_balanced (m : Model) (hM : m.p.M ≠ 0)
+    (hb : m.p.Pe m.δ ≠ m.p.Pm) : connection% (m ∈ family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff) m.p.contDiff_field
+    fun h => hb ?_
+  simpa using ((m.p.field_eq_zero_iff hM _).mp h).2
 
 /-- The closed-form stable equilibrium `(δ_s, 0)` is locally exponentially stable
 (`M, D, k₂ > 0`, `|P_m − k₁| < k₂`). -/
@@ -1181,6 +1202,29 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
         field_simp
         nlinarith [sq_nonneg (z 1), mul_pos hD hM]
 
+/-- Within positive inertia and a curved power-angle curve (`k₂ ≠ 0`) the Lyapunov translation is
+exact: a swing model with `M > 0`, `k₂ ≠ 0` is Lyapunov stable at `(δ*, 0)` exactly when the angle
+is balanced, the damping nonnegative and the synchronizing coefficient positive. This is
+`mem_den_lyapunovStable_iff_of_inertia` without its flat-curve alternative; on a flat curve the
+translation is not exact (`not_exactUnder_lyapunovStable`). -/
+@[powerlib_domain] theorem exactUnder_lyapunovStable :
+    connection% (family.ExactUnder {.inertia, .curved} (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  refine Spectral.exactUnder_iff_forall.mpr fun m hΔ => ?_
+  have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hΔ .inertia (by simp)
+  have hk : m.p.k₂ ≠ 0 := (TMIO.mem_realize _ _ _).mp hΔ .curved (by simp)
+  have h := mem_den_lyapunovStable_iff_of_inertia m hM
+  unfold powerlib.TMIO.Statement at h
+  rw [h, Set.mem_ofPred_eq]
+  simp only [TMIO.mem_realize, family, translate, Set.mem_insert_iff, Set.mem_singleton_iff,
+    forall_eq_or_imp, forall_eq, Meets]
+  constructor
+  · rintro ⟨hb, -, hD, hK⟩
+    exact ⟨hb, Or.inl ⟨hD, hK⟩⟩
+  · rintro ⟨hb, (⟨hD, hK⟩ | ⟨hk0, -⟩)⟩
+    · exact ⟨hb, hM, hD, hK⟩
+    · exact absurd hk0 hk
+
 /-! ### Boundary witness: negative inertia -/
 
 /-- A model with `M = D = k₂ = −1` (all three coefficients of `M s² + D s + K` negative), balanced
@@ -1392,14 +1436,12 @@ end Linearized
 /-- An unbalanced model: `M = P_m = 1`, no damping or electrical power, `δ* = 0`. -/
 def offEquilibrium : Model := ⟨⟨1, 0, 1, 0, 0, 0⟩, 0⟩
 
-/-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+/-- A point that is not an equilibrium is unstable: the solution through it leaves it
+(`mem_den_unstable_of_not_balanced`, `P_e(0) = 0 ≠ 1 = P_m`). -/
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
-    connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
-  unfold powerlib.TMIO.Statement
-  refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff)
-    offEquilibrium.p.contDiff_field fun h => ?_
-  rw [offEquilibrium.p.field_eq_zero_iff (by norm_num [offEquilibrium])] at h
-  simp [offEquilibrium, Model.point, SwingParams.Pe] at h
+    connection% (offEquilibrium ∈ family.den (.flow .unstable)) :=
+  mem_den_unstable_of_not_balanced offEquilibrium (by norm_num [offEquilibrium])
+    (by norm_num [offEquilibrium, SwingParams.Pe])
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
 while the translation asks for a balanced angle. -/

@@ -17,6 +17,8 @@ Saturated current-source GFM, export-positive P as in the GFM family (work-sync
   `P_e = P_sat cos(δ − φ)` (T-current-limiting §1.3). No mode switching (the converter is
   assumed to stay saturated), no inner-loop, PWM, delay or grid dynamics.
 
+Scaffold of the reading through the swing family: `theorem/SaturationSwing.agda`.
+
 Source: work-sync `theory/T-current-limiting.md` §1.3, §1.9; `theory/T-gfm-control.md` §1.10.
 
 Results.
@@ -60,9 +62,9 @@ Jacobian `[[0, 1], [P_sat sin(δ* − φ)/M, −D/M]]`): `stable` — `(δ*, 0)`
   (`not_exact_locallyAsymptoticallyStable`, `not_exact_lyapunovStable`, the negative-inertia
   witness through `Spectral.not_exact_of_les_witness`).
 * `not_exact_unstable` (boundary witness): instability is the failure of Lyapunov stability, so
-  an unbalanced model (`offEquilibrium`) is unstable (`offEquilibrium_mem_den_unstable`,
-  `Spectral.mem_den_unstable_of_ne_zero`) while the instability condition asks for an
-  equilibrium.
+  an unbalanced model (`offEquilibrium`) is unstable (`offEquilibrium_mem_den_unstable`: its swing
+  reading is unbalanced, `Synchronous.Swing.mem_den_unstable_of_not_balanced`) while the
+  instability condition asks for an equilibrium.
 
 Correction (T-current-limiting §1.3, `φ_opt`): the note states the formula without premises; it
 needs `|P₀| ≤ min(P_sat, P_max)` (`P_sat, P_max > 0`) for `arccos`/`arcsin` to be inverse
@@ -476,14 +478,17 @@ positive inertia, a zero saturated current with `D > 0` (`mem_den_lyapunovStable
 /-- An unbalanced saturated model: `M = P_ref = 1`, `D = P_sat = φ = 0`, `δ* = 0`. -/
 def offEquilibrium : SatModel := ⟨1, 0, 1, 0, 0, 0⟩
 
-/-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+/-- A point that is not an equilibrium is unstable: the solution through it leaves it. Its swing
+reading is unbalanced, `P_sat cos(0) = 0 ≠ 1 = P_ref`
+(`Synchronous.Swing.mem_den_unstable_of_not_balanced`, `mem_den_flow_iff_swing`). -/
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
-  unfold powerlib.TMIO.Statement
-  refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow)
-    (satField_contDiff _ _ _ _ _) fun h => ?_
-  rw [satField_eq_zero_iff (by norm_num [offEquilibrium])] at h
-  simp [offEquilibrium, angleState] at h
+  have hsw := mem_den_flow_iff_swing offEquilibrium .unstable
+  have hs := Synchronous.Swing.mem_den_unstable_of_not_balanced offEquilibrium.toSwing
+    (by norm_num [offEquilibrium, SatModel.toSwing])
+    (by rw [toSwing_Pe]; norm_num [offEquilibrium, SatModel.toSwing])
+  unfold powerlib.TMIO.Statement at hsw hs ⊢
+  exact hsw.mpr hs
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
 while the instability condition asks for an equilibrium. -/

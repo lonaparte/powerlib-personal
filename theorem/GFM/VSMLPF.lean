@@ -25,6 +25,8 @@ Model boundary.
 * Level: equilibrium set and local exponential stability / instability of an equilibrium, from
   the Jacobian computed by `fderiv` and the three-state Routh–Hurwitz criterion.
 
+Scaffold of the reading of `DroopLPF` through the swing family: `theorem/DroopSwing.agda`.
+
 Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
 gfl-gfm-parametric-contrast.md` §15–§16; `…/gfm-driven-gfl-parametric-resonance/notes/concepts/
 gfm-periodic-source.md` ("三态局部候选"); `notes/theory-draft.md` §1.3, §2.4;
@@ -1323,15 +1325,17 @@ locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): n
 /-- An unbalanced model: `D = ω_c = P₀ = 1`, `K₀ = 0`, `δ* = 0`. -/
 def offEquilibrium : Model := ⟨⟨1, 1, 1, 0⟩, 0⟩
 
-/-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+/-- A point that is not an equilibrium is unstable: the solution through it leaves it. Its swing
+reading (`M = D/ω_c = 1`) is unbalanced, `K₀ sin 0 = 0 ≠ 1 = P₀`
+(`Synchronous.Swing.mem_den_unstable_of_not_balanced`, `mem_den_iff_swing`). -/
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero offEquilibrium.q.contDiff_field
-    fun h => ?_)
-  rw [offEquilibrium.q.field_eq_zero_iff (by norm_num [offEquilibrium])
-    (by norm_num [offEquilibrium])] at h
-  simp [offEquilibrium, Model.point] at h
+  have hs := Synchronous.Swing.mem_den_unstable_of_not_balanced offEquilibrium.toSwing
+    (by norm_num [offEquilibrium, Model.toSwing, swingParams])
+    (by norm_num [offEquilibrium, Model.toSwing, swingParams, Synchronous.SwingParams.Pe])
+  unfold powerlib.TMIO.Statement at hs
+  exact (den_iff_swing (by norm_num [Meets, offEquilibrium]) _).mpr hs
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
 while the translation asks for a balanced angle. -/
