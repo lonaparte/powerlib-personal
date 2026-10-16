@@ -185,7 +185,10 @@ proved separating models rather than an unsupported completeness claim.
 ## Validation
 
 `lake build` checks the library, examples and admission/discovery/reuse/architecture
-tests. The independent LeanForControl profile checks direct imported theorem
+tests. The library structure test also checks that the codex layer imports only codex
+modules, and that no theorem restates (an instance of) another theorem it could use without
+using it (`RESTATEMENTS`, public and private theorems, matching by instantiation; the few
+remaining cases are listed with their reasons in the test). The independent LeanForControl profile checks direct imported theorem
 reuse and rejection of an actual upstream custom-axiom consequence. The Agda
 scaffolds are checked with Agda 2.8.0 and cubical 0.9 (`agda theorem/<Module>.agda`
 from the repository root); the Lean build does not depend on them. Dependency

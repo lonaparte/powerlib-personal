@@ -20,6 +20,12 @@ Structural checks of the `theorem/` library beyond admission, read from the buil
   contains `Family and connection conclusions`.
 * `DUPLICATES`: no two public theorems of different non-codex modules have α-equivalent
   statements (universe parameters compared by position).
+* `RESTATEMENTS`: no theorem of a non-codex module, public or private, states an instance of (or
+  the same as) another theorem of the library that it could use — one in its own module or in a
+  module that does not import it, not private to another module — without using it, directly,
+  through intermediate theorems, or through a theorem at least as general; a theorem that is a
+  stepping stone of the other is not a restatement. The remaining cases are listed with their
+  reasons in `restatementExemptions`.
 
 The layer table is the structural specification: moving a module across layers or adding a
 directory changes this file. It classifies knowledge (shared framework, generic mathematics,
@@ -363,3 +369,186 @@ run_cmd do
     ", ".intercalate (g.map fun (n, m) => s!"{n} ({m})").toList)
   logInfo m!"POWERLIB_LIBRARY_DUPLICATES_OK: {decls.size} public theorems of non-codex modules, \
     no two statements identical"
+
+/-! ## Restatements -/
+
+namespace LibraryStructure
+
+open Lean Meta Elab Command
+
+/-- `B` follows from `A` by instantiating `A`'s binders. -/
+def instanceOf (A B : Name) : MetaM Bool := do
+  let bInfo ← getConstInfo B
+  let aInfo ← getConstInfo A
+  forallTelescopeReducing bInfo.type fun bxs bconcl => do
+    let lvls ← aInfo.levelParams.mapM fun _ => mkFreshLevelMVar
+    let aType := aInfo.type.instantiateLevelParams aInfo.levelParams lvls
+    let (axs, abis, aconcl) ← forallMetaTelescopeReducing aType
+    unless ← withReducible (isDefEq aconcl bconcl) do return false
+    -- Prop hypotheses first (matching them may assign data binders), then instances, then data
+    for i in [:axs.size] do
+      let x ← instantiateMVars axs[i]!
+      unless x.isMVar do continue
+      let ty ← instantiateMVars (← inferType x)
+      if abis[i]!.isInstImplicit then continue
+      unless ← isProp ty do continue
+      let mut ok := false
+      for h in bxs do
+        if ← withReducible (isDefEq (← inferType h) ty) then
+          if ← isDefEq x h then ok := true; break
+      unless ok do return false
+    for i in [:axs.size] do
+      let x ← instantiateMVars axs[i]!
+      unless x.isMVar do continue
+      let ty ← instantiateMVars (← inferType x)
+      if abis[i]!.isInstImplicit then
+        let some inst ← synthInstance? ty | return false
+        unless ← isDefEq x inst do return false
+    for i in [:axs.size] do
+      let x ← instantiateMVars axs[i]!
+      if x.isMVar then return false
+    return true
+
+/-- `src`'s proof reaches `tgt` through theorems of the library (bounded search). -/
+def usesTransitively (env : Environment) (src tgt : Name) (limit : Nat := 400) : Bool := Id.run do
+  let mut todo := #[src]
+  let mut seen : NameSet := {}
+  let mut steps := 0
+  while todo.size > 0 do
+    let c := todo.back!
+    todo := todo.pop
+    if seen.contains c then continue
+    seen := seen.insert c
+    steps := steps + 1
+    if steps > limit then return false
+    let some (.thmInfo v) := env.find? c | continue
+    for d in v.value.getUsedConstants do
+      if d == tgt then return true
+      let some idx := env.getModuleIdxFor? d | continue
+      if (env.header.moduleNames[idx.toNat]!).getRoot == `theorem then todo := todo.push d
+  return false
+
+/-- The `theorem.*` modules each `theorem.*` module imports, transitively. -/
+def importClosure (env : Environment) : NameMap NameSet := Id.run do
+  let names := env.header.moduleNames
+  let mut memo : NameMap NameSet := {}
+  for i in [:names.size] do
+    let m := names[i]!
+    unless m.getRoot == `theorem do continue
+    let mut acc : NameSet := {}
+    for imp in env.header.moduleData[i]!.imports do
+      let j := imp.module
+      unless j.getRoot == `theorem do continue
+      acc := acc.insert j
+      if let some s := memo.find? j then
+        for x in s do acc := acc.insert x
+    memo := memo.insert m acc
+  return memo
+
+/-- Restatements that stay, with the reason: deriving them would bring a heavy, unrelated import
+into a low module or change a public statement. -/
+def restatementExemptions : Array (String × String × String) := #[
+  ("_private.theorem.LTI.Discrete.0.powerlib.LTI.mem_spectrum_iff_eigenpair",
+    "powerlib.Modal.mem_spectrum_iff_exists_eigvec",
+    "LTI.Discrete is a low module; Modal.Perturbation would add eleven modules to it"),
+  ("powerlib.Dynamics.forwardComplete_conjEquiv", "powerlib.Dynamics.ForwardComplete.transport",
+    "both are the forward direction of forwardComplete_transport_iff"),
+  ("powerlib.PhasePlane.norm_sq_eq", "powerlib.Nonlinear.Polynomial2.norm_sq",
+    "Polynomial2 is a codex model; PhasePlane.Planar would import its closure for one identity"),
+  ("powerlib.Network.Swing.state_ext", "powerlib.Dynamics.Mechanical.state_ext",
+    "Dynamics.Mechanical would add the LaSalle and instability closure for an ext lemma"),
+  ("_private.theorem.Stochastic.LargeDeviations.0.powerlib.Stochastic.LDP.dotProduct_self_le",
+    "powerlib.SingularPerturbation.dotProduct_self_le_card_mul_norm_sq",
+    "SingularPerturbation.BoundaryLayer would add thirteen unrelated modules"),
+  ("_private.theorem.DAE.KroneckerIndex.0.powerlib.DAE.hasDerivAt_mulVec",
+    "powerlib.Dynamics.hasDerivAt_mulVec",
+    "its proof uses the section instance [DecidableEq ι] of the derivative-array statements"),
+  ("_private.theorem.DAE.KroneckerIndex.0.powerlib.DAE.hasDerivAt_mulVec",
+    "powerlib.Transform.Rebase.hasDerivAt_mulVec",
+    "its proof uses the section instance [DecidableEq ι] of the derivative-array statements")]
+
+/-- Control: the general fixture. -/
+theorem fixtureRestatedGeneral (n : ℕ) : n ≤ n + 1 := by omega
+
+/-- Control: its instance at `n = 2`, proved again without it. -/
+theorem fixtureRestatedInstance : (2 : ℕ) ≤ 2 + 1 := by decide
+
+end LibraryStructure
+
+set_option maxHeartbeats 0 in
+open LibraryStructure in
+run_cmd liftTermElabM do
+  let env ← getEnv
+  -- Control: an instance proved again without the general statement is a restatement.
+  unless ← instanceOf ``fixtureRestatedGeneral ``fixtureRestatedInstance do
+    throwError "The restatement detector missed an instance of a theorem"
+  let clos := importClosure env
+  let mut decls : Array (Name × Name) := #[]
+  for (i, m) in libraryModules env do
+    for c in env.header.moduleData[i]!.constNames do
+      let some (.thmInfo _) := env.find? c | continue
+      unless (declRangeExt.find? env c).isSome do continue
+      decls := decls.push (c, m)
+  let modOf : NameMap Name := decls.foldl (fun acc (c, m) => acc.insert c m) {}
+  let mut tree : DiscrTree Name := {}
+  for (c, _) in decls do
+    let info ← getConstInfo c
+    let keys ← withNewMCtxDepth do
+      let lvls ← info.levelParams.mapM fun _ => mkFreshLevelMVar
+      let (_, _, concl) ← forallMetaTelescopeReducing
+        (info.type.instantiateLevelParams info.levelParams lvls)
+      DiscrTree.mkPath concl
+    if keys.size ≤ 1 then continue
+    tree := tree.insertKeyValue keys c
+  let uses (x y : Name) : Bool := match env.find? x with
+    | some (.thmInfo v) => v.value.getUsedConstants.contains y
+    | _ => false
+  let bounded (k : MetaM Bool) : MetaM Bool :=
+    tryCatchRuntimeEx (withNewMCtxDepth (withTheReader Core.Context
+      (fun ctx => { ctx with maxHeartbeats := 20000000 }) (withCurrHeartbeats k)))
+      fun _ => pure false
+  let mut violations : Array String := #[]
+  let mut exempted : Array (String × String) := #[]
+  let mut seen : Std.HashSet (Name × Name) := {}
+  for (b, mb) in decls do
+    -- the codex layer is shared and is not restructured here
+    if layerOf? mb == some .codex then continue
+    let info ← getConstInfo b
+    let cands ← withNewMCtxDepth <| forallTelescopeReducing info.type fun _ concl =>
+      tree.getMatch concl
+    for a in cands do
+      if a == b then continue
+      let some ma := modOf.find? a | continue
+      -- B already uses A, or A is out of B's reach: private elsewhere, or above B
+      if uses b a || uses a b then continue
+      if isPrivateName a && ma != mb then continue
+      if ma != mb && ((clos.find? ma).getD {}).contains mb then continue
+      unless ← bounded (instanceOf a b) do continue
+      -- derived through intermediate theorems, either way
+      if usesTransitively env b a || usesTransitively env a b then continue
+      -- B uses a theorem at least as general as A
+      let mut general := false
+      if let some (.thmInfo v) := env.find? b then
+        for c in v.value.getUsedConstants do
+          unless modOf.contains c do continue
+          if c == a then continue
+          if ← bounded (instanceOf c a) then
+            general := true
+            break
+      if general then continue
+      let key := if Name.quickLt a b then (a, b) else (b, a)
+      if seen.contains key then continue
+      seen := seen.insert key
+      if restatementExemptions.any (fun (x, y, _) => x == b.toString && y == a.toString) then
+        exempted := exempted.push (b.toString, a.toString)
+        continue
+      violations := violations.push s!"{b} ({mb}) restates {a} ({ma}) without using it"
+  for (x, y, _) in restatementExemptions do
+    unless exempted.contains (x, y) do
+      violations := violations.push s!"stale exemption: {x} restating {y}"
+  unless violations.isEmpty do
+    throwError "Theorems restating another theorem they could use ({violations.size}):\n\
+      {"\n".intercalate violations.toList}"
+  logInfo m!"POWERLIB_LIBRARY_RESTATEMENTS_OK: {decls.size} theorems; none restates (an instance \
+    of) another theorem it could use without using it; {exempted.size} documented exemptions"
+
