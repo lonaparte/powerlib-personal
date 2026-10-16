@@ -398,10 +398,8 @@ def family : Family SMIB11Params Requirement 11 4 :=
 /-- Passivity is translated exactly. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
-  refine Family.exact_of_translate_eq_empty rfl ?_
-  ext p
-  simp only [Set.mem_univ, iff_true]
-  exact mem_den_passive p
+  exact Family.exact_of_translate_eq_empty (F := family) rfl
+    (Set.eq_univ_of_forall fun p => mem_den_passive p)
 
 /-- Every translation of the family is sound. -/
 @[powerlib_domain] theorem chain_le_semantics :
@@ -444,10 +442,8 @@ private theorem passiveWith (p : SMIB11Params) :
 /-- Passivity is translated exactly. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
-  refine Family.exact_of_translate_eq_empty rfl ?_
-  ext p
-  simp only [Set.mem_univ, iff_true]
-  exact mem_den_passive p
+  exact Family.exact_of_translate_eq_empty (F := family) rfl
+    (Set.eq_univ_of_forall fun p => mem_den_passive p)
 
 /-- Every translation of the family is sound. -/
 @[powerlib_domain] theorem chain_le_semantics :

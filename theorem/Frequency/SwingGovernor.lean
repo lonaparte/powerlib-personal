@@ -4,7 +4,7 @@ import theorem.Linear.Rate
 import theorem.TMIO.ClaimElab
 import theorem.SingularPerturbation.FiniteHorizon
 import theorem.LTI.Decay
-import theorem.Spectral.Local
+import theorem.Spectral.LinearNamed
 
 /-! # Single-area swing + first-order governor (two-state frequency model)
 
@@ -423,34 +423,27 @@ private theorem stable_mem_den {m : Model} (h : Meets m .stable) {P : Flow.Prope
   rw [den_hurwitz hP]
   exact h
 
+/-- The swing + governor translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
+private theorem translate_eq_linearTable (s : Sentence) :
+    translate s = Spectral.linearTable {.stable} {.unstable} univ univ (fun a => {.rate a}) s := by
+  rcases s with P | _
+  · cases P <;> rfl
+  · rfl
+
 /-- Every translation of the swing + governor family is sound: its translation chain lies below
-its semantics connection. `stable` is the Hurwitz condition of the plant (the linear hub), a
-right-half-plane root gives instability, a spectral margin gives the decay rate. -/
+its semantics connection. `stable` is the Hurwitz condition of the plant, a right-half-plane root
+gives instability, a spectral margin gives the decay rate (the linear table,
+`Spectral.chain_le_semantics_of_linearTable_univ`). -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  have hnone : (∀ q, Meets m q) → False := fun h => by
-    have hm' : m ∈ realize Meets Set.univ := (mem_realize _ _ _).mpr fun q _ => h q
-    rw [realize_univ] at hm'
-    exact hm'
-  rcases s with P | _
-  · cases P
-    case lyapunovStable =>
-      have h := stable_mem_den (P := .globallyExponentiallyStable) (hm .stable rfl) (by simp)
-      rw [family_isLinear.mem_den_flow] at h ⊢
-      exact h.lyapunovStable
-    case unstable =>
-      obtain ⟨s, hs, hre⟩ := exists_root_of_unstable m.M_pos m.Tg_pos (hm .unstable rfl)
-      exact family_isLinear.mem_den_flow.mpr (Linear.unstable_of_root 0 hs hre)
-    case decay a =>
-      exact family_isLinear.mem_den_decay_of_rateMargin (hm (.rate a) rfl)
-    case conservative => exact (hnone fun q => hm q trivial).elim
-    case contractive => exact stable_mem_den (hm .stable rfl) (Or.inr rfl)
-    all_goals exact stable_mem_den (hm .stable rfl) (Or.inl (by simp))
-  · exact (hnone fun q => hm q trivial).elim
+  exact Spectral.chain_le_semantics_of_linearTable_univ (F := family) family_isLinear
+    translate_eq_linearTable
+    (fun m hm => (isHurwitz_iff m.M_pos m.Tg_pos).mpr ((mem_realize _ _ _).mp hm .stable rfl))
+    (fun m hm => exists_root_of_unstable m.M_pos m.Tg_pos
+      ((mem_realize _ _ _).mp hm .unstable rfl))
+    fun a m hm => family_isLinear.mem_den_decay_of_rateMargin
+      ((mem_realize _ _ _).mp hm (.rate a) rfl)
 
 /-- On the attractive sentences and sampled contraction the chain agrees with the semantics:
 `stable` (`0 < M + D T_g`, `0 < K_R + D`) is their exact translation. -/
@@ -458,22 +451,15 @@ right-half-plane root gives instability, a spectral margin gives the decay rate.
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  unfold Family.Exact
-  rw [den_hurwitz hP]
-  have hs : translate (.flow P) = {.stable} := by
-    rcases hP with hP | rfl
-    · cases P <;> first | rfl | exact absurd hP (by simp [Flow.Property.Attractive])
-    · rfl
-  change realize Meets (translate (.flow P)) = _
-  rw [hs]
-  ext m
-  simp [mem_realize]
+  exact Spectral.exact_of_linearTable (F := family) family_isLinear translate_eq_linearTable
+    (fun m => Spectral.mem_realize_singleton.trans (isHurwitz_iff m.M_pos m.Tg_pos).symm) hP
 
 /-- The member characterization: a model satisfies an attractive sentence exactly when
 `0 < M + D T_g` and `0 < K_R + D`. -/
 @[powerlib_domain] theorem mem_den_attractive_iff (m : Model) {P : Flow.Property}
     (hP : P.Attractive) :
-    connection% (m ∈ family.den (.flow P) ↔ m ∈ {m : Model | 0 < m.M + m.D * m.Tg ∧ 0 < m.K + m.D}) := by
+    connection% (m ∈ family.den (.flow P) ↔
+      m ∈ {m : Model | 0 < m.M + m.D * m.Tg ∧ 0 < m.K + m.D}) := by
   unfold powerlib.TMIO.Statement
   rw [den_hurwitz (Or.inl hP)]
   rfl
@@ -1047,18 +1033,8 @@ def reducedFamily : Family ReducedModel ReducedRequirement 1 1 :=
 @[powerlib_foundation] theorem reduced_realize_univ :
     connection% (realize ReducedMeets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext r
-  simp only [mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
-  have h1 : ReducedMeets r .stable := h .stable
-  have h2 : ReducedMeets r .unstable := h .unstable
-  exact absurd (lt_trans h1 h2) (lt_irrefl _)
-
-private theorem reduced_den_hurwitz {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    reducedFamily.den (.flow P) = {r | ReducedMeets r .stable} := by
-  rw [reducedFamily_isLinear.den_hurwitz hP]
-  ext r
-  exact reduced_isHurwitz_iff r.M_pos
+  exact Spectral.realize_univ_eq_empty_of .stable .unstable fun r (h1 : 0 < r.K + r.D)
+    (h2 : r.K + r.D < 0) => absurd (lt_trans h1 h2) (lt_irrefl _)
 
 private theorem reduced_mem_den_decay_iff (r : ReducedModel) (a : ℝ) :
     r ∈ reducedFamily.den (.flow (.decay a)) ↔ a * r.M ≤ r.K + r.D := by
@@ -1069,39 +1045,29 @@ private theorem reduced_mem_den_decay_iff (r : ReducedModel) (a : ℝ) :
   change Flow.Decay (affineLinearVectorField r.plant.A 0) 0 a ↔ _
   rw [hA, Linear.decay_scalar_iff, le_div_iff₀ r.M_pos]
 
-/-- Every translation of the first-order family is sound. -/
+/-- The first-order translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
+private theorem reducedTranslate_eq_linearTable (s : Sentence) :
+    reducedTranslate s =
+      Spectral.linearTable {.stable} {.unstable} univ univ (fun a => {.rate a}) s := by
+  rcases s with P | _
+  · cases P <;> rfl
+  · rfl
+
+/-- Every translation of the first-order family is sound (the linear table,
+`Spectral.chain_le_semantics_of_linearTable_univ`). -/
 @[powerlib_domain] theorem reduced_chain_le_semantics :
     connection% (∀ P, reducedFamily.chain P ≤ reducedFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s r hm => ?_
-  rw [mem_realize] at hm
-  change ∀ q ∈ reducedTranslate s, ReducedMeets r q at hm
-  have hnone : (∀ q, ReducedMeets r q) → False := fun h =>
-    absurd (lt_trans (h .stable) (h .unstable)) (lt_irrefl _)
-  have hstable : ReducedMeets r .stable → ∀ {P : Flow.Property},
-      (P.Attractive ∨ P = .contractive) → r ∈ reducedFamily.den (.flow P) := by
-    intro h P hP
-    rw [reduced_den_hurwitz hP]
-    exact h
-  rcases s with P | _
-  · cases P
-    case lyapunovStable =>
-      have h := hstable (hm .stable rfl) (P := .globallyExponentiallyStable) (by simp)
-      rw [reducedFamily_isLinear.mem_den_flow] at h ⊢
-      exact h.lyapunovStable
-    case unstable =>
-      have hu : r.K + r.D < 0 := hm .unstable rfl
-      refine reducedFamily_isLinear.mem_den_flow.mpr
-        (Linear.unstable_of_root (s := ((-(r.K + r.D) / r.M : ℝ) : ℂ)) 0 ?_ ?_)
-      · simp [ReducedModel.plant, reducedPlant, Linear.characteristicMatrix]
-      · simp only [Complex.ofReal_re]
-        exact div_pos (by linarith) r.M_pos
-    case decay a =>
-      exact (reduced_mem_den_decay_iff r a).2 (hm (.rate a) rfl)
-    case conservative => exact (hnone fun q => hm q trivial).elim
-    case contractive => exact hstable (hm .stable rfl) (Or.inr rfl)
-    all_goals exact hstable (hm .stable rfl) (Or.inl (by simp))
-  · exact (hnone fun q => hm q trivial).elim
+  refine Spectral.chain_le_semantics_of_linearTable_univ (F := reducedFamily)
+    reducedFamily_isLinear reducedTranslate_eq_linearTable
+    (fun r hm => (reduced_isHurwitz_iff r.M_pos).mpr ((mem_realize _ _ _).mp hm .stable rfl))
+    (fun r hm => ?_) fun a r hm => (reduced_mem_den_decay_iff r a).2
+      ((mem_realize _ _ _).mp hm (.rate a) rfl)
+  have hu : r.K + r.D < 0 := (mem_realize _ _ _).mp hm .unstable rfl
+  refine ⟨((-(r.K + r.D) / r.M : ℝ) : ℂ), ?_, ?_⟩
+  · simp [ReducedModel.plant, reducedPlant, Linear.characteristicMatrix]
+  · simp only [Complex.ofReal_re]
+    exact div_pos (by linarith) r.M_pos
 
 /-- On the attractive sentences and sampled contraction the first-order translation is exact
 (`0 < K_R + D`). -/
@@ -1109,16 +1075,9 @@ private theorem reduced_mem_den_decay_iff (r : ReducedModel) (a : ℝ) :
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (reducedFamily.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  unfold Family.Exact
-  rw [reduced_den_hurwitz hP]
-  have hs : reducedTranslate (.flow P) = {.stable} := by
-    rcases hP with hP | rfl
-    · cases P <;> first | rfl | exact absurd hP (by simp [Flow.Property.Attractive])
-    · rfl
-  change realize ReducedMeets (reducedTranslate (.flow P)) = _
-  rw [hs]
-  ext r
-  simp [mem_realize]
+  exact Spectral.exact_of_linearTable (F := reducedFamily) reducedFamily_isLinear
+    reducedTranslate_eq_linearTable
+    (fun r => Spectral.mem_realize_singleton.trans (reduced_isHurwitz_iff r.M_pos).symm) hP
 
 /-- The first-order decay translation is exact at every rate: the model decays at the rate `a`
 exactly when `a M ≤ K_R + D` (its solutions are `e^{−(K_R + D) t/M}`). -/

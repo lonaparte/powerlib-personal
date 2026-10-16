@@ -85,7 +85,7 @@ Family and connection conclusions.
   sign of `L` (locality: the limit is inactive near the operating point).
   `realizationSoundUnder_attractive`: within `headroom` alone the local asymptotic and local
   exponential sentences are realized soundly, by the static reduction
-  `Implementation.realizationSoundUnder_of_requirements` (the exact design translation
+  `Implementation.realizationSoundUnder_of_design` (the exact design translation
   `PIParams.exact`, the sound platform translation, and `design stable` with `headroom` meeting
   the platform translation).
   `not_realizationSoundUnder_lyapunovStable`, `not_realizationCompleteUnder_unstable`: without
@@ -710,14 +710,8 @@ no platform satisfies it. -/
 @[powerlib_domain] theorem exact_globallyExponentiallyStable :
     connection% (family.Exact (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hu := realize_univ
-  unfold powerlib.TMIO.Statement at hu
-  refine Family.exact_of_translate_eq_univ hu rfl ?_
-  ext y
-  simp only [Set.mem_empty_iff_false, iff_false]
-  have h := not_mem_den_globallyExponentiallyStable y
-  unfold powerlib.TMIO.Statement at h
-  exact h
+  exact Family.exact_of_translate_eq_univ realize_univ rfl
+    (Set.eq_empty_iff_forall_notMem.mpr not_mem_den_globallyExponentiallyStable)
 
 /-- With a positive inductance, integral action, a positive DC link and overload, the platform is
 unstable whatever the design: the operating point is not an equilibrium. -/
@@ -740,10 +734,6 @@ private theorem implementation_model : implementation.model = PIParams.family :=
 
 private theorem implementation_impl : implementation.impl = family := rfl
 
-private theorem certify_realizes (P : Set PIParams) :
-    TMIO.certify implementation.realizes P = design ⁻¹' P :=
-  Implementation.certify_ofDesign _ P
-
 /-- Within integral action and headroom, Lyapunov stability, local asymptotic and local
 exponential stability and instability are realized exactly, for every sign of `L`: near the
 operating point the limit is inactive and the platform is the design's linear loop. -/
@@ -751,8 +741,9 @@ operating point the limit is inactive and the platform is the design's linear lo
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable ∨
       P = .locallyExponentiallyStable ∨ P = .unstable) :
     connection% (implementation.RealizationExactUnder {.integral, .headroom} (.flow P)) := by
-  unfold powerlib.TMIO.Statement Implementation.RealizationExactUnder
-  rw [certify_realizes, implementation_model, implementation_impl]
+  unfold powerlib.TMIO.Statement
+  refine Implementation.realizationExactUnder_of_design (I := implementation) rfl ?_
+  rw [implementation_model, implementation_impl]
   ext y
   simp only [Set.mem_inter_iff, Set.mem_preimage]
   refine and_congr_left fun hΔ => ?_
@@ -760,10 +751,10 @@ operating point the limit is inactive and the platform is the design's linear lo
   have hKi : y.design.Ki ≠ 0 := hΔ .integral (by simp)
   have hh : |y.design.R * y.iref| < y.Vmax := hΔ .headroom (by simp)
   rw [PIParams.family_isLinear.mem_den_flow, mem_den_flow_iff]
-  exact (holds_congr_nhds (y.field_eventuallyEq_linear hKi hh) hP).symm
+  exact holds_congr_nhds (y.field_eventuallyEq_linear hKi hh) hP
 
 /-- Within headroom alone, local asymptotic and local exponential stability are realized soundly,
-by the static reduction `Implementation.realizationSoundUnder_of_requirements`: the exact design
+by the static reduction `Implementation.realizationSoundUnder_of_design`: the exact design
 translation (`PIParams.exact`), the sound platform translation (`chain_le_semantics`), and a
 stable design with headroom meeting the platform translation. -/
 @[powerlib_domain] theorem realizationSoundUnder_attractive {P : Flow.Property}
@@ -778,20 +769,16 @@ stable design with headroom meeting the platform translation. -/
     rcases hP with rfl | rfl <;> rfl
   have hIt : family.translate (.flow P) = {.design .stable, .headroom} := by
     rcases hP with rfl | rfl <;> rfl
-  refine implementation.realizationSoundUnder_of_requirements (ΔM := ∅)
-    (Family.exactUnder_empty_iff.mpr hM) (Family.chain_le_semantics_iff.mp hI _) ?_ ?_
-  · intro y _
-    rw [certify_realizes, TMIO.realize_empty]
-    trivial
-  · rintro y ⟨hd, hΔ⟩
-    rw [certify_realizes, Set.mem_preimage, Set.union_empty, implementation_model, hMt,
-      TMIO.mem_realize] at hd
-    rw [implementation_impl, TMIO.mem_realize] at hΔ ⊢
-    rw [hIt]
-    intro q hq
-    rcases hq with rfl | rfl
-    · exact hd .stable rfl
-    · exact hΔ .headroom rfl
+  refine Implementation.realizationSoundUnder_of_design (I := implementation) rfl (ΔM := ∅)
+    (Family.exactUnder_empty_iff.mpr hM) (Family.chain_le_semantics_iff.mp hI _)
+    (fun y _ => by rw [TMIO.realize_empty]; trivial) fun y hΔ hd => ?_
+  rw [Set.union_empty, implementation_model, hMt, TMIO.mem_realize] at hd
+  rw [implementation_impl, TMIO.mem_realize] at hΔ ⊢
+  rw [hIt]
+  intro q hq
+  rcases hq with rfl | rfl
+  · exact hd .stable rfl
+  · exact hΔ .headroom rfl
 
 /-- The nominal design `L = R = Kp = Ki = 1`. -/
 def nominal : PIParams := ⟨1, 1, 1, 1⟩
@@ -837,23 +824,20 @@ has a locally exponentially stable design and is unstable. -/
 @[powerlib_domain] theorem not_realizationSoundUnder_locallyExponentiallyStable :
     connection% (¬ implementation.RealizationSoundUnder {.inductance, .integral, .dcLink, .overload}
       (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement Implementation.RealizationSoundUnder
-  intro h
+  unfold powerlib.TMIO.Statement
   have hd := nominal_mem_den (P := .locallyExponentiallyStable) trivial
   have hu := overloaded_mem_den_unstable
   unfold powerlib.TMIO.Statement at hd hu
-  have hmem : overloaded ∈ implementation.impl.den (.flow .locallyExponentiallyStable) := by
-    refine h ⟨?_, ?_⟩
-    · rw [certify_realizes]
-      exact hd
-    · rw [implementation_impl, TMIO.mem_realize]
-      intro q hq
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
-      rcases hq with rfl | rfl | rfl | rfl
-      · show (0 : ℝ) < 1; norm_num
-      · show (1 : ℝ) ≠ 0; norm_num
-      · show (0 : ℝ) < 1; norm_num
-      · exact overloaded_overload
+  refine Implementation.not_realizationSoundUnder_of_design (I := implementation) (y := overloaded)
+    rfl hd ?_ fun hmem => ?_
+  · rw [implementation_impl, TMIO.mem_realize]
+    intro q hq
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
+    rcases hq with rfl | rfl | rfl | rfl
+    · show (0 : ℝ) < 1; norm_num
+    · show (1 : ℝ) ≠ 0; norm_num
+    · show (0 : ℝ) < 1; norm_num
+    · exact overloaded_overload
   rw [implementation_impl, mem_den_flow_iff] at hmem
   rw [mem_den_flow_iff] at hu
   exact hu hmem.lyapunovStable
@@ -866,24 +850,22 @@ headroom: the nominal design is globally exponentially stable, the unloaded plat
 @[powerlib_domain] theorem not_realizationSoundUnder_globallyExponentiallyStable :
     connection% (¬ implementation.RealizationSoundUnder {.inductance, .integral, .dcLink, .headroom}
       (.flow .globallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement Implementation.RealizationSoundUnder
-  intro h
+  unfold powerlib.TMIO.Statement
   have hd := nominal_mem_den (P := .globallyExponentiallyStable) trivial
   have hn := not_mem_den_globallyExponentiallyStable unloaded
   unfold powerlib.TMIO.Statement at hd hn
-  refine hn (h ⟨?_, ?_⟩)
-  · rw [certify_realizes]
-    exact hd
-  · rw [implementation_impl, TMIO.mem_realize]
-    intro q hq
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
-    rcases hq with rfl | rfl | rfl | rfl
-    · show (0 : ℝ) < 1; norm_num
-    · show (1 : ℝ) ≠ 0; norm_num
-    · show (0 : ℝ) < 1; norm_num
-    · show |(1 : ℝ) * 0| < 1 / Real.sqrt 3
-      rw [mul_zero, abs_zero]
-      positivity
+  refine Implementation.not_realizationSoundUnder_of_design (I := implementation) (y := unloaded)
+    rfl hd ?_ hn
+  rw [implementation_impl, TMIO.mem_realize]
+  intro q hq
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
+  rcases hq with rfl | rfl | rfl | rfl
+  · show (0 : ℝ) < 1; norm_num
+  · show (1 : ℝ) ≠ 0; norm_num
+  · show (0 : ℝ) < 1; norm_num
+  · show |(1 : ℝ) * 0| < 1 / Real.sqrt 3
+    rw [mul_zero, abs_zero]
+    positivity
 
 /-- Global exponential stability is realized completely, without constraints, vacuously: no
 platform satisfies it. -/
@@ -965,12 +947,12 @@ drifting platform has a Lyapunov stable design and is unstable. -/
 @[powerlib_domain] theorem not_realizationSoundUnder_lyapunovStable :
     connection% (¬ implementation.RealizationSoundUnder {.inductance, .dcLink, .headroom}
       (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement Implementation.RealizationSoundUnder
-  intro h
+  unfold powerlib.TMIO.Statement
   have hd := drifting_design_mem_den_lyapunovStable
   have hu := drifting_mem_den_unstable
   unfold powerlib.TMIO.Statement at hd hu
-  have hmem := h ⟨by rw [certify_realizes]; exact hd, drifting_mem_context⟩
+  refine Implementation.not_realizationSoundUnder_of_design (I := implementation) rfl hd
+    drifting_mem_context fun hmem => ?_
   rw [implementation_impl, mem_den_flow_iff] at hmem
   rw [mem_den_flow_iff] at hu
   exact hu hmem
@@ -980,14 +962,13 @@ drifting platform is unstable while its design is Lyapunov stable. -/
 @[powerlib_domain] theorem not_realizationCompleteUnder_unstable :
     connection% (¬ implementation.RealizationCompleteUnder {.inductance, .dcLink, .headroom}
       (.flow .unstable)) := by
-  unfold powerlib.TMIO.Statement Implementation.RealizationCompleteUnder
-  intro h
+  unfold powerlib.TMIO.Statement
   have hd := drifting_design_mem_den_lyapunovStable
   have hu := drifting_mem_den_unstable
   unfold powerlib.TMIO.Statement at hd hu
-  have hmem := h ⟨by rw [implementation_impl]; exact hu, drifting_mem_context⟩
-  rw [certify_realizes, Set.mem_preimage, implementation_model,
-    PIParams.family_isLinear.mem_den_flow] at hmem
+  refine Implementation.not_realizationCompleteUnder_of_design (I := implementation) rfl hu
+    drifting_mem_context fun hmem => ?_
+  rw [implementation_model, PIParams.family_isLinear.mem_den_flow] at hmem
   rw [PIParams.family_isLinear.mem_den_flow] at hd
   exact hmem hd
 

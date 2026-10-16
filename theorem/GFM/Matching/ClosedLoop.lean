@@ -1,6 +1,7 @@
 import theorem.GFM.Matching.Matching
 import theorem.Flow.Certificate
 import theorem.Dynamics.LaSalle.Periodic
+import theorem.Spectral.Global
 
 /-! # Matching control in closed loop: global exponential stability in the rotating frame
 
@@ -496,46 +497,39 @@ def family : Family Model Requirement 5 3 := ⟨fun m => .continuous m.system, M
   have : (1 : ℝ) ≤ 0 := h (.slowRate 1)
   norm_num at this
 
-/-- Every translation of the reduced matching family is sound. -/
+/-- Every translation of the reduced matching family is sound (the global table,
+`Spectral.chain_le_semantics_of_globalTable`). -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  rw [Family.mem_den]
-  change s.holds (.continuous m.system)
-  have key : (∀ q ∈ ({.physical, .equilibrium, .damping} : Set Requirement), Meets m q) →
-      Flow.GloballyExponentiallyStable m.system.zeroInput 0 ∧ m.system.Passive := by
-    intro h
-    obtain ⟨hCdc, hL, hC, hR, hG⟩ : Meets m .physical := h _ (by simp)
-    have he : Meets m .equilibrium := h _ (by simp)
-    have hδ : Meets m .damping := h _ (by simp)
-    exact ⟨ges m hCdc hL hC hR hG he hδ, _, passive m hCdc hL hC hR hG he hδ⟩
-  rcases s with P | _
-  · simp only [Sentence.holds]
-    cases P
-    case lyapunovStable => exact (key hm).1.lyapunovStable
-    case locallyAsymptoticallyStable =>
-      exact (key hm).1.holds Flow.Property.attractive_locallyAsymptoticallyStable
-    case locallyExponentiallyStable => exact (key hm).1.locallyExponentiallyStable
-    case globallyAsymptoticallyStable => exact (key hm).1.globallyAsymptoticallyStable
-    case globallyExponentiallyStable => exact (key hm).1
-    case contractive => exact (key hm).1.sampledContraction
-    case decay r =>
-      have hk := key fun q hq => hm q (by
-        simp only [translate, Set.mem_insert_iff, Set.mem_singleton_iff] at hq ⊢
-        tauto)
-      have hr : r ≤ 0 := hm (.slowRate r) (by simp [translate])
-      obtain ⟨a, ha, hd⟩ := hk.1.exists_decay
-      exact hd.mono (by linarith)
-    case unstable =>
-      have : (1 : ℝ) ≤ 0 := hm (.slowRate 1) trivial
-      norm_num at this
-    case conservative =>
-      have : (1 : ℝ) ≤ 0 := hm (.slowRate 1) trivial
-      norm_num at this
-  · exact (key hm).2
+  have hG : TMIO.realize family.meets {.physical, .equilibrium, .damping} ⊆
+      family.den (.flow .globallyExponentiallyStable) := fun m hm => by
+    rw [TMIO.mem_realize] at hm
+    obtain ⟨hCdc, hL, hC, hR, hG⟩ : Meets m .physical := hm .physical (by simp)
+    rw [Family.mem_den]
+    exact ges m hCdc hL hC hR hG (hm .equilibrium (by simp)) (hm .damping (by simp))
+  refine Spectral.chain_le_semantics_of_globalTable (F := family)
+    (Rs := {.physical, .equilibrium, .damping}) (Rg := {.physical, .equilibrium, .damping})
+    (Ru := Set.univ) (Rc := Set.univ) (Rp := {.physical, .equilibrium, .damping})
+    (Rd := fun r => {.physical, .equilibrium, .damping, .slowRate r}) (fun s => ?_)
+    (fun m hm => Spectral.den_globallyExponentiallyStable_subset_les (hG hm)) hG
+    (fun r m hm => ?_) (Spectral.realize_univ_subset_of_eq_empty realize_univ _)
+    (Spectral.realize_univ_subset_of_eq_empty realize_univ _) (fun m hm => ?_)
+  · rcases s with P | _
+    · cases P <;> rfl
+    · rfl
+  · rw [TMIO.mem_realize] at hm
+    have hk := hG ((TMIO.mem_realize _ _ _).mpr fun q hq => hm q (by
+      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq ⊢
+      tauto))
+    have hr : r ≤ 0 := hm (.slowRate r) (by simp)
+    rw [Family.mem_den] at hk ⊢
+    obtain ⟨a, ha, hd⟩ := Flow.GloballyExponentiallyStable.exists_decay hk
+    exact hd.mono (by linarith)
+  · rw [TMIO.mem_realize] at hm
+    obtain ⟨hCdc, hL, hC, hR, hG⟩ : Meets m .physical := hm .physical (by simp)
+    rw [Family.mem_den]
+    exact ⟨_, passive m hCdc hL hC hR hG (hm .equilibrium (by simp)) (hm .damping (by simp))⟩
 
 /-- **Global exponential stability of the matching closed loop in the rotating frame**: with
 `C_dc, L, C, R, G + G_l > 0`, the selected point an equilibrium and a positive damping margin,
@@ -913,12 +907,8 @@ one). -/
 @[powerlib_domain] theorem full_not_mem_den_globallyExponentiallyStable (M : FullModel) :
     connection% (M ∉ fullFamily.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  rw [full_mem_den_flow] at h
-  have := full_not_mem_den_globallyAsymptoticallyStable M
-  unfold powerlib.TMIO.Statement at this
-  rw [full_mem_den_flow] at this
-  exact this (Flow.GloballyExponentiallyStable.globallyAsymptoticallyStable h)
+  exact fun h => full_not_mem_den_globallyAsymptoticallyStable M
+    (Spectral.den_globallyExponentiallyStable_subset_gas h)
 
 /-- A selected point with nonzero frequency `η v* ≠ 0` is not an equilibrium of the stationary
 closed loop, hence not Lyapunov stable: the steady state is a rotating orbit. -/

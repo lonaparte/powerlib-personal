@@ -12,7 +12,7 @@ import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
 import theorem.Linear.Stability
 import theorem.Dynamics.ConverseLinearization
-import theorem.Spectral.Local
+import theorem.Spectral.Global
 
 /-! # Induction machine: rotor-flux algebra and indirect field orientation (IFOC)
 
@@ -598,38 +598,26 @@ private theorem decay_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
 /-- Every translation of the IFOC family is sound: a positive rotor gives global exponential
 stability of the rotor flux at its equilibrium (quadratic decay certificate `‖ψ_r − ψ_eq‖²`),
 hence every attractive sentence, sampled contraction and Lyapunov stability; decay holds at
-every rate up to `1/T_r`. -/
+every rate up to `1/T_r` (the global table, `Spectral.chain_le_semantics_of_globalTable`). -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s d hd => ?_
-  rw [TMIO.mem_realize] at hd
-  change ∀ q ∈ translate s, Meets d q at hd
-  have hnone : (∀ q, Meets d q) → False := fun h => by
-    have hd' : d ∈ TMIO.realize Meets Set.univ := (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    have := realize_univ
-    unfold powerlib.TMIO.Statement at this
-    rw [this] at hd'
-    exact hd'
-  rcases s with P | _
-  · rw [mem_den_flow]
-    have hpos : translate (.flow P) = {.positiveRotor} → Flow.GloballyExponentiallyStable
-        (fluxField d.p d.isd d.isq d.ωsl) (fluxEquilibrium d.p d.isd d.isq d.ωsl) := fun h => by
-      have hm : Meets d .positiveRotor := hd _ (by rw [h]; rfl)
-      exact ges_of hm.1 hm.2
-    cases P
-    case lyapunovStable => exact (hpos rfl).lyapunovStable
-    case locallyAsymptoticallyStable => exact (hpos rfl).holds trivial
-    case locallyExponentiallyStable => exact (hpos rfl).holds trivial
-    case globallyAsymptoticallyStable => exact (hpos rfl).holds trivial
-    case globallyExponentiallyStable => exact hpos rfl
-    case contractive => exact (hpos rfl).sampledContraction
-    case decay a =>
-      have hm : Meets d (.decayRateAtMost a) := hd _ rfl
-      exact (decay_of hm.1 hm.2.1).mono hm.2.2
-    all_goals exact (hnone fun q => hd q trivial).elim
-  · rw [family_isAutonomous.den_passive]
-    trivial
+  have hG : TMIO.realize family.meets {.positiveRotor} ⊆
+      family.den (.flow .globallyExponentiallyStable) := fun d hd => by
+    have hm : Meets d .positiveRotor := (TMIO.mem_realize _ _ _).mp hd _ rfl
+    exact mem_den_flow.mpr (ges_of hm.1 hm.2)
+  refine Spectral.chain_le_semantics_of_globalTable (F := family) (Rs := {.positiveRotor})
+    (Rg := {.positiveRotor}) (Ru := Set.univ) (Rc := Set.univ) (Rp := ∅)
+    (Rd := fun a => {.decayRateAtMost a}) (fun s => ?_)
+    (fun d hd => Spectral.den_globallyExponentiallyStable_subset_les (hG hd)) hG
+    (fun a d hd => ?_) (Spectral.realize_univ_subset_of_eq_empty realize_univ _)
+    (Spectral.realize_univ_subset_of_eq_empty realize_univ _)
+    (fun d _ => by rw [family_isAutonomous.den_passive]; trivial)
+  · rcases s with P | _
+    · cases P <;> rfl
+    · rfl
+  · have hm : Meets d (.decayRateAtMost a) := (TMIO.mem_realize _ _ _).mp hd _ rfl
+    exact mem_den_flow.mpr ((decay_of hm.1 hm.2.1).mono hm.2.2)
 
 /-- Passivity is translated exactly: the autonomous rotor-flux model has no ports. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by

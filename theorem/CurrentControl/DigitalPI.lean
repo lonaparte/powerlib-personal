@@ -2,6 +2,7 @@ import theorem.CurrentControl.IMC
 import theorem.Delay.SampleHold
 import theorem.Criteria.Routh3
 import theorem.Stack.Implementation
+import theorem.Spectral.LinearNamed
 
 /-! # Digital PI current loop: the sampling and computation delay as an implementation layer
 
@@ -82,7 +83,7 @@ Family and connection conclusions.
   DigitalRequirement 2 1 3 1`, every platform realizing its design (`Implementation.ofDesign`).
   `realizationSoundUnder`: within `{physical, sampling, fastSampling}` a platform whose design
   satisfies an attractive sentence (or sampled contraction) satisfies it, by the static reduction
-  `Implementation.realizationSoundUnder_of_requirements` (the exact design translation
+  `Implementation.realizationSoundUnder_of_design` (the exact design translation
   `PIParams.exact`, the sound platform translation `chain_le_semantics`, and
   `routh_of_fastSampling`). `realizationCompleteUnder`: within `{sampling}` alone, for every period
   and every inductance, a platform satisfying such a sentence realizes a design satisfying it (the
@@ -544,68 +545,45 @@ Routh conditions exclude every strict violation. -/
   · linarith
   · linarith
 
+/-- The platform translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
+private theorem translate_eq_linearTable (s : Sentence) :
+    translate s = Spectral.linearTable {.physical, .sampling, .routh}
+      {.physical, .sampling, .lagged} Set.univ Set.univ (fun _ => Set.univ) s := by
+  rcases s with P | _
+  · cases P <;> rfl
+  · rfl
+
 /-- Every translation of the platform family is sound: the Routh conditions give a Hurwitz plant,
-a strict violation a characteristic root in the open right half plane. -/
+a strict violation a characteristic root in the open right half plane (the linear table,
+`Spectral.chain_le_semantics_of_linearTable_univ`). -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  have hnone' := realize_univ
-  unfold powerlib.TMIO.Statement at hnone'
-  refine Family.chain_le_semantics_iff.mpr fun s y hy => ?_
-  rw [TMIO.mem_realize] at hy
-  change ∀ q ∈ translate s, Meets y q at hy
-  have hnone : (∀ q, Meets y q) → False := fun h => by
-    have hy' : y ∈ TMIO.realize family.meets Set.univ :=
-      (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    rw [hnone'] at hy'
-    exact hy'
-  have hstab : translate s = {.physical, .sampling, .routh} → IsHurwitz y.model.A := fun h =>
-    (isHurwitz_iff y (hy .physical (by rw [h]; simp)) (hy .sampling (by rw [h]; simp))).mpr
-      (hy .routh (by rw [h]; simp))
-  rcases s with P | _
-  · rw [family_isLinear.mem_den_flow]
-    cases P
-    case unstable =>
-      obtain ⟨r, hr, hre⟩ := exists_root_of_lagged (hy .physical (by simp [translate]))
-        (hy .sampling (by simp [translate])) (hy .lagged (by simp [translate]))
-      exact unstable_of_root 0 hr hre
-    case lyapunovStable => exact (holds_of_isHurwitz 0 (P := .locallyExponentiallyStable)
-      trivial (hstab rfl)).lyapunovStable
-    case locallyAsymptoticallyStable => exact holds_of_isHurwitz 0 trivial (hstab rfl)
-    case locallyExponentiallyStable => exact holds_of_isHurwitz 0 trivial (hstab rfl)
-    case globallyAsymptoticallyStable => exact holds_of_isHurwitz 0 trivial (hstab rfl)
-    case globallyExponentiallyStable => exact holds_of_isHurwitz 0 trivial (hstab rfl)
-    case contractive => exact sampledContraction_of_isHurwitz 0 (hstab rfl)
-    all_goals exact (hnone fun q => hy q trivial).elim
-  · exact (hnone fun q => hy q trivial).elim
+  refine Spectral.chain_le_semantics_of_linearTable_univ (F := family) family_isLinear
+    translate_eq_linearTable (fun y hy => ?_) (fun y hy => ?_)
+    fun _ => Spectral.realize_univ_subset_of_eq_empty realize_univ _
+  · rw [TMIO.mem_realize] at hy
+    exact (isHurwitz_iff y (hy .physical (by simp)) (hy .sampling (by simp))).mpr
+      (hy .routh (by simp))
+  · rw [TMIO.mem_realize] at hy
+    exact exists_root_of_lagged (hy .physical (by simp)) (hy .sampling (by simp))
+      (hy .lagged (by simp))
 
 /-- Within a positive inductance and a positive period, the attractive sentences and sampled
 contraction of the platform are translated exactly: the plant is Hurwitz exactly when the
 platform Routh conditions hold. -/
 @[powerlib_domain] theorem exactUnder {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.ExactUnder {.physical, .sampling} (.flow P)) := by
-  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
-  rw [translate_flow hP, family_isLinear.den_hurwitz hP]
-  ext y
-  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
-    Set.mem_inter_iff, Set.mem_ofPred_eq]
-  constructor
-  · intro h
-    have hL : 0 < y.design.L := h .physical (by simp)
-    have hT : 0 < y.Ts := h .sampling (by simp)
-    refine ⟨(isHurwitz_iff y hL hT).mpr (h .routh (by simp)), fun q hq => ?_⟩
-    rcases hq with rfl | rfl
-    · exact hL
-    · exact hT
-  · rintro ⟨hH, hI⟩ q hq
-    have hL : 0 < y.design.L := hI .physical (by simp)
-    have hT : 0 < y.Ts := hI .sampling (by simp)
-    rcases hq with ((rfl | rfl | rfl) | (rfl | rfl))
-    · exact hL
-    · exact hT
-    · exact (isHurwitz_iff y hL hT).mp hH
-    · exact hL
-    · exact hT
+  unfold powerlib.TMIO.Statement
+  refine Spectral.exactUnder_of_linearTable (F := family) family_isLinear
+    translate_eq_linearTable _ (fun y hΔ => ?_) hP
+  rw [TMIO.mem_realize] at hΔ
+  have hL : 0 < y.design.L := hΔ .physical (by simp)
+  have hT : 0 < y.Ts := hΔ .sampling (by simp)
+  rw [isHurwitz_iff y hL hT, TMIO.mem_realize]
+  refine ⟨fun h => h .routh (by simp), fun h q hq => ?_⟩
+  rcases hq with rfl | rfl | rfl
+  exacts [hL, hT, h]
 
 /-- With `L > 0` and `Tₛ > 0` a platform satisfies an attractive sentence (in particular global
 exponential stability) iff `0 < a₂ ∧ 0 < a₀ ∧ a₃ a₀ < a₂ a₁`. -/
@@ -629,13 +607,9 @@ private theorem implementation_model : implementation.model = PIParams.family :=
 
 private theorem implementation_impl : implementation.impl = family := rfl
 
-private theorem certify_realizes (S : Set PIParams) :
-    TMIO.certify implementation.realizes S = design ⁻¹' S :=
-  Implementation.certify_ofDesign _ S
-
 /-- Implementation soundness: within a positive inductance, a positive period and fast sampling,
 a platform whose design satisfies an attractive sentence (or sampled contraction) satisfies it.
-The proof is the static reduction `Implementation.realizationSoundUnder_of_requirements`: the
+The proof is the static reduction `Implementation.realizationSoundUnder_of_design`: the
 exact design translation (`PIParams.exact`), the sound platform translation
 (`chain_le_semantics`) and the algebraic obligation `routh_of_fastSampling`. -/
 @[powerlib_domain] theorem realizationSoundUnder {P : Flow.Property}
@@ -646,27 +620,24 @@ exact design translation (`PIParams.exact`), the sound platform translation
   have hex := PIParams.exact hP
   have hch := chain_le_semantics
   unfold powerlib.TMIO.Statement at hex hch
-  refine implementation.realizationSoundUnder_of_requirements (ΔM := ∅)
-    (Family.exactUnder_empty_iff.mpr hex) (Family.chain_le_semantics_iff.mp hch _) ?_ ?_
-  · intro y _
-    rw [TMIO.realize_empty, certify_realizes]
-    trivial
-  · rintro y ⟨hd, hΔ⟩
-    rw [Set.union_empty, certify_realizes, Set.mem_preimage, TMIO.mem_realize] at hd
-    rw [TMIO.mem_realize] at hΔ ⊢
-    have hL : 0 < y.design.L := hΔ .physical (by simp)
-    have hT : 0 < y.Ts := hΔ .sampling (by simp)
-    have hf : 3 * y.design.Kp * y.Ts ≤ y.design.L ∧
-        3 * y.design.Ki * y.Ts ≤ y.design.R + y.design.Kp := hΔ .fastSampling (by simp)
-    have hs : PIParams.Stable y.design :=
-      hd .stable (by rw [implementation_model, design_translate_flow hP]; rfl)
-    rw [implementation_impl, translate_flow hP]
-    intro q hq
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
-    rcases hq with rfl | rfl | rfl
-    · exact hL
-    · exact hT
-    · exact routh_of_fastSampling hL hT hs hf
+  refine Implementation.realizationSoundUnder_of_design (I := implementation) rfl (ΔM := ∅)
+    (Family.exactUnder_empty_iff.mpr hex) (Family.chain_le_semantics_iff.mp hch _)
+    (fun y _ => by rw [TMIO.realize_empty]; trivial) fun y hΔ hd => ?_
+  rw [Set.union_empty, TMIO.mem_realize] at hd
+  rw [TMIO.mem_realize] at hΔ ⊢
+  have hL : 0 < y.design.L := hΔ .physical (by simp)
+  have hT : 0 < y.Ts := hΔ .sampling (by simp)
+  have hf : 3 * y.design.Kp * y.Ts ≤ y.design.L ∧
+      3 * y.design.Ki * y.Ts ≤ y.design.R + y.design.Kp := hΔ .fastSampling (by simp)
+  have hs : PIParams.Stable y.design :=
+    hd .stable (by rw [implementation_model, design_translate_flow hP]; rfl)
+  rw [implementation_impl, translate_flow hP]
+  intro q hq
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
+  rcases hq with rfl | rfl | rfl
+  · exact hL
+  · exact hT
+  · exact routh_of_fastSampling hL hT hs hf
 
 /-- Implementation completeness for every period: a platform with a positive period satisfying
 an attractive sentence (or sampled contraction) realizes a design satisfying it, whatever the
@@ -679,8 +650,8 @@ inductance. The delay never stabilizes a design. -/
   rw [TMIO.mem_realize] at hΔ
   have hT : 0 < y.Ts := hΔ .sampling (by simp)
   rw [implementation_impl, family_isLinear.den_hurwitz hP] at hd
-  rw [certify_realizes, Set.mem_preimage, implementation_model,
-    PIParams.family_isLinear.den_hurwitz hP]
+  rw [Implementation.certify_realizes_of_design (I := implementation) rfl, Set.mem_preimage,
+    implementation_model, PIParams.family_isLinear.den_hurwitz hP]
   exact (PIParams.isHurwitz_iff_div y.design).mpr (design_stable_of_isHurwitz hT hd)
 
 /-- Implementation exactness: within a positive inductance, a positive period and fast sampling,
@@ -793,23 +764,20 @@ has a positive inductance and period and a stable design, and is unstable. -/
 @[powerlib_domain] theorem not_realizationSoundUnder {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (¬ implementation.RealizationSoundUnder {.physical, .sampling} (.flow P)) := by
-  unfold powerlib.TMIO.Statement Implementation.RealizationSoundUnder
-  intro h
+  unfold powerlib.TMIO.Statement
   have hd := slowIMC_design_mem_den hP
   have hu := slowIMC_mem_den_unstable
   unfold powerlib.TMIO.Statement at hd hu
-  have hmem : slowIMC ∈ implementation.impl.den (.flow P) := by
-    refine h ⟨?_, ?_⟩
-    · rw [certify_realizes]
-      exact hd
-    · rw [TMIO.mem_realize]
-      intro q hq
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
-      rcases hq with rfl | rfl
-      · show 0 < slowIMC.design.L
-        norm_num [slowIMC, imcTuned, imc]
-      · show 0 < slowIMC.Ts
-        norm_num [slowIMC, imcTuned]
+  refine Implementation.not_realizationSoundUnder_of_design (I := implementation) rfl hd ?_
+    fun hmem => ?_
+  · rw [TMIO.mem_realize]
+    intro q hq
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
+    rcases hq with rfl | rfl
+    · show 0 < slowIMC.design.L
+      norm_num [slowIMC, imcTuned, imc]
+    · show 0 < slowIMC.Ts
+      norm_num [slowIMC, imcTuned]
   rw [implementation_impl, family_isLinear.den_hurwitz hP] at hmem
   rw [family_isLinear.mem_den_flow] at hu
   exact hu (holds_of_isHurwitz 0 (P := .locallyExponentiallyStable) trivial hmem).lyapunovStable

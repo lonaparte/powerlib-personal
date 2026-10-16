@@ -1,7 +1,7 @@
 import theorem.PLL.Linear
 import theorem.Linear.Family
 import theorem.TMIO.ClaimElab
-import theorem.Spectral.Local
+import theorem.Spectral.Global
 
 /-! # SRF-PLL time-scale algebra: slow manifold, reduced slow equation, eigenvalues
 
@@ -165,36 +165,30 @@ private theorem mem_den_hurwitz {m : Model} {P : Flow.Property}
   · exact Linear.holds_iff_isHurwitz 0 hP
   · exact Linear.sampledContraction_iff_isHurwitz 0
 
-/-- Every translation of the reduced slow family is sound. -/
+/-- Every translation of the reduced slow family is sound (the global table,
+`Spectral.chain_le_semantics_of_globalTable`). -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  have hnone : (∀ q, Meets m q) → False := fun h => by
-    have hm' : m ∈ TMIO.realize Meets Set.univ := (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    rw [realize_univ] at hm'
-    exact hm'
-  rcases s with P | _
-  · cases P
-    case lyapunovStable =>
-      refine family_isAutonomous.mem_den_flow.mpr (Linear.lyapunovStable_of_isHurwitz 0 ?_)
-      exact (isHurwitz_reducedA_iff _ _).mpr (hm .positiveRatio rfl)
-    case unstable =>
-      have hneg : m.b / m.a < 0 := hm .negativeRatio rfl
-      refine family_isAutonomous.mem_den_flow.mpr
-        (Linear.unstable_of_root (s := ((-(m.b / m.a) : ℝ) : ℂ)) 0 ?_ ?_)
-      · simp [Linear.characteristicMatrix, reducedA, Matrix.det_unique]
-      · simpa using hneg
-    case decay a => exact (hnone fun q => hm q trivial).elim
-    case conservative => exact (hnone fun q => hm q trivial).elim
-    case contractive => exact (mem_den_hurwitz (Or.inr rfl)).mpr (hm .positiveRatio rfl)
-    all_goals
-      refine (mem_den_hurwitz (Or.inl ?_)).mpr (hm .positiveRatio rfl)
-      trivial
-  · rw [family_isAutonomous.den_passive]
-    trivial
+  have hG : TMIO.realize family.meets {.positiveRatio} ⊆
+      family.den (.flow .globallyExponentiallyStable) := fun m hm =>
+    (mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mpr
+      ((TMIO.mem_realize _ _ _).mp hm _ rfl)
+  refine Spectral.chain_le_semantics_of_globalTable (F := family) (Rs := {.positiveRatio})
+    (Rg := {.positiveRatio}) (Ru := {.negativeRatio}) (Rc := Set.univ) (Rp := ∅)
+    (Rd := fun _ => Set.univ) (fun s => ?_)
+    (fun m hm => Spectral.den_globallyExponentiallyStable_subset_les (hG hm)) hG
+    (fun _ => Spectral.realize_univ_subset_of_eq_empty realize_univ _) (fun m hm => ?_)
+    (Spectral.realize_univ_subset_of_eq_empty realize_univ _)
+    (fun m _ => by rw [family_isAutonomous.den_passive]; trivial)
+  · rcases s with P | _
+    · cases P <;> rfl
+    · rfl
+  have hneg : m.b / m.a < 0 := (TMIO.mem_realize _ _ _).mp hm _ rfl
+  refine family_isAutonomous.mem_den_flow.mpr
+    (Linear.unstable_of_root (s := ((-(m.b / m.a) : ℝ) : ℂ)) 0 ?_ ?_)
+  · simp [Linear.characteristicMatrix, reducedA, Matrix.det_unique]
+  · simpa using hneg
 
 /-- On the attractive sentences and sampled contraction the chain agrees with the semantics. -/
 @[powerlib_domain] theorem exact_hurwitz {P : Flow.Property}

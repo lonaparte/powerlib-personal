@@ -1,5 +1,6 @@
 import theorem.Network.Swing.Basic
 import theorem.Dynamics.Mechanical
+import theorem.Spectral.Equilibrium
 
 /-! # Networked swing equations: energy, degenerate linearizations, local asymptotic stability
 
@@ -953,29 +954,24 @@ private theorem powerFlow_of_equilibrium' {p : Params n} {θ : Fin (n + 1) → �
   linarith
 
 /-- The local asymptotic translation is exact as soon as every power-balance point with a
-non-Hurwitz reduced Jacobian fails local asymptotic stability. -/
+non-Hurwitz reduced Jacobian fails local asymptotic stability (`Spectral.exact_of_equilibrium`
+with the Hurwitz guard). -/
 private theorem exact_locallyAsymptoticallyStable_of
     (h : ∀ m : Model n, (∀ k, m.params.P k = powerInjection m.params.B m.θ k) →
       ¬ LinearSystems.IsHurwitz (jacobian m.params m.θ) →
       ¬ LocalAsymptoticStable (reducedField m.params) (equilibrium m.θ)) :
     (family (n := n)).Exact (.flow .locallyAsymptoticallyStable) := by
-  ext m
-  rw [TMIO.mem_realize, mem_den_flow_iff']
-  change _ ↔ LocalAsymptoticStable _ _
-  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
-    forall_eq]
-  constructor
-  · rintro ⟨hp, hH⟩
-    exact Flow.locallyExponentiallyStable_localAsymptoticStable
-      (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian m.params m.θ)
-        (reducedField_contDiff m.params) (reducedField_equilibrium m.params m.θ hp)
-        (hasFDerivAt_reducedField m.params m.θ).fderiv hH)
-  · intro hLAS
-    have hp := powerFlow_of_equilibrium' (Dynamics.isEquilibrium_of_lyapunovStable
-      (reducedField_contDiff m.params) hLAS.1)
-    refine ⟨hp, ?_⟩
-    by_contra hH
-    exact h m hp hH hLAS
+  have hsound := chain_le_semantics (n := n)
+  unfold powerlib.TMIO.Statement at hsound
+  refine Spectral.exact_of_equilibrium (fun m P => mem_den_flow_iff') (Or.inr (Or.inl rfl))
+    (fun m => LinearSystems.IsHurwitz (jacobian m.params m.θ))
+    (Family.chain_le_semantics_iff.mp hsound _) (fun m => reducedField_contDiff m.params)
+    (fun m heq hH hm => h m (powerFlow_of_equilibrium' heq) hH (mem_den_flow_iff'.mp hm))
+    fun m heq hH => ?_
+  rw [TMIO.mem_realize]
+  rintro q (rfl | rfl)
+  · exact powerFlow_of_equilibrium' heq
+  · exact hH
 
 /-- Two machines: the forms in the direction of the second machine. -/
 private theorem hessForm_two (p : Params 1) (θ w : Fin (1 + 1) → ℝ) (hw : w 0 = 0) :

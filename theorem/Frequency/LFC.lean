@@ -1,7 +1,7 @@
 import theorem.Frequency.Basic
 import theorem.Linear.Rate
 import theorem.TMIO.ClaimElab
-import theorem.Spectral.Local
+import theorem.Spectral.LinearNamed
 
 /-! # Two-area load-frequency control (LFC) with AGC
 
@@ -66,8 +66,10 @@ Family and connection conclusions.
   seven-state family (`chain_le_semantics7`, `exact_hurwitz7`,
   `mem_den_globallyExponentiallyStable7`).
 * The matrix requirement language (`MeetsMatrix`) and its soundness and exactness for any linear
-  family read through it (`sound_of_meetsMatrix`, `exact_of_meetsMatrix`) are generic
-  foundation, reused by the multi-area family of `Frequency.LFCNetwork`.
+  family read through it (`sound_of_meetsMatrix`, `exact_of_meetsMatrix`, instances of the linear
+  table `Spectral.chain_le_semantics_of_linearTable_univ`, `Spectral.exact_of_linearTable` of
+  `theorem/Spectral/LinearNamed.lean`) are generic foundation, reused by the multi-area family of
+  `Frequency.LFCNetwork`.
 * Static evidence: `isEquilibrium_iff`, `steadyState_isEquilibrium`, `plant7_isEquilibrium_iff`,
   `plant7_steadyState_isEquilibrium`. Private implementation evidence (trajectory level, Rules
   §3a): `tendsto_of_isHurwitz`, `exponentiallyConvergesTo_of_isHurwitz`,
@@ -424,48 +426,39 @@ def family7 : Family Model7 Requirement 7 2 :=
   unfold powerlib.TMIO.Statement
   exact Spectral.realize_univ_eq_empty_of_forall fun _ h => meetsMatrix_univ _ h
 
+/-- The LFC translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
+private theorem translate_eq_linearTable (s : Sentence) :
+    translate s = Spectral.linearTable {.hurwitz} {.rhpRoot} univ univ (fun a => {.rate a}) s := by
+  rcases s with P | _
+  · cases P <;> rfl
+  · rfl
+
 /-- Soundness of the matrix requirements for any linear family read through `MeetsMatrix`
-(generic: an arbitrary family with an arbitrary plant map). -/
+(generic: an arbitrary family with an arbitrary plant map); the instance of
+`Spectral.chain_le_semantics_of_linearTable_univ`. -/
 @[powerlib_foundation] theorem sound_of_meetsMatrix {X : Type*} {n p : ℕ}
     {F : Family X Requirement n p}
     {plant : X → Linear.Plant n p} (hF : F.IsLinear plant)
     (hmeets : ∀ x q, F.meets x q ↔ MeetsMatrix (plant x).A q) (htr : F.translate = translate) :
-    ∀ P, F.chain P ≤ F.semantics P := by
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [mem_realize] at hm
-  have hm' : ∀ q ∈ translate s, MeetsMatrix (plant m).A q := fun q hq =>
-    (hmeets m q).1 (hm q (htr ▸ hq))
-  have hnone : (∀ q, MeetsMatrix (plant m).A q) → False := meetsMatrix_univ _
-  rcases s with P | _
-  · rw [hF.mem_den_flow]
-    cases P
-    case lyapunovStable =>
-      exact Linear.lyapunovStable_of_isHurwitz 0 (hm' .hurwitz rfl)
-    case unstable =>
-      obtain ⟨s, hs, hre⟩ := hm' .rhpRoot rfl
-      exact Linear.unstable_of_root 0 hs hre
-    case decay a => exact Linear.decay_of_rateMargin (hm' (.rate a) rfl)
-    case conservative => exact (hnone fun q => hm' q trivial).elim
-    case contractive => exact Linear.sampledContraction_of_isHurwitz 0 (hm' .hurwitz rfl)
-    all_goals exact Linear.holds_of_isHurwitz 0 (by simp) (hm' .hurwitz rfl)
-  · exact (hnone fun q => hm' q trivial).elim
+    ∀ P, F.chain P ≤ F.semantics P :=
+  Spectral.chain_le_semantics_of_linearTable_univ (Rs := {.hurwitz}) (Ru := {.rhpRoot})
+    (Rd := fun a => {.rate a}) hF (fun s => htr ▸ translate_eq_linearTable s)
+    (fun x hx => (hmeets x .hurwitz).1 ((mem_realize _ _ _).mp hx _ rfl))
+    (fun x hx => (hmeets x .rhpRoot).1 ((mem_realize _ _ _).mp hx _ rfl))
+    fun a x hx => hF.mem_den_decay_of_rateMargin
+      ((hmeets x (.rate a)).1 ((mem_realize _ _ _).mp hx _ rfl))
 
 /-- Exactness of the Hurwitz requirement for the attractive sentences and sampled contraction,
-for any linear family read through `MeetsMatrix` (generic). -/
+for any linear family read through `MeetsMatrix` (generic); the instance of
+`Spectral.exact_of_linearTable`. -/
 @[powerlib_foundation] theorem exact_of_meetsMatrix {X : Type*} {n p : ℕ}
     {F : Family X Requirement n p}
     {plant : X → Linear.Plant n p} (hF : F.IsLinear plant)
     (hmeets : ∀ x q, F.meets x q ↔ MeetsMatrix (plant x).A q) (htr : F.translate = translate)
-    {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) : F.Exact (.flow P) := by
-  unfold Family.Exact
-  rw [hF.den_hurwitz hP, htr]
-  have hs : translate (.flow P) = {.hurwitz} := by
-    rcases hP with hP | rfl
-    · cases P <;> first | rfl | exact absurd hP (by simp [Flow.Property.Attractive])
-    · rfl
-  rw [hs]
-  ext m
-  simp [mem_realize, hmeets, MeetsMatrix]
+    {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) : F.Exact (.flow P) :=
+  Spectral.exact_of_linearTable (Rs := {.hurwitz}) (Ru := {.rhpRoot}) (Rd := fun a => {.rate a})
+    hF (fun s => htr ▸ translate_eq_linearTable s)
+    (fun x => by simp [mem_realize, hmeets, MeetsMatrix]) hP
 
 /-- Every translation of the five-state LFC family is sound. -/
 @[powerlib_domain] theorem chain_le_semantics :

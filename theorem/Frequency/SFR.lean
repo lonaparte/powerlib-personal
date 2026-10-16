@@ -3,7 +3,7 @@ import theorem.Criteria.Routh3
 import theorem.Linear.Rate
 import theorem.TMIO.ClaimElab
 import theorem.SpecialFunctions.Elementary
-import theorem.Spectral.Local
+import theorem.Spectral.LinearNamed
 
 /-! # Reheat-turbine system frequency response (SFR) model
 
@@ -426,35 +426,27 @@ private theorem stable_mem_den {m : Model} (h : Meets m .stable) {P : Flow.Prope
   rw [den_hurwitz hP]
   exact h
 
+/-- The SFR translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
+private theorem translate_eq_linearTable (s : Sentence) :
+    translate s = Spectral.linearTable {.stable} {.unstable} univ univ (fun a => {.rate a}) s := by
+  rcases s with P | _
+  · cases P <;> rfl
+  · rfl
+
 /-- Every translation of the SFR family is sound: its translation chain lies below its semantics
-connection (the linear hub with the 3×3 Routh–Hurwitz criterion, right-half-plane roots, rate
-margins). -/
+connection (the linear table with the 3×3 Routh–Hurwitz criterion, right-half-plane roots, rate
+margins, `Spectral.chain_le_semantics_of_linearTable_univ`). -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  have hnone : (∀ q, Meets m q) → False := fun h => by
-    have hm' : m ∈ realize Meets Set.univ := (mem_realize _ _ _).mpr fun q _ => h q
-    rw [realize_univ] at hm'
-    exact hm'
-  rcases s with P | _
-  · cases P
-    case lyapunovStable =>
-      have h := stable_mem_den (P := .globallyExponentiallyStable) (hm .stable rfl) (by simp)
-      rw [family_isLinear.mem_den_flow] at h ⊢
-      exact h.lyapunovStable
-    case unstable =>
-      obtain ⟨s, hs, hre⟩ := exists_root_of_unstable m.M_pos m.Tg_pos m.TR_pos
-        (hm .unstable rfl)
-      exact family_isLinear.mem_den_flow.mpr (Linear.unstable_of_root 0 hs hre)
-    case decay a =>
-      exact family_isLinear.mem_den_decay_of_rateMargin (hm (.rate a) rfl)
-    case conservative => exact (hnone fun q => hm q trivial).elim
-    case contractive => exact stable_mem_den (hm .stable rfl) (Or.inr rfl)
-    all_goals exact stable_mem_den (hm .stable rfl) (Or.inl (by simp))
-  · exact (hnone fun q => hm q trivial).elim
+  exact Spectral.chain_le_semantics_of_linearTable_univ (F := family) family_isLinear
+    translate_eq_linearTable
+    (fun m hm => (isHurwitz_iff m.M_pos m.Tg_pos m.TR_pos).mpr
+      ((mem_realize _ _ _).mp hm .stable rfl))
+    (fun m hm => exists_root_of_unstable m.M_pos m.Tg_pos m.TR_pos
+      ((mem_realize _ _ _).mp hm .unstable rfl))
+    fun a m hm => family_isLinear.mem_den_decay_of_rateMargin
+      ((mem_realize _ _ _).mp hm (.rate a) rfl)
 
 /-- On the attractive sentences and sampled contraction the chain agrees with the semantics: the
 Routh–Hurwitz conditions are their exact translation. -/
@@ -462,16 +454,9 @@ Routh–Hurwitz conditions are their exact translation. -/
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  unfold Family.Exact
-  rw [den_hurwitz hP]
-  have hs : translate (.flow P) = {.stable} := by
-    rcases hP with hP | rfl
-    · cases P <;> first | rfl | exact absurd hP (by simp [Flow.Property.Attractive])
-    · rfl
-  change realize Meets (translate (.flow P)) = _
-  rw [hs]
-  ext m
-  simp [mem_realize]
+  exact Spectral.exact_of_linearTable (F := family) family_isLinear translate_eq_linearTable
+    (fun m => Spectral.mem_realize_singleton.trans (isHurwitz_iff m.M_pos m.Tg_pos m.TR_pos).symm)
+    hP
 
 /-- The member characterization: a model satisfies an attractive sentence exactly when the
 Routh–Hurwitz conditions hold. -/
@@ -799,7 +784,8 @@ Under the Routh–Hurwitz conditions every solution under the load step converge
 the steady state (the connection theorem `mem_den_attractive_iff` and linearity,
 `Linear.holds_input_iff`). -/
 private theorem exponentiallyConvergesTo_steadyState (m : Model)
-    (h2 : 0 < coeff2 m.M m.D m.Tg m.TR) (hKD : 0 < m.K + m.D) (hR : 0 < routhQuantity m.M m.D m.K m.F m.Tg m.TR) (ΔPL : ℝ) :
+    (h2 : 0 < coeff2 m.M m.D m.Tg m.TR) (hKD : 0 < m.K + m.D)
+    (hR : 0 < routhQuantity m.M m.D m.K m.F m.Tg m.TR) (ΔPL : ℝ) :
     Flow.GloballyExponentiallyStable (m.plant.inputField (load ΔPL))
       (steadyState m.D m.K ΔPL) := by
   have hmem := (mem_den_attractive_iff m (P := .globallyExponentiallyStable) (by simp)).2

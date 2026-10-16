@@ -7,6 +7,7 @@ import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Coordinates
 import theorem.Spectral.Local
 import theorem.Dynamics.Pendulum
+import theorem.SpecialFunctions.Sinusoid
 
 /-! # Four-state GFL with PLL and dc-bus voltage loop
 
@@ -225,8 +226,7 @@ def vd0 (θ0 : ℝ) : ℝ := p.V0 * Real.cos θ0
   refine ⟨?_, ?_⟩
   · rw [Real.sin_arcsin h1.le h2.le]; field_simp
   · rw [Real.cos_arcsin]
-    apply Real.sqrt_pos.2
-    nlinarith
+    exact SpecialFunctions.sqrt_one_sub_sq_pos (by rwa [abs_neg]) hV0
 
 @[powerlib_foundation] theorem contDiff_regField : ContDiff ℝ 1 (regField p) := by
   have hinv : ContDiff ℝ 1 Dynamics.invExt := Dynamics.contDiff_invExt
@@ -670,16 +670,6 @@ private theorem not_les_regField_of_C_eq_zero {p : Params} (hC : p.C = 0) (x : D
     simp at this
   · simp [regField, Dynamics.lift, regCoordField, Params.γ, hC]
 
-/-- Local exponential stability of the physical field at `(θ₀, 0, 1, 0)` is that of the
-regularized field. -/
-private theorem les_field_iff_regField {p : Params} {θ0 : ℝ} :
-    LocallyExponentiallyStable (FourState.field p) (opPoint θ0) ↔
-      LocallyExponentiallyStable (regField p) (opPoint θ0) :=
-  ⟨Dynamics.locallyExponentiallyStable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
-      (fun y hy => (field_eq_regField_of_near p hy).symm),
-    Dynamics.locallyExponentiallyStable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
-      (fun y hy => field_eq_regField_of_near p hy)⟩
-
 /-- The local exponential translation is exact: a model is locally exponentially stable at
 `(θ₀, 0, 1, 0)` exactly when the point is an equilibrium (`IsEq`, `C ≠ 0`) whose quartic
 `det(λI − A₀)` meets the Routh conditions. Converse linearization of the regularized field
@@ -720,14 +710,14 @@ gains and references zero, at `θ₀ = 0`; the dc-bus voltage ramps, `V̇ = I_dc
 def offEquilibrium : Model := ⟨⟨0, 0, 0, 0, 0, 0, 0, 1, 1⟩, 0⟩
 
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it (the field
-is the smooth `regField` near the point). -/
+is the smooth `regField` near the point, `Spectral.mem_den_unstable_of_ne_zero_local`). -/
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
-    (fun y hy => field_eq_regField_of_near _ hy)
-    (Dynamics.unstable_of_ne_zero (contDiff_regField _) fun h => ?_))
-  rw [← field_eq_regField _ (by simp [opPoint]; norm_num)] at h
+  refine Spectral.mem_den_unstable_of_ne_zero_local (fun m P => mem_den_flow_iff)
+    Metric.isOpen_ball (Metric.mem_ball_self (by norm_num : (0 : ℝ) < 1 / 2))
+    ((contDiff_regField _).contDiffOn.congr fun y hy =>
+      field_eq_regField_of_near _ (mem_ball_iff_norm.mp hy)) fun h => ?_
   have := congrArg (fun y : Dynamics.State 4 => y 2) h
   simp [offEquilibrium, FourState.field, Dynamics.lift, coordField, opPoint, Params.γ] at this
 

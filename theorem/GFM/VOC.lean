@@ -5,7 +5,7 @@ import theorem.Dynamics.ConverseLinearization
 import theorem.Dynamics.Instability
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import theorem.Dynamics.Calculus
-import theorem.Spectral.Local
+import theorem.Spectral.Global
 
 /-! # Andronov–Hopf virtual oscillator (AHO-VOC) at no load
 
@@ -596,36 +596,24 @@ private theorem decay_of (hκ : 0 ≤ a.κv) {r : ℝ} (hr : r + a.c ≤ 0) :
 
 /-- Every translation of the no-load AHO family is sound: linearization at the origin for the
 local sentences and instability, the decaying energy `|v|²` for the global sentences, sampled
-contraction and decay rates, and passivity without requirement. -/
+contraction and decay rates, and passivity without requirement (the global table,
+`Spectral.chain_le_semantics_of_globalTable`). -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s a hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets a q at hm
-  rcases s with P | _
-  · rw [family_isAutonomous.mem_den_flow]
-    cases P
-    case lyapunovStable => exact (les (hm .decaying (by simp [translate]))).lyapunovStable
-    case locallyAsymptoticallyStable =>
-      exact Flow.locallyExponentiallyStable_localAsymptoticStable
-        (les (hm .decaying (by simp [translate])))
-    case locallyExponentiallyStable => exact les (hm .decaying (by simp [translate]))
-    case globallyAsymptoticallyStable =>
-      exact (ges (hm .decaying (by simp [translate])) (hm .stiff (by simp [translate]))).globallyAsymptoticallyStable
-    case globallyExponentiallyStable =>
-      exact ges (hm .decaying (by simp [translate])) (hm .stiff (by simp [translate]))
-    case contractive =>
-      exact (ges (hm .decaying (by simp [translate])) (hm .stiff (by simp [translate]))).sampledContraction
-    case decay r =>
-      exact decay_of (hm .stiff (by simp [translate])) (hm (.decayRate r) (by simp [translate]))
-    case unstable => exact unstable_of (hm .growing (by simp [translate]))
-    case conservative =>
-      have h1 : 0 < a.c := hm .growing trivial
-      have h2 : a.c < 0 := hm .decaying trivial
-      exact absurd h1 (not_lt.mpr h2.le)
-  · rw [family_isAutonomous.den_passive]
-    trivial
+  refine Spectral.chain_le_semantics_of_globalTable (F := family) (Rs := {.decaying})
+    (Rg := {.decaying, .stiff}) (Ru := {.growing}) (Rc := Set.univ) (Rp := ∅)
+    (Rd := fun r => {.stiff, .decayRate r}) (fun s => ?_) (fun a ha => ?_) (fun a ha => ?_)
+    (fun r a ha => ?_) (fun a ha => ?_) (Spectral.realize_univ_subset_of_eq_empty realize_univ _)
+    (fun a _ => by rw [family_isAutonomous.den_passive]; trivial)
+  · rcases s with P | _
+    · cases P <;> rfl
+    · rfl
+  all_goals rw [TMIO.mem_realize] at ha; rw [family_isAutonomous.mem_den_flow]
+  · exact les (ha .decaying rfl)
+  · exact ges (ha .decaying (by simp)) (ha .stiff (by simp))
+  · exact decay_of (ha .stiff (by simp)) (ha (.decayRate r) (by simp))
+  · exact unstable_of (ha .growing rfl)
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by

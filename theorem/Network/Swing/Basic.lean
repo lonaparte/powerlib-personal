@@ -6,7 +6,7 @@ import theorem.Family.Basic
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Lyapunov
 import theorem.Network.PowerFlow
-import theorem.Spectral.Local
+import theorem.Spectral.Equilibrium
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
@@ -964,41 +964,36 @@ evidence on the model, not a connection conclusion. -/
   · rw [hij i j]
     exact Relation.ReflTransGen.refl
 
-/-- For a single machine the three local translations agree with the semantics for every sentence
-that forces an equilibrium: a Lyapunov stable point of the `C¹` field is a power-balance point, and
-the reduced Jacobian is always Hurwitz. -/
-private theorem exact_zero_of_imp {P : Flow.Property}
-    (htr : translate (.flow P) = {.powerFlow, .jacobianStable})
-    (hLS : ∀ {f : State (0 + (0 + 1)) → State (0 + (0 + 1))} {x : State (0 + (0 + 1))},
-      P.holds f x → LyapunovStable f x)
-    (hsound : ∀ m : Model 0, Meets m .powerFlow → Meets m .jacobianStable →
-      m ∈ family.den (.flow P)) :
+/-- For a single machine the Lyapunov and local asymptotic translations are exact: a Lyapunov
+stable point of the `C¹` field is an equilibrium, hence a power-balance point, and the reduced
+Jacobian is always Hurwitz (`jacobian_isHurwitz_zero`), so every equilibrium meets the translation
+(`Spectral.exact_of_equilibrium`, with no degenerate equilibria). -/
+private theorem exact_zero {P : Flow.Property}
+    (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
     (family (n := 0)).Exact (.flow P) := by
-  ext m
-  rw [TMIO.mem_realize]
-  simp only [family, htr, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
-    forall_eq]
-  constructor
-  · rintro ⟨hp, hH⟩
-    exact hsound m hp hH
-  · intro hm
-    have h := hLS (mem_den_flow_iff.mp hm)
-    exact ⟨powerFlow_of_equilibrium (Dynamics.isEquilibrium_of_lyapunovStable
-      (reducedField_contDiff m.params) h), jacobian_isHurwitz_zero _ _⟩
+  have hsound := chain_le_semantics (n := 0)
+  unfold powerlib.TMIO.Statement at hsound
+  have ht : (family (n := 0)).translate (.flow P) = {.powerFlow, .jacobianStable} := by
+    rcases hP with rfl | rfl <;> rfl
+  refine Spectral.exact_of_equilibrium (fun m P => mem_den_flow_iff)
+    (by rcases hP with rfl | rfl <;> simp) (fun _ => True)
+    (Family.chain_le_semantics_iff.mp hsound _) (fun m => reducedField_contDiff m.params)
+    (fun _ _ h => absurd trivial h) fun m heq _ => ?_
+  rw [ht, TMIO.mem_realize]
+  rintro q (rfl | rfl)
+  · exact powerFlow_of_equilibrium heq
+  · exact jacobian_isHurwitz_zero _ _
 
 /-- For a single machine (`n = 0`) the Lyapunov translation is exact. -/
 @[powerlib_domain] theorem exact_lyapunovStable_zero :
     connection% ((family (n := 0)).Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  exact exact_zero_of_imp rfl id fun m hp hH =>
-    mem_den_flow_iff.mpr (mem_den_flow_iff.mp (les_of_meets hp hH)).lyapunovStable
+  exact exact_zero (Or.inl rfl)
 
 /-- For a single machine (`n = 0`) the local asymptotic translation is exact. -/
 @[powerlib_domain] theorem exact_locallyAsymptoticallyStable_zero :
     connection% ((family (n := 0)).Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact exact_zero_of_imp rfl (fun h => h.1) fun m hp hH =>
-    mem_den_flow_iff.mpr (Flow.locallyExponentiallyStable_localAsymptoticStable
-      (mem_den_flow_iff.mp (les_of_meets hp hH)))
+  exact exact_zero (Or.inr rfl)
 
 end powerlib.Network.Swing

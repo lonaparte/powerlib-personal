@@ -1,4 +1,5 @@
 import theorem.Network.Swing.Four
+import theorem.Spectral.Equilibrium
 
 /-! # Networked swing equations: four machines with five or six lines
 
@@ -1390,23 +1391,17 @@ power-balance point with a Hurwitz reduced Jacobian. -/
 @[powerlib_domain] theorem exact_locallyAsymptoticallyStable_four :
     connection% ((family (n := 3)).Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  rw [TMIO.mem_realize, mem_den_flow_iff_dense]
-  change _ ↔ LocalAsymptoticStable _ _
-  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
-    forall_eq]
-  constructor
-  · rintro ⟨hp, hH⟩
-    exact Flow.locallyExponentiallyStable_localAsymptoticStable
-      (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian m.params m.θ)
-        (reducedField_contDiff m.params) (reducedField_equilibrium m.params m.θ hp)
-        (hasFDerivAt_reducedField m.params m.θ).fderiv hH)
-  · intro hLAS
-    have hp := powerFlow_of_equilibrium_dense (Dynamics.isEquilibrium_of_lyapunovStable
-      (reducedField_contDiff m.params) hLAS.1)
-    refine ⟨hp, ?_⟩
-    by_contra hH
-    exact not_localAsymptoticStable_four_machines m.params m.θ hp hH hLAS
+  have hsound := chain_le_semantics (n := 3)
+  unfold powerlib.TMIO.Statement at hsound
+  refine Spectral.exact_of_equilibrium (fun m P => mem_den_flow_iff_dense) (Or.inr (Or.inl rfl))
+    (fun m => LinearSystems.IsHurwitz (jacobian m.params m.θ))
+    (Family.chain_le_semantics_iff.mp hsound _) (fun m => reducedField_contDiff m.params)
+    (fun m heq hH hm => not_localAsymptoticStable_four_machines m.params m.θ
+      (powerFlow_of_equilibrium_dense heq) hH (mem_den_flow_iff_dense.mp hm)) fun m heq hH => ?_
+  rw [TMIO.mem_realize]
+  rintro q (rfl | rfl)
+  · exact powerFlow_of_equilibrium_dense heq
+  · exact hH
 
 /-- **Membership in local asymptotic stability for every four-machine network**: power balance
 with a Hurwitz reduced Jacobian (no restriction on the lines). -/
@@ -1415,19 +1410,11 @@ with a Hurwitz reduced Jacobian (no restriction on the lines). -/
       (∀ k, m.params.P k = powerInjection m.params.B m.θ k) ∧
       LinearSystems.IsHurwitz (jacobian m.params m.θ)) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den_flow_iff_dense]
-  change LocalAsymptoticStable _ _ ↔ _
-  constructor
-  · intro hLAS
-    have hp := powerFlow_of_equilibrium_dense (Dynamics.isEquilibrium_of_lyapunovStable
-      (reducedField_contDiff m.params) hLAS.1)
-    refine ⟨hp, ?_⟩
-    by_contra hH
-    exact not_localAsymptoticStable_four_machines m.params m.θ hp hH hLAS
-  · rintro ⟨hp, hH⟩
-    exact Flow.locallyExponentiallyStable_localAsymptoticStable
-      (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian m.params m.θ)
-        (reducedField_contDiff m.params) (reducedField_equilibrium m.params m.θ hp)
-        (hasFDerivAt_reducedField m.params m.θ).fderiv hH)
+  have h := exact_locallyAsymptoticallyStable_four
+  unfold powerlib.TMIO.Statement Family.Exact at h
+  rw [← h, TMIO.mem_realize]
+  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
+    forall_eq]
+  rfl
 
 end powerlib.Network.Swing

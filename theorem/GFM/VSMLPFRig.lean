@@ -39,6 +39,8 @@ about the realized design models and reuses the model-layer theorems; it becomes
 about the platform (`Stack.truth`) only through realization soundness, which needs the
 implementation constraint `fastLag` and so, on the record side, the delay check `LagCheck`.
 
+Convention: active power export-positive (GFM family exception, work-sync conventions §D9).
+
 Source: `theorem/GFM/VSMLPF.lean` (the model layer) and its work-sync notes
 (`projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/gfl-gfm-parametric-contrast.md`
 §15–§16), read only; the delay is the standard first-order Padé / ZOH equivalent of the
@@ -70,9 +72,10 @@ Family and connection conclusions.
   local exponential translation is exact.
 * M–I (realization). `realizationSoundUnder_locallyExponentiallyStable`: within
   `{design physical, lag, fastLag}` a platform with a locally exponentially stable design is
-  locally exponentially stable, by the static reduction `Implementation.realizationSoundUnder_of_requirements`
-  (the M-layer `exactUnder_locallyExponentiallyStable`, the I-layer `rig_chain_le_semantics` and
-  one algebraic obligation, fast filter and fast delay give `H > 0`);
+  locally exponentially stable, by the static reduction for a design map
+  `Implementation.realizationSoundUnder_of_design` (the M-layer
+  `exactUnder_locallyExponentiallyStable`, the I-layer `rig_chain_le_semantics` and one algebraic
+  obligation, fast filter and fast delay give `H > 0`);
   `realizationCompleteUnder_locallyExponentiallyStable`: within `{design physical, lag}`, for every
   delay, a locally exponentially stable platform has a locally exponentially stable design (a delay
   never stabilizes); `realizationExactUnder_locallyExponentiallyStable`: within
@@ -488,10 +491,6 @@ private theorem mem_produces {y : Rig} {v : Record} : (y, v) ∈ stack.produces 
 private theorem mem_realizes {x : Model} {y : Rig} : (x, y) ∈ stack.realizes ↔ y.design = x :=
   Iff.rfl
 
-private theorem certify_realizes (P : Set Model) :
-    TMIO.certify stack.realizes P = Rig.design ⁻¹' P :=
-  Implementation.certify_ofDesign _ P
-
 /-- The worst-corner fast-filter check places every producer's design in the translation of
 local exponential stability. -/
 private theorem design_fast_of_modelCheck {y : Rig} {v : Record} (hv : v.ModelCheck)
@@ -666,11 +665,11 @@ private theorem fastLag_of_lagCheck {y : Rig} {v : Record} (hv : v.ModelCheck) (
 
 /-- Implementation soundness of local exponential stability: a platform whose design is a
 physical, locally exponentially stable model and whose positive delay is fast against the design
-margin is locally exponentially stable. The proof is the static reduction
-`Implementation.realizationSoundUnder_of_requirements`: the design side is the exact M-layer translation
-(`exactUnder_locallyExponentiallyStable`: balanced, `K > 0`, fast filter), the platform side the
-sound I-layer translation (`rig_chain_le_semantics`), and between them one algebraic obligation,
-fast filter and fast delay give the platform Routh condition `H > 0`. -/
+margin is locally exponentially stable. The proof is the static reduction for a design map
+`Implementation.realizationSoundUnder_of_design`: the design side is the exact M-layer
+translation (`exactUnder_locallyExponentiallyStable`: balanced, `K > 0`, fast filter), the platform
+side the sound I-layer translation (`rig_chain_le_semantics`), and between them one algebraic
+obligation, fast filter and fast delay give the platform Routh condition `H > 0`. -/
 @[powerlib_domain] theorem realizationSoundUnder_locallyExponentiallyStable :
     connection% (stack.RealizationSoundUnder {.design .physical, .lag, .fastLag}
       (.flow .locallyExponentiallyStable)) := by
@@ -678,20 +677,17 @@ fast filter and fast delay give the platform Routh condition `H > 0`. -/
   have hex := exactUnder_locallyExponentiallyStable
   have hrig := rig_chain_le_semantics
   unfold powerlib.TMIO.Statement at hex hrig
-  refine stack.realizationSoundUnder_of_requirements (ΔM := {.physical})
-    (by rw [stack_model]; exact hex)
-    (by rw [stack_impl]; exact Family.chain_le_semantics_iff.mp hrig _) ?_ ?_
-  · intro y hy
-    rw [stack_model]
-    rw [stack_impl, TMIO.mem_realize] at hy
-    rw [certify_realizes, Set.mem_preimage, TMIO.mem_realize]
+  refine Implementation.realizationSoundUnder_of_design (I := stack.toImplementation) rfl
+    (ΔM := {Requirement.physical}) (by rw [stack_model]; exact hex)
+    (by rw [stack_impl]; exact Family.chain_le_semantics_iff.mp hrig _) (fun y hy => ?_)
+    fun y hΔ hd => ?_
+  · rw [stack_impl, TMIO.mem_realize] at hy
+    rw [stack_model, TMIO.mem_realize]
     intro q hq
     rw [Set.mem_singleton_iff.mp hq]
     exact hy (.design .physical) (by simp)
-  · rintro y ⟨hd, hΔ⟩
-    rw [stack_model, stack_impl] at *
-    rw [certify_realizes, Set.mem_preimage, TMIO.mem_realize] at hd
-    rw [TMIO.mem_realize] at hΔ ⊢
+  · rw [stack_model, TMIO.mem_realize] at hd
+    rw [stack_impl, TMIO.mem_realize] at hΔ ⊢
     have hp : Meets y.design .physical := hΔ (.design .physical) (by simp)
     have hτ : 0 < y.τ := hΔ .lag (by simp)
     have hK : 0 < y.design.K := hd .synchronizing (by simp [family, translate])
@@ -731,24 +727,22 @@ unstable. -/
 @[powerlib_domain] theorem not_realizationSoundUnder_locallyExponentiallyStable :
     connection% (¬ stack.RealizationSoundUnder {.design .physical, .lag}
       (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement Implementation.RealizationSoundUnder
-  intro h
+  unfold powerlib.TMIO.Statement
   have hd := slowRig_design_mem_den
   have hu := slowRig_mem_den_unstable
   unfold powerlib.TMIO.Statement at hd hu
-  have hmem : slowRig ∈ rigFamily.den (.flow .locallyExponentiallyStable) := by
-    refine h ⟨?_, ?_⟩
-    · rw [certify_realizes]
-      exact hd
-    · rw [TMIO.mem_realize]
-      intro q hq
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
-      rcases hq with rfl | rfl
-      · show Meets slowRig.design .physical
-        norm_num [slowRig, Meets]
-      · show 0 < slowRig.τ
-        norm_num [slowRig]
-  rw [rig_mem_den_flow_iff] at hmem hu
+  refine Implementation.not_realizationSoundUnder_of_design (I := stack.toImplementation) rfl hd
+    ?_ fun hmem => ?_
+  · rw [TMIO.mem_realize]
+    intro q hq
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
+    rcases hq with rfl | rfl
+    · show Meets slowRig.design .physical
+      norm_num [slowRig, Meets]
+    · show 0 < slowRig.τ
+      norm_num [slowRig]
+  rw [stack_impl, rig_mem_den_flow_iff] at hmem
+  rw [rig_mem_den_flow_iff] at hu
   exact hu (LocallyExponentiallyStable.lyapunovStable hmem)
 
 /-- Implementation soundness of instability: a platform whose design is physical, unstable and of
@@ -933,7 +927,7 @@ and `H > 0` forces the fast-filter margin of the design. A delay never stabilize
       (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   rintro y ⟨hd, hΔ⟩
-  rw [certify_realizes]
+  rw [Implementation.certify_realizes_of_design (I := stack.toImplementation) rfl]
   have hΔ' := hΔ
   rw [TMIO.mem_realize] at hΔ'
   have hp : Meets y.design .physical := hΔ' (.design .physical) (by simp)

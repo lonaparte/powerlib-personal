@@ -1,4 +1,5 @@
 import theorem.GFM.Matching.Matching
+import theorem.Spectral.Global
 
 /-! # Energy-shaping matching control on a stiff grid: what the "global stability condition" proves
 
@@ -872,9 +873,7 @@ private theorem k_pos (m : Model) (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : 0 < m.μ
     obtain ⟨hC, hL, hR⟩ : Meets m .physical := hm .physical (by simp)
     exact mem_den_flow.mpr (les m hC hL hR (hm .synchronizing (by simp)) (hm .matching (by simp))
       (hm .damped (by simp)))
-  · change m ∈ TMIO.realize Meets Set.univ at hm
-    rw [realize_univ] at hm
-    exact hm.elim
+  · exact Spectral.realize_univ_subset_of_eq_empty realize_univ _ hm
   · rw [family_isAutonomous.den_passive]
     trivial
 
@@ -903,40 +902,22 @@ private theorem k_pos (m : Model) (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : 0 < m.μ
 @[powerlib_domain] theorem not_mem_den_globallyExponentiallyStable (m : Model) :
     connection% (m ∉ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  rw [mem_den_flow] at h
-  have := not_mem_den_globallyAsymptoticallyStable m
-  unfold powerlib.TMIO.Statement at this
-  rw [mem_den_flow] at this
-  exact this (Flow.GloballyExponentiallyStable.globallyAsymptoticallyStable h)
+  exact fun h => not_mem_den_globallyAsymptoticallyStable m
+    (Spectral.den_globallyExponentiallyStable_subset_gas h)
 
 /-- The global asymptotic translation is exact: both its denotation and its space are empty. -/
 @[powerlib_domain] theorem exact_globallyAsymptoticallyStable :
     connection% (family.Exact (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  refine Family.exact_of_translate_eq_univ ?_ rfl ?_
-  · have := realize_univ
-    unfold powerlib.TMIO.Statement at this
-    exact this
-  · ext m
-    simp only [Set.mem_empty_iff_false, iff_false]
-    have := not_mem_den_globallyAsymptoticallyStable m
-    unfold powerlib.TMIO.Statement at this
-    exact this
+  exact Family.exact_of_translate_eq_univ (F := family) realize_univ rfl
+    (Set.eq_empty_iff_forall_notMem.mpr not_mem_den_globallyAsymptoticallyStable)
 
 /-- The global exponential translation is exact: both its denotation and its space are empty. -/
 @[powerlib_domain] theorem exact_globallyExponentiallyStable :
     connection% (family.Exact (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  refine Family.exact_of_translate_eq_univ ?_ rfl ?_
-  · have := realize_univ
-    unfold powerlib.TMIO.Statement at this
-    exact this
-  · ext m
-    simp only [Set.mem_empty_iff_false, iff_false]
-    have := not_mem_den_globallyExponentiallyStable m
-    unfold powerlib.TMIO.Statement at this
-    exact this
+  exact Family.exact_of_translate_eq_univ (F := family) realize_univ rfl
+    (Set.eq_empty_iff_forall_notMem.mpr not_mem_den_globallyExponentiallyStable)
 
 /-- **Lyapunov stability of the operating point** under the note's condition in its non-strict
 form (`margin ≥ 0`), `C_dc, L_s, R_s > 0` and `μ u* v₀ > 0`: the energy `H − S(0)` is a local

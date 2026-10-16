@@ -1,6 +1,7 @@
 import theorem.Dynamics.Transport
 import theorem.Dynamics.Instability
 import theorem.Spectral.Family
+import theorem.Spectral.Global
 import theorem.LTI.Plant
 import theorem.Dynamics.Shift
 import Mathlib.Analysis.Real.Pi.Bounds
@@ -463,12 +464,7 @@ of the *set* of equilibria (the angle modulo `2π`), which is not a sentence of 
     (hper : ∀ θ v, m.ix (θ + 2 * Real.pi) v = m.ix θ v) :
     connection% (m ∉ matchingFamily.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  rw [matching_mem_den_flow] at h
-  have hgas := Flow.GloballyExponentiallyStable.globallyAsymptoticallyStable h
-  have := matching_not_mem_den_globallyAsymptoticallyStable m hper
-  unfold powerlib.TMIO.Statement at this
-  rw [matching_mem_den_flow] at this
-  exact this hgas
+  exact fun h => matching_not_mem_den_globallyAsymptoticallyStable m hper
+    (Spectral.den_globallyExponentiallyStable_subset_gas h)
 
 end powerlib.GFM.Matching
