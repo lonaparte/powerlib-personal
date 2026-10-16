@@ -20,8 +20,9 @@ Source: work-sync `theory/T-ph.md` §1.10 ((1.15), (1.16), "正实 … 导纳正
 Results.
 * Spectrum (T-ph §1.10): every complex eigenvalue of `A_ph = (J − R) Q` has `Re λ ≤ 0`
   (`phSpectral_re_nonpos`, from the Lyapunov identity `Aᵀ Q + Q A = −2 Q R Q`,
-  `linearStateMatrix_lyapunov` of `theorem/PH/Linear.lean`), hence `sI − A` is invertible for
-  `Re s > 0` (`phSpectral_det_ne_zero`).
+  `linearStateMatrix_lyapunov` of `theorem/PH/Linear.lean`, read at an eigenvector by
+  `Criteria.re_nonpos_of_lyapunov`), hence `sI − A` is invertible for `Re s > 0`
+  (`phSpectral_det_ne_zero`, `Criteria.det_characteristicMatrix_ne_zero_of_re_lt`).
 * Positive realness: `IsPositiveReal m` means: no pole and `Re uᴴ (G(s) + G(s)ᴴ) u ≥ 0` for
   every `s` with `Re s > 0` and every complex `u`. For the linear pH system the key identity is
   `Re uᴴ G(s) u = Re(s) xᴴ Q x + xᴴ Q R Q x` with `x = (sI − A)⁻¹ g u`
@@ -130,40 +131,19 @@ nonpositive real part. -/
 @[powerlib_foundation] theorem phSpectral_re_nonpos (hJ : Jᵀ = -J) (hR : R.PosSemidef)
     (hQ : Q.PosDef) {μ : ℂ} {v : Fin n → ℂ} (hv : v ≠ 0)
     (heig : Linear.complexify (linearStateMatrix J R Q) *ᵥ v = μ • v) : μ.re ≤ 0 := by
-  set A := linearStateMatrix J R Q
   have hQt : Qᵀ = Q := symmetric_of_posDef hQ
-  have hneg := linearStateMatrix_lyapunov_negSemidef hJ hR hQt
-  -- `vᴴ (Aᵀ Q + Q A) v = conj μ · S + μ · S`, `S = vᴴ Q v`.
-  set S := star v ⬝ᵥ (Linear.complexify Q *ᵥ v)
-  have h1 : star v ⬝ᵥ (Linear.complexify (Q * A) *ᵥ v) = μ * S := by
-    rw [Linear.complexify_mul, ← mulVec_mulVec, heig, mulVec_smul, dotProduct_smul, smul_eq_mul]
-  have h2 : star v ⬝ᵥ (Linear.complexify (Aᵀ * Q) *ᵥ v) = star μ * S := by
-    rw [Linear.complexify_mul, ← mulVec_mulVec, ← phCx_complexify_conjTranspose, dotProduct_mulVec,
-      ← star_mulVec, heig, star_smul, smul_dotProduct, smul_eq_mul]
-  have hsum : star v ⬝ᵥ (Linear.complexify (Aᵀ * Q + Q * A) *ᵥ v) = star μ * S + μ * S := by
-    rw [phCx_complexify_add, add_mulVec, dotProduct_add, h1, h2]
-  have hre : (star v ⬝ᵥ (Linear.complexify (Aᵀ * Q + Q * A) *ᵥ v)).re ≤ 0 := by
-    have := phCx_form_re_nonneg hneg v
-    have hmap : Linear.complexify (-(Aᵀ * Q + Q * A)) = -Linear.complexify (Aᵀ * Q + Q * A) :=
-      Linear.complexify_neg _
-    rw [hmap, neg_mulVec, dotProduct_neg, Complex.neg_re] at this
-    linarith
-  rw [hsum] at hre
-  have hS : 0 < S.re := phCx_form_re_pos hQ hv
-  have : (star μ * S + μ * S).re = 2 * μ.re * S.re := by
-    simp only [Complex.add_re, Complex.mul_re, Complex.star_def, Complex.conj_re, Complex.conj_im]
-    ring
-  rw [this] at hre
-  nlinarith
+  refine Criteria.re_nonpos_of_lyapunov hQt (fun w hw => by
+    simpa only [star_trivial] using hQ.dotProduct_mulVec_pos hw) (fun w => ?_) hv heig
+  have h := (linearStateMatrix_lyapunov_negSemidef hJ hR hQt).dotProduct_mulVec_nonneg w
+  rw [star_trivial, neg_mulVec, dotProduct_neg, Linear.quadratic_sym hQt] at h
+  linarith
 
 /-- No pole of the linear pH system in the open right half-plane. -/
 @[powerlib_foundation] theorem phSpectral_det_ne_zero (hJ : Jᵀ = -J) (hR : R.PosSemidef)
     (hQ : Q.PosDef) {s : ℂ} (hs : 0 < s.re) :
-    (Linear.characteristicMatrix (linearStateMatrix J R Q) s).det ≠ 0 := by
-  intro h
-  obtain ⟨v, hv, heig⟩ := Criteria.exists_eigenpair_of_det_characteristicMatrix_eq_zero _ h
-  have := phSpectral_re_nonpos hJ hR hQ hv heig
-  linarith
+    (Linear.characteristicMatrix (linearStateMatrix J R Q) s).det ≠ 0 :=
+  Criteria.det_characteristicMatrix_ne_zero_of_re_lt _ fun _ _ hv heig =>
+    (phSpectral_re_nonpos hJ hR hQ hv heig).trans_lt hs
 
 end Spectrum
 

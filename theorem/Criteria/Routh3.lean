@@ -1,5 +1,4 @@
 import theorem.Criteria.Hurwitz2
-import theorem.Circuits.LCL
 import theorem.Dynamics.Linearization
 
 /-! # Routh–Hurwitz criterion for monic real cubics and real 3×3 matrices
@@ -20,12 +19,14 @@ Results.
 * Monic real cubic `s ^ 3 + a2 * s ^ 2 + a1 * s + a0`: every complex root has negative real
   part iff `0 < a2 ∧ 0 < a0 ∧ a0 < a2 * a1` (both directions, `cubic_roots_re_neg_iff`;
   `0 < a1` is then implied, `cubic_linear_coeff_pos`).
-  The sufficient direction reuses `powerlib.Circuits.LCL.cubic_hurwitz` with `a3 = 1`.
-  The necessary direction factors out a real root (intermediate value theorem) and applies
-  the quadratic criterion `Criteria.quadratic_roots_re_neg_iff` to the quotient.
-* Real roots: every real cubic has a real root (`exists_cubic_real_root`); `a0 < 0` gives a
-  positive real root (`exists_cubic_root_pos_of_const_neg`); `a2 < 0` gives a root with positive
-  real part (`exists_cubic_root_re_pos_of_quadratic_coeff_neg`); a strict violation `a2 a1 < a0`
+  The sufficient direction (`cubic_roots_re_neg_of`) eliminates the imaginary part of a root with
+  `Re s ≥ 0`; the LCL filter's pole criterion `Circuits.LCL.cubic_hurwitz` is its non-monic
+  form. The necessary direction factors out a real root and applies the quadratic criterion
+  `Criteria.quadratic_roots_re_neg_iff` to the quotient.
+* Real roots, as instances of the generic criteria of `theorem/Criteria/Hurwitz.lean`: every real
+  cubic has a real root (`exists_cubic_real_root`, odd degree); `a0 < 0` gives a positive real
+  root (`exists_cubic_root_pos_of_const_neg`); `a2 < 0` gives a root with positive real part
+  (`exists_cubic_root_re_pos_of_quadratic_coeff_neg`, Stodola); a strict violation `a2 a1 < a0`
   of the gap condition gives a root with positive real part (`exists_cubic_root_re_pos_of_gap`).
 * `A : Matrix (Fin 3) (Fin 3) ℝ`:
   `det (s • 1 - A) = s ^ 3 - tr A * s ^ 2 + principalMinorSum A * s - det A`
@@ -35,8 +36,10 @@ Results.
   `IsHurwitz A ↔ A.trace < 0 ∧ A.det < 0 ∧ A.trace * principalMinorSum A < A.det`
   (`isHurwitz_fin_three_iff`; `spectrallyStable_fin_three_iff`, companion form
   `isHurwitz_companion_three_iff`).
-* Instability witnesses: `0 < det A` gives a positive real eigenvalue (real and complex
-  eigenvectors; `exists_pos_real_eigenvector_of_det_pos_fin_three`,
+* Instability witnesses, the case `n = 3` of the any-dimension witnesses
+  `Criteria.exists_pos_real_eigenvector_of_det` and `Criteria.exists_eigenpair_re_pos_of_trace_pos`:
+  `0 < det A` gives a positive real eigenvalue (real and complex eigenvectors;
+  `exists_pos_real_eigenvector_of_det_pos_fin_three`,
   `exists_eigenvalue_re_pos_of_det_pos_fin_three`); `0 < tr A` gives an eigenvalue with positive
   real part (`exists_eigenvalue_re_pos_of_trace_pos_fin_three`), in the shape of
   `powerlib.Dynamics.unstable_of_jacobian_eigenvalue_re_pos`.
@@ -62,77 +65,32 @@ section Cubic
 /-- Value of the monic real cubic `x ^ 3 + a2 x ^ 2 + a1 x + a0`. -/
 def cubicEval (a2 a1 a0 x : ℝ) : ℝ := x ^ 3 + a2 * x ^ 2 + a1 * x + a0
 
-@[powerlib_foundation] private theorem cubicEval_continuous (a2 a1 a0 : ℝ) :
-    Continuous (cubicEval a2 a1 a0) := by
-  unfold cubicEval
-  fun_prop
+/-- The monic real cubic as a polynomial, to apply the generic criteria of
+`theorem/Criteria/Hurwitz.lean`. -/
+private def cubicPoly (a2 a1 a0 : ℝ) : ℝ[X] := X ^ 3 + C a2 * X ^ 2 + C a1 * X + C a0
 
-@[powerlib_foundation] private theorem cubicEval_bound_pos (a2 a1 a0 : ℝ) :
-    0 < cubicEval a2 a1 a0 (1 + |a2| + |a1| + |a0|) := by
-  set M := 1 + |a2| + |a1| + |a0| with hM
-  have h2 := abs_nonneg a2
-  have h1 := abs_nonneg a1
-  have h0 := abs_nonneg a0
-  have hM1 : 1 ≤ M := by linarith
-  have hMM : M ≤ M ^ 2 := by nlinarith
-  have e2 : -|a2| * M ^ 2 ≤ a2 * M ^ 2 := mul_le_mul_of_nonneg_right (neg_abs_le a2) (sq_nonneg M)
-  have e1 : -|a1| * M ≤ a1 * M := mul_le_mul_of_nonneg_right (neg_abs_le a1) (by linarith)
-  have e1' : |a1| * M ≤ |a1| * M ^ 2 := mul_le_mul_of_nonneg_left hMM h1
-  have e0 : |a0| ≤ |a0| * M ^ 2 := le_mul_of_one_le_right h0 (by nlinarith)
-  have e0' := neg_abs_le a0
-  have hM3 : M ^ 3 = M ^ 2 + (|a2| * M ^ 2 + |a1| * M ^ 2 + |a0| * M ^ 2) := by
-    rw [hM]; ring
-  have hsq : 0 < M ^ 2 := by positivity
-  unfold cubicEval
-  linarith
+@[powerlib_foundation] private theorem cubicPoly_monic (a2 a1 a0 : ℝ) :
+    (cubicPoly a2 a1 a0).Monic := by
+  unfold cubicPoly
+  monicity!
 
-@[powerlib_foundation] private theorem cubicEval_bound_neg (a2 a1 a0 : ℝ) :
-    cubicEval a2 a1 a0 (-(1 + |a2| + |a1| + |a0|)) < 0 := by
-  set M := 1 + |a2| + |a1| + |a0| with hM
-  have h2 := abs_nonneg a2
-  have h1 := abs_nonneg a1
-  have h0 := abs_nonneg a0
-  have hM1 : 1 ≤ M := by linarith
-  have hMM : M ≤ M ^ 2 := by nlinarith
-  have e2 : a2 * M ^ 2 ≤ |a2| * M ^ 2 := mul_le_mul_of_nonneg_right (le_abs_self a2) (sq_nonneg M)
-  have e1 : -a1 * M ≤ |a1| * M :=
-    mul_le_mul_of_nonneg_right (by rw [← abs_neg]; exact le_abs_self (-a1)) (by linarith)
-  have e1' : |a1| * M ≤ |a1| * M ^ 2 := mul_le_mul_of_nonneg_left hMM h1
-  have e0 : |a0| ≤ |a0| * M ^ 2 := le_mul_of_one_le_right h0 (by nlinarith)
-  have e0' := le_abs_self a0
-  have hM3 : M ^ 3 = M ^ 2 + (|a2| * M ^ 2 + |a1| * M ^ 2 + |a0| * M ^ 2) := by
-    rw [hM]; ring
-  have hsq : 0 < M ^ 2 := by positivity
-  unfold cubicEval
-  have : (-M) ^ 3 = -M ^ 3 := by ring
-  have : (-M) ^ 2 = M ^ 2 := by ring
-  have : a1 * -M = -a1 * M := by ring
-  linarith
+@[powerlib_foundation] private theorem aeval_cubicPoly (a2 a1 a0 : ℝ) (s : ℂ) :
+    aeval s (cubicPoly a2 a1 a0) = s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) := by
+  simp [cubicPoly]
 
-/-- Every monic real cubic has a real root (intermediate value theorem). -/
+/-- Every monic real cubic has a real root (odd degree, `Criteria.exists_root_of_odd_natDegree`). -/
 @[powerlib_foundation] theorem exists_cubic_real_root (a2 a1 a0 : ℝ) :
     ∃ r : ℝ, r ^ 3 + a2 * r ^ 2 + a1 * r + a0 = 0 := by
-  set M := 1 + |a2| + |a1| + |a0|
-  have hM : -M ≤ M := by
-    have : 0 ≤ M := by positivity
-    linarith
-  obtain ⟨r, -, hr⟩ := intermediate_value_Icc hM (cubicEval_continuous a2 a1 a0).continuousOn
-    ⟨(cubicEval_bound_neg a2 a1 a0).le, (cubicEval_bound_pos a2 a1 a0).le⟩
-  exact ⟨r, hr⟩
+  obtain ⟨r, hr⟩ := exists_root_of_odd_natDegree (cubicPoly_monic a2 a1 a0)
+    (by rw [show (cubicPoly a2 a1 a0).natDegree = 3 by unfold cubicPoly; compute_degree!]; decide)
+  exact ⟨r, by simpa [cubicPoly] using hr⟩
 
-/-- `a0 < 0`: a positive real root. -/
+/-- `a0 < 0`: a positive real root (`Criteria.exists_pos_root_of_coeff_zero_neg`). -/
 @[powerlib_foundation] theorem exists_cubic_root_pos_of_const_neg {a2 a1 a0 : ℝ} (h0 : a0 < 0) :
     ∃ r : ℝ, 0 < r ∧ r ^ 3 + a2 * r ^ 2 + a1 * r + a0 = 0 := by
-  set M := 1 + |a2| + |a1| + |a0|
-  have hM : (0 : ℝ) ≤ M := by positivity
-  have hp0 : cubicEval a2 a1 a0 0 = a0 := by simp [cubicEval]
-  obtain ⟨r, ⟨hr0, -⟩, hr⟩ := intermediate_value_Icc hM
-    (cubicEval_continuous a2 a1 a0).continuousOn
-    ⟨by rw [hp0]; exact h0.le, (cubicEval_bound_pos a2 a1 a0).le⟩
-  refine ⟨r, lt_of_le_of_ne hr0 ?_, hr⟩
-  rintro rfl
-  rw [hp0] at hr
-  exact h0.ne hr
+  obtain ⟨r, hr, hroot⟩ := exists_pos_root_of_coeff_zero_neg (cubicPoly_monic a2 a1 a0)
+    (by simpa [cubicPoly] using h0)
+  exact ⟨r, hr, by simpa [cubicPoly] using hroot⟩
 
 @[powerlib_foundation] theorem cubic_real_root_complex {a2 a1 a0 r : ℝ}
     (h : r ^ 3 + a2 * r ^ 2 + a1 * r + a0 = 0) :
@@ -148,16 +106,14 @@ def cubicEval (a2 a1 a0 x : ℝ) : ℝ := x ^ 3 + a2 * x ^ 2 + a1 * x + a0
   push_cast
   linear_combination hc
 
-/-- `a2 < 0`: a root with positive real part (the roots sum to `-a2`). -/
+/-- `a2 < 0`: a root with positive real part (`Criteria.exists_root_re_pos_of_coeff_neg`; the
+roots sum to `-a2`). -/
 @[powerlib_foundation] theorem exists_cubic_root_re_pos_of_quadratic_coeff_neg {a2 a1 a0 : ℝ}
     (h2 : a2 < 0) :
     ∃ s : ℂ, s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 ∧ 0 < s.re := by
-  obtain ⟨r, hr⟩ := exists_cubic_real_root a2 a1 a0
-  by_cases hr0 : 0 < r
-  · exact ⟨r, cubic_real_root_complex hr, by rw [Complex.ofReal_re]; exact hr0⟩
-  · obtain ⟨s, hs, hre⟩ := exists_quadratic_root_re_pos_of_linear_neg
-      (a1 := a2 + r) (a0 := a1 + r * a2 + r ^ 2) (by linarith)
-    exact ⟨s, by rw [cubic_factor_of_root hr, hs, mul_zero], hre⟩
+  obtain ⟨s, hs, hre⟩ := exists_root_re_pos_of_coeff_neg (cubicPoly_monic a2 a1 a0) (k := 2)
+    (by simpa [cubicPoly, coeff_X, coeff_X_pow] using h2)
+  exact ⟨s, by rwa [aeval_cubicPoly] at hs, hre⟩
 
 @[powerlib_foundation] theorem cubic_linear_coeff_pos {a2 a1 a0 : ℝ}
     (h2 : 0 < a2) (h0 : 0 < a0) (hg : a0 < a2 * a1) : 0 < a1 := by
@@ -165,12 +121,34 @@ def cubicEval (a2 a1 a0 x : ℝ) : ℝ := x ^ 3 + a2 * x ^ 2 + a1 * x + a0
   push Not at h1
   nlinarith
 
-/-- Sufficient direction (strict Routh–Hurwitz conditions), via `Circuits.LCL.cubic_hurwitz`. -/
+/-- **Routh–Hurwitz (sufficient), degree three.** For a root `x + i y` with `x ≥ 0`, the
+imaginary part forces `y = 0` (impossible: every term of the cubic is positive) or
+`y² = 3x² + 2 a2 x + a1`; substituted into the real part this gives
+`8x³ + 8 a2 x² + 2 (a1 + a2²) x + (a2 a1 - a0) = 0`, whose terms are positive. -/
 @[powerlib_foundation] theorem cubic_roots_re_neg_of {a2 a1 a0 : ℝ}
     (h2 : 0 < a2) (h0 : 0 < a0) (hg : a0 < a2 * a1) (s : ℂ)
-    (hs : s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0) : s.re < 0 :=
-  Circuits.LCL.cubic_hurwitz 1 a2 a1 a0 one_pos h2 (cubic_linear_coeff_pos h2 h0 hg) h0
-    (by linarith) s (by push_cast; linear_combination hs)
+    (hs : s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0) : s.re < 0 := by
+  have h1 := cubic_linear_coeff_pos h2 h0 hg
+  by_contra hn
+  have hx : 0 ≤ s.re := le_of_not_gt hn
+  have hr : s.re ^ 3 - 3 * s.re * s.im ^ 2 + a2 * (s.re ^ 2 - s.im ^ 2) + a1 * s.re + a0 = 0 := by
+    have h := congrArg Complex.re hs
+    simp [pow_succ, Complex.mul_re, Complex.mul_im] at h
+    nlinarith [h]
+  have hi : s.im * (3 * s.re ^ 2 - s.im ^ 2 + 2 * a2 * s.re + a1) = 0 := by
+    have h := congrArg Complex.im hs
+    simp [pow_succ, Complex.mul_re, Complex.mul_im] at h
+    nlinarith [h]
+  rcases mul_eq_zero.mp hi with hy | hf
+  · rw [hy] at hr
+    have : 0 < s.re ^ 3 + a2 * s.re ^ 2 + a1 * s.re + a0 := by positivity
+    nlinarith
+  · have hz : 8 * s.re ^ 3 + 8 * a2 * s.re ^ 2 + 2 * (a1 + a2 ^ 2) * s.re + (a2 * a1 - a0) = 0 := by
+      linear_combination -hr + (3 * s.re + a2) * hf
+    have hgap : 0 < a2 * a1 - a0 := by linarith
+    have : 0 < 8 * s.re ^ 3 + 8 * a2 * s.re ^ 2 + 2 * (a1 + a2 ^ 2) * s.re + (a2 * a1 - a0) := by
+      positivity
+    linarith
 
 /-- Routh–Hurwitz for a monic real cubic, both directions. -/
 @[powerlib_foundation] theorem cubic_roots_re_neg_iff (a2 a1 a0 : ℝ) :
@@ -370,43 +348,28 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
     Matrix.one_apply_ne (show (2 : Fin 3) ≠ 1 by decide), smul_eq_mul]
   ring
 
-/-- `0 < det A`: a positive real eigenvalue with a real eigenvector. -/
+/-- `0 < det A`: a positive real eigenvalue with a real eigenvector; the case `n = 3` of
+`Criteria.exists_pos_real_eigenvector_of_det`. -/
 @[powerlib_foundation] theorem exists_pos_real_eigenvector_of_det_pos_fin_three
     (A : Matrix (Fin 3) (Fin 3) ℝ) (h : 0 < A.det) :
-    ∃ r : ℝ, 0 < r ∧ ∃ v : Fin 3 → ℝ, v ≠ 0 ∧ A *ᵥ v = r • v := by
-  obtain ⟨r, hr, hroot⟩ := exists_cubic_root_pos_of_const_neg
-    (a2 := -A.trace) (a1 := principalMinorSum A) (a0 := -A.det) (by linarith)
-  refine ⟨r, hr, ?_⟩
-  have hdet : (r • (1 : Matrix (Fin 3) (Fin 3) ℝ) - A).det = 0 := by
-    rw [det_real_characteristic_fin_three]
-    linear_combination hroot
-  obtain ⟨v, hv, hzero⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr hdet
-  refine ⟨v, hv, ?_⟩
-  rw [Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at hzero
-  exact (sub_eq_zero.mp hzero).symm
+    ∃ r : ℝ, 0 < r ∧ ∃ v : Fin 3 → ℝ, v ≠ 0 ∧ A *ᵥ v = r • v :=
+  exists_pos_real_eigenvector_of_det A (by norm_num; exact h)
 
 /-- `0 < det A`: eigenpair shaped for `Dynamics.unstable_of_jacobian_eigenvalue_re_pos`. -/
 @[powerlib_foundation] theorem exists_eigenvalue_re_pos_of_det_pos_fin_three
     (A : Matrix (Fin 3) (Fin 3) ℝ) (h : 0 < A.det) :
     ∃ (μ : ℂ) (v : Fin 3 → ℂ),
       v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re := by
-  obtain ⟨r, hr, hroot⟩ := exists_cubic_root_pos_of_const_neg
-    (a2 := -A.trace) (a1 := principalMinorSum A) (a0 := -A.det) (by linarith)
-  refine exists_eigenpair_re_pos_of_characteristic_root A (s := r) ?_
-    (by rw [Complex.ofReal_re]; exact hr)
-  rw [det_characteristicMatrix_fin_three']
-  exact cubic_real_root_complex hroot
+  obtain ⟨r, hr, v, hv, heig⟩ := exists_pos_real_eigenvalue_of_det A (by norm_num; exact h)
+  exact ⟨r, v, hv, heig, by rw [Complex.ofReal_re]; exact hr⟩
 
-/-- `0 < tr A`: eigenpair shaped for `Dynamics.unstable_of_jacobian_eigenvalue_re_pos`. -/
+/-- `0 < tr A`: eigenpair shaped for `Dynamics.unstable_of_jacobian_eigenvalue_re_pos`
+(`Criteria.exists_eigenpair_re_pos_of_trace_pos`). -/
 @[powerlib_foundation] theorem exists_eigenvalue_re_pos_of_trace_pos_fin_three
     (A : Matrix (Fin 3) (Fin 3) ℝ) (h : 0 < A.trace) :
     ∃ (μ : ℂ) (v : Fin 3 → ℂ),
-      v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re := by
-  obtain ⟨s, hs, hre⟩ := exists_cubic_root_re_pos_of_quadratic_coeff_neg
-    (a2 := -A.trace) (a1 := principalMinorSum A) (a0 := -A.det) (by linarith)
-  refine exists_eigenpair_re_pos_of_characteristic_root A (s := s) ?_ hre
-  rw [det_characteristicMatrix_fin_three']
-  exact hs
+      v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re :=
+  exists_eigenpair_re_pos_of_trace_pos A h
 
 end FinThree
 

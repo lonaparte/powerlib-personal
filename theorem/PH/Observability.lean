@@ -252,76 +252,54 @@ closed loop. -/
   have hggt : (g * gᵀ).PosSemidef := by
     simpa [conjTranspose_eq_transpose_of_trivial] using posSemidef_self_mul_conjTranspose g
   have hR' : (R + k • (g * gᵀ)).PosSemidef := hR.add (hggt.smul hk.le)
-  have hle : μ.re ≤ 0 := phSpectral_re_nonpos hJ hR' hQ hv heig
-  rcases hle.lt_or_eq with hlt | heq0
-  · exact hlt
-  · exfalso
-    -- the Lyapunov identity with `μ.re = 0` forces `Re vᴴ (Q (R + k g gᵀ) Q) v = 0`
-    set A' := linearStateMatrix J (R + k • (g * gᵀ)) Q with hA'def
-    set S := star v ⬝ᵥ (Linear.complexify Q *ᵥ v)
-    have hR't : (R + k • (g * gᵀ))ᵀ = R + k • (g * gᵀ) := by
-      simpa only [conjTranspose_eq_transpose_of_trivial] using hR'.isHermitian.eq
-    have hlyap := linearStateMatrix_lyapunov hJ hQt hR't
-    have h1 : star v ⬝ᵥ (Linear.complexify (Q * A') *ᵥ v) = μ * S := by
-      rw [Linear.complexify_mul, ← mulVec_mulVec, heig, mulVec_smul, dotProduct_smul, smul_eq_mul]
-    have h2 : star v ⬝ᵥ (Linear.complexify (A'ᵀ * Q) *ᵥ v) = star μ * S := by
-      rw [Linear.complexify_mul, ← mulVec_mulVec, ← phCx_complexify_conjTranspose,
-        dotProduct_mulVec, ← star_mulVec, heig, star_smul, smul_dotProduct, smul_eq_mul]
-    have hsum : star v ⬝ᵥ (Linear.complexify (A'ᵀ * Q + Q * A') *ᵥ v) = star μ * S + μ * S := by
-      rw [phCx_complexify_add, add_mulVec, dotProduct_add, h1, h2]
-    have hre0 : (star v ⬝ᵥ (Linear.complexify (A'ᵀ * Q + Q * A') *ᵥ v)).re = 0 := by
-      rw [hsum]
-      simp only [Complex.add_re, Complex.mul_re, Complex.star_def, Complex.conj_re,
-        Complex.conj_im]
-      rw [heq0]; ring
-    rw [hlyap] at hre0
-    -- split `Q (R + k g gᵀ) Q = Qᵀ R Q + k Cᵀ C`
-    have hsplit : -(2 : ℝ) • (Q * (R + k • (g * gᵀ)) * Q) =
-        -(2 : ℝ) • (Qᵀ * R * Q) + -(2 * k) • (Cᵀ * C) := by
-      rw [hCdef, transpose_mul, transpose_transpose, hQt]
-      simp only [Matrix.mul_add, Matrix.add_mul, Matrix.mul_smul, Matrix.smul_mul, smul_add,
-        smul_smul, Matrix.mul_assoc]
-      ring_nf
-    rw [hsplit, phCx_complexify_add, add_mulVec, dotProduct_add, Complex.add_re] at hre0
-    have hQRQ : (Qᵀ * R * Q).PosSemidef := by
-      simpa [conjTranspose_eq_transpose_of_trivial] using hR.conjTranspose_mul_mul_same Q
-    have hCC : (Cᵀ * C).PosSemidef := by
-      simpa [conjTranspose_eq_transpose_of_trivial] using posSemidef_conjTranspose_mul_self C
-    have hsm : ∀ (c : ℝ) (P : Matrix (Fin n) (Fin n) ℝ),
-        (star v ⬝ᵥ (Linear.complexify (c • P) *ᵥ v)).re = c * (star v ⬝ᵥ (Linear.complexify P *ᵥ v)).re := by
-      intro c P
-      rw [phCx_form_re, phCx_form_re, Matrix.smul_mulVec, Matrix.smul_mulVec, dotProduct_smul,
-        dotProduct_smul, smul_eq_mul, smul_eq_mul]
-      ring
-    rw [hsm, hsm] at hre0
-    have hn1 := phCx_form_re_nonneg hQRQ v
-    have hn2 := phCx_form_re_nonneg hCC v
-    have hCC0 : (star v ⬝ᵥ (Linear.complexify (Cᵀ * C) *ᵥ v)).re = 0 := by nlinarith
-    -- hence `C v = 0`
-    have hCv : Linear.complexify C *ᵥ v = 0 := by
-      rw [phCx_form_re] at hCC0
-      have ha := hCC.dotProduct_mulVec_nonneg (fun i => (v i).re)
-      have hb := hCC.dotProduct_mulVec_nonneg (fun i => (v i).im)
-      rw [star_trivial] at ha hb
-      have ha0 : (fun i => (v i).re) ⬝ᵥ ((Cᵀ * C) *ᵥ fun i => (v i).re) = 0 := by linarith
-      have hb0 : (fun i => (v i).im) ⬝ᵥ ((Cᵀ * C) *ᵥ fun i => (v i).im) = 0 := by linarith
-      rw [← mulVec_mulVec, dotProduct_mulVec, vecMul_transpose, dotProduct_self_eq_zero] at ha0 hb0
-      funext i
-      apply Complex.ext
-      · rw [phCx_mulVec_re, ha0]; rfl
-      · rw [phCx_mulVec_im, hb0]; rfl
-    -- and `v` is an eigenvector of the open-loop `A`
-    have hAv : Linear.complexify (linearStateMatrix J R Q) *ᵥ v = μ • v := by
-      have hA : linearStateMatrix J R Q = A' + g * (k • C) := by
-        rw [hA'def, ← phOutputFeedback_stateMatrix (J := J) (R := R) (Q := Q) (g := g) k, hCdef]
-        abel
-      rw [hA, phCx_complexify_add, add_mulVec, heig, Linear.complexify_mul, ← mulVec_mulVec]
-      have : Linear.complexify (k • C) *ᵥ v = 0 := by
-        rw [show Linear.complexify (k • C) = (k : ℂ) • Linear.complexify C by
-          ext i j; simp [Linear.complexify]]
-        rw [Matrix.smul_mulVec, hCv, smul_zero]
-      rw [this, mulVec_zero, add_zero]
-    exact hv (phCx_eq_zero_of_isObservable hobs hAv hCv)
+  refine (phSpectral_re_nonpos hJ hR' hQ hv heig).lt_of_ne fun heq0 => ?_
+  set A' := linearStateMatrix J (R + k • (g * gᵀ)) Q with hA'def
+  have hR't : (R + k • (g * gᵀ))ᵀ = R + k • (g * gᵀ) := by
+    simpa only [conjTranspose_eq_transpose_of_trivial] using hR'.isHermitian.eq
+  -- The closed-loop Lyapunov form: `wᵀ Q A' w = -(Q w)ᵀ R (Q w) - k |C w|²`.
+  have hform : ∀ w : Fin n → ℝ, w ⬝ᵥ (Q *ᵥ (A' *ᵥ w)) =
+      -((Q *ᵥ w) ⬝ᵥ (R *ᵥ (Q *ᵥ w))) - k * ((C *ᵥ w) ⬝ᵥ (C *ᵥ w)) := by
+    intro w
+    have h := Linear.quadratic_sym (A := A') hQt w
+    rw [linearStateMatrix_lyapunov hJ hQt hR't, Matrix.smul_mulVec, dotProduct_smul,
+      ← mulVec_mulVec, ← mulVec_mulVec, dotProduct_mulVec, ← mulVec_transpose, hQt, add_mulVec,
+      Matrix.smul_mulVec, dotProduct_add, dotProduct_smul, ← mulVec_mulVec,
+      dotProduct_mulVec (Q *ᵥ w) g, ← mulVec_transpose] at h
+    rw [hCdef, ← mulVec_mulVec]
+    simp only [smul_eq_mul] at h
+    linarith
+  -- At `Re μ = 0` the form vanishes at the real and imaginary parts of `v`, so `C v = 0`.
+  have hsum := Criteria.lyapunov_form_eigenpair hQt heig
+  rw [heq0, zero_mul, hform, hform] at hsum
+  have hsq : ∀ u : Fin m → ℝ, 0 ≤ u ⬝ᵥ u := fun u =>
+    Finset.sum_nonneg fun i _ => mul_self_nonneg (u i)
+  have hRQ : ∀ w : Fin n → ℝ, 0 ≤ (Q *ᵥ w) ⬝ᵥ (R *ᵥ (Q *ᵥ w)) := fun w => by
+    simpa only [star_trivial] using hR.dotProduct_mulVec_nonneg (Q *ᵥ w)
+  have hzero : ∀ w : Fin n → ℝ, (C *ᵥ w) ⬝ᵥ (C *ᵥ w) ≤ 0 →
+      C *ᵥ w = 0 := fun w h => dotProduct_self_eq_zero.mp (le_antisymm h (hsq _))
+  have ha := hzero (fun i => (v i).re) (by
+    nlinarith [hRQ (fun i => (v i).re), hRQ (fun i => (v i).im), hsq (C *ᵥ fun i => (v i).re),
+      hsq (C *ᵥ fun i => (v i).im)])
+  have hb := hzero (fun i => (v i).im) (by
+    nlinarith [hRQ (fun i => (v i).re), hRQ (fun i => (v i).im), hsq (C *ᵥ fun i => (v i).re),
+      hsq (C *ᵥ fun i => (v i).im)])
+  have hCv : Linear.complexify C *ᵥ v = 0 := by
+    funext i
+    apply Complex.ext
+    · rw [phCx_mulVec_re, ha]; rfl
+    · rw [phCx_mulVec_im, hb]; rfl
+  -- and `v` is an eigenvector of the open-loop `A`
+  have hAv : Linear.complexify (linearStateMatrix J R Q) *ᵥ v = μ • v := by
+    have hA : linearStateMatrix J R Q = A' + g * (k • C) := by
+      rw [hA'def, ← phOutputFeedback_stateMatrix (J := J) (R := R) (Q := Q) (g := g) k, hCdef]
+      abel
+    rw [hA, phCx_complexify_add, add_mulVec, heig, Linear.complexify_mul, ← mulVec_mulVec]
+    have : Linear.complexify (k • C) *ᵥ v = 0 := by
+      rw [show Linear.complexify (k • C) = (k : ℂ) • Linear.complexify C by
+        ext i j; simp [Linear.complexify]]
+      rw [Matrix.smul_mulVec, hCv, smul_zero]
+    rw [this, mulVec_zero, add_zero]
+  exact hv (phCx_eq_zero_of_isObservable hobs hAv hCv)
 
 /-- The damped closed loop `u = −k y + v` as a linear port-Hamiltonian plant: dissipation
 `R + k g gᵀ`, same ports. -/

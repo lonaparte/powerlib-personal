@@ -1,5 +1,6 @@
 import theorem.Family.Basic
 import theorem.Linear.Transfer
+import theorem.Criteria.Hurwitz
 import theorem.Port.Linear
 
 /-! # Linear families
@@ -32,18 +33,13 @@ the plant is Hurwitz: the behaviour about every operating point is the zero-inpu
   rw [M.inputField_eq he]
   exact holds_iff_isHurwitz e hP
 
-/-- A one-state plant is Hurwitz exactly when its state coefficient is negative. -/
+/-- A one-state plant is Hurwitz exactly when its state coefficient is negative: the degree-one
+case of `Criteria.isHurwitz_iff_of_det_characteristicMatrix` (`det (s • 1 - [a]) = s - a`). -/
 @[powerlib_foundation] theorem isHurwitz_one_iff (a : ℝ) : IsHurwitz !![a] ↔ a < 0 := by
-  rw [← spectrallyStable_iff_isHurwitz]
-  constructor
-  · intro h
-    have := h a (by simp [characteristicMatrix, Matrix.det_unique])
-    simpa using this
-  · intro ha s hs
-    simp [characteristicMatrix, Matrix.det_unique] at hs
-    have : s = a := by linear_combination hs
-    rw [this]
-    simpa using ha
+  rw [Criteria.isHurwitz_iff_of_det_characteristicMatrix _ (q := fun s => s - a) fun s => by
+    simp [characteristicMatrix, Matrix.det_unique]]
+  exact ⟨fun h => by simpa using h a (sub_self _),
+    fun ha s hs => by rw [sub_eq_zero.mp hs]; simpa using ha⟩
 
 end Linear
 

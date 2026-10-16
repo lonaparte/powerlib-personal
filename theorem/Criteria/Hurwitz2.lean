@@ -1,4 +1,5 @@
 import theorem.Linear.Realization
+import theorem.Criteria.Hurwitz
 
 /-! # Hurwitz criteria for monic quadratics and real 2×2 matrices
 
@@ -25,9 +26,11 @@ Results.
   `isHurwitz_iff_charpoly_roots`), and `¬ IsHurwitz` as an explicit eigenpair with nonnegative
   real part (`not_isHurwitz_iff`).
 * Monic real quadratic `s ^ 2 + a1 * s + a0`: all complex roots in the open left half-plane
-  iff `0 < a1 ∧ 0 < a0` (both directions, `quadratic_roots_re_neg_iff`); explicit root witnesses
+  iff `0 < a1 ∧ 0 < a0` (both directions, `quadratic_roots_re_neg_iff`; the necessary direction
+  is Stodola's condition `Criteria.coeff_pos_of_roots_re_neg`); explicit root witnesses
   with `0 ≤ re` / `0 < re` (`exists_quadratic_root_re_nonneg`,
-  `exists_quadratic_root_pos_of_const_neg`, `exists_quadratic_root_re_pos_of_linear_neg`);
+  `exists_quadratic_root_pos_of_const_neg`, `exists_quadratic_root_re_pos_of_linear_neg`, the
+  last two instances of the generic witnesses of `theorem/Criteria/Hurwitz.lean`);
   all roots real iff `0 ≤ a1 ^ 2 - 4 * a0` (`quadratic_roots_real_iff`). For a real quadratic
   `a x² + b x + c` with `a > 0`: negative exactly strictly between the two roots (`quad_neg_iff`),
   and `(−b ± √D)/(2a)` are its roots when `D ≥ 0` (`quad_root`). For `λ² + aλ + b` with `a > 0`,
@@ -39,7 +42,9 @@ Results.
   (`isHurwitz_fin_two_iff`; also for `SpectrallyStable`, `spectrallyStable_fin_two_iff`, for the
   literal `!![a, b; c, d]`, `isHurwitz_fin_two_of_iff`, and for the companion form
   `!![0, 1; -a0, -a1]`, `isHurwitz_companion_two_iff`).
-* Instability witnesses: `A.det < 0` gives a positive real eigenvalue (with real and complex
+* Instability witnesses, the case `n = 2` of `Criteria.exists_pos_real_eigenvector_of_det`,
+  `Criteria.exists_pos_real_eigenvalue_of_det` and `Criteria.exists_eigenpair_re_pos_of_trace_pos`:
+  `A.det < 0` gives a positive real eigenvalue (with real and complex
   eigenvectors; `exists_pos_real_eigenvalue_of_det_neg`, `exists_pos_real_eigenvector_of_det_neg`,
   `exists_eigenvalue_re_pos_of_det_neg`); `0 < A.trace` gives an eigenvalue with positive real
   part (`exists_eigenvalue_re_pos_of_trace_pos`). The conclusion shape matches LeanForControl's
@@ -60,7 +65,7 @@ Results.
 
 noncomputable section
 namespace powerlib.Criteria
-open Matrix
+open Matrix Polynomial
 
 /-! ## Any dimension: characteristic roots and eigenpairs -/
 
@@ -70,12 +75,8 @@ variable {n : ℕ}
 
 @[powerlib_foundation] theorem exists_eigenpair_of_det_characteristicMatrix_eq_zero
     (A : Matrix (Fin n) (Fin n) ℝ) {s : ℂ} (h : (Linear.characteristicMatrix A s).det = 0) :
-    ∃ v : Fin n → ℂ, v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = s • v := by
-  obtain ⟨v, hv, hzero⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr h
-  refine ⟨v, hv, ?_⟩
-  rw [Linear.characteristicMatrix, Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec]
-    at hzero
-  exact (sub_eq_zero.mp hzero).symm
+    ∃ v : Fin n → ℂ, v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = s • v :=
+  Linear.exists_eigenvector_of_root h
 
 @[powerlib_foundation] theorem det_characteristicMatrix_eq_zero_of_eigenpair
     (A : Matrix (Fin n) (Fin n) ℝ) {s : ℂ} {v : Fin n → ℂ} (hv : v ≠ 0)
@@ -165,69 +166,46 @@ section Quadratic
     (r : ℂ) ^ 2 + (a1 : ℂ) * (r : ℂ) + (a0 : ℂ) = 0 := by
   exact_mod_cast h
 
-/-- `a0 < 0`: a positive real root (the larger root `(-a1 + √(a1² − 4a0)) / 2`). -/
+/-- The monic real quadratic `X² + a1 X + a0` as a polynomial, to apply the generic criteria of
+`theorem/Criteria/Hurwitz.lean`. -/
+private def quadraticPoly (a1 a0 : ℝ) : ℝ[X] := X ^ 2 + C a1 * X + C a0
+
+@[powerlib_foundation] private theorem quadraticPoly_monic (a1 a0 : ℝ) :
+    (quadraticPoly a1 a0).Monic := by
+  unfold quadraticPoly
+  monicity!
+
+@[powerlib_foundation] private theorem aeval_quadraticPoly (a1 a0 : ℝ) (s : ℂ) :
+    aeval s (quadraticPoly a1 a0) = s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) := by
+  simp [quadraticPoly]
+
+/-- `a0 < 0`: a positive real root (`Criteria.exists_pos_root_of_coeff_zero_neg`). -/
 @[powerlib_foundation] theorem exists_quadratic_root_pos_of_const_neg {a1 a0 : ℝ}
     (h0 : a0 < 0) : ∃ r : ℝ, 0 < r ∧ r ^ 2 + a1 * r + a0 = 0 := by
-  have hΔ : 0 ≤ a1 ^ 2 - 4 * a0 := by nlinarith [sq_nonneg a1]
-  have hsq := Real.sq_sqrt hΔ
-  have hs0 := Real.sqrt_nonneg (a1 ^ 2 - 4 * a0)
-  refine ⟨(-a1 + Real.sqrt (a1 ^ 2 - 4 * a0)) / 2, ?_, ?_⟩
-  · by_contra hn
-    push Not at hn
-    nlinarith
-  · linear_combination (1 / 4 : ℝ) * hsq
+  obtain ⟨r, hr, hroot⟩ := exists_pos_root_of_coeff_zero_neg (quadraticPoly_monic a1 a0)
+    (by simpa [quadraticPoly] using h0)
+  exact ⟨r, hr, by simpa [quadraticPoly] using hroot⟩
 
-/-- `a1 < 0`: a root with positive real part. -/
+/-- `a1 < 0`: a root with positive real part (`Criteria.exists_root_re_pos_of_coeff_neg`). -/
 @[powerlib_foundation] theorem exists_quadratic_root_re_pos_of_linear_neg {a1 a0 : ℝ}
     (h1 : a1 < 0) : ∃ s : ℂ, s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 ∧ 0 < s.re := by
-  by_cases hΔ : 0 ≤ a1 ^ 2 - 4 * a0
-  · have hsq := Real.sq_sqrt hΔ
-    have hs0 := Real.sqrt_nonneg (a1 ^ 2 - 4 * a0)
-    refine ⟨((-a1 + Real.sqrt (a1 ^ 2 - 4 * a0)) / 2 : ℝ), ?_, ?_⟩
-    · exact quadratic_real_root_complex (by linear_combination (1 / 4 : ℝ) * hsq)
-    · rw [Complex.ofReal_re]
-      linarith
-  · push Not at hΔ
-    have hsq := Real.sq_sqrt (neg_nonneg.mpr hΔ.le)
-    refine ⟨⟨-a1 / 2, Real.sqrt (-(a1 ^ 2 - 4 * a0)) / 2⟩, ?_, ?_⟩
-    · exact quadratic_root_of_re_im (by linear_combination (-1 / 4 : ℝ) * hsq) (by ring)
-    · show 0 < -a1 / 2
-      linarith
+  obtain ⟨s, hs, hre⟩ := exists_root_re_pos_of_coeff_neg (quadraticPoly_monic a1 a0) (k := 1)
+    (by simpa [quadraticPoly, coeff_X] using h1)
+  exact ⟨s, by rwa [aeval_quadraticPoly] at hs, hre⟩
 
-/-- If `¬ (0 < a1 ∧ 0 < a0)`, some root has nonnegative real part. -/
-@[powerlib_foundation] theorem exists_quadratic_root_re_nonneg {a1 a0 : ℝ}
-    (h : ¬ (0 < a1 ∧ 0 < a0)) : ∃ s : ℂ, s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 ∧ 0 ≤ s.re := by
-  by_cases hΔ : 0 ≤ a1 ^ 2 - 4 * a0
-  · have hsq := Real.sq_sqrt hΔ
-    have hs0 := Real.sqrt_nonneg (a1 ^ 2 - 4 * a0)
-    refine ⟨((-a1 + Real.sqrt (a1 ^ 2 - 4 * a0)) / 2 : ℝ), ?_, ?_⟩
-    · exact quadratic_real_root_complex (by linear_combination (1 / 4 : ℝ) * hsq)
-    · rw [Complex.ofReal_re]
-      by_cases h1 : 0 < a1
-      · have h0 : a0 ≤ 0 := by
-          by_contra h0
-          exact h ⟨h1, lt_of_not_ge h0⟩
-        by_contra hn
-        push Not at hn
-        nlinarith
-      · linarith
-  · push Not at hΔ
-    have hsq := Real.sq_sqrt (neg_nonneg.mpr hΔ.le)
-    refine ⟨⟨-a1 / 2, Real.sqrt (-(a1 ^ 2 - 4 * a0)) / 2⟩, ?_, ?_⟩
-    · exact quadratic_root_of_re_im (by linear_combination (-1 / 4 : ℝ) * hsq) (by ring)
-    · show 0 ≤ -a1 / 2
-      have h0 : 0 < a0 := by nlinarith [sq_nonneg a1]
-      have h1 : ¬ 0 < a1 := fun h1 => h ⟨h1, h0⟩
-      linarith
-
-/-- Routh–Hurwitz for a monic real quadratic, both directions. -/
+/-- Routh–Hurwitz for a monic real quadratic, both directions: the necessary direction is
+Stodola's condition (`Criteria.coeff_pos_of_roots_re_neg`). -/
 @[powerlib_foundation] theorem quadratic_roots_re_neg_iff (a1 a0 : ℝ) :
     (∀ s : ℂ, s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 → s.re < 0) ↔ 0 < a1 ∧ 0 < a0 := by
   constructor
   · intro H
-    by_contra h
-    obtain ⟨s, hs, hre⟩ := exists_quadratic_root_re_nonneg h
-    exact absurd (H s hs) (not_lt.mpr hre)
+    have h := coeff_pos_of_roots_re_neg (quadraticPoly_monic a1 a0) fun s hs =>
+      H s (by rwa [aeval_quadraticPoly] at hs)
+    have hd : (quadraticPoly a1 a0).natDegree = 2 := by
+      unfold quadraticPoly
+      compute_degree!
+    exact ⟨by simpa [quadraticPoly, coeff_X] using h 1 (by omega),
+      by simpa [quadraticPoly] using h 0 (by omega)⟩
   · rintro ⟨h1, h0⟩ s hs
     obtain ⟨hr, hi⟩ := quadratic_root_re_im hs
     by_contra hx
@@ -236,6 +214,13 @@ section Quadratic
     · rw [hy] at hr
       nlinarith [sq_nonneg s.re, mul_nonneg h1.le hx]
     · linarith
+
+/-- If `¬ (0 < a1 ∧ 0 < a0)`, some root has nonnegative real part. -/
+@[powerlib_foundation] theorem exists_quadratic_root_re_nonneg {a1 a0 : ℝ}
+    (h : ¬ (0 < a1 ∧ 0 < a0)) : ∃ s : ℂ, s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 ∧ 0 ≤ s.re := by
+  rw [← quadratic_roots_re_neg_iff] at h
+  push Not at h
+  exact h
 
 /-- All complex roots of a monic real quadratic are real iff its discriminant is nonnegative. -/
 @[powerlib_foundation] theorem quadratic_roots_real_iff (a1 a0 : ℝ) :
@@ -456,29 +441,18 @@ section FinTwo
     Matrix.one_apply_ne (show (1 : Fin 2) ≠ 0 by decide), smul_eq_mul]
   ring
 
-/-- `det A < 0`: a positive real eigenvalue with a real eigenvector (saddle direction). -/
+/-- `det A < 0`: a positive real eigenvalue with a real eigenvector (saddle direction); the
+case `n = 2` of `Criteria.exists_pos_real_eigenvector_of_det`. -/
 @[powerlib_foundation] theorem exists_pos_real_eigenvector_of_det_neg
     (A : Matrix (Fin 2) (Fin 2) ℝ) (h : A.det < 0) :
-    ∃ r : ℝ, 0 < r ∧ ∃ v : Fin 2 → ℝ, v ≠ 0 ∧ A *ᵥ v = r • v := by
-  obtain ⟨r, hr, hroot⟩ := exists_quadratic_root_pos_of_const_neg (a1 := -A.trace) h
-  refine ⟨r, hr, ?_⟩
-  have hdet : (r • (1 : Matrix (Fin 2) (Fin 2) ℝ) - A).det = 0 := by
-    rw [det_real_characteristic_fin_two]
-    linear_combination hroot
-  obtain ⟨v, hv, hzero⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr hdet
-  refine ⟨v, hv, ?_⟩
-  rw [Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec] at hzero
-  exact (sub_eq_zero.mp hzero).symm
+    ∃ r : ℝ, 0 < r ∧ ∃ v : Fin 2 → ℝ, v ≠ 0 ∧ A *ᵥ v = r • v :=
+  exists_pos_real_eigenvector_of_det A (by simpa using h)
 
 /-- `det A < 0`: a positive real eigenvalue (complex eigenvector form). -/
 @[powerlib_foundation] theorem exists_pos_real_eigenvalue_of_det_neg
     (A : Matrix (Fin 2) (Fin 2) ℝ) (h : A.det < 0) :
-    ∃ r : ℝ, 0 < r ∧ ∃ v : Fin 2 → ℂ, v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = (r : ℂ) • v := by
-  obtain ⟨r, hr, hroot⟩ := exists_quadratic_root_pos_of_const_neg (a1 := -A.trace) h
-  refine ⟨r, hr, exists_eigenpair_of_quadratic_fin_two A ?_⟩
-  have := quadratic_real_root_complex hroot
-  push_cast at this
-  linear_combination this
+    ∃ r : ℝ, 0 < r ∧ ∃ v : Fin 2 → ℂ, v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = (r : ℂ) • v :=
+  exists_pos_real_eigenvalue_of_det A (by simpa using h)
 
 /-- `det A < 0`: eigenpair shaped for LeanForControl's
 `unstable_of_exists_complex_eigenvalue_re_pos`. -/
@@ -490,16 +464,12 @@ section FinTwo
   exact ⟨r, v, hv, heig, by rw [Complex.ofReal_re]; exact hr⟩
 
 /-- `0 < tr A`: eigenpair shaped for LeanForControl's
-`unstable_of_exists_complex_eigenvalue_re_pos`. -/
+`unstable_of_exists_complex_eigenvalue_re_pos` (`Criteria.exists_eigenpair_re_pos_of_trace_pos`). -/
 @[powerlib_foundation] theorem exists_eigenvalue_re_pos_of_trace_pos
     (A : Matrix (Fin 2) (Fin 2) ℝ) (h : 0 < A.trace) :
     ∃ (μ : ℂ) (v : Fin 2 → ℂ),
-      v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re := by
-  obtain ⟨s, hs, hre⟩ :=
-    exists_quadratic_root_re_pos_of_linear_neg (a1 := -A.trace) (a0 := A.det) (by linarith)
-  obtain ⟨v, hv, heig⟩ := exists_eigenpair_of_quadratic_fin_two A (s := s)
-    (by push_cast at hs; linear_combination hs)
-  exact ⟨s, v, hv, heig, hre⟩
+      v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re :=
+  exists_eigenpair_re_pos_of_trace_pos A h
 
 /-- Characteristic-root form of the `det A < 0` witness, for
 `Linear.unstable_of_root`. -/
@@ -511,9 +481,8 @@ section FinTwo
 
 @[powerlib_foundation] theorem exists_characteristic_root_re_pos_of_trace_pos
     (A : Matrix (Fin 2) (Fin 2) ℝ) (h : 0 < A.trace) :
-    ∃ s : ℂ, (Linear.characteristicMatrix A s).det = 0 ∧ 0 < s.re := by
-  obtain ⟨μ, v, hv, heig, hre⟩ := exists_eigenvalue_re_pos_of_trace_pos A h
-  exact ⟨μ, det_characteristicMatrix_eq_zero_of_eigenpair A hv heig, hre⟩
+    ∃ s : ℂ, (Linear.characteristicMatrix A s).det = 0 ∧ 0 < s.re :=
+  exists_root_re_pos_of_trace_pos A h
 
 /-! ### Discriminant and nilpotency -/
 

@@ -531,8 +531,8 @@ right-half-plane zero of the return difference proves instability. -/
     case unstable =>
       obtain ⟨s, hs, hrd⟩ : ∃ s : ℂ, 0 < s.re ∧ ic.returnDifference s = 0 :=
         hmem .impedanceUnstable (by simp [translate])
-      have hd₁ := det_ne_zero_of_rhp ((spectrallyStable_iff_isHurwitz _).mpr h₁) hs.le
-      have hd₂ := det_ne_zero_of_rhp ((spectrallyStable_iff_isHurwitz _).mpr h₂) hs.le
+      have hd₁ := Criteria.det_characteristicMatrix_ne_zero_of_isHurwitz h₁ hs.le
+      have hd₂ := Criteria.det_characteristicMatrix_ne_zero_of_isHurwitz h₂ hs.le
       refine family_isLinear.mem_den_flow.mpr (unstable_of_root 0 ?_ hs)
       change (characteristicMatrix ic.closedLoopA s).det = 0
       rw [det_characteristicMatrix_closedLoopA, ic.det_characteristicMatrix_closedLoop s hd₁ hd₂,

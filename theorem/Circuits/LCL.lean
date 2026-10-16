@@ -3,6 +3,7 @@ import theorem.Linear.Jordan
 import theorem.Linear.Rate
 import theorem.Circuits.RL
 import theorem.generated.LCLConversion
+import theorem.Criteria.Routh3
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-! # The LCL filter
@@ -142,10 +143,9 @@ def Circuit.Stable (m : Circuit) : Prop := ∀ s : ℂ, m.frequency s = 0 → s.
 /-- The plant is Hurwitz exactly when all poles lie in the open left half plane. -/
 @[simp, powerlib_foundation] theorem isHurwitz_iff_stable (m : Circuit) :
     IsHurwitz m.plant.A ↔ m.Stable := by
-  rw [← Linear.spectrallyStable_iff_isHurwitz]
   have ha3 : (m.a3 : ℂ) ≠ 0 := by exact_mod_cast (a3_pos m).ne'
-  simp only [Linear.SpectrallyStable, Circuit.Stable, det_characteristicMatrix, div_eq_zero_iff,
-    ha3, or_false]
+  exact Criteria.isHurwitz_iff_of_det_characteristicMatrix _ fun s => by
+    rw [det_characteristicMatrix, div_eq_zero_iff, or_iff_left ha3]
 
 /-! ## Routh–Hurwitz and passivity -/
 
@@ -164,34 +164,19 @@ def Circuit.Damped (m : Circuit) : Prop := m.first.resistance ≠ 0 ∨ m.second
   dsimp [Circuit.a3, Circuit.a2, Circuit.a1, Circuit.a0]
   ring
 
-/-- The strict cubic Routh–Hurwitz condition places every root in the open left half plane. -/
+/-- The strict cubic Routh–Hurwitz condition places every root in the open left half plane: the
+monic criterion `Criteria.cubic_roots_re_neg_of` after division by `a3`. -/
 @[powerlib_foundation] theorem cubic_hurwitz (a3 a2 a1 a0 : ℝ) (h3 : 0 < a3) (h2 : 0 < a2)
-    (h1 : 0 < a1) (h0 : 0 < a0) (hg : 0 < a2 * a1 - a3 * a0)
+    (_h1 : 0 < a1) (h0 : 0 < a0) (hg : 0 < a2 * a1 - a3 * a0)
     (s : ℂ) (hs : (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0) :
     s.re < 0 := by
-  by_contra hn
-  have hx : 0 ≤ s.re := le_of_not_gt hn
-  have hr : a3 * (s.re ^ 3 - 3 * s.re * s.im ^ 2) + a2 * (s.re ^ 2 - s.im ^ 2) + a1 * s.re +
-      a0 = 0 := by
-    have h := congrArg Complex.re hs
-    simp [pow_succ, Complex.mul_re, Complex.mul_im] at h
-    nlinarith [h]
-  have hi : s.im * (a3 * (3 * s.re ^ 2 - s.im ^ 2) + 2 * a2 * s.re + a1) = 0 := by
-    have h := congrArg Complex.im hs
-    simp [pow_succ, Complex.mul_re, Complex.mul_im] at h
-    nlinarith [h]
-  by_cases hy : s.im = 0
-  · have hp : 0 < a3 * s.re ^ 3 + a2 * s.re ^ 2 + a1 * s.re + a0 := by positivity
-    simp only [hy] at hr
-    linarith
-  · have hf : a3 * (3 * s.re ^ 2 - s.im ^ 2) + 2 * a2 * s.re + a1 = 0 :=
-      (mul_eq_zero.mp hi).resolve_left hy
-    have hz : 8 * a3 ^ 2 * s.re ^ 3 + 8 * a3 * a2 * s.re ^ 2 +
-        2 * (a3 * a1 + a2 ^ 2) * s.re + (a2 * a1 - a3 * a0) = 0 := by
-      linear_combination -a3 * hr + (3 * a3 * s.re + a2) * hf
-    have hp : 0 < 8 * a3 ^ 2 * s.re ^ 3 + 8 * a3 * a2 * s.re ^ 2 +
-        2 * (a3 * a1 + a2 ^ 2) * s.re + (a2 * a1 - a3 * a0) := by positivity
-    linarith
+  have ha3 : (a3 : ℂ) ≠ 0 := by exact_mod_cast h3.ne'
+  refine Criteria.cubic_roots_re_neg_of (a1 := a1 / a3) (div_pos h2 h3) (div_pos h0 h3) ?_ s ?_
+  · rw [div_mul_div_comm, div_lt_div_iff₀ h3 (mul_pos h3 h3)]
+    nlinarith
+  · push_cast
+    field_simp
+    linear_combination hs
 
 /-- The Routh–Hurwitz coefficient condition. -/
 def Circuit.RouthHurwitz (m : Circuit) : Prop :=

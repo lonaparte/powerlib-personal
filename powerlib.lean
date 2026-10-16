@@ -23,6 +23,7 @@ import theorem.Averaging.KBM
 import theorem.Averaging.SlidingFourier
 import theorem.Averaging.StateSpaceAveraging
 import theorem.Averaging.SwitchedStability
+import theorem.Criteria.Hurwitz
 import theorem.Criteria.Hurwitz2
 import theorem.Criteria.Routh3
 import theorem.Criteria.Routh4
