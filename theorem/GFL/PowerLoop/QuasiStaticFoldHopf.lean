@@ -3,14 +3,18 @@ import theorem.Dynamics.Degenerate.WeakFocus
 
 /-! # Quasi-static three-state GFL: a supercritical Hopf point (gains of arbitrary sign)
 
+Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
+Scaffold: `theorem/CurrentDirection.agda`.
+
 Model boundary.
 The model of `theorem/GFL/PowerLoop/QuasiStatic.lean`, unchanged: a single
 grid-following converter on an infinite bus of amplitude `V` behind a lossless reactance `X_g`;
 three-phase balanced averaged dq model in the PLL frame, algebraic (quasi-static) network,
-continuous time. States, in order: `θ` (PLL error angle), `x` (PLL integrator), `I_d` (d-axis
-current); `I_q = 0`; OUT-positive current, export-positive power `P = (3/2) V cos θ I_d`. SRF-PLL
-`θ̇ = k_p v_q + k_i x`, `ẋ = v_q`; dispatch `İ_d = k_P (P_ref − P)`. Ideal current loop; no line
-dynamics, resistance, dc link, PWM, delay or limiter. `QuasiStatic.family` admits every real
+continuous time. States, in order: `θ` (PLL error angle), `x` (PLL integrator), `i_d` (d-axis
+current into the converter); `I_q = 0`; absorbed power `P = (3/2) Re(V̄ Ī*) = (3/2) V cos θ i_d`,
+absorbed reference `P_ref`. SRF-PLL `θ̇ = k_p v_q + k_i x`, `ẋ = v_q`, `v_q = −V sin θ − X_g i_d`;
+dispatch `i̇_d = k_P (P_ref − P)`. Ideal current loop; no line dynamics, resistance, dc link, PWM,
+delay or limiter. `QuasiStatic.family` admits every real
 parameter set; the statements below concern one explicit member (with `k_p < 0`), locally, through
 the field translated to its selected point.
 
@@ -24,7 +28,8 @@ only the Lyapunov argument is formal.
 
 Results.
 Witness. `supercriticalQS`: `V = √5`, `X_g = 1`, `k_p = −1/4`, `k_i = 21/4`, `k_P = 4/3`,
-`P_ref = 3`, `(θ*, 0, I_d*) = (arctan(1/2), 0, 1)` (`supercriticalQS_trig`: `V cos θ* = 2`,
+`P_ref = −3` (an exporting converter), `(θ*, 0, i_d*) = (arctan(1/2), 0, −1)` (the OUT-positive
+source point `P_ref,exp = 3`, `I_d* = 1`; `supercriticalQS_trig`: `V cos θ* = 2`,
 `V sin θ* = 1`; `supercriticalQS_isEq`). Its characteristic polynomial is
 `s³ + (7/2)s² + 9s + 63/2 = (s + 7/2)(s² + 9)`: eigenvalues `±3i`, `−7/2`
 (`supercriticalQS_routh_boundary`: `tr J · m₂(J) = det J`, the strict Routh–Hurwitz condition
@@ -269,41 +274,43 @@ times polynomials of weight `≥ 1`. -/
 
 /-! ## The witness model (static) -/
 
-/-- Eigen-coordinate `c₁` of the witness. -/
+/-- Eigen-coordinate `c₁` of the witness (the current coordinate `z 2 = i_d − i_d*` enters with
+the sign of the IN-positive current). -/
 def hopfQS_c1 : Dynamics.State 3 →L[ℝ] ℝ :=
   (12 / 85 : ℝ) • EuclideanSpace.proj (0 : Fin 3) + (49 / 170 : ℝ) • EuclideanSpace.proj (1 : Fin 3) +
-    (1 / 170 : ℝ) • EuclideanSpace.proj (2 : Fin 3)
+    (-1 / 170 : ℝ) • EuclideanSpace.proj (2 : Fin 3)
 
 /-- Eigen-coordinate `c₂` of the witness. -/
 def hopfQS_c2 : Dynamics.State 3 →L[ℝ] ℝ :=
   (14 / 85 : ℝ) • EuclideanSpace.proj (0 : Fin 3) + (-21 / 85 : ℝ) • EuclideanSpace.proj (1 : Fin 3) +
-    (-13 / 170 : ℝ) • EuclideanSpace.proj (2 : Fin 3)
+    (13 / 170 : ℝ) • EuclideanSpace.proj (2 : Fin 3)
 
 /-- Eigen-coordinate `c₃` (the stable mode) of the witness. -/
 def hopfQS_c3 : Dynamics.State 3 →L[ℝ] ℝ :=
   (-1 / 85 : ℝ) • EuclideanSpace.proj (0 : Fin 3) + (3 / 170 : ℝ) • EuclideanSpace.proj (1 : Fin 3) +
-    (7 / 170 : ℝ) • EuclideanSpace.proj (2 : Fin 3)
+    (-7 / 170 : ℝ) • EuclideanSpace.proj (2 : Fin 3)
 
 @[powerlib_foundation] theorem hopfQS_c_apply (z : Dynamics.State 3) :
-    hopfQS_c1 z = 12 / 85 * z 0 + 49 / 170 * z 1 + 1 / 170 * z 2 ∧
-    hopfQS_c2 z = 14 / 85 * z 0 + -21 / 85 * z 1 + -13 / 170 * z 2 ∧
-    hopfQS_c3 z = -1 / 85 * z 0 + 3 / 170 * z 1 + 7 / 170 * z 2 := by
+    hopfQS_c1 z = 12 / 85 * z 0 + 49 / 170 * z 1 + -1 / 170 * z 2 ∧
+    hopfQS_c2 z = 14 / 85 * z 0 + -21 / 85 * z 1 + 13 / 170 * z 2 ∧
+    hopfQS_c3 z = -1 / 85 * z 0 + 3 / 170 * z 1 + -7 / 170 * z 2 := by
   refine ⟨?_, ?_, ?_⟩ <;> simp [hopfQS_c1, hopfQS_c2, hopfQS_c3]
 
 /-- The state in terms of the eigen-coordinates: `z = T c`,
-`T = [[3, 4, 7], [2, −2, −4], [0, 2, 28]]`. -/
+`T = [[3, 4, 7], [2, −2, −4], [0, −2, −28]]`. -/
 @[powerlib_foundation] theorem hopfQS_coords (z : Dynamics.State 3) :
     z 0 = 3 * hopfQS_c1 z + 4 * hopfQS_c2 z + 7 * hopfQS_c3 z ∧
     z 1 = 2 * hopfQS_c1 z - 2 * hopfQS_c2 z - 4 * hopfQS_c3 z ∧
-    z 2 = 2 * hopfQS_c2 z + 28 * hopfQS_c3 z := by
+    z 2 = -2 * hopfQS_c2 z - 28 * hopfQS_c3 z := by
   obtain ⟨h1, h2, h3⟩ := hopfQS_c_apply z
   rw [h1, h2, h3]
   refine ⟨by ring, by ring, by ring⟩
 
 /-- A supercritical quasi-static model: `V = √5`, `X_g = 1`, `k_p = −1/4`, `k_i = 21/4`,
-`k_P = 4/3`, `P_ref = 3` at `(θ*, 0, I_d*) = (arctan(1/2), 0, 1)` (so `V cos θ* = 2`,
-`V sin θ* = 1`). -/
-def supercriticalQS : Model := ⟨⟨Real.sqrt 5, 1, -1 / 4, 21 / 4, 4 / 3, 3⟩, Real.arctan (1 / 2), 1⟩
+`k_P = 4/3`, `P_ref = −3` at `(θ*, 0, i_d*) = (arctan(1/2), 0, −1)` (so `V cos θ* = 2`,
+`V sin θ* = 1`); the converter exports `3`. -/
+def supercriticalQS : Model :=
+  ⟨⟨Real.sqrt 5, 1, -1 / 4, 21 / 4, 4 / 3, -3⟩, Real.arctan (1 / 2), -1⟩
 
 @[powerlib_foundation] theorem supercriticalQS_trig :
     supercriticalQS.params.V * Real.cos supercriticalQS.θ = 2 ∧
@@ -325,19 +332,17 @@ def supercriticalQS : Model := ⟨⟨Real.sqrt 5, 1, -1 / 4, 21 / 4, 4 / 3, 3⟩
 
 /-- The translated field of the witness, `S = sin φ`, `C = cos φ`. -/
 @[powerlib_foundation] theorem supercriticalQS_field (z : Dynamics.State 3) :
-    supercriticalQS.field z 0 = -1 / 4 * (-2 * Real.sin (z 0) + (1 - Real.cos (z 0)) + z 2) +
+    supercriticalQS.field z 0 = -1 / 4 * (-2 * Real.sin (z 0) + (1 - Real.cos (z 0)) - z 2) +
         21 / 4 * z 1 ∧
-      supercriticalQS.field z 1 = -2 * Real.sin (z 0) + (1 - Real.cos (z 0)) + z 2 ∧
+      supercriticalQS.field z 1 = -2 * Real.sin (z 0) + (1 - Real.cos (z 0)) - z 2 ∧
       supercriticalQS.field z 2 =
-        2 * (2 - (2 * Real.cos (z 0) - Real.sin (z 0)) * (z 2 + 1)) := by
+        -(2 * (2 - (2 * Real.cos (z 0) - Real.sin (z 0)) * (-z 2 + 1))) := by
   obtain ⟨h0, h1, h2⟩ := model_fold_form supercriticalQS_isEq z
   obtain ⟨hc, hs⟩ := supercriticalQS_trig
   rw [hc, hs] at h0 h1 h2
   simp only [supercriticalQS] at h0 h1 h2 ⊢
   refine ⟨by rw [h0]; ring, by rw [h1]; ring, ?_⟩
-  rw [one_mul] at h2
-  rw [h2]
-  ring
+  linear_combination -h2
 
 /-! ## The witness is locally asymptotically stable (implementation evidence) -/
 
@@ -656,7 +661,7 @@ private theorem supercriticalQS_las : LocalAsymptoticStable supercriticalQS.fiel
 /-! ## Connection conclusions -/
 
 /-- The supercritical quasi-static witness (`V = √5`, `X_g = 1`, `k_p = −1/4`, `k_i = 21/4`,
-`k_P = 4/3`, `P_ref = 3`, `(θ*, I_d*) = (arctan(1/2), 1)`) is locally asymptotically stable: a
+`k_P = 4/3`, `P_ref = −3`, `(θ*, i_d*) = (arctan(1/2), −1)`) is locally asymptotically stable: a
 weak focus, its Jacobian has the eigenvalues `±3i` and `−7/2`. -/
 @[powerlib_domain] theorem supercriticalQS_mem_den_locallyAsymptoticallyStable :
     connection% (supercriticalQS ∈ family.den (.flow .locallyAsymptoticallyStable)) := by

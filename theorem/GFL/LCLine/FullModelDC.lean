@@ -3,21 +3,26 @@ import theorem.PLL.PIPLL
 
 /-! # The 13-state GFL-VSC with DC-link dynamics: constant-power equilibria
 
+Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
+Scaffold: `theorem/CurrentDirection.agda`.
+
 Domain module (`vsc-stochastic-stability`, main-line "M1dc").
 
 Model boundary.
 * State `x : State 13`: coordinates `0 … 9` exactly as in `theorem/GFL/LCLine/FullModel.lean`
   (`i_d, i_q, v_cd, v_cq, i_gd, i_gq, ξ_d, ξ_q, η, θ_e`), then `x 10 = v_dc` (DC-link voltage),
   `x 11 = ξ_dc` (DC-voltage PI integrator), `x 12 = v_f` (filtered DC-voltage measurement).
-* The d-axis current reference is endogenous: `i_d*(x) = K_p^dc (v_f − v_dc^ref) + K_i^dc ξ_dc`
-  (inverter convention, `v_dc` high ⇒ more export); `i_q*` frozen.
+* The d-axis current reference is endogenous: `i_d*(x) = −(K_p^dc (v_f − v_dc^ref) + K_i^dc ξ_dc)`
+  (inverter convention, `v_dc` high ⇒ more export, i.e. a more negative `i_d*`); `i_q*` frozen.
   Rows `0 … 9` are the 10-state field of `FullModel.lean` with `i_d* := i_d*(x)`
   (`field13_apply_lt`); DC side:
-  `C_dc v_dc v̇_dc = P_dc − P_br` (written `v̇_dc = (P_dc − P_br)/(C_dc v_dc)`),
+  `C_dc v_dc v̇_dc = P_dc + P_br` (written `v̇_dc = (P_dc + P_br)/(C_dc v_dc)`),
   `ξ̇_dc = v_f − v_dc^ref`, `v̇_f = ω_f (v_dc − v_f)`, bridge power `P_br = (3/2) u^c · i^c`.
-* Direction: OUT-positive converter current and `P_br > 0` = bridge output, `P_dc > 0` = DC
-  source injection (`decisions.md` §D1.6; opposite to `conventions.md` §D1:
-  `I^IN = −i`, `P^absorb = −P_br`). Text-convention PLL angle (`decisions.md` §D1.1–§D1.3).
+* Direction: currents into the converter (as `FullModel.lean`), `P_br > 0` = power absorbed by
+  the bridge from the AC side, `P_dc > 0` = DC source injection into the DC node. The source
+  project writes the model OUT-positive (`decisions.md` §D1.6: `i_out = −i`, bridge output
+  `P_br,out = −P_br`, reference `i*_d,out = K_p^dc (v_f − v_dc^ref) + K_i^dc ξ_dc`). Text-convention
+  PLL angle (`decisions.md` §D1.1–§D1.3).
 * Constant `P_dc`, no modulation limit, no switching or sampling delay, continuous time,
   `δω_g = 0`. Level: equilibrium set, plus algebraic identities of the bridge power.
 
@@ -29,17 +34,21 @@ Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/dc-link-dyna
 `_idref_const_power`).
 
 Results.
-* `bridge_power_invariant` : `u = v_c + (R_f + jω L_f) i ⇒ u·i = v_c·i + R_f |i|²`.
-* `bridgePower_qss` / `PbrAlg_eq` : on the quasi-steady set
-  `P_br = (3/2)[(R_f + R_g/Δ)(i_d*² + i_q*²) +
+* `bridge_power_invariant` : `u = v_c + (R_f + jω L_f) i ⇒ u·i = v_c·i + R_f |i|²` (an identity
+  of reals; with the IN-positive current the bridge voltage is `u = v_c − (R_f + jω L_f) i`).
+* `bridgePower_qss` / `PbrAlg_eq` : on the quasi-steady set the absorbed bridge power is
+  `P_br = (3/2)[−(R_f + R_g/Δ)(i_d*² + i_q*²) +
   (V_g/Δ)(i_d*((1 − b)cos θ − a sin θ) − i_q*((1 − b) sin θ + a cos θ))]`, a polynomial of degree
   exactly two in `i_d*` when `R_f + R_g/Δ ≠ 0` (`PbrAlg_quadratic`).
 * `field13_eq_zero_iff` : `x` is an equilibrium iff `x = qss13 θ i` with `h(θ, i) = 0`,
-  `P_br(θ, i) = P_dc` (constant-power equilibrium; `v_dc = v_f = v_dc^ref`, `ξ_dc = i/K_i^dc`).
+  `P_br(θ, i) = −P_dc` (constant-power equilibrium: the bridge exports the DC injection;
+  `v_dc = v_f = v_dc^ref`, `ξ_dc = −i/K_i^dc`).
 * `PbrAlg_eq_Pdc_iff` : for fixed `θ` the power balance has no real `i_d*` when the
   discriminant is negative, and otherwise exactly the two roots `r₊(θ), r₋(θ)`;
   `field13_exists_equilibrium_iff` : an equilibrium exists iff for some `θ` the discriminant is
   `≥ 0` and `h(θ, r₊(θ)) = 0` or `h(θ, r₋(θ)) = 0` (union of the two branches).
+* `field13_eq_transport_literatureField13` (§D8): the field is the OUT-positive source field
+  transported by the reversal of the current coordinates, with `i_q*` reversed.
 * `cp_energy_rate` : on the 2D constant-power layer, wherever a local potential `V` with
   `V′ = −h_cp` exists, `Ḣ_cp = −K_p h_cp² ≤ 0` (no claim where `h_cp` is undefined).
 
@@ -101,10 +110,11 @@ def withId (i : ℝ) : Params := { p with idRef := i }
 def proj10 (x : State 13) : State 10 :=
   WithLp.toLp 2 (fun i : Fin 10 => x (Fin.castLE (by norm_num) i))
 
-/-- Endogenous d-axis current reference `i_d*(x) = K_p^dc (v_f − v_dc^ref) + K_i^dc ξ_dc`. -/
-def idStar (x : State 13) : ℝ := d.Kpdc * (x 12 - d.vref) + d.Kidc * x 11
+/-- Endogenous d-axis current reference `i_d*(x) = −(K_p^dc (v_f − v_dc^ref) + K_i^dc ξ_dc)`
+(IN-positive: the DC-voltage PI output is the exported current). -/
+def idStar (x : State 13) : ℝ := -(d.Kpdc * (x 12 - d.vref) + d.Kidc * x 11)
 
-/-- Bridge power `P_br = (3/2) u^c · i^c`. -/
+/-- Bridge power `P_br = (3/2) u^c · i^c`, absorbed from the AC side (IN-positive `i^c`). -/
 def Pbr (x : State 13) : ℝ :=
   3 / 2 * ((p.withId (idStar d x)).ucD (proj10 x) * icD (proj10 x) +
     (p.withId (idStar d x)).ucQ (proj10 x) * icQ (proj10 x))
@@ -113,7 +123,7 @@ def Pbr (x : State 13) : ℝ :=
 def field13 (x : State 13) : State 13 :=
   WithLp.toLp 2 fun j : Fin 13 =>
     if h : (j : ℕ) < 10 then (p.withId (idStar d x)).field10 (proj10 x) ⟨j, h⟩
-    else if (j : ℕ) = 10 then (d.Pdc - p.Pbr d x) / (d.Cdc * x 10)
+    else if (j : ℕ) = 10 then (d.Pdc + p.Pbr d x) / (d.Cdc * x 10)
     else if (j : ℕ) = 11 then x 12 - d.vref
     else d.wf * (x 10 - x 12)
 
@@ -123,7 +133,7 @@ def field13 (x : State 13) : State 13 :=
   simp [field13, i.isLt]
 
 @[simp, powerlib_foundation] theorem field13_10 (x : State 13) :
-    p.field13 d x 10 = (d.Pdc - p.Pbr d x) / (d.Cdc * x 10) := by
+    p.field13 d x 10 = (d.Pdc + p.Pbr d x) / (d.Cdc * x 10) := by
   simp [field13]
 @[simp, powerlib_foundation] theorem field13_11 (x : State 13) :
     p.field13 d x 11 = x 12 - d.vref := by
@@ -134,9 +144,9 @@ def field13 (x : State 13) : State 13 :=
 
 /-! ### Bridge power on the quasi-steady set -/
 
-/-- Bridge power of the quasi-steady algebra with reference `i_d* = p.idRef`. -/
+/-- Absorbed bridge power of the quasi-steady algebra with reference `i_d* = p.idRef`. -/
 def PbrAlg (θ : ℝ) : ℝ :=
-  3 / 2 * ((p.vcD θ p.Vg 0 * p.iD θ + p.vcQ θ p.Vg 0 * p.iQ θ) +
+  3 / 2 * ((p.vcD θ p.Vg 0 * p.iD θ + p.vcQ θ p.Vg 0 * p.iQ θ) -
     p.Rf * (p.idRef ^ 2 + p.iqRef ^ 2))
 
 @[powerlib_foundation] theorem icD_qssState (θ η : ℝ) : icD (p.qssState θ η) = p.idRef := by
@@ -161,16 +171,16 @@ def PbrAlg (θ : ℝ) : ℝ :=
   rw [← hdot]
   ring
 
-/-- Closed form of the quasi-steady bridge power. -/
+/-- Closed form of the quasi-steady absorbed bridge power. -/
 @[powerlib_foundation] theorem PbrAlg_eq (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (θ : ℝ) :
-    p.PbrAlg θ = 3 / 2 * ((p.Rf + p.Rg / p.Δ) * (p.idRef ^ 2 + p.iqRef ^ 2) +
+    p.PbrAlg θ = 3 / 2 * (-(p.Rf + p.Rg / p.Δ) * (p.idRef ^ 2 + p.iqRef ^ 2) +
       p.Vg / p.Δ * (p.idRef * ((1 - p.b) * cos θ - p.a * sin θ) -
         p.iqRef * ((1 - p.b) * sin θ + p.a * cos θ))) := by
   have s1 : p.vcD θ p.Vg 0 * p.iD θ + p.vcQ θ p.Vg 0 * p.iQ θ =
-      (p.igD θ p.Vg 0 * p.iQ θ - p.igQ θ p.Vg 0 * p.iD θ) / p.wC := by
+      (p.igQ θ p.Vg 0 * p.iD θ - p.igD θ p.Vg 0 * p.iQ θ) / p.wC := by
     simp only [vcD, vcQ]; field_simp; ring
-  have s2 : p.igD θ p.Vg 0 * p.iQ θ - p.igQ θ p.Vg 0 * p.iD θ =
-      (p.a * (p.iD θ ^ 2 + p.iQ θ ^ 2) + p.wC * p.Vg * ((1 - p.b) * p.iD θ - p.a * p.iQ θ)) /
+  have s2 : p.igQ θ p.Vg 0 * p.iD θ - p.igD θ p.Vg 0 * p.iQ θ =
+      (-p.a * (p.iD θ ^ 2 + p.iQ θ ^ 2) + p.wC * p.Vg * ((1 - p.b) * p.iD θ - p.a * p.iQ θ)) /
         p.Δ := by
     simp only [igD, igQ, solD, solQ]; field_simp; ring
   have s3 : p.iD θ ^ 2 + p.iQ θ ^ 2 = p.idRef ^ 2 + p.iqRef ^ 2 := by
@@ -184,13 +194,13 @@ def PbrAlg (θ : ℝ) : ℝ :=
   field_simp
   ring
 
-/-- Coefficients of the bridge power as a polynomial in `i_d*`. -/
-def pbrA : ℝ := 3 / 2 * (p.Rf + p.Rg / p.Δ)
+/-- Coefficients of the absorbed bridge power as a polynomial in `i_d*`. -/
+def pbrA : ℝ := -(3 / 2 * (p.Rf + p.Rg / p.Δ))
 /-- Linear coefficient in `i_d*`. -/
 def pbrB (θ : ℝ) : ℝ := 3 / 2 * (p.Vg / p.Δ * ((1 - p.b) * cos θ - p.a * sin θ))
 /-- Constant term. -/
 def pbrC (θ : ℝ) : ℝ :=
-  3 / 2 * ((p.Rf + p.Rg / p.Δ) * p.iqRef ^ 2 - p.Vg / p.Δ * (p.iqRef * ((1 - p.b) * sin θ +
+  3 / 2 * (-(p.Rf + p.Rg / p.Δ) * p.iqRef ^ 2 - p.Vg / p.Δ * (p.iqRef * ((1 - p.b) * sin θ +
     p.a * cos θ)))
 
 /-- The bridge power is a quadratic polynomial in `i_d*` (degree exactly two iff
@@ -202,25 +212,26 @@ def pbrC (θ : ℝ) : ℝ :=
     withId_Rg, pbrA, pbrB, pbrC]
   ring
 
-/-- Discriminant of the power balance `P_br(θ, i) = P_dc` in `i`. -/
-def pbrDisc (θ : ℝ) : ℝ := discrim p.pbrA (p.pbrB θ) (p.pbrC θ - d.Pdc)
+/-- Discriminant of the power balance `P_br(θ, i) = −P_dc` in `i`. -/
+def pbrDisc (θ : ℝ) : ℝ := discrim p.pbrA (p.pbrB θ) (p.pbrC θ + d.Pdc)
 
 /-- The two branches `r_±(θ) = (−β ± √disc)/(2α)`. -/
 def rootPlus (θ : ℝ) : ℝ := (-p.pbrB θ + √(p.pbrDisc d θ)) / (2 * p.pbrA)
 /-- Second branch. -/
 def rootMinus (θ : ℝ) : ℝ := (-p.pbrB θ - √(p.pbrDisc d θ)) / (2 * p.pbrA)
 
-/-- Power balance in `i_d*` at fixed `θ`: no real solution if the discriminant is negative,
-otherwise exactly the two branches. -/
+/-- Power balance in `i_d*` at fixed `θ` (the bridge absorbs `−P_dc`, i.e. exports the DC
+injection): no real solution if the discriminant is negative, otherwise exactly the two
+branches. -/
 @[powerlib_foundation] theorem PbrAlg_eq_Pdc_iff (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hA : p.pbrA ≠ 0) (θ i : ℝ) :
-    (p.withId i).PbrAlg θ = d.Pdc ↔
+    (p.withId i).PbrAlg θ = -d.Pdc ↔
       0 ≤ p.pbrDisc d θ ∧ (i = p.rootPlus d θ ∨ i = p.rootMinus d θ) := by
   rw [p.PbrAlg_quadratic hwC hΔ, ← sub_eq_zero,
-    show p.pbrA * (i * i) + p.pbrB θ * i + p.pbrC θ - d.Pdc =
-      p.pbrA * (i * i) + p.pbrB θ * i + (p.pbrC θ - d.Pdc) by ring]
+    show p.pbrA * (i * i) + p.pbrB θ * i + p.pbrC θ - -d.Pdc =
+      p.pbrA * (i * i) + p.pbrB θ * i + (p.pbrC θ + d.Pdc) by ring]
   by_cases hd : 0 ≤ p.pbrDisc d θ
-  · have hs : discrim p.pbrA (p.pbrB θ) (p.pbrC θ - d.Pdc) = √(p.pbrDisc d θ) * √(p.pbrDisc d θ) :=
+  · have hs : discrim p.pbrA (p.pbrB θ) (p.pbrC θ + d.Pdc) = √(p.pbrDisc d θ) * √(p.pbrDisc d θ) :=
       (Real.mul_self_sqrt hd).symm
     rw [quadratic_eq_zero_iff hA hs]
     simp [hd, rootPlus, rootMinus]
@@ -235,7 +246,7 @@ otherwise exactly the two branches. -/
 def qss13 (θ i : ℝ) : State 13 :=
   WithLp.toLp 2 fun j : Fin 13 =>
     if h : (j : ℕ) < 10 then (p.withId i).qssState θ 0 ⟨j, h⟩
-    else if (j : ℕ) = 11 then i / d.Kidc else d.vref
+    else if (j : ℕ) = 11 then -i / d.Kidc else d.vref
 
 @[powerlib_foundation] theorem proj10_qss13 (θ i : ℝ) :
     proj10 (p.qss13 d θ i) = (p.withId i).qssState θ 0 := by
@@ -244,7 +255,7 @@ def qss13 (θ i : ℝ) : State 13 :=
 
 @[powerlib_foundation] theorem qss13_10 (θ i : ℝ) : p.qss13 d θ i 10 = d.vref := by
   simp [qss13]
-@[powerlib_foundation] theorem qss13_11 (θ i : ℝ) : p.qss13 d θ i 11 = i / d.Kidc := by
+@[powerlib_foundation] theorem qss13_11 (θ i : ℝ) : p.qss13 d θ i 11 = -i / d.Kidc := by
   simp [qss13]
 @[powerlib_foundation] theorem qss13_12 (θ i : ℝ) : p.qss13 d θ i 12 = d.vref := by
   simp [qss13]
@@ -266,14 +277,14 @@ def qss13 (θ i : ℝ) : State 13 :=
   simp [proj10]
 
 /-- A (`dc-link-dynamics.md` §2): the equilibria of the 13-state field are exactly the
-constant-power quasi-steady states: `h(θ, i) = 0` and `P_br(θ, i) = P_dc`, with
-`v_dc = v_f = v_dc^ref` and `ξ_dc = i/K_i^dc`.
+constant-power quasi-steady states: `h(θ, i) = 0` and `P_br(θ, i) = −P_dc`, with
+`v_dc = v_f = v_dc^ref` and `ξ_dc = −i/K_i^dc`.
 Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem field13_eq_zero_iff (hLf : p.Lf ≠ 0) (hCf : p.Cf ≠ 0)
     (hLg : p.Lg ≠ 0) (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKicc : p.Kicc ≠ 0) (hKi : p.Ki ≠ 0)
     (hKidc : d.Kidc ≠ 0) (hwf : d.wf ≠ 0) (hCdc : d.Cdc ≠ 0) (hvref : d.vref ≠ 0)
     (x : State 13) :
-    p.field13 d x = 0 ↔ ∃ θ i, (p.withId i).h θ = 0 ∧ (p.withId i).PbrAlg θ = d.Pdc ∧
+    p.field13 d x = 0 ↔ ∃ θ i, (p.withId i).h θ = 0 ∧ (p.withId i).PbrAlg θ = -d.Pdc ∧
       x = p.qss13 d θ i := by
   constructor
   · intro hx
@@ -284,16 +295,16 @@ Static evidence on the model, not a connection conclusion. -/
     obtain ⟨θ, hθ, hy⟩ := (q.field10_eq_zero_iff hLf hCf hLg hwC hΔ hKicc hKi _).mp h10
     have e11 : x 12 - d.vref = 0 := by rw [← p.field13_11 d x, hx]; rfl
     have e12 : d.wf * (x 10 - x 12) = 0 := by rw [← p.field13_12 d x, hx]; rfl
-    have e10 : (d.Pdc - p.Pbr d x) / (d.Cdc * x 10) = 0 := by rw [← p.field13_10 d x, hx]; rfl
+    have e10 : (d.Pdc + p.Pbr d x) / (d.Cdc * x 10) = 0 := by rw [← p.field13_10 d x, hx]; rfl
     have hvf : x 12 = d.vref := by linarith
     have hvdc : x 10 = d.vref := by
       rcases mul_eq_zero.mp e12 with h | h
       · exact absurd h hwf
       · linarith
-    have hP : p.Pbr d x = d.Pdc := by
+    have hP : p.Pbr d x = -d.Pdc := by
       rw [div_eq_zero_iff, or_iff_left (mul_ne_zero hCdc (by rw [hvdc]; exact hvref))] at e10
       linarith
-    have hid : idStar d x = d.Kidc * x 11 := by simp [idStar, hvf]
+    have hid : idStar d x = -(d.Kidc * x 11) := by simp [idStar, hvf]
     refine ⟨θ, idStar d x, hθ, ?_, ?_⟩
     · rw [← hP, Pbr, ← q.bridgePower_qss hKicc θ 0, ← hy]
     · rw [state13_ext_iff]; intro j
@@ -321,7 +332,7 @@ Static evidence on the model, not a connection conclusion. -/
       simp only at hj
       interval_cases k
       · rw [show (⟨10, hk⟩ : Fin 13) = 10 from rfl, p.field13_10, Pbr, hid, hq,
-          (p.withId i).bridgePower_qss hKicc θ 0, hP, sub_self, zero_div]; rfl
+          (p.withId i).bridgePower_qss hKicc θ 0, hP, add_neg_cancel, zero_div]; rfl
       · rw [show (⟨11, hk⟩ : Fin 13) = 11 from rfl, p.field13_11, p.qss13_12, sub_self]; rfl
       · rw [show (⟨12, hk⟩ : Fin 13) = 12 from rfl, p.field13_12, p.qss13_10, p.qss13_12,
           sub_self, mul_zero]; rfl
@@ -348,7 +359,63 @@ Static evidence on the model, not a connection conclusion. -/
     · exact ⟨_, (p.field13_eq_zero_iff d hLf hCf hLg hwC hΔ hKicc hKi hKidc hwf hCdc hvref _).mpr
         ⟨θ, _, hθ, (p.PbrAlg_eq_Pdc_iff d hwC hΔ hA θ _).mpr ⟨hdisc, Or.inr rfl⟩, rfl⟩⟩
 
+/-! ### The OUT-positive form of the source (conventions §D8) -/
+
+/-- The OUT-positive form of the source model (`models_dc.py::full_dynamics_dc`; work-sync
+conventions §D8): rows `0 … 9` are `literatureField10` with the endogenous reference
+`i*_d,out = K_p^dc (v_f − v_dc^ref) + K_i^dc ξ_dc`, and the DC node is
+`v̇_dc = (P_dc − P_br,out)/(C_dc v_dc)` with the bridge output power
+`P_br,out = (3/2) u^c · i^c_out`.
+A static definition only: the model is `field13`. -/
+def literatureField13 (x : State 13) : State 13 :=
+  let q := p.withId (d.Kpdc * (x 12 - d.vref) + d.Kidc * x 11)
+  let y := proj10 x
+  let ucd := q.Kpcc * (q.idRef - icD y) + q.Kicc * y 6 - q.ωg * q.Lf * icQ y + vccD y
+  let ucq := q.Kpcc * (q.iqRef - icQ y) + q.Kicc * y 7 + q.ωg * q.Lf * icD y + vccQ y
+  WithLp.toLp 2 fun j : Fin 13 =>
+    if h : (j : ℕ) < 10 then q.literatureField10 y ⟨j, h⟩
+    else if (j : ℕ) = 10 then (d.Pdc - 3 / 2 * (ucd * icD y + ucq * icQ y)) / (d.Cdc * x 10)
+    else if (j : ℕ) = 11 then x 12 - d.vref
+    else d.wf * (x 10 - x 12)
+
 end Params
+
+/-- The reversal `diag(−1, −1, 1, 1, −1, −1, −1, −1, 1, 1, 1, 1, 1)` of the current coordinates
+of the 13-state model. -/
+def currentReversal13 : Matrix (Fin 13) (Fin 13) ℝ :=
+  Matrix.diagonal ![-1, -1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1]
+
+@[powerlib_foundation] theorem currentReversal13_mul_self :
+    currentReversal13 * currentReversal13 = 1 := by
+  rw [currentReversal13, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
+  congr 1
+  ext i
+  fin_cases i <;> norm_num
+
+@[powerlib_foundation] theorem currentReversal13_isUnit : IsUnit currentReversal13 :=
+  (Matrix.isUnit_iff_isUnit_det _).mpr
+    (Matrix.isUnit_det_of_right_inverse currentReversal13_mul_self)
+
+/-- §D8 boundary translation: the IN-positive 13-state field is the OUT-positive source field
+transported by the reversal of the current coordinates, with the frozen q-axis reference reversed
+(the d-axis reference is endogenous and reverses with the state). -/
+@[powerlib_foundation] theorem Params.field13_eq_transport_literatureField13 (p : Params)
+    (d : DCParams) :
+    p.field13 d = Dynamics.transportField
+      (Dynamics.matrixCoord currentReversal13 currentReversal13_isUnit) 0
+      (({ p with iqRef := -p.iqRef } : Params).literatureField13 d) := by
+  have hinv : currentReversal13⁻¹ = currentReversal13 :=
+    Matrix.inv_eq_left_inv currentReversal13_mul_self
+  funext x
+  apply WithLp.ofLp_injective
+  ext j
+  simp only [Dynamics.transportField, sub_zero, Dynamics.ofLp_matrixCoord,
+    Dynamics.matrixCoord_symm_apply, hinv]
+  fin_cases j <;>
+    simp [Params.field13, Params.literatureField13, Params.field10, Params.literatureField10,
+      Params.withId, Params.idStar, Params.Pbr, proj10, Params.ucD, Params.ucQ, Params.uD,
+      Params.uQ, icD, icQ, vccD, vccQ, Transform.parkD, Transform.parkQ, iparkD, iparkQ,
+      currentReversal13, Matrix.mulVec_diagonal, -mul_eq_mul_left_iff] <;> ring
 
 /-! ### Energy identity of the 2D constant-power layer -/
 

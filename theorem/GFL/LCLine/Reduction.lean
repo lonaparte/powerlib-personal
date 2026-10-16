@@ -6,6 +6,9 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-! # GFL-VSC algebraic reduction chain and the closed form of the PLL error signal `h`
 
+Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
+Scaffold: `theorem/CurrentDirection.agda`.
+
 Foundation layer for the `vsc-stochastic-stability` project (single grid-following VSC with
 LC filter, series R–L line and infinite bus). Everything in this module is an algebraic
 identity about the quasi-steady algebra of the 10-state model; no dynamical approximation
@@ -19,21 +22,25 @@ Model boundary.
   (`theorem/Transform/Park.lean`).
   `θ_e = θ̂_g − θ_g` (`decisions.md` §D1.1, the mathematical-text convention, not the code frame;
   the code frame is `θ_code = −θ_text`, see `theorem/GFL/LCLine/Reduced2D.lean`).
-* Direction. Converter port current `i` is OUT-positive (flows from the bridge into the filter /
-  grid), as in the project's whole model (`decisions.md` §D1.6); this is the opposite of the
-  workspace default IN-positive (`conventions.md` §D1): `I^IN = −i`, `P^absorb = −P_br`.
+* Direction. The converter current `i` flows from the filter into the bridge and the line
+  current `i_g` from the grid into the filter (IN-positive, conventions §D1), and so do the
+  references `i*`. The source project writes the whole model OUT-positive (`decisions.md` §D1.6,
+  `i_out = −i`, `i_g,out = −i_g`, `i*_out = −i*`); the PLL error signal `h`, a voltage, is the
+  same function in both writings, and so are `c₀`, `A`, `φ` (§D8 boundary translation of the
+  source's `c₀ = [((1 − b) i*_d,out + a i*_q,out)/Δ − i*_d,out]/(ω_g C_f)`).
 * Parameters: `L_f, R_f, C_f, L_g, R_g, ω_g, V_g` (filter, line, nominal grid frequency and
   EMF), frozen current references `i_d*, i_q*`, current-loop PI `K_p^cc, K_i^cc`, PLL PI `K_p, K_i`.
   `a = ω_g C_f R_g`, `b = ω_g² C_f L_g`, `Δ = (1 − b)² + a²`. Nondegeneracy hypotheses
   (`ω_g C_f ≠ 0`, `Δ ≠ 0`) are explicit in each statement.
-* Quasi-steady algebra (`reduction-pipeline.md` §2–§4):
+* Quasi-steady algebra (`reduction-pipeline.md` §2–§4), capacitor
+  `C_f v̇_c = i_g − i − ω_g C_f J v_c`, line `L_g i̇_g = E − v_c − R_g i_g − ω_g L_g J i_g`:
   current-loop integrator at rest ⇔ `i^c = i*` ⇔ `i = T(−θ_e) i*`;
-  capacitor at rest ⇔ `v_c = ((i_q − i_gq), (i_gd − i_d)) / (ω_g C_f)`;
+  capacitor at rest ⇔ `v_c = ((i_gq − i_q), (i_d − i_gd)) / (ω_g C_f)`;
   line at rest (grid EMF `(E_d, E_q)` in the system frame) ⇔
-  `[[1 − b, −a], [a, 1 − b]] i_g = (i_d + ω_g C_f E_q, i_q − ω_g C_f E_d)`.
+  `[[1 − b, −a], [a, 1 − b]] i_g = (i_d − ω_g C_f E_q, i_q + ω_g C_f E_d)`.
 * `h(θ_e) := v_cq^c` on that algebraic set (`reduced-2d-equation.md` §2), with the nominal EMF
   `(E_d, E_q) = (V_g, 0)`; `hE` keeps a general EMF for the noise-sensitivity identities.
-* The same reduction in the workspace's IN-positive convention (`T-gfl-dynamics` form B) is
+* The same reduction written with the network of `T-gfl-dynamics` form B is
   `theorem/GFL/LCLine/FormB.lean` (`formBChar`, `pllInput_of_quasiSteady`); both find no `2θ`
   term in the PLL error signal.
 
@@ -42,7 +49,7 @@ Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/reduction-pi
 
 Results.
 * `h_eq` : `h θ = c₀ − (V_g/Δ)((1 − b) sin θ + a cos θ)`,
-  `c₀ = [((1 − b) i_d* + a i_q*)/Δ − i_d*]/(ω_g C_f)`.
+  `c₀ = [i_d* − ((1 − b) i_d* + a i_q*)/Δ]/(ω_g C_f)`.
 * `h_eq_polar` : `h θ = c₀ − A sin(θ + φ)`, `A = V_g/√Δ`, `φ = arg((1 − b) + j a)`
   (`= atan2(a, 1 − b)`).
 * `hasDerivAt_h`, `contDiff_h`.
@@ -57,12 +64,13 @@ The correct entry is `+a` (`lineMatrix`); with `−a` the line and capacitor equ
 `a · i_gd = 0` (`noteLineSystem_forces`). The project code `models.py::_ig_at_thetae` uses the
 correct sign.
 
-Correction (`reduced-2d-equation.md` §1–§2): the note states
+Correction (`reduced-2d-equation.md` §1–§2): the note states (OUT-positive)
 `−sin θ · i_q − cos θ · i_d = −i_d* cos 2θ − i_q* sin 2θ` on `i = T(−θ) i*`. In fact the left side
-is identically `−i_d*` (`current_part`); the double-angle form is false whenever `i_d* ≠ 0`
-(`current_part_ne_doubleAngle`). Hence `h` has no `2θ` term: it is exactly a shifted sinusoid
-(`h_eq_polar`). The note's "`2θ` term makes `h` non-sinusoidal / basin asymmetric" does not hold for
-this model.
+is identically `−i_d*`; written IN-positive, the current part `sin θ · i_q + cos θ · i_d` of
+`ω_g C_f v_cq^c` is identically `i_d*` (`current_part`), and the double-angle form is false
+whenever `i_d* ≠ 0` (`current_part_ne_doubleAngle`). Hence `h` has no `2θ` term: it is exactly a
+shifted sinusoid (`h_eq_polar`). The note's "`2θ` term makes `h` non-sinusoidal / basin asymmetric"
+does not hold for this model.
 
 Correction (`sn-critical-scaling.md` §3): the note supports `σ_q = g/V_g` by a numerical check
 `|σ_q V_g/g − 1| < 1e−5`; here it is an exact identity.
@@ -89,9 +97,9 @@ structure Params where
   ωg : ℝ
   /-- Grid EMF amplitude `V_g` (d-axis of the system frame). -/
   Vg : ℝ
-  /-- Frozen d-axis current reference `i_d*`. -/
+  /-- Frozen d-axis current reference `i_d*` (IN-positive). -/
   idRef : ℝ
-  /-- Frozen q-axis current reference `i_q*`. -/
+  /-- Frozen q-axis current reference `i_q*` (IN-positive). -/
   iqRef : ℝ
   /-- Current-loop proportional gain `K_p^cc`. -/
   Kpcc : ℝ
@@ -166,16 +174,17 @@ def iQ (θ : ℝ) : ℝ := iparkQ θ p.idRef p.iqRef
     cos θ * p.iQ θ - sin θ * p.iD θ = p.iqRef := by
   unfold iQ iD iparkQ iparkD; linear_combination p.iqRef * sin_sq_add_cos_sq θ
 
-/-- The current part of `v_cq^c`: `−sin θ · i_q − cos θ · i_d ≡ −i_d*` (no double-angle term). -/
+/-- The current part of `ω_g C_f v_cq^c`: `sin θ · i_q + cos θ · i_d ≡ i_d*` (no double-angle
+term). -/
 @[powerlib_foundation] theorem current_part (θ : ℝ) :
-    -sin θ * p.iQ θ + cos θ * (-p.iD θ) = -p.idRef := by
-  linear_combination -(p.sin_iQ_add_cos_iD θ)
+    -sin θ * (-p.iQ θ) + cos θ * p.iD θ = p.idRef := by
+  linear_combination p.sin_iQ_add_cos_iD θ
 
-/-- Correction: the double-angle form printed in `reduced-2d-equation.md` §1 is false as soon as
-`i_d* ≠ 0` (it fails at `θ = π/2`). -/
+/-- Correction: the double-angle form printed in `reduced-2d-equation.md` §1 (here with the
+IN-positive currents) is false as soon as `i_d* ≠ 0` (it fails at `θ = π/2`). -/
 @[powerlib_foundation] theorem current_part_ne_doubleAngle (hid : p.idRef ≠ 0) :
-    ¬ ∀ θ : ℝ, -sin θ * p.iQ θ + cos θ * (-p.iD θ) =
-      -p.idRef * cos (2 * θ) - p.iqRef * sin (2 * θ) := by
+    ¬ ∀ θ : ℝ, -sin θ * (-p.iQ θ) + cos θ * p.iD θ =
+      p.idRef * cos (2 * θ) + p.iqRef * sin (2 * θ) := by
   intro h
   have h1 := h (π / 2)
   rw [current_part] at h1
@@ -187,40 +196,41 @@ def iQ (θ : ℝ) : ℝ := iparkQ θ p.idRef p.iqRef
 /-! ### Steps 2–3: capacitor and line at rest -/
 
 /-- `reduction-pipeline.md` §3–§4 with a general grid EMF `(E_d, E_q)`: the capacitor
-equations `C_f v̇_c = 0` and the line equations `L_g i̇_g = 0` hold iff `v_c` is given by the
-capacitor formula and `i_g` solves the corrected line system. -/
+equations `C_f v̇_c = i_g − i − ω_g C_f J v_c = 0` and the line equations
+`L_g i̇_g = E − v_c − R_g i_g − ω_g L_g J i_g = 0` hold iff `v_c` is given by the capacitor formula
+and `i_g` solves the corrected line system. -/
 @[powerlib_foundation] theorem lc_line_qss_iff (hwC : p.wC ≠ 0) (Ed Eq id iq vcd vcq igd igq : ℝ) :
-    (id - igd + p.wC * vcq = 0 ∧ iq - igq - p.wC * vcd = 0 ∧
-      vcd - Ed - p.Rg * igd + p.ωg * p.Lg * igq = 0 ∧
-      vcq - Eq - p.Rg * igq - p.ωg * p.Lg * igd = 0) ↔
-    (p.lineMatrix *ᵥ ![igd, igq] = ![id + p.wC * Eq, iq - p.wC * Ed] ∧
-      vcd = (iq - igq) / p.wC ∧ vcq = (igd - id) / p.wC) := by
+    (igd - id + p.wC * vcq = 0 ∧ igq - iq - p.wC * vcd = 0 ∧
+      Ed - vcd - p.Rg * igd + p.ωg * p.Lg * igq = 0 ∧
+      Eq - vcq - p.Rg * igq - p.ωg * p.Lg * igd = 0) ↔
+    (p.lineMatrix *ᵥ ![igd, igq] = ![id - p.wC * Eq, iq + p.wC * Ed] ∧
+      vcd = (igq - iq) / p.wC ∧ vcq = (id - igd) / p.wC) := by
   have ha : p.a = p.wC * p.Rg := by simp [a, wC]
   have hb : p.b = p.wC * (p.ωg * p.Lg) := by simp [b, wC]; ring
   constructor
   · rintro ⟨h1, h2, h3, h4⟩
-    have hvd : vcd = (iq - igq) / p.wC := by field_simp; linarith
-    have hvq : vcq = (igd - id) / p.wC := by field_simp; linarith
+    have hvd : vcd = (igq - iq) / p.wC := by field_simp; linarith
+    have hvq : vcq = (id - igd) / p.wC := by field_simp; linarith
     refine ⟨?_, hvd, hvq⟩
     ext i; fin_cases i
     · simp [lineMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two, ha, hb]
-      linear_combination -h1 + p.wC * h4
+      linear_combination h1 + p.wC * h4
     · simp [lineMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two, ha, hb]
-      linear_combination -h2 - p.wC * h3
+      linear_combination h2 - p.wC * h3
   · rintro ⟨hM, hvd, hvq⟩
     have hM0 := congrFun hM 0
     have hM1 := congrFun hM 1
     simp [lineMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two, ha, hb] at hM0 hM1
-    have e1 : p.wC * vcq = igd - id := by rw [hvq]; field_simp
-    have e2 : p.wC * vcd = iq - igq := by rw [hvd]; field_simp
+    have e1 : p.wC * vcq = id - igd := by rw [hvq]; field_simp
+    have e2 : p.wC * vcd = igq - iq := by rw [hvd]; field_simp
     refine ⟨by linarith, by linarith, ?_, ?_⟩
-    · have : p.wC * (vcd - Ed - p.Rg * igd + p.ωg * p.Lg * igq) = 0 := by
-        linear_combination e2 - hM1
+    · have : p.wC * (Ed - vcd - p.Rg * igd + p.ωg * p.Lg * igq) = 0 := by
+        linear_combination -e2 - hM1
       rcases mul_eq_zero.mp this with h | h
       · exact absurd h hwC
       · exact h
-    · have : p.wC * (vcq - Eq - p.Rg * igq - p.ωg * p.Lg * igd) = 0 := by
-        linear_combination e1 + hM0
+    · have : p.wC * (Eq - vcq - p.Rg * igq - p.ωg * p.Lg * igd) = 0 := by
+        linear_combination hM0 - e1
       rcases mul_eq_zero.mp this with h | h
       · exact absurd h hwC
       · exact h
@@ -228,10 +238,10 @@ capacitor formula and `i_g` solves the corrected line system. -/
 /-- Correction witness: the line system with the note's (2,1) entry `−a`, together with the
 capacitor and line equations, forces `a · i_gd = 0`. -/
 @[powerlib_foundation] theorem noteLineSystem_forces (hwC : p.wC ≠ 0) (Ed Eq id iq vcd vcq igd igq : ℝ)
-    (hqss : id - igd + p.wC * vcq = 0 ∧ iq - igq - p.wC * vcd = 0 ∧
-      vcd - Ed - p.Rg * igd + p.ωg * p.Lg * igq = 0 ∧
-      vcq - Eq - p.Rg * igq - p.ωg * p.Lg * igd = 0)
-    (hnote : p.noteLineMatrix *ᵥ ![igd, igq] = ![id + p.wC * Eq, iq - p.wC * Ed]) :
+    (hqss : igd - id + p.wC * vcq = 0 ∧ igq - iq - p.wC * vcd = 0 ∧
+      Ed - vcd - p.Rg * igd + p.ωg * p.Lg * igq = 0 ∧
+      Eq - vcq - p.Rg * igq - p.ωg * p.Lg * igd = 0)
+    (hnote : p.noteLineMatrix *ᵥ ![igd, igq] = ![id - p.wC * Eq, iq + p.wC * Ed]) :
     p.a * igd = 0 := by
   obtain ⟨hM, -, -⟩ := (p.lc_line_qss_iff hwC Ed Eq id iq vcd vcq igd igq).mp hqss
   have h1 := congrFun hM 1
@@ -241,14 +251,14 @@ capacitor and line equations, forces `a · i_gd = 0`. -/
 
 /-- Solution of the corrected line system (Cramer's rule), d-axis. -/
 def solD (id iq Ed Eq : ℝ) : ℝ :=
-  ((1 - p.b) * (id + p.wC * Eq) + p.a * (iq - p.wC * Ed)) / p.Δ
+  ((1 - p.b) * (id - p.wC * Eq) + p.a * (iq + p.wC * Ed)) / p.Δ
 
 /-- Solution of the corrected line system (Cramer's rule), q-axis. -/
 def solQ (id iq Ed Eq : ℝ) : ℝ :=
-  (-p.a * (id + p.wC * Eq) + (1 - p.b) * (iq - p.wC * Ed)) / p.Δ
+  (-p.a * (id - p.wC * Eq) + (1 - p.b) * (iq + p.wC * Ed)) / p.Δ
 
 @[powerlib_foundation] theorem lineMatrix_mulVec_iff (hΔ : p.Δ ≠ 0) (id iq Ed Eq igd igq : ℝ) :
-    p.lineMatrix *ᵥ ![igd, igq] = ![id + p.wC * Eq, iq - p.wC * Ed] ↔
+    p.lineMatrix *ᵥ ![igd, igq] = ![id - p.wC * Eq, iq + p.wC * Ed] ↔
       (igd = p.solD id iq Ed Eq ∧ igq = p.solQ id iq Ed Eq) := by
   have hΔ' : (1 - p.b) ^ 2 + p.a ^ 2 ≠ 0 := hΔ
   constructor
@@ -277,10 +287,10 @@ def igD (θ Ed Eq : ℝ) : ℝ := p.solD (p.iD θ) (p.iQ θ) Ed Eq
 def igQ (θ Ed Eq : ℝ) : ℝ := p.solQ (p.iD θ) (p.iQ θ) Ed Eq
 
 /-- Capacitor voltage on the quasi-steady set, d-axis. -/
-def vcD (θ Ed Eq : ℝ) : ℝ := (p.iQ θ - p.igQ θ Ed Eq) / p.wC
+def vcD (θ Ed Eq : ℝ) : ℝ := (p.igQ θ Ed Eq - p.iQ θ) / p.wC
 
 /-- Capacitor voltage on the quasi-steady set, q-axis. -/
-def vcQ (θ Ed Eq : ℝ) : ℝ := (p.igD θ Ed Eq - p.iD θ) / p.wC
+def vcQ (θ Ed Eq : ℝ) : ℝ := (p.iD θ - p.igD θ Ed Eq) / p.wC
 
 /-- PLL error signal `v_cq^c` on the quasi-steady set, for a general grid EMF `(E_d, E_q)`. -/
 def hE (θ Ed Eq : ℝ) : ℝ := parkQ θ (p.vcD θ Ed Eq) (p.vcQ θ Ed Eq)
@@ -288,8 +298,9 @@ def hE (θ Ed Eq : ℝ) : ℝ := parkQ θ (p.vcD θ Ed Eq) (p.vcQ θ Ed Eq)
 /-- PLL error signal `h(θ_e) = v_cq^c(θ_e)` with the nominal grid EMF `(V_g, 0)`. -/
 def h (θ : ℝ) : ℝ := p.hE θ p.Vg 0
 
-/-- Constant term `c₀ = [((1 − b) i_d* + a i_q*)/Δ − i_d*]/(ω_g C_f)`. -/
-def c0 : ℝ := (((1 - p.b) * p.idRef + p.a * p.iqRef) / p.Δ - p.idRef) / p.wC
+/-- Constant term `c₀ = [i_d* − ((1 − b) i_d* + a i_q*)/Δ]/(ω_g C_f)` (IN-positive references;
+the source's `[((1 − b) i*_d,out + a i*_q,out)/Δ − i*_d,out]/(ω_g C_f)`). -/
+def c0 : ℝ := (p.idRef - ((1 - p.b) * p.idRef + p.a * p.iqRef) / p.Δ) / p.wC
 
 /-- Amplitude `A = V_g/√Δ`. -/
 def amp : ℝ := p.Vg / √p.Δ
@@ -309,7 +320,7 @@ def phase : ℝ := Complex.arg ⟨1 - p.b, p.a⟩
   simp only [hE, parkQ, vcD, vcQ, igD, igQ, solD, solQ, c0, div_eq_mul_inv]
   set u := p.wC⁻¹
   set v := p.Δ⁻¹
-  linear_combination (u * (v * (1 - p.b) - 1)) * L1 + (u * v * p.a) * L2 +
+  linear_combination (-(u * (v * (1 - p.b) - 1))) * L1 + (-(u * v * p.a)) * L2 +
     (v * ((1 - p.b) * (cos θ * Eq - sin θ * Ed) - p.a * (cos θ * Ed + sin θ * Eq))) * hu
 
 /-- Closed form of the PLL error signal: `h(θ) = c₀ − (V_g/Δ)((1 − b) sin θ + a cos θ)`. -/

@@ -4,34 +4,40 @@ import theorem.Dynamics.Instability
 
 /-! # Quasi-static three-state GFL: the fold of the Routh–Hurwitz region
 
+Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
+Scaffold: `theorem/CurrentDirection.agda`.
+
 Model boundary.
 The model of `theorem/GFL/PowerLoop/QuasiStatic.lean`, unchanged: a single
 grid-following converter on an infinite bus of amplitude `V` behind a lossless reactance `X_g`;
 three-phase balanced averaged dq model in the PLL frame, algebraic (quasi-static) network,
-continuous time. States, in order: `θ` (PLL error angle), `x` (PLL integrator), `I_d` (d-axis
-current); `I_q = 0`; OUT-positive current, export-positive power `P = (3/2) V cos θ I_d`. SRF-PLL
-`θ̇ = k_p v_q + k_i x`, `ẋ = v_q`, `v_q = −V sin θ + X_g I_d`; pure-integral dispatch
-`İ_d = k_P (P_ref − P)`. Ideal current loop; no line dynamics, resistance, dc link, PWM, delay or
-limiter. All statements are local, about the full nonlinear field translated to the selected point
-`(θ*, 0, I_d*)` (`QuasiStatic.Model.field`).
+continuous time. States, in order: `θ` (PLL error angle), `x` (PLL integrator), `i_d` (d-axis
+current into the converter); `I_q = 0`; absorbed power `P = (3/2) Re(V̄ Ī*) = (3/2) V cos θ i_d`
+and absorbed reference `P_ref`. SRF-PLL `θ̇ = k_p v_q + k_i x`, `ẋ = v_q`,
+`v_q = −V sin θ − X_g i_d`; pure-integral dispatch `i̇_d = k_P (P_ref − P)`. Ideal current loop;
+no line dynamics, resistance, dc link, PWM, delay or limiter. All statements are local, about the
+full nonlinear field translated to the selected point `(θ*, 0, i_d*)`
+(`QuasiStatic.Model.field`).
 
 Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
 notes/concepts/contrast-conclusions.md` (差别二 `P_SN = 3V²/(4X_g)`, 折叠角 45°; 推论二 准静态无
 Hopf); model `GFLQuasiStatic` in `.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`.
 
 Results.
-The fold (static). At a balanced point write `A = V cos θ*`, `B = V sin θ* = X_g I_d*`,
-`κ = (3/2) k_P`, `ι' = X_g (I_d − I_d*)`. On the fold `cos 2θ* = 0` (`B² = A²`, the transmission
-limit `P_ref = ±P_SN`) the Jacobian `[[−k_pA, k_i, k_p], [−A, 0, 1], [κA², 0, −κA]]` (coordinates
-`(φ, x, ι')`) has the left null vector `(0, κA, 1)`: `u = κA x + ι'` has
+The fold (static). At a balanced point write `A = V cos θ*`, `B = V sin θ* = −X_g i_d*`,
+`κ = (3/2) k_P`, `ι' = −X_g (i_d − i_d*)` (the source's `X_g (I_d − I_d*)` with `I_d = −i_d`;
+the generic parameter `Xg` of the fold function is `−X_g`). On the fold `cos 2θ* = 0`
+(`B² = A²`, the transmission limit `P_ref = ±P_SN`) the Jacobian
+`[[−k_pA, k_i, k_p], [−A, 0, 1], [κA², 0, −κA]]` (coordinates `(φ, x, ι')`) has the left null
+vector `(0, κA, 1)`: `u = κA x + ι'` has
 `u̇ = κ[(1 − cos φ)(2AB + Aι') + Bι' sin φ]`, whose quadratic part `κBφ(Aφ + ι')` does not vanish
 on the right null vector `(1, 0, A)` — a saddle-node. The fold function
 `foldU = −(B/A) u + S(φ, x, ι')` with the explicit quadratic form `S` (SymPy solution of the
 singular Lyapunov equation, `fold_quad_identity`:
 `2(Sz)·(Jz) − κAφ(Aφ + ι') = −(κA²φ² + 2k_i(k_p + κ)x² + κι'²)`) has
 `U̇ = −(κA²φ² + 2k_i(k_p + κ)x² + κι'²) + O(s³)`, negative on a punctured neighbourhood for
-`k_p, k_i, k_P > 0`, while `U(t(B, 0, AB/X_g)) = −t B² − t² B² < 0`. `hasFDerivAt_foldU`,
-`contDiff_foldU` give its derivative.
+`k_p, k_i, k_P > 0`, while `U = −t B² − t² B² < 0` along `(φ, x, ι') = t(B, 0, AB)`.
+`hasFDerivAt_foldU`, `contDiff_foldU` give its derivative.
 
 Family and connection conclusions.
 * `mem_den_unstable_of_fold`: positive gains, balanced point, `V cos θ* > 0`, `cos 2θ* = 0` ⇒
@@ -61,8 +67,9 @@ open Filter Topology Asymptotics
 
 /-! ## The fold function (static) -/
 
-/-- The fold function in the coordinates `(φ, x, ι) = (θ − θ*, x, I_d − I_d*)`:
-`U = −(B/A)(κA x + X_g ι) + S(φ, x, X_g ι)` with the quadratic form
+/-- The fold function in coordinates `(φ, x, ι)` with a parameter `Xg` (the model reads it with
+`(φ, x, ι) = (θ − θ*, x, i_d − i_d*)` and `Xg = −X_g`, `model_fold_form`):
+`U = −(B/A)(κA x + Xg ι) + S(φ, x, Xg ι)` with the quadratic form
 `S(φ, x, ι') = φ² − 2(k_p + κ) φx − (2/A) φι' + (k_i/A + k_p² + 2k_pκ − Aκ²/2) x²
   + (2k_p/A − κ) xι'`. -/
 def foldU (A B Xg kp ki κ φ x ι : ℝ) : ℝ :=
@@ -395,27 +402,27 @@ private theorem model_field2 (m : Model) (z : Dynamics.State 3) :
     m.field z 2 = m.params.kP * (m.params.Pref - power m.params (z 0 + m.θ) (z 2 + m.Id)) := by
   simp [Model.field, QuasiStatic.field, Dynamics.lift, coordField, point]
 
-private theorem vq_shift (p : Params) {θ Id : ℝ} (heq : p.Xg * Id = p.V * Real.sin θ)
+private theorem vq_shift (p : Params) {θ Id : ℝ} (heq : -(p.Xg * Id) = p.V * Real.sin θ)
     (φ ι : ℝ) : vq p (φ + θ) (ι + Id) =
-      -(p.V * Real.cos θ) * Real.sin φ + p.V * Real.sin θ * (1 - Real.cos φ) + p.Xg * ι := by
+      -(p.V * Real.cos θ) * Real.sin φ + p.V * Real.sin θ * (1 - Real.cos φ) + -p.Xg * ι := by
   unfold vq
   rw [Real.sin_add]
   linear_combination heq
 
-/-- The translated field of a balanced model, with `A = V cos θ*`, `B = V sin θ*`:
-`φ̇ = k_p v + k_i x`, `ẋ = v`, `X_g İ_d = (3/2)k_P (AB − (A cos φ − B sin φ)(X_g ι + B))` where
-`v = −A sin φ + B(1 − cos φ) + X_g ι`. -/
+/-- The translated field of a balanced model, with `A = V cos θ*`, `B = V sin θ*`, `ι = i_d − i_d*`:
+`φ̇ = k_p v + k_i x`, `ẋ = v`, `−X_g i̇_d = (3/2)k_P (AB − (A cos φ − B sin φ)(−X_g ι + B))` where
+`v = −A sin φ + B(1 − cos φ) − X_g ι`. -/
 @[powerlib_foundation] theorem model_fold_form {m : Model} (heq : IsEq m.params m.θ m.Id)
     (z : Dynamics.State 3) :
     m.field z 0 = m.params.kp * (-(m.params.V * Real.cos m.θ) * Real.sin (z 0) +
-        m.params.V * Real.sin m.θ * (1 - Real.cos (z 0)) + m.params.Xg * z 2) +
+        m.params.V * Real.sin m.θ * (1 - Real.cos (z 0)) + -m.params.Xg * z 2) +
         m.params.ki * z 1 ∧
     m.field z 1 = -(m.params.V * Real.cos m.θ) * Real.sin (z 0) +
-        m.params.V * Real.sin m.θ * (1 - Real.cos (z 0)) + m.params.Xg * z 2 ∧
-    m.params.Xg * m.field z 2 = 3 / 2 * m.params.kP *
+        m.params.V * Real.sin m.θ * (1 - Real.cos (z 0)) + -m.params.Xg * z 2 ∧
+    -m.params.Xg * m.field z 2 = 3 / 2 * m.params.kP *
       (m.params.V * Real.cos m.θ * (m.params.V * Real.sin m.θ) -
         (m.params.V * Real.cos m.θ * Real.cos (z 0) - m.params.V * Real.sin m.θ * Real.sin (z 0)) *
-          (m.params.Xg * z 2 + m.params.V * Real.sin m.θ)) := by
+          (-m.params.Xg * z 2 + m.params.V * Real.sin m.θ)) := by
   obtain ⟨h1, h2⟩ := heq
   refine ⟨by rw [model_field0, vq_shift m.params h1], by rw [model_field1, vq_shift m.params h1],
     ?_⟩
@@ -438,13 +445,14 @@ private theorem model_fold_unstable {m : Model} (heq : IsEq m.params m.θ m.Id)
     linear_combination (m.params.V ^ 2) * (this - hc2)
   have hXg : m.params.Xg ≠ 0 := by
     intro h
-    have hB : m.params.V * Real.sin m.θ = 0 := by rw [← heq.1, h, zero_mul]
+    have hB : m.params.V * Real.sin m.θ = 0 := by rw [← heq.1, h, zero_mul, neg_zero]
     rw [hB] at hAB
     have : (m.params.V * Real.cos m.θ) ^ 2 = 0 := by rw [← hAB]; ring
     exact hA.ne' (pow_eq_zero_iff two_ne_zero |>.mp this)
-  exact fold_unstable (κ := 3 / 2 * m.params.kP) hA.ne' hAB (by positivity) (by positivity) hXg
-    (contDiff_model_field m) (fun z => (model_fold_form heq z).1)
-    (fun z => (model_fold_form heq z).2.1) (fun z => (model_fold_form heq z).2.2)
+  exact fold_unstable (κ := 3 / 2 * m.params.kP) (Xg := -m.params.Xg) hA.ne' hAB (by positivity)
+    (by positivity) (neg_ne_zero.mpr hXg) (contDiff_model_field m)
+    (fun z => (model_fold_form heq z).1) (fun z => (model_fold_form heq z).2.1)
+    (fun z => (model_fold_form heq z).2.2)
 
 /-- Membership through the sound translation. -/
 private theorem mem_den_of_meets {m : Model} {s : Sentence}
@@ -462,11 +470,12 @@ private theorem seed_of_frequently {P : Dynamics.State 3 → Prop}
 /-- A dead grid (`V = 0`) with `k_i > 0`: the integrator or the current drifts linearly. -/
 private theorem unstable_of_V_eq_zero {m : Model} (heq : IsEq m.params m.θ m.Id)
     (hki : 0 < m.params.ki) (hV : m.params.V = 0) : Unstable m.field 0 := by
-  have h1 : m.params.Xg * m.Id = 0 := by rw [heq.1, hV, zero_mul]
-  have hf0 : ∀ z, m.field z 0 = m.params.kp * (m.params.Xg * z 2) + m.params.ki * z 1 := fun z => by
-    rw [model_field0]; unfold vq; rw [hV]; linear_combination m.params.kp * h1
-  have hf1 : ∀ z, m.field z 1 = m.params.Xg * z 2 := fun z => by
-    rw [model_field1]; unfold vq; rw [hV]; linear_combination h1
+  have h1 : m.params.Xg * m.Id = 0 := by
+    have := heq.1; rw [hV, zero_mul] at this; linarith
+  have hf0 : ∀ z, m.field z 0 = m.params.kp * (-m.params.Xg * z 2) + m.params.ki * z 1 :=
+    fun z => by rw [model_field0]; unfold vq; rw [hV]; linear_combination (-m.params.kp) * h1
+  have hf1 : ∀ z, m.field z 1 = -m.params.Xg * z 2 := fun z => by
+    rw [model_field1]; unfold vq; rw [hV]; linear_combination -h1
   have hf2 : ∀ z, m.field z 2 = 0 := fun z => by
     rw [model_field2, heq.2]; unfold power; rw [hV]; ring
   by_cases hXg : m.params.Xg = 0
@@ -487,25 +496,25 @@ private theorem unstable_of_V_eq_zero {m : Model} (heq : IsEq m.params m.θ m.Id
     simp only [add_apply, smul_apply, PiLp.proj_apply, smul_eq_mul]
     rw [hf0, hf1, hXg]
     have hz1 : z 1 ≠ 0 := fun h => by rw [h, mul_zero] at hW; exact lt_irrefl 0 hW
-    simp only [zero_mul, mul_zero, zero_add]
+    simp only [neg_zero, zero_mul, mul_zero, zero_add]
     have : 0 < z 1 * z 1 := mul_self_pos.mpr hz1
     nlinarith
-  · -- `ẋ = X_g ι`, `ι̇ = 0`: Chetaev with `X_g x ι`
+  · -- `ẋ = −X_g ι`, `ι̇ = 0`: Chetaev with `−X_g x ι`
     have hd : ∀ z : Dynamics.State 3, HasFDerivAt
-        (fun z : Dynamics.State 3 => m.params.Xg * (z 1 * z 2))
-        ((m.params.Xg * z 1) • (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 2 : Dynamics.State 3 →L[ℝ] ℝ) +
-          (m.params.Xg * z 2) • (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 1 :
+        (fun z : Dynamics.State 3 => -m.params.Xg * (z 1 * z 2))
+        ((-m.params.Xg * z 1) • (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 2 : Dynamics.State 3 →L[ℝ] ℝ) +
+          (-m.params.Xg * z 2) • (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 1 :
             Dynamics.State 3 →L[ℝ] ℝ)) z := fun z => by
       have a := (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (1 : Fin 3) :
         Dynamics.State 3 →L[ℝ] ℝ).hasFDerivAt (x := z)
       have b := (PiLp.proj 2 (fun _ : Fin 3 => ℝ) (2 : Fin 3) :
         Dynamics.State 3 →L[ℝ] ℝ).hasFDerivAt (x := z)
-      exact ((a.mul b).const_mul m.params.Xg).congr_fderiv (by ext v; simp; ring)
+      exact ((a.mul b).const_mul (-m.params.Xg)).congr_fderiv (by ext v; simp; ring)
     refine Dynamics.unstable_of_chetaev
-      (W := fun z : Dynamics.State 3 => m.params.Xg * (z 1 * z 2))
+      (W := fun z : Dynamics.State 3 => -m.params.Xg * (z 1 * z 2))
       (contDiff_model_field m) (by fun_prop) one_pos
       (seed_of_frequently (Dynamics.frequently_of_forall_smul
-        (WithLp.toLp 2 ![0, m.params.Xg, 1]) fun t ht => by
+        (WithLp.toLp 2 ![0, -m.params.Xg, 1]) fun t ht => by
           simp
           have : 0 < m.params.Xg ^ 2 := by positivity
           nlinarith [mul_pos (mul_pos ht ht) this])) fun z _ hW => ?_

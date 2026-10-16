@@ -1,27 +1,34 @@
 import theorem.GFL.LCLine.Reduction
 import theorem.Dynamics.State
+import theorem.Dynamics.Transport
 
 /-! # The 10-state GFL-VSC model, its quasi-steady set, and its equilibria
+
+Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
+Scaffold: `theorem/CurrentDirection.agda`.
 
 Domain module (`vsc-stochastic-stability`, rigid-DC baseline "M1").
 
 Model boundary.
 * State `x : State 10`, coordinates in this order:
-  `x 0 = i_d`, `x 1 = i_q` (converter current, system dq frame),
+  `x 0 = i_d`, `x 1 = i_q` (converter current, system dq frame, filter → bridge),
   `x 2 = v_cd`, `x 3 = v_cq` (filter-capacitor voltage, system frame),
-  `x 4 = i_gd`, `x 5 = i_gq` (line current, system frame),
-  `x 6 = ξ_d`, `x 7 = ξ_q` (current-loop PI integrators, controller frame),
+  `x 4 = i_gd`, `x 5 = i_gq` (line current, system frame, grid → filter),
+  `x 6 = ξ_d`, `x 7 = ξ_q` (current-loop PI integrators `ξ = ∫ (i* − i^c)`, controller frame),
   `x 8 = η` (PLL integrator), `x 9 = θ_e` (PLL angle error).
 * Frames: system dq aligned with the grid EMF `(V_g, 0)`; controller frame obtained with the
   Park matrix `T(θ_e)` (`conventions.md` §D4; `decisions.md` §D1.2), `θ_e = θ̂_g − θ_g`
   (§D1.1, text convention).
-* Direction: converter current OUT-positive (from the bridge into the filter), as in the
-  project frame `decisions.md` §D1.6 (opposite to the workspace default `conventions.md` §D1).
+* Direction: currents and references IN-positive (into the converter). The source project
+  writes the model OUT-positive (`decisions.md` §D1.6); that form is `literatureField10`, read
+  through the reversal of the six current coordinates by `field10_eq_transport_literatureField10`
+  (conventions §D8).
 * Continuous time, autonomous (no grid-frequency drift: `δω_g ≡ 0`), no noise.
-  Plant: `L_f i̇ = u − v_c − R_f i + ω_g L_f J i`, `C_f v̇_c = i − i_g − ω_g C_f J v_c`,
-  `L_g i̇_g = v_c − (V_g, 0) − R_g i_g − ω_g L_g J i_g` written component-wise as in
-  `reduction-pipeline.md` §1. Current loop (controller frame):
-  `ξ̇ = i* − i^c`, `u^c = K_p^cc (i* − i^c) + K_i^cc ξ + ω_g L_f J i^c + v_c^c`, `u = T(−θ_e) u^c`.
+  Plant: `L_f i̇ = v_c − u − R_f i − ω_g L_f J i`, `C_f v̇_c = i_g − i − ω_g C_f J v_c`,
+  `L_g i̇_g = (V_g, 0) − v_c − R_g i_g − ω_g L_g J i_g` written component-wise as in
+  `reduction-pipeline.md` §1 (`J = [[0, −1], [1, 0]]`). Current loop (controller frame), reversed
+  as the IN-positive plant requires (§D8): `ξ̇ = i* − i^c`,
+  `u^c = −(K_p^cc (i* − i^c) + K_i^cc ξ) − ω_g L_f J i^c + v_c^c`, `u = T(−θ_e) u^c`.
   The decoupling term uses the nominal `ω_g` (as in the project code `models.py::full_dynamics`);
   the note's `ω_p` coincides with `ω_g` at every equilibrium.
   PLL (SRF, `decisions.md` §D1.3): `η̇ = v_cq^c`, `θ̇_e = K_p v_cq^c + K_i η`.
@@ -40,6 +47,8 @@ Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/reduction-pi
 `equilibria-and-bifurcation.md` §1.
 
 Results.
+* `field10_eq_transport_literatureField10` (§D8): the field is the OUT-positive source field
+  transported by `diag(−1, −1, 1, 1, −1, −1, −1, −1, 1, 1)`, with the references reversed.
 * `fastAtRest_iff` : the eight fast rows (current, capacitor, line, current-loop integrators)
   vanish iff the state lies on the explicit quasi-steady set `qssState θ_e η`
   (`i = T(−θ_e) i*`, capacitor and corrected line solution, `ξ = R_f i*/K_i^cc`).
@@ -84,12 +93,12 @@ namespace Params
 
 variable (p : Params)
 
-/-- Current-loop output, controller frame, d-axis. -/
+/-- Current-loop output, controller frame, d-axis: `−(PI_d) + ω_g L_f i_q^c + v_cd^c`. -/
 def ucD (x : State 10) : ℝ :=
-  p.Kpcc * (p.idRef - icD x) + p.Kicc * x 6 - p.ωg * p.Lf * icQ x + vccD x
-/-- Current-loop output, controller frame, q-axis. -/
+  -(p.Kpcc * (p.idRef - icD x) + p.Kicc * x 6) + p.ωg * p.Lf * icQ x + vccD x
+/-- Current-loop output, controller frame, q-axis: `−(PI_q) − ω_g L_f i_d^c + v_cq^c`. -/
 def ucQ (x : State 10) : ℝ :=
-  p.Kpcc * (p.iqRef - icQ x) + p.Kicc * x 7 + p.ωg * p.Lf * icD x + vccQ x
+  -(p.Kpcc * (p.iqRef - icQ x) + p.Kicc * x 7) - p.ωg * p.Lf * icD x + vccQ x
 
 /-- Bridge voltage in the system frame, `u = T(−θ_e) u^c`, d-axis. -/
 def uD (x : State 10) : ℝ := iparkD (x 9) (p.ucD x) (p.ucQ x)
@@ -99,8 +108,53 @@ def uQ (x : State 10) : ℝ := iparkQ (x 9) (p.ucD x) (p.ucQ x)
 /-- The complete 10-state field (`reduction-pipeline.md` §1, `δω_g = 0`). -/
 def field10 (x : State 10) : State 10 :=
   WithLp.toLp 2 ![
-    (p.uD x - x 2 - p.Rf * x 0 + p.ωg * p.Lf * x 1) / p.Lf,
-    (p.uQ x - x 3 - p.Rf * x 1 - p.ωg * p.Lf * x 0) / p.Lf,
+    (x 2 - p.uD x - p.Rf * x 0 + p.ωg * p.Lf * x 1) / p.Lf,
+    (x 3 - p.uQ x - p.Rf * x 1 - p.ωg * p.Lf * x 0) / p.Lf,
+    (x 4 - x 0 + p.ωg * p.Cf * x 3) / p.Cf,
+    (x 5 - x 1 - p.ωg * p.Cf * x 2) / p.Cf,
+    (p.Vg - x 2 - p.Rg * x 4 + p.ωg * p.Lg * x 5) / p.Lg,
+    (-x 3 - p.Rg * x 5 - p.ωg * p.Lg * x 4) / p.Lg,
+    p.idRef - icD x,
+    p.iqRef - icQ x,
+    vccQ x,
+    p.Kp * vccQ x + p.Ki * x 8]
+
+@[simp, powerlib_foundation] theorem field10_0 (x : State 10) :
+    p.field10 x 0 = (x 2 - p.uD x - p.Rf * x 0 + p.ωg * p.Lf * x 1) / p.Lf := rfl
+@[simp, powerlib_foundation] theorem field10_1 (x : State 10) :
+    p.field10 x 1 = (x 3 - p.uQ x - p.Rf * x 1 - p.ωg * p.Lf * x 0) / p.Lf := rfl
+@[simp, powerlib_foundation] theorem field10_2 (x : State 10) :
+    p.field10 x 2 = (x 4 - x 0 + p.ωg * p.Cf * x 3) / p.Cf := rfl
+@[simp, powerlib_foundation] theorem field10_3 (x : State 10) :
+    p.field10 x 3 = (x 5 - x 1 - p.ωg * p.Cf * x 2) / p.Cf := rfl
+@[simp, powerlib_foundation] theorem field10_4 (x : State 10) :
+    p.field10 x 4 = (p.Vg - x 2 - p.Rg * x 4 + p.ωg * p.Lg * x 5) / p.Lg := rfl
+@[simp, powerlib_foundation] theorem field10_5 (x : State 10) :
+    p.field10 x 5 = (-x 3 - p.Rg * x 5 - p.ωg * p.Lg * x 4) / p.Lg := rfl
+@[simp, powerlib_foundation] theorem field10_6 (x : State 10) :
+    p.field10 x 6 = p.idRef - icD x := rfl
+@[simp, powerlib_foundation] theorem field10_7 (x : State 10) :
+    p.field10 x 7 = p.iqRef - icQ x := rfl
+@[simp, powerlib_foundation] theorem field10_8 (x : State 10) :
+    p.field10 x 8 = vccQ x := rfl
+@[simp, powerlib_foundation] theorem field10_9 (x : State 10) :
+    p.field10 x 9 = p.Kp * vccQ x + p.Ki * x 8 := rfl
+
+/-! ### The OUT-positive form of the source (conventions §D8) -/
+
+/-- The OUT-positive form of the source model (`reduction-pipeline.md` §1,
+`models.py::full_dynamics`; work-sync conventions §D8): the converter current `x 0, x 1` flowing
+bridge → filter, the line current `x 4, x 5` filter → grid, the integrators `x 6, x 7` and the
+references read in the same direction; filter `L_f i̇ = u − v_c − R_f i − ω_g L_f J i`, capacitor
+`C_f v̇_c = i − i_g − ω_g C_f J v_c`, line `L_g i̇_g = v_c − (V_g, 0) − R_g i_g − ω_g L_g J i_g`,
+current loop `u^c = K_p^cc (i* − i^c) + K_i^cc ξ + ω_g L_f J i^c + v_c^c`. A static definition
+only: the model is `field10`. -/
+def literatureField10 (x : State 10) : State 10 :=
+  let ucd := p.Kpcc * (p.idRef - icD x) + p.Kicc * x 6 - p.ωg * p.Lf * icQ x + vccD x
+  let ucq := p.Kpcc * (p.iqRef - icQ x) + p.Kicc * x 7 + p.ωg * p.Lf * icD x + vccQ x
+  WithLp.toLp 2 ![
+    (iparkD (x 9) ucd ucq - x 2 - p.Rf * x 0 + p.ωg * p.Lf * x 1) / p.Lf,
+    (iparkQ (x 9) ucd ucq - x 3 - p.Rf * x 1 - p.ωg * p.Lf * x 0) / p.Lf,
     (x 0 - x 4 + p.ωg * p.Cf * x 3) / p.Cf,
     (x 1 - x 5 - p.ωg * p.Cf * x 2) / p.Cf,
     (x 2 - p.Vg - p.Rg * x 4 + p.ωg * p.Lg * x 5) / p.Lg,
@@ -110,26 +164,44 @@ def field10 (x : State 10) : State 10 :=
     vccQ x,
     p.Kp * vccQ x + p.Ki * x 8]
 
-@[simp, powerlib_foundation] theorem field10_0 (x : State 10) :
-    p.field10 x 0 = (p.uD x - x 2 - p.Rf * x 0 + p.ωg * p.Lf * x 1) / p.Lf := rfl
-@[simp, powerlib_foundation] theorem field10_1 (x : State 10) :
-    p.field10 x 1 = (p.uQ x - x 3 - p.Rf * x 1 - p.ωg * p.Lf * x 0) / p.Lf := rfl
-@[simp, powerlib_foundation] theorem field10_2 (x : State 10) :
-    p.field10 x 2 = (x 0 - x 4 + p.ωg * p.Cf * x 3) / p.Cf := rfl
-@[simp, powerlib_foundation] theorem field10_3 (x : State 10) :
-    p.field10 x 3 = (x 1 - x 5 - p.ωg * p.Cf * x 2) / p.Cf := rfl
-@[simp, powerlib_foundation] theorem field10_4 (x : State 10) :
-    p.field10 x 4 = (x 2 - p.Vg - p.Rg * x 4 + p.ωg * p.Lg * x 5) / p.Lg := rfl
-@[simp, powerlib_foundation] theorem field10_5 (x : State 10) :
-    p.field10 x 5 = (x 3 - p.Rg * x 5 - p.ωg * p.Lg * x 4) / p.Lg := rfl
-@[simp, powerlib_foundation] theorem field10_6 (x : State 10) :
-    p.field10 x 6 = p.idRef - icD x := rfl
-@[simp, powerlib_foundation] theorem field10_7 (x : State 10) :
-    p.field10 x 7 = p.iqRef - icQ x := rfl
-@[simp, powerlib_foundation] theorem field10_8 (x : State 10) :
-    p.field10 x 8 = vccQ x := rfl
-@[simp, powerlib_foundation] theorem field10_9 (x : State 10) :
-    p.field10 x 9 = p.Kp * vccQ x + p.Ki * x 8 := rfl
+end Params
+
+/-- The reversal `diag(−1, −1, 1, 1, −1, −1, −1, −1, 1, 1)` of the converter current, the line
+current and the current-loop integrators. -/
+def currentReversal10 : Matrix (Fin 10) (Fin 10) ℝ :=
+  Matrix.diagonal ![-1, -1, 1, 1, -1, -1, -1, -1, 1, 1]
+
+@[powerlib_foundation] theorem currentReversal10_mul_self :
+    currentReversal10 * currentReversal10 = 1 := by
+  rw [currentReversal10, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
+  congr 1
+  ext i
+  fin_cases i <;> norm_num
+
+@[powerlib_foundation] theorem currentReversal10_isUnit : IsUnit currentReversal10 :=
+  (Matrix.isUnit_iff_isUnit_det _).mpr
+    (Matrix.isUnit_det_of_right_inverse currentReversal10_mul_self)
+
+namespace Params
+
+variable (p : Params)
+
+/-- §D8 boundary translation: the IN-positive 10-state field is the OUT-positive source field
+transported by the reversal of the six current coordinates, with the references reversed. -/
+@[powerlib_foundation] theorem field10_eq_transport_literatureField10 :
+    p.field10 = Dynamics.transportField
+      (Dynamics.matrixCoord currentReversal10 currentReversal10_isUnit) 0
+      ({ p with idRef := -p.idRef, iqRef := -p.iqRef } : Params).literatureField10 := by
+  have hinv : currentReversal10⁻¹ = currentReversal10 :=
+    Matrix.inv_eq_left_inv currentReversal10_mul_self
+  funext x
+  apply WithLp.ofLp_injective
+  ext i
+  simp only [Dynamics.transportField, sub_zero, Dynamics.ofLp_matrixCoord,
+    Dynamics.matrixCoord_symm_apply, hinv]
+  fin_cases i <;>
+    simp [field10, literatureField10, ucD, ucQ, uD, uQ, icD, icQ, vccD, vccQ, parkD, parkQ,
+      iparkD, iparkQ, currentReversal10, Matrix.mulVec_diagonal, -mul_eq_mul_left_iff] <;> ring
 
 /-! ### The quasi-steady set -/
 
@@ -157,12 +229,12 @@ def FastAtRest (x : State 10) : Prop := ∀ i : Fin 10, i.val < 8 → p.field10 
   have hwC' : p.ωg * p.Cf = p.wC := rfl
   constructor
   · intro hx
-    have f0 : (p.uD x - x 2 - p.Rf * x 0 + p.ωg * p.Lf * x 1) / p.Lf = 0 := hx 0 (by decide)
-    have f1 : (p.uQ x - x 3 - p.Rf * x 1 - p.ωg * p.Lf * x 0) / p.Lf = 0 := hx 1 (by decide)
-    have f2 : (x 0 - x 4 + p.ωg * p.Cf * x 3) / p.Cf = 0 := hx 2 (by decide)
-    have f3 : (x 1 - x 5 - p.ωg * p.Cf * x 2) / p.Cf = 0 := hx 3 (by decide)
-    have f4 : (x 2 - p.Vg - p.Rg * x 4 + p.ωg * p.Lg * x 5) / p.Lg = 0 := hx 4 (by decide)
-    have f5 : (x 3 - p.Rg * x 5 - p.ωg * p.Lg * x 4) / p.Lg = 0 := hx 5 (by decide)
+    have f0 : (x 2 - p.uD x - p.Rf * x 0 + p.ωg * p.Lf * x 1) / p.Lf = 0 := hx 0 (by decide)
+    have f1 : (x 3 - p.uQ x - p.Rf * x 1 - p.ωg * p.Lf * x 0) / p.Lf = 0 := hx 1 (by decide)
+    have f2 : (x 4 - x 0 + p.ωg * p.Cf * x 3) / p.Cf = 0 := hx 2 (by decide)
+    have f3 : (x 5 - x 1 - p.ωg * p.Cf * x 2) / p.Cf = 0 := hx 3 (by decide)
+    have f4 : (p.Vg - x 2 - p.Rg * x 4 + p.ωg * p.Lg * x 5) / p.Lg = 0 := hx 4 (by decide)
+    have f5 : (-x 3 - p.Rg * x 5 - p.ωg * p.Lg * x 4) / p.Lg = 0 := hx 5 (by decide)
     have f6 : p.idRef - icD x = 0 := hx 6 (by decide)
     have f7 : p.iqRef - icQ x = 0 := hx 7 (by decide)
     rw [div_eq_zero_iff, or_iff_left hLf] at f0 f1
@@ -170,7 +242,7 @@ def FastAtRest (x : State 10) : Prop := ∀ i : Fin 10, i.val < 8 → p.field10 
     rw [div_eq_zero_iff, or_iff_left hLg] at f4 f5
     rw [hwC'] at f2 f3
     obtain ⟨hi0, hi1⟩ := (p.current_qss_iff θ (x 0) (x 1)).mp ⟨f6, f7⟩
-    have f5' : x 3 - 0 - p.Rg * x 5 - p.ωg * p.Lg * x 4 = 0 := by linarith
+    have f5' : 0 - x 3 - p.Rg * x 5 - p.ωg * p.Lg * x 4 = 0 := by linarith
     obtain ⟨hM, hv2, hv3⟩ :=
       (p.lc_line_qss_iff hwC p.Vg 0 (x 0) (x 1) (x 2) (x 3) (x 4) (x 5)).mp ⟨f2, f3, f4, f5'⟩
     obtain ⟨hg4, hg5⟩ := (p.lineMatrix_mulVec_iff hΔ (x 0) (x 1) p.Vg 0 (x 4) (x 5)).mp hM
@@ -179,9 +251,9 @@ def FastAtRest (x : State 10) : Prop := ∀ i : Fin 10, i.val < 8 → p.field10 
     have hic1 : icQ x = p.iqRef := by linarith
     have key_d : p.Kicc * x 6 = p.Rf * p.idRef := by
       have hu : parkD θ (p.uD x) (p.uQ x) = p.ucD x := by simp [uD, uQ, hθ]
-      have : parkD θ (p.uD x - x 2 - p.Rf * x 0 + p.ωg * p.Lf * x 1)
-          (p.uQ x - x 3 - p.Rf * x 1 - p.ωg * p.Lf * x 0) =
-          p.ucD x - vccD x - p.Rf * icD x + p.ωg * p.Lf * icQ x := by
+      have : parkD θ (x 2 - p.uD x - p.Rf * x 0 + p.ωg * p.Lf * x 1)
+          (x 3 - p.uQ x - p.Rf * x 1 - p.ωg * p.Lf * x 0) =
+          vccD x - p.ucD x - p.Rf * icD x + p.ωg * p.Lf * icQ x := by
         rw [← hu]; simp only [parkD, vccD, icD, icQ, parkQ]; ring
       rw [f0, f1] at this
       simp only [parkD, mul_zero, add_zero] at this
@@ -190,9 +262,9 @@ def FastAtRest (x : State 10) : Prop := ∀ i : Fin 10, i.val < 8 → p.field10 
       linarith
     have key_q : p.Kicc * x 7 = p.Rf * p.iqRef := by
       have hu : parkQ θ (p.uD x) (p.uQ x) = p.ucQ x := by simp [uD, uQ, hθ]
-      have : parkQ θ (p.uD x - x 2 - p.Rf * x 0 + p.ωg * p.Lf * x 1)
-          (p.uQ x - x 3 - p.Rf * x 1 - p.ωg * p.Lf * x 0) =
-          p.ucQ x - vccQ x - p.Rf * icQ x - p.ωg * p.Lf * icD x := by
+      have : parkQ θ (x 2 - p.uD x - p.Rf * x 0 + p.ωg * p.Lf * x 1)
+          (x 3 - p.uQ x - p.Rf * x 1 - p.ωg * p.Lf * x 0) =
+          vccQ x - p.ucQ x - p.Rf * icQ x - p.ωg * p.Lf * icD x := by
         rw [← hu]; simp only [parkD, vccQ, icD, icQ, parkQ]; ring
       rw [f0, f1] at this
       simp only [parkQ, mul_zero, add_zero] at this
@@ -240,29 +312,29 @@ def FastAtRest (x : State 10) : Prop := ∀ i : Fin 10, i.val < 8 → p.field10 
     have hK6 : p.Kicc * q 6 = p.Rf * p.idRef := by rw [q6]; field_simp
     have hK7 : p.Kicc * q 7 = p.Rf * p.iqRef := by rw [q7]; field_simp
     -- controller-frame inductor balance
-    have huc : p.ucD q = vccD q + p.Rf * icD q - p.ωg * p.Lf * icQ q := by
+    have huc : p.ucD q = vccD q - p.Rf * icD q + p.ωg * p.Lf * icQ q := by
       simp only [ucD]; rw [hK6, hic0]; ring
-    have huq : p.ucQ q = vccQ q + p.Rf * icQ q + p.ωg * p.Lf * icD q := by
+    have huq : p.ucQ q = vccQ q - p.Rf * icQ q - p.ωg * p.Lf * icD q := by
       simp only [ucQ]; rw [hK7, hic1]; ring
-    have hud : p.uD q = q 2 + p.Rf * q 0 - p.ωg * p.Lf * q 1 := by
+    have hud : p.uD q = q 2 - p.Rf * q 0 + p.ωg * p.Lf * q 1 := by
       simp only [uD, huc, huq, vccD, vccQ, icD, icQ, iparkD, parkD, parkQ]
-      linear_combination (q 2 + p.Rf * q 0 - p.ωg * p.Lf * q 1) * sin_sq_add_cos_sq (q 9)
-    have huq' : p.uQ q = q 3 + p.Rf * q 1 + p.ωg * p.Lf * q 0 := by
+      linear_combination (q 2 - p.Rf * q 0 + p.ωg * p.Lf * q 1) * sin_sq_add_cos_sq (q 9)
+    have huq' : p.uQ q = q 3 - p.Rf * q 1 - p.ωg * p.Lf * q 0 := by
       simp only [uQ, huc, huq, vccD, vccQ, icD, icQ, iparkQ, parkD, parkQ]
-      linear_combination (q 3 + p.Rf * q 1 + p.ωg * p.Lf * q 0) * sin_sq_add_cos_sq (q 9)
+      linear_combination (q 3 - p.Rf * q 1 - p.ωg * p.Lf * q 0) * sin_sq_add_cos_sq (q 9)
     intro i hi
     fin_cases i
-    · show (p.uD q - q 2 - p.Rf * q 0 + p.ωg * p.Lf * q 1) / p.Lf = 0
+    · show (q 2 - p.uD q - p.Rf * q 0 + p.ωg * p.Lf * q 1) / p.Lf = 0
       rw [hud, div_eq_zero_iff]; left; ring
-    · show (p.uQ q - q 3 - p.Rf * q 1 - p.ωg * p.Lf * q 0) / p.Lf = 0
+    · show (q 3 - p.uQ q - p.Rf * q 1 - p.ωg * p.Lf * q 0) / p.Lf = 0
       rw [huq', div_eq_zero_iff]; left; ring
-    · show (q 0 - q 4 + p.ωg * p.Cf * q 3) / p.Cf = 0
+    · show (q 4 - q 0 + p.ωg * p.Cf * q 3) / p.Cf = 0
       rw [q0, q3, q4, hwC', l2, zero_div]
-    · show (q 1 - q 5 - p.ωg * p.Cf * q 2) / p.Cf = 0
+    · show (q 5 - q 1 - p.ωg * p.Cf * q 2) / p.Cf = 0
       rw [q1, q2, q5, hwC', l3, zero_div]
-    · show (q 2 - p.Vg - p.Rg * q 4 + p.ωg * p.Lg * q 5) / p.Lg = 0
+    · show (p.Vg - q 2 - p.Rg * q 4 + p.ωg * p.Lg * q 5) / p.Lg = 0
       rw [q2, q4, q5, l4, zero_div]
-    · show (q 3 - p.Rg * q 5 - p.ωg * p.Lg * q 4) / p.Lg = 0
+    · show (-q 3 - p.Rg * q 5 - p.ωg * p.Lg * q 4) / p.Lg = 0
       rw [q3, q4, q5, div_eq_zero_iff]; left; linarith
     · show p.idRef - icD q = 0
       rw [hic0, sub_self]

@@ -7,30 +7,43 @@ import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Coordinates
 import theorem.Spectral.Local
 import theorem.Dynamics.Pendulum
+import theorem.Dynamics.Transport
 
 /-! # Quasi-static three-state GFL: PLL + active-power dispatch loop
+
+Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
+Scaffold: `theorem/CurrentDirection.agda`.
 
 Model boundary.
 Single grid-following converter on an infinite bus of amplitude `V`
 behind a lossless reactance `X_g`; three-phase balanced averaged dq model in the PLL frame,
 algebraic (quasi-static) network, continuous time.
-* States, in order: `θ` (PLL error angle), `x` (PLL integrator), `I_d` (d-axis current).
-* Port current OUT-positive (converter → grid) and active power export-positive, as declared
-  in the source project (`P = 1.5 v_d I_d`, amplitude-invariant Park).  `I_q = 0`.
-* Network: `v_q = −V sin θ + X_g I_d`, `v_d = V cos θ`; SRF-PLL `θ̇ = k_p v_q + k_i x`,
-  `ẋ = v_q`; outer active-power loop (pure integral dispatch) `İ_d = k_P (P_ref − P)`.
+* States, in order: `θ` (PLL error angle), `x` (PLL integrator), `i_d` (d-axis current, into the
+  converter).
+* Power from `S̄ = V̄ Ī*` with `V̄ = v_d + j v_q`, `Ī = i_d + j 0` (`I_q = 0`, amplitude-invariant
+  Park): `P = (3/2) Re(V̄ Ī*) = (3/2) v_d i_d`, the power absorbed by the converter. The reference
+  `P_ref` is absorbed-positive as well: an exporting converter has `P_ref < 0`, `i_d < 0`.
+* Network `v_pcc = v_g − j X_g i`: `v_q = −V sin θ − X_g i_d`, `v_d = V cos θ`; SRF-PLL
+  `θ̇ = k_p v_q + k_i x`, `ẋ = v_q`; outer active-power loop (pure integral dispatch)
+  `i̇_d = k_P (P_ref − P)`.
 * Ideal current loop, no line dynamics, no line resistance, no dc link, no PWM, delay or
   limiter.  Results are at the equilibrium (linearization) level.
 
 Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
 notes/concepts/contrast-conclusions.md` (差别二 `P_SN = 3V_g²/(4X_g)`, 折叠角 45°;
 推论二 准静态无 Hopf); model `GFLQuasiStatic` in `.../archive/simulation/src/
-gfl_gfm_contrast_sim/models.py` (with `I_q = 0`).
+gfl_gfm_contrast_sim/models.py` (with `I_q = 0`). The source writes the model OUT-positive
+(`I_d = −i_d`, converter → grid) with export-positive power and reference
+(`P_exp = −P`, `P_ref,exp = −P_ref`); that form is `literatureField`, read through the current
+reversal by `field_eq_transport_literatureField` (conventions §D8).
 
 Results.
-* `equilibrium_exists_iff`: an equilibrium exists iff `|P_ref| ≤ 3V²/(4X_g)`; the power
-  curve is `P(θ) = (3V²/(4X_g)) sin 2θ`, maximal exactly at the fold angle `θ = π/4` on the
-  branch `|θ| < π/2` (`power_eq_PSN_iff`).
+* `equilibrium_exists_iff`: an equilibrium exists iff `|P_ref| ≤ 3V²/(4X_g)`; the absorbed power
+  curve is `P(θ) = −(3V²/(4X_g)) sin 2θ` (`power_of_isEq`), so the exported power `−P` is
+  maximal exactly at the fold angle `θ = π/4` on the branch `|θ| < π/2` (`power_eq_PSN_iff`).
+* `field_eq_transport_literatureField` (§D8 boundary translation): the field is the OUT-positive
+  source field transported by the reversal `diag(1, 1, −1)` of the current coordinate, with the
+  reference reversed.
 * Characteristic polynomial of the Jacobian (derived with `fderiv`):
   `s³ + a₂ s² + a₁ s + a₀`, `a₂ = (V cos θ/2)(3k_P + 2k_p)`,
   `a₁ = (V/2)(3V k_P k_p cos 2θ + 2k_i cos θ)`, `a₀ = (3/2)V² k_P k_i cos 2θ`, and
@@ -46,10 +59,10 @@ Results.
 
 Family and connection conclusions.
 A complete system (`Model`) is a parameter set with a
-selected operating point `(θ*, 0, I_d*)`; the system map reads it as the field translated so that
-this point is the origin, `z ↦ field p (z + point θ* I_d*)` (every flow sentence is invariant
+selected operating point `(θ*, 0, i_d*)`; the system map reads it as the field translated so that
+this point is the origin, `z ↦ field p (z + point θ* i_d*)` (every flow sentence is invariant
 under this translation, `Flow.Property.holds_shift_iff`). The requirement language is static:
-the point is an equilibrium (`IsEq p θ* I_d*`); the closed-form Jacobian `jac p θ* I_d*` (proved
+the point is an equilibrium (`IsEq p θ* i_d*`); the closed-form Jacobian `jac p θ* i_d*` (proved
 to be the `fderiv`) satisfies the strict 3×3 Routh–Hurwitz conditions (`tr < 0`, `det < 0`,
 `tr · m₂ < det`); or it has `det > 0` or `tr > 0`; and the context requirement `positiveGains`
 (`k_p, k_i, k_P > 0`), into which no sentence is translated. The local sentences translate into the
@@ -69,7 +82,7 @@ instability is the failure of Lyapunov stability, so a model whose selected poin
 equilibrium (`offEquilibrium`) is unstable (`offEquilibrium_mem_den_unstable`). The Lyapunov
 translation is not exact (`not_exact_lyapunovStable`): the undamped PLL with a frozen dispatch loop
 `undampedPLL` (`k_p = k_P = 0`) is Lyapunov stable through the conserved energy
-`1 − cos θ + x²/2 + I_d²/2` (`undampedPLL_mem_den_lyapunovStable`) with a trace-zero Jacobian. The
+`1 − cos θ + x²/2 + i_d²/2` (`undampedPLL_mem_den_lyapunovStable`) with a trace-zero Jacobian. The
 local asymptotic translation is not exact for gains of arbitrary sign
 (`not_exact_locallyAsymptoticallyStable`, in `theorem/GFL/PowerLoop/QuasiStaticFoldHopf.lean`): the
 witness `supercriticalQS` (`k_p = −1/4 < 0`) sits on the Hopf boundary `a₂a₁ = a₀` with eigenvalues
@@ -102,34 +115,34 @@ structure Params where
   ki : ℝ
   /-- dispatch-loop integral gain -/
   kP : ℝ
-  /-- active-power reference (export-positive) -/
+  /-- active-power reference (absorbed-positive) -/
   Pref : ℝ
 
 variable (p : Params)
 
-/-- q-axis PCC voltage -/
-def vq (θ Id : ℝ) : ℝ := -p.V * Real.sin θ + p.Xg * Id
+/-- q-axis PCC voltage `v_q = −V sin θ − X_g i_d` (`v_pcc = v_g − j X_g i`, `i` IN-positive) -/
+def vq (θ Id : ℝ) : ℝ := -p.V * Real.sin θ - p.Xg * Id
 
-/-- exported active power with `I_q = 0` -/
+/-- absorbed active power `(3/2) Re(V̄ Ī*) = (3/2) v_d i_d` with `I_q = 0` -/
 def power (θ Id : ℝ) : ℝ := 3 / 2 * (p.V * Real.cos θ) * Id
 
-/-- Coordinate field, state `(θ, x, I_d)`. -/
+/-- Coordinate field, state `(θ, x, i_d)`. -/
 def coordField (y : Fin 3 → ℝ) : Fin 3 → ℝ :=
   ![p.kp * vq p (y 0) (y 2) + p.ki * y 1, vq p (y 0) (y 2), p.kP * (p.Pref - power p (y 0) (y 2))]
 
 /-- The nonlinear three-state field. -/
 def field : Dynamics.State 3 → Dynamics.State 3 := Dynamics.lift (coordField p)
 
-/-- The state `(θ, 0, I_d)`. -/
+/-- The state `(θ, 0, i_d)`. -/
 def point (θ Id : ℝ) : Dynamics.State 3 := WithLp.toLp 2 ![θ, 0, Id]
 
-/-- Equilibrium conditions at `(θ, 0, I_d)`. -/
-def IsEq (θ Id : ℝ) : Prop := p.Xg * Id = p.V * Real.sin θ ∧ p.Pref = power p θ Id
+/-- Equilibrium conditions at `(θ, 0, i_d)`: `−X_g i_d = V sin θ`, `P_ref = P`. -/
+def IsEq (θ Id : ℝ) : Prop := -(p.Xg * Id) = p.V * Real.sin θ ∧ p.Pref = power p θ Id
 
-/-- Closed-form Jacobian at `(θ, x, I_d)`. -/
+/-- Closed-form Jacobian at `(θ, x, i_d)`. -/
 def jac (θ Id : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
-  !![-p.kp * p.V * Real.cos θ, p.ki, p.kp * p.Xg;
-     -p.V * Real.cos θ, 0, p.Xg;
+  !![-p.kp * p.V * Real.cos θ, p.ki, -(p.kp * p.Xg);
+     -p.V * Real.cos θ, 0, -p.Xg;
      3 / 2 * p.kP * p.V * Real.sin θ * Id, 0, -(3 / 2) * p.kP * p.V * Real.cos θ]
 
 /-- Transmission limit `P_SN = 3V²/(4X_g)`. -/
@@ -154,7 +167,7 @@ def PSN : ℝ := 3 * p.V ^ 2 / (4 * p.Xg)
   have h0 := hasFDerivAt_apply (𝕜 := ℝ) (0 : Fin 3) y
   have h1 := hasFDerivAt_apply (𝕜 := ℝ) (1 : Fin 3) y
   have h2 := hasFDerivAt_apply (𝕜 := ℝ) (2 : Fin 3) y
-  have hq := (h0.sin.const_mul (-p.V)).add (h2.const_mul p.Xg)
+  have hq := (h0.sin.const_mul (-p.V)).sub (h2.const_mul p.Xg)
   rw [hasFDerivAt_pi']
   intro i
   fin_cases i
@@ -180,17 +193,59 @@ def PSN : ℝ := 3 * p.V ^ 2 / (4 * p.Xg)
   have := hasFDerivAt_coordField p ![θ, x, Id]
   exact Dynamics.fderiv_lift (by simpa using this)
 
+/-! ## The OUT-positive form of the source (conventions §D8) -/
+
+/-- The OUT-positive form of the source model `GFLQuasiStatic` (work-sync conventions §D8): state
+`(θ, x, I_d)` with the current `I_d = −i_d` flowing converter → grid and `p.Pref` read as the
+exported power reference; `v_q = −V sin θ + X_g I_d`, `P_exp = (3/2) V cos θ I_d`,
+`İ_d = k_P (P_ref,exp − P_exp)`. A static definition only: the family reads `field`. -/
+def literatureField : Dynamics.State 3 → Dynamics.State 3 :=
+  Dynamics.lift fun y => ![p.kp * (-p.V * Real.sin (y 0) + p.Xg * y 2) + p.ki * y 1,
+    -p.V * Real.sin (y 0) + p.Xg * y 2, p.kP * (p.Pref - 3 / 2 * (p.V * Real.cos (y 0)) * y 2)]
+
+/-- The reversal `diag(1, 1, −1)` of the current coordinate. -/
+def currentReversal : Matrix (Fin 3) (Fin 3) ℝ := Matrix.diagonal ![1, 1, -1]
+
+@[powerlib_foundation] theorem currentReversal_mul_self :
+    currentReversal * currentReversal = 1 := by
+  rw [currentReversal, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
+  congr 1
+  ext i
+  fin_cases i <;> norm_num
+
+@[powerlib_foundation] theorem currentReversal_isUnit : IsUnit currentReversal :=
+  (Matrix.isUnit_iff_isUnit_det _).mpr (Matrix.isUnit_det_of_right_inverse currentReversal_mul_self)
+
+/-- §D8 boundary translation: the IN-positive field is the OUT-positive source field transported
+by the reversal of the current coordinate (`i_d = −I_d`), with the power reference reversed
+(`P_ref = −P_ref,exp`); the dispatch law keeps its form since both sides of `İ_d = k_P(P_ref − P)`
+change sign. -/
+@[powerlib_foundation] theorem field_eq_transport_literatureField :
+    field p = Dynamics.transportField (Dynamics.matrixCoord currentReversal currentReversal_isUnit)
+      0 (literatureField { p with Pref := -p.Pref }) := by
+  have hinv : currentReversal⁻¹ = currentReversal :=
+    Matrix.inv_eq_left_inv currentReversal_mul_self
+  funext y
+  apply WithLp.ofLp_injective
+  ext i
+  simp only [Dynamics.transportField, sub_zero, Dynamics.ofLp_matrixCoord,
+    Dynamics.matrixCoord_symm_apply, hinv]
+  fin_cases i <;>
+    simp [field, literatureField, Dynamics.lift, coordField, vq, power, currentReversal,
+      Matrix.mulVec_diagonal, -mul_eq_mul_left_iff] <;> ring
+
 /-! ## Equilibria and the transmission limit -/
 
 @[powerlib_foundation] theorem power_of_isEq {θ Id : ℝ} (hX : p.Xg ≠ 0)
-    (h : p.Xg * Id = p.V * Real.sin θ) :
-    power p θ Id = PSN p * Real.sin (2 * θ) := by
-  have hId : Id = p.V * Real.sin θ / p.Xg := by field_simp; linarith
+    (h : -(p.Xg * Id) = p.V * Real.sin θ) :
+    power p θ Id = -(PSN p * Real.sin (2 * θ)) := by
+  have hId : Id = -(p.V * Real.sin θ / p.Xg) := by field_simp; linarith
   rw [power, PSN, hId, Real.sin_two_mul]
   field_simp
   ring
 
-/-- Quasi-static GFL: an equilibrium exists iff `|P_ref| ≤ 3V²/(4X_g)`.
+/-- Quasi-static GFL: an equilibrium exists iff `|P_ref| ≤ 3V²/(4X_g)` (for either sign of the
+absorbed reference).
 Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem equilibrium_exists_iff (hX : 0 < p.Xg)
     (hkP : p.kP ≠ 0) :
@@ -209,28 +264,28 @@ Static evidence on the model, not a connection conclusion. -/
       rcases this with h | h
       · exact absurd h hkP
       · linarith
-    have hXI : p.Xg * z 2 = p.V * Real.sin (z 0) := by unfold vq at hq; linarith
-    rw [hP, power_of_isEq p hX.ne' hXI, abs_mul, abs_of_nonneg hPSN]
+    have hXI : -(p.Xg * z 2) = p.V * Real.sin (z 0) := by unfold vq at hq; linarith
+    rw [hP, power_of_isEq p hX.ne' hXI, abs_neg, abs_mul, abs_of_nonneg hPSN]
     exact mul_le_of_le_one_right hPSN (Real.abs_sin_le_one _)
   · intro h
     by_cases h0 : PSN p = 0
     · have hP0 : p.Pref = 0 := by rw [h0] at h; exact abs_nonpos_iff.mp h
       refine ⟨point 0 0, field_point_eq_zero p ⟨by simp, by simp [power, hP0]⟩⟩
     · have hpos : 0 < PSN p := lt_of_le_of_ne hPSN (Ne.symm h0)
-      have hr : |p.Pref / PSN p| ≤ 1 := by
-        rw [abs_div, abs_of_pos hpos, div_le_one hpos]; exact h
-      set θ := Real.arcsin (p.Pref / PSN p) / 2
-      have hs : Real.sin (2 * θ) = p.Pref / PSN p := by
-        rw [show 2 * θ = Real.arcsin (p.Pref / PSN p) by simp [θ]; ring,
+      have hr : |-p.Pref / PSN p| ≤ 1 := by
+        rw [abs_div, abs_neg, abs_of_pos hpos, div_le_one hpos]; exact h
+      set θ := Real.arcsin (-p.Pref / PSN p) / 2
+      have hs : Real.sin (2 * θ) = -p.Pref / PSN p := by
+        rw [show 2 * θ = Real.arcsin (-p.Pref / PSN p) by simp [θ]; ring,
           Real.sin_arcsin (abs_le.mp hr).1 (abs_le.mp hr).2]
-      have hXI : p.Xg * (p.V * Real.sin θ / p.Xg) = p.V * Real.sin θ := by
+      have hXI : -(p.Xg * -(p.V * Real.sin θ / p.Xg)) = p.V * Real.sin θ := by
         field_simp
-      refine ⟨point θ (p.V * Real.sin θ / p.Xg), field_point_eq_zero p ⟨hXI, ?_⟩⟩
+      refine ⟨point θ (-(p.V * Real.sin θ / p.Xg)), field_point_eq_zero p ⟨hXI, ?_⟩⟩
       rw [power_of_isEq p hX.ne' hXI, hs]
       field_simp
 
-/-- On the branch `|θ| < π/2` the exported power reaches `P_SN` exactly at the fold angle
-`θ = π/4`. -/
+/-- On the branch `|θ| < π/2` the exported power `−P = P_SN sin 2θ` (`power_of_isEq`) reaches
+`P_SN` exactly at the fold angle `θ = π/4`. -/
 @[powerlib_foundation] theorem power_eq_PSN_iff (hX : 0 < p.Xg) (hV : p.V ≠ 0) {θ : ℝ}
     (hθ : θ ∈ Set.Ioo (-(Real.pi / 2)) (Real.pi / 2)) :
     PSN p * Real.sin (2 * θ) = PSN p ↔ θ = Real.pi / 4 := by
@@ -268,13 +323,13 @@ def a0 (θ : ℝ) : ℝ := 3 / 2 * p.V ^ 2 * p.kP * p.ki * Real.cos (2 * θ)
   ring
 
 @[powerlib_foundation] theorem principalMinorSum_jac {θ Id : ℝ}
-    (h : p.Xg * Id = p.V * Real.sin θ) : Criteria.principalMinorSum (jac p θ Id) = a1 p θ := by
+    (h : -(p.Xg * Id) = p.V * Real.sin θ) : Criteria.principalMinorSum (jac p θ Id) = a1 p θ := by
   simp [jac, Criteria.principalMinorSum, a1, Real.cos_two_mul]
   have := Real.sin_sq_add_cos_sq θ
   linear_combination (-(3 / 2) * p.kp * p.kP * p.V * Real.sin θ) * h +
     (-(3 / 2) * p.kp * p.kP * p.V ^ 2) * this
 
-@[powerlib_foundation] theorem det_jac {θ Id : ℝ} (h : p.Xg * Id = p.V * Real.sin θ) :
+@[powerlib_foundation] theorem det_jac {θ Id : ℝ} (h : -(p.Xg * Id) = p.V * Real.sin θ) :
     (jac p θ Id).det = -a0 p θ := by
   simp [jac, Matrix.det_fin_three, a0, Real.cos_two_mul]
   have := Real.sin_sq_add_cos_sq θ
@@ -283,7 +338,7 @@ def a0 (θ : ℝ) : ℝ := 3 / 2 * p.V ^ 2 * p.kP * p.ki * Real.cos (2 * θ)
 
 /-- The characteristic polynomial of the Jacobian at an equilibrium. -/
 @[powerlib_foundation] theorem det_characteristicMatrix_jac {θ Id : ℝ}
-    (h : p.Xg * Id = p.V * Real.sin θ) (s : ℂ) :
+    (h : -(p.Xg * Id) = p.V * Real.sin θ) (s : ℂ) :
     (Linear.characteristicMatrix (jac p θ Id) s).det =
       s ^ 3 + (a2 p θ : ℂ) * s ^ 2 + (a1 p θ : ℂ) * s + (a0 p θ : ℂ) := by
   rw [Criteria.det_characteristicMatrix_fin_three, trace_jac, principalMinorSum_jac p h,
@@ -319,13 +374,13 @@ def a0 (θ : ℝ) : ℝ := 3 / 2 * p.V ^ 2 * p.kP * p.ki * Real.cos (2 * θ)
 /-! ## The quasi-static GFL family -/
 
 /-- A quasi-static three-state GFL model read about a selected operating point
-`(θ*, 0, I_d*)`. -/
+`(θ*, 0, i_d*)`. -/
 structure Model where
   /-- The parameters. -/
   params : Params
   /-- The selected angle `θ*`. -/
   θ : ℝ
-  /-- The selected d-axis current `I_d*`. -/
+  /-- The selected d-axis current `i_d*` (IN-positive). -/
   Id : ℝ
 
 /-- The field translated so that the selected operating point is the origin. -/
@@ -334,7 +389,7 @@ def Model.field (m : Model) (z : Dynamics.State 3) : Dynamics.State 3 :=
 
 /-- Requirements on the quasi-static GFL models, all static. -/
 inductive Requirement
-  /-- `(θ*, 0, I_d*)` is an equilibrium (`IsEq`). -/
+  /-- `(θ*, 0, i_d*)` is an equilibrium (`IsEq`). -/
   | equilibrium
   /-- The closed-form Jacobian satisfies the strict 3×3 Routh–Hurwitz conditions. -/
   | jacobianStable
@@ -437,7 +492,7 @@ private theorem det_jac_of_kP_eq_zero {p : Params} (h : p.kP = 0) (θ Id : ℝ) 
     (jac p θ Id).det = 0 := by
   simp [jac, Matrix.det_fin_three, h]
 
-/-- An equilibrium of the field at `(θ*, 0, I_d*)` with a nonzero dispatch gain is an `IsEq`
+/-- An equilibrium of the field at `(θ*, 0, i_d*)` with a nonzero dispatch gain is an `IsEq`
 point. -/
 @[powerlib_foundation] theorem isEq_of_field_eq_zero {p : Params} {θ Id : ℝ} (hkP : p.kP ≠ 0)
     (h : field p (point θ Id) = 0) : IsEq p θ Id := by
@@ -547,7 +602,7 @@ equilibrium is unstable (fold side of the branch). -/
 /-- No Hopf pair: for positive gains and `cos θ > 0`, the Jacobian at an equilibrium never has
 a nonzero purely imaginary eigenvalue. -/
 @[powerlib_foundation] theorem no_imaginary_eigenvalue (hV : 0 < p.V) (hkp : 0 < p.kp)
-    (hki : 0 < p.ki) (hkP : 0 < p.kP) {θ Id : ℝ} (heq : p.Xg * Id = p.V * Real.sin θ)
+    (hki : 0 < p.ki) (hkP : 0 < p.kP) {θ Id : ℝ} (heq : -(p.Xg * Id) = p.V * Real.sin θ)
     (hcos : 0 < Real.cos θ) (ω : ℝ) (hω : ω ≠ 0) :
     (Linear.characteristicMatrix (jac p θ Id) (Complex.I * ω)).det ≠ 0 := by
   intro h
@@ -578,8 +633,8 @@ a nonzero purely imaginary eigenvalue. -/
 /-! ### Instability away from equilibrium -/
 
 /-- An unbalanced model: `V = 0`, `X_g = 1`, all gains and the reference zero, at
-`(θ*, 0, I_d*) = (0, 0, 1)`. -/
-def offEquilibrium : Model := ⟨⟨0, 1, 0, 0, 0, 0⟩, 0, 1⟩
+`(θ*, 0, i_d*) = (0, 0, −1)` (the OUT-positive source point `I_d* = 1`). -/
+def offEquilibrium : Model := ⟨⟨0, 1, 0, 0, 0, 0⟩, 0, -1⟩
 
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
@@ -601,7 +656,8 @@ while the translation asks for an equilibrium. -/
 /-! ### The Lyapunov translation -/
 
 /-- An undamped PLL with a frozen dispatch loop: `V = k_i = 1`, `X_g = k_p = k_P = P_ref = 0` at
-`(θ*, 0, I_d*) = (0, 0, 0)`; the field is the pendulum `θ̇ = x`, `ẋ = −sin θ` with `I_d` constant. -/
+`(θ*, 0, i_d*) = (0, 0, 0)`; the field is the pendulum `θ̇ = x`, `ẋ = −sin θ` with `i_d`
+constant. -/
 def undampedPLL : Model := ⟨⟨1, 0, 0, 1, 0, 0⟩, 0, 0⟩
 
 private theorem undampedPLL_field (z : Dynamics.State 3) :
@@ -609,7 +665,7 @@ private theorem undampedPLL_field (z : Dynamics.State 3) :
   ext i
   fin_cases i <;> simp [QuasiStatic.field, Dynamics.lift, coordField, undampedPLL, vq, power]
 
-/-- The energy `1 − cos θ + x²/2 + I_d²/2`. -/
+/-- The energy `1 − cos θ + x²/2 + i_d²/2`. -/
 private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 3) :
     HasFDerivAt (fun y : Dynamics.State 3 => 1 - Real.cos (y 0) + 1 / 2 * y 1 ^ 2 + 1 / 2 * y 2 ^ 2)
       (Real.sin (z 0) • (PiLp.proj 2 (fun _ : Fin 3 => ℝ) 0 : Dynamics.State 3 →L[ℝ] ℝ) +
@@ -631,7 +687,7 @@ private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 3) :
   ring
 
 /-- The undamped PLL with a frozen dispatch loop is Lyapunov stable: the energy
-`1 − cos θ + x²/2 + I_d²/2` is conserved and has a strict minimum on `|θ| < π`
+`1 − cos θ + x²/2 + i_d²/2` is conserved and has a strict minimum on `|θ| < π`
 (`Dynamics.pendulumEnergy_pos`). Its Jacobian has trace `0`, so it meets no Routh–Hurwitz
 requirement. -/
 @[powerlib_domain] theorem undampedPLL_mem_den_lyapunovStable :

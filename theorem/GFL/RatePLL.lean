@@ -8,34 +8,43 @@ import theorem.Dynamics.Coordinates
 import theorem.Spectral.Local
 import theorem.Dynamics.Pendulum
 
-/-! # Rate-coupled two-state GFL PLL (form-C-lite, frozen `I_d`)
+/-! # Rate-coupled two-state GFL PLL (form-C-lite, frozen `i_d`)
+
+Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
+Scaffold: `theorem/CurrentDirection.agda`.
 
 Model boundary.
 Single grid-following converter on an infinite bus of amplitude `V`
 behind a lossless inductive line `X_g = ω_s L_g`; three-phase balanced, averaged dq model in
 the PLL frame, continuous time.
 * States, in order: `θ` (PLL error angle `θ̂_g − θ_g`), `x` (PLL integrator state).
-* The current loop is ideal (controlled current source); the d-axis current `I_d` is a
-  **frozen parameter**, not a state; `I_q = 0`.  Port current is OUT-positive (converter →
-  grid), as in the source project (`convention_override` there; IN-positive `i_d = −I_d`).
-* The only line dynamics kept is the speed-EMF coupling `L_g u I_d` of the line inductance:
-  `v_q = h + L_g u I_d`, `h = −V sin θ + X_g I_d`, and the SRF-PLL is
-  `u = k_p v_q + k_i x`.  Solving the algebraic loop gives
-  `θ̇ = u = (k_p h + k_i x) / D₀`, `ẋ = v_q`, with `D₀ = 1 − k_p L_g I_d ≠ 0`
+* The current loop is ideal (controlled current source); the d-axis current `i_d` (into the
+  converter) is a **frozen parameter**, not a state; `I_q = 0`. An exporting converter has
+  `i_d < 0`.
+* Line `v_pcc = v_g − j ω₁ L_g i` (`ω₁ = ω_s + u`); the only line dynamics kept is the speed-EMF
+  coupling `−L_g u i_d` of the line inductance: `v_q = h − L_g u i_d`, `h = −V sin θ − X_g i_d`,
+  and the SRF-PLL is `u = k_p v_q + k_i x`.  Solving the algebraic loop gives
+  `θ̇ = u = (k_p h + k_i x) / D₀`, `ẋ = v_q`, with `D₀ = 1 + k_p L_g i_d ≠ 0`
   (`D₀ > 0` is assumed for the stability results).
 * No PWM, delay, limiter, dc link, outer loop, line resistance, or `L_f`.
-* Equilibria: `x = 0`, `V sin θ = X_g I_d`.  Results are at the equilibrium (linearization)
+* Equilibria: `x = 0`, `V sin θ = −X_g i_d`.  Results are at the equilibrium (linearization)
   level: local exponential stability / instability of the full nonlinear two-state field.
 
 Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/archive/
 notes/concepts/contrast-conclusions.md` (推论二 `tan θ_H`, 推论四 ζ 比),
 `.../archive/notes/concepts/disturbance-layer.md` (`X_g` 精确消去, `tan θ_H = ω_s ζ₀/(π f_{n0})`),
 `projects/gfl-gfm-stability-tree/notes/concepts/nonautonomous-criteria.md` (N1 冻结阈 `ε_frozen`);
-model `GFLRate` in `.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`.
+model `GFLRate` in `.../archive/simulation/src/gfl_gfm_contrast_sim/models.py`. The source writes
+the frozen current OUT-positive, `I_d = −i_d` (`convention_override` there): that form is
+`literatureField`, and `field_eq_literatureField` reads it by the substitution `I_d = −i_d`
+(conventions §D8).
 
 Results.
+* `field_eq_literatureField` (§D8 boundary translation): the field at `i_d` is the OUT-positive
+  source field at `I_d = −i_d`.
 * `jacobian_eq`: the Jacobian at an equilibrium is
-  `(1/D₀) [[−k_p V cos θ, k_i], [−V cos θ, k_i V sin θ / ω_s]]` (derived with `fderiv`).
+  `(1/D₀) [[−k_p V cos θ, k_i], [−V cos θ, k_i V sin θ / ω_s]]` (derived with `fderiv`; at an
+  equilibrium `−L_g i_d = V sin θ / ω_s`).
 * `mem_den_locallyExponentiallyStable_of_tan_lt` / `mem_den_unstable_of_tan_gt` (connection
   memberships, below): for `V, k_p, k_i, ω_s > 0`,
   `D₀ > 0`, `cos θ > 0`: `tan θ < ω_s k_p / k_i` ⇒ locally exponentially stable,
@@ -46,13 +55,14 @@ Results.
 * `zeta_ratio`: damping ratio of the rate-coupled Jacobian over the quasi-static closed form
   `(k_p/2) √(V cos θ / k_i)` equals `(1 − r)/√D₀`, `r = tan θ / (ω_s k_p / k_i)`.
 * `jacobian_indep_Xg`: at a fixed equilibrium angle the Jacobian does not depend on `X_g`
-  (`L_g I_d = V sin θ / ω_s` there).
+  (`−L_g i_d = V sin θ / ω_s` there).
 * `omega_kp_div_ki_of_pllGains`: with the source tuning rule `k_p = 2ζ₀ω_{n0}/V`,
   `k_i = ω_{n0}²/V`, `ω_{n0} = 2π f_{n0}`, one gets `ω_s k_p / k_i = ω_s ζ₀ / (π f_{n0})`.
 * Frozen-coefficient threshold (`frozen_hurwitz_forall_iff`): with the grid amplitude
-  modulated as `V(t) = V_g + ε cos(ω_p t)`, `ε ≥ 0`, `ω_p ≠ 0`, `I_d ≥ 0`, the *frozen*
-  Jacobian at the fixed angle `θ_{e0}` is Hurwitz for every `t` iff
-  `ε < ε_frozen = V_g − k_i L_g I_d / (k_p cos θ_{e0})`.  This is a statement about a
+  modulated as `V(t) = V_g + ε cos(ω_p t)`, `ε ≥ 0`, `ω_p ≠ 0`, `L_g i_d ≤ 0` (exporting), the
+  *frozen* Jacobian at the fixed angle `θ_{e0}` is Hurwitz for every `t` iff
+  `ε < ε_frozen = V_g + k_i L_g i_d / (k_p cos θ_{e0})` (the source's
+  `V_g − k_i L_g I_d / (k_p cos θ_{e0})`).  This is a statement about a
   family of constant matrices only: frozen-time Hurwitz stability does **not** imply
   stability of the linear time-varying (periodic) system, and the source note exhibits
   parametric resonance below `ε_frozen`.
@@ -62,7 +72,7 @@ A complete system (`Model`) is a parameter set with a
 selected angle `θ*`; the system map reads it as the autonomous field translated so that the
 operating point `(θ*, 0)` is the origin, `z ↦ field p (z + (θ*, 0))` (every flow sentence is
 invariant under this translation, `Flow.Property.holds_shift_iff`). The requirement language is
-static: `(θ*, 0)` is an equilibrium with a nondegenerate loop (`V sin θ* = X_g I_d`, `D₀ ≠ 0`);
+static: `(θ*, 0)` is an equilibrium with a nondegenerate loop (`V sin θ* = −X_g i_d`, `D₀ ≠ 0`);
 the closed-form Jacobian `jac p θ*` (proved to be the `fderiv`) has `tr < 0`, `det > 0`; or it has
 `tr > 0` or `det < 0`. The local sentences translate into the first two, instability into the
 first and the third, passivity into nothing, and the global sentences, decay rates, sampled
@@ -79,7 +89,7 @@ passivity translation exact. The stability results are connection memberships:
 exact (`not_exact_unstable`): instability is the failure of Lyapunov stability, so a model whose
 selected point is not an equilibrium (`offEquilibrium`) is unstable
 (`offEquilibrium_mem_den_unstable`). The Lyapunov translation is not exact
-(`not_exact_lyapunovStable`): the undamped PLL `undampedPLL` (`k_p = 0`, `I_d = 0`) is the pendulum
+(`not_exact_lyapunovStable`): the undamped PLL `undampedPLL` (`k_p = 0`, `i_d = 0`) is the pendulum
 `θ̇ = x`, `ẋ = −sin θ`, Lyapunov stable through its conserved energy `1 − cos θ + x²/2`
 (`undampedPLL_mem_den_lyapunovStable`) with a trace-zero Jacobian. The local asymptotic
 translation is not exact (`not_exact_locallyAsymptoticallyStable`, in
@@ -112,7 +122,7 @@ structure Params where
   kp : ℝ
   /-- PLL integral gain -/
   ki : ℝ
-  /-- frozen d-axis current (OUT-positive) -/
+  /-- frozen d-axis current `i_d` (IN-positive: into the converter) -/
   Id : ℝ
 
 namespace Params
@@ -121,21 +131,21 @@ variable (p : Params)
 /-- line inductance `L_g = X_g / ω_s` -/
 def Lg : ℝ := p.Xg / p.ωs
 
-/-- algebraic-loop factor `D₀ = 1 − k_p L_g I_d` -/
-def D0 : ℝ := 1 - p.kp * p.Lg * p.Id
+/-- algebraic-loop factor `D₀ = 1 + k_p L_g i_d` -/
+def D0 : ℝ := 1 + p.kp * p.Lg * p.Id
 
 end Params
 
 variable (p : Params)
 
-/-- `h = −V sin θ + X_g I_d` (q-axis PCC voltage without the speed-EMF term) -/
-def gridQ (θ : ℝ) : ℝ := -p.V * Real.sin θ + p.Xg * p.Id
+/-- `h = −V sin θ − X_g i_d` (q-axis PCC voltage without the speed-EMF term) -/
+def gridQ (θ : ℝ) : ℝ := -p.V * Real.sin θ - p.Xg * p.Id
 
 /-- PLL frequency deviation after solving the algebraic loop -/
 def pllOut (θ x : ℝ) : ℝ := (p.kp * gridQ p θ + p.ki * x) / p.D0
 
-/-- q-axis PCC voltage `v_q = h + L_g u I_d` -/
-def vq (θ x : ℝ) : ℝ := gridQ p θ + p.Lg * pllOut p θ x * p.Id
+/-- q-axis PCC voltage `v_q = h − L_g u i_d` -/
+def vq (θ x : ℝ) : ℝ := gridQ p θ - p.Lg * pllOut p θ x * p.Id
 
 /-- Coordinate form of the field, state `(θ, x)`. -/
 def coordField (y : Fin 2 → ℝ) : Fin 2 → ℝ := ![pllOut p (y 0) (y 1), vq p (y 0) (y 1)]
@@ -149,9 +159,10 @@ def equilibrium (θ : ℝ) : Dynamics.State 2 := WithLp.toLp 2 ![θ, 0]
 /-- Closed-form Jacobian at the state `(θ, x)` (independent of `x`). -/
 def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![-p.kp * p.V * Real.cos θ / p.D0, p.ki / p.D0;
-     -p.V * Real.cos θ / p.D0, p.ki * p.Lg * p.Id / p.D0]
+     -p.V * Real.cos θ / p.D0, -(p.ki * p.Lg * p.Id) / p.D0]
 
-@[powerlib_foundation] theorem field_equilibrium {θ : ℝ} (heq : p.V * Real.sin θ = p.Xg * p.Id) :
+@[powerlib_foundation] theorem field_equilibrium {θ : ℝ}
+    (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     field p (equilibrium θ) = 0 := by
   have hq : gridQ p θ = 0 := by unfold gridQ; linarith
   apply Dynamics.lift_toLp_eq_zero
@@ -168,20 +179,21 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     HasFDerivAt (coordField p) (Matrix.toLin' (jac p (y 0))).toContinuousLinearMap y := by
   have h0 := hasFDerivAt_apply (𝕜 := ℝ) (0 : Fin 2) y
   have h1 := hasFDerivAt_apply (𝕜 := ℝ) (1 : Fin 2) y
-  have hq := (h0.sin.const_mul (-p.V)).add_const (p.Xg * p.Id)
+  have hq := (h0.sin.const_mul (-p.V)).sub_const (p.Xg * p.Id)
   have hu := ((hq.const_mul p.kp).add (h1.const_mul p.ki)).mul_const p.D0⁻¹
   rw [hasFDerivAt_pi']
   intro i
   fin_cases i
-  · refine Dynamics.hasFDerivAt_of_eq hu (fun z => by simp [coordField, pllOut, gridQ, div_eq_mul_inv]) ?_
+  · refine Dynamics.hasFDerivAt_of_eq hu
+      (fun z => by simp [coordField, pllOut, gridQ, div_eq_mul_inv]) ?_
     ext v
     simp [jac, dotProduct, Fin.sum_univ_two]
     field_simp
-  · refine Dynamics.hasFDerivAt_of_eq (hq.add ((hu.const_mul p.Lg).mul_const p.Id))
+  · refine Dynamics.hasFDerivAt_of_eq (hq.sub ((hu.const_mul p.Lg).mul_const p.Id))
       (fun z => by simp [coordField, vq, pllOut, gridQ, div_eq_mul_inv]) ?_
     ext v
     simp [jac, dotProduct, Fin.sum_univ_two]
-    have hD : p.D0 = 1 - p.kp * p.Lg * p.Id := rfl
+    have hD : p.D0 = 1 + p.kp * p.Lg * p.Id := rfl
     field_simp
     rw [hD]
     ring
@@ -194,23 +206,23 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 /-- Jacobian at an equilibrium in the source form
 `(1/D₀) [[−k_p V cos θ, k_i], [−V cos θ, k_i V sin θ / ω_s]]`. -/
-@[powerlib_foundation] theorem jacobian_eq {θ : ℝ} (heq : p.V * Real.sin θ = p.Xg * p.Id) :
+@[powerlib_foundation] theorem jacobian_eq {θ : ℝ} (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     jac p θ = !![-p.kp * p.V * Real.cos θ / p.D0, p.ki / p.D0;
       -p.V * Real.cos θ / p.D0, p.ki * (p.V * Real.sin θ / p.ωs) / p.D0] := by
-  have : p.Lg * p.Id = p.V * Real.sin θ / p.ωs := by
+  have : p.Lg * p.Id = -(p.V * Real.sin θ / p.ωs) := by
     rw [Params.Lg, heq]
     ring
-  simp only [jac, mul_assoc, this]
+  simp only [jac, mul_assoc, this, mul_neg, neg_neg]
 
 @[powerlib_foundation] theorem trace_jac (θ : ℝ) :
-    (jac p θ).trace = (-p.kp * p.V * Real.cos θ + p.ki * p.Lg * p.Id) / p.D0 := by
+    (jac p θ).trace = (-p.kp * p.V * Real.cos θ - p.ki * p.Lg * p.Id) / p.D0 := by
   rw [jac, Matrix.trace_fin_two_of]
   ring
 
 @[powerlib_foundation] theorem det_jac (hD0 : p.D0 ≠ 0) (θ : ℝ) :
     (jac p θ).det = p.ki * p.V * Real.cos θ / p.D0 := by
   rw [jac, Matrix.det_fin_two_of]
-  have hD : p.D0 = 1 - p.kp * p.Lg * p.Id := rfl
+  have hD : p.D0 = 1 + p.kp * p.Lg * p.Id := rfl
   field_simp
   rw [hD]
   ring
@@ -222,10 +234,10 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 
 /-- At an equilibrium, `tr J = (V/ω_s)(k_i sin θ − ω_s k_p cos θ) / D₀`. -/
 @[powerlib_foundation] theorem trace_jac_eq (hωs : p.ωs ≠ 0) {θ : ℝ}
-    (heq : p.V * Real.sin θ = p.Xg * p.Id) :
+    (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     (jac p θ).trace =
       p.V / p.ωs * (p.ki * Real.sin θ - p.ωs * p.kp * Real.cos θ) / p.D0 := by
-  have hLI : p.Lg * p.Id = p.V * Real.sin θ / p.ωs := by rw [Params.Lg, heq]; ring
+  have hLI : p.Lg * p.Id = -(p.V * Real.sin θ / p.ωs) := by rw [Params.Lg, heq]; ring
   rw [trace_jac, mul_assoc p.ki, hLI]
   field_simp
   ring
@@ -233,7 +245,7 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 /-- At an equilibrium, `tr J < 0 ↔ tan θ < ω_s k_p / k_i`. -/
 @[powerlib_foundation] theorem trace_jac_neg_iff (hD0 : 0 < p.D0) (hV : 0 < p.V)
     (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
-    (heq : p.V * Real.sin θ = p.Xg * p.Id) :
+    (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     (jac p θ).trace < 0 ↔ Real.tan θ < p.ωs * p.kp / p.ki := by
   have hVw : 0 < p.V / p.ωs := div_pos hV hωs
   rw [trace_jac_eq p hωs.ne' heq, Real.tan_eq_sin_div_cos, div_lt_div_iff₀ hcos hki]
@@ -250,7 +262,7 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 /-- At an equilibrium, `tr J > 0 ↔ tan θ > ω_s k_p / k_i`. -/
 @[powerlib_foundation] theorem trace_jac_pos_iff (hD0 : 0 < p.D0) (hV : 0 < p.V)
     (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
-    (heq : p.V * Real.sin θ = p.Xg * p.Id) :
+    (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     0 < (jac p θ).trace ↔ p.ωs * p.kp / p.ki < Real.tan θ := by
   have hVw : 0 < p.V / p.ωs := div_pos hV hωs
   rw [trace_jac_eq p hωs.ne' heq, Real.tan_eq_sin_div_cos, div_lt_div_iff₀ hki hcos]
@@ -268,7 +280,7 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 /-- The Jacobian is Hurwitz exactly below the boundary angle. -/
 @[powerlib_foundation] theorem isHurwitz_jac_iff (hD0 : 0 < p.D0) (hV : 0 < p.V)
     (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
-    (heq : p.V * Real.sin θ = p.Xg * p.Id) :
+    (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     LinearSystems.IsHurwitz (jac p θ) ↔ Real.tan θ < p.ωs * p.kp / p.ki := by
   rw [Criteria.isHurwitz_fin_two_iff, trace_jac_neg_iff p hD0 hV hki hωs hcos heq]
   exact ⟨fun h => h.1, fun h => ⟨h, det_jac_pos p hD0 hV hki hcos⟩⟩
@@ -276,7 +288,7 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 /-- On the boundary `tan θ = ω_s k_p / k_i` the Jacobian has the imaginary pair `± j√det`. -/
 @[powerlib_foundation] theorem imaginary_pair_at_boundary (hD0 : 0 < p.D0) (hV : 0 < p.V)
     (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
-    (heq : p.V * Real.sin θ = p.Xg * p.Id) (htan : Real.tan θ = p.ωs * p.kp / p.ki) :
+    (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) (htan : Real.tan θ = p.ωs * p.kp / p.ki) :
     (jac p θ).trace = 0 ∧ 0 < (jac p θ).det ∧
       (Linear.characteristicMatrix (jac p θ) (Complex.I * Real.sqrt (jac p θ).det)).det = 0 := by
   have htr : (jac p θ).trace = 0 := by
@@ -292,14 +304,38 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   push_cast
   ring
 
+/-! ## The OUT-positive form of the source (conventions §D8) -/
+
+/-- The OUT-positive form of the source model `GFLRate` (work-sync conventions §D8): the frozen
+current `p.Id` read as `I_d`, flowing converter → grid; `h = −V sin θ + X_g I_d`,
+`D₀ = 1 − k_p L_g I_d`, `θ̇ = (k_p h + k_i x)/D₀`, `ẋ = h + L_g θ̇ I_d`. A static definition only:
+the family reads `field`. -/
+def literatureField : Dynamics.State 2 → Dynamics.State 2 :=
+  Dynamics.lift fun y =>
+    ![(p.kp * (-p.V * Real.sin (y 0) + p.Xg * p.Id) + p.ki * y 1) / (1 - p.kp * p.Lg * p.Id),
+      -p.V * Real.sin (y 0) + p.Xg * p.Id +
+        p.Lg * ((p.kp * (-p.V * Real.sin (y 0) + p.Xg * p.Id) + p.ki * y 1) /
+          (1 - p.kp * p.Lg * p.Id)) * p.Id]
+
+/-- §D8 boundary translation: the IN-positive field at the current `i_d` is the OUT-positive
+source field at `I_d = −i_d`. -/
+@[powerlib_foundation] theorem field_eq_literatureField :
+    field p = literatureField { p with Id := -p.Id } := by
+  funext y
+  apply WithLp.ofLp_injective
+  ext i
+  fin_cases i <;>
+    simp [field, literatureField, Dynamics.lift, coordField, pllOut, vq, gridQ, Params.D0,
+      Params.Lg] <;> ring
+
 /-! ## Damping-ratio comparison and `X_g` elimination -/
 
 /-- At an equilibrium the loop factor is `D₀ = 1 − k_p V sin θ / ω_s`. -/
 @[powerlib_foundation] theorem D0_eq_of_equilibrium {θ : ℝ}
-    (heq : p.V * Real.sin θ = p.Xg * p.Id) :
+    (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     p.D0 = 1 - p.kp * p.V * Real.sin θ / p.ωs := by
-  rw [Params.D0, Params.Lg, mul_assoc p.kp, div_mul_eq_mul_div, ← heq]
-  ring
+  rw [Params.D0, Params.Lg, mul_assoc p.kp, div_mul_eq_mul_div]
+  linear_combination (p.kp / p.ωs) * heq
 
 /-- Damping ratio `−tr / (2 √det)` of a real 2×2 matrix (meaningful for a complex pair). -/
 def dampingRatio (A : Matrix (Fin 2) (Fin 2) ℝ) : ℝ := -A.trace / (2 * Real.sqrt A.det)
@@ -311,7 +347,7 @@ def zetaQS (θ : ℝ) : ℝ := p.kp / 2 * Real.sqrt (p.V * Real.cos θ / p.ki)
 `(1 − r)/√D₀`, `r = tan θ / (ω_s k_p / k_i)`, `D₀ = 1 − k_p V sin θ / ω_s`. -/
 @[powerlib_foundation] theorem zeta_ratio (hD0 : 0 < p.D0) (hV : 0 < p.V) (hkp : 0 < p.kp)
     (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
-    (heq : p.V * Real.sin θ = p.Xg * p.Id) :
+    (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     dampingRatio (jac p θ) =
       zetaQS p θ * (1 - Real.tan θ / (p.ωs * p.kp / p.ki)) /
         Real.sqrt (1 - p.kp * p.V * Real.sin θ / p.ωs) := by
@@ -348,7 +384,7 @@ parameter sets that differ in `X_g` (with `I_d` re-solved to keep `θ` an equili
 same Jacobian. -/
 @[powerlib_foundation] theorem jacobian_indep_Xg (q : Params) (hV : p.V = q.V)
     (hωs : p.ωs = q.ωs) (hkp : p.kp = q.kp) (hki : p.ki = q.ki) {θ : ℝ}
-    (hp : p.V * Real.sin θ = p.Xg * p.Id) (hq : q.V * Real.sin θ = q.Xg * q.Id) :
+    (hp : p.V * Real.sin θ = -(p.Xg * p.Id)) (hq : q.V * Real.sin θ = -(q.Xg * q.Id)) :
     jac p θ = jac q θ := by
   have hDp := D0_eq_of_equilibrium p hp
   have hDq := D0_eq_of_equilibrium q hq
@@ -368,31 +404,32 @@ same Jacobian. -/
 /-- The same model with the grid amplitude replaced by `V'` (frozen-time evaluation). -/
 def withV (V' : ℝ) : Params := { p with V := V' }
 
-/-- Frozen threshold `ε_frozen = V_g − k_i L_g I_d / (k_p cos θ_{e0})`. -/
-def epsFrozen (Vg θ : ℝ) : ℝ := Vg - p.ki * p.Lg * p.Id / (p.kp * Real.cos θ)
+/-- Frozen threshold `ε_frozen = V_g + k_i L_g i_d / (k_p cos θ_{e0})`. -/
+def epsFrozen (Vg θ : ℝ) : ℝ := Vg + p.ki * p.Lg * p.Id / (p.kp * Real.cos θ)
 
 /-- The frozen Jacobian at the fixed angle `θ` and grid amplitude `V'` is Hurwitz iff
-`V' > k_i L_g I_d / (k_p cos θ)` (when `L_g I_d ≥ 0`). -/
+`V' > −k_i L_g i_d / (k_p cos θ)` (when `L_g i_d ≤ 0`, an exporting converter). -/
 @[powerlib_foundation] theorem frozen_isHurwitz_iff (hD0 : 0 < p.D0) (hkp : 0 < p.kp)
-    (hki : 0 < p.ki) {θ : ℝ} (hcos : 0 < Real.cos θ) (hLI : 0 ≤ p.Lg * p.Id) (V' : ℝ) :
+    (hki : 0 < p.ki) {θ : ℝ} (hcos : 0 < Real.cos θ) (hLI : p.Lg * p.Id ≤ 0) (V' : ℝ) :
     LinearSystems.IsHurwitz (jac (withV p V') θ) ↔
-      p.ki * p.Lg * p.Id / (p.kp * Real.cos θ) < V' := by
+      -(p.ki * p.Lg * p.Id / (p.kp * Real.cos θ)) < V' := by
   have hD : (withV p V').D0 = p.D0 := rfl
   have hL : (withV p V').Lg = p.Lg := rfl
   rw [Criteria.isHurwitz_fin_two_iff, det_jac _ (hD ▸ hD0.ne'), trace_jac, hD, hL]
   simp only [withV]
   have hkc : 0 < p.kp * Real.cos θ := mul_pos hkp hcos
-  rw [div_lt_iff₀ hkc]
+  rw [← neg_div, div_lt_iff₀ hkc]
   constructor
   · rintro ⟨htr, -⟩
-    have : -p.kp * V' * Real.cos θ + p.ki * p.Lg * p.Id < 0 := by
+    have : -p.kp * V' * Real.cos θ - p.ki * p.Lg * p.Id < 0 := by
       by_contra hc
       push Not at hc
       exact absurd htr (not_lt.mpr (div_nonneg hc hD0.le))
     nlinarith
   · intro h
     have hV' : 0 < V' := by
-      have : 0 ≤ p.ki * p.Lg * p.Id := by rw [mul_assoc]; exact mul_nonneg hki.le hLI
+      have : p.ki * p.Lg * p.Id ≤ 0 := by
+        rw [mul_assoc]; exact mul_nonpos_of_nonneg_of_nonpos hki.le hLI
       nlinarith
     refine ⟨div_neg_of_neg_of_pos (by nlinarith) hD0, by positivity⟩
 
@@ -401,7 +438,7 @@ the frozen Jacobian is Hurwitz at every instant iff `ε < ε_frozen`.  Frozen-ti
 stability is a property of a family of constant matrices; it does not imply stability of the
 periodic linear time-varying system. -/
 @[powerlib_foundation] theorem frozen_hurwitz_forall_iff (hD0 : 0 < p.D0) (hkp : 0 < p.kp)
-    (hki : 0 < p.ki) {θ : ℝ} (hcos : 0 < Real.cos θ) (hLI : 0 ≤ p.Lg * p.Id)
+    (hki : 0 < p.ki) {θ : ℝ} (hcos : 0 < Real.cos θ) (hLI : p.Lg * p.Id ≤ 0)
     {Vg ε ωp : ℝ} (hε : 0 ≤ ε) (hωp : ωp ≠ 0) :
     (∀ t : ℝ, LinearSystems.IsHurwitz (jac (withV p (Vg + ε * Real.cos (ωp * t))) θ)) ↔
       ε < epsFrozen p Vg θ := by
@@ -431,7 +468,7 @@ def Model.field (m : Model) (z : Dynamics.State 2) : Dynamics.State 2 :=
 
 /-- Requirements on the rate-coupled PLL models, all static. -/
 inductive Requirement
-  /-- `(θ*, 0)` is an equilibrium (`V sin θ* = X_g I_d`) with a nondegenerate loop `D₀ ≠ 0`. -/
+  /-- `(θ*, 0)` is an equilibrium (`V sin θ* = −X_g i_d`) with a nondegenerate loop `D₀ ≠ 0`. -/
   | equilibrium
   /-- The closed-form Jacobian at `θ*` has `tr < 0` and `det > 0`. -/
   | jacobianStable
@@ -440,7 +477,7 @@ inductive Requirement
 
 /-- Satisfaction of a requirement by a model. -/
 def Meets (m : Model) : Requirement → Prop
-  | .equilibrium => m.params.V * Real.sin m.θ = m.params.Xg * m.params.Id ∧ m.params.D0 ≠ 0
+  | .equilibrium => m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id) ∧ m.params.D0 ≠ 0
   | .jacobianStable => (jac m.params m.θ).trace < 0 ∧ 0 < (jac m.params m.θ).det
   | .jacobianUnstable => 0 < (jac m.params m.θ).trace ∨ (jac m.params m.θ).det < 0
 
@@ -536,21 +573,21 @@ private theorem not_les_of_D0_eq_zero {p : Params} (hD0 : p.D0 = 0) (x : Dynamic
     simp at this
   · simp [RatePLL.field, Dynamics.lift, coordField, pllOut, hD0]
 
-/-- An equilibrium of the field at `(θ*, 0)` with `D₀ ≠ 0` is balanced, `V sin θ* = X_g I_d`. -/
+/-- An equilibrium of the field at `(θ*, 0)` with `D₀ ≠ 0` is balanced, `V sin θ* = −X_g i_d`. -/
 private theorem balance_of_field_eq_zero {p : Params} (hD0 : p.D0 ≠ 0) {θ : ℝ}
-    (h : RatePLL.field p (equilibrium θ) = 0) : p.V * Real.sin θ = p.Xg * p.Id := by
+    (h : RatePLL.field p (equilibrium θ) = 0) : p.V * Real.sin θ = -(p.Xg * p.Id) := by
   have h0 := congrArg (fun y : Dynamics.State 2 => y 0) h
   have h1 := congrArg (fun y : Dynamics.State 2 => y 1) h
   simp [RatePLL.field, Dynamics.lift, coordField, equilibrium, pllOut, vq, hD0] at h0 h1
   have hk : p.kp * gridQ p θ = 0 := by
     rcases h0 with h0 | h0 <;> simp [h0]
-  rw [hk, zero_div, mul_zero, zero_mul, add_zero] at h1
+  rw [hk, zero_div, mul_zero, zero_mul, sub_zero] at h1
   unfold gridQ at h1
   linarith
 
 /-- The local exponential translation is exact: a model is locally exponentially stable at
 `(θ*, 0)` exactly when the point is an equilibrium with a nondegenerate loop
-(`V sin θ* = X_g I_d`, `D₀ ≠ 0`) and the closed-form Jacobian has `tr < 0`, `det > 0`. Converse
+(`V sin θ* = −X_g i_d`, `D₀ ≠ 0`) and the closed-form Jacobian has `tr < 0`, `det > 0`. Converse
 linearization: local exponential stability of the `C¹` field forces an equilibrium with a Hurwitz
 Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
 @[powerlib_domain] theorem exact_locallyExponentiallyStable :
@@ -574,10 +611,10 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
 
 /-- Rate-coupled GFL PLL: below the angle `tan θ_H = ω_s k_p / k_i` the operating point
 `(θ, 0)` is locally exponentially stable (`V, k_i, ω_s > 0`, `D₀ > 0`, `cos θ > 0`,
-`V sin θ = X_g I_d`). -/
+`V sin θ = −X_g i_d`). -/
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_tan_lt (p : Params)
     (hD0 : 0 < p.D0) (hV : 0 < p.V) (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ}
-    (hcos : 0 < Real.cos θ) (heq : p.V * Real.sin θ = p.Xg * p.Id)
+    (hcos : 0 < Real.cos θ) (heq : p.V * Real.sin θ = -(p.Xg * p.Id))
     (htan : Real.tan θ < p.ωs * p.kp / p.ki) :
     connection% (Model.mk p θ ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -588,7 +625,7 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
 `(θ, 0)` is unstable. -/
 @[powerlib_domain] theorem mem_den_unstable_of_tan_gt (p : Params) (hD0 : 0 < p.D0)
     (hV : 0 < p.V) (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
-    (heq : p.V * Real.sin θ = p.Xg * p.Id) (htan : p.ωs * p.kp / p.ki < Real.tan θ) :
+    (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) (htan : p.ωs * p.kp / p.ki < Real.tan θ) :
     connection% (Model.mk p θ ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   exact unstable_of_meets ⟨heq, hD0.ne'⟩
@@ -597,7 +634,7 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
 /-- Above the boundary angle the operating point is not Lyapunov stable. -/
 @[powerlib_domain] theorem not_mem_den_lyapunovStable_of_tan_gt (p : Params) (hD0 : 0 < p.D0)
     (hV : 0 < p.V) (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
-    (heq : p.V * Real.sin θ = p.Xg * p.Id) (htan : p.ωs * p.kp / p.ki < Real.tan θ) :
+    (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) (htan : p.ωs * p.kp / p.ki < Real.tan θ) :
     connection% (Model.mk p θ ∉ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_mem_den_lyapunovStable_of_unstable
@@ -605,8 +642,9 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
 
 /-! ### Instability away from equilibrium -/
 
-/-- An unbalanced model: `V = 0`, `X_g = ω_s = I_d = 1`, `k_p = k_i = 0` (so `D₀ = 1`), `θ* = 0`. -/
-def offEquilibrium : Model := ⟨⟨0, 1, 1, 0, 0, 1⟩, 0⟩
+/-- An unbalanced model: `V = 0`, `X_g = ω_s = 1`, `i_d = −1` (the OUT-positive source point
+`I_d = 1`), `k_p = k_i = 0` (so `D₀ = 1`), `θ* = 0`. -/
+def offEquilibrium : Model := ⟨⟨0, 1, 1, 0, 0, -1⟩, 0⟩
 
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
@@ -628,7 +666,7 @@ while the translation asks for an equilibrium. -/
 
 /-! ### The Lyapunov translation -/
 
-/-- An undamped PLL: `V = k_i = ω_s = 1`, `k_p = X_g = I_d = 0` (so `D₀ = 1`) at `θ* = 0`; the
+/-- An undamped PLL: `V = k_i = ω_s = 1`, `k_p = X_g = i_d = 0` (so `D₀ = 1`) at `θ* = 0`; the
 field is the pendulum `θ̇ = x`, `ẋ = −sin θ`. -/
 def undampedPLL : Model := ⟨⟨1, 0, 1, 0, 1, 0⟩, 0⟩
 

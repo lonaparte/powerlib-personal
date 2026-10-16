@@ -7,6 +7,9 @@ import theorem.TMIO.ClaimElab
 
 /-! # Reduced 2-state GFL-PLL model: equilibria, stability, port-Hamiltonian form, code frame
 
+Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
+Scaffold: `theorem/CurrentDirection.agda`.
+
 Domain module of the `vsc-stochastic-stability` project: equilibria, local stability, the
 port-Hamiltonian form, and the conjugacy with the project's code frame.
 
@@ -24,7 +27,9 @@ Model boundary.
 * Conclusions are at the equilibrium level (equilibrium set, linearization-based local
   exponential stability / instability, Jacobian at a fold) and at the level of the energy
   balance along solutions.
-* Direction: converter current OUT-positive (`decisions.md` §D1.6), as in `Reduction.lean`.
+* Direction: currents and references IN-positive, as in `Reduction.lean`; the state `(θ_e, η)`
+  and `h` (a voltage) are the same in the OUT-positive source frame (`decisions.md` §D1.6),
+  whose references are `i*_out = −i*`.
 
 Source: work-sync `projects/vsc-stochastic-stability/notes/concepts/reduced-2d-equation.md`
 §2–§4; `equilibria-and-bifurcation.md` §1, §3; `decisions.md` §D1.1–§D1.4;
@@ -325,16 +330,18 @@ private theorem hamiltonian_antitoneOn (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
 
 /-! ### The code frame (`decisions.md` §D1.4) -/
 
-/-- Code-frame converter current (`models.py`: `i_d = cos θ i_d* + sin θ i_q*`), d-axis. -/
+/-- Code-frame converter current (`models.py`: `i_d = cos θ i_d* + sin θ i_q*`, here with the
+IN-positive references), d-axis. -/
 def codeID (θ : ℝ) : ℝ := cos θ * p.idRef + sin θ * p.iqRef
 /-- Code-frame converter current (`i_q = −sin θ i_d* + cos θ i_q*`), q-axis. -/
 def codeIQ (θ : ℝ) : ℝ := -sin θ * p.idRef + cos θ * p.iqRef
 
 /-- The code's PLL input `v_cqc = sin θ v_cd + cos θ v_cq` on its own algebraic chain
-(`models.py::vcqc_exact`; line solved with the corrected system, as `_ig_at_thetae` does). -/
+(`models.py::vcqc_exact`; line solved with the corrected system, as `_ig_at_thetae` does),
+written with the IN-positive capacitor formula `v_c = ((i_gq − i_q), (i_d − i_gd))/(ω_g C_f)`. -/
 def hCode (θ : ℝ) : ℝ :=
-  sin θ * ((p.codeIQ θ - p.solQ (p.codeID θ) (p.codeIQ θ) p.Vg 0) / p.wC) +
-    cos θ * ((p.solD (p.codeID θ) (p.codeIQ θ) p.Vg 0 - p.codeID θ) / p.wC)
+  sin θ * ((p.solQ (p.codeID θ) (p.codeIQ θ) p.Vg 0 - p.codeIQ θ) / p.wC) +
+    cos θ * ((p.codeID θ - p.solD (p.codeID θ) (p.codeIQ θ) p.Vg 0) / p.wC)
 
 /-- Exact form of "numerically `h_code(θ) = h_text(−θ)`". -/
 @[powerlib_foundation] theorem hCode_eq (θ : ℝ) : p.hCode θ = p.h (-θ) := by

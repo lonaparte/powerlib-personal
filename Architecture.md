@@ -81,7 +81,7 @@ narrow bridge of Rules §11 and is checked by Lean (`theorem/generated/`).
 | `theorem/ClassicalMachineSwing.agda` | the classical machine read as a swing machine (momentum `p = M ω`, flow sentences) | `Synchronous/PH` (`ClassicalSM.mem_den_flow_iff_swing`) |
 | `theorem/PortHamiltonianPLL.agda` | the port-Hamiltonian SRF-PLL read as a PI-PLL (flow sentences, within nonnegative energy) | `PLL/PH` (`PLLPH.mem_den_flow_iff_srf`) |
 | `theorem/IMCCurrentLoop.agda` | the drive IMC current loop read as the converter PI loop with IMC tuning (same plant, `L ≠ 0`) | `Drives/CascadeControl` (`mem_den_iff_imc`) |
-| `theorem/CurrentDirection.agda` | OUT-positive and IN-positive writings of a model related by the reversal of currents and powers (conventions §D) | `GFL/PowerLoop/QuasiStatic`, `GFL/RatePLL` (literature forms) |
+| `theorem/CurrentDirection.agda` | OUT-positive and IN-positive writings of a model related by the reversal of currents and powers (conventions §D) | `GFL/PowerLoop/QuasiStatic`, `GFL/RatePLL`, `GFL/ModelLayers`, `GFL/LCLine/FullModel`, `GFL/LCLine/FullModelDC` (IN-written families; the literature OUT forms and `field_eq_transport_literatureField`-type identities) |
 
 The rebasing scaffold shows the division of labour. Univalence turns the equivalences of the
 six spaces of an interconnection into a path, so the closed loop commutes with every change of

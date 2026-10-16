@@ -3,32 +3,37 @@ import theorem.SpecialFunctions.TrigZeros
 
 /-! # GFL form-B reduction: quasi-steady algebra and the phase-detector characteristic
 
+Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
+Scaffold: `theorem/CurrentDirection.agda`.
+
 Model boundary.
 Grid-following VSC with LC filter and an `R_g`–`L_g` line to an infinite bus
 `(V_g, 0)` (system dq frame rotating at the constant grid frequency `ω_g`), SRF-PLL with PI gains
-`K_p, K_i`, current references `i_d*, i_q*` frozen (outer loops frozen), IN-positive currents
-(`conventions.md` §D1), Park matrix `T(θ) = [[cos θ, sin θ], [−sin θ, cos θ]]`. What is
+`K_p, K_i`, current references `i_d*, i_q*` frozen (outer loops frozen), IN-positive currents:
+the converter current `i` flows from the filter into the bridge, the line current `i_g` from the
+grid into the filter, Park matrix `T(θ) = [[cos θ, sin θ], [−sin θ, cos θ]]`. What is
 formalized is the algebra of the form-B reduction of `T-gfl-dynamics` §1.4–§1.7:
 * step 1 (`convCurrentD/Q`): ideal current tracking `i^c = i*`, rotated to the system frame,
   `i = T(−θ) i*`;
-* steps 2–3 (`QuasiSteady`): the LC-capacitor and line equations with their time derivatives set
-  to zero, `0 = i_d − i_gd + ω_g C_f v_cq`, `0 = i_q − i_gq − ω_g C_f v_cd`,
-  `0 = v_cd − V_g − R_g i_gd + ω_g L_g i_gq`, `0 = v_cq − R_g i_gq − ω_g L_g i_gd`;
+* steps 2–3 (`QuasiSteady`): the LC-capacitor equation `C_f v̇_c = i_g − i − ω_g C_f J v_c` and the
+  line equation `L_g i̇_g = (V_g, 0) − v_c − R_g i_g − ω_g L_g J i_g` with their time derivatives
+  set to zero, `0 = i_gd − i_d + ω_g C_f v_cq`, `0 = i_gq − i_q − ω_g C_f v_cd`,
+  `0 = V_g − v_cd − R_g i_gd + ω_g L_g i_gq`, `0 = −v_cq − R_g i_gq − ω_g L_g i_gd`;
 * step 4 (`formBPllInput`): the PLL input `v_cq^c = −sin θ v_cd + cos θ v_cq`.
 The singular-perturbation (Tikhonov) justification of the reduction and its error are **not**
 formalized; the reduced 2D model is `piPLLField p.formBChar K_p K_i δω` of
 `theorem/PLL/PIPLL.lean`, valid as a model only under the note's assumptions (strong grid,
 time-scale separation, frozen outer loops). Continuous time; no saturation, PWM or delay.
-The same reduction, written in the OUT-positive current convention of the
-`vsc-stochastic-stability` project, is `theorem/GFL/LCLine/Reduction.lean` (`h_eq`,
-`h_eq_polar`).
+The same reduction with the parametrization `a, b, Δ` of the `vsc-stochastic-stability` project
+is `theorem/GFL/LCLine/Reduction.lean` (`h_eq`, `h_eq_polar`).
 
 Source: work-sync `theory/T-gfl-dynamics.md` §1.0 (frame rotations), §1.4–§1.9, §1.11, §1.14.
 
 Results.
-* `cc_projection`: the current-loop part of `ω_g C_f v_cq^c` is identically `−i_d*`.
+* `cc_projection`: the current-loop part of `ω_g C_f v_cq^c` is identically `i_d*`.
 * `pllInput_expansion`: for any line solution `i_g = α + β sin θ + γ cos θ`, the double-angle
-  expansion with exactly the coefficients `c₀ … c₄` of §1.7.
+  expansion with the coefficients `c₀ … c₄` of §1.7 (written for the IN-positive currents: the
+  line current coefficients and `i_d*` enter with the opposite sign).
 * `quasiSteady_iff`: with `ω_g C_f ≠ 0` and the added premise
   `R_g² + (ω_g L_g − 1/(ω_g C_f))² ≠ 0`, the quasi-steady equations have exactly one solution,
   given in closed form.
@@ -47,6 +52,12 @@ result is algebra of the reduction or a count of zeros of the reduced field. The
 connection conclusion. Behavioural conclusions about the reduced 2D model go through the PI-PLL
 family of `theorem/PLL/PIPLLFamily.lean` with `h = formBChar` (`contDiff_formBChar`).
 
+Correction (§1.4–§1.6, current direction): the note declares its currents IN-positive (§D1) but
+writes `C_f v̇_c = i − i_g − ω_g C_f J v_c` and
+`L_g i̇_g = v_c − (V_g, 0) − R_g i_g − ω_g L_g J i_g`, in which `i` flows from the bridge into the filter and `i_g` from the filter to the grid: these
+are the OUT-positive equations (those of the `vsc-stochastic-stability` source frame). The
+equations above are the IN-positive ones (`i^IN = −i^note`, `i_g^IN = −i_g^note`,
+`i*^IN = −i*^note`); `formBChar`, a voltage, is the same function in both writings.
 Correction (§1.6, added premise): the line/LC algebraic system is uniquely solvable only when
 `R_g² + (ω_g L_g − 1/(ω_g C_f))² ≠ 0` (and `ω_g C_f ≠ 0`); the note does not state it.
 Correction (§1.7–§1.8, §1.9 table, §1.11, §1.14 region E): the exact quasi-steady line solution
@@ -96,20 +107,20 @@ def convCurrentD (θ : ℝ) : ℝ := Real.cos θ * p.idRef - Real.sin θ * p.iqR
 /-- `i_q(θ) = sin θ i_d* + cos θ i_q*`. -/
 def convCurrentQ (θ : ℝ) : ℝ := Real.sin θ * p.idRef + Real.cos θ * p.iqRef
 
-/-- The current-loop contribution to `ω_g C_f v_cq^c` is the constant `−i_d*` (§1.7 (a)). -/
+/-- The current-loop contribution to `ω_g C_f v_cq^c` is the constant `i_d*` (§1.7 (a)). -/
 @[powerlib_foundation] theorem cc_projection (θ : ℝ) :
-    -Real.sin θ * p.convCurrentQ θ - Real.cos θ * p.convCurrentD θ = -p.idRef := by
+    Real.sin θ * p.convCurrentQ θ + Real.cos θ * p.convCurrentD θ = p.idRef := by
   simp only [convCurrentD, convCurrentQ]
-  linear_combination (-p.idRef) * Real.sin_sq_add_cos_sq θ
+  linear_combination p.idRef * Real.sin_sq_add_cos_sq θ
 
 /-! ## Steps 2–4: quasi-steady LC and line, PLL input -/
 
 /-- Quasi-steady LC-capacitor and line equations at phase offset `θ`. -/
 def QuasiSteady (θ vcd vcq igd igq : ℝ) : Prop :=
-  p.convCurrentD θ - igd + p.ωg * p.Cf * vcq = 0 ∧
-  p.convCurrentQ θ - igq - p.ωg * p.Cf * vcd = 0 ∧
-  vcd - p.Vg - p.Rg * igd + p.ωg * p.Lg * igq = 0 ∧
-  vcq - p.Rg * igq - p.ωg * p.Lg * igd = 0
+  igd - p.convCurrentD θ + p.ωg * p.Cf * vcq = 0 ∧
+  igq - p.convCurrentQ θ - p.ωg * p.Cf * vcd = 0 ∧
+  p.Vg - vcd - p.Rg * igd + p.ωg * p.Lg * igq = 0 ∧
+  -vcq - p.Rg * igq - p.ωg * p.Lg * igd = 0
 
 /-- `X = 1/(ω_g C_f) − ω_g L_g`. -/
 def lineX : ℝ := 1 / (p.ωg * p.Cf) - p.ωg * p.Lg
@@ -117,8 +128,8 @@ def lineX : ℝ := 1 / (p.ωg * p.Cf) - p.ωg * p.Lg
 /-- `Δ = R_g² + X²` (`= R_g² + (ω_g L_g − 1/(ω_g C_f))²`). -/
 def lineDet : ℝ := p.Rg ^ 2 + p.lineX ^ 2
 
-/-- `a(θ) = V_g − i_q(θ)/(ω_g C_f)`. -/
-def driveA (θ : ℝ) : ℝ := p.Vg - p.convCurrentQ θ / (p.ωg * p.Cf)
+/-- `a(θ) = −V_g − i_q(θ)/(ω_g C_f)`. -/
+def driveA (θ : ℝ) : ℝ := -p.Vg - p.convCurrentQ θ / (p.ωg * p.Cf)
 
 /-- `b(θ) = i_d(θ)/(ω_g C_f)`. -/
 def driveB (θ : ℝ) : ℝ := p.convCurrentD θ / (p.ωg * p.Cf)
@@ -129,11 +140,11 @@ def lineCurrentD (θ : ℝ) : ℝ := (-p.Rg * p.driveA θ + p.lineX * p.driveB �
 /-- Closed-form line current, q axis: `(−X a − R_g b)/Δ`. -/
 def lineCurrentQ (θ : ℝ) : ℝ := (-p.lineX * p.driveA θ - p.Rg * p.driveB θ) / p.lineDet
 
-/-- Closed-form capacitor voltage, d axis: `(i_q − i_gq)/(ω_g C_f)`. -/
-def capVoltageD (θ : ℝ) : ℝ := (p.convCurrentQ θ - p.lineCurrentQ θ) / (p.ωg * p.Cf)
+/-- Closed-form capacitor voltage, d axis: `(i_gq − i_q)/(ω_g C_f)`. -/
+def capVoltageD (θ : ℝ) : ℝ := (p.lineCurrentQ θ - p.convCurrentQ θ) / (p.ωg * p.Cf)
 
-/-- Closed-form capacitor voltage, q axis: `(i_gd − i_d)/(ω_g C_f)`. -/
-def capVoltageQ (θ : ℝ) : ℝ := (p.lineCurrentD θ - p.convCurrentD θ) / (p.ωg * p.Cf)
+/-- Closed-form capacitor voltage, q axis: `(i_d − i_gd)/(ω_g C_f)`. -/
+def capVoltageQ (θ : ℝ) : ℝ := (p.convCurrentD θ - p.lineCurrentD θ) / (p.ωg * p.Cf)
 
 /-- Unique solvability of the quasi-steady equations (premises `ω_g C_f ≠ 0`, `Δ ≠ 0`). -/
 @[powerlib_foundation] theorem quasiSteady_iff (hωC : p.ωg * p.Cf ≠ 0) (hΔ : p.lineDet ≠ 0)
@@ -144,10 +155,10 @@ def capVoltageQ (θ : ℝ) : ℝ := (p.lineCurrentD θ - p.convCurrentD θ) / (p
   have hk1 (z : ℝ) : p.ωg * p.Cf * (z / (p.ωg * p.Cf)) = z := mul_div_cancel₀ z hωC
   constructor
   · rintro ⟨e1, e2, e3, e4⟩
-    have hvcd : vcd = (p.convCurrentQ θ - igq) / (p.ωg * p.Cf) := by
+    have hvcd : vcd = (igq - p.convCurrentQ θ) / (p.ωg * p.Cf) := by
       rw [eq_div_iff hωC]
       linarith
-    have hvcq : vcq = (igd - p.convCurrentD θ) / (p.ωg * p.Cf) := by
+    have hvcq : vcq = (p.convCurrentD θ - igd) / (p.ωg * p.Cf) := by
       rw [eq_div_iff hωC]
       linarith
     -- the reduced 2×2 system `−R_g i_gd − X i_gq = a`, `X i_gd − R_g i_gq = b`
@@ -195,10 +206,10 @@ def capVoltageQ (θ : ℝ) : ℝ := (p.lineCurrentD θ - p.convCurrentD θ) / (p
 /-! ## Trigonometric form of the line solution -/
 
 /-- Coefficients of `i_g = α + β sin θ + γ cos θ`. -/
-def αd : ℝ := -p.Rg * p.Vg / p.lineDet
+def αd : ℝ := p.Rg * p.Vg / p.lineDet
 def βd : ℝ := (p.Rg * p.idRef - p.lineX * p.iqRef) / (p.ωg * p.Cf * p.lineDet)
 def γd : ℝ := (p.Rg * p.iqRef + p.lineX * p.idRef) / (p.ωg * p.Cf * p.lineDet)
-def αq : ℝ := -p.lineX * p.Vg / p.lineDet
+def αq : ℝ := p.lineX * p.Vg / p.lineDet
 def βq : ℝ := (p.lineX * p.idRef + p.Rg * p.iqRef) / (p.ωg * p.Cf * p.lineDet)
 def γq : ℝ := (p.lineX * p.iqRef - p.Rg * p.idRef) / (p.ωg * p.Cf * p.lineDet)
 
@@ -232,26 +243,27 @@ end FormBParams
 
 /-- The double-angle expansion of §1.7 for an arbitrary line solution
 `i_g = α + β sin θ + γ cos θ`:
-`−sin θ (i_q − i_gq) + cos θ (i_gd − i_d) = c₀ + c₁ sin θ + c₂ cos θ + c₃ sin 2θ + c₄ cos 2θ`,
-`c₀ = −i_d* + (β_q + γ_d)/2`, `c₁ = α_q`, `c₂ = α_d`, `c₃ = (γ_q + β_d)/2`, `c₄ = (γ_d − β_q)/2`. -/
+`−sin θ (i_gq − i_q) + cos θ (i_d − i_gd) = c₀ + c₁ sin θ + c₂ cos θ + c₃ sin 2θ + c₄ cos 2θ`,
+`c₀ = i_d* − (β_q + γ_d)/2`, `c₁ = −α_q`, `c₂ = −α_d`, `c₃ = −(γ_q + β_d)/2`,
+`c₄ = −(γ_d − β_q)/2`. -/
 @[powerlib_foundation] theorem pllInput_expansion (p : FormBParams)
     (αd βd γd αq βq γq θ : ℝ) :
-    -Real.sin θ * (p.convCurrentQ θ - (αq + βq * Real.sin θ + γq * Real.cos θ)) +
-        Real.cos θ * ((αd + βd * Real.sin θ + γd * Real.cos θ) - p.convCurrentD θ) =
-      (-p.idRef + (βq + γd) / 2) + αq * Real.sin θ + αd * Real.cos θ +
-        (γq + βd) / 2 * Real.sin (2 * θ) + (γd - βq) / 2 * Real.cos (2 * θ) := by
+    -Real.sin θ * ((αq + βq * Real.sin θ + γq * Real.cos θ) - p.convCurrentQ θ) +
+        Real.cos θ * (p.convCurrentD θ - (αd + βd * Real.sin θ + γd * Real.cos θ)) =
+      (p.idRef - (βq + γd) / 2) - αq * Real.sin θ - αd * Real.cos θ -
+        (γq + βd) / 2 * Real.sin (2 * θ) - (γd - βq) / 2 * Real.cos (2 * θ) := by
   simp only [FormBParams.convCurrentD, FormBParams.convCurrentQ, Real.sin_two_mul,
     Real.cos_two_mul]
-  linear_combination (-p.idRef + βq) * Real.sin_sq_add_cos_sq θ
+  linear_combination (p.idRef - βq) * Real.sin_sq_add_cos_sq θ
 
 namespace FormBParams
 
 variable (p : FormBParams)
 
 /-- The form-B phase-detector characteristic
-`h(θ) = (1/(ω_g C_f)) [(−i_d* + β_q) + α_q sin θ + α_d cos θ]`. -/
+`h(θ) = (1/(ω_g C_f)) [(i_d* − β_q) − α_q sin θ − α_d cos θ]`. -/
 def formBChar (θ : ℝ) : ℝ :=
-  1 / (p.ωg * p.Cf) * ((-p.idRef + p.βq) + p.αq * Real.sin θ + p.αd * Real.cos θ)
+  1 / (p.ωg * p.Cf) * ((p.idRef - p.βq) - p.αq * Real.sin θ - p.αd * Real.cos θ)
 
 /-- Along the quasi-steady manifold the PLL input is exactly `formBChar θ` (no `2θ` terms). -/
 @[powerlib_foundation] theorem pllInput_of_quasiSteady (hωC : p.ωg * p.Cf ≠ 0)
@@ -262,10 +274,10 @@ def formBChar (θ : ℝ) : ℝ :=
   obtain ⟨h1, h2⟩ := p.lineCurrent_rotational
   rw [← p.lineCurrentD_eq hΔ, ← p.lineCurrentQ_eq hΔ, h1, h2] at hexp
   rw [formBPllInput, hvd, hvq, capVoltageD, capVoltageQ, formBChar]
-  have e : -Real.sin θ * ((p.convCurrentQ θ - p.lineCurrentQ θ) / (p.ωg * p.Cf)) +
-      Real.cos θ * ((p.lineCurrentD θ - p.convCurrentD θ) / (p.ωg * p.Cf)) =
-      1 / (p.ωg * p.Cf) * (-Real.sin θ * (p.convCurrentQ θ - p.lineCurrentQ θ) +
-        Real.cos θ * (p.lineCurrentD θ - p.convCurrentD θ)) := by
+  have e : -Real.sin θ * ((p.lineCurrentQ θ - p.convCurrentQ θ) / (p.ωg * p.Cf)) +
+      Real.cos θ * ((p.convCurrentD θ - p.lineCurrentD θ) / (p.ωg * p.Cf)) =
+      1 / (p.ωg * p.Cf) * (-Real.sin θ * (p.lineCurrentQ θ - p.convCurrentQ θ) +
+        Real.cos θ * (p.convCurrentD θ - p.lineCurrentD θ)) := by
     field_simp
   rw [e, hexp]
   ring
@@ -273,8 +285,8 @@ def formBChar (θ : ℝ) : ℝ :=
 /-- `formBChar` as a trigonometric polynomial (coefficients in `trigPoly2` order:
 constant, `cos θ`, `sin θ`, `cos 2θ`, `sin 2θ`). -/
 @[powerlib_foundation] theorem formBChar_eq_trigPoly2 :
-    p.formBChar = SpecialFunctions.trigPoly2 ((-p.idRef + p.βq) / (p.ωg * p.Cf))
-      (p.αd / (p.ωg * p.Cf)) (p.αq / (p.ωg * p.Cf)) 0 0 := by
+    p.formBChar = SpecialFunctions.trigPoly2 ((p.idRef - p.βq) / (p.ωg * p.Cf))
+      (-p.αd / (p.ωg * p.Cf)) (-p.αq / (p.ωg * p.Cf)) 0 0 := by
   funext θ
   simp only [formBChar, SpecialFunctions.trigPoly2]
   ring
@@ -286,18 +298,18 @@ constant, `cos θ`, `sin θ`, `cos 2θ`, `sin 2θ`). -/
 /-- With `V_g ≠ 0` (and `Δ ≠ 0`, `ω_g C_f ≠ 0`) the characteristic is not identically zero. -/
 @[powerlib_foundation] theorem formBChar_coeffs_ne_zero (hωC : p.ωg * p.Cf ≠ 0)
     (hΔ : p.lineDet ≠ 0) (hVg : p.Vg ≠ 0) :
-    ¬ ((-p.idRef + p.βq) / (p.ωg * p.Cf) = 0 ∧ p.αd / (p.ωg * p.Cf) = 0 ∧
-      p.αq / (p.ωg * p.Cf) = 0) := by
+    ¬ ((p.idRef - p.βq) / (p.ωg * p.Cf) = 0 ∧ -p.αd / (p.ωg * p.Cf) = 0 ∧
+      -p.αq / (p.ωg * p.Cf) = 0) := by
   rintro ⟨-, h2, h3⟩
-  have hd : p.αd = 0 := (div_eq_zero_iff.mp h2).resolve_right hωC
-  have hq : p.αq = 0 := (div_eq_zero_iff.mp h3).resolve_right hωC
+  have hd : p.αd = 0 := neg_eq_zero.mp ((div_eq_zero_iff.mp h2).resolve_right hωC)
+  have hq : p.αq = 0 := neg_eq_zero.mp ((div_eq_zero_iff.mp h3).resolve_right hωC)
   have h1 : p.Rg * p.Vg = 0 := by
-    have h : -p.Rg * p.Vg / p.lineDet = 0 := hd
+    have h : p.Rg * p.Vg / p.lineDet = 0 := hd
     rcases div_eq_zero_iff.mp h with h | h
     · linarith
     · exact absurd h hΔ
   have h2 : p.lineX * p.Vg = 0 := by
-    have h : -p.lineX * p.Vg / p.lineDet = 0 := hq
+    have h : p.lineX * p.Vg / p.lineDet = 0 := hq
     rcases div_eq_zero_iff.mp h with h | h
     · linarith
     · exact absurd h hΔ

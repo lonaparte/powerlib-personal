@@ -1,8 +1,13 @@
 import theorem.GFL.RatePLL
 import theorem.GFL.DCLink.FourState
 import theorem.Transform.ComplexPower
+import theorem.Dynamics.Transport
 
 /-! # Model layers of the GFL carrier: algebraic loops, exact cancellations, convention invariance
+
+Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3), in
+every layer (the dc carrier also keeps the OUT-positive writing as sign flags, `outConv`).
+Scaffold: `theorem/CurrentDirection.agda`.
 
 Foundation module: algebraic identities about the model layers of the GFL side of
 `gfl-gfm-stability-tree`. Each layer is written as its defining relations (KVL of filter and line
@@ -13,27 +18,37 @@ No time-scale (Tikhonov) or convergence statement is made: the note's numerical 
 Model boundary.
 Common to every layer: single GFL converter, infinite bus `v_g = (V_g cos θ, −V_g sin θ)` in the PLL
 frame (`θ` = PLL error angle), frame speed `ω₁ = ω₀ + u`, SRF-PLL `u = k_p v_q + k_i x`,
-`J i = (−i_q, i_d)`, averaged model, continuous time, no PWM / delay / limiter.
+`J i = (−i_q, i_d)`, port current `i` into the converter, averaged model, continuous time, no
+PWM / delay / limiter.
 
 Source: work-sync `projects/gfl-gfm-stability-tree/notes/concepts/model-layers.md`
 (I1 放开一级: 6 态与 `L_g u I_d` 的真身, 性质 3; `R_g` 在 GFL 侧 (2 态载体); 目标载体的推导:
 两个代数环与 `i_q ≠ 0` 的补项; `D₁` 的方向约定); `projects/vsc-parametric-oscillation/references/
 gfm-driven-gfl-parametric-resonance/notes/concepts/gfl-four-state-parametric-resonance.md`
-(`P_abs`, `Q_abs`); code reference `simulation/src/.../models_extended.py`.
+(`P_abs`, `Q_abs`); code reference `simulation/src/.../models_extended.py`. The source writes the
+six-state and two-state carriers OUT-positive (`i_out = −i`); the six-state form is
+`literatureCCField`, read through the reversal of the current-loop coordinates by
+`lift_ccField_eq_transport` (conventions §D8); the two-state carrier is `GFL.RatePLL`, whose
+§D8 reading is `RatePLL.field_eq_literatureField`.
 
 Results.
 * Six-state carrier (`CCParams`, `GFLRateCC` with `R_f = R_g = 0`; states
-  `(θ, x, i_d, i_q, ξ_d, ξ_q)`, OUT-positive current): L filter `L_f i̇ = e − v − ω₁ L_f J i`,
-  line `v = v_g + ω₁ L_g J i + L_g i̇`, current loop with ideal PCC feed-forward and nominal
-  decoupling `e = v + PI + ω₀ L_f J i`. `speedEMF_cancel`, `loopRel_iff`: the speed EMF
-  `(ω₀ + u) L_g i_d` and the part `−u L_g i_d` of `L_g i̇_q` cancel exactly, so
-  `v_q = −V_g sin θ + X_g i_d + (L_g/L_f) PI_q` (`X_g = ω₀ L_g`) and the algebraic loop has a
+  `(θ, x, i_d, i_q, ξ_d, ξ_q)`, IN-positive current, `ξ = ∫ (i* − i)`): L filter
+  `L_f i̇ = v − e − ω₁ L_f J i`, line `v = v_g − ω₁ L_g J i − L_g i̇`, current loop with ideal PCC
+  feed-forward and nominal decoupling, reversed as the IN-positive plant requires (§D8):
+  `e = v − PI − ω₀ L_f J i`, `PI = k_p^cc (i* − i) + k_i^cc ξ`. `speedEMF_cancel`, `loopRel_iff`:
+  the speed EMF `−(ω₀ + u) L_g i_d` and the part `u L_g i_d` of `−L_g i̇_q` cancel exactly, so
+  `v_q = −V_g sin θ − X_g i_d − (L_g/L_f) PI_q` (`X_g = ω₀ L_g`) and the algebraic loop has a
   unique explicit solution. `ccField_bwTuned_indep_Lf`: with `k_p^cc = 2ζ_c ω_cc L_f`,
   `k_i^cc = ω_cc² L_f` the closed-loop six-state field does not depend on `L_f`.
+  `lift_ccField_eq_transport` (§D8): the field is the OUT-positive source field transported by the
+  reversal `diag(1, 1, −1, −1, −1, −1)` of `(i_d, i_q, ξ_d, ξ_q)`, with the references reversed.
 * Two-state rate carrier with line resistance (`RateRel`, extends `GFL.RatePLL`,
-  frozen `I_d`, constant `i_q`): `rateRel_iff` — the `D₀` loop factor `1 − k_p L_g I_d` contains
-  neither `R_g` nor `i_q`; `rateRel_iq_zero_iff` — at `i_q = 0` the solution is exactly that of
-  the `R_g`-free model for every `R_g` (exact insensitivity, not small sensitivity).
+  frozen `i_d`, constant `i_q`, both into the converter):
+  `v_q = −V sin θ − R_g i_q − X_g i_d − L_g u i_d`; `rateRel_iff` — the `D₀` loop factor
+  `1 + k_p L_g i_d` contains neither `R_g` nor `i_q`; `rateRel_iq_zero_iff` — at `i_q = 0` the
+  solution is exactly that of the `R_g`-free model for every `R_g` (exact insensitivity, not small
+  sensitivity).
 * Four-state dc carrier (`DCParams`, `GFLDCFormC`; states `(θ, x, V_dc, η)`, ideal current loop
   `i = i*`, `i_d* = i_{d0} + s_K (k_pv (V − 1) + k_iv η)`, constant `i_q`, constant-current dc
   source `C V̇ = I_src + s_P P / V`, `P = (3/2)(v_d i_d + v_q i_q)` from `S̄ = V̄ Ī*`). The line
@@ -41,8 +56,9 @@ Results.
   PLL loop `D₀ = 1 − k_p s_L L_g i_d`, then the dc loop
   `D₁ = 1 − s_K s_P s_L (3/2) k_pv L_g i_d/(C V)`; `i_q` enters neither loop factor (`D1_indep_iq`).
   `coordField` / `field` is the resulting four-state field.
-* Direction convention: OUT-positive writing `s_L = 1, s_P = −1, s_K = 1` (`outConv`); the
-  complete §D8 translation negates both currents and all three flags (`inConv`).
+* Direction convention: OUT-positive writing of the source `s_L = 1, s_P = −1, s_K = 1`
+  (`outConv`); the workspace writing `inConv` is its complete §D8 translation, which negates both
+  currents and all three flags.
   `loopFactor_flip_all`, `D1_inConv`: `D₁` is invariant; `field_inConv`, `fderiv_field_inConv`:
   the reduced four-state field — none of whose states is a current — is the same function in
   both conventions, so the Jacobians agree entry by entry; `D1_currentOnly`: translating only
@@ -82,9 +98,9 @@ structure CCParams where
   kp : ℝ
   /-- PLL integral gain -/
   ki : ℝ
-  /-- d-axis current reference -/
+  /-- d-axis current reference (IN-positive) -/
   idRef : ℝ
-  /-- q-axis current reference -/
+  /-- q-axis current reference (IN-positive) -/
   iqRef : ℝ
 
 namespace CCParams
@@ -97,31 +113,31 @@ def piD (id ξd : ℝ) : ℝ := q.kpcc * (q.idRef - id) + q.kicc * ξd
 def piQ (iq ξq : ℝ) : ℝ := q.kpcc * (q.iqRef - iq) + q.kicc * ξq
 
 /-- Algebraic relations of the six-state carrier at the state `(θ, x, i_d, i_q, ξ_d, ξ_q)`, with
-unknowns `v` (PCC voltage), `e` (converter voltage), `i̇` and the PLL output `u`:
-filter `L_f i̇ = e − v − ω₁ L_f J i`, line `v = v_g + ω₁ L_g J i + L_g i̇`, current loop
-`e = v + PI + ω₀ L_f J i`, PLL `u = k_p v_q + k_i x`, `ω₁ = ω₀ + u`, `J i = (−i_q, i_d)`,
+unknowns `v` (PCC voltage), `e` (converter voltage), `i̇` and the PLL output `u`, current `i` into
+the converter: filter `L_f i̇ = v − e − ω₁ L_f J i`, line `v = v_g − ω₁ L_g J i − L_g i̇`, current
+loop `e = v − PI − ω₀ L_f J i`, PLL `u = k_p v_q + k_i x`, `ω₁ = ω₀ + u`, `J i = (−i_q, i_d)`,
 `v_g = (V_g cos θ, −V_g sin θ)`. -/
 def LoopRel (θ x id iq ξd ξq vd vq ed eq did diq u : ℝ) : Prop :=
-  q.Lf * did = ed - vd + (q.ω0 + u) * q.Lf * iq ∧
-  q.Lf * diq = eq - vq - (q.ω0 + u) * q.Lf * id ∧
-  vd = q.Vg * cos θ - (q.ω0 + u) * q.Lg * iq + q.Lg * did ∧
-  vq = -q.Vg * sin θ + (q.ω0 + u) * q.Lg * id + q.Lg * diq ∧
-  ed = vd + q.piD id ξd - q.ω0 * q.Lf * iq ∧
-  eq = vq + q.piQ iq ξq + q.ω0 * q.Lf * id ∧
+  q.Lf * did = vd - ed + (q.ω0 + u) * q.Lf * iq ∧
+  q.Lf * diq = vq - eq - (q.ω0 + u) * q.Lf * id ∧
+  vd = q.Vg * cos θ + (q.ω0 + u) * q.Lg * iq - q.Lg * did ∧
+  vq = -q.Vg * sin θ - (q.ω0 + u) * q.Lg * id - q.Lg * diq ∧
+  ed = vd - q.piD id ξd + q.ω0 * q.Lf * iq ∧
+  eq = vq - q.piQ iq ξq - q.ω0 * q.Lf * id ∧
   u = q.kp * vq + q.ki * x
 
-/-- Explicit q-axis PCC voltage `−V_g sin θ + X_g i_d + (L_g/L_f) PI_q`, `X_g = ω₀ L_g`. -/
-def vqSol (θ id iq ξq : ℝ) : ℝ := -q.Vg * sin θ + q.ω0 * q.Lg * id + q.Lg / q.Lf * q.piQ iq ξq
+/-- Explicit q-axis PCC voltage `−V_g sin θ − X_g i_d − (L_g/L_f) PI_q`, `X_g = ω₀ L_g`. -/
+def vqSol (θ id iq ξq : ℝ) : ℝ := -q.Vg * sin θ - q.ω0 * q.Lg * id - q.Lg / q.Lf * q.piQ iq ξq
 
-/-- Explicit d-axis PCC voltage `V_g cos θ − X_g i_q + (L_g/L_f) PI_d`. -/
-def vdSol (θ id iq ξd : ℝ) : ℝ := q.Vg * cos θ - q.ω0 * q.Lg * iq + q.Lg / q.Lf * q.piD id ξd
+/-- Explicit d-axis PCC voltage `V_g cos θ + X_g i_q − (L_g/L_f) PI_d`. -/
+def vdSol (θ id iq ξd : ℝ) : ℝ := q.Vg * cos θ + q.ω0 * q.Lg * iq - q.Lg / q.Lf * q.piD id ξd
 
 /-- Explicit PLL output. -/
 def uSol (θ x id iq ξq : ℝ) : ℝ := q.kp * q.vqSol θ id iq ξq + q.ki * x
 
-/-- The speed EMF `(ω₀ + u) L_g i_d` and the slip part `−u L_g i_d` of `L_g i̇_q` cancel. -/
+/-- The speed EMF `−(ω₀ + u) L_g i_d` and the slip part `u L_g i_d` of `−L_g i̇_q` cancel. -/
 @[powerlib_foundation] theorem speedEMF_cancel (hLf : q.Lf ≠ 0) (θ id iq ξq u : ℝ) :
-    -q.Vg * sin θ + (q.ω0 + u) * q.Lg * id + q.Lg * (q.piQ iq ξq / q.Lf - u * id) =
+    -q.Vg * sin θ - (q.ω0 + u) * q.Lg * id - q.Lg * (q.piQ iq ξq / q.Lf - u * id) =
       q.vqSol θ id iq ξq := by
   unfold vqSol
   field_simp
@@ -134,7 +150,7 @@ not contain `u` (speed-EMF cancellation), so `u` follows without any `D₀` fact
     q.LoopRel θ x id iq ξd ξq vd vq ed eq did diq u ↔
       u = q.uSol θ x id iq ξq ∧ vq = q.vqSol θ id iq ξq ∧ vd = q.vdSol θ id iq ξd ∧
       did = q.piD id ξd / q.Lf + u * iq ∧ diq = q.piQ iq ξq / q.Lf - u * id ∧
-      ed = vd + q.piD id ξd - q.ω0 * q.Lf * iq ∧ eq = vq + q.piQ iq ξq + q.ω0 * q.Lf * id := by
+      ed = vd - q.piD id ξd + q.ω0 * q.Lf * iq ∧ eq = vq - q.piQ iq ξq - q.ω0 * q.Lf * id := by
   constructor
   · rintro ⟨h1, h2, h3, h4, h5, h6, h7⟩
     have hdid : did = q.piD id ξd / q.Lf + u * iq := by
@@ -175,8 +191,8 @@ def ccField (y : Fin 6 → ℝ) : Fin 6 → ℝ :=
     ∃ vd ed eq, q.LoopRel (y 0) (y 1) (y 2) (y 3) (y 4) (y 5) vd (q.ccField y 1) ed eq
       (q.ccField y 2) (q.ccField y 3) (q.ccField y 0) := by
   refine ⟨q.vdSol (y 0) (y 2) (y 3) (y 4),
-    q.vdSol (y 0) (y 2) (y 3) (y 4) + q.piD (y 2) (y 4) - q.ω0 * q.Lf * y 3,
-    q.vqSol (y 0) (y 2) (y 3) (y 5) + q.piQ (y 3) (y 5) + q.ω0 * q.Lf * y 2, ?_⟩
+    q.vdSol (y 0) (y 2) (y 3) (y 4) - q.piD (y 2) (y 4) + q.ω0 * q.Lf * y 3,
+    q.vqSol (y 0) (y 2) (y 3) (y 5) - q.piQ (y 3) (y 5) - q.ω0 * q.Lf * y 2, ?_⟩
   rw [q.loopRel_iff hLf]
   simp [ccField]
 
@@ -200,24 +216,70 @@ def bwTuned (ζc ωcc : ℝ) : CCParams :=
     field_simp
   rw [e1, e1, e2]
 
+/-! ### The OUT-positive form of the source (conventions §D8) -/
+
+/-- The OUT-positive form of the source carrier `GFLRateCC` (`R_f = R_g = 0`; work-sync
+conventions §D8), coordinates `(θ, x, i_d, i_q, ξ_d, ξ_q)` with the currents flowing converter →
+grid and the references `idRef`, `iqRef`, integrators `ξ = ∫ (i* − i)` in the same direction:
+filter `L_f i̇ = e − v − ω₁ L_f J i`, line `v = v_g + ω₁ L_g J i + L_g i̇`, current loop
+`e = v + PI + ω₀ L_f J i`, solved as `v_q = −V_g sin θ + X_g i_d + (L_g/L_f) PI_q`. A static
+definition only. -/
+def literatureCCField (y : Fin 6 → ℝ) : Fin 6 → ℝ :=
+  let v := -q.Vg * sin (y 0) + q.ω0 * q.Lg * y 2 + q.Lg / q.Lf * q.piQ (y 3) (y 5)
+  let u := q.kp * v + q.ki * y 1
+  ![u, v, q.piD (y 2) (y 4) / q.Lf + u * y 3, q.piQ (y 3) (y 5) / q.Lf - u * y 2,
+    q.idRef - y 2, q.iqRef - y 3]
+
 end CCParams
+
+/-- The reversal `diag(1, 1, −1, −1, −1, −1)` of the current-loop coordinates
+`(i_d, i_q, ξ_d, ξ_q)` of the six-state carrier. -/
+def ccReversal : Matrix (Fin 6) (Fin 6) ℝ := Matrix.diagonal ![1, 1, -1, -1, -1, -1]
+
+@[powerlib_foundation] theorem ccReversal_mul_self : ccReversal * ccReversal = 1 := by
+  rw [ccReversal, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
+  congr 1
+  ext i
+  fin_cases i <;> norm_num
+
+@[powerlib_foundation] theorem ccReversal_isUnit : IsUnit ccReversal :=
+  (Matrix.isUnit_iff_isUnit_det _).mpr (Matrix.isUnit_det_of_right_inverse ccReversal_mul_self)
+
+/-- §D8 boundary translation of the six-state carrier: its field is the OUT-positive source field
+transported by the reversal of `(i_d, i_q, ξ_d, ξ_q)`, with the current references reversed. -/
+@[powerlib_foundation] theorem lift_ccField_eq_transport (q : CCParams) :
+    Dynamics.lift q.ccField =
+      Dynamics.transportField (Dynamics.matrixCoord ccReversal ccReversal_isUnit) 0
+        (Dynamics.lift
+          ({ q with idRef := -q.idRef, iqRef := -q.iqRef } : CCParams).literatureCCField) := by
+  have hinv : ccReversal⁻¹ = ccReversal := Matrix.inv_eq_left_inv ccReversal_mul_self
+  funext y
+  apply WithLp.ofLp_injective
+  ext i
+  simp only [Dynamics.transportField, sub_zero, Dynamics.ofLp_matrixCoord,
+    Dynamics.matrixCoord_symm_apply, hinv]
+  fin_cases i <;>
+    simp [Dynamics.lift, CCParams.ccField, CCParams.literatureCCField, CCParams.uSol,
+      CCParams.vqSol, CCParams.piD, CCParams.piQ, ccReversal, Matrix.mulVec_diagonal,
+      -mul_eq_mul_left_iff] <;> ring
 
 /-! ## Two-state rate carrier with line resistance -/
 
 /-- Loop relation of the rate-coupled two-state carrier with line resistance `R_g` and a constant
-q-axis current `i_q` (`L_g i̇_q = 0`): `v_q = −V sin θ + R_g i_q + X_g I_d + L_g u I_d`,
-`u = k_p v_q + k_i x` (OUT-positive, as `GFL.RatePLL`). -/
+q-axis current `i_q` (`L_g i̇_q = 0`), currents into the converter (as `GFL.RatePLL`): line
+`v = v_g − R_g i − ω₁ L_g J i − L_g i̇`, i.e. `v_q = −V sin θ − R_g i_q − X_g i_d − L_g u i_d`,
+`u = k_p v_q + k_i x`. -/
 def RateRel (p : RatePLL.Params) (Rg iq θ x vq u : ℝ) : Prop :=
-  vq = -p.V * sin θ + Rg * iq + p.Xg * p.Id + p.Lg * u * p.Id ∧ u = p.kp * vq + p.ki * x
+  vq = -p.V * sin θ - Rg * iq - p.Xg * p.Id - p.Lg * u * p.Id ∧ u = p.kp * vq + p.ki * x
 
-/-- Solution of the `D₀` loop with `R_g`, `i_q`: `D₀ u = k_p(−V sin θ + R_g i_q + X_g I_d) + k_i x`;
-`D₀ = 1 − k_p L_g I_d` contains neither `R_g` nor `i_q`. -/
+/-- Solution of the `D₀` loop with `R_g`, `i_q`: `D₀ u = k_p(−V sin θ − R_g i_q − X_g i_d) + k_i x`;
+`D₀ = 1 + k_p L_g i_d` contains neither `R_g` nor `i_q`. -/
 @[powerlib_foundation] theorem rateRel_iff (p : RatePLL.Params) (hD0 : p.D0 ≠ 0)
     (Rg iq θ x vq u : ℝ) :
     RateRel p Rg iq θ x vq u ↔
-      u = (p.kp * (RatePLL.gridQ p θ + Rg * iq) + p.ki * x) / p.D0 ∧
-        vq = RatePLL.gridQ p θ + Rg * iq + p.Lg * u * p.Id := by
-  have hD : p.D0 = 1 - p.kp * p.Lg * p.Id := rfl
+      u = (p.kp * (RatePLL.gridQ p θ - Rg * iq) + p.ki * x) / p.D0 ∧
+        vq = RatePLL.gridQ p θ - Rg * iq - p.Lg * u * p.Id := by
+  have hD : p.D0 = 1 + p.kp * p.Lg * p.Id := rfl
   unfold RateRel RatePLL.gridQ
   constructor
   · rintro ⟨h1, h2⟩
@@ -238,7 +300,7 @@ the one of the `R_g`-free model `RatePLL` (`θ̇ = pllOut`, `v_q = RatePLL.vq`).
     (Rg θ x vq u : ℝ) :
     RateRel p Rg 0 θ x vq u ↔ u = RatePLL.pllOut p θ x ∧ vq = RatePLL.vq p θ x := by
   rw [rateRel_iff p hD0]
-  simp only [mul_zero, add_zero, RatePLL.pllOut, RatePLL.vq]
+  simp only [mul_zero, sub_zero, RatePLL.pllOut, RatePLL.vq]
   constructor
   · rintro ⟨h1, h2⟩; exact ⟨h1, by rw [h2, h1]⟩
   · rintro ⟨h1, h2⟩; exact ⟨h1, by rw [h2, h1]⟩

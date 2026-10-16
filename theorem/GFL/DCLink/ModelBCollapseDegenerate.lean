@@ -12,6 +12,8 @@ treats the discriminant `D = H² + 4G = 0` (`planeDisc`) left open in
 `theorem/GFL/DCLink/ModelBCollapse.lean`, with `q = planeQ`, `G = planeG`, `H = planeH` as there
 (`V_dc V_dc' = q`, `q' = G + H q / V_dc` off the plane).
 
+Convention: port current IN-positive (work-sync conventions §D1), as in `ModelBStability`.
+
 Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (model B); the analysis is new
 (answers the residual case of the `V_dc* = 0` question). Candidate behaviour checked numerically
 (untrusted); Lean proves every statement.

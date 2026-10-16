@@ -6,13 +6,17 @@ import theorem.Dynamics.Degenerate.WeakFocus
 
 /-! # Rate-coupled GFL PLL at the boundary angle: Hopf normal form
 
+Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
+Scaffold: `theorem/CurrentDirection.agda`.
+
 Model boundary.
 The model of `theorem/GFL/RatePLL.lean`, unchanged: a single
 grid-following converter on an infinite bus of amplitude `V` behind a lossless inductive line
 `X_g = ω_s L_g`; three-phase balanced averaged dq model in the PLL frame, continuous time. States,
 in order: `θ` (PLL error angle), `x` (PLL integrator). Ideal current loop with the d-axis current
-`I_d` a frozen parameter (OUT-positive), `I_q = 0`; the only line dynamics kept is the speed-EMF
-coupling `L_g u I_d`; SRF-PLL `u = k_p v_q + k_i x`, `D₀ = 1 − k_p L_g I_d`. No PWM, delay,
+`i_d` (into the converter) a frozen parameter, `I_q = 0`; the only line dynamics kept is the
+speed-EMF coupling `−L_g u i_d`, `v_q = −V sin θ − X_g i_d − L_g u i_d`; SRF-PLL
+`u = k_p v_q + k_i x`, `D₀ = 1 + k_p L_g i_d`. No PWM, delay,
 limiter, dc link, outer loop, line resistance or `L_f`. Every parameter is an arbitrary real, as
 in `RatePLL.family`. All statements are local, about the full nonlinear field translated to the
 selected point `(θ*, 0)` (`RatePLL.Model.field`).
@@ -23,7 +27,7 @@ lyap1 网格); model `GFLRate` in `.../archive/simulation/src/gfl_gfm_contrast_s
 Normal form and `κ` derived in SymPy (Kuznetsov's planar `l₁` formula cross-checked numerically).
 
 Results.
-Normal form (static). Write `A = V cos θ*`, `B = V sin θ*`, `b = L_g I_d`, `α = k_i/D₀`,
+Normal form (static). Write `A = V cos θ*`, `B = V sin θ*`, `b = −L_g i_d`, `α = k_i/D₀`,
 `β = k_p/D₀`, `φ = θ − θ*`, `w = x − b φ` and `N(φ) = A(φ − sin φ) + B(1 − cos φ)` (`hopfN`). At a
 balanced point the corrected integrator obeys `ẇ = −Aφ + N(φ)` exactly, and on the boundary
 `tr J = 0` (i.e. `k_i b = k_p A`, the angle `tan θ* = ω_s k_p/k_i` of `RatePLL`) the angle obeys
@@ -55,11 +59,11 @@ Family and connection conclusions.
   `k_p k_i < 0`)). The remaining cases fail: non-equilibrium (unstable); `D₀ = 0` (frozen angle);
   `det J < 0` or `tr J > 0` (linear instability); `det J = 0` (a line of equilibria for `k_i = 0`
   or `V = 0`, `Dynamics.not_localAsymptoticStable_of_equilibria`; the fold `cos θ* = 0`, where
-  `x − L_g I_d θ` is monotone along the flow, `ẇ = V sin θ*(1 − cos φ)`); `tr J = 0` with `k_p = 0`
+  `x + L_g i_d θ` is monotone along the flow, `ẇ = V sin θ*(1 − cos φ)`); `tr J = 0` with `k_p = 0`
   (conserved energy `α w²/2 + A(1 − cos φ) − B(φ − sin φ)`) or `k_p k_i > 0` (subcritical).
 * `not_exact_locallyAsymptoticallyStable`: the local asymptotic translation of `RatePLL.family`
   (`{equilibrium, jacobianStable}`) is **not exact**. Witness `supercriticalPLL`
-  (`V = √2`, `X_g = ω_s = 1`, `k_p = −1/2`, `k_i = 1/2`, `I_d = −1`, `θ* = −π/4`; `D₀ = 1/2`,
+  (`V = √2`, `X_g = ω_s = 1`, `k_p = −1/2`, `k_i = 1/2`, `i_d = 1`, `θ* = −π/4`; `D₀ = 1/2`,
   `tr J = 0`, `det J = 1`), locally asymptotically stable
   (`supercriticalPLL_mem_den_locallyAsymptoticallyStable`) with a trace-zero Jacobian.
 
@@ -387,7 +391,7 @@ end NormalForm
 
 section Boundary
 
-private theorem gridQ_shift (p : Params) {θ : ℝ} (heq : p.V * Real.sin θ = p.Xg * p.Id)
+private theorem gridQ_shift (p : Params) {θ : ℝ} (heq : p.V * Real.sin θ = -(p.Xg * p.Id))
     (φ : ℝ) : gridQ p (φ + θ) =
       -(p.V * Real.cos θ) * φ + hopfN (p.V * Real.cos θ) (p.V * Real.sin θ) φ := by
   unfold gridQ hopfN
@@ -399,29 +403,30 @@ private theorem model_field0 (m : Model) (z : Dynamics.State 2) :
   simp [Model.field, RatePLL.field, Dynamics.lift, coordField, equilibrium, pllOut]
 
 private theorem model_field1 (m : Model) (z : Dynamics.State 2) :
-    m.field z 1 = gridQ m.params (z 0 + m.θ) + m.params.Lg * m.field z 0 * m.params.Id := by
+    m.field z 1 = gridQ m.params (z 0 + m.θ) - m.params.Lg * m.field z 0 * m.params.Id := by
   simp [Model.field, RatePLL.field, Dynamics.lift, coordField, equilibrium, pllOut, vq]
 
 private theorem contDiff_model_field (m : Model) : ContDiff ℝ 1 m.field :=
   (contDiff_field m.params).comp (contDiff_id.add contDiff_const)
 
-/-- `ẇ = ḣ`: the PLL integrator corrected by the speed-EMF term, `w = x − L_g I_d θ`, is driven by
+/-- `ẇ = ḣ`: the PLL integrator corrected by the speed-EMF term, `w = x + L_g i_d θ`, is driven by
 the grid q-voltage alone. -/
-private theorem model_hg1 {m : Model} (heq : m.params.V * Real.sin m.θ = m.params.Xg * m.params.Id)
-    (z : Dynamics.State 2) :
-    m.field z 1 - m.params.Lg * m.params.Id * m.field z 0 =
+private theorem model_hg1 {m : Model}
+    (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (z : Dynamics.State 2) :
+    m.field z 1 - -(m.params.Lg * m.params.Id) * m.field z 0 =
       -(m.params.V * Real.cos m.θ) * z 0 +
         hopfN (m.params.V * Real.cos m.θ) (m.params.V * Real.sin m.θ) (z 0) := by
   rw [model_field1, ← gridQ_shift m.params heq]
   ring
 
 /-- On the boundary (`tr J = 0`) the angle equation is `θ̇ = α w + β N(φ)`. -/
-private theorem model_hg0 {m : Model} (heq : m.params.V * Real.sin m.θ = m.params.Xg * m.params.Id)
+private theorem model_hg0 {m : Model}
+    (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id))
     (hD0 : m.params.D0 ≠ 0) (htr : (jac m.params m.θ).trace = 0) (z : Dynamics.State 2) :
-    m.field z 0 = m.params.ki / m.params.D0 * (z 1 - m.params.Lg * m.params.Id * z 0) +
+    m.field z 0 = m.params.ki / m.params.D0 * (z 1 - -(m.params.Lg * m.params.Id) * z 0) +
       m.params.kp / m.params.D0 *
         hopfN (m.params.V * Real.cos m.θ) (m.params.V * Real.sin m.θ) (z 0) := by
-  have htr' : -m.params.kp * m.params.V * Real.cos m.θ + m.params.ki * m.params.Lg * m.params.Id
+  have htr' : -m.params.kp * m.params.V * Real.cos m.θ - m.params.ki * m.params.Lg * m.params.Id
       = 0 := by
     rw [trace_jac, div_eq_zero_iff] at htr
     exact htr.resolve_right hD0
@@ -520,12 +525,13 @@ private theorem frequently_single (i : Fin 2) {c : ℝ} (hc : c ≠ 0) {P : Dyna
   linarith
 
 /-- An equilibrium of the translated field with a nondegenerate loop is balanced. -/
-private theorem balance_of_model_field_zero {m : Model} (h : m.field 0 = 0) : m.params.V * Real.sin m.θ = m.params.Xg * m.params.Id := by
+private theorem balance_of_model_field_zero {m : Model} (h : m.field 0 = 0) :
+    m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id) := by
   have h0 := congrArg (fun y : Dynamics.State 2 => y 0) h
   have h1 := congrArg (fun y : Dynamics.State 2 => y 1) h
   simp only [PiLp.zero_apply] at h0 h1
   rw [model_field1, h0] at h1
-  simp only [PiLp.zero_apply, zero_add, mul_zero, zero_mul, add_zero] at h1
+  simp only [PiLp.zero_apply, zero_add, mul_zero, zero_mul, sub_zero] at h1
   unfold gridQ at h1
   linarith
 
@@ -547,7 +553,7 @@ private theorem not_las_of_D0_eq_zero {m : Model} (hD0 : m.params.D0 = 0) :
 /-- A singular Jacobian (`det J = 0`) at a balanced point with `D₀ ≠ 0`: no local asymptotic
 stability (a line of equilibria for `k_i = 0` or `V = 0`, the fold `cos θ* = 0` otherwise). -/
 private theorem not_las_of_det_eq_zero {m : Model}
-    (heq : m.params.V * Real.sin m.θ = m.params.Xg * m.params.Id) (hD0 : m.params.D0 ≠ 0)
+    (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
     (hdet : (jac m.params m.θ).det = 0) : ¬ LocalAsymptoticStable m.field 0 := by
   rw [det_jac m.params hD0, div_eq_zero_iff] at hdet
   have hkvc : m.params.ki * m.params.V * Real.cos m.θ = 0 := hdet.resolve_right hD0
@@ -590,7 +596,7 @@ private theorem not_las_of_det_eq_zero {m : Model}
       · simpa using h0
       · simp only [Fin.mk_one, PiLp.zero_apply]
         rw [model_field1, h0]; simp [hq0]
-  -- the fold `cos θ* = 0`: `w = x − L_g I_d θ` is monotone, `ẇ = V sin θ* (1 − cos φ)`
+  -- the fold `cos θ* = 0`: `w = x + L_g i_d θ` is monotone, `ẇ = V sin θ* (1 − cos φ)`
   have hc : Real.cos m.θ = 0 := by
     rcases mul_eq_zero.mp hkvc with h | h
     · rcases mul_eq_zero.mp h with h | h
@@ -598,7 +604,7 @@ private theorem not_las_of_det_eq_zero {m : Model}
       · exact absurd h hV
     · exact h
   set B := m.params.V * Real.sin m.θ with hB
-  set b := m.params.Lg * m.params.Id with hb
+  set b := -(m.params.Lg * m.params.Id) with hb
   have hBne : B ≠ 0 := by
     intro h
     have hs : Real.sin m.θ = 0 := (mul_eq_zero.mp h).resolve_left hV
@@ -630,7 +636,7 @@ private theorem not_las_of_det_eq_zero {m : Model}
 
 /-- A supercritical boundary point (`k_p k_i < 0`) is locally asymptotically stable. -/
 private theorem las_of_hopf {m : Model}
-    (heq : m.params.V * Real.sin m.θ = m.params.Xg * m.params.Id) (hD0 : m.params.D0 ≠ 0)
+    (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hk : m.params.kp * m.params.ki < 0) : LocalAsymptoticStable m.field 0 := by
   obtain ⟨hA, hα, hq⟩ := model_ratio_pos hD0 hdet
@@ -639,7 +645,7 @@ private theorem las_of_hopf {m : Model}
 
 /-- A subcritical boundary point (`k_p k_i > 0`) is unstable. -/
 private theorem unstable_of_hopf {m : Model}
-    (heq : m.params.V * Real.sin m.θ = m.params.Xg * m.params.Id) (hD0 : m.params.D0 ≠ 0)
+    (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hk : 0 < m.params.kp * m.params.ki) : Unstable m.field 0 := by
   obtain ⟨hA, hα, hq⟩ := model_ratio_pos hD0 hdet
@@ -648,7 +654,7 @@ private theorem unstable_of_hopf {m : Model}
 
 /-- A boundary point without proportional gain (`k_p = 0`) conserves an energy. -/
 private theorem not_las_of_hopf_kp_eq_zero {m : Model}
-    (heq : m.params.V * Real.sin m.θ = m.params.Xg * m.params.Id) (hD0 : m.params.D0 ≠ 0)
+    (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hkp : m.params.kp = 0) : ¬ LocalAsymptoticStable m.field 0 := by
   obtain ⟨-, hα, -⟩ := model_ratio_pos hD0 hdet
@@ -665,7 +671,7 @@ imaginary pair `± j √det J`, yet the operating point is locally asymptoticall
 normal-form polynomial `hopfW` has derivative `−κ (φ² + (α/A) w²)² + O(s⁵)` with
 `κ = −k_p V² / (16 D₀ V cos θ*) > 0`. -/
 @[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_of_hopf (m : Model)
-    (heq : m.params.V * Real.sin m.θ = m.params.Xg * m.params.Id) (hD0 : m.params.D0 ≠ 0)
+    (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hk : m.params.kp * m.params.ki < 0) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
@@ -676,7 +682,7 @@ normal-form polynomial `hopfW` has derivative `−κ (φ² + (α/A) w²)² + O(s
 /-- Rate-coupled GFL PLL on the boundary `tr J = 0` with gains of equal signs, `k_p k_i > 0`: a
 subcritical Hopf point, unstable (Chetaev with the normal-form polynomial, `κ < 0`). -/
 @[powerlib_domain] theorem mem_den_unstable_of_hopf (m : Model)
-    (heq : m.params.V * Real.sin m.θ = m.params.Xg * m.params.Id) (hD0 : m.params.D0 ≠ 0)
+    (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hk : 0 < m.params.kp * m.params.ki) :
     connection% (m ∈ family.den (.flow .unstable)) := by
@@ -689,7 +695,7 @@ exactly at the boundary angle `tan θ = ω_s k_p / k_i`: the operating point is 
 (subcritical Hopf). -/
 @[powerlib_domain] theorem mem_den_unstable_of_tan_eq (p : Params) (hD0 : 0 < p.D0)
     (hV : 0 < p.V) (hkp : 0 < p.kp) (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ}
-    (hcos : 0 < Real.cos θ) (heq : p.V * Real.sin θ = p.Xg * p.Id)
+    (hcos : 0 < Real.cos θ) (heq : p.V * Real.sin θ = -(p.Xg * p.Id))
     (htan : Real.tan θ = p.ωs * p.kp / p.ki) :
     connection% (Model.mk p θ ∈ family.den (.flow .unstable)) := by
   obtain ⟨htr, hdet, -⟩ := imaginary_pair_at_boundary p hD0 hV hki hωs hcos heq htan
@@ -697,10 +703,10 @@ exactly at the boundary angle `tan θ = ω_s k_p / k_i`: the operating point is 
 
 /-- With physical gains the operating point is locally asymptotically stable exactly below the
 boundary angle: `tan θ < ω_s k_p / k_i` (`V, k_p, k_i, ω_s > 0`, `D₀ > 0`, `cos θ > 0`,
-`V sin θ = X_g I_d`). -/
+`V sin θ = −X_g i_d`). -/
 @[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_tan_lt (p : Params)
     (hD0 : 0 < p.D0) (hV : 0 < p.V) (hkp : 0 < p.kp) (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ}
-    (hcos : 0 < Real.cos θ) (heq : p.V * Real.sin θ = p.Xg * p.Id) :
+    (hcos : 0 < Real.cos θ) (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     connection% (Model.mk p θ ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
       Model.mk p θ ∈ {m : Model | Real.tan m.θ < m.params.ωs * m.params.kp / m.params.ki}) := by
   unfold powerlib.TMIO.Statement
@@ -727,15 +733,15 @@ boundary angle: `tan θ < ω_s k_p / k_i` (`V, k_p, k_i, ω_s > 0`, `D₀ > 0`, 
 
 /-- **Complete membership of the local asymptotic sentence.** A rate-coupled PLL model is locally
 asymptotically stable at `(θ*, 0)` exactly when the point is balanced with a nondegenerate loop
-(`V sin θ* = X_g I_d`, `D₀ ≠ 0`), `det J > 0`, and either `tr J < 0` (Hurwitz) or `tr J = 0` with
+(`V sin θ* = −X_g i_d`, `D₀ ≠ 0`), `det J > 0`, and either `tr J < 0` (Hurwitz) or `tr J = 0` with
 gains of opposite signs (`k_p k_i < 0`, supercritical Hopf). Everything else fails: a
 non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear instability);
 `det J = 0` (a line of equilibria for `k_i = 0` or `V = 0`, the monotone fold coordinate
-`x − L_g I_d θ` for `cos θ* = 0`); `tr J = 0` with `k_p = 0` (conserved energy) or `k_p k_i > 0`
+`x + L_g i_d θ` for `cos θ* = 0`); `tr J = 0` with `k_p = 0` (conserved energy) or `k_p k_i > 0`
 (subcritical Hopf). -/
 @[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff (m : Model) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
-      m ∈ {m : Model | (m.params.V * Real.sin m.θ = m.params.Xg * m.params.Id ∧
+      m ∈ {m : Model | (m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id) ∧
         m.params.D0 ≠ 0) ∧ 0 < (jac m.params m.θ).det ∧ ((jac m.params m.θ).trace < 0 ∨
           ((jac m.params m.θ).trace = 0 ∧ m.params.kp * m.params.ki < 0))}) := by
   unfold powerlib.TMIO.Statement
@@ -792,13 +798,13 @@ non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear 
 /-! ### The local asymptotic translation is not exact -/
 
 /-- A supercritical boundary PLL: `V = √2`, `X_g = ω_s = 1`, `k_p = −1/2`, `k_i = 1/2`,
-`I_d = −1` (so `L_g I_d = −1`, `D₀ = 1/2`) at `θ* = −π/4`. Balanced (`V sin θ* = −1 = X_g I_d`),
-`tr J = 0`, `det J = 1`, `k_p k_i = −1/4`. -/
-def supercriticalPLL : Model := ⟨⟨Real.sqrt 2, 1, 1, -1 / 2, 1 / 2, -1⟩, -(Real.pi / 4)⟩
+`i_d = 1` (so `L_g i_d = 1`, `D₀ = 1/2`; the OUT-positive source point `I_d = −1`) at
+`θ* = −π/4`. Balanced (`V sin θ* = −1 = −X_g i_d`), `tr J = 0`, `det J = 1`, `k_p k_i = −1/4`. -/
+def supercriticalPLL : Model := ⟨⟨Real.sqrt 2, 1, 1, -1 / 2, 1 / 2, 1⟩, -(Real.pi / 4)⟩
 
 private theorem supercriticalPLL_data :
     supercriticalPLL.params.V * Real.sin supercriticalPLL.θ =
-        supercriticalPLL.params.Xg * supercriticalPLL.params.Id ∧
+        -(supercriticalPLL.params.Xg * supercriticalPLL.params.Id) ∧
       supercriticalPLL.params.D0 ≠ 0 ∧ (jac supercriticalPLL.params supercriticalPLL.θ).trace = 0 ∧
       0 < (jac supercriticalPLL.params supercriticalPLL.θ).det ∧
       supercriticalPLL.params.kp * supercriticalPLL.params.ki < 0 := by

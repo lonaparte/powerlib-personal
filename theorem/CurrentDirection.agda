@@ -16,10 +16,15 @@ module theorem.CurrentDirection where
 -- requirement languages correspond by restating each requirement (a sign condition on a directed
 -- quantity flips, e.g. `0 ≤ L_g I_d` becomes `L_g i_d ≤ 0`). Then every exactness and soundness
 -- result passes between the writings (`exact-rewritten`, `sound-rewritten`); the dispatch law
--- `i̇ = k_P (P_ref − P)` keeps its form because both sides flip. Lean writes the families
--- IN-positive and proves the conjugacy against the literature (OUT-positive) form, the §D8
+-- `i̇ = k_P (P_ref − P)` keeps its form because both sides flip. The library keeps one writing:
+-- Lean writes the families IN-positive (`GFL.PowerLoop.QuasiStatic`, `GFL.RatePLL`,
+-- `GFL.ModelLayers`, `GFL.LCLine.*`) and keeps the OUT writing only as the literature field of
+-- each model, with the conjugacy against it (`field_eq_transport_literatureField`,
+-- `field_eq_literatureField`, `lift_ccField_eq_transport`,
+-- `field10_eq_transport_literatureField10`, `field13_eq_transport_literatureField13`), the §D8
 -- boundary translation; the structure the reversal must preserve (linearity of the field in the
--- directed quantities, jointly) is what that proof checks. Nothing here is exported.
+-- directed quantities, jointly) is what those proofs check. With one writing, the family-level
+-- transfer of this scaffold is not needed in Lean. Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv

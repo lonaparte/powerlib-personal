@@ -11,6 +11,8 @@ The three-state VSM + low-pass field `(δ, ω, P_f)` of the contrast note's `GFM
 law `E(δ)` with PCC or internal-emf Q-sensing), its characteristic polynomial
 `(s + ω_c)(M s² + D s) + ω_c K` and the transfer `T_exact`; polynomial identities over `ℂ`.
 
+Convention: active power export-positive (GFM family exception, work-sync conventions §D9).
+
 Source: work-sync `projects/vsc-parametric-oscillation/references/gfl-gfm-contrast/
 gfl-gfm-parametric-contrast.md` §17; `.../gfl-gfm-contrast/archive/notes/concepts/
 contrast-conclusions.md` 推论三 (`K_q = 0` 严格零), model `GFM` in

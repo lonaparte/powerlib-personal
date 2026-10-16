@@ -3,6 +3,9 @@ import theorem.SpecialFunctions.Sinusoid
 
 /-! # Equilibrium count, saddle-node surface and fold of the GFL-PLL model
 
+Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
+Scaffold: `theorem/CurrentDirection.agda`.
+
 Domain module.
 
 Model boundary.
@@ -23,8 +26,9 @@ Per period window `[a, a + 2π)` of the angle `θ_e`:
 * `fold_equilibrium_per_period` (`|c₀| = A`): exactly one equilibrium; its Jacobian is the
   nonzero nilpotent `[[0, K_i], [0, 0]]` (saddle-node / fold).
 * `no_equilibrium` (`|c₀| > A`): the reduced field has no equilibrium.
-* `snSurface_iff` and companions: `|c₀| = A ⇔ [((1 − b) i_d* + a i_q*) − Δ i_d*]² =
-  (ω_g C_f V_g)² Δ` (and the corresponding strict inequalities).
+* `snSurface_iff` and companions: `|c₀| = A ⇔ [Δ i_d* − ((1 − b) i_d* + a i_q*)]² =
+  (ω_g C_f V_g)² Δ` (IN-positive references; the square is the same for the source's
+  `i*_out = −i*`), and the corresponding strict inequalities.
 * `field10_exists_equilibrium_iff`: the complete 10-state field has an equilibrium iff `|c₀| ≤ A`.
 
 Family and connection conclusions.
@@ -152,8 +156,8 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-! ### The saddle-node surface in explicit parameters -/
 
-/-- `N = ((1 − b) i_d* + a i_q*) − Δ i_d*`, so that `c₀ = N/(Δ ω_g C_f)`. -/
-def snNumerator : ℝ := ((1 - p.b) * p.idRef + p.a * p.iqRef) - p.Δ * p.idRef
+/-- `N = Δ i_d* − ((1 − b) i_d* + a i_q*)`, so that `c₀ = N/(Δ ω_g C_f)`. -/
+def snNumerator : ℝ := p.Δ * p.idRef - ((1 - p.b) * p.idRef + p.a * p.iqRef)
 
 @[powerlib_foundation] theorem c0_eq_snNumerator (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) :
     p.c0 = p.snNumerator / (p.Δ * p.wC) := by

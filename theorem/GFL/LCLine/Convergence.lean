@@ -4,6 +4,9 @@ import Mathlib.Topology.MetricSpace.Sequences
 
 /-! # Bounded solutions of the reduced GFL-PLL model converge; node / focus classification
 
+Port current IN-positive (work-sync conventions §D1), as in `theorem/GFL/LCLine/Reduction.lean`;
+no statement here involves a current.
+
 Domain module (`vsc-stochastic-stability`, reduced model of `theorem/GFL/LCLine/Reduced2D.lean`).
 
 Model boundary.

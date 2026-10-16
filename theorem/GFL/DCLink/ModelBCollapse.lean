@@ -11,6 +11,8 @@ filters), read at a selected state `x*` on the singular plane `V_dc* = 0`, where
 with Lean's `x / 0 = 0` (DC-link component `I₀ / C_dc`). This module settles the case left open in
 `theorem/GFL/DCLink/ModelBStability.lean`: the degenerate power balance `P(x*) = 0` (`P = pccP`).
 
+Convention: port current IN-positive (work-sync conventions §D1), as in `ModelBStability`.
+
 Source: work-sync `theory/T-gfl-reduced-order-dynamics.md` §1.6 (model B); the reduction is new
 (answers the residual case of the `V_dc* = 0` question). Candidate analysis checked numerically
 (untrusted); Lean proves every statement.
