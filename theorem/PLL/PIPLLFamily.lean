@@ -4,6 +4,7 @@ import theorem.Family.Basic
 import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.LaSalle.Passivity
+import theorem.Spectral.Local
 
 /-! # The PI-PLL family
 
@@ -202,11 +203,9 @@ language is inconsistent. -/
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
-  obtain ⟨h1, h2⟩ : Meets m .slopeStable := h .slopeStable
-  rcases (h .slopeUnstable : Meets m .slopeUnstable) with h3 | h3 <;> linarith
+  refine Spectral.realize_univ_eq_empty_of .slopeStable .slopeUnstable fun m hs hu => ?_
+  obtain ⟨h1, h2⟩ : Meets m .slopeStable := hs
+  rcases (hu : Meets m .slopeUnstable) with h3 | h3 <;> linarith
 
 /-- Every translation of the PI-PLL family is sound: its translation chain lies below its
 semantics connection. Negative slope-gain products at a phase-locked point prove the local
@@ -215,33 +214,16 @@ selected point, moved to the origin), and passivity holds without requirement. -
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  have hnone : (∀ q, Meets m q) → False := fun h => by
-    have hm' : m ∈ TMIO.realize Meets Set.univ := (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    rw [realize_univ] at hm'
-    exact hm'
-  rcases s with P | _
-  · have hles : Meets m .phaseLocked → Meets m .slopeStable →
-        LocallyExponentiallyStable m.field 0 := fun hp hs =>
-      family_isAutonomous.mem_den_flow.mp (les_of_meets hp hs)
-    rw [family_isAutonomous.mem_den_flow]
-    cases P
-    case lyapunovStable =>
-      exact (hles (hm .phaseLocked (by simp [translate]))
-        (hm .slopeStable (by simp [translate]))).lyapunovStable
-    case locallyAsymptoticallyStable =>
-      exact Flow.locallyExponentiallyStable_localAsymptoticStable
-        (hles (hm .phaseLocked (by simp [translate])) (hm .slopeStable (by simp [translate])))
-    case locallyExponentiallyStable =>
-      exact hles (hm .phaseLocked (by simp [translate])) (hm .slopeStable (by simp [translate]))
-    case unstable =>
-      exact family_isAutonomous.mem_den_flow.mp (unstable_of_meets
-        (hm .phaseLocked (by simp [translate])) (hm .slopeUnstable (by simp [translate])))
-    all_goals exact (hnone fun q => hm q trivial).elim
-  · rw [family_isAutonomous.den_passive]
-    trivial
+  refine Spectral.chain_le_semantics_of_localTable_same (Rs := {.phaseLocked, .slopeStable})
+    (Ru := {.phaseLocked, .slopeUnstable}) (fun s => ?_) realize_univ (fun m hm => ?_)
+    (fun m hm => ?_) family_isAutonomous.den_passive
+  · rcases s with P | _
+    · cases P <;> rfl
+    · rfl
+  · rw [TMIO.mem_realize] at hm
+    exact les_of_meets (hm .phaseLocked (by simp)) (hm .slopeStable (by simp))
+  · rw [TMIO.mem_realize] at hm
+    exact unstable_of_meets (hm .phaseLocked (by simp)) (hm .slopeUnstable (by simp))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
@@ -256,15 +238,19 @@ Jacobian `[[K_p g, K_i], [g, 0]]`. -/
 @[powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  rw [TMIO.mem_realize, mem_den_flow_iff]
-  have hJac := fderiv_piPLLField (Kp := m.Kp) (Ki := m.Ki) (δω := m.δω) (x := m.point)
-    (m.hasDerivAt (m.point 0))
-  change _ ↔ LocallyExponentiallyStable _ _
-  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _
-    (contDiff_piPLLField m.smooth) hJac, piPLLJacobian_isHurwitz_iff, Model.point,
-    piPLLField_point_eq_zero_iff]
-  simp [family, translate, Meets, PhasePlane.mk]
+  refine Spectral.exact_of_exactUnder_empty (Spectral.exactUnder_les_of_jacobian
+    (fun m P => mem_den_flow_iff) ∅ (fun m => piPLLJacobian m.Kp m.Ki (deriv m.h (m.point 0)))
+    (fun m _ hm => ?_) (fun m _ => contDiff_piPLLField m.smooth)
+    (fun m _ => fderiv_piPLLField (m.hasDerivAt (m.point 0))) fun m _ heq hH => ?_)
+  · rw [TMIO.mem_realize] at hm
+    exact les_of_meets (hm .phaseLocked (by simp [family, translate]))
+      (hm .slopeStable (by simp [family, translate]))
+  rw [Model.point, piPLLField_point_eq_zero_iff] at heq
+  rw [piPLLJacobian_isHurwitz_iff, Model.point, PhasePlane.mk_apply_zero] at hH
+  rw [TMIO.mem_realize]
+  rintro q (rfl | rfl)
+  · exact heq
+  · exact hH
 
 /-! ### Members of the local denotations -/
 
@@ -393,13 +379,8 @@ is empty while the linear detector satisfies the sentence. -/
 @[powerlib_domain] theorem not_exact_globallyExponentiallyStable :
     connection% (¬ family.Exact (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := linearModel_mem_den_globallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h] at hmem
-  change linearModel ∈ TMIO.realize Meets Set.univ at hmem
-  rw [realize_univ] at hmem
-  exact hmem
+  exact Spectral.not_exact_of_witness linearModel_mem_den_globallyExponentiallyStable
+    (q := .slopeUnstable) trivial (by simp [family, Meets, linearModel])
 
 /-! ### A degenerate slope: where the local connections part -/
 
@@ -470,14 +451,8 @@ phase-locked point with zero slope, which meets no slope-gain requirement. -/
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := cubicDetector_mem_den_lyapunovStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have hs : Meets cubicDetector .slopeStable := hmem .slopeStable (by simp [family, translate])
-  have := hs.1
-  rw [cubicDetector_slope] at this
-  simp at this
+  exact Spectral.not_exact_of_witness cubicDetector_mem_den_lyapunovStable (q := .slopeStable)
+    (by simp [family, translate]) (by simp [family, Meets, cubicDetector_slope])
 
 /-! ### The degenerate slope is locally asymptotically stable -/
 
@@ -593,14 +568,8 @@ requirement. -/
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := cubicDetector_mem_den_locallyAsymptoticallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have hs : Meets cubicDetector .slopeStable := hmem .slopeStable (by simp [family, translate])
-  have := hs.1
-  rw [cubicDetector_slope] at this
-  simp at this
+  exact Spectral.not_exact_of_witness cubicDetector_mem_den_locallyAsymptoticallyStable
+    (q := .slopeStable) (by simp [family, translate]) (by simp [family, Meets, cubicDetector_slope])
 
 /-! ### Instability away from equilibrium -/
 
@@ -612,8 +581,8 @@ def offEquilibrium : Model := ⟨fun _ => 1, 0, 0, 0, 0, contDiff_const⟩
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero
-    (contDiff_piPLLField offEquilibrium.smooth) fun h => ?_)
+  refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff)
+    (contDiff_piPLLField offEquilibrium.smooth) fun h => ?_
   have := congrArg (fun y : ℝ² => y 1) h
   simp [offEquilibrium] at this
 
@@ -623,11 +592,7 @@ phase-locked point. -/
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := offEquilibrium_mem_den_unstable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have hp : Meets offEquilibrium .phaseLocked := hmem .phaseLocked (by simp [family, translate])
-  simp [Meets, offEquilibrium] at hp
+  exact Spectral.not_exact_of_witness offEquilibrium_mem_den_unstable (q := .phaseLocked)
+    (by simp [family, translate]) (by simp [family, Meets, offEquilibrium])
 
 end powerlib.PLL.PIPLL

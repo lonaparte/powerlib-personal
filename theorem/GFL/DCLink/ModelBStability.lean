@@ -760,11 +760,9 @@ language is inconsistent. -/
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
-  have h1 : RouthFin4 (m.p.jacobian m.x) := h .routh
-  have h2 : (m.p.jacobian m.x).det < 0 := h .detNeg
+  refine Spectral.realize_univ_eq_empty_of .routh .detNeg fun m hr hd => ?_
+  have h1 : RouthFin4 (m.p.jacobian m.x) := hr
+  have h2 : (m.p.jacobian m.x).det < 0 := hd
   linarith [h1.2.2.1]
 
 private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
@@ -779,36 +777,19 @@ which it agrees with model B), and passivity holds without requirement. -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  have hnone : (∀ q, Meets m q) → False := fun h => by
-    have hm' : m ∈ TMIO.realize Meets Set.univ := (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    rw [realize_univ] at hm'
-    exact hm'
-  rcases s with P | _
-  · have hles : Meets m .equilibrium → Meets m .positiveReference → Meets m .routh →
-        LocallyExponentiallyStable m.field 0 := fun he hV hr =>
-      family_isAutonomous.mem_den_flow.mp (les_of_meets he hV hr)
-    rw [family_isAutonomous.mem_den_flow]
-    cases P
-    case lyapunovStable =>
-      exact (hles (hm .equilibrium (by simp [translate])) (hm .positiveReference
-        (by simp [translate])) (hm .routh (by simp [translate]))).lyapunovStable
-    case locallyAsymptoticallyStable =>
-      exact Flow.locallyExponentiallyStable_localAsymptoticStable
-        (hles (hm .equilibrium (by simp [translate])) (hm .positiveReference
-          (by simp [translate])) (hm .routh (by simp [translate])))
-    case locallyExponentiallyStable =>
-      exact hles (hm .equilibrium (by simp [translate])) (hm .positiveReference
-        (by simp [translate])) (hm .routh (by simp [translate]))
-    case unstable =>
-      refine family_isAutonomous.mem_den_flow.mp (mem_den_flow_iff.mpr ?_)
-      exact m.p.modelB_unstable_of_det_neg (hm .positiveReference (by simp [translate]))
-        (hm .equilibrium (by simp [translate])) (hm .detNeg (by simp [translate]))
-    all_goals exact (hnone fun q => hm q trivial).elim
-  · rw [family_isAutonomous.den_passive]
-    trivial
+  refine Spectral.chain_le_semantics_of_localTable_same
+    (Rs := {.equilibrium, .positiveReference, .routh})
+    (Ru := {.equilibrium, .positiveReference, .detNeg})
+    (fun s => ?_) realize_univ (fun m hm => ?_) (fun m hm => ?_) family_isAutonomous.den_passive
+  · rcases s with P | _
+    · cases P <;> rfl
+    · rfl
+  · rw [TMIO.mem_realize] at hm
+    exact les_of_meets (hm .equilibrium (by simp)) (hm .positiveReference (by simp))
+      (hm .routh (by simp))
+  · rw [TMIO.mem_realize] at hm
+    exact mem_den_flow_iff.mpr (m.p.modelB_unstable_of_det_neg (hm .positiveReference (by simp))
+      (hm .equilibrium (by simp)) (hm .detNeg (by simp)))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
@@ -862,37 +843,29 @@ model B on a ball around the equilibrium, and the quartic Routh–Hurwitz criter
 @[powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
     connection% (family.ExactUnder {.equilibrium, .positiveReference}
       (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
-  change TMIO.realize Meets ({.equilibrium, .positiveReference, .routh} ∪
-    {.equilibrium, .positiveReference}) = _
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
-    Set.mem_inter_iff]
-  constructor
-  · intro h
-    have he : Meets m .equilibrium := h .equilibrium (by simp)
-    have hV : Meets m .positiveReference := h .positiveReference (by simp)
-    refine ⟨les_of_meets he hV (h .routh (by simp)), fun q hq => ?_⟩
-    rcases hq with rfl | rfl
-    · exact he
-    · exact hV
-  · rintro ⟨hd, hI⟩ q hq
-    have hx : m.p.field m.x = 0 := hI .equilibrium (by simp)
-    have hV : 0 < m.p.VdcRef := hI .positiveReference (by simp)
-    obtain ⟨-, hJ⟩ := m.p.regField_equilibrium_jacobian hV hx
-    have hles : LocallyExponentiallyStable m.p.regField m.x :=
-      Dynamics.locallyExponentiallyStable_of_eqOn_ball (by positivity)
-        (fun y hy => (m.p.field_eq_regField_of_mem_ball hV (m.p.equilibrium_Vdc hx)
-          (mem_ball_iff_norm.mpr hy)).symm)
-        (mem_den_flow_iff.mp hd)
-    have hA := Dynamics.isHurwitz_of_locallyExponentiallyStable _ (m.p.contDiff_regField hV) hJ
-      hles
-    rcases hq with ((rfl | rfl | rfl) | (rfl | rfl))
-    · exact hx
-    · exact hV
-    · exact (Criteria.isHurwitz_fin_four_iff _).mp hA
-    · exact hx
-    · exact hV
+  unfold powerlib.TMIO.Statement
+  have hΔ : ∀ m ∈ TMIO.realize family.meets {.equilibrium, .positiveReference},
+      m.p.field m.x = 0 ∧ 0 < m.p.VdcRef := fun m hm =>
+    ⟨(TMIO.mem_realize _ _ _).mp hm .equilibrium (by simp),
+      (TMIO.mem_realize _ _ _).mp hm .positiveReference (by simp)⟩
+  refine Spectral.exactUnder_les_of_jacobian_local (fun m P => mem_den_flow_iff)
+    {.equilibrium, .positiveReference} (fun m => m.p.jacobian m.x) (fun m _ hm => ?_)
+    (fun m => Metric.ball m.x (m.p.VdcRef / 4)) (fun _ _ => Metric.isOpen_ball)
+    (fun m hm => Metric.mem_ball_self (by linarith [(hΔ m hm).2]))
+    (fun m hm => (m.p.contDiff_regField (hΔ m hm).2).contDiffOn.congr fun y hy =>
+      m.p.field_eq_regField_of_mem_ball (hΔ m hm).2 (m.p.equilibrium_Vdc (hΔ m hm).1) hy)
+    (fun m hm => m.p.fderiv_field (by rw [m.p.equilibrium_Vdc (hΔ m hm).1]; exact (hΔ m hm).2.ne'))
+    fun m hm _ hH => ?_
+  · rw [TMIO.mem_realize] at hm
+    exact les_of_meets (hm .equilibrium (by simp [family, translate]))
+      (hm .positiveReference (by simp [family, translate]))
+      (hm .routh (by simp [family, translate]))
+  obtain ⟨hx, hV⟩ := hΔ m hm
+  rw [TMIO.mem_realize]
+  rintro q (rfl | rfl | rfl)
+  · exact hx
+  · exact hV
+  · exact (Criteria.isHurwitz_fin_four_iff _).mp hH
 
 /-! ### The local exponential translation without context -/
 
@@ -980,12 +953,8 @@ makes it exact (`not_exactUnder_equilibrium_locallyExponentiallyStable`). -/
 @[powerlib_domain] theorem not_exact_locallyExponentiallyStable :
     connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := negativeReference_mem_den_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have hV : Meets negativeReference .positiveReference :=
-    hmem .positiveReference (by simp [family, translate])
+  refine Spectral.not_exact_of_witness negativeReference_mem_den_locallyExponentiallyStable
+    (q := .positiveReference) (by simp [family, translate]) fun hV => ?_
   have : (0 : ℝ) < -1 := hV
   norm_num at this
 
@@ -993,25 +962,16 @@ makes it exact (`not_exactUnder_equilibrium_locallyExponentiallyStable`). -/
 the negative-reference converter is an equilibrium. -/
 @[powerlib_domain] theorem not_exactUnder_equilibrium_locallyExponentiallyStable :
     connection% (¬ family.ExactUnder {.equilibrium} (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
-  intro h
-  have hmem := negativeReference_mem_den_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  have hI : negativeReference ∈ TMIO.realize family.meets {.equilibrium} := by
-    rw [TMIO.mem_realize]
+  unfold powerlib.TMIO.Statement
+  refine Spectral.not_exactUnder_of_witness ?_ negativeReference_mem_den_locallyExponentiallyStable
+    (q := .positiveReference) (by simp [family, translate]) fun hV => ?_
+  · rw [TMIO.mem_realize]
     intro q hq
     rw [Set.mem_singleton_iff] at hq
     subst hq
     exact negativeReference_equilibrium
-  have h' : negativeReference ∈ TMIO.realize family.meets
-      (family.translate (.flow .locallyExponentiallyStable) ∪ {.equilibrium}) := by
-    rw [h]
-    exact ⟨hmem, hI⟩
-  rw [TMIO.mem_realize] at h'
-  have hV : Meets negativeReference .positiveReference :=
-    h' .positiveReference (by simp [family, translate])
-  have : (0 : ℝ) < -1 := hV
-  norm_num at this
+  · have : (0 : ℝ) < -1 := hV
+    norm_num at this
 
 /-- On the singular plane `V_dc = 0` (read with `x / 0 = 0`) an equilibrium is not locally
 asymptotically stable: there the DC-link and DC-loop components vanish identically, and the
@@ -1111,10 +1071,7 @@ equilibria of the plane form a curve through the point (along `Δθ` with
     connection% (m ∉ family.den (.flow .locallyExponentiallyStable)) := by
   have h := not_mem_den_locallyAsymptoticallyStable_of_Vdc_eq_zero m hx heq
   unfold powerlib.TMIO.Statement at h ⊢
-  intro hm
-  apply h
-  rw [family_isAutonomous.mem_den_flow] at hm ⊢
-  exact Flow.locallyExponentiallyStable_localAsymptoticStable hm
+  exact fun hm => h (Spectral.den_locallyExponentiallyStable_subset_las hm)
 
 /-! ### Selected states on the singular plane that are not equilibria -/
 
@@ -1238,82 +1195,54 @@ locally exponentially stable in the segment semantics. -/
   unfold powerlib.TMIO.Statement at h ⊢
   exact h
 
-/-- A member of a local denotation outside the equilibria, with positive reference, refutes
-exactness of the translation within the context of a positive reference. -/
-private theorem not_exactUnder_positiveReference_of_mem {P : Flow.Property}
-    (hP : family.translate (.flow P) = {.equilibrium, .positiveReference, .routh})
-    (hmem : collapsePoint ∈ family.den (.flow P)) :
-    ¬ family.ExactUnder {.positiveReference} (.flow P) := by
-  unfold Family.ExactUnder TMIO.ExactUnder
-  intro h
-  have hI : collapsePoint ∈ TMIO.realize family.meets {.positiveReference} := by
-    rw [TMIO.mem_realize]
-    intro q hq
-    rw [Set.mem_singleton_iff] at hq
-    subst hq
-    show (0 : ℝ) < collapsePoint.p.VdcRef
-    simp [collapsePoint]
-  have h' : collapsePoint ∈ TMIO.realize family.meets
-      (family.translate (.flow P) ∪ {.positiveReference}) := by
-    rw [h]
-    exact ⟨hmem, hI⟩
-  rw [TMIO.mem_realize, hP] at h'
-  exact collapsePoint_field_ne_zero (h' .equilibrium (by simp))
-
 /-- Within the context of a positive DC-voltage reference the local exponential translation is not
 exact: the collapse point is locally exponentially stable but not an equilibrium. The exact context
 is that of an equilibrium with positive reference (`exactUnder_locallyExponentiallyStable`). -/
 @[powerlib_domain] theorem not_exactUnder_positiveReference_locallyExponentiallyStable :
     connection% (¬ family.ExactUnder {.positiveReference} (.flow .locallyExponentiallyStable)) := by
-  have hmem := collapsePoint_mem_den_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hmem ⊢
-  exact not_exactUnder_positiveReference_of_mem rfl hmem
+  unfold powerlib.TMIO.Statement
+  exact Spectral.not_exactUnder_of_witness
+    (by simp [TMIO.mem_realize, family, Meets, collapsePoint])
+    collapsePoint_mem_den_locallyExponentiallyStable (q := Requirement.equilibrium)
+    (by simp [family, translate]) collapsePoint_field_ne_zero
 
 /-- Within the context of a positive DC-voltage reference the local asymptotic translation is not
 exact (the collapse point). -/
 @[powerlib_domain] theorem not_exactUnder_positiveReference_locallyAsymptoticallyStable :
     connection% (¬ family.ExactUnder {.positiveReference} (.flow .locallyAsymptoticallyStable)) := by
-  have hmem := collapsePoint_mem_den_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hmem ⊢
-  refine not_exactUnder_positiveReference_of_mem rfl ?_
-  rw [family_isAutonomous.mem_den_flow] at hmem ⊢
-  exact Flow.locallyExponentiallyStable_localAsymptoticStable hmem
+  unfold powerlib.TMIO.Statement
+  exact Spectral.not_exactUnder_of_les_witness
+    (by simp [TMIO.mem_realize, family, Meets, collapsePoint])
+    collapsePoint_mem_den_locallyExponentiallyStable (Or.inr rfl) (q := Requirement.equilibrium)
+    (by simp [family, translate]) collapsePoint_field_ne_zero
 
 /-- Within the context of a positive DC-voltage reference the Lyapunov translation is not exact
 (the collapse point). -/
 @[powerlib_domain] theorem not_exactUnder_positiveReference_lyapunovStable :
     connection% (¬ family.ExactUnder {.positiveReference} (.flow .lyapunovStable)) := by
-  have hmem := collapsePoint_mem_den_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hmem ⊢
-  refine not_exactUnder_positiveReference_of_mem rfl ?_
-  rw [family_isAutonomous.mem_den_flow] at hmem ⊢
-  exact hmem.lyapunovStable
+  unfold powerlib.TMIO.Statement
+  exact Spectral.not_exactUnder_of_les_witness
+    (by simp [TMIO.mem_realize, family, Meets, collapsePoint])
+    collapsePoint_mem_den_locallyExponentiallyStable (Or.inl rfl) (q := Requirement.equilibrium)
+    (by simp [family, translate]) collapsePoint_field_ne_zero
 
 /-- The local asymptotic translation is not exact (the negative-reference converter). -/
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hsound := chain_le_semantics
-  have hles := not_exact_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hsound hles
-  refine Spectral.not_exact_of_den_subset (s := .flow .locallyExponentiallyStable)
-    (s' := .flow .locallyAsymptoticallyStable) rfl
-    (Family.chain_le_semantics_iff.mp hsound _) (fun m hm => ?_) hles
-  rw [family_isAutonomous.mem_den_flow] at hm ⊢
-  exact Flow.locallyExponentiallyStable_localAsymptoticStable hm
+  refine Spectral.not_exact_of_les_witness negativeReference_mem_den_locallyExponentiallyStable
+    (Or.inr rfl) (q := .positiveReference) (by simp [family, translate]) fun hV => ?_
+  have : (0 : ℝ) < -1 := hV
+  norm_num at this
 
 /-- The Lyapunov translation is not exact (the negative-reference converter). -/
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  have hsound := chain_le_semantics
-  have hles := not_exact_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hsound hles
-  refine Spectral.not_exact_of_den_subset (s := .flow .locallyExponentiallyStable)
-    (s' := .flow .lyapunovStable) rfl
-    (Family.chain_le_semantics_iff.mp hsound _) (fun m hm => ?_) hles
-  rw [family_isAutonomous.mem_den_flow] at hm ⊢
-  exact hm.lyapunovStable
+  refine Spectral.not_exact_of_les_witness negativeReference_mem_den_locallyExponentiallyStable
+    (Or.inl rfl) (q := .positiveReference) (by simp [family, translate]) fun hV => ?_
+  have : (0 : ℝ) < -1 := hV
+  norm_num at this
 
 end ModelB
 

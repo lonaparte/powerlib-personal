@@ -1,5 +1,6 @@
 import theorem.Dynamics.ConverseLinearization
 import theorem.Linear.Family
+import theorem.Spectral.Local
 import theorem.TMIO.ClaimElab
 
 /-! # Spectral families (foundation)
@@ -43,6 +44,9 @@ Results.
   stability condition that also fixes physical signs (positive inertia, capacitance, …) is not of
   this form; such families publish the exact membership within the physical range and a
   witness that the translation itself is not exact.
+* The local laws are the two-requirement instance of the named-requirement template
+  `theorem/Spectral/Local.lean` (`localTable`, `chain_le_semantics_of_localTable_same`,
+  `realize_univ_eq_empty_of`), which families with their own requirement languages use directly.
 * Inexactness passes along translations (`Spectral.not_exact_of_den_subset`): if a sound
   translation of `s` is not exact and a sentence `s'` with the same translation has a larger
   denotation, the translation of `s'` is not exact either; for local families a boundary witness
@@ -84,11 +88,8 @@ def Meets (S U : X → Prop) (x : X) : Requirement → Prop
 
 /-- No member meets both requirements when they are mutually exclusive. -/
 @[powerlib_foundation] theorem realize_univ_of {S U : X → Prop} (h : ∀ x, S x → U x → False) :
-    realize (Meets S U) Set.univ = ∅ := by
-  ext x
-  simp only [mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro hx
-  exact h x (hx .stable) (hx .unstable)
+    realize (Meets S U) Set.univ = ∅ :=
+  realize_univ_eq_empty_of .stable .unstable h
 
 /-! ### Linear families -/
 
@@ -199,26 +200,14 @@ local exponential stability of the field at the origin, the instability conditio
     (hU : ∀ x, U x → Unstable (field x) 0) :
     ∀ P, (localFamily field S U).chain P ≤ (localFamily field S U).semantics P := by
   have hF := localFamily_isAutonomous field S U
-  have hnone : realize (Meets S U) Set.univ = ∅ :=
-    realize_univ_of fun x h1 h2 => hU x h2 (hS x h1).lyapunovStable
-  refine Family.chain_le_semantics_iff.mpr fun s x hx => ?_
-  rw [mem_realize] at hx
-  change ∀ q ∈ localTranslate s, Meets S U x q at hx
-  have huniv : (∀ q, Meets S U x q) → False := fun h => by
-    have hx' : x ∈ realize (Meets S U) Set.univ := (mem_realize _ _ _).mpr fun q _ => h q
-    rw [hnone] at hx'
-    exact hx'
+  refine chain_le_semantics_of_localTable_same (Rs := {.stable}) (Ru := {.unstable})
+    (fun s => ?_) (realize_univ_of fun x h1 h2 => hU x h2 (hS x h1).lyapunovStable)
+    (fun x hx => hF.mem_den_flow.mpr (hS x ((mem_realize _ _ _).mp hx .stable rfl)))
+    (fun x hx => hF.mem_den_flow.mpr (hU x ((mem_realize _ _ _).mp hx .unstable rfl)))
+    hF.den_passive
   rcases s with P | _
-  · rw [hF.mem_den_flow]
-    cases P
-    case lyapunovStable => exact (hS x (hx .stable rfl)).lyapunovStable
-    case locallyAsymptoticallyStable =>
-      exact Flow.locallyExponentiallyStable_localAsymptoticStable (hS x (hx .stable rfl))
-    case locallyExponentiallyStable => exact hS x (hx .stable rfl)
-    case unstable => exact hU x (hx .unstable rfl)
-    all_goals exact (huniv fun q => hx q trivial).elim
-  · rw [hF.den_passive]
-    trivial
+  · cases P <;> rfl
+  · rfl
 
 /-- Passivity is translated exactly in a local spectral family: a system without ports is
 passive. -/

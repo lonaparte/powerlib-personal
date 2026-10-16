@@ -575,12 +575,9 @@ other. -/
 @[powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize family.meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext y
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
-  have h1 : |y.design.R * y.iref| < y.Vmax := h .headroom
-  have h2 : y.Vmax < |y.design.R * y.iref| := h .overload
-  linarith
+  exact Spectral.realize_univ_eq_empty_of .headroom .overload
+    fun y (h1 : |y.design.R * y.iref| < y.Vmax) (h2 : y.Vmax < |y.design.R * y.iref|) => by
+      linarith
 
 /-- Every translation of the platform family is sound: with headroom a stable design gives local
 exponential stability and an unstable design instability (locality of the local sentences), and
@@ -588,35 +585,18 @@ passivity holds without requirement. -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s y hy => ?_
-  rw [TMIO.mem_realize] at hy
-  change ∀ q ∈ translate s, Meets y q at hy
-  have hnone : (∀ q, Meets y q) → False := fun h => by
-    have hy' : y ∈ TMIO.realize family.meets Set.univ :=
-      (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    have hu := realize_univ
-    unfold powerlib.TMIO.Statement at hu
-    rw [hu] at hy'
-    exact hy'
-  rcases s with P | _
-  · rw [mem_den_flow_iff]
-    cases P
-    case unstable =>
-      exact unstable_of_unstable (hy (.design .unstable) (by simp [translate]))
-        (hy .headroom (by simp [translate]))
-    case lyapunovStable =>
-      exact (les_of_stable (hy (.design .stable) (by simp [translate]))
-        (hy .headroom (by simp [translate]))).lyapunovStable
-    case locallyAsymptoticallyStable =>
-      exact Flow.locallyExponentiallyStable_localAsymptoticStable
-        (les_of_stable (hy (.design .stable) (by simp [translate]))
-          (hy .headroom (by simp [translate])))
-    case locallyExponentiallyStable =>
-      exact les_of_stable (hy (.design .stable) (by simp [translate]))
-        (hy .headroom (by simp [translate]))
-    all_goals exact (hnone fun q => hy q trivial).elim
-  · rw [family_isAutonomous.den_passive]
-    trivial
+  refine Spectral.chain_le_semantics_of_localTable_same (Rs := {.design .stable, .headroom})
+    (Ru := {.design .unstable, .headroom}) (fun s => ?_) realize_univ (fun y hy => ?_)
+    (fun y hy => ?_) family_isAutonomous.den_passive
+  · rcases s with P | _
+    · cases P <;> rfl
+    · rfl
+  · rw [TMIO.mem_realize] at hy
+    exact mem_den_flow_iff.mpr (les_of_stable (hy (.design .stable) (by simp))
+      (hy .headroom (by simp)))
+  · rw [TMIO.mem_realize] at hy
+    exact mem_den_flow_iff.mpr (unstable_of_unstable (hy (.design .unstable) (by simp))
+      (hy .headroom (by simp)))
 
 /-- Passivity is translated exactly: a platform without ports is passive. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
@@ -629,25 +609,16 @@ platform is locally asymptotically (exponentially) stable exactly when its desig
 @[powerlib_domain] theorem exactUnder_attractive {P : Flow.Property}
     (hP : P = .locallyAsymptoticallyStable ∨ P = .locallyExponentiallyStable) :
     connection% (family.ExactUnder {.headroom} (.flow P)) := by
-  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
+  unfold powerlib.TMIO.Statement
   have ht : family.translate (.flow P) = {.design .stable, .headroom} := by
     rcases hP with rfl | rfl <;> rfl
-  rw [ht]
-  ext y
-  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
-    Set.mem_inter_iff]
-  constructor
-  · intro h
-    have hh : |y.design.R * y.iref| < y.Vmax := h .headroom (by simp)
-    refine ⟨(mem_den_attractive_iff hh hP).mpr (h (.design .stable) (by simp)), ?_⟩
-    rintro q rfl
-    exact hh
-  · rintro ⟨hd, hI⟩ q hq
-    have hh : |y.design.R * y.iref| < y.Vmax := hI .headroom rfl
-    rcases hq with (rfl | rfl) | rfl
-    · exact (mem_den_attractive_iff hh hP).mp hd
-    · exact hh
-    · exact hh
+  refine Spectral.exactUnder_iff_forall.mpr fun y hΔ => ?_
+  have hh : |y.design.R * y.iref| < y.Vmax := (TMIO.mem_realize _ _ _).mp hΔ .headroom rfl
+  rw [ht, mem_den_attractive_iff hh hP, TMIO.mem_realize]
+  refine ⟨fun h => h (.design .stable) (by simp), fun hs => ?_⟩
+  rintro q (rfl | rfl)
+  · exact hs
+  · exact hh
 
 /-- With `L > 0` and headroom, a platform is locally asymptotically (exponentially) stable iff
 `R + Kp > 0 ∧ Ki > 0`. -/
@@ -666,31 +637,27 @@ a design that is not unstable, `(R + Kp)/L ≥ 0` and `Ki/L > 0`, is Lyapunov st
 the platform. -/
 @[powerlib_domain] theorem exactUnder_unstable :
     connection% (family.ExactUnder {.inductance, .integral, .headroom} (.flow .unstable)) := by
-  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
-  change TMIO.realize Meets ({.design .unstable, .headroom} ∪
-    {.inductance, .integral, .headroom}) = _
-  ext y
-  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
-    Set.mem_inter_iff]
-  constructor
-  · intro h
-    refine ⟨mem_den_flow_iff.mpr (unstable_of_unstable (h (.design .unstable) (by simp))
-      (h .headroom (by simp))), fun q hq => h q (Or.inr hq)⟩
-  · rintro ⟨hd, hI⟩ q hq
-    have hL : 0 < y.design.L := hI .inductance (by simp)
-    have hKi : y.design.Ki ≠ 0 := hI .integral (by simp)
-    have hh : |y.design.R * y.iref| < y.Vmax := hI .headroom (by simp)
-    rcases hq with (rfl | rfl) | hq
-    · show PIParams.Unstable y.design
-      by_contra hn
-      simp only [PIParams.Unstable, not_or, not_lt] at hn
-      have hb : 0 < y.design.Ki / y.design.L :=
-        lt_of_le_of_ne hn.2 (Ne.symm (div_ne_zero hKi hL.ne'))
-      rw [mem_den_flow_iff] at hd
-      exact hd (Dynamics.lyapunovStable_congr_nhds (y.field_eventuallyEq_linear hKi hh)
-        (lyapunovStable_of_nonneg y.design hn.1 hb))
-    · exact hh
-    · exact hI q hq
+  unfold powerlib.TMIO.Statement
+  refine Spectral.exactUnder_iff_forall.mpr fun y hΔ => ⟨fun h => ?_, fun hd => ?_⟩
+  · rw [TMIO.mem_realize] at h
+    exact mem_den_flow_iff.mpr (unstable_of_unstable
+      (h (.design .unstable) (by simp [family, translate]))
+      (h .headroom (by simp [family, translate])))
+  rw [TMIO.mem_realize] at hΔ
+  have hL : 0 < y.design.L := hΔ .inductance (by simp)
+  have hKi : y.design.Ki ≠ 0 := hΔ .integral (by simp)
+  have hh : |y.design.R * y.iref| < y.Vmax := hΔ .headroom (by simp)
+  rw [TMIO.mem_realize]
+  rintro q (rfl | rfl)
+  · show PIParams.Unstable y.design
+    by_contra hn
+    simp only [PIParams.Unstable, not_or, not_lt] at hn
+    have hb : 0 < y.design.Ki / y.design.L :=
+      lt_of_le_of_ne hn.2 (Ne.symm (div_ne_zero hKi hL.ne'))
+    rw [mem_den_flow_iff] at hd
+    exact hd (Dynamics.lyapunovStable_congr_nhds (y.field_eventuallyEq_linear hKi hh)
+      (lyapunovStable_of_nonneg y.design hn.1 hb))
+  · exact hh
 
 /-- A lossless platform: the design `L = R = Ki = 1`, `Kp = −1` (`R + Kp = 0`), at `i* = 0`,
 `V_dc = 1`. -/
@@ -714,15 +681,10 @@ the lossless platform is Lyapunov stable while its design is not stable (`R + Kp
 @[powerlib_domain] theorem not_exactUnder_lyapunovStable :
     connection% (¬ family.ExactUnder {.inductance, .integral, .dcLink, .headroom}
       (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
-  intro h
-  have hc := center_mem_den_lyapunovStable
-  unfold powerlib.TMIO.Statement at hc
-  have hm : center ∈ TMIO.realize family.meets
-      (family.translate (.flow .lyapunovStable) ∪ {.inductance, .integral, .dcLink, .headroom}) := by
-    rw [h]
-    refine ⟨hc, ?_⟩
-    rw [TMIO.mem_realize]
+  unfold powerlib.TMIO.Statement
+  refine Spectral.not_exactUnder_of_witness ?_ center_mem_den_lyapunovStable
+    (q := .design .stable) (by simp [family, translate]) fun hs => ?_
+  · rw [TMIO.mem_realize]
     intro q hq
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
     rcases hq with rfl | rfl | rfl | rfl
@@ -732,11 +694,8 @@ the lossless platform is Lyapunov stable while its design is not stable (`R + Kp
     · show |(1 : ℝ) * 0| < 1 / Real.sqrt 3
       rw [mul_zero, abs_zero]
       positivity
-  rw [TMIO.mem_realize] at hm
-  have hs : PIParams.Stable center.design :=
-    hm (.design .stable) (Or.inl (by simp [family, translate]))
-  have := hs.1
-  norm_num [center] at this
+  · have := (hs : PIParams.Stable center.design).1
+    norm_num [center] at this
 
 /-- No platform is globally exponentially stable: the voltage limit bounds the rate at which a
 large integrator state unwinds. -/

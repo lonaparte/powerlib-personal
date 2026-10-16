@@ -5,6 +5,7 @@ import theorem.Family.Basic
 import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Coordinates
+import theorem.Spectral.Local
 
 /-! # Four-state GFL with PLL and dc-bus voltage loop
 
@@ -558,12 +559,9 @@ private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
-  obtain ⟨-, -, h0, -⟩ : Meets m .routh := h .routh
-  have : Meets m .constNeg := h .constNeg
-  exact lt_asymm h0 this
+  refine Spectral.realize_univ_eq_empty_of .routh .constNeg fun m hr hn => ?_
+  obtain ⟨-, -, h0, -⟩ : Meets m .routh := hr
+  exact lt_asymm h0 hn
 
 /-- Every translation of the four-state GFL family is sound: its translation chain lies below
 its semantics connection. The Routh conditions at an equilibrium prove the local sentences,
@@ -573,33 +571,16 @@ without requirement. -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  have hnone : (∀ q, Meets m q) → False := fun h => by
-    have hm' : m ∈ TMIO.realize Meets Set.univ := (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    rw [realize_univ] at hm'
-    exact hm'
-  rcases s with P | _
-  · have hles : Meets m .equilibrium → Meets m .routh →
-        LocallyExponentiallyStable m.field 0 := fun he hr =>
-      family_isAutonomous.mem_den_flow.mp (les_of_meets he hr)
-    rw [family_isAutonomous.mem_den_flow]
-    cases P
-    case lyapunovStable =>
-      exact (hles (hm .equilibrium (by simp [translate]))
-        (hm .routh (by simp [translate]))).lyapunovStable
-    case locallyAsymptoticallyStable =>
-      exact Flow.locallyExponentiallyStable_localAsymptoticStable
-        (hles (hm .equilibrium (by simp [translate])) (hm .routh (by simp [translate])))
-    case locallyExponentiallyStable =>
-      exact hles (hm .equilibrium (by simp [translate])) (hm .routh (by simp [translate]))
-    case unstable =>
-      exact family_isAutonomous.mem_den_flow.mp (unstable_of_meets
-        (hm .equilibrium (by simp [translate])) (hm .constNeg (by simp [translate])))
-    all_goals exact (hnone fun q => hm q trivial).elim
-  · rw [family_isAutonomous.den_passive]
-    trivial
+  refine Spectral.chain_le_semantics_of_localTable_same
+    (Rs := {.equilibrium, .routh}) (Ru := {.equilibrium, .constNeg})
+    (fun s => ?_) realize_univ (fun m hm => ?_) (fun m hm => ?_) family_isAutonomous.den_passive
+  · rcases s with P | _
+    · cases P <;> rfl
+    · rfl
+  · rw [TMIO.mem_realize] at hm
+    exact les_of_meets (hm .equilibrium (by simp)) (hm .routh (by simp))
+  · rw [TMIO.mem_realize] at hm
+    exact unstable_of_meets (hm .equilibrium (by simp)) (hm .constNeg (by simp))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
@@ -637,10 +618,8 @@ positive real eigenvalue, and instability of the physical field, for all positiv
     (heq : IsEq p θ0) (hcos : Real.cos (2 * θ0) < 0) :
     connection% (Model.mk p θ0 ∉ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  have h := mem_den_unstable_of_cos_two_mul_neg p hC hki hkiv hV0 heq hcos
-  unfold powerlib.TMIO.Statement at h
-  rw [family_isAutonomous.mem_den_flow] at h ⊢
-  exact h
+  exact Spectral.not_mem_den_lyapunovStable_of_unstable
+    (mem_den_unstable_of_cos_two_mul_neg p hC hki hkiv hV0 heq hcos)
 
 /-- Necessary condition (`cos 2θ₀ ≥ 0`, in contrapositive form): if `cos 2θ₀ < 0` the operating
 point is not locally exponentially stable, i.e. local exponential stability forces
@@ -652,8 +631,7 @@ point is not locally exponentially stable, i.e. local exponential stability forc
   unfold powerlib.TMIO.Statement
   have h := not_mem_den_lyapunovStable_of_cos_two_mul_neg p hC hki hkiv hV0 heq hcos
   unfold powerlib.TMIO.Statement at h
-  rw [family_isAutonomous.mem_den_flow] at h ⊢
-  exact fun hs => h hs.lyapunovStable
+  exact fun hs => h (Spectral.den_locallyExponentiallyStable_subset_lyapunovStable hs)
 
 /-! ## Grid-angle input in error-angle coordinates -/
 
@@ -709,29 +687,30 @@ criterion; with `C = 0` the frozen dc-bus voltage excludes local exponential sta
 @[powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  ext m
+  refine Spectral.exact_of_exactUnder_empty (Spectral.exactUnder_les_of_jacobian_local
+    (fun m P => mem_den_flow_iff) ∅ (fun m => A0 m.params m.θ) (fun m _ hm => ?_)
+    (fun m => Metric.ball (opPoint m.θ) (1 / 2)) (fun _ _ => Metric.isOpen_ball)
+    (fun _ _ => Metric.mem_ball_self (by norm_num))
+    (fun m _ => (contDiff_regField m.params).contDiffOn.congr fun y hy =>
+      field_eq_regField_of_near m.params (mem_ball_iff_norm.mp hy))
+    (fun m _ => fderiv_field_opPoint m.params m.θ) fun m _ he hH => ?_)
+  · rw [TMIO.mem_realize] at hm
+    exact les_of_meets (hm .equilibrium (by simp [family, translate]))
+      (hm .routh (by simp [family, translate]))
   rw [TMIO.mem_realize]
-  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
-    forall_eq]
-  constructor
-  · rintro ⟨he, hr⟩
-    exact les_of_meets he hr
-  · intro h
-    have hles : LocallyExponentiallyStable (regField m.params) (opPoint m.θ) :=
-      les_field_iff_regField.mp (mem_den_flow_iff.mp h)
-    by_cases hC : m.params.C = 0
-    · exact absurd hles (not_les_regField_of_C_eq_zero hC _)
-    have h0 := Dynamics.isEquilibrium_of_locallyExponentiallyStable (contDiff_regField m.params)
-      hles
-    have heq : IsEq m.params m.θ := by
-      rw [← isEq_iff m.params hC]
-      rw [field_eq_regField_of_near m.params (by simp : ‖opPoint m.θ - opPoint m.θ‖ < 1 / 2)]
-      exact h0
-    have hA := Dynamics.isHurwitz_of_locallyExponentiallyStable _ (contDiff_regField m.params)
-      (fderiv_regField_opPoint m.params m.θ) hles
-    rw [Criteria.isHurwitz_iff_of_det_characteristicMatrix_quartic _
-      (det_characteristicMatrix_A0_quartic m.params heq.1)] at hA
-    exact ⟨⟨heq, hC⟩, hA⟩
+  by_cases hC : m.params.C = 0
+  · -- the regularized field would be locally exponentially stable, but `V` is frozen
+    have hreg : regField m.params (opPoint m.θ) = 0 := by
+      rwa [← field_eq_regField_of_near m.params (by simp : ‖opPoint m.θ - opPoint m.θ‖ < 1 / 2)]
+    exact absurd ((Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _
+      (contDiff_regField m.params) (fderiv_regField_opPoint m.params m.θ)).mpr ⟨hreg, hH⟩)
+      (not_les_regField_of_C_eq_zero hC _)
+  have heq : IsEq m.params m.θ := (isEq_iff m.params hC m.θ).mp he
+  rw [Criteria.isHurwitz_iff_of_det_characteristicMatrix_quartic _
+    (det_characteristicMatrix_A0_quartic m.params heq.1)] at hH
+  rintro q (rfl | rfl)
+  · exact ⟨heq, hC⟩
+  · exact hH
 
 /-! ### Instability away from equilibrium -/
 
@@ -757,12 +736,8 @@ for an equilibrium. -/
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := offEquilibrium_mem_den_unstable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have he : Meets offEquilibrium .equilibrium := hmem .equilibrium (by simp [family, translate])
-  simp [Meets, IsEq, offEquilibrium] at he
+  exact Spectral.not_exact_of_witness offEquilibrium_mem_den_unstable (q := .equilibrium)
+    (by simp [family, translate]) (by simp [family, Meets, IsEq, offEquilibrium])
 
 /-! ### The Lyapunov translation -/
 
@@ -900,11 +875,9 @@ quartic `(λ² + 1)(λ² + λ + 1)` has the imaginary pair `±i`, so the Routh i
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := undampedPLL_mem_den_lyapunovStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  obtain ⟨-, -, -, hg⟩ : Meets undampedPLL .routh := hmem .routh (by simp [family, translate])
+  refine Spectral.not_exact_of_witness undampedPLL_mem_den_lyapunovStable (q := .routh)
+    (by simp [family, translate]) fun hr => ?_
+  obtain ⟨-, -, -, hg⟩ : Meets undampedPLL .routh := hr
   norm_num [a1, a2, a3, a0, twoAlphaCl, omegaClSq, Γc, vd0, undampedPLL, Params.γ] at hg
 
 

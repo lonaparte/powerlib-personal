@@ -4,6 +4,7 @@ import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
+import theorem.Spectral.Local
 
 /-! # The `basin-guard` GFL carrier: direction-convention algebra
 
@@ -326,9 +327,7 @@ def family : Family Model Requirement 4 0 :=
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
+  refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
   exact h .unavailable
 
 /-- Every translation of the carrier family is sound (the flow translations are empty), and

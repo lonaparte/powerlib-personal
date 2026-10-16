@@ -5,6 +5,7 @@ import theorem.Family.Basic
 import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Coordinates
+import theorem.Spectral.Local
 
 /-! # Rate-coupled two-state GFL PLL (form-C-lite, frozen `I_d`)
 
@@ -494,11 +495,9 @@ inconsistent. -/
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
-  obtain ⟨h1, h2⟩ : Meets m .jacobianStable := h .jacobianStable
-  rcases (h .jacobianUnstable : Meets m .jacobianUnstable) with h3 | h3 <;> linarith
+  refine Spectral.realize_univ_eq_empty_of .jacobianStable .jacobianUnstable fun m hs hu => ?_
+  obtain ⟨h1, h2⟩ : Meets m .jacobianStable := hs
+  rcases (hu : Meets m .jacobianUnstable) with h3 | h3 <;> linarith
 
 /-- Every translation of the rate-coupled PLL family is sound: its translation chain lies below
 its semantics connection. A stable Jacobian at an equilibrium proves the local sentences, an
@@ -507,33 +506,16 @@ the origin), and passivity holds without requirement. -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  have hnone : (∀ q, Meets m q) → False := fun h => by
-    have hm' : m ∈ TMIO.realize Meets Set.univ := (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    rw [realize_univ] at hm'
-    exact hm'
-  rcases s with P | _
-  · have hles : Meets m .equilibrium → Meets m .jacobianStable →
-        LocallyExponentiallyStable m.field 0 := fun he hs =>
-      family_isAutonomous.mem_den_flow.mp (les_of_meets he hs)
-    rw [family_isAutonomous.mem_den_flow]
-    cases P
-    case lyapunovStable =>
-      exact (hles (hm .equilibrium (by simp [translate]))
-        (hm .jacobianStable (by simp [translate]))).lyapunovStable
-    case locallyAsymptoticallyStable =>
-      exact Flow.locallyExponentiallyStable_localAsymptoticStable
-        (hles (hm .equilibrium (by simp [translate])) (hm .jacobianStable (by simp [translate])))
-    case locallyExponentiallyStable =>
-      exact hles (hm .equilibrium (by simp [translate])) (hm .jacobianStable (by simp [translate]))
-    case unstable =>
-      exact family_isAutonomous.mem_den_flow.mp (unstable_of_meets
-        (hm .equilibrium (by simp [translate])) (hm .jacobianUnstable (by simp [translate])))
-    all_goals exact (hnone fun q => hm q trivial).elim
-  · rw [family_isAutonomous.den_passive]
-    trivial
+  refine Spectral.chain_le_semantics_of_localTable_same
+    (Rs := {.equilibrium, .jacobianStable}) (Ru := {.equilibrium, .jacobianUnstable})
+    (fun s => ?_) realize_univ (fun m hm => ?_) (fun m hm => ?_) family_isAutonomous.den_passive
+  · rcases s with P | _
+    · cases P <;> rfl
+    · rfl
+  · rw [TMIO.mem_realize] at hm
+    exact les_of_meets (hm .equilibrium (by simp)) (hm .jacobianStable (by simp))
+  · rw [TMIO.mem_realize] at hm
+    exact unstable_of_meets (hm .equilibrium (by simp)) (hm .jacobianUnstable (by simp))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
@@ -573,22 +555,19 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
 @[powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  rw [TMIO.mem_realize, mem_den_flow_iff]
-  change _ ↔ LocallyExponentiallyStable _ _
-  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
-    forall_eq, Meets]
-  by_cases hD0 : m.params.D0 = 0
-  · simp only [hD0, ne_eq, not_true_eq_false, and_false, false_and, false_iff]
-    exact not_les_of_D0_eq_zero hD0 _
-  · change _ ↔ LocallyExponentiallyStable _ (WithLp.toLp 2 ![m.θ, 0])
-    rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ (contDiff_field m.params)
-      (fderiv_field m.params hD0 m.θ 0), Criteria.isHurwitz_fin_two_iff]
-    constructor
-    · rintro ⟨⟨hb, -⟩, hs⟩
-      exact ⟨field_equilibrium m.params hb, hs⟩
-    · rintro ⟨he, hs⟩
-      exact ⟨⟨balance_of_field_eq_zero hD0 he, hD0⟩, hs⟩
+  refine Spectral.exact_of_exactUnder_empty (Spectral.exactUnder_les_of_jacobian_on
+    (fun m P => mem_den_flow_iff) ∅ (fun m => m.params.D0 ≠ 0) (fun m => jac m.params m.θ)
+    (fun m _ hm => ?_) (fun m _ hD0 h => ?_) (fun m _ _ => contDiff_field m.params)
+    (fun m _ hD0 => fderiv_field m.params hD0 m.θ 0) fun m _ hD0 he hH => ?_)
+  · rw [TMIO.mem_realize] at hm
+    exact les_of_meets (hm .equilibrium (by simp [family, translate]))
+      (hm .jacobianStable (by simp [family, translate]))
+  · exact not_les_of_D0_eq_zero (not_not.mp hD0) _ (mem_den_flow_iff.mp h)
+  · rw [Criteria.isHurwitz_fin_two_iff] at hH
+    rw [TMIO.mem_realize]
+    rintro q (rfl | rfl)
+    · exact ⟨balance_of_field_eq_zero hD0 he, hD0⟩
+    · exact hH
 
 /-! ### Members of the local denotations: the boundary angle `tan θ_H = ω_s k_p / k_i` -/
 
@@ -620,10 +599,8 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
     (heq : p.V * Real.sin θ = p.Xg * p.Id) (htan : p.ωs * p.kp / p.ki < Real.tan θ) :
     connection% (Model.mk p θ ∉ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  have h := mem_den_unstable_of_tan_gt p hD0 hV hki hωs hcos heq htan
-  unfold powerlib.TMIO.Statement at h
-  rw [family_isAutonomous.mem_den_flow] at h ⊢
-  exact h
+  exact Spectral.not_mem_den_lyapunovStable_of_unstable
+    (mem_den_unstable_of_tan_gt p hD0 hV hki hωs hcos heq htan)
 
 /-! ### Instability away from equilibrium -/
 
@@ -634,7 +611,8 @@ def offEquilibrium : Model := ⟨⟨0, 1, 1, 0, 0, 1⟩, 0⟩
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero (contDiff_field _) fun h => ?_)
+  refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff) (contDiff_field _)
+    fun h => ?_
   have := congrArg (fun y : Dynamics.State 2 => y 1) h
   simp [offEquilibrium, RatePLL.field, Dynamics.lift, coordField, equilibrium, vq, pllOut, gridQ,
     Params.D0, Params.Lg] at this
@@ -644,12 +622,8 @@ while the translation asks for an equilibrium. -/
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := offEquilibrium_mem_den_unstable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have he : Meets offEquilibrium .equilibrium := hmem .equilibrium (by simp [family, translate])
-  simp [Meets, offEquilibrium] at he
+  exact Spectral.not_exact_of_witness offEquilibrium_mem_den_unstable (q := .equilibrium)
+    (by simp [family, translate]) (by simp [family, Meets, offEquilibrium])
 
 /-! ### The Lyapunov translation -/
 
@@ -727,12 +701,9 @@ equilibrium whose Jacobian has trace `0`. -/
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := undampedPLL_mem_den_lyapunovStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have hs : Meets undampedPLL .jacobianStable := hmem .jacobianStable (by simp [family, translate])
-  have := hs.1
+  refine Spectral.not_exact_of_witness undampedPLL_mem_den_lyapunovStable (q := .jacobianStable)
+    (by simp [family, translate]) fun hs => ?_
+  have := (hs : Meets undampedPLL .jacobianStable).1
   simp [jac, Matrix.trace_fin_two, undampedPLL, Params.D0, Params.Lg] at this
 
 end powerlib.GFL.RatePLL

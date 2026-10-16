@@ -3,6 +3,7 @@ import theorem.Transform.Park
 import theorem.Linear.Family
 import theorem.Linear.Jordan
 import theorem.TMIO.ClaimElab
+import theorem.Spectral.Local
 
 /-! # Linearized SRF-PLL: state-space models, transfer functions and tuning
 
@@ -469,9 +470,7 @@ inconsistent. -/
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
+  refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
   have h1 : 0 < m.V * m.Kp := h .proportional
   have h2 : 0 < m.V * m.Ki := h .integral
   rcases (h .negativeGain : m.V * m.Kp < 0 ∨ m.V * m.Ki < 0) with h3 | h3 <;> linarith
@@ -586,15 +585,15 @@ frozen loop is Lyapunov stable (conserved energy) with zero loop gains. -/
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
   have hmem : frozen ∈ family.den (.flow .lyapunovStable) := by
     have hc := frozen_mem_den_conservative
     unfold powerlib.TMIO.Statement at hc
     rw [family_isLinear.mem_den_flow] at hc ⊢
     exact Flow.Conservative.lyapunovStable hc
-  rw [← h, TMIO.mem_realize] at hmem
-  have h' : 0 < frozen.V * frozen.Kp := hmem .proportional (by simp [family, translate])
-  simp [frozen] at h'
+  refine Spectral.not_exact_of_witness hmem (q := .proportional) (by simp [family, translate])
+    fun h' => ?_
+  have h'' : 0 < frozen.V * frozen.Kp := h'
+  simp [frozen] at h''
 
 /-- The phase channel with `V = 0`, `K_i = 1`: the state matrix is the Jordan block
 `[[0, 1], [0, 0]]`. -/
@@ -606,7 +605,6 @@ gain is negative. -/
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  intro hexact
   let v : EuclideanSpace ℝ (Fin 2) := WithLp.toLp 2 ![1, 0]
   let w : EuclideanSpace ℝ (Fin 2) := WithLp.toLp 2 ![0, 1]
   have hv : v ≠ 0 := by intro h; have := congrArg (fun x => x 0) h; norm_num [v] at this
@@ -622,8 +620,8 @@ gain is negative. -/
       Fin.sum_univ_two]
   have hmem : jordan ∈ family.den (.flow .unstable) :=
     family_isLinear.mem_den_flow.mpr (Linear.unstable_of_zero_jordan_chain hv hAv hAw)
-  rw [← hexact, TMIO.mem_realize] at hmem
-  rcases (hmem .negativeGain rfl : jordan.V * jordan.Kp < 0 ∨ jordan.V * jordan.Ki < 0) with h | h <;>
+  refine Spectral.not_exact_of_witness hmem (q := .negativeGain) rfl fun h => ?_
+  rcases (h : jordan.V * jordan.Kp < 0 ∨ jordan.V * jordan.Ki < 0) with h | h <;>
     simp [jordan] at h
 
 end LinearPLL

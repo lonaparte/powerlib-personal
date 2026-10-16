@@ -29,6 +29,15 @@ audit recognizes discrete behaviour — a sequence indexed by steps into a state
 iterate of a state map, the step of a discrete system — inside the semantic layer and
 rejects it outside, as it does for signals of time.
 
+Family laws that recur across models are proved once in generic templates and instantiated by
+the model families: `Spectral.linearFamily` and `Spectral.localFamily` for the two-requirement
+languages, and the named-requirement template `theorem/Spectral/Local.lean` (`localTable`,
+`chain_le_semantics_of_localTable`, `exactUnder_les_of_jacobian`, the witness lemmas
+`not_exact_of_witness`, `not_exact_of_les_witness`, `mem_den_unstable_of_ne_zero`) for families
+that keep their own requirement languages. A model family then supplies only its obligations:
+which requirements give local exponential stability or instability, and the converse algebra of
+its Jacobian.
+
 Representation transport preserves the semantic and generated maps, and now
 also transports closed and interior fixed points. `closedTransport`,
 `interiorTransport` and `fixedPointsIso_transport` prove that the fixed-point

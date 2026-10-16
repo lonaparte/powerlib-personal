@@ -1,6 +1,7 @@
 import theorem.PLL.Linear
 import theorem.Linear.Family
 import theorem.TMIO.ClaimElab
+import theorem.Spectral.Local
 
 /-! # SRF-PLL time-scale algebra: slow manifold, reduced slow equation, eigenvalues
 
@@ -151,9 +152,7 @@ def family : Family Model Requirement 1 0 :=
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
+  refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
   have h1 : 0 < m.b / m.a := h .positiveRatio
   have h2 : m.b / m.a < 0 := h .negativeRatio
   linarith

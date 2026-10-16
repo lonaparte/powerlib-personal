@@ -6,6 +6,7 @@ import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
 import theorem.SpecialFunctions.Elementary
+import theorem.Spectral.Local
 
 /-! # Power-synchronization control (PSC): quasi-static one-dimensional model and algebra
 
@@ -42,7 +43,7 @@ slope `K_p P_max cos δ* < 0`.  The local sentences translate into balance and a
 instability into balance and a positive slope, passivity into nothing (exact), the remaining
 sentences into the whole, inconsistent, language.  `PSC.chain_le_semantics` proves soundness;
 `PSC.exact_locallyExponentiallyStable` proves the local exponential translation exact (converse
-linearization of the scalar field, `NormalForm.lift_locallyExponentiallyStable_iff`); the
+linearization of the scalar field, `Spectral.exactUnder_les_of_jacobian`); the
 stability theorems `locallyExponentiallyStable`, `unstable`, `locallyExponentiallyStable_arcsin`
 and `unstable_pi_sub_arcsin` are connection statements (members of the denotations), and
 `field_eq_zero_iff`, `exists_equilibrium_iff` are static evidence on the model. The instability
@@ -196,11 +197,9 @@ positive. -/
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
-  have h1 : 0 < m.c.Kp * m.c.Pmax * Real.cos m.δ := h .stableSlope
-  have h2 : m.c.Kp * m.c.Pmax * Real.cos m.δ < 0 := h .unstableSlope
+  refine Spectral.realize_univ_eq_empty_of .stableSlope .unstableSlope fun m h1 h2 => ?_
+  have h1 : 0 < m.c.Kp * m.c.Pmax * Real.cos m.δ := h1
+  have h2 : m.c.Kp * m.c.Pmax * Real.cos m.δ < 0 := h2
   linarith
 
 /-- Every translation of the PSC family is sound: the scalar linearization at the selected angle
@@ -209,30 +208,16 @@ without requirement. -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  have hnone : (∀ q, Meets m q) → False := fun h => by
-    have hm' : m ∈ TMIO.realize Meets Set.univ := (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    rw [realize_univ] at hm'
-    exact hm'
-  rcases s with P | _
-  · rw [mem_den_flow_iff]
-    cases P
-    case unstable =>
-      exact unstable_of (hm .balanced (by simp [translate]))
-        (hm .unstableSlope (by simp [translate]))
-    case lyapunovStable =>
-      exact (les_of (hm .balanced (by simp [translate]))
-        (hm .stableSlope (by simp [translate]))).lyapunovStable
-    case locallyAsymptoticallyStable =>
-      exact Flow.locallyExponentiallyStable_localAsymptoticStable
-        (les_of (hm .balanced (by simp [translate])) (hm .stableSlope (by simp [translate])))
-    case locallyExponentiallyStable =>
-      exact les_of (hm .balanced (by simp [translate])) (hm .stableSlope (by simp [translate]))
-    all_goals exact (hnone fun q => hm q trivial).elim
-  · rw [family_isAutonomous.den_passive]
-    trivial
+  refine Spectral.chain_le_semantics_of_localTable_same (Rs := {.balanced, .stableSlope})
+    (Ru := {.balanced, .unstableSlope}) (fun s => ?_) realize_univ (fun m hm => ?_)
+    (fun m hm => ?_) family_isAutonomous.den_passive
+  · rcases s with P | _
+    · cases P <;> rfl
+    · rfl
+  · rw [TMIO.mem_realize] at hm
+    exact mem_den_flow_iff.mpr (les_of (hm .balanced (by simp)) (hm .stableSlope (by simp)))
+  · rw [TMIO.mem_realize] at hm
+    exact mem_den_flow_iff.mpr (unstable_of (hm .balanced (by simp)) (hm .unstableSlope (by simp)))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
@@ -246,24 +231,27 @@ without requirement. -/
 @[powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  rw [TMIO.mem_realize, mem_den_flow_iff]
-  change _ ↔ LocallyExponentiallyStable (NormalForm.lift m.c.rhs) _
-  rw [NormalForm.lift_locallyExponentiallyStable_iff m.c.rhs_contDiff,
-    (m.c.hasDerivAt_rhs m.δ).deriv]
-  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
-    forall_eq, Meets, rhs, neg_lt_zero]
-  constructor
-  · rintro ⟨hb, hs⟩
-    exact ⟨by rw [hb, sub_self, mul_zero], hs⟩
-  · rintro ⟨hb, hs⟩
-    have hK : m.c.Kp ≠ 0 := by
-      rintro h
-      rw [h, zero_mul, zero_mul] at hs
-      exact lt_irrefl 0 hs
-    refine ⟨?_, hs⟩
-    have := (mul_eq_zero.mp hb).resolve_left hK
+  refine Spectral.exact_of_exactUnder_empty (Spectral.exactUnder_les_of_jacobian
+    (fun m P => mem_den_flow_iff) ∅ (fun m => !![-(m.c.Kp * m.c.Pmax * Real.cos m.δ)])
+    (fun m _ hm => ?_) (fun m _ => NormalForm.lift_contDiff m.c.rhs_contDiff)
+    (fun m _ => (NormalForm.hasFDerivAt_lift (by simpa using m.c.hasDerivAt_rhs m.δ)).fderiv)
+    fun m _ heq hH => ?_)
+  · rw [TMIO.mem_realize] at hm
+    exact mem_den_flow_iff.mpr (les_of (hm .balanced (by simp [family, translate]))
+      (hm .stableSlope (by simp [family, translate])))
+  rw [field, NormalForm.lift_eq_zero_iff, rhs] at heq
+  rw [Linear.isHurwitz_one_iff, neg_lt_zero] at hH
+  have hK : m.c.Kp ≠ 0 := by
+    rintro h
+    rw [h, zero_mul, zero_mul] at hH
+    exact lt_irrefl 0 hH
+  have hb : m.c.Pmax * Real.sin m.δ = m.c.Pstar := by
+    have := (mul_eq_zero.mp heq).resolve_left hK
     linarith
+  rw [TMIO.mem_realize]
+  rintro q (rfl | rfl)
+  · exact hb
+  · exact hH
 
 /-- An equilibrium with `cos δ₀ > 0` is locally exponentially stable (`K_p, P_max > 0`). -/
 @[powerlib_domain] theorem locallyExponentiallyStable (hK : 0 < c.Kp) (hP : 0 < c.Pmax)
@@ -539,12 +527,8 @@ negative slope. -/
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := frozen_mem_den_lyapunovStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have hs : Meets frozen .stableSlope := hmem .stableSlope (by simp [family, translate])
-  simp [Meets, frozen] at hs
+  exact Spectral.not_exact_of_witness frozen_mem_den_lyapunovStable (q := .stableSlope)
+    (by simp [family, translate]) (by simp [family, Meets, frozen])
 
 /-! ### Instability away from equilibrium -/
 
@@ -555,8 +539,8 @@ def offEquilibrium : Model := ⟨⟨1, 1, 0⟩, 0⟩
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero
-    (NormalForm.lift_contDiff offEquilibrium.c.rhs_contDiff) fun h => ?_)
+  refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff)
+    (NormalForm.lift_contDiff offEquilibrium.c.rhs_contDiff) fun h => ?_
   change NormalForm.lift offEquilibrium.c.rhs (NormalForm.embed offEquilibrium.δ) = 0 at h
   rw [NormalForm.lift_eq_zero_iff] at h
   simp [offEquilibrium, rhs] at h
@@ -566,12 +550,8 @@ while the translation asks for a balanced one. -/
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := offEquilibrium_mem_den_unstable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have hb : Meets offEquilibrium .balanced := hmem .balanced (by simp [family, translate])
-  simp [Meets, offEquilibrium] at hb
+  exact Spectral.not_exact_of_witness offEquilibrium_mem_den_unstable (q := .balanced)
+    (by simp [family, translate]) (by simp [family, Meets, offEquilibrium])
 
 end PSC
 

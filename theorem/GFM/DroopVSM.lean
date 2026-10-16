@@ -1,5 +1,6 @@
 import theorem.Synchronous.Swing
 import theorem.Dynamics.Transport
+import theorem.Spectral.Local
 
 /-! # Droop with a first-order power filter is exactly a virtual synchronous machine
 
@@ -374,46 +375,32 @@ private theorem vsm_unstable {m : VSMModel} (hsm : vsmMeets m .smooth)
 @[powerlib_foundation] theorem vsm_realize_univ :
     connection% (TMIO.realize vsmMeets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
+  refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
   have h1 : 0 < m.D := h .damped
   have h2 : 0 < deriv m.P (m.point 0) := h .synchronizing
   rcases (h .destabilizing : vsmMeets m .destabilizing) with h3 | h3 <;> linarith
-
-private theorem vsm_sound (s : Sentence) : vsmFamily.Sound s := by
-  intro m hm
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ vsmTranslate s, vsmMeets m q at hm
-  have hnone : (∀ q, vsmMeets m q) → False := fun h => by
-    have hm' : m ∈ TMIO.realize vsmMeets Set.univ := (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    rw [vsm_realize_univ] at hm'
-    exact hm'
-  rcases s with P | _
-  · rw [vsm_mem_den_flow_iff]
-    have hles : vsmTranslate (.flow P) = {.smooth, .balanced, .inertia, .damped, .synchronizing} →
-        LocallyExponentiallyStable m.vector m.point := fun ht =>
-      vsm_les (hm .smooth (by simp [ht])) (hm .balanced (by simp [ht]))
-        (hm .inertia (by simp [ht])) (hm .damped (by simp [ht])) (hm .synchronizing (by simp [ht]))
-    cases P
-    case unstable =>
-      exact vsm_unstable (hm .smooth (by simp [vsmTranslate]))
-        (hm .balanced (by simp [vsmTranslate])) (hm .inertia (by simp [vsmTranslate]))
-        (hm .destabilizing (by simp [vsmTranslate]))
-    case lyapunovStable => exact (hles rfl).lyapunovStable
-    case locallyAsymptoticallyStable =>
-      exact Flow.locallyExponentiallyStable_localAsymptoticStable (hles rfl)
-    case locallyExponentiallyStable => exact hles rfl
-    all_goals exact (hnone fun q => hm q trivial).elim
-  · rw [vsmFamily_isAutonomous.den_passive]
-    trivial
 
 /-- Every translation of the VSM family is sound: linearization at the selected state
 (`tr J = −D/M`, `det J = P'(θ*)/M`), and passivity without requirement. -/
 @[powerlib_domain] theorem vsmFamily_chain_le_semantics :
     connection% (∀ P, vsmFamily.chain P ≤ vsmFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
-  exact Family.chain_le_semantics_iff.mpr vsm_sound
+  refine Spectral.chain_le_semantics_of_localTable_same
+    (Rs := {.smooth, .balanced, .inertia, .damped, .synchronizing})
+    (Ru := {.smooth, .balanced, .inertia, .destabilizing}) (fun s => ?_) vsm_realize_univ
+    (fun m hm => ?_) (fun m hm => ?_) vsmFamily_isAutonomous.den_passive
+  · rcases s with P | _
+    · cases P <;> rfl
+    · rfl
+  · rw [TMIO.mem_realize] at hm
+    exact vsm_mem_den_flow_iff.mpr (vsm_les (hm .smooth (by simp)) (hm .balanced (by simp))
+      (hm .inertia (by simp)) (hm .damped (by simp)) (hm .synchronizing (by simp)))
+  · rw [TMIO.mem_realize] at hm
+    exact vsm_mem_den_flow_iff.mpr (vsm_unstable (hm .smooth (by simp)) (hm .balanced (by simp))
+      (hm .inertia (by simp)) (hm .destabilizing (by simp)))
+
+private theorem vsm_sound (s : Sentence) : vsmFamily.Sound s :=
+  Family.chain_le_semantics_iff.mp vsmFamily_chain_le_semantics s
 
 /-- Passivity is translated exactly for the VSM family. -/
 @[powerlib_domain] theorem vsmFamily_exact_passive : connection% (vsmFamily.Exact .passive) := by

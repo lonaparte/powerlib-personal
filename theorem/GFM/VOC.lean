@@ -5,6 +5,7 @@ import theorem.Dynamics.ConverseLinearization
 import theorem.Dynamics.Instability
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import theorem.Dynamics.Calculus
+import theorem.Spectral.Local
 
 /-! # Andronov–Hopf virtual oscillator (AHO-VOC) at no load
 
@@ -588,9 +589,7 @@ private theorem decay_of (hκ : 0 ≤ a.κv) {r : ℝ} (hr : r + a.c ≤ 0) :
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext a
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
+  refine Spectral.realize_univ_eq_empty_of_forall fun a h => ?_
   have h1 : 0 < a.c := h .growing
   have h2 : a.c < 0 := h .decaying
   linarith
@@ -752,38 +751,30 @@ asymptotically stable without decay at the origin (`c = 0`). -/
 @[powerlib_domain] theorem not_exact_globallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := critical_mem_den_globallyAsymptoticallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  exact critical_not_decaying (hmem .decaying (by simp [family, translate]))
+  exact Spectral.not_exact_of_witness critical_mem_den_globallyAsymptoticallyStable
+    (q := .decaying) (by simp [family, translate]) critical_not_decaying
 
 /-- The local asymptotic translation is sound but not exact (the same witness): local asymptotic
 stability is not decided by the linearization. -/
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
   have hmem := critical_mem_den_globallyAsymptoticallyStable
   unfold powerlib.TMIO.Statement at hmem
-  have hmem' : critical ∈ family.den (.flow .locallyAsymptoticallyStable) :=
-    family_isAutonomous.mem_den_flow.mpr
-      (Flow.GloballyAsymptoticallyStable.localAsymptoticStable
-        (family_isAutonomous.mem_den_flow.mp hmem))
-  rw [← h, TMIO.mem_realize] at hmem'
-  exact critical_not_decaying (hmem' .decaying (by simp [family, translate]))
+  exact Spectral.not_exact_of_witness (family_isAutonomous.mem_den_flow.mpr
+    (Flow.GloballyAsymptoticallyStable.localAsymptoticStable
+      (family_isAutonomous.mem_den_flow.mp hmem))) (q := .decaying)
+    (by simp [family, translate]) critical_not_decaying
 
 /-- The Lyapunov translation is sound but not exact (the same witness). -/
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
   have hmem := critical_mem_den_globallyAsymptoticallyStable
   unfold powerlib.TMIO.Statement at hmem
-  have hmem' : critical ∈ family.den (.flow .lyapunovStable) :=
-    family_isAutonomous.mem_den_flow.mpr (family_isAutonomous.mem_den_flow.mp hmem).2.2.1
-  rw [← h, TMIO.mem_realize] at hmem'
-  exact critical_not_decaying (hmem' .decaying (by simp [family, translate]))
+  exact Spectral.not_exact_of_witness (family_isAutonomous.mem_den_flow.mpr
+    (family_isAutonomous.mem_den_flow.mp hmem).2.2.1) (q := .decaying)
+    (by simp [family, translate]) critical_not_decaying
 
 /-! ### The local asymptotic and Lyapunov denotations -/
 

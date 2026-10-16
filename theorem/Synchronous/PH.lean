@@ -4,6 +4,7 @@ import theorem.Synchronous.Swing
 import theorem.Dynamics.Transport
 import theorem.Dynamics.ConverseLinearization
 import theorem.TMIO.ClaimElab
+import theorem.Spectral.Local
 
 /-! # Synchronous machines as nonlinear port-Hamiltonian systems
 
@@ -481,9 +482,7 @@ language is inconsistent. -/
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
+  refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
   have h1 : Meets m .damped := h .damped
   have h2 : Meets m .unstableBranch := h .unstableBranch
   exact lt_asymm h1.2 h2
@@ -935,12 +934,8 @@ while the translation asks for an equilibrium. -/
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := offEquilibrium_mem_den_unstable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have hl : Meets offEquilibrium .locked := hmem .locked (by simp [family, translate])
-  simp [Meets, offEquilibrium] at hl
+  exact Spectral.not_exact_of_witness offEquilibrium_mem_den_unstable (q := .locked)
+    (by simp [family, translate]) (by simp [family, Meets, offEquilibrium])
 
 /-! #### Boundary of the equivalence: passivity -/
 
@@ -1199,9 +1194,7 @@ def family : Family SyncMachine7Params Requirement 7 4 :=
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext p
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  exact fun h => h .impossible
+  exact Spectral.realize_univ_eq_empty_of_forall fun _ h => h .impossible
 
 /-- Passivity of the seven-state machine with storage `H` (T-sync-machine §1.13): for every
 input `(v_d, v_q, v_f, T_m^ext)` and solution segment,

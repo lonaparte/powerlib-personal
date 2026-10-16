@@ -373,9 +373,7 @@ inconsistent. -/
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
+  refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
   have h1 : Real.cos m.θ = 1 := (h .wellBottom : Meets m .wellBottom).2.2
   have h2 : Real.cos m.θ = -1 := (h .saddle : Meets m .saddle).2
   linarith
@@ -584,12 +582,9 @@ exact: the reversed-amplitude model is locally exponentially stable at an anti-p
 @[powerlib_domain] theorem not_exact_locallyExponentiallyStable :
     connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := reversedAmplitude_mem_den_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have hs : Meets reversedAmplitude .slopeStable := hmem .slopeStable (by simp [family, translate])
-  have := hs.2.2
+  refine Spectral.not_exact_of_witness reversedAmplitude_mem_den_locallyExponentiallyStable
+    (q := .slopeStable) (by simp [family, translate]) fun hs => ?_
+  have := (show Meets reversedAmplitude .slopeStable from hs).2.2
   simp [reversedAmplitude] at this
   norm_num at this
 
@@ -716,29 +711,20 @@ anti-phase point. -/
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hsound := chain_le_semantics
-  have hles := not_exact_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hsound hles
-  refine Spectral.not_exact_of_den_subset (s := .flow .locallyExponentiallyStable)
-    (s' := .flow .locallyAsymptoticallyStable) rfl
-    (Family.chain_le_semantics_iff.mp hsound _) (fun m hm => ?_) hles
-  rw [family_isNonlinearPH.mem_den_flow] at hm ⊢
-  exact Flow.locallyExponentiallyStable_localAsymptoticStable hm
+  refine Spectral.not_exact_of_les_witness reversedAmplitude_mem_den_locallyExponentiallyStable
+    (Or.inr rfl) (q := .slopeStable) (by simp [family, translate]) fun hs => ?_
+  have := (show Meets reversedAmplitude .slopeStable from hs).2.2
+  simp [reversedAmplitude] at this
+  norm_num at this
 
 /-- Without the context of nonnegative energy the Lyapunov translation is sound but not exact:
 the reversed-amplitude model is Lyapunov stable with a negative amplitude. -/
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := reversedAmplitude_mem_den_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [family_isNonlinearPH.mem_den_flow] at hmem
-  have hls : reversedAmplitude ∈ family.den (.flow .lyapunovStable) :=
-    family_isNonlinearPH.mem_den_flow.mpr hmem.lyapunovStable
-  rw [← h, TMIO.mem_realize] at hls
-  have hw : Meets reversedAmplitude .wellBottom := hls .wellBottom (by simp [family, translate])
-  have := hw.1
+  refine Spectral.not_exact_of_les_witness reversedAmplitude_mem_den_locallyExponentiallyStable
+    (Or.inl rfl) (q := .wellBottom) (by simp [family, translate]) fun hw => ?_
+  have := (show Meets reversedAmplitude .wellBottom from hw).1
   simp [reversedAmplitude] at this
   norm_num at this
 
@@ -762,23 +748,15 @@ def deadGrid : Model := ⟨0, 0, 0, 0, 0, le_rfl⟩
 nonnegative energy and is Lyapunov stable, but is not at a well bottom (`V = 0`). -/
 @[powerlib_domain] theorem not_exactUnder_lyapunovStable :
     connection% (¬ family.ExactUnder {.nonnegativeEnergy} (.flow .lyapunovStable)) := by
-  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
-  intro h
-  have hmem := deadGrid_mem_den_lyapunovStable
-  unfold powerlib.TMIO.Statement at hmem
-  have hI : deadGrid ∈ TMIO.realize family.meets {.nonnegativeEnergy} := by
-    rw [TMIO.mem_realize]
-    intro q hq
-    rw [Set.mem_singleton_iff] at hq
-    subst hq
-    exact ⟨le_rfl, le_rfl⟩
-  have h' : deadGrid ∈ TMIO.realize family.meets (family.translate (.flow .lyapunovStable) ∪
-      {.nonnegativeEnergy}) := by
-    rw [h]
-    exact ⟨hmem, hI⟩
-  rw [TMIO.mem_realize] at h'
-  have hw : Meets deadGrid .wellBottom := h' .wellBottom (by simp [family, translate])
-  exact lt_irrefl 0 hw.1
+  unfold powerlib.TMIO.Statement
+  refine Spectral.not_exactUnder_of_witness ?_ deadGrid_mem_den_lyapunovStable
+    (q := Requirement.wellBottom) (by simp [family, translate])
+    fun hw => lt_irrefl 0 (show Meets deadGrid .wellBottom from hw).1
+  rw [TMIO.mem_realize]
+  intro q hq
+  rw [Set.mem_singleton_iff] at hq
+  subst hq
+  exact ⟨le_rfl, le_rfl⟩
 
 /-! ### Instability away from equilibrium -/
 
@@ -800,12 +778,9 @@ while the translation asks for an anti-phase point. -/
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := offEquilibrium_mem_den_unstable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have hs : Meets offEquilibrium .saddle := hmem .saddle (by simp [family, translate])
-  have := hs.2
+  refine Spectral.not_exact_of_witness offEquilibrium_mem_den_unstable (q := .saddle)
+    (by simp [family, translate]) fun hs => ?_
+  have := (show Meets offEquilibrium .saddle from hs).2
   simp [offEquilibrium] at this
 
 end PLLPH

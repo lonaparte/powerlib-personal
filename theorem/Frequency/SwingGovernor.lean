@@ -4,6 +4,7 @@ import theorem.Linear.Rate
 import theorem.TMIO.ClaimElab
 import theorem.SingularPerturbation.FiniteHorizon
 import theorem.LTI.Decay
+import theorem.Spectral.Local
 
 /-! # Single-area swing + first-order governor (two-state frequency model)
 
@@ -406,9 +407,7 @@ def family : Family Model Requirement 2 1 := ⟨fun m => m.plant.system, Meets, 
 @[powerlib_foundation] theorem realize_univ :
     connection% (realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
+  refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
   obtain ⟨h1, h2⟩ : Meets m .stable := h .stable
   rcases (h .unstable : Meets m .unstable) with h3 | h3 <;> linarith
 

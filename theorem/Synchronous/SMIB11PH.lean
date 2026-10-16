@@ -1,5 +1,6 @@
 import theorem.PH.Linear
 import theorem.TMIO.ClaimElab
+import theorem.Spectral.Local
 
 /-! # Single machine, node capacitor, RL link and infinite bus: an 11-state pH system
 
@@ -387,9 +388,7 @@ def family : Family SMIB11Params Requirement 11 4 :=
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext p
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  exact fun h => h .impossible
+  exact Spectral.realize_univ_eq_empty_of_forall fun _ h => h .impossible
 
 /-- Passivity of the note's 11-state system with storage `H^tot`. -/
 @[powerlib_domain] theorem mem_den_passive (p : SMIB11Params) :

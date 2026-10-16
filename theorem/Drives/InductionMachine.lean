@@ -12,6 +12,7 @@ import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
 import theorem.Linear.Stability
 import theorem.Dynamics.ConverseLinearization
+import theorem.Spectral.Local
 
 /-! # Induction machine: rotor-flux algebra and indirect field orientation (IFOC)
 
@@ -590,9 +591,7 @@ private theorem decay_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext d
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
+  refine Spectral.realize_univ_eq_empty_of_forall fun d h => ?_
   have := (h (.decayRateAtMost (1 / d.p.Tr + 1)) : Meets d _).2.2
   linarith
 
@@ -710,19 +709,14 @@ negative-rotor drive satisfies these sentences without a positive rotor. -/
     (hP : P.Attractive ∨ P = .contractive ∨ P = .lyapunovStable) :
     connection% (¬ family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := negativeRotor_mem_den hP
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
   have ht : translate (.flow P) = {.positiveRotor} := by
     rcases hP with hP | rfl | rfl
     · cases P <;> first | rfl | exact hP.elim
     · rfl
     · rfl
-  have hm : Meets negativeRotor .positiveRotor := hmem .positiveRotor (by
-    change Requirement.positiveRotor ∈ translate (.flow P)
-    rw [ht]; rfl)
-  have := hm.1
+  refine Spectral.not_exact_of_witness (negativeRotor_mem_den hP) (q := .positiveRotor)
+    (by change Requirement.positiveRotor ∈ translate (.flow P); rw [ht]; rfl) fun hm => ?_
+  have := (show Meets negativeRotor .positiveRotor from hm).1
   norm_num [negativeRotor] at this
 
 /-! ## The attractive sentences are decided by `r_r / L_r` -/

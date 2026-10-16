@@ -838,11 +838,9 @@ private theorem mem_den_flow {m : Model} {P : Flow.Property} :
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
-  have h1 : 0 < m.μ * m.ustar * m.v0 := h .synchronizing
-  have h2 : m.μ * m.ustar * m.v0 < 0 := h .antiSynchronizing
+  refine Spectral.realize_univ_eq_empty_of .synchronizing .antiSynchronizing fun m h1 h2 => ?_
+  have h1 : 0 < m.μ * m.ustar * m.v0 := h1
+  have h2 : m.μ * m.ustar * m.v0 < 0 := h2
   linarith
 
 private theorem k_pos (m : Model) (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : 0 < m.μ * m.ustar * m.v0) :
@@ -860,30 +858,23 @@ private theorem k_pos (m : Model) (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : 0 < m.μ
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  rcases s with P | _
-  · rw [mem_den_flow]
-    cases P
-    case lyapunovStable =>
-      obtain ⟨hC, hL, hR⟩ : Meets m .physical := hm _ (by simp [translate])
-      have hs : Meets m .synchronizing := hm _ (by simp [translate])
-      have hδ : Meets m .dissipative := hm _ (by simp [translate])
-      exact lyapunovStable m hC hL hR (k_pos m hL hR hs) hδ
-    case locallyExponentiallyStable =>
-      obtain ⟨hC, hL, hR⟩ : Meets m .physical := hm _ (by simp [translate])
-      exact les m hC hL hR (hm .synchronizing (by simp [translate]))
-        (hm .matching (by simp [translate])) (hm .damped (by simp [translate]))
-    case locallyAsymptoticallyStable =>
-      obtain ⟨hC, hL, hR⟩ : Meets m .physical := hm _ (by simp [translate])
-      exact Flow.locallyExponentiallyStable_localAsymptoticStable
-        (les m hC hL hR (hm .synchronizing (by simp [translate]))
-          (hm .matching (by simp [translate])) (hm .damped (by simp [translate])))
-    all_goals
-      have h1 : 0 < m.μ * m.ustar * m.v0 := hm .synchronizing trivial
-      have h2 : m.μ * m.ustar * m.v0 < 0 := hm .antiSynchronizing trivial
-      exact absurd h1 (not_lt.mpr h2.le)
+  refine Spectral.chain_le_semantics_of_localTable (Rl := {.physical, .synchronizing, .dissipative})
+    (Rs := {.physical, .synchronizing, .damped, .matching}) (Ru := Set.univ) (Rp := ∅)
+    (fun s => ?_) realize_univ (fun m hm => ?_) (fun m hm => ?_) (fun m hm => ?_) (fun m _ => ?_)
+  · rcases s with P | _
+    · cases P <;> rfl
+    · rfl
+  · rw [TMIO.mem_realize] at hm
+    obtain ⟨hC, hL, hR⟩ : Meets m .physical := hm .physical (by simp)
+    exact mem_den_flow.mpr (lyapunovStable m hC hL hR (k_pos m hL hR (hm .synchronizing (by simp)))
+      (hm .dissipative (by simp)))
+  · rw [TMIO.mem_realize] at hm
+    obtain ⟨hC, hL, hR⟩ : Meets m .physical := hm .physical (by simp)
+    exact mem_den_flow.mpr (les m hC hL hR (hm .synchronizing (by simp)) (hm .matching (by simp))
+      (hm .damped (by simp)))
+  · change m ∈ TMIO.realize Meets Set.univ at hm
+    rw [realize_univ] at hm
+    exact hm.elim
   · rw [family_isAutonomous.den_passive]
     trivial
 
@@ -975,7 +966,7 @@ linearization is Hurwitz (`jac_isHurwitz`). -/
     (hδ : 0 < m.margin) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den_flow]
-  exact Flow.locallyExponentiallyStable_localAsymptoticStable (les m hC hL hR hs hη hδ)
+  exact Spectral.den_locallyExponentiallyStable_subset_las
+    (mem_den_locallyExponentiallyStable m hC hL hR hs hη hδ)
 
 end powerlib.GFM.Matching.MatchingStiffGrid

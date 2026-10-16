@@ -8,6 +8,7 @@ import theorem.Linear.Family
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Lyapunov
 import theorem.Dynamics.Instability
+import theorem.Spectral.Local
 
 /-! # The sinusoidally coupled swing equation (canonical single-machine model)
 
@@ -686,9 +687,7 @@ requirement language is inconsistent. -/
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
+  refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
   have h1 : 0 < m.p.D := h .damped
   have h2 : 0 < m.p.syncCoeff m.δ := h .synchronizing
   rcases (h .destabilizing : Meets m .destabilizing) with h3 | h3 <;> linarith
@@ -701,30 +700,23 @@ proves instability; passivity holds without requirement. -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  have hnone : (∀ q, Meets m q) → False := fun h => by
-    have hm' : m ∈ TMIO.realize Meets Set.univ := (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    rw [realize_univ] at hm'
-    exact hm'
-  rcases s with P | _
-  · rw [mem_den_flow_iff]
-    cases P
-    case lyapunovStable =>
-      exact ls_of (hm .inertia (by simp [translate])) (hm .dampingNonneg (by simp [translate]))
-        (hm .balanced (by simp [translate])) (hm .synchronizing (by simp [translate]))
-    case locallyAsymptoticallyStable =>
-      exact Flow.locallyExponentiallyStable_localAsymptoticStable
-        (les_of (hm .inertia (by simp [translate])) (hm .damped (by simp [translate]))
-          (hm .balanced (by simp [translate])) (hm .synchronizing (by simp [translate])))
-    case locallyExponentiallyStable =>
-      exact les_of (hm .inertia (by simp [translate])) (hm .damped (by simp [translate]))
-        (hm .balanced (by simp [translate])) (hm .synchronizing (by simp [translate]))
-    case unstable =>
-      exact unstable_of (hm .inertia (by simp [translate])) (hm .balanced (by simp [translate]))
-        (hm .destabilizing (by simp [translate]))
-    all_goals exact (hnone fun q => hm q trivial).elim
+  refine Spectral.chain_le_semantics_of_localTable
+    (Rl := {.balanced, .inertia, .dampingNonneg, .synchronizing})
+    (Rs := {.balanced, .inertia, .damped, .synchronizing})
+    (Ru := {.balanced, .inertia, .destabilizing}) (Rp := ∅) (fun s => ?_) realize_univ
+    (fun m hm => ?_) (fun m hm => ?_) (fun m hm => ?_) fun m _ => ?_
+  · rcases s with P | _
+    · cases P <;> rfl
+    · rfl
+  · rw [TMIO.mem_realize] at hm
+    exact mem_den_flow_iff.mpr (ls_of (hm .inertia (by simp)) (hm .dampingNonneg (by simp))
+      (hm .balanced (by simp)) (hm .synchronizing (by simp)))
+  · rw [TMIO.mem_realize] at hm
+    exact mem_den_flow_iff.mpr (les_of (hm .inertia (by simp)) (hm .damped (by simp))
+      (hm .balanced (by simp)) (hm .synchronizing (by simp)))
+  · rw [TMIO.mem_realize] at hm
+    exact mem_den_flow_iff.mpr (unstable_of (hm .inertia (by simp)) (hm .balanced (by simp))
+      (hm .destabilizing (by simp)))
   · rw [family_isAutonomous.den_passive]
     trivial
 
@@ -806,34 +798,23 @@ an equilibrium whose Jacobian `[[0, 1], [−K/M, −D/M]]` is Hurwitz. -/
 @[powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
     connection% (family.ExactUnder {.inertia} (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  unfold Family.ExactUnder TMIO.ExactUnder
-  change TMIO.realize Meets ({.balanced, .inertia, .damped, .synchronizing} ∪ {.inertia}) = _
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
-    Set.mem_inter_iff]
-  constructor
-  · intro h
-    have hM : 0 < m.p.M := h .inertia (by simp)
-    refine ⟨mem_den_flow_iff.mpr ?_, fun q hq => by rw [hq]; exact hM⟩
-    change LocallyExponentiallyStable _ _
-    rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ m.p.contDiff_field
-      m.fderiv_point, m.p.field_eq_zero_iff hM.ne', m.p.isHurwitz_jacobian_iff hM]
-    have hb : m.p.Pe m.δ = m.p.Pm := h .balanced (by simp)
-    exact ⟨⟨by simp [Model.point], by simpa [Model.point] using hb⟩,
-      h .damped (by simp), h .synchronizing (by simp)⟩
-  · rintro ⟨hd, hI⟩ q hq
-    have hM : 0 < m.p.M := hI .inertia rfl
-    have hles : LocallyExponentiallyStable m.p.field m.point := mem_den_flow_iff.mp hd
-    rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ m.p.contDiff_field
-      m.fderiv_point, m.p.field_eq_zero_iff hM.ne', m.p.isHurwitz_jacobian_iff hM] at hles
-    obtain ⟨⟨-, hb⟩, hD, hK⟩ := hles
-    rcases hq with ((rfl | rfl | rfl | rfl) | rfl)
-    · show m.p.Pe m.δ = m.p.Pm
-      simpa [Model.point] using hb
-    · exact hM
-    · exact hD
-    · exact hK
-    · exact hM
+  refine Spectral.exactUnder_les_of_jacobian (fun m P => mem_den_flow_iff) {.inertia}
+    (fun m => m.p.jacobian m.δ) (fun m _ hm => ?_) (fun m _ => m.p.contDiff_field)
+    (fun m _ => m.fderiv_point) fun m hI heq hH => ?_
+  · rw [TMIO.mem_realize] at hm
+    exact mem_den_flow_iff.mpr (les_of (hm .inertia (by simp [family, translate]))
+      (hm .damped (by simp [family, translate])) (hm .balanced (by simp [family, translate]))
+      (hm .synchronizing (by simp [family, translate])))
+  have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
+  rw [m.p.field_eq_zero_iff hM.ne'] at heq
+  rw [m.p.isHurwitz_jacobian_iff hM] at hH
+  rw [TMIO.mem_realize]
+  rintro q (rfl | rfl | rfl | rfl)
+  · show m.p.Pe m.δ = m.p.Pm
+    simpa [Model.point] using heq.2
+  · exact hM
+  · exact hH.1
+  · exact hH.2
 
 /-! ### The local asymptotic and Lyapunov translations within positive inertia -/
 
@@ -964,26 +945,20 @@ synchronizing coefficient is unstable. -/
 @[powerlib_domain] theorem exactUnder_locallyAsymptoticallyStable :
     connection% (family.ExactUnder {.inertia} (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  unfold Family.ExactUnder TMIO.ExactUnder
-  change TMIO.realize Meets ({.balanced, .inertia, .damped, .synchronizing} ∪ {.inertia}) = _
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
-    Set.mem_inter_iff]
-  constructor
-  · intro h
-    have hM : 0 < m.p.M := h .inertia (by simp)
-    refine ⟨mem_den_flow_iff.mpr (Flow.locallyExponentiallyStable_localAsymptoticStable
-      (les_of hM (h .damped (by simp)) (h .balanced (by simp)) (h .synchronizing (by simp)))),
-      fun q hq => by rw [hq]; exact hM⟩
-  · rintro ⟨hd, hI⟩ q hq
-    have hM : 0 < m.p.M := hI .inertia rfl
-    obtain ⟨hb, hD, hK⟩ := las_requirements hM (mem_den_flow_iff.mp hd)
-    rcases hq with ((rfl | rfl | rfl | rfl) | rfl)
-    · exact hb
-    · exact hM
-    · exact hD
-    · exact hK
-    · exact hM
+  refine Spectral.exactUnder_iff_forall.mpr fun m hI => ⟨fun hm => ?_, fun hd => ?_⟩
+  · rw [TMIO.mem_realize] at hm
+    exact Spectral.den_locallyExponentiallyStable_subset_las (mem_den_flow_iff.mpr
+      (les_of (hm .inertia (by simp [family, translate])) (hm .damped (by simp [family, translate]))
+        (hm .balanced (by simp [family, translate]))
+        (hm .synchronizing (by simp [family, translate]))))
+  have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
+  obtain ⟨hb, hD, hK⟩ := las_requirements hM (mem_den_flow_iff.mp hd)
+  rw [TMIO.mem_realize]
+  rintro q (rfl | rfl | rfl | rfl)
+  · exact hb
+  · exact hM
+  · exact hD
+  · exact hK
 
 /-- A flat power-angle curve: `M = D = 1`, `P_m = k₁ = k₂ = k₃ = 0`, `δ* = 0`. Every angle is
 balanced; the field is `δ̇ = ω`, `ω̇ = −ω`. -/
@@ -1018,24 +993,15 @@ positive inertia and is Lyapunov stable, but its synchronizing coefficient is ze
 @[powerlib_domain] theorem not_exactUnder_lyapunovStable :
     connection% (¬ family.ExactUnder {.inertia} (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  unfold Family.ExactUnder TMIO.ExactUnder
-  intro h
-  have hmem := flatCurve_mem_den_lyapunovStable
-  unfold powerlib.TMIO.Statement at hmem
-  have hI : flatCurve ∈ TMIO.realize family.meets {.inertia} := by
-    rw [TMIO.mem_realize]
-    intro q hq
-    rw [Set.mem_singleton_iff] at hq
-    subst hq
-    show (0 : ℝ) < 1
-    norm_num
-  have h' : flatCurve ∈ TMIO.realize family.meets (family.translate (.flow .lyapunovStable) ∪
-      {.inertia}) := by
-    rw [h]
-    exact ⟨hmem, hI⟩
-  rw [TMIO.mem_realize] at h'
-  have hs : Meets flatCurve .synchronizing := h' .synchronizing (by simp [family, translate])
-  simp [Meets, flatCurve, SwingParams.syncCoeff] at hs
+  refine Spectral.not_exactUnder_of_witness ?_ flatCurve_mem_den_lyapunovStable
+    (q := .synchronizing) (by simp [family, translate])
+    (by simp [family, Meets, flatCurve, SwingParams.syncCoeff])
+  rw [TMIO.mem_realize]
+  intro q hq
+  rw [Set.mem_singleton_iff] at hq
+  subst hq
+  show (0 : ℝ) < 1
+  norm_num
 
 /-- At a balanced angle with zero synchronizing coefficient the accelerating power is
 `P_m − P_e(δ* + s) = (P_m − k₁)(1 − cos s)`, of one sign on both sides of `δ*`.
@@ -1242,37 +1208,22 @@ locally exponentially stable without positive inertia. -/
 @[powerlib_domain] theorem not_exact_locallyExponentiallyStable :
     connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := negativeInertia_mem_den_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  exact negativeInertia_not_meets (hmem .inertia (by simp [family, translate]))
+  exact Spectral.not_exact_of_witness negativeInertia_mem_den_locallyExponentiallyStable
+    (q := .inertia) (by simp [family, translate]) negativeInertia_not_meets
 
 /-- The local asymptotic translation is sound but not exact (the same witness). -/
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := negativeInertia_mem_den_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  have hmem' : negativeInertia ∈ family.den (.flow .locallyAsymptoticallyStable) :=
-    family_isAutonomous.mem_den_flow.mpr (Flow.locallyExponentiallyStable_localAsymptoticStable
-      (family_isAutonomous.mem_den_flow.mp hmem))
-  rw [← h, TMIO.mem_realize] at hmem'
-  exact negativeInertia_not_meets (hmem' .inertia (by simp [family, translate]))
+  exact Spectral.not_exact_of_les_witness negativeInertia_mem_den_locallyExponentiallyStable
+    (Or.inr rfl) (q := Requirement.inertia) (by simp [family, translate]) negativeInertia_not_meets
 
 /-- The Lyapunov translation is sound but not exact (the same witness). -/
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := negativeInertia_mem_den_locallyExponentiallyStable
-  unfold powerlib.TMIO.Statement at hmem
-  have hmem' : negativeInertia ∈ family.den (.flow .lyapunovStable) :=
-    family_isAutonomous.mem_den_flow.mpr
-      (LocallyExponentiallyStable.lyapunovStable (family_isAutonomous.mem_den_flow.mp hmem))
-  rw [← h, TMIO.mem_realize] at hmem'
-  exact negativeInertia_not_meets (hmem' .inertia (by simp [family, translate]))
+  exact Spectral.not_exact_of_les_witness negativeInertia_mem_den_locallyExponentiallyStable
+    (Or.inl rfl) (q := Requirement.inertia) (by simp [family, translate]) negativeInertia_not_meets
 
 /-! ## The linearized swing family
 
@@ -1445,8 +1396,8 @@ def offEquilibrium : Model := ⟨⟨1, 0, 1, 0, 0, 0⟩, 0⟩
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero offEquilibrium.p.contDiff_field
-    fun h => ?_)
+  refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff)
+    offEquilibrium.p.contDiff_field fun h => ?_
   rw [offEquilibrium.p.field_eq_zero_iff (by norm_num [offEquilibrium])] at h
   simp [offEquilibrium, Model.point, SwingParams.Pe] at h
 
@@ -1455,12 +1406,8 @@ while the translation asks for a balanced angle. -/
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := offEquilibrium_mem_den_unstable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have hb : Meets offEquilibrium .balanced := hmem .balanced (by simp [family, translate])
-  simp [Meets, offEquilibrium, SwingParams.Pe] at hb
+  exact Spectral.not_exact_of_witness offEquilibrium_mem_den_unstable (q := .balanced)
+    (by simp [family, translate]) (by simp [family, Meets, offEquilibrium, SwingParams.Pe])
 
 end Swing
 

@@ -347,9 +347,7 @@ coefficient with the platform Routh condition has no destabilizing platform sign
 @[powerlib_domain] theorem rig_realize_univ :
     connection% (TMIO.realize rigFamily.meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext y
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
+  refine Spectral.realize_univ_eq_empty_of_forall fun y h => ?_
   have h1 : 0 < y.H := h .routh
   have h2 : y.H < 0 ∨ y.design.K < 0 := h .lagged
   have h3 : 0 < y.design.K := h (.design .synchronizing)
@@ -361,38 +359,20 @@ instability, and passivity holds without requirement. -/
 @[powerlib_domain] theorem rig_chain_le_semantics :
     connection% (∀ P, rigFamily.chain P ≤ rigFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s y hy => ?_
-  rw [TMIO.mem_realize] at hy
-  change ∀ q ∈ rigTranslate s, RigMeets y q at hy
-  have hnone : (∀ q, RigMeets y q) → False := fun h => by
-    have hy' : y ∈ TMIO.realize rigFamily.meets Set.univ :=
-      (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    have hu := rig_realize_univ
-    unfold powerlib.TMIO.Statement at hu
-    rw [hu] at hy'
-    exact hy'
-  rcases s with P | _
-  · rw [rig_mem_den_flow_iff]
-    have hles : LocallyExponentiallyStable (rigField y) y.point →
-        P = .locallyExponentiallyStable ∨ P = .locallyAsymptoticallyStable ∨
-          P = .lyapunovStable → P.holds (rigField y) y.point := by
-      rintro h (rfl | rfl | rfl)
-      · exact h
-      · exact Flow.locallyExponentiallyStable_localAsymptoticStable h
-      · exact h.lyapunovStable
-    cases P
-    case unstable =>
-      exact rig_unstable_of (hy (.design .physical) (by simp [rigTranslate]))
-        (hy .lag (by simp [rigTranslate])) (hy (.design .balanced) (by simp [rigTranslate]))
-        (hy .lagged (by simp [rigTranslate]))
-    case lyapunovStable | locallyAsymptoticallyStable | locallyExponentiallyStable =>
-      exact hles (rig_les_of (hy (.design .physical) (by simp [rigTranslate]))
-        (hy .lag (by simp [rigTranslate])) (hy (.design .balanced) (by simp [rigTranslate]))
-        (hy (.design .synchronizing) (by simp [rigTranslate])) (hy .routh (by simp [rigTranslate])))
-        (by simp)
-    all_goals exact (hnone fun q => hy q trivial).elim
-  · rw [rigFamily_isAutonomous.den_passive]
-    trivial
+  refine Spectral.chain_le_semantics_of_localTable_same
+    (Rs := {.design .balanced, .design .physical, .design .synchronizing, .lag, .routh})
+    (Ru := {.design .balanced, .design .physical, .lag, .lagged}) (fun s => ?_) rig_realize_univ
+    (fun y hy => ?_) (fun y hy => ?_) rigFamily_isAutonomous.den_passive
+  · rcases s with P | _
+    · cases P <;> rfl
+    · rfl
+  · rw [TMIO.mem_realize] at hy
+    exact rig_mem_den_flow_iff.mpr (rig_les_of (hy (.design .physical) (by simp))
+      (hy .lag (by simp)) (hy (.design .balanced) (by simp))
+      (hy (.design .synchronizing) (by simp)) (hy .routh (by simp)))
+  · rw [TMIO.mem_realize] at hy
+    exact rig_mem_den_flow_iff.mpr (rig_unstable_of (hy (.design .physical) (by simp))
+      (hy .lag (by simp)) (hy (.design .balanced) (by simp)) (hy .lagged (by simp)))
 
 /-- Passivity is translated exactly: a platform without ports is passive. -/
 @[powerlib_domain] theorem rig_exact_passive : connection% (rigFamily.Exact .passive) := by
@@ -406,44 +386,37 @@ the four-state Routh–Hurwitz criterion, both directions). -/
 @[powerlib_domain] theorem rig_exactUnder_locallyExponentiallyStable :
     connection% (rigFamily.ExactUnder {.design .physical, .lag}
       (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement Family.ExactUnder TMIO.ExactUnder
-  change TMIO.realize RigMeets ({.design .balanced, .design .physical, .design .synchronizing,
-    .lag, .routh} ∪ {.design .physical, .lag}) = _
-  ext y
-  simp only [TMIO.mem_realize, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff,
-    Set.mem_inter_iff]
-  constructor
-  · intro h
-    have hp : Meets y.design .physical := h (.design .physical) (by simp)
-    have hτ : 0 < y.τ := h .lag (by simp)
-    refine ⟨rig_mem_den_flow_iff.mpr (rig_les_of hp hτ (h (.design .balanced) (by simp))
-      (h (.design .synchronizing) (by simp)) (h .routh (by simp))), fun q hq => ?_⟩
-    rcases hq with rfl | rfl
-    · exact hp
-    · exact hτ
-  · rintro ⟨hd, hI⟩ q hq
-    have hp : Meets y.design .physical := hI (.design .physical) (by simp)
-    have hτ : 0 < y.τ := hI .lag (by simp)
-    obtain ⟨hM, hD, hω⟩ := hp
-    have hles : LocallyExponentiallyStable (rigField y) y.point := rig_mem_den_flow_iff.mp hd
-    rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ (contDiff_rigField y)
-      (hasFDerivAt_rigField y).fderiv, rigField_point_eq_zero_iff y hω.ne',
-      Criteria.isHurwitz_fin_four_iff] at hles
-    obtain ⟨hb, -, -, hdet, hg⟩ := hles
-    have hK : 0 < y.design.K := by
-      rw [rig_det_jacobian] at hdet
-      exact pos_of_mul_pos_right hdet (by positivity)
-    have hH : 0 < y.H := by
-      rw [← gap_eq y hM.ne' hτ.ne']
-      exact mul_pos (by linarith) (by positivity)
-    rcases hq with ((rfl | rfl | rfl | rfl | rfl) | (rfl | rfl))
-    · exact hb
-    · exact ⟨hM, hD, hω⟩
-    · exact hK
-    · exact hτ
-    · exact hH
-    · exact ⟨hM, hD, hω⟩
-    · exact hτ
+  unfold powerlib.TMIO.Statement
+  refine Spectral.exactUnder_les_of_jacobian (fun y P => rig_mem_den_flow_iff)
+    {.design .physical, .lag} Rig.jacobian (fun y _ hy => ?_) (fun y _ => contDiff_rigField y)
+    (fun y _ => (hasFDerivAt_rigField y).fderiv) fun y hI heq hHur => ?_
+  · rw [TMIO.mem_realize] at hy
+    exact rig_mem_den_flow_iff.mpr (rig_les_of
+      (hy (.design .physical) (by simp [rigFamily, rigTranslate]))
+      (hy .lag (by simp [rigFamily, rigTranslate]))
+      (hy (.design .balanced) (by simp [rigFamily, rigTranslate]))
+      (hy (.design .synchronizing) (by simp [rigFamily, rigTranslate]))
+      (hy .routh (by simp [rigFamily, rigTranslate])))
+  rw [TMIO.mem_realize] at hI
+  have hp : Meets y.design .physical := hI (.design .physical) (by simp)
+  have hτ : 0 < y.τ := hI .lag (by simp)
+  obtain ⟨hM, hD, hω⟩ := hp
+  rw [rigField_point_eq_zero_iff y hω.ne'] at heq
+  rw [Criteria.isHurwitz_fin_four_iff] at hHur
+  obtain ⟨-, -, hdet, hg⟩ := hHur
+  have hK : 0 < y.design.K := by
+    rw [rig_det_jacobian] at hdet
+    exact pos_of_mul_pos_right hdet (by positivity)
+  have hH : 0 < y.H := by
+    rw [← gap_eq y hM.ne' hτ.ne']
+    exact mul_pos (by linarith) (by positivity)
+  rw [TMIO.mem_realize]
+  rintro q (rfl | rfl | rfl | rfl | rfl)
+  · exact heq
+  · exact ⟨hM, hD, hω⟩
+  · exact hK
+  · exact hτ
+  · exact hH
 
 /-! ## The observation layer and the stack -/
 

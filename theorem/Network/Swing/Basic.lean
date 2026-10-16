@@ -6,6 +6,7 @@ import theorem.Family.Basic
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Lyapunov
 import theorem.Network.PowerFlow
+import theorem.Spectral.Local
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
@@ -653,9 +654,7 @@ unstable one: the whole requirement language is inconsistent. -/
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize (Meets (n := n)) Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
+  refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
   have hH := jacobian_isHurwitz_of_angle m.params m.θ (h .angle) (h .connected)
   obtain ⟨s, hs, hre⟩ : Meets m .jacobianUnstable := h .jacobianUnstable
   have := (Linear.spectrallyStable_iff_isHurwitz _).2 hH s hs
@@ -668,34 +667,16 @@ holds without requirement. -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, (family (n := n)).chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
-  have hnone : (∀ q, Meets m q) → False := fun h => by
-    have hm' : m ∈ TMIO.realize Meets Set.univ :=
-      (TMIO.mem_realize _ _ _).mpr fun q _ => h q
-    rw [realize_univ] at hm'
-    exact hm'
-  rcases s with P | _
-  · have hles : Meets m .powerFlow → Meets m .jacobianStable →
-        LocallyExponentiallyStable m.field 0 := fun hp hH =>
-      family_isAutonomous.mem_den_flow.mp (les_of_meets hp hH)
-    rw [family_isAutonomous.mem_den_flow]
-    cases P
-    case lyapunovStable =>
-      exact (hles (hm .powerFlow (by simp [translate]))
-        (hm .jacobianStable (by simp [translate]))).lyapunovStable
-    case locallyAsymptoticallyStable =>
-      exact Flow.locallyExponentiallyStable_localAsymptoticStable
-        (hles (hm .powerFlow (by simp [translate])) (hm .jacobianStable (by simp [translate])))
-    case locallyExponentiallyStable =>
-      exact hles (hm .powerFlow (by simp [translate])) (hm .jacobianStable (by simp [translate]))
-    case unstable =>
-      exact family_isAutonomous.mem_den_flow.mp (unstable_of_meets
-        (hm .powerFlow (by simp [translate])) (hm .jacobianUnstable (by simp [translate])))
-    all_goals exact (hnone fun q => hm q trivial).elim
-  · rw [family_isAutonomous.den_passive]
-    trivial
+  refine Spectral.chain_le_semantics_of_localTable_same (Rs := {.powerFlow, .jacobianStable})
+    (Ru := {.powerFlow, .jacobianUnstable}) (fun s => ?_) realize_univ (fun m hm => ?_)
+    (fun m hm => ?_) family_isAutonomous.den_passive
+  · rcases s with P | _
+    · cases P <;> rfl
+    · rfl
+  · rw [TMIO.mem_realize] at hm
+    exact les_of_meets (hm .powerFlow (by simp)) (hm .jacobianStable (by simp))
+  · rw [TMIO.mem_realize] at hm
+    exact unstable_of_meets (hm .powerFlow (by simp)) (hm .jacobianUnstable (by simp))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
 @[powerlib_domain] theorem exact_passive : connection% ((family (n := n)).Exact .passive) := by
@@ -720,18 +701,17 @@ reduced field forces an equilibrium with a Hurwitz Jacobian. -/
 @[powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% ((family (n := n)).Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  rw [TMIO.mem_realize, mem_den_flow_iff]
-  change _ ↔ LocallyExponentiallyStable _ _
-  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _
-    (reducedField_contDiff m.params) (hasFDerivAt_reducedField m.params m.θ).fderiv]
-  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
-    forall_eq]
-  constructor
-  · rintro ⟨hp, hH⟩
-    exact ⟨reducedField_equilibrium m.params m.θ hp, hH⟩
-  · rintro ⟨he, hH⟩
-    exact ⟨powerFlow_of_equilibrium he, hH⟩
+  refine Spectral.exact_of_exactUnder_empty (Spectral.exactUnder_les_of_jacobian
+    (fun m P => mem_den_flow_iff) ∅ (fun m => jacobian m.params m.θ) (fun m _ hm => ?_)
+    (fun m _ => reducedField_contDiff m.params)
+    (fun m _ => (hasFDerivAt_reducedField m.params m.θ).fderiv) fun m _ heq hH => ?_)
+  · rw [TMIO.mem_realize] at hm
+    exact les_of_meets (hm .powerFlow (by simp [family, translate]))
+      (hm .jacobianStable (by simp [family, translate]))
+  rw [TMIO.mem_realize]
+  rintro q (rfl | rfl)
+  · exact powerFlow_of_equilibrium heq
+  · exact hH
 
 /-- **Swing network, relative-angle coordinates.** At a synchronous equilibrium with
 `Pₖ = ∑ⱼ Bₖⱼ sin(θ*ₖ - θ*ⱼ)`, every line angle difference `|θ*ᵢ - θ*ⱼ| < π/2` and a
@@ -766,8 +746,8 @@ def offEquilibrium : Model n :=
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% ((offEquilibrium (n := n)) ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  refine mem_den_flow_iff.mpr (Dynamics.unstable_of_ne_zero (reducedField_contDiff _)
-    fun h => ?_)
+  refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff)
+    (reducedField_contDiff _) fun h => ?_
   have := powerFlow_of_equilibrium h 0
   simp [offEquilibrium, powerInjection] at this
 
@@ -776,13 +756,9 @@ while the translation asks for power balance. -/
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ (family (n := n)).Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := offEquilibrium_mem_den_unstable (n := n)
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have hp : Meets (offEquilibrium (n := n)) .powerFlow :=
-    hmem .powerFlow (by simp [family, translate])
-  have := hp 0
+  refine Spectral.not_exact_of_witness (offEquilibrium_mem_den_unstable (n := n))
+    (q := .powerFlow) (by simp [family, translate]) fun hp => ?_
+  have := (hp : Meets (offEquilibrium (n := n)) .powerFlow) 0
   simp [offEquilibrium, powerInjection] at this
 
 /-! ### The Lyapunov translation: two uncoupled machines -/
@@ -867,12 +843,8 @@ machines are Lyapunov stable at a power-balance point whose reduced Jacobian is 
 @[powerlib_domain] theorem not_exact_lyapunovStable_two :
     connection% (¬ (family (n := 1)).Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := uncoupled_mem_den_lyapunovStable
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have hj : Meets uncoupled .jacobianStable := hmem .jacobianStable (by simp [family, translate])
-  exact uncoupled_not_isHurwitz hj
+  exact Spectral.not_exact_of_witness uncoupled_mem_den_lyapunovStable (q := .jacobianStable)
+    (by simp [family, translate]) uncoupled_not_isHurwitz
 
 /-! ### The Lyapunov translation for every number of machines -/
 
@@ -976,13 +948,8 @@ point whose reduced Jacobian is not Hurwitz. -/
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ (family (n := n + 1)).Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  intro h
-  have hmem := uncoupledN_mem_den_lyapunovStable (n := n)
-  unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
-  have hj : Meets (uncoupledN n) .jacobianStable :=
-    hmem .jacobianStable (by simp [family, translate])
-  exact uncoupledN_not_isHurwitz hj
+  exact Spectral.not_exact_of_witness (uncoupledN_mem_den_lyapunovStable (n := n))
+    (q := .jacobianStable) (by simp [family, translate]) uncoupledN_not_isHurwitz
 
 /-! ### A single machine -/
 

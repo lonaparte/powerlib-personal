@@ -1,6 +1,7 @@
 import theorem.PH.Linear
 import theorem.Flow.Certificate
 import theorem.TMIO.ClaimElab
+import theorem.Spectral.Local
 
 /-! # Structural results for port-Hamiltonian systems
 
@@ -420,9 +421,7 @@ def family : Family Model Requirement 2 0 :=
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  exact fun h => h .impossible
+  exact Spectral.realize_univ_eq_empty_of_forall fun _ h => h .impossible
 
 /-- The minimizer `x* = (−2, 0)` meets the note's hypothesis.
 Static evidence on the model, not a connection conclusion. -/

@@ -1,6 +1,7 @@
 import theorem.Frequency.Basic
 import theorem.Linear.Rate
 import theorem.TMIO.ClaimElab
+import theorem.Spectral.Local
 
 /-! # Two-area load-frequency control (LFC) with AGC
 
@@ -415,17 +416,13 @@ def family7 : Family Model7 Requirement 7 2 :=
 @[powerlib_foundation] theorem realize_univ :
     connection% (realize family.meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  exact fun h => meetsMatrix_univ _ h
+  exact Spectral.realize_univ_eq_empty_of_forall fun _ h => meetsMatrix_univ _ h
 
 /-- No seven-state model meets every requirement. -/
 @[powerlib_foundation] theorem realize_univ7 :
     connection% (realize family7.meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext m
-  simp only [mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  exact fun h => meetsMatrix_univ _ h
+  exact Spectral.realize_univ_eq_empty_of_forall fun _ h => meetsMatrix_univ _ h
 
 /-- Soundness of the matrix requirements for any linear family read through `MeetsMatrix`
 (generic: an arbitrary family with an arbitrary plant map). -/

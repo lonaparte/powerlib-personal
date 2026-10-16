@@ -531,9 +531,7 @@ Routh conditions exclude every strict violation. -/
 @[powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize family.meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
-  ext y
-  simp only [TMIO.mem_realize, Set.mem_univ, true_implies, Set.mem_empty_iff_false, iff_false]
-  intro h
+  refine Spectral.realize_univ_eq_empty_of_forall fun y h => ?_
   have hL : 0 < y.design.L := h .physical
   have hT : 0 < y.Ts := h .sampling
   have hr : 0 < y.a2 ∧ 0 < y.a0 ∧ y.a3 * y.a0 < y.a2 * y.a1 := h .routh

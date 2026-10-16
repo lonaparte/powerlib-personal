@@ -121,29 +121,20 @@ private theorem exactUnder_offBoundary_of {P : Flow.Property}
     · exact hm
     · exact hm.1
   have hS : family.Sound (.flow P) := Family.chain_le_semantics_iff.mp hsound _
-  unfold Family.ExactUnder TMIO.ExactUnder
-  ext m
-  rw [htr, Set.mem_inter_iff, TMIO.mem_realize, TMIO.mem_realize]
-  constructor
-  · intro h
-    refine ⟨hS ?_, fun q hq => h q (Or.inr hq)⟩
-    rw [TMIO.mem_realize, htr]
-    exact fun q hq => h q (Or.inl hq)
-  · rintro ⟨hd, hI⟩ q hq
-    have hx : Meets m .equilibrium := hI .equilibrium (by simp)
-    have hV : Meets m .positiveReference := hI .positiveReference (by simp)
-    have hob : Meets m .offBoundary := hI .offBoundary (by simp)
-    have hr : Meets m .routh := by
-      rcases hob with hr | hviol
-      · exact hr
-      · exact absurd (hLS m hd) (unstable_of_violation hV hx hviol)
-    rcases hq with hq | hq
-    · simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
-      rcases hq with rfl | rfl | rfl
-      · exact hx
-      · exact hV
-      · exact hr
-    · exact hI q hq
+  refine Spectral.exactUnder_iff_forall.mpr fun m hI => ⟨fun h => hS h, fun hd => ?_⟩
+  rw [TMIO.mem_realize] at hI
+  have hx : Meets m .equilibrium := hI .equilibrium (by simp)
+  have hV : Meets m .positiveReference := hI .positiveReference (by simp)
+  have hob : Meets m .offBoundary := hI .offBoundary (by simp)
+  have hr : Meets m .routh := by
+    rcases hob with hr | hviol
+    · exact hr
+    · exact absurd (hLS m hd) (unstable_of_violation hV hx hviol)
+  rw [TMIO.mem_realize, htr]
+  rintro q (rfl | rfl | rfl)
+  · exact hx
+  · exact hV
+  · exact hr
 
 /-- **Off the Routh boundary the Lyapunov translation is exact.** At an equilibrium with positive
 reference whose Jacobian is not on the 4×4 Routh boundary, Lyapunov stability holds exactly when
@@ -390,40 +381,20 @@ private theorem hopfCenter_not_violation :
   rw [h1, h2, h3, h4]
   norm_num
 
-/-- A member of a local denotation at an equilibrium with positive reference whose Jacobian is not
-Routh refutes exactness of the translation within the context of an equilibrium with positive
-reference. -/
-private theorem not_exactUnder_of_witness {P : Flow.Property}
-    (htr : family.translate (.flow P) = {.equilibrium, .positiveReference, .routh}) {m : Model}
-    (hmem : m ∈ family.den (.flow P)) (he : m.p.field m.x = 0) (hV : 0 < m.p.VdcRef)
-    (hr : ¬ RouthFin4 (m.p.jacobian m.x)) :
-    ¬ family.ExactUnder {.equilibrium, .positiveReference} (.flow P) := by
-  unfold Family.ExactUnder TMIO.ExactUnder
-  intro h
-  have hI : m ∈ TMIO.realize family.meets {.equilibrium, .positiveReference} := by
-    rw [TMIO.mem_realize]
-    intro q hq
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
-    rcases hq with rfl | rfl
-    · exact he
-    · exact hV
-  have h' : m ∈ TMIO.realize family.meets
-      (family.translate (.flow P) ∪ {.equilibrium, .positiveReference}) := by
-    rw [h]
-    exact ⟨hmem, hI⟩
-  rw [TMIO.mem_realize, htr] at h'
-  exact hr (h' .routh (by simp))
-
 /-- **The Lyapunov translation is not exact at equilibria with positive reference.** The undamped
 DC loop is Lyapunov stable, but its Jacobian is on the 4×4 Routh boundary. Off the boundary the
 translation is exact (`exactUnder_offBoundary_lyapunovStable`). -/
 @[powerlib_domain] theorem not_exactUnder_lyapunovStable :
     connection% (¬ family.ExactUnder {.equilibrium, .positiveReference}
       (.flow .lyapunovStable)) := by
-  have hmem := hopfCenter_mem_den_lyapunovStable
-  unfold powerlib.TMIO.Statement at hmem ⊢
-  exact not_exactUnder_of_witness rfl hmem hopfCenter_equilibrium (by norm_num [hopfCenter])
-    hopfCenter_not_routh
+  unfold powerlib.TMIO.Statement
+  refine Spectral.not_exactUnder_of_witness ?_ hopfCenter_mem_den_lyapunovStable
+    (q := Requirement.routh) (by simp [family, translate]) hopfCenter_not_routh
+  rw [TMIO.mem_realize]
+  rintro q (rfl | rfl)
+  · exact hopfCenter_equilibrium
+  · show (0 : ℝ) < hopfCenter.p.VdcRef
+    norm_num [hopfCenter]
 
 /-! ## The Routh boundary: a disconnected DC link (unstable) -/
 
@@ -875,10 +846,14 @@ boundary. Off the boundary the translation is exact
 @[powerlib_domain] theorem not_exactUnder_locallyAsymptoticallyStable :
     connection% (¬ family.ExactUnder {.equilibrium, .positiveReference}
       (.flow .locallyAsymptoticallyStable)) := by
-  have hmem := hopfDamped_mem_den_locallyAsymptoticallyStable
-  unfold powerlib.TMIO.Statement at hmem ⊢
-  exact not_exactUnder_of_witness rfl hmem hopfDamped_equilibrium (by norm_num [hopfDamped])
-    hopfDamped_not_routh
+  unfold powerlib.TMIO.Statement
+  refine Spectral.not_exactUnder_of_witness ?_ hopfDamped_mem_den_locallyAsymptoticallyStable
+    (q := Requirement.routh) (by simp [family, translate]) hopfDamped_not_routh
+  rw [TMIO.mem_realize]
+  rintro q (rfl | rfl)
+  · exact hopfDamped_equilibrium
+  · show (0 : ℝ) < hopfDamped.p.VdcRef
+    norm_num [hopfDamped]
 
 /-! ## The witnesses lie on the Routh boundary -/
 
