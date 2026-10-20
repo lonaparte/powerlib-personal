@@ -7,10 +7,14 @@ The discrete counterpart of the linear hub of the flow semantics (`Linear.holds_
 `Family.IsLinear.den_hurwitz`): for the linear map of a real square matrix `Φ`, every attractive
 sentence and sampled contraction holds at the origin exactly when `Φ` is Schur stable, whatever
 the step length. A Schur matrix gives a global geometric estimate, which gives every one of these
-sentences; conversely each of them gives local asymptotic stability, which for a linear map makes
-every orbit converge (scale the initial state into the basin), and convergence of every orbit is
-Schur stability (`LTI.asymptoticallyStable_iff_schurStable`). Scaffold: the `discrete-reading`
-hypothesis of `theorem/ExactSampling.agda` and `theorem/SwitchedAveraging.agda`.
+sentences (`Map.GloballyExponentiallyStable.holdsMap`, `theorem/Map/Basic.lean`); conversely each
+of them gives local asymptotic stability, which for a linear map makes every orbit converge (scale
+the initial state into the basin), and convergence of every orbit is Schur stability
+(`LTI.asymptoticallyStable_iff_schurStable`). Lyapunov stability of a linear map bounds its
+orbits (scale the initial state into the stability ball), so one eigenvalue outside the closed
+unit disk gives instability: the discrete counterpart of `Linear.unstable_of_eigenvalue`.
+Scaffold: the `discrete-reading` hypothesis of `theorem/ExactSampling.agda` and
+`theorem/SwitchedAveraging.agda`.
 
 Scope. Maps `F : ℝⁿ → ℝⁿ` on `ℝⁿ = EuclideanSpace ℝ (Fin n)`, read by the map semantics
 `theorem/Map/Defs.lean`; the linear map of a matrix is `Map.op Φ`
@@ -19,27 +23,28 @@ Scope. Maps `F : ℝⁿ → ℝⁿ` on `ℝⁿ = EuclideanSpace ℝ (Fin n)`, re
 
 Source: the map semantics (`theorem/Map/Defs.lean`, `theorem/Map/Basic.lean`), the linearization
 of maps (`theorem/Map/Linearization.lean`: `globallyExponentiallyStable_of_schurStable`,
-`locallyExponentiallyStable_of_pow_norm_lt_one`) and the discrete converse
-`LTI.asymptoticallyStable_iff_schurStable` (`theorem/LTI/Discrete.lean`); work-sync
+`locallyExponentiallyStable_of_pow_norm_lt_one`), the discrete converse
+`LTI.asymptoticallyStable_iff_schurStable` (`theorem/LTI/Discrete.lean`) and the real and
+imaginary parts of a complex eigenpair (LeanForControl `matrixMulVec_re_smul_eigenpair`); work-sync
 `theory/T-numerical-integration.md` §2.7 (the recursion `x_{k+1} = R(hA) x_k` as the discrete
 semantics).
 
 Results.
-* General maps: `Map.GloballyAsymptoticallyStable.localAsymptoticStable`;
-  `Map.GloballyExponentiallyStable.holdsMap` (a global geometric estimate gives every attractive
-  sentence and sampled contraction); `Flow.Property.localAsymptoticStable_of_holdsMap` (every
-  attractive sentence of a map gives local asymptotic stability).
 * Linear maps: `Map.tendsto_iterate_of_localAsymptoticStable` (local asymptotic stability of a
   continuous linear map at the origin makes every orbit converge);
-  `Map.schurStable_of_localAsymptoticStable`, `Map.schurStable_of_sampledContraction`;
-  `Map.holdsMap_op_iff_schurStable` (main): `P.holdsMap T (op Φ) 0 ↔ LTI.SchurStable Φ` for every
-  attractive sentence and sampled contraction and every step length `T`.
+  `Map.decay_zero_of_lyapunovStable` (Lyapunov stability of a continuous linear map at the origin
+  bounds every orbit by a multiple of its initial norm: `Map.Decay` at the rate zero);
+  `Map.unstable_op_of_eigenvalue`: a complex eigenvalue `μ` of `Φ` with `1 < ‖μ‖` gives
+  `Map.Unstable (op Φ) 0`; `Map.schurStable_of_localAsymptoticStable`,
+  `Map.schurStable_of_sampledContraction`; `Map.holdsMap_op_iff_schurStable` (main):
+  `P.holdsMap T (op Φ) 0 ↔ LTI.SchurStable Φ` for every attractive sentence and sampled
+  contraction and every step length `T`.
 * Families: `Family.IsAutonomousMap.den_schurStable`: in a family of linear maps the attractive
   sentences and sampled contraction denote the members with a Schur matrix (the discrete
   counterpart of `Family.IsLinear.den_hurwitz`).
 
 Family and connection conclusions.
-* None: generic laws of the map semantics and of families of linear maps; the families of
+* None: generic laws of families of linear maps; the families of
   `theorem/LTI/ExactSampling.lean` and `theorem/Averaging/SwitchedFamily.lean` use them in their
   connection statements.
 -/
@@ -53,46 +58,6 @@ open Filter Topology Matrix
 variable {n : ℕ}
 
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
-
-namespace Map
-
-/-! ## General maps -/
-
-/-- Global asymptotic stability gives local asymptotic stability. -/
-@[powerlib_foundation] theorem GloballyAsymptoticallyStable.localAsymptoticStable {F : ℝⁿ → ℝⁿ}
-    {x : ℝⁿ} (h : GloballyAsymptoticallyStable F x) : LocalAsymptoticStable F x :=
-  ⟨h.2.1, 1, one_pos, fun y _ => h.2.2 y⟩
-
-/-- A global geometric estimate gives every attractive sentence and sampled contraction, for every
-step length. -/
-@[powerlib_foundation] theorem GloballyExponentiallyStable.holdsMap {F : ℝⁿ → ℝⁿ} {x : ℝⁿ}
-    (h : GloballyExponentiallyStable F x) {P : Flow.Property}
-    (hP : P.Attractive ∨ P = .contractive) (T : ℝ) : P.holdsMap T F x := by
-  rcases hP with hP | rfl
-  · cases P
-    case locallyAsymptoticallyStable =>
-      exact h.locallyExponentiallyStable.localAsymptoticStable
-    case locallyExponentiallyStable => exact h.locallyExponentiallyStable
-    case globallyAsymptoticallyStable => exact h.globallyAsymptoticallyStable
-    case globallyExponentiallyStable => exact h
-    all_goals exact hP.elim
-  · exact h.sampledContraction
-
-end Map
-
-/-- Every attractive sentence of a map gives local asymptotic stability. -/
-@[powerlib_foundation] theorem Flow.Property.localAsymptoticStable_of_holdsMap {F : ℝⁿ → ℝⁿ}
-    {x : ℝⁿ} {P : Flow.Property} (hP : P.Attractive) {T : ℝ} (h : P.holdsMap T F x) :
-    Map.LocalAsymptoticStable F x := by
-  cases P
-  case locallyAsymptoticallyStable => exact h
-  case locallyExponentiallyStable => exact Map.LocallyExponentiallyStable.localAsymptoticStable h
-  case globallyAsymptoticallyStable =>
-    exact Map.GloballyAsymptoticallyStable.localAsymptoticStable h
-  case globallyExponentiallyStable =>
-    exact Map.LocallyExponentiallyStable.localAsymptoticStable
-      (Map.GloballyExponentiallyStable.locallyExponentiallyStable h)
-  all_goals exact hP.elim
 
 namespace Map
 
@@ -122,6 +87,84 @@ to the origin: a scaled copy of the initial state lies in the basin. -/
   rw [smul_zero] at ht
   refine ht.congr fun k => ?_
   rw [iterate_smul, smul_smul, inv_mul_cancel₀ hs0.ne', one_smul]
+
+/-- Lyapunov stability of a continuous linear map at the origin bounds every orbit by a fixed
+multiple of its initial norm (decay at the rate zero): a scaled copy of the initial state lies in
+the ball that stays within distance one. -/
+@[powerlib_foundation] theorem decay_zero_of_lyapunovStable {L : ℝⁿ →L[ℝ] ℝⁿ}
+    (h : LyapunovStable L 0) : Decay L 0 0 := by
+  obtain ⟨δ, hδ, hb⟩ := h 1 one_pos
+  refine ⟨2 / δ, fun y k => ?_⟩
+  rw [neg_zero, zero_mul, Real.exp_zero, mul_one, sub_zero, sub_zero]
+  rcases eq_or_ne y 0 with rfl | hy
+  · rw [Function.iterate_fixed (map_zero L), norm_zero, mul_zero]
+  have hy0 : 0 < ‖y‖ := norm_pos_iff.mpr hy
+  set c : ℝ := δ / (2 * ‖y‖) with hc
+  have hc0 : 0 < c := by positivity
+  have hcy : ‖c • y - 0‖ < δ := by
+    rw [sub_zero, norm_smul, Real.norm_of_nonneg hc0.le, hc]
+    field_simp
+    linarith
+  have h1 := hb (c • y) hcy k
+  rw [iterate_smul, sub_zero, norm_smul, Real.norm_of_nonneg hc0.le, hc, div_mul_eq_mul_div,
+    div_lt_one (by positivity)] at h1
+  rw [div_mul_eq_mul_div, le_div_iff₀ hδ]
+  linarith
+
+/-- **Instability from one eigenvalue.** The linear map of a real square matrix with a complex
+eigenvalue outside the closed unit disk is unstable at the origin: the real and imaginary parts of
+the eigenvector start orbits whose squared norms add up to `‖μ‖^{2k}` times their initial value,
+which the bound of a Lyapunov stable linear map (`decay_zero_of_lyapunovStable`) forbids. -/
+@[powerlib_foundation] theorem unstable_op_of_eigenvalue {Φ : Matrix (Fin n) (Fin n) ℝ} {μ : ℂ}
+    {v : Fin n → ℂ} (hv : v ≠ 0) (heig : Φ.map (algebraMap ℝ ℂ) *ᵥ v = μ • v)
+    (hμ : 1 < ‖μ‖) : Unstable (op Φ) 0 := by
+  intro hstab
+  obtain ⟨C, hC⟩ := decay_zero_of_lyapunovStable hstab
+  let re : ℕ → ℝⁿ := fun k => WithLp.toLp 2 fun j => (μ ^ k * v j).re
+  let im : ℕ → ℝⁿ := fun k => WithLp.toLp 2 fun j => (μ ^ k * v j).im
+  have hre : ∀ k, (⇑(op Φ))^[k] (re 0) = re k := by
+    intro k
+    induction k with
+    | zero => rfl
+    | succ k ih =>
+      rw [Function.iterate_succ_apply', ih]
+      have h := MatrixAlgebra.matrixMulVec_re_smul_eigenpair Φ μ (μ ^ k) v heig
+      simp only [re, toEuclideanCLM_toLp, ← h, pow_succ]
+  have him : ∀ k, (⇑(op Φ))^[k] (im 0) = im k := by
+    intro k
+    induction k with
+    | zero => rfl
+    | succ k ih =>
+      rw [Function.iterate_succ_apply', ih]
+      have h := MatrixAlgebra.matrixMulVec_im_smul_eigenpair Φ μ (μ ^ k) v heig
+      simp only [im, toEuclideanCLM_toLp, ← h, pow_succ]
+  set N : ℝ := ∑ j, Complex.normSq (v j) with hN
+  have hsq : ∀ k, ‖re k‖ ^ 2 + ‖im k‖ ^ 2 = (‖μ‖ ^ 2) ^ k * N := by
+    intro k
+    rw [EuclideanSpace.real_norm_sq_eq, EuclideanSpace.real_norm_sq_eq, ← Finset.sum_add_distrib,
+      hN, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    simp only [re, im]
+    rw [← Complex.normSq_eq_norm_sq, ← map_pow, ← Complex.normSq_mul, Complex.normSq_apply]
+    ring
+  have hN0 : 0 < N := by
+    obtain ⟨j, hj⟩ := Function.ne_iff.mp hv
+    exact Finset.sum_pos' (fun k _ => Complex.normSq_nonneg _)
+      ⟨j, Finset.mem_univ _, Complex.normSq_pos.mpr hj⟩
+  have hbound : ∀ k, (‖μ‖ ^ 2) ^ k * N ≤ C ^ 2 * N := by
+    intro k
+    have h1 := hC (re 0) k
+    have h2 := hC (im 0) k
+    simp only [neg_zero, zero_mul, Real.exp_zero, mul_one, sub_zero, hre, him] at h1 h2
+    have h1' := pow_le_pow_left₀ (norm_nonneg _) h1 2
+    have h2' := pow_le_pow_left₀ (norm_nonneg _) h2 2
+    have h0 := hsq 0
+    rw [pow_zero, one_mul] at h0
+    rw [← hsq k]
+    nlinarith
+  obtain ⟨k, hk⟩ := ((tendsto_pow_atTop_atTop_of_one_lt (by nlinarith : 1 < ‖μ‖ ^ 2))
+    |>.eventually_gt_atTop (C ^ 2)).exists
+  linarith [hbound k, mul_lt_mul_of_pos_right hk hN0]
 
 /-- Convergence of every orbit of the linear map of `Φ` is Schur stability of `Φ`. -/
 private theorem schurStable_of_tendsto {Φ : Matrix (Fin n) (Fin n) ℝ}

@@ -44,6 +44,7 @@ import theorem.LTI.Plant
 import theorem.LTI.Decay
 import theorem.LTI.Discrete
 import theorem.LTI.Sampling
+import theorem.LTI.SampledFlow
 import theorem.LTI.ExactSampling
 import theorem.Map.Basic
 import theorem.Map.Linearization

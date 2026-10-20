@@ -29,8 +29,9 @@ Results.
 * `unstable_of_expanding`, `unstable_of_inverse_schurStable`, `holds_unstable`: a Jacobian with a
   Schur stable left inverse (every eigenvalue outside the closed unit disk) gives instability
   (`n > 0`).
-  Instability from a single eigenvalue outside the unit circle is not proved here; it needs a
-  spectral splitting with adapted norms. -/
+  Instability from a single Jacobian eigenvalue outside the unit circle is not proved here; it
+  needs a spectral splitting with adapted norms (for the linear map itself it is
+  `Map.unstable_op_of_eigenvalue`, `theorem/Map/LinearReading.lean`). -/
 
 noncomputable section
 

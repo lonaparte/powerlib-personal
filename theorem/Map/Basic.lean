@@ -16,7 +16,12 @@ Results.
   gives Lyapunov and local asymptotic stability.
 * `Map.GloballyExponentiallyStable.locallyExponentiallyStable`, `.globallyAsymptoticallyStable`,
   `.sampledContraction`: a global geometric estimate gives the local one, global asymptotic
-  stability and sampled contraction (the discrete counterparts of `theorem/Flow/Basic.lean`). -/
+  stability and sampled contraction (the discrete counterparts of `theorem/Flow/Basic.lean`).
+* `Map.GloballyAsymptoticallyStable.localAsymptoticStable`;
+  `Map.GloballyExponentiallyStable.holdsMap`: a global geometric estimate gives every attractive
+  sentence and sampled contraction, for every step length;
+  `Flow.Property.localAsymptoticStable_of_holdsMap`: every attractive sentence of a map gives
+  local asymptotic stability. -/
 
 noncomputable section
 
@@ -102,6 +107,40 @@ by `ρ^k`. -/
   obtain ⟨k, hk⟩ := ((eventually_gt_atTop 0).and (hlim.eventually (gt_mem_nhds one_pos))).exists
   exact ⟨k, hk.1, C * ρ ^ k, hk.2, fun y => hb y k⟩
 
+/-- Global asymptotic stability gives local asymptotic stability. -/
+@[powerlib_foundation] theorem GloballyAsymptoticallyStable.localAsymptoticStable {F : ℝⁿ → ℝⁿ}
+    {x : ℝⁿ} (h : GloballyAsymptoticallyStable F x) : LocalAsymptoticStable F x :=
+  ⟨h.2.1, 1, one_pos, fun y _ => h.2.2 y⟩
+
+/-- A global geometric estimate gives every attractive sentence and sampled contraction, for every
+step length. -/
+@[powerlib_foundation] theorem GloballyExponentiallyStable.holdsMap {F : ℝⁿ → ℝⁿ} {x : ℝⁿ}
+    (h : GloballyExponentiallyStable F x) {P : Flow.Property}
+    (hP : P.Attractive ∨ P = .contractive) (T : ℝ) : P.holdsMap T F x := by
+  rcases hP with hP | rfl
+  · cases P
+    case locallyAsymptoticallyStable =>
+      exact h.locallyExponentiallyStable.localAsymptoticStable
+    case locallyExponentiallyStable => exact h.locallyExponentiallyStable
+    case globallyAsymptoticallyStable => exact h.globallyAsymptoticallyStable
+    case globallyExponentiallyStable => exact h
+    all_goals exact hP.elim
+  · exact h.sampledContraction
+
 end Map
+
+/-- Every attractive sentence of a map gives local asymptotic stability. -/
+@[powerlib_foundation] theorem Flow.Property.localAsymptoticStable_of_holdsMap {F : ℝⁿ → ℝⁿ}
+    {x : ℝⁿ} {P : Flow.Property} (hP : P.Attractive) {T : ℝ} (h : P.holdsMap T F x) :
+    Map.LocalAsymptoticStable F x := by
+  cases P
+  case locallyAsymptoticallyStable => exact h
+  case locallyExponentiallyStable => exact Map.LocallyExponentiallyStable.localAsymptoticStable h
+  case globallyAsymptoticallyStable =>
+    exact Map.GloballyAsymptoticallyStable.localAsymptoticStable h
+  case globallyExponentiallyStable =>
+    exact Map.LocallyExponentiallyStable.localAsymptoticStable
+      (Map.GloballyExponentiallyStable.locallyExponentiallyStable h)
+  all_goals exact hP.elim
 
 end powerlib
