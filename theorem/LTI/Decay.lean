@@ -5,8 +5,8 @@ import theorem.Criteria.Lyapunov
 
 /-! # Hurwitz matrices and exponential decay of linear solutions (foundation)
 
-Library-owned LTI lemmas (the codex `Linear/` layer is not modified) relating a real square
-matrix `A` to the decay of the solutions of `ẋ = A x`.
+LTI lemmas, kept beside the `Linear/` modules, relating a real square matrix `A` to the decay of
+the solutions of `ẋ = A x`.
 
 Scope.
 * Every statement is about arbitrary matrices; nothing here describes a physical system. Every

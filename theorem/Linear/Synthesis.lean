@@ -14,10 +14,29 @@ full-operator backend, with positive definiteness decided by verified Schur elim
 `accepts_iff_isHurwitz` proves both directions for every dimension. The LDL proposal remains a
 fast candidate; both entry points use the complete backend when it supplies no checked solution.
 
-There are two ways to run it. `certificateOf A (by decide +kernel)` lets the kernel run both the
-synthesizer and the check. `lyapunov_certificate% A` evaluates the synthesizer during elaboration,
-outside the kernel, writes its proposal out as rational literals, and leaves only the check to the
-kernel; this is the way for larger matrices. -/
+Scope.
+* Generic: square rational matrices of every dimension, read in `ℝ` through `real`; no model.
+* There are two ways to run it. `certificateOf A (by decide +kernel)` lets the kernel run both
+  the synthesizer and the check. `lyapunov_certificate% A` evaluates the synthesizer during
+  elaboration, outside the kernel, writes its proposal out as rational literals, and leaves only
+  the check to the kernel; this is the way for larger matrices.
+
+Source: the certificates of `theorem/Linear/Certificate.lean`; the complete verified backend of
+`theorem/Linear/VerifiedSynthesis.lean` (`VerifiedSynthesis.check`, `candidate`,
+`solutionCheck`); LeanForControl's `IsHurwitz`.
+
+Results.
+* The untrusted synthesizer: `eliminate`, `solve`, `pairs`, `lyapunovSystem`, `ldlStep`, `ldl`,
+  `ofRows`, `Witness`, `synth`.
+* The legacy witness check: `Witness.Valid`, `Witness.check`, `Witness.valid_of_check`,
+  `real`, `real_eq_mapMatrix`, `Witness.lyapunov_eq`, `Witness.factor_eq`,
+  `Witness.certificate`.
+* Acceptance: `selectedMatrix`, `accepts`, `certificateOf`, `accepts_of_isHurwitz` (no Hurwitz
+  matrix is lost), `accepts_iff_isHurwitz` (the synthesizer decides the Hurwitz property of every
+  finite rational matrix).
+* Synthesis during elaboration: `rows`, `ofList`, `synthRows`, `selectedRows`, and the term
+  elaborator `lyapunov_certificate%` (a `Certificate (real A)`).
+-/
 
 namespace powerlib.Linear.Synthesis
 

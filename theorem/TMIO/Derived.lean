@@ -8,7 +8,23 @@ to the earlier layer. The forward maps `l₁, l₂, l₃` are generated, never s
 
 Every composite of edges is again a seed edge, and the generated forward map of a composite is the
 composite of the generated forward maps (`generate_uTO`). There is therefore no separate
-cross-layer algorithm that could disagree with the layer-by-layer one. -/
+cross-layer algorithm that could disagree with the layer-by-layer one.
+
+Scope.
+* Generic order theory: four arbitrary complete lattices and three semantic maps
+  (`theorem/TMIO/Generate.lean`); no model and no semantics.
+
+Source: TMIO v0.3 §2 (generation data) and §5 (whole equals parts); the generation theorem of
+`theorem/TMIO/Generate.lean`.
+
+Results.
+* `Seed` (`u₁`, `u₂`, `u₃`), the generated forward maps `Seed.l₁`, `Seed.l₂`, `Seed.l₃` and their
+  Galois connections `Seed.gc₁`, `Seed.gc₂`, `Seed.gc₃`.
+* Composite semantic maps `Seed.uTI`, `Seed.uMO`, `Seed.uTO` and their generated forward maps
+  `Seed.generate_uTI`, `Seed.generate_uMO`, `Seed.generate_uTO`.
+* The whole chain: `Seed.gc_whole`, `Seed.whole_monotone` (stronger theory data never yields
+  weaker observation data), `Seed.whole_sSup`.
+-/
 
 namespace powerlib.TMIO
 

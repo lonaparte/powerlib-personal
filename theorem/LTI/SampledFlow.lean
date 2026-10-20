@@ -31,8 +31,6 @@ correspondence `LTI.isHurwitz_iff_schurStable_exp` (`theorem/LTI/Sampling.lean`)
 recursion as the sampled semantics).
 
 Results.
-* Flows: `Flow.Decay.lyapunovStable` (a nonnegative decay rate gives Lyapunov stability; a
-  general fact of the flow semantics).
 * The sampled map: `op_exp_smul` (`op (e^{sA}) = e^{s op A}`), `op_exp_add_smul` (the flow over
   `s + τ` is the flow over `s` after the flow over `τ`), `iterate_op_exp` (the `k`-th iterate of
   `e^{TA}` is the flow over `k T`).
@@ -55,25 +53,6 @@ open Set LinearSystems NormedSpace
 variable {n : ℕ}
 
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
-
-/-- A decay rate `a ≥ 0` gives Lyapunov stability: the overshoot constant bounds every solution
-segment by a fixed multiple of its initial distance. -/
-@[powerlib_foundation] theorem Flow.Decay.lyapunovStable {f : ℝⁿ → ℝⁿ} {x : ℝⁿ} {a : ℝ} (ha : 0 ≤ a)
-    (h : Flow.Decay f x a) : LyapunovStable f x := by
-  obtain ⟨C, hC⟩ := h
-  intro ε hε
-  refine ⟨ε / (|C| + 1), by positivity, fun t₀ t₁ φ hφ h0 t ht => ?_⟩
-  have he : Real.exp (-a * (t - t₀)) ≤ 1 :=
-    Real.exp_le_one_iff.mpr (by nlinarith [ht.1])
-  have hd := norm_nonneg (φ t₀ - x)
-  have hCe : C * Real.exp (-a * (t - t₀)) ≤ |C| :=
-    (mul_le_mul_of_nonneg_right (le_abs_self C) (Real.exp_pos _).le).trans
-      (mul_le_of_le_one_right (abs_nonneg C) he)
-  have h1 : (|C| + 1) * ‖φ t₀ - x‖ < ε := by
-    rwa [lt_div_iff₀ (by positivity), mul_comm] at h0
-  calc ‖φ t - x‖ ≤ C * Real.exp (-a * (t - t₀)) * ‖φ t₀ - x‖ := hC t₀ t₁ φ hφ t ht
-    _ ≤ |C| * ‖φ t₀ - x‖ := mul_le_mul_of_nonneg_right hCe hd
-    _ < ε := by nlinarith
 
 namespace LTI
 

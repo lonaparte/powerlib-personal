@@ -3,13 +3,35 @@ import theorem.Linear.Family
 
 /-! # Linear port-Hamiltonian plants
 
-Model boundary: `x' = (J - R) Q x + B u`, `y = Bᵀ Q x`, with a skew-symmetric interconnection
-`J`, a symmetric positive semidefinite dissipation `R`, a symmetric positive definite energy
-matrix `Q` (stored energy `xᵀ Q x / 2`) and `p` ports. Continuous time with constant matrices;
-no switching, delay, saturation or nonlinear element.
-
 The energy matrix is a KYP certificate, so passivity and zero-input Lyapunov stability follow
-from the generic theorems of `Port.Linear`; nothing about trajectories is restated here. -/
+from the generic theorems of `Port.Linear`; nothing about trajectories is restated here.
+
+Model boundary.
+* `x' = (J - R) Q x + B u`, `y = Bᵀ Q x`, with a skew-symmetric interconnection `J`, a symmetric
+  positive semidefinite dissipation `R`, a symmetric positive definite energy matrix `Q` (stored
+  energy `xᵀ Q x / 2`) and `p` ports.
+* Continuous time with constant matrices; no switching, delay, saturation or nonlinear element.
+
+Source: the KYP certificates of `theorem/Port/Linear.lean` (`KYP.passiveWith`,
+`KYP.lyapunovStable_of_pos`) and the linear family laws of `theorem/Linear/Family.lean`
+(`Family.IsLinear.mem_den_passive`, `Family.IsLinear.den_hurwitz`).
+
+Results.
+* Static: `PortHamiltonian` (`J`, `R`, `Q`, `B` and their structure), `PortHamiltonian.plant`,
+  `PortHamiltonian.kyp` (the energy matrix is a KYP certificate), `Requirement`, `Meets`,
+  `translate`, `family_isLinear`.
+
+Family and connection conclusions.
+* `Port.PortHamiltonian.family : Family (PortHamiltonian n p) Requirement n p`: requirements
+  `hurwitz` and `impossible` (the structure fields already enforce passivity and positive stored
+  energy). Passivity and Lyapunov stability translate into nothing, the attractive sentences and
+  sampled contraction into `hurwitz`, instability, decay rates and conservation into the whole,
+  inconsistent, language.
+* `mem_den_passive`: stored energy places each submitted plant in the passivity denotation;
+  `mem_den_lyapunovStable`: positive stored energy places it in the zero-input stability
+  denotation.
+* `chain_le_semantics`: the translation chain is sound for every sentence.
+-/
 
 noncomputable section
 

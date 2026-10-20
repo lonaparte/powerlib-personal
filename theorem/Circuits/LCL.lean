@@ -2,33 +2,71 @@ import theorem.TMIO.ClaimElab
 import theorem.Linear.Jordan
 import theorem.Linear.Rate
 import theorem.Circuits.RL
+import theorem.Criteria.Routh3
 import theorem.generated.LCLConversion
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-! # The LCL filter
 
-Model boundary: a converter-side series RL branch `(R₁, L₁)`, an ideal shunt capacitor `C`, and
-a grid-side series RL branch `(R₂, L₂)`, in continuous time. States, in order: converter current
-`i₁`, capacitor voltage `v_C`, grid current `i₂`, as stationary scalar phase variables (no dq
-transformation). Ports: the converter terminal voltage `u` with port current `i₁`, and the grid
-terminal voltage `v_g` with port current `-i₂`. Inductances and capacitance are positive;
-resistances are real, of either sign, unless passivity is required. No controller, PLL, PWM,
-sampling delay or further grid state.
-
 The circuit parameters and the state-space parameters are related by the Agda-generated
 conversion (the RL conversion on each branch, the reciprocal on the capacitance). The family reads
 every circuit as the port system of its three-state plant.
 
-Its translation chain lies below its semantics connection everywhere (`chain_le_semantics`) and
-agrees with it on the attractive sentences and sampled contraction, whose translation is pole
-stability (`exact_hurwitz`), and on passivity, whose translation is the passivity of both
-resistances (`exact_passive`: a negative resistance is exposed by a closed cycle along which the
-ports deliver net energy). Within passive circuits, conservation is exactly losslessness
-(`exactUnder_conservative`); the requirement equivalences of Routh and Hurwitz are evaluations of
-the satisfaction connection (`realize_routhHurwitz`, `realize_passive_damped`). Two circuits mark
-where the connections part: a Hurwitz circuit with a negative resistance is Lyapunov stable but
-not passive, and a circuit with opposite resistances conserves an energy without being lossless
-(`not_exact_lyapunovStable`, `not_exact_conservative`). -/
+Model boundary.
+* A converter-side series RL branch `(R₁, L₁)`, an ideal shunt capacitor `C`, and a grid-side
+  series RL branch `(R₂, L₂)`, in continuous time.
+* States, in order: converter current `i₁`, capacitor voltage `v_C`, grid current `i₂`, as
+  stationary scalar phase variables (no dq transformation). Ports: the converter terminal voltage
+  `u` with port current `i₁`, and the grid terminal voltage `v_g` with port current `-i₂`.
+* Inductances and capacitance are positive; resistances are real, of either sign, unless
+  passivity is required.
+* No controller, PLL, PWM, sampling delay or further grid state.
+
+Source: scaffold `theorem/LCLConversion.agda` (circuit parameters ↔ state-space parameters), its
+generated conversion `theorem/generated/LCLConversion.lean`; the RL branch
+(`theorem/Circuits/RL.lean`); the linear family laws (`theorem/Linear/Family.lean`), rate margins
+(`theorem/Linear/Rate.lean`) and zero Jordan chains (`theorem/Linear/Jordan.lean`); the cubic
+Routh–Hurwitz criterion.
+
+Results.
+* Representations: `Circuit`, `StateSpace`, `toStateSpace`, `toCircuit`, `circuit_roundtrip`,
+  `state_roundtrip`, `modelEquiv`, `StateSpace.plant`, `Circuit.plant`, `plant_toCircuit`.
+* Poles: the coefficients `Circuit.a3`, `Circuit.a2`, `Circuit.a1`, `Circuit.a0`, the pole
+  polynomial `Circuit.frequency`, `Circuit.Stable`, `a3_pos`, `det_characteristicMatrix`,
+  `isHurwitz_iff_stable`.
+* Routh–Hurwitz and passivity: `Circuit.Passive`, `Circuit.Damped`, `hurwitz_gap`,
+  `Circuit.RouthHurwitz`, `stable_of_routhHurwitz` (from the cubic criterion
+  `Criteria.cubic_hurwitz`, `theorem/Criteria/Routh3.lean`), `routhHurwitz_of_passive`,
+  `passive_stable_iff` (with passive resistances, pole stability is exactly damping).
+* Energy: `toStateSpace_first`, `toStateSpace_second`, `toStateSpace_capacitorGain`,
+  `energyMatrix` (`diag(L₁, C, L₂)`), `energy_identity`, `kyp` (a KYP certificate for a passive
+  circuit), `energy_pos`, `energy_lossless`, `energyMatrix_symmetric`.
+* Static evidence: `family_isLinear`, `not_stable_of_conservative`,
+  `hasDerivAt_three`, `integral_cycle`; the circuits `negativeCircuit`, `balancedCircuit`,
+  `balancedEnergy`, `jordanCircuit` with `negativeCircuit_routhHurwitz`,
+  `balancedEnergy_conserved`, `balancedEnergy_pos`, `jordanCircuit_frequency`.
+
+Family and connection conclusions.
+* `Circuits.LCL.family : Family Circuit Requirement 3 2`: requirements `poleStable`,
+  `routhHurwitz`, `passive`, `damped`, `lossless`, `rightHalfPlanePole` and `rate a`. Lyapunov
+  stability and passivity translate into `passive`, the attractive sentences and sampled
+  contraction into `poleStable`, instability into `rightHalfPlanePole`, decay at `a` into
+  `rate a` (a strict margin on the state matrix), conservation into `lossless`.
+* `realize_univ`: no circuit has all poles in the open left half plane and one in the open right
+  half plane; the whole requirement language is inconsistent.
+* Its translation chain lies below its semantics connection everywhere (`chain_le_semantics`)
+  and agrees with it on the attractive sentences and sampled contraction, whose translation is
+  pole stability (`exact_hurwitz`), and on passivity, whose translation is the passivity of both
+  resistances (`exact_passive`: a negative resistance is exposed by a closed cycle along which the
+  ports deliver net energy). Within passive circuits, conservation is exactly losslessness
+  (`exactUnder_conservative`); the requirement equivalences of Routh and Hurwitz are evaluations
+  of the satisfaction connection (`realize_routhHurwitz`, `realize_passive_damped`).
+* Two circuits mark where the connections part: a Hurwitz circuit with a negative resistance is
+  Lyapunov stable but not passive, and a circuit with opposite resistances conserves an energy
+  without being lossless (`not_exact_lyapunovStable`, `not_exact_conservative`). The
+  right-half-plane pole translation misses polynomial growth at a zero Jordan block
+  (`not_exact_unstable`, the circuit `jordanCircuit`).
+-/
 
 noncomputable section
 
@@ -164,35 +202,6 @@ def Circuit.Damped (m : Circuit) : Prop := m.first.resistance ≠ 0 ∨ m.second
   dsimp [Circuit.a3, Circuit.a2, Circuit.a1, Circuit.a0]
   ring
 
-/-- The strict cubic Routh–Hurwitz condition places every root in the open left half plane. -/
-@[powerlib_foundation] theorem cubic_hurwitz (a3 a2 a1 a0 : ℝ) (h3 : 0 < a3) (h2 : 0 < a2)
-    (h1 : 0 < a1) (h0 : 0 < a0) (hg : 0 < a2 * a1 - a3 * a0)
-    (s : ℂ) (hs : (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0) :
-    s.re < 0 := by
-  by_contra hn
-  have hx : 0 ≤ s.re := le_of_not_gt hn
-  have hr : a3 * (s.re ^ 3 - 3 * s.re * s.im ^ 2) + a2 * (s.re ^ 2 - s.im ^ 2) + a1 * s.re +
-      a0 = 0 := by
-    have h := congrArg Complex.re hs
-    simp [pow_succ, Complex.mul_re, Complex.mul_im] at h
-    nlinarith [h]
-  have hi : s.im * (a3 * (3 * s.re ^ 2 - s.im ^ 2) + 2 * a2 * s.re + a1) = 0 := by
-    have h := congrArg Complex.im hs
-    simp [pow_succ, Complex.mul_re, Complex.mul_im] at h
-    nlinarith [h]
-  by_cases hy : s.im = 0
-  · have hp : 0 < a3 * s.re ^ 3 + a2 * s.re ^ 2 + a1 * s.re + a0 := by positivity
-    simp only [hy] at hr
-    linarith
-  · have hf : a3 * (3 * s.re ^ 2 - s.im ^ 2) + 2 * a2 * s.re + a1 = 0 :=
-      (mul_eq_zero.mp hi).resolve_left hy
-    have hz : 8 * a3 ^ 2 * s.re ^ 3 + 8 * a3 * a2 * s.re ^ 2 +
-        2 * (a3 * a1 + a2 ^ 2) * s.re + (a2 * a1 - a3 * a0) = 0 := by
-      linear_combination -a3 * hr + (3 * a3 * s.re + a2) * hf
-    have hp : 0 < 8 * a3 ^ 2 * s.re ^ 3 + 8 * a3 * a2 * s.re ^ 2 +
-        2 * (a3 * a1 + a2 ^ 2) * s.re + (a2 * a1 - a3 * a0) := by positivity
-    linarith
-
 /-- The Routh–Hurwitz coefficient condition. -/
 def Circuit.RouthHurwitz (m : Circuit) : Prop :=
   0 < m.a2 ∧ 0 < m.a1 ∧ 0 < m.a0 ∧ 0 < m.a2 * m.a1 - m.a3 * m.a0
@@ -200,7 +209,8 @@ def Circuit.RouthHurwitz (m : Circuit) : Prop :=
 @[powerlib_foundation, aesop unsafe 70% apply]
 theorem stable_of_routhHurwitz (m : Circuit) (h : m.RouthHurwitz) :
     m.Stable :=
-  fun s hs => cubic_hurwitz m.a3 m.a2 m.a1 m.a0 (a3_pos m) h.1 h.2.1 h.2.2.1 h.2.2.2 s hs
+  fun s hs => Criteria.cubic_hurwitz m.a3 m.a2 m.a1 m.a0 (a3_pos m) h.1 h.2.1 h.2.2.1 h.2.2.2 s
+    hs
 
 @[powerlib_foundation, aesop unsafe 70% apply]
 theorem routhHurwitz_of_passive (m : Circuit) (hp : m.Passive)

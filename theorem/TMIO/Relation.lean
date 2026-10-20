@@ -7,18 +7,43 @@ Instances supply their edges through these constructors. Each constructor provid
 semantic map `u`; the forward map is the generated lower adjoint, identified here with the
 corresponding Mathlib construction by uniqueness of adjoints.
 
+Scope.
+* Generic: powerset lattices over arbitrary types of sentences, requirements, complete systems
+  and readings, related by arbitrary satisfaction predicates, functions and relations; no model.
+
+Source: TMIO v0.3 §4 (satisfaction), §7 (data analysis), §8 (fibre-universal image); Mathlib's
+relational Galois connections (`Mathlib.Order.Rel.GaloisConnection`, `SetRel.image`,
+`SetRel.core`, `SetRel.equivFixedPoints`) and `GaloisConnection.compl`; the generation theorem
+of `theorem/TMIO/Generate.lean` and the seeds of `theorem/TMIO/Derived.lean`.
+
+Results.
 * `satisfaction`: requirements and complete systems related by satisfaction (v0.3 §4). The
   implementation layer is ordered by reverse inclusion; the generated map is the maximal legal
-  implementation space `realize`.
-* `preimage`: a deterministic map such as a data analysis (v0.3 §7); generates the direct image.
-* `kern`: the fibre-universal image (v0.3 §8); generates the preimage.
-* `cover`: a translation relation from theory sentences to requirements; generates its image.
-* `possibly`: a relational observation in reverse-inclusion orders; generates certification.
-  Prediction (possible observations) is then derived by complement through Mathlib's
-  `GaloisConnection.compl`, which is available because powerset lattices are Boolean.
+  implementation space `realize` (`satRel`, `mem_satisfaction`, `generate_satisfaction`,
+  `mem_realize`, maximality `realize_max`, `realize_union`, `realize_antitone`,
+  `exists_realize_iff`, `realizableEquiv`).
+* `preimage`: a deterministic map such as a data analysis (v0.3 §7); generates the direct image
+  (`preimage_apply`, `generate_preimage`, `generate_preimage_comp`).
+* `kern`: the fibre-universal image (v0.3 §8); generates the preimage (`kern_apply`,
+  `generate_kern`).
+* `cover`: a translation relation from theory sentences to requirements; generates its image
+  (`gc_image_core`, translation tables `table`, `image_table_singleton`, `image_table`,
+  `generate_cover`).
+* `possibly`: a relational observation in reverse-inclusion orders; generates certification
+  (`certify`, `mem_certify`, `gc_certify`, `mem_possibly`, `generate_possibly`). Prediction
+  (possible observations) is then derived by complement through Mathlib's
+  `GaloisConnection.compl`, which is available because powerset lattices are Boolean (`predict`,
+  `allPre`, `predict_eq_image`, `mem_allPre`, `gc_predict`).
 * `relationalSeed`: the seed built from `cover`, `satisfaction` and `possibly`; its whole chain
-  translates, realizes and certifies, and soundness of the translation propagates to every
-  certified observation. -/
+  translates, realizes and certifies (`relationalSeed_whole`), and soundness of the translation
+  propagates to every certified observation (`relationalSeed_sound`).
+* Applied forms of the generated maps: `generate_preimage_apply`, `generate_kern_apply`,
+  `generate_cover_apply`, `generate_possibly_apply`.
+* Satisfaction along maps and products: `realize_comap`; exactness relative to a context,
+  `ExactUnder` (`exactUnder_empty_iff`: with an empty context, plain exactness); sums of
+  requirement languages, `satSum` and `realize_sum` (component requirements carve out a product
+  space).
+-/
 
 namespace powerlib.TMIO
 

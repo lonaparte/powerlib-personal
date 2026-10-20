@@ -2,9 +2,31 @@ import theorem.Attributes
 import Lean.Meta.Tactic.LibrarySearch
 import Lean.Util.CollectAxioms
 
-/-! Goal-directed reuse of imported declarations. The index is Lean's library
+/-! # Library search with an axiom audit (foundation)
+
+Goal-directed reuse of imported declarations. The index is Lean's library
 search index; upstream libraries need no PowerLib attributes or namespace.
-Model equivalences remain explicit theorem premises, checked by Lean. -/
+Model equivalences remain explicit theorem premises, checked by Lean.
+
+Scope.
+* Lean meta-programming, no mathematics. A candidate is a theorem of the library search index
+  whose axioms are only `propext`, `Classical.choice` and `Quot.sound`; a proof assembled by the
+  search (the candidate applied, its remaining goals closed by `solveByElim`) is audited
+  against the same allowlist before it is accepted.
+* The axiom audit is shared with whole-package admission (`theorem/Architecture.lean`), which runs
+  `axiomViolation?` on the declarations of every built module.
+
+Source: Lean's library search (`Lean.Meta.Tactic.LibrarySearch`) and axiom collector
+(`Lean.Util.CollectAxioms`); the classification registry of `theorem/Attributes.lean`.
+
+Results.
+* Entries: `TheoremEntry`, `describe` (module, universe parameters, statement, classification and
+  axioms of a theorem), `allowedAxiom`, `declarationAxioms`, `eligible`.
+* `axiomViolation?`: a root of a batch whose transitive type and value dependencies reach an axiom
+  outside the allowlist, with that axiom.
+* Search: `candidates` (the library search candidates restricted to eligible theorems),
+  `checkProof`, `solve`, and the tactic `powerlib_search`.
+-/
 namespace powerlib.Search
 open Lean Meta
 

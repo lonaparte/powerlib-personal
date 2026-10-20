@@ -6,7 +6,29 @@ The implications between the sentences hold for every vector field and are prove
 exponential stability gives every other attractive sentence, a decay rate and sampled contraction;
 a local exponential estimate gives local asymptotic stability; a positive decay rate gives sampled
 contraction; and a conserved energy with a strict minimum gives Lyapunov stability
-(Lagrange–Dirichlet) while ruling out convergence of every solution through a nearby state. -/
+(Lagrange–Dirichlet) while ruling out convergence of every solution through a nearby state.
+
+Scope.
+* Generic: an arbitrary autonomous field `f : ℝⁿ → ℝⁿ` and point `x`, read by the flow semantics
+  of `theorem/Flow/Defs.lean`; no model.
+
+Source: the definitions of `theorem/Flow/Defs.lean` and LeanForControl's local notions
+(`LeanForControl.Stability.DefsAutonomous`).
+
+Results.
+* `tendsto_of_segment_bound`: an exponential estimate on every segment of a forward-complete
+  solution forces convergence.
+* Global exponential stability: `GloballyExponentiallyStable.locallyExponentiallyStable`,
+  `.lyapunovStable`, `.globallyAsymptoticallyStable`, `.holds` (every attractive sentence),
+  `.exists_decay` (a positive rate), `.sampledContraction`.
+* Local asymptotic stability: `locallyExponentiallyStable_localAsymptoticStable`,
+  `GloballyAsymptoticallyStable.localAsymptoticStable`, `Property.localAsymptoticStable` (every
+  attractive sentence implies it).
+* Decay rates: `Decay.mono` (a rate gives every smaller rate), `Decay.lyapunovStable` (a
+  nonnegative rate), `Decay.sampledContraction` (a positive rate).
+* Conservation: `Conservative.lyapunovStable` (Lagrange–Dirichlet),
+  `Conservative.not_localAsymptoticStable` (with a solution through every state and `0 < n`).
+-/
 
 noncomputable section
 
@@ -115,6 +137,25 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
     (h : GloballyExponentiallyStable f x) : ∃ a, 0 < a ∧ Decay f x a := by
   obtain ⟨-, -, C, a, -, ha, hb⟩ := h
   exact ⟨a, ha, C, hb⟩
+
+/-- A decay rate `a ≥ 0` gives Lyapunov stability: the overshoot constant bounds every solution
+segment by a fixed multiple of its initial distance. -/
+@[powerlib_foundation] theorem Decay.lyapunovStable {f : ℝⁿ → ℝⁿ} {x : ℝⁿ} {a : ℝ} (ha : 0 ≤ a)
+    (h : Flow.Decay f x a) : LyapunovStable f x := by
+  obtain ⟨C, hC⟩ := h
+  intro ε hε
+  refine ⟨ε / (|C| + 1), by positivity, fun t₀ t₁ φ hφ h0 t ht => ?_⟩
+  have he : Real.exp (-a * (t - t₀)) ≤ 1 :=
+    Real.exp_le_one_iff.mpr (by nlinarith [ht.1])
+  have hd := norm_nonneg (φ t₀ - x)
+  have hCe : C * Real.exp (-a * (t - t₀)) ≤ |C| :=
+    (mul_le_mul_of_nonneg_right (le_abs_self C) (Real.exp_pos _).le).trans
+      (mul_le_of_le_one_right (abs_nonneg C) he)
+  have h1 : (|C| + 1) * ‖φ t₀ - x‖ < ε := by
+    rwa [lt_div_iff₀ (by positivity), mul_comm] at h0
+  calc ‖φ t - x‖ ≤ C * Real.exp (-a * (t - t₀)) * ‖φ t₀ - x‖ := hC t₀ t₁ φ hφ t ht
+    _ ≤ |C| * ‖φ t₀ - x‖ := mul_le_mul_of_nonneg_right hCe hd
+    _ < ε := by nlinarith
 
 /-- A positive decay rate gives sampled contraction: the overshoot is eventually beaten by the
 exponential. -/

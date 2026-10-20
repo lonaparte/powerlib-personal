@@ -14,7 +14,23 @@ translated into requirements (`cover`), requirements realized by implementations
 semantics exactly when every sentence's translation realizes exactly its models, and lies below
 it exactly when every translation realizes only models (`chain_eq_satisfaction_iff`,
 `chain_le_satisfaction_iff`). Exactness and soundness of a translation are therefore statements
-about two connections, not new notions. -/
+about two connections, not new notions.
+
+Scope.
+* Generic: semantic maps between arbitrary complete lattices, and translation chains over
+  arbitrary sentences, requirements and implementations; no model. The model families compare
+  their chains with their semantics through this module (`theorem/Family/Basic.lean`).
+
+Source: the generation theorem (`theorem/TMIO/Generate.lean`) and the constructors `cover` and
+`satisfaction` (`theorem/TMIO/Relation.lean`).
+
+Results.
+* Order of connections: `generate_le_generate_iff`, `generate_inj`.
+* Relational: `realize_empty`, `mem_satisfaction_iff_subset`, `mem_chain_iff_subset`,
+  `generate_chain_singleton` (the chain's generated value at one sentence is the space of its
+  translation), `chain_eq_satisfaction_iff` (exactness), `chain_le_satisfaction_iff`
+  (soundness).
+-/
 
 namespace powerlib.TMIO
 

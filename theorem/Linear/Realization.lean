@@ -12,9 +12,30 @@ and no more states (`exists_minimal_realization`), and controllability together 
 observability is exactly minimality (`controllable_observable_iff_minimal`). The modes removed by
 a minimal realization are the hidden modes that the observation cannot see.
 
-Controllability and observability are LeanForControl's predicates, used through their rank
-characterizations. Transfer functions are compared where both are defined; equality there is
-equality of the Markov parameters `C Aᵏ B` and of the feedthrough. -/
+Scope.
+* Generic: arbitrary linear plants `Plant n p` (`theorem/Linear/Plant.lean`), continuous time,
+  of any state dimension; no model.
+* Controllability and observability are LeanForControl's predicates, used through their rank
+  characterizations. Transfer functions are compared where both are defined; equality there is
+  equality of the Markov parameters `C Aᵏ B` and of the feedthrough.
+
+Source: LeanForControl's controllability and observability (`IsControllable`, `IsObservable`,
+`reachableSubspace`); the transfer functions and similarity of `theorem/Linear/Transfer.lean`;
+certification by an observation (`TMIO.certify`, `theorem/TMIO/Relation.lean`).
+
+Results.
+* Transfer functions and Markov parameters: `det_characteristicMatrix`, `transfer_eq_adjugate`,
+  `markov`, `exists_det_characteristicMatrix_ne_zero`, `markov_eq_of_transfer_eventually_eq`,
+  `transfer_eventually_eq_of_markov_eq`, `transfer_eq_of_eventually_eq`,
+  `transfer_eq_iff_markov_eq`.
+* Minimal plants: `obsv`, `ctrb`, `ctrb_eq`, `obsv_eq`, `similar_of_markov_eq`,
+  `similar_iff_transfer_eq`, `basisMatrix`, `reduce_uncontrollable`, `Plant.dual`, `markov_dual`,
+  `isObservable_iff_isControllable_transpose`, `exists_minimal_markov`,
+  `exists_minimal_realization`, `controllable_observable_iff_minimal`, `Plant.Minimal`.
+* What the observation decides: `isHurwitz_iff_of_transfer_eq`, `transfer_certified` (on minimal
+  plants the transfer function certifies every behavioural sentence), `hiddenMode_not_minimal`
+  (the observation misses exactly such modes).
+-/
 
 noncomputable section
 

@@ -7,16 +7,30 @@ The single definition of the behaviour of continuous-time autonomous systems. Ev
 whose complete systems evolve in continuous time is read through these definitions and nothing
 else; discrete-time systems are read through `theorem/Map/Defs.lean`.
 
-A system is a complete autonomous vector field `f : ℝⁿ → ℝⁿ` on `ℝⁿ = EuclideanSpace ℝ (Fin n)`,
-after inputs are fixed and feedback is closed: continuous time, no delay, sampling, PWM or
-switching (a sampled-data loop or a switched converter is read as a discrete-time system at its
-sampling instants or through its period map). Solutions are Mathlib integral curves on finite forward segments (LeanForControl's
-`IsTrajectoryOn`), so finite-time escape never makes a property vacuous. The local notions —
+Scope.
+* A system is a complete autonomous vector field `f : ℝⁿ → ℝⁿ` on
+  `ℝⁿ = EuclideanSpace ℝ (Fin n)`, after inputs are fixed and feedback is closed: continuous
+  time, no delay, sampling, PWM or switching (a sampled-data loop or a switched converter is read
+  as a discrete-time system at its sampling instants or through its period map).
+* Solutions are Mathlib integral curves on finite forward segments (LeanForControl's
+  `IsTrajectoryOn`), so finite-time escape never makes a property vacuous.
+* Systems with ports are read through their zero-input field (`theorem/Port/Defs.lean`).
+
+Source: LeanForControl (`LeanForControl.Stability.DefsAutonomous`): the local notions —
 Lyapunov stability, local asymptotic and local exponential stability, instability — are
-LeanForControl's definitions, reused unchanged. The two global notions are defined here because
-they also assert that every solution exists for all forward time. Three further notions complete
-the sentence language: a decay rate on every solution segment, contraction of solutions sampled
-at an integer horizon, and conservation of an energy with a strict minimum at the equilibrium. -/
+LeanForControl's definitions, reused unchanged; Mathlib's `IsIntegralCurveOn`.
+
+Results.
+* The two global notions are defined here because they also assert that every solution exists
+  for all forward time: `ForwardComplete`, `GloballyExponentiallyStable`,
+  `GloballyAsymptoticallyStable`.
+* Three further notions complete the sentence language: a decay rate on every solution segment
+  (`Decay`), contraction of solutions sampled at an integer horizon (`SampledContraction`), and
+  conservation of an energy with a strict minimum at the equilibrium (`Conservative`).
+* The sentences `Property` and their interpretation `Property.holds`, fixed once; the sentences
+  asserting convergence, `Property.Attractive` (`Property.attractive_locallyAsymptoticallyStable`
+  and the three other attractive cases).
+-/
 
 noncomputable section
 

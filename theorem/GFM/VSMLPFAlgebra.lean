@@ -173,9 +173,9 @@ eigenvalues of the Jacobian at the loading equilibrium. -/
         (g.jacobian g.δ0).map (algebraMap ℝ ℂ) *ᵥ v = ((ωH : ℂ) * Complex.I) • v) ∧
       ∃ v : Fin 3 → ℂ, v ≠ 0 ∧
         (g.jacobian g.δ0).map (algebraMap ℝ ℂ) *ᵥ v = (((-ωH : ℝ) : ℂ) * Complex.I) • v := by
-  refine ⟨Criteria.exists_eigenpair_of_det_characteristicMatrix_eq_zero _
+  refine ⟨Linear.exists_eigenvector_of_root
       (g.det_characteristicMatrix_boundary hM hD hωc hH),
-    Criteria.exists_eigenpair_of_det_characteristicMatrix_eq_zero _
+    Linear.exists_eigenvector_of_root
       (g.det_characteristicMatrix_boundary hM hD hωc (by rw [neg_sq]; exact hH))⟩
 
 end VSMLPF

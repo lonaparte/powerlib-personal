@@ -12,13 +12,24 @@ zero the system is the autonomous field `zeroInput`, whose behaviour is the Flow
 Passivity is dissipativity with respect to the supplied power: a nonnegative storage whose
 increase on every solution segment is bounded by the energy supplied through the ports.
 
-A complete system is read by the semantic layer in one of two kinds (`Behaviour`): a
-continuous-time system with ports, interpreted here and in `theorem/Flow/Defs.lean`, or a
-discrete-time system with ports, interpreted in `theorem/Map/Defs.lean`.
+Scope.
+* A complete system is read by the semantic layer in one of two kinds (`Behaviour`): a
+  continuous-time system with ports, interpreted here and in `theorem/Flow/Defs.lean`, or a
+  discrete-time system with ports, interpreted in `theorem/Map/Defs.lean`.
+* The sentences of the library are the Flow sentences of the zero-input dynamics about the origin
+  and passivity; their interpretation on both kinds of systems is fixed here once
+  (`Sentence.holds`). An autonomous field or map is the system without ports.
 
-The sentences of the library are the Flow sentences of the zero-input dynamics about the origin
-and passivity; their interpretation on both kinds of systems is fixed here once
-(`Sentence.holds`). An autonomous field or map is the system without ports. -/
+Source: the flow semantics (`theorem/Flow/Defs.lean`; Mathlib's `IsIntegralCurveOn` for
+solutions under an input) and the map semantics (`theorem/Map/Defs.lean`); dissipativity with
+respect to the supply rate `u ⬝ y`.
+
+Results.
+* `Port.System` (field and conjugate output), `System.supply`, `System.IsTrajectoryOn` (solutions
+  under an input signal), `System.zeroInput`, `System.PassiveWith`, `System.Passive`,
+  `System.autonomous`.
+* `Behaviour` (`continuous`, `discrete`), `Sentence` (`flow P`, `passive`) and `Sentence.holds`.
+-/
 
 noncomputable section
 

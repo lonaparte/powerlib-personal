@@ -7,6 +7,13 @@ import theorem.Linear.Synthesis
 Two synthesizers produce ordinary `Linear.Certificate`s for the exact plant; what a certificate
 proves is the hub's, not restated here.
 
+Rational submissions form the LCL family read through the submitted parameters, its requirement
+language extended by acceptance (`rationalFamily`). Acceptance is related to the circuit
+requirements by an evaluation of the satisfaction connection (`realize_accepted`); the sentences
+keep their exact translations by the generic extension theorems.
+
+Model boundary.
+* The LCL filter of `theorem/Circuits/LCL.lean`, unchanged.
 * For a passive, damped circuit, a closed-form symbolic witness built from the model
   coefficients; every endpoint is checked by the Lean kernel.
 * For circuits submitted with rational parameters, the generic rational synthesizer of
@@ -14,10 +21,34 @@ proves is the hub's, not restated here.
   passivity nor damping: a circuit with a negative resistance is certified whenever its plant is
   Hurwitz.
 
-Rational submissions form the LCL family read through the submitted parameters, its requirement
-language extended by acceptance (`rationalFamily`). Acceptance is related to the circuit
-requirements by an evaluation of the satisfaction connection (`realize_accepted`); the sentences
-keep their exact translations by the generic extension theorems. -/
+Source: the LCL family and its state-space parameters (`theorem/Circuits/LCL.lean`); the
+certificates of `theorem/Linear/Certificate.lean`; the rational synthesizer
+(`theorem/Linear/Synthesis.lean`); requirement extensions (`Family.extend`,
+`theorem/Family/Basic.lean`).
+
+Results.
+* Symmetric matrices: `SymmetricMatrix`, `SymmetricMatrix.minor2`, `SymmetricMatrix.det`,
+  `SymmetricMatrix.toMatrix`, `SymmetricMatrix.form_pos` (positive leading minors make the form
+  positive).
+* The symbolic witness (`PassiveWitness`): `coupling`, `gap`, `denominator`, the numerators
+  `n11` … `n33`, `minorNumerator`, `detNumerator`, `matrix`; positivity (`coupling_pos`,
+  `gap_pos`, `n11_pos`, `minorNumerator_pos`, `detNumerator_pos`), the minor and determinant
+  identities (`minor_identity`, `det_identity`) and the Lyapunov equations entry by entry (`eq11`,
+  `eq12`, `eq13`, `eq22`, `eq23`, `eq33`).
+* Closed-form synthesis: `synthesizeState` (nonnegative decays, not both zero), `synthesize` (a
+  passive, damped circuit).
+* Rational synthesis: `RationalCircuit`, `RationalCircuit.circuit`, `RationalCircuit.matrix`,
+  `RationalCircuit.real_matrix` (the exact rational matrix is the circuit's plant matrix),
+  `RationalCircuit.certificate`, `Synthesis`, `rationalFamily_isLinear`.
+
+Family and connection conclusions.
+* `Circuits.LCL.rationalFamily : Family RationalCircuit (Requirement ⊕ Synthesis) 3 2`: the LCL
+  family read through the submitted parameters (`family.extend`), with the circuit requirements
+  and acceptance by the generic synthesizer run on the exact rational plant matrix; the sentences
+  keep the LCL translations.
+* `realize_accepted`: acceptance by the synthesizer entails pole stability (the accepted
+  certificate proves the plant Hurwitz).
+-/
 
 noncomputable section
 

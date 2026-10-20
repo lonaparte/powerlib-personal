@@ -6,7 +6,26 @@ The general facts about passivity, proved once: a storage whose rate along solut
 by the supplied power proves passivity; a solution segment returning to its initial state while
 drawing net energy out of the ports refutes it; with the ports at zero the storage cannot increase;
 a storage between two positive quadratic bounds proves Lyapunov stability of the zero-input field
-in the Flow semantics; and a system without ports is passive with the zero storage. -/
+in the Flow semantics; and a system without ports is passive with the zero storage.
+
+Scope.
+* Generic: an arbitrary continuous-time system with ports `Port.System n p`
+  (`theorem/Port/Defs.lean`) and storage `V`; no model.
+
+Source: the port semantics of `theorem/Port/Defs.lean` (passivity as dissipativity with respect
+to the supplied power) and the flow semantics of `theorem/Flow/Defs.lean`.
+
+Results.
+* Proving passivity: `System.passiveWith_of_rate`, `System.passive_of_noPorts`,
+  `System.autonomous_passive`.
+* Refuting passivity: `System.not_passive_of_cycle`, `System.not_passive_of_equilibrium` (an
+  equilibrium held by a constant input that draws energy out of the ports).
+* Consequences of a storage: `System.PassiveWith.zeroInput_le`,
+  `System.PassiveWith.lyapunovStable`.
+* Simplification: `System.supply_zero`, `System.autonomous_zeroInput`, and the interpretation of
+  the sentences on both kinds of systems, `Sentence.holds_flow`, `Sentence.holds_passive`,
+  `Sentence.holds_flow_discrete`, `Sentence.holds_passive_discrete`.
+-/
 
 noncomputable section
 

@@ -6,7 +6,25 @@ import theorem.Linear.Certificate
 The port system of a linear plant has input `u` and output `y = C x + D u`. Its zero-input field is
 the hub's affine linear field, so its stability is the hub's. A KYP certificate — a nonnegative
 symmetric storage matrix for which the plant dissipates and whose output is the storage gradient
-read through `B` — proves passivity with the quadratic storage `xᵀ P x / 2`. -/
+read through `B` — proves passivity with the quadratic storage `xᵀ P x / 2`.
+
+Scope.
+* Generic: an arbitrary linear plant `Plant n p` (`theorem/Linear/Plant.lean`) read as a
+  continuous-time system with ports (`theorem/Port/Defs.lean`); quadratic storages only. No model.
+
+Source: the port semantics (`theorem/Port/Defs.lean`, `theorem/Port/Basic.lean`) and the linear
+stability hub (`theorem/Linear/Stability.lean`); the Kalman–Yakubovich–Popov (KYP) conditions for
+passivity of a linear plant.
+
+Results.
+* `Plant.system` (the port system of a plant), `Plant.system_zeroInput` (with the ports at zero,
+  the plant is the hub's linear field).
+* `KYP` (a KYP certificate with storage matrix `P`), `KYP.storage`, `KYP.output_dot`,
+  `KYP.passiveWith` (passivity with the quadratic storage).
+* `KYP.storage_conserved` (a lossless certificate, `Aᵀ P + P A = 0`, conserves the storage along
+  every zero-input solution segment), `KYP.lyapunovStable` (with quadratic bounds on the storage),
+  `KYP.lyapunovStable_of_pos` (with a positive definite storage matrix).
+-/
 
 noncomputable section
 

@@ -7,16 +7,44 @@ semantics — local or global, asymptotic or exponential — holds at `e` exactl
 Hurwitz. This is the one place where linear stability is decided; every linear family inherits
 it through its plant map.
 
-* Hurwitz ⇒ local exponential stability: LeanForControl's linearization theorem, applied to the
-  field itself.
-* Local ⇒ global exponential stability: the field is linear about `e`, so solution segments scale.
-* Forward completeness: the matrix exponential.
-* Local asymptotic stability ⇒ Hurwitz: a real eigenmode with `Re μ ≥ 0` does not decay.
-
 Sampled contraction is decided by the same test: Hurwitz gives a contracting integer horizon
 (LeanForControl's spectral-radius argument), and a non-decaying eigenmode does not contract. A
 conserved energy excludes Hurwitz on a nontrivial state space, and a one-state plant decays exactly
-at the rates up to its pole. -/
+at the rates up to its pole.
+
+Scope.
+* Generic: the affine linear field `affineLinearVectorField A e` of an arbitrary real square
+  matrix `A` centred at an arbitrary point `e`, read by the flow semantics; no model.
+
+Source: LeanForControl: the linearization theorem
+(`hurwitz_linearization_locally_exponentially_stable`), instability from an eigenvalue in the
+open right half plane (`unstable_affineLinear_of_eigenvalue_re_pos`), uniqueness of solutions of
+Lipschitz fields (`eqOn_of_isIntegralCurveOn_Icc`) and the contracting horizon of a Hurwitz
+matrix (`IsHurwitz.exists_norm_exp_nat_smul_lt_one`); Mathlib's matrix exponential.
+
+Results.
+* Hurwitz ⇒ local exponential stability: LeanForControl's linearization theorem, applied to the
+  field itself (`locallyExponentiallyStable_of_isHurwitz`, with `affine_isEquilibrium`,
+  `affine_hasFDerivAt`, `affine_contDiff`).
+* Forward completeness: the matrix exponential (`solution`, `solution_initial`,
+  `solution_hasDerivAt`, `forwardComplete`, `affine_lipschitzWith`, `trajectory_eq_solution`,
+  `trajectory_unique`).
+* Local ⇒ global exponential stability: the field is linear about `e`, so solution segments scale
+  (`isTrajectoryOn_scale`, `globallyExponentiallyStable_of_locallyExponentiallyStable`,
+  `globallyExponentiallyStable_of_isHurwitz`).
+* Local asymptotic stability ⇒ Hurwitz: a real eigenmode with `Re μ ≥ 0` does not decay
+  (`eigenmode`, `eigen_component_hasDerivAt`, `eigenmode_hasDerivAt`, `eigenmode_norm_sq`,
+  `isHurwitz_of_localAsymptoticStable`).
+* The hub: `holds_iff_isHurwitz` (every attractive sentence), `holds_of_isHurwitz`,
+  `globallyAsymptoticallyStable_of_isHurwitz`, `localAsymptoticStable_of_isHurwitz`,
+  `lyapunovStable_of_isHurwitz`; `unstable_of_eigenvalue`.
+* Sampled contraction: `contractive_block`, `norm_op_apply_le`, `op_exp`,
+  `sampledContraction_of_isHurwitz`, `isHurwitz_of_sampledContraction`,
+  `sampledContraction_iff_isHurwitz`.
+* Conservation and one-state plants: `not_isHurwitz_of_conservative`, `decay_scalar_iff` (a
+  one-state plant `x' = -b x` decays exactly at the rates up to `b`; with `op_one_apply`,
+  `scalar_solution_hasDerivAt`, `trajectory_eq_scalar`).
+-/
 
 noncomputable section
 

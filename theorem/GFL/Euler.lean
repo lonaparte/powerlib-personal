@@ -70,10 +70,6 @@ def eulerFamily : Family Euler Requirement 2 0 :=
 def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
   Numerics.euler family Model.field Euler.design Euler.h
 
-/-- The translated field is `C¹`. -/
-private theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
-  (contDiff_field m.params).comp (contDiff_id.add contDiff_const)
-
 /-- **Small steps realize local exponential stability of the rate-coupled PLL models.** A locally
 exponentially stable rate-coupled PLL model has a step `h₀ > 0` such that its explicit Euler
 integration with every step `h ∈ (0, h₀]` is locally exponentially stable. -/
@@ -84,7 +80,7 @@ integration with every step `h ∈ (0, h₀]` is locally exponentially stable. -
   unfold powerlib.TMIO.Statement
   intro m hm
   obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step (design := Euler.design)
-    (step := Euler.h) family_isAutonomous contDiff_modelField hm
+    (step := Euler.h) family_isAutonomous Model.field_contDiff hm
   exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Certified integrations with a small step.** For an Euler integration certified for local
@@ -99,7 +95,7 @@ stable. -/
   unfold powerlib.TMIO.Statement
   intro y hy
   obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step family_isAutonomous
-    contDiff_modelField hy
+    Model.field_contDiff hy
   exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the rate-coupled PLL models is not sound.**
@@ -114,7 +110,7 @@ integrated with a large enough step is not locally exponentially stable: every E
     one_pos one_pos one_pos (θ := 0) (by simp) (by simp) (by simp)
   unfold powerlib.TMIO.Statement at hm
   exact Numerics.not_euler_realizationSoundUnder_of_large_step family_isAutonomous
-    contDiff_modelField (by norm_num) hm
+    Model.field_contDiff (by norm_num) hm
     fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.GFL.RatePLL

@@ -43,7 +43,7 @@ data-driven work is the whole backward traversal (`infer`, the seed's `uTO`). Th
 Galois connection reads: records support sentences exactly when they are certified for them
 (`subset_certified_iff`).
 
-The codex encoding `Family.seed` places the model instances in the third position and the
+The seed encoding `Family.seed` places the model instances in the third position and the
 requirement sets in the second. In the reading above both belong to the model layer: a `Family`
 with its translation is one T–M connection, and every connection conclusion of a family
 (translation, denotation, requirement space) is a T–M conclusion. The `organized` seed of a stack

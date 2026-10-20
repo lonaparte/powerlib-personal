@@ -22,7 +22,45 @@ requirement context.
 Observations extend the chain to the standard relational seed: certification, refutation and
 changes of representation are generated once here. A family proves facts of three shapes only:
 the value of a connection at a point, the agreement or order of two connections, and witnesses
-where two connections part. -/
+where two connections part.
+
+Scope.
+* Generic: arbitrary types of complete systems `X`, requirements `Q` and readings `V`, systems
+  with `n` states and `p` ports of either kind (`theorem/Port/Defs.lean`); no model.
+* Families of autonomous fields (`IsAutonomous`, no ports, continuous time) and of autonomous maps
+  (`IsAutonomousMap`, no ports, discrete time with a step length) are recognized here.
+
+Source: the TMIO framework: satisfaction, translation tables and relational observations
+(`theorem/TMIO/Relation.lean`), the comparison of connections (`theorem/TMIO/Compare.lean`,
+`chain_eq_satisfaction_iff`, `chain_le_satisfaction_iff`) and seeds
+(`theorem/TMIO/Derived.lean`); the single semantics `Sentence.holds` (`theorem/Port/Defs.lean`).
+
+Results.
+* `Family` (`system`, `meets`, `translate`), `Holds`, `semantics`, `den` (`mem_den`,
+  `den_eq_generate`), `chain`, `seed` (the family's seed for an observation, `seed_uTI`),
+  `generate_chain_singleton`.
+* `Exact`, `Sound`, `ExactUnder`, `SoundUnder`; `exact_iff_generate`, `sound_iff_generate`,
+  `chain_eq_semantics_iff`, `chain_le_semantics_iff`, `Exact.sound`, `Sound.soundUnder`,
+  `ExactUnder.soundUnder`, `exactUnder_empty_iff`.
+* Sentences without a translation: `sound_of_translate_eq_univ`, `exact_of_translate_eq_univ`,
+  `exact_of_translate_eq_empty`.
+* Observations: `certified` (with an exact translation, the certified observations are those
+  whose every possible source satisfies the sentence), `certifies`, `refutes`.
+* Changes of representation: `den_comap`, `realize_comap`, `den_extend`, `realize_extend_inl`,
+  `Exact.comap`, `Sound.comap`, `Exact.extend`, `Sound.extend`.
+* Autonomous families: `IsAutonomous.mem_den_flow`, `IsAutonomous.den_passive`,
+  `IsAutonomousMap.mem_den_flow`, `IsAutonomousMap.den_passive` (a system without ports is
+  passive).
+
+Family and connection conclusions.
+* `Family.comap g : Family Y Q n p` (the family read in another representation, through a map of
+  complete systems) and `Family.extend g extra : Family Y (Q ⊕ R) n p` (its requirement language
+  extended by requirements stated on the new representation; sentences keep their translations).
+  Exactness and soundness survive both (`Exact.comap`, `Sound.comap`, `Exact.extend`,
+  `Sound.extend`).
+* No connection statements: the module states the generic laws once; model modules publish their
+  conclusions as connection statements.
+-/
 
 noncomputable section
 

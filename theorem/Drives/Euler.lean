@@ -68,10 +68,6 @@ def eulerFamily : Family Euler Requirement 2 0 :=
 def euler : Implementation Drive Requirement Euler Requirement 2 0 2 0 :=
   Numerics.euler family Drive.field Euler.design Euler.h
 
-/-- The translated field is `C¹`. -/
-private theorem contDiff_modelField (m : Drive) : ContDiff ℝ 1 (Drive.field m) :=
-  (fluxField_smooth m.p m.isd m.isq m.ωsl).comp (contDiff_id.add contDiff_const)
-
 /-- **Small steps realize local exponential stability of the drives.** A locally exponentially
 stable drive has a step `h₀ > 0` such that its explicit Euler integration with every step
 `h ∈ (0, h₀]` is locally exponentially stable. -/
@@ -82,7 +78,7 @@ stable drive has a step `h₀ > 0` such that its explicit Euler integration with
   unfold powerlib.TMIO.Statement
   intro m hm
   obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step (design := Euler.design)
-    (step := Euler.h) family_isAutonomous contDiff_modelField hm
+    (step := Euler.h) family_isAutonomous field_contDiff hm
   exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Certified integrations with a small step.** For an Euler integration certified for local
@@ -96,7 +92,7 @@ drive with a step below a threshold is locally exponentially stable. -/
   unfold powerlib.TMIO.Statement
   intro y hy
   obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step family_isAutonomous
-    contDiff_modelField hy
+    field_contDiff hy
   exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the drives is not sound.** A locally
@@ -109,7 +105,7 @@ locally exponentially stable: every Euler multiplier `1 + hλ` leaves the unit d
   have hm := (mem_den_attractive_iff unitRotor (P := .locallyExponentiallyStable) trivial).mpr
     (by norm_num [unitRotor])
   exact Numerics.not_euler_realizationSoundUnder_of_large_step family_isAutonomous
-    contDiff_modelField (by norm_num) hm
+    field_contDiff (by norm_num) hm
     fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.Drives.InductionMachine

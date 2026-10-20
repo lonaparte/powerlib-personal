@@ -14,8 +14,26 @@ exchange statistics instead of records: the statistics of merged records are the
 statistics, so the distributed and the central pipelines have the same semantic map and hence
 the same generated forward map.
 
-A record whose samples carry no nonzero current has zero denominator; Lean's convention
-`x / 0 = 0` then returns `0`, and no theorem below concludes anything about such records. -/
+Scope.
+* Records over an arbitrary field `K`; the analysis is the least-squares fit through the origin,
+  with no noise model. No circuit is modelled here; `theorem/Circuits/RLMeasurement.lean`
+  attaches real records to the RL instance.
+* A record whose samples carry no nonzero current has zero denominator; Lean's convention
+  `x / 0 = 0` then returns `0`, and no theorem below concludes anything about such records.
+
+Source: TMIO v0.3 §7 (data analysis as a deterministic edge); the constructor `preimage` and its
+generated direct image (`theorem/TMIO/Relation.lean`).
+
+Results.
+* Records and the analysis: `Sample`, `Record`, `stats`, `fit`, `estimate`.
+* Edges: `estimateEdge`, `statsEdge`, `fitEdge`; `generate_estimateEdge` (the direct image),
+  `generate_estimateEdge_comp` (the analysis is the composite of the statistics and fit edges).
+* Distribution: `stats_append` (merging records adds their statistics), `distributedEdge`,
+  `centralEdge`, `distributedEdge_eq_centralEdge` (the same semantic map),
+  `generate_distributedEdge` (the distributed pipeline computes the central estimates).
+* Evaluation: `estimate_eq_of_exact` (a noiseless record with some nonzero current fits `R`),
+  `estimate_example` (samples `(2 V, 1 A)` and `(4 V, 2 A)` fit `2 Ω`).
+-/
 
 namespace powerlib.Data.Analysis
 

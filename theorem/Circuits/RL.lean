@@ -6,20 +6,49 @@ import theorem.generated.Conversion
 
 /-! # The RL branch
 
-Model boundary: one series resistor–inductor branch driven by its terminal voltage, in continuous
-time: `L i' = v - R i`. State: the branch current `i` (one state, stationary frame, no dq
-transformation). Port: input voltage `v`, output current `i`. Inductance `L > 0`; resistance `R`
-real, of either sign. No controller, PLL, PWM, delay, switching or discretization.
-
 Two representations — impedance parameters `(R, L)` and state-space parameters
 `(a, b) = (R / L, 1 / L)` — are related by the Agda-generated conversion, an equivalence. The
 plant map sends the state-space parameters to `i' = -a i + b v`; the family reads every branch as
 the port system of its plant, so every sentence denotes the single semantics pulled back.
 
-The family is faithful: its translation chain is its semantics connection
-(`chain_eq_semantics`). Every sentence — the stability sentences, decay at a rate, sampled
-contraction, conservation and passivity — is carved out exactly by a condition on the resistance
-and the time constant. -/
+Model boundary.
+* One series resistor–inductor branch driven by its terminal voltage, in continuous time:
+  `L i' = v - R i`.
+* State: the branch current `i` (one state, stationary frame, no dq transformation). Port: input
+  voltage `v`, output current `i`.
+* Inductance `L > 0`; resistance `R` real, of either sign.
+* No controller, PLL, PWM, delay, switching or discretization.
+
+Source: scaffold `theorem/Conversion.agda` (impedance parameters ↔ state-space parameters), its
+generated conversion `theorem/generated/Conversion.lean`; the linear family laws
+(`theorem/Linear/Family.lean`), KYP certificates (`theorem/Port/Linear.lean`) and realization
+theory (`theorem/Linear/Realization.lean`).
+
+Results.
+* Representations: `Positive`, `reciprocal` (`reciprocal_involutive`, `scale_cancel`),
+  `Impedance`, `StateSpace`, `toImpedance` and `toStateSpace` (the generated conversion),
+  `state_roundtrip`, `impedance_roundtrip`, `modelEquiv`, `toStateSpace_decay`,
+  `toStateSpace_inputGain`.
+* The plant: `StateSpace.plant`, `Impedance.plant`, `plant_toImpedance`, `plant_A`,
+  `isHurwitz_iff` (Hurwitz exactly when the resistance is positive).
+* Certificates: `synthesize` (the closed-form Lyapunov certificate `P = L / (2 R)` for a positive
+  resistance), `kyp` (the physical energy `L i² / 2` for a nonnegative resistance), `energy_pos`.
+* Frequency domain: `transfer_eq` (the admittance `1 / (R + L s)`), `minimal` (no hidden mode).
+* Static evidence: `field_hold`, `supply_hold` (a constant current `c` held by the terminal
+  voltage `R c` draws the power `R c²`), `family_isLinear`.
+
+Family and connection conclusions.
+* `Circuits.RL.family : Family Impedance Requirement 1 1`: every branch read as the port system
+  of its plant. Requirements: positive, nonnegative or negative resistance, lossless, a decay rate
+  at least `a`, and bounds on the resistance and inductance. Lyapunov stability and passivity
+  translate into a nonnegative resistance, the attractive sentences and sampled contraction into a
+  positive one, instability into a negative one, conservation into a lossless branch, decay at
+  `a` into `a ≤ R / L`.
+* The family is faithful: its translation chain is its semantics connection
+  (`chain_eq_semantics`). Every sentence — the stability sentences, decay at a rate, sampled
+  contraction, conservation and passivity — is carved out exactly by a condition on the
+  resistance and the time constant.
+-/
 
 noncomputable section
 

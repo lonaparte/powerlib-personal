@@ -2,8 +2,44 @@ import theorem.Family.Basic
 import theorem.LibrarySearch
 import theorem.TMIO.ClaimElab
 
-/-! Whole-package admission, with earlier feedback at module boundaries. Behavioural
-predicates are followed transitively until a structurally certified connection endpoint. -/
+/-! # Admission of the library (foundation)
+
+Whole-package admission, with earlier feedback at module boundaries. Behavioural
+predicates are followed transitively until a structurally certified connection endpoint.
+
+Scope.
+* Lean meta-programming, no mathematics. The semantic audit reads the time axis and the signal
+  spaces from the declared semantic layer (`theorem/Flow/Defs.lean`, `theorem/Map/Defs.lean`,
+  `theorem/Port/Defs.lean`) and recognizes behaviour — signals of time, sequences indexed by
+  steps, iterates of a state map, the step of a discrete system — inside the semantic layer and
+  rejects it outside.
+* Model types are inferred from the actual `Family` definitions of first-party modules (with
+  transparent aliases), not from a handwritten list. Private helpers and generic semantic support
+  are implementation evidence; static mathematics needs no classification.
+* Every public, model-specific behavioural conclusion must be a typed connection `Statement`,
+  whatever its label; at a certified endpoint the inputs and structural maps are inspected while
+  the semantic map stays abstract.
+
+Source: the library rules (`Rules.md` §3a, generated connections and public conclusions) and the
+design of public admission (`Architecture.md`); the connection grammar of
+`theorem/TMIO/Claim.lean` and `theorem/TMIO/ClaimElab.lean`; the classification registry
+(`theorem/Attributes.lean`) and the axiom audit (`theorem/LibrarySearch.lean`).
+
+Results.
+* The semantic audit (`SemanticAudit`): `semanticLayer`, `moduleOf?`, `inLibrary`,
+  `inSemantics`, `Ctx`, `isTime`, `isPredicateType`, `isTypeFamily`, `isSpace`, `anyField`,
+  `containsSpace`, `isStep`, `carriesSignalAux`, `evolvesDiscretely`, `isTimeFunction`,
+  `carriesSignal`, `Rules`, `isEliminator`, `visit`, `scanDecl`, `behavioural`, `classify`,
+  `outside`, `pattern`, `readSemantics`, `libraryDecls`.
+* Admission (`powerlib.Architecture`): `conclusionOnConnection`, `statement?` (published claims
+  carry the certificate in their type, independently of attributes), `context`, `rejection`,
+  `audit`, `modelTypes`, `publicTypeRejection`, `declarationRejection`.
+* `auditModules`: whole-package admission of the actual Lake module inventory, run by the build
+  (`lakefile.lean`); it neither trusts source imports of the linter nor the classification
+  registry, and rejects axioms outside the allowlist.
+* `moduleLinter`, registered with `addModuleLinter`: earlier feedback for published connection
+  statements at each module boundary.
+-/
 
 open Lean Meta Elab Command
 

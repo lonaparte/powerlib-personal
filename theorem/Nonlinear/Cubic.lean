@@ -5,16 +5,35 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-! # Cubic damping
 
-Model boundary: the autonomous fields `x' = -(α + ‖x‖²) x` on `ℝⁿ` with a positive linear damping
-gain `α`, in continuous time, without input, delay or switching; the equilibrium is the origin.
 The cubic term admits no global Lipschitz constant, so existence for all time is not available
 from Picard–Lindelöf alone. The energy `‖x‖²` is a quadratic-decay certificate with rate `2α`; it
 proves forward completeness and global exponential stability at every initial amplitude.
 
-The requirement language bounds the decay rate from below. On a nontrivial state space the family
-is faithful (`chain_eq_semantics`): every model satisfies the stability sentences, sampled
-contraction and passivity, none is unstable or conservative, and a model decays at the rate `a`
-exactly when `a ≤ α` — near the origin the cubic term vanishes and the gain alone sets the rate. -/
+Model boundary.
+* The autonomous fields `x' = -(α + ‖x‖²) x` on `ℝⁿ` with a positive linear damping gain `α`, in
+  continuous time, without input, delay or switching; the equilibrium is the origin.
+* A polynomial example family of generic mathematics, not an engineering model.
+
+Source: the quadratic-decay certificates of `theorem/Flow/Certificate.lean` (forward
+completeness from compact energy sublevels); the family interface of `theorem/Family/Basic.lean`.
+
+Results.
+* Static: `Gain`, `field`, `energy`, `field_smooth`, `not_lipschitzWith` (with a nonnegative gain
+  the field admits no global Lipschitz constant), `energy_lie`, `certificate` (the energy is a
+  quadratic-decay certificate with rate `2α`), `Requirement`, `Meets`, `translate`,
+  `family_isAutonomous`.
+
+Family and connection conclusions.
+* `Nonlinear.Cubic.family : Family Gain Requirement n 0`: every gain read as its autonomous field.
+  The requirement language bounds the decay rate from below (`decayRateAtLeast a`); decay at `a`
+  translates into `a ≤ α`, instability and conservation into the whole language, which no model
+  meets (`realize_univ`), every other sentence into no requirement.
+* `mem_den_globallyExponentiallyStable`: every model is globally exponentially stable.
+* On a nontrivial state space the family is faithful (`chain_eq_semantics`): every model
+  satisfies the stability sentences, sampled contraction and passivity, none is unstable or
+  conservative, and a model decays at the rate `a` exactly when `a ≤ α` — near the origin the
+  cubic term vanishes and the gain alone sets the rate.
+-/
 
 noncomputable section
 

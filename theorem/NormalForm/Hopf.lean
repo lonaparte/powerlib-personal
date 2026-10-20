@@ -147,7 +147,7 @@ def linPart (p : Params) : Matrix (Fin 2) (Fin 2) ℝ := !![p.μ, -p.ω₀; p.ω
       rw [hf]
       convert h using 1
       ext v; simp
-  · intro i v; rw [Fin.sum_univ_two]; fin_cases i <;> simp [linPart] <;> ring
+  · intro i v; rw [Fin.sum_univ_two]; fin_cases i <;> simp [linPart]; ring
 
 @[powerlib_foundation] theorem fderiv_field_zero (p : Params) :
     fderiv ℝ (field p) 0 = Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (linPart p) :=
@@ -178,7 +178,7 @@ def linPart (p : Params) : Matrix (Fin 2) (Fin 2) ℝ := !![p.μ, -p.ω₀; p.ω
 @[powerlib_foundation] theorem exists_eigenpair (p : Params) :
     ∃ v : Fin 2 → ℂ, v ≠ 0 ∧
       (linPart p).map (algebraMap ℝ ℂ) *ᵥ v = ((p.μ : ℂ) + p.ω₀ * Complex.I) • v := by
-  apply Criteria.exists_eigenpair_of_det_characteristicMatrix_eq_zero
+  apply Linear.exists_eigenvector_of_root
   rw [Criteria.det_characteristicMatrix_fin_two, trace_linPart, det_linPart]
   push_cast
   ring_nf

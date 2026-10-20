@@ -1,5 +1,38 @@
 import Lean
 
+/-! # Theorem classification registry (foundation)
+
+The two PowerLib theorem classifications, `foundation` and `domain`, and the audit that a
+source-authored theorem of a first-party module carries exactly one of them. Classification is
+optional search metadata, never an admission exemption.
+
+Scope.
+* Lean meta-programming, no mathematics: the attributes `powerlib_foundation` and
+  `powerlib_domain`, persisted by Lean's enum attributes; a theorem is classified once (a second,
+  different classification is an error), and only theorems can be classified.
+* A theorem whose statement is a typed `TMIO.Statement` (a connection statement) is a `domain`
+  theorem without either attribute.
+* Source ownership: first-party modules are those rooted at `theorem`, `dependencies`, `example`
+  and `powerlib`, plus sources of an isolated integration profile under
+  `dependencies/integrations`; imported upstream declarations and downstream modules are not
+  relabeled.
+
+Source: Lean's `EnumAttributes` and `ModuleLinter` interfaces; the library rules (`Rules.md` §3,
+foundation and domain results). The admission audit (`theorem/Architecture.lean`) reads the
+registry through `kindOf?`, `isFirstPartyModule`, `isIntegrationSource` and `authoredTheorems`.
+
+Results.
+* `TheoremKind` (`foundation`, `domain`), `TheoremKind.label`, the attribute registry
+  `theoremKinds`.
+* Queries: `kindOf?` (the classification of a declaration), `theoremNames` (every classified
+  theorem, optionally of one kind, including the unannotated connection statements).
+* Source ownership: `isFirstPartyModule`, `isIntegrationSource`.
+* Authored theorems: `authoredTheorems` (the theorems of the current module authored in a list of
+  commands, matched by name and selection range, without generated auxiliaries),
+  `auditAuthoredTheorems` (each needs exactly one classification), and the module linter
+  `classificationLinter` running that audit on first-party sources.
+-/
+
 namespace powerlib.Registry
 open Lean
 

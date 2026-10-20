@@ -7,7 +7,36 @@ representation of it: plants with hidden modes share a transfer function with pl
 different stability (`transfer_not_determines_stability`). A coordinate change of the state is
 a representation change: it preserves the transfer function and the spectrum, hence every
 behavioural sentence. Pole stability is read through the characteristic matrix and agrees with
-LeanForControl's Hurwitz predicate. -/
+LeanForControl's Hurwitz predicate.
+
+Scope.
+* Generic: linear plants `Plant n p` (`theorem/Linear/Plant.lean`) and real square matrices on
+  arbitrary finite state indices, continuous time; invertible state coordinate changes. No model.
+
+Source: LeanForControl's `IsHurwitz`; Mathlib's characteristic polynomial
+(`Matrix.eval_charpoly`) and block matrices; the plants of `theorem/Linear/Plant.lean` and the
+stability hub of `theorem/Linear/Stability.lean` (`unstable_of_eigenvalue`).
+
+Results.
+* Poles: `complexify`, `characteristicMatrix`, `SpectrallyStable`,
+  `det_characteristicMatrix_eq_eval`, `spectrallyStable_reindex`,
+  `spectrallyStable_iff_isHurwitz` (pole stability is LeanForControl's Hurwitz predicate),
+  `exists_eigenvector_of_root`, `unstable_of_root`.
+* Transfer functions: `transfer`, `transferOf` (any finite state index, as produced by block
+  constructions), `transfer_eq_transferOf`, `characteristicMatrix_reindex`, `transferOf_reindex`;
+  complexification of matrix operations (`complexify_mul`, `complexify_neg`, `complexify_sub`,
+  `complexify_zero`, `complexify_fromRows`, `complexify_fromCols`, `complexify_fromBlocks`,
+  `complexify_mul_eq_one`, `inv_conj`).
+* Coordinate changes: `Plant.changeCoordinates` (`x' = T x`, `x = S x'`),
+  `characteristicMatrix_conj`, `isHurwitz_conj`, `transfer_changeCoordinates`; behaviour under
+  linear conjugation (`isTrajectoryOn_conj`, `lyapunovStable_conj`, `decay_conj`,
+  `conservative_conj`, `conj_iff`, `holds_conj`: every behavioural sentence at the origin).
+* Similarity: `Similar`, `Plant.changeCoordinates_changeCoordinates`,
+  `Plant.changeCoordinates_one`, `Similar.refl`, `Similar.symm`, `Similar.trans`,
+  `Similar.transfer_eq`, `Similar.isHurwitz_iff`, `Similar.holds_iff`, and the equivalence of
+  plants `Plant.similarity`.
+* Hidden modes: `hiddenMode`, `quietMode`, `transfer_not_determines_stability`.
+-/
 
 noncomputable section
 

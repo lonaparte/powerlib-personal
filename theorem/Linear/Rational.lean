@@ -4,15 +4,41 @@ import theorem.Linear.Synthesis
 
 /-! # Rational state matrices
 
-Model boundary: the linear plant without ports `x' = A x` of an exact rational state matrix `A`,
-in continuous time, about the origin. The family reads every submitted matrix as that plant. Its
+The family of exact rational state matrices, read as linear plants without ports. Its
 requirements are the Hurwitz property, acceptance by the rational synthesizer of
-`Linear.Synthesis`, and a root of the characteristic polynomial in the open right half plane.
+`Linear.Synthesis`, a strict rate margin, and a root of the characteristic polynomial in the open
+right half plane.
 
-The Hurwitz property is the exact translation of the attractive sentences and sampled
-contraction (`exact_hurwitz`) and every translation is sound (`chain_le_semantics`). Acceptance
-entails the Hurwitz property (`realize_accepted`), so a submission accepted by the kernel's run of
-the synthesizer is placed in those sentences along the chain. -/
+Model boundary.
+* The linear plant without ports `x' = A x` of an exact rational state matrix `A`, in continuous
+  time, about the origin. The family reads every submitted matrix as that plant
+  (`Family.IsLinear`).
+* No inputs, outputs, delay, sampling or switching; any dimension `n`.
+
+Source: the rational synthesizer and its completeness (`theorem/Linear/Synthesis.lean`,
+`accepts_iff_isHurwitz`, `certificateOf`); strict rate margins (`theorem/Linear/Rate.lean`);
+pole stability and right-half-plane roots (`theorem/Linear/Transfer.lean`,
+`spectrallyStable_iff_isHurwitz`, `unstable_of_root`); the linear family laws of
+`theorem/Linear/Family.lean` (`Family.IsLinear.den_hurwitz`).
+
+Results.
+* Static: `plant`, `Requirement`, `Meets`, `translate`, `family_isLinear`.
+
+Family and connection conclusions.
+* `Linear.Rational.family : Family (Matrix (Fin n) (Fin n) ℚ) Requirement n 0`: requirements
+  `hurwitz`, `accepted`, `rightHalfPlaneRoot` and `rate a` (`RateMargin`). The attractive
+  sentences, Lyapunov stability and sampled contraction translate into `hurwitz`, instability into
+  `rightHalfPlaneRoot`, decay at `a` into `rate a` (a strict matrix margin), conservation into the
+  inconsistent whole language, passivity of a plant without ports into nothing.
+* `realize_univ`: no matrix is Hurwitz with a right-half-plane root (the whole language is
+  inconsistent).
+* The Hurwitz property is the exact translation of the attractive sentences and sampled
+  contraction (`exact_hurwitz`) and every translation is sound (`chain_le_semantics`).
+* Acceptance entails the Hurwitz property (`realize_accepted`), so a submission accepted by the
+  kernel's run of the synthesizer is placed in those sentences along the chain; acceptance is
+  itself an exact requirement for them (`accepted_eq_den`: the executable synthesizer is
+  complete, not merely sound).
+-/
 
 noncomputable section
 

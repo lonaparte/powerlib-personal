@@ -4,16 +4,29 @@ import theorem.TMIO.Relation
 
 Two finite instances of the same generator.
 
+Scope.
 * `witness`: the strict four-layer chain of v0.3 §8. Theory, model, implementation and
   observation points are `Bool`, `Bool²`, `Bool³` and `Bool`; the first two edges keep every
   extension (`kern` of a coordinate projection, generating its preimage) and the last edge
   observes the second coordinate (`preimage`, generating the direct image).
 * The satisfaction witness of v0.3 §4 on two-bit implementations: a coupled space is generated
   exactly by two different requirement sets, and a narrower family is legal but not the space.
+* Finite Boolean instances only; no model of the library.
 
-A concrete counterexample shows that, once implementations are ordered by reverse inclusion
-(the requirement family), the possible-observation image cannot be a generated lower adjoint for
-either order on observations; prediction is therefore derived by complement (`predict`). -/
+Source: TMIO v0.3 §4 and §8; the constructors of `theorem/TMIO/Relation.lean`.
+
+Results.
+* The strict chain: `dropModel`, `dropImplementation`, `observe`, `witness`; its generated maps
+  `witness_l₁`, `witness_l₂`, `witness_l₃`; `witness_closure₁` (the extension edge loses
+  nothing), `witness_whole_true`, `witness_whole_empty`, `witness_roundtrip_strict` (the
+  observation edge compresses information, so the generated adjoints are not inverse functions).
+* The satisfaction witness: `member`, `coupled`, `requirementsOne`, `requirementsTwo`,
+  `requirementsOne_space`, `requirementsTwo_space`, `narrow_legal_not_space`.
+* A concrete counterexample shows that, once implementations are ordered by reverse inclusion
+  (the requirement family), the possible-observation image cannot be a generated lower adjoint
+  for either order on observations (`image_not_lowerAdjoint_inclusion`,
+  `image_not_lowerAdjoint_reverse`); prediction is therefore derived by complement (`predict`).
+-/
 
 namespace powerlib.TMIO.Finite
 

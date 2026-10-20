@@ -5,7 +5,25 @@ import theorem.TMIO.Derived
 A representation change on both ends of an edge is a pair of order isomorphisms. The new semantic
 map is defined as `e_A ∘ u ∘ e_B⁻¹`; the new forward map, its closure operator and the whole
 generated chain then follow from uniqueness of adjoints and are not designed again. A bare type
-bijection does not establish this structure: the semantic map itself must be transported. -/
+bijection does not establish this structure: the semantic map itself must be transported.
+
+Scope.
+* Generic order theory: an edge between arbitrary complete lattices, or a whole seed, changed by
+  order isomorphisms of its layers; no model.
+
+Source: TMIO v0.3 §6; scaffold `theorem/TMIO/Representation.agda` (a representation change of
+complete systems is an equivalence of carriers preserving satisfaction, hence a path of
+satisfaction structures along which the generated legal space transports); Mathlib's
+`ClosureOperator.conjBy`.
+
+Results.
+* `transport` (`transport_apply`, `transport_refl`), `generate_transport` (the generated forward
+  map transports with the structure), `closure_transport`.
+* Fixed points: `closedTransport`, `interiorTransport`, `fixedPointsIso_transport` (the
+  fixed-point correspondence commutes with representation changes).
+* Seeds: `Seed.transport` (all four layers), `Seed.transport_whole` (the whole generated chain
+  transports with the four representation changes).
+-/
 
 namespace powerlib.TMIO
 

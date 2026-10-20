@@ -9,7 +9,28 @@ indexed by the exact matrix it was produced for. It introduces no meaning of its
 `⟪x - e, P (x - e)⟫` is a quadratic-decay certificate of the affine linear field
 (`Certificate.toQuadraticDecay`), so what it proves is what the generic certificate theory of
 `Flow` proves. A certificate exists exactly when `A` is Hurwitz. Families supply synthesizers that
-construct certificates; they do not restate what a certificate proves. -/
+construct certificates; they do not restate what a certificate proves.
+
+Scope.
+* Generic: an arbitrary real square matrix `A` and its affine linear field centred at any point;
+  quadratic energies only. No model.
+
+Source: the quadratic-decay certificates of `theorem/Flow/Certificate.lean`; LeanForControl's
+continuous Lyapunov equation (`IsHurwitz.exists_posDef_unique_solution_continuous_lyapunov`) for
+the converse.
+
+Results.
+* `Certificate` (`P`, `symmetric`, `positive`, `lyapunov`); `quadratic_sym`, `quadratic_lyapunov`.
+* `Certificate.isHurwitz` and `nonempty_certificate_iff` (a certificate exists exactly when `A`
+  is Hurwitz).
+* The energy: `inner_op`, `Certificate.energy`, `Certificate.hasFDerivAt_energy`,
+  `Certificate.lie_energy_matrix`, `Certificate.lie_energy`, `Certificate.energy_contDiff`,
+  `Certificate.exists_energy_bounds`; `Certificate.toQuadraticDecay`, and `Certificate.holds`
+  (every attractive sentence at every centre).
+* Conserved quadratic energies: `dotProduct_hasDerivWithinAt`, `quadratic_conserved` (a symmetric
+  `P` with `Aᵀ P + P A = 0` is constant along every solution segment), `conservative_of_quadratic`
+  (with `P` positive definite the linear field is conservative).
+-/
 
 noncomputable section
 

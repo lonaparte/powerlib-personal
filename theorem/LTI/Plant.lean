@@ -3,8 +3,8 @@ import theorem.Linear.Stability
 
 /-! # Single-input single-output plant helpers (foundation)
 
-Library-owned LTI plant lemmas (the codex `Linear/` layer is not modified), shared by the converter
-current-loop, DC-link and feedforward modules.
+LTI plant lemmas, kept beside the `Linear/` modules, shared by the converter current-loop,
+DC-link and feedforward modules.
 
 Scope.
 * Generic plant algebra about arbitrary `Linear.Plant` data, not a model: nothing here describes a

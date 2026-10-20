@@ -4,15 +4,49 @@ import theorem.Data.Analysis
 
 /-! # Measuring the RL branch
 
-Model boundary: the RL family of `theorem.Circuits.RL`. A DC resistance reading `r` with accuracy
-`ε` may be produced by a model exactly when `|r - R| ≤ ε`; the inductance is not observed. DC test
-records are reduced to readings by the least-squares analysis of `Data.Analysis`.
-
 The seed is the family's seed for the reading relation; certified readings, possible readings and
 the observation closure are generated. Because the family is faithful, a reading certifies a
 sentence exactly when its accuracy interval lies in the resistances all of whose models satisfy
 the sentence (`certified_readings`). A positive decay rate is never certified: it depends on the
-inductance, which the observation cannot separate (`closure_resistance`). -/
+inductance, which the observation cannot separate (`closure_resistance`).
+
+Model boundary.
+* The RL family of `theorem.Circuits.RL`.
+* A DC resistance reading `r` with accuracy `ε` may be produced by a model exactly when
+  `|r - R| ≤ ε`; the inductance is not observed.
+* DC test records are reduced to readings by the least-squares analysis of `Data.Analysis`.
+
+Source: TMIO observations (`Family.seed`, certification and prediction,
+`theorem/TMIO/Relation.lean`; representation change, `theorem/TMIO/Representation.lean`); the
+data analysis of `theorem/Data/Analysis.lean`; the Agda-generated conversion of
+`theorem/Circuits/RL.lean` for the state-space representation.
+
+Results.
+* The observation: `rl` (`rl_resistance`, `rl_inductance`), `reading`, `seed`.
+* Windows: `window` (the resistances all of whose models satisfy a sentence),
+  `kernImage_resistance`, `kernImage_decayRate`, `kernImage_den` (the window of every sentence is
+  the resistance kernel of its denotation).
+* Test records: `recordEdge` (the analysis as one more relational observation edge), `dcTest`,
+  `estimate_dcTest`.
+* The state-space representation: `stateSpaceIso`, `stateSpaceSeed`, `stateSpace_whole`
+  (certified readings do not depend on the implementation representation).
+
+Family and connection conclusions.
+* No new family: the module observes `Circuits.RL.family` through `seed ε`.
+* `certify_reading`: a reading certifies a set of models exactly when its accuracy interval lies
+  in the resistances all of whose models belong to the set; `predict_reading`: the possible
+  readings, derived from certification by complement; `candidates`: the candidates of a reading
+  are the semantic map itself.
+* `certified_readings`: a reading is certified, along the whole chain, when its whole accuracy
+  interval lies in the sentence's window; a positive decay rate has an empty window and is never
+  certified.
+* `closure_resistance`: the generated observation closure cannot separate models of equal
+  resistance; the inductance, and with it the decay rate, is not identifiable from DC readings.
+* `certified_records`: the chain extended by the analysis edge certifies a record exactly when it
+  certifies the record's estimate; `dcTest_certified`: with accuracy `1/2`, the record `dcTest`
+  is certified, along the chain extended by the analysis, for every attractive sentence and for
+  sampled contraction.
+-/
 
 noncomputable section
 

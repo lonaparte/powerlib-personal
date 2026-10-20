@@ -6,7 +6,21 @@ A finite-dimensional continuous-time linear plant `x' = A x + B u`, `y = C x + D
 states and `p` ports; input and output have the same dimension, as for impedance and admittance
 models. The state is a point of `ℝⁿ = EuclideanSpace ℝ (Fin n)`. Nothing about trajectories is
 defined here: the behaviour of a plant is the Flow semantics of its vector field, and the field
-for a constant input with an equilibrium is LeanForControl's affine linear vector field. -/
+for a constant input with an equilibrium is LeanForControl's affine linear vector field.
+
+Scope.
+* Generic: arbitrary real matrices `A, B, C, D` of compatible sizes, continuous time, constant
+  inputs; no model.
+
+Source: LeanForControl's `affineLinearVectorField` (`LinearSystems`); Mathlib's
+`Matrix.toEuclideanCLM`.
+
+Results.
+* `Plant` (`A`, `B`, `C`, `D`), the matrix action `op` on Euclidean state space (`affine_apply`,
+  `op_mul_apply`, `op_cancel`).
+* `Plant.inputField` (the field under a constant input); `Plant.inputField_eq` (with an
+  equilibrium `e` it is the affine linear field of `A` centred at `e`), `Plant.inputField_zero`.
+-/
 
 noncomputable section
 

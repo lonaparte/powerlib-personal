@@ -57,8 +57,11 @@ detector `h = −V sin` gives a stable and an unstable member for every `δω`. 
 (`mem_den_lyapunovStable_of_slope`). At a hyperbolic slope (`K_p h'(θ*) ≠ 0`, `K_i h'(θ*) ≠ 0`)
 local asymptotic stability is decided by the linearization: it holds exactly at a phase-locked
 point with both products negative (`mem_den_las_iff_of_nondegenerate`). The frequency-drift
-boundary `Σ_FD` of `T-gfl-dynamics` §1.12 is refuted on both the requirement connection and the
-semantics connection (`frequencyDriftBoundary_refuted`, `frequencyDriftBoundary_stable`). The
+boundary `Σ_FD` as `T-gfl-dynamics` §1.12 first stated it — a constant offset `|δω| > K_p sup |h|`
+removes phase lock — is refuted on both the requirement connection and the semantics connection
+(`frequencyDriftBoundary_refuted`, `frequencyDriftBoundary_stable`): the integrator absorbs a
+constant offset. The note now states the boundary for a frequency ramp `ρ`, which in shifted
+coordinates is this family with the detector `h − ρ/K_i`. The
 global sentences have no available translation: the linear detector `h = −θ` is globally
 exponentially stable, so that translation is sound but not exact
 (`not_exact_globallyExponentiallyStable`). At a degenerate slope the local connections part: the

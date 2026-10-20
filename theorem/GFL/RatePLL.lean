@@ -466,6 +466,10 @@ structure Model where
 def Model.field (m : Model) (z : Dynamics.State 2) : Dynamics.State 2 :=
   RatePLL.field m.params (z + equilibrium m.θ)
 
+/-- The translated field is `C¹`. Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem Model.field_contDiff (m : Model) : ContDiff ℝ 1 m.field :=
+  (contDiff_field m.params).comp (contDiff_id.add contDiff_const)
+
 /-- Requirements on the rate-coupled PLL models, all static. -/
 inductive Requirement
   /-- `(θ*, 0)` is an equilibrium (`V sin θ* = −X_g i_d`) with a nondegenerate loop `D₀ ≠ 0`. -/

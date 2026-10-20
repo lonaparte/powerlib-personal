@@ -1,5 +1,4 @@
 import theorem.Criteria.Hurwitz2
-import theorem.Circuits.LCL
 import theorem.Dynamics.Linearization
 
 /-! # Routh–Hurwitz criterion for monic real cubics and real 3×3 matrices
@@ -20,8 +19,9 @@ Results.
 * Monic real cubic `s ^ 3 + a2 * s ^ 2 + a1 * s + a0`: every complex root has negative real
   part iff `0 < a2 ∧ 0 < a0 ∧ a0 < a2 * a1` (both directions, `cubic_roots_re_neg_iff`;
   `0 < a1` is then implied, `cubic_linear_coeff_pos`).
-  The sufficient direction (`cubic_roots_re_neg_of`) is the LCL filter's pole criterion
-  `Circuits.LCL.cubic_hurwitz` (codex) with `a3 = 1`. The necessary direction factors out a real root and applies the quadratic criterion
+  The sufficient direction (`cubic_roots_re_neg_of`) is the case `a3 = 1` of the criterion for
+  any positive leading coefficient (`cubic_hurwitz`, also the LCL filter's pole criterion). The
+  necessary direction factors out a real root and applies the quadratic criterion
   `Criteria.quadratic_roots_re_neg_iff` to the quotient.
 * Real roots, as instances of the generic criteria of `theorem/Criteria/Hurwitz.lean`: every real
   cubic has a real root (`exists_cubic_real_root`, odd degree); `a0 < 0` gives a positive real
@@ -121,12 +121,41 @@ roots sum to `-a2`). -/
   push Not at h1
   nlinarith
 
-/-- Sufficient direction (strict Routh–Hurwitz conditions), via `Circuits.LCL.cubic_hurwitz`, the
-non-monic criterion of the codex LCL model, with `a3 = 1`. -/
+/-- The strict cubic Routh–Hurwitz condition (any leading coefficient `a3 > 0`) places every root
+in the open left half plane. -/
+@[powerlib_foundation] theorem cubic_hurwitz (a3 a2 a1 a0 : ℝ) (h3 : 0 < a3) (h2 : 0 < a2)
+    (h1 : 0 < a1) (h0 : 0 < a0) (hg : 0 < a2 * a1 - a3 * a0)
+    (s : ℂ) (hs : (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0) :
+    s.re < 0 := by
+  by_contra hn
+  have hx : 0 ≤ s.re := le_of_not_gt hn
+  have hr : a3 * (s.re ^ 3 - 3 * s.re * s.im ^ 2) + a2 * (s.re ^ 2 - s.im ^ 2) + a1 * s.re +
+      a0 = 0 := by
+    have h := congrArg Complex.re hs
+    simp [pow_succ, Complex.mul_re, Complex.mul_im] at h
+    nlinarith [h]
+  have hi : s.im * (a3 * (3 * s.re ^ 2 - s.im ^ 2) + 2 * a2 * s.re + a1) = 0 := by
+    have h := congrArg Complex.im hs
+    simp [pow_succ, Complex.mul_re, Complex.mul_im] at h
+    nlinarith [h]
+  by_cases hy : s.im = 0
+  · have hp : 0 < a3 * s.re ^ 3 + a2 * s.re ^ 2 + a1 * s.re + a0 := by positivity
+    simp only [hy] at hr
+    linarith
+  · have hf : a3 * (3 * s.re ^ 2 - s.im ^ 2) + 2 * a2 * s.re + a1 = 0 :=
+      (mul_eq_zero.mp hi).resolve_left hy
+    have hz : 8 * a3 ^ 2 * s.re ^ 3 + 8 * a3 * a2 * s.re ^ 2 +
+        2 * (a3 * a1 + a2 ^ 2) * s.re + (a2 * a1 - a3 * a0) = 0 := by
+      linear_combination -a3 * hr + (3 * a3 * s.re + a2) * hf
+    have hp : 0 < 8 * a3 ^ 2 * s.re ^ 3 + 8 * a3 * a2 * s.re ^ 2 +
+        2 * (a3 * a1 + a2 ^ 2) * s.re + (a2 * a1 - a3 * a0) := by positivity
+    linarith
+
+/-- Sufficient direction (strict Routh–Hurwitz conditions): `cubic_hurwitz` with `a3 = 1`. -/
 @[powerlib_foundation] theorem cubic_roots_re_neg_of {a2 a1 a0 : ℝ}
     (h2 : 0 < a2) (h0 : 0 < a0) (hg : a0 < a2 * a1) (s : ℂ)
     (hs : s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0) : s.re < 0 :=
-  Circuits.LCL.cubic_hurwitz 1 a2 a1 a0 one_pos h2 (cubic_linear_coeff_pos h2 h0 hg) h0
+  cubic_hurwitz 1 a2 a1 a0 one_pos h2 (cubic_linear_coeff_pos h2 h0 hg) h0
     (by linarith) s (by push_cast; linear_combination hs)
 
 /-- Routh–Hurwitz for a monic real cubic, both directions. -/

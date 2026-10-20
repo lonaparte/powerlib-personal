@@ -6,18 +6,41 @@ import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 A certificate is data whose conditions imply Flow sentences for a complete nonlinear field
 `f : ℝⁿ → ℝⁿ`; it never introduces a semantics of its own.
 
-* A quadratic-decay certificate (`QuadraticDecay`): a C¹ energy, not necessarily quadratic,
-  between two positive multiples of the squared distance to the equilibrium and decaying at a
-  uniform exponential rate along the field. It proves decay at half the energy rate; with a C¹
-  field it proves global exponential stability, hence every attractive sentence, Lyapunov
-  stability and sampled contraction.
-* LeanForControl's strict Lyapunov function (`IsStrictLyapunovFunction`) proves global asymptotic
-  stability.
-
 Neither certificate presupposes that solutions exist for all time. For a C¹ field, forward
 completeness follows from compact energy sublevels: a smooth cutoff makes the field globally
 Lipschitz without changing it on the initial sublevel, which the cutoff solution never leaves.
-The field need not be globally Lipschitz. -/
+The field need not be globally Lipschitz.
+
+Scope.
+* Generic: an arbitrary autonomous field on `ℝⁿ = EuclideanSpace ℝ (Fin n)` with an equilibrium
+  `e`, read by the flow semantics (`theorem/Flow/Defs.lean`); no model.
+* Two certificates. A quadratic-decay certificate (`QuadraticDecay`): a C¹ energy, not
+  necessarily quadratic, between two positive multiples of the squared distance to the
+  equilibrium and decaying at a uniform exponential rate along the field. LeanForControl's strict
+  Lyapunov function (`IsStrictLyapunovFunction`).
+
+Source: LeanForControl (`IsStrictLyapunovFunction`, Picard–Lindelöf on the forward ray,
+`LeanForControl.ODEs.PicardLindelof`); Mathlib's smooth bump functions
+(`Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension`) for the cutoff.
+
+Results.
+* Forward completeness: `exists_lipschitz_cutoff`, `forwardComplete_of_lipschitzWith`,
+  `forwardComplete_of_compact_sublevel` (a C¹ field with a nonincreasing differentiable energy of
+  compact sublevels).
+* Energy estimates: `quadratic_bounds` (a continuous, quadratically homogeneous function positive
+  away from the origin lies between two positive multiples of the squared norm),
+  `energy_lower_bound`, `energy_bound_of_dissipation` and `norm_bound_of_dissipation` (at any
+  rate, negative rates giving growth bounds).
+* The quadratic-decay certificate proves decay at half the energy rate
+  (`QuadraticDecay.decay`); with a C¹ field it proves global exponential stability, hence every
+  attractive sentence, Lyapunov stability and sampled contraction
+  (`QuadraticDecay.globallyExponentiallyStable`, `QuadraticDecay.holds`,
+  `QuadraticDecay.forwardComplete`); also `QuadraticDecay.energy_bound`,
+  `QuadraticDecay.norm_bound`, `QuadraticDecay.compact_sublevel`.
+* A strict Lyapunov function with compact sublevels proves global asymptotic stability of a C¹
+  field, including a solution through every state
+  (`globallyAsymptoticallyStable_of_strictLyapunov`).
+-/
 
 noncomputable section
 

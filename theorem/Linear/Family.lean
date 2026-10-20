@@ -10,7 +10,26 @@ once for all of them: the attractive sentences and sampled contraction denote th
 a conserved energy excludes the Hurwitz members of a nontrivial family, a positive definite
 quadratic energy conserved by the plant places a member in conservation, and a KYP certificate
 places it in passivity. The families supply only their plant maps, requirement languages and
-translations, and their own model facts. -/
+translations, and their own model facts.
+
+Scope.
+* Generic: an arbitrary family `F : Family X Q n p` with a plant map `plant : X → Plant n p`,
+  read through the port systems of its plants (`theorem/Port/Linear.lean`); no model.
+
+Source: the linear stability hub (`theorem/Linear/Stability.lean`), certificates
+(`theorem/Linear/Certificate.lean`), pole stability (`theorem/Linear/Transfer.lean`) and KYP
+certificates (`theorem/Port/Linear.lean`); the family interface of `theorem/Family/Basic.lean`.
+
+Results.
+* Plants: `Linear.holds_input_iff` (at any constant input with an equilibrium, an attractive
+  sentence holds there exactly when the plant is Hurwitz), `Linear.isHurwitz_one_iff`.
+* `Family.IsLinear`; `IsLinear.mem_den_flow` (a flow sentence holds for a member exactly when it
+  holds for the zero-input field of its plant), `IsLinear.den_hurwitz`,
+  `IsLinear.not_isHurwitz_of_mem_den_conservative`, `IsLinear.mem_den_conservative`,
+  `IsLinear.mem_den_passive`.
+* Representations: `IsLinear.comap` (a family read in another representation stays linear),
+  `IsLinear.extend` (with an extended requirement language).
+-/
 
 noncomputable section
 

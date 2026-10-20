@@ -4,6 +4,28 @@
 import dependencies.Mathlib
 import theorem.Attributes
 
+/-! # Generated closed-loop block matrices (foundation)
+
+The block matrices of the closed loop of a source plant `(A₁, B₁, C₁, D₁)` and a strictly proper
+load plant `(A₂, B₂, C₂)` sharing their ports, generated from the Agda scaffold. The file is
+generated; each block's endpoint contract is checked here by the Lean kernel.
+
+Scope.
+* Generic: real matrices over arbitrary state indices `ι₁`, `ι₂` and a finite port index `κ`; no
+  model. `theorem/Circuits/Interconnection.lean` builds the closed loop from these blocks.
+
+Source: scaffold `theorem/ImpedanceInterconnection.agda` (source and load → closed loop;
+covariance under state coordinates), through the Agda-normalized executable conversion; the
+comment lines at the top of this file record the generator, the SHA-256 of the Agda source and
+the wire encoding of the block expressions.
+
+Results.
+* `closedLoopBlocks` (state matrix `[[A₁, B₁ C₂], [-(B₂ C₁), A₂ - B₂ D₁ C₂]]`),
+  `closedLoopInput` (`[-B₁; B₂ D₁]`), `closedLoopOutput` (`[-C₁, -(D₁ C₂)]`),
+  `closedLoopFeedthrough` (`D₁`), with their endpoint contracts `closedLoopBlocks_spec`,
+  `closedLoopInput_spec`, `closedLoopOutput_spec`, `closedLoopFeedthrough_spec`.
+-/
+
 namespace powerlib.generated
 
 def closedLoopBlocks {ι₁ ι₂ κ : Type*} [Fintype κ]

@@ -5,22 +5,22 @@ import powerlib
 Structural checks of the `theorem/` library beyond admission, read from the built environment of
 `powerlib`. Each check logs `POWERLIB_LIBRARY_<NAME>_OK` or fails with the list of violations.
 
-* `LAYERS`: every `theorem.*` module belongs to exactly one layer of the table below: the codex
-  shared layer, generic mathematics, or engineering models. A new module is registered by its
-  directory or by its own name; a new directory must be registered before it builds.
-* `DEPENDENCIES`: a generic module imports no engineering-model module directly, and a codex
-  module imports only codex modules (the shared layer stays self-contained).
+* `LAYERS`: every `theorem.*` module belongs to exactly one layer of the table below: generic
+  mathematics (with the framework: TMIO, families, the semantic layer, linear systems) or
+  engineering models. A new module is registered by its directory or by its own name; a new
+  directory must be registered before it builds.
+* `DEPENDENCIES`: a generic module imports no engineering-model module directly.
 * `BARE_BEHAVIOUR`: no public theorem outside `TMIO.Statement` applies a behavioural predicate of
   the semantic layer (`theorem/Flow/Defs.lean`, `theorem/Port/Defs.lean`, and the upstream
   predicates they are built from) to an argument mentioning a constant of an engineering-model
   module. Admission recognizes models by their `Family` types; this check also covers model
   fields, parameters and states that no family reads.
-* `HEADERS`: the module docstring of every non-codex module starts with a `# ` title and contains
+* `HEADERS`: the module docstring of every module starts with a `# ` title and contains
   `Source:`, `Results` and `Scope.` or `Model boundary.`; a module defining a `Family` value also
   contains `Family and connection conclusions`.
-* `DUPLICATES`: no two public theorems of different non-codex modules have α-equivalent
+* `DUPLICATES`: no two public theorems of different modules have α-equivalent
   statements (universe parameters compared by position).
-* `RESTATEMENTS`: no theorem of a non-codex module, public or private, states an instance of (or
+* `RESTATEMENTS`: no theorem, public or private, states an instance of (or
   the same as) another theorem of the library that it could use — one in its own module or in a
   module that does not import it, not private to another module — without using it, directly,
   through intermediate theorems, or through a theorem at least as general; a theorem that is a
@@ -28,7 +28,7 @@ Structural checks of the `theorem/` library beyond admission, read from the buil
   reasons in `restatementExemptions`.
 
 The layer table is the structural specification: moving a module across layers or adding a
-directory changes this file. It classifies knowledge (shared framework, generic mathematics,
+directory changes this file. It classifies knowledge (generic mathematics and the framework,
 engineering content), not TMIO layers: an engineering module may organize models (M) or
 implementations under realistic constraints (I), and `Library/TMIOIndex.lean` files its
 connection statements by TMIO layer. -/
@@ -38,38 +38,23 @@ namespace LibraryStructure
 open Lean Meta Elab Command
 
 inductive Layer where
-  | codex | generic | engineering
+  | generic | engineering
   deriving BEq, Inhabited
 
 def Layer.label : Layer → String
-  | .codex => "codex" | .generic => "generic" | .engineering => "engineering"
+  | .generic => "generic" | .engineering => "engineering"
 
 /-! ## Layer table -/
 
-/-- The codex shared layer: the TMIO framework, families, the semantic layer, admission and the
-codex reference models. Registered module by module. -/
-def codexModules : Array Name := #[
-  `theorem.Architecture, `theorem.Attributes, `theorem.LibrarySearch,
-  `theorem.Circuits.Interconnection, `theorem.Circuits.LCL, `theorem.Circuits.LCLSynthesis,
-  `theorem.Circuits.RL, `theorem.Circuits.RLMeasurement,
-  `theorem.Data.Analysis, `theorem.Family.Basic,
-  `theorem.Flow.Basic, `theorem.Flow.Certificate, `theorem.Flow.Defs,
-  `theorem.Linear.Certificate, `theorem.Linear.Coordinates, `theorem.Linear.Family,
-  `theorem.Linear.Jordan, `theorem.Linear.Plant, `theorem.Linear.Positive, `theorem.Linear.Rate,
-  `theorem.Linear.Rational, `theorem.Linear.Realization, `theorem.Linear.Stability,
-  `theorem.Linear.Synthesis, `theorem.Linear.Transfer, `theorem.Linear.VerifiedSynthesis,
-  `theorem.Map.Defs,
-  `theorem.Nonlinear.Cubic, `theorem.Nonlinear.Polynomial2,
-  `theorem.Port.Basic, `theorem.Port.Defs, `theorem.Port.Linear, `theorem.Port.PortHamiltonian,
-  `theorem.TMIO.Claim, `theorem.TMIO.ClaimElab, `theorem.TMIO.Compare, `theorem.TMIO.Derived,
-  `theorem.TMIO.Generate, `theorem.TMIO.Instances.Finite, `theorem.TMIO.Relation,
-  `theorem.TMIO.Representation,
-  `theorem.generated.Conversion, `theorem.generated.ImpedanceInterconnection,
-  `theorem.generated.LCLConversion]
-
 /-- Generic mathematics: statements about arbitrary fields, matrices, polynomials, processes,
-graphs and functions, with no engineering model. An entry is a directory (the modules directly
-in it) or a single module.
+graphs and functions, with no engineering model, and the framework that reads them: the TMIO
+connections (`TMIO`), model families (`Family`), the semantic layer (`Flow`, `Map`, `Port`), linear
+systems (`Linear`), the polynomial example families (`Nonlinear`), data analysis (`Data`), admission
+and search (`Architecture`, `Attributes`, `LibrarySearch`). An entry is a directory (the modules
+directly in it) or a single module.
+* `Circuits.Interconnection` (and its generated block matrices): the interconnection of a source
+  and a load plant with ports is linear-systems theory; the circuit models of `Circuits/` are
+  engineering.
 * `Transform`: coordinate transformations and unit bases (Clarke, Park, space vectors, complex
   power in dq, per-unit scaling, circulant line matrices) are identities, not models.
 * `Network`: only the graph and node-network modules (weighted Laplacians, synchronization of
@@ -81,26 +66,27 @@ in it) or a single module.
   `PH/Structure` (a tilted double well) and the lossless LC counterexample of `PH/Observability`;
   concrete circuit instances are in `PH/Models/`.
 * `Spectral`: the spectral family template, parametrized by an arbitrary model type.
-* `Stack`: the four-layer stack of models, implementations and records over arbitrary families.
-* `Map.Basic`, `Map.Linearization`, `Map.LinearReading`: general facts of the discrete-time
-  semantic layer (`Map.Defs`, codex layer), registered module by module.
-* `Linear.EigenMap`: eigenvalue maps of matrices (polynomial and Möbius images), general linear
-  algebra beside the codex `Linear.*` modules, registered module by module. -/
+* `Stack`: the four-layer stack of models, implementations and records over arbitrary families. -/
 def genericEntries : Array Name := #[
-  `theorem.Asymptotics, `theorem.Asymptotics.Guard, `theorem.Averaging, `theorem.Criteria,
-  `theorem.DAE, `theorem.Delay, `theorem.Dynamics, `theorem.Dynamics.Degenerate,
-  `theorem.Dynamics.LaSalle, `theorem.Estimation, `theorem.Information, `theorem.LTI,
-  `theorem.Linear.EigenMap, `theorem.LinearAlgebra, `theorem.Map.Basic,
-  `theorem.Map.Linearization, `theorem.Map.LinearReading, `theorem.Modal,
+  `theorem.Architecture, `theorem.Attributes, `theorem.LibrarySearch,
+  `theorem.Asymptotics, `theorem.Asymptotics.Guard, `theorem.Averaging,
+  `theorem.Circuits.Interconnection, `theorem.Criteria, `theorem.DAE, `theorem.Data,
+  `theorem.Delay, `theorem.Dynamics, `theorem.Dynamics.Degenerate, `theorem.Dynamics.LaSalle,
+  `theorem.Estimation, `theorem.Family, `theorem.Flow, `theorem.Information, `theorem.LTI,
+  `theorem.Linear, `theorem.LinearAlgebra, `theorem.Map, `theorem.Modal,
   `theorem.Network.LinearSync, `theorem.Network.Synchronization, `theorem.Network.WeightedLaplacian,
-  `theorem.NormalForm, `theorem.Numerics, `theorem.PDE, `theorem.PH, `theorem.ParametricResonance,
-  `theorem.Periodic, `theorem.PhasePlane, `theorem.Potential, `theorem.SingularPerturbation,
-  `theorem.SpecialFunctions, `theorem.Spectral, `theorem.Stack, `theorem.Stochastic,
-  `theorem.Transform]
+  `theorem.Nonlinear, `theorem.NormalForm, `theorem.Numerics, `theorem.PDE, `theorem.PH,
+  `theorem.ParametricResonance, `theorem.Periodic, `theorem.PhasePlane, `theorem.Port,
+  `theorem.Potential, `theorem.SingularPerturbation, `theorem.SpecialFunctions, `theorem.Spectral,
+  `theorem.Stack, `theorem.Stochastic, `theorem.TMIO, `theorem.TMIO.Instances, `theorem.Transform,
+  `theorem.generated.ImpedanceInterconnection]
 
 /-- Engineering models of power electronics and power systems: model families, their connection
-conclusions and the static evidence about them. -/
+conclusions and the static evidence about them, including the circuit models of `Circuits/` (RL
+branch, LCL filter) and their generated parameter conversions. -/
 def engineeringEntries : Array Name := #[
+  `theorem.Circuits.LCL, `theorem.Circuits.LCLSynthesis, `theorem.Circuits.RL,
+  `theorem.Circuits.RLMeasurement, `theorem.generated.Conversion, `theorem.generated.LCLConversion,
   `theorem.CurrentControl, `theorem.Drives, `theorem.Frequency,
   `theorem.GFL, `theorem.GFL.DCLink, `theorem.GFL.Impedance, `theorem.GFL.LCLine,
   `theorem.GFL.Noise, `theorem.GFL.Parametric, `theorem.GFL.PowerLoop,
@@ -112,7 +98,6 @@ def engineeringEntries : Array Name := #[
 or engineering table. -/
 def registrations (m : Name) : Array Layer := Id.run do
   let mut out := #[]
-  if codexModules.contains m then out := out.push .codex
   for (layer, entries) in #[(Layer.generic, genericEntries), (Layer.engineering, engineeringEntries)] do
     if entries.contains m then out := out.push layer
     if entries.contains m.getPrefix then out := out.push layer
@@ -248,41 +233,36 @@ run_cmd do
   let env ← getEnv
   let modules := libraryModules env
   let mut violations := #[]
-  let mut counts : Array Nat := #[0, 0, 0]
+  let mut counts : Array Nat := #[0, 0]
   for (_, m) in modules do
     match registrations m with
     | #[layer] =>
-      let k := match layer with | .codex => 0 | .generic => 1 | .engineering => 2
+      let k := match layer with | .generic => 0 | .engineering => 1
       counts := counts.modify k (· + 1)
     | #[] => violations := violations.push s!"{m}: unregistered (add its directory to a layer)"
     | layers => violations := violations.push s!"{m}: registered in {layers.map (·.label)}"
   -- Every entry names an existing module or directory.
   let names := modules.map (·.2)
-  for entry in codexModules ++ genericEntries ++ engineeringEntries do
+  for entry in genericEntries ++ engineeringEntries do
     unless names.any (fun m => m == entry || m.getPrefix == entry) do
       violations := violations.push s!"{entry}: registered but no such module or directory"
   report "Library modules outside the layer table" violations
-  logInfo m!"POWERLIB_LIBRARY_LAYERS_OK: {modules.size} modules; codex {counts[0]!}, \
-    generic {counts[1]!}, engineering {counts[2]!}"
+  logInfo m!"POWERLIB_LIBRARY_LAYERS_OK: {modules.size} modules; generic {counts[0]!}, \
+    engineering {counts[1]!}"
 
 run_cmd do
   let env ← getEnv
   let mut violations := #[]
   let mut generic : Nat := 0
-  let mut codex : Nat := 0
   for (i, m) in libraryModules env do
     let some layer := layerOf? m | continue
     if layer == .generic then generic := generic + 1
-    if layer == .codex then codex := codex + 1
     for imp in env.header.moduleData[i]!.imports do
-      let target := layerOf? imp.module
-      if layer == .generic && target == some .engineering then
+      if layer == .generic && layerOf? imp.module == some .engineering then
         violations := violations.push s!"{m} imports {imp.module}"
-      if layer == .codex && (target == some .generic || target == some .engineering) then
-        violations := violations.push s!"{m} (codex) imports {imp.module}"
   report "Modules importing a higher layer" violations
   logInfo m!"POWERLIB_LIBRARY_DEPENDENCIES_OK: {generic} generic modules import no engineering \
-    module; {codex} codex modules import only codex modules"
+    module"
 
 run_cmd liftTermElabM do
   let env ← getEnv
@@ -333,7 +313,6 @@ run_cmd liftTermElabM do
   let mut checked : Nat := 0
   let mut families : Nat := 0
   for (i, m) in libraryModules env do
-    if layerOf? m == some .codex then continue
     checked := checked + 1
     let definesFamily ← env.header.moduleData[i]!.constNames.anyM fun c => isFamilyValue c
     if definesFamily then families := families + 1
@@ -345,7 +324,7 @@ run_cmd liftTermElabM do
   unless violations.isEmpty do
     throwError "Module headers not in the library format ({violations.size}):\n\
       {"\n".intercalate violations.toList}"
-  logInfo m!"POWERLIB_LIBRARY_HEADERS_OK: {checked} non-codex module headers, \
+  logInfo m!"POWERLIB_LIBRARY_HEADERS_OK: {checked} module headers, \
     {families} defining families"
 
 run_cmd do
@@ -359,7 +338,6 @@ run_cmd do
     throwError "The duplicate detector missed an α-equivalent statement"
   let mut decls := #[]
   for (i, m) in libraryModules env do
-    if layerOf? m == some .codex then continue
     for name in env.header.moduleData[i]!.constNames do
       let some info@(.thmInfo _) := env.find? name | continue
       unless authoredPublic env name do continue
@@ -367,7 +345,7 @@ run_cmd do
   let groups := duplicates decls
   report "Identical public statements in different modules" (groups.map fun g =>
     ", ".intercalate (g.map fun (n, m) => s!"{n} ({m})").toList)
-  logInfo m!"POWERLIB_LIBRARY_DUPLICATES_OK: {decls.size} public theorems of non-codex modules, \
+  logInfo m!"POWERLIB_LIBRARY_DUPLICATES_OK: {decls.size} public theorems, \
     no two statements identical"
 
 /-! ## Restatements -/
@@ -446,11 +424,9 @@ def importClosure (env : Environment) : NameMap NameSet := Id.run do
   return memo
 
 /-- Restatements that stay, with the reason: deriving them would bring a heavy, unrelated import
-into a low module or change a public statement. -/
-def restatementExemptions : Array (String × String × String) := #[
-  ("powerlib.PhasePlane.norm_sq_eq", "powerlib.Nonlinear.Polynomial2.norm_sq",
-    "Polynomial2 is a codex model and no codex module below it states the identity; importing \
-    it would add eleven modules to PhasePlane.Planar and up to eleven to its 42 dependents")]
+into a low module or change a public statement. Empty: every restatement found so far has been
+derived from the theorem it restated. -/
+def restatementExemptions : Array (String × String × String) := #[]
 
 /-- Control: the general fixture. -/
 theorem fixtureRestatedGeneral (n : ℕ) : n ≤ n + 1 := by omega
@@ -496,8 +472,6 @@ run_cmd liftTermElabM do
   let mut exempted : Array (String × String) := #[]
   let mut seen : Std.HashSet (Name × Name) := {}
   for (b, mb) in decls do
-    -- the codex layer is shared and is not restructured here
-    if layerOf? mb == some .codex then continue
     let info ← getConstInfo b
     let cands ← withNewMCtxDepth <| forallTelescopeReducing info.type fun _ concl =>
       tree.getMatch concl

@@ -10,7 +10,25 @@ constructs it as `a ↦ ⨅ {b | a ≤ u b}`, packaged as Mathlib's `LowerAdjoin
 closure-operator and closed-element theory applies to it unchanged.
 
 The forward map is therefore determined by `u` alone (`generate_unique`); a separately written
-forward map either coincides with `generate u` or is not a lower adjoint of `u`. -/
+forward map either coincides with `generate u` or is not a lower adjoint of `u`.
+
+Scope.
+* Generic order theory: arbitrary complete lattices `A`, `B`, `C` and arbitrary-infimum
+  preserving maps between them; no model and no semantics.
+
+Source: TMIO v0.3 §3 (the generation theorem); Mathlib's `LowerAdjoint`, `GaloisConnection` and
+`ClosureOperator` (`Mathlib.Order.Closure`, `Mathlib.Order.Hom.CompleteLattice`).
+
+Results.
+* `generate` (with `generate_apply`, `le_map_sInf_setOf`, `sInfHom_monotone`) and the generation
+  theorem `gc_generate`: `generate u ⊣ u`.
+* Uniqueness and optimality: `generate_unique`, `lowerAdjoint_eq_generate`, `generate_isLeast`.
+* Preservation: `generate_sSup`, `generate_sup`, `generate_monotone`; whole equals parts,
+  `generate_comp` (the generated adjoint of a composite is the composite of the generated
+  adjoints, in reverse order).
+* Closure and interior: `closure` (`closure_apply`), `generate_u_le`, `generate_u_idempotent`, and
+  the fixed-point correspondence `fixedPointsIso`.
+-/
 
 namespace powerlib.TMIO
 

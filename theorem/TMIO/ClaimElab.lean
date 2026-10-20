@@ -2,8 +2,29 @@ import theorem.TMIO.Claim
 import theorem.TMIO.Relation
 import Lean
 
-/-! Compile ordinary connection notation to the closed kernel-checked grammar. This is
-untrusted elaboration: a mistaken compiler cannot produce a well-typed certificate. -/
+/-! # Elaboration of connection claims (foundation)
+
+Compile ordinary connection notation to the closed kernel-checked grammar. This is
+untrusted elaboration: a mistaken compiler cannot produce a well-typed certificate.
+
+Scope.
+* Lean meta-programming over the grammar of `theorem/TMIO/Claim.lean`; no mathematics. No names
+  or tags of model families are trusted: aliases are unfolded until a typed map application or a
+  structural powerset operation is reached, and there is no arbitrary-proposition fallback.
+
+Source: the closed grammar `Endpoint`, `ConnectionClaim`, `Statement`
+(`theorem/TMIO/Claim.lean`) and the semantic constructors of `theorem/TMIO/Relation.lean`; the
+admission rules of `Rules.md` §3a (`connection% (ordinary proposition)` constructs the
+certificate, which Lean's kernel checks).
+
+Results.
+* `endpoint?`: an `Endpoint` certificate for a value, if one exists.
+* `endpointInputs?`: the inputs and structural maps of an endpoint, derived from its certificate,
+  so that an identity map cannot launder a behavioural set.
+* `encode`: a `ConnectionClaim` certificate of a proposition.
+* The term elaborator `connection% P`: the `TMIO.Statement` of `P` with its generated certificate,
+  checked again by the kernel; the trace class `powerlib.claim`.
+-/
 
 open Lean Meta Elab Term
 

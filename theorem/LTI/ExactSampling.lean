@@ -45,8 +45,7 @@ Family and connection conclusions.
 * `LTI.sampledFamily : Family (Sampled n) Spectral.Requirement n 0`: requirements and translation
   of the design model, read through the design (`meets y = continuousFamily.meets y.design`).
 * `sampled_reading` (scaffold `reading`): every denotation of the sampled family is the model
-  family's pulled back along the design map, at every period; `sampled_den_eq_preimage` is its
-  attractive and contractive case.
+  family's pulled back along the design map, at every period.
 * `sampled_chain_le_semantics`: every translation of the sampled family is sound (the model
   family's soundness pulled back through the reading); `sampled_exact_iff`: a translation of the
   sampled family is exact exactly when the model family's is (the design map is onto); with
@@ -54,8 +53,7 @@ Family and connection conclusions.
 * M–I (realization). `LTI.exactSampling`, every sampled system realizing its design model
   (`Implementation.ofDesign Sampled.design`). `exactSampling_realizationExact` (scaffold `exact`):
   every sentence is realized exactly, without constraints
-  (`Implementation.realizationExactUnder_of_den_eq_preimage`);
-  `exactSampling_realizationExactUnder` is its attractive and contractive case.
+  (`Implementation.realizationExactUnder_of_den_eq_preimage`).
 -/
 
 noncomputable section
@@ -154,17 +152,6 @@ flow of the design and its sampled map satisfy the same flow sentences
   · rw [Family.mem_den, Family.mem_den]
     exact iff_of_true (Map.System.autonomous_passive _ _) (Port.System.passive_of_noPorts _)
 
-/-- The attractive and contractive denotations of the sampled family are those of the continuous
-family pulled back along the design map, at every sampling period. -/
-@[powerlib_domain] theorem sampled_den_eq_preimage {P : Flow.Property}
-    (_hP : P.Attractive ∨ P = .contractive) :
-    connection% ((sampledFamily (n := n)).den (.flow P) =
-      Sampled.design ⁻¹' continuousFamily.den (.flow P)) := by
-  unfold powerlib.TMIO.Statement
-  have h := sampled_reading (n := n) (.flow P)
-  unfold powerlib.TMIO.Statement at h
-  exact h
-
 /-- The requirement spaces of the sampled family are those of the continuous family pulled back
 along the design map. -/
 private theorem sampled_realize (Γ : Set Spectral.Requirement) :
@@ -220,15 +207,5 @@ period, a sampled system satisfies a sentence exactly when its design model does
   have h := sampled_reading (n := n) s
   unfold powerlib.TMIO.Statement at h
   exact Implementation.realizationExactUnder_of_den_eq_preimage rfl h
-
-/-- Exact sampling realizes the attractive sentences and sampled contraction exactly, without
-constraints, at every sampling period. -/
-@[powerlib_domain] theorem exactSampling_realizationExactUnder {P : Flow.Property}
-    (_hP : P.Attractive ∨ P = .contractive) :
-    connection% ((exactSampling (n := n)).RealizationExactUnder ∅ (.flow P)) := by
-  unfold powerlib.TMIO.Statement
-  have h := exactSampling_realizationExact (n := n) (.flow P)
-  unfold powerlib.TMIO.Statement at h
-  exact h
 
 end powerlib.LTI

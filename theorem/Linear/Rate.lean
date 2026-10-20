@@ -4,7 +4,23 @@ import theorem.Linear.Family
 
 A strict spectral margin at a specified real rate is a finite matrix condition. It gives a
 sound decay requirement at every rate, including zero and negative rates. The strict condition
-is intentionally not claimed exact at a spectral boundary. -/
+is intentionally not claimed exact at a spectral boundary.
+
+Scope.
+* Generic: an arbitrary real square matrix `A` and real rate `a`, the linear field centred at the
+  origin; every linear family (`Family.IsLinear`, `theorem/Linear/Family.lean`). No model.
+
+Source: the Lyapunov certificates of `theorem/Linear/Certificate.lean`
+(`nonempty_certificate_iff`, `Certificate.exists_energy_bounds`) and the arbitrary-rate energy
+estimate of `theorem/Flow/Certificate.lean` (`Flow.norm_bound_of_dissipation`).
+
+Results.
+* `RateMargin A a`: `A + a • 1` is Hurwitz (shifting the spectrum turns a requested rate into the
+  hub's Hurwitz requirement).
+* `decay_of_rateMargin`: the margin gives decay at the rate `a`.
+* `Family.IsLinear.mem_den_decay_of_rateMargin`: every linear family consumes the matrix rate
+  criterion through its generated denotation.
+-/
 
 noncomputable section
 namespace powerlib.Linear

@@ -6,15 +6,6 @@ import theorem.generated.ImpedanceInterconnection
 
 /-! # Source–load interconnection and the impedance criterion
 
-Model boundary: a source plant with `n₁` states and a load plant with `n₂` states, both linear,
-continuous time, sharing `p` ports. The source maps port current to port voltage (its transfer
-function is the source impedance `Z`); the load maps port voltage to port current and is strictly
-proper (its transfer function is the load admittance `Y`). The interconnection closes the loop
-`i = y_load - j`, `v = -y_source`, where `j` is a current injected at the port; the closed loop is
-the plant from `j` to the port voltage. Its state, input, output and feedthrough matrices are the
-Agda-generated block matrices, and its transfer function is the port impedance `(1 + Z Y)⁻¹ Z`.
-No controller, delay or switching beyond what the two plants already contain.
-
 The complete system is the pair of plants; the family reads it as the port system of the closed
 loop, so its behaviour is the hub's and nothing about closed-loop trajectories is restated. Within
 the space of internally stable components, the impedance criterion is an exact translation of the
@@ -24,7 +15,71 @@ system: they preserve the port data, the criterion and the closed loop up to sim
 port data certify is decided by minimality: with minimal components they certify every flow
 sentence (`portData_certified`); with a hidden mode, a stable interconnection shares its port data
 with an unstable one (`portData_not_certified`). Closed-loop stability is no product of
-requirements on the source and the load (`closedLoop_not_separable`). -/
+requirements on the source and the load (`closedLoop_not_separable`).
+
+Model boundary.
+* A source plant with `n₁` states and a load plant with `n₂` states, both linear, continuous
+  time, sharing `p` ports. The source maps port current to port voltage (its transfer function is
+  the source impedance `Z`); the load maps port voltage to port current and is strictly proper
+  (its transfer function is the load admittance `Y`).
+* The interconnection closes the loop `i = y_load - j`, `v = -y_source`, where `j` is a current
+  injected at the port; the closed loop is the plant from `j` to the port voltage. Its state,
+  input, output and feedthrough matrices are the Agda-generated block matrices, and its transfer
+  function is the port impedance `(1 + Z Y)⁻¹ Z`.
+* No controller, delay or switching beyond what the two plants already contain.
+
+Source: scaffold `theorem/ImpedanceInterconnection.agda` (source and load → closed loop;
+covariance under state coordinates), its generated block matrices
+`theorem/generated/ImpedanceInterconnection.lean`; transfer functions, similarity and realization
+theory (`theorem/Linear/Transfer.lean`, `theorem/Linear/Realization.lean`); certification
+(`TMIO.certify`) and product spaces (`TMIO.realize_sum`) of `theorem/TMIO/Relation.lean`.
+
+Results.
+* The interconnection: `Interconnection` (`source`, `load`, `load_strictly_proper`),
+  `sourceImpedance`, `loadAdmittance`, `returnDifference` (`det (1 + Z Y)`), `ImpedanceStable`
+  (no zero of the return difference in the closed right half plane), `closedLoopBlocks`,
+  `inputBlocks`, `outputBlocks`, `closedLoopA`, `closedLoop`, `portImpedance`.
+* The closed loop: `closedLoop_A`, `characteristicMatrix_closedLoop`,
+  `det_characteristicMatrix_closedLoop` (the characteristic polynomial factors through the return
+  difference), `det_ne_zero_of_rhp`, `det_characteristicMatrix_closedLoopA`,
+  `det_closedLoop_ne_zero`, `transfer_closedLoop` (the transfer function is the port impedance),
+  `isHurwitz_closedLoop_iff` (with internally stable components, pole stability exactly when the
+  impedance criterion holds), `isHurwitz_closedLoop_of_impedanceStable`.
+* Coordinate changes: `reindex_mul`, `blockCoordinates`, `blockCoordinates_mul`,
+  `blockCoordinates_one`, `changeCoordinates`, `closedLoopBlocks_changeCoordinates`,
+  `inputBlocks_changeCoordinates`, `outputBlocks_changeCoordinates`,
+  `closedLoop_changeCoordinates`, `similar_closedLoop_changeCoordinates`,
+  `sourceImpedance_changeCoordinates`, `loadAdmittance_changeCoordinates`,
+  `portImpedance_changeCoordinates`, `impedanceStable_changeCoordinates_iff`,
+  `isHurwitz_closedLoop_changeCoordinates`.
+* Minimal realizations of the port impedance: `eventually_regular`, `similar_closedLoop_iff`,
+  `exists_minimal_realization_portImpedance`.
+* Port data: `portData`, `impedanceStable_of_portData`, `MinimalComponents`, `Observable`,
+  `exists_changeCoordinates_of_portData`, `similar_closedLoop_of_portData`; the hidden-mode
+  example `testLoad`, `hiddenLoop`, `quietLoop`, `portData_hidden_quiet`, `testLoad_isHurwitz`,
+  `quietLoop_stable`, `hiddenLoop_unstable`, `hiddenLoop_not_minimalComponents`.
+* Static loops: `staticSource`, `firstOrderLoad`, `staticLoop`, `staticLoop_entry`,
+  `staticLoop_isHurwitz_iff` (stable exactly when `1 + d c > 0`).
+* Static evidence on the family: `family_isLinear`, `componentsStable`.
+
+Family and connection conclusions.
+* `Circuits.Interconnection.family : Family (Interconnection n₁ n₂ p) Requirement (n₁ + n₂) p`:
+  the closed loop as the port system of the complete system. Requirements: `sourceStable`,
+  `loadStable`, `impedanceStable`, `impedanceUnstable` and `rate a` (a strict margin on the full
+  closed-loop state matrix). Instability translates into `impedanceUnstable`, decay at `a` into
+  `rate a`, conservation and passivity into the whole language, which no interconnection meets,
+  and the other flow sentences into `impedanceStable`.
+* `realize_univ`: no interconnection satisfies the impedance criterion and violates it.
+* `exactUnder_hurwitz`: within internally stable components (`componentsStable`) the impedance
+  criterion is an exact translation of the attractive sentences and sampled contraction;
+  `soundUnder`: within that context every translation is sound; `sound_decay`: full-state rate
+  evidence is sound without the context.
+* `portData_certified`: with minimal components, port data certify every flow sentence of the
+  closed loop; `portData_not_certified`: with a hidden source mode they do not.
+* `closedLoop_not_separable`: over the static loops, the denotation of global exponential
+  stability is no product of a set of sources and a set of loads, so no requirements that each
+  speak about one component translate it exactly.
+-/
 
 noncomputable section
 

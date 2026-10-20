@@ -4,8 +4,25 @@ import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.NormNum
 import theorem.Attributes
 
-/-! Exact rational positive-definiteness checking by Schur elimination. The equivalence is
-proved for all dimensions, rather than inferred from a collection of accepted examples. -/
+/-! # Positive definiteness by Schur elimination (foundation)
+
+Exact rational positive-definiteness checking by Schur elimination. The equivalence is
+proved for all dimensions, rather than inferred from a collection of accepted examples.
+
+Scope.
+* Generic: square rational matrices of every dimension, read in `ℝ` through `real`; the check is
+  a total finite computation (symmetry, a positive pivot, then the Schur complement). No model.
+
+Source: Mathlib's positive definite matrices (`Mathlib.LinearAlgebra.Matrix.PosDef`); completing
+the square at the first pivot.
+
+Results.
+* The check: `schur`, `check`, `real`, `schurReal`, `schur_real`, `schur_symmetric`.
+* Elimination: `quadratic_split` (completing the square is the invariant of one elimination
+  step), `posDef_schur_iff` (positive pivots and a positive Schur complement are equivalent to a
+  positive form).
+* `check_iff`: the executable rational check recognizes precisely the positive real forms.
+-/
 
 namespace powerlib.Linear.Positive
 open Matrix

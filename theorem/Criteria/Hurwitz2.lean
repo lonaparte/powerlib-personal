@@ -73,11 +73,6 @@ section General
 
 variable {n : ℕ}
 
-@[powerlib_foundation] theorem exists_eigenpair_of_det_characteristicMatrix_eq_zero
-    (A : Matrix (Fin n) (Fin n) ℝ) {s : ℂ} (h : (Linear.characteristicMatrix A s).det = 0) :
-    ∃ v : Fin n → ℂ, v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = s • v :=
-  Linear.exists_eigenvector_of_root h
-
 @[powerlib_foundation] theorem det_characteristicMatrix_eq_zero_of_eigenpair
     (A : Matrix (Fin n) (Fin n) ℝ) {s : ℂ} {v : Fin n → ℂ} (hv : v ≠ 0)
     (heig : A.map (algebraMap ℝ ℂ) *ᵥ v = s • v) :
@@ -91,7 +86,7 @@ variable {n : ℕ}
     (A : Matrix (Fin n) (Fin n) ℝ) (s : ℂ) :
     (Linear.characteristicMatrix A s).det = 0 ↔
       ∃ v : Fin n → ℂ, v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = s • v :=
-  ⟨exists_eigenpair_of_det_characteristicMatrix_eq_zero A,
+  ⟨Linear.exists_eigenvector_of_root,
     fun ⟨_, hv, heig⟩ => det_characteristicMatrix_eq_zero_of_eigenpair A hv heig⟩
 
 /-- `IsHurwitz` in characteristic-root form (any dimension). -/
@@ -132,7 +127,7 @@ LeanForControl's `unstable_of_exists_complex_eigenvalue_re_pos`. -/
     (hs : 0 < s.re) :
     ∃ (μ : ℂ) (v : Fin n → ℂ),
       v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re := by
-  obtain ⟨v, hv, heig⟩ := exists_eigenpair_of_det_characteristicMatrix_eq_zero A h
+  obtain ⟨v, hv, heig⟩ := Linear.exists_eigenvector_of_root h
   exact ⟨s, v, hv, heig, hs⟩
 
 end General
@@ -428,7 +423,7 @@ section FinTwo
     (A : Matrix (Fin 2) (Fin 2) ℝ) {s : ℂ}
     (hs : s ^ 2 - (A.trace : ℂ) * s + (A.det : ℂ) = 0) :
     ∃ v : Fin 2 → ℂ, v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = s • v :=
-  exists_eigenpair_of_det_characteristicMatrix_eq_zero A
+  Linear.exists_eigenvector_of_root
     (by rw [det_characteristicMatrix_fin_two]; exact hs)
 
 /-! ### Instability witnesses -/
@@ -495,7 +490,7 @@ case `n = 2` of `Criteria.exists_pos_real_eigenvector_of_det`. -/
   rw [← hdisc, ← quadratic_roots_real_iff]
   constructor
   · intro H s hs
-    obtain ⟨v, hv, heig⟩ := exists_eigenpair_of_det_characteristicMatrix_eq_zero A
+    obtain ⟨v, hv, heig⟩ := Linear.exists_eigenvector_of_root
       (by rw [det_characteristicMatrix_fin_two']; exact hs)
     exact H s v hv heig
   · intro H μ v hv heig

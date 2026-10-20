@@ -406,9 +406,6 @@ private theorem model_field1 (m : Model) (z : Dynamics.State 2) :
     m.field z 1 = gridQ m.params (z 0 + m.θ) - m.params.Lg * m.field z 0 * m.params.Id := by
   simp [Model.field, RatePLL.field, Dynamics.lift, coordField, equilibrium, pllOut, vq]
 
-private theorem contDiff_model_field (m : Model) : ContDiff ℝ 1 m.field :=
-  (contDiff_field m.params).comp (contDiff_id.add contDiff_const)
-
 /-- `ẇ = ḣ`: the PLL integrator corrected by the speed-EMF term, `w = x + L_g i_d θ`, is driven by
 the grid q-voltage alone. -/
 private theorem model_hg1 {m : Model}
@@ -542,7 +539,7 @@ private theorem not_las_of_D0_eq_zero {m : Model} (hD0 : m.params.D0 = 0) :
       (-(PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : Dynamics.State 2 →L[ℝ] ℝ)) z := fun z =>
     ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) :
       Dynamics.State 2 →L[ℝ] ℝ).hasFDerivAt (x := z)).neg
-  refine Dynamics.not_localAsymptoticStable_of_eventually_lie_nonpos (contDiff_model_field m)
+  refine Dynamics.not_localAsymptoticStable_of_eventually_lie_nonpos m.field_contDiff
     (fun z => (hd z).differentiableAt) (Eventually.of_forall fun z => ?_)
     (frequently_single 0 one_ne_zero fun t ht => ?_)
   · rw [(hd z).fderiv]
@@ -619,7 +616,7 @@ private theorem not_las_of_det_eq_zero {m : Model}
     have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) :
       Dynamics.State 2 →L[ℝ] ℝ).hasFDerivAt (x := z)
     exact ((h1.sub (h0.const_mul b)).const_mul (-B)).congr_fderiv (by ext v; simp)
-  refine Dynamics.not_localAsymptoticStable_of_eventually_lie_nonpos (contDiff_model_field m)
+  refine Dynamics.not_localAsymptoticStable_of_eventually_lie_nonpos m.field_contDiff
     (fun z => (hd z).differentiableAt) (Eventually.of_forall fun z => ?_)
     (frequently_single 1 hBne fun t ht => ?_)
   · rw [(hd z).fderiv]
@@ -640,7 +637,7 @@ private theorem las_of_hopf {m : Model}
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hk : m.params.kp * m.params.ki < 0) : LocalAsymptoticStable m.field 0 := by
   obtain ⟨hA, hα, hq⟩ := model_ratio_pos hD0 hdet
-  exact hopf_las hA hα hq ((model_kappa_sign hD0 hdet).1 hk) (contDiff_model_field m)
+  exact hopf_las hA hα hq ((model_kappa_sign hD0 hdet).1 hk) m.field_contDiff
     (model_hg0 heq hD0 htr) (model_hg1 heq)
 
 /-- A subcritical boundary point (`k_p k_i > 0`) is unstable. -/
@@ -649,7 +646,7 @@ private theorem unstable_of_hopf {m : Model}
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hk : 0 < m.params.kp * m.params.ki) : Unstable m.field 0 := by
   obtain ⟨hA, hα, hq⟩ := model_ratio_pos hD0 hdet
-  exact hopf_unstable hA hα hq ((model_kappa_sign hD0 hdet).2 hk) (contDiff_model_field m)
+  exact hopf_unstable hA hα hq ((model_kappa_sign hD0 hdet).2 hk) m.field_contDiff
     (model_hg0 heq hD0 htr) (model_hg1 heq)
 
 /-- A boundary point without proportional gain (`k_p = 0`) conserves an energy. -/
@@ -658,7 +655,7 @@ private theorem not_las_of_hopf_kp_eq_zero {m : Model}
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hkp : m.params.kp = 0) : ¬ LocalAsymptoticStable m.field 0 := by
   obtain ⟨-, hα, -⟩ := model_ratio_pos hD0 hdet
-  exact hopf_conservative_not_las hα (contDiff_model_field m)
+  exact hopf_conservative_not_las hα m.field_contDiff
     (fun z => by rw [model_hg0 heq hD0 htr z, hkp, zero_div]) (model_hg1 heq)
 
 end Members
@@ -764,7 +761,7 @@ non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear 
       exact h hLAS.1
     have hf0 : m.field 0 = 0 := by
       by_contra h
-      exact Dynamics.unstable_of_ne_zero (contDiff_model_field m) h hLAS.1
+      exact Dynamics.unstable_of_ne_zero m.field_contDiff h hLAS.1
     have hD0 : m.params.D0 ≠ 0 := fun h => not_las_of_D0_eq_zero h hLAS
     have heq := balance_of_model_field_zero hf0
     have he : Meets m .equilibrium := ⟨heq, hD0⟩

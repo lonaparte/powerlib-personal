@@ -7,23 +7,38 @@ loops read at their sampling instants, period maps of switched systems, numerica
 schemes. Every model family whose complete systems evolve in discrete steps is read through these
 definitions and nothing else.
 
-A discrete-time system is a map `F : ℝⁿ → ℝⁿ` on `ℝⁿ = EuclideanSpace ℝ (Fin n)`, the state update
-over one step, after inputs are fixed and feedback is closed. Its behaviour from a state `y` is the
-orbit of iterates `F^[k] y`, `k : ℕ`. Orbits exist and are unique for all forward steps, so no
-notion needs a solution concept or a completeness clause.
+Scope.
+* A discrete-time system is a map `F : ℝⁿ → ℝⁿ` on `ℝⁿ = EuclideanSpace ℝ (Fin n)`, the state
+  update over one step, after inputs are fixed and feedback is closed. Its behaviour from a state
+  `y` is the orbit of iterates `F^[k] y`, `k : ℕ`. Orbits exist and are unique for all forward
+  steps, so no notion needs a solution concept or a completeness clause.
+* Every notion is written with iterates and one-step inequalities; none quantifies a sequence of
+  states or inputs. The step counter is therefore a quantified instant and never the domain of a
+  quantified function, and the semantic layer keeps the single time axis of the flow semantics.
+  The admission audit recognizes iteration of a state map as discrete behaviour
+  (`theorem/Architecture.lean`).
+* A system with ports has a one-step update and a conjugate output; its step length `T` converts
+  rates per step into rates per unit time and scales the supplied energy, so the sentences mean
+  the same in both kinds.
 
-Every notion is written with iterates and one-step inequalities; none quantifies a sequence of
-states or inputs. The step counter is therefore a quantified instant and never the domain of a
-quantified function, and the semantic layer keeps the single time axis of the flow semantics. The
-admission audit recognizes iteration of a state map as discrete behaviour (`theorem/Architecture.lean`).
+Source: the flow notions of `theorem/Flow/Defs.lean`, of which these are the discrete
+counterparts; Mathlib's iterates `F^[k]`.
 
-The notions are the discrete counterparts of the flow notions: Lyapunov stability, local
-asymptotic and local exponential (geometric) stability, their global versions, instability,
-decay at a rate per step, contraction over some number of steps, and conservation of an energy
-with a strict minimum. A system with ports has a one-step update and a conjugate output; its step
-length `T` converts rates per step into rates per unit time and scales the supplied energy, so the
-sentences mean the same in both kinds. Passivity is the one-step dissipation inequality, the
-discrete counterpart of the integral dissipation inequality. -/
+Results.
+* The notions are the discrete counterparts of the flow notions: Lyapunov stability, local
+  asymptotic and local exponential (geometric) stability, their global versions, instability,
+  decay at a rate per step, contraction over some number of steps, and conservation of an energy
+  with a strict minimum (`Map.LyapunovStable`, `Map.LocalAsymptoticStable`,
+  `Map.LocallyExponentiallyStable`, `Map.GloballyAsymptoticallyStable`,
+  `Map.GloballyExponentiallyStable`, `Map.Unstable`, `Map.Decay`, `Map.SampledContraction`,
+  `Map.Conservative`).
+* Systems with ports: `Map.System` (step, conjugate output, step length `period`),
+  `System.supply`, `System.zeroInput`, `System.autonomous`. Passivity is the one-step dissipation
+  inequality, the discrete counterpart of the integral dissipation inequality
+  (`System.PassiveWith`, `System.Passive`).
+* `Flow.Property.holdsMap`: the interpretation of every sentence on a map with step length `T`,
+  fixed once; `decay a` asks for the factor `e^{-a T}` per step.
+-/
 
 noncomputable section
 

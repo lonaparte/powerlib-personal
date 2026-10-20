@@ -16,8 +16,8 @@ an equilibrium).
 
 Results.
 * `Flow.Property.holds_shift_iff`: every behavioural sentence is invariant under moving the
-  equilibrium to the origin. It keeps the namespace of the codex type `Flow.Property` it extends
-  (dot notation).
+  equilibrium to the origin. It keeps the namespace of the semantic-layer type `Flow.Property` it
+  extends (dot notation).
 * The per-predicate lemmas live in `powerlib.Dynamics`: `isIntegralCurveOn_shift_iff`,
   `isEquilibrium_shift_iff`, `lyapunovStable_shift_iff`, `locallyExponentiallyStable_shift_iff`,
   `unstable_shift_iff`, `localAsymptoticStable_shift_iff`, `globalAsymptoticStable_shift_iff`,

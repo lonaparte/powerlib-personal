@@ -3,12 +3,10 @@ import theorem.Family.Basic
 import theorem.Flow.Certificate
 import theorem.Linear.Synthesis
 import theorem.Linear.Transfer
+import theorem.Dynamics.Coordinates
+import theorem.PhasePlane.Planar
 
 /-! # Two-state polynomial fields with sum-of-squares certificates
-
-Model boundary: autonomous fields `x' = f(x)` on `ℝ²` whose two components are polynomials with
-rational coefficients, in continuous time, without input, delay or switching. The equilibrium is
-the origin.
 
 A model enters the library through its field map, read as an autonomous system. A certificate is
 rational data — a quadratic energy, two bounds, a decay rate and three weighted sums of squares —
@@ -25,13 +23,69 @@ proposes is checked. It succeeds when some energy of the family makes the higher
 dissipative and the decay polynomial admits a Gram matrix of that shape; otherwise it proposes
 nothing, which proves nothing.
 
-The family's requirement language speaks of the origin as an equilibrium, of the linearization
-there — computed from the linear coefficients, and shown to be the Jacobian of the field — and of
-certificates. Its translation chain lies below its semantics connection (`chain_le_semantics`):
-the linearization decides the local sentences and instability (LeanForControl's indirect method),
-a certificate the global ones and a decay rate. Cubic damping `x' = -x³, y' = -y³` marks where the
-connections part: it is globally asymptotically stable with neither a certificate nor a Hurwitz
-linearization (`not_exact_asymptotic`). -/
+Model boundary.
+* Autonomous fields `x' = f(x)` on `ℝ²` whose two components are polynomials with rational
+  coefficients, in continuous time, without input, delay or switching. The equilibrium is the
+  origin.
+* A polynomial example family of generic mathematics, not an engineering model; certificates are
+  quadratic energies only.
+
+Source: the quadratic-decay certificates of `theorem/Flow/Certificate.lean`; the rational
+Lyapunov synthesizer (`theorem/Linear/Synthesis.lean`) and pole stability
+(`theorem/Linear/Transfer.lean`); LeanForControl's linearization theorem and indirect method of
+Lyapunov; coordinate and planar helpers (`theorem/Dynamics/Coordinates.lean`,
+`theorem/PhasePlane/Planar.lean`).
+
+Results.
+* Data: `Term`, `Polynomial`, `Model`, `WeightedSquare`, `Witness`; exact arithmetic (`scale`,
+  `mul`, `coeff`, `vanishes`, `Witness.quadPoly`, `circle`, `sosPoly`, `Witness.liePoly`,
+  `Witness.lowerGap`, `Witness.upperGap`, `Witness.decayGap`).
+* The check: `Witness.check`, `Certificate` (indexed by the model), `Witness.check_spec` (what the
+  check establishes), `sosPoly_nonneg`, `Certificate.quadraticDecay` (an accepted certificate is a
+  quadratic-decay certificate of the model's field).
+* The untrusted synthesizer: `Model.linearPart`, `support`, `basis`, `addAt`, `gram`, `ldlStep`,
+  `gramSquares`, `synthWith`, `energies`, `synth`, `accepts`, `certificateOf`.
+* Evaluation and smoothness: `eval` (with `eval_nil`, `eval_cons`, `eval_append`, `eval_scale`,
+  `eval_map_mul`, `eval_mul`, `coeff_cons`, `coeff_eq_zero_of_not_mem`, `eval_eq_sum`,
+  `eval_eq_zero_of_vanishes`, `eval_zero`), `Model.field` (`Model.field_zero_apply`,
+  `Model.field_one_apply`, `Model.field_smooth`), `coordinate_smooth`, `eval_smooth`,
+  `Witness.energy` (`Witness.energy_apply`, `Witness.energy_smooth`, `Witness.energy_derivative`,
+  `Witness.energy_lie`), `norm_sq`, `eval_circle`.
+* The linearization: `coord`, `hasFDerivAt_monomial_zero`, `hasFDerivAt_eval_zero`,
+  `Model.linearization` (the matrix of linear coefficients), `hasFDerivAt_field_zero` (it is the
+  Jacobian of the field at the origin), `Model.field_eq_zero`.
+* Static evidence: `family_isAutonomous`; the boundary models `cubicModel`,
+  `cascadeModel`, `quarticModel` with `cubicModel_field`, `cubicModel_not_certified`,
+  `cubicModel_linearization`, `cascadeModel_field`, `cascadeEnergy`, `cascadeEnergy_lie`,
+  `cascade_rejected`, `quarticModel_field`, `quarticEnergy`, `quarticEnergy_smooth`,
+  `quarticEnergy_lie`, `quarticEnergy_bounds`, `quarticEnergy_compact`, `nonpos_of_sq_bound`,
+  `quartic_leading_nonpos`.
+
+Family and connection conclusions.
+* `Nonlinear.Polynomial2.family : Family Model Requirement 2 0`: every model read as its
+  autonomous field. The family's requirement language speaks of the origin as an equilibrium, of
+  the linearization there — computed from the linear coefficients, and shown to be the Jacobian
+  of the field — and of certificates (`equilibrium`, `linearizationHurwitz`,
+  `linearizationUnstable`, `certified`, `decayRateAtLeast a`). The local sentences translate into
+  an equilibrium with a Hurwitz linearization, instability into one with a right-half-plane root,
+  the global sentences and sampled contraction into a certificate, a decay rate into a certificate
+  with that rate; conservation into the whole language, which no model meets (`realize_univ`: no
+  model has a Hurwitz linearization with a right-half-plane root); passivity into nothing.
+* `Certificate.mem_den`: a certificate places its model in global exponential stability.
+* Its translation chain lies below its semantics connection (`chain_le_semantics`): the
+  linearization decides the local sentences and instability (LeanForControl's indirect method),
+  a certificate the global ones and a decay rate.
+* Cubic damping `x' = -x³, y' = -y³` marks where the connections part: it is globally
+  asymptotically stable with neither a certificate nor a Hurwitz linearization
+  (`not_exact_asymptotic`).
+* The cascade `cascadeModel` is globally asymptotically stable (`cascade_asymptotic`) but not
+  globally exponentially stable (`cascade_not_exponential`), so no certificate of this language
+  exists (`cascade_certificate_boundary`), a limitation of the language, not of its search.
+* The quartic rotation with linear damping `quarticModel` is globally exponentially stable
+  (`quartic_exponential`) without a quadratic certificate (`quartic_certificate_boundary`); the
+  global exponential and the contractive translations are therefore not exact
+  (`not_exact_exponential`, `not_exact_contractive`).
+-/
 
 namespace powerlib.Nonlinear.Polynomial2
 
@@ -370,7 +424,7 @@ def Model.field (model : Model) (x : ℝ²) : ℝ² :=
 
 @[fun_prop, powerlib_foundation] theorem coordinate_smooth (j : Fin 2) :
     ContDiff ℝ 1 (fun x : ℝ² => x j) :=
-  (PiLp.proj 2 (fun _ : Fin 2 => ℝ) j : ℝ² →L[ℝ] ℝ).contDiff
+  Dynamics.contDiff_coord j
 
 @[powerlib_foundation] theorem eval_smooth (p : Polynomial) :
     ContDiff ℝ 1 (fun x : ℝ² => eval p (x 0) (x 1)) := by
@@ -429,9 +483,8 @@ def Witness.energy (w : Witness) (x : ℝ²) : ℝ := eval w.quadPoly (x 0) (x 1
   rw [w.energy_derivative]
   simp [Witness.liePoly]
 
-@[powerlib_foundation] theorem norm_sq (x : ℝ²) : ‖x‖ ^ 2 = (x 0) ^ 2 + (x 1) ^ 2 := by
-  rw [EuclideanSpace.norm_sq_eq]
-  simp [Fin.sum_univ_succ, sq_abs]
+@[powerlib_foundation] theorem norm_sq (x : ℝ²) : ‖x‖ ^ 2 = (x 0) ^ 2 + (x 1) ^ 2 :=
+  PhasePlane.norm_sq_eq x
 
 @[powerlib_foundation] theorem eval_circle (x : ℝ²) : eval circle (x 0) (x 1) = ‖x‖ ^ 2 := by
   simp [circle, norm_sq]

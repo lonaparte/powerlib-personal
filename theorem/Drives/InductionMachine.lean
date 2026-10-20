@@ -710,7 +710,9 @@ negative-rotor drive satisfies these sentences without a positive rotor. -/
 
 /-! ## The attractive sentences are decided by `r_r / L_r` -/
 
-private theorem field_contDiff (d : Drive) : ContDiff ℝ 1 d.field :=
+/-- The translated rotor-flux field is `C¹`. Static evidence on the model, not a connection
+conclusion. -/
+@[powerlib_foundation] theorem field_contDiff (d : Drive) : ContDiff ℝ 1 d.field :=
   (fluxField_smooth d.p d.isd d.isq d.ωsl).comp (contDiff_id.add contDiff_const)
 
 /-- The translated rotor-flux field has the constant Jacobian `fluxMatrix`

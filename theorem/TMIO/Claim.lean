@@ -1,7 +1,30 @@
 import theorem.TMIO.Generate
 
-/-! Kernel-checked syntax for connection conclusions. Neither grammar has an arbitrary
-proposition constructor. Metadata cannot construct an endpoint or admit a conclusion. -/
+/-! # Connection claims (foundation)
+
+Kernel-checked syntax for connection conclusions. Neither grammar has an arbitrary
+proposition constructor. Metadata cannot construct an endpoint or admit a conclusion.
+
+Scope.
+* Generic: values in arbitrary complete lattices obtained from arbitrary-infimum preserving maps,
+  and propositions built from them; no model and no semantics. Connection statements are written
+  with `connection%` (`theorem/TMIO/ClaimElab.lean`), which builds the certificate.
+
+Source: the generation theorem (`theorem/TMIO/Generate.lean`: `generate`, `closure`); the
+admission rules of `Rules.md` §3a (a published connection result carries a `ConnectionClaim`
+certificate in its proposition type).
+
+Results.
+* `Endpoint`: a value obtained from an actual upper adjoint (`upper`), its uniquely generated
+  lower adjoint (`lower`), its closure (`closed`), or a structural operation on such values
+  (`dual`, `toDual`, `preimage`, `compl`, `inter`).
+* `ConnectionClaim`: the closed grammar of admitted connection conclusions, indexed by their
+  meaning — equalities, orders and memberships with an endpoint side, equality of two
+  infimum-preserving maps, and their logical combinations (`not`, `and`, `or`, `iff`, `assuming`,
+  `all`, `exists`), which cannot add an unrelated proposition.
+* `Statement`: a public statement carries its kernel-checked connection syntax; its meaning is
+  definitionally the original proposition, so existing mathematical proofs and reuse still work.
+-/
 
 namespace powerlib.TMIO
 

@@ -1,7 +1,22 @@
 import theorem.Linear.Family
 
-/-! A length-two zero-eigenvalue Jordan chain grows linearly. This boundary is independent of
-any circuit family and complements the upstream positive-real-part instability criterion. -/
+/-! # Instability from a zero-eigenvalue Jordan chain (foundation)
+
+A length-two zero-eigenvalue Jordan chain grows linearly. This boundary is independent of
+any circuit family and complements the upstream positive-real-part instability criterion.
+
+Scope.
+* Generic: the linear field `affineLinearVectorField A 0` of an arbitrary real square matrix
+  with a chain `A v = 0`, `A w = v`, `v ≠ 0`; no model.
+
+Source: the solution `ε (w + t v)` of the linear field, which leaves every ball; LeanForControl's
+instability criterion for an eigenvalue with positive real part
+(`unstable_affineLinear_of_eigenvalue_re_pos`), which it complements.
+
+Results.
+* `unstable_of_zero_jordan_chain`: a nontrivial Jordan chain at zero makes the linear field
+  unstable.
+-/
 
 noncomputable section
 namespace powerlib.Linear

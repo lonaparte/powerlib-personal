@@ -1,10 +1,32 @@
 import theorem.Linear.Certificate
 import theorem.Linear.Positive
 
-/-! A complete rational backend for Lyapunov synthesis. The full finite Lyapunov operator is
+/-! # A complete rational backend for Lyapunov synthesis (foundation)
+
+A complete rational backend for Lyapunov synthesis. The full finite Lyapunov operator is
 inverted over ℚ. The result is checked by the equation and verified Schur elimination. This
 backend is also the fallback for an untrusted faster proposal; no invariant of the proposal
-algorithm is assumed. -/
+algorithm is assumed.
+
+Scope.
+* Generic: square rational matrices of every dimension, read in `ℝ` through `real`; the
+  Lyapunov equation `Aᵀ P + P A = -1` with the full operator, without assuming a symmetric
+  solution. No model. The front end is `theorem/Linear/Synthesis.lean`.
+
+Source: the certificates of `theorem/Linear/Certificate.lean`; the Schur-elimination check of
+`theorem/Linear/Positive.lean`; LeanForControl's continuous Lyapunov theorem (existence and
+uniqueness of the solution for a Hurwitz matrix).
+
+Results.
+* The backend: `operatorMap`, `operator`, `inverse` (by cofactors), `candidate` (singular
+  operators produce a candidate that the check rejects), `solutionCheck`, `check`, `real`.
+* Soundness: `inverse_eq`, `real_lyapunov`, `certificate` (the checked data constructs the real
+  certificate used throughout the library), `isHurwitz_of_check`.
+* Completeness: `operator_injective` (a Hurwitz real image makes the full rational operator
+  injective), `candidate_solves`, `check_of_solution` (every rational solution for a Hurwitz
+  matrix passes the positivity check), `candidate_checked` (the backend is complete for every
+  finite rational state matrix).
+-/
 
 namespace powerlib.Linear.VerifiedSynthesis
 open Matrix LinearSystems

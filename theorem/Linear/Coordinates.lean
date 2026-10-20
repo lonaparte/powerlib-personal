@@ -1,6 +1,28 @@
 import theorem.Linear.Family
 
-/-! Coordinate changes preserve every sentence, including port passivity. -/
+/-! # Coordinate changes and port passivity (foundation)
+
+Coordinate changes preserve every sentence, including port passivity.
+
+Scope.
+* Generic: an arbitrary continuous-time system with ports conjugated by continuous linear maps
+  `L`, `K` with `K ∘ L = id`; linear plants under invertible state coordinate changes; linear
+  families (`Family.IsLinear`). No model.
+
+Source: the port semantics (`theorem/Port/Defs.lean`); coordinate changes and similarity of
+plants (`theorem/Linear/Transfer.lean`); the port systems of plants (`theorem/Port/Linear.lean`);
+linear families (`theorem/Linear/Family.lean`).
+
+Results.
+* `Port.System.conjugate` (state dynamics and port output transported through a coordinate
+  change), `Port.System.passiveWith_conjugate` (the storage pulls back along the inverse
+  coordinates; input and supplied power are preserved), `Port.System.passive_conjugate`.
+* Plants: `Plant.system_changeCoordinates`, `Plant.passive_changeCoordinates`,
+  `Similar.passive_iff` (with no minimality assumption), `Similar.sentence_iff` (similar plants
+  agree on the complete sentence language).
+* `Family.IsLinear.den_similar`: all denotations are invariant when system maps are read in
+  similar state coordinates.
+-/
 
 noncomputable section
 namespace powerlib
