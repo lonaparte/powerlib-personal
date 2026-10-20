@@ -1,4 +1,5 @@
 import theorem.SingularPerturbation.FiniteHorizon
+import theorem.SingularPerturbation.SupNorm
 
 /-! # Nonlinear boundary layer: exponential stability uniform in the frozen slow variables
 
@@ -273,17 +274,8 @@ space with a continuous Hurwitz linearization (the certificates of
   obtain ⟨lo, hlo, hi, hhi, Pb, hPb, hcert⟩ := exists_uniform_dissipation hA hH
   exact boundaryLayer_uniform_exponentialStability_of_certificates hlo hhi hPb hcert hlin
 
-/-- `|v|² ≤ m ‖v‖²` (sup norm). -/
-@[powerlib_foundation] theorem dotProduct_self_le_card_mul_norm_sq (v : Fin m → ℝ) : v ⬝ᵥ v ≤ m * ‖v‖ ^ 2 := by
-  have h : ∀ i, v i * v i ≤ ‖v‖ ^ 2 := fun i => by
-    have h1 : |v i| ≤ ‖v‖ := by simpa [Real.norm_eq_abs] using norm_le_pi_norm v i
-    have h2 := abs_nonneg (v i)
-    nlinarith [abs_mul_abs_self (v i)]
-  calc v ⬝ᵥ v = ∑ i, v i * v i := rfl
-    _ ≤ ∑ _i : Fin m, ‖v‖ ^ 2 := Finset.sum_le_sum fun i _ => h i
-    _ = m * ‖v‖ ^ 2 := by simp
-
-/-- `‖v‖² ≤ |v|²` (sup norm). -/
+/-- `‖v‖² ≤ |v|²` (sup norm; the converse bound `dotProduct_self_le_card_mul_norm_sq` is in
+`theorem/SingularPerturbation/SupNorm.lean`). -/
 @[powerlib_foundation] theorem norm_sq_le_dotProduct_self (v : Fin m → ℝ) : ‖v‖ ^ 2 ≤ v ⬝ᵥ v := by
   have hs : ‖v‖ ≤ Real.sqrt (v ⬝ᵥ v) := by
     refine (pi_norm_le_iff_of_nonneg (Real.sqrt_nonneg _)).2 fun i => ?_

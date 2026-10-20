@@ -1,5 +1,6 @@
 import dependencies.Mathlib
 import theorem.Attributes
+import theorem.SingularPerturbation.SupNorm
 import Mathlib.Probability.Moments.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLog
 import Mathlib.Order.LiminfLimsup
@@ -369,17 +370,6 @@ private theorem exists_bound_deriv_smoothTransition :
     rw [deriv_smoothTransition_eq_zero this, abs_zero]
     exact le_max_right _ _
 
-/-- `v ⬝ᵥ v ≤ n ‖v‖²` for the sup norm on `Fin n → ℝ`. -/
-private theorem dotProduct_self_le (v : Fin n → ℝ) : v ⬝ᵥ v ≤ n * ‖v‖ ^ 2 := by
-  unfold dotProduct
-  calc ∑ i, v i * v i ≤ ∑ _i : Fin n, ‖v‖ ^ 2 := by
-        refine Finset.sum_le_sum fun i _ => ?_
-        have h := norm_le_pi_norm v i
-        rw [Real.norm_eq_abs] at h
-        have := abs_nonneg (v i)
-        nlinarith [abs_mul_abs_self (v i)]
-    _ = n * ‖v‖ ^ 2 := by simp
-
 /-- **Core estimate**: the explicit path that starts at `xA`, corrects onto the reversed gradient
 orbit `ψ` during `[0, 1]`, follows `ψ` and corrects onto `x` during `[T − 1, T]` has action at most
 `2 (U(x) − U(xA)) + n ε₀²` when the residual is at most `ε₀` on the two correction windows. -/
@@ -441,7 +431,7 @@ private theorem quasiPotential_le_of_window {U : (Fin n → ℝ) → ℝ}
   set F : ℝ → ℝ := fun t => (φd t - gU (φ t)) ⬝ᵥ (φd t - gU (φ t)) with hF
   have hFn : ∀ t, ‖φd t - gU (φ t)‖ ≤ ε₀ → F t ≤ n * ε₀ ^ 2 := by
     intro t ht
-    refine (dotProduct_self_le _).trans ?_
+    refine (SingularPerturbation.dotProduct_self_le_card_mul_norm_sq _).trans ?_
     have : ‖φd t - gU (φ t)‖ ^ 2 ≤ ε₀ ^ 2 := pow_le_pow_left₀ (norm_nonneg _) ht 2
     exact mul_le_mul_of_nonneg_left this (Nat.cast_nonneg n)
   have hF1 : ∀ t ∈ Icc (0 : ℝ) 1, F t ≤ n * ε₀ ^ 2 := by

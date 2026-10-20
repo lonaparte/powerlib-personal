@@ -1,6 +1,7 @@
 import theorem.DAE.Weierstrass
 import theorem.DAE.Linear
 import theorem.DAE.Pryce
+import theorem.Dynamics.Calculus
 
 /-! # Kronecker index = differentiation index for linear constant-coefficient DAEs
 
@@ -284,14 +285,12 @@ Kronecker index of any of its Weierstrass forms. -/
 
 /-! ## Meaning on solutions -/
 
-private theorem hasDerivAt_mulVec {M : Matrix ι ι ℝ} {x : ℝ → ι → ℝ} {v : ι → ℝ} {t : ℝ}
-    (h : HasDerivAt x v t) : HasDerivAt (fun s => M *ᵥ x s) (M *ᵥ v) t :=
-  (LinearMap.toContinuousLinearMap (Matrix.toLin' M)).hasFDerivAt.comp_hasDerivAt t h
-
+-- The statement keeps the section instance `[DecidableEq ι]`; the proof does not use it.
+omit [DecidableEq ι] in
 /-- Along a solution of `E x' = A x + f` with `x 0 = x`, `x (r + 1) = (x r)'` (`r ≤ μ`) and
 `f (r + 1) = (f r)'` (`r < μ`), the derivative array of order `μ` holds:
 `E x^(r+1) = A x^(r) + f^(r)` for `r ≤ μ`. -/
-@[powerlib_foundation] theorem derivArray_of_solution {E A : Matrix ι ι ℝ} {μ : ℕ}
+@[powerlib_foundation] theorem derivArray_of_solution [DecidableEq ι] {E A : Matrix ι ι ℝ} {μ : ℕ}
     {x f : ℕ → ℝ → ι → ℝ} (hx : ∀ r ≤ μ, ∀ t, HasDerivAt (x r) (x (r + 1) t) t)
     (hf : ∀ r < μ, ∀ t, HasDerivAt (f r) (f (r + 1) t) t)
     (hs : ∀ t, E *ᵥ x 1 t = A *ᵥ x 0 t + f 0 t) :
@@ -304,9 +303,9 @@ private theorem hasDerivAt_mulVec {M : Matrix ι ι ℝ} {x : ℝ → ι → ℝ
     have hfun : (fun s => E *ᵥ x (r + 1) s) = fun s => A *ᵥ x r s + f r s :=
       funext (ih (by omega))
     have h1 : HasDerivAt (fun s => E *ᵥ x (r + 1) s) (E *ᵥ x (r + 2) t) t :=
-      hasDerivAt_mulVec (hx (r + 1) hr t)
+      Dynamics.hasDerivAt_mulVec E (hx (r + 1) hr t)
     have h2 : HasDerivAt (fun s => A *ᵥ x r s + f r s) (A *ᵥ x (r + 1) t + f (r + 1) t) t :=
-      (hasDerivAt_mulVec (hx r (by omega) t)).add (hf r (by omega) t)
+      (Dynamics.hasDerivAt_mulVec A (hx r (by omega) t)).add (hf r (by omega) t)
     rw [hfun] at h1
     exact h1.unique h2
 
@@ -393,11 +392,14 @@ private theorem jetPoly_zero_zero (w : ℕ → ι → ℝ) (μ : ℕ) : jetPoly 
   refine Finset.sum_eq_zero fun r _ => ?_
   simp
 
+-- The statement keeps the section instance `[DecidableEq ι]`; the proof does not use it.
+omit [DecidableEq ι] in
 /-- Converse: if the derivative array of order `μ` is not 1-full, `μ` differentiations do not
 determine the velocity. There is a polynomial solution `x` of `E x' = A x + f` with the data of
 the zero solution at `t = 0` — `x(0) = 0` and input jet `f^(r)(0) = 0` for `r ≤ μ` — but
 `x'(0) ≠ 0` (`x r` and `f r` are the `r`-th derivatives, defined for all `r`). -/
-@[powerlib_foundation] theorem exists_solution_of_not_oneFull {E A : Matrix ι ι ℝ} {μ : ℕ}
+@[powerlib_foundation] theorem exists_solution_of_not_oneFull [DecidableEq ι] {E A : Matrix ι ι ℝ}
+    {μ : ℕ}
     (h : ¬ OneFull E A μ) :
     ∃ x f : ℕ → ℝ → ι → ℝ, (∀ r t, HasDerivAt (x r) (x (r + 1) t) t) ∧
       (∀ r t, HasDerivAt (f r) (f (r + 1) t) t) ∧ (∀ t, E *ᵥ x 1 t = A *ᵥ x 0 t + f 0 t) ∧
@@ -407,8 +409,8 @@ the zero solution at `t = 0` — `x(0) = 0` and input jet `f^(r)(0) = 0` for `r 
   refine ⟨jetPoly w μ, fun k t => E *ᵥ jetPoly w μ (k + 1) t - A *ᵥ jetPoly w μ k t,
     hasDerivAt_jetPoly w μ, fun k t => ?_, fun t => (add_sub_cancel _ _).symm, jetPoly_zero_zero w μ,
     ?_, ?_⟩
-  · exact (hasDerivAt_mulVec (hasDerivAt_jetPoly w μ (k + 1) t)).sub
-      (hasDerivAt_mulVec (hasDerivAt_jetPoly w μ k t))
+  · exact (Dynamics.hasDerivAt_mulVec E (hasDerivAt_jetPoly w μ (k + 1) t)).sub
+      (Dynamics.hasDerivAt_mulVec A (hasDerivAt_jetPoly w μ k t))
   · intro r hrμ
     rcases r with _ | r
     · simp only [jetPoly_zero_succ w μ 0 (Nat.zero_le _), jetPoly_zero_zero, h0, mulVec_zero,

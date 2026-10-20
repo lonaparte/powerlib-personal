@@ -61,7 +61,7 @@ Lyapunov stability, decay rates and conservation are conjugated by
 (`theorem/Linear/Transfer.lean`), unchanged; the remaining sentences (local and global
 exponential and asymptotic stability, forward completeness, sampled contraction) are conjugated
 here, for arbitrary nonlinear fields (`*_conjEquiv`, collected in `holds_conjEquiv_iff`; forward
-completeness is the case `c = 0` of `forwardComplete_transport_iff`). The
+completeness is the case `c = 0` of `ForwardComplete.transport`). The
 equilibrium-shift lemmas (`Dynamics.*_shift_iff`, `Flow.Property.holds_shift_iff`) are those of
 `theorem/Dynamics/Shift.lean` and are not restated.
 -/
@@ -140,6 +140,11 @@ variable (T : State n ≃L[ℝ] State n) (c : State n)
   refine ⟨fun h => ?_, key T c f⟩
   have h' := key T.symm (-(T.symm c)) _ h
   rwa [transportField_symm_transportField] at h'
+
+variable {T c} in
+@[powerlib_foundation] theorem ForwardComplete.transport {f : State n → State n}
+    (h : Flow.ForwardComplete f) : Flow.ForwardComplete (transportField T c f) :=
+  (forwardComplete_transport_iff T c).mpr h
 
 /-- Equilibria correspond under the affine coordinate change. -/
 @[powerlib_foundation] theorem transportField_affineCoord_eq_zero_iff
@@ -256,7 +261,7 @@ private lemma tendsto_of_back {χ : ℝ → State n}
 
 @[powerlib_foundation] theorem forwardComplete_conjEquiv {g : State n → State n}
     (h : Flow.ForwardComplete g) : Flow.ForwardComplete (transportField T 0 g) :=
-  (forwardComplete_transport_iff T 0).mpr h
+  ForwardComplete.transport h
 
 @[powerlib_foundation] theorem locallyExponentiallyStable_conjEquiv {g : State n → State n}
     (h : LocallyExponentiallyStable g 0) :
@@ -511,10 +516,6 @@ variable {T c}
     {x : State n} (h : LocalAsymptoticStable f x) :
     LocalAsymptoticStable (transportField T c f) (affineCoord T c x) :=
   (localAsymptoticStable_transport_iff T c).mpr h
-
-@[powerlib_foundation] theorem ForwardComplete.transport {f : State n → State n}
-    (h : Flow.ForwardComplete f) : Flow.ForwardComplete (transportField T c f) :=
-  (forwardComplete_transport_iff T c).mpr h
 
 @[powerlib_foundation] theorem GloballyExponentiallyStable.transport {f : State n → State n}
     {x : State n} (h : Flow.GloballyExponentiallyStable f x) :

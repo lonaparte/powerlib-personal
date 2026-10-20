@@ -342,6 +342,7 @@ import theorem.Modal.Poles
 import theorem.Modal.Splitting
 import theorem.Numerics.BDFInstability
 import theorem.SingularPerturbation.BoundaryLayer
+import theorem.SingularPerturbation.SupNorm
 import theorem.SingularPerturbation.FiniteHorizon
 import theorem.Line.CableSchelkunoff
 import theorem.Asymptotics.Guard.MFPTExpansion

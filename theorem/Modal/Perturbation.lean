@@ -1,5 +1,6 @@
 import theorem.Modal.Participation
 import theorem.LinearAlgebra.Conditioning
+import theorem.LTI.Discrete
 import Mathlib.Analysis.Matrix.Spectrum
 import Mathlib.Analysis.CStarAlgebra.Basic
 import Mathlib.Analysis.CStarAlgebra.Spectrum
@@ -33,7 +34,8 @@ Results.
   its spectral radius (Mathlib `IsStarNormal.spectralRadius_eq_nnnorm`; complex matrices with
   the `ℓ²` operator norm form a C⋆-algebra), which is attained at some `1/(μ − ν)`, `ν ∈ σ(A)`
   (`spectrum.exists_nnnorm_eq_spectralRadius`); `x = R E x` gives `1 ≤ ‖R‖ ‖E‖`.
-  `mem_spectrum_iff_exists_eigvec`: `σ(M)` is the set of eigenvalues of a complex matrix.
+  `mem_spectrum_iff_exists_eigvec`: `σ(M)` is the set of eigenvalues of a complex matrix
+  (membership form of `LTI.spectrum_eq_setOf_eigenpair`, `theorem/LTI/Discrete.lean`).
   `bauerFike_normal_spectrum`: the same with `μ ∈ σ(A + E)` (spectrum form).
 * `eigenvalue_sensitivity` — along a differentiable eigen-branch `A(α) v(α) = λ(α) v(α)` with a
   left eigenvector `ψ` of `A(α₀)` (`ψᵀ v(α₀) ≠ 0`), `λ'(α₀) = ψᵀ A'(α₀) v(α₀) / (ψᵀ v(α₀))`
@@ -161,13 +163,11 @@ eigenvalue of `A + E` lies within `‖E‖` of the spectrum of `A`. -/
 
 /-! ## Bauer–Fike for normal matrices -/
 
-/-- The spectrum of a complex matrix is its set of eigenvalues. -/
+/-- The spectrum of a complex matrix is its set of eigenvalues (membership form of
+`LTI.spectrum_eq_setOf_eigenpair`). -/
 @[powerlib_foundation] theorem mem_spectrum_iff_exists_eigvec {M : Matrix n n ℂ} {ν : ℂ} :
-    ν ∈ spectrum ℂ M ↔ ∃ w : n → ℂ, w ≠ 0 ∧ M *ᵥ w = ν • w := by
-  rw [spectrum.mem_iff, Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero, not_not,
-    ← Matrix.exists_mulVec_eq_zero_iff, Algebra.algebraMap_eq_smul_one]
-  refine exists_congr fun w => and_congr_right fun _ => ?_
-  rw [Matrix.sub_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec, sub_eq_zero, eq_comm]
+    ν ∈ spectrum ℂ M ↔ ∃ w : n → ℂ, w ≠ 0 ∧ M *ᵥ w = ν • w :=
+  Set.ext_iff.mp (LTI.spectrum_eq_setOf_eigenpair M) ν
 
 /-- **Bauer–Fike for normal matrices**: if `A` is normal (`Aᴴ A = A Aᴴ`), every eigenvalue `μ` of
 `A + E` lies within `‖E‖` (spectral norm) of some eigenvalue `ν ∈ σ(A)`. -/

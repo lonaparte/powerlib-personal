@@ -1,5 +1,6 @@
 import theorem.Dynamics.LaSalle.Ball
 import theorem.Dynamics.Instability
+import theorem.Dynamics.Coordinates
 
 /-! # Damped mechanical systems: potential minima and local asymptotic stability (foundation)
 
@@ -62,12 +63,10 @@ abbrev qIdx (i : Fin m) : Fin (m + k) := Fin.castAdd k i
 /-- Position of the velocity `wⱼ` in the state. -/
 abbrev vIdx (j : Fin k) : Fin (m + k) := Fin.natAdd m j
 
+/-- A state is determined by its positions and velocities (`Dynamics.state_ext_blocks`). -/
 @[powerlib_foundation] theorem state_ext {z z' : State (m + k)}
-    (hq : ∀ i, z (qIdx i) = z' (qIdx i)) (hv : ∀ j, z (vIdx j) = z' (vIdx j)) : z = z' := by
-  ext r
-  refine Fin.addCases (fun i => ?_) (fun j => ?_) r
-  · exact hq i
-  · exact hv j
+    (hq : ∀ i, z (qIdx i) = z' (qIdx i)) (hv : ∀ j, z (vIdx j) = z' (vIdx j)) : z = z' :=
+  state_ext_blocks hq hv
 
 /-- The positions of a state. -/
 def pos : State (m + k) →L[ℝ] (Fin m → ℝ) :=

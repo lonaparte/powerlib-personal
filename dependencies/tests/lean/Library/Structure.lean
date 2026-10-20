@@ -448,24 +448,9 @@ def importClosure (env : Environment) : NameMap NameSet := Id.run do
 /-- Restatements that stay, with the reason: deriving them would bring a heavy, unrelated import
 into a low module or change a public statement. -/
 def restatementExemptions : Array (String × String × String) := #[
-  ("_private.theorem.LTI.Discrete.0.powerlib.LTI.mem_spectrum_iff_eigenpair",
-    "powerlib.Modal.mem_spectrum_iff_exists_eigvec",
-    "LTI.Discrete is a low module; Modal.Perturbation would add eleven modules to it"),
-  ("powerlib.Dynamics.forwardComplete_conjEquiv", "powerlib.Dynamics.ForwardComplete.transport",
-    "both are the forward direction of forwardComplete_transport_iff"),
   ("powerlib.PhasePlane.norm_sq_eq", "powerlib.Nonlinear.Polynomial2.norm_sq",
-    "Polynomial2 is a codex model; PhasePlane.Planar would import its closure for one identity"),
-  ("powerlib.Network.Swing.state_ext", "powerlib.Dynamics.Mechanical.state_ext",
-    "Dynamics.Mechanical would add the LaSalle and instability closure for an ext lemma"),
-  ("_private.theorem.Stochastic.LargeDeviations.0.powerlib.Stochastic.LDP.dotProduct_self_le",
-    "powerlib.SingularPerturbation.dotProduct_self_le_card_mul_norm_sq",
-    "SingularPerturbation.BoundaryLayer would add thirteen unrelated modules"),
-  ("_private.theorem.DAE.KroneckerIndex.0.powerlib.DAE.hasDerivAt_mulVec",
-    "powerlib.Dynamics.hasDerivAt_mulVec",
-    "its proof uses the section instance [DecidableEq ι] of the derivative-array statements"),
-  ("_private.theorem.DAE.KroneckerIndex.0.powerlib.DAE.hasDerivAt_mulVec",
-    "powerlib.Transform.Rebase.hasDerivAt_mulVec",
-    "its proof uses the section instance [DecidableEq ι] of the derivative-array statements")]
+    "Polynomial2 is a codex model and no codex module below it states the identity; importing \
+    it would add eleven modules to PhasePlane.Planar and up to eleven to its 42 dependents")]
 
 /-- Control: the general fixture. -/
 theorem fixtureRestatedGeneral (n : ℕ) : n ≤ n + 1 := by omega
