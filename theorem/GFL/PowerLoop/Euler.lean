@@ -35,11 +35,13 @@ Family and connection conclusions.
   integration read as its Euler map; requirements and translation are those of its model, read
   through the design. `QuasiStatic.euler`: the implementation layer, every integration realizing
   its model (`Implementation.ofDesign Euler.design`).
-* M–I (realization). `euler_sound_small_step` (scaffold `sound-small-step`): a locally
-  exponentially stable model has a step `h₀ > 0` such that every Euler integration with a step
-  `h ≤ h₀` is locally exponentially stable. `euler_certified_small_step` (scaffold
-  `certified-small-step`): the same for the design of an integration certified for local
-  exponential stability. `not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
+* M–I (realization). The small-step laws are the generic connection laws applied to the family,
+  with its autonomy `QuasiStatic.family_isAutonomous` and the public smoothness lemma
+  `QuasiStatic.contDiff_model_field`: `Numerics.euler_sound_small_step` (scaffold
+  `sound-small-step`: a locally exponentially stable model has a step `h₀ > 0` such that every
+  Euler integration with a step `h ≤ h₀` is locally exponentially stable) and
+  `Numerics.euler_certified_small_step` (scaffold `certified-small-step`).
+  `not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
   without a step constraint the realization is not sound — the locally exponentially stable model
   `V = k_p = k_i = k_P = 1`, `X_g = P_ref = 0` at `θ* = i_d* = 0` has Euler integrations with every
   multiplier outside the unit disk.
@@ -67,34 +69,6 @@ def eulerFamily : Family Euler Requirement 3 0 :=
 /-- The Euler realization: every integration realizes its quasi-static GFL model. -/
 def euler : Implementation Model Requirement Euler Requirement 3 0 3 0 :=
   Numerics.euler family Model.field Euler.design Euler.h
-
-/-- **Small steps realize local exponential stability of the quasi-static GFL models.** A locally
-exponentially stable quasi-static GFL model has a step `h₀ > 0` such that its explicit Euler
-integration with every step `h ∈ (0, h₀]` is locally exponentially stable. -/
-@[powerlib_domain] theorem euler_sound_small_step :
-    connection% (∀ m : Model, m ∈ family.den (.flow .locallyExponentiallyStable) →
-      ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-        (⟨m, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step (design := Euler.design)
-    (step := Euler.h) family_isAutonomous contDiff_model_field hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its quasi-static GFL model is locally exponentially stable), every Euler
-integration of its quasi-static GFL model with a step below a threshold is locally exponentially
-stable. -/
-@[powerlib_domain] theorem euler_certified_small_step :
-    connection% (∀ y : Euler,
-      y ∈ TMIO.certify euler.realizes (euler.model.den (.flow .locallyExponentiallyStable)) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step family_isAutonomous
-    contDiff_model_field hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the quasi-static GFL models is not sound.**
 A locally exponentially stable model (`V = k_p = k_i = k_P = 1`, `X_g = P_ref = 0` at

@@ -33,18 +33,20 @@ Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step`,
 `theory/T-numerical-integration.md` §1.2, §2.7.
 
 Results.
-* No static result beyond the family definitions; the witness parameters `unitLine` are private.
+* `LCLine.code_contDiff_field`: the translated code-frame field is `C¹`, the smoothness hypothesis
+  of the generic laws; the witness parameters `unitLine` are private.
 
 Family and connection conclusions.
 * `LCLine.codeEulerFamily : Family LCLine.CodeEuler PLL.PIPLL.Requirement 2 0`: every integration
   read as its Euler map; requirements and translation are those of its model, read through the
   design. `LCLine.codeEuler`: the implementation layer, every integration realizing its model
   (`Implementation.ofDesign CodeEuler.design`).
-* M–I (realization). `code_euler_sound_small_step` (scaffold `sound-small-step`): a locally
-  exponentially stable model has a step `h₀ > 0` such that every Euler integration with a step
-  `h ≤ h₀` is locally exponentially stable. `code_euler_certified_small_step` (scaffold
-  `certified-small-step`): the same for the design of an integration certified for local
-  exponential stability. `code_not_euler_realizationSoundUnder` (scaffold
+* M–I (realization). The small-step laws are the generic connection laws applied to the family,
+  with its autonomy `LCLine.codeFamily_isAutonomous` and the public smoothness lemma
+  `LCLine.code_contDiff_field`: `Numerics.euler_sound_small_step` (scaffold `sound-small-step`: a
+  locally exponentially stable model has a step `h₀ > 0` such that every Euler integration with a
+  step `h ≤ h₀` is locally exponentially stable) and `Numerics.euler_certified_small_step`
+  (scaffold `certified-small-step`). `code_not_euler_realizationSoundUnder` (scaffold
   `not-sound-large-step`): without a step constraint the realization is not sound — the model with
   unit filter capacitance, grid frequency and EMF, a line without impedance, zero current
   references and unit PLL gains at `θ_c* = 0` (`h = −sin`, locally exponentially stable through
@@ -77,42 +79,14 @@ def codeEuler : Implementation CodeModel PLL.PIPLL.Requirement CodeEuler PLL.PIP
   Numerics.euler codeFamily CodeModel.field CodeEuler.design CodeEuler.h
 
 /-- The translated code-frame field is `C¹`: the reflection of the reduced field, whose
-phase-detector characteristic `h` is `C¹` for every parameter set. -/
-private theorem code_contDiff_field (m : CodeModel) : ContDiff ℝ 1 (CodeModel.field m) := by
+phase-detector characteristic `h` is `C¹` for every parameter set. The smoothness hypothesis of the
+generic Euler laws (`Numerics.euler_sound_small_step`). -/
+@[powerlib_foundation] theorem code_contDiff_field (m : CodeModel) :
+    ContDiff ℝ 1 (CodeModel.field m) := by
   have h : ContDiff ℝ 1 m.params.codeField := by
     rw [Params.codeField_eq_transport, Params.reducedField_eq]
     exact Dynamics.contDiff_transportField _ _ (PLL.contDiff_piPLLField m.params.contDiff_h_one)
   exact h.comp (contDiff_id.add contDiff_const)
-
-/-- **Small steps realize local exponential stability of the code-frame PLL models.** A locally
-exponentially stable code-frame PLL model has a step `h₀ > 0` such that its explicit Euler
-integration with every step `h ∈ (0, h₀]` is locally exponentially stable. -/
-@[powerlib_domain] theorem code_euler_sound_small_step :
-    connection% (∀ m : CodeModel, m ∈ codeFamily.den (.flow .locallyExponentiallyStable) →
-      ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-        (⟨m, h, hh⟩ : CodeEuler) ∈ codeEulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step (design := CodeEuler.design)
-    (step := CodeEuler.h) codeFamily_isAutonomous code_contDiff_field hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its code-frame PLL model is locally exponentially stable), every Euler
-integration of its code-frame PLL model with a step below a threshold is locally exponentially
-stable. -/
-@[powerlib_domain] theorem code_euler_certified_small_step :
-    connection% (∀ y : CodeEuler,
-      y ∈ TMIO.certify codeEuler.realizes (codeEuler.model.den (.flow .locallyExponentiallyStable))
-        →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : CodeEuler) ∈
-            codeEulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step codeFamily_isAutonomous
-    code_contDiff_field hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- The parameters of the witness below: unit filter capacitance, grid frequency and grid EMF, a
 line without impedance, zero current references and unit PLL gains (`a = b = 0`, `Δ = 1`, so the

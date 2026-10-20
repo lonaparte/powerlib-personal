@@ -66,9 +66,10 @@ Family and connection conclusions.
   `not_switching_realizationSoundUnder` (scaffold `not-sound-slow`): in every dimension `n ≥ 2`,
   without a constraint the realization is not sound for any attractive sentence (nor sampled
   contraction), witnessed by `d = 1/2`, `T = 5` and the topologies
-  `[[−1/10, 1], [0, −1/10]] ⊕ (−I)`, `[[−1/10, 0], [−1, −1/10]] ⊕ (−I)`. With
-  `switching_realizationExactUnder_of_le_one`: for the attractive sentences and sampled
-  contraction the realization is sound without constraint iff `n ≤ 1`.
+  `[[−1/10, 1], [0, −1/10]] ⊕ (−I)`, `[[−1/10, 0], [−1, −1/10]] ⊕ (−I)`.
+  `switching_realizationSoundUnder_iff` (the dimension boundary, from the last two): for the
+  attractive sentences and sampled contraction the realization is sound without constraint iff
+  `n ≤ 1`.
 -/
 
 noncomputable section
@@ -230,5 +231,24 @@ model satisfies it (`slowSwitching_counterexample_of_two_le`, `d = 1/2`, `T = 5`
   · change (⟨1 / 2, 5, A₁, A₂, _, _⟩ : Switched n) ∉ switchedFamily.den (.flow P)
     rw [switchedFamily_isAutonomousMap.den_schurStable hP]
     exact hnot
+
+/-- **The dimension boundary of averaging.** For an attractive sentence (or sampled contraction),
+the switched realization is sound without a constraint exactly in dimension `n ≤ 1`: in
+dimension at most one it is exact (`switching_realizationExactUnder_of_le_one`), in every
+dimension `n ≥ 2` slow switching refutes it (`not_switching_realizationSoundUnder`). -/
+@[powerlib_domain] theorem switching_realizationSoundUnder_iff {P : Flow.Property}
+    (hP : P.Attractive ∨ P = .contractive) :
+    connection% ((switching (n := n)).RealizationSoundUnder ∅ (.flow P) ↔ n ≤ 1) := by
+  unfold powerlib.TMIO.Statement
+  constructor
+  · intro h
+    by_contra hn
+    have hnot := not_switching_realizationSoundUnder hP (by omega : 2 ≤ n)
+    unfold powerlib.TMIO.Statement at hnot
+    exact hnot h
+  · intro hn
+    have h := switching_realizationExactUnder_of_le_one hn (.flow P)
+    unfold powerlib.TMIO.Statement at h
+    exact h.soundUnder
 
 end powerlib.Averaging

@@ -58,7 +58,8 @@ Results.
   source's (and the note's) condition).
 
 Family and connection conclusions.
-* Family `family : Family Model Requirement 4 0`: the closed loop about `x*`. Requirements
+* Family `family : Family Model Requirement 4 0`: the closed loop about `x*`, the family of the
+  translated fields (`family_isAutonomous`). Requirements
   `physical` (`C_dc, L_s, R_s > 0`), `synchronizing` (`μ u* v₀ > 0`, so that `θ_dq = 0` is the
   minimum of `S`), `dissipative` (`margin ≥ 0`), `antiSynchronizing` (`μ u* v₀ < 0`), `damped`
   (`margin > 0`), `matching` (`η ≠ 0`). Lyapunov stability translates into
@@ -815,7 +816,9 @@ def Model.translated (m : Model) (z : State 4) : State 4 := m.field (z + m.point
 def family : Family Model Requirement 4 0 :=
   ⟨fun m => Port.System.autonomous m.translated, Meets, translate⟩
 
-private theorem family_isAutonomous : family.IsAutonomous Model.translated := fun _ => rfl
+/-- The stiff-grid family is the family of the translated autonomous fields. -/
+@[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.translated :=
+  fun _ => rfl
 
 private theorem mem_den_flow {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.field m.point :=

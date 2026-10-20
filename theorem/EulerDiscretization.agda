@@ -2,33 +2,34 @@
 module theorem.EulerDiscretization where
 
 -- Scaffold of the explicit Euler implementation of a model: the model is a field `f` with a
--- selected point `x*`; its implementation with step `h > 0` is the discrete system `x_{k+1} = x_k +
--- h f(x_k)` (period `h`), which realizes the model it is designed from (`ofDesign`, design map `(m,
--- h) ↦ m`). The realization holds under a constraint, a small step: at an equilibrium with a
--- Hurwitz Jacobian (local exponential stability of a field `C¹` near the point, by converse
--- linearization) the Euler Jacobian `I + h Df(x*)` is Schur for every step below a threshold, and a
--- fixed point with a Schur Jacobian is locally exponentially stable for the map (discrete
--- linearization), so the implementation is locally exponentially stable for every small step
--- (`sound-small-step`). Without the constraint the realization is not sound: at every locally
--- exponentially stable model the Jacobian is Hurwitz, and for every large enough step all
--- multipliers `1 + hλ` of the Euler map lie outside the unit disk, so the Euler implementation is
--- unstable there (`not-sound-large-step`). Only smoothness near the selected point is used, so the
--- laws hold model by model. Lean: `converse` is
--- `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local`, `threshold` is
--- `Numerics.exists_forwardEuler_schurStable` (from the forward Euler stability region), `discrete`
--- is `Map.locallyExponentiallyStable_of_schurStable` with `Numerics.hasFDerivAt_eulerMap`, `large`
--- comes from `Numerics.exists_forwardEuler_inverse_schurStable`; the template laws
--- `Numerics.euler_sound_small_step_local`, `Numerics.euler_certified_small_step_local` and
+-- selected point `x*`; its implementation with step `h > 0` is the discrete system `x⁺ = x + h
+-- f(x)` (period `h`), which realizes the model it is designed from (`ofDesign`, design map `(m, h)
+-- ↦ m`). The realization holds under a constraint, a small step: at an equilibrium with a Hurwitz
+-- Jacobian (local exponential stability of a field `C¹` near the point, by converse linearization)
+-- the Euler Jacobian `I + h Df(x*)` is Schur for every step below a threshold, and a fixed point
+-- with a Schur Jacobian is locally exponentially stable for the map (discrete linearization), so
+-- the implementation is locally exponentially stable for every small step (`sound-small-step`).
+-- Without the constraint the realization is not sound: at every locally exponentially stable model
+-- the Jacobian is Hurwitz, and for every large enough step all multipliers `1 + hλ` of the Euler
+-- map lie outside the unit disk, so the Euler implementation is unstable there
+-- (`not-sound-large-step`). Only smoothness near the selected point is used, so the laws hold model
+-- by model. Lean: `converse` is `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local`,
+-- `threshold` is `Numerics.exists_forwardEuler_schurStable` (from the forward Euler stability
+-- region), `discrete` is `Map.locallyExponentiallyStable_of_schurStable` with
+-- `Numerics.hasFDerivAt_eulerMap`, `large` comes from
+-- `Numerics.exists_forwardEuler_inverse_schurStable`. The laws are connection statements over
+-- arbitrary autonomous families (`theorem/Numerics/EulerRealization.lean`): `sound-small-step` is
+-- `Numerics.euler_sound_small_step_local` (every field `C¹`: `euler_sound_small_step`),
+-- `certified-small-step` is `Numerics.euler_certified_small_step_local`
+-- (`euler_certified_small_step`), `not-sound-large-step` is
 -- `Numerics.not_euler_realizationSoundUnder_of_large_step_local`
--- (`theorem/Numerics/EulerRealization.lean`, for autonomous families and a model whose field is
--- `C¹` at its point; the forms without `_local` assume every field `C¹`) are published as
--- connection statements (`euler_sound_small_step`, `euler_certified_small_step`,
--- `not_euler_realizationSoundUnder`, with family prefixes where a namespace holds several families)
--- for the swing family (`theorem/Synchronous/SwingEuler.lean`) and for the families of the `Euler`
--- modules of `GFM`, `GFM/Matching`, `GFL`, `GFL/PowerLoop`, `GFL/LCLine`, `GFL/DCLink`,
--- `CurrentControl`, `Network/Swing`, `Drives`, `PLL` and `Limiting`; families with arbitrary laws,
--- a DC-voltage division or saturation carry the smoothness at the point (or the headroom
--- requirement) as a hypothesis. Nothing here is exported.
+-- (`not_euler_realizationSoundUnder_of_large_step`). A family uses them through its autonomy and
+-- the public smoothness lemma of its field; the `Euler` modules of `Synchronous`, `GFM`,
+-- `GFM/Matching`, `GFL`, `GFL/PowerLoop`, `GFL/LCLine`, `GFL/DCLink`, `CurrentControl`,
+-- `Network/Swing`, `Drives`, `PLL` and `Limiting` define each family's Euler implementation and
+-- state its `not_euler_realizationSoundUnder` with the family's own locally exponentially stable
+-- witness (and, for the full matching loop, which has none, the vacuous soundness). Nothing here is
+-- exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Sigma

@@ -11,8 +11,12 @@ Scope.
 * Lean meta-programming over the grammar of `theorem/TMIO/Claim.lean`; no mathematics. No names
   or tags of model families are trusted: aliases are unfolded until a typed map application or a
   structural powerset operation is reached, and there is no arbitrary-proposition fallback.
+* Claims use endpoints of `Type` and binders of `Type`; a binder over `Type` itself (a claim
+  about arbitrary families) uses `allType`. A side condition is accepted only where the grammar
+  has one: the right side of an iff whose left side is a claim, and the guard `A i` of an
+  existential `∃ i, A i ∧ P i`.
 
-Source: the closed grammar `Endpoint`, `ConnectionClaim`, `Statement`
+Source: the closed grammar `Endpoint`, `Condition`, `ConnectionClaim`, `Statement`
 (`theorem/TMIO/Claim.lean`) and the semantic constructors of `theorem/TMIO/Relation.lean`; the
 admission rules of `Rules.md` §3a (`connection% (ordinary proposition)` constructs the
 certificate, which Lean's kernel checks).
@@ -21,6 +25,8 @@ Results.
 * `endpoint?`: an `Endpoint` certificate for a value, if one exists.
 * `endpointInputs?`: the inputs and structural maps of an endpoint, derived from its certificate,
   so that an identity map cannot launder a behavioural set.
+* `condition`: a `Condition` certificate of a side condition (comparisons of numbers, `¬`, `∧`,
+  `∨`; `≥`, `>`, `≠` by unfolding).
 * `encode`: a `ConnectionClaim` certificate of a proposition.
 * The term elaborator `connection% P`: the `TMIO.Statement` of `P` with its generated certificate,
   checked again by the kernel; the trace class `powerlib.claim`.
@@ -179,6 +185,35 @@ private def certified (prop proof : Expr) : MetaM Expr := do
     throwError "Connection grammar certificate does not describe the requested proposition"
   return ← instantiateMVars proof
 
+/-- Build a certificate of a side condition: a comparison of numbers or a combination of such by
+`¬`, `∧`, `∨`. -/
+partial def condition (e : Expr) (fuel : Nat := 32) : MetaM Expr := do
+  if fuel == 0 then throwError "Side condition unfolding exceeded its limit"
+  let e ← instantiateMVars e
+  let target := mkApp (mkConst ``Condition) e
+  let check (proof : Expr) : MetaM Expr := do
+    unless ← isDefEq (← inferType proof) target do
+      throwError "Side condition certificate does not describe the requested proposition"
+    instantiateMVars proof
+  let args := e.getAppArgs
+  let head := e.getAppFn
+  if head.isConstOf ``Not then
+    return ← check (← mkAppM ``Condition.not #[← condition args.back! (fuel - 1)])
+  for (logical, ctor) in #[(``And, ``Condition.and), (``Or, ``Condition.or)] do
+    if head.isConstOf logical then
+      return ← check (← mkAppM ctor
+        #[← condition args[0]! (fuel - 1), ← condition args[1]! (fuel - 1)])
+  for (rel, ctor) in #[(``LE.le, ``Condition.le), (``LT.lt, ``Condition.lt),
+      (``Eq, ``Condition.eq)] do
+    if head.isConstOf rel && args.size ≥ 2 then
+      let saved ← saveState
+      try
+        return ← check (← mkAppM ctor #[args[args.size - 2]!, args.back!])
+      catch _ => saved.restore
+  if let some unfolded ← unfoldDefinition? e then
+    if unfolded != e then return ← check (← condition unfolded (fuel - 1))
+  throwError "The side condition is not a comparison of numbers"
+
 /-- Build a certificate of the closed claim grammar; no arbitrary-Prop fallback exists. -/
 partial def encode (e : Expr) (fuel : Nat := 32) : MetaM Expr := do
   if fuel == 0 then throwError "Connection conclusion unfolding exceeded its limit"
@@ -187,7 +222,10 @@ partial def encode (e : Expr) (fuel : Nat := 32) : MetaM Expr := do
   if let .forallE n ty body bi := e then
     return ← withLocalDecl n bi ty fun x => do
       let p ← encode (body.instantiate1 x) (fuel - 1)
-      let ctor := if ← isProp ty then ``ConnectionClaim.assuming else ``ConnectionClaim.all
+      -- A binder over `Type` (a sort other than `Prop`) is a binder over families' types.
+      let ctor ← if ← isProp ty then pure ``ConnectionClaim.assuming
+        else if (← whnf ty) matches .sort (.succ _) then pure ``ConnectionClaim.allType
+        else pure ``ConnectionClaim.all
       certified e (← build ctor #[← mkLambdaFVars #[x] p] (← claimType e))
   let args := e.getAppArgs
   let head := e.getAppFn
@@ -204,12 +242,33 @@ partial def encode (e : Expr) (fuel : Nat := 32) : MetaM Expr := do
             let x := xs.back!
             let other ← withLocalDeclD `x (← inferType x) fun y => mkLambdaFVars #[y] args[1]!
             return ← certified e (← build ``ConnectionClaim.memberIff #[x, other, p] (← claimType e))
+        -- The right side is a claim, or else a side condition characterizing the left side.
+        let left ← encode args[0]! (fuel - 1)
+        let saved ← saveState
+        let right? ← try some <$> encode args[1]! (fuel - 1) catch _ => do
+          saved.restore
+          pure none
+        if let some right := right? then
+          return ← certified e (← build ctor #[left, right] (← claimType e))
+        return ← certified e (← build ``ConnectionClaim.iffCondition
+          #[left, ← condition args[1]!] (← claimType e))
       return ← certified e (← build ctor #[← encode args[0]! (fuel - 1),
         ← encode args[1]! (fuel - 1)] (← claimType e))
   if head.isConstOf ``Exists then
     return ← lambdaTelescope args.back! fun xs body => do
-      let p ← encode body (fuel - 1)
-      certified e (← build ``ConnectionClaim.exists #[← mkLambdaFVars xs p] (← claimType e))
+      let saved ← saveState
+      try
+        let p ← encode body (fuel - 1)
+        certified e (← build ``ConnectionClaim.exists #[← mkLambdaFVars xs p] (← claimType e))
+      catch ex =>
+        -- `∃ i, A i ∧ P i`: a side condition `A i` guards the witness of the claim `P i`.
+        saved.restore
+        unless body.isAppOf ``And do throw ex
+        let some guard ← (try some <$> condition body.getAppArgs[0]! catch _ => pure none) |
+          throw ex
+        let p ← encode body.getAppArgs[1]! (fuel - 1)
+        certified e (← build ``ConnectionClaim.existsGuard
+          #[← mkLambdaFVars xs guard, ← mkLambdaFVars xs p] (← claimType e))
   if head.isConstOf ``Eq || head.isConstOf ``LE.le || head.isConstOf ``Set.Subset then
     let a := args[args.size - 2]!
     let b := args.back!

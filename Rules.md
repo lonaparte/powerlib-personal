@@ -69,11 +69,15 @@ presentation metadata. They do not grant admission or exempt a declaration from
 checking. A typed `TMIO.Statement` is discovered as a domain result without either
 annotation. Simp, ext and Aesop registration remain independent decisions.
 
-Generic semantic implications and certificate arithmetic are foundation results.
-A model family's public engineering conclusion must be a domain theorem on a
-connection: an evaluation of its generated space, a comparison of connections,
-or a boundary witness. Relabeling such a conclusion as foundation does not
-complete its public domain interface.
+Generic static lemmas, semantic implications and certificate arithmetic are
+foundation results. Generic connection laws — laws about arbitrary families stated
+as connections, such as the explicit Euler template or the hub transfer laws — are
+connection statements over families of `Type`, stated once; an instance applies
+them to its family's static evidence (autonomy, smoothness of its field) and
+publishes only what carries its own content. A model family's public engineering
+conclusion must be a domain theorem on a connection: an evaluation of its
+generated space, a comparison of connections, or a boundary witness. Relabeling
+such a conclusion as foundation does not complete its public domain interface.
 
 ## 3a. Generated connections and public conclusions
 
@@ -97,6 +101,13 @@ There are two admission rules:
    evaluations, connection comparisons and boundaries. It has no constructor
    injecting an arbitrary `Prop`. Use `connection% (ordinary proposition)` to
    construct the certificate; Lean's kernel checks both it and the theorem proof.
+   Premises are unrestricted. Side conditions are comparisons of numbers (`≤`,
+   `<`, `=` in ℕ, ℤ, ℚ, ℝ, combined by `¬ ∧ ∨`) and enter a conclusion only as the
+   characterizing side of an iff (`C ↔ n ≤ 1`) or as the guard of an existential
+   witness (`∃ h₀, 0 < h₀ ∧ C`). A claim may bind types (`∀ X : Type, …`, or type
+   parameters of the theorem): endpoints and binders live in `Type`, so a law about
+   arbitrary families is stated for families of `Type`; universe-polymorphic
+   statements are not claims.
 
 `TMIO.Endpoint` certificates are built from typed `sInfHom` applications,
 `generate`, generated closure, and structural powerset operations. Endpoint

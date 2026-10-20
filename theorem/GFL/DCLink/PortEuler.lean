@@ -41,12 +41,15 @@ Family and connection conclusions.
   parameters' small-signal port system, with the requirements and translation of its parameters
   read through the design) and `linearizedEuler` (every discretization realizing its parameter
   set, `Implementation.ofDesign`).
-* M–I (realization), for every attractive sentence or sampled contraction `P`:
-  `linearizedEuler_exact_small_step` (scaffold `sound-small-step`, with completeness): every
-  parameter set has a step `h₀ > 0` below which its discretizations satisfy `P` exactly when its
-  linearization does; `linearizedEuler_realizationCompleteUnder`: at every step, within every
-  requirement context, a discretization satisfying `P` realizes only parameter sets satisfying
-  it; `not_linearizedEuler_realizationSoundUnder` (scaffold `not-sound-large-step`): without a
+* M–I (realization), for every attractive sentence or sampled contraction `P`. The small-step and
+  completeness laws are the generic connection laws for linear families applied to the family's
+  linearity `linearizedFamily_isLinear`: `Numerics.eulerPorts_exact_small_step_linear` (scaffold
+  `sound-small-step`, with completeness: every parameter set has a step `h₀ > 0` below which its
+  discretizations satisfy `P` exactly when its linearization does) and
+  `Numerics.eulerPorts_realizationCompleteUnder_linear` (with `LinearizedEuler.pos`: at every
+  step, within every requirement context, a discretization satisfying `P` realizes only parameter
+  sets satisfying it). `not_linearizedEuler_realizationSoundUnder` (scaffold
+  `not-sound-large-step`): without a
   step constraint the realization is not sound (the rectifier `L = Kp = Ki = C = V_d0 = V0 =
   I_d0 = 1`, `R = 0`, so `I_dc0 = 1`).
 * Passivity: `linearizedEuler_not_mem_den_passive`: no discretization is passive, whatever its
@@ -89,30 +92,6 @@ def linearizedEuler :
       3 1 3 1 :=
   Numerics.eulerPorts linearizedFamily (fun p => p.model.system) LinearizedEuler.design
     LinearizedEuler.h
-
-/-- **Small steps realize the attractive sentences of the linearized cascade exactly.** Every
-parameter set has a step `h₀ > 0` such that its Euler discretizations with a step `h ≤ h₀`
-satisfy an attractive sentence (or sampled contraction) exactly when its linearization does. -/
-@[powerlib_domain] theorem linearizedEuler_exact_small_step {P : Flow.Property}
-    (hP : P.Attractive ∨ P = .contractive) :
-    connection% (∀ p : CascadeParams, ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h),
-      h ≤ h₀.1 → ((⟨p, h, hh⟩ : LinearizedEuler) ∈ linearizedEulerFamily.den (.flow P) ↔
-        p ∈ linearizedFamily.den (.flow P))) := by
-  unfold powerlib.TMIO.Statement
-  intro p
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.eulerPorts_exact_small_step_linear
-    (design := LinearizedEuler.design) (step := LinearizedEuler.h) linearizedFamily_isLinear hP p
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨p, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **The Euler realization of the linearized cascade is complete at every step.** A
-discretization satisfying an attractive sentence (or sampled contraction) realizes only parameter
-sets whose linearization satisfies it, within every requirement context. -/
-@[powerlib_domain] theorem linearizedEuler_realizationCompleteUnder {P : Flow.Property}
-    (hP : P.Attractive ∨ P = .contractive) (Δ : Set Spectral.Requirement) :
-    connection% (linearizedEuler.RealizationCompleteUnder Δ (.flow P)) := by
-  unfold powerlib.TMIO.Statement
-  exact Numerics.eulerPorts_realizationCompleteUnder_linear linearizedFamily_isLinear
-    LinearizedEuler.pos hP Δ
 
 /-- **Without a step constraint the Euler realization of the linearized cascade is not sound.**
 The rectifier `L = Kp = Ki = C = V_d0 = V0 = I_d0 = 1`, `R = 0` (`I_dc0 = 1`) has a Hurwitz

@@ -19,6 +19,9 @@ Scope.
 * Every public, model-specific behavioural conclusion must be a typed connection `Statement`,
   whatever its label; at a certified endpoint the inputs and structural maps are inspected while
   the semantic map stays abstract.
+* A statement's telescope is encoded with the claim grammar too: type parameters (a law about
+  arbitrary families of `Type`) are binders over `Type`; numeric side conditions are read where
+  the grammar admits them, and every operand, condition and hypothesis passes the bypass audit.
 
 Source: the library rules (`Rules.md` §3a, generated connections and public conclusions) and the
 design of public admission (`Architecture.md`); the connection grammar of

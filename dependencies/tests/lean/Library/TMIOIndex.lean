@@ -17,10 +17,13 @@ records produced by implementations (O).
 * `observation` (the seed encoding, observation relations on models): what observations certify
   or predict about models, or the observation closure. `P` mentions a member of `TMIO.Seed`
   (`u₃`, `uTO`, …), `TMIO.certify`, `TMIO.possibly` or `TMIO.predict`.
-* `implementation` (I): translation, denotation or requirement space of an implementation family,
+* `implementation` (I): translation, denotation or requirement space of an implementation family:
   a family whose system type is the implementation type of some `Implementation` or `Stack`
-  declared in the library. The implementation types are read from the types of the library's
-  `Implementation` and `Stack` constants, never from names or tags.
+  declared in the library, or a family that is the implementation family (the `impl` field) of an
+  `Implementation` built in the library — generic ones included, so that a law about the Euler
+  implementations of an arbitrary family (`Numerics.eulerFamily`) is filed here like its
+  instances. The implementation types and families are read from the types and values of the
+  library's `Implementation` and `Stack` constants, never from names or tags.
 * `translation` (T–M, organization): the requirement translation of a model family compared with
   the semantics (exactness, soundness, the translation chain against the semantics connection).
   `P` mentions `Family.chain`, `Family.Exact`, `Family.ExactUnder`, `Family.Sound`,
@@ -161,6 +164,27 @@ def implementationTypes (env : Environment) : Array Expr := Id.run do
           unless y.hasLooseBVars || out.contains y do out := out.push y
   return out
 
+/-- The implementation families of the library: the head constant of the `impl` field of every
+`Implementation` constant of a `theorem.*` module whose value (under its parameters) is built with
+`Implementation.mk`, generic ones included. -/
+def implementationFamilies (env : Environment) : Array Name := Id.run do
+  let mut out := #[]
+  for i in [:env.header.moduleNames.size] do
+    unless env.header.moduleNames[i]!.getRoot == `theorem do continue
+    for name in env.header.moduleData[i]!.constNames do
+      let some (.defnInfo info) := env.find? name | continue
+      let mut ty := info.type
+      while ty.isForall do ty := ty.bindingBody!
+      unless ty.isAppOf ``powerlib.Implementation do continue
+      let mut val := info.value
+      while val.isLambda do val := val.bindingBody!
+      unless val.isAppOf ``powerlib.Implementation.mk do continue
+      -- `Implementation.mk X Q Y R n p m q model impl realizes`
+      let some impl := val.getAppArgs[9]? | continue
+      let .const c _ := impl.getAppFn | continue
+      unless out.contains c do out := out.push c
+  return out
+
 /-- Whether some `Family` constant in `e` is applied at a system type in `types` (its first
 argument). -/
 def readsFamilyAt (types : Array Expr) (e : Expr) : Bool :=
@@ -173,6 +197,7 @@ def readsFamilyAt (types : Array Expr) (e : Expr) : Bool :=
 /-- The connection statements of the `theorem.*` modules, read from each module's own constants. -/
 def statements (env : Environment) : Array Entry := Id.run do
   let types := implementationTypes env
+  let families := implementationFamilies env
   let mut out := #[]
   for i in [:env.header.moduleNames.size] do
     let module := env.header.moduleNames[i]!
@@ -180,9 +205,10 @@ def statements (env : Environment) : Array Entry := Id.run do
     for name in env.header.moduleData[i]!.constNames do
       let some (.thmInfo info) := env.find? name | continue
       let some prop := statementProp? info.type | continue
+      let consts := prop.getUsedConstants
       out := out.push
-        { name, module, consts := prop.getUsedConstants
-          readsImplementation := readsFamilyAt types prop }
+        { name, module, consts
+          readsImplementation := readsFamilyAt types prop || consts.any families.contains }
   return out.qsort fun a b =>
     a.module.toString < b.module.toString ||
       (a.module == b.module && a.name.toString < b.name.toString)

@@ -27,18 +27,21 @@ Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step`,
 work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
 
 Results.
-* No static result beyond the family definitions.
+* `Network.Swing.contDiff_modelField`: the translated field is `C¹` (from
+  `reducedField_contDiff`), the smoothness hypothesis of the generic laws.
 
 Family and connection conclusions.
 * `Network.Swing.eulerFamily : Family (Network.Swing.Euler n) Requirement (n + (n + 1)) 0`: every
   integration read as its Euler map; requirements and translation are those of its model, read
   through the design. `Network.Swing.euler`: the implementation layer, every integration realizing
   its model (`Implementation.ofDesign Euler.design`).
-* M–I (realization), for every number `n + 1` of machines. `euler_sound_small_step` (scaffold
-  `sound-small-step`): a locally exponentially stable model has a step `h₀ > 0` such that every
-  Euler integration with a step `h ≤ h₀` is locally exponentially stable.
-  `euler_certified_small_step` (scaffold `certified-small-step`): the same for the design of an
-  integration certified for local exponential stability. `not_euler_realizationSoundUnder`
+* M–I (realization), for every number `n + 1` of machines. The small-step laws are the generic
+  connection laws applied to the family, with its autonomy `Network.Swing.family_isAutonomous` and
+  the public smoothness lemma `Network.Swing.contDiff_modelField`:
+  `Numerics.euler_sound_small_step` (scaffold `sound-small-step`: a locally exponentially stable
+  model has a step `h₀ > 0` such that every Euler integration with a step `h ≤ h₀` is locally
+  exponentially stable) and `Numerics.euler_certified_small_step` (scaffold
+  `certified-small-step`). `not_euler_realizationSoundUnder`
   (scaffold `not-sound-large-step`): without a step constraint the realization is not sound — the
   locally exponentially stable network with unit inertia, damping and coupling, no injection and
   `θ* = 0` has Euler integrations with every multiplier outside the unit disk.
@@ -70,38 +73,10 @@ def euler : Implementation (Model n) Requirement (Euler n) Requirement (n + (n +
     1)) 0 :=
   Numerics.euler family Model.field Euler.design Euler.h
 
-/-- The translated field is `C¹`. -/
-private theorem contDiff_modelField (m : (Model n)) : ContDiff ℝ 1 (Model.field m) :=
+/-- The translated field of a swing-network model is `C¹`: the smoothness hypothesis of the generic
+Euler laws (`Numerics.euler_sound_small_step`). -/
+@[powerlib_foundation] theorem contDiff_modelField (m : Model n) : ContDiff ℝ 1 (Model.field m) :=
   (reducedField_contDiff m.params).comp (contDiff_id.add contDiff_const)
-
-/-- **Small steps realize local exponential stability of the swing-network models.** A locally
-exponentially stable swing-network model has a step `h₀ > 0` such that its explicit Euler
-integration with every step `h ∈ (0, h₀]` is locally exponentially stable. -/
-@[powerlib_domain] theorem euler_sound_small_step :
-    connection% (∀ m : (Model n), m ∈ family.den (.flow .locallyExponentiallyStable) →
-      ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-        (⟨m, h, hh⟩ : (Euler n)) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step (design := Euler.design)
-    (step := Euler.h) family_isAutonomous contDiff_modelField hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its swing-network model is locally exponentially stable), every Euler
-integration of its swing-network model with a step below a threshold is locally exponentially
-stable. -/
-@[powerlib_domain] theorem euler_certified_small_step :
-    connection% (∀ y : (Euler n),
-      y ∈ TMIO.certify euler.realizes (euler.model.den (.flow .locallyExponentiallyStable)) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : (Euler n)) ∈
-            eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step family_isAutonomous
-    contDiff_modelField hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the swing-network models is not sound.** A
 locally exponentially stable network (unit inertia and damping, no injection, unit coupling between

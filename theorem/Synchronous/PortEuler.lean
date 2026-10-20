@@ -46,16 +46,20 @@ Source: `theorem/Numerics/EulerPorts.lean` (`eulerPorts_sound_small_step_local`,
 `theory/T-ph.md` §2.5.
 
 Results.
-* No static result beyond the family definitions.
+* `ClassicalSM.contDiffAt_zeroInput`: the centred zero-input field of the classical machine is
+  `C¹` near the origin, the smoothness hypothesis of the generic laws.
 
 Family and connection conclusions.
 * For `N` = `ClassicalSM`, `SyncMachine7`, `SMIB11`, `SMIB11Rel`: `N.eulerFamily` (every
   discretization read as the Euler discretization of its model's port system, with the
   requirements and translation of its model read through the design) and `N.euler` (every
   discretization realizing its model, `Implementation.ofDesign`).
-* M–I, classical machine: `ClassicalSM.euler_sound_small_step` (scaffold `sound-small-step`): a
-  locally exponentially stable model has a step `h₀ > 0` below which its discretizations are
-  locally exponentially stable; `ClassicalSM.not_euler_realizationSoundUnder` (scaffold
+* M–I, classical machine. The small-step law is the generic connection law applied to the
+  family, with its port structure `ClassicalSM.family_isNonlinearPH.isPort` and the public
+  smoothness lemma `ClassicalSM.contDiffAt_zeroInput`: `Numerics.eulerPorts_sound_small_step_local`
+  (scaffold `sound-small-step`: a locally exponentially stable model has a step `h₀ > 0` below
+  which its discretizations are locally exponentially stable).
+  `ClassicalSM.not_euler_realizationSoundUnder` (scaffold
   `not-sound-large-step`): without a step constraint the realization is not sound
   (`M = D = b = 1`, `P_m = 0`, `δ* = 0`).
 * M–I, passivity, for each `N`: `N.euler_not_mem_den_passive`: no discretization is passive,
@@ -92,8 +96,11 @@ def euler : Implementation Model Requirement Euler Requirement 2 1 2 1 :=
 private theorem family_isPort : family.IsPort fun m => m.toPH.system :=
   family_isNonlinearPH.isPort
 
-/-- The centred zero-input field is `C¹` near the origin. -/
-private theorem contDiffAt_zeroInput (m : Model) : ContDiffAt ℝ 1 m.toPH.system.zeroInput 0 :=
+/-- The centred zero-input field of a classical machine is `C¹` near the origin: the smoothness
+hypothesis of the generic Euler laws for port systems
+(`Numerics.eulerPorts_sound_small_step_local`). -/
+@[powerlib_foundation] theorem contDiffAt_zeroInput (m : Model) :
+    ContDiffAt ℝ 1 m.toPH.system.zeroInput 0 :=
   Numerics.contDiffAt_shift (g := (classicalSM m.p).zeroInputField) (x₀ := m.point)
     ((classicalSM m.p).contDiff_zeroInputField (fun _ _ => contDiff_const)
       (fun _ _ => contDiff_const) (classicalSM_contDiff_dH m.p)).contDiffAt
@@ -114,19 +121,6 @@ private theorem output_unit_ne_zero (m : Model) : ![1 / m.p.M] ≠ 0 := by
   intro h
   have := congrFun h 0
   simp [m.p.M_pos.ne'] at this
-
-/-- **Small steps realize local exponential stability of the classical machine.** A locally
-exponentially stable model has a step `h₀ > 0` such that its explicit Euler discretization with
-every step `h ∈ (0, h₀]` is locally exponentially stable. -/
-@[powerlib_domain] theorem euler_sound_small_step :
-    connection% (∀ m : Model, m ∈ family.den (.flow .locallyExponentiallyStable) →
-      ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-        (⟨m, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.eulerPorts_sound_small_step_local (design := Euler.design)
-    (step := Euler.h) family_isPort (contDiffAt_zeroInput m) hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the classical machine is not sound.**
 The damped machine `M = D = b = 1`, `P_m = 0` at `δ* = 0` is locally exponentially stable, and its

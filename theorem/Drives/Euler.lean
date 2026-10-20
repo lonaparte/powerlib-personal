@@ -25,7 +25,8 @@ Model boundary.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step`,
 `euler_certified_small_step`, `not_euler_realizationSoundUnder_of_large_step`),
-`theorem/Drives/InductionMachine.lean` (`fluxField_smooth`, `mem_den_attractive_iff`); work-sync
+`theorem/Drives/InductionMachine.lean` (`family_isAutonomous`, `field_contDiff`,
+`mem_den_attractive_iff`); work-sync
 `theory/T-numerical-integration.md` §1.2, §2.7.
 
 Results.
@@ -36,11 +37,13 @@ Family and connection conclusions.
   every integration read as its Euler map; requirements and translation are those of its drive,
   read through the design. `InductionMachine.euler`: the implementation layer, every integration
   realizing its drive (`Implementation.ofDesign Euler.design`).
-* M–I (realization). `euler_sound_small_step` (scaffold `sound-small-step`): a locally
-  exponentially stable drive has a step `h₀ > 0` such that every Euler integration with a step
-  `h ≤ h₀` is locally exponentially stable. `euler_certified_small_step` (scaffold
-  `certified-small-step`): the same for the design of an integration certified for local
-  exponential stability. `not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
+* M–I (realization). The small-step laws are the generic connection laws applied to the family,
+  with its autonomy `InductionMachine.family_isAutonomous` and the public smoothness lemma
+  `InductionMachine.field_contDiff`: `Numerics.euler_sound_small_step` (scaffold
+  `sound-small-step`: a locally exponentially stable drive has a step `h₀ > 0` such that every
+  Euler integration with a step `h ≤ h₀` is locally exponentially stable) and
+  `Numerics.euler_certified_small_step` (scaffold `certified-small-step`).
+  `not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
   without a step constraint the realization is not sound — the unit-rotor drive (`r_r = L_r = 1`,
   locally exponentially stable by `mem_den_attractive_iff`) has Euler integrations with every
   multiplier outside the unit disk.
@@ -67,33 +70,6 @@ def eulerFamily : Family Euler Requirement 2 0 :=
 /-- The Euler realization: every integration realizes its drive. -/
 def euler : Implementation Drive Requirement Euler Requirement 2 0 2 0 :=
   Numerics.euler family Drive.field Euler.design Euler.h
-
-/-- **Small steps realize local exponential stability of the drives.** A locally exponentially
-stable drive has a step `h₀ > 0` such that its explicit Euler integration with every step
-`h ∈ (0, h₀]` is locally exponentially stable. -/
-@[powerlib_domain] theorem euler_sound_small_step :
-    connection% (∀ m : Drive, m ∈ family.den (.flow .locallyExponentiallyStable) →
-      ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-        (⟨m, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step (design := Euler.design)
-    (step := Euler.h) family_isAutonomous field_contDiff hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its drive is locally exponentially stable), every Euler integration of its
-drive with a step below a threshold is locally exponentially stable. -/
-@[powerlib_domain] theorem euler_certified_small_step :
-    connection% (∀ y : Euler,
-      y ∈ TMIO.certify euler.realizes (euler.model.den (.flow .locallyExponentiallyStable)) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step family_isAutonomous
-    field_contDiff hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the drives is not sound.** A locally
 exponentially stable drive (`unitRotor`, `r_r = L_r = 1`) integrated with a large enough step is not

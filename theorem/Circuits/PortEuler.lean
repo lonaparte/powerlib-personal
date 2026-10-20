@@ -42,11 +42,14 @@ Family and connection conclusions.
   Euler discretization of its circuit's port system, with the requirements and translation of its
   circuit read through the design) and `N.euler` (every discretization realizing its circuit,
   `Implementation.ofDesign`).
-* M–I (realization), for each family and every attractive sentence or sampled contraction `P`:
-  `N.euler_exact_small_step` (scaffold `sound-small-step`, with completeness): every circuit has
-  a step `h₀ > 0` below which its discretizations satisfy `P` exactly when the circuit does;
-  `N.euler_realizationCompleteUnder`: at every step a discretization satisfying `P` realizes only
-  circuits satisfying it, within every requirement context; `N.not_euler_realizationSoundUnder`
+* M–I (realization), for each family and every attractive sentence or sampled contraction `P`.
+  The small-step and completeness laws are the generic connection laws for linear families
+  applied to the family's linearity `N.family_isLinear`:
+  `Numerics.eulerPorts_exact_small_step_linear` (scaffold `sound-small-step`, with completeness:
+  every circuit has a step `h₀ > 0` below which its discretizations satisfy `P` exactly when the
+  circuit does) and `Numerics.eulerPorts_realizationCompleteUnder_linear` (with `Euler.pos`: at
+  every step a discretization satisfying `P` realizes only circuits satisfying it, within every
+  requirement context). `N.not_euler_realizationSoundUnder`
   (scaffold `not-sound-large-step`): without a step constraint the realization is not sound (RL:
   `R = L = 1`; LCL: all parameters `1`, passive and damped, hence pole stable).
 * Passivity: `N.euler_not_mem_den_passive`: no discretization is passive, whatever its step (the
@@ -81,28 +84,6 @@ def euler : Implementation Impedance Requirement Euler Requirement 1 1 1 1 :=
 
 /-- The branch with `R = L = 1`. -/
 private def unitBranch : Impedance := ⟨1, ⟨1, one_pos⟩⟩
-
-/-- **Small steps realize the attractive sentences of the RL branch exactly.** Every branch has a
-step `h₀ > 0` such that its Euler discretizations with a step `h ≤ h₀` satisfy an attractive
-sentence (or sampled contraction) exactly when the branch does. -/
-@[powerlib_domain] theorem euler_exact_small_step {P : Flow.Property}
-    (hP : P.Attractive ∨ P = .contractive) :
-    connection% (∀ m : Impedance, ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-      ((⟨m, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow P) ↔ m ∈ family.den (.flow P))) := by
-  unfold powerlib.TMIO.Statement
-  intro m
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.eulerPorts_exact_small_step_linear (design := Euler.design)
-    (step := Euler.h) family_isLinear hP m
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **The Euler realization of the RL branch is complete at every step.** A discretization
-satisfying an attractive sentence (or sampled contraction) realizes only branches satisfying it,
-within every requirement context. -/
-@[powerlib_domain] theorem euler_realizationCompleteUnder {P : Flow.Property}
-    (hP : P.Attractive ∨ P = .contractive) (Δ : Set Requirement) :
-    connection% (euler.RealizationCompleteUnder Δ (.flow P)) := by
-  unfold powerlib.TMIO.Statement
-  exact Numerics.eulerPorts_realizationCompleteUnder_linear family_isLinear Euler.pos hP Δ
 
 /-- **Without a step constraint the Euler realization of the RL branch is not sound.** The branch
 `R = L = 1` (`ẋ = −x`) satisfies every attractive sentence, and its discretizations with a large
@@ -168,28 +149,6 @@ def euler : Implementation Circuit Requirement Euler Requirement 3 2 3 2 :=
 private def unitCircuit : Circuit := ⟨⟨1, ⟨1, one_pos⟩⟩, ⟨1, ⟨1, one_pos⟩⟩, ⟨1, one_pos⟩⟩
 
 private theorem unitCircuit_passive : unitCircuit.Passive := ⟨zero_le_one, zero_le_one⟩
-
-/-- **Small steps realize the attractive sentences of the LCL filter exactly.** Every circuit has
-a step `h₀ > 0` such that its Euler discretizations with a step `h ≤ h₀` satisfy an attractive
-sentence (or sampled contraction) exactly when the circuit does. -/
-@[powerlib_domain] theorem euler_exact_small_step {P : Flow.Property}
-    (hP : P.Attractive ∨ P = .contractive) :
-    connection% (∀ m : Circuit, ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-      ((⟨m, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow P) ↔ m ∈ family.den (.flow P))) := by
-  unfold powerlib.TMIO.Statement
-  intro m
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.eulerPorts_exact_small_step_linear (design := Euler.design)
-    (step := Euler.h) family_isLinear hP m
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **The Euler realization of the LCL filter is complete at every step.** A discretization
-satisfying an attractive sentence (or sampled contraction) realizes only circuits satisfying it,
-within every requirement context. -/
-@[powerlib_domain] theorem euler_realizationCompleteUnder {P : Flow.Property}
-    (hP : P.Attractive ∨ P = .contractive) (Δ : Set Requirement) :
-    connection% (euler.RealizationCompleteUnder Δ (.flow P)) := by
-  unfold powerlib.TMIO.Statement
-  exact Numerics.eulerPorts_realizationCompleteUnder_linear family_isLinear Euler.pos hP Δ
 
 /-- **Without a step constraint the Euler realization of the LCL filter is not sound.** The
 circuit with all parameters `1` is passive and damped, hence pole stable, and its discretizations

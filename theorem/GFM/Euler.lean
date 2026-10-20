@@ -42,7 +42,11 @@ forms, `contDiffAt_shift`) and the family modules (autonomy, `C¹` fields, membe
 exponential stability); work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
 
 Results.
-* No static result beyond the family definitions.
+* The smoothness hypotheses of the generic laws, one per family: `PSC.contDiff_modelField`,
+  `VSMLPF.contDiff_modelField`, `VSMLPF.rig_contDiff_field`, `DroopLPF.contDiff_modelField` (the
+  translated fields are `C¹`; `AHO.contDiff_realField` of `theorem/GFM/VOC.lean` for the
+  oscillator), `DroopVSM.vsm_contDiffAt_field`, `DroopVSM.droop_contDiffAt_field` (the translated
+  fields are `C¹` near the origin when the power map is `C¹` near the selected angle).
 
 Family and connection conclusions.
 * For each family `F` above (`F = PSC, VSMLPF, DroopLPF, AHO`): `F.eulerFamily` (for the platform
@@ -51,23 +55,26 @@ Family and connection conclusions.
   translation of its model read through the design; `F.euler` (`VSMLPF.rigEuler`,
   `DroopVSM.vsmEuler`, `DroopVSM.droopEuler`), every integration realizing its model
   (`Implementation.ofDesign`).
-* M–I (realization), for each family: `F.euler_sound_small_step` (scaffold `sound-small-step`): a
-  locally exponentially stable model has a step `h₀ > 0` such that every Euler integration with a
-  step `h ≤ h₀` is locally exponentially stable. `F.euler_certified_small_step` (scaffold
-  `certified-small-step`): the same for the design of an integration certified for local
-  exponential stability. `F.not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
+* M–I (realization), for each family. The small-step laws are the generic connection laws applied
+  to the family, with its autonomy (`F.family_isAutonomous`, for the platform
+  `VSMLPF.rigFamily_isAutonomous`) and its public smoothness lemma above:
+  `Numerics.euler_sound_small_step` (scaffold `sound-small-step`: a locally exponentially stable
+  model has a step `h₀ > 0` such that every Euler integration with a step `h ≤ h₀` is locally
+  exponentially stable) and `Numerics.euler_certified_small_step` (scaffold
+  `certified-small-step`). `F.not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
   without a step constraint the realization is not sound — a locally exponentially stable member
   (`PSC.locallyExponentiallyStable`, `VSMLPF.mem_den_locallyExponentiallyStable`,
   `DroopLPF.locallyExponentiallyStable`, `AHO.mem_den_locallyExponentiallyStable`, for the
   platform `VSMLPF.rig_chain_le_semantics` at `M = D = ω_c = K₀ = 1`, `τ = 1/2`, `H = 1/2`) has
   Euler integrations with every multiplier outside the unit disk. The platform's statements carry
   the prefix `rig_`.
-* M–I for the DroopVSM families, with a power map `C¹` near the selected angle (hypothesis of the
-  statement): `DroopVSM.vsm_euler_sound_small_step`, `DroopVSM.vsm_euler_certified_small_step`,
-  `DroopVSM.vsm_not_euler_realizationSoundUnder` (witness `vsm_mem_den_locallyExponentiallyStable`
-  with `P(θ) = θ`, `M = D = 1`, `P_ref = ω_s = 0` at the origin), and
-  `DroopVSM.droop_euler_sound_small_step`, `DroopVSM.droop_euler_certified_small_step`,
-  `DroopVSM.droop_not_euler_realizationSoundUnder` (witness
+* M–I for the DroopVSM families, with a power map `C¹` near the selected angle: the small-step
+  laws are the local generic laws `Numerics.euler_sound_small_step_local` and
+  `Numerics.euler_certified_small_step_local` applied with `DroopVSM.vsmFamily_isAutonomous`,
+  `DroopVSM.droopFamily_isAutonomous` and the smoothness lemmas `DroopVSM.vsm_contDiffAt_field`,
+  `DroopVSM.droop_contDiffAt_field`; `DroopVSM.vsm_not_euler_realizationSoundUnder` (witness
+  `vsm_mem_den_locallyExponentiallyStable` with `P(θ) = θ`, `M = D = 1`, `P_ref = ω_s = 0` at the
+  origin) and `DroopVSM.droop_not_euler_realizationSoundUnder` (witness
   `infiniteBus_locallyExponentiallyStable` with `P = sin`, `K_R = τ_p = 1`, `P_ref = ω_s = 0` at the
   origin).
 -/
@@ -94,36 +101,10 @@ def eulerFamily : Family Euler Requirement 1 0 :=
 def euler : Implementation Model Requirement Euler Requirement 1 0 1 0 :=
   Numerics.euler family Model.field Euler.design Euler.h
 
-/-- The translated field is `C¹`. -/
-private theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
+/-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
+(`Numerics.euler_sound_small_step`). -/
+@[powerlib_foundation] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
   (NormalForm.lift_contDiff m.c.rhs_contDiff).comp (contDiff_id.add contDiff_const)
-
-/-- **Small steps realize local exponential stability of the PSC models.** A locally exponentially
-stable PSC model has a step `h₀ > 0` such that its explicit Euler integration with every step
-`h ∈ (0, h₀]` is locally exponentially stable. -/
-@[powerlib_domain] theorem euler_sound_small_step :
-    connection% (∀ m : Model, m ∈ family.den (.flow .locallyExponentiallyStable) →
-      ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-        (⟨m, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step (design := Euler.design)
-    (step := Euler.h) family_isAutonomous contDiff_modelField hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its PSC model is locally exponentially stable), every Euler integration of
-its PSC model with a step below a threshold is locally exponentially stable. -/
-@[powerlib_domain] theorem euler_certified_small_step :
-    connection% (∀ y : Euler,
-      y ∈ TMIO.certify euler.realizes (euler.model.den (.flow .locallyExponentiallyStable)) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step family_isAutonomous
-    contDiff_modelField hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the PSC models is not sound.** A locally
 exponentially stable PSC model (`K_p = P_max = 1`, `P* = 0` at `δ* = 0`) integrated with a large
@@ -161,37 +142,10 @@ def eulerFamily : Family Euler Requirement 3 0 :=
 def euler : Implementation Model Requirement Euler Requirement 3 0 3 0 :=
   Numerics.euler family Model.field Euler.design Euler.h
 
-/-- The translated field is `C¹`. -/
-private theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
+/-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
+(`Numerics.euler_sound_small_step`). -/
+@[powerlib_foundation] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
   m.g.contDiff_field.comp (contDiff_id.add contDiff_const)
-
-/-- **Small steps realize local exponential stability of the VSM + power-filter models.** A locally
-exponentially stable VSM + power-filter model has a step `h₀ > 0` such that its explicit Euler
-integration with every step `h ∈ (0, h₀]` is locally exponentially stable. -/
-@[powerlib_domain] theorem euler_sound_small_step :
-    connection% (∀ m : Model, m ∈ family.den (.flow .locallyExponentiallyStable) →
-      ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-        (⟨m, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step (design := Euler.design)
-    (step := Euler.h) family_isAutonomous contDiff_modelField hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its VSM + power-filter model is locally exponentially stable), every Euler
-integration of its VSM + power-filter model with a step below a threshold is locally exponentially
-stable. -/
-@[powerlib_domain] theorem euler_certified_small_step :
-    connection% (∀ y : Euler,
-      y ∈ TMIO.certify euler.realizes (euler.model.den (.flow .locallyExponentiallyStable)) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step family_isAutonomous
-    contDiff_modelField hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the VSM + power-filter models is not
 sound.** A locally exponentially stable model (`M = D = ω_c = K₀ = 1`, `P₀ = 0` at `δ* = 0`:
@@ -227,37 +181,10 @@ def rigEulerFamily : Family RigEuler RigRequirement 4 0 :=
 def rigEuler : Implementation Rig RigRequirement RigEuler RigRequirement 4 0 4 0 :=
   Numerics.euler rigFamily Rig.field RigEuler.design RigEuler.h
 
-/-- The translated platform field is `C¹`. -/
-private theorem rig_contDiff_field (m : Rig) : ContDiff ℝ 1 (Rig.field m) :=
+/-- The translated platform field is `C¹`: the smoothness hypothesis of the generic Euler laws
+(`Numerics.euler_sound_small_step`). -/
+@[powerlib_foundation] theorem rig_contDiff_field (m : Rig) : ContDiff ℝ 1 (Rig.field m) :=
   (contDiff_rigField m).comp (contDiff_id.add contDiff_const)
-
-/-- **Small steps realize local exponential stability of the platform models.** A locally
-exponentially stable platform model has a step `h₀ > 0` such that its explicit Euler integration
-with every step `h ∈ (0, h₀]` is locally exponentially stable. -/
-@[powerlib_domain] theorem rig_euler_sound_small_step :
-    connection% (∀ m : Rig, m ∈ rigFamily.den (.flow .locallyExponentiallyStable) →
-      ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-        (⟨m, h, hh⟩ : RigEuler) ∈ rigEulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step (design := RigEuler.design)
-    (step := RigEuler.h) rigFamily_isAutonomous rig_contDiff_field hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its platform model is locally exponentially stable), every Euler integration
-of its platform model with a step below a threshold is locally exponentially stable. -/
-@[powerlib_domain] theorem rig_euler_certified_small_step :
-    connection% (∀ y : RigEuler,
-      y ∈ TMIO.certify rigEuler.realizes (rigEuler.model.den (.flow .locallyExponentiallyStable)) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : RigEuler) ∈
-            rigEulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step rigFamily_isAutonomous
-    rig_contDiff_field hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the platform models is not sound.** A
 locally exponentially stable platform (design `M = D = ω_c = K₀ = 1`, `P₀ = δ* = 0`, delay
@@ -302,37 +229,10 @@ def eulerFamily : Family Euler Requirement 2 0 :=
 def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
   Numerics.euler family Model.field Euler.design Euler.h
 
-/-- The translated field is `C¹`. -/
-private theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
+/-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
+(`Numerics.euler_sound_small_step`). -/
+@[powerlib_foundation] theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.field m) :=
   m.q.contDiff_field.comp (contDiff_id.add contDiff_const)
-
-/-- **Small steps realize local exponential stability of the droop + LPF models.** A locally
-exponentially stable droop + LPF model has a step `h₀ > 0` such that its explicit Euler integration
-with every step `h ∈ (0, h₀]` is locally exponentially stable. -/
-@[powerlib_domain] theorem euler_sound_small_step :
-    connection% (∀ m : Model, m ∈ family.den (.flow .locallyExponentiallyStable) →
-      ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-        (⟨m, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step (design := Euler.design)
-    (step := Euler.h) family_isAutonomous contDiff_modelField hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its droop + LPF model is locally exponentially stable), every Euler
-integration of its droop + LPF model with a step below a threshold is locally exponentially
-stable. -/
-@[powerlib_domain] theorem euler_certified_small_step :
-    connection% (∀ y : Euler,
-      y ∈ TMIO.certify euler.realizes (euler.model.den (.flow .locallyExponentiallyStable)) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step family_isAutonomous
-    contDiff_modelField hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the droop + LPF models is not sound.** A
 locally exponentially stable model (`D = ω_c = K₀ = 1`, `P₀ = 0` at its loading angle) integrated
@@ -369,34 +269,6 @@ def eulerFamily : Family Euler Requirement 2 0 :=
 /-- The Euler realization: every integration realizes its virtual-oscillator model. -/
 def euler : Implementation AHO Requirement Euler Requirement 2 0 2 0 :=
   Numerics.euler family AHO.realField Euler.design Euler.h
-
-/-- **Small steps realize local exponential stability of the virtual-oscillator models.** A locally
-exponentially stable virtual-oscillator model has a step `h₀ > 0` such that its explicit Euler
-integration with every step `h ∈ (0, h₀]` is locally exponentially stable. -/
-@[powerlib_domain] theorem euler_sound_small_step :
-    connection% (∀ m : AHO, m ∈ family.den (.flow .locallyExponentiallyStable) →
-      ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-        (⟨m, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step (design := Euler.design)
-    (step := Euler.h) family_isAutonomous AHO.contDiff_realField hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its virtual-oscillator model is locally exponentially stable), every Euler
-integration of its virtual-oscillator model with a step below a threshold is locally exponentially
-stable. -/
-@[powerlib_domain] theorem euler_certified_small_step :
-    connection% (∀ y : Euler,
-      y ∈ TMIO.certify euler.realizes (euler.model.den (.flow .locallyExponentiallyStable)) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step family_isAutonomous
-    AHO.contDiff_realField hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the virtual-oscillator models is not
 sound.** A locally exponentially stable oscillator (`ω_s = σ = κ_v = 1`, `v* = 0`:
@@ -437,8 +309,10 @@ def vsmEuler : Implementation VSMModel VSMRequirement VSMEuler VSMRequirement 2 
   Numerics.euler vsmFamily VSMModel.field VSMEuler.design VSMEuler.h
 
 /-- The translated VSM field is `C¹` near the origin when the power map is `C¹` near the selected
-angle. -/
-private theorem vsm_contDiffAt_field {m : VSMModel} (hs : ContDiffAt ℝ 1 m.P (m.point 0)) :
+angle: the smoothness hypothesis of the local generic Euler laws
+(`Numerics.euler_sound_small_step_local`). -/
+@[powerlib_foundation] theorem vsm_contDiffAt_field {m : VSMModel}
+    (hs : ContDiffAt ℝ 1 m.P (m.point 0)) :
     ContDiffAt ℝ 1 m.field 0 := by
   refine Numerics.contDiffAt_shift (g := m.vector) (x₀ := m.point) ?_
   have hP : ContDiffAt ℝ 1 (fun x : State 2 => m.P (x 0)) m.point :=
@@ -450,37 +324,6 @@ private theorem vsm_contDiffAt_field {m : VSMModel} (hs : ContDiffAt ℝ 1 m.P (
   · simp only [VSMModel.vector, Fin.mk_one, Fin.isValue, PhasePlane.mk_apply_one]
     exact ((contDiffAt_const.sub hP).sub (contDiffAt_const.mul
       ((Dynamics.contDiff_coord 1).contDiffAt.sub contDiffAt_const))).div_const _
-
-/-- **Small steps realize local exponential stability of the VSM models.** A locally exponentially
-stable VSM model whose power map is `C¹` near the selected angle has a step `h₀ > 0` such that its
-explicit Euler integration with every step `h ∈ (0, h₀]` is locally exponentially stable. -/
-@[powerlib_domain] theorem vsm_euler_sound_small_step :
-    connection% (∀ m : VSMModel, ContDiffAt ℝ 1 m.P (m.point 0) →
-      m ∈ vsmFamily.den (.flow .locallyExponentiallyStable) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨m, h, hh⟩ : VSMEuler) ∈ vsmEulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hs hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step_local (design := VSMEuler.design)
-    (step := VSMEuler.h) vsmFamily_isAutonomous (vsm_contDiffAt_field hs) hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its VSM model is locally exponentially stable) whose power map is `C¹` near
-the selected angle, every Euler integration of its VSM model with a step below a threshold is
-locally exponentially stable. -/
-@[powerlib_domain] theorem vsm_euler_certified_small_step :
-    connection% (∀ y : VSMEuler, ContDiffAt ℝ 1 y.design.P (y.design.point 0) →
-      y ∈ TMIO.certify vsmEuler.realizes
-        (vsmEuler.model.den (.flow .locallyExponentiallyStable)) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : VSMEuler) ∈
-            vsmEulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hs hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step_local vsmFamily_isAutonomous
-    (vsm_contDiffAt_field hs) hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the VSM models is not sound.** A locally
 exponentially stable VSM model (`P(θ) = θ`, `M = D = 1`, `P_ref = ω_s = 0` at the origin)
@@ -516,8 +359,10 @@ def droopEuler : Implementation DroopModel VSMRequirement DroopEuler VSMRequirem
   Numerics.euler droopFamily DroopModel.field DroopEuler.design DroopEuler.h
 
 /-- The translated droop + LPF field is `C¹` near the origin when the power map is `C¹` near the
-selected angle. -/
-private theorem droop_contDiffAt_field {m : DroopModel} (hs : ContDiffAt ℝ 1 m.d.P (m.point 0)) :
+selected angle: the smoothness hypothesis of the local generic Euler laws
+(`Numerics.euler_sound_small_step_local`). -/
+@[powerlib_foundation] theorem droop_contDiffAt_field {m : DroopModel}
+    (hs : ContDiffAt ℝ 1 m.d.P (m.point 0)) :
     ContDiffAt ℝ 1 m.field 0 := by
   refine Numerics.contDiffAt_shift (g := m.d.droopField) (x₀ := m.point) ?_
   have hP : ContDiffAt ℝ 1 (fun x : State 2 => m.d.P (x 0)) m.point :=
@@ -530,39 +375,6 @@ private theorem droop_contDiffAt_field {m : DroopModel} (hs : ContDiffAt ℝ 1 m
       (((Dynamics.contDiff_coord 1).contDiffAt.sub contDiffAt_const).div_const _)
   · simp only [droopField, Fin.mk_one, Fin.isValue, PhasePlane.mk_apply_one]
     exact (hP.sub (Dynamics.contDiff_coord 1).contDiffAt).div_const _
-
-/-- **Small steps realize local exponential stability of the droop + LPF models.** A locally
-exponentially stable droop + LPF model whose power map is `C¹` near the selected angle has a step
-`h₀ > 0` such that its explicit Euler integration with every step `h ∈ (0, h₀]` is locally
-exponentially stable. -/
-@[powerlib_domain] theorem droop_euler_sound_small_step :
-    connection% (∀ m : DroopModel, ContDiffAt ℝ 1 m.d.P (m.point 0) →
-      m ∈ droopFamily.den (.flow .locallyExponentiallyStable) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨m, h, hh⟩ : DroopEuler) ∈
-            droopEulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hs hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step_local (design := DroopEuler.design)
-    (step := DroopEuler.h) droopFamily_isAutonomous (droop_contDiffAt_field hs) hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its droop + LPF model is locally exponentially stable) whose power map is
-`C¹` near the selected angle, every Euler integration of its model with a step below a threshold
-is locally exponentially stable. -/
-@[powerlib_domain] theorem droop_euler_certified_small_step :
-    connection% (∀ y : DroopEuler, ContDiffAt ℝ 1 y.design.d.P (y.design.point 0) →
-      y ∈ TMIO.certify droopEuler.realizes
-        (droopEuler.model.den (.flow .locallyExponentiallyStable)) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : DroopEuler) ∈
-            droopEulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hs hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step_local droopFamily_isAutonomous
-    (droop_contDiffAt_field hs) hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the droop + LPF models is not sound.** A
 locally exponentially stable model on an infinite bus (`P = sin`, `K_R = τ_p = 1`,

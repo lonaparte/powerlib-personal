@@ -23,13 +23,14 @@ module theorem.SwitchedAveraging where
 -- `Averaging.switching_sound_fast`, `not-sound-slow` is
 -- `Averaging.not_switching_realizationSoundUnder`, `commuting-exact` is
 -- `Averaging.switching_realizationExactUnder_commuting`, `dimension-one` is
--- `Averaging.switching_realizationExactUnder_of_le_one`. Nothing here is exported.
+-- `Averaging.switching_realizationExactUnder_of_le_one`, `sound-iff` (the dimension boundary) is
+-- `Averaging.switching_realizationSoundUnder_iff`. Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Sigma
 open import Cubical.Data.Unit
-open import Cubical.Data.Empty using (⊥)
-open import Cubical.Relation.Nullary using (¬_)
+open import Cubical.Data.Empty using (⊥) renaming (elim to ⊥-elim)
+open import Cubical.Relation.Nullary using (¬_; Dec; yes; no)
 
 open import theorem.FamilyReading
 open import theorem.Realization
@@ -45,6 +46,8 @@ module _ (S : Semantics) where
     (continuous : Mat → System) (discrete : Period → Mat → System)
     (Attractive : Sentence → Type)
     (exp : Period → Mat → Mat) (Commute : Mat → Mat → Type)
+    -- The dimension is at most one (decidable).
+    (Dim1 : Type) (dim1? : Dec Dim1)
     -- What Lean proves.
     (continuous-reading : (s : Sentence) → Attractive s → (A : Mat) →
       holds (continuous A) s ↔ Hurwitz A)
@@ -52,8 +55,9 @@ module _ (S : Semantics) where
       holds (discrete T Φ) s ↔ Schur Φ)
     (fast : (d : Duty) (A₁ A₂ : Mat) → Hurwitz (avg d A₁ A₂) →
       Σ[ T₀ ∈ Period ] ((T : Period) → T ≤ T₀ → Schur (periodMap d T A₁ A₂)))
-    (slow : Σ[ d ∈ Duty ] Σ[ T ∈ Period ] Σ[ A₁ ∈ Mat ] Σ[ A₂ ∈ Mat ]
+    (slow : ¬ Dim1 → Σ[ d ∈ Duty ] Σ[ T ∈ Period ] Σ[ A₁ ∈ Mat ] Σ[ A₂ ∈ Mat ]
       Hurwitz (avg d A₁ A₂) × (¬ Schur (periodMap d T A₁ A₂)))
+    (scalars-commute : Dim1 → (A₁ A₂ : Mat) → Commute A₁ A₂)
     (commute : (d : Duty) (T : Period) (A₁ A₂ : Mat) → Commute A₁ A₂ →
       periodMap d T A₁ A₂ ≡ exp T (avg d A₁ A₂))
     (sampling : (T : Period) (A : Mat) (s : Sentence) →
@@ -91,10 +95,10 @@ module _ (S : Semantics) where
       let (T₀ , hT) = fast d A₁ A₂ (fst (continuous-reading s a (avg d A₁ A₂)) h)
       in T₀ , λ T hT₀ → snd (discrete-reading s a T (periodMap d T A₁ A₂)) (hT T hT₀)
 
-    -- Without the constraint the realization is not sound.
-    not-sound-slow : (s : Sentence) → Attractive s → ¬ SoundUnder designed (λ _ → ⊥) s
-    not-sound-slow s a =
-      let (d , T , A₁ , A₂ , hH , hS) = slow
+    -- Without the constraint, in dimension two and above, the realization is not sound.
+    not-sound-slow : ¬ Dim1 → (s : Sentence) → Attractive s → ¬ SoundUnder designed (λ _ → ⊥) s
+    not-sound-slow nd s a =
+      let (d , T , A₁ , A₂ , hH , hS) = slow nd
       in not-sound-of-witness designed (d , T , A₁ , A₂) (λ _ ())
         (snd (certified↔ s (d , T , A₁ , A₂)) (snd (continuous-reading s a (avg d A₁ A₂)) hH))
         (λ h → hS (fst (discrete-reading s a T (periodMap d T A₁ A₂)) h))
@@ -117,3 +121,14 @@ module _ (S : Semantics) where
       ExactUnder' designed (λ _ → ⊥) s
     dimension-one all s (d , T , A₁ , A₂) _ =
       commuting-exact s (d , T , A₁ , A₂) (λ { commuting _ → all A₁ A₂ })
+
+    -- The dimension boundary: the realization is sound without constraint exactly in dimension
+    -- at most one.
+    sound-iff : (s : Sentence) → Attractive s → SoundUnder designed (λ _ → ⊥) s ↔ Dim1
+    sound-iff s a = forward dim1? , backward
+      where
+        forward : Dec Dim1 → SoundUnder designed (λ _ → ⊥) s → Dim1
+        forward (yes d) _ = d
+        forward (no nd) h = ⊥-elim (not-sound-slow nd s a h)
+        backward : Dim1 → SoundUnder designed (λ _ → ⊥) s
+        backward d y r c = fst (dimension-one (scalars-commute d) s y r) c

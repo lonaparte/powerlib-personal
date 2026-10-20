@@ -2,6 +2,7 @@ import theorem.Numerics.EulerRealization
 import theorem.Numerics.DiscreteGradient
 import theorem.Map.LinearReading
 import theorem.Linear.Family
+import theorem.TMIO.ClaimElab
 
 /-! # The explicit Euler implementation of a model with ports: a realization (foundation)
 
@@ -38,11 +39,15 @@ Scope.
 * Implementation layer (I): an arbitrary type `Y` of implementations with a design model
   `design y` and a step `step y`; the system is `eulerSystem (sys (design y)) (step y)` (discrete
   time, the input held over each step, exact arithmetic, fixed step).
-* The implementation type is a parameter, so the template states no connection of a model: the
-  instances publish their conclusions as connection statements in the `PortEuler.lean` modules of
-  `theorem/GFL/DCLink/` (the linearized cascade), `theorem/Circuits/` (RL branch, LCL filter),
-  `theorem/Synchronous/` (the classical, seven-state and 11-state single-machine pH systems) and
-  `theorem/PLL/` (SRF-PLL as a port-Hamiltonian system).
+* The realization and denotation laws are connection statements about arbitrary families of
+  `Type` (the definitions stay universe polymorphic); static facts (the Euler discretization, the
+  integrator, linear algebra) and the passivity of systems are foundation lemmas. The instances
+  apply the laws to their families (`IsPort`, `IsLinear`, the public smoothness lemma of the
+  zero-input field) and publish what carries their own content — witnesses against soundness,
+  passivity witnesses — in the `PortEuler.lean` modules of `theorem/GFL/DCLink/` (the linearized
+  cascade), `theorem/Circuits/` (RL branch, LCL filter), `theorem/Synchronous/` (the classical,
+  seven-state and 11-state single-machine pH systems) and `theorem/PLL/` (SRF-PLL as a
+  port-Hamiltonian system).
 
 Source: `theorem/Numerics/EulerRealization.lean` (`eulerMap`, `eulerFamily`, `euler`,
 `euler_sound_small_step_local`, `not_euler_realizationSoundUnder_of_large_step_local`,
@@ -77,22 +82,23 @@ Family and connection conclusions.
   the design model) and the realization `eulerPorts F sys design step`
   (`Implementation.ofDesign design`); `eulerPortFamily_den_flow` (its flow denotations are those
   of the autonomous Euler family of the zero-input family) and
-  `eulerPorts_realizationSoundUnder_flow_iff` (so are its flow realizations).
-* M–I laws for flow sentences (foundation), from the autonomous template:
+  `eulerPorts_realizationSoundUnder_flow_iff` (so are its flow realizations). These and the laws
+  below are connection statements over families of `Type`.
+* M–I laws for flow sentences, from the autonomous template:
   `eulerPorts_sound_small_step_local` (scaffold `sound-small-step`: a locally exponentially
   stable model whose zero-input field is `C¹` near the origin has a step `h₀ > 0` below which its
   Euler implementations are locally exponentially stable) and
   `not_eulerPorts_realizationSoundUnder_of_large_step_local` (scaffold `not-sound-large-step`,
   `n > 0`: without a step constraint the realization is not sound, given such a model with
   arbitrarily large steps).
-* M–I laws for passivity (foundation): `eulerPortFamily_not_mem_den_passive` (an Euler
+* M–I laws for passivity: `eulerPortFamily_not_mem_den_passive` (an Euler
   implementation with a positive step of a model whose output is independent of the input and
   nonzero at some state is not passive, whatever the step);
   `not_eulerPorts_realizationSoundUnder_passive` (so the passivity realization is not sound
   within any requirement context the passive design meets, at any step);
   `not_eulerPorts_realizationSoundUnder_passive_of_integrator` (the integrator, at any positive
   step, is a witness).
-* M–I laws for linear families (foundation): `eulerPortFamily_den_linear` (the attractive
+* M–I laws for linear families: `eulerPortFamily_den_linear` (the attractive
   sentences and sampled contraction of the Euler implementations denote those with a Schur stable
   `I + h A`); `eulerPorts_realizationCompleteUnder_linear` (completeness of these sentences at
   every positive step, within every context); `eulerPorts_exact_small_step_linear` (every model
@@ -107,13 +113,15 @@ namespace powerlib
 
 open Matrix LinearSystems TMIO
 
-variable {X Y Q : Type*} {n p : ℕ}
+variable {n p : ℕ}
 
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-! ## Families of port systems -/
 
 namespace Family
+
+variable {X Q : Type*}
 
 /-- Every complete system of the family is the continuous-time port system `sys x`. -/
 def IsPort (F : Family X Q n p) (sys : X → Port.System n p) : Prop :=
@@ -239,6 +247,10 @@ output `gᵀ ∇H(x)` does not, and the Euler discretization is not passive
 
 /-! ## The implementation family -/
 
+section Template
+
+variable {X Y Q : Type*}
+
 /-- The zero-input family of a family of port systems: every complete system read as the
 autonomous field of its port system with the ports at zero; requirements and translation are
 unchanged. -/
@@ -251,14 +263,6 @@ def zeroInputFamily (F : Family X Q n p) (sys : X → Port.System n p) : Family 
     (sys : X → Port.System n p) :
     (zeroInputFamily F sys).IsAutonomous fun x => (sys x).zeroInput :=
   fun _ => rfl
-
-/-- A family of port systems and its zero-input family have the same flow denotations. -/
-@[powerlib_foundation] theorem den_flow_zeroInputFamily {F : Family X Q n p}
-    {sys : X → Port.System n p} (hF : F.IsPort sys) (P : Flow.Property) :
-    (zeroInputFamily F sys).den (.flow P) = F.den (.flow P) := by
-  ext x
-  rw [(zeroInputFamily_isAutonomous F sys).mem_den_flow, Family.mem_den, hF x]
-  rfl
 
 /-- The explicit Euler implementation family of a family of port systems, over an
 implementation type `Y` whose members carry a design model `design y` and a step `step y`: every
@@ -277,13 +281,29 @@ def eulerPorts (F : Family X Q n p) (sys : X → Port.System n p) (design : Y �
   { model := F, impl := eulerPortFamily F sys design step,
     realizes := Implementation.ofDesign design }
 
+end Template
+
+/-! The laws are connection statements about arbitrary families of `Type`. -/
+
+variable {X Y Q : Type}
+
+/-- A family of port systems and its zero-input family have the same flow denotations. -/
+@[powerlib_domain] theorem den_flow_zeroInputFamily {F : Family X Q n p}
+    {sys : X → Port.System n p} (hF : F.IsPort sys) (P : Flow.Property) :
+    connection% ((zeroInputFamily F sys).den (.flow P) = F.den (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  ext x
+  rw [(zeroInputFamily_isAutonomous F sys).mem_den_flow, Family.mem_den, hF x]
+  rfl
+
 /-- The flow denotations of the Euler implementations of a family of port systems are those of
 the autonomous Euler implementations of its zero-input family. -/
-@[powerlib_foundation] theorem eulerPortFamily_den_flow (F : Family X Q n p)
+@[powerlib_domain] theorem eulerPortFamily_den_flow (F : Family X Q n p)
     (sys : X → Port.System n p) (design : Y → X) (step : Y → ℝ) (P : Flow.Property) :
-    (eulerPortFamily F sys design step).den (.flow P) =
+    connection% ((eulerPortFamily F sys design step).den (.flow P) =
       (eulerFamily (zeroInputFamily F sys) (fun x => (sys x).zeroInput) design step).den
-        (.flow P) := by
+        (.flow P)) := by
+  unfold powerlib.TMIO.Statement
   ext y
   rw [(eulerFamily_isAutonomousMap _ _ design step).mem_den_flow, Family.mem_den]
   rfl
@@ -292,12 +312,12 @@ variable {F : Family X Q n p} {sys : X → Port.System n p} {design : Y → X} {
 
 /-- The realization of a flow sentence by the Euler implementations of a family of port systems
 is sound exactly when it is for the autonomous Euler implementations of its zero-input family. -/
-@[powerlib_foundation] theorem eulerPorts_realizationSoundUnder_flow_iff (hF : F.IsPort sys)
+@[powerlib_domain] theorem eulerPorts_realizationSoundUnder_flow_iff (hF : F.IsPort sys)
     {Δ : Set Q} {P : Flow.Property} :
-    (eulerPorts F sys design step).RealizationSoundUnder Δ (.flow P) ↔
+    connection% ((eulerPorts F sys design step).RealizationSoundUnder Δ (.flow P) ↔
       (euler (zeroInputFamily F sys) (fun x => (sys x).zeroInput) design step).RealizationSoundUnder
-        Δ (.flow P) := by
-  unfold Implementation.RealizationSoundUnder
+        Δ (.flow P)) := by
+  unfold powerlib.TMIO.Statement Implementation.RealizationSoundUnder
   change certify _ (F.den _) ∩ _ ⊆ (eulerPortFamily F sys design step).den _ ↔
     certify _ ((zeroInputFamily F sys).den _) ∩ _ ⊆ _
   rw [den_flow_zeroInputFamily hF, eulerPortFamily_den_flow]
@@ -310,11 +330,12 @@ family of port systems, a locally exponentially stable model whose zero-input fi
 the origin has a step `h₀ > 0` such that every Euler implementation of it with a step in
 `(0, h₀]` is locally exponentially stable (`euler_sound_small_step_local` on the zero-input
 family). -/
-@[powerlib_foundation] theorem eulerPorts_sound_small_step_local (hF : F.IsPort sys) {x : X}
+@[powerlib_domain] theorem eulerPorts_sound_small_step_local (hF : F.IsPort sys) {x : X}
     (hC : ContDiffAt ℝ 1 (sys x).zeroInput 0)
     (hx : x ∈ F.den (.flow .locallyExponentiallyStable)) :
-    ∃ h₀ : ℝ, 0 < h₀ ∧ ∀ y : Y, design y = x → step y ∈ Set.Ioc (0 : ℝ) h₀ →
-      y ∈ (eulerPortFamily F sys design step).den (.flow .locallyExponentiallyStable) := by
+    connection% (∃ h₀ : ℝ, 0 < h₀ ∧ ∀ y : Y, design y = x → step y ∈ Set.Ioc (0 : ℝ) h₀ →
+      y ∈ (eulerPortFamily F sys design step).den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
   rw [eulerPortFamily_den_flow]
   rw [← den_flow_zeroInputFamily hF] at hx
   exact euler_sound_small_step_local (zeroInputFamily_isAutonomous F sys) hC hx
@@ -324,13 +345,16 @@ not sound, from a model `C¹` near its point** (`n > 0`). A locally exponentiall
 whose zero-input field is `C¹` near the origin and whose Euler implementations include
 arbitrarily large steps refutes realization soundness
 (`not_euler_realizationSoundUnder_of_large_step_local` on the zero-input family). -/
-@[powerlib_foundation] theorem not_eulerPorts_realizationSoundUnder_of_large_step_local
+@[powerlib_domain] theorem not_eulerPorts_realizationSoundUnder_of_large_step_local
     (hF : F.IsPort sys) (hn : 0 < n) {x : X} (hC : ContDiffAt ℝ 1 (sys x).zeroInput 0)
     (hx : x ∈ F.den (.flow .locallyExponentiallyStable))
     (hY : ∀ h₁ : ℝ, ∃ y : Y, design y = x ∧ h₁ ≤ step y) :
-    ¬ (eulerPorts F sys design step).RealizationSoundUnder ∅
-      (.flow .locallyExponentiallyStable) := by
-  rw [eulerPorts_realizationSoundUnder_flow_iff hF]
+    connection% (¬ (eulerPorts F sys design step).RealizationSoundUnder ∅
+      (.flow .locallyExponentiallyStable)) := by
+  have h := eulerPorts_realizationSoundUnder_flow_iff (design := design) (step := step)
+    (Δ := ∅) (P := .locallyExponentiallyStable) hF
+  unfold powerlib.TMIO.Statement at h ⊢
+  rw [h]
   rw [← den_flow_zeroInputFamily hF] at hx
   exact not_euler_realizationSoundUnder_of_large_step_local (zeroInputFamily_isAutonomous F sys)
     hn hC hx hY
@@ -340,9 +364,10 @@ arbitrarily large steps refutes realization soundness
 /-- **Explicit Euler implementations are not passive, at any step.** An Euler implementation with
 a positive step of a model whose output, at some state, is a nonzero `v` whatever the input, is
 not passive (`not_passive_eulerSystem`). -/
-@[powerlib_foundation] theorem eulerPortFamily_not_mem_den_passive {y : Y} (hh : 0 < step y)
+@[powerlib_domain] theorem eulerPortFamily_not_mem_den_passive {y : Y} (hh : 0 < step y)
     {x₀ : ℝⁿ} {v : Fin p → ℝ} (hv : ∀ u, (sys (design y)).output x₀ u = v) (hv0 : v ≠ 0) :
-    y ∉ (eulerPortFamily F sys design step).den .passive := by
+    connection% (y ∉ (eulerPortFamily F sys design step).den .passive) := by
+  unfold powerlib.TMIO.Statement
   rw [Family.mem_den]
   exact not_passive_eulerSystem _ hh hv hv0
 
@@ -350,10 +375,11 @@ not passive (`not_passive_eulerSystem`). -/
 implementation with a positive step of a passive design whose output, at some state, is a
 nonzero `v` whatever the input refutes realization soundness of passivity within every
 requirement context the design meets. -/
-@[powerlib_foundation] theorem not_eulerPorts_realizationSoundUnder_passive {Δ : Set Q} {y : Y}
+@[powerlib_domain] theorem not_eulerPorts_realizationSoundUnder_passive {Δ : Set Q} {y : Y}
     (hd : design y ∈ F.den .passive) (hΔ : design y ∈ realize F.meets Δ) (hh : 0 < step y)
     {x₀ : ℝⁿ} {v : Fin p → ℝ} (hv : ∀ u, (sys (design y)).output x₀ u = v) (hv0 : v ≠ 0) :
-    ¬ (eulerPorts F sys design step).RealizationSoundUnder Δ .passive := by
+    connection% (¬ (eulerPorts F sys design step).RealizationSoundUnder Δ .passive) := by
+  unfold powerlib.TMIO.Statement
   refine Implementation.not_realizationSoundUnder_of_design (I := eulerPorts F sys design step)
     rfl hd ?_ (eulerPortFamily_not_mem_den_passive hh hv hv0)
   change y ∈ realize (fun y q => F.meets (design y) q) Δ
@@ -363,10 +389,11 @@ requirement context the design meets. -/
 /-- **The integrator is a witness.** In a family of one-state, one-port systems, an
 implementation with a positive step whose design is the integrator `ẋ = u`, `y = x` (passive)
 refutes realization soundness of passivity (`not_passive_eulerSystem_integrator`). -/
-@[powerlib_foundation] theorem not_eulerPorts_realizationSoundUnder_passive_of_integrator
+@[powerlib_domain] theorem not_eulerPorts_realizationSoundUnder_passive_of_integrator
     {F : Family X Q 1 1} {sys : X → Port.System 1 1} (hF : F.IsPort sys) (y : Y)
     (hx : sys (design y) = integrator.system) (hy : 0 < step y) :
-    ¬ (eulerPorts F sys design step).RealizationSoundUnder ∅ .passive := by
+    connection% (¬ (eulerPorts F sys design step).RealizationSoundUnder ∅ .passive) := by
+  unfold powerlib.TMIO.Statement
   refine Implementation.not_realizationSoundUnder_of_design (I := eulerPorts F sys design step)
     (y := y) rfl ?_ ?_ ?_
   · change design y ∈ F.den .passive
@@ -414,10 +441,11 @@ variable {plant : X → Linear.Plant n p}
 /-- **The linear reading of the Euler implementations.** For plants, the attractive sentences and
 sampled contraction of the Euler implementations denote those with a Schur stable forward Euler
 matrix `I + h A`. -/
-@[powerlib_foundation] theorem eulerPortFamily_den_linear {P : Flow.Property}
+@[powerlib_domain] theorem eulerPortFamily_den_linear {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
-    (eulerPortFamily F (fun x => (plant x).system) design step).den (.flow P) =
-      {y | LTI.SchurStable (forwardEulerMatrix (step y) (plant (design y)).A)} := by
+    connection% ((eulerPortFamily F (fun x => (plant x).system) design step).den (.flow P) =
+      {y | LTI.SchurStable (forwardEulerMatrix (step y) (plant (design y)).A)}) := by
+  unfold powerlib.TMIO.Statement
   ext y
   rw [Family.mem_den, Set.mem_ofPred_eq]
   change P.holdsMap (step y) (eulerSystem (plant (design y)).system (step y)).zeroInput 0 ↔ _
@@ -427,11 +455,12 @@ matrix `I + h A`. -/
 /-- **Completeness at every step, for linear families.** Every Euler implementation with a
 positive step that satisfies an attractive sentence (or sampled contraction) realizes only models
 satisfying it: its multipliers `1 + hλ` lie in the unit disk, which forces `Re λ < 0`. -/
-@[powerlib_foundation] theorem eulerPorts_realizationCompleteUnder_linear
+@[powerlib_domain] theorem eulerPorts_realizationCompleteUnder_linear
     (hF : F.IsLinear plant) (hstep : ∀ y, 0 < step y) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) (Δ : Set Q) :
-    (eulerPorts F (fun x => (plant x).system) design step).RealizationCompleteUnder Δ
-      (.flow P) := by
+    connection% ((eulerPorts F (fun x => (plant x).system) design step).RealizationCompleteUnder
+      Δ (.flow P)) := by
+  unfold powerlib.TMIO.Statement
   rintro y ⟨hy, -⟩
   rw [Implementation.certify_realizes_of_design
     (I := eulerPorts F (fun x => (plant x).system) design step) rfl]
@@ -445,11 +474,12 @@ satisfying it: its multipliers `1 + hλ` lie in the unit disk, which forces `Re 
 its Euler implementations with a step in `(0, h₀]` satisfy an attractive sentence (or sampled
 contraction) exactly when it does: soundness below the step threshold of a Hurwitz model
 (`exists_forwardEuler_schurStable`), completeness at every positive step. -/
-@[powerlib_foundation] theorem eulerPorts_exact_small_step_linear (hF : F.IsLinear plant)
+@[powerlib_domain] theorem eulerPorts_exact_small_step_linear (hF : F.IsLinear plant)
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) (x : X) :
-    ∃ h₀ : ℝ, 0 < h₀ ∧ ∀ y : Y, design y = x → step y ∈ Set.Ioc (0 : ℝ) h₀ →
+    connection% (∃ h₀ : ℝ, 0 < h₀ ∧ ∀ y : Y, design y = x → step y ∈ Set.Ioc (0 : ℝ) h₀ →
       (y ∈ (eulerPortFamily F (fun x => (plant x).system) design step).den (.flow P) ↔
-        x ∈ F.den (.flow P)) := by
+        x ∈ F.den (.flow P))) := by
+  unfold powerlib.TMIO.Statement
   rw [hF.den_hurwitz hP, eulerPortFamily_den_linear hP]
   by_cases hA : IsHurwitz (plant x).A
   · obtain ⟨h₀, hh₀, hS⟩ := exists_forwardEuler_schurStable hA
@@ -465,12 +495,13 @@ sound** (`n > 0`). A Hurwitz model whose Euler implementations include arbitrari
 refutes realization soundness of every attractive sentence and of sampled contraction: above a
 step threshold every multiplier `1 + hλ` lies outside the closed unit disk
 (`exists_forwardEuler_inverse_schurStable`) and the implementation is unstable. -/
-@[powerlib_foundation] theorem not_eulerPorts_realizationSoundUnder_of_large_step_linear
+@[powerlib_domain] theorem not_eulerPorts_realizationSoundUnder_of_large_step_linear
     (hF : F.IsLinear plant) (hn : 0 < n) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) {x : X} (hx : IsHurwitz (plant x).A)
     (hY : ∀ h₁ : ℝ, ∃ y : Y, design y = x ∧ h₁ ≤ step y) :
-    ¬ (eulerPorts F (fun x => (plant x).system) design step).RealizationSoundUnder ∅
-      (.flow P) := by
+    connection% (¬ (eulerPorts F (fun x => (plant x).system) design step).RealizationSoundUnder ∅
+      (.flow P)) := by
+  unfold powerlib.TMIO.Statement
   obtain ⟨h₁, -, hB⟩ := exists_forwardEuler_inverse_schurStable hx
   obtain ⟨y, rfl, hy⟩ := hY h₁
   obtain ⟨B, hB, hS⟩ := hB _ hy

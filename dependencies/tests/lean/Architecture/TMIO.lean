@@ -179,6 +179,16 @@ def hiddenHolds (m : Circuits.RL.Impedance) : Prop :=
   simp only [ite_self]
   exact offConnection
 
+-- The side conditions of the grammar are comparisons of numbers, on the characterizing side of an
+-- iff only: a static fact on that side, or a numeric conjunct, is not a connection conclusion.
+@[powerlib_foundation] theorem staticIff :
+    Circuits.RL.family.chain = Circuits.RL.family.semantics ↔ IsHurwitz !![(-1 : ℝ)] :=
+  iff_of_true Circuits.RL.chain_eq_semantics offConnection
+
+@[powerlib_foundation] theorem numericConjunct :
+    Circuits.RL.family.chain = Circuits.RL.family.semantics ∧ (1 : ℕ) ≤ 2 :=
+  ⟨Circuits.RL.chain_eq_semantics, by norm_num⟩
+
 @[powerlib_domain] theorem onConnection :
     connection% (Circuits.RL.family.chain = Circuits.RL.family.semantics) :=
   Circuits.RL.chain_eq_semantics
@@ -201,10 +211,11 @@ run_cmd do
     for name in #[`PlacementFixture.offConnection, `PlacementFixture.phantomFamily,
         `PlacementFixture.irrelevantHypothesis, ``PlacementFixture.directHolds,
         ``PlacementFixture.transitiveHolds, `PlacementFixture.unrelatedConjunct,
-        `PlacementFixture.conditionPadding] do
+        `PlacementFixture.conditionPadding, `PlacementFixture.staticIff,
+        `PlacementFixture.numericConjunct] do
       if (← powerlib.Architecture.rejection ctx (← getConstInfo name).type).isNone then
         throwError "The architecture audit accepted its negative control: {name}"
     if let some reason ← powerlib.Architecture.rejection ctx
         (← getConstInfo `PlacementFixture.onConnection).type then
       throwError "The architecture audit rejected its positive control: {reason}"
-    logInfo m!"POWERLIB_PLACEMENT_OK: {placed} first-party domain theorems; 7 negative controls"
+    logInfo m!"POWERLIB_PLACEMENT_OK: {placed} first-party domain theorems; 9 negative controls"

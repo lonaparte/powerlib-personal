@@ -1,5 +1,6 @@
 import theorem.Spectral.Local
 import theorem.Dynamics.Transport
+import theorem.TMIO.ClaimElab
 
 /-! # Hub families: a spoke family read through a hub family (foundation)
 
@@ -21,6 +22,8 @@ Scope.
   `theorem/Spectral/Local.lean`.
 * Readings and requirement correspondences are hypotheses on a context of the spoke, so a reading
   that needs nonzero gains (an invertible coordinate change) is used only where they hold.
+* Families of `Type` (model and requirement types in `Type`): the transfer laws are connection
+  statements about arbitrary families, and a connection statement binds types of `Type`.
 
 Source: Agda scaffold `theorem/FamilyReading.agda`, the generic pattern (a spoke read through a hub:
 univalence turns the readings into a path from the spoke's semantics to the hub's pulled back
@@ -31,15 +34,15 @@ a context); each reading has its own scaffold named after its two families (`Dro
 the hub's language.
 
 Results.
-* `realize_subset_den_of_hub` (a requirement obligation `realize A ⊆ den s` of the spoke from the
-  hub's), `sound_of_hub`, `exactUnder_of_hub`, `exact_of_hub` (exactness passes from the hub to
-  the spoke), `mem_den_iff_of_flow` (a reading of the flow sentences of autonomous families is a
-  reading of every sentence), `mem_den_flow_iff_of_transport` (an affine conjugacy of fields is a
-  reading of the flow sentences).
+* `mem_den_flow_iff_of_transport` (an affine conjugacy of fields is a reading of the flow
+  sentences; its hypotheses read the sentences on fields, so it stays a foundation lemma).
 
 Family and connection conclusions.
-* None: the module states the transfer once for arbitrary families; model modules instantiate it
-  and publish their conclusions as connection statements.
+* Transfer laws, connection statements about arbitrary families of `Type` (stated once; model
+  modules instantiate them): `realize_subset_den_of_hub` (a requirement obligation
+  `realize A ⊆ den s` of the spoke from the hub's), `sound_of_hub`, `exactUnder_of_hub`,
+  `exact_of_hub` (exactness passes from the hub to the spoke), `mem_den_iff_of_flow` (a reading
+  of the flow sentences of autonomous families is a reading of every sentence).
 -/
 
 noncomputable section
@@ -48,35 +51,38 @@ namespace powerlib.Spectral
 
 open TMIO Set
 
-variable {X Y Q R : Type*} {n m p r : ℕ} {F : Family X Q n p} {G : Family Y R m r}
+variable {X Y Q R : Type} {n m p r : ℕ} {F : Family X Q n p} {G : Family Y R m r}
 
 /-! ## Transfer along a map of models -/
 
 /-- A requirement obligation of the spoke from one of the hub: the models of `A` map into the
 models of `B`, which satisfy `s` in the hub, and a model satisfies `s` when its image does. -/
-@[powerlib_foundation] theorem realize_subset_den_of_hub (g : X → Y) {A : Set Q} {B : Set R}
+@[powerlib_domain] theorem realize_subset_den_of_hub (g : X → Y) {A : Set Q} {B : Set R}
     {s : Sentence} (hreq : ∀ x ∈ realize F.meets A, g x ∈ realize G.meets B)
     (hden : ∀ x ∈ realize F.meets A, g x ∈ G.den s → x ∈ F.den s)
-    (hG : realize G.meets B ⊆ G.den s) : realize F.meets A ⊆ F.den s :=
-  fun x hx => hden x hx (hG (hreq x hx))
+    (hG : realize G.meets B ⊆ G.den s) : connection% (realize F.meets A ⊆ F.den s) := by
+  unfold powerlib.TMIO.Statement
+  exact fun x hx => hden x hx (hG (hreq x hx))
 
 /-- Soundness passes from the hub to the spoke when the spoke's translated requirements give the
 hub's. -/
-@[powerlib_foundation] theorem sound_of_hub (g : X → Y) {s : Sentence}
+@[powerlib_domain] theorem sound_of_hub (g : X → Y) {s : Sentence}
     (hreq : ∀ x ∈ realize F.meets (F.translate s), g x ∈ realize G.meets (G.translate s))
     (hden : ∀ x ∈ realize F.meets (F.translate s), g x ∈ G.den s → x ∈ F.den s)
-    (hG : G.Sound s) : F.Sound s :=
-  realize_subset_den_of_hub g hreq hden hG
+    (hG : G.Sound s) : connection% (F.Sound s) := by
+  unfold powerlib.TMIO.Statement
+  exact realize_subset_den_of_hub g hreq hden hG
 
 /-- Exactness within a context passes from the hub to the spoke: the spoke's context maps into
 the hub's, and on it the map reads `s` and the translated requirements of the two families
 correspond. -/
-@[powerlib_foundation] theorem exactUnder_of_hub (g : X → Y) {ΔF : Set Q} {ΔG : Set R}
+@[powerlib_domain] theorem exactUnder_of_hub (g : X → Y) {ΔF : Set Q} {ΔG : Set R}
     {s : Sentence} (hΔ : ∀ x ∈ realize F.meets ΔF, g x ∈ realize G.meets ΔG)
     (hden : ∀ x ∈ realize F.meets ΔF, (x ∈ F.den s ↔ g x ∈ G.den s))
     (hreq : ∀ x ∈ realize F.meets ΔF,
       (x ∈ realize F.meets (F.translate s) ↔ g x ∈ realize G.meets (G.translate s)))
-    (hG : G.ExactUnder ΔG s) : F.ExactUnder ΔF s := by
+    (hG : G.ExactUnder ΔG s) : connection% (F.ExactUnder ΔF s) := by
+  unfold powerlib.TMIO.Statement
   rw [exactUnder_iff_forall] at hG ⊢
   intro x hx
   rw [hreq x hx, hden x hx]
@@ -84,23 +90,25 @@ correspond. -/
 
 /-- Exactness of the hub within a context passes to exactness of the spoke when every spoke model
 maps into that context. -/
-@[powerlib_foundation] theorem exact_of_hub (g : X → Y) {ΔG : Set R} {s : Sentence}
+@[powerlib_domain] theorem exact_of_hub (g : X → Y) {ΔG : Set R} {s : Sentence}
     (hΔ : ∀ x, g x ∈ realize G.meets ΔG) (hden : ∀ x, (x ∈ F.den s ↔ g x ∈ G.den s))
     (hreq : ∀ x, (x ∈ realize F.meets (F.translate s) ↔ g x ∈ realize G.meets (G.translate s)))
-    (hG : G.ExactUnder ΔG s) : F.Exact s :=
-  exact_of_exactUnder_empty
+    (hG : G.ExactUnder ΔG s) : connection% (F.Exact s) := by
+  unfold powerlib.TMIO.Statement
+  exact exact_of_exactUnder_empty
     (exactUnder_of_hub g (fun x _ => hΔ x) (fun x _ => hden x) (fun x _ => hreq x) hG)
 
 /-! ## Readings -/
 
 /-- For autonomous families a reading of the flow sentences reads every sentence: neither family
 has a port, so both are passive. -/
-@[powerlib_foundation] theorem mem_den_iff_of_flow {F : Family X Q n 0} {G : Family Y R m 0}
+@[powerlib_domain] theorem mem_den_iff_of_flow {F : Family X Q n 0} {G : Family Y R m 0}
     {f : X → EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)}
     {φ : Y → EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin m)} (hF : F.IsAutonomous f)
     (hG : G.IsAutonomous φ) {g : X → Y} {x : X}
     (h : ∀ P : Flow.Property, x ∈ F.den (.flow P) ↔ g x ∈ G.den (.flow P)) (s : Sentence) :
-    x ∈ F.den s ↔ g x ∈ G.den s := by
+    connection% (x ∈ F.den s ↔ g x ∈ G.den s) := by
+  unfold powerlib.TMIO.Statement
   rcases s with P | _
   · exact h P
   · rw [hF.den_passive, hG.den_passive]

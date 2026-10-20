@@ -46,12 +46,14 @@ Family and connection conclusions.
   its Euler map; requirements and translation are those of its platform, read through the design
   (`meets y = LimitedPI.Meets y.design`). `LimitedPI.euler`: the implementation layer, every
   integration realizing its platform (`Implementation.ofDesign Euler.design`).
-* M–I (realization). `LimitedPI.euler_sound_small_step` (scaffold `sound-small-step`): a locally
-  exponentially stable platform with headroom (with `L > 0`: `R + Kp > 0`, `Ki > 0`,
-  `LimitedPI.mem_den_iff`) has a step `h₀ > 0` such that every Euler integration with a step
-  `h ≤ h₀` is locally exponentially stable. `LimitedPI.euler_certified_small_step` (scaffold
-  `certified-small-step`): the same for the platform of an integration certified for local
-  exponential stability, with headroom. `LimitedPI.not_euler_realizationSoundUnder` (scaffold
+* M–I (realization). The small-step laws are the generic connection laws applied to the family,
+  with its autonomy `LimitedPI.family_isAutonomous` and the public smoothness lemma
+  `LimitedPI.contDiffAt_field` (the field is `C¹` near the operating point with headroom):
+  `Numerics.euler_sound_small_step_local` (scaffold `sound-small-step`: a locally exponentially
+  stable platform with headroom — with `L > 0`: `R + Kp > 0`, `Ki > 0`, `LimitedPI.mem_den_iff`
+  — has a step `h₀ > 0` such that every Euler integration with a step `h ≤ h₀` is locally
+  exponentially stable) and `Numerics.euler_certified_small_step_local` (scaffold
+  `certified-small-step`). `LimitedPI.not_euler_realizationSoundUnder` (scaffold
   `not-sound-large-step`): without a step constraint the realization is not sound — the unloaded
   platform `LimitedPI.unloaded` (nominal design `L = R = Kp = Ki = 1`, `i* = 0`, `V_dc = 1`) is
   locally exponentially stable with headroom and has Euler integrations with every multiplier
@@ -80,35 +82,6 @@ def eulerFamily : Family Euler LimitRequirement 2 0 :=
 /-- The Euler realization: every integration realizes its platform. -/
 def euler : Implementation LimitedPI LimitRequirement Euler LimitRequirement 2 0 2 0 :=
   Numerics.euler family field Euler.design Euler.h
-
-/-- **Small steps realize local exponential stability of the platforms with headroom.** A locally
-exponentially stable platform with headroom has a step `h₀ > 0` such that its explicit Euler
-integration with every step `h ∈ (0, h₀]` is locally exponentially stable. -/
-@[powerlib_domain] theorem euler_sound_small_step :
-    connection% (∀ m : LimitedPI, family.meets m .headroom →
-      m ∈ family.den (.flow .locallyExponentiallyStable) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨m, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hr hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step_local (design := Euler.design)
-    (step := Euler.h) family_isAutonomous (m.contDiffAt_field hr) hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its platform is locally exponentially stable) whose platform has headroom,
-every Euler integration of its platform with a step below a threshold is locally exponentially
-stable. -/
-@[powerlib_domain] theorem euler_certified_small_step :
-    connection% (∀ y : Euler, family.meets y.design .headroom →
-      y ∈ TMIO.certify euler.realizes (euler.model.den (.flow .locallyExponentiallyStable)) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hr hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step_local family_isAutonomous
-    (y.design.contDiffAt_field hr) hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the platforms is not sound.** The
 unloaded platform (nominal design `L = R = Kp = Ki = 1`, `i* = 0`, `V_dc = 1`: headroom

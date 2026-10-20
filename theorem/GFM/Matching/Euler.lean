@@ -51,34 +51,40 @@ forms, `contDiffAt_shift`), `theorem/GFM/Matching/StiffGrid.lean` (`field_contDi
 `theory/T-numerical-integration.md` §1.2, §2.7.
 
 Results.
-* No static result beyond the family definitions.
+* The smoothness hypotheses of the generic laws: `MatchingStiffGrid.contDiff_modelField`,
+  `MatchingClosedLoop.full_contDiff_field` (the translated fields are `C¹`),
+  `Matching.matching_contDiffAt_field`, `Matching.swing_contDiffAt_field` (the translated fields
+  are `C¹` near the origin when the load law, resp. the power law, is `C¹` near the selected
+  point).
 
 Family and connection conclusions.
 * `MatchingStiffGrid.eulerFamily : Family MatchingStiffGrid.Euler Requirement 4 0`: every
   integration read as its Euler map; requirements and translation are those of its model, read
   through the design. `MatchingStiffGrid.euler`: the implementation layer, every integration
   realizing its model (`Implementation.ofDesign Euler.design`).
-* M–I (realization) on the stiff grid. `MatchingStiffGrid.euler_sound_small_step` (scaffold
-  `sound-small-step`): a locally exponentially stable model has a step `h₀ > 0` such that every
-  Euler integration with a step `h ≤ h₀` is locally exponentially stable.
-  `MatchingStiffGrid.euler_certified_small_step` (scaffold `certified-small-step`): the same for
-  the design of an integration certified for local exponential stability.
+* M–I (realization) on the stiff grid. The small-step laws are the generic connection laws
+  applied to the family, with its autonomy `MatchingStiffGrid.family_isAutonomous` and the public
+  smoothness lemma `MatchingStiffGrid.contDiff_modelField`: `Numerics.euler_sound_small_step`
+  (scaffold `sound-small-step`: a locally exponentially stable model has a step `h₀ > 0` such
+  that every Euler integration with a step `h ≤ h₀` is locally exponentially stable) and
+  `Numerics.euler_certified_small_step` (scaffold `certified-small-step`).
   `MatchingStiffGrid.not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
   without a step constraint the realization is not sound — the locally exponentially stable model
   with unit parameters and `K_p = 0` (`margin = 7/8`) has Euler integrations with every multiplier
   outside the unit disk.
 * The same laws for `Matching.matchingFamily` (`Matching.matchingEulerFamily`,
-  `Matching.matchingEuler`; `matching_euler_sound_small_step`,
-  `matching_euler_certified_small_step`, with a load law `C¹` near `(θ*, v*)`;
+  `Matching.matchingEuler`; the local generic laws `Numerics.euler_sound_small_step_local`,
+  `Numerics.euler_certified_small_step_local` applied with `Spectral.localFamily_isAutonomous`
+  and `matching_contDiffAt_field`, for a load law `C¹` near `(θ*, v*)`;
   `matching_not_euler_realizationSoundUnder`, witness `C = G = η = 1`, `i_dc = 0`,
   `i_x(θ, v) = sin θ` at the origin, through `matching_den_eq`) and `Matching.swingFamily`
-  (`Matching.swingEulerFamily`, `Matching.swingEuler`; `swing_euler_sound_small_step`,
-  `swing_euler_certified_small_step`, with a power law `C¹` near `(θ*, ω*)`;
+  (`Matching.swingEulerFamily`, `Matching.swingEuler`; the local generic laws with
+  `swing_contDiffAt_field`, for a power law `C¹` near `(θ*, ω*)`;
   `swing_not_euler_realizationSoundUnder`, witness `M = D = 1`, `τ = 0`, `P_e = sin θ` at the
   origin).
 * `MatchingClosedLoop.fullFamily`: `MatchingClosedLoop.fullEulerFamily`,
-  `MatchingClosedLoop.fullEuler`; `full_euler_sound_small_step`, `full_euler_certified_small_step`
-  (both vacuous: no model is locally exponentially stable) and
+  `MatchingClosedLoop.fullEuler`; the generic small-step laws, applied with
+  `full_contDiff_field`, hold vacuously (no model is locally exponentially stable), and
   `full_euler_realizationSoundUnder`: the realization is sound without a step constraint
   (`RealizationSoundUnder ∅`), vacuously, so the family has no step threshold to state.
 -/
@@ -106,37 +112,11 @@ def eulerFamily : Family Euler Requirement 4 0 :=
 def euler : Implementation Model Requirement Euler Requirement 4 0 4 0 :=
   Numerics.euler family Model.translated Euler.design Euler.h
 
-/-- The translated field is `C¹`. -/
-private theorem contDiff_modelField (m : Model) : ContDiff ℝ 1 (Model.translated m) :=
+/-- The translated field is `C¹`: the smoothness hypothesis of the generic Euler laws
+(`Numerics.euler_sound_small_step`). -/
+@[powerlib_foundation] theorem contDiff_modelField (m : Model) :
+    ContDiff ℝ 1 (Model.translated m) :=
   (field_contDiff m).comp (contDiff_id.add contDiff_const)
-
-/-- **Small steps realize local exponential stability of the stiff-grid matching models.** A locally
-exponentially stable stiff-grid matching model has a step `h₀ > 0` such that its explicit Euler
-integration with every step `h ∈ (0, h₀]` is locally exponentially stable. -/
-@[powerlib_domain] theorem euler_sound_small_step :
-    connection% (∀ m : Model, m ∈ family.den (.flow .locallyExponentiallyStable) →
-      ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-        (⟨m, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step (design := Euler.design)
-    (step := Euler.h) (fun _ => rfl : family.IsAutonomous Model.translated) contDiff_modelField hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its stiff-grid matching model is locally exponentially stable), every Euler
-integration of its stiff-grid matching model with a step below a threshold is locally exponentially
-stable. -/
-@[powerlib_domain] theorem euler_certified_small_step :
-    connection% (∀ y : Euler,
-      y ∈ TMIO.certify euler.realizes (euler.model.den (.flow .locallyExponentiallyStable)) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step (fun _ => rfl : family.IsAutonomous
-    Model.translated) contDiff_modelField hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the stiff-grid matching models is not
 sound.** A locally exponentially stable model (`C_dc = G_dc = η = μ = u*_dc = v₀ = R_s = L_s = 1`,
@@ -149,8 +129,7 @@ stable: every Euler multiplier `1 + hλ` leaves the unit disk
   have hm := mem_den_locallyExponentiallyStable ⟨1, 1, 0, 1, 1, 1, 1, 1, 1⟩ one_pos one_pos one_pos
     (by norm_num) one_ne_zero (by norm_num [Model.margin, Model.ω0, Model.N])
   unfold powerlib.TMIO.Statement at hm
-  exact Numerics.not_euler_realizationSoundUnder_of_large_step
-    (fun _ => rfl : family.IsAutonomous Model.translated)
+  exact Numerics.not_euler_realizationSoundUnder_of_large_step family_isAutonomous
     contDiff_modelField (by norm_num) hm
     fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
@@ -181,8 +160,9 @@ def matchingEuler :
   Numerics.euler matchingFamily MatchingModel.field MatchingEuler.design MatchingEuler.h
 
 /-- The translated matching field is `C¹` near the origin when the load law is `C¹` near the
-selected point. -/
-private theorem matching_contDiffAt_field {m : MatchingModel}
+selected point: the smoothness hypothesis of the local generic Euler laws
+(`Numerics.euler_sound_small_step_local`). -/
+@[powerlib_foundation] theorem matching_contDiffAt_field {m : MatchingModel}
     (hs : ContDiffAt ℝ 1 (Function.uncurry m.ix) (m.θ, m.v)) : ContDiffAt ℝ 1 m.field 0 := by
   refine Numerics.contDiffAt_shift (g := matchingField m.C m.G m.η m.idc m.ix) (x₀ := m.point) ?_
   have hpt : (m.point 0, m.point 1) = (m.θ, m.v) := by simp [MatchingModel.point]
@@ -199,43 +179,6 @@ private theorem matching_contDiffAt_field {m : MatchingModel}
       Matrix.cons_val_zero]
     exact ((contDiffAt_const.sub hx).sub
       (contDiffAt_const.mul (Dynamics.contDiff_coord 1).contDiffAt)).div_const _
-
-/-- **Small steps realize local exponential stability of the matching-control models.** A locally
-exponentially stable matching-control model whose load law is `C¹` near the selected point has a
-step `h₀ > 0` such that its explicit Euler integration with every step `h ∈ (0, h₀]` is locally
-exponentially stable. -/
-@[powerlib_domain] theorem matching_euler_sound_small_step :
-    connection% (∀ m : MatchingModel, ContDiffAt ℝ 1 (Function.uncurry m.ix) (m.θ, m.v) →
-      m ∈ matchingFamily.den (.flow .locallyExponentiallyStable) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨m, h, hh⟩ : MatchingEuler) ∈
-            matchingEulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hs hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step_local (design := MatchingEuler.design)
-    (step := MatchingEuler.h)
-    (Spectral.localFamily_isAutonomous _ _ _ : matchingFamily.IsAutonomous MatchingModel.field)
-    (matching_contDiffAt_field hs) hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its matching-control model is locally exponentially stable) whose load law
-is `C¹` near the selected point, every Euler integration of its model with a step below a threshold
-is locally exponentially stable. -/
-@[powerlib_domain] theorem matching_euler_certified_small_step :
-    connection% (∀ y : MatchingEuler,
-      ContDiffAt ℝ 1 (Function.uncurry y.design.ix) (y.design.θ, y.design.v) →
-      y ∈ TMIO.certify matchingEuler.realizes
-        (matchingEuler.model.den (.flow .locallyExponentiallyStable)) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : MatchingEuler) ∈
-            matchingEulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hs hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step_local
-    (Spectral.localFamily_isAutonomous _ _ _ : matchingFamily.IsAutonomous MatchingModel.field)
-    (matching_contDiffAt_field hs) hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the matching-control models is not
 sound.** The model `C = G = η = 1`, `i_dc = 0`, `i_x(θ, v) = sin θ` at the origin is locally
@@ -281,8 +224,9 @@ def swingEuler :
   Numerics.euler swingFamily SwingModel.field SwingEuler.design SwingEuler.h
 
 /-- The translated swing field is `C¹` near the origin when the power law is `C¹` near the
-selected point. -/
-private theorem swing_contDiffAt_field {m : SwingModel}
+selected point: the smoothness hypothesis of the local generic Euler laws
+(`Numerics.euler_sound_small_step_local`). -/
+@[powerlib_foundation] theorem swing_contDiffAt_field {m : SwingModel}
     (hs : ContDiffAt ℝ 1 (Function.uncurry m.Pe) (m.θ, m.ω)) : ContDiffAt ℝ 1 m.field 0 := by
   refine Numerics.contDiffAt_shift (g := swingField m.M m.D m.τ m.Pe) (x₀ := m.point) ?_
   have hpt : (m.point 0, m.point 1) = (m.θ, m.ω) := by simp [SwingModel.point]
@@ -299,43 +243,6 @@ private theorem swing_contDiffAt_field {m : SwingModel}
       Matrix.cons_val_zero]
     exact ((contDiffAt_const.sub hx).sub
       (contDiffAt_const.mul (Dynamics.contDiff_coord 1).contDiffAt)).div_const _
-
-/-- **Small steps realize local exponential stability of the swing models.** A locally
-exponentially stable swing model whose power law is `C¹` near the selected point has a step
-`h₀ > 0` such that its explicit Euler integration with every step `h ∈ (0, h₀]` is locally
-exponentially stable. -/
-@[powerlib_domain] theorem swing_euler_sound_small_step :
-    connection% (∀ m : SwingModel, ContDiffAt ℝ 1 (Function.uncurry m.Pe) (m.θ, m.ω) →
-      m ∈ swingFamily.den (.flow .locallyExponentiallyStable) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨m, h, hh⟩ : SwingEuler) ∈
-            swingEulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hs hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step_local (design := SwingEuler.design)
-    (step := SwingEuler.h)
-    (Spectral.localFamily_isAutonomous _ _ _ : swingFamily.IsAutonomous SwingModel.field)
-    (swing_contDiffAt_field hs) hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its swing model is locally exponentially stable) whose power law is `C¹`
-near the selected point, every Euler integration of its model with a step below a threshold is
-locally exponentially stable. -/
-@[powerlib_domain] theorem swing_euler_certified_small_step :
-    connection% (∀ y : SwingEuler,
-      ContDiffAt ℝ 1 (Function.uncurry y.design.Pe) (y.design.θ, y.design.ω) →
-      y ∈ TMIO.certify swingEuler.realizes
-        (swingEuler.model.den (.flow .locallyExponentiallyStable)) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : SwingEuler) ∈
-            swingEulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hs hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step_local
-    (Spectral.localFamily_isAutonomous _ _ _ : swingFamily.IsAutonomous SwingModel.field)
-    (swing_contDiffAt_field hs) hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the swing models is not sound.** The
 swing model `M = D = 1`, `τ = 0`, `P_e(θ, ω) = sin θ` at the origin is locally exponentially
@@ -379,41 +286,10 @@ def fullEuler :
     Implementation FullModel Spectral.Requirement FullEuler Spectral.Requirement 8 0 8 0 :=
   Numerics.euler fullFamily FullModel.field FullEuler.design FullEuler.h
 
-/-- The translated stationary-frame field is `C¹`. -/
-private theorem full_contDiff_field (M : FullModel) : ContDiff ℝ 1 M.field :=
+/-- The translated stationary-frame field is `C¹`: the smoothness hypothesis of the generic Euler
+laws (`Numerics.euler_sound_small_step`), which hold vacuously for this family. -/
+@[powerlib_foundation] theorem full_contDiff_field (M : FullModel) : ContDiff ℝ 1 M.field :=
   (abField_smooth M.p).comp (contDiff_id.add contDiff_const)
-
-/-- **Small steps realize local exponential stability of the stationary-frame models.** A locally
-exponentially stable stationary-frame model has a step `h₀ > 0` such that its explicit Euler
-integration with every step `h ∈ (0, h₀]` is locally exponentially stable. -/
-@[powerlib_domain] theorem full_euler_sound_small_step :
-    connection% (∀ M : FullModel, M ∈ fullFamily.den (.flow .locallyExponentiallyStable) →
-      ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-        (⟨M, h, hh⟩ : FullEuler) ∈ fullEulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro M hM
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step (design := FullEuler.design)
-    (step := FullEuler.h)
-    (Spectral.localFamily_isAutonomous _ _ _ : fullFamily.IsAutonomous FullModel.field)
-    full_contDiff_field hM
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨M, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its stationary-frame model is locally exponentially stable), every Euler
-integration of its model with a step below a threshold is locally exponentially stable. -/
-@[powerlib_domain] theorem full_euler_certified_small_step :
-    connection% (∀ y : FullEuler,
-      y ∈ TMIO.certify fullEuler.realizes
-        (fullEuler.model.den (.flow .locallyExponentiallyStable)) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : FullEuler) ∈
-            fullEulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step
-    (Spectral.localFamily_isAutonomous _ _ _ : fullFamily.IsAutonomous FullModel.field)
-    full_contDiff_field hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **The Euler realization of the stationary-frame models is sound without a step constraint,
 vacuously.** No stationary-frame model is locally exponentially stable

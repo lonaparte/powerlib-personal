@@ -58,6 +58,30 @@ def AllPassive : Prop := ∀ m : Circuits.RL.Impedance, 0 ≤ m.resistance → m
 
 private theorem packed : AllPassive := fun m h => raw m h
 
+-- The grammar extension. A claim about arbitrary families of `Type`: type parameters of the
+-- theorem, or binders over `Type` inside the claim (`allType`).
+theorem genericPassive {X Q : Type} (F : Family X Q 1 0) (x : X) (h : x ∈ F.den .passive) :
+    connection% (x ∈ F.den .passive) := by
+  unfold Statement
+  exact h
+
+theorem allTypeClaim : connection% (∀ (X Q : Type) (F : Family X Q 1 0) (x : X),
+    x ∈ F.den .passive → x ∈ F.den .passive) := by
+  unfold Statement
+  exact fun _ _ _ _ h => h
+
+-- A claim characterized by a numeric side condition (`iffCondition`), and an existential whose
+-- witness is guarded by one (`existsGuard`).
+theorem conditionIff :
+    connection% (Circuits.RL.family.chain = Circuits.RL.family.semantics ↔ (0 : ℕ) ≤ 1) := by
+  unfold Statement
+  exact iff_of_true Circuits.RL.chain_eq_semantics (by norm_num)
+
+theorem guardedExists (m : Circuits.RL.Impedance) (h : 0 ≤ m.resistance) :
+    connection% (∃ r : ℝ, 0 < r ∧ m ∈ Circuits.RL.family.den .passive) := by
+  unfold Statement
+  exact ⟨1, one_pos, passive m h⟩
+
 open Lean Elab Command in
 run_cmd do
   let env ← getEnv
@@ -68,14 +92,64 @@ run_cmd do
         ``rawHypothesis, ``hiddenInput, ``freshRaw, ``packed] do
       if (← Architecture.publicTypeRejection ctx models (← getConstInfo name).type).isNone then
         throwError "Public admission accepted its rejection fixture: {name}"
-    for name in #[``passive, ``misleading_label] do
+    for name in #[``passive, ``misleading_label, ``genericPassive, ``allTypeClaim,
+        ``conditionIff, ``guardedExists] do
       if let some reason ← Architecture.declarationRejection ctx models name then
         throwError "Public admission rejected its positive fixture: {name}: {reason}"
-  for name in #[``passive, ``misleading_label] do
+  for name in #[``passive, ``misleading_label, ``genericPassive, ``allTypeClaim, ``conditionIff,
+      ``guardedExists] do
     unless Registry.kindOf? env name == some .domain &&
         (Registry.theoremNames env (some .domain)).contains name &&
         !(Registry.theoremNames env (some .foundation)).contains name do
       throwError "Connection discovery trusted metadata instead of the proposition type"
   logInfo "POWERLIB_TYPED_ADMISSION_OK: unlabeled and mislabeled positive claims; 9 rejection controls"
+
+-- The grammar extension admits side conditions only as the characterizing side of an iff and as
+-- the guard of an existential, comparisons of numbers only, and binders over `Type` only as
+-- universal binders; behaviour in an operand or a binder is still rejected by the bypass audit.
+open Lean Elab Command Term in
+run_cmd liftTermElabM do
+  let ctx ← Architecture.context
+  let elabProp (stx : Term) : TermElabM Expr := do
+    let e ← elabTerm stx (some (mkSort .zero))
+    synthesizeSyntheticMVarsNoPostponing
+    instantiateMVars e
+  let controls : Array (String × Term) := #[
+    ("claim ↔ a static fact that is no comparison of numbers",
+      ← `(Circuits.RL.family.chain = Circuits.RL.family.semantics ↔
+          LinearSystems.IsHurwitz !![(-1 : ℝ)])),
+    ("a numeric conjunct", ← `(Circuits.RL.family.chain = Circuits.RL.family.semantics ∧
+          (1 : ℕ) ≤ 2)),
+    ("condition ↔ condition", ← `(((2 : ℕ) ≤ 1) ↔ ((2 : ℕ) ≤ 1))),
+    ("a comparison in Prop", ← `(Circuits.RL.family.chain = Circuits.RL.family.semantics ↔
+          ((True : Prop) ≤ ((1 : ℕ) ≤ 2)))),
+    ("behaviour inside a numeric operand", ← `(∀ m : Circuits.RL.Impedance,
+          Circuits.RL.family.chain = Circuits.RL.family.semantics ↔
+            (@ite ℕ m.plant.system.Passive (Classical.propDecidable _) 0 1) ≤ 0)),
+    ("a binder over Type without a claim", ← `(∀ X : Type, Nonempty (X → X))),
+    ("an existential over types",
+      ← `(∃ X : Type, Circuits.RL.family.chain = Circuits.RL.family.semantics)),
+    ("a binder over Type with a signal binder",
+      ← `(∀ (X : Type) (σ : ℝ → EuclideanSpace ℝ (Fin 1)),
+          Circuits.RL.family.chain = Circuits.RL.family.semantics)),
+    ("a condition mixed with a static fact",
+      ← `(Circuits.RL.family.chain = Circuits.RL.family.semantics ↔
+          ((1 : ℕ) ≤ 2 ∧ LinearSystems.IsHurwitz !![(-1 : ℝ)]))),
+    ("a binder over Type 1",
+      ← `(∀ X : Type 1, Circuits.RL.family.chain = Circuits.RL.family.semantics)),
+    ("condition ↔ claim", ← `(((2 : ℕ) ≤ 1) ↔
+          Circuits.RL.family.chain = Circuits.RL.family.semantics)),
+    ("an existential guarded by a static fact", ← `(∃ k : ℕ,
+          LinearSystems.IsHurwitz !![(-1 : ℝ)] ∧
+            Circuits.RL.family.chain = Circuits.RL.family.semantics)),
+    ("an existential with the condition after the claim", ← `(∃ k : ℕ,
+          Circuits.RL.family.chain = Circuits.RL.family.semantics ∧ k ≤ 2)),
+    ("an existential with a condition and no claim",
+      ← `(∃ k : ℕ, k ≤ 2 ∧ LinearSystems.IsHurwitz !![(-1 : ℝ)]))]
+  for (label, stx) in controls do
+    if (← Architecture.rejection ctx (← elabProp stx)).isNone then
+      throwError "Public admission accepted its grammar-extension control: {label}"
+  logInfo m!"POWERLIB_CLAIM_EXTENSION_OK: 4 positive claims (type parameters, binders over \
+    Type, a numeric iff, a guarded existential); {controls.size} rejection controls"
 
 end ConnectionAdmission

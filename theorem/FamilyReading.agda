@@ -20,9 +20,10 @@ module theorem.FamilyReading where
 -- soundness pass from the hub to the spoke (`exactUnder-pullback`, `exact-pullback`,
 -- `sound-pullback`). Readings compose (`compose`), so a spoke of a spoke reads through the hub.
 --
--- The Lean connection is `theorem/Spectral/Hub.lean` (`exactUnder_of_hub`, `exact_of_hub`,
--- `sound_of_hub`, `realize_subset_den_of_hub`; readings by conjugacy
--- `mem_den_flow_iff_of_transport`). Nothing here is exported.
+-- The Lean connection is `theorem/Spectral/Hub.lean`: the transfer laws are connection statements
+-- over arbitrary families (`exactUnder_of_hub`, `exact_of_hub`, `sound_of_hub`,
+-- `realize_subset_den_of_hub`, `mem_den_iff_of_flow`); readings by conjugacy go through the
+-- foundation lemma `mem_den_flow_iff_of_transport`. Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv

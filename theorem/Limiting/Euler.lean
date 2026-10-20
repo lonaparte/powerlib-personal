@@ -27,18 +27,21 @@ Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step`,
 work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
 
 Results.
-* No static result beyond the family definitions.
+* `Limiting.contDiff_modelField`: the translated field is `C¹` (from `satField_contDiff`), the
+  smoothness hypothesis of the generic laws.
 
 Family and connection conclusions.
 * `Limiting.eulerFamily : Family Limiting.Euler Spectral.Requirement 2 0`: every integration read
   as its Euler map; requirements and translation are those of its model, read through the design.
   `Limiting.euler`: the implementation layer, every integration realizing its model
   (`Implementation.ofDesign Euler.design`).
-* M–I (realization). `euler_sound_small_step` (scaffold `sound-small-step`): a locally
-  exponentially stable model has a step `h₀ > 0` such that every Euler integration with a step
-  `h ≤ h₀` is locally exponentially stable. `euler_certified_small_step` (scaffold
-  `certified-small-step`): the same for the design of an integration certified for local
-  exponential stability. `not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
+* M–I (realization). The small-step laws are the generic connection laws applied to the family,
+  with its autonomy (`Spectral.localFamily_isAutonomous`, the family is a local family) and the
+  public smoothness lemma `Limiting.contDiff_modelField`: `Numerics.euler_sound_small_step`
+  (scaffold `sound-small-step`: a locally exponentially stable model has a step `h₀ > 0` such
+  that every Euler integration with a step `h ≤ h₀` is locally exponentially stable) and
+  `Numerics.euler_certified_small_step` (scaffold `certified-small-step`).
+  `not_euler_realizationSoundUnder` (scaffold `not-sound-large-step`):
   without a step constraint the realization is not sound — the stable saturated equilibrium with
   `M = D = P_sat = 1`, `P_ref = φ = 0` has Euler integrations with every multiplier outside the
   unit disk.
@@ -67,37 +70,11 @@ def eulerFamily : Family Euler Spectral.Requirement 2 0 :=
 def euler : Implementation SatModel Spectral.Requirement Euler Spectral.Requirement 2 0 2 0 :=
   Numerics.euler family SatModel.field Euler.design Euler.h
 
-/-- The translated field is `C¹`. -/
-private theorem contDiff_modelField (m : SatModel) : ContDiff ℝ 1 (SatModel.field m) :=
+/-- The translated field of a saturated GFM model is `C¹`: the smoothness hypothesis of the
+generic Euler laws (`Numerics.euler_sound_small_step`). -/
+@[powerlib_foundation] theorem contDiff_modelField (m : SatModel) :
+    ContDiff ℝ 1 (SatModel.field m) :=
   (satField_contDiff _ _ _ _ _).comp (contDiff_id.add contDiff_const)
-
-/-- **Small steps realize local exponential stability of the saturated GFM models.** A locally
-exponentially stable saturated GFM model has a step `h₀ > 0` such that its explicit Euler
-integration with every step `h ∈ (0, h₀]` is locally exponentially stable. -/
-@[powerlib_domain] theorem euler_sound_small_step :
-    connection% (∀ m : SatModel, m ∈ family.den (.flow .locallyExponentiallyStable) →
-      ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-        (⟨m, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro m hm
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_sound_small_step (design := Euler.design)
-    (step := Euler.h) (Spectral.localFamily_isAutonomous _ _ _) contDiff_modelField hm
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨m, h, hh⟩ rfl ⟨hh, hle⟩⟩
-
-/-- **Certified integrations with a small step.** For an Euler integration certified for local
-exponential stability (its saturated GFM model is locally exponentially stable), every Euler
-integration of its saturated GFM model with a step below a threshold is locally exponentially
-stable. -/
-@[powerlib_domain] theorem euler_certified_small_step :
-    connection% (∀ y : Euler,
-      y ∈ TMIO.certify euler.realizes (euler.model.den (.flow .locallyExponentiallyStable)) →
-        ∃ h₀ : {h : ℝ // 0 < h}, ∀ (h : ℝ) (hh : 0 < h), h ≤ h₀.1 →
-          (⟨y.design, h, hh⟩ : Euler) ∈ eulerFamily.den (.flow .locallyExponentiallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  intro y hy
-  obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step (Spectral.localFamily_isAutonomous _
-    _ _) contDiff_modelField hy
-  exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
 /-- **Without a step constraint the Euler realization of the saturated GFM models is not sound.**
 The stable saturated equilibrium with `M = D = P_sat = 1`, `P_ref = φ = 0` integrated with a large
