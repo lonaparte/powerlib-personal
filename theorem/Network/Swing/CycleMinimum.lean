@@ -2,6 +2,8 @@ import theorem.Attributes
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import theorem.SpecialFunctions.AmplitudePhase
+import theorem.SpecialFunctions.Sinusoid
 
 /-! # Degenerate strict minima of a cycle potential
 
@@ -101,29 +103,16 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
     rw [amp_sq]; unfold edgeQ at hq; nlinarith
   exact abs_lt_of_sq_lt_sq h2 hB.le
 
+/-- `B cos a = |W|` (`SpecialFunctions.sqrt_mul_cos_arcsin`). -/
 @[powerlib_foundation] theorem cos_base_pos {W f : ℝ} (hW : W ≠ 0) :
-    amp W f * Real.cos (base W f) = |W| := by
-  have hB := amp_pos (f := f) hW
-  unfold base
-  rw [Real.cos_arcsin]
-  have : 1 - (f / amp W f) ^ 2 = W ^ 2 / amp W f ^ 2 := by
-    have h2 := amp_sq W f
-    rw [eq_div_iff (by positivity), sub_mul, div_pow, div_mul_cancel₀ _ (by positivity)]
-    linarith
-  rw [this, sqrt_div' _ (sq_nonneg _), sqrt_sq hB.le, sqrt_sq_eq_abs]
-  field_simp
+    amp W f * Real.cos (base W f) = |W| :=
+  SpecialFunctions.sqrt_mul_cos_arcsin W f
 
+/-- `B sin a = f` (`SpecialFunctions.mul_sin_arcsin_div`). -/
 @[powerlib_foundation] theorem sin_base {W f : ℝ} (hW : W ≠ 0) :
-    amp W f * Real.sin (base W f) = f := by
-  have hB := amp_pos (f := f) hW
-  have h1 : |f / amp W f| ≤ 1 := by
-    rw [abs_div, abs_of_pos hB, div_le_one hB]
-    have : f ^ 2 ≤ amp W f ^ 2 := by rw [amp_sq]; nlinarith
-    exact abs_le_of_sq_le_sq' this hB.le |>.2 |> fun h => by
-      rw [abs_le]; exact ⟨by nlinarith [abs_le_of_sq_le_sq' this hB.le], h⟩
-  unfold base
-  rw [Real.sin_arcsin (abs_le.mp h1).1 (abs_le.mp h1).2]
-  field_simp
+    amp W f * Real.sin (base W f) = f :=
+  SpecialFunctions.mul_sin_arcsin_div (abs_le_sqrt (le_add_of_nonneg_left (sq_nonneg W)))
+    (amp_pos hW)
 
 /-- `f + G'(x) = B sin(a + x)` on a line with positive weight. -/
 @[powerlib_foundation] theorem add_edgeD_pos {W f : ℝ} (hW : 0 < W) (x : ℝ) :

@@ -44,7 +44,10 @@ Family and connection conclusions.
   `{powerFlow, jacobianStable}` of `Swing.family` is exact; and
   `mem_den_locallyAsymptoticallyStable_iff_four_machines` — every four-machine model is locally
   asymptotically stable exactly when its profile is a power-balance point with a Hurwitz reduced
-  Jacobian (no restriction on the lines). With `exact_locallyAsymptoticallyStable_zero`, `_two`,
+  Jacobian (no restriction on the lines); both instantiate the Hurwitz-guard statements
+  `exact_locallyAsymptoticallyStable_of_guard` and
+  `mem_den_locallyAsymptoticallyStable_iff_of_guard` of `theorem/Network/Swing/Degenerate.lean`
+  with `not_localAsymptoticStable_four_machines`. With `exact_locallyAsymptoticallyStable_zero`, `_two`,
   `_three` and `not_exact_locallyAsymptoticallyStable` (five or more machines) the local
   asymptotic translation is decided for every number of machines: exact up to four machines, not
   exact from five.
@@ -1131,12 +1134,8 @@ theorem exists_sorted_lift (θ : Fin 4 → ℝ) : ∃ (σ : Equiv.Perm (Fin 4)) 
 
 private theorem mem_den_flow_iff_dense {m : Model n} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
-
-private theorem mem_den_of_localAsymptoticStable_dense {p : Params 3} {θ : Fin (3 + 1) → ℝ}
-    (h : LocalAsymptoticStable (reducedField p) (equilibrium θ)) :
-    (⟨p, θ⟩ : Model 3) ∈ family.den (.flow .locallyAsymptoticallyStable) :=
-  mem_den_flow_iff_dense.mpr h
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model n => reducedField m.params)
+    (pt := fun m => equilibrium m.θ) family_isAutonomous
 
 /-- **A cut of the labelled machines has positive weight at a locally asymptotically stable point.**
 `c` is the indicator (in labelled order) of a nonempty proper group of machines. -/
@@ -1161,7 +1160,7 @@ private theorem cut_pos_of_localAsymptoticStable {p : Params 3} {θ : Fin (3 + 1
   push Not at hle
   have hW : ∑ i ∈ X, ∑ j ∈ Xᶜ, p.B i j * Real.cos (θ i - θ j) ≤ 0 := by linarith
   exact not_localAsymptoticStable_of_cut ⟨p, θ⟩ hbal X hW (i₀ := σ i₀) (j₀ := σ j₀)
-    (by simp [hX, hi]) (by simp [hX, hj]) (mem_den_of_localAsymptoticStable_dense hLAS)
+    (by simp [hX, hi]) (by simp [hX, hj]) (mem_den_flow_iff_dense.mpr hLAS)
 
 /-- The Hessian form in labelled coordinates is positive semidefinite at a locally asymptotically
 stable power-balance point. -/
@@ -1174,7 +1173,7 @@ private theorem labelled_nonneg_of_localAsymptoticStable {p : Params 3} {θ : Fi
       weightOf p θ σ 1 3 * (g₁ - g₃) ^ 2 + weightOf p θ σ 2 3 * (g₂ - g₃) ^ 2 := by
   have : 0 ≤ hessForm p θ (fun k => ![g₀, g₁, g₂, g₃] (σ.symm k)) := not_lt.mp fun h =>
     not_localAsymptoticStable_of_hessForm_neg ⟨p, θ⟩ hbal _ h
-      (mem_den_of_localAsymptoticStable_dense hLAS)
+      (mem_den_flow_iff_dense.mpr hLAS)
   rw [hessForm_four p θ _ σ] at this
   simp only [Equiv.symm_apply_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two, Matrix.cons_val_three, Matrix.tail_cons, Matrix.head_cons] at this
@@ -1188,7 +1187,8 @@ private theorem exists_null_of_localAsymptoticStable {p : Params 3} {θ : Fin (3
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
     ∃ u : Fin (3 + 1) → ℝ, (∃ k, u k ≠ u 0) ∧ hessForm p θ u = 0 ∧ cubicForm p θ u = 0 := by
   obtain ⟨u, hu0, hu, hle⟩ := exists_hessForm_nonpos hH
-  have hmem := mem_den_of_localAsymptoticStable_dense hLAS
+  have hmem : (⟨p, θ⟩ : Model 3) ∈ family.den (.flow .locallyAsymptoticallyStable) :=
+    mem_den_flow_iff_dense.mpr hLAS
   have hQ0 : hessForm p θ u = 0 := le_antisymm hle (not_lt.mp fun h =>
     not_localAsymptoticStable_of_hessForm_neg ⟨p, θ⟩ hbal u h hmem)
   have hC0 : cubicForm p θ u = 0 := by
@@ -1363,7 +1363,7 @@ private theorem not_localAsymptoticStable_four_machines (p : Params 3) (θ : Fin
   have h12' : p.B (σ 1) (σ 2) = 0 := le_antisymm (not_lt.mp h12) (p.B_nonneg _ _)
   intro hLAS
   refine not_localAsymptoticStable_four ⟨p, θ⟩ ((Equiv.swap (2 : Fin 4) 3).trans σ) ?_ (Or.inl ?_)
-    hbal hH (mem_den_of_localAsymptoticStable_dense hLAS)
+    hbal hH (mem_den_flow_iff_dense.mpr hLAS)
   · have e1 : (Equiv.swap (2 : Fin 4) 3) 1 = 1 := by decide
     have e3 : (Equiv.swap (2 : Fin 4) 3) 3 = 2 := by decide
     simp only [Equiv.trans_apply, e1, e3]
@@ -1375,33 +1375,14 @@ private theorem not_localAsymptoticStable_four_machines (p : Params 3) (θ : Fin
 
 /-! ## The family: exactness for four machines -/
 
-private theorem powerFlow_of_equilibrium_dense {p : Params n} {θ : Fin (n + 1) → ℝ}
-    (h : reducedField p (equilibrium θ) = 0) : ∀ k, p.P k = powerInjection p.B θ k := by
-  intro k
-  have hk := congrArg (fun z : State (n + (n + 1)) => z (wIdx k)) h
-  simp only [reducedField_wIdx, equilibrium, reduce_wIdx, angleMap_reduce,
-    powerInjection_add_const, PiLp.zero_apply] at hk
-  rw [div_eq_zero_iff, or_iff_left (p.M_pos k).ne'] at hk
-  simp only [Pi.zero_apply, mul_zero, sub_zero] at hk
-  linarith
-
 /-- **Four machines: the local asymptotic translation is exact.** For every four-machine network
 (`n = 3`), local asymptotic stability of the selected profile holds exactly when it is a
 power-balance point with a Hurwitz reduced Jacobian. -/
 @[powerlib_domain] theorem exact_locallyAsymptoticallyStable_four :
     connection% ((family (n := 3)).Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hsound := chain_le_semantics (n := 3)
-  unfold powerlib.TMIO.Statement at hsound
-  refine Spectral.exact_of_equilibrium (fun m P => mem_den_flow_iff_dense) (Or.inr (Or.inl rfl))
-    (fun m => LinearSystems.IsHurwitz (jacobian m.params m.θ))
-    (Family.chain_le_semantics_iff.mp hsound _) (fun m => reducedField_contDiff m.params)
-    (fun m heq hH hm => not_localAsymptoticStable_four_machines m.params m.θ
-      (powerFlow_of_equilibrium_dense heq) hH (mem_den_flow_iff_dense.mp hm)) fun m heq hH => ?_
-  rw [TMIO.mem_realize]
-  rintro q (rfl | rfl)
-  · exact powerFlow_of_equilibrium_dense heq
-  · exact hH
+  exact exact_locallyAsymptoticallyStable_of_guard fun m hp hH hm =>
+    not_localAsymptoticStable_four_machines m.params m.θ hp hH (mem_den_flow_iff_dense.mp hm)
 
 /-- **Membership in local asymptotic stability for every four-machine network**: power balance
 with a Hurwitz reduced Jacobian (no restriction on the lines). -/
@@ -1410,11 +1391,7 @@ with a Hurwitz reduced Jacobian (no restriction on the lines). -/
       (∀ k, m.params.P k = powerInjection m.params.B m.θ k) ∧
       LinearSystems.IsHurwitz (jacobian m.params m.θ)) := by
   unfold powerlib.TMIO.Statement
-  have h := exact_locallyAsymptoticallyStable_four
-  unfold powerlib.TMIO.Statement Family.Exact at h
-  rw [← h, TMIO.mem_realize]
-  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
-    forall_eq]
-  rfl
+  exact mem_den_locallyAsymptoticallyStable_iff_of_guard m fun hp hH hm =>
+    not_localAsymptoticStable_four_machines m.params m.θ hp hH (mem_den_flow_iff_dense.mp hm)
 
 end powerlib.Network.Swing

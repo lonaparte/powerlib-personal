@@ -157,11 +157,6 @@ def rigField (y : Rig) (x : State 4) : State 4 :=
 /-- The platform field translated so that the operating point is the origin. -/
 def Rig.field (y : Rig) (z : State 4) : State 4 := rigField y (z + y.point)
 
-private theorem toEuclideanCLM_apply4 (A : Matrix (Fin 4) (Fin 4) ℝ) (v : State 4) (i : Fin 4) :
-    (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) A v) i =
-      A i 0 * v 0 + A i 1 * v 1 + A i 2 * v 2 + A i 3 * v 3 := by
-  rw [Dynamics.toEuclideanCLM_apply, Fin.sum_univ_four]
-
 /-- Static evidence on the implementation, not a connection conclusion. -/
 @[powerlib_foundation] theorem contDiff_rigField (y : Rig) {k : WithTop ℕ∞} :
     ContDiff ℝ k (rigField y) := by
@@ -184,26 +179,26 @@ implementation, not a connection conclusion. -/
   · convert hp 1 using 1
     · funext x; simp [rigField]
     · apply ContinuousLinearMap.ext; intro v
-      simp [Rig.jacobian, toEuclideanCLM_apply4]
+      simp [Rig.jacobian, Dynamics.toEuclideanCLM_apply, Fin.sum_univ_four]
   · have h := (((hasFDerivAt_const y.design.g.P0 y.point).sub (hp 2)).sub
       ((hp 1).const_mul y.design.g.D)).const_mul y.design.g.M⁻¹
     convert h using 1
     · funext x; simp [rigField, div_eq_inv_mul]
     · apply ContinuousLinearMap.ext; intro v
-      simp [Rig.jacobian, toEuclideanCLM_apply4]
+      simp [Rig.jacobian, Dynamics.toEuclideanCLM_apply, Fin.sum_univ_four]
       ring
   · have hs := (Real.hasDerivAt_sin (y.point 3)).comp_hasFDerivAt y.point (hp 3)
     have h := ((hs.const_mul y.design.g.K0).sub (hp 2)).const_mul y.design.g.ωc
     convert h using 1
     · funext x; simp [rigField]
     · apply ContinuousLinearMap.ext; intro v
-      simp [Rig.jacobian, toEuclideanCLM_apply4, p3, Model.K]
+      simp [Rig.jacobian, Dynamics.toEuclideanCLM_apply, Fin.sum_univ_four, p3, Model.K]
       ring
   · have h := ((hp 0).sub (hp 3)).const_mul y.τ⁻¹
     convert h using 1
     · funext x; simp [rigField, div_eq_inv_mul]
     · apply ContinuousLinearMap.ext; intro v
-      simp [Rig.jacobian, toEuclideanCLM_apply4]
+      simp [Rig.jacobian, Dynamics.toEuclideanCLM_apply, Fin.sum_univ_four]
       ring
 
 /-- The operating point is an equilibrium of the platform exactly when the design angle is
@@ -307,7 +302,7 @@ def rigFamily : Family Rig RigRequirement 4 0 :=
 
 private theorem rig_mem_den_flow_iff {y : Rig} {P : Flow.Property} :
     y ∈ rigFamily.den (.flow P) ↔ P.holds (rigField y) y.point :=
-  rigFamily_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := rigField) (pt := Rig.point) rigFamily_isAutonomous
 
 private theorem rig_les_of {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
     (hb : Meets y.design .balanced) (hK : 0 < y.design.K) (hH : 0 < y.H) :

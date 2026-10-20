@@ -49,6 +49,7 @@ import theorem.Map.Basic
 import theorem.Map.Linearization
 import theorem.Map.LinearReading
 import theorem.LTI.Oscillator2
+import theorem.SpecialFunctions.AmplitudePhase
 import theorem.SpecialFunctions.BesselI
 import theorem.SpecialFunctions.BesselK
 import theorem.SpecialFunctions.Elementary
@@ -91,6 +92,7 @@ import theorem.Dynamics.LaSalle.Periodic
 import theorem.Dynamics.LaSalle.Passivity
 import theorem.Dynamics.State
 import theorem.Dynamics.Transport
+import theorem.Dynamics.PiecewiseAffine
 import theorem.Dynamics.Pendulum
 import theorem.Estimation.Bayes
 import theorem.Estimation.BayesKL

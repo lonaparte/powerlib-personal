@@ -4,7 +4,7 @@ import theorem.Dynamics.Shift
 import theorem.TMIO.ClaimElab
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
-import theorem.Spectral.Local
+import theorem.Spectral.Global
 
 /-! # The `basin-guard` GFL carrier: direction-convention algebra
 
@@ -331,17 +331,17 @@ def family : Family Model Requirement 4 0 :=
   exact h .unavailable
 
 /-- Every translation of the carrier family is sound (the flow translations are empty), and
-passivity holds without requirement. -/
+passivity holds without requirement (`Spectral.chain_le_semantics_of_localTable_same`, every flow
+sentence on the inconsistent whole language). -/
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
-  change ∀ q ∈ translate s, Meets m q at hm
+  refine Spectral.chain_le_semantics_of_localTable_same (Rs := Set.univ) (Ru := Set.univ)
+    (fun s => ?_) realize_univ (Spectral.realize_univ_subset_of_eq_empty realize_univ _)
+    (Spectral.realize_univ_subset_of_eq_empty realize_univ _) family_isAutonomous.den_passive
   rcases s with P | _
-  · exact (hm .unavailable trivial).elim
-  · rw [family_isAutonomous.den_passive]
-    trivial
+  · cases P <;> rfl
+  · rfl
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by

@@ -2,6 +2,7 @@ import theorem.Dynamics.Linearization
 import theorem.Dynamics.ConverseLinearization
 import theorem.Dynamics.Shift
 import theorem.Dynamics.State
+import theorem.Dynamics.Coordinates
 import theorem.Family.Basic
 import theorem.TMIO.ClaimElab
 import theorem.Dynamics.Lyapunov
@@ -44,8 +45,10 @@ Results.
   (`jacobian_isHurwitz`, `jacobian_isHurwitz_of_angle`), and applies
   `Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian`.
 * Static evidence: `fullField_equilibrium_shift`, `reducedField_reduce`,
-  `reducedField_equilibrium`, `jacobian_isHurwitz_of_angle`. Private implementation evidence
-  (trajectory level, Rules §3a): `reduce_trajectory`.
+  `reducedField_equilibrium` and its converse `powerFlow_of_equilibrium` (the equilibria of the
+  reduced field at the selected points are the power-balance points), `state_ext`,
+  `jacobian_isHurwitz_of_angle`. Private implementation evidence (trajectory level, Rules §3a):
+  `reduce_trajectory`.
 
 Family and connection conclusions.
 * System map: a model (`Model n`: the swing data `Params n` and a selected angle profile `θ*`)
@@ -190,12 +193,11 @@ def reduce (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) : State (n + (n 
   · simp
   · simp [sub_eq_add_neg]
 
+/-- A reduced state is determined by its angle and frequency blocks
+(`Dynamics.state_ext_blocks`). -/
 @[powerlib_foundation] theorem state_ext {z z' : State (n + (n + 1))}
-    (hd : ∀ i, z (dIdx i) = z' (dIdx i)) (hw : ∀ k, z (wIdx k) = z' (wIdx k)) : z = z' := by
-  ext r
-  refine Fin.addCases (fun i => ?_) (fun k => ?_) r
-  · exact hd i
-  · exact hw k
+    (hd : ∀ i, z (dIdx i) = z' (dIdx i)) (hw : ∀ k, z (wIdx k) = z' (wIdx k)) : z = z' :=
+  Dynamics.state_ext_blocks hd hw
 
 /-- The reduction intertwines the full and the reduced field. Static evidence on the model, not a
 connection conclusion. -/
@@ -623,7 +625,8 @@ def family : Family (Model n) Requirement (n + (n + 1)) 0 :=
 selected point. -/
 private theorem mem_den_flow_iff {m : Model n} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model n => reducedField m.params)
+    (pt := fun m => equilibrium m.θ) family_isAutonomous
 
 /-- Implementation evidence for `mem_den_locallyExponentiallyStable`, at the selected point of
 the untranslated field. -/
@@ -683,8 +686,10 @@ holds without requirement. -/
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
-/-- An equilibrium of the reduced field at the selected point is a power-balance point. -/
-private theorem powerFlow_of_equilibrium {p : Params n} {θ : Fin (n + 1) → ℝ}
+/-- An equilibrium of the reduced field at the selected point is a power-balance point (the
+converse of `reducedField_equilibrium`). Static evidence on the model, not a connection
+conclusion. -/
+@[powerlib_foundation] theorem powerFlow_of_equilibrium {p : Params n} {θ : Fin (n + 1) → ℝ}
     (h : reducedField p (equilibrium θ) = 0) : ∀ k, p.P k = powerInjection p.B θ k := by
   intro k
   have hk := congrArg (fun z : State (n + (n + 1)) => z (wIdx k)) h

@@ -100,10 +100,6 @@ def gradH (x : State 2) : State 2 := WithLp.toLp 2 ![s.Pmax * sin (x 0) - s.Pm, 
   simp [gradH, π0, π1, dotProduct, Fin.sum_univ_two]
   ring
 
-@[powerlib_foundation] private lemma skew_J :
-    (!![(0 : ℝ), 1; -1, 0])ᵀ = -!![(0 : ℝ), 1; -1, 0] := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp
-
 @[powerlib_foundation] private lemma posSemidef_RA {D : ℝ} (hD : 0 ≤ D) :
     (!![0, 0; 0, D]).PosSemidef := by
   have : !![0, 0; 0, D] = Matrix.diagonal ![0, D] := by
@@ -118,7 +114,7 @@ def swingPH (hD : 0 ≤ s.D) : PH.NonlinearModel 2 1 where
   g _ := !![0; 1]
   H := s.hamiltonian
   dH := s.gradH
-  skew _ := skew_J
+  skew _ := PH.transpose_symplectic_two
   dissipation_posSemidef _ := posSemidef_RA hD
   hasGradient := s.hasGradientAt_hamiltonian
 

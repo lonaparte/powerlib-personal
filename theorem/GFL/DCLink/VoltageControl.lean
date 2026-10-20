@@ -140,12 +140,6 @@ def dcState (V0 : ℝ) : State 1 := WithLp.toLp 2 ![V0]
   fin_cases i
   simp [openField, dcState]
 
-private lemma hasFDerivAt_inv_coord {n : ℕ} (i : Fin n)
-    {x : State n} (hx : x i ≠ 0) :
-    HasFDerivAt (fun y : State n => (y i)⁻¹)
-      ((ContinuousLinearMap.toSpanSingleton ℝ (-((x i) ^ 2)⁻¹)).comp (Dynamics.coord i)) x :=
-  (hasFDerivAt_inv hx).comp x (Dynamics.hasFDerivAt_coord i x)
-
 @[powerlib_foundation] theorem openField_contDiffOn (C isrc P : ℝ) :
     ContDiffOn ℝ 1 (openField C isrc P) (posDC 1) := by
   rw [contDiffOn_euclidean]
@@ -456,7 +450,8 @@ def openFamily : Family OpenLoop Spectral.Requirement 1 0 :=
 private theorem open_mem_den_flow {m : OpenLoop} {P : Flow.Property} :
     m ∈ openFamily.den (.flow P) ↔
       P.holds (openField m.C (-(m.P / m.V0)) m.P) (dcState m.V0) :=
-  (Spectral.localFamily_isAutonomous _ _ _).mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun m : OpenLoop => openField m.C (-(m.P / m.V0)) m.P)
+    (pt := fun m => dcState m.V0) (Spectral.localFamily_isAutonomous _ _ _)
 
 /-- Every translation of the open-loop family is sound: rectifier operation gives local
 exponential stability, inverter operation instability (local linearization on `V_dc > 0`). -/
@@ -510,7 +505,8 @@ def closedFamily : Family DCParams Spectral.Requirement 2 0 :=
 
 private theorem closed_mem_den_flow {p : DCParams} {P : Flow.Property} :
     p ∈ closedFamily.den (.flow P) ↔ P.holds p.closedField p.eqState :=
-  (Spectral.localFamily_isAutonomous _ _ _).mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := DCParams.closedField) (pt := DCParams.eqState)
+    (Spectral.localFamily_isAutonomous _ _ _)
 
 /-- Every translation of the DC-voltage loop family is sound: the §1.4 conditions give local
 exponential stability, their strict violation instability. -/

@@ -753,7 +753,8 @@ def family : Family Model Requirement 4 0 :=
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected state. -/
 private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.p.field m.x :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.x)
+    family_isAutonomous
 
 /-- No model meets the Routh conditions and a negative determinant: the whole requirement
 language is inconsistent. -/

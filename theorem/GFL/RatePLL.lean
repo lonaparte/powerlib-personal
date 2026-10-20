@@ -505,7 +505,8 @@ def family : Family Model Requirement 2 0 :=
 /-- A flow sentence of a model is the sentence of the untranslated field at `(θ*, 0)`. -/
 private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (RatePLL.field m.params) (equilibrium m.θ) :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model => RatePLL.field m.params)
+    (pt := fun m => equilibrium m.θ) family_isAutonomous
 
 /-- Linearization at `(θ*, 0)`: a stable Jacobian gives local exponential stability. -/
 private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)

@@ -218,12 +218,6 @@ def posV : Set (State 3) := {x | 0 < x 2}
       unfold vconv
       fun_prop
 
-private lemma hasFDerivAt_coord_inv (i : Fin 3) {x : State 3}
-    (hx : x i ≠ 0) :
-    HasFDerivAt (fun y : State 3 => (y i)⁻¹)
-      ((ContinuousLinearMap.toSpanSingleton ℝ (-((x i) ^ 2)⁻¹)).comp (Dynamics.coord i)) x :=
-  (hasFDerivAt_inv hx).comp x (Dynamics.hasFDerivAt_coord i x)
-
 /-- The state matrix is the Jacobian of the nonlinear plant at `eqState` whenever the bridge
 voltage there is `V_d0 − R I_d0` (always for `Ki ≠ 0`; for `Ki = 0` iff `R I_d0 = 0`). -/
 private theorem jacobian_eq_of_vconv (hv0 : p.vconv p.Id0 p.eqState = p.Vd0 - p.pi.R * p.Id0)
@@ -247,7 +241,7 @@ private theorem jacobian_eq_of_vconv (hv0 : p.vconv p.Id0 p.eqState = p.Vd0 - p.
   have hA := ((((h0.const_mul (-p.pi.R)).add ((h0.const_sub p.Id0).const_mul p.pi.Kp)).add
     (h1.const_mul p.pi.Ki)).mul_const p.pi.L⁻¹)
   have hB := h0.const_sub p.Id0
-  have hC := (((hvc.mul h0).mul (hasFDerivAt_coord_inv 2 hx2)).const_add p.isrc).mul_const p.C⁻¹
+  have hC := (((hvc.mul h0).mul (hasFDerivAt_inv_coord 2 hx2)).const_add p.isrc).mul_const p.C⁻¹
   refine Dynamics.fderiv_eq_toEuclideanCLM_of_components _
     ![p.pi.L⁻¹ • ((-p.pi.R) • Dynamics.coord 0 + p.pi.Kp • -Dynamics.coord 0 +
         p.pi.Ki • Dynamics.coord 1),
@@ -540,7 +534,8 @@ def family : Family CascadeParams Spectral.Requirement 3 0 :=
 
 private theorem mem_den_flow {p : CascadeParams} {P : Flow.Property} :
     p ∈ family.den (.flow P) ↔ P.holds (p.field p.Id0) p.eqState :=
-  (Spectral.localFamily_isAutonomous _ _ _).mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun p : CascadeParams => p.field p.Id0)
+    (pt := CascadeParams.eqState) (Spectral.localFamily_isAutonomous _ _ _)
 
 /-- Every translation of the nonlinear cascade family is sound. -/
 @[powerlib_domain] theorem chain_le_semantics :

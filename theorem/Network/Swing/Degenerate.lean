@@ -57,6 +57,12 @@ Family and connection conclusions.
 * `not_localAsymptoticStable_of_forms` — at a power-balance point a relative-angle direction with
   `A₂ < 0`, or `A₂ = 0` and `A₃ ≠ 0` (a saddle or a fold), puts the model outside the local
   asymptotic denotation.
+* `mem_den_locallyAsymptoticallyStable_iff_of_guard` — a model at which every power-balance
+  point with a non-Hurwitz reduced Jacobian fails local asymptotic stability is locally
+  asymptotically stable exactly when its profile is a power-balance point with a Hurwitz reduced
+  Jacobian; `exact_locallyAsymptoticallyStable_of_guard`, the same for every model of
+  `family (n := n)`: the local asymptotic translation is exact. The four-machine results of
+  `Four.lean` and `FourDense.lean` are instances.
 * `not_localAsymptoticStable_two`, `not_localAsymptoticStable_three` — two or three machines at a
   power-balance point with a non-Hurwitz reduced Jacobian are not locally asymptotically stable;
   hence `exact_locallyAsymptoticallyStable_two` (`n = 1`) and
@@ -484,7 +490,15 @@ along the reachable directions are the power-balance points. -/
 
 private theorem mem_den_flow_iff' {m : Model n} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model n => reducedField m.params)
+    (pt := fun m => equilibrium m.θ) family_isAutonomous
+
+/-- A Lyapunov stable selected point of the `C¹` reduced field is an equilibrium, hence a
+power-balance point. -/
+private theorem powerFlow_of_lyapunovStable {p : Params n} {θ : Fin (n + 1) → ℝ}
+    (h : LyapunovStable (reducedField p) (equilibrium θ)) :
+    ∀ k, p.P k = powerInjection p.B θ k :=
+  powerFlow_of_equilibrium (Dynamics.isEquilibrium_of_lyapunovStable (reducedField_contDiff p) h)
 
 /-- Implementation evidence: `Dynamics.Mechanical.not_localAsymptoticStable_of_potential_lt` on the
 reduced field (`reducedField_eq_mechanical`). At a power-balance point, relative-angle
@@ -943,35 +957,51 @@ Hessian form. -/
 
 /-! ## The family: exactness of the local asymptotic translation for small networks -/
 
-private theorem powerFlow_of_equilibrium' {p : Params n} {θ : Fin (n + 1) → ℝ}
-    (h : reducedField p (equilibrium θ) = 0) : ∀ k, p.P k = powerInjection p.B θ k := by
-  intro k
-  have hk := congrArg (fun z : State (n + (n + 1)) => z (wIdx k)) h
-  simp only [reducedField_wIdx, equilibrium, reduce_wIdx, angleMap_reduce,
-    powerInjection_add_const, PiLp.zero_apply] at hk
-  rw [div_eq_zero_iff, or_iff_left (p.M_pos k).ne'] at hk
-  simp only [Pi.zero_apply, mul_zero, sub_zero] at hk
-  linarith
+/-- **Local asymptotic stability decided by the Hurwitz test, model by model.** If at a
+power-balance point a non-Hurwitz reduced Jacobian rules out local asymptotic stability of `m`, then
+`m` is locally asymptotically stable exactly when its profile is a power-balance point with a
+Hurwitz reduced Jacobian: a Lyapunov stable point of the `C¹` reduced field is an equilibrium,
+hence a power-balance point (`powerFlow_of_equilibrium`), and the translation
+`{powerFlow, jacobianStable}` is sound (`chain_le_semantics`). -/
+@[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_of_guard (m : Model n)
+    (h : (∀ k, m.params.P k = powerInjection m.params.B m.θ k) →
+      ¬ LinearSystems.IsHurwitz (jacobian m.params m.θ) →
+      m ∉ family.den (.flow .locallyAsymptoticallyStable)) :
+    connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
+      (∀ k, m.params.P k = powerInjection m.params.B m.θ k) ∧
+      LinearSystems.IsHurwitz (jacobian m.params m.θ)) := by
+  unfold powerlib.TMIO.Statement
+  constructor
+  · intro hm
+    have hLAS : LocalAsymptoticStable (reducedField m.params) (equilibrium m.θ) :=
+      mem_den_flow_iff'.mp hm
+    have hp := powerFlow_of_lyapunovStable hLAS.1
+    exact ⟨hp, by_contra fun hH => h hp hH hm⟩
+  · rintro ⟨hp, hH⟩
+    have hsound := chain_le_semantics (n := n)
+    unfold powerlib.TMIO.Statement at hsound
+    refine Family.chain_le_semantics_iff.mp hsound _ ?_
+    rw [TMIO.mem_realize]
+    rintro q (rfl | rfl)
+    exacts [hp, hH]
 
-/-- The local asymptotic translation is exact as soon as every power-balance point with a
-non-Hurwitz reduced Jacobian fails local asymptotic stability (`Spectral.exact_of_equilibrium`
-with the Hurwitz guard). -/
-private theorem exact_locallyAsymptoticallyStable_of
+/-- **Exactness of the local asymptotic translation from the Hurwitz test.** If for every model a
+power-balance point with a non-Hurwitz reduced Jacobian is not locally asymptotically stable, the
+local asymptotic translation `{powerFlow, jacobianStable}` of `family (n := n)` is exact
+(`mem_den_locallyAsymptoticallyStable_iff_of_guard` at every model). -/
+@[powerlib_domain] theorem exact_locallyAsymptoticallyStable_of_guard
     (h : ∀ m : Model n, (∀ k, m.params.P k = powerInjection m.params.B m.θ k) →
       ¬ LinearSystems.IsHurwitz (jacobian m.params m.θ) →
-      ¬ LocalAsymptoticStable (reducedField m.params) (equilibrium m.θ)) :
-    (family (n := n)).Exact (.flow .locallyAsymptoticallyStable) := by
-  have hsound := chain_le_semantics (n := n)
-  unfold powerlib.TMIO.Statement at hsound
-  refine Spectral.exact_of_equilibrium (fun m P => mem_den_flow_iff') (Or.inr (Or.inl rfl))
-    (fun m => LinearSystems.IsHurwitz (jacobian m.params m.θ))
-    (Family.chain_le_semantics_iff.mp hsound _) (fun m => reducedField_contDiff m.params)
-    (fun m heq hH hm => h m (powerFlow_of_equilibrium' heq) hH (mem_den_flow_iff'.mp hm))
-    fun m heq hH => ?_
-  rw [TMIO.mem_realize]
-  rintro q (rfl | rfl)
-  · exact powerFlow_of_equilibrium' heq
-  · exact hH
+      m ∉ family.den (.flow .locallyAsymptoticallyStable)) :
+    connection% ((family (n := n)).Exact (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  ext m
+  have hm := mem_den_locallyAsymptoticallyStable_iff_of_guard m (h m)
+  unfold powerlib.TMIO.Statement at hm
+  rw [hm, TMIO.mem_realize]
+  simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
+    forall_eq]
+  rfl
 
 /-- Two machines: the forms in the direction of the second machine. -/
 private theorem hessForm_two (p : Params 1) (θ w : Fin (1 + 1) → ℝ) (hw : w 0 = 0) :
@@ -1061,8 +1091,8 @@ machines are uncoupled (a continuum of equilibria). -/
 @[powerlib_domain] theorem exact_locallyAsymptoticallyStable_two :
     connection% ((family (n := 1)).Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact exact_locallyAsymptoticallyStable_of fun m hp hH =>
-    reducedSwing_not_localAsymptoticStable_two m.params m.θ hp hH
+  exact exact_locallyAsymptoticallyStable_of_guard fun m hp hH =>
+    not_localAsymptoticStable_two m hp hH
 
 /-! ## Three machines -/
 
@@ -1498,8 +1528,8 @@ which contradicts the positive Hessian along it. -/
 @[powerlib_domain] theorem exact_locallyAsymptoticallyStable_three :
     connection% ((family (n := 2)).Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact exact_locallyAsymptoticallyStable_of fun m hp hH =>
-    reducedSwing_not_localAsymptoticStable_three m.params m.θ hp hH
+  exact exact_locallyAsymptoticallyStable_of_guard fun m hp hH =>
+    not_localAsymptoticStable_three m hp hH
 
 /-! ## Local asymptotic stability at a strict, isolated minimum of the potential -/
 
@@ -1600,12 +1630,11 @@ vanishes). -/
 reduced field. The selected point of a locally asymptotically stable network is a strict, isolated
 minimum of the potential. -/
 private theorem reducedSwing_strictMin_of_localAsymptoticStable {p : Params n}
-    {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
-    (hLAS : LocalAsymptoticStable (reducedField p) (equilibrium θ)) :
+    {θ : Fin (n + 1) → ℝ} (hLAS : LocalAsymptoticStable (reducedField p) (equilibrium θ)) :
     ∃ r > 0, ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r →
       potential p θ < potential p (θ + ground v) ∧
         ¬ ∀ k, p.P k = powerInjection p.B (θ + ground v) k := by
-  have hP := sum_P_of_balance hbal
+  have hP := sum_P_of_balance (powerFlow_of_lyapunovStable hLAS.1)
   rw [reducedField_eq_mechanical hP, equilibrium_eq_point] at hLAS
   obtain ⟨r, hr, h⟩ := Dynamics.Mechanical.strictMin_of_localAsymptoticStable
     (potential_comp_ground_contDiff p) (fun j => (p.M_pos j).ne') (fun j => (p.D_pos j).le) hLAS
@@ -1632,9 +1661,7 @@ and the energy, `Dynamics.Mechanical.strictMin_of_localAsymptoticStable`, throug
   change LocalAsymptoticStable _ _ ↔ _
   constructor
   · intro h
-    have hp := powerFlow_of_equilibrium' (Dynamics.isEquilibrium_of_lyapunovStable
-      (reducedField_contDiff _) h.1)
-    exact ⟨hp, reducedSwing_strictMin_of_localAsymptoticStable hp h⟩
+    exact ⟨powerFlow_of_lyapunovStable h.1, reducedSwing_strictMin_of_localAsymptoticStable h⟩
   · rintro ⟨hp, r, hr, hv⟩
     exact reducedSwing_localAsymptoticStable_of_strictMin hp hr (fun v h0 h1 => (hv v h0 h1).1)
       (fun v h0 h1 => (hv v h0 h1).2)

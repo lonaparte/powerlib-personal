@@ -2,6 +2,7 @@ import dependencies.Mathlib
 import theorem.Attributes
 import theorem.Stochastic.SPH
 import theorem.PLL.StochasticPH
+import theorem.PH.Nonlinear
 
 /-! # SPHS embedding of the reduced 2D GFL–PLL equation: port geometry and the generator
 
@@ -24,7 +25,7 @@ form, `h_noise` with columns `(d, q, ω)`), §2b (invariant noise coordinates: r
 
 Results.
 * `embDrift_eq_pH`, `embDrift_dot_grad`, `embJ_skew`, `embR_posSemidef`: the drift is the pH
-  field `(J − R)∇𝓗` with skew `J` and `R ⪰ 0` (`K_p ≥ 0`).
+  field `(J − R)∇𝓗` with skew `J` (`PH.transpose_symplectic_two`) and `R ⪰ 0` (`K_p ≥ 0`).
 * `voltageBlock_eq_vecMulVec`, `voltageBlock_det`, `voltageBlock_rank_le`: the voltage block is
   the rank-one matrix `(K_p, 1)ᵀ(σ_d, g)`.
 * `freqNoise_fdt`: the frequency channel satisfies `B Bᵀ = 2 T_eff R`, `T_eff = ε²/(2K_p)`
@@ -61,8 +62,7 @@ def embGrad (Ki hθ η : ℝ) : Fin 2 → ℝ := ![-hθ, Ki * η]
 /-- Drift `f = (K_p h + K_i η, h)` of the 2D slow model. -/
 def embDrift (Kp Ki hθ η : ℝ) : Fin 2 → ℝ := ![Kp * hθ + Ki * η, hθ]
 
-@[powerlib_foundation] theorem embJ_skew : embJᵀ = -embJ := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp [embJ]
+@[powerlib_foundation] theorem embJ_skew : embJᵀ = -embJ := PH.transpose_symplectic_two
 
 @[powerlib_foundation] theorem embR_posSemidef {Kp : ℝ} (hKp : 0 ≤ Kp) : (embR Kp).PosSemidef := by
   have : embR Kp = Matrix.diagonal ![Kp, 0] := by

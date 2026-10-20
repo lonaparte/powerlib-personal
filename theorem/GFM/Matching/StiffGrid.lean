@@ -664,11 +664,6 @@ boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC ro
     · show di = 0
       rw [hdi, hai, mul_zero]
 
-private theorem toEuclideanCLM_apply4 (A : Matrix (Fin 4) (Fin 4) ℝ) (v : State 4) (i : Fin 4) :
-    (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) A v) i =
-      A i 0 * v 0 + A i 1 * v 1 + A i 2 * v 2 + A i 3 * v 3 := by
-  rw [Dynamics.toEuclideanCLM_apply, Fin.sum_univ_four]
-
 /-- Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem field_contDiff (m : Model) : ContDiff ℝ 1 m.field := by
   have hd : ContDiff ℝ 1 m.iHatD := by
@@ -691,7 +686,7 @@ private theorem toEuclideanCLM_apply4 (A : Matrix (Fin 4) (Fin 4) ℝ) (v : Stat
       m.μ * m.ustar / m.Ls * v 0 - m.Rs / m.Ls * v 2 + m.ω0 * v 3 ∧
     (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) m.jac v) 3 =
       -m.μ / m.Ls * v 1 - m.ω0 * v 2 - m.Rs / m.Ls * v 3 := by
-  refine ⟨?_, ?_, ?_, ?_⟩ <;> rw [toEuclideanCLM_apply4] <;>
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> rw [Dynamics.toEuclideanCLM_apply, Fin.sum_univ_four] <;>
     simp only [Model.jac, Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
       Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons] <;> ring
 

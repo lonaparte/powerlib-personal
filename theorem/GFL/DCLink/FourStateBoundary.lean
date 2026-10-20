@@ -564,7 +564,8 @@ locally asymptotically stable, but its quartic `(λ² + 1)(λ² + λ + 2)` has t
 
 private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (FourState.field m.params) (opPoint m.θ) :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model => FourState.field m.params)
+    (pt := fun m => opPoint m.θ) family_isAutonomous
 
 private theorem lyapunovStable_regField {p : Params} {θ0 : ℝ}
     (h : LyapunovStable (FourState.field p) (opPoint θ0)) :

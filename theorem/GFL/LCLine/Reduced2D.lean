@@ -232,10 +232,6 @@ def gradH (y : State 2) : State 2 := WithLp.toLp 2 ![-p.h (y 0), p.Ki * y 1]
   ext i; fin_cases i <;>
     simp [Matrix.mulVec, dotProduct]
 
-@[powerlib_foundation] private lemma skew_J :
-    (!![(0 : ℝ), 1; -1, 0])ᵀ = -!![(0 : ℝ), 1; -1, 0] := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp
-
 @[powerlib_foundation] private lemma posSemidef_R {Kp : ℝ} (hKp : 0 ≤ Kp) :
     (!![Kp, 0; 0, (0 : ℝ)]).PosSemidef := by
   have : !![Kp, 0; 0, (0 : ℝ)] = Matrix.diagonal ![Kp, 0] := by
@@ -252,7 +248,7 @@ def pHModel (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : 0 ≤ p.Kp) : PH.Nonlin
   g _ := !![-1; 0]
   H := p.hamiltonian
   dH := p.gradH
-  skew _ := skew_J
+  skew _ := PH.transpose_symplectic_two
   dissipation_posSemidef _ := posSemidef_R hKp
   hasGradient := p.hasGradientAt_hamiltonian hwC hΔ
 

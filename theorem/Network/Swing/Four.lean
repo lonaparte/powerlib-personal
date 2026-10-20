@@ -1,4 +1,5 @@
 import theorem.Network.Swing.Degenerate
+import theorem.SpecialFunctions.AmplitudePhase
 
 /-! # Networked swing equations: four machines
 
@@ -74,12 +75,8 @@ variable {n : ℕ}
 
 private theorem mem_den_flow_iff_four {m : Model n} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
-
-private theorem mem_den_of_localAsymptoticStable {p : Params n} {θ : Fin (n + 1) → ℝ}
-    (h : LocalAsymptoticStable (reducedField p) (equilibrium θ)) :
-    (⟨p, θ⟩ : Model n) ∈ family.den (.flow .locallyAsymptoticallyStable) :=
-  mem_den_flow_iff_four.mpr h
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model n => reducedField m.params)
+    (pt := fun m => equilibrium m.θ) family_isAutonomous
 
 /-- A locally asymptotically stable selected point is a strict, isolated minimum of the potential
 (`mem_den_locallyAsymptoticallyStable_iff`). -/
@@ -90,7 +87,7 @@ private theorem strictMin_of_localAsymptoticStable_four {p : Params n} {θ : Fin
         ¬ ∀ k, p.P k = powerInjection p.B (θ + ground v) k := by
   have hmem := mem_den_locallyAsymptoticallyStable_iff (⟨p, θ⟩ : Model n)
   unfold powerlib.TMIO.Statement at hmem
-  exact (hmem.mp (mem_den_of_localAsymptoticStable hLAS)).2
+  exact (hmem.mp (mem_den_flow_iff_four.mpr hLAS)).2
 
 /-! ## Cuts -/
 
@@ -194,7 +191,7 @@ private theorem reducedSwing_not_localAsymptoticStable_of_cut {p : Params n}
   rcases hW.lt_or_eq with hneg | hzero
   · intro hLAS
     refine not_localAsymptoticStable_of_forms ⟨p, θ⟩ hbal v (Or.inl ?_)
-      (mem_den_of_localAsymptoticStable hLAS)
+      (mem_den_flow_iff_four.mpr hLAS)
     show hessForm p θ (ground v) < 0
     rw [hv, ground_groupIndicator, hessForm_add_const, hessForm_groupIndicator]
     linarith
@@ -348,7 +345,7 @@ private theorem reducedSwing_hessForm_nonneg_of_localAsymptoticStable {p : Param
   by_contra h
   push Not at h
   refine not_localAsymptoticStable_of_forms ⟨p, θ⟩ hbal (fun i => u i.succ - u 0) (Or.inl ?_)
-    (mem_den_of_localAsymptoticStable hLAS)
+    (mem_den_flow_iff_four.mpr hLAS)
   show hessForm p θ (ground fun i => u i.succ - u 0) < 0
   rw [ground_sub_zero, hessForm_add_const]
   exact h
@@ -361,7 +358,7 @@ private theorem reducedSwing_cubicForm_eq_zero_of_localAsymptoticStable {p : Par
     (h0 : hessForm p θ u = 0) : cubicForm p θ u = 0 := by
   by_contra h
   refine not_localAsymptoticStable_of_forms ⟨p, θ⟩ hbal (fun i => u i.succ - u 0)
-    (Or.inr ⟨?_, ?_⟩) (mem_den_of_localAsymptoticStable hLAS)
+    (Or.inr ⟨?_, ?_⟩) (mem_den_flow_iff_four.mpr hLAS)
   · show hessForm p θ (ground fun i => u i.succ - u 0) = 0
     rw [ground_sub_zero, hessForm_add_const]; exact h0
   · show cubicForm p θ (ground fun i => u i.succ - u 0) ≠ 0
@@ -506,18 +503,11 @@ vanishing on every null direction of its Hessian form. -/
 cosine. -/
 @[powerlib_foundation] theorem exists_rep_of_cos_pos {φ : ℝ} (hc : 0 < Real.cos φ) :
     ∃ β, (-(π / 2) < β ∧ β < π / 2) ∧ Real.sin β = Real.sin φ ∧ Real.cos β = Real.cos φ := by
-  refine ⟨Real.arcsin (Real.sin φ), ?_, Real.sin_arcsin (Real.neg_one_le_sin φ)
-    (Real.sin_le_one φ), ?_⟩
-  swap
-  · rw [Real.cos_arcsin]
-    have : 1 - Real.sin φ ^ 2 = Real.cos φ ^ 2 := by rw [← Real.sin_sq_add_cos_sq φ]; ring
-    rw [this, Real.sqrt_sq hc.le]
   have hcb : Real.cos (Real.arcsin (Real.sin φ)) = Real.cos φ := by
-    rw [Real.cos_arcsin]
-    have : 1 - Real.sin φ ^ 2 = Real.cos φ ^ 2 := by rw [← Real.sin_sq_add_cos_sq φ]; ring
-    rw [this, Real.sqrt_sq hc.le]
-  refine ⟨lt_of_le_of_ne (Real.neg_pi_div_two_le_arcsin _) fun h => ?_,
-    lt_of_le_of_ne (Real.arcsin_le_pi_div_two _) fun h => ?_⟩
+    rw [SpecialFunctions.cos_arcsin_sin, abs_of_pos hc]
+  refine ⟨Real.arcsin (Real.sin φ), ⟨lt_of_le_of_ne (Real.neg_pi_div_two_le_arcsin _) fun h => ?_,
+    lt_of_le_of_ne (Real.arcsin_le_pi_div_two _) fun h => ?_⟩,
+    Real.sin_arcsin (Real.neg_one_le_sin φ) (Real.sin_le_one φ), hcb⟩
   · rw [← h, Real.cos_neg, Real.cos_pi_div_two] at hcb; linarith
   · rw [h, Real.cos_pi_div_two] at hcb; linarith
 
@@ -972,22 +962,13 @@ zero-weight cut (`not_localAsymptoticStable_of_zero_cut`). -/
 
 /-! ## The family: four machines with at most four lines -/
 
-private theorem powerFlow_of_equilibrium_four {p : Params n} {θ : Fin (n + 1) → ℝ}
-    (h : reducedField p (equilibrium θ) = 0) : ∀ k, p.P k = powerInjection p.B θ k := by
-  intro k
-  have hk := congrArg (fun z : State (n + (n + 1)) => z (wIdx k)) h
-  simp only [reducedField_wIdx, equilibrium, reduce_wIdx, angleMap_reduce,
-    powerInjection_add_const, PiLp.zero_apply] at hk
-  rw [div_eq_zero_iff, or_iff_left (p.M_pos k).ne'] at hk
-  simp only [Pi.zero_apply, mul_zero, sub_zero] at hk
-  linarith
-
 /-- **Four machines with at most four lines: the local asymptotic translation is exact.** Label
 the machines by `σ` so that the pairs `σ1, σ3` and either `σ0, σ2` (the lines lie on the four-cycle
 `σ0 σ1 σ2 σ3`) or `σ0, σ3` (a triangle `σ0 σ1 σ2` with the pendant line `σ2 σ3`) are uncoupled;
 every four-machine network with two uncoupled pairs has such a labelling. Then the model is
 locally asymptotically stable exactly when its profile is a power-balance point with a Hurwitz
-reduced Jacobian. -/
+reduced Jacobian (`mem_den_locallyAsymptoticallyStable_iff_of_guard` with the obstruction
+`not_localAsymptoticStable_four`). -/
 @[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_four (m : Model 3)
     (σ : Equiv.Perm (Fin 4)) (h13 : m.params.B (σ 1) (σ 3) = 0)
     (hsp : m.params.B (σ 0) (σ 2) = 0 ∨ m.params.B (σ 0) (σ 3) = 0) :
@@ -995,19 +976,7 @@ reduced Jacobian. -/
       (∀ k, m.params.P k = powerInjection m.params.B m.θ k) ∧
       LinearSystems.IsHurwitz (jacobian m.params m.θ)) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den_flow_iff_four]
-  change LocalAsymptoticStable _ _ ↔ _
-  constructor
-  · intro hLAS
-    have hp := powerFlow_of_equilibrium_four (Dynamics.isEquilibrium_of_lyapunovStable
-      (reducedField_contDiff m.params) hLAS.1)
-    refine ⟨hp, ?_⟩
-    by_contra hH
-    exact reducedSwing_not_localAsymptoticStable_four m.params m.θ σ h13 hsp hp hH hLAS
-  · rintro ⟨hp, hH⟩
-    exact Flow.locallyExponentiallyStable_localAsymptoticStable
-      (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian m.params m.θ)
-        (reducedField_contDiff m.params) (reducedField_equilibrium m.params m.θ hp)
-        (hasFDerivAt_reducedField m.params m.θ).fderiv hH)
+  exact mem_den_locallyAsymptoticallyStable_iff_of_guard m fun hp hH =>
+    not_localAsymptoticStable_four m σ h13 hsp hp hH
 
 end powerlib.Network.Swing

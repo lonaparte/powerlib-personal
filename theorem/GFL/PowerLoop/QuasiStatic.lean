@@ -432,7 +432,8 @@ def family : Family Model Requirement 3 0 :=
 point. -/
 private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (QuasiStatic.field m.params) (point m.θ m.Id) :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model => QuasiStatic.field m.params)
+    (pt := fun m => point m.θ m.Id) family_isAutonomous
 
 /-- Linearization at the selected point: a Routh–Hurwitz Jacobian gives local exponential
 stability. -/

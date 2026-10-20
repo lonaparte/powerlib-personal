@@ -220,13 +220,8 @@ def vd0 (θ0 : ℝ) : ℝ := p.V0 * Real.cos θ0
     (hlt : |p.Xg * p.id0| < p.V0) :
     p.V0 * Real.sin (Real.arcsin (-(p.Xg * p.id0) / p.V0)) = -(p.Xg * p.id0) ∧
       0 < Real.cos (Real.arcsin (-(p.Xg * p.id0) / p.V0)) := by
-  have hr : |-(p.Xg * p.id0) / p.V0| < 1 := by
-    rw [abs_div, abs_neg, abs_of_pos hV0, div_lt_one hV0]; exact hlt
-  obtain ⟨h1, h2⟩ := abs_lt.mp hr
-  refine ⟨?_, ?_⟩
-  · rw [Real.sin_arcsin h1.le h2.le]; field_simp
-  · rw [Real.cos_arcsin]
-    exact SpecialFunctions.sqrt_one_sub_sq_pos (by rwa [abs_neg]) hV0
+  have hc : |-(p.Xg * p.id0)| < p.V0 := by rwa [abs_neg]
+  exact ⟨SpecialFunctions.mul_sin_arcsin_div hc.le hV0, SpecialFunctions.cos_arcsin_div_pos hc hV0⟩
 
 @[powerlib_foundation] theorem contDiff_regField : ContDiff ℝ 1 (regField p) := by
   have hinv : ContDiff ℝ 1 Dynamics.invExt := Dynamics.contDiff_invExt
@@ -529,7 +524,8 @@ def family : Family Model Requirement 4 0 :=
 /-- A flow sentence of a model is the sentence of the untranslated field at `(θ₀, 0, 1, 0)`. -/
 private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (FourState.field m.params) (opPoint m.θ) :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model => FourState.field m.params)
+    (pt := fun m => opPoint m.θ) family_isAutonomous
 
 /-- The quartic Routh conditions give local exponential stability of the physical field. -/
 private theorem les_of_meets {m : Model} (he : Meets m .equilibrium) (hr : Meets m .routh) :
