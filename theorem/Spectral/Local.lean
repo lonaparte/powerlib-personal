@@ -1,5 +1,6 @@
 import theorem.Dynamics.ConverseLinearization
 import theorem.Map.Basic
+import theorem.Dynamics.Shift
 import theorem.Family.Basic
 import theorem.TMIO.ClaimElab
 
@@ -31,7 +32,9 @@ work-sync `theory/T-small-signal-stability.md` §1 for the local sentences, conv
 Results.
 * Denotations: `den_locallyExponentiallyStable_subset_las`, `den_las_subset_lyapunovStable`,
   `den_locallyExponentiallyStable_subset_lyapunovStable` (for every family, continuous or
-  discrete).
+  discrete); `mem_den_flow_iff_shift` (an autonomous family written in coordinates about selected
+  points `pt x` reads its flow sentences on the original fields at those points, through
+  `Flow.Property.holds_shift_iff`).
 * The table: `localTable Rl Rs Ru Rp`. `chain_le_semantics_of_localTable` proves every translation
   sound from the inconsistency of the whole language and the three obligations (`Rl` gives
   Lyapunov stability, `Rs` local exponential stability, `Ru` instability) plus passivity on `Rp`;
@@ -103,6 +106,14 @@ variable {F : Family X Q n p}
 @[powerlib_foundation] theorem den_locallyExponentiallyStable_subset_lyapunovStable :
     F.den (.flow .locallyExponentiallyStable) ⊆ F.den (.flow .lyapunovStable) :=
   fun _ hx => den_las_subset_lyapunovStable (den_locallyExponentiallyStable_subset_las hx)
+
+/-- A family read on fields translated to selected points: its flow sentences are those of the
+untranslated fields at the points (`Flow.Property.holds_shift_iff`). -/
+@[powerlib_foundation] theorem mem_den_flow_iff_shift {F : Family X Q n 0}
+    {f : X → EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)}
+    {pt : X → EuclideanSpace ℝ (Fin n)} (hF : F.IsAutonomous fun x z => f x (z + pt x))
+    {x : X} {P : Flow.Property} : x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x) :=
+  hF.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
 
 end Denotation
 

@@ -141,6 +141,13 @@ pendulum, swing equation or reduced PLL in `(angle, rate)` coordinates) is smoot
     fin_cases i <;> simp [Fin.sum_univ_two]
     ring
 
+/-- The reciprocal of a coordinate, `y ↦ (y i)⁻¹`, at a point where the coordinate is nonzero. -/
+@[powerlib_foundation] theorem hasFDerivAt_inv_coord (i : Fin n) {x : Dynamics.State n}
+    (hx : x i ≠ 0) :
+    HasFDerivAt (fun y : Dynamics.State n => (y i)⁻¹)
+      ((ContinuousLinearMap.toSpanSingleton ℝ (-((x i) ^ 2)⁻¹)).comp (coord i)) x :=
+  (hasFDerivAt_inv hx).comp x (hasFDerivAt_coord i x)
+
 end Jacobian
 
 /-! ## Three-dimensional states -/
@@ -234,6 +241,21 @@ def lift (F : (Fin n → ℝ) → (Fin n → ℝ)) (x : Dynamics.State n) : Dyna
 end Lift
 
 /-! ## Norms and coordinates -/
+
+section Blocks
+
+variable {m k : ℕ}
+
+/-- A state of `ℝ^{m+k}` is determined by its two blocks of coordinates. -/
+@[powerlib_foundation] theorem state_ext_blocks {z z' : State (m + k)}
+    (h₁ : ∀ i : Fin m, z (Fin.castAdd k i) = z' (Fin.castAdd k i))
+    (h₂ : ∀ j : Fin k, z (Fin.natAdd m j) = z' (Fin.natAdd m j)) : z = z' := by
+  ext r
+  refine Fin.addCases (fun i => ?_) (fun j => ?_) r
+  · exact h₁ i
+  · exact h₂ j
+
+end Blocks
 
 section Norms
 

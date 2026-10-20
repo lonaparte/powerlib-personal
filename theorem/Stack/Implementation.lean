@@ -24,7 +24,9 @@ Realization soundness reduces to static obligations on requirements
 map `design : Y → X` uses `ofDesign`.
 
 Source: TMIO v0.3 (`theorem/TMIO/Derived.lean`, `theorem/TMIO/Relation.lean`); the model family
-interface (`theorem/Family/Basic.lean`).
+interface (`theorem/Family/Basic.lean`). Scaffold: `theorem/Realization.agda` (the generic pattern;
+each realization of the library has its own scaffold: `ExactSampling`, `SwitchedAveraging`,
+`EulerDiscretization`).
 
 Results.
 * The composite connection `uTI` and its generated value at a sentence

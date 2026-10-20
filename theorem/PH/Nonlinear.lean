@@ -119,6 +119,11 @@ variable {n m : ℕ}
       _ = -(v ⬝ᵥ (J *ᵥ v)) := by rw [hJ, neg_mulVec, neg_dotProduct, dotProduct_comm]
   linarith
 
+/-- The planar symplectic matrix `[[0, 1], [−1, 0]]` is skew-symmetric. -/
+@[powerlib_foundation] theorem transpose_symplectic_two :
+    (!![(0 : ℝ), 1; -1, 0])ᵀ = -!![(0 : ℝ), 1; -1, 0] := by
+  ext i j; fin_cases i <;> fin_cases j <;> simp
+
 /-- Builds a gradient from a Fréchet derivative given in dot-product form. -/
 @[powerlib_foundation] theorem hasGradientAt_of_hasFDerivAt {H : State n → ℝ}
     {L : State n →L[ℝ] ℝ} {x d : State n} (hH : HasFDerivAt H L x)

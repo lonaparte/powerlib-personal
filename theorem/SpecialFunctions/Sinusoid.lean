@@ -98,6 +98,31 @@ variable {c A φ a : ℝ}
     rw [div_pow, ← sq_abs, hc, div_self (pow_ne_zero 2 hA.ne')]
   rw [this, sub_self, Real.sqrt_zero]
 
+/-- The loading angle `arcsin (c / A)` solves `A sin δ = c`. -/
+@[powerlib_foundation] theorem mul_sin_arcsin_div (hc : |c| ≤ A) (hA : 0 < A) :
+    A * sin (arcsin (c / A)) = c := by
+  have hs : |c / A| ≤ 1 := by rw [abs_div, abs_of_pos hA, div_le_one hA]; exact hc
+  rw [sin_arcsin (abs_le.mp hs).1 (abs_le.mp hs).2]
+  field_simp
+
+/-- The second angle `π − arcsin (c / A)` solves `A sin δ = c` too. -/
+@[powerlib_foundation] theorem mul_sin_pi_sub_arcsin_div (hc : |c| ≤ A) (hA : 0 < A) :
+    A * sin (π - arcsin (c / A)) = c := by
+  rw [sin_pi_sub]
+  exact mul_sin_arcsin_div hc hA
+
+/-- Below the peak, `A cos δ > 0` at the loading angle. -/
+@[powerlib_foundation] theorem cos_arcsin_div_pos (hc : |c| < A) (hA : 0 < A) :
+    0 < cos (arcsin (c / A)) := by
+  rw [cos_arcsin]
+  exact sqrt_one_sub_sq_pos hc hA
+
+/-- Below the peak, `A cos δ < 0` at the second angle. -/
+@[powerlib_foundation] theorem cos_pi_sub_arcsin_div_neg (hc : |c| < A) (hA : 0 < A) :
+    cos (π - arcsin (c / A)) < 0 := by
+  rw [cos_pi_sub, neg_lt_zero]
+  exact cos_arcsin_div_pos hc hA
+
 @[powerlib_foundation] theorem stableRoot_zero (hc : |c| ≤ A) (hA : 0 < A) :
     c - A * sin (stableRoot c A φ a + φ) = 0 := by
   rw [sin_stableRoot hc hA]; field_simp; ring
