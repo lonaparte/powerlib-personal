@@ -76,7 +76,7 @@ producers (`Stack.refutes`) and, through realization soundness, for some realize
 ## Placing results
 
 * A model family with its translation is one T–M connection. Its translation, denotation and
-  requirement-space conclusions are T–M and M results. The codex encoding `Family.seed` puts the
+  requirement-space conclusions are T–M and M results. The seed encoding `Family.seed` puts the
   model instances in the third position and the requirement sets in the second; in the reading
   above both belong to M.
 * An implementation is a second family. Its own conclusions have the same three shapes and are
@@ -113,8 +113,8 @@ import dependencies.tests.lean.Library.TMIOIndex
 ```
 
 The categories are `translation`, `denotation` (T–M), `requirementSpace` (M), `implementation`
-(I), `realization` (M–I), `data` (records: T–O and O–I) and `observation` (the codex observation
-relations on models).
+(I), `realization` (M–I), `data` (records: T–O and O–I) and `observation` (the observation
+relations on models of the seed encoding).
 
 ## Implementation families
 

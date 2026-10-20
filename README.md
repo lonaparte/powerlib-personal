@@ -2,7 +2,7 @@
 
 powerlib is a theorem library for power systems and power electronics. Its theorems are proved in Lean 4; Agda is the scaffolding between its different contents.
 
-Development takes place first in the private repository with the maintainer and Codex, and is periodically synchronized to the public repository.
+Development takes place first in the private repository with the maintainer and coding agents, and is periodically synchronized to the public repository. The whole library is developed in one role: no part of it is reserved to one agent.
 
 ## Directions
 

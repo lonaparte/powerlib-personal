@@ -14,7 +14,7 @@ records produced by implementations (O).
 * `realization` (M–I): implementations against the models they realize. `P` mentions
   `Implementation.RealizationSoundUnder`, `Implementation.RealizationCompleteUnder`,
   `Implementation.RealizationExactUnder` or `Implementation.uTI`.
-* `observation` (the codex encoding, observation relations on models): what observations certify
+* `observation` (the seed encoding, observation relations on models): what observations certify
   or predict about models, or the observation closure. `P` mentions a member of `TMIO.Seed`
   (`u₃`, `uTO`, …), `TMIO.certify`, `TMIO.possibly` or `TMIO.predict`.
 * `implementation` (I): translation, denotation or requirement space of an implementation family,
@@ -75,7 +75,7 @@ def Category.label : Category → String
 def Category.layer : Category → String
   | .data => "O"
   | .realization => "M–I"
-  | .observation => "codex"
+  | .observation => "seed"
   | .implementation => "I"
   | .translation => "T–M"
   | .requirementSpace => "M"
@@ -84,7 +84,7 @@ def Category.layer : Category → String
 def Category.meaning : Category → String
   | .data => "records along a stack: inference, certification, prediction"
   | .realization => "implementations against the models they realize"
-  | .observation => "observation relations on models (codex encoding)"
+  | .observation => "observation relations on models (seed encoding)"
   | .implementation => "implementation families: translation, denotation, requirement space"
   | .translation => "requirement translation compared with the semantics"
   | .requirementSpace => "models meeting requirements"
