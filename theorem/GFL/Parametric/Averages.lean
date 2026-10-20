@@ -62,8 +62,9 @@ variable (p : FourState.Params)
       (continuous_const.mul h3)))
 
 /-- `⟨V⟩ = 1`: `∫₀ᵀ (V − 1) dt = 0` on a returning solution. -/
-@[powerlib_foundation] private theorem integral_V_sub_one {φ : ℝ → Dynamics.State 4} {θg θgd : ℝ → ℝ}
-    (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t) {T : ℝ} (hT : φ T = φ 0) :
+@[powerlib_foundation] private theorem integral_V_sub_one {φ : ℝ → Dynamics.State 4}
+    {θg θgd : ℝ → ℝ} (hφ : ∀ t, HasDerivAt φ (fieldAngle p (θg t) (θgd t) (φ t)) t)
+    {T : ℝ} (hT : φ T = φ 0) :
     ∫ t in (0 : ℝ)..T, (φ t 2 - 1) = 0 := by
   have hd : ∀ t ∈ Set.uIcc 0 T, HasDerivAt (fun s => φ s 3) (φ t 2 - 1) t := by
     intro t _

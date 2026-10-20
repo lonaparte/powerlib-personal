@@ -196,7 +196,8 @@ end GivenBranch
 
 /-- The characteristic polynomial `(p, z) ↦ det(zI − A(p))` is `C¹` jointly in the parameter and
 the spectral variable when the entries of `A` are `C¹` at `p₀`. -/
-@[powerlib_foundation] theorem contDiffAt_charpoly_eval {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+@[powerlib_foundation] theorem contDiffAt_charpoly_eval {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E]
     {A : E → Matrix n n ℂ} {p₀ : E} (hA : ∀ i j, ContDiffAt ℝ 1 (fun p => A p i j) p₀) (z₀ : ℂ) :
     ContDiffAt ℝ 1 (fun q : E × ℂ => (A q.1).charpoly.eval q.2) (p₀, z₀) := by
   have e : (fun q : E × ℂ => (A q.1).charpoly.eval q.2) = fun q =>
@@ -218,8 +219,8 @@ the characteristic polynomial, Mathlib `ContDiffAt.implicitFunction`): if the en
 are `C¹` at `p₀` and `λ₀` is a simple eigenvalue of `A(p₀)` (algebraic multiplicity one), there is
 a function `λ(p)`, `C¹` at `p₀`, with `λ(p₀) = λ₀`, such that near `p₀` every `λ(p)` is an
 eigenvalue of `A(p)` and, near `(p₀, λ₀)`, it is the only one. -/
-@[powerlib_foundation] theorem exists_eigenvalue_branch {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [CompleteSpace E] {A : E → Matrix n n ℂ} {p₀ : E} {lam₀ : ℂ}
+@[powerlib_foundation] theorem exists_eigenvalue_branch {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {A : E → Matrix n n ℂ} {p₀ : E} {lam₀ : ℂ}
     (hA : ∀ i j, ContDiffAt ℝ 1 (fun p => A p i j) p₀)
     (hsimple : (A p₀).charpoly.rootMultiplicity lam₀ = 1) :
     ∃ lam : E → ℂ, lam p₀ = lam₀ ∧ ContDiffAt ℝ 1 lam p₀ ∧
@@ -281,7 +282,8 @@ one in `charpoly M`, `M v₀ = λ₀ v₀` with `v₀ ≠ 0`, and `(M − λ₀)
 of `v₀`. Indeed `x` lies in the generalized eigenspace `ker (M − λ₀)²`, whose dimension is at most
 the root multiplicity (Mathlib `LinearMap.finrank_genEigenspace_le`), hence is the line
 `span v₀`. -/
-@[powerlib_foundation] theorem eq_smul_of_mulVec_sub_eq_smul {M : Matrix n n ℂ} {lam₀ : ℂ} {v₀ x : n → ℂ}
+@[powerlib_foundation] theorem eq_smul_of_mulVec_sub_eq_smul {M : Matrix n n ℂ} {lam₀ : ℂ}
+    {v₀ x : n → ℂ}
     (hsimple : M.charpoly.rootMultiplicity lam₀ = 1) (hv₀ : v₀ ≠ 0)
     (hMv : M *ᵥ v₀ = lam₀ • v₀) {c : ℂ} (hx : M *ᵥ x - lam₀ • x = c • v₀) :
     ∃ a : ℂ, x = a • v₀ := by
@@ -333,7 +335,8 @@ eigenvector `v₀`, and a normalising vector `w` with `wᵀ v₀ ≠ 0`, there a
 `C¹` at `p₀`, with `v(p₀) = v₀`, `λ(p₀) = λ₀`, and for `p` near `p₀`
 `A(p) v(p) = λ(p) v(p)`, `wᵀ v(p) = wᵀ v₀` and `v(p) ≠ 0`; near `(p₀, v₀, λ₀)` every normalised
 eigenpair `(A(p) v = λ v, wᵀ v = wᵀ v₀)` is `(v(p), λ(p))`. -/
-@[powerlib_foundation] theorem exists_eigenvector_branch {A : E → Matrix n n ℂ} {p₀ : E} {lam₀ : ℂ} {v₀ w : n → ℂ}
+@[powerlib_foundation] theorem exists_eigenvector_branch {A : E → Matrix n n ℂ} {p₀ : E} {lam₀ : ℂ}
+    {v₀ w : n → ℂ}
     (hA : ∀ i j, ContDiffAt ℝ 1 (fun p => A p i j) p₀)
     (hsimple : (A p₀).charpoly.rootMultiplicity lam₀ = 1) (hv₀ : A p₀ *ᵥ v₀ = lam₀ • v₀)
     (hw : w ⬝ᵥ v₀ ≠ 0) :
@@ -409,7 +412,8 @@ eigenpair `(A(p) v = λ v, wᵀ v = wᵀ v₀)` is `(v(p), λ(p))`. -/
   set φ := hF.implicitFunction hpn hinv with hφ
   have hφ0 : φ p₀ = (v₀, lam₀) := hF.implicitFunction_apply_self hpn hinv
   have hφC : ContDiffAt ℝ 1 φ p₀ := hF.contDiffAt_implicitFunction hpn hinv
-  refine ⟨fun p => (φ p).1, fun p => (φ p).2, congrArg Prod.fst hφ0, congrArg Prod.snd hφ0, hφC.fst, hφC.snd, ?_, ?_⟩
+  refine ⟨fun p => (φ p).1, fun p => (φ p).2, congrArg Prod.fst hφ0, congrArg Prod.snd hφ0,
+    hφC.fst, hφC.snd, ?_, ?_⟩
   · filter_upwards [hF.eventually_apply_implicitFunction hpn hinv] with p hp
     rw [hFu] at hp
     have h1 := congrArg Prod.fst hp

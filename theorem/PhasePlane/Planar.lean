@@ -88,7 +88,8 @@ def mk (a b : ℝ) : State 2 := WithLp.toLp 2 ![a, b]
 @[powerlib_foundation] theorem hasDerivWithinAt_iff_components {φ : ℝ → State 2} {v : State 2}
     {s : Set ℝ} {t : ℝ} :
     HasDerivWithinAt φ v s t ↔
-      HasDerivWithinAt (fun τ => φ τ 0) (v 0) s t ∧ HasDerivWithinAt (fun τ => φ τ 1) (v 1) s t := by
+      HasDerivWithinAt (fun τ => φ τ 0) (v 0) s t ∧
+        HasDerivWithinAt (fun τ => φ τ 1) (v 1) s t := by
   constructor
   · intro h
     exact ⟨(Dynamics.coord 0).hasFDerivAt.comp_hasDerivWithinAt t h,

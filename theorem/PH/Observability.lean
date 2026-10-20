@@ -161,8 +161,7 @@ private theorem losslessLC_trajectory (t₀ t₁ : ℝ) :
   apply WithLp.ofLp_injective
   ext i; fin_cases i <;>
     simp [Linear.Plant.system, Port.System.zeroInput, losslessLC, toPortHamiltonian,
-      Port.PortHamiltonian.plant, losslessJ, Linear.op, Matrix.ofLp_toEuclideanCLM, mulVec,
-      dotProduct, Fin.sum_univ_two]
+      Port.PortHamiltonian.plant, losslessJ, Linear.op]
 
 /-- That trajectory keeps unit energy, so it does not converge to the origin.
 Static evidence on the model, not a connection conclusion. -/

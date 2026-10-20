@@ -612,8 +612,8 @@ private theorem modelB_locallyExponentiallyStable_of_collapse {x : State 4} (hx 
   obtain ⟨ρ₁, hρ₁, hball⟩ := Metric.continuous_iff.mp hgc x a ha0
   obtain ⟨M, hM⟩ := (isCompact_closedBall x 1).exists_bound_of_continuousOn
     p.contDiff_field_offDC.continuous.continuousOn
-  refine Dynamics.Degenerate.locallyExponentiallyStable_of_collapse 2 hx (ρ := min ρ₁ 1) (a := a) (M := M)
-    (lt_min hρ₁ one_pos) ha0 ?_ ?_ ?_
+  refine Dynamics.Degenerate.locallyExponentiallyStable_of_collapse 2 hx (ρ := min ρ₁ 1) (a := a)
+    (M := M) (lt_min hρ₁ one_pos) ha0 ?_ ?_ ?_
   · intro y hy hy2
     rw [p.two_mul_field_two hy2]
     have h1 := hball y (by rw [dist_eq_norm]; exact lt_of_lt_of_le hy (min_le_left _ _))
@@ -658,7 +658,8 @@ private theorem modelB_unstable_of_repel {x : State 4} (hx : x 2 = 0)
     show a ≤ g y
     linarith
   · refine ⟨fun y => (WithLp.toLp 2 ![p.field y 0, p.field y 1,
-      (p.I0 + 3 * p.pccP y / (2 * Dynamics.regDen s (y 2))) / p.Cdc, p.field y 3] : State 4), ?_, ?_⟩
+      (p.I0 + 3 * p.pccP y / (2 * Dynamics.regDen s (y 2))) / p.Cdc, p.field y 3] : State 4),
+      ?_, ?_⟩
     · have hden : ContDiff ℝ 1 (fun y : State 4 => 2 * Dynamics.regDen s (y 2)) :=
         contDiff_const.mul ((Dynamics.contDiff_regDen _).comp (Dynamics.contDiff_coord 2))
       have hden0 : ∀ y : State 4, 2 * Dynamics.regDen s (y 2) ≠ 0 := fun y => by
@@ -1082,8 +1083,8 @@ injection crosses the plane (`I₀ / C_dc ≠ 0`) is locally exponentially stabl
 semantics, although it is not an equilibrium (the DC-link component of the field is
 `I₀ / C_dc ≠ 0` there): near `x*`, `d(V_dc²)/dt = (2 I₀ V_dc + 3 P) / C_dc` is bounded below zero,
 so every solution segment reaches the plane at most at its end, after a time `O(V_dc(t₀)²)`, and
-moves by `O(‖x(t₀) − x*‖²)` (`Dynamics.Degenerate.locallyExponentiallyStable_of_collapse`). The estimate is
-met because the solutions cease to exist, not because they converge. -/
+moves by `O(‖x(t₀) − x*‖²)` (`Dynamics.Degenerate.locallyExponentiallyStable_of_collapse`). The
+estimate is met because the solutions cease to exist, not because they converge. -/
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_collapse (m : Model)
     (hx : m.x 2 = 0) (hP : m.p.pccP m.x / m.p.Cdc < 0) (hI : m.p.I0 / m.p.Cdc ≠ 0) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
@@ -1092,9 +1093,9 @@ met because the solutions cease to exist, not because they converge. -/
 
 /-- When the injection does not cross the singular plane (`I₀ / C_dc = 0`, in particular when
 `C_dc = 0`), no selected state on the plane is locally exponentially stable. The field agrees on
-the plane with the smooth field `G = (f₀, f₁, 0, f₃)`, which keeps the plane invariant: a solution of
-`G` through `x*` is a solution of model B, so the estimate forces it to stay at `x*`, making `x*` an
-equilibrium (`not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero`). -/
+the plane with the smooth field `G = (f₀, f₁, 0, f₃)`, which keeps the plane invariant: a solution
+of `G` through `x*` is a solution of model B, so the estimate forces it to stay at `x*`, making `x*`
+an equilibrium (`not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero`). -/
 @[powerlib_domain] theorem not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero_of_I0
     (m : Model) (hx : m.x 2 = 0) (hI : m.p.I0 / m.p.Cdc = 0) :
     connection% (m ∉ family.den (.flow .locallyExponentiallyStable)) := by
@@ -1210,7 +1211,8 @@ is that of an equilibrium with positive reference (`exactUnder_locallyExponentia
 /-- Within the context of a positive DC-voltage reference the local asymptotic translation is not
 exact (the collapse point). -/
 @[powerlib_domain] theorem not_exactUnder_positiveReference_locallyAsymptoticallyStable :
-    connection% (¬ family.ExactUnder {.positiveReference} (.flow .locallyAsymptoticallyStable)) := by
+    connection% (¬ family.ExactUnder {.positiveReference}
+      (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_exactUnder_of_les_witness
     (by simp [TMIO.mem_realize, family, Meets, collapsePoint])

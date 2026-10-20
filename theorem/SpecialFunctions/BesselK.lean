@@ -434,14 +434,16 @@ theorem abs_K0_weight_sub_one_le (u : ℝ) : |1 / Real.sqrt (1 + u ^ 2 / 4) - 1|
     ‖Complex.exp z * besselK0 z - gaussHalf z‖ ≤
       1 / 8 * (4 / z.re) * (Real.sqrt (Real.pi / (z.re / 4)) / 2) := by
   rw [exp_mul_besselK0_eq]
-  exact norm_integral_gauss_mul_sub_le continuous_K0_weight (by norm_num) abs_K0_weight_sub_one_le hz
+  exact norm_integral_gauss_mul_sub_le continuous_K0_weight (by norm_num)
+    abs_K0_weight_sub_one_le hz
 
 /-- **Large argument of `K₁`**: `‖e^z K₁(z) − G(z)‖ ≤ (1/2)(4/x) √(π/(x/4))/2`, `x = Re z > 0`. -/
 @[powerlib_foundation] theorem norm_exp_mul_besselK1_sub_le {z : ℂ} (hz : 0 < z.re) :
     ‖Complex.exp z * besselK1 z - gaussHalf z‖ ≤
       1 / 2 * (4 / z.re) * (Real.sqrt (Real.pi / (z.re / 4)) / 2) := by
   rw [exp_mul_besselK1_eq]
-  exact norm_integral_gauss_mul_sub_le continuous_K1_weight (by norm_num) abs_K1_weight_sub_one_le hz
+  exact norm_integral_gauss_mul_sub_le continuous_K1_weight (by norm_num)
+    abs_K1_weight_sub_one_le hz
 
 /-- `‖e^z K₀(z)‖ ≤ √(π/(x/2))/2` (`x = Re z > 0`): the logarithmic growth of `K₀` at `0` is
 `O(x^{−1/2})`. -/
@@ -865,7 +867,8 @@ theorem hasDerivAt_besselI0 (z : ℂ) : HasDerivAt besselI0 (besselI1 z) z := by
 
 /-- Integration by parts on `(0, ∞)`: `z ∫₀^∞ e^{−z cosh t} sinh²t dt = K₁(z)` (`Re z > 0`). -/
 @[powerlib_foundation] theorem mul_integral_cexp_neg_mul_cosh_mul_sinh_sq {z : ℂ} (hz : 0 < z.re) :
-    z * ∫ t in Ioi (0 : ℝ), Complex.exp (-z * Real.cosh t) * (Real.sinh t ^ 2 : ℝ) = besselK1 z := by
+    z * ∫ t in Ioi (0 : ℝ), Complex.exp (-z * Real.cosh t) * (Real.sinh t ^ 2 : ℝ) =
+      besselK1 z := by
   have hint2 : IntegrableOn (fun t : ℝ => Complex.exp (-z * Real.cosh t) * (Real.sinh t ^ 2 : ℝ))
       (Ioi 0) := by
     refine Integrable.mono' (integrableOn_cexp_neg_mul_cosh_mul_cosh_sq hz).norm (by fun_prop)
@@ -873,9 +876,10 @@ theorem hasDerivAt_besselI0 (z : ℂ) : HasDerivAt besselI0 (besselI1 z) z := by
     rw [norm_mul, norm_mul, Complex.norm_real, Complex.norm_real, Real.norm_eq_abs,
       Real.norm_eq_abs, abs_of_nonneg (by positivity), abs_of_nonneg (by positivity)]
     exact mul_le_mul_of_nonneg_left (by rw [Real.cosh_sq]; linarith) (norm_nonneg _)
-  have hd : ∀ t ∈ Ici (0 : ℝ), HasDerivAt (fun t : ℝ => -(Complex.exp (-z * Real.cosh t) * Real.sinh t))
-      (z * (Complex.exp (-z * Real.cosh t) * (Real.sinh t ^ 2 : ℝ)) -
-        Complex.exp (-z * Real.cosh t) * Real.cosh t) t := by
+  have hd : ∀ t ∈ Ici (0 : ℝ),
+      HasDerivAt (fun t : ℝ => -(Complex.exp (-z * Real.cosh t) * Real.sinh t))
+        (z * (Complex.exp (-z * Real.cosh t) * (Real.sinh t ^ 2 : ℝ)) -
+          Complex.exp (-z * Real.cosh t) * Real.cosh t) t := by
     intro t _
     have h1 : HasDerivAt (fun t : ℝ => ((Real.cosh t : ℝ) : ℂ)) (Real.sinh t : ℂ) t :=
       (Real.hasDerivAt_cosh t).ofReal_comp
@@ -884,14 +888,16 @@ theorem hasDerivAt_besselI0 (z : ℂ) : HasDerivAt besselI0 (besselI1 z) z := by
     have := (((h1.const_mul (-z)).cexp).mul h2).neg
     convert this using 1
     push_cast; ring
-  have hlim : Tendsto (fun t : ℝ => -(Complex.exp (-z * Real.cosh t) * Real.sinh t)) atTop (𝓝 0) := by
+  have hlim :
+      Tendsto (fun t : ℝ => -(Complex.exp (-z * Real.cosh t) * Real.sinh t)) atTop (𝓝 0) := by
     rw [tendsto_zero_iff_norm_tendsto_zero]
     have hy : Tendsto (fun y : ℝ => 1 / z.re * ((y * z.re) ^ 1 * Real.exp (-(y * z.re)))) atTop
         (𝓝 (1 / z.re * 0)) :=
       ((Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 1).comp
         (tendsto_id.atTop_mul_const hz)).const_mul _
     rw [mul_zero] at hy
-    refine squeeze_zero' (Eventually.of_forall fun t => norm_nonneg _) ?_ (hy.comp tendsto_cosh_atTop)
+    refine squeeze_zero' (Eventually.of_forall fun t => norm_nonneg _) ?_
+      (hy.comp tendsto_cosh_atTop)
     filter_upwards [eventually_ge_atTop 0] with t ht
     rw [norm_neg, norm_mul, norm_cexp_neg_mul_cosh, Complex.norm_real, Real.norm_eq_abs,
       abs_of_nonneg (Real.sinh_nonneg_iff.mpr ht)]

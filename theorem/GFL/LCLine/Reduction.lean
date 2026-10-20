@@ -237,7 +237,8 @@ and `i_g` solves the corrected line system. -/
 
 /-- Correction witness: the line system with the note's (2,1) entry `−a`, together with the
 capacitor and line equations, forces `a · i_gd = 0`. -/
-@[powerlib_foundation] theorem noteLineSystem_forces (hwC : p.wC ≠ 0) (Ed Eq id iq vcd vcq igd igq : ℝ)
+@[powerlib_foundation] theorem noteLineSystem_forces (hwC : p.wC ≠ 0)
+    (Ed Eq id iq vcd vcq igd igq : ℝ)
     (hqss : igd - id + p.wC * vcq = 0 ∧ igq - iq - p.wC * vcd = 0 ∧
       Ed - vcd - p.Rg * igd + p.ωg * p.Lg * igq = 0 ∧
       Eq - vcq - p.Rg * igq - p.ωg * p.Lg * igd = 0)

@@ -314,7 +314,8 @@ private theorem jacobian_eq_of_vconv (hv0 : p.vconv p.Id0 p.eqState = p.Vd0 - p.
 /-- Block-triangular characteristic polynomial: the current loop times `(s + I_dc0/(C V0))`. -/
 @[powerlib_foundation] theorem det_characteristicMatrix (s : ℂ) :
     (Linear.characteristicMatrix p.stateMatrix s).det =
-      (Linear.characteristicMatrix p.pi.model.A s).det * (s + ((p.Idc0 / (p.C * p.V0) : ℝ) : ℂ)) := by
+      (Linear.characteristicMatrix p.pi.model.A s).det *
+        (s + ((p.Idc0 / (p.C * p.V0) : ℝ) : ℂ)) := by
   simp only [CurrentControl.PIParams.model, LTI.det_characteristicMatrix_of]
   simp [Linear.characteristicMatrix, stateMatrix, Matrix.det_fin_three]
   ring
@@ -391,7 +392,8 @@ on the model, not a connection conclusion. -/
     (hs2 : (p.C : ℂ) * p.V0 * s + p.Idc0 ≠ 0) :
     Linear.transfer p.model s 0 0 =
       bridgeTransfer p.Vd0 p.pi.R p.pi.L p.Id0 s * (p.pi.Kp * s + p.pi.Ki) /
-        (((p.pi.L : ℂ) * s ^ 2 + (p.pi.R + p.pi.Kp) * s + p.pi.Ki) * (p.C * p.V0 * s + p.Idc0)) := by
+        (((p.pi.L : ℂ) * s ^ 2 + (p.pi.R + p.pi.Kp) * s + p.pi.Ki) *
+          (p.C * p.V0 * s + p.Idc0)) := by
   have hL' : (p.pi.L : ℂ) ≠ 0 := by exact_mod_cast hL
   have hC' : (p.C : ℂ) ≠ 0 := by exact_mod_cast hC
   have hV' : (p.V0 : ℂ) ≠ 0 := by exact_mod_cast hV
@@ -601,8 +603,8 @@ private theorem cascade_fderiv_ki_zero {p : CascadeParams} (hKi : p.pi.Ki = 0) (
 /-- With `L, C, V0 > 0` the nonlinear cascade is locally exponentially stable at its operating
 point exactly when the current loop is stable (`R + Kp > 0`, `Ki > 0`) and the converter
 rectifies (`I_dc0 > 0`). -/
-@[powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff (p : CascadeParams) (hL : 0 < p.pi.L)
-    (hC : 0 < p.C) (hV : 0 < p.V0) :
+@[powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff (p : CascadeParams)
+    (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0) :
     connection% (p ∈ family.den (.flow .locallyExponentiallyStable) ↔
       p ∈ {p : CascadeParams | (0 < p.pi.R + p.pi.Kp ∧ 0 < p.pi.Ki) ∧ 0 < p.Idc0}) := by
   unfold powerlib.TMIO.Statement

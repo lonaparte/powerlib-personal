@@ -98,7 +98,8 @@ terms is at most `‖w‖²` for `‖w‖ ≤ 1`. -/
     ‖besselSeries0 w - 1 - w‖ ≤ ‖w‖ ^ 2 := by
   have h := norm_tsum_sub_two_le (g := fun k : ℕ => w ^ k / ((k ! : ℂ) ^ 2)) hw (fun k => by
     rw [norm_div, norm_pow, norm_pow, Complex.norm_natCast]
-    have hk : (1 : ℝ) ≤ (k ! : ℝ) := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (Nat.factorial_ne_zero k)
+    have hk : (1 : ℝ) ≤ (k ! : ℝ) := by
+      exact_mod_cast Nat.one_le_iff_ne_zero.mpr (Nat.factorial_ne_zero k)
     have hk0 : (0 : ℝ) < (k ! : ℝ) := by positivity
     rw [div_le_div_iff₀ (by positivity) hk0]
     have : (k ! : ℝ) ≤ (k ! : ℝ) ^ 2 := by nlinarith
@@ -117,8 +118,9 @@ terms is at most `‖w‖²` for `‖w‖ ≤ 1`. -/
       rw [div_le_div_iff₀ (by positivity) hk0]
       have : (k ! : ℝ) ≤ (k ! : ℝ) * ((k + 1) ! : ℝ) := by nlinarith
       exact mul_le_mul_of_nonneg_left this (by positivity))
-  have e : (∑' k : ℕ, w ^ k / ((k ! : ℂ) * ((k + 1) ! : ℂ))) - w ^ 0 / ((0 ! : ℂ) * ((0 + 1) ! : ℂ)) -
-      w ^ 1 / ((1 ! : ℂ) * ((1 + 1) ! : ℂ)) = besselSeries1 w - 1 - w / 2 := by
+  have e : (∑' k : ℕ, w ^ k / ((k ! : ℂ) * ((k + 1) ! : ℂ))) -
+        w ^ 0 / ((0 ! : ℂ) * ((0 + 1) ! : ℂ)) - w ^ 1 / ((1 ! : ℂ) * ((1 + 1) ! : ℂ)) =
+      besselSeries1 w - 1 - w / 2 := by
     simp [besselSeries1, Nat.factorial]
   rw [e] at h
   exact h
@@ -324,7 +326,8 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
     rw [norm_mul, Complex.norm_exp]
     have : (s * w : ℂ).re = s * w.re := by simp
     rw [this]
-    have : Real.exp (s * w.re) ≤ 1 := Real.exp_le_one_iff.mpr (mul_nonpos_of_nonneg_of_nonpos hs.1 hw)
+    have : Real.exp (s * w.re) ≤ 1 :=
+      Real.exp_le_one_iff.mpr (mul_nonpos_of_nonneg_of_nonpos hs.1 hw)
     calc ‖w‖ * Real.exp (s * w.re) ≤ ‖w‖ * 1 := by gcongr
       _ = ‖w‖ := mul_one _
   have := norm_image_sub_le_of_norm_deriv_le_segment' hd hb 1 ⟨zero_le_one, le_rfl⟩
@@ -412,8 +415,8 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
         ((1 - Real.cos θ : ℝ) : ℂ) =
       Complex.exp (-z) * (Real.pi * besselI0 z - Real.pi * besselI1 z) := by
   rw [← integral_cexp_cos, ← integral_cexp_cos_mul_cos, ← intervalIntegral.integral_sub
-    (Continuous.intervalIntegrable (by fun_prop) _ _) (Continuous.intervalIntegrable (by fun_prop) _ _),
-    ← intervalIntegral.integral_const_mul]
+    (Continuous.intervalIntegrable (by fun_prop) _ _)
+    (Continuous.intervalIntegrable (by fun_prop) _ _), ← intervalIntegral.integral_const_mul]
   congr 1; funext θ
   rw [show -z * ((1 - Real.cos θ : ℝ) : ℂ) = -z + z * Real.cos θ by push_cast; ring,
     Complex.exp_add]
@@ -465,7 +468,8 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
       _ = _ := by rw [hbdef]; field_simp
 
 /-- Comparison with the Gaussian: `x = Re z > 0`,
-`‖∫₀^π e^{−z(1−cos θ)} − ∫₀^∞ e^{−zθ²/2}‖ ≤ ‖z‖π⁴/(12x²) · √(π/(x/π²))/2 + e^{−xπ²/4} √(π/(x/4))/2`. -/
+`‖∫₀^π e^{−z(1−cos θ)} − ∫₀^∞ e^{−zθ²/2}‖ ≤ ‖z‖π⁴/(12x²) · √(π/(x/π²))/2 + e^{−xπ²/4} √(π/(x/4))/2`.
+-/
 @[powerlib_foundation] theorem norm_integral_cexp_one_sub_cos_sub_gaussian_le {z : ℂ}
     (hx : 0 < z.re) :
     ‖(∫ θ in (0 : ℝ)..Real.pi, Complex.exp (-z * ((1 - Real.cos θ : ℝ) : ℂ))) -
@@ -487,7 +491,8 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
     have hb2 : b / 2 = x / Real.pi ^ 2 := by rw [hbdef]; ring
     refine (intervalIntegral.norm_integral_le_of_norm_le Real.pi_pos.le
       (g := fun θ => ‖z‖ / 24 * (8 / b ^ 2) * Real.exp (-(b / 2) * θ ^ 2))
-      (Eventually.of_forall fun θ hθ => ?_) (Continuous.intervalIntegrable (by fun_prop) _ _)).trans ?_
+      (Eventually.of_forall fun θ hθ => ?_)
+      (Continuous.intervalIntegrable (by fun_prop) _ _)).trans ?_
     · have hθπ : |θ| ≤ Real.pi := by rw [abs_of_pos hθ.1]; exact hθ.2
       have hulo : 2 / Real.pi ^ 2 * θ ^ 2 ≤ 1 - Real.cos θ := by
         linarith [Real.cos_le_one_sub_mul_cos_sq hθπ]
@@ -590,7 +595,8 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
   have hγ₀ : 0 < γ₀ := by positivity
   -- the two auxiliary Gaussian widths relative to `γ₀`
   have hγ₁ : Real.sqrt (Real.pi / (x / Real.pi ^ 2)) / 2 ≤ k₁ * γ₀ := by
-    have e : Real.pi / (x / Real.pi ^ 2) = (‖z‖ * Real.pi ^ 2 / (2 * x)) * (Real.pi / (‖z‖ / 2)) := by
+    have e : Real.pi / (x / Real.pi ^ 2) =
+        (‖z‖ * Real.pi ^ 2 / (2 * x)) * (Real.pi / (‖z‖ / 2)) := by
       field_simp
     rw [e, Real.sqrt_mul (by positivity), hγ₀def]
     have : Real.sqrt (‖z‖ * Real.pi ^ 2 / (2 * x)) ≤ k₁ := by

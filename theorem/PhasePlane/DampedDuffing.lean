@@ -73,7 +73,8 @@ def equilibria : Set (State 2) := {mk 0 0, mk 1 0, mk (-1) 0}
     have := (mul_eq_zero.mp this).resolve_left hδ.ne'
     exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp this
   -- a local solution from `x` stays in `N`, so its `y`-coordinate vanishes identically
-  obtain ⟨T, ψ, hT, hψ0, hψ⟩ := ((field_contDiff δ (k := 1)).contDiffAt (x := x)).exists_isIntegralCurveOn_Icc
+  obtain ⟨T, ψ, hT, hψ0, hψ⟩ :=
+    ((field_contDiff δ (k := 1)).contDiffAt (x := x)).exists_isIntegralCurveOn_Icc
   have hstay : ∀ t ∈ Icc 0 T, ψ t ∈ N := hNinv 0 T ψ hψ (hψ0 ▸ hx)
   have hmem0 : (0 : ℝ) ∈ Icc 0 T := ⟨le_rfl, hT.le⟩
   have hchain : HasDerivWithinAt (fun t => ψ t 1) (field δ (ψ 0) 1) (Icc 0 T) 0 :=

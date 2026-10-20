@@ -31,8 +31,8 @@ re-parametrised (`returnDifference_perUnit`), so `ImpedanceStable` is invariant
 (`impedanceStable_perUnit_iff`), and the closed-loop state matrix is the per-unit transform of
 the SI one (`closedLoopBlocks_perUnit`), with the same Hurwitz property
 (`isHurwitz_closedLoop_perUnit_iff`). These are change-of-units statements (static evidence).
-The diagonal helpers `diagonal_inv_mul`, `diagonal_mul_inv`, `mulVec_cancel`, `mulVec_cancel'` supply
-the invertibility of the bases.
+The diagonal helpers `diagonal_inv_mul`, `diagonal_mul_inv`, `mulVec_cancel`, `mulVec_cancel'`
+supply the invertibility of the bases.
 
 Family and connection conclusions.
 `den_perUnit`: on the interconnection

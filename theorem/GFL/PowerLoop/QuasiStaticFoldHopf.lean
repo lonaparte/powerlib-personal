@@ -261,11 +261,16 @@ def hopfQS_w4 (c1 c2 c3 : ℝ) : ℝ :=
 is its weight-four part plus a remainder of weight `≥ 5` and the Taylor remainders of `sin`, `cos`
 times polynomials of weight `≥ 1`. -/
 @[powerlib_foundation] theorem hopfQS_key (c1 c2 c3 S C : ℝ) :
-    dpoly3 hopfQS_W c1 c2 c3 (-4*C*c2/85 - 56*C*c3/85 - 47*C/170 + 2*S*c2/85 + 28*S*c3/85 - 42*S/85 + 126*c1/85 - 83*c2/85 + 70*c3/17 + 47/170)
-        (52*C*c2/85 + 728*C*c3/85 + 101*C/170 - 26*S*c2/85 - 364*S*c3/85 + 36*S/85 + 147*c1/85 - 196*c2/85 - 196*c3/17 - 101/170)
-        (-28*C*c2/85 - 392*C*c3/85 - 63*C/340 + 14*S*c2/85 + 196*S*c3/85 + 7*S/170 - 21*c1/170 + 14*c2/85 + 14*c3/17 + 63/340) =
+    dpoly3 hopfQS_W c1 c2 c3
+        (-4*C*c2/85 - 56*C*c3/85 - 47*C/170 + 2*S*c2/85 + 28*S*c3/85 - 42*S/85 + 126*c1/85 -
+          83*c2/85 + 70*c3/17 + 47/170)
+        (52*C*c2/85 + 728*C*c3/85 + 101*C/170 - 26*S*c2/85 - 364*S*c3/85 + 36*S/85 + 147*c1/85 -
+          196*c2/85 - 196*c3/17 - 101/170)
+        (-28*C*c2/85 - 392*C*c3/85 - 63*C/340 + 14*S*c2/85 + 196*S*c3/85 + 7*S/170 - 21*c1/170 +
+          14*c2/85 + 14*c3/17 + 63/340) =
       hopfQS_w4 c1 c2 c3 + poly3 hopfQS_R c1 c2 c3 +
-        (S - ((3 * c1 + 4 * c2 + 7 * c3) - (3 * c1 + 4 * c2 + 7 * c3) ^ 3 / 6)) * poly3 hopfQS_KS c1 c2 c3 +
+        (S - ((3 * c1 + 4 * c2 + 7 * c3) - (3 * c1 + 4 * c2 + 7 * c3) ^ 3 / 6)) *
+          poly3 hopfQS_KS c1 c2 c3 +
         (C - (1 - (3 * c1 + 4 * c2 + 7 * c3) ^ 2 / 2)) * poly3 hopfQS_KC c1 c2 c3 := by
   simp only [hopfQS_W, hopfQS_R, hopfQS_KS, hopfQS_KC, hopfQS_w4, hopfQS_h, hopfQS_q, dpoly3_cons,
     dpoly3_nil, poly3_cons, poly3_nil]
@@ -277,17 +282,20 @@ times polynomials of weight `≥ 1`. -/
 /-- Eigen-coordinate `c₁` of the witness (the current coordinate `z 2 = i_d − i_d*` enters with
 the sign of the IN-positive current). -/
 def hopfQS_c1 : Dynamics.State 3 →L[ℝ] ℝ :=
-  (12 / 85 : ℝ) • EuclideanSpace.proj (0 : Fin 3) + (49 / 170 : ℝ) • EuclideanSpace.proj (1 : Fin 3) +
+  (12 / 85 : ℝ) • EuclideanSpace.proj (0 : Fin 3) +
+    (49 / 170 : ℝ) • EuclideanSpace.proj (1 : Fin 3) +
     (-1 / 170 : ℝ) • EuclideanSpace.proj (2 : Fin 3)
 
 /-- Eigen-coordinate `c₂` of the witness. -/
 def hopfQS_c2 : Dynamics.State 3 →L[ℝ] ℝ :=
-  (14 / 85 : ℝ) • EuclideanSpace.proj (0 : Fin 3) + (-21 / 85 : ℝ) • EuclideanSpace.proj (1 : Fin 3) +
+  (14 / 85 : ℝ) • EuclideanSpace.proj (0 : Fin 3) +
+    (-21 / 85 : ℝ) • EuclideanSpace.proj (1 : Fin 3) +
     (13 / 170 : ℝ) • EuclideanSpace.proj (2 : Fin 3)
 
 /-- Eigen-coordinate `c₃` (the stable mode) of the witness. -/
 def hopfQS_c3 : Dynamics.State 3 →L[ℝ] ℝ :=
-  (-1 / 85 : ℝ) • EuclideanSpace.proj (0 : Fin 3) + (3 / 170 : ℝ) • EuclideanSpace.proj (1 : Fin 3) +
+  (-1 / 85 : ℝ) • EuclideanSpace.proj (0 : Fin 3) +
+    (3 / 170 : ℝ) • EuclideanSpace.proj (1 : Fin 3) +
     (-7 / 170 : ℝ) • EuclideanSpace.proj (2 : Fin 3)
 
 @[powerlib_foundation] theorem hopfQS_c_apply (z : Dynamics.State 3) :

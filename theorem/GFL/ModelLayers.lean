@@ -309,7 +309,8 @@ the one of the `R_g`-free model `RatePLL` (`θ̇ = pllOut`, `v_q = RatePLL.vq`).
 
 /-- The general sign-flag form of the dc loop factor,
 `D₁ = 1 − s_K s_P s_L (3/2) k_pv L_g i_d / (C V)`. -/
-def loopFactor (sL sP sK kpv Lg C V id : ℝ) : ℝ := 1 - sK * sP * sL * (3 / 2 * kpv * Lg * id) / (C * V)
+def loopFactor (sL sP sK kpv Lg C V id : ℝ) : ℝ :=
+  1 - sK * sP * sL * (3 / 2 * kpv * Lg * id) / (C * V)
 
 /-- Flipping all four signs (`i_d`, `s_L`, `s_P`, `s_K`) leaves `D₁` unchanged. -/
 @[powerlib_foundation] theorem loopFactor_flip_all (sL sP sK kpv Lg C V id : ℝ) :
@@ -410,7 +411,8 @@ def VdSol (θ x V η : ℝ) : ℝ :=
         vd = d.vdStat θ x V η + d.sL * d.Lg * did ∧
         P = d.PStat θ x V η + 3 / 2 * d.sL * d.Lg * did * d.idRef V η ∧ Vd = d.VdSol θ x V η := by
   have hD0' : d.D0 V η = 1 - d.kp * d.sL * d.Lg * d.idRef V η := rfl
-  have hD1' : d.D1 V η = 1 - d.sK * d.sP * d.sL * (3 / 2 * d.kpv * d.Lg * d.idRef V η) / (d.C * V) :=
+  have hD1' : d.D1 V η =
+      1 - d.sK * d.sP * d.sL * (3 / 2 * d.kpv * d.Lg * d.idRef V η) / (d.C * V) :=
     rfl
   have hu_iff : ∀ vq', (u = d.kp * vq' + d.ki * x ∧ vq' = -d.Vg * sin θ +
       d.sL * (d.Rg * d.iq + (d.ω0 + u) * d.Lg * d.idRef V η)) ↔
@@ -560,7 +562,8 @@ end DCParams
 /-! ## Four-state model: absorbed powers from the complex power -/
 
 /-- Absorbed reactive power of the four-state model (`i_q = 0`): `Q_abs = (3/2) v_q i_d`. -/
-def qAbs (p : FourState.Params) (θ V η : ℝ) : ℝ := 3 / 2 * (FourState.vq p θ V η * FourState.idc p V η)
+def qAbs (p : FourState.Params) (θ V η : ℝ) : ℝ :=
+  3 / 2 * (FourState.vq p θ V η * FourState.idc p V η)
 
 /-- `P_abs = (3/2) Re(V̄ Ī*)`, `Q_abs = (3/2) Im(V̄ Ī*)` with `V̄ = V₀ cos θ + j v_q`,
 `Ī = i_d + j 0` (`conventions.md` §D0, IN-positive). -/

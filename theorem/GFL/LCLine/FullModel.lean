@@ -206,7 +206,8 @@ transported by the reversal of the six current coordinates, with the references 
 /-! ### The quasi-steady set -/
 
 /-- The explicit quasi-steady state with PLL coordinates `(θ, η)`:
-`i = T(−θ) i*`, `v_c`, `i_g` from the capacitor and corrected line equations, `ξ = R_f i*/K_i^cc`. -/
+`i = T(−θ) i*`, `v_c`, `i_g` from the capacitor and corrected line equations,
+`ξ = R_f i*/K_i^cc`. -/
 def qssState (θ η : ℝ) : State 10 :=
   WithLp.toLp 2 ![p.iD θ, p.iQ θ, p.vcD θ p.Vg 0, p.vcQ θ p.Vg 0, p.igD θ p.Vg 0,
     p.igQ θ p.Vg 0, p.Rf * p.idRef / p.Kicc, p.Rf * p.iqRef / p.Kicc, η, θ]

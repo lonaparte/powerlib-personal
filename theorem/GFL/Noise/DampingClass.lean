@@ -124,8 +124,7 @@ def swingPH (hD : 0 ≤ s.D) : PH.NonlinearModel 2 1 where
   have hg : WithLp.ofLp (s.gradH x) = ![s.Pmax * sin (x 0) - s.Pm, s.M⁻¹ * x 1] := rfl
   simp only [PH.NonlinearModel.zeroInputField, PH.NonlinearModel.field, swingPH, hg, field]
   congr 1
-  ext i; fin_cases i <;>
-    simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two, Matrix.vecHead, Matrix.vecTail] <;> ring
+  ext i; fin_cases i <;> simp [Matrix.vecHead, Matrix.vecTail]; ring
 
 /-- Class-A energy balance: `Ḣ = −D (p/M)²`. -/
 @[powerlib_foundation] theorem swing_energy_rate (hD : 0 ≤ s.D) (x : State 2) :
@@ -136,7 +135,7 @@ def swingPH (hD : 0 ≤ s.D) : PH.NonlinearModel 2 1 where
   rw [h]
   have hg : WithLp.ofLp (s.gradH x) = ![s.Pmax * sin (x 0) - s.Pm, s.M⁻¹ * x 1] := rfl
   simp only [PH.NonlinearModel.dampingPower, swingPH, hg]
-  simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two, Matrix.vecHead, Matrix.vecTail]
+  simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two]
   ring
 
 end SwingParams
@@ -157,7 +156,7 @@ def RB (Kp : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp, 0; 0, 0]
 /-- Grid-frequency noise in class B, `B = (−ε, 0)ᵀ`: `B Bᵀ = 2 T R_B` with `T = ε²/(2K_p)`. -/
 @[powerlib_foundation] theorem classB_frequency_fdt {Kp : ℝ} (hKp : Kp ≠ 0) (ε : ℝ) :
     !![-ε; 0] * (!![-ε; 0])ᵀ = (2 * (ε ^ 2 / (2 * Kp))) • RB Kp := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp [RB, Matrix.mul_apply] <;> field_simp <;> ring
+  ext i j; fin_cases i <;> fin_cases j <;> simp [RB, Matrix.mul_apply]; field_simp
 
 /-- Grid-frequency noise in class A, `B = (−σ, 0)ᵀ`: orthogonal to `R_A`, `tr(B Bᵀ R_A) = 0`. -/
 @[powerlib_foundation] theorem classA_frequency_orthogonal (D σ : ℝ) :
@@ -165,7 +164,7 @@ def RB (Kp : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp, 0; 0, 0]
   have hB : !![-σ; 0] * (!![-σ; 0])ᵀ = !![σ ^ 2, 0; 0, (0 : ℝ)] := by
     ext i j; fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, sq]
   rw [hB]
-  simp [RA, Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]
+  simp [RA, Matrix.trace_fin_two]
 
 /-- ... and never of the form `2 T R_A` (`σ ≠ 0`). -/
 @[powerlib_foundation] theorem classA_frequency_not_fdt {D σ : ℝ} (hσ : σ ≠ 0) (T : ℝ) :
@@ -178,7 +177,7 @@ def RB (Kp : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp, 0; 0, 0]
 /-- Mechanical-power noise in class A, `B = (0, σ)ᵀ`: `B Bᵀ = 2 T R_A` with `T = σ²/(2D)`. -/
 @[powerlib_foundation] theorem classA_torque_fdt {D : ℝ} (hD : D ≠ 0) (σ : ℝ) :
     !![0; σ] * (!![0; σ])ᵀ = (2 * (σ ^ 2 / (2 * D))) • RA D := by
-  ext i j; fin_cases i <;> fin_cases j <;> simp [RA, Matrix.mul_apply] <;> field_simp <;> ring
+  ext i j; fin_cases i <;> fin_cases j <;> simp [RA, Matrix.mul_apply]; field_simp
 
 /-- Voltage noise in class B enters both rows, `B = (K_p σ, σ)ᵀ`: never of the form `2 T R_B`. -/
 @[powerlib_foundation] theorem classB_voltage_not_fdt {Kp σ : ℝ} (hσ : σ ≠ 0) (T : ℝ) :

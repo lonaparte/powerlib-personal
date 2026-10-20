@@ -203,14 +203,14 @@ end ModalBasis
         (continuousAt_const.mul (continuousAt_id.sub continuousAt_const)).div
           (continuousAt_id.sub continuousAt_const) (sub_ne_zero.2 (hsimple j hj).symm)
       simpa using hc.tendsto
-  rw [Finset.sum_ite_eq' Finset.univ i a, if_pos (Finset.mem_univ _)] at hg
+  rw [Finset.sum_ite_eq' Finset.univ i a, ite_eq_left (Finset.mem_univ _)] at hg
   refine (hg.mono_left nhdsWithin_le_nhds).congr' ?_
   filter_upwards [eventually_ne_all lam hsimple] with s hs
   simp only [g, Finset.mul_sum]
   refine Finset.sum_congr rfl fun j _ => ?_
   by_cases hj : j = i
-  · subst hj; rw [if_pos rfl]; field_simp [sub_ne_zero.2 (hs j)]
-  · rw [if_neg hj]; ring
+  · subst hj; rw [ite_eq_left rfl]; field_simp [sub_ne_zero.2 (hs j)]
+  · rw [ite_eq_right hj]; ring
 
 namespace ModalBasis
 

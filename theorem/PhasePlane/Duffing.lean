@@ -95,8 +95,8 @@ def energy : State 2 → ℝ := Conservative.energy 1 potential
 @[powerlib_foundation] theorem hasFDerivAt_field (δ : ℝ) (y : State 2) :
     HasFDerivAt (field δ)
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![0, 1; 1 - 3 * y 0 ^ 2, -δ]) y := by
-  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _ ![Dynamics.coord 1, (1 - 3 * y 0 ^ 2) • Dynamics.coord 0 + (-δ) • Dynamics.coord 1]
-    ?_ ?_
+  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
+    ![Dynamics.coord 1, (1 - 3 * y 0 ^ 2) • Dynamics.coord 0 + (-δ) • Dynamics.coord 1] ?_ ?_
   · intro i; fin_cases i
     · exact Dynamics.hasFDerivAt_coord 1 y
     · show HasFDerivAt (fun z => field δ z 1) _ y

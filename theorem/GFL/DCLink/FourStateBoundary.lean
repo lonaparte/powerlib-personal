@@ -445,8 +445,8 @@ private theorem weakFocus_field (z : Dynamics.State 4) :
     weakFocus.field z = WithLp.toLp 2 ![-Real.sin (z 0) + z 3 + 2 * z 1, -Real.sin (z 0) + z 3,
       -(Real.cos (z 0) * z 3 * (z 2 + 1)⁻¹), z 2] := by
   ext i
-  fin_cases i <;> simp [Model.field, FourState.field, Dynamics.lift, coordField, opPoint, weakFocus, vq, idc,
-    Params.γ]
+  fin_cases i <;> simp [Model.field, FourState.field, Dynamics.lift, coordField, opPoint, weakFocus,
+    vq, idc, Params.γ]
   ring
 
 private theorem wfLyap_contDiff : ContDiff ℝ 1 wfLyap := by

@@ -65,7 +65,8 @@ section Tilted
 variable {m p : Measure α} [SigmaFinite m] {g : α → ℝ}
 
 omit [SigmaFinite m] in
-@[powerlib_foundation] private theorem aemeasurable_of_integrable_exp (hg : Integrable (fun x => exp (g x)) m) :
+@[powerlib_foundation] private theorem aemeasurable_of_integrable_exp
+    (hg : Integrable (fun x => exp (g x)) m) :
     AEMeasurable g m := by
   simpa using hg.1.aemeasurable.log
 

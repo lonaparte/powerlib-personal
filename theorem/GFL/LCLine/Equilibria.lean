@@ -172,7 +172,7 @@ def snNumerator : ℝ := p.Δ * p.idRef - ((1 - p.b) * p.idRef + p.a * p.iqRef)
   have hs := p.sqrt_Δ_pos hΔ
   rw [amp, div_pow, Real.sq_sqrt p.Δ_nonneg]; field_simp
 
-@[powerlib_foundation] private lemma abs_c0_cmp (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
+@[powerlib_foundation] private lemma abs_c0_cmp (_hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
     (|p.c0| < p.amp ↔ p.c0 ^ 2 < p.amp ^ 2) ∧ (|p.c0| = p.amp ↔ p.c0 ^ 2 = p.amp ^ 2) := by
   have hA := p.amp_pos hVg hΔ
   constructor

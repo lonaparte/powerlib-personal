@@ -86,9 +86,7 @@ variable {lam : ℝ}
     norm_num
   rw [setIntegral_congr_fun measurableSet_Ioi hc] at h
   have hG : Real.Gamma 2 = 1 := by
-    have := Real.Gamma_nat_eq_factorial 1
-    rw [show ((1 : ℕ) : ℝ) + 1 = 2 by norm_num] at this
-    simpa using this
+    simp
   rw [h, Real.rpow_two, hG]
   field_simp
 

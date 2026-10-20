@@ -663,7 +663,8 @@ def family : Family Model Requirement 2 0 :=
 @[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
-@[aesop norm -1 apply (index := [unindexed])] theorem Certificate.mem_den {model : Model} (c : Certificate model) :
+@[aesop norm -1 apply (index := [unindexed])] theorem Certificate.mem_den {model : Model}
+    (c : Certificate model) :
     connection% (model ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact family_isAutonomous.mem_den_flow.mpr c.globallyExponentiallyStable
@@ -1031,10 +1032,12 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
     fun x => (quarticEnergy_lie x).le
   have hfc := Flow.forwardComplete_of_compact_sublevel quarticModel.field_smooth
     (quarticEnergy_smooth.differentiable (by norm_num))
-    (fun x => by rw [quarticEnergy_lie]; exact mul_nonpos_of_nonpos_of_nonneg (by norm_num) (by dsimp [quarticEnergy]; positivity))
+    (fun x => by
+      rw [quarticEnergy_lie]
+      exact mul_nonpos_of_nonpos_of_nonneg (by norm_num) (by dsimp [quarticEnergy]; positivity))
     quarticEnergy_compact
-  refine ⟨by rw [IsEquilibrium, quarticModel_field]; ext i; fin_cases i <;> simp, hfc, 2, 1, by norm_num, one_pos,
-    fun t₀ t₁ φ hφ t ht => ?_⟩
+  refine ⟨by rw [IsEquilibrium, quarticModel_field]; ext i; fin_cases i <;> simp, hfc, 2, 1,
+    by norm_num, one_pos, fun t₀ t₁ φ hφ t ht => ?_⟩
   have he := Flow.energy_bound_of_dissipation quarticEnergy_smooth hd hφ ht
   have hfour : ‖φ t‖ ^ 4 ≤ 2 * Real.exp (-(4 * (t - t₀))) * ‖φ t₀‖ ^ 4 :=
     ((quarticEnergy_bounds (φ t)).2.trans
@@ -1135,7 +1138,8 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
   exact quartic_certificate_boundary.2 hmem
 
 
-/-- The same quartic model contracts at an integer horizon, although no certificate represents it. -/
+/-- The same quartic model contracts at an integer horizon, although no certificate represents
+it. -/
 @[powerlib_domain] theorem not_exact_contractive :
     connection% (¬ family.Exact (.flow .contractive)) := by
   unfold powerlib.TMIO.Statement

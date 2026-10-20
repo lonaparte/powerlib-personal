@@ -89,7 +89,8 @@ variable {R : Type*} [CommRing R]
     s • (1 : Matrix (Fin 2) (Fin 2) R) = complexSymm s 0 := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [complexSymm]
 
-@[powerlib_foundation] theorem det_complexSymm (a b : R) : (complexSymm a b).det = a ^ 2 + b ^ 2 := by
+@[powerlib_foundation] theorem det_complexSymm (a b : R) :
+    (complexSymm a b).det = a ^ 2 + b ^ 2 := by
   rw [complexSymm, det_fin_two_of]; ring
 
 @[powerlib_foundation] theorem complexSymm_map {S : Type*} [CommRing S] (f : R →+* S) (a b : R) :
@@ -303,8 +304,8 @@ def seqMatrixInv : Matrix (Fin 2) (Fin 2) ℂ := (1 / 2 : ℂ) • !![1, 1; -Com
 @[powerlib_foundation] theorem seqMatrixInv_mul : seqMatrixInv * seqMatrix = 1 := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [seqMatrix, seqMatrixInv, Matrix.mul_apply, Fin.sum_univ_two] <;> ring_nf <;>
-    simp [Complex.I_sq]
+    simp [seqMatrix, seqMatrixInv, Matrix.mul_apply, Fin.sum_univ_two] <;> ring_nf
+  simp [Complex.I_sq]
 
 /-- Complex-vector (modified sequence) form of a dq transfer matrix. -/
 def toSeq (Y : Matrix (Fin 2) (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=

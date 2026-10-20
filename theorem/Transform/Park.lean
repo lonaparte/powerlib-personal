@@ -274,7 +274,8 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
     convert (hs.mul h0).add (hc.mul h1) using 1
     simp; ring
 
-/-- The same chain rule for the Park direction: `d/dt (park θ · x) = park θ · ẋ − ω J (park θ · x)`. -/
+/-- The same chain rule for the Park direction:
+`d/dt (park θ · x) = park θ · ẋ − ω J (park θ · x)`. -/
 @[powerlib_foundation] theorem hasDerivAt_park_mulVec {θ : ℝ → ℝ} {ω : ℝ} {x : ℝ → Fin 2 → ℝ}
     {x' : Fin 2 → ℝ} {t : ℝ} (hθ : HasDerivAt θ ω t) (hx : HasDerivAt x x' t) :
     HasDerivAt (fun s => park (θ s) *ᵥ x s)
@@ -284,7 +285,8 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
   rw [show (fun s => park (θ s) *ᵥ x s) = fun s => rot (-θ s) *ᵥ x s from
     funext fun s => by rw [park_eq_rot_neg]]
   convert h using 1
-  rw [← park_eq_rot_neg, Matrix.mulVec_add, Matrix.mulVec_smul, park_mulVec_J_mulVec, neg_smul, sub_eq_add_neg]
+  rw [← park_eq_rot_neg, Matrix.mulVec_add, Matrix.mulVec_smul, park_mulVec_J_mulVec, neg_smul,
+    sub_eq_add_neg]
 
 /-- Complex form of the §1.3 boxed chain rule:
 `d/dt (x^{dq} e^{jθ}) = (ẋ^{dq} + jω x^{dq}) e^{jθ}`. -/

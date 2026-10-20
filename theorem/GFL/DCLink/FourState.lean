@@ -154,7 +154,8 @@ def field : Dynamics.State 4 → Dynamics.State 4 := Dynamics.lift (coordField p
 /-- Coordinate field with `V⁻¹` replaced by the smooth `invExt V`. -/
 def regCoordField (y : Fin 4 → ℝ) : Fin 4 → ℝ :=
   ![p.kp * vq p (y 0) (y 2) (y 3) + p.ki * y 1, vq p (y 0) (y 2) (y 3),
-    p.Idc0 / p.C + p.γ * (p.V0 * Real.cos (y 0) * idc p (y 2) (y 3)) * Dynamics.invExt (y 2), y 2 - 1]
+    p.Idc0 / p.C + p.γ * (p.V0 * Real.cos (y 0) * idc p (y 2) (y 3)) * Dynamics.invExt (y 2),
+    y 2 - 1]
 
 /-- Globally smooth field agreeing with `field` for `V ≥ 1/2`. -/
 def regField : Dynamics.State 4 → Dynamics.State 4 := Dynamics.lift (regCoordField p)

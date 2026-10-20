@@ -330,8 +330,9 @@ of `G(s) = C (sI − A)⁻¹ B + D` is unbounded near `μ` iff `μ ∈ σ(A)`. -
   Set.ext (minimal_pole_iff hm)
 
 /-- The determinant of a matrix with entries analytic at `x` is analytic at `x`. -/
-@[powerlib_foundation] theorem analyticAt_det {ι : Type*} [Fintype ι] [DecidableEq ι] {M : ℂ → Matrix ι ι ℂ} {x : ℂ}
-    (h : ∀ a b, AnalyticAt ℂ (fun s => M s a b) x) : AnalyticAt ℂ (fun s => (M s).det) x := by
+@[powerlib_foundation] theorem analyticAt_det {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {M : ℂ → Matrix ι ι ℂ} {x : ℂ} (h : ∀ a b, AnalyticAt ℂ (fun s => M s a b) x) :
+    AnalyticAt ℂ (fun s => (M s).det) x := by
   have e : (fun s => (M s).det) = fun s =>
       ∑ σ : Equiv.Perm ι, ((Equiv.Perm.sign σ : ℤ) : ℂ) * ∏ i, M s (σ i) i :=
     funext fun s => Matrix.det_apply' _
@@ -340,8 +341,8 @@ of `G(s) = C (sI − A)⁻¹ B + D` is unbounded near `μ` iff `μ ∈ σ(A)`. -
     analyticAt_const.mul (Finset.analyticAt_fun_prod _ fun i _ => h _ _)
 
 /-- The adjugate of a matrix with entries analytic at `x` has entries analytic at `x`. -/
-@[powerlib_foundation] theorem analyticAt_adjugate {ι : Type*} [Fintype ι] [DecidableEq ι] {M : ℂ → Matrix ι ι ℂ}
-    {x : ℂ} (h : ∀ a b, AnalyticAt ℂ (fun s => M s a b) x) (i j : ι) :
+@[powerlib_foundation] theorem analyticAt_adjugate {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {M : ℂ → Matrix ι ι ℂ} {x : ℂ} (h : ∀ a b, AnalyticAt ℂ (fun s => M s a b) x) (i j : ι) :
     AnalyticAt ℂ (fun s => (M s).adjugate i j) x := by
   simp only [Matrix.adjugate_apply]
   refine analyticAt_det fun a b => ?_
@@ -350,7 +351,8 @@ of `G(s) = C (sI − A)⁻¹ B + D` is unbounded near `μ` iff `μ ∈ σ(A)`. -
   · exact analyticAt_const
   · exact h a b
 
-@[powerlib_foundation] theorem analyticAt_characteristicMatrix (A : Matrix (Fin n) (Fin n) ℝ) (x : ℂ) (a b : Fin n) :
+@[powerlib_foundation] theorem analyticAt_characteristicMatrix (A : Matrix (Fin n) (Fin n) ℝ)
+    (x : ℂ) (a b : Fin n) :
     AnalyticAt ℂ (fun s => characteristicMatrix A s a b) x := by
   simp only [characteristicMatrix, Matrix.sub_apply, Matrix.smul_apply, Matrix.one_apply,
     smul_eq_mul]
@@ -374,7 +376,8 @@ of `G(s) = C (sI − A)⁻¹ B + D` is unbounded near `μ` iff `μ ∈ σ(A)`. -
 
 /-- An unbounded entry of the transfer matrix tends to infinity: near `μ` a rational function is
 either bounded (removable) or has a genuine pole (Mathlib `meromorphicOrderAt`). -/
-@[powerlib_foundation] theorem tendsto_norm_transfer_of_not_isBoundedUnder (m : Plant n p) {μ : ℂ} {i j : Fin p}
+@[powerlib_foundation] theorem tendsto_norm_transfer_of_not_isBoundedUnder (m : Plant n p) {μ : ℂ}
+    {i j : Fin p}
     (h : ¬ IsBoundedUnder (· ≤ ·) (𝓝[≠] μ) (fun s => ‖transfer m s i j‖)) :
     Tendsto (fun s => ‖transfer m s i j‖) (𝓝[≠] μ) atTop := by
   have hmer := meromorphicAt_transfer m μ i j

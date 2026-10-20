@@ -657,7 +657,8 @@ Routh–Hurwitz Jacobian; in particular the fold `cos 2θ* = 0` (no Hopf pair,
   exact exactUnder_of_routh (Or.inr rfl)
 
 /-- **Within positive gains the Lyapunov translation is exact**: every non-Hurwitz point with
-positive gains is unstable (the undamped witness of `not_exact_lyapunovStable` has `k_p = k_P = 0`). -/
+positive gains is unstable (the undamped witness of `not_exact_lyapunovStable` has
+`k_p = k_P = 0`). -/
 @[powerlib_domain] theorem exactUnder_lyapunovStable :
     connection% (family.ExactUnder {.positiveGains} (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement

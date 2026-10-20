@@ -240,8 +240,9 @@ eigenvalue of `A + E` lies within `‖E‖` of the spectrum of `A`. -/
 
 /-- **Bauer–Fike for normal matrices**, spectral form: `A` normal, `μ ∈ σ(A + E)` ⇒
 `∃ ν ∈ σ(A)`, `|μ − ν| ≤ ‖E‖₂`. -/
-@[powerlib_foundation] theorem bauerFike_normal_spectrum {A E : Matrix n n ℂ} (hA : Aᴴ * A = A * Aᴴ) {μ : ℂ}
-    (hμ : μ ∈ spectrum ℂ (A + E)) : ∃ ν ∈ spectrum ℂ A, ‖μ - ν‖ ≤ ‖E‖ := by
+@[powerlib_foundation] theorem bauerFike_normal_spectrum {A E : Matrix n n ℂ}
+    (hA : Aᴴ * A = A * Aᴴ) {μ : ℂ} (hμ : μ ∈ spectrum ℂ (A + E)) :
+    ∃ ν ∈ spectrum ℂ A, ‖μ - ν‖ ≤ ‖E‖ := by
   obtain ⟨w, hw, hAw⟩ := mem_spectrum_iff_exists_eigvec.mp hμ
   refine bauerFike_normal hA (x := WithLp.toLp 2 w) (fun h => hw ?_) ?_
   · have := congrArg WithLp.ofLp h
@@ -264,7 +265,8 @@ omit [DecidableEq n] in
   -- differentiate `Σⱼ A_ij v_j = λ v_i`
   have hrow : ∀ i, (∑ j, (A' i j * v α₀ j + A α₀ i j * v' j)) = lam' * v α₀ i + lam α₀ * v' i := by
     intro i
-    have hL : HasDerivAt (fun α => (A α *ᵥ v α) i) (∑ j, (A' i j * v α₀ j + A α₀ i j * v' j)) α₀ := by
+    have hL : HasDerivAt (fun α => (A α *ᵥ v α) i)
+        (∑ j, (A' i j * v α₀ j + A α₀ i j * v' j)) α₀ := by
       simp only [mulVec, dotProduct]
       exact HasDerivAt.fun_sum fun j _ => (hA i j).mul (hv j)
     have hR : HasDerivAt (fun α => (lam α • v α) i) (lam' * v α₀ i + lam α₀ * v' i) α₀ := by

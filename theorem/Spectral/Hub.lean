@@ -30,8 +30,8 @@ univalence turns the readings into a path from the spoke's semantics to the hub'
 along the map, and exactness and soundness pass under a correspondence of requirement languages on
 a context); each reading has its own scaffold named after its two families (`DroopSwing`,
 `SaturationSwing`, `ClassicalMachineSwing`, `MatchingSwing`, `PortHamiltonianPLL`,
-`IMCCurrentLoop`, `CurrentDirection`). `Family.comap` (`theorem/Family/Basic.lean`) is the case of a spoke that keeps
-the hub's language.
+`IMCCurrentLoop`, `CurrentDirection`). `Family.comap` (`theorem/Family/Basic.lean`) is the case of a
+spoke that keeps the hub's language.
 
 Results.
 * `mem_den_flow_iff_of_transport` (an affine conjugacy of fields is a reading of the flow

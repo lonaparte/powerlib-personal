@@ -92,7 +92,8 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
 @[powerlib_foundation] theorem hasFDerivAt_field (ω₀ : ℝ) (y : State 2) :
     HasFDerivAt (field ω₀)
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![0, 1; -(ω₀ ^ 2 * Real.cos (y 0)), 0]) y := by
-  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _ ![Dynamics.coord 1, (-(ω₀ ^ 2 * Real.cos (y 0))) • Dynamics.coord 0] ?_ ?_
+  refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
+    ![Dynamics.coord 1, (-(ω₀ ^ 2 * Real.cos (y 0))) • Dynamics.coord 0] ?_ ?_
   · intro i; fin_cases i
     · show HasFDerivAt (fun z => field ω₀ z 0) (Dynamics.coord 1) y
       exact Dynamics.hasFDerivAt_coord 1 y
@@ -116,7 +117,8 @@ def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential �
   · simp [Matrix.det_fin_two]; positivity
 
 /-- Separatrix energy `E(π, 0) = 2ω₀²`. -/
-@[powerlib_foundation] theorem separatrix_energy (ω₀ : ℝ) : energy ω₀ (mk Real.pi 0) = 2 * ω₀ ^ 2 := by
+@[powerlib_foundation] theorem separatrix_energy (ω₀ : ℝ) :
+    energy ω₀ (mk Real.pi 0) = 2 * ω₀ ^ 2 := by
   simp [energy, Conservative.energy, potential]; ring
 
 /-- Libration: below the separatrix energy a solution started in `(−π, π)` never reaches `±π`. -/

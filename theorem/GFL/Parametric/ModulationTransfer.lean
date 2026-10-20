@@ -153,8 +153,8 @@ def KCL (X2 X3 E Vinf δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) : Prop :=
 
 /-- One GFL branch: `V_GFL = V_th − j X_g I_in`. -/
 @[powerlib_foundation] theorem single_branch {X1 X2 X3 E Vinf : ℝ} (h2 : X2 ≠ 0) (h3 : X3 ≠ 0)
-    (h : X2 + X3 ≠ 0) (δ : ℝ) (Vc Iin Vgfl : ℂ) (hkcl : KCL X2 X3 E Vinf δ Vc (fun _ : Fin 1 => Iin))
-    (hbr : Vgfl = Vc - I * X1 * Iin) :
+    (h : X2 + X3 ≠ 0) (δ : ℝ) (Vc Iin Vgfl : ℂ)
+    (hkcl : KCL X2 X3 E Vinf δ Vc (fun _ : Fin 1 => Iin)) (hbr : Vgfl = Vc - I * X1 * Iin) :
     Vgfl = vth X2 X3 E Vinf δ - I * Xg X1 X2 X3 * Iin := by
   rw [kcl_iff h2 h3 h] at hkcl
   rw [hbr, hkcl]
@@ -167,7 +167,8 @@ def KCL (X2 X3 E Vinf δ : ℝ) (Vc : ℂ) (Icur : Fin N → ℂ) : Prop :=
 /-- `V(δ) = |V_th(δ)| = √(a_V² + b_V² + 2a_V b_V cos δ)`. -/
 @[powerlib_foundation] theorem norm_vth (X2 X3 E Vinf δ : ℝ) :
     ‖vth X2 X3 E Vinf δ‖ =
-      Real.sqrt (aV X2 X3 E ^ 2 + bV X2 X3 Vinf ^ 2 + 2 * aV X2 X3 E * bV X2 X3 Vinf * Real.cos δ) := by
+      Real.sqrt (aV X2 X3 E ^ 2 + bV X2 X3 Vinf ^ 2 +
+        2 * aV X2 X3 E * bV X2 X3 Vinf * Real.cos δ) := by
   rw [← normSq_affine_exp, Complex.norm_def]
   rfl
 
@@ -386,7 +387,8 @@ def modeMatrix (N : ℕ) (x Xe : ℝ) : Matrix (Fin N) (Fin N) ℝ :=
         replicateCol (Fin 1) (fun _ : Fin (N + 1) => (1 : ℝ)) *
           replicateRow (Fin 1) (fun _ : Fin (N + 1) => (1 : ℝ)) := by
       ext i j; simp [replicateCol, replicateRow, Matrix.mul_apply]
-    have hfac : c • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) ℝ) - w • Matrix.of (fun _ _ => (1 : ℝ)) =
+    have hfac : c • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) ℝ) -
+          w • Matrix.of (fun _ _ => (1 : ℝ)) =
         c • (1 + replicateCol (Fin 1) (fun _ : Fin (N + 1) => (-(w / c))) *
           replicateRow (Fin 1) (fun _ : Fin (N + 1) => (1 : ℝ))) := by
       rw [hrank]
@@ -404,7 +406,8 @@ differential eigenvalue `x` has algebraic multiplicity `N − 1`. -/
     (s • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) ℝ) - modeMatrix (N + 1) x Xe).det =
       (s - x) ^ N * (s - x - (N + 1) * Xe) := by
   have : s • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) ℝ) - modeMatrix (N + 1) x Xe =
-      (s - x) • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) ℝ) - Xe • Matrix.of (fun _ _ => (1 : ℝ)) := by
+      (s - x) • (1 : Matrix (Fin (N + 1)) (Fin (N + 1)) ℝ) -
+        Xe • Matrix.of (fun _ _ => (1 : ℝ)) := by
     simp only [modeMatrix, sub_smul]; abel
   rw [this, det_scalar_sub_ones]
 

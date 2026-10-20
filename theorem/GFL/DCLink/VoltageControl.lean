@@ -555,8 +555,8 @@ exponential stability, their strict violation instability. -/
 
 /-- Positive capacitance and operating voltage: the open-loop DC node is locally exponentially
 stable exactly in rectifier operation, `P/V0 > 0`. -/
-@[powerlib_domain] theorem openLoop_mem_den_locallyExponentiallyStable_iff (m : OpenLoop) (hC : 0 < m.C)
-    (hV : 0 < m.V0) :
+@[powerlib_domain] theorem openLoop_mem_den_locallyExponentiallyStable_iff (m : OpenLoop)
+    (hC : 0 < m.C) (hV : 0 < m.V0) :
     connection% (m ∈ openFamily.den (.flow .locallyExponentiallyStable) ↔
       m ∈ {m : OpenLoop | 0 < m.P / m.V0}) := by
   unfold powerlib.TMIO.Statement
@@ -626,8 +626,8 @@ private theorem closed_fderiv_ki_zero {p : DCParams} (hKi : p.Ki = 0) (hV : 0 < 
 
 /-- Positive `V_d`, `V_dc*`, `C`: the nonlinear DC-voltage loop is locally exponentially stable
 at `(V_dc*, ζ0)` exactly when `Kp > −I_dc0/V_d` and `Ki > 0` (§1.4 boxed, both directions). -/
-@[powerlib_domain] theorem closedLoop_mem_den_locallyExponentiallyStable_iff (p : DCParams) (hVd : 0 < p.Vd)
-    (hV : 0 < p.Vref) (hC : 0 < p.C) :
+@[powerlib_domain] theorem closedLoop_mem_den_locallyExponentiallyStable_iff (p : DCParams)
+    (hVd : 0 < p.Vd) (hV : 0 < p.Vref) (hC : 0 < p.C) :
     connection% (p ∈ closedFamily.den (.flow .locallyExponentiallyStable) ↔
       p ∈ {p : DCParams | -(p.Idc0 / p.Vd) < p.Kp ∧ 0 < p.Ki}) := by
   unfold powerlib.TMIO.Statement

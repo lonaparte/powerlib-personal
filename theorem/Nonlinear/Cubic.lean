@@ -179,9 +179,11 @@ passivity; none is unstable or conservative; and a model decays at the rate `a` 
   rcases s with P | _
   · cases P
     case lyapunovStable =>
-      exact Family.exact_of_translate_eq_empty (F := family) rfl (hall fun α => (hges α).lyapunovStable)
+      exact Family.exact_of_translate_eq_empty (F := family) rfl
+        (hall fun α => (hges α).lyapunovStable)
     case contractive =>
-      exact Family.exact_of_translate_eq_empty (F := family) rfl (hall fun α => (hges α).sampledContraction)
+      exact Family.exact_of_translate_eq_empty (F := family) rfl
+        (hall fun α => (hges α).sampledContraction)
     case unstable =>
       refine Family.exact_of_translate_eq_univ (F := family) realize_univ rfl ?_
       ext α
@@ -234,7 +236,8 @@ passivity; none is unstable or conservative; and a model decays at the rate `a` 
         have hexp := Real.add_one_le_exp (C ^ 2)
         nlinarith
     all_goals
-      exact Family.exact_of_translate_eq_empty (F := family) rfl (hall fun α => (hges α).holds trivial)
+      exact Family.exact_of_translate_eq_empty (F := family) rfl
+        (hall fun α => (hges α).holds trivial)
   · exact Family.exact_of_translate_eq_empty (F := family) rfl family_isAutonomous.den_passive
 
 end powerlib.Nonlinear.Cubic

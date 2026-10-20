@@ -144,7 +144,8 @@ denominator `V_dc` is replaced by `σ regDen s (σ V_dc)`. -/
       ∀ y : State 4, s ≤ σ * y 2 → g y = p.field y := by
   have hσ2 : σ * σ = 1 := by rcases hσ with rfl | rfl <;> norm_num
   refine ⟨fun y => (WithLp.toLp 2 ![p.field y 0, p.field y 1,
-      (p.I0 + 3 * p.pccP y / (2 * (σ * Dynamics.regDen s (σ * y 2)))) / p.Cdc, p.field y 3] : State 4),
+      (p.I0 + 3 * p.pccP y / (2 * (σ * Dynamics.regDen s (σ * y 2)))) / p.Cdc,
+      p.field y 3] : State 4),
     ?_, ?_⟩
   · have hden : ContDiff ℝ 1 (fun y : State 4 => 2 * (σ * Dynamics.regDen s (σ * y 2))) :=
       contDiff_const.mul (contDiff_const.mul ((Dynamics.contDiff_regDen _).comp

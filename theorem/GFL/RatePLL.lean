@@ -679,7 +679,8 @@ private theorem undampedPLL_field (z : Dynamics.State 2) :
     RatePLL.field undampedPLL.params z = WithLp.toLp 2 ![z 1, -Real.sin (z 0)] := by
   ext i
   fin_cases i <;>
-    simp [RatePLL.field, Dynamics.lift, coordField, undampedPLL, vq, pllOut, gridQ, Params.D0, Params.Lg]
+    simp [RatePLL.field, Dynamics.lift, coordField, undampedPLL, vq, pllOut, gridQ, Params.D0,
+      Params.Lg]
 
 /-- The pendulum energy `1 − cos θ + x²/2`. -/
 private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 2) :

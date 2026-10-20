@@ -573,8 +573,8 @@ variable {n p : ℕ}
 
 /-- A continuous linear map intertwining two port fields carries solution segments. Generic: for
 any two port systems. -/
-@[powerlib_foundation] theorem isTrajectoryOn_map {n' p' : ℕ} (s : Port.System n p) (s' : Port.System n' p')
-    (L : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n'))
+@[powerlib_foundation] theorem isTrajectoryOn_map {n' p' : ℕ} (s : Port.System n p)
+    (s' : Port.System n' p') (L : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n'))
     (v : EuclideanSpace ℝ (Fin n) → (Fin p → ℝ) → (Fin p' → ℝ))
     (hL : ∀ y u, L (s.field y u) = s'.field (L y) (v y u)) {u : ℝ → Fin p → ℝ}
     {x : ℝ → EuclideanSpace ℝ (Fin n)} {t₀ t₁ : ℝ} (hx : s.IsTrajectoryOn u x t₀ t₁) :
@@ -644,7 +644,8 @@ end Interconnection
 
 /-- Compositionality (T-ph §1.5), for numbered components (connection statements quantify only
 over values, so the index types are `Fin`): every numbering of the interconnected model is
-passive, with no new Lyapunov analysis; its stored energy is `H₁ + H₂` (`toPH_storage`, `interconnect_energy`). -/
+passive, with no new Lyapunov analysis; its stored energy is `H₁ + H₂` (`toPH_storage`,
+`interconnect_energy`). -/
 @[powerlib_domain] theorem interconnect_mem_den_passive {a₁ a₂ b₁ b₂ b n p : ℕ}
     (m₁ : DiagonalPH (Fin a₁) (Fin b₁)) (m₂ : DiagonalPH (Fin a₂) (Fin b₂))
     (Mc : Matrix (Fin b₂) (Fin b₁) ℝ) (g₁ : Matrix (Fin b₁) (Fin b) ℝ)

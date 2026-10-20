@@ -80,7 +80,8 @@ variable {n m : ℕ}
   linarith
 
 @[powerlib_foundation] theorem phCx_form_re_pos {P : Matrix (Fin n) (Fin n) ℝ}
-    (hP : P.PosDef) {v : Fin n → ℂ} (hv : v ≠ 0) : 0 < (star v ⬝ᵥ (Linear.complexify P *ᵥ v)).re := by
+    (hP : P.PosDef) {v : Fin n → ℂ} (hv : v ≠ 0) :
+    0 < (star v ⬝ᵥ (Linear.complexify P *ᵥ v)).re := by
   rw [phCx_form_re]
   have h1 := hP.posSemidef.dotProduct_mulVec_nonneg (fun i => (v i).re)
   have h2 := hP.posSemidef.dotProduct_mulVec_nonneg (fun i => (v i).im)
@@ -179,8 +180,8 @@ variable {J R Q : Matrix (Fin n) (Fin n) ℝ} {g : Matrix (Fin n) (Fin m) ℝ}
 /-- The key identity: with `x = (sI − A)⁻¹ g u`,
 `Re uᴴ G(s) u = Re(s) · Re(xᴴ Q x) + Re(xᴴ Q R Q x)`. -/
 @[powerlib_foundation] theorem linearLTIModel_transfer_re (hJ : Jᵀ = -J) (hRt : Rᵀ = R)
-    (hQt : Qᵀ = Q) (s : ℂ) (hdet : (Linear.characteristicMatrix (linearStateMatrix J R Q) s).det ≠ 0)
-    (u : Fin m → ℂ) :
+    (hQt : Qᵀ = Q) (s : ℂ)
+    (hdet : (Linear.characteristicMatrix (linearStateMatrix J R Q) s).det ≠ 0) (u : Fin m → ℂ) :
     (star u ⬝ᵥ (Linear.transfer (linearLTIModel J R g Q) s *ᵥ u)).re =
       s.re * (star ((Linear.characteristicMatrix (linearStateMatrix J R Q) s)⁻¹ *ᵥ
           (Linear.complexify g *ᵥ u)) ⬝ᵥ (Linear.complexify Q *ᵥ

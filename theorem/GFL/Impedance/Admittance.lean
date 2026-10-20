@@ -442,7 +442,8 @@ end Resp
 
 /-- The 10-state realization has exactly the closed-form GFL port admittance. -/
 @[powerlib_foundation] theorem transfer_eq_Ygfl {s : ℂ} (hs : s ≠ 0) (ha : p.a ≠ 0)
-    (hda : 1 + (p.a : ℂ) * s ≠ 0) (hL : p.L ≠ 0) (hpll : s ^ 2 + p.V0 0 * p.Kpl * s + p.V0 0 * p.Kil ≠ 0)
+    (hda : 1 + (p.a : ℂ) * s ≠ 0) (hL : p.L ≠ 0)
+    (hpll : s ^ 2 + p.V0 0 * p.Kpl * s + p.V0 0 * p.Kil ≠ 0)
     (hZ : (Zoc p.L p.R p.ω s).det ≠ 0)
     (hP : (1 - Gid p.L p.R p.ω p.Vdc s * (p.Gdel s • p.Phi s)).det ≠ 0)
     (hM : (characteristicMatrix p.model.A s).det ≠ 0) :

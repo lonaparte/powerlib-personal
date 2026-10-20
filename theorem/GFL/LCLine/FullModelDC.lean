@@ -187,7 +187,8 @@ def PbrAlg (θ : ℝ) : ℝ :=
     simp only [iD, iQ, iparkD, iparkQ]
     linear_combination (p.idRef ^ 2 + p.iqRef ^ 2) * sin_sq_add_cos_sq θ
   have s4 : (1 - p.b) * p.iD θ - p.a * p.iQ θ =
-      p.idRef * ((1 - p.b) * cos θ - p.a * sin θ) - p.iqRef * ((1 - p.b) * sin θ + p.a * cos θ) := by
+      p.idRef * ((1 - p.b) * cos θ - p.a * sin θ) -
+        p.iqRef * ((1 - p.b) * sin θ + p.a * cos θ) := by
     simp only [iD, iQ, iparkD, iparkQ]; ring
   have ha : p.a = p.wC * p.Rg := rfl
   rw [PbrAlg, s1, s2, s3, s4, ha]

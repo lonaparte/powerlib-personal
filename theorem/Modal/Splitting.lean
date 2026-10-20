@@ -64,7 +64,8 @@ def ofRealVec (n : ℕ) : (Fin n → ℝ) →ₗ[ℝ] (Fin n → ℂ) where
   map_add' x y := by funext i; simp
   map_smul' c x := by funext i; simp
 
-@[simp, powerlib_foundation] theorem ofRealVec_apply (x : Fin n → ℝ) (i : Fin n) : ofRealVec n x i = (x i : ℂ) := rfl
+@[simp, powerlib_foundation] theorem ofRealVec_apply (x : Fin n → ℝ) (i : Fin n) :
+    ofRealVec n x i = (x i : ℂ) := rfl
 
 @[powerlib_foundation] theorem ofRealVec_injective : Function.Injective (ofRealVec n) := by
   intro x y h
@@ -89,17 +90,20 @@ def cSpec (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ) : Submodule ℂ (Fin n 
 def rSpec (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ) : Submodule ℝ (Fin n → ℝ) :=
   ((cSpec A S).restrictScalars ℝ).comap (ofRealVec n)
 
-@[powerlib_foundation] theorem mem_rSpec {A : Matrix (Fin n) (Fin n) ℝ} {S : Set ℂ} {x : Fin n → ℝ} :
+@[powerlib_foundation] theorem mem_rSpec {A : Matrix (Fin n) (Fin n) ℝ} {S : Set ℂ}
+    {x : Fin n → ℝ} :
     x ∈ rSpec A S ↔ ofRealVec n x ∈ cSpec A S := Iff.rfl
 
 /-! ## Conjugation -/
 
-@[powerlib_foundation] theorem complexify_mulVec_star (A : Matrix (Fin n) (Fin n) ℝ) (v : Fin n → ℂ) :
+@[powerlib_foundation] theorem complexify_mulVec_star (A : Matrix (Fin n) (Fin n) ℝ)
+    (v : Fin n → ℂ) :
     A.map (algebraMap ℝ ℂ) *ᵥ star v = star (A.map (algebraMap ℝ ℂ) *ᵥ v) := by
   funext i
   simp [Matrix.mulVec, dotProduct]
 
-@[powerlib_foundation] theorem pow_sub_star (A : Matrix (Fin n) (Fin n) ℝ) (μ : ℂ) (k : ℕ) (v : Fin n → ℂ) :
+@[powerlib_foundation] theorem pow_sub_star (A : Matrix (Fin n) (Fin n) ℝ) (μ : ℂ) (k : ℕ)
+    (v : Fin n → ℂ) :
     ((endC A - μ • 1) ^ k) (star v) =
       star (((endC A - conj μ • 1) ^ k) v) := by
   induction k generalizing v with
@@ -112,8 +116,8 @@ def rSpec (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ) : Submodule ℝ (Fin n 
       simp
     rw [h1, ih]
 
-@[powerlib_foundation] theorem star_mem_maxGenEigenspace {A : Matrix (Fin n) (Fin n) ℝ} {μ : ℂ} {v : Fin n → ℂ}
-    (hv : v ∈ (endC A).maxGenEigenspace μ) :
+@[powerlib_foundation] theorem star_mem_maxGenEigenspace {A : Matrix (Fin n) (Fin n) ℝ} {μ : ℂ}
+    {v : Fin n → ℂ} (hv : v ∈ (endC A).maxGenEigenspace μ) :
     star v ∈ (endC A).maxGenEigenspace (conj μ) := by
   rw [Module.End.mem_maxGenEigenspace] at hv ⊢
   obtain ⟨k, hk⟩ := hv
@@ -137,8 +141,8 @@ def rSpec (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ) : Submodule ℝ (Fin n 
 
 /-! ## Invariance -/
 
-@[powerlib_foundation] theorem mulVec_mem_cSpec {A : Matrix (Fin n) (Fin n) ℝ} {S : Set ℂ} {v : Fin n → ℂ}
-    (hv : v ∈ cSpec A S) : A.map (algebraMap ℝ ℂ) *ᵥ v ∈ cSpec A S := by
+@[powerlib_foundation] theorem mulVec_mem_cSpec {A : Matrix (Fin n) (Fin n) ℝ} {S : Set ℂ}
+    {v : Fin n → ℂ} (hv : v ∈ cSpec A S) : A.map (algebraMap ℝ ℂ) *ᵥ v ∈ cSpec A S := by
   unfold cSpec at hv ⊢
   refine Submodule.iSup_induction _ (motive := fun v => A.map (algebraMap ℝ ℂ) *ᵥ v ∈ ⨆ μ ∈ S,
     (endC A).maxGenEigenspace μ) hv (fun μ x hx => ?_) ?_ fun x y hx hy => ?_
@@ -160,8 +164,8 @@ def rSpec (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ) : Submodule ℝ (Fin n 
   exact this
 
 /-- `rSpec A S` is `A`-invariant. -/
-@[powerlib_foundation] theorem mulVec_mem_rSpec {A : Matrix (Fin n) (Fin n) ℝ} {S : Set ℂ} {x : Fin n → ℝ}
-    (hx : x ∈ rSpec A S) : A *ᵥ x ∈ rSpec A S := by
+@[powerlib_foundation] theorem mulVec_mem_rSpec {A : Matrix (Fin n) (Fin n) ℝ} {S : Set ℂ}
+    {x : Fin n → ℝ} (hx : x ∈ rSpec A S) : A *ᵥ x ∈ rSpec A S := by
   rw [mem_rSpec, ofRealVec_mulVec]
   exact mulVec_mem_cSpec hx
 
@@ -181,7 +185,8 @@ def rSpec (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ) : Submodule ℝ (Fin n 
   rw [Complex.im_eq_sub_conj]
   simp [div_eq_inv_mul]
 
-@[powerlib_foundation] theorem re_mem_rSpec {A : Matrix (Fin n) (Fin n) ℝ} {S : Set ℂ} (hS : ∀ μ ∈ S, conj μ ∈ S)
+@[powerlib_foundation] theorem re_mem_rSpec {A : Matrix (Fin n) (Fin n) ℝ} {S : Set ℂ}
+    (hS : ∀ μ ∈ S, conj μ ∈ S)
     {v : Fin n → ℂ} (hv : v ∈ cSpec A S) : (fun i => (v i).re) ∈ rSpec A S := by
   rw [mem_rSpec, ofRealVec_re]
   exact Submodule.smul_mem _ _ (Submodule.add_mem _ hv (star_mem_cSpec hS hv))
@@ -199,7 +204,8 @@ def rSpec (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ) : Submodule ℝ (Fin n 
     cSpec A (S ∪ T) = cSpec A S ⊔ cSpec A T := iSup_union
 
 /-- For conjugation-closed sets, real spectral subspaces add like the eigenvalue sets. -/
-@[powerlib_foundation] theorem rSpec_union {A : Matrix (Fin n) (Fin n) ℝ} {S T : Set ℂ} (hS : ∀ μ ∈ S, conj μ ∈ S)
+@[powerlib_foundation] theorem rSpec_union {A : Matrix (Fin n) (Fin n) ℝ} {S T : Set ℂ}
+    (hS : ∀ μ ∈ S, conj μ ∈ S)
     (hT : ∀ μ ∈ T, conj μ ∈ T) : rSpec A S ⊔ rSpec A T = rSpec A (S ∪ T) := by
   refine le_antisymm (sup_le (rSpec_mono Set.subset_union_left)
     (rSpec_mono Set.subset_union_right)) fun x hx => ?_
@@ -210,31 +216,35 @@ def rSpec (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ) : Submodule ℝ (Fin n 
   have := congrArg Complex.re (congrFun hyz i)
   simpa using this
 
-@[powerlib_foundation] theorem cSpec_disjoint (A : Matrix (Fin n) (Fin n) ℝ) {S T : Set ℂ} (h : Disjoint S T) :
+@[powerlib_foundation] theorem cSpec_disjoint (A : Matrix (Fin n) (Fin n) ℝ) {S T : Set ℂ}
+    (h : Disjoint S T) :
     Disjoint (cSpec A S) (cSpec A T) :=
   (Module.End.independent_maxGenEigenspace (endC A)).disjoint_biSup_biSup h
 
-@[powerlib_foundation] theorem rSpec_disjoint (A : Matrix (Fin n) (Fin n) ℝ) {S T : Set ℂ} (h : Disjoint S T) :
+@[powerlib_foundation] theorem rSpec_disjoint (A : Matrix (Fin n) (Fin n) ℝ) {S T : Set ℂ}
+    (h : Disjoint S T) :
     Disjoint (rSpec A S) (rSpec A T) := by
   rw [Submodule.disjoint_def]
   intro x hxS hxT
   have h0 := (Submodule.disjoint_def.mp (cSpec_disjoint A h)) _ hxS hxT
   exact ofRealVec_injective (by rw [h0, map_zero])
 
-@[powerlib_foundation] theorem cSpec_univ (A : Matrix (Fin n) (Fin n) ℝ) : cSpec A Set.univ = ⊤ := by
+@[powerlib_foundation] theorem cSpec_univ (A : Matrix (Fin n) (Fin n) ℝ) :
+    cSpec A Set.univ = ⊤ := by
   rw [cSpec]
   simp only [Set.mem_univ, iSup_pos]
   exact Module.End.iSup_maxGenEigenspace_eq_top _
 
-@[powerlib_foundation] theorem rSpec_univ (A : Matrix (Fin n) (Fin n) ℝ) : rSpec A Set.univ = ⊤ := by
+@[powerlib_foundation] theorem rSpec_univ (A : Matrix (Fin n) (Fin n) ℝ) :
+    rSpec A Set.univ = ⊤ := by
   rw [rSpec, cSpec_univ]
   rfl
 
 /-! ## Dimensions -/
 
 /-- The dimension of a finite independent supremum of subspaces is the sum of the dimensions. -/
-@[powerlib_foundation] theorem finrank_biSup_finset {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V]
-    [FiniteDimensional K V] [DecidableEq ι] {f : ι → Submodule K V} (hf : iSupIndep f)
+@[powerlib_foundation] theorem finrank_biSup_finset {K V ι : Type*} [Field K] [AddCommGroup V]
+    [Module K V] [FiniteDimensional K V] [DecidableEq ι] {f : ι → Submodule K V} (hf : iSupIndep f)
     (s : Finset ι) : finrank K ↥(⨆ i ∈ s, f i) = ∑ i ∈ s, finrank K ↥(f i) := by
   induction s using Finset.induction_on with
   | empty => simp
@@ -244,7 +254,8 @@ def rSpec (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ) : Submodule ℝ (Fin n 
     simp only [Finset.mem_coe] at hd
     rw [← Submodule.finrank_sup_add_finrank_inf_eq, hd.eq_bot, finrank_bot, add_zero]
 
-@[powerlib_foundation] theorem finrank_maxGenEigenspace_endC (A : Matrix (Fin n) (Fin n) ℝ) (μ : ℂ) :
+@[powerlib_foundation] theorem finrank_maxGenEigenspace_endC (A : Matrix (Fin n) (Fin n) ℝ)
+    (μ : ℂ) :
     finrank ℂ ↥((endC A).maxGenEigenspace μ) =
       (A.map (algebraMap ℝ ℂ)).charpoly.rootMultiplicity μ := by
   rw [LinearMap.finrank_maxGenEigenspace_eq, endC, Matrix.charpoly_toLin']
@@ -255,7 +266,8 @@ def rSpec (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ) : Submodule ℝ (Fin n 
   exact rootMultiplicity_eq_zero hμ
 
 /-- `cSpec A S` is the sum over the (finitely many) eigenvalues in `S`. -/
-@[powerlib_foundation] theorem cSpec_eq_finset (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ) [DecidablePred (· ∈ S)] :
+@[powerlib_foundation] theorem cSpec_eq_finset (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ)
+    [DecidablePred (· ∈ S)] :
     cSpec A S = ⨆ μ ∈ (A.map (algebraMap ℝ ℂ)).charpoly.roots.toFinset.filter (· ∈ S),
       (endC A).maxGenEigenspace μ := by
   have hχ : (A.map (algebraMap ℝ ℂ)).charpoly ≠ 0 := (Matrix.charpoly_monic _).ne_zero
@@ -270,7 +282,8 @@ def rSpec (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ) : Submodule ℝ (Fin n 
     exact le_biSup (fun μ => (endC A).maxGenEigenspace μ) (Finset.mem_filter.mp hμ).2
 
 /-- `dim_ℂ cSpec A S = Σ_{μ ∈ σ(A) ∩ S} m_a(μ)` (algebraic multiplicities). -/
-@[powerlib_foundation] theorem finrank_cSpec (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ) [DecidablePred (· ∈ S)] :
+@[powerlib_foundation] theorem finrank_cSpec (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ)
+    [DecidablePred (· ∈ S)] :
     finrank ℂ ↥(cSpec A S) =
       ∑ μ ∈ (A.map (algebraMap ℝ ℂ)).charpoly.roots.toFinset.filter (· ∈ S),
         (A.map (algebraMap ℝ ℂ)).charpoly.rootMultiplicity μ := by
@@ -278,7 +291,8 @@ def rSpec (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ) : Submodule ℝ (Fin n 
   exact Finset.sum_congr rfl fun μ _ => finrank_maxGenEigenspace_endC A μ
 
 /-- Real vectors that are linearly independent over `ℝ` stay independent over `ℂ`. -/
-@[powerlib_foundation] theorem linearIndependent_ofRealVec {ι : Type*} [Fintype ι] {b : ι → Fin n → ℝ}
+@[powerlib_foundation] theorem linearIndependent_ofRealVec {ι : Type*} [Fintype ι]
+    {b : ι → Fin n → ℝ}
     (hb : LinearIndependent ℝ b) : LinearIndependent ℂ fun i => ofRealVec n (b i) := by
   rw [Fintype.linearIndependent_iff] at hb ⊢
   intro g hg i
@@ -307,7 +321,8 @@ def rSpec (A : Matrix (Fin n) (Fin n) ℝ) (S : Set ℂ) : Submodule ℝ (Fin n 
     _ ≤ finrank ℂ ↥(cSpec A S) := Submodule.finrank_mono hspan
 
 /-- For a conjugation-closed set `S`, `dim_ℝ rSpec A S = dim_ℂ cSpec A S`. -/
-@[powerlib_foundation] theorem finrank_rSpec (A : Matrix (Fin n) (Fin n) ℝ) {S : Set ℂ} (hS : ∀ μ ∈ S, conj μ ∈ S) :
+@[powerlib_foundation] theorem finrank_rSpec (A : Matrix (Fin n) (Fin n) ℝ) {S : Set ℂ}
+    (hS : ∀ μ ∈ S, conj μ ∈ S) :
     finrank ℝ ↥(rSpec A S) = finrank ℂ ↥(cSpec A S) := by
   have hSc : ∀ μ ∈ Sᶜ, conj μ ∈ Sᶜ := fun μ hμ h => hμ (by simpa using hS _ h)
   have hd : Disjoint S Sᶜ := disjoint_compl_right
@@ -337,23 +352,27 @@ def centerSubspace (A : Matrix (Fin n) (Fin n) ℝ) : Submodule ℝ (Fin n → �
 def unstableSubspace (A : Matrix (Fin n) (Fin n) ℝ) : Submodule ℝ (Fin n → ℝ) :=
   rSpec A {μ | 0 < μ.re}
 
-@[powerlib_foundation] theorem conj_mem_re_lt {μ : ℂ} (h : μ ∈ {μ : ℂ | μ.re < 0}) : conj μ ∈ {μ : ℂ | μ.re < 0} := by
+@[powerlib_foundation] theorem conj_mem_re_lt {μ : ℂ} (h : μ ∈ {μ : ℂ | μ.re < 0}) :
+    conj μ ∈ {μ : ℂ | μ.re < 0} := by
   simpa using h
 
-@[powerlib_foundation] theorem conj_mem_re_eq {μ : ℂ} (h : μ ∈ {μ : ℂ | μ.re = 0}) : conj μ ∈ {μ : ℂ | μ.re = 0} := by
+@[powerlib_foundation] theorem conj_mem_re_eq {μ : ℂ} (h : μ ∈ {μ : ℂ | μ.re = 0}) :
+    conj μ ∈ {μ : ℂ | μ.re = 0} := by
   simpa using h
 
-@[powerlib_foundation] theorem conj_mem_re_gt {μ : ℂ} (h : μ ∈ {μ : ℂ | 0 < μ.re}) : conj μ ∈ {μ : ℂ | 0 < μ.re} := by
+@[powerlib_foundation] theorem conj_mem_re_gt {μ : ℂ} (h : μ ∈ {μ : ℂ | 0 < μ.re}) :
+    conj μ ∈ {μ : ℂ | 0 < μ.re} := by
   simpa using h
 
 /-- `E^s`, `E^c`, `E^u` are `A`-invariant. -/
-@[powerlib_foundation] theorem stableSubspace_invariant {A : Matrix (Fin n) (Fin n) ℝ} {x : Fin n → ℝ}
-    (hx : x ∈ stableSubspace A) : A *ᵥ x ∈ stableSubspace A := mulVec_mem_rSpec hx
+@[powerlib_foundation] theorem stableSubspace_invariant {A : Matrix (Fin n) (Fin n) ℝ}
+    {x : Fin n → ℝ} (hx : x ∈ stableSubspace A) : A *ᵥ x ∈ stableSubspace A := mulVec_mem_rSpec hx
 
-@[powerlib_foundation] theorem centerSubspace_invariant {A : Matrix (Fin n) (Fin n) ℝ} {x : Fin n → ℝ}
-    (hx : x ∈ centerSubspace A) : A *ᵥ x ∈ centerSubspace A := mulVec_mem_rSpec hx
+@[powerlib_foundation] theorem centerSubspace_invariant {A : Matrix (Fin n) (Fin n) ℝ}
+    {x : Fin n → ℝ} (hx : x ∈ centerSubspace A) : A *ᵥ x ∈ centerSubspace A := mulVec_mem_rSpec hx
 
-@[powerlib_foundation] theorem unstableSubspace_invariant {A : Matrix (Fin n) (Fin n) ℝ} {x : Fin n → ℝ}
+@[powerlib_foundation] theorem unstableSubspace_invariant {A : Matrix (Fin n) (Fin n) ℝ}
+    {x : Fin n → ℝ}
     (hx : x ∈ unstableSubspace A) : A *ᵥ x ∈ unstableSubspace A := mulVec_mem_rSpec hx
 
 /-- `E^s + E^c + E^u = ℝⁿ`. -/
@@ -430,7 +449,8 @@ in the characteristic polynomial) of the eigenvalues with negative real part. -/
 
 /-! ## Complexification and the spectrum of the restriction -/
 
-@[powerlib_foundation] theorem im_mem_rSpec {A : Matrix (Fin n) (Fin n) ℝ} {S : Set ℂ} (hS : ∀ μ ∈ S, conj μ ∈ S)
+@[powerlib_foundation] theorem im_mem_rSpec {A : Matrix (Fin n) (Fin n) ℝ} {S : Set ℂ}
+    (hS : ∀ μ ∈ S, conj μ ∈ S)
     {v : Fin n → ℂ} (hv : v ∈ cSpec A S) : (fun i => (v i).im) ∈ rSpec A S := by
   rw [mem_rSpec, ofRealVec_im]
   exact Submodule.smul_mem _ _ (Submodule.sub_mem _ hv (star_mem_cSpec hS hv))
@@ -444,7 +464,8 @@ in the characteristic polynomial) of the eigenvalues with negative real part. -/
     rintro _ ⟨x, hx, rfl⟩
     exact hx
   · intro v hv
-    have hdec : v = ofRealVec n (fun i => (v i).re) + Complex.I • ofRealVec n (fun i => (v i).im) := by
+    have hdec :
+        v = ofRealVec n (fun i => (v i).re) + Complex.I • ofRealVec n (fun i => (v i).im) := by
       funext i
       simp [Complex.ext_iff]
     rw [hdec]
@@ -452,8 +473,8 @@ in the characteristic polynomial) of the eigenvalues with negative real part. -/
       (Submodule.smul_mem _ _ (Submodule.subset_span ⟨_, im_mem_rSpec hS hv, rfl⟩))
 
 /-- An eigenvector of `A_ℂ` lying in `cSpec A S` has its eigenvalue in `S`. -/
-@[powerlib_foundation] theorem mem_of_eigvec_mem_cSpec {A : Matrix (Fin n) (Fin n) ℝ} {S : Set ℂ} {ν : ℂ}
-    {v : Fin n → ℂ} (hv0 : v ≠ 0) (hAv : A.map (algebraMap ℝ ℂ) *ᵥ v = ν • v)
+@[powerlib_foundation] theorem mem_of_eigvec_mem_cSpec {A : Matrix (Fin n) (Fin n) ℝ} {S : Set ℂ}
+    {ν : ℂ} {v : Fin n → ℂ} (hv0 : v ≠ 0) (hAv : A.map (algebraMap ℝ ℂ) *ᵥ v = ν • v)
     (hv : v ∈ cSpec A S) : ν ∈ S := by
   by_contra hν
   have hgen : v ∈ (endC A).maxGenEigenspace ν := by
@@ -467,22 +488,22 @@ in the characteristic polynomial) of the eigenvalues with negative real part. -/
 
 /-- **Spectrum of `A` on `E^s`, `E^c`, `E^u`**: an eigenvector of `A_ℂ` in the complexification
 `span_ℂ E^s` (resp. `E^c`, `E^u`) has eigenvalue with `Re < 0` (resp. `= 0`, `> 0`). -/
-@[powerlib_foundation] theorem re_lt_of_eigvec_mem_stable {A : Matrix (Fin n) (Fin n) ℝ} {ν : ℂ} {v : Fin n → ℂ}
-    (hv0 : v ≠ 0) (hAv : A.map (algebraMap ℝ ℂ) *ᵥ v = ν • v)
+@[powerlib_foundation] theorem re_lt_of_eigvec_mem_stable {A : Matrix (Fin n) (Fin n) ℝ} {ν : ℂ}
+    {v : Fin n → ℂ} (hv0 : v ≠ 0) (hAv : A.map (algebraMap ℝ ℂ) *ᵥ v = ν • v)
     (hv : v ∈ Submodule.span ℂ (ofRealVec n '' (stableSubspace A : Set (Fin n → ℝ)))) :
     ν.re < 0 := by
   rw [stableSubspace, span_rSpec_eq_cSpec (fun _ => conj_mem_re_lt)] at hv
   exact mem_of_eigvec_mem_cSpec hv0 hAv hv
 
-@[powerlib_foundation] theorem re_eq_of_eigvec_mem_center {A : Matrix (Fin n) (Fin n) ℝ} {ν : ℂ} {v : Fin n → ℂ}
-    (hv0 : v ≠ 0) (hAv : A.map (algebraMap ℝ ℂ) *ᵥ v = ν • v)
+@[powerlib_foundation] theorem re_eq_of_eigvec_mem_center {A : Matrix (Fin n) (Fin n) ℝ} {ν : ℂ}
+    {v : Fin n → ℂ} (hv0 : v ≠ 0) (hAv : A.map (algebraMap ℝ ℂ) *ᵥ v = ν • v)
     (hv : v ∈ Submodule.span ℂ (ofRealVec n '' (centerSubspace A : Set (Fin n → ℝ)))) :
     ν.re = 0 := by
   rw [centerSubspace, span_rSpec_eq_cSpec (fun _ => conj_mem_re_eq)] at hv
   exact mem_of_eigvec_mem_cSpec hv0 hAv hv
 
-@[powerlib_foundation] theorem re_gt_of_eigvec_mem_unstable {A : Matrix (Fin n) (Fin n) ℝ} {ν : ℂ} {v : Fin n → ℂ}
-    (hv0 : v ≠ 0) (hAv : A.map (algebraMap ℝ ℂ) *ᵥ v = ν • v)
+@[powerlib_foundation] theorem re_gt_of_eigvec_mem_unstable {A : Matrix (Fin n) (Fin n) ℝ} {ν : ℂ}
+    {v : Fin n → ℂ} (hv0 : v ≠ 0) (hAv : A.map (algebraMap ℝ ℂ) *ᵥ v = ν • v)
     (hv : v ∈ Submodule.span ℂ (ofRealVec n '' (unstableSubspace A : Set (Fin n → ℝ)))) :
     0 < ν.re := by
   rw [unstableSubspace, span_rSpec_eq_cSpec (fun _ => conj_mem_re_gt)] at hv

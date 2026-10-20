@@ -305,7 +305,8 @@ def phLaSalle_dH (x : State 2) : State 2 :=
   let P : Fin 2 → State 2 →L[ℝ] ℝ := fun i => PiLp.proj 2 (fun _ : Fin 2 => ℝ) i
   have h := (((((P 0).hasFDerivAt (x := x)).pow 4).const_mul (1 / 4)).add
     ((((P 0).hasFDerivAt (x := x)).pow 3).const_mul (1 / 3))).sub
-    (((P 0).hasFDerivAt (x := x)).pow 2) |>.add ((((P 1).hasFDerivAt (x := x)).pow 2).const_mul (1 / 2))
+    (((P 0).hasFDerivAt (x := x)).pow 2) |>.add
+      ((((P 1).hasFDerivAt (x := x)).pow 2).const_mul (1 / 2))
   refine hasGradientAt_of_hasFDerivAt h (fun v => ?_)
   simp [phLaSalle_dH, P, dotProduct, Fin.sum_univ_two]
   ring

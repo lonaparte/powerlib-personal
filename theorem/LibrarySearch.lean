@@ -50,7 +50,8 @@ def declarationAxioms (env : Environment) (name : Name) : Array Name :=
 -- For admission only the allowlist decision is needed, not a separate axiom
 -- array for every root. Walk the union of their kernel dependencies once.
 -- Keep provenance queries above on Lean's public CollectAxioms API.
-private partial def axiomViolation (env : Environment) (checked : Kernel.Environment) (name : Name) :
+private partial def axiomViolation (env : Environment) (checked : Kernel.Environment)
+    (name : Name) :
     StateM (Std.HashSet Name) (Option Name) := do
   if (← get).contains name then return none
   modify (·.insert name)

@@ -243,7 +243,8 @@ private theorem piPLL_tendsto_of_bounded
   have hθlim : Tendsto θ atTop (𝓝 θs) := by
     rw [Metric.tendsto_atTop]
     intro ε0 hε0
-    obtain ⟨r, hr, hr'⟩ := Metric.eventually_nhds_iff.mp (eventually_nhdsWithin_iff.mp (hiso θs hzero))
+    obtain ⟨r, hr, hr'⟩ :=
+      Metric.eventually_nhds_iff.mp (eventually_nhdsWithin_iff.mp (hiso θs hzero))
     set ε : ℝ := min ε0 (r / 2)
     have hε : 0 < ε := lt_min hε0 (by positivity)
     have hεr : ε < r := lt_of_le_of_lt (min_le_right _ _) (by linarith)
@@ -266,8 +267,10 @@ private theorem piPLL_tendsto_of_bounded
       have hsmall := hT1 s (hT1t0.trans hs)
       rw [Real.dist_eq, sub_zero] at hsmall
       constructor
-      · intro heq; rw [heq] at hsmall; exact absurd (lt_of_lt_of_le hsmall (min_le_left _ _)) (lt_irrefl _)
-      · intro heq; rw [heq] at hsmall; exact absurd (lt_of_lt_of_le hsmall (min_le_right _ _)) (lt_irrefl _)
+      · intro heq; rw [heq] at hsmall
+        exact absurd (lt_of_lt_of_le hsmall (min_le_left _ _)) (lt_irrefl _)
+      · intro heq; rw [heq] at hsmall
+        exact absurd (lt_of_lt_of_le hsmall (min_le_right _ _)) (lt_irrefl _)
     refine ⟨t0, fun t ht => ?_⟩
     rw [Real.dist_eq]
     have hcont : ContinuousOn θ (Icc t0 t) := hθc.mono (fun s hs => le_trans ht0.le hs.1)

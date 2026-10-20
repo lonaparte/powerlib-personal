@@ -73,8 +73,8 @@ def tiltedTransition (T : S → S → ℝ) (u : S → ℝ) (ρ : ℝ) (i j : S) 
   T i j * u j / (ρ * u i)
 
 /-- `P(λ)` is a stochastic matrix. -/
-@[powerlib_foundation] theorem tiltedTransition_stochastic [Fintype S] {T : S → S → ℝ} {u : S → ℝ} {ρ : ℝ}
-    (hT : ∀ i j, 0 ≤ T i j) (hu : ∀ i, 0 < u i) (hρ : 0 < ρ)
+@[powerlib_foundation] theorem tiltedTransition_stochastic [Fintype S] {T : S → S → ℝ} {u : S → ℝ}
+    {ρ : ℝ} (hT : ∀ i j, 0 ≤ T i j) (hu : ∀ i, 0 < u i) (hρ : 0 < ρ)
     (heig : ∀ i, ∑ j, T i j * u j = ρ * u i) :
     (∀ i j, 0 ≤ tiltedTransition T u ρ i j) ∧ ∀ i, ∑ j, tiltedTransition T u ρ i j = 1 := by
   refine ⟨fun i j => div_nonneg (mul_nonneg (hT i j) (hu j).le) (mul_pos hρ (hu i)).le,

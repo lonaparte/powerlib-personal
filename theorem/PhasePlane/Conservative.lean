@@ -115,8 +115,8 @@ def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + 
   intro t ht
   exact constant_of_has_deriv_right_zero
     (fun τ hτ => (hc τ hτ).continuousWithinAt)
-    (fun τ hτ => ((hc τ (Ico_subset_Icc_self hτ)).mono (Icc_subset_Icc_left hτ.1)).mono_of_mem_nhdsWithin
-      (Icc_mem_nhdsGE hτ.2)) t ht
+    (fun τ hτ => ((hc τ (Ico_subset_Icc_self hτ)).mono (Icc_subset_Icc_left hτ.1))
+      |>.mono_of_mem_nhdsWithin (Icc_mem_nhdsGE hτ.2)) t ht
 
 /-- Damped case `γ ≥ 0`: the energy is nonincreasing along every solution segment. -/
 @[powerlib_foundation] theorem energy_antitone {m γ : ℝ} {V dV : ℝ → ℝ} (hm : m ≠ 0) (hγ : 0 ≤ γ)

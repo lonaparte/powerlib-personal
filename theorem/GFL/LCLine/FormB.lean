@@ -54,10 +54,11 @@ family of `theorem/PLL/PIPLLFamily.lean` with `h = formBChar` (`contDiff_formBCh
 
 Correction (§1.4–§1.6, current direction): the note declares its currents IN-positive (§D1) but
 writes `C_f v̇_c = i − i_g − ω_g C_f J v_c` and
-`L_g i̇_g = v_c − (V_g, 0) − R_g i_g − ω_g L_g J i_g`, in which `i` flows from the bridge into the filter and `i_g` from the filter to the grid: these
-are the OUT-positive equations (those of the `vsc-stochastic-stability` source frame). The
-equations above are the IN-positive ones (`i^IN = −i^note`, `i_g^IN = −i_g^note`,
-`i*^IN = −i*^note`); `formBChar`, a voltage, is the same function in both writings.
+`L_g i̇_g = v_c − (V_g, 0) − R_g i_g − ω_g L_g J i_g`, in which `i` flows from the bridge into the
+filter and `i_g` from the filter to the grid: these are the OUT-positive equations (those of the
+`vsc-stochastic-stability` source frame). The equations above are the IN-positive ones
+(`i^IN = −i^note`, `i_g^IN = −i_g^note`, `i*^IN = −i*^note`); `formBChar`, a voltage, is the same
+function in both writings.
 Correction (§1.6, added premise): the line/LC algebraic system is uniquely solvable only when
 `R_g² + (ω_g L_g − 1/(ω_g C_f))² ≠ 0` (and `ω_g C_f ≠ 0`); the note does not state it.
 Correction (§1.7–§1.8, §1.9 table, §1.11, §1.14 region E): the exact quasi-steady line solution
@@ -213,12 +214,14 @@ def αq : ℝ := p.lineX * p.Vg / p.lineDet
 def βq : ℝ := (p.lineX * p.idRef + p.Rg * p.iqRef) / (p.ωg * p.Cf * p.lineDet)
 def γq : ℝ := (p.lineX * p.iqRef - p.Rg * p.idRef) / (p.ωg * p.Cf * p.lineDet)
 
-@[powerlib_foundation] theorem lineCurrentD_eq (hΔ : p.lineDet ≠ 0) (θ : ℝ) : p.lineCurrentD θ = p.αd + p.βd * Real.sin θ + p.γd * Real.cos θ := by
+@[powerlib_foundation] theorem lineCurrentD_eq (hΔ : p.lineDet ≠ 0) (θ : ℝ) :
+    p.lineCurrentD θ = p.αd + p.βd * Real.sin θ + p.γd * Real.cos θ := by
   simp only [lineCurrentD, driveA, driveB, convCurrentD, convCurrentQ, αd, βd, γd]
   field_simp
   ring
 
-@[powerlib_foundation] theorem lineCurrentQ_eq (hΔ : p.lineDet ≠ 0) (θ : ℝ) : p.lineCurrentQ θ = p.αq + p.βq * Real.sin θ + p.γq * Real.cos θ := by
+@[powerlib_foundation] theorem lineCurrentQ_eq (hΔ : p.lineDet ≠ 0) (θ : ℝ) :
+    p.lineCurrentQ θ = p.αq + p.βq * Real.sin θ + p.γq * Real.cos θ := by
   simp only [lineCurrentQ, driveA, driveB, convCurrentD, convCurrentQ, αq, βq, γq]
   field_simp
   ring

@@ -259,7 +259,7 @@ def pHModel (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hKp : 0 ≤ p.Kp) : PH.Nonlin
   have hg : WithLp.ofLp (p.gradH y) = ![-p.h (y 0), p.Ki * y 1] := rfl
   simp only [PH.NonlinearModel.field, pHModel, hg, JR_mulVec, portB_mulVec, piPLLField]
   congr 1
-  ext i; fin_cases i <;> simp <;> ring
+  ext i; fin_cases i <;> simp; ring
 
 /-- `(J − R)∇H` is exactly the reduced field. -/
 @[powerlib_foundation] theorem pHModel_zeroInputField (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
@@ -361,7 +361,8 @@ def reflectMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![-1, 0; 0, 1]
 /-- The reflection `(θ, η) ↦ (−θ, η)` as a coordinate change. -/
 def reflect : State 2 ≃L[ℝ] State 2 := Dynamics.matrixCoord reflectMatrix reflectMatrix_isUnit
 
-@[powerlib_foundation] theorem reflect_apply (y : State 2) : reflect y = PhasePlane.mk (-(y 0)) (y 1) := by
+@[powerlib_foundation] theorem reflect_apply (y : State 2) :
+    reflect y = PhasePlane.mk (-(y 0)) (y 1) := by
   rw [PhasePlane.ext_iff']
   simp [reflect, reflectMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
