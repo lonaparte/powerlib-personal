@@ -9,16 +9,24 @@ module theorem.EulerDiscretization where
 -- converse linearization) the Euler Jacobian `I + h Df(x*)` is Schur for every step below a
 -- threshold, and a fixed point with a Schur Jacobian is locally exponentially stable for the map
 -- (discrete linearization), so the implementation is locally exponentially stable for every small
--- step (`sound-small-step`). Lean proves converse linearization
--- (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`), discrete linearization
--- (`Map.locallyExponentiallyStable_of_schurStable`), the step threshold (from the forward Euler
--- stability region, `Numerics.forwardEuler_schurStable_iff`) and the realization, generically for
--- autonomous families with `C¹` fields and for the swing family, in
--- `theorem/Numerics/EulerRealization.lean`. Nothing here is exported.
+-- step (`sound-small-step`). Without the constraint the realization is not sound: a locally
+-- exponentially stable model whose Euler implementation at a large step has a multiplier outside
+-- the unit disk (`ẋ = −x` at `h = 3`: the map `x ↦ −2x`) is certified and fails the sentence
+-- (`not-sound-large-step`). Lean: `converse` is
+-- `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`, `threshold` is
+-- `Numerics.exists_forwardEuler_schurStable` (from the forward Euler stability region), `discrete`
+-- is `Map.locallyExponentiallyStable_of_schurStable` with `Numerics.hasFDerivAt_eulerMap`; the
+-- template laws `Numerics.euler_sound_small_step`, `Numerics.euler_certified_small_step`,
+-- `Numerics.not_euler_realizationSoundUnder(_of_neg)` (`theorem/Numerics/EulerRealization.lean`,
+-- for autonomous families with `C¹` fields) and their connection statements for the swing family
+-- `Swing.euler_sound_small_step`, `Swing.euler_certified_small_step`,
+-- `Swing.not_euler_realizationSoundUnder` (`theorem/Synchronous/SwingEuler.lean`). Nothing here is
+-- exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Sigma
 open import Cubical.Data.Empty using (⊥)
+open import Cubical.Relation.Nullary using (¬_)
 
 open import theorem.FamilyReading
 open import theorem.Realization
@@ -37,6 +45,7 @@ module _ (S : Semantics) where
     (threshold : (m : Model) → HurwitzAt m →
       Σ[ h₀ ∈ Step ] ((h : Step) → h ≤ h₀ → SchurAt h m))
     (discrete : (h : Step) (m : Model) → SchurAt h m → holds (euler h m) les)
+    (large : Σ[ m ∈ Model ] Σ[ h ∈ Step ] holds (continuous m) les × (¬ holds (euler h m) les))
     where
 
     model : Family
@@ -63,3 +72,9 @@ module _ (S : Semantics) where
     certified-small-step : (y : Model × Step) → Certified designed les y →
       Σ[ h₀ ∈ Step ] ((h : Step) → h ≤ h₀ → den implementation les (fst y , h))
     certified-small-step y c = sound-small-step (fst y) (fst (certified↔ les y) c)
+
+    -- Without a step constraint the realization is not sound.
+    not-sound-large-step : ¬ SoundUnder designed (λ _ → ⊥) les
+    not-sound-large-step =
+      let (m , h , hm , hn) = large
+      in not-sound-of-witness designed (m , h) (λ _ ()) (snd (certified↔ les (m , h)) hm) hn

@@ -82,8 +82,8 @@ in it) or a single module.
   concrete circuit instances are in `PH/Models/`.
 * `Spectral`: the spectral family template, parametrized by an arbitrary model type.
 * `Stack`: the four-layer stack of models, implementations and records over arbitrary families.
-* `Map.Basic`, `Map.Linearization`: general facts of the discrete-time semantic layer
-  (`Map.Defs`, codex layer), registered module by module.
+* `Map.Basic`, `Map.Linearization`, `Map.LinearReading`: general facts of the discrete-time
+  semantic layer (`Map.Defs`, codex layer), registered module by module.
 * `Linear.EigenMap`: eigenvalue maps of matrices (polynomial and Möbius images), general linear
   algebra beside the codex `Linear.*` modules, registered module by module. -/
 def genericEntries : Array Name := #[
@@ -91,7 +91,7 @@ def genericEntries : Array Name := #[
   `theorem.DAE, `theorem.Delay, `theorem.Dynamics, `theorem.Dynamics.Degenerate,
   `theorem.Dynamics.LaSalle, `theorem.Estimation, `theorem.Information, `theorem.LTI,
   `theorem.Linear.EigenMap, `theorem.LinearAlgebra, `theorem.Map.Basic,
-  `theorem.Map.Linearization, `theorem.Modal,
+  `theorem.Map.Linearization, `theorem.Map.LinearReading, `theorem.Modal,
   `theorem.Network.LinearSync, `theorem.Network.Synchronization, `theorem.Network.WeightedLaplacian,
   `theorem.NormalForm, `theorem.Numerics, `theorem.PDE, `theorem.PH, `theorem.ParametricResonance,
   `theorem.Periodic, `theorem.PhasePlane, `theorem.Potential, `theorem.SingularPerturbation,

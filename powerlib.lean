@@ -23,6 +23,7 @@ import theorem.Averaging.KBM
 import theorem.Averaging.SlidingFourier
 import theorem.Averaging.StateSpaceAveraging
 import theorem.Averaging.SwitchedStability
+import theorem.Averaging.SwitchedFamily
 import theorem.Criteria.Hurwitz
 import theorem.Criteria.Hurwitz2
 import theorem.Criteria.Routh3
@@ -43,8 +44,10 @@ import theorem.LTI.Plant
 import theorem.LTI.Decay
 import theorem.LTI.Discrete
 import theorem.LTI.Sampling
+import theorem.LTI.ExactSampling
 import theorem.Map.Basic
 import theorem.Map.Linearization
+import theorem.Map.LinearReading
 import theorem.LTI.Oscillator2
 import theorem.SpecialFunctions.BesselI
 import theorem.SpecialFunctions.BesselK
@@ -224,6 +227,7 @@ import theorem.Numerics.EulerMaruyama
 import theorem.Numerics.MethodOfLines
 import theorem.Numerics.ExplicitRK
 import theorem.Numerics.LinearSchemes
+import theorem.Numerics.EulerRealization
 import theorem.Numerics.LocalError
 import theorem.Numerics.Newton
 import theorem.Numerics.NewtonVariants
@@ -317,6 +321,7 @@ import theorem.Synchronous.SMIB11PH
 import theorem.Synchronous.StochasticPH
 import theorem.Synchronous.Swing
 import theorem.Synchronous.SwingPH
+import theorem.Synchronous.SwingEuler
 import theorem.Transform.Circulant
 import theorem.Transform.ComplexImpedance
 import theorem.Transform.ComplexPower

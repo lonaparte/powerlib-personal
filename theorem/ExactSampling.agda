@@ -4,14 +4,16 @@ module theorem.ExactSampling where
 -- Scaffold of the exact sampling of continuous linear models: the model is `ẋ = A x`; its
 -- implementation with period `T > 0` and zero-order hold is the discrete system
 -- `x_{k+1} = e^{TA} x_k`, which realizes the model it was designed from (`ofDesign`, design map
--- `(T, A) ↦ A`). Every attractive sentence of a linear continuous system is the Hurwitz property
--- of its matrix, every attractive sentence of a linear discrete system is the Schur property, and
--- `A` is Hurwitz exactly when `e^{TA}` is Schur; so the sampled implementation reads through its
--- design model (`reading`) and the realization is exact for every attractive sentence, with no
--- constraint (`exact`). Lean proves the three facts (`LTI.isHurwitz_iff_schurStable_exp`,
--- `Family.IsLinear.den_hurwitz`, and its discrete counterpart) and the realization
--- (`Stack.Implementation.realizationExactUnder_of_den_eq_preimage`) in
--- `theorem/LTI/ExactSampling.lean`. Nothing here is exported.
+-- `(T, A) ↦ A`). Every attractive sentence (and sampled contraction) of a linear continuous system
+-- is the Hurwitz property of its matrix, every such sentence of a linear discrete system is the
+-- Schur property, and `A` is Hurwitz exactly when `e^{TA}` is Schur; so the sampled implementation
+-- reads through its design model (`reading`) and the realization is exact for every such sentence,
+-- with no constraint (`exact`). Lean (`theorem/LTI/ExactSampling.lean`): `sampling` is
+-- `LTI.isHurwitz_iff_schurStable_exp`, `continuous-reading` is `Family.IsLinear.den_hurwitz`,
+-- `discrete-reading` is `Map.holdsMap_op_iff_schurStable` (`theorem/Map/LinearReading.lean`;
+-- family form `Family.IsAutonomousMap.den_schurStable`), `reading` is
+-- `LTI.sampled_den_eq_preimage`, `exact` is `LTI.exactSampling_realizationExactUnder`. Nothing
+-- here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Sigma

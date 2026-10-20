@@ -2,19 +2,21 @@
 module theorem.SwitchedAveraging where
 
 -- Scaffold of the switched implementation of an averaged model: the model is the averaged linear
--- system `ẋ = Ā x`, `Ā = d A₁ + (1 − d) A₂`; its implementation switches between `A₁` and `A₂`
--- with duty `d` and period `T`, read stroboscopically (the period map
--- `M_T = e^{(1−d) T A₂} e^{d T A₁}` as a discrete system of period `T`), and realizes the
--- averaged model it is designed from (`ofDesign`, design map `(d, T, A₁, A₂) ↦ Ā`). The
--- realization is a relation that holds only under a constraint: fast switching. If `Ā` is
--- Hurwitz, every switching period below a threshold gives a Schur period map, so the switched
--- implementation satisfies every attractive sentence its averaged model satisfies
--- (`sound-fast`); without the constraint the realization is not sound — slow switching between two
--- Hurwitz matrices with a Hurwitz average can have a period map with a multiplier below `−1`
--- (`not-sound-slow`, a period-doubling instability). Lean proves the threshold
--- (`Averaging.periodMap_schurStable_of_isHurwitz`), the witness
--- (`Averaging.slowSwitching_counterexample`) and the readings, and states the realization in
--- `theorem/Averaging/SwitchedFamily.lean`. Nothing here is exported.
+-- system `ẋ = Ā x`, `Ā = d A₁ + (1 − d) A₂`; its implementation switches between `A₁` and `A₂` with
+-- duty `d` and period `T`, read stroboscopically (the period map `M_T = e^{(1−d) T A₂} e^{d T A₁}`
+-- as a discrete system of period `T`), and realizes the averaged model it is designed from
+-- (`ofDesign`, design map `(d, T, A₁, A₂) ↦ Ā`). The realization is a relation that holds only
+-- under a constraint: fast switching. If `Ā` is Hurwitz, every switching period below a threshold
+-- gives a Schur period map, so the switched implementation satisfies every attractive sentence its
+-- averaged model satisfies (`sound-fast`); without the constraint the realization is not sound —
+-- slow switching between two Hurwitz matrices with a Hurwitz average can have a period map with a
+-- multiplier below `−1` (`not-sound-slow`, a period-doubling instability). Lean
+-- (`theorem/Averaging/SwitchedFamily.lean`): `fast` is
+-- `Averaging.periodMap_schurStable_of_isHurwitz`, `slow` is
+-- `Averaging.slowSwitching_counterexample` (in `ℝ²`), the readings are
+-- `Family.IsLinear.den_hurwitz` and `Map.holdsMap_op_iff_schurStable`, `sound-fast` is
+-- `Averaging.switching_sound_fast` and `not-sound-slow` is
+-- `Averaging.not_switching_realizationSoundUnder`. Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Sigma
