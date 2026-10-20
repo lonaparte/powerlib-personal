@@ -147,13 +147,13 @@ there is a switching period `T₀ > 0` below which every switched system satisfi
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (∀ (d : ℝ) (A₁ A₂ : Matrix (Fin n) (Fin n) ℝ) (hd : d ∈ Set.Icc (0 : ℝ) 1),
       (⟨avgMatrix d A₁ A₂⟩ : LTI.ContinuousModel n) ∈ LTI.continuousFamily.den (.flow P) →
-        ∃ T₀ : {T : ℝ // 0 < T}, ∀ (T : ℝ) (hT : 0 < T), T ≤ T₀.1 →
+        ∃ T₀ : ℝ, 0 < T₀ ∧ ∀ (T : ℝ) (hT : 0 < T), T ≤ T₀ →
           (⟨d, T, A₁, A₂, hd, hT⟩ : Switched n) ∈ switchedFamily.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   intro d A₁ A₂ hd h
   rw [LTI.continuousFamily_isLinear.den_hurwitz hP] at h
   obtain ⟨T₀, hT₀, hS⟩ := periodMap_schurStable_of_isHurwitz hd.1 hd.2 A₁ A₂ h
-  refine ⟨⟨T₀, hT₀⟩, fun T hT hle => ?_⟩
+  refine ⟨T₀, hT₀, fun T hT hle => ?_⟩
   rw [switchedFamily_isAutonomousMap.den_schurStable hP]
   exact (hS T ⟨hT, hle⟩).1
 

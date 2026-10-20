@@ -492,7 +492,7 @@ load `ΔP_L = 1` the quasi-steady state is an equilibrium at which the port supp
   refine Port.System.not_passive_of_equilibrium _ (x₀ := steadyState m.D m.K 1) (u₀ := load 1)
     (steadyState_isEquilibrium m.M_pos.ne' m.Tg_pos.ne' hKD.ne') ?_
   have hsupply : m.plant.system.supply (steadyState m.D m.K 1) (load 1) = -1 / (m.K + m.D) := by
-    simp [Port.System.supply, family, Model.plant, plant, Linear.Plant.system, load, steadyState,
+    simp [Port.System.supply, Model.plant, plant, Linear.Plant.system, load, steadyState,
       dotProduct, Fin.sum_univ_two]
   rw [hsupply]
   exact div_neg_of_neg_of_pos (by norm_num) hKD
@@ -1144,8 +1144,8 @@ model with these parameters and `T_g < τ` decays at the rate `a` exactly when i
 reduction does (i.e. exactly when `a M ≤ K_R + D`). -/
 @[powerlib_domain] theorem exists_threshold_mem_den_decay_iff_reduce (M D K a : ℝ) (hM : 0 < M)
     (ha : a * M ≠ K + D) :
-    connection% (∃ τ : {τ : ℝ // 0 < τ}, ∀ m : Model, m.M = M → m.D = D → m.K = K →
-      m.Tg < τ.1 → (m ∈ family.den (.flow (.decay a)) ↔
+    connection% (∃ τ : ℝ, 0 < τ ∧ ∀ m : Model, m.M = M → m.D = D → m.K = K →
+      m.Tg < τ → (m ∈ family.den (.flow (.decay a)) ↔
         m.reduce ∈ reducedFamily.den (.flow (.decay a)))) := by
   unfold powerlib.TMIO.Statement
   -- the eventual facts as `T_g → 0⁺`
@@ -1167,7 +1167,7 @@ reduction does (i.e. exactly when `a M ≤ K_R + D`). -/
       nhdsWithin_le_nhds hslow] with Tg h1 h2 h3 h4
     exact ⟨h1, h2, h3, h4⟩
   obtain ⟨τ, hτ, hτP⟩ := (nhdsGT_basis (0 : ℝ)).eventually_iff.1 hev
-  refine ⟨⟨τ, hτ⟩, fun m hMm hDm hKm hTm => ?_⟩
+  refine ⟨τ, hτ, fun m hMm hDm hKm hTm => ?_⟩
   obtain ⟨hrate, hΔ, hS, hslow⟩ := hτP ⟨m.Tg_pos, hTm⟩
   subst hMm hDm hKm
   rw [reduced_mem_den_decay_iff]

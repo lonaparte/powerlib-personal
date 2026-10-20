@@ -1,10 +1,10 @@
 {-# OPTIONS --cubical --safe --guardedness #-}
 module theorem.EulerPorts where
 
--- Scaffold of the explicit Euler implementation of models with ports: the model is a port system `ẋ
--- = f(x, u)`, `y = g(x, u)`; its implementation with step `h > 0` is the discrete port system `x⁺ =
--- x + h f(x, u)` with the same output, read with step length `h`, and realizes the model it is
--- designed from (`ofDesign`). Three readings carry it. The flow sentences read the zero-input
+-- Scaffold of the explicit Euler implementation of models with ports: the model is a port system
+-- `ẋ = f(x, u)`, `y = g(x, u)`; its implementation with step `h > 0` is the discrete port system
+-- `x⁺ = x + h f(x, u)` with the same output, read with step length `h`, and realizes the model it
+-- is designed from (`ofDesign`). Three readings carry it. The flow sentences read the zero-input
 -- dynamics on both sides, and the zero-input map of the Euler system is the Euler map of the
 -- zero-input field, so the implementation reads through the autonomous Euler implementation of the
 -- zero-input family (`flow-reading`), and the small-step and large-step laws of

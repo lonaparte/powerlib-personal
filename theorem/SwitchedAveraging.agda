@@ -13,8 +13,8 @@ module theorem.SwitchedAveraging where
 -- (`commuting-exact`, through the exact-sampling reading of `theorem/ExactSampling.agda`); in
 -- dimension one every pair commutes, so there the realization is exact without constraint
 -- (`dimension-one`). Without a constraint, in dimension two and above, the realization is not sound
--- — slow switching between two Hurwitz matrices with a Hurwitz average can have a period map with
--- a multiplier below `−1` (`not-sound-slow`, a period-doubling instability). Lean
+-- — slow switching between two Hurwitz matrices with a Hurwitz average can have a period map with a
+-- multiplier below `−1` (`not-sound-slow`, a period-doubling instability). Lean
 -- (`theorem/Averaging/SwitchedStability.lean`, `theorem/Averaging/SwitchedFamily.lean`): `fast` is
 -- `Averaging.periodMap_schurStable_of_isHurwitz`, `slow` is
 -- `Averaging.slowSwitching_counterexample_of_two_le` (every `n ≥ 2`, the `ℝ²` example embedded

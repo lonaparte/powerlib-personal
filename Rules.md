@@ -249,6 +249,11 @@ There is no assumed general translation of Agda proofs to Lean. An Agda proof
 does not authorize unconditional acceptance by Lean. A restricted versioned wire
 interface is the institutional pattern.
 
+The exported modules in `theorem/generated/` keep their provenance comments (the
+Agda source and its SHA-256) as the first lines and carry a library module docstring
+after their imports, like every other module. Regenerating one must keep both: the
+generator emits the data, the docstring is maintained with the module.
+
 ## 12. Exact acceptance
 
 Prefer exact checking of integers, rational numbers, and symbolic expressions.

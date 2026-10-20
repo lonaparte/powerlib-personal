@@ -4,14 +4,14 @@ module theorem.ClassicalMachineSwing where
 -- Scaffold of the reading of the classical synchronous machine through the swing hub
 -- (`ClassicalSM.family` of `theorem/Synchronous/PH.lean` read through `Synchronous.Swing.family`).
 -- The port-Hamiltonian machine `δ̇ = p/M`, `ṗ = P_m − b sin δ − D p/M (+ u)` at `(δ*, 0)` is, on
--- its zero-input field, the swing machine `⟨M, D, P_m, 0, b, 0⟩` in the momentum coordinate `p = M
--- ω`. Its parameters carry `M > 0`, `D ≥ 0`, `b > 0`, so every model maps into the swing context
--- `{inertia, curved}` and exactness, not only exactness within a context, passes. Only the flow
--- sentences are read: passivity is read on the machine's port, which the swing family does not
+-- its zero-input field, the swing machine `⟨M, D, P_m, 0, b, 0⟩` in the momentum coordinate
+-- `p = M ω`. Its parameters carry `M > 0`, `D ≥ 0`, `b > 0`, so every model maps into the swing
+-- context `{inertia, curved}` and exactness, not only exactness within a context, passes. Only the
+-- flow sentences are read: passivity is read on the machine's port, which the swing family does not
 -- have, and stays a law of the machine (`ClassicalSM.exact_passive`). Lean proves the conjugacy
--- (`mem_den_flow_iff_swing`, through `Spectral.mem_den_flow_iff_of_transport` with `T = diag(1,
--- M)`), the requirement correspondence (`realize_translate_flow_eq_preimage`) and the transfer
--- (`Spectral.exact_of_hub`, `Spectral.sound_of_hub`). Nothing here is exported.
+-- (`mem_den_flow_iff_swing`, through `Spectral.mem_den_flow_iff_of_transport` with
+-- `T = diag(1, M)`), the requirement correspondence (`realize_translate_flow_eq_preimage`) and the
+-- transfer (`Spectral.exact_of_hub`, `Spectral.sound_of_hub`). Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv

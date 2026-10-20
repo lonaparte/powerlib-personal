@@ -206,14 +206,14 @@ centre). -/
 /-- `r > 0`: every zero-input solution segment decays at one positive exponential rate, with one
 constant for all segments. -/
 @[powerlib_domain] theorem seriesRLCPH_exists_decay (p : SeriesRLCParams) (hr : 0 < p.r) :
-    connection% (∃ a : {a : ℝ // 0 < a},
-      seriesRLCPH p ∈ Port.PortHamiltonian.family.den (.flow (.decay a.1))) := by
+    connection% (∃ a : ℝ, 0 < a ∧
+      seriesRLCPH p ∈ Port.PortHamiltonian.family.den (.flow (.decay a))) := by
   unfold powerlib.TMIO.Statement
   have h := seriesRLCPH_mem_den_globallyExponentiallyStable p hr
   unfold powerlib.TMIO.Statement at h
   rw [Port.PortHamiltonian.family_isLinear.mem_den_flow] at h
   obtain ⟨a, ha, hd⟩ := Flow.GloballyExponentiallyStable.exists_decay h
-  exact ⟨⟨a, ha⟩, Port.PortHamiltonian.family_isLinear.mem_den_flow.mpr hd⟩
+  exact ⟨a, ha, Port.PortHamiltonian.family_isLinear.mem_den_flow.mpr hd⟩
 
 /-- The lossless loop `r = 0` conserves its energy `H`. -/
 @[powerlib_domain] theorem seriesRLCPH_mem_den_conservative (p : SeriesRLCParams)
