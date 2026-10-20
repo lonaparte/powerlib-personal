@@ -85,8 +85,8 @@ def genericEntries : Array Name := #[
 conclusions and the static evidence about them, including the circuit models of `Circuits/` (RL
 branch, LCL filter) and their generated parameter conversions. -/
 def engineeringEntries : Array Name := #[
-  `theorem.Circuits.LCL, `theorem.Circuits.LCLSynthesis, `theorem.Circuits.RL,
-  `theorem.Circuits.RLMeasurement, `theorem.generated.Conversion, `theorem.generated.LCLConversion,
+  `theorem.Circuits.LCL, `theorem.Circuits.LCLSynthesis, `theorem.Circuits.PortEuler,
+  `theorem.Circuits.RL, `theorem.Circuits.RLMeasurement, `theorem.generated.Conversion, `theorem.generated.LCLConversion,
   `theorem.CurrentControl, `theorem.Drives, `theorem.Frequency,
   `theorem.GFL, `theorem.GFL.DCLink, `theorem.GFL.Impedance, `theorem.GFL.LCLine,
   `theorem.GFL.Noise, `theorem.GFL.Parametric, `theorem.GFL.PowerLoop,

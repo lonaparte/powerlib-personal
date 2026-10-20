@@ -336,6 +336,11 @@ import theorem.PLL.Euler
 import theorem.Limiting.Euler
 import theorem.GFL.DCLink.Euler
 import theorem.CurrentControl.Euler
+import theorem.Numerics.EulerPorts
+import theorem.Circuits.PortEuler
+import theorem.GFL.DCLink.PortEuler
+import theorem.Synchronous.PortEuler
+import theorem.PLL.PortEuler
 import theorem.Transform.Circulant
 import theorem.Transform.ComplexImpedance
 import theorem.Transform.ComplexPower
