@@ -44,7 +44,8 @@ def cubicField (c : ℝ) (x : State n) : State n := (c * ‖x‖ ^ 2) • x
     fderiv ℝ (cubicField (n := n) c) 0 = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) 0 := by
   have hg : HasFDerivAt (fun x : State n => c * ‖x‖ ^ 2)
       (fderiv ℝ (fun x : State n => c * ‖x‖ ^ 2) 0) 0 :=
-    ((contDiff_const.mul (contDiff_norm_sq ℝ) : ContDiff ℝ 1 (fun x : State n => c * ‖x‖ ^ 2)).differentiable one_ne_zero 0).hasFDerivAt
+    ((contDiff_const.mul (contDiff_norm_sq ℝ) :
+      ContDiff ℝ 1 (fun x : State n => c * ‖x‖ ^ 2)).differentiable one_ne_zero 0).hasFDerivAt
   have h := hg.smul (hasFDerivAt_id (0 : State n))
   rw [map_zero]
   have h0 : HasFDerivAt (cubicField (n := n) c) (0 : State n →L[ℝ] State n) 0 := by
@@ -80,7 +81,7 @@ def cubicField (c : ℝ) (x : State n) : State n := (c * ‖x‖ ^ 2) • x
     · exact isClosed_le (continuous_norm.pow 2) continuous_const
     · rw [isBounded_iff_forall_norm_le]
       refine ⟨max 1 c, fun x hx => ?_⟩
-      simp only [Set.mem_setOf_eq] at hx
+      simp only [Set.mem_ofPred_eq] at hx
       by_cases h1 : ‖x‖ ≤ 1
       · exact h1.trans (le_max_left _ _)
       · push Not at h1

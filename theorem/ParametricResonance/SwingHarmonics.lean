@@ -177,7 +177,8 @@ private theorem swing_remainder (hC : 0 ≤ C)
   have hrem : ∫ φ in (0 : ℝ)..2 * Real.pi,
       (F (δ0 + dh * Real.cos φ) - F δ0 - F' * (dh * Real.cos φ)) =
       (∫ φ in (0 : ℝ)..2 * Real.pi, F (δ0 + dh * Real.cos φ)) - 2 * Real.pi * F δ0 := by
-    rw [intervalIntegral.integral_sub, intervalIntegral.integral_sub, intervalIntegral.integral_const]
+    rw [intervalIntegral.integral_sub, intervalIntegral.integral_sub,
+      intervalIntegral.integral_const]
     · have : ∫ φ in (0 : ℝ)..2 * Real.pi, F' * (dh * Real.cos φ) = 0 := by
         rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul, integral_cos,
           Real.sin_two_pi, Real.sin_zero]

@@ -275,7 +275,8 @@ def lineG (R X : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := (lineMatrix R X)⁻¹
   · intro h; rw [← h, mulVec_mulVec, nonsing_inv_mul _ hdet, one_mulVec]
   · intro h; rw [h, mulVec_mulVec, mul_nonsing_inv _ hdet, one_mulVec]
 
-/-- PLL input `ωC v_{c,q}^c = −sin θ (i_q − i_{g,q}) + cos θ (i_{g,d} − i_d)` (T-gfl-dynamics §1.7). -/
+/-- PLL input `ωC v_{c,q}^c = −sin θ (i_q − i_{g,q}) + cos θ (i_{g,d} − i_d)`
+(T-gfl-dynamics §1.7). -/
 def pllInput (θ : ℝ) (idq ig : Fin 2 → ℝ) : ℝ :=
   -sin θ * (idq 1 - ig 1) + cos θ * (ig 0 - idq 0)
 

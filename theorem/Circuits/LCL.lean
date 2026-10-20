@@ -426,7 +426,8 @@ conservation of that energy, and a right-half-plane pole proves instability. -/
 
 /-- On the attractive sentences and sampled contraction the chain agrees with the semantics: pole
 stability is their exact translation, for every circuit, passive or not. -/
-@[powerlib_domain] theorem exact_hurwitz {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[powerlib_domain] theorem exact_hurwitz {P : Flow.Property}
+    (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
   have ht : translate (.flow P) = {.poleStable} := by
@@ -486,7 +487,8 @@ pole-stable, so its solutions converge. -/
     intervalIntegral.integral_const_mul, integral_cos_sq, integral_sin_mul_cos₁]
   · simp
   · exact (continuous_const.mul (Real.continuous_cos.pow 2)).intervalIntegrable _ _
-  · exact (continuous_const.mul (Real.continuous_sin.mul Real.continuous_cos)).intervalIntegrable _ _
+  · exact
+      (continuous_const.mul (Real.continuous_sin.mul Real.continuous_cos)).intervalIntegrable _ _
 
 /-- Passivity of the port behaviour is exactly the passivity of both resistances. A passive
 circuit stores its physical energy; with a negative resistance in one branch, the other branch

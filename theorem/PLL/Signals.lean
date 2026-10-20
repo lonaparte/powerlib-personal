@@ -330,7 +330,8 @@ def mafTF (Tw : ℝ) (s : ℂ) : ℂ := (1 - Complex.exp (-((Tw : ℂ) * s))) / 
   have hT' : (Tw : ℂ) ≠ 0 := by exact_mod_cast hT
   rw [integral_exp_mul_complex hc, mafTF]
   have hsplit : Complex.exp ((ω : ℂ) * Complex.I * ((t - Tw : ℝ) : ℂ)) =
-      Complex.exp ((ω : ℂ) * Complex.I * t) * Complex.exp (-((Tw : ℂ) * ((ω : ℂ) * Complex.I))) := by
+      Complex.exp ((ω : ℂ) * Complex.I * t) *
+        Complex.exp (-((Tw : ℂ) * ((ω : ℂ) * Complex.I))) := by
     rw [← Complex.exp_add]; congr 1; push_cast; ring
   rw [hsplit]
   field_simp

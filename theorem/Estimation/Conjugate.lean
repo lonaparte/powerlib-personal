@@ -60,7 +60,7 @@ singletons are measurable. -/
   have : ∀ a, f a s = ∑' b, s.indicator (fun b => f a {b}) b :=
     fun a => (Measure.tsum_indicator_apply_singleton (f a) s hs).symm
   simp_rw [this]
-  refine Measurable.ennreal_tsum fun b => ?_
+  refine Measurable.tsum fun b => ?_
   by_cases hb : b ∈ s
   · simpa [Set.indicator_of_mem hb] using h b
   · simp [Set.indicator_of_notMem hb]

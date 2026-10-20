@@ -219,12 +219,16 @@ private theorem abs_sin_sub_int_mul_pi (x : ℝ) (j : ℤ) :
   have hπ := Real.pi_pos
   rcases le_total 0 x with h0 | h0
   · have h1 := Real.mul_le_sin h0 (by rwa [abs_of_nonneg h0] at hx)
-    rw [abs_of_nonneg h0, abs_of_nonneg (by have := mul_nonneg (by positivity : (0:ℝ) ≤ 2 / Real.pi) h0; linarith)]
+    rw [abs_of_nonneg h0, abs_of_nonneg (by
+      have := mul_nonneg (by positivity : (0:ℝ) ≤ 2 / Real.pi) h0
+      linarith)]
     have : Real.pi / 2 * (2 / Real.pi * x) = x := by field_simp
     nlinarith
   · have h1 := Real.mul_le_sin (neg_nonneg.mpr h0) (by rw [abs_of_nonpos h0] at hx; exact hx)
     rw [Real.sin_neg] at h1
-    rw [abs_of_nonpos h0, abs_of_nonpos (by have := mul_nonneg (by positivity : (0:ℝ) ≤ 2 / Real.pi) (neg_nonneg.mpr h0); linarith)]
+    rw [abs_of_nonpos h0, abs_of_nonpos (by
+      have := mul_nonneg (by positivity : (0:ℝ) ≤ 2 / Real.pi) (neg_nonneg.mpr h0)
+      linarith)]
     have : Real.pi / 2 * (2 / Real.pi * -x) = -x := by field_simp
     nlinarith
 

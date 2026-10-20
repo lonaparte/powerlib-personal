@@ -152,7 +152,7 @@ def piPLLLienardField (h h' : ℝ → ℝ) (Kp Ki : ℝ) (y : ℝ²) : ℝ² :=
 
 /-- Conjugacy identity: `DΦ(x) f(x) = G(Φ(x))`. -/
 @[powerlib_foundation] theorem piPLLVelocityCoord_pushforward {h h' : ℝ → ℝ} {Kp Ki δω : ℝ}
-    (hh : ∀ θ, HasDerivAt h (h' θ) θ) (x : ℝ²) :
+    (_hh : ∀ θ, HasDerivAt h (h' θ) θ) (x : ℝ²) :
     Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![1, 0; Kp * h' (x 0), Ki]
         (piPLLField h Kp Ki δω x) =
       piPLLLienardField h h' Kp Ki (piPLLVelocityCoord h Kp Ki δω x) := by
@@ -235,7 +235,8 @@ this is a conjugacy of the two flows. -/
       (by simpa using hh) (by simpa using hh')
     simpa [hd0] using this
 
-/-- Second component of the Liénard field near `θ*`: `F(u, w) = K_i h(θ* + u) + K_p h'(θ* + u) w`. -/
+/-- Second component of the Liénard field near `θ*`:
+`F(u, w) = K_i h(θ* + u) + K_p h'(θ* + u) w`. -/
 def lienardSecond (h h' : ℝ → ℝ) (Kp Ki θ : ℝ) (u w : ℝ) : ℝ :=
   Ki * h (θ + u) + Kp * h' (θ + u) * w
 

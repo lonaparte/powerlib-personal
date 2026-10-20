@@ -219,7 +219,8 @@ private theorem reduce_trajectory (p : Params n)
   rw [reducedField_reduce]
   have hlin : ∃ R : ((Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)) →L[ℝ] State (n + (n + 1)),
       ∀ y, R y = reduce y := by
-    refine ⟨(PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin (n + (n + 1)) => ℝ)).symm.toContinuousLinearMap.comp
+    refine ⟨(PiLp.continuousLinearEquiv 2 ℝ
+        (fun _ : Fin (n + (n + 1)) => ℝ)).symm.toContinuousLinearMap.comp
       (ContinuousLinearMap.pi fun r => Fin.addCases (motive := fun _ => _ →L[ℝ] ℝ)
         (fun i => (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) => ℝ) i.succ).comp
             (ContinuousLinearMap.fst ℝ (Fin (n + 1) → ℝ) (Fin (n + 1) → ℝ)) -
@@ -262,7 +263,8 @@ def jacobianBlocks (p : Params n) (θ : Fin (n + 1) → ℝ) :
     (Matrix.of fun k k' => if k = k' then -(p.D k / p.M k) else 0)
 
 /-- The reduced Jacobian matrix in the state order `(δ, ω)`. -/
-def jacobian (p : Params n) (θ : Fin (n + 1) → ℝ) : Matrix (Fin (n + (n + 1))) (Fin (n + (n + 1))) ℝ :=
+def jacobian (p : Params n) (θ : Fin (n + 1) → ℝ) :
+    Matrix (Fin (n + (n + 1))) (Fin (n + (n + 1))) ℝ :=
   Matrix.reindex finSumFinEquiv finSumFinEquiv (jacobianBlocks p θ)
 
 @[simp, powerlib_foundation] theorem jacobian_dd (p : Params n) (θ : Fin (n + 1) → ℝ)
@@ -275,7 +277,8 @@ def jacobian (p : Params n) (θ : Fin (n + 1) → ℝ) : Matrix (Fin (n + (n + 1
   simp [jacobian, jacobianBlocks]
 
 @[simp, powerlib_foundation] theorem jacobian_wd (p : Params n) (θ : Fin (n + 1) → ℝ)
-    (k : Fin (n + 1)) (i : Fin n) : jacobian p θ (wIdx k) (dIdx i) = -(laplacian (flowWeights p.B θ) k i.succ) / p.M k := by
+    (k : Fin (n + 1)) (i : Fin n) : jacobian p θ (wIdx k) (dIdx i) =
+      -(laplacian (flowWeights p.B θ) k i.succ) / p.M k := by
   simp [jacobian, jacobianBlocks]
 
 @[simp, powerlib_foundation] theorem jacobian_ww (p : Params n) (θ : Fin (n + 1) → ℝ)
@@ -283,7 +286,8 @@ def jacobian (p : Params n) (θ : Fin (n + 1) → ℝ) : Matrix (Fin (n + (n + 1
       if k = k' then -(p.D k / p.M k) else 0 := by
   simp [jacobian, jacobianBlocks]
 
-@[powerlib_foundation] theorem flowWeights_angleMap_equilibrium (p : Params n) (θ : Fin (n + 1) → ℝ) :
+@[powerlib_foundation] theorem flowWeights_angleMap_equilibrium (p : Params n)
+    (θ : Fin (n + 1) → ℝ) :
     flowWeights p.B (angleMap (equilibrium θ)) = flowWeights p.B θ := by
   ext i j
   simp [flowWeights, equilibrium, angleMap_reduce]
@@ -316,10 +320,10 @@ def jacobian (p : Params n) (θ : Fin (n + 1) → ℝ) : Matrix (Fin (n + (n + 1
     convert hd using 1
     ext v
     simp only [ContinuousLinearMap.comp_apply, PiLp.proj_apply, Matrix.ofLp_toEuclideanCLM,
-      ContinuousLinearMap.sub_apply]
+      _root_.sub_apply]
     rw [mulVec, dotProduct, sum_state]
     simp only [jacobian_dd, zero_mul, Finset.sum_const_zero, zero_add, jacobian_dw, sub_mul,
-      ite_mul, one_mul, Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, if_true]
+      ite_mul, one_mul, Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
   · have hP := (hasFDerivAt_powerInjection p.B (angleMap (equilibrium θ))).comp (equilibrium θ)
       angleMap.hasFDerivAt
     have hPk := (hasFDerivAt_apply (𝕜 := ℝ) (F' := fun _ : Fin (n + 1) => ℝ) k _).comp
@@ -337,13 +341,11 @@ def jacobian (p : Params n) (θ : Fin (n + 1) → ℝ) : Matrix (Fin (n + (n + 1
     simp only [ContinuousLinearMap.comp_apply, PiLp.proj_apply, Matrix.ofLp_toEuclideanCLM]
     rw [mulVec, dotProduct, sum_state]
     simp only [jacobian_wd, jacobian_ww, ite_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ,
-      if_true]
-    simp only [ContinuousLinearMap.smul_apply, ContinuousLinearMap.sub_apply,
-      ContinuousLinearMap.zero_apply, smul_eq_mul, ContinuousLinearMap.comp_apply,
+      ite_true]
+    simp only [_root_.smul_apply, _root_.sub_apply, smul_eq_mul, ContinuousLinearMap.comp_apply,
       ContinuousLinearMap.proj_apply, LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply,
-      flowWeights_angleMap_equilibrium, laplacian_angleMap, PiLp.proj_apply,
-      ContinuousLinearMap.coe_smul', Pi.smul_apply, ContinuousLinearMap.coe_sub', Pi.sub_apply,
-      ContinuousLinearMap.coe_comp', Function.comp_apply, zero_sub, ContinuousLinearMap.neg_apply]
+      flowWeights_angleMap_equilibrium, laplacian_angleMap, PiLp.proj_apply, zero_sub,
+      _root_.neg_apply]
     simp only [mul_sub, Finset.mul_sum]
     rw [sub_eq_add_neg, ← Finset.sum_neg_distrib, add_comm]
     congr 1
@@ -358,7 +360,7 @@ def jacobian (p : Params n) (θ : Fin (n + 1) → ℝ) : Matrix (Fin (n + (n + 1
   have him := congrArg Complex.im h
   simp only [sq, Complex.add_re, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im,
     Complex.zero_re, Complex.add_im, Complex.mul_im, Complex.zero_im, zero_mul, sub_zero,
-    add_zero, mul_zero] at hre him
+    add_zero] at hre him
   by_contra hnn
   push Not at hnn
   have him0 : μ.im = 0 := by
@@ -370,7 +372,8 @@ def jacobian (p : Params n) (θ : Fin (n + 1) → ℝ) : Matrix (Fin (n + (n + 1
   have hre0 : μ.re = 0 := by nlinarith [mul_nonneg hm.le (mul_nonneg hnn hnn)]
   exact hμ (Complex.ext hre0 him0)
 
-@[powerlib_foundation] theorem flowWeights_symm (p : Params n) (θ : Fin (n + 1) → ℝ) (i j : Fin (n + 1)) :
+@[powerlib_foundation] theorem flowWeights_symm (p : Params n) (θ : Fin (n + 1) → ℝ)
+    (i j : Fin (n + 1)) :
     flowWeights p.B θ i j = flowWeights p.B θ j i := by
   simp only [flowWeights, of_apply, p.B_symm i j]
   rw [← Real.cos_neg, neg_sub]
@@ -397,7 +400,7 @@ nonnegative and their positive edges connect all machines. -/
     simp only [jacobian_dd, jacobian_dw, Complex.ofReal_sub, Complex.ofReal_zero, zero_mul,
       Finset.sum_const_zero, zero_add, apply_ite (fun x : ℝ => (x : ℂ)), Complex.ofReal_one,
       sub_mul, ite_mul, one_mul, Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ,
-      if_true] at this
+      ite_true] at this
     exact this
   have hζ0 : ζ 0 = 0 := rfl
   have hζs : ∀ i, ζ i.succ = η i := fun i => rfl
@@ -426,7 +429,7 @@ nonnegative and their positive edges connect all machines. -/
     have hM : (p.M k : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (p.M_pos k).ne'
     have h' : -(∑ l, (flowWeights p.B θ k l : ℂ) * (ζ k - ζ l)) / p.M k +
         -((p.D k : ℂ) / p.M k) * w k = μ * w k := by
-      push_cast at this; exact this
+      exact this
     field_simp at h'
     linear_combination (-1 : ℂ) * h'
   have hv0 : ∀ (hη : η = 0) (hw : w = 0), False := by
@@ -524,7 +527,8 @@ nonnegative and their positive edges connect all machines. -/
 
 /-! ## Local exponential stability -/
 
-@[powerlib_foundation] theorem reducedField_contDiff (p : Params n) : ContDiff ℝ 1 (reducedField p) := by
+@[powerlib_foundation] theorem reducedField_contDiff (p : Params n) :
+    ContDiff ℝ 1 (reducedField p) := by
   rw [contDiff_euclidean]
   intro r
   refine Fin.addCases (fun i => ?_) (fun k => ?_) r
@@ -648,8 +652,9 @@ private theorem les_of_meets {m : Model n} (hp : Meets m .powerFlow)
 private theorem unstable_of_meets {m : Model n} (hp : Meets m .powerFlow)
     (hu : Meets m .jacobianUnstable) : m ∈ family.den (.flow .unstable) := by
   obtain ⟨s, hs, hre⟩ := hu
-  exact mem_den_flow_iff.mpr (Dynamics.unstable_of_characteristic_root_re_pos (jacobian m.params m.θ)
-    (reducedField_contDiff m.params) (reducedField_equilibrium m.params m.θ hp)
+  exact mem_den_flow_iff.mpr (Dynamics.unstable_of_characteristic_root_re_pos
+    (jacobian m.params m.θ) (reducedField_contDiff m.params)
+    (reducedField_equilibrium m.params m.θ hp)
     (hasFDerivAt_reducedField m.params m.θ).fderiv hs hre)
 
 /-- No model has both a Hurwitz reduced Jacobian (angle condition on a connected graph) and an

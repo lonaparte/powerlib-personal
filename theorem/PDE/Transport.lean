@@ -32,7 +32,7 @@ open Set
       (ContinuousLinearMap.fst ℝ ℝ ℝ - a • ContinuousLinearMap.snd ℝ ℝ ℝ) q :=
     (hasFDerivAt_fst).sub ((hasFDerivAt_snd).const_mul a)
   have := (hu _).comp_hasFDerivAt q hm
-  exact (this.congr_fderiv (by ext <;> simp <;> ring)).hasFDerivWithinAt
+  exact (this.congr_fderiv (by ext <;> simp; ring)).hasFDerivWithinAt
 
 /-- Uniqueness for the transport equation: every C¹ solution of `u_t + a u_x = 0` on the
 plane is constant along the characteristics, `u(x, t) = u(x - at, 0)`. -/

@@ -139,8 +139,8 @@ open Set Filter Topology
 
 /-- Mean-value lower bound on a subinterval: a function with derivative at least `m` inside
 `[c, d] ⊆ [a, b]` increases by at least `m (d − c)`. -/
-@[powerlib_foundation] theorem sub_ge_of_deriv_ge {u u' : ℝ → ℝ} {a b c d m : ℝ} (hcd : c ≤ d) (hca : a ≤ c)
-    (hdb : d ≤ b) (hu : ∀ s ∈ Icc a b, HasDerivWithinAt u (u' s) (Icc a b) s)
+@[powerlib_foundation] theorem sub_ge_of_deriv_ge {u u' : ℝ → ℝ} {a b c d m : ℝ} (hcd : c ≤ d)
+    (hca : a ≤ c) (hdb : d ≤ b) (hu : ∀ s ∈ Icc a b, HasDerivWithinAt u (u' s) (Icc a b) s)
     (hm : ∀ s ∈ Ioo c d, m ≤ u' s) : m * (d - c) ≤ u d - u c := by
   have hmono : MonotoneOn (fun s => u s - m * s) (Icc c d) := by
     refine monotoneOn_of_hasDerivWithinAt_nonneg (f' := fun s => u' s - m) (convex_Icc _ _)
@@ -158,8 +158,8 @@ open Set Filter Topology
   linarith
 
 /-- Mean-value upper bound on a subinterval. -/
-@[powerlib_foundation] theorem sub_le_of_deriv_le {u u' : ℝ → ℝ} {a b c d m : ℝ} (hcd : c ≤ d) (hca : a ≤ c)
-    (hdb : d ≤ b) (hu : ∀ s ∈ Icc a b, HasDerivWithinAt u (u' s) (Icc a b) s)
+@[powerlib_foundation] theorem sub_le_of_deriv_le {u u' : ℝ → ℝ} {a b c d m : ℝ} (hcd : c ≤ d)
+    (hca : a ≤ c) (hdb : d ≤ b) (hu : ∀ s ∈ Icc a b, HasDerivWithinAt u (u' s) (Icc a b) s)
     (hm : ∀ s ∈ Ioo c d, u' s ≤ m) : u d - u c ≤ m * (d - c) := by
   have h := sub_ge_of_deriv_ge (u := fun s => -u s) (u' := fun s => -u' s) (m := -m) hcd hca hdb
     (fun s hs => (hu s hs).neg) (fun s hs => by linarith [hm s hs])
@@ -177,8 +177,8 @@ open Set Filter Topology
     (by linarith [hu.2])
 
 /-- A function vanishing at `0` with positive derivative there is positive at some `t ∈ (0, ε)`. -/
-@[powerlib_foundation] theorem exists_pos_of_hasDerivAt {ψ : ℝ → ℝ} {d : ℝ} (hd : HasDerivAt ψ d 0) (h0 : ψ 0 = 0)
-    (hpos : 0 < d) {ε : ℝ} (hε : 0 < ε) : ∃ t ∈ Ioo 0 ε, 0 < ψ t := by
+@[powerlib_foundation] theorem exists_pos_of_hasDerivAt {ψ : ℝ → ℝ} {d : ℝ} (hd : HasDerivAt ψ d 0)
+    (h0 : ψ 0 = 0) (hpos : 0 < d) {ε : ℝ} (hε : 0 < ε) : ∃ t ∈ Ioo 0 ε, 0 < ψ t := by
   rw [hasDerivAt_iff_tendsto_slope] at hd
   have h1 : Tendsto (slope ψ 0) (𝓝[>] 0) (𝓝 d) :=
     hd.mono_left (nhdsWithin_mono _ fun t ht => ne_of_gt ht)
@@ -192,8 +192,8 @@ open Set Filter Topology
   exact (div_pos_iff_of_pos_right ht0).mp this
 
 /-- A function vanishing at `0` with positive derivative there is positive just to the right. -/
-@[powerlib_foundation] theorem eventually_pos_of_hasDerivAt {ψ : ℝ → ℝ} {d : ℝ} (hd : HasDerivAt ψ d 0)
-    (h0 : ψ 0 = 0) (hpos : 0 < d) : ∀ᶠ t in 𝓝[>] (0 : ℝ), 0 < ψ t := by
+@[powerlib_foundation] theorem eventually_pos_of_hasDerivAt {ψ : ℝ → ℝ} {d : ℝ}
+    (hd : HasDerivAt ψ d 0) (h0 : ψ 0 = 0) (hpos : 0 < d) : ∀ᶠ t in 𝓝[>] (0 : ℝ), 0 < ψ t := by
   rw [hasDerivAt_iff_tendsto_slope] at hd
   have h1 : Tendsto (slope ψ 0) (𝓝[>] 0) (𝓝 d) :=
     hd.mono_left (nhdsWithin_mono _ fun t ht => ne_of_gt ht)

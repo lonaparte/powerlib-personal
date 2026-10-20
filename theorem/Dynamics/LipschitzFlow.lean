@@ -121,7 +121,8 @@ def lipschitzFlow (hf : LipschitzWith K f) : Flow ℝ≥0 E where
           dist (forwardSolution hf x₀ t) (forwardSolution hf x₀ t₀) := dist_triangle _ _ _
       _ < ε := by linarith
   map_add' t₁ t₂ x := by
-    show forwardSolution hf x ((t₁ + t₂ : ℝ≥0) : ℝ) = forwardSolution hf (forwardSolution hf x t₂) t₁
+    show forwardSolution hf x ((t₁ + t₂ : ℝ≥0) : ℝ) =
+      forwardSolution hf (forwardSolution hf x t₂) t₁
     rw [NNReal.coe_add]
     exact forwardSolution_add hf x t₂.2 t₁.2
   map_zero' x := (forwardSolution_spec hf x).1

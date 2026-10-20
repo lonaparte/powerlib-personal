@@ -104,7 +104,7 @@ def invNeg (W f μ : ℝ) : ℝ := base W f - Real.arcsin ((f + μ) / amp W f)
   exact abs_lt_of_sq_lt_sq h2 hB.le
 
 /-- `B cos a = |W|` (`SpecialFunctions.sqrt_mul_cos_arcsin`). -/
-@[powerlib_foundation] theorem cos_base_pos {W f : ℝ} (hW : W ≠ 0) :
+@[powerlib_foundation] theorem cos_base_pos {W f : ℝ} (_hW : W ≠ 0) :
     amp W f * Real.cos (base W f) = |W| :=
   SpecialFunctions.sqrt_mul_cos_arcsin W f
 

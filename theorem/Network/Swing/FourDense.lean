@@ -47,8 +47,8 @@ Family and connection conclusions.
   Jacobian (no restriction on the lines); both instantiate the Hurwitz-guard statements
   `exact_locallyAsymptoticallyStable_of_guard` and
   `mem_den_locallyAsymptoticallyStable_iff_of_guard` of `theorem/Network/Swing/Degenerate.lean`
-  with `not_localAsymptoticStable_four_machines`. With `exact_locallyAsymptoticallyStable_zero`, `_two`,
-  `_three` and `not_exact_locallyAsymptoticallyStable` (five or more machines) the local
+  with `not_localAsymptoticStable_four_machines`. With `exact_locallyAsymptoticallyStable_zero`,
+  `_two`, `_three` and `not_exact_locallyAsymptoticallyStable` (five or more machines) the local
   asymptotic translation is decided for every number of machines: exact up to four machines, not
   exact from five.
 * The family is `Swing.family`; the public model conclusions are `connection%` statements on its

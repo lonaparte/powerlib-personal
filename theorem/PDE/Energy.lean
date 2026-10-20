@@ -115,7 +115,8 @@ variable {u : ℝ × ℝ → ℝ}
 @[powerlib_foundation] theorem heat_energy_identity {ν ℓ t : ℝ} (hu : ContDiff ℝ 2 u)
     (hpde : ∀ x ∈ uIcc 0 ℓ, dt u (x, t) = ν * dx (dx u) (x, t))
     (h0 : u (0, t) = 0) (hℓ : u (ℓ, t) = 0) :
-    ∫ x in (0 : ℝ)..ℓ, 2 * u (x, t) * dt u (x, t) = -(2 * ν) * ∫ x in (0 : ℝ)..ℓ, dx u (x, t) ^ 2 := by
+    ∫ x in (0 : ℝ)..ℓ, 2 * u (x, t) * dt u (x, t) =
+      -(2 * ν) * ∫ x in (0 : ℝ)..ℓ, dx u (x, t) ^ 2 := by
   have hd : Differentiable ℝ u := hu.differentiable (by norm_num)
   have hdxd : Differentiable ℝ (dx u) := differentiable_dx hu
   have hcongr : ∫ x in (0 : ℝ)..ℓ, 2 * u (x, t) * dt u (x, t) =
@@ -210,7 +211,8 @@ variable {u : ℝ × ℝ → ℝ}
 @[powerlib_foundation] theorem wave_energy_conserved {c ℓ : ℝ} (hu : ContDiff ℝ 2 u)
     (hpde : ∀ t, ∀ x ∈ uIcc 0 ℓ, dt (dt u) (x, t) = c ^ 2 * dx (dx u) (x, t))
     (hbc : ∀ t, u (0, t) = 0 ∧ u (ℓ, t) = 0) (t : ℝ) :
-    HasDerivAt (fun s => ∫ x in (0 : ℝ)..ℓ, (dt u (x, s) ^ 2 + c ^ 2 * dx u (x, s) ^ 2) / 2) 0 t := by
+    HasDerivAt (fun s => ∫ x in (0 : ℝ)..ℓ, (dt u (x, s) ^ 2 + c ^ 2 * dx u (x, s) ^ 2) / 2)
+      0 t := by
   have hd : Differentiable ℝ u := hu.differentiable (by norm_num)
   have hdtd := differentiable_dt hu
   have hdxd := differentiable_dx hu
@@ -230,7 +232,8 @@ variable {u : ℝ × ℝ → ℝ}
   have hdtx : ∀ p, dt (dx u) p = dx (dt u) p := fun p => (dx_dt_comm hu p).symm
   have hcongr : ∫ x in (0 : ℝ)..ℓ, (dt u (x, t) * dt (dt u) (x, t) +
       c ^ 2 * (dx u (x, t) * dt (dx u) (x, t))) =
-      ∫ x in (0 : ℝ)..ℓ, c ^ 2 * (dt u (x, t) * dx (dx u) (x, t) + dx (dt u) (x, t) * dx u (x, t)) :=
+      ∫ x in (0 : ℝ)..ℓ,
+        c ^ 2 * (dt u (x, t) * dx (dx u) (x, t) + dx (dt u) (x, t) * dx u (x, t)) :=
     integral_congr fun x hx => by rw [hpde t x hx, hdtx]; ring
   rw [hcongr, intervalIntegral.integral_const_mul]
   -- the integrand is the `x`-derivative of `u_t u_x`
@@ -242,7 +245,8 @@ variable {u : ℝ × ℝ → ℝ}
       ((continuous_dx hu).comp (by fun_prop))).add
       (((continuous_dt hu).comp (by fun_prop)).mul
       ((continuous_dxdx hu).comp (by fun_prop))) |>.intervalIntegrable 0 ℓ)
-  have hcomm : (∫ x in (0 : ℝ)..ℓ, (dt u (x, t) * dx (dx u) (x, t) + dx (dt u) (x, t) * dx u (x, t))) =
+  have hcomm : (∫ x in (0 : ℝ)..ℓ,
+      (dt u (x, t) * dx (dx u) (x, t) + dx (dt u) (x, t) * dx u (x, t))) =
       ∫ x in (0 : ℝ)..ℓ, (dx (dt u) (x, t) * dx u (x, t) + dt u (x, t) * dx (dx u) (x, t)) :=
     integral_congr fun x _ => by ring
   -- boundary values of `u_t` vanish because `u(0,·) = u(ℓ,·) = 0`

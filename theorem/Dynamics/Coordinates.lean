@@ -306,9 +306,11 @@ coordinates. -/
   exact h
 
 /-- `√(a² + b²) ≤ |a| + |b|`. -/
-@[powerlib_foundation] theorem sqrt_sq_add_sq_le (a b : ℝ) : Real.sqrt (a ^ 2 + b ^ 2) ≤ |a| + |b| := by
+@[powerlib_foundation] theorem sqrt_sq_add_sq_le (a b : ℝ) :
+    Real.sqrt (a ^ 2 + b ^ 2) ≤ |a| + |b| := by
   rw [Real.sqrt_le_left (by positivity)]
-  nlinarith [abs_nonneg a, abs_nonneg b, sq_abs a, sq_abs b, mul_nonneg (abs_nonneg a) (abs_nonneg b)]
+  nlinarith [abs_nonneg a, abs_nonneg b, sq_abs a, sq_abs b,
+    mul_nonneg (abs_nonneg a) (abs_nonneg b)]
 
 end Norms
 
@@ -335,9 +337,11 @@ coordinates. -/
     {φ' : State n} {s : Set ℝ} {t : ℝ}
     (h : ∀ i, HasDerivWithinAt (fun τ => φ τ i) (φ' i) s t) : HasDerivWithinAt φ φ' s t := by
   have h1 : HasDerivWithinAt (fun τ => (φ τ).ofLp) φ'.ofLp s t := hasDerivWithinAt_pi.mpr h
-  have h2 := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm.hasFDerivAt.comp_hasDerivWithinAt
-    t h1
-  have e : (⇑(PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm ∘ fun τ => (φ τ).ofLp) = φ := by
+  have h2 :=
+    (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm.hasFDerivAt.comp_hasDerivWithinAt
+      t h1
+  have e :
+      (⇑(PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm ∘ fun τ => (φ τ).ofLp) = φ := by
     funext τ
     simp
   rw [e] at h2

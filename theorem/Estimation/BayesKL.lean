@@ -140,7 +140,8 @@ def mhMatrix (p₀ : ι → ℝ) (Q : ι → ι → ℝ) (i j : ι) : ℝ :=
   if i = j then 1 - ∑ k ∈ univ.erase i, Q i k * mhAccept p₀ Q i k else Q i j * mhAccept p₀ Q i j
 
 omit [Fintype ι] [DecidableEq ι] in
-/-- The probability flux of an accepted move is symmetric: `π_i Q_ij α_ij = min(π_i Q_ij, π_j Q_ji)`. -/
+/-- The probability flux of an accepted move is symmetric:
+`π_i Q_ij α_ij = min(π_i Q_ij, π_j Q_ji)`. -/
 @[powerlib_foundation] theorem mh_flux {Q : ι → ι → ℝ} (hp₀ : ∀ i, 0 < p₀ i)
     (hQ : ∀ i j, 0 ≤ Q i j) (i j : ι) :
     p₀ i * (Q i j * mhAccept p₀ Q i j) = min (p₀ i * Q i j) (p₀ j * Q j i) := by

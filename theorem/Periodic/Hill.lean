@@ -330,8 +330,8 @@ an eigenvector `φ` of `𝓗[J]` is mapped to the eigenvector `Gφ = ((−1)^m �
     (hJ : ∀ h, J' h = (h.negOnePow : ℂ) • J h) (ν ω : ℝ) (K : ℕ) {s : ℂ}
     {φ : X × Fin (2 * K + 1) → ℂ} (hφ : hillMatrix J ν ω K *ᵥ φ = s • φ) :
     hillMatrix J' ν ω K *ᵥ (hillGauge K *ᵥ φ) = s • (hillGauge K *ᵥ φ) := by
-  rw [hillMatrix_gauge_similar hJ, Matrix.mulVec_mulVec, Matrix.mul_assoc, hillGauge_mul_self, Matrix.mul_one,
-    ← Matrix.mulVec_mulVec, hφ, Matrix.mulVec_smul]
+  rw [hillMatrix_gauge_similar hJ, Matrix.mulVec_mulVec, Matrix.mul_assoc, hillGauge_mul_self,
+    Matrix.mul_one, ← Matrix.mulVec_mulVec, hφ, Matrix.mulVec_smul]
 
 omit [Fintype X] in
 /-- The LTI Hill matrix is the case `J_0 = A₀`, `J_h = 0` (`h ≠ 0`), `ν = 0`. -/

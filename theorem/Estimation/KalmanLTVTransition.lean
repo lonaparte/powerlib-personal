@@ -113,7 +113,8 @@ composition laws. -/
             (show s ∈ uIcc a z from by rw [uIcc_comm, uIcc_of_le (hzs.trans hsa)]; exact ⟨hzs, hsa⟩)
           rw [← h, Matrix.mul_assoc, stm_mul_inv hA s a, Matrix.mul_one]
   have hfun : (fun z => LinearSystems.stateTransitionMatrix A z s) =
-      fun z => LinearSystems.stateTransitionMatrix A z a * LinearSystems.stateTransitionMatrix A a s :=
+      fun z => LinearSystems.stateTransitionMatrix A z a *
+        LinearSystems.stateTransitionMatrix A a s :=
     funext hcomp
   rw [hfun, hcomp t, ← Matrix.mul_assoc]
   exact hda.mul_const _

@@ -235,8 +235,9 @@ Negative rates give growth bounds, and zero gives a bounded energy. -/
     (dissipation : ∀ x, fderiv ℝ V x (f x) ≤ -rate * V x)
     {φ : ℝ → ℝⁿ} {a b t : ℝ} (hφ : IsTrajectoryOn φ f a b) (ht : t ∈ Icc a b) :
     ‖φ t - e‖ ≤ Real.sqrt (upper / lower) * Real.exp (-(rate / 2) * (t - a)) * ‖φ a - e‖ := by
-  have henergy := (lower_bound (φ t)).trans ((energy_bound_of_dissipation smooth dissipation hφ ht).trans
-    (mul_le_mul_of_nonneg_left (upper_bound (φ a)) (Real.exp_nonneg _)))
+  have henergy := (lower_bound (φ t)).trans
+    ((energy_bound_of_dissipation smooth dissipation hφ ht).trans
+      (mul_le_mul_of_nonneg_left (upper_bound (φ a)) (Real.exp_nonneg _)))
   have hsquared : ‖φ t - e‖ ^ 2 ≤
       (upper / lower) * Real.exp (-(rate * (t - a))) * ‖φ a - e‖ ^ 2 := by
     apply (mul_le_mul_iff_right₀ hlo).mp

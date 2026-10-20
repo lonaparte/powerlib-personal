@@ -172,7 +172,8 @@ private theorem frequencyRamp_tracking {V Kp Ki : ℝ} (hVKp : 0 < V * Kp)
     (hx : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt x
       ((frequencyModel V Kp Ki).A *ᵥ x t + (frequencyModel V Kp Ki).B *ᵥ ![ρ * t]) (Ici 0) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 (-ρ / (V * Ki))) ∧
-      Tendsto (fun t => plantOutput (frequencyModel V Kp Ki) (x t) ![ρ * t] 0 - ρ * t) atTop (𝓝 0) := by
+      Tendsto (fun t => plantOutput (frequencyModel V Kp Ki) (x t) ![ρ * t] 0 - ρ * t) atTop
+        (𝓝 0) := by
   have hKi : Ki ≠ 0 := by rintro rfl; simp at hVKi
   have hV : V ≠ 0 := by rintro rfl; simp at hVKi
   have hA : LinearSystems.IsHurwitz (frequencyModel V Kp Ki).A :=

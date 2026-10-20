@@ -130,7 +130,7 @@ theorem wr_ne (k : Fin 5) : wr k ≠ 0 := by
   fin_cases k <;> simp [wr, Complex.ext_iff]
 
 theorem lamr_pos (e : Fin 5) : 0 < lamr e := by
-  fin_cases e <;> simp [lamr] <;> norm_num
+  fin_cases e <;> simp [lamr]
 
 theorem wr_conj (e : Fin 5) : wr e * conj (wr (e + 1)) = (lamr e : ℂ) * zr e := by
   fin_cases e <;> simp [wr, lamr, zr, Wr, fr, Complex.ext_iff] <;> norm_num
@@ -148,7 +148,7 @@ theorem line_trig (e : Fin 5) :
 theorem Ar_nonneg (e : Fin 5) : 0 ≤ Ar e := Real.sqrt_nonneg _
 
 theorem Br_symm (i j : Fin 5) : Br i j = Br j i := by
-  fin_cases i <;> fin_cases j <;> simp [Br] <;> decide
+  fin_cases i <;> fin_cases j <;> simp [Br]
 
 theorem Br_nonneg (i j : Fin 5) : 0 ≤ Br i j := by
   unfold Br; split_ifs <;> first | exact Ar_nonneg _ | exact le_rfl
@@ -180,7 +180,11 @@ theorem term_ge (t : ℝ) {μ ρ : ℝ} (k : ℕ) (hμ : |μ| ≤ ρ) : -(|t| * 
     exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (abs_nonneg μ) hμ k) (abs_nonneg t)
   linarith [neg_abs_le (t * μ ^ k)]
 
-theorem ring_T_pos {μ : ℝ} (hμ : |μ| ≤ 1 / 2) : 0 < (82520638541733888) * μ ^ 0 + (4006064228272128) * μ ^ 1 + (-444291750542592) * μ ^ 2 + (-7746113954880) * μ ^ 3 + (929100585600) * μ ^ 4 + (-11056492224) * μ ^ 5 + (-348275376) * μ ^ 6 + (10865016) * μ ^ 7 + (-117612) * μ ^ 8 + (567) * μ ^ 9 + (-1) * μ ^ 10 := by
+theorem ring_T_pos {μ : ℝ} (hμ : |μ| ≤ 1 / 2) :
+    0 < (82520638541733888) * μ ^ 0 + (4006064228272128) * μ ^ 1 +
+      (-444291750542592) * μ ^ 2 + (-7746113954880) * μ ^ 3 + (929100585600) * μ ^ 4 +
+      (-11056492224) * μ ^ 5 + (-348275376) * μ ^ 6 + (10865016) * μ ^ 7 +
+      (-117612) * μ ^ 8 + (567) * μ ^ 9 + (-1) * μ ^ 10 := by
   have t1 := term_ge (4006064228272128 : ℝ) 1 hμ
   norm_num at t1
   have t2 := term_ge (-444291750542592 : ℝ) 2 hμ
@@ -282,7 +286,11 @@ theorem ring_gamma {μ : ℝ} (hμ0 : μ ≠ 0) (hμ : |μ| ≤ 1 / 2) :
       (2 * (1 / 36 - μ / 1296) * (1296 + 72 * μ - μ ^ 2)) *
       (2 * (1 / 54 - μ / 1458) * (2916 + 216 * μ - μ ^ 2)) *
       (2 * (1 / 54 - μ / 1458) * (2916 + 216 * μ - μ ^ 2)) =
-    μ ^ 2 * (27 - μ) * (2916 + 216 * μ - μ ^ 2) * ((82520638541733888) * μ ^ 0 + (4006064228272128) * μ ^ 1 + (-444291750542592) * μ ^ 2 + (-7746113954880) * μ ^ 3 + (929100585600) * μ ^ 4 + (-11056492224) * μ ^ 5 + (-348275376) * μ ^ 6 + (10865016) * μ ^ 7 + (-117612) * μ ^ 8 + (567) * μ ^ 9 + (-1) * μ ^ 10) / 976076478078336 := by ring
+    μ ^ 2 * (27 - μ) * (2916 + 216 * μ - μ ^ 2) * ((82520638541733888) * μ ^ 0 +
+      (4006064228272128) * μ ^ 1 + (-444291750542592) * μ ^ 2 + (-7746113954880) * μ ^ 3 +
+      (929100585600) * μ ^ 4 + (-11056492224) * μ ^ 5 + (-348275376) * μ ^ 6 +
+      (10865016) * μ ^ 7 + (-117612) * μ ^ 8 + (567) * μ ^ 9 + (-1) * μ ^ 10) /
+      976076478078336 := by ring
   rw [e]
   positivity
 
@@ -318,7 +326,8 @@ theorem potential_ring (u : Fin (4 + 1) → ℝ) :
       ∑ e : Fin 5, edgeG (Wr e) (fr e) (u e - u (e + 1)) := by
   rw [potential_add_sub balance u]
   have hk : ∀ k : Fin 5, ∑ j, params.B k j * edgeIncrement (θr k - θr j) (u k - u j) =
-      edgeG (Wr k) (fr k) (u k - u (k + 1)) + edgeG (Wr (k - 1)) (fr (k - 1)) (u (k - 1) - u k) := by
+      edgeG (Wr k) (fr k) (u k - u (k + 1)) +
+        edgeG (Wr (k - 1)) (fr (k - 1)) (u (k - 1) - u k) := by
     intro k
     show ∑ j, Br k j * edgeIncrement (θr k - θr j) (u k - u j) = _
     rw [sum_Br (fun j => edgeIncrement (θr k - θr j) (u k - u j)) k,
@@ -506,7 +515,7 @@ theorem potential_leaf (p : Params n) (φ : Fin (n + 2) → ℝ) :
   unfold potential
   rw [hP, hsplit, Finset.sum_congr rfl fun k _ => hrow k, hlast,
     Finset.sum_add_distrib, Finset.sum_ite_eq' Finset.univ (0 : Fin (n + 1))]
-  simp only [Finset.mem_univ, if_true]
+  simp only [Finset.mem_univ, ite_true]
   rw [show φ (Fin.last (n + 1)) - φ (0 : Fin (n + 1)).castSucc =
     -(φ (0 : Fin (n + 1)).castSucc - φ (Fin.last (n + 1))) by ring, Real.cos_neg]
   ring

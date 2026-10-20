@@ -138,10 +138,11 @@ private theorem srf_regionOfAttraction_hamiltonian {V Kp Ki : ℝ} (hV : 0 < V)
         nlinarith [le_abs_self c]
       nlinarith [sq_nonneg (x 1 - 2 * (δω / Ki))]
   refine Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel hW (contDiff_srfField V Kp Ki δω)
-    (contDiff_pllHamiltonian V Ki _) (fun x _ => by rw [hLie]; nlinarith [sq_nonneg (srfPD V (x 0))])
+    (contDiff_pllHamiltonian V Ki _)
+    (fun x _ => by rw [hLie]; nlinarith [sq_nonneg (srfPD V (x 0))])
     hcompact ?_
-  refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv (contDiff_srfField V Kp Ki δω) (contDiff_coord 0)
-    (fun x hx => ?_) (fun x hx hd => ?_)
+  refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv (contDiff_srfField V Kp Ki δω)
+    (contDiff_coord 0) (fun x hx => ?_) (fun x hx hd => ?_)
   · -- on the zero set of `Ḣ_s` inside the well, `θ = 0`
     rw [Dynamics.LaSalle.lieDerivZeroSet_def] at hx
     obtain ⟨⟨hxW, -⟩, hz⟩ := hx
@@ -198,7 +199,8 @@ def xiRate (a b Δω : ℝ) (x : State 2) : ℝ := Δω - a * Real.sin (x 0) + b
 def pendulumEnergy (a b Δω : ℝ) (x : State 2) : ℝ :=
   xiRate a b Δω x ^ 2 / 2 + b * (1 - Real.cos (x 0))
 
-@[powerlib_foundation] private lemma contDiff_xiRate (a b Δω : ℝ) : ContDiff ℝ 1 (xiRate a b Δω) := by
+@[powerlib_foundation] private lemma contDiff_xiRate (a b Δω : ℝ) :
+    ContDiff ℝ 1 (xiRate a b Δω) := by
   unfold xiRate
   exact (contDiff_const.sub (contDiff_const.mul (Real.contDiff_sin.comp (contDiff_coord 0)))).add
     (contDiff_const.mul (contDiff_coord 1))
@@ -243,7 +245,8 @@ def pendulumEnergy (a b Δω : ℝ) (x : State 2) : ℝ :=
   exact (((contDiff_xiRate a b Δω).pow 2).div_const 2).add
     (contDiff_const.mul (contDiff_const.sub (Real.contDiff_cos.comp (contDiff_coord 0))))
 
-@[powerlib_foundation] private lemma contDiff_xiField (a b Δω : ℝ) : ContDiff ℝ 1 (xiField a b Δω) := by
+@[powerlib_foundation] private lemma contDiff_xiField (a b Δω : ℝ) :
+    ContDiff ℝ 1 (xiField a b Δω) := by
   rw [xiField_eq_srfField]; exact contDiff_srfField _ _ _ _
 
 /-- For `a, b > 0` and `c < b` the well piece `{|θ| < π/2, E ≤ c}` of the pendulum energy lies
@@ -328,8 +331,8 @@ private theorem xi_regionOfAttraction_pendulum {a b Δω : ℝ} (ha : 0 < a) (hb
     rcases this with h | h
     · exact absurd h hpos.ne'
     · exact pow_eq_zero_iff two_ne_zero |>.mp h
-  refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv (contDiff_xiField a b Δω) (contDiff_xiRate a b Δω)
-    hzero (fun x hx hd => ?_)
+  refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv (contDiff_xiField a b Δω)
+    (contDiff_xiRate a b Δω) hzero (fun x hx hd => ?_)
   have hw := hzero x hx
   rw [Dynamics.LaSalle.lieDerivZeroSet_def] at hx
   obtain ⟨⟨hxW, -⟩, -⟩ := hx

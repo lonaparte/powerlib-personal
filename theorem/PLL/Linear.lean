@@ -119,7 +119,8 @@ def portTF (V Kp Ki : ℝ) (s : ℂ) : ℂ := ((Kp : ℂ) * s + Ki) / loopPoly V
     (Linear.characteristicMatrix (linA V Kp Ki) s).det = loopPoly V Kp Ki s := by
   rw [characteristicMatrix_linA, det_fin_two_of, loopPoly]; ring
 
-@[simp, powerlib_foundation] theorem trace_linA (V Kp Ki : ℝ) : (linA V Kp Ki).trace = -(V * Kp) := by
+@[simp, powerlib_foundation] theorem trace_linA (V Kp Ki : ℝ) :
+    (linA V Kp Ki).trace = -(V * Kp) := by
   simp [linA, Matrix.trace_fin_two]
 
 @[simp, powerlib_foundation] theorem det_linA (V Kp Ki : ℝ) : (linA V Kp Ki).det = V * Ki := by
@@ -140,8 +141,8 @@ def portTF (V Kp Ki : ℝ) (s : ℂ) : ℂ := ((Kp : ℂ) * s + Ki) / loopPoly V
 
 /-! ## Transfer functions -/
 
-@[powerlib_foundation] private lemma transfer_linA_model (V Kp Ki : ℝ) (B : Matrix (Fin 2) (Fin 1) ℝ)
-    (C : Matrix (Fin 1) (Fin 2) ℝ) (s : ℂ) :
+@[powerlib_foundation] private lemma transfer_linA_model (V Kp Ki : ℝ)
+    (B : Matrix (Fin 2) (Fin 1) ℝ) (C : Matrix (Fin 1) (Fin 2) ℝ) (s : ℂ) :
     Linear.transfer (⟨linA V Kp Ki, B, C, 0⟩ : Linear.Plant 2 1) s =
       (loopPoly V Kp Ki s)⁻¹ •
         (Linear.complexify C * !![s, (Ki : ℂ); -(V : ℂ), s + V * Kp] * Linear.complexify B) := by
@@ -281,7 +282,8 @@ independently of `V` (T-invariant-coordinates §1.2). -/
   exact h
 
 /-- Operating-point dependence (T-pll-dynamics §1.5): `ω_n(V) = ω_n(V₀) √(V/V₀)`. -/
-@[powerlib_foundation] theorem omegaN_scale {V V₀ Ki : ℝ} (hV₀ : 0 < V₀) (hKi : 0 ≤ Ki) : omegaN V Ki = omegaN V₀ Ki * Real.sqrt (V / V₀) := by
+@[powerlib_foundation] theorem omegaN_scale {V V₀ Ki : ℝ} (hV₀ : 0 < V₀) (hKi : 0 ≤ Ki) :
+    omegaN V Ki = omegaN V₀ Ki * Real.sqrt (V / V₀) := by
   rw [omegaN, omegaN, ← Real.sqrt_mul (mul_nonneg hV₀.le hKi)]
   congr 1
   field_simp

@@ -78,7 +78,7 @@ def Reach (W : Matrix ι ι ℝ) : ι → ι → Prop := Relation.ReflTransGen f
   ext i j
   by_cases h : i = j
   · subst h; rfl
-  · simp [laplacian, diagonal_apply, h, Ne.symm h, hW i j]
+  · simp [laplacian, h, Ne.symm h, hW i j]
 
 /-- Column sums of a symmetric Laplacian vanish: `𝟙ᵀ L x = 0`. -/
 @[powerlib_foundation] theorem sum_laplacian_mulVec {W : Matrix ι ι ℝ}
@@ -87,6 +87,7 @@ def Reach (W : Matrix ι ι ℝ) : ι → ι → Prop := Relation.ReflTransGen f
   rw [sub_eq_zero, Finset.sum_comm]
   exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by rw [hW]
 
+omit [Fintype ι] [DecidableEq ι] in
 /-- Propagation of an edge relation along positive-weight paths. -/
 @[powerlib_foundation] theorem eq_of_reach {α : Type*} {W : Matrix ι ι ℝ} {x : ι → α}
     (hx : ∀ a b, 0 < W a b → x a = x b) {i k : ι} (h : Reach W i k) : x i = x k := by
@@ -112,6 +113,7 @@ def Reach (W : Matrix ι ι ℝ) : ι → ι → Prop := Relation.ReflTransGen f
   rw [h3, ← h2, h1]
   ring
 
+omit [DecidableEq ι] in
 /-- Complex Hermitian form of a symmetric real Laplacian: `uᴴ L u = ½ ∑ Wᵢⱼ |uᵢ - uⱼ|²`. -/
 @[powerlib_foundation] theorem star_dotProduct_laplacian_mulVec {W : Matrix ι ι ℝ}
     (hW : ∀ i j, W i j = W j i) (u : ι → ℂ) :
@@ -177,6 +179,7 @@ def Reach (W : Matrix ι ι ℝ) : ι → ι → Prop := Relation.ReflTransGen f
   have h0 : dotProduct x (laplacian W *ᵥ x) = 0 := by rw [hx, dotProduct_zero]
   exact eq_of_reach (edge_eq_of_form_zero hW hpos h0) (hconn i j)
 
+omit [DecidableEq ι] in
 /-- Complex kernel of a connected symmetric Laplacian. -/
 @[powerlib_foundation] theorem complex_eq_of_laplacian_eq_zero {W : Matrix ι ι ℝ}
     (hW : ∀ i j, W i j = W j i) (hpos : ∀ i j, 0 ≤ W i j) (hconn : ∀ i j, Reach W i j)
@@ -244,7 +247,7 @@ def GroundReachable (W : Matrix ι ι ℝ) (g : ι → ℝ) : Prop := ∀ i, ∃
   by_contra hneg
   push Not at hneg
   obtain ⟨i₀, hi₀⟩ := hneg
-  haveI : Nonempty ι := ⟨i₀⟩
+  have : Nonempty ι := ⟨i₀⟩
   obtain ⟨m, hm⟩ := Finite.exists_min x
   have hmneg : x m < 0 := (hm i₀).trans_lt hi₀
   -- the minimum set is closed under positive edges and contains no grounded node
@@ -329,7 +332,7 @@ positive-weight path to a grounded node. -/
     ext i j
     by_cases h : i = j
     · subst h; simp
-    · simp [grounded, laplacian, diagonal_apply, h, Ne.symm h, hW i j]
+    · simp [grounded, laplacian, h, Ne.symm h, hW i j]
   have hform : ∀ x : ι → ℝ, dotProduct x (grounded W g *ᵥ x) =
       dotProduct x (laplacian W *ᵥ x) + ∑ i, g i * x i ^ 2 := by
     intro x
@@ -348,7 +351,7 @@ positive-weight path to a grounded node. -/
       intro h
       have := congrFun h i
       simp only [x, Pi.zero_apply] at this
-      rw [if_pos (show Reach W i i from Relation.ReflTransGen.refl)] at this
+      rw [ite_eq_left (show Reach W i i from Relation.ReflTransGen.refl)] at this
       exact one_ne_zero this
     have hgx : ∀ a, g a * x a ^ 2 = 0 := by
       intro a

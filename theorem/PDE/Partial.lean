@@ -57,7 +57,7 @@ directional derivative vanishes. -/
     have h := hU'.comp_hasDerivWithinAt s hγ (fun s hs => hmaps s hs)
     have h0 : (Ux (p₀ + s • d) • ContinuousLinearMap.fst ℝ ℝ ℝ +
         Ut (p₀ + s • d) • ContinuousLinearMap.snd ℝ ℝ ℝ) d = 0 := by
-      simp only [ContinuousLinearMap.add_apply, ContinuousLinearMap.smul_apply,
+      simp only [add_apply, smul_apply,
         ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', smul_eq_mul]
       linarith [hdir s hs]
     rw [h0] at h

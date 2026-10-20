@@ -61,7 +61,8 @@ variable {m k : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k]
 /-- **Loewner antitonicity of the inverse**: `S ⪯ A`, `S, A ≻ 0` ⇒ `A⁻¹ ⪯ S⁻¹`. -/
 @[powerlib_foundation] theorem inv_sub_inv_posSemidef {S A : Matrix m m ℝ} (hS : S.PosDef)
     (hA : A.PosDef) (hle : (A - S).PosSemidef) : (S⁻¹ - A⁻¹).PosSemidef := by
-  have hdetA : IsUnit A.det := hA.isUnit.map Matrix.detMonoidHom |>.ne_zero |> isUnit_iff_ne_zero.mpr
+  have hdetA : IsUnit A.det :=
+    hA.isUnit.map Matrix.detMonoidHom |>.ne_zero |> isUnit_iff_ne_zero.mpr
   have hAs : Aᵀ = A := by
     have := hA.isHermitian.eq; rwa [conjTranspose_eq_transpose_of_trivial] at this
   refine PosSemidef.of_dotProduct_mulVec_nonneg (hS.isHermitian.inv.sub hA.isHermitian.inv)
@@ -106,7 +107,8 @@ variable {m k : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k]
     have := hI.submatrix (e := (Sum.inr : k → m ⊕ k)) Sum.inr_injective
     have e : (fromBlocks A B Bᵀ C).submatrix Sum.inr Sum.inr = C := by ext i j; simp
     rwa [e] at this
-  have hCdet : IsUnit C.det := hC.isUnit.map Matrix.detMonoidHom |>.ne_zero |> isUnit_iff_ne_zero.mpr
+  have hCdet : IsUnit C.det :=
+    hC.isUnit.map Matrix.detMonoidHom |>.ne_zero |> isUnit_iff_ne_zero.mpr
   let := invertibleOfIsUnitDet C hCdet
   have hBt : Bᴴ = Bᵀ := conjTranspose_eq_transpose_of_trivial B
   -- the Schur complement is PSD and invertible, hence PD

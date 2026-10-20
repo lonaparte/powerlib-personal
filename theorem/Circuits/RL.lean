@@ -377,7 +377,8 @@ negative one, conservation by a lossless branch, and decay at the rate `a` by a 
     case globallyExponentiallyStable =>
       simpa [translate, Meets] using
         (hhur (P := .globallyExponentiallyStable) (Or.inl trivial) m).symm
-    case contractive => simpa [translate, Meets] using (hhur (P := .contractive) (Or.inr rfl) m).symm
+    case contractive =>
+      simpa [translate, Meets] using (hhur (P := .contractive) (Or.inr rfl) m).symm
   · simp only [translate, Set.mem_singleton_iff, forall_eq, Meets, Sentence.holds_passive]
     constructor
     · intro hR

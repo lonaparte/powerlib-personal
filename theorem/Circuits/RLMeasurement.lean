@@ -181,7 +181,8 @@ def window : Sentence → Set ℝ
 certified when its whole accuracy interval lies in the sentence's window. A positive decay rate
 has an empty window and is never certified. -/
 @[powerlib_domain] theorem certified_readings (ε : ℝ) (s : Sentence) :
-    connection% (ofDual (generate (seed ε).uTO {s}) = {r | Set.Icc (r - ε) (r + ε) ⊆ window s}) := by
+    connection% (ofDual (generate (seed ε).uTO {s}) =
+      {r | Set.Icc (r - ε) (r + ε) ⊆ window s}) := by
   unfold powerlib.TMIO.Statement
   rw [seed, family.certified (reading ε) (Family.chain_eq_semantics_iff.mp chain_eq_semantics s),
     certify_reading, kernImage_den]

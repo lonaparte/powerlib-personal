@@ -536,7 +536,8 @@ def componentsStable : Set Requirement := {.sourceStable, .loadStable}
 translation of the attractive sentences and sampled contraction of the closed loop. -/
 @[powerlib_domain] theorem exactUnder_hurwitz {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
-    connection% ((family (n₁ := n₁) (n₂ := n₂) (p := p)).ExactUnder componentsStable (.flow P)) := by
+    connection% ((family (n₁ := n₁) (n₂ := n₂) (p := p)).ExactUnder componentsStable
+      (.flow P)) := by
   unfold powerlib.TMIO.Statement
   have ht : translate (.flow P) = {Requirement.impedanceStable} := by
     rcases hP with hP | rfl

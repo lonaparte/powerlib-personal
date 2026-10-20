@@ -156,9 +156,9 @@ def potentialGrad (p : Params n) (θ : Fin (n + 1) → ℝ) : (Fin (n + 1) → �
     simp only [potential, Pi.sub_apply, Pi.neg_apply]
     ring
   ext v
-  simp only [potentialGrad_apply, ContinuousLinearMap.sub_apply, ContinuousLinearMap.neg_apply,
-    ContinuousLinearMap.coe_sum', Finset.sum_apply, ContinuousLinearMap.coe_smul',
-    Pi.smul_apply, ContinuousLinearMap.proj_apply, smul_eq_mul, ContinuousLinearMap.coe_sub',
+  simp only [potentialGrad_apply, _root_.sub_apply, _root_.neg_apply,
+    FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul,
+    Pi.smul_apply, ContinuousLinearMap.proj_apply, smul_eq_mul, FunLike.coe_sub,
     Pi.sub_apply]
   have := sum_sin_mul_sub p θ v
   simp only [neg_mul, mul_sub, Finset.sum_neg_distrib, Finset.sum_sub_distrib] at this ⊢
@@ -773,7 +773,7 @@ nonzero cubic coefficient, makes `t² a/2 − t³ b/6 + t⁴ C` negative at arbi
     simp only [jacobian_dd, jacobian_dw, Complex.ofReal_sub, Complex.ofReal_zero, zero_mul,
       Finset.sum_const_zero, zero_add, apply_ite (fun x : ℝ => (x : ℂ)), Complex.ofReal_one,
       sub_mul, ite_mul, one_mul, Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ,
-      if_true] at this
+      ite_true] at this
     exact this
   have hζ0 : ζ 0 = 0 := rfl
   have hζs : ∀ i, ζ i.succ = η i := fun i => rfl
@@ -802,7 +802,7 @@ nonzero cubic coefficient, makes `t² a/2 − t³ b/6 + t⁴ C` negative at arbi
     have hM : (p.M k : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (p.M_pos k).ne'
     have h' : -(∑ l, (flowWeights p.B θ k l : ℂ) * (ζ k - ζ l)) / p.M k +
         -((p.D k : ℂ) / p.M k) * w k = μ * w k := by
-      push_cast at this; exact this
+      exact this
     field_simp at h'
     linear_combination (-1 : ℂ) * h'
   have hv0 : ∀ (hη : η = 0) (hw : w = 0), False := by
@@ -1007,7 +1007,7 @@ local asymptotic translation `{powerFlow, jacobianStable}` of `family (n := n)` 
 private theorem hessForm_two (p : Params 1) (θ w : Fin (1 + 1) → ℝ) (hw : w 0 = 0) :
     hessForm p θ w = 2 * (p.B 0 1 * Real.cos (θ 0 - θ 1)) * w 1 ^ 2 := by
   simp only [hessForm, Fin.sum_univ_succ, Fin.sum_univ_zero, hw]
-  simp only [Fin.succ_zero_eq_one, sub_self, zero_sub, add_zero, ne_eq, zero_pow two_ne_zero,
+  simp only [Fin.succ_zero_eq_one, sub_self, zero_sub, add_zero, zero_pow two_ne_zero,
     mul_zero, Fin.isValue]
   rw [p.B_symm 1 0, show θ 1 - θ 0 = -(θ 0 - θ 1) by ring, Real.cos_neg]
   ring
@@ -1015,7 +1015,7 @@ private theorem hessForm_two (p : Params 1) (θ w : Fin (1 + 1) → ℝ) (hw : w
 private theorem cubicForm_two (p : Params 1) (θ w : Fin (1 + 1) → ℝ) (hw : w 0 = 0) :
     cubicForm p θ w = -2 * (p.B 0 1 * Real.sin (θ 0 - θ 1)) * w 1 ^ 3 := by
   simp only [cubicForm, Fin.sum_univ_succ, Fin.sum_univ_zero, hw]
-  simp only [Fin.succ_zero_eq_one, sub_self, zero_sub, add_zero, ne_eq,
+  simp only [Fin.succ_zero_eq_one, sub_self, zero_sub, add_zero,
     zero_pow (three_ne_zero), mul_zero, Fin.isValue]
   rw [p.B_symm 1 0, show θ 1 - θ 0 = -(θ 0 - θ 1) by ring, Real.sin_neg]
   ring
@@ -1615,7 +1615,7 @@ vanishes). -/
     intro i
     have := congrArg (fun L : (Fin n → ℝ) →L[ℝ] ℝ => L (Pi.single i 1)) h0
     simp only [ContinuousLinearMap.comp_apply, groundCLM_apply, potentialGrad_apply,
-      ContinuousLinearMap.zero_apply] at this
+      _root_.zero_apply] at this
     rw [Fin.sum_univ_succ] at this
     simpa [Pi.single_apply] using this
   have hsum : ∑ k, (powerInjection p.B (θ + ground v) k - p.P k) = 0 := by

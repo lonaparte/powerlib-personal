@@ -106,8 +106,10 @@ def bandwidth (ωn ζ : ℝ) : ℝ :=
   rcases (add_nonneg (sq_nonneg (V * Ki - ω ^ 2)) (sq_nonneg (V * Kp * ω))).lt_or_eq with hp | h0
   · exact Or.inl hp
   · right
-    have h1 : (V * Ki - ω ^ 2) ^ 2 = 0 := by nlinarith [sq_nonneg (V * Ki - ω ^ 2), sq_nonneg (V * Kp * ω)]
-    have h2 : (V * Kp * ω) ^ 2 = 0 := by nlinarith [sq_nonneg (V * Ki - ω ^ 2), sq_nonneg (V * Kp * ω)]
+    have h1 : (V * Ki - ω ^ 2) ^ 2 = 0 := by
+      nlinarith [sq_nonneg (V * Ki - ω ^ 2), sq_nonneg (V * Kp * ω)]
+    have h2 : (V * Kp * ω) ^ 2 = 0 := by
+      nlinarith [sq_nonneg (V * Ki - ω ^ 2), sq_nonneg (V * Kp * ω)]
     have h1' : V * Ki - ω ^ 2 = 0 := pow_eq_zero_iff two_ne_zero |>.mp h1
     have hω2 : ω ^ 2 = V * Ki := by linarith
     have hω : ω ≠ 0 := by
@@ -273,7 +275,8 @@ denominator is positive (`a = V K_p`, `b = ω_n² = V K_i`). -/
     rcases (add_nonneg (sq_nonneg (V * Ki - ω ^ 2)) (sq_nonneg (V * Kp * ω))).lt_or_eq with h | h
     · exact h
     · exfalso
-      have h1 : V * Ki - ω ^ 2 = 0 := by nlinarith [sq_nonneg (V * Ki - ω ^ 2), sq_nonneg (V * Kp * ω)]
+      have h1 : V * Ki - ω ^ 2 = 0 := by
+        nlinarith [sq_nonneg (V * Ki - ω ^ 2), sq_nonneg (V * Kp * ω)]
       have h2 : V * Kp * ω = 0 := by nlinarith [sq_nonneg (V * Ki - ω ^ 2), sq_nonneg (V * Kp * ω)]
       have : V * Ki * (V * Ki - ω ^ 2) + (V * Kp) ^ 2 * ω ^ 2 = 0 := by
         rw [h1, show (V * Kp) ^ 2 * ω ^ 2 = (V * Kp * ω) ^ 2 by ring, h2]; ring

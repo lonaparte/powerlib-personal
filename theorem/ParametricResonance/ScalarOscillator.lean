@@ -114,7 +114,8 @@ def field (ζ ω₀ a F ωp t : ℝ) (y : State 2) : State 2 :=
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ)
         !![0, 1; -(ω₀ ^ 2 + 2 * a * y 0), -(2 * ζ * ω₀)]) y := by
   refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
-    ![Dynamics.coord 1, (-(2 * ζ * ω₀)) • Dynamics.coord 1 - (ω₀ ^ 2 + 2 * a * y 0) • Dynamics.coord 0] ?_ ?_
+    ![Dynamics.coord 1,
+      (-(2 * ζ * ω₀)) • Dynamics.coord 1 - (ω₀ ^ 2 + 2 * a * y 0) • Dynamics.coord 0] ?_ ?_
   · intro i; fin_cases i
     · exact Dynamics.hasFDerivAt_coord 1 y
     · show HasFDerivAt (fun z => field ζ ω₀ a F ωp t z 1) _ y

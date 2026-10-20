@@ -97,7 +97,7 @@ is nonsingular exactly when every node reaches a grounded node. -/
     intro h
     have := congrFun h i
     simp only [Pi.zero_apply] at this
-    rw [if_pos (show Reach W i i from Relation.ReflTransGen.refl)] at this
+    rw [ite_eq_left (show Reach W i i from Relation.ReflTransGen.refl)] at this
     exact one_ne_zero this
   · exact grounded_det_ne_zero hpos hg
 
@@ -129,7 +129,7 @@ def MachineConnected (W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ) : Prop := ∀ b, �
 @[powerlib_foundation] theorem Bbb_eq_grounded (W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ) :
     Bbb W = grounded (Wbb W) (machineCoupling W) := by
   ext i j
-  simp only [Bbb, submatrix_apply, laplacian_apply, grounded, laplacian, Wbb, machineCoupling,
+  simp only [Bbb, submatrix_apply, grounded, laplacian, Wbb, machineCoupling,
     Matrix.add_apply, Matrix.sub_apply, diagonal_apply, Fintype.sum_sum_type, Sum.inl.injEq]
   by_cases h : i = j
   · subst h; simp; ring
@@ -139,6 +139,7 @@ def MachineConnected (W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ) : Prop := ∀ b, �
   ext i g
   simp [Bbg, Wbg, laplacian_apply]
 
+omit [Fintype β] [DecidableEq β] [DecidableEq γ] in
 @[powerlib_foundation] theorem machineConnected_iff_groundReachable
     {W : Matrix (β ⊕ γ) (β ⊕ γ) ℝ} (hpos : ∀ i j, 0 ≤ W i j) :
     GroundReachable (Wbb W) (machineCoupling W) ↔ MachineConnected W := by

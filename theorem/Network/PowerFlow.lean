@@ -84,8 +84,8 @@ def flowWeights (b : Matrix ι ι ℝ) (θ : ι → ℝ) : Matrix ι ι ℝ :=
   · ext v
     simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply,
       LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply, laplacian_mulVec_apply,
-      flowWeights, of_apply, ContinuousLinearMap.coe_sum', Finset.sum_apply,
-      ContinuousLinearMap.coe_smul', Pi.smul_apply, ContinuousLinearMap.coe_sub', Pi.sub_apply,
+      flowWeights, of_apply, FunLike.coe_sum, Finset.sum_apply,
+      FunLike.coe_smul, Pi.smul_apply, FunLike.coe_sub, Pi.sub_apply,
       smul_eq_mul]
 
 end Injection

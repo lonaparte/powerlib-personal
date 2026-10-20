@@ -74,7 +74,8 @@ local notation "ℝⁿ" => State n
 a punctured ball around it and strictly decreases along a field continuous on that ball makes the
 point locally asymptotically stable. No hypothesis is made on the field outside the ball, and no
 global sublevel set needs to be compact. -/
-@[powerlib_foundation] theorem localAsymptoticStable_of_lie_neg (hn : 0 < n) {f : State n → State n} {x : State n}
+@[powerlib_foundation] theorem localAsymptoticStable_of_lie_neg (hn : 0 < n)
+    {f : State n → State n} {x : State n}
     {V : State n → ℝ} {R : ℝ} (hR : 0 < R) (hV : ContDiff ℝ 1 V)
     (hf : ContinuousOn f (Metric.ball x R)) (hV0 : V x = 0)
     (hpos : ∀ y, ‖y - x‖ < R → y ≠ x → 0 < V y)
@@ -157,7 +158,7 @@ vanishes at an equilibrium of a `C¹` field and is positive with negative deriva
 field on a punctured neighbourhood makes the equilibrium locally asymptotically stable. No
 global compactness of sublevel sets is needed. -/
 @[powerlib_foundation] theorem localAsymptoticStable_of_eventually_lyapunov (hn : 0 < n)
-    {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} {W : ℝⁿ → ℝ} (hf : ContDiff ℝ 1 f) (hfx : f x_eq = 0)
+    {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} {W : ℝⁿ → ℝ} (hf : ContDiff ℝ 1 f) (_hfx : f x_eq = 0)
     (hW : ContDiff ℝ 1 W) (hW0 : W x_eq = 0) (hpos : ∀ᶠ x in 𝓝[≠] x_eq, 0 < W x)
     (hLie : ∀ᶠ x in 𝓝[≠] x_eq, fderiv ℝ W x (f x) < 0) :
     LocalAsymptoticStable f x_eq := by

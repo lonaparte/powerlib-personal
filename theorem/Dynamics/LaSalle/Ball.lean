@@ -40,7 +40,7 @@ local notation "ℝⁿ" => State n
 
 /-- **Local asymptotic stability by LaSalle on a ball.** -/
 @[powerlib_foundation] theorem localAsymptoticStable_of_lasalle_ball (hn : 0 < n)
-    {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} {W : ℝⁿ → ℝ} {r : ℝ} (hf : ContDiff ℝ 1 f) (hfx : f x_eq = 0)
+    {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} {W : ℝⁿ → ℝ} {r : ℝ} (hf : ContDiff ℝ 1 f) (_hfx : f x_eq = 0)
     (hW : ContDiff ℝ 1 W) (hW0 : W x_eq = 0) (hr : 0 < r)
     (hpos : ∀ x, ‖x - x_eq‖ < r → x ≠ x_eq → 0 < W x)
     (hLie : ∀ x, ‖x - x_eq‖ < r → fderiv ℝ W x (f x) ≤ 0)

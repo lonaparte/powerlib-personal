@@ -60,7 +60,8 @@ variable {X : Fin n → Ω → ℝ} {Y : Fin p → Ω → ℝ}
 private lemma cov_sub_comb [IsFiniteMeasure P] (hX2 : ∀ i, MemLp (X i) 2 P)
     (hY2 : ∀ j, MemLp (Y j) 2 P) (K : Matrix (Fin n) (Fin p) ℝ) (i : Fin n) {W : Ω → ℝ}
     (hW : MemLp W 2 P) :
-    cov[fun ω => X i ω - ∑ l, K i l * Y l ω, W; P] = cov[X i, W; P] - ∑ l, K i l * cov[Y l, W; P] := by
+    cov[fun ω => X i ω - ∑ l, K i l * Y l ω, W; P] =
+      cov[X i, W; P] - ∑ l, K i l * cov[Y l, W; P] := by
   have hs : MemLp (fun ω => ∑ l, K i l * Y l ω) 2 P :=
     memLp_finsetSum _ fun l _ => (hY2 l).const_mul _
   rw [covariance_fun_sub_left (hX2 i) hs hW,
@@ -117,7 +118,8 @@ Gaussian vector in `ℝⁿ × ℝᵖ` and `K Σ_YY = Σ_XY` (e.g. `K = Σ_XY Σ_
     hind.comp (measurable_pi_apply i) measurable_id
   have hZi : Integrable Z P :=
     ((hX2 i).sub (memLp_finsetSum _ fun l _ => (hY2 l).const_mul _)).integrable one_le_two
-  have hcZ : P[Z | MeasurableSpace.comap (fun ω j => Y j ω) inferInstance] =ᵐ[P] fun _ => ∫ ω, Z ω ∂P :=
+  have hcZ : P[Z | MeasurableSpace.comap (fun ω j => Y j ω) inferInstance] =ᵐ[P]
+      fun _ => ∫ ω, Z ω ∂P :=
     condExp_indep_eq hZm.comap_le hle (comap_measurable Z).stronglyMeasurable
       ((IndepFun_iff_Indep _ _ _).mp hindi)
   set f : Ω → ℝ := fun ω => ∑ l, K i l * Y l ω with hf
@@ -336,7 +338,8 @@ covariance `S` is invertible, `kalmanGain_mul_innov`):
   funext _
   rw [hcov, Matrix.sub_mul, Matrix.one_mul, Matrix.sub_apply, Matrix.mul_apply]
   congr 1
-  refine (Finset.sum_congr rfl fun j _ => by rw [hXY_cov, Matrix.mul_apply, Finset.mul_sum]).trans ?_
+  refine (Finset.sum_congr rfl fun j _ => by
+    rw [hXY_cov, Matrix.mul_apply, Finset.mul_sum]).trans ?_
   simp_rw [Matrix.mul_apply, Finset.sum_mul]
   rw [Finset.sum_comm]
   exact Finset.sum_congr rfl fun l _ => Finset.sum_congr rfl fun j _ => by

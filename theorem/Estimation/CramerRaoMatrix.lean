@@ -154,7 +154,8 @@ nonnegative near `θ`: zeros are allowed (their derivative vanishes, a local min
   have hcross : X * W * Sᵀ = Jm := by
     ext j i
     rw [mul_diagonal_mul_transpose_apply]
-    have e : ∀ ω, q ω * (X j ω * S i ω) = T ω j * D ω (Pi.single i 1) - m j * D ω (Pi.single i 1) := by
+    have e : ∀ ω, q ω * (X j ω * S i ω) =
+        T ω j * D ω (Pi.single i 1) - m j * D ω (Pi.single i 1) := by
       intro ω
       simp only [X, S, scoreFin, of_apply]
       by_cases h0 : q ω = 0

@@ -47,8 +47,8 @@ def joseph (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
 def innov (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
     (R : Matrix (Fin p) (Fin p) ℝ) : Matrix (Fin p) (Fin p) ℝ := H * P * Hᵀ + R
 
-@[powerlib_foundation] private lemma psd_congr {m k : ℕ} {A : Matrix (Fin m) (Fin m) ℝ} (hA : A.PosSemidef)
-    (B : Matrix (Fin k) (Fin m) ℝ) : (B * A * Bᵀ).PosSemidef := by
+@[powerlib_foundation] private lemma psd_congr {m k : ℕ} {A : Matrix (Fin m) (Fin m) ℝ}
+    (hA : A.PosSemidef) (B : Matrix (Fin k) (Fin m) ℝ) : (B * A * Bᵀ).PosSemidef := by
   simpa [conjTranspose_eq_transpose_of_trivial] using hA.mul_mul_conjTranspose_same B
 
 /-- **The Joseph form is PSD for every gain** (§1.1). -/
