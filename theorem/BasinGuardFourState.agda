@@ -17,7 +17,12 @@ module theorem.BasinGuardFourState where
 -- `necessary` is `CarrierParams.equilibrium_Kip_xp` with
 -- `Dynamics.isEquilibrium_of_lyapunovStable_local`, `four-les` is
 -- `FourState.exact_locallyExponentiallyStable`, `les↔` is
--- `BasinGuard.mem_den_locallyExponentiallyStable_iff`. Nothing here is exported.
+-- `BasinGuard.mem_den_locallyExponentiallyStable_iff`. The family's requirement language speaks
+-- of these conditions (`iqZero`, `vdcNonzero`, `fourStatePoint`, and `fourState r` for each
+-- four-state requirement `r`, meaning `r` of the four-state reading), and translates local
+-- exponential stability to `iqZero`, `fourStatePoint` and the four-state equilibrium and Routh
+-- requirements, so the translation is exact within `{iqZero, vdcNonzero}` (`exact-les`, Lean
+-- `BasinGuard.exactUnder_locallyExponentiallyStable`). Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv
@@ -44,6 +49,8 @@ module _ (X : Type) (holds : System X → Sentence → Type)
     -- `K_i^pll x_p* = 0`.
     (Guard Context : GuardModel → Type)
     (Equilibrium Routh : FourModel → Type)
+    -- `I_q* = 0` alone (part of the guard and of the translation).
+    (IqZero : GuardModel → Type)
     where
 
     guardFamily : Family
@@ -90,3 +97,22 @@ module _ (X : Type) (holds : System X → Sentence → Type)
                in c , fst (four-les (toFour m)) (fst (den↔ m c locallyExponentiallyStable tt) h))
         , λ { (c , er) →
               snd (den↔ m c locallyExponentiallyStable tt) (snd (four-les (toFour m)) er) }
+
+
+      -- The requirement language: the translation of local exponential stability says
+      -- `I_q* = 0`, the reading context and the four-state conditions, and the guard is met by
+      -- the requirements `iqZero`, `vdcNonzero`.
+      module Exactness (Δ : GuardReq → Type)
+        (translation↔ : (m : GuardModel) →
+          realize guardFamily (guardTranslate locallyExponentiallyStable) m ↔
+            (IqZero m × (Context m × (Equilibrium (toFour m) × Routh (toFour m)))))
+        (guard-of : (m : GuardModel) → realize guardFamily Δ m → Guard m)
+        (iq-of : (m : GuardModel) → Guard m → IqZero m)
+        where
+
+        exact-les : ExactUnder guardFamily Δ locallyExponentiallyStable
+        exact-les m hΔ =
+          let g = guard-of m hΔ
+          in ↔-trans (translation↔ m)
+               ((λ t → snd (les↔ m g) (snd t))
+               , (λ d → iq-of m g , fst (les↔ m g) d))

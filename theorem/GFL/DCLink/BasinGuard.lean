@@ -8,6 +8,7 @@ import theorem.Spectral.Global
 import theorem.Spectral.Hub
 import theorem.Dynamics.Lyapunov
 import theorem.GFL.DCLink.FourState
+import theorem.GFL.DCLink.FourStateBoundary
 
 /-! # The `basin-guard` GFL carrier: direction-convention algebra
 
@@ -31,8 +32,9 @@ Domain module; per-unit, continuous time.
 Source: work-sync `projects/basin-guard/notes/_MOC.md` (§方向约定, 卡点 5) and
 `derivation-log.md` §2 (P_ac invariance, mirror at `I_q* = 0`) and §3 (`K_p^{dvc,*} = I_d0`);
 code reference `simulation/src/basin_guard_sim/models.py` (GFL carrier); the four-state GFL
-model `theorem/GFL/DCLink/FourState.lean`, which the carrier is for `I_q* = 0`. Scaffold of the
-four-state reading: `theorem/BasinGuardFourState.agda`.
+model `theorem/GFL/DCLink/FourState.lean`, which the carrier is for `I_q* = 0`, and its Routh
+boundary `theorem/GFL/DCLink/FourStateBoundary.lean`. Scaffold of the four-state reading:
+`theorem/BasinGuardFourState.agda`.
 
 Results.
 * `Pac_eq` : `P_ac = (3/2)(V cos θ_e · i_d* − V sin θ_e · I_q*)` for both signs `s`
@@ -56,29 +58,57 @@ Results.
   `equilibrium_Kip_xp` : every equilibrium has `V_dc = 1` and `K_i^pll x_p = 0`.
 
 Family and connection conclusions.
-A complete system (`BasinGuard.Model`) is a carrier
-parameter set, a drop sign `s` and a selected operating point `x*`; the system map reads it as the
-carrier field translated so that `x*` is the origin, `z ↦ carrierField q s (z + x*)` (every flow
-sentence is invariant under this translation, `Flow.Property.holds_shift_iff`). The requirement
-language has a single inconsistent requirement and every flow sentence is translated into it:
-unavailable translation coverage, sound by `BasinGuard.chain_le_semantics`; passivity is
-translated exactly (`BasinGuard.exact_passive`). The connection content is the frame flip and the
-four-state reading.
+A complete system (`BasinGuard.Model`) is a carrier parameter set, a drop sign `s` and a selected
+operating point `x*`; the system map reads it as the carrier field translated so that `x*` is the
+origin, `z ↦ carrierField q s (z + x*)` (every flow sentence is invariant under this translation,
+`Flow.Property.holds_shift_iff`). Its four-state reading is `Model.toFourState`, the four-state
+GFL model of `fourStateParams s ξ*` at the selected angle `θ_e*`.
+* Requirements (`BasinGuard.Requirement`, all static): `unavailable` (met by no model); the
+  context requirements `iqZero` (`I_q* = 0`) and `vdcNonzero` (`V_dc* ≠ 0`, where the carrier is
+  `C¹`); `fourStatePoint` (`V_dc* = 1` and `K_i^pll x_p* = 0`: the selected point is the image of
+  the four-state operating point); `fourState r` (the four-state reading meets the requirement `r`
+  of `GFL.DCLink.FourState`: `equilibrium`, `routh` or `constNeg`).
+* Translation: each local sentence into `iqZero`, `fourStatePoint` and the image under `fourState`
+  of its four-state translation: Lyapunov, local asymptotic and local exponential stability into
+  `iqZero`, `fourStatePoint`, `fourState equilibrium`, `fourState routh`; instability into
+  `iqZero`, `fourStatePoint`, `fourState equilibrium`, `fourState constNeg`. Passivity into
+  nothing. The global sentences, decay rates, sampled contraction and conservation into the whole,
+  inconsistent, language (`unavailable`): unavailable translation coverage.
+* Soundness: every translation is sound (`BasinGuard.chain_le_semantics`). A model meeting a local
+  translation has `I_q* = 0` and the four-state point, so it satisfies exactly the sentences of its
+  four-state reading (`BasinGuard.mem_den_iff_fourState`, below), and its reading meets the
+  four-state translation, which is sound (`FourState.chain_le_semantics`, carried over by
+  `Spectral.realize_subset_den_of_hub`). Passivity is translated exactly
+  (`BasinGuard.exact_passive`).
+* Exactness within `I_q* = 0`, `V_dc* ≠ 0` (the context `{iqZero, vdcNonzero}`): the local
+  exponential translation is exact (`BasinGuard.exactUnder_locallyExponentiallyStable`, from
+  `BasinGuard.mem_den_locallyExponentiallyStable_iff`, below). The Lyapunov, local asymptotic and
+  instability translations are not exact even there (`BasinGuard.not_exactUnder_lyapunovStable`,
+  `BasinGuard.not_exactUnder_locallyAsymptoticallyStable`, `BasinGuard.not_exactUnder_unstable`):
+  the carriers at `(0, 0, 1, 0)` whose four-state readings are `FourState.undampedPLL` (Lyapunov
+  stable, on the Routh boundary), `FourStateBoundary.weakFocus` (locally asymptotically stable, on
+  the Routh boundary) and `FourState.offEquilibrium` (unstable, not an equilibrium).
+* Outside the context every translation stays sound, and no model with `I_q* ≠ 0` or with
+  `V_dc* = 0` meets a local translation: the local exponential translation is exact on those models
+  exactly when none of them is locally exponentially stable, which is not decided here. For
+  `I_q* ≠ 0` the term `−V sin θ_e I_q*` of `P_ac` has no four-state counterpart and no witness
+  is proved (informally, with `X_g = 0` the PLL rows do not depend on the DC states and `I_q*`
+  enters the Jacobian at `θ_e* = 0` only below the diagonal blocks, so locally exponentially
+  stable models with `I_q* ≠ 0` exist and the translation is not exact there; not formalized). At
+  `V_dc* = 0` the term `P_ac / V_dc` is read with `x / 0 = 0` and the carrier is not `C¹`, so the
+  converse linearization does not apply.
 * Frame flip: for `I_q* = 0` the flipped model `Model.flip ⟨q, s, x*⟩ = ⟨q, −s, S x*⟩` satisfies
   exactly the sentences of the original (`BasinGuard.flip_mem_den_iff`, every sentence, every
   drop sign `s`).
 * Four-state reading: for `I_q* = 0` a model whose selected point has `V_dc* = 1` and
   `K_i^pll x_p* = 0` (every equilibrium has both) satisfies exactly the sentences of its four-state
-  GFL model `Model.toFourState` (`BasinGuard.mem_den_iff_fourState`, every sentence), so the
-  stability results of `GFL.DCLink.FourState` hold for the carrier.
+  reading (`BasinGuard.mem_den_iff_fourState`, every sentence), so the stability results of
+  `GFL.DCLink.FourState` hold for the carrier.
 * Local exponential stability: for `I_q* = 0` and `V_dc* ≠ 0` a model is locally exponentially
   stable exactly when `V_dc* = 1`, `K_i^pll x_p* = 0` and its four-state reading meets the
   equilibrium and Routh requirements of the four-state local exponential translation
   (`BasinGuard.mem_den_locallyExponentiallyStable_iff`: a locally exponentially stable point is an
-  equilibrium, and `FourState.exact_locallyExponentiallyStable`, converse linearization). Not
-  covered: `I_q* ≠ 0` (the term `−V sin θ_e I_q*` of `P_ac` has no four-state counterpart) and
-  selected points with `V_dc* = 0` (the `P_ac / V_dc` term, read with `x / 0 = 0`). The
-  requirement language is not rewritten to these conditions.
+  equilibrium, and `FourState.exact_locallyExponentiallyStable`, converse linearization).
 The mirror equilibria (`carrier_equilibrium_iff`), the Jacobian similarity, `P_ac`, the DC-node
 entry and the field identity with the four-state model are static evidence.
 
@@ -302,103 +332,7 @@ is the operating current `I_d0`. -/
 
 end CarrierParams
 
-/-! ## The carrier family -/
-
-namespace BasinGuard
-
-/-- A `basin-guard` carrier read about a selected operating point, with a drop sign `s`
-(`s = 1`: the IN-positive carrier). -/
-structure Model where
-  /-- The carrier parameters. -/
-  params : CarrierParams
-  /-- The sign of the reactance drop. -/
-  s : ℝ
-  /-- The selected operating point `x* = (θ_e, x_p, V_dc, ξ)`. -/
-  point : State 4
-
-/-- The carrier field translated so that the selected operating point is the origin. -/
-def Model.field (m : Model) (z : State 4) : State 4 :=
-  m.params.carrierField m.s (z + m.point)
-
-/-- The flipped model: the opposite drop sign about the mirror point `S x*`. -/
-def Model.flip (m : Model) : Model := ⟨m.params, -m.s, carrierReflect m.point⟩
-
-/-- The requirement language of the carrier: no stability criterion is formalized for it, so it
-has a single requirement, which no model meets. -/
-inductive Requirement
-  /-- No criterion is available. -/
-  | unavailable
-
-/-- Satisfaction of a requirement by a model: never. -/
-def Meets (_ : Model) : Requirement → Prop
-  | .unavailable => False
-
-/-- Every flow sentence is translated into the whole (inconsistent) language: unavailable
-translation coverage, not a usable translation. Passivity is translated into nothing. -/
-def translate : Sentence → Set Requirement
-  | .flow _ => Set.univ
-  | .passive => ∅
-
-/-- The carrier family: every model read as its carrier field translated to the selected
-operating point. -/
-def family : Family Model Requirement 4 0 :=
-  ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
-
-@[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
-  fun _ => rfl
-
-/-- No model meets the requirement language. -/
-@[powerlib_foundation] theorem realize_univ :
-    connection% (TMIO.realize Meets Set.univ = ∅) := by
-  unfold powerlib.TMIO.Statement
-  refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
-  exact h .unavailable
-
-/-- Every translation of the carrier family is sound (the flow translations are empty), and
-passivity holds without requirement (`Spectral.chain_le_semantics_of_localTable_same`, every flow
-sentence on the inconsistent whole language). -/
-@[powerlib_domain] theorem chain_le_semantics :
-    connection% (∀ P, family.chain P ≤ family.semantics P) := by
-  unfold powerlib.TMIO.Statement
-  refine Spectral.chain_le_semantics_of_localTable_same (Rs := Set.univ) (Ru := Set.univ)
-    (fun s => ?_) realize_univ (Spectral.realize_univ_subset_of_eq_empty realize_univ _)
-    (Spectral.realize_univ_subset_of_eq_empty realize_univ _) family_isAutonomous.den_passive
-  rcases s with P | _
-  · cases P <;> rfl
-  · rfl
-
-/-- Passivity is translated exactly: a system without ports is passive. -/
-@[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
-  unfold powerlib.TMIO.Statement
-  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
-
-/-- The flipped field about the mirror point is the transported field about the origin. -/
-private theorem flip_holds_iff {m : Model} (hIq : m.params.Iq = 0) (P : Flow.Property) :
-    P.holds m.flip.field 0 ↔ P.holds m.field 0 := by
-  have h1 : m.flip.field = fun z => m.params.carrierField (-m.s) (z + carrierReflect m.point) :=
-    rfl
-  have h2 : m.field = fun z => m.params.carrierField m.s (z + m.point) := rfl
-  have hpt : carrierReflect m.point = Dynamics.affineCoord carrierReflect 0 m.point := by
-    simp [Dynamics.affineCoord]
-  rw [h1, h2, Flow.Property.holds_shift_iff, Flow.Property.holds_shift_iff, hpt,
-    m.params.carrierField_neg_sign_eq_transport hIq m.s]
-  exact Dynamics.holds_transport_iff carrierReflect 0 P
-
-/-- `I_q* = 0`: the two writings of the reactance drop agree on every sentence at mirror points —
-the flipped model `⟨q, −s, S x*⟩` satisfies exactly the sentences of `⟨q, s, x*⟩`, for every
-sentence (in particular local exponential stability and instability at `s = 1`). -/
-@[powerlib_domain] theorem flip_mem_den_iff (m : Model) (hIq : m.params.Iq = 0) (s : Sentence) :
-    connection% (m.flip ∈ family.den s ↔ m ∈ family.den s) := by
-  unfold powerlib.TMIO.Statement
-  rcases s with P | _
-  · rw [family_isAutonomous.mem_den_flow, family_isAutonomous.mem_den_flow]
-    exact flip_holds_iff hIq P
-  · rw [family_isAutonomous.den_passive]
-    simp
-
-end BasinGuard
-
-/-! ## The four-state reading -/
+/-! ## The four-state field -/
 
 /-- The sign change of the DC-voltage integrator, `diag(1, 1, 1, −1)`: the carrier integrates
 `1 − V_dc`, the four-state GFL model `V − 1`. -/
@@ -499,12 +433,114 @@ Static evidence on the model, not a connection conclusion. -/
 
 end CarrierParams
 
+/-! ## The carrier family -/
+
 namespace BasinGuard
+
+/-- A `basin-guard` carrier read about a selected operating point, with a drop sign `s`
+(`s = 1`: the IN-positive carrier). -/
+structure Model where
+  /-- The carrier parameters. -/
+  params : CarrierParams
+  /-- The sign of the reactance drop. -/
+  s : ℝ
+  /-- The selected operating point `x* = (θ_e, x_p, V_dc, ξ)`. -/
+  point : State 4
+
+/-- The carrier field translated so that the selected operating point is the origin. -/
+def Model.field (m : Model) (z : State 4) : State 4 :=
+  m.params.carrierField m.s (z + m.point)
+
+/-- The flipped model: the opposite drop sign about the mirror point `S x*`. -/
+def Model.flip (m : Model) : Model := ⟨m.params, -m.s, carrierReflect m.point⟩
 
 /-- The four-state GFL reading of a carrier model: the parameters `fourStateParams s ξ*` at the
 selected angle `θ_e*`. -/
 def Model.toFourState (m : Model) : FourState.Model :=
   ⟨m.params.fourStateParams m.s (m.point 3), m.point 0⟩
+
+/-- The requirement language of the carrier, all static: a context (`I_q* = 0`, `V_dc* ≠ 0`),
+the four-state point, and the requirements of the four-state GFL language read on the four-state
+reading. -/
+inductive Requirement
+  /-- No criterion is available: met by no model. -/
+  | unavailable
+  /-- No quadrature current reference, `I_q* = 0`. -/
+  | iqZero
+  /-- The selected point has `V_dc* ≠ 0`, where the carrier is `C¹`. -/
+  | vdcNonzero
+  /-- The selected point has `V_dc* = 1` and `K_i^pll x_p* = 0`: it is the image of the
+  four-state operating point (every equilibrium has both). -/
+  | fourStatePoint
+  /-- The four-state reading `Model.toFourState` meets the four-state requirement `r`. -/
+  | fourState (r : FourState.Requirement)
+
+/-- Satisfaction of a requirement by a model. -/
+def Meets (m : Model) : Requirement → Prop
+  | .unavailable => False
+  | .iqZero => m.params.Iq = 0
+  | .vdcNonzero => m.point 2 ≠ 0
+  | .fourStatePoint => m.point 2 = 1 ∧ m.params.Kip * m.point 1 = 0
+  | .fourState r => FourState.Meets m.toFourState r
+
+/-- The translation of the sentences: each local sentence (Lyapunov, local asymptotic and local
+exponential stability, instability) into `I_q* = 0`, the four-state point and its four-state
+translation met by the four-state reading; passivity into nothing. The global sentences, decay
+rates, sampled contraction and conservation are translated into the whole language, which no
+model meets (unavailable translation coverage). -/
+def translate (s : Sentence) : Set Requirement :=
+  match s with
+  | .flow .lyapunovStable | .flow .locallyAsymptoticallyStable
+  | .flow .locallyExponentiallyStable | .flow .unstable =>
+      {.iqZero, .fourStatePoint} ∪ Requirement.fourState '' FourState.translate s
+  | .flow _ => Set.univ
+  | .passive => ∅
+
+/-- The carrier family: every model read as its carrier field translated to the selected
+operating point. -/
+def family : Family Model Requirement 4 0 :=
+  ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
+
+@[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+  fun _ => rfl
+
+/-- No model meets the requirement language. -/
+@[powerlib_foundation] theorem realize_univ :
+    connection% (TMIO.realize Meets Set.univ = ∅) := by
+  unfold powerlib.TMIO.Statement
+  refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
+  exact h .unavailable
+
+/-- Passivity is translated exactly: a system without ports is passive. -/
+@[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
+  unfold powerlib.TMIO.Statement
+  exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
+
+/-- The flipped field about the mirror point is the transported field about the origin. -/
+private theorem flip_holds_iff {m : Model} (hIq : m.params.Iq = 0) (P : Flow.Property) :
+    P.holds m.flip.field 0 ↔ P.holds m.field 0 := by
+  have h1 : m.flip.field = fun z => m.params.carrierField (-m.s) (z + carrierReflect m.point) :=
+    rfl
+  have h2 : m.field = fun z => m.params.carrierField m.s (z + m.point) := rfl
+  have hpt : carrierReflect m.point = Dynamics.affineCoord carrierReflect 0 m.point := by
+    simp [Dynamics.affineCoord]
+  rw [h1, h2, Flow.Property.holds_shift_iff, Flow.Property.holds_shift_iff, hpt,
+    m.params.carrierField_neg_sign_eq_transport hIq m.s]
+  exact Dynamics.holds_transport_iff carrierReflect 0 P
+
+/-- `I_q* = 0`: the two writings of the reactance drop agree on every sentence at mirror points —
+the flipped model `⟨q, −s, S x*⟩` satisfies exactly the sentences of `⟨q, s, x*⟩`, for every
+sentence (in particular local exponential stability and instability at `s = 1`). -/
+@[powerlib_domain] theorem flip_mem_den_iff (m : Model) (hIq : m.params.Iq = 0) (s : Sentence) :
+    connection% (m.flip ∈ family.den s ↔ m ∈ family.den s) := by
+  unfold powerlib.TMIO.Statement
+  rcases s with P | _
+  · rw [family_isAutonomous.mem_den_flow, family_isAutonomous.mem_den_flow]
+    exact flip_holds_iff hIq P
+  · rw [family_isAutonomous.den_passive]
+    simp
+
+/-! ### The four-state reading -/
 
 /-- A selected point with `V_dc* = 1` is the image of the four-state operating point. -/
 private theorem point_eq_affineCoord (m : Model) (hV : m.point 2 = 1) :
@@ -535,6 +571,61 @@ integrator and the reference of `x_p`. -/
       (f := fun y : FourState.Model => FourState.field y.params)
       (pt := fun y : FourState.Model => FourState.opPoint y.θ) FourState.family_isAutonomous)
     _ _ (m.params.carrierField_eq_transport hIq m.s _ _ hx) (point_eq_affineCoord m hV) P
+
+/-- The requirements of a local translation, `I_q* = 0`, the four-state point and the image of
+four-state requirements `B`: a model meets them exactly when it has `I_q* = 0`, `V_dc* = 1`,
+`K_i^pll x_p* = 0` and its four-state reading meets `B`. -/
+private theorem mem_realize_reading {m : Model} {B : Set FourState.Requirement} :
+    m ∈ TMIO.realize Meets ({.iqZero, .fourStatePoint} ∪ Requirement.fourState '' B) ↔
+      m.params.Iq = 0 ∧ (m.point 2 = 1 ∧ m.params.Kip * m.point 1 = 0) ∧
+        m.toFourState ∈ TMIO.realize FourState.Meets B := by
+  simp only [TMIO.mem_realize]
+  constructor
+  · intro h
+    exact ⟨h .iqZero (by simp), h .fourStatePoint (by simp),
+      fun r hr => h (.fourState r) (Or.inr ⟨r, hr, rfl⟩)⟩
+  · rintro ⟨h1, h2, h3⟩ q ((rfl | rfl) | ⟨r, hr, rfl⟩)
+    exacts [h1, h2, h3 r hr]
+
+/-- A local translation is sound when the four-state requirements it reads give the sentence for
+the four-state family: its models read as four-state models meeting them
+(`mem_den_iff_fourState`, `Spectral.realize_subset_den_of_hub`). -/
+private theorem realize_subset_den_of_fourState {s : Sentence} {B : Set FourState.Requirement}
+    (hB : TMIO.realize FourState.Meets B ⊆ FourState.family.den s) :
+    TMIO.realize Meets ({.iqZero, .fourStatePoint} ∪ Requirement.fourState '' B) ⊆
+      family.den s :=
+  Spectral.realize_subset_den_of_hub (F := family) (G := FourState.family) Model.toFourState
+    (fun _ hm => (mem_realize_reading.mp hm).2.2) (fun m hm => by
+      obtain ⟨hIq, ⟨hV, hx⟩, -⟩ := mem_realize_reading.mp hm
+      have h := mem_den_iff_fourState m hIq hV hx s
+      unfold powerlib.TMIO.Statement at h
+      exact h.mpr) hB
+
+/-! ### Soundness and exactness -/
+
+/-- Every translation of the carrier family is sound: a model meeting a local translation reads
+as a four-state model meeting the four-state translation of the sentence, which is sound
+(`FourState.chain_le_semantics`); the global sentences are translated into the inconsistent whole
+language, and passivity holds without requirement
+(`Spectral.chain_le_semantics_of_localTable_same`). -/
+@[powerlib_domain] theorem chain_le_semantics :
+    connection% (∀ P, family.chain P ≤ family.semantics P) := by
+  unfold powerlib.TMIO.Statement
+  have hG := FourState.chain_le_semantics
+  unfold powerlib.TMIO.Statement at hG
+  have hsound := Family.chain_le_semantics_iff.mp hG
+  refine Spectral.chain_le_semantics_of_localTable_same
+    (Rs := {Requirement.iqZero, Requirement.fourStatePoint} ∪
+      Requirement.fourState '' FourState.translate (.flow .locallyExponentiallyStable))
+    (Ru := {Requirement.iqZero, Requirement.fourStatePoint} ∪
+      Requirement.fourState '' FourState.translate (.flow .unstable))
+    (fun s => ?_) realize_univ
+    (realize_subset_den_of_fourState (hsound (.flow .locallyExponentiallyStable)))
+    (realize_subset_den_of_fourState (hsound (.flow .unstable)))
+    family_isAutonomous.den_passive
+  rcases s with P | _
+  · cases P <;> rfl
+  · rfl
 
 /-- **Local exponential stability of the carrier.** For `I_q* = 0` and a selected point with
 `V_dc* ≠ 0` (where the carrier is `C¹`), the point is locally exponentially stable exactly when
@@ -578,6 +669,109 @@ linearization). -/
     exact ⟨hV1, hx, (hfs hV1 hx).mp hm⟩
   · rintro ⟨hV1, hx, h⟩
     exact (hfs hV1 hx).mpr h
+
+/-- **Within `I_q* = 0` and `V_dc* ≠ 0` the local exponential translation is exact**: a model of
+the context meets `I_q* = 0`, the four-state point and the four-state equilibrium and Routh
+requirements exactly when it is locally exponentially stable
+(`mem_den_locallyExponentiallyStable_iff`, `Spectral.exactUnder_iff_forall`). -/
+@[powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
+    connection% (family.ExactUnder {.iqZero, .vdcNonzero}
+      (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  refine Spectral.exactUnder_iff_forall.mpr fun m hm => ?_
+  rw [TMIO.mem_realize] at hm
+  have hIq : m.params.Iq = 0 := hm .iqZero (by simp)
+  have h := mem_den_locallyExponentiallyStable_iff m hIq (hm .vdcNonzero (by simp))
+  unfold powerlib.TMIO.Statement at h
+  change m ∈ TMIO.realize Meets ({.iqZero, .fourStatePoint} ∪
+    Requirement.fourState '' {.equilibrium, .routh}) ↔ _
+  rw [h, mem_realize_reading, TMIO.mem_realize]
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq]
+  exact ⟨fun ⟨_, hp, he⟩ => ⟨hp.1, hp.2, he⟩, fun ⟨hV1, hx, he⟩ => ⟨hIq, ⟨hV1, hx⟩, he⟩⟩
+
+/-- A carrier with `I_q* = 0` at a four-state point whose reading satisfies `s` but misses a
+requirement `r` of the four-state translation of `s` refutes exactness within `I_q* = 0`,
+`V_dc* ≠ 0` (`mem_den_iff_fourState`, `Spectral.not_exactUnder_of_witness`). -/
+private theorem not_exactUnder_of_fourState {m : Model} {s : Sentence}
+    {r : FourState.Requirement} (hIq : m.params.Iq = 0) (hV : m.point 2 = 1)
+    (hx : m.params.Kip * m.point 1 = 0) (hden : m.toFourState ∈ FourState.family.den s)
+    (hq : Requirement.fourState r ∈ translate s) (hn : ¬ FourState.Meets m.toFourState r) :
+    ¬ family.ExactUnder {.iqZero, .vdcNonzero} s := by
+  have h := mem_den_iff_fourState m hIq hV hx s
+  unfold powerlib.TMIO.Statement at h
+  refine Spectral.not_exactUnder_of_witness (q := Requirement.fourState r) ?_ (h.mpr hden) hq hn
+  rw [TMIO.mem_realize]
+  rintro q (rfl | rfl)
+  · exact hIq
+  · show m.point 2 ≠ 0
+    rw [hV]
+    exact one_ne_zero
+
+/-- The carrier at `(θ_e, x_p, V_dc, ξ) = (0, 0, 1, 0)` with `s = 1` and the parameters `q`. -/
+private def atUnitPoint (q : CarrierParams) : Model := ⟨q, 1, WithLp.toLp 2 ![0, 0, 1, 0]⟩
+
+/-- **Within `I_q* = 0` and `V_dc* ≠ 0` the Lyapunov translation is not exact.** The carrier
+`V = K_i^pll = K_p^dvc = K_i^dvc = 1`, `C = 3/2`, `I_dc = I_q* = X_g = K_p^pll = 0` at
+`(0, 0, 1, 0)` reads as `FourState.undampedPLL`, which is Lyapunov stable
+(`FourState.undampedPLL_mem_den_lyapunovStable`) with the quartic `(λ² + 1)(λ² + λ + 1)` on the
+Routh boundary. -/
+@[powerlib_domain] theorem not_exactUnder_lyapunovStable :
+    connection% (¬ family.ExactUnder {.iqZero, .vdcNonzero} (.flow .lyapunovStable)) := by
+  unfold powerlib.TMIO.Statement
+  have hto : (atUnitPoint ⟨0, 0, 1, 0, 0, 1, 1, 1, 3 / 2⟩).toFourState =
+      FourState.undampedPLL := by
+    simp [atUnitPoint, Model.toFourState, CarrierParams.fourStateParams, FourState.undampedPLL]
+  have hm := FourState.undampedPLL_mem_den_lyapunovStable
+  unfold powerlib.TMIO.Statement at hm
+  refine not_exactUnder_of_fourState (r := .routh) rfl (by simp [atUnitPoint])
+    (by simp [atUnitPoint]) (hto ▸ hm) (Or.inr ⟨_, Or.inr rfl, rfl⟩) fun hr => ?_
+  rw [hto] at hr
+  obtain ⟨-, -, -, hg⟩ := hr
+  norm_num [FourState.a1, FourState.a2, FourState.a3, FourState.a0, FourState.twoAlphaCl,
+    FourState.omegaClSq, FourState.Γc, FourState.vd0, FourState.undampedPLL,
+    FourState.Params.γ] at hg
+
+/-- **Within `I_q* = 0` and `V_dc* ≠ 0` the local asymptotic translation is not exact.** The
+carrier `V = X_g = K_p^pll = K_i^dvc = 1`, `K_i^pll = 2`, `C = 3/2`,
+`I_dc = I_q* = K_p^dvc = 0` at `(0, 0, 1, 0)` reads as the weak focus
+`FourStateBoundary.weakFocus`, which is locally asymptotically stable
+(`FourStateBoundary.weakFocus_mem_den_locallyAsymptoticallyStable`) with the quartic
+`(λ² + 1)(λ² + λ + 2)` on the Routh boundary. -/
+@[powerlib_domain] theorem not_exactUnder_locallyAsymptoticallyStable :
+    connection% (¬ family.ExactUnder {.iqZero, .vdcNonzero}
+      (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have hto : (atUnitPoint ⟨0, 0, 1, 1, 1, 2, 0, 1, 3 / 2⟩).toFourState =
+      FourStateBoundary.weakFocus := by
+    simp [atUnitPoint, Model.toFourState, CarrierParams.fourStateParams,
+      FourStateBoundary.weakFocus]
+  have hm := FourStateBoundary.weakFocus_mem_den_locallyAsymptoticallyStable
+  unfold powerlib.TMIO.Statement at hm
+  refine not_exactUnder_of_fourState (r := .routh) rfl (by simp [atUnitPoint])
+    (by simp [atUnitPoint]) (hto ▸ hm) (Or.inr ⟨_, Or.inr rfl, rfl⟩) fun hr => ?_
+  rw [hto] at hr
+  obtain ⟨-, -, -, hg⟩ := hr
+  norm_num [FourState.a1, FourState.a2, FourState.a3, FourState.a0, FourState.twoAlphaCl,
+    FourState.omegaClSq, FourState.Γc, FourState.vd0, FourStateBoundary.weakFocus,
+    FourState.Params.γ] at hg
+
+/-- **Within `I_q* = 0` and `V_dc* ≠ 0` the instability translation is not exact.** The carrier
+without ac source and with a unit DC source current (`I_dc = C = 1`, every other parameter `0`)
+at `(0, 0, 1, 0)` reads as `FourState.offEquilibrium`, which is unstable
+(`FourState.offEquilibrium_mem_den_unstable`) without being an equilibrium. -/
+@[powerlib_domain] theorem not_exactUnder_unstable :
+    connection% (¬ family.ExactUnder {.iqZero, .vdcNonzero} (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  have hto : (atUnitPoint ⟨1, 0, 0, 0, 0, 0, 0, 0, 1⟩).toFourState =
+      FourState.offEquilibrium := by
+    simp [atUnitPoint, Model.toFourState, CarrierParams.fourStateParams,
+      FourState.offEquilibrium]
+  have hm := FourState.offEquilibrium_mem_den_unstable
+  unfold powerlib.TMIO.Statement at hm
+  refine not_exactUnder_of_fourState (r := .equilibrium) rfl (by simp [atUnitPoint])
+    (by simp [atUnitPoint]) (hto ▸ hm) (Or.inr ⟨_, Or.inl rfl, rfl⟩) fun he => ?_
+  rw [hto] at he
+  simp [FourState.Meets, FourState.IsEq, FourState.offEquilibrium] at he
 
 end BasinGuard
 
