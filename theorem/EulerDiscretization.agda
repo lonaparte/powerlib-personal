@@ -2,26 +2,28 @@
 module theorem.EulerDiscretization where
 
 -- Scaffold of the explicit Euler implementation of a model: the model is a field `f` with a
--- selected point `x*`; its implementation with step `h > 0` is the discrete system
--- `x_{k+1} = x_k + h f(x_k)` (period `h`), which realizes the model it is designed from
--- (`ofDesign`, design map `(m, h) ↦ m`). The realization holds under a constraint, a small step:
--- at an equilibrium with a Hurwitz Jacobian (local exponential stability of a `C¹` field, by
--- converse linearization) the Euler Jacobian `I + h Df(x*)` is Schur for every step below a
--- threshold, and a fixed point with a Schur Jacobian is locally exponentially stable for the map
--- (discrete linearization), so the implementation is locally exponentially stable for every small
--- step (`sound-small-step`). Without the constraint the realization is not sound: a locally
--- exponentially stable model whose Euler implementation at a large step has a multiplier outside
--- the unit disk (`ẋ = −x` at `h = 3`: the map `x ↦ −2x`) is certified and fails the sentence
+-- selected point `x*`; its implementation with step `h > 0` is the discrete system `x_{k+1} = x_k +
+-- h f(x_k)` (period `h`), which realizes the model it is designed from (`ofDesign`, design map `(m,
+-- h) ↦ m`). The realization holds under a constraint, a small step: at an equilibrium with a
+-- Hurwitz Jacobian (local exponential stability of a `C¹` field, by converse linearization) the
+-- Euler Jacobian `I + h Df(x*)` is Schur for every step below a threshold, and a fixed point with a
+-- Schur Jacobian is locally exponentially stable for the map (discrete linearization), so the
+-- implementation is locally exponentially stable for every small step (`sound-small-step`). Without
+-- the constraint the realization is not sound: at every locally exponentially stable model the
+-- Jacobian is Hurwitz, and for every large enough step all multipliers `1 + hλ` of the Euler map
+-- lie outside the unit disk, so the Euler implementation is unstable there
 -- (`not-sound-large-step`). Lean: `converse` is
 -- `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`, `threshold` is
 -- `Numerics.exists_forwardEuler_schurStable` (from the forward Euler stability region), `discrete`
--- is `Map.locallyExponentiallyStable_of_schurStable` with `Numerics.hasFDerivAt_eulerMap`; the
--- template laws `Numerics.euler_sound_small_step`, `Numerics.euler_certified_small_step`,
--- `Numerics.not_euler_realizationSoundUnder(_of_neg)` (`theorem/Numerics/EulerRealization.lean`,
--- for autonomous families with `C¹` fields) and their connection statements for the swing family
--- `Swing.euler_sound_small_step`, `Swing.euler_certified_small_step`,
--- `Swing.not_euler_realizationSoundUnder` (`theorem/Synchronous/SwingEuler.lean`). Nothing here is
--- exported.
+-- is `Map.locallyExponentiallyStable_of_schurStable` with `Numerics.hasFDerivAt_eulerMap`, `large`
+-- comes from `Numerics.exists_forwardEuler_inverse_schurStable`; the template laws
+-- `Numerics.euler_sound_small_step`, `Numerics.euler_certified_small_step` and
+-- `Numerics.not_euler_realizationSoundUnder_of_large_step`
+-- (`theorem/Numerics/EulerRealization.lean`, for autonomous families with `C¹` fields) are
+-- published as connection statements (`euler_sound_small_step`, `euler_certified_small_step`,
+-- `not_euler_realizationSoundUnder`) for the swing family (`theorem/Synchronous/SwingEuler.lean`)
+-- and for the families of the `Euler` modules of `GFM`, `GFM/Matching`, `GFL`, `GFL/PowerLoop`,
+-- `GFL/LCLine`, `Network/Swing`, `Drives`, `PLL` and `Limiting`. Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Sigma

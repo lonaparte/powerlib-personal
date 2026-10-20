@@ -16,9 +16,11 @@ linearization, `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`), th
 the forward Euler stability region `forwardEuler_schurStable_iff`), and a fixed point with a Schur
 Jacobian is locally exponentially stable for the map
 (`Map.locallyExponentiallyStable_of_schurStable`); so the implementation is locally exponentially
-stable for every small step. Without the constraint the realization is not sound: Euler
-multipliers outside the closed unit disk make the implementation unstable (the field `ż = −z` with
-`h = 3`: the map `z ↦ −2 z`). Scaffold: `theorem/EulerDiscretization.agda`.
+stable for every small step. Without the constraint the realization is not sound: above a second
+threshold every Euler multiplier `1 + hλ` of a Hurwitz Jacobian lies outside the closed unit disk
+(`exists_forwardEuler_inverse_schurStable`), which makes the implementation unstable
+(`Map.unstable_of_inverse_schurStable`; the field `ż = −z` with `h = 3`: the map `z ↦ −2 z`).
+Scaffold: `theorem/EulerDiscretization.agda`.
 
 Scope.
 * A generic template, not a model. Model layer (M): an arbitrary family `F : Family X Q n 0` of
@@ -30,9 +32,11 @@ Scope.
   `x = design y`, `h = step y`, with step length `h` (`Map.System.autonomous`), discrete time,
   exact arithmetic (no round-off), fixed step (no step-size control).
 * The implementation type is a parameter, so the template states no connection of a model of its
-  own: an instance fixes its implementation type (for example a structure of a design model and a
-  positive step, `theorem/Synchronous/SwingEuler.lean`) and publishes the conclusions as
-  connection statements.
+  own: an instance fixes its implementation type (a structure of a design model and a positive
+  step) and publishes the conclusions as connection statements:
+  `theorem/Synchronous/SwingEuler.lean` and the `Euler.lean` modules of `theorem/GFM/`,
+  `theorem/GFM/Matching/`, `theorem/GFL/`, `theorem/GFL/PowerLoop/`, `theorem/GFL/LCLine/`,
+  `theorem/Network/Swing/`, `theorem/Drives/`, `theorem/PLL/` and `theorem/Limiting/`.
 
 Source: `theorem/Numerics/LinearSchemes.lean` (`forwardEulerMatrix`,
 `forwardEuler_schurStable_iff`), `theorem/Dynamics/ConverseLinearization.lean`,
@@ -45,6 +49,10 @@ Results.
   `I + h A` Schur stable for every `h ∈ (0, h₀]` (every eigenvalue `λ` has `Re λ < 0`, so
   `|1 + hλ|² = 1 + h (2 Re λ + h |λ|²) < 1` for small `h > 0`; finitely many eigenvalues, the roots
   of the characteristic polynomial).
+* `exists_forwardEuler_inverse_schurStable` (the large-step threshold): a Hurwitz `A` has
+  `h₁ > 0` with `I + h A` invertible and its inverse Schur stable for every `h ≥ h₁`
+  (`|1 + hλ|² > 1` for large `h`; the inverse is the Möbius image `1 / (1 + hλ)`,
+  `Linear.schurStable_mobius_iff`).
 * `hasFDerivAt_eulerMap`: the Euler map of a field with Jacobian `J` has Jacobian `I + h J`.
 
 Family and connection conclusions.
@@ -61,7 +69,10 @@ Family and connection conclusions.
   `not_euler_realizationSoundUnder`: without a step constraint the realization of local
   exponential stability is not sound, given an implementation whose design has an equilibrium at
   the origin with a Hurwitz Jacobian `J` and whose `I + h J` has a Schur stable left inverse;
-  `not_euler_realizationSoundUnder_of_neg` (`n > 0`): the field `ż = −z` with `h = 3` is such a
+  `not_euler_realizationSoundUnder_of_large_step` (scaffold `not-sound-large-step`, `n > 0`): the
+  same from any locally exponentially stable model whose Euler implementations include arbitrarily
+  large steps (the instances' form: every positive step is an implementation);
+  `not_euler_realizationSoundUnder_of_neg` (`n > 0`): the field `ż = −z` with `h = 3` is a
   witness.
 -/
 
@@ -75,7 +86,24 @@ variable {n : ℕ}
 
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
-/-! ## The step threshold -/
+/-! ## The step thresholds -/
+
+/-- `|1 + hμ|² = 1 + h (2 Re μ + h |μ|²)`. -/
+private theorem norm_one_add_mul_sq (h : ℝ) (μ : ℂ) :
+    ‖1 + (h : ℂ) * μ‖ ^ 2 = 1 + h * (2 * μ.re + h * ‖μ‖ ^ 2) := by
+  rw [Complex.sq_norm, Complex.sq_norm, Complex.normSq_apply, Complex.normSq_apply]
+  simp only [Complex.add_re, Complex.one_re, Complex.re_ofReal_mul, Complex.add_im,
+    Complex.one_im, Complex.im_ofReal_mul]
+  ring
+
+/-- An eigenvalue of `A` is a root of the characteristic polynomial of its complexification. -/
+private theorem mem_roots_of_eigen {A : Matrix (Fin n) (Fin n) ℝ} {μ : ℂ} {v : Fin n → ℂ}
+    (hv : v ≠ 0) (heig : A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
+    μ ∈ (Linear.complexify A).charpoly.roots.toFinset := by
+  have hdet := Criteria.det_characteristicMatrix_eq_zero_of_eigenpair A hv heig
+  rw [Linear.det_characteristicMatrix_eq_eval] at hdet
+  rw [Multiset.mem_toFinset, Polynomial.mem_roots (Matrix.charpoly_monic _).ne_zero]
+  exact hdet
 
 /-- **Step threshold of forward Euler.** For a Hurwitz matrix `A` there is `h₀ > 0` such that
 the forward Euler matrix `I + h A` is Schur stable for every step `h ∈ (0, h₀]`. -/
@@ -83,9 +111,8 @@ the forward Euler matrix `I + h A` is Schur stable for every step `h ∈ (0, h�
     (hA : IsHurwitz A) :
     ∃ h₀ : ℝ, 0 < h₀ ∧ ∀ h ∈ Set.Ioc (0 : ℝ) h₀, LTI.SchurStable (forwardEulerMatrix h A) := by
   classical
-  set p : Polynomial ℂ := (Linear.complexify A).charpoly with hp
-  have hev : ∀ᶠ (h : ℝ) in 𝓝[>] 0,
-      ∀ μ ∈ p.roots.toFinset, μ.re < 0 → ‖1 + (h : ℂ) * μ‖ < 1 := by
+  have hev : ∀ᶠ (h : ℝ) in 𝓝[>] 0, ∀ μ ∈ (Linear.complexify A).charpoly.roots.toFinset,
+      μ.re < 0 → ‖1 + (h : ℂ) * μ‖ < 1 := by
     rw [Filter.eventually_all_finset]
     intro μ _
     by_cases hμ : μ.re < 0
@@ -95,13 +122,8 @@ the forward Euler matrix `I + h A` is Schur stable for every step `h ∈ (0, h�
       have hneg : ∀ᶠ h in 𝓝 (0 : ℝ), 2 * μ.re + h * ‖μ‖ ^ 2 < 0 :=
         hlim.eventually (gt_mem_nhds (by linarith))
       filter_upwards [nhdsWithin_le_nhds hneg, self_mem_nhdsWithin] with h hn hpos _
-      have hsq : ‖1 + (h : ℂ) * μ‖ ^ 2 = 1 + h * (2 * μ.re + h * ‖μ‖ ^ 2) := by
-        rw [Complex.sq_norm, Complex.sq_norm, Complex.normSq_apply, Complex.normSq_apply]
-        simp only [Complex.add_re, Complex.one_re, Complex.re_ofReal_mul, Complex.add_im,
-          Complex.one_im, Complex.im_ofReal_mul]
-        ring
       have hlt : ‖1 + (h : ℂ) * μ‖ ^ 2 < 1 := by
-        rw [hsq]
+        rw [norm_one_add_mul_sq]
         have : h * (2 * μ.re + h * ‖μ‖ ^ 2) < 0 := mul_neg_of_pos_of_neg hpos hn
         linarith
       exact (sq_lt_one_iff₀ (norm_nonneg _)).mp hlt
@@ -110,13 +132,60 @@ the forward Euler matrix `I + h A` is Schur stable for every step `h ∈ (0, h�
   refine ⟨h₀, hh₀, fun h hh => ?_⟩
   rw [forwardEuler_schurStable_iff hh.1.ne']
   intro μ v hv heig
-  have hre := Linear.isHurwitz_iff_forall_eigen.mp hA μ v hv heig
-  have hroot : μ ∈ p.roots.toFinset := by
-    have hdet := Criteria.det_characteristicMatrix_eq_zero_of_eigenpair A hv heig
-    rw [Linear.det_characteristicMatrix_eq_eval] at hdet
-    rw [Multiset.mem_toFinset, Polynomial.mem_roots (Matrix.charpoly_monic _).ne_zero]
-    exact hdet
-  exact hP hh μ hroot hre
+  exact hP hh μ (mem_roots_of_eigen hv heig) (Linear.isHurwitz_iff_forall_eigen.mp hA μ v hv heig)
+
+/-- A forward Euler matrix `I + h A` whose multipliers `1 + hλ` all lie outside the closed unit
+disk has a Schur stable inverse (`h ≠ 0`; the Möbius image `1 / (1 + hλ)` of every eigenvalue). -/
+private theorem exists_inverse_schurStable_of_forall_eigen {A : Matrix (Fin n) (Fin n) ℝ}
+    {h : ℝ} (hh : h ≠ 0) (hout : ∀ (μ : ℂ) (v : Fin n → ℂ), v ≠ 0 →
+      A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v → 1 < ‖1 + (h : ℂ) * μ‖) :
+    ∃ B : Matrix (Fin n) (Fin n) ℝ, B * forwardEulerMatrix h A = 1 ∧ LTI.SchurStable B := by
+  have hne : ∀ (μ : ℂ) (v : Fin n → ℂ), v ≠ 0 → Linear.complexify A *ᵥ v = μ • v →
+      (h : ℂ) * μ + ((1 : ℝ) : ℂ) ≠ 0 := fun μ v hv heig h0 => by
+    have := hout μ v hv heig
+    rw [add_comm, ← Complex.ofReal_one, h0, norm_zero] at this
+    exact absurd this (by norm_num)
+  have hQ := Linear.isUnit_det_affine_of_forall_eigen hh hne
+  have hE : forwardEulerMatrix h A = h • A + (1 : ℝ) • 1 := by
+    rw [forwardEulerMatrix, one_smul, add_comm]
+  refine ⟨(h • A + (1 : ℝ) • 1)⁻¹, by rw [hE]; exact Matrix.nonsing_inv_mul _ hQ, ?_⟩
+  rw [Linear.schurStable_mobius_iff (α := 0) (β := 1) (by simpa using hh) hQ
+    (by rw [Matrix.mul_nonsing_inv _ hQ, zero_smul, zero_add, one_smul])]
+  intro μ v hv heig
+  rw [norm_div, Complex.ofReal_zero, zero_mul, zero_add, Complex.ofReal_one, norm_one,
+    add_comm]
+  exact (div_lt_one (by linarith [hout μ v hv heig])).mpr (hout μ v hv heig)
+
+/-- **Large-step threshold of forward Euler.** For a Hurwitz matrix `A` there is `h₁ > 0` such
+that for every step `h ≥ h₁` the forward Euler matrix `I + h A` has a Schur stable inverse: every
+eigenvalue `λ` has `Re λ < 0`, so `|1 + hλ|² = 1 + h (2 Re λ + h |λ|²) > 1` for large `h`. -/
+@[powerlib_foundation] theorem exists_forwardEuler_inverse_schurStable
+    {A : Matrix (Fin n) (Fin n) ℝ} (hA : IsHurwitz A) :
+    ∃ h₁ : ℝ, 0 < h₁ ∧ ∀ h, h₁ ≤ h →
+      ∃ B : Matrix (Fin n) (Fin n) ℝ, B * forwardEulerMatrix h A = 1 ∧ LTI.SchurStable B := by
+  classical
+  have hev : ∀ᶠ (h : ℝ) in atTop, ∀ μ ∈ (Linear.complexify A).charpoly.roots.toFinset,
+      μ.re < 0 → 1 < ‖1 + (h : ℂ) * μ‖ := by
+    rw [Filter.eventually_all_finset]
+    intro μ _
+    by_cases hμ : μ.re < 0
+    · have hμ2 : 0 < ‖μ‖ ^ 2 := by
+        have : μ ≠ 0 := fun h0 => by simp [h0] at hμ
+        positivity
+      have ht : Tendsto (fun h : ℝ => 2 * μ.re + h * ‖μ‖ ^ 2) atTop atTop :=
+        tendsto_atTop_add_const_left _ _ (tendsto_id.atTop_mul_const hμ2)
+      filter_upwards [ht.eventually_gt_atTop 0, eventually_gt_atTop 0] with h hc hpos _
+      have hgt : 1 < ‖1 + (h : ℂ) * μ‖ ^ 2 := by
+        rw [norm_one_add_mul_sq]
+        nlinarith [mul_pos hpos hc]
+      exact (one_lt_sq_iff₀ (norm_nonneg _)).mp hgt
+    · exact Eventually.of_forall fun _ h => absurd h hμ
+  obtain ⟨h₁, hP⟩ := eventually_atTop.mp hev
+  refine ⟨max h₁ 1, by positivity, fun h hh => ?_⟩
+  refine exists_inverse_schurStable_of_forall_eigen
+    (lt_of_lt_of_le one_pos (le_of_max_le_right hh)).ne' fun μ v hv heig => ?_
+  exact hP h (le_of_max_le_left hh) μ (mem_roots_of_eigen hv heig)
+    (Linear.isHurwitz_iff_forall_eigen.mp hA μ v hv heig)
 
 /-! ## The Euler map -/
 
@@ -162,19 +231,16 @@ def euler (F : Family X Q n 0) (f : X → ℝⁿ → ℝⁿ) (design : Y → X) 
 variable {F : Family X Q n 0} {f : X → EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)}
   {design : Y → X} {step : Y → ℝ}
 
-/-- A `C¹` field with an equilibrium at the origin and a Hurwitz Jacobian `J` has Euler maps
-locally exponentially stable at the origin for every step below a threshold. -/
-private theorem exists_euler_les {g : ℝⁿ → ℝⁿ} (hC : ContDiff ℝ 1 g) (h0 : g 0 = 0)
-    {J : Matrix (Fin n) (Fin n) ℝ} (hJ : fderiv ℝ g 0 = Map.op J) (hA : IsHurwitz J) :
-    ∃ h₀ : ℝ, 0 < h₀ ∧ ∀ h ∈ Set.Ioc (0 : ℝ) h₀,
-      Map.LocallyExponentiallyStable (eulerMap g h) 0 := by
-  obtain ⟨h₀, hh₀, hS⟩ := exists_forwardEuler_schurStable hA
-  have hd : HasFDerivAt g (Map.op J) 0 := by
-    rw [← hJ]
-    exact ((hC.differentiable one_ne_zero) 0).hasFDerivAt
-  refine ⟨h₀, hh₀, fun h hh => ?_⟩
-  exact Map.locallyExponentiallyStable_of_schurStable (hasFDerivAt_eulerMap hd h)
-    (by simp [eulerMap, h0]) (hS h hh)
+/-- A locally exponentially stable `C¹` field has an equilibrium at the origin with a Hurwitz
+Jacobian `J` (converse linearization). -/
+private theorem exists_isHurwitz_jacobian {g : ℝⁿ → ℝⁿ} (hC : ContDiff ℝ 1 g)
+    (hles : LocallyExponentiallyStable g 0) :
+    ∃ J : Matrix (Fin n) (Fin n) ℝ, fderiv ℝ g 0 = Map.op J ∧ g 0 = 0 ∧ IsHurwitz J := by
+  set J : Matrix (Fin n) (Fin n) ℝ :=
+    (Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ)).symm (fderiv ℝ g 0)
+  have hJ : fderiv ℝ g 0 = Map.op J :=
+    ((Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ)).apply_symm_apply _).symm
+  exact ⟨J, hJ, (Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian J hC hJ).mp hles⟩
 
 /-- **Small steps realize local exponential stability.** In a family of autonomous `C¹` fields, a
 locally exponentially stable model has a step `h₀ > 0` such that every Euler implementation of it
@@ -183,17 +249,15 @@ with a step in `(0, h₀]` is locally exponentially stable. -/
     (hC : ∀ x, ContDiff ℝ 1 (f x)) {x : X} (hx : x ∈ F.den (.flow .locallyExponentiallyStable)) :
     ∃ h₀ : ℝ, 0 < h₀ ∧ ∀ y : Y, design y = x → step y ∈ Set.Ioc (0 : ℝ) h₀ →
       y ∈ (eulerFamily F f design step).den (.flow .locallyExponentiallyStable) := by
-  have hles : LocallyExponentiallyStable (f x) 0 := hF.mem_den_flow.mp hx
-  set J : Matrix (Fin n) (Fin n) ℝ :=
-    (Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ)).symm (fderiv ℝ (f x) 0)
-  have hJ : fderiv ℝ (f x) 0 = Map.op J :=
-    ((Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ)).apply_symm_apply _).symm
-  obtain ⟨h0, hA⟩ :=
-    (Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian J (hC x) hJ).mp hles
-  obtain ⟨h₀, hh₀, hE⟩ := exists_euler_les (hC x) h0 hJ hA
+  obtain ⟨J, hJ, h0, hA⟩ := exists_isHurwitz_jacobian (hC x) (hF.mem_den_flow.mp hx)
+  obtain ⟨h₀, hh₀, hS⟩ := exists_forwardEuler_schurStable hA
+  have hd : HasFDerivAt (f x) (Map.op J) 0 := by
+    rw [← hJ]
+    exact (((hC x).differentiable one_ne_zero) 0).hasFDerivAt
   refine ⟨h₀, hh₀, fun y hy hstep => ?_⟩
   rw [(eulerFamily_isAutonomousMap F f design step).mem_den_flow, hy]
-  exact hE _ hstep
+  exact Map.locallyExponentiallyStable_of_schurStable (hasFDerivAt_eulerMap hd _)
+    (by simp [eulerMap, h0]) (hS _ hstep)
 
 /-- **Certified implementations with a small step.** For an Euler implementation certified for
 local exponential stability (every model it realizes is locally exponentially stable), every
@@ -233,6 +297,23 @@ Euler multiplier outside the closed unit disk) is not locally exponentially stab
       (by simp [eulerMap, h0]) hB hS hn
     exact hu (Map.LocallyExponentiallyStable.lyapunovStable hy)
 
+/-- **Large steps: without a step constraint the Euler realization is not sound.** In a family of
+autonomous `C¹` fields (`n > 0`), a locally exponentially stable model whose Euler implementations
+include arbitrarily large steps refutes realization soundness: its Jacobian `J` is Hurwitz
+(converse linearization), so above a step threshold every Euler multiplier `1 + hλ` lies outside
+the closed unit disk (`exists_forwardEuler_inverse_schurStable`) and that implementation is
+unstable. -/
+@[powerlib_foundation] theorem not_euler_realizationSoundUnder_of_large_step
+    (hF : F.IsAutonomous f) (hC : ∀ x, ContDiff ℝ 1 (f x)) (hn : 0 < n) {x : X}
+    (hx : x ∈ F.den (.flow .locallyExponentiallyStable))
+    (hY : ∀ h₁ : ℝ, ∃ y : Y, design y = x ∧ h₁ ≤ step y) :
+    ¬ (euler F f design step).RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable) := by
+  obtain ⟨J, hJ, h0, hA⟩ := exists_isHurwitz_jacobian (hC x) (hF.mem_den_flow.mp hx)
+  obtain ⟨h₁, -, hB⟩ := exists_forwardEuler_inverse_schurStable hA
+  obtain ⟨y, rfl, hy⟩ := hY h₁
+  obtain ⟨B, hB, hS⟩ := hB _ hy
+  exact not_euler_realizationSoundUnder hF hC hn y J B hJ h0 hA hB hS
+
 /-- A complex eigenvalue of a real scalar matrix `c I` is `c`. -/
 private theorem eigen_smul_one {c : ℝ} {μ : ℂ} {v : Fin n → ℂ} (hv : v ≠ 0)
     (heig : (c • (1 : Matrix (Fin n) (Fin n) ℝ)).map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
@@ -268,18 +349,10 @@ step constraint. -/
     intro μ v hv heig
     rw [eigen_smul_one hv heig]
     norm_num
-  have hE : forwardEulerMatrix 3 ((-1 : ℝ) • (1 : Matrix (Fin n) (Fin n) ℝ)) =
-      (-2 : ℝ) • (1 : Matrix (Fin n) (Fin n) ℝ) := by
-    rw [forwardEulerMatrix]
-    module
-  have hB : ((-1 / 2 : ℝ) • (1 : Matrix (Fin n) (Fin n) ℝ)) *
-      forwardEulerMatrix (step y) ((-1 : ℝ) • (1 : Matrix (Fin n) (Fin n) ℝ)) = 1 := by
-    rw [hy, hE, smul_mul_smul_comm, mul_one]
-    norm_num
-  have hS : LTI.SchurStable ((-1 / 2 : ℝ) • (1 : Matrix (Fin n) (Fin n) ℝ)) := by
-    intro μ v hv heig
-    rw [eigen_smul_one hv heig]
-    norm_num
-  exact not_euler_realizationSoundUnder hF hC hn y _ _ hJ (by rw [hx]; exact neg_zero) hA hB hS
+  obtain ⟨B, hB, hS⟩ := exists_inverse_schurStable_of_forall_eigen (h := step y)
+    (A := (-1 : ℝ) • (1 : Matrix (Fin n) (Fin n) ℝ)) (by rw [hy]; norm_num) fun μ v hv heig => by
+      rw [eigen_smul_one hv heig, hy]
+      norm_num
+  exact not_euler_realizationSoundUnder hF hC hn y _ B hJ (by rw [hx]; exact neg_zero) hA hB hS
 
 end powerlib.Numerics

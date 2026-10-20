@@ -5,18 +5,25 @@ module theorem.SwitchedAveraging where
 -- system `ẋ = Ā x`, `Ā = d A₁ + (1 − d) A₂`; its implementation switches between `A₁` and `A₂` with
 -- duty `d` and period `T`, read stroboscopically (the period map `M_T = e^{(1−d) T A₂} e^{d T A₁}`
 -- as a discrete system of period `T`), and realizes the averaged model it is designed from
--- (`ofDesign`, design map `(d, T, A₁, A₂) ↦ Ā`). The realization is a relation that holds only
--- under a constraint: fast switching. If `Ā` is Hurwitz, every switching period below a threshold
--- gives a Schur period map, so the switched implementation satisfies every attractive sentence its
--- averaged model satisfies (`sound-fast`); without the constraint the realization is not sound —
--- slow switching between two Hurwitz matrices with a Hurwitz average can have a period map with a
--- multiplier below `−1` (`not-sound-slow`, a period-doubling instability). Lean
--- (`theorem/Averaging/SwitchedFamily.lean`): `fast` is
+-- (`ofDesign`, design map `(d, T, A₁, A₂) ↦ Ā`). The realization holds under constraints. Fast
+-- switching: if `Ā` is Hurwitz, every switching period below a threshold gives a Schur period map,
+-- so the switched implementation satisfies every attractive sentence its averaged model satisfies
+-- (`sound-fast`). Commuting topologies: then `M_T = e^{T Ā}`, the switched system is the exact
+-- sampling of its average, and the realization is exact for every sentence at every period
+-- (`commuting-exact`, through the exact-sampling reading of `theorem/ExactSampling.agda`); in
+-- dimension one every pair commutes, so there the realization is exact without constraint
+-- (`dimension-one`). Without a constraint, in dimension two and above, the realization is not sound
+-- — slow switching between two Hurwitz matrices with a Hurwitz average can have a period map with
+-- a multiplier below `−1` (`not-sound-slow`, a period-doubling instability). Lean
+-- (`theorem/Averaging/SwitchedStability.lean`, `theorem/Averaging/SwitchedFamily.lean`): `fast` is
 -- `Averaging.periodMap_schurStable_of_isHurwitz`, `slow` is
--- `Averaging.slowSwitching_counterexample` (in `ℝ²`), the readings are
--- `Family.IsLinear.den_hurwitz` and `Map.holdsMap_op_iff_schurStable`, `sound-fast` is
--- `Averaging.switching_sound_fast` and `not-sound-slow` is
--- `Averaging.not_switching_realizationSoundUnder`. Nothing here is exported.
+-- `Averaging.slowSwitching_counterexample_of_two_le` (every `n ≥ 2`, the `ℝ²` example embedded
+-- block-diagonally), `commute` is `Averaging.periodMap_eq_exp_of_commute`, `sampling` is
+-- `LTI.holds_iff_holdsMap_exp` (read as `LTI.sampled_reading`), `sound-fast` is
+-- `Averaging.switching_sound_fast`, `not-sound-slow` is
+-- `Averaging.not_switching_realizationSoundUnder`, `commuting-exact` is
+-- `Averaging.switching_realizationExactUnder_commuting`, `dimension-one` is
+-- `Averaging.switching_realizationExactUnder_of_le_one`. Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Sigma
@@ -37,6 +44,7 @@ module _ (S : Semantics) where
     (Hurwitz Schur : Mat → Type)
     (continuous : Mat → System) (discrete : Period → Mat → System)
     (Attractive : Sentence → Type)
+    (exp : Period → Mat → Mat) (Commute : Mat → Mat → Type)
     -- What Lean proves.
     (continuous-reading : (s : Sentence) → Attractive s → (A : Mat) →
       holds (continuous A) s ↔ Hurwitz A)
@@ -46,6 +54,10 @@ module _ (S : Semantics) where
       Σ[ T₀ ∈ Period ] ((T : Period) → T ≤ T₀ → Schur (periodMap d T A₁ A₂)))
     (slow : Σ[ d ∈ Duty ] Σ[ T ∈ Period ] Σ[ A₁ ∈ Mat ] Σ[ A₂ ∈ Mat ]
       Hurwitz (avg d A₁ A₂) × (¬ Schur (periodMap d T A₁ A₂)))
+    (commute : (d : Duty) (T : Period) (A₁ A₂ : Mat) → Commute A₁ A₂ →
+      periodMap d T A₁ A₂ ≡ exp T (avg d A₁ A₂))
+    (sampling : (T : Period) (A : Mat) (s : Sentence) →
+      holds (discrete T (exp T A)) s ↔ holds (continuous A) s)
     where
 
     Switched : Type
@@ -58,11 +70,15 @@ module _ (S : Semantics) where
     model = record
       { Model = Mat ; Req = ⊥ ; system = continuous ; meets = λ _ () ; translate = λ _ () }
 
+    -- The realistic constraint the switched family can state about itself.
+    data Constraint : Type where
+      commuting : Constraint
+
     switched : Family
     switched = record
-      { Model = Switched ; Req = ⊥
+      { Model = Switched ; Req = Constraint
       ; system = λ { (d , T , A₁ , A₂) → discrete T (periodMap d T A₁ A₂) }
-      ; meets = λ _ () ; translate = λ _ () }
+      ; meets = λ { (d , T , A₁ , A₂) commuting → Commute A₁ A₂ } ; translate = λ _ _ → ⊥ }
 
     open Design model switched average
 
@@ -82,3 +98,22 @@ module _ (S : Semantics) where
       in not-sound-of-witness designed (d , T , A₁ , A₂) (λ _ ())
         (snd (certified↔ s (d , T , A₁ , A₂)) (snd (continuous-reading s a (avg d A₁ A₂)) hH))
         (λ h → hS (fst (discrete-reading s a T (periodMap d T A₁ A₂)) h))
+
+    -- Commuting topologies: the switched system is the exact sampling of its average, so the
+    -- realization is exact for every sentence at every period.
+    commuting-exact : (s : Sentence) → ExactUnder' designed (λ r → r ≡ commuting) s
+    commuting-exact s (d , T , A₁ , A₂) r =
+      let p = commute d T A₁ A₂ (r commuting refl)
+          toModel : den switched s (d , T , A₁ , A₂) → den model s (avg d A₁ A₂)
+          toModel h = fst (sampling T (avg d A₁ A₂) s) (subst (λ M → holds (discrete T M) s) p h)
+          fromModel : den model s (avg d A₁ A₂) → den switched s (d , T , A₁ , A₂)
+          fromModel h =
+            subst (λ M → holds (discrete T M) s) (sym p) (snd (sampling T (avg d A₁ A₂) s) h)
+      in ↔-trans (certified↔ s (d , T , A₁ , A₂)) (fromModel , toModel)
+
+    -- Where every pair of matrices commutes (dimension one), the realization is exact without
+    -- constraint.
+    dimension-one : ((A₁ A₂ : Mat) → Commute A₁ A₂) → (s : Sentence) →
+      ExactUnder' designed (λ _ → ⊥) s
+    dimension-one all s (d , T , A₁ , A₂) _ =
+      commuting-exact s (d , T , A₁ , A₂) (λ { commuting _ → all A₁ A₂ })

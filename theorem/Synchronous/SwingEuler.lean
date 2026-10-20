@@ -22,12 +22,12 @@ Model boundary.
 * Level: local exponential stability of the selected point.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step`,
-`euler_certified_small_step`), `theorem/Synchronous/Swing.lean` (`family_isAutonomous`,
-`SwingParams.contDiff_field`); work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
+`euler_certified_small_step`, `not_euler_realizationSoundUnder_of_large_step`),
+`theorem/Synchronous/Swing.lean` (`family_isAutonomous`, `SwingParams.contDiff_field`,
+`mem_den_locallyExponentiallyStable`); work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
 
 Results.
-* No static result beyond the family definitions; the witness `overstep` and the left inverse of
-  its Euler Jacobian are private evidence.
+* No static result beyond the family definitions.
 
 Family and connection conclusions.
 * `Swing.eulerFamily : Family Swing.Euler Requirement 2 0`: every integration read as its Euler
@@ -39,10 +39,11 @@ Family and connection conclusions.
   and synchronizing coefficient, `Swing.mem_den_locallyExponentiallyStable`) has a step `h₀ > 0`
   such that every Euler integration with a step `h ≤ h₀` is locally exponentially stable.
   `euler_certified_small_step` (scaffold `certified-small-step`): the same for the design of an
-  integration certified for local exponential stability. `not_euler_realizationSoundUnder`:
-  without a step constraint the realization is not sound — `M = 1`, `D = 4`, `K = 4` at a balanced
-  angle with step `h = 3` has both Euler multipliers at `−5` (the generic witness
-  `Numerics.not_euler_realizationSoundUnder`).
+  integration certified for local exponential stability. `not_euler_realizationSoundUnder`
+  (scaffold `not-sound-large-step`): without a step constraint the realization is not sound — the
+  locally exponentially stable model `M = 1`, `D = 4`, `K = 4` at a balanced angle has Euler
+  integrations with every Euler multiplier outside the unit disk (`h = 3`: both at `−5`; the
+  generic law `Numerics.not_euler_realizationSoundUnder_of_large_step`).
 -/
 
 noncomputable section
@@ -98,58 +99,17 @@ of its swing model with a step below a threshold is locally exponentially stable
     contDiff_modelField hy
   exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
-/-- The overstepped integration: `M = 1`, `D = 4`, `P_m = k₁ = k₃ = 0`, `k₂ = 4`, `δ* = 0`
-(Jacobian `[[0, 1], [−4, −4]]`, eigenvalue `−2` twice), step `h = 3` (Euler multiplier
-`1 + 3 (−2) = −5` twice). -/
-private def overstep : Euler := ⟨⟨⟨1, 4, 0, 0, 4, 0⟩, 0⟩, 3, by norm_num⟩
-
-/-- The left inverse `(I + 3 J)⁻¹ = [[−11, −3], [12, 1]] / 25` of the overstepped Euler
-Jacobian. -/
-private def overstepInverse : Matrix (Fin 2) (Fin 2) ℝ := (1 / 25 : ℝ) • !![-11, -3; 12, 1]
-
-/-- **Without a step constraint the Euler realization of the swing family is not sound.** The
-overstepped integration (`M = 1`, `D = 4`, `K = 4` at a balanced angle, step `h = 3`) is not
-locally exponentially stable although its swing model is: both Euler multipliers are `−5`. -/
+/-- **Without a step constraint the Euler realization of the swing family is not sound.** A
+locally exponentially stable swing model (`M = 1`, `D = 4`, `K = 4` at a balanced angle) integrated
+with a large enough step is not locally exponentially stable: every Euler multiplier `1 + hλ` leaves
+the unit disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
 @[powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  set J := overstep.design.p.jacobian 0 with hJdef
-  have hJ : fderiv ℝ overstep.design.field 0 = Map.op J := by
-    change fderiv ℝ (fun z => overstep.design.p.field (z + overstep.design.point)) 0 = _
-    rw [fderiv_comp_add_right, zero_add, Model.fderiv_point]
-    rfl
-  have h0 : overstep.design.field 0 = 0 := by
-    change overstep.design.p.field (0 + overstep.design.point) = 0
-    rw [zero_add, SwingParams.field_eq_zero_iff _ (by norm_num [overstep])]
-    simp [overstep, Model.point, SwingParams.Pe]
-  have hA : LinearSystems.IsHurwitz J :=
-    (SwingParams.isHurwitz_jacobian_iff _ (by norm_num [overstep]) 0).mpr
-      ⟨by norm_num [overstep], by norm_num [overstep, SwingParams.syncCoeff]⟩
-  have hB : overstepInverse * Numerics.forwardEulerMatrix overstep.h J = 1 := by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [overstepInverse, Numerics.forwardEulerMatrix, hJdef, overstep, SwingParams.jacobian,
-        SwingParams.syncCoeff, Matrix.mul_apply, Fin.sum_univ_two] <;> norm_num
-  have hS : LTI.SchurStable overstepInverse := by
-    intro μ v hv heig
-    have hdet := Criteria.det_characteristicMatrix_eq_zero_of_eigenpair _ hv heig
-    rw [Criteria.det_characteristicMatrix_fin_two] at hdet
-    have htr : overstepInverse.trace = -2 / 5 := by
-      simp [overstepInverse, Matrix.trace_fin_two]
-      norm_num
-    have hdt : overstepInverse.det = 1 / 25 := by
-      simp [overstepInverse, Matrix.det_fin_two]
-      norm_num
-    rw [htr, hdt] at hdet
-    have hsq : (μ + 1 / 5) ^ 2 = 0 := by
-      push_cast at hdet
-      linear_combination hdet
-    have hμ : μ = -1 / 5 := by
-      have := pow_eq_zero_iff (two_ne_zero) |>.mp hsq
-      linear_combination this
-    rw [hμ]
-    norm_num
-  exact Numerics.not_euler_realizationSoundUnder family_isAutonomous contDiff_modelField
-    (by norm_num) overstep J overstepInverse hJ h0 hA hB hS
+  have hm := mem_den_locallyExponentiallyStable ⟨⟨1, 4, 0, 0, 4, 0⟩, 0⟩ one_pos (by norm_num)
+    (by simp [SwingParams.Pe]) (by norm_num [SwingParams.syncCoeff])
+  unfold powerlib.TMIO.Statement at hm
+  exact Numerics.not_euler_realizationSoundUnder_of_large_step family_isAutonomous
+    contDiff_modelField two_pos hm fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.Synchronous.Swing

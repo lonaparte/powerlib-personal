@@ -9,8 +9,9 @@ For fast switching, a Hurwitz state-space averaged matrix `Ā = d A₁ + (1 − 
 trajectory of the ideal two-topology switched linear converter decay exponentially, ripple
 included, with constants independent of the switching period `T ≤ T₀`, and the averaging error
 `O(T)` holds on the whole half line. Conversely such a `T`-uniform decay forces `Ā` Hurwitz. For
-slow switching the transfer fails: two Hurwitz topologies with a Hurwitz average switch into an
-unstable system.
+commuting topologies the period map is `e^{TĀ}` at every switching period. For slow switching the
+transfer fails in every dimension `n ≥ 2`: two Hurwitz topologies with a Hurwitz average switch
+into an unstable system.
 
 Scope.
 * The model boundary of `theorem/Averaging/StateSpaceAveraging.lean`: an ideal two-topology
@@ -57,7 +58,9 @@ system, an unstable one repels it; here the linear case with the `T`-uniform con
 LeanForControl `LinearSystems.spectralRadius_exp_complexification_lt_one` and
 `MatrixAlgebra.complexification_exp`, `theorem/Periodic/LTI.lean`
 (`monodromy_const_mulVec_eigen`, `norm_exp_mul_eq`), `theorem/Criteria/Hurwitz2.lean`
-(`isHurwitz_fin_two_of_iff`).
+(`isHurwitz_fin_two_of_iff`), `theorem/Linear/Transfer.lean` (`spectrallyStable_reindex`,
+`spectrallyStable_iff_isHurwitz`), Mathlib `NormedSpace.exp_add_of_commute_of_mem_ball` and
+`NormedSpace.map_exp_of_mem_ball`.
 
 Results.
 * Banach algebra (`‖1‖ = 1`), `M_T = e^{(1−d)TA₂} e^{dTA₁}` (`periodMap`), `Ā` (`avgMatrix`):
@@ -67,9 +70,17 @@ Results.
   `exists_periodMap_pow_decay` (`‖M_T^k‖ ≤ C e^{−α k T}` with `C`, `α` independent of `T`, from
   the block bound `LTI.norm_pow_le_of_block`);
   `exists_periodMap_pow_sub_le` (`‖M_T^k − e^{kTĀ}‖ ≤ C T` for **every** `k`, through the
-  telescoping identity `pow_sub_pow_eq_sum` and both decays). Auxiliary: `exp_natCast_mul_smul`,
-  `avgMatrix_self`, `periodMap_self`, `exp_smul_sqZero_sub_smul_one`
-  (`e^{s(N − ε)} = e^{−εs}(1 + sN)` for `N² = 0`).
+  telescoping identity `pow_sub_pow_eq_sum` and both decays);
+  `periodMap_eq_exp_of_commute` (commuting topologies: `M_T = e^{TĀ}` at every switching period;
+  `periodMap_self` is the case `A₁ = A₂`); `map_periodMap` (the period map commutes with
+  continuous algebra homomorphisms). Auxiliary: `exp_natCast_mul_smul`, `avgMatrix_self`,
+  `exp_smul_sqZero_sub_smul_one` (`e^{s(N − ε)} = e^{−εs}(1 + sN)` for `N² = 0`).
+* Block-diagonal pairs (states relabelled along `e : m ⊕ k ≃ ι`): `periodMap_reindex_fromBlocks`,
+  `avgMatrix_reindex_fromBlocks` (the period map and the average of a pair of block-diagonal
+  topologies are block diagonal, through the exponential of a block-diagonal matrix);
+  `isHurwitz_reindex_fromBlocks` (Hurwitz blocks give a Hurwitz matrix: the characteristic
+  determinant is the product of the blocks'); `schurStable_of_reindex_fromBlocks` (an eigenvalue
+  of a block is an eigenvalue of the whole, so Schur stability of the whole gives that of a block).
 * Switched trajectories (any finite index type, contractive averaged block):
   `exists_switched_trajectory` (every initial state has a switched trajectory, so the statements
   about every switched trajectory are not vacuous); `switched_decay_of_norm_exp_lt_one`
@@ -90,6 +101,9 @@ Results.
   trace `e^{−εT}(2 − T²/4)`, determinant `e^{−2εT}`); `slowSwitching_counterexample` (`ε = 1/10`:
   `A₁`, `A₂` and `Ā = [[−1/10, 1/2], [−1/2, −1/10]]` are Hurwitz, but `M_5 (1, −2) =
   −4 e^{−1/2} (1, −2)`, `4 e^{−1/2} ≈ 2.43`, so `M_5` is not Schur stable);
+  `slowSwitching_counterexample_of_two_le` (every dimension `n ≥ 2`: the example embedded
+  block-diagonally, `Aᵢ ⊕ (−1)` on the remaining `n − 2` coordinates, keeps Hurwitz topologies, a
+  Hurwitz average and a period map that is not Schur stable);
   `slowSwitching_unbounded_trajectory` (a switched trajectory from `(1, −2)` with
   `x(5k) = (−4 e^{−1/2})^k (1, −2)`, unbounded). The instability is a flip (period-doubling,
   real multiplier `< −1`, a subharmonic oscillation at half the switching frequency) once the
@@ -329,10 +343,33 @@ omit [CompleteSpace 𝔸] [NormOneClass 𝔸] in
   rw [avgMatrix, ← add_smul, add_sub_cancel, one_smul]
 
 omit [NormOneClass 𝔸] in
+/-- **Commuting topologies.** If `A₁ A₂ = A₂ A₁`, the period map is the exponential of the
+averaged matrix over one period: `e^{(1−d)TA₂} e^{dTA₁} = e^{TĀ}`, at every switching period. -/
+@[powerlib_foundation] theorem periodMap_eq_exp_of_commute (d T : ℝ) {A₁ A₂ : 𝔸}
+    (h : Commute A₁ A₂) : periodMap d T A₁ A₂ = NormedSpace.exp (T • avgMatrix d A₁ A₂) := by
+  have hT : T • avgMatrix d A₁ A₂ = ((1 - d) * T) • A₂ + (d * T) • A₁ := by
+    rw [avgMatrix, smul_add, smul_smul, smul_smul, add_comm, mul_comm T, mul_comm T]
+  rw [periodMap, hT]
+  refine (NormedSpace.exp_add_of_commute_of_mem_ball (𝕂 := ℝ)
+    ((h.symm.smul_left _).smul_right _) ?_ ?_).symm <;>
+  · rw [NormedSpace.expSeries_radius_eq_top]
+    simp
+
+omit [NormOneClass 𝔸] in
 /-- The period map of a single topology is its exponential over one period. -/
 @[powerlib_foundation] theorem periodMap_self (d T : ℝ) (A : 𝔸) :
     periodMap d T A A = NormedSpace.exp (T • A) := by
-  rw [periodMap, ← exp_add_smul, show (1 - d) * T + d * T = T by ring]
+  rw [periodMap_eq_exp_of_commute d T (Commute.refl A), avgMatrix_self]
+
+omit [NormOneClass 𝔸] in
+/-- The period map commutes with continuous algebra homomorphisms. -/
+@[powerlib_foundation] theorem map_periodMap {𝔹 : Type*} [NormedRing 𝔹] [NormedAlgebra ℝ 𝔹]
+    (f : 𝔸 →ₐ[ℝ] 𝔹) (hf : Continuous f) (d T : ℝ) (A₁ A₂ : 𝔸) :
+    f (periodMap d T A₁ A₂) = periodMap d T (f A₁) (f A₂) := by
+  have h (x : 𝔸) : f (NormedSpace.exp x) = NormedSpace.exp (f x) :=
+    NormedSpace.map_exp_of_mem_ball (𝕂 := ℝ) f hf x
+      (by rw [NormedSpace.expSeries_radius_eq_top]; exact edist_lt_top _ _)
+  simp only [periodMap, map_mul, h, map_smul]
 
 /-- **Averaging error on the infinite horizon (sampled).** If the averaged model contracts over
 some horizon (`‖e^{HĀ}‖ < 1`), there are `T₀ ∈ (0, 1]` and `C` such that for every switching
@@ -850,6 +887,89 @@ switching period `T ∈ (0, T₀]` decays exponentially with constants independe
 
 end Hurwitz
 
+/-! ## Block-diagonal pairs -/
+
+section Blocks
+
+variable {m k ι : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k] [Fintype ι]
+  [DecidableEq ι]
+
+/-- The block-diagonal embedding `(A, D) ↦ diag(A, D)` of a pair of square matrices. -/
+private def blockAlgHom : Matrix m m ℝ × Matrix k k ℝ →ₐ[ℝ] Matrix (m ⊕ k) (m ⊕ k) ℝ where
+  toFun p := fromBlocks p.1 0 0 p.2
+  map_one' := fromBlocks_one
+  map_mul' p q := by simp [fromBlocks_multiply]
+  map_zero' := fromBlocks_zero
+  map_add' p q := by simp [fromBlocks_add]
+  commutes' r := by simp [Algebra.algebraMap_eq_smul_one, ← fromBlocks_one, fromBlocks_smul]
+
+/-- The period map of a block-diagonal pair is block diagonal (states relabelled along `e`):
+`M_T(diag(A₁, D₁), diag(A₂, D₂)) = diag(M_T(A₁, A₂), M_T(D₁, D₂))`, through the exponential of a
+block-diagonal matrix (`map_periodMap`). -/
+@[powerlib_foundation] theorem periodMap_reindex_fromBlocks (e : m ⊕ k ≃ ι) (d T : ℝ)
+    (A₁ A₂ : Matrix m m ℝ) (D₁ D₂ : Matrix k k ℝ) :
+    periodMap d T ((fromBlocks A₁ 0 0 D₁).reindex e e) ((fromBlocks A₂ 0 0 D₂).reindex e e) =
+      (fromBlocks (periodMap d T A₁ A₂) 0 0 (periodMap d T D₁ D₂)).reindex e e := by
+  set f := (reindexAlgEquiv ℝ ℝ e).toAlgHom.comp (blockAlgHom (m := m) (k := k))
+  have hf : Continuous f :=
+    (Continuous.matrix_fromBlocks continuous_fst continuous_const continuous_const
+      continuous_snd).matrix_reindex e e
+  have h1 := map_periodMap (AlgHom.fst ℝ _ _) continuous_fst d T (A₁, D₁) (A₂, D₂)
+  have h2 := map_periodMap (AlgHom.snd ℝ _ _) continuous_snd d T (A₁, D₁) (A₂, D₂)
+  change periodMap d T (f (A₁, D₁)) (f (A₂, D₂)) = _
+  rw [← map_periodMap f hf]
+  change (fromBlocks (periodMap d T (A₁, D₁) (A₂, D₂)).1 0 0
+    (periodMap d T (A₁, D₁) (A₂, D₂)).2).reindex e e = _
+  rw [show (periodMap d T (A₁, D₁) (A₂, D₂)).1 = periodMap d T A₁ A₂ from h1,
+    show (periodMap d T (A₁, D₁) (A₂, D₂)).2 = periodMap d T D₁ D₂ from h2]
+
+/-- The averaged matrix of a block-diagonal pair is block diagonal (states relabelled along
+`e`). -/
+@[powerlib_foundation] theorem avgMatrix_reindex_fromBlocks (e : m ⊕ k ≃ ι) (d : ℝ)
+    (A₁ A₂ : Matrix m m ℝ) (D₁ D₂ : Matrix k k ℝ) :
+    avgMatrix d ((fromBlocks A₁ 0 0 D₁).reindex e e) ((fromBlocks A₂ 0 0 D₂).reindex e e) =
+      (fromBlocks (avgMatrix d A₁ A₂) 0 0 (avgMatrix d D₁ D₂)).reindex e e := by
+  set f := (reindexAlgEquiv ℝ ℝ e).toAlgHom.comp (blockAlgHom (m := m) (k := k))
+  change avgMatrix d (f (A₁, D₁)) (f (A₂, D₂)) = f (avgMatrix d (A₁, D₁) (A₂, D₂))
+  simp only [avgMatrix, map_add, map_smul]
+
+/-- A block-diagonal matrix with Hurwitz blocks is Hurwitz (states relabelled along `e`): its
+characteristic determinant is the product of the blocks' (`Linear.spectrallyStable_reindex`). -/
+@[powerlib_foundation] theorem isHurwitz_reindex_fromBlocks {p q n : ℕ}
+    (e : Fin p ⊕ Fin q ≃ Fin n) {A : Matrix (Fin p) (Fin p) ℝ} {D : Matrix (Fin q) (Fin q) ℝ}
+    (hA : LinearSystems.IsHurwitz A) (hD : LinearSystems.IsHurwitz D) :
+    LinearSystems.IsHurwitz ((fromBlocks A 0 0 D).reindex e e) := by
+  rw [← Linear.spectrallyStable_iff_isHurwitz, Linear.spectrallyStable_reindex]
+  rw [← Linear.spectrallyStable_iff_isHurwitz] at hA hD
+  intro s hs
+  have hc : Linear.characteristicMatrix (fromBlocks A 0 0 D) s =
+      fromBlocks (Linear.characteristicMatrix A s) 0 0 (Linear.characteristicMatrix D s) := by
+    ext (i | i) (j | j) <;> simp [Linear.characteristicMatrix, one_apply]
+  rw [hc, det_fromBlocks_zero₂₁, mul_eq_zero] at hs
+  rcases hs with h | h
+  exacts [hA s h, hD s h]
+
+/-- An eigenvalue of a block is an eigenvalue of the block-diagonal matrix (states relabelled
+along `e`): Schur stability of the whole gives Schur stability of the block. -/
+@[powerlib_foundation] theorem schurStable_of_reindex_fromBlocks {p q n : ℕ}
+    (e : Fin p ⊕ Fin q ≃ Fin n) {P : Matrix (Fin p) (Fin p) ℝ} (Q : Matrix (Fin q) (Fin q) ℝ)
+    (h : LTI.SchurStable ((fromBlocks P 0 0 Q).reindex e e)) : LTI.SchurStable P := by
+  intro μ v hv hPv
+  refine h μ (Sum.elim v 0 ∘ e.symm) ?_ ?_
+  · intro h0
+    apply hv
+    ext i
+    simpa using congrFun h0 (e (Sum.inl i))
+  · have hx : (Sum.elim v 0 ∘ e.symm) ∘ e.symm.symm = Sum.elim v 0 := by
+      ext x
+      simp
+    rw [reindex_apply, ← submatrix_map, submatrix_mulVec_equiv, hx, fromBlocks_map,
+      fromBlocks_mulVec, Sum.elim_comp_inl, Sum.elim_comp_inr, hPv]
+    ext i
+    rcases h' : e.symm i with j | j <;> simp [h']
+
+end Blocks
+
 /-! ## Slow switching: a Hurwitz average does not suffice -/
 
 section Counterexample
@@ -936,6 +1056,34 @@ the period map has the real eigenvalue `−4 e^{−1/2}` (modulus `≈ 2.43 > 1`
       norm_num
     rw [this] at h1
     linarith
+
+/-- **Slow switching destabilizes a Hurwitz average in every dimension `n ≥ 2`.** The example of
+`slowSwitching_counterexample` embedded block-diagonally, `Aᵢ ⊕ (−1)` on the remaining `n − 2`
+coordinates (`Fin n ≃ Fin 2 ⊕ Fin (n − 2)`): both topologies and their average (`d = 1/2`) are
+Hurwitz, but at the switching period `T = 5` the period map, block diagonal, carries the
+eigenvalue `−4 e^{−1/2}` of its first block and is not Schur stable. -/
+@[powerlib_foundation] theorem slowSwitching_counterexample_of_two_le {n : ℕ} (hn : 2 ≤ n) :
+    ∃ A₁ A₂ : Matrix (Fin n) (Fin n) ℝ, LinearSystems.IsHurwitz A₁ ∧
+      LinearSystems.IsHurwitz A₂ ∧ LinearSystems.IsHurwitz (avgMatrix (1 / 2) A₁ A₂) ∧
+      ¬ LTI.SchurStable (periodMap (1 / 2) 5 A₁ A₂) := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hn
+  obtain ⟨h₁, h₂, havg, -, hnot⟩ := slowSwitching_counterexample
+  have hD : LinearSystems.IsHurwitz (-1 : Matrix (Fin k) (Fin k) ℝ) := by
+    intro μ v hv h
+    rw [Matrix.map_neg _ (map_neg _), Matrix.map_one _ (map_zero _) (map_one _),
+      Matrix.neg_mulVec, Matrix.one_mulVec] at h
+    have h0 : (μ + 1) • v = 0 := by rw [add_smul, one_smul, ← h, neg_add_cancel]
+    rcases smul_eq_zero.mp h0 with h1 | h1
+    · rw [eq_neg_of_add_eq_zero_left h1]
+      norm_num
+    · exact absurd h1 hv
+  set e : Fin 2 ⊕ Fin k ≃ Fin (2 + k) := finSumFinEquiv
+  refine ⟨(fromBlocks _ 0 0 (-1)).reindex e e, (fromBlocks _ 0 0 (-1)).reindex e e,
+    isHurwitz_reindex_fromBlocks e h₁ hD, isHurwitz_reindex_fromBlocks e h₂ hD, ?_, ?_⟩
+  · rw [avgMatrix_reindex_fromBlocks, avgMatrix_self]
+    exact isHurwitz_reindex_fromBlocks e havg hD
+  · rw [periodMap_reindex_fromBlocks]
+    exact fun h => hnot (schurStable_of_reindex_fromBlocks e _ h)
 
 /-- **Slow switching, trajectory form.** For the example of `slowSwitching_counterexample`
 (`A₁ = [[−1/10, 1], [0, −1/10]]`, `A₂ = [[−1/10, 0], [−1, −1/10]]`, `d = 1/2`, `T = 5`; both
