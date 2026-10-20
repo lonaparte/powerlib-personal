@@ -84,7 +84,8 @@ open Filter Topology Real
 
 /-- `ln D_s` of a tube with inner radius `a` and outer radius `b` (§1.2.3). -/
 def lnGMR (a b : ℝ) : ℝ :=
-  Real.log b - a ^ 4 / (b ^ 2 - a ^ 2) ^ 2 * Real.log (b / a) + a ^ 2 / (2 * (b ^ 2 - a ^ 2)) - 1 / 4
+  Real.log b - a ^ 4 / (b ^ 2 - a ^ 2) ^ 2 * Real.log (b / a) +
+    a ^ 2 / (2 * (b ^ 2 - a ^ 2)) - 1 / 4
 
 /-- Solid-conductor limit: `ln D_s → ln r_sh - 1/4` (`D_s → e^{-1/4} r_sh`) as `r_in → 0⁺`. -/
 @[powerlib_foundation] theorem lnGMR_solid_limit {b : ℝ} (hb : 0 < b) :
@@ -219,7 +220,8 @@ def lnGMR (a b : ℝ) : ℝ :=
   rw [Real.log_div hb.ne' ha.ne']
   ring
 
-/-- `r_j` cancels in the screen–earth loop inductance: `ln(r_j/r_sh) + ln(D_e/r_j) = ln(D_e/r_sh)`. -/
+/-- `r_j` cancels in the screen–earth loop inductance:
+`ln(r_j/r_sh) + ln(D_e/r_j) = ln(D_e/r_sh)`. -/
 @[powerlib_foundation] theorem log_jacket_cancel {rsh rj De : ℝ} (hsh : 0 < rsh) (hj : 0 < rj)
     (hDe : 0 < De) : Real.log (rj / rsh) + Real.log (De / rj) = Real.log (De / rsh) := by
   rw [Real.log_div hj.ne' hsh.ne', Real.log_div hDe.ne' hj.ne', Real.log_div hDe.ne' hsh.ne']
@@ -301,7 +303,8 @@ then `I_c(0) D̂ = I_c(ℓ) N̂`. -/
   simp only [Nhat, Dhat, Aterm, zero_mul, add_zero]
   field_simp
 
-/-- `N̂ - (cosh γ₁ℓ + Z_L sinh γ₁ℓ/Z_{c1}) D̂ = R_b sinh γ₁ℓ/Z_{c1} (cosh γ₂ℓ - cosh γ₁ℓ - Z_L sinh γ₁ℓ/Z_{c1})`;
+/-- `N̂ - (cosh γ₁ℓ + Z_L sinh γ₁ℓ/Z_{c1}) D̂ =
+R_b sinh γ₁ℓ/Z_{c1} (cosh γ₂ℓ - cosh γ₁ℓ - Z_L sinh γ₁ℓ/Z_{c1})`;
 on `D̂ = 0` this is the value of `N̂`. -/
 @[powerlib_foundation] theorem Nhat_on_Dhat_zero {c₁ s₁ Y₁ c₂ s₂ Y₂ Rb ZL : ℂ}
     (hD : Dhat c₁ s₁ Y₁ c₂ s₂ Y₂ Rb = 0) :
@@ -499,7 +502,8 @@ DC resistance of the tube (no screening at DC). -/
   have h := (((tendsto_div_sinh_mul (t := b - a) (by linarith)).mul hc).const_mul
     ((ρ / (2 * Real.pi * a) : ℝ) : ℂ)).sub_const ((ρ / (2 * Real.pi * a * (a + b)) : ℝ) : ℂ)
   have e : ((ρ / (2 * Real.pi * a) : ℝ) : ℂ) * (((1 / (b - a) : ℝ) : ℂ) * 1) -
-      ((ρ / (2 * Real.pi * a * (a + b)) : ℝ) : ℂ) = ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ) := by
+      ((ρ / (2 * Real.pi * a * (a + b)) : ℝ) : ℂ) =
+        ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ) := by
     have h1 : b - a ≠ 0 := by linarith
     have h2 : a + b ≠ 0 := by linarith
     have h3 : b ^ 2 - a ^ 2 ≠ 0 := by nlinarith
@@ -528,7 +532,8 @@ DC resistance of the tube (no screening at DC). -/
   have h := (((tendsto_div_sinh_mul (t := b - a) (by linarith)).mul hc).const_mul
     ((ρ / (2 * Real.pi * b) : ℝ) : ℂ)).add_const ((ρ / (2 * Real.pi * b * (a + b)) : ℝ) : ℂ)
   have e : ((ρ / (2 * Real.pi * b) : ℝ) : ℂ) * (((1 / (b - a) : ℝ) : ℂ) * 1) +
-      ((ρ / (2 * Real.pi * b * (a + b)) : ℝ) : ℂ) = ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ) := by
+      ((ρ / (2 * Real.pi * b * (a + b)) : ℝ) : ℂ) =
+        ((ρ / (Real.pi * (b ^ 2 - a ^ 2)) : ℝ) : ℂ) := by
     have h1 : b - a ≠ 0 := by linarith
     have h2 : a + b ≠ 0 := by linarith
     have h3 : b ^ 2 - a ^ 2 ≠ 0 := by nlinarith

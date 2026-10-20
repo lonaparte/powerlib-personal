@@ -122,7 +122,8 @@ exponential-integrability set. -/
         ((12 * a ^ 2 + 48 * a ^ 3 * s ^ 2 + 16 * a ^ 4 * s ^ 4) * E s) s := by
       convert hp.mul (dE s) using 1; ring
     exact hd.deriv
-  have hit : iteratedDeriv 4 E = fun s => (12 * a ^ 2 + 48 * a ^ 3 * s ^ 2 + 16 * a ^ 4 * s ^ 4) * E s := by
+  have hit : iteratedDeriv 4 E =
+      fun s => (12 * a ^ 2 + 48 * a ^ 3 * s ^ 2 + 16 * a ^ 4 * s ^ 4) * E s := by
     simp only [iteratedDeriv_succ, iteratedDeriv_zero]
     rw [e1, e2, e3, e4]
   rw [hf, hit] at h
@@ -263,8 +264,8 @@ omit [IsProbabilityMeasure P] in
 whose mesh `δ_k → 0`, `E[(∑ (ΔW)² − T)²] → 0`. -/
 @[powerlib_foundation] theorem qv_tendsto_L2 (hB : IsPreBrownianReal B P) {T : ℝ≥0}
     {par : ℕ → ℕ → ℝ≥0} {N : ℕ → ℕ} {δ : ℕ → ℝ} (hmono : ∀ k, Monotone (par k))
-    (h0 : ∀ k, par k 0 = 0) (hT : ∀ k, par k (N k) = T) (hmesh : ∀ k, ∀ i < N k, step (par k) i ≤ δ k)
-    (hδ : Tendsto δ atTop (𝓝 0)) :
+    (h0 : ∀ k, par k 0 = 0) (hT : ∀ k, par k (N k) = T)
+    (hmesh : ∀ k, ∀ i < N k, step (par k) i ≤ δ k) (hδ : Tendsto δ atTop (𝓝 0)) :
     Tendsto (fun k => ∫ ω, (qvSum B (par k) (N k) ω - T) ^ 2 ∂P) atTop (𝓝 0) := by
   have hle : ∀ k, ∫ ω, (qvSum B (par k) (N k) ω - T) ^ 2 ∂P ≤ 2 * δ k * T := by
     intro k
@@ -281,7 +282,8 @@ whose mesh `δ_k → 0`, `E[(∑ (ΔW)² − T)²] → 0`. -/
 `P(|∑ (ΔW)² − T| ≥ ε) → 0` for every `ε > 0` (Chebyshev). -/
 @[powerlib_foundation] theorem qv_tendsto_inProbability (hB : IsPreBrownianReal B P) {T : ℝ≥0}
     {par : ℕ → ℕ → ℝ≥0} {N : ℕ → ℕ} {δ : ℕ → ℝ} (hmono : ∀ k, Monotone (par k))
-    (h0 : ∀ k, par k 0 = 0) (hT : ∀ k, par k (N k) = T) (hmesh : ∀ k, ∀ i < N k, step (par k) i ≤ δ k)
+    (h0 : ∀ k, par k 0 = 0) (hT : ∀ k, par k (N k) = T)
+    (hmesh : ∀ k, ∀ i < N k, step (par k) i ≤ δ k)
     (hδ : Tendsto δ atTop (𝓝 0)) {ε : ℝ} (hε : 0 < ε) :
     Tendsto (fun k => P {ω | ε ≤ |qvSum B (par k) (N k) ω - T|}) atTop (𝓝 0) := by
   have hL2 := qv_tendsto_L2 hB hmono h0 hT hmesh hδ
@@ -301,7 +303,8 @@ whose mesh `δ_k → 0`, `E[(∑ (ΔW)² − T)²] → 0`. -/
     rw [variance_eq_integral hmeas, qvSum_mean hB (hmono k), hT k, h0 k, NNReal.coe_zero,
       sub_zero] at this
     exact this
-  have hlim : Tendsto (fun k => ENNReal.ofReal ((∫ ω, (qvSum B (par k) (N k) ω - T) ^ 2 ∂P) / ε ^ 2))
+  have hlim : Tendsto
+      (fun k => ENNReal.ofReal ((∫ ω, (qvSum B (par k) (N k) ω - T) ^ 2 ∂P) / ε ^ 2))
       atTop (𝓝 0) := by
     rw [← ENNReal.ofReal_zero]
     apply ENNReal.tendsto_ofReal

@@ -183,8 +183,10 @@ produced by leg voltages in `[0, V_dc]`, then `ρ ≤ V_dc/√3`. -/
   have := clarke_add_const (M * Real.cos θ) (M * Real.cos (θ - 2 * Real.pi / 3))
     (M * Real.cos (θ + 2 * Real.pi / 3)) (V / 2)
   rw [show V / 2 + M * Real.cos θ = M * Real.cos θ + V / 2 by ring,
-    show V / 2 + M * Real.cos (θ - 2 * Real.pi / 3) = M * Real.cos (θ - 2 * Real.pi / 3) + V / 2 by ring,
-    show V / 2 + M * Real.cos (θ + 2 * Real.pi / 3) = M * Real.cos (θ + 2 * Real.pi / 3) + V / 2 by ring,
+    show V / 2 + M * Real.cos (θ - 2 * Real.pi / 3) =
+      M * Real.cos (θ - 2 * Real.pi / 3) + V / 2 by ring,
+    show V / 2 + M * Real.cos (θ + 2 * Real.pi / 3) =
+      M * Real.cos (θ + 2 * Real.pi / 3) + V / 2 by ring,
     this, clarke_balanced]
 
 /-- Six-step leg: `V_dc` on `[0, π)`, `0` on `[π, 2π)`. Its fundamental sine coefficient

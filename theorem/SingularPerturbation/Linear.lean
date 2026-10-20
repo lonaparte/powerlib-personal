@@ -188,7 +188,8 @@ def compositeP (P0 : Matrix (Fin n) (Fin n) ℝ) (P2 : Matrix (Fin m) (Fin m) �
 
 @[powerlib_foundation] theorem blockDiag_form (P0 : Matrix (Fin n) (Fin n) ℝ)
     (P2 : Matrix (Fin m) (Fin m) ℝ) (x x' : Fin n → ℝ) (η η' : Fin m → ℝ) :
-    Sum.elim x η ⬝ᵥ (fromBlocks P0 0 0 P2 *ᵥ Sum.elim x' η') = x ⬝ᵥ (P0 *ᵥ x') + η ⬝ᵥ (P2 *ᵥ η') := by
+    Sum.elim x η ⬝ᵥ (fromBlocks P0 0 0 P2 *ᵥ Sum.elim x' η') =
+      x ⬝ᵥ (P0 *ᵥ x') + η ⬝ᵥ (P2 *ᵥ η') := by
   rw [fromBlocks_mulVec]
   simp [sumElim_dotProduct_sumElim]
 
@@ -348,7 +349,8 @@ Hurwitz. -/
     have hxx := dotProduct_self_nonneg' (w ∘ Sum.inl)
     have hηη := dotProduct_self_nonneg' (w ∘ Sum.inr + sp.gain *ᵥ (w ∘ Sum.inl))
     have hstrict : 0 < (w ∘ Sum.inl) ⬝ᵥ (w ∘ Sum.inl) ∨
-        0 < (w ∘ Sum.inr + sp.gain *ᵥ (w ∘ Sum.inl)) ⬝ᵥ (w ∘ Sum.inr + sp.gain *ᵥ (w ∘ Sum.inl)) := by
+        0 < (w ∘ Sum.inr + sp.gain *ᵥ (w ∘ Sum.inl)) ⬝ᵥ
+          (w ∘ Sum.inr + sp.gain *ᵥ (w ∘ Sum.inl)) := by
       rcases hne w hw with h | h
       · left
         exact lt_of_le_of_ne (dotProduct_self_nonneg' _)

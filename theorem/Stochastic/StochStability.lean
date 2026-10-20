@@ -166,8 +166,8 @@ eventually, then `E‖X_t‖^{θp+(1−θ)q} ≤ e^{(θa+(1−θ)b)t}` eventuall
   have e : ENNReal.ofReal (exp ((θ * a + (1 - θ) * b) * τ i)) =
       ENNReal.ofReal (exp (a * τ i)) ^ θ * ENNReal.ofReal (exp (b * τ i)) ^ (1 - θ) := by
     rw [ENNReal.ofReal_rpow_of_nonneg (exp_pos _).le hθ0.le,
-      ENNReal.ofReal_rpow_of_nonneg (exp_pos _).le (by linarith), ← ENNReal.ofReal_mul (by positivity),
-      ← exp_mul, ← exp_mul, ← exp_add]
+      ENNReal.ofReal_rpow_of_nonneg (exp_pos _).le (by linarith),
+      ← ENNReal.ofReal_mul (by positivity), ← exp_mul, ← exp_mul, ← exp_add]
     congr 2; ring
   rw [e]
   gcongr

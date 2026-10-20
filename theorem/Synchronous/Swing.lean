@@ -387,7 +387,8 @@ coefficient (`M > 0`). -/
 private theorem unstable_of_damping_neg (hM : 0 < p.M) {x : State 2}
     (heq : p.field x = 0) (hD : p.D < 0) : Unstable p.field x :=
   Criteria.unstable_of_jacobian_trace_pos_fin_two (p.jacobian (x 0)) p.contDiff_field heq
-    (p.fderiv_field x) (by rw [trace_jacobian, neg_div]; exact neg_pos.mpr (div_neg_of_neg_of_pos hD hM))
+    (p.fderiv_field x)
+    (by rw [trace_jacobian, neg_div]; exact neg_pos.mpr (div_neg_of_neg_of_pos hD hM))
 
 /-! ## Energy function -/
 
@@ -447,8 +448,8 @@ synchronizing coefficient stays positive. -/
   set g : ℝ → ℝ := fun θ => p.Pe θ - p.Pm with hg
   have hgd : ∀ θ, HasDerivAt g (p.syncCoeff θ) θ := by
     intro θ
-    have h := (((Real.hasDerivAt_sin (θ - p.k₃)).comp θ ((hasDerivAt_id θ).sub_const p.k₃)).const_mul
-      p.k₂).const_add p.k₁ |>.sub_const p.Pm
+    have h := (((Real.hasDerivAt_sin (θ - p.k₃)).comp θ
+      ((hasDerivAt_id θ).sub_const p.k₃)).const_mul p.k₂).const_add p.k₁ |>.sub_const p.Pm
     convert h using 1
     · funext y; simp [hg, Pe]
     · simp [syncCoeff]
@@ -1120,8 +1121,8 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
               simp only [SwingParams.accel, SwingParams.Pe, hk2, ← hD0, zero_mul, add_zero]
               rw [show m.p.Pm - m.p.k₁ - 0 = 0 by linarith, zero_div]
             simp only [_root_.add_apply, _root_.smul_apply,
-              PiLp.proj_apply, smul_eq_mul, SwingParams.field_apply_zero, SwingParams.field_apply_one, hacc, mul_zero,
-              zero_add]
+              PiLp.proj_apply, smul_eq_mul, SwingParams.field_apply_zero,
+              SwingParams.field_apply_one, hacc, mul_zero, zero_add]
             exact mul_self_pos.mpr hx1
         · exact Or.inr ⟨hk2, hDpos⟩
       · -- a fold: below the level of `(δ*, 0)` the quantity `(P_m − k₁)(M ω + D δ)` grows
@@ -1142,7 +1143,8 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
             (((h1 x).const_mul m.p.M).add ((h0 x).const_mul m.p.D)).const_mul a
           rw [hd.fderiv]
           simp only [_root_.smul_apply, _root_.add_apply,
-            PiLp.proj_apply, smul_eq_mul, SwingParams.field_apply_zero, SwingParams.field_apply_one, SwingParams.accel]
+            PiLp.proj_apply, smul_eq_mul, SwingParams.field_apply_zero, SwingParams.field_apply_one,
+            SwingParams.accel]
           have hMne := hM.ne'
           have hrate : m.p.M * ((m.p.Pm - m.p.Pe (x 0) - m.p.D * x 1) / m.p.M) + m.p.D * x 1 =
               m.p.Pm - m.p.Pe (x 0) := by field_simp; ring
@@ -1180,15 +1182,16 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
         (fun z w hzw => ?_) fun z => ?_
       · have hz0 := congrArg (fun y : State 2 => y 0) hzw
         have hz1 := congrArg (fun y : State 2 => y 1) hzw
-        simp only [PhasePlane.toEuclideanCLM_apply_zero, PhasePlane.toEuclideanCLM_apply_one] at hz0 hz1
+        simp only [PhasePlane.toEuclideanCLM_apply_zero,
+          PhasePlane.toEuclideanCLM_apply_one] at hz0 hz1
         simp at hz0 hz1
         refine PhasePlane.ext_iff'.2 ⟨?_, hz1⟩
         rw [hz1] at hz0
         linarith
       · have hf0 : m.field z 0 = z 1 := by simp [Model.field, Model.point]
         have hf1 : m.field z 1 = -(m.p.D / m.p.M) * z 1 := by
-          simp only [Model.field, SwingParams.field_apply_one, SwingParams.accel, SwingParams.Pe, hk2,
-            zero_mul, add_zero, hk1, sub_self, PiLp.add_apply, Model.point_one]
+          simp only [Model.field, SwingParams.field_apply_one, SwingParams.accel, SwingParams.Pe,
+            hk2, zero_mul, add_zero, hk1, sub_self, PiLp.add_apply, Model.point_one]
           field_simp
           ring
         simp only [PiLp.inner_apply, Fin.sum_univ_two, PhasePlane.toEuclideanCLM_apply_zero,

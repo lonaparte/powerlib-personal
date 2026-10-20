@@ -276,12 +276,12 @@ private theorem regionOfAttraction_well (hM : 0 < p.M) (hD : 0 < p.D)
     rcases mul_eq_zero.mp this with h0 | h0
     · exact absurd h0 hD.ne'
     · exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp h0
-  refine Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel p.isOpen_wellWindow p.contDiff_field
-    (p.contDiff_energy _) (fun x _ => ?_) (p.isCompact_wellSublevel hM hc1 hc2) ?_
+  refine Dynamics.LaSalle.regionOfAttraction_of_lasalle_sublevel p.isOpen_wellWindow
+    p.contDiff_field (p.contDiff_energy _) (fun x _ => ?_) (p.isCompact_wellSublevel hM hc1 hc2) ?_
   · rw [p.energy_lie hM.ne']
     nlinarith [sq_nonneg (x 1)]
-  · refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv p.contDiff_field (h := fun x : State 2 => x 1)
-      (Dynamics.contDiff_coord 1) ?_ ?_
+  · refine Dynamics.LaSalle.lasalle_condition_of_lieDeriv p.contDiff_field
+      (h := fun x : State 2 => x 1) (Dynamics.contDiff_coord 1) ?_ ?_
     · intro x hx
       exact hω x hx.2
     · intro x hx hder
@@ -329,7 +329,8 @@ private theorem dampedBolted_trajectory (hM : 0 < p.M) (hD : 0 < p.D)
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Icc tf T))
     (h0 : φ tf = PhasePlane.mk δ₀ 0) :
     ∀ t ∈ Icc tf T, φ t 1 = p.Pm / p.D * (1 - Real.exp (-(p.D / p.M) * (t - tf))) ∧
-      φ t 0 = δ₀ + p.Pm / p.D * ((t - tf) - p.M / p.D * (1 - Real.exp (-(p.D / p.M) * (t - tf)))) := by
+      φ t 0 = δ₀ + p.Pm / p.D *
+        ((t - tf) - p.M / p.D * (1 - Real.exp (-(p.D / p.M) * (t - tf)))) := by
   have hacc : ∀ x : State 2, p.field x 1 = (p.Pm - p.D * x 1) / p.M := by
     intro x; simp [accel, Pe, hk₁, hk₂]
   have hd := hasDerivWithinAt_Ici_of_isIntegralCurveOn hφ
@@ -341,13 +342,14 @@ private theorem dampedBolted_trajectory (hM : 0 < p.M) (hD : 0 < p.D)
   -- `(ω − W) e^{a(t−t_f)}` is constant
   have h1 : ∀ t ∈ Icc tf T, φ t 1 * Real.exp (p.D / p.M * (t - tf)) -
       p.Pm / p.D * (Real.exp (p.D / p.M * (t - tf)) - 1) =
-      φ tf 1 * Real.exp (p.D / p.M * (tf - tf)) - p.Pm / p.D * (Real.exp (p.D / p.M * (tf - tf)) - 1) := by
+      φ tf 1 * Real.exp (p.D / p.M * (tf - tf)) -
+        p.Pm / p.D * (Real.exp (p.D / p.M * (tf - tf)) - 1) := by
     apply constant_of_has_deriv_right_zero
     · exact ((((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : State 2 →L[ℝ] ℝ).continuous).comp_continuousOn
         hcont).mul (by fun_prop)).sub (by fun_prop)
     · intro x hx
-      have hω := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : State 2 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt
-        x (hd x hx)
+      have hω := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 :
+        State 2 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt x (hd x hx)
       have := (hω.mul (hEd x).hasDerivWithinAt).sub
         (((hEd x).sub_const 1).const_mul (p.Pm / p.D)).hasDerivWithinAt
       convert this using 1
@@ -378,15 +380,16 @@ private theorem dampedBolted_trajectory (hM : 0 < p.M) (hD : 0 < p.D)
     · exact (((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : State 2 →L[ℝ] ℝ).continuous).comp_continuousOn
         hcont).sub (by fun_prop)
     · intro x hx
-      have hδ := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : State 2 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt
-        x (hd x hx)
+      have hδ := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 :
+        State 2 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt x (hd x hx)
       have hE2 : HasDerivAt (fun t => Real.exp (-(p.D / p.M) * (t - tf)))
           (-(p.D / p.M) * Real.exp (-(p.D / p.M) * (x - tf))) x :=
         ((((hasDerivAt_id' x).sub_const tf).const_mul (-(p.D / p.M))).exp).congr_deriv
           (by ring)
       have hW : HasDerivAt (fun t => δ₀ + p.Pm / p.D * ((t - tf) - p.M / p.D *
           (1 - Real.exp (-(p.D / p.M) * (t - tf)))))
-          (p.Pm / p.D * (1 - p.M / p.D * (-(-(p.D / p.M) * Real.exp (-(p.D / p.M) * (x - tf)))))) x :=
+          (p.Pm / p.D * (1 - p.M / p.D *
+            (-(-(p.D / p.M) * Real.exp (-(p.D / p.M) * (x - tf)))))) x :=
         ((((hasDerivAt_id' x).sub_const tf).sub ((hE2.const_sub 1).const_mul (p.M / p.D))).const_mul
           (p.Pm / p.D)).const_add δ₀
       have := hδ.sub hW.hasDerivWithinAt

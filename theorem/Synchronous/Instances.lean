@@ -241,7 +241,8 @@ def toSwing : SwingParams := ⟨m.M, m.D, m.Pm, 0, m.Pmax, 0⟩
 @[powerlib_domain] theorem locallyExponentiallyStable (hM : 0 < m.M) (hD : 0 < m.D)
     (hP : 0 < m.Pmax) {δ₀ : ℝ} (hδ : δ₀ ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2))
     (heq : m.toSwing.field (PhasePlane.mk δ₀ 0) = 0) :
-    connection% (Swing.Model.mk m.toSwing δ₀ ∈ Swing.family.den (.flow .locallyExponentiallyStable)) :=
+    connection% (Swing.Model.mk m.toSwing δ₀ ∈
+      Swing.family.den (.flow .locallyExponentiallyStable)) :=
   Swing.mem_den_locallyExponentiallyStable _ hM hD
     (by simpa using ((m.toSwing.field_eq_zero_iff hM.ne' _).mp heq).2)
     (by simpa [toSwing, SwingParams.syncCoeff] using mul_pos hP (Real.cos_pos_of_mem_Ioo hδ))

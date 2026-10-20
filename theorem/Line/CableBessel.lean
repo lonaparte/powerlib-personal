@@ -191,7 +191,8 @@ open MeasureTheory Set intervalIntegral
 
 /-- **High-frequency expansion with bounded remainder**: along `m = (1 + i)s`,
 `Z(m) = ρ m/(2π r) + O(1)` as `s → ∞` (the surface term itself grows like `s`). -/
-@[powerlib_foundation] theorem coreImpedance_sub_surface_isBigO {ρ r : ℝ} (hρ : ρ ≠ 0) (hr : 0 < r) :
+@[powerlib_foundation] theorem coreImpedance_sub_surface_isBigO {ρ r : ℝ} (hρ : ρ ≠ 0)
+    (hr : 0 < r) :
     (fun s : ℝ => coreImpedance ρ r ((1 + Complex.I) * s) -
       (ρ : ℂ) * ((1 + Complex.I) * s) / (2 * Real.pi * r)) =O[atTop] (fun _ => (1 : ℝ)) := by
   obtain ⟨C, x₀, hx₀, hC⟩ := besselI0_div_besselI1_sub_one_le (K := 2) two_pos

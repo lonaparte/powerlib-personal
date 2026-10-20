@@ -277,8 +277,9 @@ private theorem boltedFault_trajectory (hM : 0 < p.M) (hD : p.D = 0)
     · exact (((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : State 2 →L[ℝ] ℝ).continuous).comp_continuousOn
         hcont).sub (by fun_prop)
     · intro x hx
-      have := ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 : State 2 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt
-        x (hd x hx)).sub (((hasDerivAt_id x).sub_const tf).const_mul (p.Pm / p.M)).hasDerivWithinAt
+      have := ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1 :
+        State 2 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt x (hd x hx)).sub
+          (((hasDerivAt_id x).sub_const tf).const_mul (p.Pm / p.M)).hasDerivWithinAt
       convert this using 1
       · funext y; simp [Function.comp_def]
       · simp [hacc]
@@ -290,9 +291,9 @@ private theorem boltedFault_trajectory (hM : 0 < p.M) (hD : p.D = 0)
     · exact (((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : State 2 →L[ℝ] ℝ).continuous).comp_continuousOn
         hcont).sub (by fun_prop)
     · intro x hx
-      have := ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 : State 2 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt
-        x (hd x hx)).sub ((((hasDerivAt_id x).sub_const tf).pow 2).const_mul
-          (p.Pm / (2 * p.M))).hasDerivWithinAt
+      have := ((PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0 :
+        State 2 →L[ℝ] ℝ).hasFDerivAt.comp_hasDerivWithinAt x (hd x hx)).sub
+          ((((hasDerivAt_id x).sub_const tf).pow 2).const_mul (p.Pm / (2 * p.M))).hasDerivWithinAt
       convert this using 1
       · funext y; simp [Function.comp_def]
       · simp only [PiLp.proj_apply, field_apply_zero, id_eq]

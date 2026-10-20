@@ -165,7 +165,8 @@ def gradField (V : ℝ → ℝ) (γ : ℝ) (y : Dynamics.State 1) : Dynamics.Sta
 equation, but `ϑ(s) = e^{−4s}` gives `ε² ϑ''(0) + ε ϑ'(0) = 2 − √2 ≠ 0`. -/
 @[powerlib_foundation] theorem note_rescaling_false :
     (∀ t : ℝ, 1 * (4 * Real.exp (-2 * t)) + 2 * (-2 * Real.exp (-2 * t)) + 0 = 0) ∧
-      (1 / 8 : ℝ) * (16 * Real.exp (-4 * 0)) + Real.sqrt (1 / 8) * (-4 * Real.exp (-4 * 0)) + 0 ≠ 0 := by
+      (1 / 8 : ℝ) * (16 * Real.exp (-4 * 0)) +
+        Real.sqrt (1 / 8) * (-4 * Real.exp (-4 * 0)) + 0 ≠ 0 := by
   refine ⟨fun t => by ring, ?_⟩
   simp only [mul_zero, Real.exp_zero, mul_one, add_zero]
   have h8 : Real.sqrt (1 / 8) = Real.sqrt 2 / 4 := by

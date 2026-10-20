@@ -272,8 +272,7 @@ def equilibrium (iref : Fin 2 → ℝ) : ℝ⁴ :=
     (iref : Fin 2 → ℝ) : IsEquilibrium (p.model.inputField iref) (p.equilibrium iref) := by
   ext j
   fin_cases j <;>
-    simp [Plant.inputField, op, model, stateMatrix, equilibrium, Matrix.mulVec, dotProduct,
-      Fin.sum_univ_four, Fin.sum_univ_two]
+    simp [Plant.inputField, op, model, stateMatrix, equilibrium, dotProduct, Fin.sum_univ_two]
   · field_simp
     ring
   · field_simp

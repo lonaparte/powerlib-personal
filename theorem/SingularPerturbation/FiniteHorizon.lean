@@ -74,8 +74,8 @@ for `f + β/k`). -/
   simpa only [neg_neg, sub_zero] using h
 
 /-- Decay form: `f' ≤ -α f + β` (`α > 0`, `β ≥ 0`) gives `f t ≤ e^{-αt} f 0 + β/α`. -/
-@[powerlib_foundation] theorem le_of_deriv_le_neg {f f' : ℝ → ℝ} {α β T : ℝ} (hα : 0 < α) (hβ : 0 ≤ β)
-    (hf : ∀ t, HasDerivAt f (f' t) t) (hb : ∀ t ∈ Icc 0 T, f' t ≤ -α * f t + β) :
+@[powerlib_foundation] theorem le_of_deriv_le_neg {f f' : ℝ → ℝ} {α β T : ℝ} (hα : 0 < α)
+    (hβ : 0 ≤ β) (hf : ∀ t, HasDerivAt f (f' t) t) (hb : ∀ t ∈ Icc 0 T, f' t ≤ -α * f t + β) :
     ∀ t ∈ Icc 0 T, f t ≤ Real.exp (-α * t) * f 0 + β / α := by
   intro t ht
   have h := comparison_of_deriv_le (neg_ne_zero.mpr hα.ne') hf hb t ht
@@ -87,8 +87,8 @@ for `f + β/k`). -/
   nlinarith
 
 /-- Growth form: `f' ≤ k f + β` (`k > 0`, `β ≥ 0`) gives `f t ≤ e^{k t} (f 0 + β/k)`. -/
-@[powerlib_foundation] theorem le_of_deriv_le_pos {f f' : ℝ → ℝ} {k β T : ℝ} (hk : 0 < k) (hβ : 0 ≤ β)
-    (hf : ∀ t, HasDerivAt f (f' t) t) (hb : ∀ t ∈ Icc 0 T, f' t ≤ k * f t + β) :
+@[powerlib_foundation] theorem le_of_deriv_le_pos {f f' : ℝ → ℝ} {k β T : ℝ} (hk : 0 < k)
+    (hβ : 0 ≤ β) (hf : ∀ t, HasDerivAt f (f' t) t) (hb : ∀ t ∈ Icc 0 T, f' t ≤ k * f t + β) :
     ∀ t ∈ Icc 0 T, f t ≤ Real.exp (k * t) * (f 0 + β / k) := by
   intro t ht
   have h := comparison_of_deriv_le hk.ne' hf hb t ht
@@ -104,7 +104,8 @@ for `f + β/k`). -/
   linarith
 
 /-- Every entry is bounded by `Σᵢⱼ |Nᵢⱼ|`. -/
-@[powerlib_foundation] theorem le_absSum {k l : Type*} [Fintype k] [Fintype l] (N : Matrix k l ℝ) (i : k) (j : l) :
+@[powerlib_foundation] theorem le_absSum {k l : Type*} [Fintype k] [Fintype l] (N : Matrix k l ℝ)
+    (i : k) (j : l) :
     |N i j| ≤ absSum N := by
   unfold absSum
   calc |N i j| ≤ ∑ j', |N i j'| :=
@@ -134,16 +135,16 @@ for `f + β/k`). -/
     linarith [le_abs_self ((N *ᵥ v) ⬝ᵥ (N *ᵥ v))]
 
 /-- Derivative of `yᵀ P y` for symmetric `P`: `2 yᵀ P ẏ`. -/
-@[powerlib_foundation] theorem hasDerivAt_quadratic_of_symm {k : ℕ} {P : Matrix (Fin k) (Fin k) ℝ} (hP : Pᵀ = P)
-    {y : ℝ → Fin k → ℝ} {dy : Fin k → ℝ} {t : ℝ} (hy : HasDerivAt y dy t) :
+@[powerlib_foundation] theorem hasDerivAt_quadratic_of_symm {k : ℕ} {P : Matrix (Fin k) (Fin k) ℝ}
+    (hP : Pᵀ = P) {y : ℝ → Fin k → ℝ} {dy : Fin k → ℝ} {t : ℝ} (hy : HasDerivAt y dy t) :
     HasDerivAt (fun s => y s ⬝ᵥ (P *ᵥ y s)) (2 * (y t ⬝ᵥ (P *ᵥ dy))) t := by
   convert hasDerivAt_quadratic P hy using 1
   rw [Criteria.dotProduct_mulVec_comm_of_symm hP dy (y t)]
   ring
 
 /-- Derivative of `|y|²`: `2 yᵀ ẏ`. -/
-@[powerlib_foundation] theorem hasDerivAt_dotProduct_self {k : ℕ} {y : ℝ → Fin k → ℝ} {dy : Fin k → ℝ} {t : ℝ}
-    (hy : HasDerivAt y dy t) :
+@[powerlib_foundation] theorem hasDerivAt_dotProduct_self {k : ℕ} {y : ℝ → Fin k → ℝ}
+    {dy : Fin k → ℝ} {t : ℝ} (hy : HasDerivAt y dy t) :
     HasDerivAt (fun s => y s ⬝ᵥ y s) (2 * (y t ⬝ᵥ dy)) t := by
   have := hasDerivAt_quadratic_of_symm (P := (1 : Matrix (Fin k) (Fin k) ℝ)) (by simp) hy
   simpa using this
@@ -152,12 +153,13 @@ for `f + β/k`). -/
 variable {n m : ℕ}
 
 /-- The quadratic form of a bounded Lyapunov certificate is nonnegative. -/
-@[powerlib_foundation] theorem quadratic_nonneg {A22 : Matrix (Fin m) (Fin m) ℝ} (c : BoundedCertificate A22)
-    (v : Fin m → ℝ) : 0 ≤ v ⬝ᵥ (c.P *ᵥ v) :=
+@[powerlib_foundation] theorem quadratic_nonneg {A22 : Matrix (Fin m) (Fin m) ℝ}
+    (c : BoundedCertificate A22) (v : Fin m → ℝ) : 0 ≤ v ⬝ᵥ (c.P *ᵥ v) :=
   le_trans (mul_nonneg c.lower_pos.le (dotProduct_self_nonneg' v)) (c.lower_bound v)
 
 /-- The energy derivative of the a-priori estimate. -/
-@[powerlib_foundation] theorem growth_deriv_le {A0 : Matrix (Fin n) (Fin n) ℝ} {A12 : Matrix (Fin n) (Fin m) ℝ}
+@[powerlib_foundation] theorem growth_deriv_le {A0 : Matrix (Fin n) (Fin n) ℝ}
+    {A12 : Matrix (Fin n) (Fin m) ℝ}
     {L : Matrix (Fin m) (Fin n) ℝ} {A22 : Matrix (Fin m) (Fin m) ℝ} (c : BoundedCertificate A22)
     {ε : ℝ} (hε : 0 < ε)
     (hεk : ε * (2 * (absSum A0 + absSum A12 + absSum (c.P * L * A0) +
@@ -205,20 +207,22 @@ variable {n m : ℕ}
 
 
 /-- Derivative of `N y(t)` (`Dynamics.hasDerivAt_mulVec`). -/
-@[powerlib_foundation] theorem hasDerivAt_mulVec {k l : ℕ} (N : Matrix (Fin k) (Fin l) ℝ) {y : ℝ → Fin l → ℝ}
-    {dy : Fin l → ℝ} {t : ℝ} (hy : HasDerivAt y dy t) :
+@[powerlib_foundation] theorem hasDerivAt_mulVec {k l : ℕ} (N : Matrix (Fin k) (Fin l) ℝ)
+    {y : ℝ → Fin l → ℝ} {dy : Fin l → ℝ} {t : ℝ} (hy : HasDerivAt y dy t) :
     HasDerivAt (fun s => N *ᵥ y s) (N *ᵥ dy) t :=
   Dynamics.hasDerivAt_mulVec N hy
 
 /-- `|a v|² = a² |v|²`. -/
-@[powerlib_foundation] theorem smul_dotProduct_smul_self {k : Type*} [Fintype k] (a : ℝ) (v : k → ℝ) :
+@[powerlib_foundation] theorem smul_dotProduct_smul_self {k : Type*} [Fintype k] (a : ℝ)
+    (v : k → ℝ) :
     (a • v) ⬝ᵥ (a • v) = a ^ 2 * (v ⬝ᵥ v) := by
   simp only [smul_dotProduct, dotProduct_smul, smul_eq_mul]
   ring
 
 /-- Boundary-layer error: `e = η - η_b` with `ė = A₂₂e/ε + L(A₀x + A₁₂η)`, `e(0) = 0`, and
 `|x|², |η|² ≤ R` on `[0, T]` give `|e|² ≤ 4 (hi/lo) S (S+1) R ε²`. -/
-@[powerlib_foundation] theorem layer_error_le {A0 : Matrix (Fin n) (Fin n) ℝ} {A12 : Matrix (Fin n) (Fin m) ℝ}
+@[powerlib_foundation] theorem layer_error_le {A0 : Matrix (Fin n) (Fin n) ℝ}
+    {A12 : Matrix (Fin n) (Fin m) ℝ}
     {L : Matrix (Fin m) (Fin n) ℝ} {A22 : Matrix (Fin m) (Fin m) ℝ} (c : BoundedCertificate A22)
     {ε R T : ℝ} (hε : 0 < ε) (hR : 0 ≤ R)
     {x : ℝ → Fin n → ℝ} {η e : ℝ → Fin m → ℝ}
@@ -301,8 +305,8 @@ variable {n m : ℕ}
   nlinarith
 
 /-- Slow error with the boundary-layer correction `ε A₁₂A₂₂⁻¹ η_b` removed. -/
-@[powerlib_foundation] theorem slow_error_le {A0 : Matrix (Fin n) (Fin n) ℝ} {A12 : Matrix (Fin n) (Fin m) ℝ}
-    {A22 : Matrix (Fin m) (Fin m) ℝ} (hA22 : IsUnit A22.det)
+@[powerlib_foundation] theorem slow_error_le {A0 : Matrix (Fin n) (Fin n) ℝ}
+    {A12 : Matrix (Fin n) (Fin m) ℝ} {A22 : Matrix (Fin m) (Fin m) ℝ} (hA22 : IsUnit A22.det)
     {ε Rb E T : ℝ} (hε : 0 < ε) (hRb : 0 ≤ Rb) (hE : 0 ≤ E)
     {x xbar : ℝ → Fin n → ℝ} {η ηb : ℝ → Fin m → ℝ}
     (hx : ∀ t, HasDerivAt x (A0 *ᵥ x t + A12 *ᵥ η t) t)
@@ -392,7 +396,8 @@ variable {n m : ℕ}
 
 
 /-- The a-priori bound on `[0, T]`: `|x|², |η|² ≤ e^{(K+1)T} V(0) (1 + 1/lo)`. -/
-@[powerlib_foundation] theorem apriori_le {A0 : Matrix (Fin n) (Fin n) ℝ} {A12 : Matrix (Fin n) (Fin m) ℝ}
+@[powerlib_foundation] theorem apriori_le {A0 : Matrix (Fin n) (Fin n) ℝ}
+    {A12 : Matrix (Fin n) (Fin m) ℝ}
     {L : Matrix (Fin m) (Fin n) ℝ} {A22 : Matrix (Fin m) (Fin m) ℝ} (c : BoundedCertificate A22)
     {ε : ℝ} (hε : 0 < ε)
     (hεk : ε * (2 * (absSum A0 + absSum A12 + absSum (c.P * L * A0) +
@@ -448,7 +453,8 @@ variable {n m : ℕ}
     linarith
 
 /-- Decay of the boundary layer in the original time: `|η_b(t)|² ≤ (hi/lo) |η_b(0)|²`. -/
-@[powerlib_foundation] theorem layer_le {A22 : Matrix (Fin m) (Fin m) ℝ} (c : BoundedCertificate A22) {ε T : ℝ}
+@[powerlib_foundation] theorem layer_le {A22 : Matrix (Fin m) (Fin m) ℝ}
+    (c : BoundedCertificate A22) {ε T : ℝ}
     (hε : 0 < ε) {ηb : ℝ → Fin m → ℝ} (hηb : ∀ t, HasDerivAt ηb (ε⁻¹ • (A22 *ᵥ ηb t)) t) :
     ∀ t ∈ Icc 0 T, ηb t ⬝ᵥ ηb t ≤ c.upper / c.lower * (ηb 0 ⬝ᵥ ηb 0) := by
   have hP := c.symmetric
@@ -475,13 +481,15 @@ variable {n m : ℕ}
   have hq := quadratic_nonneg c (ηb 0)
   have hlow := c.lower_bound (ηb t)
   have hup0 := c.upper_bound (ηb 0)
-  have h2 : ηb t ⬝ᵥ (c.P *ᵥ ηb t) ≤ c.upper * (ηb 0 ⬝ᵥ ηb 0) := by nlinarith [Real.exp_pos (-(ε⁻¹ / c.upper) * t)]
+  have h2 : ηb t ⬝ᵥ (c.P *ᵥ ηb t) ≤ c.upper * (ηb 0 ⬝ᵥ ηb 0) := by
+    nlinarith [Real.exp_pos (-(ε⁻¹ / c.upper) * t)]
   rw [div_mul_eq_mul_div, le_div_iff₀ hlo]
   linarith
 
 
 /-- Arithmetic of the final slow estimate. -/
-@[powerlib_foundation] theorem slow_combine {D ε N0 t T kC g a0g a12 Rb0 Ce : ℝ} (hkC : 0 < kC) (ht : t ≤ T)
+@[powerlib_foundation] theorem slow_combine {D ε N0 t T kC g a0g a12 Rb0 Ce : ℝ} (hkC : 0 < kC)
+    (ht : t ≤ T)
     (hN : 0 ≤ ε ^ 2 * N0) (hRb : 0 ≤ Rb0) (ha0g : 0 ≤ a0g) (ha12 : 0 ≤ a12) (hCe : 0 ≤ Ce)
     (h : D ≤ 2 * Real.exp (kC * t) * (ε ^ 2 * g ^ 2 * (Rb0 * N0) +
         (a0g * ε ^ 2 * (Rb0 * N0) + a12 * (Ce * (ε ^ 2 * N0))) / kC) +
@@ -507,7 +515,8 @@ variable (sp : LinearSP n m)
 
 /-- Slow/fast coordinates `η = z + L x`: the full system reads
 `ẋ = A₀x + A₁₂η`, `η̇ = A₂₂η/ε + L(A₀x + A₁₂η)`. -/
-@[powerlib_foundation] theorem coords_hasDerivAt (hU : IsUnit sp.A22.det) {ε : ℝ} {x : ℝ → Fin n → ℝ}
+@[powerlib_foundation] theorem coords_hasDerivAt (hU : IsUnit sp.A22.det) {ε : ℝ}
+    {x : ℝ → Fin n → ℝ}
     {z : ℝ → Fin m → ℝ} (hx : ∀ t, HasDerivAt x (sp.A11 *ᵥ x t + sp.A12 *ᵥ z t) t)
     (hz : ∀ t, HasDerivAt z (ε⁻¹ • (sp.A21 *ᵥ x t + sp.A22 *ᵥ z t)) t) (t : ℝ) :
     HasDerivAt x (sp.reducedMatrix *ᵥ x t + sp.A12 *ᵥ (z t + sp.gain *ᵥ x t)) t ∧
@@ -528,7 +537,8 @@ variable (sp : LinearSP n m)
   exact h
 
 /-- **Finite-horizon `O(ε)` approximation** (Tikhonov's theorem, linear case). -/
-@[powerlib_foundation] theorem exists_finiteHorizon_error (hA22 : LinearSystems.IsHurwitz sp.A22) (T : ℝ) :
+@[powerlib_foundation] theorem exists_finiteHorizon_error (hA22 : LinearSystems.IsHurwitz sp.A22)
+    (T : ℝ) :
     ∃ ε₀ > 0, ∃ C : ℝ, ∀ ε, 0 < ε → ε ≤ ε₀ →
       ∀ (x : ℝ → Fin n → ℝ) (z : ℝ → Fin m → ℝ) (xbar : ℝ → Fin n → ℝ)
         (zb : ℝ → Fin m → ℝ),

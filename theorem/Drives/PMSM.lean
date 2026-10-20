@@ -198,7 +198,8 @@ the unique maximiser. -/
 @[powerlib_foundation] theorem ipmsm_mtpa_unique_max (np ψf Ld Lq I : ℝ) (hnp : 0 < np)
     (hΔ : 0 < Lq - Ld) (hψ : 0 < ψf) (hI : 0 < I) (id iq : ℝ) (hdisk : id ^ 2 + iq ^ 2 ≤ I ^ 2)
     (hne : (id, iq) ≠ (mtpaId ψf (Lq - Ld) I, mtpaIq ψf (Lq - Ld) I)) :
-    torque np ψf Ld Lq id iq < torque np ψf Ld Lq (mtpaId ψf (Lq - Ld) I) (mtpaIq ψf (Lq - Ld) I) := by
+    torque np ψf Ld Lq id iq <
+      torque np ψf Ld Lq (mtpaId ψf (Lq - Ld) I) (mtpaIq ψf (Lq - Ld) I) := by
   rw [torque_eq_reduced, torque_eq_reduced]
   apply mul_lt_mul_of_pos_left _ (by positivity)
   set ΔL := Lq - Ld
@@ -237,7 +238,8 @@ the unique maximiser. -/
 /-- The maximum is attained: the MTPA torque bounds every feasible torque. -/
 @[powerlib_foundation] theorem ipmsm_mtpa_max (np ψf Ld Lq I : ℝ) (hnp : 0 < np)
     (hΔ : 0 < Lq - Ld) (hψ : 0 < ψf) (hI : 0 < I) (id iq : ℝ) (hdisk : id ^ 2 + iq ^ 2 ≤ I ^ 2) :
-    torque np ψf Ld Lq id iq ≤ torque np ψf Ld Lq (mtpaId ψf (Lq - Ld) I) (mtpaIq ψf (Lq - Ld) I) := by
+    torque np ψf Ld Lq id iq ≤
+      torque np ψf Ld Lq (mtpaId ψf (Lq - Ld) I) (mtpaIq ψf (Lq - Ld) I) := by
   by_cases h : (id, iq) = (mtpaId ψf (Lq - Ld) I, mtpaIq ψf (Lq - Ld) I)
   · simp only [Prod.mk.injEq] at h
     rw [h.1, h.2]

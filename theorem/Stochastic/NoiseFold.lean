@@ -148,7 +148,8 @@ of the swept problem are `ε^{2/3}` times crossing values of the rescaled proble
     field_simp
   · push Not at hs
     have h1 : s.toNNReal = 0 := Real.toNNReal_of_nonpos hs.le
-    have h2 : (s / c).toNNReal = 0 := Real.toNNReal_of_nonpos (div_nonpos_of_nonpos_of_nonneg hs.le hc'.le)
+    have h2 : (s / c).toNNReal = 0 :=
+      Real.toNNReal_of_nonpos (div_nonpos_of_nonpos_of_nonneg hs.le hc'.le)
     rw [h1, h2, mul_zero]
 
 /-! ## Corrected static exponents -/

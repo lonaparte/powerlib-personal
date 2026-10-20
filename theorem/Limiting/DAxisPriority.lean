@@ -70,7 +70,8 @@ def dPriorityNote (I id iq : ℝ) : ℝ × ℝ :=
 /-- No action inside the limit disc. -/
 @[powerlib_foundation] theorem dPriority_of_within {I id iq : ℝ} (hI : 0 ≤ I)
     (h : id ^ 2 + iq ^ 2 ≤ I ^ 2) : dPriority I id iq = (id, iq) := by
-  have hd : |id| ≤ I := abs_le_of_sq_le_sq' (by nlinarith [sq_nonneg iq]) hI |> fun h => abs_le.mpr h
+  have hd : |id| ≤ I :=
+    abs_le_of_sq_le_sq' (by nlinarith [sq_nonneg iq]) hI |> fun h => abs_le.mpr h
   have hcd : clampSym I id = id := clampSym_of_abs_le hd
   have hq : |iq| ≤ Real.sqrt (I ^ 2 - id ^ 2) := by
     rw [← Real.sqrt_sq_eq_abs]

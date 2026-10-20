@@ -112,11 +112,11 @@ def momentumCoord : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, p.M]
     (p.linearPH δ₀ hM hD hK).plant.system.field x u =
       PhasePlane.mk (x 1 / p.M) (-p.syncCoeff δ₀ * x 0 - p.D * (x 1 / p.M) + u 0) := by
   refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
-  · simp [Linear.Plant.system, Port.PortHamiltonian.plant, linearPH, PhasePlane.toEuclideanCLM_apply_zero,
-      dotProduct]
+  · simp [Linear.Plant.system, Port.PortHamiltonian.plant, linearPH,
+      PhasePlane.toEuclideanCLM_apply_zero, dotProduct]
     ring
-  · simp [Linear.Plant.system, Port.PortHamiltonian.plant, linearPH, PhasePlane.toEuclideanCLM_apply_one,
-      dotProduct]
+  · simp [Linear.Plant.system, Port.PortHamiltonian.plant, linearPH,
+      PhasePlane.toEuclideanCLM_apply_one, dotProduct]
     ring
 
 /-- Reuse of the port-Hamiltonian family: the linearized swing equation is passive from the power
@@ -130,7 +130,8 @@ perturbation `u` to `Δω`, with storage `H`. -/
 stable for every `D ≥ 0` (including `D = 0`). -/
 @[powerlib_domain] theorem linearPH_lyapunovStable (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D)
     (hK : 0 < p.syncCoeff δ₀) :
-    connection% (p.linearPH δ₀ hM hD hK ∈ Port.PortHamiltonian.family.den (.flow .lyapunovStable)) :=
+    connection% (p.linearPH δ₀ hM hD hK ∈
+      Port.PortHamiltonian.family.den (.flow .lyapunovStable)) :=
   Port.PortHamiltonian.mem_den_lyapunovStable _
 
 /-- Every flow sentence of the pH plant is the same sentence of the linearized swing family at

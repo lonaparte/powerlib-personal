@@ -114,7 +114,8 @@ Lyapunov theorem is among all matrices, so no symmetry premise is needed. -/
 @[powerlib_foundation] theorem candidate_solves {A : Matrix (Fin n) (Fin n) ℚ}
     (hA : IsHurwitz (real A)) : Aᵀ * candidate A + candidate A * A = -1 := by
   have hu : IsUnit (operator A).det :=
-    (Matrix.isUnit_iff_isUnit_det _).mp (Matrix.mulVec_injective_iff_isUnit.mp (operator_injective hA))
+    (Matrix.isUnit_iff_isUnit_det _).mp
+      (Matrix.mulVec_injective_iff_isUnit.mp (operator_injective hA))
   have h := congrArg
     (fun M : Matrix (Fin n × Fin n) (Fin n × Fin n) ℚ =>
       M *ᵥ (fun q => (-1 : Matrix (Fin n) (Fin n) ℚ) q.1 q.2))

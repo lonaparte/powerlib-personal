@@ -123,7 +123,8 @@ partial def endpoint? (e : Expr) (fuel : Nat := 32) : MetaM (Option Expr) := do
       if obj.isConstOf ``OrderDual.ofDual || obj.getAppFn.isConstOf ``OrderDual.ofDual ||
           obj.isConstOf ``OrderDual.toDual || obj.getAppFn.isConstOf ``OrderDual.toDual then
         if let some p ← endpoint? x (fuel - 1) then
-          let ctor := if obj.getAppFn.isConstOf ``OrderDual.ofDual then ``Endpoint.dual else ``Endpoint.toDual
+          let ctor := if obj.getAppFn.isConstOf ``OrderDual.ofDual then ``Endpoint.dual
+            else ``Endpoint.toDual
           if let some p ← attempt (buildEndpoint ctor #[p] e) then return some p
       let ty ← whnf (← inferType obj)
       if ty.getAppFn.isConstOf ``sInfHom then
@@ -230,7 +231,8 @@ partial def encode (e : Expr) (fuel : Nat := 32) : MetaM Expr := do
   let args := e.getAppArgs
   let head := e.getAppFn
   if head.isConstOf ``Not then
-    return ← certified e (← build ``ConnectionClaim.not #[← encode args.back! (fuel - 1)] (← claimType e))
+    return ← certified e (← build ``ConnectionClaim.not #[← encode args.back! (fuel - 1)]
+      (← claimType e))
   for (logical, ctor) in #[(``And, ``ConnectionClaim.and), (``Or, ``ConnectionClaim.or),
       (``Iff, ``ConnectionClaim.iff)] do
     if head.isConstOf logical then
@@ -241,7 +243,8 @@ partial def encode (e : Expr) (fuel : Nat := 32) : MetaM Expr := do
           if let some p ← endpoint? xs[xs.size - 2]! then
             let x := xs.back!
             let other ← withLocalDeclD `x (← inferType x) fun y => mkLambdaFVars #[y] args[1]!
-            return ← certified e (← build ``ConnectionClaim.memberIff #[x, other, p] (← claimType e))
+            return ← certified e (← build ``ConnectionClaim.memberIff #[x, other, p]
+              (← claimType e))
         -- The right side is a claim, or else a side condition characterizing the left side.
         let left ← encode args[0]! (fuel - 1)
         let saved ← saveState
@@ -276,9 +279,11 @@ partial def encode (e : Expr) (fuel : Nat := 32) : MetaM Expr := do
       return ← certified e (← build ``ConnectionClaim.mapsEq #[a, b] (← claimType e))
     let eq := head.isConstOf ``Eq
     if let some p ← endpoint? a then
-      return ← certified e (← build (if eq then ``ConnectionClaim.eqLeft else ``ConnectionClaim.leLeft) #[p] (← claimType e))
+      return ← certified e (← build
+        (if eq then ``ConnectionClaim.eqLeft else ``ConnectionClaim.leLeft) #[p] (← claimType e))
     if let some p ← endpoint? b then
-      return ← certified e (← build (if eq then ``ConnectionClaim.eqRight else ``ConnectionClaim.leRight) #[p] (← claimType e))
+      return ← certified e (← build
+        (if eq then ``ConnectionClaim.eqRight else ``ConnectionClaim.leRight) #[p] (← claimType e))
   if head.isConstOf ``Membership.mem then
     if let some p ← endpoint? args[args.size - 2]! then
       return ← certified e (← build ``ConnectionClaim.member #[p] (← claimType e))

@@ -293,7 +293,8 @@ open scoped Matrix.Norms.Operator in
   have hxN : ‖((x : ℂ) ^ N)⁻¹‖ = (x ^ N)⁻¹ := by
     rw [norm_inv, norm_pow, Complex.norm_real, Real.norm_of_nonneg hx0.le]
   rw [hdiff N, norm_smul, hxN]
-  calc (x ^ N)⁻¹ * ‖_ - _‖ ≤ (x ^ N)⁻¹ * (‖complexify m.A‖ ^ N * K + ‖complexify m'.A‖ ^ N * K') := by
+  calc (x ^ N)⁻¹ * ‖_ - _‖ ≤
+      (x ^ N)⁻¹ * (‖complexify m.A‖ ^ N * K + ‖complexify m'.A‖ ^ N * K') := by
         gcongr
         exact (norm_sub_le _ _).trans (add_le_add (norm_remainder_le m N _)
           (norm_remainder_le m' N _))

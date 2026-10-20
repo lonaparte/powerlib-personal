@@ -250,7 +250,8 @@ independent of `X` has covariance `e^{-θτ} s` with `X`.  With `s = σ²/(2θ)`
 @[powerlib_foundation] theorem ouAutocov_zero (θ σ : ℝ) : ouAutocov θ σ 0 = ouStatVar θ σ := by
   simp [ouAutocov]
 
-@[powerlib_foundation] theorem ouAutocov_neg (θ σ τ : ℝ) : ouAutocov θ σ (-τ) = ouAutocov θ σ τ := by
+@[powerlib_foundation] theorem ouAutocov_neg (θ σ τ : ℝ) :
+    ouAutocov θ σ (-τ) = ouAutocov θ σ τ := by
   simp [ouAutocov]
 
 @[powerlib_foundation] private lemma integral_exp_mul_Ioi_zero {a : ℂ} (ha : a.re < 0) :

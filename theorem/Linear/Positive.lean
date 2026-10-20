@@ -105,9 +105,11 @@ def schurReal {n : ℕ} (P : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :
 @[powerlib_foundation] theorem posDef_schur_iff {n : ℕ}
     {P : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} (hs : Pᵀ = P) (hp : 0 < P 0 0) :
     P.PosDef ↔ (schurReal P).PosDef := by
-  have hh : P.IsHermitian := by simpa only [Matrix.IsHermitian, Matrix.conjTranspose_eq_transpose_of_trivial] using hs
+  have hh : P.IsHermitian := by
+    simpa only [Matrix.IsHermitian, Matrix.conjTranspose_eq_transpose_of_trivial] using hs
   have hschur : (schurReal P).IsHermitian := by
-    simpa only [Matrix.IsHermitian, Matrix.conjTranspose_eq_transpose_of_trivial] using schur_symmetric hs
+    simpa only [Matrix.IsHermitian, Matrix.conjTranspose_eq_transpose_of_trivial] using
+      schur_symmetric hs
   constructor
   · intro hP
     refine posDef_iff_dotProduct_mulVec.mpr ⟨hschur, fun y hy => ?_⟩

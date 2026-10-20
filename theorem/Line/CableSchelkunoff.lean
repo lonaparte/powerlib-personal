@@ -188,10 +188,12 @@ theorem tendsto_exactZin_dc {ρ a b K : ℝ} (ha : 0 < a) (hab : a < b) (hf : Te
   have hD := tendsto_tubeDet_zero ha hb hf hre
   -- `m I₀(ma) K₁(mb) → 1/b`
   have hN1 := ((tendsto_besselI0_zero (tendsto_mul_ofReal (r := a) hf)).mul
-    (tendsto_mul_besselK1_zero (tendsto_mul_ofReal (r := b) hf) (re_mul_ofReal_pos hb hre))).const_mul
+    (tendsto_mul_besselK1_zero (tendsto_mul_ofReal (r := b) hf)
+      (re_mul_ofReal_pos hb hre))).const_mul
     ((1 / b : ℝ) : ℂ)
   -- `m K₀(ma) I₁(mb) → 0`
-  have hN2 := ((tendsto_mul_besselK0_zero (tendsto_mul_ofReal (r := a) hf) (re_mul_ofReal_pos ha hre)
+  have hN2 := ((tendsto_mul_besselK0_zero (tendsto_mul_ofReal (r := a) hf)
+    (re_mul_ofReal_pos ha hre)
     (sector_mul_ofReal ha hsec)).mul ((tendsto_mul_ofReal (r := b) hf).mul
     (tendsto_besselSeries1_sq_zero (tendsto_mul_ofReal (r := b) hf)))).const_mul
     ((1 / (2 * a) : ℝ) : ℂ)
@@ -232,10 +234,12 @@ theorem tendsto_exactZout_dc {ρ a b K : ℝ} (ha : 0 < a) (hab : a < b) (hf : T
   have hD := tendsto_tubeDet_zero ha hb hf hre
   -- `m I₀(mb) K₁(ma) → 1/a`
   have hN1 := ((tendsto_besselI0_zero (tendsto_mul_ofReal (r := b) hf)).mul
-    (tendsto_mul_besselK1_zero (tendsto_mul_ofReal (r := a) hf) (re_mul_ofReal_pos ha hre))).const_mul
+    (tendsto_mul_besselK1_zero (tendsto_mul_ofReal (r := a) hf)
+      (re_mul_ofReal_pos ha hre))).const_mul
     ((1 / a : ℝ) : ℂ)
   -- `m K₀(mb) I₁(ma) → 0`
-  have hN2 := ((tendsto_mul_besselK0_zero (tendsto_mul_ofReal (r := b) hf) (re_mul_ofReal_pos hb hre)
+  have hN2 := ((tendsto_mul_besselK0_zero (tendsto_mul_ofReal (r := b) hf)
+    (re_mul_ofReal_pos hb hre)
     (sector_mul_ofReal hb hsec)).mul ((tendsto_mul_ofReal (r := a) hf).mul
     (tendsto_besselSeries1_sq_zero (tendsto_mul_ofReal (r := a) hf)))).const_mul
     ((1 / (2 * b) : ℝ) : ℂ)
@@ -378,7 +382,8 @@ theorem exactZout_div_surface_eq {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a) (h
     (hm : 0 < m.re) :
     exactZout ρ a b m / ((ρ : ℂ) * m / (2 * Real.pi * b)) =
       (besselI0Norm (m * b) * besselK1Norm (m * a) +
-        besselK0Norm (m * b) * besselI1Norm (m * a) * Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ))))) /
+        besselK0Norm (m * b) * besselI1Norm (m * a) *
+          Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ))))) /
       (besselI1Norm (m * b) * besselK1Norm (m * a) - besselI1Norm (m * a) * besselK1Norm (m * b) *
         Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ))))) := by
   have hm0 : m ≠ 0 := by intro h; rw [h] at hm; simp at hm
@@ -416,7 +421,8 @@ theorem tendsto_exactZin_surface {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a) 
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => exactZin ρ a b (f i) / ((ρ : ℂ) * f i / (2 * Real.pi * a))) l (𝓝 1) := by
   have hb : 0 < b := ha.trans hab
-  obtain ⟨⟨hI0a, hI1a, hK0a, hK1a⟩, ⟨hI0b, hI1b, hK0b, hK1b⟩, hE⟩ := tendsto_norms ha hab hK hre hsec
+  obtain ⟨⟨hI0a, hI1a, hK0a, hK1a⟩, ⟨hI0b, hI1b, hK0b, hK1b⟩, hE⟩ :=
+    tendsto_norms ha hab hK hre hsec
   have h := (((hI0a.mul hK1b).mul hE).add (hK0a.mul hI1b)).div
     ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)) (by norm_num)
   rw [show ((1 : ℂ) * 1 * 0 + 1 * 1) / (1 * 1 - 1 * 1 * 0) = 1 by norm_num] at h
@@ -430,7 +436,8 @@ theorem tendsto_exactZout_surface {ρ a b K : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a)
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => exactZout ρ a b (f i) / ((ρ : ℂ) * f i / (2 * Real.pi * b))) l (𝓝 1) := by
   have hb : 0 < b := ha.trans hab
-  obtain ⟨⟨hI0a, hI1a, hK0a, hK1a⟩, ⟨hI0b, hI1b, hK0b, hK1b⟩, hE⟩ := tendsto_norms ha hab hK hre hsec
+  obtain ⟨⟨hI0a, hI1a, hK0a, hK1a⟩, ⟨hI0b, hI1b, hK0b, hK1b⟩, hE⟩ :=
+    tendsto_norms ha hab hK hre hsec
   have h := (((hI0b.mul hK1a)).add ((hK0b.mul hI1a).mul hE)).div
     ((hI1b.mul hK1a).sub ((hI1a.mul hK1b).mul hE)) (by norm_num)
   rw [show ((1 : ℂ) * 1 + 1 * 1 * 0) / (1 * 1 - 1 * 1 * 0) = 1 by norm_num] at h
@@ -479,8 +486,10 @@ theorem tendsto_mul_cexp_neg {t K : ℝ} (ht : 0 < t) (hre : Tendsto (fun i => (
     (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => f i * Complex.exp (-(f i * t))) l (𝓝 0) := by
   rw [tendsto_zero_iff_norm_tendsto_zero]
-  have h1 : Tendsto (fun x : ℝ => K / t * ((x * t) ^ 1 * Real.exp (-(x * t)))) atTop (𝓝 (K / t * 0)) :=
-    ((Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 1).comp (tendsto_id.atTop_mul_const ht)).const_mul _
+  have h1 : Tendsto (fun x : ℝ => K / t * ((x * t) ^ 1 * Real.exp (-(x * t)))) atTop
+      (𝓝 (K / t * 0)) :=
+    ((Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 1).comp
+      (tendsto_id.atTop_mul_const ht)).const_mul _
   rw [mul_zero] at h1
   refine squeeze_zero' (Eventually.of_forall fun i => norm_nonneg _) ?_ (h1.comp hre)
   filter_upwards [hsec, hre.eventually_gt_atTop 0] with i hs hi
@@ -707,7 +716,8 @@ theorem exactZin_div_tubeZin_tendsto_hf {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 0 
 theorem exactZout_div_tubeZout_tendsto_hf {ρ a b : ℝ} (hρ : ρ ≠ 0) (ha : 0 < a) (hab : a < b) :
     Tendsto (fun s : ℝ => exactZout ρ a b ((1 + Complex.I) * s) /
       tubeZout ρ a b ((1 + Complex.I) * s)) atTop (𝓝 1) := by
-  have h := (exactZout_tendsto_surface hρ ha hab).div (tubeZout_tendsto_surface hρ ha hab) one_ne_zero
+  have h := (exactZout_tendsto_surface hρ ha hab).div (tubeZout_tendsto_surface hρ ha hab)
+    one_ne_zero
   rw [div_one] at h
   refine h.congr' ?_
   filter_upwards [eventually_gt_atTop 0] with s hs
@@ -868,7 +878,8 @@ theorem innerRatio_sub_one_isBigO {a b K : ℝ} (ha : 0 < a) (hab : a < b) (hK :
   have hb : 0 < b := ha.trans hab
   have hrer : ∀ {r : ℝ}, 0 < r → Tendsto (fun i => (f i * r).re) l atTop := fun hr => by
     simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const hr
-  obtain ⟨⟨hI0a, hI1a, hK0a, hK1a⟩, ⟨hI0b, hI1b, hK0b, hK1b⟩, hE⟩ := tendsto_norms ha hab hK hre hsec
+  obtain ⟨⟨hI0a, hI1a, hK0a, hK1a⟩, ⟨hI0b, hI1b, hK0b, hK1b⟩, hE⟩ :=
+    tendsto_norms ha hab hK hre hsec
   obtain ⟨-, -, rK0a, rK1a⟩ := besselNorm_sub_one_isBigO hK (hrer ha) (sector_mul_ofReal ha hsec)
   have rK0a' := rK0a.trans (inv_re_mul_isBigO ha)
   have rK1a' := rK1a.trans (inv_re_mul_isBigO ha)
@@ -917,7 +928,8 @@ theorem outerRatio_sub_one_isBigO {a b K : ℝ} (ha : 0 < a) (hab : a < b) (hK :
   have hb : 0 < b := ha.trans hab
   have hrer : ∀ {r : ℝ}, 0 < r → Tendsto (fun i => (f i * r).re) l atTop := fun hr => by
     simpa [Complex.re_mul_ofReal] using hre.atTop_mul_const hr
-  obtain ⟨⟨hI0a, hI1a, hK0a, hK1a⟩, ⟨hI0b, hI1b, hK0b, hK1b⟩, hE⟩ := tendsto_norms ha hab hK hre hsec
+  obtain ⟨⟨hI0a, hI1a, hK0a, hK1a⟩, ⟨hI0b, hI1b, hK0b, hK1b⟩, hE⟩ :=
+    tendsto_norms ha hab hK hre hsec
   obtain ⟨rI0b, rI1b, -, -⟩ := besselNorm_sub_one_isBigO hK (hrer hb) (sector_mul_ofReal hb hsec)
   have rI0b' := rI0b.trans (inv_re_mul_isBigO hb)
   have rI1b' := rI1b.trans (inv_re_mul_isBigO hb)
@@ -953,7 +965,8 @@ theorem exactZin_eq_norm {ρ a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm 
 theorem exactZout_eq_norm {ρ a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm : 0 < m.re) :
     exactZout ρ a b m = (ρ : ℂ) * m / (2 * Real.pi * b) *
       ((besselI0Norm (m * b) * besselK1Norm (m * a) +
-        besselK0Norm (m * b) * besselI1Norm (m * a) * Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ))))) /
+        besselK0Norm (m * b) * besselI1Norm (m * a) *
+          Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ))))) /
       (besselI1Norm (m * b) * besselK1Norm (m * a) - besselI1Norm (m * a) * besselK1Norm (m * b) *
         Complex.exp (-(2 * (m * ((b - a : ℝ) : ℂ)))))) := by
   unfold exactZout
@@ -980,9 +993,11 @@ theorem exactZout_eq_norm {ρ a b : ℝ} (ha : 0 < a) (hb : 0 < b) {m : ℂ} (hm
 @[powerlib_foundation]
 theorem exactZin_sub_surface_isBigO_of {ρ a b K : ℝ} (ha : 0 < a) (hab : a < b) (hK : 0 < K)
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
-    (fun i => exactZin ρ a b (f i) - (ρ : ℂ) * f i / (2 * Real.pi * a)) =O[l] (fun _ => (1 : ℝ)) := by
+    (fun i => exactZin ρ a b (f i) - (ρ : ℂ) * f i / (2 * Real.pi * a)) =O[l]
+      (fun _ => (1 : ℝ)) := by
   have hb : 0 < b := ha.trans hab
-  have h := (surface_isBigO (ρ := ρ) ha hK.le hsec).mul (innerRatio_sub_one_isBigO ha hab hK hre hsec)
+  have h := (surface_isBigO (ρ := ρ) ha hK.le hsec).mul
+    (innerRatio_sub_one_isBigO ha hab hK hre hsec)
   refine h.congr' ?_ ?_
   · filter_upwards [hre.eventually_gt_atTop 0] with i hi
     rw [exactZin_eq_norm ha hb hi]; ring
@@ -996,7 +1011,8 @@ theorem exactZout_sub_surface_isBigO_of {ρ a b K : ℝ} (ha : 0 < a) (hab : a <
     (fun i => exactZout ρ a b (f i) - (ρ : ℂ) * f i / (2 * Real.pi * b)) =O[l]
       (fun _ => (1 : ℝ)) := by
   have hb : 0 < b := ha.trans hab
-  have h := (surface_isBigO (ρ := ρ) hb hK.le hsec).mul (outerRatio_sub_one_isBigO ha hab hK hre hsec)
+  have h := (surface_isBigO (ρ := ρ) hb hK.le hsec).mul
+    (outerRatio_sub_one_isBigO ha hab hK hre hsec)
   refine h.congr' ?_ ?_
   · filter_upwards [hre.eventually_gt_atTop 0] with i hi
     rw [exactZout_eq_norm ha hb hi]; ring

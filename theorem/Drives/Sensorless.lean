@@ -224,7 +224,8 @@ def estInvInductance (Δ Ld Lq : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 `Δθ = 0`. -/
 @[powerlib_foundation] theorem hf_note_d_axis_wrong (Ld Lq : ℝ) (hd : Ld ≠ 0) (hq : Lq ≠ 0)
     (hne : Ld ≠ Lq) :
-    (1 / Ld + 1 / Lq) / 2 - (1 / Ld - 1 / Lq) / 2 * Real.cos (2 * 0) = 1 / Lq ∧ 1 / Lq ≠ 1 / Ld := by
+    (1 / Ld + 1 / Lq) / 2 - (1 / Ld - 1 / Lq) / 2 * Real.cos (2 * 0) = 1 / Lq ∧
+      1 / Lq ≠ 1 / Ld := by
   refine ⟨by simp; ring, ?_⟩
   intro h
   exact hne (by field_simp at h; linarith)

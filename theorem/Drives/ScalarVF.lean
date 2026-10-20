@@ -156,7 +156,8 @@ def maxTorqueVF (k x rs f : ℝ) : ℝ := maxTorque (k * f) (2 * Real.pi * f) rs
   rw [div_lt_div_iff₀ (by positivity) (by positivity)]
   have hk2 : 0 < 3 * k ^ 2 := by positivity
   have : f1 * (rs + S2) < f2 * (rs + S1) := by nlinarith
-  nlinarith [mul_lt_mul_of_pos_left this (show 0 < 3 * k ^ 2 * (2 * Real.pi) * (f1 * f2) by positivity)]
+  nlinarith [mul_lt_mul_of_pos_left this
+    (show 0 < 3 * k ^ 2 * (2 * Real.pi) * (f1 * f2) by positivity)]
 
 /-- Field weakening (`V = V_n`, `r_s = 0`): `T_max(f) = T_max(f_n) (f_n/f)²`. -/
 @[powerlib_foundation] theorem maxTorque_fieldWeakening (Vn x fn f : ℝ) (hx : 0 < x) (hfn : 0 < fn)

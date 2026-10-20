@@ -367,12 +367,14 @@ quarter-wave set `γℓ = (2k+1)πi/2`. -/
     have : p.γ * ℓ = (p.γ * ℓ * I) * (-I) := by ring_nf; simp
     rw [this, hk]
     push_cast
-    ring_nf <;> (try simp [Complex.I_sq]) <;> (try ring)
+    ring_nf
   · rintro ⟨k, hk⟩
     refine ⟨-k - 1, ?_⟩
     rw [hk]
     push_cast
-    ring_nf <;> (try simp [Complex.I_sq]) <;> (try ring)
+    ring_nf
+    simp [Complex.I_sq]
+    ring
 
 /-- Lossless line, shorted far end: with `γ = iω/c` (`γℓ = iωτ`) the denominator vanishes iff
 `ωτ = (2k+1)π/2`, i.e. at `f = (2k+1)/(4τ) = (2k+1)c/(4ℓ)`. -/

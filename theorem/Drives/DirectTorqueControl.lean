@@ -131,7 +131,8 @@ open powerlib.Transform.SpaceVector
 /-- Sign pattern of the radial (`cos`) and tangential (`sin`) components of the vectors
 `v_{k+1}, v_{k+2}, v_{k−1}, v_{k−2}` (relative angles `±π/3, ±2π/3`) for a flux inside the
 sector, `φ ∈ [−π/6, π/6]`. -/
-@[powerlib_foundation] theorem sector_signs (φ : ℝ) (hφ : φ ∈ Set.Icc (-(Real.pi / 6)) (Real.pi / 6)) :
+@[powerlib_foundation] theorem sector_signs (φ : ℝ)
+    (hφ : φ ∈ Set.Icc (-(Real.pi / 6)) (Real.pi / 6)) :
     (0 ≤ Real.cos (Real.pi / 3 - φ) ∧ 0 < Real.sin (Real.pi / 3 - φ)) ∧
       (Real.cos (2 * Real.pi / 3 - φ) ≤ 0 ∧ 0 < Real.sin (2 * Real.pi / 3 - φ)) ∧
       (0 ≤ Real.cos (-(Real.pi / 3) - φ) ∧ Real.sin (-(Real.pi / 3) - φ) < 0) ∧

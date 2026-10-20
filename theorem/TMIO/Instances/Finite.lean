@@ -105,11 +105,13 @@ def requirementsOne : Set (Set (Bool × Bool)) := {coupled}
 def requirementsTwo : Set (Set (Bool × Bool)) :=
   {{(false, false), (true, true), (false, true)}, {(false, false), (true, true), (true, false)}}
 
-@[powerlib_foundation] theorem requirementsOne_space : realize member requirementsOne = coupled := by
+@[powerlib_foundation] theorem requirementsOne_space :
+    realize member requirementsOne = coupled := by
   ext ⟨a, b⟩
   cases a <;> cases b <;> simp [requirementsOne, coupled, member]
 
-@[powerlib_foundation] theorem requirementsTwo_space : realize member requirementsTwo = coupled := by
+@[powerlib_foundation] theorem requirementsTwo_space :
+    realize member requirementsTwo = coupled := by
   ext ⟨a, b⟩
   cases a <;> cases b <;> simp [requirementsTwo, coupled, member]
 

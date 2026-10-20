@@ -328,7 +328,8 @@ def classicalSM_equilibrium (δs : ℝ) : State 2 := WithLp.toLp 2 ![δs, 0]
     (classicalSM p).IsStrictLocalMin (classicalSM_equilibrium δs) := by
   have hopen : IsOpen {x : State 2 | x 0 ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2)} :=
     isOpen_Ioo.preimage (smCoord 0).continuous
-  have hmem : classicalSM_equilibrium δs ∈ {x : State 2 | x 0 ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2)} := by
+  have hmem : classicalSM_equilibrium δs ∈
+      {x : State 2 | x 0 ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2)} := by
     simpa [classicalSM_equilibrium] using hδs
   have hev := hopen.mem_nhds hmem
   refine eventually_nhdsWithin_iff.mpr ?_
@@ -392,7 +393,8 @@ def classicalSM_equilibrium (δs : ℝ) : State 2 := WithLp.toLp 2 ![δs, 0]
 /-- Linearization of the unforced classical machine at `(δ*, 0)`:
 `A = (J − R) ∇²H = !![0, 1/M; −b cos δ*, −D/M]`. -/
 @[powerlib_foundation] theorem classicalSM_linearization (p : ClassicalSMParams) (δs : ℝ) :
-    ((classicalSM p).J (classicalSM_equilibrium δs) - (classicalSM p).R (classicalSM_equilibrium δs)) *
+    ((classicalSM p).J (classicalSM_equilibrium δs) -
+      (classicalSM p).R (classicalSM_equilibrium δs)) *
         !![p.b * Real.cos δs, 0; 0, 1 / p.M] =
       !![0, 1 / p.M; -(p.b * Real.cos δs), -(p.D / p.M)] := by
   ext i j
@@ -975,7 +977,8 @@ def syncMachine7_inductance (Ld Lq Lad Laq Lff Lfkd Lkdkd Lkqkq : ℝ) :
      0, Laq, 0, 0, Lkqkq]
 
 /-- The structured inductance matrix is symmetric (reciprocal mutual inductances). -/
-@[powerlib_foundation] theorem syncMachine7_inductance_symm (Ld Lq Lad Laq Lff Lfkd Lkdkd Lkqkq : ℝ) :
+@[powerlib_foundation] theorem syncMachine7_inductance_symm
+    (Ld Lq Lad Laq Lff Lfkd Lkdkd Lkqkq : ℝ) :
     (syncMachine7_inductance Ld Lq Lad Laq Lff Lfkd Lkdkd Lkqkq)ᵀ =
       syncMachine7_inductance Ld Lq Lad Laq Lff Lfkd Lkdkd Lkqkq := by
   ext i j
@@ -1129,7 +1132,8 @@ electromagnetic-torque terms cancel. -/
 /-- `H = ½ Ψᵀ Γ Ψ + p² / (2M)`: magnetic plus kinetic energy, independent of `δ`. -/
 @[powerlib_foundation] theorem syncMachine7_H (p : SyncMachine7Params) (x : State 7) :
     (syncMachine7 p).H x =
-      (1 / 2 : ℝ) * (syncMachine7_flux x ⬝ᵥ (p.Γ *ᵥ syncMachine7_flux x)) + x 5 ^ 2 / (2 * p.M) := by
+      (1 / 2 : ℝ) * (syncMachine7_flux x ⬝ᵥ (p.Γ *ᵥ syncMachine7_flux x)) +
+        x 5 ^ 2 / (2 * p.M) := by
   have hQ := syncMachine7_Q_mulVec p x
   simp only [syncMachine7, quadraticEnergy]
   rw [hQ]

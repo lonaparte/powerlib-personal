@@ -269,8 +269,8 @@ omit [CompleteSpace 𝔸] [NormOneClass 𝔸] in
       ≤ ‖NormedSpace.exp (((1 - d) * T) • A₂)‖ * ‖NormedSpace.exp ((d * T) • A₁)‖ :=
         norm_mul_le _ _
     _ ≤ Real.exp (‖A₂‖ * ((1 - d) * T)) * Real.exp (‖A₁‖ * (d * T)) :=
-        mul_le_mul (norm_exp_smul_le _ (mul_nonneg hd1' hT)) (norm_exp_smul_le _ (mul_nonneg hd0 hT))
-          (norm_nonneg _) (Real.exp_pos _).le
+        mul_le_mul (norm_exp_smul_le _ (mul_nonneg hd1' hT))
+          (norm_exp_smul_le _ (mul_nonneg hd0 hT)) (norm_nonneg _) (Real.exp_pos _).le
     _ = Real.exp (‖A₂‖ * ((1 - d) * T) + ‖A₁‖ * (d * T)) := (Real.exp_add _ _).symm
     _ ≤ Real.exp ((‖A₁‖ + ‖A₂‖) * T) := by
         apply Real.exp_le_exp.mpr

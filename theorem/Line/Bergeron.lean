@@ -125,7 +125,7 @@ variable {a b : ℝ} {v i : ℝ × ℝ → ℝ}
     (by
       intro s hs
       obtain ⟨hv, hi, -, -⟩ := hsol _ (hmaps s hs)
-      exact (hv.add (hi.const_mul p.Zc)).congr_fderiv (by ext <;> simp <;> ring))
+      exact (hv.add (hi.const_mul p.Zc)).congr_fderiv (by ext <;> simp))
     (by
       intro s hs
       obtain ⟨-, -, hkvl, hkcl⟩ := hsol _ (hmaps s hs)
@@ -160,7 +160,7 @@ variable {a b : ℝ} {v i : ℝ × ℝ → ℝ}
     (by
       intro s hs
       obtain ⟨hv, hi, -, -⟩ := hsol _ (hmaps s hs)
-      exact (hv.sub (hi.const_mul p.Zc)).congr_fderiv (by ext <;> simp <;> ring))
+      exact (hv.sub (hi.const_mul p.Zc)).congr_fderiv (by ext <;> simp))
     (by
       intro s hs
       obtain ⟨-, -, hkvl, hkcl⟩ := hsol _ (hmaps s hs)
@@ -205,7 +205,7 @@ def i₂ (ℓ : ℝ) (i : ℝ × ℝ → ℝ) (t : ℝ) : ℝ := -i (ℓ, t)
     (h : IsTelegrapherSolution p.L p.C 0 0 0 ℓ v i) (hℓ : 0 ≤ ℓ) (t : ℝ) :
     v₁ v t - p.Zc * i₁ i t = v₂ ℓ v (t - τ p ℓ) + p.Zc * i₂ ℓ i (t - τ p ℓ) := by
   have := backward_invariant h hℓ t
-  simp only [sub_zero, τ] at this
+  simp only [sub_zero] at this
   simp only [v₁, v₂, i₁, i₂, τ]
   linarith
 
@@ -265,7 +265,7 @@ def travellingI (p : LosslessLine) (f g : ℝ → ℝ) (q : ℝ × ℝ) : ℝ :=
         (ContinuousLinearMap.fst ℝ ℝ ℝ + p.c • ContinuousLinearMap.snd ℝ ℝ ℝ) q :=
       (hasFDerivAt_fst).add ((hasFDerivAt_snd).const_mul p.c)
     have := ((hf _).comp_hasFDerivAt q hm).add ((hg _).comp_hasFDerivAt q hp)
-    exact (this.congr_fderiv (by ext <;> simp <;> ring)).hasFDerivWithinAt
+    exact (this.congr_fderiv (by ext <;> simp; ring)).hasFDerivWithinAt
   · have hm : HasFDerivAt (fun q : ℝ × ℝ => q.1 - p.c * q.2)
         (ContinuousLinearMap.fst ℝ ℝ ℝ - p.c • ContinuousLinearMap.snd ℝ ℝ ℝ) q :=
       (hasFDerivAt_fst).sub ((hasFDerivAt_snd).const_mul p.c)
@@ -274,7 +274,7 @@ def travellingI (p : LosslessLine) (f g : ℝ → ℝ) (q : ℝ × ℝ) : ℝ :=
       (hasFDerivAt_fst).add ((hasFDerivAt_snd).const_mul p.c)
     have := (((hf _).comp_hasFDerivAt q hm).sub ((hg _).comp_hasFDerivAt q hp)).mul_const
       p.Zc⁻¹
-    exact (this.congr_fderiv (by ext <;> simp <;> field_simp <;> ring)).hasFDerivWithinAt
+    exact (this.congr_fderiv (by ext <;> simp <;> field_simp)).hasFDerivWithinAt
   · simp only [zero_mul, sub_zero]
     have h2 := p.c_mul_L
     field_simp

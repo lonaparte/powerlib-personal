@@ -594,7 +594,8 @@ private def usesModel (models : Array (Nat × Expr)) (e : Expr)
 /-- Private proof helpers and generic semantic support are implementation evidence.
 Every public, model-specific behavioural conclusion must use Statement; its label is irrelevant.
 Static mathematics is checked normally and does not need a classification annotation. -/
-def publicTypeRejection (ctx : Ctx) (models : Array (Nat × Expr)) (type : Expr) : MetaM (Option String) := do
+def publicTypeRejection (ctx : Ctx) (models : Array (Nat × Expr)) (type : Expr) :
+    MetaM (Option String) := do
   if (← statement? type).isSome then return ← rejection ctx type
   if ← usesModel models type ctx.owners then
     if let some reason ← visit (classify ctx) type true false false then
@@ -604,7 +605,8 @@ def publicTypeRejection (ctx : Ctx) (models : Array (Nat × Expr)) (type : Expr)
       return some "public connection conclusion requires a typed connection Statement"
   return none
 
-def declarationRejection (ctx : Ctx) (models : Array (Nat × Expr)) (name : Name) : MetaM (Option String) := do
+def declarationRejection (ctx : Ctx) (models : Array (Nat × Expr)) (name : Name) :
+    MetaM (Option String) := do
   let info ← getConstInfo name
   unless ← isProp info.type do return none
   if isPrivateName name then return none
@@ -643,7 +645,8 @@ def auditModules (modules : Array Name) : CommandElabM Unit := do
         rejected := rejected.push s!"{name} in {mod}: {reason}"
     unless rejected.isEmpty do
       throwError "Admission rejected:\n{String.intercalate "\n" rejected.toList}"
-    logInfo m!"POWERLIB_ADMISSION_OK: {modules.size} built modules; {checked} proofs; {claims} typed connection statements"
+    logInfo m!"POWERLIB_ADMISSION_OK: {modules.size} built modules; {checked} proofs; \
+      {claims} typed connection statements"
 
 /-- Earlier feedback for published connection statements. The complete module inventory
 is checked separately by the mandatory build target. -/

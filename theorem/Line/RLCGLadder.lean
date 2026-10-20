@@ -139,11 +139,11 @@ omit p in
     ∑ j : Fin N, (if j.val + 1 = k.val then g j else 0) =
       if h : k.val = 0 then 0 else g ⟨k.val - 1, by omega⟩ := by
   split_ifs with h
-  · exact Finset.sum_eq_zero fun j _ => if_neg (by omega)
+  · exact Finset.sum_eq_zero fun j _ => ite_eq_right (by omega)
   · rw [Finset.sum_eq_single ⟨k.val - 1, by omega⟩]
-    · exact if_pos (by simp only; omega)
+    · exact ite_eq_left (by simp only; omega)
     · intro j _ hj
-      exact if_neg fun h' => hj (Fin.ext (by simp only; omega))
+      exact ite_eq_right fun h' => hj (Fin.ext (by simp only; omega))
     · exact fun h' => absurd (Finset.mem_univ _) h'
 
 omit p in
@@ -151,11 +151,11 @@ omit p in
     ∑ j : Fin N, (if j.val = k.val + 1 then g j else 0) =
       if h : k.val + 1 = N then 0 else g ⟨k.val + 1, by omega⟩ := by
   split_ifs with h
-  · exact Finset.sum_eq_zero fun j _ => if_neg (by omega)
+  · exact Finset.sum_eq_zero fun j _ => ite_eq_right (by omega)
   · rw [Finset.sum_eq_single ⟨k.val + 1, by omega⟩]
-    · exact if_pos rfl
+    · exact ite_eq_left rfl
     · intro j _ hj
-      exact if_neg fun h' => hj (Fin.ext h')
+      exact ite_eq_right fun h' => hj (Fin.ext h')
     · exact fun h' => absurd (Finset.mem_univ _) h'
 
 omit p in
@@ -202,9 +202,8 @@ Static evidence on the model, not a connection conclusion. -/
   simp only [DiagonalPH.field, sub_mulVec, Pi.add_apply, Pi.sub_apply, mulVec,
     dotProduct, Fintype.sum_sum_type, Fin.sum_univ_two, gradient_inl, gradient_inr]
   simp only [model, J, B, of_apply, Jfun, Bfun, diagonal_apply, Sum.elim_inl,
-    reduceCtorEq, if_false, zero_mul, Finset.sum_const_zero, zero_add, add_zero,
-    Sum.inl.injEq, mul_ite, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, if_true,
-    sum_kvl, true_and, Fin.isValue, one_ne_zero, false_and]
+    reduceCtorEq, ite_false, zero_mul, Finset.sum_const_zero, zero_add, add_zero,
+    Sum.inl.injEq, sum_kvl, true_and, Fin.isValue, one_ne_zero, false_and]
   unfold leftVoltage
   split_ifs <;> simp_all <;> ring
 
@@ -216,11 +215,11 @@ Static evidence on the model, not a connection conclusion. -/
   simp only [DiagonalPH.field, sub_mulVec, Pi.add_apply, Pi.sub_apply, mulVec,
     dotProduct, Fintype.sum_sum_type, Fin.sum_univ_two, gradient_inl, gradient_inr]
   simp only [model, J, B, of_apply, Jfun, Bfun, diagonal_apply, Sum.elim_inr,
-    reduceCtorEq, if_false, zero_mul, Finset.sum_const_zero, zero_add, add_zero,
-    Sum.inr.injEq, mul_ite, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, if_true,
-    sum_kcl, true_and, Fin.isValue, zero_ne_one, false_and]
+    reduceCtorEq, ite_false, zero_mul, Finset.sum_const_zero, zero_add, add_zero,
+    Sum.inr.injEq, sum_kcl, true_and, Fin.isValue, zero_ne_one, false_and]
   unfold rightCurrent
-  split_ifs <;> simp_all <;> ring
+  split_ifs <;> simp_all
+  ring
 
 /-- Port supply: `v₁ i_0 - i₂ v_{N-1}`, the electrical power entering the ladder.
 Static evidence on the model, not a connection conclusion. -/
@@ -231,19 +230,19 @@ Static evidence on the model, not a connection conclusion. -/
     dotProduct, transpose_apply, Fintype.sum_sum_type, Fin.sum_univ_two, gradient_inl,
     gradient_inr]
   simp only [model, B, of_apply, Bfun, Fin.isValue, true_and, one_ne_zero, zero_ne_one,
-    false_and, if_false, zero_mul, Finset.sum_const_zero, add_zero, zero_add, ite_mul,
+    false_and, ite_false, zero_mul, Finset.sum_const_zero, add_zero, zero_add, ite_mul,
     one_mul, neg_mul]
   have h0 : (∑ j : Fin (n + 1), if j.val = 0 then current p (n + 1) x j else 0) =
       current p (n + 1) x 0 := by
     rw [Finset.sum_eq_single 0]
     · simp
-    · intro j _ hj; exact if_neg fun h => hj (Fin.ext h)
+    · intro j _ hj; exact ite_eq_right fun h => hj (Fin.ext h)
     · simp
   have h1 : (∑ j : Fin (n + 1), if j.val + 1 = n + 1 then -voltage p (n + 1) x j else 0) =
       -voltage p (n + 1) x (Fin.last n) := by
     rw [Finset.sum_eq_single (Fin.last n)]
     · simp
-    · intro j _ hj; exact if_neg fun h => hj (Fin.ext (by simp; omega))
+    · intro j _ hj; exact ite_eq_right fun h => hj (Fin.ext (by simp; omega))
     · simp
   rw [h0, h1]
   ring

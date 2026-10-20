@@ -59,8 +59,8 @@ def RateMargin (A : Matrix (Fin n) (Fin n) ℝ) (a : ℝ) : Prop := IsHurwitz (A
       Finset.sum_nonneg fun i _ => mul_self_nonneg _
     linarith
   refine ⟨Real.sqrt (hi / lo), fun t₀ t₁ φ hφ t ht => ?_⟩
-  have hb := Flow.norm_bound_of_dissipation (e := 0) (rate := 2 * a) (c.energy_contDiff 0) hlo (hlo.trans_le hhi)
-    (fun x => by simpa [Certificate.energy] using (bounds x).1)
+  have hb := Flow.norm_bound_of_dissipation (e := 0) (rate := 2 * a) (c.energy_contDiff 0) hlo
+    (hlo.trans_le hhi) (fun x => by simpa [Certificate.energy] using (bounds x).1)
     (fun x => by simpa [Certificate.energy] using (bounds x).2) hd hφ ht
   simpa only [show 2 * a / 2 = a by ring] using hb
 

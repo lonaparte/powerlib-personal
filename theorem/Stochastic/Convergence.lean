@@ -108,7 +108,8 @@ def spike (n : ℕ) (u : I) : ℝ := if (u : ℝ) < 1 / ((n : ℝ) + 1) then (n 
     exact one_div_le_one_div_of_le (by positivity) (by exact_mod_cast Nat.add_le_add_right hn 1)
   simp only [spike, not_lt.mpr this, ↓reduceIte]
 
-@[powerlib_foundation] theorem integral_spike (n : ℕ) : ∫ u, spike n u ∂(volume : Measure I) = 1 := by
+@[powerlib_foundation] theorem integral_spike (n : ℕ) :
+    ∫ u, spike n u ∂(volume : Measure I) = 1 := by
   have hx : (1 / ((n : ℝ) + 1)) ∈ I := ⟨by positivity, by
     rw [div_le_one (by positivity)]; linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]⟩
   set x : I := ⟨1 / ((n : ℝ) + 1), hx⟩
@@ -158,7 +159,8 @@ def eventA (n : ℕ) : Set (ℕ → I) := {ω | ((ω n : I) : ℝ) ≤ 1 / ((n :
 @[powerlib_foundation] theorem measurableSet_eventA (n : ℕ) : MeasurableSet (eventA n) :=
   measurableSet_le (by fun_prop) measurable_const
 
-@[powerlib_foundation] theorem unifSeq_eventA (n : ℕ) : unifSeq (eventA n) = ENNReal.ofReal (1 / ((n : ℝ) + 1)) := by
+@[powerlib_foundation] theorem unifSeq_eventA (n : ℕ) :
+    unifSeq (eventA n) = ENNReal.ofReal (1 / ((n : ℝ) + 1)) := by
   have hx : (1 / ((n : ℝ) + 1)) ∈ I := ⟨by positivity, by
     rw [div_le_one (by positivity)]; linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]⟩
   set x : I := ⟨1 / ((n : ℝ) + 1), hx⟩

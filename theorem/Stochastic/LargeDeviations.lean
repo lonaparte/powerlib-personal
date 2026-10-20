@@ -1323,7 +1323,8 @@ private theorem cramer_lower_upper_endpoint [IsProbabilityMeasure μ] (hindep : 
     have hI1 : ((θ * x - cgf (X 0) μ θ : ℝ) : EReal) ≤ cramerRate (X 0) μ x :=
       le_iSup₂_of_le (f := fun t (_ : t ∈ integrableExpSet (X 0) μ) =>
         ((t * x - cgf (X 0) μ t : ℝ) : EReal)) θ hmem le_rfl
-    calc -cramerRate (X 0) μ x ≤ -((θ * x - cgf (X 0) μ θ : ℝ) : EReal) := EReal.neg_le_neg_iff.mpr hI1
+    calc -cramerRate (X 0) μ x ≤ -((θ * x - cgf (X 0) μ θ : ℝ) : EReal) :=
+          EReal.neg_le_neg_iff.mpr hI1
       _ = ((-(θ * x - cgf (X 0) μ θ) : ℝ) : EReal) := rfl
       _ ≤ _ := EReal.coe_le_coe_iff.mpr (by linarith)
   -- conclude
@@ -1652,7 +1653,8 @@ private theorem neg_cramerRate_le_of_trunc [IsProbabilityMeasure μ] {Y : Ω →
       (ae_of_all _ fun _ => (exp_pos _).le)]
     exact ENNReal.ofReal_le_ofReal (hbound j)
   have hfi : Integrable f μ :=
-    (lintegral_ofReal_ne_top_iff_integrable hfm hf0).mp (ne_top_of_le_ne_top ENNReal.ofReal_ne_top hlin)
+    (lintegral_ofReal_ne_top_iff_integrable hfm hf0).mp
+      (ne_top_of_le_ne_top ENNReal.ofReal_ne_top hlin)
   have hfint : ∫ ω, f ω ∂μ ≤ exp r := by
     rw [integral_eq_lintegral_of_nonneg_ae hf0 hfm]
     exact ENNReal.toReal_le_of_le_ofReal (exp_pos r).le hlin
@@ -1865,7 +1867,8 @@ private theorem trunc_exists_tilt [IsProbabilityMeasure μ] (hindep : iIndepFun 
     rw [e] at hlt
     exact lt_of_mul_lt_mul_left hlt (inv_nonneg.mpr hpr.le)
   rw [hF]
-  calc exp (-(t * x)) * ∫ ω in S, exp (t * X 0 ω) ∂μ ≤ exp (-(t * x)) * (exp (t * x) * exp (r + ε)) :=
+  calc exp (-(t * x)) * ∫ ω in S, exp (t * X 0 ω) ∂μ ≤
+        exp (-(t * x)) * (exp (t * x) * exp (r + ε)) :=
         mul_le_mul_of_nonneg_left hJ.le (exp_pos _).le
     _ = exp (r + ε) := by rw [← mul_assoc, ← exp_add, neg_add_cancel, exp_zero, one_mul]
 
