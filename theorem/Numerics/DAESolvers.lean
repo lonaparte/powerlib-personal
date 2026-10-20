@@ -73,7 +73,8 @@ def bdfResidual (F : Z × Z → W) (c : ℝ) (d z : Z) : W := F (z, c • z + d)
 @[powerlib_foundation] theorem bdfResidual_hasFDerivAt {F : Z × Z → W} {F' : Z × Z →L[ℝ] W}
     {c : ℝ} {d z : Z} (hF : HasFDerivAt F F' (z, c • z + d)) :
     HasFDerivAt (bdfResidual F c d)
-      (F'.comp (ContinuousLinearMap.inl ℝ Z Z) + c • F'.comp (ContinuousLinearMap.inr ℝ Z Z)) z := by
+      (F'.comp (ContinuousLinearMap.inl ℝ Z Z) +
+        c • F'.comp (ContinuousLinearMap.inr ℝ Z Z)) z := by
   have hpath : HasFDerivAt (fun z : Z => (z, c • z + d))
       ((ContinuousLinearMap.id ℝ Z).prod (c • ContinuousLinearMap.id ℝ Z)) z :=
     (hasFDerivAt_id z).prodMk (((hasFDerivAt_id z).const_smul c).add_const d)

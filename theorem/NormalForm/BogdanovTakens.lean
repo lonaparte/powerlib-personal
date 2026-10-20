@@ -190,7 +190,9 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     HasFDerivAt (field p)
       (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (jacobian p (y 0) (y 1))) y := by
   refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
-    ![Dynamics.coord 1, (p.β₂ + 2 * p.a * y 0 + p.b * y 1) • Dynamics.coord 0 + (p.b * y 0) • Dynamics.coord 1] ?_ ?_
+    ![Dynamics.coord 1,
+      (p.β₂ + 2 * p.a * y 0 + p.b * y 1) • Dynamics.coord 0 + (p.b * y 0) • Dynamics.coord 1]
+    ?_ ?_
   · intro i; fin_cases i
     · show HasFDerivAt (fun y => field p y 0) (Dynamics.coord 1) y
       simpa [field] using Dynamics.hasFDerivAt_coord 1 y
@@ -345,8 +347,8 @@ def jacobian (p : Params) (y₁ y₂ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
     (heq : p.a * y₁ ^ 2 + p.β₂ * y₁ + p.β₁ = 0) (hs : 0 < p.β₂ + 2 * p.a * y₁) :
     Unstable (field p) (mk y₁ 0) :=
   Criteria.unstable_of_jacobian_det_neg_fin_two (jacobian p y₁ 0) (field_contDiff p)
-    ((field_eq_zero_iff p _).mpr ⟨rfl, by simpa using heq⟩) (by simpa using fderiv_field p (mk y₁ 0))
-    (by rw [det_jacobian]; linarith)
+    ((field_eq_zero_iff p _).mpr ⟨rfl, by simpa using heq⟩)
+    (by simpa using fderiv_field p (mk y₁ 0)) (by rw [det_jacobian]; linarith)
 
 /-- An equilibrium `(y₁, 0)` with `β₂ + 2 a y₁ < 0` and `b y₁ < 0` is locally exponentially
 stable. -/
@@ -355,7 +357,8 @@ stable. -/
     (htr : p.b * y₁ < 0) :
     LocallyExponentiallyStable (field p) (mk y₁ 0) :=
   Criteria.locallyExponentiallyStable_of_jacobian_fin_two (jacobian p y₁ 0) (field_contDiff p)
-    ((field_eq_zero_iff p _).mpr ⟨rfl, by simpa using heq⟩) (by simpa using fderiv_field p (mk y₁ 0))
-    (by rw [trace_jacobian]; exact htr) (by rw [det_jacobian]; linarith)
+    ((field_eq_zero_iff p _).mpr ⟨rfl, by simpa using heq⟩)
+    (by simpa using fderiv_field p (mk y₁ 0)) (by rw [trace_jacobian]; exact htr)
+    (by rw [det_jacobian]; linarith)
 
 end powerlib.NormalForm.BogdanovTakens

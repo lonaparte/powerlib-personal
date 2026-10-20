@@ -104,14 +104,14 @@ def field (v : ℂ) : ℂ := (I * a.ωs + (a.gain v : ℂ)) * v
 
 @[powerlib_foundation] theorem aho_re (v : ℂ) :
     (a.field v).re = -a.σ * v.re - a.ωs * v.im + a.κv * (a.vstar ^ 2 - normSq v) * v.re := by
-  simp only [field, Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im, Complex.ofReal_re,
-    Complex.ofReal_im, Complex.I_re, Complex.I_im]
+  simp only [field, Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im,
+    Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]
   simp only [gain, c]; ring
 
 @[powerlib_foundation] theorem aho_im (v : ℂ) :
     (a.field v).im = a.ωs * v.re - a.σ * v.im + a.κv * (a.vstar ^ 2 - normSq v) * v.im := by
-  simp only [field, Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im, Complex.ofReal_re,
-    Complex.ofReal_im, Complex.I_re, Complex.I_im]
+  simp only [field, Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im,
+    Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]
   simp only [gain, c]; ring
 
 /-- Standing assumptions `κ_v > 0`, `σ < κ_v v*²`. -/
@@ -165,11 +165,11 @@ variable (a)
   · funext τ; simp [normSq_apply, Function.comp_def]
   · simp only [Function.comp_apply, reCLM_apply, imCLM_apply]
     rw [show (a.field (φ t)).re = a.gain (φ t) * (φ t).re - a.ωs * (φ t).im by
-      simp only [field, Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im, Complex.ofReal_re,
-    Complex.ofReal_im, Complex.I_re, Complex.I_im]; ring,
+      simp only [field, Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im,
+    Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]; ring,
       show (a.field (φ t)).im = a.ωs * (φ t).re + a.gain (φ t) * (φ t).im by
-      simp only [field, Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im, Complex.ofReal_re,
-    Complex.ofReal_im, Complex.I_re, Complex.I_im]; ring]
+      simp only [field, Complex.mul_re, Complex.mul_im, Complex.add_re, Complex.add_im,
+    Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]; ring]
     rw [normSq_apply]; ring
 
 /-- On any interval where `|v|² > 0`, `1/|v|² = κ_v/c + (1/|v(0)|² − κ_v/c) e^{−2ct}`.
@@ -332,7 +332,8 @@ private theorem phase_rotation (h : a.Admissible) {φ : ℝ → ℂ}
       have hcn : ContinuousWithinAt (fun τ => ((1 / ‖φ τ‖ : ℝ) : ℂ)) (Icc 0 T) x := by
         apply Complex.continuous_ofReal.continuousAt.comp_continuousWithinAt
         exact continuousWithinAt_const.div hcφ.norm (norm_ne_zero_iff.mpr (hne x hx'))
-      exact (hcφ.mul (by fun_prop : Continuous fun τ : ℝ => exp (-(I * a.ωs * τ))).continuousWithinAt).mul hcn
+      exact (hcφ.mul
+        (by fun_prop : Continuous fun τ : ℝ => exp (-(I * a.ωs * τ))).continuousWithinAt).mul hcn
     · intro x hx
       have hx' : x ∈ Ici (0 : ℝ) := hx.1
       have hd := (hφ x hx').mono (Ici_subset_Ici.mpr hx.1)
@@ -526,8 +527,9 @@ variable {a}
 private def energy (x : State 2) : ℝ := x 0 ^ 2 + x 1 ^ 2
 
 private theorem hasFDerivAt_energy (x : State 2) :
-    HasFDerivAt energy ((2 * x 0) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ) +
-      (2 * x 1) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ)) x := by
+    HasFDerivAt energy
+      ((2 * x 0) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ) +
+        (2 * x 1) • (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ)) x := by
   have h0 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (0 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
   have h1 := (PiLp.proj 2 (fun _ : Fin 2 => ℝ) (1 : Fin 2) : State 2 →L[ℝ] ℝ).hasFDerivAt (x := x)
   have h := (h0.pow 2).add (h1.pow 2)

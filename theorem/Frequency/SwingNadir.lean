@@ -104,7 +104,8 @@ def rateC (c σ ωd Tg t : ℝ) : ℝ :=
   ring
 
 /-- Critical-point shift: if `t ↦ e^{−σt}(a cos ω_d t + b sin ω_d t)` has zero derivative at
-`T`, then its value at `T + u` is its value at `T` times `e^{−σu}(cos ω_d u + (σ/ω_d) sin ω_d u)`. -/
+`T`, then its value at `T + u` is its value at `T` times
+`e^{−σu}(cos ω_d u + (σ/ω_d) sin ω_d u)`. -/
 @[powerlib_foundation] theorem damped_shift {σ ωd a b T : ℝ} (hωd : ωd ≠ 0)
     (hcrit : -σ * (a * Real.cos (ωd * T) + b * Real.sin (ωd * T)) +
       ωd * (b * Real.cos (ωd * T) - a * Real.sin (ωd * T)) = 0) (u : ℝ) :
@@ -168,7 +169,8 @@ def tCrit (σ ωd Tg : ℝ) : ℝ := Complex.arg ⟨σ - 1 / Tg, ωd⟩ / ωd
     ωd * tCrit σ ωd Tg = Complex.arg ⟨σ - 1 / Tg, ωd⟩ := by
   unfold tCrit; field_simp
 
-@[powerlib_foundation] theorem rateC_tCrit (hωd : 0 < ωd) : rateC c σ ωd Tg (tCrit σ ωd Tg) = 0 := by
+@[powerlib_foundation] theorem rateC_tCrit (hωd : 0 < ωd) :
+    rateC c σ ωd Tg (tCrit σ ωd Tg) = 0 := by
   rw [rateC_eq_sin hωd, mul_tCrit hωd, sub_self, Real.sin_zero]
   ring
 

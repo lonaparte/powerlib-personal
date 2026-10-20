@@ -549,8 +549,8 @@ omit [DecidableEq α] [Fintype β] in
 B_a > 0` and `K_I,a M_a ≤ D_a + K_R,a`, every line has `ω_s T_ℓ > 0`, and `𝓑` has trivial
 kernel (radial graph), the line-flow state matrix is spectrally stable — for every tie-line
 strength and every radial topology. -/
-@[powerlib_foundation] theorem netA_spectrallyStable_of_gain [DecidableEq β] (hM : ∀ a, 0 < (area a).M)
-    (hK : ∀ a, 0 < (area a).KI) (hB : ∀ a, 0 < (area a).B)
+@[powerlib_foundation] theorem netA_spectrallyStable_of_gain [DecidableEq β]
+    (hM : ∀ a, 0 < (area a).M) (hK : ∀ a, 0 < (area a).KI) (hB : ∀ a, 0 < (area a).B)
     (hgain : ∀ a, (area a).KI * (area a).M ≤ (area a).D + (area a).K)
     (hw : ∀ ℓ, 0 < ωs * T ℓ) (hker : ∀ p : β → ℝ, 𝓑 *ᵥ p = 0 → p = 0) :
     Linear.SpectrallyStable (netA area ωs T 𝓑) := by

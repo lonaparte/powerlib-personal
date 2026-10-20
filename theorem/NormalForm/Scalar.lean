@@ -158,7 +158,8 @@ when it is a zero with negative slope. -/
   have hd : DifferentiableAt ℝ g r := hg.differentiable one_ne_zero r
   have hJac := NormalForm.fderiv_lift (g := g) (x := NormalForm.embed r) (by simpa using hd)
   simp only [NormalForm.embed_apply] at hJac
-  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ (NormalForm.lift_contDiff hg) hJac,
+  rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _
+      (NormalForm.lift_contDiff hg) hJac,
     NormalForm.lift_eq_zero_iff, Linear.isHurwitz_one_iff]
 
 /-- Scalar linearization: an equilibrium with positive slope is unstable. -/

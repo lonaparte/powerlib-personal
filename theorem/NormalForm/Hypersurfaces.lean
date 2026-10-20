@@ -170,8 +170,8 @@ in `[x₀ − r, x₀ + r]` just above `μ₀`, exactly two just below. -/
       · exact ⟨le_rfl, by linarith⟩
       · exact ⟨by linarith, le_rfl⟩
     have hc : ContinuousWithinAt (f y) (Icc (μ₀ - ε) (μ₀ + ε)) μ₀ := by
-      have := (hcont (y, μ₀) ⟨hyI, hμ₀⟩).comp (continuousWithinAt_const.prodMk continuousWithinAt_id)
-        (fun μ hμ => ⟨hyI, hμ⟩)
+      have := (hcont (y, μ₀) ⟨hyI, hμ₀⟩).comp
+        (continuousWithinAt_const.prodMk continuousWithinAt_id) (fun μ hμ => ⟨hyI, hμ⟩)
       exact this
     exact hc.eventually (lt_mem_nhds (hend y hy))
   have hboth := (hpos _ (Or.inl rfl)).and (hpos _ (Or.inr rfl))
@@ -330,7 +330,8 @@ point `(x₀, μ₀)`. If `f = f_x = 0`, `f_xx > 0` and `f_μ > 0` there, then o
 
 /-- **`Σ_SN` crossing from `C²` data.** For `f ∈ C²(ℝ²)` with `f = ∂ₓf = 0`, `∂ₓₓf > 0`,
 `∂_μ f > 0` at `(x₀, μ₀)`, there is a neighbourhood `[x₀ − r, x₀ + r]` in which the number of
-equilibria of `ẋ = f(x, μ)` is `0` for `μ ∈ (μ₀, μ₀ + ε]` and `2` for `μ` in some `(μ₀ − ε', μ₀)`. -/
+equilibria of `ẋ = f(x, μ)` is `0` for `μ ∈ (μ₀, μ₀ + ε]` and `2` for `μ` in some
+`(μ₀ − ε', μ₀)`. -/
 @[powerlib_foundation] theorem fold_crossing_of_contDiff {f : ℝ → ℝ → ℝ} {x₀ μ₀ : ℝ}
     (hf : ContDiff ℝ 2 (Function.uncurry f)) (h0 : f x₀ μ₀ = 0)
     (h1 : deriv (fun x => f x μ₀) x₀ = 0)

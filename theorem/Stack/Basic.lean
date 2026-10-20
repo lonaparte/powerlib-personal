@@ -172,7 +172,8 @@ certify against the realized models, certify the records. -/
   simp only [Function.comp_apply, Seed.l₁, Seed.l₂, Seed.l₃, organized, Family.chain]
   rw [congrFun (generate_possibly S.produces), congrFun (generate_possibly S.realizes),
     congrFun (generate_comp _ _)]
-  have h : (generate (cover (table S.model.translate))).toFun Φ = (table S.model.translate).image Φ :=
+  have h : (generate (cover (table S.model.translate))).toFun Φ =
+      (table S.model.translate).image Φ :=
     generate_cover_apply _ Φ
   simp only [Function.comp_apply, h]
   rfl

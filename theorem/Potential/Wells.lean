@@ -99,7 +99,8 @@ def anharmonicWell (k lam θ : ℝ) : ℝ := k * θ ^ 2 / 2 + lam * θ ^ 4 / 4
 /-- The anharmonic single well (`k > 0`, `λ ≥ 0`) has the unique critical point `0`, which is
 its strict global minimum. -/
 @[powerlib_foundation] theorem anharmonicWell_unique_min {k lam : ℝ} (hk : 0 < k) (hl : 0 ≤ lam) :
-    (∀ θ, k * θ + lam * θ ^ 3 = 0 ↔ θ = 0) ∧ ∀ θ, θ ≠ 0 → anharmonicWell k lam 0 < anharmonicWell k lam θ := by
+    (∀ θ, k * θ + lam * θ ^ 3 = 0 ↔ θ = 0) ∧
+      ∀ θ, θ ≠ 0 → anharmonicWell k lam 0 < anharmonicWell k lam θ := by
   refine ⟨fun θ => ⟨fun h => ?_, fun h => by simp [h]⟩, fun θ hθ => ?_⟩
   · have : θ * (k + lam * θ ^ 2) = 0 := by linarith
     rcases mul_eq_zero.mp this with h | h
@@ -113,7 +114,8 @@ its strict global minimum. -/
 @[powerlib_foundation] theorem singleWell_normalization {k D : ℝ} (hk : 0 < k) (hD : 0 < D) :
     ∫ θ, Real.exp (-singleWell k θ / D) = √(2 * π * D / k) := by
   have h := integral_gaussian (k / (2 * D))
-  have hfun : (fun θ => Real.exp (-singleWell k θ / D)) = fun θ => Real.exp (-(k / (2 * D)) * θ ^ 2) := by
+  have hfun : (fun θ => Real.exp (-singleWell k θ / D)) =
+      fun θ => Real.exp (-(k / (2 * D)) * θ ^ 2) := by
     funext θ; congr 1; simp only [singleWell]; field_simp
   rw [hfun, h]
   congr 1

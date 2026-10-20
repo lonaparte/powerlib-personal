@@ -359,7 +359,8 @@ def Tred (s : ℂ) : ℂ := (g.K : ℂ) / ((g.M : ℂ) * s ^ 2 + (g.D : ℂ) * s
     rw [← hsM2, ← hsK2]
     apply Complex.ext <;>
       simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
-        Complex.ofReal_im, Complex.I_re, Complex.I_im, pow_two, Complex.re_ofNat, Complex.im_ofNat] <;>
+        Complex.ofReal_im, Complex.I_re, Complex.I_im, pow_two, Complex.re_ofNat,
+        Complex.im_ofNat] <;>
       field_simp <;> ring
   have hne : (g.ωc : ℂ) * (g.K : ℂ) ≠ 0 :=
     mul_ne_zero (by exact_mod_cast hω.ne') (by exact_mod_cast hK.ne')
@@ -401,7 +402,8 @@ def fieldU (u : ℝ) (x : State 3) : State 3 := g.field (x - mk3 u 0 0)
 
 /-- The Jacobian of the perturbed field is `J(δ − u)`. -/
 @[powerlib_foundation] theorem fderiv_fieldU (u : ℝ) (x : State 3) :
-    fderiv ℝ (g.fieldU u) x = Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (g.jacobian (x 0 - u)) := by
+    fderiv ℝ (g.fieldU u) x =
+      Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (g.jacobian (x 0 - u)) := by
   have h := (g.hasFDerivAt_field (x - mk3 u 0 0)).comp x
     ((hasFDerivAt_id x).sub_const (mk3 u 0 0))
   have : fieldU g u = g.field ∘ fun y => id y - mk3 u 0 0 := rfl
@@ -564,7 +566,8 @@ private theorem point_eq_zero {m : Model} (hp : Meets m .physical) (hb : Meets m
       by have hb' : m.g.K0 * Real.sin m.δ = m.g.P0 := hb; simpa [Model.point] using hb'⟩
 
 private theorem fderiv_point (m : Model) :
-    fderiv ℝ m.g.field m.point = Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (m.g.jacobian m.δ) := by
+    fderiv ℝ m.g.field m.point =
+      Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) (m.g.jacobian m.δ) := by
   rw [m.g.fderiv_field]
   simp [Model.point]
 
@@ -897,7 +900,8 @@ flat-curve VSM is physical and Lyapunov stable with a zero synchronizing coeffic
     connection% (¬ family.ExactUnder {.physical} (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.not_exactUnder_of_witness ?_ flatCurve_mem_den_lyapunovStable
-    (q := .synchronizing) (by simp [family, translate]) (by simp [family, Meets, flatCurve, Model.K])
+    (q := .synchronizing) (by simp [family, translate])
+    (by simp [family, Meets, flatCurve, Model.K])
   rw [TMIO.mem_realize]
   intro q hq
   rw [Set.mem_singleton_iff] at hq

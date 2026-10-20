@@ -129,7 +129,8 @@ omit [DecidableEq ι] in
   · rintro ⟨h, -⟩ ⟨v, hv, hEv⟩
     exact hv (h v hEv)
   · intro h
-    exact ⟨fun v hv => by_contra fun hne => h ⟨v, hne, hv⟩, fun μ hμ => absurd hμ (Nat.not_lt_zero μ)⟩
+    exact ⟨fun v hv => by_contra fun hne => h ⟨v, hne, hv⟩,
+      fun μ hμ => absurd hμ (Nat.not_lt_zero μ)⟩
 
 /-! ## Invariance under equivalence transformations -/
 
@@ -279,7 +280,8 @@ blocks of the same nilpotency class. -/
 /-- Every regular pencil over an infinite field has a differentiation index, equal to the
 Kronecker index of any of its Weierstrass forms. -/
 @[powerlib_foundation] theorem exists_isDiffIndex [Infinite K] {E A : Matrix ι ι K}
-    (h : Regular E A) : ∃ ν, IsDiffIndex E A ν ∧ ∀ W : WeierstrassForm E A, ν = nilpotencyClass W.N := by
+    (h : Regular E A) :
+    ∃ ν, IsDiffIndex E A ν ∧ ∀ W : WeierstrassForm E A, ν = nilpotencyClass W.N := by
   obtain ⟨W⟩ := weierstrass h
   exact ⟨_, W.isDiffIndex, fun W' => kroneckerIndex_eq W W'⟩
 
@@ -407,8 +409,8 @@ the zero solution at `t = 0` — `x(0) = 0` and input jet `f^(r)(0) = 0` for `r 
   simp only [OneFull, not_forall] at h
   obtain ⟨w, h0, hr, hw⟩ := h
   refine ⟨jetPoly w μ, fun k t => E *ᵥ jetPoly w μ (k + 1) t - A *ᵥ jetPoly w μ k t,
-    hasDerivAt_jetPoly w μ, fun k t => ?_, fun t => (add_sub_cancel _ _).symm, jetPoly_zero_zero w μ,
-    ?_, ?_⟩
+    hasDerivAt_jetPoly w μ, fun k t => ?_, fun t => (add_sub_cancel _ _).symm,
+    jetPoly_zero_zero w μ, ?_, ?_⟩
   · exact (Dynamics.hasDerivAt_mulVec E (hasDerivAt_jetPoly w μ (k + 1) t)).sub
       (Dynamics.hasDerivAt_mulVec A (hasDerivAt_jetPoly w μ k t))
   · intro r hrμ

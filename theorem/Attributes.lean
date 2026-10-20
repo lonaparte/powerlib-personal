@@ -93,7 +93,8 @@ def theoremNames (env : Environment) (kind : Option TheoremKind := none) : Array
   -- Typed public claims are discoverable without either metadata annotation.
   for (name, info) in env.constants do
     if let .thmInfo _ := info then
-      if statementType info.type && (kind.isNone || kind == some .domain) && !names.contains name then
+      if statementType info.type && (kind.isNone || kind == some .domain) &&
+          !names.contains name then
         names := names.push name
   return names.qsort Name.quickLt
 
@@ -144,7 +145,8 @@ def authoredTheorems (commands : Array Syntax) : CommandElabM (Array Name) := do
     for ref in authoredDeclarationRefs command do
       if ref.isIdent then
         if let some range ← Elab.getDeclarationRange? ref then
-          refs := refs.push (ref.getId.eraseMacroScopes.replacePrefix rootNamespace .anonymous, range)
+          refs := refs.push
+            (ref.getId.eraseMacroScopes.replacePrefix rootNamespace .anonymous, range)
   let mut names := #[]
   -- Main-branch source ranges and immediate async constant kinds avoid joining
   -- env.checked while a command or its linter is still completing.
@@ -164,7 +166,8 @@ def auditAuthoredTheorems (commands : Array Syntax) : CommandElabM Unit := do
   let env ← getEnv
   for name in ← authoredTheorems commands do
     unless (kindOf? env name).isSome do
-      throwError "Source-authored theorem {privateToUserName name} requires exactly one PowerLib classification"
+      throwError m!"Source-authored theorem {privateToUserName name} requires exactly one " ++
+        m!"PowerLib classification"
 
 def classificationLinter : ModuleLinter where
   run commands := do

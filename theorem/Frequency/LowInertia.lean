@@ -250,8 +250,8 @@ def firstOrderModel (M β : ℝ) : Linear.Plant 1 1 where
       fun ω => (β ^ 2)⁻¹ * (fun y : ℝ => (1 + y ^ 2)⁻¹) (M / β * ω) := by
     funext ω
     field_simp
-  rw [h1, integral_const_mul, integral_comp_mul_left_Ioi (fun y : ℝ => (1 + y ^ 2)⁻¹) 0 hc, mul_zero,
-    integral_Ioi_inv_one_add_sq, Real.arctan_zero, sub_zero, smul_eq_mul]
+  rw [h1, integral_const_mul, integral_comp_mul_left_Ioi (fun y : ℝ => (1 + y ^ 2)⁻¹) 0 hc,
+    mul_zero, integral_Ioi_inv_one_add_sq, Real.arctan_zero, sub_zero, smul_eq_mul]
   field_simp
 
 /-- Frequency variance `σ²(M) = ∫₀^∞ S(ω)/(β² + M² ω²) dω` for a PSD `S`. -/

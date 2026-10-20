@@ -265,7 +265,8 @@ end Model
 /-- The energy balance of the source's appendix:
 `dH/dt = −(G_dc+K_p) ũ² − R_s ‖ĩ‖² − ũ ĩᵀ T(θ)`, `T(θ) = (μ ω₀ L_s/N) Z_sᵀ (cos θ, sin θ)`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem energy_lie (m : Model) (hN : m.N ≠ 0) (hL : m.Ls ≠ 0) (hC : m.Cdc ≠ 0) (x : State 4) :
+@[powerlib_foundation] theorem energy_lie (m : Model) (hN : m.N ≠ 0) (hL : m.Ls ≠ 0)
+    (hC : m.Cdc ≠ 0) (x : State 4) :
     fderiv ℝ m.energy x (m.field x) =
       -(m.Gdc + m.Kp) * (x 1 - m.ustar) ^ 2 -
         m.Rs * ((x 2 - m.iHatD (x 0)) ^ 2 + (x 3 - m.iHatQ (x 0)) ^ 2) -
@@ -305,9 +306,11 @@ private theorem sos_aux {R N B G u e1 e2 z1 z2 : ℝ} (hR : 0 < R) (hN : 0 < N)
         B / N * u * (e1 * z1 + e2 * z2) + B ^ 2 * u ^ 2 / (4 * R * N)) := by ring
   linarith
 
-/-- With `R_s > 0`, `dH/dt ≤ −margin ũ²`. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem energy_lie_le (m : Model) (hR : 0 < m.Rs) (hL : m.Ls ≠ 0) (hC : m.Cdc ≠ 0)
-    (x : State 4) : fderiv ℝ m.energy x (m.field x) ≤ -m.margin * (x 1 - m.ustar) ^ 2 := by
+/-- With `R_s > 0`, `dH/dt ≤ −margin ũ²`. Static evidence on the model, not a connection
+conclusion. -/
+@[powerlib_foundation] theorem energy_lie_le (m : Model) (hR : 0 < m.Rs) (hL : m.Ls ≠ 0)
+    (hC : m.Cdc ≠ 0) (x : State 4) :
+    fderiv ℝ m.energy x (m.field x) ≤ -m.margin * (x 1 - m.ustar) ^ 2 := by
   have hN : 0 < m.N := by
     unfold Model.N
     have := sq_nonneg (m.ω0)
@@ -326,8 +329,10 @@ private theorem sos_aux {R N B G u e1 e2 z1 z2 : ℝ} (hR : 0 < R) (hN : 0 < N)
   linarith
 
 /-- Every `θ_dq` with `sin θ_dq = 0` gives an equilibrium `(θ_dq, u*, î(θ_dq))`; for
-`θ_dq = π` it is the saddle of `S` contained in the source's LaSalle set. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field_eq_zero_of_sin_eq_zero (m : Model) (hN : m.N ≠ 0) {θ : ℝ} (hθ : Real.sin θ = 0) :
+`θ_dq = π` it is the saddle of `S` contained in the source's LaSalle set. Static evidence on the
+model, not a connection conclusion. -/
+@[powerlib_foundation] theorem field_eq_zero_of_sin_eq_zero (m : Model) (hN : m.N ≠ 0) {θ : ℝ}
+    (hθ : Real.sin θ = 0) :
     m.field (WithLp.toLp 2 ![θ, m.ustar, m.iHatD θ, m.iHatQ θ]) = 0 := by
   ext i
   fin_cases i
@@ -347,11 +352,13 @@ private theorem sos_aux {R N B G u e1 e2 z1 z2 : ℝ} (hR : 0 < R) (hN : 0 < N)
     simp only [Model.N]
     ring
 
-/-- The operating point is an equilibrium. Static evidence on the model, not a connection conclusion. -/
+/-- The operating point is an equilibrium. Static evidence on the model, not a connection
+conclusion. -/
 @[powerlib_foundation] theorem field_point (m : Model) (hN : m.N ≠ 0) : m.field m.point = 0 := by
   simpa [Model.point] using field_eq_zero_of_sin_eq_zero m hN (θ := 0) Real.sin_zero
 
-/-- The closed loop is `2π`-periodic in `θ_dq`. Static evidence on the model, not a connection conclusion. -/
+/-- The closed loop is `2π`-periodic in `θ_dq`. Static evidence on the model, not a connection
+conclusion. -/
 @[powerlib_foundation] theorem field_add_two_pi (m : Model) (θ u id iq : ℝ) :
     m.field (WithLp.toLp 2 ![θ + 2 * Real.pi, u, id, iq]) =
       m.field (WithLp.toLp 2 ![θ, u, id, iq]) := by
@@ -407,15 +414,19 @@ private theorem lyapunovStable (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR 
       hLie_nonpos := fun x _ => (energy_lie_le m hR hL.ne' hC.ne' x).trans
         (by nlinarith [sq_nonneg (x 1 - m.ustar)]) }
 
-/-- The source's potential (16): `S(θ) = L_s (μ²u*² − 2μu*v₀ cos θ + v₀²)/(2N)`. Static evidence on the model, not a connection conclusion. -/
+/-- The source's potential (16): `S(θ) = L_s (μ²u*² − 2μu*v₀ cos θ + v₀²)/(2N)`. Static evidence
+on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem potential_eq (m : Model) (hN : m.N ≠ 0) (θ : ℝ) :
     m.potential θ = m.Ls / (2 * m.N) *
       (m.μ ^ 2 * m.ustar ^ 2 - 2 * m.μ * m.ustar * m.v0 * Real.cos θ + m.v0 ^ 2) := by
   have hw : (m.μ * m.ustar * Real.sin θ) ^ 2 + (m.v0 - m.μ * m.ustar * Real.cos θ) ^ 2 =
       m.μ ^ 2 * m.ustar ^ 2 - 2 * m.μ * m.ustar * m.v0 * Real.cos θ + m.v0 ^ 2 := by
     linear_combination (m.μ ^ 2 * m.ustar ^ 2) * Real.sin_sq_add_cos_sq θ
-  have hZ : (m.Rs * (m.μ * m.ustar * Real.sin θ) + m.ω0 * m.Ls * (m.v0 - m.μ * m.ustar * Real.cos θ)) ^ 2
-      + (-(m.ω0 * m.Ls) * (m.μ * m.ustar * Real.sin θ) + m.Rs * (m.v0 - m.μ * m.ustar * Real.cos θ)) ^ 2
+  have hZ :
+      (m.Rs * (m.μ * m.ustar * Real.sin θ) +
+          m.ω0 * m.Ls * (m.v0 - m.μ * m.ustar * Real.cos θ)) ^ 2
+      + (-(m.ω0 * m.Ls) * (m.μ * m.ustar * Real.sin θ) +
+          m.Rs * (m.v0 - m.μ * m.ustar * Real.cos θ)) ^ 2
       = m.N * ((m.μ * m.ustar * Real.sin θ) ^ 2 + (m.v0 - m.μ * m.ustar * Real.cos θ) ^ 2) := by
     simp only [Model.N]
     ring
@@ -436,7 +447,8 @@ potential. Static evidence on the model, not a connection conclusion. -/
   ring
 
 /-- For `η ≠ 0`, `margin > 0` is the source's (and the note's) condition
-`(G_dc+K_p)/η² > L_s²μ²u*²/(4R_s‖Z_s‖²)`. Static evidence on the model, not a connection conclusion. -/
+`(G_dc+K_p)/η² > L_s²μ²u*²/(4R_s‖Z_s‖²)`. Static evidence on the model, not a connection
+conclusion. -/
 @[powerlib_foundation] theorem margin_pos_iff (m : Model) (hη : m.η ≠ 0) :
     0 < m.margin ↔ m.Ls ^ 2 * m.μ ^ 2 * m.ustar ^ 2 / (4 * m.Rs * m.N) <
       (m.Gdc + m.Kp) / m.η ^ 2 := by
@@ -483,9 +495,11 @@ def linDot (a b c d : ℝ) : ℝ :=
 
 end Model
 
-/-- Energy balance of the linearization: `B(x, J x) = −2 (g δu² + R_s ‖δĩ‖² + (μω₀L_s/N) δu δĩᵀ Z_sᵀ e₁)`,
+/-- Energy balance of the linearization:
+`B(x, J x) = −2 (g δu² + R_s ‖δĩ‖² + (μω₀L_s/N) δu δĩᵀ Z_sᵀ e₁)`,
 `δĩ = δi − î'(0) δθ`. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem linDot_eq (m : Model) (hN : m.N ≠ 0) (hL : m.Ls ≠ 0) (hC : m.Cdc ≠ 0) (a b c d : ℝ) :
+@[powerlib_foundation] theorem linDot_eq (m : Model) (hN : m.N ≠ 0) (hL : m.Ls ≠ 0)
+    (hC : m.Cdc ≠ 0) (a b c d : ℝ) :
     m.linDot a b c d = -2 * ((m.Gdc + m.Kp) * b ^ 2 +
       m.Rs * ((c - m.p * a) ^ 2 + (d - m.q * a) ^ 2) +
       m.μ * m.ω0 * m.Ls / m.N * b * ((c - m.p * a) * m.Rs + (d - m.q * a) * (-(m.ω0 * m.Ls)))) := by
@@ -504,7 +518,8 @@ private theorem jac_coef (m : Model) (hN : m.N ≠ 0) (hC : m.Cdc ≠ 0) :
 private theorem sq_add_sq_eq_zero {x y : ℝ} (h : x ^ 2 + y ^ 2 = 0) : x = 0 ∧ y = 0 := by
   have hx : x ^ 2 = 0 := by nlinarith [sq_nonneg x, sq_nonneg y]
   have hy : y ^ 2 = 0 := by nlinarith [sq_nonneg x, sq_nonneg y]
-  exact ⟨pow_eq_zero_iff (n := 2) (by norm_num) |>.mp hx, pow_eq_zero_iff (n := 2) (by norm_num) |>.mp hy⟩
+  exact ⟨pow_eq_zero_iff (n := 2) (by norm_num) |>.mp hx,
+    pow_eq_zero_iff (n := 2) (by norm_num) |>.mp hy⟩
 
 private theorem eigen_re_im {A : Matrix (Fin 4) (Fin 4) ℝ} {lam : ℂ} {v : Fin 4 → ℂ}
     (h : Matrix.mulVec (A.map (algebraMap ℝ ℂ)) v = lam • v) (i : Fin 4) :
@@ -524,8 +539,8 @@ private theorem eigen_re_im {A : Matrix (Fin 4) (Fin 4) ℝ} {lam : ℂ} {v : Fi
 the quadratic energy gives `2 Re λ (E(v_r) + E(v_i)) = B(v_r, J v_r) + B(v_i, J v_i) ≤ 0`; on the
 boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC row then forces
 `κ δθ = 0`. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem jac_isHurwitz (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
-    (hs : 0 < m.μ * m.ustar * m.v0) (hη : m.η ≠ 0) (hδ : 0 < m.margin) :
+@[powerlib_foundation] theorem jac_isHurwitz (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
+    (hR : 0 < m.Rs) (hs : 0 < m.μ * m.ustar * m.v0) (hη : m.η ≠ 0) (hδ : 0 < m.margin) :
     LinearSystems.IsHurwitz m.jac := by
   intro lam v hv hev
   have hN : 0 < m.N := by
@@ -560,7 +575,8 @@ boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC ro
     simp only [Model.linDot, Model.linB, Model.linE]
     linear_combination
       (2 * m.k * ar - 2 * m.Ls * m.p * (cr - m.p * ar) - 2 * m.Ls * m.q * (dr - m.q * ar)) * r0 +
-      (2 * m.Cdc * br) * r1 + (2 * m.Ls * (cr - m.p * ar)) * r2 + (2 * m.Ls * (dr - m.q * ar)) * r3 +
+      (2 * m.Cdc * br) * r1 + (2 * m.Ls * (cr - m.p * ar)) * r2 +
+      (2 * m.Ls * (dr - m.q * ar)) * r3 +
       (2 * m.k * ai - 2 * m.Ls * m.p * (ci - m.p * ai) - 2 * m.Ls * m.q * (di - m.q * ai)) * i0 +
       (2 * m.Cdc * bi) * i1 + (2 * m.Ls * (ci - m.p * ai)) * i2 + (2 * m.Ls * (di - m.q * ai)) * i3
   -- dissipation
@@ -677,7 +693,8 @@ boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC ro
   intro i
   fin_cases i <;> simp [Model.field, Model.idc, Model.ixHat] <;> fun_prop
 
-/-- Entries of the Jacobian applied to a vector. Static evidence on the model, not a connection conclusion. -/
+/-- Entries of the Jacobian applied to a vector. Static evidence on the model, not a connection
+conclusion. -/
 @[powerlib_foundation] theorem jac_apply (m : Model) (v : State 4) :
     (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) m.jac v) 0 = m.η * v 1 ∧
     (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) m.jac v) 1 =
@@ -691,7 +708,8 @@ boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC ro
     simp only [Model.jac, Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
       Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons] <;> ring
 
-/-- The derivative of the closed loop at the operating point is `jac`. Static evidence on the model, not a connection conclusion. -/
+/-- The derivative of the closed loop at the operating point is `jac`. Static evidence on the
+model, not a connection conclusion. -/
 @[powerlib_foundation] theorem hasFDerivAt_field_point (m : Model) (hL : m.Ls ≠ 0) :
     HasFDerivAt m.field (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) m.jac) m.point := by
   rw [← hasFDerivWithinAt_univ, hasFDerivWithinAt_euclidean]
@@ -722,8 +740,9 @@ boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC ro
       rw [(j v).1]
       simp
   · have hix := ((hs.neg.mul hD).add (hc.mul hQ)).const_mul m.μ |>.neg
-    have hidc := ((((h1.sub_const m.ustar).const_mul (-m.Kp)).add_const (m.Gdc * m.ustar)).add hix).sub
-      (hs.const_mul m.κ)
+    have hidc :=
+      ((((h1.sub_const m.ustar).const_mul (-m.Kp)).add_const (m.Gdc * m.ustar)).add hix).sub
+        (hs.const_mul m.κ)
     have h := (((h1.const_mul (-m.Gdc)).add hidc).add (((hs.neg.mul h2).add (hc.mul h3)).const_mul
       m.μ)).mul_const m.Cdc⁻¹
     convert h using 1
@@ -750,8 +769,9 @@ boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC ro
       simp [p0, p1]
       field_simp
       ring
-  · have h := (((((h2.const_mul m.ω0).const_mul m.Ls).add (h3.const_mul m.Rs)).neg.add_const m.v0).sub
-      ((hc.const_mul m.μ).mul h1)).mul_const m.Ls⁻¹
+  · have h :=
+      (((((h2.const_mul m.ω0).const_mul m.Ls).add (h3.const_mul m.Rs)).neg.add_const m.v0).sub
+        ((hc.const_mul m.μ).mul h1)).mul_const m.Ls⁻¹
     convert h using 1
     · funext y
       simp only [Model.field, PiLp.toLp_apply, Matrix.cons_val_three, Matrix.head_cons,
@@ -800,8 +820,9 @@ def Meets (m : Model) : Requirement → Prop
 
 /-- The translation: Lyapunov stability into the physical, synchronizing and dissipative
 requirements; local asymptotic and exponential stability into the physical, synchronizing,
-damped (`margin > 0`) and matching (`η ≠ 0`) requirements; passivity into nothing; every other flow sentence into the whole, inconsistent,
-language (unavailable coverage, exact for the global sentences). -/
+damped (`margin > 0`) and matching (`η ≠ 0`) requirements; passivity into nothing; every other
+flow sentence into the whole, inconsistent, language (unavailable coverage, exact for the global
+sentences). -/
 def translate : Sentence → Set Requirement
   | .flow .lyapunovStable => {.physical, .synchronizing, .dissipative}
   | .flow .locallyAsymptoticallyStable | .flow .locallyExponentiallyStable =>

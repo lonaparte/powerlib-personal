@@ -107,7 +107,8 @@ Implementation evidence: trajectory-level result outside the sentence language (
     · exact h2 k
     · simp [h1 k]
 
-/-- In a synchronous steady state (a relative equilibrium) every unit shares `ΔP_k = P_k − P*_k = −K_{R,k} (ω − ω_s)`.
+/-- In a synchronous steady state (a relative equilibrium) every unit shares
+`ΔP_k = P_k − P*_k = −K_{R,k} (ω − ω_s)`.
 Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem synchronous_sharing (hτ : ∀ k, m.τ k ≠ 0) (hK : ∀ k, m.KR k ≠ 0)
     {θ₀ Pf₀ : Fin N → ℝ} {ω : ℝ}

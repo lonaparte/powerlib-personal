@@ -199,8 +199,10 @@ solution converging to `a` backwards and of one converging to `b` forwards. -/
           Tendsto ψ atTop (𝓝 b)} := by
   obtain ⟨hγ, ha, hb⟩ := h
   have hshift := IsGlobalSolution.shift hγ t₀
-  have hT : Tendsto (fun t : ℝ => t + t₀) atTop atTop := tendsto_atTop_add_const_right _ t₀ tendsto_id
-  have hB : Tendsto (fun t : ℝ => t + t₀) atBot atBot := tendsto_atBot_add_const_right _ t₀ tendsto_id
+  have hT : Tendsto (fun t : ℝ => t + t₀) atTop atTop :=
+    tendsto_atTop_add_const_right _ t₀ tendsto_id
+  have hB : Tendsto (fun t : ℝ => t + t₀) atBot atBot :=
+    tendsto_atBot_add_const_right _ t₀ tendsto_id
   exact ⟨⟨_, hshift, by simp, ha.comp hB⟩, ⟨_, hshift, by simp, hb.comp hT⟩⟩
 
 variable [CompleteSpace E]

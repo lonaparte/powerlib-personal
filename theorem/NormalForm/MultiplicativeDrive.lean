@@ -138,8 +138,8 @@ state-independent coefficient iff all second derivatives with a drive index vani
 
 /-- Discriminant (A) does not imply (B): `F = f₀(x) + u b + u² d` with `d ≠ 0` has
 `∂_x ∂_u F = 0` everywhere but is not of the form `f₀'(x) + u b'`. -/
-@[powerlib_foundation] theorem quadratic_drive_counterexample {f₀ : E → E} (hf₀ : Differentiable ℝ f₀)
-    (b d : E) (hd : d ≠ 0) :
+@[powerlib_foundation] theorem quadratic_drive_counterexample {f₀ : E → E}
+    (hf₀ : Differentiable ℝ f₀) (b d : E) (hd : d ≠ 0) :
     (∀ p : E × ℝ, ∀ w : E, fderiv ℝ (driveDeriv fun q : E × ℝ => f₀ q.1 + q.2 • b + q.2 ^ 2 • d)
         p (w, 0) = 0) ∧
       ¬ ∃ f₁ : E → E, ∃ b' : E, ∀ p : E × ℝ,
@@ -218,7 +218,8 @@ state: `D^kF(p) = D^kf₀(p.1) ∘ (fst, …, fst)`. -/
   have h1 : (fun q : E × ℝ => f₀ q.1) = f₀ ∘ (ContinuousLinearMap.fst ℝ E ℝ) := rfl
   have h2 : (fun q : E × ℝ => q.2 • b) = (fun s : ℝ => s • b) ∘ (ContinuousLinearMap.snd ℝ E ℝ) :=
     rfl
-  have hc1 : ContDiff ℝ k fun q : E × ℝ => f₀ q.1 := by rw [h1]; exact hf₀.comp (ContinuousLinearMap.fst ℝ E ℝ).contDiff
+  have hc1 : ContDiff ℝ k fun q : E × ℝ => f₀ q.1 := by
+    rw [h1]; exact hf₀.comp (ContinuousLinearMap.fst ℝ E ℝ).contDiff
   have hc2 : ContDiff ℝ k fun q : E × ℝ => q.2 • b := by
     rw [h2]; exact hlin.comp (ContinuousLinearMap.snd ℝ E ℝ).contDiff
   have hsum : (fun q : E × ℝ => f₀ q.1 + q.2 • b) =
@@ -238,7 +239,8 @@ state: `D^kF(p) = D^kf₀(p.1) ∘ (fst, …, fst)`. -/
       simp
     rw [this]
     rfl
-  rw [Pi.add_apply, hzero, add_zero, h1, ContinuousLinearMap.iteratedFDeriv_comp_right _ hf₀ _ le_rfl]
+  rw [Pi.add_apply, hzero, add_zero, h1,
+    ContinuousLinearMap.iteratedFDeriv_comp_right _ hf₀ _ le_rfl]
   rfl
 
 /-- An affine drive channel has drive-free derivative tensors of every order `k ≥ 2`. -/

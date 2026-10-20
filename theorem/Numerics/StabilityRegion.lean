@@ -126,7 +126,8 @@ every eigenvalue into the closed unit disk. -/
     (∀ x₀ : Fin n → ℂ, ∃ C : ℝ, ∀ k : ℕ,
         ‖((1 + h • (P * diagonal lam * Pinv)) ^ k) *ᵥ x₀‖ ≤ C) ↔
       ∀ i, ‖1 + h * lam i‖ ≤ 1 := by
-  have hconj : 1 + h • (P * diagonal lam * Pinv) = P * diagonal (fun i => 1 + h * lam i) * Pinv := by
+  have hconj :
+      1 + h • (P * diagonal lam * Pinv) = P * diagonal (fun i => 1 + h * lam i) * Pinv := by
     have : diagonal (fun i => 1 + h * lam i) = 1 + h • diagonal lam := by
       ext i j
       by_cases hij : i = j
@@ -166,7 +167,8 @@ every eigenvalue into the closed unit disk. -/
       | zero => ext i j; fin_cases i <;> fin_cases j <;> simp
       | succ k ih =>
         rw [pow_succ, ih]
-        ext i j; fin_cases i <;> fin_cases j <;> (simp [Matrix.mul_apply, Fin.sum_univ_two]; try ring)
+        ext i j
+        fin_cases i <;> fin_cases j <;> (simp [Matrix.mul_apply, Fin.sum_univ_two]; try ring)
     obtain ⟨k, hk⟩ := exists_nat_gt (C / h)
     have := hC k
     rw [hpow k] at this

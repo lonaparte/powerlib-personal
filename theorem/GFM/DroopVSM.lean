@@ -418,8 +418,8 @@ private theorem vsm_sound (s : Sentence) : vsmFamily.Sound s :=
 /-- A `C¹` power map, balance, positive inertia and damping and a positive synchronizing slope
 place a VSM model in local exponential stability. -/
 @[powerlib_domain] theorem vsm_mem_den_locallyExponentiallyStable (m : VSMModel)
-    (hs : ContDiff ℝ 1 m.P) (hω : m.point 1 = 0) (hb : m.P (m.point 0) = m.Pref + m.D * m.ωs) (hM : 0 < m.M)
-    (hD : 0 < m.D) (hK : 0 < deriv m.P (m.point 0)) :
+    (hs : ContDiff ℝ 1 m.P) (hω : m.point 1 = 0) (hb : m.P (m.point 0) = m.Pref + m.D * m.ωs)
+    (hM : 0 < m.M) (hD : 0 < m.D) (hK : 0 < deriv m.P (m.point 0)) :
     connection% (m ∈ vsmFamily.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact vsm_mem_den_flow_iff.mpr (vsm_les hs ⟨hω, hb⟩ hM hD hK)

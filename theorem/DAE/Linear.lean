@@ -161,7 +161,7 @@ lies on the constraint manifold. -/
       d.Ayx *ᵥ x t + d.Ayy *ᵥ y t + d.By *ᵥ 0 = 0) ↔
       (∀ t, HasDerivAt x (d.schurA *ᵥ x t) t) ∧ ∀ t, y t = d.algebraic (x t) 0 := by
   rw [d.isSolution_iff hA]
-  simp only [Pi.zero_apply, mulVec_zero, add_zero]
+  simp only [mulVec_zero, add_zero]
 
 /-- Every reduced trajectory lifts to a DAE solution (zero input), with algebraic part
 `y t = algebraic (x t) 0`. -/
@@ -231,13 +231,13 @@ is differentiable and the stacked state solves the explicit linear ODE `ż = sta
     rw [(d.constraint_iff hA _ _ _).mp (h s).2]
     simp [algebraic, mulVec_mulVec]
   have hx := (h t).1
-  simp only [Pi.zero_apply, mulVec_zero, add_zero] at hx
+  simp only [mulVec_zero, add_zero] at hx
   have hyd : HasDerivAt y (-((d.Ayy⁻¹ * d.Ayx) *ᵥ (d.Axx *ᵥ x t + d.Axy *ᵥ y t))) t := by
     have hfun : y = fun s => -((d.Ayy⁻¹ * d.Ayx) *ᵥ x s) := funext hy
     have hL : HasDerivAt (fun s => (d.Ayy⁻¹ * d.Ayx) *ᵥ x s)
         ((d.Ayy⁻¹ * d.Ayx) *ᵥ (d.Axx *ᵥ x t + d.Axy *ᵥ y t)) t :=
-      (LinearMap.toContinuousLinearMap (Matrix.toLin' (d.Ayy⁻¹ * d.Ayx))).hasFDerivAt.comp_hasDerivAt
-        t hx
+      (LinearMap.toContinuousLinearMap
+        (Matrix.toLin' (d.Ayy⁻¹ * d.Ayx))).hasFDerivAt.comp_hasDerivAt t hx
     have hL' : HasDerivAt (fun s => -((d.Ayy⁻¹ * d.Ayx) *ᵥ x s))
         (-((d.Ayy⁻¹ * d.Ayx) *ᵥ (d.Axx *ᵥ x t + d.Axy *ᵥ y t))) t := hL.neg
     convert hL' using 1

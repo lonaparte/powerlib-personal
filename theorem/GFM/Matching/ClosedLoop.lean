@@ -212,11 +212,13 @@ private theorem coord_smooth (j : Fin 5) : ContDiff ℝ 1 (fun x : State 5 => x 
 
 /-- Components of the reduced field. Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem field_apply (m : Model) (x : State 5) (w : Fin 3 → ℝ) :
-    m.field x w 0 = (-m.Gdc * x 0 + m.idcRef - m.Kp * (x 0 - m.vdcRef) - m.μ / 2 * x 2 + w 0) / m.Cdc ∧
+    m.field x w 0 =
+      (-m.Gdc * x 0 + m.idcRef - m.Kp * (x 0 - m.vdcRef) - m.μ / 2 * x 2 + w 0) / m.Cdc ∧
     m.field x w 1 = (-m.R * x 1 - x 3) / m.L + m.η * x 0 * x 2 ∧
     m.field x w 2 = (-m.R * x 2 + m.μ / 2 * x 0 - x 4) / m.L - m.η * x 0 * x 1 ∧
     m.field x w 3 = (-(m.G + m.Gl) * x 3 + m.Bl * x 4 - m.sd + x 1 + w 1) / m.C + m.η * x 0 * x 4 ∧
-    m.field x w 4 = (-(m.G + m.Gl) * x 4 - m.Bl * x 3 - m.sq + x 2 + w 2) / m.C - m.η * x 0 * x 3 := by
+    m.field x w 4 =
+      (-(m.G + m.Gl) * x 4 - m.Bl * x 3 - m.sq + x 2 + w 2) / m.C - m.η * x 0 * x 3 := by
   refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp [Model.field]
 
 /-- Components of the selected point. Static evidence on the model, not a connection conclusion. -/
@@ -226,7 +228,8 @@ private theorem coord_smooth (j : Fin 5) : ContDiff ℝ 1 (fun x : State 5 => x 
   refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp [Model.point]
 
 /-- The reduced field is `C¹`. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field_smooth (m : Model) (w : Fin 3 → ℝ) : ContDiff ℝ 1 (fun x => m.field x w) := by
+@[powerlib_foundation] theorem field_smooth (m : Model) (w : Fin 3 → ℝ) :
+    ContDiff ℝ 1 (fun x => m.field x w) := by
   have h0 := coord_smooth 0
   have h1 := coord_smooth 1
   have h2 := coord_smooth 2
@@ -262,14 +265,18 @@ private theorem coord_smooth (j : Fin 5) : ContDiff ℝ 1 (fun x : State 5 => x 
   simp [p]
   ring
 
-/-- The reduced field multiplied by the storage weights. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field_scaled (m : Model) (hCdc : m.Cdc ≠ 0) (hL : m.L ≠ 0) (hC : m.C ≠ 0)
-    (x : State 5) (w : Fin 3 → ℝ) :
-    m.Cdc * m.field x w 0 = -m.Gdc * x 0 + m.idcRef - m.Kp * (x 0 - m.vdcRef) - m.μ / 2 * x 2 + w 0 ∧
+/-- The reduced field multiplied by the storage weights. Static evidence on the model, not a
+connection conclusion. -/
+@[powerlib_foundation] theorem field_scaled (m : Model) (hCdc : m.Cdc ≠ 0) (hL : m.L ≠ 0)
+    (hC : m.C ≠ 0) (x : State 5) (w : Fin 3 → ℝ) :
+    m.Cdc * m.field x w 0 =
+      -m.Gdc * x 0 + m.idcRef - m.Kp * (x 0 - m.vdcRef) - m.μ / 2 * x 2 + w 0 ∧
     m.L * m.field x w 1 = -m.R * x 1 - x 3 + m.L * (m.η * x 0 * x 2) ∧
     m.L * m.field x w 2 = -m.R * x 2 + m.μ / 2 * x 0 - x 4 - m.L * (m.η * x 0 * x 1) ∧
-    m.C * m.field x w 3 = -(m.G + m.Gl) * x 3 + m.Bl * x 4 - m.sd + x 1 + w 1 + m.C * (m.η * x 0 * x 4) ∧
-    m.C * m.field x w 4 = -(m.G + m.Gl) * x 4 - m.Bl * x 3 - m.sq + x 2 + w 2 - m.C * (m.η * x 0 * x 3) := by
+    m.C * m.field x w 3 =
+      -(m.G + m.Gl) * x 3 + m.Bl * x 4 - m.sd + x 1 + w 1 + m.C * (m.η * x 0 * x 4) ∧
+    m.C * m.field x w 4 =
+      -(m.G + m.Gl) * x 4 - m.Bl * x 3 - m.sq + x 2 + w 2 - m.C * (m.η * x 0 * x 3) := by
   obtain ⟨h0, h1, h2, h3, h4⟩ := field_apply m x w
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · rw [h0]; field_simp
@@ -280,8 +287,8 @@ private theorem coord_smooth (j : Fin 5) : ContDiff ℝ 1 (fun x : State 5 => x 
 
 /-- Energy balance: along the port system the storage changes at the rate `−W + w ⬝ y`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem energy_lie (m : Model) (hCdc : m.Cdc ≠ 0) (hL : m.L ≠ 0) (hC : m.C ≠ 0)
-    (he : m.field m.point 0 = 0) (z : State 5) (u : Fin 3 → ℝ) :
+@[powerlib_foundation] theorem energy_lie (m : Model) (hCdc : m.Cdc ≠ 0) (hL : m.L ≠ 0)
+    (hC : m.C ≠ 0) (he : m.field m.point 0 = 0) (z : State 5) (u : Fin 3 → ℝ) :
     fderiv ℝ m.energy z (m.system.field z u) =
       -m.dissipation z + (u 0 * z 0 + u 1 * z 3 + u 2 * z 4) := by
   obtain ⟨D, hD, hDv⟩ := energy_hasFDerivAt m z
@@ -305,7 +312,8 @@ def Model.margin (m : Model) : ℝ :=
 
 /-- Completing the squares: `W = margin ṽ_dc² + R ‖ĩ_dq − …‖² + (G+G_l) ‖ṽ_dq − …‖²`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem dissipation_eq (m : Model) (hR : m.R ≠ 0) (hG : m.G + m.Gl ≠ 0) (z : State 5) :
+@[powerlib_foundation] theorem dissipation_eq (m : Model) (hR : m.R ≠ 0) (hG : m.G + m.Gl ≠ 0)
+    (z : State 5) :
     m.dissipation z = m.margin * z 0 ^ 2 +
       m.R * ((z 1 - m.η * m.L / (2 * m.R) * z 0 * m.iqStar) ^ 2 +
         (z 2 + m.η * m.L / (2 * m.R) * z 0 * m.idStar) ^ 2) +
@@ -315,13 +323,15 @@ Static evidence on the model, not a connection conclusion. -/
   field_simp
   ring
 
-/-- With a positive margin the dissipation is nonnegative. Static evidence on the model, not a connection conclusion. -/
+/-- With a positive margin the dissipation is nonnegative. Static evidence on the model, not a
+connection conclusion. -/
 @[powerlib_foundation] theorem dissipation_nonneg (m : Model) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl)
     (hδ : 0 < m.margin) (z : State 5) : 0 ≤ m.dissipation z := by
   rw [dissipation_eq m hR.ne' hG.ne']
   positivity
 
-/-- With a positive margin the dissipation is positive definite. Static evidence on the model, not a connection conclusion. -/
+/-- With a positive margin the dissipation is positive definite. Static evidence on the model,
+not a connection conclusion. -/
 @[powerlib_foundation] theorem dissipation_pos (m : Model) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl)
     (hδ : 0 < m.margin) (z : State 5) (hz : z ≠ 0) : 0 < m.dissipation z := by
   rw [dissipation_eq m hR.ne' hG.ne']
@@ -332,12 +342,14 @@ Static evidence on the model, not a connection conclusion. -/
   have h1 : 0 ≤ m.margin * z 0 ^ 2 := by positivity
   have h2 : 0 ≤ m.R * ((z 1 - a * z 0 * m.iqStar) ^ 2 + (z 2 + a * z 0 * m.idStar) ^ 2) := by
     positivity
-  have h3 : 0 ≤ (m.G + m.Gl) * ((z 3 - b * z 0 * m.vqStar) ^ 2 + (z 4 + b * z 0 * m.vdStar) ^ 2) := by
+  have h3 :
+      0 ≤ (m.G + m.Gl) * ((z 3 - b * z 0 * m.vqStar) ^ 2 + (z 4 + b * z 0 * m.vdStar) ^ 2) := by
     positivity
   have e1 : m.margin * z 0 ^ 2 = 0 := by linarith
   have e2 : m.R * ((z 1 - a * z 0 * m.iqStar) ^ 2 + (z 2 + a * z 0 * m.idStar) ^ 2) = 0 := by
     linarith
-  have e3 : (m.G + m.Gl) * ((z 3 - b * z 0 * m.vqStar) ^ 2 + (z 4 + b * z 0 * m.vdStar) ^ 2) = 0 := by
+  have e3 :
+      (m.G + m.Gl) * ((z 3 - b * z 0 * m.vqStar) ^ 2 + (z 4 + b * z 0 * m.vdStar) ^ 2) = 0 := by
     linarith
   have z0 : z 0 = 0 := by
     rcases mul_eq_zero.mp e1 with h | h
@@ -378,8 +390,8 @@ private theorem eq_zero_of_mul_sq {c x : ℝ} (hc : 0 < c) (h : c * x ^ 2 = 0) :
   pow_eq_zero_iff (n := 2) (by norm_num) |>.mp ((mul_eq_zero.mp h).resolve_left hc.ne')
 
 /-- The storage is positive definite. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem energy_pos (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L) (hC : 0 < m.C) (z : State 5)
-    (hz : z ≠ 0) : 0 < m.energy z := by
+@[powerlib_foundation] theorem energy_pos (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L)
+    (hC : 0 < m.C) (z : State 5) (hz : z ≠ 0) : 0 < m.energy z := by
   unfold Model.energy
   by_contra hle
   push Not at hle
@@ -581,7 +593,8 @@ absorbed into the damping). -/
   exact ⟨_, passive m hCdc hL hC hR hG he hδ⟩
 
 /-- For `η ≠ 0` the damping requirement is the source's inequality
-`C²‖v*‖²/(4(G+G_l)) + L²‖i*‖²/(4R) < (G_dc+K_p)/η²`. Static evidence on the model, not a connection conclusion. -/
+`C²‖v*‖²/(4(G+G_l)) + L²‖i*‖²/(4R) < (G_dc+K_p)/η²`. Static evidence on the model, not a
+connection conclusion. -/
 @[powerlib_foundation] theorem margin_pos_iff (m : Model) (hη : m.η ≠ 0) :
     0 < m.margin ↔ m.C ^ 2 * (m.vdStar ^ 2 + m.vqStar ^ 2) / (4 * (m.G + m.Gl)) +
       m.L ^ 2 * (m.idStar ^ 2 + m.iqStar ^ 2) / (4 * m.R) < (m.Gdc + m.Kp) / m.η ^ 2 := by
@@ -687,7 +700,8 @@ def Model.withLoad (m : Model) (sd sq : ℝ) : Model := { m with sd := sd, sq :=
 
 /-- The reduced field is the stationary field in the coordinates of `θ`: each reduced component
 equals the rotating-frame chain rule applied to the stationary field, with the load source
-`s_dq = R_θᵀ s_αβ`, whose own rotating-frame derivative vanishes. Static evidence on the model, not a connection conclusion. -/
+`s_dq = R_θᵀ s_αβ`, whose own rotating-frame derivative vanishes. Static evidence on the model,
+not a connection conclusion. -/
 @[powerlib_foundation] theorem field_reduce (m : Model) (X : State 8) :
     let F := m.abField X
     let m' := m.withLoad (rotD (X 0) (X 6) (X 7)) (rotQ (X 0) (X 6) (X 7))
@@ -864,13 +878,15 @@ private theorem full_mem_den_flow {M : FullModel} {P : Flow.Property} :
   Spectral.mem_den_flow_iff_shift (f := fun M : FullModel => M.p.abField) (pt := FullModel.point)
     (Spectral.localFamily_isAutonomous _ _ _)
 
-/-- The stationary field is `2π`-periodic in `θ`. Static evidence on the model, not a connection conclusion. -/
+/-- The stationary field is `2π`-periodic in `θ`. Static evidence on the model, not a connection
+conclusion. -/
 @[powerlib_foundation] theorem abField_add_two_pi (m : Model) (θ v iα iβ uα uβ sα sβ : ℝ) :
     m.abField (WithLp.toLp 2 ![θ + 2 * Real.pi, v, iα, iβ, uα, uβ, sα, sβ]) =
       m.abField (WithLp.toLp 2 ![θ, v, iα, iβ, uα, uβ, sα, sβ]) := by
   simp [Model.abField, Real.sin_add_two_pi, Real.cos_add_two_pi]
 
-/-- Every stationary-frame equilibrium has zero frequency `η v_dc`. Static evidence on the model, not a connection conclusion. -/
+/-- Every stationary-frame equilibrium has zero frequency `η v_dc`. Static evidence on the model,
+not a connection conclusion. -/
 @[powerlib_foundation] theorem abField_eq_zero (m : Model) {X : State 8} (h : m.abField X = 0) :
     m.η * X 1 = 0 := by
   have := congrArg (fun Y : State 8 => Y 0) h

@@ -462,6 +462,7 @@ step constraint. -/
   have hC : ContDiffAt ℝ 1 (f (design y)) 0 := by
     rw [hx]
     exact contDiffAt_id.neg
-  exact not_euler_realizationSoundUnder_local hF hn y _ B hC hJ (by rw [hx]; exact neg_zero) hA hB hS
+  exact not_euler_realizationSoundUnder_local hF hn y _ B hC hJ (by rw [hx]; exact neg_zero)
+    hA hB hS
 
 end powerlib.Numerics

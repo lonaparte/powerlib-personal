@@ -194,7 +194,8 @@ matrix-exponential solution. -/
 /-- The matrix-exponential solution is a solution under the constant input. -/
 @[powerlib_foundation] theorem solution_hasDerivAt (M : Linear.Plant n p) {u : Fin p → ℝ}
     {e : ℝⁿ} (he : IsEquilibrium (M.inputField u) e) (t₀ : ℝ) (x₀ : ℝⁿ) (t : ℝ) :
-    HasDerivAt (Linear.solution M.A e t₀ x₀) (M.inputField u (Linear.solution M.A e t₀ x₀ t)) t := by
+    HasDerivAt (Linear.solution M.A e t₀ x₀)
+      (M.inputField u (Linear.solution M.A e t₀ x₀ t)) t := by
   rw [M.inputField_eq he]
   exact Linear.solution_hasDerivAt M.A e t₀ x₀ t
 
@@ -287,8 +288,8 @@ with one-sided derivatives at `0`. -/
       HasDerivWithinAt φ (LinearSystems.affineLinearVectorField M.A 0 (φ t)) (Ici 0) t := by
     intro t ht
     have h := (hx t ht).sub (hy t ht)
-    have h2 := (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm.hasFDerivAt.comp_hasDerivWithinAt
-      t h
+    have h2 := (PiLp.continuousLinearEquiv 2 ℝ
+      (fun _ : Fin n => ℝ)).symm.hasFDerivAt.comp_hasDerivWithinAt t h
     have heq : LinearSystems.affineLinearVectorField M.A 0 (φ t) =
         (PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)).symm
           (M.A *ᵥ x t + M.B *ᵥ u t - (M.A *ᵥ y t + M.B *ᵥ u t)) := by

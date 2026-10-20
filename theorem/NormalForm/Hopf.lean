@@ -86,7 +86,8 @@ def toComplex (x : State 2) : ℂ := ⟨x 0, x 1⟩
 
 @[powerlib_foundation] theorem field_contDiff (p : Params) {k : WithTop ℕ∞} :
     ContDiff ℝ k (field p) := by
-  refine Dynamics.contDiff_of_components (Fin.forall_fin_two.2 ⟨?_, ?_⟩) <;> (simp only [field, mk_apply_zero, mk_apply_one]; fun_prop)
+  refine Dynamics.contDiff_of_components (Fin.forall_fin_two.2 ⟨?_, ?_⟩) <;>
+    (simp only [field, mk_apply_zero, mk_apply_one]; fun_prop)
 
 @[simp, powerlib_foundation] theorem field_apply_zero (p : Params) (x : State 2) :
     field p x 0 = p.μ * x 0 - p.ω₀ * x 1 + (p.l₁ * x 0 - p.κ * x 1) * (x 0 ^ 2 + x 1 ^ 2) := rfl
@@ -120,7 +121,8 @@ def linPart (p : Params) : Matrix (Fin 2) (Fin 2) ℝ := !![p.μ, -p.ω₀; p.ω
 @[powerlib_foundation] theorem hasFDerivAt_field_zero (p : Params) :
     HasFDerivAt (field p) (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (linPart p)) 0 := by
   refine Dynamics.hasFDerivAt_toEuclideanCLM_of_components _
-    ![p.μ • Dynamics.coord 0 - p.ω₀ • Dynamics.coord 1, p.ω₀ • Dynamics.coord 0 + p.μ • Dynamics.coord 1] ?_ ?_
+    ![p.μ • Dynamics.coord 0 - p.ω₀ • Dynamics.coord 1,
+      p.ω₀ • Dynamics.coord 0 + p.μ • Dynamics.coord 1] ?_ ?_
   · have h0 := Dynamics.hasFDerivAt_coord 0 (0 : State 2)
     have h1 := Dynamics.hasFDerivAt_coord 1 (0 : State 2)
     have hρ : HasFDerivAt (fun x : State 2 => x 0 ^ 2 + x 1 ^ 2) _ 0 := (h0.pow 2).add (h1.pow 2)
@@ -430,7 +432,8 @@ not start at the origin. -/
     have hnorm := supercritical_norm_tendsto p hμ hl hφ ha
     have hpos : ∀ t, a ≤ t → φ t ≠ 0 := by
       intro t ht h0
-      have := Logistic.pos (normSq_isIntegralCurveOn p (hφ.mono (Icc_subset_Ici_self : Icc a t ⊆ Ici a)))
+      have := Logistic.pos
+        (normSq_isIntegralCurveOn p (hφ.mono (Icc_subset_Ici_self : Icc a t ⊆ Ici a)))
         (pow_pos (norm_pos_iff.mpr ha) 2) t ⟨ht, le_rfl⟩
       rw [h0, norm_zero] at this
       norm_num at this

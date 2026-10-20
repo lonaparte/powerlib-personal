@@ -187,7 +187,8 @@ end Derivation
     Tendsto (fun x : ℝ => (1 + x / 2) / (1 - x / 2)) atBot (𝓝 (-1)) := by
   have hlim : Tendsto (fun x : ℝ => -1 + 4 * (2 - x)⁻¹) atBot (𝓝 (-1)) := by
     have h2 : Tendsto (fun x : ℝ => 2 - x) atBot atTop := by
-      simpa [sub_eq_add_neg, add_comm] using tendsto_atTop_add_const_right _ 2 tendsto_neg_atBot_atTop
+      simpa [sub_eq_add_neg, add_comm] using
+        tendsto_atTop_add_const_right _ 2 tendsto_neg_atBot_atTop
     have h := ((tendsto_inv_atTop_zero.comp h2).const_mul (4 : ℝ)).const_add (-1 : ℝ)
     simpa using h
   refine hlim.congr' ?_

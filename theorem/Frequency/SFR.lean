@@ -497,7 +497,7 @@ load `ΔP_L = 1` the steady state is an equilibrium at which the port supplies
     (steadyState_isEquilibrium m.M_pos.ne' m.Tg_pos.ne' m.TR_pos.ne' hKD.ne') ?_
   have hsupply : m.plant.system.supply (steadyState m.D m.K 1) (load 1) =
       -1 / (m.K + m.D) := by
-    simp [Port.System.supply, family, Model.plant, plant, Linear.Plant.system, load,
+    simp [Port.System.supply, Model.plant, plant, Linear.Plant.system, load,
       steadyState, dotProduct, Fin.sum_univ_three]
   rw [hsupply]
   exact div_neg_of_neg_of_pos (by norm_num) hKD

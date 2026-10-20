@@ -139,7 +139,8 @@ def StructurallyNonsingular [DecidableEq ι] : Prop :=
 /-- Hall's marriage condition for the occurrence pattern. -/
 @[powerlib_foundation] theorem exists_transversal_iff_hall [DecidableEq ι] :
     (∃ σ : Equiv.Perm ι, S.IsTransversal σ) ↔
-      ∀ A : Finset ι, A.card ≤ (A.biUnion fun i => univ.filter fun j => S.occurs i j = true).card := by
+      ∀ A : Finset ι,
+        A.card ≤ (A.biUnion fun i => univ.filter fun j => S.occurs i j = true).card := by
   rw [Finset.all_card_le_biUnion_card_iff_exists_injective]
   constructor
   · rintro ⟨σ, hσ⟩
@@ -153,7 +154,8 @@ def StructurallyNonsingular [DecidableEq ι] : Prop :=
 /-- One sweep: `d_j ← max_{i : j ∈ i} (c_i + order i j)`, then `c_i ← d_{σ i} - order i (σ i)`
 (truncated subtraction, i.e. `max 0`). -/
 def pryceStep (σ : Equiv.Perm ι) (p : (ι → ℕ) × (ι → ℕ)) : (ι → ℕ) × (ι → ℕ) :=
-  let d : ι → ℕ := fun j => (univ.filter fun i => S.occurs i j = true).sup fun i => p.1 i + S.order i j
+  let d : ι → ℕ := fun j =>
+    (univ.filter fun i => S.occurs i j = true).sup fun i => p.1 i + S.order i j
   (fun i => d (σ i) - S.order i (σ i), d)
 
 def pryceIter (σ : Equiv.Perm ι) (k : ℕ) : (ι → ℕ) × (ι → ℕ) := (S.pryceStep σ)^[k] (0, 0)
@@ -345,7 +347,8 @@ ODE. -/
     (h : ∀ t, HasDerivAt x₁ (y t) t ∧ HasDerivAt x₂ (x₁ t - y t) t ∧
       deriv x₁ t + 2 * deriv x₂ t = 0) (t : ℝ) : HasDerivAt y (2 * y t) t := by
   have hd := ((h t).1).const_mul 2
-  exact hd.congr_of_eventuallyEq (Filter.Eventually.of_forall fun s => example_hidden_constraint h s)
+  exact hd.congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun s => example_hidden_constraint h s)
 
 /-! ## Pendulum: both formulas give index 3 -/
 

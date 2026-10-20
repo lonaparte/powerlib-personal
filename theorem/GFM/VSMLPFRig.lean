@@ -101,8 +101,8 @@ Family and connection conclusions.
   `unstable_mem_infer`, `unstable_mem_truth`: a `SlowCheck` record supports instability of the
   realized models and of every producing platform, whatever its delay.
   `not_mem_predicted_locallyExponentiallyStable`: a `SlowCheck` record lies outside the records
-  predicted by local exponential stability of the platform (`Stack.predicted`), so it refutes that sentence for every
-  producer (`Stack.refutes`).
+  predicted by local exponential stability of the platform (`Stack.predicted`), so it refutes that
+  sentence for every producer (`Stack.refutes`).
 -/
 
 noncomputable section

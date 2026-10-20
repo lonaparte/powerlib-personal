@@ -15,7 +15,8 @@ Scope.
   finite-dimensional space are equivalent, so exponential decay does not depend on this choice
   (only the constant `C` does).
 * Exponential stability (uniform geometric decay of every trajectory) is
-  `∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖`;
+  `∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) →
+  ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖`;
   it quantifies real constants, so it is written out in each statement that uses it rather
   than defined (single-semantics rule).
 * `SchurStable Φ` is stated through complex eigenpairs of the complexification, exactly like
@@ -333,7 +334,8 @@ imaginary part of the complex eigenmode `μ^k v`) that does not converge to zero
 
 /-- Convergence of every trajectory forces a Schur matrix. -/
 @[powerlib_foundation] theorem schurStable_of_asymptoticallyStable {m : Model n}
-    (h : (∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → Tendsto x atTop (𝓝 0))) : SchurStable m.Φ := by
+    (h : (∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → Tendsto x atTop (𝓝 0))) :
+    SchurStable m.Φ := by
   intro μ v hv heig
   by_contra hμ
   obtain ⟨x, hx, hnot⟩ := exists_trajectory_not_tendsto_zero hv heig (not_lt.mp hμ)
@@ -354,12 +356,14 @@ imaginary part of the complex eigenmode `μ^k v`) that does not converge to zero
 `0 ≤ ρ < 1`) holds exactly for a Schur matrix. -/
 @[powerlib_foundation] theorem exponentiallyStable_iff_schurStable (m : Model n) :
     (∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧
-      ∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔ SchurStable m.Φ :=
+      ∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔
+      SchurStable m.Φ :=
   ⟨fun h => schurStable_of_asymptoticallyStable (asymptoticallyStable_of_exponentiallyStable h),
     exponentiallyStable_of_schurStable⟩
 
 @[powerlib_foundation] theorem asymptoticallyStable_iff_schurStable (m : Model n) :
-    (∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → Tendsto x atTop (𝓝 0)) ↔ SchurStable m.Φ :=
+    (∀ x : ℕ → State n, (∀ k, x (k + 1) = m.step (x k)) → Tendsto x atTop (𝓝 0)) ↔
+      SchurStable m.Φ :=
   ⟨schurStable_of_asymptoticallyStable,
     fun h => asymptoticallyStable_of_exponentiallyStable (exponentiallyStable_of_schurStable h)⟩
 

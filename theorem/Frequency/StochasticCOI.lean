@@ -94,8 +94,8 @@ def swingCov (M D k s2 : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
 @[powerlib_foundation] theorem swingNoise_mul_transpose (M sω sv : ℝ) :
     swingNoise M sω sv * (swingNoise M sω sv)ᵀ = !![0, 0; 0, (sω ^ 2 + sv ^ 2) / M ^ 2] := by
   ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [swingNoise, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
+  fin_cases i <;> fin_cases j <;> simp [swingNoise, Matrix.mul_apply, Fin.sum_univ_two]
+  ring
 
 /-- `A` is Hurwitz for `M, D, k > 0`. -/
 @[powerlib_foundation] theorem swingA_isHurwitz {M D k : ℝ} (hM : 0 < M) (hD : 0 < D)
