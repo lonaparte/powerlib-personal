@@ -8,8 +8,10 @@ The matching-control families of `theorem/GFM/Matching/` integrated by the expli
 with a fixed step `h > 0`: each integration realizes the model it integrates. A locally
 exponentially stable model whose field is `C¹` near its point has a step `h₀ > 0` below which its
 Euler integration is locally exponentially stable, and without a step constraint the realization
-is not sound; instances of the generic template `theorem/Numerics/EulerRealization.lean`, in the
-pattern of `theorem/Synchronous/SwingEuler.lean`. Scaffold: `theorem/EulerDiscretization.agda`.
+is not sound — except for the stationary-frame family, which has no locally exponentially stable
+member, so that its realization is sound without a step constraint, vacuously; instances of the
+generic template `theorem/Numerics/EulerRealization.lean`, in the pattern of
+`theorem/Synchronous/SwingEuler.lean`. Scaffold: `theorem/EulerDiscretization.agda`.
 
 Model boundary.
 * Model layer (M), each family with the model boundary of its module, read about its selected
@@ -32,9 +34,11 @@ Model boundary.
   `matchingFamily` and `swingFamily` carry the hypothesis that the law is `C¹` near the selected
   point (`ContDiffAt ℝ 1 (Function.uncurry i_x) (θ*, v*)`, resp. `P_e` at `(θ*, ω*)`; the local
   laws of the template).
-* `MatchingClosedLoop.fullFamily`: no member is proved locally exponentially stable (every
-  equilibrium has `η v* = 0`, `MatchingClosedLoop.abField_eq_zero`), so only the small-step laws
-  are stated, not the failure of soundness.
+* `MatchingClosedLoop.fullFamily`: no member is locally exponentially stable
+  (`MatchingClosedLoop.full_not_mem_den_locallyExponentiallyStable`: every equilibrium has
+  `η v* = 0` and a singular Jacobian), so its Euler realization is sound without a step
+  constraint, vacuously, and the family has no step threshold to state; its small-step laws hold
+  vacuously.
 * Level: local exponential stability of the selected point.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step`,
@@ -42,7 +46,8 @@ Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step`,
 forms, `contDiffAt_shift`), `theorem/GFM/Matching/StiffGrid.lean` (`field_contDiff`,
 `mem_den_locallyExponentiallyStable`), `theorem/GFM/Matching/Matching.lean` (`matching_den_eq`,
 `swing_mem_den_locallyExponentiallyStable_iff_of_sinusoid`),
-`theorem/GFM/Matching/ClosedLoop.lean` (`abField_smooth`); work-sync
+`theorem/GFM/Matching/ClosedLoop.lean` (`abField_smooth`,
+`full_not_mem_den_locallyExponentiallyStable`); work-sync
 `theory/T-numerical-integration.md` §1.2, §2.7.
 
 Results.
@@ -72,7 +77,10 @@ Family and connection conclusions.
   `swing_not_euler_realizationSoundUnder`, witness `M = D = 1`, `τ = 0`, `P_e = sin θ` at the
   origin).
 * `MatchingClosedLoop.fullFamily`: `MatchingClosedLoop.fullEulerFamily`,
-  `MatchingClosedLoop.fullEuler`; `full_euler_sound_small_step`, `full_euler_certified_small_step`.
+  `MatchingClosedLoop.fullEuler`; `full_euler_sound_small_step`, `full_euler_certified_small_step`
+  (both vacuous: no model is locally exponentially stable) and
+  `full_euler_realizationSoundUnder`: the realization is sound without a step constraint
+  (`RealizationSoundUnder ∅`), vacuously, so the family has no step threshold to state.
 -/
 
 noncomputable section
@@ -406,5 +414,19 @@ integration of its model with a step below a threshold is locally exponentially 
     (Spectral.localFamily_isAutonomous _ _ _ : fullFamily.IsAutonomous FullModel.field)
     full_contDiff_field hy
   exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
+
+/-- **The Euler realization of the stationary-frame models is sound without a step constraint,
+vacuously.** No stationary-frame model is locally exponentially stable
+(`full_not_mem_den_locallyExponentiallyStable`: every equilibrium has a singular Jacobian), so
+no integration is certified for local exponential stability, whatever its step; the family has
+no step threshold to state. -/
+@[powerlib_domain] theorem full_euler_realizationSoundUnder :
+    connection% (fullEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  rintro y ⟨hy, -⟩
+  rw [Implementation.certify_realizes_of_design (I := fullEuler) rfl] at hy
+  have hn := full_not_mem_den_locallyExponentiallyStable y.design
+  unfold powerlib.TMIO.Statement at hn
+  exact absurd hy hn
 
 end powerlib.GFM.Matching.MatchingClosedLoop

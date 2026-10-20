@@ -34,10 +34,11 @@ Model boundary.
   or higher-order schemes, the integration error against the continuous trajectory.
 * Smoothness at the selected point, as a hypothesis on the model where the family admits points
   off it: none for `FourState` (its fields agree with the smooth `regField` near every operating
-  point); `V_dc* ≠ 0` for `BasinGuard` (the carrier is `C¹` on `V_dc ≠ 0`, private
-  `carrierField_contDiffOn`) and `ModelB` (`ModelBParams.field_contDiffOn`); `V0 > 0` for the
-  cascade (`CascadeParams.field_contDiffOn`) and the open loop (`openField_contDiffOn`);
-  `V_dc,ref > 0` for the closed loop (`DCParams.closedField_contDiffOn`). Without it the laws are
+  point); `V_dc* ≠ 0` for `BasinGuard` (the carrier is `C¹` on `V_dc ≠ 0`,
+  `CarrierParams.carrierField_contDiffOn`) and `ModelB` (`ModelBParams.field_contDiffOn`);
+  `V0 > 0` for the cascade (`CascadeParams.field_contDiffOn`) and the open loop
+  (`openField_contDiffOn`); `V_dc,ref > 0` for the closed loop
+  (`DCParams.closedField_contDiffOn`). Without it the laws are
   not stated: model B has selected points on the plane `V_dc = 0` that satisfy the local
   exponential estimate without being equilibria (`ModelB.collapsePoint`), where no Jacobian exists.
 * Level: local exponential stability of the selected point.
@@ -45,11 +46,11 @@ Model boundary.
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step_local`,
 `euler_certified_small_step_local`, `not_euler_realizationSoundUnder_of_large_step_local`,
 `contDiffAt_shift`) and the family modules (autonomy, smoothness on `V_dc ≠ 0`, members of local
-exponential stability); work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
+exponential stability; for the carrier its four-state reading `BasinGuard.mem_den_iff_fourState`);
+work-sync `theory/T-numerical-integration.md` §1.2, §2.7.
 
 Results.
-* No static result beyond the family definitions (the smoothness of the carrier on `V_dc ≠ 0` is a
-  private lemma of this module).
+* No static result beyond the family definitions.
 
 Family and connection conclusions.
 * For each family `F` above: `N.eulerFamily` (`N` the namespace of its model type), every
@@ -63,10 +64,11 @@ Family and connection conclusions.
   (scaffold `not-sound-large-step`): without a step constraint the realization is not sound — a
   locally exponentially stable member (`FourState`: `V₀ = k_p = k_i = k_pv = k_iv = C = 1`,
   `X_g = i_d0 = I_dc0 = 0` at `θ₀ = 0`, `FourState.mem_den_locallyExponentiallyStable_of_routh`;
-  `ModelB.negativeReference`; `CascadeParams`: `negativeInductance`; `OpenLoop`: `C = P = V0 = 1`;
-  `DCParams`: `C = V_d = V_dc* = Kp = Ki = 1`, `i_ff = I_d0 = 0`) has Euler integrations with
-  every multiplier outside the unit disk. Not stated for `BasinGuard`: its module proves no
-  stability criterion, so no locally exponentially stable member is available.
+  `BasinGuard`: `s = 1`, `I_dc = I_q* = X_g = 0`, `V = K_p^pll = K_i^pll = K_p^dvc = K_i^dvc =
+  C = 1` at `(0, 0, 1, 0)`, whose four-state reading is the `FourState` witness,
+  `BasinGuard.mem_den_iff_fourState`; `ModelB.negativeReference`; `CascadeParams`:
+  `negativeInductance`; `OpenLoop`: `C = P = V0 = 1`; `DCParams`: `C = V_d = V_dc* = Kp = Ki = 1`,
+  `i_ff = I_d0 = 0`) has Euler integrations with every multiplier outside the unit disk.
 -/
 
 noncomputable section
@@ -129,6 +131,21 @@ model with a step below a threshold is locally exponentially stable. -/
     (contDiffAt_modelField y.design) hy
   exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
 
+/-- The unit model `V₀ = k_p = k_i = k_pv = k_iv = C = 1`, `X_g = i_d0 = I_dc0 = 0` at `θ₀ = 0`
+is locally exponentially stable: quartic `λ⁴ + (5/2) λ³ + 4 λ² + 3 λ + 3/2`, Routh conditions met
+(`mem_den_locallyExponentiallyStable_of_routh`). -/
+private theorem unitModel_mem_den :
+    (⟨⟨1, 0, 0, 1, 1, 1, 1, 1, 0⟩, 0⟩ : Model) ∈
+      family.den (.flow .locallyExponentiallyStable) := by
+  have hm := mem_den_locallyExponentiallyStable_of_routh ⟨1, 0, 0, 1, 1, 1, 1, 1, 0⟩ one_ne_zero
+    (θ0 := 0) ⟨by simp, by simp⟩
+    (by norm_num [a3, vd0, twoAlphaCl, Params.γ])
+    (by norm_num [a1, vd0, twoAlphaCl, omegaClSq, Γc, Params.γ])
+    (by norm_num [a0, vd0, omegaClSq, Γc, Params.γ])
+    (by norm_num [a1, a2, a3, a0, vd0, twoAlphaCl, omegaClSq, Γc, Params.γ])
+  unfold powerlib.TMIO.Statement at hm
+  exact hm
+
 /-- **Without a step constraint the Euler realization of the four-state GFL models is not
 sound.** A locally exponentially stable model (`V₀ = k_p = k_i = k_pv = k_iv = C = 1`,
 `X_g = i_d0 = I_dc0 = 0` at `θ₀ = 0`: quartic `λ⁴ + (5/2) λ³ + 4 λ² + 3 λ + 3/2`, Routh
@@ -138,15 +155,8 @@ Euler multiplier `1 + hλ` leaves the unit disk
 @[powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hm := mem_den_locallyExponentiallyStable_of_routh ⟨1, 0, 0, 1, 1, 1, 1, 1, 0⟩ one_ne_zero
-    (θ0 := 0) ⟨by simp, by simp⟩
-    (by norm_num [a3, vd0, twoAlphaCl, Params.γ])
-    (by norm_num [a1, vd0, twoAlphaCl, omegaClSq, Γc, Params.γ])
-    (by norm_num [a0, vd0, omegaClSq, Γc, Params.γ])
-    (by norm_num [a1, a2, a3, a0, vd0, twoAlphaCl, omegaClSq, Γc, Params.γ])
-  unfold powerlib.TMIO.Statement at hm
   exact Numerics.not_euler_realizationSoundUnder_of_large_step_local family_isAutonomous
-    (by norm_num) (contDiffAt_modelField _) hm
+    (by norm_num) (contDiffAt_modelField _) unitModel_mem_den
     fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.GFL.DCLink.FourState
@@ -172,41 +182,12 @@ def eulerFamily : Family Euler Requirement 4 0 :=
 def euler : Implementation Model Requirement Euler Requirement 4 0 4 0 :=
   Numerics.euler family Model.field Euler.design Euler.h
 
-/-- The carrier field is `C¹` where `V_dc ≠ 0`. -/
-private theorem carrierField_contDiffOn (q : CarrierParams) (s : ℝ) :
-    ContDiffOn ℝ 1 (q.carrierField s) {x : State 4 | x 2 ≠ 0} := by
-  rw [contDiffOn_euclidean]
-  intro i
-  fin_cases i
-  · simp only [CarrierParams.carrierField, PiLp.toLp_apply, Fin.zero_eta, Matrix.cons_val_zero,
-      CarrierParams.vg_im]
-    apply ContDiff.contDiffOn
-    unfold CarrierParams.idr
-    fun_prop
-  · simp only [CarrierParams.carrierField, PiLp.toLp_apply, Fin.mk_one, Matrix.cons_val_one,
-      Matrix.cons_val_zero, CarrierParams.vg_im]
-    apply ContDiff.contDiffOn
-    unfold CarrierParams.idr
-    fun_prop
-  · simp only [CarrierParams.carrierField, PiLp.toLp_apply, Fin.reduceFinMk, Matrix.cons_val,
-      CarrierParams.Pac_eq]
-    apply ContDiffOn.div_const
-    apply contDiffOn_const.add
-    apply ContDiffOn.div _ (Dynamics.contDiff_coord 2).contDiffOn
-    · exact fun _ hx => hx
-    · apply ContDiff.contDiffOn
-      unfold CarrierParams.idr
-      fun_prop
-  · simp only [CarrierParams.carrierField, PiLp.toLp_apply, Fin.reduceFinMk, Matrix.cons_val]
-    apply ContDiff.contDiffOn
-    fun_prop
-
 /-- The translated carrier field is `C¹` near the origin when the selected point has
 `V_dc ≠ 0`. -/
 private theorem contDiffAt_modelField {m : Model} (hV : m.point 2 ≠ 0) :
     ContDiffAt ℝ 1 m.field 0 :=
   Numerics.contDiffAt_shift (g := m.params.carrierField m.s) (x₀ := m.point)
-    ((carrierField_contDiffOn m.params m.s).contDiffAt
+    ((m.params.carrierField_contDiffOn m.s).contDiffAt
       ((isOpen_ne_fun (Dynamics.contDiff_coord (n := 4) (k := 0) 2).continuous
         continuous_const).mem_nhds hV))
 
@@ -239,6 +220,26 @@ locally exponentially stable. -/
   obtain ⟨h₀, hh₀, hE⟩ := Numerics.euler_certified_small_step_local family_isAutonomous
     (contDiffAt_modelField hV) hy
   exact ⟨⟨h₀, hh₀⟩, fun h hh hle => hE ⟨y.design, h, hh⟩ rfl ⟨hh, hle⟩⟩
+
+/-- **Without a step constraint the Euler realization of the carrier models is not sound.** The
+IN-positive carrier (`s = 1`) with `I_dc = I_q* = X_g = 0`,
+`V = K_p^pll = K_i^pll = K_p^dvc = K_i^dvc = C = 1` at `(θ_e, x_p, V_dc, ξ) = (0, 0, 1, 0)` is
+locally exponentially stable: its four-state reading (`mem_den_iff_fourState`) is the unit
+four-state model above. Integrated with a large enough step it is not: every Euler multiplier
+`1 + hλ` leaves the unit disk (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
+@[powerlib_domain] theorem not_euler_realizationSoundUnder :
+    connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  set m : Model := ⟨⟨0, 0, 1, 0, 1, 1, 1, 1, 1⟩, 1, WithLp.toLp 2 ![0, 0, 1, 0]⟩
+  have h := mem_den_iff_fourState m rfl (by simp [m]) (by simp [m])
+    (.flow .locallyExponentiallyStable)
+  unfold powerlib.TMIO.Statement at h
+  have hto : m.toFourState = ⟨⟨1, 0, 0, 1, 1, 1, 1, 1, 0⟩, 0⟩ := by
+    simp [m, Model.toFourState, CarrierParams.fourStateParams]
+  rw [hto] at h
+  exact Numerics.not_euler_realizationSoundUnder_of_large_step_local family_isAutonomous
+    (by norm_num) (contDiffAt_modelField (by simp [m])) (h.mpr FourState.unitModel_mem_den)
+    fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 end powerlib.GFL.DCLink.BasinGuard
 

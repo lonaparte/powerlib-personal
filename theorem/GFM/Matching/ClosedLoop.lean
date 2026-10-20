@@ -95,9 +95,13 @@ Family and connection conclusions.
   (the stationary closed loop about a selected point; no requirement language, every flow
   translation is unavailable coverage): `full_not_mem_den_globallyAsymptoticallyStable` and
   `full_not_mem_den_globallyExponentiallyStable` (the field is `2π`-periodic in `θ`, so no point
-  is globally attractive on `ℝ⁸`, whatever the gains), and `full_mem_den_unstable` (a point with
+  is globally attractive on `ℝ⁸`, whatever the gains), `full_mem_den_unstable` (a point with
   frequency `η v* ≠ 0` is not an equilibrium, hence not Lyapunov stable — the steady state is a
-  rotating orbit). The global result as a sentence therefore lives only on the reduced space;
+  rotating orbit), and `full_not_mem_den_locallyExponentiallyStable` (no point is locally
+  exponentially stable, whatever the parameters: an equilibrium has `η v* = 0`, and there the
+  linearized `s_α` equation is `−s_β*` times the linearized `θ` equation, so the Jacobian is
+  singular; converse linearization, `Dynamics.fderiv_injective_of_locallyExponentiallyStable`).
+  The global result as a sentence therefore lives only on the reduced space;
   set attraction of the steady-state orbit in `ℝ⁸` is not a sentence of the library and is proved
   below as implementation evidence.
 * Stationary-frame orbit attraction (Rules §3a: set attraction is outside the sentence language,
@@ -132,7 +136,8 @@ Corrections (to the work-sync notes).
   set `{ũ_dc = 0, ∇S = 0, ĩ_dq = 0}`, which contains the saddle points `θ_dq = π`, not global
   stability of the operating point (see `theorem.GFM.Matching.StiffGrid`).
 * "Global" stability of matching control holds only in the `θ`-free reduced coordinates
-  (`full_not_mem_den_globallyAsymptoticallyStable`, `full_mem_den_unstable`; for the
+  (`full_not_mem_den_globallyAsymptoticallyStable`, `full_mem_den_unstable`,
+  `full_not_mem_den_locallyExponentiallyStable`; for the
   two-state abstraction also `matching_not_mem_den_globallyAsymptoticallyStable` in
   `theorem.GFM.Matching.Matching`).
 -/
@@ -906,6 +911,49 @@ closed loop, hence not Lyapunov stable: the steady state is a rotating orbit. -/
   have := abField_eq_zero M.p he
   simp only [FullModel.point, PiLp.toLp_apply, Matrix.cons_val_one] at this
   exact h this
+
+/-- **No selected point of the stationary closed loop is locally exponentially stable**, whatever
+the parameters. A locally exponentially stable point is an equilibrium, so `η v* = 0`
+(`abField_eq_zero`), and its Jacobian is injective (converse linearization,
+`Dynamics.fderiv_injective_of_locallyExponentiallyStable`), hence invertible. But at such an
+equilibrium the linearized `s_α` equation is `−s_β*` times the linearized `θ` equation: the
+functional `ℓ = s_β* e_θ + e_{s_α}` takes the field to `η v_dc (s_β* − s_β)`, whose derivative
+vanishes where `η v_dc = 0` and `s_β = s_β*`, so `ℓ` kills the range of the Jacobian. -/
+@[powerlib_domain] theorem full_not_mem_den_locallyExponentiallyStable (M : FullModel) :
+    connection% (M ∉ fullFamily.den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [full_mem_den_flow]
+  intro h
+  change LocallyExponentiallyStable M.p.abField M.point at h
+  have hηv : M.p.η * M.point 1 = 0 := abField_eq_zero M.p
+    (Dynamics.isEquilibrium_of_locallyExponentiallyStable (abField_smooth M.p) h)
+  set D := fderiv ℝ M.p.abField M.point
+  set ℓ : State 8 →L[ℝ] ℝ := M.sβ • EuclideanSpace.proj 0 + EuclideanSpace.proj 6
+  have hℓf : (fun X => ℓ (M.p.abField X)) = fun X => (M.p.η * X 1) * (M.sβ - X 7) := by
+    funext X
+    simp [ℓ, Model.abField]
+    ring
+  have hzero : ℓ.comp D = 0 := by
+    have hd : HasFDerivAt (fun X => ℓ (M.p.abField X)) (ℓ.comp D) M.point :=
+      ℓ.hasFDerivAt.comp M.point
+        ((abField_smooth M.p).differentiable one_ne_zero M.point).hasFDerivAt
+    rw [hℓf] at hd
+    have h1 : DifferentiableAt ℝ (fun X : State 8 => M.p.η * X 1) M.point :=
+      ((Dynamics.contDiff_coord (k := 1) 1).differentiable one_ne_zero _).const_mul _
+    have h7 : DifferentiableAt ℝ (fun X : State 8 => M.sβ - X 7) M.point :=
+      ((Dynamics.contDiff_coord (k := 1) 7).differentiable one_ne_zero _).const_sub _
+    have hm := h1.hasFDerivAt.mul h7.hasFDerivAt
+    have h7' : M.sβ - M.point 7 = 0 := by simp [FullModel.point]
+    rw [hηv, h7', zero_smul, zero_smul, add_zero] at hm
+    exact hd.unique hm
+  have hinj : Function.Injective (D : State 8 →ₗ[ℝ] State 8) :=
+    Dynamics.fderiv_injective_of_locallyExponentiallyStable (abField_smooth M.p) h
+  obtain ⟨x, hx⟩ := LinearMap.injective_iff_surjective.mp hinj (EuclideanSpace.single 6 1)
+  have h0 := congrArg (fun L : State 8 →L[ℝ] ℝ => L x) hzero
+  simp only [ContinuousLinearMap.comp_apply, _root_.zero_apply] at h0
+  have hx' : D x = EuclideanSpace.single 6 1 := hx
+  rw [hx'] at h0
+  simp [ℓ] at h0
 
 /-! ## Attraction of the steady-state orbit in the stationary frame -/
 

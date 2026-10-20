@@ -5,6 +5,9 @@ import theorem.TMIO.ClaimElab
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 import theorem.Spectral.Global
+import theorem.Spectral.Hub
+import theorem.Dynamics.Lyapunov
+import theorem.GFL.DCLink.FourState
 
 /-! # The `basin-guard` GFL carrier: direction-convention algebra
 
@@ -27,7 +30,9 @@ Domain module; per-unit, continuous time.
 
 Source: work-sync `projects/basin-guard/notes/_MOC.md` (§方向约定, 卡点 5) and
 `derivation-log.md` §2 (P_ac invariance, mirror at `I_q* = 0`) and §3 (`K_p^{dvc,*} = I_d0`);
-code reference `simulation/src/basin_guard_sim/models.py` (GFL carrier).
+code reference `simulation/src/basin_guard_sim/models.py` (GFL carrier); the four-state GFL
+model `theorem/GFL/DCLink/FourState.lean`, which the carrier is for `I_q* = 0`. Scaffold of the
+four-state reading: `theorem/BasinGuardFourState.agda`.
 
 Results.
 * `Pac_eq` : `P_ac = (3/2)(V cos θ_e · i_d* − V sin θ_e · I_q*)` for both signs `s`
@@ -42,20 +47,40 @@ Results.
   `−(3/(2C))(V cos θ_e (K_p^dvc + I_d0) − V sin θ_e I_q*)`, `I_d0 = i_d*|_{V_dc = 1}`;
   for `I_q* = 0` it vanishes iff `K_p^dvc = −I_d0` (`dcNode_partial_Vdc_eq_zero_iff`),
   independently of `X_g` and `C` (and of `V cos θ_e ≠ 0`).
+* `carrierField_eq_transport` : for `I_q* = 0` and `K_i^pll x_p* = 0`, the carrier with drop sign
+  `s` is the four-state GFL field of `fourStateParams s ξ*` (`V₀ = V`, `X_g ↦ s X_g`,
+  `i_d0 = K_i^dvc ξ*`) in the coordinates `(θ_e, x_p, V_dc, ξ) = (θ, x + x_p*, V, ξ* − η)`
+  (`integratorFlip = diag(1, 1, 1, −1)`: the carrier integrates `1 − V_dc`, the four-state model
+  `V − 1`).
+* `carrierField_contDiffOn` : the carrier is `C¹` on `V_dc ≠ 0`; `equilibrium_Vdc`,
+  `equilibrium_Kip_xp` : every equilibrium has `V_dc = 1` and `K_i^pll x_p = 0`.
 
 Family and connection conclusions.
 A complete system (`BasinGuard.Model`) is a carrier
 parameter set, a drop sign `s` and a selected operating point `x*`; the system map reads it as the
 carrier field translated so that `x*` is the origin, `z ↦ carrierField q s (z + x*)` (every flow
-sentence is invariant under this translation, `Flow.Property.holds_shift_iff`). The module proves
-no stability criterion for the carrier, so the requirement language has a single inconsistent
-requirement and every flow sentence is translated into it: unavailable translation coverage,
-sound by `BasinGuard.chain_le_semantics`; passivity is translated exactly
-(`BasinGuard.exact_passive`). The connection content is the frame flip: for `I_q* = 0` the
-flipped model `Model.flip ⟨q, s, x*⟩ = ⟨q, −s, S x*⟩` satisfies exactly the sentences of the
-original (`BasinGuard.flip_mem_den_iff`, every sentence, every drop sign `s`). The mirror
-equilibria (`carrier_equilibrium_iff`), the Jacobian similarity, `P_ac` and the DC-node entry are
-static evidence.
+sentence is invariant under this translation, `Flow.Property.holds_shift_iff`). The requirement
+language has a single inconsistent requirement and every flow sentence is translated into it:
+unavailable translation coverage, sound by `BasinGuard.chain_le_semantics`; passivity is
+translated exactly (`BasinGuard.exact_passive`). The connection content is the frame flip and the
+four-state reading.
+* Frame flip: for `I_q* = 0` the flipped model `Model.flip ⟨q, s, x*⟩ = ⟨q, −s, S x*⟩` satisfies
+  exactly the sentences of the original (`BasinGuard.flip_mem_den_iff`, every sentence, every
+  drop sign `s`).
+* Four-state reading: for `I_q* = 0` a model whose selected point has `V_dc* = 1` and
+  `K_i^pll x_p* = 0` (every equilibrium has both) satisfies exactly the sentences of its four-state
+  GFL model `Model.toFourState` (`BasinGuard.mem_den_iff_fourState`, every sentence), so the
+  stability results of `GFL.DCLink.FourState` hold for the carrier.
+* Local exponential stability: for `I_q* = 0` and `V_dc* ≠ 0` a model is locally exponentially
+  stable exactly when `V_dc* = 1`, `K_i^pll x_p* = 0` and its four-state reading meets the
+  equilibrium and Routh requirements of the four-state local exponential translation
+  (`BasinGuard.mem_den_locallyExponentiallyStable_iff`: a locally exponentially stable point is an
+  equilibrium, and `FourState.exact_locallyExponentiallyStable`, converse linearization). Not
+  covered: `I_q* ≠ 0` (the term `−V sin θ_e I_q*` of `P_ac` has no four-state counterpart) and
+  selected points with `V_dc* = 0` (the `P_ac / V_dc` term, read with `x / 0 = 0`). The
+  requirement language is not rewritten to these conditions.
+The mirror equilibria (`carrier_equilibrium_iff`), the Jacobian similarity, `P_ac`, the DC-node
+entry and the field identity with the four-state model are static evidence.
 
 Correction (`derivation-log.md` §3): `K_p^{dvc,*} = I_d0` is the statement in the OUT-positive
 frame of the sister project (`GFLDC`); in this IN-positive carrier it reads `K_p^{dvc,*} = −I_d0`
@@ -157,8 +182,7 @@ def carrierReflect : State 4 ≃L[ℝ] State 4 :=
   apply WithLp.ofLp_injective
   ext i
   fin_cases i <;>
-    simp [carrierReflect, carrierReflectMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_four,
-      Matrix.diagonal_apply]
+    simp [carrierReflect, carrierReflectMatrix, Matrix.mulVec, dotProduct, Matrix.diagonal_apply]
 
 namespace CarrierParams
 
@@ -371,6 +395,189 @@ sentence (in particular local exponential stability and instability at `s = 1`).
     exact flip_holds_iff hIq P
   · rw [family_isAutonomous.den_passive]
     simp
+
+end BasinGuard
+
+/-! ## The four-state reading -/
+
+/-- The sign change of the DC-voltage integrator, `diag(1, 1, 1, −1)`: the carrier integrates
+`1 − V_dc`, the four-state GFL model `V − 1`. -/
+def integratorFlipMatrix : Matrix (Fin 4) (Fin 4) ℝ := Matrix.diagonal ![1, 1, 1, -1]
+
+@[powerlib_foundation] theorem integratorFlipMatrix_isUnit : IsUnit integratorFlipMatrix :=
+  (Matrix.isUnit_iff_isUnit_det _).mpr
+    (by simp [integratorFlipMatrix, Matrix.det_diagonal, Fin.prod_univ_four])
+
+/-- `(θ, x, V, η) ↦ (θ, x, V, −η)` as a coordinate change. -/
+def integratorFlip : State 4 ≃L[ℝ] State 4 :=
+  Dynamics.matrixCoord integratorFlipMatrix integratorFlipMatrix_isUnit
+
+@[powerlib_foundation] theorem integratorFlip_apply (x : State 4) :
+    integratorFlip x = WithLp.toLp 2 ![x 0, x 1, x 2, -(x 3)] := by
+  apply WithLp.ofLp_injective
+  ext i
+  fin_cases i <;>
+    simp [integratorFlip, integratorFlipMatrix, Matrix.mulVec, dotProduct, Matrix.diagonal_apply]
+
+/-- The flip is an involution. -/
+@[powerlib_foundation] theorem integratorFlip_symm_apply (y : State 4) :
+    integratorFlip.symm y = integratorFlip y := by
+  rw [ContinuousLinearEquiv.symm_apply_eq, integratorFlip_apply, integratorFlip_apply]
+  apply WithLp.ofLp_injective
+  ext i
+  fin_cases i <;> simp
+
+namespace CarrierParams
+
+variable (q : CarrierParams)
+
+/-- The four-state GFL parameters of the carrier with drop sign `s` and operating integrator
+state `ξ*`: `V₀ = V`, `X_g ↦ s X_g`, `i_d0 = K_i^dvc ξ*` (the operating current), the same gains,
+capacitance and DC source current. -/
+def fourStateParams (s ξ : ℝ) : FourState.Params :=
+  ⟨q.V, s * q.Xg, q.Kiv * ξ, q.Kpp, q.Kip, q.Kpv, q.Kiv, q.C, q.Idc⟩
+
+/-- The carrier field is `C¹` where `V_dc ≠ 0`. Static evidence on the model, not a connection
+conclusion. -/
+@[powerlib_foundation] theorem carrierField_contDiffOn (s : ℝ) :
+    ContDiffOn ℝ 1 (q.carrierField s) {x : State 4 | x 2 ≠ 0} := by
+  rw [contDiffOn_euclidean]
+  intro i
+  fin_cases i
+  · simp only [CarrierParams.carrierField, PiLp.toLp_apply, Fin.zero_eta, Matrix.cons_val_zero,
+      CarrierParams.vg_im]
+    apply ContDiff.contDiffOn
+    unfold CarrierParams.idr
+    fun_prop
+  · simp only [CarrierParams.carrierField, PiLp.toLp_apply, Fin.mk_one, Matrix.cons_val_one,
+      Matrix.cons_val_zero, CarrierParams.vg_im]
+    apply ContDiff.contDiffOn
+    unfold CarrierParams.idr
+    fun_prop
+  · simp only [CarrierParams.carrierField, PiLp.toLp_apply, Fin.reduceFinMk, Matrix.cons_val,
+      CarrierParams.Pac_eq]
+    apply ContDiffOn.div_const
+    apply contDiffOn_const.add
+    apply ContDiffOn.div _ (Dynamics.contDiff_coord 2).contDiffOn
+    · exact fun _ hx => hx
+    · apply ContDiff.contDiffOn
+      unfold CarrierParams.idr
+      fun_prop
+  · simp only [CarrierParams.carrierField, PiLp.toLp_apply, Fin.reduceFinMk, Matrix.cons_val]
+    apply ContDiff.contDiffOn
+    fun_prop
+
+/-- `I_q* = 0`, `K_i^pll x_p* = 0`: the carrier with drop sign `s` is the four-state GFL field of
+`fourStateParams s ξ*` in the coordinates `(θ_e, x_p, V_dc, ξ) = (θ, x + x_p*, V, ξ* − η)`.
+Static evidence on the model, not a connection conclusion. -/
+@[powerlib_foundation] theorem carrierField_eq_transport (hIq : q.Iq = 0) (s xp ξ : ℝ)
+    (hx : q.Kip * xp = 0) :
+    q.carrierField s = Dynamics.transportField integratorFlip (WithLp.toLp 2 ![0, xp, 0, ξ])
+      (FourState.field (q.fourStateParams s ξ)) := by
+  funext y
+  apply WithLp.ofLp_injective
+  ext i
+  fin_cases i <;>
+    simp [Dynamics.transportField, integratorFlip_symm_apply, integratorFlip_apply,
+      FourState.field, Dynamics.lift, FourState.coordField, FourState.vq, FourState.idc,
+      FourState.Params.γ, carrierField, vg_im, Pac_eq, idr, hIq, fourStateParams]
+  · linear_combination hx
+  · left
+    ring
+  · ring
+
+/-- At an equilibrium of the carrier `V_dc = 1` and `K_i^pll x_p = 0`. -/
+@[powerlib_foundation] theorem equilibrium_Kip_xp (s : ℝ) {x : State 4}
+    (hx : q.carrierField s x = 0) : x 2 = 1 ∧ q.Kip * x 1 = 0 := by
+  have h0 := congrArg (fun y : State 4 => y 0) hx
+  have h1 := congrArg (fun y : State 4 => y 1) hx
+  simp only [carrierField, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+    PiLp.zero_apply] at h0 h1
+  refine ⟨(q.equilibrium_Vdc s hx).1, ?_⟩
+  rw [h1, mul_zero, zero_add] at h0
+  exact h0
+
+end CarrierParams
+
+namespace BasinGuard
+
+/-- The four-state GFL reading of a carrier model: the parameters `fourStateParams s ξ*` at the
+selected angle `θ_e*`. -/
+def Model.toFourState (m : Model) : FourState.Model :=
+  ⟨m.params.fourStateParams m.s (m.point 3), m.point 0⟩
+
+/-- A selected point with `V_dc* = 1` is the image of the four-state operating point. -/
+private theorem point_eq_affineCoord (m : Model) (hV : m.point 2 = 1) :
+    m.point = Dynamics.affineCoord integratorFlip (WithLp.toLp 2 ![0, m.point 1, 0, m.point 3])
+      (FourState.opPoint m.toFourState.θ) := by
+  apply WithLp.ofLp_injective
+  ext i
+  fin_cases i <;>
+    simp [Dynamics.affineCoord, integratorFlip_apply, FourState.opPoint, Model.toFourState, hV]
+
+/-- **The four-state reading.** For `I_q* = 0`, a carrier model whose selected point has
+`V_dc* = 1` and `K_i^pll x_p* = 0` (every equilibrium has both, `equilibrium_Kip_xp`) satisfies
+exactly the sentences of its four-state GFL reading `toFourState` (`carrierField_eq_transport`,
+`Spectral.mem_den_flow_iff_of_transport`): the two models differ by the sign of the DC-voltage
+integrator and the reference of `x_p`. -/
+@[powerlib_domain] theorem mem_den_iff_fourState (m : Model) (hIq : m.params.Iq = 0)
+    (hV : m.point 2 = 1) (hx : m.params.Kip * m.point 1 = 0) (s : Sentence) :
+    connection% (m ∈ family.den s ↔ m.toFourState ∈ FourState.family.den s) := by
+  unfold powerlib.TMIO.Statement
+  refine Spectral.mem_den_iff_of_flow (g := Model.toFourState) family_isAutonomous
+    FourState.family_isAutonomous (fun P => ?_) s
+  exact Spectral.mem_den_flow_iff_of_transport (f := fun m : Model => m.params.carrierField m.s)
+    (pt := Model.point) (φ := fun y : FourState.Model => FourState.field y.params)
+    (ψ := fun y : FourState.Model => FourState.opPoint y.θ) (g := Model.toFourState)
+    (fun _ _ => Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.params.carrierField m.s)
+      (pt := Model.point) family_isAutonomous)
+    (fun _ _ => Spectral.mem_den_flow_iff_shift
+      (f := fun y : FourState.Model => FourState.field y.params)
+      (pt := fun y : FourState.Model => FourState.opPoint y.θ) FourState.family_isAutonomous)
+    _ _ (m.params.carrierField_eq_transport hIq m.s _ _ hx) (point_eq_affineCoord m hV) P
+
+/-- **Local exponential stability of the carrier.** For `I_q* = 0` and a selected point with
+`V_dc* ≠ 0` (where the carrier is `C¹`), the point is locally exponentially stable exactly when
+`V_dc* = 1`, `K_i^pll x_p* = 0` and its four-state reading meets the requirements of the
+four-state local exponential translation: an equilibrium (`FourState.IsEq`, `C ≠ 0`) whose quartic
+`det(λI − A₀)` meets the Routh conditions. A locally exponentially stable point is an equilibrium
+(`Dynamics.isEquilibrium_of_lyapunovStable_local`), which fixes `V_dc* = 1` and
+`K_i^pll x_p* = 0`; the rest is the four-state reading (`mem_den_iff_fourState`) and the exactness
+of the four-state translation (`FourState.exact_locallyExponentiallyStable`, converse
+linearization). -/
+@[powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff (m : Model)
+    (hIq : m.params.Iq = 0) (hV : m.point 2 ≠ 0) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable) ↔
+      m.point 2 = 1 ∧ m.params.Kip * m.point 1 = 0 ∧
+        FourState.Meets m.toFourState .equilibrium ∧ FourState.Meets m.toFourState .routh) := by
+  unfold powerlib.TMIO.Statement
+  have hex := FourState.exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hex
+  have hfs : ∀ hV1 : m.point 2 = 1, ∀ hx : m.params.Kip * m.point 1 = 0,
+      (m ∈ family.den (.flow .locallyExponentiallyStable) ↔
+        FourState.Meets m.toFourState .equilibrium ∧ FourState.Meets m.toFourState .routh) := by
+    intro hV1 hx
+    have h := mem_den_iff_fourState m hIq hV1 hx (.flow .locallyExponentiallyStable)
+    unfold powerlib.TMIO.Statement at h
+    rw [h, ← hex, TMIO.mem_realize]
+    constructor
+    · intro hr
+      exact ⟨hr .equilibrium (by simp [FourState.family, FourState.translate]),
+        hr .routh (by simp [FourState.family, FourState.translate])⟩
+    · rintro ⟨he, hr⟩ r (rfl | rfl)
+      exacts [he, hr]
+  constructor
+  · intro hm
+    have hles : LocallyExponentiallyStable (m.params.carrierField m.s) m.point :=
+      (Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.params.carrierField m.s)
+        (pt := Model.point) family_isAutonomous).mp hm
+    have he := Dynamics.isEquilibrium_of_lyapunovStable_local
+      ((isOpen_ne_fun (Dynamics.contDiff_coord (n := 4) (k := 0) 2).continuous
+        continuous_const)) hV (m.params.carrierField_contDiffOn m.s) hles.lyapunovStable
+    obtain ⟨hV1, hx⟩ := m.params.equilibrium_Kip_xp m.s he
+    exact ⟨hV1, hx, (hfs hV1 hx).mp hm⟩
+  · rintro ⟨hV1, hx, h⟩
+    exact (hfs hV1 hx).mpr h
 
 end BasinGuard
 
