@@ -46,7 +46,10 @@ Correction (`T-gfl-dynamics` §1.12, `Σ_FD`, and §1.14 region D): the note cla
 `(θ*, δω / K_i)` with the same `θ*` for every `δω`. `piPLL_exists_equilibrium_iff` and
 `piPLL_frequencyDriftBoundary_refuted` state this statically; the connection conclusions
 `PIPLL.frequencyDriftBoundary_refuted` and `PIPLL.frequencyDriftBoundary_stable` of
-`PIPLLFamily` refute the claim through the family's requirement and semantics connections.
+`PIPLLFamily` refute the claim through the family's requirement and semantics connections. The
+note now states the boundary for a frequency ramp `ρ`; `PIPLLFamily` reads the ramped loop as the
+model `m.ramp ρ` with detector `h − ρ/K_i` (`PIPLL.ramp_hasDerivAt_iff`) and proves the boundary
+(`PIPLL.frequencyRampBoundary`: every ramp model is unstable when `ρ/K_i` leaves the range of `h`).
 
 Sign conventions of the sources. `T-gfl-dynamics` §1.7, `T-gfl-ph` (1.1) and this module use
 `θ̇ = K_p h + K_i η − δω`. The vsc note and `T-bogdanov-takens` §1.6 drop `δω` (take `δω = 0`).

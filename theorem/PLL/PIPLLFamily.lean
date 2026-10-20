@@ -25,10 +25,14 @@ characteristic, read about one selected operating point:
 * the system map reads the model as the autonomous field translated so that `x*` is the origin,
   `z ↦ f(z + x*)`, because the library semantics is fixed at the origin
   (`Sentence.holds (.flow P) s = P.holds s.zeroInput 0`). Every flow sentence is invariant under
-  this translation (`Flow.Property.holds_shift_iff`), so the sentences speak about `x*` itself.
+  this translation (`Flow.Property.holds_shift_iff`), so the sentences speak about `x*` itself;
+* a grid-frequency ramp `δω(t) = δω + ρ t` is not a parameter: the ramped loop is read through the
+  ramp model `m.ramp ρ` (detector `h − ρ/K_i`, offset `0`, selected point `(θ*, 0)`), to which it
+  is equivalent in the coordinates `(θ, η − δω(t)/K_i + K_p ρ/K_i²)` when `K_i ≠ 0`
+  (`ramp_hasDerivAt_iff`).
 
 Source: work-sync `theory/T-gfl-dynamics.md` §1.7 (boxed 2D ODE), §1.9 (equilibria), §1.10
-(Jacobian and local stability), §1.12 (`Σ_FD`).
+(Jacobian and local stability), §1.12 (`Σ_FD`: constant offset and frequency ramp).
 
 Results.
 Static evidence on the members (the behavioural results are the connection conclusions below):
@@ -38,6 +42,8 @@ Static evidence on the members (the behavioural results are the connection concl
   (`h = −θ`) and cubic (`h = −θ³`) detector members.
 * `cubicEnergy_hasFDerivAt`, `cubicEnergy_lie`, `cubicEnergy_contDiff`, `cubicEnergy_pos`,
   `norm_sq_le_cubicEnergy`: the PLL energy `θ⁴/4 + η²/2` of the cubic detector.
+* `Model.ramp`, `Model.ramp_deriv`, `ramp_hasDerivAt_iff`: the ramp model (detector `h − ρ/K_i`,
+  with the slope of `h`, no offset) and the bridge from the loop under a frequency ramp to it.
 
 Family and connection conclusions.
 The requirement language is static: `x*` is an equilibrium (`h θ* = 0`, and `K_i ≠ 0` or
@@ -60,24 +66,32 @@ point with both products negative (`mem_den_las_iff_of_nondegenerate`). The freq
 boundary `Σ_FD` as `T-gfl-dynamics` §1.12 first stated it — a constant offset `|δω| > K_p sup |h|`
 removes phase lock — is refuted on both the requirement connection and the semantics connection
 (`frequencyDriftBoundary_refuted`, `frequencyDriftBoundary_stable`): the integrator absorbs a
-constant offset. The note now states the boundary for a frequency ramp `ρ`, which in shifted
-coordinates is this family with the detector `h − ρ/K_i`. The
-global sentences have no available translation: the linear detector `h = −θ` is globally
-exponentially stable, so that translation is sound but not exact
-(`not_exact_globallyExponentiallyStable`). At a degenerate slope the local connections part: the
-cubic detector `h = −θ³` is Lyapunov stable through the PLL energy `θ⁴/4 + η²/2`
-(LeanForControl's `lyapunov_stable`) with a nilpotent Jacobian (`not_exact_lyapunovStable`).
+constant offset. The note now states the boundary for a frequency ramp `δω(t) = δω + ρ t`, which
+in the coordinates `(θ, η − δω(t)/K_i + K_p ρ/K_i²)` is the member `m.ramp ρ` of this family, with
+the detector `h − ρ/K_i` and no offset (`ramp_hasDerivAt_iff`). Its phase-locked phases are the
+solutions of `h(θ*) = ρ/K_i` (`ramp_phaseLocked_iff`). When `ρ/K_i` leaves the range of `h` —
+across `Σ_FD`: `ρ = K_i max h` or `ρ = K_i min h` — no phase is locked and every ramp model is
+unstable: the loop loses lock (`frequencyRampBoundary`). Within the range, local exponential
+stability of a ramp model is decided by the slope `h'(θ*)` at a locked phase as for any model
+(`ramp_mem_den_locallyExponentiallyStable_iff`), and local asymptotic stability too at a
+hyperbolic slope (`ramp_mem_den_las_iff_of_nondegenerate`). The global sentences have no
+available translation: the linear detector `h = −θ` is globally exponentially stable, so that
+translation is sound but not exact (`not_exact_globallyExponentiallyStable`). At a degenerate
+slope the local connections part: the cubic detector `h = −θ³` is Lyapunov stable through the PLL
+energy `θ⁴/4 + η²/2` (LeanForControl's `lyapunov_stable`) with a nilpotent Jacobian
+(`not_exact_lyapunovStable`).
 The local exponential translation is exact (`exact_locallyExponentiallyStable`): by the converse
 linearization theorem (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`), the selected
 point is locally exponentially stable exactly when it is an equilibrium with a Hurwitz Jacobian,
 i.e. phase-locked with both slope-gain products negative. The instability translation is not
-exact (`not_exact_unstable`): instability is the failure of Lyapunov stability, so a model whose
-selected point is not phase-locked (`offEquilibrium`) is unstable
-(`offEquilibrium_mem_den_unstable`, `Dynamics.unstable_of_ne_zero`). The local asymptotic
-translation is not exact either (`not_exact_locallyAsymptoticallyStable`): the cubic detector is
-locally asymptotically stable (`cubicDetector_mem_den_locallyAsymptoticallyStable`, LaSalle's
-principle through `Dynamics.LaSalle.tendsto_zero_of_lasalle_detectable`: the PLL energy decreases at
-the rate `θ⁶`, and the only solution with `θ ≡ 0` is the locked point) although its slope is zero.
+exact (`not_exact_unstable`): instability is the failure of Lyapunov stability, so every model
+whose selected point is not phase-locked is unstable (`mem_den_unstable_of_not_phaseLocked`,
+`Dynamics.unstable_of_ne_zero`), e.g. `offEquilibrium` (`offEquilibrium_mem_den_unstable`). The
+local asymptotic translation is not exact either (`not_exact_locallyAsymptoticallyStable`): the
+cubic detector is locally asymptotically stable
+(`cubicDetector_mem_den_locallyAsymptoticallyStable`, LaSalle's principle through
+`Dynamics.LaSalle.tendsto_zero_of_lasalle_detectable`: the PLL energy decreases at the rate `θ⁶`,
+and the only solution with `θ ≡ 0` is the locked point) although its slope is zero.
 -/
 
 noncomputable section
@@ -340,6 +354,19 @@ in instability; no sign condition on `K_p`. -/
     connection% (m ∈ family.den (.flow .unstable)) :=
   mem_den_unstable m hzero (mul_pos hKi hg)
 
+/-- Off the phase-locked set every model is unstable: a selected point that is not phase-locked
+(`h θ* ≠ 0`, or `K_i = 0` with an offset `δω ≠ 0`) is not an equilibrium of the `C¹` field, so
+the solution through it leaves it (`Spectral.mem_den_unstable_of_ne_zero`). -/
+@[powerlib_domain] theorem mem_den_unstable_of_not_phaseLocked (m : Model)
+    (hm : m ∉ TMIO.realize Meets {.phaseLocked}) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff)
+    (contDiff_piPLLField m.smooth) fun h => hm ?_
+  rw [TMIO.mem_realize]
+  rintro q rfl
+  exact piPLLField_point_eq_zero_iff.mp h
+
 /-! ### Lyapunov stability at a negative slope: the PLL energy
 
 At a zero `θ*` of `h` with `h'(θ*) < 0`, `K_p ≥ 0` and `K_i > 0` the PLL energy
@@ -498,6 +525,110 @@ point of the same SRF model is even locally exponentially stable. -/
   exact H (srf 1 1 1 2 0) 1 one_pos one_pos
     (fun θ => by simpa [srf] using Real.abs_sin_le_one θ) (by norm_num [srf])
     (srf_mem_den_locallyExponentiallyStable one_pos one_pos one_pos 2)
+
+/-! ### The frequency-ramp boundary `Σ_FD`
+
+A grid frequency ramping as `δω(t) = δω + ρ t` makes the PI-PLL non-autonomous. In the
+coordinates `(θ, η̂)`, `η̂ = η − δω(t)/K_i + K_p ρ/K_i²`, it is the autonomous member `m.ramp ρ`
+of this family: the detector `h − ρ/K_i`, no offset, the same gains (`ramp_hasDerivAt_iff`). -/
+
+/-- The ramp model of `m` at the ramp rate `ρ`: the PI-PLL with the detector `h − ρ/K_i`, no
+frequency offset, the gains and the selected phase of `m`; its selected point is `(θ*, 0)`. -/
+def Model.ramp (m : Model) (ρ : ℝ) : Model :=
+  ⟨fun θ => m.h θ - ρ / m.Ki, m.Kp, m.Ki, 0, m.θ, m.smooth.sub contDiff_const⟩
+
+/-- The tilted detector `h − ρ/K_i` has the slope of `h`. -/
+@[simp, powerlib_foundation] theorem Model.ramp_deriv (m : Model) (ρ θ : ℝ) :
+    deriv (m.ramp ρ).h θ = deriv m.h θ :=
+  deriv_sub_const _
+
+/-- Bridge to the original law under a frequency ramp (`K_i ≠ 0`): `(θ, η)` solves
+`θ̇ = K_p h(θ) + K_i η − (δω + ρ t)`, `η̇ = h(θ)` at time `t` iff
+`z = (θ − θ*, η̂)`, `η̂ = η − (δω + ρ t)/K_i + K_p ρ/K_i²`, solves `ż = f(z)` at `t` for the field
+`f` of the ramp model `m.ramp ρ` — the state of the family, translated to the selected point
+`(θ*, 0)` — written componentwise. -/
+@[powerlib_foundation] theorem ramp_hasDerivAt_iff (m : Model) (ρ : ℝ) (hKi : m.Ki ≠ 0)
+    (θ η : ℝ → ℝ) (t : ℝ) :
+    (HasDerivAt θ (m.Kp * m.h (θ t) + m.Ki * η t - (m.δω + ρ * t)) t ∧
+        HasDerivAt η (m.h (θ t)) t) ↔
+      (HasDerivAt (fun s => θ s - m.θ) ((m.ramp ρ).field (PhasePlane.mk (θ t - m.θ)
+          (η t - (m.δω + ρ * t) / m.Ki + m.Kp * ρ / m.Ki ^ 2)) 0) t ∧
+        HasDerivAt (fun s => η s - (m.δω + ρ * s) / m.Ki + m.Kp * ρ / m.Ki ^ 2)
+          ((m.ramp ρ).field (PhasePlane.mk (θ t - m.θ)
+            (η t - (m.δω + ρ * t) / m.Ki + m.Kp * ρ / m.Ki ^ 2)) 1) t) := by
+  rw [hasDerivAt_sub_const_iff]
+  simp only [Model.field, Model.point, Model.ramp, piPLLField_apply_zero, piPLLField_apply_one,
+    PiLp.add_apply, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one, sub_add_cancel, zero_div,
+    add_zero]
+  have hc : HasDerivAt (fun s => (m.δω + ρ * s) / m.Ki - m.Kp * ρ / m.Ki ^ 2) (ρ / m.Ki) t := by
+    simpa using ((((hasDerivAt_id t).const_mul ρ).const_add m.δω).div_const m.Ki).sub_const
+      (m.Kp * ρ / m.Ki ^ 2)
+  constructor
+  · rintro ⟨h0, h1⟩
+    refine ⟨h0.congr_deriv (by field_simp; ring), ?_⟩
+    convert h1.sub hc using 1
+    funext s
+    simp only [Pi.sub_apply]
+    ring
+  · rintro ⟨h0, h1⟩
+    refine ⟨h0.congr_deriv (by field_simp; ring), ?_⟩
+    convert h1.add hc using 1
+    · funext s
+      simp only [Pi.add_apply]
+      ring
+    · ring
+
+/-- Under a frequency ramp `ρ` the phase-locked phases are the solutions of `h(θ*) = ρ / K_i`:
+the ramp model meets the phase-locking requirement exactly there (it has no offset, so no
+condition on `K_i` remains). -/
+@[powerlib_domain] theorem ramp_phaseLocked_iff (m : Model) (ρ : ℝ) :
+    connection% (m.ramp ρ ∈ TMIO.realize Meets {.phaseLocked} ↔ m.h m.θ = ρ / m.Ki) := by
+  unfold powerlib.TMIO.Statement
+  simp [Meets, Model.ramp, sub_eq_zero]
+
+/-- `Σ_FD` (`T-gfl-dynamics` §1.12) for a frequency ramp: when `ρ / K_i` lies outside the range
+of `h` — above every value or below every value, i.e. beyond `ρ = K_i max h` or
+`ρ = K_i min h` — no phase is locked under the ramp (`ramp_phaseLocked_iff`), and every ramp
+model, whatever its selected phase, is unstable (`mem_den_unstable_of_not_phaseLocked`): the PLL
+loses lock. -/
+@[powerlib_domain] theorem frequencyRampBoundary (m : Model) (ρ : ℝ)
+    (hρ : ρ / m.Ki ∉ Set.range m.h) :
+    connection% (m.ramp ρ ∈ family.den (.flow .unstable)) := by
+  have hlock := ramp_phaseLocked_iff m ρ
+  unfold powerlib.TMIO.Statement at hlock ⊢
+  exact mem_den_unstable_of_not_phaseLocked _ fun hm => hρ ⟨m.θ, hlock.mp hm⟩
+
+/-- The ramp model meets the local requirements exactly at a locked phase with both slope-gain
+products negative. -/
+private theorem ramp_mem_realize_iff (m : Model) (ρ : ℝ) :
+    m.ramp ρ ∈ TMIO.realize Meets {.phaseLocked, .slopeStable} ↔
+      m.h m.θ = ρ / m.Ki ∧ m.Kp * deriv m.h m.θ < 0 ∧ m.Ki * deriv m.h m.θ < 0 := by
+  simp [Meets, Model.ramp, sub_eq_zero]
+
+/-- Local exponential stability of a ramp model is decided by the slope as for any model
+(`exact_locallyExponentiallyStable`): it holds exactly at a locked phase, `h(θ*) = ρ / K_i` (so
+`ρ / K_i` lies in the range of `h`), with both slope-gain products at `θ*` negative — the tilted
+detector `h − ρ/K_i` has the slope of `h`. -/
+@[powerlib_domain] theorem ramp_mem_den_locallyExponentiallyStable_iff (m : Model) (ρ : ℝ) :
+    connection% (m.ramp ρ ∈ family.den (.flow .locallyExponentiallyStable) ↔
+      m.h m.θ = ρ / m.Ki ∧ m.Kp * deriv m.h m.θ < 0 ∧ m.Ki * deriv m.h m.θ < 0) := by
+  have hex := exact_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement Family.Exact at hex
+  unfold powerlib.TMIO.Statement
+  rw [← hex]
+  exact ramp_mem_realize_iff m ρ
+
+/-- At a hyperbolic slope (both slope-gain products nonzero) local asymptotic stability of a ramp
+model is decided in the same way (`mem_den_las_iff_of_nondegenerate`). -/
+@[powerlib_domain] theorem ramp_mem_den_las_iff_of_nondegenerate (m : Model) (ρ : ℝ)
+    (hKp : m.Kp * deriv m.h m.θ ≠ 0) (hKi : m.Ki * deriv m.h m.θ ≠ 0) :
+    connection% (m.ramp ρ ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
+      m.h m.θ = ρ / m.Ki ∧ m.Kp * deriv m.h m.θ < 0 ∧ m.Ki * deriv m.h m.θ < 0) := by
+  have hlas := mem_den_las_iff_of_nondegenerate (m.ramp ρ) (by simpa [Model.ramp] using hKp)
+    (by simpa [Model.ramp] using hKi)
+  unfold powerlib.TMIO.Statement at hlas ⊢
+  rw [hlas]
+  exact ramp_mem_realize_iff m ρ
 
 /-! ### Unavailable coverage of the global sentences -/
 
@@ -724,14 +855,11 @@ requirement. -/
 and the offset zero, `θ* = 0`. -/
 def offEquilibrium : Model := ⟨fun _ => 1, 0, 0, 0, 0, contDiff_const⟩
 
-/-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+/-- A point that is not an equilibrium is unstable: the solution through it leaves it
+(`mem_den_unstable_of_not_phaseLocked`). -/
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
-    connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
-  unfold powerlib.TMIO.Statement
-  refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff)
-    (contDiff_piPLLField offEquilibrium.smooth) fun h => ?_
-  have := congrArg (fun y : ℝ² => y 1) h
-  simp [offEquilibrium] at this
+    connection% (offEquilibrium ∈ family.den (.flow .unstable)) :=
+  mem_den_unstable_of_not_phaseLocked _ (by simp [Meets, offEquilibrium])
 
 /-- The instability translation is sound but not exact: instability is the failure of Lyapunov
 stability, which every non-equilibrium point satisfies, while the translation asks for a
