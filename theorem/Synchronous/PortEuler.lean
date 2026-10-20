@@ -11,7 +11,9 @@ an infinite bus (`ClassicalSM.family`), the seven-state dq machine (`SyncMachine
 `h > 0`, with their ports: each discretization realizes the model it is designed from; the
 generic template is `theorem/Numerics/EulerPorts.lean`. For the classical machine the
 flow-sentence laws apply (its zero-input field is smooth): local exponential stability is
-realized below a step threshold and not without a step constraint. For every family the
+realized below a step threshold and not without a step constraint. The seven-state and 11-state
+families have no locally exponentially stable member, so their realization of local exponential
+stability is sound, vacuously, without a step constraint. For every family the
 passivity realization is not sound: the collocated outputs `gᵀ ∇H(x)` (speed, currents) do not
 depend on the input, so one Euler step with a large input draws energy without bound, while the
 continuous models are passive. Scaffold: `theorem/EulerPorts.agda`.
@@ -29,21 +31,26 @@ Model boundary.
   model's port system with the same output (the input held over the step), step length `h`,
   discrete time, exact arithmetic, fixed step. Excluded: step-size control, implicit, symplectic
   or discrete-gradient schemes, the integration error against the continuous trajectory.
-* Level: local exponential stability of the zero-input dynamics about the origin (classical
-  machine only); passivity of the discretized port system.
-* Flow laws are not stated for the seven-state and 11-state families: their rotor angle `δ` is
-  a free direction at the origin (no field component depends on `δ` there to first order:
-  `∂H/∂δ = 0` and `∇H(0) = 0`), so the Jacobian has a zero eigenvalue and, by converse
-  linearization, no member is locally exponentially stable; the small-step law would be vacuous.
-  For the corrected model with `ω_s ≠ 0` the origin is not even an equilibrium.
+* Level: local exponential stability of the zero-input dynamics about the origin; passivity of
+  the discretized port system.
+* The seven-state and 11-state families have no locally exponentially stable member, whatever
+  the parameters (`SyncMachine7.not_mem_den_locallyExponentiallyStable`,
+  `SMIB11.not_mem_den_locallyExponentiallyStable`,
+  `SMIB11Rel.not_mem_den_locallyExponentiallyStable`, in the family modules): the Jacobian at
+  the origin kills the rotor-angle direction `e_δ` (`∂H/∂δ = 0` and `∇H(0) = 0`; the frame
+  drift of the corrected model is constant), while a locally exponentially stable point has an
+  injective Jacobian (converse linearization). For the corrected model with `ω_s ≠ 0` the
+  origin is not even an equilibrium (`SMIB11Rel.mem_den_unstable`). So the small-step law holds
+  vacuously and is not stated.
 
 Source: `theorem/Numerics/EulerPorts.lean` (`eulerPorts_sound_small_step_local`,
 `not_eulerPorts_realizationSoundUnder_of_large_step_local`,
 `eulerPortFamily_not_mem_den_passive`, `not_eulerPorts_realizationSoundUnder_passive`,
 `Family.IsNonlinearPH.isPort`), `theorem/Numerics/EulerRealization.lean` (`contDiff_shift`),
-`theorem/PH/Linearization.lean` (`NonlinearModel.contDiff_zeroInputField`) and the family modules
-(members, passivity); work-sync `theory/T-numerical-integration.md` §1.2, §2.7,
-`theory/T-ph.md` §2.5.
+`theorem/PH/Linearization.lean` (`NonlinearModel.contDiff_zeroInputField`),
+`theorem/Stack/Implementation.lean` (`Implementation.certify_realizes_of_design`) and the family
+modules (members, passivity, no locally exponentially stable member); work-sync
+`theory/T-numerical-integration.md` §1.2, §2.7, `theory/T-ph.md` §2.5.
 
 Results.
 * `ClassicalSM.contDiffAt_zeroInput`: the centred zero-input field of the classical machine is
@@ -62,6 +69,10 @@ Family and connection conclusions.
   `ClassicalSM.not_euler_realizationSoundUnder` (scaffold
   `not-sound-large-step`): without a step constraint the realization is not sound
   (`M = D = b = 1`, `P_m = 0`, `δ* = 0`).
+* M–I, seven-state and 11-state families, for `N` = `SyncMachine7`, `SMIB11`, `SMIB11Rel`:
+  `N.euler_realizationSoundUnder`: without a step constraint the realization of local
+  exponential stability is sound, vacuously — no model is locally exponentially stable
+  (`N.not_mem_den_locallyExponentiallyStable`), so no discretization is certified for it.
 * M–I, passivity, for each `N`: `N.euler_not_mem_den_passive`: no discretization is passive,
   whatever its step; `N.not_euler_realizationSoundUnder_passive`: the passivity realization is not
   sound (classical machine: `M = D = b = 1`, `P_m = 0`, passive; the other families: every member
@@ -161,6 +172,23 @@ not. -/
 
 end powerlib.Synchronous.ClassicalSM
 
+namespace powerlib.Synchronous
+
+/-- Vacuous soundness: when no model of a family of port systems is locally exponentially stable,
+no Euler implementation is certified for it, so the realization is sound without a step
+constraint. -/
+private theorem eulerPorts_realizationSoundUnder_of_not_mem {X Y Q : Type} {n p : ℕ}
+    {F : Family X Q n p} {sys : X → Port.System n p} {design : Y → X} {step : Y → ℝ}
+    (h : ∀ x, x ∉ F.den (.flow .locallyExponentiallyStable)) :
+    (Numerics.eulerPorts F sys design step).RealizationSoundUnder ∅
+      (.flow .locallyExponentiallyStable) := by
+  rintro y ⟨hy, -⟩
+  rw [Implementation.certify_realizes_of_design (I := Numerics.eulerPorts F sys design step) rfl]
+    at hy
+  exact absurd hy (h _)
+
+end powerlib.Synchronous
+
 namespace powerlib.Synchronous.SyncMachine7
 
 /-- The explicit Euler discretization of a seven-state machine with step `h > 0`. -/
@@ -180,6 +208,19 @@ def eulerFamily : Family Euler Requirement 7 4 :=
 /-- The Euler realization: every discretization realizes its machine. -/
 def euler : Implementation SyncMachine7Params Requirement Euler Requirement 7 4 7 4 :=
   Numerics.eulerPorts family (fun p => (syncMachine7 p).system) Euler.design Euler.h
+
+/-- **The Euler realization of the seven-state machine is sound without a step constraint,
+vacuously.** No machine is locally exponentially stable at the origin
+(`not_mem_den_locallyExponentiallyStable`: the rotor angle is a direction killed by the
+Jacobian), so no discretization is certified for local exponential stability, whatever its step;
+the family has no step threshold to state. -/
+@[powerlib_domain] theorem euler_realizationSoundUnder :
+    connection% (euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  refine eulerPorts_realizationSoundUnder_of_not_mem fun p => ?_
+  have hn := not_mem_den_locallyExponentiallyStable p
+  unfold powerlib.TMIO.Statement at hn
+  exact hn
 
 /-- The output at the unit momentum has the speed component `1/M`. -/
 private theorem output_ne_zero (p : SyncMachine7Params) :
@@ -254,6 +295,18 @@ def eulerFamily : Family Euler Requirement 11 4 :=
 def euler : Implementation SMIB11Params Requirement Euler Requirement 11 4 11 4 :=
   Numerics.eulerPorts family (fun p => (smib11 p).system) Euler.design Euler.h
 
+/-- **The Euler realization of the note's 11-state system is sound without a step constraint,
+vacuously.** No system is locally exponentially stable at the origin
+(`not_mem_den_locallyExponentiallyStable`: the rotor-angle axis is killed by the Jacobian), so
+no discretization is certified for local exponential stability, whatever its step. -/
+@[powerlib_domain] theorem euler_realizationSoundUnder :
+    connection% (euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  refine eulerPorts_realizationSoundUnder_of_not_mem fun p => ?_
+  have hn := not_mem_den_locallyExponentiallyStable p
+  unfold powerlib.TMIO.Statement at hn
+  exact hn
+
 /-- **No Euler discretization of the note's 11-state system is passive, whatever its step.** The
 outputs `(i_f, ω_r, −I_D, −I_Q)` do not depend on the inputs. -/
 @[powerlib_domain] theorem euler_not_mem_den_passive :
@@ -295,6 +348,19 @@ def eulerFamily : Family Euler SMIB11.Requirement 11 4 :=
 /-- The Euler realization: every discretization realizes its system. -/
 def euler : Implementation SMIB11Params SMIB11.Requirement Euler SMIB11.Requirement 11 4 11 4 :=
   Numerics.eulerPorts family smib11Rel_system Euler.design Euler.h
+
+/-- **The Euler realization of the corrected 11-state system is sound without a step
+constraint, vacuously.** No system is locally exponentially stable at the origin, whatever `ω_s`
+(`not_mem_den_locallyExponentiallyStable`: the constant frame drift leaves the note's Jacobian,
+which kills the rotor-angle axis), so no discretization is certified for local exponential
+stability, whatever its step. -/
+@[powerlib_domain] theorem euler_realizationSoundUnder :
+    connection% (euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  refine eulerPorts_realizationSoundUnder_of_not_mem fun p => ?_
+  have hn := not_mem_den_locallyExponentiallyStable p
+  unfold powerlib.TMIO.Statement at hn
+  exact hn
 
 /-- **No Euler discretization of the corrected 11-state system is passive, whatever its step.**
 The outputs `(i_f, ω_r, −I_D, −I_Q)` do not depend on the inputs. -/

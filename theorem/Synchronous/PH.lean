@@ -128,11 +128,17 @@ Family and connection conclusions.
   read as its pH port system at the origin (the unforced state, an equilibrium). Passivity is
   translated into no requirement and is exact (`H ≥ 0`, `SyncMachine7.mem_den_passive`); flow
   sentences have no translation; the chain lies below the semantics
-  (`SyncMachine7.chain_le_semantics`).
+  (`SyncMachine7.chain_le_semantics`). No machine is locally exponentially stable at the origin,
+  whatever its parameters (`SyncMachine7.not_mem_den_locallyExponentiallyStable`): `H` does not
+  depend on the rotor angle `δ` and `∇H(0) = 0`, so the Jacobian `(J(0) − R) ∇²H` of the
+  zero-input field (`NonlinearModel.fderiv_zeroInputField_of_dH_eq_zero`) kills `e_δ`, while a
+  locally exponentially stable point of a `C¹` field has an injective Jacobian (converse
+  linearization, `Dynamics.fderiv_injective_of_locallyExponentiallyStable`).
 * The rate equations, energies, damping powers, supplies, power balances, equilibrium
   characterization, unboundedness of `H`, the linearization and the swing reading are static
-  evidence; the trajectory-level dissipation inequality of the classical machine and the energy
-  derivative of the seven-state machine are private implementation evidence.
+  evidence; the trajectory-level dissipation inequality of the classical machine, the energy
+  derivative of the seven-state machine and the smoothness and Jacobian at the origin of its
+  zero-input field are private implementation evidence.
 
 Correction.
 * T-ph §1.1, structural assumption 3 `H ≥ H_min > −∞`: the classical-machine `H` contains
@@ -1150,6 +1156,41 @@ private theorem syncMachine7_trajectory_energy_derivative (p : SyncMachine7Param
       (Icc t₀ t₁) t :=
   (syncMachine7 p).trajectory_energy_derivative hx ht
 
+/-! ### The rotor-angle direction at the origin -/
+
+/-- The entries of `J(x)` are `C¹` (constants and the flux coordinates `Ψ_d`, `Ψ_q`). -/
+private theorem syncMachine7_contDiff_J (i j : Fin 7) :
+    ContDiff ℝ 1 fun x : State 7 => syncMachine7_J x i j := by
+  fin_cases i <;> fin_cases j <;> simp [syncMachine7_J] <;> fun_prop
+
+/-- `∇H` is the linear map `x ↦ Q x`. -/
+private theorem syncMachine7_dH_eq (p : SyncMachine7Params) :
+    (syncMachine7 p).dH = Matrix.toEuclideanCLM (n := Fin 7) (𝕜 := ℝ) (syncMachine7_Q p) :=
+  funext fun _ => rfl
+
+/-- The zero-input field `(J(x) − R) ∇H(x)` is `C¹`. -/
+private theorem syncMachine7_contDiff_zeroInputField (p : SyncMachine7Params) :
+    ContDiff ℝ 1 (syncMachine7 p).zeroInputField :=
+  (syncMachine7 p).contDiff_zeroInputField syncMachine7_contDiff_J (fun _ _ => contDiff_const)
+    (by rw [syncMachine7_dH_eq]; exact ContinuousLinearMap.contDiff _)
+
+/-- At the origin the Jacobian `(J(0) − R) Q` of the zero-input field kills the rotor-angle
+direction `e_δ`: `∇H(0) = 0`, and the column of `Q = ∇²H` at `δ` is zero (`∂H/∂δ = 0`). -/
+private theorem syncMachine7_fderiv_angle (p : SyncMachine7Params) :
+    fderiv ℝ (syncMachine7 p).zeroInputField 0 (EuclideanSpace.single 6 1) = 0 := by
+  have hQ : HasFDerivAt (syncMachine7 p).dH
+      (Matrix.toEuclideanCLM (n := Fin 7) (𝕜 := ℝ) (syncMachine7_Q p)) 0 := by
+    rw [syncMachine7_dH_eq]
+    exact ContinuousLinearMap.hasFDerivAt _
+  rw [(syncMachine7 p).fderiv_zeroInputField_of_dH_eq_zero
+    (fun i j => ((syncMachine7_contDiff_J i j).differentiable one_ne_zero) 0)
+    (fun _ _ => differentiableAt_const _) hQ (by rw [syncMachine7_dH_eq, map_zero])]
+  have hcol : (syncMachine7_Q p).col 6 = 0 := by
+    ext k
+    fin_cases k <;> simp [syncMachine7_Q]
+  ext i
+  simp [hcol]
+
 /-! ### The seven-state machine family -/
 
 namespace SyncMachine7
@@ -1204,6 +1245,35 @@ input `(v_d, v_q, v_f, T_m^ext)` and solution segment,
   rcases s with P | _
   · exact (hp .impossible trivial).elim
   · exact mem_den_passive p
+
+/-- **No seven-state machine is locally exponentially stable at the origin**, whatever its
+parameters. A locally exponentially stable point of the `C¹` zero-input field has an injective
+Jacobian (converse linearization, `Dynamics.fderiv_injective_of_locallyExponentiallyStable`),
+but at the origin the Jacobian `(J(0) − R) ∇²H` kills the rotor-angle direction `e_δ`: `H` does
+not depend on `δ` and `∇H(0) = 0`. -/
+@[powerlib_domain] theorem not_mem_den_locallyExponentiallyStable (p : SyncMachine7Params) :
+    connection% (p ∉ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [family_isNonlinearPH.mem_den_flow]
+  intro h
+  change LocallyExponentiallyStable (syncMachine7 p).zeroInputField 0 at h
+  have hv : (EuclideanSpace.single 6 1 : State 7) ≠ 0 := fun h0 => by
+    simpa using congrArg (fun z : State 7 => z 6) h0
+  exact hv (Dynamics.fderiv_injective_of_locallyExponentiallyStable
+    (syncMachine7_contDiff_zeroInputField p) h (by rw [syncMachine7_fderiv_angle, map_zero]))
+
+/-- The translation of local exponential stability (the whole, inconsistent language) is exact:
+no member is locally exponentially stable (`not_mem_den_locallyExponentiallyStable`). -/
+@[powerlib_domain] theorem exact_locallyExponentiallyStable :
+    connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have hu := realize_univ
+  unfold powerlib.TMIO.Statement at hu
+  exact Family.exact_of_translate_eq_univ (F := family) hu rfl
+    (Set.eq_empty_of_forall_notMem fun p => by
+      have h := not_mem_den_locallyExponentiallyStable p
+      unfold powerlib.TMIO.Statement at h
+      exact h)
 
 end SyncMachine7
 

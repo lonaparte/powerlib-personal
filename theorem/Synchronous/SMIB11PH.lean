@@ -1,4 +1,6 @@
 import theorem.PH.Linear
+import theorem.PH.Linearization
+import theorem.Dynamics.ConverseLinearization
 import theorem.TMIO.ClaimElab
 import theorem.Spectral.Local
 
@@ -30,7 +32,9 @@ As in T-power-system-ph §1.5.1:
 
 Source: work-sync `theory/T-power-system-ph.md` §1.5.1 (11-state `J^tot`, `R^tot`, `B`,
 state equations, energy balance), §1.4 (block-sum Hamiltonian), §1.8 (state dimension); parent
-`theory/T-sync-machine.md` §1.13.
+`theory/T-sync-machine.md` §1.13; `theorem/PH/Linearization.lean`,
+`theorem/Dynamics/ConverseLinearization.lean` (the Jacobian at the origin, converse
+linearization).
 
 Results.
 * `smib11`: the note's ODE verbatim (`δ̇ = ω_r`); its energy balance (`smib11_power_balance`)
@@ -55,8 +59,18 @@ Family and connection conclusions.
   here and the corrected model's origin is not an equilibrium when `ω_s ≠ 0`.
 * Connection conclusions: `SMIB11.mem_den_passive` and `SMIB11Rel.mem_den_passive`, exactness
   and chain soundness of both families; the corrected model's passivity is proved through
-  `Port.System.passiveWith_of_rate`.  The state equations, damping power, supply, power
-  balances, `H` identities and the equilibrium corrections are static evidence.
+  `Port.System.passiveWith_of_rate`. No member of either family is locally exponentially stable
+  at the origin, whatever its parameters (`SMIB11.not_mem_den_locallyExponentiallyStable`,
+  `SMIB11Rel.not_mem_den_locallyExponentiallyStable`): `H` does not depend on `δ` and
+  `∇H(0) = 0`, so the Jacobian `(J^tot(0) − R^tot) ∇²H` of the note's zero-input field
+  (`NonlinearModel.fderiv_zeroInputField_of_dH_eq_zero`) kills the rotor-angle axis, and the
+  corrected field differs from it by the constant drift `−ω_s e_δ`; a locally exponentially
+  stable point of a `C¹` field has an injective Jacobian (converse linearization,
+  `Dynamics.fderiv_injective_of_locallyExponentiallyStable`). With `ω_s ≠ 0` the corrected
+  model's origin is not an equilibrium, hence unstable (`SMIB11Rel.mem_den_unstable`).
+  The state equations, damping power, supply, power balances, `H` identities and the
+  equilibrium corrections are static evidence; the smoothness and the Jacobian at the origin of
+  the zero-input fields are private implementation evidence.
 
 Correction (hard obstruction).
 * The parent model T-sync-machine §1.13 uses the **absolute** rotor angle, `δ̇ = ω_r`, and
@@ -284,16 +298,16 @@ def smib11_angleAxis (θ : ℝ) : State 11 := WithLp.toLp 2 (Pi.single 6 θ)
   rw [smib11_H, hflux]
   simp [smib11_angleAxis]
 
+/-- The rotor-angle axis is a nonzero direction. -/
+private theorem smib11_angleAxis_one_ne_zero : smib11_angleAxis 1 ≠ 0 := fun h => by
+  simpa [smib11_angleAxis] using congrArg (fun z : State 11 => z 6) h
+
 /-- `H^tot` is not positive definite (it vanishes along the rotor-angle axis), hence it is no
 quadratic storage. -/
 @[powerlib_foundation] theorem smib11_no_quadraticStorage (p : SMIB11Params) :
     ¬ ∀ x : State 11, x ≠ 0 → 0 < (smib11 p).H x := by
   intro hpos
-  have hne : smib11_angleAxis 1 ≠ 0 := by
-    intro h
-    have := congrArg (fun z : State 11 => z 6) h
-    simp [smib11_angleAxis] at this
-  have h := hpos _ hne
+  have h := hpos _ smib11_angleAxis_one_ne_zero
   rw [smib11_H_angleAxis] at h
   exact lt_irrefl _ h
 
@@ -361,6 +375,48 @@ def smib11Rel_system (p : SMIB11Params) : Port.System 11 4 :=
   simp only [PiLp.zero_apply] at h'
   linarith
 
+/-! ### The rotor-angle direction at the origin -/
+
+/-- The entries of `J^tot(x)` are `C¹` (constants, `Ψ_d`, `Ψ_q`, `cos δ`, `sin δ`). -/
+private theorem smib11_contDiff_J (p : SMIB11Params) (i j : Fin 11) :
+    ContDiff ℝ 1 fun x : State 11 => smib11_J p x i j := by
+  fin_cases i <;> fin_cases j <;> simp [smib11_J] <;> fun_prop
+
+/-- `∇H` is the linear map `x ↦ Q x`. -/
+private theorem smib11_dH_eq (p : SMIB11Params) :
+    (smib11 p).dH = Matrix.toEuclideanCLM (n := Fin 11) (𝕜 := ℝ) (smib11_Q p) :=
+  funext fun _ => rfl
+
+/-- The zero-input field `(J^tot(x) − R^tot) ∇H(x)` of the note's model is `C¹`. -/
+private theorem smib11_contDiff_zeroInputField (p : SMIB11Params) :
+    ContDiff ℝ 1 (smib11 p).zeroInputField :=
+  (smib11 p).contDiff_zeroInputField (smib11_contDiff_J p) (fun _ _ => contDiff_const)
+    (by rw [smib11_dH_eq]; exact ContinuousLinearMap.contDiff _)
+
+/-- At the origin the Jacobian `(J^tot(0) − R^tot) Q` of the note's zero-input field kills the
+rotor-angle axis: `∇H(0) = 0`, and the column of `Q = ∇²H` at `δ` is zero (`∂H/∂δ = 0`). The
+`δ`-dependence of `J^tot` (through `cos δ`, `sin δ`) multiplies `∇H(0) = 0`. -/
+private theorem smib11_fderiv_angleAxis (p : SMIB11Params) :
+    fderiv ℝ (smib11 p).zeroInputField 0 (smib11_angleAxis 1) = 0 := by
+  have hQ : HasFDerivAt (smib11 p).dH
+      (Matrix.toEuclideanCLM (n := Fin 11) (𝕜 := ℝ) (smib11_Q p)) 0 := by
+    rw [smib11_dH_eq]
+    exact ContinuousLinearMap.hasFDerivAt _
+  rw [(smib11 p).fderiv_zeroInputField_of_dH_eq_zero
+    (fun i j => ((smib11_contDiff_J p i j).differentiable one_ne_zero) 0)
+    (fun _ _ => differentiableAt_const _) hQ (by rw [smib11_dH_eq, map_zero])]
+  have hcol : (smib11_Q p).col 6 = 0 := by
+    ext k
+    fin_cases k <;> simp [smib11_Q, smib11_w]
+  ext i
+  simp [smib11_angleAxis, hcol]
+
+/-- The corrected zero-input field is the note's minus the constant frame drift `ω_s e_δ`. -/
+private theorem smib11Rel_zeroInput (p : SMIB11Params) :
+    (smib11Rel_system p).zeroInput =
+      fun x => (smib11 p).zeroInputField x - smib11_angleAxis p.ωs :=
+  rfl
+
 /-! ### Families -/
 
 namespace SMIB11
@@ -412,6 +468,34 @@ def family : Family SMIB11Params Requirement 11 4 :=
   · exact (hp .impossible trivial).elim
   · exact mem_den_passive p
 
+/-- **No member of the note's 11-state family is locally exponentially stable at the origin**,
+whatever its parameters. A locally exponentially stable point of the `C¹` zero-input field has an
+injective Jacobian (converse linearization,
+`Dynamics.fderiv_injective_of_locallyExponentiallyStable`), but at the origin the Jacobian
+`(J^tot(0) − R^tot) ∇²H` kills the rotor-angle axis: `H` does not depend on `δ` and
+`∇H(0) = 0`. -/
+@[powerlib_domain] theorem not_mem_den_locallyExponentiallyStable (p : SMIB11Params) :
+    connection% (p ∉ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [family_isNonlinearPH.mem_den_flow]
+  intro h
+  change LocallyExponentiallyStable (smib11 p).zeroInputField 0 at h
+  exact smib11_angleAxis_one_ne_zero (Dynamics.fderiv_injective_of_locallyExponentiallyStable
+    (smib11_contDiff_zeroInputField p) h (by rw [smib11_fderiv_angleAxis, map_zero]))
+
+/-- The translation of local exponential stability (the whole, inconsistent language) is exact:
+no member is locally exponentially stable (`not_mem_den_locallyExponentiallyStable`). -/
+@[powerlib_domain] theorem exact_locallyExponentiallyStable :
+    connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have hu := realize_univ
+  unfold powerlib.TMIO.Statement at hu
+  exact Family.exact_of_translate_eq_univ (F := family) hu rfl
+    (Set.eq_empty_of_forall_notMem fun p => by
+      have h := not_mem_den_locallyExponentiallyStable p
+      unfold powerlib.TMIO.Statement at h
+      exact h)
+
 end SMIB11
 
 namespace SMIB11Rel
@@ -455,6 +539,49 @@ private theorem passiveWith (p : SMIB11Params) :
   rcases s with P | _
   · exact (hp .impossible trivial).elim
   · exact mem_den_passive p
+
+/-- **No member of the corrected 11-state family is locally exponentially stable at the
+origin**, whatever its parameters, including `ω_s = 0`. The frame drift `−ω_s e_δ` is constant,
+so the Jacobian at the origin is the note's (`smib11_fderiv_angleAxis`), which kills the
+rotor-angle axis; a locally exponentially stable point of a `C¹` field has an injective Jacobian
+(`Dynamics.fderiv_injective_of_locallyExponentiallyStable`). -/
+@[powerlib_domain] theorem not_mem_den_locallyExponentiallyStable (p : SMIB11Params) :
+    connection% (p ∉ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  rw [Family.mem_den]
+  intro h
+  change LocallyExponentiallyStable (smib11Rel_system p).zeroInput 0 at h
+  rw [smib11Rel_zeroInput] at h
+  exact smib11_angleAxis_one_ne_zero (Dynamics.fderiv_injective_of_locallyExponentiallyStable
+    ((smib11_contDiff_zeroInputField p).sub contDiff_const) h
+    (by rw [fderiv_sub_const, smib11_fderiv_angleAxis, map_zero]))
+
+/-- The translation of local exponential stability (the whole, inconsistent language) is exact:
+no member is locally exponentially stable (`not_mem_den_locallyExponentiallyStable`). -/
+@[powerlib_domain] theorem exact_locallyExponentiallyStable :
+    connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
+  unfold powerlib.TMIO.Statement
+  have hu := SMIB11.realize_univ
+  unfold powerlib.TMIO.Statement at hu
+  exact Family.exact_of_translate_eq_univ (F := family) hu rfl
+    (Set.eq_empty_of_forall_notMem fun p => by
+      have h := not_mem_den_locallyExponentiallyStable p
+      unfold powerlib.TMIO.Statement at h
+      exact h)
+
+/-- **With `ω_s ≠ 0` the origin of the corrected model is not an equilibrium, hence unstable**
+(not Lyapunov stable): the field there is the frame drift `−ω_s e_δ`
+(`smib11Rel_speed_eq_of_equilibrium`: every equilibrium runs at `ω_r = ω_s`, and `ω_r = 0` at
+the origin). With `ω_s = 0` the origin is an equilibrium. -/
+@[powerlib_domain] theorem mem_den_unstable (p : SMIB11Params) (hωs : p.ωs ≠ 0) :
+    connection% (p ∈ family.den (.flow .unstable)) := by
+  unfold powerlib.TMIO.Statement
+  refine Spectral.mem_den_unstable_of_ne_zero (F := family) (pt := fun _ => 0)
+    (f := fun p => (smib11Rel_system p).zeroInput) (fun _ _ => Family.mem_den _)
+    (by rw [smib11Rel_zeroInput]; exact (smib11_contDiff_zeroInputField p).sub contDiff_const)
+    fun h0 => hωs ?_
+  have h := smib11Rel_speed_eq_of_equilibrium p 0 0 h0
+  simpa [smib11_speed] using h.symm
 
 end SMIB11Rel
 
