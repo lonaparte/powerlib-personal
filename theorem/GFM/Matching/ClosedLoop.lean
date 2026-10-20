@@ -64,7 +64,9 @@ Reduction (static and generic results; Rules §5):
   `(R_θᵀ z)' = R_θᵀ z' − θ' J R_θᵀ z`, for arbitrary differentiable `θ`, `z`.
 * `field_reduce` (static): the reduced field at `reduce X = (v_dc, R_θᵀ i_αβ, R_θᵀ v_αβ)`, with
   load `s_dq = R_θᵀ s_αβ`, equals the stationary field `F = abField X` transformed by that chain
-  rule; and `R_θᵀ s_αβ` has zero rotating-frame derivative. Together they give the private
+  rule; and `R_θᵀ s_αβ` has zero rotating-frame derivative. `abField_smooth` (static): the
+  stationary field is `C¹` (used by its explicit Euler integration,
+  `theorem/GFM/Matching/Euler.lean`). `field_reduce` and the chain rule together give the private
   trajectory statement `reduce_isTrajectoryOn` (implementation evidence: every stationary-frame
   solution segment is mapped by `reduce` to a solution segment of the reduced model with the
   constant load `s_dq` it starts with).
@@ -706,7 +708,9 @@ equals the rotating-frame chain rule applied to the stationary field, with the l
   · ring
   · ring
 
-private theorem abField_smooth (m : Model) : ContDiff ℝ 1 m.abField := by
+/-- The stationary-frame closed loop is `C¹`. Static evidence on the model, not a connection
+conclusion. -/
+@[powerlib_foundation] theorem abField_smooth (m : Model) : ContDiff ℝ 1 m.abField := by
   have h0 : ContDiff ℝ 1 (fun x : State 8 => x 0) := Dynamics.contDiff_coord 0
   have h1 : ContDiff ℝ 1 (fun x : State 8 => x 1) := Dynamics.contDiff_coord 1
   have h2 : ContDiff ℝ 1 (fun x : State 8 => x 2) := Dynamics.contDiff_coord 2

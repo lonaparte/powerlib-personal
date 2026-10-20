@@ -51,7 +51,9 @@ Results.
   every voltage the platform applies, at every frame angle, is produced by the inverter.
 * Saturation (static): `sat_of_abs_le`, `abs_sat_le`, `sat_eventually_eq` (constant near every
   command beyond the limit), `sat_ne_of_lt_abs`; `limitedField_eq_of_abs_le` (the platform field
-  is the design field wherever the command is in range); `control_point`, `abs_control_point_le`.
+  is the design field wherever the command is in range); `control_point`, `abs_control_point_le`;
+  `contDiffAt_field` (with headroom the platform field is `C¹` near the operating point; used by
+  its explicit Euler integration, `theorem/CurrentControl/Euler.lean`).
 * Implementation evidence (private). With headroom the command at the operating point is in
   range, so near the point the platform field is the unsaturated design field
   (`field_eventuallyEq_design`), the design's linear zero-input field when `Ki ≠ 0`
@@ -275,6 +277,12 @@ private theorem field_eventuallyEq_design (hh : |y.design.R * y.iref| < y.Vmax) 
     exact y.abs_control_point_le.trans_lt hh
   filter_upwards [hc.eventually (eventually_lt_nhds h0)] with z hz
   exact y.limitedField_eq_of_abs_le hz.le
+
+/-- With headroom the platform field is `C¹` near the operating point, where it is the
+unsaturated design field. Static evidence on the implementation, not a connection conclusion. -/
+@[powerlib_foundation] theorem contDiffAt_field (hh : |y.design.R * y.iref| < y.Vmax) :
+    ContDiffAt ℝ 1 y.field 0 :=
+  y.contDiff_designField.contDiffAt.congr_of_eventuallyEq (y.field_eventuallyEq_design hh)
 
 /-- At an equilibrium the unsaturated design field about the operating point is the linear
 zero-input field of the design plant. -/

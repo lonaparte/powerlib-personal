@@ -19,9 +19,9 @@ Model boundary.
   arithmetic (no round-off), fixed step. Excluded: step-size control, implicit or higher-order
   schemes, the integration error against the continuous trajectory.
 * The other grid-following families are instantiated in their directories
-  (`theorem/GFL/PowerLoop/Euler.lean`, `theorem/GFL/LCLine/Euler.lean`); the DC-link families of
-  `theorem/GFL/DCLink/` are not (their fields divide by the DC voltage, so they are not `C¹` on
-  the whole state space).
+  (`theorem/GFL/PowerLoop/Euler.lean`, `theorem/GFL/LCLine/Euler.lean`,
+  `theorem/GFL/DCLink/Euler.lean`; the DC-link fields divide by the DC voltage, so they are `C¹`
+  only near points with `V_dc ≠ 0`, and use the local laws of the template).
 * Level: local exponential stability of the selected point.
 
 Source: `theorem/Numerics/EulerRealization.lean` (`euler_sound_small_step`,
