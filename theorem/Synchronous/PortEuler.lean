@@ -46,7 +46,7 @@ Model boundary.
 Source: `theorem/Numerics/EulerPorts.lean` (`eulerPorts_sound_small_step_local`,
 `not_eulerPorts_realizationSoundUnder_of_large_step_local`,
 `eulerPortFamily_not_mem_den_passive`, `not_eulerPorts_realizationSoundUnder_passive`,
-`Family.IsNonlinearPH.isPort`), `theorem/Numerics/EulerRealization.lean` (`contDiff_shift`),
+`Family.IsNonlinearPH.isPort`), `theorem/Numerics/EulerRealization.lean` (`contDiffAt_shift`),
 `theorem/PH/Linearization.lean` (`NonlinearModel.contDiff_zeroInputField`),
 `theorem/Stack/Implementation.lean` (`Implementation.certify_realizes_of_design`) and the family
 modules (members, passivity, no locally exponentially stable member); work-sync
