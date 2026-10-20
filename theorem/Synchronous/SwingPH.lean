@@ -1,5 +1,6 @@
 import theorem.Synchronous.Swing
 import theorem.Port.PortHamiltonian
+import theorem.PH.Nonlinear
 
 /-! # The linearized swing equation as a port-Hamiltonian model
 
@@ -52,9 +53,7 @@ def linearPH (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D) (hK : 0 < p.syncCoeff
   R := !![0, 0; 0, p.D]
   Q := !![p.syncCoeff δ₀, 0; 0, 1 / p.M]
   B := !![0; 1]
-  skew := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
+  skew := PH.transpose_symplectic_two
   dissipation_symmetric := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp

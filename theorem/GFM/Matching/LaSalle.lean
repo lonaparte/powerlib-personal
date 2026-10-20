@@ -987,8 +987,8 @@ private theorem not_tendsto_critical_of_eta_eq_zero (m : Model) (hL : 0 < m.Ls) 
 
 private theorem mem_den_flow' {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.field m.point :=
-  ((show family.IsAutonomous Model.translated from fun _ => rfl).mem_den_flow).trans
-    (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := Model.field) (pt := Model.point)
+    (show family.IsAutonomous Model.translated from fun _ => rfl)
 
 /-- **Local asymptotic stability under the non-strict condition** `margin ≥ 0` (the note's
 condition with equality allowed), with `C_dc, L_s, R_s > 0`, `μ u* v₀ > 0` and `η ≠ 0`: the operating

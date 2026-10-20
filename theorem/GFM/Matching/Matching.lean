@@ -4,6 +4,7 @@ import theorem.Spectral.Family
 import theorem.Spectral.Global
 import theorem.LTI.Plant
 import theorem.Dynamics.Shift
+import theorem.Synchronous.Swing
 import Mathlib.Analysis.Real.Pi.Bounds
 
 /-! # DC-voltage based grid forming: DC energy balance, matching control, DC droop
@@ -56,6 +57,17 @@ Family and connection conclusions.
   `matching_locallyExponentiallyStable_iff`, `matching_unstable_iff` are private implementation
   evidence, together with the solution correspondence `matching_trajectory_iff` (a
   trajectory-level statement outside the sentence language).
+* `swing_mem_den_iff_hub_of_sinusoid` (connection comparison): on a speed-independent sinusoidal
+  law `P_e(θ, ω) = k₁ + k₂ sin(θ − k₃)` with `ω* = 0` a swing model is the canonical swing model
+  `⟨M, D, τ, k₁, k₂, k₃⟩` of `Synchronous.Swing.family` about `θ*`; through that hub
+  `swing_mem_den_locallyExponentiallyStable_iff_of_sinusoid` characterizes local exponential
+  stability (`M > 0`) by balance, `D > 0` and `k₂ cos(θ* − k₃) > 0`. The swing family here stays
+  a family of its own: its power law `P_e(θ, ω)` is arbitrary and may depend on the speed — the
+  matched law `i_x(θ, ω/η)/η` does whenever the load current depends on the DC voltage — and its
+  selected speed `ω*` is free, while the hub has the speed-independent sinusoid and the point
+  `(δ*, 0)`. Without a requirement language there is nothing for `Spectral.exactUnder_of_hub` to
+  carry: the hub supplies the denotations themselves on the sinusoidal case. Scaffold:
+  `theorem/MatchingSwing.agda`.
 * Global stability (Arghir–Dörfler 2020, quoted in T-dc-voltage-gfm §1.2 and T-gfm-control §1.6:
   `(G_dc + K_p)/η² > L_s² μ² v*²/(4 R_s ‖Z_s‖²)` ⇒ global stability via a shifted Hamiltonian
   and LaSalle). The work-sync notes quote only the condition; the closed loops are not written
@@ -388,11 +400,14 @@ def swingFamily : Family SwingModel Spectral.Requirement 2 0 :=
 
 private theorem matching_mem_den_flow {m : MatchingModel} {P : Flow.Property} :
     m ∈ matchingFamily.den (.flow P) ↔ P.holds (matchingField m.C m.G m.η m.idc m.ix) m.point :=
-  (Spectral.localFamily_isAutonomous _ _ _).mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift
+    (f := fun m : MatchingModel => matchingField m.C m.G m.η m.idc m.ix)
+    (pt := MatchingModel.point) (Spectral.localFamily_isAutonomous _ _ _)
 
 private theorem swing_mem_den_flow {m : SwingModel} {P : Flow.Property} :
     m ∈ swingFamily.den (.flow P) ↔ P.holds (swingField m.M m.D m.τ m.Pe) m.point :=
-  (Spectral.localFamily_isAutonomous _ _ _).mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun m : SwingModel => swingField m.M m.D m.τ m.Pe)
+    (pt := SwingModel.point) (Spectral.localFamily_isAutonomous _ _ _)
 
 /-- Every translation of the matching family is sound: no member meets a requirement. -/
 @[powerlib_domain] theorem matchingChain_le_semantics :
@@ -423,6 +438,55 @@ point `(θ*, η v*)`. -/
     rw [matching_eq_swing m.C_ne m.η_ne]
     rfl
   rw [hpt, hfield, holds_transport_iff]
+
+/-! ## The swing family read through the swing hub -/
+
+/-- On a speed-independent sinusoidal power law `P_e(θ, ω) = k₁ + k₂ sin(θ − k₃)` and at a selected
+point with `ω* = 0`, a swing model is the canonical swing model `⟨M, D, τ, k₁, k₂, k₃⟩` of
+`Synchronous.Swing.family` read about `θ*`: the two families agree on every sentence, because the
+two translated fields are equal. -/
+@[powerlib_domain] theorem swing_mem_den_iff_hub_of_sinusoid (m : SwingModel) (k₁ k₂ k₃ : ℝ)
+    (hP : m.Pe = fun θ _ => k₁ + k₂ * Real.sin (θ - k₃)) (hω : m.ω = 0) (s : Sentence) :
+    connection% (m ∈ swingFamily.den s ↔
+      Synchronous.Swing.Model.mk ⟨m.M, m.D, m.τ, k₁, k₂, k₃⟩ m.θ ∈
+        Synchronous.Swing.family.den s) := by
+  unfold powerlib.TMIO.Statement
+  have hfield : m.field = Synchronous.Swing.Model.field ⟨⟨m.M, m.D, m.τ, k₁, k₂, k₃⟩, m.θ⟩ := by
+    funext z
+    refine PhasePlane.ext_iff'.2 ⟨?_, ?_⟩
+    · simp [SwingModel.field, swingField, SwingModel.point, hω, Synchronous.Swing.Model.field,
+        Synchronous.Swing.Model.point]
+    · simp only [SwingModel.field, swingField, Synchronous.Swing.Model.field,
+        Synchronous.SwingParams.field_apply_one, Synchronous.SwingParams.accel,
+        Synchronous.SwingParams.Pe, hP]
+      simp [SwingModel.point, hω, Synchronous.Swing.Model.point]
+  rw [Family.mem_den, Family.mem_den]
+  change s.holds (.continuous (Port.System.autonomous m.field)) ↔
+    s.holds (.continuous (Port.System.autonomous _))
+  rw [hfield]
+
+/-- Through the swing hub (`Synchronous.Swing.exactUnder_locallyExponentiallyStable`): with
+positive inertia, a speed-independent sinusoidal law and `ω* = 0`, a swing model is locally
+exponentially stable exactly when the angle is balanced, `k₁ + k₂ sin(θ* − k₃) = τ`, with positive
+damping and synchronizing coefficient `k₂ cos(θ* − k₃) > 0`. -/
+@[powerlib_domain] theorem swing_mem_den_locallyExponentiallyStable_iff_of_sinusoid
+    (m : SwingModel) (k₁ k₂ k₃ : ℝ) (hP : m.Pe = fun θ _ => k₁ + k₂ * Real.sin (θ - k₃))
+    (hω : m.ω = 0) (hM : 0 < m.M) :
+    connection% (m ∈ swingFamily.den (.flow .locallyExponentiallyStable) ↔
+      m ∈ {m : SwingModel | k₁ + k₂ * Real.sin (m.θ - k₃) = m.τ ∧ 0 < m.D ∧
+        0 < k₂ * Real.cos (m.θ - k₃)}) := by
+  have hr := swing_mem_den_iff_hub_of_sinusoid m k₁ k₂ k₃ hP hω (.flow .locallyExponentiallyStable)
+  have hx := Synchronous.Swing.exactUnder_locallyExponentiallyStable
+  unfold powerlib.TMIO.Statement at hr hx ⊢
+  rw [Spectral.exactUnder_iff_forall] at hx
+  rw [hr, ← hx _ ((TMIO.mem_realize _ _ _).mpr fun q hq => by
+    rw [Set.mem_singleton_iff] at hq
+    subst hq
+    exact hM)]
+  simp only [TMIO.mem_realize, Synchronous.Swing.family, Synchronous.Swing.translate,
+    Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq, Set.mem_ofPred_eq]
+  simp [Synchronous.Swing.Meets, Synchronous.SwingParams.Pe, Synchronous.SwingParams.syncCoeff,
+    hM]
 
 
 /-! ## Global stability of matching control: the sentence-language boundary -/

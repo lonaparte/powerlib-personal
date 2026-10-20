@@ -340,7 +340,8 @@ def vsmFamily : Family VSMModel VSMRequirement 2 0 :=
 
 private theorem vsm_mem_den_flow_iff {m : VSMModel} {P : Flow.Property} :
     m ∈ vsmFamily.den (.flow P) ↔ P.holds m.vector m.point :=
-  vsmFamily_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := VSMModel.vector) (pt := VSMModel.point)
+    vsmFamily_isAutonomous
 
 private theorem vsm_point_eq_zero {m : VSMModel} (hM : 0 < m.M) (hb : vsmMeets m .balanced) :
     m.vector m.point = 0 :=

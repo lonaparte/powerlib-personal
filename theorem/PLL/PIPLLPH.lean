@@ -66,10 +66,7 @@ def gflPHModel (h V : ℝ → ℝ) (hV : ∀ θ, HasDerivAt V (-h θ) θ) (Kp Ki
   g := fun _ => !![-1; 0]
   H := fun x => V (x 0) + Ki / 2 * x 1 ^ 2
   dH := fun x => PhasePlane.mk (-h (x 0)) (Ki * x 1)
-  skew := by
-    intro _
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
+  skew := fun _ => PH.transpose_symplectic_two
   dissipation_posSemidef := by
     intro _
     refine Matrix.PosSemidef.diagonal ?_

@@ -156,7 +156,8 @@ helpers; the public conclusions are the connection statements below. -/
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected point. -/
 private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (piPLLField m.h m.Kp m.Ki m.δω) m.point :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model => piPLLField m.h m.Kp m.Ki m.δω)
+    (pt := Model.point) family_isAutonomous
 
 /-- At an equilibrium with both slope-gain products negative (`K_p g < 0`, `K_i g < 0`) the
 untranslated field is locally exponentially stable. -/

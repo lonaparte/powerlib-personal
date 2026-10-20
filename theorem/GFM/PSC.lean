@@ -171,7 +171,8 @@ def family : Family Model Requirement 1 0 :=
 
 private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.c.field (embed m.δ) :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.c.field) (pt := fun m => embed m.δ)
+    family_isAutonomous
 
 private theorem les_of {m : Model} (hb : Meets m .balanced) (hs : Meets m .stableSlope) :
     LocallyExponentiallyStable m.c.field (embed m.δ) := by
@@ -275,22 +276,16 @@ without requirement. -/
     (h : |c.Pstar| < c.Pmax) :
     connection% (Model.mk c (Real.arcsin (c.Pstar / c.Pmax)) ∈
       family.den (.flow .locallyExponentiallyStable)) := by
-  have ha : |c.Pstar / c.Pmax| < 1 := by rw [abs_div, abs_of_pos hP, div_lt_one hP]; exact h
-  apply c.locallyExponentiallyStable hK hP
-  · rw [Real.sin_arcsin (abs_lt.mp ha).1.le (abs_lt.mp ha).2.le]; field_simp
-  · rw [Real.cos_arcsin]
-    exact SpecialFunctions.sqrt_one_sub_sq_pos h hP
+  exact c.locallyExponentiallyStable hK hP (SpecialFunctions.mul_sin_arcsin_div h.le hP)
+    (SpecialFunctions.cos_arcsin_div_pos h hP)
 
 /-- The second equilibrium `π − arcsin(P*/P_max)` is unstable when `|P*| < P_max`. -/
 @[powerlib_domain] theorem unstable_pi_sub_arcsin (hK : 0 < c.Kp) (hP : 0 < c.Pmax)
     (h : |c.Pstar| < c.Pmax) :
     connection% (Model.mk c (Real.pi - Real.arcsin (c.Pstar / c.Pmax)) ∈
       family.den (.flow .unstable)) := by
-  have ha : |c.Pstar / c.Pmax| < 1 := by rw [abs_div, abs_of_pos hP, div_lt_one hP]; exact h
-  apply c.unstable hK hP
-  · rw [Real.sin_pi_sub, Real.sin_arcsin (abs_lt.mp ha).1.le (abs_lt.mp ha).2.le]; field_simp
-  · rw [Real.cos_pi_sub, Real.cos_arcsin, neg_lt_zero]
-    exact SpecialFunctions.sqrt_one_sub_sq_pos h hP
+  exact c.unstable hK hP (SpecialFunctions.mul_sin_pi_sub_arcsin_div h.le hP)
+    (SpecialFunctions.cos_pi_sub_arcsin_div_neg h hP)
 
 /-- Bridge to the original law in the absolute angle `θ` against the grid angle
 `θ_g(t) = ω₁ t + θ_{g0}`: `θ̇ = ω₁ + K_p (P* − P_max sin(θ − θ_g))` at time `t` iff the relative

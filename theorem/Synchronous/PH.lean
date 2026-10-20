@@ -189,9 +189,7 @@ def classicalSM (p : ClassicalSMParams) : NonlinearModel 2 1 where
   g _ := !![0; 1]
   H := classicalSM_H p
   dH := classicalSM_dH p
-  skew _ := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
+  skew _ := PH.transpose_symplectic_two
   dissipation_posSemidef _ := PosSemidef.diagonal (fun i => by
     fin_cases i <;> simp [p.D_nonneg])
   hasGradient := classicalSM_hasGradientAt p
@@ -512,8 +510,9 @@ the coordinates `(δ, M ω)` (`classicalSM_zeroInputField_eq_transport`), the op
     connection% (m ∈ family.den (.flow P) ↔ m.toSwing ∈ Swing.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   have hdenG : ∀ (y : Swing.Model) (P : Flow.Property),
-      y ∈ Swing.family.den (.flow P) ↔ P.holds y.p.field y.point := fun _ P =>
-    Swing.family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+      y ∈ Swing.family.den (.flow P) ↔ P.holds y.p.field y.point := fun _ _ =>
+    Spectral.mem_den_flow_iff_shift (f := fun y : Swing.Model => y.p.field)
+      (pt := Swing.Model.point) Swing.family_isAutonomous
   have hpt : m.point =
       Dynamics.affineCoord (Dynamics.scaleCoord m.p.M_pos.ne') 0 m.toSwing.point := by
     ext i

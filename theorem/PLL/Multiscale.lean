@@ -2,6 +2,7 @@ import theorem.PLL.Linear
 import theorem.Linear.Family
 import theorem.TMIO.ClaimElab
 import theorem.Spectral.Global
+import theorem.SpecialFunctions.Sinusoid
 
 /-! # SRF-PLL time-scale algebra: slow manifold, reduced slow equation, eigenvalues
 
@@ -68,15 +69,11 @@ def slowAngle (a b Δω ξ : ℝ) : ℝ := Real.arcsin ((Δω + b * ξ) / a)
       -(a * Real.cos (slowAngle a b Δω ξ)) < 0 := by
   have hx : |(Δω + b * ξ) / a| < 1 := by rw [abs_div, abs_of_pos ha, div_lt_one ha]; exact hdom
   have hx' := abs_lt.mp hx
-  have hsin : Real.sin (slowAngle a b Δω ξ) = (Δω + b * ξ) / a :=
-    Real.sin_arcsin hx'.1.le hx'.2.le
-  have hlt : |slowAngle a b Δω ξ| < Real.pi / 2 :=
-    abs_lt.mpr ⟨Real.neg_pi_div_two_lt_arcsin.mpr hx'.1, Real.arcsin_lt_pi_div_two.mpr hx'.2⟩
-  have hcos : 0 < Real.cos (slowAngle a b Δω ξ) :=
-    Real.cos_pos_of_mem_Ioo ⟨by linarith [neg_abs_le (slowAngle a b Δω ξ)],
-      lt_of_le_of_lt (le_abs_self _) hlt⟩
-  refine ⟨?_, hlt, by nlinarith⟩
-  rw [hsin]; field_simp; ring
+  have hsin : a * Real.sin (slowAngle a b Δω ξ) = Δω + b * ξ :=
+    SpecialFunctions.mul_sin_arcsin_div hdom.le ha
+  refine ⟨by linarith, abs_lt.mpr ⟨Real.neg_pi_div_two_lt_arcsin.mpr hx'.1,
+    Real.arcsin_lt_pi_div_two.mpr hx'.2⟩, ?_⟩
+  exact neg_neg_of_pos (mul_pos ha (SpecialFunctions.cos_arcsin_div_pos hdom ha))
 
 /-- Reduced slow field on the domain: `−sin θ*(ξ) = −(Δω + b ξ)/a = −(b/a)(ξ − ξ*)`,
 `ξ* = −Δω/b`. -/

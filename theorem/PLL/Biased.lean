@@ -1,4 +1,5 @@
 import theorem.PLL.PIPLLFamily
+import theorem.SpecialFunctions.Sinusoid
 
 /-! # PI-PLL with a biased sinusoidal phase detector `h(θ) = −V sin θ + μ`
 
@@ -115,13 +116,10 @@ exponentially stable, for every constant frequency offset `δω`. -/
     (hV : 0 < V) (hμ : |μ| < V) (hKp : 0 < Kp) (hKi : 0 < Ki) (δω : ℝ) :
     connection% (biasedModel V μ Kp Ki δω (Real.arcsin (μ / V)) ∈
       PIPLL.family.den (.flow .locallyExponentiallyStable)) := by
-  have hx : |μ / V| < 1 := by rw [abs_div, abs_of_pos hV, div_lt_one hV]; exact hμ
-  have hx' := abs_lt.mp hx
-  have hcos : 0 < Real.cos (Real.arcsin (μ / V)) := by
-    rw [Real.cos_arcsin]; apply Real.sqrt_pos.mpr; nlinarith
+  have hcos := SpecialFunctions.cos_arcsin_div_pos hμ hV
   refine PIPLL.mem_den_locallyExponentiallyStable_of_pos _ hKp hKi ?_ ?_
   · change biasedPD V μ (Real.arcsin (μ / V)) = 0
-    rw [biasedPD, Real.sin_arcsin hx'.1.le hx'.2.le]; field_simp; ring
+    rw [biasedPD, SpecialFunctions.mul_sin_arcsin_div hμ.le hV, neg_add_cancel]
   · rw [biasedModel_deriv]; nlinarith
 
 /-- `|μ| < V`, `K_i > 0`: the equilibrium at `θ₂ = π − arcsin(μ/V)` is unstable (saddle), for
@@ -130,14 +128,11 @@ every `K_p` and every constant frequency offset `δω`. -/
     (hKi : 0 < Ki) (δω : ℝ) :
     connection% (biasedModel V μ Kp Ki δω (Real.pi - Real.arcsin (μ / V)) ∈
       PIPLL.family.den (.flow .unstable)) := by
-  have hx : |μ / V| < 1 := by rw [abs_div, abs_of_pos hV, div_lt_one hV]; exact hμ
-  have hx' := abs_lt.mp hx
-  have hcos : 0 < Real.cos (Real.arcsin (μ / V)) := by
-    rw [Real.cos_arcsin]; apply Real.sqrt_pos.mpr; nlinarith
+  have hcos := SpecialFunctions.cos_pi_sub_arcsin_div_neg hμ hV
   refine PIPLL.mem_den_unstable_of_pos _ hKi ?_ ?_
   · change biasedPD V μ (Real.pi - Real.arcsin (μ / V)) = 0
-    rw [biasedPD, Real.sin_pi_sub, Real.sin_arcsin hx'.1.le hx'.2.le]; field_simp; ring
-  · rw [biasedModel_deriv, Real.cos_pi_sub]; nlinarith
+    rw [biasedPD, SpecialFunctions.mul_sin_pi_sub_arcsin_div hμ.le hV, neg_add_cancel]
+  · rw [biasedModel_deriv]; nlinarith
 
 /-- `|μ| > V ≥ 0`: loss of lock on the requirement connection — no selected phase of the biased
 PLL meets the phase-locking requirement of the PI-PLL family. -/

@@ -242,7 +242,8 @@ selected point. -/
 private theorem mem_den_flow_iff {m : PIPLL.Model} {P : Flow.Property} :
     m ∈ PIPLL.family.den (.flow P) ↔
       P.holds (piPLLField m.h m.Kp m.Ki m.δω) (PhasePlane.mk m.θ (m.δω / m.Ki)) :=
-  PIPLL.family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun m : PIPLL.Model => piPLLField m.h m.Kp m.Ki m.δω)
+    (pt := PIPLL.Model.point) PIPLL.family_isAutonomous
 
 /-! ## Physical coordinates `(θ̂, η)` versus error coordinates `(θ̃, η)` -/
 

@@ -138,7 +138,7 @@ def pllPH (V Kp Ki ηs : ℝ) (hKp : 0 ≤ Kp) : PH.NonlinearModel 2 1 where
   g := fun _ => pllB
   H := pllHamiltonian V Ki ηs
   dH := pllGradient V Ki ηs
-  skew := fun _ => by ext i j; fin_cases i <;> fin_cases j <;> simp [pllJ]
+  skew := fun _ => PH.transpose_symplectic_two
   dissipation_posSemidef := fun _ => by
     rw [pllR, Matrix.posSemidef_diagonal_iff]
     intro i; fin_cases i <;> simp [hKp]

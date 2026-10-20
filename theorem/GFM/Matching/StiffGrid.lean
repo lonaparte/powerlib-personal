@@ -824,7 +824,7 @@ private theorem family_isAutonomous : family.IsAutonomous Model.translated := fu
 
 private theorem mem_den_flow {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.field m.point :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := Model.field) (pt := Model.point) family_isAutonomous
 
 /-- The whole requirement language is inconsistent. -/
 @[powerlib_foundation] theorem realize_univ :

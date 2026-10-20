@@ -64,7 +64,8 @@ open powerlib.Dynamics (State mk3 mk3_zero mk3_one mk3_two state3_ext toEuclidea
 
 private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.g.field m.point :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.g.field) (pt := Model.point)
+    family_isAutonomous
 
 /-- The Hopf coordinates `(a, b, c)` of the translated state `z = (δ − δ*, ω, P_f − P₀)`:
 `a = λ z₀ + z₁`, `b = ω_c z₁ − z₂/M`, `c = H z₀ − (D/M) z₁ − z₂/M` with `λ = ω_c + D/M`,

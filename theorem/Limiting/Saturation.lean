@@ -97,16 +97,13 @@ pre-fault operating point `(arcsin(P₀/P_max), P₀)` when `φ = φ_opt`. -/
     (hmax : 0 < Pmax) (h1 : |P0| ≤ Psat) (h2 : |P0| ≤ Pmax) :
     Pmax * Real.sin (Real.arcsin (P0 / Pmax)) = P0 ∧
       Psat * Real.cos (Real.arcsin (P0 / Pmax) - phiOpt P0 Psat Pmax) = P0 := by
-  obtain ⟨a1, a2⟩ := abs_div_le_one hmax h2
   obtain ⟨b1, b2⟩ := abs_div_le_one hsat h1
-  constructor
-  · rw [Real.sin_arcsin a1 a2]
-    field_simp
-  · have : Real.arcsin (P0 / Pmax) - phiOpt P0 Psat Pmax = -Real.arccos (P0 / Psat) := by
-      simp only [phiOpt]
-      ring
-    rw [this, Real.cos_neg, Real.cos_arccos b1 b2]
-    field_simp
+  refine ⟨SpecialFunctions.mul_sin_arcsin_div h2 hmax, ?_⟩
+  have : Real.arcsin (P0 / Pmax) - phiOpt P0 Psat Pmax = -Real.arccos (P0 / Psat) := by
+    simp only [phiOpt]
+    ring
+  rw [this, Real.cos_neg, Real.cos_arccos b1 b2]
+  field_simp
 
 /-- Without `|P₀| ≤ P_sat` the saturated curve never reaches `P₀`. -/
 @[powerlib_foundation] theorem saturated_no_intersection {P0 Psat : ℝ} (hsat : 0 ≤ Psat)
@@ -260,7 +257,8 @@ def family : Family SatModel Spectral.Requirement 2 0 :=
 private theorem mem_den_flow {m : SatModel} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔
       P.holds (satField m.M m.D m.Pref m.Psat m.φ) (angleState m.δ) :=
-  (Spectral.localFamily_isAutonomous _ _ _).mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun m : SatModel => satField m.M m.D m.Pref m.Psat m.φ)
+    (pt := fun m => angleState m.δ) (Spectral.localFamily_isAutonomous _ _ _)
 
 /-- Every translation of the saturated-GFM family is sound (local linearization at the
 selected equilibrium). -/
@@ -371,13 +369,12 @@ connections at the two members. -/
     connection% (m ∈ family.den (.flow P) ↔
       m.toSwing ∈ Synchronous.Swing.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den_flow, Synchronous.Swing.family_isAutonomous.mem_den_flow,
-    ← Flow.Property.holds_shift_iff, satField_eq_swing]
   have hpt : angleState m.δ = m.toSwing.point := by
     ext i
     fin_cases i <;> simp [angleState, Synchronous.Swing.Model.point, SatModel.toSwing]
-  rw [hpt]
-  rfl
+  rw [mem_den_flow, Spectral.mem_den_flow_iff_shift
+    (f := fun y : Synchronous.Swing.Model => y.p.field) (pt := Synchronous.Swing.Model.point)
+    Synchronous.Swing.family_isAutonomous, satField_eq_swing, hpt]
 
 private theorem toSwing_Pe (m : SatModel) :
     m.toSwing.p.Pe m.toSwing.δ = m.Psat * Real.cos (m.δ - m.φ) := by

@@ -26,8 +26,8 @@ Source: Agda scaffold `theorem/FamilyReading.agda`, the generic pattern (a spoke
 univalence turns the readings into a path from the spoke's semantics to the hub's pulled back
 along the map, and exactness and soundness pass under a correspondence of requirement languages on
 a context); each reading has its own scaffold named after its two families (`DroopSwing`,
-`SaturationSwing`, `ClassicalMachineSwing`, `PortHamiltonianPLL`, `IMCCurrentLoop`,
-`CurrentDirection`). `Family.comap` (`theorem/Family/Basic.lean`) is the case of a spoke that keeps
+`SaturationSwing`, `ClassicalMachineSwing`, `MatchingSwing`, `PortHamiltonianPLL`,
+`IMCCurrentLoop`, `CurrentDirection`). `Family.comap` (`theorem/Family/Basic.lean`) is the case of a spoke that keeps
 the hub's language.
 
 Results.

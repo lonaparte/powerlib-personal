@@ -852,7 +852,8 @@ def fullFamily : Family FullModel Spectral.Requirement 8 0 :=
 
 private theorem full_mem_den_flow {M : FullModel} {P : Flow.Property} :
     M ∈ fullFamily.den (.flow P) ↔ P.holds M.p.abField M.point :=
-  (Spectral.localFamily_isAutonomous _ _ _).mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun M : FullModel => M.p.abField) (pt := FullModel.point)
+    (Spectral.localFamily_isAutonomous _ _ _)
 
 /-- The stationary field is `2π`-periodic in `θ`. Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem abField_add_two_pi (m : Model) (θ v iα iβ uα uβ sα sβ : ℝ) :

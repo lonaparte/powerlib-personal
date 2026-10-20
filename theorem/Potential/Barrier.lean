@@ -93,22 +93,16 @@ def barrierDown (c A φ : ℝ) : ℝ :=
 
 @[powerlib_foundation] theorem thetaS_zero (hA : 0 < A) (hc : |c| ≤ A) :
     c - A * sin (thetaS c A φ + φ) = 0 := by
-  have hs := abs_div_le hA hc
-  rw [thetaS, sub_add_cancel, sin_arcsin (abs_le.mp hs).1 (abs_le.mp hs).2]
-  field_simp; ring
+  rw [thetaS, sub_add_cancel, SpecialFunctions.mul_sin_arcsin_div hc hA, sub_self]
 
 @[powerlib_foundation] theorem thetaUp_zero (hA : 0 < A) (hc : |c| ≤ A) :
     c - A * sin (thetaUp c A φ + φ) = 0 := by
-  have hs := abs_div_le hA hc
-  rw [thetaUp, sub_add_cancel, sin_pi_sub, sin_arcsin (abs_le.mp hs).1 (abs_le.mp hs).2]
-  field_simp; ring
+  rw [thetaUp, sub_add_cancel, SpecialFunctions.mul_sin_pi_sub_arcsin_div hc hA, sub_self]
 
 @[powerlib_foundation] theorem thetaDown_zero (hA : 0 < A) (hc : |c| ≤ A) :
     c - A * sin (thetaDown c A φ + φ) = 0 := by
-  have hs := abs_div_le hA hc
-  rw [thetaDown, sub_add_cancel, show -π - arcsin (c / A) = -(π + arcsin (c / A)) by ring,
-    sin_neg, sin_add, sin_pi, cos_pi, sin_arcsin (abs_le.mp hs).1 (abs_le.mp hs).2]
-  field_simp; ring
+  rw [thetaDown, sub_add_cancel, show -π - arcsin (c / A) = π - arcsin (c / A) - 2 * π by ring,
+    sin_sub_two_pi, SpecialFunctions.mul_sin_pi_sub_arcsin_div hc hA, sub_self]
 
 @[powerlib_foundation] private lemma A_sqrt (hA : 0 < A) :
     A * √(1 - (c / A) ^ 2) = √(A ^ 2 - c ^ 2) := by

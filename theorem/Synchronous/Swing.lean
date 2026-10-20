@@ -278,10 +278,8 @@ def deltaU : ℝ := Real.pi - Real.arcsin p.loadRatio + p.k₃
   rw [loadRatio, abs_div, abs_of_pos hk, div_lt_one hk]; exact h
 
 @[powerlib_foundation] theorem sin_loadRatio (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| ≤ p.k₂) :
-    p.k₂ * Real.sin (Real.arcsin p.loadRatio) = p.Pm - p.k₁ := by
-  have ha := p.abs_loadRatio_le hk h
-  rw [Real.sin_arcsin (abs_le.mp ha).1 (abs_le.mp ha).2, loadRatio]
-  field_simp
+    p.k₂ * Real.sin (Real.arcsin p.loadRatio) = p.Pm - p.k₁ :=
+  SpecialFunctions.mul_sin_arcsin_div h hk
 
 @[powerlib_foundation] theorem Pe_deltaS (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| ≤ p.k₂) :
     p.Pe p.deltaS = p.Pm := by
@@ -296,15 +294,14 @@ def deltaU : ℝ := Real.pi - Real.arcsin p.loadRatio + p.k₃
 /-- `cos(δ_s − k₃) = √(1 − a²) > 0` strictly inside the loadability limit. -/
 @[powerlib_foundation] theorem syncCoeff_deltaS_pos (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
     0 < p.syncCoeff p.deltaS := by
-  simp only [syncCoeff, deltaS, add_sub_cancel_right, Real.cos_arcsin]
-  exact mul_pos hk (SpecialFunctions.sqrt_one_sub_sq_pos h hk)
+  simp only [syncCoeff, deltaS, add_sub_cancel_right]
+  exact mul_pos hk (SpecialFunctions.cos_arcsin_div_pos h hk)
 
 /-- `cos(δ_u − k₃) = −√(1 − a²) < 0` strictly inside the loadability limit. -/
 @[powerlib_foundation] theorem syncCoeff_deltaU_neg (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
     p.syncCoeff p.deltaU < 0 := by
-  have hs := p.syncCoeff_deltaS_pos hk h
-  simp only [syncCoeff, deltaS, deltaU, add_sub_cancel_right, Real.cos_pi_sub] at hs ⊢
-  linarith
+  simp only [syncCoeff, deltaU, add_sub_cancel_right]
+  exact mul_neg_of_pos_of_neg hk (SpecialFunctions.cos_pi_sub_arcsin_div_neg h hk)
 
 /-- The equilibrium set: `ω = 0` and `δ ∈ {δ_s + 2nπ} ∪ {δ_u + 2nπ}` (two equilibria per
 period of the power-angle curve). Static evidence on the model, not a connection conclusion. -/
@@ -666,7 +663,8 @@ def family : Family Model Requirement 2 0 :=
 /-- A flow sentence of a model is the sentence of the untranslated field at the selected point. -/
 private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.p.field m.point :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.point)
+    family_isAutonomous
 
 private theorem point_eq_zero {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm) :
     m.p.field m.point = 0 :=

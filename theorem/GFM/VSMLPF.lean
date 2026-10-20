@@ -259,10 +259,8 @@ Static evidence on the model, not a connection conclusion. -/
 /-- The loading angle balances the power: `K₀ sin δ₀ = P₀` (`|P₀| ≤ K₀`).
 Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem sin_δ0 (hK0 : 0 < g.K0) (h : |g.P0| ≤ g.K0) :
-    g.K0 * Real.sin g.δ0 = g.P0 := by
-  have ha : |g.P0 / g.K0| ≤ 1 := by rw [abs_div, abs_of_pos hK0, div_le_one hK0]; exact h
-  rw [δ0, Real.sin_arcsin (abs_le.mp ha).1 (abs_le.mp ha).2]
-  field_simp
+    g.K0 * Real.sin g.δ0 = g.P0 :=
+  SpecialFunctions.mul_sin_arcsin_div h hK0
 
 /-- The loading point `(δ₀, 0, P₀)` is an equilibrium when `|P₀| ≤ K₀`.
 Static evidence on the model, not a connection conclusion. -/
@@ -272,10 +270,9 @@ Static evidence on the model, not a connection conclusion. -/
     rw [equilibrium, mk3_zero]; exact g.sin_δ0 hK0 h⟩
 
 /-- Strictly inside the loadability limit the synchronizing coefficient is positive
-(`cos δ₀ = √(1 − (P₀/K₀)²) > 0`, `SpecialFunctions.sqrt_one_sub_sq_pos`). -/
-@[powerlib_foundation] theorem K_pos (hK0 : 0 < g.K0) (h : |g.P0| < g.K0) : 0 < g.K := by
-  simp only [K, δ0, Real.cos_arcsin]
-  exact mul_pos hK0 (SpecialFunctions.sqrt_one_sub_sq_pos h hK0)
+(`cos δ₀ = √(1 − (P₀/K₀)²) > 0`, `SpecialFunctions.cos_arcsin_div_pos`). -/
+@[powerlib_foundation] theorem K_pos (hK0 : 0 < g.K0) (h : |g.P0| < g.K0) : 0 < g.K :=
+  mul_pos hK0 (SpecialFunctions.cos_arcsin_div_pos h hK0)
 
 /-! ## Physical parameters -/
 
@@ -557,7 +554,8 @@ def family : Family Model Requirement 3 0 :=
 
 private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.g.field m.point :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.g.field) (pt := Model.point)
+    family_isAutonomous
 
 private theorem point_eq_zero {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced) :
     m.g.field m.point = 0 :=
@@ -785,13 +783,9 @@ load, light load is the dangerous side. -/
 positive `M, D, ω_c` and `|P₀| < K₀`. -/
 @[powerlib_domain] theorem unstable_atAntiLoading (hp : g.Pos) (h : |g.P0| < g.K0) :
     connection% (atAntiLoading g ∈ family.den (.flow .unstable)) := by
-  refine mem_den_unstable_of_K_neg _ hp.M hp.D hp.ωc ?_ ?_
-  · simp only [atAntiLoading, Real.sin_pi_sub]
-    exact g.sin_δ0 hp.K0 h.le
-  · have := g.K_pos hp.K0 h
-    simp only [Model.K, atAntiLoading, Real.cos_pi_sub]
-    simp only [K] at this
-    linarith
+  exact mem_den_unstable_of_K_neg _ hp.M hp.D hp.ωc
+    (SpecialFunctions.mul_sin_pi_sub_arcsin_div h.le hp.K0)
+    (mul_neg_of_pos_of_neg hp.K0 (SpecialFunctions.cos_pi_sub_arcsin_div_neg h hp.K0))
 
 /-! ### Instability away from equilibrium -/
 
@@ -1104,10 +1098,6 @@ def family : Family Model Requirement 2 0 :=
 @[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
-private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
-    m ∈ family.den (.flow P) ↔ P.holds m.q.field m.point :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
-
 /-! ### The swing reading -/
 
 /-- The swing parameters of the loop: inertia `M = D/ω_c`, damping `D`, mechanical power `P₀` and
@@ -1151,9 +1141,12 @@ of the two semantics connections at the two members. -/
     Synchronous.Swing.family_isAutonomous (fun P => ?_) s
   exact Spectral.mem_den_flow_iff_of_transport (f := fun m : Model => m.q.field)
     (pt := Model.point) (φ := fun y : Synchronous.Swing.Model => y.p.field)
-    (ψ := Synchronous.Swing.Model.point) (g := Model.toSwing) (fun _ _ => mem_den_flow_iff)
-    (fun _ P => Synchronous.Swing.family_isAutonomous.mem_den_flow.trans
-      (Flow.Property.holds_shift_iff P)) _ _ (m.q.field_eq_transport hD hω)
+    (ψ := Synchronous.Swing.Model.point) (g := Model.toSwing)
+    (fun _ _ => Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.q.field)
+      (pt := Model.point) family_isAutonomous)
+    (fun _ _ => Spectral.mem_den_flow_iff_shift (f := fun y : Synchronous.Swing.Model => y.p.field)
+      (pt := Synchronous.Swing.Model.point) Synchronous.Swing.family_isAutonomous)
+    _ _ (m.q.field_eq_transport hD hω)
     (point_eq_affineCoord m hD) P
 
 private theorem den_iff_swing {m : Model} (hp : Meets m .physical) (s : Sentence) :
@@ -1280,15 +1273,11 @@ locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): n
     (hK0 : 0 < q.K0) (h : |q.P0| < q.K0) :
     connection% (q.atLoading ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have ha : |q.P0 / q.K0| < 1 := by rw [abs_div, abs_of_pos hK0, div_lt_one hK0]; exact h
-  have hsin : q.K0 * Real.sin (Real.arcsin (q.P0 / q.K0)) = q.P0 := by
-    rw [Real.sin_arcsin (abs_lt.mp ha).1.le (abs_lt.mp ha).2.le]; field_simp
-  have hcos : 0 < Real.cos (Real.arcsin (q.P0 / q.K0)) := by
-    rw [Real.cos_arcsin]
-    exact SpecialFunctions.sqrt_one_sub_sq_pos h hK0
   have hm := Synchronous.Swing.mem_den_locallyExponentiallyStable q.atLoading.toSwing
-    (div_pos hD hω) hD ((swing_meets_iff q.atLoading).1.mpr hsin)
-    ((swing_meets_iff q.atLoading).2.2.2.1.mpr (mul_pos hK0 hcos))
+    (div_pos hD hω) hD
+    ((swing_meets_iff q.atLoading).1.mpr (SpecialFunctions.mul_sin_arcsin_div h.le hK0))
+    ((swing_meets_iff q.atLoading).2.2.2.1.mpr
+      (mul_pos hK0 (SpecialFunctions.cos_arcsin_div_pos h hK0)))
   unfold powerlib.TMIO.Statement at hm
   exact (den_iff_swing ⟨hD, hω⟩ _).mpr hm
 
@@ -1298,16 +1287,11 @@ locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): n
     (hK0 : 0 < q.K0) (h : |q.P0| < q.K0) :
     connection% (q.atAntiLoading ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  have ha : |q.P0 / q.K0| < 1 := by rw [abs_div, abs_of_pos hK0, div_lt_one hK0]; exact h
-  have hsin : q.K0 * Real.sin (Real.pi - Real.arcsin (q.P0 / q.K0)) = q.P0 := by
-    rw [Real.sin_pi_sub, Real.sin_arcsin (abs_lt.mp ha).1.le (abs_lt.mp ha).2.le]; field_simp
-  have hcos : Real.cos (Real.pi - Real.arcsin (q.P0 / q.K0)) < 0 := by
-    rw [Real.cos_pi_sub, Real.cos_arcsin, neg_lt_zero]
-    exact SpecialFunctions.sqrt_one_sub_sq_pos h hK0
   have hm := Synchronous.Swing.mem_den_unstable q.atAntiLoading.toSwing (div_pos hD hω)
-    ((swing_meets_iff q.atAntiLoading).1.mpr hsin)
+    ((swing_meets_iff q.atAntiLoading).1.mpr
+      (SpecialFunctions.mul_sin_pi_sub_arcsin_div h.le hK0))
     (by simpa [Model.toSwing, swingParams, Synchronous.SwingParams.syncCoeff, atAntiLoading]
-      using mul_neg_of_pos_of_neg hK0 hcos)
+      using mul_neg_of_pos_of_neg hK0 (SpecialFunctions.cos_pi_sub_arcsin_div_neg h hK0))
   unfold powerlib.TMIO.Statement at hm
   exact (den_iff_swing ⟨hD, hω⟩ _).mpr hm
 

@@ -570,7 +570,8 @@ def family : Family Drive Requirement 2 0 :=
 private theorem mem_den_flow {d : Drive} {P : Flow.Property} :
     d ∈ family.den (.flow P) ↔
       P.holds (fluxField d.p d.isd d.isq d.ωsl) (fluxEquilibrium d.p d.isd d.isq d.ωsl) :=
-  family_isAutonomous.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
+  Spectral.mem_den_flow_iff_shift (f := fun d : Drive => fluxField d.p d.isd d.isq d.ωsl)
+    (pt := fun d => fluxEquilibrium d.p d.isd d.isq d.ωsl) family_isAutonomous
 
 private theorem ges_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
     Flow.GloballyExponentiallyStable (fluxField d.p d.isd d.isq d.ωsl)
