@@ -39,7 +39,7 @@ Results.
   sound from the inconsistency of the whole language and the three obligations (`Rl` gives
   Lyapunov stability, `Rs` local exponential stability, `Ru` instability) plus passivity on `Rp`;
   `chain_le_semantics_of_localTable_same` is the common case `Rl = Rs`, `Rp = ∅` with every member
-  passive.
+  passive. Scaffold: `theorem/FlowSemantics.agda` (the sentence kinds and `localTable`).
 * Exactness: `exactUnder_iff_forall` (within a context, by membership), `exactUnder_les_of_jacobian`
   and `exactUnder_les_of_jacobian_local` (converse linearization within a context: soundness of the
   translated requirements plus the converse algebra, an equilibrium with a Hurwitz Jacobian meets

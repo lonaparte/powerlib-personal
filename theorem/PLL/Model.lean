@@ -60,7 +60,8 @@ conclusions on the family's semantics connection: the four local-stability resul
 (`srf_mem_den_locallyExponentiallyStable_inPhase`, `srf_mem_den_unstable_inPhase_of_mul_neg`,
 `srf_mem_den_unstable_inPhase_of_trace`, `srf_mem_den_unstable_antiPhase`) and amplitude
 invariance of every flow sentence (`srf_mem_den_iff_unitAmplitude`: amplitude `V` with gains
-`(K_p, K_i)` is the unit-amplitude loop with gains `(V K_p, V K_i)`). The equilibrium sets
+`(K_p, K_i)` is the unit-amplitude loop with gains `(V K_p, V K_i)`). Scaffold of the amplitude
+invariance: `theorem/PLLAmplitude.agda`. The equilibrium sets
 (`srfField_eq_zero_iff`, `srf_equilibria_eq`, `srf_exists_equilibrium`,
 `measField_eq_zero_iff`) are static evidence on the model, not connection conclusions; the
 coordinate conjugacies are foundation.

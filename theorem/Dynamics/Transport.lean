@@ -34,7 +34,9 @@ Results.
   equilibria, smoothness and the Jacobian (`T ∘ Df(x*) ∘ T⁻¹`) are transported, and **every**
   behavioural sentence of the library holds for `f` at `x*` exactly when it holds for `g` at
   `φ(x*)` (`holds_transport_iff`); forward completeness is invariant as well. The per-sentence
-  forms (`lyapunovStable_transport_iff`, …) are corollaries.
+  forms (`lyapunovStable_transport_iff`, …) are corollaries. Scaffold:
+  `theorem/FlowSemantics.agda` (satisfaction of the sentences by a field at a point, invariant
+  under affine changes of coordinates: `transportSystem`, `invariant`).
 * Matrix form: `T = P` for an invertible matrix `P` (`IsUnit P`), acting through
   `Matrix.toEuclideanCLM` (`matrixCoord`); the Jacobian matrix becomes `P A P⁻¹`. Example: the
   planar scaling `(θ, v) ↦ (θ, η v)`, `η ≠ 0` (`scaleMatrix`, `scaleCoord`, `scaleCoord_apply`,

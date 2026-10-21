@@ -2,9 +2,8 @@
 module theorem.FamilyReading where
 
 -- Scaffold of family readings, the generic pattern: a spoke family read through a hub family.
--- Each reading of the library has its own scaffold, named after its two families
--- (`DroopSwing`, `SaturationSwing`, `ClassicalMachineSwing`, `PortHamiltonianPLL`,
--- `IMCCurrentLoop`, `CurrentDirection`; hub content `Swing`, semantic layer `FlowSemantics`).
+-- Each reading of the library has its own scaffold, named after its two families and listed in
+-- the scaffold table of `Architecture.md` (hub content `Swing`, semantic layer `FlowSemantics`).
 --
 -- A hub is a family whose laws are proved once (the swing equation, the PI-PLL); a spoke is a
 -- family whose models are read as hub models: a map of models and, for every model, a reading

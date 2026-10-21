@@ -14,7 +14,7 @@ module theorem.Realization where
 -- through a hub (`theorem/FamilyReading.agda`) — makes the realization exact there
 -- (`exactUnder-of-reading`); a certified implementation outside the sentence refutes soundness
 -- (`not-sound-of-witness`). Each realization of the library has its own scaffold, named after its
--- two layers (`ExactSampling`, `SwitchedAveraging`, `EulerDiscretization`). The Lean connection is
+-- two contents and listed in the scaffold table of `Architecture.md`. The Lean connection is
 -- `theorem/Stack/Implementation.lean` (`ofDesign`, `realizationExactUnder_of_design`,
 -- `realizationExactUnder_of_den_eq_preimage`, `not_realizationSoundUnder_of_design`). Nothing here
 -- is exported.

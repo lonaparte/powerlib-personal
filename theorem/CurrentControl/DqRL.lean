@@ -42,7 +42,8 @@ branch at the origin. Requirements: `R/L > 0` (`stable`, eigenvalues `−R/L ± 
 * `den_eq_alphaBeta` (connection comparison): the attractive denotation of the dq family is its
   own pull-back along `DqBranch.alphaBeta` — the αβ and dq descriptions are stable together, at
   every frame speed. The comparison is read from the spectra
-  (`spectrallyStable_dqRLMatrix_iff`), which do not depend on `ω`.
+  (`spectrallyStable_dqRLMatrix_iff`), which do not depend on `ω`. Scaffold:
+  `theorem/DqAlphaBeta.agda`.
 The spectra, the field identity and the dq impedance are static evidence. The trajectory form of
 the dq KVL is `dqRL_of_alphaBetaRL`, and the plant's field is `dqRLPlant_field`.
 -/

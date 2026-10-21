@@ -25,8 +25,8 @@ map `design : Y → X` uses `ofDesign`.
 
 Source: TMIO v0.3 (`theorem/TMIO/Derived.lean`, `theorem/TMIO/Relation.lean`); the model family
 interface (`theorem/Family/Basic.lean`). Scaffold: `theorem/Realization.agda` (the generic pattern;
-each realization of the library has its own scaffold: `ExactSampling`, `SwitchedAveraging`,
-`EulerDiscretization`).
+each realization of the library has its own scaffold, listed in the scaffold table of
+`Architecture.md`).
 
 Results.
 * The composite connection `uTI` and its generated value at a sentence

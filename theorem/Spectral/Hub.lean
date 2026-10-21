@@ -28,9 +28,8 @@ Scope.
 Source: Agda scaffold `theorem/FamilyReading.agda`, the generic pattern (a spoke read through a hub:
 univalence turns the readings into a path from the spoke's semantics to the hub's pulled back
 along the map, and exactness and soundness pass under a correspondence of requirement languages on
-a context); each reading has its own scaffold named after its two families (`DroopSwing`,
-`SaturationSwing`, `ClassicalMachineSwing`, `MatchingSwing`, `PortHamiltonianPLL`,
-`IMCCurrentLoop`, `CurrentDirection`). `Family.comap` (`theorem/Family/Basic.lean`) is the case of a
+a context); each reading has its own scaffold named after its two families, listed in the
+scaffold table of `Architecture.md`. `Family.comap` (`theorem/Family/Basic.lean`) is the case of a
 spoke that keeps the hub's language.
 
 Results.

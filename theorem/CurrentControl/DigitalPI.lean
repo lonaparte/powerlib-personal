@@ -92,7 +92,7 @@ Family and connection conclusions.
   realization is not sound — `slowIMC` has a stable design (`slowIMC_design_mem_den`, `ω_b > 0`,
   `R/L > 0`) and an unstable platform (`a₂ a₁ = 1/2 < 3/2 = a₃ a₀`).
   `realizationSoundUnder_unstable`: within `{physical, sampling, design unstable}` every platform
-  is unstable, for every period.
+  is unstable, for every period. Scaffold: `theorem/DigitalCurrentLoop.agda`.
 
 Scope (the Padé platform versus the pure delay). The implementation model is itself an
 approximation of the transcendental delay: Padé(1,1) matches `e^{−τ s}` to third order

@@ -38,7 +38,7 @@ requirements are the PI loop's monic coefficient conditions together with the si
   sampled contraction are carved out exactly.
 * `lpfDen_eq`: adding the low-pass feedforward does not change the stability of the PI loop —
   the attractive denotation of the feedforward family is the pull-back of the PI family's along
-  `LPFLoop.pi`, cut by `τ > 0`.
+  `LPFLoop.pi`, cut by `τ > 0`. Scaffold: `theorem/FeedforwardCurrentLoop.agda`.
 * `lpf_mem_den_iff`: with `L > 0`, stable iff `R + Kp > 0 ∧ Ki > 0 ∧ τ > 0`.
 * `lpf_tracks_reference` (`i → i*`, `ṽ → v` for constant `i*`, `v`) is a trajectory-level
   result outside the sentence language, kept as private implementation evidence.

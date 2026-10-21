@@ -48,7 +48,8 @@ monic coefficients `(R + Kp)/L`, `Ki/L` positive (`stable`) or `(R + Kp)/L` nega
   `L̂` is a parameter tolerance of the controller, so the mismatched dq loop is an implementation
   of the single-axis PI design `PIParams.family` (perfect decoupling), realizing its base loop
   (`MismatchParams.implementation`). `realizationExactUnder`: the attractive sentences and sampled
-  contraction are realized exactly, without constraints (from `den_eq_base`).
+  contraction are realized exactly, without constraints (from `den_eq_base`). Scaffold:
+  `theorem/DecouplingMismatch.agda`.
 * `tracks_reference` (`i → i*` for constant references) is a trajectory-level result outside the
   sentence language, kept as private implementation evidence.
 

@@ -104,7 +104,7 @@ Family and connection conclusions.
   `not_realizationSoundUnder_globallyExponentiallyStable`: global exponential stability is not
   realized soundly within all realistic constraints including headroom (`unloaded`: the nominal
   design at `i* = 0`, `V_dc = 1`); `realizationCompleteUnder_globallyExponentiallyStable` holds
-  vacuously.
+  vacuously. Scaffold: `theorem/VoltageLimit.agda`.
 
 Complement (T-field-oriented-control §1.7, "当 |v_s*| 饱和后，PI 积分饱和需 anti-windup"): the
 note treats integrator windup as a performance issue. Here, without anti-windup, the voltage limit
