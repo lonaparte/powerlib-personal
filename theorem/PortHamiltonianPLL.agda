@@ -4,16 +4,16 @@ module theorem.PortHamiltonianPLL where
 -- Scaffold of the reading of the port-Hamiltonian SRF-PLL through the PI-PLL hub
 -- (`PLL.PLLPH.family` of `theorem/PLL/PH.lean` read through `PIPLL.family` of
 -- `theorem/PLL/PIPLLFamily.lean`). The pH PLL with amplitude `V`, gains `K_p, K_i` and selected
--- point `(θ*, η*)` has, on its zero-input field, the field of the SRF member
--- `srf V K_p K_i (K_i η*) θ*` of the PI-PLL family (for `K_i = 0` both fields ignore `η`, so the
--- reading holds for every model). Only the flow sentences are read: the pH PLL has a port and its
--- passivity stays its own law. The hub's laws are taken abstractly here (the PI-PLL family has its
--- own development); the scaffold fixes the map, the context (`nonnegativeEnergy`: `V, K_i ≥ 0`)
--- and the correspondence, and derives exactness of local exponential stability within the context
--- and soundness of the local sentences. Lean proves the reading (`mem_den_flow_iff_srf`, private
--- `mem_den_flow_iff_toSRF`), the correspondence (`toSRF_of_slopeStable`, `slopeStable_of_toSRF`,
--- `toSRF_of_saddle`) and the transfer (`Spectral.exactUnder_of_hub` with an empty hub context,
--- `Spectral.realize_subset_den_of_hub`). Nothing here is exported.
+-- point `(θ*, η*)` has, on its zero-input field, the field of the SRF member `srf V K_p K_i (K_i
+-- η*) θ*` of the PI-PLL family (for `K_i = 0` both fields ignore `η`, so the reading holds for
+-- every model). Only the flow sentences are read: the pH PLL has a port and its passivity stays its
+-- own law. The hub's laws are taken abstractly here (the PI-PLL family has its own development);
+-- the scaffold fixes the map, the context (`nonnegativeEnergy`: `V, K_i ≥ 0`) and the
+-- correspondence, and derives exactness of local exponential stability within the context and
+-- soundness of the local sentences. Lean proves the reading (`PLLPH.mem_den_flow_iff_srf`), the
+-- correspondence (steps of the proofs of `PLLPH.exactUnder_locallyExponentiallyStable` and
+-- `PLLPH.chain_le_semantics`) and the transfer (`Spectral.exactUnder_of_hub` with an empty hub
+-- context, `Spectral.realize_subset_den_of_hub`). Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv
@@ -113,7 +113,7 @@ module _ (Sc : Scalars) where
             (λ y _ → exact-les y))
 
         -- Soundness of local exponential stability and instability from the hub (Lean
-        -- `PLLPH.chain_le_semantics`, obligations `les_sound`, `unstable_sound`).
+        -- `PLLPH.chain_le_semantics`).
         sound-les : Sound pllFamily locallyExponentiallyStable
         sound-les = sound-pullback-partial reading tt local→ (sound locallyExponentiallyStable)
 

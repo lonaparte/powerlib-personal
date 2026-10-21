@@ -55,7 +55,7 @@ Family and connection conclusions.
   stability of the unforced RL network when every branch is resistive
   (`rlNetworkPH_mem_den_globallyExponentiallyStable`); and invariance of every sentence under
   branch rescaling (`rlNetworkPH_scale_mem_den_iff`), the sentence-level form of the
-  transformer referral.
+  transformer referral, a diagonal change of coordinates (scaffold `theorem/Similarity.agda`).
 * The pointwise KVL/KCL fields, outputs, energies and power balances are static evidence on the
   model; the trajectory transport `rlNetwork_scale_trajectory` is private implementation
   evidence.

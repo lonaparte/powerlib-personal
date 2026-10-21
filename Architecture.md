@@ -66,6 +66,7 @@ narrow bridge of Rules §11 and is checked by Lean (`theorem/generated/`).
 | `theorem/ImpedanceInterconnection.agda` | source and load → closed loop; covariance under state coordinates | `Circuits/Interconnection` (generated `ImpedanceInterconnection`) |
 | `theorem/TMIO/Representation.agda` | representation changes transport satisfaction structures and generated spaces | `TMIO/Representation` (`generate_transport`, `Seed.transport_whole`) |
 | `theorem/Rebase.agda` | changes of bases of an interconnection: state coordinates, per-unit bases, current direction, time base | `Transform/Rebase`; per-unit instance `Transform/PerUnitLTI` |
+| `theorem/Similarity.agda` | changes of state coordinates of linear plants with ports: similar plants satisfy the same sentences, passivity included (a storage pulls back along the inverse coordinates); a linear family reads through another along a map of models with similar plants; the port-Hamiltonian family reads through itself under similarity and under rescaling of RL branches | `Linear/Coordinates` (`Similar.sentence_iff`, `Family.IsLinear.den_similar`), `PH/Composition` (`mem_den_iff_of_similar`), `PH/Models/RLNetwork` (`rlNetworkPH_scale_mem_den_iff`) |
 | `theorem/FamilyReading.agda` | the generic pattern: a spoke family read through a hub family (readings by conjugacy or equality, contexts, transfer of exactness and soundness, composition) | `Spectral/Hub` |
 | `theorem/FlowSemantics.agda` | the semantic layer the readings use: fields at a point, affine changes of coordinates, the local sentence kinds and table | `Dynamics/Transport` (`holds_transport_iff`), `Spectral/Local` (`localTable`) |
 | `theorem/Swing.agda` | the swing hub: models, requirements, translation and the laws its spokes read | `Synchronous/Swing` |
@@ -82,7 +83,7 @@ narrow bridge of Rules §11 and is checked by Lean (`theorem/generated/`).
 | `theorem/FeedforwardCurrentLoop.agda` | the PI current loop with low-pass PCC-voltage feedforward read through the PI loop: its spectrum adds `−1/τ`, so the attractive denotation is the PI one pulled back along `LPFLoop.pi`, cut by `τ > 0` | `CurrentControl/Feedforward` (`lpfDen_eq`) |
 | `theorem/CascadeCurrentLoop.agda` | the linearized current-loop/DC-link cascade against the converter PI loop: the attractive denotation is the PI one pulled back along `pi`, cut by a positive DC-node coefficient `I_dc0/(C V0)` (the DC node adds its own pole) | `GFL/DCLink/Cascade` (`linearizedDen_eq`, `linearizedExact`, `linearized_mem_den_iff`) |
 | `theorem/GovernorReduction.agda` | the swing–governor family against its first-order reduction (`T_g → 0`): the attractive sentences and sampled contraction transfer when `0 < M + D T_g` (every `T_g` when `D ≥ 0`) and not on the whole family (an unstable model with a globally exponentially stable reduction); decay rates off the governor pole transfer below a threshold | `Frequency/SwingGovernor` (`mem_den_iff_reduce`, `mem_den_iff_reduce_of_nonneg`, `exists_unstable_reduce_globallyExponentiallyStable`, `exists_threshold_mem_den_decay_iff_reduce`) |
-| `theorem/CurrentDirection.agda` | OUT-positive and IN-positive writings of a model related by the reversal of currents and powers (conventions §D) | `GFL/PowerLoop/QuasiStatic`, `GFL/RatePLL`, `GFL/ModelLayers`, `GFL/LCLine/FullModel`, `GFL/LCLine/FullModelDC` (IN-written families; the literature OUT forms and `field_eq_transport_literatureField`-type identities) |
+| `theorem/CurrentDirection.agda` | OUT-positive and IN-positive writings of a model related by the reversal of currents and powers (conventions §D) | `GFL/PowerLoop/QuasiStatic`, `GFL/RatePLL`, `GFL/ModelLayers`, `GFL/LCLine/FullModel`, `GFL/LCLine/FullModelDC` (IN-written families; the literature OUT forms and `field_eq_transport_literatureField`-type identities); `GFL/DCLink/BasinGuard` (both writings as the drop sign `s = ±1`: `flip_mem_den_iff`) |
 | `theorem/DqAlphaBeta.agda` | the RL branch in the dq frame at speed `ω` and in the αβ frame (`ω = 0`): the attractive denotation is its own pull-back along `DqBranch.alphaBeta` (Hurwitz iff `R/L > 0` at every frame speed; not a conjugacy, Park's transformation being time-varying) | `CurrentControl/DqRL` (`den_eq_alphaBeta`) |
 | `theorem/PLLAmplitude.agda` | amplitude invariance inside the PI-PLL family: for `V ≠ 0` the SRF-PLL of amplitude `V` and gains `(K_p, K_i)` is conjugate (`ξ = η / V`) to the unit-amplitude one with gains `(V K_p, V K_i)` on every flow sentence | `PLL/Model` (`srf_mem_den_iff_unitAmplitude`) |
 | `theorem/PLLCodeFrame.agda` | the reduced PLL loop written in the project-code frame read as the PI-PLL family: the code field is the text field reflected by `(θ, η) ↦ (−θ, η)`, the code model reads as the member at angle `−θ_c*`, on every sentence; soundness of the PI-PLL translations carries over | `GFL/LCLine/Reduced2D` (`codeField_eq_transport`, `codeFamily_den`, `code_mem_den_iff`, `codeFamily_chain_le_semantics`) |
@@ -207,8 +208,9 @@ that are visible in the built environment: every module in exactly one layer (`L
 generic module importing an engineering one (`DEPENDENCIES`), model behaviour only inside
 connection statements (`BARE_BEHAVIOUR`), module headers (`HEADERS`), no duplicate statements
 (`DUPLICATES`), no theorem restating another it could use (`RESTATEMENTS`, no exemptions), and
-every connection between contents citing a scaffold whose row above names its module, every
-scaffold cited and with a row (`SCAFFOLDS`). The independent LeanForControl profile checks direct imported theorem
+every connection between contents (changes of representation inside one family included) citing
+a scaffold whose row above names its module, every scaffold cited and with a row, and every Lean
+name a scaffold cites a public declaration (`SCAFFOLDS`). The independent LeanForControl profile checks direct imported theorem
 reuse and rejection of an actual upstream custom-axiom consequence. The Agda
 scaffolds are checked with Agda 2.8.0 and cubical 0.9 (`agda theorem/<Module>.agda`
 from the repository root); the Lean build does not depend on them. Dependency
@@ -217,7 +219,8 @@ oleans were reused without building Mathlib from source.
 The main admission checks 427 built modules, 8196 proof declarations and 851
 typed connection statements, including private rejection fixtures. The structure
 test reads 411 library modules (259 generic, 152 engineering), 7030 public
-theorems, and 38 modules with connections between contents citing 36 scaffolds.
+theorems, and 44 modules with connections between contents (6 of them changes of representation
+inside one family) citing 37 scaffolds, whose comments cite 420 Lean names, all public.
 The independent profile checks 32 modules, 362 proof declarations and 6 typed
 statements; its library list is explicit and must follow the imports of the
 modules it names. The admitted Lean axiom set is `propext`, `Classical.choice`

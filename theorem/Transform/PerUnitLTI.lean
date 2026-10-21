@@ -34,7 +34,8 @@ the SI one (`closedLoopBlocks_perUnit`), with the same Hurwitz property
 The diagonal helpers `diagonal_inv_mul`, `diagonal_mul_inv`, `mulVec_cancel`, `mulVec_cancel'`
 supply the invertibility of the bases.
 
-Family and connection conclusions.
+Family and connection conclusions. Scaffold: `theorem/Rebase.agda` (per-unit bases are one of its
+changes of bases).
 `den_perUnit`: on the interconnection
 family `Circuits.Interconnection.family`, the denotation of every attractive sentence and of
 sampled contraction is its own pull-back along the per-unit transformation

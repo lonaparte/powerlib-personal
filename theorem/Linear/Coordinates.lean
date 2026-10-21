@@ -11,7 +11,7 @@ Scope.
 
 Source: the port semantics (`theorem/Port/Defs.lean`); coordinate changes and similarity of
 plants (`theorem/Linear/Transfer.lean`); the port systems of plants (`theorem/Port/Linear.lean`);
-linear families (`theorem/Linear/Family.lean`).
+linear families (`theorem/Linear/Family.lean`). Scaffold: `theorem/Similarity.agda`.
 
 Results.
 * `Port.System.conjugate` (state dynamics and port output transported through a coordinate

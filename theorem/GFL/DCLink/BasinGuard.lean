@@ -99,7 +99,8 @@ GFL model of `fourStateParams s ξ*` at the selected angle `θ_e*`.
   converse linearization does not apply.
 * Frame flip: for `I_q* = 0` the flipped model `Model.flip ⟨q, s, x*⟩ = ⟨q, −s, S x*⟩` satisfies
   exactly the sentences of the original (`BasinGuard.flip_mem_den_iff`, every sentence, every
-  drop sign `s`).
+  drop sign `s`). The two drop signs are the OUT and IN writings of the reactance drop; scaffold:
+  `theorem/CurrentDirection.agda`.
 * Four-state reading: for `I_q* = 0` a model whose selected point has `V_dc* = 1` and
   `K_i^pll x_p* = 0` (every equilibrium has both) satisfies exactly the sentences of its four-state
   reading (`BasinGuard.mem_den_iff_fourState`, every sentence), so the stability results of

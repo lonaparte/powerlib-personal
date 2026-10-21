@@ -14,7 +14,7 @@ them or filters what they admit, and says which.
 | M1 | **One semantics.** Behaviour is a continuous-time or discrete-time system with ports, interpreted once by `Sentence.holds`. | single-semantics audit; `BARE_BEHAVIOUR` |
 | M2 | **One connection shape.** A TMIO seed supplies one arbitrary-infimum-preserving backward map per adjacent edge; adjoints, closures, composites, denotations, exactness and soundness are generated. A family supplies only its system map, requirement satisfaction and translation. | the types `TMIO.Seed`, `Family`, `Implementation`, `Stack` |
 | M3 | **One public conclusion.** A public model conclusion is `connection% P`, a statement of the closed grammar `TMIO.ConnectionClaim`. | kernel-checked certificate; whole-package admission; bypass audit |
-| M4 | **Scaffold first.** A connection between contents (two model families, a model and its implementation, a model and its records, two representations) is first built as an Agda scaffold, then proved in Lean in the generality the scaffold fixes; the Lean module cites the scaffold. | `SCAFFOLDS` (except a change of representation inside one family, which is reviewed) |
+| M4 | **Scaffold first.** A connection between contents (two model families, a model and its implementation, a model and its records, two representations) is first built as an Agda scaffold, then proved in Lean in the generality the scaffold fixes; the Lean module cites the scaffold. | `SCAFFOLDS` |
 | M5 | **Generic once.** A law about arbitrary families or fields is proved once, in a generic module that imports no engineering module; instances supply only their obligations and do not restate it. Upstream results are reused, not reproved. | `DEPENDENCIES`, `DUPLICATES`, `RESTATEMENTS` |
 | M6 | **One trust root.** The Lean kernel with the axioms `propext`, `Classical.choice` and `Quot.sound`. Agda, synthesizers, solvers, scripts and the elaborator are untrusted. | axiom audit; admission |
 
@@ -51,12 +51,14 @@ A connection is built in three steps:
    header of the Lean module cites it. Only data passes between Agda and Lean (§11).
 
 The scaffold table of [Architecture.md](Architecture.md) is the registry: one row per
-scaffold, naming the Lean modules that prove its connection. The `SCAFFOLDS` check enforces
-the rule for every connection it recognizes from a public statement (one using two model
-families, an implementation or stack, or an observation seed): the module cites a scaffold
-whose row names the module. Every scaffold is cited by a Lean module and has a row. A
-change of representation inside one family is not recognizable from its statement; review
-keeps it to the same rule.
+scaffold, naming the Lean modules that prove its connection. The `SCAFFOLDS` check
+recognizes a connection from a public statement that uses two model families, an
+implementation or stack, or an observation seed, or that changes the representation inside
+one family (an iff or an equality with that family's denotation of one sentence on both
+sides, at different models); the module must cite a scaffold whose row names it. Every
+scaffold is cited by a Lean module and has a row. A scaffold's comments cite only public
+Lean declarations and library modules, and the check resolves every such name: a step
+proved by a private lemma is cited through the public theorem whose proof contains it.
 
 A scaffold is named after the contents it connects: a reading of one family through
 another after the two families (`DroopSwing.agda`: the droop loop read as a swing

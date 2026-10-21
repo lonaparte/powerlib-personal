@@ -12,8 +12,8 @@ module theorem.PLLAmplitude where
 -- (`reading`, by conjugacy, on the flow sentences), and every flow sentence holds of the
 -- amplitude-`V` member exactly when it holds of its unit-amplitude form (`den≃`). For `V = 0` the
 -- rescaling is singular and nothing is read; passivity is not read (every member is autonomous
--- and passive). Lean: `member` is `srf_piPLLField` with `Spectral.mem_den_flow_iff_shift` (the
--- private `mem_den_flow_iff`), `field-eq` is `transport_scale_srfField`, `point-eq` is the image
+-- and passive). Lean: `member` is `srf_piPLLField` with `Spectral.mem_den_flow_iff_shift`,
+-- `field-eq` is `transport_scale_srfField`, `point-eq` is the image
 -- of the selected point under `scaleSecond V⁻¹` (inside `srf_mem_den_iff_unitAmplitude`), the
 -- invariance is `Dynamics.holds_transport_iff`, and `den≃` is `srf_mem_den_iff_unitAmplitude`.
 -- Nothing here is exported.

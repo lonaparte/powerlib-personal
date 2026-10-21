@@ -28,11 +28,14 @@ Structural checks of the `theorem/` library beyond admission, read from the buil
   reasons in `restatementExemptions`.
 * `SCAFFOLDS`: a module with a public connection statement between contents — one whose
   proposition uses two model families, an implementation or stack, or an observation seed, each
-  defined outside the framework (`TMIO`, `Family`, `Spectral`, `Stack`) — cites in its docstrings
-  an Agda scaffold `theorem/<Name>.agda` whose row in the scaffold table of `Architecture.md`
-  names the module (`Dir/Module`). Every cited scaffold exists, and every scaffold in `theorem/`
-  is cited by some module and has a row. A change of representation inside one family is not
-  recognizable from its statement and is not checked here. Run from the repository root.
+  defined outside the framework (`TMIO`, `Family`, `Spectral`, `Stack`), or one that changes the
+  representation inside a family — cites in its docstrings an Agda scaffold `theorem/<Name>.agda`
+  whose row in the scaffold table of `Architecture.md` names the module (`Dir/Module`). Every
+  cited scaffold exists, and every scaffold in `theorem/` is cited by some module and has a row.
+  A change of representation inside one family is a statement whose claim is an iff or an
+  equality with the same family's denotation of the same sentence on both sides and different
+  models (`x ∈ F.den s ↔ g x ∈ F.den s`). The Lean names a scaffold's comments cite are public
+  declarations or library modules. Run from the repository root.
 
 The layer table is the structural specification: moving a module across layers or adding a
 directory changes this file. It classifies knowledge (generic mathematics and the framework,
@@ -222,6 +225,38 @@ def contentKind (name : Name) : MetaM (Option Nat) := do
   if ← isValueOf ``powerlib.TMIO.Seed name then return some 2
   return none
 
+/-- The `(family, sentence)` pairs of the `Family.den` applications in `e`. -/
+partial def denApps (e : Expr) : Array (Expr × Expr) :=
+  let here := if e.isAppOfArity ``powerlib.Family.den 6 then #[(e.getArg! 4, e.getArg! 5)] else #[]
+  match e with
+  | .app f a => here ++ denApps f ++ denApps a
+  | .lam _ t b _ | .forallE _ t b _ => denApps t ++ denApps b
+  | .letE _ t v b _ => denApps t ++ denApps v ++ denApps b
+  | .mdata _ b | .proj _ _ b => denApps b
+  | _ => here
+
+/-- The body of `e` under its leading binders. -/
+def stripForalls : Expr → Expr
+  | .forallE _ _ b _ => stripForalls b
+  | e => e
+
+/-- A statement that changes the representation inside one family: its claim is an iff or an
+equality whose two sides differ and use the denotation of the same family at the same sentence
+(`x ∈ F.den s ↔ g x ∈ F.den s`, `F.den s = g ⁻¹' F.den s`). Implications between sentences of
+one family are not changes of representation. -/
+def representationChange (type : Expr) : Bool := Id.run do
+  let body := stripForalls type
+  unless body.isAppOf ``powerlib.TMIO.Statement do return false
+  let some claim := body.getAppArgs[0]? | return false
+  let claim := stripForalls claim
+  let sides : Option (Expr × Expr) :=
+    if claim.isAppOfArity ``Iff 2 then some (claim.getArg! 0, claim.getArg! 1)
+    else if claim.isAppOfArity ``Eq 3 then some (claim.getArg! 1, claim.getArg! 2) else none
+  let some (a, b) := sides | return false
+  if a == b then return false
+  let db := denApps b
+  return (denApps a).any fun x => db.any fun y => x.1 == y.1 && x.2 == y.2
+
 /-- The Agda files a text cites, as paths `theorem/….agda`. -/
 def scaffoldCitations (text : String) : Array String := Id.run do
   let mut out := #[]
@@ -232,6 +267,43 @@ def scaffoldCitations (text : String) : Array String := Id.run do
       let path := s!"theorem/{String.ofList name}.agda"
       unless out.contains path do out := out.push path
   return out
+
+/-- The backticked tokens of the comment lines of an Agda source. -/
+def agdaCommentTokens (text : String) : Array String := Id.run do
+  let mut out := #[]
+  for line in text.splitOn "\n" do
+    unless (line.toList.dropWhile (· == ' ')).take 2 == ['-', '-'] do continue
+    let parts := (line.splitOn "`").toArray
+    for i in [:parts.size] do
+      if i % 2 == 1 then out := out.push parts[i]!
+  return out
+
+/-- The names an Agda source declares: modules, records and data types, and every name left of
+` : ` in a signature, a field or a module parameter. -/
+def agdaDeclared (text : String) (acc : Std.HashSet String) : Std.HashSet String := Id.run do
+  let mut out := acc
+  for line in text.splitOn "\n" do
+    let words := (line.splitOn " ").filter (· != "")
+    let some first := words.head? | continue
+    if first.startsWith "--" then continue
+    if ["module", "record", "data"].contains first then
+      if let some n := words[1]? then out := out.insert n
+    else if words.contains ":" then
+      for w in words.takeWhile (· != ":") do
+        out := out.insert (String.ofList (w.toList.dropWhile (fun c => c == '(' || c == '{')))
+  return out
+
+/-- A token that reads as a Lean name: an ASCII identifier with a namespace, or a long one with an
+underscore. Short underscored tokens are notation (`K_R`, `V_dc`), and file names are paths. -/
+def leanReference (tok : String) : Bool :=
+  let cs := tok.toList
+  match cs with
+  | [] => false
+  | c :: _ =>
+    (c.isAlpha || c == '_') &&
+    cs.all (fun c => c.isAlphanum || c == '_' || c == '.' || c == '\'') &&
+    (cs.contains '.' || (cs.contains '_' && cs.length > 6)) &&
+    [".md", ".lean", ".agda", ".py"].all (fun e => !tok.endsWith e)
 
 /-! ## Duplicate statements -/
 
@@ -380,7 +452,7 @@ run_cmd liftTermElabM do
       | none => acc
     else acc
   let mut kinds : NameMap (Option Nat) := {}
-  let mut found : Array Nat := #[0, 0, 0]
+  let mut found : Array Nat := #[0, 0, 0, 0]
   let mut violations := #[]
   let mut connected : Nat := 0
   let mut cited : Std.HashSet String := {}
@@ -410,6 +482,8 @@ run_cmd liftTermElabM do
       let families := uses.filter (·.2 == 0)
       if let some (_, k) := uses.find? (·.2 != 0) then witness := some (name, k)
       else if families.size ≥ 2 then witness := some (name, 0)
+      else if witness.isNone && !frameworkModule m && representationChange v.type then
+        witness := some (name, 3)
     let some (name, k) := witness | continue
     connected := connected + 1
     found := found.modify k (· + 1)
@@ -420,9 +494,46 @@ run_cmd liftTermElabM do
       violations := violations.push
         s!"{m}: connection {name}; no row of a cited scaffold {citations} names `{path}`"
   -- Controls: each kind of connection is recognized somewhere in the library.
-  for (k, label) in [(0, "two families"), (1, "an implementation"), (2, "an observation seed")] do
+  for (k, label) in [(0, "two families"), (1, "an implementation"), (2, "an observation seed"),
+      (3, "a change of representation")] do
     if found[k]! == 0 then throwError "The scaffold check recognized no connection of {label}"
   let scaffolds ← (root / "theorem").walkDir
+  -- The Lean names a scaffold cites are public declarations or library modules; tokens that are
+  -- Agda declarations or Agda modules are the scaffold's own.
+  let agdaFiles := scaffolds.filter (·.extension == some "agda")
+  let relOf (file : System.FilePath) : String :=
+    String.ofList (file.toString.toList.drop (root.toString.length + 1))
+  let mut texts : Array (String × String) := #[]
+  for file in agdaFiles do
+    texts := texts.push (relOf file, ← IO.FS.readFile file)
+  let declared := texts.foldl (fun acc t => agdaDeclared t.2 acc) {}
+  let agdaModules : Std.HashSet String := texts.foldl (init := {}) fun acc t =>
+    acc.insert (".".intercalate ((String.ofList (t.1.toList.take (t.1.length - 5))).splitOn "/"))
+  let modules : NameSet := env.header.moduleNames.foldl (·.insert ·) {}
+  let mut wanted : Array (String × String) := #[]
+  for (rel, text) in texts do
+    for tok in agdaCommentTokens text do
+      unless leanReference tok do continue
+      if (tok.splitOn ".").all declared.contains then continue
+      if agdaModules.contains tok then continue
+      if modules.contains tok.toName || modules.contains (`theorem ++ tok.toName) then continue
+      wanted := wanted.push (rel, tok)
+  let lasts : Std.HashSet String :=
+    wanted.foldl (fun acc w => acc.insert (w.2.splitOn ".").getLast!) {}
+  let mut byLast : Std.HashMap String (Array (List String × Bool)) := {}
+  for (n, _) in env.constants.map₁.toList ++ env.constants.map₂.toList do
+    let some last := n.components.getLast? | continue
+    unless lasts.contains last.toString do continue
+    byLast := byLast.alter last.toString fun a =>
+      some ((a.getD #[]).push (n.components.map toString, isPrivateName n))
+  for (rel, tok) in wanted do
+    let comps := tok.splitOn "."
+    let hits := (byLast.getD comps.getLast! #[]).filter fun (cs, _) =>
+      cs.length ≥ comps.length && cs.drop (cs.length - comps.length) == comps
+    if hits.any (fun (_, isPrivate) => !isPrivate) then continue
+    violations := violations.push <| if hits.isEmpty then
+      s!"{rel}: `{tok}` is no public declaration, library module or Agda declaration"
+    else s!"{rel}: `{tok}` names a private declaration"
   let mut total : Nat := 0
   for file in scaffolds do
     unless file.extension == some "agda" do continue
@@ -436,8 +547,10 @@ run_cmd liftTermElabM do
     throwError "Connections and scaffolds out of step ({violations.size}):\n\
       {"\n".intercalate violations.toList}"
   logInfo m!"POWERLIB_LIBRARY_SCAFFOLDS_OK: {connected} modules with connections between contents \
-    (families {found[0]!}, implementations {found[1]!}, records {found[2]!}) cite scaffolds; \
-    {total} scaffolds, each cited and with a row naming its modules in Architecture.md"
+    (families {found[0]!}, implementations {found[1]!}, records {found[2]!}, representations \
+    {found[3]!}) cite scaffolds; \
+    {total} scaffolds, each cited and with a row naming its modules in Architecture.md; \
+    {wanted.size} Lean references in scaffolds, all public"
 
 run_cmd do
   let env ← getEnv

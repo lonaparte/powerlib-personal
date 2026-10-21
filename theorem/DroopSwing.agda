@@ -9,9 +9,9 @@ module theorem.DroopSwing where
 -- the reading holds (`physical`: `D, ω_c > 0`) and the requirement correspondence there, and
 -- derives the transfer of exactness and soundness of the local sentences. Lean proves the field
 -- identity (`DroopLPF.field_eq_transport`), the invariance (`Dynamics.holds_transport_iff`), the
--- correspondence (`realize_local_iff`, `realize_unstable_toSwing`, `swing_meets_iff`) and the
--- transfer (`Spectral.exactUnder_of_hub`, `Spectral.realize_subset_den_of_hub`). Nothing here is
--- exported.
+-- correspondence (steps of the proofs of `DroopLPF.chain_le_semantics` and
+-- `DroopLPF.exactUnder_locallyExponentiallyStable`) and the transfer (`Spectral.exactUnder_of_hub`,
+-- `Spectral.realize_subset_den_of_hub`). Nothing here is exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv

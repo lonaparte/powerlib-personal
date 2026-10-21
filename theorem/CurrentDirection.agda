@@ -24,7 +24,10 @@ module theorem.CurrentDirection where
 -- `field10_eq_transport_literatureField10`, `field13_eq_transport_literatureField13`), the §D8
 -- boundary translation; the structure the reversal must preserve (linearity of the field in the
 -- directed quantities, jointly) is what those proofs check. With one writing, the family-level
--- transfer of this scaffold is not needed in Lean. Nothing here is exported.
+-- transfer of this scaffold is not needed in Lean, except where a family keeps both writings as a
+-- parameter: the basin-guard carrier's reactance-drop sign `s = ±1`, whose two writings agree on
+-- every sentence at mirror points (`GFL.DCLink.BasinGuard.flip_mem_den_iff`). Nothing here is
+-- exported.
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv

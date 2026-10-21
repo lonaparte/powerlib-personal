@@ -30,14 +30,16 @@ module theorem.VSMPlatform where
 -- Obligations: the model laws `model-exactUnder`, `model-sound` are
 -- `VSMLPF.exactUnder_locallyExponentiallyStable`, `VSMLPF.chain_le_semantics`; the platform laws
 -- `rig-sound`, `rig-exactUnder` are `VSMLPF.rig_chain_le_semantics`,
--- `VSMLPF.rig_exactUnder_locallyExponentiallyStable`; `fast-routh` and `routh-margin` are the
--- private `H_pos_of_fastLag`, `margin_pos_of_H_pos`; `unstable-of-destabilizing` is the proof of
--- `VSMLPF.realizationSoundUnder_unstable` (private `H_neg_of_slow`,
+-- `VSMLPF.rig_exactUnder_locallyExponentiallyStable`; `fast-routh` and `routh-margin` are
+-- steps of the proofs of `VSMLPF.realizationSoundUnder_locallyExponentiallyStable` and
+-- `VSMLPF.realizationCompleteUnder_locallyExponentiallyStable`; `unstable-of-destabilizing` is a
+-- step of the proof of `VSMLPF.realizationSoundUnder_unstable` (with
 -- `VSMLPF.rigField_point_eq_zero_iff`); `unstable-excludes` is
 -- `LocallyExponentiallyStable.lyapunovStable`; `slow-design`, `slow-unstable` are
 -- `VSMLPF.slowRig_design_mem_den`, `VSMLPF.slowRig_mem_den_unstable`; `model-check`, `lag-check`,
--- `slow-check` are the private `design_fast_of_modelCheck`, `fastLag_of_lagCheck`,
--- `design_slow_of_slowCheck` (`slow-context` reads `VSMLPF.Produces` as well); `slow-produces` is
+-- `slow-check` are steps of the proofs of `VSMLPF.locallyExponentiallyStable_mem_infer`,
+-- `VSMLPF.locallyExponentiallyStable_mem_truth` and `VSMLPF.unstable_mem_infer` (`slow-context`
+-- reads `VSMLPF.Produces` as well); `slow-produces` is
 -- `VSMLPF.slowRig_produces`. Derived: `sound-fast` is
 -- `VSMLPF.realizationSoundUnder_locallyExponentiallyStable` (through
 -- `Implementation.realizationSoundUnder_of_design`), `complete-lag` is
