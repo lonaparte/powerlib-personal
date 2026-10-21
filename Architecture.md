@@ -47,17 +47,10 @@ language with the hub's on a context; `theorem/Spectral/Hub.lean` then carries e
 context, soundness and requirement obligations from the hub (`exactUnder_of_hub`, `exact_of_hub`,
 `sound_of_hub`, `realize_subset_den_of_hub`).
 
-Representation transport preserves the semantic and generated maps, and now
-also transports closed and interior fixed points. `closedTransport`,
+Representation transport preserves the semantic and generated maps and
+transports closed and interior fixed points. `closedTransport`,
 `interiorTransport` and `fixedPointsIso_transport` prove that the fixed-point
 correspondence commutes with representation changes.
-
-The independent review of `8919b16` found this core architecture implemented,
-but found gaps at the public interface: the old placement audit counted any
-occurrence of a TMIO or Family constant, the bypass audit stopped at first-party
-aliases, PortHamiltonian had only raw semantic conclusions, some reuse consumers
-had raw flow conclusions, and the coordinate theorem omitted passivity.
-Those gaps are addressed by the interfaces and checks below.
 
 ## Scaffolds
 
@@ -101,13 +94,8 @@ Coordinates, per-unit bases and the current direction are then instances, not se
 
 ## Public admission
 
-The first admission implementation used endpoint tags and domain classifications.
-Independent mutation tests showed three escapes: relabel a model-behaviour
-conclusion as foundation, omit the Architecture import in a new module, or mark
-a behavioural alias as an endpoint within TMIO. That implementation did not
-provide whole-package enforcement.
-
-The new interface uses two closed, proposition-indexed inductive grammars:
+Rules §3a states what a public conclusion may be. Its implementation uses two closed,
+proposition-indexed inductive grammars:
 `TMIO.Endpoint` certifies values of real infimum-preserving maps or their uniquely
 generated adjoints; `TMIO.ConnectionClaim` certifies endpoint evaluation,
 comparison and boundary conclusions. Neither has an arbitrary-Prop constructor.
@@ -118,26 +106,17 @@ untrusted. Statements unfold definitionally to P, preserving mathematical use.
 Admission keeps the stored certificate, so every restriction on the shape of a
 claim is a constructor of the kernel grammar, not an elaborator check.
 
-The grammar binds types of `Type` (`allType`), so a law about arbitrary families
-of `Type` is a connection statement: the explicit Euler templates, the hub
-transfer laws and their kind are stated once as connection statements and their
-instances apply them. Endpoints and binders have fixed universes; one claim mixes
-endpoints generated from sentences and from model sets, so universe-polymorphic
-claims would need certificates with a universe per node and are not admitted.
-Side conditions (`TMIO.Condition`) are comparisons of numbers in a linearly and
-strictly ordered semiring, combined by `¬ ∧ ∨`; they appear only as the
-characterizing side of an iff (`iffCondition`) and as the guard of an existential
-witness (`existsGuard`). Premises were already unrestricted. A tautological claim
-can still carry its condition, as `memberIff` can carry any right side; no new kind
-of conclusion is admitted, and the bypass audit still reads every operand.
-Generic static lemmas remain foundation results.
+The constructors `allType`, `iffCondition` and `existsGuard` carry the binders and
+side conditions of Rules §3a. Endpoints and binders have fixed universes: one claim
+mixes endpoints generated from sentences and from model sets, so a
+universe-polymorphic claim would need a certificate with a universe per node. Side
+conditions are `TMIO.Condition` values. A tautological claim can still carry its
+condition, as `memberIff` can carry any right side; neither adds a kind of
+conclusion, and the bypass audit still reads every operand.
 
-Endpoint tags are removed. Foundation/domain annotations are optional metadata;
-unannotated typed claims are automatically discovered. Whole-package admission
-also rejects public model-specific behavioural helpers outside Statement,
-regardless of labels. Model types are inferred from actual Family definitions,
-not a handwritten list. Generic mathematical support and private helpers remain
-implementation evidence. The semantic bypass checker independently checks that
+Admission infers model types from actual Family definitions, not a handwritten
+list, and discovers typed claims whatever their annotations. The semantic bypass
+checker independently checks that
 claim operands and hypothesis types do not directly state behaviour. At a
 certified endpoint it checks the input and structural maps while keeping the
 semantic map abstract. A raw behavioural set passed to an identity connection
@@ -158,7 +137,7 @@ domains from declared Family types, including transparent aliases. It does not
 decide whether an arbitrary generic mathematical proposition ought to be an
 engineering claim. Generic support remains available for implementation proofs.
 
-PortHamiltonian now has a Family interface for passivity and Lyapunov stability.
+PortHamiltonian has a Family interface for passivity and Lyapunov stability.
 `Similar.sentence_iff` includes port passivity, using pullback of storage through
 the inverse state coordinates. `Family.IsLinear.den_similar` preserves every
 sentence denotation, with no minimality premise.
@@ -168,21 +147,21 @@ sentence denotation, with no minimality premise.
 | Question | Kernel-checked result |
 | --- | --- |
 | Is LCL right-half-plane-pole translation exact for instability? | **Refuted** by `Circuits.LCL.not_exact_unstable`: opposite unit resistances, unit inductances and capacitance 2 give frequency polynomial `2 s³`, but a zero-eigenvalue Jordan chain gives unbounded linear growth. |
-| Is LCL passive translation exact for Lyapunov stability? | **Refuted**, as already proved by `not_exact_lyapunovStable` in the reviewed branch. |
-| Is LCL lossless translation exact for conservation without passivity? | **Refuted**, as already proved by `not_exact_conservative`; `exactUnder_conservative` retains the passive context. |
-| Are polynomial global asymptotic translations exact? | **Refuted** by the existing cubic damping boundary `not_exact_asymptotic`. |
+| Is LCL passive translation exact for Lyapunov stability? | **Refuted** by `not_exact_lyapunovStable`. |
+| Is LCL lossless translation exact for conservation without passivity? | **Refuted** by `not_exact_conservative`; `exactUnder_conservative` retains the passive context. |
+| Are polynomial global asymptotic translations exact? | **Refuted** by the cubic damping boundary `not_exact_asymptotic`. |
 | Can the cascade be globally certified? | `cascade_asymptotic` proves global asymptotic semantics for `x′ = -2x + y²`, `y′ = -y`; `cascade_not_exponential` proves failure of a uniform global exponential bound. `cascade_certificate_boundary` therefore proves absence of every certificate in this language, independently of search failure. |
 | Is the polynomial global exponential translation exact? | **Refuted** by `not_exact_exponential`: `x′ = -x - y³`, `y′ = -y + x³` has a quartic energy with exponential decay, but no quadratic certificate in the language (`quartic_certificate_boundary`). |
 | Is the polynomial sampled-contraction translation exact? | **Refuted** by `not_exact_contractive`, using the same quartic model. |
 | Is rational synthesis complete? | **Proved** by `Linear.Synthesis.accepts_iff_isHurwitz` for every finite dimension; `Linear.Rational.accepted_eq_den` exposes it as an equality of generated requirement space and denotation. |
 
-The new instability lemma `Linear.unstable_of_zero_jordan_chain` is generic.
+The instability lemma `Linear.unstable_of_zero_jordan_chain` is generic.
 The polynomial boundaries concern autonomous rational two-state fields on all
 of ℝ², in continuous time, with no switching, delay or inputs.
 
 ## Rates and synthesis
 
-LCL, source-load interconnection and rational-matrix requirements now include a
+LCL, source-load interconnection and rational-matrix requirements include a
 specified real rate. The static requirement is `RateMargin A a`, meaning
 `IsHurwitz (A + a • 1)`. A shared quadratic-energy comparison proves its
 soundness at every real rate, including zero and negative rates. The interconnection
@@ -207,11 +186,14 @@ proved separating models rather than an unsupported completeness claim.
 
 ## Validation
 
-`lake build` checks the library, examples and admission/discovery/reuse/architecture
-tests. The library structure test also checks that generic modules import no engineering
-module, and that no theorem restates (an instance of) another theorem it could use without
-using it (`RESTATEMENTS`, public and private theorems, matching by instantiation; any case that
-stays would be listed with its reason in the test, and none does). The independent LeanForControl profile checks direct imported theorem
+`lake build` checks the library, examples and the admission, discovery, reuse, architecture
+and library-structure tests. The library structure test enforces the meta-rules of Rules §0
+that are visible in the built environment: every module in exactly one layer (`LAYERS`), no
+generic module importing an engineering one (`DEPENDENCIES`), model behaviour only inside
+connection statements (`BARE_BEHAVIOUR`), module headers (`HEADERS`), no duplicate statements
+(`DUPLICATES`), no theorem restating another it could use (`RESTATEMENTS`, no exemptions), and
+every connection between contents citing its scaffold, every scaffold cited and listed above
+(`SCAFFOLDS`). The independent LeanForControl profile checks direct imported theorem
 reuse and rejection of an actual upstream custom-axiom consequence. The Agda
 scaffolds are checked with Agda 2.8.0 and cubical 0.9 (`agda theorem/<Module>.agda`
 from the repository root); the Lean build does not depend on them. Dependency

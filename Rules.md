@@ -4,7 +4,28 @@ These rules define what PowerLib admits, how results are checked, and what its
 automation claims mean. They apply to the library, bridges, synthesizers,
 discovery tools, examples, tests, and public documentation.
 
+## 0. Meta-rules
+
+Six meta-rules fix the form of the library. Every later section applies one of
+them or filters what they admit, and says which.
+
+| | Meta-rule | Enforced by |
+| --- | --- | --- |
+| M1 | **One semantics.** Behaviour is a continuous-time or discrete-time system with ports, interpreted once by `Sentence.holds`. | single-semantics audit; `BARE_BEHAVIOUR` |
+| M2 | **One connection shape.** A TMIO seed supplies one arbitrary-infimum-preserving backward map per adjacent edge; adjoints, closures, composites, denotations, exactness and soundness are generated. A family supplies only its system map, requirement satisfaction and translation. | the types `TMIO.Seed`, `Family`, `Implementation`, `Stack` |
+| M3 | **One public conclusion.** A public model conclusion is `connection% P`, a statement of the closed grammar `TMIO.ConnectionClaim`. | kernel-checked certificate; whole-package admission; bypass audit |
+| M4 | **Scaffold first.** A connection between contents (two model families, a model and its implementation, a model and its records, two representations) is first built as an Agda scaffold, then proved in Lean in the generality the scaffold fixes; the Lean module cites the scaffold. | `SCAFFOLDS` (except a change of representation inside one family, which is reviewed) |
+| M5 | **Generic once.** A law about arbitrary families or fields is proved once, in a generic module that imports no engineering module; instances supply only their obligations and do not restate it. Upstream results are reused, not reproved. | `DEPENDENCIES`, `DUPLICATES`, `RESTATEMENTS` |
+| M6 | **One trust root.** The Lean kernel with the axioms `propext`, `Classical.choice` and `Quot.sound`. Agda, synthesizers, solvers, scripts and the elaborator are untrusted. | axiom audit; admission |
+
+The checks are the library structure test (`dependencies/tests/lean/Library/Structure.lean`) and
+the admission tests (`dependencies/tests/lean/Architecture/`). The meta-rules fix the form of the
+library, not its content: which models and conclusions it contains is chosen from the sources each
+module header cites.
+
 ## 1. Agda scaffolding and the Lean 4 theorem layer
+
+*Applies M4, and M6 for what Agda cannot establish.*
 
 Agda is the scaffolding between the different contents of the library: models,
 representations and layers. Every connection between them is first constructed
@@ -29,6 +50,12 @@ A connection is built in three steps:
 3. The scaffold stays in `theorem/` as the design record of the connection, and the
    header of the Lean module cites it. Only data passes between Agda and Lean (§11).
 
+The `SCAFFOLDS` check enforces this for every connection it recognizes from a public
+statement: one using two model families, an implementation or stack, or an observation
+seed. Every scaffold is cited by a Lean module and listed in the scaffold table of
+[Architecture.md](Architecture.md). A change of representation inside one family is not
+recognizable from its statement; review keeps it to the same rule.
+
 A scaffold is named after the contents it connects: a reading of one family through
 another after the two families (`DroopSwing.agda`: the droop loop read as a swing
 machine), a change of representation after the representations or the change
@@ -42,6 +69,8 @@ numerical experiments, and Agda-only proofs are not admitted theorems.
 
 ## 2. Formalization directory
 
+*Filter (M6): what counts as library source.*
+
 The active visible source directories are `theorem/`, `example/`, and
 `dependencies/`. `theorem/` contains formalization source and checked generated
 formalization source, with no Markdown files. `example/` contains formal public
@@ -53,6 +82,8 @@ as a Lean theorem is a research note, regardless of its mathematical plausibilit
 Directory structure must enforce this distinction.
 
 ## 3. Foundation results and domain results
+
+*Applies M3 and M5.*
 
 Foundation results include algebraic identities, conversion involutions,
 representation equivalences, transport laws, and auxiliary lemmas. They may
@@ -80,6 +111,8 @@ generated space, a comparison of connections, or a boundary witness. Relabeling
 such a conclusion as foundation does not complete its public domain interface.
 
 ## 3a. Generated connections and public conclusions
+
+*Applies M2 and M3.*
 
 The four TMIO layers contain objects and their orders. A seed supplies one
 arbitrary-infimum-preserving semantic map per adjacent edge; the forward
@@ -111,10 +144,10 @@ There are two admission rules:
 
 `TMIO.Endpoint` certificates are built from typed `sInfHom` applications,
 `generate`, generated closure, and structural powerset operations. Endpoint
-metadata cannot substitute for these certificates; `powerlib_connection` has
-been removed. A connection only in a hypothesis or an unrelated conjunct cannot
-satisfy the closed grammar. Behaviour is reached through these endpoints, never
-through a direct or aliased behavioural conclusion or operand.
+metadata cannot substitute for these certificates. A connection only in a
+hypothesis or an unrelated conjunct cannot satisfy the closed grammar. Behaviour
+is reached through these endpoints, never through a direct or aliased
+behavioural conclusion or operand.
 
 The bypass check inspects endpoint inputs, structural maps, and hypothesis types.
 An identity connection applied to a raw behavioural set cannot hide that set
@@ -143,6 +176,8 @@ evidence. Preserve UNPROVED until a kernel-checked proof or refutation exists.
 
 ## 4. Explicit model boundaries
 
+*Filter on M3 conclusions: the boundary of every domain theorem.*
+
 Every domain theorem must precisely identify the system it concerns. State
 its state variables and their order, coordinate frame, parameter ranges, inputs,
 controller and feedback signs, whether delay, PWM, or PLL dynamics are included,
@@ -155,6 +190,8 @@ Excluded components and idealizations are part of the model boundary.
 
 ## 5. Formalize the system before its calculation
 
+*Applies M1: behaviour belongs to the formalized system.*
+
 Represent the engineering model itself formally. Construct state-space models,
 impedance descriptions, closed-loop matrices, or other derived objects from
 that model, then prove their relationships to the intended system.
@@ -165,6 +202,8 @@ The formal chain must connect the original model to the derived objects and
 the final engineering property.
 
 ## 6. Semantic completion
+
+*Applies M1 and M3.*
 
 Determinant positivity, a Routh-Hurwitz condition, a determinant identity, or
 `A^T * P + P * A = -I` is intermediate evidence. Certificate arithmetic is not
@@ -186,6 +225,8 @@ semantic theorem has also been derived and kernel-checked.
 
 ## 7. Synthesis is the default ATP target
 
+*Filter: the maturity of ATP claims (§14).*
+
 ATP-facing domain results default to S-level: the system receives a problem
 description or model without the missing witness and automatically finds the
 witness or certificate, then Lean derives the semantic theorem.
@@ -199,12 +240,16 @@ For example, submitting only `R = 2` and `L = 1`, automatically obtaining
 
 ## 8. The synthesizer is untrusted
 
+*Applies M6.*
+
 Python, an LLM, an SMT or SDP solver, a CAS, a search procedure, or a neural
 network may propose witnesses. None belongs to the trusted computing base.
 An arbitrarily wrong proposal must lead at most to rejection; it must never
 compromise the soundness of admitted results.
 
 ## 9. Independent reconstruction of the submitted model
+
+*Applies M6.*
 
 The checker must independently reconstruct the target model from the original
 submission. It must not trust a certificate's claimed model, success flag,
@@ -219,6 +264,8 @@ obligations for several models can be checked anew for each model; an earlier
 acceptance for one model cannot replace checking another.
 
 ## 10. Kernel trust and proof escapes
+
+*Applies M6.*
 
 Final proof trust comes only from the proof kernel. No admitted theorem may
 transitively depend on `sorry`, `admit`, `sorryAx`, a custom unapproved axiom,
@@ -241,6 +288,8 @@ replace kernel checking, and not every theorem should be a simplification rule.
 
 ## 11. A narrow Agda-to-Lean bridge
 
+*Applies M4 and M6: the only data path from a scaffold to Lean.*
+
 The bridge exports a limited, versioned, structurally specified, machine-checkable
 data representation of an Agda-checked executable operation. Lean independently
 checks the exported endpoint contract and its concrete instantiation.
@@ -256,6 +305,8 @@ generator emits the data, the docstring is maintained with the module.
 
 ## 12. Exact acceptance
 
+*Applies M6.*
+
 Prefer exact checking of integers, rational numbers, and symbolic expressions.
 Floating-point values, numerical eigenvalue calculations, and ordinary SDP
 outputs cannot directly establish strict proofs.
@@ -265,6 +316,8 @@ kernel-checkable evidence such as rigorous error bounds, interval certificates,
 or rational reconstruction. Numerical search remains outside the trusted base.
 
 ## 13. Public admission and provenance
+
+*Filter (M3, M6): admission and provenance.*
 
 One successful Lean compilation does not automatically admit a result to the
 library. An admitted theorem requires a stable name and namespace, explicit
@@ -288,6 +341,8 @@ Hashes establish artifact identity, not mathematical correctness.
 
 ## 14. Result maturity and discovery claims
 
+*Filter: how results and claims are labelled.*
+
 | Status | Meaning and required evidence |
 | --- | --- |
 | Note | Nonformal derivation, computation, or experiment; no admitted domain claim. |
@@ -310,6 +365,8 @@ prototypes. Complete ATD remains an objective until conjecture generation,
 formal proof/refutation, traceability, and library admission are all implemented.
 
 ## 15. Reuse Mathlib and LeanForControl
+
+*Applies M5 across libraries.*
 
 PowerLib follows the reuse principle of LeanForControl. Check Mathlib and
 LeanForControl for existing formalized results before developing new proofs.
@@ -343,6 +400,8 @@ imported and direct reuse has passed kernel checks. A version mismatch requires
 a separately verified compatibility change before that dependency can be used.
 
 ## 16. Formal theorem dependencies
+
+*Applies M5 and M6 to dependencies.*
 
 `dependencies/` is the formal interface to the upstream results PowerLib uses.
 Its Lean import interfaces directly import Mathlib or LeanForControl modules.

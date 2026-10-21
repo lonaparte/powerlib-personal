@@ -156,6 +156,9 @@ mathematics, independent of the semantic decision:
 | Averaged model Hurwitz implies uniform exponential decay of the switched system, ripple included, for `T ≤ T₀`; conversely a `T`-uniform decay forces the average Hurwitz; averaging error `O(T)` on the whole half line | `Averaging/SwitchedStability` |
 | Slow switching breaks the transfer: two Hurwitz topologies with a Hurwitz average switch into an unstable system (a period-doubling flip, multiplier `−4 e^{−1/2}` at `T = 5`) | `Averaging/SwitchedStability` |
 | Discrete linearization (Schur Jacobian); instability when every eigenvalue lies outside the closed unit disk | `Map/Linearization` |
+| Exact sampling as a realization: every sentence read through the design model, exact without constraint | `LTI/ExactSampling` (scaffold `theorem/ExactSampling.agda`) |
+| Switched averaging as a realization: sound under fast switching, exact for commuting topologies, sound without constraint iff `n ≤ 1` | `Averaging/SwitchedFamily` (scaffold `theorem/SwitchedAveraging.agda`) |
+| Explicit Euler as a realization: local exponential stability realized below a step threshold, never for every step; with ports, flow sentences read through the zero input and passivity never realized when the output does not depend on the input | `Numerics/EulerRealization`, `Numerics/EulerPorts` (scaffolds `theorem/EulerDiscretization.agda`, `theorem/EulerPorts.agda`) |
 | Instability for every small `T` when the average has an eigenvalue with positive real part | to do |
 | Quantized loops: ultimate bound from a Lyapunov decrease outside a ball | to do |
 | Saturated loops: region of attraction from a Lyapunov sublevel set | to do |
@@ -172,7 +175,7 @@ dynamics.
 
 0. Without semantic change: continuous-time implementation families (done: VSM platform, PI
    loop with tolerance, Padé-delayed digital loop, voltage limit) and the generic bridges of §3.5
-   (done: sampling and switching).
+   (done: sampling, switching and explicit Euler, as realizations).
 1. Discrete-time kind: `Behaviour`, `Map/Defs` with its recognition rule, the discrete
    linearization theorem (`Map/Linearization`) — done. First families: the exact digital PI loop (ZOH, computation delay,
    Euler or Tustin integrator; its lifted matrix is `LTI.delayedLoopMatrix`) realizing the PI

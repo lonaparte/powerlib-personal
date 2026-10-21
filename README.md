@@ -30,9 +30,9 @@ records of the connections they built; only data passes between Agda and Lean, a
 Lean checks it independently. The project pins Lean 4.34.1,
 Mathlib v4.34.1, and Agda 2.8.0. Adapt dependencies to these pins with minimal,
 provenance-preserving changes, and accept them only after the complete build and
-proof checks pass. See [Rules.md](Rules.md) for the formal requirements and
-[Architecture.md](Architecture.md) for generated connections, admission and
-proved completion boundaries. [Layers.md](Layers.md) defines the theory, model,
+proof checks pass. See [Rules.md](Rules.md) for the six meta-rules and the formal
+requirements, and [Architecture.md](Architecture.md) for generated connections,
+admission and proved completion boundaries. [Layers.md](Layers.md) defines the theory, model,
 implementation and observation layers and how results are placed in them.
 
 Public model results use `connection% (ordinary proposition)`. The resulting
