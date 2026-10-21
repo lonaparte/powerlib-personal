@@ -212,10 +212,13 @@ scaffolds are checked with Agda 2.8.0 and cubical 0.9 (`agda theorem/<Module>.ag
 from the repository root); the Lean build does not depend on them. Dependency
 oleans were reused without building Mathlib from source.
 
-The completed main admission checks 56 built modules, 705 proof declarations and
-85 typed connection statements, including private rejection fixtures. The
-independent profile checks 31 modules, 347 proof declarations and 6 typed
-statements. The admitted Lean axiom set remains `propext`, `Classical.choice`
+The main admission checks 427 built modules, 8196 proof declarations and 851
+typed connection statements, including private rejection fixtures. The structure
+test reads 411 library modules (259 generic, 152 engineering), 7030 public
+theorems, and 38 modules with connections between contents citing 34 scaffolds.
+The independent profile checks 32 modules, 362 proof declarations and 6 typed
+statements; its library list is explicit and must follow the imports of the
+modules it names. The admitted Lean axiom set is `propext`, `Classical.choice`
 and `Quot.sound`.
 
 `ConnectionAdmission.lean` supplies two positive claims, one unannotated and one
