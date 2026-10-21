@@ -26,6 +26,13 @@ Structural checks of the `theorem/` library beyond admission, read from the buil
   through intermediate theorems, or through a theorem at least as general; a theorem that is a
   stepping stone of the other is not a restatement. The remaining cases are listed with their
   reasons in `restatementExemptions`.
+* `SCAFFOLDS`: a module with a public connection statement between contents — one whose
+  proposition uses two model families, an implementation or stack, or an observation seed, each
+  defined outside the framework (`TMIO`, `Family`, `Spectral`, `Stack`) — cites in its docstrings
+  an Agda scaffold `theorem/<Name>.agda`. Every cited scaffold exists, and every scaffold in
+  `theorem/` is cited by some module and listed in `Architecture.md`. A change of representation
+  inside one family is not recognizable from its statement and is not checked here. Run from the
+  repository root.
 
 The layer table is the structural specification: moving a module across layers or adding a
 directory changes this file. It classifies knowledge (generic mathematics and the framework,
@@ -189,12 +196,42 @@ def headerGaps (doc : String) (definesFamily : Bool) : Array String := Id.run do
     gaps := gaps.push "Family and connection conclusions"
   return gaps
 
-/-- A definition whose value is a model family (structure projections, such as the families of
-a `Stack`, are not values). -/
-def isFamilyValue (name : Name) : MetaM Bool := do
+/-- A definition whose value, as a function of its parameters, is an application of `head`
+(structure projections, such as the families of a `Stack`, are not values). -/
+def isValueOf (head name : Name) : MetaM Bool := do
   if (← getEnv).isProjectionFn name then return false
   let some (.defnInfo v) := (← getEnv).find? name | return false
-  forallTelescopeReducing v.type fun _ body => return (← whnf body).isAppOf ``powerlib.Family
+  forallTelescopeReducing v.type fun _ body => return (← whnf body).isAppOf head
+
+/-- A definition whose value is a model family. -/
+def isFamilyValue (name : Name) : MetaM Bool := isValueOf ``powerlib.Family name
+
+/-! ## Scaffolds -/
+
+/-- Modules of the framework: their families, implementations and seeds are constructions over
+arbitrary contents, not contents. -/
+def frameworkModule (m : Name) : Bool :=
+  [`theorem.Family, `theorem.TMIO, `theorem.Spectral, `theorem.Stack].any (·.isPrefixOf m)
+
+/-- The contents a value of this definition is: `0` a model family, `1` an implementation or
+stack, `2` an observation seed; `none` for anything else. -/
+def contentKind (name : Name) : MetaM (Option Nat) := do
+  if ← isFamilyValue name then return some 0
+  if (← isValueOf ``powerlib.Implementation name) || (← isValueOf ``powerlib.Stack name) then
+    return some 1
+  if ← isValueOf ``powerlib.TMIO.Seed name then return some 2
+  return none
+
+/-- The Agda files a text cites, as paths `theorem/….agda`. -/
+def scaffoldCitations (text : String) : Array String := Id.run do
+  let mut out := #[]
+  for part in (text.splitOn "theorem/").drop 1 do
+    let chars := part.toList
+    let name := chars.takeWhile fun c => c.isAlphanum || c == '/' || c == '_'
+    if (chars.drop name.length).take 5 == ".agda".toList then
+      let path := s!"theorem/{String.ofList name}.agda"
+      unless out.contains path do out := out.push path
+  return out
 
 /-! ## Duplicate statements -/
 
@@ -326,6 +363,70 @@ run_cmd liftTermElabM do
       {"\n".intercalate violations.toList}"
   logInfo m!"POWERLIB_LIBRARY_HEADERS_OK: {checked} module headers, \
     {families} defining families"
+
+run_cmd liftTermElabM do
+  let env ← getEnv
+  let root ← IO.currentDir
+  unless ← (root / "lakefile.lean").pathExists do
+    throwError "The scaffold check reads `theorem/`: run the build from the repository root"
+  let moduleOf (c : Name) : Option Name :=
+    (env.getModuleIdxFor? c).map fun i => env.header.moduleNames[i.toNat]!
+  let mut kinds : NameMap (Option Nat) := {}
+  let mut found : Array Nat := #[0, 0, 0]
+  let mut violations := #[]
+  let mut connected : Nat := 0
+  let mut cited : Std.HashSet String := {}
+  for (i, m) in libraryModules env do
+    let text := " ".intercalate
+      (((getModuleDoc? env m).getD #[]).map (·.doc)).toList
+    let citations := scaffoldCitations text
+    for path in citations do
+      cited := cited.insert path
+      unless ← (root / path).pathExists do
+        violations := violations.push s!"{m}: cites {path}, which does not exist"
+    let mut witness : Option (Name × Nat) := none
+    for name in env.header.moduleData[i]!.constNames do
+      let some (.thmInfo v) := env.find? name | continue
+      unless authoredPublic env name && statementType v.type do continue
+      let mut uses : Array (Name × Nat) := #[]
+      for c in v.type.getUsedConstants do
+        let some cm := moduleOf c | continue
+        unless cm.getRoot == `theorem && !frameworkModule cm do continue
+        let kind ← match kinds.find? c with
+          | some k => pure k
+          | none => do
+            let k ← contentKind c
+            kinds := kinds.insert c k
+            pure k
+        if let some k := kind then uses := uses.push (c, k)
+      let families := uses.filter (·.2 == 0)
+      if let some (_, k) := uses.find? (·.2 != 0) then witness := some (name, k)
+      else if families.size ≥ 2 then witness := some (name, 0)
+    let some (name, k) := witness | continue
+    connected := connected + 1
+    found := found.modify k (· + 1)
+    if citations.isEmpty then
+      violations := violations.push s!"{m}: connection {name} without a cited scaffold"
+  -- Controls: each kind of connection is recognized somewhere in the library.
+  for (k, label) in [(0, "two families"), (1, "an implementation"), (2, "an observation seed")] do
+    if found[k]! == 0 then throwError "The scaffold check recognized no connection of {label}"
+  let table ← IO.FS.readFile (root / "Architecture.md")
+  let scaffolds ← (root / "theorem").walkDir
+  let mut total : Nat := 0
+  for file in scaffolds do
+    unless file.extension == some "agda" do continue
+    total := total + 1
+    let pre := root.toString ++ "/"
+    let rel := String.ofList (file.toString.toList.drop pre.length)
+    unless cited.contains rel do violations := violations.push s!"{rel}: cited by no module"
+    unless (table.splitOn s!"`{rel}`").length > 1 do
+      violations := violations.push s!"{rel}: not listed in Architecture.md"
+  unless violations.isEmpty do
+    throwError "Connections and scaffolds out of step ({violations.size}):\n\
+      {"\n".intercalate violations.toList}"
+  logInfo m!"POWERLIB_LIBRARY_SCAFFOLDS_OK: {connected} modules with connections between contents \
+    (families {found[0]!}, implementations {found[1]!}, records {found[2]!}) cite scaffolds; \
+    {total} scaffolds, each cited and listed in Architecture.md"
 
 run_cmd do
   let env ← getEnv
