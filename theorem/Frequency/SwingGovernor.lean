@@ -111,7 +111,7 @@ Family and connection conclusions.
   negative damping the transfer needs a small `T_g`), `not_mem_den_decay_of_slowEig` (the slow
   root bounds every decay rate), `exists_threshold_mem_den_decay_iff_reduce` (for a rate off the
   pole there is a threshold `τ > 0` below which the model decays at that rate exactly when its
-  reduction does).
+  reduction does). Scaffold: `theorem/GovernorReduction.agda`.
 * Implementation evidence of the limit (private, trajectory level): `finiteHorizon_reduce` —
   for every horizon `T` and `T_g ≤ ε₀`, `|Δω(t) − Δω̄(t)|² ≤ C T_g² |x(0) − x^∞|²` and
   `|ΔP_m(t) − (−K_R Δω̄(t) + e^{−t/T_g}(ΔP_m(0) + K_R Δω(0)))|² ≤ C T_g² |x(0) − x^∞|²` on

@@ -39,6 +39,7 @@ records of
 about the realized design models and reuses the model-layer theorems; it becomes a conclusion
 about the platform (`Stack.truth`) only through realization soundness, which needs the
 implementation constraint `fastLag` and so, on the record side, the delay check `LagCheck`.
+Scaffold: `theorem/VSMPlatform.agda`.
 
 Convention: active power export-positive (GFM family exception, work-sync conventions §D9).
 

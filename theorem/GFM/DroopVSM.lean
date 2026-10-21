@@ -50,7 +50,7 @@ Family and connection conclusions.
   coordinate change).  The per-sentence equivalences (`locallyExponentiallyStable_iff`,
   `lyapunovStable_iff`, `unstable_iff`, `localAsymptoticStable_iff`) are member-equivalences of
   the two families.  Consequently the droop translation is sound
-  (`droopFamily_chain_le_semantics`).
+  (`droopFamily_chain_le_semantics`). Scaffold: `theorem/DroopVSM.agda`.
 * On a sinusoidal power curve (`P = k₁ + k₂ sin(θ − k₃)`, any `ω_s`, `ω* = 0`) the VSM family
   agrees with the swing family `Synchronous.Swing.family` sentence by sentence: the model is the
   swing model `⟨M, D, P_ref + D ω_s, k₁, k₂, k₃⟩` about `θ*`
@@ -60,7 +60,9 @@ Family and connection conclusions.
   (`Synchronous.Swing.mem_den_locallyExponentiallyStable`). The VSM family keeps its own laws
   (`vsmFamily_chain_le_semantics`, `vsm_mem_den_locallyExponentiallyStable`): they hold for an
   arbitrary `C¹` power map `P` and a selected state with `ω* ≠ 0`, which the swing family, with
-  its sinusoidal curve and selected point `(δ*, 0)`, does not cover.
+  its sinusoidal curve and selected point `(δ*, 0)`, does not cover. Scaffold:
+  `theorem/VSMSwing.agda` (the composite with the droop reading,
+  `infiniteBus_locallyExponentiallyStable`, in `theorem/DroopVSM.agda`).
 * `vsmField_eq_transport` and `equilibrium_iff` are static evidence on the model (a field
   identity and an equilibrium correspondence).  The trajectory maps `isTrajectoryOn_vsm_of_droop`,
   `isTrajectoryOn_droop_of_vsm` are private implementation evidence (trajectory level).
