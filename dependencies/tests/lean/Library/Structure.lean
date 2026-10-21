@@ -29,10 +29,10 @@ Structural checks of the `theorem/` library beyond admission, read from the buil
 * `SCAFFOLDS`: a module with a public connection statement between contents — one whose
   proposition uses two model families, an implementation or stack, or an observation seed, each
   defined outside the framework (`TMIO`, `Family`, `Spectral`, `Stack`) — cites in its docstrings
-  an Agda scaffold `theorem/<Name>.agda`. Every cited scaffold exists, and every scaffold in
-  `theorem/` is cited by some module and listed in `Architecture.md`. A change of representation
-  inside one family is not recognizable from its statement and is not checked here. Run from the
-  repository root.
+  an Agda scaffold `theorem/<Name>.agda` whose row in the scaffold table of `Architecture.md`
+  names the module (`Dir/Module`). Every cited scaffold exists, and every scaffold in `theorem/`
+  is cited by some module and has a row. A change of representation inside one family is not
+  recognizable from its statement and is not checked here. Run from the repository root.
 
 The layer table is the structural specification: moving a module across layers or adding a
 directory changes this file. It classifies knowledge (generic mathematics and the framework,
@@ -371,6 +371,14 @@ run_cmd liftTermElabM do
     throwError "The scaffold check reads `theorem/`: run the build from the repository root"
   let moduleOf (c : Name) : Option Name :=
     (env.getModuleIdxFor? c).map fun i => env.header.moduleNames[i.toNat]!
+  -- The scaffold table: one row per scaffold, keyed by its path.
+  let table ← IO.FS.readFile (root / "Architecture.md")
+  let rows : Std.HashMap String String := (table.splitOn "\n").foldl (init := {}) fun acc line =>
+    if line.startsWith "| `theorem/" then
+      match (line.splitOn "`")[1]? with
+      | some path => acc.insert path line
+      | none => acc
+    else acc
   let mut kinds : NameMap (Option Nat) := {}
   let mut found : Array Nat := #[0, 0, 0]
   let mut violations := #[]
@@ -405,12 +413,15 @@ run_cmd liftTermElabM do
     let some (name, k) := witness | continue
     connected := connected + 1
     found := found.modify k (· + 1)
+    let path := "/".intercalate (m.components.drop 1 |>.map toString)
     if citations.isEmpty then
       violations := violations.push s!"{m}: connection {name} without a cited scaffold"
+    else unless citations.any (fun a => ((rows.getD a "").splitOn s!"`{path}`").length > 1) do
+      violations := violations.push
+        s!"{m}: connection {name}; no row of a cited scaffold {citations} names `{path}`"
   -- Controls: each kind of connection is recognized somewhere in the library.
   for (k, label) in [(0, "two families"), (1, "an implementation"), (2, "an observation seed")] do
     if found[k]! == 0 then throwError "The scaffold check recognized no connection of {label}"
-  let table ← IO.FS.readFile (root / "Architecture.md")
   let scaffolds ← (root / "theorem").walkDir
   let mut total : Nat := 0
   for file in scaffolds do
@@ -419,14 +430,14 @@ run_cmd liftTermElabM do
     let pre := root.toString ++ "/"
     let rel := String.ofList (file.toString.toList.drop pre.length)
     unless cited.contains rel do violations := violations.push s!"{rel}: cited by no module"
-    unless (table.splitOn s!"`{rel}`").length > 1 do
-      violations := violations.push s!"{rel}: not listed in Architecture.md"
+    unless rows.contains rel do
+      violations := violations.push s!"{rel}: no row in the scaffold table of Architecture.md"
   unless violations.isEmpty do
     throwError "Connections and scaffolds out of step ({violations.size}):\n\
       {"\n".intercalate violations.toList}"
   logInfo m!"POWERLIB_LIBRARY_SCAFFOLDS_OK: {connected} modules with connections between contents \
     (families {found[0]!}, implementations {found[1]!}, records {found[2]!}) cite scaffolds; \
-    {total} scaffolds, each cited and listed in Architecture.md"
+    {total} scaffolds, each cited and with a row naming its modules in Architecture.md"
 
 run_cmd do
   let env ← getEnv

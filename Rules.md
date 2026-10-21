@@ -50,19 +50,23 @@ A connection is built in three steps:
 3. The scaffold stays in `theorem/` as the design record of the connection, and the
    header of the Lean module cites it. Only data passes between Agda and Lean (§11).
 
-The `SCAFFOLDS` check enforces this for every connection it recognizes from a public
-statement: one using two model families, an implementation or stack, or an observation
-seed. Every scaffold is cited by a Lean module and listed in the scaffold table of
-[Architecture.md](Architecture.md). A change of representation inside one family is not
-recognizable from its statement; review keeps it to the same rule.
+The scaffold table of [Architecture.md](Architecture.md) is the registry: one row per
+scaffold, naming the Lean modules that prove its connection. The `SCAFFOLDS` check enforces
+the rule for every connection it recognizes from a public statement (one using two model
+families, an implementation or stack, or an observation seed): the module cites a scaffold
+whose row names the module. Every scaffold is cited by a Lean module and has a row. A
+change of representation inside one family is not recognizable from its statement; review
+keeps it to the same rule.
 
 A scaffold is named after the contents it connects: a reading of one family through
 another after the two families (`DroopSwing.agda`: the droop loop read as a swing
 machine), a change of representation after the representations or the change
-(`Conversion.agda`, `Rebase.agda`, `CurrentDirection.agda`). One scaffold records one
-connection. A construction shared by several connections is a scaffold of its own,
-named after the construction (`FamilyReading.agda`), and content shared by several
-readings of one hub is named after the hub (`Swing.agda`).
+(`Conversion.agda`, `Rebase.agda`, `CurrentDirection.agda`), a realization after its
+implementation (`ExactSampling.agda`, `DigitalCurrentLoop.agda`), records after the
+model and the observation (`RLMeasurement.agda`). One scaffold records one connection. A
+construction shared by several connections is a scaffold of its own, named after the
+construction (`FamilyReading.agda`, `Realization.agda`, `Records.agda`), and content
+shared by several readings of one hub is named after the hub (`Swing.agda`).
 
 Markdown derivations, Python computations, Mathematica or SymPy results,
 numerical experiments, and Agda-only proofs are not admitted theorems.

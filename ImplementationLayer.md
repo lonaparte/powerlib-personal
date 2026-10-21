@@ -94,12 +94,11 @@ sequence-quantifying definition gives `{ℝ, ℕ}`, as intended).
 
 What the extension carries:
 
-* Recognition of discrete behaviour. The audit recognized behaviour only through signals, so
-  iterate-based notions were invisible to it (a bypass). It now also recognizes a sequence indexed
-  by steps into a state space (a discrete signal) and discrete evolution (an iterate of a self-map
-  of a state space, or the step of a discrete system): such notions are behavioural inside the
-  semantic layer and rejected outside it. The two discrete notions previously defined outside
-  (`LTI.IsTrajectory`, `LTI.AsymptoticallyStable`) were inlined into their statements.
+* Recognition of discrete behaviour. Besides signals of time, the audit recognizes a sequence
+  indexed by steps into a state space (a discrete signal) and discrete evolution (an iterate of a
+  self-map of a state space, or the step of a discrete system): such notions are behavioural
+  inside the semantic layer and rejected outside it, so no discrete notion is defined outside the
+  semantic layer.
 * `decay a` must mean the same rate in both kinds; the discrete system therefore carries its
   sampling period `T`, and `decay a` reads as `e^{−a T k}`. The other sentences are scale-free.
 * The first theorem of the discrete layer is proved: a map differentiable at a fixed point with

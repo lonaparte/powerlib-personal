@@ -8,7 +8,7 @@ import theorem.TMIO.ClaimElab
 /-! # Reduced 2-state GFL-PLL model: equilibria, stability, port-Hamiltonian form, code frame
 
 Port current IN-positive (work-sync conventions §D1); active power absorbed-positive (§D3).
-Scaffold: `theorem/CurrentDirection.agda`.
+Scaffold of the direction convention: `theorem/CurrentDirection.agda`.
 
 Domain module of the `vsc-stochastic-stability` project: equilibria, local stability, the
 port-Hamiltonian form, and the conjugacy with the project's code frame.
@@ -67,7 +67,8 @@ point, with the PI-PLL requirement language pulled back along `CodeModel.toText`
 (`θ_text* = −θ_code*`). The corrected §D1.4 conjugacy is the connection equality
 `codeFamily_den`: every denotation of the code family is the preimage of the PI-PLL denotation,
 for every sentence (all nine flow sentences, by the affine transport law, and passivity); hence
-`codeFamily_chain_le_semantics` and `code_mem_den_iff` (for every sentence).
+`codeFamily_chain_le_semantics` and `code_mem_den_iff` (for every sentence). Scaffold of this
+reading, a reflection of the angle: `theorem/PLLCodeFrame.agda`.
 Static evidence on the model, not connection conclusions: the equilibrium set
 (`reducedField_eq_zero_iff`), the fold Jacobian (`reduced_jacobian_nilpotent`) and the energy
 rates (`reduced_energy_rate`, `reduced_energy_rate_nonpos`, `energy_rate_with_drift`). The decrease

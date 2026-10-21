@@ -58,7 +58,9 @@ producing implementation through realization soundness (`infer_true`), and refut
 same edge backwards (`refutes_realized`).
 
 Source: TMIO v0.3 (`theorem/TMIO/Derived.lean`, `theorem/TMIO/Relation.lean`); the model family
-interface (`theorem/Family/Basic.lean`).
+interface (`theorem/Family/Basic.lean`). Scaffold: `theorem/Records.agda` (the generic pattern;
+each implementation with records has its own scaffold, listed in the scaffold table of
+`Architecture.md`).
 
 Results.
 * The stack seed and its organized variant (`seed`, `organized`), data-driven inference

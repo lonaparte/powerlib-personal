@@ -8,7 +8,7 @@ module theorem.VSMPlatform where
 -- computation delay and PWM update), O the identification records (`VSMLPF.Record`: intervals of
 -- `M, D, ω_c, K` and a delay bound `τ_hi`). A platform realizes its design model (`ofDesign`,
 -- design map `(m, τ) ↦ m`) and may produce the records of `VSMLPF.Produces`. The record layer of
--- a stack is generic (`Stacks`: inference, certification, truth, prediction and their laws).
+-- a stack is generic (`theorem/Records.agda`: inference, certification, truth, prediction).
 -- M–I. Within a physical design, a positive delay and the fast-delay constraint `fastLag`, a
 -- platform with a locally exponentially stable design is locally exponentially stable
 -- (`sound-fast`: the design side is the exact model translation, the platform side the sound
@@ -26,21 +26,19 @@ module theorem.VSMPlatform where
 -- produced by `slowRig`). A slow-filter record supports instability of the models and of every
 -- producer (`unstable-infer`, `unstable-truth`), lies outside the records predicted by local
 -- exponential stability (`not-predicted`) and so refutes it for every producer (`refuted`).
--- Lean. Generic (`theorem/Stack/Basic.lean`): `Infer`, `CertifiedRecords`, `Truth`, `Predicted`
--- are `Stack.mem_infer`, `Stack.mem_certified`, `Stack.mem_truth`, `Stack.mem_predicted`;
--- `galois` is `Stack.subset_certified_iff`, `infer-of-organized` is `Stack.mem_infer_of_organized`,
--- `truth-of-infer` is `Stack.infer_subset_truth`, `refutes` is `Stack.refutes`. Obligations: the
--- model laws `model-exactUnder`, `model-sound` are `VSMLPF.exactUnder_locallyExponentiallyStable`,
--- `VSMLPF.chain_le_semantics`; the platform laws `rig-sound`, `rig-exactUnder` are
--- `VSMLPF.rig_chain_le_semantics`, `VSMLPF.rig_exactUnder_locallyExponentiallyStable`;
--- `fast-routh` and `routh-margin` are the private `H_pos_of_fastLag`, `margin_pos_of_H_pos`;
--- `unstable-of-destabilizing` is the proof of `VSMLPF.realizationSoundUnder_unstable` (private
--- `H_neg_of_slow`, `VSMLPF.rigField_point_eq_zero_iff`); `unstable-excludes` is
+-- Lean. The generic laws are those of `theorem/Records.agda` (`theorem/Stack/Basic.lean`).
+-- Obligations: the model laws `model-exactUnder`, `model-sound` are
+-- `VSMLPF.exactUnder_locallyExponentiallyStable`, `VSMLPF.chain_le_semantics`; the platform laws
+-- `rig-sound`, `rig-exactUnder` are `VSMLPF.rig_chain_le_semantics`,
+-- `VSMLPF.rig_exactUnder_locallyExponentiallyStable`; `fast-routh` and `routh-margin` are the
+-- private `H_pos_of_fastLag`, `margin_pos_of_H_pos`; `unstable-of-destabilizing` is the proof of
+-- `VSMLPF.realizationSoundUnder_unstable` (private `H_neg_of_slow`,
+-- `VSMLPF.rigField_point_eq_zero_iff`); `unstable-excludes` is
 -- `LocallyExponentiallyStable.lyapunovStable`; `slow-design`, `slow-unstable` are
 -- `VSMLPF.slowRig_design_mem_den`, `VSMLPF.slowRig_mem_den_unstable`; `model-check`, `lag-check`,
 -- `slow-check` are the private `design_fast_of_modelCheck`, `fastLag_of_lagCheck`,
--- `design_slow_of_slowCheck` (`slow-context` reads `VSMLPF.Produces` as well);
--- `slow-produces` is `VSMLPF.slowRig_produces`. Derived: `sound-fast` is
+-- `design_slow_of_slowCheck` (`slow-context` reads `VSMLPF.Produces` as well); `slow-produces` is
+-- `VSMLPF.slowRig_produces`. Derived: `sound-fast` is
 -- `VSMLPF.realizationSoundUnder_locallyExponentiallyStable` (through
 -- `Implementation.realizationSoundUnder_of_design`), `complete-lag` is
 -- `VSMLPF.realizationCompleteUnder_locallyExponentiallyStable`, `exact-fast` is
@@ -63,62 +61,8 @@ open import Cubical.Relation.Nullary using (¬_)
 
 open import theorem.FamilyReading
 open import theorem.Realization
+open import theorem.Records
 open import theorem.Swing using (only)
-
--- The record layer of a stack: records `V` that implementations may produce
--- (`Stack.produces`), over an implementation layer.
-module Stacks (S : Semantics) where
-  open Semantics S
-  open Readings S
-  open Realizations S
-
-  module _ (L : Implementation) {V : Type}
-    (produces : Family.Model (Implementation.impl L) → V → Type) where
-    open Implementation L
-
-    -- Data-driven inference, the whole backward traversal: the sentences every model realized by
-    -- a possible producer of a record of `D` satisfies.
-    Infer : (V → Type) → Sentence → Type
-    Infer D s = (v : V) → D v → (y : Family.Model impl) → produces y v → Certified L s y
-
-    -- Theory-driven certification: the records all of whose possible producers realize only
-    -- models of `Φ`.
-    CertifiedRecords : (Sentence → Type) → V → Type
-    CertifiedRecords Φ v = (y : Family.Model impl) → produces y v →
-      (x : Family.Model model) → realizes x y → (s : Sentence) → Φ s → den model s x
-
-    -- The truth at the implementation layer: the sentences every possible producer satisfies.
-    Truth : (V → Type) → Sentence → Type
-    Truth D s = (v : V) → D v → (y : Family.Model impl) → produces y v → den impl s y
-
-    -- The records predicted by `s`: those some implementation satisfying `s` may produce.
-    Predicted : Sentence → V → Type
-    Predicted s v = Σ[ y ∈ Family.Model impl ] den impl s y × produces y v
-
-    -- The whole-chain Galois connection: records support sentences exactly when they are
-    -- certified for them.
-    galois : (D : V → Type) (Φ : Sentence → Type) →
-      ((v : V) → D v → CertifiedRecords Φ v) ↔ ((s : Sentence) → Φ s → Infer D s)
-    galois D Φ =
-      (λ h s φ v d y p x r → h v d y p x r s φ) , (λ h v d y p x r s φ → h s φ v d y p x r)
-
-    -- Inference through the requirement language of the models and a sound translation.
-    infer-of-organized : {D : V → Type} {s : Sentence} → Sound model s →
-      ((v : V) → D v → (y : Family.Model impl) → produces y v → (x : Family.Model model) →
-        realizes x y → realize model (Family.translate model s) x) → Infer D s
-    infer-of-organized hS h v d y p x r = hS x (h v d y p x r)
-
-    -- Under realization soundness, with every possible producer within the constraints, the
-    -- inferred sentences are true of the implementations.
-    truth-of-infer : {Δ : Family.Req impl → Type} {D : V → Type} {s : Sentence} →
-      ((v : V) → D v → (y : Family.Model impl) → produces y v → realize impl Δ y) →
-      SoundUnder L Δ s → Infer D s → Truth D s
-    truth-of-infer hΔ hS hs v d y p = hS y (hΔ v d y p) (hs v d y p)
-
-    -- A record outside the predicted records refutes the sentence for every producer.
-    refutes : {s : Sentence} {y : Family.Model impl} {v : V} → produces y v →
-      ¬ Predicted s v → ¬ den impl s y
-    refutes p hv hs = hv (_ , hs , p)
 
 open import theorem.FlowSemantics using (Sentence; locallyExponentiallyStable; unstable)
 
