@@ -393,6 +393,7 @@ def translate : Sentence → Set Requirement
   | .flow .conservative => Set.univ
   | .flow _ => {.hurwitz}
   | .passive => Set.univ
+  | .envelope _ => ∅
 
 /-- The five-state LFC family: every model read as the port system of its plant (area loads in,
 area frequencies out). -/
@@ -429,8 +430,9 @@ def family7 : Family Model7 Requirement 7 2 :=
 /-- The LFC translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
 private theorem translate_eq_linearTable (s : Sentence) :
     translate s = Spectral.linearTable {.hurwitz} {.rhpRoot} univ univ (fun a => {.rate a}) s := by
-  rcases s with P | _
+  rcases s with P | _ | _
   · cases P <;> rfl
+  · rfl
   · rfl
 
 /-- Soundness of the matrix requirements for any linear family read through `MeetsMatrix`

@@ -651,6 +651,7 @@ def translate : Sentence → Set Requirement
   | .flow .unstable => {.balanced, .inertia, .destabilizing}
   | .flow _ => Set.univ
   | .passive => ∅
+  | .envelope _ => Set.univ
 
 /-- The swing family: every model read as its field translated to the selected point. -/
 def family : Family Model Requirement 2 0 :=
@@ -717,8 +718,9 @@ proves instability; passivity holds without requirement. -/
     (Rs := {.balanced, .inertia, .damped, .synchronizing})
     (Ru := {.balanced, .inertia, .destabilizing}) (Rp := ∅) (fun s => ?_) realize_univ
     (fun m hm => ?_) (fun m hm => ?_) (fun m hm => ?_) fun m _ => ?_
-  · rcases s with P | _
+  · rcases s with P | _ | _
     · cases P <;> rfl
+    · rfl
     · rfl
   · rw [TMIO.mem_realize] at hm
     exact mem_den_flow_iff.mpr (ls_of (hm .inertia (by simp)) (hm .dampingNonneg (by simp))
@@ -1294,6 +1296,7 @@ def translate : Sentence → Set Requirement
   | .flow (.decay _) => Set.univ
   | .flow _ => {.inertia, .damped, .synchronizing}
   | .passive => ∅
+  | .envelope _ => ∅
 
 /-- The linearized swing family. -/
 def family : Family Model Requirement 2 0 := ⟨fun m => (plant m).system, Meets, translate⟩
@@ -1304,8 +1307,9 @@ def family : Family Model Requirement 2 0 := ⟨fun m => (plant m).system, Meets
 private theorem translate_eq (s : Sentence) :
     family.translate s = Spectral.linearTable {.inertia, .damped, .synchronizing}
       {.inertia, .destabilizing} {.inertia, .synchronizing, .undamped} ∅ (fun _ => Set.univ) s := by
-  rcases s with P | _
+  rcases s with P | _ | _
   · cases P <;> rfl
+  · rfl
   · rfl
 
 private theorem isHurwitz_iff {m : Model} (hM : 0 < m.p.M) :

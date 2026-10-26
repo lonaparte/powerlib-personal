@@ -98,7 +98,7 @@ the rate `a`, `Rc` conservation and `Rp` passivity. -/
     (fun x hx => den_globallyExponentiallyStable_subset_les (hG hx)) hG hD
     (fun x hx => by
       obtain ⟨s, hs, hre⟩ := hU x hx
-      exact hF.mem_den_flow.mpr (unstable_of_root 0 hs hre)) hC hP
+      exact hF.mem_den_flow.mpr (unstable_of_root 0 hs hre)) hC hP hF.den_envelope
 
 /-- The common table: conservation and passivity are translated into the whole language, which
 `Rs` and `Ru` make inconsistent. -/

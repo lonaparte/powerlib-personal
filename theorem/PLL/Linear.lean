@@ -462,6 +462,7 @@ def translate : Sentence → Set Requirement
   | .flow (.decay _) | .flow .conservative => Set.univ
   | .flow _ => {.proportional, .integral}
   | .passive => Set.univ
+  | .envelope _ => ∅
 
 /-- The linearized SRF-PLL family: every model read as the port system of its channel's plant. -/
 def family : Family Model Requirement 2 1 := ⟨fun m => m.plant.system, Meets, translate⟩
@@ -488,8 +489,9 @@ language for decay rates, conservation and passivity. -/
 private theorem translate_eq (s : Sentence) :
     family.translate s = Spectral.linearTable {.proportional, .integral} {.negativeGain}
       Set.univ Set.univ (fun _ => Set.univ) s := by
-  rcases s with P | _
+  rcases s with P | _ | _
   · cases P <;> rfl
+  · rfl
   · rfl
 
 /-- Both positive loop gains are the Hurwitz property of the state matrix. -/

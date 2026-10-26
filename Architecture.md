@@ -22,8 +22,12 @@ to the generic connection comparisons in `TMIO.Compare`. Certification,
 refutation, representation changes and requirement extensions use this interface.
 
 The system map returns a `Behaviour`: a continuous-time system with ports (`Flow.Defs`,
-`Port.Defs`) or a discrete-time system with ports (`Map.Defs`), each interpreted once by
-`Sentence.holds`. Discrete notions are stated through iterates of the state map and
+`Port.Defs`), a discrete-time system with ports (`Map.Defs`), or a random continuous-time system
+with an operating envelope (`Port.Defs`: a system for each sample of the disturbance, an initial
+set, a safe set and a law), each interpreted once by `Sentence.holds`. The envelope sentences,
+safety over a horizon at a probability level and a mean-square bound, are read on the random
+kind; the other kinds satisfy them. The disturbance is part of the system, not an input signal,
+so a behaviour holds no signal and families stay outside the reach of the signal rules. Discrete notions are stated through iterates of the state map and
 one-step inequalities, so the semantic layer keeps one time axis. The single-semantics
 audit recognizes discrete behaviour — a sequence indexed by steps into a state space, an
 iterate of a state map, the step of a discrete system — inside the semantic layer and
@@ -93,6 +97,8 @@ narrow bridge of Rules §11 and is checked by Lean (`theorem/generated/`).
 | `theorem/SwitchedAveraging.agda` | averaged linear model ↔ switched implementation read stroboscopically: sound under fast switching; exact for every sentence when the topologies commute, hence always in dimension one; not sound without a constraint in every dimension `n ≥ 2` | `Averaging/SwitchedFamily` (`switching_sound_fast`, `switching_realizationExactUnder_commuting`, `switching_realizationExactUnder_of_le_one`, `not_switching_realizationSoundUnder`, and the boundary `switching_realizationSoundUnder_iff`: sound without constraint ↔ `n ≤ 1`) |
 | `theorem/EulerDiscretization.agda` | model ↔ explicit Euler implementation: local exponential stability realized for every small step, and never for every step; only smoothness at the selected point is needed | connection statements over arbitrary autonomous families in `Numerics/EulerRealization` (`euler_sound_small_step(_local)`, `euler_certified_small_step(_local)`, `not_euler_realizationSoundUnder_of_large_step(_local)`); per family (`Synchronous/SwingEuler`, `GFM/Euler`, `GFM/Matching/Euler`, `GFL/Euler`, `GFL/PowerLoop/Euler`, `GFL/LCLine/Euler`, `GFL/DCLink/Euler`, `CurrentControl/Euler`, `Network/Swing/Euler`, `Drives/Euler`, `PLL/Euler`, `Limiting/Euler`): the Euler implementation, the public smoothness lemma and `not_euler_realizationSoundUnder` with the family's witness |
 | `theorem/EulerPorts.agda` | model with ports ↔ explicit Euler implementation: flow sentences read through the zero-input dynamics (the autonomous laws carry over); passivity is not realized at any step when the output does not depend on the input; for linear plants the realization is complete at every step and exact below a threshold | connection statements over arbitrary families with ports in `Numerics/EulerPorts` (`eulerPorts_realizationSoundUnder_flow_iff`, `eulerPorts_sound_small_step_local`, `not_eulerPorts_realizationSoundUnder_passive`, `eulerPorts_realizationCompleteUnder_linear`, `eulerPorts_exact_small_step_linear`; contrast `discreteGradient_passiveWith`); per family the passivity and large-step witnesses (`Circuits/PortEuler`, `GFL/DCLink/PortEuler`, `Synchronous/PortEuler`, `PLL/PortEuler`) |
+| `theorem/Envelope.agda` | the parameters of the envelope sentences: the horizon and the level enter through Galois connections, whose upper adjoints are the longest certified horizon and the worst exceedance probability of a set of models; safe sets are closed under countable meets almost surely, and at a positive level two certified safe sets can have an uncertified intersection, so no certified safe set is least | `Envelope/Basic` (`den_safe_sSup`, `den_safe_antitone`, `le_certifiedHorizon_iff`, `generate_certifiedHorizon`, `den_safe_iInf`, `gc_worstExceedance`, `generate_worstExceedance`, `holds_safe_iInter_null`, `not_holds_safe_inter`, `not_isLeast_safe`) |
+| `theorem/DisturbedRealization.agda` | deterministic design ↔ disturbed implementation (a random perturbation of intensity `σ` added to the field, judged on a safe set with a margin): finite-horizon safety realized soundly within a Lipschitz, solvable design, the margin, a small intensity and a bounded perturbation (Grönwall); infinite-horizon safety not realized under any intensity bound; small disturbance and long horizon do not commute | connection statements over arbitrary design families in `Envelope/Disturbed` (`noisy_realizationSoundUnder_safe`); the drift witness (`noisyDrift_mem_den_finite`, `noisyDrift_not_mem_den_top`, `not_driftImpl_realizationSoundUnder_top`) |
 | `theorem/VSMPlatform.agda` | VSM + LPF models (M) realized by test platforms with an execution delay (I) that produce identification records (O): realization sound and exact within `fastLag`, complete for every delay, not sound without `fastLag`; instability realized for every delay; inference, certification, truth and the inference–truth gap of a record without the delay check | `GFM/VSMLPFRig` (`realizationExactUnder_locallyExponentiallyStable`, `not_realizationSoundUnder_locallyExponentiallyStable`, `realizationSoundUnder_unstable`, `locallyExponentiallyStable_mem_infer`, `mem_certified_locallyExponentiallyStable`, `lagFreeRecord_infer_not_truth`) |
 | `theorem/DigitalCurrentLoop.agda` | PI current loop ↔ its digital platform (computation delay and zero-order hold, `τ = 3Tₛ/2`, as a Padé(1,1) state): attractive sentences realized soundly under the step constraints, completely for every period, exactly under the constraints; not soundly without them; instability realized for unstable designs | `CurrentControl/DigitalPI` (`realizationSoundUnder`, `realizationCompleteUnder`, `realizationExactUnder`, `not_realizationSoundUnder`, `realizationSoundUnder_unstable`) |
 | `theorem/DecouplingMismatch.agda` | PI current loop ↔ the dq loop decoupled with an inductance estimate: the attractive denotation is the design's pulled back along `base` for every frame speed and mismatch, so the attractive sentences are realized exactly without constraints | `CurrentControl/Mismatch` (`den_eq_base`, `realizationExactUnder`) |
@@ -216,12 +222,12 @@ scaffolds are checked with Agda 2.8.0 and cubical 0.9 (`agda theorem/<Module>.ag
 from the repository root); the Lean build does not depend on them. Dependency
 oleans were reused without building Mathlib from source.
 
-The main admission checks 427 built modules, 8196 proof declarations and 851
+The main admission checks 429 built modules, 8257 proof declarations and 856
 typed connection statements, including private rejection fixtures. The structure
-test reads 411 library modules (259 generic, 152 engineering), 7030 public
-theorems, and 44 modules with connections between contents (6 of them changes of representation
-inside one family) citing 37 scaffolds, whose comments cite 420 Lean names, all public.
-The independent profile checks 32 modules, 362 proof declarations and 6 typed
+test reads 413 library modules (261 generic, 152 engineering), 7091 public
+theorems, and 45 modules with connections between contents (6 of them changes of representation
+inside one family) citing 39 scaffolds, whose comments cite 437 Lean names, all public.
+The independent profile checks 32 modules, 374 proof declarations and 6 typed
 statements; its library list is explicit and must follow the imports of the
 modules it names. The admitted Lean axiom set is `propext`, `Classical.choice`
 and `Quot.sound`.

@@ -176,7 +176,7 @@ passivity; none is unstable or conservative; and a model decays at the rate `a` 
     simp only [family_isAutonomous.mem_den_flow, mem_univ, iff_true]
     exact h α
   refine Family.chain_eq_semantics_iff.mpr fun s => ?_
-  rcases s with P | _
+  rcases s with P | _ | E
   · cases P
     case lyapunovStable =>
       exact Family.exact_of_translate_eq_empty (F := family) rfl
@@ -239,5 +239,6 @@ passivity; none is unstable or conservative; and a model decays at the rate `a` 
       exact Family.exact_of_translate_eq_empty (F := family) rfl
         (hall fun α => (hges α).holds trivial)
   · exact Family.exact_of_translate_eq_empty (F := family) rfl family_isAutonomous.den_passive
+  · exact Family.exact_of_translate_eq_empty (F := family) rfl (family_isAutonomous.den_envelope E)
 
 end powerlib.Nonlinear.Cubic

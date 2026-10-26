@@ -96,7 +96,7 @@ def Meets (S U : X → Prop) (x : X) : Requirement → Prop
 /-- The translation of a linear spectral family. -/
 def linearTranslate : Sentence → Set Requirement
   | .flow .unstable => {.unstable}
-  | .flow (.decay _) | .flow .conservative | .passive => Set.univ
+  | .flow (.decay _) | .flow .conservative | .passive | .envelope _ => Set.univ
   | .flow _ => {.stable}
 
 /-- A linear spectral family: every complete system read as the port system of its plant. -/
@@ -133,7 +133,7 @@ plane. -/
     exact hx'
   have hstab : linearTranslate s = {.stable} → IsHurwitz (plant x).A := fun h =>
     hS x (hx .stable (by rw [h]; rfl))
-  rcases s with P | _
+  rcases s with P | _ | _
   · rw [hF.mem_den_flow]
     cases P
     case unstable =>
@@ -147,6 +147,7 @@ plane. -/
     case globallyExponentiallyStable => exact holds_of_isHurwitz 0 trivial (hstab rfl)
     case contractive => exact sampledContraction_of_isHurwitz 0 (hstab rfl)
     all_goals exact (huniv fun q => hx q trivial).elim
+  · exact (huniv fun q => hx q trivial).elim
   · exact (huniv fun q => hx q trivial).elim
 
 /-- With a stability condition equivalent to the Hurwitz property, the attractive sentences and
@@ -184,6 +185,7 @@ def localTranslate : Sentence → Set Requirement
   | .flow .unstable => {.unstable}
   | .flow _ => Set.univ
   | .passive => ∅
+  | .envelope _ => Set.univ
 
 /-- A local spectral family: every complete system read as its autonomous field about the
 selected operating point. -/
@@ -205,8 +207,9 @@ local exponential stability of the field at the origin, the instability conditio
     (fun x hx => hF.mem_den_flow.mpr (hS x ((mem_realize _ _ _).mp hx .stable rfl)))
     (fun x hx => hF.mem_den_flow.mpr (hU x ((mem_realize _ _ _).mp hx .unstable rfl)))
     hF.den_passive
-  rcases s with P | _
+  rcases s with P | _ | _
   · cases P <;> rfl
+  · rfl
   · rfl
 
 /-- Passivity is translated exactly in a local spectral family: a system without ports is

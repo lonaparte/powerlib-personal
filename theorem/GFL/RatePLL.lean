@@ -495,6 +495,7 @@ def translate : Sentence → Set Requirement
   | .flow .unstable => {.equilibrium, .jacobianUnstable}
   | .flow _ => Set.univ
   | .passive => ∅
+  | .envelope _ => Set.univ
 
 /-- The rate-coupled PLL family: every model read as its field translated to the selected
 point. -/
@@ -552,8 +553,9 @@ the origin), and passivity holds without requirement. -/
   refine Spectral.chain_le_semantics_of_localTable_same
     (Rs := {.equilibrium, .jacobianStable}) (Ru := {.equilibrium, .jacobianUnstable})
     (fun s => ?_) realize_univ (fun m hm => ?_) (fun m hm => ?_) family_isAutonomous.den_passive
-  · rcases s with P | _
+  · rcases s with P | _ | _
     · cases P <;> rfl
+    · rfl
     · rfl
   · rw [TMIO.mem_realize] at hm
     exact les_of_meets (hm .equilibrium (by simp)) (hm .jacobianStable (by simp))

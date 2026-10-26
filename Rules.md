@@ -11,7 +11,7 @@ them or filters what they admit, and says which.
 
 | | Meta-rule | Enforced by |
 | --- | --- | --- |
-| M1 | **One semantics.** Behaviour is a continuous-time or discrete-time system with ports, interpreted once by `Sentence.holds`. | single-semantics audit; `BARE_BEHAVIOUR` |
+| M1 | **One semantics.** Behaviour is a continuous-time or discrete-time system with ports, or a random continuous-time system with an operating envelope, interpreted once by `Sentence.holds`. | single-semantics audit; `BARE_BEHAVIOUR` |
 | M2 | **One connection shape.** A TMIO seed supplies one arbitrary-infimum-preserving backward map per adjacent edge; adjoints, closures, composites, denotations, exactness and soundness are generated. A family supplies only its system map, requirement satisfaction and translation. | the types `TMIO.Seed`, `Family`, `Implementation`, `Stack` |
 | M3 | **One public conclusion.** A public model conclusion is `connection% P`, a statement of the closed grammar `TMIO.ConnectionClaim`. | kernel-checked certificate; whole-package admission; bypass audit |
 | M4 | **Scaffold first.** A connection between contents (two model families, a model and its implementation, a model and its records, two representations) is first built as an Agda scaffold, then proved in Lean in the generality the scaffold fixes; the Lean module cites the scaffold. | `SCAFFOLDS` |

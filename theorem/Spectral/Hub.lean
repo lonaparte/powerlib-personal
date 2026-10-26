@@ -100,7 +100,7 @@ maps into that context. -/
 /-! ## Readings -/
 
 /-- For autonomous families a reading of the flow sentences reads every sentence: neither family
-has a port, so both are passive. -/
+has a port, so both are passive, and neither has an envelope. -/
 @[powerlib_domain] theorem mem_den_iff_of_flow {F : Family X Q n 0} {G : Family Y R m 0}
     {f : X → EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)}
     {φ : Y → EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin m)} (hF : F.IsAutonomous f)
@@ -108,9 +108,11 @@ has a port, so both are passive. -/
     (h : ∀ P : Flow.Property, x ∈ F.den (.flow P) ↔ g x ∈ G.den (.flow P)) (s : Sentence) :
     connection% (x ∈ F.den s ↔ g x ∈ G.den s) := by
   unfold powerlib.TMIO.Statement
-  rcases s with P | _
+  rcases s with P | _ | E
   · exact h P
   · rw [hF.den_passive, hG.den_passive]
+    exact iff_of_true trivial trivial
+  · rw [hF.den_envelope, hG.den_envelope]
     exact iff_of_true trivial trivial
 
 /-- An affine conjugacy of fields reads the flow sentences: when the spoke's field at `x` is the

@@ -71,6 +71,10 @@ variable {F : Family X Q n p}
     rw [h, Sentence.holds_flow_discrete] at hx
     rw [Sentence.holds_flow_discrete]
     exact Map.GloballyExponentiallyStable.globallyAsymptoticallyStable hx
+  | disturbed s _ _ _ =>
+    rw [h, Sentence.holds_flow_disturbed] at hx
+    rw [Sentence.holds_flow_disturbed]
+    exact fun ω => Flow.GloballyExponentiallyStable.globallyAsymptoticallyStable (hx ω)
 
 /-- Global exponential stability gives local exponential stability, for every family. -/
 @[powerlib_foundation] theorem den_globallyExponentiallyStable_subset_les :
@@ -87,6 +91,10 @@ variable {F : Family X Q n p}
     rw [h, Sentence.holds_flow_discrete] at hx
     rw [Sentence.holds_flow_discrete]
     exact Map.GloballyExponentiallyStable.locallyExponentiallyStable hx
+  | disturbed s _ _ _ =>
+    rw [h, Sentence.holds_flow_disturbed] at hx
+    rw [Sentence.holds_flow_disturbed]
+    exact fun ω => Flow.GloballyExponentiallyStable.locallyExponentiallyStable (hx ω)
 
 /-- Global exponential stability gives sampled contraction, for every family. -/
 @[powerlib_foundation] theorem den_globallyExponentiallyStable_subset_contractive :
@@ -102,6 +110,10 @@ variable {F : Family X Q n p}
     rw [h, Sentence.holds_flow_discrete] at hx
     rw [Sentence.holds_flow_discrete]
     exact Map.GloballyExponentiallyStable.sampledContraction hx
+  | disturbed s _ _ _ =>
+    rw [h, Sentence.holds_flow_disturbed] at hx
+    rw [Sentence.holds_flow_disturbed]
+    exact fun ω => Flow.GloballyExponentiallyStable.sampledContraction (hx ω)
 
 end Denotation
 
@@ -120,7 +132,7 @@ end Denotation
 
 /-- The global table: the local sentences to `Rs`, global asymptotic and global exponential
 stability and sampled contraction to `Rg`, decay at the rate `a` to `Rd a`, instability to `Ru`,
-conservation to `Rc`, passivity to `Rp`. -/
+conservation to `Rc`, passivity to `Rp`, the envelope sentences to no requirement. -/
 def globalTable (Rs Rg Ru Rc Rp : Set Q) (Rd : ℝ → Set Q) : Sentence → Set Q
   | .flow .lyapunovStable | .flow .locallyAsymptoticallyStable
   | .flow .locallyExponentiallyStable => Rs
@@ -130,6 +142,7 @@ def globalTable (Rs Rg Ru Rc Rp : Set Q) (Rd : ℝ → Set Q) : Sentence → Set
   | .flow .unstable => Ru
   | .flow .conservative => Rc
   | .passive => Rp
+  | .envelope _ => ∅
 
 section Table
 
@@ -137,7 +150,8 @@ variable {F : Family X Q n p} {Rs Rg Ru Rc Rp : Set Q} {Rd : ℝ → Set Q}
 
 /-- Soundness of every translation of a family with the global table: the requirement sets give
 local exponential stability (`Rs`), global exponential stability (`Rg`), decay at the rate `a`
-(`Rd a`), instability (`Ru`), conservation (`Rc`) and passivity (`Rp`). -/
+(`Rd a`), instability (`Ru`), conservation (`Rc`) and passivity (`Rp`), and every member satisfies
+the envelope sentences (a family read without an envelope, `Family.IsAutonomous.den_envelope`). -/
 @[powerlib_foundation] theorem chain_le_semantics_of_globalTable
     (ht : ∀ s, F.translate s = globalTable Rs Rg Ru Rc Rp Rd s)
     (hS : realize F.meets Rs ⊆ F.den (.flow .locallyExponentiallyStable))
@@ -145,12 +159,12 @@ local exponential stability (`Rs`), global exponential stability (`Rg`), decay a
     (hD : ∀ a, realize F.meets (Rd a) ⊆ F.den (.flow (.decay a)))
     (hU : realize F.meets Ru ⊆ F.den (.flow .unstable))
     (hC : realize F.meets Rc ⊆ F.den (.flow .conservative))
-    (hP : realize F.meets Rp ⊆ F.den .passive) :
+    (hP : realize F.meets Rp ⊆ F.den .passive) (hE : ∀ E, F.den (.envelope E) = univ) :
     ∀ P, F.chain P ≤ F.semantics P := by
   refine Family.chain_le_semantics_iff.mpr fun s x hx => ?_
   change x ∈ realize F.meets (F.translate s) at hx
   rw [ht s] at hx
-  rcases s with P | _
+  rcases s with P | _ | E
   · cases P
     case lyapunovStable => exact den_locallyExponentiallyStable_subset_lyapunovStable (hS hx)
     case locallyAsymptoticallyStable => exact den_locallyExponentiallyStable_subset_las (hS hx)
@@ -162,6 +176,8 @@ local exponential stability (`Rs`), global exponential stability (`Rg`), decay a
     case unstable => exact hU hx
     case conservative => exact hC hx
   · exact hP hx
+  · rw [hE E]
+    exact mem_univ x
 
 end Table
 

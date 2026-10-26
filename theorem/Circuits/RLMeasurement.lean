@@ -120,6 +120,7 @@ def window : Sentence → Set ℝ
   | .flow .conservative => {0}
   | .flow _ => Set.Ioi 0
   | .passive => Set.Ici 0
+  | .envelope _ => Set.univ
 
 /-- A requirement on the resistance alone has the resistances satisfying it as its kernel. -/
 @[powerlib_foundation] theorem kernImage_resistance (S : Set ℝ) :
@@ -159,7 +160,7 @@ def window : Sentence → Set ℝ
   have hexact : realize Meets (translate s) = family.den s :=
     Family.chain_eq_semantics_iff.mp chain_eq_semantics s
   rw [← hexact]
-  rcases s with P | _
+  rcases s with P | _ | E
   · cases P
     case decay a =>
       change _ = {R | 0 ≤ R ∧ a ≤ 0}
@@ -173,7 +174,8 @@ def window : Sentence → Set ℝ
          congr 1
          ext m
          simp [translate, Meets, window])
-  · rw [← kernImage_resistance (window _)]
+  all_goals
+    rw [← kernImage_resistance (window _)]
     congr 1
     ext m
     simp [translate, Meets, window]

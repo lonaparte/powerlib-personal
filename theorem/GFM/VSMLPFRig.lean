@@ -291,6 +291,7 @@ def rigTranslate : Sentence → Set RigRequirement
   | .flow .unstable => {.design .balanced, .design .physical, .lag, .lagged}
   | .flow _ => Set.univ
   | .passive => ∅
+  | .envelope _ => Set.univ
 
 /-- The platform family. -/
 def rigFamily : Family Rig RigRequirement 4 0 :=
@@ -363,8 +364,9 @@ instability, and passivity holds without requirement. -/
     (Rs := {.design .balanced, .design .physical, .design .synchronizing, .lag, .routh})
     (Ru := {.design .balanced, .design .physical, .lag, .lagged}) (fun s => ?_) rig_realize_univ
     (fun y hy => ?_) (fun y hy => ?_) rigFamily_isAutonomous.den_passive
-  · rcases s with P | _
+  · rcases s with P | _ | _
     · cases P <;> rfl
+    · rfl
     · rfl
   · rw [TMIO.mem_realize] at hy
     exact rig_mem_den_flow_iff.mpr (rig_les_of (hy (.design .physical) (by simp))

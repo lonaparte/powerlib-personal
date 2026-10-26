@@ -264,6 +264,7 @@ def translate : Sentence → Set Requirement
   | .flow .conservative => {.lossless}
   | .flow _ => {.positiveResistance}
   | .passive => {.nonnegativeResistance}
+  | .envelope _ => ∅
 
 /-- The RL family: every branch read as the port system of its plant, the requirement language
 and the translation table. -/
@@ -331,7 +332,7 @@ negative one, conservation by a lossless branch, and decay at the rate `a` by a 
   ext m
   rw [Family.mem_den, mem_realize]
   change (∀ q ∈ translate s, Meets m q) ↔ s.holds (.continuous m.plant.system)
-  rcases s with P | _
+  rcases s with P | _ | E
   · rw [Sentence.holds_flow, Linear.Plant.system_zeroInput]
     cases P
     case lyapunovStable => simpa [translate, Meets, Flow.Property.holds] using (hLS m).symm
@@ -387,5 +388,6 @@ negative one, conservation by a lossless branch, and decay at the rate `a` by a 
       by_contra hR
       exact m.plant.system.not_passive_of_equilibrium (field_hold m 1)
         (by rw [supply_hold]; linarith [not_le.mp hR]) h
+  · exact iff_of_true (fun q hq => (Set.notMem_empty q hq).elim) trivial
 
 end powerlib.Circuits.RL

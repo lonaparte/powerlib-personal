@@ -97,6 +97,7 @@ def translate : Sentence → Set Requirement
   | .passive | .flow .lyapunovStable => ∅
   | .flow .unstable | .flow (.decay _) | .flow .conservative => Set.univ
   | .flow _ => {.hurwitz}
+  | .envelope _ => ∅
 
 def family : Family (PortHamiltonian n p) Requirement n p :=
   ⟨fun h => h.plant.system, Meets, translate⟩
@@ -120,7 +121,7 @@ def family : Family (PortHamiltonian n p) Requirement n p :=
   refine Family.chain_le_semantics_iff.mpr fun s h hh => ?_
   rw [TMIO.mem_realize] at hh
   change ∀ q ∈ translate s, Meets h q at hh
-  rcases s with P | _
+  rcases s with P | _ | E
   · cases P
     case lyapunovStable => exact h.mem_den_lyapunovStable
     case unstable => exact (hh .impossible (Set.mem_univ _)).elim
@@ -130,6 +131,8 @@ def family : Family (PortHamiltonian n p) Requirement n p :=
       rw [family_isLinear.den_hurwitz (by simp)]
       exact hh .hurwitz rfl
   · exact h.mem_den_passive
+  · rw [family_isLinear.den_envelope]
+    trivial
 
 end PortHamiltonian
 

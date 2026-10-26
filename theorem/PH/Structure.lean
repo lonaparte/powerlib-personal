@@ -411,6 +411,7 @@ def translate : Sentence → Set Requirement
   | .flow .lyapunovStable => {.uniqueMin}
   | .flow _ => Set.univ
   | .passive => ∅
+  | .envelope _ => ∅
 
 /-- The counterexample family: the gradient pH system centred at the selected point. -/
 def family : Family Model Requirement 2 0 :=
@@ -458,11 +459,12 @@ Static evidence on the model, not a connection conclusion. -/
   refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
   rw [TMIO.mem_realize] at hm
   change ∀ q ∈ translate s, Meets m q at hm
-  rcases s with P | _
+  rcases s with P | _ | E
   · cases P
     case lyapunovStable => exact mem_den_lyapunovStable m (hm .uniqueMin rfl)
     all_goals exact (hm .impossible trivial).elim
   · exact mem_den_passive m
+  · exact (Family.mem_den _).mpr trivial
 
 /-- Refutation of the T-ph §1.2 corollary: the counterexample satisfies "argmin H = {x*}" and
 "R ≻ 0 on ∇H ≠ 0" (`meets_uniqueMin`, `phLaSalle_counterexample_damping_pos`), yet `x*` is not

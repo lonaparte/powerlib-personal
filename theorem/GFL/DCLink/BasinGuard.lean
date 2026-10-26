@@ -496,6 +496,7 @@ def translate (s : Sentence) : Set Requirement :=
       {.iqZero, .fourStatePoint} ∪ Requirement.fourState '' FourState.translate s
   | .flow _ => Set.univ
   | .passive => ∅
+  | .envelope _ => Set.univ
 
 /-- The carrier family: every model read as its carrier field translated to the selected
 operating point. -/
@@ -535,10 +536,12 @@ sentence (in particular local exponential stability and instability at `s = 1`).
 @[powerlib_domain] theorem flip_mem_den_iff (m : Model) (hIq : m.params.Iq = 0) (s : Sentence) :
     connection% (m.flip ∈ family.den s ↔ m ∈ family.den s) := by
   unfold powerlib.TMIO.Statement
-  rcases s with P | _
+  rcases s with P | _ | E
   · rw [family_isAutonomous.mem_den_flow, family_isAutonomous.mem_den_flow]
     exact flip_holds_iff hIq P
   · rw [family_isAutonomous.den_passive]
+    simp
+  · rw [family_isAutonomous.den_envelope]
     simp
 
 /-! ### The four-state reading -/
@@ -624,8 +627,9 @@ language, and passivity holds without requirement
     (realize_subset_den_of_fourState (hsound (.flow .locallyExponentiallyStable)))
     (realize_subset_den_of_fourState (hsound (.flow .unstable)))
     family_isAutonomous.den_passive
-  rcases s with P | _
+  rcases s with P | _ | _
   · cases P <;> rfl
+  · rfl
   · rfl
 
 /-- **Local exponential stability of the carrier.** For `I_q* = 0` and a selected point with

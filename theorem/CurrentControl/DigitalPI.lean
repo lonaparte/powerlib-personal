@@ -506,6 +506,7 @@ def translate : Sentence → Set DigitalRequirement
   | .flow .unstable => {.physical, .sampling, .lagged}
   | .flow (.decay _) | .flow .conservative | .passive => Set.univ
   | .flow _ => {.physical, .sampling, .routh}
+  | .envelope _ => ∅
 
 /-- The digital PI platforms, each read as the port system of its plant (input `i*`, output
 `i`). -/
@@ -549,8 +550,9 @@ Routh conditions exclude every strict violation. -/
 private theorem translate_eq_linearTable (s : Sentence) :
     translate s = Spectral.linearTable {.physical, .sampling, .routh}
       {.physical, .sampling, .lagged} Set.univ Set.univ (fun _ => Set.univ) s := by
-  rcases s with P | _
+  rcases s with P | _ | _
   · cases P <;> rfl
+  · rfl
   · rfl
 
 /-- Every translation of the platform family is sound: the Routh conditions give a Hurwitz plant,

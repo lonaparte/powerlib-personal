@@ -436,7 +436,7 @@ sentence. -/
   unfold powerlib.TMIO.Statement
   ext m
   rw [Set.mem_preimage]
-  rcases s with P | _
+  rcases s with P | _ | E
   · rw [codeFamily_isAutonomous.mem_den_flow, PLL.PIPLL.family_isAutonomous.mem_den_flow]
     have h1 : CodeModel.field m = fun z => m.params.codeField (z + PhasePlane.mk m.θ 0) := rfl
     have h2 : (CodeModel.toText m).field =
@@ -446,6 +446,8 @@ sentence. -/
     exact codeField_holds_iff m.params P m.θ
   · rw [codeFamily_isAutonomous.den_passive, PLL.PIPLL.family_isAutonomous.den_passive]
     simp
+  · rw [codeFamily_isAutonomous.den_envelope, PLL.PIPLL.family_isAutonomous.den_envelope]
+    exact iff_of_true trivial trivial
 
 /-- Every translation of the code-frame family is sound, by the corrected conjugacy and the
 soundness of the PI-PLL family. -/

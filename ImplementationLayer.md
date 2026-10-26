@@ -50,7 +50,8 @@ time-varying stability theorems rest on its unproved axioms and cannot be used.
 | State-dependent switching: DCM, diodes, hysteresis control, current-limit mode changes, protection | hybrid system (flows and jumps) | hybrid stability | design map | written-out trajectories in `Frequency/UFLSLatched`, `Synchronous/FaultSequence` | hybrid kind (second time axis) |
 | Dead time | discontinuous in the current sign (Filippov) | as above | design map | none | hybrid or Filippov kind |
 | Device switching transients | stiff fast dynamics | usually excluded by the ideal-switch boundary | singular perturbation | `SingularPerturbation/*` | none (boundary) |
-| Process noise | SDE | mean-square or almost-sure stability | design map | `Stochastic/*`, `Numerics/EulerMaruyama` | stochastic kind |
+| Disturbances: random parameter errors and biases | random system (a system per sample) | envelope sentences: safety over a horizon at a level, mean-square bound | design map | `Envelope/*` | random kind (done, §3.6) |
+| Process noise (white) | SDE | mean-square or almost-sure stability | design map | `Stochastic/*`, `Numerics/EulerMaruyama` | a signal in the behaviour (§3.6) |
 
 ## 3. Design
 
@@ -64,11 +65,15 @@ semantic layer by the same sentence language:
 inductive Behaviour (n p : ℕ)
   | continuous (s : Port.System n p)   -- Flow semantics
   | discrete (s : Map.System n p)      -- Map semantics: step x u, output, period T
+  | disturbed (s : Envelope.Sample → Port.System n p) (S A : Set ℝⁿ) (ν : Measure Envelope.Sample)
 def Sentence.holds : Sentence → Behaviour n p → Prop
   | .flow P, .continuous s => P.holds s.zeroInput 0
   | .passive, .continuous s => s.Passive
   | .flow P, .discrete s => P.holdsMap s.period s.zeroInput 0
   | .passive, .discrete s => s.Passive
+  | .flow P, .disturbed s _ _ _ => ∀ ω, P.holds (s ω).zeroInput 0
+  | .envelope (.safe T ε), .disturbed s S A ν => ν {ω | (s ω).Exceeds S A T} ≤ ε
+  -- the other kinds satisfy every envelope sentence; mean square and passivity similarly
 ```
 
 `Family.system : X → Behaviour n p`, with a coercion from `Port.System`; `Family.IsAutonomous`
@@ -80,8 +85,8 @@ continuous model family can be realized by a discrete implementation family dire
 The migration changed `Port/Defs`, `Port/Basic`, `Family/Basic`, `Architecture` and the
 architecture tests, added the semantic module `Map/Defs`, and needed an explicit
 `.continuous` where the coercion does not fire (a few family definitions and proofs); `TMIO/*`
-did not change. Later kinds (periodic, hybrid, stochastic) extend `Behaviour` and
-`Sentence.holds` the same way.
+did not change. The random kind (§3.6) was added the same way; later kinds (periodic, hybrid)
+extend `Behaviour` and `Sentence.holds` likewise.
 
 ### 3.2 Discrete time without a second time axis
 
@@ -131,7 +136,10 @@ sentences in the style of `decay a`:
 * `attracts r`: the region of attraction contains the ball `r` (saturation, current limiting).
 
 Limits on individual coordinates (a current magnitude, a DC-link voltage) need a weighted or
-coordinate form; the first version can use balls in scaled coordinates.
+coordinate form; the first version can use balls in scaled coordinates. `confined` is now the
+envelope sentence of §3.6 read on an undisturbed system, with arbitrary initial and safe sets
+(coordinate limits included) and a horizon: its denotation is the reachable set lying in the safe
+set (`Envelope.holds_safe_undisturbed_iff`).
 
 ### 3.4 Approximation as a realization
 
@@ -158,6 +166,7 @@ mathematics, independent of the semantic decision:
 | Exact sampling as a realization: every sentence read through the design model, exact without constraint | `LTI/ExactSampling` (scaffold `theorem/ExactSampling.agda`) |
 | Switched averaging as a realization: sound under fast switching, exact for commuting topologies, sound without constraint iff `n ≤ 1` | `Averaging/SwitchedFamily` (scaffold `theorem/SwitchedAveraging.agda`) |
 | Explicit Euler as a realization: local exponential stability realized below a step threshold, never for every step; with ports, flow sentences read through the zero input and passivity never realized when the output does not depend on the input | `Numerics/EulerRealization`, `Numerics/EulerPorts` (scaffolds `theorem/EulerDiscretization.agda`, `theorem/EulerPorts.agda`) |
+| Disturbed implementation as a realization: finite-horizon safety sound under a small disturbance (Grönwall with a margin), infinite-horizon safety under no intensity bound | `Envelope/Disturbed` (scaffold `theorem/DisturbedRealization.agda`) |
 | Instability for every small `T` when the average has an eigenvalue with positive real part | to do |
 | Quantized loops: ultimate bound from a Lyapunov decrease outside a ball | to do |
 | Saturated loops: region of attraction from a Lyapunov sublevel set | to do |
@@ -169,6 +178,30 @@ averaged model, not as an absolute period. The `T₀` extracted from the proof i
 conservative. With a constant input the switched statements are incremental: trajectories
 approach the periodic steady state, and the Hurwitz hypothesis applies to the deviation
 dynamics.
+
+### 3.6 Disturbances and the envelope sentences
+
+The random kind reads a system per sample of the disturbance, `ω ↦ s ω`, with an initial set, a
+safe set and the law of the samples. The disturbance is a random, time-invariant perturbation of
+the system (parameter errors, biases, tolerances drawn from a law); a time-varying disturbance
+enters through states of an exosystem. Storing a disturbance signal in the behaviour was tried and
+rejected: the single-semantics audit then sees a signal inside every family. White noise, which
+needs stochastic integration and a signal-valued disturbance, is therefore not represented.
+
+The envelope sentences are `safe T ε` (some solution of the zero-input dynamics from the initial
+set leaves the safe set before `T` with probability at most `ε`; `T = ⊤` ever) and
+`meanSquare T c`. Their laws (`theorem/Envelope/Basic.lean`): the infinite horizon is the meet of
+the finite horizons (continuity from below, no measurability needed), horizon and level enter
+through Galois connections with generated adjoints, safe sets are meet-closed almost surely and
+not at a positive level, Kushner's bound `E[c] T / (ℓ − v₀)` from a storage growing at a random
+rate certifies safety, and a mean-square bound bounds the probability of a large state at each
+time. The M–I realization of a deterministic design by a disturbed implementation
+(`theorem/Envelope/Disturbed.lean`) is sound over finite horizons under a small disturbance and
+not under any intensity bound over the infinite horizon.
+
+Not done: white noise (an SDE semantics); flow sentences in probability (the random kind reads
+them for every sample); a probabilistic record layer (a law of records given an implementation, so
+that records support a level `ε`).
 
 ## 4. Plan
 
@@ -195,4 +228,5 @@ dynamics.
 * Extending the shared semantic layer with system kinds (§3.1–3.2), including the recognition
   rule for discrete behaviour: decided and done for the discrete kind.
 * Adding parameterized limit sentences to the sentence language (§3.3).
+* Random systems with an operating envelope and the envelope sentences (§3.6): decided and done.
 * Later: hybrid time, which changes the single-time-axis rule.

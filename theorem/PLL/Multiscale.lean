@@ -137,6 +137,7 @@ def translate : Sentence → Set Requirement
   | .flow (.decay _) | .flow .conservative => Set.univ
   | .flow _ => {.positiveRatio}
   | .passive => ∅
+  | .envelope _ => ∅
 
 /-- The reduced slow family: every model read as its autonomous one-state field. -/
 def family : Family Model Requirement 1 0 :=
@@ -177,9 +178,10 @@ private theorem mem_den_hurwitz {m : Model} {P : Flow.Property}
     (fun m hm => Spectral.den_globallyExponentiallyStable_subset_les (hG hm)) hG
     (fun _ => Spectral.realize_univ_subset_of_eq_empty realize_univ _) (fun m hm => ?_)
     (Spectral.realize_univ_subset_of_eq_empty realize_univ _)
-    (fun m _ => by rw [family_isAutonomous.den_passive]; trivial)
-  · rcases s with P | _
+    (fun m _ => by rw [family_isAutonomous.den_passive]; trivial) family_isAutonomous.den_envelope
+  · rcases s with P | _ | _
     · cases P <;> rfl
+    · rfl
     · rfl
   have hneg : m.b / m.a < 0 := (TMIO.mem_realize _ _ _).mp hm _ rfl
   refine family_isAutonomous.mem_den_flow.mpr

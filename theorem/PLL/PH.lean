@@ -370,6 +370,7 @@ def translate : Sentence → Set Requirement
   | .flow .unstable => {.saddle}
   | .flow _ => Set.univ
   | .passive => {.nonnegativeEnergy}
+  | .envelope _ => Set.univ
 
 /-- The SRF-PLL pH family: every model read as its pH system centred at the selected point. -/
 def family : Family Model Requirement 2 1 :=
@@ -556,8 +557,9 @@ PI-PLL family, `PIPLL.chain_le_semantics`, read through the hub,
     (fun m hm => lyapunovStable_of_meets ((TMIO.mem_realize _ _ _).mp hm .wellBottom rfl))
     les_sound unstable_sound
     fun m hm => passive_of_meets ((TMIO.mem_realize _ _ _).mp hm .nonnegativeEnergy rfl)
-  rcases s with P | _
+  rcases s with P | _ | _
   · cases P <;> rfl
+  · rfl
   · rfl
 
 /-- Passivity of the SRF-PLL from the frequency-offset port to `y = h(θ)`, with storage `H ≥ 0`

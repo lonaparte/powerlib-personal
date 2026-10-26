@@ -559,6 +559,7 @@ def translate : Sentence → Set Requirement
   | .flow .unstable | .flow .conservative => Set.univ
   | .flow _ => {.positiveRotor}
   | .passive => ∅
+  | .envelope _ => ∅
 
 /-- The IFOC family: every drive read as its translated rotor-flux field. -/
 def family : Family Drive Requirement 2 0 :=
@@ -613,9 +614,10 @@ every rate up to `1/T_r` (the global table, `Spectral.chain_le_semantics_of_glob
     (fun d hd => Spectral.den_globallyExponentiallyStable_subset_les (hG hd)) hG
     (fun a d hd => ?_) (Spectral.realize_univ_subset_of_eq_empty realize_univ _)
     (Spectral.realize_univ_subset_of_eq_empty realize_univ _)
-    (fun d _ => by rw [family_isAutonomous.den_passive]; trivial)
-  · rcases s with P | _
+    (fun d _ => by rw [family_isAutonomous.den_passive]; trivial) family_isAutonomous.den_envelope
+  · rcases s with P | _ | _
     · cases P <;> rfl
+    · rfl
     · rfl
   · have hm : Meets d (.decayRateAtMost a) := (TMIO.mem_realize _ _ _).mp hd _ rfl
     exact mem_den_flow.mpr ((decay_of hm.1 hm.2.1).mono hm.2.2)

@@ -26,7 +26,8 @@ Results.
 * `Family.IsLinear`; `IsLinear.mem_den_flow` (a flow sentence holds for a member exactly when it
   holds for the zero-input field of its plant), `IsLinear.den_hurwitz`,
   `IsLinear.not_isHurwitz_of_mem_den_conservative`, `IsLinear.mem_den_conservative`,
-  `IsLinear.mem_den_passive`.
+  `IsLinear.mem_den_passive`, `IsLinear.den_envelope` (a linear family is read without an
+  envelope: every envelope sentence denotes the whole family).
 * Representations: `IsLinear.comap` (a family read in another representation stays linear),
   `IsLinear.extend` (with an extended requirement language).
 -/
@@ -73,6 +74,11 @@ def IsLinear (F : Family X Q n p) (plant : X → Plant n p) : Prop :=
   ∀ x, F.system x = (plant x).system
 
 variable {F : Family X Q n p} {plant : X → Plant n p}
+
+/-- A linear family is read without an envelope: it satisfies every envelope sentence. -/
+@[powerlib_foundation] theorem IsLinear.den_envelope (hF : F.IsLinear plant)
+    (E : Envelope.Property) : F.den (.envelope E) = Set.univ :=
+  Family.den_envelope_of_continuous hF E
 
 /-- A flow sentence holds for a member of a linear family exactly when it holds for the zero-input
 field of its plant. -/

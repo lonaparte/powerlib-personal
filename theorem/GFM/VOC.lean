@@ -511,6 +511,7 @@ def translate : Sentence → Set Requirement
   | .flow .unstable => {.growing}
   | .flow .conservative => Set.univ
   | .passive => ∅
+  | .envelope _ => ∅
 
 /-- The no-load AHO family: each parameter set read as its real field about the origin. -/
 def family : Family AHO Requirement 2 0 :=
@@ -607,9 +608,10 @@ contraction and decay rates, and passivity without requirement (the global table
     (Rg := {.decaying, .stiff}) (Ru := {.growing}) (Rc := Set.univ) (Rp := ∅)
     (Rd := fun r => {.stiff, .decayRate r}) (fun s => ?_) (fun a ha => ?_) (fun a ha => ?_)
     (fun r a ha => ?_) (fun a ha => ?_) (Spectral.realize_univ_subset_of_eq_empty realize_univ _)
-    (fun a _ => by rw [family_isAutonomous.den_passive]; trivial)
-  · rcases s with P | _
+    (fun a _ => by rw [family_isAutonomous.den_passive]; trivial) family_isAutonomous.den_envelope
+  · rcases s with P | _ | _
     · cases P <;> rfl
+    · rfl
     · rfl
   all_goals rw [TMIO.mem_realize] at ha; rw [family_isAutonomous.mem_den_flow]
   · exact les (ha .decaying rfl)

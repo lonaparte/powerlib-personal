@@ -11,9 +11,9 @@ and `theorem/Stack/Basic.lean`.
 
 | Layer | Objects | Changes when |
 | --- | --- | --- |
-| T, theory | Sentences of the semantic layer (`Sentence`: the flow properties and passivity). Generic mathematics supplies their proofs. | The mathematics changes. |
+| T, theory | Sentences of the semantic layer (`Sentence`: the flow properties, passivity, and the envelope sentences: safety over a horizon at a probability level, a mean-square bound). Generic mathematics supplies their proofs. | The mathematics changes. |
 | M, model | The theory organized for a concrete situation. A model is an idealized description of one situation (topology, control law, parameters); its behaviour is given exactly by the semantic layer. A requirement language describes classes of models and organizes the theory over them. | The modelling changes for the same theory. |
-| I, implementation | A model under realistic constraints: experimental platforms and test rigs, sampling and computation delay, sensor and actuator dynamics, quantization, limits the design did not intend, parameter tolerances, numerical integration. An implementation has its own behaviour, read by the same semantic layer, which in general differs from the behaviour of the model it realizes. | The conditions of realization change for the same model: platform, digitization, simulation method. |
+| I, implementation | A model under realistic constraints: experimental platforms and test rigs, sampling and computation delay, sensor and actuator dynamics, quantization, limits the design did not intend, parameter tolerances, disturbances, numerical integration. An implementation has its own behaviour, read by the same semantic layer, which in general differs from the behaviour of the model it realizes. | The conditions of realization change for the same model: platform, digitization, simulation method. |
 | O, observation | Records produced by implementations: sampled waveforms, frequency sweeps, identification results, with their measurement errors. A record has no behaviour of its own. | The run or the sensor changes for the same implementation. |
 
 Boundary cases follow from design intent. A designed current limit, an averaged model and
@@ -92,9 +92,10 @@ families of the library are idealized: their model boundaries list delay, PWM, s
 saturation among the exclusions, which are the realistic constraints of the implementation
 layer.
 
-The semantic layer reads two kinds of systems (`Behaviour`): continuous-time systems with ports
-(`theorem/Flow/Defs.lean`, `theorem/Port/Defs.lean`) and discrete-time systems with ports
-(`theorem/Map/Defs.lean`). A digital controller, a sampled-data loop read at its sampling instants
+The semantic layer reads three kinds of systems (`Behaviour`): continuous-time systems with ports
+(`theorem/Flow/Defs.lean`, `theorem/Port/Defs.lean`), discrete-time systems with ports
+(`theorem/Map/Defs.lean`), and random continuous-time systems with an operating envelope
+(`theorem/Port/Defs.lean`, `disturbed`). A digital controller, a sampled-data loop read at its sampling instants
 (`LTI/Sampling`), the period map of a switched converter (`Averaging/SwitchedStability`) and a
 numerical integration scheme (`Numerics/EMT`) are discrete-time implementation families of
 continuous-time models. Hybrid behaviour (state-dependent switching) is not yet read; see
@@ -164,3 +165,30 @@ The single-axis PI current loop `CurrentControl.PIParams.family` (M) has three i
   `Dynamics/Locality`); under overload the operating point is not an equilibrium and the platform
   is unstable whatever its design; global exponential stability holds for no platform, so it is
   not realized soundly even with headroom.
+
+### Disturbed implementations of deterministic designs
+
+A deterministic design is a model read with its operating envelope (initial set, safe set) and no
+disturbance; an implementation adds a random perturbation of intensity `σ` to its field and is
+judged on its own safe set, which keeps a margin around the design's
+(`theorem/Envelope/Disturbed.lean`, scaffold `theorem/DisturbedRealization.agda`). The
+disturbance is a realistic constraint of the implementation, so the connection is M–I, and the
+sentence is safety over a horizon at a probability level.
+
+* M–I: over a finite horizon the realization is sound within a Lipschitz, solvable design, the
+  margin, an intensity whose Grönwall bound at the horizon is at most the margin, and a
+  perturbation bounded with probability `1 − ε` (`noisy_realizationSoundUnder_safe`). Over the
+  infinite horizon it is not sound under any intensity bound: the drift design `ẋ = 0` is safe
+  over every horizon, while its implementation `ẋ = σ ω₀`, `ω₀` standard Gaussian, leaves its
+  safe set, the unit ball, with probability one for every `σ ≠ 0` (`noisyDrift_not_mem_den_top`,
+  `not_driftImpl_realizationSoundUnder_top`). Over each finite horizon a threshold `σ₀(T)` exists
+  (`noisyDrift_mem_den_finite`; the proof gives one of order `1/T`), and no threshold serves every
+  horizon: small disturbance and long horizon do not commute.
+* T–M, for every family: the infinite horizon is the meet of the finite horizons, and horizon and
+  level enter through Galois connections whose generated adjoints are the longest certified
+  horizon and the worst exceedance probability (`theorem/Envelope/Basic.lean`, scaffold
+  `theorem/Envelope.agda`). Safe sets are closed under countable meets almost surely only; at a
+  positive level no certified safe set need be least (`not_isLeast_safe`).
+* O: the record layer is relational (`possibly produces`): it infers what holds for every possible
+  producer and cannot attach a probability to a record. Inferring a level `ε` from records needs a
+  law of the records given the implementation, which is not represented.

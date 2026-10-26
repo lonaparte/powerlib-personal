@@ -78,17 +78,17 @@ directly in it) or a single module.
 * `Spectral`: the spectral family template, parametrized by an arbitrary model type.
 * `Stack`: the four-layer stack of models, implementations and records over arbitrary families. -/
 def genericEntries : Array Name := #[
-  `theorem.Architecture, `theorem.Attributes, `theorem.LibrarySearch,
-  `theorem.Asymptotics, `theorem.Asymptotics.Guard, `theorem.Averaging,
-  `theorem.Circuits.Interconnection, `theorem.Criteria, `theorem.DAE, `theorem.Data,
-  `theorem.Delay, `theorem.Dynamics, `theorem.Dynamics.Degenerate, `theorem.Dynamics.LaSalle,
-  `theorem.Estimation, `theorem.Family, `theorem.Flow, `theorem.Information, `theorem.LTI,
-  `theorem.Linear, `theorem.LinearAlgebra, `theorem.Map, `theorem.Modal,
-  `theorem.Network.LinearSync, `theorem.Network.Synchronization, `theorem.Network.WeightedLaplacian,
-  `theorem.Nonlinear, `theorem.NormalForm, `theorem.Numerics, `theorem.PDE, `theorem.PH,
-  `theorem.ParametricResonance, `theorem.Periodic, `theorem.PhasePlane, `theorem.Port,
-  `theorem.Potential, `theorem.SingularPerturbation, `theorem.SpecialFunctions, `theorem.Spectral,
-  `theorem.Stack, `theorem.Stochastic, `theorem.TMIO, `theorem.TMIO.Instances, `theorem.Transform,
+  `theorem.Architecture, `theorem.Attributes, `theorem.LibrarySearch, `theorem.Asymptotics,
+  `theorem.Asymptotics.Guard, `theorem.Averaging, `theorem.Circuits.Interconnection,
+  `theorem.Criteria, `theorem.DAE, `theorem.Data, `theorem.Delay, `theorem.Dynamics,
+  `theorem.Dynamics.Degenerate, `theorem.Dynamics.LaSalle, `theorem.Envelope, `theorem.Estimation,
+  `theorem.Family, `theorem.Flow, `theorem.Information, `theorem.LTI, `theorem.Linear,
+  `theorem.LinearAlgebra, `theorem.Map, `theorem.Modal, `theorem.Network.LinearSync,
+  `theorem.Network.Synchronization, `theorem.Network.WeightedLaplacian, `theorem.Nonlinear,
+  `theorem.NormalForm, `theorem.Numerics, `theorem.PDE, `theorem.PH, `theorem.ParametricResonance,
+  `theorem.Periodic, `theorem.PhasePlane, `theorem.Port, `theorem.Potential,
+  `theorem.SingularPerturbation, `theorem.SpecialFunctions, `theorem.Spectral, `theorem.Stack,
+  `theorem.Stochastic, `theorem.TMIO, `theorem.TMIO.Instances, `theorem.Transform,
   `theorem.generated.ImpedanceInterconnection]
 
 /-- Engineering models of power electronics and power systems: model families, their connection

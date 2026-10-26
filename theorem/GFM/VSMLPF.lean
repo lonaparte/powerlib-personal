@@ -544,6 +544,7 @@ def translate : Sentence → Set Requirement
   | .flow .unstable => {.balanced, .physical, .destabilizing}
   | .flow _ => Set.univ
   | .passive => ∅
+  | .envelope _ => Set.univ
 
 /-- The VSM + power-filter family. -/
 def family : Family Model Requirement 3 0 :=
@@ -639,8 +640,9 @@ and passivity holds without requirement. -/
     (Rs := {.balanced, .physical, .synchronizing, .fastFilter})
     (Ru := {.balanced, .physical, .destabilizing}) (fun s => ?_) realize_univ (fun m hm => ?_)
     (fun m hm => ?_) family_isAutonomous.den_passive
-  · rcases s with P | _
+  · rcases s with P | _ | _
     · cases P <;> rfl
+    · rfl
     · rfl
   · rw [TMIO.mem_realize] at hm
     exact mem_den_flow_iff.mpr (les_of (hm .physical (by simp)) (hm .balanced (by simp))
@@ -1094,6 +1096,7 @@ def translate : Sentence → Set Requirement
   | .flow .unstable => {.balanced, .physical, .antiSynchronizing}
   | .flow _ => Set.univ
   | .passive => ∅
+  | .envelope _ => Set.univ
 
 /-- The droop + LPF family. -/
 def family : Family Model Requirement 2 0 :=
@@ -1238,8 +1241,9 @@ are those of its swing reading (`mem_den_iff_swing`, `Synchronous.Swing.chain_le
       (fun _ hm => (den_iff_swing (physical_of (by simp) hm) _).mpr) (hsound (.flow .unstable))
   refine Spectral.chain_le_semantics_of_localTable_same (fun s => ?_) realize_univ hS hU
     family_isAutonomous.den_passive
-  rcases s with P | _
+  rcases s with P | _ | _
   · cases P <;> rfl
+  · rfl
   · rfl
 
 /-- Passivity is translated exactly: a system without ports is passive. -/

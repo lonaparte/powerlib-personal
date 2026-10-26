@@ -393,6 +393,7 @@ def translate : Sentence → Set LimitRequirement
   | .flow .unstable => {.design .unstable, .headroom}
   | .flow _ => Set.univ
   | .passive => ∅
+  | .envelope _ => Set.univ
 
 /-- The voltage-limited platforms, each read as its field about the operating point. -/
 def family : Family LimitedPI LimitRequirement 2 0 :=
@@ -571,8 +572,9 @@ passivity holds without requirement. -/
   refine Spectral.chain_le_semantics_of_localTable_same (Rs := {.design .stable, .headroom})
     (Ru := {.design .unstable, .headroom}) (fun s => ?_) realize_univ (fun y hy => ?_)
     (fun y hy => ?_) family_isAutonomous.den_passive
-  · rcases s with P | _
+  · rcases s with P | _ | _
     · cases P <;> rfl
+    · rfl
     · rfl
   · rw [TMIO.mem_realize] at hy
     exact family_isAutonomous.mem_den_flow.mpr (les_of_stable (hy (.design .stable) (by simp))

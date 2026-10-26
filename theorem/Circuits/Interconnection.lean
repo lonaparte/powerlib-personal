@@ -510,6 +510,7 @@ def translate : Sentence → Set Requirement
   | .flow (.decay a) => {.rate a}
   | .flow .conservative | .passive => Set.univ
   | .flow _ => {.impedanceStable}
+  | .envelope _ => ∅
 
 /-- The interconnection family: the closed loop as the port system of the complete system, the
 requirement language and the translation table. -/
@@ -582,7 +583,7 @@ right-half-plane zero of the return difference proves instability. -/
       (mem_realize _ _ _).mpr fun q _ => hmem q (Or.inl (hs ▸ Set.mem_univ q))
     rw [realize_univ] at this
     exact this.elim
-  rcases s with P | _
+  rcases s with P | _ | E
   · cases P
     case unstable =>
       obtain ⟨s, hs, hrd⟩ : ∃ s : ℂ, 0 < s.re ∧ ic.returnDifference s = 0 :=
@@ -603,6 +604,8 @@ right-half-plane zero of the return difference proves instability. -/
       rw [family_isLinear.den_hurwitz (by simp)]
       exact hcl .impedanceStable rfl rfl
   · exact huniv rfl
+  · rw [family_isLinear.den_envelope]
+    trivial
 
 end Interconnection
 

@@ -161,6 +161,7 @@ def translate : Sentence → Set Requirement
   | .flow .unstable => {.balanced, .unstableSlope}
   | .flow _ => Set.univ
   | .passive => ∅
+  | .envelope _ => Set.univ
 
 /-- The quasi-static PSC family. -/
 def family : Family Model Requirement 1 0 :=
@@ -211,8 +212,9 @@ without requirement. -/
   refine Spectral.chain_le_semantics_of_localTable_same (Rs := {.balanced, .stableSlope})
     (Ru := {.balanced, .unstableSlope}) (fun s => ?_) realize_univ (fun m hm => ?_)
     (fun m hm => ?_) family_isAutonomous.den_passive
-  · rcases s with P | _
+  · rcases s with P | _ | _
     · cases P <;> rfl
+    · rfl
     · rfl
   · rw [TMIO.mem_realize] at hm
     exact mem_den_flow_iff.mpr (les_of (hm .balanced (by simp)) (hm .stableSlope (by simp)))

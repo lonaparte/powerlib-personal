@@ -478,6 +478,7 @@ def translate : Sentence → Set Requirement
   | .flow .unstable => {.locked, .unstableBranch}
   | .flow _ => Set.univ
   | .passive => {.noPower}
+  | .envelope _ => ∅
 
 /-- The classical-machine family: every model read as its pH system centred at `(δ*, 0)`. -/
 def family : Family Model Requirement 2 1 :=
@@ -695,12 +696,13 @@ swing translations read through `toSwing` (`Spectral.sound_of_hub` from
   have hr := realize_translate_flow_eq_preimage
   unfold powerlib.TMIO.Statement at hs hr ⊢
   refine Family.chain_le_semantics_iff.mpr fun s => ?_
-  rcases s with P | _
+  rcases s with P | _ | E
   · exact Spectral.sound_of_hub Model.toSwing (fun m hm => (Set.ext_iff.mp (hr P) m).mp hm)
       (fun m _ => (mem_den_flow_iff_swing m P).mpr) (Family.chain_le_semantics_iff.mp hs (.flow P))
   · intro m hm
     rw [TMIO.mem_realize] at hm
     exact mem_den_passive_of_Pm_zero m (hm .noPower rfl)
+  · exact fun m _ => (Family.mem_den _).mpr trivial
 
 /-! #### Exactness of the local translations -/
 
@@ -1211,6 +1213,7 @@ def Meets (_ : SyncMachine7Params) : Requirement → Prop
 def translate : Sentence → Set Requirement
   | .passive => ∅
   | .flow _ => Set.univ
+  | .envelope _ => ∅
 
 /-- The seven-state machine family, read as its pH port system at the origin. -/
 def family : Family SyncMachine7Params Requirement 7 4 :=
@@ -1246,9 +1249,10 @@ input `(v_d, v_q, v_f, T_m^ext)` and solution segment,
   refine Family.chain_le_semantics_iff.mpr fun s p hp => ?_
   rw [TMIO.mem_realize] at hp
   change ∀ q ∈ translate s, Meets p q at hp
-  rcases s with P | _
+  rcases s with P | _ | E
   · exact (hp .impossible trivial).elim
   · exact mem_den_passive p
+  · exact (Family.mem_den _).mpr trivial
 
 /-- **No seven-state machine is locally exponentially stable at the origin**, whatever its
 parameters. A locally exponentially stable point of the `C¹` zero-input field has an injective

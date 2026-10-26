@@ -501,6 +501,7 @@ def translate : Sentence → Set Requirement
   | .flow (.decay r) => {.physical, .equilibrium, .damping, .slowRate r}
   | .flow .unstable | .flow .conservative => Set.univ
   | .passive => {.physical, .equilibrium, .damping}
+  | .envelope _ => ∅
 
 /-- The reduced matching closed-loop family. -/
 def family : Family Model Requirement 5 3 := ⟨fun m => .continuous m.system, Meets, translate⟩
@@ -531,8 +532,10 @@ def family : Family Model Requirement 5 3 := ⟨fun m => .continuous m.system, M
     (fun m hm => Spectral.den_globallyExponentiallyStable_subset_les (hG hm)) hG
     (fun r m hm => ?_) (Spectral.realize_univ_subset_of_eq_empty realize_univ _)
     (Spectral.realize_univ_subset_of_eq_empty realize_univ _) (fun m hm => ?_)
-  · rcases s with P | _
+    (Family.den_envelope_of_continuous fun _ => rfl)
+  · rcases s with P | _ | _
     · cases P <;> rfl
+    · rfl
     · rfl
   · rw [TMIO.mem_realize] at hm
     have hk := hG ((TMIO.mem_realize _ _ _).mpr fun q hq => hm q (by

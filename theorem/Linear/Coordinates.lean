@@ -91,6 +91,7 @@ open Matrix
     simp only [Sentence.holds_flow, Plant.system_zeroInput]
     exact h.holds_iff P
   | passive => exact h.passive_iff
+  | envelope E => exact Iff.rfl
 
 end Linear
 

@@ -157,6 +157,7 @@ def translate : Sentence → Set Requirement
   | .flow .unstable => {.phaseLocked, .slopeUnstable}
   | .flow _ => Set.univ
   | .passive => ∅
+  | .envelope _ => Set.univ
 
 /-- The PI-PLL family: every model read as its field translated to the selected point. -/
 def family : Family Model Requirement 2 0 :=
@@ -240,8 +241,9 @@ selected point, moved to the origin), and passivity holds without requirement. -
   refine Spectral.chain_le_semantics_of_localTable_same (Rs := {.phaseLocked, .slopeStable})
     (Ru := {.phaseLocked, .slopeUnstable}) (fun s => ?_) realize_univ (fun m hm => ?_)
     (fun m hm => ?_) family_isAutonomous.den_passive
-  · rcases s with P | _
+  · rcases s with P | _ | _
     · cases P <;> rfl
+    · rfl
     · rfl
   · rw [TMIO.mem_realize] at hm
     exact les_of_meets (hm .phaseLocked (by simp)) (hm .slopeStable (by simp))

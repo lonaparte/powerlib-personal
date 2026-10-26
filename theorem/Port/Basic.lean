@@ -23,11 +23,17 @@ Results.
 * Consequences of a storage: `System.PassiveWith.zeroInput_le`,
   `System.PassiveWith.lyapunovStable`.
 * Simplification: `System.supply_zero`, `System.autonomous_zeroInput`, and the interpretation of
-  the sentences on both kinds of systems, `Sentence.holds_flow`, `Sentence.holds_passive`,
-  `Sentence.holds_flow_discrete`, `Sentence.holds_passive_discrete`.
+  the sentences on every kind of system, `Sentence.holds_flow`, `Sentence.holds_passive`,
+  `Sentence.holds_flow_discrete`, `Sentence.holds_passive_discrete`, `Sentence.holds_envelope`,
+  `Sentence.holds_envelope_discrete` (a system read without an envelope satisfies every envelope
+  sentence), `Sentence.holds_flow_disturbed`, `Sentence.holds_passive_disturbed`,
+  `Sentence.holds_safe_disturbed`, `Sentence.holds_meanSquare_disturbed`.
 -/
 
 noncomputable section
+
+open MeasureTheory
+open scoped ENNReal
 
 namespace powerlib
 
@@ -144,5 +150,56 @@ end Port
 
 @[simp, powerlib_foundation] theorem Sentence.holds_passive_discrete {n p : ℕ}
     (s : Map.System n p) : Sentence.passive.holds (Behaviour.discrete s) ↔ s.Passive := Iff.rfl
+
+/-- A system read without an envelope has no initial states: its envelope sentences hold. -/
+@[simp, powerlib_foundation] theorem Sentence.holds_envelope {n p : ℕ} (E : Envelope.Property)
+    (s : Port.System n p) : (Sentence.envelope E).holds (s : Behaviour n p) := trivial
+
+@[simp, powerlib_foundation] theorem Sentence.holds_envelope_discrete {n p : ℕ}
+    (E : Envelope.Property) (s : Map.System n p) :
+    (Sentence.envelope E).holds (Behaviour.discrete s) := trivial
+
+@[simp, powerlib_foundation] theorem Sentence.holds_flow_disturbed {n p : ℕ} (P : Flow.Property)
+    (s : Envelope.Sample → Port.System n p) (S A : Set (EuclideanSpace ℝ (Fin n)))
+    (ν : Measure Envelope.Sample) :
+    (Sentence.flow P).holds (Behaviour.disturbed s S A ν) ↔ ∀ ω, P.holds (s ω).zeroInput 0 :=
+  Iff.rfl
+
+@[simp, powerlib_foundation] theorem Sentence.holds_passive_disturbed {n p : ℕ}
+    (s : Envelope.Sample → Port.System n p) (S A : Set (EuclideanSpace ℝ (Fin n)))
+    (ν : Measure Envelope.Sample) :
+    Sentence.passive.holds (Behaviour.disturbed s S A ν) ↔ ∀ ω, (s ω).Passive := Iff.rfl
+
+@[simp, powerlib_foundation] theorem Sentence.holds_safe_disturbed {n p : ℕ} (T ε : ℝ≥0∞)
+    (s : Envelope.Sample → Port.System n p) (S A : Set (EuclideanSpace ℝ (Fin n)))
+    (ν : Measure Envelope.Sample) :
+    (Sentence.envelope (.safe T ε)).holds (Behaviour.disturbed s S A ν) ↔
+      ν {ω | (s ω).Exceeds S A T} ≤ ε := Iff.rfl
+
+/-- A solution leaves the safe set exactly when the reached states are not all in it. -/
+@[powerlib_foundation] theorem Port.System.exceeds_iff_not_reach_subset {n p : ℕ}
+    (s : Port.System n p) (S A : Set (EuclideanSpace ℝ (Fin n))) (T : ℝ≥0∞) :
+    s.Exceeds S A T ↔ ¬ s.reach S T ⊆ A := by
+  constructor
+  · rintro ⟨x, t, ht, hT, hS, hx, hA⟩ hsub
+    exact hA (hsub ⟨x, t, ht, hT, hS, hx, rfl⟩)
+  · intro h
+    obtain ⟨y, ⟨x, t, ht, hT, hS, hx, rfl⟩, hA⟩ := Set.not_subset.mp h
+    exact ⟨x, t, ht, hT, hS, hx, hA⟩
+
+/-- The safety sentence bounds the exceedance probability, on every kind of system. -/
+@[powerlib_foundation] theorem Sentence.holds_safe_iff_exceedance {n p : ℕ} (T ε : ℝ≥0∞)
+    (b : Behaviour n p) :
+    (Sentence.envelope (.safe T ε)).holds b ↔ b.exceedance T ≤ ε := by
+  cases b with
+  | continuous s => exact ⟨fun _ => zero_le, fun _ => trivial⟩
+  | discrete s => exact ⟨fun _ => zero_le, fun _ => trivial⟩
+  | disturbed s S A ν => exact Iff.rfl
+
+@[simp, powerlib_foundation] theorem Sentence.holds_meanSquare_disturbed {n p : ℕ} (T c : ℝ≥0∞)
+    (s : Envelope.Sample → Port.System n p) (S A : Set (EuclideanSpace ℝ (Fin n)))
+    (ν : Measure Envelope.Sample) :
+    (Sentence.envelope (.meanSquare T c)).holds (Behaviour.disturbed s S A ν) ↔
+      ∀ t : ℝ, 0 ≤ t → ENNReal.ofReal t < T → ∫⁻ ω, (s ω).squareAt S t ∂ν ≤ c := Iff.rfl
 
 end powerlib

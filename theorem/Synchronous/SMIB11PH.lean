@@ -433,6 +433,7 @@ def Meets (_ : SMIB11Params) : Requirement → Prop
 def translate : Sentence → Set Requirement
   | .passive => ∅
   | .flow _ => Set.univ
+  | .envelope _ => ∅
 
 /-- The note's 11-state system, read as its pH port system at the origin. -/
 def family : Family SMIB11Params Requirement 11 4 :=
@@ -464,9 +465,10 @@ def family : Family SMIB11Params Requirement 11 4 :=
   refine Family.chain_le_semantics_iff.mpr fun s p hp => ?_
   rw [TMIO.mem_realize] at hp
   change ∀ q ∈ translate s, Meets p q at hp
-  rcases s with P | _
+  rcases s with P | _ | E
   · exact (hp .impossible trivial).elim
   · exact mem_den_passive p
+  · exact (Family.mem_den _).mpr trivial
 
 /-- **No member of the note's 11-state family is locally exponentially stable at the origin**,
 whatever its parameters. A locally exponentially stable point of the `C¹` zero-input field has an
@@ -536,9 +538,10 @@ private theorem passiveWith (p : SMIB11Params) :
   refine Family.chain_le_semantics_iff.mpr fun s p hp => ?_
   rw [TMIO.mem_realize] at hp
   change ∀ q ∈ SMIB11.translate s, SMIB11.Meets p q at hp
-  rcases s with P | _
+  rcases s with P | _ | E
   · exact (hp .impossible trivial).elim
   · exact mem_den_passive p
+  · exact (Family.mem_den _).mpr trivial
 
 /-- **No member of the corrected 11-state family is locally exponentially stable at the
 origin**, whatever its parameters, including `ω_s = 0`. The frame drift `−ω_s e_δ` is constant,

@@ -655,6 +655,7 @@ def translate : Sentence → Set Requirement
   | .flow .conservative => Set.univ
   | .flow _ => {.certified}
   | .passive => ∅
+  | .envelope _ => ∅
 
 /-- The polynomial family: every model read as its autonomous field. -/
 def family : Family Model Requirement 2 0 :=
@@ -711,7 +712,7 @@ semantics connection. -/
     rintro Γ rfl h
     exact locallyExponentiallyStable_of_linearization model (h .equilibrium (by simp))
       (h .linearizationHurwitz (by simp))
-  rcases s with P | _
+  rcases s with P | _ | E
   · rw [family_isAutonomous.mem_den_flow]
     cases P
     case lyapunovStable => exact (hlocal _ rfl hm).lyapunovStable
@@ -739,6 +740,8 @@ semantics connection. -/
       obtain ⟨c⟩ := hm .certified rfl
       exact c.globallyExponentiallyStable.sampledContraction
   · rw [family_isAutonomous.den_passive]
+    trivial
+  · rw [family_isAutonomous.den_envelope]
     trivial
 
 /-! ## Where the connections part -/

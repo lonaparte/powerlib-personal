@@ -6,7 +6,8 @@ import theorem.TMIO.Representation
 
 A model family enters the library through three semantic maps and nothing else: its system map,
 reading each complete system as a system of one of the kinds the semantic layer reads (a
-continuous-time or a discrete-time system with ports, `Behaviour`); the satisfaction relation of
+continuous-time or a discrete-time system with ports, or a random continuous-time system with an
+operating envelope, `Behaviour`); the satisfaction relation of
 its requirement language; and the translation of every sentence into requirements.
 
 Two connections between sentences and complete systems are generated from them. The semantics
@@ -51,6 +52,8 @@ Results.
 * Autonomous families: `IsAutonomous.mem_den_flow`, `IsAutonomous.den_passive`,
   `IsAutonomousMap.mem_den_flow`, `IsAutonomousMap.den_passive` (a system without ports is
   passive).
+* Families read without an envelope: `den_envelope_of_continuous`, `IsAutonomous.den_envelope`,
+  `IsAutonomousMap.den_envelope` (every envelope sentence denotes the whole family).
 
 Family and connection conclusions.
 * `Family.comap g : Family Y Q n p` (the family read in another representation, through a map of
@@ -302,6 +305,15 @@ variable {F}
 
 /-! ## Families of autonomous fields -/
 
+/-- A family whose complete systems are all continuous-time systems read without an envelope
+satisfies every envelope sentence. -/
+@[powerlib_foundation] theorem den_envelope_of_continuous {X Q : Type*} {n p : ℕ}
+    {F : Family X Q n p} {sys : X → Port.System n p} (h : ∀ x, F.system x = .continuous (sys x))
+    (E : Envelope.Property) : F.den (.envelope E) = Set.univ :=
+  Set.eq_univ_of_forall fun x => by
+    rw [mem_den, h x]
+    exact Sentence.holds_envelope E _
+
 section Autonomous
 
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
@@ -322,6 +334,12 @@ def IsAutonomous (F : Family X Q n 0) (field : X → ℝⁿ → ℝⁿ) : Prop :
   ext x
   simp only [mem_den, Set.mem_univ, iff_true, hF x, Sentence.holds_passive]
   exact Port.System.autonomous_passive _
+
+/-- A family read without an envelope satisfies every envelope sentence. -/
+@[powerlib_foundation] theorem IsAutonomous.den_envelope {F : Family X Q n 0}
+    {field : X → ℝⁿ → ℝⁿ} (hF : F.IsAutonomous field) (E : Envelope.Property) :
+    F.den (.envelope E) = Set.univ :=
+  den_envelope_of_continuous hF E
 
 end Autonomous
 
@@ -350,6 +368,14 @@ def IsAutonomousMap (F : Family X Q n 0) (period : X → ℝ) (map : X → ℝ�
   simp only [mem_den, Set.mem_univ, iff_true, hF x, Sentence.holds_passive_discrete]
   exact ⟨fun _ => 0, fun _ => le_rfl, fun _ u => by
     simp [Map.System.supply, Map.System.autonomous, Subsingleton.elim u 0]⟩
+
+/-- A family of maps is read without an envelope: it satisfies every envelope sentence. -/
+@[powerlib_foundation] theorem IsAutonomousMap.den_envelope {F : Family X Q n 0}
+    {period : X → ℝ} {map : X → ℝⁿ → ℝⁿ} (hF : F.IsAutonomousMap period map)
+    (E : Envelope.Property) : F.den (.envelope E) = Set.univ := by
+  ext x
+  simp only [mem_den, Set.mem_univ, iff_true, hF x]
+  exact Sentence.holds_envelope_discrete E _
 
 end AutonomousMap
 

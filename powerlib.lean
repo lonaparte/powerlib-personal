@@ -95,6 +95,8 @@ import theorem.Dynamics.State
 import theorem.Dynamics.Transport
 import theorem.Dynamics.PiecewiseAffine
 import theorem.Dynamics.Pendulum
+import theorem.Envelope.Basic
+import theorem.Envelope.Disturbed
 import theorem.Estimation.Bayes
 import theorem.Estimation.BayesKL
 import theorem.Estimation.CondExpL2

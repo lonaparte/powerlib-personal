@@ -743,6 +743,7 @@ def translate : Sentence → Set Requirement
   | .flow .unstable => {.equilibrium, .positiveReference, .detNeg}
   | .flow _ => Set.univ
   | .passive => ∅
+  | .envelope _ => Set.univ
 
 /-- The model-B family: every model read as its field translated to the selected state. -/
 def family : Family Model Requirement 4 0 :=
@@ -783,8 +784,9 @@ which it agrees with model B), and passivity holds without requirement. -/
     (Rs := {.equilibrium, .positiveReference, .routh})
     (Ru := {.equilibrium, .positiveReference, .detNeg})
     (fun s => ?_) realize_univ (fun m hm => ?_) (fun m hm => ?_) family_isAutonomous.den_passive
-  · rcases s with P | _
+  · rcases s with P | _ | _
     · cases P <;> rfl
+    · rfl
     · rfl
   · rw [TMIO.mem_realize] at hm
     exact les_of_meets (hm .equilibrium (by simp)) (hm .positiveReference (by simp))

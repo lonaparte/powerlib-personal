@@ -87,6 +87,10 @@ variable {F : Family X Q n p}
     rw [h, Sentence.holds_flow_discrete] at hx
     rw [Sentence.holds_flow_discrete]
     exact Map.LocallyExponentiallyStable.localAsymptoticStable hx
+  | disturbed s _ _ _ =>
+    rw [h, Sentence.holds_flow_disturbed] at hx
+    rw [Sentence.holds_flow_disturbed]
+    exact fun ω => Flow.locallyExponentiallyStable_localAsymptoticStable (hx ω)
 
 /-- Local asymptotic stability gives Lyapunov stability, for every family. -/
 @[powerlib_foundation] theorem den_las_subset_lyapunovStable :
@@ -102,6 +106,10 @@ variable {F : Family X Q n p}
     rw [h, Sentence.holds_flow_discrete] at hx
     rw [Sentence.holds_flow_discrete]
     exact hx.1
+  | disturbed s _ _ _ =>
+    rw [h, Sentence.holds_flow_disturbed] at hx
+    rw [Sentence.holds_flow_disturbed]
+    exact fun ω => (hx ω).1
 
 @[powerlib_foundation] theorem den_locallyExponentiallyStable_subset_lyapunovStable :
     F.den (.flow .locallyExponentiallyStable) ⊆ F.den (.flow .lyapunovStable) :=
@@ -134,13 +142,15 @@ end Denotation
 /-! ## The local table and soundness -/
 
 /-- The local table: Lyapunov stability to `Rl`, local asymptotic and local exponential stability
-to `Rs`, instability to `Ru`, passivity to `Rp`, every other flow sentence to the whole language. -/
+to `Rs`, instability to `Ru`, passivity to `Rp`, every other flow sentence and every envelope
+sentence to the whole language. -/
 def localTable (Rl Rs Ru Rp : Set Q) : Sentence → Set Q
   | .flow .lyapunovStable => Rl
   | .flow .locallyAsymptoticallyStable | .flow .locallyExponentiallyStable => Rs
   | .flow .unstable => Ru
   | .flow _ => univ
   | .passive => Rp
+  | .envelope _ => univ
 
 section Table
 
@@ -163,7 +173,7 @@ instability and passivity. -/
   have hnone : x ∈ realize F.meets univ → x ∈ F.den s := fun h => by
     rw [hinc] at h
     exact h.elim
-  rcases s with P | _
+  rcases s with P | _ | _
   · cases P
     case lyapunovStable => exact hL hx
     case locallyAsymptoticallyStable => exact den_locallyExponentiallyStable_subset_las (hS hx)
@@ -171,6 +181,7 @@ instability and passivity. -/
     case unstable => exact hU hx
     all_goals exact hnone hx
   · exact hP hx
+  · exact hnone hx
 
 /-- The common case: Lyapunov stability shares the requirements of the attractive local
 sentences, passivity has none, and every member is passive (a system without ports). -/
@@ -379,6 +390,9 @@ local asymptotic stability refutes the exactness of that translation. -/
   | discrete s' =>
     rw [h, Sentence.holds_flow_discrete] at hx hl
     exact hx hl
+  | disturbed s' _ _ _ =>
+    rw [h, Sentence.holds_flow_disturbed] at hx hl
+    exact hx default (hl default)
 
 end Witness
 

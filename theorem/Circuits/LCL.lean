@@ -367,6 +367,7 @@ def translate : Sentence → Set Requirement
   | .flow .conservative => {.lossless}
   | .flow _ => {.poleStable}
   | .passive => {.passive}
+  | .envelope _ => ∅
 
 /-- The LCL family: every circuit read as the port system of its plant, the requirement language
 and the translation table. -/
@@ -403,7 +404,7 @@ conservation of that energy, and a right-half-plane pole proves instability. -/
   refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
   rw [mem_realize] at hm
   change ∀ q ∈ translate s, Meets m q at hm
-  rcases s with P | _
+  rcases s with P | _ | E
   · cases P
     case lyapunovStable =>
       have hp : m.Passive := hm .passive rfl
@@ -423,6 +424,8 @@ conservation of that energy, and a right-half-plane pole proves instability. -/
       rw [family_isLinear.den_hurwitz (by simp), Set.mem_ofPred_eq, isHurwitz_iff_stable]
       exact hm .poleStable rfl
   · exact family_isLinear.mem_den_passive (kyp m (hm .passive rfl))
+  · rw [family_isLinear.den_envelope]
+    trivial
 
 /-- On the attractive sentences and sampled contraction the chain agrees with the semantics: pole
 stability is their exact translation, for every circuit, passive or not. -/

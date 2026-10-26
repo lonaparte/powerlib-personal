@@ -73,6 +73,7 @@ def translate : Sentence → Set Requirement
   | .flow .conservative => Set.univ
   | .passive => ∅
   | .flow _ => {.hurwitz}
+  | .envelope _ => ∅
 
 /-- The family of rational state matrices. -/
 def family : Family (Matrix (Fin n) (Fin n) ℚ) Requirement n 0 :=
@@ -121,7 +122,7 @@ ports is passive. -/
       (mem_realize _ _ _).mpr fun q _ => hA q (hs ▸ Set.mem_univ q)
     rw [realize_univ] at this
     exact this.elim
-  rcases s with P | _
+  rcases s with P | _ | E
   · cases P
     case unstable =>
       obtain ⟨s, hs, hre⟩ := hA .rightHalfPlaneRoot rfl
@@ -134,6 +135,8 @@ ports is passive. -/
       rw [family_isLinear.den_hurwitz (by simp)]
       exact hA .hurwitz rfl
   · exact (Family.mem_den _).mpr (Port.System.passive_of_noPorts _)
+  · rw [family_isLinear.den_envelope]
+    trivial
 
 /-- Acceptance by the synthesizer entails the Hurwitz property: the accepted proposal is a
 kernel-checked certificate. -/

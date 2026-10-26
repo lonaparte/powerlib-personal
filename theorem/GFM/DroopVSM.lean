@@ -332,6 +332,7 @@ def vsmTranslate : Sentence → Set VSMRequirement
   | .flow .unstable => {.smooth, .balanced, .inertia, .destabilizing}
   | .flow _ => Set.univ
   | .passive => ∅
+  | .envelope _ => Set.univ
 
 /-- The VSM family: every model read as its field translated to the selected state. -/
 def vsmFamily : Family VSMModel VSMRequirement 2 0 :=
@@ -399,8 +400,9 @@ private theorem vsm_unstable {m : VSMModel} (hsm : vsmMeets m .smooth)
     (Rs := {.smooth, .balanced, .inertia, .damped, .synchronizing})
     (Ru := {.smooth, .balanced, .inertia, .destabilizing}) (fun s => ?_) vsm_realize_univ
     (fun m hm => ?_) (fun m hm => ?_) vsmFamily_isAutonomous.den_passive
-  · rcases s with P | _
+  · rcases s with P | _ | _
     · cases P <;> rfl
+    · rfl
     · rfl
   · rw [TMIO.mem_realize] at hm
     exact vsm_mem_den_flow_iff.mpr (vsm_les (hm .smooth (by simp)) (hm .balanced (by simp))
@@ -516,9 +518,10 @@ private theorem holds_iff (m : DroopModel) (P : Flow.Property) :
 private theorem holds_eq : droopFamily.Holds = (vsmFamily.comap DroopModel.toVSM).Holds := by
   funext m s
   apply propext
-  rcases s with P | _
+  rcases s with P | _ | E
   · exact holds_iff m P
   · exact ⟨fun _ => Port.System.autonomous_passive _, fun _ => Port.System.autonomous_passive _⟩
+  · exact iff_of_true trivial trivial
 
 /-- **Large-signal equivalence as a comparison of connections.** The semantics connection of the
 droop + LPF family is the semantics connection of the VSM family read through `toVSM`

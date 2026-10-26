@@ -829,6 +829,7 @@ def translate : Sentence → Set Requirement
       {.physical, .synchronizing, .damped, .matching}
   | .flow _ => Set.univ
   | .passive => ∅
+  | .envelope _ => Set.univ
 
 /-- The closed loop translated to the operating point. -/
 def Model.translated (m : Model) (z : State 4) : State 4 := m.field (z + m.point)
@@ -874,8 +875,9 @@ Static evidence on the model, not a connection conclusion. -/
   refine Spectral.chain_le_semantics_of_localTable (Rl := {.physical, .synchronizing, .dissipative})
     (Rs := {.physical, .synchronizing, .damped, .matching}) (Ru := Set.univ) (Rp := ∅)
     (fun s => ?_) realize_univ (fun m hm => ?_) (fun m hm => ?_) (fun m hm => ?_) (fun m _ => ?_)
-  · rcases s with P | _
+  · rcases s with P | _ | _
     · cases P <;> rfl
+    · rfl
     · rfl
   · rw [TMIO.mem_realize] at hm
     obtain ⟨hC, hL, hR⟩ : Meets m .physical := hm .physical (by simp)

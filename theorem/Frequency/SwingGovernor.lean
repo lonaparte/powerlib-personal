@@ -397,6 +397,7 @@ def translate : Sentence → Set Requirement
   | .flow .conservative => Set.univ
   | .flow _ => {.stable}
   | .passive => Set.univ
+  | .envelope _ => ∅
 
 /-- The swing + governor family: every model read as the port system of its plant (load
 deviation in, frequency deviation out). -/
@@ -427,8 +428,9 @@ private theorem stable_mem_den {m : Model} (h : Meets m .stable) {P : Flow.Prope
 /-- The swing + governor translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
 private theorem translate_eq_linearTable (s : Sentence) :
     translate s = Spectral.linearTable {.stable} {.unstable} univ univ (fun a => {.rate a}) s := by
-  rcases s with P | _
+  rcases s with P | _ | _
   · cases P <;> rfl
+  · rfl
   · rfl
 
 /-- Every translation of the swing + governor family is sound: its translation chain lies below
@@ -1018,6 +1020,7 @@ def reducedTranslate : Sentence → Set ReducedRequirement
   | .flow .conservative => Set.univ
   | .flow _ => {.stable}
   | .passive => Set.univ
+  | .envelope _ => ∅
 
 /-- The first-order family: every model read as the port system of its plant (load deviation
 in, frequency deviation out). -/
@@ -1050,8 +1053,9 @@ private theorem reduced_mem_den_decay_iff (r : ReducedModel) (a : ℝ) :
 private theorem reducedTranslate_eq_linearTable (s : Sentence) :
     reducedTranslate s =
       Spectral.linearTable {.stable} {.unstable} univ univ (fun a => {.rate a}) s := by
-  rcases s with P | _
+  rcases s with P | _ | _
   · cases P <;> rfl
+  · rfl
   · rfl
 
 /-- Every translation of the first-order family is sound (the linear table,
