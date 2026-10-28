@@ -556,7 +556,8 @@ system at the origin. -/
 
 /-- A lower bound on the Hamiltonian places a member in the passivity denotation. -/
 @[tmio TM, powerlib_foundation] theorem IsNonlinearPH.mem_den_passive (hF : F.IsNonlinearPH model) {x : X}
-    (hH : BddBelow (range (model x).H)) : x ∈ F.den .passive := by
+    (hH : BddBelow (range (model x).H)) : connection% (x ∈ F.den .passive) := by
+  unfold powerlib.TMIO.Statement
   rw [mem_den, hF x]
   exact (model x).holds_passive hH
 

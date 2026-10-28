@@ -387,10 +387,14 @@ plane: the whole requirement language is inconsistent. -/
   exact absurd (h .poleStable s hs) (not_lt.mpr hre.le)
 
 /-- A conserving circuit is not pole-stable: every solution of a Hurwitz plant converges. -/
-@[tmio TM, powerlib_foundation] theorem not_stable_of_conservative {m : Circuit}
-    (h : m ∈ family.den (.flow .conservative)) : ¬ m.Stable := by
-  rw [← isHurwitz_iff_stable]
+@[tmio TM, powerlib_domain] theorem not_stable_of_conservative {m : Circuit}
+    (h : m ∈ family.den (.flow .conservative)) :
+    connection% (m ∉ realize Meets {.poleStable}) := by
+  unfold powerlib.TMIO.Statement
+  intro hm
+  have hs : m.Stable := (mem_realize Meets {.poleStable} m).mp hm .poleStable rfl
   exact family_isLinear.not_isHurwitz_of_mem_den_conservative (by norm_num) h
+    ((isHurwitz_iff_stable m).mpr hs)
 
 /-! ## Faithfulness -/
 
@@ -460,8 +464,10 @@ pole-stable, so its solutions converge. -/
     rcases hq with hq | hq
     · have hq' : q = .lossless := hq
       subst hq'
-      have hnd : ¬ m.Damped := fun hd => not_stable_of_conservative hc
-        ((passive_stable_iff m hpass).mpr hd)
+      have hnd : ¬ m.Damped := by
+        intro hd
+        apply not_stable_of_conservative hc
+        simpa [mem_realize, Meets] using (passive_stable_iff m hpass).mpr hd
       show m.first.resistance = 0 ∧ m.second.resistance = 0
       simpa [Circuit.Damped] using hnd
     · exact hp q hq

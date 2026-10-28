@@ -124,7 +124,7 @@ Each reviewed public connection theorem has exactly one. The attributes are the
 sole classification source; queries rebuild their index without a separate
 catalog or handwritten theorem-to-kind regression list. The current source coverage
 is 2,798 theorems in 405 modules (T 1,682, M 334, T–M 685, M–I 88, I–O 9), including
-111 private helpers. All 813 public connections remain covered; 1,985 ordinary
+111 private helpers. All 832 public connections remain covered; 1,966 ordinary
 theorems have been individually reviewed and annotated. The remaining 5,086
 theorems are unclassified. Reviewing a module does not classify every theorem in it.
 
@@ -164,9 +164,12 @@ Admission keeps the stored certificate, so every restriction on the shape of a
 claim is a constructor of the kernel grammar, not an elaborator check.
 
 The constructors `allType`, `iffCondition` and `existsGuard` carry the binders and
-side conditions of Rules §3a. Endpoints and binders have fixed universes: one claim
-mixes endpoints generated from sentences and from model sets, so a
-universe-polymorphic claim would need a certificate with a universe per node. Side
+side conditions of Rules §3a. Certificate universes are inferred from the actual
+maps and endpoints. Symmetric atomic constructors let the same certificate mix
+both directions of one pair of endpoint universes, for example sentence sets and
+model sets. External theorem parameters are checked separately, preserving the
+original `Type*` scope of generic laws. This does not require a separate universe
+for every node or an arbitrary-proposition constructor. Side
 conditions are `TMIO.Condition` values. A tautological claim can still carry its
 condition, as `memberIff` can carry any right side; neither adds a kind of
 conclusion, and the bypass audit still reads every operand.
@@ -178,6 +181,14 @@ claim operands and hypothesis types do not directly state behaviour. At a
 certified endpoint it checks the input and structural maps while keeping the
 semantic map abstract. A raw behavioural set passed to an identity connection
 therefore fails admission even though that connection is mathematically valid.
+
+An interface theorem about an arbitrary `Family` may expose the library's own
+semantic predicates. This allowance requires that the family occur in the
+conclusion and that the statement have no concrete model dependency, including
+through first-party value definitions. It still checks the full connection
+certificate and rejects raw signals, discrete evolution and ambient behavioural
+predicates. Model families defined in the current module participate in this
+check as well as imported families; metadata cannot grant an exemption.
 
 The default Lake target `powerlib` first runs the source classification preflight,
 then builds every module selected by all package library globs and generates an
@@ -246,13 +257,17 @@ proved separating models rather than an unsupported completeness claim.
 
 ## Validation
 
-For the source-attribute change, verification consists of targeted attribute-engine
-checks with Lean 4.34.1 and source classification counts covering the 2,798 reviewed
-theorems, including the unchanged 813 public connections. For the latest batch,
-the source comparison also verifies that only attributes were added: theorem
-statements and proofs are unchanged. The mathematical library has not been
-recompiled for these changes, and Mathlib has not been built from source. This is not a completed run
-of the full-module environment check or the mathematical test suite.
+The source-attribute checks cover 2,798 reviewed theorems. The subsequent connection
+migration wraps 19 more declarations, bringing public connections to 832 without
+changing their TMIO attributes. Sixteen retain their original propositions and
+generic parameters; three circuit declarations use equivalent endpoint formulations.
+Targeted Lean 4.34.1 checks compile the connection grammar, elaborator and
+`ClaimUniverses` regression tests against real TMIO definitions. Only 18 missing
+Mathlib dependencies were built on demand. The admission metaprogram was also
+typechecked and exercised against isolated lightweight interface fixtures; that
+does not validate the real engineering modules. Their complete dependency caches
+were unavailable, so this is not a completed run of the full-module environment
+check or mathematical test suite.
 
 The build figures below describe the previously validated `bb46a37` baseline,
 before the concrete-record cleanup and source-attribute classification. They

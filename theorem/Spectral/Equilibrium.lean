@@ -28,8 +28,8 @@ Results.
   requirements; `exact_of_equilibrium`, the same without a context.
 
 Family and connection conclusions.
-* None: the module states the law once for arbitrary families; model modules instantiate it and
-  publish their conclusions as connection statements.
+* `exactUnder_of_equilibrium` is a generic foundation connection establishing translation
+  exactness. Model modules instantiate it for their own engineering conclusions.
 -/
 
 noncomputable section
@@ -59,8 +59,9 @@ the translation of `P` is exact within `Δ`. -/
     (hdeg : ∀ x ∈ realize F.meets Δ, f x (pt x) = 0 → ¬ G x → x ∉ F.den (.flow P))
     (hcomplete : ∀ x ∈ realize F.meets Δ, f x (pt x) = 0 → G x →
       x ∈ realize F.meets (F.translate (.flow P))) :
-    F.ExactUnder Δ (.flow P) :=
-  exactUnder_iff_forall.mpr fun x hΔ => ⟨hsound x hΔ, fun hx => by
+    connection% (F.ExactUnder Δ (.flow P)) := by
+  unfold powerlib.TMIO.Statement
+  exact exactUnder_iff_forall.mpr fun x hΔ => ⟨hsound x hΔ, fun hx => by
     have hls : LyapunovStable (f x) (pt x) := by
       have h := (hden x P).mp hx
       rcases hP with rfl | rfl | rfl

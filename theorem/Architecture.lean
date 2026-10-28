@@ -19,9 +19,12 @@ Scope.
 * Every public, model-specific behavioural conclusion must be a typed connection `Statement`,
   whatever its label; at a certified endpoint the inputs and structural maps are inspected while
   the semantic map stays abstract.
-* A statement's telescope is encoded with the claim grammar too: type parameters (a law about
-  arbitrary families of `Type`) are binders over `Type`; numeric side conditions are read where
-  the grammar admits them, and every operand, condition and hypothesis passes the bypass audit.
+* Every published conclusion must fit the closed connection grammar; its external telescope is
+  checked separately. Model-specific statements also pass the behavioural bypass audit. A generic
+  theorem whose conclusion depends on an arbitrary Family may expose the library's semantic
+  interface (`holds`, reachability, and similar notions); it still passes the ordinary
+  semantic-layer audit. A phantom Family
+  parameter, a presentation label, or an actual model cannot obtain that generic treatment.
 
 Source: the library rules (`Rules.md` §3a, generated connections and public conclusions) and the
 design of public admission (`Architecture.md`); the connection grammar of
@@ -419,12 +422,14 @@ namespace powerlib.Architecture
 
 open Lean Meta Elab Command SemanticAudit
 
-/-- Ordinary notation must compile to the kernel-checked closed grammar. -/
-def conclusionOnConnection (e : Expr) : MetaM Bool := do
-  try
-    discard <| TMIO.ClaimElab.encode e
-    return true
-  catch _ => return false
+/-- A theorem's conclusion must fit the closed grammar. Its external parameters are checked
+separately by the semantic audit; they are not binders inside its published certificate. -/
+def conclusionOnConnection (e : Expr) : MetaM Bool :=
+  forallTelescope e fun _ body => do
+    try
+      discard <| TMIO.ClaimElab.encode body
+      return true
+    catch _ => return false
 
 /-- Published claims carry the certificate in their type, independently of attributes. -/
 partial def statement? (e : Expr) (fuel : Nat := 24) : MetaM (Option Expr) := do
@@ -460,13 +465,6 @@ def rejection (ctx : Ctx) (type : Expr) : MetaM (Option String) := do
     let body := (← statement? body).getD body
     visit (classify ctx) body true false false
 
-def audit (names : Array Name) : CommandElabM Unit := do
-  liftTermElabM do
-    let ctx ← context
-    for name in names do
-      if let some reason ← rejection ctx (← getConstInfo name).type then
-        throwError "Domain theorem {name} violates connection admission: {reason}"
-
 /-- Model types are inferred from the system-domain parameter of actual Family definitions.
 This is a semantic ownership boundary, not a list of model or theorem names. -/
 private partial def unfoldModelAlias (e : Expr) (owners : Array Name := #[])
@@ -483,32 +481,43 @@ private partial def unfoldModelAlias (e : Expr) (owners : Array Name := #[])
 
 def modelTypes (owners : Array Name := #[]) : MetaM (Array (Nat × Expr)) := do
   let env ← getEnv
-  let mut out : Array (Nat × Expr) := #[]
+  let mut names : Array Name := #[]
   for i in [:env.header.moduleNames.size] do
     unless if owners.isEmpty then Registry.isFirstPartyModule env.header.moduleNames[i]!
       else owners.contains env.header.moduleNames[i]! do continue
-    for name in env.header.moduleData[i]!.constNames do
-      let some info := env.find? name | continue
-      if info matches .defnInfo _ | .opaqueInfo _ then
-        if ← isProp info.type then continue
-        let resultHead := info.type.getForallBody.getAppFn
-        let isAlias := if let .const c _ := resultHead then
-            match env.find? c with
-            | some (.defnInfo _) =>
-              let owner := (moduleOf? env c).getD env.mainModule
-              Registry.isFirstPartyModule owner || owners.contains owner
-            | _ => false
-          else false
-        unless info.type.getUsedConstants.contains ``Family || isAlias do continue
-        let found ← forallTelescopeReducing info.type fun _ body => do
-          let body ← whnf body
-          unless body.getAppFn.isConstOf ``Family do return none
-          let model := body.getAppArgs[0]!
-          if model.isFVar then return none
-          let model ← unfoldModelAlias model owners
-          return some (← pattern model)
-        if let some found := found then
-          unless out.contains found do out := out.push found
+    names := names ++ env.header.moduleData[i]!.constNames
+  -- Module-boundary feedback must include families defined in the current module,
+  -- not only the imported inventory used by the complete-package audit.
+  if (owners.isEmpty && Registry.isFirstPartyModule env.mainModule) ||
+      owners.contains env.mainModule then
+    for (name, _) in (declRangeExt.getState env (asyncMode := .local)).toList do
+      if (env.getModuleIdxFor? name).isNone &&
+          (env.findAsync? name (skipRealize := true)).any
+            (fun info => info.kind == .defn || info.kind == .opaque) then
+        names := names.push name
+  let mut out : Array (Nat × Expr) := #[]
+  for name in names do
+    let some info := env.find? name | continue
+    if info matches .defnInfo _ | .opaqueInfo _ then
+      if ← isProp info.type then continue
+      let resultHead := info.type.getForallBody.getAppFn
+      let isAlias := if let .const c _ := resultHead then
+          match env.find? c with
+          | some (.defnInfo _) =>
+            let owner := (moduleOf? env c).getD env.mainModule
+            Registry.isFirstPartyModule owner || owners.contains owner
+          | _ => false
+        else false
+      unless info.type.getUsedConstants.contains ``Family || isAlias do continue
+      let found ← forallTelescopeReducing info.type fun _ body => do
+        let body ← whnf body
+        unless body.getAppFn.isConstOf ``Family do return none
+        let model := body.getAppArgs[0]!
+        if model.isFVar then return none
+        let model ← unfoldModelAlias model owners
+        return some (← pattern model)
+      if let some found := found then
+        unless out.contains found do out := out.push found
   return out
 
 private def canUnfoldModelAlias (e : Expr) (owners : Array Name) : MetaM Bool := do
@@ -591,12 +600,74 @@ private def usesModel (models : Array (Nat × Expr)) (e : Expr)
   let cache ← IO.mkRef {}
   usesModelCached cache models e owners
 
+/-- A generic interface must not hide an engineering model behind a value alias whose result
+type has forgotten the model (for example a concrete circuit exported as a Port.System).
+Follow first-party definitions once each; proof bodies and upstream implementation details are
+irrelevant. This extra dependency walk is only needed when considering a generic exemption. -/
+private partial def modelDependency (ctx : Ctx) (models : Array (Nat × Expr))
+    (cache : ModelUseCache) (seen : IO.Ref (Std.HashSet Name)) (e : Expr) : MetaM Bool := do
+  if ← usesModelCached cache models e ctx.owners then return true
+  for name in e.getUsedConstants do
+    if (← seen.get).contains name then continue
+    seen.modify (·.insert name)
+    let env ← getEnv
+    let owner := (moduleOf? env name).getD env.mainModule
+    unless Registry.isFirstPartyModule owner || ctx.owners.contains owner do continue
+    let info ← getConstInfo name
+    if ← isProp info.type then continue
+    let value? := match info with
+      | .defnInfo value => some value.value
+      | .opaqueInfo value => some value.value
+      | _ => none
+    if let some value := value? then
+      if ← modelDependency ctx models cache seen value then return true
+  return false
+
+private def dependsOnModel (ctx : Ctx) (models : Array (Nat × Expr)) (e : Expr) :
+    MetaM Bool := do
+  let cache ← IO.mkRef {}
+  let seen ← IO.mkRef {}
+  modelDependency ctx models cache seen e
+
+/-- Generic semantic support is recognized from the mathematical parameters, not a metadata
+label. The complete-system type must be arbitrary, and the Family must occur in the conclusion;
+an unused Family or one that appears only in a premise is not an interface for that conclusion. -/
+private def hasGenericFamilyConclusion (type : Expr) : MetaM Bool :=
+  forallTelescope type fun xs body => do
+    let body := (← statement? body).getD body
+    xs.anyM fun x => do
+      let ty ← whnf (← inferType x)
+      unless ty.getAppFn.isConstOf ``Family do return false
+      let model ← whnf ty.getAppArgs[0]!
+      unless model.isFVar do return false
+      return (body.find? (· == x)).isSome
+
+/-- Generic Family laws may describe the library's semantic interface. They still reject
+signals, discrete evolution and behavioural predicates imported from outside the library. -/
+private def genericRejection (ctx : Ctx) (type : Expr) : MetaM (Option String) :=
+  forallTelescope type fun xs body => do
+    for x in xs do
+      let ty ← inferType x
+      if let some reason ← (outside ctx).binder ty false then return some reason
+      let ty := (← statement? ty).getD ty
+      if let some reason ← visit (outside ctx) ty true false false then return some reason
+    let body := (← statement? body).getD body
+    visit (outside ctx) body true false false
+
 /-- Private proof helpers and generic semantic support are implementation evidence.
 Every public, model-specific behavioural conclusion must use Statement; its label is irrelevant.
 Static mathematics is checked normally and does not need a classification annotation. -/
 def publicTypeRejection (ctx : Ctx) (models : Array (Nat × Expr)) (type : Expr) :
     MetaM (Option String) := do
-  if (← statement? type).isSome then return ← rejection ctx type
+  if (← statement? type).isSome then
+    -- Closed syntax remains mandatory even for a generic semantic template.
+    unless ← conclusionOnConnection type do
+      return some "the conclusion is not a generated connection endpoint"
+    let strict ← rejection ctx type
+    if strict.isNone then return none
+    if (← hasGenericFamilyConclusion type) && !(← dependsOnModel ctx models type) then
+      return ← genericRejection ctx type
+    return strict
   if ← usesModel models type ctx.owners then
     if let some reason ← visit (classify ctx) type true false false then
       return some s!"public model behaviour requires a typed connection Statement ({reason})"
@@ -613,6 +684,16 @@ def declarationRejection (ctx : Ctx) (models : Array (Nat × Expr)) (name : Name
   if (← statement? info.type).isNone && Registry.kindOf? (← getEnv) name == some .domain then
     return some "domain publication requires a typed connection Statement"
   publicTypeRejection ctx models info.type
+
+/-- Module feedback applies the same structural generic/model distinction as the complete
+package audit, including model families authored in the current module. -/
+def audit (names : Array Name) : CommandElabM Unit := do
+  liftTermElabM do
+    let ctx ← context
+    let models ← modelTypes
+    for name in names do
+      if let some reason ← declarationRejection ctx models name then
+        throwError "Connection theorem {name} violates connection admission: {reason}"
 
 /-- Whole-package admission uses the actual Lake module inventory, supplied by the build.
 It neither trusts source imports of the linter nor the classification registry. -/

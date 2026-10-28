@@ -9,10 +9,11 @@ proposition constructor. Metadata cannot construct an endpoint or admit a conclu
 Scope.
 * Generic: values in arbitrary complete lattices obtained from arbitrary-infimum preserving maps,
   and propositions built from them; comparisons of numbers as side conditions; no model and no
-  semantics. Endpoints and binders live in fixed universes (`connection%` uses endpoints of
-  `Type`, binders of `Type` and over `Type`), so a claim about arbitrary families is a claim about
-  families of `Type`. Connection statements are written with `connection%`
-  (`theorem/TMIO/ClaimElab.lean`), which builds the certificate.
+  semantics. A claim has two inferred endpoint universes and an inferred binder universe. Atoms
+  may use the endpoint universes in either order, so an adjunction and its generated map can
+  occur in the same claim without restricting their carrier types to `Type`. Connection
+  statements are written with `connection%` (`theorem/TMIO/ClaimElab.lean`), which builds the
+  certificate.
 
 Source: the generation theorem (`theorem/TMIO/Generate.lean`: `generate`, `closure`); the
 admission rules of `Rules.md` §3a (a published connection result carries a `ConnectionClaim`
@@ -29,7 +30,7 @@ Results.
   meaning — equalities, orders and memberships with an endpoint side, equality of two
   infimum-preserving maps, and their logical combinations (`not`, `and`, `or`, `iff`, `assuming`,
   `all`, `exists`), which cannot add an unrelated proposition; binders over the types of the
-  endpoints' universe (`allType`: a claim about arbitrary families of `Type`); and side conditions
+  endpoints' universe (`allType`: a claim about arbitrary families); and side conditions
   in two places only: the characterizing side of an iff (`iffCondition`) and the guard of an
   existential witness (`existsGuard`). Premises are already unrestricted (`assuming`).
 * `Statement`: a public statement carries its kernel-checked connection syntax; its meaning is
@@ -84,6 +85,20 @@ inductive ConnectionClaim : Prop → Prop where
       Endpoint.{u,v} s → ConnectionClaim (x ∈ s ↔ x ∈ t)
   | mapsEq {A : Type u} {B : Type v} [CompleteLattice A] [CompleteLattice B]
       (back₁ back₂ : sInfHom B A) : ConnectionClaim (back₁ = back₂)
+  /-- The same atomic shapes with the two endpoint universes reversed. Generated forward maps
+  reverse the carriers of an upper adjoint; both orientations belong to one connection law. -/
+  | eqLeftSwap {A : Type v} {a b : A} : Endpoint.{v,u} a → ConnectionClaim (a = b)
+  | eqRightSwap {A : Type v} {a b : A} : Endpoint.{v,u} b → ConnectionClaim (a = b)
+  | leLeftSwap {A : Type v} [CompleteLattice A] {a b : A} :
+      Endpoint.{v,u} a → ConnectionClaim (a ≤ b)
+  | leRightSwap {A : Type v} [CompleteLattice A] {a b : A} :
+      Endpoint.{v,u} b → ConnectionClaim (a ≤ b)
+  | memberSwap {X : Type v} {x : X} {s : Set X} :
+      Endpoint.{v,u} s → ConnectionClaim (x ∈ s)
+  | memberIffSwap {X : Type v} (x : X) {s : Set X} (t : Set X) :
+      Endpoint.{v,u} s → ConnectionClaim (x ∈ s ↔ x ∈ t)
+  | mapsEqSwap {A : Type v} {B : Type u} [CompleteLattice A] [CompleteLattice B]
+      (back₁ back₂ : sInfHom B A) : ConnectionClaim (back₁ = back₂)
   | not {P : Prop} : ConnectionClaim P → ConnectionClaim (¬ P)
   | and {P Q : Prop} : ConnectionClaim P → ConnectionClaim Q → ConnectionClaim (P ∧ Q)
   | or {P Q : Prop} : ConnectionClaim P → ConnectionClaim Q → ConnectionClaim (P ∨ Q)
@@ -91,7 +106,7 @@ inductive ConnectionClaim : Prop → Prop where
   | assuming {P : Prop} {Q : P → Prop} : (∀ h, ConnectionClaim (Q h)) → ConnectionClaim (∀ h, Q h)
   | all {ι : Sort w} {P : ι → Prop} : (∀ i, ConnectionClaim (P i)) → ConnectionClaim (∀ i, P i)
   | exists {ι : Sort w} {P : ι → Prop} : (∀ i, ConnectionClaim (P i)) → ConnectionClaim (∃ i, P i)
-  /-- A binder over the types of the endpoints' universe (`Type`): a claim about arbitrary
+  /-- A binder over the types of the endpoints' universe (`Type u`): a claim about arbitrary
   families. -/
   | allType {P : Type u → Prop} : (∀ X, ConnectionClaim (P X)) → ConnectionClaim (∀ X, P X)
   /-- A claim characterized by a side condition. -/

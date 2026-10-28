@@ -73,7 +73,9 @@ variable {X Q : Type*} {n p : ℕ} {F : Family X Q n p} {plant : X → Plant n p
 
 /-- Every linear family consumes the matrix rate criterion through its generated denotation. -/
 @[tmio TM, powerlib_foundation] theorem IsLinear.mem_den_decay_of_rateMargin (hF : F.IsLinear plant)
-    {x : X} {a : ℝ} (h : RateMargin (plant x).A a) : x ∈ F.den (.flow (.decay a)) :=
-  hF.mem_den_flow.mpr (decay_of_rateMargin h)
+    {x : X} {a : ℝ} (h : RateMargin (plant x).A a) :
+    connection% (x ∈ F.den (.flow (.decay a))) := by
+  unfold powerlib.TMIO.Statement
+  exact hF.mem_den_flow.mpr (decay_of_rateMargin h)
 
 end powerlib.Family

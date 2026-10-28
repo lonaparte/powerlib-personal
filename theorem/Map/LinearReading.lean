@@ -228,7 +228,9 @@ members with a Schur matrix, whatever their step lengths (the discrete counterpa
 @[tmio TM, powerlib_foundation] theorem IsAutonomousMap.den_schurStable {F : Family X Q n 0}
     {period : X → ℝ} {Φ : X → Matrix (Fin n) (Fin n) ℝ}
     (hF : F.IsAutonomousMap period fun x => Map.op (Φ x)) {P : Flow.Property}
-    (hP : P.Attractive ∨ P = .contractive) : F.den (.flow P) = {x | LTI.SchurStable (Φ x)} := by
+    (hP : P.Attractive ∨ P = .contractive) :
+    connection% (F.den (.flow P) = {x | LTI.SchurStable (Φ x)}) := by
+  unfold powerlib.TMIO.Statement
   ext x
   rw [hF.mem_den_flow, Set.mem_ofPred_eq]
   exact Map.holdsMap_op_iff_schurStable hP _

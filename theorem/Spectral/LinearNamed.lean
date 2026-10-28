@@ -37,8 +37,8 @@ Results.
   `exact_of_linearTable` (without a context).
 
 Family and connection conclusions.
-* None: the module states the laws once for arbitrary linear families; model modules instantiate
-  them and publish their conclusions as connection statements.
+* `chain_le_semantics_of_linearTable` is a generic foundation connection establishing
+  translation soundness. Model modules instantiate it for their own engineering conclusions.
 -/
 
 noncomputable section
@@ -91,7 +91,8 @@ the rate `a`, `Rc` conservation and `Rp` passivity. -/
     (hD : ∀ a, realize F.meets (Rd a) ⊆ F.den (.flow (.decay a)))
     (hC : realize F.meets Rc ⊆ F.den (.flow .conservative))
     (hP : realize F.meets Rp ⊆ F.den .passive) :
-    ∀ P, F.chain P ≤ F.semantics P := by
+    connection% (∀ P, F.chain P ≤ F.semantics P) := by
+  unfold powerlib.TMIO.Statement
   have hG : realize F.meets Rs ⊆ F.den (.flow .globallyExponentiallyStable) := fun x hx =>
     hF.mem_den_flow.mpr (holds_of_isHurwitz 0 trivial (hS x hx))
   exact chain_le_semantics_of_globalTable ht

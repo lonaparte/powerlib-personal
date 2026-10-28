@@ -55,8 +55,8 @@ Results.
   local asymptotic translations).
 
 Family and connection conclusions.
-* None: the module states the laws once for arbitrary families; model modules instantiate them and
-  publish their conclusions as connection statements.
+* The local stability implication is a generic foundation connection between denotations.
+  Model modules instantiate the generic laws for their own engineering conclusions.
 -/
 
 noncomputable section
@@ -75,7 +75,9 @@ variable {F : Family X Q n p}
 
 /-- Local exponential stability gives local asymptotic stability, for every family. -/
 @[tmio TM, powerlib_foundation] theorem den_locallyExponentiallyStable_subset_las :
-    F.den (.flow .locallyExponentiallyStable) ⊆ F.den (.flow .locallyAsymptoticallyStable) := by
+    connection% (F.den (.flow .locallyExponentiallyStable) ⊆
+      F.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
   intro x hx
   rw [Family.mem_den] at hx ⊢
   cases h : F.system x with

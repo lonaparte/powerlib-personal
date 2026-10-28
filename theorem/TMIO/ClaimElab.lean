@@ -12,8 +12,10 @@ Scope.
 * Lean meta-programming over the grammar of `theorem/TMIO/Claim.lean`; no mathematics. No names
   or tags of model families are trusted: aliases are unfolded until a typed map application or a
   structural powerset operation is reached, and there is no arbitrary-proposition fallback.
-* Claims use endpoints of `Type` and binders of `Type`; a binder over `Type` itself (a claim
-  about arbitrary families) uses `allType`. A side condition is accepted only where the grammar
+* Claims infer their endpoint and binder universes. Atomic certificates may use the two endpoint
+  universes in either order; universal type parameters use `allType`, and existential binders
+  may range over type universes when their bodies are genuine claims. A side condition is
+  accepted only where the grammar
   has one: the right side of an iff whose left side is a claim, and the guard `A i` of an
   existential `∃ i, A i ∧ P i`.
 
@@ -39,15 +41,14 @@ namespace powerlib.TMIO.ClaimElab
 
 initialize registerTraceClass `powerlib.claim
 
-private def certConst (name : Name) : MetaM Expr := do
-  let info ← getConstInfo name
-  return mkConst name (info.levelParams.map fun p => if p == `w then .succ .zero else .zero)
+private def certConst (name : Name) : MetaM Expr :=
+  mkConstWithFreshMVarLevels name
 
 private def endpointType (value : Expr) (u v : Level) : MetaM Expr := do
   return mkApp2 (mkConst ``Endpoint [u,v]) (← inferType value) value
 
-private def claimType (prop : Expr) : MetaM Expr := do
-  return mkApp (← certConst ``ConnectionClaim) prop
+private def claimType (levels : List Level) (prop : Expr) : MetaM Expr :=
+  pure <| mkApp (mkConst ``ConnectionClaim levels) prop
 
 /-- Supply the expected index before finalizing implicit arguments. -/
 private def buildWith (f : Expr) (xs : Array Expr) (target : Expr) : MetaM Expr := do
@@ -181,11 +182,25 @@ partial def endpointInputs? (proof : Expr) (fuel : Nat := 32) : MetaM (Option (A
     return some (left ++ right)
   return none
 
-private def certified (prop proof : Expr) : MetaM Expr := do
-  let target ← claimType prop
+private def certified (levels : List Level) (prop proof : Expr) : MetaM Expr := do
+  let target ← claimType levels prop
   unless ← isDefEq (← inferType proof) target do
     throwError "Connection grammar certificate does not describe the requested proposition"
   return ← instantiateMVars proof
+
+/-- Failed endpoint orientations must not constrain the remaining candidates' universe levels.
+Use ordinary saved states here: unlike endpoint discovery, successful atoms must constrain the
+shared universe metavariables of the enclosing claim. -/
+private def atomic? (levels : List Level) (prop : Expr) (ctors : Array Name)
+    (args : Array Expr) : MetaM (Option Expr) := do
+  for ctor in ctors do
+    let saved ← saveState
+    try
+      return some (← certified levels prop (← build ctor args (← claimType levels prop)))
+    catch ex =>
+      saved.restore
+      trace[powerlib.claim] ex.toMessageData
+  return none
 
 /-- Build a certificate of a side condition: a comparison of numbers or a combination of such by
 `¬`, `∧`, `∨`. -/
@@ -217,23 +232,24 @@ partial def condition (e : Expr) (fuel : Nat := 32) : MetaM Expr := do
   throwError "The side condition is not a comparison of numbers"
 
 /-- Build a certificate of the closed claim grammar; no arbitrary-Prop fallback exists. -/
-partial def encode (e : Expr) (fuel : Nat := 32) : MetaM Expr := do
+private partial def encodeWith (levels : List Level) (e : Expr) (fuel : Nat) : MetaM Expr := do
   if fuel == 0 then throwError "Connection conclusion unfolding exceeded its limit"
   let e ← instantiateMVars e
-  if e.getAppFn.isConstOf ``Statement then return e.getAppArgs.back!
+  if e.getAppFn.isConstOf ``Statement then
+    return ← certified levels e e.getAppArgs.back!
   if let .forallE n ty body bi := e then
     return ← withLocalDecl n bi ty fun x => do
-      let p ← encode (body.instantiate1 x) (fuel - 1)
+      let p ← encodeWith levels (body.instantiate1 x) (fuel - 1)
       -- A binder over `Type` (a sort other than `Prop`) is a binder over families' types.
       let ctor ← if ← isProp ty then pure ``ConnectionClaim.assuming
         else if (← whnf ty) matches .sort (.succ _) then pure ``ConnectionClaim.allType
         else pure ``ConnectionClaim.all
-      certified e (← build ctor #[← mkLambdaFVars #[x] p] (← claimType e))
+      certified levels e (← build ctor #[← mkLambdaFVars #[x] p] (← claimType levels e))
   let args := e.getAppArgs
   let head := e.getAppFn
   if head.isConstOf ``Not then
-    return ← certified e (← build ``ConnectionClaim.not #[← encode args.back! (fuel - 1)]
-      (← claimType e))
+    return ← certified levels e (← build ``ConnectionClaim.not #[← encodeWith levels args.back! (fuel - 1)]
+      (← claimType levels e))
   for (logical, ctor) in #[(``And, ``ConnectionClaim.and), (``Or, ``ConnectionClaim.or),
       (``Iff, ``ConnectionClaim.iff)] do
     if head.isConstOf logical then
@@ -244,53 +260,75 @@ partial def encode (e : Expr) (fuel : Nat := 32) : MetaM Expr := do
           if let some p ← endpoint? xs[xs.size - 2]! then
             let x := xs.back!
             let other ← withLocalDeclD `x (← inferType x) fun y => mkLambdaFVars #[y] args[1]!
-            return ← certified e (← build ``ConnectionClaim.memberIff #[x, other, p]
-              (← claimType e))
+            if let some proof ← atomic? levels e
+                #[``ConnectionClaim.memberIff, ``ConnectionClaim.memberIffSwap] #[x, other, p] then
+              return proof
         -- The right side is a claim, or else a side condition characterizing the left side.
-        let left ← encode args[0]! (fuel - 1)
+        let left ← encodeWith levels args[0]! (fuel - 1)
         let saved ← saveState
-        let right? ← try some <$> encode args[1]! (fuel - 1) catch _ => do
+        let right? ← try some <$> encodeWith levels args[1]! (fuel - 1) catch _ => do
           saved.restore
           pure none
         if let some right := right? then
-          return ← certified e (← build ctor #[left, right] (← claimType e))
-        return ← certified e (← build ``ConnectionClaim.iffCondition
-          #[left, ← condition args[1]!] (← claimType e))
-      return ← certified e (← build ctor #[← encode args[0]! (fuel - 1),
-        ← encode args[1]! (fuel - 1)] (← claimType e))
+          return ← certified levels e (← build ctor #[left, right] (← claimType levels e))
+        return ← certified levels e (← build ``ConnectionClaim.iffCondition
+          #[left, ← condition args[1]!] (← claimType levels e))
+      return ← certified levels e (← build ctor #[← encodeWith levels args[0]! (fuel - 1),
+        ← encodeWith levels args[1]! (fuel - 1)] (← claimType levels e))
   if head.isConstOf ``Exists then
     return ← lambdaTelescope args.back! fun xs body => do
       let saved ← saveState
       try
-        let p ← encode body (fuel - 1)
-        certified e (← build ``ConnectionClaim.exists #[← mkLambdaFVars xs p] (← claimType e))
+        let p ← encodeWith levels body (fuel - 1)
+        certified levels e (← build ``ConnectionClaim.exists #[← mkLambdaFVars xs p] (← claimType levels e))
       catch ex =>
         -- `∃ i, A i ∧ P i`: a side condition `A i` guards the witness of the claim `P i`.
         saved.restore
         unless body.isAppOf ``And do throw ex
         let some guard ← (try some <$> condition body.getAppArgs[0]! catch _ => pure none) |
           throw ex
-        let p ← encode body.getAppArgs[1]! (fuel - 1)
-        certified e (← build ``ConnectionClaim.existsGuard
-          #[← mkLambdaFVars xs guard, ← mkLambdaFVars xs p] (← claimType e))
+        let p ← encodeWith levels body.getAppArgs[1]! (fuel - 1)
+        certified levels e (← build ``ConnectionClaim.existsGuard
+          #[← mkLambdaFVars xs guard, ← mkLambdaFVars xs p] (← claimType levels e))
   if head.isConstOf ``Eq || head.isConstOf ``LE.le || head.isConstOf ``Set.Subset then
     let a := args[args.size - 2]!
     let b := args.back!
     if head.isConstOf ``Eq && (← whnf (← inferType a)).getAppFn.isConstOf ``sInfHom then
-      return ← certified e (← build ``ConnectionClaim.mapsEq #[a, b] (← claimType e))
+      if let some proof ← atomic? levels e
+          #[``ConnectionClaim.mapsEq, ``ConnectionClaim.mapsEqSwap] #[a, b] then
+        return proof
     let eq := head.isConstOf ``Eq
     if let some p ← endpoint? a then
-      return ← certified e (← build
-        (if eq then ``ConnectionClaim.eqLeft else ``ConnectionClaim.leLeft) #[p] (← claimType e))
+      if let some proof ← atomic? levels e
+          (if eq then #[``ConnectionClaim.eqLeft, ``ConnectionClaim.eqLeftSwap]
+            else #[``ConnectionClaim.leLeft, ``ConnectionClaim.leLeftSwap]) #[p] then
+        return proof
     if let some p ← endpoint? b then
-      return ← certified e (← build
-        (if eq then ``ConnectionClaim.eqRight else ``ConnectionClaim.leRight) #[p] (← claimType e))
+      if let some proof ← atomic? levels e
+          (if eq then #[``ConnectionClaim.eqRight, ``ConnectionClaim.eqRightSwap]
+            else #[``ConnectionClaim.leRight, ``ConnectionClaim.leRightSwap]) #[p] then
+        return proof
   if head.isConstOf ``Membership.mem then
     if let some p ← endpoint? args[args.size - 2]! then
-      return ← certified e (← build ``ConnectionClaim.member #[p] (← claimType e))
+      if let some proof ← atomic? levels e
+          #[``ConnectionClaim.member, ``ConnectionClaim.memberSwap] #[p] then
+        return proof
   if let some unfolded ← unfoldDefinition? e then
-    if unfolded != e then return ← certified e (← encode unfolded (fuel - 1))
+    if unfolded != e then return ← certified levels e (← encodeWith levels unfolded (fuel - 1))
   throwError "The conclusion is not in the closed connection grammar"
+
+/-- Infer one pair of endpoint universes for the entire certificate. Atomic alternatives are
+checked against that pair, including its reverse, rather than certifying each branch in isolation. -/
+def encode (e : Expr) (fuel : Nat := 32) : MetaM Expr := do
+  -- Caller-owned levels (including `Type*` parameters) must never be specialized by the
+  -- certificate search. Only otherwise unconstrained levels created for the certificate default.
+  withNewMCtxDepth do
+    let existing := (← getMCtx).lDecls
+    let .const _ levels ← certConst ``ConnectionClaim | throwError "Connection grammar expected"
+    let shape ← instantiateMVars (← encodeWith levels e fuel)
+    for level in (collectLevelMVars {} shape).result do
+      unless existing.contains level do assignLevelMVar level .zero
+    instantiateMVars shape
 
 end powerlib.TMIO.ClaimElab
 
@@ -301,4 +339,6 @@ elab "connection% " p:term : term => do
   synthesizeSyntheticMVarsNoPostponing
   let prop ← instantiateMVars prop
   let shape ← powerlib.TMIO.ClaimElab.encode prop
-  return mkApp2 (mkConst ``powerlib.TMIO.Statement [.zero, .zero, .succ .zero]) prop shape
+  let .const _ levels := (← inferType shape).getAppFn |
+    throwError "Connection grammar certificate expected"
+  return mkApp2 (mkConst ``powerlib.TMIO.Statement levels) prop shape

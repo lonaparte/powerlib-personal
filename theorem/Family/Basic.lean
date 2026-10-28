@@ -1,6 +1,7 @@
 import theorem.Port.Basic
 import theorem.TMIO.Compare
 import theorem.TMIO.Representation
+import theorem.TMIO.ClaimElab
 
 /-! # Model families
 
@@ -61,8 +62,9 @@ Family and connection conclusions.
   extended by requirements stated on the new representation; sentences keep their translations).
   Exactness and soundness survive both (`Exact.comap`, `Sound.comap`, `Exact.extend`,
   `Sound.extend`).
-* No connection statements: the module states the generic laws once; model modules publish their
-  conclusions as connection statements.
+* Generic connection statements describe denotation and translation exactness once, with their
+  original universe-polymorphic family parameters. They remain foundation results; model modules
+  instantiate these laws for their own engineering conclusions.
 -/
 
 noncomputable section
@@ -102,7 +104,9 @@ def den (s : Sentence) : Set X := realize F.Holds {s}
 
 /-- The denotation is the generated value of the semantics connection at the sentence. -/
 @[tmio TM, powerlib_foundation] theorem den_eq_generate (s : Sentence) :
-    F.den s = ofDual (generate F.semantics {s}) := rfl
+    connection% (F.den s = ofDual (generate F.semantics {s})) := by
+  unfold powerlib.TMIO.Statement
+  rfl
 
 /-- The translation chain: sentences into requirements, requirements into complete systems. -/
 def chain : sInfHom (Set X)ᵒᵈ (Set Sentence) :=
@@ -156,7 +160,9 @@ smaller family of complete systems. -/
   rfl
 
 /-- The chain is the semantics exactly when every translation is exact. -/
-@[tmio TM, powerlib_foundation] theorem chain_eq_semantics_iff : F.chain = F.semantics ↔ ∀ s, F.Exact s := by
+@[tmio TM, powerlib_foundation] theorem chain_eq_semantics_iff :
+    connection% (F.chain = F.semantics ↔ ∀ s, F.Exact s) := by
+  unfold powerlib.TMIO.Statement
   rw [chain, semantics, chain_eq_satisfaction_iff]
   simp only [image_table_singleton]
   rfl

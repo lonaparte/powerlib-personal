@@ -88,7 +88,9 @@ field of its plant. -/
 
 /-- The attractive sentences and sampled contraction denote the Hurwitz members. -/
 @[tmio TM, powerlib_foundation] theorem IsLinear.den_hurwitz (hF : F.IsLinear plant) {P : Flow.Property}
-    (hP : P.Attractive ∨ P = .contractive) : F.den (.flow P) = {x | IsHurwitz (plant x).A} := by
+    (hP : P.Attractive ∨ P = .contractive) :
+    connection% (F.den (.flow P) = {x | IsHurwitz (plant x).A}) := by
+  unfold powerlib.TMIO.Statement
   ext x
   rw [hF.mem_den_flow, Set.mem_ofPred_eq]
   rcases hP with hP | rfl

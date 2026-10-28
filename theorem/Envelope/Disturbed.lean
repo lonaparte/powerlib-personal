@@ -36,7 +36,8 @@ Scope.
 * The disturbance is a random, time-invariant perturbation of the field (a bias or a parameter
   error); a time-varying disturbance enters through states of an exosystem, and white noise
   (stochastic integrals) is not represented.
-* The laws are connection statements about arbitrary families of `Type`.
+* The safety-reading law is a universe-polymorphic foundation connection. The realization laws
+  below use arbitrary families of `Type`.
 
 Source: Grönwall's inequality for approximate solutions (Mathlib
 `dist_le_of_approx_trajectories_ODE`); finite-time stability over a horizon (Dorato 1961; Amato,
@@ -152,7 +153,8 @@ def IsDesign {X Q : Type*} (F : Family X Q n p) (sys : X → Port.System n p) (S
     {sys : X → Port.System n p} {S A : X → Set ℝⁿ} {ν : X → Measure Sample}
     [∀ x, IsProbabilityMeasure (ν x)] (hF : IsDesign F sys S A ν) {x : X} {T ε : ℝ≥0∞}
     (hε : ε < 1) :
-    x ∈ F.den (.envelope (.safe T ε)) ↔ (sys x).reach (S x) T ⊆ A x := by
+    connection% (x ∈ F.den (.envelope (.safe T ε)) ↔ (sys x).reach (S x) T ⊆ A x) := by
+  unfold powerlib.TMIO.Statement
   rw [Family.mem_den, hF x]
   exact holds_safe_undisturbed_iff _ _ _ _ _ hε
 

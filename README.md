@@ -41,8 +41,8 @@ or compares generated connections. Each public typed connection theorem in
 `theorem/` also carries exactly one `@[tmio T]`, `@[tmio M]`, `@[tmio TM]`,
 `@[tmio MI]` or `@[tmio IO]` attribute. These source attributes are the only
 classification source; no separate catalog or handwritten theorem-to-kind list is
-maintained. The current review covers 2,798 theorems, including all 813 public
-connections and 1,985 ordinary theorems; 111 classified helpers are private.
+maintained. The current review covers 2,798 theorems, including all 832 public
+connections and 1,966 ordinary theorems; 111 classified helpers are private.
 The remaining 5,086 theorems are unclassified. Labels record individual statement
 reviews; a module's role does not supply a default class for its declarations.
 Foundation/domain annotations remain optional, independent presentation metadata.

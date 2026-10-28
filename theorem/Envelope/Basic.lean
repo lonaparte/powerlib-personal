@@ -138,7 +138,9 @@ sentences at the horizons of the set. -/
 supremum of a set of horizons is the intersection of the denotations, for every family. -/
 @[tmio TM, powerlib_foundation] theorem den_safe_sSup {X Q : Type*} (F : Family X Q n p) (H : Set ℝ≥0∞)
     (ε : ℝ≥0∞) :
-    F.den (.envelope (.safe (sSup H) ε)) = ⋂ T ∈ H, F.den (.envelope (.safe T ε)) := by
+    connection% (F.den (.envelope (.safe (sSup H) ε)) =
+      ⋂ T ∈ H, F.den (.envelope (.safe T ε))) := by
+  unfold powerlib.TMIO.Statement
   ext x
   simp only [Family.mem_den, mem_iInter₂]
   exact holds_safe_sSup _ H ε

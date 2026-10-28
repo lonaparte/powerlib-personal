@@ -38,8 +38,8 @@ Results.
   `realize_univ_subset_of_eq_empty`.
 
 Family and connection conclusions.
-* None: the module states the laws once for arbitrary families; model modules instantiate them and
-  publish their conclusions as connection statements.
+* The global stability implication is a generic foundation connection between denotations.
+  Model modules instantiate the generic laws for their own engineering conclusions.
 -/
 
 noncomputable section
@@ -58,8 +58,9 @@ variable {F : Family X Q n p}
 
 /-- Global exponential stability gives global asymptotic stability, for every family. -/
 @[tmio TM, powerlib_foundation] theorem den_globallyExponentiallyStable_subset_gas :
-    F.den (.flow .globallyExponentiallyStable) ⊆
-      F.den (.flow .globallyAsymptoticallyStable) := by
+    connection% (F.den (.flow .globallyExponentiallyStable) ⊆
+      F.den (.flow .globallyAsymptoticallyStable)) := by
+  unfold powerlib.TMIO.Statement
   intro x hx
   rw [Family.mem_den] at hx ⊢
   cases h : F.system x with

@@ -127,8 +127,8 @@ review of the complete statement and its hypotheses; the attribute checker does
 not prove that semantic judgment or replace mathematical admission.
 
 The current reviewed coverage is 2,798 theorems: T 1,682, M 334, T–M 685, M–I 88
-and I–O 9, including 111 private helpers. This includes all 813 public
-`connection%` theorems (T 0, M 50, T–M 668, M–I 88, I–O 7) and 1,985 individually
+and I–O 9, including 111 private helpers. This includes all 832 public
+`connection%` theorems (T 0, M 50, T–M 685, M–I 88, I–O 9) and 1,966 individually
 reviewed ordinary theorems. Module-level role suggestions do not assign a kind to
 every declaration in a module. The remaining 5,086 theorems are unclassified;
 definitions are outside this theorem-attribute inventory.
@@ -161,8 +161,8 @@ registration remain independent decisions.
 Generic static lemmas, semantic implications and certificate arithmetic are
 foundation results. Generic connection laws — laws about arbitrary families stated
 as connections, such as the explicit Euler template or the hub transfer laws — may
-remain foundation results. These connection statements over families of `Type`
-are stated once; an instance applies
+remain foundation results. These connection statements retain their generic
+family parameters and are stated once; an instance applies
 them to its family's static evidence (autonomy, smoothness of its field) and
 publishes only what carries its own content. A model family's public engineering
 conclusion must be a domain theorem on a connection: an evaluation of its
@@ -198,20 +198,30 @@ There are two admission rules:
    `<`, `=` in ℕ, ℤ, ℚ, ℝ, combined by `¬ ∧ ∨`) and enter a conclusion only as the
    characterizing side of an iff (`C ↔ n ≤ 1`) or as the guard of an existential
    witness (`∃ h₀, 0 < h₀ ∧ C`). A claim may bind types (`∀ X : Type, …`, or type
-   parameters of the theorem): endpoints and binders live in `Type`, so a law about
-   arbitrary families is stated for families of `Type`; universe-polymorphic
-   statements are not claims.
+   parameters of the theorem). Certificate universes are inferred from the actual
+   endpoints; one claim can combine both directions of the same pair of endpoint
+   universes. Generic declarations retain their `Type*` parameters. The external
+   theorem telescope is checked separately, rather than re-encoded as part of the
+   conclusion's certificate.
 
 `TMIO.Endpoint` certificates are built from typed `sInfHom` applications,
 `generate`, generated closure, and structural powerset operations. Endpoint
 metadata cannot substitute for these certificates. A connection only in a
 hypothesis or an unrelated conjunct cannot satisfy the closed grammar. Behaviour
-is reached through these endpoints, never through a direct or aliased
-behavioural conclusion or operand.
+of a concrete model is reached through these endpoints, never through a direct or
+aliased behavioural conclusion or operand.
 
 The bypass check inspects endpoint inputs, structural maps, and hypothesis types.
 An identity connection applied to a raw behavioural set cannot hide that set
 behind the otherwise valid connection.
+
+Generic semantic interface laws may relate an arbitrary `Family` to the library's
+semantic predicates, such as `holds` and `reach`. Their conclusions must still
+carry the complete connection certificate, actually depend on that arbitrary
+family, and have no concrete model dependency, including through value aliases.
+They retain the semantic-layer checks against raw signals, discrete evolution and
+ambient behavioural predicates. A foundation label or an unused family parameter
+does not grant this interface allowance.
 
 Whole-package admission discovers model-domain types from actual `Family`
 definitions. Every public model-specific behavioural proof must use Statement,

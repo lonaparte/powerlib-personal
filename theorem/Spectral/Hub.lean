@@ -22,8 +22,8 @@ Scope.
   `theorem/Spectral/Local.lean`.
 * Readings and requirement correspondences are hypotheses on a context of the spoke, so a reading
   that needs nonzero gains (an invertible coordinate change) is used only where they hold.
-* Families of `Type` (model and requirement types in `Type`): the transfer laws are connection
-  statements about arbitrary families, and a connection statement binds types of `Type`.
+* These transfer laws use model and requirement types in `Type` and make no assumption about a
+  particular engineering model.
 
 Source: Agda scaffold `theorem/FamilyReading.agda`, the generic pattern (a spoke read through a hub:
 univalence turns the readings into a path from the spoke's semantics to the hub's pulled back
@@ -34,7 +34,7 @@ spoke that keeps the hub's language.
 
 Results.
 * `mem_den_flow_iff_of_transport` (an affine conjugacy of fields is a reading of the flow
-  sentences; its hypotheses read the sentences on fields, so it stays a foundation lemma).
+  sentences; a generic foundation connection with hypotheses reading sentences on fields).
 
 Family and connection conclusions.
 * Transfer laws, connection statements about arbitrary families of `Type` (stated once; model
@@ -126,7 +126,8 @@ hub's, `x` and `g x` satisfy the same flow sentences. -/
     {g : X → Y} {x : X} (T : Dynamics.State n ≃L[ℝ] Dynamics.State n) (c : Dynamics.State n)
     (hf : f x = Dynamics.transportField T c (φ (g x)))
     (hpt : pt x = Dynamics.affineCoord T c (ψ (g x))) (P : Flow.Property) :
-    x ∈ F.den (.flow P) ↔ g x ∈ G.den (.flow P) := by
+    connection% (x ∈ F.den (.flow P) ↔ g x ∈ G.den (.flow P)) := by
+  unfold powerlib.TMIO.Statement
   rw [hdenF, hdenG, hf, hpt, Dynamics.holds_transport_iff]
 
 end powerlib.Spectral

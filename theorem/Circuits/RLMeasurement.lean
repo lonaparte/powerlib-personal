@@ -159,8 +159,10 @@ def window : Sentence → Set ℝ
     exact ha.trans (div_nonneg hR m.inductance.property.le)
 
 /-- The window of every sentence is the resistance kernel of its denotation. -/
-@[tmio TM, powerlib_foundation] theorem kernImage_den (s : Sentence) :
-    Set.kernImage Impedance.resistance (family.den s) = window s := by
+@[tmio TM, powerlib_domain] theorem kernImage_den (s : Sentence) :
+    connection% (TMIO.kern Impedance.resistance (family.den s) = window s) := by
+  unfold powerlib.TMIO.Statement
+  change Set.kernImage Impedance.resistance (family.den s) = window s
   have hexact : realize Meets (translate s) = family.den s :=
     Family.chain_eq_semantics_iff.mp chain_eq_semantics s
   rw [← hexact]
@@ -192,7 +194,7 @@ has an empty window, so with `ε ≥ 0` it is never certified. -/
       {r | Set.Icc (r - ε) (r + ε) ⊆ window s}) := by
   unfold powerlib.TMIO.Statement
   rw [seed, family.certified (reading ε) (Family.chain_eq_semantics_iff.mp chain_eq_semantics s),
-    certify_reading, kernImage_den]
+    certify_reading, ← kern_apply, kernImage_den]
 
 /-! ## The compatibility closure -/
 
@@ -243,8 +245,10 @@ def stateSpaceSeed (ε : ℝ) :
   (seed ε).transport (OrderIso.refl _) (OrderIso.refl _) stateSpaceIso (OrderIso.refl _)
 
 /-- Certified symbolic values do not depend on the model representation. -/
-@[tmio TM, powerlib_foundation] theorem stateSpace_whole (ε : ℝ) :
-    ⇑(generate (stateSpaceSeed ε).uTO) = ⇑(generate (seed ε).uTO) := by
+@[tmio TM, powerlib_domain] theorem stateSpace_whole (ε : ℝ) :
+    connection% (∀ Φ, generate (stateSpaceSeed ε).uTO Φ = generate (seed ε).uTO Φ) := by
+  unfold powerlib.TMIO.Statement
+  intro Φ
   rw [stateSpaceSeed, Seed.transport_whole]
   rfl
 

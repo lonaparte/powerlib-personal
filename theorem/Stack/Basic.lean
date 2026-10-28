@@ -183,7 +183,8 @@ certify against the realized models, certify the records. -/
 /-- The whole-chain Galois connection of the stack (`Seed.gc_whole`): a set of records supports
 a set of sentences exactly when every record is certified for them. -/
 @[tmio IO, powerlib_foundation] theorem subset_certified_iff (D : Set V) (Φ : Set Sentence) :
-    D ⊆ S.certified Φ ↔ Φ ⊆ S.infer D := by
+    connection% (D ⊆ S.certified Φ ↔ Φ ⊆ S.infer D) := by
+  unfold powerlib.TMIO.Statement
   have h := S.seed.gc_whole Φ (toDual D)
   rw [← S.seed.generate_uTO] at h
   exact h
@@ -216,8 +217,10 @@ realization soundness, an implementation within the constraints that may produce
 `D` satisfies every sentence inferred from `D`. -/
 @[tmio IO, powerlib_foundation] theorem infer_true {Δ : Set R} {s : Sentence}
     (hS : S.RealizationSoundUnder Δ s) {D : Set V} (hs : s ∈ S.infer D) {v : V} (hv : v ∈ D)
-    {y : Y} (hy : (y, v) ∈ S.produces) (hΔ : y ∈ realize S.impl.meets Δ) : y ∈ S.impl.den s :=
-  hS ⟨(mem_certify _ _ _).mpr fun x hx => S.mem_infer.mp hs v hv y hy x hx, hΔ⟩
+    {y : Y} (hy : (y, v) ∈ S.produces) (hΔ : y ∈ realize S.impl.meets Δ) :
+    connection% (y ∈ S.impl.den s) := by
+  unfold powerlib.TMIO.Statement
+  exact hS ⟨(mem_certify _ _ _).mpr fun x hx => S.mem_infer.mp hs v hv y hy x hx, hΔ⟩
 
 /-- When the records are certified for the constraints (every possible producer lies within
 `Δ`; the generated observation map at the constraint space), the inferred sentences with sound

@@ -1,6 +1,7 @@
 import theorem.Circuits.RL
 import theorem.Architecture
 import dependencies.tests.lean.Architecture.ConnectionFamilyFixture
+import dependencies.tests.lean.Architecture.GenericModelValueFixture
 
 open powerlib powerlib.TMIO
 
@@ -69,6 +70,55 @@ private theorem packed : AllPassive := fun m h => raw m h
   unfold Statement
   exact h
 
+-- A generic semantic bridge may name the library's behavioural interface. Its classification
+-- does not grant that permission: the model type is arbitrary and the conclusion uses F.
+@[powerlib_foundation] theorem genericFlowInterface {X Q : Type} (F : Family X Q 1 0)
+    (f : X → Dynamics.State 1 → Dynamics.State 1) (pt : X → Dynamics.State 1)
+    (hden : ∀ x (P : Flow.Property), x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x))
+    (x : X) (P : Flow.Property) :
+    connection% (x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x)) := by
+  unfold Statement
+  exact hden x P
+
+@[powerlib_foundation] theorem genericReachInterface {X Q : Type} (F : Family X Q 1 0)
+    (sys : X → Port.System 1 0) (S A : X → Set (Dynamics.State 1)) (T ε : ℝ≥0∞)
+    (hden : ∀ x, x ∈ F.den (.envelope (.safe T ε)) ↔ (sys x).reach (S x) T ⊆ A x)
+    (x : X) :
+    connection% (x ∈ F.den (.envelope (.safe T ε)) ↔ (sys x).reach (S x) T ⊆ A x) := by
+  unfold Statement
+  exact hden x
+
+-- An arbitrary Family cannot launder a concrete model or an unconnected signal input.
+@[powerlib_foundation] private theorem genericModelInput {X Q : Type} (F : Family X Q 1 0)
+    (x : X) (m : Circuits.RL.Impedance) (_h : m.plant.system.Passive)
+    (hx : x ∈ F.den .passive) : connection% (x ∈ F.den .passive) := hx
+
+private theorem phantomFamilyInput {X Q : Type} (_F : Family X Q 1 0)
+    (m : Circuits.RL.Impedance) (h : m.plant.system.Passive) :
+    connection% (m ∈ Circuits.RL.family.den .passive) := by
+  unfold Statement
+  exact Circuits.RL.family.mem_den.mpr h
+
+private theorem genericSignalInput {X Q : Type} (F : Family X Q 1 0) (x : X)
+    (_signal : ℝ → Dynamics.State 1) (hx : x ∈ F.den .passive) :
+    connection% (x ∈ F.den .passive) := hx
+
+private theorem hiddenGenericModelInterface {X Q : Type} (F : Family X Q 1 0) (x : X)
+    (r : ℝ)
+    (h : x ∈ F.den .passive ↔ (GenericModelValueFixture.systemAlias r).Passive) :
+    connection% (x ∈ F.den .passive ↔ (GenericModelValueFixture.systemAlias r).Passive) := h
+
+-- The module linter must discover this model before it becomes an imported declaration.
+structure CurrentModel where
+  field : Dynamics.State 1 → Dynamics.State 1
+
+noncomputable def currentFamily : Family CurrentModel Unit 1 0 :=
+  ⟨fun m => Port.System.autonomous m.field, fun _ _ => True, fun _ => Set.univ⟩
+
+private theorem genericCurrentModelInput {X Q : Type} (F : Family X Q 1 0) (x : X)
+    (m : CurrentModel) (_h : (Port.System.autonomous m.field).Passive)
+    (hx : x ∈ F.den .passive) : connection% (x ∈ F.den .passive) := hx
+
 theorem allTypeClaim : connection% (∀ (X Q : Type) (F : Family X Q 1 0) (x : X),
     x ∈ F.den .passive → x ∈ F.den .passive) := by
   unfold Statement
@@ -93,11 +143,14 @@ run_cmd do
     let ctx ← Architecture.context
     let models ← Architecture.modelTypes
     for name in #[``raw, ``aliased, ``aliasedModel, ``proofDefinition, ``hiddenRelation,
-        ``rawHypothesis, ``hiddenInput, ``freshRaw, ``packed] do
+        ``rawHypothesis, ``hiddenInput, ``freshRaw, ``packed, ``genericModelInput,
+        ``phantomFamilyInput, ``genericSignalInput, ``hiddenGenericModelInterface,
+        ``genericCurrentModelInput] do
       if (← Architecture.publicTypeRejection ctx models (← getConstInfo name).type).isNone then
         throwError "Public admission accepted its rejection fixture: {name}"
     for name in #[``passive, ``foundation_connection, ``domain_connection, ``genericPassive,
-        ``allTypeClaim, ``conditionIff, ``guardedExists] do
+        ``genericFlowInterface, ``genericReachInterface, ``allTypeClaim, ``conditionIff,
+        ``guardedExists] do
       if let some reason ← Architecture.declarationRejection ctx models name then
         throwError "Public admission rejected its positive fixture: {name}: {reason}"
   let classified := Registry.theoremNames env
@@ -107,7 +160,8 @@ run_cmd do
     unless (Registry.kindOf? env name).isNone && !classified.contains name &&
         !foundations.contains name && !domains.contains name do
       throwError "An unannotated connection acquired a presentation classification: {name}"
-  for name in #[``foundation_connection, ``genericPassive] do
+  for name in #[``foundation_connection, ``genericPassive, ``genericFlowInterface,
+      ``genericReachInterface] do
     unless Registry.kindOf? env name == some .foundation && classified.contains name &&
         foundations.contains name && !domains.contains name do
       throwError "A connection overrode its explicit foundation classification: {name}"
@@ -116,11 +170,11 @@ run_cmd do
       !foundations.contains ``domain_connection do
     throwError "An explicitly classified domain connection was lost"
   logInfo m!"POWERLIB_TYPED_ADMISSION_OK: unclassified, foundation and domain connections; \
-    9 rejection controls"
+    14 rejection controls"
 
 -- The grammar extension admits side conditions only as the characterizing side of an iff and as
--- the guard of an existential, comparisons of numbers only, and binders over `Type` only as
--- universal binders; behaviour in an operand or a binder is still rejected by the bypass audit.
+-- the guard of an existential, and comparisons of numbers only. Binder universes are inferred;
+-- behaviour in an operand or a binder is still rejected by the bypass audit.
 open Lean Elab Command Term in
 run_cmd liftTermElabM do
   let ctx ← Architecture.context
@@ -141,16 +195,13 @@ run_cmd liftTermElabM do
           Circuits.RL.family.chain = Circuits.RL.family.semantics ↔
             (@ite ℕ m.plant.system.Passive (Classical.propDecidable _) 0 1) ≤ 0)),
     ("a binder over Type without a claim", ← `(∀ X : Type, Nonempty (X → X))),
-    ("an existential over types",
-      ← `(∃ X : Type, Circuits.RL.family.chain = Circuits.RL.family.semantics)),
+    ("an existential over types without a claim", ← `(∃ X : Type, Nonempty X)),
     ("a binder over Type with a signal binder",
       ← `(∀ (X : Type) (σ : ℝ → EuclideanSpace ℝ (Fin 1)),
           Circuits.RL.family.chain = Circuits.RL.family.semantics)),
     ("a condition mixed with a static fact",
       ← `(Circuits.RL.family.chain = Circuits.RL.family.semantics ↔
           ((1 : ℕ) ≤ 2 ∧ LinearSystems.IsHurwitz !![(-1 : ℝ)]))),
-    ("a binder over Type 1",
-      ← `(∀ X : Type 1, Circuits.RL.family.chain = Circuits.RL.family.semantics)),
     ("condition ↔ claim", ← `(((2 : ℕ) ≤ 1) ↔
           Circuits.RL.family.chain = Circuits.RL.family.semantics)),
     ("an existential guarded by a static fact", ← `(∃ k : ℕ,

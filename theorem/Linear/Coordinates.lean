@@ -103,7 +103,8 @@ variable {X Y Q R : Type*} {F : Family X Q n p} {G : Family Y R n p}
 /-- All denotations are invariant when system maps are read in similar state coordinates. -/
 @[tmio TM, powerlib_foundation] theorem IsLinear.den_similar (hF : F.IsLinear plant)
     (hG : G.IsLinear plant') (g : X → Y) (hg : ∀ x, Similar (plant x) (plant' (g x)))
-    (s : Sentence) : g ⁻¹' G.den s = F.den s := by
+    (s : Sentence) : connection% (g ⁻¹' G.den s = F.den s) := by
+  unfold powerlib.TMIO.Statement
   ext x
   simp only [Set.mem_preimage, mem_den, hF x, hG (g x)]
   exact (hg x).sentence_iff s
