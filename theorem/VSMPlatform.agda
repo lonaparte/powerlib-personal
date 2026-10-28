@@ -22,8 +22,9 @@ module theorem.VSMPlatform where
 -- check supports local exponential stability of every realized model (`les-infer`, through the
 -- organized seed) and is certified for it (`les-certified`, the whole-chain Galois connection);
 -- with the delay check the sentence is true of every producing platform (`les-truth`, through
--- `sound-fast`); without it the inference is about the models only (`lagFree-gap`: `lagFree` is
--- produced by `slowRig`). A slow-filter record supports instability of the models and of every
+-- `sound-fast`); if an unstable platform may produce a model-checked record, the inference is
+-- not true of every producer (`infer-not-truth-of-unstable-producer`). A slow-filter record
+-- supports instability of the models and of every
 -- producer (`unstable-infer`, `unstable-truth`), lies outside the records predicted by local
 -- exponential stability (`not-predicted`) and so refutes it for every producer (`refuted`).
 -- Lean. The generic laws are those of `theorem/Records.agda` (`theorem/Stack/Basic.lean`).
@@ -39,8 +40,7 @@ module theorem.VSMPlatform where
 -- `VSMLPF.slowRig_design_mem_den`, `VSMLPF.slowRig_mem_den_unstable`; `model-check`, `lag-check`,
 -- `slow-check` are steps of the proofs of `VSMLPF.locallyExponentiallyStable_mem_infer`,
 -- `VSMLPF.locallyExponentiallyStable_mem_truth` and `VSMLPF.unstable_mem_infer` (`slow-context`
--- reads `VSMLPF.Produces` as well); `slow-produces` is
--- `VSMLPF.slowRig_produces`. Derived: `sound-fast` is
+-- reads `VSMLPF.Produces` as well). Derived: `sound-fast` is
 -- `VSMLPF.realizationSoundUnder_locallyExponentiallyStable` (through
 -- `Implementation.realizationSoundUnder_of_design`), `complete-lag` is
 -- `VSMLPF.realizationCompleteUnder_locallyExponentiallyStable`, `exact-fast` is
@@ -50,8 +50,8 @@ module theorem.VSMPlatform where
 -- `VSMLPF.realizationSoundUnder_unstable`, `les-infer` is
 -- `VSMLPF.locallyExponentiallyStable_mem_infer`, `les-certified` is
 -- `VSMLPF.mem_certified_locallyExponentiallyStable`, `les-truth` is
--- `VSMLPF.locallyExponentiallyStable_mem_truth`, `lagFree-gap` is
--- `VSMLPF.lagFreeRecord_infer_not_truth`, `unstable-infer`, `unstable-truth` are
+-- `VSMLPF.locallyExponentiallyStable_mem_truth`, `infer-not-truth-of-unstable-producer` is
+-- `VSMLPF.infer_not_truth_of_unstable_producer`, `unstable-infer`, `unstable-truth` are
 -- `VSMLPF.unstable_mem_infer`, `VSMLPF.unstable_mem_truth`, `not-predicted` is
 -- `VSMLPF.not_mem_predicted_locallyExponentiallyStable` (`refuted` is its reading by
 -- `Stack.refutes`). Nothing here is exported.
@@ -121,10 +121,10 @@ module _ (Sys : Type) (holds : Sys → Sentence → Type) where
     Δfast r = Δlag r ⊎ (r ≡ fastLag)
     Δunst r = Δlag r ⊎ (r ≡ design destabilizing)
 
-    -- The observation layer: records, production, the static checks of records, the slow
-    -- platform (`VSMLPF.slowRig`) and the record it may produce (`VSMLPF.lagFreeRecord`).
+    -- The observation interface: records, production and static checks. The slow platform
+    -- (`VSMLPF.slowRig`) witnesses the failure of realization soundness without fast delay.
     module _ (Record : Type) (produces : Rig → Record → Type)
-      (ModelCheck LagCheck SlowCheck : Record → Type) (slowRig : Rig) (lagFree : Record)
+      (ModelCheck LagCheck SlowCheck : Record → Type) (slowRig : Rig)
       where
 
       -- What Lean proves.
@@ -153,8 +153,6 @@ module _ (Sys : Type) (holds : Sys → Sentence → Type) where
             realize model (translate unstable) (fst y)
           slow-context : (v : Record) → SlowCheck v → (y : Rig) → produces y v →
             realize rig Δunst y
-          lagFree-check : ModelCheck lagFree
-          slow-produces : produces slowRig lagFree
 
       module _ (ob : Obligations) where
         open Obligations ob
@@ -206,12 +204,12 @@ module _ (Sys : Type) (holds : Sys → Sentence → Type) where
         les-truth v hm hl = truth-of-infer designed produces
           (λ w e y p → lag-check v hm hl y (subst (produces y) e p)) sound-fast (les-infer v hm)
 
-        -- Without the delay check the data-driven conclusion is about the models only.
-        lagFree-gap : Infer designed produces (only lagFree) les
-          × (¬ Truth designed produces (only lagFree) les)
-        lagFree-gap = les-infer lagFree lagFree-check
-          , λ t → unstable-excludes (rigSystem slowRig) slow-unstable
-              (t lagFree refl slowRig slow-produces)
+        -- An unstable producer prevents model-level inference from being true of every producer.
+        infer-not-truth-of-unstable-producer : (v : Record) → ModelCheck v → (y : Rig) →
+          produces y v → den rig unstable y →
+          Infer designed produces (only v) les × (¬ Truth designed produces (only v) les)
+        infer-not-truth-of-unstable-producer v hm y hp hu = les-infer v hm
+          , λ t → unstable-excludes (rigSystem y) hu (t v refl y hp)
 
         -- T–O: instability of slow-filter records, and refutation.
         unstable-infer : (v : Record) → SlowCheck v → Infer designed produces (only v) unstable

@@ -1,7 +1,9 @@
 # Generated connections and verified completion
 
-PowerLib supplies objects at the T, M, I and O layers. The public engineering
-interface evaluates or compares generated connections. [Rules.md](Rules.md)
+PowerLib admits T and M knowledge nodes and the T–M, M–I and I–O relations.
+Implementation and observation types are relation endpoints; concrete measurement
+records and results remain external. The public engineering interface evaluates
+or compares generated connections. [Rules.md](Rules.md)
 applies that interface to library results, examples, admission tests, automatic
 reuse and the standalone LeanForControl integration.
 
@@ -99,11 +101,11 @@ narrow bridge of Rules §11 and is checked by Lean (`theorem/generated/`).
 | `theorem/EulerPorts.agda` | model with ports ↔ explicit Euler implementation: flow sentences read through the zero-input dynamics (the autonomous laws carry over); passivity is not realized at any step when the output does not depend on the input; for linear plants the realization is complete at every step and exact below a threshold | connection statements over arbitrary families with ports in `Numerics/EulerPorts` (`eulerPorts_realizationSoundUnder_flow_iff`, `eulerPorts_sound_small_step_local`, `not_eulerPorts_realizationSoundUnder_passive`, `eulerPorts_realizationCompleteUnder_linear`, `eulerPorts_exact_small_step_linear`; contrast `discreteGradient_passiveWith`); per family the passivity and large-step witnesses (`Circuits/PortEuler`, `GFL/DCLink/PortEuler`, `Synchronous/PortEuler`, `PLL/PortEuler`) |
 | `theorem/Envelope.agda` | the parameters of the envelope sentences: the horizon and the level enter through Galois connections, whose upper adjoints are the longest certified horizon and the worst exceedance probability of a set of models; safe sets are closed under countable meets almost surely, and at a positive level two certified safe sets can have an uncertified intersection, so no certified safe set is least | `Envelope/Basic` (`den_safe_sSup`, `den_safe_antitone`, `le_certifiedHorizon_iff`, `generate_certifiedHorizon`, `den_safe_iInf`, `gc_worstExceedance`, `generate_worstExceedance`, `holds_safe_iInter_null`, `not_holds_safe_inter`, `not_isLeast_safe`) |
 | `theorem/DisturbedRealization.agda` | deterministic design ↔ disturbed implementation (a random perturbation of intensity `σ` added to the field, judged on a safe set with a margin): finite-horizon safety realized soundly within a Lipschitz, solvable design, the margin, a small intensity and a bounded perturbation (Grönwall); infinite-horizon safety not realized under any intensity bound; small disturbance and long horizon do not commute | connection statements over arbitrary design families in `Envelope/Disturbed` (`noisy_realizationSoundUnder_safe`); the drift witness (`noisyDrift_mem_den_finite`, `noisyDrift_not_mem_den_top`, `not_driftImpl_realizationSoundUnder_top`) |
-| `theorem/VSMPlatform.agda` | VSM + LPF models (M) realized by test platforms with an execution delay (I) that produce identification records (O): realization sound and exact within `fastLag`, complete for every delay, not sound without `fastLag`; instability realized for every delay; inference, certification, truth and the inference–truth gap of a record without the delay check | `GFM/VSMLPFRig` (`realizationExactUnder_locallyExponentiallyStable`, `not_realizationSoundUnder_locallyExponentiallyStable`, `realizationSoundUnder_unstable`, `locallyExponentiallyStable_mem_infer`, `mem_certified_locallyExponentiallyStable`, `lagFreeRecord_infer_not_truth`) |
+| `theorem/VSMPlatform.agda` | VSM + LPF models (M) realized by test platforms with an execution delay (I) that produce identification records (O): realization sound and exact within `fastLag`, complete for every delay, not sound without `fastLag`; instability realized for every delay; inference, certification, truth and the inference–truth gap of a record without the delay check | `GFM/VSMLPFRig` (`realizationExactUnder_locallyExponentiallyStable`, `not_realizationSoundUnder_locallyExponentiallyStable`, `realizationSoundUnder_unstable`, `locallyExponentiallyStable_mem_infer`, `mem_certified_locallyExponentiallyStable`, `infer_not_truth_of_unstable_producer`) |
 | `theorem/DigitalCurrentLoop.agda` | PI current loop ↔ its digital platform (computation delay and zero-order hold, `τ = 3Tₛ/2`, as a Padé(1,1) state): attractive sentences realized soundly under the step constraints, completely for every period, exactly under the constraints; not soundly without them; instability realized for unstable designs | `CurrentControl/DigitalPI` (`realizationSoundUnder`, `realizationCompleteUnder`, `realizationExactUnder`, `not_realizationSoundUnder`, `realizationSoundUnder_unstable`) |
 | `theorem/DecouplingMismatch.agda` | PI current loop ↔ the dq loop decoupled with an inductance estimate: the attractive denotation is the design's pulled back along `base` for every frame speed and mismatch, so the attractive sentences are realized exactly without constraints | `CurrentControl/Mismatch` (`den_eq_base`, `realizationExactUnder`) |
 | `theorem/VoltageLimit.agda` | PI current loop ↔ the loop with the applied voltage saturated at `V_dc/√3`: local sentences exact with integral action and headroom; without integral action Lyapunov stability not realized soundly; under overload every platform is unstable; global exponential stability not realized soundly | `CurrentControl/VoltageLimit` (`realizationExactUnder_local`, `realizationSoundUnder_attractive`, `not_realizationSoundUnder_lyapunovStable`, `realizationSoundUnder_unstable_of_overload`, `not_realizationSoundUnder_globallyExponentiallyStable`) |
-| `theorem/RLMeasurement.agda` | the RL family and its DC resistance readings of accuracy `ε` (models → records): certification by the resistance window, prediction, an observation closure that cannot separate equal resistances (inductance and decay rate not identifiable), records certified through their estimate, independence of the model representation | `Circuits/RLMeasurement` (`certify_reading`, `predict_reading`, `certified_readings`, `closure_resistance`, `certified_records`, `stateSpace_whole`) |
+| `theorem/RLMeasurement.agda` | the RL model-side compatibility relation for a symbolic resistance reading of accuracy `ε` (not an implementation production interface): certification by the resistance window, prediction, an observation closure that cannot separate equal resistances (inductance and decay rate not identifiable), records certified through their estimate, independence of the model representation | `Circuits/RLMeasurement` (`certify_reading`, `predict_reading`, `certified_readings`, `closure_resistance`, `certified_records`, `stateSpace_whole`) |
 
 The rebasing scaffold shows the division of labour. Univalence turns the equivalences of the
 six spaces of an interconnection into a path, so the closed loop commutes with every change of
@@ -207,6 +209,13 @@ claim. The polynomial sum-of-squares search remains sound and incomplete, with
 proved separating models rather than an unsupported completeness claim.
 
 ## Validation
+
+The build figures below describe the previously validated `bb46a37` baseline,
+before the concrete-record cleanup and five-kind ownership clarification. They
+are not a claim that the modified tree has been rebuilt. The changed observation
+scaffolds have been checked with Agda; current Lean verification requires the
+pinned dependency artifacts. Missing caches must not trigger an unrestricted
+source rebuild of Mathlib merely to refresh these figures.
 
 `lake build` checks the library, examples and the admission, discovery, reuse, architecture
 and library-structure tests. The library structure test enforces the meta-rules of Rules §0

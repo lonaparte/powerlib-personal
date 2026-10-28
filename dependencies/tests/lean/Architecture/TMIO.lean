@@ -122,7 +122,7 @@ run_cmd do
       unless powerlib.Search.allowedAxiom axiomName do
         throwError "TMIO theorem used an unapproved axiom: {name}: {axiomName}"
   for name in #[`powerlib.Circuits.RL.chain_eq_semantics, `powerlib.Circuits.RL.certified_readings,
-      `powerlib.Circuits.RL.dcTest_certified, `powerlib.Circuits.RL.closure_resistance,
+      `powerlib.Circuits.RL.certified_records, `powerlib.Circuits.RL.closure_resistance,
       `powerlib.Circuits.LCL.chain_le_semantics, `powerlib.Circuits.LCL.exact_hurwitz,
       `powerlib.Circuits.LCL.exactUnder_conservative, `powerlib.Circuits.LCL.realize_passive_damped,
       `powerlib.Circuits.LCL.exact_passive,

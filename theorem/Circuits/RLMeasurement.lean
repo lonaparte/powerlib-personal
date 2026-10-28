@@ -2,51 +2,55 @@ import theorem.TMIO.ClaimElab
 import theorem.Circuits.RL
 import theorem.Data.Analysis
 
-/-! # Measuring the RL branch
+/-! # RL candidate models from symbolic resistance constraints
 
-The seed is the family's seed for the reading relation; certified readings, possible readings and
-the observation closure are generated. Because the family is faithful, a reading certifies a
-sentence exactly when its accuracy interval lies in the resistances all of whose models satisfy
-the sentence (`certified_readings`). With `ε ≥ 0` a positive decay rate is never certified: it
-depends on the inductance, which the observation cannot separate (`closure_resistance`).
+The relation `reading ε` is a formal compatibility assumption between an RL model and a symbolic
+resistance value. It constrains candidate models within M and supplies criteria for their T–M
+properties. This module defines no implementation or I–O production interface and proves no claim
+that a physical implementation produces a reading or record.
+
+The family's compatibility seed generates certified values, possible values and a closure of
+candidate models. Because the family is faithful, a value certifies a sentence exactly when its
+tolerance interval lies in the resistances all of whose models satisfy the sentence
+(`certified_readings`). With `ε ≥ 0` a positive decay rate is never certified: it
+depends on the inductance, which this compatibility relation cannot separate (`closure_resistance`).
 
 Model boundary.
 * The RL family of `theorem.Circuits.RL`.
-* A DC resistance reading `r` with accuracy `ε` may be produced by a model exactly when
-  `|r - R| ≤ ε`; the inductance is not observed.
-* DC test records are reduced to readings by the least-squares analysis of `Data.Analysis`.
+* The formal compatibility assumption for a symbolic resistance value `r` and tolerance `ε` is
+  `|r - R| ≤ ε`; this constraint supplies no information about the inductance.
+* The parameterized record interface is reduced to symbolic resistance values by the deterministic
+  least-squares analysis of `Data.Analysis`.
 
-Source: TMIO observations (`Family.seed`, certification and prediction,
+Source: TMIO relational calculus (`Family.seed`, certification and prediction,
 `theorem/TMIO/Relation.lean`; representation change, `theorem/TMIO/Representation.lean`); the
 data analysis of `theorem/Data/Analysis.lean`; the Agda-generated conversion of
 `theorem/Circuits/RL.lean` for the state-space representation.
 
 Results.
-* The observation: `rl` (`rl_resistance`, `rl_inductance`), `reading`, `seed`.
+* Model compatibility: `rl` (`rl_resistance`, `rl_inductance`), `reading`, `seed`.
 * Windows: `window` (the resistances all of whose models satisfy a sentence),
   `kernImage_resistance`, `kernImage_decayRate`, `kernImage_den` (the window of every sentence is
   the resistance kernel of its denotation).
-* Test records: `recordEdge` (the analysis as one more relational observation edge), `dcTest`,
-  `estimate_dcTest`.
+* Record interface: `recordEdge` (the deterministic analysis relation).
 * The state-space representation: `stateSpaceIso`, `stateSpaceSeed`, `stateSpace_whole`
-  (certified readings do not depend on the implementation representation).
+  (certified values do not depend on the model representation).
 
 Family and connection conclusions.
-* No new family: the module observes `Circuits.RL.family` through `seed ε`. Scaffold:
+* No new family: the module constrains candidate models of `Circuits.RL.family` through `seed ε`.
+  This is a model-side compatibility construction; it does not establish an I–O relation. Scaffold:
   `theorem/RLMeasurement.agda`.
 * `certify_reading`: a reading certifies a set of models exactly when its accuracy interval lies
   in the resistances all of whose models belong to the set; `predict_reading`: the possible
   readings, derived from certification by complement; `candidates`: the candidates of a reading
   are the semantic map itself.
-* `certified_readings`: a reading is certified, along the whole chain, when its whole accuracy
-  interval lies in the sentence's window; a positive decay rate has an empty window, so with
+* `certified_readings`: a symbolic value is certified through the compatibility seed when its
+  tolerance interval lies in the sentence's window; a positive decay rate has an empty window, so with
   `ε ≥ 0` (a nonempty interval) it is never certified.
-* `closure_resistance`: the generated observation closure cannot separate models of equal
-  resistance; the inductance, and with it the decay rate, is not identifiable from DC readings.
+* `closure_resistance`: the generated compatibility closure cannot separate models of equal
+  resistance; the constraint does not identify the inductance or the decay rate.
 * `certified_records`: the chain extended by the analysis edge certifies a record exactly when it
-  certifies the record's estimate; `dcTest_certified`: with accuracy `1/2`, the record `dcTest`
-  is certified, along the chain extended by the analysis, for every attractive sentence and for
-  sampled contraction.
+  certifies the record's estimate.
 -/
 
 noncomputable section
@@ -64,12 +68,12 @@ def rl (R L : ℝ) (hL : 0 < L) : Impedance := ⟨R, ⟨L, hL⟩⟩
 @[simp, powerlib_foundation] theorem rl_inductance (R L : ℝ) (hL : 0 < L) :
     (rl R L hL).inductance.val = L := rfl
 
-/-! ## The observation -/
+/-! ## Model compatibility -/
 
-/-- The DC resistance reading with accuracy `ε`. -/
+/-- Formal compatibility between a model and a symbolic resistance value with tolerance `ε`. -/
 def reading (ε : ℝ) : SetRel Impedance ℝ := {p | |p.2 - p.1.resistance| ≤ ε}
 
-/-- The RL measurement seed: the family's seed for the reading relation. -/
+/-- The family's seed for the model compatibility relation. -/
 def seed (ε : ℝ) : Seed (Set Sentence) (Set Requirement) (Set Impedance)ᵒᵈ (Set ℝ)ᵒᵈ :=
   family.seed (reading ε)
 
@@ -180,8 +184,8 @@ def window : Sentence → Set ℝ
     ext m
     simp [translate, Meets, window]
 
-/-- The certified readings of every sentence, generated along the whole chain: a reading is
-certified when its whole accuracy interval lies in the sentence's window. A positive decay rate
+/-- The certified symbolic values of every sentence, generated through the compatibility seed: a
+value is certified when its tolerance interval lies in the sentence's window. A positive decay rate
 has an empty window, so with `ε ≥ 0` it is never certified. -/
 @[powerlib_domain] theorem certified_readings (ε : ℝ) (s : Sentence) :
     connection% (ofDual (generate (seed ε).uTO {s}) =
@@ -190,7 +194,7 @@ has an empty window, so with `ε ≥ 0` it is never certified. -/
   rw [seed, family.certified (reading ε) (Family.chain_eq_semantics_iff.mp chain_eq_semantics s),
     certify_reading, kernImage_den]
 
-/-! ## The observation closure -/
+/-! ## The compatibility closure -/
 
 /-- The candidates of a reading are the semantic map itself. -/
 @[powerlib_foundation] theorem candidates (ε r : ℝ) :
@@ -199,8 +203,8 @@ has an empty window, so with `ε ≥ 0` it is never certified. -/
   ext m
   simp [seed, Family.seed, relationalSeed, reading]
 
-/-- The generated observation closure cannot separate models of equal resistance: the inductance,
-and with it the decay rate, is not identifiable from DC readings. -/
+/-- The generated compatibility closure cannot separate models of equal resistance: the symbolic
+resistance constraint does not identify the inductance or the decay rate. -/
 @[powerlib_domain] theorem closure_resistance (ε : ℝ) (P : (Set Impedance)ᵒᵈ)
     {m m' : Impedance} (h : m.resistance = m'.resistance) :
     connection% (m ∈ ofDual (closure (seed ε).u₃ P) ↔ m' ∈ ofDual (closure (seed ε).u₃ P)) := by
@@ -209,10 +213,10 @@ and with it the decay rate, is not identifiable from DC readings. -/
     m' ∈ ofDual (possibly (reading ε) (generate (possibly (reading ε)) P))
   simp only [mem_possibly, reading, Set.mem_ofPred_eq, h]
 
-/-! ## Test records -/
+/-! ## The parameterized record interface -/
 
-/-- A DC test record is read through its least-squares resistance: the analysis of
-`Data.Analysis` as one more relational observation edge. -/
+/-- A symbolic record is read through its least-squares resistance: the deterministic analysis of
+`Data.Analysis` as a relation composed with model compatibility. -/
 def recordEdge : sInfHom (Set (Record ℝ))ᵒᵈ (Set ℝ)ᵒᵈ :=
   possibly (Function.graph (estimate (K := ℝ))).inv
 
@@ -227,38 +231,18 @@ as a composite, certifies a record exactly when it certifies the record's estima
   rw [mem_certify]
   exact ⟨fun h => h _ rfl, fun h r hr => (show estimate d = r from hr) ▸ h⟩
 
-/-- Two DC samples, `(2 V, 1 A)` and `(4 V, 2 A)`. -/
-def dcTest : Record ℝ := [⟨2, 1⟩, ⟨4, 2⟩]
-
-@[powerlib_foundation] theorem estimate_dcTest : estimate dcTest = 2 := by
-  norm_num [dcTest, estimate, fit, stats]
-
-/-- With accuracy `1/2`, the record `dcTest` is certified, along the chain extended by the
-analysis, for every attractive sentence and for sampled contraction. -/
-@[powerlib_domain] theorem dcTest_certified {P : Flow.Property}
-    (hP : P.Attractive ∨ P = .contractive) :
-    connection% (dcTest ∈ ofDual (generate ((seed (1 / 2)).uTO.comp recordEdge) {.flow P})) := by
-  unfold powerlib.TMIO.Statement
-  have hw : window (.flow P) = Set.Ioi 0 := by
-    rcases hP with hP | rfl
-    · cases P <;> first | rfl | exact absurd hP id
-    · rfl
-  rw [certified_records, Set.mem_preimage, certified_readings, hw, Set.mem_ofPred_eq,
-    estimate_dcTest, Set.Icc_subset_Ioi_iff (by norm_num)]
-  norm_num
-
 /-! ## The state-space representation -/
 
-/-- The implementation layer in state-space coordinates, along the Agda-generated conversion. -/
+/-- The model representation in state-space coordinates, along the Agda-generated conversion. -/
 def stateSpaceIso : (Set Impedance)ᵒᵈ ≃o (Set StateSpace)ᵒᵈ :=
   (Equiv.toOrderIsoSet modelEquiv.symm).dual
 
-/-- The seed transported to state-space implementations. -/
+/-- The compatibility seed transported to the state-space model representation. -/
 def stateSpaceSeed (ε : ℝ) :
     Seed (Set Sentence) (Set Requirement) (Set StateSpace)ᵒᵈ (Set ℝ)ᵒᵈ :=
   (seed ε).transport (OrderIso.refl _) (OrderIso.refl _) stateSpaceIso (OrderIso.refl _)
 
-/-- Certified readings do not depend on the implementation representation. -/
+/-- Certified symbolic values do not depend on the model representation. -/
 @[powerlib_foundation] theorem stateSpace_whole (ε : ℝ) :
     ⇑(generate (stateSpaceSeed ε).uTO) = ⇑(generate (seed ε).uTO) := by
   rw [stateSpaceSeed, Seed.transport_whole]

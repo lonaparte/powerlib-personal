@@ -14,7 +14,7 @@ open powerlib powerlib.TMIO
 #check powerlib.TMIO.chain_eq_satisfaction_iff
 #check powerlib.TMIO.chain_le_satisfaction_iff
 #print axioms powerlib.TMIO.Seed.generate_uTO
-#print axioms powerlib.Circuits.RL.dcTest_certified
+#print axioms powerlib.Circuits.RL.certified_records
 
 -- The generated space of a requirement set is the maximal legal family.
 example (Γ : Set Circuits.RL.Requirement) (P : Set Circuits.RL.Impedance) :
@@ -28,17 +28,15 @@ example (ε : ℝ) (s : Sentence) :
       {r | Set.Icc (r - ε) (r + ε) ⊆ Circuits.RL.window s} :=
   Circuits.RL.certified_readings ε s
 
--- A DC test record is certified for every attractive sentence, so every RL model that may produce
--- its estimate satisfies it.
-example (m : Circuits.RL.Impedance)
-    (hm : |Data.Analysis.estimate Circuits.RL.dcTest - m.resistance| ≤ 1 / 2)
-    {P : Flow.Property} (hP : P.Attractive) : m ∈ Circuits.RL.family.den (.flow P) := by
-  have hd := Circuits.RL.dcTest_certified (Or.inl hP)
-  unfold powerlib.TMIO.Statement at hd
+-- Every model compatible with the estimate of a certified record satisfies its certified sentences.
+example (ε : ℝ) (Φ : Set Sentence) (d : Data.Analysis.Record ℝ) (m : Circuits.RL.Impedance)
+    (hd : d ∈ OrderDual.ofDual
+      (generate ((Circuits.RL.seed ε).uTO.comp Circuits.RL.recordEdge) Φ))
+    (hm : |Data.Analysis.estimate d - m.resistance| ≤ ε)
+    (s : Sentence) (hs : s ∈ Φ) : m ∈ Circuits.RL.family.den s := by
   rw [Circuits.RL.certified_records, Set.mem_preimage] at hd
   exact Family.certifies
-    (fun s _ => (Family.chain_eq_semantics_iff.mp Circuits.RL.chain_eq_semantics s).sound) hd hm
-    _ rfl
+    (fun s _ => (Family.chain_eq_semantics_iff.mp Circuits.RL.chain_eq_semantics s).sound) hd hm s hs
 
 -- The state-space representation is reached by transport, not by a second development.
 example (s : Sentence) : (Circuits.RL.family.comap Circuits.RL.toImpedance).Exact s :=

@@ -56,7 +56,7 @@ Results.
   `a₁ = D ω_c/(M τ)`, `a₀ = ω_c K/(M τ)`, and `(τ M)³ (a₃ a₂ a₁ − a₁² − a₃² a₀) = Rig.H`,
   `H = c (M + τ b)(b + τ c) − τ M c² − ω_c K (M + τ b)²`, `b = M ω_c + D`, `c = D ω_c`),
   `rigField_point_eq_zero_iff` (the operating point is an equilibrium of the platform iff the design
-  angle is balanced), `slowRig_produces`.
+  angle is balanced).
 * Algebra behind the connection conclusions (private): `H/ω_c = M e + τ b (e − K M) +
   τ² b (D² ω_c − K M ω_c − K D)` with `e = D b − K M` (the design is fast-filter iff `e > 0`), so
   `H > 0` forces `e > 0`, `e < 0 < K` forces `H < 0`, and `fastLag` forces `H > 0`.
@@ -97,8 +97,8 @@ Family and connection conclusions.
   (`Stack.subset_certified_iff`); `locallyExponentiallyStable_mem_truth`: with `LagCheck` the
   record is certified for the platform constraints and the sentence is true of every platform that
   may produce it (`Stack.infer_subset_truth`).
-  `lagFreeRecord_infer_not_truth`: without the delay check the data-driven conclusion is about the
-  models only (`lagFreeRecord`: all intervals `[1, 1]`, `τ_hi = 1`, produced by `slowRig`).
+  `infer_not_truth_of_unstable_producer`: if a record passes `ModelCheck` and an unstable platform
+  may produce it, its model-level inference does not hold for every producing platform.
   `unstable_mem_infer`, `unstable_mem_truth`: a `SlowCheck` record supports instability of the
   realized models and of every producing platform, whatever its delay.
   `not_mem_predicted_locallyExponentiallyStable`: a `SlowCheck` record lies outside the records
@@ -818,29 +818,18 @@ every platform that may produce the record (`Stack.infer_subset_truth` with
   · exact hτ
   · exact fastLag_of_lagCheck h₁ h₂ hp
 
-/-- An identification record with all intervals `[1, 1]` and the delay bound `1`. -/
-def lagFreeRecord : Record := ⟨1, 1, 1, 1, 1, 1, 1, 1, 1⟩
-
-/-- The slow platform may produce the record `lagFreeRecord`. Static evidence on the
-implementation, not a connection conclusion. -/
-@[powerlib_foundation] theorem slowRig_produces : Produces slowRig lagFreeRecord := by
-  refine ⟨by simp [slowRig, Meets], ?_⟩
-  norm_num [slowRig, lagFreeRecord, Model.K]
-
-/-- Data-driven inference without the implementation constraint is about the models only:
-`lagFreeRecord` supports local exponential stability of every realized model, while the slow
-platform, which may produce it, is unstable. -/
-@[powerlib_domain] theorem lagFreeRecord_infer_not_truth :
-    connection% ((.flow .locallyExponentiallyStable : Sentence) ∈ stack.infer {lagFreeRecord} ∧
-      (.flow .locallyExponentiallyStable : Sentence) ∉ stack.truth {lagFreeRecord}) := by
+/-- A record passing the model check supports local exponential stability of every realized model.
+If an unstable platform may produce that record, this inference is not true of every producer. -/
+@[powerlib_domain] theorem infer_not_truth_of_unstable_producer (v : Record) (h : v.ModelCheck)
+    (y : Rig) (hp : Produces y v) (hu : y ∈ rigFamily.den (.flow .unstable)) :
+    connection% ((.flow .locallyExponentiallyStable : Sentence) ∈ stack.infer {v} ∧
+      (.flow .locallyExponentiallyStable : Sentence) ∉ stack.truth {v}) := by
   unfold powerlib.TMIO.Statement
-  have hi := locallyExponentiallyStable_mem_infer lagFreeRecord (by
-    unfold Record.ModelCheck; norm_num [lagFreeRecord])
-  have hu := slowRig_mem_den_unstable
-  unfold powerlib.TMIO.Statement at hi hu
+  have hi := locallyExponentiallyStable_mem_infer v h
+  unfold powerlib.TMIO.Statement at hi
   refine ⟨hi, fun ht => ?_⟩
-  have hmem : slowRig ∈ rigFamily.den (.flow .locallyExponentiallyStable) :=
-    (stack.mem_truth).mp ht lagFreeRecord rfl slowRig (mem_produces.mpr slowRig_produces)
+  have hmem : y ∈ rigFamily.den (.flow .locallyExponentiallyStable) :=
+    (stack.mem_truth).mp ht v rfl y (mem_produces.mpr hp)
   rw [rig_mem_den_flow_iff] at hmem hu
   exact hu (LocallyExponentiallyStable.lyapunovStable hmem)
 

@@ -1,17 +1,22 @@
-# The four TMIO layers in this library
+# Knowledge nodes and TMIO relations
 
-`TMIO.Seed` fixes the mathematics of a four-layer chain: four complete lattices, one
-infimum-preserving semantic map per adjacent edge pointing back to the earlier layer, and
-forward maps generated as unique lower adjoints ([Architecture.md](Architecture.md)). This
-document fixes what the four layers mean in powerlib, how a result is placed in one of them, and
-how the Lean interface carries each layer. The interface is `theorem/Stack/Implementation.lean`
-and `theorem/Stack/Basic.lean`.
+The core admits exactly five kinds of knowledge unit: T, M, T–M, M–I and I–O.
+T contains general theory and its internal theorems; M contains mathematical
+models and their internal structural facts. The other three kinds relate
+sentences to models, models to implementations, and implementations to external
+observations, respectively. There are no standalone I or O knowledge units.
 
-## Definitions
+`TMIO.Seed` still fixes the mathematics of four ordered endpoints, with one
+infimum-preserving backward map per adjacent edge and uniquely generated forward
+adjoints. Endpoint roles must not be confused with independent library contents.
+Implementation and record types are interface definitions owned by relations;
+concrete measurement records and numerical measurement results are external.
+
+## Endpoint roles
 
 | Layer | Objects | Changes when |
 | --- | --- | --- |
-| T, theory | Sentences of the semantic layer (`Sentence`: the flow properties, passivity, and the envelope sentences: safety over a horizon at a probability level, a mean-square bound). Generic mathematics supplies their proofs. | The mathematics changes. |
+| T, theory | General mathematical theory, properties and their laws. The model-facing language is `Sentence`: flow properties, passivity and envelope properties. | The mathematics changes. |
 | M, model | The theory organized for a concrete situation. A model is an idealized description of one situation (topology, control law, parameters); its behaviour is given exactly by the semantic layer. A requirement language describes classes of models and organizes the theory over them. | The modelling changes for the same theory. |
 | I, implementation | A model under realistic constraints: experimental platforms and test rigs, sampling and computation delay, sensor and actuator dynamics, quantization, limits the design did not intend, parameter tolerances, disturbances, numerical integration. An implementation has its own behaviour, read by the same semantic layer, which in general differs from the behaviour of the model it realizes. | The conditions of realization change for the same model: platform, digitization, simulation method. |
 | O, observation | Records produced by implementations: sampled waveforms, frequency sweeps, identification results, with their measurement errors. A record has no behaviour of its own. | The run or the sensor changes for the same implementation. |
@@ -73,24 +78,36 @@ producers (`Stack.refutes`) and, through realization soundness, for some realize
 (`Stack.refutes_realized`). Sound translations let inference use the requirement language
 (`Stack.mem_infer_of_organized`, `Stack.certifiedOrganized_subset`).
 
-## Placing results
+## Placing knowledge units
 
-* A model family with its translation is one T–M connection. Its translation, denotation and
-  requirement-space conclusions are T–M and M results. The seed encoding `Family.seed` puts the
-  model instances in the third position and the requirement sets in the second; in the reading
-  above both belong to M.
-* An implementation is a second family. Its own conclusions have the same three shapes and are
-  I results; its realistic constraints are requirements of its language.
-* A theorem relating implementations to the models they realize is an M–I result, stated with
-  `RealizationSoundUnder`, `RealizationCompleteUnder` or `RealizationExactUnder`.
-* A theorem about records along a stack is an O result, stated with `infer`, `certified`,
-  `truth` (T–O) or `predicted` (O–I).
+* **T**: general mathematics, semantic laws, numerical and estimation theory, and
+  generic connection composition or transport laws. Framework infrastructure supports
+  these units; it is not an extra knowledge category.
+* **M**: models, parameter and requirement languages, algebraic structure and changes
+  of model representation. A platform's mathematical description can be M as well.
+* **T–M**: interpretation of sentences in model families, parameter criteria,
+  translation soundness/exactness and preservation of this interpretation under a
+  model reading. A model mapping itself is M; a theorem about its interpretation is T–M.
+* **M–I**: realization relations and their conditional soundness, completeness,
+  exactness and boundaries. Endpoint models and requirements support the relation;
+  their carrier types do not acquire a permanent I classification.
+* **I–O**: production or compatibility interfaces for arbitrary external observations,
+  and their inference, certification and prediction laws. Records are parameters,
+  not stored measurements. Whole-chain results compose T–M, M–I and I–O; they do
+  not create independent O or T–O knowledge units.
 
-Generic modules supply the tools of each layer without belonging to it: the delay, sampling and
-modulation modules for implementations, and the estimation modules for records. The model
-families of the library are idealized: their model boundaries list delay, PWM, sampling and
-saturation among the exclusions, which are the realistic constraints of the implementation
-layer.
+The legacy `Family.seed` encoding places requirement sets and model instances in
+its middle positions; both are on the M side of the interpretation. It does not
+establish a physical realization merely by occupying the third Seed position.
+In `Circuits/RLMeasurement`, `reading` is a model-side compatibility criterion
+for a symbolic resistance estimate. Its constraint calculations belong to M and
+its sentence criteria to T–M. A genuine I–O reading would additionally require an
+implementation and a justified production interface; that connection is not claimed.
+
+The generic/engineering dependency partition and foundation/domain presentation
+metadata remain independent. Generic modules can contain T–M or M–I relations;
+engineering directories can contain general T lemmas. Classify the complete
+statement and its hypotheses, not just the directory or the type of one endpoint.
 
 The semantic layer reads three kinds of systems (`Behaviour`): continuous-time systems with ports
 (`theorem/Flow/Defs.lean`, `theorem/Port/Defs.lean`), discrete-time systems with ports
@@ -101,46 +118,43 @@ numerical integration scheme (`Numerics/EMT`) are discrete-time implementation f
 continuous-time models. Hybrid behaviour (state-dependent switching) is not yet read; see
 [ImplementationLayer.md](ImplementationLayer.md).
 
-`dependencies/tests/lean/Library/TMIOIndex.lean` files every connection statement under one
-category by the constants of its proposition. It recognizes implementation families by the
-implementation type of an `Implementation` or `Stack` declared in the library, not by names or
-tags:
+`dependencies/tests/lean/Library/TMIOIndex.lean` is the existing surface-form
+connection diagnostic. It scans typed connection theorems, not all core definitions
+and theorems. Its legacy buckets (`translation`, `denotation`, `requirementSpace`,
+`implementation`, `realization`, `data`, `observation`) are not the five-kind
+knowledge catalog. In particular, its I/O/seed labels cannot establish admitted
+knowledge ownership. It also ignores outer hypotheses when reading the proposition,
+so it cannot by itself decide whether a statement expresses M–I transfer.
 
-```
-import dependencies.tests.lean.Library.TMIOIndex
+The five-kind inventory must preserve those hypotheses and relative endpoint roles,
+and include T and M internal content. Until that declaration-level inventory is
+implemented, this diagnostic must not be reported as a complete classification.
 
-#tmio_edges                  -- statements per category and layer
-#tmio_edges realization      -- one category, grouped by module
-```
-
-The categories are `translation`, `denotation` (T–M), `requirementSpace` (M), `implementation`
-(I), `realization` (M–I), `data` (records: T–O and O–I) and `observation` (the observation
-relations on models of the seed encoding).
-
-## Implementation families
+## Models and realization interfaces
 
 ### Pilot: a grid-forming VSM on a test platform
 
-`theorem/GFM/VSMLPFRig.lean` builds the four layers for the VSM with a first-order power filter
+`theorem/GFM/VSMLPFRig.lean` supplies model definitions, their T–M interpretation,
+an M–I realization and an I–O interface for the VSM with a first-order power filter
 on an infinite bus.
 
 * M: `GFM.VSMLPF.family` (three states), unchanged.
-* I: `VSMLPF.Rig`, a design model with an execution delay `τ` (the first-order equivalent of the
+* M–I endpoint: `VSMLPF.Rig`, a design model with an execution delay `τ` (the first-order equivalent of the
   computation delay and PWM update), four states. Its requirement language adds the platform
   Routh condition `H > 0` and the constraint `fastLag`, a delay fast against the design margin.
   Within a physical design and a positive delay its translation of local exponential stability
   is exact.
-* O: `VSMLPF.Record`, an identification result (parameter intervals and a delay bound), produced
+* I–O interface: `VSMLPF.Record`, an identification result (parameter intervals and a delay bound), produced
   by every platform running at its balanced operating point with parameters in the intervals.
 * M–I: local exponential stability is realized soundly within `fastLag`, by the static reduction
   above, and completely for every delay (a delay never stabilizes). Without `fastLag` it is not
   realized soundly: `slowRig` has a stable design (`K = 1 < 2`) and is unstable at `τ = 1`.
   Instability of a destabilizing design is realized for every delay.
-* T–O: a record passing the worst-corner fast-filter check supports local exponential stability
+* Composite inference through T–M, M–I and I–O: an external record passing the worst-corner fast-filter check supports local exponential stability
   of every realized model, inferred through the model family's requirement language and its
   soundness. Only with the worst-corner delay check as well does the sentence hold for every
-  producing platform. `lagFreeRecord_infer_not_truth` shows the gap: a record produced by
-  `slowRig` supports stability of the models while its producer is unstable. A slow-filter record
+  producing platform. `infer_not_truth_of_unstable_producer` states the gap for any model-checked
+  record and any compatible unstable producer, without storing a concrete record. A slow-filter record
   supports instability of models and platforms and lies outside the records predicted by platform
   stability.
 
@@ -189,6 +203,6 @@ sentence is safety over a horizon at a probability level.
   horizon and the worst exceedance probability (`theorem/Envelope/Basic.lean`, scaffold
   `theorem/Envelope.agda`). Safe sets are closed under countable meets almost surely only; at a
   positive level no certified safe set need be least (`not_isLeast_safe`).
-* O: the record layer is relational (`possibly produces`): it infers what holds for every possible
+* I–O: the observation interface is relational (`possibly produces`): it infers what holds for every possible
   producer and cannot attach a probability to a record. Inferring a level `ε` from records needs a
   law of the records given the implementation, which is not represented.

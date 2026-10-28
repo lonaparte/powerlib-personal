@@ -31,8 +31,7 @@ Results.
 * Distribution: `stats_append` (merging records adds their statistics), `distributedEdge`,
   `centralEdge`, `distributedEdge_eq_centralEdge` (the same semantic map),
   `generate_distributedEdge` (the distributed pipeline computes the central estimates).
-* Evaluation: `estimate_eq_of_exact` (a noiseless record with some nonzero current fits `R`),
-  `estimate_example` (samples `(2 V, 1 A)` and `(4 V, 2 A)` fit `2 Ω`).
+* Evaluation: `estimate_eq_of_exact` (a noiseless record with some nonzero current fits `R`).
 -/
 
 namespace powerlib.Data.Analysis
@@ -127,10 +126,5 @@ def centralEdge : sInfHom (Set K) (Set (Record K × Record K)) :=
     rw [hd s hs]
     ring
   rw [estimate, fit, h1, mul_div_cancel_right₀ R h]
-
-/-- A concrete exact evaluation: samples `(2 V, 1 A)` and `(4 V, 2 A)` fit `2 Ω`. -/
-@[powerlib_foundation] theorem estimate_example :
-    estimate ([⟨2, 1⟩, ⟨4, 2⟩] : Record ℚ) = 2 := by
-  norm_num [estimate, fit, stats]
 
 end powerlib.Data.Analysis

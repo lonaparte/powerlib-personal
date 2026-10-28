@@ -1,15 +1,17 @@
-# Building the implementation layer
+# Building model–implementation connections
 
 Status: the discrete-time kind of the semantic layer (§3.1–3.2), the generic bridges (§3.5) and
 the continuous-time implementation families are in the library. The limit sentences (§3.3), the
 approximation relation (§3.4) and the hybrid kind are proposals awaiting decisions (§5).
 
-[Layers.md](Layers.md) defines the implementation layer: a model under realistic constraints
+[Layers.md](Layers.md) defines the implementation endpoint of an M–I relation: a model under realistic constraints
 (digitization, switching, physical limits, tolerances, numerical integration), with its own
 behaviour, related to the model it realizes. The interface (`theorem/Stack/Implementation.lean`)
 is complete for implementations whose behaviour the semantic layer can read. This document
 records what the semantic layer cannot yet read, what each kind of implementation needs, and a
-staged plan.
+staged plan. Such endpoint definitions support M–I relations; they do not establish
+an independent I knowledge category. Mathematical descriptions of platforms and
+numerical schemes remain models, with their own T–M interpretation where applicable.
 
 ## 1. The obstacle
 

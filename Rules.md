@@ -87,6 +87,35 @@ stay in the local workspace outside the repositories. A result not yet expressed
 as a Lean theorem is a research note, regardless of its mathematical plausibility.
 Directory structure must enforce this distinction.
 
+## 2a. Knowledge units and external observations
+
+The core admits exactly five kinds of knowledge unit: **T**, **M**, **T–M**,
+**M–I** and **I–O**. T contains general mathematical theory; M contains model
+definitions and their internal structural facts. T–M relates sentences to models
+and their requirements. M–I relates designs to realizations under stated
+constraints. I–O specifies the interface between a realization and external
+observations. I and O are endpoints of relations, not independent knowledge units.
+
+The types of implementations and observations, and the definitions needed to
+state their relations, belong to those relations. A mathematical model of an
+implementation may itself be M in another connection: the role is relative to
+the connection, not a permanent classification of its carrier type. General
+composition laws belong to T; derived paths use the three admitted relation kinds
+without introducing T–O or M–M as additional unit kinds.
+
+Concrete measurement records and results are not core knowledge. Keep record
+types, compatibility or production interfaces, and theorems quantified over
+arbitrary external observations. Do not store a fixed observation or publish a
+conclusion specific to its measured values. Mathematical constants, normalized
+models, and exact witnesses or certificates needed to prove general results are
+not measurement records and are reviewed according to their mathematical role.
+
+The generic/engineering module partition and foundation/domain metadata are
+independent of these five kinds. Supporting definitions, private proofs and
+metaprogramming infrastructure support admitted units rather than forming a
+sixth knowledge kind. The existing surface-form connection index is a diagnostic,
+not a complete declaration-level implementation of this ownership rule.
+
 ## 3. Foundation results and domain results
 
 *Applies M3 and M5.*
@@ -120,7 +149,8 @@ such a conclusion as foundation does not complete its public domain interface.
 
 *Applies M2 and M3.*
 
-The four TMIO layers contain objects and their orders. A seed supplies one
+The TMIO chain has four ordered endpoints; the core's knowledge units are those
+of §2a. A seed supplies one
 arbitrary-infimum-preserving semantic map per adjacent edge; the forward
 adjoints, complete implementation spaces, closures and composites are generated.
 Do not supply a second independent forward map or implementation space.
