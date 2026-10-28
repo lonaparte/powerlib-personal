@@ -36,7 +36,7 @@ open Set MeasureTheory intervalIntegral
 /-! ## Differentiation under the integral sign -/
 
 /-- `d/dt ∫ₐᵇ G(x,t) dx = ∫ₐᵇ G_t(x,t) dx` for continuous `G`, `G_t`. -/
-@[powerlib_foundation] theorem hasDerivAt_integral_param {G Gt : ℝ × ℝ → ℝ} (a b : ℝ)
+@[tmio T, powerlib_foundation] theorem hasDerivAt_integral_param {G Gt : ℝ × ℝ → ℝ} (a b : ℝ)
     (hG : Continuous G) (hGt : Continuous Gt)
     (hd : ∀ x τ, HasDerivAt (fun s => G (x, s)) (Gt (x, τ)) τ) (t : ℝ) :
     HasDerivAt (fun s => ∫ x in a..b, G (x, s)) (∫ x in a..b, Gt (x, t)) t := by

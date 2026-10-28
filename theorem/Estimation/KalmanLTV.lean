@@ -88,7 +88,7 @@ private lemma eq_zero_forward {f f' : ℝ → E} {c : ℝ → ℝ} (hc : Continu
 
 /-- **Grönwall uniqueness.**  If `‖f'(t)‖ ≤ c(t) ‖f(t)‖` with `c` continuous and `f(s) = 0`, then
 `f ≡ 0` on all of `ℝ` (both time directions). -/
-@[powerlib_foundation] theorem eq_zero_of_norm_deriv_le {f f' : ℝ → E} {c : ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem eq_zero_of_norm_deriv_le {f f' : ℝ → E} {c : ℝ → ℝ}
     (hc : Continuous c) (hf : ∀ t, HasDerivAt f (f' t) t) (hb : ∀ t, ‖f' t‖ ≤ c t * ‖f t‖)
     {s : ℝ} (hs : f s = 0) (t : ℝ) : f t = 0 := by
   rcases le_total s t with hst | hts

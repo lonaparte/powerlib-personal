@@ -41,7 +41,7 @@ def variationalMatrix (f : (X → ℝ) → X → ℝ) (xp : ℝ → X → ℝ) (
 
 variable {f : (X → ℝ) → X → ℝ} {xp : ℝ → X → ℝ}
 
-@[powerlib_foundation] theorem variationalMatrix_mulVec (t : ℝ) (v : X → ℝ) :
+@[tmio T, powerlib_foundation] theorem variationalMatrix_mulVec (t : ℝ) (v : X → ℝ) :
     variationalMatrix f xp t *ᵥ v = fderiv ℝ f (xp t) v := by
   rw [variationalMatrix, LinearMap.toMatrix'_mulVec]
   rfl

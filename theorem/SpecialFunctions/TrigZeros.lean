@@ -65,7 +65,7 @@ def trigPoly2Deriv (c₁ s₁ c₂ s₂ : ℝ) (θ : ℝ) : ℝ :=
 def trigPoly2ZeroSet (c₀ c₁ s₁ c₂ s₂ a : ℝ) : Set ℝ :=
   {θ | θ ∈ Ico a (a + 2 * Real.pi) ∧ trigPoly2 c₀ c₁ s₁ c₂ s₂ θ = 0}
 
-@[powerlib_foundation] theorem hasDerivAt_trigPoly2 (c₀ c₁ s₁ c₂ s₂ θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_trigPoly2 (c₀ c₁ s₁ c₂ s₂ θ : ℝ) :
     HasDerivAt (trigPoly2 c₀ c₁ s₁ c₂ s₂) (trigPoly2Deriv c₁ s₁ c₂ s₂ θ) θ := by
   have h2 : HasDerivAt (fun t : ℝ => 2 * t) 2 θ := by
     simpa using (hasDerivAt_id θ).const_mul (2 : ℝ)

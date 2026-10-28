@@ -63,7 +63,7 @@ section Graph
 variable {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj]
 
 /-- `L𝟙 = 0` (wraps `SimpleGraph.lapMatrix_mulVec_one_eq_zero`). -/
-@[powerlib_foundation] theorem lapMatrix_mulVec_one : G.lapMatrix ℝ *ᵥ 1 = 0 :=
+@[tmio T, powerlib_foundation] theorem lapMatrix_mulVec_one : G.lapMatrix ℝ *ᵥ 1 = 0 :=
   G.lapMatrix_mulVec_one_eq_zero ℝ
 
 /-- `L ⪰ 0` (wraps `SimpleGraph.posSemidef_lapMatrix`). -/

@@ -94,7 +94,7 @@ section Affine
 
 variable (T : State n ≃L[ℝ] State n) (c : State n)
 
-@[simp, powerlib_foundation] theorem transportField_affineCoord (f : State n → State n)
+@[tmio T, simp, powerlib_foundation] theorem transportField_affineCoord (f : State n → State n)
     (x : State n) : transportField T c f (affineCoord T c x) = T (f x) := by
   simp [transportField, affineCoord]
 

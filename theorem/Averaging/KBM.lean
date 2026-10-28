@@ -57,7 +57,7 @@ def fieldAverage (f : E → ℝ → E) (T : ℝ) (x : E) : E := T⁻¹ • ∫ s
 variable {f : E → ℝ → E} {T ℓ M : ℝ}
 
 omit [NormedSpace ℝ E] [CompleteSpace E] in
-@[powerlib_foundation] theorem PeriodicField.continuous_snd
+@[tmio T, powerlib_foundation] theorem PeriodicField.continuous_snd
     (hf : 0 < T ∧ 0 ≤ ℓ ∧ Continuous (Function.uncurry f) ∧ (∀ x t, f x (t + T) = f x t) ∧
       (∀ x y t, ‖f x t - f y t‖ ≤ ℓ * ‖x - y‖) ∧ ∀ x t, ‖f x t‖ ≤ M) (x : E) :
     Continuous (f x) :=

@@ -46,7 +46,7 @@ namespace Linear
 
 /-- At any constant input with an equilibrium, an attractive sentence holds there exactly when
 the plant is Hurwitz: the behaviour about every operating point is the zero-input behaviour. -/
-@[powerlib_foundation] theorem holds_input_iff (M : Plant n p) {u : Fin p → ℝ} {e : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem holds_input_iff (M : Plant n p) {u : Fin p → ℝ} {e : ℝⁿ}
     (he : IsEquilibrium (M.inputField u) e) {P : Flow.Property} (hP : P.Attractive) :
     P.holds (M.inputField u) e ↔ IsHurwitz M.A := by
   rw [M.inputField_eq he]
@@ -87,7 +87,7 @@ field of its plant. -/
   rw [mem_den, hF x, Sentence.holds_flow, Plant.system_zeroInput]
 
 /-- The attractive sentences and sampled contraction denote the Hurwitz members. -/
-@[powerlib_foundation] theorem IsLinear.den_hurwitz (hF : F.IsLinear plant) {P : Flow.Property}
+@[tmio TM, powerlib_foundation] theorem IsLinear.den_hurwitz (hF : F.IsLinear plant) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) : F.den (.flow P) = {x | IsHurwitz (plant x).A} := by
   ext x
   rw [hF.mem_den_flow, Set.mem_ofPred_eq]

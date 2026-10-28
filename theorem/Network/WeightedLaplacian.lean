@@ -58,7 +58,7 @@ def laplacian (W : Matrix ι ι ℝ) : Matrix ι ι ℝ := diagonal (fun i => �
 /-- Reachability through edges of positive weight. -/
 def Reach (W : Matrix ι ι ℝ) : ι → ι → Prop := Relation.ReflTransGen fun a b => 0 < W a b
 
-@[powerlib_foundation] theorem laplacian_mulVec_apply (W : Matrix ι ι ℝ) (x : ι → ℝ) (i : ι) :
+@[tmio T, powerlib_foundation] theorem laplacian_mulVec_apply (W : Matrix ι ι ℝ) (x : ι → ℝ) (i : ι) :
     (laplacian W *ᵥ x) i = ∑ j, W i j * (x i - x j) := by
   rw [laplacian, sub_mulVec, Pi.sub_apply, mulVec_diagonal]
   simp only [mulVec, dotProduct, Finset.sum_mul, ← Finset.sum_sub_distrib]

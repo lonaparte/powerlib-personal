@@ -48,7 +48,7 @@ def expFamLik (h : 𝓧 → ℝ) (T : 𝓧 → Fin k → ℝ) (η : Θ → Fin k
     (d : Fin N → 𝓧) (θ : Θ) : ℝ≥0∞ :=
   ∏ i, ENNReal.ofReal (h (d i) * exp (η θ ⬝ᵥ T (d i) - A θ))
 
-@[powerlib_foundation] theorem measurable_conjDensity {η : Θ → Fin k → ℝ} {A : Θ → ℝ}
+@[tmio T, powerlib_foundation] theorem measurable_conjDensity {η : Θ → Fin k → ℝ} {A : Θ → ℝ}
     (hη : Measurable η) (hA : Measurable A) (χ : Fin k → ℝ) (n : ℝ) :
     Measurable (conjDensity η A χ n) := by
   unfold conjDensity dotProduct

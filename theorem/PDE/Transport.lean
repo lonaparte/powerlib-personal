@@ -22,7 +22,7 @@ namespace powerlib.PDE
 open Set
 
 /-- `u₀(x - at)` solves the transport equation `u_t + a u_x = 0`. -/
-@[powerlib_foundation] theorem transport_solution {u₀ u₀' : ℝ → ℝ} (a : ℝ)
+@[tmio T, powerlib_foundation] theorem transport_solution {u₀ u₀' : ℝ → ℝ} (a : ℝ)
     (hu : ∀ y, HasDerivAt u₀ (u₀' y) y) (q : ℝ × ℝ) :
     HasPartialsWithin (fun q => u₀ (q.1 - a * q.2)) (fun q => u₀' (q.1 - a * q.2))
       (fun q => -a * u₀' (q.1 - a * q.2)) univ q ∧

@@ -46,7 +46,7 @@ def schurReal {n : ℕ} (P : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :
     Matrix (Fin n) (Fin n) ℝ :=
   fun i j => P i.succ j.succ - P i.succ 0 * P 0 j.succ / P 0 0
 
-@[powerlib_foundation] theorem schur_real {n : ℕ}
+@[tmio T, powerlib_foundation] theorem schur_real {n : ℕ}
     (P : Matrix (Fin (n + 1)) (Fin (n + 1)) ℚ) : real (schur P) = schurReal (real P) := by
   ext i j
   simp [real, schur, schurReal]

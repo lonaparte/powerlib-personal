@@ -31,7 +31,7 @@ namespace powerlib.ParametricResonance
 open Complex Matrix
 
 /-- `δ cos θ = (δ/2)(e^{jθ} + e^{−jθ})`. -/
-@[powerlib_foundation] theorem pump_harmonic1 (δ θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem pump_harmonic1 (δ θ : ℝ) :
     ((δ * Real.cos θ : ℝ) : ℂ) = δ / 2 * (exp (θ * I) + exp (-(θ * I))) := by
   have h1 : exp (θ * I) = Complex.cos θ + Complex.sin θ * I := Complex.exp_mul_I θ
   have h2 : exp (-(θ * I)) = Complex.cos θ - Complex.sin θ * I := by

@@ -65,7 +65,7 @@ def check (A P : Matrix (Fin n) (Fin n) ℚ) : Bool :=
 noncomputable section
 abbrev real (P : Matrix (Fin n) (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℝ := Positive.real P
 
-@[powerlib_foundation] theorem inverse_eq (M : Matrix (Fin n × Fin n) (Fin n × Fin n) ℚ) :
+@[tmio T, powerlib_foundation] theorem inverse_eq (M : Matrix (Fin n × Fin n) (Fin n × Fin n) ℚ) :
     inverse M = M⁻¹ := by
   rw [Matrix.inv_def, Ring.inverse_eq_inv]
   rfl

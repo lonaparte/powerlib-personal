@@ -34,7 +34,7 @@ open scoped Matrix.Norms.Operator
 variable {X : Type*} [Fintype X] [DecidableEq X] {A : ℝ → Matrix X X ℝ} {M : ℝ}
 
 /-- Transition matrix of the time-shifted system `A_c(t) = A(t + c)`. -/
-@[powerlib_foundation] theorem transition_shift (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
+@[tmio T, powerlib_foundation] theorem transition_shift (hA : Continuous A) (hM : ∀ t, ‖A t‖ ≤ M)
     (c : ℝ) {s t : ℝ} (hst : s ≤ t) :
     transition (fun r => A (r + c)) t s = transition A (t + c) (s + c) := by
   have hAc : Continuous fun r => A (r + c) := hA.comp (continuous_id.add continuous_const)

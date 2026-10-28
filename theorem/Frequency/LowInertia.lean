@@ -84,7 +84,7 @@ open scoped Topology
 def rot (ω t : ℝ) : ℂ := Complex.exp (-((ω : ℂ) * Complex.I) * (t : ℂ))
 
 /-- Product rule for the Park rotation `x_dq(t) = e^{−j ω t} x_αβ(t)`. -/
-@[powerlib_foundation] theorem rotatingFrame_hasDerivAt {xs : ℝ → ℂ} {xs' : ℂ} {ω t : ℝ}
+@[tmio T, powerlib_foundation] theorem rotatingFrame_hasDerivAt {xs : ℝ → ℂ} {xs' : ℂ} {ω t : ℝ}
     (h : HasDerivAt xs xs' t) :
     HasDerivAt (fun t : ℝ => rot ω t * xs t)
       (rot ω t * xs' - (ω : ℂ) * Complex.I * (rot ω t * xs t)) t := by

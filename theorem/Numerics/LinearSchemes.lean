@@ -99,7 +99,7 @@ variable (A : Matrix (Fin n) (Fin n) ℝ) (h : ℝ)
     rw [Matrix.mulVec_mulVec, Matrix.nonsing_inv_mul P hP, Matrix.one_mulVec]
 
 /-- Forward Euler on a linear field is the recursion with `1 + hA`. -/
-@[powerlib_foundation] theorem isForwardEulerTrajectory_iff (x : ℕ → Fin n → ℝ) :
+@[tmio T, powerlib_foundation] theorem isForwardEulerTrajectory_iff (x : ℕ → Fin n → ℝ) :
     IsForwardEulerTrajectory (linearField A) h x ↔
       ∀ k, x (k + 1) = LTI.Model.step ⟨forwardEulerMatrix h A⟩ (x k) := by
   simp only [IsForwardEulerTrajectory, LTI.Model.step,

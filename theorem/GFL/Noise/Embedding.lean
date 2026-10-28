@@ -62,7 +62,7 @@ def embGrad (Ki hθ η : ℝ) : Fin 2 → ℝ := ![-hθ, Ki * η]
 /-- Drift `f = (K_p h + K_i η, h)` of the 2D slow model. -/
 def embDrift (Kp Ki hθ η : ℝ) : Fin 2 → ℝ := ![Kp * hθ + Ki * η, hθ]
 
-@[powerlib_foundation] theorem embJ_skew : embJᵀ = -embJ := PH.transpose_symplectic_two
+@[tmio T, powerlib_foundation] theorem embJ_skew : embJᵀ = -embJ := PH.transpose_symplectic_two
 
 @[powerlib_foundation] theorem embR_posSemidef {Kp : ℝ} (hKp : 0 ≤ Kp) : (embR Kp).PosSemidef := by
   have : embR Kp = Matrix.diagonal ![Kp, 0] := by

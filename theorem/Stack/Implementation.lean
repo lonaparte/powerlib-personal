@@ -212,7 +212,7 @@ def ofDesign (design : Y → X) : SetRel X Y := {p | design p.2 = p.1}
     (x, y) ∈ ofDesign design ↔ design y = x := Iff.rfl
 
 /-- Certification against a design map is its preimage. -/
-@[powerlib_foundation] theorem certify_ofDesign (design : Y → X) (P : Set X) :
+@[tmio T, powerlib_foundation] theorem certify_ofDesign (design : Y → X) (P : Set X) :
     certify (ofDesign design) P = design ⁻¹' P := by
   ext y
   simp only [mem_certify, mem_ofDesign, Set.mem_preimage]

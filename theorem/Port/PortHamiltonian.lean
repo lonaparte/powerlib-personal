@@ -106,19 +106,16 @@ def family : Family (PortHamiltonian n p) Requirement n p :=
     (family (n := n) (p := p)).IsLinear PortHamiltonian.plant := fun _ => rfl
 
 /-- Stored energy places each submitted plant in the passivity denotation. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_passive (h : PortHamiltonian n p) :
+@[tmio TM, powerlib_domain] theorem mem_den_passive (h : PortHamiltonian n p) :
     connection% (h ∈ family.den .passive) := family_isLinear.mem_den_passive h.kyp
 
 /-- Positive stored energy places each submitted plant in the zero-input stability denotation. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_lyapunovStable (h : PortHamiltonian n p) :
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable (h : PortHamiltonian n p) :
     connection% (h ∈ family.den (.flow .lyapunovStable)) :=
   family_isLinear.mem_den_flow.mpr (h.kyp.lyapunovStable_of_pos h.energy_pos)
 
 /-- The translation chain is sound for every sentence of a port-Hamiltonian plant. -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, (family (n := n) (p := p)).chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s h hh => ?_

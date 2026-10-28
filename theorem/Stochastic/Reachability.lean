@@ -64,7 +64,7 @@ def safeValue (Q : Kernel E E) (A : Set E) : ℕ → E → ℝ
   | 0 => fun _ => 1
   | N + 1 => fun x => ∫ y, A.indicator (safeValue Q A N) y ∂(Q x)
 
-@[powerlib_foundation] theorem safeValue_stronglyMeasurable (Q : Kernel E E) {A : Set E}
+@[tmio T, powerlib_foundation] theorem safeValue_stronglyMeasurable (Q : Kernel E E) {A : Set E}
     (hA : MeasurableSet A) : ∀ N, StronglyMeasurable (safeValue Q A N)
   | 0 => stronglyMeasurable_const
   | N + 1 => ((safeValue_stronglyMeasurable Q hA N).indicator hA).integral_kernel

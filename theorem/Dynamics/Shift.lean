@@ -41,7 +41,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 section Shift
 
 /-- Solutions of `z ↦ f (z + e)` are the solutions of `f` moved by `-e`. -/
-@[powerlib_foundation] theorem isIntegralCurveOn_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} {φ : ℝ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem isIntegralCurveOn_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} {φ : ℝ → ℝⁿ}
     {s : Set ℝ} :
     IsIntegralCurveOn (fun t => φ t - e) (fun _ z => f (z + e)) s ↔
       IsIntegralCurveOn φ (fun _ x => f x) s := by

@@ -51,7 +51,7 @@ open Complex
 /-! ## Inertia conversions -/
 
 /-- `M_vsm = 2H/ω_s` equals `K_d = J ω_s / S_b` when `H = ½ J ω_s² / S_b`. -/
-@[powerlib_foundation] theorem Mvsm_eq_Kd {J ωs Sb : ℝ} (hω : ωs ≠ 0) (hS : Sb ≠ 0) :
+@[tmio T, powerlib_foundation] theorem Mvsm_eq_Kd {J ωs Sb : ℝ} (hω : ωs ≠ 0) (hS : Sb ≠ 0) :
     2 * (J * ωs ^ 2 / (2 * Sb)) / ωs = J * ωs / Sb := by
   field_simp
 

@@ -40,7 +40,7 @@ noncomputable section
 namespace powerlib.Criteria
 open Matrix
 
-@[powerlib_foundation] theorem dotProduct_mulVec_comm_of_symm {ι : Type*} [Fintype ι]
+@[tmio T, powerlib_foundation] theorem dotProduct_mulVec_comm_of_symm {ι : Type*} [Fintype ι]
     {P : Matrix ι ι ℝ} (hP : Pᵀ = P) (u w : ι → ℝ) :
     u ⬝ᵥ (P *ᵥ w) = w ⬝ᵥ (P *ᵥ u) := by
   rw [dotProduct_mulVec, ← hP, vecMul_transpose, hP, dotProduct_comm]

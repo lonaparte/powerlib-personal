@@ -108,7 +108,7 @@ variable (v)
 
 /-- Equilibria of the VSG on an infinite bus exist iff `|P_ref| ≤ E V_g / X_g`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem exists_equilibrium_iff (h : v.Pos) :
+@[tmio M, powerlib_foundation] theorem exists_equilibrium_iff (h : v.Pos) :
     (∃ x, v.toSwing.field x = 0) ↔ |v.Pref| ≤ v.Pmax := by
   have := v.toSwing.exists_equilibrium_iff h.M.ne' h.Pmax
   simpa [toSwing] using this
@@ -129,8 +129,7 @@ def atAntiLoading : Swing.Model := ⟨v.toSwing, Real.pi - Real.arcsin (v.Pref /
 
 /-- The loading angle `δ₀ = arcsin(P_ref X_g / (E V_g))` is locally exponentially stable
 (`D_p > 0`, `|P_ref| < E V_g / X_g`). -/
-@[tmio TM]
-@[powerlib_domain] theorem locallyExponentiallyStable (h : v.Pos) (hD : 0 < v.Dp)
+@[tmio TM, powerlib_domain] theorem locallyExponentiallyStable (h : v.Pos) (hD : 0 < v.Dp)
     (hP : |v.Pref| < v.Pmax) :
     connection% (v.atLoading ∈ Swing.family.den (.flow .locallyExponentiallyStable)) := by
   have hD' : 0 < v.toSwing.D := show 0 < v.Dp / v.ωs from div_pos hD h.ωs
@@ -141,8 +140,7 @@ def atAntiLoading : Swing.Model := ⟨v.toSwing, Real.pi - Real.arcsin (v.Pref /
   exact this
 
 /-- The second equilibrium `π − δ₀` is unstable for every damping. -/
-@[tmio TM]
-@[powerlib_domain] theorem unstable (h : v.Pos) (hP : |v.Pref| < v.Pmax) :
+@[tmio TM, powerlib_domain] theorem unstable (h : v.Pos) (hP : |v.Pref| < v.Pmax) :
     connection% (v.atAntiLoading ∈ Swing.family.den (.flow .unstable)) := by
   have := Swing.deltaU_mem_den_unstable v.toSwing h.M h.Pmax (by simpa [toSwing] using hP)
   unfold powerlib.TMIO.Statement at this ⊢
@@ -151,8 +149,7 @@ def atAntiLoading : Swing.Model := ⟨v.toSwing, Real.pi - Real.arcsin (v.Pref /
 
 /-- Without damping (`D_p = 0`) — and for any `D_p ≥ 0` — the loading angle is Lyapunov
 stable (energy function). -/
-@[tmio TM]
-@[powerlib_domain] theorem lyapunovStable (h : v.Pos) (hD : 0 ≤ v.Dp)
+@[tmio TM, powerlib_domain] theorem lyapunovStable (h : v.Pos) (hD : 0 ≤ v.Dp)
     (hP : |v.Pref| < v.Pmax) :
     connection% (v.atLoading ∈ Swing.family.den (.flow .lyapunovStable)) := by
   have hD' : 0 ≤ v.toSwing.D := show 0 ≤ v.Dp / v.ωs from div_nonneg hD h.ωs.le
@@ -176,8 +173,7 @@ stable (energy function). -/
 
 /-- Linearized VSG about the angle `δ₀`: globally exponentially stable iff `D_p > 0` and
 `K_E > 0` (all coefficients of `2H s² + D_p s + ω_s K_E` positive). -/
-@[tmio TM]
-@[powerlib_domain] theorem linearModel_mem_den_iff (h : v.Pos) (δ₀ : ℝ) :
+@[tmio TM, powerlib_domain] theorem linearModel_mem_den_iff (h : v.Pos) (δ₀ : ℝ) :
     connection% (Swing.Model.mk v.toSwing δ₀ ∈
         Swing.Linearized.family.den (.flow .globallyExponentiallyStable) ↔
       Swing.Model.mk v.toSwing δ₀ ∈ {m : Swing.Model | 0 < v.Dp ∧ 0 < v.KE m.δ}) := by
@@ -242,8 +238,7 @@ def toSwing : SwingParams := ⟨m.M, m.D, m.Pm, 0, m.Pmax, 0⟩
 
 /-- An equilibrium with `δ₀ ∈ (−π/2, π/2)` is locally exponentially stable (`M, D > 0`,
 `E' V_∞ / X_d' > 0`). -/
-@[tmio TM]
-@[powerlib_domain] theorem locallyExponentiallyStable (hM : 0 < m.M) (hD : 0 < m.D)
+@[tmio TM, powerlib_domain] theorem locallyExponentiallyStable (hM : 0 < m.M) (hD : 0 < m.D)
     (hP : 0 < m.Pmax) {δ₀ : ℝ} (hδ : δ₀ ∈ Ioo (-(Real.pi / 2)) (Real.pi / 2))
     (heq : m.toSwing.field (PhasePlane.mk δ₀ 0) = 0) :
     connection% (Swing.Model.mk m.toSwing δ₀ ∈
@@ -253,8 +248,7 @@ def toSwing : SwingParams := ⟨m.M, m.D, m.Pm, 0, m.Pmax, 0⟩
     (by simpa [toSwing, SwingParams.syncCoeff] using mul_pos hP (Real.cos_pos_of_mem_Ioo hδ))
 
 /-- An equilibrium with `cos δ₀ < 0` is unstable for every damping. -/
-@[tmio TM]
-@[powerlib_domain] theorem unstable (hM : 0 < m.M) (hP : 0 < m.Pmax) {δ₀ : ℝ}
+@[tmio TM, powerlib_domain] theorem unstable (hM : 0 < m.M) (hP : 0 < m.Pmax) {δ₀ : ℝ}
     (hδ : Real.cos δ₀ < 0) (heq : m.toSwing.field (PhasePlane.mk δ₀ 0) = 0) :
     connection% (Swing.Model.mk m.toSwing δ₀ ∈ Swing.family.den (.flow .unstable)) :=
   Swing.mem_den_unstable _ hM
@@ -347,8 +341,7 @@ def toSwing : SwingParams :=
 
 /-- Post-fault equilibria `δ_s = arcsin((P_m − k₁)/k₂) + k₃` (locally exponentially stable,
 `D > 0`) and `δ_u = π − arcsin(·) + k₃` (unstable), when `|P_m − k₁| < k₂`. -/
-@[tmio TM]
-@[powerlib_domain] theorem deltaS_stable_deltaU_unstable (hM : 0 < m.M) (hD : 0 < m.D)
+@[tmio TM, powerlib_domain] theorem deltaS_stable_deltaU_unstable (hM : 0 < m.M) (hD : 0 < m.D)
     (hk : 0 < m.toSwing.k₂) (h : |m.toSwing.Pm - m.toSwing.k₁| < m.toSwing.k₂) :
     connection% (Swing.Model.mk m.toSwing m.toSwing.deltaS ∈
         Swing.family.den (.flow .locallyExponentiallyStable) ∧
@@ -359,8 +352,7 @@ def toSwing : SwingParams :=
   exact ⟨h1, h2⟩
 
 /-- Undamped post-fault model (`D = 0`): `δ_s` is Lyapunov stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem deltaS_lyapunovStable (hM : 0 < m.M) (hD : 0 ≤ m.D)
+@[tmio TM, powerlib_domain] theorem deltaS_lyapunovStable (hM : 0 < m.M) (hD : 0 ≤ m.D)
     (hk : 0 < m.toSwing.k₂) (h : |m.toSwing.Pm - m.toSwing.k₁| < m.toSwing.k₂) :
     connection% (Swing.Model.mk m.toSwing m.toSwing.deltaS ∈
       Swing.family.den (.flow .lyapunovStable)) :=

@@ -52,7 +52,7 @@ section Location
 variable {v : ℝ≥0}
 
 /-- Integrability against a nondegenerate Gaussian law is integrability of `pdf · f`. -/
-@[powerlib_foundation] theorem integrable_gaussianReal_iff (hv : v ≠ 0) {μ : ℝ} {f : ℝ → ℝ} :
+@[tmio T, powerlib_foundation] theorem integrable_gaussianReal_iff (hv : v ≠ 0) {μ : ℝ} {f : ℝ → ℝ} :
     Integrable f (gaussianReal μ v) ↔ Integrable (fun x => gaussianPDFReal μ v x * f x) := by
   rw [gaussianReal_of_var_ne_zero _ hv, integrable_withDensity_iff_integrable_smul'
     (measurable_gaussianPDF _ _) (ae_of_all _ fun _ => gaussianPDF_lt_top)]

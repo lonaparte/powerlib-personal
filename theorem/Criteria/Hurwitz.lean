@@ -182,7 +182,7 @@ degree one or two: `X - r` at a real root `r`, `X² - 2 Re z X + |z|²` at a non
 
 /-- **Stodola.** Every coefficient of a monic real polynomial whose complex roots all have
 negative real part is positive, up to the degree. -/
-@[powerlib_foundation] theorem coeff_pos_of_roots_re_neg (hp : p.Monic)
+@[tmio T, powerlib_foundation] theorem coeff_pos_of_roots_re_neg (hp : p.Monic)
     (H : ∀ s : ℂ, aeval s p = 0 → s.re < 0) : ∀ k ≤ p.natDegree, 0 < p.coeff k := by
   refine monic_induction (P := fun p => (∀ s : ℂ, aeval s p = 0 → s.re < 0) →
     ∀ k ≤ p.natDegree, 0 < p.coeff k) ?_ ?_ ?_ hp H

@@ -72,7 +72,7 @@ def Model.step (m : Model n) (x : State n) : State n := m.Φ *ᵥ x
 def response (m : Model n) (initial : State n) (k : ℕ) : State n :=
   (m.Φ ^ k) *ᵥ initial
 
-@[simp, powerlib_foundation] theorem response_zero (m : Model n) (initial : State n) :
+@[tmio T, simp, powerlib_foundation] theorem response_zero (m : Model n) (initial : State n) :
     response m initial 0 = initial := by
   simp [response]
 

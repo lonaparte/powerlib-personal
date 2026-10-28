@@ -106,7 +106,7 @@ structure Area where
 def syncCoeff (Va Vb X δ0 : ℝ) : ℝ := Va * Vb * Real.cos δ0 / X
 
 /-- §1.2: `T` is the slope of `P_tie(δ) = V_a V_b sin δ / X` at `δ⁰`. -/
-@[powerlib_foundation] theorem tiePower_hasDerivAt (Va Vb X δ0 : ℝ) :
+@[tmio M, powerlib_foundation] theorem tiePower_hasDerivAt (Va Vb X δ0 : ℝ) :
     HasDerivAt (fun δ => Va * Vb / X * Real.sin δ) (syncCoeff Va Vb X δ0) δ0 := by
   have h := (Real.hasDerivAt_sin δ0).const_mul (Va * Vb / X)
   convert h using 1
@@ -416,15 +416,13 @@ def family7 : Family Model7 Requirement 7 2 :=
   linarith
 
 /-- No five-state model meets every requirement. -/
-@[tmio M]
-@[powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_foundation] theorem realize_univ :
     connection% (realize family.meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.realize_univ_eq_empty_of_forall fun _ h => meetsMatrix_univ _ h
 
 /-- No seven-state model meets every requirement. -/
-@[tmio M]
-@[powerlib_foundation] theorem realize_univ7 :
+@[tmio M, powerlib_foundation] theorem realize_univ7 :
     connection% (realize family7.meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.realize_univ_eq_empty_of_forall fun _ h => meetsMatrix_univ _ h
@@ -465,16 +463,14 @@ for any linear family read through `MeetsMatrix` (generic); the instance of
     (fun x => by simp [mem_realize, hmeets, MeetsMatrix]) hP
 
 /-- Every translation of the five-state LFC family is sound. -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   exact sound_of_meetsMatrix family_isLinear (fun _ _ => Iff.rfl) rfl
 
 /-- The attractive sentences and sampled contraction of the five-state family are translated
 exactly by the Hurwitz property of the state matrix. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_hurwitz {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem exact_hurwitz {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -483,8 +479,7 @@ exactly by the Hurwitz property of the state matrix. -/
 /-- With a Hurwitz state matrix (explicit premise) the five-state model is globally
 exponentially stable; in deviation coordinates this is the exponential convergence of every
 trajectory under constant loads to the non-interactive steady state. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_globallyExponentiallyStable (m : Model)
+@[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable (m : Model)
     (hA : IsHurwitz m.plant.A) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -492,16 +487,14 @@ trajectory under constant loads to the non-interactive steady state. -/
   exact hA
 
 /-- Every translation of the seven-state LFC family is sound. -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics7 :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics7 :
     connection% (∀ P, family7.chain P ≤ family7.semantics P) := by
   unfold powerlib.TMIO.Statement
   exact sound_of_meetsMatrix family7_isLinear (fun _ _ => Iff.rfl) rfl
 
 /-- The attractive sentences and sampled contraction of the seven-state family are translated
 exactly by the Hurwitz property of the state matrix. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_hurwitz7 {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem exact_hurwitz7 {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family7.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -509,8 +502,7 @@ exactly by the Hurwitz property of the state matrix. -/
 
 /-- Seven-state model: Hurwitz premise ⇒ global exponential stability (convergence to the
 steady state in deviation coordinates). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_globallyExponentiallyStable7 (m : Model7)
+@[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable7 (m : Model7)
     (hA : IsHurwitz m.plant.A) :
     connection% (m ∈ family7.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement

@@ -37,7 +37,7 @@ noncomputable section
 namespace powerlib.GFL.DCLink.DCSource
 
 /-- Constant-current source: `V̇ = (I₀ + P(V)/V)/C`, derivative at `V = 1`. -/
-@[powerlib_foundation] theorem hasDerivAt_constCurrent {P : ℝ → ℝ} {P' : ℝ} (I0 C : ℝ)
+@[tmio T, powerlib_foundation] theorem hasDerivAt_constCurrent {P : ℝ → ℝ} {P' : ℝ} (I0 C : ℝ)
     (hP : HasDerivAt P P' 1) :
     HasDerivAt (fun V => (I0 + P V / V) / C) ((P' - P 1) / C) 1 := by
   have h := ((hP.div (hasDerivAt_id (1 : ℝ)) one_ne_zero).const_add I0).div_const C

@@ -65,7 +65,7 @@ def slowFlowSystem (α₀ Δ : ℝ) (g : ℂ) : EuclideanSpace ℝ (Fin 2) → E
 def toReal : ℂ ≃L[ℝ] EuclideanSpace ℝ (Fin 2) :=
   Complex.orthonormalBasisOneI.repr.toContinuousLinearEquiv
 
-@[simp, powerlib_foundation] theorem toReal_apply_zero (A : ℂ) : toReal A 0 = A.re := rfl
+@[tmio T, simp, powerlib_foundation] theorem toReal_apply_zero (A : ℂ) : toReal A 0 = A.re := rfl
 
 @[simp, powerlib_foundation] theorem toReal_apply_one (A : ℂ) : toReal A 1 = A.im := rfl
 

@@ -50,7 +50,7 @@ def Jc : Matrix (Fin 2) (Fin 2) ℂ := !![0, -1; 1, 0]
 def Zoc (L R ω : ℝ) (s : ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   (s * L + R) • (1 : Matrix (Fin 2) (Fin 2) ℂ) + ((ω * L : ℝ) : ℂ) • Jc
 
-@[powerlib_foundation] theorem Zoc_eq (L R ω : ℝ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem Zoc_eq (L R ω : ℝ) (s : ℂ) :
     Zoc L R ω s = !![s * L + R, -(ω * L); ω * L, s * L + R] := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Zoc, Jc]

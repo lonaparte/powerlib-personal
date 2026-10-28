@@ -19,8 +19,10 @@ typed-statement checks in `theorem/Architecture.lean`; Lean's `ParametricAttribu
 Results.
 * `Kind`, `Kind.label` and `theoremKinds`: the closed five-category schema and persistent
   `tmio` attribute; `kindOf?` reads local asynchronous updates and imported attributes.
-* `Entry` and `entriesInEnvironment`: classified public typed connections actually imported,
-  with declaration ownership read from Lean; missing attributes are errors.
+* `Entry` and `classifiedEntriesInEnvironment`: all explicitly classified authored theorems
+  actually imported from `theorem.*`, including ordinary and private theorems.
+* `entriesInEnvironment`: public typed connections actually imported, with declaration
+  ownership read from Lean; missing attributes are errors only in this coverage scope.
 * `auditEnvironment`: coverage admission for this imported environment. No separate catalog
   supplies names, kinds or a presumed total.
 -/
@@ -93,11 +95,31 @@ initialize theoremKinds : ParametricAttribute Kind ← do
 def kindOf? (env : Environment) (name : Name) : Option Kind :=
   lookupKind? theoremKinds env name
 
+/-- Source-authored theorem declarations, including explicitly classified private helpers. -/
+private def authoredTheorem (env : Environment) (info : ConstantInfo) : Bool :=
+  match info with
+  | .thmInfo _ => (declRangeExt.find? env info.name).isSome
+  | _ => false
+
 /-- Only source-authored public theorem declarations are connection admission subjects. -/
 private def authoredPublic (env : Environment) (info : ConstantInfo) : Bool :=
-  match info with
-  | .thmInfo _ => !isPrivateName info.name && (declRangeExt.find? env info.name).isSome
-  | _ => false
+  authoredTheorem env info && !isPrivateName info.name
+
+/-- Query all explicitly classified authored theorems in imported first-party theorem modules.
+Ordinary T/M results and classified private helpers are included. Unclassified ordinary
+theorems remain outside the query: this function never assigns a kind or requires one. -/
+def classifiedEntriesInEnvironment : CommandElabM (Array Entry) := do
+  let env ← getEnv
+  let mut entries : Array Entry := #[]
+  for index in [:env.header.moduleNames.size] do
+    let owner := env.header.moduleNames[index]!
+    unless owner.getRoot == `theorem do continue
+    for name in env.header.moduleData[index]!.constNames do
+      let some info := env.find? name | continue
+      unless authoredTheorem env info do continue
+      let some kind := kindOf? env name | continue
+      entries := entries.push ⟨name, owner, kind⟩
+  return entries.qsort (fun left right => Name.quickLt left.name right.name)
 
 /-- Inspect the declared conclusion before unfolding the `Statement` marker itself.
 Telescope parameters, lets and transparent aliases may precede that marker. The marker is a
@@ -140,6 +162,7 @@ The build calls this after importing its complete module inventory; standalone q
 checks report only their current imported environment, without claiming whole-library coverage. -/
 def auditEnvironment : CommandElabM Unit := do
   let entries ← entriesInEnvironment
-  logInfo m!"POWERLIB_KNOWLEDGE_CHECK_OK: {entries.size} imported public typed connection theorems, each with one tmio attribute"
+  let classified ← classifiedEntriesInEnvironment
+  logInfo m!"POWERLIB_KNOWLEDGE_CHECK_OK: {entries.size} imported public typed connection theorems, each with one tmio attribute; {classified.size} explicitly classified authored theorems in total"
 
 end powerlib.Knowledge

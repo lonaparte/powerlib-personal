@@ -74,7 +74,7 @@ section Denotation
 variable {F : Family X Q n p}
 
 /-- Local exponential stability gives local asymptotic stability, for every family. -/
-@[powerlib_foundation] theorem den_locallyExponentiallyStable_subset_las :
+@[tmio TM, powerlib_foundation] theorem den_locallyExponentiallyStable_subset_las :
     F.den (.flow .locallyExponentiallyStable) ⊆ F.den (.flow .locallyAsymptoticallyStable) := by
   intro x hx
   rw [Family.mem_den] at hx ⊢

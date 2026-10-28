@@ -44,7 +44,7 @@ namespace powerlib.GFM
 open Set Matrix
 
 /-- `d/dδ [(E V_g / X_g) sin δ] = E V_g cos δ / X_g`. -/
-@[powerlib_foundation] theorem hasDerivAt_powerAngle (E Vg Xg δ : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_powerAngle (E Vg Xg δ : ℝ) :
     HasDerivAt (fun x => E * Vg / Xg * Real.sin x) (E * Vg * Real.cos δ / Xg) δ := by
   convert (Real.hasDerivAt_sin δ).const_mul (E * Vg / Xg) using 1
   ring

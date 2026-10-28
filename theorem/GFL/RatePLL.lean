@@ -161,7 +161,7 @@ def jac (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![-p.kp * p.V * Real.cos θ / p.D0, p.ki / p.D0;
      -p.V * Real.cos θ / p.D0, -(p.ki * p.Lg * p.Id) / p.D0]
 
-@[powerlib_foundation] theorem field_equilibrium {θ : ℝ}
+@[tmio M, powerlib_foundation] theorem field_equilibrium {θ : ℝ}
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     field p (equilibrium θ) = 0 := by
   have hq : gridQ p θ = 0 := by unfold gridQ; linarith
@@ -536,8 +536,7 @@ private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
 
 /-- No model has both a stable and an unstable Jacobian: the whole requirement language is
 inconsistent. -/
-@[tmio M]
-@[powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of .jacobianStable .jacobianUnstable fun m hs hu => ?_
@@ -548,8 +547,7 @@ inconsistent. -/
 its semantics connection. A stable Jacobian at an equilibrium proves the local sentences, an
 unstable one proves instability (LeanForControl's linearization theorems at `(θ*, 0)`, moved to
 the origin), and passivity holds without requirement. -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.chain_le_semantics_of_localTable_same
@@ -565,8 +563,7 @@ the origin), and passivity holds without requirement. -/
     exact unstable_of_meets (hm .equilibrium (by simp)) (hm .jacobianUnstable (by simp))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
+@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
@@ -600,8 +597,7 @@ private theorem balance_of_field_eq_zero {p : Params} (hD0 : p.D0 ≠ 0) {θ : �
 (`V sin θ* = −X_g i_d`, `D₀ ≠ 0`) and the closed-form Jacobian has `tr < 0`, `det > 0`. Converse
 linearization: local exponential stability of the `C¹` field forces an equilibrium with a Hurwitz
 Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_locallyExponentiallyStable :
+@[tmio TM, powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.exact_of_exactUnder_empty (Spectral.exactUnder_les_of_jacobian_on
@@ -623,8 +619,7 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
 /-- Rate-coupled GFL PLL: below the angle `tan θ_H = ω_s k_p / k_i` the operating point
 `(θ, 0)` is locally exponentially stable (`V, k_i, ω_s > 0`, `D₀ > 0`, `cos θ > 0`,
 `V sin θ = −X_g i_d`). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_tan_lt (p : Params)
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_tan_lt (p : Params)
     (hD0 : 0 < p.D0) (hV : 0 < p.V) (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ}
     (hcos : 0 < Real.cos θ) (heq : p.V * Real.sin θ = -(p.Xg * p.Id))
     (htan : Real.tan θ < p.ωs * p.kp / p.ki) :
@@ -635,8 +630,7 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
 
 /-- Rate-coupled GFL PLL: above the angle `tan θ_H = ω_s k_p / k_i` the operating point
 `(θ, 0)` is unstable. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_unstable_of_tan_gt (p : Params) (hD0 : 0 < p.D0)
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_tan_gt (p : Params) (hD0 : 0 < p.D0)
     (hV : 0 < p.V) (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) (htan : p.ωs * p.kp / p.ki < Real.tan θ) :
     connection% (Model.mk p θ ∈ family.den (.flow .unstable)) := by
@@ -645,8 +639,7 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
     (Or.inl ((trace_jac_pos_iff p hD0 hV hki hωs hcos heq).2 htan))
 
 /-- Above the boundary angle the operating point is not Lyapunov stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_mem_den_lyapunovStable_of_tan_gt (p : Params) (hD0 : 0 < p.D0)
+@[tmio TM, powerlib_domain] theorem not_mem_den_lyapunovStable_of_tan_gt (p : Params) (hD0 : 0 < p.D0)
     (hV : 0 < p.V) (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ} (hcos : 0 < Real.cos θ)
     (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) (htan : p.ωs * p.kp / p.ki < Real.tan θ) :
     connection% (Model.mk p θ ∉ family.den (.flow .lyapunovStable)) := by
@@ -661,8 +654,7 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
 def offEquilibrium : Model := ⟨⟨0, 1, 1, 0, 0, -1⟩, 0⟩
 
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
-@[tmio TM]
-@[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
+@[tmio TM, powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff) (contDiff_field _)
@@ -673,8 +665,7 @@ def offEquilibrium : Model := ⟨⟨0, 1, 1, 0, 0, -1⟩, 0⟩
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
 while the translation asks for an equilibrium. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exact_unstable :
+@[tmio TM, powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_exact_of_witness offEquilibrium_mem_den_unstable (q := .equilibrium)
@@ -713,8 +704,7 @@ private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 2) :
 /-- The undamped PLL is Lyapunov stable at `θ* = 0`: the pendulum energy `1 − cos θ + x²/2` is
 conserved and has a strict minimum on `|θ| < π` (`Dynamics.pendulumEnergy_pos`). Its Jacobian
 `[[0, 1], [−1, 0]]` has trace `0`, so it meets no stable-Jacobian requirement. -/
-@[tmio TM]
-@[powerlib_domain] theorem undampedPLL_mem_den_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem undampedPLL_mem_den_lyapunovStable :
     connection% (undampedPLL ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   refine mem_den_flow_iff.mpr ?_
@@ -741,8 +731,7 @@ conserved and has a strict minimum on `|θ| < π` (`Dynamics.pendulumEnergy_pos`
 
 /-- The Lyapunov translation is sound but not exact: the undamped PLL is Lyapunov stable at an
 equilibrium whose Jacobian has trace `0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exact_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.not_exact_of_witness undampedPLL_mem_den_lyapunovStable (q := .jacobianStable)

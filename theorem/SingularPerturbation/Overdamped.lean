@@ -44,7 +44,7 @@ namespace powerlib.SingularPerturbation.Overdamped
 open Real MeasureTheory
 
 /-- **Energy balance** `dE/dt = −γ θ̇² + F θ̇` for `E = ½ m θ̇² + V(θ)`. -/
-@[powerlib_foundation] theorem energy_balance {m γ : ℝ} {V V' F θ ω a : ℝ → ℝ} {t : ℝ}
+@[tmio T, powerlib_foundation] theorem energy_balance {m γ : ℝ} {V V' F θ ω a : ℝ → ℝ} {t : ℝ}
     (hθ : HasDerivAt θ (ω t) t) (hω : HasDerivAt ω (a t) t) (hV : HasDerivAt V (V' (θ t)) (θ t))
     (heq : m * a t + γ * ω t + V' (θ t) = F t) :
     HasDerivAt (fun s => m / 2 * ω s ^ 2 + V (θ s)) (-γ * ω t ^ 2 + F t * ω t) t := by

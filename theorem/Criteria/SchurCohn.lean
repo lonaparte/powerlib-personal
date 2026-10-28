@@ -38,7 +38,7 @@ open Finset Polynomial ComplexConjugate
 
 /-- Blaschke factor bound: for `‖w‖ ≤ 1` and `‖ζ‖ ≤ 1`, `‖w - ζ‖ ≤ ‖1 - w̄ ζ‖`, from
 `‖1 - w̄ ζ‖² - ‖w - ζ‖² = (1 - ‖w‖²)(1 - ‖ζ‖²)`. -/
-@[powerlib_foundation] theorem norm_sub_le_norm_one_sub_conj_mul {w ζ : ℂ} (hw : ‖w‖ ≤ 1)
+@[tmio T, powerlib_foundation] theorem norm_sub_le_norm_one_sub_conj_mul {w ζ : ℂ} (hw : ‖w‖ ≤ 1)
     (hζ : ‖ζ‖ ≤ 1) : ‖w - ζ‖ ≤ ‖1 - conj w * ζ‖ := by
   have key : ‖1 - conj w * ζ‖ ^ 2 - ‖w - ζ‖ ^ 2 = (1 - ‖w‖ ^ 2) * (1 - ‖ζ‖ ^ 2) := by
     simp only [Complex.sq_norm, Complex.normSq_apply, Complex.sub_re, Complex.sub_im,

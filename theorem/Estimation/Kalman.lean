@@ -52,7 +52,7 @@ def innov (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
   simpa [conjTranspose_eq_transpose_of_trivial] using hA.mul_mul_conjTranspose_same B
 
 /-- **The Joseph form is PSD for every gain** (§1.1). -/
-@[powerlib_foundation] theorem joseph_posSemidef {P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem joseph_posSemidef {P : Matrix (Fin n) (Fin n) ℝ}
     {R : Matrix (Fin p) (Fin p) ℝ} (hP : P.PosSemidef) (hR : R.PosSemidef)
     (H : Matrix (Fin p) (Fin n) ℝ) (K : Matrix (Fin n) (Fin p) ℝ) :
     (joseph P H R K).PosSemidef :=

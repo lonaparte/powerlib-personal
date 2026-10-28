@@ -59,7 +59,7 @@ open powerlib.PhasePlane
 /-- The single `2 × 2` Jordan block with eigenvalue `0`. -/
 def jordanBlock : Matrix (Fin 2) (Fin 2) ℝ := !![0, 1; 0, 0]
 
-@[powerlib_foundation] theorem jordanBlock_sq : jordanBlock ^ 2 = 0 := by
+@[tmio T, powerlib_foundation] theorem jordanBlock_sq : jordanBlock ^ 2 = 0 := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [jordanBlock, pow_two]
 
 @[powerlib_foundation] theorem jordanBlock_ne_zero : jordanBlock ≠ 0 := by

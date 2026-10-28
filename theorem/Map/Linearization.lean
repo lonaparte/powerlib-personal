@@ -49,7 +49,7 @@ abbrev op (A : Matrix (Fin n) (Fin n) ℝ) : ℝⁿ →L[ℝ] ℝⁿ := Matrix.t
 open scoped Matrix.Norms.Operator in
 /-- Schur stability gives a geometric bound on the operator norms of the powers (the matrix bound
 `LTI.SchurStable.exists_pow_bound` read through the coordinate equivalence of `ℝⁿ`). -/
-@[powerlib_foundation] theorem pow_bound_toEuclideanCLM {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem pow_bound_toEuclideanCLM {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : LTI.SchurStable A) :
     ∃ C ρ : ℝ, 0 ≤ C ∧ 0 ≤ ρ ∧ ρ < 1 ∧ ∀ k : ℕ, ‖op A ^ k‖ ≤ C * ρ ^ k := by
   obtain ⟨C, hC, ρ, hρ0, hρ1, hb⟩ := hA.exists_pow_bound

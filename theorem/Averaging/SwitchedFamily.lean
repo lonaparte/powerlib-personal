@@ -143,8 +143,7 @@ def switching :
 /-- **Fast switching realizes the averaged model.** For an attractive sentence (or sampled
 contraction), a duty `d ∈ [0, 1]` and topologies `A₁`, `A₂` whose averaged model satisfies it,
 there is a switching period `T₀ > 0` below which every switched system satisfies it. -/
-@[tmio MI]
-@[powerlib_domain] theorem switching_sound_fast {P : Flow.Property}
+@[tmio MI, powerlib_domain] theorem switching_sound_fast {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (∀ (d : ℝ) (A₁ A₂ : Matrix (Fin n) (Fin n) ℝ) (hd : d ∈ Set.Icc (0 : ℝ) 1),
       (⟨avgMatrix d A₁ A₂⟩ : LTI.ContinuousModel n) ∈ LTI.continuousFamily.den (.flow P) →
@@ -171,8 +170,7 @@ topologies commute, at every switching period and duty, a switched system satisf
 exactly when its averaged model does: the period map is then `e^{TĀ}`
 (`periodMap_eq_exp_of_commute`), so the switched system is the exact sampling of its averaged model
 with the switching period, read through its design at every sentence (`LTI.sampled_reading`). -/
-@[tmio MI]
-@[powerlib_domain] theorem switching_realizationExactUnder_commuting (s : Sentence) :
+@[tmio MI, powerlib_domain] theorem switching_realizationExactUnder_commuting (s : Sentence) :
     connection% ((switching (n := n)).RealizationExactUnder {.commuting} s) := by
   unfold powerlib.TMIO.Statement
   have hs := LTI.sampled_reading (n := n) s
@@ -201,8 +199,7 @@ private theorem commute_of_le_one (hn : n ≤ 1) (A B : Matrix (Fin n) (Fin n) �
 /-- **Scalar systems: averaging never fails.** In dimension `n ≤ 1` every two topologies commute,
 so without a constraint, at every switching period and duty, a switched system satisfies a
 sentence exactly when its averaged model does (`switching_realizationExactUnder_commuting`). -/
-@[tmio MI]
-@[powerlib_domain] theorem switching_realizationExactUnder_of_le_one (hn : n ≤ 1) (s : Sentence) :
+@[tmio MI, powerlib_domain] theorem switching_realizationExactUnder_of_le_one (hn : n ≤ 1) (s : Sentence) :
     connection% ((switching (n := n)).RealizationExactUnder ∅ s) := by
   have h := switching_realizationExactUnder_commuting (n := n) s
   unfold powerlib.TMIO.Statement Implementation.RealizationExactUnder at h ⊢
@@ -219,8 +216,7 @@ sentence exactly when its averaged model does (`switching_realizationExactUnder_
 For every attractive sentence (and sampled contraction), slow switching between two Hurwitz
 topologies with a Hurwitz average gives a switched system outside the sentence whose averaged
 model satisfies it (`slowSwitching_counterexample_of_two_le`, `d = 1/2`, `T = 5`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_switching_realizationSoundUnder {P : Flow.Property}
+@[tmio MI, powerlib_domain] theorem not_switching_realizationSoundUnder {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) (hn : 2 ≤ n) :
     connection% (¬ (switching (n := n)).RealizationSoundUnder ∅ (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -240,8 +236,7 @@ model satisfies it (`slowSwitching_counterexample_of_two_le`, `d = 1/2`, `T = 5`
 the switched realization is sound without a constraint exactly in dimension `n ≤ 1`: in
 dimension at most one it is exact (`switching_realizationExactUnder_of_le_one`), in every
 dimension `n ≥ 2` slow switching refutes it (`not_switching_realizationSoundUnder`). -/
-@[tmio MI]
-@[powerlib_domain] theorem switching_realizationSoundUnder_iff {P : Flow.Property}
+@[tmio MI, powerlib_domain] theorem switching_realizationSoundUnder_iff {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% ((switching (n := n)).RealizationSoundUnder ∅ (.flow P) ↔ n ≤ 1) := by
   unfold powerlib.TMIO.Statement

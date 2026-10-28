@@ -106,7 +106,7 @@ open powerlib.Dynamics (State)
 variable {n m : ℕ}
 
 /-- The Euclidean inner product written as a dot product of coordinate vectors. -/
-@[powerlib_foundation] theorem inner_eq_dotProduct (x y : State n) :
+@[tmio T, powerlib_foundation] theorem inner_eq_dotProduct (x y : State n) :
     inner ℝ x y = WithLp.ofLp x ⬝ᵥ WithLp.ofLp y := by
   rw [EuclideanSpace.inner_eq_star_dotProduct, star_trivial, dotProduct_comm]
 
@@ -555,7 +555,7 @@ system at the origin. -/
   rw [mem_den, hF x, Sentence.holds_flow, NonlinearModel.system_zeroInput]
 
 /-- A lower bound on the Hamiltonian places a member in the passivity denotation. -/
-@[powerlib_foundation] theorem IsNonlinearPH.mem_den_passive (hF : F.IsNonlinearPH model) {x : X}
+@[tmio TM, powerlib_foundation] theorem IsNonlinearPH.mem_den_passive (hF : F.IsNonlinearPH model) {x : X}
     (hH : BddBelow (range (model x).H)) : x ∈ F.den .passive := by
   rw [mem_den, hF x]
   exact (model x).holds_passive hH

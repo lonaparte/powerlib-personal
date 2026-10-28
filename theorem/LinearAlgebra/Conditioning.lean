@@ -43,7 +43,7 @@ def cond (A : Matrix n n 𝕜) : ℝ := ‖A‖ * ‖A⁻¹‖
 abbrev act (A : Matrix n n 𝕜) : EuclideanSpace 𝕜 n →L[𝕜] EuclideanSpace 𝕜 n :=
   Matrix.toEuclideanCLM (n := n) (𝕜 := 𝕜) A
 
-@[powerlib_foundation] theorem norm_act_le (A : Matrix n n 𝕜) (x : EuclideanSpace 𝕜 n) :
+@[tmio T, powerlib_foundation] theorem norm_act_le (A : Matrix n n 𝕜) (x : EuclideanSpace 𝕜 n) :
     ‖act A x‖ ≤ ‖A‖ * ‖x‖ := by
   have := (act A).le_opNorm x
   rwa [act, Matrix.l2_opNorm_toEuclideanCLM] at this

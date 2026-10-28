@@ -60,7 +60,7 @@ def toSISO (M : Matrix (Fin 2) (Fin 2) ℂ) : ℂ := M 0 0 + Complex.I * M 1 0
 
 variable {R : Type*} [CommRing R]
 
-@[powerlib_foundation] theorem isComplexSymm_iff (M : Matrix (Fin 2) (Fin 2) R) :
+@[tmio T, powerlib_foundation] theorem isComplexSymm_iff (M : Matrix (Fin 2) (Fin 2) R) :
     IsComplexSymm M ↔ M = complexSymm (M 0 0) (M 1 0) := by
   constructor
   · rintro ⟨h1, h2⟩

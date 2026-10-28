@@ -84,7 +84,7 @@ structure DCParams where
 
 /-- Bridge-power invariant: with `u = v_c + R_f i + ω L_f J i`, `u·i = v_c·i + R_f |i|²`
 (the `ω L_f` cross terms cancel in the dot product). -/
-@[powerlib_foundation] theorem bridge_power_invariant (vd vq id iq Rf ωL : ℝ) :
+@[tmio T, powerlib_foundation] theorem bridge_power_invariant (vd vq id iq Rf ωL : ℝ) :
     (vd + Rf * id - ωL * iq) * id + (vq + Rf * iq + ωL * id) * iq =
       (vd * id + vq * iq) + Rf * (id ^ 2 + iq ^ 2) := by
   ring

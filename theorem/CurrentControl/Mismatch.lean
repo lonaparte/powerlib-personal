@@ -106,7 +106,7 @@ def model : Plant 4 2 :=
     !![1, 0, 0, 0; 0, 1, 0, 0], 0⟩
 
 /-- The plant is the physical loop for every PCC voltage `v` (exact cancellation). -/
-@[powerlib_foundation] theorem model_field (hL : p.base.L ≠ 0) (v iref : Fin 2 → ℝ)
+@[tmio M, powerlib_foundation] theorem model_field (hL : p.base.L ≠ 0) (v iref : Fin 2 → ℝ)
     (x : ℝ⁴) : p.model.inputField iref x = p.field v iref x := by
   ext j
   fin_cases j <;>
@@ -315,8 +315,7 @@ private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contrac
   Spectral.linear_den (U := Unstable) (fun p => (isHurwitz_iff_stable p).symm) hP
 
 /-- Every translation of the mismatched family is sound. -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.linear_chain_le_semantics (fun p h => (isHurwitz_iff_stable p).mpr h)
@@ -324,16 +323,14 @@ private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contrac
 
 /-- The attractive sentences and sampled contraction of the mismatched loop are carved out
 exactly by positive monic coefficients. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM, powerlib_domain] theorem exact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.linear_exact (fun p => (isHurwitz_iff_stable p).symm) hP
 
 /-- The inductance mismatch never changes the stability region: the attractive denotation of the
 mismatched family is the PI family's, pulled back along `base`. -/
-@[tmio MI]
-@[powerlib_domain] theorem den_eq_base {P : Flow.Property}
+@[tmio MI, powerlib_domain] theorem den_eq_base {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.den (.flow P) = base ⁻¹' PIParams.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -345,8 +342,7 @@ mismatched family is the PI family's, pulled back along `base`. -/
 
 /-- With `L > 0` the mismatched decoupled loop satisfies an attractive sentence iff
 `R + Kp > 0 ∧ Ki > 0`, for every `ω` and every mismatch. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_iff (hL : 0 < p.base.L) {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem mem_den_iff (hL : 0 < p.base.L) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (p ∈ family.den (.flow P) ↔
       p ∈ {p : MismatchParams | 0 < p.base.R + p.base.Kp ∧ 0 < p.base.Ki}) := by
@@ -383,8 +379,7 @@ def implementation :
 
 /-- The attractive sentences and sampled contraction are realized exactly, without constraints:
 a mismatched loop satisfies them exactly when its base PI loop does (`den_eq_base`). -/
-@[tmio MI]
-@[powerlib_domain] theorem realizationExactUnder {P : Flow.Property}
+@[tmio MI, powerlib_domain] theorem realizationExactUnder {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (implementation.RealizationExactUnder ∅ (.flow P)) := by
   unfold powerlib.TMIO.Statement

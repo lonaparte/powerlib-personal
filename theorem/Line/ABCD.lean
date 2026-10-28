@@ -71,7 +71,7 @@ structure Params where
 
 variable (p : Params)
 
-@[powerlib_foundation] theorem gamma_sq : p.γ ^ 2 = p.Z * p.Y := by
+@[tmio M, powerlib_foundation] theorem gamma_sq : p.γ ^ 2 = p.Z * p.Y := by
   rw [p.hZ, p.hγ]; ring
 
 @[powerlib_foundation] theorem Zc_sq_mul_Y : p.Zc ^ 2 * p.Y = p.Z := by

@@ -49,7 +49,7 @@ def upwindFactor (σ θ : ℝ) : ℂ := 1 - σ * (1 - exp ((-θ : ℝ) * I))
   push_cast
   ring
 
-@[powerlib_foundation] theorem ftcs_mode (lam θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem ftcs_mode (lam θ : ℝ) :
     ftcs lam (fourierMode θ) = fun j => (ftcsFactor lam θ : ℂ) * fourierMode θ j := by
   funext j
   have h1 : fourierMode θ (j + 1) = fourierMode θ j * exp (θ * I) := by

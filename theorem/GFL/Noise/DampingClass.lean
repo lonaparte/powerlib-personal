@@ -81,7 +81,7 @@ def hamiltonian (x : State 2) : ℝ := (2 * s.M)⁻¹ * x 1 ^ 2 + s.pot (x 0)
 /-- Gradient `∇H = (P_max sin δ − P_m, p/M)`. -/
 def gradH (x : State 2) : State 2 := WithLp.toLp 2 ![s.Pmax * sin (x 0) - s.Pm, s.M⁻¹ * x 1]
 
-@[powerlib_foundation] theorem hasGradientAt_hamiltonian (x : State 2) :
+@[tmio M, powerlib_foundation] theorem hasGradientAt_hamiltonian (x : State 2) :
     HasGradientAt s.hamiltonian (s.gradH x) x := by
   set π0 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 0
   set π1 : State 2 →L[ℝ] ℝ := PiLp.proj 2 (fun _ : Fin 2 => ℝ) 1

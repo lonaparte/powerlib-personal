@@ -89,7 +89,7 @@ def stabilityPoly : ℂ[X] := 1 + X * ∑ i, C (M.b i : ℂ) * M.stagePoly i
   · simp
 
 /-- For the test field, every stage vector is `kᵢ = λ x pᵢ(hλ)`. -/
-@[powerlib_foundation] theorem stages_testEquation (lam : ℂ) (h : ℝ) (x : ℂ) (k : Fin s → ℂ)
+@[tmio T, powerlib_foundation] theorem stages_testEquation (lam : ℂ) (h : ℝ) (x : ℂ) (k : Fin s → ℂ)
     (hk : M.IsStages (testField lam) h x k) (i : Fin s) :
     k i = lam * x * (M.stagePoly i).eval (h * lam) := by
   induction' hm : i.val using Nat.strong_induction_on with m ih generalizing i

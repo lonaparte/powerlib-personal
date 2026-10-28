@@ -109,7 +109,7 @@ def closedLoopTF (V Kp Ki : ℝ) (s : ℂ) : ℂ :=
 /-- `G_pll(s) = (K_p s + K_i) / (s² + V K_p s + V K_i)`. -/
 def portTF (V Kp Ki : ℝ) (s : ℂ) : ℂ := ((Kp : ℂ) * s + Ki) / loopPoly V Kp Ki s
 
-@[powerlib_foundation] theorem characteristicMatrix_linA (V Kp Ki : ℝ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem characteristicMatrix_linA (V Kp Ki : ℝ) (s : ℂ) :
     Linear.characteristicMatrix (linA V Kp Ki) s = !![s + V * Kp, -(Ki : ℂ); V, s] := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Linear.characteristicMatrix, linA]
@@ -471,8 +471,7 @@ def family : Family Model Requirement 2 1 := ⟨fun m => m.plant.system, Meets, 
 
 /-- No model has both positive loop gains and a negative one: the whole requirement language is
 inconsistent. -/
-@[tmio M]
-@[powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
@@ -515,8 +514,7 @@ semantics connection. The translation is the linear table (`Spectral.linearTable
 loop gains make the state matrix Hurwitz (the linear hub), a negative loop gain gives a
 right-half-plane root (LeanForControl's eigenvalue instability), and the whole language of the
 remaining sentences is inconsistent. -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   have hU := realize_univ
@@ -529,8 +527,7 @@ remaining sentences is inconsistent. -/
 /-- On the attractive sentences and sampled contraction the chain agrees with the semantics: both
 positive loop gains are their exact translation, for every channel
 (`Spectral.exact_of_linearTable`). -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_hurwitz {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem exact_hurwitz {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -538,8 +535,7 @@ positive loop gains are their exact translation, for every channel
 
 /-- Linear SRF-PLL (every channel; they share the state matrix): global exponential stability of
 the locked point iff `V K_p > 0 ∧ V K_i > 0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_globallyExponentiallyStable_iff (m : Model) :
+@[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable_iff (m : Model) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔
       m ∈ {m : Model | 0 < m.V * m.Kp ∧ 0 < m.V * m.Ki}) := by
   unfold powerlib.TMIO.Statement
@@ -556,8 +552,7 @@ def frozen : Model := ⟨0, 0, 0, .phase⟩
   fin_cases i <;> fin_cases j <;> simp [frozen, linA]
 
 /-- The frozen loop conserves the energy `|x|²`. -/
-@[tmio TM]
-@[powerlib_domain] theorem frozen_mem_den_conservative :
+@[tmio TM, powerlib_domain] theorem frozen_mem_den_conservative :
     connection% (frozen ∈ family.den (.flow .conservative)) := by
   unfold powerlib.TMIO.Statement
   refine family_isLinear.mem_den_conservative (P := 1) (by simp) (fun v hv => ?_)
@@ -566,8 +561,7 @@ def frozen : Model := ⟨0, 0, 0, .phase⟩
 
 /-- Conservation has no available translation, and none is exact: the frozen loop conserves an
 energy while no model meets the whole language. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exact_conservative :
+@[tmio TM, powerlib_domain] theorem not_exact_conservative :
     connection% (¬ family.Exact (.flow .conservative)) := by
   unfold powerlib.TMIO.Statement
   intro h
@@ -580,8 +574,7 @@ energy while no model meets the whole language. -/
 
 /-- Both positive loop gains are a sound but not exact translation of Lyapunov stability: the
 frozen loop is Lyapunov stable (conserved energy) with zero loop gains. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exact_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   have hmem : frozen ∈ family.den (.flow .lyapunovStable) := by
@@ -601,8 +594,7 @@ def jordan : Model := ⟨0, 0, 1, .phase⟩
 /-- A negative loop gain is a sound but not exact translation of instability: with zero amplitude
 and a nonzero integral gain the integrator drifts linearly (a zero Jordan chain), although no loop
 gain is negative. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exact_unstable :
+@[tmio TM, powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   let v : EuclideanSpace ℝ (Fin 2) := WithLp.toLp 2 ![1, 0]

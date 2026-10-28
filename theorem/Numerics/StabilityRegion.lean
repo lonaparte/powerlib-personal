@@ -46,7 +46,7 @@ open scoped Matrix.Norms.Operator
 variable {n : ℕ}
 
 /-- The powers of an eigenvalue are eigenvalues of the powers (`Linear.mulVec_pow_of_eigen`). -/
-@[powerlib_foundation] theorem pow_mulVec_eigen {Φ : Matrix (Fin n) (Fin n) ℂ} {μ : ℂ}
+@[tmio T, powerlib_foundation] theorem pow_mulVec_eigen {Φ : Matrix (Fin n) (Fin n) ℂ} {μ : ℂ}
     {v : Fin n → ℂ} (heig : Φ *ᵥ v = μ • v) (k : ℕ) : (Φ ^ k) *ᵥ v = μ ^ k • v :=
   Linear.mulVec_pow_of_eigen heig k
 

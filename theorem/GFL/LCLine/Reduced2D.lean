@@ -98,7 +98,7 @@ variable (p : Params)
 /-! ### Identification with the general PI-PLL field -/
 
 /-- The reduced field is the general PI-PLL field with `h = p.h` and `δω = 0`. -/
-@[powerlib_foundation] theorem reducedField_eq : p.reducedField = piPLLField p.h p.Kp p.Ki 0 := by
+@[tmio M, powerlib_foundation] theorem reducedField_eq : p.reducedField = piPLLField p.h p.Kp p.Ki 0 := by
   funext y
   rw [reducedField_apply, piPLLField, sub_zero]
 
@@ -146,8 +146,7 @@ translated so that `(θ*, 0)` is the origin. -/
 
 /-- A1: `K_p, K_i > 0` and `h′(θ*) = −A cos(θ* + φ) < 0` ⇒ `(θ*, 0)` is locally exponentially
 stable for the reduced 2-state PLL model. -/
-@[tmio TM]
-@[powerlib_domain] theorem reduced_mem_den_locallyExponentiallyStable (hwC : p.wC ≠ 0)
+@[tmio TM, powerlib_domain] theorem reduced_mem_den_locallyExponentiallyStable (hwC : p.wC ≠ 0)
     (hΔ : p.Δ ≠ 0) (hKp : 0 < p.Kp) (hKi : 0 < p.Ki) {θ : ℝ} (hθ : p.h θ = 0)
     (hslope : -(p.amp * cos (θ + p.phase)) < 0) :
     connection% (p.pllModel θ ∈ PLL.PIPLL.family.den (.flow .locallyExponentiallyStable)) :=
@@ -155,15 +154,13 @@ stable for the reduced 2-state PLL model. -/
     (by rw [p.deriv_pllModel hwC hΔ]; exact hslope)
 
 /-- A1: `K_i > 0` and `h′(θ*) > 0` ⇒ `(θ*, 0)` is unstable (saddle). -/
-@[tmio TM]
-@[powerlib_domain] theorem reduced_mem_den_unstable (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+@[tmio TM, powerlib_domain] theorem reduced_mem_den_unstable (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKi : 0 < p.Ki) {θ : ℝ} (hθ : p.h θ = 0) (hslope : 0 < -(p.amp * cos (θ + p.phase))) :
     connection% (p.pllModel θ ∈ PLL.PIPLL.family.den (.flow .unstable)) :=
   PLL.PIPLL.mem_den_unstable_of_pos _ hKi hθ (by rw [p.deriv_pllModel hwC hΔ]; exact hslope)
 
 /-- A1: at a saddle (`K_i > 0`, `h′(θ*) > 0`) the point is not Lyapunov stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem reduced_not_mem_den_lyapunovStable (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
+@[tmio TM, powerlib_domain] theorem reduced_not_mem_den_lyapunovStable (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hKi : 0 < p.Ki) {θ : ℝ} (hθ : p.h θ = 0) (hslope : 0 < -(p.amp * cos (θ + p.phase))) :
     connection% (p.pllModel θ ∉ PLL.PIPLL.family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -434,8 +431,7 @@ private theorem codeField_holds_iff (p : Params) (P : Flow.Property) (θ : ℝ) 
 /-- `decisions.md` §D1.4, corrected, on the semantics connections: every denotation of the
 code-frame family is the preimage of the PI-PLL denotation under `θ_text* = −θ_code*`, for every
 sentence. -/
-@[tmio TM]
-@[powerlib_domain] theorem codeFamily_den (s : Sentence) :
+@[tmio TM, powerlib_domain] theorem codeFamily_den (s : Sentence) :
     connection% (codeFamily.den s = CodeModel.toText ⁻¹' PLL.PIPLL.family.den s) := by
   unfold powerlib.TMIO.Statement
   ext m
@@ -455,8 +451,7 @@ sentence. -/
 
 /-- Every translation of the code-frame family is sound, by the corrected conjugacy and the
 soundness of the PI-PLL family. -/
-@[tmio TM]
-@[powerlib_domain] theorem codeFamily_chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem codeFamily_chain_le_semantics :
     connection% (∀ P, codeFamily.chain P ≤ codeFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
   have hpll := PLL.PIPLL.chain_le_semantics
@@ -473,8 +468,7 @@ soundness of the PI-PLL family. -/
 
 /-- Every sentence transfers between the two frames (mirror points), in particular local
 exponential stability and instability. -/
-@[tmio TM]
-@[powerlib_domain] theorem code_mem_den_iff (m : CodeModel) (s : Sentence) :
+@[tmio TM, powerlib_domain] theorem code_mem_den_iff (m : CodeModel) (s : Sentence) :
     connection% (m ∈ codeFamily.den s ↔ m.toText ∈ PLL.PIPLL.family.den s) := by
   unfold powerlib.TMIO.Statement
   have h := codeFamily_den s

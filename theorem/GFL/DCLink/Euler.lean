@@ -133,8 +133,7 @@ sound.** A locally exponentially stable model (`V₀ = k_p = k_i = k_pv = k_iv =
 conditions met) integrated with a large enough step is not locally exponentially stable: every
 Euler multiplier `1 + hλ` leaves the unit disk
 (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact Numerics.not_euler_realizationSoundUnder_of_large_step_local family_isAutonomous
@@ -180,8 +179,7 @@ IN-positive carrier (`s = 1`) with `I_dc = I_q* = X_g = 0`,
 locally exponentially stable: its four-state reading (`mem_den_iff_fourState`) is the unit
 four-state model above. Integrated with a large enough step it is not: every Euler multiplier
 `1 + hλ` leaves the unit disk (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   set m : Model := ⟨⟨0, 0, 1, 0, 1, 1, 1, 1, 1⟩, 1, WithLp.toLp 2 ![0, 0, 1, 0]⟩
@@ -229,8 +227,7 @@ smoothness hypothesis of the local generic Euler laws (`Numerics.euler_sound_sma
 negative-reference converter (`V_dc* = −1`, `negativeReference`) is locally exponentially stable;
 integrated with a large enough step it is not: every Euler multiplier `1 + hλ` leaves the unit
 disk (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := negativeReference_mem_den_locallyExponentiallyStable
@@ -274,8 +271,7 @@ smoothness hypothesis of the local generic Euler laws (`Numerics.euler_sound_sma
 negative-inductance cascade (`negativeInductance`, `V0 = 1`) is locally exponentially stable;
 integrated with a large enough step it is not: every Euler multiplier `1 + hλ` leaves the unit
 disk (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := negativeInductance_mem_den_locallyExponentiallyStable
@@ -320,8 +316,7 @@ smoothness hypothesis of the local generic Euler laws (`Numerics.euler_sound_sma
 rectifying node (`C = P = V0 = 1`) is locally exponentially stable; integrated with a large enough
 step it is not: its Euler multiplier `1 + hλ` leaves the unit disk
 (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := openLoop_mem_den_locallyExponentiallyStable ⟨1, 1, 1⟩ one_pos one_pos (by norm_num)
@@ -366,8 +361,7 @@ smoothness hypothesis of the local generic Euler laws (`Numerics.euler_sound_sma
 sound.** The loop `C = V_d = V_dc* = Kp = Ki = 1`, `i_ff = I_d0 = 0` is locally exponentially
 stable; integrated with a large enough step it is not: every Euler multiplier `1 + hλ` leaves the
 unit disk (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := closedLoop_mem_den_locallyExponentiallyStable ⟨1, 1, 1, 1, 1, 0, 0⟩ one_pos one_pos

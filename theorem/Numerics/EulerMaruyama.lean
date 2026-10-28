@@ -56,7 +56,7 @@ open MeasureTheory ProbabilityTheory Filter
 open scoped NNReal Topology
 
 /-- Second moment of `c + β z` under `N(0, h)`. -/
-@[powerlib_foundation] theorem integral_affine_sq_gaussian (c β : ℝ) (h : ℝ≥0) :
+@[tmio T, powerlib_foundation] theorem integral_affine_sq_gaussian (c β : ℝ) (h : ℝ≥0) :
     ∫ z, (c + β * z) ^ 2 ∂(gaussianReal 0 h) = c ^ 2 + β ^ 2 * h := by
   have hv : ∫ z, z ^ 2 ∂(gaussianReal 0 h) = h := by
     have := variance_fun_id_gaussianReal (μ := (0:ℝ)) (v := h)

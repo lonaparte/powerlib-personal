@@ -50,7 +50,7 @@ open Complex ComplexConjugate
 open powerlib.Transform.SpaceVector
 
 /-- Voltage-model stator flux estimate (integral form of `ψ̇ = v − r i`). -/
-@[powerlib_foundation] theorem fluxVoltageModel (r : ℝ) (v i ψ : ℝ → ℂ) (hv : Continuous v)
+@[tmio T, powerlib_foundation] theorem fluxVoltageModel (r : ℝ) (v i ψ : ℝ → ℂ) (hv : Continuous v)
     (hi : Continuous i) (hψ : ∀ t, HasDerivAt ψ (v t - r * i t) t) (t : ℝ) :
     ψ t = ψ 0 + ∫ τ in (0 : ℝ)..t, (v τ - r * i τ) := by
   have hc : Continuous fun τ => v τ - r * i τ := hv.sub (continuous_const.mul hi)
@@ -71,7 +71,7 @@ open powerlib.Transform.SpaceVector
   · simp [Complex.mul_re]; ring
 
 /-- `Im(conj(ρ_r e^{jθ_r}) · ρ_s e^{jθ_s}) = ρ_s ρ_r sin(θ_s − θ_r)`. -/
-@[powerlib_foundation] theorem cross_polar (ρs θs ρr θr : ℝ) :
+@[tmio T, powerlib_foundation] theorem cross_polar (ρs θs ρr θr : ℝ) :
     (conj (⟨ρr * Real.cos θr, ρr * Real.sin θr⟩ : ℂ) *
         ⟨ρs * Real.cos θs, ρs * Real.sin θs⟩).im = ρs * ρr * Real.sin (θs - θr) := by
   rw [cross_eq, Real.sin_sub]

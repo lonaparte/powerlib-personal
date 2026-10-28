@@ -84,7 +84,7 @@ def Xeq (X2 X3 : ℝ) : ℝ := X2 * X3 / (X2 + X3)
 /-- Single-branch Thévenin reactance `X_g = X₁ + X_eq`. -/
 def Xg (X1 X2 X3 : ℝ) : ℝ := X1 + Xeq X2 X3
 
-@[powerlib_foundation] theorem one_sub_beta {X2 X3 : ℝ} (h : X2 + X3 ≠ 0) :
+@[tmio T, powerlib_foundation] theorem one_sub_beta {X2 X3 : ℝ} (h : X2 + X3 ≠ 0) :
     1 - beta X2 X3 = X2 / (X2 + X3) := by
   unfold beta; field_simp; ring
 

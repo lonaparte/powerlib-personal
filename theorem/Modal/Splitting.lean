@@ -64,7 +64,7 @@ def ofRealVec (n : ℕ) : (Fin n → ℝ) →ₗ[ℝ] (Fin n → ℂ) where
   map_add' x y := by funext i; simp
   map_smul' c x := by funext i; simp
 
-@[simp, powerlib_foundation] theorem ofRealVec_apply (x : Fin n → ℝ) (i : Fin n) :
+@[tmio T, simp, powerlib_foundation] theorem ofRealVec_apply (x : Fin n → ℝ) (i : Fin n) :
     ofRealVec n x i = (x i : ℂ) := rfl
 
 @[powerlib_foundation] theorem ofRealVec_injective : Function.Injective (ofRealVec n) := by

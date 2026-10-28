@@ -71,7 +71,7 @@ def coreImpedance (ρ r : ℝ) (m : ℂ) : ℂ :=
   (ρ : ℂ) * m / (2 * Real.pi * r) * (besselI0 (m * r) / besselI1 (m * r))
 
 /-- With `w = (m r)²/4`: `Z = (ρ/(π r²)) · I₀-series(w)/I₁-series(w)`. -/
-@[powerlib_foundation] theorem coreImpedance_eq {ρ r : ℝ} (hr : r ≠ 0) {m : ℂ} (hm : m ≠ 0) :
+@[tmio M, powerlib_foundation] theorem coreImpedance_eq {ρ r : ℝ} (hr : r ≠ 0) {m : ℂ} (hm : m ≠ 0) :
     coreImpedance ρ r m = ((ρ / (Real.pi * r ^ 2) : ℝ) : ℂ) *
       (besselSeries0 ((m * r) ^ 2 / 4) / besselSeries1 ((m * r) ^ 2 / 4)) := by
   unfold coreImpedance besselI0 besselI1

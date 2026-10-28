@@ -54,7 +54,7 @@ variable {n : ℕ}
 
 /-- Line angle from node phasors: if `a · conj b = λ z` with `λ > 0`, then
 `‖z‖ cos(arg a − arg b) = Re z` and `‖z‖ sin(arg a − arg b) = Im z`. -/
-@[powerlib_foundation] theorem norm_mul_cos_arg_sub {a b z : ℂ} {lam : ℝ} (ha : a ≠ 0) (hb : b ≠ 0)
+@[tmio T, powerlib_foundation] theorem norm_mul_cos_arg_sub {a b z : ℂ} {lam : ℝ} (ha : a ≠ 0) (hb : b ≠ 0)
     (hl : 0 < lam) (h : a * conj b = lam * z) :
     ‖z‖ * Real.cos (Complex.arg a - Complex.arg b) = z.re ∧
       ‖z‖ * Real.sin (Complex.arg a - Complex.arg b) = z.im := by
@@ -89,7 +89,7 @@ variable {n : ℕ}
 
 /-- A lossless line with weight `W = B cos φ` and flow `f = B sin φ`: its potential increment is
 the cycle edge potential. -/
-@[powerlib_foundation] theorem mul_edgeIncrement {B φ W f : ℝ} (hW : B * Real.cos φ = W)
+@[tmio M, powerlib_foundation] theorem mul_edgeIncrement {B φ W f : ℝ} (hW : B * Real.cos φ = W)
     (hf : B * Real.sin φ = f) (x : ℝ) : B * edgeIncrement φ x = edgeG W f x := by
   simp only [edgeIncrement, edgeG, Real.cos_add, ← hW, ← hf]; ring
 
@@ -723,8 +723,7 @@ def ring5 : Model 4 := ⟨Ring5.params, Ring5.θr⟩
 
 /-- **The five-machine ring is locally asymptotically stable** at its selected angles: a strict,
 isolated minimum of the network potential (LaSalle), although the linearization is degenerate. -/
-@[tmio TM]
-@[powerlib_domain] theorem ring5_mem_den_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem ring5_mem_den_locallyAsymptoticallyStable :
     connection% (ring5 ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   have h := mem_den_locallyAsymptoticallyStable_iff ring5
@@ -741,8 +740,7 @@ direction `(9, 6, 4, 2)` of the Hessian). Static evidence on the model. -/
 /-- **The local asymptotic translation is not exact for five or more machines** (`n + 5` machines,
 every `n`): a ring of five machines, with unit leaves attached for more machines, is locally
 asymptotically stable at a power-balance point whose reduced Jacobian has a zero eigenvalue. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ (family (n := n + 4)).Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   intro h

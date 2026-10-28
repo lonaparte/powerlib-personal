@@ -44,7 +44,7 @@ def field (ω₀ : ℝ) : State 2 → State 2 := Conservative.field 1 0 (torque 
 /-- Energy `ω²/2 + ω₀²(1 − cos θ)`. -/
 def energy (ω₀ : ℝ) : State 2 → ℝ := Conservative.energy 1 (potential ω₀)
 
-@[powerlib_foundation] theorem hasDerivAt_potential (ω₀ θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_potential (ω₀ θ : ℝ) :
     HasDerivAt (potential ω₀) (torque ω₀ θ) θ := by
   have h := ((Real.hasDerivAt_cos θ).const_sub 1).const_mul (ω₀ ^ 2)
   unfold potential torque

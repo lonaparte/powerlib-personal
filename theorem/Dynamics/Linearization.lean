@@ -36,7 +36,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- A Hurwitz Jacobian at an equilibrium gives local exponential stability (LeanForControl's
 `hurwitz_linearization_locally_exponentially_stable`). -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_of_isHurwitz_jacobian
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_isHurwitz_jacobian
     {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} (A : Matrix (Fin n) (Fin n) ℝ)
     (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)

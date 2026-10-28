@@ -29,7 +29,7 @@ noncomputable section
 namespace powerlib.Criteria
 
 /-- Vieta form of the complex-quadratic Hurwitz discriminant. -/
-@[powerlib_foundation] theorem vieta_discriminant (s₁ s₂ : ℂ) :
+@[tmio T, powerlib_foundation] theorem vieta_discriminant (s₁ s₂ : ℂ) :
     (-(s₁ + s₂)).re ^ 2 * (s₁ * s₂).re + (-(s₁ + s₂)).re * (-(s₁ + s₂)).im * (s₁ * s₂).im -
         (s₁ * s₂).im ^ 2 =
       s₁.re * s₂.re * ((s₁.re + s₂.re) ^ 2 + (s₁.im - s₂.im) ^ 2) := by

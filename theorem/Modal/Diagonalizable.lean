@@ -38,7 +38,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 abbrev op (A : Matrix n n ℂ) : Module.End ℂ (n → ℂ) := Matrix.toLin' A
 
 /-- (⇒) for a diagonalizable matrix, `m_g(μ) = m_a(μ)` for every `μ`. -/
-@[powerlib_foundation] theorem ModalBasis.geom_eq_alg {A : Matrix n n ℂ} (mb : ModalBasis A)
+@[tmio T, powerlib_foundation] theorem ModalBasis.geom_eq_alg {A : Matrix n n ℂ} (mb : ModalBasis A)
     (μ : ℂ) : finrank ℂ ((op A).eigenspace μ) = A.charpoly.rootMultiplicity μ := by
   refine le_antisymm (LinearAlgebra.geom_le_alg A μ) ?_
   rw [mb.rootMultiplicity_eq_card]

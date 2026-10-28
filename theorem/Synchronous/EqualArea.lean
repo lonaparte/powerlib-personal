@@ -64,7 +64,7 @@ variable (p : SwingParams)
 /-! ## Closed-form areas -/
 
 /-- `∫_a^b P_e = k₁ (b − a) + k₂ (cos(a − k₃) − cos(b − k₃))`. -/
-@[powerlib_foundation] theorem integral_Pe (a b : ℝ) :
+@[tmio M, powerlib_foundation] theorem integral_Pe (a b : ℝ) :
     ∫ s in a..b, p.Pe s = p.k₁ * (b - a) + p.k₂ * (Real.cos (a - p.k₃) - Real.cos (b - p.k₃)) := by
   have h2 : IntervalIntegrable (fun s => p.k₂ * Real.sin (s - p.k₃)) MeasureTheory.volume a b :=
     (by fun_prop : Continuous fun s => p.k₂ * Real.sin (s - p.k₃)).intervalIntegrable _ _

@@ -70,7 +70,7 @@ variable {m : Linear.Plant n 1} {i₀ : Fin n} {ΔPL shed θ : ℝ}
 /-! ## Auxiliary facts -/
 
 /-- The field of a plant under a constant input is globally Lipschitz. -/
-@[powerlib_foundation] theorem inputField_lipschitzWith (m : Linear.Plant n 1) (u : Fin 1 → ℝ) :
+@[tmio T, powerlib_foundation] theorem inputField_lipschitzWith (m : Linear.Plant n 1) (u : Fin 1 → ℝ) :
     LipschitzWith ‖Linear.op m.A‖₊ (m.inputField u) :=
   LipschitzWith.of_dist_le_mul fun x y => by
     simp only [Linear.Plant.inputField, dist_eq_norm, add_sub_add_right_eq_sub, ← map_sub,
@@ -78,7 +78,7 @@ variable {m : Linear.Plant n 1} {i₀ : Fin n} {ΔPL shed θ : ℝ}
     exact (Linear.op m.A).le_opNorm _
 
 /-- Uniqueness of right-derivative solutions of `ẋ = A x + B u` (constant `u`). -/
-@[powerlib_foundation] theorem rightODE_unique (m : Linear.Plant n 1) (u : Fin 1 → ℝ)
+@[tmio T, powerlib_foundation] theorem rightODE_unique (m : Linear.Plant n 1) (u : Fin 1 → ℝ)
     {f g : ℝ → ℝⁿ} {a b : ℝ} (hf : ContinuousOn f (Icc a b))
     (hf' : ∀ t ∈ Ico a b, HasDerivWithinAt f (m.inputField u (f t)) (Ici t) t)
     (hg : ContinuousOn g (Icc a b))

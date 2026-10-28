@@ -95,7 +95,7 @@ private theorem strictMin_of_localAsymptoticStable_four {p : Params n} {θ : Fin
 def groupIndicator (X : Finset (Fin (n + 1))) (k : Fin (n + 1)) : ℝ := if k ∈ X then 1 else 0
 
 /-- A double sum over ordered pairs of machines split by a group `X`. -/
-@[powerlib_foundation] theorem sum_sum_cross (X : Finset (Fin (n + 1)))
+@[tmio T, powerlib_foundation] theorem sum_sum_cross (X : Finset (Fin (n + 1)))
     (F : Fin (n + 1) → Fin (n + 1) → ℝ) :
     ∑ k, ∑ j, ((if k ∈ X ∧ j ∉ X then F k j else 0) + (if k ∉ X ∧ j ∈ X then F j k else 0)) =
       2 * ∑ i ∈ X, ∑ j ∈ Xᶜ, F i j := by
@@ -124,7 +124,7 @@ set_option linter.unusedSimpArgs false in
 /-- Turning a group `X` of machines rigidly by `t` changes the potential by
 `W (1 − cos t) + K (sin t − t)`, with `W` the total linearization weight and `K` the total flow of
 the lines leaving `X`. -/
-@[powerlib_foundation] theorem potential_add_groupIndicator {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio M, powerlib_foundation] theorem potential_add_groupIndicator {p : Params n} {θ : Fin (n + 1) → ℝ}
     (hbal : ∀ k, p.P k = powerInjection p.B θ k) (X : Finset (Fin (n + 1))) (t : ℝ) :
     potential p (θ + t • groupIndicator X) - potential p θ =
       (∑ i ∈ X, ∑ j ∈ Xᶜ, p.B i j * Real.cos (θ i - θ j)) * (1 - Real.cos t) +
@@ -271,8 +271,7 @@ machines). If the lines between a nonempty proper group `X` of machines and the 
 linearization weight `W = ∑ Bᵢⱼ cos(θᵢ − θⱼ) ≤ 0`, turning `X` rigidly changes the potential by
 `W (1 − cos t) + K (sin t − t)`: a saddle if `W < 0`; if `W = 0` a fold when the flow `K` out of
 `X` is nonzero and a non-strict minimum when it vanishes. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_localAsymptoticStable_of_cut (m : Model n)
+@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_of_cut (m : Model n)
     (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) (X : Finset (Fin (n + 1)))
     (hW : ∑ i ∈ X, ∑ j ∈ Xᶜ, m.params.B i j * Real.cos (m.θ i - m.θ j) ≤ 0)
     {i₀ j₀ : Fin (n + 1)} (hi₀ : i₀ ∈ X) (hj₀ : j₀ ∉ X) :
@@ -292,8 +291,7 @@ private theorem reducedSwing_not_localAsymptoticStable_of_zero_cut {p : Params n
 
 /-- **A cut of zero-weight lines** (each line between `X` and the rest open or at `±π/2`) rules
 out local asymptotic stability. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_localAsymptoticStable_of_zero_cut (m : Model n)
+@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_of_zero_cut (m : Model n)
     (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) (X : Finset (Fin (n + 1)))
     (hX : ∀ i ∈ X, ∀ j ∉ X, m.params.B i j * Real.cos (m.θ i - m.θ j) = 0)
     {i₀ j₀ : Fin (n + 1)} (hi₀ : i₀ ∈ X) (hj₀ : j₀ ∉ X) :
@@ -325,8 +323,7 @@ private theorem reducedSwing_not_localAsymptoticStable_of_flat {p : Params n}
 /-- A null direction without circulation: if every line carries no linearized flow
 `Bₖⱼ cos(θₖ − θⱼ)(uₖ − uⱼ)` along a non-constant `u`, the machines at the top value of `u` are cut
 off by zero-weight lines, so the model is not locally asymptotically stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_localAsymptoticStable_of_flat (m : Model n)
+@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_of_flat (m : Model n)
     (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) (u : Fin (n + 1) → ℝ)
     {k₁ k₂ : Fin (n + 1)} (hne : u k₁ ≠ u k₂)
     (h : ∀ k j, m.params.B k j * Real.cos (m.θ k - m.θ j) * (u k - u j) = 0) :
@@ -370,8 +367,7 @@ private theorem reducedSwing_cubicForm_eq_zero_of_localAsymptoticStable {p : Par
 /-- **A negative value of the Hessian form rules out local asymptotic stability**: at a
 power-balance point a locally asymptotically stable model has a positive semidefinite Hessian
 form. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_localAsymptoticStable_of_hessForm_neg (m : Model n)
+@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_of_hessForm_neg (m : Model n)
     (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) (u : Fin (n + 1) → ℝ)
     (h : hessForm m.params m.θ u < 0) :
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
@@ -383,8 +379,7 @@ form. -/
 /-- **A nonzero cubic form along a null direction of the Hessian form rules out local asymptotic
 stability**: at a power-balance point a locally asymptotically stable model has a cubic form
 vanishing on every null direction of its Hessian form. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_localAsymptoticStable_of_cubicForm_ne_zero (m : Model n)
+@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_of_cubicForm_ne_zero (m : Model n)
     (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) (u : Fin (n + 1) → ℝ)
     (h0 : hessForm m.params m.θ u = 0) (h : cubicForm m.params m.θ u ≠ 0) :
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
@@ -955,8 +950,7 @@ cuts off zero-weight lines (`not_localAsymptoticStable_of_flat`); a circulation 
 has exactly one negative weight and a nonzero cubic term (`ring_cubic_ne_zero`); a circulation on
 the triangle has a nonzero cubic term (`triangle_cubic_ne_zero`); a zero-weight pendant line is a
 zero-weight cut (`not_localAsymptoticStable_of_zero_cut`). -/
-@[tmio TM]
-@[powerlib_domain] theorem not_localAsymptoticStable_four (m : Model 3)
+@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_four (m : Model 3)
     (σ : Equiv.Perm (Fin 4)) (h13 : m.params.B (σ 1) (σ 3) = 0)
     (hsp : m.params.B (σ 0) (σ 2) = 0 ∨ m.params.B (σ 0) (σ 3) = 0)
     (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k)
@@ -975,8 +969,7 @@ every four-machine network with two uncoupled pairs has such a labelling. Then t
 locally asymptotically stable exactly when its profile is a power-balance point with a Hurwitz
 reduced Jacobian (`mem_den_locallyAsymptoticallyStable_iff_of_guard` with the obstruction
 `not_localAsymptoticStable_four`). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_four (m : Model 3)
+@[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_four (m : Model 3)
     (σ : Equiv.Perm (Fin 4)) (h13 : m.params.B (σ 1) (σ 3) = 0)
     (hsp : m.params.B (σ 0) (σ 2) = 0 ∨ m.params.B (σ 0) (σ 3) = 0) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable) ↔

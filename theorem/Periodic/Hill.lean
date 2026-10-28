@@ -78,7 +78,7 @@ def hillLTI (A : Matrix X X ℝ) (ωs : ℝ) (K : ℕ) :
     A.map (algebraMap ℝ ℂ) - (((harmonicIndex K k : ℂ) * ωs * I)) • (1 : Matrix X X ℂ)
 
 /-- `det(sI − 𝓗_K) = ∏_h det((s + jhω_s) I − A₀)`. -/
-@[powerlib_foundation] theorem det_hillLTI (A : Matrix X X ℝ) (ωs : ℝ) (K : ℕ) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem det_hillLTI (A : Matrix X X ℝ) (ωs : ℝ) (K : ℕ) (s : ℂ) :
     (s • (1 : Matrix (X × Fin (2 * K + 1)) (X × Fin (2 * K + 1)) ℂ) - hillLTI A ωs K).det =
       ∏ k, (Linear.characteristicMatrix A (s + (harmonicIndex K k : ℂ) * ωs * I)).det := by
   have h : s • (1 : Matrix (X × Fin (2 * K + 1)) (X × Fin (2 * K + 1)) ℂ) - hillLTI A ωs K =

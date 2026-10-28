@@ -40,24 +40,30 @@ Public model results use `connection% (ordinary proposition)`. The resulting
 or compares generated connections. Each public typed connection theorem in
 `theorem/` also carries exactly one `@[tmio T]`, `@[tmio M]`, `@[tmio TM]`,
 `@[tmio MI]` or `@[tmio IO]` attribute. These source attributes are the only
-classification source; no separate catalog is maintained. The current review
-covers 813 public connections, not all library theorems or all T/M content.
+classification source; no separate catalog or handwritten theorem-to-kind list is
+maintained. The current review covers 1,224 theorems, including all 813 public
+connections and 411 ordinary theorems; three classified helpers are private.
+The rest of the library has not all been classified.
 Foundation/domain annotations remain optional, independent presentation metadata.
 The attribute checks enforce theorem targets, allowed kinds and unique assignment;
 they do not prove semantic classification or change mathematical admission.
+Use one attribute block per declaration, such as `@[tmio TM, powerlib_domain]`.
 
 For source queries without starting Lean or building dependencies, run:
 
 ```sh
 python3 tools/tmio_classification.py check
+python3 tools/tmio_classification.py list T
 python3 tools/tmio_classification.py list TM
 python3 tools/tmio_classification.py show powerlib.LTI.sampled_exact_iff
 ```
 
 In Lean, import `theorem.TMIO.KnowledgeIndex` alongside the desired theorem
-modules. `#tmio_edges` shows counts, `#tmio_edges TM` lists one class (arguments:
-`T`, `M`, `TM`, `MI`, `IO`), and `#tmio_check` checks classification coverage of
-the currently imported public typed connections. Unimported modules are excluded.
+modules. `#tmio_theorems` lists counts of all explicitly classified theorems, and
+`#tmio_theorems T` lists one class (arguments: `T`, `M`, `TM`, `MI`, `IO`).
+`#tmio_edges` restricts queries to public typed connections. `#tmio_check` checks
+their required coverage and reports the full classified population. Ordinary and
+private theorem attributes are discoverable; unimported modules are excluded.
 
 `lake build` and `lake build powerlib` run the source preflight and check the
 actual complete module inventory, including new modules that omit the architecture

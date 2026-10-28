@@ -108,7 +108,7 @@ def dampingPower (m : DiagonalPH ι κ) (x : ι → ℝ) : ℝ := ∑ i, m.d i *
 def stateMatrix (m : DiagonalPH ι κ) : Matrix ι ι ℝ := (m.J - diagonal m.d) * diagonal m.w
 
 omit [Fintype κ] in
-@[simp, powerlib_foundation] theorem diagonal_mulVec_gradient (m : DiagonalPH ι κ)
+@[tmio M, simp, powerlib_foundation] theorem diagonal_mulVec_gradient (m : DiagonalPH ι κ)
     (x : ι → ℝ) : diagonal m.w *ᵥ x = m.gradient x := by
   ext i
   exact mulVec_diagonal m.w x i
@@ -439,8 +439,7 @@ energy itself. -/
 
 /-- Strictly damped linear port-Hamiltonian plants satisfy every attractive sentence and sampled
 contraction. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_of_dissipation_pos (h : Port.PortHamiltonian n p)
+@[tmio TM, powerlib_domain] theorem mem_den_of_dissipation_pos (h : Port.PortHamiltonian n p)
     (hR : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (h.R *ᵥ x)) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (h ∈ Port.PortHamiltonian.family.den (.flow P)) := by
@@ -449,23 +448,20 @@ contraction. -/
   exact isHurwitz_of_dissipation_pos h hR
 
 /-- Strict damping: the zero-input plant is globally exponentially stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_globallyExponentiallyStable_of_dissipation_pos
+@[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable_of_dissipation_pos
     (h : Port.PortHamiltonian n p) (hR : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (h.R *ᵥ x)) :
     connection% (h ∈ Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable)) :=
   mem_den_of_dissipation_pos h hR (Or.inl trivial)
 
 /-- Without dissipation the zero-input plant conserves its positive definite stored energy. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_conservative_of_lossless (h : Port.PortHamiltonian n p)
+@[tmio TM, powerlib_domain] theorem mem_den_conservative_of_lossless (h : Port.PortHamiltonian n p)
     (hR : h.R = 0) :
     connection% (h ∈ Port.PortHamiltonian.family.den (.flow .conservative)) :=
   Port.PortHamiltonian.family_isLinear.mem_den_conservative h.energy_symmetric h.energy_pos
     (lossless_lyapunov h hR)
 
 /-- A strictly damped plant with a state conserves no energy. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_mem_den_conservative_of_dissipation_pos
+@[tmio TM, powerlib_domain] theorem not_mem_den_conservative_of_dissipation_pos
     (h : Port.PortHamiltonian n p) (hn : 0 < n)
     (hR : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (h.R *ᵥ x)) :
     connection% (h ∉ Port.PortHamiltonian.family.den (.flow .conservative)) := fun hc =>
@@ -473,8 +469,7 @@ contraction. -/
     (isHurwitz_of_dissipation_pos h hR)
 
 /-- Similar plants of port-Hamiltonian models satisfy the same sentences. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_iff_of_similar {h h' : Port.PortHamiltonian n p}
+@[tmio TM, powerlib_domain] theorem mem_den_iff_of_similar {h h' : Port.PortHamiltonian n p}
     (hs : Linear.Similar h.plant h'.plant) :
     connection% (∀ s : Sentence, h' ∈ Port.PortHamiltonian.family.den s ↔
       h ∈ Port.PortHamiltonian.family.den s) := by
@@ -652,8 +647,7 @@ end Interconnection
 over values, so the index types are `Fin`): every numbering of the interconnected model is
 passive, with no new Lyapunov analysis; its stored energy is `H₁ + H₂` (`toPH_storage`,
 `interconnect_energy`). -/
-@[tmio TM]
-@[powerlib_domain] theorem interconnect_mem_den_passive {a₁ a₂ b₁ b₂ b n p : ℕ}
+@[tmio TM, powerlib_domain] theorem interconnect_mem_den_passive {a₁ a₂ b₁ b₂ b n p : ℕ}
     (m₁ : DiagonalPH (Fin a₁) (Fin b₁)) (m₂ : DiagonalPH (Fin a₂) (Fin b₂))
     (Mc : Matrix (Fin b₂) (Fin b₁) ℝ) (g₁ : Matrix (Fin b₁) (Fin b) ℝ)
     (g₂ : Matrix (Fin b₂) (Fin b) ℝ) (e : Fin a₁ ⊕ Fin a₂ ≃ Fin n) (e' : Fin b ≃ Fin p) :
@@ -662,8 +656,7 @@ passive, with no new Lyapunov analysis; its stored energy is `H₁ + H₂` (`toP
   Port.PortHamiltonian.mem_den_passive _
 
 /-- The zero-input interconnection is Lyapunov stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem interconnect_mem_den_lyapunovStable {a₁ a₂ b₁ b₂ b n p : ℕ}
+@[tmio TM, powerlib_domain] theorem interconnect_mem_den_lyapunovStable {a₁ a₂ b₁ b₂ b n p : ℕ}
     (m₁ : DiagonalPH (Fin a₁) (Fin b₁)) (m₂ : DiagonalPH (Fin a₂) (Fin b₂))
     (Mc : Matrix (Fin b₂) (Fin b₁) ℝ) (g₁ : Matrix (Fin b₁) (Fin b) ℝ)
     (g₂ : Matrix (Fin b₂) (Fin b) ℝ) (e : Fin a₁ ⊕ Fin a₂ ≃ Fin n) (e' : Fin b ≃ Fin p) :
@@ -776,8 +769,7 @@ omit [DecidableEq ι] [Fintype κ] in
 /-- A diagonal port-Hamiltonian model whose every state is damped is globally exponentially
 stable with zero input, in every numbering: equilibrium, global existence, and a uniform
 exponential bound on every solution segment. -/
-@[tmio TM]
-@[powerlib_domain] theorem toPH_mem_den_globallyExponentiallyStable {a b n p : ℕ}
+@[tmio TM, powerlib_domain] theorem toPH_mem_den_globallyExponentiallyStable {a b n p : ℕ}
     (m : DiagonalPH (Fin a) (Fin b)) (e : Fin a ≃ Fin n) (e' : Fin b ≃ Fin p)
     (hd : ∀ i, 0 < m.d i) :
     connection% (m.toPH e e' ∈

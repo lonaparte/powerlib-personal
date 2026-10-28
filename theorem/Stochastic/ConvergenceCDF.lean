@@ -49,7 +49,7 @@ open scoped ENNReal NNReal Topology
 variable {ι : Type*} {l : Filter ι}
 
 /-- Mass of `(a, b]` through the distribution function. -/
-@[powerlib_foundation] theorem coe_apply_Ioc (μ : ProbabilityMeasure ℝ) (a b : ℝ) :
+@[tmio T, powerlib_foundation] theorem coe_apply_Ioc (μ : ProbabilityMeasure ℝ) (a b : ℝ) :
     ((μ (Ioc a b) : ℝ≥0) : ℝ) = max (cdf (μ : Measure ℝ) b - cdf (μ : Measure ℝ) a) 0 := by
   have h := (cdf (μ : Measure ℝ)).measure_Ioc a b
   rw [measure_cdf] at h

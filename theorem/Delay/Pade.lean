@@ -75,7 +75,7 @@ def pade22 (τ : ℝ) (s : ℂ) : ℂ := pade22Num τ s / pade22Den τ s
 
 /-! ## Delay cascade -/
 
-@[powerlib_foundation] theorem pureDelay_add (τ₁ τ₂ : ℝ) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem pureDelay_add (τ₁ τ₂ : ℝ) (s : ℂ) :
     pureDelay (τ₁ + τ₂) s = pureDelay τ₁ s * pureDelay τ₂ s := by
   simp only [pureDelay, ← Complex.exp_add]
   congr 1

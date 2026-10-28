@@ -76,7 +76,7 @@ variable {K : Type*} [Field K] {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- Fitting decomposition: every square matrix is, after an invertible change of basis `P`, `Q`
 (`P Q = 1`, `Q P = 1`), block diagonal `diag(M₁, M₀)` with `M₁` invertible and `M₀` nilpotent. -/
-@[powerlib_foundation] theorem fitting_matrix (M : Matrix ι ι K) :
+@[tmio T, powerlib_foundation] theorem fitting_matrix (M : Matrix ι ι K) :
     ∃ (k l : ℕ) (P : Matrix (Fin k ⊕ Fin l) ι K) (Q : Matrix ι (Fin k ⊕ Fin l) K)
       (M₁ : Matrix (Fin k) (Fin k) K) (M₀ : Matrix (Fin l) (Fin l) K),
       P * Q = 1 ∧ Q * P = 1 ∧ P * M * Q = fromBlocks M₁ 0 0 M₀ ∧ IsUnit M₁ ∧

@@ -106,7 +106,7 @@ def diracRate {E : Type*} (x₀ : E) (x : E) : ℝ≥0∞ := if x = x₀ then 0 
 speed `ε → 0⁺` and rate function `diracRate x₀` (on a T1 space): the rate is lower semicontinuous,
 and for every Borel set `A` the upper bound `limsup_{ε → 0⁺} ε log δ_{x₀}(A) ≤ −inf_{cl A} I` and
 the lower bound `−inf_{int A} I ≤ liminf_{ε → 0⁺} ε log δ_{x₀}(A)` hold. -/
-@[powerlib_foundation] theorem dirac_satisfiesLDP {E : Type*} [TopologicalSpace E] [T1Space E]
+@[tmio T, powerlib_foundation] theorem dirac_satisfiesLDP {E : Type*} [TopologicalSpace E] [T1Space E]
     [MeasurableSpace E] [MeasurableSingletonClass E] (x₀ : E) :
     LowerSemicontinuous (diracRate x₀) ∧
       (∀ A : Set E, MeasurableSet A →

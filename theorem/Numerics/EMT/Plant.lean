@@ -78,7 +78,7 @@ def rlField (m : RL.Impedance) : (Fin 1 → ℝ) → (Fin 1 → ℝ) := rlInputF
 /-- State matrix of the RL field: the state matrix of the RL family's plant. -/
 def rlMatrix (m : RL.Impedance) : Matrix (Fin 1) (Fin 1) ℝ := m.plant.A
 
-@[powerlib_foundation] theorem rlMatrix_eq (m : RL.Impedance) :
+@[tmio M, powerlib_foundation] theorem rlMatrix_eq (m : RL.Impedance) :
     rlMatrix m = !![-(m.resistance / m.inductance.val)] :=
   RL.plant_A m
 

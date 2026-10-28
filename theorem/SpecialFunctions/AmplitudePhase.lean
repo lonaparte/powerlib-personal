@@ -32,7 +32,7 @@ open Real
 
 /-- The cosine part of the amplitude-phase form: with `B = √(W² + f²)`,
 `B cos (arcsin (f / B)) = |W|`. -/
-@[powerlib_foundation] theorem sqrt_mul_cos_arcsin (W f : ℝ) :
+@[tmio T, powerlib_foundation] theorem sqrt_mul_cos_arcsin (W f : ℝ) :
     √(W ^ 2 + f ^ 2) * cos (arcsin (f / √(W ^ 2 + f ^ 2))) = |W| := by
   obtain ⟨B, hBdef⟩ : ∃ B, B = √(W ^ 2 + f ^ 2) := ⟨_, rfl⟩
   rw [← hBdef]

@@ -69,7 +69,7 @@ def ψ (i : n) : n → ℂ := fun k => mb.W k i
 /-- Participation factor `p_{ki} = v_{ki} ψ_{ki}` of state `k` in mode `i`. -/
 def pf (k i : n) : ℂ := mb.V k i * mb.W k i
 
-@[powerlib_foundation] theorem V_mul_Wt : mb.V * mb.Wᵀ = 1 := mul_eq_one_comm.mp mb.biorth
+@[tmio T, powerlib_foundation] theorem V_mul_Wt : mb.V * mb.Wᵀ = 1 := mul_eq_one_comm.mp mb.biorth
 
 @[powerlib_foundation] theorem decomp : A = mb.V * diagonal mb.eig * mb.Wᵀ := by
   calc A = A * (mb.V * mb.Wᵀ) := by rw [mb.V_mul_Wt, Matrix.mul_one]

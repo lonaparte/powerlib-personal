@@ -59,7 +59,7 @@ def genL (f : Fin n → ℝ) (h : Matrix (Fin n) (Fin q) ℝ) (g : Fin n → ℝ
   f ⬝ᵥ g + itoCorrection h K
 
 /-- A skew matrix contributes no power: `(J g) ⬝ g = 0`. -/
-@[powerlib_foundation] theorem skew_dotProduct_self {J : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem skew_dotProduct_self {J : Matrix (Fin n) (Fin n) ℝ}
     (hJ : Jᵀ = -J) (g : Fin n → ℝ) : (J *ᵥ g) ⬝ᵥ g = 0 := by
   have h1 : g ⬝ᵥ (Jᵀ *ᵥ g) = g ⬝ᵥ (J *ᵥ g) := by
     rw [mulVec_transpose, dotProduct_comm g (g ᵥ* J), ← dotProduct_mulVec]

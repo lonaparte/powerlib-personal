@@ -57,7 +57,7 @@ A forward trajectory of the linearized error dynamics for the grid-frequency dev
 `w(t) = ω_g(t) − ω_s` is a forward trajectory of `frequencyModel V K_p K_i` under the input
 `t ↦ ![w t]`. -/
 
-@[powerlib_foundation] theorem frequencyModel_field (V Kp Ki : ℝ) (x : Fin 2 → ℝ)
+@[tmio M, powerlib_foundation] theorem frequencyModel_field (V Kp Ki : ℝ) (x : Fin 2 → ℝ)
     (u : Fin 1 → ℝ) :
     (frequencyModel V Kp Ki).A *ᵥ x + (frequencyModel V Kp Ki).B *ᵥ u =
       ![-(V * Kp) * x 0 + Ki * x 1 - u 0, -V * x 0] := by

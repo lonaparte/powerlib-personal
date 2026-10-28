@@ -34,7 +34,7 @@ open FourState intervalIntegral
 variable (p : FourState.Params)
 
 /-- Component form of the angle-driven field. -/
-@[powerlib_foundation] theorem fieldAngle_apply (u ud : ℝ) (z : Dynamics.State 4) :
+@[tmio M, powerlib_foundation] theorem fieldAngle_apply (u ud : ℝ) (z : Dynamics.State 4) :
     (fieldAngle p u ud z) 0 =
         p.kp * vq p (z 0) (z 2) (z 3) + p.ki * z 1 - ud ∧
       (fieldAngle p u ud z) 1 = vq p (z 0) (z 2) (z 3) ∧

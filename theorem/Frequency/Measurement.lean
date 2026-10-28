@@ -99,7 +99,7 @@ def analyticSignal (A ω φ : ℝ) (τ : ℝ) : ℂ := A * Complex.exp (((ω * �
 
 /-- PMU frequency estimate `f̂ = f₀ + arg(X(t)/X(t − T))/(2πT)` is exact on a complex
 positive-sequence signal of nonzero amplitude when `|ω − ω₀| T < π`. -/
-@[powerlib_foundation] theorem pmu_frequency_exact {T ω₀ A ω φ : ℝ} (hT : 0 < T) (hA : A ≠ 0)
+@[tmio M, powerlib_foundation] theorem pmu_frequency_exact {T ω₀ A ω φ : ℝ} (hT : 0 < T) (hA : A ≠ 0)
     (hω : |ω - ω₀| * T < Real.pi) (t : ℝ) :
     ω₀ / (2 * Real.pi) +
         arg (windowPhasor T ω₀ (analyticSignal A ω φ) t /

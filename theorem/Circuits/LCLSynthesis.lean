@@ -193,7 +193,7 @@ def matrix (a d b e k : ℝ) : SymmetricMatrix :=
   ⟨n11 a d b e k / q, n12 a d b e k / q, n13 a d b e k / q,
     n22 a d b e k / q, n23 a d b e k / q, n33 a d b e k / q⟩
 
-@[powerlib_foundation] theorem coupling_pos {a d b e : ℝ}
+@[tmio T, powerlib_foundation] theorem coupling_pos {a d b e : ℝ}
     (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (had : 0 < a ∨ 0 < d) :
     0 < coupling a d b e := by
   rcases had with ha' | hd' <;> dsimp [coupling] <;> positivity
@@ -406,8 +406,7 @@ def rationalFamily : Family RationalCircuit (Requirement ⊕ Synthesis) 3 2 :=
 
 /-- Acceptance by the synthesizer entails pole stability: the accepted certificate proves the
 plant Hurwitz. -/
-@[tmio M]
-@[powerlib_domain] theorem realize_accepted :
+@[tmio M, powerlib_domain] theorem realize_accepted :
     connection% (realize rationalFamily.meets {.inr .accepted} ⊆
       realize rationalFamily.meets {.inl .poleStable}) := by
   unfold powerlib.TMIO.Statement

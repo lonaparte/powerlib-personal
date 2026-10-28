@@ -83,7 +83,7 @@ def IsDiffIndex (E A : Matrix ι ι K) (ν : ℕ) : Prop :=
   OneFull E A ν ∧ ∀ μ < ν, ¬ OneFull E A μ
 
 omit [DecidableEq ι] in
-@[powerlib_foundation] theorem oneFull_mono {E A : Matrix ι ι K} {μ μ' : ℕ}
+@[tmio T, powerlib_foundation] theorem oneFull_mono {E A : Matrix ι ι K} {μ μ' : ℕ}
     (h : OneFull E A μ) (hle : μ ≤ μ') : OneFull E A μ' :=
   fun w h0 hr => h w h0 fun r hr' => hr r (by omega)
 

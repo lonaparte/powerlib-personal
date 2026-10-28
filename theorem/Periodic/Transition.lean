@@ -71,7 +71,7 @@ variable {A : ℝ → Matrix X X ℝ} {M : ℝ}
 
 /-! ## Lipschitz bounds of the linear fields -/
 
-@[powerlib_foundation] theorem matField_lipschitz (hM : ∀ t, ‖A t‖ ≤ M) (t : ℝ) :
+@[tmio T, powerlib_foundation] theorem matField_lipschitz (hM : ∀ t, ‖A t‖ ≤ M) (t : ℝ) :
     LipschitzWith (Real.toNNReal M) (matField A t) := by
   refine LipschitzWith.of_dist_le_mul fun Y Z => ?_
   rw [dist_eq_norm, dist_eq_norm, matField, matField, ← mul_sub, Real.coe_toNNReal']

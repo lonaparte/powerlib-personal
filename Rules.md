@@ -119,15 +119,20 @@ Each public typed connection theorem in `theorem/` carries exactly one source
 attribute: `@[tmio T]`, `@[tmio M]`, `@[tmio TM]`, `@[tmio MI]` or `@[tmio IO]`.
 These attributes are the sole source of classification; queries reconstruct an
 index from them, and no separate classification table is maintained.
+Combine existing attributes in the same block, for example
+`@[tmio TM, powerlib_domain]`; consecutive `@[...]` blocks are not valid Lean syntax.
 `theorem/TMIO/KnowledgeKind.lean` checks that an attribute targets a theorem,
 uses one of the five kinds, and is not assigned twice. The assigned kind records
 review of the complete statement and its hypotheses; the attribute checker does
 not prove that semantic judgment or replace mathematical admission.
 
-The current reviewed coverage is 813 public `connection%` theorems: T 0, M 50,
-T–M 668, M–I 88 and I–O 7. Ordinary non-connection theorems and definitions,
-including the rest of the library's T and M content, have not all been classified.
-The required coverage check is limited to public typed connection theorems.
+The current reviewed coverage is 1,224 theorems: T 297, M 148, T–M 682, M–I 88
+and I–O 9, including three private helpers. This includes all 813 public
+`connection%` theorems (T 0, M 50, T–M 668, M–I 88, I–O 7) and 411 individually
+reviewed ordinary theorems. Module-level role suggestions do not assign a kind to
+every declaration in a module. The remaining theorems and definitions have not all been classified.
+The required missing-label check is limited to public typed connection theorems;
+every explicit attribute, including one on an ordinary or private theorem, is checked.
 `Layers.md` gives the Lean environment queries and the source-only queries.
 
 ## 3. Foundation results and domain results

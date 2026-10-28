@@ -79,7 +79,7 @@ private def cubicPoly (a2 a1 a0 : ℝ) : ℝ[X] := X ^ 3 + C a2 * X ^ 2 + C a1 *
   simp [cubicPoly]
 
 /-- Every monic real cubic has a real root (odd degree, `Criteria.exists_root_of_odd_natDegree`). -/
-@[powerlib_foundation] theorem exists_cubic_real_root (a2 a1 a0 : ℝ) :
+@[tmio T, powerlib_foundation] theorem exists_cubic_real_root (a2 a1 a0 : ℝ) :
     ∃ r : ℝ, r ^ 3 + a2 * r ^ 2 + a1 * r + a0 = 0 := by
   obtain ⟨r, hr⟩ := exists_root_of_odd_natDegree (cubicPoly_monic a2 a1 a0)
     (by rw [show (cubicPoly a2 a1 a0).natDegree = 3 by unfold cubicPoly; compute_degree!]; decide)

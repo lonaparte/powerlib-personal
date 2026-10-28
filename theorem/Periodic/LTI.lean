@@ -34,7 +34,7 @@ open scoped Matrix.Norms.Operator
 variable {X : Type*} [Fintype X] [DecidableEq X]
 
 /-- For a constant state matrix, `Φ(t, s) = exp ((t - s) • A)` (`t ≥ s`). -/
-@[powerlib_foundation] theorem transition_const (A : Matrix X X ℝ) {s t : ℝ} (hst : s ≤ t) :
+@[tmio T, powerlib_foundation] theorem transition_const (A : Matrix X X ℝ) {s t : ℝ} (hst : s ≤ t) :
     transition (fun _ => A) t s = NormedSpace.exp ((t - s) • A) := by
   have hM : ∀ r, ‖(fun _ : ℝ => A) r‖ ≤ ‖A‖ := fun _ => le_rfl
   have hY : IsIntegralCurveOn (fun r => NormedSpace.exp ((r - s) • A))

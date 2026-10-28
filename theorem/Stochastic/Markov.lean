@@ -64,7 +64,7 @@ section Kernels
 variable {α : Type*} {mα : MeasurableSpace α}
 
 /-- Composition of kernels is associative (Mathlib `ProbabilityTheory.Kernel.comp_assoc`). -/
-@[powerlib_foundation] theorem kernel_comp_assoc {β γ δ : Type*} {mβ : MeasurableSpace β}
+@[tmio T, powerlib_foundation] theorem kernel_comp_assoc {β γ δ : Type*} {mβ : MeasurableSpace β}
     {mγ : MeasurableSpace γ} {mδ : MeasurableSpace δ} (ξ : Kernel γ δ) (η : Kernel β γ)
     (κ : Kernel α β) : ξ ∘ₖ η ∘ₖ κ = ξ ∘ₖ (η ∘ₖ κ) :=
   Kernel.comp_assoc ξ η κ

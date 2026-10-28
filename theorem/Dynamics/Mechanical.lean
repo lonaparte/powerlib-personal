@@ -64,7 +64,7 @@ abbrev qIdx (i : Fin m) : Fin (m + k) := Fin.castAdd k i
 abbrev vIdx (j : Fin k) : Fin (m + k) := Fin.natAdd m j
 
 /-- A state is determined by its positions and velocities (`Dynamics.state_ext_blocks`). -/
-@[powerlib_foundation] theorem state_ext {z z' : State (m + k)}
+@[tmio T, powerlib_foundation] theorem state_ext {z z' : State (m + k)}
     (hq : ∀ i, z (qIdx i) = z' (qIdx i)) (hv : ∀ j, z (vIdx j) = z' (vIdx j)) : z = z' :=
   state_ext_blocks hq hv
 

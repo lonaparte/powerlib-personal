@@ -64,7 +64,7 @@ def krylov (A : Matrix (Fin k) (Fin k) ℝ) (r : Fin k → ℝ) (m : ℕ) : Subm
 /-! ## Galerkin optimality -/
 
 /-- **A-norm optimality**: residual orthogonal to `S` ⇒ minimal `A`-norm error over `x₀ + S`. -/
-@[powerlib_foundation] theorem galerkin_optimal {A : Matrix (Fin k) (Fin k) ℝ} (hsym : Aᵀ = A)
+@[tmio T, powerlib_foundation] theorem galerkin_optimal {A : Matrix (Fin k) (Fin k) ℝ} (hsym : Aᵀ = A)
     (hpsd : ∀ u, 0 ≤ anorm2 A u) {S : Submodule ℝ (Fin k → ℝ)} {x₀ xm xs b : Fin k → ℝ}
     (hxs : A *ᵥ xs = b) (hxm : xm - x₀ ∈ S) (horth : ∀ s ∈ S, s ⬝ᵥ (b - A *ᵥ xm) = 0)
     (x : Fin k → ℝ) (hx : x - x₀ ∈ S) : anorm2 A (xm - xs) ≤ anorm2 A (x - xs) := by

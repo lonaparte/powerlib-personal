@@ -101,7 +101,7 @@ def den (s : Sentence) : Set X := realize F.Holds {s}
   simp [den, Holds]
 
 /-- The denotation is the generated value of the semantics connection at the sentence. -/
-@[powerlib_foundation] theorem den_eq_generate (s : Sentence) :
+@[tmio TM, powerlib_foundation] theorem den_eq_generate (s : Sentence) :
     F.den s = ofDual (generate F.semantics {s}) := rfl
 
 /-- The translation chain: sentences into requirements, requirements into complete systems. -/
@@ -156,7 +156,7 @@ smaller family of complete systems. -/
   rfl
 
 /-- The chain is the semantics exactly when every translation is exact. -/
-@[powerlib_foundation] theorem chain_eq_semantics_iff : F.chain = F.semantics ↔ ∀ s, F.Exact s := by
+@[tmio TM, powerlib_foundation] theorem chain_eq_semantics_iff : F.chain = F.semantics ↔ ∀ s, F.Exact s := by
   rw [chain, semantics, chain_eq_satisfaction_iff]
   simp only [image_table_singleton]
   rfl

@@ -211,7 +211,7 @@ private theorem coord_smooth (j : Fin 5) : ContDiff ℝ 1 (fun x : State 5 => x 
   Dynamics.contDiff_coord j
 
 /-- Components of the reduced field. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field_apply (m : Model) (x : State 5) (w : Fin 3 → ℝ) :
+@[tmio M, powerlib_foundation] theorem field_apply (m : Model) (x : State 5) (w : Fin 3 → ℝ) :
     m.field x w 0 =
       (-m.Gdc * x 0 + m.idcRef - m.Kp * (x 0 - m.vdcRef) - m.μ / 2 * x 2 + w 0) / m.Cdc ∧
     m.field x w 1 = (-m.R * x 1 - x 3) / m.L + m.η * x 0 * x 2 ∧
@@ -507,8 +507,7 @@ def translate : Sentence → Set Requirement
 def family : Family Model Requirement 5 3 := ⟨fun m => .continuous m.system, Meets, translate⟩
 
 /-- The whole requirement language is inconsistent (`r ≤ 0` fails at `r = 1`). -/
-@[tmio M]
-@[powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
@@ -517,8 +516,7 @@ def family : Family Model Requirement 5 3 := ⟨fun m => .continuous m.system, M
 
 /-- Every translation of the reduced matching family is sound (the global table,
 `Spectral.chain_le_semantics_of_globalTable`). -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   have hG : TMIO.realize family.meets {.physical, .equilibrium, .damping} ⊆
@@ -556,8 +554,7 @@ def family : Family Model Requirement 5 3 := ⟨fun m => .continuous m.system, M
 `C_dc, L, C, R, G + G_l > 0`, the selected point an equilibrium and a positive damping margin,
 the steady state of the reduced model is globally exponentially stable (the source proves global
 asymptotic stability). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_globallyExponentiallyStable (m : Model) (hCdc : 0 < m.Cdc)
+@[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable (m : Model) (hCdc : 0 < m.Cdc)
     (hL : 0 < m.L) (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl)
     (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable)) := by
@@ -567,8 +564,7 @@ asymptotic stability). -/
 
 /-- The source's corollary "Closed-loop stability with DC-side P-control": global asymptotic
 stability of the steady state of the reduced model. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_globallyAsymptoticallyStable (m : Model) (hCdc : 0 < m.Cdc)
+@[tmio TM, powerlib_domain] theorem mem_den_globallyAsymptoticallyStable (m : Model) (hCdc : 0 < m.Cdc)
     (hL : 0 < m.L) (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl)
     (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
     connection% (m ∈ family.den (.flow .globallyAsymptoticallyStable)) := by
@@ -577,8 +573,7 @@ stability of the steady state of the reduced model. -/
   exact (ges m hCdc hL hC hR hG he hδ).globallyAsymptoticallyStable
 
 /-- Every attractive sentence and sampled contraction. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_attractive (m : Model) (hCdc : 0 < m.Cdc)
+@[tmio TM, powerlib_domain] theorem mem_den_attractive (m : Model) (hCdc : 0 < m.Cdc)
     (hL : 0 < m.L) (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl)
     (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
@@ -592,8 +587,7 @@ stability of the steady state of the reduced model. -/
 /-- Passivity relative to the steady state, from the port perturbations `(ĩ_dc, −ĩ_l,dq)` to
 `(ṽ_dc, ṽ_dq)` (the source's passivity theorem, with the P-control and load admittance
 absorbed into the damping). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_passive (m : Model) (hCdc : 0 < m.Cdc)
+@[tmio TM, powerlib_domain] theorem mem_den_passive (m : Model) (hCdc : 0 < m.Cdc)
     (hL : 0 < m.L) (hC : 0 < m.C) (hR : 0 < m.R) (hG : 0 < m.G + m.Gl)
     (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
     connection% (m ∈ family.den .passive) := by
@@ -648,8 +642,7 @@ def example1 : Model :=
   norm_num
 
 /-- Nonvacuity: the example is globally exponentially stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem example1_mem_den :
+@[tmio TM, powerlib_domain] theorem example1_mem_den :
     connection% (example1 ∈ family.den (.flow .globallyExponentiallyStable)) :=
   mem_den_globallyExponentiallyStable example1 (by norm_num [example1]) (by norm_num [example1])
     (by norm_num [example1]) (by norm_num [example1]) (by norm_num [example1])
@@ -664,7 +657,7 @@ def rotD (θ a b : ℝ) : ℝ := Real.cos θ * a + Real.sin θ * b
 def rotQ (θ a b : ℝ) : ℝ := -Real.sin θ * a + Real.cos θ * b
 
 /-- The rotating-frame chain rule `(R_θᵀ z)' = R_θᵀ z' − θ' J R_θᵀ z`, for arbitrary functions. -/
-@[powerlib_foundation] theorem hasDerivWithinAt_rot {θ a b : ℝ → ℝ} {θ' a' b' t : ℝ}
+@[tmio T, powerlib_foundation] theorem hasDerivWithinAt_rot {θ a b : ℝ → ℝ} {θ' a' b' t : ℝ}
     {s : Set ℝ} (hθ : HasDerivWithinAt θ θ' s t) (ha : HasDerivWithinAt a a' s t)
     (hb : HasDerivWithinAt b b' s t) :
     HasDerivWithinAt (fun τ => rotD (θ τ) (a τ) (b τ))
@@ -878,8 +871,7 @@ def fullFamily : Family FullModel Spectral.Requirement 8 0 :=
   Spectral.localFamily FullModel.field (fun _ => False) (fun _ => False)
 
 /-- Every translation of the stationary-frame family is sound. -/
-@[tmio TM]
-@[powerlib_domain] theorem fullChain_le_semantics :
+@[tmio TM, powerlib_domain] theorem fullChain_le_semantics :
     connection% (∀ P, fullFamily.chain P ≤ fullFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.local_chain_le_semantics (fun _ h => h.elim) (fun _ h => h.elim)
@@ -906,8 +898,7 @@ not a connection conclusion. -/
 /-- **Boundary**: in the stationary frame no selected point of the matching closed loop is globally
 asymptotically stable on `ℝ⁸` (`2π`-periodicity gives a second equilibrium whenever the point is
 one). -/
-@[tmio TM]
-@[powerlib_domain] theorem full_not_mem_den_globallyAsymptoticallyStable (M : FullModel) :
+@[tmio TM, powerlib_domain] theorem full_not_mem_den_globallyAsymptoticallyStable (M : FullModel) :
     connection% (M ∉ fullFamily.den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [full_mem_den_flow]
@@ -922,8 +913,7 @@ one). -/
     simp [FullModel.point, Real.pi_ne_zero] at h0
 
 /-- The same boundary for global exponential stability. -/
-@[tmio TM]
-@[powerlib_domain] theorem full_not_mem_den_globallyExponentiallyStable (M : FullModel) :
+@[tmio TM, powerlib_domain] theorem full_not_mem_den_globallyExponentiallyStable (M : FullModel) :
     connection% (M ∉ fullFamily.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact fun h => full_not_mem_den_globallyAsymptoticallyStable M
@@ -931,8 +921,7 @@ one). -/
 
 /-- A selected point with nonzero frequency `η v* ≠ 0` is not an equilibrium of the stationary
 closed loop, hence not Lyapunov stable: the steady state is a rotating orbit. -/
-@[tmio TM]
-@[powerlib_domain] theorem full_mem_den_unstable (M : FullModel) (h : M.p.η * M.v ≠ 0) :
+@[tmio TM, powerlib_domain] theorem full_mem_den_unstable (M : FullModel) (h : M.p.η * M.v ≠ 0) :
     connection% (M ∈ fullFamily.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   rw [full_mem_den_flow]
@@ -949,8 +938,7 @@ the parameters. A locally exponentially stable point is an equilibrium, so `η v
 equilibrium the linearized `s_α` equation is `−s_β*` times the linearized `θ` equation: the
 functional `ℓ = s_β* e_θ + e_{s_α}` takes the field to `η v_dc (s_β* − s_β)`, whose derivative
 vanishes where `η v_dc = 0` and `s_β = s_β*`, so `ℓ` kills the range of the Jacobian. -/
-@[tmio TM]
-@[powerlib_domain] theorem full_not_mem_den_locallyExponentiallyStable (M : FullModel) :
+@[tmio TM, powerlib_domain] theorem full_not_mem_den_locallyExponentiallyStable (M : FullModel) :
     connection% (M ∉ fullFamily.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [full_mem_den_flow]

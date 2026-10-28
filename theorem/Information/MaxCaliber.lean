@@ -50,7 +50,7 @@ def tiltedPath (P₀ : (Fin (n + 1) → S) → ℝ) (F : (Fin (n + 1) → S) →
 
 /-- **Maximum caliber on a finite path space.** Among all path distributions with the same mean
 path functional `⟨F⟩`, the tilted path weight has the largest caliber `-KL(P‖P₀)`, uniquely. -/
-@[powerlib_foundation] theorem tiltedPath_maxCaliber [Nonempty S]
+@[tmio T, powerlib_foundation] theorem tiltedPath_maxCaliber [Nonempty S]
     {P₀ F : (Fin (n + 1) → S) → ℝ} {lam : ℝ} (hP₀ : ∀ Γ, 0 < P₀ Γ)
     {P : (Fin (n + 1) → S) → ℝ} (hP : ∀ Γ, 0 ≤ P Γ) (hP1 : ∑ Γ, P Γ = 1)
     (hF : ∑ Γ, P Γ * F Γ = ∑ Γ, tiltedPath P₀ F lam Γ * F Γ) :

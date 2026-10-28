@@ -44,7 +44,7 @@ def cvec (θ : ℝ) : Fin 3 → ℝ := fun x => Real.cos (θ - phase x)
 /-- `(sin(θ − φ_x))_x`. -/
 def svec (θ : ℝ) : Fin 3 → ℝ := fun x => Real.sin (θ - phase x)
 
-@[powerlib_foundation] theorem sqrt3_sq : Real.sqrt 3 ^ 2 = 3 := Real.sq_sqrt (by norm_num)
+@[tmio T, powerlib_foundation] theorem sqrt3_sq : Real.sqrt 3 ^ 2 = 3 := Real.sq_sqrt (by norm_num)
 
 @[powerlib_foundation] theorem cos_two_pi_div_three : Real.cos (2 * Real.pi / 3) = -1 / 2 := by
   have : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring

@@ -57,7 +57,7 @@ def networkModel (Lg Rg Rl C ω : ℝ) : Plant 4 2 :=
     (networkB C).reindex finSumFinEquiv (Equiv.refl _),
     networkC.reindex (Equiv.refl _) finSumFinEquiv, 0⟩
 
-@[powerlib_foundation] theorem networkModel_D (Lg Rg Rl C ω : ℝ) :
+@[tmio M, powerlib_foundation] theorem networkModel_D (Lg Rg Rl C ω : ℝ) :
     (networkModel Lg Rg Rl C ω).D = 0 := rfl
 
 /-- The block equations are the PCC KCL and the line KVL. -/

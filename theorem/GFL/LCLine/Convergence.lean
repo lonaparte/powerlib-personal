@@ -371,7 +371,7 @@ namespace Params
 variable (p : Params)
 
 /-- `h(θ) = c₀ − A sin(θ + φ)` is `A`-Lipschitz. -/
-@[powerlib_foundation] theorem lipschitzWith_h (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
+@[tmio M, powerlib_foundation] theorem lipschitzWith_h (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0) (hVg : 0 < p.Vg) :
     LipschitzWith ⟨p.amp, (p.amp_pos hVg hΔ).le⟩ p.h := by
   refine LipschitzWith.of_dist_le_mul fun x y => ?_
   rw [Real.dist_eq, Real.dist_eq, p.h_eq_polar hwC hΔ, p.h_eq_polar hwC hΔ]

@@ -33,7 +33,7 @@ def convertLCL {Scalar Unit : Type} (scale : Scalar → Unit → Scalar)
   ((((scale x.1.1.1 (reciprocal x.1.1.2)), (reciprocal x.1.1.2)), ((scale x.1.2.1 (reciprocal x.1.2.2)), (reciprocal x.1.2.2))), (reciprocal x.2))
 
 -- Lean independently checks the endpoint, not a translation of the Agda proof.
-@[simp, powerlib_foundation] theorem convertLCL_spec {Scalar Unit : Type} (scale : Scalar → Unit → Scalar)
+@[tmio T, simp, powerlib_foundation] theorem convertLCL_spec {Scalar Unit : Type} (scale : Scalar → Unit → Scalar)
     (reciprocal : Unit → Unit) (x : ((Scalar × Unit) × (Scalar × Unit)) × Unit) :
     convertLCL scale reciprocal x =
       (((scale x.1.1.1 (reciprocal x.1.1.2), reciprocal x.1.1.2),

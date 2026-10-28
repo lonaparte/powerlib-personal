@@ -45,8 +45,8 @@ Galois connection reads: records support sentences exactly when they are certifi
 
 The seed encoding `Family.seed` places the model instances in the third position and the
 requirement sets in the second. In the reading above both belong to the model layer: a `Family`
-with its translation is one T–M connection, and every connection conclusion of a family
-(translation, denotation, requirement space) is a T–M conclusion. The `organized` seed of a stack
+with its translation supplies a T–M connection: translation/denotation comparisons belong to
+T–M, while facts only about static requirement spaces belong to M. The `organized` seed of a stack
 keeps that organization: its first edge is the translation chain `model.chain` instead of the
 semantics.
 
@@ -182,7 +182,7 @@ certify against the realized models, certify the records. -/
 
 /-- The whole-chain Galois connection of the stack (`Seed.gc_whole`): a set of records supports
 a set of sentences exactly when every record is certified for them. -/
-@[powerlib_foundation] theorem subset_certified_iff (D : Set V) (Φ : Set Sentence) :
+@[tmio IO, powerlib_foundation] theorem subset_certified_iff (D : Set V) (Φ : Set Sentence) :
     D ⊆ S.certified Φ ↔ Φ ⊆ S.infer D := by
   have h := S.seed.gc_whole Φ (toDual D)
   rw [← S.seed.generate_uTO] at h
@@ -214,7 +214,7 @@ def predicted (s : Sentence) : Set V := predict S.produces (S.impl.den s)
 /-- Data-driven conclusions become conclusions about the producing implementation: under
 realization soundness, an implementation within the constraints that may produce a record of
 `D` satisfies every sentence inferred from `D`. -/
-@[powerlib_foundation] theorem infer_true {Δ : Set R} {s : Sentence}
+@[tmio IO, powerlib_foundation] theorem infer_true {Δ : Set R} {s : Sentence}
     (hS : S.RealizationSoundUnder Δ s) {D : Set V} (hs : s ∈ S.infer D) {v : V} (hv : v ∈ D)
     {y : Y} (hy : (y, v) ∈ S.produces) (hΔ : y ∈ realize S.impl.meets Δ) : y ∈ S.impl.den s :=
   hS ⟨(mem_certify _ _ _).mpr fun x hx => S.mem_infer.mp hs v hv y hy x hx, hΔ⟩

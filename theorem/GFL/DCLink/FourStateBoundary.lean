@@ -98,6 +98,7 @@ Variables: `θ, x, u, η` the translated state, `s = sin θ`, `c = cos θ`, `w =
 `a, b` the PLL deviation `ξ`, `R = u² + η²`, `X = |ξ|²`, `t = −u/2 + 3η/2` the linear slaving of
 `θ`. -/
 
+@[tmio T]
 private theorem bP1 {η u c θ R X : ℝ} (hηu : |η * u| ≤ R / 2)
     (hc : |1 - c - θ ^ 2 / 2| ≤ θ ^ 4 * (5 / 96)) (hθ4 : θ ^ 4 ≤ X / 10000 + 25 * R ^ 2)
     (hR0 : 0 ≤ R) (hRle : R ≤ 1 / 1000000) (hX0 : 0 ≤ X) :
@@ -493,8 +494,7 @@ locally asymptotically stable. Its linearization has the imaginary pair `±i` of
 loop; the PLL response to the dc oscillation (phase lag with `sin 2φ = 3/5`) gives the negative
 first Lyapunov coefficient, certified by a composite Lyapunov function whose derivative is at most
 `−(3/64)(u² + η²)² − (1/2000)|ξ|²` on the ball of radius `1/1000`. -/
-@[tmio TM]
-@[powerlib_domain] theorem weakFocus_mem_den_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem weakFocus_mem_den_locallyAsymptoticallyStable :
     connection% (weakFocus ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [family_isAutonomous.mem_den_flow]
@@ -551,8 +551,7 @@ first Lyapunov coefficient, certified by a composite Lyapunov function whose der
 /-- The local asymptotic translation is sound but not exact: the weak focus `weakFocus` is
 locally asymptotically stable, but its quartic `(λ² + 1)(λ² + λ + 2)` has the imaginary pair
 `±i`, so the Routh inequality `a₁² + a₃² a₀ < a₃ a₂ a₁` fails with equality (`3 = 3`). -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   intro h
@@ -631,8 +630,7 @@ private theorem unstable_regField_of_C_eq_zero {p : Params} (hC : p.C = 0) (θ0 
 selected point is an equilibrium (`IsEq`), and the quartic coefficients of `det(λI − A₀)` lie in
 the closure of the Routh region: `a₃, a₂, a₁, a₀ ≥ 0` and `a₁² + a₃² a₀ ≤ a₃ a₂ a₁`. Hence the
 same holds for local asymptotic and local exponential stability. -/
-@[tmio TM]
-@[powerlib_domain] theorem closedRouth_of_mem_den_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem closedRouth_of_mem_den_lyapunovStable :
     connection% (family.den (.flow .lyapunovStable) ⊆
       {m : Model | IsEq m.params m.θ ∧ m.params.C ≠ 0 ∧ 0 ≤ a3 m.params m.θ ∧
         0 ≤ a2 m.params m.θ ∧ 0 ≤ a1 m.params m.θ ∧ 0 ≤ a0 m.params m.θ ∧
@@ -658,8 +656,7 @@ same holds for local asymptotic and local exponential stability. -/
   exact ⟨heq, hC, hnot⟩
 
 /-- The closed Routh region is necessary for local asymptotic stability as well. -/
-@[tmio TM]
-@[powerlib_domain] theorem closedRouth_of_mem_den_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem closedRouth_of_mem_den_locallyAsymptoticallyStable :
     connection% (family.den (.flow .locallyAsymptoticallyStable) ⊆
       {m : Model | IsEq m.params m.θ ∧ m.params.C ≠ 0 ∧ 0 ≤ a3 m.params m.θ ∧
         0 ≤ a2 m.params m.θ ∧ 0 ≤ a1 m.params m.θ ∧ 0 ≤ a0 m.params m.θ ∧
@@ -682,8 +679,7 @@ boundary of the Routh region. -/
 def frozenPLL : Model := ⟨⟨1, 0, 0, 0, 0, 1, 1, 3 / 2, 0⟩, 0⟩
 
 /-- The frozen PLL is unstable: `W = −x sin θ` has `Ẇ = sin² θ` (Chetaev). -/
-@[tmio TM]
-@[powerlib_domain] theorem frozenPLL_mem_den_unstable :
+@[tmio TM, powerlib_domain] theorem frozenPLL_mem_den_unstable :
     connection% (frozenPLL ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   refine mem_den_flow_iff'.mpr (Dynamics.unstable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
@@ -722,8 +718,7 @@ def frozenPLL : Model := ⟨⟨1, 0, 0, 0, 0, 1, 1, 3 / 2, 0⟩, 0⟩
 
 /-- The undamped PLL with a damped dc loop is not locally asymptotically stable: the PLL is
 decoupled (`X_g = 0`) and conserves the pendulum energy `1 − cos θ + x²/2`. -/
-@[tmio TM]
-@[powerlib_domain] theorem undampedPLL_not_mem_den_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem undampedPLL_not_mem_den_locallyAsymptoticallyStable :
     connection% (undampedPLL ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   intro h
@@ -789,8 +784,7 @@ private theorem meets_weakFocus_iff_undamped (q : Requirement) :
 /-- **Inexpressibility of Lyapunov stability.** No translation into the requirement language
 of the family is exact for Lyapunov stability: `undampedPLL` (Lyapunov stable) and `frozenPLL`
 (unstable) meet the same requirements. -/
-@[tmio TM]
-@[powerlib_domain] theorem realize_ne_den_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem realize_ne_den_lyapunovStable :
     connection% (∀ T : Set Requirement,
       TMIO.realize Meets T ≠ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -808,8 +802,7 @@ of the family is exact for Lyapunov stability: `undampedPLL` (Lyapunov stable) a
 /-- **Inexpressibility of instability.** No translation into the requirement language of the
 family is exact for instability: `frozenPLL` (unstable) and `undampedPLL` (Lyapunov stable) meet
 the same requirements. -/
-@[tmio TM]
-@[powerlib_domain] theorem realize_ne_den_unstable :
+@[tmio TM, powerlib_domain] theorem realize_ne_den_unstable :
     connection% (∀ T : Set Requirement, TMIO.realize Meets T ≠ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   intro T hT
@@ -826,8 +819,7 @@ the same requirements. -/
 /-- **Inexpressibility of local asymptotic stability.** No translation into the requirement
 language of the family is exact for local asymptotic stability: `weakFocus` (locally
 asymptotically stable) and `undampedPLL` (not) meet the same requirements. -/
-@[tmio TM]
-@[powerlib_domain] theorem realize_ne_den_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem realize_ne_den_locallyAsymptoticallyStable :
     connection% (∀ T : Set Requirement,
       TMIO.realize Meets T ≠ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement

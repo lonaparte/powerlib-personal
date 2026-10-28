@@ -32,7 +32,7 @@ def nnPostVar (τ v : ℝ≥0) (N : ℕ) : ℝ≥0 := (τ⁻¹ + N * v⁻¹)⁻�
 def nnPostMean (μ₀ : ℝ) (τ v : ℝ≥0) {N : ℕ} (d : Fin N → ℝ) : ℝ :=
   nnPostVar τ v N * (μ₀ / τ + (∑ i, d i) / v)
 
-@[powerlib_foundation] theorem coe_nnPostVar (τ v : ℝ≥0) (N : ℕ) :
+@[tmio T, powerlib_foundation] theorem coe_nnPostVar (τ v : ℝ≥0) (N : ℕ) :
     (nnPostVar τ v N : ℝ) = ((τ : ℝ)⁻¹ + N * (v : ℝ)⁻¹)⁻¹ := by
   simp [nnPostVar]
 

@@ -40,7 +40,7 @@ variable {m k : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k]
 
 /-- Quadratic-form identity behind the inverse: for symmetric invertible `S`,
 `2 xᵀ y − yᵀ S y ≤ xᵀ S⁻¹ x` when `S ⪰ 0`. -/
-@[powerlib_foundation] theorem two_dot_sub_quad_le {S : Matrix m m ℝ} (hS : S.PosDef)
+@[tmio T, powerlib_foundation] theorem two_dot_sub_quad_le {S : Matrix m m ℝ} (hS : S.PosDef)
     (x y : m → ℝ) : 2 * (x ⬝ᵥ y) - y ⬝ᵥ (S *ᵥ y) ≤ x ⬝ᵥ (S⁻¹ *ᵥ x) := by
   have hdet : IsUnit S.det := hS.isUnit.map Matrix.detMonoidHom |>.ne_zero |> isUnit_iff_ne_zero.mpr
   have hSs : Sᵀ = S := by

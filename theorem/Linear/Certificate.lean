@@ -52,7 +52,7 @@ structure Certificate (A : Matrix (Fin n) (Fin n) ℝ) where
   lyapunov : Aᵀ * P + P * A = -1
 
 /-- For a symmetric `P`, the quadratic form of `Aᵀ P + P A` is twice that of `P A`. -/
-@[powerlib_foundation] theorem quadratic_sym {A P : Matrix (Fin n) (Fin n) ℝ} (hP : Pᵀ = P)
+@[tmio T, powerlib_foundation] theorem quadratic_sym {A P : Matrix (Fin n) (Fin n) ℝ} (hP : Pᵀ = P)
     (z : Fin n → ℝ) : z ⬝ᵥ ((Aᵀ * P + P * A) *ᵥ z) = 2 * (z ⬝ᵥ (P *ᵥ (A *ᵥ z))) := by
   simp only [Matrix.add_mulVec, ← Matrix.mulVec_mulVec, dotProduct_add]
   have h1 : z ⬝ᵥ (Aᵀ *ᵥ (P *ᵥ z)) = (A *ᵥ z) ⬝ᵥ (P *ᵥ z) := by

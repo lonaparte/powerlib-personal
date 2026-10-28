@@ -103,11 +103,11 @@ section LowFrequency
 
 variable {ι : Type*} {l : Filter ι} {f : ι → ℂ}
 
-@[powerlib_foundation] theorem tendsto_mul_ofReal {r : ℝ} (hf : Tendsto f l (𝓝 0)) :
+@[tmio T, powerlib_foundation] theorem tendsto_mul_ofReal {r : ℝ} (hf : Tendsto f l (𝓝 0)) :
     Tendsto (fun i => f i * r) l (𝓝 0) := by
   simpa using hf.mul_const (r : ℂ)
 
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem re_mul_ofReal_pos {r : ℝ} (hr : 0 < r) (hre : ∀ᶠ i in l, 0 < (f i).re) :
     ∀ᶠ i in l, 0 < (f i * r).re := by
   filter_upwards [hre] with i hi

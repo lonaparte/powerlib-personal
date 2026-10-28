@@ -148,7 +148,7 @@ def dampingRatio (M D K Tg : ℝ) : ℝ := (M + D * Tg) / (2 * Real.sqrt (M * Tg
 
 variable {M D K Tg ΔPL : ℝ}
 
-@[simp, powerlib_foundation] theorem steadyState_zero (D K ΔPL : ℝ) :
+@[tmio M, simp, powerlib_foundation] theorem steadyState_zero (D K ΔPL : ℝ) :
     steadyState D K ΔPL 0 = -ΔPL / (K + D) := rfl
 
 @[simp, powerlib_foundation] theorem steadyState_one (D K ΔPL : ℝ) :
@@ -406,8 +406,7 @@ def family : Family Model Requirement 2 1 := ⟨fun m => m.plant.system, Meets, 
 @[powerlib_foundation] theorem family_isLinear : family.IsLinear Model.plant := fun _ => rfl
 
 /-- No model is both stable and unstable: the whole requirement language is inconsistent. -/
-@[tmio M]
-@[powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_foundation] theorem realize_univ :
     connection% (realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
@@ -438,8 +437,7 @@ private theorem translate_eq_linearTable (s : Sentence) :
 its semantics connection. `stable` is the Hurwitz condition of the plant, a right-half-plane root
 gives instability, a spectral margin gives the decay rate (the linear table,
 `Spectral.chain_le_semantics_of_linearTable_univ`). -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.chain_le_semantics_of_linearTable_univ (F := family) family_isLinear
@@ -452,8 +450,7 @@ gives instability, a spectral margin gives the decay rate (the linear table,
 
 /-- On the attractive sentences and sampled contraction the chain agrees with the semantics:
 `stable` (`0 < M + D T_g`, `0 < K_R + D`) is their exact translation. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_hurwitz {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem exact_hurwitz {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -462,8 +459,7 @@ gives instability, a spectral margin gives the decay rate (the linear table,
 
 /-- The member characterization: a model satisfies an attractive sentence exactly when
 `0 < M + D T_g` and `0 < K_R + D`. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_attractive_iff (m : Model) {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem mem_den_attractive_iff (m : Model) {P : Flow.Property}
     (hP : P.Attractive) :
     connection% (m ∈ family.den (.flow P) ↔
       m ∈ {m : Model | 0 < m.M + m.D * m.Tg ∧ 0 < m.K + m.D}) := by
@@ -473,8 +469,7 @@ gives instability, a spectral margin gives the decay rate (the linear table,
 
 /-- §1.6: with nonnegative damping, `0 < K_R + D` makes the zero-load operating point globally
 exponentially stable; by linearity so is the quasi-steady state of every constant load step. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_globallyExponentiallyStable (m : Model) (hD : 0 ≤ m.D)
+@[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable (m : Model) (hD : 0 ≤ m.D)
     (hKD : 0 < m.K + m.D) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -483,8 +478,7 @@ exponentially stable; by linearity so is the quasi-steady state of every constan
 
 /-- A negative determinant (`K_R + D < 0`) or a positive trace (`M + D T_g < 0`) places a model
 in instability. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_unstable (m : Model) (h : m.K + m.D < 0 ∨ m.M + m.D * m.Tg < 0) :
+@[tmio TM, powerlib_domain] theorem mem_den_unstable (m : Model) (h : m.K + m.D < 0 ∨ m.M + m.D * m.Tg < 0) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   obtain ⟨s, hs, hre⟩ := exists_root_of_unstable m.M_pos m.Tg_pos h
@@ -493,8 +487,7 @@ in instability. -/
 /-- With `0 < K_R + D` the model is not passive on its `(ΔP_L, Δω)` port: under the constant
 load `ΔP_L = 1` the quasi-steady state is an equilibrium at which the port supplies
 `ΔP_L Δω^∞ = −1/(K_R + D) < 0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_mem_den_passive (m : Model) (hKD : 0 < m.K + m.D) :
+@[tmio TM, powerlib_domain] theorem not_mem_den_passive (m : Model) (hKD : 0 < m.K + m.D) :
     connection% (m ∉ family.den .passive) := by
   unfold powerlib.TMIO.Statement
   rw [Family.mem_den, family_isLinear m, Sentence.holds_passive]
@@ -1041,8 +1034,7 @@ def reducedFamily : Family ReducedModel ReducedRequirement 1 1 :=
     m.reduce.plant = reducedPlant m.M m.D m.K := rfl
 
 /-- No first-order model is both stable and unstable. -/
-@[tmio M]
-@[powerlib_foundation] theorem reduced_realize_univ :
+@[tmio M, powerlib_foundation] theorem reduced_realize_univ :
     connection% (realize ReducedMeets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.realize_univ_eq_empty_of .stable .unstable fun r (h1 : 0 < r.K + r.D)
@@ -1068,8 +1060,7 @@ private theorem reducedTranslate_eq_linearTable (s : Sentence) :
 
 /-- Every translation of the first-order family is sound (the linear table,
 `Spectral.chain_le_semantics_of_linearTable_univ`). -/
-@[tmio TM]
-@[powerlib_domain] theorem reduced_chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem reduced_chain_le_semantics :
     connection% (∀ P, reducedFamily.chain P ≤ reducedFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.chain_le_semantics_of_linearTable_univ (F := reducedFamily)
@@ -1085,8 +1076,7 @@ private theorem reducedTranslate_eq_linearTable (s : Sentence) :
 
 /-- On the attractive sentences and sampled contraction the first-order translation is exact
 (`0 < K_R + D`). -/
-@[tmio TM]
-@[powerlib_domain] theorem reduced_exact_hurwitz {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem reduced_exact_hurwitz {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (reducedFamily.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -1096,8 +1086,7 @@ private theorem reducedTranslate_eq_linearTable (s : Sentence) :
 
 /-- The first-order decay translation is exact at every rate: the model decays at the rate `a`
 exactly when `a M ≤ K_R + D` (its solutions are `e^{−(K_R + D) t/M}`). -/
-@[tmio TM]
-@[powerlib_domain] theorem reduced_exact_decay (a : ℝ) :
+@[tmio TM, powerlib_domain] theorem reduced_exact_decay (a : ℝ) :
     connection% (reducedFamily.Exact (.flow (.decay a))) := by
   unfold powerlib.TMIO.Statement
   unfold Family.Exact
@@ -1109,8 +1098,7 @@ exactly when `a M ≤ K_R + D` (its solutions are `e^{−(K_R + D) t/M}`). -/
 /-- **Stability is preserved by the reduction `T_g → 0`**: whenever `0 < M + D T_g`, a swing +
 governor model satisfies an attractive sentence (or sampled contraction) exactly when its
 first-order reduction does. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_iff_reduce (m : Model) {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem mem_den_iff_reduce (m : Model) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) (h : 0 < m.M + m.D * m.Tg) :
     connection% (m ∈ family.den (.flow P) ↔ m.reduce ∈ reducedFamily.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -1118,8 +1106,7 @@ first-order reduction does. -/
   exact isHurwitz_iff_reduced m.M_pos m.Tg_pos h
 
 /-- With nonnegative damping the reduction preserves the attractive sentences for every `T_g`. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_iff_reduce_of_nonneg (m : Model) {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem mem_den_iff_reduce_of_nonneg (m : Model) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) (hD : 0 ≤ m.D) :
     connection% (m ∈ family.den (.flow P) ↔ m.reduce ∈ reducedFamily.den (.flow P)) :=
   mem_den_iff_reduce m hP (by nlinarith [m.M_pos, m.Tg_pos])
@@ -1127,8 +1114,7 @@ first-order reduction does. -/
 /-- Boundary of the reduction: with negative damping a large `T_g` breaks it. `M = 1`, `D = −1`,
 `K_R = 2`, `T_g = 2` is unstable (`M + D T_g = −1 < 0`) while its first-order reduction
 (`K_R + D = 1 > 0`) is globally exponentially stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem exists_unstable_reduce_globallyExponentiallyStable :
+@[tmio TM, powerlib_domain] theorem exists_unstable_reduce_globallyExponentiallyStable :
     connection% (∃ m : Model, m ∈ family.den (.flow .unstable) ∧
       m.reduce ∈ reducedFamily.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -1139,8 +1125,7 @@ first-order reduction does. -/
 
 /-- The slow root bounds every decay rate: if `−a < λ_s` (real roots, `M + D T_g + √disc ≠ 0`),
 the model does not decay at the rate `a` (its slow eigenmode decays like `e^{λ_s t}`). -/
-@[tmio TM]
-@[powerlib_domain] theorem not_mem_den_decay_of_slowEig (m : Model) {a : ℝ}
+@[tmio TM, powerlib_domain] theorem not_mem_den_decay_of_slowEig (m : Model) {a : ℝ}
     (hΔ : 0 ≤ eigDisc m.M m.D m.K m.Tg)
     (hS : m.M + m.D * m.Tg + Real.sqrt (eigDisc m.M m.D m.K m.Tg) ≠ 0)
     (h : -a < slowEig m.M m.D m.K m.Tg) :
@@ -1161,8 +1146,7 @@ the model does not decay at the rate `a` (its slow eigenmode decays like `e^{λ_
 first-order pole (`a M ≠ K_R + D`) there is a threshold `τ > 0` such that every swing + governor
 model with these parameters and `T_g < τ` decays at the rate `a` exactly when its first-order
 reduction does (i.e. exactly when `a M ≤ K_R + D`). -/
-@[tmio TM]
-@[powerlib_domain] theorem exists_threshold_mem_den_decay_iff_reduce (M D K a : ℝ) (hM : 0 < M)
+@[tmio TM, powerlib_domain] theorem exists_threshold_mem_den_decay_iff_reduce (M D K a : ℝ) (hM : 0 < M)
     (ha : a * M ≠ K + D) :
     connection% (∃ τ : ℝ, 0 < τ ∧ ∀ m : Model, m.M = M → m.D = D → m.K = K →
       m.Tg < τ → (m ∈ family.den (.flow (.decay a)) ↔

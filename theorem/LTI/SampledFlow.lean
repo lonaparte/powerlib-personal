@@ -57,7 +57,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 namespace LTI
 
 /-- The sampled map of a period `s` is the flow over `s`. -/
-@[powerlib_foundation] theorem op_exp_smul (A : Matrix (Fin n) (Fin n) ℝ) (s : ℝ) :
+@[tmio T, powerlib_foundation] theorem op_exp_smul (A : Matrix (Fin n) (Fin n) ℝ) (s : ℝ) :
     Map.op (exp (s • A)) = exp (s • Linear.op A) := by
   rw [show Map.op (exp (s • A)) = Linear.op (exp (s • A)) from rfl, Linear.op_exp]
   exact congrArg exp (map_smul (Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ)) s A)

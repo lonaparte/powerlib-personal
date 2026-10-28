@@ -34,7 +34,7 @@ noncomputable section
 namespace powerlib.GFL.DCLink
 
 /-- Exact power balance of the dq R–L filter along a trajectory. -/
-@[powerlib_foundation] theorem pcc_eq_bridge_add_losses {L R ω : ℝ}
+@[tmio T, powerlib_foundation] theorem pcc_eq_bridge_add_losses {L R ω : ℝ}
     {id iq : ℝ → ℝ} {vd vq vcd vcq id' iq' t : ℝ}
     (hd : HasDerivAt id id' t) (hq : HasDerivAt iq iq' t)
     (kvl_d : L * id' = vd - vcd - R * id t + ω * L * iq t)

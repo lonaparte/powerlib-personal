@@ -66,7 +66,7 @@ section IMC
 
 variable {L R ωb : ℝ}
 
-@[powerlib_foundation] theorem imc_charPoly (L R ωb : ℝ) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem imc_charPoly (L R ωb : ℝ) (s : ℂ) :
     (L : ℂ) * s ^ 2 + (R + L * ωb) * s + R * ωb = (L * s + R) * (s + ωb) := by ring
 
 @[powerlib_foundation] theorem imc_det_characteristicMatrix (hL : L ≠ 0) (s : ℂ) :
@@ -113,8 +113,7 @@ evidence on the model, not a connection conclusion. -/
 
 /-- Internal stability after the cancellation: the IMC loop satisfies an attractive sentence
 (in particular global exponential stability) iff `R/L > 0`, whatever `ω_b > 0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem imc_mem_den_iff (hL : 0 < L) (hω : 0 < ωb) {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem imc_mem_den_iff (hL : 0 < L) (hω : 0 < ωb) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (imc L R ωb ∈ PIParams.family.den (.flow P) ↔
       imc L R ωb ∈ {_m : PIParams | 0 < R / L}) := by
@@ -132,8 +131,7 @@ evidence on the model, not a connection conclusion. -/
 /-- A stable first-order transfer function does not certify the IMC loop: for `R ≤ 0` the
 transfer is still `ω_b/(s + ω_b)` (`imc_transfer_eq`, for every `R`) but the loop satisfies no
 attractive sentence. -/
-@[tmio TM]
-@[powerlib_domain] theorem imc_transfer_stable_insufficient (hL : 0 < L) (hω : 0 < ωb)
+@[tmio TM, powerlib_domain] theorem imc_transfer_stable_insufficient (hL : 0 < L) (hω : 0 < ωb)
     (hR : R ≤ 0) {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (imc L R ωb ∉ PIParams.family.den (.flow P)) := by
   have h := imc_mem_den_iff (R := R) hL hω hP
@@ -199,8 +197,7 @@ the model, not a connection conclusion. -/
   exact ⟨r, hr, Criteria.det_characteristicMatrix_eq_zero_of_eigenpair _ hv heig⟩
 
 /-- The copied OUT form is unstable. -/
-@[tmio TM]
-@[powerlib_domain] theorem copied_mem_den_unstable (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc)
+@[tmio TM, powerlib_domain] theorem copied_mem_den_unstable (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc)
     (hKi : 0 < p.Ki) : connection% (p.withGain (-Vdc) ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   obtain ⟨r, hr, hroot⟩ := p.copied_exists_pos_root hL hV hKi
@@ -208,8 +205,7 @@ the model, not a connection conclusion. -/
 
 /-- The copied OUT form satisfies no attractive sentence (in particular it is not exponentially
 stable). -/
-@[tmio TM]
-@[powerlib_domain] theorem copied_not_mem_den (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc)
+@[tmio TM, powerlib_domain] theorem copied_not_mem_den (hL : 0 < p.L) {Vdc : ℝ} (hV : 0 < Vdc)
     (hKi : 0 < p.Ki) {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (p.withGain (-Vdc) ∉ family.den (.flow P)) := by
   have h := mem_den_iff (p.withGain (-Vdc)) hL hP

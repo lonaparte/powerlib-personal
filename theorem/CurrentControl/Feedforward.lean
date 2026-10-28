@@ -73,7 +73,7 @@ private lemma pole_ne {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ}
   field_simp
   ring
 
-@[powerlib_foundation] theorem lpf_transfer {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ} (hs : 1 + s * τ ≠ 0) :
+@[tmio M, powerlib_foundation] theorem lpf_transfer {τ : ℝ} (hτ : τ ≠ 0) {s : ℂ} (hs : 1 + s * τ ≠ 0) :
     transfer (lpf τ) s 0 0 = 1 / (1 + s * τ) := by
   have hτ' : (τ : ℂ) ≠ 0 := by exact_mod_cast hτ
   rw [lpf, LTI.transfer_fin_one _ _ _ _ (pole_ne hτ hs)]
@@ -254,8 +254,7 @@ private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contrac
   Spectral.linear_den (U := Unstable) (fun q => (isHurwitz_iff_stable q).symm) hP
 
 /-- Every translation of the feedforward family is sound. -/
-@[tmio TM]
-@[powerlib_domain] theorem lpfChain_le_semantics :
+@[tmio TM, powerlib_domain] theorem lpfChain_le_semantics :
     connection% (∀ P, lpfFamily.chain P ≤ lpfFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.linear_chain_le_semantics (fun q h => (isHurwitz_iff_stable q).mpr h)
@@ -263,8 +262,7 @@ private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contrac
 
 /-- The attractive sentences and sampled contraction of the feedforward loop are carved out
 exactly by the PI loop's positive monic coefficients and `τ > 0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem lpfExact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM, powerlib_domain] theorem lpfExact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (lpfFamily.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.linear_exact (fun q => (isHurwitz_iff_stable q).symm) hP
@@ -272,8 +270,7 @@ exactly by the PI loop's positive monic coefficients and `τ > 0`. -/
 /-- Adding the low-pass PCC-voltage feedforward preserves the stability of the PI loop exactly:
 the attractive denotation of the feedforward family is the PI family's, pulled back along
 `LPFLoop.pi`, cut by `τ > 0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem lpfDen_eq {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM, powerlib_domain] theorem lpfDen_eq {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (lpfFamily.den (.flow P) =
       LPFLoop.pi ⁻¹' PIParams.family.den (.flow P) ∩ {q | 0 < q.τ}) := by
   unfold powerlib.TMIO.Statement
@@ -284,8 +281,7 @@ the attractive denotation of the feedforward family is the PI family's, pulled b
   rfl
 
 /-- With `L > 0` the feedforward loop is stable iff `R + Kp > 0 ∧ Ki > 0 ∧ τ > 0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem lpf_mem_den_iff (q : LPFLoop) (hL : 0 < q.pi.L) {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem lpf_mem_den_iff (q : LPFLoop) (hL : 0 < q.pi.L) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (q ∈ lpfFamily.den (.flow P) ↔
       q ∈ {q : LPFLoop | (0 < q.pi.R + q.pi.Kp ∧ 0 < q.pi.Ki) ∧ 0 < q.τ}) := by

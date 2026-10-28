@@ -112,7 +112,7 @@ private theorem energy_antitoneOn (hM : p.M ≠ 0) (hD : 0 ≤ p.D) (δ₀ : ℝ
     nlinarith [sq_nonneg (φ t 1)]
 
 /-- `U(δ − 2π) = U(δ) + 2π (P_m − k₁)`. -/
-@[powerlib_foundation] theorem potential_sub_two_pi (δ₀ δ : ℝ) :
+@[tmio M, powerlib_foundation] theorem potential_sub_two_pi (δ₀ δ : ℝ) :
     p.potential δ₀ (δ - 2 * Real.pi) = p.potential δ₀ δ + 2 * Real.pi * (p.Pm - p.k₁) := by
   have : Real.cos (δ - 2 * Real.pi - p.k₃) = Real.cos (δ - p.k₃) := by
     rw [show δ - 2 * Real.pi - p.k₃ = (δ - p.k₃) - 2 * Real.pi by ring, Real.cos_sub_two_pi]

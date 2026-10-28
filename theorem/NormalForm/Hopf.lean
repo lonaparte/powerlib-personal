@@ -84,7 +84,7 @@ def field (p : Params) (x : State 2) : State 2 :=
 /-- The planar state as a complex number. -/
 def toComplex (x : State 2) : ℂ := ⟨x 0, x 1⟩
 
-@[powerlib_foundation] theorem field_contDiff (p : Params) {k : WithTop ℕ∞} :
+@[tmio T, powerlib_foundation] theorem field_contDiff (p : Params) {k : WithTop ℕ∞} :
     ContDiff ℝ k (field p) := by
   refine Dynamics.contDiff_of_components (Fin.forall_fin_two.2 ⟨?_, ?_⟩) <;>
     (simp only [field, mk_apply_zero, mk_apply_one]; fun_prop)

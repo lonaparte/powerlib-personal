@@ -46,7 +46,7 @@ noncomputable local instance frobeniusENormedAddMonoid'' :
     ENormedAddCommMonoid (Matrix (Fin n) (Fin n) ℝ)).toENormedAddMonoid
 
 /-- Discrete prediction preserves positive semidefiniteness: `Φ P Φᵀ + Q ⪰ 0`. -/
-@[powerlib_foundation] theorem predict_posSemidef {m : Type*} [Fintype m] {k : Type*}
+@[tmio T, powerlib_foundation] theorem predict_posSemidef {m : Type*} [Fintype m] {k : Type*}
     [Fintype k] (Φ : Matrix m k ℝ) {P : Matrix k k ℝ} {Q : Matrix m m ℝ} (hP : P.PosSemidef)
     (hQ : Q.PosSemidef) : (Φ * P * Φᵀ + Q).PosSemidef := by
   have h := hP.mul_mul_conjTranspose_same Φ

@@ -76,7 +76,7 @@ plane transversally on it (`f_k(y) ≠ 0` where `y_k = 0`), and has bounded comp
 Every solution segment starting near `x` stays off the plane except possibly at its end, so it
 lasts at most `y_k(t₀)² / a`, and over that time it moves by `O(‖y(t₀) − x‖²)`; the estimate
 holds with `C = 4` and rate `1`. The field need not be continuous on the plane. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_of_collapse
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_collapse
     {f : State n → State n} {x : State n} (k : Fin n) (hxk : x k = 0) {ρ a M : ℝ}
     (hρ : 0 < ρ) (ha : 0 < a)
     (hcol : ∀ y : State n, ‖y - x‖ < ρ → y k ≠ 0 → 2 * y k * f y k ≤ -a)

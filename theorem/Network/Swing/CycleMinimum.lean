@@ -412,7 +412,7 @@ weight and the others positive weight, if `∑ᵢ 1/√qᵢ(μ) < 1/√q₀(μ)`
 potential `∑ₑ Gₑ(xₑ)` on the closed-loop angle increments (`∑ₑ xₑ = 0`) has a strict local
 minimum at `0` that is an isolated critical point (equal flow increments on every line). No
 condition is put on the Hessian at `0`, which may be singular. -/
-@[powerlib_foundation] theorem cycle_strictMin (hρ : 0 < ρ) :
+@[tmio T, powerlib_foundation] theorem cycle_strictMin (hρ : 0 < ρ) :
     ∃ r > 0, ∀ x : Fin (m + 1) → ℝ, ∑ e, x e = 0 → x ≠ 0 → (∀ e, |x e| < r) →
       0 < ∑ e, edgeG (W e) (f e) (x e) ∧
         ¬ ∀ e, edgeD (W e) (f e) (x e) = edgeD (W 0) (f 0) (x 0) := by

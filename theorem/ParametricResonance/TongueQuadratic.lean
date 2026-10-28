@@ -101,7 +101,7 @@ def secondOrderSystem (Δ y : ℝ) (g : ℂ) : EuclideanSpace ℝ (Fin 2) → Eu
 variable {α₀ cα cω g2}
 
 /-- `q(y) = a(y)² − h(y)²` (`σ₊σ₋ = q` for `σ_± = −a ± h`). -/
-@[powerlib_foundation] theorem tongue_eq_damping_sq_sub_splitSq (y : ℝ) :
+@[tmio T, powerlib_foundation] theorem tongue_eq_damping_sq_sub_splitSq (y : ℝ) :
     tongue α₀ cα cω g2 y = damping α₀ cα y ^ 2 - splitSq cω g2 y := by
   simp only [tongue, damping, splitSq, pumpQ]; ring
 

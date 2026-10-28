@@ -35,7 +35,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 def RateMargin (A : Matrix (Fin n) (Fin n) ℝ) (a : ℝ) : Prop := IsHurwitz (A + a • 1)
 
 /-- A strict matrix margin supplies the specified rate by the generic energy estimate. -/
-@[powerlib_foundation] theorem decay_of_rateMargin {A : Matrix (Fin n) (Fin n) ℝ} {a : ℝ}
+@[tmio T, powerlib_foundation] theorem decay_of_rateMargin {A : Matrix (Fin n) (Fin n) ℝ} {a : ℝ}
     (h : RateMargin A a) : Flow.Decay (affineLinearVectorField A 0) 0 a := by
   obtain ⟨c⟩ := (nonempty_certificate_iff (A + a • 1)).mpr h
   obtain ⟨lo, hlo, hi, hhi, bounds⟩ := c.exists_energy_bounds
@@ -72,7 +72,7 @@ open Linear LinearSystems
 variable {X Q : Type*} {n p : ℕ} {F : Family X Q n p} {plant : X → Plant n p}
 
 /-- Every linear family consumes the matrix rate criterion through its generated denotation. -/
-@[powerlib_foundation] theorem IsLinear.mem_den_decay_of_rateMargin (hF : F.IsLinear plant)
+@[tmio TM, powerlib_foundation] theorem IsLinear.mem_den_decay_of_rateMargin (hF : F.IsLinear plant)
     {x : X} {a : ℝ} (h : RateMargin (plant x).A a) : x ∈ F.den (.flow (.decay a)) :=
   hF.mem_den_flow.mpr (decay_of_rateMargin h)
 

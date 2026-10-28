@@ -68,7 +68,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 /-- Unit bump `t e^{1−t}` (peak `1` at `t = 1`, tends to `0`). -/
 def bump (t : ℝ) : ℝ := t * exp (1 - t)
 
-@[powerlib_foundation] theorem bump_one : bump 1 = 1 := by simp [bump]
+@[tmio T, powerlib_foundation] theorem bump_one : bump 1 = 1 := by simp [bump]
 
 @[powerlib_foundation] theorem bump_tendsto : Tendsto bump atTop (𝓝 0) := by
   have h := Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 1

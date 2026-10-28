@@ -88,8 +88,7 @@ private def unitBranch : Impedance := ⟨1, ⟨1, one_pos⟩⟩
 /-- **Without a step constraint the Euler realization of the RL branch is not sound.** The branch
 `R = L = 1` (`ẋ = −x`) satisfies every attractive sentence, and its discretizations with a large
 step do not (the multiplier `1 − h` leaves the unit disk). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder {P : Flow.Property}
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -107,8 +106,7 @@ private theorem output_unit (m : Impedance) (u : Fin 1 → ℝ) :
 /-- **No Euler discretization of an RL branch is passive, whatever its step.** The port current
 does not depend on the port voltage, so one step from the unit current with a large reverse
 voltage draws energy without bound; no nonnegative storage pays for it. -/
-@[tmio TM]
-@[powerlib_domain] theorem euler_not_mem_den_passive :
+@[tmio TM, powerlib_domain] theorem euler_not_mem_den_passive :
     connection% (∀ (m : Impedance) (h : ℝ) (hh : 0 < h),
       (⟨m, h, hh⟩ : Euler) ∉ eulerFamily.den .passive) := by
   unfold powerlib.TMIO.Statement
@@ -118,8 +116,7 @@ voltage draws energy without bound; no nonnegative storage pays for it. -/
 
 /-- **The passivity realization of explicit Euler is not sound for the RL branch.** The branch
 `R = L = 1` is passive (storage `L i²/2`), and its discretizations are not. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder_passive :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder_passive :
     connection% (¬ euler.RealizationSoundUnder ∅ .passive) := by
   unfold powerlib.TMIO.Statement
   exact Numerics.not_eulerPorts_realizationSoundUnder_passive (y := ⟨unitBranch, 1, one_pos⟩)
@@ -156,8 +153,7 @@ private theorem unitCircuit_passive : unitCircuit.Passive := ⟨zero_le_one, zer
 /-- **Without a step constraint the Euler realization of the LCL filter is not sound.** The
 circuit with all parameters `1` is passive and damped, hence pole stable, and its discretizations
 with a large step are not stable. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder {P : Flow.Property}
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -179,8 +175,7 @@ private theorem output_unit (m : Circuit) (u : Fin 2 → ℝ) :
 /-- **No Euler discretization of an LCL filter is passive, whatever its step.** The port currents
 do not depend on the port voltages, so one step from a unit converter current with a large
 reverse converter voltage draws energy without bound. -/
-@[tmio TM]
-@[powerlib_domain] theorem euler_not_mem_den_passive :
+@[tmio TM, powerlib_domain] theorem euler_not_mem_den_passive :
     connection% (∀ (m : Circuit) (h : ℝ) (hh : 0 < h),
       (⟨m, h, hh⟩ : Euler) ∉ eulerFamily.den .passive) := by
   unfold powerlib.TMIO.Statement
@@ -190,8 +185,7 @@ reverse converter voltage draws energy without bound. -/
 
 /-- **The passivity realization of explicit Euler is not sound for the LCL filter.** The circuit
 with all parameters `1` is passive (its physical energy), and its discretizations are not. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder_passive :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder_passive :
     connection% (¬ euler.RealizationSoundUnder ∅ .passive) := by
   unfold powerlib.TMIO.Statement
   exact Numerics.not_eulerPorts_realizationSoundUnder_passive (y := ⟨unitCircuit, 1, one_pos⟩)

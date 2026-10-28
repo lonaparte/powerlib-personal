@@ -84,7 +84,7 @@ noncomputable local instance frobeniusENormedAddMonoid' :
 def SolvesCovLyapunov (A P Q : Matrix (Fin n) (Fin n) ℝ) : Prop :=
   A * P + P * Aᵀ + Q = 0
 
-@[powerlib_foundation] theorem solvesCovLyapunov_iff (A P Q : Matrix (Fin n) (Fin n) ℝ) :
+@[tmio T, powerlib_foundation] theorem solvesCovLyapunov_iff (A P Q : Matrix (Fin n) (Fin n) ℝ) :
     SolvesCovLyapunov A P Q ↔ LinearSystems.SolvesContinuousLyapunovEquation Aᵀ P Q := by
   unfold SolvesCovLyapunov LinearSystems.SolvesContinuousLyapunovEquation
   rw [transpose_transpose]

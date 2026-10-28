@@ -56,7 +56,7 @@ def linearTable (Rs Ru Rc Rp : Set Q) (Rd : ℝ → Set Q) : Sentence → Set Q 
   globalTable Rs Rs Ru Rc Rp Rd
 
 /-- The attractive sentences and sampled contraction are translated into `Rs`. -/
-@[powerlib_foundation] theorem linearTable_flow {Rs Ru Rc Rp : Set Q} {Rd : ℝ → Set Q}
+@[tmio T, powerlib_foundation] theorem linearTable_flow {Rs Ru Rc Rp : Set Q} {Rd : ℝ → Set Q}
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     linearTable Rs Ru Rc Rp Rd (.flow P) = Rs := by
   rcases hP with hP | rfl
@@ -83,7 +83,7 @@ mutually exclusive, so the whole language is inconsistent. -/
 /-- Soundness of every translation of a linear family with the linear table: `Rs` gives a
 Hurwitz state matrix, `Ru` a characteristic root in the open right half plane, `Rd a` decay at
 the rate `a`, `Rc` conservation and `Rp` passivity. -/
-@[powerlib_foundation] theorem chain_le_semantics_of_linearTable (hF : F.IsLinear plant)
+@[tmio TM, powerlib_foundation] theorem chain_le_semantics_of_linearTable (hF : F.IsLinear plant)
     (ht : ∀ s, F.translate s = linearTable Rs Ru Rc Rp Rd s)
     (hS : ∀ x ∈ realize F.meets Rs, IsHurwitz (plant x).A)
     (hU : ∀ x ∈ realize F.meets Ru,

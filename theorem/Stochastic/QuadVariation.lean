@@ -63,7 +63,7 @@ open scoped NNReal ENNReal Topology
 
 /-- Every exponential moment of `N(μ, v)` is finite, so `0` lies in the interior of the
 exponential-integrability set. -/
-@[powerlib_foundation] theorem zero_mem_interior_integrableExpSet_gaussianReal (m : ℝ)
+@[tmio T, powerlib_foundation] theorem zero_mem_interior_integrableExpSet_gaussianReal (m : ℝ)
     (v : ℝ≥0) : (0 : ℝ) ∈ interior (integrableExpSet id (gaussianReal m v)) := by
   have : integrableExpSet id (gaussianReal m v) = Set.univ := by
     ext s

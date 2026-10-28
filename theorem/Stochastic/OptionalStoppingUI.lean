@@ -39,7 +39,7 @@ variable {Ω : Type*} {m : MeasurableSpace Ω} {μ : Measure Ω} {𝒢 : Filtrat
   {f : ℕ → Ω → ℝ} {τ : Ω → WithTop ℕ}
 
 /-- A martingale has constant expectation. -/
-@[powerlib_foundation] theorem martingale_integral_eq [IsFiniteMeasure μ]
+@[tmio T, powerlib_foundation] theorem martingale_integral_eq [IsFiniteMeasure μ]
     (h : Martingale f 𝒢 μ) (n : ℕ) : ∫ ω, f n ω ∂μ = ∫ ω, f 0 ω ∂μ := by
   rw [← integral_condExp (𝒢.le 0)]
   exact integral_congr_ae (h.condExp_ae_eq (Nat.zero_le n))

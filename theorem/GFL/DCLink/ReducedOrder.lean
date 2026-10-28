@@ -81,7 +81,7 @@ def bridgeVoltageQ (kp ki ξq iq iqRef vffq ωhat Lhat id : ℝ) : ℝ :=
 /-- d-axis closed loop:
 `L_f i̇_d = k_p(i_d* − i_d) − k_i ξ_d + (v_gd − ṽ_gd) + ω̂ ΔL_f i_q − R_f i_d` when the PLL-frame
 KVL is `L_f i̇_d = v_gd − V_d^conv − R_f i_d + ω̂ L_f i_q`. -/
-@[powerlib_foundation] theorem closedLoop_d (kp ki ξd id iq idRef vgd vffd ωhat Lf Lhat Rf : ℝ) :
+@[tmio M, powerlib_foundation] theorem closedLoop_d (kp ki ξd id iq idRef vgd vffd ωhat Lf Lhat Rf : ℝ) :
     vgd - bridgeVoltageD kp ki ξd id idRef vffd ωhat Lhat iq - Rf * id + ωhat * Lf * iq =
       kp * (idRef - id) - ki * ξd + (vgd - vffd) + ωhat * (Lf - Lhat) * iq - Rf * id := by
   unfold bridgeVoltageD

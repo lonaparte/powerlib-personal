@@ -45,7 +45,7 @@ section Fourier
 open Filter Topology Asymptotics
 
 /-- `∫₀^{2π} cos(m φ) dφ = 0` for a positive integer `m`. -/
-@[powerlib_foundation] theorem integral_cos_nat_mul {m : ℕ} (hm : m ≠ 0) :
+@[tmio T, powerlib_foundation] theorem integral_cos_nat_mul {m : ℕ} (hm : m ≠ 0) :
     ∫ φ in (0 : ℝ)..2 * Real.pi, Real.cos (m * φ) = 0 := by
   have hm' : (m : ℝ) ≠ 0 := by exact_mod_cast hm
   rw [intervalIntegral.integral_comp_mul_left (fun x => Real.cos x) hm', integral_cos, mul_zero,

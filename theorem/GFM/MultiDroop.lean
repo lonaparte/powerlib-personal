@@ -58,7 +58,7 @@ def field (x : (Fin N → ℝ) × (Fin N → ℝ)) : (Fin N → ℝ) × (Fin N �
 def syncCurve (θ₀ Pf₀ : Fin N → ℝ) (ω : ℝ) (t : ℝ) : (Fin N → ℝ) × (Fin N → ℝ) :=
   (fun k => θ₀ k + ω * t, Pf₀)
 
-@[powerlib_foundation] theorem hasDerivAt_syncCurve (θ₀ Pf₀ : Fin N → ℝ) (ω t : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_syncCurve (θ₀ Pf₀ : Fin N → ℝ) (ω t : ℝ) :
     HasDerivAt (syncCurve θ₀ Pf₀ ω) ((fun _ => ω), (0 : Fin N → ℝ)) t := by
   apply HasDerivAt.prodMk
   · apply hasDerivAt_pi.mpr

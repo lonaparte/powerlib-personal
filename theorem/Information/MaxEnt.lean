@@ -55,7 +55,7 @@ variable {α : Type*} {mα : MeasurableSpace α}
 /-- Real-valued relative entropy `∫ log (dp/dm) dp`, i.e. `-H[p‖m]` in Jaynes's notation. -/
 def relEntropy (p m : Measure α) : ℝ := ∫ x, llr p m x ∂p
 
-@[powerlib_foundation] theorem relEntropy_eq_toReal_klDiv {p m : Measure α}
+@[tmio T, powerlib_foundation] theorem relEntropy_eq_toReal_klDiv {p m : Measure α}
     [IsProbabilityMeasure p] [IsProbabilityMeasure m] (hpm : p ≪ m) :
     relEntropy p m = (klDiv p m).toReal := by
   rw [relEntropy, toReal_klDiv_of_measure_eq hpm (by simp)]

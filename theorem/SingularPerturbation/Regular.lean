@@ -42,7 +42,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   (h t (Ico_subset_Icc_self ht)).mono_of_mem_nhdsWithin (Icc_mem_nhdsGE_of_mem ht)
 
 /-- Regular perturbation estimate (Grönwall form). -/
-@[powerlib_foundation] theorem norm_sub_le_gronwallBound {F : ℝ → E → E} {K : ℝ≥0} {C ε a b : ℝ}
+@[tmio T, powerlib_foundation] theorem norm_sub_le_gronwallBound {F : ℝ → E → E} {K : ℝ≥0} {C ε a b : ℝ}
     (hK : LipschitzWith K (F 0)) (hC : ∀ z, ‖F ε z - F 0 z‖ ≤ C * ε)
     {zε z₀ : ℝ → E} (hε : IsIntegralCurveOn zε (fun _ x => F ε x) (Icc a b))
     (h₀ : IsIntegralCurveOn z₀ (fun _ x => F 0 x) (Icc a b)) (hinit : zε a = z₀ a) :

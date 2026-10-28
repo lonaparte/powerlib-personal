@@ -58,7 +58,7 @@ def barrierShape (u : ℝ) : ℝ := 2 * sin u - 2 * u * cos u
 section
 variable {c A φ : ℝ}
 
-@[powerlib_foundation] theorem hasDerivAt_washboard (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_washboard (θ : ℝ) :
     HasDerivAt (washboard c A φ) (-(c - A * sin (θ + φ))) θ := by
   have h1 : HasDerivAt (fun θ : ℝ => θ + φ) 1 θ := (hasDerivAt_id θ).add_const _
   have h2 := ((hasDerivAt_id θ).const_mul c).neg.sub ((h1.cos).const_mul A)

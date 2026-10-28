@@ -50,7 +50,7 @@ namespace powerlib.Asymptotics
 open Real Filter Topology MeasureTheory Set
 
 /-- `φ(y)/y² → a` from `φ(0) = φ'(0) = 0`, `φ''(0) = 2a` (l'Hôpital). -/
-@[powerlib_foundation] theorem quadLimit_of_deriv {φ φ' : ℝ → ℝ} {a : ℝ}
+@[tmio T, powerlib_foundation] theorem quadLimit_of_deriv {φ φ' : ℝ → ℝ} {a : ℝ}
     (hφ : ∀ y, HasDerivAt φ (φ' y) y) (hφ0 : φ 0 = 0) (hφ'0 : φ' 0 = 0)
     (h2 : HasDerivAt φ' (2 * a) 0) :
     Tendsto (fun y => φ y / y ^ 2) (𝓝[≠] 0) (𝓝 a) := by

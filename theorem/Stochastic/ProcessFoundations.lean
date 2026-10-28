@@ -42,7 +42,7 @@ open MeasureTheory ProbabilityTheory
 variable {Ω ι β : Type*} {m : MeasurableSpace Ω}
 
 /-- A progressively measurable process is adapted. -/
-@[powerlib_foundation] theorem progressive_adapted [Preorder ι] [MeasurableSpace ι]
+@[tmio T, powerlib_foundation] theorem progressive_adapted [Preorder ι] [MeasurableSpace ι]
     [MeasurableSpace β] {f : Filtration ι m} {u : ι → Ω → β} (h : IsProgressive f u) :
     Adapted f u :=
   h.adapted

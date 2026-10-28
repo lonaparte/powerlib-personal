@@ -48,7 +48,7 @@ def dualVec (m : Measure α) (f : ι → α → ℝ) (F lam : ι → ℝ) : ℝ 
 /-- Direction statistic `g_u = ∑ u_k f_k`. -/
 def dirFun (f : ι → α → ℝ) (u : ι → ℝ) (x : α) : ℝ := ∑ i, u i * f i x
 
-@[powerlib_foundation] theorem tilt_line (f : ι → α → ℝ) (lam u : ι → ℝ) (s : ℝ) (x : α) :
+@[tmio T, powerlib_foundation] theorem tilt_line (f : ι → α → ℝ) (lam u : ι → ℝ) (s : ℝ) (x : α) :
     -∑ i, lam i * f i x + -s * dirFun f u x = -∑ i, (lam + s • u) i * f i x := by
   simp only [dirFun, Pi.add_apply, Pi.smul_apply, smul_eq_mul, add_mul, Finset.sum_add_distrib,
     Finset.mul_sum, mul_assoc, neg_mul, Finset.sum_neg_distrib]

@@ -223,7 +223,7 @@ def pendulumEnergy (a b Δω : ℝ) (x : State 2) : ℝ :=
   ring
 
 /-- Lie derivative of the pendulum energy: `Ė = −a cos θ · θ̇²`. -/
-@[powerlib_foundation] theorem pendulumEnergy_lie (a b Δω : ℝ) (x : State 2) :
+@[tmio M, powerlib_foundation] theorem pendulumEnergy_lie (a b Δω : ℝ) (x : State 2) :
     fderiv ℝ (pendulumEnergy a b Δω) x (xiField a b Δω x) =
       -(a * Real.cos (x 0) * xiRate a b Δω x ^ 2) := by
   have h0 : HasFDerivAt (fun z : State 2 => z 0)

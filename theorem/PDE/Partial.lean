@@ -39,7 +39,7 @@ def strip (a b : ℝ) : Set (ℝ × ℝ) := Icc a b ×ˢ univ
 
 /-- A function with partial derivatives is constant along a segment on which its
 directional derivative vanishes. -/
-@[powerlib_foundation] theorem const_along_segment {U Ux Ut : ℝ × ℝ → ℝ} {S : Set (ℝ × ℝ)}
+@[tmio T, powerlib_foundation] theorem const_along_segment {U Ux Ut : ℝ × ℝ → ℝ} {S : Set (ℝ × ℝ)}
     {p₀ d : ℝ × ℝ} {a b : ℝ} (hab : a ≤ b)
     (hmaps : ∀ s ∈ Icc a b, p₀ + s • d ∈ S)
     (hU : ∀ s ∈ Icc a b, HasPartialsWithin U Ux Ut S (p₀ + s • d))

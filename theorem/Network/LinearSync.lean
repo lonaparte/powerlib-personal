@@ -66,7 +66,7 @@ structure SpectralData (L : Matrix (Fin N) (Fin N) ℝ) where
 
 /-! ## Euclidean-norm helpers -/
 
-@[powerlib_foundation] theorem euclidean_sub (x y : Fin d → ℝ) :
+@[tmio T, powerlib_foundation] theorem euclidean_sub (x y : Fin d → ℝ) :
     euclidean (x - y) = euclidean x - euclidean y := rfl
 
 @[powerlib_foundation] theorem euclidean_smul (c : ℝ) (x : Fin d → ℝ) :

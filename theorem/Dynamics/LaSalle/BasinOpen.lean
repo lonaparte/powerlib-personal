@@ -34,7 +34,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
 
 /-- The basin of attraction `{x | φ_t x → x*}` of `x*` for the forward flow is forward
 invariant. -/
-@[powerlib_foundation] theorem basin_isInvariant (hf : LipschitzWith K f) (xs : E) :
+@[tmio T, powerlib_foundation] theorem basin_isInvariant (hf : LipschitzWith K f) (xs : E) :
     IsInvariant (lipschitzFlow hf)
       {x | Tendsto (fun t : ℝ≥0 => lipschitzFlow hf t x) atTop (𝓝 xs)} := by
   intro s x hx

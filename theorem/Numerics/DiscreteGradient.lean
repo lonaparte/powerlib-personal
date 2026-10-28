@@ -37,7 +37,7 @@ structure DiscreteGradient (H : (Fin n → ℝ) → ℝ) where
 
 /-- One implicit discrete-gradient step `x⁺ − x = h((J − R)∇̄H + g u)` changes the energy by
 exactly `h (uᵀ gᵀ ∇̄H − ∇̄Hᵀ R ∇̄H)`. -/
-@[powerlib_foundation] theorem discreteGradient_energy_step {H : (Fin n → ℝ) → ℝ}
+@[tmio T, powerlib_foundation] theorem discreteGradient_energy_step {H : (Fin n → ℝ) → ℝ}
     (G : DiscreteGradient H) {J R : Matrix (Fin n) (Fin n) ℝ} (g : Matrix (Fin n) (Fin m) ℝ)
     (hJ : Jᵀ = -J) (h : ℝ) (u : Fin m → ℝ) {x y : Fin n → ℝ}
     (hstep : y - x = h • ((J - R) *ᵥ G.dg x y + g *ᵥ u)) :

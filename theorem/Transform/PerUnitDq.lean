@@ -43,7 +43,7 @@ def parkABCPI (θ : ℝ) : Matrix (Fin 2) (Fin 3) ℝ := Real.sqrt (3 / 2) • p
   exact park_mul_rot θ
 
 /-- `T^A T^Aᵀ = (2/3) I`. -/
-@[powerlib_foundation] theorem parkABC_mul_transpose (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem parkABC_mul_transpose (θ : ℝ) :
     parkABC θ * (parkABC θ)ᵀ = (2 / 3 : ℝ) • 1 := by
   rw [parkABC, transpose_mul, Matrix.mul_assoc, ← Matrix.mul_assoc clarke, clarke_mul_transpose,
     Matrix.smul_mul, Matrix.one_mul, Matrix.mul_smul, park_mul_transpose]

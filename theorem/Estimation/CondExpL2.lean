@@ -38,7 +38,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsFiniteMeas
   {m : MeasurableSpace Ω} {f g : Ω → ℝ}
 
 /-- The residual `f − E[f | m]` is orthogonal to every square-integrable `m`-measurable `h`. -/
-@[powerlib_foundation] theorem condExp_orthogonal (hm : m ≤ mΩ) (hf : MemLp f 2 μ)
+@[tmio T, powerlib_foundation] theorem condExp_orthogonal (hm : m ≤ mΩ) (hf : MemLp f 2 μ)
     {h : Ω → ℝ} (hh : AEStronglyMeasurable[m] h μ) (hh2 : MemLp h 2 μ) :
     ∫ ω, (f ω - μ[f | m] ω) * h ω ∂μ = 0 := by
   have hEf : MemLp (μ[f | m]) 2 μ := hf.condExp one_le_two

@@ -47,7 +47,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 def kgain (p h r : ℝ) : ℝ := p * h / (h ^ 2 * p + r)
 
 /-- Covariance of two linear combinations of independent square-integrable variables. -/
-@[powerlib_foundation] theorem cov_lin_indep [IsFiniteMeasure P] {A W : Ω → ℝ}
+@[tmio T, powerlib_foundation] theorem cov_lin_indep [IsFiniteMeasure P] {A W : Ω → ℝ}
     (hA : MemLp A 2 P) (hW : MemLp W 2 P) (hAW : IndepFun A W P) (a b c d : ℝ) :
     cov[fun ω => a * A ω + b * W ω, fun ω => c * A ω + d * W ω; P] =
       a * c * Var[A; P] + b * d * Var[W; P] := by

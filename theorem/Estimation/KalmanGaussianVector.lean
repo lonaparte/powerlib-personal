@@ -70,7 +70,7 @@ private lemma cov_sub_comb [IsFiniteMeasure P] (hX2 : ∀ i, MemLp (X i) 2 P)
 
 /-- The error `X_i − Σ_l K_il Y_l` of a gain `K` with `K Σ_YY = Σ_XY`, jointly Gaussian with `Y`,
 is independent of the measurement vector `Y`. -/
-@[powerlib_foundation] theorem gaussian_error_indep
+@[tmio T, powerlib_foundation] theorem gaussian_error_indep
     (hXY : HasGaussianLaw (fun ω => (fun i => X i ω, fun j => Y j ω)) P)
     {K : Matrix (Fin n) (Fin p) ℝ}
     (hK : ∀ i j, ∑ l, K i l * cov[Y l, Y j; P] = cov[X i, Y j; P]) :

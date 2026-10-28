@@ -57,7 +57,7 @@ private lemma stm_mul_inv (hA : Continuous A) (s a : ℝ) :
 upstream theorem (`LinearSystems.hasDerivAt_stateTransitionMatrix`, Peano–Baker) gives the
 derivative on open segments `t ∈ (s, t₁)`; at `t = s` the anchor is moved with the upstream
 composition laws. -/
-@[powerlib_foundation] theorem stm_hasDerivAt (hA : Continuous A) (t s : ℝ) :
+@[tmio T, powerlib_foundation] theorem stm_hasDerivAt (hA : Continuous A) (t s : ℝ) :
     HasDerivAt (fun z => LinearSystems.stateTransitionMatrix A z s)
       (A t * LinearSystems.stateTransitionMatrix A t s) t := by
   -- derivative with the anchor `a = t - 1`, at an interior point of `(a, t + 1)`

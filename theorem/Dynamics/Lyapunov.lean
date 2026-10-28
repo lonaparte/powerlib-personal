@@ -63,7 +63,7 @@ variable {n : ℕ}
 local notation "ℝⁿ" => State n
 
 /-- A radius on which an eventual punctured-neighbourhood property holds. -/
-@[powerlib_foundation] theorem exists_radius_of_eventually {x_eq : ℝⁿ} {P : ℝⁿ → Prop}
+@[tmio T, powerlib_foundation] theorem exists_radius_of_eventually {x_eq : ℝⁿ} {P : ℝⁿ → Prop}
     (h : ∀ᶠ x in 𝓝[≠] x_eq, P x) :
     ∃ r > 0, ∀ x, ‖x - x_eq‖ < r → x ≠ x_eq → P x := by
   rw [eventually_nhdsWithin_iff, Metric.eventually_nhds_iff] at h

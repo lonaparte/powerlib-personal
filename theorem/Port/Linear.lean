@@ -41,7 +41,7 @@ def Plant.system (M : Plant n p) : Port.System n p :=
   ⟨fun x u => op M.A x + WithLp.toLp 2 (M.B *ᵥ u), fun x u => M.C *ᵥ WithLp.ofLp x + M.D *ᵥ u⟩
 
 /-- With the ports at zero, the plant is the hub's linear field. -/
-@[powerlib_foundation] theorem Plant.system_zeroInput (M : Plant n p) :
+@[tmio T, powerlib_foundation] theorem Plant.system_zeroInput (M : Plant n p) :
     M.system.zeroInput = affineLinearVectorField M.A 0 := by
   funext x
   simp [Port.System.zeroInput, Plant.system, affine_apply]

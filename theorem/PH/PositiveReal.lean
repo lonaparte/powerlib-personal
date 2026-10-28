@@ -48,7 +48,7 @@ variable {n m : ℕ}
 /-! ## Complex quadratic forms of real matrices -/
 
 /-- For real `M` and complex `x`: `xᴴ Mᵀ x = conj (xᴴ M x)`. -/
-@[powerlib_foundation] theorem phCx_transpose_form (M : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem phCx_transpose_form (M : Matrix (Fin n) (Fin n) ℝ)
     (x : Fin n → ℂ) :
     star x ⬝ᵥ (Linear.complexify Mᵀ *ᵥ x) = star (star x ⬝ᵥ (Linear.complexify M *ᵥ x)) := by
   simp only [dotProduct, mulVec, Finset.mul_sum, star_sum, star_mul', Pi.star_apply, star_star,

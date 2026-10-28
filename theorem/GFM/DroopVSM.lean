@@ -105,7 +105,7 @@ def vsmField (M D : ℝ) (x : State 2) : State 2 :=
 /-- Linear part of the coordinate change. -/
 def coordMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, -1 / d.KR]
 
-@[powerlib_foundation] theorem coordMatrix_inv (hK : d.KR ≠ 0) :
+@[tmio M, powerlib_foundation] theorem coordMatrix_inv (hK : d.KR ≠ 0) :
     d.coordMatrix⁻¹ = !![1, 0; 0, -d.KR] := by
   apply Matrix.inv_eq_left_inv
   ext i j
@@ -383,8 +383,7 @@ private theorem vsm_unstable {m : VSMModel} (hsm : vsmMeets m .smooth)
     rw [neg_div]; linarith
 
 /-- The whole VSM requirement language is inconsistent. -/
-@[tmio M]
-@[powerlib_foundation] theorem vsm_realize_univ :
+@[tmio M, powerlib_foundation] theorem vsm_realize_univ :
     connection% (TMIO.realize vsmMeets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
@@ -394,8 +393,7 @@ private theorem vsm_unstable {m : VSMModel} (hsm : vsmMeets m .smooth)
 
 /-- Every translation of the VSM family is sound: linearization at the selected state
 (`tr J = −D/M`, `det J = P'(θ*)/M`), and passivity without requirement. -/
-@[tmio TM]
-@[powerlib_domain] theorem vsmFamily_chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem vsmFamily_chain_le_semantics :
     connection% (∀ P, vsmFamily.chain P ≤ vsmFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.chain_le_semantics_of_localTable_same
@@ -417,15 +415,13 @@ private theorem vsm_sound (s : Sentence) : vsmFamily.Sound s :=
   Family.chain_le_semantics_iff.mp vsmFamily_chain_le_semantics s
 
 /-- Passivity is translated exactly for the VSM family. -/
-@[tmio TM]
-@[powerlib_domain] theorem vsmFamily_exact_passive : connection% (vsmFamily.Exact .passive) := by
+@[tmio TM, powerlib_domain] theorem vsmFamily_exact_passive : connection% (vsmFamily.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl vsmFamily_isAutonomous.den_passive
 
 /-- A `C¹` power map, balance, positive inertia and damping and a positive synchronizing slope
 place a VSM model in local exponential stability. -/
-@[tmio TM]
-@[powerlib_domain] theorem vsm_mem_den_locallyExponentiallyStable (m : VSMModel)
+@[tmio TM, powerlib_domain] theorem vsm_mem_den_locallyExponentiallyStable (m : VSMModel)
     (hs : ContDiff ℝ 1 m.P) (hω : m.point 1 = 0) (hb : m.P (m.point 0) = m.Pref + m.D * m.ωs)
     (hM : 0 < m.M) (hD : 0 < m.D) (hK : 0 < deriv m.P (m.point 0)) :
     connection% (m ∈ vsmFamily.den (.flow .locallyExponentiallyStable)) := by
@@ -436,8 +432,7 @@ place a VSM model in local exponential stability. -/
 at a state with `ω* = 0` is the swing model `⟨M, D, P_ref + D ω_s, k₁, k₂, k₃⟩` read about `θ*`
 (the damping reference `ω_s` shifts the mechanical power to `P_ref + D ω_s`): the two families
 agree on every sentence, because the two translated fields are equal. -/
-@[tmio TM]
-@[powerlib_domain] theorem vsm_mem_den_iff_swing_of_sinusoid (m : VSMModel) (k₁ k₂ k₃ : ℝ)
+@[tmio TM, powerlib_domain] theorem vsm_mem_den_iff_swing_of_sinusoid (m : VSMModel) (k₁ k₂ k₃ : ℝ)
     (hP : m.P = fun θ => k₁ + k₂ * Real.sin (θ - k₃)) (h1 : m.point 1 = 0) (s : Sentence) :
     connection% (m ∈ vsmFamily.den s ↔
       Synchronous.Swing.Model.mk ⟨m.M, m.D, m.Pref + m.D * m.ωs, k₁, k₂, k₃⟩ (m.point 0) ∈
@@ -463,8 +458,7 @@ agree on every sentence, because the two translated fields are equal. -/
 /-- On an infinite bus in the synchronous frame (`P = K₀ sin`, `ω_s = 0`) a VSM model at a state
 with `ω* = 0` is the swing model `⟨M, D, P_ref, 0, K₀, 0⟩` read about `θ*`: the two families agree
 on every sentence (`vsm_mem_den_iff_swing_of_sinusoid` with `k₁ = k₃ = 0`). -/
-@[tmio TM]
-@[powerlib_domain] theorem vsm_mem_den_iff_swing (m : VSMModel) (K0 : ℝ)
+@[tmio TM, powerlib_domain] theorem vsm_mem_den_iff_swing (m : VSMModel) (K0 : ℝ)
     (hP : m.P = fun θ => K0 * Real.sin θ) (hω : m.ωs = 0) (h1 : m.point 1 = 0) (s : Sentence) :
     connection% (m ∈ vsmFamily.den s ↔
       Synchronous.Swing.Model.mk ⟨m.M, m.D, m.Pref, 0, K0, 0⟩ (m.point 0) ∈
@@ -532,16 +526,14 @@ private theorem holds_eq : droopFamily.Holds = (vsmFamily.comap DroopModel.toVSM
 /-- **Large-signal equivalence as a comparison of connections.** The semantics connection of the
 droop + LPF family is the semantics connection of the VSM family read through `toVSM`
 (`M = τ_p K_R`, `D = K_R`): the two closed loops satisfy the same sentences. -/
-@[tmio TM]
-@[powerlib_domain] theorem semantics_eq_comap :
+@[tmio TM, powerlib_domain] theorem semantics_eq_comap :
     connection% (droopFamily.semantics = (vsmFamily.comap DroopModel.toVSM).semantics) := by
   unfold powerlib.TMIO.Statement
   unfold Family.semantics
   rw [holds_eq]
 
 /-- Every sentence of a droop + LPF model denotes the preimage of its VSM denotation. -/
-@[tmio TM]
-@[powerlib_domain] theorem den_eq_preimage :
+@[tmio TM, powerlib_domain] theorem den_eq_preimage :
     connection% (∀ s, droopFamily.den s = DroopModel.toVSM ⁻¹' vsmFamily.den s) := by
   unfold powerlib.TMIO.Statement
   intro s
@@ -550,8 +542,7 @@ droop + LPF family is the semantics connection of the VSM family read through `t
   exact (congrFun (congrFun holds_eq m) s).to_iff
 
 /-- The droop + LPF translation is sound: its requirements are its VSM image's. -/
-@[tmio TM]
-@[powerlib_domain] theorem droopFamily_chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem droopFamily_chain_le_semantics :
     connection% (∀ P, droopFamily.chain P ≤ droopFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
@@ -561,8 +552,7 @@ droop + LPF family is the semantics connection of the VSM family read through `t
   exact vsm_sound s ((TMIO.mem_realize _ _ _).mpr fun q hq => (TMIO.mem_realize _ _ _).mp hm q hq)
 
 /-- Local exponential stability is identical for the two closed loops. -/
-@[tmio TM]
-@[powerlib_domain] theorem locallyExponentiallyStable_iff (m : DroopModel) :
+@[tmio TM, powerlib_domain] theorem locallyExponentiallyStable_iff (m : DroopModel) :
     connection% (m ∈ droopFamily.den (.flow .locallyExponentiallyStable) ↔
       m.toVSM ∈ vsmFamily.den (.flow .locallyExponentiallyStable)) := by
   have hd := den_eq_preimage
@@ -570,8 +560,7 @@ droop + LPF family is the semantics connection of the VSM family read through `t
   rw [hd]; rfl
 
 /-- Lyapunov stability is identical for the two closed loops. -/
-@[tmio TM]
-@[powerlib_domain] theorem lyapunovStable_iff (m : DroopModel) :
+@[tmio TM, powerlib_domain] theorem lyapunovStable_iff (m : DroopModel) :
     connection% (m ∈ droopFamily.den (.flow .lyapunovStable) ↔
       m.toVSM ∈ vsmFamily.den (.flow .lyapunovStable)) := by
   have hd := den_eq_preimage
@@ -579,8 +568,7 @@ droop + LPF family is the semantics connection of the VSM family read through `t
   rw [hd]; rfl
 
 /-- Instability is identical for the two closed loops. -/
-@[tmio TM]
-@[powerlib_domain] theorem unstable_iff (m : DroopModel) :
+@[tmio TM, powerlib_domain] theorem unstable_iff (m : DroopModel) :
     connection% (m ∈ droopFamily.den (.flow .unstable) ↔
       m.toVSM ∈ vsmFamily.den (.flow .unstable)) := by
   have hd := den_eq_preimage
@@ -588,8 +576,7 @@ droop + LPF family is the semantics connection of the VSM family read through `t
   rw [hd]; rfl
 
 /-- Local asymptotic stability is identical for the two closed loops. -/
-@[tmio TM]
-@[powerlib_domain] theorem localAsymptoticStable_iff (m : DroopModel) :
+@[tmio TM, powerlib_domain] theorem localAsymptoticStable_iff (m : DroopModel) :
     connection% (m ∈ droopFamily.den (.flow .locallyAsymptoticallyStable) ↔
       m.toVSM ∈ vsmFamily.den (.flow .locallyAsymptoticallyStable)) := by
   have hd := den_eq_preimage
@@ -601,8 +588,7 @@ locally exponentially stable for all `K_R, τ_p > 0`, in every rotating frame. I
 swing model `⟨τ_p K_R, K_R, P_ref + K_R ω_s, 0, K₀, 0⟩` about `θ₀`
 (`vsm_mem_den_iff_swing_of_sinusoid`), balanced with positive inertia, damping and synchronizing
 coefficient (`Synchronous.Swing.mem_den_locallyExponentiallyStable`). -/
-@[tmio TM]
-@[powerlib_domain] theorem infiniteBus_locallyExponentiallyStable (m : DroopModel) (K0 : ℝ)
+@[tmio TM, powerlib_domain] theorem infiniteBus_locallyExponentiallyStable (m : DroopModel) (K0 : ℝ)
     (hP : m.d.P = fun θ => K0 * Real.sin θ) (hK : 0 < m.d.KR)
     (hτ : 0 < m.d.τp) (heq : m.d.droopField m.point = 0) (hcos : 0 < K0 * Real.cos (m.point 0)) :
     connection% (m ∈ droopFamily.den (.flow .locallyExponentiallyStable)) := by

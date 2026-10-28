@@ -96,7 +96,7 @@ def potential (p : Params n) (θ : Fin (n + 1) → ℝ) : ℝ :=
 def energy (p : Params n) (z : State (n + (n + 1))) : ℝ :=
   (∑ k, p.M k * z (wIdx k) ^ 2) / 2 + potential p (angleMap z)
 
-@[powerlib_foundation] theorem sum_powerInjection (p : Params n) (θ : Fin (n + 1) → ℝ) :
+@[tmio M, powerlib_foundation] theorem sum_powerInjection (p : Params n) (θ : Fin (n + 1) → ℝ) :
     ∑ k, powerInjection p.B θ k = 0 := by
   have h : ∑ k, powerInjection p.B θ k = -∑ k, powerInjection p.B θ k := by
     unfold powerInjection
@@ -937,8 +937,7 @@ private theorem reducedSwing_not_localAsymptoticStable_of_forms {p : Params n}
 /-- **Second- and third-order test.** At a power-balance point, a relative-angle direction `v`
 with `A₂ < 0`, or with `A₂ = 0` and `A₃ ≠ 0` (a fold), rules out local asymptotic stability:
 the model is not in the denotation of the local asymptotic sentence. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_localAsymptoticStable_of_forms (m : Model n)
+@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_of_forms (m : Model n)
     (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) (v : Fin n → ℝ)
     (h : hessForm m.params m.θ (ground v) < 0 ∨
       (hessForm m.params m.θ (ground v) = 0 ∧ cubicForm m.params m.θ (ground v) ≠ 0)) :
@@ -964,8 +963,7 @@ power-balance point a non-Hurwitz reduced Jacobian rules out local asymptotic st
 Hurwitz reduced Jacobian: a Lyapunov stable point of the `C¹` reduced field is an equilibrium,
 hence a power-balance point (`powerFlow_of_equilibrium`), and the translation
 `{powerFlow, jacobianStable}` is sound (`chain_le_semantics`). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_of_guard (m : Model n)
+@[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_of_guard (m : Model n)
     (h : (∀ k, m.params.P k = powerInjection m.params.B m.θ k) →
       ¬ LinearSystems.IsHurwitz (jacobian m.params m.θ) →
       m ∉ family.den (.flow .locallyAsymptoticallyStable)) :
@@ -991,8 +989,7 @@ hence a power-balance point (`powerFlow_of_equilibrium`), and the translation
 power-balance point with a non-Hurwitz reduced Jacobian is not locally asymptotically stable, the
 local asymptotic translation `{powerFlow, jacobianStable}` of `family (n := n)` is exact
 (`mem_den_locallyAsymptoticallyStable_iff_of_guard` at every model). -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_locallyAsymptoticallyStable_of_guard
+@[tmio TM, powerlib_domain] theorem exact_locallyAsymptoticallyStable_of_guard
     (h : ∀ m : Model n, (∀ k, m.params.P k = powerInjection m.params.B m.θ k) →
       ¬ LinearSystems.IsHurwitz (jacobian m.params m.θ) →
       m ∉ family.den (.flow .locallyAsymptoticallyStable)) :
@@ -1082,8 +1079,7 @@ private theorem reducedSwing_not_localAsymptoticStable_two (p : Params 1) (θ : 
 model is not locally asymptotically stable: the line weight `B₀₁ cos(θ₀ − θ₁)` is negative (a
 saddle of the potential), or zero with a coupled line (a fold, nonzero cubic term), or the
 machines are uncoupled (a continuum of equilibria). -/
-@[tmio TM]
-@[powerlib_domain] theorem not_localAsymptoticStable_two (m : Model 1)
+@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_two (m : Model 1)
     (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian m.params m.θ)) :
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
@@ -1092,8 +1088,7 @@ machines are uncoupled (a continuum of equilibria). -/
   exact reducedSwing_not_localAsymptoticStable_two m.params m.θ hbal hH
 
 /-- **For two machines the local asymptotic translation is exact.** -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_locallyAsymptoticallyStable_two :
+@[tmio TM, powerlib_domain] theorem exact_locallyAsymptoticallyStable_two :
     connection% ((family (n := 1)).Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact exact_locallyAsymptoticallyStable_of_guard fun m hp hH =>
@@ -1521,8 +1516,7 @@ zero, the cubic term has one strict sign (`triangle_cubic_ne_zero`): a fold. If 
 direction turns one machine against the other two through two zero-weight lines, whose cubic terms
 cancel only if both lines are open (a continuum of equilibria) or the third line is in antiphase,
 which contradicts the positive Hessian along it. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_localAsymptoticStable_three (m : Model 2)
+@[tmio TM, powerlib_domain] theorem not_localAsymptoticStable_three (m : Model 2)
     (hbal : ∀ k, m.params.P k = powerInjection m.params.B m.θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian m.params m.θ)) :
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
@@ -1531,8 +1525,7 @@ which contradicts the positive Hessian along it. -/
   exact reducedSwing_not_localAsymptoticStable_three m.params m.θ hbal hH
 
 /-- **For three machines the local asymptotic translation is exact.** -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_locallyAsymptoticallyStable_three :
+@[tmio TM, powerlib_domain] theorem exact_locallyAsymptoticallyStable_three :
     connection% ((family (n := 2)).Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact exact_locallyAsymptoticallyStable_of_guard fun m hp hH =>
@@ -1657,8 +1650,7 @@ isolated power-balance point. The conditions are static: they do not mention sol
 linearization is not involved (LaSalle, `Dynamics.Mechanical.localAsymptoticStable_of_strictMin`,
 and the energy, `Dynamics.Mechanical.strictMin_of_localAsymptoticStable`, through
 `reducedField_eq_mechanical`). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff (m : Model n) :
+@[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff (m : Model n) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
       (∀ k, m.params.P k = powerInjection m.params.B m.θ k) ∧
       ∃ r > 0, ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r →

@@ -85,7 +85,7 @@ def IsTight (σ : Equiv.Perm ι) (c d : ι → ℕ) : Prop := ∀ i, S.order i (
 
 /-! ## Weak duality and the HVT-tight identity -/
 
-@[powerlib_foundation] theorem value_add_le {σ : Equiv.Perm ι} {c d : ι → ℕ}
+@[tmio T, powerlib_foundation] theorem value_add_le {σ : Equiv.Perm ι} {c d : ι → ℕ}
     (hσ : S.IsTransversal σ) (h : S.IsDualFeasible c d) :
     S.value σ + ∑ i, c i ≤ ∑ j, d j := by
   rw [value, ← sum_add_distrib, ← Equiv.sum_comp σ d]

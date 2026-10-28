@@ -26,7 +26,7 @@ variable {n : ℕ}
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- A nontrivial Jordan chain at zero makes the linear field unstable. -/
-@[powerlib_foundation] theorem unstable_of_zero_jordan_chain
+@[tmio T, powerlib_foundation] theorem unstable_of_zero_jordan_chain
     {A : Matrix (Fin n) (Fin n) ℝ} {v w : ℝⁿ} (hv : v ≠ 0)
     (hAv : op A v = 0) (hAw : op A w = v) : Unstable (affineLinearVectorField A 0) 0 := by
   intro hs

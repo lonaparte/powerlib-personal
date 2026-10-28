@@ -54,7 +54,7 @@ def l₂ : LowerAdjoint S.u₂ := generate S.u₂
 /-- Generated forward map from implementations to observations. -/
 def l₃ : LowerAdjoint S.u₃ := generate S.u₃
 
-@[powerlib_foundation] theorem gc₁ : GaloisConnection S.l₁ S.u₁ := gc_generate S.u₁
+@[tmio T, powerlib_foundation] theorem gc₁ : GaloisConnection S.l₁ S.u₁ := gc_generate S.u₁
 @[powerlib_foundation] theorem gc₂ : GaloisConnection S.l₂ S.u₂ := gc_generate S.u₂
 @[powerlib_foundation] theorem gc₃ : GaloisConnection S.l₃ S.u₃ := gc_generate S.u₃
 
@@ -74,7 +74,7 @@ def uTO : sInfHom O T := S.u₁.comp (S.u₂.comp S.u₃)
   generate_comp S.u₂ S.u₃
 
 /-- Whole equals parts for the full chain (v0.3 §5). -/
-@[powerlib_foundation] theorem generate_uTO : ⇑(generate S.uTO) = S.l₃ ∘ S.l₂ ∘ S.l₁ := by
+@[tmio T, powerlib_foundation] theorem generate_uTO : ⇑(generate S.uTO) = S.l₃ ∘ S.l₂ ∘ S.l₁ := by
   rw [uTO, generate_comp, generate_comp]
   rfl
 

@@ -49,7 +49,7 @@ def finPost (p₀ L : ι → ℝ) (i : ι) : ℝ := p₀ i * L i / finEvidence p
 
 variable {p₀ L : ι → ℝ}
 
-@[powerlib_foundation] theorem finEvidence_pos [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i)
+@[tmio T, powerlib_foundation] theorem finEvidence_pos [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i)
     (hL : ∀ i, 0 < L i) : 0 < finEvidence p₀ L :=
   sum_pos (fun i _ => mul_pos (hp₀ i) (hL i)) univ_nonempty
 

@@ -136,7 +136,7 @@ def vdSol (θ id iq ξd : ℝ) : ℝ := q.Vg * cos θ + q.ω0 * q.Lg * iq - q.Lg
 def uSol (θ x id iq ξq : ℝ) : ℝ := q.kp * q.vqSol θ id iq ξq + q.ki * x
 
 /-- The speed EMF `−(ω₀ + u) L_g i_d` and the slip part `u L_g i_d` of `−L_g i̇_q` cancel. -/
-@[powerlib_foundation] theorem speedEMF_cancel (hLf : q.Lf ≠ 0) (θ id iq ξq u : ℝ) :
+@[tmio M, powerlib_foundation] theorem speedEMF_cancel (hLf : q.Lf ≠ 0) (θ id iq ξq u : ℝ) :
     -q.Vg * sin θ - (q.ω0 + u) * q.Lg * id - q.Lg * (q.piQ iq ξq / q.Lf - u * id) =
       q.vqSol θ id iq ξq := by
   unfold vqSol

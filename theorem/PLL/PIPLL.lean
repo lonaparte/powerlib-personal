@@ -73,7 +73,7 @@ def piPLLField (h : ℝ → ℝ) (Kp Ki δω : ℝ) (x : ℝ²) : ℝ² :=
 /-- The Jacobian matrix `[[K_p g, K_i], [g, 0]]`, `g = h'(θ)`. -/
 def piPLLJacobian (Kp Ki g : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![Kp * g, Ki; g, 0]
 
-@[simp, powerlib_foundation] theorem piPLLField_apply_zero (h : ℝ → ℝ) (Kp Ki δω : ℝ)
+@[tmio M, simp, powerlib_foundation] theorem piPLLField_apply_zero (h : ℝ → ℝ) (Kp Ki δω : ℝ)
     (x : ℝ²) : piPLLField h Kp Ki δω x 0 = Kp * h (x 0) + Ki * x 1 - δω := rfl
 
 @[simp, powerlib_foundation] theorem piPLLField_apply_one (h : ℝ → ℝ) (Kp Ki δω : ℝ)

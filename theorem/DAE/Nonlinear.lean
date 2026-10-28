@@ -95,7 +95,7 @@ def schurMatrix : Matrix (Fin n) (Fin n) ℝ :=
 
 variable {f g u}
 
-@[powerlib_foundation] theorem implicitMap_self (hg : ContDiff ℝ 1 g)
+@[tmio T, powerlib_foundation] theorem implicitMap_self (hg : ContDiff ℝ 1 g)
     (hinv : (partialY g u).IsInvertible) : implicitMap g u hg hinv u.1 = u.2 :=
   ContDiffAt.implicitFunction_apply_self _ _ _
 

@@ -80,7 +80,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 
 omit [DecidableEq n] in
 /-- Derivative of the eigen-equation along a differentiable branch defined near `α₀`. -/
-@[powerlib_foundation] theorem eigen_branch_deriv_of_eventually {A : ℝ → Matrix n n ℂ}
+@[tmio T, powerlib_foundation] theorem eigen_branch_deriv_of_eventually {A : ℝ → Matrix n n ℂ}
     {A' : Matrix n n ℂ} {v : ℝ → n → ℂ} {v' : n → ℂ} {lam : ℝ → ℂ} {lam' : ℂ} {α₀ : ℝ}
     (hA : ∀ i j, HasDerivAt (fun α => A α i j) (A' i j) α₀)
     (hv : ∀ j, HasDerivAt (fun α => v α j) (v' j) α₀) (hlam : HasDerivAt lam lam' α₀)

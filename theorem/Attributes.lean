@@ -1,4 +1,5 @@
 import Lean
+import theorem.TMIO.KnowledgeKind
 
 /-! # Theorem classification registry (foundation)
 

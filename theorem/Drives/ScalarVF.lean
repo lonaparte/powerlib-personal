@@ -49,7 +49,7 @@ namespace powerlib.Drives.ScalarVF
 /-! ## Frequency ramp -/
 
 /-- With `Ω = 2πf/np` and `J Ω̇ = T`, the frequency slope is `ḟ = np T/(2πJ)`. -/
-@[powerlib_foundation] theorem rampRate_eq (np J T df : ℝ) (hnp : np ≠ 0) (hJ : J ≠ 0)
+@[tmio T, powerlib_foundation] theorem rampRate_eq (np J T df : ℝ) (hnp : np ≠ 0) (hJ : J ≠ 0)
     (h : J * (2 * Real.pi / np * df) = T) : df = np * T / (2 * Real.pi * J) := by
   have hpi : Real.pi ≠ 0 := Real.pi_ne_zero
   rw [← h]

@@ -36,7 +36,7 @@ open MeasureTheory Set
 variable {ν : Measure ℝ} [IsProbabilityMeasure ν]
 
 /-- Bias–variance decomposition of the posterior expected squared loss. -/
-@[powerlib_foundation] theorem integral_sq_sub_eq (h1 : Integrable (fun θ : ℝ => θ) ν)
+@[tmio T, powerlib_foundation] theorem integral_sq_sub_eq (h1 : Integrable (fun θ : ℝ => θ) ν)
     (h2 : Integrable (fun θ : ℝ => θ ^ 2) ν) (a : ℝ) :
     ∫ θ, (θ - a) ^ 2 ∂ν = ∫ θ, (θ - ∫ x, x ∂ν) ^ 2 ∂ν + ((∫ x, x ∂ν) - a) ^ 2 := by
   have hq : ∀ c : ℝ,

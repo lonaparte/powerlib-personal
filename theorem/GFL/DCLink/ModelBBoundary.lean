@@ -100,8 +100,7 @@ private theorem unstable_of_violation {m : Model} (hV : 0 < m.p.VdcRef)
 
 /-- At an equilibrium with positive reference whose Jacobian violates the 4×4 Routh conditions
 strictly, model B is unstable. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_unstable_of_violation (m : Model) (hV : 0 < m.p.VdcRef)
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_violation (m : Model) (hV : 0 < m.p.VdcRef)
     (hx : m.p.field m.x = 0) (hviol : RouthViolationFin4 (m.p.jacobian m.x)) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
@@ -141,16 +140,14 @@ private theorem exactUnder_offBoundary_of {P : Flow.Property}
 /-- **Off the Routh boundary the Lyapunov translation is exact.** At an equilibrium with positive
 reference whose Jacobian is not on the 4×4 Routh boundary, Lyapunov stability holds exactly when
 the Routh conditions hold (a strict violation gives instability). -/
-@[tmio TM]
-@[powerlib_domain] theorem exactUnder_offBoundary_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem exactUnder_offBoundary_lyapunovStable :
     connection% (family.ExactUnder {.equilibrium, .positiveReference, .offBoundary}
       (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   exact exactUnder_offBoundary_of (Or.inl rfl)
 
 /-- **Off the Routh boundary the local asymptotic translation is exact.** -/
-@[tmio TM]
-@[powerlib_domain] theorem exactUnder_offBoundary_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem exactUnder_offBoundary_locallyAsymptoticallyStable :
     connection% (family.ExactUnder {.equilibrium, .positiveReference, .offBoundary}
       (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -165,7 +162,7 @@ the Routh conditions hold (a strict violation gives instability). -/
 def hopfCenter : Model :=
   ⟨⟨0, 0, 1, 1, 3 / 2, 0, 1, 0, 1, 1, 0, 0, 0⟩, WithLp.toLp 2 ![0, 0, 1, 0]⟩
 
-@[powerlib_foundation] theorem hopfCenter_field (y : State 4) (hy : y 2 ≠ 0) :
+@[tmio M, powerlib_foundation] theorem hopfCenter_field (y : State 4) (hy : y 2 ≠ 0) :
     hopfCenter.p.field y = WithLp.toLp 2 ![-Real.sin (y 0) + y 1, -Real.sin (y 0),
       Real.cos (y 0) * y 3 / y 2, 1 - y 2] := by
   ext i
@@ -243,8 +240,7 @@ private theorem centerEnergy_lie_nonpos {σ : ℝ} (hσ : |σ| ≤ 1) {y : State
 /-- The undamped DC loop is Lyapunov stable: the energy `centerEnergy 1` does not increase near
 `x*`. Its Jacobian lies on the 4×4 Routh boundary (`hopfCenter_not_routh`), so the linearization
 decides nothing. -/
-@[tmio TM]
-@[powerlib_domain] theorem hopfCenter_mem_den_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem hopfCenter_mem_den_lyapunovStable :
     connection% (hopfCenter ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   rw [mem_den_flow_iff']
@@ -294,8 +290,7 @@ decides nothing. -/
 increase near `x*` and is negative at `x*` displaced along `ξ_v`, so the solution from there keeps
 it negative and cannot converge (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`, on the
 regularized field, which is model B on the ball of radius `1/4`). -/
-@[tmio TM]
-@[powerlib_domain] theorem hopfCenter_not_mem_den_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem hopfCenter_not_mem_den_locallyAsymptoticallyStable :
     connection% (hopfCenter ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   intro hm
@@ -390,8 +385,7 @@ private theorem hopfCenter_not_violation :
 /-- **The Lyapunov translation is not exact at equilibria with positive reference.** The undamped
 DC loop is Lyapunov stable, but its Jacobian is on the 4×4 Routh boundary. Off the boundary the
 translation is exact (`exactUnder_offBoundary_lyapunovStable`). -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exactUnder_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem not_exactUnder_lyapunovStable :
     connection% (¬ family.ExactUnder {.equilibrium, .positiveReference}
       (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -449,8 +443,7 @@ private theorem cdcZero_not_violation : ¬ RouthViolationFin4 (cdcZero.p.jacobia
 `s² (s² + s + 1)`) lies on the 4×4 Routh boundary: `V_dc` is conserved, so off `V_dc = 1` the
 integrator `ξ_v` drifts; Chetaev's function `(1 − V_dc) ξ_v` grows at the rate `(1 − V_dc)²`
 (`Dynamics.unstable_of_chetaev`; the field is smooth since `C_dc = 0`). -/
-@[tmio TM]
-@[powerlib_domain] theorem cdcZero_mem_den_unstable :
+@[tmio TM, powerlib_domain] theorem cdcZero_mem_den_unstable :
     connection% (cdcZero ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   rw [mem_den_flow_iff']
@@ -745,8 +738,7 @@ the 4×4 Routh boundary. Strict Lyapunov function `dampedEnergy` on the ball of 
 (`dampedEnergy_lie`), bounded by `−s²/2 − x_pll²/8 − (w² + ξ²)²/2`: the PLL damping dominates the
 coupling through `cos Δθ`, and the quartic term, whose coefficient is the first Lyapunov
 coefficient of the DC loop, dominates the quintic remainder. -/
-@[tmio TM]
-@[powerlib_domain] theorem hopfDamped_mem_den_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem hopfDamped_mem_den_locallyAsymptoticallyStable :
     connection% (hopfDamped ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [mem_den_flow_iff']
@@ -852,8 +844,7 @@ coefficient of the DC loop, dominates the quintic remainder. -/
 weakly damped DC loop is locally asymptotically stable, but its Jacobian is on the 4×4 Routh
 boundary. Off the boundary the translation is exact
 (`exactUnder_offBoundary_locallyAsymptoticallyStable`). -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exactUnder_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem not_exactUnder_locallyAsymptoticallyStable :
     connection% (¬ family.ExactUnder {.equilibrium, .positiveReference}
       (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -868,8 +859,7 @@ boundary. Off the boundary the translation is exact
 /-! ## The witnesses lie on the Routh boundary -/
 
 /-- The three boundary witnesses are equilibria with positive DC-voltage reference. -/
-@[tmio M]
-@[powerlib_foundation] theorem boundaryWitnesses_mem_realize :
+@[tmio M, powerlib_foundation] theorem boundaryWitnesses_mem_realize :
     connection% ({hopfCenter, hopfDamped, cdcZero} ⊆
       TMIO.realize Meets {.equilibrium, .positiveReference}) := by
   unfold powerlib.TMIO.Statement
@@ -887,8 +877,7 @@ boundary. Off the boundary the translation is exact
 
 /-- None of the three boundary witnesses is off the 4×4 Routh boundary: their Jacobians neither
 meet the Routh conditions nor violate them strictly. -/
-@[tmio M]
-@[powerlib_foundation] theorem boundaryWitnesses_not_mem_realize_offBoundary :
+@[tmio M, powerlib_foundation] theorem boundaryWitnesses_not_mem_realize_offBoundary :
     connection% ({hopfCenter, hopfDamped, cdcZero} ⊆
       (TMIO.realize Meets {.offBoundary})ᶜ) := by
   unfold powerlib.TMIO.Statement

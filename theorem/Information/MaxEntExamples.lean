@@ -38,7 +38,7 @@ section Geometric
 
 variable {q : ℝ}
 
-@[powerlib_foundation] theorem geometric_partition (hq0 : 0 ≤ q) (hq1 : q < 1) :
+@[tmio T, powerlib_foundation] theorem geometric_partition (hq0 : 0 ≤ q) (hq1 : q < 1) :
     HasSum (fun n : ℕ => q ^ (n + 1)) (q / (1 - q)) := by
   have h := (hasSum_geometric_of_lt_one hq0 hq1).mul_left q
   simpa [pow_succ', div_eq_mul_inv] using h

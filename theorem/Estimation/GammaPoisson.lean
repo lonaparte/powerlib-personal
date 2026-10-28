@@ -36,7 +36,7 @@ def poissonIIDKernel (N : ℕ) : Kernel ℝ (Fin N → ℕ) where
 instance (N : ℕ) : IsMarkovKernel (poissonIIDKernel N) :=
   ⟨fun θ => by simp only [poissonIIDKernel, Kernel.coe_mk]; infer_instance⟩
 
-@[powerlib_foundation] theorem poissonIIDKernel_singleton (N : ℕ) {θ : ℝ} (hθ : 0 ≤ θ)
+@[tmio T, powerlib_foundation] theorem poissonIIDKernel_singleton (N : ℕ) {θ : ℝ} (hθ : 0 ≤ θ)
     (d : Fin N → ℕ) :
     poissonIIDKernel N θ {d} =
       ENNReal.ofReal (exp (-(N * θ)) * θ ^ (∑ i, d i) / ∏ i, ((d i).factorial : ℝ)) := by

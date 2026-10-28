@@ -34,7 +34,7 @@ open Matrix
 variable {m : ℕ}
 
 /-- `|v|² ≤ m ‖v‖²` (sup norm). -/
-@[powerlib_foundation] theorem dotProduct_self_le_card_mul_norm_sq (v : Fin m → ℝ) :
+@[tmio T, powerlib_foundation] theorem dotProduct_self_le_card_mul_norm_sq (v : Fin m → ℝ) :
     v ⬝ᵥ v ≤ m * ‖v‖ ^ 2 := by
   have h : ∀ i, v i * v i ≤ ‖v‖ ^ 2 := fun i => by
     have h1 : |v i| ≤ ‖v‖ := by simpa [Real.norm_eq_abs] using norm_le_pi_norm v i

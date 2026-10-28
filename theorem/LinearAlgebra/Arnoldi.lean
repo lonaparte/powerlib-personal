@@ -43,7 +43,7 @@ local notation "⟪" x ", " y "⟫" => @inner 𝕜 _ _ x y
 def arnoldiResidual {k : ℕ} (T : E →ₗ[𝕜] E) (q : Fin (k + 1) → E) : E :=
   T (q (Fin.last k)) - ∑ i, ⟪q i, T (q (Fin.last k))⟫ • q i
 
-@[powerlib_foundation] theorem inner_arnoldiResidual {k : ℕ} (T : E →ₗ[𝕜] E)
+@[tmio T, powerlib_foundation] theorem inner_arnoldiResidual {k : ℕ} (T : E →ₗ[𝕜] E)
     {q : Fin (k + 1) → E} (hq : Orthonormal 𝕜 q) (i : Fin (k + 1)) :
     ⟪q i, arnoldiResidual T q⟫ = 0 := by
   unfold arnoldiResidual

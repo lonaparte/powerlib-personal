@@ -33,7 +33,7 @@ namespace powerlib.Dynamics
 `c` at zero, the energy `1 − cos (y i) + w` is positive at every state `y ≠ c` on the strip
 `|y i| < 2π` whose remainder `w` dominates a positive multiple `a` of the squared distance from `y`
 to `c` in the other coordinates, `‖y − c‖² − (y i)²`. -/
-@[powerlib_foundation] theorem pendulumEnergy_pos {n : ℕ} (i : Fin n) {c y : State n} {a w : ℝ}
+@[tmio T, powerlib_foundation] theorem pendulumEnergy_pos {n : ℕ} (i : Fin n) {c y : State n} {a w : ℝ}
     (ha : 0 < a) (hc : c i = 0) (hw : a * (‖y - c‖ ^ 2 - y i ^ 2) ≤ w)
     (hy : |y i| < 2 * Real.pi) (hne : y ≠ c) : 0 < 1 - Real.cos (y i) + w := by
   have hi : y i ^ 2 ≤ ‖y - c‖ ^ 2 := by

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check/query source-authored connection theorems' @[tmio ...] attributes.
+"""Check/query all source-authored theorems' explicit @[tmio ...] attributes.
 
 No classification table is maintained. Lean's registered attribute is the source
 of ownership; this standard-library preflight reads its explicit source notation
@@ -93,7 +93,7 @@ def attribute_kinds(body: str) -> list[str]:
     return [item[4:].strip() for item in items if re.match(r'tmio\b', item)]
 
 
-def scan_connections(root: Path) -> dict[str, dict]:
+def scan_theorems(root: Path) -> dict[str, dict]:
     found = {}
     for path in sorted((root / 'theorem').rglob('*.lean')):
         code = code_only(path.read_text(encoding='utf-8'))
@@ -114,8 +114,7 @@ def scan_connections(root: Path) -> dict[str, dict]:
             pos += len(line)
         declarations = list(DECLARATION.finditer(declaration_code))
         for index, match in enumerate(declarations):
-            if 'private' in match['mods'].split():
-                continue
+            private = 'private' in match['mods'].split()
             limit = declarations[index+1].start() if index+1 < len(declarations) else len(code)
             depth, stop = 0, None
             for i in range(match.end(), limit):
@@ -126,9 +125,8 @@ def scan_connections(root: Path) -> dict[str, dict]:
                 elif code[i] in ')]}⦄':
                     depth -= 1
             header = code[match.end():stop if stop is not None else limit]
-            if not re.search(r'\bconnection%\s*\(', header):
-                continue
-            if stop is None:
+            connection = bool(re.search(r'\bconnection%\s*\(', header))
+            if connection and stop is None:
                 raise ClassificationError(f'Cannot parse connection declaration: {path}:{match["name"]}')
             namespace = namespaces[bisect.bisect_right(starts, match.start())-1]
             name = match['name']
@@ -136,31 +134,52 @@ def scan_connections(root: Path) -> dict[str, dict]:
                 name = name.removeprefix('_root_.')
             elif namespace:
                 name = namespace + '.' + name
-            if name in found:
-                raise ClassificationError(f'Duplicate source connection: {name}')
-            kinds, before = [], match.start('kind')
+            kinds, before, block_count = [], match.start('kind'), 0
             for start, end, body in reversed(spans):
                 if end > before:
                     continue
                 between = code[end:before]
                 if not re.fullmatch(r'\s*' + MODIFIERS, between):
                     break
+                block_count += 1
                 kinds[:0] = attribute_kinds(body)
                 before = start
             relative = path.relative_to(root).as_posix()
-            found[name] = {'name':name,'module':relative[:-5].replace('/', '.'),
-                           'path':relative,'line':code.count('\n',0,match.start('kind'))+1,
-                           'kinds':kinds}
+            module = relative[:-5].replace('/', '.')
+            line = code.count('\n',0,match.start('kind'))+1
+            # Lean's generated private names are available only after elaboration.
+            # Keep the source spelling and a disambiguating location in source queries.
+            key = f'{module}::{name}@{line}' if private else name
+            if key in found:
+                raise ClassificationError(f'Duplicate source theorem: {name}')
+            found[key] = {'name':name,'module':module,'path':relative,'line':line,
+                          'kinds':kinds,'private':private,'connection':connection,
+                          'attribute_block_count':block_count}
     return found
 
 
+def scan_connections(root: Path) -> dict[str, dict]:
+    return {key:entry for key, entry in scan_theorems(root).items()
+            if entry['connection'] and not entry['private']}
+
+
+def scan_classified(root: Path) -> dict[str, dict]:
+    return {key:entry for key, entry in scan_theorems(root).items() if entry['kinds']}
+
+
 def validate(root: Path) -> dict[str, int]:
-    entries = scan_connections(root)
+    all_theorems = scan_theorems(root)
+    entries = {key:e for key,e in all_theorems.items() if e['connection'] and not e['private']}
     if not entries:
         raise ClassificationError('No source connection theorems found')
     errors = []
-    for entry in entries.values():
+    for key, entry in all_theorems.items():
         kinds = entry['kinds']
+        if not kinds and key not in entries:
+            continue
+        if entry['attribute_block_count'] > 1:
+            errors.append(f'{entry["path"]}:{entry["line"]} {entry["name"]}: '
+                          'Lean requires one attribute block; merge tmio and existing attributes into @[...,...]')
         if len(kinds) != 1:
             errors.append(f'{entry["path"]}:{entry["line"]} {entry["name"]}: '
                           f'expected exactly one @[tmio ...], found {kinds}')
@@ -183,17 +202,23 @@ def main() -> int:
         if args.command == 'check':
             print(f'POWERLIB_TMIO_SOURCE_OK: {sum(counts.values())} connection theorems; ' +
                   ', '.join(f'{kind} {counts[kind]}' for kind in KINDS))
+            classified = scan_classified(root)
+            all_counts = Counter(e['kinds'][0] for e in classified.values())
+            print(f'POWERLIB_TMIO_TAGS_OK: {len(classified)} classified theorems; ' +
+                  ', '.join(f'{kind} {all_counts[kind]}' for kind in KINDS))
         elif args.command == 'list':
             if args.query not in KINDS:
                 raise ClassificationError('list requires T, M, TM, MI or IO')
-            for entry in scan_connections(root).values():
+            for entry in scan_classified(root).values():
                 if entry['kinds'] == [args.query]:
-                    print(f'{args.query}\t{entry["path"]}:{entry["line"]}\t{entry["name"]}')
+                    visibility = ' (private)' if entry['private'] else ''
+                    print(f'{args.query}\t{entry["path"]}:{entry["line"]}\t{entry["name"]}{visibility}')
         else:
-            entries = scan_connections(root)
-            if args.query not in entries:
-                raise ClassificationError(f'No source connection named {args.query}')
-            print(json.dumps(entries[args.query],ensure_ascii=False,indent=2))
+            entries = scan_classified(root)
+            matches = [e for key,e in entries.items() if key == args.query or e['name'] == args.query]
+            if not matches:
+                raise ClassificationError(f'No classified source theorem named {args.query}')
+            print(json.dumps(matches[0] if len(matches) == 1 else matches,ensure_ascii=False,indent=2))
         return 0
     except (ClassificationError, OSError) as error:
         print(f'TMIO classification error: {error}',file=sys.stderr)

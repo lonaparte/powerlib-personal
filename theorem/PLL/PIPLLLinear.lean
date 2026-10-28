@@ -40,7 +40,7 @@ open Matrix
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 /-- Characteristic equation `μ² − K_p g μ − K_i g = 0` of every eigenvalue of the Jacobian. -/
-@[powerlib_foundation] theorem piPLLJacobian_eigenvalue_char {Kp Ki g : ℝ} {μ : ℂ}
+@[tmio M, powerlib_foundation] theorem piPLLJacobian_eigenvalue_char {Kp Ki g : ℝ} {μ : ℂ}
     {v : Fin 2 → ℂ} (hv : v ≠ 0)
     (heig : (piPLLJacobian Kp Ki g).map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
     μ ^ 2 - (Kp * g : ℝ) * μ - (Ki * g : ℝ) = 0 := by

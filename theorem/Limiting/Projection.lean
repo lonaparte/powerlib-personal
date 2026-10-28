@@ -122,7 +122,7 @@ def radialLimit (I : ℝ) (x : E) : E := if ‖x‖ ≤ I then x else (I / ‖x�
   · have hpos : 0 < ‖a - b‖ := lt_of_le_of_ne (norm_nonneg _) (Ne.symm hab)
     nlinarith
 
-@[powerlib_foundation] theorem radialLimit_lipschitz {I : ℝ} (hI : 0 ≤ I) :
+@[tmio T, powerlib_foundation] theorem radialLimit_lipschitz {I : ℝ} (hI : 0 ≤ I) :
     LipschitzWith 1 (radialLimit (E := E) I) :=
   LipschitzWith.of_dist_le_mul fun x y => by
     simpa [dist_eq_norm] using radialLimit_dist_le hI x y

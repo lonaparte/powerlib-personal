@@ -81,6 +81,7 @@ variable (p : SwingParams)
 
 /-- Energy is conserved along every solution of the undamped (`D = 0`) swing equation.
 Implementation evidence: trajectory-level result outside the sentence language (Rules §3a). -/
+@[tmio M]
 private theorem energy_conserved (hM : p.M ≠ 0) (hD : p.D = 0) (δ₀ : ℝ)
     {φ : ℝ → State 2} {a : ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => p.field x) (Ici a)) :

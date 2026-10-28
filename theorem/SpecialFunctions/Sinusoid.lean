@@ -43,7 +43,7 @@ def saddleRoot (c A φ a : ℝ) : ℝ := toIcoMod two_pi_pos a (π - arcsin (c /
 section
 variable {c A φ a : ℝ}
 
-@[powerlib_foundation] theorem stableRoot_mem : stableRoot c A φ a ∈ Ico a (a + 2 * π) :=
+@[tmio T, powerlib_foundation] theorem stableRoot_mem : stableRoot c A φ a ∈ Ico a (a + 2 * π) :=
   toIcoMod_mem_Ico _ _ _
 
 @[powerlib_foundation] theorem saddleRoot_mem : saddleRoot c A φ a ∈ Ico a (a + 2 * π) :=

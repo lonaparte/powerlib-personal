@@ -95,7 +95,7 @@ def seriesRLC_kirchhoffField (p : SeriesRLCParams) (x : Fin 2 → ℝ) (u : Fin 
 
 /-- (1.11): the pH vector field `(J − R)∇H + g u` is exactly the Kirchhoff field.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem seriesRLC_field_eq_kirchhoff (p : SeriesRLCParams)
+@[tmio M, powerlib_foundation] theorem seriesRLC_field_eq_kirchhoff (p : SeriesRLCParams)
     (x : Fin 2 → ℝ) (u : Fin 1 → ℝ) :
     (seriesRLC p).field x u = seriesRLC_kirchhoffField p x u := by
   ext i
@@ -177,22 +177,19 @@ Static evidence on the model, not a connection conclusion. -/
     linarith
 
 /-- Passivity of the series RLC loop; the storage is `H` (`toPH_storage`). -/
-@[tmio TM]
-@[powerlib_domain] theorem seriesRLCPH_mem_den_passive (p : SeriesRLCParams) :
+@[tmio TM, powerlib_domain] theorem seriesRLCPH_mem_den_passive (p : SeriesRLCParams) :
     connection% (seriesRLCPH p ∈ Port.PortHamiltonian.family.den .passive) :=
   Port.PortHamiltonian.mem_den_passive _
 
 /-- Lyapunov stability of the zero-input origin for every `r ≥ 0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem seriesRLCPH_mem_den_lyapunovStable (p : SeriesRLCParams) :
+@[tmio TM, powerlib_domain] theorem seriesRLCPH_mem_den_lyapunovStable (p : SeriesRLCParams) :
     connection% (seriesRLCPH p ∈ Port.PortHamiltonian.family.den (.flow .lyapunovStable)) :=
   Port.PortHamiltonian.mem_den_lyapunovStable _
 
 /-- Every attractive sentence (local or global, asymptotic or exponential) and sampled
 contraction hold for the zero-input loop **iff** `r > 0` (the lossless loop `r = 0` is a
 centre). -/
-@[tmio TM]
-@[powerlib_domain] theorem seriesRLCPH_mem_den_iff (p : SeriesRLCParams) {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem seriesRLCPH_mem_den_iff (p : SeriesRLCParams) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (seriesRLCPH p ∈ Port.PortHamiltonian.family.den (.flow P) ↔ 0 < p.r) := by
   unfold powerlib.TMIO.Statement
@@ -200,8 +197,7 @@ centre). -/
   exact seriesRLCPH_isHurwitz_iff p
 
 /-- `r > 0`: the zero-input loop is globally exponentially stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem seriesRLCPH_mem_den_globallyExponentiallyStable (p : SeriesRLCParams)
+@[tmio TM, powerlib_domain] theorem seriesRLCPH_mem_den_globallyExponentiallyStable (p : SeriesRLCParams)
     (hr : 0 < p.r) :
     connection% (seriesRLCPH p ∈
       Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable)) :=
@@ -209,8 +205,7 @@ centre). -/
 
 /-- `r > 0`: every zero-input solution segment decays at one positive exponential rate, with one
 constant for all segments. -/
-@[tmio TM]
-@[powerlib_domain] theorem seriesRLCPH_exists_decay (p : SeriesRLCParams) (hr : 0 < p.r) :
+@[tmio TM, powerlib_domain] theorem seriesRLCPH_exists_decay (p : SeriesRLCParams) (hr : 0 < p.r) :
     connection% (∃ a : ℝ, 0 < a ∧
       seriesRLCPH p ∈ Port.PortHamiltonian.family.den (.flow (.decay a))) := by
   unfold powerlib.TMIO.Statement
@@ -221,8 +216,7 @@ constant for all segments. -/
   exact ⟨a, ha, Port.PortHamiltonian.family_isLinear.mem_den_flow.mpr hd⟩
 
 /-- The lossless loop `r = 0` conserves its energy `H`. -/
-@[tmio TM]
-@[powerlib_domain] theorem seriesRLCPH_mem_den_conservative (p : SeriesRLCParams)
+@[tmio TM, powerlib_domain] theorem seriesRLCPH_mem_den_conservative (p : SeriesRLCParams)
     (hr : p.r = 0) :
     connection% (seriesRLCPH p ∈ Port.PortHamiltonian.family.den (.flow .conservative)) := by
   refine mem_den_conservative_of_lossless _ (DiagonalPH.toPH_R_eq_zero _ _ _ ?_)
@@ -230,8 +224,7 @@ constant for all segments. -/
   fin_cases i <;> simp [seriesRLC, hr]
 
 /-- The lossless loop `r = 0` is not locally asymptotically stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem seriesRLCPH_not_mem_den_locallyAsymptoticallyStable
+@[tmio TM, powerlib_domain] theorem seriesRLCPH_not_mem_den_locallyAsymptoticallyStable
     (p : SeriesRLCParams) (hr : p.r = 0) :
     connection% (seriesRLCPH p ∉
       Port.PortHamiltonian.family.den (.flow .locallyAsymptoticallyStable)) := by

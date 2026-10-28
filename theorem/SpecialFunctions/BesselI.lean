@@ -63,7 +63,7 @@ def besselSeries0 (w : ℂ) : ℂ := ∑' k : ℕ, w ^ k / ((k ! : ℂ) ^ 2)
 def besselSeries1 (w : ℂ) : ℂ := ∑' k : ℕ, w ^ k / ((k ! : ℂ) * ((k + 1) ! : ℂ))
 
 /-- The exponential tail `Σ_{k ≥ 2} x^k/k! = eˣ − 1 − x`. -/
-@[powerlib_foundation] theorem hasSum_exp_tail (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasSum_exp_tail (x : ℝ) :
     HasSum (fun k : ℕ => x ^ (k + 2) / ((k + 2) ! : ℝ)) (Real.exp x - 1 - x) := by
   have h := NormedSpace.expSeries_div_hasSum_exp (𝔸 := ℝ) x
   rw [← Real.exp_eq_exp_ℝ] at h

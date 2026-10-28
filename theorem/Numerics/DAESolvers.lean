@@ -70,7 +70,7 @@ variable {Z W : Type*} [NormedAddCommGroup Z] [NormedSpace ℝ Z] [NormedAddComm
 def bdfResidual (F : Z × Z → W) (c : ℝ) (d z : Z) : W := F (z, c • z + d)
 
 /-- `∂Φ/∂z = ∂F/∂z + c · ∂F/∂ż` (`c = α_k/(hβ_k)`). -/
-@[powerlib_foundation] theorem bdfResidual_hasFDerivAt {F : Z × Z → W} {F' : Z × Z →L[ℝ] W}
+@[tmio T, powerlib_foundation] theorem bdfResidual_hasFDerivAt {F : Z × Z → W} {F' : Z × Z →L[ℝ] W}
     {c : ℝ} {d z : Z} (hF : HasFDerivAt F F' (z, c • z + d)) :
     HasFDerivAt (bdfResidual F c d)
       (F'.comp (ContinuousLinearMap.inl ℝ Z Z) +

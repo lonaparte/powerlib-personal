@@ -83,8 +83,7 @@ locally exponentially stable network (unit inertia and damping, no injection, un
 every pair of machines, `θ* = 0`) integrated with a large enough step is not locally exponentially
 stable: every Euler multiplier `1 + hλ` leaves the unit disk
 (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ (euler (n := n)).RealizationSoundUnder ∅
       (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement

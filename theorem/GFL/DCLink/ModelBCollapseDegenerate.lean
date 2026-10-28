@@ -64,7 +64,7 @@ namespace ModelBParams
 
 variable (p : ModelBParams)
 
-@[powerlib_foundation] theorem contDiff_planeG : ContDiff ℝ 1 p.planeG := by
+@[tmio M, powerlib_foundation] theorem contDiff_planeG : ContDiff ℝ 1 p.planeG := by
   show ContDiff ℝ 1 fun y : State 4 => 3 / 2 * (p.dP0 y *
     (p.ωs - p.ωg + p.kp * p.vgq (y 0) (p.idRef (y 2) (y 3)) + p.ki * y 1) +
       p.dP3 y * (p.VdcRef - y 2)) / p.Cdc
@@ -154,8 +154,7 @@ private theorem mem_den_flow_iff'' {m : Model} {P : Flow.Property} :
 
 /-- **Degenerate node, `D = 0`, `H ≠ 0`: instability.** A selected state on the singular plane
 (`V_dc* = 0`) with `P(x*) = 0`, `H² + 4G = 0` and `H ≠ 0` is unstable. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_unstable_of_disc_eq_zero (m : Model) (hx : m.x 2 = 0)
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_disc_eq_zero (m : Model) (hx : m.x 2 = 0)
     (hP : m.p.pccP m.x = 0) (hD : m.p.planeDisc m.x = 0) (hH : m.p.planeH m.x ≠ 0) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
@@ -164,8 +163,7 @@ private theorem mem_den_flow_iff'' {m : Model} {P : Flow.Property} :
 /-- **Nilpotent plane point with drift: no local exponential estimate.** A selected state on the
 singular plane with `P(x*) = 0`, `H = G = 0` and `(f_Δθ, f_pll, f_ξ)(x*) ≠ 0` is not locally
 exponentially stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_mem_den_locallyExponentiallyStable_of_nilpotent (m : Model)
+@[tmio TM, powerlib_domain] theorem not_mem_den_locallyExponentiallyStable_of_nilpotent (m : Model)
     (hx : m.x 2 = 0) (hP : m.p.pccP m.x = 0) (hH : m.p.planeH m.x = 0)
     (hG : m.p.planeG m.x = 0)
     (hF : m.p.field m.x 0 ≠ 0 ∨ m.p.field m.x 1 ≠ 0 ∨ m.p.field m.x 3 ≠ 0) :
@@ -181,8 +179,7 @@ def degenerateNode : Model :=
   ⟨⟨0, 0, 1, 1, 3 / 2, 3 / 2, -1 / 4, 0, 1, 1, 0, 0, 0⟩, WithLp.toLp 2 ![0, 0, 0, 0]⟩
 
 /-- The degenerate node is unstable. -/
-@[tmio TM]
-@[powerlib_domain] theorem degenerateNode_mem_den_unstable :
+@[tmio TM, powerlib_domain] theorem degenerateNode_mem_den_unstable :
     connection% (degenerateNode ∈ family.den (.flow .unstable)) := by
   have h := mem_den_unstable_of_disc_eq_zero degenerateNode
     (by simp [degenerateNode])
@@ -205,8 +202,7 @@ def nilpotentDrift : Model :=
   ⟨⟨0, 0, 1, 1, 3 / 2, 3 / 2, 0, 1, 1, 1, 0, 0, 0⟩, WithLp.toLp 2 ![0, 1, 0, 0]⟩
 
 /-- The nilpotent plane point with drift is not locally exponentially stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem nilpotentDrift_not_mem_den_locallyExponentiallyStable :
+@[tmio TM, powerlib_domain] theorem nilpotentDrift_not_mem_den_locallyExponentiallyStable :
     connection% (nilpotentDrift ∉ family.den (.flow .locallyExponentiallyStable)) := by
   have h := not_mem_den_locallyExponentiallyStable_of_nilpotent nilpotentDrift
     (by simp [nilpotentDrift])
@@ -227,8 +223,7 @@ state with `V_dc* = 0` outside the residual set
 `{P(x*) = 0, I₀ / C_dc ≠ 0, H(x*) = 0, f_Δθ(x*) = f_pll(x*) = f_ξ(x*) = 0}`, the segment-based
 local exponential estimate holds exactly when `I₀ / C_dc ≠ 0` and either `P / C_dc < 0` or
 (`P = 0` and `H² + 4G < 0`). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nonresidual
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nonresidual
     (m : Model) (hx : m.x 2 = 0)
     (hres : m.p.pccP m.x = 0 → m.p.I0 / m.p.Cdc ≠ 0 → m.p.planeH m.x = 0 →
       m.p.field m.x 0 ≠ 0 ∨ m.p.field m.x 1 ≠ 0 ∨ m.p.field m.x 3 ≠ 0) :
@@ -263,8 +258,7 @@ local exponential estimate holds exactly when `I₀ / C_dc ≠ 0` and either `P 
 /-- **Complete characterization on the singular plane for a nonzero reference.** If
 `V_dc,ref ≠ 0`, a selected state with `V_dc* = 0` is locally exponentially stable exactly when
 `I₀ / C_dc ≠ 0` and either `P / C_dc < 0` or (`P = 0` and `H² + 4G < 0`). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_VdcRef
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_VdcRef
     (m : Model) (hx : m.x 2 = 0) (hV : m.p.VdcRef ≠ 0) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable) ↔
       m ∈ {m : Model | m.p.I0 / m.p.Cdc ≠ 0 ∧ (m.p.pccP m.x / m.p.Cdc < 0 ∨

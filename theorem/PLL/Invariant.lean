@@ -60,7 +60,7 @@ open powerlib.PLL.PIPLL (srf)
 
 /-- First-order `(θ, ξ)` system ⇒ second-order pendulum: along any solution of `xiField`,
 `θ̇ = Δω − a sin θ + b ξ` and `θ̈ = −a cos θ · θ̇ − b sin θ`. -/
-@[powerlib_foundation] theorem xiField_pendulum {a b Δω : ℝ} {φ : ℝ → State 2}
+@[tmio M, powerlib_foundation] theorem xiField_pendulum {a b Δω : ℝ} {φ : ℝ → State 2}
     (hφ : ∀ t, HasDerivAt φ (xiField a b Δω (φ t)) t) (t : ℝ) :
     HasDerivAt (fun τ => φ τ 0) (Δω - a * Real.sin (φ t 0) + b * φ t 1) t ∧
       HasDerivAt (fun τ => Δω - a * Real.sin (φ τ 0) + b * φ τ 1)
@@ -101,16 +101,14 @@ gains `(a, b)` and offset `−Δω`. -/
 /-- `(θ_err, ξ)` model (T-invariant-coordinates §1.2, T-gfl-multiscale §1.3): for
 `a = V K_p > 0`, `b = V K_i > 0` the equilibria `(2kπ, −Δω/b)` are locally exponentially
 stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem xi_mem_den_locallyExponentiallyStable {a b : ℝ} (ha : 0 < a)
+@[tmio TM, powerlib_domain] theorem xi_mem_den_locallyExponentiallyStable {a b : ℝ} (ha : 0 < a)
     (hb : 0 < b) (Δω : ℝ) (k : ℤ) :
     connection% (srf 1 a b (-Δω) (2 * k * Real.pi) ∈
       PIPLL.family.den (.flow .locallyExponentiallyStable)) :=
   srf_mem_den_locallyExponentiallyStable_inPhase (by simpa using ha) (by simpa using hb) (-Δω) k
 
 /-- `(θ_err, ξ)` model: for `b > 0` the equilibria `((2k+1)π, −Δω/b)` are saddles, unstable. -/
-@[tmio TM]
-@[powerlib_domain] theorem xi_mem_den_unstable_antiPhase {a b : ℝ} (hb : 0 < b) (Δω : ℝ)
+@[tmio TM, powerlib_domain] theorem xi_mem_den_unstable_antiPhase {a b : ℝ} (hb : 0 < b) (Δω : ℝ)
     (k : ℤ) :
     connection% (srf 1 a b (-Δω) ((2 * k + 1) * Real.pi) ∈
       PIPLL.family.den (.flow .unstable)) :=

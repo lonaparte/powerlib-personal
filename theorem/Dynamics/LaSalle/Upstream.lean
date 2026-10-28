@@ -72,7 +72,7 @@ local notation "ℝⁿ" => State n
 /-- `{x ∈ Ω | fderiv ℝ V x (f x) = 0}` (upstream `_root_.LieDerivZeroSet`). -/
 abbrev LieDerivZeroSet := @_root_.LieDerivZeroSet
 
-@[powerlib_foundation] theorem lieDerivZeroSet_def (f : ℝⁿ → ℝⁿ) (V : ℝⁿ → ℝ) (Ω : Set ℝⁿ) :
+@[tmio T, powerlib_foundation] theorem lieDerivZeroSet_def (f : ℝⁿ → ℝⁿ) (V : ℝⁿ → ℝ) (Ω : Set ℝⁿ) :
     LieDerivZeroSet f V Ω = {x ∈ Ω | fderiv ℝ V x (f x) = 0} := rfl
 
 /-- Membership in the ω-limit set `_root_.omegaLimitTraj φ` of a forward trajectory `φ`

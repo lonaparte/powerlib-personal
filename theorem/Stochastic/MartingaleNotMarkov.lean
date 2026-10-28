@@ -42,7 +42,7 @@ def coin2 : Measure (Bool × Bool) := coin.prod coin
 
 instance : IsProbabilityMeasure coin2 := by unfold coin2; infer_instance
 
-@[powerlib_foundation] theorem integral_coin (f : Bool → ℝ) :
+@[tmio T, powerlib_foundation] theorem integral_coin (f : Bool → ℝ) :
     ∫ b, f b ∂coin = (f true + f false) / 2 := by
   rw [integral_fintype Integrable.of_finite]
   simp [coin, Measure.real, PMF.uniformOfFintype_apply]

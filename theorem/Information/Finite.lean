@@ -51,7 +51,7 @@ def gibbsVec (q g : ι → ℝ) (i : ι) : ℝ := q i * exp (g i) / partitionSum
 /-- Boltzmann–Gibbs law `exp(-β Eᵢ) / Z(β)` (uniform reference). -/
 def boltzmann (β : ℝ) (E : ι → ℝ) : ι → ℝ := gibbsVec (fun _ => 1) (fun i => -β * E i)
 
-@[powerlib_foundation] theorem shannon_eq_neg_klSum_one (p : ι → ℝ) :
+@[tmio T, powerlib_foundation] theorem shannon_eq_neg_klSum_one (p : ι → ℝ) :
     shannon p = -klSum p (fun _ => 1) := by
   simp [shannon, klSum, negMulLog, Finset.sum_neg_distrib]
 

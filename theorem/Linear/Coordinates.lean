@@ -37,7 +37,7 @@ def conjugate (s : Port.System n p) (L K : ℝⁿ →L[ℝ] ℝⁿ) : Port.Syste
   ⟨fun x u => L (s.field (K x) u), fun x u => s.output (K x) u⟩
 
 /-- Storage pulls back along the inverse coordinates; input and supplied power are preserved. -/
-@[powerlib_foundation] theorem passiveWith_conjugate (s : Port.System n p)
+@[tmio T, powerlib_foundation] theorem passiveWith_conjugate (s : Port.System n p)
     (L K : ℝⁿ →L[ℝ] ℝⁿ) (hKL : ∀ x, K (L x) = x) {V : ℝⁿ → ℝ}
     (h : s.PassiveWith V) : (s.conjugate L K).PassiveWith (V ∘ K) := by
   refine ⟨fun x => h.1 _, fun u φ t₀ t₁ ht hφ hi => ?_⟩
@@ -101,7 +101,7 @@ variable {X Y Q R : Type*} {F : Family X Q n p} {G : Family Y R n p}
     {plant : X → Plant n p} {plant' : Y → Plant n p}
 
 /-- All denotations are invariant when system maps are read in similar state coordinates. -/
-@[powerlib_foundation] theorem IsLinear.den_similar (hF : F.IsLinear plant)
+@[tmio TM, powerlib_foundation] theorem IsLinear.den_similar (hF : F.IsLinear plant)
     (hG : G.IsLinear plant') (g : X → Y) (hg : ∀ x, Similar (plant x) (plant' (g x)))
     (s : Sentence) : g ⁻¹' G.den s = F.den s := by
   ext x

@@ -58,7 +58,7 @@ variable {Θ : Type*} {mΘ : MeasurableSpace Θ}
 
 /-- **Bayes' theorem for events.** Wrapper of Mathlib
 `ProbabilityTheory.cond_eq_inv_mul_cond_mul`. -/
-@[powerlib_foundation] theorem bayes_cond {s t : Set Θ} (hs : MeasurableSet s)
+@[tmio T, powerlib_foundation] theorem bayes_cond {s t : Set Θ} (hs : MeasurableSet s)
     (ht : MeasurableSet t) (μ : Measure Θ) [IsFiniteMeasure μ] :
     μ[t | s] = (μ s)⁻¹ * μ[s | t] * μ t :=
   cond_eq_inv_mul_cond_mul hs ht μ

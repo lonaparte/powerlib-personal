@@ -44,7 +44,7 @@ variable {K : Type*} [Field K] {n : Type*} [Fintype n] [DecidableEq n]
 /-! ## Geometric versus algebraic multiplicity -/
 
 /-- `m_g(λ) ≤ m_a(λ)` (wraps `LinearMap.finrank_eigenspace_le`). -/
-@[powerlib_foundation] theorem geom_le_alg (A : Matrix n n K) (lam : K) :
+@[tmio T, powerlib_foundation] theorem geom_le_alg (A : Matrix n n K) (lam : K) :
     finrank K (Module.End.eigenspace (Matrix.toLin' A) lam) ≤ A.charpoly.rootMultiplicity lam := by
   have := LinearMap.finrank_eigenspace_le (Matrix.toLin' A) lam
   rwa [Matrix.charpoly_toLin'] at this

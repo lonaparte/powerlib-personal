@@ -34,7 +34,7 @@ namespace powerlib.Limiting
 /-- `I_omag(δ) = √(E² + V² − 2 E V cos δ)/X`. -/
 def iMag (E V X δ : ℝ) : ℝ := Real.sqrt (E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ) / X
 
-@[powerlib_foundation] theorem iMag_radicand (E V δ : ℝ) :
+@[tmio T, powerlib_foundation] theorem iMag_radicand (E V δ : ℝ) :
     E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ =
       (V - E * Real.cos δ) ^ 2 + (E * Real.sin δ) ^ 2 := by
   have := Real.sin_sq_add_cos_sq δ

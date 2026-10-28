@@ -47,7 +47,7 @@ open scoped Topology
 /-! ## Decoupling residuals (IN-positive) -/
 
 /-- d-axis coupling left in the `L`-equation: geometric `+ω L i_q` minus `u_d^dec = ω̂ L̂ i_q`. -/
-@[powerlib_foundation] theorem residual_general (ω ωhat L Lhat iq : ℝ) :
+@[tmio T, powerlib_foundation] theorem residual_general (ω ωhat L Lhat iq : ℝ) :
     ω * L * iq - ωhat * Lhat * iq = (ω * L - ωhat * Lhat) * iq := by ring
 
 /-- q-axis coupling: geometric `−ω L i_d` minus `u_q^dec = −ω̂ L̂ i_d`. -/
@@ -88,8 +88,7 @@ variable (p : PIParams)
 
 /-- With `L > 0` and `Ki < 0` the PI current loop is unstable: `Ki/L < 0` makes the
 determinant of its state matrix negative (a real saddle mode). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_unstable_of_Ki_neg (hL : 0 < p.L) (hKi : p.Ki < 0) :
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_Ki_neg (hL : 0 < p.L) (hKi : p.Ki < 0) :
     connection% (p ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   obtain ⟨s, hs, hre⟩ := p.exists_root_of_unstable (Or.inr (div_neg_of_neg_of_pos hKi hL))

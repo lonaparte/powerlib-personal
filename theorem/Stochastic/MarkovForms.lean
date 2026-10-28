@@ -56,7 +56,7 @@ variable {Ω E : Type*} {m₁ m₂ : MeasurableSpace Ω} {mΩ : MeasurableSpace 
   {mE : MeasurableSpace E} {P : Measure Ω} [IsFiniteMeasure P]
 
 /-- For `m₂ ≤ m₁`, `E[Y | m₁] = E[Y | m₂]` a.e. iff `E[Y | m₁]` is a.e. `m₂`-measurable. -/
-@[powerlib_foundation] theorem condExp_eq_condExp_iff_aestronglyMeasurable (h₂₁ : m₂ ≤ m₁)
+@[tmio T, powerlib_foundation] theorem condExp_eq_condExp_iff_aestronglyMeasurable (h₂₁ : m₂ ≤ m₁)
     (h₁ : m₁ ≤ mΩ) {Y : Ω → ℝ} :
     P[Y | m₁] =ᵐ[P] P[Y | m₂] ↔ AEStronglyMeasurable[m₂] (P[Y | m₁]) P := by
   constructor

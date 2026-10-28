@@ -35,7 +35,7 @@ namespace powerlib.TMIO
 variable {A B C : Type*} [CompleteLattice A] [CompleteLattice B] [CompleteLattice C]
 
 /-- An arbitrary-infimum preserving map is monotone. -/
-@[powerlib_foundation] theorem sInfHom_monotone (u : sInfHom B A) : Monotone u :=
+@[tmio T, powerlib_foundation] theorem sInfHom_monotone (u : sInfHom B A) : Monotone u :=
   OrderHomClass.mono u
 
 @[powerlib_foundation] theorem le_map_sInf_setOf (u : sInfHom B A) (a : A) :

@@ -46,7 +46,7 @@ variable {n p : ℕ}
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- A storage whose rate along every solution is bounded by the supply proves passivity. -/
-@[powerlib_foundation] theorem System.passiveWith_of_rate (s : System n p) (V : ℝⁿ → ℝ)
+@[tmio T, powerlib_foundation] theorem System.passiveWith_of_rate (s : System n p) (V : ℝⁿ → ℝ)
     (hV : ∀ x, 0 ≤ V x) (rate : ℝⁿ → (Fin p → ℝ) → ℝ)
     (hderiv : ∀ (u : ℝ → Fin p → ℝ) (x : ℝ → ℝⁿ) (t₀ t₁ t : ℝ), s.IsTrajectoryOn u x t₀ t₁ →
       t ∈ Icc t₀ t₁ → HasDerivWithinAt (fun τ => V (x τ)) (rate (x t) (u t)) (Icc t₀ t₁) t)

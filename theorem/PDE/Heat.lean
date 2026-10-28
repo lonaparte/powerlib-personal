@@ -32,7 +32,7 @@ open Real Filter Topology
 def hadamard (ν : ℝ) (n : ℕ) (x t : ℝ) : ℝ := Real.exp (ν * n ^ 2 * t) * Real.sin (n * x) / n
 
 /-- `∂ₜ uₙ = νn² uₙ`. -/
-@[powerlib_foundation] theorem hasDerivAt_t (ν : ℝ) (n : ℕ) (x t : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_t (ν : ℝ) (n : ℕ) (x t : ℝ) :
     HasDerivAt (fun τ => hadamard ν n x τ) (ν * n ^ 2 * hadamard ν n x t) t := by
   unfold hadamard
   have h := ((hasDerivAt_id' t).const_mul (ν * n ^ 2)).exp

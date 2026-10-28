@@ -31,7 +31,7 @@ open scoped Matrix.Norms.L2Operator
 variable {k : ℕ}
 
 /-- **QR existence** (invertible `A`): `A = QR`, `QQᵀ = I`, `R` upper triangular, `Rᵢᵢ > 0`. -/
-@[powerlib_foundation] theorem qr_exists {A : Matrix (Fin k) (Fin k) ℝ} (hA : IsUnit A.det) :
+@[tmio T, powerlib_foundation] theorem qr_exists {A : Matrix (Fin k) (Fin k) ℝ} (hA : IsUnit A.det) :
     ∃ Q R : Matrix (Fin k) (Fin k) ℝ, Q ∈ orthogonalGroup (Fin k) ℝ ∧ R.IsUpperTriangular ∧
       (∀ i, 0 < R i i) ∧ A = Q * R := by
   have hinj : Function.Injective A.mulVec := (mulVec_injective_iff_isUnit).mpr

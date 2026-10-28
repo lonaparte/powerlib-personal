@@ -58,7 +58,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 open scoped Classical in
 /-- If node `i` has no positive-weight path to a grounded node, the indicator of its
 component lies in the kernel of the grounded Laplacian. -/
-@[powerlib_foundation] theorem grounded_mulVec_component_eq_zero {W : Matrix ι ι ℝ} {g : ι → ℝ}
+@[tmio T, powerlib_foundation] theorem grounded_mulVec_component_eq_zero {W : Matrix ι ι ℝ} {g : ι → ℝ}
     (hW : ∀ i j, W i j = W j i) (hpos : ∀ i j, 0 ≤ W i j) (hg : ∀ i, 0 ≤ g i) {i : ι}
     (hnot : ∀ k, Reach W i k → g k ≤ 0) :
     grounded W g *ᵥ (fun a => if Reach W i a then (1 : ℝ) else 0) = 0 := by
@@ -83,7 +83,7 @@ component lies in the kernel of the grounded Laplacian. -/
 open scoped Classical in
 /-- For symmetric nonnegative weights and nonnegative grounding, the grounded Laplacian
 is nonsingular exactly when every node reaches a grounded node. -/
-@[powerlib_foundation] theorem grounded_det_ne_zero_iff {W : Matrix ι ι ℝ} {g : ι → ℝ}
+@[tmio T, powerlib_foundation] theorem grounded_det_ne_zero_iff {W : Matrix ι ι ℝ} {g : ι → ℝ}
     (hW : ∀ i j, W i j = W j i) (hpos : ∀ i j, 0 ≤ W i j) (hg : ∀ i, 0 ≤ g i) :
     (grounded W g).det ≠ 0 ↔ GroundReachable W g := by
   constructor

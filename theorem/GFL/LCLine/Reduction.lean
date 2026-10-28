@@ -132,7 +132,7 @@ def lineMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![1 - p.b, -p.a; p.a, 1 - p.b]
 /-- The matrix printed in `reduction-pipeline.md` §4 (wrong (2,1) entry). -/
 def noteLineMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![1 - p.b, -p.a; -p.a, 1 - p.b]
 
-@[powerlib_foundation] theorem det_lineMatrix : p.lineMatrix.det = p.Δ := by
+@[tmio M, powerlib_foundation] theorem det_lineMatrix : p.lineMatrix.det = p.Δ := by
   simp [lineMatrix, Δ, Matrix.det_fin_two]; ring
 
 @[powerlib_foundation] theorem Δ_nonneg : 0 ≤ p.Δ := by

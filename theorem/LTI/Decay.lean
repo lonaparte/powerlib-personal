@@ -49,7 +49,7 @@ variable {k : ℕ}
 
 /-- A global coordinate solution of `ẋ = A x` is, on every interval, a solution segment of
 LeanForControl's affine linear field of `A` centred at the origin. -/
-@[powerlib_foundation] theorem isTrajectoryOn_toLp {A : Matrix (Fin k) (Fin k) ℝ}
+@[tmio T, powerlib_foundation] theorem isTrajectoryOn_toLp {A : Matrix (Fin k) (Fin k) ℝ}
     {x : ℝ → Fin k → ℝ} (hx : ∀ t, HasDerivAt x (A *ᵥ x t) t) (t₀ t₁ : ℝ) :
     IsTrajectoryOn (fun t => WithLp.toLp 2 (x t)) (affineLinearVectorField A 0) t₀ t₁ := by
   intro t _

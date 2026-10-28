@@ -52,7 +52,7 @@ def sparseNoise (c : Fin k → Fin n) (σ : Fin k → ℝ) : Matrix (Fin n) (Fin
 
 /-- For a sparse diffusion with distinct target coordinates, the Itô correction only sees the
 diagonal entries of the Hessian: `½ tr(Σ Σᵀ K) = ½ Σ_j σ_j² K_{c_j c_j}` (T-sync-machine (1.5)). -/
-@[powerlib_foundation] theorem itoCorrection_sparseNoise {c : Fin k → Fin n}
+@[tmio T, powerlib_foundation] theorem itoCorrection_sparseNoise {c : Fin k → Fin n}
     (σ : Fin k → ℝ) (K : Matrix (Fin n) (Fin n) ℝ) :
     itoCorrection (sparseNoise c σ) K = (1 / 2 : ℝ) * ∑ j, σ j ^ 2 * K (c j) (c j) := by
   unfold itoCorrection

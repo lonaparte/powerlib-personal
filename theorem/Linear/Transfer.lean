@@ -60,7 +60,7 @@ def SpectrallyStable {ι : Type*} [Fintype ι] [DecidableEq ι] (A : Matrix ι �
 
 /-- The characteristic determinant is the characteristic polynomial of the complexified matrix,
 on any finite index. -/
-@[powerlib_foundation] theorem det_characteristicMatrix_eq_eval {ι : Type*} [Fintype ι]
+@[tmio T, powerlib_foundation] theorem det_characteristicMatrix_eq_eval {ι : Type*} [Fintype ι]
     [DecidableEq ι] (A : Matrix ι ι ℝ) (s : ℂ) :
     (characteristicMatrix A s).det = (complexify A).charpoly.eval s := by
   rw [Matrix.eval_charpoly, characteristicMatrix, Matrix.scalar_apply, Matrix.smul_one_eq_diagonal]

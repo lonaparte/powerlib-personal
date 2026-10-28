@@ -243,7 +243,7 @@ def eulerFamily (F : Family X Q n 0) (f : X → ℝⁿ → ℝⁿ) (design : Y �
   meets y := F.meets (design y)
   translate := F.translate
 
-@[powerlib_foundation] theorem eulerFamily_isAutonomousMap (F : Family X Q n 0)
+@[tmio M, powerlib_foundation] theorem eulerFamily_isAutonomousMap (F : Family X Q n 0)
     (f : X → ℝⁿ → ℝⁿ) (design : Y → X) (step : Y → ℝ) :
     (eulerFamily F f design step).IsAutonomousMap step
       fun y => eulerMap (f (design y)) (step y) :=
@@ -295,8 +295,7 @@ private theorem hasFDerivAt_of_fderiv_eq {g : ℝⁿ → ℝⁿ} {J : Matrix (Fi
 family of autonomous fields, a locally exponentially stable model whose field is `C¹` near the
 origin has a step `h₀ > 0` such that every Euler implementation of it with a step in `(0, h₀]` is
 locally exponentially stable. The smoothness is asked of this model only. -/
-@[tmio MI]
-@[powerlib_domain] theorem euler_sound_small_step_local (hF : F.IsAutonomous f) {x : X}
+@[tmio MI, powerlib_domain] theorem euler_sound_small_step_local (hF : F.IsAutonomous f) {x : X}
     (hC : ContDiffAt ℝ 1 (f x) 0) (hx : x ∈ F.den (.flow .locallyExponentiallyStable)) :
     connection% (∃ h₀ : ℝ, 0 < h₀ ∧ ∀ y : Y, design y = x → step y ∈ Set.Ioc (0 : ℝ) h₀ →
       y ∈ (eulerFamily F f design step).den (.flow .locallyExponentiallyStable)) := by
@@ -311,8 +310,7 @@ locally exponentially stable. The smoothness is asked of this model only. -/
 /-- **Small steps realize local exponential stability.** In a family of autonomous `C¹` fields, a
 locally exponentially stable model has a step `h₀ > 0` such that every Euler implementation of it
 with a step in `(0, h₀]` is locally exponentially stable (`euler_sound_small_step_local`). -/
-@[tmio MI]
-@[powerlib_domain] theorem euler_sound_small_step (hF : F.IsAutonomous f)
+@[tmio MI, powerlib_domain] theorem euler_sound_small_step (hF : F.IsAutonomous f)
     (hC : ∀ x, ContDiff ℝ 1 (f x)) {x : X} (hx : x ∈ F.den (.flow .locallyExponentiallyStable)) :
     connection% (∃ h₀ : ℝ, 0 < h₀ ∧ ∀ y : Y, design y = x → step y ∈ Set.Ioc (0 : ℝ) h₀ →
       y ∈ (eulerFamily F f design step).den (.flow .locallyExponentiallyStable)) := by
@@ -323,8 +321,7 @@ with a step in `(0, h₀]` is locally exponentially stable (`euler_sound_small_s
 Euler implementation certified for local exponential stability (every model it realizes is
 locally exponentially stable) whose design has a field `C¹` near the origin, every Euler
 implementation of its design with a step below a threshold is locally exponentially stable. -/
-@[tmio MI]
-@[powerlib_domain] theorem euler_certified_small_step_local (hF : F.IsAutonomous f) {y : Y}
+@[tmio MI, powerlib_domain] theorem euler_certified_small_step_local (hF : F.IsAutonomous f) {y : Y}
     (hC : ContDiffAt ℝ 1 (f (design y)) 0)
     (hy : y ∈ TMIO.certify (euler F f design step).realizes
       ((euler F f design step).model.den (.flow .locallyExponentiallyStable))) :
@@ -339,8 +336,7 @@ implementation of its design with a step below a threshold is locally exponentia
 local exponential stability (every model it realizes is locally exponentially stable), every
 Euler implementation of its design with a step below a threshold is locally exponentially
 stable (`euler_certified_small_step_local`). -/
-@[tmio MI]
-@[powerlib_domain] theorem euler_certified_small_step (hF : F.IsAutonomous f)
+@[tmio MI, powerlib_domain] theorem euler_certified_small_step (hF : F.IsAutonomous f)
     (hC : ∀ x, ContDiff ℝ 1 (f x)) {y : Y}
     (hy : y ∈ TMIO.certify (euler F f design step).realizes
       ((euler F f design step).model.den (.flow .locallyExponentiallyStable))) :
@@ -355,8 +351,7 @@ point.** An implementation whose design has a field `C¹` near the origin, an eq
 and a Hurwitz Jacobian `J` (so it is locally exponentially stable) and whose Euler Jacobian
 `I + h J` has a Schur stable left inverse (every Euler multiplier outside the closed unit disk) is
 not locally exponentially stable. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder_local (hF : F.IsAutonomous f)
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder_local (hF : F.IsAutonomous f)
     (hn : 0 < n) (y : Y) (J B : Matrix (Fin n) (Fin n) ℝ) (hC : ContDiffAt ℝ 1 (f (design y)) 0)
     (hJ : fderiv ℝ (f (design y)) 0 = Map.op J) (h0 : f (design y) 0 = 0) (hA : IsHurwitz J)
     (hB : B * forwardEulerMatrix (step y) J = 1) (hS : LTI.SchurStable B) :
@@ -383,8 +378,7 @@ design has an equilibrium at the origin and a Hurwitz Jacobian `J` (so it is loc
 exponentially stable) and whose Euler Jacobian `I + h J` has a Schur stable left inverse (every
 Euler multiplier outside the closed unit disk) is not locally exponentially stable
 (`not_euler_realizationSoundUnder_local`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder (hF : F.IsAutonomous f)
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder (hF : F.IsAutonomous f)
     (hC : ∀ x, ContDiff ℝ 1 (f x)) (hn : 0 < n) (y : Y) (J B : Matrix (Fin n) (Fin n) ℝ)
     (hJ : fderiv ℝ (f (design y)) 0 = Map.op J) (h0 : f (design y) 0 = 0) (hA : IsHurwitz J)
     (hB : B * forwardEulerMatrix (step y) J = 1) (hS : LTI.SchurStable B) :
@@ -399,8 +393,7 @@ model whose field is `C¹` near the origin and whose Euler implementations inclu
 large steps refutes realization soundness: its Jacobian `J` is Hurwitz (converse linearization),
 so above a step threshold every Euler multiplier `1 + hλ` lies outside the closed unit disk
 (`exists_forwardEuler_inverse_schurStable`) and that implementation is unstable. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder_of_large_step_local
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder_of_large_step_local
     (hF : F.IsAutonomous f) (hn : 0 < n) {x : X} (hC : ContDiffAt ℝ 1 (f x) 0)
     (hx : x ∈ F.den (.flow .locallyExponentiallyStable))
     (hY : ∀ h₁ : ℝ, ∃ y : Y, design y = x ∧ h₁ ≤ step y) :
@@ -417,8 +410,7 @@ so above a step threshold every Euler multiplier `1 + hλ` lies outside the clos
 autonomous `C¹` fields (`n > 0`), a locally exponentially stable model whose Euler implementations
 include arbitrarily large steps refutes realization soundness
 (`not_euler_realizationSoundUnder_of_large_step_local`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder_of_large_step
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder_of_large_step
     (hF : F.IsAutonomous f) (hC : ∀ x, ContDiff ℝ 1 (f x)) (hn : 0 < n) {x : X}
     (hx : x ∈ F.den (.flow .locallyExponentiallyStable))
     (hY : ∀ h₁ : ℝ, ∃ y : Y, design y = x ∧ h₁ ≤ step y) :
@@ -444,8 +436,7 @@ private theorem eigen_smul_one {c : ℝ} {μ : ℂ} {v : Fin n → ℂ} (hv : v 
 /-- The field `ż = −z` with step `h = 3` is a witness (`n > 0`): its Euler map is `z ↦ −2 z`. An
 implementation of a design with this field and this step refutes realization soundness without a
 step constraint. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder_of_neg (hF : F.IsAutonomous f)
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder_of_neg (hF : F.IsAutonomous f)
     (hn : 0 < n) (y : Y) (hx : f (design y) = fun z => -z) (hy : step y = 3) :
     connection% (¬ (euler F f design step).RealizationSoundUnder ∅
       (.flow .locallyExponentiallyStable)) := by

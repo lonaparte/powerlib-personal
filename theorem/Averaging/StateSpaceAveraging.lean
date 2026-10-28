@@ -71,7 +71,7 @@ section Algebra
 variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸] [NormOneClass 𝔸]
 
 omit [NormOneClass 𝔸] in
-@[powerlib_foundation] theorem hasDerivAt_exp_smul (X : 𝔸) (r : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_exp_smul (X : 𝔸) (r : ℝ) :
     HasDerivAt (fun s : ℝ => NormedSpace.exp (s • X)) (X * NormedSpace.exp (r • X)) r :=
   hasDerivAt_exp_smul_const' X r
 

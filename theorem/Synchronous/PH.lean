@@ -178,7 +178,7 @@ def classicalSM_H (p : ClassicalSMParams) (x : State 2) : ℝ :=
 def classicalSM_dH (p : ClassicalSMParams) (x : State 2) : State 2 :=
   WithLp.toLp 2 ![p.b * Real.sin (x 0) - p.Pm, x 1 / p.M]
 
-@[powerlib_foundation] theorem classicalSM_hasGradientAt (p : ClassicalSMParams) (x : State 2) :
+@[tmio M, powerlib_foundation] theorem classicalSM_hasGradientAt (p : ClassicalSMParams) (x : State 2) :
     HasGradientAt (classicalSM_H p) (classicalSM_dH p x) x := by
   have h1 := (((smCoord 1).hasFDerivAt (x := x)).pow 2).const_mul (1 / (2 * p.M))
   have h0 := ((smCoord 0).hasFDerivAt (x := x)).const_mul p.Pm
@@ -493,8 +493,7 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
 
 /-- No model is both damped on the stable side and on the unstable branch: the whole requirement
 language is inconsistent. -/
-@[tmio M]
-@[powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
@@ -516,8 +515,7 @@ sentence exactly when its swing reading does: under zero input the pH field is t
 the coordinates `(δ, M ω)` (`classicalSM_zeroInputField_eq_transport`), the operating point
 `(δ*, 0)` is fixed by that change, and every flow sentence is invariant under it
 (`Spectral.mem_den_flow_iff_of_transport`, `Dynamics.holds_transport_iff`). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_flow_iff_swing (m : Model) (P : Flow.Property) :
+@[tmio TM, powerlib_domain] theorem mem_den_flow_iff_swing (m : Model) (P : Flow.Property) :
     connection% (m ∈ family.den (.flow P) ↔ m.toSwing ∈ Swing.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   have hdenG : ∀ (y : Swing.Model) (P : Flow.Property),
@@ -535,8 +533,7 @@ the coordinates `(δ, M ω)` (`classicalSM_zeroInputField_eq_transport`), the op
 /-- Every flow sentence of the classical-machine family denotes the preimage of its swing
 denotation under `Model.toSwing`: on the flow sentences the semantics connection of the family is
 that of `Swing.family.comap Model.toSwing`. -/
-@[tmio TM]
-@[powerlib_domain] theorem den_flow_eq_preimage :
+@[tmio TM, powerlib_domain] theorem den_flow_eq_preimage :
     connection% (∀ P : Flow.Property,
       family.den (.flow P) = Model.toSwing ⁻¹' Swing.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -551,8 +548,7 @@ translation. On the image of `toSwing` positive inertia and nonnegative damping 
 `locked` is `balanced`, `stableBranch` is `synchronizing` (`b > 0`), `damped` is `damped` with
 `synchronizing`, `unstableBranch` is `destabilizing` (`D ≥ 0`); the global sentences, decay rates,
 sampled contraction and conservation have the empty space on both sides. -/
-@[tmio TM]
-@[powerlib_foundation] theorem realize_translate_flow_eq_preimage :
+@[tmio TM, powerlib_foundation] theorem realize_translate_flow_eq_preimage :
     connection% (∀ P : Flow.Property, TMIO.realize family.meets (family.translate (.flow P)) =
       Model.toSwing ⁻¹' TMIO.realize Swing.family.meets (Swing.family.translate (.flow P))) := by
   unfold powerlib.TMIO.Statement
@@ -601,8 +597,7 @@ sampled contraction and conservation have the empty space on both sides. -/
 /-- On the flow sentences the classical-machine family is the swing family read through
 `Model.toSwing` for both connections: a flow translation is exact exactly when the swing
 translation is exact on the image of `toSwing`. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_flow_iff :
+@[tmio TM, powerlib_domain] theorem exact_flow_iff :
     connection% (∀ P : Flow.Property,
       family.Exact (.flow P) ↔ (Swing.family.comap Model.toSwing).Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -643,8 +638,7 @@ private theorem exact_of_exactUnder {Δ : Set Swing.Requirement} {P : Flow.Prope
 the unforced classical machine, for every `D ≥ 0`: the swing reading is balanced with a positive
 synchronizing coefficient `b cos δ*` (`Swing.mem_den_lyapunovStable`, whose energy
 `½ M ω² + U(δ)` is `H − H(x*)` in swing coordinates). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_lyapunovStable (m : Model)
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable (m : Model)
     (heq : m.p.b * Real.sin m.δs = m.p.Pm) (hcos : 0 < Real.cos m.δs) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   have hsw := mem_den_flow_iff_swing m .lyapunovStable
@@ -656,8 +650,7 @@ synchronizing coefficient `b cos δ*` (`Swing.mem_den_lyapunovStable`, whose ene
 /-- `D > 0`, `b sin δ* = P_m`, `cos δ* > 0`: the equilibrium `(δ*, 0)` of the full nonlinear
 unforced classical machine is locally exponentially stable
 (`Swing.mem_den_locallyExponentiallyStable` on the swing reading). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model) (hD : 0 < m.p.D)
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model) (hD : 0 < m.p.D)
     (heq : m.p.b * Real.sin m.δs = m.p.Pm) (hcos : 0 < Real.cos m.δs) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   have hsw := mem_den_flow_iff_swing m .locallyExponentiallyStable
@@ -669,8 +662,7 @@ unforced classical machine is locally exponentially stable
 /-- `b sin δ* = P_m`, `cos δ* < 0` (the unstable branch): the equilibrium `(δ*, 0)` of the full
 nonlinear unforced classical machine is unstable, for every `D ≥ 0` (`Swing.mem_den_unstable` on
 the swing reading, a saddle). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_unstable (m : Model) (heq : m.p.b * Real.sin m.δs = m.p.Pm)
+@[tmio TM, powerlib_domain] theorem mem_den_unstable (m : Model) (heq : m.p.b * Real.sin m.δs = m.p.Pm)
     (hcos : Real.cos m.δs < 0) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   have hsw := mem_den_flow_iff_swing m .unstable
@@ -681,8 +673,7 @@ the swing reading, a saddle). -/
 
 /-- With no mechanical power the Hamiltonian `p²/(2M) − b cos δ ≥ −b` is bounded below, so the
 machine is passive. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_passive_of_Pm_zero (m : Model) (hPm : m.p.Pm = 0) :
+@[tmio TM, powerlib_domain] theorem mem_den_passive_of_Pm_zero (m : Model) (hPm : m.p.Pm = 0) :
     connection% (m ∈ family.den .passive) := by
   unfold powerlib.TMIO.Statement
   refine family_isNonlinearPH.mem_den_passive
@@ -699,8 +690,7 @@ machine is passive. -/
 swing translations read through `toSwing` (`Spectral.sound_of_hub` from
 `Swing.chain_le_semantics`, with `realize_translate_flow_eq_preimage` and
 `mem_den_flow_iff_swing`); passivity from `P_m = 0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   have hs := Swing.chain_le_semantics
   have hr := realize_translate_flow_eq_preimage
@@ -722,8 +712,7 @@ inertia the swing translation is exact (`Swing.exactUnder_locallyExponentiallySt
 linearization: the Jacobian `[[0, 1], [−K/M, −D/M]]`, conjugate by `diag(1, M)` to
 `(J − R) ∇²H = [[0, 1/M], [−b cos δ*, −D/M]]`, `classicalSM_linearization`), and every swing
 reading has positive inertia (`Spectral.exact_of_hub`). -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_locallyExponentiallyStable :
+@[tmio TM, powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact exact_of_exactUnder (by simp) Swing.exactUnder_locallyExponentiallyStable
@@ -759,8 +748,7 @@ machine conserves `H`, and at a fold (`cos δ* = 0`) the Hamiltonian `p²/(2M) �
 (`classicalSM_H_fold`; `Swing.potential_fold` in swing coordinates) is below its value at
 `(δ*, 0)` on one side, where the dissipated energy keeps every solution away
 (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem exact_locallyAsymptoticallyStable :
     connection% (family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact exact_of_exactUnder (by simp) Swing.exactUnder_locallyAsymptoticallyStable
@@ -774,8 +762,7 @@ swing coordinates), and every swing reading lies in that context (`M > 0`, `k₂
 `Spectral.exact_of_hub`). The stable-branch requirement `cos δ* > 0` is invariant under whole
 turns; `|δ*| < π/2` would not be (at `δ* = 2π`, `M = b = 1`, `D = P_m = 0` the machine is Lyapunov
 stable without meeting it, so that translation would be sound but not exact). -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem exact_lyapunovStable :
     connection% (family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   exact exact_of_exactUnder subset_rfl Swing.exactUnder_lyapunovStable
@@ -783,8 +770,7 @@ stable without meeting it, so that translation would be sound but not exact). -/
 /-- Lyapunov stability holds exactly at the equilibria with `cos δ* > 0` (every damping
 `D ≥ 0`): the stable branch up to whole turns. This is the exact Lyapunov translation
 (`exact_lyapunovStable`). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_lyapunovStable_iff (m : Model) :
+@[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable_iff (m : Model) :
     connection% (m ∈ family.den (.flow .lyapunovStable) ↔
       m ∈ {m : Model | m.p.b * Real.sin m.δs = m.p.Pm ∧ 0 < Real.cos m.δs}) := by
   have h := exact_lyapunovStable
@@ -842,8 +828,7 @@ private theorem spin_supply (m : Model) (ω₀ t : ℝ) :
 spin `ω₀ = P_m / (2 (D + 1))` in the direction of `P_m` at constant speed; per unit time it draws
 `κ = ω₀ (P_m − D ω₀) > 0` on average (the work of `P_m` minus the damping loss), so along one
 solution segment from a fixed state the supplied energy falls below minus every storage value. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_mem_den_passive (m : Model) (hPm : m.p.Pm ≠ 0) :
+@[tmio TM, powerlib_domain] theorem not_mem_den_passive (m : Model) (hPm : m.p.Pm ≠ 0) :
     connection% (m ∉ family.den .passive) := by
   unfold powerlib.TMIO.Statement
   rw [Family.mem_den]
@@ -907,8 +892,7 @@ solution segment from a fixed state the supplied energy falls below minus every 
 
 /-- The passivity translation is exact: the classical machine is passive exactly when it has no
 mechanical power, `P_m = 0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
+@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   ext m
   rw [TMIO.mem_realize]
@@ -929,8 +913,7 @@ def offEquilibrium : Model := ⟨⟨1, 0, 1, 2, one_pos, le_rfl, one_pos⟩, 0�
 
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it. Its swing
 reading is unbalanced (`b sin 0 = 0 ≠ 2 = P_m`, `Swing.mem_den_unstable_of_not_balanced`). -/
-@[tmio TM]
-@[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
+@[tmio TM, powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   have hsw := mem_den_flow_iff_swing offEquilibrium .unstable
   have hs := Swing.mem_den_unstable_of_not_balanced offEquilibrium.toSwing
@@ -941,8 +924,7 @@ reading is unbalanced (`b sin 0 = 0 ≠ 2 = P_m`, `Swing.mem_den_unstable_of_not
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
 while the translation asks for an equilibrium. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exact_unstable :
+@[tmio TM, powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_exact_of_witness offEquilibrium_mem_den_unstable (q := .locked)
@@ -954,8 +936,7 @@ while the translation asks for an equilibrium. -/
 a mechanical-power port and is passive only for `P_m = 0` (`exact_passive`), while the swing family
 has no port and every model is passive. The unbalanced machine `offEquilibrium` (`P_m = 2`) is
 not passive although its swing reading is. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_den_eq_preimage :
+@[tmio TM, powerlib_domain] theorem not_den_eq_preimage :
     connection% (¬ ∀ s, family.den s = Model.toSwing ⁻¹' Swing.family.den s) := by
   unfold powerlib.TMIO.Statement
   intro h
@@ -1241,8 +1222,7 @@ def family : Family SyncMachine7Params Requirement 7 4 :=
 @[powerlib_foundation] theorem family_isNonlinearPH : family.IsNonlinearPH syncMachine7 :=
   fun _ => rfl
 
-@[tmio M]
-@[powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.realize_univ_eq_empty_of_forall fun _ h => h .impossible
@@ -1250,14 +1230,12 @@ def family : Family SyncMachine7Params Requirement 7 4 :=
 /-- Passivity of the seven-state machine with storage `H` (T-sync-machine §1.13): for every
 input `(v_d, v_q, v_f, T_m^ext)` and solution segment,
 `H(x(t₁)) − H(x(t₀)) ≤ ∫ (v_d i_d + v_q i_q + v_f i_f + T_m ω_r)`. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_passive (p : SyncMachine7Params) :
+@[tmio TM, powerlib_domain] theorem mem_den_passive (p : SyncMachine7Params) :
     connection% (p ∈ family.den .passive) :=
   family_isNonlinearPH.mem_den_passive_of_lowerBound 0 (syncMachine7_H_nonneg p)
 
 /-- Passivity is translated exactly. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
+@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   refine Family.exact_of_translate_eq_empty rfl ?_
   ext p
@@ -1265,8 +1243,7 @@ input `(v_d, v_q, v_f, T_m^ext)` and solution segment,
   exact mem_den_passive p
 
 /-- Every translation of the seven-state machine family is sound. -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s p hp => ?_
@@ -1282,8 +1259,7 @@ parameters. A locally exponentially stable point of the `C¹` zero-input field h
 Jacobian (converse linearization, `Dynamics.fderiv_injective_of_locallyExponentiallyStable`),
 but at the origin the Jacobian `(J(0) − R) ∇²H` kills the rotor-angle direction `e_δ`: `H` does
 not depend on `δ` and `∇H(0) = 0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_mem_den_locallyExponentiallyStable (p : SyncMachine7Params) :
+@[tmio TM, powerlib_domain] theorem not_mem_den_locallyExponentiallyStable (p : SyncMachine7Params) :
     connection% (p ∉ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [family_isNonlinearPH.mem_den_flow]
@@ -1296,8 +1272,7 @@ not depend on `δ` and `∇H(0) = 0`. -/
 
 /-- The translation of local exponential stability (the whole, inconsistent language) is exact:
 no member is locally exponentially stable (`not_mem_den_locallyExponentiallyStable`). -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_locallyExponentiallyStable :
+@[tmio TM, powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hu := realize_univ

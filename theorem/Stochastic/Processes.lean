@@ -66,7 +66,7 @@ section Discrete
 variable {μ : Measure Ω} {𝒢 : Filtration ℕ m} {f : ℕ → Ω → ℝ} {τ π : Ω → WithTop ℕ}
 
 /-- Discrete hitting (and exit) times of adapted processes are stopping times. -/
-@[powerlib_foundation] theorem discrete_hitting_isStoppingTime {β : Type*} [MeasurableSpace β]
+@[tmio T, powerlib_foundation] theorem discrete_hitting_isStoppingTime {β : Type*} [MeasurableSpace β]
     {u : ℕ → Ω → β} {s : Set β} (hu : Adapted 𝒢 u) (hs : MeasurableSet s) (n : ℕ) :
     IsStoppingTime 𝒢 (hittingAfter u s n) :=
   hu.isStoppingTime_hittingAfter hs

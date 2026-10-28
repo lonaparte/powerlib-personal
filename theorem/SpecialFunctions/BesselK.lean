@@ -69,7 +69,7 @@ def besselK0 (z : ℂ) : ℂ := ∫ t in Ioi (0 : ℝ), Complex.exp (-z * Real.c
 /-- `K₁(z) = ∫₀^∞ e^{−z cosh t} cosh t dt` (`Re z > 0`). -/
 def besselK1 (z : ℂ) : ℂ := ∫ t in Ioi (0 : ℝ), Complex.exp (-z * Real.cosh t) * Real.cosh t
 
-@[powerlib_foundation] theorem norm_cexp_neg_mul_cosh (z : ℂ) (t : ℝ) :
+@[tmio T, powerlib_foundation] theorem norm_cexp_neg_mul_cosh (z : ℂ) (t : ℝ) :
     ‖Complex.exp (-z * Real.cosh t)‖ = Real.exp (-(z.re * Real.cosh t)) := by
   rw [Complex.norm_exp]; congr 1; simp [Complex.mul_re]
 

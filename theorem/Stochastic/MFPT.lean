@@ -60,7 +60,7 @@ def kramersT (V : ℝ → ℝ) (D γ θr θc θ : ℝ) : ℝ := γ / D * ∫ y i
 
 variable {V V' : ℝ → ℝ} {D γ θr θc : ℝ}
 
-@[powerlib_foundation] theorem innerI_hasDerivAt (hV : Continuous V) (y : ℝ) :
+@[tmio T, powerlib_foundation] theorem innerI_hasDerivAt (hV : Continuous V) (y : ℝ) :
     HasDerivAt (innerI V D θr) (exp (-V y / D)) y :=
   (Continuous.integral_hasStrictDerivAt (by fun_prop) θr y).hasDerivAt
 

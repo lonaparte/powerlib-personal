@@ -65,7 +65,7 @@ def quadraticEnergy (Q : Matrix (Fin n) (Fin n) ℝ) (x : State n) : ℝ :=
   (1 / 2 : ℝ) * (WithLp.ofLp x ⬝ᵥ (Q *ᵥ WithLp.ofLp x))
 
 /-- For symmetric `Q`, the gradient of `½ xᵀ Q x` is `Q x`. -/
-@[powerlib_foundation] theorem hasGradientAt_quadraticEnergy {Q : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem hasGradientAt_quadraticEnergy {Q : Matrix (Fin n) (Fin n) ℝ}
     (hQ : Qᵀ = Q) (x : State n) :
     HasGradientAt (quadraticEnergy Q) (WithLp.toLp 2 (Q *ᵥ WithLp.ofLp x)) x := by
   let A := Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) Q
@@ -276,8 +276,7 @@ def toPortHamiltonian (J R : Matrix (Fin n) (Fin n) ℝ) (g : Matrix (Fin n) (Fi
 
 /-- Every constant-coefficient pH system with `Q ≻ 0`, `R ⪰ 0` is passive (storage
 `½ xᵀ Q x`). -/
-@[tmio TM]
-@[powerlib_domain] theorem toPortHamiltonian_mem_den_passive {J R : Matrix (Fin n) (Fin n) ℝ}
+@[tmio TM, powerlib_domain] theorem toPortHamiltonian_mem_den_passive {J R : Matrix (Fin n) (Fin n) ℝ}
     (g : Matrix (Fin n) (Fin m) ℝ) {Q : Matrix (Fin n) (Fin n) ℝ} (hJ : Jᵀ = -J)
     (hR : R.PosSemidef) (hQ : Q.PosDef) :
     connection% (toPortHamiltonian J R g Q hJ hR hQ ∈ Port.PortHamiltonian.family.den .passive) :=
@@ -285,8 +284,7 @@ def toPortHamiltonian (J R : Matrix (Fin n) (Fin n) ℝ) (g : Matrix (Fin n) (Fi
 
 /-- Every unforced constant-coefficient pH system with `Q ≻ 0`, `R ⪰ 0` is Lyapunov stable at
 the origin. -/
-@[tmio TM]
-@[powerlib_domain] theorem toPortHamiltonian_mem_den_lyapunovStable
+@[tmio TM, powerlib_domain] theorem toPortHamiltonian_mem_den_lyapunovStable
     {J R : Matrix (Fin n) (Fin n) ℝ} (g : Matrix (Fin n) (Fin m) ℝ)
     {Q : Matrix (Fin n) (Fin n) ℝ} (hJ : Jᵀ = -J) (hR : R.PosSemidef) (hQ : Q.PosDef) :
     connection% (toPortHamiltonian J R g Q hJ hR hQ ∈

@@ -53,7 +53,7 @@ def fp1 (μ a p : ℝ → ℝ) (x : ℝ) : ℝ :=
 def flux1 (μ a p : ℝ → ℝ) (x : ℝ) : ℝ := μ x * p x - 1 / 2 * deriv (fun y => a y * p y) x
 
 /-- `L* p = −J'` whenever `μ p` and `(a p)'` are differentiable at `x`. -/
-@[powerlib_foundation] theorem fp1_eq_neg_deriv_flux {μ a p : ℝ → ℝ} {x : ℝ}
+@[tmio T, powerlib_foundation] theorem fp1_eq_neg_deriv_flux {μ a p : ℝ → ℝ} {x : ℝ}
     (h1 : DifferentiableAt ℝ (fun y => μ y * p y) x)
     (h2 : DifferentiableAt ℝ (deriv (fun y => a y * p y)) x) :
     fp1 μ a p x = -deriv (flux1 μ a p) x := by

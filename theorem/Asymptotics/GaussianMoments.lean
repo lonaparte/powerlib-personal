@@ -41,7 +41,7 @@ namespace powerlib.Asymptotics
 open Real MeasureTheory Set
 
 /-- Half-line zeroth moment: `∫_0^∞ e^{-b ξ²/2} dξ = ½ √(2π/b)` (wraps `integral_gaussian_Ioi`). -/
-@[powerlib_foundation] theorem halfMoment0 {b : ℝ} (hb : 0 < b) :
+@[tmio T, powerlib_foundation] theorem halfMoment0 {b : ℝ} (hb : 0 < b) :
     ∫ ξ in Ioi (0 : ℝ), Real.exp (-(b / 2) * ξ ^ 2) = Real.sqrt (2 * π / b) / 2 := by
   rw [integral_gaussian_Ioi]
   congr 2

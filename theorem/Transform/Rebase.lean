@@ -122,7 +122,7 @@ def rebase (T S : ∀ a, Matrix (Fin (dim a)) (Fin (dim a)) ℝ)
 
 /-- Naturality: a construction of rebased primitive maps is the rebased construction, provided the
 bases of the spaces it passes through are invertible. -/
-@[powerlib_foundation] theorem eval_rebase (T S : ∀ a, Matrix (Fin (dim a)) (Fin (dim a)) ℝ)
+@[tmio T, powerlib_foundation] theorem eval_rebase (T S : ∀ a, Matrix (Fin (dim a)) (Fin (dim a)) ℝ)
     (M : ∀ a b, Atom a b → Matrix (Fin (dim a)) (Fin (dim b)) ℝ) {a b : σ}
     (e : Construction Atom a b) (h : ∀ c ∈ e.inner, S c * T c = 1) :
     eval dim (rebase dim T S M) e = T a * eval dim M e * S b := by
@@ -679,8 +679,7 @@ variable {n₁ n₂ p : ℕ}
 /-- Stable together in every bases: on the interconnection family, the denotation of every
 attractive sentence and of sampled contraction is its own pull-back along any change of bases with
 invertible bases and positive time base. -/
-@[tmio TM]
-@[powerlib_domain] theorem den_rebase {β : Bases n₁ n₂ p} (h₁ : β.S₁ * β.T₁ = 1)
+@[tmio TM, powerlib_domain] theorem den_rebase {β : Bases n₁ n₂ p} (h₁ : β.S₁ * β.T₁ = 1)
     (h₂ : β.S₂ * β.T₂ = 1) (hv : β.Sv * β.Tv = 1) (hi : β.Si * β.Ti = 1) (hw : 0 < β.w)
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% ((Interconnection.family (n₁ := n₁) (n₂ := n₂) (p := p)).den (.flow P) =
@@ -693,8 +692,7 @@ invertible bases and positive time base. -/
 
 /-- With the time base `1`, every flow sentence is pulled back along any change of bases with
 invertible bases. -/
-@[tmio TM]
-@[powerlib_domain] theorem den_rebase_unitTime {β : Bases n₁ n₂ p} (h₁ : β.S₁ * β.T₁ = 1)
+@[tmio TM, powerlib_domain] theorem den_rebase_unitTime {β : Bases n₁ n₂ p} (h₁ : β.S₁ * β.T₁ = 1)
     (h₂ : β.S₂ * β.T₂ = 1) (hv : β.Sv * β.Tv = 1) (hi : β.Si * β.Ti = 1) (hw : β.w = 1)
     (P : Flow.Property) :
     connection% ((Interconnection.family (n₁ := n₁) (n₂ := n₂) (p := p)).den (.flow P) =
@@ -714,8 +712,7 @@ of bases with invertible bases and positive time base `w`, the rebased interconn
 satisfy a flow sentence `P` are those whose original satisfies `P.timeScale w` (decay at the rate
 `a` per unit of the rebased time `τ = w t` is decay at the rate `w a` per unit of `t`; every other
 sentence is unchanged). -/
-@[tmio TM]
-@[powerlib_domain] theorem den_rebase_timeScale {β : Bases n₁ n₂ p} (h₁ : β.S₁ * β.T₁ = 1)
+@[tmio TM, powerlib_domain] theorem den_rebase_timeScale {β : Bases n₁ n₂ p} (h₁ : β.S₁ * β.T₁ = 1)
     (h₂ : β.S₂ * β.T₂ = 1) (hv : β.Sv * β.Tv = 1) (hi : β.Si * β.Ti = 1) (hw : 0 < β.w)
     (P : Flow.Property) :
     connection% ((Interconnection.family (n₁ := n₁) (n₂ := n₂) (p := p)).den
@@ -731,8 +728,7 @@ sentence is unchanged). -/
 
 /-- The two current direction conventions denote the same interconnections for every flow
 sentence. -/
-@[tmio TM]
-@[powerlib_domain] theorem den_flipCurrent (P : Flow.Property) :
+@[tmio TM, powerlib_domain] theorem den_flipCurrent (P : Flow.Property) :
     connection% ((Interconnection.family (n₁ := n₁) (n₂ := n₂) (p := p)).den (.flow P) =
       (fun ic => interconnection ic flipCurrent) ⁻¹' Interconnection.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement

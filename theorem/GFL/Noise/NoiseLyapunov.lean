@@ -44,7 +44,7 @@ open powerlib.GFL.LCLine
 
 /-- Second-order oscillator form of the reduced PLL: if `θ̇ = K_p h(θ) + K_i η` and `η̇ = h(θ)`
 everywhere, then `θ̈ = K_p h′(θ) θ̇ + K_i h(θ)`. -/
-@[powerlib_foundation] theorem oscillator_form {h h' : ℝ → ℝ} {Kp Ki : ℝ} {θ η : ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem oscillator_form {h h' : ℝ → ℝ} {Kp Ki : ℝ} {θ η : ℝ → ℝ}
     (hh : ∀ x, HasDerivAt h (h' x) x)
     (hθ : ∀ s, HasDerivAt θ (Kp * h (θ s) + Ki * η s) s)
     (hη : ∀ s, HasDerivAt η (h (θ s)) s) (t : ℝ) :

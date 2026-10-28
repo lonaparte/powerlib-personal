@@ -30,7 +30,7 @@ def convert {Scalar Unit : Type} (scale : Scalar → Unit → Scalar)
   ((scale x.1 (reciprocal x.2)), (reciprocal x.2))
 
 -- The independent endpoint contract is checked by the Lean kernel.
-@[simp, powerlib_foundation] theorem convert_spec {Scalar Unit : Type} (scale : Scalar → Unit → Scalar)
+@[tmio T, simp, powerlib_foundation] theorem convert_spec {Scalar Unit : Type} (scale : Scalar → Unit → Scalar)
     (reciprocal : Unit → Unit) (x : Scalar × Unit) :
     convert scale reciprocal x = (scale x.1 (reciprocal x.2), reciprocal x.2) := rfl
 

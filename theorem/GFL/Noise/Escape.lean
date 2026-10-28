@@ -57,7 +57,7 @@ open scoped ENNReal
 
 /-- Along a trajectory of `θ̇ = K_p h(θ) + K_i η`, `η̇ = h(θ)`, the corrected energy
 `𝓗 = ½ K_i η² + 𝒱(θ)` (`𝒱' = −h`) decreases at rate `K_p h²`. -/
-@[powerlib_foundation] theorem H_hasDerivAt_along {Kp Ki : ℝ} {h V : ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem H_hasDerivAt_along {Kp Ki : ℝ} {h V : ℝ → ℝ}
     (hV : ∀ x, HasDerivAt V (-h x) x) {θ η : ℝ → ℝ} {t : ℝ}
     (hθ : HasDerivAt θ (Kp * h (θ t) + Ki * η t) t) (hη : HasDerivAt η (h (θ t)) t) :
     HasDerivAt (fun s => Ki / 2 * η s ^ 2 + V (θ s)) (-(Kp * h (θ t) ^ 2)) t := by

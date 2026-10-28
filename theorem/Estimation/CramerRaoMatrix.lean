@@ -98,7 +98,7 @@ finite set, differentiable in `θ ∈ ℝ^p` at `θ`, and let the statistic `T` 
 all `θ'` near `θ`, with `ψ` differentiable at `θ` (Jacobian `J`).  If the Fisher matrix `𝓘(θ)` is
 positive definite, then `Cov_θ(T) ⪰ J 𝓘(θ)⁻¹ Jᵀ`.  The probability vectors only need to be
 nonnegative near `θ`: zeros are allowed (their derivative vanishes, a local minimum). -/
-@[powerlib_foundation] theorem crb_fin {pmf : (Fin p → ℝ) → Ω → ℝ} {θ : Fin p → ℝ}
+@[tmio T, powerlib_foundation] theorem crb_fin {pmf : (Fin p → ℝ) → Ω → ℝ} {θ : Fin p → ℝ}
     {T : Ω → Fin k → ℝ} {ψ : (Fin p → ℝ) → Fin k → ℝ} {J : (Fin p → ℝ) →L[ℝ] (Fin k → ℝ)}
     (hdiff : ∀ ω, DifferentiableAt ℝ (fun θ' => pmf θ' ω) θ)
     (hnn : ∀ᶠ θ' in 𝓝 θ, ∀ ω, 0 ≤ pmf θ' ω)

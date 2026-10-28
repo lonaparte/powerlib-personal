@@ -118,7 +118,7 @@ def guardMFPT (α l₁ D rb : ℝ) : ℝ :=
 variable {α l₁ : ℝ}
 
 /-- `U(z) = ΔU − (l₁/4)(z² − r_c²)²`. -/
-@[powerlib_foundation] theorem guardPotential_eq_barrier_sub (hl : 0 < l₁) (z : ℝ) :
+@[tmio M, powerlib_foundation] theorem guardPotential_eq_barrier_sub (hl : 0 < l₁) (z : ℝ) :
     guardPotential α l₁ z = barrierHeight α l₁ - l₁ / 4 * (z ^ 2 - α / l₁) ^ 2 := by
   simp only [guardPotential, barrierHeight]; field_simp; ring
 

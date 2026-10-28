@@ -45,7 +45,7 @@ section Exponential
 open Set
 
 /-- `e^{−u} < 1 − u + u²/2` for `u > 0`. -/
-@[powerlib_foundation] theorem exp_neg_lt_quadratic {u : ℝ} (hu : 0 < u) :
+@[tmio T, powerlib_foundation] theorem exp_neg_lt_quadratic {u : ℝ} (hu : 0 < u) :
     Real.exp (-u) < 1 - u + u ^ 2 / 2 := by
   let f : ℝ → ℝ := fun x => 1 - x + x ^ 2 / 2 - Real.exp (-x)
   have hd : ∀ x, HasDerivAt f (-1 + x + Real.exp (-x)) x := by

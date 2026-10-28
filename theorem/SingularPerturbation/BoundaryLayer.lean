@@ -66,7 +66,7 @@ open Matrix Set
 variable {m : ℕ}
 
 /-- Right derivative of `yᵀ P y` for symmetric `P`. -/
-@[powerlib_foundation] theorem hasDerivWithinAt_quadratic_of_symm {P : Matrix (Fin m) (Fin m) ℝ}
+@[tmio T, powerlib_foundation] theorem hasDerivWithinAt_quadratic_of_symm {P : Matrix (Fin m) (Fin m) ℝ}
     (hP : Pᵀ = P) {y : ℝ → Fin m → ℝ} {dy : Fin m → ℝ} {s : Set ℝ} {t : ℝ}
     (hy : HasDerivWithinAt y dy s t) :
     HasDerivWithinAt (fun τ => y τ ⬝ᵥ (P *ᵥ y τ)) (2 * (y t ⬝ᵥ (P *ᵥ dy))) s t := by

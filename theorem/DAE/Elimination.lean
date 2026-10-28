@@ -68,7 +68,7 @@ def solveDAG (φ : X → (Fin m → ℝ) → Fin m → ℝ) (x : X) : Fin m → 
     exact ih i (by have : i.val < j.val := hi; omega) k'' (by omega)
 
 /-- `solveDAG φ x` solves the algebraic constraint. -/
-@[powerlib_foundation] theorem solveDAG_spec {φ : X → (Fin m → ℝ) → Fin m → ℝ} (hφ : IsDAG φ)
+@[tmio T, powerlib_foundation] theorem solveDAG_spec {φ : X → (Fin m → ℝ) → Fin m → ℝ} (hφ : IsDAG φ)
     (x : X) : φ x (solveDAG φ x) = solveDAG φ x := by
   funext j
   have h := iterate_stable hφ x m j j.isLt (m + 1) (Nat.le_succ m)

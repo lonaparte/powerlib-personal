@@ -73,7 +73,7 @@ def endpointCorrection (g₀ g₁ φ₂ φ₃ : ℝ) : ℝ :=
   rw [q2]
   ring
 
-@[powerlib_foundation] theorem endpointTable_eq {g₀ g₁ φ₂ φ₃ X : ℝ} (hg : g₀ ≠ 0)
+@[tmio T, powerlib_foundation] theorem endpointTable_eq {g₀ g₁ φ₂ φ₃ X : ℝ} (hg : g₀ ≠ 0)
     (hφ : 0 < φ₂) (hX : 0 < X) :
     endpointTable g₀ g₁ φ₂ φ₃ X =
       1 / 2 * g₀ * Real.sqrt (2 * π / (X * φ₂)) *

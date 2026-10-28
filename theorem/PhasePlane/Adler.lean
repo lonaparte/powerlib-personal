@@ -37,7 +37,7 @@ namespace powerlib.PhasePlane.Adler
 open Real Filter Topology
 
 /-- An equilibrium of `θ̇ = B − A sin θ` exists iff `|B| ≤ |A|`. -/
-@[powerlib_foundation] theorem adler_equilibrium_iff (A B : ℝ) :
+@[tmio T, powerlib_foundation] theorem adler_equilibrium_iff (A B : ℝ) :
     (∃ θ, B - A * Real.sin θ = 0) ↔ |B| ≤ |A| := by
   constructor
   · rintro ⟨θ, h⟩

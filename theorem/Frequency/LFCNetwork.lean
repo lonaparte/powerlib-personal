@@ -131,7 +131,7 @@ def netField (area : α → Area) (ωs : ℝ) (T : β → ℝ) (𝓑 : Matrix α
 
 omit [DecidableEq α] in
 /-- Correction (dimension): `2 N_a + N_t` states once `T_g → 0`. -/
-@[powerlib_foundation] theorem netModel_card :
+@[tmio T, powerlib_foundation] theorem netModel_card :
     Fintype.card (α ⊕ (β ⊕ α)) = 2 * Fintype.card α + Fintype.card β := by
   simp only [Fintype.card_sum]
   ring
@@ -719,8 +719,7 @@ def netFamily :
 `Fin N_t` lines): the closed claim grammar quantifies over data, not over types. -/
 
 /-- Every translation of the `N`-area family is sound. -/
-@[tmio TM]
-@[powerlib_domain] theorem net_chain_le_semantics (Na Nt : ℕ) :
+@[tmio TM, powerlib_domain] theorem net_chain_le_semantics (Na Nt : ℕ) :
     connection% (∀ P, (netFamily (Fin Na) (Fin Nt)).chain P ≤
       (netFamily (Fin Na) (Fin Nt)).semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -728,8 +727,7 @@ def netFamily :
 
 /-- The attractive sentences and sampled contraction of the `N`-area family are translated
 exactly by the Hurwitz property of the transported state matrix. -/
-@[tmio TM]
-@[powerlib_domain] theorem net_exact_hurwitz (Na Nt : ℕ) {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem net_exact_hurwitz (Na Nt : ℕ) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% ((netFamily (Fin Na) (Fin Nt)).Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -738,8 +736,7 @@ exactly by the Hurwitz property of the transported state matrix. -/
 /-- A spectrally stable state matrix (explicit premise) makes the `N`-area model globally
 exponentially stable; in deviation coordinates this is the convergence of every trajectory under
 constant loads to its steady state (on a radial graph, `(0, 0, ΔP_L)`). -/
-@[tmio TM]
-@[powerlib_domain] theorem net_mem_den_globallyExponentiallyStable {Na Nt : ℕ}
+@[tmio TM, powerlib_domain] theorem net_mem_den_globallyExponentiallyStable {Na Nt : ℕ}
     (m : NetModel (Fin Na) (Fin Nt))
     (hA : Linear.SpectrallyStable (netA m.area m.ωs m.T m.𝓑)) :
     connection% (m ∈ (netFamily (Fin Na) (Fin Nt)).den (.flow .globallyExponentiallyStable)) := by
@@ -749,8 +746,7 @@ constant loads to its steady state (on a radial graph, `(0, 0, ΔP_L)`). -/
 
 /-- Correction as a refutation: a loop in the tie-line graph (a nonzero circulating flow `p`,
 `𝓑 p = 0`) excludes every attractive sentence, whatever the gains. -/
-@[tmio TM]
-@[powerlib_domain] theorem net_not_mem_den_attractive {Na Nt : ℕ}
+@[tmio TM, powerlib_domain] theorem net_not_mem_den_attractive {Na Nt : ℕ}
     (m : NetModel (Fin Na) (Fin Nt)) {p : Fin Nt → ℝ} (hp0 : p ≠ 0) (hp : m.𝓑 *ᵥ p = 0)
     {P : Flow.Property} (hP : P.Attractive) :
     connection% (m ∉ (netFamily (Fin Na) (Fin Nt)).den (.flow P)) := by
@@ -761,8 +757,7 @@ constant loads to its steady state (on a radial graph, `(0, 0, ΔP_L)`). -/
 
 /-- Three areas in a ring: the line-flow LFC model satisfies no attractive sentence for any
 parameters. -/
-@[tmio TM]
-@[powerlib_domain] theorem triangle_not_mem_den_attractive (area : Fin 3 → Area) (ωs : ℝ)
+@[tmio TM, powerlib_domain] theorem triangle_not_mem_den_attractive (area : Fin 3 → Area) (ωs : ℝ)
     (T : Fin 3 → ℝ) {P : Flow.Property} (hP : P.Attractive) :
     connection% ((⟨area, ωs, T, Network.signedIncidence (![0, 1, 2] : Fin 3 → Fin 3) ![1, 2, 0]⟩ :
       NetModel (Fin 3) (Fin 3)) ∉ (netFamily (Fin 3) (Fin 3)).den (.flow P)) :=
@@ -773,8 +768,7 @@ parameters. -/
 kernel), if every area has `M_a, K_I,a, B_a > 0` and `K_I,a M_a ≤ D_a + K_R,a`, and every line
 has `ω_s T_ℓ > 0`, the model satisfies every attractive sentence and sampled contraction —
 whatever the tie-line strengths and the radial topology. -/
-@[tmio TM]
-@[powerlib_domain] theorem net_mem_den_of_gain {Na Nt : ℕ} (m : NetModel (Fin Na) (Fin Nt))
+@[tmio TM, powerlib_domain] theorem net_mem_den_of_gain {Na Nt : ℕ} (m : NetModel (Fin Na) (Fin Nt))
     (hM : ∀ a, 0 < (m.area a).M) (hK : ∀ a, 0 < (m.area a).KI) (hB : ∀ a, 0 < (m.area a).B)
     (hgain : ∀ a, (m.area a).KI * (m.area a).M ≤ (m.area a).D + (m.area a).K)
     (hw : ∀ ℓ, 0 < m.ωs * m.T ℓ) (hker : ∀ p : Fin Nt → ℝ, m.𝓑 *ᵥ p = 0 → p = 0)
@@ -788,8 +782,7 @@ whatever the tie-line strengths and the radial topology. -/
 `M, K_I, B > 0`, `K_I M ≤ D + K_R` in both areas and `ω_s T > 0`, the two-area model satisfies
 every attractive sentence and sampled contraction; this replaces the explicit Hurwitz premise of
 `LFC.mem_den_globallyExponentiallyStable` by a parametric one. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_of_gain (m : Model) (hMa : 0 < m.a.M) (hMb : 0 < m.b.M)
+@[tmio TM, powerlib_domain] theorem mem_den_of_gain (m : Model) (hMa : 0 < m.a.M) (hMb : 0 < m.b.M)
     (hKa : 0 < m.a.KI) (hKb : 0 < m.b.KI) (hBa : 0 < m.a.B) (hBb : 0 < m.b.B)
     (hga : m.a.KI * m.a.M ≤ m.a.D + m.a.K) (hgb : m.b.KI * m.b.M ≤ m.b.D + m.b.K)
     (hw : 0 < m.ωs * m.T) {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :

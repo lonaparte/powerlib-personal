@@ -76,7 +76,7 @@ def hopfCoord (m : Model) : State 3 →L[ℝ] State 3 :=
       0, m.g.ωc, -(1 / m.g.M);
       m.g.D * m.g.ωc / m.g.M, -(m.g.D / m.g.M), -(1 / m.g.M)]
 
-@[simp, powerlib_foundation] theorem hopfCoord_apply_zero (m : Model) (z : State 3) :
+@[tmio M, simp, powerlib_foundation] theorem hopfCoord_apply_zero (m : Model) (z : State 3) :
     hopfCoord m z 0 = (m.g.ωc + m.g.D / m.g.M) * z 0 + z 1 := by
   simp [hopfCoord, toEuclideanCLM_apply3]
 
@@ -262,8 +262,7 @@ private theorem not_las_of_K_zero {m : Model} (hM : 0 < m.g.M) (hω : 0 < m.g.ω
 /-- **Hopf boundary.** Positive `M, D, ω_c`, a balanced angle and `K = D ω_c + D²/M` place a model
 in local asymptotic stability: the boundary point is a weak stable focus (supercritical Hopf), at
 every load. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_of_hopf (m : Model)
+@[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_of_hopf (m : Model)
     (hM : 0 < m.g.M) (hD : 0 < m.g.D) (hω : 0 < m.g.ωc) (hb : m.g.K0 * Real.sin m.δ = m.g.P0)
     (hK : m.K = m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
@@ -273,8 +272,7 @@ every load. -/
 /-- **Local asymptotic stability within positive `M, D, ω_c`.** The operating point `(δ*, 0, P₀)`
 is locally asymptotically stable exactly when the angle is balanced and
 `0 < K ≤ D ω_c + D²/M` (the Hopf boundary included). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_of_physical (m : Model)
+@[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_of_physical (m : Model)
     (hM : 0 < m.g.M) (hD : 0 < m.g.D) (hω : 0 < m.g.ωc) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
       m ∈ {m : Model | m.g.K0 * Real.sin m.δ = m.g.P0 ∧ 0 < m.K ∧
@@ -315,15 +313,13 @@ is locally asymptotically stable exactly when the angle is balanced and
 def hopfBoundary : Model := ⟨⟨1, 1, 1, 0, 2⟩, 0⟩
 
 /-- The Hopf boundary model is locally asymptotically stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem hopfBoundary_mem_den_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem hopfBoundary_mem_den_locallyAsymptoticallyStable :
     connection% (hopfBoundary ∈ family.den (.flow .locallyAsymptoticallyStable)) :=
   mem_den_locallyAsymptoticallyStable_of_hopf hopfBoundary one_pos one_pos one_pos
     (by simp [hopfBoundary]) (by norm_num [hopfBoundary, Model.K])
 
 /-- The Hopf boundary model is not locally exponentially stable (its Jacobian is not Hurwitz). -/
-@[tmio TM]
-@[powerlib_domain] theorem hopfBoundary_not_mem_den_locallyExponentiallyStable :
+@[tmio TM, powerlib_domain] theorem hopfBoundary_not_mem_den_locallyExponentiallyStable :
     connection% (hopfBoundary ∉ family.den (.flow .locallyExponentiallyStable)) := by
   have hex := exactUnder_locallyExponentiallyStable
   unfold powerlib.TMIO.Statement at hex ⊢
@@ -347,8 +343,7 @@ def hopfBoundary : Model := ⟨⟨1, 1, 1, 0, 2⟩, 0⟩
 /-- **The local asymptotic translation is not exact within positive `M, D, ω_c`.** The translation
 asks for the strict fast-filter condition `K < D ω_c + D²/M`, but the Hopf boundary model is
 locally asymptotically stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exactUnder_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem not_exactUnder_locallyAsymptoticallyStable :
     connection% (¬ family.ExactUnder {.physical} (.flow .locallyAsymptoticallyStable)) := by
   have hmem := hopfBoundary_mem_den_locallyAsymptoticallyStable
   unfold powerlib.TMIO.Statement at hmem ⊢
@@ -371,8 +366,7 @@ locally asymptotically stable. -/
 
 /-- At the loading angle (`|P₀| < K₀`, positive parameters) the equilibrium is locally
 asymptotically stable iff `K ≤ D ω_c + D²/M`: the Hopf boundary is included. -/
-@[tmio TM]
-@[powerlib_domain] theorem locallyAsymptoticallyStable_iff {g : VSMLPF} (hp : g.Pos)
+@[tmio TM, powerlib_domain] theorem locallyAsymptoticallyStable_iff {g : VSMLPF} (hp : g.Pos)
     (h : |g.P0| < g.K0) :
     connection% (atLoading g ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
       atLoading g ∈ {m : Model | m.K ≤ m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M}) := by

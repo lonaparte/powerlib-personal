@@ -38,7 +38,7 @@ open scoped Matrix.Norms.Operator
 /-- Single-tone pump `u_δ(t) = δ cos(ω_p t)`. -/
 def pump (δ ωp t : ℝ) : ℝ := δ * Real.cos (ωp * t)
 
-@[powerlib_foundation] theorem pump_add_half {δ ωp T : ℝ} (hT : ωp * T = 2 * Real.pi) (t : ℝ) :
+@[tmio T, powerlib_foundation] theorem pump_add_half {δ ωp T : ℝ} (hT : ωp * T = 2 * Real.pi) (t : ℝ) :
     pump δ ωp (t + T / 2) = pump (-δ) ωp t := by
   simp only [pump]
   rw [show ωp * (t + T / 2) = ωp * t + Real.pi by linarith [hT], Real.cos_add_pi]

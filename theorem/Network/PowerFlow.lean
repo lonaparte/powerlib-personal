@@ -62,7 +62,7 @@ def flowWeights (b : Matrix ι ι ℝ) (θ : ι → ℝ) : Matrix ι ι ℝ :=
 
 /-- The Jacobian of the lossless power-flow map is the weighted Laplacian of
 `bᵢⱼ cos(θᵢ - θⱼ)`. -/
-@[powerlib_foundation] theorem hasFDerivAt_powerInjection (b : Matrix ι ι ℝ) (θ : ι → ℝ) :
+@[tmio M, powerlib_foundation] theorem hasFDerivAt_powerInjection (b : Matrix ι ι ℝ) (θ : ι → ℝ) :
     HasFDerivAt (powerInjection b)
       (Matrix.toLin' (laplacian (flowWeights b θ))).toContinuousLinearMap θ := by
   rw [hasFDerivAt_pi']

@@ -71,7 +71,7 @@ def c : ℝ := 1 / Real.sqrt (p.L * p.C)
 /-- Characteristic (surge) impedance `Z_c = √(L'/C')`. -/
 def Zc : ℝ := Real.sqrt (p.L / p.C)
 
-@[powerlib_foundation] theorem c_pos : 0 < p.c :=
+@[tmio M, powerlib_foundation] theorem c_pos : 0 < p.c :=
   one_div_pos.mpr (Real.sqrt_pos.mpr (mul_pos p.L_pos p.C_pos))
 
 @[powerlib_foundation] theorem Zc_pos : 0 < p.Zc := Real.sqrt_pos.mpr (div_pos p.L_pos p.C_pos)

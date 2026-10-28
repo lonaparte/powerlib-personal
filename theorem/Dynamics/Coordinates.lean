@@ -59,7 +59,7 @@ variable {n : ℕ}
 /-- The `i`-th coordinate of `Dynamics.State n` as a continuous linear functional. -/
 def coord (i : Fin n) : Dynamics.State n →L[ℝ] ℝ := EuclideanSpace.proj i
 
-@[simp, powerlib_foundation] theorem coord_apply (i : Fin n) (x : Dynamics.State n) :
+@[tmio T, simp, powerlib_foundation] theorem coord_apply (i : Fin n) (x : Dynamics.State n) :
     coord i x = x i := rfl
 
 @[powerlib_foundation] theorem hasFDerivAt_coord (i : Fin n) (x : Dynamics.State n) :

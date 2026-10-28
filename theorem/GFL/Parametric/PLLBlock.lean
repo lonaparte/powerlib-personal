@@ -52,7 +52,7 @@ def pllBlock (v kp ki : ℝ) : Linear.Plant 2 1 where
 def LPLL (v kp ki : ℝ) (s : ℂ) : ℂ := s ^ 2 + ((kp * v : ℝ) : ℂ) * s + ((ki * v : ℝ) : ℂ)
 
 /-- The block matrix is the `(θ, x)` block of the four-state `A₀`. -/
-@[powerlib_foundation] theorem pllBlock_A_eq_A0 (p : FourState.Params) (θ0 : ℝ) (i j : Fin 2) :
+@[tmio M, powerlib_foundation] theorem pllBlock_A_eq_A0 (p : FourState.Params) (θ0 : ℝ) (i j : Fin 2) :
     (pllBlock (FourState.vd0 p θ0) p.kp p.ki).A i j =
       FourState.A0 p θ0 (Fin.castLE (by norm_num) i) (Fin.castLE (by norm_num) j) := by
   fin_cases i <;> fin_cases j <;> simp [pllBlock, FourState.A0]

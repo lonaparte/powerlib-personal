@@ -77,7 +77,7 @@ variable {n : ℕ}
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- With no initial offset the Grönwall bound is linear in the forcing. -/
-@[powerlib_foundation] theorem gronwallBound_zero_eq_mul (K ε x : ℝ) :
+@[tmio T, powerlib_foundation] theorem gronwallBound_zero_eq_mul (K ε x : ℝ) :
     gronwallBound 0 K ε x = ε * gronwallBound 0 K 1 x := by
   unfold gronwallBound
   split_ifs <;> ring

@@ -162,7 +162,7 @@ def vg (s : ℝ) (x : State 4) : ℂ :=
 /-- Active power from the complex power `S̄ = V̄ Ī*`: `P_ac = (3/2) Re{v_g ī}`. -/
 def Pac (s : ℝ) (x : State 4) : ℝ := 3 / 2 * (q.vg s x * (starRingEnd ℂ) (q.cur x)).re
 
-@[powerlib_foundation] theorem vg_re (s : ℝ) (x : State 4) :
+@[tmio M, powerlib_foundation] theorem vg_re (s : ℝ) (x : State 4) :
     (q.vg s x).re = q.V * cos (x 0) + s * q.Xg * q.Iq := by
   simp [vg, cur, Complex.exp_re, Complex.exp_im, Complex.mul_re, Complex.mul_im]
 
@@ -507,16 +507,14 @@ def family : Family Model Requirement 4 0 :=
   fun _ => rfl
 
 /-- No model meets the requirement language. -/
-@[tmio M]
-@[powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
   exact h .unavailable
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
+@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
@@ -535,8 +533,7 @@ private theorem flip_holds_iff {m : Model} (hIq : m.params.Iq = 0) (P : Flow.Pro
 /-- `I_q* = 0`: the two writings of the reactance drop agree on every sentence at mirror points —
 the flipped model `⟨q, −s, S x*⟩` satisfies exactly the sentences of `⟨q, s, x*⟩`, for every
 sentence (in particular local exponential stability and instability at `s = 1`). -/
-@[tmio TM]
-@[powerlib_domain] theorem flip_mem_den_iff (m : Model) (hIq : m.params.Iq = 0) (s : Sentence) :
+@[tmio TM, powerlib_domain] theorem flip_mem_den_iff (m : Model) (hIq : m.params.Iq = 0) (s : Sentence) :
     connection% (m.flip ∈ family.den s ↔ m ∈ family.den s) := by
   unfold powerlib.TMIO.Statement
   rcases s with P | _ | E
@@ -563,8 +560,7 @@ private theorem point_eq_affineCoord (m : Model) (hV : m.point 2 = 1) :
 exactly the sentences of its four-state GFL reading `toFourState` (`carrierField_eq_transport`,
 `Spectral.mem_den_flow_iff_of_transport`): the two models differ by the sign of the DC-voltage
 integrator and the reference of `x_p`. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_iff_fourState (m : Model) (hIq : m.params.Iq = 0)
+@[tmio TM, powerlib_domain] theorem mem_den_iff_fourState (m : Model) (hIq : m.params.Iq = 0)
     (hV : m.point 2 = 1) (hx : m.params.Kip * m.point 1 = 0) (s : Sentence) :
     connection% (m ∈ family.den s ↔ m.toFourState ∈ FourState.family.den s) := by
   unfold powerlib.TMIO.Statement
@@ -616,8 +612,7 @@ as a four-state model meeting the four-state translation of the sentence, which 
 (`FourState.chain_le_semantics`); the global sentences are translated into the inconsistent whole
 language, and passivity holds without requirement
 (`Spectral.chain_le_semantics_of_localTable_same`). -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   have hG := FourState.chain_le_semantics
@@ -646,8 +641,7 @@ four-state local exponential translation: an equilibrium (`FourState.IsEq`, `C �
 `K_i^pll x_p* = 0`; the rest is the four-state reading (`mem_den_iff_fourState`) and the exactness
 of the four-state translation (`FourState.exact_locallyExponentiallyStable`, converse
 linearization). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff (m : Model)
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff (m : Model)
     (hIq : m.params.Iq = 0) (hV : m.point 2 ≠ 0) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable) ↔
       m.point 2 = 1 ∧ m.params.Kip * m.point 1 = 0 ∧
@@ -685,8 +679,7 @@ linearization). -/
 the context meets `I_q* = 0`, the four-state point and the four-state equilibrium and Routh
 requirements exactly when it is locally exponentially stable
 (`mem_den_locallyExponentiallyStable_iff`, `Spectral.exactUnder_iff_forall`). -/
-@[tmio TM]
-@[powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
+@[tmio TM, powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
     connection% (family.ExactUnder {.iqZero, .vdcNonzero}
       (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -727,8 +720,7 @@ private def atUnitPoint (q : CarrierParams) : Model := ⟨q, 1, WithLp.toLp 2 ![
 `(0, 0, 1, 0)` reads as `FourState.undampedPLL`, which is Lyapunov stable
 (`FourState.undampedPLL_mem_den_lyapunovStable`) with the quartic `(λ² + 1)(λ² + λ + 1)` on the
 Routh boundary. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exactUnder_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem not_exactUnder_lyapunovStable :
     connection% (¬ family.ExactUnder {.iqZero, .vdcNonzero} (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   have hto : (atUnitPoint ⟨0, 0, 1, 0, 0, 1, 1, 1, 3 / 2⟩).toFourState =
@@ -750,8 +742,7 @@ carrier `V = X_g = K_p^pll = K_i^dvc = 1`, `K_i^pll = 2`, `C = 3/2`,
 `FourStateBoundary.weakFocus`, which is locally asymptotically stable
 (`FourStateBoundary.weakFocus_mem_den_locallyAsymptoticallyStable`) with the quartic
 `(λ² + 1)(λ² + λ + 2)` on the Routh boundary. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exactUnder_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem not_exactUnder_locallyAsymptoticallyStable :
     connection% (¬ family.ExactUnder {.iqZero, .vdcNonzero}
       (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -773,8 +764,7 @@ carrier `V = X_g = K_p^pll = K_i^dvc = 1`, `K_i^pll = 2`, `C = 3/2`,
 without ac source and with a unit DC source current (`I_dc = C = 1`, every other parameter `0`)
 at `(0, 0, 1, 0)` reads as `FourState.offEquilibrium`, which is unstable
 (`FourState.offEquilibrium_mem_den_unstable`) without being an equilibrium. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exactUnder_unstable :
+@[tmio TM, powerlib_domain] theorem not_exactUnder_unstable :
     connection% (¬ family.ExactUnder {.iqZero, .vdcNonzero} (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   have hto : (atUnitPoint ⟨1, 0, 0, 0, 0, 0, 0, 0, 1⟩).toFourState =

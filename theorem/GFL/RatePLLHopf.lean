@@ -82,6 +82,7 @@ open powerlib.Dynamics.Degenerate (hopfN hopfN3 lyapPoly lyapPolyφ lyapPolyw ho
 
 section NormalForm
 
+@[tmio T]
 private theorem coord0_isBigO (b : ℝ) :
     (fun z : Dynamics.State 2 => z 0) =O[𝓝 0] fun z => |z 0| + |z 1 - b * z 0| :=
   IsBigO.of_bound 1 (Eventually.of_forall fun z => by
@@ -667,8 +668,7 @@ with gains of opposite signs, `k_p k_i < 0`: a supercritical Hopf point. The Jac
 imaginary pair `± j √det J`, yet the operating point is locally asymptotically stable: the
 normal-form polynomial `hopfW` has derivative `−κ (φ² + (α/A) w²)² + O(s⁵)` with
 `κ = −k_p V² / (16 D₀ V cos θ*) > 0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_of_hopf (m : Model)
+@[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_of_hopf (m : Model)
     (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hk : m.params.kp * m.params.ki < 0) :
@@ -679,8 +679,7 @@ normal-form polynomial `hopfW` has derivative `−κ (φ² + (α/A) w²)² + O(s
 
 /-- Rate-coupled GFL PLL on the boundary `tr J = 0` with gains of equal signs, `k_p k_i > 0`: a
 subcritical Hopf point, unstable (Chetaev with the normal-form polynomial, `κ < 0`). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_unstable_of_hopf (m : Model)
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_hopf (m : Model)
     (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hk : 0 < m.params.kp * m.params.ki) :
@@ -692,8 +691,7 @@ subcritical Hopf point, unstable (Chetaev with the normal-form polynomial, `κ <
 /-- Rate-coupled GFL PLL with physical gains (`V, k_p, k_i, ω_s > 0`, `D₀ > 0`, `cos θ > 0`)
 exactly at the boundary angle `tan θ = ω_s k_p / k_i`: the operating point is unstable
 (subcritical Hopf). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_unstable_of_tan_eq (p : Params) (hD0 : 0 < p.D0)
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_tan_eq (p : Params) (hD0 : 0 < p.D0)
     (hV : 0 < p.V) (hkp : 0 < p.kp) (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ}
     (hcos : 0 < Real.cos θ) (heq : p.V * Real.sin θ = -(p.Xg * p.Id))
     (htan : Real.tan θ = p.ωs * p.kp / p.ki) :
@@ -704,8 +702,7 @@ exactly at the boundary angle `tan θ = ω_s k_p / k_i`: the operating point is 
 /-- With physical gains the operating point is locally asymptotically stable exactly below the
 boundary angle: `tan θ < ω_s k_p / k_i` (`V, k_p, k_i, ω_s > 0`, `D₀ > 0`, `cos θ > 0`,
 `V sin θ = −X_g i_d`). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_tan_lt (p : Params)
+@[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_tan_lt (p : Params)
     (hD0 : 0 < p.D0) (hV : 0 < p.V) (hkp : 0 < p.kp) (hki : 0 < p.ki) (hωs : 0 < p.ωs) {θ : ℝ}
     (hcos : 0 < Real.cos θ) (heq : p.V * Real.sin θ = -(p.Xg * p.Id)) :
     connection% (Model.mk p θ ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
@@ -740,8 +737,7 @@ non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear 
 `det J = 0` (a line of equilibria for `k_i = 0` or `V = 0`, the monotone fold coordinate
 `x + L_g i_d θ` for `cos θ* = 0`); `tr J = 0` with `k_p = 0` (conserved energy) or `k_p k_i > 0`
 (subcritical Hopf). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff (m : Model) :
+@[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff (m : Model) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
       m ∈ {m : Model | (m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id) ∧
         m.params.D0 ≠ 0) ∧ 0 < (jac m.params m.θ).det ∧ ((jac m.params m.θ).trace < 0 ∨
@@ -824,8 +820,7 @@ private theorem supercriticalPLL_data :
     nlinarith [h2]
 
 /-- The supercritical boundary PLL is locally asymptotically stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem supercriticalPLL_mem_den_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem supercriticalPLL_mem_den_locallyAsymptoticallyStable :
     connection% (supercriticalPLL ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   obtain ⟨heq, hD0, htr, hdet, hk⟩ := supercriticalPLL_data
   exact mem_den_locallyAsymptoticallyStable_of_hopf supercriticalPLL heq hD0 htr hdet hk
@@ -833,8 +828,7 @@ private theorem supercriticalPLL_data :
 /-- **The local asymptotic translation is not exact.** The supercritical boundary PLL is locally
 asymptotically stable, but its Jacobian has trace `0`, so it meets no stable-Jacobian
 requirement. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   intro h

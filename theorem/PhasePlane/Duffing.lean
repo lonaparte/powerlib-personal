@@ -62,7 +62,7 @@ def field (δ : ℝ) : State 2 → State 2 := Conservative.field 1 δ force
 /-- Energy `y²/2 + x⁴/4 − x²/2`. -/
 def energy : State 2 → ℝ := Conservative.energy 1 potential
 
-@[powerlib_foundation] theorem hasDerivAt_potential (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_potential (x : ℝ) :
     HasDerivAt potential (force x) x := by
   have h := ((hasDerivAt_pow 4 x).div_const 4).sub ((hasDerivAt_pow 2 x).div_const 2)
   unfold potential force

@@ -58,7 +58,7 @@ open Set Filter Topology
 /-! ## 1. `Σ_SN` crossing in one dimension -/
 
 /-- Strict convexity at an interior point: `g b < θ g a + (1 − θ) g c`. -/
-@[powerlib_foundation] theorem strictConvexOn_lt_secant {s : Set ℝ} {g : ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem strictConvexOn_lt_secant {s : Set ℝ} {g : ℝ → ℝ}
     (hg : StrictConvexOn ℝ s g) {a b c : ℝ} (ha : a ∈ s) (hc : c ∈ s) (hab : a < b)
     (hbc : b < c) :
     g b < (c - b) / (c - a) * g a + (b - a) / (c - a) * g c := by

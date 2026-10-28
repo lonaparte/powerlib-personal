@@ -97,7 +97,7 @@ variable {n : ℕ}
 
 /-- **Exact sampling preserves exactly the stability of an LTI system.** For a sampling period
 `T > 0`, `A` is Hurwitz exactly when `e^{TA}` is Schur stable. -/
-@[powerlib_foundation] theorem isHurwitz_iff_schurStable_exp (A : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem isHurwitz_iff_schurStable_exp (A : Matrix (Fin n) (Fin n) ℝ)
     {T : ℝ} (hT : 0 < T) :
     LinearSystems.IsHurwitz A ↔ SchurStable (NormedSpace.exp (T • A)) := by
   constructor

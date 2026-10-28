@@ -66,7 +66,7 @@ private lemma field_apply (x : State n) (u : Fin m → ℝ) (i : Fin n) :
   simp [field, mulVec, dotProduct]
 
 /-- Entrywise `Cᵏ` coefficients and a `Cᵏ` gradient give a `Cᵏ` field for each fixed input. -/
-@[powerlib_foundation] theorem contDiff_field {k : WithTop ℕ∞}
+@[tmio T, powerlib_foundation] theorem contDiff_field {k : WithTop ℕ∞}
     (hJ : ∀ i j, ContDiff ℝ k fun x => M.J x i j) (hR : ∀ i j, ContDiff ℝ k fun x => M.R x i j)
     (hg : ∀ i j, ContDiff ℝ k fun x => M.g x i j) (hdH : ContDiff ℝ k M.dH)
     (u : Fin m → ℝ) : ContDiff ℝ k fun x => M.field x u := by

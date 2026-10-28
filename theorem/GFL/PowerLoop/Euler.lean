@@ -75,8 +75,7 @@ A locally exponentially stable model (`V = k_p = k_i = k_P = 1`, `X_g = P_ref = 
 `θ* = i_d* = 0`) integrated with a large enough step is not locally exponentially stable: every
 Euler multiplier `1 + hλ` leaves the unit disk
 (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := mem_den_locallyExponentiallyStable_of_abs_lt ⟨1, 0, 1, 1, 1, 0⟩ one_pos one_pos one_pos

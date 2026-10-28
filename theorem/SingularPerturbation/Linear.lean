@@ -52,7 +52,7 @@ open Matrix
 
 /-- A Hurwitz matrix is invertible: `det(0 · 1 − A) ≠ 0`
 (`Criteria.det_smul_sub_ne_zero_of_isHurwitz`). -/
-@[powerlib_foundation] theorem isUnit_det_of_isHurwitz {k : ℕ} {A : Matrix (Fin k) (Fin k) ℝ}
+@[tmio T, powerlib_foundation] theorem isUnit_det_of_isHurwitz {k : ℕ} {A : Matrix (Fin k) (Fin k) ℝ}
     (hA : LinearSystems.IsHurwitz A) : IsUnit A.det :=
   isUnit_iff_ne_zero.mpr fun h0 => Criteria.det_smul_sub_ne_zero_of_isHurwitz hA le_rfl (by
     rw [zero_smul, zero_sub, det_neg, h0, mul_zero])

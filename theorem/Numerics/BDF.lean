@@ -53,7 +53,7 @@ def HasExactOrder (m : LMM k) (p : ℕ) : Prop := m.HasOrder p ∧ m.C (p + 1) �
 def Consistent (m : LMM k) : Prop :=
   ∑ i, m.α i = 0 ∧ ∑ i, m.α i * (i : ℚ) = ∑ i, m.β i
 
-@[powerlib_foundation] theorem consistent_iff_hasOrder_one (m : LMM k) :
+@[tmio T, powerlib_foundation] theorem consistent_iff_hasOrder_one (m : LMM k) :
     m.Consistent ↔ m.HasOrder 1 := by
   constructor
   · rintro ⟨h0, h1⟩ q hq

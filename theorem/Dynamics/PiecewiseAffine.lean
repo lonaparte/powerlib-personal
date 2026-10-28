@@ -48,7 +48,7 @@ variable {n p : ℕ}
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- The local sentences at a point depend only on the field near the point. -/
-@[powerlib_foundation] theorem holds_congr_nhds {f g : ℝⁿ → ℝⁿ} {x : ℝⁿ} (hfg : f =ᶠ[𝓝 x] g)
+@[tmio T, powerlib_foundation] theorem holds_congr_nhds {f g : ℝⁿ → ℝⁿ} {x : ℝⁿ} (hfg : f =ᶠ[𝓝 x] g)
     {P : Flow.Property}
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable ∨
       P = .locallyExponentiallyStable ∨ P = .unstable) :

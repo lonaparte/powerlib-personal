@@ -32,7 +32,7 @@ open powerlib.PhasePlane
 /-- The equilibrium set `{(0, 0), (1, 0), (−1, 0)}`. -/
 def equilibria : Set (State 2) := {mk 0 0, mk 1 0, mk (-1) 0}
 
-@[powerlib_foundation] theorem mem_equilibria_iff (δ : ℝ) (y : State 2) :
+@[tmio T, powerlib_foundation] theorem mem_equilibria_iff (δ : ℝ) (y : State 2) :
     y ∈ equilibria ↔ field δ y = 0 := by
   rw [field_eq_zero_iff]
   simp only [equilibria, mem_insert_iff, mem_singleton_iff, ext_iff', mk_apply_zero,

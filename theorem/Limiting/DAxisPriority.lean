@@ -36,13 +36,13 @@ namespace powerlib.Limiting
 /-- Clamp to `[-r, r]`. -/
 def clampSym (r x : ℝ) : ℝ := max (-r) (min x r)
 
-@[powerlib_foundation] theorem clampSym_sq_le {r : ℝ} (hr : 0 ≤ r) (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem clampSym_sq_le {r : ℝ} (hr : 0 ≤ r) (x : ℝ) :
     clampSym r x ^ 2 ≤ r ^ 2 := by
   have h1 : -r ≤ clampSym r x := le_max_left _ _
   have h2 : clampSym r x ≤ r := max_le (by linarith) (min_le_right _ _)
   nlinarith
 
-@[powerlib_foundation] theorem clampSym_of_abs_le {r x : ℝ} (h : |x| ≤ r) : clampSym r x = x := by
+@[tmio T, powerlib_foundation] theorem clampSym_of_abs_le {r x : ℝ} (h : |x| ≤ r) : clampSym r x = x := by
   have := abs_le.mp h
   simp only [clampSym]
   rw [min_eq_left this.2, max_eq_right this.1]

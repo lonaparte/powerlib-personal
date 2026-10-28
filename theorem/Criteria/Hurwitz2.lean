@@ -73,7 +73,7 @@ section General
 
 variable {n : ℕ}
 
-@[powerlib_foundation] theorem det_characteristicMatrix_eq_zero_of_eigenpair
+@[tmio T, powerlib_foundation] theorem det_characteristicMatrix_eq_zero_of_eigenpair
     (A : Matrix (Fin n) (Fin n) ℝ) {s : ℂ} {v : Fin n → ℂ} (hv : v ≠ 0)
     (heig : A.map (algebraMap ℝ ℂ) *ᵥ v = s • v) :
     (Linear.characteristicMatrix A s).det = 0 := by

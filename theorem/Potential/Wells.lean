@@ -78,7 +78,7 @@ def singleWell (k θ : ℝ) : ℝ := k * θ ^ 2 / 2
 /-- Anharmonic single well `kθ²/2 + λθ⁴/4`. -/
 def anharmonicWell (k lam θ : ℝ) : ℝ := k * θ ^ 2 / 2 + lam * θ ^ 4 / 4
 
-@[powerlib_foundation] theorem singleWell_min {k : ℝ} (hk : 0 < k) (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem singleWell_min {k : ℝ} (hk : 0 < k) (θ : ℝ) :
     singleWell k 0 ≤ singleWell k θ ∧ (singleWell k θ = singleWell k 0 ↔ θ = 0) := by
   simp only [singleWell]
   refine ⟨by nlinarith [sq_nonneg θ], ?_⟩

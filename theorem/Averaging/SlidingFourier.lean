@@ -33,7 +33,7 @@ open Complex intervalIntegral MeasureTheory
 def slidingCoeff (T ω : ℝ) (k : ℤ) (x : ℝ → ℂ) (t : ℝ) : ℂ :=
   (1 / T : ℂ) * ∫ τ in (t - T)..t, x τ * Complex.exp (-((k : ℂ) * ω * τ * I))
 
-@[powerlib_foundation] theorem hasDerivAt_harmonic (ω : ℝ) (k : ℤ) (τ : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_harmonic (ω : ℝ) (k : ℤ) (τ : ℝ) :
     HasDerivAt (fun τ : ℝ => Complex.exp (-((k : ℂ) * ω * τ * I)))
       (-((k : ℂ) * ω * I) * Complex.exp (-((k : ℂ) * ω * τ * I))) τ := by
   have h1 : HasDerivAt (fun τ : ℝ => ((τ : ℂ))) 1 τ := (hasDerivAt_id τ).ofReal_comp

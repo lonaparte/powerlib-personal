@@ -123,8 +123,7 @@ sound.** A locally exponentially stable model (`C_dc = G_dc = η = μ = u*_dc = 
 `K_p = 0`: `margin = 7/8 > 0`) integrated with a large enough step is not locally exponentially
 stable: every Euler multiplier `1 + hλ` leaves the unit disk
 (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := mem_den_locallyExponentiallyStable ⟨1, 1, 0, 1, 1, 1, 1, 1, 1⟩ one_pos one_pos one_pos
@@ -186,8 +185,7 @@ sound.** The model `C = G = η = 1`, `i_dc = 0`, `i_x(θ, v) = sin θ` at the or
 exponentially stable (its matched swing model `M = D = 1`, `τ = 0`, `P_e = sin θ` is,
 `matching_den_eq`); integrated with a large enough step it is not: every Euler multiplier
 `1 + hλ` leaves the unit disk (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
-@[tmio MI]
-@[powerlib_domain] theorem matching_not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem matching_not_euler_realizationSoundUnder :
     connection% (¬ matchingEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   set m : MatchingModel := ⟨1, 1, 1, 0, fun θ _ => Real.sin θ, 0, 0, one_ne_zero, one_ne_zero⟩
@@ -251,8 +249,7 @@ swing model `M = D = 1`, `τ = 0`, `P_e(θ, ω) = sin θ` at the origin is local
 stable (`swing_mem_den_locallyExponentiallyStable_iff_of_sinusoid`); integrated with a large
 enough step it is not: every Euler multiplier `1 + hλ` leaves the unit disk
 (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
-@[tmio MI]
-@[powerlib_domain] theorem swing_not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem swing_not_euler_realizationSoundUnder :
     connection% (¬ swingEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   set m : SwingModel := ⟨1, 1, 0, fun θ _ => 0 + 1 * Real.sin (θ - 0), 0, 0⟩
@@ -299,8 +296,7 @@ vacuously.** No stationary-frame model is locally exponentially stable
 (`full_not_mem_den_locallyExponentiallyStable`: every equilibrium has a singular Jacobian), so
 no integration is certified for local exponential stability, whatever its step; the family has
 no step threshold to state. -/
-@[tmio MI]
-@[powerlib_domain] theorem full_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem full_euler_realizationSoundUnder :
     connection% (fullEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   rintro y ⟨hy, -⟩

@@ -60,7 +60,7 @@ variable {n : ℕ}
 local notation "ℝⁿ" => State n
 
 /-- An integral curve of `g` along which `g` and `f` coincide is an integral curve of `f`. -/
-@[powerlib_foundation] theorem isIntegralCurveOn_of_eq_on_curve {f g : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem isIntegralCurveOn_of_eq_on_curve {f g : ℝⁿ → ℝⁿ}
     {ψ : ℝ → ℝⁿ} {s : Set ℝ} (hψ : IsIntegralCurveOn ψ (fun _ x => g x) s)
     (h : ∀ t ∈ s, g (ψ t) = f (ψ t)) : IsIntegralCurveOn ψ (fun _ x => f x) s := by
   intro t ht

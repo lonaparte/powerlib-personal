@@ -61,7 +61,7 @@ section Polynomial
 variable {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
 
 /-- An eigenpair `(μ, v)` of `M` is an eigenpair `(p(μ), v)` of every polynomial image `p(M)`. -/
-@[powerlib_foundation] theorem mulVec_aeval_of_eigen {M : Matrix ι ι R} {μ : R} {v : ι → R}
+@[tmio T, powerlib_foundation] theorem mulVec_aeval_of_eigen {M : Matrix ι ι R} {μ : R} {v : ι → R}
     (h : M *ᵥ v = μ • v) (p : R[X]) : aeval M p *ᵥ v = p.eval μ • v := by
   induction p using Polynomial.induction_on with
   | C a => simp [Algebra.algebraMap_eq_smul_one, Matrix.smul_mulVec]

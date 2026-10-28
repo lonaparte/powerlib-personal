@@ -78,7 +78,7 @@ section Derivation
 
 variable (lam : ℂ) (h : ℝ) (x : ℕ → ℂ)
 
-@[powerlib_foundation] theorem forwardEuler_testEquation :
+@[tmio T, powerlib_foundation] theorem forwardEuler_testEquation :
     IsForwardEulerTrajectory (testField lam) h x ↔ ∀ k, x (k + 1) = stabFE (h * lam) * x k := by
   simp only [IsForwardEulerTrajectory, testField, stabFE, Complex.real_smul]
   refine forall_congr' fun k => ?_

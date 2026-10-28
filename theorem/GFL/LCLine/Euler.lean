@@ -98,8 +98,7 @@ The locally exponentially stable code-frame model `unitLine` at `θ_c* = 0` (a z
 with negative slope, read through the text frame, `code_mem_den_iff`) integrated with a large
 enough step is not locally exponentially stable: every Euler multiplier `1 + hλ` leaves the unit
 disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
-@[tmio MI]
-@[powerlib_domain] theorem code_not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem code_not_euler_realizationSoundUnder :
     connection% (¬ codeEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hwC : unitLine.wC ≠ 0 := by norm_num [unitLine, Params.wC]

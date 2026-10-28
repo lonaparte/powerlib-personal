@@ -56,7 +56,7 @@ variable {n : ℕ}
 
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
-@[powerlib_foundation] theorem affine_isEquilibrium (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) :
+@[tmio T, powerlib_foundation] theorem affine_isEquilibrium (A : Matrix (Fin n) (Fin n) ℝ) (e : ℝⁿ) :
     IsEquilibrium (affineLinearVectorField A e) e := by
   simp [IsEquilibrium, affine_apply]
 

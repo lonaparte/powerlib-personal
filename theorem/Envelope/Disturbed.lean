@@ -90,7 +90,7 @@ def _root_.powerlib.Port.System.perturb (s : Port.System n p) (g : ℝⁿ → �
 
 /-- **Grönwall deviation.** While the perturbation stays below `W`, a solution of the perturbed
 system stays within `gronwallBound 0 K (|σ| W) t` of the nominal solution from the same state. -/
-@[powerlib_foundation] theorem dist_le_gronwall_perturb {s : Port.System n p} {K : ℝ≥0}
+@[tmio T, powerlib_foundation] theorem dist_le_gronwall_perturb {s : Port.System n p} {K : ℝ≥0}
     {σ W t : ℝ} (hK : LipschitzWith K s.zeroInput) {g : ℝⁿ → ℝⁿ} (hg : ∀ x, ‖g x‖ ≤ W)
     {x xn : ℝ → ℝⁿ} (hx : (s.perturb (σ • g)).IsTrajectoryOn 0 x 0 t)
     (hxn : s.IsTrajectoryOn 0 xn 0 t) (h0 : x 0 = xn 0) (ht : 0 ≤ t) :
@@ -148,7 +148,7 @@ def IsDesign {X Q : Type*} (F : Family X Q n p) (sys : X → Port.System n p) (S
   ∀ x, F.system x = .disturbed (fun _ => sys x) (S x) (A x) (ν x)
 
 /-- A design is safe at a level below one exactly when its reachable set lies in its safe set. -/
-@[powerlib_foundation] theorem IsDesign.mem_den_safe_iff {X Q : Type*} {F : Family X Q n p}
+@[tmio TM, powerlib_foundation] theorem IsDesign.mem_den_safe_iff {X Q : Type*} {F : Family X Q n p}
     {sys : X → Port.System n p} {S A : X → Set ℝⁿ} {ν : X → Measure Sample}
     [∀ x, IsProbabilityMeasure (ν x)] (hF : IsDesign F sys S A ν) {x : X} {T ε : ℝ≥0∞}
     (hε : ε < 1) :
@@ -220,8 +220,7 @@ variable {X Q : Type} {F : Family X Q n p} {sys : X → Port.System n p}
 states start solutions on `[0, T₀]`, the margin, an intensity whose Grönwall bound at `T₀` is at
 most the margin, and a perturbation exceeding `W` with probability at most `ε < 1`, an
 implementation whose design is safe before `T₀` is safe before `T₀` at the level `ε`. -/
-@[tmio MI]
-@[powerlib_domain] theorem noisy_realizationSoundUnder_safe [∀ x, IsProbabilityMeasure (ν x)]
+@[tmio MI, powerlib_domain] theorem noisy_realizationSoundUnder_safe [∀ x, IsProbabilityMeasure (ν x)]
     (hF : IsDesign F sys S A ν) {K : ℝ≥0} {W T₀ : ℝ} {ε : ℝ≥0∞} (hε : ε < 1) :
     connection% ((noisy F sys S A).RealizationSoundUnder
       {.lipschitz K, .solvable T₀, .margin, .small K W T₀, .bounded W ε}
@@ -281,8 +280,7 @@ def driftImpl : Implementation Unit Unit (Noisy Unit 1) NoiseRequirement 1 1 1 1
   simp only [drift, Port.System.perturb, zero_smul, zero_add]
 
 /-- The drift design is safe over every horizon at every level. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_driftDesign (T ε : ℝ≥0∞) :
+@[tmio TM, powerlib_domain] theorem mem_den_driftDesign (T ε : ℝ≥0∞) :
     connection% (() ∈ driftDesign.den (.envelope (.safe T ε))) := by
   unfold powerlib.TMIO.Statement
   rw [Family.mem_den]
@@ -316,8 +314,7 @@ def driftImpl : Implementation Unit Unit (Noisy Unit 1) NoiseRequirement 1 1 1 1
 
 /-- **Over the infinite horizon no nonzero intensity is safe.** The disturbed drift with `σ ≠ 0`
 leaves the unit ball with probability one, so it is not safe at any level `ε < 1`. -/
-@[tmio TM]
-@[powerlib_domain] theorem noisyDrift_not_mem_den_top {σ : ℝ} (hσ : σ ≠ 0) {ε : ℝ≥0∞}
+@[tmio TM, powerlib_domain] theorem noisyDrift_not_mem_den_top {σ : ℝ} (hσ : σ ≠ 0) {ε : ℝ≥0∞}
     (hε1 : ε < 1) :
     connection% (noisyDrift σ ∉ driftImpl.impl.den (.envelope (.safe ⊤ ε))) := by
   unfold powerlib.TMIO.Statement
@@ -345,8 +342,7 @@ at the level `ε` (`noisy_realizationSoundUnder_safe`: the design is Lipschitz a
 margin holds, the Gaussian coordinate exceeds some `k` with probability below `ε`, and
 `|σ| k T₀ ≤ 1/2` for `|σ| ≤ σ₀`). With `noisyDrift_not_mem_den_top` the two limits do not
 commute: `σ₀` depends on `T₀` and no positive threshold serves every horizon. -/
-@[tmio TM]
-@[powerlib_domain] theorem noisyDrift_mem_den_finite {ε : ℝ≥0∞} (hε : 0 < ε) (hε1 : ε < 1) :
+@[tmio TM, powerlib_domain] theorem noisyDrift_mem_den_finite {ε : ℝ≥0∞} (hε : 0 < ε) (hε1 : ε < 1) :
     connection% (∀ T₀ : ℝ, 0 ≤ T₀ → ∃ σ₀ : ℝ, 0 < σ₀ ∧ ∀ σ : ℝ, |σ| ≤ σ₀ →
       noisyDrift σ ∈ driftImpl.impl.den (.envelope (.safe (ENNReal.ofReal T₀) ε))) := by
   unfold powerlib.TMIO.Statement
@@ -400,8 +396,7 @@ commute: `σ₀` depends on `T₀` and no positive threshold serves every horizo
 `ε < 1`, the realization of safety over the infinite horizon is not sound within the Lipschitz
 design, the margin and the intensity bound `σ₀`: the disturbed drift with intensity `σ₀` is a
 witness (`noisyDrift_not_mem_den_top`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_driftImpl_realizationSoundUnder_top {σ₀ : ℝ} (hσ₀ : 0 < σ₀)
+@[tmio MI, powerlib_domain] theorem not_driftImpl_realizationSoundUnder_top {σ₀ : ℝ} (hσ₀ : 0 < σ₀)
     {ε : ℝ≥0∞} (hε1 : ε < 1) :
     connection% (¬ driftImpl.RealizationSoundUnder {.lipschitz 0, .margin, .intensityAtMost σ₀}
       (.envelope (.safe ⊤ ε))) := by

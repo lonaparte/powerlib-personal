@@ -58,7 +58,7 @@ section Implications
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : ℕ → Ω → ℝ} {Y : Ω → ℝ}
 
 /-- a.s. ⇒ in probability (finite measure). -/
-@[powerlib_foundation] theorem ae_imp_inProbability [IsFiniteMeasure P]
+@[tmio T, powerlib_foundation] theorem ae_imp_inProbability [IsFiniteMeasure P]
     (hX : ∀ n, AEStronglyMeasurable (X n) P)
     (h : ∀ᵐ ω ∂P, Tendsto (fun n => X n ω) atTop (𝓝 (Y ω))) : TendstoInMeasure P X atTop Y :=
   tendstoInMeasure_of_tendsto_ae hX h

@@ -44,7 +44,7 @@ open Filter Topology
 /-! ## The `β₃` parameter family -/
 
 /-- `β₃` family: positive `D, K, ω_c` realizing the prescribed spectrum. -/
-@[powerlib_foundation] theorem beta3_family {α0 ν β3 M : ℝ} (hα : 0 < α0) (hν : 0 < ν)
+@[tmio M, powerlib_foundation] theorem beta3_family {α0 ν β3 M : ℝ} (hα : 0 < α0) (hν : 0 < ν)
     (hβ : 2 * (α0 + ν) < β3) (hM : 0 < M) :
     ∃ D K ωc : ℝ, 0 < D ∧ 0 < K ∧ 0 < ωc ∧ ∀ s : ℂ,
       (s + ωc) * (M * s ^ 2 + D * s) + ωc * K =
@@ -78,7 +78,7 @@ open Filter Topology
   linear_combination ((M : ℂ) * s ^ 2) * hsumC + ((M : ℂ) * s) * hprodC + hK
 
 /-- `s² + 2α₀ s + (α₀² + ω_cr²) = (s − (−α₀ + jω_cr))(s − (−α₀ − jω_cr))`. -/
-@[powerlib_foundation] theorem roots_victim_quadratic (α0 ωcr : ℝ) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem roots_victim_quadratic (α0 ωcr : ℝ) (s : ℂ) :
     s ^ 2 + 2 * α0 * s + ((α0 ^ 2 + ωcr ^ 2 : ℝ) : ℂ) =
       (s - (-α0 + Complex.I * ωcr)) * (s - (-α0 - Complex.I * ωcr)) := by
   push_cast

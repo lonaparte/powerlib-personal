@@ -32,7 +32,7 @@ open Set Filter Topology
 /-- The squared-amplitude field `ρ ↦ 2μρ + 2lρ²`. -/
 def field (μ l : ℝ) (ρ : ℝ) : ℝ := 2 * μ * ρ + 2 * l * ρ ^ 2
 
-@[powerlib_foundation] theorem field_contDiff (μ l : ℝ) {k : WithTop ℕ∞} :
+@[tmio T, powerlib_foundation] theorem field_contDiff (μ l : ℝ) {k : WithTop ℕ∞} :
     ContDiff ℝ k (field μ l) := by
   unfold field; fun_prop
 

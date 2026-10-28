@@ -43,7 +43,7 @@ def relPhaseError (G : ℝ → ℂ → ℂ) (τ ω : ℝ) : ℝ :=
 
 /-! ## Arguments -/
 
-@[powerlib_foundation] theorem arg_pureDelay_jω {τ ω : ℝ} (h₁ : -π ≤ τ * ω) (h₂ : τ * ω < π) :
+@[tmio T, powerlib_foundation] theorem arg_pureDelay_jω {τ ω : ℝ} (h₁ : -π ≤ τ * ω) (h₂ : τ * ω < π) :
     arg (pureDelay τ (ω * I)) = -(τ * ω) := by
   rw [pureDelay_jω, Complex.exp_mul_I]
   exact Complex.arg_cos_add_sin_mul_I (θ := -(τ * ω)) ⟨by linarith, by linarith⟩

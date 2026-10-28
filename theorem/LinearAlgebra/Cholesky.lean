@@ -33,7 +33,7 @@ variable {k : ℕ}
 
 /-! ## Triangular helpers -/
 
-@[powerlib_foundation] theorem lowerTriangular_mul {A B : Matrix (Fin k) (Fin k) ℝ}
+@[tmio T, powerlib_foundation] theorem lowerTriangular_mul {A B : Matrix (Fin k) (Fin k) ℝ}
     (hA : A.IsLowerTriangular) (hB : B.IsLowerTriangular) : (A * B).IsLowerTriangular :=
   BlockTriangular.mul hA hB
 

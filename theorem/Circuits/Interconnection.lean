@@ -138,7 +138,7 @@ def closedLoop : Plant (n₁ + n₂) p :=
     ic.outputBlocks.reindex (Equiv.refl _) finSumFinEquiv,
     generated.closedLoopFeedthrough ic.source.D⟩
 
-@[simp, powerlib_foundation] theorem closedLoop_A : ic.closedLoop.A = ic.closedLoopA := rfl
+@[tmio M, simp, powerlib_foundation] theorem closedLoop_A : ic.closedLoop.A = ic.closedLoopA := rfl
 
 @[powerlib_foundation] theorem characteristicMatrix_closedLoop (s : ℂ) :
     characteristicMatrix ic.closedLoopBlocks s =
@@ -524,8 +524,7 @@ def family : Family (Interconnection n₁ n₂ p) Requirement (n₁ + n₂) p :=
 def componentsStable : Set Requirement := {.sourceStable, .loadStable}
 
 /-- No interconnection satisfies the impedance criterion and violates it. -/
-@[tmio M]
-@[powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_foundation] theorem realize_univ :
     connection% (realize (Meets (n₁ := n₁) (n₂ := n₂) (p := p)) Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   ext ic
@@ -536,8 +535,7 @@ def componentsStable : Set Requirement := {.sourceStable, .loadStable}
 
 /-- Within the space of internally stable components, the impedance criterion is an exact
 translation of the attractive sentences and sampled contraction of the closed loop. -/
-@[tmio TM]
-@[powerlib_domain] theorem exactUnder_hurwitz {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem exactUnder_hurwitz {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% ((family (n₁ := n₁) (n₂ := n₂) (p := p)).ExactUnder componentsStable
       (.flow P)) := by
@@ -559,8 +557,7 @@ translation of the attractive sentences and sampled contraction of the closed lo
     exact ⟨(ic.isHurwitz_closedLoop_iff h₁ h₂).mp hcl, h₁, h₂⟩
 
 /-- Full-state rate evidence is sound without a separate component-stability context. -/
-@[tmio TM]
-@[powerlib_domain] theorem sound_decay (a : ℝ) :
+@[tmio TM, powerlib_domain] theorem sound_decay (a : ℝ) :
     connection% ((family (n₁ := n₁) (n₂ := n₂) (p := p)).Sound (.flow (.decay a))) := by
   unfold powerlib.TMIO.Statement
   intro ic hic
@@ -570,8 +567,7 @@ translation of the attractive sentences and sampled contraction of the closed lo
 /-- Within the space of internally stable components every translation is sound: the impedance
 criterion proves Lyapunov stability, the attractive sentences and sampled contraction, and a
 right-half-plane zero of the return difference proves instability. -/
-@[tmio TM]
-@[powerlib_domain] theorem soundUnder (s : Sentence) :
+@[tmio TM, powerlib_domain] theorem soundUnder (s : Sentence) :
     connection% ((family (n₁ := n₁) (n₂ := n₂) (p := p)).SoundUnder componentsStable s) := by
   unfold powerlib.TMIO.Statement
   intro ic hic
@@ -668,8 +664,7 @@ def quietLoop : Interconnection 1 1 1 := ⟨quietMode, testLoad, rfl⟩
 /-- Port data do not certify closed-loop stability: the quiet interconnection is globally
 exponentially stable, yet its port data are not certified for that sentence, because the
 hidden-mode interconnection produces the same data. -/
-@[tmio TM]
-@[powerlib_domain] theorem portData_not_certified :
+@[tmio TM, powerlib_domain] theorem portData_not_certified :
     connection% (quietLoop ∈ family.den (.flow .globallyExponentiallyStable) ∧
       quietLoop.portData ∉ certify (Function.graph (portData (n₁ := 1) (n₂ := 1) (p := 1)))
         (family.den (.flow .globallyExponentiallyStable))) := by
@@ -721,8 +716,7 @@ abbrev Observable (n₁ n₂ p : ℕ) := {ic : Interconnection n₁ n₂ p // ic
 generated certification of a sentence contains the port data of every interconnection that
 satisfies it. This is the exact complement of `portData_not_certified`, whose source has a hidden
 mode. -/
-@[tmio TM]
-@[powerlib_domain] theorem portData_certified {ic : Interconnection n₁ n₂ p}
+@[tmio TM, powerlib_domain] theorem portData_certified {ic : Interconnection n₁ n₂ p}
     (hm : ic.MinimalComponents) {P : Flow.Property} (hP : ic ∈ family.den (.flow P)) :
     connection% (ic.portData ∈ certify (Function.graph fun ic : Observable n₁ n₂ p => ic.1.portData)
       {ic | ic.1 ∈ family.den (.flow P)}) := by
@@ -769,8 +763,7 @@ def staticLoop (d c : ℝ) : Interconnection 0 1 1 := ⟨staticSource d, firstOr
 components are all internally stable, the denotation of global exponential stability is no
 product of a set of sources and a set of loads. Requirements that each speak about one component
 realize products (`TMIO.realize_sum`), so none of them translates the sentence exactly. -/
-@[tmio TM]
-@[powerlib_domain] theorem closedLoop_not_separable :
+@[tmio TM, powerlib_domain] theorem closedLoop_not_separable :
     connection% (¬ ∃ (D C : Set ℝ), (fun dc : ℝ × ℝ => staticLoop dc.1 dc.2) ⁻¹'
       (family (n₁ := 0) (n₂ := 1) (p := 1)).den (.flow .globallyExponentiallyStable) =
         D ×ˢ C) := by

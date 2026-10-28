@@ -65,7 +65,7 @@ open powerlib.Transform (rot rot_neg_mul_rot)
 /-! ## Back-EMF methods -/
 
 /-- Back-EMF estimate from the stator voltage equation `v = r i + L di/dt + e`. -/
-@[powerlib_foundation] theorem backEMF_estimate (r L : ℝ) (v i di e : ℂ)
+@[tmio T, powerlib_foundation] theorem backEMF_estimate (r L : ℝ) (v i di e : ℂ)
     (h : v = r * i + L * di + e) : e = v - r * i - L * di := by
   rw [h]; ring
 

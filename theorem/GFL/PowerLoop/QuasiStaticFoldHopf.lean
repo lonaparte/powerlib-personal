@@ -260,7 +260,7 @@ def hopfQS_w4 (c1 c2 c3 : ℝ) : ℝ :=
 `c = M z` (`φ = 3c₁ + 4c₂ + 7c₃`, `S = sin φ`, `C = cos φ` kept as atoms), the derivative of `W`
 is its weight-four part plus a remainder of weight `≥ 5` and the Taylor remainders of `sin`, `cos`
 times polynomials of weight `≥ 1`. -/
-@[powerlib_foundation] theorem hopfQS_key (c1 c2 c3 S C : ℝ) :
+@[tmio M, powerlib_foundation] theorem hopfQS_key (c1 c2 c3 S C : ℝ) :
     dpoly3 hopfQS_W c1 c2 c3
         (-4*C*c2/85 - 56*C*c3/85 - 47*C/170 + 2*S*c2/85 + 28*S*c3/85 - 42*S/85 + 126*c1/85 -
           83*c2/85 + 70*c3/17 + 47/170)
@@ -671,8 +671,7 @@ private theorem supercriticalQS_las : LocalAsymptoticStable supercriticalQS.fiel
 /-- The supercritical quasi-static witness (`V = √5`, `X_g = 1`, `k_p = −1/4`, `k_i = 21/4`,
 `k_P = 4/3`, `P_ref = −3`, `(θ*, i_d*) = (arctan(1/2), −1)`) is locally asymptotically stable: a
 weak focus, its Jacobian has the eigenvalues `±3i` and `−7/2`. -/
-@[tmio TM]
-@[powerlib_domain] theorem supercriticalQS_mem_den_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem supercriticalQS_mem_den_locallyAsymptoticallyStable :
     connection% (supercriticalQS ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [family_isAutonomous.mem_den_flow]
@@ -720,8 +719,7 @@ weak focus, its Jacobian has the eigenvalues `±3i` and `−7/2`. -/
 /-- **The local asymptotic translation is not exact** (gains of arbitrary sign): the supercritical
 witness is locally asymptotically stable, but `tr J · m₂(J) = det J`, so it meets no strict
 Routh–Hurwitz requirement. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   intro h

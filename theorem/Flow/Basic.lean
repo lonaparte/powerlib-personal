@@ -41,7 +41,7 @@ variable {n : ℕ}
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- An exponential estimate on every segment of a forward-complete solution forces convergence. -/
-@[powerlib_foundation] theorem tendsto_of_segment_bound
+@[tmio T, powerlib_foundation] theorem tendsto_of_segment_bound
     {f : ℝⁿ → ℝⁿ} {x : ℝⁿ} {C a : ℝ} (ha : 0 < a) {t₀ : ℝ}
     {φ : ℝ → ℝⁿ} (hφ : IsIntegralCurveOn φ (fun _ y => f y) (Ici t₀))
     (hb : ∀ t₁ : ℝ, IsTrajectoryOn φ f t₀ t₁ → ∀ t : ℝ, t ∈ Icc t₀ t₁ →
@@ -78,7 +78,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
   exact tendsto_of_segment_bound ha hφ fun t₁ hseg => hb t₀ t₁ φ hseg
 
 /-- A local exponential estimate gives local asymptotic stability. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_localAsymptoticStable
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_localAsymptoticStable
     {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
     (h : LocallyExponentiallyStable f x) : LocalAsymptoticStable f x := by
   refine ⟨h.lyapunovStable, ?_⟩

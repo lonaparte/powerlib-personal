@@ -31,6 +31,6 @@ namespace powerlib.Frequency
 /-- A constant scalar load step `ΔP_L` on a one-port plant. -/
 def load (ΔPL : ℝ) : Fin 1 → ℝ := fun _ => ΔPL
 
-@[simp, powerlib_foundation] theorem load_apply (ΔPL : ℝ) (i : Fin 1) : load ΔPL i = ΔPL := rfl
+@[tmio M, simp, powerlib_foundation] theorem load_apply (ΔPL : ℝ) (i : Fin 1) : load ΔPL i = ΔPL := rfl
 
 end powerlib.Frequency

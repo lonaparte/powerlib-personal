@@ -62,12 +62,12 @@ abbrev Positive := {x : ℝ // 0 < x}
 /-- The reciprocal of a positive real. -/
 def reciprocal (x : Positive) : Positive := ⟨x.val⁻¹, inv_pos.mpr x.property⟩
 
-@[simp, powerlib_foundation] theorem reciprocal_involutive (x : Positive) :
+@[tmio T, simp, powerlib_foundation] theorem reciprocal_involutive (x : Positive) :
     reciprocal (reciprocal x) = x := by
   apply Subtype.ext
   simp [reciprocal]
 
-@[simp, powerlib_foundation] theorem scale_cancel (x : ℝ) (y : Positive) :
+@[tmio T, simp, powerlib_foundation] theorem scale_cancel (x : ℝ) (y : Positive) :
     (x * (reciprocal y).val) * y.val = x := by
   dsimp [reciprocal]
   field_simp [ne_of_gt y.property]
@@ -308,8 +308,7 @@ is carved out exactly by its requirement — Lyapunov stability and passivity by
 resistance, the attractive sentences and sampled contraction by a positive one, instability by a
 negative one, conservation by a lossless branch, and decay at the rate `a` by a time constant
 `L / R` with `a ≤ R / L`. -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_eq_semantics :
+@[tmio TM, powerlib_domain] theorem chain_eq_semantics :
     connection% (family.chain = family.semantics) := by
   unfold powerlib.TMIO.Statement
   have hLS : ∀ m : Impedance,

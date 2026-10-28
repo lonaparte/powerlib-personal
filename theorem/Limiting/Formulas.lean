@@ -51,7 +51,7 @@ namespace powerlib.Limiting
 def currentMag (E V R X δ : ℝ) : ℝ :=
   ‖(E : ℂ) * Complex.exp (δ * Complex.I) - V‖ / ‖(⟨R, X⟩ : ℂ)‖
 
-@[powerlib_foundation] theorem currentMag_sq_num (E V δ : ℝ) :
+@[tmio T, powerlib_foundation] theorem currentMag_sq_num (E V δ : ℝ) :
     ‖(E : ℂ) * Complex.exp (δ * Complex.I) - V‖ ^ 2 = E ^ 2 + V ^ 2 - 2 * E * V * Real.cos δ := by
   rw [Complex.sq_norm, Complex.normSq_apply]
   have hre : ((E : ℂ) * Complex.exp (δ * Complex.I) - V).re = E * Real.cos δ - V := by

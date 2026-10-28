@@ -77,7 +77,7 @@ variable {α l₁ : ℝ}
 /-- Morse substitution `u = y² − r_c²` (`r_c² = α/l₁`): for `0 < a ≤ b`,
 `∫_a^b y⁻¹ e^{U(y)/D̃} dy = (e^{ΔU/D̃}/2) ∫_{a²−r_c²}^{b²−r_c²} (r_c² + u)⁻¹ e^{−l₁u²/(4D̃)} du`,
 since `U(y) = ΔU − (l₁/4)(y² − r_c²)²` exactly. -/
-@[powerlib_foundation] theorem guard_weight_morse (hl : 0 < l₁) {D a b : ℝ} (hD : 0 < D)
+@[tmio M, powerlib_foundation] theorem guard_weight_morse (hl : 0 < l₁) {D a b : ℝ} (hD : 0 < D)
     (ha : 0 < a) (hab : a ≤ b) :
     ∫ y in a..b, y⁻¹ * Real.exp (guardPotential α l₁ y / D) =
       Real.exp (barrierHeight α l₁ / D) / 2 *

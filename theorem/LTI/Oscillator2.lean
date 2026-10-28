@@ -53,7 +53,7 @@ def osc2 (A : Matrix (Fin 2) (Fin 2) ℝ) (σ ωd : ℝ) (p : Fin 2 → ℝ) (t 
 variable {A : Matrix (Fin 2) (Fin 2) ℝ} {σ ωd : ℝ}
 
 /-- 2×2 Cayley–Hamilton: `A² = tr A · A − det A · I`. -/
-@[powerlib_foundation] theorem mul_self_fin_two (A : Matrix (Fin 2) (Fin 2) ℝ) :
+@[tmio T, powerlib_foundation] theorem mul_self_fin_two (A : Matrix (Fin 2) (Fin 2) ℝ) :
     A * A = A.trace • A - A.det • (1 : Matrix (Fin 2) (Fin 2) ℝ) := by
   ext i j
   fin_cases i <;> fin_cases j <;>

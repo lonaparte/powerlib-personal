@@ -62,7 +62,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 def chordStep (F : E → E) (A : E →L[ℝ] E) (x : E) : E := x - Ring.inverse A (F x)
 
 /-- The chord map is Lipschitz with constant `‖A⁻¹‖ c` on a convex set where `‖J − A‖ ≤ c`. -/
-@[powerlib_foundation] theorem chordStep_lipschitz {F : E → E} {J : E → E →L[ℝ] E} {U : Set E}
+@[tmio T, powerlib_foundation] theorem chordStep_lipschitz {F : E → E} {J : E → E →L[ℝ] E} {U : Set E}
     (hU : Convex ℝ U) (hF : ∀ z ∈ U, HasFDerivAt F (J z) z) {A : E →L[ℝ] E} (hA : IsUnit A)
     {c : ℝ} (hJA : ∀ z ∈ U, ‖J z - A‖ ≤ c) {x y : E} (hx : x ∈ U) (hy : y ∈ U) :
     ‖chordStep F A x - chordStep F A y‖ ≤ ‖Ring.inverse A‖ * c * ‖x - y‖ := by

@@ -38,11 +38,11 @@ def transport (u : sInfHom B A) (eA : A ≃o A') (eB : B ≃o B') : sInfHom B' A
   map_sInf' s := by
     rw [map_sInf eB.symm, map_sInf u, map_sInf eA, Set.image_image, Set.image_image]
 
-@[simp, powerlib_foundation] theorem transport_apply (u : sInfHom B A) (eA : A ≃o A')
+@[tmio T, simp, powerlib_foundation] theorem transport_apply (u : sInfHom B A) (eA : A ≃o A')
     (eB : B ≃o B') (b : B') : transport u eA eB b = eA (u (eB.symm b)) := rfl
 
 /-- The generated forward map transports with the structure. -/
-@[powerlib_foundation] theorem generate_transport (u : sInfHom B A) (eA : A ≃o A')
+@[tmio T, powerlib_foundation] theorem generate_transport (u : sInfHom B A) (eA : A ≃o A')
     (eB : B ≃o B') : ⇑(generate (transport u eA eB)) = eB ∘ generate u ∘ eA.symm := by
   symm
   apply generate_unique

@@ -47,7 +47,7 @@ variable {X Q : Type*} {n p : ℕ} {F : Family X Q n p}
 requirements of `P` give it (soundness), the fields are `C¹`, an equilibrium outside the guard
 `G` does not satisfy `P`, and an equilibrium on the guard meets the translated requirements. Then
 the translation of `P` is exact within `Δ`. -/
-@[powerlib_foundation] theorem exactUnder_of_equilibrium
+@[tmio TM, powerlib_foundation] theorem exactUnder_of_equilibrium
     (hden : ∀ x (P : Flow.Property), x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x))
     {P : Flow.Property}
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable ∨

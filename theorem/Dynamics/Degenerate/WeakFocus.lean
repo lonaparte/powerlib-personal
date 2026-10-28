@@ -88,7 +88,7 @@ def dpoly3 : List (ℝ × ℕ × ℕ × ℕ) → ℝ → ℝ → ℝ → ℝ →
         (t.2.2.2 : ℝ) * a ^ t.2.1 * b ^ t.2.2.1 * c ^ (t.2.2.2 - 1) * dc) +
       dpoly3 l a b c da db dc
 
-@[simp, powerlib_foundation] theorem poly3_nil (a b c : ℝ) : poly3 [] a b c = 0 := rfl
+@[tmio T, simp, powerlib_foundation] theorem poly3_nil (a b c : ℝ) : poly3 [] a b c = 0 := rfl
 
 @[simp, powerlib_foundation] theorem poly3_cons (t : ℝ × ℕ × ℕ × ℕ) (l : List (ℝ × ℕ × ℕ × ℕ))
     (a b c : ℝ) :

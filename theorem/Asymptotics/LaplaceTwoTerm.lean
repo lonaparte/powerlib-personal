@@ -44,7 +44,7 @@ open Real Set Filter Topology MeasureTheory intervalIntegral
 
 /-- Half-line second Gaussian moment: `∫_0^∞ u² e^{−βu²} du = √(π/β)/(4β)`
 (wraps `integral_rpow_mul_exp_neg_mul_rpow` with `p = q = 2`, `Γ(3/2) = √π/2`). -/
-@[powerlib_foundation] theorem gaussMoment2_Ioi {β : ℝ} (hβ : 0 < β) :
+@[tmio T, powerlib_foundation] theorem gaussMoment2_Ioi {β : ℝ} (hβ : 0 < β) :
     ∫ u in Ioi (0 : ℝ), u ^ 2 * Real.exp (-β * u ^ 2) = √(π / β) / (4 * β) := by
   have h := integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := 2) (b := β) two_pos
     (by norm_num) hβ

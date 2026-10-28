@@ -40,7 +40,7 @@ open Set
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- Integrating a power bound on the derivative. -/
-@[powerlib_foundation] theorem norm_le_of_hasDerivAt_le_pow {φ φ' : ℝ → E} {M h : ℝ} (m : ℕ)
+@[tmio T, powerlib_foundation] theorem norm_le_of_hasDerivAt_le_pow {φ φ' : ℝ → E} {M h : ℝ} (m : ℕ)
     (hφ : ∀ s ∈ Icc 0 h, HasDerivAt φ (φ' s) s) (h0 : φ 0 = 0)
     (hb : ∀ s ∈ Icc 0 h, ‖φ' s‖ ≤ M * s ^ m) :
     ∀ s ∈ Icc 0 h, ‖φ s‖ ≤ M * s ^ (m + 1) / (m + 1) := by

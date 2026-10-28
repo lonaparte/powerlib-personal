@@ -34,7 +34,7 @@ open scoped Matrix.Norms.Operator
 variable {X : Type*} [Fintype X] [DecidableEq X] {A : ℝ → Matrix X X ℝ} {M : ℝ}
 
 /-- An interval integral of a family commuting with `N` commutes with `N`. -/
-@[powerlib_foundation] theorem commute_intervalIntegral (hA : Continuous A)
+@[tmio T, powerlib_foundation] theorem commute_intervalIntegral (hA : Continuous A)
     {N : Matrix X X ℝ} (h : ∀ r, Commute (A r) N) (a b : ℝ) :
     Commute (∫ r in a..b, A r) N := by
   have h1 := ((ContinuousLinearMap.mul ℝ (Matrix X X ℝ)).flip N).intervalIntegral_comp_comm

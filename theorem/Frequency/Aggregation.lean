@@ -57,7 +57,7 @@ variable {ι : Type*} [Fintype ι]
 def coi (M ω : ι → ℝ) : ℝ := (∑ k, M k * ω k) / ∑ k, M k
 
 /-- The COI frequency of signals `Δω_k(t)` is differentiable with the weighted-mean rate. -/
-@[powerlib_foundation] theorem hasDerivAt_coi {M : ι → ℝ} {ω ω' : ι → ℝ → ℝ} {t : ℝ}
+@[tmio T, powerlib_foundation] theorem hasDerivAt_coi {M : ι → ℝ} {ω ω' : ι → ℝ → ℝ} {t : ℝ}
     (hω : ∀ k, HasDerivAt (ω k) (ω' k t) t) :
     HasDerivAt (fun s => coi M (fun k => ω k s)) ((∑ k, M k * ω' k t) / ∑ k, M k) t := by
   unfold coi

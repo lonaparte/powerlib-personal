@@ -148,7 +148,7 @@ def B : Matrix (Fin 10) (Fin 2) ℝ := Matrix.of fun i j => p.lin 0 (unitVec j) 
 section LinAlg
 variable {K : Type*} [Field K] [Algebra ℝ K]
 
-@[powerlib_foundation] theorem lin_add (x y : Fin 10 → K) (u v : Fin 2 → K) :
+@[tmio M, powerlib_foundation] theorem lin_add (x y : Fin 10 → K) (u v : Fin 2 → K) :
     p.lin (x + y) (u + v) = p.lin x u + p.lin y v := by
   ext i
   fin_cases i <;> simp [lin, duty, iref, epq, ipll, vpll] <;> ring

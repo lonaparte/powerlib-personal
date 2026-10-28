@@ -72,7 +72,7 @@ private theorem iterate_smul (L : ℝⁿ →L[ℝ] ℝⁿ) (c : ℝ) (y : ℝⁿ
 
 /-- Local asymptotic stability of a continuous linear map at the origin makes every orbit converge
 to the origin: a scaled copy of the initial state lies in the basin. -/
-@[powerlib_foundation] theorem tendsto_iterate_of_localAsymptoticStable {L : ℝⁿ →L[ℝ] ℝⁿ}
+@[tmio T, powerlib_foundation] theorem tendsto_iterate_of_localAsymptoticStable {L : ℝⁿ →L[ℝ] ℝⁿ}
     (h : LocalAsymptoticStable L 0) (y : ℝⁿ) :
     Tendsto (fun k : ℕ => (⇑L)^[k] y) atTop (𝓝 0) := by
   obtain ⟨-, c, hc, hconv⟩ := h
@@ -225,7 +225,7 @@ variable {X Q : Type*}
 /-- In a family of linear maps, the attractive sentences and sampled contraction denote the
 members with a Schur matrix, whatever their step lengths (the discrete counterpart of
 `Family.IsLinear.den_hurwitz`). -/
-@[powerlib_foundation] theorem IsAutonomousMap.den_schurStable {F : Family X Q n 0}
+@[tmio TM, powerlib_foundation] theorem IsAutonomousMap.den_schurStable {F : Family X Q n 0}
     {period : X → ℝ} {Φ : X → Matrix (Fin n) (Fin n) ℝ}
     (hF : F.IsAutonomousMap period fun x => Map.op (Φ x)) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) : F.den (.flow P) = {x | LTI.SchurStable (Φ x)} := by

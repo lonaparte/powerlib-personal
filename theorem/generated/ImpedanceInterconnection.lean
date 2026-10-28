@@ -35,7 +35,7 @@ def closedLoopBlocks {ι₁ ι₂ κ : Type*} [Fintype κ]
   Matrix.fromBlocks A₁ (B₁ * C₂)
     (-(B₂ * C₁)) (A₂ - ((B₂ * D₁) * C₂))
 
-@[simp, powerlib_foundation] theorem closedLoopBlocks_spec {ι₁ ι₂ κ : Type*} [Fintype κ]
+@[tmio T, simp, powerlib_foundation] theorem closedLoopBlocks_spec {ι₁ ι₂ κ : Type*} [Fintype κ]
     (A₁ : Matrix ι₁ ι₁ ℝ) (B₁ : Matrix ι₁ κ ℝ) (C₁ : Matrix κ ι₁ ℝ) (D₁ : Matrix κ κ ℝ)
     (A₂ : Matrix ι₂ ι₂ ℝ) (B₂ : Matrix ι₂ κ ℝ) (C₂ : Matrix κ ι₂ ℝ) :
     closedLoopBlocks A₁ B₁ C₁ D₁ A₂ B₂ C₂ =

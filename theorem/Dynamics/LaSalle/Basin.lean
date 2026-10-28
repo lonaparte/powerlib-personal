@@ -74,7 +74,7 @@ initial state in `S` a forward solution exists, and every forward solution from 
 `x_eq`) iff `S` is a subset of the region of attraction of `x_eq` (right side: the set of initial
 states `x₀` for which the same condition holds on the singleton `{x₀}`; the largest set
 satisfying the condition). -/
-@[powerlib_foundation] theorem regionOfAttraction_iff_subset {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem regionOfAttraction_iff_subset {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
     {S : Set ℝⁿ} :
     (∀ x₀ ∈ S,
       (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧

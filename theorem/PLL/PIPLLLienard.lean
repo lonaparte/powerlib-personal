@@ -51,7 +51,7 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 
 /-- If `F₀`, `F₁ : ℝ² → ℝ` have derivatives `v ↦ a v₀ + b v₁` and `v ↦ c v₀ + d v₁` at `x`,
 then `y ↦ (F₀ y, F₁ y)` has Jacobian matrix `[[a, b], [c, d]]` at `x`. -/
-@[powerlib_foundation] theorem hasFDerivAt_piPLLState_comp {F₀ F₁ : ℝ² → ℝ} {x : ℝ²}
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_piPLLState_comp {F₀ F₁ : ℝ² → ℝ} {x : ℝ²}
     {L₀ L₁ : ℝ² →L[ℝ] ℝ} {a b c d : ℝ} (h₀ : HasFDerivAt F₀ L₀ x)
     (h₁ : HasFDerivAt F₁ L₁ x) (hL₀ : ∀ v : ℝ², L₀ v = a * v 0 + b * v 1)
     (hL₁ : ∀ v : ℝ², L₁ v = c * v 0 + d * v 1) :

@@ -41,7 +41,7 @@ section Order
 variable {A B : Type*} [CompleteLattice A] [CompleteLattice B]
 
 /-- One semantic map lies below another exactly when its generated forward map lies above. -/
-@[powerlib_foundation] theorem generate_le_generate_iff (u v : sInfHom B A) :
+@[tmio T, powerlib_foundation] theorem generate_le_generate_iff (u v : sInfHom B A) :
     (∀ a, generate v a ≤ generate u a) ↔ ∀ b, u b ≤ v b := by
   constructor
   · intro h b

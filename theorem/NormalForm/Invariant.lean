@@ -58,7 +58,7 @@ open Set Filter Topology Polynomial
 /-! ## Invariance implies tangency -/
 
 /-- If a solution starting at `p` stays in `S` on `(0, T)`, then `f(p) ∈ tangentConeAt ℝ S p`. -/
-@[powerlib_foundation] theorem vectorField_mem_tangentCone {E : Type*} [NormedAddCommGroup E]
+@[tmio T, powerlib_foundation] theorem vectorField_mem_tangentCone {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {f : E → E} {S : Set E} {φ : ℝ → E} {T : ℝ} (hT : 0 < T)
     (hφ : IsIntegralCurveOn φ (fun _ x => f x) (Icc 0 T)) (hS : ∀ t ∈ Ioo 0 T, φ t ∈ S) :
     f (φ 0) ∈ tangentConeAt ℝ S (φ 0) := by

@@ -33,7 +33,7 @@ variable {n : ℕ}
 /-- `ẋ = c ‖x‖² x`. -/
 def cubicField (c : ℝ) (x : State n) : State n := (c * ‖x‖ ^ 2) • x
 
-@[powerlib_foundation] theorem cubicField_zero (c : ℝ) : cubicField c (0 : State n) = 0 := by
+@[tmio T, powerlib_foundation] theorem cubicField_zero (c : ℝ) : cubicField c (0 : State n) = 0 := by
   simp [cubicField]
 
 @[powerlib_foundation] theorem cubicField_contDiff (c : ℝ) : ContDiff ℝ 1 (cubicField (n := n) c) :=

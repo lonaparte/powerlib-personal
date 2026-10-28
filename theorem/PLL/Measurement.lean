@@ -52,7 +52,7 @@ open powerlib.LTI (derivModel)
 /-! ## Magnitude and the −3 dB bandwidth -/
 
 /-- `|H(jω)|² = (b² + a²ω²)/((b − ω²)² + a²ω²)`, `a = V K_p`, `b = V K_i`. -/
-@[powerlib_foundation] theorem normSq_closedLoopTF (V Kp Ki ω : ℝ) :
+@[tmio M, powerlib_foundation] theorem normSq_closedLoopTF (V Kp Ki ω : ℝ) :
     normSq (closedLoopTF V Kp Ki ((ω : ℂ) * I)) =
       ((V * Ki) ^ 2 + (V * Kp * ω) ^ 2) / ((V * Ki - ω ^ 2) ^ 2 + (V * Kp * ω) ^ 2) := by
   have hden : loopPoly V Kp Ki ((ω : ℂ) * I) = ⟨V * Ki - ω ^ 2, V * Kp * ω⟩ := by

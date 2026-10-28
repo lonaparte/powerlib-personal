@@ -36,7 +36,7 @@ namespace Map
 open Filter Topology
 
 /-- A system without ports is passive (zero storage). -/
-@[powerlib_foundation] theorem System.autonomous_passive (T : ℝ) (F : ℝⁿ → ℝⁿ) :
+@[tmio T, powerlib_foundation] theorem System.autonomous_passive (T : ℝ) (F : ℝⁿ → ℝⁿ) :
     (System.autonomous T F).Passive :=
   ⟨fun _ => 0, fun _ => le_rfl, fun x u => by
     simp [System.supply, System.autonomous, Subsingleton.elim u 0]⟩

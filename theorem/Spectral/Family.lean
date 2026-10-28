@@ -80,7 +80,7 @@ def Meets (S U : X → Prop) (x : X) : Requirement → Prop
   | .stable => S x
   | .unstable => U x
 
-@[simp, powerlib_foundation] theorem meets_stable {S U : X → Prop} {x : X} :
+@[tmio M, simp, powerlib_foundation] theorem meets_stable {S U : X → Prop} {x : X} :
     Meets S U x .stable ↔ S x := Iff.rfl
 
 @[simp, powerlib_foundation] theorem meets_unstable {S U : X → Prop} {x : X} :

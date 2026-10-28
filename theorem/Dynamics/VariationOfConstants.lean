@@ -61,7 +61,7 @@ open scoped Matrix.Norms.Operator
 variable {X U : Type*} [Fintype X] [DecidableEq X] [Fintype U]
 
 /-- The forced response solves `ẋ = A(t) x + B(t) u(t)` at every time. -/
-@[powerlib_foundation] theorem forcedResponse_hasDerivAt {A : ℝ → Matrix X X ℝ}
+@[tmio T, powerlib_foundation] theorem forcedResponse_hasDerivAt {A : ℝ → Matrix X X ℝ}
     {B : ℝ → Matrix X U ℝ} {u : ℝ → U → ℝ} (hA : Continuous A) (hB : Continuous B)
     (hu : Continuous u) (t₀ : ℝ) (x₀ : X → ℝ) (t : ℝ) :
     HasDerivAt (LinearSystems.forcedResponse A B u t₀ x₀)

@@ -76,7 +76,7 @@ open Matrix Polynomial
 
 section Quartic
 
-@[powerlib_foundation] theorem quartic_root_re_im {a3 a2 a1 a0 : ℝ} {s : ℂ}
+@[tmio T, powerlib_foundation] theorem quartic_root_re_im {a3 a2 a1 a0 : ℝ} {s : ℂ}
     (hs : s ^ 4 + (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0) :
     s.re ^ 4 - 6 * s.re ^ 2 * s.im ^ 2 + s.im ^ 4 + a3 * (s.re ^ 3 - 3 * s.re * s.im ^ 2) +
         a2 * (s.re ^ 2 - s.im ^ 2) + a1 * s.re + a0 = 0 ∧

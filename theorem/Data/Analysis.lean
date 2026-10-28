@@ -80,7 +80,7 @@ map is the composite of their generated forward maps. -/
   rw [h, generate_comp, statsEdge, fitEdge, generate_preimage, generate_preimage]
 
 /-- Merging two records adds their statistics. -/
-@[simp, powerlib_foundation] theorem stats_append (d₁ d₂ : Record K) :
+@[tmio T, simp, powerlib_foundation] theorem stats_append (d₁ d₂ : Record K) :
     stats (d₁ ++ d₂) = stats d₁ + stats d₂ := by
   simp [stats]
 

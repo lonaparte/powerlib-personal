@@ -88,12 +88,12 @@ local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 def siso2 (a b c d b1 b2 c1 c2 : ℝ) : Plant 2 1 :=
   ⟨!![a, b; c, d], !![b1; b2], !![c1, c2], 0⟩
 
-@[powerlib_foundation] theorem siso2_det_characteristicMatrix (a b c d b1 b2 c1 c2 : ℝ) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem siso2_det_characteristicMatrix (a b c d b1 b2 c1 c2 : ℝ) (s : ℂ) :
     (characteristicMatrix (siso2 a b c d b1 b2 c1 c2).A s).det =
       (s - a) * (s - d) - b * c := by
   simp [characteristicMatrix, siso2, Matrix.det_fin_two]
 
-@[powerlib_foundation] theorem siso2_transfer (a b c d b1 b2 c1 c2 : ℝ) (s : ℂ)
+@[tmio T, powerlib_foundation] theorem siso2_transfer (a b c d b1 b2 c1 c2 : ℝ) (s : ℂ)
     (hdet : (s - a) * (s - d) - b * c ≠ 0) :
     transfer (siso2 a b c d b1 b2 c1 c2) s 0 0 =
       ((c1 : ℂ) * ((s - d) * b1 + b * b2) + c2 * (c * b1 + (s - a) * b2)) /
@@ -228,8 +228,7 @@ connection conclusion. -/
 /-- For `L ≠ 0` an IMC current loop satisfies exactly the sentences of the converter PI loop with
 IMC tuning `CurrentControl.imc L R α`: the two families read the same plant (`imcModel_eq`). A
 comparison of the two semantics connections at the two members. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_iff_imc (m : IMCLoop) (hL : m.L ≠ 0) (s : Sentence) :
+@[tmio TM, powerlib_domain] theorem mem_den_iff_imc (m : IMCLoop) (hL : m.L ≠ 0) (s : Sentence) :
     connection% (m ∈ family.den s ↔
       CurrentControl.imc m.L m.R m.α ∈ CurrentControl.PIParams.family.den s) := by
   unfold powerlib.TMIO.Statement
@@ -237,8 +236,7 @@ comparison of the two semantics connections at the two members. -/
   simp only [IMCLoop.plant, imcModel_eq _ _ _ hL]
 
 /-- Every translation of the IMC family is sound. -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.linear_chain_le_semantics (fun m h => (imcModel_isHurwitz_iff _ _ _).mpr h)
@@ -246,8 +244,7 @@ comparison of the two semantics connections at the two members. -/
 
 /-- The attractive sentences and sampled contraction of the IMC loop are carved out exactly by
 positive monic coefficients. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM, powerlib_domain] theorem exact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.linear_exact (fun m => (imcModel_isHurwitz_iff _ _ _).symm) hP
@@ -255,8 +252,7 @@ positive monic coefficients. -/
 /-- For `L, R, α > 0` the IMC current loop satisfies every attractive sentence (closed-loop
 eigenvalues `−α`, `−R/L`), in particular global exponential stability; read from the converter
 loop (`mem_den_iff_imc`, `CurrentControl.imc_mem_den_iff`). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den (L R α : ℝ) (hL : 0 < L) (hR : 0 < R) (hα : 0 < α)
+@[tmio TM, powerlib_domain] theorem mem_den (L R α : ℝ) (hL : 0 < L) (hR : 0 < R) (hα : 0 < α)
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (⟨L, R, α⟩ ∈ family.den (.flow P)) := by
   have hr := mem_den_iff_imc ⟨L, R, α⟩ hL.ne' (.flow P)

@@ -88,7 +88,7 @@ def lnGMR (a b : ℝ) : ℝ :=
     a ^ 2 / (2 * (b ^ 2 - a ^ 2)) - 1 / 4
 
 /-- Solid-conductor limit: `ln D_s → ln r_sh - 1/4` (`D_s → e^{-1/4} r_sh`) as `r_in → 0⁺`. -/
-@[powerlib_foundation] theorem lnGMR_solid_limit {b : ℝ} (hb : 0 < b) :
+@[tmio M, powerlib_foundation] theorem lnGMR_solid_limit {b : ℝ} (hb : 0 < b) :
     Tendsto (fun a => lnGMR a b) (𝓝[>] 0) (𝓝 (Real.log b - 1 / 4)) := by
   have hlog : Tendsto (fun a : ℝ => Real.log a * a ^ (4 : ℕ)) (𝓝[>] 0) (𝓝 0) := by
     have h := tendsto_log_mul_rpow_nhdsGT_zero (r := (4 : ℝ)) (by norm_num)

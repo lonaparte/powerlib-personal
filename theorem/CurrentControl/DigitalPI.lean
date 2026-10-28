@@ -163,7 +163,7 @@ def model : Plant 3 1 :=
 
 /-- The platform field written out: `dz/dt = −(2/τ) z + u`, `v = (4/τ) z − u`. Static evidence
 on the implementation, not a connection conclusion. -/
-@[powerlib_foundation] theorem field_apply (iref : ℝ) (x : ℝ³) :
+@[tmio M, powerlib_foundation] theorem field_apply (iref : ℝ) (x : ℝ³) :
     y.field iref x = WithLp.toLp 2
       ![(-y.design.R * x 0 + (4 / y.τ * x 2 - y.control iref x)) / y.design.L, iref - x 0,
         -2 / y.τ * x 2 + y.control iref x] := by
@@ -530,8 +530,7 @@ private theorem design_translate_flow {P : Flow.Property}
 
 /-- The whole platform requirement language is inconsistent: with `L > 0` and `Tₛ > 0` the
 Routh conditions exclude every strict violation. -/
-@[tmio M]
-@[powerlib_domain] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize family.meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun y h => ?_
@@ -559,8 +558,7 @@ private theorem translate_eq_linearTable (s : Sentence) :
 /-- Every translation of the platform family is sound: the Routh conditions give a Hurwitz plant,
 a strict violation a characteristic root in the open right half plane (the linear table,
 `Spectral.chain_le_semantics_of_linearTable_univ`). -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.chain_le_semantics_of_linearTable_univ (F := family) family_isLinear
@@ -576,8 +574,7 @@ a strict violation a characteristic root in the open right half plane (the linea
 /-- Within a positive inductance and a positive period, the attractive sentences and sampled
 contraction of the platform are translated exactly: the plant is Hurwitz exactly when the
 platform Routh conditions hold. -/
-@[tmio TM]
-@[powerlib_domain] theorem exactUnder {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM, powerlib_domain] theorem exactUnder {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.ExactUnder {.physical, .sampling} (.flow P)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.exactUnder_of_linearTable (F := family) family_isLinear
@@ -592,8 +589,7 @@ platform Routh conditions hold. -/
 
 /-- With `L > 0` and `Tₛ > 0` a platform satisfies an attractive sentence (in particular global
 exponential stability) iff `0 < a₂ ∧ 0 < a₀ ∧ a₃ a₀ < a₂ a₁`. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_iff (y : DigitalPI) (hL : 0 < y.design.L) (hT : 0 < y.Ts)
+@[tmio TM, powerlib_domain] theorem mem_den_iff (y : DigitalPI) (hL : 0 < y.design.L) (hT : 0 < y.Ts)
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (y ∈ family.den (.flow P) ↔
       y ∈ {y : DigitalPI | 0 < y.a2 ∧ 0 < y.a0 ∧ y.a3 * y.a0 < y.a2 * y.a1}) := by
@@ -618,8 +614,7 @@ a platform whose design satisfies an attractive sentence (or sampled contraction
 The proof is the static reduction `Implementation.realizationSoundUnder_of_design`: the
 exact design translation (`PIParams.exact`), the sound platform translation
 (`chain_le_semantics`) and the algebraic obligation `routh_of_fastSampling`. -/
-@[tmio MI]
-@[powerlib_domain] theorem realizationSoundUnder {P : Flow.Property}
+@[tmio MI, powerlib_domain] theorem realizationSoundUnder {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (implementation.RealizationSoundUnder {.physical, .sampling, .fastSampling}
       (.flow P)) := by
@@ -649,8 +644,7 @@ exact design translation (`PIParams.exact`), the sound platform translation
 /-- Implementation completeness for every period: a platform with a positive period satisfying
 an attractive sentence (or sampled contraction) realizes a design satisfying it, whatever the
 inductance. The delay never stabilizes a design. -/
-@[tmio MI]
-@[powerlib_domain] theorem realizationCompleteUnder {P : Flow.Property}
+@[tmio MI, powerlib_domain] theorem realizationCompleteUnder {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (implementation.RealizationCompleteUnder {.sampling} (.flow P)) := by
   unfold powerlib.TMIO.Statement Implementation.RealizationCompleteUnder
@@ -665,8 +659,7 @@ inductance. The delay never stabilizes a design. -/
 /-- Implementation exactness: within a positive inductance, a positive period and fast sampling,
 a platform satisfies an attractive sentence (or sampled contraction) exactly when its design
 does. -/
-@[tmio MI]
-@[powerlib_domain] theorem realizationExactUnder {P : Flow.Property}
+@[tmio MI, powerlib_domain] theorem realizationExactUnder {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (implementation.RealizationExactUnder {.physical, .sampling, .fastSampling}
       (.flow P)) := by
@@ -678,8 +671,7 @@ does. -/
 
 /-- Implementation soundness of instability: a platform whose design is statically unstable
 (`(R + Kp)/L < 0` or `Ki/L < 0`) is unstable, for every positive inductance and period. -/
-@[tmio MI]
-@[powerlib_domain] theorem realizationSoundUnder_unstable :
+@[tmio MI, powerlib_domain] theorem realizationSoundUnder_unstable :
     connection% (implementation.RealizationSoundUnder {.physical, .sampling, .design .unstable}
       (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement Implementation.RealizationSoundUnder
@@ -736,8 +728,7 @@ not a connection conclusion. -/
 /-- The sampled IMC loop with `L, R, Tₛ > 0` satisfies an attractive sentence iff
 `0 < ω_b` and `ω_b Tₛ < 4/3`, whatever `L` and `R`; its design does for every `ω_b > 0`
 (`imc_mem_den_iff`). -/
-@[tmio TM]
-@[powerlib_domain] theorem imcTuned_mem_den_iff {L R ωb Ts : ℝ} (hL : 0 < L) (hR : 0 < R)
+@[tmio TM, powerlib_domain] theorem imcTuned_mem_den_iff {L R ωb Ts : ℝ} (hL : 0 < L) (hR : 0 < R)
     (hT : 0 < Ts) {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (imcTuned L R ωb Ts ∈ family.den (.flow P) ↔
       imcTuned L R ωb Ts ∈ {_y : DigitalPI | 0 < ωb ∧ 3 * ωb * Ts < 4}) := by
@@ -751,8 +742,7 @@ def slowIMC : DigitalPI := imcTuned 1 1 1 2
 
 /-- The design of the slow platform satisfies every attractive sentence (`R + Kp = 2`,
 `Ki = 1`). -/
-@[tmio TM]
-@[powerlib_domain] theorem slowIMC_design_mem_den {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem slowIMC_design_mem_den {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (slowIMC.design ∈ PIParams.family.den (.flow P)) := by
   have h := PIParams.mem_den_iff slowIMC.design (by norm_num [slowIMC, imcTuned, imc]) hP
@@ -762,8 +752,7 @@ def slowIMC : DigitalPI := imcTuned 1 1 1 2
   norm_num [slowIMC, imcTuned, imc]
 
 /-- The slow platform is unstable: `a₂ a₁ = 1/2 < 3/2 = a₃ a₀`. -/
-@[tmio TM]
-@[powerlib_domain] theorem slowIMC_mem_den_unstable :
+@[tmio TM, powerlib_domain] theorem slowIMC_mem_den_unstable :
     connection% (slowIMC ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   rw [family_isLinear.mem_den_flow]
@@ -774,8 +763,7 @@ def slowIMC : DigitalPI := imcTuned 1 1 1 2
 
 /-- Without fast sampling the attractive sentences are not realized soundly: the slow platform
 has a positive inductance and period and a stable design, and is unstable. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_realizationSoundUnder {P : Flow.Property}
+@[tmio MI, powerlib_domain] theorem not_realizationSoundUnder {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (¬ implementation.RealizationSoundUnder {.physical, .sampling} (.flow P)) := by
   unfold powerlib.TMIO.Statement

@@ -67,7 +67,7 @@ def satisfaction (sat : X → Q → Prop) : sInfHom (Set X)ᵒᵈ (Set Q) where
     rw [sInf_image]
     exact (satRel sat).gc_leftDual_rightDual.u_sInf
 
-@[simp, powerlib_foundation] theorem mem_satisfaction (sat : X → Q → Prop) (P : (Set X)ᵒᵈ)
+@[tmio T, simp, powerlib_foundation] theorem mem_satisfaction (sat : X → Q → Prop) (P : (Set X)ᵒᵈ)
     (q : Q) : q ∈ satisfaction sat P ↔ ∀ x ∈ ofDual P, sat x q := Iff.rfl
 
 /-- The generated forward map is Mathlib's `leftDual`. -/

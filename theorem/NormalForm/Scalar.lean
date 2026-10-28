@@ -48,7 +48,7 @@ def embed (r : ℝ) : State 1 := EuclideanSpace.single 0 r
 /-- The scalar field `g` lifted to `State 1`: the only coordinate evolves as `ẋ = g x`. -/
 def lift (g : ℝ → ℝ) (x : State 1) : State 1 := embed (g (x 0))
 
-@[simp, powerlib_foundation] theorem embed_apply (r : ℝ) (i : Fin 1) : embed r i = r := by
+@[tmio T, simp, powerlib_foundation] theorem embed_apply (r : ℝ) (i : Fin 1) : embed r i = r := by
   fin_cases i
   simp [embed]
 

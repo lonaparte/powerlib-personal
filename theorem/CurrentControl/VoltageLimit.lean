@@ -139,12 +139,12 @@ namespace LimitedPI
 def sat (V u : ℝ) : ℝ := max (-V) (min V u)
 
 /-- A command in range passes unchanged. -/
-@[powerlib_foundation] theorem sat_of_abs_le {V u : ℝ} (h : |u| ≤ V) : sat V u = u := by
+@[tmio T, powerlib_foundation] theorem sat_of_abs_le {V u : ℝ} (h : |u| ≤ V) : sat V u = u := by
   rw [abs_le] at h
   simp [sat, min_eq_right h.2, max_eq_right h.1]
 
 /-- The saturated command is bounded by the limit. -/
-@[powerlib_foundation] theorem abs_sat_le (V u : ℝ) : |sat V u| ≤ |V| := by
+@[tmio T, powerlib_foundation] theorem abs_sat_le (V u : ℝ) : |sat V u| ≤ |V| := by
   unfold sat
   rcases le_total 0 V with hV | hV
   · rw [abs_of_nonneg hV, abs_le]
@@ -556,8 +556,7 @@ private theorem not_globallyExponentiallyStable (y : LimitedPI) :
 
 /-- The whole platform requirement language is inconsistent: headroom and overload exclude each
 other. -/
-@[tmio M]
-@[powerlib_domain] theorem realize_univ :
+@[tmio M, powerlib_domain] theorem realize_univ :
     connection% (TMIO.realize family.meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.realize_univ_eq_empty_of .headroom .overload
@@ -567,8 +566,7 @@ other. -/
 /-- Every translation of the platform family is sound: with headroom a stable design gives local
 exponential stability and an unstable design instability (locality of the local sentences), and
 passivity holds without requirement. -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.chain_le_semantics_of_localTable_same (Rs := {.design .stable, .headroom})
@@ -586,8 +584,7 @@ passivity holds without requirement. -/
       (unstable_of_unstable (hy (.design .unstable) (by simp)) (hy .headroom (by simp)))
 
 /-- Passivity is translated exactly: a platform without ports is passive. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
+@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
@@ -596,8 +593,7 @@ platform is locally asymptotically (exponentially) stable exactly when its desig
 `(R + Kp)/L > 0 ∧ Ki/L > 0`. The saturated field is not `C¹`, but near the operating point it is
 the design's affine loop, which decides these sentences
 (`Dynamics.holds_iff_of_eventuallyEq_inputField`). -/
-@[tmio TM]
-@[powerlib_domain] theorem exactUnder_attractive {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem exactUnder_attractive {P : Flow.Property}
     (hP : P = .locallyAsymptoticallyStable ∨ P = .locallyExponentiallyStable) :
     connection% (family.ExactUnder {.headroom} (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -613,8 +609,7 @@ the design's affine loop, which decides these sentences
 
 /-- With `L > 0` and headroom, a platform is locally asymptotically (exponentially) stable iff
 `R + Kp > 0 ∧ Ki > 0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_iff (y : LimitedPI) (hL : 0 < y.design.L)
+@[tmio TM, powerlib_domain] theorem mem_den_iff (y : LimitedPI) (hL : 0 < y.design.L)
     (hh : |y.design.R * y.iref| < y.Vmax) {P : Flow.Property}
     (hP : P = .locallyAsymptoticallyStable ∨ P = .locallyExponentiallyStable) :
     connection% (y ∈ family.den (.flow P) ↔
@@ -627,8 +622,7 @@ the design's affine loop, which decides these sentences
 /-- Within a positive inductance, integral action and headroom, instability is translated exactly:
 a design that is not unstable, `(R + Kp)/L ≥ 0` and `Ki/L > 0`, is Lyapunov stable, and so is
 the platform. -/
-@[tmio TM]
-@[powerlib_domain] theorem exactUnder_unstable :
+@[tmio TM, powerlib_domain] theorem exactUnder_unstable :
     connection% (family.ExactUnder {.inductance, .integral, .headroom} (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.exactUnder_iff_forall.mpr fun y hΔ => ⟨fun h => ?_, fun hd => ?_⟩
@@ -658,8 +652,7 @@ def center : LimitedPI := ⟨⟨1, 1, -1, 1⟩, 0, 1⟩
 
 /-- The lossless platform is Lyapunov stable: its design is a centre and the limit is inactive near
 the operating point. -/
-@[tmio TM]
-@[powerlib_domain] theorem center_mem_den_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem center_mem_den_lyapunovStable :
     connection% (center ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   rw [family_isAutonomous.mem_den_flow]
@@ -672,8 +665,7 @@ the operating point. -/
 
 /-- Lyapunov stability is not translated exactly within all realistic constraints with headroom:
 the lossless platform is Lyapunov stable while its design is not stable (`R + Kp = 0`). -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exactUnder_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem not_exactUnder_lyapunovStable :
     connection% (¬ family.ExactUnder {.inductance, .integral, .dcLink, .headroom}
       (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -694,8 +686,7 @@ the lossless platform is Lyapunov stable while its design is not stable (`R + Kp
 
 /-- No platform is globally exponentially stable: the voltage limit bounds the rate at which a
 large integrator state unwinds. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_mem_den_globallyExponentiallyStable (y : LimitedPI) :
+@[tmio TM, powerlib_domain] theorem not_mem_den_globallyExponentiallyStable (y : LimitedPI) :
     connection% (y ∉ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [family_isAutonomous.mem_den_flow]
@@ -703,8 +694,7 @@ large integrator state unwinds. -/
 
 /-- Global exponential stability is translated exactly into the whole, inconsistent, language:
 no platform satisfies it. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_globallyExponentiallyStable :
+@[tmio TM, powerlib_domain] theorem exact_globallyExponentiallyStable :
     connection% (family.Exact (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_univ realize_univ rfl
@@ -712,8 +702,7 @@ no platform satisfies it. -/
 
 /-- With a positive inductance, integral action, a positive DC link and overload, the platform is
 unstable whatever the design: the operating point is not an equilibrium. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_unstable_of_overload (y : LimitedPI) (hL : 0 < y.design.L)
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_overload (y : LimitedPI) (hL : 0 < y.design.L)
     (hKi : y.design.Ki ≠ 0) (hV : 0 < y.Vdc) (ho : y.Vmax < |y.design.R * y.iref|) :
     connection% (y ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
@@ -735,8 +724,7 @@ private theorem implementation_impl : implementation.impl = family := rfl
 /-- Within integral action and headroom, Lyapunov stability, local asymptotic and local
 exponential stability and instability are realized exactly, for every sign of `L`: near the
 operating point the limit is inactive and the platform is the design's linear loop. -/
-@[tmio MI]
-@[powerlib_domain] theorem realizationExactUnder_local {P : Flow.Property}
+@[tmio MI, powerlib_domain] theorem realizationExactUnder_local {P : Flow.Property}
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable ∨
       P = .locallyExponentiallyStable ∨ P = .unstable) :
     connection% (implementation.RealizationExactUnder {.integral, .headroom} (.flow P)) := by
@@ -756,8 +744,7 @@ operating point the limit is inactive and the platform is the design's linear lo
 by the static reduction `Implementation.realizationSoundUnder_of_design`: the exact design
 translation (`PIParams.exact`), the sound platform translation (`chain_le_semantics`), and a
 stable design with headroom meeting the platform translation. -/
-@[tmio MI]
-@[powerlib_domain] theorem realizationSoundUnder_attractive {P : Flow.Property}
+@[tmio MI, powerlib_domain] theorem realizationSoundUnder_attractive {P : Flow.Property}
     (hP : P = .locallyAsymptoticallyStable ∨ P = .locallyExponentiallyStable) :
     connection% (implementation.RealizationSoundUnder {.headroom} (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -784,8 +771,7 @@ stable design with headroom meeting the platform translation. -/
 def nominal : PIParams := ⟨1, 1, 1, 1⟩
 
 /-- The nominal design satisfies every attractive sentence. -/
-@[tmio TM]
-@[powerlib_domain] theorem nominal_mem_den {P : Flow.Property} (hP : P.Attractive) :
+@[tmio TM, powerlib_domain] theorem nominal_mem_den {P : Flow.Property} (hP : P.Attractive) :
     connection% (nominal ∈ PIParams.family.den (.flow P)) := by
   have h := PIParams.mem_den_iff nominal (by norm_num [nominal]) (Or.inl hP)
   unfold powerlib.TMIO.Statement at h ⊢
@@ -802,16 +788,14 @@ private theorem overloaded_overload :
   norm_num
 
 /-- The overloaded platform is unstable. -/
-@[tmio TM]
-@[powerlib_domain] theorem overloaded_mem_den_unstable :
+@[tmio TM, powerlib_domain] theorem overloaded_mem_den_unstable :
     connection% (overloaded ∈ family.den (.flow .unstable)) :=
   mem_den_unstable_of_overload overloaded (by norm_num [overloaded, nominal])
     (by norm_num [overloaded, nominal]) (by norm_num [overloaded]) overloaded_overload
 
 /-- Within overload (with a positive inductance, integral action and a positive DC link)
 instability is realized soundly: every such platform is unstable. -/
-@[tmio MI]
-@[powerlib_domain] theorem realizationSoundUnder_unstable_of_overload :
+@[tmio MI, powerlib_domain] theorem realizationSoundUnder_unstable_of_overload :
     connection% (implementation.RealizationSoundUnder {.inductance, .integral, .dcLink, .overload}
       (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement Implementation.RealizationSoundUnder
@@ -824,8 +808,7 @@ instability is realized soundly: every such platform is unstable. -/
 
 /-- Within overload local exponential stability is not realized soundly: the overloaded platform
 has a locally exponentially stable design and is unstable. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_realizationSoundUnder_locallyExponentiallyStable :
+@[tmio MI, powerlib_domain] theorem not_realizationSoundUnder_locallyExponentiallyStable :
     connection% (¬ implementation.RealizationSoundUnder {.inductance, .integral, .dcLink, .overload}
       (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -851,8 +834,7 @@ def unloaded : LimitedPI := ⟨nominal, 0, 1⟩
 
 /-- Global exponential stability is not realized soundly within all realistic constraints with
 headroom: the nominal design is globally exponentially stable, the unloaded platform is not. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_realizationSoundUnder_globallyExponentiallyStable :
+@[tmio MI, powerlib_domain] theorem not_realizationSoundUnder_globallyExponentiallyStable :
     connection% (¬ implementation.RealizationSoundUnder {.inductance, .integral, .dcLink, .headroom}
       (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -874,8 +856,7 @@ headroom: the nominal design is globally exponentially stable, the unloaded plat
 
 /-- Global exponential stability is realized completely, without constraints, vacuously: no
 platform satisfies it. -/
-@[tmio MI]
-@[powerlib_domain] theorem realizationCompleteUnder_globallyExponentiallyStable :
+@[tmio MI, powerlib_domain] theorem realizationCompleteUnder_globallyExponentiallyStable :
     connection% (implementation.RealizationCompleteUnder ∅
       (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement Implementation.RealizationCompleteUnder
@@ -895,8 +876,7 @@ private theorem drifting_headroom : |drifting.design.R * drifting.iref| < drifti
 
 /-- Without integral action the drifting design is Lyapunov stable: the current decays and the
 integrator only drifts by a bounded amount (`i² + (ξ − i)²` does not increase). -/
-@[tmio TM]
-@[powerlib_domain] theorem drifting_design_mem_den_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem drifting_design_mem_den_lyapunovStable :
     connection% (drifting.design ∈ PIParams.family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   rw [PIParams.family_isLinear.mem_den_flow]
@@ -929,8 +909,7 @@ integrator only drifts by a bounded amount (`i² + (ξ − i)²` does not increa
 
 /-- The drifting platform is unstable: without integral action the operating point `(1, 0)` is not
 an equilibrium (the steady voltage `R i* = 1` is never commanded). -/
-@[tmio TM]
-@[powerlib_domain] theorem drifting_mem_den_unstable :
+@[tmio TM, powerlib_domain] theorem drifting_mem_den_unstable :
     connection% (drifting ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   rw [family_isAutonomous.mem_den_flow]
@@ -952,8 +931,7 @@ private theorem drifting_mem_context :
 
 /-- Without integral action Lyapunov stability is not realized soundly, even with headroom: the
 drifting platform has a Lyapunov stable design and is unstable. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_realizationSoundUnder_lyapunovStable :
+@[tmio MI, powerlib_domain] theorem not_realizationSoundUnder_lyapunovStable :
     connection% (¬ implementation.RealizationSoundUnder {.inductance, .dcLink, .headroom}
       (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -968,8 +946,7 @@ drifting platform has a Lyapunov stable design and is unstable. -/
 
 /-- Without integral action instability is not realized completely, even with headroom: the
 drifting platform is unstable while its design is Lyapunov stable. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_realizationCompleteUnder_unstable :
+@[tmio MI, powerlib_domain] theorem not_realizationCompleteUnder_unstable :
     connection% (¬ implementation.RealizationCompleteUnder {.inductance, .dcLink, .headroom}
       (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement

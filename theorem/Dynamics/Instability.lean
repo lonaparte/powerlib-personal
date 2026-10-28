@@ -65,7 +65,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 /-- A function that does not increase along the field near a point, and takes values below its
 value at the point arbitrarily close to it, rules out local asymptotic stability of a `C¹`
 field: a solution through such a state keeps the function below its value at the point. -/
-@[powerlib_foundation] theorem not_localAsymptoticStable_of_lie_nonpos {f : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem not_localAsymptoticStable_of_lie_nonpos {f : ℝⁿ → ℝⁿ}
     {x_eq : ℝⁿ} {V : ℝⁿ → ℝ} {ρ : ℝ} (hf : ContDiff ℝ 1 f) (hV : Differentiable ℝ V)
     (hρ : 0 < ρ) (hLie : ∀ x, ‖x - x_eq‖ < ρ → fderiv ℝ V x (f x) ≤ 0)
     (hseed : ∀ ε > 0, ∃ x, ‖x - x_eq‖ < ε ∧ V x < V x_eq) :

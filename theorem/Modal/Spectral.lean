@@ -53,7 +53,7 @@ variable {A : Matrix n n ℂ} (mb : ModalBasis A)
 /-! ## Characteristic polynomial and multiplicity -/
 
 /-- `det(sI − A) = Π_i (s − λ_i)`. -/
-@[powerlib_foundation] theorem det_sub_eq_prod (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem det_sub_eq_prod (s : ℂ) :
     (s • (1 : Matrix n n ℂ) - A).det = ∏ i, (s - mb.eig i) := by
   rw [mb.sub_eq_conj, det_mul, det_mul, det_diagonal]
   have h : mb.V.det * mb.Wᵀ.det = 1 := by rw [← det_mul, mb.V_mul_Wt, det_one]

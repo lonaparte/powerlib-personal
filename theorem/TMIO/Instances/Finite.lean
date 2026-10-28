@@ -81,7 +81,7 @@ def witness : Seed (Set Bool) (Set (Bool × Bool)) (Set (Bool × Bool × Bool)) 
 
 /-- The observation edge compresses information: its round trip strictly enlarges a singleton, so
 the generated adjoints are not inverse functions. -/
-@[powerlib_foundation] theorem witness_roundtrip_strict :
+@[tmio T, powerlib_foundation] theorem witness_roundtrip_strict :
     witness.u₃ (witness.l₃ {(true, true, true)}) ≠ {(true, true, true)} := by
   rw [witness_l₃]
   intro h

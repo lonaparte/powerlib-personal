@@ -91,7 +91,7 @@ def foldS2 (A kp κ φ x : ℝ) : ℝ := -1 / A * φ + (-κ / 2 + kp / A) * x
 /-- The quadratic Lyapunov identity at the fold: with
 `J = [[−k_pA, k_i, k_p], [−A, 0, 1], [κA², 0, −κA]]` (coordinates `(φ, x, ι')`),
 `2 (Sz)·(Jz) − κAφ(Aφ + ι') = −(κA²φ² + 2k_i(k_p + κ)x² + κι'²)`. -/
-@[powerlib_foundation] theorem fold_quad_identity {A : ℝ} (hA : A ≠ 0) (Xg kp ki κ φ x ι : ℝ) :
+@[tmio M, powerlib_foundation] theorem fold_quad_identity {A : ℝ} (hA : A ≠ 0) (Xg kp ki κ φ x ι : ℝ) :
     2 * (foldS0 A Xg kp κ φ x ι * (-kp * A * φ + ki * x + kp * (Xg * ι)) +
         foldS1 A Xg kp ki κ φ x ι * (-A * φ + Xg * ι) +
         foldS2 A kp κ φ x * (κ * A ^ 2 * φ - κ * A * (Xg * ι))) -
@@ -630,8 +630,7 @@ end Members
 /-- Quasi-static GFL with positive gains at a balanced point on the fold `cos 2θ* = 0` with
 `V cos θ* > 0` (the transmission limit `P_ref = ±P_SN`): the operating point is unstable — a
 saddle-node, whose Jacobian has a simple zero eigenvalue (`det J = 0`) and two stable ones. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_unstable_of_fold (p : Params) (hkp : 0 < p.kp)
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_fold (p : Params) (hkp : 0 < p.kp)
     (hki : 0 < p.ki) (hkP : 0 < p.kP) {θ Id : ℝ} (heq : IsEq p θ Id)
     (hA : 0 < p.V * Real.cos θ) (hc2 : Real.cos (2 * θ) = 0) :
     connection% (Model.mk p θ Id ∈ family.den (.flow .unstable)) := by
@@ -640,8 +639,7 @@ saddle-node, whose Jacobian has a simple zero eigenvalue (`det J = 0`) and two s
   exact model_fold_unstable (m := Model.mk p θ Id) heq hkp hki hkP hA hc2
 
 /-- Same, at the fold angle `θ* = π/4` (`V > 0`): the transmission limit is unstable. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_unstable_of_pi_div_four (p : Params) (hV : 0 < p.V)
+@[tmio TM, powerlib_domain] theorem mem_den_unstable_of_pi_div_four (p : Params) (hV : 0 < p.V)
     (hkp : 0 < p.kp) (hki : 0 < p.ki) (hkP : 0 < p.kP) {Id : ℝ}
     (heq : IsEq p (Real.pi / 4) Id) :
     connection% (Model.mk p (Real.pi / 4) Id ∈ family.den (.flow .unstable)) :=
@@ -653,8 +651,7 @@ saddle-node, whose Jacobian has a simple zero eigenvalue (`det J = 0`) and two s
 the selected point is locally asymptotically stable exactly when it is an equilibrium with a strict
 Routh–Hurwitz Jacobian; in particular the fold `cos 2θ* = 0` (no Hopf pair,
 `no_imaginary_eigenvalue`) is a saddle-node and unstable (`mem_den_unstable_of_fold`). -/
-@[tmio TM]
-@[powerlib_domain] theorem exactUnder_locallyAsymptoticallyStable :
+@[tmio TM, powerlib_domain] theorem exactUnder_locallyAsymptoticallyStable :
     connection% (family.ExactUnder {.positiveGains} (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact exactUnder_of_routh (Or.inr rfl)
@@ -662,8 +659,7 @@ Routh–Hurwitz Jacobian; in particular the fold `cos 2θ* = 0` (no Hopf pair,
 /-- **Within positive gains the Lyapunov translation is exact**: every non-Hurwitz point with
 positive gains is unstable (the undamped witness of `not_exact_lyapunovStable` has
 `k_p = k_P = 0`). -/
-@[tmio TM]
-@[powerlib_domain] theorem exactUnder_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem exactUnder_lyapunovStable :
     connection% (family.ExactUnder {.positiveGains} (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   exact exactUnder_of_routh (Or.inl rfl)

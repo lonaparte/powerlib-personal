@@ -53,7 +53,7 @@ variable {n : ℕ}
 local notation "ℝⁿ" => State n
 
 /-- Continuous induction on `[t₀, t₁]` for a closed target set. -/
-@[powerlib_foundation] theorem forall_mem_Icc_of_local_step {ψ : ℝ → ℝⁿ} {Ω : Set ℝⁿ}
+@[tmio T, powerlib_foundation] theorem forall_mem_Icc_of_local_step {ψ : ℝ → ℝⁿ} {Ω : Set ℝⁿ}
     {t₀ t₁ : ℝ} (hψ : ContinuousOn ψ (Icc t₀ t₁)) (hΩ : IsClosed Ω) (h0 : ψ t₀ ∈ Ω)
     (hstep : ∀ x ∈ Ico t₀ t₁, ψ x ∈ Ω → ∃ y, x < y ∧ ∀ t ∈ Ioo x y, ψ t ∈ Ω) :
     ∀ t ∈ Icc t₀ t₁, ψ t ∈ Ω := by

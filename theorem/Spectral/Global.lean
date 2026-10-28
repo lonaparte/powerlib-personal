@@ -57,7 +57,7 @@ section Denotation
 variable {F : Family X Q n p}
 
 /-- Global exponential stability gives global asymptotic stability, for every family. -/
-@[powerlib_foundation] theorem den_globallyExponentiallyStable_subset_gas :
+@[tmio TM, powerlib_foundation] theorem den_globallyExponentiallyStable_subset_gas :
     F.den (.flow .globallyExponentiallyStable) ⊆
       F.den (.flow .globallyAsymptoticallyStable) := by
   intro x hx

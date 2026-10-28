@@ -137,8 +137,7 @@ private theorem output_unit_ne_zero (m : Model) : ![1 / m.p.M] ≠ 0 := by
 The damped machine `M = D = b = 1`, `P_m = 0` at `δ* = 0` is locally exponentially stable, and its
 discretizations with a large step are not: every Euler multiplier `1 + hλ` leaves the unit
 disk. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := mem_den_locallyExponentiallyStable unitModel (by norm_num [unitModel])
@@ -151,8 +150,7 @@ disk. -/
 /-- **No Euler discretization of a classical machine is passive, whatever its step.** The speed
 output does not depend on the mechanical-power input, so one step from a unit momentum deviation
 with a large braking input draws energy without bound. -/
-@[tmio TM]
-@[powerlib_domain] theorem euler_not_mem_den_passive :
+@[tmio TM, powerlib_domain] theorem euler_not_mem_den_passive :
     connection% (∀ (m : Model) (h : ℝ) (hh : 0 < h),
       (⟨m, h, hh⟩ : Euler) ∉ eulerFamily.den .passive) := by
   unfold powerlib.TMIO.Statement
@@ -163,8 +161,7 @@ with a large braking input draws energy without bound. -/
 /-- **The passivity realization of explicit Euler is not sound for the classical machine.** The
 machine without mechanical power (`M = D = b = 1`) is passive, and its discretizations are
 not. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder_passive :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder_passive :
     connection% (¬ euler.RealizationSoundUnder ∅ .passive) := by
   unfold powerlib.TMIO.Statement
   have hm := mem_den_passive_of_Pm_zero unitModel rfl
@@ -217,8 +214,7 @@ vacuously.** No machine is locally exponentially stable at the origin
 (`not_mem_den_locallyExponentiallyStable`: the rotor angle is a direction killed by the
 Jacobian), so no discretization is certified for local exponential stability, whatever its step;
 the family has no step threshold to state. -/
-@[tmio MI]
-@[powerlib_domain] theorem euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem euler_realizationSoundUnder :
     connection% (euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   refine eulerPorts_realizationSoundUnder_of_not_mem fun p => ?_
@@ -239,8 +235,7 @@ private theorem output_ne_zero (p : SyncMachine7Params) :
 /-- **No Euler discretization of a seven-state machine is passive, whatever its step.** The
 outputs `(i_d, i_q, i_f, ω_r)` do not depend on the inputs, so one step from a unit momentum with
 a large braking torque draws energy without bound. -/
-@[tmio TM]
-@[powerlib_domain] theorem euler_not_mem_den_passive :
+@[tmio TM, powerlib_domain] theorem euler_not_mem_den_passive :
     connection% (∀ (p : SyncMachine7Params) (h : ℝ) (hh : 0 < h),
       (⟨p, h, hh⟩ : Euler) ∉ eulerFamily.den .passive) := by
   unfold powerlib.TMIO.Statement
@@ -250,8 +245,7 @@ a large braking torque draws energy without bound. -/
 
 /-- **The passivity realization of explicit Euler is not sound for the seven-state machine.**
 Every machine is passive (storage `H ≥ 0`), and no discretization is. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder_passive :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder_passive :
     connection% (¬ euler.RealizationSoundUnder ∅ .passive) := by
   unfold powerlib.TMIO.Statement
   let p : SyncMachine7Params :=
@@ -305,8 +299,7 @@ def euler : Implementation SMIB11Params Requirement Euler Requirement 11 4 11 4 
 vacuously.** No system is locally exponentially stable at the origin
 (`not_mem_den_locallyExponentiallyStable`: the rotor-angle axis is killed by the Jacobian), so
 no discretization is certified for local exponential stability, whatever its step. -/
-@[tmio MI]
-@[powerlib_domain] theorem euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem euler_realizationSoundUnder :
     connection% (euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   refine eulerPorts_realizationSoundUnder_of_not_mem fun p => ?_
@@ -316,8 +309,7 @@ no discretization is certified for local exponential stability, whatever its ste
 
 /-- **No Euler discretization of the note's 11-state system is passive, whatever its step.** The
 outputs `(i_f, ω_r, −I_D, −I_Q)` do not depend on the inputs. -/
-@[tmio TM]
-@[powerlib_domain] theorem euler_not_mem_den_passive :
+@[tmio TM, powerlib_domain] theorem euler_not_mem_den_passive :
     connection% (∀ (p : SMIB11Params) (h : ℝ) (hh : 0 < h),
       (⟨p, h, hh⟩ : Euler) ∉ eulerFamily.den .passive) := by
   unfold powerlib.TMIO.Statement
@@ -327,8 +319,7 @@ outputs `(i_f, ω_r, −I_D, −I_Q)` do not depend on the inputs. -/
 
 /-- **The passivity realization of explicit Euler is not sound for the note's 11-state system.**
 Every system is passive (storage `H^tot ≥ 0`), and no discretization is. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder_passive :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder_passive :
     connection% (¬ euler.RealizationSoundUnder ∅ .passive) := by
   unfold powerlib.TMIO.Statement
   have hm := mem_den_passive smib11Unit
@@ -363,8 +354,7 @@ constraint, vacuously.** No system is locally exponentially stable at the origin
 (`not_mem_den_locallyExponentiallyStable`: the constant frame drift leaves the note's Jacobian,
 which kills the rotor-angle axis), so no discretization is certified for local exponential
 stability, whatever its step. -/
-@[tmio MI]
-@[powerlib_domain] theorem euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem euler_realizationSoundUnder :
     connection% (euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   refine eulerPorts_realizationSoundUnder_of_not_mem fun p => ?_
@@ -374,8 +364,7 @@ stability, whatever its step. -/
 
 /-- **No Euler discretization of the corrected 11-state system is passive, whatever its step.**
 The outputs `(i_f, ω_r, −I_D, −I_Q)` do not depend on the inputs. -/
-@[tmio TM]
-@[powerlib_domain] theorem euler_not_mem_den_passive :
+@[tmio TM, powerlib_domain] theorem euler_not_mem_den_passive :
     connection% (∀ (p : SMIB11Params) (h : ℝ) (hh : 0 < h),
       (⟨p, h, hh⟩ : Euler) ∉ eulerFamily.den .passive) := by
   unfold powerlib.TMIO.Statement
@@ -386,8 +375,7 @@ The outputs `(i_f, ω_r, −I_D, −I_Q)` do not depend on the inputs. -/
 /-- **The passivity realization of explicit Euler is not sound for the corrected 11-state
 system.** Every system is passive (storage `H^tot ≥ 0`; the frame drift does no work), and no
 discretization is. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder_passive :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder_passive :
     connection% (¬ euler.RealizationSoundUnder ∅ .passive) := by
   unfold powerlib.TMIO.Statement
   have hm := mem_den_passive smib11Unit

@@ -58,7 +58,7 @@ def scaledField (ε : ℝ) (Φ : Dynamics.State (n + m) → Dynamics.State (n + 
 def blocksSP (J : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℝ) : LinearSP n m :=
   ⟨J.toBlocks₁₁, J.toBlocks₁₂, J.toBlocks₂₁, J.toBlocks₂₂⟩
 
-@[powerlib_foundation] theorem scaleBlocks_mul (J : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℝ)
+@[tmio T, powerlib_foundation] theorem scaleBlocks_mul (J : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℝ)
     (ε : ℝ) : scaleBlocks n m ε * J = (blocksSP J).blockMatrix ε := by
   conv_lhs => rw [← fromBlocks_toBlocks J]
   rw [scaleBlocks, fromBlocks_multiply]

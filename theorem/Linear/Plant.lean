@@ -43,7 +43,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 abbrev op (A : Matrix (Fin n) (Fin n) ℝ) : ℝⁿ →L[ℝ] ℝⁿ :=
   Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A
 
-@[powerlib_foundation] theorem affine_apply (A : Matrix (Fin n) (Fin n) ℝ) (e x : ℝⁿ) :
+@[tmio T, powerlib_foundation] theorem affine_apply (A : Matrix (Fin n) (Fin n) ℝ) (e x : ℝⁿ) :
     affineLinearVectorField A e x = op A (x - e) := rfl
 
 @[powerlib_foundation] theorem op_mul_apply (X Y : Matrix (Fin n) (Fin n) ℝ) (x : ℝⁿ) :

@@ -63,7 +63,7 @@ def rescaleState (c : ℝ) (x : ℝ → ℝ) (s : ℝ) : ℝ := x (s / c) / c
 def rescalePath (c : ℝ) (w : ℝ → ℝ) (s : ℝ) : ℝ := √c * w (s / c)
 
 /-- Drift integral under the time change `t = s/c`. -/
-@[powerlib_foundation] theorem drift_rescale {c : ℝ} (hc : 0 < c) (μ₀ : ℝ) (x : ℝ → ℝ) (s : ℝ) :
+@[tmio T, powerlib_foundation] theorem drift_rescale {c : ℝ} (hc : 0 < c) (μ₀ : ℝ) (x : ℝ → ℝ) (s : ℝ) :
     (∫ r in (0 : ℝ)..s / c, (μ₀ - c ^ 3 * r - x r ^ 2)) / c =
       ∫ r in (0 : ℝ)..s, (μ₀ / c ^ 2 - r - rescaleState c x r ^ 2) := by
   have hc0 : c ≠ 0 := hc.ne'

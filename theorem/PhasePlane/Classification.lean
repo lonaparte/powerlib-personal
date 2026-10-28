@@ -31,7 +31,7 @@ open Complex
 
 variable (A : Matrix (Fin 2) (Fin 2) ℝ)
 
-@[powerlib_foundation] theorem charRoot_iff (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem charRoot_iff (s : ℂ) :
     (Linear.characteristicMatrix A s).det = 0 ↔
       s ^ 2 + ((-A.trace : ℝ) : ℂ) * s + (A.det : ℂ) = 0 := by
   rw [Criteria.det_characteristicMatrix_fin_two']

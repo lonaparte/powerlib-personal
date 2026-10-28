@@ -83,7 +83,7 @@ def dcLink (C : ℝ) (hC : 0 < C) : DiagonalPH (Fin 1) (Fin 2) where
 
 /-- The pH field is `C_dc V̇_dc = i_in − i_out`, written for the charge `q = C_dc V_dc`.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem dcLink_field (C : ℝ) (hC : 0 < C) (x : Fin 1 → ℝ) (u : Fin 2 → ℝ) :
+@[tmio M, powerlib_foundation] theorem dcLink_field (C : ℝ) (hC : 0 < C) (x : Fin 1 → ℝ) (u : Fin 2 → ℝ) :
     (dcLink C hC).field x u = ![u 0 - u 1] := by
   ext i
   fin_cases i
@@ -150,14 +150,12 @@ private theorem dcLink_energy_balance (C : ℝ) (hC : 0 < C)
       (Icc_mem_nhds hτ.1 hτ.2)).hasDerivWithinAt) hint]
 
 /-- Passivity of the DC link; the storage is `½ C_dc V_dc²` (`toPH_storage`, `dcLink_energy`). -/
-@[tmio TM]
-@[powerlib_domain] theorem dcLinkPH_mem_den_passive (C : ℝ) (hC : 0 < C) :
+@[tmio TM, powerlib_domain] theorem dcLinkPH_mem_den_passive (C : ℝ) (hC : 0 < C) :
     connection% (dcLinkPH C hC ∈ Port.PortHamiltonian.family.den .passive) :=
   Port.PortHamiltonian.mem_den_passive _
 
 /-- With both currents at zero the capacitor keeps its energy. -/
-@[tmio TM]
-@[powerlib_domain] theorem dcLinkPH_mem_den_conservative (C : ℝ) (hC : 0 < C) :
+@[tmio TM, powerlib_domain] theorem dcLinkPH_mem_den_conservative (C : ℝ) (hC : 0 < C) :
     connection% (dcLinkPH C hC ∈ Port.PortHamiltonian.family.den (.flow .conservative)) :=
   mem_den_conservative_of_lossless _ (DiagonalPH.toPH_R_eq_zero _ _ _ rfl)
 
@@ -252,20 +250,17 @@ private theorem dqLC_trajectory_energy_derivative (p : DqLCParams)
   exact h.congr_deriv (by rw [← hb]; rfl)
 
 /-- Passivity of the dq LC filter; the storage is `H` (`toPH_storage`). -/
-@[tmio TM]
-@[powerlib_domain] theorem dqLCPH_mem_den_passive (p : DqLCParams) :
+@[tmio TM, powerlib_domain] theorem dqLCPH_mem_den_passive (p : DqLCParams) :
     connection% (dqLCPH p ∈ Port.PortHamiltonian.family.den .passive) :=
   Port.PortHamiltonian.mem_den_passive _
 
 /-- Lyapunov stability of the unforced lossless filter at the origin. -/
-@[tmio TM]
-@[powerlib_domain] theorem dqLCPH_mem_den_lyapunovStable (p : DqLCParams) :
+@[tmio TM, powerlib_domain] theorem dqLCPH_mem_den_lyapunovStable (p : DqLCParams) :
     connection% (dqLCPH p ∈ Port.PortHamiltonian.family.den (.flow .lyapunovStable)) :=
   Port.PortHamiltonian.mem_den_lyapunovStable _
 
 /-- The unforced lossless filter conserves its stored energy. -/
-@[tmio TM]
-@[powerlib_domain] theorem dqLCPH_mem_den_conservative (p : DqLCParams) :
+@[tmio TM, powerlib_domain] theorem dqLCPH_mem_den_conservative (p : DqLCParams) :
     connection% (dqLCPH p ∈ Port.PortHamiltonian.family.den (.flow .conservative)) :=
   mem_den_conservative_of_lossless _ (DiagonalPH.toPH_R_eq_zero _ _ _ rfl)
 

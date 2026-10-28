@@ -91,7 +91,7 @@ def swingNoise (M sω sv : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![0, 0; sω / M
 def swingCov (M D k s2 : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![s2 / (2 * D * k), 0; 0, s2 / (2 * M * D)]
 
-@[powerlib_foundation] theorem swingNoise_mul_transpose (M sω sv : ℝ) :
+@[tmio M, powerlib_foundation] theorem swingNoise_mul_transpose (M sω sv : ℝ) :
     swingNoise M sω sv * (swingNoise M sω sv)ᵀ = !![0, 0; 0, (sω ^ 2 + sv ^ 2) / M ^ 2] := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [swingNoise, Matrix.mul_apply, Fin.sum_univ_two]

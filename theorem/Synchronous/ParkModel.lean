@@ -72,7 +72,7 @@ def statorInductance (Ll LA LB θ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
     (LA - LB) • vecMulVec (svec θ) (svec θ)
 
 /-- Entries of `L(θ)`: `L_ℓ δ_xy + L_A cos(φ_x − φ_y) + L_B cos(2θ − φ_x − φ_y)`. -/
-@[powerlib_foundation] theorem statorInductance_apply (Ll LA LB θ : ℝ) (x y : Fin 3) :
+@[tmio M, powerlib_foundation] theorem statorInductance_apply (Ll LA LB θ : ℝ) (x y : Fin 3) :
     statorInductance Ll LA LB θ x y =
       (if x = y then Ll else 0) + LA * Real.cos (phase x - phase y) +
         LB * Real.cos (2 * θ - phase x - phase y) := by

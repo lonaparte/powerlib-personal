@@ -52,7 +52,7 @@ def originalTime (μ₀ c s : ℝ) : ℝ := μ₀ / c ^ 3 + s / c
 /-- The rescaled state `y(s) = x(t(s)) / c`. -/
 def rescale (μ₀ c : ℝ) (x : ℝ → ℝ) (s : ℝ) : ℝ := x (originalTime μ₀ c s) / c
 
-@[powerlib_foundation] theorem scaledTime_originalTime {c : ℝ} (hc : c ≠ 0) (μ₀ s : ℝ) :
+@[tmio T, powerlib_foundation] theorem scaledTime_originalTime {c : ℝ} (hc : c ≠ 0) (μ₀ s : ℝ) :
     scaledTime μ₀ c (originalTime μ₀ c s) = s := by
   simp only [scaledTime, originalTime]; field_simp; ring
 

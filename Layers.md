@@ -127,15 +127,21 @@ catalog; an index is reconstructed when queried. Classification considers the
 complete statement, including its hypotheses and the relative roles of its
 endpoints.
 
+Keep all attributes on a declaration in one block. For example,
+`@[tmio TM, powerlib_domain] theorem ...` retains both classifications; do not
+place a new `@[tmio TM]` block before another `@[...]` block.
+
 `theorem/TMIO/KnowledgeKind.lean` defines the attribute and checks its theorem
 target, allowed kind and unique assignment. These checks do not decide whether
 the chosen kind correctly describes the mathematics. Foundation/domain metadata
 and the kernel-checked `connection%` admission contract remain independent.
 
-The current source coverage is 813 public `connection%` theorems in 100 modules:
-T 0, M 50, T–M 668, M–I 88 and I–O 7. This covers the reviewed connections,
-not every definition or theorem. In particular, T 0 does not mean that the library
-lacks general theory; classification of the remaining T and M content is unfinished.
+The current source coverage is 1,224 theorems in 405 modules: T 297, M 148,
+T–M 682, M–I 88 and I–O 9, including three private helpers. All 813 public
+`connection%` theorems remain covered (T 0, M 50, T–M 668, M–I 88, I–O 7).
+The additional 411 ordinary theorems were individually reviewed from the concrete
+representatives in the earlier audits. A module's suggested role does not classify
+all its declarations. Classification of the remaining theorems is unfinished.
 
 `theorem/TMIO/KnowledgeIndex.lean` queries the attributes in the currently imported
 `theorem.*` modules:
@@ -144,13 +150,17 @@ lacks general theory; classification of the remaining T and M content is unfinis
 import powerlib
 import theorem.TMIO.KnowledgeIndex
 
-#tmio_edges       -- Counts for T, M, T–M, M–I and I–O.
-#tmio_edges TM    -- List T–M connections; other arguments are T, M, MI and IO.
-#tmio_check       -- Require an attribute on every imported public typed connection.
+#tmio_theorems    -- All explicitly classified authored theorems, including private ones.
+#tmio_theorems T  -- List classified theory theorems; arguments are T, M, TM, MI and IO.
+#tmio_edges       -- Counts restricted to public typed connections.
+#tmio_edges TM    -- List T–M connections only.
+#tmio_check       -- Check connection coverage and report all classified theorems.
 ```
 
-These commands cover only imported modules. A missing attribute is an error;
-unimported modules are outside the query. The default Lake target first performs
+These commands cover only imported modules. A missing attribute on a public typed
+connection is an error; unclassified ordinary theorems are not automatically assigned
+a kind. Private theorems appear under their source names with a visibility marker.
+Unimported modules are outside the query. The default Lake target first performs
 a source check, then checks the environment containing its complete module
 inventory, including modules absent from `powerlib.lean`.
 
@@ -158,11 +168,15 @@ Source queries need only Python and do not start Lean or build dependencies:
 
 ```sh
 python3 tools/tmio_classification.py check
+python3 tools/tmio_classification.py list T
 python3 tools/tmio_classification.py list TM
 python3 tools/tmio_classification.py show powerlib.LTI.sampled_exact_iff
 ```
 
-The source tool reads explicit attributes and connection declarations. It is a
+The source tool lists and shows every explicitly classified theorem, including
+ordinary and private ones. `check` reports both connection coverage and the total
+classified population, rejecting invalid or repeated labels on either population.
+No handwritten theorem-to-kind list is maintained. The source tool is a
 preflight and lookup tool; the Lean environment check additionally reads elaborated
 declaration types, including aliases. Neither check proves semantic classification
 or constructs a verified graph of relation endpoints.

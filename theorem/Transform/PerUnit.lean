@@ -73,7 +73,7 @@ def I : ℝ := b.S / b.V
 /-- Impedance base `Z_B = V_B² / S_B`. -/
 def Z : ℝ := b.V ^ 2 / b.S
 
-@[powerlib_foundation] theorem I_pos : 0 < b.I := div_pos b.S_pos b.V_pos
+@[tmio T, powerlib_foundation] theorem I_pos : 0 < b.I := div_pos b.S_pos b.V_pos
 
 @[powerlib_foundation] theorem Z_pos : 0 < b.Z := div_pos (pow_pos b.V_pos 2) b.S_pos
 

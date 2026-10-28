@@ -104,7 +104,7 @@ def RootCondition (m : LMM k) : Prop :=
   ∀ ζ : ℂ, m.rho ζ = 0 → ‖ζ‖ ≤ 1 ∧ (‖ζ‖ = 1 → m.rhoDeriv ζ ≠ 0)
 
 /-- A root of `ρ` outside the closed unit disk violates the root condition. -/
-@[powerlib_foundation] theorem not_rootCondition_of_root (m : LMM k) {ζ : ℂ} (h : m.rho ζ = 0)
+@[tmio T, powerlib_foundation] theorem not_rootCondition_of_root (m : LMM k) {ζ : ℂ} (h : m.rho ζ = 0)
     (h1 : 1 < ‖ζ‖) : ¬ m.RootCondition := fun hm => absurd (hm ζ h).1 (not_le.mpr h1)
 
 end LMM

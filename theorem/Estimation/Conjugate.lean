@@ -41,7 +41,7 @@ variable {Θ : Type*} {mΘ : MeasurableSpace Θ}
 
 /-- **Conjugacy lemma.** If prior density × likelihood is (a.e.) a constant multiple of a
 normalised density `g`, the posterior is `ν.withDensity g`. -/
-@[powerlib_foundation] theorem bayesPosterior_withDensity_eq {ν : Measure Θ} {f L g : Θ → ℝ≥0∞}
+@[tmio T, powerlib_foundation] theorem bayesPosterior_withDensity_eq {ν : Measure Θ} {f L g : Θ → ℝ≥0∞}
     (hf : Measurable f) (hL : Measurable L) {c : ℝ≥0∞} (hc0 : c ≠ 0) (hct : c ≠ ∞)
     (hfac : ∀ᵐ θ ∂ν, f θ * L θ = c * g θ) (hg1 : ∫⁻ θ, g θ ∂ν = 1) :
     bayesPosterior (ν.withDensity f) L = ν.withDensity g := by

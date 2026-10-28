@@ -65,7 +65,7 @@ variable {n p : ℕ}
 
 /-- Off a finite set of points, `sI − A` is invertible; in particular eventually near every `μ`
 (punctured). -/
-@[powerlib_foundation] theorem eventually_det_characteristicMatrix_ne_zero
+@[tmio T, powerlib_foundation] theorem eventually_det_characteristicMatrix_ne_zero
     (A : Matrix (Fin n) (Fin n) ℝ) (μ : ℂ) :
     ∀ᶠ s in 𝓝[≠] μ, (characteristicMatrix A s).det ≠ 0 := by
   have hχ : (complexify A).charpoly ≠ 0 := (Matrix.charpoly_monic _).ne_zero

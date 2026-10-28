@@ -121,7 +121,7 @@ def fullField (p : Params n) (x : (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ)
     (Fin (n + 1) → ℝ) × (Fin (n + 1) → ℝ) :=
   (x.2, fun k => (p.P k - p.D k * x.2 k - powerInjection p.B x.1 k) / p.M k)
 
-@[powerlib_foundation] theorem powerInjection_add_const (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
+@[tmio M, powerlib_foundation] theorem powerInjection_add_const (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
     (θ : Fin (n + 1) → ℝ) (c : ℝ) :
     powerInjection B (fun k => θ k + c) = powerInjection B θ := by
   funext k
@@ -660,8 +660,7 @@ private theorem unstable_of_meets {m : Model n} (hp : Meets m .powerFlow)
 
 /-- No model has both a Hurwitz reduced Jacobian (angle condition on a connected graph) and an
 unstable one: the whole requirement language is inconsistent. -/
-@[tmio M]
-@[powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize (Meets (n := n)) Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
@@ -674,8 +673,7 @@ unstable one: the whole requirement language is inconsistent. -/
 condition on a connected graph proves the local sentences (a Hurwitz reduced Jacobian,
 LeanForControl's linearization theorem), an unstable Jacobian proves instability, and passivity
 holds without requirement. -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, (family (n := n)).chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.chain_le_semantics_of_localTable_same (Rs := {.powerFlow, .jacobianStable})
@@ -691,8 +689,7 @@ holds without requirement. -/
     exact unstable_of_meets (hm .powerFlow (by simp)) (hm .jacobianUnstable (by simp))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_passive : connection% ((family (n := n)).Exact .passive) := by
+@[tmio TM, powerlib_domain] theorem exact_passive : connection% ((family (n := n)).Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
@@ -713,8 +710,7 @@ conclusion. -/
 stable at its selected point exactly when the angle profile is a power-balance point with a
 Hurwitz reduced Jacobian. Converse linearization: local exponential stability of the `C¹`
 reduced field forces an equilibrium with a Hurwitz Jacobian. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_locallyExponentiallyStable :
+@[tmio TM, powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% ((family (n := n)).Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.exact_of_exactUnder_empty (Spectral.exactUnder_les_of_jacobian
@@ -733,8 +729,7 @@ reduced field forces an equilibrium with a Hurwitz Jacobian. -/
 `Pₖ = ∑ⱼ Bₖⱼ sin(θ*ₖ - θ*ⱼ)`, every line angle difference `|θ*ᵢ - θ*ⱼ| < π/2` and a
 connected coupling graph, the reduced nonlinear swing dynamics (relative angles and
 frequencies, positive inertia and damping) is locally exponentially stable. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model n)
+@[tmio TM, powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model n)
     (heq : ∀ k, m.params.P k = powerInjection m.params.B m.θ k)
     (hangle : ∀ i j, 0 < m.params.B i j → |m.θ i - m.θ j| < Real.pi / 2)
     (hconn : ∀ i j, Reach m.params.B i j) :
@@ -744,8 +739,7 @@ frequencies, positive inertia and damping) is locally exponentially stable. -/
 
 /-- At a power-balance point, a reduced Jacobian with a characteristic root in the open right
 half plane places the model in instability. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_unstable (m : Model n)
+@[tmio TM, powerlib_domain] theorem mem_den_unstable (m : Model n)
     (heq : ∀ k, m.params.P k = powerInjection m.params.B m.θ k) {s : ℂ}
     (hs : (Linear.characteristicMatrix (jacobian m.params m.θ) s).det = 0) (hre : 0 < s.re) :
     connection% (m ∈ family.den (.flow .unstable)) := by
@@ -761,8 +755,7 @@ def offEquilibrium : Model n :=
     fun _ _ => rfl, fun _ _ => le_rfl⟩, 0⟩
 
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
-@[tmio TM]
-@[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
+@[tmio TM, powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% ((offEquilibrium (n := n)) ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff)
@@ -772,8 +765,7 @@ def offEquilibrium : Model n :=
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
 while the translation asks for power balance. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exact_unstable :
+@[tmio TM, powerlib_domain] theorem not_exact_unstable :
     connection% (¬ (family (n := n)).Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.not_exact_of_witness (offEquilibrium_mem_den_unstable (n := n))
@@ -816,8 +808,7 @@ private theorem uncoupled_field (z : State (1 + (1 + 1))) :
 /-- Two uncoupled machines are Lyapunov stable: `(δ − ω₀ + ω₁)² + ω₀² + ω₁²` does not increase
 (`δ − ω₀ + ω₁` is conserved, the frequencies decay), although the relative angle has no restoring
 force (the reduced Jacobian has a zero column). -/
-@[tmio TM]
-@[powerlib_domain] theorem uncoupled_mem_den_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem uncoupled_mem_den_lyapunovStable :
     connection% (uncoupled ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   rw [family_isAutonomous.mem_den_flow]
@@ -861,8 +852,7 @@ restored (zero column). Static evidence on the model, not a connection conclusio
 
 /-- The Lyapunov translation of the two-machine network is sound but not exact: two uncoupled
 machines are Lyapunov stable at a power-balance point whose reduced Jacobian is not Hurwitz. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exact_lyapunovStable_two :
+@[tmio TM, powerlib_domain] theorem not_exact_lyapunovStable_two :
     connection% (¬ (family (n := 1)).Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_exact_of_witness uncoupled_mem_den_lyapunovStable (q := .jacobianStable)
@@ -927,8 +917,7 @@ private theorem conservedLin_injective (m : ℕ) : Function.Injective (conserved
 /-- `n + 2` uncoupled machines are Lyapunov stable: in the block coordinates
 `(δᵢ + ω_{i+1} − ω₀, ω)` the first block is conserved and the frequencies decay, so the quadratic
 energy `∑ᵢ (δᵢ + ω_{i+1} − ω₀)² + ∑ₖ ωₖ²` does not increase. -/
-@[tmio TM]
-@[powerlib_domain] theorem uncoupledN_mem_den_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem uncoupledN_mem_den_lyapunovStable :
     connection% (uncoupledN n ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   rw [family_isAutonomous.mem_den_flow]
@@ -968,8 +957,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- **The Lyapunov translation is not exact for any network of at least two machines**
 (`n + 2` machines, every `n`): `n + 2` uncoupled machines are Lyapunov stable at a power-balance
 point whose reduced Jacobian is not Hurwitz. -/
-@[tmio TM]
-@[powerlib_domain] theorem not_exact_lyapunovStable :
+@[tmio TM, powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ (family (n := n + 1)).Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_exact_of_witness (uncoupledN_mem_den_lyapunovStable (n := n))
@@ -1009,15 +997,13 @@ private theorem exact_zero {P : Flow.Property}
   · exact jacobian_isHurwitz_zero _ _
 
 /-- For a single machine (`n = 0`) the Lyapunov translation is exact. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_lyapunovStable_zero :
+@[tmio TM, powerlib_domain] theorem exact_lyapunovStable_zero :
     connection% ((family (n := 0)).Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   exact exact_zero (Or.inl rfl)
 
 /-- For a single machine (`n = 0`) the local asymptotic translation is exact. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_locallyAsymptoticallyStable_zero :
+@[tmio TM, powerlib_domain] theorem exact_locallyAsymptoticallyStable_zero :
     connection% ((family (n := 0)).Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact exact_zero (Or.inr rfl)

@@ -50,7 +50,7 @@ open scoped Topology NNReal
 /-- Closed-form solution `b/a + (y₀ - b/a) e^{-a t}` of `y' = -a y + b`, `y(0) = y₀`. -/
 def affineSol (a b y₀ : ℝ) (t : ℝ) : ℝ := b / a + (y₀ - b / a) * exp (-a * t)
 
-@[powerlib_foundation] theorem affineSol_zero (a b y₀ : ℝ) : affineSol a b y₀ 0 = y₀ := by
+@[tmio T, powerlib_foundation] theorem affineSol_zero (a b y₀ : ℝ) : affineSol a b y₀ 0 = y₀ := by
   simp [affineSol]
 
 @[powerlib_foundation] theorem affineSol_hasDerivAt {a : ℝ} (ha : a ≠ 0) (b y₀ t : ℝ) :

@@ -73,7 +73,7 @@ def solvabilityShift (φ : ℝ → ℝ) : ℝ :=
   1 - (Real.sqrt π)⁻¹ * ∫ τ : ℝ, Real.exp (-τ ^ 2) * φ τ
 
 /-- The unperturbed separatrix `X = τ` is an exact solution exactly when `λ = 1`. -/
-@[powerlib_foundation] theorem id_solves_riccatiGraze_iff (lam : ℝ) :
+@[tmio T, powerlib_foundation] theorem id_solves_riccatiGraze_iff (lam : ℝ) :
     (∀ τ, HasDerivAt (fun τ : ℝ => τ) (riccatiGraze lam τ τ) τ) ↔ lam = 1 := by
   constructor
   · intro h

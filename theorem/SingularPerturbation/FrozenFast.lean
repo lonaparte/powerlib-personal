@@ -47,7 +47,7 @@ open Matrix
 
 variable {m : ℕ}
 
-@[powerlib_foundation] theorem absSum_mul_le (P Q : Matrix (Fin m) (Fin m) ℝ) :
+@[tmio T, powerlib_foundation] theorem absSum_mul_le (P Q : Matrix (Fin m) (Fin m) ℝ) :
     absSum (P * Q) ≤ absSum P * absSum Q := by
   have hrow : ∀ l, ∑ j, |Q l j| ≤ absSum Q := fun l =>
     Finset.single_le_sum (f := fun l' => ∑ j, |Q l' j|)

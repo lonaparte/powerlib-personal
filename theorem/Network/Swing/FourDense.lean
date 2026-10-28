@@ -102,7 +102,7 @@ machine `2` (amplitudes `P, Q`, line angles `a, b` with `a + b = Φ`, increments
 `P cos a · xa = Q cos b · xb` and `xa + xb = d`): with `s = P cos a + Q cos b`,
 `s³ (d cos Φ (P cos a xa² + Q cos b xb²) + sin Φ (P sin a xa³ + Q sin b xb³)) =
 d³ P Q ((P cos² a)² + (Q cos² b)² + 2 (P cos² a)(Q cos² b) cos Φ)`. -/
-@[powerlib_foundation] theorem branch_identity {P Q a b xa xb d : ℝ}
+@[tmio T, powerlib_foundation] theorem branch_identity {P Q a b xa xb d : ℝ}
     (hs : P * Real.cos a * xa = Q * Real.cos b * xb) (hd : xa + xb = d) :
     (P * Real.cos a + Q * Real.cos b) ^ 3 *
       (d * Real.cos (a + b) * (P * Real.cos a * xa ^ 2 + Q * Real.cos b * xb ^ 2) +
@@ -1378,8 +1378,7 @@ private theorem not_localAsymptoticStable_four_machines (p : Params 3) (θ : Fin
 /-- **Four machines: the local asymptotic translation is exact.** For every four-machine network
 (`n = 3`), local asymptotic stability of the selected profile holds exactly when it is a
 power-balance point with a Hurwitz reduced Jacobian. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_locallyAsymptoticallyStable_four :
+@[tmio TM, powerlib_domain] theorem exact_locallyAsymptoticallyStable_four :
     connection% ((family (n := 3)).Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact exact_locallyAsymptoticallyStable_of_guard fun m hp hH hm =>
@@ -1387,8 +1386,7 @@ power-balance point with a Hurwitz reduced Jacobian. -/
 
 /-- **Membership in local asymptotic stability for every four-machine network**: power balance
 with a Hurwitz reduced Jacobian (no restriction on the lines). -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_four_machines (m : Model 3) :
+@[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_four_machines (m : Model 3) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
       (∀ k, m.params.P k = powerInjection m.params.B m.θ k) ∧
       LinearSystems.IsHurwitz (jacobian m.params m.θ)) := by

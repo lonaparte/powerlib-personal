@@ -45,7 +45,7 @@ def denom (ζ ω₀ ωp : ℝ) : ℂ := (ω₀ ^ 2 - ωp ^ 2 : ℝ) + (2 * ζ * 
 def field (ζ ω₀ a F ωp t : ℝ) (y : State 2) : State 2 :=
   mk (y 1) (-(2 * ζ * ω₀) * y 1 - ω₀ ^ 2 * y 0 - a * y 0 ^ 2 + F * Real.cos (ωp * t))
 
-@[powerlib_foundation] theorem det_characteristicMatrix_linPart (ζ ω₀ ωp : ℝ) :
+@[tmio T, powerlib_foundation] theorem det_characteristicMatrix_linPart (ζ ω₀ ωp : ℝ) :
     (Linear.characteristicMatrix (linPart ζ ω₀) ((ωp : ℂ) * I)).det = denom ζ ω₀ ωp := by
   simp only [Linear.characteristicMatrix, Matrix.det_fin_two, linPart, denom]
   simp [Matrix.sub_apply]

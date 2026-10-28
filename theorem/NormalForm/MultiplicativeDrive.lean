@@ -55,7 +55,7 @@ def driveDeriv (F : E × ℝ → E) (p : E × ℝ) : E := fderiv ℝ F p (0, 1)
 /-! ## Global discriminant (B) -/
 
 /-- Along a horizontal line, the derivative of `u ↦ F(x, u)` is the drive derivative. -/
-@[powerlib_foundation] theorem hasDerivAt_line {F : E × ℝ → E} {x : E} {u : ℝ}
+@[tmio T, powerlib_foundation] theorem hasDerivAt_line {F : E × ℝ → E} {x : E} {u : ℝ}
     (hF : DifferentiableAt ℝ F (x, u)) :
     HasDerivAt (fun s : ℝ => F (x, s)) (driveDeriv F (x, u)) u := by
   have hl : HasDerivAt (fun s : ℝ => ((x, s) : E × ℝ)) ((0, 1) : E × ℝ) u :=

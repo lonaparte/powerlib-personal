@@ -40,7 +40,7 @@ def field (m γ : ℝ) (dV : ℝ → ℝ) (y : State 2) : State 2 :=
 /-- Mechanical energy `m v²/2 + V(x)`. -/
 def energy (m : ℝ) (V : ℝ → ℝ) (y : State 2) : ℝ := m * y 1 ^ 2 / 2 + V (y 0)
 
-@[simp, powerlib_foundation] theorem field_apply_zero (m γ : ℝ) (dV : ℝ → ℝ) (y : State 2) :
+@[tmio T, simp, powerlib_foundation] theorem field_apply_zero (m γ : ℝ) (dV : ℝ → ℝ) (y : State 2) :
     field m γ dV y 0 = y 1 := rfl
 
 @[simp, powerlib_foundation] theorem field_apply_one (m γ : ℝ) (dV : ℝ → ℝ) (y : State 2) :

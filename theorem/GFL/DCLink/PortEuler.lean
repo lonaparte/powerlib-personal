@@ -96,8 +96,7 @@ def linearizedEuler :
 /-- **Without a step constraint the Euler realization of the linearized cascade is not sound.**
 The rectifier `L = Kp = Ki = C = V_d0 = V0 = I_d0 = 1`, `R = 0` (`I_dc0 = 1`) has a Hurwitz
 linearization, and its discretizations with a large step are unstable. -/
-@[tmio MI]
-@[powerlib_domain] theorem not_linearizedEuler_realizationSoundUnder {P : Flow.Property}
+@[tmio MI, powerlib_domain] theorem not_linearizedEuler_realizationSoundUnder {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (¬ linearizedEuler.RealizationSoundUnder ∅ (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -112,8 +111,7 @@ linearization, and its discretizations with a large step are unstable. -/
 /-- **No Euler discretization of the linearized cascade is passive, whatever its step.** The
 output `ΔV_dc` does not depend on the input, so one step from a unit DC-voltage deviation with a
 large reverse input draws energy without bound. -/
-@[tmio TM]
-@[powerlib_domain] theorem linearizedEuler_not_mem_den_passive :
+@[tmio TM, powerlib_domain] theorem linearizedEuler_not_mem_den_passive :
     connection% (∀ (p : CascadeParams) (h : ℝ) (hh : 0 < h),
       (⟨p, h, hh⟩ : LinearizedEuler) ∉ linearizedEulerFamily.den .passive) := by
   unfold powerlib.TMIO.Statement

@@ -45,7 +45,7 @@ def torque (np ψf Ld Lq id iq : ℝ) : ℝ := 3 / 2 * np * (ψf * iq + (Ld - Lq
 
 /-! ## Surface PMSM -/
 
-@[powerlib_foundation] theorem torque_surface (np ψf L id iq : ℝ) :
+@[tmio M, powerlib_foundation] theorem torque_surface (np ψf L id iq : ℝ) :
     torque np ψf L L id iq = 3 / 2 * np * ψf * iq := by
   unfold torque; ring
 

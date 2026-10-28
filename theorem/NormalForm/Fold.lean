@@ -51,7 +51,7 @@ def system (μ : ℝ) : State 1 → State 1 := lift (field μ)
 /-- The potential `V(x) = −μ x + x³/3`, with `V' = −(μ − x²)`. -/
 def potential (μ : ℝ) (x : ℝ) : ℝ := -μ * x + x ^ 3 / 3
 
-@[powerlib_foundation] theorem field_contDiff (μ : ℝ) {k : WithTop ℕ∞} :
+@[tmio T, powerlib_foundation] theorem field_contDiff (μ : ℝ) {k : WithTop ℕ∞} :
     ContDiff ℝ k (field μ) := by
   unfold field; fun_prop
 

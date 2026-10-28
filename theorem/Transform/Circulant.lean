@@ -33,7 +33,7 @@ open Matrix
 /-- Symmetric circulant `[[a, b, b], [b, a, b], [b, b, a]]`. -/
 def symCirc {R : Type*} [Ring R] (a b : R) : Matrix (Fin 3) (Fin 3) R := circulant ![a, b, b]
 
-@[powerlib_foundation] theorem symCirc_apply {R : Type*} [Ring R] (a b : R) :
+@[tmio T, powerlib_foundation] theorem symCirc_apply {R : Type*} [Ring R] (a b : R) :
     symCirc a b = !![a, b, b; b, a, b; b, b, a] := by
   ext i j; fin_cases i <;> fin_cases j <;> rfl
 

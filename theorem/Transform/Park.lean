@@ -75,7 +75,7 @@ def ofComplex (z : ℂ) : Fin 2 → ℝ := ![z.re, z.im]
 
 /-! ## Elementary identities -/
 
-@[simp, powerlib_foundation] theorem rot_apply_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem rot_apply_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
     rot θ *ᵥ x = ![Real.cos θ * x 0 - Real.sin θ * x 1, Real.sin θ * x 0 + Real.cos θ * x 1] := by
   ext i; fin_cases i
   · simp [rot, Matrix.mulVec, dotProduct, Fin.sum_univ_two]; ring

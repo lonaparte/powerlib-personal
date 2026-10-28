@@ -110,8 +110,7 @@ def euler : Implementation Model Requirement Euler Requirement 1 0 1 0 :=
 exponentially stable PSC model (`K_p = P_max = 1`, `P* = 0` at `δ* = 0`) integrated with a large
 enough step is not locally exponentially stable: every Euler multiplier `1 + hλ` leaves the unit
 disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := PSC.locallyExponentiallyStable ⟨1, 0, 1⟩ one_pos one_pos (δ₀ := 0) (by simp) (by simp)
@@ -153,8 +152,7 @@ sound.** A locally exponentially stable model (`M = D = ω_c = K₀ = 1`, `P₀ 
 `K = 1 < D ω_c + D²/M = 2`) integrated with a large enough step is not locally exponentially stable:
 every Euler multiplier `1 + hλ` leaves the unit disk
 (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := mem_den_locallyExponentiallyStable ⟨⟨1, 1, 1, 0, 1⟩, 0⟩ one_pos one_pos one_pos
@@ -193,8 +191,7 @@ locally exponentially stable platform (design `M = D = ω_c = K₀ = 1`, `P₀ =
 `τ = 1/2`, so `H = 1/2 > 0`) integrated with a large enough step is not locally exponentially
 stable: every Euler multiplier `1 + hλ` leaves the unit disk
 (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
-@[tmio MI]
-@[powerlib_domain] theorem rig_not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem rig_not_euler_realizationSoundUnder :
     connection% (¬ rigEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hc := rig_chain_le_semantics
@@ -241,8 +238,7 @@ def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
 locally exponentially stable model (`D = ω_c = K₀ = 1`, `P₀ = 0` at its loading angle) integrated
 with a large enough step is not locally exponentially stable: every Euler multiplier `1 + hλ` leaves
 the unit disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := DroopLPF.locallyExponentiallyStable ⟨1, 1, 0, 1⟩ one_pos one_pos one_pos (by norm_num)
@@ -279,8 +275,7 @@ sound.** A locally exponentially stable oscillator (`ω_s = σ = κ_v = 1`, `v* 
 `c = κ_v v*² − σ < 0`) integrated with a large enough step is not locally exponentially stable:
 every Euler multiplier `1 + hλ` leaves the unit disk
 (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := mem_den_locallyExponentiallyStable ⟨1, 1, 1, 0⟩ (by norm_num [AHO.c])
@@ -334,8 +329,7 @@ angle: the smoothness hypothesis of the local generic Euler laws
 exponentially stable VSM model (`P(θ) = θ`, `M = D = 1`, `P_ref = ω_s = 0` at the origin)
 integrated with a large enough step is not locally exponentially stable: every Euler multiplier
 `1 + hλ` leaves the unit disk (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
-@[tmio MI]
-@[powerlib_domain] theorem vsm_not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem vsm_not_euler_realizationSoundUnder :
     connection% (¬ vsmEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := vsm_mem_den_locallyExponentiallyStable ⟨1, 1, 0, 0, fun θ => θ, 0⟩ contDiff_id
@@ -387,8 +381,7 @@ locally exponentially stable model on an infinite bus (`P = sin`, `K_R = τ_p = 
 `P_ref = ω_s = 0` at the origin, `infiniteBus_locallyExponentiallyStable`) integrated with a large
 enough step is not locally exponentially stable: every Euler multiplier `1 + hλ` leaves the unit
 disk (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
-@[tmio MI]
-@[powerlib_domain] theorem droop_not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem droop_not_euler_realizationSoundUnder :
     connection% (¬ droopEuler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := infiniteBus_locallyExponentiallyStable

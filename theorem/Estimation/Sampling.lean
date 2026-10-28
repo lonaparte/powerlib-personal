@@ -50,7 +50,7 @@ variable {α : Type*} [MeasurableSpace α]
 
 /-- **Importance-sampling identity**: if `π ≪ q` then `π(F) = E_q[1_F · dπ/dq]`
 (Mathlib `MeasureTheory.Measure.setLIntegral_rnDeriv`). -/
-@[powerlib_foundation] theorem importance_sampling_identity {π q : Measure α}
+@[tmio T, powerlib_foundation] theorem importance_sampling_identity {π q : Measure α}
     [π.HaveLebesgueDecomposition q] [SFinite q] (hac : π ≪ q) (F : Set α) :
     ∫⁻ x in F, π.rnDeriv q x ∂q = π F :=
   Measure.setLIntegral_rnDeriv hac F

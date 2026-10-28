@@ -45,7 +45,7 @@ variable (d : LinearDAE n m p)
 /-- Index-1 reduction of the SDAE: Schur-complement drift, unchanged diffusion `G`. The
 left-hand side is the pathwise integral form of the linear SDAE with additive noise `G dW`
 (`(X, Y)` is a path of the SDAE driven by `W` with input `u`). -/
-@[powerlib_foundation] theorem isSDAEPath_iff (hA : IsUnit d.Ayy.det)
+@[tmio T, powerlib_foundation] theorem isSDAEPath_iff (hA : IsUnit d.Ayy.det)
     (G : Matrix (Fin n) (Fin q) ℝ) (u : ℝ → Fin p → ℝ) (W : ℝ → Fin q → ℝ)
     (X : ℝ → Fin n → ℝ) (Y : ℝ → Fin m → ℝ) :
     ((∀ t, X t = X 0 + (∫ s in (0 : ℝ)..t, (d.Axx *ᵥ X s + d.Axy *ᵥ Y s + d.Bx *ᵥ u s)) +

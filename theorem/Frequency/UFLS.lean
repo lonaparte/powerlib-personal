@@ -74,7 +74,7 @@ variable {M D K Tg ΔPL f₀ th : ℝ}
 
 /-- The post-shedding steady state `−ΔP'/(K_R + D)` lies strictly above the threshold
 `−Δf_th/f₀` iff `ΔP' < (K_R + D) Δf_th / f₀`. -/
-@[powerlib_foundation] theorem postShed_steadyState_above_iff {ΔP' : ℝ} (hKD : 0 < K + D)
+@[tmio T, powerlib_foundation] theorem postShed_steadyState_above_iff {ΔP' : ℝ} (hKD : 0 < K + D)
     (hf : 0 < f₀) : -(th / f₀) < -ΔP' / (K + D) ↔ ΔP' < (K + D) * th / f₀ := by
   rw [neg_div, neg_lt_neg_iff, div_lt_div_iff₀ hKD hf, lt_div_iff₀ hf]
   constructor <;> intro h <;> linarith

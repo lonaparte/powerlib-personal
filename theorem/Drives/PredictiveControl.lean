@@ -75,7 +75,7 @@ def currentDeriv (p : Params) (ω : ℝ) (x u : Fin 2 → ℝ) : Fin 2 → ℝ :
   ![(u 0 - p.rs * x 0 + ω * p.Lq * x 1) / p.Ld,
     (u 1 - p.rs * x 1 - ω * p.Ld * x 0 - ω * p.ψf) / p.Lq]
 
-@[powerlib_foundation] theorem voltageEquation_iff (p : Params) (hd : p.Ld ≠ 0) (hq : p.Lq ≠ 0)
+@[tmio M, powerlib_foundation] theorem voltageEquation_iff (p : Params) (hd : p.Ld ≠ 0) (hq : p.Lq ≠ 0)
     (ω : ℝ) (x dx u : Fin 2 → ℝ) :
     VoltageEquation p ω x dx u ↔ dx = currentDeriv p ω x u := by
   unfold VoltageEquation

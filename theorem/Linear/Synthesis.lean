@@ -146,7 +146,7 @@ def accepts (A : Matrix (Fin n) (Fin n) ℚ) : Bool :=
 /-! ## Soundness of the check -/
 
 /-- The boolean check establishes the conditions. -/
-@[powerlib_foundation] theorem Witness.valid_of_check {A : Matrix (Fin n) (Fin n) ℚ}
+@[tmio T, powerlib_foundation] theorem Witness.valid_of_check {A : Matrix (Fin n) (Fin n) ℚ}
     {w : Witness n} (h : w.check A = true) : w.Valid A := by
   simp only [Witness.check, List.all_eq_true, List.mem_finRange, forall_const, Bool.and_eq_true,
     beq_iff_eq, Bool.or_eq_true, Bool.not_eq_true', decide_eq_false_iff_not, decide_eq_true_eq,

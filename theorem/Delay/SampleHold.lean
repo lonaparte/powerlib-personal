@@ -43,7 +43,7 @@ def zoh (T : ℝ) (s : ℂ) : ℂ := ∫ t in (0 : ℝ)..T, Complex.exp (-(s * t
 /-- Normalized sample-and-hold (window average) `zoh T s / T`. -/
 def sampleHold (T : ℝ) (s : ℂ) : ℂ := zoh T s / T
 
-@[powerlib_foundation] theorem zoh_eq {T : ℝ} {s : ℂ} (hs : s ≠ 0) :
+@[tmio T, powerlib_foundation] theorem zoh_eq {T : ℝ} {s : ℂ} (hs : s ≠ 0) :
     zoh T s = (1 - Complex.exp (-(s * T))) / s := by
   have h := integral_exp_mul_complex (a := 0) (b := T) (neg_ne_zero.mpr hs)
   simp only [zoh, neg_mul_eq_neg_mul]

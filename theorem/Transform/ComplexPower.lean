@@ -38,7 +38,7 @@ namespace powerlib.Transform
 open Matrix ComplexConjugate
 
 /-- `V̄ Ī*` expanded into real and imaginary parts. -/
-@[powerlib_foundation] theorem complexPower_expand (vd vq id iq : ℝ) :
+@[tmio T, powerlib_foundation] theorem complexPower_expand (vd vq id iq : ℝ) :
     (⟨vd, vq⟩ : ℂ) * conj (⟨id, iq⟩ : ℂ) = ⟨vd * id + vq * iq, vq * id - vd * iq⟩ := by
   apply Complex.ext
   · simp [Complex.mul_re]

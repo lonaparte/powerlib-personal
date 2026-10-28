@@ -71,7 +71,7 @@ def balancedAbc (V θg : ℝ) : Fin 3 → ℝ :=
 def gridAlphaBeta (V θg : ℝ) : Fin 2 → ℝ := ![V * Real.cos θg, V * Real.sin θg]
 
 /-- Amplitude-invariant Clarke maps the balanced phase voltages to `V (cos θ_g, sin θ_g)`. -/
-@[powerlib_foundation] theorem clarke_balancedAbc (V θg : ℝ) :
+@[tmio M, powerlib_foundation] theorem clarke_balancedAbc (V θg : ℝ) :
     clarke *ᵥ balancedAbc V θg = gridAlphaBeta V θg := by
   have h3 : Real.sqrt 3 ^ 2 = 3 := Real.sq_sqrt (by norm_num)
   have hc : Real.cos (2 * Real.pi / 3) = -1 / 2 := by

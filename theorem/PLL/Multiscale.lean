@@ -62,7 +62,7 @@ open Matrix
 /-- Slow-manifold branch `θ*(ξ) = arcsin((Δω + b ξ)/a)`. -/
 def slowAngle (a b Δω ξ : ℝ) : ℝ := Real.arcsin ((Δω + b * ξ) / a)
 
-@[powerlib_foundation] theorem slowAngle_spec {a b Δω ξ : ℝ} (ha : 0 < a)
+@[tmio M, powerlib_foundation] theorem slowAngle_spec {a b Δω ξ : ℝ} (ha : 0 < a)
     (hdom : |Δω + b * ξ| < a) :
     Δω - a * Real.sin (slowAngle a b Δω ξ) + b * ξ = 0 ∧
       |slowAngle a b Δω ξ| < Real.pi / 2 ∧
@@ -147,8 +147,7 @@ def family : Family Model Requirement 1 0 :=
   fun _ => rfl
 
 /-- The whole requirement language is inconsistent. -/
-@[tmio M]
-@[powerlib_foundation] theorem realize_univ :
+@[tmio M, powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
@@ -166,8 +165,7 @@ private theorem mem_den_hurwitz {m : Model} {P : Flow.Property}
 
 /-- Every translation of the reduced slow family is sound (the global table,
 `Spectral.chain_le_semantics_of_globalTable`). -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   have hG : TMIO.realize family.meets {.positiveRatio} ⊆
@@ -192,8 +190,7 @@ private theorem mem_den_hurwitz {m : Model} {P : Flow.Property}
   · simpa using hneg
 
 /-- On the attractive sentences and sampled contraction the chain agrees with the semantics. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_hurwitz {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem exact_hurwitz {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -209,8 +206,7 @@ private theorem mem_den_hurwitz {m : Model} {P : Flow.Property}
   simp [Meets]
 
 /-- The reduced slow model is globally exponentially stable iff `b/a > 0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_globallyExponentiallyStable_iff (m : Model) :
+@[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable_iff (m : Model) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔
       m ∈ {m : Model | 0 < m.b / m.a}) := by
   unfold powerlib.TMIO.Statement
@@ -218,8 +214,7 @@ private theorem mem_den_hurwitz {m : Model} {P : Flow.Property}
   rfl
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
+@[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 

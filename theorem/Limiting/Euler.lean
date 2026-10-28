@@ -80,8 +80,7 @@ generic Euler laws (`Numerics.euler_sound_small_step`). -/
 The stable saturated equilibrium with `M = D = P_sat = 1`, `P_ref = φ = 0` integrated with a large
 enough step is not locally exponentially stable: every Euler multiplier `1 + hλ` leaves the unit
 disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
-@[tmio MI]
-@[powerlib_domain] theorem not_euler_realizationSoundUnder :
+@[tmio MI, powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   have hm := saturated_stable_equilibrium (M := 1) (D := 1) (Pref := 0) (Psat := 1) (φ := 0) one_pos

@@ -64,7 +64,7 @@ omit [DecidableEq n] in
 
 /-- **Bauer–Fike**: `A = V diag(λ) V⁻¹` ⇒ every eigenvalue `μ` of `A + E` has
 `|μ − λᵢ| ≤ ‖V‖ ‖V⁻¹‖ ‖E‖` for some `i`. -/
-@[powerlib_foundation] theorem bauerFike {A E V Vinv : Matrix n n ℂ} {lam : n → ℂ}
+@[tmio T, powerlib_foundation] theorem bauerFike {A E V Vinv : Matrix n n ℂ} {lam : n → ℂ}
     (hV : V * Vinv = 1) (hA : A = V * diagonal lam * Vinv) {μ : ℂ} {x : EuclideanSpace ℂ n}
     (hx : x ≠ 0) (heig : act (A + E) x = μ • x) :
     ∃ i, ‖μ - lam i‖ ≤ ‖V‖ * ‖Vinv‖ * ‖E‖ := by

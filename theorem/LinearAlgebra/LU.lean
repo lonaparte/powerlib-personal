@@ -33,7 +33,7 @@ def liftPerm {k : ℕ} (σ : Equiv.Perm (Fin k)) : Equiv.Perm (Fin (k + 1)) wher
   left_inv i := by cases i using Fin.cases <;> simp
   right_inv i := by cases i using Fin.cases <;> simp
 
-@[simp, powerlib_foundation] theorem liftPerm_zero {k : ℕ} (σ : Equiv.Perm (Fin k)) :
+@[tmio T, simp, powerlib_foundation] theorem liftPerm_zero {k : ℕ} (σ : Equiv.Perm (Fin k)) :
     liftPerm σ 0 = 0 := rfl
 
 @[simp, powerlib_foundation] theorem liftPerm_succ {k : ℕ} (σ : Equiv.Perm (Fin k)) (j : Fin k) :

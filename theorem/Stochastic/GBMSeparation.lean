@@ -41,7 +41,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 �
 /-- Unit-time increments `W_{k+1} − W_k`. -/
 def unitIncr (B : ℝ≥0 → Ω → ℝ) (k : ℕ) (ω : Ω) : ℝ := B ((k + 1 : ℕ) : ℝ≥0) ω - B (k : ℝ≥0) ω
 
-@[powerlib_foundation] theorem unitIncr_hasLaw (hB : IsPreBrownianReal B P) (k : ℕ) :
+@[tmio T, powerlib_foundation] theorem unitIncr_hasLaw (hB : IsPreBrownianReal B P) (k : ℕ) :
     HasLaw (unitIncr B k) (gaussianReal 0 1) P := by
   have h := increment_hasLaw hB (s := (k : ℝ≥0)) (t := ((k + 1 : ℕ) : ℝ≥0))
     (by exact_mod_cast Nat.le_succ k)

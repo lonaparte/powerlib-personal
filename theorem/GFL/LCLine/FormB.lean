@@ -109,7 +109,7 @@ def convCurrentD (θ : ℝ) : ℝ := Real.cos θ * p.idRef - Real.sin θ * p.iqR
 def convCurrentQ (θ : ℝ) : ℝ := Real.sin θ * p.idRef + Real.cos θ * p.iqRef
 
 /-- The current-loop contribution to `ω_g C_f v_cq^c` is the constant `i_d*` (§1.7 (a)). -/
-@[powerlib_foundation] theorem cc_projection (θ : ℝ) :
+@[tmio M, powerlib_foundation] theorem cc_projection (θ : ℝ) :
     Real.sin θ * p.convCurrentQ θ + Real.cos θ * p.convCurrentD θ = p.idRef := by
   simp only [convCurrentD, convCurrentQ]
   linear_combination p.idRef * Real.sin_sq_add_cos_sq θ

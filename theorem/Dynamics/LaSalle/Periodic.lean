@@ -83,7 +83,7 @@ open Set Filter Topology Metric
 
 /-- **Semiconjugacy.** If `DP x (f x) = g (P x)` for every `x`, then `P` maps integral curves of
 `f` to integral curves of `g`. -/
-@[powerlib_foundation] theorem isIntegralCurveOn_comp_of_fderiv {n m : ℕ} {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem isIntegralCurveOn_comp_of_fderiv {n m : ℕ} {f : State n → State n}
     {g : State m → State m} {P : State n → State m} (hP : Differentiable ℝ P)
     (hconj : ∀ x, fderiv ℝ P x (f x) = g (P x)) {φ : ℝ → State n} {s : Set ℝ}
     (hφ : IsIntegralCurveOn φ (fun _ x => f x) s) :

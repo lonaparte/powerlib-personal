@@ -53,7 +53,7 @@ def IsInvariantGraph (ε : ℝ) (f : E × F → E) (g : E × F → F) (H : E →
   ∀ x, DifferentiableAt ℝ H x ∧ ε • fderiv ℝ H x (f (x, H x)) = g (x, H x)
 
 /-- A reduced solution lifts to a full solution on the graph. -/
-@[powerlib_foundation] theorem graph_lift {ε : ℝ} (hε : ε ≠ 0) {f : E × F → E} {g : E × F → F}
+@[tmio T, powerlib_foundation] theorem graph_lift {ε : ℝ} (hε : ε ≠ 0) {f : E × F → E} {g : E × F → F}
     {H : E → F} (hH : IsInvariantGraph ε f g H) {x : ℝ → E}
     (hx : ∀ t, HasDerivAt x (f (x t, H (x t))) t) (t : ℝ) :
     HasDerivAt (fun τ => (x τ, H (x τ))) (spField ε f g (x t, H (x t))) t := by

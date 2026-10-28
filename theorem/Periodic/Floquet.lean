@@ -44,7 +44,7 @@ variable {A : ℝ → Matrix X X ℝ} {T : ℝ}
 /-- **Floquet sufficient criterion.** For a continuous `T`-periodic state matrix, Floquet
 multipliers strictly inside the unit disk give uniform exponential stability of `ẋ = A(t) x`,
 stated on the transition matrix: `‖Φ(t, s)‖ ≤ K e^{-β (t - s)}` for all `s ≤ t`, with `β > 0`. -/
-@[powerlib_foundation] theorem uniformlyExponentiallyStable_of_spectralRadius_lt_one
+@[tmio T, powerlib_foundation] theorem uniformlyExponentiallyStable_of_spectralRadius_lt_one
     (hA : Continuous A) (hP : Periodic A T) (hT : 0 < T)
     (hρ : spectralRadius ℂ ((monodromy A T 0).map (algebraMap ℝ ℂ)) < 1) :
     ∃ K β : ℝ, 0 < β ∧ ∀ s t, s ≤ t → ‖transition A t s‖ ≤ K * Real.exp (-(β * (t - s))) := by

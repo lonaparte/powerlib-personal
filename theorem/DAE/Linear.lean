@@ -88,7 +88,7 @@ variable {n m p : ℕ}
 /-- The singular "mass matrix" `E = diag(I, 0)` of a semi-explicit DAE. -/
 def massMatrix (n m : ℕ) : Matrix (Fin n ⊕ Fin m) (Fin n ⊕ Fin m) ℝ := fromBlocks 1 0 0 0
 
-@[powerlib_foundation] theorem complexify_inv {k : ℕ} {A : Matrix (Fin k) (Fin k) ℝ}
+@[tmio T, powerlib_foundation] theorem complexify_inv {k : ℕ} {A : Matrix (Fin k) (Fin k) ℝ}
     (h : IsUnit A.det) : Linear.complexify A⁻¹ = (Linear.complexify A)⁻¹ := by
   refine (Matrix.inv_eq_left_inv ?_).symm
   rw [← Linear.complexify_mul, nonsing_inv_mul _ h]

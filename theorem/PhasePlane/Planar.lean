@@ -36,7 +36,7 @@ open powerlib.Dynamics (State)
 /-- The planar state with coordinates `(a, b)`. -/
 def mk (a b : ℝ) : State 2 := WithLp.toLp 2 ![a, b]
 
-@[simp, powerlib_foundation] theorem mk_apply_zero (a b : ℝ) : mk a b 0 = a := rfl
+@[tmio T, simp, powerlib_foundation] theorem mk_apply_zero (a b : ℝ) : mk a b 0 = a := rfl
 @[simp, powerlib_foundation] theorem mk_apply_one (a b : ℝ) : mk a b 1 = b := rfl
 
 @[simp, powerlib_foundation] theorem mk_coords (x : State 2) : mk (x 0) (x 1) = x := by

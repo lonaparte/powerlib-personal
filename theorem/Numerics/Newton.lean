@@ -49,7 +49,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 def newtonStep (F : E → E) (J : E → E →L[ℝ] E) (x : E) : E := x - Ring.inverse (J x) (F x)
 
 /-- First-order Taylor remainder with a Lipschitz derivative. -/
-@[powerlib_foundation] theorem norm_sub_sub_apply_le {F : E → E} {J : E → E →L[ℝ] E}
+@[tmio T, powerlib_foundation] theorem norm_sub_sub_apply_le {F : E → E} {J : E → E →L[ℝ] E}
     {U : Set E} (hU : Convex ℝ U) (hF : ∀ z ∈ U, HasFDerivAt F (J z) z) {L : ℝ}
     (hJ : ∀ z ∈ U, ∀ w ∈ U, ‖J z - J w‖ ≤ L * ‖z - w‖) {x y : E} (hx : x ∈ U) (hy : y ∈ U) :
     ‖F y - F x - J x (y - x)‖ ≤ L / 2 * ‖y - x‖ ^ 2 := by

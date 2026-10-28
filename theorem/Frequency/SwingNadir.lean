@@ -72,7 +72,7 @@ def rateC (c σ ωd Tg t : ℝ) : ℝ :=
   -(c * (σ ^ 2 + ωd ^ 2) * Tg / ωd) * Real.exp (-(σ * t)) *
     (ωd * Real.cos (ωd * t) - (σ - 1 / Tg) * Real.sin (ωd * t))
 
-@[powerlib_foundation] theorem hasDerivAt_respC {c σ ωd Tg : ℝ} (hωd : ωd ≠ 0) (hTg : Tg ≠ 0)
+@[tmio M, powerlib_foundation] theorem hasDerivAt_respC {c σ ωd Tg : ℝ} (hωd : ωd ≠ 0) (hTg : Tg ≠ 0)
     (t : ℝ) : HasDerivAt (respC c σ ωd Tg) (rateC c σ ωd Tg t) t := by
   have he : HasDerivAt (fun s => Real.exp (-(σ * s))) (Real.exp (-(σ * t)) * (-σ)) t := by
     have := ((hasDerivAt_id t).const_mul σ).neg.exp

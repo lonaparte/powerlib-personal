@@ -73,7 +73,7 @@ open powerlib.Dynamics (State)
 open powerlib.Transform (parkD parkQ iparkD iparkQ)
 
 /-- Ten-state vectors are equal iff all ten coordinates agree. -/
-@[powerlib_foundation] theorem state10_ext_iff {x y : State 10} : x = y ↔ ∀ i, x i = y i := by
+@[tmio T, powerlib_foundation] theorem state10_ext_iff {x y : State 10} : x = y ↔ ∀ i, x i = y i := by
   constructor
   · rintro rfl i; rfl
   · intro h; ext i; exact h i

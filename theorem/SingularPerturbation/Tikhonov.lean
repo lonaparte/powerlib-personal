@@ -48,7 +48,7 @@ namespace powerlib.SingularPerturbation
 open Set Filter Topology
 
 /-- Solutions of `u' = -r (u - c)` are `c + (u(0) - c) e^{-r t}`. -/
-@[powerlib_foundation] theorem linear_relaxation_eq {u : ℝ → ℝ} {r c : ℝ}
+@[tmio T, powerlib_foundation] theorem linear_relaxation_eq {u : ℝ → ℝ} {r c : ℝ}
     (hu : ∀ t, HasDerivAt u (-r * (u t - c)) t) (t : ℝ) :
     u t = c + (u 0 - c) * Real.exp (-(r * t)) := by
   let w : ℝ → ℝ := fun s => (u s - c) * Real.exp (r * s)

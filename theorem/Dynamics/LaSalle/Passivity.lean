@@ -50,7 +50,7 @@ variable {n m : ℕ}
 /-- **LaSalle with detectability.** `f` C¹, `V` C¹ positive definite with `V̇ ≤ 0` everywhere,
 and every forward solution of `f` along which `V̇` vanishes identically converges to `0`. Then
 every forward solution starting in a compact positively invariant set converges to `0`. -/
-@[powerlib_foundation] theorem tendsto_zero_of_lasalle_detectable
+@[tmio T, powerlib_foundation] theorem tendsto_zero_of_lasalle_detectable
     {f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)}
     {V : EuclideanSpace ℝ (Fin n) → ℝ} (hf : ContDiff ℝ 1 f) (hV : ContDiff ℝ 1 V)
     (hV0 : V 0 = 0) (hVpos : ∀ x, x ≠ 0 → 0 < V x)

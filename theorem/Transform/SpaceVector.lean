@@ -43,7 +43,7 @@ open Complex ComplexConjugate
 /-- `a = e^{j2π/3} = -1/2 + j√3/2`. -/
 def a : ℂ := ⟨-1 / 2, Real.sqrt 3 / 2⟩
 
-@[powerlib_foundation] theorem a_sq : a ^ 2 = ⟨-1 / 2, -(Real.sqrt 3 / 2)⟩ := by
+@[tmio T, powerlib_foundation] theorem a_sq : a ^ 2 = ⟨-1 / 2, -(Real.sqrt 3 / 2)⟩ := by
   apply Complex.ext <;> simp [a, pow_two] <;> nlinarith [sqrt3_sq]
 
 @[powerlib_foundation] theorem one_add_a_add_a_sq : 1 + a + a ^ 2 = 0 := by

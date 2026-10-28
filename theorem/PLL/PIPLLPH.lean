@@ -90,7 +90,7 @@ def gflPHModel (h V : ℝ → ℝ) (hV : ∀ θ, HasDerivAt V (-h θ) θ) (Kp Ki
 
 variable {h V : ℝ → ℝ} {hV : ∀ θ, HasDerivAt V (-h θ) θ} {Kp Ki : ℝ} {hKp : 0 ≤ Kp}
 
-@[simp, powerlib_foundation] theorem gflPHModel_H (x : State 2) :
+@[tmio M, simp, powerlib_foundation] theorem gflPHModel_H (x : State 2) :
     (gflPHModel h V hV Kp Ki hKp).H x = V (x 0) + Ki / 2 * x 1 ^ 2 := rfl
 
 /-- `(J − R) ∇H + B δω` equals the PI-PLL field: T-gfl-ph (1.1) ⇔ (1.2).

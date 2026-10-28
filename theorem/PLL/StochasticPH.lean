@@ -50,7 +50,7 @@ open powerlib.Stochastic.SPH
 def pllV (Vg θ : ℝ) : ℝ := Vg * (1 - cos θ)
 
 /-- `𝒱' = V_g sin θ = −h(θ)` with the phase detector `h(θ) = −V_g sin θ`. -/
-@[powerlib_foundation] theorem pllV_hasDerivAt (Vg θ : ℝ) :
+@[tmio M, powerlib_foundation] theorem pllV_hasDerivAt (Vg θ : ℝ) :
     HasDerivAt (pllV Vg) (Vg * sin θ) θ := by
   have := ((hasDerivAt_cos θ).const_sub 1).const_mul Vg
   unfold pllV

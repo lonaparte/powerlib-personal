@@ -126,7 +126,7 @@ variable {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpac
 
 omit [NormOneClass 𝔸] in
 /-- `e^{(j s) X} = (e^{s X})^j`. -/
-@[powerlib_foundation] theorem exp_natCast_mul_smul (X : 𝔸) (s : ℝ) (j : ℕ) :
+@[tmio T, powerlib_foundation] theorem exp_natCast_mul_smul (X : 𝔸) (s : ℝ) (j : ℕ) :
     NormedSpace.exp (((j : ℝ) * s) • X) = NormedSpace.exp (s • X) ^ j := by
   induction j with
   | zero => simp

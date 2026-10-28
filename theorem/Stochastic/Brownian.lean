@@ -55,7 +55,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 �
 /-! ## Mathlib wrappers: Brownian motion -/
 
 /-- `W_t ~ N(0, t)` (Mathlib `IsPreBrownianReal.hasLaw_eval`). -/
-@[powerlib_foundation] theorem brownian_hasLaw (hB : IsPreBrownianReal B P) (t : ℝ≥0) :
+@[tmio T, powerlib_foundation] theorem brownian_hasLaw (hB : IsPreBrownianReal B P) (t : ℝ≥0) :
     HasLaw (B t) (gaussianReal 0 t) P := hB.hasLaw_eval t
 
 /-- `E W_t = 0` (Mathlib `IsPreBrownianReal.integral_eval`). -/

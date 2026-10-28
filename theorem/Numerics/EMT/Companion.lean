@@ -46,7 +46,7 @@ open Matrix
 /-! ### Element companion models -/
 
 /-- Inductor `L di/dt = v`: the trapezoidal step equals the companion form. -/
-@[powerlib_foundation] theorem inductor_companion_iff {L h : ℝ} (hL : L ≠ 0)
+@[tmio T, powerlib_foundation] theorem inductor_companion_iff {L h : ℝ} (hL : L ≠ 0)
     (i₀ v₀ i₁ v₁ : ℝ) :
     i₁ = i₀ + h / 2 * (v₀ / L + v₁ / L) ↔ i₁ = h / (2 * L) * v₁ + (i₀ + h / (2 * L) * v₀) := by
   constructor <;> intro hk <;> rw [hk] <;> field_simp <;> ring

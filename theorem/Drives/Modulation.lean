@@ -45,7 +45,7 @@ open powerlib.Transform.SpaceVector
 /-- Projection of a space vector on the unit vector `e^{jπ/6} = (√3/2, 1/2)`. -/
 def apothemProjection (u : ℂ) : ℝ := Real.sqrt 3 / 2 * u.re + 1 / 2 * u.im
 
-@[powerlib_foundation] theorem apothemProjection_clarke (xa xb xc : ℝ) :
+@[tmio T, powerlib_foundation] theorem apothemProjection_clarke (xa xb xc : ℝ) :
     apothemProjection (clarke xa xb xc) = Real.sqrt 3 / 3 * (xa - xc) := by
   simp only [apothemProjection, clarke_re, clarke_im]
   ring

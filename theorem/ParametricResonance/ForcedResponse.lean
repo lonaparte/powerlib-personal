@@ -74,7 +74,7 @@ def forcedOrbit (A : Matrix (Fin n) (Fin n) ℝ) (b : Fin n → ℂ) (ω t : ℝ
 def forcing (b : Fin n → ℂ) (ω t : ℝ) : ℝⁿ :=
   WithLp.toLp 2 fun i => (b i * Complex.exp ((ω : ℂ) * t * I)).re
 
-@[powerlib_foundation] theorem characteristicMatrix_mulVec_forcedAmplitude
+@[tmio T, powerlib_foundation] theorem characteristicMatrix_mulVec_forcedAmplitude
     {A : Matrix (Fin n) (Fin n) ℝ} {ω : ℝ} (b : Fin n → ℂ)
     (h : (Linear.characteristicMatrix A ((ω : ℂ) * I)).det ≠ 0) :
     Linear.characteristicMatrix A ((ω : ℂ) * I) *ᵥ forcedAmplitude A b ω = b := by

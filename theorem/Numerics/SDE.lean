@@ -53,7 +53,7 @@ def milsteinStep (μ σ : E → ℝ → E) (dt t ξ : ℝ) (x : E) : E :=
     ((1 / 2 : ℝ) * ((Real.sqrt dt * ξ) ^ 2 - dt)) • (fderiv ℝ (fun y => σ y t) x) (σ x t)
 
 /-- Additive scalar noise: Milstein equals Euler–Maruyama, sample by sample. -/
-@[powerlib_foundation] theorem milsteinStep_eq_emStep {μ σ : E → ℝ → E}
+@[tmio T, powerlib_foundation] theorem milsteinStep_eq_emStep {μ σ : E → ℝ → E}
     (hσ : ∀ x y t, σ x t = σ y t) (dt t ξ : ℝ) (x : E) :
     milsteinStep μ σ dt t ξ x = emStep μ σ dt t ξ x := by
   have hconst : (fun y => σ y t) = fun _ => σ x t := funext fun y => hσ y x t

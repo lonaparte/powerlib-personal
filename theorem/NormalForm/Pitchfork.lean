@@ -67,7 +67,7 @@ open powerlib.Dynamics (State)
 /-- The transcritical normal form `x ↦ μ x − x²`. -/
 def transField (μ : ℝ) (x : ℝ) : ℝ := μ * x - x ^ 2
 
-@[powerlib_foundation] theorem transField_contDiff (μ : ℝ) {k : WithTop ℕ∞} :
+@[tmio T, powerlib_foundation] theorem transField_contDiff (μ : ℝ) {k : WithTop ℕ∞} :
     ContDiff ℝ k (transField μ) := by
   unfold transField; fun_prop
 

@@ -67,7 +67,7 @@ def guardPrefactor (α l₁ D : ℝ) : ℝ := Real.sqrt π / 2 * Real.sqrt (D * 
 
 variable {α l₁ : ℝ}
 
-@[powerlib_foundation] theorem guardRadius_sq (hα : 0 ≤ α) (hl : 0 < l₁) :
+@[tmio M, powerlib_foundation] theorem guardRadius_sq (hα : 0 ≤ α) (hl : 0 < l₁) :
     guardRadius α l₁ ^ 2 = α / l₁ := by
   rw [guardRadius, Real.sq_sqrt (div_nonneg hα hl.le)]
 

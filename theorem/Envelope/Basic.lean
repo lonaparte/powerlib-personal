@@ -74,7 +74,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 /-! ## Horizons -/
 
 /-- A later horizon leaves more time to leave the safe set. -/
-@[powerlib_foundation] theorem exceeds_mono {s : Port.System n p} {S A : Set ℝⁿ}
+@[tmio T, powerlib_foundation] theorem exceeds_mono {s : Port.System n p} {S A : Set ℝⁿ}
     {T T' : ℝ≥0∞} (h : T ≤ T') (he : s.Exceeds S A T) : s.Exceeds S A T' := by
   obtain ⟨x, t, ht, hT, hS, hx, hA⟩ := he
   exact ⟨x, t, ht, hT.trans_le h, hS, hx, hA⟩
@@ -136,7 +136,7 @@ sentences at the horizons of the set. -/
 
 /-- The infinite horizon is the meet of the finite horizons: the denotation of safety at the
 supremum of a set of horizons is the intersection of the denotations, for every family. -/
-@[powerlib_foundation] theorem den_safe_sSup {X Q : Type*} (F : Family X Q n p) (H : Set ℝ≥0∞)
+@[tmio TM, powerlib_foundation] theorem den_safe_sSup {X Q : Type*} (F : Family X Q n p) (H : Set ℝ≥0∞)
     (ε : ℝ≥0∞) :
     F.den (.envelope (.safe (sSup H) ε)) = ⋂ T ∈ H, F.den (.envelope (.safe T ε)) := by
   ext x
@@ -410,7 +410,7 @@ theorem twoPoint_apply (E : Set Sample) :
 /-- At the level `1/2`, the random drift from the origin with `ω₀ = ±1` is safe in `x < 1/2` and
 in `x > −1/2` over the infinite horizon, but not in their intersection: each drift leaves exactly
 one of the two sets. -/
-@[powerlib_foundation] theorem not_holds_safe_inter :
+@[tmio T, powerlib_foundation] theorem not_holds_safe_inter :
     (Sentence.envelope (.safe ⊤ 2⁻¹)).holds (Behaviour.disturbed randomDrift {0} below twoPoint) ∧
       (Sentence.envelope (.safe ⊤ 2⁻¹)).holds
         (Behaviour.disturbed randomDrift {0} above twoPoint) ∧

@@ -55,7 +55,7 @@ open scoped Topology
 
 /-- Transfer function of a one-state SISO plant `⟨[a], [b], [c], [d]⟩`:
 `c b / (s − a) + d` for `s ≠ a`. -/
-@[powerlib_foundation] theorem transfer_fin_one (a b c d : ℝ) {s : ℂ} (hs : s - a ≠ 0) :
+@[tmio T, powerlib_foundation] theorem transfer_fin_one (a b c d : ℝ) {s : ℂ} (hs : s - a ≠ 0) :
     transfer (⟨!![a], !![b], !![c], !![d]⟩ : Plant 1 1) s 0 0 =
       (c : ℂ) * b / (s - a) + d := by
   simp [transfer, characteristicMatrix, Matrix.mul_apply]

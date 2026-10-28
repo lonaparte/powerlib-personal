@@ -64,7 +64,7 @@ open Matrix Set
 /-- Comparison lemma: `f' ≤ k f + β` on `[0, T]` with `k ≠ 0` gives
 `f t + β/k ≤ e^{k t} (f 0 + β/k)` on `[0, T]` (Grönwall, `Dynamics.le_exp_mul_of_hasDerivWithinAt`,
 for `f + β/k`). -/
-@[powerlib_foundation] theorem comparison_of_deriv_le {f f' : ℝ → ℝ} {k β T : ℝ} (hk : k ≠ 0)
+@[tmio T, powerlib_foundation] theorem comparison_of_deriv_le {f f' : ℝ → ℝ} {k β T : ℝ} (hk : k ≠ 0)
     (hf : ∀ t, HasDerivAt f (f' t) t) (hb : ∀ t ∈ Icc 0 T, f' t ≤ k * f t + β) :
     ∀ t ∈ Icc 0 T, f t + β / k ≤ Real.exp (k * t) * (f 0 + β / k) := by
   intro t ht

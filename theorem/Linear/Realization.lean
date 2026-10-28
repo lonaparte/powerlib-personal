@@ -45,7 +45,7 @@ open Matrix LinearSystems
 
 variable {n n' p : ℕ}
 
-@[powerlib_foundation] theorem det_characteristicMatrix (A : Matrix (Fin n) (Fin n) ℝ) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem det_characteristicMatrix (A : Matrix (Fin n) (Fin n) ℝ) (s : ℂ) :
     (characteristicMatrix A s).det = (complexify A).charpoly.eval s :=
   det_characteristicMatrix_eq_eval A s
 

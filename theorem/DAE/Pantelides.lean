@@ -186,7 +186,7 @@ def potential (σ : Equiv.Perm ι) (st : PantelidesState ι) : ℕ :=
 /-! ## Invariant -/
 
 omit [DecidableEq ι] in
-@[powerlib_foundation] theorem initial_valid : S.Valid S.initial := by
+@[tmio T, powerlib_foundation] theorem initial_valid : S.Valid S.initial := by
   refine ⟨fun i j hij => ?_, fun _ _ h => by simp [initial] at h, fun _ _ _ h => by
     simp [initial] at h⟩
   simp only [initial, add_zero]

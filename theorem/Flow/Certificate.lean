@@ -56,7 +56,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- A smooth nonnegative cutoff makes a C¹ field globally Lipschitz without changing it on a
 ball. -/
-@[powerlib_foundation] theorem exists_lipschitz_cutoff {f : ℝⁿ → ℝⁿ} (hf : ContDiff ℝ 1 f)
+@[tmio T, powerlib_foundation] theorem exists_lipschitz_cutoff {f : ℝⁿ → ℝⁿ} (hf : ContDiff ℝ 1 f)
     (R : ℝ) :
     ∃ χ : ℝⁿ → ℝ, (∀ x, 0 ≤ χ x) ∧ (∀ x, ‖x‖ ≤ R → χ x = 1) ∧
       ∃ K, LipschitzWith K (fun x => χ x • f x) := by

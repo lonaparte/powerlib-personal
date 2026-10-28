@@ -84,7 +84,7 @@ private lemma sum_shift {M : ℕ} (w : Fin M → ℝ) (k : ℕ) :
     simp only [hjk]; simp
 
 /-- `(T w)_j = w_{j−1} − 2w_j + w_{j+1}` with the Dirichlet zeros. -/
-@[powerlib_foundation] theorem lapT_mulVec_apply {M : ℕ} (w : Fin M → ℝ) (i : Fin M) :
+@[tmio T, powerlib_foundation] theorem lapT_mulVec_apply {M : ℕ} (w : Fin M → ℝ) (i : Fin M) :
     (lapT M *ᵥ w) i = gridExt w i - 2 * gridExt w (i + 1) + gridExt w (i + 2) := by
   have hsplit : ∀ j : Fin M, lapT M i j * w j =
       -2 * (if j = i then w j else 0) + (if (j : ℕ) + 1 = i then w j else 0) +

@@ -46,7 +46,7 @@ def forwardSolution (hf : LipschitzWith K f) (x : E) : ℝ → E :=
   (_root_.exists_isIntegralCurveOn_Ici (f := fun _ y => f y)
     (hf.continuous.comp continuous_snd) (fun _ => hf) 0 x).choose
 
-@[powerlib_foundation] theorem forwardSolution_spec (hf : LipschitzWith K f) (x : E) :
+@[tmio T, powerlib_foundation] theorem forwardSolution_spec (hf : LipschitzWith K f) (x : E) :
     forwardSolution hf x 0 = x ∧
       IsIntegralCurveOn (forwardSolution hf x) (fun _ y => f y) (Ici 0) ∧
       ∀ β : ℝ → E, β 0 = x → IsIntegralCurveOn β (fun _ y => f y) (Ici 0) →

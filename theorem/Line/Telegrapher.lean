@@ -41,7 +41,7 @@ open powerlib.PDE (dx dt hasFDerivAt_fderiv_apply differentiable_dx differentiab
   fderiv_combo)
 
 /-- **Second-order telegrapher equation** obtained by eliminating `i`. -/
-@[powerlib_foundation] theorem second_order_v (L C R G : ℝ) {v i : ℝ × ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem second_order_v (L C R G : ℝ) {v i : ℝ × ℝ → ℝ}
     (hv : ContDiff ℝ 2 v) (hi : ContDiff ℝ 2 i)
     (h1 : ∀ p, dx v p = -L * dt i p - R * i p) (h2 : ∀ p, dx i p = -C * dt v p - G * v p)
     (p : ℝ × ℝ) :

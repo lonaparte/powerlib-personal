@@ -56,7 +56,7 @@ open powerlib.Transform (J park rot)
 /-- Zero-input dq-frame state matrix `−(R/L) I − ω J` of one R–L branch. -/
 def dqRLMatrix (R L ω : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![-(R / L), ω; -ω, -(R / L)]
 
-@[powerlib_foundation] theorem dqRLMatrix_eq (R L ω : ℝ) :
+@[tmio M, powerlib_foundation] theorem dqRLMatrix_eq (R L ω : ℝ) :
     dqRLMatrix R L ω = -(R / L) • (1 : Matrix (Fin 2) (Fin 2) ℝ) - ω • J := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [dqRLMatrix, J]
 
@@ -298,8 +298,7 @@ private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contrac
     (fun m => m.isHurwitz_plant_iff.symm) hP
 
 /-- Every translation of the dq RL-branch family is sound. -/
-@[tmio TM]
-@[powerlib_domain] theorem chain_le_semantics :
+@[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.linear_chain_le_semantics (fun m h => m.isHurwitz_plant_iff.mpr h)
@@ -307,24 +306,21 @@ private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contrac
 
 /-- The attractive sentences and sampled contraction of the dq branch are carved out exactly by
 `R/L > 0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem exact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM, powerlib_domain] theorem exact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.linear_exact (fun m => m.isHurwitz_plant_iff.symm) hP
 
 /-- Zero-input dq-frame RL branch at constant frame speed `ω`: an attractive sentence (in
 particular exponential stability) holds iff `R/L > 0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_iff (m : DqBranch) {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem mem_den_iff (m : DqBranch) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (m ∈ family.den (.flow P) ↔ m ∈ {m : DqBranch | 0 < m.R / m.L}) := by
   unfold powerlib.TMIO.Statement
   rw [den_flow hP]
 
 /-- With a positive inductance, the dq RL branch is stable iff `R > 0`. -/
-@[tmio TM]
-@[powerlib_domain] theorem mem_den_iff_resistance_pos (m : DqBranch) (hL : 0 < m.L)
+@[tmio TM, powerlib_domain] theorem mem_den_iff_resistance_pos (m : DqBranch) (hL : 0 < m.L)
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (m ∈ family.den (.flow P) ↔ m ∈ {m : DqBranch | 0 < m.R}) := by
   unfold powerlib.TMIO.Statement
@@ -333,8 +329,7 @@ particular exponential stability) holds iff `R/L > 0`. -/
 
 /-- The αβ and dq descriptions of the RL branch are stable together, at every frame speed: the
 attractive denotation of the dq family is its pull-back along the αβ reading. -/
-@[tmio TM]
-@[powerlib_domain] theorem den_eq_alphaBeta {P : Flow.Property}
+@[tmio TM, powerlib_domain] theorem den_eq_alphaBeta {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.den (.flow P) = DqBranch.alphaBeta ⁻¹' family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
