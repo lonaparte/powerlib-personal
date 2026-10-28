@@ -77,6 +77,7 @@ def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
 A locally exponentially stable model (`V = ω_s = k_p = k_i = 1`, `X_g = i_d = 0` at `θ* = 0`)
 integrated with a large enough step is not locally exponentially stable: every Euler multiplier
 `1 + hλ` leaves the unit disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+@[tmio MI]
 @[powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement

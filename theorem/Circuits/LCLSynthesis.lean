@@ -406,6 +406,7 @@ def rationalFamily : Family RationalCircuit (Requirement ⊕ Synthesis) 3 2 :=
 
 /-- Acceptance by the synthesizer entails pole stability: the accepted certificate proves the
 plant Hurwitz. -/
+@[tmio M]
 @[powerlib_domain] theorem realize_accepted :
     connection% (realize rationalFamily.meets {.inr .accepted} ⊆
       realize rationalFamily.meets {.inl .poleStable}) := by

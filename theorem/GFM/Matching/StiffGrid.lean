@@ -847,6 +847,7 @@ private theorem mem_den_flow {m : Model} {P : Flow.Property} :
   Spectral.mem_den_flow_iff_shift (f := Model.field) (pt := Model.point) family_isAutonomous
 
 /-- The whole requirement language is inconsistent. -/
+@[tmio M]
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
@@ -869,6 +870,7 @@ Static evidence on the model, not a connection conclusion. -/
   positivity
 
 /-- Every translation of the stiff-grid matching family is sound. -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -892,12 +894,14 @@ Static evidence on the model, not a connection conclusion. -/
     trivial
 
 /-- Passivity is translated exactly: the closed loop has no ports. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
 /-- **Boundary**: no stiff-grid matching closed loop is globally asymptotically stable on `ℝ⁴`
 (`2π`-periodicity gives a second equilibrium whenever the operating point is one). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_mem_den_globallyAsymptoticallyStable (m : Model) :
     connection% (m ∉ family.den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -913,6 +917,7 @@ Static evidence on the model, not a connection conclusion. -/
     simp [Model.point, Real.pi_ne_zero] at h0
 
 /-- The same boundary for global exponential stability. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_mem_den_globallyExponentiallyStable (m : Model) :
     connection% (m ∉ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -920,6 +925,7 @@ Static evidence on the model, not a connection conclusion. -/
     (Spectral.den_globallyExponentiallyStable_subset_gas h)
 
 /-- The global asymptotic translation is exact: both its denotation and its space are empty. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_globallyAsymptoticallyStable :
     connection% (family.Exact (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -927,6 +933,7 @@ Static evidence on the model, not a connection conclusion. -/
     (Set.eq_empty_iff_forall_notMem.mpr not_mem_den_globallyAsymptoticallyStable)
 
 /-- The global exponential translation is exact: both its denotation and its space are empty. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_globallyExponentiallyStable :
     connection% (family.Exact (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -936,6 +943,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- **Lyapunov stability of the operating point** under the note's condition in its non-strict
 form (`margin ≥ 0`), `C_dc, L_s, R_s > 0` and `μ u* v₀ > 0`: the energy `H − S(0)` is a local
 Lyapunov function on `|θ_dq| < 2π`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_lyapunovStable (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
     (hR : 0 < m.Rs) (hs : 0 < m.μ * m.ustar * m.v0) (hδ : 0 ≤ m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
@@ -947,6 +955,7 @@ Lyapunov function on `|θ_dq| < 2π`. -/
 /-- **Local exponential stability of the operating point** under the source's (and the note's)
 strict condition `margin > 0`, with `C_dc, L_s, R_s > 0`, `μ u* v₀ > 0` and `η ≠ 0`: the
 linearization is Hurwitz (`jac_isHurwitz`). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model) (hC : 0 < m.Cdc)
     (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : 0 < m.μ * m.ustar * m.v0) (hη : m.η ≠ 0)
     (hδ : 0 < m.margin) :
@@ -956,6 +965,7 @@ linearization is Hurwitz (`jac_isHurwitz`). -/
   exact les m hC hL hR hs hη hδ
 
 /-- Local asymptotic stability of the operating point under the same requirements. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable (m : Model) (hC : 0 < m.Cdc)
     (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : 0 < m.μ * m.ustar * m.v0) (hη : m.η ≠ 0)
     (hδ : 0 < m.margin) :

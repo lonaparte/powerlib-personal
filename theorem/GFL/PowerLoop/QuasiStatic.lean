@@ -460,6 +460,7 @@ private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
 
 /-- No model has both a Routh–Hurwitz Jacobian and `det > 0` or `tr > 0`: the whole requirement
 language is inconsistent. -/
+@[tmio M]
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
@@ -471,6 +472,7 @@ language is inconsistent. -/
 its semantics connection. A Routh–Hurwitz Jacobian at an equilibrium proves the local sentences,
 `det > 0` or `tr > 0` proves instability (LeanForControl's linearization theorems at the selected
 point, moved to the origin), and passivity holds without requirement. -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -508,6 +510,7 @@ point. -/
 selected point exactly when the point is an equilibrium (`IsEq`) and the closed-form Jacobian
 satisfies the strict 3×3 Routh–Hurwitz conditions. Converse linearization: local exponential
 stability of the `C¹` field forces an equilibrium with a Hurwitz Jacobian. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -529,6 +532,7 @@ stability of the `C¹` field forces an equilibrium with a Hurwitz Jacobian. -/
   · exact hH
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
@@ -537,6 +541,7 @@ stability of the `C¹` field forces an equilibrium with a Hurwitz Jacobian. -/
 
 /-- Quasi-static GFL, `cos θ > 0` and `cos 2θ > 0` (i.e. `|θ| < 45°` on the branch): the
 equilibrium is locally exponentially stable for every positive gain triple. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_cos_two_mul_pos (p : Params)
     (hV : 0 < p.V) (hkp : 0 < p.kp) (hki : 0 < p.ki) (hkP : 0 < p.kP) {θ Id : ℝ}
     (heq : IsEq p θ Id) (hcos : 0 < Real.cos θ) (hcos2 : 0 < Real.cos (2 * θ)) :
@@ -556,6 +561,7 @@ equilibrium is locally exponentially stable for every positive gain triple. -/
     linarith
 
 /-- Same, stated with the angle: `|θ| < π/4`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_abs_lt (p : Params)
     (hV : 0 < p.V) (hkp : 0 < p.kp) (hki : 0 < p.ki) (hkP : 0 < p.kP) {θ Id : ℝ}
     (heq : IsEq p θ Id) (hθ : |θ| < Real.pi / 4) :
@@ -568,6 +574,7 @@ equilibrium is locally exponentially stable for every positive gain triple. -/
 
 /-- Quasi-static GFL, `cos 2θ < 0` (`45° < |θ| < 135°`): a positive real eigenvalue, the
 equilibrium is unstable (fold side of the branch). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable_of_cos_two_mul_neg (p : Params) (hV : p.V ≠ 0)
     (hki : 0 < p.ki) (hkP : 0 < p.kP) {θ Id : ℝ} (heq : IsEq p θ Id)
     (hcos2 : Real.cos (2 * θ) < 0) :
@@ -582,6 +589,7 @@ equilibrium is unstable (fold side of the branch). -/
   nlinarith
 
 /-- Same, stated with the angle: `π/4 < θ < π/2`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable_of_pi_div_four_lt (p : Params) (hV : p.V ≠ 0)
     (hki : 0 < p.ki) (hkP : 0 < p.kP) {θ Id : ℝ} (heq : IsEq p θ Id) (h1 : Real.pi / 4 < θ)
     (h2 : θ < Real.pi / 2) :
@@ -590,6 +598,7 @@ equilibrium is unstable (fold side of the branch). -/
     (Real.cos_neg_of_pi_div_two_lt_of_lt (by linarith) (by linarith [Real.pi_pos]))
 
 /-- On the fold side of the branch (`cos 2θ < 0`) the equilibrium is not Lyapunov stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_mem_den_lyapunovStable_of_cos_two_mul_neg (p : Params)
     (hV : p.V ≠ 0) (hki : 0 < p.ki) (hkP : 0 < p.kP) {θ Id : ℝ} (heq : IsEq p θ Id)
     (hcos2 : Real.cos (2 * θ) < 0) :
@@ -638,6 +647,7 @@ a nonzero purely imaginary eigenvalue. -/
 def offEquilibrium : Model := ⟨⟨0, 1, 0, 0, 0, 0⟩, 0, -1⟩
 
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+@[tmio TM]
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
@@ -648,6 +658,7 @@ def offEquilibrium : Model := ⟨⟨0, 1, 0, 0, 0, 0⟩, 0, -1⟩
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
 while the translation asks for an equilibrium. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
@@ -691,6 +702,7 @@ private theorem pendulumEnergy_hasFDerivAt (z : Dynamics.State 3) :
 `1 − cos θ + x²/2 + i_d²/2` is conserved and has a strict minimum on `|θ| < π`
 (`Dynamics.pendulumEnergy_pos`). Its Jacobian has trace `0`, so it meets no Routh–Hurwitz
 requirement. -/
+@[tmio TM]
 @[powerlib_domain] theorem undampedPLL_mem_den_lyapunovStable :
     connection% (undampedPLL ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -720,6 +732,7 @@ requirement. -/
 
 /-- The Lyapunov translation is sound but not exact: the undamped PLL with a frozen dispatch loop
 is Lyapunov stable at an equilibrium whose Jacobian has trace `0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement

@@ -671,6 +671,7 @@ private theorem supercriticalQS_las : LocalAsymptoticStable supercriticalQS.fiel
 /-- The supercritical quasi-static witness (`V = √5`, `X_g = 1`, `k_p = −1/4`, `k_i = 21/4`,
 `k_P = 4/3`, `P_ref = −3`, `(θ*, i_d*) = (arctan(1/2), −1)`) is locally asymptotically stable: a
 weak focus, its Jacobian has the eigenvalues `±3i` and `−7/2`. -/
+@[tmio TM]
 @[powerlib_domain] theorem supercriticalQS_mem_den_locallyAsymptoticallyStable :
     connection% (supercriticalQS ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -719,6 +720,7 @@ weak focus, its Jacobian has the eigenvalues `±3i` and `−7/2`. -/
 /-- **The local asymptotic translation is not exact** (gains of arbitrary sign): the supercritical
 witness is locally asymptotically stable, but `tr J · m₂(J) = det J`, so it meets no strict
 Routh–Hurwitz requirement. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement

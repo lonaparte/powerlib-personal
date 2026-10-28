@@ -221,6 +221,7 @@ open powerlib.Circuits in
 interconnection family, the denotation of every attractive sentence and of sampled contraction
 is its own pull-back along the per-unit transformation (nonzero state and port bases, positive
 time base). -/
+@[tmio TM]
 @[powerlib_domain] theorem den_perUnit {n₁ n₂ : ℕ} {b₁ : Fin n₁ → ℝ} {b₂ : Fin n₂ → ℝ}
     {vb ib : Fin p → ℝ} {ωB : ℝ} (hb₁ : ∀ i, b₁ i ≠ 0) (hb₂ : ∀ i, b₂ i ≠ 0)
     (hv : ∀ k, vb k ≠ 0) (hi : ∀ k, ib k ≠ 0) (hω : 0 < ωB) {P : Flow.Property}
@@ -233,6 +234,7 @@ time base). -/
 open powerlib.Circuits in
 /-- With time in SI seconds (convention (A), `ω_B = 1`), SI and per-unit descriptions satisfy
 every flow sentence together. -/
+@[tmio TM]
 @[powerlib_domain] theorem den_perUnit_unitTime {n₁ n₂ : ℕ} {b₁ : Fin n₁ → ℝ}
     {b₂ : Fin n₂ → ℝ} {vb ib : Fin p → ℝ} (hb₁ : ∀ i, b₁ i ≠ 0) (hb₂ : ∀ i, b₂ i ≠ 0)
     (hv : ∀ k, vb k ≠ 0) (hi : ∀ k, ib k ≠ 0) (P : Flow.Property) :
@@ -246,6 +248,7 @@ open powerlib.Circuits in
 a flow sentence `P` exactly when the SI description satisfies `P.timeScale ω_B`: decay at the rate
 `a` per unit of `τ = ω_B t` is decay at the rate `ω_B a` per second, and every other sentence is
 unchanged. -/
+@[tmio TM]
 @[powerlib_domain] theorem den_perUnit_timeScale {n₁ n₂ : ℕ} {b₁ : Fin n₁ → ℝ} {b₂ : Fin n₂ → ℝ}
     {vb ib : Fin p → ℝ} {ωB : ℝ} (hb₁ : ∀ i, b₁ i ≠ 0) (hb₂ : ∀ i, b₂ i ≠ 0)
     (hv : ∀ k, vb k ≠ 0) (hi : ∀ k, ib k ≠ 0) (hω : 0 < ωB) (P : Flow.Property) :

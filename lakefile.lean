@@ -26,6 +26,15 @@ library globs has passed admission, even if it omits the Architecture import. -/
 @[default_target]
 target powerlib pkg : Unit := do
   let ws ← getWorkspace
+  -- Read the source attributes before scheduling any compilation. This check
+  -- needs only Python's standard library, not dependency artifacts.
+  let ownership ← IO.Process.output {
+    cmd := "python3"
+    args := #[(pkg.dir / "tools" / "tmio_classification.py").toString, "check"]
+  }
+  unless ownership.exitCode == 0 do
+    error s!"TMIO source classification failed:\n{ownership.stdout}\n{ownership.stderr}"
+  logInfo ownership.stdout.trimAscii.toString
   let mut modules : Array Lake.Module := #[]
   for lib in pkg.leanLibs do
     for mod in ← lib.getModuleArray do
@@ -39,6 +48,9 @@ target powerlib pkg : Unit := do
     let names := modules.map (fun m => "`" ++ m.name.toString)
     text := text ++ "set_option maxHeartbeats 0\nopen Lean Elab Command in\nrun_cmd powerlib.Architecture.auditModules #[" ++
       String.intercalate ", " names.toList ++ "]\n"
+    -- Audit the actual Lake module inventory, including newly added modules not
+    -- yet imported by the public umbrella. Categories come from source attributes.
+    text := text ++ "run_cmd powerlib.Knowledge.auditEnvironment\n"
     -- The collected jobs trace every built module, including the checker.
     -- Also trace the inventory itself, so adding or removing a module reruns
     -- admission. Failed checks never produce a successful receipt.

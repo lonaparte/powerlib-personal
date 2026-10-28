@@ -381,6 +381,7 @@ def family : Family Model Requirement 2 1 :=
 
 /-- No model is at a well bottom and at an anti-phase point: the whole requirement language is
 inconsistent. -/
+@[tmio M]
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
@@ -399,6 +400,7 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
 /-- On flow sentences the pH family agrees with the PI-PLL family (`K_i ≠ 0`): a model satisfies
 a flow sentence exactly when the SRF member of the PI-PLL family with offset `K_i η*` about the
 same phase does. A comparison of the two semantics connections at the two members. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_flow_iff_srf (m : Model) (hKi : m.Ki ≠ 0)
     (P : Flow.Property) :
     connection% (m ∈ family.den (.flow P) ↔
@@ -548,6 +550,7 @@ private theorem lyapunovStable_of_meets {m : Model} (h : Meets m .wellBottom) :
 bottom prove local exponential stability and a saddle proves instability (the soundness of the
 PI-PLL family, `PIPLL.chain_le_semantics`, read through the hub,
 `Spectral.realize_subset_den_of_hub`). -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -564,6 +567,7 @@ PI-PLL family, `PIPLL.chain_le_semantics`, read through the hub,
 
 /-- Passivity of the SRF-PLL from the frequency-offset port to `y = h(θ)`, with storage `H ≥ 0`
 (`V, K_i ≥ 0`, `K_p ≥ 0`), at every set point and selected phase. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_passive (m : Model) (hV : 0 ≤ m.V) (hKi : 0 ≤ m.Ki) :
     connection% (m ∈ family.den .passive) :=
   passive_of_meets ⟨hV, hKi⟩
@@ -572,6 +576,7 @@ PI-PLL family, `PIPLL.chain_le_semantics`, read through the hub,
 `K_p ≥ 0`, every offset `K_i η*`): the PI-PLL's energy at a negative slope
 (`PIPLL.mem_den_lyapunovStable_of_slope`), here the shifted Hamiltonian, which has a strict local
 minimum there (`pllPH_isStrictLocalMin`). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_lyapunovStable (m : Model) (hV : 0 < m.V) (hKi : 0 < m.Ki)
     (hθ : Real.cos m.θ = 1) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) :=
@@ -579,12 +584,14 @@ minimum there (`pllPH_isStrictLocalMin`). -/
 
 /-- A well bottom `(θ*, η*)`, `cos θ* = 1`, is locally exponentially stable when `V K_p > 0` and
 `V K_i > 0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model) (hVKp : 0 < m.V * m.Kp)
     (hVKi : 0 < m.V * m.Ki) (hθ : Real.cos m.θ = 1) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) :=
   les_of_meets ⟨hVKp, hVKi, hθ⟩
 
 /-- An anti-phase point `(θ*, η*)`, `cos θ* = −1`, is unstable (a saddle) when `V K_i > 0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable_antiPhase (m : Model) (hVKi : 0 < m.V * m.Ki)
     (hθ : Real.cos m.θ = -1) :
     connection% (m ∈ family.den (.flow .unstable)) :=
@@ -597,6 +604,7 @@ a model is locally exponentially stable at `(θ*, η*)` exactly when `V K_p > 0`
 `cos θ* = 1`. The exactness of the PI-PLL's translation (`PIPLL.exact_locallyExponentiallyStable`,
 converse linearization) passes through the hub (`Spectral.exactUnder_of_hub`): within nonnegative
 energy these are exactly the PI-PLL's requirements on the SRF member. -/
+@[tmio TM]
 @[powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
     connection% (family.ExactUnder {.nonnegativeEnergy} (.flow .locallyExponentiallyStable)) := by
   have hG := PIPLL.exact_locallyExponentiallyStable
@@ -612,6 +620,7 @@ point `θ* = π`. -/
 def reversedAmplitude : Model := ⟨-1, 1, 1, 0, Real.pi, zero_le_one⟩
 
 /-- The reversed-amplitude model is locally exponentially stable at `θ* = π`. -/
+@[tmio TM]
 @[powerlib_domain] theorem reversedAmplitude_mem_den_locallyExponentiallyStable :
     connection% (reversedAmplitude ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -621,6 +630,7 @@ def reversedAmplitude : Model := ⟨-1, 1, 1, 0, Real.pi, zero_le_one⟩
 
 /-- Without the context of nonnegative energy the local exponential translation is sound but not
 exact: the reversed-amplitude model is locally exponentially stable at an anti-phase point. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_locallyExponentiallyStable :
     connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -722,6 +732,7 @@ linearization does not decide the degenerate gains, the model's structure does: 
 (`Dynamics.not_localAsymptoticStable_of_equilibria`), and a lossless loop (`K_p = 0`) conserves the
 Hamiltonian `V (1 − cos θ) + ½ K_i (η − η*)²` (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`);
 with positive gains an anti-phase equilibrium is a saddle (`mem_den_unstable_antiPhase`). -/
+@[tmio TM]
 @[powerlib_domain] theorem exactUnder_locallyAsymptoticallyStable :
     connection% (family.ExactUnder {.nonnegativeEnergy} (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -739,6 +750,7 @@ with positive gains an anti-phase equilibrium is a saddle (`mem_den_unstable_ant
 /-- Without the context of nonnegative energy the local asymptotic translation is sound but not
 exact: the reversed-amplitude model is locally exponentially, hence asymptotically, stable at an
 anti-phase point. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -750,6 +762,7 @@ anti-phase point. -/
 
 /-- Without the context of nonnegative energy the Lyapunov translation is sound but not exact:
 the reversed-amplitude model is Lyapunov stable with a negative amplitude. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -763,6 +776,7 @@ the reversed-amplitude model is Lyapunov stable with a negative amplitude. -/
 def deadGrid : Model := ⟨0, 0, 0, 0, 0, le_rfl⟩
 
 /-- The dead-grid loop is Lyapunov stable (every solution is constant). -/
+@[tmio TM]
 @[powerlib_domain] theorem deadGrid_mem_den_lyapunovStable :
     connection% (deadGrid ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -777,6 +791,7 @@ def deadGrid : Model := ⟨0, 0, 0, 0, 0, le_rfl⟩
 
 /-- Within nonnegative energy the Lyapunov translation is not exact: the dead-grid loop has
 nonnegative energy and is Lyapunov stable, but is not at a well bottom (`V = 0`). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exactUnder_lyapunovStable :
     connection% (¬ family.ExactUnder {.nonnegativeEnergy} (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -796,6 +811,7 @@ nonnegative energy and is Lyapunov stable, but is not at a well bottom (`V = 0`)
 def offEquilibrium : Model := ⟨1, 0, 1, 0, Real.pi / 2, le_rfl⟩
 
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+@[tmio TM]
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
@@ -806,6 +822,7 @@ def offEquilibrium : Model := ⟨1, 0, 1, 0, Real.pi / 2, le_rfl⟩
 
 /-- The instability translation is sound but not exact: every non-equilibrium phase is unstable,
 while the translation asks for an anti-phase point. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement

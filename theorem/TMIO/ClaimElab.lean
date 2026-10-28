@@ -1,5 +1,6 @@
 import theorem.TMIO.Claim
 import theorem.TMIO.Relation
+import theorem.TMIO.KnowledgeKind
 import Lean
 
 /-! # Elaboration of connection claims (foundation)

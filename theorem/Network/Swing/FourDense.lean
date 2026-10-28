@@ -1378,6 +1378,7 @@ private theorem not_localAsymptoticStable_four_machines (p : Params 3) (θ : Fin
 /-- **Four machines: the local asymptotic translation is exact.** For every four-machine network
 (`n = 3`), local asymptotic stability of the selected profile holds exactly when it is a
 power-balance point with a Hurwitz reduced Jacobian. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_locallyAsymptoticallyStable_four :
     connection% ((family (n := 3)).Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -1386,6 +1387,7 @@ power-balance point with a Hurwitz reduced Jacobian. -/
 
 /-- **Membership in local asymptotic stability for every four-machine network**: power balance
 with a Hurwitz reduced Jacobian (no restriction on the lines). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff_four_machines (m : Model 3) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
       (∀ k, m.params.P k = powerInjection m.params.B m.θ k) ∧

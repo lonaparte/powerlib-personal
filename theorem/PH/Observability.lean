@@ -121,11 +121,13 @@ def losslessLC : Port.PortHamiltonian 2 1 :=
     losslessLC.plant = linearLTIModel losslessJ 0 losslessG 1 := rfl
 
 /-- The lossless loop is passive (storage `H = ½ |x|²`). -/
+@[tmio TM]
 @[powerlib_domain] theorem losslessLC_mem_den_passive :
     connection% (losslessLC ∈ Port.PortHamiltonian.family.den .passive) :=
   Port.PortHamiltonian.mem_den_passive _
 
 /-- The lossless loop conserves its energy. -/
+@[tmio TM]
 @[powerlib_domain] theorem losslessLC_mem_den_conservative :
     connection% (losslessLC ∈ Port.PortHamiltonian.family.den (.flow .conservative)) :=
   mem_den_conservative_of_lossless _ rfl
@@ -188,6 +190,7 @@ Static evidence on the model, not a connection conclusion. -/
   linarith [h.1]
 
 /-- The lossless loop is not locally asymptotically stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem losslessLC_not_mem_den_locallyAsymptoticallyStable :
     connection% (losslessLC ∉
       Port.PortHamiltonian.family.den (.flow .locallyAsymptoticallyStable)) := by
@@ -198,6 +201,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- Correction of T-ph Part 2: passivity together with zero-state observability does **not**
 give asymptotic stability, on the semantics connection of the linear port-Hamiltonian family. -/
+@[tmio TM]
 @[powerlib_domain] theorem passive_observable_not_asymptotic :
     connection% (¬ ∀ h : Port.PortHamiltonian 2 1,
       h ∈ Port.PortHamiltonian.family.den .passive →
@@ -294,6 +298,7 @@ def phOutputFeedback (J R : Matrix (Fin n) (Fin n) ℝ) (g : Matrix (Fin n) (Fin
 
 /-- Damping injection `u = −k y` (`k > 0`) on an observable linear pH system: the unforced
 closed loop `ẋ = (J − (R + k g gᵀ)) Q x` is globally exponentially stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem phOutputFeedback_mem_den_globallyExponentiallyStable (hJ : Jᵀ = -J)
     (hR : R.PosSemidef) (hQ : Q.PosDef) (hk : 0 < k)
     (hobs : LinearSystems.IsObservable (linearStateMatrix J R Q) (gᵀ * Q)) :

@@ -94,6 +94,7 @@ def continuousFamily : Family (ContinuousModel n) Spectral.Requirement n 0 :=
   Spectral.linearFamily_isLinear _ _ _
 
 /-- Every translation of the continuous linear family is sound. -/
+@[tmio TM]
 @[powerlib_domain] theorem continuous_chain_le_semantics :
     connection% (∀ P, (continuousFamily (n := n)).chain P ≤ continuousFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -101,6 +102,7 @@ def continuousFamily : Family (ContinuousModel n) Spectral.Requirement n 0 :=
 
 /-- The attractive sentences and sampled contraction are translated exactly: into a Hurwitz state
 matrix. -/
+@[tmio TM]
 @[powerlib_domain] theorem continuous_exact {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% ((continuousFamily (n := n)).Exact (.flow P)) := by
@@ -141,6 +143,7 @@ def sampledFamily : Family (Sampled n) Spectral.Requirement n 0 where
 is that of the continuous family pulled back along the design map, at every sampling period: the
 flow of the design and its sampled map satisfy the same flow sentences
 (`holds_iff_holdsMap_exp`), and neither has a port, so both are passive. -/
+@[tmio MI]
 @[powerlib_domain] theorem sampled_reading (s : Sentence) :
     connection% ((sampledFamily (n := n)).den s = Sampled.design ⁻¹' continuousFamily.den s) := by
   unfold powerlib.TMIO.Statement
@@ -164,6 +167,7 @@ private theorem sampled_realize (Γ : Set Spectral.Requirement) :
 /-- Every translation of the sampled family is sound: a sampled system meeting the translation of
 a sentence has a design meeting it, which satisfies the sentence (`continuous_chain_le_semantics`),
 and so does the sampled system (`sampled_reading`). -/
+@[tmio TM]
 @[powerlib_domain] theorem sampled_chain_le_semantics :
     connection% (∀ P, (sampledFamily (n := n)).chain P ≤ sampledFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -181,6 +185,7 @@ and so does the sampled system (`sampled_reading`). -/
 is exact exactly when the continuous family's is: both its requirement spaces and its denotations
 are the model family's pulled back along the design map, which is onto. With `continuous_exact`
 the attractive and contractive translations are exact. -/
+@[tmio TM]
 @[powerlib_domain] theorem sampled_exact_iff (s : Sentence) :
     connection% ((sampledFamily (n := n)).Exact s ↔ (continuousFamily (n := n)).Exact s) := by
   unfold powerlib.TMIO.Statement
@@ -203,6 +208,7 @@ def exactSampling :
 
 /-- **Exact sampling realizes every sentence exactly.** Without constraints, at every sampling
 period, a sampled system satisfies a sentence exactly when its design model does. -/
+@[tmio MI]
 @[powerlib_domain] theorem exactSampling_realizationExact (s : Sentence) :
     connection% ((exactSampling (n := n)).RealizationExactUnder ∅ s) := by
   unfold powerlib.TMIO.Statement

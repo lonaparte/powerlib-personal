@@ -98,6 +98,7 @@ private theorem output_quarter (m : Model) :
 /-- **Without a step constraint the Euler realization of the SRF-PLL pH models is not sound.** The
 well bottom of `V = K_p = K_i = 1` is locally exponentially stable, and its discretizations with a
 large step are not: every Euler multiplier `1 + hλ` leaves the unit disk. -/
+@[tmio MI]
 @[powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -112,6 +113,7 @@ large step are not: every Euler multiplier `1 + hλ` leaves the unit disk. -/
 whatever its step.** For `V ≠ 0` the output `−V sin θ` does not depend on the offset input, so one
 step from the phase `π/2` with a large offset draws energy without bound; for `V = 0` the output
 vanishes and the zero storage proves passivity. -/
+@[tmio TM]
 @[powerlib_domain] theorem euler_mem_den_passive_iff :
     connection% (∀ (m : Model) (h : ℝ) (hh : 0 < h),
       (⟨m, h, hh⟩ : Euler) ∈ eulerFamily.den .passive ↔ m.V = 0) := by
@@ -135,6 +137,7 @@ vanishes and the zero storage proves passivity. -/
 /-- **The passivity realization of explicit Euler is not sound for the SRF-PLL pH models.** The
 model `V = K_p = K_i = 1` has nonnegative energy and is passive, and its discretizations are
 not. -/
+@[tmio MI]
 @[powerlib_domain] theorem not_euler_realizationSoundUnder_passive :
     connection% (¬ euler.RealizationSoundUnder ∅ .passive) := by
   unfold powerlib.TMIO.Statement

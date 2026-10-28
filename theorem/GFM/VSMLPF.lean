@@ -621,6 +621,7 @@ private theorem unstable_of {m : Model} (hp : Meets m .physical) (hb : Meets m .
 
 /-- The whole requirement language is inconsistent: a positive synchronizing coefficient below
 the fast-filter bound has no destabilizing sign. -/
+@[tmio M]
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
@@ -633,6 +634,7 @@ the fast-filter bound has no destabilizing sign. -/
 conditions of the Jacobian at the selected point prove the local sentences, a destabilizing sign
 proves instability (a characteristic root or a real eigenvalue in the open right half plane),
 and passivity holds without requirement. -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -652,6 +654,7 @@ and passivity holds without requirement. -/
       (hm .destabilizing (by simp)))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
@@ -661,6 +664,7 @@ translated exactly: a model with `M, D, ω_c > 0` is locally exponentially stabl
 `(δ*, 0, P₀)` exactly when the angle is balanced with `0 < K < D ω_c + D²/M`. Converse
 linearization: local exponential stability of the `C¹` field forces an equilibrium whose Jacobian
 satisfies the strict 3×3 Routh–Hurwitz conditions. -/
+@[tmio TM]
 @[powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
     connection% (family.ExactUnder {.physical} (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -702,6 +706,7 @@ satisfies the strict 3×3 Routh–Hurwitz conditions. -/
 
 /-- Positive `M, D, ω_c`, a balanced angle, a positive synchronizing coefficient and the
 fast-filter Routh condition place a model in local exponential stability. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model) (hM : 0 < m.g.M)
     (hD : 0 < m.g.D) (hω : 0 < m.g.ωc) (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (hK : 0 < m.K)
     (hf : m.K < m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) :
@@ -711,6 +716,7 @@ fast-filter Routh condition place a model in local exponential stability. -/
 
 /-- A slow filter, `D ω_c + D²/M < K`, places a balanced model with positive `M, D, ω_c` in
 instability (a characteristic root crosses into the open right half plane). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable (m : Model) (hM : 0 < m.g.M) (hD : 0 < m.g.D)
     (hω : 0 < m.g.ωc) (hb : m.g.K0 * Real.sin m.δ = m.g.P0)
     (hs : m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M < m.K) :
@@ -720,6 +726,7 @@ instability (a characteristic root crosses into the open right half plane). -/
 
 /-- A negative synchronizing coefficient places a balanced model with positive `M, D, ω_c` in
 instability (a positive real eigenvalue). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable_of_K_neg (m : Model) (hM : 0 < m.g.M)
     (hD : 0 < m.g.D) (hω : 0 < m.g.ωc) (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (hK : m.K < 0) :
     connection% (m ∈ family.den (.flow .unstable)) := by
@@ -751,6 +758,7 @@ private theorem slow_iff (hp : g.Pos) :
     show g.D / g.M * g.D = g.D ^ 2 / g.M by ring]
 
 /-- `ω_c > K/D − D/M` ⇒ the loading equilibrium is locally exponentially stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem locallyExponentiallyStable (hp : g.Pos) (h : |g.P0| < g.K0)
     (hω : g.K / g.D - g.D / g.M < g.ωc) :
     connection% (atLoading g ∈ family.den (.flow .locallyExponentiallyStable)) :=
@@ -759,6 +767,7 @@ private theorem slow_iff (hp : g.Pos) :
 
 /-- `ω_c < K/D − D/M` ⇒ the loading equilibrium is unstable (a characteristic root crosses
 into the open right half-plane). -/
+@[tmio TM]
 @[powerlib_domain] theorem unstable (hp : g.Pos) (h : |g.P0| < g.K0)
     (hω : g.ωc < g.K / g.D - g.D / g.M) :
     connection% (atLoading g ∈ family.den (.flow .unstable)) :=
@@ -767,6 +776,7 @@ into the open right half-plane). -/
 /-- Exact stability boundary (boundary `K = D ω_c + D²/M` excluded): the loading equilibrium
 is locally exponentially stable iff `K < D ω_c + D²/M`.  Since `K = K₀ cos δ₀` decreases with
 load, light load is the dangerous side. -/
+@[tmio TM]
 @[powerlib_domain] theorem locallyExponentiallyStable_iff (hp : g.Pos) (h : |g.P0| < g.K0)
     (hne : g.K ≠ g.D * g.ωc + g.D ^ 2 / g.M) :
     connection% (atLoading g ∈ family.den (.flow .locallyExponentiallyStable) ↔
@@ -786,6 +796,7 @@ load, light load is the dangerous side. -/
 
 /-- The second equilibrium `(π − δ₀, 0, P₀)` is unstable (a positive real eigenvalue) for every
 positive `M, D, ω_c` and `|P₀| < K₀`. -/
+@[tmio TM]
 @[powerlib_domain] theorem unstable_atAntiLoading (hp : g.Pos) (h : |g.P0| < g.K0) :
     connection% (atAntiLoading g ∈ family.den (.flow .unstable)) := by
   exact mem_den_unstable_of_K_neg _ hp.M hp.D hp.ωc
@@ -798,6 +809,7 @@ positive `M, D, ω_c` and `|P₀| < K₀`. -/
 def offEquilibrium : Model := ⟨⟨1, 0, 1, 1, 0⟩, 0⟩
 
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+@[tmio TM]
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
@@ -809,6 +821,7 @@ def offEquilibrium : Model := ⟨⟨1, 0, 1, 1, 0⟩, 0⟩
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
 while the translation asks for a balanced angle. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
@@ -823,6 +836,7 @@ def negativeInertia : Model := ⟨⟨-1, -1, 1, 0, -1⟩, 0⟩
 
 /-- The negative-inertia model is locally exponentially stable: its Jacobian has `tr = −2`,
 `det = −1` and `tr · Σ₂ = −2 < det` (strict 3×3 Routh–Hurwitz). -/
+@[tmio TM]
 @[powerlib_domain] theorem negativeInertia_mem_den_locallyExponentiallyStable :
     connection% (negativeInertia ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -839,6 +853,7 @@ def negativeInertia : Model := ⟨⟨-1, -1, 1, 0, -1⟩, 0⟩
 
 /-- Without positive inertia, damping and bandwidth the local exponential translation is sound
 but not exact: the negative-inertia model is locally exponentially stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_locallyExponentiallyStable :
     connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -850,6 +865,7 @@ but not exact: the negative-inertia model is locally exponentially stable. -/
 
 /-- Without positive inertia, damping and bandwidth the local asymptotic translation is sound but
 not exact (the negative-inertia model). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -859,6 +875,7 @@ not exact (the negative-inertia model). -/
 
 /-- Without positive inertia, damping and bandwidth the Lyapunov translation is sound but not
 exact (the negative-inertia model). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -872,6 +889,7 @@ def flatCurve : Model := ⟨⟨1, 1, 1, 0, 0⟩, 0⟩
 
 /-- The flat-curve VSM is Lyapunov stable: `(δ + ω − P_f)² + ω² + P_f²` does not increase
 (`δ + ω − P_f` is conserved), although its synchronizing coefficient is zero. -/
+@[tmio TM]
 @[powerlib_domain] theorem flatCurve_mem_den_lyapunovStable :
     connection% (flatCurve ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -898,6 +916,7 @@ def flatCurve : Model := ⟨⟨1, 1, 1, 0, 0⟩, 0⟩
 
 /-- Within positive inertia, damping and bandwidth the Lyapunov translation is not exact: the
 flat-curve VSM is physical and Lyapunov stable with a zero synchronizing coefficient. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exactUnder_lyapunovStable :
     connection% (¬ family.ExactUnder {.physical} (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -1140,6 +1159,7 @@ private theorem point_eq_affineCoord (m : Model) (hD : m.q.D ≠ 0) :
 /-- With nonzero droop gain and bandwidth a droop + LPF model satisfies exactly the sentences of
 its swing reading (`field_eq_transport`, `Spectral.mem_den_flow_iff_of_transport`). A comparison
 of the two semantics connections at the two members. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_iff_swing (m : Model) (hD : m.q.D ≠ 0) (hω : m.q.ωc ≠ 0)
     (s : Sentence) :
     connection% (m ∈ family.den s ↔ m.toSwing ∈ Synchronous.Swing.family.den s) := by
@@ -1211,6 +1231,7 @@ private theorem realize_unstable_toSwing {m : Model}
 
 /-- The whole requirement language is inconsistent: the synchronizing coefficient cannot be
 both positive and negative. -/
+@[tmio M]
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
@@ -1222,6 +1243,7 @@ both positive and negative. -/
 
 /-- Every translation of the droop + LPF family is sound: within `D, ω_c > 0` its requirements
 are those of its swing reading (`mem_den_iff_swing`, `Synchronous.Swing.chain_le_semantics`). -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -1247,6 +1269,7 @@ are those of its swing reading (`mem_den_iff_swing`, `Synchronous.Swing.chain_le
   · rfl
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
@@ -1257,6 +1280,7 @@ angle is balanced and synchronizing (`K₀ cos δ* > 0`). Converse linearization
 stability of the `C¹` field forces an equilibrium with a Hurwitz Jacobian
 (`tr = −ω_c`, `det = ω_c K₀ cos δ* / D`). Proved on the swing reading
 (`Synchronous.Swing.exactUnder_locallyExponentiallyStable`, `Spectral.exactUnder_of_hub`). -/
+@[tmio TM]
 @[powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
     connection% (family.ExactUnder {.physical} (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -1277,6 +1301,7 @@ def atAntiLoading : Model := ⟨q, Real.pi - Real.arcsin (q.P0 / q.K0)⟩
 
 /-- For every `D, ω_c, K₀ > 0` and `|P₀| < K₀` the loading equilibrium of droop + LPF is
 locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): no Hopf boundary. -/
+@[tmio TM]
 @[powerlib_domain] theorem locallyExponentiallyStable (hD : 0 < q.D) (hω : 0 < q.ωc)
     (hK0 : 0 < q.K0) (h : |q.P0| < q.K0) :
     connection% (q.atLoading ∈ family.den (.flow .locallyExponentiallyStable)) := by
@@ -1291,6 +1316,7 @@ locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): n
 
 /-- The second equilibrium `(π − arcsin(P₀/K₀), P₀)` of droop + LPF is a saddle, hence unstable
 (`D, ω_c, K₀ > 0`, `|P₀| < K₀`). -/
+@[tmio TM]
 @[powerlib_domain] theorem unstable_atAntiLoading (hD : 0 < q.D) (hω : 0 < q.ωc)
     (hK0 : 0 < q.K0) (h : |q.P0| < q.K0) :
     connection% (q.atAntiLoading ∈ family.den (.flow .unstable)) := by
@@ -1311,6 +1337,7 @@ def offEquilibrium : Model := ⟨⟨1, 1, 1, 0⟩, 0⟩
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it. Its swing
 reading (`M = D/ω_c = 1`) is unbalanced, `K₀ sin 0 = 0 ≠ 1 = P₀`
 (`Synchronous.Swing.mem_den_unstable_of_not_balanced`, `mem_den_iff_swing`). -/
+@[tmio TM]
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
@@ -1322,6 +1349,7 @@ reading (`M = D/ω_c = 1`) is unbalanced, `K₀ sin 0 = 0 ≠ 1 = P₀`
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
 while the translation asks for a balanced angle. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
@@ -1338,6 +1366,7 @@ def negativeDamping : Model := ⟨⟨-1, 1, 0, -1⟩, 0⟩
 
 /-- The negative-damping model is locally exponentially stable: its Jacobian has `tr = −1` and
 `det = ω_c K₀ cos δ* / D = 1` (its swing reading is `Synchronous.Swing.negativeInertia`). -/
+@[tmio TM]
 @[powerlib_domain] theorem negativeDamping_mem_den_locallyExponentiallyStable :
     connection% (negativeDamping ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -1352,6 +1381,7 @@ def negativeDamping : Model := ⟨⟨-1, 1, 0, -1⟩, 0⟩
 
 /-- Without positive damping and bandwidth the local exponential translation is sound but not
 exact: the negative-damping model is locally exponentially stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_locallyExponentiallyStable :
     connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -1429,6 +1459,7 @@ the energy `(P₀ − P_f)²/(2 D ω_c) + U(δ)`, dissipated at the rate `(P₀ 
 `−P₀ (s − sin s)` at `(δ* + s, P₀)` (`energy_fold`), below its value at the operating point on
 one side. Proved once on the swing reading
 (`Synchronous.Swing.exactUnder_locallyAsymptoticallyStable`, `Spectral.exactUnder_of_hub`). -/
+@[tmio TM]
 @[powerlib_domain] theorem exactUnder_locallyAsymptoticallyStable :
     connection% (family.ExactUnder {.physical} (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -1446,6 +1477,7 @@ coefficient is a saddle, and a fold is unstable: below the level of the operatin
 dissipated energy keeps the solution, and there `P₀ ((P₀ − P_f)/ω_c + D δ)` grows at the rate
 `P₀² (1 − cos(δ − δ*))`. Proved once on the swing reading
 (`Synchronous.Swing.mem_den_lyapunovStable_iff_of_inertia`). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_lyapunovStable_iff_of_physical (m : Model) (hD : 0 < m.q.D)
     (hω : 0 < m.q.ωc) :
     connection% (m ∈ family.den (.flow .lyapunovStable) ↔
@@ -1465,6 +1497,7 @@ dissipated energy keeps the solution, and there `P₀ ((P₀ − P_f)/ω_c + D �
 
 /-- Without positive damping and bandwidth the local asymptotic translation is sound but not
 exact (the negative-damping model). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -1475,6 +1508,7 @@ exact (the negative-damping model). -/
 
 /-- Without positive damping and bandwidth the Lyapunov translation is sound but not exact (the
 negative-damping model). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -1488,6 +1522,7 @@ def flatCurve : Model := ⟨⟨1, 1, 0, 0⟩, 0⟩
 
 /-- Within positive damping and bandwidth the Lyapunov translation is not exact: the flat-curve
 droop loop is Lyapunov stable with a zero synchronizing coefficient. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exactUnder_lyapunovStable :
     connection% (¬ family.ExactUnder {.physical} (.flow .lyapunovStable)) := by
   have hmem := mem_den_lyapunovStable_iff_of_physical flatCurve one_pos one_pos

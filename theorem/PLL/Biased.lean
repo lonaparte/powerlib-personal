@@ -112,6 +112,7 @@ def biasedModel (V μ Kp Ki δω θ : ℝ) : PIPLL.Model :=
 
 /-- `|μ| < V`, `K_p, K_i > 0`: the equilibrium at `θ₁ = arcsin(μ/V)` is locally
 exponentially stable, for every constant frequency offset `δω`. -/
+@[tmio TM]
 @[powerlib_domain] theorem biased_mem_den_locallyExponentiallyStable {V μ Kp Ki : ℝ}
     (hV : 0 < V) (hμ : |μ| < V) (hKp : 0 < Kp) (hKi : 0 < Ki) (δω : ℝ) :
     connection% (biasedModel V μ Kp Ki δω (Real.arcsin (μ / V)) ∈
@@ -124,6 +125,7 @@ exponentially stable, for every constant frequency offset `δω`. -/
 
 /-- `|μ| < V`, `K_i > 0`: the equilibrium at `θ₂ = π − arcsin(μ/V)` is unstable (saddle), for
 every `K_p` and every constant frequency offset `δω`. -/
+@[tmio TM]
 @[powerlib_domain] theorem biased_mem_den_unstable {V μ Kp Ki : ℝ} (hV : 0 < V) (hμ : |μ| < V)
     (hKi : 0 < Ki) (δω : ℝ) :
     connection% (biasedModel V μ Kp Ki δω (Real.pi - Real.arcsin (μ / V)) ∈
@@ -136,6 +138,7 @@ every `K_p` and every constant frequency offset `δω`. -/
 
 /-- `|μ| > V ≥ 0`: loss of lock on the requirement connection — no selected phase of the biased
 PLL meets the phase-locking requirement of the PI-PLL family. -/
+@[tmio M]
 @[powerlib_domain] theorem biased_not_phaseLocked {V μ : ℝ} (hV : 0 ≤ V) (hμ : V < |μ|)
     (Kp Ki δω θ : ℝ) :
     connection% (biasedModel V μ Kp Ki δω θ ∉

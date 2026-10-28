@@ -442,23 +442,27 @@ def family : Family SMIB11Params Requirement 11 4 :=
 @[powerlib_foundation] theorem family_isNonlinearPH : family.IsNonlinearPH smib11 :=
   fun _ => rfl
 
+@[tmio M]
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.realize_univ_eq_empty_of_forall fun _ h => h .impossible
 
 /-- Passivity of the note's 11-state system with storage `H^tot`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_passive (p : SMIB11Params) :
     connection% (p ∈ family.den .passive) :=
   family_isNonlinearPH.mem_den_passive_of_lowerBound 0 (smib11_H_nonneg p)
 
 /-- Passivity is translated exactly. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty (F := family) rfl
     (Set.eq_univ_of_forall fun p => mem_den_passive p)
 
 /-- Every translation of the family is sound. -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -476,6 +480,7 @@ injective Jacobian (converse linearization,
 `Dynamics.fderiv_injective_of_locallyExponentiallyStable`), but at the origin the Jacobian
 `(J^tot(0) − R^tot) ∇²H` kills the rotor-angle axis: `H` does not depend on `δ` and
 `∇H(0) = 0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_mem_den_locallyExponentiallyStable (p : SMIB11Params) :
     connection% (p ∉ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -487,6 +492,7 @@ injective Jacobian (converse linearization,
 
 /-- The translation of local exponential stability (the whole, inconsistent language) is exact:
 no member is locally exponentially stable (`not_mem_den_locallyExponentiallyStable`). -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -519,6 +525,7 @@ private theorem passiveWith (p : SMIB11Params) :
       linarith [(smib11 p).dampingPower_nonneg x])
 
 /-- Passivity of the corrected relative-angle model with storage `H^tot`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_passive (p : SMIB11Params) :
     connection% (p ∈ family.den .passive) := by
   unfold powerlib.TMIO.Statement
@@ -526,12 +533,14 @@ private theorem passiveWith (p : SMIB11Params) :
   exact ⟨_, passiveWith p⟩
 
 /-- Passivity is translated exactly. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty (F := family) rfl
     (Set.eq_univ_of_forall fun p => mem_den_passive p)
 
 /-- Every translation of the family is sound. -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -548,6 +557,7 @@ origin**, whatever its parameters, including `ω_s = 0`. The frame drift `−ω_
 so the Jacobian at the origin is the note's (`smib11_fderiv_angleAxis`), which kills the
 rotor-angle axis; a locally exponentially stable point of a `C¹` field has an injective Jacobian
 (`Dynamics.fderiv_injective_of_locallyExponentiallyStable`). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_mem_den_locallyExponentiallyStable (p : SMIB11Params) :
     connection% (p ∉ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -561,6 +571,7 @@ rotor-angle axis; a locally exponentially stable point of a `C¹` field has an i
 
 /-- The translation of local exponential stability (the whole, inconsistent language) is exact:
 no member is locally exponentially stable (`not_mem_den_locallyExponentiallyStable`). -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -576,6 +587,7 @@ no member is locally exponentially stable (`not_mem_den_locallyExponentiallyStab
 (not Lyapunov stable): the field there is the frame drift `−ω_s e_δ`
 (`smib11Rel_speed_eq_of_equilibrium`: every equilibrium runs at `ω_r = ω_s`, and `ω_r = 0` at
 the origin). With `ω_s = 0` the origin is an equilibrium. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable (p : SMIB11Params) (hωs : p.ωs ≠ 0) :
     connection% (p ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement

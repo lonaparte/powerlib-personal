@@ -116,6 +116,31 @@ naturality theorem (`Construction.eval_rebase`), where linearity supplies the pr
 only the invertibility of the bases the constructions pass through remains as a hypothesis.
 Coordinates, per-unit bases and the current direction are then instances, not separate proofs.
 
+## Classification and discovery
+
+`theorem/TMIO/KnowledgeKind.lean` registers the five source attributes
+`@[tmio T]`, `@[tmio M]`, `@[tmio TM]`, `@[tmio MI]` and `@[tmio IO]`.
+Each reviewed public connection theorem has exactly one. The attributes are the
+sole classification source; queries rebuild their index without a separate
+catalog. The current source coverage is 813 public connections in 100 modules
+(T 0, M 50, T–M 668, M–I 88, I–O 7), not the entire library's T/M content or
+all non-connection theorems.
+
+The attribute implementation rejects non-theorem targets, unknown kinds and
+second assignments. It records a reviewed semantic judgment; it does not infer
+or prove that judgment. Foundation/domain metadata, mathematical admission and
+the kernel's proof checking remain independent.
+
+`theorem/TMIO/KnowledgeIndex.lean` provides `#tmio_edges` for counts,
+`#tmio_edges T`, `M`, `TM`, `MI` or `IO` for a class listing, and `#tmio_check`
+for coverage of public typed connections in the currently imported `theorem.*`
+modules. Missing attributes fail the check; unimported modules are not counted.
+`python3 tools/tmio_classification.py check`, `list TM` and
+`show powerlib.LTI.sampled_exact_iff` provide source checks and queries without
+starting Lean. The environment audit reads elaborated types and module ownership;
+the source tool does not replace it. [Layers.md](Layers.md#source-attributes-and-queries)
+gives complete usage examples.
+
 ## Public admission
 
 Rules §3a states what a public conclusion may be. Its implementation uses two closed,
@@ -146,8 +171,11 @@ certified endpoint it checks the input and structural maps while keeping the
 semantic map abstract. A raw behavioural set passed to an identity connection
 therefore fails admission even though that connection is mathematically valid.
 
-The default Lake target `powerlib` builds every module selected by all package
-library globs and generates an admission module importing that actual inventory.
+The default Lake target `powerlib` first runs the source classification preflight,
+then builds every module selected by all package library globs and generates an
+admission module importing that actual inventory. Alongside mathematical admission,
+the generated module checks the `tmio` attributes of every imported public typed
+connection theorem from `theorem.*` modules.
 Consequently a new source cannot evade admission by omitting the linter import
 or the central library import. `lake build` and `lake build powerlib` include this
 gate. Lake reuses a successful audit only while the complete module inventory and
@@ -210,8 +238,14 @@ proved separating models rather than an unsupported completeness claim.
 
 ## Validation
 
+For the source-attribute change, verification consists of targeted attribute-engine
+checks with Lean 4.34.1 and source classification counts covering the 813 reviewed
+public connections. The mathematical library has not been recompiled for this
+change, and Mathlib has not been built from source. This is not a completed run
+of the full-module environment check or the mathematical test suite.
+
 The build figures below describe the previously validated `bb46a37` baseline,
-before the concrete-record cleanup and five-kind ownership clarification. They
+before the concrete-record cleanup and source-attribute classification. They
 are not a claim that the modified tree has been rebuilt. The changed observation
 scaffolds have been checked with Agda; current Lean verification requires the
 pinned dependency artifacts. Missing caches must not trigger an unrestricted
@@ -241,7 +275,7 @@ statements; its library list is explicit and must follow the imports of the
 modules it names. The admitted Lean axiom set is `propext`, `Classical.choice`
 and `Quot.sound`.
 
-`ConnectionAdmission.lean` supplies two positive claims, one unannotated and one
+At that baseline, `ConnectionAdmission.lean` supplied two positive claims, one unannotated and one
 misleadingly annotated foundation, and nine rejection controls. Real temporary
 source files also exercise the public `lake build` entry point; none is added to
 the central library import or imports Architecture. Every expected rejection

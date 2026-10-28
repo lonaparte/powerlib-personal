@@ -345,6 +345,7 @@ private theorem rig_unstable_of {y : Rig} (hp : Meets y.design .physical) (hτ :
 
 /-- The whole platform requirement language is inconsistent: a positive synchronizing
 coefficient with the platform Routh condition has no destabilizing platform sign. -/
+@[tmio M]
 @[powerlib_domain] theorem rig_realize_univ :
     connection% (TMIO.realize rigFamily.meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
@@ -357,6 +358,7 @@ coefficient with the platform Routh condition has no destabilizing platform sign
 /-- Every translation of the platform family is sound: the four-state Routh–Hurwitz conditions of
 the platform Jacobian prove the local sentences, a destabilizing platform sign proves
 instability, and passivity holds without requirement. -/
+@[tmio TM]
 @[powerlib_domain] theorem rig_chain_le_semantics :
     connection% (∀ P, rigFamily.chain P ≤ rigFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -377,6 +379,7 @@ instability, and passivity holds without requirement. -/
       (hy .lag (by simp)) (hy (.design .balanced) (by simp)) (hy .lagged (by simp)))
 
 /-- Passivity is translated exactly: a platform without ports is passive. -/
+@[tmio TM]
 @[powerlib_domain] theorem rig_exact_passive : connection% (rigFamily.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl rigFamily_isAutonomous.den_passive
@@ -385,6 +388,7 @@ instability, and passivity holds without requirement. -/
 translated exactly: the operating point is locally exponentially stable exactly when the design
 is balanced, `K > 0` and the platform Routh condition `H > 0` holds (converse linearization and
 the four-state Routh–Hurwitz criterion, both directions). -/
+@[tmio TM]
 @[powerlib_domain] theorem rig_exactUnder_locallyExponentiallyStable :
     connection% (rigFamily.ExactUnder {.design .physical, .lag}
       (.flow .locallyExponentiallyStable)) := by
@@ -669,6 +673,7 @@ margin is locally exponentially stable. The proof is the static reduction for a 
 translation (`exactUnder_locallyExponentiallyStable`: balanced, `K > 0`, fast filter), the platform
 side the sound I-layer translation (`rig_chain_le_semantics`), and between them one algebraic
 obligation, fast filter and fast delay give the platform Routh condition `H > 0`. -/
+@[tmio MI]
 @[powerlib_domain] theorem realizationSoundUnder_locallyExponentiallyStable :
     connection% (stack.RealizationSoundUnder {.design .physical, .lag, .fastLag}
       (.flow .locallyExponentiallyStable)) := by
@@ -704,6 +709,7 @@ exponentially stable) with the delay `τ = 1` (`H = −1`). -/
 def slowRig : Rig := ⟨⟨⟨1, 1, 1, 0, 1⟩, 0⟩, 1⟩
 
 /-- The design of the slow platform is locally exponentially stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem slowRig_design_mem_den :
     connection% (slowRig.design ∈ family.den (.flow .locallyExponentiallyStable)) :=
   mem_den_locallyExponentiallyStable _ (by norm_num [slowRig]) (by norm_num [slowRig])
@@ -712,6 +718,7 @@ def slowRig : Rig := ⟨⟨⟨1, 1, 1, 0, 1⟩, 0⟩, 1⟩
 
 /-- The slow platform is unstable: its characteristic coefficients are positive and the third
 Hurwitz determinant is negative (`H = −1`). -/
+@[tmio TM]
 @[powerlib_domain] theorem slowRig_mem_den_unstable :
     connection% (slowRig ∈ rigFamily.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
@@ -723,6 +730,7 @@ Hurwitz determinant is negative (`H = −1`). -/
 /-- Without the delay constraint, local exponential stability is not realized soundly: the slow
 platform has a physical, locally exponentially stable design and a positive delay, and is
 unstable. -/
+@[tmio MI]
 @[powerlib_domain] theorem not_realizationSoundUnder_locallyExponentiallyStable :
     connection% (¬ stack.RealizationSoundUnder {.design .physical, .lag}
       (.flow .locallyExponentiallyStable)) := by
@@ -747,6 +755,7 @@ unstable. -/
 /-- Implementation soundness of instability: a platform whose design is physical, unstable and of
 destabilizing sign is unstable for every positive delay. An unbalanced design leaves the
 operating point off equilibrium; a slow filter gives `H < 0`; `K < 0` gives `det < 0`. -/
+@[tmio MI]
 @[powerlib_domain] theorem realizationSoundUnder_unstable :
     connection% (stack.RealizationSoundUnder {.design .physical, .design .destabilizing, .lag}
       (.flow .unstable)) := by
@@ -770,6 +779,7 @@ operating point off equilibrium; a slow filter gives `H < 0`; `K < 0` gives `det
 fast-filter check supports local exponential stability of every realized model. Every possible
 producer's design meets the translation of the sentence (`design_fast_of_modelCheck`), and the
 M-layer translation is sound (`chain_le_semantics`). -/
+@[tmio IO]
 @[powerlib_domain] theorem locallyExponentiallyStable_mem_infer (v : Record) (h : v.ModelCheck) :
     connection% ((.flow .locallyExponentiallyStable : Sentence) ∈ stack.infer {v}) := by
   unfold powerlib.TMIO.Statement
@@ -786,6 +796,7 @@ M-layer translation is sound (`chain_le_semantics`). -/
 
 /-- Theory-driven certification: a record passing the worst-corner fast-filter check is certified
 for local exponential stability (the whole-chain Galois connection). -/
+@[tmio IO]
 @[powerlib_domain] theorem mem_certified_locallyExponentiallyStable (v : Record)
     (h : v.ModelCheck) :
     connection% (v ∈ stack.certified {.flow .locallyExponentiallyStable}) := by
@@ -797,6 +808,7 @@ for local exponential stability (the whole-chain Galois connection). -/
 /-- With the delay bound checked as well, the inferred local exponential stability is true of
 every platform that may produce the record (`Stack.infer_subset_truth` with
 `realizationSoundUnder_locallyExponentiallyStable`). -/
+@[tmio IO]
 @[powerlib_domain] theorem locallyExponentiallyStable_mem_truth (v : Record) (h₁ : v.ModelCheck)
     (h₂ : v.LagCheck) :
     connection% ((.flow .locallyExponentiallyStable : Sentence) ∈ stack.truth {v}) := by
@@ -820,6 +832,7 @@ every platform that may produce the record (`Stack.infer_subset_truth` with
 
 /-- A record passing the model check supports local exponential stability of every realized model.
 If an unstable platform may produce that record, this inference is not true of every producer. -/
+@[tmio IO]
 @[powerlib_domain] theorem infer_not_truth_of_unstable_producer (v : Record) (h : v.ModelCheck)
     (y : Rig) (hp : Produces y v) (hu : y ∈ rigFamily.den (.flow .unstable)) :
     connection% ((.flow .locallyExponentiallyStable : Sentence) ∈ stack.infer {v} ∧
@@ -835,6 +848,7 @@ If an unstable platform may produce that record, this inference is not true of e
 
 /-- A record passing the worst-corner slow-filter check supports instability of every realized
 model. -/
+@[tmio IO]
 @[powerlib_domain] theorem unstable_mem_infer (v : Record) (h : v.SlowCheck) :
     connection% ((.flow .unstable : Sentence) ∈ stack.infer {v}) := by
   unfold powerlib.TMIO.Statement
@@ -851,6 +865,7 @@ model. -/
 
 /-- The inferred instability is true of every platform that may produce a slow-filter record,
 whatever its delay (`realizationSoundUnder_unstable`). -/
+@[tmio IO]
 @[powerlib_domain] theorem unstable_mem_truth (v : Record) (h : v.SlowCheck) :
     connection% ((.flow .unstable : Sentence) ∈ stack.truth {v}) := by
   unfold powerlib.TMIO.Statement
@@ -910,6 +925,7 @@ private theorem margin_pos_of_H_pos {y : Rig} (hp : Meets y.design .physical) (h
 exponentially stable platform with a physical design has a locally exponentially stable design.
 The platform is balanced with `K > 0` and `H > 0` (`rig_exactUnder_locallyExponentiallyStable`),
 and `H > 0` forces the fast-filter margin of the design. A delay never stabilizes. -/
+@[tmio MI]
 @[powerlib_domain] theorem realizationCompleteUnder_locallyExponentiallyStable :
     connection% (stack.RealizationCompleteUnder {.design .physical, .lag}
       (.flow .locallyExponentiallyStable)) := by
@@ -947,6 +963,7 @@ and `H > 0` forces the fast-filter margin of the design. A delay never stabilize
 stability is realized exactly: the platform is locally exponentially stable exactly when its
 design is (`realizationSoundUnder_locallyExponentiallyStable`,
 `realizationCompleteUnder_locallyExponentiallyStable`). -/
+@[tmio MI]
 @[powerlib_domain] theorem realizationExactUnder_locallyExponentiallyStable :
     connection% (stack.RealizationExactUnder {.design .physical, .lag, .fastLag}
       (.flow .locallyExponentiallyStable)) := by
@@ -966,6 +983,7 @@ design is (`realizationSoundUnder_locallyExponentiallyStable`,
 /-- A slow-filter record lies outside the records predicted by local exponential stability of the
 platform; by `Stack.refutes` it refutes local exponential stability for every platform that may
 produce it, whatever its delay. -/
+@[tmio IO]
 @[powerlib_domain] theorem not_mem_predicted_locallyExponentiallyStable (v : Record)
     (h : v.SlowCheck) :
     connection% (v ∉ stack.predicted (.flow .locallyExponentiallyStable)) := by

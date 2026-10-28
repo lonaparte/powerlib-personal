@@ -88,6 +88,7 @@ unloaded platform (nominal design `L = R = Kp = Ki = 1`, `i* = 0`, `V_dc = 1`: h
 `0 < 1/√3`) is locally exponentially stable; integrated with a large enough step it is not: every
 Euler multiplier `1 + hλ` leaves the unit disk
 (`Numerics.not_euler_realizationSoundUnder_of_large_step_local`). -/
+@[tmio MI]
 @[powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement

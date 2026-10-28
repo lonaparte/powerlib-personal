@@ -255,11 +255,13 @@ def ladderPH : Port.PortHamiltonian (N + N) 2 :=
 
 /-- The ladder is passive; the storage is the magnetic plus electric energy
 `∑ φ_k²/(2L'Δx) + ∑ q_k²/(2C'Δx)` (`toPH_storage`). -/
+@[tmio TM]
 @[powerlib_domain] theorem ladderPH_mem_den_passive :
     connection% (ladderPH p N ∈ Port.PortHamiltonian.family.den .passive) :=
   Port.PortHamiltonian.mem_den_passive _
 
 /-- With both ports shorted/opened (`v₁ = 0`, `i₂ = 0`) the ladder is Lyapunov stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem ladderPH_mem_den_lyapunovStable :
     connection% (ladderPH p N ∈ Port.PortHamiltonian.family.den (.flow .lyapunovStable)) :=
   Port.PortHamiltonian.mem_den_lyapunovStable _
@@ -277,6 +279,7 @@ def ladderPH : Port.PortHamiltonian (N + N) 2 :=
 /-- With `R' > 0` and `G' > 0` the zero-input ladder (`v₁ = 0`, `i₂ = 0`) is globally
 exponentially stable: every solution exists for all forward time and decays
 exponentially, for every initial flux and charge distribution. -/
+@[tmio TM]
 @[powerlib_domain] theorem lossyLadder_mem_den_globallyExponentiallyStable
     (hR : 0 < p.R') (hG : 0 < p.G') :
     connection% (ladderPH p N ∈
@@ -285,12 +288,14 @@ exponentially, for every initial flux and charge distribution. -/
 
 /-- Correction of "the telegrapher line conserves energy": a lossy ladder with at least one cell
 conserves no positive definite energy. -/
+@[tmio TM]
 @[powerlib_domain] theorem lossyLadder_not_mem_den_conservative (hR : 0 < p.R') (hG : 0 < p.G')
     (hN : 0 < N) :
     connection% (ladderPH p N ∉ Port.PortHamiltonian.family.den (.flow .conservative)) :=
   not_mem_den_conservative_of_dissipation_pos _ (by omega) (ladderPH_dissipation_pos p N hR hG)
 
 /-- In the lossless case `R' = G' = 0` the zero-input ladder conserves its stored energy. -/
+@[tmio TM]
 @[powerlib_domain] theorem losslessLadder_mem_den_conservative (hR : p.R' = 0) (hG : p.G' = 0) :
     connection% (ladderPH p N ∈ Port.PortHamiltonian.family.den (.flow .conservative)) := by
   refine mem_den_conservative_of_lossless _ (DiagonalPH.toPH_R_eq_zero _ _ _ ?_)

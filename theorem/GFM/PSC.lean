@@ -195,6 +195,7 @@ private theorem unstable_of {m : Model} (hb : Meets m .balanced) (hs : Meets m .
 
 /-- The whole requirement language is inconsistent: the slope cannot be both negative and
 positive. -/
+@[tmio M]
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
@@ -206,6 +207,7 @@ positive. -/
 /-- Every translation of the PSC family is sound: the scalar linearization at the selected angle
 (the slope `−K_p P_max cos δ*`) proves the local sentences and instability, and passivity holds
 without requirement. -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -222,6 +224,7 @@ without requirement. -/
     exact mem_den_flow_iff.mpr (unstable_of (hm .balanced (by simp)) (hm .unstableSlope (by simp)))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
@@ -230,6 +233,7 @@ without requirement. -/
 `δ*` exactly when the angle is balanced (`P_max sin δ* = P*`) with a negative slope
 (`K_p P_max cos δ* > 0`). Converse linearization of the scalar field
 `δ̇ = K_p (P* − P_max sin δ)`: local exponential stability forces a zero with negative slope. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -256,6 +260,7 @@ without requirement. -/
   · exact hH
 
 /-- An equilibrium with `cos δ₀ > 0` is locally exponentially stable (`K_p, P_max > 0`). -/
+@[tmio TM]
 @[powerlib_domain] theorem locallyExponentiallyStable (hK : 0 < c.Kp) (hP : 0 < c.Pmax)
     {δ₀ : ℝ} (heq : c.Pmax * Real.sin δ₀ = c.Pstar) (hcos : 0 < Real.cos δ₀) :
     connection% (Model.mk c δ₀ ∈ family.den (.flow .locallyExponentiallyStable)) := by
@@ -265,6 +270,7 @@ without requirement. -/
     positivity))
 
 /-- An equilibrium with `cos δ₀ < 0` is unstable (`K_p, P_max > 0`). -/
+@[tmio TM]
 @[powerlib_domain] theorem unstable (hK : 0 < c.Kp) (hP : 0 < c.Pmax) {δ₀ : ℝ}
     (heq : c.Pmax * Real.sin δ₀ = c.Pstar) (hcos : Real.cos δ₀ < 0) :
     connection% (Model.mk c δ₀ ∈ family.den (.flow .unstable)) := by
@@ -274,6 +280,7 @@ without requirement. -/
 
 /-- The loading angle `arcsin(P*/P_max)` is locally exponentially stable when
 `|P*| < P_max`. -/
+@[tmio TM]
 @[powerlib_domain] theorem locallyExponentiallyStable_arcsin (hK : 0 < c.Kp) (hP : 0 < c.Pmax)
     (h : |c.Pstar| < c.Pmax) :
     connection% (Model.mk c (Real.arcsin (c.Pstar / c.Pmax)) ∈
@@ -282,6 +289,7 @@ without requirement. -/
     (SpecialFunctions.cos_arcsin_div_pos h hP)
 
 /-- The second equilibrium `π − arcsin(P*/P_max)` is unstable when `|P*| < P_max`. -/
+@[tmio TM]
 @[powerlib_domain] theorem unstable_pi_sub_arcsin (hK : 0 < c.Kp) (hP : 0 < c.Pmax)
     (h : |c.Pstar| < c.Pmax) :
     connection% (Model.mk c (Real.pi - Real.arcsin (c.Pstar / c.Pmax)) ∈
@@ -431,6 +439,7 @@ slope is unstable; and at a balanced fold angle (`cos δ* = 0`, `K_p P_max ≠ 0
 never return (`Dynamics.not_localAsymptoticStable_of_lie_nonpos`). The linearization alone does
 not decide the fold, the model's structure does (`Spectral.exact_of_equilibrium` with the guard
 `K_p P_max cos δ* > 0`). -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_locallyAsymptoticallyStable :
     connection% (family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -465,6 +474,7 @@ not decide the fold, the model's structure does (`Spectral.exact_of_equilibrium`
 vanishing scalar field (`K_p = 0`, or `P_max = P* = 0`, where every state is an equilibrium). A
 positive slope is unstable, and so is a balanced fold angle (`cos δ* = 0`, `K_p P_max ≠ 0`), by
 Chetaev's theorem (`Dynamics.unstable_of_chetaev`). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_lyapunovStable_iff (m : Model) :
     connection% (m ∈ family.den (.flow .lyapunovStable) ↔
       m ∈ {m : Model | (m.c.Pmax * Real.sin m.δ = m.c.Pstar ∧
@@ -506,6 +516,7 @@ def frozen : Model := ⟨⟨0, 0, 0⟩, 0⟩
 
 /-- The frozen loop is Lyapunov stable (every solution is constant) although its slope
 `K_p P_max cos δ*` is zero. -/
+@[tmio TM]
 @[powerlib_domain] theorem frozen_mem_den_lyapunovStable :
     connection% (frozen ∈ family.den (.flow .lyapunovStable)) := by
   have h := mem_den_lyapunovStable_iff frozen
@@ -514,6 +525,7 @@ def frozen : Model := ⟨⟨0, 0, 0⟩, 0⟩
 
 /-- The Lyapunov translation is sound but not exact: the frozen loop is Lyapunov stable without a
 negative slope. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -526,6 +538,7 @@ negative slope. -/
 def offEquilibrium : Model := ⟨⟨1, 1, 0⟩, 0⟩
 
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it. -/
+@[tmio TM]
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
@@ -537,6 +550,7 @@ def offEquilibrium : Model := ⟨⟨1, 1, 0⟩, 0⟩
 
 /-- The instability translation is sound but not exact: every non-equilibrium angle is unstable,
 while the translation asks for a balanced one. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement

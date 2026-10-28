@@ -298,6 +298,7 @@ private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contrac
     (fun m => m.isHurwitz_plant_iff.symm) hP
 
 /-- Every translation of the dq RL-branch family is sound. -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -306,6 +307,7 @@ private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contrac
 
 /-- The attractive sentences and sampled contraction of the dq branch are carved out exactly by
 `R/L > 0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -313,6 +315,7 @@ private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contrac
 
 /-- Zero-input dq-frame RL branch at constant frame speed `ω`: an attractive sentence (in
 particular exponential stability) holds iff `R/L > 0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_iff (m : DqBranch) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (m ∈ family.den (.flow P) ↔ m ∈ {m : DqBranch | 0 < m.R / m.L}) := by
@@ -320,6 +323,7 @@ particular exponential stability) holds iff `R/L > 0`. -/
   rw [den_flow hP]
 
 /-- With a positive inductance, the dq RL branch is stable iff `R > 0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_iff_resistance_pos (m : DqBranch) (hL : 0 < m.L)
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (m ∈ family.den (.flow P) ↔ m ∈ {m : DqBranch | 0 < m.R}) := by
@@ -329,6 +333,7 @@ particular exponential stability) holds iff `R/L > 0`. -/
 
 /-- The αβ and dq descriptions of the RL branch are stable together, at every frame speed: the
 attractive denotation of the dq family is its pull-back along the αβ reading. -/
+@[tmio TM]
 @[powerlib_domain] theorem den_eq_alphaBeta {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.den (.flow P) = DqBranch.alphaBeta ⁻¹' family.den (.flow P)) := by

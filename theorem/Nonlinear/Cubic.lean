@@ -149,12 +149,14 @@ def family : Family Gain Requirement n 0 :=
 @[powerlib_foundation] theorem family_isAutonomous :
     (family (n := n)).IsAutonomous fun α => field α.1 := fun _ => rfl
 
+@[tmio TM]
 theorem mem_den_globallyExponentiallyStable (α : Gain) :
     connection% (α ∈ (family (n := n)).den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact family_isAutonomous.mem_den_flow.mpr (globallyExponentiallyStable α)
 
 /-- No gain bounds every decay rate. -/
+@[tmio M]
 @[powerlib_foundation] theorem realize_univ :
     connection% (realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
@@ -166,6 +168,7 @@ theorem mem_den_globallyExponentiallyStable (α : Gain) :
 semantics connection. Every model satisfies the stability sentences, sampled contraction and
 passivity; none is unstable or conservative; and a model decays at the rate `a` exactly when
 `a ≤ α`, since small solutions decay no faster than at the rate `α + ‖x₀‖²`. -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_eq_semantics (hn : 0 < n) :
     connection% ((family (n := n)).chain = (family (n := n)).semantics) := by
   unfold powerlib.TMIO.Statement

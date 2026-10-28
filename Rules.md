@@ -113,8 +113,22 @@ not measurement records and are reviewed according to their mathematical role.
 The generic/engineering module partition and foundation/domain metadata are
 independent of these five kinds. Supporting definitions, private proofs and
 metaprogramming infrastructure support admitted units rather than forming a
-sixth knowledge kind. The existing surface-form connection index is a diagnostic,
-not a complete declaration-level implementation of this ownership rule.
+sixth knowledge kind.
+
+Each public typed connection theorem in `theorem/` carries exactly one source
+attribute: `@[tmio T]`, `@[tmio M]`, `@[tmio TM]`, `@[tmio MI]` or `@[tmio IO]`.
+These attributes are the sole source of classification; queries reconstruct an
+index from them, and no separate classification table is maintained.
+`theorem/TMIO/KnowledgeKind.lean` checks that an attribute targets a theorem,
+uses one of the five kinds, and is not assigned twice. The assigned kind records
+review of the complete statement and its hypotheses; the attribute checker does
+not prove that semantic judgment or replace mathematical admission.
+
+The current reviewed coverage is 813 public `connection%` theorems: T 0, M 50,
+T–M 668, M–I 88 and I–O 7. Ordinary non-connection theorems and definitions,
+including the rest of the library's T and M content, have not all been classified.
+The required coverage check is limited to public typed connection theorems.
+`Layers.md` gives the Lean environment queries and the source-only queries.
 
 ## 3. Foundation results and domain results
 
@@ -191,15 +205,20 @@ behind the otherwise valid connection.
 
 Whole-package admission discovers model-domain types from actual `Family`
 definitions. Every public model-specific behavioural proof must use Statement,
-even when unlabeled, labeled foundation, or written as a proof-valued definition.
+even without foundation/domain metadata, when labeled foundation, or when written
+as a proof-valued definition.
 Generic semantic support and private helpers remain implementation evidence;
-static mathematics does not need a classification label. Negative behavioural
-fixtures are private evidence explicitly submitted to rejection tests.
+ordinary non-connection theorems are outside the current required `tmio` coverage.
+Negative behavioural fixtures are private evidence explicitly submitted to
+rejection tests.
 
-The public entry points `lake build` and `lake build powerlib` build every module
-selected by the package's actual Lake library globs and then audit that complete
-inventory. A file cannot opt out by omitting an Architecture import or by being
-absent from `powerlib.lean`. Examples, tests and the independent integration
+The public entry points `lake build` and `lake build powerlib` first check source
+classification with `python3 tools/tmio_classification.py check`, then build every
+module selected by the package's actual Lake library globs and audit that complete
+inventory. The environment check requires a `tmio` attribute on each imported
+public typed connection theorem in a `theorem.*` module. A file cannot opt out by
+omitting an Architecture import or by being absent from `powerlib.lean`.
+Examples, tests and the independent integration
 profile use the same admission checker. Raw `lean` or a staging-library target
 is compilation, not PowerLib admission. Changing the trusted build configuration
 can bypass policy; the kernel alone cannot forbid arbitrary valid Lean theorems.
@@ -248,8 +267,9 @@ the completion criterion.
 The completed result must conclude a meaningful system property, for example:
 
 ```lean
-theorem stable : connection% (submittedModel ∈ family.den (.flow .lyapunovStable))
-theorem exponentially_stable :
+@[tmio TM] theorem stable :
+    connection% (submittedModel ∈ family.den (.flow .lyapunovStable))
+@[tmio TM] theorem exponentially_stable :
     connection% (submittedModel ∈ family.den (.flow .globallyExponentiallyStable))
 ```
 

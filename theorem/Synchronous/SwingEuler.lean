@@ -81,6 +81,7 @@ def euler : Implementation Model Requirement Euler Requirement 2 0 2 0 :=
 locally exponentially stable swing model (`M = 1`, `D = 4`, `K = 4` at a balanced angle) integrated
 with a large enough step is not locally exponentially stable: every Euler multiplier `1 + hλ` leaves
 the unit disk (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+@[tmio MI]
 @[powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement

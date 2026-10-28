@@ -331,6 +331,7 @@ private theorem refDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .cont
 
 /-- Every translation of the PI-loop family is sound: positive monic coefficients give a Hurwitz
 loop, a negative one a right-half-plane characteristic root. -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -339,6 +340,7 @@ loop, a negative one a right-half-plane characteristic root. -/
 
 /-- The attractive sentences and sampled contraction of the PI loop are carved out exactly by
 positive monic coefficients `(R + Kp)/L > 0 ∧ Ki/L > 0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -346,6 +348,7 @@ positive monic coefficients `(R + Kp)/L > 0 ∧ Ki/L > 0`. -/
 
 /-- The PI current loop with `L > 0` satisfies an attractive sentence (in particular global
 exponential stability) iff `R + Kp > 0 ∧ Ki > 0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_iff (p : PIParams) (hL : 0 < p.L) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (p ∈ family.den (.flow P) ↔ p ∈ {p : PIParams | 0 < p.R + p.Kp ∧ 0 < p.Ki}) := by
@@ -355,6 +358,7 @@ exponential stability) iff `R + Kp > 0 ∧ Ki > 0`. -/
   rw [Stable, div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
 
 /-- The duty-cycle loop: stable iff `R + V_dc Kp > 0 ∧ V_dc Ki > 0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem withGain_mem_den_iff (p : PIParams) (hL : 0 < p.L) (Vdc : ℝ)
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (p.withGain Vdc ∈ family.den (.flow P) ↔
@@ -365,6 +369,7 @@ exponential stability) iff `R + Kp > 0 ∧ Ki > 0`. -/
   rfl
 
 /-- Every translation of the reference-feedback family is sound. -/
+@[tmio TM]
 @[powerlib_domain] theorem refChain_le_semantics :
     connection% (∀ P, refFamily.chain P ≤ refFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -374,6 +379,7 @@ exponential stability) iff `R + Kp > 0 ∧ Ki > 0`. -/
 
 /-- With reference feedback the attractive sentences and sampled contraction are carved out
 exactly by `(R + Kp (1 − κ))/L > 0 ∧ Ki (1 − κ)/L > 0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem refExact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (refFamily.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -381,6 +387,7 @@ exactly by `(R + Kp (1 − κ))/L > 0 ∧ Ki (1 − κ)/L > 0`. -/
 
 /-- With `L > 0` the loop with reference feedback `κ` satisfies an attractive sentence iff
 `R + Kp (1 − κ) > 0 ∧ Ki (1 − κ) > 0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem refFeedback_mem_den_iff (p : PIParams) (hL : 0 < p.L) (κ : ℝ)
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% ((p, κ) ∈ refFamily.den (.flow P) ↔
@@ -392,6 +399,7 @@ exactly by `(R + Kp (1 − κ))/L > 0 ∧ Ki (1 − κ)/L > 0`. -/
 
 /-- The q-axis PI loop with the proportional Q-loop feedback folded in (`κ = −k_p^Q`): stable
 iff `R + Kp (1 + k_p^Q) > 0 ∧ Ki (1 + k_p^Q) > 0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem qLoop_mem_den_iff (p : PIParams) (hL : 0 < p.L) (kpQ : ℝ)
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% ((p, -kpQ) ∈ refFamily.den (.flow P) ↔

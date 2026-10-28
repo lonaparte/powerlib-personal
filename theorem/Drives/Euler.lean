@@ -75,6 +75,7 @@ def euler : Implementation Drive Requirement Euler Requirement 2 0 2 0 :=
 exponentially stable drive (`unitRotor`, `r_r = L_r = 1`) integrated with a large enough step is not
 locally exponentially stable: every Euler multiplier `1 + hλ` leaves the unit disk
 (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+@[tmio MI]
 @[powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement

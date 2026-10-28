@@ -760,6 +760,7 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
 
 /-- No model meets the Routh conditions and a negative determinant: the whole requirement
 language is inconsistent. -/
+@[tmio M]
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
@@ -777,6 +778,7 @@ private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
 prove the local sentences, a negative Jacobian determinant proves instability (LeanForControl's
 linearization theorems, applied to the regularized field and transferred through the ball on
 which it agrees with model B), and passivity holds without requirement. -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -796,6 +798,7 @@ which it agrees with model B), and passivity holds without requirement. -/
       (hm .equilibrium (by simp)) (hm .detNeg (by simp)))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
@@ -805,6 +808,7 @@ Jacobian `J = jacobian x*` satisfies the 4×4 Routh conditions (`tr J < 0`, `m�
 `det J > 0`, `m₃² + tr² det < tr m₂ m₃`, i.e. `a3, a1, a0 > 0` and `a1² + a3² a0 < a3 a2 a1` for
 `det(sI − J) = s⁴ + a3 s³ + a2 s² + a1 s + a0`), the equilibrium is locally exponentially
 stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model)
     (hV : 0 < m.p.VdcRef) (hx : m.p.field m.x = 0) (htr : (m.p.jacobian m.x).trace < 0)
     (hm3 : Criteria.principalMinorSum3Fin4 (m.p.jacobian m.x) < 0)
@@ -819,6 +823,7 @@ stable. -/
 
 /-- **Model B, instability.** At an equilibrium of model B (`V_dc* > 0`) with `det J < 0` the
 Jacobian has a positive real eigenvalue and the equilibrium is unstable. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable_of_det_neg (m : Model) (hV : 0 < m.p.VdcRef)
     (hx : m.p.field m.x = 0) (hdet : (m.p.jacobian m.x).det < 0) :
     connection% (m ∈ family.den (.flow .unstable)) := by
@@ -829,6 +834,7 @@ Jacobian has a positive real eigenvalue and the equilibrium is unstable. -/
 `i_q0 = 0`, `V_dc* > 0`, `V_g > 0` and positive gains `k_p, k_i, k_pv, k_iv` and `C_dc > 0`
 (any `X_g`, `ω_s`, `ω_g`), the equilibrium `(0, (ω_g − ω_s)/k_i, V_dc*, 0)` of model B is locally
 exponentially stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem noLoad_mem_den_locallyExponentiallyStable (p : ModelBParams)
     (hV : 0 < p.VdcRef) (hVg : 0 < p.Vg) (hkp : 0 < p.kp) (hki : 0 < p.ki) (hkpv : 0 < p.kpv)
     (hkiv : 0 < p.kiv) (hC : 0 < p.Cdc) (hI : p.I0 = 0) (hR : p.Rg = 0) (hq : p.iq0 = 0) :
@@ -844,6 +850,7 @@ exponentially stable. -/
 translated exactly: the equilibrium is locally exponentially stable exactly when its Jacobian
 satisfies the 4×4 Routh conditions. Converse linearization of the regularized field, which is
 model B on a ball around the equilibrium, and the quartic Routh–Hurwitz criterion. -/
+@[tmio TM]
 @[powerlib_domain] theorem exactUnder_locallyExponentiallyStable :
     connection% (family.ExactUnder {.equilibrium, .positiveReference}
       (.flow .locallyExponentiallyStable)) := by
@@ -879,6 +886,7 @@ conditions. Model B is `C¹` on `V_dc ≠ 0` (`ModelBParams.field_contDiffOn`), 
 linearization theorem for fields that are `C¹` on an open neighbourhood applies
 (`Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local`): the negative side needs no
 separate regularization. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff (m : Model) (hx : m.x 2 ≠ 0) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable) ↔
       m ∈ {m : Model | m.p.field m.x = 0 ∧ RouthFin4 (m.p.jacobian m.x)}) := by
@@ -903,6 +911,7 @@ private theorem negativeReference_equilibrium :
 
 /-- The negative-reference converter is locally exponentially stable: its Jacobian is block
 diagonal, `[[−1, 1], [−1, 0]]` (PLL) and `[[−3/2, 3/2], [−1, 0]]` (DC loop), both Hurwitz. -/
+@[tmio TM]
 @[powerlib_domain] theorem negativeReference_mem_den_locallyExponentiallyStable :
     connection% (negativeReference ∈ family.den (.flow .locallyExponentiallyStable)) := by
   have h := mem_den_locallyExponentiallyStable_iff negativeReference (by simp [negativeReference])
@@ -954,6 +963,7 @@ diagonal, `[[−1, 1], [−1, 0]]` (PLL) and `[[−3/2, 3/2], [−1, 0]]` (DC lo
 converter is locally exponentially stable at an equilibrium whose Jacobian meets the Routh
 conditions, but its DC-voltage reference is negative. Not even the context of an equilibrium
 makes it exact (`not_exactUnder_equilibrium_locallyExponentiallyStable`). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_locallyExponentiallyStable :
     connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -964,6 +974,7 @@ makes it exact (`not_exactUnder_equilibrium_locallyExponentiallyStable`). -/
 
 /-- Within the context of an equilibrium the local exponential translation is still not exact:
 the negative-reference converter is an equilibrium. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exactUnder_equilibrium_locallyExponentiallyStable :
     connection% (¬ family.ExactUnder {.equilibrium} (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -981,6 +992,7 @@ the negative-reference converter is an equilibrium. -/
 asymptotically stable: there the DC-link and DC-loop components vanish identically, and the
 equilibria of the plane form a curve through the point (along `Δθ` with
 `ξ_v = −(V_g sin Δθ + R_g i_q0)/(X_g k_iv)` when `X_g k_iv ≠ 0`, along `ξ_v` otherwise). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_mem_den_locallyAsymptoticallyStable_of_Vdc_eq_zero (m : Model)
     (hx : m.x 2 = 0) (heq : m.p.field m.x = 0) :
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
@@ -1070,6 +1082,7 @@ equilibria of the plane form a curve through the point (along `Δθ` with
     · exact hpt _ _ (hq _)
 
 /-- On the singular plane an equilibrium is not locally exponentially stable either. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero (m : Model)
     (hx : m.x 2 = 0) (heq : m.p.field m.x = 0) :
     connection% (m ∉ family.den (.flow .locallyExponentiallyStable)) := by
@@ -1087,6 +1100,7 @@ semantics, although it is not an equilibrium (the DC-link component of the field
 so every solution segment reaches the plane at most at its end, after a time `O(V_dc(t₀)²)`, and
 moves by `O(‖x(t₀) − x*‖²)` (`Dynamics.Degenerate.locallyExponentiallyStable_of_collapse`). The
 estimate is met because the solutions cease to exist, not because they converge. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_collapse (m : Model)
     (hx : m.x 2 = 0) (hP : m.p.pccP m.x / m.p.Cdc < 0) (hI : m.p.I0 / m.p.Cdc ≠ 0) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
@@ -1098,6 +1112,7 @@ estimate is met because the solutions cease to exist, not because they converge.
 the plane with the smooth field `G = (f₀, f₁, 0, f₃)`, which keeps the plane invariant: a solution
 of `G` through `x*` is a solution of model B, so the estimate forces it to stay at `x*`, making `x*`
 an equilibrium (`not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero`). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero_of_I0
     (m : Model) (hx : m.x 2 = 0) (hI : m.p.I0 / m.p.Cdc = 0) :
     connection% (m ∉ family.den (.flow .locallyExponentiallyStable)) := by
@@ -1146,6 +1161,7 @@ an equilibrium (`not_mem_den_locallyExponentiallyStable_of_Vdc_eq_zero`). -/
 term pushes the DC-link voltage away from the plane (`P(x*) / C_dc > 0`) is unstable: near `x*`,
 `d(V_dc²)/dt` is bounded below by a positive rate, and the solution from `V_dc = s > 0` exists
 while it stays near `x*` (`Dynamics.Degenerate.unstable_of_repel`). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable_of_repel (m : Model) (hx : m.x 2 = 0)
     (hP : 0 < m.p.pccP m.x / m.p.Cdc) :
     connection% (m ∈ family.den (.flow .unstable)) := by
@@ -1157,6 +1173,7 @@ and nonzero power term `P(x*) / C_dc ≠ 0` (so `C_dc ≠ 0`), the segment-based
 estimate holds exactly when the power term drives `V_dc` into the plane (`P(x*) / C_dc < 0`) and the
 injection crosses it (`I₀ / C_dc ≠ 0`); such a state is never an equilibrium. The degenerate
 power-balance case `P(x*) = 0` is not decided here. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero (m : Model)
     (hx : m.x 2 = 0) (hP : m.p.pccP m.x / m.p.Cdc ≠ 0) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable) ↔
@@ -1189,6 +1206,7 @@ private theorem collapsePoint_field_ne_zero :
 
 /-- The collapse point, which is not an equilibrium and has positive DC-voltage reference, is
 locally exponentially stable in the segment semantics. -/
+@[tmio TM]
 @[powerlib_domain] theorem collapsePoint_mem_den_locallyExponentiallyStable :
     connection% (collapsePoint ∈ family.den (.flow .locallyExponentiallyStable)) := by
   have h := mem_den_locallyExponentiallyStable_of_collapse collapsePoint
@@ -1202,6 +1220,7 @@ locally exponentially stable in the segment semantics. -/
 /-- Within the context of a positive DC-voltage reference the local exponential translation is not
 exact: the collapse point is locally exponentially stable but not an equilibrium. The exact context
 is that of an equilibrium with positive reference (`exactUnder_locallyExponentiallyStable`). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exactUnder_positiveReference_locallyExponentiallyStable :
     connection% (¬ family.ExactUnder {.positiveReference} (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -1212,6 +1231,7 @@ is that of an equilibrium with positive reference (`exactUnder_locallyExponentia
 
 /-- Within the context of a positive DC-voltage reference the local asymptotic translation is not
 exact (the collapse point). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exactUnder_positiveReference_locallyAsymptoticallyStable :
     connection% (¬ family.ExactUnder {.positiveReference}
       (.flow .locallyAsymptoticallyStable)) := by
@@ -1223,6 +1243,7 @@ exact (the collapse point). -/
 
 /-- Within the context of a positive DC-voltage reference the Lyapunov translation is not exact
 (the collapse point). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exactUnder_positiveReference_lyapunovStable :
     connection% (¬ family.ExactUnder {.positiveReference} (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -1232,6 +1253,7 @@ exact (the collapse point). -/
     (by simp [family, translate]) collapsePoint_field_ne_zero
 
 /-- The local asymptotic translation is not exact (the negative-reference converter). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -1241,6 +1263,7 @@ exact (the collapse point). -/
   norm_num at this
 
 /-- The Lyapunov translation is not exact (the negative-reference converter). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement

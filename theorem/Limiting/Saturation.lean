@@ -262,6 +262,7 @@ private theorem mem_den_flow {m : SatModel} {P : Flow.Property} :
 
 /-- Every translation of the saturated-GFM family is sound (local linearization at the
 selected equilibrium). -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -271,6 +272,7 @@ selected equilibrium). -/
   · exact (Flow.Property.holds_shift_iff .unstable).mpr (satField_unstable_of h.2.1 h.1 h.2.2)
 
 /-- Passivity is translated exactly: the autonomous model has no ports. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.local_exact_passive _ _ _
@@ -285,6 +287,7 @@ private lemma sin_arccos_pos {Pref Psat : ℝ} (hsat : 0 < Psat) (h : |Pref| < P
   nlinarith [abs_lt.mp hy, sq_abs (Pref / Psat)]
 
 /-- Stable saturated equilibrium `δ_s = φ − arccos(P_ref/P_sat)` (`|P_ref| < P_sat`). -/
+@[tmio TM]
 @[powerlib_domain] theorem saturated_stable_equilibrium {M D Pref Psat φ : ℝ} (hM : 0 < M)
     (hD : 0 < D) (hsat : 0 < Psat) (h : |Pref| < Psat) :
     connection% (⟨M, D, Pref, Psat, φ, φ - Real.arccos (Pref / Psat)⟩ ∈
@@ -299,6 +302,7 @@ private lemma sin_arccos_pos {Pref Psat : ℝ} (hsat : 0 < Psat) (h : |Pref| < P
     nlinarith
 
 /-- Unstable saturated equilibrium `δ_u = φ + arccos(P_ref/P_sat)` (`|P_ref| < P_sat`). -/
+@[tmio TM]
 @[powerlib_domain] theorem saturated_unstable_equilibrium {M D Pref Psat φ : ℝ} (hM : 0 < M)
     (hsat : 0 < Psat) (h : |Pref| < Psat) :
     connection% (⟨M, D, Pref, Psat, φ, φ + Real.arccos (Pref / Psat)⟩ ∈
@@ -319,6 +323,7 @@ def negativeInertia : SatModel := ⟨-1, -1, 0, 1, 0, Real.pi / 2⟩
 
 /-- The negative-inertia saturated model is locally exponentially stable: its Jacobian
 `[[0, 1], [−1, −1]]` is Hurwitz. -/
+@[tmio TM]
 @[powerlib_domain] theorem negativeInertia_mem_den_locallyExponentiallyStable :
     connection% (negativeInertia ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -335,6 +340,7 @@ private theorem negativeInertia_not_stable : ¬ SatModel.Stable negativeInertia 
 
 /-- The local exponential translation is sound but not exact: the negative-inertia model is
 locally exponentially stable without positive inertia. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_locallyExponentiallyStable :
     connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -365,6 +371,7 @@ Static evidence on the model, not a connection conclusion. -/
 /-- On flow sentences the saturated family agrees with the swing family: a saturated model
 satisfies a flow sentence exactly when its swing reading does. A comparison of the two semantics
 connections at the two members. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_flow_iff_swing (m : SatModel) (P : Flow.Property) :
     connection% (m ∈ family.den (.flow P) ↔
       m.toSwing ∈ Synchronous.Swing.family.den (.flow P)) := by
@@ -414,6 +421,7 @@ when `(δ*, 0)` is an equilibrium, `D > 0` and `P_sat sin(δ* − φ) < 0`. Conv
 the swing reading (`mem_den_flow_iff_swing`,
 `Synchronous.Swing.exactUnder_locallyExponentiallyStable`): local exponential stability forces an
 equilibrium with a Hurwitz Jacobian. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff (m : SatModel) (hM : 0 < m.M) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable) ↔
       m ∈ {m : SatModel | m.Psat * Real.cos (m.δ - m.φ) = m.Pref ∧ 0 < m.D ∧
@@ -430,6 +438,7 @@ local exponential stability. The linearization does not decide the degenerate ca
 swing reading (`mem_den_flow_iff_swing`) the swing family's exactness within positive inertia
 applies (`Synchronous.Swing.exactUnder_locallyAsymptoticallyStable`: conserved energy for `D = 0`,
 a continuum of equilibria for `P_sat = 0`, the dissipated energy at a fold of the curve). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff (m : SatModel) (hM : 0 < m.M) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
       m ∈ {m : SatModel | m.Psat * Real.cos (m.δ - m.φ) = m.Pref ∧ 0 < m.D ∧
@@ -444,6 +453,7 @@ a continuum of equilibria for `P_sat = 0`, the dissipated energy at a fold of th
 equilibrium with `D ≥ 0` and `P_sat sin(δ* − φ) < 0`, or with a zero saturated current
 (`P_sat = 0`) and `D > 0` (`Synchronous.Swing.mem_den_lyapunovStable_iff_of_inertia`: a fold of
 the curve is unstable for every `D ≥ 0`). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_lyapunovStable_iff (m : SatModel) (hM : 0 < m.M) :
     connection% (m ∈ family.den (.flow .lyapunovStable) ↔
       m ∈ {m : SatModel | m.Psat * Real.cos (m.δ - m.φ) = m.Pref ∧
@@ -456,6 +466,7 @@ the curve is unstable for every `D ≥ 0`). -/
 
 /-- Without positive inertia the local asymptotic translation is sound but not exact (the
 negative-inertia model, `Spectral.not_exact_of_les_witness`). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -464,6 +475,7 @@ negative-inertia model, `Spectral.not_exact_of_les_witness`). -/
 
 /-- The Lyapunov translation is sound but not exact: the negative-inertia model, and, within
 positive inertia, a zero saturated current with `D > 0` (`mem_den_lyapunovStable_iff`). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -478,6 +490,7 @@ def offEquilibrium : SatModel := ⟨1, 0, 1, 0, 0, 0⟩
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it. Its swing
 reading is unbalanced, `P_sat cos(0) = 0 ≠ 1 = P_ref`
 (`Synchronous.Swing.mem_den_unstable_of_not_balanced`, `mem_den_flow_iff_swing`). -/
+@[tmio TM]
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   have hsw := mem_den_flow_iff_swing offEquilibrium .unstable
@@ -489,6 +502,7 @@ reading is unbalanced, `P_sat cos(0) = 0 ≠ 1 = P_ref`
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
 while the instability condition asks for an equilibrium. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement

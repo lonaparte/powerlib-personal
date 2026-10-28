@@ -88,6 +88,7 @@ variable (p : PIParams)
 
 /-- With `L > 0` and `Ki < 0` the PI current loop is unstable: `Ki/L < 0` makes the
 determinant of its state matrix negative (a real saddle mode). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable_of_Ki_neg (hL : 0 < p.L) (hKi : p.Ki < 0) :
     connection% (p ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement

@@ -590,6 +590,7 @@ private theorem decay_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
   rwa [hr] at h
 
 /-- No drive meets every requirement: the rate `1/T_r + 1` is never attained. -/
+@[tmio M]
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
@@ -601,6 +602,7 @@ private theorem decay_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
 stability of the rotor flux at its equilibrium (quadratic decay certificate `‖ψ_r − ψ_eq‖²`),
 hence every attractive sentence, sampled contraction and Lyapunov stability; decay holds at
 every rate up to `1/T_r` (the global table, `Spectral.chain_le_semantics_of_globalTable`). -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -623,6 +625,7 @@ every rate up to `1/T_r` (the global table, `Spectral.chain_le_semantics_of_glob
     exact mem_den_flow.mpr ((decay_of hm.1 hm.2.1).mono hm.2.2)
 
 /-- Passivity is translated exactly: the autonomous rotor-flux model has no ports. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
@@ -631,6 +634,7 @@ every rate up to `1/T_r` (the global table, `Spectral.chain_le_semantics_of_glob
 in the IFOC frame with constant stator current `(isd, isq)` and constant slip command `ω_sl`,
 the rotor flux is globally exponentially stable at `ψ_eq = L_m i_s / (1 + jω_sl T_r)`: every
 solution exists for all forward time and converges exponentially. -/
+@[tmio TM]
 @[powerlib_domain] theorem ifocFlux_globallyExponentiallyStable (d : Drive) (hrr : 0 < d.p.rr)
     (hLr : 0 < d.p.Lr) :
     connection% (d ∈ family.den (.flow .globallyExponentiallyStable)) := by
@@ -639,6 +643,7 @@ solution exists for all forward time and converges exponentially. -/
 
 /-- Decay at the exact rate `1/T_r`, for every initial flux and every slip command (the slip
 term rotates the flux error and does no work). -/
+@[tmio TM]
 @[powerlib_domain] theorem ifocFlux_decay (d : Drive) (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
     connection% (d ∈ family.den (.flow (.decay (1 / d.p.Tr)))) := by
   unfold powerlib.TMIO.Statement
@@ -647,6 +652,7 @@ term rotates the flux error and does no work). -/
 /-- The detuned IFOC drive, whose slip command uses an estimate `T̂_r`, is still globally
 exponentially stable; its equilibrium is oriented only when `T̂_r = T_r`
 (`ifocFlux_detuned_orientation_iff`). -/
+@[tmio TM]
 @[powerlib_domain] theorem ifocFlux_detuned_globallyExponentiallyStable (p : Params)
     (hrr : 0 < p.rr) (hLr : 0 < p.Lr) (isd isq Tr_hat : ℝ) :
     connection% (⟨p, isd, isq, isq / (Tr_hat * isd)⟩ ∈
@@ -657,6 +663,7 @@ exponentially stable; its equilibrium is oriented only when `T̂_r = T_r`
 commands `(i_sd*, i_sq*)`, `i_sd* ≠ 0`, and the slip command computed with the true rotor time
 constant, the rotor flux converges globally exponentially (rate `1/T_r`) to its equilibrium,
 which is the oriented value `(L_m i_sd*, 0)` (`fluxEquilibrium_tuned`). -/
+@[tmio TM]
 @[powerlib_domain] theorem ifocFlux_tuned_globallyExponentiallyStable (p : Params)
     (hrr : 0 < p.rr) (hLr : 0 < p.Lr) (isd isq : ℝ) :
     connection% (⟨p, isd, isq, isq / (p.Tr * isd)⟩ ∈
@@ -680,6 +687,7 @@ unit-rotor drive. -/
 
 /-- The negative-rotor drive satisfies every attractive sentence, sampled contraction and
 Lyapunov stability: its field is that of the unit-rotor drive, globally exponentially stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem negativeRotor_mem_den {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive ∨ P = .lyapunovStable) :
     connection% (negativeRotor ∈ family.den (.flow P)) := by
@@ -696,6 +704,7 @@ Lyapunov stability: its field is that of the unit-rotor drive, globally exponent
 
 /-- The attractive, contractive and Lyapunov translations are sound but not exact: the
 negative-rotor drive satisfies these sentences without a positive rotor. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive ∨ P = .lyapunovStable) :
     connection% (¬ family.Exact (.flow P)) := by
@@ -771,6 +780,7 @@ the same field and a positive rotor, hence is globally exponentially stable; con
 attractive equilibrium of the affine field makes it linear, and `fluxMatrix` is Hurwitz only when
 its trace `−2 r_r/L_r` is negative. The translation `positiveRotor` is therefore sound and
 strictly stronger (`not_exact`). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_attractive_iff (d : Drive) {P : Flow.Property}
     (hP : P.Attractive) :
     connection% (d ∈ family.den (.flow P) ↔ d ∈ {d : Drive | 0 < d.p.rr / d.p.Lr}) := by
@@ -849,6 +859,7 @@ with `ω_sl L_m i_s = 0` (then the field is a rotation about the selected point,
 With `r_r / L_r < 0` the flux grows (`‖ψ − ψ_eq‖²` increases at the rate `−2 (r_r/L_r) ‖·‖²`,
 Chetaev); with `r_r / L_r = 0` and `ω_sl L_m i_s ≠ 0` the selected point is not an equilibrium.
 So the translation `positiveRotor` is not exact for Lyapunov stability even with `L_r > 0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_lyapunovStable_iff (d : Drive) :
     connection% (d ∈ family.den (.flow .lyapunovStable) ↔
       d ∈ {d : Drive | 0 < d.p.rr / d.p.Lr ∨ (d.p.rr / d.p.Lr = 0 ∧

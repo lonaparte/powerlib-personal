@@ -159,12 +159,14 @@ def rlNetworkPH (p : RLBranchParams (Fin m)) (𝓑 : Matrix (Fin k) (Fin m) ℝ)
   (rlNetwork p 𝓑).toPH (Equiv.refl _) (Equiv.refl _)
 
 /-- Passivity of every RL network; the storage is `H = Σ φ_k² / (2 L_k)` (`toPH_storage`). -/
+@[tmio TM]
 @[powerlib_domain] theorem rlNetworkPH_mem_den_passive (p : RLBranchParams (Fin m))
     (𝓑 : Matrix (Fin k) (Fin m) ℝ) :
     connection% (rlNetworkPH p 𝓑 ∈ Port.PortHamiltonian.family.den .passive) :=
   Port.PortHamiltonian.mem_den_passive _
 
 /-- Lyapunov stability of the unforced RL network (all node potentials zero) at the origin. -/
+@[tmio TM]
 @[powerlib_domain] theorem rlNetworkPH_mem_den_lyapunovStable (p : RLBranchParams (Fin m))
     (𝓑 : Matrix (Fin k) (Fin m) ℝ) :
     connection% (rlNetworkPH p 𝓑 ∈ Port.PortHamiltonian.family.den (.flow .lyapunovStable)) :=
@@ -172,6 +174,7 @@ def rlNetworkPH (p : RLBranchParams (Fin m)) (𝓑 : Matrix (Fin k) (Fin m) ℝ)
 
 /-- With a positive resistance in every branch the unforced RL network is globally
 exponentially stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem rlNetworkPH_mem_den_globallyExponentiallyStable
     (p : RLBranchParams (Fin m)) (𝓑 : Matrix (Fin k) (Fin m) ℝ) (hr : ∀ j, 0 < p.r j) :
     connection% (rlNetworkPH p 𝓑 ∈
@@ -279,6 +282,7 @@ omit [Fintype ν] [DecidableEq ν] in
 /-- Branch rescaling by nonzero factors preserves every sentence: the referred network and the
 original network are the same linear port-Hamiltonian plant up to a change of state
 coordinates. -/
+@[tmio TM]
 @[powerlib_domain] theorem rlNetworkPH_scale_mem_den_iff (p : RLBranchParams (Fin m))
     (𝓑 : Matrix (Fin k) (Fin m) ℝ) (c : Fin m → ℝ) (hc : ∀ j, c j ≠ 0) :
     connection% (∀ s : Sentence,
@@ -425,12 +429,14 @@ def rlcNetworkPH (p : RLBranchParams (Fin m)) (q : NodeParams (Fin k))
 
 /-- Passivity of the RL network with node capacitors and shunt loads; the storage is the
 magnetic plus electric energy (`toPH_storage`). -/
+@[tmio TM]
 @[powerlib_domain] theorem rlcNetworkPH_mem_den_passive (p : RLBranchParams (Fin m))
     (q : NodeParams (Fin k)) (𝓑 : Matrix (Fin k) (Fin m) ℝ) :
     connection% (rlcNetworkPH p q 𝓑 ∈ Port.PortHamiltonian.family.den .passive) :=
   Port.PortHamiltonian.mem_den_passive _
 
 /-- Lyapunov stability of the unforced network (zero injections) at the origin. -/
+@[tmio TM]
 @[powerlib_domain] theorem rlcNetworkPH_mem_den_lyapunovStable (p : RLBranchParams (Fin m))
     (q : NodeParams (Fin k)) (𝓑 : Matrix (Fin k) (Fin m) ℝ) :
     connection% (rlcNetworkPH p q 𝓑 ∈

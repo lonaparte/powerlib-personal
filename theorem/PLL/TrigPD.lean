@@ -135,6 +135,7 @@ def trigModel (a b c d e Kp Ki δω θ : ℝ) : PIPLL.Model :=
   (hasDerivAt_trigPD a b c d e θ).deriv
 
 /-- `K_p, K_i > 0`, `h(θ*) = 0`, `h'(θ*) < 0`: `(θ*, δω/K_i)` is locally exponentially stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem trigPLL_mem_den_locallyExponentiallyStable {a b c d e Kp Ki δω θ : ℝ}
     (hKp : 0 < Kp) (hKi : 0 < Ki) (hz : trigPD a b c d e θ = 0)
     (hd : trigPDDeriv a b c d θ < 0) :
@@ -144,6 +145,7 @@ def trigModel (a b c d e Kp Ki δω θ : ℝ) : PIPLL.Model :=
     (by rw [trigModel_deriv]; exact hd)
 
 /-- `K_i > 0`, `h(θ*) = 0`, `h'(θ*) > 0`: `(θ*, δω/K_i)` is unstable (saddle), for every `K_p`. -/
+@[tmio TM]
 @[powerlib_domain] theorem trigPLL_mem_den_unstable {a b c d e Kp Ki δω θ : ℝ} (hKi : 0 < Ki)
     (hz : trigPD a b c d e θ = 0) (hd : 0 < trigPDDeriv a b c d θ) :
     connection% (trigModel a b c d e Kp Ki δω θ ∈ PIPLL.family.den (.flow .unstable)) :=
@@ -152,6 +154,7 @@ def trigModel (a b c d e Kp Ki δω θ : ℝ) : PIPLL.Model :=
 /-- Alternation (T-pll-dynamics §1.13.1): for consecutive simple zeros `θ₁ < θ₂` of `h` (no zero
 of `h` in `(θ₁, θ₂)`) and `K_p, K_i > 0`, one of the two equilibria `(θᵢ, δω/K_i)` is locally
 exponentially stable and the other is unstable. -/
+@[tmio TM]
 @[powerlib_domain] theorem trigPLL_stable_saddle_alternate {a b c d e Kp Ki δω θ₁ θ₂ : ℝ}
     (hKp : 0 < Kp) (hKi : 0 < Ki) (h12 : θ₁ < θ₂) (hz1 : trigPD a b c d e θ₁ = 0)
     (hz2 : trigPD a b c d e θ₂ = 0) (hnz : ∀ θ ∈ Ioo θ₁ θ₂, trigPD a b c d e θ ≠ 0)

@@ -204,6 +204,7 @@ private theorem srf_deriv_inPhase (V Kp Ki δω : ℝ) (k : ℤ) :
 
 /-- In-phase equilibria `(2kπ, δω/K_i)` are locally exponentially stable when
 `V K_p > 0` and `V K_i > 0`, for every constant frequency offset `δω`. -/
+@[tmio TM]
 @[powerlib_domain] theorem srf_mem_den_locallyExponentiallyStable_inPhase {V Kp Ki : ℝ}
     (hVKp : 0 < V * Kp) (hVKi : 0 < V * Ki) (δω : ℝ) (k : ℤ) :
     connection% (srf V Kp Ki δω (2 * k * Real.pi) ∈
@@ -213,6 +214,7 @@ private theorem srf_deriv_inPhase (V Kp Ki δω : ℝ) (k : ℤ) :
     (by rw [srf_deriv_inPhase]; show Ki * -V < 0; linarith [mul_comm V Ki])
 
 /-- `V K_i < 0`: the in-phase equilibria are saddles, hence unstable. -/
+@[tmio TM]
 @[powerlib_domain] theorem srf_mem_den_unstable_inPhase_of_mul_neg {V Kp Ki : ℝ}
     (hVKi : V * Ki < 0) (δω : ℝ) (k : ℤ) :
     connection% (srf V Kp Ki δω (2 * k * Real.pi) ∈ PIPLL.family.den (.flow .unstable)) :=
@@ -220,6 +222,7 @@ private theorem srf_deriv_inPhase (V Kp Ki δω : ℝ) (k : ℤ) :
     (by rw [srf_deriv_inPhase]; show 0 < Ki * -V; linarith [mul_comm V Ki])
 
 /-- `V K_p < 0` (`K_i ≠ 0`): positive Jacobian trace at the in-phase equilibria, unstable. -/
+@[tmio TM]
 @[powerlib_domain] theorem srf_mem_den_unstable_inPhase_of_trace {V Kp Ki : ℝ} (hKi : Ki ≠ 0)
     (hVKp : V * Kp < 0) (δω : ℝ) (k : ℤ) :
     connection% (srf V Kp Ki δω (2 * k * Real.pi) ∈ PIPLL.family.den (.flow .unstable)) :=
@@ -227,6 +230,7 @@ private theorem srf_deriv_inPhase (V Kp Ki δω : ℝ) (k : ℤ) :
     (by rw [srf_deriv_inPhase]; show 0 < Kp * -V; linarith [mul_comm V Kp])
 
 /-- `V K_i > 0`: the anti-phase equilibria `((2k+1)π, δω/K_i)` are saddles, hence unstable. -/
+@[tmio TM]
 @[powerlib_domain] theorem srf_mem_den_unstable_antiPhase {V Kp Ki : ℝ} (hVKi : 0 < V * Ki)
     (δω : ℝ) (k : ℤ) :
     connection% (srf V Kp Ki δω ((2 * k + 1) * Real.pi) ∈
@@ -367,6 +371,7 @@ the unit-amplitude PLL with loop gains `a = V K_p`, `b = V K_i`. -/
 `θ*` exactly when it holds for the unit-amplitude SRF-PLL with loop gains `(V K_p, V K_i)` about
 `θ*` (the conjugacy `ξ = η / V` maps the selected point `(θ*, δω / K_i)` to
 `(θ*, δω / (V K_i))`). -/
+@[tmio TM]
 @[powerlib_domain] theorem srf_mem_den_iff_unitAmplitude {V : ℝ} (hV : V ≠ 0)
     (Kp Ki δω θ : ℝ) (P : Flow.Property) :
     connection% (srf V Kp Ki δω θ ∈ PIPLL.family.den (.flow P) ↔

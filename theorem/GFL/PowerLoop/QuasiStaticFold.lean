@@ -630,6 +630,7 @@ end Members
 /-- Quasi-static GFL with positive gains at a balanced point on the fold `cos 2θ* = 0` with
 `V cos θ* > 0` (the transmission limit `P_ref = ±P_SN`): the operating point is unstable — a
 saddle-node, whose Jacobian has a simple zero eigenvalue (`det J = 0`) and two stable ones. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable_of_fold (p : Params) (hkp : 0 < p.kp)
     (hki : 0 < p.ki) (hkP : 0 < p.kP) {θ Id : ℝ} (heq : IsEq p θ Id)
     (hA : 0 < p.V * Real.cos θ) (hc2 : Real.cos (2 * θ) = 0) :
@@ -639,6 +640,7 @@ saddle-node, whose Jacobian has a simple zero eigenvalue (`det J = 0`) and two s
   exact model_fold_unstable (m := Model.mk p θ Id) heq hkp hki hkP hA hc2
 
 /-- Same, at the fold angle `θ* = π/4` (`V > 0`): the transmission limit is unstable. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable_of_pi_div_four (p : Params) (hV : 0 < p.V)
     (hkp : 0 < p.kp) (hki : 0 < p.ki) (hkP : 0 < p.kP) {Id : ℝ}
     (heq : IsEq p (Real.pi / 4) Id) :
@@ -651,6 +653,7 @@ saddle-node, whose Jacobian has a simple zero eigenvalue (`det J = 0`) and two s
 the selected point is locally asymptotically stable exactly when it is an equilibrium with a strict
 Routh–Hurwitz Jacobian; in particular the fold `cos 2θ* = 0` (no Hopf pair,
 `no_imaginary_eigenvalue`) is a saddle-node and unstable (`mem_den_unstable_of_fold`). -/
+@[tmio TM]
 @[powerlib_domain] theorem exactUnder_locallyAsymptoticallyStable :
     connection% (family.ExactUnder {.positiveGains} (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -659,6 +662,7 @@ Routh–Hurwitz Jacobian; in particular the fold `cos 2θ* = 0` (no Hopf pair,
 /-- **Within positive gains the Lyapunov translation is exact**: every non-Hurwitz point with
 positive gains is unstable (the undamped witness of `not_exact_lyapunovStable` has
 `k_p = k_P = 0`). -/
+@[tmio TM]
 @[powerlib_domain] theorem exactUnder_lyapunovStable :
     connection% (family.ExactUnder {.positiveGains} (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement

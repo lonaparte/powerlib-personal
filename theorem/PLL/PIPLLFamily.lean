@@ -224,6 +224,7 @@ private theorem unstable_of_meets {m : Model} (hp : Meets m .phaseLocked)
 
 /-- No model has both negative slope-gain products and a positive one: the whole requirement
 language is inconsistent. -/
+@[tmio M]
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
@@ -235,6 +236,7 @@ language is inconsistent. -/
 semantics connection. Negative slope-gain products at a phase-locked point prove the local
 sentences, a positive one proves instability (LeanForControl's linearization theorems at the
 selected point, moved to the origin), and passivity holds without requirement. -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -251,6 +253,7 @@ selected point, moved to the origin), and passivity holds without requirement. -
     exact unstable_of_meets (hm .phaseLocked (by simp)) (hm .slopeUnstable (by simp))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
@@ -260,6 +263,7 @@ selected point exactly when the point is phase-locked (`h θ* = 0`, and `K_i ≠
 both slope-gain products are negative (`K_p h'(θ*) < 0`, `K_i h'(θ*) < 0`). Converse
 linearization: local exponential stability of a `C¹` field forces an equilibrium with a Hurwitz
 Jacobian `[[K_p g, K_i], [g, 0]]`. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -284,6 +288,7 @@ asymptotically stable at its selected point exactly when the point is phase-lock
 products negative (a Hurwitz Jacobian). A locally asymptotically stable point of the `C¹` field is
 an equilibrium (`Dynamics.isEquilibrium_of_lyapunovStable`), and at an equilibrium a positive
 determinant-side product (`K_i g > 0`, a saddle) or a positive trace (`K_p g > 0`) is unstable. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_las_iff_of_nondegenerate (m : Model)
     (hKp : m.Kp * deriv m.h m.θ ≠ 0) (hKi : m.Ki * deriv m.h m.θ ≠ 0) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
@@ -311,6 +316,7 @@ determinant-side product (`K_i g > 0`, a saddle) or a positive trace (`K_p g > 0
 
 /-- Slope and gain conditions alone place a model in local exponential stability: at a zero
 `θ*` of `h`, `K_p h'(θ*) < 0` and `K_i h'(θ*) < 0` (Jacobian trace `< 0`, determinant `> 0`). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable (m : Model)
     (hzero : m.h m.θ = 0) (hKp : m.Kp * deriv m.h m.θ < 0) (hKi : m.Ki * deriv m.h m.θ < 0) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
@@ -323,6 +329,7 @@ determinant-side product (`K_i g > 0`, a saddle) or a positive trace (`K_p g > 0
 
 /-- Positive gains: a zero `θ*` of `h` with `h'(θ*) < 0` is locally exponentially stable, for
 every constant frequency offset `δω`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_pos (m : Model)
     (hKp : 0 < m.Kp) (hKi : 0 < m.Ki) (hzero : m.h m.θ = 0) (hg : deriv m.h m.θ < 0) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) :=
@@ -331,6 +338,7 @@ every constant frequency offset `δω`. -/
 
 /-- Saddle: at a zero `θ*` of `h`, `K_i h'(θ*) > 0` (Jacobian determinant `< 0`) places a model
 in instability; no sign condition on `K_p`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable (m : Model) (hzero : m.h m.θ = 0)
     (hKi : 0 < m.Ki * deriv m.h m.θ) :
     connection% (m ∈ family.den (.flow .unstable)) := by
@@ -343,6 +351,7 @@ in instability; no sign condition on `K_p`. -/
 
 /-- Positive trace: at an equilibrium (`h θ* = 0`, and `K_i ≠ 0` or `δω = 0`),
 `K_p h'(θ*) > 0` places a model in instability. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable_of_trace_pos (m : Model) (hzero : m.h m.θ = 0)
     (hlock : m.Ki ≠ 0 ∨ m.δω = 0) (hKp : 0 < m.Kp * deriv m.h m.θ) :
     connection% (m ∈ family.den (.flow .unstable)) := by
@@ -351,6 +360,7 @@ in instability; no sign condition on `K_p`. -/
 
 /-- Positive integral gain: a zero `θ*` of `h` with `h'(θ*) > 0` is unstable (saddle), for every
 `K_p` and every constant frequency offset `δω`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable_of_pos (m : Model) (hKi : 0 < m.Ki)
     (hzero : m.h m.θ = 0) (hg : 0 < deriv m.h m.θ) :
     connection% (m ∈ family.den (.flow .unstable)) :=
@@ -359,6 +369,7 @@ in instability; no sign condition on `K_p`. -/
 /-- Off the phase-locked set every model is unstable: a selected point that is not phase-locked
 (`h θ* ≠ 0`, or `K_i = 0` with an offset `δω ≠ 0`) is not an equilibrium of the `C¹` field, so
 the solution through it leaves it (`Spectral.mem_den_unstable_of_ne_zero`). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable_of_not_phaseLocked (m : Model)
     (hm : m ∉ TMIO.realize Meets {.phaseLocked}) :
     connection% (m ∈ family.den (.flow .unstable)) := by
@@ -471,6 +482,7 @@ private theorem lyapunovStable_of_slope {m : Model} (hzero : m.h m.θ = 0) (hKp 
 positive integral gain place a model in Lyapunov stability, for every constant offset `δω`: the PLL
 energy `U(θ) + ½ K_i (η − δω/K_i)²`, `U = −∫_{θ*} h`, decreases at the rate `K_p h(θ)²`. With
 `K_p = 0` (a lossless loop, a centre of the linearization) the energy is conserved. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_lyapunovStable_of_slope (m : Model) (hzero : m.h m.θ = 0)
     (hKp : 0 ≤ m.Kp) (hKi : 0 < m.Ki) (hg : deriv m.h m.θ < 0) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
@@ -489,6 +501,7 @@ def srf (V Kp Ki δω θ : ℝ) : Model :=
 
 /-- SRF detector with positive amplitude and gains: the phase-locked point `θ* = 0` is locally
 exponentially stable for every frequency offset `δω`. -/
+@[tmio TM]
 @[powerlib_domain] theorem srf_mem_den_locallyExponentiallyStable {V Kp Ki : ℝ} (hV : 0 < V)
     (hKp : 0 < Kp) (hKi : 0 < Ki) (δω : ℝ) :
     connection% (srf V Kp Ki δω 0 ∈ family.den (.flow .locallyExponentiallyStable)) :=
@@ -497,6 +510,7 @@ exponentially stable for every frequency offset `δω`. -/
 
 /-- SRF detector with positive amplitude and integral gain: the anti-phase point `θ* = π` is
 unstable (saddle) for every `K_p` and every frequency offset `δω`. -/
+@[tmio TM]
 @[powerlib_domain] theorem srf_mem_den_unstable {V Ki : ℝ} (hV : 0 < V) (hKi : 0 < Ki)
     (Kp δω : ℝ) :
     connection% (srf V Kp Ki δω Real.pi ∈ family.den (.flow .unstable)) :=
@@ -507,6 +521,7 @@ unstable (saddle) for every `K_p` and every frequency offset `δω`. -/
 /-- `Σ_FD` (`T-gfl-dynamics` §1.12) on the requirement connection — "if `|δω| > K_p sup |h|`, no
 phase is locked" — is refuted: the SRF detector with `V = K_p = K_i = 1`, `δω = 2`, `θ* = 0`
 meets the phase-locking requirement although `|δω| = 2 > K_p sup |h| = 1`. -/
+@[tmio M]
 @[powerlib_domain] theorem frequencyDriftBoundary_refuted :
     connection% (¬ ∀ (m : Model) (M : ℝ), 0 < m.Kp → 0 < m.Ki → (∀ θ, |m.h θ| ≤ M) →
       m.Kp * M < |m.δω| → m ∉ TMIO.realize Meets {.phaseLocked}) := by
@@ -519,6 +534,7 @@ meets the phase-locking requirement although `|δω| = 2 > K_p sup |h| = 1`. -/
 
 /-- On the semantics connection the drift boundary fails as well: beyond it the phase-locked
 point of the same SRF model is even locally exponentially stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem frequencyDriftBoundary_stable :
     connection% (¬ ∀ (m : Model) (M : ℝ), 0 < m.Kp → 0 < m.Ki → (∀ θ, |m.h θ| ≤ M) →
       m.Kp * M < |m.δω| → m ∉ family.den (.flow .locallyExponentiallyStable)) := by
@@ -583,6 +599,7 @@ def Model.ramp (m : Model) (ρ : ℝ) : Model :=
 /-- Under a frequency ramp `ρ` the phase-locked phases are the solutions of `h(θ*) = ρ / K_i`:
 the ramp model meets the phase-locking requirement exactly there (it has no offset, so no
 condition on `K_i` remains). -/
+@[tmio M]
 @[powerlib_domain] theorem ramp_phaseLocked_iff (m : Model) (ρ : ℝ) :
     connection% (m.ramp ρ ∈ TMIO.realize Meets {.phaseLocked} ↔ m.h m.θ = ρ / m.Ki) := by
   unfold powerlib.TMIO.Statement
@@ -593,6 +610,7 @@ of `h` — above every value or below every value, i.e. beyond `ρ = K_i max h` 
 `ρ = K_i min h` — no phase is locked under the ramp (`ramp_phaseLocked_iff`), and every ramp
 model, whatever its selected phase, is unstable (`mem_den_unstable_of_not_phaseLocked`): the PLL
 loses lock. -/
+@[tmio TM]
 @[powerlib_domain] theorem frequencyRampBoundary (m : Model) (ρ : ℝ)
     (hρ : ρ / m.Ki ∉ Set.range m.h) :
     connection% (m.ramp ρ ∈ family.den (.flow .unstable)) := by
@@ -611,6 +629,7 @@ private theorem ramp_mem_realize_iff (m : Model) (ρ : ℝ) :
 (`exact_locallyExponentiallyStable`): it holds exactly at a locked phase, `h(θ*) = ρ / K_i` (so
 `ρ / K_i` lies in the range of `h`), with both slope-gain products at `θ*` negative — the tilted
 detector `h − ρ/K_i` has the slope of `h`. -/
+@[tmio TM]
 @[powerlib_domain] theorem ramp_mem_den_locallyExponentiallyStable_iff (m : Model) (ρ : ℝ) :
     connection% (m.ramp ρ ∈ family.den (.flow .locallyExponentiallyStable) ↔
       m.h m.θ = ρ / m.Ki ∧ m.Kp * deriv m.h m.θ < 0 ∧ m.Ki * deriv m.h m.θ < 0) := by
@@ -622,6 +641,7 @@ detector `h − ρ/K_i` has the slope of `h`. -/
 
 /-- At a hyperbolic slope (both slope-gain products nonzero) local asymptotic stability of a ramp
 model is decided in the same way (`mem_den_las_iff_of_nondegenerate`). -/
+@[tmio TM]
 @[powerlib_domain] theorem ramp_mem_den_las_iff_of_nondegenerate (m : Model) (ρ : ℝ)
     (hKp : m.Kp * deriv m.h m.θ ≠ 0) (hKi : m.Ki * deriv m.h m.θ ≠ 0) :
     connection% (m.ramp ρ ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
@@ -647,6 +667,7 @@ def linearModel : Model := ⟨fun x => -x, 1, 1, 0, 0, contDiff_id.neg⟩
 
 /-- The linear detector is globally exponentially stable (the linear hub), with no requirement
 translating the global sentence. -/
+@[tmio TM]
 @[powerlib_domain] theorem linearModel_mem_den_globallyExponentiallyStable :
     connection% (linearModel ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -656,6 +677,7 @@ translating the global sentence. -/
 
 /-- The translation of global exponential stability is sound but not exact: its requirement space
 is empty while the linear detector satisfies the sentence. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_globallyExponentiallyStable :
     connection% (¬ family.Exact (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -699,6 +721,7 @@ def cubicEnergy (z : ℝ²) : ℝ := 1 / 4 * (z 0) ^ 4 + 1 / 2 * (z 1) ^ 2
 
 /-- The PLL energy is a Lyapunov function of the cubic detector, hence it is Lyapunov stable
 although its linearization is not Hurwitz. -/
+@[tmio TM]
 @[powerlib_domain] theorem cubicDetector_mem_den_lyapunovStable :
     connection% (cubicDetector ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -728,6 +751,7 @@ although its linearization is not Hurwitz. -/
 
 /-- The local translations are sound but not exact: the cubic detector is Lyapunov stable at a
 phase-locked point with zero slope, which meets no slope-gain requirement. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -773,6 +797,7 @@ open scoped Pointwise in
 decreases at the rate `θ⁶`, and the only solution along which `θ ≡ 0` is the locked point (then
 `θ̇ = η` vanishes too). Its Jacobian `[[0, 1], [0, 0]]` is nilpotent, so the linearization decides
 nothing. -/
+@[tmio TM]
 @[powerlib_domain] theorem cubicDetector_mem_den_locallyAsymptoticallyStable :
     connection% (cubicDetector ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   have hls := cubicDetector_mem_den_lyapunovStable
@@ -845,6 +870,7 @@ nothing. -/
 /-- The local asymptotic translation is sound but not exact: the cubic detector is locally
 asymptotically stable at a phase-locked point with zero slope, which meets no slope-gain
 requirement. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -859,6 +885,7 @@ def offEquilibrium : Model := ⟨fun _ => 1, 0, 0, 0, 0, contDiff_const⟩
 
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it
 (`mem_den_unstable_of_not_phaseLocked`). -/
+@[tmio TM]
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) :=
   mem_den_unstable_of_not_phaseLocked _ (by simp [Meets, offEquilibrium])
@@ -866,6 +893,7 @@ def offEquilibrium : Model := ⟨fun _ => 1, 0, 0, 0, 0, contDiff_const⟩
 /-- The instability translation is sound but not exact: instability is the failure of Lyapunov
 stability, which every non-equilibrium point satisfies, while the translation asks for a
 phase-locked point. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement

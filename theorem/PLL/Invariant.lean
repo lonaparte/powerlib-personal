@@ -101,6 +101,7 @@ gains `(a, b)` and offset `−Δω`. -/
 /-- `(θ_err, ξ)` model (T-invariant-coordinates §1.2, T-gfl-multiscale §1.3): for
 `a = V K_p > 0`, `b = V K_i > 0` the equilibria `(2kπ, −Δω/b)` are locally exponentially
 stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem xi_mem_den_locallyExponentiallyStable {a b : ℝ} (ha : 0 < a)
     (hb : 0 < b) (Δω : ℝ) (k : ℤ) :
     connection% (srf 1 a b (-Δω) (2 * k * Real.pi) ∈
@@ -108,6 +109,7 @@ stable. -/
   srf_mem_den_locallyExponentiallyStable_inPhase (by simpa using ha) (by simpa using hb) (-Δω) k
 
 /-- `(θ_err, ξ)` model: for `b > 0` the equilibria `((2k+1)π, −Δω/b)` are saddles, unstable. -/
+@[tmio TM]
 @[powerlib_domain] theorem xi_mem_den_unstable_antiPhase {a b : ℝ} (hb : 0 < b) (Δω : ℝ)
     (k : ℤ) :
     connection% (srf 1 a b (-Δω) ((2 * k + 1) * Real.pi) ∈

@@ -288,6 +288,7 @@ end Template
 variable {X Y Q : Type}
 
 /-- A family of port systems and its zero-input family have the same flow denotations. -/
+@[tmio TM]
 @[powerlib_domain] theorem den_flow_zeroInputFamily {F : Family X Q n p}
     {sys : X → Port.System n p} (hF : F.IsPort sys) (P : Flow.Property) :
     connection% ((zeroInputFamily F sys).den (.flow P) = F.den (.flow P)) := by
@@ -298,6 +299,7 @@ variable {X Y Q : Type}
 
 /-- The flow denotations of the Euler implementations of a family of port systems are those of
 the autonomous Euler implementations of its zero-input family. -/
+@[tmio TM]
 @[powerlib_domain] theorem eulerPortFamily_den_flow (F : Family X Q n p)
     (sys : X → Port.System n p) (design : Y → X) (step : Y → ℝ) (P : Flow.Property) :
     connection% ((eulerPortFamily F sys design step).den (.flow P) =
@@ -312,6 +314,7 @@ variable {F : Family X Q n p} {sys : X → Port.System n p} {design : Y → X} {
 
 /-- The realization of a flow sentence by the Euler implementations of a family of port systems
 is sound exactly when it is for the autonomous Euler implementations of its zero-input family. -/
+@[tmio MI]
 @[powerlib_domain] theorem eulerPorts_realizationSoundUnder_flow_iff (hF : F.IsPort sys)
     {Δ : Set Q} {P : Flow.Property} :
     connection% ((eulerPorts F sys design step).RealizationSoundUnder Δ (.flow P) ↔
@@ -330,6 +333,7 @@ family of port systems, a locally exponentially stable model whose zero-input fi
 the origin has a step `h₀ > 0` such that every Euler implementation of it with a step in
 `(0, h₀]` is locally exponentially stable (`euler_sound_small_step_local` on the zero-input
 family). -/
+@[tmio MI]
 @[powerlib_domain] theorem eulerPorts_sound_small_step_local (hF : F.IsPort sys) {x : X}
     (hC : ContDiffAt ℝ 1 (sys x).zeroInput 0)
     (hx : x ∈ F.den (.flow .locallyExponentiallyStable)) :
@@ -345,6 +349,7 @@ not sound, from a model `C¹` near its point** (`n > 0`). A locally exponentiall
 whose zero-input field is `C¹` near the origin and whose Euler implementations include
 arbitrarily large steps refutes realization soundness
 (`not_euler_realizationSoundUnder_of_large_step_local` on the zero-input family). -/
+@[tmio MI]
 @[powerlib_domain] theorem not_eulerPorts_realizationSoundUnder_of_large_step_local
     (hF : F.IsPort sys) (hn : 0 < n) {x : X} (hC : ContDiffAt ℝ 1 (sys x).zeroInput 0)
     (hx : x ∈ F.den (.flow .locallyExponentiallyStable))
@@ -364,6 +369,7 @@ arbitrarily large steps refutes realization soundness
 /-- **Explicit Euler implementations are not passive, at any step.** An Euler implementation with
 a positive step of a model whose output, at some state, is a nonzero `v` whatever the input, is
 not passive (`not_passive_eulerSystem`). -/
+@[tmio TM]
 @[powerlib_domain] theorem eulerPortFamily_not_mem_den_passive {y : Y} (hh : 0 < step y)
     {x₀ : ℝⁿ} {v : Fin p → ℝ} (hv : ∀ u, (sys (design y)).output x₀ u = v) (hv0 : v ≠ 0) :
     connection% (y ∉ (eulerPortFamily F sys design step).den .passive) := by
@@ -375,6 +381,7 @@ not passive (`not_passive_eulerSystem`). -/
 implementation with a positive step of a passive design whose output, at some state, is a
 nonzero `v` whatever the input refutes realization soundness of passivity within every
 requirement context the design meets. -/
+@[tmio MI]
 @[powerlib_domain] theorem not_eulerPorts_realizationSoundUnder_passive {Δ : Set Q} {y : Y}
     (hd : design y ∈ F.den .passive) (hΔ : design y ∈ realize F.meets Δ) (hh : 0 < step y)
     {x₀ : ℝⁿ} {v : Fin p → ℝ} (hv : ∀ u, (sys (design y)).output x₀ u = v) (hv0 : v ≠ 0) :
@@ -389,6 +396,7 @@ requirement context the design meets. -/
 /-- **The integrator is a witness.** In a family of one-state, one-port systems, an
 implementation with a positive step whose design is the integrator `ẋ = u`, `y = x` (passive)
 refutes realization soundness of passivity (`not_passive_eulerSystem_integrator`). -/
+@[tmio MI]
 @[powerlib_domain] theorem not_eulerPorts_realizationSoundUnder_passive_of_integrator
     {F : Family X Q 1 1} {sys : X → Port.System 1 1} (hF : F.IsPort sys) (y : Y)
     (hx : sys (design y) = integrator.system) (hy : 0 < step y) :
@@ -441,6 +449,7 @@ variable {plant : X → Linear.Plant n p}
 /-- **The linear reading of the Euler implementations.** For plants, the attractive sentences and
 sampled contraction of the Euler implementations denote those with a Schur stable forward Euler
 matrix `I + h A`. -/
+@[tmio TM]
 @[powerlib_domain] theorem eulerPortFamily_den_linear {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% ((eulerPortFamily F (fun x => (plant x).system) design step).den (.flow P) =
@@ -455,6 +464,7 @@ matrix `I + h A`. -/
 /-- **Completeness at every step, for linear families.** Every Euler implementation with a
 positive step that satisfies an attractive sentence (or sampled contraction) realizes only models
 satisfying it: its multipliers `1 + hλ` lie in the unit disk, which forces `Re λ < 0`. -/
+@[tmio MI]
 @[powerlib_domain] theorem eulerPorts_realizationCompleteUnder_linear
     (hF : F.IsLinear plant) (hstep : ∀ y, 0 < step y) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) (Δ : Set Q) :
@@ -474,6 +484,7 @@ satisfying it: its multipliers `1 + hλ` lie in the unit disk, which forces `Re 
 its Euler implementations with a step in `(0, h₀]` satisfy an attractive sentence (or sampled
 contraction) exactly when it does: soundness below the step threshold of a Hurwitz model
 (`exists_forwardEuler_schurStable`), completeness at every positive step. -/
+@[tmio MI]
 @[powerlib_domain] theorem eulerPorts_exact_small_step_linear (hF : F.IsLinear plant)
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) (x : X) :
     connection% (∃ h₀ : ℝ, 0 < h₀ ∧ ∀ y : Y, design y = x → step y ∈ Set.Ioc (0 : ℝ) h₀ →
@@ -495,6 +506,7 @@ sound** (`n > 0`). A Hurwitz model whose Euler implementations include arbitrari
 refutes realization soundness of every attractive sentence and of sampled contraction: above a
 step threshold every multiplier `1 + hλ` lies outside the closed unit disk
 (`exists_forwardEuler_inverse_schurStable`) and the implementation is unstable. -/
+@[tmio MI]
 @[powerlib_domain] theorem not_eulerPorts_realizationSoundUnder_of_large_step_linear
     (hF : F.IsLinear plant) (hn : 0 < n) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) {x : X} (hx : IsHurwitz (plant x).A)

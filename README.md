@@ -32,15 +32,38 @@ Mathlib v4.34.1, and Agda 2.8.0. Adapt dependencies to these pins with minimal,
 provenance-preserving changes, and accept them only after the complete build and
 proof checks pass. See [Rules.md](Rules.md) for the six meta-rules and the formal
 requirements, and [Architecture.md](Architecture.md) for generated connections,
-admission and proved completion boundaries. [Layers.md](Layers.md) defines the theory, model,
-implementation and observation layers and how results are placed in them.
+admission and proved completion boundaries. [Layers.md](Layers.md) defines T and M
+knowledge nodes, T–M/M–I/I–O relations, their endpoints and classification queries.
 
 Public model results use `connection% (ordinary proposition)`. The resulting
 `TMIO.Statement` carries a kernel-checked certificate that the conclusion evaluates
-or compares generated connections. Classification annotations are optional search
-metadata. `lake build` and `lake build powerlib` check the actual module inventory,
-including new modules that omit the architecture linter import. Internal library
-targets provide compilation only; they do not run whole-package admission.
+or compares generated connections. Each public typed connection theorem in
+`theorem/` also carries exactly one `@[tmio T]`, `@[tmio M]`, `@[tmio TM]`,
+`@[tmio MI]` or `@[tmio IO]` attribute. These source attributes are the only
+classification source; no separate catalog is maintained. The current review
+covers 813 public connections, not all library theorems or all T/M content.
+Foundation/domain annotations remain optional, independent presentation metadata.
+The attribute checks enforce theorem targets, allowed kinds and unique assignment;
+they do not prove semantic classification or change mathematical admission.
+
+For source queries without starting Lean or building dependencies, run:
+
+```sh
+python3 tools/tmio_classification.py check
+python3 tools/tmio_classification.py list TM
+python3 tools/tmio_classification.py show powerlib.LTI.sampled_exact_iff
+```
+
+In Lean, import `theorem.TMIO.KnowledgeIndex` alongside the desired theorem
+modules. `#tmio_edges` shows counts, `#tmio_edges TM` lists one class (arguments:
+`T`, `M`, `TM`, `MI`, `IO`), and `#tmio_check` checks classification coverage of
+the currently imported public typed connections. Unimported modules are excluded.
+
+`lake build` and `lake build powerlib` run the source preflight and check the
+actual complete module inventory, including new modules that omit the architecture
+linter import. Internal library targets provide compilation only; they do not run
+whole-package admission. See [Architecture.md](Architecture.md#validation) for
+the current verification scope and the historical full-build results.
 
 ## Dependencies
 

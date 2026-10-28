@@ -276,6 +276,7 @@ def toPortHamiltonian (J R : Matrix (Fin n) (Fin n) ℝ) (g : Matrix (Fin n) (Fi
 
 /-- Every constant-coefficient pH system with `Q ≻ 0`, `R ⪰ 0` is passive (storage
 `½ xᵀ Q x`). -/
+@[tmio TM]
 @[powerlib_domain] theorem toPortHamiltonian_mem_den_passive {J R : Matrix (Fin n) (Fin n) ℝ}
     (g : Matrix (Fin n) (Fin m) ℝ) {Q : Matrix (Fin n) (Fin n) ℝ} (hJ : Jᵀ = -J)
     (hR : R.PosSemidef) (hQ : Q.PosDef) :
@@ -284,6 +285,7 @@ def toPortHamiltonian (J R : Matrix (Fin n) (Fin n) ℝ) (g : Matrix (Fin n) (Fi
 
 /-- Every unforced constant-coefficient pH system with `Q ≻ 0`, `R ⪰ 0` is Lyapunov stable at
 the origin. -/
+@[tmio TM]
 @[powerlib_domain] theorem toPortHamiltonian_mem_den_lyapunovStable
     {J R : Matrix (Fin n) (Fin n) ℝ} (g : Matrix (Fin n) (Fin m) ℝ)
     {Q : Matrix (Fin n) (Fin n) ℝ} (hJ : Jᵀ = -J) (hR : R.PosSemidef) (hQ : Q.PosDef) :

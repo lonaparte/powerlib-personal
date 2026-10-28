@@ -555,6 +555,7 @@ private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
 /-! ### Soundness of the translation -/
 
 /-- No model has `a₀ > 0` and `a₀ < 0`: the whole requirement language is inconsistent. -/
+@[tmio M]
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
@@ -567,6 +568,7 @@ its semantics connection. The Routh conditions at an equilibrium prove the local
 `a₀ < 0` proves instability (LeanForControl's linearization theorems for the smooth `regField`,
 transported to the physical field by locality and moved to the origin), and passivity holds
 without requirement. -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -583,6 +585,7 @@ without requirement. -/
     exact unstable_of_meets (hm .equilibrium (by simp)) (hm .constNeg (by simp))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
@@ -591,6 +594,7 @@ without requirement. -/
 
 /-- Four-state GFL (PLL + dc-voltage loop): the quartic Routh–Hurwitz conditions on the
 coefficients of `det(λI − A₀)` place the operating point in local exponential stability. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_routh (p : Params)
     (hC : p.C ≠ 0) {θ0 : ℝ} (heq : IsEq p θ0) (h3 : 0 < a3 p θ0) (h1 : 0 < a1 p θ0)
     (h0 : 0 < a0 p θ0) (hg : a1 p θ0 ^ 2 + a3 p θ0 ^ 2 * a0 p θ0 < a3 p θ0 * a2 p θ0 * a1 p θ0) :
@@ -600,6 +604,7 @@ coefficients of `det(λI − A₀)` place the operating point in local exponenti
 
 /-- Four-state GFL: `cos 2θ₀ < 0` (operating angle beyond 45°) gives `a₀ = det A₀ < 0`, a
 positive real eigenvalue, and instability of the physical field, for all positive `C, k_i, k_iv`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable_of_cos_two_mul_neg (p : Params) (hC : 0 < p.C)
     (hki : 0 < p.ki) (hkiv : 0 < p.kiv) (hV0 : p.V0 ≠ 0) {θ0 : ℝ} (heq : IsEq p θ0)
     (hcos : Real.cos (2 * θ0) < 0) :
@@ -613,6 +618,7 @@ positive real eigenvalue, and instability of the physical field, for all positiv
   nlinarith
 
 /-- Beyond 45° (`cos 2θ₀ < 0`) the operating point is not Lyapunov stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_mem_den_lyapunovStable_of_cos_two_mul_neg (p : Params)
     (hC : 0 < p.C) (hki : 0 < p.ki) (hkiv : 0 < p.kiv) (hV0 : p.V0 ≠ 0) {θ0 : ℝ}
     (heq : IsEq p θ0) (hcos : Real.cos (2 * θ0) < 0) :
@@ -624,6 +630,7 @@ positive real eigenvalue, and instability of the physical field, for all positiv
 /-- Necessary condition (`cos 2θ₀ ≥ 0`, in contrapositive form): if `cos 2θ₀ < 0` the operating
 point is not locally exponentially stable, i.e. local exponential stability forces
 `cos 2θ₀ ≥ 0` (`|θ₀| ≤ 45°` on the principal branch). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_mem_den_locallyExponentiallyStable_of_cos_two_mul_neg (p : Params)
     (hC : 0 < p.C) (hki : 0 < p.ki) (hkiv : 0 < p.kiv) (hV0 : p.V0 ≠ 0) {θ0 : ℝ}
     (heq : IsEq p θ0) (hcos : Real.cos (2 * θ0) < 0) :
@@ -674,6 +681,7 @@ private theorem not_les_regField_of_C_eq_zero {p : Params} (hC : p.C = 0) (x : D
 `det(λI − A₀)` meets the Routh conditions. Converse linearization of the regularized field
 (which is the physical field on a ball around the point) and the quartic Routh–Hurwitz
 criterion; with `C = 0` the frozen dc-bus voltage excludes local exponential stability. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -710,6 +718,7 @@ def offEquilibrium : Model := ⟨⟨0, 0, 0, 0, 0, 0, 0, 1, 1⟩, 0⟩
 
 /-- A point that is not an equilibrium is unstable: the solution through it leaves it (the field
 is the smooth `regField` near the point, `Spectral.mem_den_unstable_of_ne_zero_local`). -/
+@[tmio TM]
 @[powerlib_domain] theorem offEquilibrium_mem_den_unstable :
     connection% (offEquilibrium ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
@@ -723,6 +732,7 @@ is the smooth `regField` near the point, `Spectral.mem_den_unstable_of_ne_zero_l
 /-- The instability translation is sound but not exact: instability is the failure of Lyapunov
 stability, so the non-equilibrium point `offEquilibrium` is unstable, while the translation asks
 for an equilibrium. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
@@ -778,6 +788,7 @@ energy `1 − cos θ + x²/2` of the PLL is conserved, and the dc quadratic `u²
 (`|θ| < 1/2`, `|V − 1| < 1/10`). The cascade coupling `cos θ` therefore needs no separate
 input-to-state argument: the sum is a local Lyapunov function, positive away from the point
 (`Dynamics.pendulumEnergy_pos`). -/
+@[tmio TM]
 @[powerlib_domain] theorem undampedPLL_mem_den_lyapunovStable :
     connection% (undampedPLL ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -837,6 +848,7 @@ input-to-state argument: the sum is a local Lyapunov function, positive away fro
 /-- The Lyapunov translation is sound but not exact: `undampedPLL` is Lyapunov stable, but its
 quartic `(λ² + 1)(λ² + λ + 1)` has the imaginary pair `±i`, so the Routh inequality
 `a₁² + a₃² a₀ < a₃ a₂ a₁` fails with equality (`2 = 2`). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement

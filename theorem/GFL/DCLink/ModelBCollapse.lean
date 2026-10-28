@@ -334,6 +334,7 @@ private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
 
 /-- **Degenerate power balance, positive discriminant: instability.** A selected state on the
 singular plane (`V_dc* = 0`) with `P(x*) = 0` and `H² + 4G > 0` (`planeDisc`) is unstable. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable_of_disc_pos (m : Model) (hx : m.x 2 = 0)
     (hP : m.p.pccP m.x = 0) (hD : 0 < m.p.planeDisc m.x) :
     connection% (m ∈ family.den (.flow .unstable)) := by
@@ -344,6 +345,7 @@ singular plane (`V_dc* = 0`) with `P(x*) = 0` and `H² + 4G > 0` (`planeDisc`) i
 state on the singular plane with `P(x*) = 0`, `I₀ / C_dc ≠ 0` and `H² + 4G < 0` is locally
 exponentially stable in the segment semantics, although it is not an equilibrium: solution
 segments spiral into the plane within a time `O(‖x(t₀) − x*‖)`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable_of_disc_neg (m : Model)
     (hx : m.x 2 = 0) (hP : m.p.pccP m.x = 0) (hI : m.p.I0 / m.p.Cdc ≠ 0)
     (hD : m.p.planeDisc m.x < 0) :
@@ -360,6 +362,7 @@ def degenerateFocus : Model :=
 
 /-- The degenerate focus is locally exponentially stable in the segment semantics (it is not an
 equilibrium: its DC-link component is `I₀ / C_dc = 1`). -/
+@[tmio TM]
 @[powerlib_domain] theorem degenerateFocus_mem_den_locallyExponentiallyStable :
     connection% (degenerateFocus ∈ family.den (.flow .locallyExponentiallyStable)) := by
   have h := mem_den_locallyExponentiallyStable_of_disc_neg degenerateFocus
@@ -379,6 +382,7 @@ selected state with `V_dc* = 0` outside the degenerate set `{P(x*) = 0, I₀ / C
 segment-based local exponential estimate holds exactly when the injection crosses the plane
 (`I₀ / C_dc ≠ 0`) and either the power term drives `V_dc` into the plane (`P / C_dc < 0`) or the
 power balance is degenerate with a focus (`P = 0`, `D < 0`). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable_iff_of_Vdc_eq_zero_of_nondegenerate
     (m : Model) (hx : m.x 2 = 0)
     (hnd : m.p.pccP m.x = 0 → m.p.I0 / m.p.Cdc ≠ 0 → m.p.planeDisc m.x ≠ 0) :

@@ -723,6 +723,7 @@ def ring5 : Model 4 := ⟨Ring5.params, Ring5.θr⟩
 
 /-- **The five-machine ring is locally asymptotically stable** at its selected angles: a strict,
 isolated minimum of the network potential (LaSalle), although the linearization is degenerate. -/
+@[tmio TM]
 @[powerlib_domain] theorem ring5_mem_den_locallyAsymptoticallyStable :
     connection% (ring5 ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -740,6 +741,7 @@ direction `(9, 6, 4, 2)` of the Hessian). Static evidence on the model. -/
 /-- **The local asymptotic translation is not exact for five or more machines** (`n + 5` machines,
 every `n`): a ring of five machines, with unit leaves attached for more machines, is locally
 asymptotically stable at a power-balance point whose reduced Jacobian has a zero eigenvalue. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ (family (n := n + 4)).Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement

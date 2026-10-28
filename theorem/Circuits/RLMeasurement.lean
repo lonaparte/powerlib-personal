@@ -79,6 +79,7 @@ def seed (ε : ℝ) : Seed (Set Sentence) (Set Requirement) (Set Impedance)ᵒ�
 
 /-- A reading certifies a set of models exactly when its accuracy interval lies in the
 resistances all of whose models belong to the set. -/
+@[tmio M]
 @[powerlib_foundation] theorem certify_reading (ε : ℝ) (D : Set Impedance) :
     connection% (certify (reading ε) D =
       {r | Set.Icc (r - ε) (r + ε) ⊆ Set.kernImage Impedance.resistance D}) := by
@@ -97,6 +98,7 @@ resistances all of whose models belong to the set. -/
 
 /-- The possible readings of a set of models, derived from certification by complement: those
 within the accuracy of some model's resistance. -/
+@[tmio M]
 @[powerlib_foundation] theorem predict_reading (ε : ℝ) (D : Set Impedance) :
     connection% (predict (reading ε) D =
       {r | (Set.Icc (r - ε) (r + ε) ∩ Impedance.resistance '' D).Nonempty}) := by
@@ -187,6 +189,7 @@ def window : Sentence → Set ℝ
 /-- The certified symbolic values of every sentence, generated through the compatibility seed: a
 value is certified when its tolerance interval lies in the sentence's window. A positive decay rate
 has an empty window, so with `ε ≥ 0` it is never certified. -/
+@[tmio TM]
 @[powerlib_domain] theorem certified_readings (ε : ℝ) (s : Sentence) :
     connection% (ofDual (generate (seed ε).uTO {s}) =
       {r | Set.Icc (r - ε) (r + ε) ⊆ window s}) := by
@@ -197,6 +200,7 @@ has an empty window, so with `ε ≥ 0` it is never certified. -/
 /-! ## The compatibility closure -/
 
 /-- The candidates of a reading are the semantic map itself. -/
+@[tmio M]
 @[powerlib_foundation] theorem candidates (ε r : ℝ) :
     connection% (ofDual ((seed ε).u₃ (toDual {r})) = {m : Impedance | |r - m.resistance| ≤ ε}) := by
   unfold powerlib.TMIO.Statement
@@ -205,6 +209,7 @@ has an empty window, so with `ε ≥ 0` it is never certified. -/
 
 /-- The generated compatibility closure cannot separate models of equal resistance: the symbolic
 resistance constraint does not identify the inductance or the decay rate. -/
+@[tmio M]
 @[powerlib_domain] theorem closure_resistance (ε : ℝ) (P : (Set Impedance)ᵒᵈ)
     {m m' : Impedance} (h : m.resistance = m'.resistance) :
     connection% (m ∈ ofDual (closure (seed ε).u₃ P) ↔ m' ∈ ofDual (closure (seed ε).u₃ P)) := by
@@ -222,6 +227,7 @@ def recordEdge : sInfHom (Set (Record ℝ))ᵒᵈ (Set ℝ)ᵒᵈ :=
 
 /-- The certified records of any sentences: the chain extended by the analysis edge, generated
 as a composite, certifies a record exactly when it certifies the record's estimate. -/
+@[tmio TM]
 @[powerlib_foundation] theorem certified_records (ε : ℝ) (Φ : Set Sentence) :
     connection% (ofDual (generate ((seed ε).uTO.comp recordEdge) Φ) =
       estimate ⁻¹' ofDual (generate (seed ε).uTO Φ)) := by

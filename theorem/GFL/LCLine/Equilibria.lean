@@ -94,6 +94,7 @@ Static evidence on the model, not a connection conclusion. -/
 
 /-- A4, `|c₀| < A`, `K_p, K_i > 0`: of the two equilibria of every period window, `(θ_s, 0)` is
 locally exponentially stable and `(θ_u, 0)` is unstable. -/
+@[tmio TM]
 @[powerlib_domain] theorem two_equilibria_per_period_den (hwC : p.wC ≠ 0) (hΔ : p.Δ ≠ 0)
     (hVg : 0 < p.Vg) (hKp : 0 < p.Kp) (hKi : 0 < p.Ki) (hc : |p.c0| < p.amp) (a : ℝ) :
     connection% (p.pllModel (stableRoot p.c0 p.amp p.phase a) ∈

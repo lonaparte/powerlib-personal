@@ -377,6 +377,7 @@ def family : Family Circuit Requirement 3 2 := ⟨fun m => m.plant.system, Meets
 
 /-- No circuit has both all poles in the open left half plane and one in the open right half
 plane: the whole requirement language is inconsistent. -/
+@[tmio M]
 @[powerlib_foundation] theorem realize_univ :
     connection% (realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
@@ -398,6 +399,7 @@ plane: the whole requirement language is inconsistent. -/
 connection. Pole stability proves the attractive sentences and sampled contraction, passivity
 proves Lyapunov stability and passivity through the physical energy, losslessness proves
 conservation of that energy, and a right-half-plane pole proves instability. -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -429,6 +431,7 @@ conservation of that energy, and a right-half-plane pole proves instability. -/
 
 /-- On the attractive sentences and sampled contraction the chain agrees with the semantics: pole
 stability is their exact translation, for every circuit, passive or not. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_hurwitz {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
@@ -445,6 +448,7 @@ stability is their exact translation, for every circuit, passive or not. -/
 
 /-- Within passive circuits, conservation is exactly losslessness: a damped passive circuit is
 pole-stable, so its solutions converge. -/
+@[tmio TM]
 @[powerlib_domain] theorem exactUnder_conservative :
     connection% (family.ExactUnder {.passive} (.flow .conservative)) := by
   unfold powerlib.TMIO.Statement
@@ -497,6 +501,7 @@ pole-stable, so its solutions converge. -/
 circuit stores its physical energy; with a negative resistance in one branch, the other branch
 idle and the capacitor exchanging energy with the active branch over one period, the state returns
 to its start while the ports deliver the net energy `-R C² π`. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_passive :
     connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
@@ -574,6 +579,7 @@ to its start while the ports deliver the net energy `-R C² π`. -/
 /-! ## Requirement equivalences -/
 
 /-- The Routh–Hurwitz condition entails pole stability. -/
+@[tmio M]
 @[powerlib_domain] theorem realize_routhHurwitz :
     connection% (realize Meets {.routhHurwitz} ⊆ realize Meets {.poleStable}) := by
   unfold powerlib.TMIO.Statement
@@ -582,6 +588,7 @@ to its start while the ports deliver the net energy `-R C² π`. -/
   exact stable_of_routhHurwitz m hm
 
 /-- Within passive circuits, pole stability is exactly damping. -/
+@[tmio M]
 @[powerlib_domain] theorem realize_passive_damped :
     connection% (realize Meets {.passive, .damped} = realize Meets {.passive, .poleStable}) := by
   unfold powerlib.TMIO.Statement
@@ -635,6 +642,7 @@ def balancedEnergy : Matrix (Fin 3) (Fin 3) ℝ := !![2, 2, 1; 2, 3, 2; 1, 2, 2]
 
 /-- Passivity is a sound but not exact translation of Lyapunov stability: the negative-resistance
 circuit is pole-stable, hence Lyapunov stable, without being passive. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -651,6 +659,7 @@ circuit is pole-stable, hence Lyapunov stable, without being passive. -/
 /-- Losslessness is a sound but not exact translation of conservation: the balanced circuit
 conserves the energy `balancedEnergy` with both resistances nonzero. Passivity is the context in
 which the translation is exact (`exactUnder_conservative`). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_conservative :
     connection% (¬ family.Exact (.flow .conservative)) := by
   unfold powerlib.TMIO.Statement
@@ -674,6 +683,7 @@ def jordanCircuit : Circuit :=
 
 /-- The right-half-plane pole translation misses polynomial growth at a zero Jordan block.
 This is a proved failure of exactness, not an unfinished equivalence. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_unstable :
     connection% (¬ family.Exact (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement

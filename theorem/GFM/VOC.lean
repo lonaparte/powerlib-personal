@@ -589,6 +589,7 @@ private theorem decay_of (hκ : 0 ≤ a.κv) {r : ℝ} (hr : r + a.c ≤ 0) :
 /-! ### Soundness of the translation -/
 
 /-- The whole requirement language is inconsistent: the origin cannot both grow and decay. -/
+@[tmio M]
 @[powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
@@ -601,6 +602,7 @@ private theorem decay_of (hκ : 0 ≤ a.κv) {r : ℝ} (hr : r + a.c ≤ 0) :
 local sentences and instability, the decaying energy `|v|²` for the global sentences, sampled
 contraction and decay rates, and passivity without requirement (the global table,
 `Spectral.chain_le_semantics_of_globalTable`). -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -620,6 +622,7 @@ contraction and decay rates, and passivity without requirement (the global table
   · exact unstable_of (ha .growing rfl)
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
@@ -627,6 +630,7 @@ contraction and decay rates, and passivity without requirement (the global table
 /-- The local exponential translation is exact: the origin of the no-load AHO is locally
 exponentially stable exactly when it decays, `c = κ_v v*² − σ < 0`. Converse linearization: local
 exponential stability forces a Hurwitz Jacobian `[[c, −ω_s], [ω_s, c]]` (trace `2c`). -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_locallyExponentiallyStable :
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -646,6 +650,7 @@ exponential stability forces a Hurwitz Jacobian `[[c, −ω_s], [ω_s, c]]` (tra
 /-! ### Members -/
 
 /-- Growth at the origin (`σ < κ_v v*²`) makes the origin unstable. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable (a : AHO) (hc : 0 < a.c) :
     connection% (a ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
@@ -653,18 +658,21 @@ exponential stability forces a Hurwitz Jacobian `[[c, −ω_s], [ω_s, c]]` (tra
 
 /-- Under the standing assumptions `κ_v > 0`, `σ < κ_v v*²` of the limit-cycle results, the
 origin of the no-load AHO is unstable. -/
+@[tmio TM]
 @[powerlib_domain] theorem Admissible.mem_den_unstable (h : a.Admissible) :
     connection% (a ∈ family.den (.flow .unstable)) :=
   AHO.mem_den_unstable a h.c_pos
 
 /-- Decay at the origin (`κ_v v*² < σ`) makes the origin locally exponentially stable, for every
 sign of `κ_v`. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyExponentiallyStable (a : AHO) (hc : a.c < 0) :
     connection% (a ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact family_isAutonomous.mem_den_flow.mpr (les hc)
 
 /-- Decay at the origin with `κ_v ≥ 0` makes the origin globally exponentially stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_globallyExponentiallyStable (a : AHO) (hc : a.c < 0)
     (hκ : 0 ≤ a.κv) : connection% (a ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -672,6 +680,7 @@ sign of `κ_v`. -/
 
 /-- With `κ_v ≥ 0` every solution segment decays at every rate `r ≤ −c` (a growth bound when
 `c > 0`). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_decay (a : AHO) (hκ : 0 ≤ a.κv) {r : ℝ} (hr : r + a.c ≤ 0) :
     connection% (a ∈ family.den (.flow (.decay r))) := by
   unfold powerlib.TMIO.Statement
@@ -726,6 +735,7 @@ private theorem critical_strictLyapunov : IsStrictLyapunovFunction critical.real
       _ ≤ Real.sqrt (max c 0) := Real.sqrt_le_sqrt hx'
 
 /-- The critical AHO is globally asymptotically stable (cubic damping). -/
+@[tmio TM]
 @[powerlib_domain] theorem critical_mem_den_globallyAsymptoticallyStable :
     connection% (critical ∈ family.den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -740,6 +750,7 @@ private theorem critical_not_decaying : ¬ Meets critical .decaying := by
 
 /-- The global asymptotic translation is sound but not exact: the critical AHO is globally
 asymptotically stable without decay at the origin (`c = 0`). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_globallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -748,6 +759,7 @@ asymptotically stable without decay at the origin (`c = 0`). -/
 
 /-- The local asymptotic translation is sound but not exact (the same witness): local asymptotic
 stability is not decided by the linearization. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -759,6 +771,7 @@ stability is not decided by the linearization. -/
     (by simp [family, translate]) critical_not_decaying
 
 /-- The Lyapunov translation is sound but not exact (the same witness). -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -817,6 +830,7 @@ critical gain `c = 0`, the amplitude is cubically damped (`κ_v > 0`, `ṙ = −
 linearization decides `c ≠ 0`, and at `c = 0` the energy `|v|²` obeys `d|v|²/dt = −2 κ_v |v|⁴`
 (strict Lyapunov function for `κ_v > 0`; nondecreasing for `κ_v ≤ 0`, so no nearby solution
 converges, `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_iff (a : AHO) :
     connection% (a ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
       a ∈ {a : AHO | a.c < 0 ∨ (a.c = 0 ∧ 0 < a.κv)}) := by
@@ -846,6 +860,7 @@ converges, `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
 /-- The origin is Lyapunov stable exactly when it decays (`c < 0`) or `c = 0` with `κ_v ≥ 0`
 (the energy `|v|²` does not increase); at `c = 0` with `κ_v < 0` the energy grows at the rate
 `2 |κ_v| |v|⁴` (Chetaev's theorem, `Dynamics.unstable_of_chetaev`). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_lyapunovStable_iff (a : AHO) :
     connection% (a ∈ family.den (.flow .lyapunovStable) ↔
       a ∈ {a : AHO | a.c < 0 ∨ (a.c = 0 ∧ 0 ≤ a.κv)}) := by

@@ -118,17 +118,54 @@ numerical integration scheme (`Numerics/EMT`) are discrete-time implementation f
 continuous-time models. Hybrid behaviour (state-dependent switching) is not yet read; see
 [ImplementationLayer.md](ImplementationLayer.md).
 
-`dependencies/tests/lean/Library/TMIOIndex.lean` is the existing surface-form
-connection diagnostic. It scans typed connection theorems, not all core definitions
-and theorems. Its legacy buckets (`translation`, `denotation`, `requirementSpace`,
-`implementation`, `realization`, `data`, `observation`) are not the five-kind
-knowledge catalog. In particular, its I/O/seed labels cannot establish admitted
-knowledge ownership. It also ignores outer hypotheses when reading the proposition,
-so it cannot by itself decide whether a statement expresses M–I transfer.
+## Source attributes and queries
 
-The five-kind inventory must preserve those hypotheses and relative endpoint roles,
-and include T and M internal content. Until that declaration-level inventory is
-implemented, this diagnostic must not be reported as a complete classification.
+Every reviewed public connection theorem carries one of `@[tmio T]`, `@[tmio M]`,
+`@[tmio TM]`, `@[tmio MI]` or `@[tmio IO]` beside its declaration. The attribute
+is the only source of its classification. There is no separately maintained
+catalog; an index is reconstructed when queried. Classification considers the
+complete statement, including its hypotheses and the relative roles of its
+endpoints.
+
+`theorem/TMIO/KnowledgeKind.lean` defines the attribute and checks its theorem
+target, allowed kind and unique assignment. These checks do not decide whether
+the chosen kind correctly describes the mathematics. Foundation/domain metadata
+and the kernel-checked `connection%` admission contract remain independent.
+
+The current source coverage is 813 public `connection%` theorems in 100 modules:
+T 0, M 50, T–M 668, M–I 88 and I–O 7. This covers the reviewed connections,
+not every definition or theorem. In particular, T 0 does not mean that the library
+lacks general theory; classification of the remaining T and M content is unfinished.
+
+`theorem/TMIO/KnowledgeIndex.lean` queries the attributes in the currently imported
+`theorem.*` modules:
+
+```lean
+import powerlib
+import theorem.TMIO.KnowledgeIndex
+
+#tmio_edges       -- Counts for T, M, T–M, M–I and I–O.
+#tmio_edges TM    -- List T–M connections; other arguments are T, M, MI and IO.
+#tmio_check       -- Require an attribute on every imported public typed connection.
+```
+
+These commands cover only imported modules. A missing attribute is an error;
+unimported modules are outside the query. The default Lake target first performs
+a source check, then checks the environment containing its complete module
+inventory, including modules absent from `powerlib.lean`.
+
+Source queries need only Python and do not start Lean or build dependencies:
+
+```sh
+python3 tools/tmio_classification.py check
+python3 tools/tmio_classification.py list TM
+python3 tools/tmio_classification.py show powerlib.LTI.sampled_exact_iff
+```
+
+The source tool reads explicit attributes and connection declarations. It is a
+preflight and lookup tool; the Lean environment check additionally reads elaborated
+declaration types, including aliases. Neither check proves semantic classification
+or constructs a verified graph of relation endpoints.
 
 ## Models and realization interfaces
 

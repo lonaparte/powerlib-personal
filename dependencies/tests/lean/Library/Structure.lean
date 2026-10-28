@@ -39,9 +39,9 @@ Structural checks of the `theorem/` library beyond admission, read from the buil
 
 The layer table is the structural specification: moving a module across layers or adding a
 directory changes this file. It classifies knowledge (generic mathematics and the framework,
-engineering content), not TMIO layers: an engineering module may organize models (M) or
-implementations under realistic constraints (I), and `Library/TMIOIndex.lean` files its
-connection statements by TMIO layer. -/
+engineering content), independently of the five knowledge kinds. An engineering module may
+contain several kinds; `Library/TMIOIndex.lean` reads each connection theorem's explicit
+`@[tmio T|M|TM|MI|IO]` classification. -/
 
 namespace LibraryStructure
 

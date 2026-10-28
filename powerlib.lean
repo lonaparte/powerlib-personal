@@ -1,4 +1,5 @@
 import theorem.LibrarySearch
+import theorem.TMIO.KnowledgeIndex
 import theorem.Architecture
 import theorem.TMIO.Instances.Finite
 import theorem.Data.Analysis

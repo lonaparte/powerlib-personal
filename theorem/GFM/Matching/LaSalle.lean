@@ -1003,6 +1003,7 @@ condition with equality allowed), with `C_dc, L_s, R_s > 0`, `μ u* v₀ > 0` an
 operating point is Lyapunov stable (`mem_den_lyapunovStable`) and a ball around it lies in the
 LaSalle basin window (`basin`). At `margin = 0` the linearization is not used (the dissipation is
 only semidefinite); the LaSalle set argument on the cylinder covers it. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_locallyAsymptoticallyStable_of_dissipative (m : Model)
     (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : 0 < m.μ * m.ustar * m.v0)
     (hη : m.η ≠ 0) (hδ : 0 ≤ m.margin) :
@@ -1039,6 +1040,7 @@ def boundaryModel : Model :=
   norm_num
 
 /-- The boundary model is locally asymptotically stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem boundaryModel_mem_den_locallyAsymptoticallyStable :
     connection% (boundaryModel ∈ family.den (.flow .locallyAsymptoticallyStable)) :=
   mem_den_locallyAsymptoticallyStable_of_dissipative boundaryModel (by norm_num [boundaryModel])
@@ -1048,6 +1050,7 @@ def boundaryModel : Model :=
 /-- **Boundary**: the local asymptotic translation `{physical, synchronizing, damped, matching}` of
 `MatchingStiffGrid.family` is sound but **not exact** — the boundary model with `margin = 0`
 violates `damped` and is locally asymptotically stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -1531,6 +1534,7 @@ private theorem point_apply (m : Model) :
 
 /-- **Lyapunov stability without synchronizing torque**: with `C_dc, L_s, R_s > 0`,
 `μ u* v₀ = 0` and `margin > 0` the operating point is Lyapunov stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_lyapunovStable_of_no_sync (m : Model) (hC : 0 < m.Cdc)
     (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
@@ -1541,6 +1545,7 @@ private theorem point_apply (m : Model) :
 /-- **Boundary: no local asymptotic stability without synchronizing torque.** With `R_s > 0` and
 `μ u* v₀ = 0` every `(θ, u*, î(θ))` is an equilibrium, so equilibria accumulate at the operating
 point. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_mem_den_locallyAsymptoticallyStable_of_no_sync (m : Model)
     (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) :
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
@@ -1574,6 +1579,7 @@ point. -/
     linarith
 
 /-- The local exponential sentence fails as well. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_mem_den_locallyExponentiallyStable_of_no_sync (m : Model)
     (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) :
     connection% (m ∉ family.den (.flow .locallyExponentiallyStable)) := by
@@ -1595,6 +1601,7 @@ def noSyncModel : Model :=
   norm_num
 
 /-- The model without synchronizing torque is Lyapunov stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem noSyncModel_mem_den_lyapunovStable :
     connection% (noSyncModel ∈ family.den (.flow .lyapunovStable)) :=
   mem_den_lyapunovStable_of_no_sync noSyncModel (by norm_num [noSyncModel])
@@ -1604,6 +1611,7 @@ def noSyncModel : Model :=
 /-- **Boundary**: the Lyapunov translation `{physical, synchronizing, dissipative}` of
 `MatchingStiffGrid.family` is sound but **not exact** — `noSyncModel` violates `synchronizing`
 (`μ u* v₀ = 0`) and is Lyapunov stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
@@ -1716,6 +1724,7 @@ private theorem not_tendsto_critical_of_mu_eq_zero (m : Model) (hR : 0 < m.Rs) (
 
 /-- **Instability (no modulation, `margin = 0`, `η ≠ 0`)**: an arbitrarily small DC offset makes the
 angle drift away linearly. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_unstable_of_mu_eq_zero (m : Model) (hR : 0 < m.Rs)
     (hμ : m.μ = 0) (hm : m.margin = 0) (hη : m.η ≠ 0) :
     connection% (m ∈ family.den (.flow .unstable)) := by
@@ -2524,6 +2533,7 @@ private theorem lyapunovStable_of_no_sync_of_mu_ne_zero (m : Model) (hC : 0 < m.
 
 /-- **Lyapunov stability with a frozen angle and no modulation**: with `C_dc, L_s, R_s > 0`,
 `μ = 0`, `η = 0` and `margin ≥ 0` the operating point is Lyapunov stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_lyapunovStable_of_frozen (m : Model) (hC : 0 < m.Cdc)
     (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ = 0) (hη : m.η = 0) (hδ : 0 ≤ m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
@@ -2534,6 +2544,7 @@ private theorem lyapunovStable_of_no_sync_of_mu_ne_zero (m : Model) (hC : 0 < m.
 /-- **Lyapunov stability without synchronizing torque, with modulation**: with
 `C_dc, L_s, R_s > 0`, `μ ≠ 0`, `μ u* v₀ = 0` and `margin ≥ 0` (in particular at `margin = 0`) the
 operating point is Lyapunov stable. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_lyapunovStable_of_no_sync_of_mu_ne_zero (m : Model)
     (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ ≠ 0)
     (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 ≤ m.margin) :
@@ -2546,6 +2557,7 @@ operating point is Lyapunov stable. -/
 `μ u* v₀ = 0`, `margin ≥ 0`): the operating point is Lyapunov stable exactly when
 `margin > 0`, or `μ ≠ 0`, or `η = 0`; the remaining case `margin = 0`, `μ = 0`, `η ≠ 0` is
 unstable (`mem_den_unstable_of_mu_eq_zero`). -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_lyapunovStable_iff_of_no_sync (m : Model) (hC : 0 < m.Cdc)
     (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 ≤ m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable) ↔

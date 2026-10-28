@@ -122,6 +122,7 @@ def momentumCoord : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, p.M]
 
 /-- Reuse of the port-Hamiltonian family: the linearized swing equation is passive from the power
 perturbation `u` to `Δω`, with storage `H`. -/
+@[tmio TM]
 @[powerlib_domain] theorem linearPH_passive (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D)
     (hK : 0 < p.syncCoeff δ₀) :
     connection% (p.linearPH δ₀ hM hD hK ∈ Port.PortHamiltonian.family.den .passive) :=
@@ -129,6 +130,7 @@ perturbation `u` to `Δω`, with storage `H`. -/
 
 /-- Reuse of the port-Hamiltonian family: the unforced linearized swing equation is Lyapunov
 stable for every `D ≥ 0` (including `D = 0`). -/
+@[tmio TM]
 @[powerlib_domain] theorem linearPH_lyapunovStable (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D)
     (hK : 0 < p.syncCoeff δ₀) :
     connection% (p.linearPH δ₀ hM hD hK ∈
@@ -137,6 +139,7 @@ stable for every `D ≥ 0` (including `D = 0`). -/
 
 /-- Every flow sentence of the pH plant is the same sentence of the linearized swing family at
 `(p, δ₀)`: the two families' denotations agree through the momentum coordinates. -/
+@[tmio TM]
 @[powerlib_domain] theorem linearPH_mem_den_flow_iff (δ₀ : ℝ) (hM : 0 < p.M) (hD : 0 ≤ p.D)
     (hK : 0 < p.syncCoeff δ₀) (P : Flow.Property) :
     connection% (p.linearPH δ₀ hM hD hK ∈ Port.PortHamiltonian.family.den (.flow P) ↔

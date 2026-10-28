@@ -315,6 +315,7 @@ private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contrac
   Spectral.linear_den (U := Unstable) (fun p => (isHurwitz_iff_stable p).symm) hP
 
 /-- Every translation of the mismatched family is sound. -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -323,6 +324,7 @@ private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contrac
 
 /-- The attractive sentences and sampled contraction of the mismatched loop are carved out
 exactly by positive monic coefficients. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -330,6 +332,7 @@ exactly by positive monic coefficients. -/
 
 /-- The inductance mismatch never changes the stability region: the attractive denotation of the
 mismatched family is the PI family's, pulled back along `base`. -/
+@[tmio MI]
 @[powerlib_domain] theorem den_eq_base {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.den (.flow P) = base ⁻¹' PIParams.family.den (.flow P)) := by
@@ -342,6 +345,7 @@ mismatched family is the PI family's, pulled back along `base`. -/
 
 /-- With `L > 0` the mismatched decoupled loop satisfies an attractive sentence iff
 `R + Kp > 0 ∧ Ki > 0`, for every `ω` and every mismatch. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_iff (hL : 0 < p.base.L) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (p ∈ family.den (.flow P) ↔
@@ -379,6 +383,7 @@ def implementation :
 
 /-- The attractive sentences and sampled contraction are realized exactly, without constraints:
 a mismatched loop satisfies them exactly when its base PI loop does (`den_eq_base`). -/
+@[tmio MI]
 @[powerlib_domain] theorem realizationExactUnder {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (implementation.RealizationExactUnder ∅ (.flow P)) := by

@@ -56,6 +56,7 @@ variable {X Y Q R : Type} {n m p r : ℕ} {F : Family X Q n p} {G : Family Y R m
 
 /-- A requirement obligation of the spoke from one of the hub: the models of `A` map into the
 models of `B`, which satisfy `s` in the hub, and a model satisfies `s` when its image does. -/
+@[tmio TM]
 @[powerlib_domain] theorem realize_subset_den_of_hub (g : X → Y) {A : Set Q} {B : Set R}
     {s : Sentence} (hreq : ∀ x ∈ realize F.meets A, g x ∈ realize G.meets B)
     (hden : ∀ x ∈ realize F.meets A, g x ∈ G.den s → x ∈ F.den s)
@@ -65,6 +66,7 @@ models of `B`, which satisfy `s` in the hub, and a model satisfies `s` when its 
 
 /-- Soundness passes from the hub to the spoke when the spoke's translated requirements give the
 hub's. -/
+@[tmio TM]
 @[powerlib_domain] theorem sound_of_hub (g : X → Y) {s : Sentence}
     (hreq : ∀ x ∈ realize F.meets (F.translate s), g x ∈ realize G.meets (G.translate s))
     (hden : ∀ x ∈ realize F.meets (F.translate s), g x ∈ G.den s → x ∈ F.den s)
@@ -75,6 +77,7 @@ hub's. -/
 /-- Exactness within a context passes from the hub to the spoke: the spoke's context maps into
 the hub's, and on it the map reads `s` and the translated requirements of the two families
 correspond. -/
+@[tmio TM]
 @[powerlib_domain] theorem exactUnder_of_hub (g : X → Y) {ΔF : Set Q} {ΔG : Set R}
     {s : Sentence} (hΔ : ∀ x ∈ realize F.meets ΔF, g x ∈ realize G.meets ΔG)
     (hden : ∀ x ∈ realize F.meets ΔF, (x ∈ F.den s ↔ g x ∈ G.den s))
@@ -89,6 +92,7 @@ correspond. -/
 
 /-- Exactness of the hub within a context passes to exactness of the spoke when every spoke model
 maps into that context. -/
+@[tmio TM]
 @[powerlib_domain] theorem exact_of_hub (g : X → Y) {ΔG : Set R} {s : Sentence}
     (hΔ : ∀ x, g x ∈ realize G.meets ΔG) (hden : ∀ x, (x ∈ F.den s ↔ g x ∈ G.den s))
     (hreq : ∀ x, (x ∈ realize F.meets (F.translate s) ↔ g x ∈ realize G.meets (G.translate s)))
@@ -101,6 +105,7 @@ maps into that context. -/
 
 /-- For autonomous families a reading of the flow sentences reads every sentence: neither family
 has a port, so both are passive, and neither has an envelope. -/
+@[tmio TM]
 @[powerlib_domain] theorem mem_den_iff_of_flow {F : Family X Q n 0} {G : Family Y R m 0}
     {f : X → EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)}
     {φ : Y → EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin m)} (hF : F.IsAutonomous f)

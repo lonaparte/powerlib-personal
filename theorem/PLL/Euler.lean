@@ -87,6 +87,7 @@ exponentially stable PI-PLL (the SRF detector `h = −V sin` with `V = K_p = K_i
 `θ* = 0`) integrated with a large enough step is not locally exponentially stable: every Euler
 multiplier `1 + hλ` leaves the unit disk
 (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+@[tmio MI]
 @[powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
@@ -128,6 +129,7 @@ generic Euler laws (`Numerics.euler_sound_small_step`). -/
 sound.** The locally exponentially stable model `a = b = 1` (`ẏ = −y`) integrated with a large
 enough step is not locally exponentially stable: its Euler multiplier `1 − h` leaves the unit disk
 (`Numerics.not_euler_realizationSoundUnder_of_large_step`). -/
+@[tmio MI]
 @[powerlib_domain] theorem not_euler_realizationSoundUnder :
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement

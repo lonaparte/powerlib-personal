@@ -310,6 +310,7 @@ private theorem droopDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .co
     (fun _ => (droop_isHurwitz_iff _ _ _ _).symm) hP
 
 /-- Every translation of the droop family is sound. -/
+@[tmio TM]
 @[powerlib_domain] theorem droopChain_le_semantics :
     connection% (∀ P, droopFamily.chain P ≤ droopFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -318,6 +319,7 @@ private theorem droopDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .co
 
 /-- The attractive sentences and sampled contraction of the droop node are carved out exactly by
 `G/C > 0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem droopExact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (droopFamily.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
@@ -325,6 +327,7 @@ private theorem droopDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .co
 
 /-- The droop small-signal DC node with `C > 0` satisfies an attractive sentence (in particular
 exponential stability) iff `G > 0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem droop_mem_den_iff (m : DroopNode) (hC : 0 < m.C) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (m ∈ droopFamily.den (.flow P) ↔ m ∈ {m : DroopNode | 0 < m.G}) := by
@@ -410,12 +413,14 @@ private theorem swing_mem_den_flow {m : SwingModel} {P : Flow.Property} :
     (pt := SwingModel.point) (Spectral.localFamily_isAutonomous _ _ _)
 
 /-- Every translation of the matching family is sound: no member meets a requirement. -/
+@[tmio TM]
 @[powerlib_domain] theorem matchingChain_le_semantics :
     connection% (∀ P, matchingFamily.chain P ≤ matchingFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.local_chain_le_semantics (fun _ h => h.elim) (fun _ h => h.elim)
 
 /-- Every translation of the swing family is sound: no member meets a requirement. -/
+@[tmio TM]
 @[powerlib_domain] theorem swingChain_le_semantics :
     connection% (∀ P, swingFamily.chain P ≤ swingFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
@@ -424,6 +429,7 @@ private theorem swing_mem_den_flow {m : SwingModel} {P : Flow.Property} :
 /-- Matching control is the swing equation: for every behavioural sentence, a matching model
 satisfies it at its selected point exactly when its matched swing model does at the scaled
 point `(θ*, η v*)`. -/
+@[tmio TM]
 @[powerlib_domain] theorem matching_den_eq (P : Flow.Property) :
     connection% (matchingFamily.den (.flow P) =
       MatchingModel.toSwing ⁻¹' swingFamily.den (.flow P)) := by
@@ -445,6 +451,7 @@ point `(θ*, η v*)`. -/
 point with `ω* = 0`, a swing model is the canonical swing model `⟨M, D, τ, k₁, k₂, k₃⟩` of
 `Synchronous.Swing.family` read about `θ*`: the two families agree on every sentence, because the
 two translated fields are equal. -/
+@[tmio TM]
 @[powerlib_domain] theorem swing_mem_den_iff_hub_of_sinusoid (m : SwingModel) (k₁ k₂ k₃ : ℝ)
     (hP : m.Pe = fun θ _ => k₁ + k₂ * Real.sin (θ - k₃)) (hω : m.ω = 0) (s : Sentence) :
     connection% (m ∈ swingFamily.den s ↔
@@ -469,6 +476,7 @@ two translated fields are equal. -/
 positive inertia, a speed-independent sinusoidal law and `ω* = 0`, a swing model is locally
 exponentially stable exactly when the angle is balanced, `k₁ + k₂ sin(θ* − k₃) = τ`, with positive
 damping and synchronizing coefficient `k₂ cos(θ* − k₃) > 0`. -/
+@[tmio TM]
 @[powerlib_domain] theorem swing_mem_den_locallyExponentiallyStable_iff_of_sinusoid
     (m : SwingModel) (k₁ k₂ k₃ : ℝ) (hP : m.Pe = fun θ _ => k₁ + k₂ * Real.sin (θ - k₃))
     (hω : m.ω = 0) (hM : 0 < m.M) :
@@ -504,6 +512,7 @@ A load law `2π`-periodic in the modulation angle — every AC network seen thro
 the matching model the equilibria `(θ* + 2πk, v*)`, so no selected point is globally
 asymptotically stable on `ℝ²`, whatever the gains. The global result of the source is stability
 of the *set* of equilibria (the angle modulo `2π`), which is not a sentence of the library. -/
+@[tmio TM]
 @[powerlib_domain] theorem matching_not_mem_den_globallyAsymptoticallyStable (m : MatchingModel)
     (hper : ∀ θ v, m.ix (θ + 2 * Real.pi) v = m.ix θ v) :
     connection% (m ∉ matchingFamily.den (.flow .globallyAsymptoticallyStable)) := by
@@ -520,6 +529,7 @@ of the *set* of equilibria (the angle modulo `2π`), which is not a sentence of 
     simp [MatchingModel.point] at h0
 
 /-- The same boundary for global exponential stability. -/
+@[tmio TM]
 @[powerlib_domain] theorem matching_not_mem_den_globallyExponentiallyStable (m : MatchingModel)
     (hper : ∀ θ v, m.ix (θ + 2 * Real.pi) v = m.ix θ v) :
     connection% (m ∉ matchingFamily.den (.flow .globallyExponentiallyStable)) := by

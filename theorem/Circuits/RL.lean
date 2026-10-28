@@ -308,6 +308,7 @@ is carved out exactly by its requirement — Lyapunov stability and passivity by
 resistance, the attractive sentences and sampled contraction by a positive one, instability by a
 negative one, conservation by a lossless branch, and decay at the rate `a` by a time constant
 `L / R` with `a ≤ R / L`. -/
+@[tmio TM]
 @[powerlib_domain] theorem chain_eq_semantics :
     connection% (family.chain = family.semantics) := by
   unfold powerlib.TMIO.Statement
