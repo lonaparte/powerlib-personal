@@ -122,7 +122,7 @@ run_cmd do
       unless powerlib.Search.allowedAxiom axiomName do
         throwError "TMIO theorem used an unapproved axiom: {name}: {axiomName}"
   for name in #[`powerlib.Circuits.RL.chain_eq_semantics, `powerlib.Circuits.RL.certified_readings,
-      `powerlib.Circuits.RL.certified_records, `powerlib.Circuits.RL.closure_resistance,
+      `powerlib.Circuits.RL.closure_resistance,
       `powerlib.Circuits.LCL.chain_le_semantics, `powerlib.Circuits.LCL.exact_hurwitz,
       `powerlib.Circuits.LCL.exactUnder_conservative, `powerlib.Circuits.LCL.realize_passive_damped,
       `powerlib.Circuits.LCL.exact_passive,
@@ -134,6 +134,10 @@ run_cmd do
       `powerlib.Nonlinear.Polynomial2.not_exact_asymptotic] do
     unless powerlib.Registry.kindOf? env name == some .domain do
       throwError "A family conclusion is not a classified domain theorem: {name}"
+  -- Connection shape does not override explicit presentation metadata.
+  unless powerlib.Registry.kindOf? env `powerlib.Circuits.RL.certified_records ==
+      some .foundation do
+    throwError "A connection overrode its explicit foundation classification"
   for name in #[`powerlib.TMIO.generate, `powerlib.TMIO.realize, `powerlib.TMIO.Seed,
       `powerlib.TMIO.relationalSeed, `powerlib.TMIO.transport, `powerlib.TMIO.ExactUnder,
       `powerlib.Family.chain, `powerlib.Family.semantics, `powerlib.Family.Exact] do

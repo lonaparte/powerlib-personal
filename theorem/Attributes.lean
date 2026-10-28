@@ -11,8 +11,8 @@ Scope.
 * Lean meta-programming, no mathematics: the attributes `powerlib_foundation` and
   `powerlib_domain`, persisted by Lean's enum attributes; a theorem is classified once (a second,
   different classification is an error), and only theorems can be classified.
-* A theorem whose statement is a typed `TMIO.Statement` (a connection statement) is a `domain`
-  theorem without either attribute.
+* Classification comes only from the explicit attributes. A typed `TMIO.Statement` (a
+  connection statement) does not imply either classification or override an explicit one.
 * Source ownership: first-party modules are those rooted at `theorem`, `dependencies`, `example`
   and `powerlib`, plus sources of an isolated integration profile under
   `dependencies/integrations`; imported upstream declarations and downstream modules are not
@@ -25,8 +25,8 @@ registry through `kindOf?`, `isFirstPartyModule`, `isIntegrationSource` and `aut
 Results.
 * `TheoremKind` (`foundation`, `domain`), `TheoremKind.label`, the attribute registry
   `theoremKinds`.
-* Queries: `kindOf?` (the classification of a declaration), `theoremNames` (every classified
-  theorem, optionally of one kind, including the unannotated connection statements).
+* Queries: `kindOf?` (the explicit classification of a declaration), `theoremNames` (every
+  explicitly classified theorem, optionally of one kind).
 * Source ownership: `isFirstPartyModule`, `isIntegrationSource`.
 * Authored theorems: `authoredTheorems` (the theorems of the current module authored in a list of
   commands, matched by name and selection range, without generated auxiliaries),
@@ -71,15 +71,8 @@ initialize theoremKinds : EnumAttributes TheoremKind ← do
   registry.set (some attributes)
   pure attributes
 
-private partial def statementType (type : Expr) : Bool :=
-  if type.getAppFn.isConstOf `powerlib.TMIO.Statement then true
-  else match type with
-    | .forallE _ _ body _ => statementType body
-    | _ => false
-
 def kindOf? (env : Environment) (name : Name) : Option TheoremKind :=
-  if (env.find? name).any (fun info => statementType info.type) then some .domain
-  else lookupKind? theoremKinds env name
+  lookupKind? theoremKinds env name
 
 -- Whole-registry queries belong at command boundaries, outside a pending proof.
 def theoremNames (env : Environment) (kind : Option TheoremKind := none) : Array Name := Id.run do
@@ -91,12 +84,6 @@ def theoremNames (env : Environment) (kind : Option TheoremKind := none) : Array
   for (name, _) in entries.toList do
     if kind.isNone || kind == kindOf? env name then
       names := names.push name
-  -- Typed public claims are discoverable without either metadata annotation.
-  for (name, info) in env.constants do
-    if let .thmInfo _ := info then
-      if statementType info.type && (kind.isNone || kind == some .domain) &&
-          !names.contains name then
-        names := names.push name
   return names.qsort Name.quickLt
 
 end powerlib.Registry

@@ -6,14 +6,17 @@ open powerlib powerlib.TMIO
 
 namespace ConnectionAdmission
 
--- No classification annotation is needed for a real public connection theorem.
+-- A real public connection is admitted without assigning a presentation classification.
 theorem passive (m : Circuits.RL.Impedance) (h : 0 ≤ m.resistance) :
     connection% (m ∈ Circuits.RL.family.den .passive) := by
   unfold Statement
   exact Circuits.RL.family_isLinear.mem_den_passive (Circuits.RL.kyp m h)
 
--- The annotation cannot change the theorem's structurally inferred role.
-@[powerlib_foundation] theorem misleading_label (m : Circuits.RL.Impedance)
+-- Explicit metadata is preserved; admission still checks the actual statement.
+@[powerlib_foundation] theorem foundation_connection (m : Circuits.RL.Impedance)
+    (h : 0 ≤ m.resistance) : connection% (m ∈ Circuits.RL.family.den .passive) := passive m h
+
+@[powerlib_domain] theorem domain_connection (m : Circuits.RL.Impedance)
     (h : 0 ≤ m.resistance) : connection% (m ∈ Circuits.RL.family.den .passive) := passive m h
 
 -- Private fixtures are implementation evidence, never public results.
@@ -60,7 +63,8 @@ private theorem packed : AllPassive := fun m h => raw m h
 
 -- The grammar extension. A claim about arbitrary families of `Type`: type parameters of the
 -- theorem, or binders over `Type` inside the claim (`allType`).
-theorem genericPassive {X Q : Type} (F : Family X Q 1 0) (x : X) (h : x ∈ F.den .passive) :
+@[powerlib_foundation] theorem genericPassive {X Q : Type} (F : Family X Q 1 0) (x : X)
+    (h : x ∈ F.den .passive) :
     connection% (x ∈ F.den .passive) := by
   unfold Statement
   exact h
@@ -92,17 +96,27 @@ run_cmd do
         ``rawHypothesis, ``hiddenInput, ``freshRaw, ``packed] do
       if (← Architecture.publicTypeRejection ctx models (← getConstInfo name).type).isNone then
         throwError "Public admission accepted its rejection fixture: {name}"
-    for name in #[``passive, ``misleading_label, ``genericPassive, ``allTypeClaim,
-        ``conditionIff, ``guardedExists] do
+    for name in #[``passive, ``foundation_connection, ``domain_connection, ``genericPassive,
+        ``allTypeClaim, ``conditionIff, ``guardedExists] do
       if let some reason ← Architecture.declarationRejection ctx models name then
         throwError "Public admission rejected its positive fixture: {name}: {reason}"
-  for name in #[``passive, ``misleading_label, ``genericPassive, ``allTypeClaim, ``conditionIff,
-      ``guardedExists] do
-    unless Registry.kindOf? env name == some .domain &&
-        (Registry.theoremNames env (some .domain)).contains name &&
-        !(Registry.theoremNames env (some .foundation)).contains name do
-      throwError "Connection discovery trusted metadata instead of the proposition type"
-  logInfo "POWERLIB_TYPED_ADMISSION_OK: unlabeled and mislabeled positive claims; 9 rejection controls"
+  let classified := Registry.theoremNames env
+  let foundations := Registry.theoremNames env (some .foundation)
+  let domains := Registry.theoremNames env (some .domain)
+  for name in #[``passive, ``allTypeClaim, ``conditionIff, ``guardedExists] do
+    unless (Registry.kindOf? env name).isNone && !classified.contains name &&
+        !foundations.contains name && !domains.contains name do
+      throwError "An unannotated connection acquired a presentation classification: {name}"
+  for name in #[``foundation_connection, ``genericPassive] do
+    unless Registry.kindOf? env name == some .foundation && classified.contains name &&
+        foundations.contains name && !domains.contains name do
+      throwError "A connection overrode its explicit foundation classification: {name}"
+  unless Registry.kindOf? env ``domain_connection == some .domain &&
+      classified.contains ``domain_connection && domains.contains ``domain_connection &&
+      !foundations.contains ``domain_connection do
+    throwError "An explicitly classified domain connection was lost"
+  logInfo m!"POWERLIB_TYPED_ADMISSION_OK: unclassified, foundation and domain connections; \
+    9 rejection controls"
 
 -- The grammar extension admits side conditions only as the characterizing side of an iff and as
 -- the guard of an existential, comparisons of numbers only, and binders over `Type` only as

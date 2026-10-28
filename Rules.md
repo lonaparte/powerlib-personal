@@ -152,13 +152,17 @@ system. Foundation evidence must not be presented as a domain conclusion.
 
 `@[powerlib_foundation]` and `@[powerlib_domain]` are optional discovery and
 presentation metadata. They do not grant admission or exempt a declaration from
-checking. A typed `TMIO.Statement` is discovered as a domain result without either
-annotation. Simp, ext and Aesop registration remain independent decisions.
+checking. Only an explicit annotation assigns one of these classifications: a typed
+`TMIO.Statement` neither implies domain nor overrides foundation. Unannotated
+connection statements remain unclassified in this registry; connection discovery
+and admission still inspect their types independently. Simp, ext and Aesop
+registration remain independent decisions.
 
 Generic static lemmas, semantic implications and certificate arithmetic are
 foundation results. Generic connection laws — laws about arbitrary families stated
-as connections, such as the explicit Euler template or the hub transfer laws — are
-connection statements over families of `Type`, stated once; an instance applies
+as connections, such as the explicit Euler template or the hub transfer laws — may
+remain foundation results. These connection statements over families of `Type`
+are stated once; an instance applies
 them to its family's static evidence (autonomy, smoothness of its field) and
 publishes only what carries its own content. A model family's public engineering
 conclusion must be a domain theorem on a connection: an evaluation of its
