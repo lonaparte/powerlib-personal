@@ -84,7 +84,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- A smooth cutoff of a `C¹` field: globally Lipschitz and equal to the field within distance one
 of a given point. -/
-@[powerlib_foundation] theorem exists_lipschitz_cutoff_near {f : ℝⁿ → ℝⁿ} (hf : ContDiff ℝ 1 f)
+@[tmio T, powerlib_foundation] theorem exists_lipschitz_cutoff_near {f : ℝⁿ → ℝⁿ} (hf : ContDiff ℝ 1 f)
     (x_eq : ℝⁿ) :
     ∃ (g : ℝⁿ → ℝⁿ) (K : NNReal), LipschitzWith K g ∧ ∀ x, dist x x_eq ≤ 1 → g x = f x := by
   obtain ⟨χ, -, hχ, K, hK⟩ := Flow.exists_lipschitz_cutoff hf (‖x_eq‖ + 1)
@@ -97,7 +97,7 @@ of a given point. -/
 
 /-- A solution of the cutoff field that stays within distance one of the point is a solution
 segment of the field itself. -/
-@[powerlib_foundation] theorem isTrajectoryOn_of_cutoff {f g : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem isTrajectoryOn_of_cutoff {f g : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
     (hg : ∀ x, dist x x_eq ≤ 1 → g x = f x) {ψ : ℝ → ℝⁿ} {t₀ t₁ : ℝ}
     (hψ : IsIntegralCurveOn ψ (fun _ x => g x) (Ici t₀))
     (hin : ∀ t ∈ Icc t₀ t₁, dist (ψ t) x_eq ≤ 1) : IsTrajectoryOn ψ f t₀ t₁ := by
@@ -109,7 +109,7 @@ segment of the field itself. -/
 
 /-- A Lyapunov stable point of a `C¹` field is an equilibrium: the solution through it exists for
 a short time and stays in every neighbourhood of the point. -/
-@[powerlib_foundation] theorem isEquilibrium_of_lyapunovStable {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem isEquilibrium_of_lyapunovStable {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
     (hf : ContDiff ℝ 1 f) (h : LyapunovStable f x_eq) : IsEquilibrium f x_eq := by
   obtain ⟨g, K, hK, hg⟩ := exists_lipschitz_cutoff_near hf x_eq
   obtain ⟨ψ, hψ0, hψ⟩ := Flow.forwardComplete_of_lipschitzWith hK 0 x_eq
@@ -138,19 +138,19 @@ a short time and stays in every neighbourhood of the point. -/
 
 /-- A point of a `C¹` field that is not an equilibrium is unstable: in this semantics instability
 is the failure of Lyapunov stability, and the solution through the point leaves it. -/
-@[powerlib_foundation] theorem unstable_of_ne_zero {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem unstable_of_ne_zero {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
     (hf : ContDiff ℝ 1 f) (h : f x_eq ≠ 0) : Unstable f x_eq :=
   fun hs => h (isEquilibrium_of_lyapunovStable hf hs)
 
 /-- A locally exponentially stable point of a `C¹` field is an equilibrium. -/
-@[powerlib_foundation] theorem isEquilibrium_of_locallyExponentiallyStable {f : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem isEquilibrium_of_locallyExponentiallyStable {f : ℝⁿ → ℝⁿ}
     {x_eq : ℝⁿ} (hf : ContDiff ℝ 1 f) (h : LocallyExponentiallyStable f x_eq) :
     IsEquilibrium f x_eq :=
   isEquilibrium_of_lyapunovStable hf h.lyapunovStable
 
 /-- The exponential estimate of a locally exponentially stable equilibrium of a `C¹` field passes
 to its linearization: every solution of `y' = A y` obeys the same estimate. -/
-@[powerlib_foundation] theorem norm_exp_le_of_locallyExponentiallyStable {f : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem norm_exp_le_of_locallyExponentiallyStable {f : ℝⁿ → ℝⁿ}
     {x_eq : ℝⁿ} (A : Matrix (Fin n) (Fin n) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
     {r C a : ℝ} (hr : 0 < r)
@@ -268,7 +268,7 @@ to its linearization: every solution of `y' = A y` obeys the same estimate. -/
 
 /-- **Converse linearization.** A locally exponentially stable equilibrium of a `C¹` field has a
 Hurwitz Jacobian. -/
-@[powerlib_foundation] theorem isHurwitz_of_locallyExponentiallyStable {f : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem isHurwitz_of_locallyExponentiallyStable {f : ℝⁿ → ℝⁿ}
     {x_eq : ℝⁿ} (A : Matrix (Fin n) (Fin n) ℝ) (hf : ContDiff ℝ 1 f)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
     (h : LocallyExponentiallyStable f x_eq) : IsHurwitz A := by
@@ -282,7 +282,7 @@ Hurwitz Jacobian. -/
 
 /-- Local exponential stability of a point of a `C¹` field is decided by its linearization: the
 point is an equilibrium and the Jacobian is Hurwitz. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_iff_isHurwitz_jacobian
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_iff_isHurwitz_jacobian
     {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} (A : Matrix (Fin n) (Fin n) ℝ) (hf : ContDiff ℝ 1 f)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A) :
     LocallyExponentiallyStable f x_eq ↔ f x_eq = 0 ∧ IsHurwitz A :=
@@ -292,7 +292,7 @@ point is an equilibrium and the Jacobian is Hurwitz. -/
 
 /-- At an equilibrium of a `C¹` field, local exponential stability is equivalent to a Hurwitz
 Jacobian. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_iff_isHurwitz_of_eq
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_iff_isHurwitz_of_eq
     {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} (A : Matrix (Fin n) (Fin n) ℝ) (hf : ContDiff ℝ 1 f)
     (heq : f x_eq = 0)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A) :
@@ -303,7 +303,7 @@ Jacobian. -/
 /-! ## Degenerate linearizations -/
 
 /-- A Hurwitz matrix has no nonzero real null vector. -/
-@[powerlib_foundation] theorem mulVec_ne_zero_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem mulVec_ne_zero_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : IsHurwitz A) {v : Fin n → ℝ} (hv : v ≠ 0) : A *ᵥ v ≠ 0 := by
   intro h0
   have h := hA 0 (fun i => (v i : ℂ))
@@ -319,7 +319,7 @@ Jacobian. -/
     exact this
 
 /-- A Hurwitz matrix acts injectively on `ℝⁿ`. -/
-@[powerlib_foundation] theorem toEuclideanCLM_injective_of_isHurwitz
+@[tmio T, powerlib_foundation] theorem toEuclideanCLM_injective_of_isHurwitz
     {A : Matrix (Fin n) (Fin n) ℝ} (hA : IsHurwitz A) :
     Function.Injective (Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A) := by
   intro x y hxy
@@ -336,7 +336,7 @@ Jacobian. -/
 
 /-- A `C¹` field with a nonzero linear first integral — a linear functional `ℓ` with
 `ℓ (f x) = 0` everywhere — has no locally exponentially stable point: its Jacobian is singular. -/
-@[powerlib_foundation] theorem not_locallyExponentiallyStable_of_firstIntegral
+@[tmio T, powerlib_foundation] theorem not_locallyExponentiallyStable_of_firstIntegral
     {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} (hf : ContDiff ℝ 1 f) (ℓ : ℝⁿ →L[ℝ] ℝ) (hℓ : ℓ ≠ 0)
     (hcons : ∀ x, ℓ (f x) = 0) : ¬ LocallyExponentiallyStable f x_eq := by
   intro h
@@ -366,7 +366,7 @@ Jacobian. -/
 
 /-- A singular Jacobian excludes local exponential stability: at a locally exponentially stable
 point of a `C¹` field the Jacobian is injective. -/
-@[powerlib_foundation] theorem fderiv_injective_of_locallyExponentiallyStable {f : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem fderiv_injective_of_locallyExponentiallyStable {f : ℝⁿ → ℝⁿ}
     {x_eq : ℝⁿ} (hf : ContDiff ℝ 1 f) (h : LocallyExponentiallyStable f x_eq) :
     Function.Injective (fderiv ℝ f x_eq) := by
   set A := (Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ)).symm (fderiv ℝ f x_eq) with hA_def
@@ -385,7 +385,7 @@ that are `C¹` only on an open neighbourhood of the point, e.g. power-balance fi
 `1/V_dc` factor. -/
 
 /-- Converse linearization for a field that is `C¹` on an open neighbourhood of the point. -/
-@[powerlib_foundation] theorem isHurwitz_of_locallyExponentiallyStable_local {f : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem isHurwitz_of_locallyExponentiallyStable_local {f : ℝⁿ → ℝⁿ}
     {x_eq : ℝⁿ} {U : Set ℝⁿ} (hU : IsOpen U) (hx : x_eq ∈ U) (A : Matrix (Fin n) (Fin n) ℝ)
     (hf : ContDiffOn ℝ 1 f U)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
@@ -396,7 +396,7 @@ that are `C¹` only on an open neighbourhood of the point, e.g. power-balance fi
 
 /-- Local exponential stability of a point of a field that is `C¹` on an open neighbourhood holds
 exactly when the point is an equilibrium with a Hurwitz Jacobian. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_iff_isHurwitz_jacobian_local
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_iff_isHurwitz_jacobian_local
     {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} {U : Set ℝⁿ} (hU : IsOpen U) (hx : x_eq ∈ U)
     (A : Matrix (Fin n) (Fin n) ℝ) (hf : ContDiffOn ℝ 1 f U)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A) :
@@ -413,7 +413,7 @@ exactly when the point is an equilibrium with a Hurwitz Jacobian. -/
 
 /-- A direction killed by the Jacobian excludes local exponential stability, for a field that
 is `C¹` on an open neighbourhood of the point. -/
-@[powerlib_foundation] theorem not_locallyExponentiallyStable_of_fderiv_apply_eq_zero_local
+@[tmio T, powerlib_foundation] theorem not_locallyExponentiallyStable_of_fderiv_apply_eq_zero_local
     {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} {U : Set ℝⁿ} (hU : IsOpen U) (hx : x_eq ∈ U)
     (hf : ContDiffOn ℝ 1 f U) {v : ℝⁿ} (hv : v ≠ 0) (hker : fderiv ℝ f x_eq v = 0) :
     ¬ LocallyExponentiallyStable f x_eq := by

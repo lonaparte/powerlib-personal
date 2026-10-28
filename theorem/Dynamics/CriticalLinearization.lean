@@ -36,11 +36,11 @@ def cubicField (c : ℝ) (x : State n) : State n := (c * ‖x‖ ^ 2) • x
 @[tmio T, powerlib_foundation] theorem cubicField_zero (c : ℝ) : cubicField c (0 : State n) = 0 := by
   simp [cubicField]
 
-@[powerlib_foundation] theorem cubicField_contDiff (c : ℝ) : ContDiff ℝ 1 (cubicField (n := n) c) :=
+@[tmio T, powerlib_foundation] theorem cubicField_contDiff (c : ℝ) : ContDiff ℝ 1 (cubicField (n := n) c) :=
   (contDiff_const.mul (contDiff_norm_sq ℝ)).smul contDiff_id
 
 /-- The Jacobian at the origin is the zero matrix. -/
-@[powerlib_foundation] theorem cubicField_jacobian (c : ℝ) :
+@[tmio T, powerlib_foundation] theorem cubicField_jacobian (c : ℝ) :
     fderiv ℝ (cubicField (n := n) c) 0 = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) 0 := by
   have hg : HasFDerivAt (fun x : State n => c * ‖x‖ ^ 2)
       (fderiv ℝ (fun x : State n => c * ‖x‖ ^ 2) 0) 0 :=
@@ -56,14 +56,14 @@ def cubicField (c : ℝ) (x : State n) : State n := (c * ‖x‖ ^ 2) • x
     simp
   exact h0.fderiv
 
-@[powerlib_foundation] private lemma lie_norm_sq (x v : State n) :
+@[tmio T, powerlib_foundation] private lemma lie_norm_sq (x v : State n) :
     fderiv ℝ (fun y : State n => ‖y‖ ^ 2) x v = 2 * inner ℝ x v := by
   have h := (hasStrictFDerivAt_norm_sq x).hasFDerivAt
   rw [h.fderiv]
   simp
 
 /-- `‖x‖²` is a strict global Lyapunov function for `ẋ = −‖x‖² x`. -/
-@[powerlib_foundation] theorem cubic_neg_strictLyapunov :
+@[tmio T, powerlib_foundation] theorem cubic_neg_strictLyapunov :
     _root_.IsStrictLyapunovFunction (cubicField (n := n) (-1)) (fun x => ‖x‖ ^ 2) 0 where
   hcont := continuous_norm.pow 2
   hV_c1 := contDiff_norm_sq ℝ
@@ -88,13 +88,13 @@ def cubicField (c : ℝ) (x : State n) : State n := (c * ‖x‖ ^ 2) • x
         exact (le_of_lt (by nlinarith)).trans ((hx.trans' le_rfl).trans (le_max_right _ _))
 
 /-- `ẋ = −‖x‖² x` (for `n = 1`, `ẋ = −x³`): the origin is globally asymptotically stable. -/
-@[powerlib_foundation] theorem cubic_neg_globallyAsymptoticallyStable (hn : 0 < n) :
+@[tmio T, powerlib_foundation] theorem cubic_neg_globallyAsymptoticallyStable (hn : 0 < n) :
     Flow.GloballyAsymptoticallyStable (cubicField (n := n) (-1)) 0 :=
   Flow.globallyAsymptoticallyStable_of_strictLyapunov hn (cubicField_contDiff _)
     cubic_neg_strictLyapunov
 
 /-- `ẋ = ‖x‖² x` (for `n = 1`, `ẋ = x³`): the origin is unstable. -/
-@[powerlib_foundation] theorem cubic_pos_unstable (hn : 0 < n) :
+@[tmio T, powerlib_foundation] theorem cubic_pos_unstable (hn : 0 < n) :
     Unstable (cubicField (n := n) 1) 0 := by
   intro hstab
   obtain ⟨δ, hδ, hball⟩ := hstab 1 one_pos
@@ -146,7 +146,7 @@ def cubicField (c : ℝ) (x : State n) : State n := (c * ‖x‖ ^ 2) • x
 
 /-- Two `C¹` systems with the same equilibrium and the same Jacobian (the zero matrix, all
 eigenvalues with zero real part), one globally asymptotically stable and one unstable. -/
-@[powerlib_foundation] theorem linearization_inconclusive (hn : 0 < n) :
+@[tmio T, powerlib_foundation] theorem linearization_inconclusive (hn : 0 < n) :
     ∃ f g : State n → State n, ContDiff ℝ 1 f ∧ ContDiff ℝ 1 g ∧ f 0 = 0 ∧ g 0 = 0 ∧
       fderiv ℝ f 0 = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) 0 ∧
       fderiv ℝ g 0 = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) 0 ∧

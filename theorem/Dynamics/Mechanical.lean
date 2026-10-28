@@ -76,16 +76,16 @@ def pos : State (m + k) →L[ℝ] (Fin m → ℝ) :=
 def vel : State (m + k) →L[ℝ] (Fin k → ℝ) :=
   ContinuousLinearMap.pi fun j => PiLp.proj 2 (fun _ : Fin (m + k) => ℝ) (vIdx j)
 
-@[simp, powerlib_foundation] theorem pos_apply (z : State (m + k)) (i : Fin m) :
+@[tmio T, simp, powerlib_foundation] theorem pos_apply (z : State (m + k)) (i : Fin m) :
     pos z i = z (qIdx i) := by
   simp [pos]
 
-@[simp, powerlib_foundation] theorem vel_apply (z : State (m + k)) (j : Fin k) :
+@[tmio T, simp, powerlib_foundation] theorem vel_apply (z : State (m + k)) (j : Fin k) :
     vel z j = z (vIdx j) := by
   simp [vel]
 
 /-- The positions bound their state. -/
-@[powerlib_foundation] theorem norm_pos_le (z : State (m + k)) : ‖pos z‖ ≤ ‖z‖ :=
+@[tmio T, powerlib_foundation] theorem norm_pos_le (z : State (m + k)) : ‖pos z‖ ≤ ‖z‖ :=
   (pi_norm_le_iff_of_nonneg (norm_nonneg z)).mpr fun i => by
     simpa using PiLp.norm_apply_le z (qIdx i)
 
@@ -100,30 +100,30 @@ def point : (Fin m → ℝ) →L[ℝ] State (m + k) :=
         ext r
         refine Fin.addCases (fun i => ?_) (fun j => ?_) r <;> simp }
 
-@[simp, powerlib_foundation] theorem point_qIdx (q : Fin m → ℝ) (i : Fin m) :
+@[tmio T, simp, powerlib_foundation] theorem point_qIdx (q : Fin m → ℝ) (i : Fin m) :
     point (k := k) q (qIdx i) = q i := by
   simp [point]
 
-@[simp, powerlib_foundation] theorem point_vIdx (q : Fin m → ℝ) (j : Fin k) :
+@[tmio T, simp, powerlib_foundation] theorem point_vIdx (q : Fin m → ℝ) (j : Fin k) :
     point (k := k) q (vIdx j) = 0 := by
   simp [point]
 
-@[simp, powerlib_foundation] theorem pos_point (q : Fin m → ℝ) : pos (point (k := k) q) = q := by
+@[tmio T, simp, powerlib_foundation] theorem pos_point (q : Fin m → ℝ) : pos (point (k := k) q) = q := by
   ext i
   simp
 
-@[simp, powerlib_foundation] theorem vel_point (q : Fin m → ℝ) : vel (point (k := k) q) = 0 := by
+@[tmio T, simp, powerlib_foundation] theorem vel_point (q : Fin m → ℝ) : vel (point (k := k) q) = 0 := by
   ext j
   simp
 
 /-- The distance of a state from a rest point bounds the distance of its positions. -/
-@[powerlib_foundation] theorem norm_pos_sub_le (z : State (m + k)) (q : Fin m → ℝ) :
+@[tmio T, powerlib_foundation] theorem norm_pos_sub_le (z : State (m + k)) (q : Fin m → ℝ) :
     ‖pos z - q‖ ≤ ‖z - point q‖ := by
   have := norm_pos_le (z - point q)
   rwa [map_sub, pos_point] at this
 
 /-- Small positions give rest points close to the origin. -/
-@[powerlib_foundation] theorem exists_norm_point_lt {ε : ℝ} (hε : 0 < ε) :
+@[tmio T, powerlib_foundation] theorem exists_norm_point_lt {ε : ℝ} (hε : 0 < ε) :
     ∃ δ > 0, ∀ v : Fin m → ℝ, ‖v‖ < δ → ‖point (k := k) v‖ < ε := by
   have hc := (point (m := m) (k := k)).continuous.continuousAt (x := 0)
   rw [Metric.continuousAt_iff] at hc
@@ -161,7 +161,7 @@ variable {G : (Fin k → ℝ) →L[ℝ] (Fin m → ℝ)} {M D : Fin k → ℝ} {
   simp
 
 /-- A linear functional of `G w` is the combination of its values on the unit velocities. -/
-@[powerlib_foundation] theorem apply_eq_sum (L : (Fin m → ℝ) →L[ℝ] ℝ)
+@[tmio T, powerlib_foundation] theorem apply_eq_sum (L : (Fin m → ℝ) →L[ℝ] ℝ)
     (G : (Fin k → ℝ) →L[ℝ] (Fin m → ℝ)) (w : Fin k → ℝ) :
     L (G w) = ∑ j, w j * L (G (Pi.single j 1)) := by
   conv_lhs => rw [← Finset.univ_sum_single w]
@@ -171,7 +171,7 @@ variable {G : (Fin k → ℝ) →L[ℝ] (Fin m → ℝ)} {M D : Fin k → ℝ} {
     rw [← Pi.single_smul, smul_eq_mul, mul_one], map_smul, map_smul, smul_eq_mul]
 
 /-- `dU(q) ∘ G` vanishes exactly when the generalized force vanishes. -/
-@[powerlib_foundation] theorem comp_eq_zero_iff (L : (Fin m → ℝ) →L[ℝ] ℝ)
+@[tmio T, powerlib_foundation] theorem comp_eq_zero_iff (L : (Fin m → ℝ) →L[ℝ] ℝ)
     (G : (Fin k → ℝ) →L[ℝ] (Fin m → ℝ)) :
     L.comp G = 0 ↔ ∀ j, L (G (Pi.single j 1)) = 0 := by
   constructor

@@ -56,7 +56,7 @@ def boltzmann (β : ℝ) (E : ι → ℝ) : ι → ℝ := gibbsVec (fun _ => 1) 
   simp [shannon, klSum, negMulLog, Finset.sum_neg_distrib]
 
 /-- Termwise Gibbs bound `p - q ≤ p log (p / q)` for `p ≥ 0`, `q > 0`, strict unless `p = q`. -/
-@[powerlib_foundation] private theorem term_bound {a b : ℝ} (ha : 0 ≤ a) (hb : 0 < b) :
+@[tmio T, powerlib_foundation] private theorem term_bound {a b : ℝ} (ha : 0 ≤ a) (hb : 0 < b) :
     a - b ≤ a * log (a / b) := by
   have h := Real.self_sub_one_le_mul_log (div_nonneg ha hb.le)
   have h2 : b * (a / b - 1) ≤ b * (a / b * log (a / b)) := mul_le_mul_of_nonneg_left h hb.le
@@ -64,7 +64,7 @@ def boltzmann (β : ℝ) (E : ι → ℝ) : ι → ℝ := gibbsVec (fun _ => 1) 
   have e2 : b * (a / b * log (a / b)) = a * log (a / b) := by field_simp
   linarith
 
-@[powerlib_foundation] private theorem term_bound_strict {a b : ℝ} (ha : 0 ≤ a) (hb : 0 < b)
+@[tmio T, powerlib_foundation] private theorem term_bound_strict {a b : ℝ} (ha : 0 ≤ a) (hb : 0 < b)
     (hab : a ≠ b) : a - b < a * log (a / b) := by
   have hne : a / b ≠ 1 := by
     intro h; apply hab; field_simp at h; linarith
@@ -75,7 +75,7 @@ def boltzmann (β : ℝ) (E : ι → ℝ) : ι → ℝ := gibbsVec (fun _ => 1) 
   linarith
 
 /-- **Gibbs inequality** on a finite set. -/
-@[powerlib_foundation] theorem klSum_nonneg {p q : ι → ℝ} (hp : ∀ i, 0 ≤ p i) (hq : ∀ i, 0 < q i)
+@[tmio T, powerlib_foundation] theorem klSum_nonneg {p q : ι → ℝ} (hp : ∀ i, 0 ≤ p i) (hq : ∀ i, 0 < q i)
     (hp1 : ∑ i, p i = 1) (hq1 : ∑ i, q i = 1) : 0 ≤ klSum p q := by
   have h : ∑ i, (p i - q i) ≤ klSum p q :=
     Finset.sum_le_sum fun i _ => term_bound (hp i) (hq i)
@@ -83,7 +83,7 @@ def boltzmann (β : ℝ) (E : ι → ℝ) : ι → ℝ := gibbsVec (fun _ => 1) 
   exact h
 
 /-- **Converse Gibbs inequality**: `klSum p q = 0` iff `p = q`. -/
-@[powerlib_foundation] theorem klSum_eq_zero_iff {p q : ι → ℝ} (hp : ∀ i, 0 ≤ p i)
+@[tmio T, powerlib_foundation] theorem klSum_eq_zero_iff {p q : ι → ℝ} (hp : ∀ i, 0 ≤ p i)
     (hq : ∀ i, 0 < q i) (hp1 : ∑ i, p i = 1) (hq1 : ∑ i, q i = 1) :
     klSum p q = 0 ↔ p = q := by
   constructor
@@ -104,20 +104,20 @@ section Gibbs
 
 variable {q g : ι → ℝ}
 
-@[powerlib_foundation] theorem partitionSum_pos [Nonempty ι] (hq : ∀ i, 0 < q i) :
+@[tmio T, powerlib_foundation] theorem partitionSum_pos [Nonempty ι] (hq : ∀ i, 0 < q i) :
     0 < partitionSum q g :=
   Finset.sum_pos (fun i _ => mul_pos (hq i) (exp_pos _)) Finset.univ_nonempty
 
-@[powerlib_foundation] theorem gibbsVec_pos [Nonempty ι] (hq : ∀ i, 0 < q i) (i : ι) :
+@[tmio T, powerlib_foundation] theorem gibbsVec_pos [Nonempty ι] (hq : ∀ i, 0 < q i) (i : ι) :
     0 < gibbsVec q g i :=
   div_pos (mul_pos (hq i) (exp_pos _)) (partitionSum_pos hq)
 
-@[powerlib_foundation] theorem sum_gibbsVec [Nonempty ι] (hq : ∀ i, 0 < q i) :
+@[tmio T, powerlib_foundation] theorem sum_gibbsVec [Nonempty ι] (hq : ∀ i, 0 < q i) :
     ∑ i, gibbsVec q g i = 1 := by
   simp only [gibbsVec, ← Finset.sum_div]
   exact div_self (partitionSum_pos (g := g) hq).ne'
 
-@[powerlib_foundation] theorem log_gibbsVec_div [Nonempty ι] (hq : ∀ i, 0 < q i) (i : ι) :
+@[tmio T, powerlib_foundation] theorem log_gibbsVec_div [Nonempty ι] (hq : ∀ i, 0 < q i) (i : ι) :
     log (gibbsVec q g i / q i) = g i - log (partitionSum q g) := by
   have hZ := partitionSum_pos (g := g) hq
   rw [gibbsVec, show q i * exp (g i) / partitionSum q g / q i = exp (g i) / partitionSum q g by
@@ -125,18 +125,18 @@ variable {q g : ι → ℝ}
 
 /-- Relative entropy of an arbitrary probability vector against the reference, split through
 `log(gᵢ)`: `∑ p log (gibbs/q) = E_p[g] - log Z`. -/
-@[powerlib_foundation] private theorem sum_mul_log_gibbsVec_div [Nonempty ι] (hq : ∀ i, 0 < q i)
+@[tmio T, powerlib_foundation] private theorem sum_mul_log_gibbsVec_div [Nonempty ι] (hq : ∀ i, 0 < q i)
     {p : ι → ℝ} (hp1 : ∑ i, p i = 1) :
     ∑ i, p i * log (gibbsVec q g i / q i) = ∑ i, p i * g i - log (partitionSum q g) := by
   simp only [log_gibbsVec_div hq, mul_sub, Finset.sum_sub_distrib, ← Finset.sum_mul, hp1, one_mul]
 
-@[powerlib_foundation] theorem klSum_gibbsVec [Nonempty ι] (hq : ∀ i, 0 < q i) :
+@[tmio T, powerlib_foundation] theorem klSum_gibbsVec [Nonempty ι] (hq : ∀ i, 0 < q i) :
     klSum (gibbsVec q g) q = ∑ i, gibbsVec q g i * g i - log (partitionSum q g) :=
   sum_mul_log_gibbsVec_div hq (sum_gibbsVec hq)
 
 /-- **Pythagorean identity** (finite MaxEnt). If `E_p[g] = E_{gibbs}[g]` then
 `klSum p q = klSum p gibbs + klSum gibbs q`. -/
-@[powerlib_foundation] theorem klSum_eq_klSum_gibbsVec_add [Nonempty ι] (hq : ∀ i, 0 < q i)
+@[tmio T, powerlib_foundation] theorem klSum_eq_klSum_gibbsVec_add [Nonempty ι] (hq : ∀ i, 0 < q i)
     {p : ι → ℝ} (hp : ∀ i, 0 ≤ p i) (hp1 : ∑ i, p i = 1)
     (hmom : ∑ i, p i * g i = ∑ i, gibbsVec q g i * g i) :
     klSum p q = klSum p (gibbsVec q g) + klSum (gibbsVec q g) q := by
@@ -154,7 +154,7 @@ variable {q g : ι → ℝ}
   rw [h1, sum_mul_log_gibbsVec_div hq hp1, hmom, klSum_gibbsVec hq]
 
 /-- The Gibbs vector minimises relative entropy (maximises `H[·‖q]`) in its moment class. -/
-@[powerlib_foundation] theorem klSum_gibbsVec_le [Nonempty ι] (hq : ∀ i, 0 < q i)
+@[tmio T, powerlib_foundation] theorem klSum_gibbsVec_le [Nonempty ι] (hq : ∀ i, 0 < q i)
     {p : ι → ℝ} (hp : ∀ i, 0 ≤ p i) (hp1 : ∑ i, p i = 1)
     (hmom : ∑ i, p i * g i = ∑ i, gibbsVec q g i * g i) :
     klSum (gibbsVec q g) q ≤ klSum p q := by
@@ -162,7 +162,7 @@ variable {q g : ι → ℝ}
   linarith [klSum_nonneg hp (gibbsVec_pos (g := g) hq) hp1 (sum_gibbsVec (g := g) hq)]
 
 /-- Uniqueness of the finite MaxEnt solution. -/
-@[powerlib_foundation] theorem klSum_eq_klSum_gibbsVec_iff [Nonempty ι] (hq : ∀ i, 0 < q i)
+@[tmio T, powerlib_foundation] theorem klSum_eq_klSum_gibbsVec_iff [Nonempty ι] (hq : ∀ i, 0 < q i)
     {p : ι → ℝ} (hp : ∀ i, 0 ≤ p i) (hp1 : ∑ i, p i = 1)
     (hmom : ∑ i, p i * g i = ∑ i, gibbsVec q g i * g i) :
     klSum p q = klSum (gibbsVec q g) q ↔ p = gibbsVec q g := by
@@ -175,14 +175,14 @@ section Boltzmann
 
 variable [Nonempty ι] {β : ℝ} {E : ι → ℝ}
 
-@[powerlib_foundation] theorem boltzmann_pos (i : ι) : 0 < boltzmann β E i :=
+@[tmio T, powerlib_foundation] theorem boltzmann_pos (i : ι) : 0 < boltzmann β E i :=
   gibbsVec_pos (fun _ => one_pos) i
 
-@[powerlib_foundation] theorem sum_boltzmann : ∑ i, boltzmann β E i = 1 :=
+@[tmio T, powerlib_foundation] theorem sum_boltzmann : ∑ i, boltzmann β E i = 1 :=
   sum_gibbsVec fun _ => one_pos
 
 /-- Thermodynamic identity `S = β⟨E⟩ + log Z` for the Boltzmann–Gibbs law. -/
-@[powerlib_foundation] theorem shannon_boltzmann :
+@[tmio T, powerlib_foundation] theorem shannon_boltzmann :
     shannon (boltzmann β E) = β * ∑ i, boltzmann β E i * E i +
       log (∑ i, exp (-β * E i)) := by
   have h := klSum_gibbsVec (q := fun _ : ι => (1 : ℝ)) (g := fun i => -β * E i)
@@ -192,7 +192,7 @@ variable [Nonempty ι] {β : ℝ} {E : ι → ℝ}
   ring_nf
 
 /-- **Boltzmann–Gibbs is the MaxEnt law at fixed mean energy.** -/
-@[powerlib_foundation] theorem shannon_le_shannon_boltzmann {p : ι → ℝ} (hp : ∀ i, 0 ≤ p i)
+@[tmio T, powerlib_foundation] theorem shannon_le_shannon_boltzmann {p : ι → ℝ} (hp : ∀ i, 0 ≤ p i)
     (hp1 : ∑ i, p i = 1) (hE : ∑ i, p i * E i = ∑ i, boltzmann β E i * E i) :
     shannon p ≤ shannon (boltzmann β E) := by
   have hmom : ∑ i, p i * (-β * E i) = ∑ i, boltzmann β E i * (-β * E i) := by
@@ -200,7 +200,7 @@ variable [Nonempty ι] {β : ℝ} {E : ι → ℝ}
   rw [shannon_eq_neg_klSum_one, shannon_eq_neg_klSum_one, neg_le_neg_iff]
   exact klSum_gibbsVec_le (fun _ => one_pos) hp hp1 hmom
 
-@[powerlib_foundation] theorem shannon_eq_shannon_boltzmann_iff {p : ι → ℝ} (hp : ∀ i, 0 ≤ p i)
+@[tmio T, powerlib_foundation] theorem shannon_eq_shannon_boltzmann_iff {p : ι → ℝ} (hp : ∀ i, 0 ≤ p i)
     (hp1 : ∑ i, p i = 1) (hE : ∑ i, p i * E i = ∑ i, boltzmann β E i * E i) :
     shannon p = shannon (boltzmann β E) ↔ p = boltzmann β E := by
   have hmom : ∑ i, p i * (-β * E i) = ∑ i, boltzmann β E i * (-β * E i) := by

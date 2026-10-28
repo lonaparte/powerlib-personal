@@ -55,14 +55,14 @@ noncomputable local instance frobeniusENormedAddMonoid'' :
 
 /-- The explicit prediction covariance `e^{tA}(P₀ − P∞)e^{tAᵀ} + P∞` solves the prediction ODE
 `Ṗ = A P + P Aᵀ + Q` with `P(0) = P₀`, whenever `P∞` solves the algebraic equation. -/
-@[powerlib_foundation] theorem predict_cov_ode_solution {A Q Pinf : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem predict_cov_ode_solution {A Q Pinf : Matrix (Fin n) (Fin n) ℝ}
     (hinf : SolvesCovLyapunov A Pinf Q) (P₀ : Matrix (Fin n) (Fin n) ℝ) :
     covSol A Pinf P₀ 0 = P₀ ∧
       ∀ t, HasDerivAt (covSol A Pinf P₀) (A * covSol A Pinf P₀ t + covSol A Pinf P₀ t * Aᵀ + Q) t :=
   ⟨covSol_zero A Pinf P₀, covSol_hasDerivAt hinf P₀⟩
 
 /-- Uniqueness of the prediction covariance trajectory. -/
-@[powerlib_foundation] theorem predict_cov_ode_unique {A Q Pinf P₀ : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem predict_cov_ode_unique {A Q Pinf P₀ : Matrix (Fin n) (Fin n) ℝ}
     (hinf : SolvesCovLyapunov A Pinf Q) {P : ℝ → Matrix (Fin n) (Fin n) ℝ}
     (hP : ∀ t, HasDerivAt P (A * P t + P t * Aᵀ + Q) t) (h0 : P 0 = P₀) :
     P = covSol A Pinf P₀ :=
@@ -71,7 +71,7 @@ noncomputable local instance frobeniusENormedAddMonoid'' :
 /-- **Hurwitz prediction**: for `A` Hurwitz and `Q ⪰ 0` there is a unique `P∞ ⪰ 0` with
 `A P∞ + P∞ Aᵀ + Q = 0`; every solution of the prediction ODE with `P(0) = P₀` equals
 `e^{tA}(P₀ − P∞)e^{tAᵀ} + P∞`, and it converges to `P∞`. -/
-@[powerlib_foundation] theorem predict_cov_hurwitz {A Q : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem predict_cov_hurwitz {A Q : Matrix (Fin n) (Fin n) ℝ}
     (hA : LinearSystems.IsHurwitz A) (hQ : Q.PosSemidef) (P₀ : Matrix (Fin n) (Fin n) ℝ) :
     ∃ Pinf : Matrix (Fin n) (Fin n) ℝ, Pinf.PosSemidef ∧ SolvesCovLyapunov A Pinf Q ∧
       (∀ P : ℝ → Matrix (Fin n) (Fin n) ℝ, (∀ t, HasDerivAt P (A * P t + P t * Aᵀ + Q) t) →

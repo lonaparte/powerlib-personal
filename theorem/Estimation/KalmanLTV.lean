@@ -73,7 +73,7 @@ section Uniqueness
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- Forward half: on `[s, t]`. -/
-private lemma eq_zero_forward {f f' : ℝ → E} {c : ℝ → ℝ} (hc : Continuous c)
+@[tmio T] private lemma eq_zero_forward {f f' : ℝ → E} {c : ℝ → ℝ} (hc : Continuous c)
     (hf : ∀ t, HasDerivAt f (f' t) t) (hb : ∀ t, ‖f' t‖ ≤ c t * ‖f t‖) {s : ℝ} (hs : f s = 0)
     {t : ℝ} (hst : s ≤ t) : f t = 0 := by
   obtain ⟨C, hC⟩ := (isCompact_Icc (a := s) (b := t)).exists_bound_of_continuousOn hc.continuousOn
@@ -113,7 +113,7 @@ variable {A : ℝ → Matrix (Fin n) (Fin n) ℝ} {Φ : ℝ → ℝ → Matrix (
 
 /-- **Cocycle (semigroup) property** of a fundamental matrix: if `∂_t Φ(t, s) = A(t) Φ(t, s)` and
 `Φ(s, s) = I` with `A` continuous, then `Φ(t, s) Φ(s, τ) = Φ(t, τ)` for all `t, s, τ`. -/
-@[powerlib_foundation] theorem fund_cocycle (hA : Continuous A)
+@[tmio T, powerlib_foundation] theorem fund_cocycle (hA : Continuous A)
     (hΦ : ∀ t s, HasDerivAt (fun z => Φ z s) (A t * Φ t s) t) (hΦ0 : ∀ s, Φ s s = 1)
     (t s τ : ℝ) : Φ t s * Φ s τ = Φ t τ := by
   have h := eq_zero_of_norm_deriv_le (f := fun z => Φ z s * Φ s τ - Φ z τ)
@@ -126,13 +126,13 @@ variable {A : ℝ → Matrix (Fin n) (Fin n) ℝ} {Φ : ℝ → ℝ → Matrix (
     rw [Matrix.mul_sub, Matrix.mul_assoc]
 
 /-- `Φ(t, s) Φ(s, t) = I`: every fundamental matrix is invertible. -/
-@[powerlib_foundation] theorem fund_mul_inv (hA : Continuous A)
+@[tmio T, powerlib_foundation] theorem fund_mul_inv (hA : Continuous A)
     (hΦ : ∀ t s, HasDerivAt (fun z => Φ z s) (A t * Φ t s) t) (hΦ0 : ∀ s, Φ s s = 1)
     (t s : ℝ) : Φ t s * Φ s t = 1 := by
   rw [fund_cocycle hA hΦ hΦ0, hΦ0]
 
 /-- Continuity in the second argument: `τ ↦ Φ(t, τ) = Φ(τ, t)⁻¹`. -/
-@[powerlib_foundation] theorem fund_continuous_snd (hA : Continuous A)
+@[tmio T, powerlib_foundation] theorem fund_continuous_snd (hA : Continuous A)
     (hΦ : ∀ t s, HasDerivAt (fun z => Φ z s) (A t * Φ t s) t) (hΦ0 : ∀ s, Φ s s = 1)
     (t : ℝ) : Continuous fun τ => Φ t τ := by
   have heq : (fun τ => Φ t τ) = fun τ => (Φ τ t)⁻¹ := by
@@ -172,7 +172,7 @@ private def congrCLM (C : Matrix (Fin n) (Fin n) ℝ) :
       map_add' := fun M N => by simp [Matrix.mul_add, Matrix.add_mul]
       map_smul' := fun c M => by simp }
 
-private lemma congrCLM_apply (C M : Matrix (Fin n) (Fin n) ℝ) : congrCLM C M = C * M * Cᵀ := rfl
+@[tmio T] private lemma congrCLM_apply (C M : Matrix (Fin n) (Fin n) ℝ) : congrCLM C M = C * M * Cᵀ := rfl
 
 /-- Transposition as a continuous linear map. -/
 private def transposeCLM : Matrix (Fin n) (Fin n) ℝ →L[ℝ] Matrix (Fin n) (Fin n) ℝ :=
@@ -183,7 +183,7 @@ private def transposeCLM : Matrix (Fin n) (Fin n) ℝ →L[ℝ] Matrix (Fin n) (
 
 /-- Factorization through the base point:
 `P(z) = Φ(z, t₀) [P₀ + ∫_{t₀}^z Φ(t₀, τ) Q(τ) Φ(t₀, τ)ᵀ dτ] Φ(z, t₀)ᵀ`. -/
-private lemma ltvCov_eq (hA : Continuous A) (hQ : Continuous Q)
+@[tmio T] private lemma ltvCov_eq (hA : Continuous A) (hQ : Continuous Q)
     (hΦ : ∀ t s, HasDerivAt (fun z => Φ z s) (A t * Φ t s) t) (hΦ0 : ∀ s, Φ s s = 1)
     (P₀ : Matrix (Fin n) (Fin n) ℝ) (t₀ z : ℝ) :
     ltvCov Φ Q P₀ t₀ z = Φ z t₀ * (P₀ + ∫ τ in t₀..z, Φ t₀ τ * Q τ * (Φ t₀ τ)ᵀ) * (Φ z t₀)ᵀ := by
@@ -204,7 +204,7 @@ private lemma ltvCov_eq (hA : Continuous A) (hQ : Continuous Q)
   exact hcomm
 
 /-- `P(t₀) = P₀`. -/
-@[powerlib_foundation] theorem ltvCov_self (Φ : ℝ → ℝ → Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem ltvCov_self (Φ : ℝ → ℝ → Matrix (Fin n) (Fin n) ℝ)
     (hΦ0 : ∀ s, Φ s s = 1) (Q : ℝ → Matrix (Fin n) (Fin n) ℝ) (P₀ : Matrix (Fin n) (Fin n) ℝ)
     (t₀ : ℝ) : ltvCov Φ Q P₀ t₀ t₀ = P₀ := by
   simp [ltvCov, hΦ0]
@@ -213,7 +213,7 @@ private lemma ltvCov_eq (hA : Continuous A) (hQ : Continuous Q)
 matrix `Φ` of `ẋ = A(t) x` (`∂_t Φ(t, s) = A(t) Φ(t, s)`, `Φ(s, s) = I`), the variation-of-constants
 matrix `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ` solves
 `Ṗ = A(t) P + P A(t)ᵀ + Q(t)` at every `t`. -/
-@[powerlib_foundation] theorem hasDerivAt_ltvCov (hA : Continuous A) (hQ : Continuous Q)
+@[tmio T, powerlib_foundation] theorem hasDerivAt_ltvCov (hA : Continuous A) (hQ : Continuous Q)
     (hΦ : ∀ t s, HasDerivAt (fun z => Φ z s) (A t * Φ t s) t) (hΦ0 : ∀ s, Φ s s = 1)
     (P₀ : Matrix (Fin n) (Fin n) ℝ) (t₀ t : ℝ) :
     HasDerivAt (ltvCov Φ Q P₀ t₀)
@@ -244,7 +244,7 @@ matrix `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ
 
 /-- **LTV prediction covariance, uniqueness.**  Every differentiable solution of
 `Ṗ = A(t) P + P A(t)ᵀ + Q(t)` with `P(t₀) = P₀` is the variation-of-constants matrix. -/
-@[powerlib_foundation] theorem ltvCov_unique (hA : Continuous A) (hQ : Continuous Q)
+@[tmio T, powerlib_foundation] theorem ltvCov_unique (hA : Continuous A) (hQ : Continuous Q)
     (hΦ : ∀ t s, HasDerivAt (fun z => Φ z s) (A t * Φ t s) t) (hΦ0 : ∀ s, Φ s s = 1)
     {P₀ : Matrix (Fin n) (Fin n) ℝ} {t₀ : ℝ} {P : ℝ → Matrix (Fin n) (Fin n) ℝ}
     (hP : ∀ t, HasDerivAt P (A t * P t + P t * (A t)ᵀ + Q t) t) (h0 : P t₀ = P₀) :
@@ -274,11 +274,11 @@ end Covariance
 section Constant
 
 /-- `Φ(t, s) = e^{(t−s)A}` is the fundamental matrix of `ẋ = A x`. -/
-@[powerlib_foundation] theorem expFund_hasDerivAt (A : Matrix (Fin n) (Fin n) ℝ) (t s : ℝ) :
+@[tmio T, powerlib_foundation] theorem expFund_hasDerivAt (A : Matrix (Fin n) (Fin n) ℝ) (t s : ℝ) :
     HasDerivAt (fun z => NormedSpace.exp ((z - s) • A)) (A * NormedSpace.exp ((t - s) • A)) t :=
   (hasDerivAt_exp_smul_const' A (t - s)).comp_sub_const t s
 
-@[powerlib_foundation] theorem expFund_self (A : Matrix (Fin n) (Fin n) ℝ) (s : ℝ) :
+@[tmio T, powerlib_foundation] theorem expFund_self (A : Matrix (Fin n) (Fin n) ℝ) (s : ℝ) :
     NormedSpace.exp ((s - s) • A) = 1 := by
   simp [NormedSpace.exp_zero]
 
@@ -286,7 +286,7 @@ section Constant
 `Q(t)` (no Hurwitz assumption and no algebraic solution `P∞` needed),
 `P(t) = e^{(t−t₀)A} P₀ e^{(t−t₀)A}ᵀ + ∫_{t₀}^t e^{(t−τ)A} Q(τ) e^{(t−τ)A}ᵀ dτ` is the unique
 solution of `Ṗ = A P + P Aᵀ + Q(t)`, `P(t₀) = P₀`. -/
-@[powerlib_foundation] theorem lti_cov_integral_form (A : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem lti_cov_integral_form (A : Matrix (Fin n) (Fin n) ℝ)
     {Q : ℝ → Matrix (Fin n) (Fin n) ℝ} (hQ : Continuous Q) (P₀ : Matrix (Fin n) (Fin n) ℝ)
     (t₀ : ℝ) :
     ltvCov (fun t s => NormedSpace.exp ((t - s) • A)) Q P₀ t₀ t₀ = P₀ ∧
@@ -311,7 +311,7 @@ variable {A Q : ℝ → Matrix (Fin n) (Fin n) ℝ} {Φ : ℝ → ℝ → Matrix
 
 /-- **The prediction covariance stays positive semidefinite**: for `t ≥ t₀`, `P₀ ⪰ 0` and
 `Q(τ) ⪰ 0` give `P(t) ⪰ 0`. -/
-@[powerlib_foundation] theorem ltvCov_posSemidef (hA : Continuous A) (hQ : Continuous Q)
+@[tmio T, powerlib_foundation] theorem ltvCov_posSemidef (hA : Continuous A) (hQ : Continuous Q)
     (hΦ : ∀ t s, HasDerivAt (fun z => Φ z s) (A t * Φ t s) t) (hΦ0 : ∀ s, Φ s s = 1)
     {P₀ : Matrix (Fin n) (Fin n) ℝ} (hP₀ : P₀.PosSemidef) (hQp : ∀ τ, (Q τ).PosSemidef)
     {t₀ t : ℝ} (ht : t₀ ≤ t) : (ltvCov Φ Q P₀ t₀ t).PosSemidef := by
@@ -356,7 +356,7 @@ the filter Riccati equation `Ṗ = A P + P Aᵀ + Q − P Cᵀ R⁻¹ C P` with 
 continuous symmetric invertible `R`, and let `K = P Cᵀ R⁻¹`.  If `Φ_K` is a fundamental matrix of
 the closed-loop matrix `A − K C`, then
 `P(t) = Φ_K(t, t₀) P(t₀) Φ_K(t, t₀)ᵀ + ∫_{t₀}^t Φ_K(t, τ) (Q + K R Kᵀ)(τ) Φ_K(t, τ)ᵀ dτ`. -/
-@[powerlib_foundation] theorem riccati_joseph_form (hA : Continuous A) (hC : Continuous C)
+@[tmio T, powerlib_foundation] theorem riccati_joseph_form (hA : Continuous A) (hC : Continuous C)
     (hQ : Continuous Q) (hR : Continuous R) (hRs : ∀ t, (R t)ᵀ = R t)
     (hRu : ∀ t, IsUnit (R t).det) {P : ℝ → Matrix (Fin n) (Fin n) ℝ}
     (hP : ∀ t, HasDerivAt P
@@ -395,7 +395,7 @@ the closed-loop matrix `A − K C`, then
 /-- **Symmetry of Riccati solutions.**  If `Q(t)` and `R(t)` are symmetric and `P(t₀)` is
 symmetric, every solution of `Ṗ = A P + P Aᵀ + Q − P Cᵀ R⁻¹ C P` stays symmetric
 (`D = P − Pᵀ` solves a linear equation with continuous coefficients and `D(t₀) = 0`). -/
-@[powerlib_foundation] theorem riccati_symm (hA : Continuous A) (hC : Continuous C)
+@[tmio T, powerlib_foundation] theorem riccati_symm (hA : Continuous A) (hC : Continuous C)
     (hR : Continuous R) (hRs : ∀ t, (R t)ᵀ = R t) (hRu : ∀ t, IsUnit (R t).det)
     (hQs : ∀ t, (Q t)ᵀ = Q t) {P : ℝ → Matrix (Fin n) (Fin n) ℝ}
     (hP : ∀ t, HasDerivAt P
@@ -448,7 +448,7 @@ symmetric, every solution of `Ṗ = A P + P Aᵀ + Q − P Cᵀ R⁻¹ C P` stay
 /-- **The Riccati covariance stays positive semidefinite.**  For the filter Riccati equation with
 `Q(t) ⪰ 0`, `R(t) ≻ 0` and `P(t₀) ⪰ 0`, given a fundamental matrix of the closed-loop matrix
 `A − P Cᵀ R⁻¹ C`, `P(t) ⪰ 0` for all `t ≥ t₀`. -/
-@[powerlib_foundation] theorem riccati_posSemidef (hA : Continuous A) (hC : Continuous C)
+@[tmio T, powerlib_foundation] theorem riccati_posSemidef (hA : Continuous A) (hC : Continuous C)
     (hQ : Continuous Q) (hR : Continuous R) (hQp : ∀ t, (Q t).PosSemidef)
     (hRp : ∀ t, (R t).PosDef) {P : ℝ → Matrix (Fin n) (Fin n) ℝ}
     (hP : ∀ t, HasDerivAt P

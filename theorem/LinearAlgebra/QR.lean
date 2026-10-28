@@ -54,7 +54,7 @@ variable {k : ℕ}
   · rw [Matrix.mul_assoc, nonsing_inv_mul _ hRdet, Matrix.mul_one]
 
 /-- `‖R‖ = ‖A‖` and `‖R⁻¹‖ = ‖A⁻¹‖` for `A = QR`, `Q` orthogonal. -/
-@[powerlib_foundation] theorem norm_R_eq {A Q R : Matrix (Fin k) (Fin k) ℝ}
+@[tmio T, powerlib_foundation] theorem norm_R_eq {A Q R : Matrix (Fin k) (Fin k) ℝ}
     (hQ : Q ∈ orthogonalGroup (Fin k) ℝ) (hAQR : A = Q * R) :
     ‖R‖ = ‖A‖ ∧ ‖R⁻¹‖ = ‖A⁻¹‖ := by
   have hQu : Q ∈ unitary (Matrix (Fin k) (Fin k) ℝ) := hQ
@@ -67,7 +67,7 @@ variable {k : ℕ}
       CStarRing.norm_mul_mem_unitary _ (Unitary.star_mem hQu)]
 
 /-- **QR does not amplify the condition number**: `κ(R) = κ(A)`. -/
-@[powerlib_foundation] theorem cond_R_eq {A Q R : Matrix (Fin k) (Fin k) ℝ}
+@[tmio T, powerlib_foundation] theorem cond_R_eq {A Q R : Matrix (Fin k) (Fin k) ℝ}
     (hQ : Q ∈ orthogonalGroup (Fin k) ℝ) (hAQR : A = Q * R) : cond R = cond A := by
   obtain ⟨h1, h2⟩ := norm_R_eq hQ hAQR
   rw [cond, cond, h1, h2]

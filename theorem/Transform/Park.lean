@@ -81,113 +81,113 @@ def ofComplex (z : ℂ) : Fin 2 → ℝ := ![z.re, z.im]
   · simp [rot, Matrix.mulVec, dotProduct, Fin.sum_univ_two]; ring
   · simp [rot, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
-@[simp, powerlib_foundation] theorem park_apply_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem park_apply_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
     park θ *ᵥ x = ![Real.cos θ * x 0 + Real.sin θ * x 1, -Real.sin θ * x 0 + Real.cos θ * x 1] := by
   ext i; fin_cases i <;> simp [park, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
-@[simp, powerlib_foundation] theorem J_mulVec (x : Fin 2 → ℝ) : J *ᵥ x = ![-x 1, x 0] := by
+@[tmio T, simp, powerlib_foundation] theorem J_mulVec (x : Fin 2 → ℝ) : J *ᵥ x = ![-x 1, x 0] := by
   ext i; fin_cases i <;> simp [J, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
-@[powerlib_foundation] theorem park_eq_rot_neg (θ : ℝ) : park θ = rot (-θ) := by
+@[tmio T, powerlib_foundation] theorem park_eq_rot_neg (θ : ℝ) : park θ = rot (-θ) := by
   simp [park, rot]
 
-@[powerlib_foundation] theorem park_eq_transpose_rot (θ : ℝ) : park θ = (rot θ)ᵀ := by
+@[tmio T, powerlib_foundation] theorem park_eq_transpose_rot (θ : ℝ) : park θ = (rot θ)ᵀ := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [park, rot]
 
-@[simp, powerlib_foundation] theorem rot_zero : rot 0 = 1 := by
+@[tmio T, simp, powerlib_foundation] theorem rot_zero : rot 0 = 1 := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [rot]
 
-@[simp, powerlib_foundation] theorem park_zero : park 0 = 1 := by
+@[tmio T, simp, powerlib_foundation] theorem park_zero : park 0 = 1 := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [park]
 
-@[powerlib_foundation] theorem rot_add (a b : ℝ) : rot (a + b) = rot a * rot b := by
+@[tmio T, powerlib_foundation] theorem rot_add (a b : ℝ) : rot (a + b) = rot a * rot b := by
   simp only [rot, mul_fin_two, Real.cos_add, Real.sin_add]
   ext i j; fin_cases i <;> fin_cases j <;> simp <;> ring
 
-@[powerlib_foundation] theorem park_add (a b : ℝ) : park (a + b) = park a * park b := by
+@[tmio T, powerlib_foundation] theorem park_add (a b : ℝ) : park (a + b) = park a * park b := by
   rw [park_eq_rot_neg, park_eq_rot_neg, park_eq_rot_neg, neg_add, rot_add]
 
-@[powerlib_foundation] theorem rot_mul_park (θ : ℝ) : rot θ * park θ = 1 := by
+@[tmio T, powerlib_foundation] theorem rot_mul_park (θ : ℝ) : rot θ * park θ = 1 := by
   rw [park_eq_rot_neg, ← rot_add, add_neg_cancel, rot_zero]
 
-@[powerlib_foundation] theorem park_mul_rot (θ : ℝ) : park θ * rot θ = 1 := by
+@[tmio T, powerlib_foundation] theorem park_mul_rot (θ : ℝ) : park θ * rot θ = 1 := by
   rw [park_eq_rot_neg, ← rot_add, neg_add_cancel, rot_zero]
 
-@[powerlib_foundation] theorem rot_neg_mul_rot (a : ℝ) : rot (-a) * rot a = 1 := by
+@[tmio T, powerlib_foundation] theorem rot_neg_mul_rot (a : ℝ) : rot (-a) * rot a = 1 := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [rot, Matrix.mul_apply, Fin.sum_univ_two] <;>
     nlinarith [Real.sin_sq_add_cos_sq a]
 
 /-- T-power-system-ph §1.2: the rotation `R(δ)` is orthogonal, so the port power
 `v_d i_d + v_q i_q` is the same in the machine frame and in the common DQ frame. -/
-@[powerlib_foundation] theorem frameRotation_power_invariant (δ : ℝ) (v i : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem frameRotation_power_invariant (δ : ℝ) (v i : Fin 2 → ℝ) :
     (Transform.rot δ *ᵥ v) ⬝ᵥ (Transform.rot δ *ᵥ i) = v ⬝ᵥ i := by
   simp only [Transform.rot_apply_mulVec, dotProduct, Fin.sum_univ_two, Matrix.cons_val_zero,
     Matrix.cons_val_one]
   have h := Real.sin_sq_add_cos_sq δ
   linear_combination (v 0 * i 0 + v 1 * i 1) * h
 
-@[simp, powerlib_foundation] theorem rot_mulVec_park_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem rot_mulVec_park_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
     rot θ *ᵥ (park θ *ᵥ x) = x := by
   rw [Matrix.mulVec_mulVec, rot_mul_park, Matrix.one_mulVec]
 
-@[simp, powerlib_foundation] theorem park_mulVec_rot_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem park_mulVec_rot_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
     park θ *ᵥ (rot θ *ᵥ x) = x := by
   rw [Matrix.mulVec_mulVec, park_mul_rot, Matrix.one_mulVec]
 
-@[powerlib_foundation] theorem det_rot (θ : ℝ) : (rot θ).det = 1 := by
+@[tmio T, powerlib_foundation] theorem det_rot (θ : ℝ) : (rot θ).det = 1 := by
   rw [rot, det_fin_two_of]; nlinarith [Real.sin_sq_add_cos_sq θ]
 
-@[powerlib_foundation] theorem det_park (θ : ℝ) : (park θ).det = 1 := by
+@[tmio T, powerlib_foundation] theorem det_park (θ : ℝ) : (park θ).det = 1 := by
   rw [park_eq_rot_neg, det_rot]
 
 /-- Park is a proper rotation: it lies in `SO(2)`. -/
-@[powerlib_foundation] theorem park_mem_specialOrthogonalGroup (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem park_mem_specialOrthogonalGroup (θ : ℝ) :
     park θ ∈ Matrix.specialOrthogonalGroup (Fin 2) ℝ := by
   rw [Matrix.mem_specialOrthogonalGroup_iff, Matrix.mem_orthogonalGroup_iff]
   refine ⟨?_, det_park θ⟩
   rw [show (park θ)ᵀ = rot θ by rw [park_eq_transpose_rot, transpose_transpose]]
   exact park_mul_rot θ
 
-@[powerlib_foundation] theorem rot_mem_specialOrthogonalGroup (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem rot_mem_specialOrthogonalGroup (θ : ℝ) :
     rot θ ∈ Matrix.specialOrthogonalGroup (Fin 2) ℝ := by
   simpa [park_eq_rot_neg] using park_mem_specialOrthogonalGroup (-θ)
 
-@[powerlib_foundation] theorem J_mul_J : J * J = -1 := by
+@[tmio T, powerlib_foundation] theorem J_mul_J : J * J = -1 := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [J]
 
-@[powerlib_foundation] theorem J_transpose : Jᵀ = -J := by
+@[tmio T, powerlib_foundation] theorem J_transpose : Jᵀ = -J := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [J]
 
-@[powerlib_foundation] theorem rot_mul_J (θ : ℝ) : rot θ * J = J * rot θ := by
+@[tmio T, powerlib_foundation] theorem rot_mul_J (θ : ℝ) : rot θ * J = J * rot θ := by
   simp only [rot, J, mul_fin_two]
   ext i j; fin_cases i <;> fin_cases j <;> simp
 
-@[powerlib_foundation] theorem park_mul_J (θ : ℝ) : park θ * J = J * park θ := by
+@[tmio T, powerlib_foundation] theorem park_mul_J (θ : ℝ) : park θ * J = J * park θ := by
   rw [park_eq_rot_neg, rot_mul_J]
 
-@[powerlib_foundation] theorem rot_mulVec_J_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem rot_mulVec_J_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
     rot θ *ᵥ (J *ᵥ x) = J *ᵥ (rot θ *ᵥ x) := by
   rw [Matrix.mulVec_mulVec, Matrix.mulVec_mulVec, rot_mul_J]
 
-@[powerlib_foundation] theorem park_mulVec_J_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem park_mulVec_J_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
     park θ *ᵥ (J *ᵥ x) = J *ᵥ (park θ *ᵥ x) := by
   rw [Matrix.mulVec_mulVec, Matrix.mulVec_mulVec, park_mul_J]
 
 /-! ## Complex form versus matrix form (`T-park-transformation.md` §1.2) -/
 
-@[simp, powerlib_foundation] theorem toComplex_re (x : Fin 2 → ℝ) : (toComplex x).re = x 0 := rfl
+@[tmio T, simp, powerlib_foundation] theorem toComplex_re (x : Fin 2 → ℝ) : (toComplex x).re = x 0 := rfl
 
-@[simp, powerlib_foundation] theorem toComplex_im (x : Fin 2 → ℝ) : (toComplex x).im = x 1 := rfl
+@[tmio T, simp, powerlib_foundation] theorem toComplex_im (x : Fin 2 → ℝ) : (toComplex x).im = x 1 := rfl
 
-@[simp, powerlib_foundation] theorem toComplex_ofComplex (z : ℂ) : toComplex (ofComplex z) = z := by
+@[tmio T, simp, powerlib_foundation] theorem toComplex_ofComplex (z : ℂ) : toComplex (ofComplex z) = z := by
   apply Complex.ext <;> simp [toComplex, ofComplex]
 
-@[simp, powerlib_foundation] theorem ofComplex_toComplex (x : Fin 2 → ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem ofComplex_toComplex (x : Fin 2 → ℝ) :
     ofComplex (toComplex x) = x := by
   ext i; fin_cases i <;> simp [toComplex, ofComplex]
 
-@[powerlib_foundation] theorem toComplex_eq (x : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem toComplex_eq (x : Fin 2 → ℝ) :
     toComplex x = (x 0 : ℂ) + (x 1 : ℂ) * Complex.I := by
   apply Complex.ext <;> simp [toComplex]
 
@@ -200,57 +200,57 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
   left_inv := ofComplex_toComplex
   right_inv := toComplex_ofComplex
 
-@[simp, powerlib_foundation] theorem complexEquiv_apply (x : Fin 2 → ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem complexEquiv_apply (x : Fin 2 → ℝ) :
     complexEquiv x = toComplex x := rfl
 
-@[simp, powerlib_foundation] theorem toComplex_add (x y : Fin 2 → ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem toComplex_add (x y : Fin 2 → ℝ) :
     toComplex (x + y) = toComplex x + toComplex y := complexEquiv.map_add x y
 
-@[simp, powerlib_foundation] theorem toComplex_sub (x y : Fin 2 → ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem toComplex_sub (x y : Fin 2 → ℝ) :
     toComplex (x - y) = toComplex x - toComplex y := complexEquiv.map_sub x y
 
-@[simp, powerlib_foundation] theorem toComplex_smul (c : ℝ) (x : Fin 2 → ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem toComplex_smul (c : ℝ) (x : Fin 2 → ℝ) :
     toComplex (c • x) = (c : ℂ) * toComplex x := by
   apply Complex.ext <;> simp [toComplex]
 
 /-- Matrix rotation is complex multiplication by `e^{jθ}`. -/
-@[powerlib_foundation] theorem toComplex_rot_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem toComplex_rot_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
     toComplex (rot θ *ᵥ x) = toComplex x * Complex.exp (θ * Complex.I) := by
   apply Complex.ext <;>
     simp [toComplex, Complex.mul_re, Complex.mul_im, Complex.exp_ofReal_mul_I_re,
       Complex.exp_ofReal_mul_I_im] <;> ring
 
 /-- Park is complex multiplication by `e^{-jθ}`: `x^{dq} = x^{αβ} e^{-jθ}` (§1.2 boxed). -/
-@[powerlib_foundation] theorem toComplex_park_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem toComplex_park_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
     toComplex (park θ *ᵥ x) = toComplex x * Complex.exp (-(θ * Complex.I)) := by
   rw [park_eq_rot_neg, toComplex_rot_mulVec]
   push_cast
   ring_nf
 
 /-- `J` is complex multiplication by `j`. -/
-@[powerlib_foundation] theorem toComplex_J_mulVec (x : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem toComplex_J_mulVec (x : Fin 2 → ℝ) :
     toComplex (J *ᵥ x) = Complex.I * toComplex x := by
   apply Complex.ext <;> simp [toComplex]
 
 /-- Rotation preserves the Euclidean squared norm. -/
-@[powerlib_foundation] theorem rot_mulVec_sq_sum (θ : ℝ) (x : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem rot_mulVec_sq_sum (θ : ℝ) (x : Fin 2 → ℝ) :
     (rot θ *ᵥ x) 0 ^ 2 + (rot θ *ᵥ x) 1 ^ 2 = x 0 ^ 2 + x 1 ^ 2 := by
   simp only [rot_apply_mulVec, Matrix.cons_val_zero, Matrix.cons_val_one]
   nlinarith [Real.sin_sq_add_cos_sq θ]
 
-@[powerlib_foundation] theorem park_mulVec_sq_sum (θ : ℝ) (x : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem park_mulVec_sq_sum (θ : ℝ) (x : Fin 2 → ℝ) :
     (park θ *ᵥ x) 0 ^ 2 + (park θ *ᵥ x) 1 ^ 2 = x 0 ^ 2 + x 1 ^ 2 := by
   rw [park_eq_rot_neg, rot_mulVec_sq_sum]
 
 /-- Rotation preserves the Euclidean norm. -/
-@[powerlib_foundation] theorem norm_rot_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem norm_rot_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
     ‖(WithLp.equiv 2 (Fin 2 → ℝ)).symm (rot θ *ᵥ x)‖ = ‖(WithLp.equiv 2 (Fin 2 → ℝ)).symm x‖ := by
   have h := rot_mulVec_sq_sum θ x
   rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), EuclideanSpace.norm_sq_eq,
     EuclideanSpace.norm_sq_eq]
   simpa [Fin.sum_univ_two, Real.norm_eq_abs, sq_abs] using h
 
-@[powerlib_foundation] theorem norm_park_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem norm_park_mulVec (θ : ℝ) (x : Fin 2 → ℝ) :
     ‖(WithLp.equiv 2 (Fin 2 → ℝ)).symm (park θ *ᵥ x)‖ = ‖(WithLp.equiv 2 (Fin 2 → ℝ)).symm x‖ := by
   rw [park_eq_rot_neg, norm_rot_mulVec]
 
@@ -258,7 +258,7 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
 
 /-- Matrix form of the §1.3 chain rule: if `x^{αβ}(t) = rot θ(t) · x^{dq}(t)` then
 `ẋ^{αβ} = rot θ · (ẋ^{dq} + ω J x^{dq})`, with `ω = θ̇` (any differentiable frame angle). -/
-@[powerlib_foundation] theorem hasDerivAt_rot_mulVec {θ : ℝ → ℝ} {ω : ℝ} {x : ℝ → Fin 2 → ℝ}
+@[tmio T, powerlib_foundation] theorem hasDerivAt_rot_mulVec {θ : ℝ → ℝ} {ω : ℝ} {x : ℝ → Fin 2 → ℝ}
     {x' : Fin 2 → ℝ} {t : ℝ} (hθ : HasDerivAt θ ω t) (hx : HasDerivAt x x' t) :
     HasDerivAt (fun s => rot (θ s) *ᵥ x s) (rot (θ t) *ᵥ (x' + ω • (J *ᵥ x t))) t := by
   have h0 := hasDerivAt_pi.1 hx 0
@@ -276,7 +276,7 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
 
 /-- The same chain rule for the Park direction:
 `d/dt (park θ · x) = park θ · ẋ − ω J (park θ · x)`. -/
-@[powerlib_foundation] theorem hasDerivAt_park_mulVec {θ : ℝ → ℝ} {ω : ℝ} {x : ℝ → Fin 2 → ℝ}
+@[tmio T, powerlib_foundation] theorem hasDerivAt_park_mulVec {θ : ℝ → ℝ} {ω : ℝ} {x : ℝ → Fin 2 → ℝ}
     {x' : Fin 2 → ℝ} {t : ℝ} (hθ : HasDerivAt θ ω t) (hx : HasDerivAt x x' t) :
     HasDerivAt (fun s => park (θ s) *ᵥ x s)
       (park (θ t) *ᵥ x' - ω • (J *ᵥ (park (θ t) *ᵥ x t))) t := by
@@ -290,7 +290,7 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
 
 /-- Complex form of the §1.3 boxed chain rule:
 `d/dt (x^{dq} e^{jθ}) = (ẋ^{dq} + jω x^{dq}) e^{jθ}`. -/
-@[powerlib_foundation] theorem hasDerivAt_mul_cexp {θ : ℝ → ℝ} {ω : ℝ} {z : ℝ → ℂ} {z' : ℂ}
+@[tmio T, powerlib_foundation] theorem hasDerivAt_mul_cexp {θ : ℝ → ℝ} {ω : ℝ} {z : ℝ → ℂ} {z' : ℂ}
     {t : ℝ} (hθ : HasDerivAt θ ω t) (hz : HasDerivAt z z' t) :
     HasDerivAt (fun s => z s * Complex.exp (θ s * Complex.I))
       ((z' + ω * Complex.I * z t) * Complex.exp (θ t * Complex.I)) t := by
@@ -301,7 +301,7 @@ def complexEquiv : (Fin 2 → ℝ) ≃ₗ[ℝ] ℂ where
 /-! ## First-order frame rotation and a shunt capacitor in the dq frame -/
 
 /-- First-order rotation: `d/dθ (park θ · x)` at `θ = 0` is `−J x`. -/
-@[powerlib_foundation] theorem hasDerivAt_park_zero (x : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_park_zero (x : Fin 2 → ℝ) :
     HasDerivAt (fun θ => Transform.park θ *ᵥ x) (-(Transform.J *ᵥ x)) 0 := by
   refine hasDerivAt_pi.2 fun i => ?_
   fin_cases i
@@ -351,32 +351,32 @@ def iparkD (θ xd xq : ℝ) : ℝ := cos θ * xd - sin θ * xq
 /-- q-component of `T(−θ) x` (controller → system). -/
 def iparkQ (θ xd xq : ℝ) : ℝ := sin θ * xd + cos θ * xq
 
-@[simp, powerlib_foundation] theorem parkD_ipark (θ x y : ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem parkD_ipark (θ x y : ℝ) :
     parkD θ (iparkD θ x y) (iparkQ θ x y) = x := by
   unfold parkD iparkD iparkQ; linear_combination x * sin_sq_add_cos_sq θ
 
-@[simp, powerlib_foundation] theorem parkQ_ipark (θ x y : ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem parkQ_ipark (θ x y : ℝ) :
     parkQ θ (iparkD θ x y) (iparkQ θ x y) = y := by
   unfold parkQ iparkD iparkQ; linear_combination y * sin_sq_add_cos_sq θ
 
-@[simp, powerlib_foundation] theorem iparkD_park (θ x y : ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem iparkD_park (θ x y : ℝ) :
     iparkD θ (parkD θ x y) (parkQ θ x y) = x := by
   unfold parkD parkQ iparkD; linear_combination x * sin_sq_add_cos_sq θ
 
-@[simp, powerlib_foundation] theorem iparkQ_park (θ x y : ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem iparkQ_park (θ x y : ℝ) :
     iparkQ θ (parkD θ x y) (parkQ θ x y) = y := by
   unfold parkD parkQ iparkQ; linear_combination y * sin_sq_add_cos_sq θ
 
 /-- The rotation preserves the dot product. -/
-@[powerlib_foundation] theorem park_dot (θ x y u v : ℝ) :
+@[tmio T, powerlib_foundation] theorem park_dot (θ x y u v : ℝ) :
     parkD θ x y * parkD θ u v + parkQ θ x y * parkQ θ u v = x * u + y * v := by
   unfold parkD parkQ; linear_combination (x * u + y * v) * sin_sq_add_cos_sq θ
 
 /-- The rotation commutes with the generator `J (x, y) = (−y, x)`. -/
-@[powerlib_foundation] theorem parkD_J (θ x y : ℝ) : parkD θ (-y) x = -parkQ θ x y := by
+@[tmio T, powerlib_foundation] theorem parkD_J (θ x y : ℝ) : parkD θ (-y) x = -parkQ θ x y := by
   unfold parkD parkQ; ring
 
-@[powerlib_foundation] theorem parkQ_J (θ x y : ℝ) : parkQ θ (-y) x = parkD θ x y := by
+@[tmio T, powerlib_foundation] theorem parkQ_J (θ x y : ℝ) : parkQ θ (-y) x = parkD θ x y := by
   unfold parkD parkQ; ring
 
 end Components
@@ -396,24 +396,24 @@ def clarkePI : Matrix (Fin 3) (Fin 3) ℝ :=
   Real.sqrt (2 / 3) • !![1, -1 / 2, -1 / 2; 0, Real.sqrt 3 / 2, -(Real.sqrt 3 / 2);
     1 / Real.sqrt 2, 1 / Real.sqrt 2, 1 / Real.sqrt 2]
 
-@[powerlib_foundation] private lemma sqrt_three_mul_self : Real.sqrt 3 * Real.sqrt 3 = 3 :=
+@[tmio T, powerlib_foundation] private lemma sqrt_three_mul_self : Real.sqrt 3 * Real.sqrt 3 = 3 :=
   Real.mul_self_sqrt (by norm_num)
 
-@[powerlib_foundation] private lemma sqrt_two_mul_self : Real.sqrt 2 * Real.sqrt 2 = 2 :=
+@[tmio T, powerlib_foundation] private lemma sqrt_two_mul_self : Real.sqrt 2 * Real.sqrt 2 = 2 :=
   Real.mul_self_sqrt (by norm_num)
 
-@[powerlib_foundation] theorem clarke_mul_clarkeInv : clarke * clarkeInv = 1 := by
+@[tmio T, powerlib_foundation] theorem clarke_mul_clarkeInv : clarke * clarkeInv = 1 := by
   have h3 := sqrt_three_mul_self
   ext i j; fin_cases i <;> fin_cases j <;>
     simp [clarke, clarkeInv, Matrix.mul_apply, Fin.sum_univ_three] <;> linarith [h3]
 
-@[powerlib_foundation] theorem clarke_mul_transpose : clarke * clarkeᵀ = (2 / 3 : ℝ) • 1 := by
+@[tmio T, powerlib_foundation] theorem clarke_mul_transpose : clarke * clarkeᵀ = (2 / 3 : ℝ) • 1 := by
   have h3 := sqrt_three_mul_self
   ext i j; fin_cases i <;> fin_cases j <;>
     simp [clarke, Matrix.mul_apply, Fin.sum_univ_three] <;> linarith [h3]
 
 /-- On zero-sequence-free vectors (`x_a + x_b + x_c = 0`) the inverse Clarke reconstructs `abc`. -/
-@[powerlib_foundation] theorem clarkeInv_mulVec_clarke_mulVec (x : Fin 3 → ℝ)
+@[tmio T, powerlib_foundation] theorem clarkeInv_mulVec_clarke_mulVec (x : Fin 3 → ℝ)
     (hx : x 0 + x 1 + x 2 = 0) : clarkeInv *ᵥ (clarke *ᵥ x) = x := by
   have h3 := sqrt_three_mul_self
   ext i; fin_cases i <;>
@@ -424,14 +424,14 @@ def clarkePI : Matrix (Fin 3) (Fin 3) ℝ :=
 
 /-- Amplitude-invariant Clarke power: `v · i = (3/2)(v_α i_α + v_β i_β)` when `i` is
 zero-sequence free. -/
-@[powerlib_foundation] theorem dotProduct_eq_three_halves_clarke (v i : Fin 3 → ℝ)
+@[tmio T, powerlib_foundation] theorem dotProduct_eq_three_halves_clarke (v i : Fin 3 → ℝ)
     (hi : i 0 + i 1 + i 2 = 0) :
     v ⬝ᵥ i = (3 / 2 : ℝ) * ((clarke *ᵥ v) ⬝ᵥ (clarke *ᵥ i)) := by
   have h3 := sqrt_three_mul_self
   simp [clarke, Matrix.mulVec, dotProduct, Fin.sum_univ_three, Fin.sum_univ_two]
   linear_combination (1/3) * (v 0 + v 1 + v 2) * hi - (1/6) * (v 1 - v 2) * (i 1 - i 2) * h3
 
-@[powerlib_foundation] theorem clarkePI_mul_transpose : clarkePI * clarkePIᵀ = 1 := by
+@[tmio T, powerlib_foundation] theorem clarkePI_mul_transpose : clarkePI * clarkePIᵀ = 1 := by
   have h3 := sqrt_three_mul_self
   have h2 := sqrt_two_mul_self
   have h3' : (0 : ℝ) < Real.sqrt 3 := by positivity
@@ -441,13 +441,13 @@ zero-sequence free. -/
     first | ring1 | (field_simp; nlinarith [h3, h2])
 
 /-- The power-invariant Clarke matrix is orthogonal. -/
-@[powerlib_foundation] theorem clarkePI_mem_orthogonalGroup :
+@[tmio T, powerlib_foundation] theorem clarkePI_mem_orthogonalGroup :
     clarkePI ∈ Matrix.orthogonalGroup (Fin 3) ℝ := by
   rw [Matrix.mem_orthogonalGroup_iff]
   exact clarkePI_mul_transpose
 
 /-- Power invariance: `(T v) · (T i) = v · i` for the power-invariant Clarke `T`. -/
-@[powerlib_foundation] theorem clarkePI_dotProduct (v i : Fin 3 → ℝ) :
+@[tmio T, powerlib_foundation] theorem clarkePI_dotProduct (v i : Fin 3 → ℝ) :
     (clarkePI *ᵥ v) ⬝ᵥ (clarkePI *ᵥ i) = v ⬝ᵥ i := by
   have hTT : clarkePIᵀ * clarkePI = 1 := by
     have := (Matrix.mem_orthogonalGroup_iff' (A := clarkePI)).1 clarkePI_mem_orthogonalGroup
@@ -468,7 +468,7 @@ def balanced (V φ θ : ℝ) : Fin 3 → ℝ :=
     V * Real.cos (θ + 2 * Real.pi / 3 + φ)]
 
 /-- The balanced signal has no zero-sequence component. -/
-@[powerlib_foundation] theorem balanced_sum (V φ θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem balanced_sum (V φ θ : ℝ) :
     balanced V φ θ 0 + balanced V φ θ 1 + balanced V φ θ 2 = 0 := by
   simp only [balanced, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.tail_cons, Matrix.head_cons]
@@ -481,7 +481,7 @@ def balanced (V φ θ : ℝ) : Fin 3 → ℝ :=
 
 /-- In the stationary αβ frame a balanced positive-sequence signal is the rotating vector
 `V (cos(θ + φ), sin(θ + φ))`, i.e. `V e^{j(θ+φ)}`; with `θ = ω t` it is not constant. -/
-@[powerlib_foundation] theorem clarke_mulVec_balanced (V φ θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem clarke_mulVec_balanced (V φ θ : ℝ) :
     clarke *ᵥ balanced V φ θ = ![V * Real.cos (θ + φ), V * Real.sin (θ + φ)] := by
   have h3 := sqrt_three_mul_self
   have h1 : θ - 2 * Real.pi / 3 + φ = (θ + φ) - 2 * Real.pi / 3 := by ring
@@ -496,7 +496,7 @@ def balanced (V φ θ : ℝ) : Fin 3 → ℝ :=
 
 /-- In the dq frame at angle `θ` the same signal is the constant `V (cos φ, sin φ)`.
 In particular `v_q = +V sin φ` for the amplitude-invariant Park. -/
-@[powerlib_foundation] theorem parkABC_mulVec_balanced (V φ θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem parkABC_mulVec_balanced (V φ θ : ℝ) :
     parkABC θ *ᵥ balanced V φ θ = ![V * Real.cos φ, V * Real.sin φ] := by
   rw [parkABC, ← Matrix.mulVec_mulVec, clarke_mulVec_balanced]
   have hφ : φ = (θ + φ) - θ := by ring
@@ -521,7 +521,7 @@ def negSeq (V φ θ : ℝ) : Fin 3 → ℝ :=
     V * Real.cos (θ - 2 * Real.pi / 3 + φ)]
 
 /-- A negative-sequence signal is `V e^{−j(θ+φ)}` in αβ: `(V cos(θ + φ), −V sin(θ + φ))`. -/
-@[powerlib_foundation] theorem clarke_mulVec_negSeq (V φ θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem clarke_mulVec_negSeq (V φ θ : ℝ) :
     Transform.clarke *ᵥ negSeq V φ θ = ![V * Real.cos (θ + φ), -(V * Real.sin (θ + φ))] := by
   have h3 : Real.sqrt 3 * Real.sqrt 3 = 3 := Real.mul_self_sqrt (by norm_num)
   have h1 : θ + 2 * Real.pi / 3 + φ = (θ + φ) + 2 * Real.pi / 3 := by ring
@@ -535,7 +535,7 @@ def negSeq (V φ θ : ℝ) : Fin 3 → ℝ :=
   · linear_combination (-(1 / 3)) * V * Real.sin ψ * h3
 
 /-- In complex form, `toComplex (clarke · negSeq) = V e^{−j(θ+φ)}`. -/
-@[powerlib_foundation] theorem toComplex_clarke_negSeq (V φ θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem toComplex_clarke_negSeq (V φ θ : ℝ) :
     Transform.toComplex (Transform.clarke *ᵥ negSeq V φ θ) =
       V * Complex.exp (-((θ + φ : ℝ) : ℂ) * I) := by
   rw [clarke_mulVec_negSeq]

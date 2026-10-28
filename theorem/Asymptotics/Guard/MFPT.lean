@@ -123,24 +123,24 @@ variable {α l₁ : ℝ}
   simp only [guardPotential, barrierHeight]; field_simp; ring
 
 /-- `U` is a decreasing function of `(z² − r_c²)²`. -/
-@[powerlib_foundation] theorem guardPotential_le_of_sq_le (hl : 0 < l₁) {z w : ℝ}
+@[tmio M, powerlib_foundation] theorem guardPotential_le_of_sq_le (hl : 0 < l₁) {z w : ℝ}
     (h : (z ^ 2 - α / l₁) ^ 2 ≤ (w ^ 2 - α / l₁) ^ 2) :
     guardPotential α l₁ w ≤ guardPotential α l₁ z := by
   rw [guardPotential_eq_barrier_sub hl, guardPotential_eq_barrier_sub hl]
   have : 0 < l₁ / 4 := by positivity
   nlinarith
 
-@[powerlib_foundation] theorem guardPotential_le_quad (hl : 0 ≤ l₁) (z : ℝ) :
+@[tmio M, powerlib_foundation] theorem guardPotential_le_quad (hl : 0 ≤ l₁) (z : ℝ) :
     guardPotential α l₁ z ≤ α * z ^ 2 / 2 := by
   simp only [guardPotential]; nlinarith [pow_nonneg (sq_nonneg z) 2, sq_nonneg (z ^ 2)]
 
-@[powerlib_foundation] theorem guardPotential_le_barrier (hl : 0 < l₁) (z : ℝ) :
+@[tmio M, powerlib_foundation] theorem guardPotential_le_barrier (hl : 0 < l₁) (z : ℝ) :
     guardPotential α l₁ z ≤ barrierHeight α l₁ := by
   rw [guardPotential_eq_barrier_sub hl]
   have : 0 ≤ l₁ / 4 * (z ^ 2 - α / l₁) ^ 2 := by positivity
   linarith
 
-@[powerlib_foundation] theorem guardPotential_pos (hl : 0 < l₁) {z : ℝ}
+@[tmio M, powerlib_foundation] theorem guardPotential_pos (hl : 0 < l₁) {z : ℝ}
     (hz : 0 < z) (hz2 : z ^ 2 < 2 * (α / l₁)) : 0 < guardPotential α l₁ z := by
   have : guardPotential α l₁ z = z ^ 2 / 4 * (l₁ * (2 * (α / l₁) - z ^ 2)) := by
     simp only [guardPotential]; field_simp; ring
@@ -149,7 +149,7 @@ variable {α l₁ : ℝ}
   positivity
 
 /-- Near the top from above: `U(y) ≤ ΔU − (α/4)(r_c − y)²` for every `y ≥ 0`. -/
-@[powerlib_foundation] theorem guardPotential_le_barrier_sub_sq (hα : 0 < α) (hl : 0 < l₁)
+@[tmio M, powerlib_foundation] theorem guardPotential_le_barrier_sub_sq (hα : 0 < α) (hl : 0 < l₁)
     {y : ℝ} (hy : 0 ≤ y) :
     guardPotential α l₁ y ≤ barrierHeight α l₁ - α / 4 * (√(α / l₁) - y) ^ 2 := by
   have hρ : 0 < α / l₁ := div_pos hα hl
@@ -167,7 +167,7 @@ variable {α l₁ : ℝ}
   linarith
 
 /-- Near the top from below: `U(y) ≥ ΔU − α(r_c − y)²` for `0 ≤ y ≤ r_c`. -/
-@[powerlib_foundation] theorem barrier_sub_sq_le_guardPotential (hα : 0 < α) (hl : 0 < l₁)
+@[tmio M, powerlib_foundation] theorem barrier_sub_sq_le_guardPotential (hα : 0 < α) (hl : 0 < l₁)
     {y : ℝ} (hy : 0 ≤ y) (hyr : y ≤ √(α / l₁)) :
     barrierHeight α l₁ - α * (√(α / l₁) - y) ^ 2 ≤ guardPotential α l₁ y := by
   have hρ : 0 < α / l₁ := div_pos hα hl
@@ -191,20 +191,20 @@ section Inner
 
 variable {D : ℝ}
 
-@[powerlib_foundation] theorem continuous_guardInner_integrand (α l₁ D : ℝ) :
+@[tmio M, powerlib_foundation] theorem continuous_guardInner_integrand (α l₁ D : ℝ) :
     Continuous fun z => z * Real.exp (-(guardPotential α l₁ z / D)) := by
   unfold guardPotential; fun_prop
 
-@[powerlib_foundation] theorem hasDerivAt_guardInner (α l₁ D y : ℝ) :
+@[tmio M, powerlib_foundation] theorem hasDerivAt_guardInner (α l₁ D y : ℝ) :
     HasDerivAt (guardInner α l₁ D) (y * Real.exp (-(guardPotential α l₁ y / D))) y :=
   ((continuous_guardInner_integrand α l₁ D).integral_hasStrictDerivAt 0 y).hasDerivAt
 
-@[powerlib_foundation] theorem continuous_guardInner (α l₁ D : ℝ) :
+@[tmio M, powerlib_foundation] theorem continuous_guardInner (α l₁ D : ℝ) :
     Continuous (guardInner α l₁ D) :=
   continuous_iff_continuousAt.2 fun y => (hasDerivAt_guardInner α l₁ D y).continuousAt
 
 /-- `K(y₂) − K(y₁) = ∫_{y₁}^{y₂} z e^{−U/D̃}`. -/
-@[powerlib_foundation] theorem guardInner_sub (α l₁ D y₁ y₂ : ℝ) :
+@[tmio M, powerlib_foundation] theorem guardInner_sub (α l₁ D y₁ y₂ : ℝ) :
     guardInner α l₁ D y₂ - guardInner α l₁ D y₁ =
       ∫ z in y₁..y₂, z * Real.exp (-(guardPotential α l₁ z / D)) := by
   simp only [guardInner]
@@ -212,20 +212,20 @@ variable {D : ℝ}
   · exact (continuous_guardInner_integrand α l₁ D).intervalIntegrable _ _
   · exact (continuous_guardInner_integrand α l₁ D).intervalIntegrable _ _
 
-@[powerlib_foundation] theorem guardInner_mono {y₁ y₂ : ℝ} (h0 : 0 ≤ y₁) (h : y₁ ≤ y₂) :
+@[tmio M, powerlib_foundation] theorem guardInner_mono {y₁ y₂ : ℝ} (h0 : 0 ≤ y₁) (h : y₁ ≤ y₂) :
     guardInner α l₁ D y₁ ≤ guardInner α l₁ D y₂ := by
   have := guardInner_sub α l₁ D y₁ y₂
   have hnn : 0 ≤ ∫ z in y₁..y₂, z * Real.exp (-(guardPotential α l₁ z / D)) :=
     integral_nonneg h fun z hz => mul_nonneg (h0.trans hz.1) (Real.exp_pos _).le
   linarith
 
-@[powerlib_foundation] theorem guardInner_nonneg {y : ℝ} (hy : 0 ≤ y) :
+@[tmio M, powerlib_foundation] theorem guardInner_nonneg {y : ℝ} (hy : 0 ≤ y) :
     0 ≤ guardInner α l₁ D y := by
   have := guardInner_mono (α := α) (l₁ := l₁) (D := D) le_rfl hy
   simpa [guardInner] using this
 
 /-- `K(y) ≤ (y²/2)(1 + e^{−U(y)/D̃})`: on `[0, y]` the potential is at least `min(0, U(y))`. -/
-@[powerlib_foundation] theorem guardInner_le (hl : 0 < l₁) (hD : 0 < D) {y : ℝ} (hy : 0 ≤ y) :
+@[tmio M, powerlib_foundation] theorem guardInner_le (hl : 0 < l₁) (hD : 0 < D) {y : ℝ} (hy : 0 ≤ y) :
     guardInner α l₁ D y ≤ y ^ 2 / 2 * (1 + Real.exp (-(guardPotential α l₁ y / D))) := by
   have hb : ∀ z ∈ Icc (0 : ℝ) y, z * Real.exp (-(guardPotential α l₁ z / D)) ≤
       z * (1 + Real.exp (-(guardPotential α l₁ y / D))) := by
@@ -257,7 +257,7 @@ variable {D : ℝ}
         rw [intervalIntegral.integral_mul_const, integral_id]; ring
 
 /-- `K(a) ≥ (D̃/2) e^{−α/2}` once `D̃ ≤ a²`. -/
-@[powerlib_foundation] theorem guardInner_ge (hα : 0 ≤ α) (hl : 0 ≤ l₁) (hD : 0 < D) {a : ℝ}
+@[tmio M, powerlib_foundation] theorem guardInner_ge (hα : 0 ≤ α) (hl : 0 ≤ l₁) (hD : 0 < D) {a : ℝ}
     (ha : 0 ≤ a)
     (hDa : D ≤ a ^ 2) : D / 2 * Real.exp (-(α / 2)) ≤ guardInner α l₁ D a := by
   have hs : √D ≤ a := by
@@ -279,7 +279,7 @@ variable {D : ℝ}
         nlinarith
     _ ≤ guardInner α l₁ D a := guardInner_mono hs0 hs
 
-@[powerlib_foundation] theorem guardInner_sub_le (hD : 0 < D) {a b : ℝ} (ha : 0 ≤ a)
+@[tmio M, powerlib_foundation] theorem guardInner_sub_le (hD : 0 < D) {a b : ℝ} (ha : 0 ≤ a)
     (hab : a ≤ b) (hU : ∀ z ∈ Icc a b, guardPotential α l₁ a ≤ guardPotential α l₁ z) :
     guardInner α l₁ D b - guardInner α l₁ D a ≤
       (b - a) * (b * Real.exp (-(guardPotential α l₁ a / D))) := by
@@ -301,12 +301,12 @@ section Outer
 
 variable {D : ℝ}
 
-@[powerlib_foundation] theorem guardIntegrand_nonneg {y : ℝ} (hy : 0 ≤ y) :
+@[tmio M, powerlib_foundation] theorem guardIntegrand_nonneg {y : ℝ} (hy : 0 ≤ y) :
     0 ≤ guardIntegrand α l₁ D y :=
   mul_nonneg (mul_nonneg (inv_nonneg.2 hy) (Real.exp_pos _).le) (guardInner_nonneg hy)
 
 /-- `y⁻¹ e^{U/D̃} K(y) ≤ (y/2)(e^{U(y)/D̃} + 1)`. -/
-@[powerlib_foundation] theorem guardIntegrand_le (hl : 0 < l₁) (hD : 0 < D) {y : ℝ} (hy : 0 < y) :
+@[tmio M, powerlib_foundation] theorem guardIntegrand_le (hl : 0 < l₁) (hD : 0 < D) {y : ℝ} (hy : 0 < y) :
     guardIntegrand α l₁ D y ≤ y / 2 * (Real.exp (guardPotential α l₁ y / D) + 1) := by
   unfold guardIntegrand
   have hK := guardInner_le (α := α) hl hD hy.le
@@ -321,18 +321,18 @@ variable {D : ℝ}
         field_simp
     _ = y / 2 * (Real.exp (guardPotential α l₁ y / D) + 1) := by rw [e]
 
-@[powerlib_foundation] theorem continuous_exp_guardPotential (α l₁ D : ℝ) :
+@[tmio M, powerlib_foundation] theorem continuous_exp_guardPotential (α l₁ D : ℝ) :
     Continuous fun y => Real.exp (guardPotential α l₁ y / D) := by
   unfold guardPotential; fun_prop
 
-@[powerlib_foundation] theorem continuousOn_guardIntegrand (α l₁ D : ℝ) :
+@[tmio M, powerlib_foundation] theorem continuousOn_guardIntegrand (α l₁ D : ℝ) :
     ContinuousOn (guardIntegrand α l₁ D) (Ioi 0) := by
   have h1 : ContinuousOn (fun y : ℝ => y⁻¹) (Ioi 0) :=
     continuousOn_inv₀.mono fun y hy => (ne_of_gt hy : y ≠ 0)
   exact (h1.mul (continuous_exp_guardPotential α l₁ D).continuousOn).mul
     (continuous_guardInner α l₁ D).continuousOn
 
-@[powerlib_foundation] theorem intervalIntegrable_guardIntegrand (hl : 0 < l₁) (hD : 0 < D)
+@[tmio M, powerlib_foundation] theorem intervalIntegrable_guardIntegrand (hl : 0 < l₁) (hD : 0 < D)
     {R : ℝ} (hR : 0 ≤ R) : IntervalIntegrable (guardIntegrand α l₁ D) volume 0 R := by
   refine IntervalIntegrable.mono_fun'
     (g := fun _ => R / 2 * (Real.exp (barrierHeight α l₁ / D) + 1)) intervalIntegrable_const ?_ ?_
@@ -347,7 +347,7 @@ variable {D : ℝ}
       (guardPotential_le_barrier (α := α) hl y) hD.le)
     linarith
 
-@[powerlib_foundation] theorem intervalIntegrable_guardIntegrand_of_pos {a b : ℝ} (ha : 0 < a)
+@[tmio M, powerlib_foundation] theorem intervalIntegrable_guardIntegrand_of_pos {a b : ℝ} (ha : 0 < a)
     (hb : 0 < b) : IntervalIntegrable (guardIntegrand α l₁ D) volume a b :=
   ((continuousOn_guardIntegrand α l₁ D).mono fun y hy => by
     simp only [mem_Ioi]
@@ -356,7 +356,7 @@ variable {D : ℝ}
     · rw [uIcc_of_ge h] at hy; linarith [hy.1]).intervalIntegrable
 
 /-- The reflection `ψ(y) = √(2r_c² − y²)` about the barrier top preserves the potential. -/
-@[powerlib_foundation] theorem guardPotential_reflect (hl : 0 < l₁) {y : ℝ}
+@[tmio M, powerlib_foundation] theorem guardPotential_reflect (hl : 0 < l₁) {y : ℝ}
     (hy : y ^ 2 ≤ 2 * (α / l₁)) :
     guardPotential α l₁ √(2 * (α / l₁) - y ^ 2) = guardPotential α l₁ y := by
   apply le_antisymm <;> apply guardPotential_le_of_sq_le hl <;>
@@ -364,7 +364,7 @@ variable {D : ℝ}
 
 /-- Change of variables through the reflection: the part of the outer integral just beyond the
 barrier top, `∫_{r_c}^{ψ(a)} h`, equals `∫_a^{r_c} h(ψ(y)) y/ψ(y) dy`. -/
-@[powerlib_foundation] theorem integral_guardIntegrand_reflect {a : ℝ} (ha : 0 < a)
+@[tmio M, powerlib_foundation] theorem integral_guardIntegrand_reflect {a : ℝ} (ha : 0 < a)
     (har : a ≤ √(α / l₁)) (hρ : 0 < α / l₁) :
     ∫ y in √(α / l₁)..√(2 * (α / l₁) - a ^ 2), guardIntegrand α l₁ D y =
       ∫ y in a..√(α / l₁), guardIntegrand α l₁ D √(2 * (α / l₁) - y ^ 2) *
@@ -403,7 +403,7 @@ barrier top, `∫_{r_c}^{ψ(a)} h`, equals `∫_a^{r_c} h(ψ(y)) y/ψ(y) dy`. -/
 
 /-- First moment of the barrier weight about the top:
 `∫_a^{r_c} (r_c − y) e^{U(y)/D̃} dy ≤ (2D̃/α) e^{ΔU/D̃}`. -/
-@[powerlib_foundation] theorem guard_firstMoment_le (hα : 0 < α) (hl : 0 < l₁) {a : ℝ}
+@[tmio M, powerlib_foundation] theorem guard_firstMoment_le (hα : 0 < α) (hl : 0 < l₁) {a : ℝ}
     (hD : 0 < D) (ha : 0 ≤ a)
     (har : a ≤ √(α / l₁)) :
     ∫ y in a..√(α / l₁), (√(α / l₁) - y) * Real.exp (guardPotential α l₁ y / D) ≤
@@ -455,7 +455,7 @@ barrier top, `∫_{r_c}^{ψ(a)} h`, equals `∫_a^{r_c} h(ψ(y)) y/ψ(y) dy`. -/
 
 /-- Window lower bound for the weight integral: if `s = √(D̃/α) ≤ r_c − a` then
 `∫_a^{r_c} y⁻¹ e^{U(y)/D̃} dy ≥ (s/r_c) e^{ΔU/D̃ − 1}`. -/
-@[powerlib_foundation] theorem guard_weight_ge_window (hα : 0 < α) (hl : 0 < l₁) {a : ℝ}
+@[tmio M, powerlib_foundation] theorem guard_weight_ge_window (hα : 0 < α) (hl : 0 < l₁) {a : ℝ}
     (hD : 0 < D) (ha : 0 < a)
     (hwin : √(D / α) ≤ √(α / l₁) - a) :
     √(D / α) / √(α / l₁) * Real.exp (barrierHeight α l₁ / D - 1) ≤
@@ -502,7 +502,7 @@ barrier top, `∫_{r_c}^{ψ(a)} h`, equals `∫_a^{r_c} h(ψ(y)) y/ψ(y) dy`. -/
 
 /-- `J ≤ 2e r_c √(D̃/α) · I`: the first moment about the top is `O(√D̃)` relative to the
 weight integral. -/
-@[powerlib_foundation] theorem guard_firstMoment_le_weight (hα : 0 < α) (hl : 0 < l₁) {a : ℝ}
+@[tmio M, powerlib_foundation] theorem guard_firstMoment_le_weight (hα : 0 < α) (hl : 0 < l₁) {a : ℝ}
     (hD : 0 < D)
     (ha : 0 < a) (hwin : √(D / α) ≤ √(α / l₁) - a) :
     ∫ y in a..√(α / l₁), (√(α / l₁) - y) * Real.exp (guardPotential α l₁ y / D) ≤
@@ -550,13 +550,13 @@ section Ratio
 
 variable {D : ℝ}
 
-@[powerlib_foundation] private theorem frac_le_inv {y ρ : ℝ} (hy0 : 0 < y) (hy2 : y ^ 2 ≤ ρ) :
+@[tmio T, powerlib_foundation] private theorem frac_le_inv {y ρ : ℝ} (hy0 : 0 < y) (hy2 : y ^ 2 ≤ ρ) :
     y / (2 * ρ - y ^ 2) ≤ y⁻¹ := by
   have hpos : 0 < 2 * ρ - y ^ 2 := by nlinarith
   rw [div_le_iff₀ hpos, inv_mul_eq_div, le_div_iff₀ hy0]
   nlinarith
 
-@[powerlib_foundation] private theorem frac_ge {a y ρ : ℝ} (ha : 0 < a) (hay : a ≤ y)
+@[tmio T, powerlib_foundation] private theorem frac_ge {a y ρ : ℝ} (ha : 0 < a) (hay : a ≤ y)
     (hy2 : y ^ 2 ≤ ρ) : a ^ 2 / (2 * ρ - a ^ 2) * y⁻¹ ≤ y / (2 * ρ - y ^ 2) := by
   have hy0 : 0 < y := ha.trans_le hay
   have hya : a ^ 2 ≤ y ^ 2 := pow_le_pow_left₀ ha.le hay 2
@@ -569,7 +569,7 @@ variable {D : ℝ}
     _ = y / (2 * ρ - y ^ 2) := by field_simp
 
 /-- The reflected integrand `h(ψ(y)) y/ψ(y) = y/(2r_c² − y²) · e^{U(y)/D̃} · K(ψ(y))`. -/
-@[powerlib_foundation] private theorem guardIntegrand_reflect_eq (hl : 0 < l₁) {y : ℝ}
+@[tmio M, powerlib_foundation] private theorem guardIntegrand_reflect_eq (hl : 0 < l₁) {y : ℝ}
     (hy2 : y ^ 2 < 2 * (α / l₁)) :
     guardIntegrand α l₁ D √(2 * (α / l₁) - y ^ 2) * (y / √(2 * (α / l₁) - y ^ 2)) =
       y / (2 * (α / l₁) - y ^ 2) * Real.exp (guardPotential α l₁ y / D) *
@@ -592,7 +592,7 @@ variable {D : ℝ}
     _ = y / (2 * (α / l₁) - y ^ 2) * Real.exp (guardPotential α l₁ y / D) *
           guardInner α l₁ D √(2 * (α / l₁) - y ^ 2) := by rw [e]
 
-@[powerlib_foundation] private theorem intervalIntegrable_guardIntegrand_reflect {a b : ℝ}
+@[tmio M, powerlib_foundation] private theorem intervalIntegrable_guardIntegrand_reflect {a b : ℝ}
     (ha : 0 < a) (hab : a ≤ b) (hb2 : b ^ 2 < 2 * (α / l₁)) :
     IntervalIntegrable (fun y => guardIntegrand α l₁ D √(2 * (α / l₁) - y ^ 2) *
       (y / √(2 * (α / l₁) - y ^ 2))) volume a b := by
@@ -609,7 +609,7 @@ variable {D : ℝ}
     hct hc1).mul (hc2.div hc1 (Real.sqrt_pos.mpr hpos).ne')
 
 /-- The weight `w(y) = y⁻¹ e^{U(y)/D̃}` is interval integrable on `[a, b]`, `0 < a ≤ b`. -/
-@[powerlib_foundation] theorem intervalIntegrable_guardWeight {a b : ℝ} (ha : 0 < a)
+@[tmio M, powerlib_foundation] theorem intervalIntegrable_guardWeight {a b : ℝ} (ha : 0 < a)
     (hab : a ≤ b) :
     IntervalIntegrable (fun y => y⁻¹ * Real.exp (guardPotential α l₁ y / D)) volume a b := by
   apply ContinuousOn.intervalIntegrable
@@ -619,7 +619,7 @@ variable {D : ℝ}
 
 /-- The part of the outer integral just inside the barrier top:
 `K(a) I ≤ ∫_a^{r_c} h ≤ K(r_c) I`, `I = ∫_a^{r_c} y⁻¹ e^{U/D̃}`. -/
-@[powerlib_foundation] theorem guard_inside_bounds {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
+@[tmio M, powerlib_foundation] theorem guard_inside_bounds {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
     guardInner α l₁ D a * ∫ y in a..b, y⁻¹ * Real.exp (guardPotential α l₁ y / D) ≤
         ∫ y in a..b, guardIntegrand α l₁ D y ∧
       ∫ y in a..b, guardIntegrand α l₁ D y ≤
@@ -647,7 +647,7 @@ variable {D : ℝ}
 
 /-- The part just beyond the barrier top, through the reflection:
 `a²/(2r_c² − a²) K(r_c) I ≤ ∫_{r_c}^{ψ(a)} h ≤ K(ψ(a)) I`. -/
-@[powerlib_foundation] private theorem guard_beyond_bounds (hl : 0 < l₁) {a : ℝ} (ha : 0 < a)
+@[tmio M, powerlib_foundation] private theorem guard_beyond_bounds (hl : 0 < l₁) {a : ℝ} (ha : 0 < a)
     (har : a ≤ √(α / l₁)) (hρ : 0 < α / l₁) :
     a ^ 2 / (2 * (α / l₁) - a ^ 2) *
         (guardInner α l₁ D √(α / l₁) *
@@ -705,7 +705,7 @@ variable {D : ℝ}
 
 /-- Lower bound for the main weight integral: `I ≥ ((r_c − m)/r_c) e^{U(m)/D̃}` for `a ≤ m ≤ r_c`
 with `U ≥ U(m)` on `[m, r_c]`. -/
-@[powerlib_foundation] private theorem guard_weight_ge (hD : 0 < D) {a m rc : ℝ} (ha : 0 < a)
+@[tmio M, powerlib_foundation] private theorem guard_weight_ge (hD : 0 < D) {a m rc : ℝ} (ha : 0 < a)
     (ham : a ≤ m) (hmr : m ≤ rc)
     (hU : ∀ y ∈ Icc m rc, guardPotential α l₁ m ≤ guardPotential α l₁ y) :
     (rc - m) / rc * Real.exp (guardPotential α l₁ m / D) ≤
@@ -729,7 +729,7 @@ with `U ≥ U(m)` on `[m, r_c]`. -/
         · exact intervalIntegrable_guardWeight ha (ham.trans hmr)
 
 /-- Tail bound: `∫_c^d h ≤ (d − c)(d/2)(e^{U*/D̃} + 1)` when `U ≤ U*` on `[c, d]`, `0 ≤ c ≤ d`. -/
-@[powerlib_foundation] private theorem guard_tail_le (hl : 0 < l₁) (hD : 0 < D) {c d Us : ℝ}
+@[tmio M, powerlib_foundation] private theorem guard_tail_le (hl : 0 < l₁) (hD : 0 < D) {c d Us : ℝ}
     (hc : 0 ≤ c) (hcd : c ≤ d) (hU : ∀ y ∈ Icc c d, guardPotential α l₁ y ≤ Us)
     (hint : IntervalIntegrable (guardIntegrand α l₁ D) volume c d) :
     ∫ y in c..d, guardIntegrand α l₁ D y ≤ (d - c) * (d / 2 * (Real.exp (Us / D) + 1)) := by
@@ -749,7 +749,7 @@ with `U ≥ U(m)` on `[m, r_c]`. -/
 
 /-- `y⁻¹ − 4(r − y)/(a r) ≤ y/(2r² − y²)` for `0 < a ≤ y ≤ r`: the reflection Jacobian
 `y/ψ(y)²` differs from `y⁻¹` by `O(r − y)`. -/
-@[powerlib_foundation] private theorem reflect_weight_ge {a y r : ℝ} (ha : 0 < a) (hay : a ≤ y)
+@[tmio T, powerlib_foundation] private theorem reflect_weight_ge {a y r : ℝ} (ha : 0 < a) (hay : a ≤ y)
     (hyr : y ≤ r) :
     y⁻¹ - 4 * (r - y) / (a * r) ≤ y / (2 * r ^ 2 - y ^ 2) := by
   have hy : 0 < y := ha.trans_le hay
@@ -771,7 +771,7 @@ with `U ≥ U(m)` on `[m, r_c]`. -/
 
 /-- The new lower estimate for the part just beyond the top:
 `∫_a^{r_c} h − (4/(a r_c)) K(r_c) J ≤ ∫_{r_c}^{ψ(a)} h`, `J = ∫_a^{r_c} (r_c − y) e^{U/D̃}`. -/
-@[powerlib_foundation] private theorem guard_beyond_lower (hl : 0 < l₁) {a : ℝ} (ha : 0 < a)
+@[tmio M, powerlib_foundation] private theorem guard_beyond_lower (hl : 0 < l₁) {a : ℝ} (ha : 0 < a)
     (har : a ≤ √(α / l₁)) (hρ : 0 < α / l₁) :
     (∫ y in a..√(α / l₁), guardIntegrand α l₁ D y) -
         4 / (a * √(α / l₁)) * guardInner α l₁ D √(α / l₁) *
@@ -830,7 +830,7 @@ with `U ≥ U(m)` on `[m, r_c]`. -/
 
 /-- The two tails are exponentially small against the main part: with
 `I = ∫_a^{r_c} y⁻¹ e^{U/D̃}`, `∫₀^a h + ∫_{ψ(a)}^{r_b} h ≤ ε K(a) I`. -/
-@[powerlib_foundation] theorem guard_tails_le (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
+@[tmio M, powerlib_foundation] theorem guard_tails_le (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
     (ha : 0 < a) (har : a < √(α / l₁)) (hψ : √(2 * (α / l₁) - a ^ 2) ≤ rb) (hD : 0 < D)
     (hDa : D ≤ a ^ 2) :
     (∫ y in (0 : ℝ)..a, guardIntegrand α l₁ D y) +
@@ -903,7 +903,7 @@ with `U ≥ U(m)` on `[m, r_c]`. -/
 
 /-- `K(ψ(a)) ≤ (1 + κ) K(a)`: across the barrier the inner integral grows by an exponentially
 small relative amount. -/
-@[powerlib_foundation] theorem guardInner_reflect_le (hα : 0 < α) (hl : 0 < l₁) {a : ℝ}
+@[tmio M, powerlib_foundation] theorem guardInner_reflect_le (hα : 0 < α) (hl : 0 < l₁) {a : ℝ}
     (ha : 0 < a) (har : a < √(α / l₁)) (hD : 0 < D) (hDa : D ≤ a ^ 2) :
     guardInner α l₁ D √(2 * (α / l₁) - a ^ 2) ≤
       (1 + guardKappa α l₁ a D) * guardInner α l₁ D a := by
@@ -934,7 +934,7 @@ small relative amount. -/
     exact mul_le_mul_of_nonneg_left hKa this
   linarith
 
-@[powerlib_foundation] theorem guardKappa_nonneg (hα : 0 < α) (hl : 0 < l₁) {a : ℝ}
+@[tmio M, powerlib_foundation] theorem guardKappa_nonneg (hα : 0 < α) (hl : 0 < l₁) {a : ℝ}
     (ha : 0 < a) (har : a < √(α / l₁)) (hD : 0 < D) : 0 ≤ guardKappa α l₁ a D := by
   have hρ : 0 < α / l₁ := div_pos hα hl
   have hrc2 : √(α / l₁) ^ 2 = α / l₁ := Real.sq_sqrt hρ.le
@@ -945,7 +945,7 @@ small relative amount. -/
   have : 0 ≤ √(2 * (α / l₁) - a ^ 2) - a := by linarith
   positivity
 
-@[powerlib_foundation] theorem guardEps_nonneg (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
+@[tmio M, powerlib_foundation] theorem guardEps_nonneg (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
     (ha : 0 < a) (har : a < √(α / l₁)) (hψ : √(2 * (α / l₁) - a ^ 2) ≤ rb) (hD : 0 < D) :
     0 ≤ guardEps α l₁ a rb D := by
   have hρ : 0 < α / l₁ := div_pos hα hl
@@ -961,7 +961,7 @@ small relative amount. -/
 /-- Deterministic bounds at a fixed cut `a ∈ (0, r_c)` with reflected cut `ψ(a) ≤ r_b` and
 `D̃ ≤ a²`: with `A = ∫₀^{r_c} h` and `B = ∫_{r_c}^{r_b} h`,
 `0 < A`, `B ≤ (1 + κ + ε) A` and `a²/(2r_c² − a²) · A ≤ (1 + ε) B`. -/
-@[powerlib_foundation] theorem guard_ratio_bounds (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
+@[tmio M, powerlib_foundation] theorem guard_ratio_bounds (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
     (ha : 0 < a) (har : a < √(α / l₁)) (hψ : √(2 * (α / l₁) - a ^ 2) ≤ rb) (hD : 0 < D)
     (hDa : D ≤ a ^ 2) :
     0 < ∫ y in (0 : ℝ)..√(α / l₁), guardIntegrand α l₁ D y ∧
@@ -1065,7 +1065,7 @@ window condition `√(D̃/α) ≤ r_c − a`: `(1 − δ) A ≤ (1 + ε) B` with
 (`guard_ratio_bounds`) this pins `B/A` to `1 + O(√D̃)`. The proof compares the reflected
 integrand with the inside one pointwise (`|y/ψ(y)² − y⁻¹| ≤ 4(r_c − y)/(a r_c)`) and bounds the
 first moment `∫ (r_c − y) e^{U/D̃}` by `2e r_c √(D̃/α)` times the weight integral. -/
-@[powerlib_foundation] theorem guard_ratio_rate_bounds (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
+@[tmio M, powerlib_foundation] theorem guard_ratio_rate_bounds (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
     (ha : 0 < a) (har : a < √(α / l₁)) (hψ : √(2 * (α / l₁) - a ^ 2) ≤ rb) (hD : 0 < D)
     (hDa : D ≤ a ^ 2) (hwin : √(D / α) ≤ √(α / l₁) - a) :
     (1 - guardDelta α l₁ a D) * ∫ y in (0 : ℝ)..√(α / l₁), guardIntegrand α l₁ D y ≤
@@ -1165,7 +1165,7 @@ first moment `∫ (r_c − y) e^{U/D̃}` by `2e r_c √(D̃/α)` times the weigh
 `guard_ratio_rate_bounds`: `|T(r_b)/T(r_c) − 2| ≤ δ + κ + ε`, where `δ = guardDelta α l₁ a D̃`
 is `O(√D̃)` and `κ`, `ε` are exponentially small (`tendsto_guardKappa_div`,
 `tendsto_guardEps_div`). -/
-@[powerlib_foundation] theorem guardMFPT_ratio_sub_two_le (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
+@[tmio M, powerlib_foundation] theorem guardMFPT_ratio_sub_two_le (hα : 0 < α) (hl : 0 < l₁) {a rb : ℝ}
     (ha : 0 < a) (har : a < √(α / l₁)) (hψ : √(2 * (α / l₁) - a ^ 2) ≤ rb) (hD : 0 < D)
     (hDa : D ≤ a ^ 2) (hwin : √(D / α) ≤ √(α / l₁) - a) :
     |guardMFPT α l₁ D rb / guardMFPT α l₁ D (guardRadius α l₁) - 2| ≤
@@ -1212,7 +1212,7 @@ is `O(√D̃)` and `κ`, `ε` are exponentially small (`tendsto_guardKappa_div`,
     nlinarith [mul_nonneg hδ0 hA.le]
 
 /-- `e^{−c/D̃}/D̃ → 0` as `D̃ → 0⁺` (`c > 0`). -/
-@[powerlib_foundation] theorem tendsto_exp_neg_div_div {c : ℝ} (hc : 0 < c) :
+@[tmio T, powerlib_foundation] theorem tendsto_exp_neg_div_div {c : ℝ} (hc : 0 < c) :
     Tendsto (fun D : ℝ => Real.exp (-(c / D)) / D) (𝓝[>] 0) (𝓝 0) := by
   have h1 : Tendsto (fun t : ℝ => t * Real.exp (-(c * t))) atTop (𝓝 0) := by
     have h := ((Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 1).comp
@@ -1226,7 +1226,7 @@ is `O(√D̃)` and `κ`, `ε` are exponentially small (`tendsto_guardKappa_div`,
   simp only [Function.comp_apply]
   rw [div_eq_mul_inv, mul_comm, div_eq_mul_inv c]
 
-@[powerlib_foundation] theorem tendsto_guardKappa (hl : 0 < l₁) {a : ℝ} (ha : 0 < a)
+@[tmio M, powerlib_foundation] theorem tendsto_guardKappa (hl : 0 < l₁) {a : ℝ} (ha : 0 < a)
     (ha2 : a ^ 2 < 2 * (α / l₁)) : Tendsto (guardKappa α l₁ a) (𝓝[>] 0) (𝓝 0) := by
   have hU := guardPotential_pos (α := α) hl ha ha2
   have h := (tendsto_exp_neg_div_div hU).const_mul
@@ -1238,7 +1238,7 @@ is `O(√D̃)` and `κ`, `ε` are exponentially small (`tendsto_guardKappa_div`,
   simp only [guardKappa]
   field_simp
 
-@[powerlib_foundation] theorem tendsto_guardEps (hl : 0 < l₁) {a rb : ℝ} (ha : 0 < a)
+@[tmio M, powerlib_foundation] theorem tendsto_guardEps (hl : 0 < l₁) {a rb : ℝ} (ha : 0 < a)
     (har : a < √(α / l₁)) (hρ : 0 < α / l₁) : Tendsto (guardEps α l₁ a rb) (𝓝[>] 0) (𝓝 0) := by
   set m := (a + √(α / l₁)) / 2 with hmdef
   have hrc2 : √(α / l₁) ^ 2 = α / l₁ := Real.sq_sqrt hρ.le
@@ -1276,7 +1276,7 @@ is `O(√D̃)` and `κ`, `ε` are exponentially small (`tendsto_guardKappa_div`,
   field_simp
 
 /-- `e^{−c/D̃}/D̃² → 0` as `D̃ → 0⁺` (`c > 0`). -/
-@[powerlib_foundation] theorem tendsto_exp_neg_div_div_div {c : ℝ} (hc : 0 < c) :
+@[tmio T, powerlib_foundation] theorem tendsto_exp_neg_div_div_div {c : ℝ} (hc : 0 < c) :
     Tendsto (fun D : ℝ => Real.exp (-(c / D)) / D / D) (𝓝[>] 0) (𝓝 0) := by
   have h1 : Tendsto (fun t : ℝ => t ^ 2 * Real.exp (-(c * t))) atTop (𝓝 0) := by
     have h := ((Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 2).comp
@@ -1292,7 +1292,7 @@ is `O(√D̃)` and `κ`, `ε` are exponentially small (`tendsto_guardKappa_div`,
   field_simp
 
 /-- `κ = o(D̃)`: the inner-integral growth across the barrier is exponentially small. -/
-@[powerlib_foundation] theorem tendsto_guardKappa_div (hl : 0 < l₁) {a : ℝ} (ha : 0 < a)
+@[tmio M, powerlib_foundation] theorem tendsto_guardKappa_div (hl : 0 < l₁) {a : ℝ} (ha : 0 < a)
     (ha2 : a ^ 2 < 2 * (α / l₁)) :
     Tendsto (fun D => guardKappa α l₁ a D / D) (𝓝[>] 0) (𝓝 0) := by
   have hU := guardPotential_pos (α := α) hl ha ha2
@@ -1306,7 +1306,7 @@ is `O(√D̃)` and `κ`, `ε` are exponentially small (`tendsto_guardKappa_div`,
   field_simp
 
 /-- `ε = o(D̃)`: the tails are exponentially small. -/
-@[powerlib_foundation] theorem tendsto_guardEps_div (hl : 0 < l₁) {a rb : ℝ} (ha : 0 < a)
+@[tmio M, powerlib_foundation] theorem tendsto_guardEps_div (hl : 0 < l₁) {a rb : ℝ} (ha : 0 < a)
     (har : a < √(α / l₁)) (hρ : 0 < α / l₁) :
     Tendsto (fun D => guardEps α l₁ a rb D / D) (𝓝[>] 0) (𝓝 0) := by
   set m := (a + √(α / l₁)) / 2 with hmdef
@@ -1347,7 +1347,7 @@ is `O(√D̃)` and `κ`, `ε` are exponentially small (`tendsto_guardKappa_div`,
 
 /-- Choice of the cut: for every `t < 1` there is `a ∈ (0, r_c)` with `ψ(a) ≤ r_b` and
 `t < a²/(2r_c² − a²)`. -/
-@[powerlib_foundation] theorem guard_exists_cut (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
+@[tmio M, powerlib_foundation] theorem guard_exists_cut (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
     (hrb : guardRadius α l₁ < rb) {t : ℝ} (ht : t < 1) :
     ∃ a, 0 < a ∧ a < √(α / l₁) ∧ √(2 * (α / l₁) - a ^ 2) ≤ rb ∧
       t < a ^ 2 / (2 * (α / l₁) - a ^ 2) := by
@@ -1382,7 +1382,7 @@ is `O(√D̃)` and `κ`, `ε` are exponentially small (`tendsto_guardKappa_div`,
 the ratio of the mean first-passage times `T(r_b)/T(r_c)` (`guardMFPT`) tends to `2` as the noise
 intensity `D̃ → 0⁺` (equivalently `X = ΔU/D̃ → ∞`): stopping at the barrier top integrates only
 half of the Gaussian barrier peak. -/
-@[powerlib_foundation] theorem tendsto_guardMFPT_ratio (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
+@[tmio M, powerlib_foundation] theorem tendsto_guardMFPT_ratio (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
     (hrb : guardRadius α l₁ < rb) :
     Tendsto (fun D => guardMFPT α l₁ D rb / guardMFPT α l₁ D (guardRadius α l₁))
       (𝓝[>] 0) (𝓝 2) := by
@@ -1453,7 +1453,7 @@ half of the Gaussian barrier peak. -/
 
 /-- The limit of `T_guard / T_committed` is `1/2`: the guard (first-arrival) time underestimates the
 committed escape time by a factor of two. -/
-@[powerlib_foundation] theorem tendsto_guardMFPT_ratio_inv (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
+@[tmio M, powerlib_foundation] theorem tendsto_guardMFPT_ratio_inv (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
     (hrb : guardRadius α l₁ < rb) :
     Tendsto (fun D => guardMFPT α l₁ D (guardRadius α l₁) / guardMFPT α l₁ D rb)
       (𝓝[>] 0) (𝓝 (1 / 2)) := by
@@ -1464,7 +1464,7 @@ committed escape time by a factor of two. -/
 
 /-- **`T_committed / T_guard → 2` along `X = ΔU/D̃ → ∞`**: the same limit with the noise intensity
 written as `D̃ = ΔU/X`, `ΔU = α²/(4 l₁)` (`barrierHeight`). -/
-@[powerlib_foundation] theorem tendsto_guardMFPT_ratio_atTop (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
+@[tmio M, powerlib_foundation] theorem tendsto_guardMFPT_ratio_atTop (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
     (hrb : guardRadius α l₁ < rb) :
     Tendsto (fun X => guardMFPT α l₁ (barrierHeight α l₁ / X) rb /
         guardMFPT α l₁ (barrierHeight α l₁ / X) (guardRadius α l₁)) atTop (𝓝 2) := by
@@ -1479,7 +1479,7 @@ written as `D̃ = ΔU/X`, `ΔU = α²/(4 l₁)` (`barrierHeight`). -/
 itself an endpoint effect of relative order `X^{−1/2}`, `X = ΔU/D̃`), for every committed-escape
 boundary `r_b > r_c`. Explicitly, at a fixed cut `a`, `|T(r_b)/T(r_c) − 2| ≤ δ + κ + ε`
 (`guardMFPT_ratio_sub_two_le`) with `δ ≤ (16e/a) √(D̃/α)` and `κ, ε ≤ D̃` eventually. -/
-@[powerlib_foundation] theorem guardMFPT_ratio_sub_two_isBigO (hα : 0 < α) (hl : 0 < l₁)
+@[tmio M, powerlib_foundation] theorem guardMFPT_ratio_sub_two_isBigO (hα : 0 < α) (hl : 0 < l₁)
     {rb : ℝ} (hrb : guardRadius α l₁ < rb) :
     (fun D => guardMFPT α l₁ D rb / guardMFPT α l₁ D (guardRadius α l₁) - 2) =O[𝓝[>] 0]
       fun D => √D := by
@@ -1533,7 +1533,7 @@ boundary `r_b > r_c`. Explicitly, at a fixed cut `a`, `|T(r_b)/T(r_c) − 2| ≤
 (source §1.2, "趋近 2 的方式本身是 `1 + O(X^{−1/2})`"). This theorem is the upper bound; the
 half-order term is present for this integral, with coefficient `−1/√π`
 (`tendsto_guardMFPT_ratio_mul_sqrt_atTop`, `Asymptotics/Guard/MFPTExpansion.lean`). -/
-@[powerlib_foundation] theorem guardMFPT_ratio_isBigO_atTop (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
+@[tmio M, powerlib_foundation] theorem guardMFPT_ratio_isBigO_atTop (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
     (hrb : guardRadius α l₁ < rb) :
     (fun X => guardMFPT α l₁ (barrierHeight α l₁ / X) rb /
         guardMFPT α l₁ (barrierHeight α l₁ / X) (guardRadius α l₁) / 2 - 1) =O[atTop]
@@ -1563,7 +1563,7 @@ section Guard
 
 /-- Lower Gaussian bound for the inner integral: `K(y) ≥ (D̃/α)(1 − e^{−αy²/(2D̃)})`, `y ≥ 0`
 (from `U(z) ≤ αz²/2`). -/
-@[powerlib_foundation] theorem guardInner_ge_gauss (hα : 0 < α) (hl : 0 ≤ l₁) {D y : ℝ}
+@[tmio M, powerlib_foundation] theorem guardInner_ge_gauss (hα : 0 < α) (hl : 0 ≤ l₁) {D y : ℝ}
     (hD : 0 < D) (hy : 0 ≤ y) :
     D / α * (1 - Real.exp (-(α / (2 * D)) * y ^ 2)) ≤ guardInner α l₁ D y := by
   rw [← integral_mul_exp_neg_sq_div hα hD]
@@ -1584,7 +1584,7 @@ section Guard
 /-- Upper Gaussian bound for the inner integral up to the barrier top:
 `K(r_c) ≤ (D̃/α)(1 + 16 l₁ D̃/α²)` (from `e^{−U/D̃} ≤ e^{−αz²/(2D̃)} + (l₁z⁴/(4D̃)) e^{−αz²/(4D̃)}`
 on `[0, r_c]` and the fifth half-line moment). -/
-@[powerlib_foundation] theorem guardInner_le_gauss (hα : 0 < α) (hl : 0 < l₁) {D : ℝ}
+@[tmio M, powerlib_foundation] theorem guardInner_le_gauss (hα : 0 < α) (hl : 0 < l₁) {D : ℝ}
     (hD : 0 < D) :
     guardInner α l₁ D √(α / l₁) ≤ D / α * (1 + 16 * l₁ * D / α ^ 2) := by
   have hρ : 0 < α / l₁ := div_pos hα hl
@@ -1657,7 +1657,7 @@ on `[0, r_c]` and the fifth half-line moment). -/
 /-- Lower Gaussian bound for the barrier weight, `c = α/D̃`:
 `∫_a^{r_c} y⁻¹ e^{U/D̃} ≥ r_c⁻¹ e^{ΔU/D̃} (√(π/c)/2 − 1/(2c(r_c − a)))`
 (from `U(y) ≥ ΔU − α(r_c − y)²` and `integral_exp_neg_mul_sq_ge`). -/
-@[powerlib_foundation] theorem guard_weight_ge_gauss (hα : 0 < α) (hl : 0 < l₁) {D a : ℝ}
+@[tmio M, powerlib_foundation] theorem guard_weight_ge_gauss (hα : 0 < α) (hl : 0 < l₁) {D a : ℝ}
     (hD : 0 < D) (ha : 0 < a) (har : a < √(α / l₁)) :
     (√(α / l₁))⁻¹ * Real.exp (barrierHeight α l₁ / D) *
         (√(π / (α / D)) / 2 - 1 / (2 * (α / D) * (√(α / l₁) - a))) ≤
@@ -1702,7 +1702,7 @@ on `[0, r_c]` and the fifth half-line moment). -/
 `∫_a^{r_c} y⁻¹ e^{U/D̃} ≤ e^{ΔU/D̃} (r_c⁻¹ √(π/c)/2 + (a r_c)⁻¹/(2c) + (l₁ r_c/(a D̃))/(2c'²))`.
 In `ξ = r_c − y`: `U = ΔU − D̃ s`, `s ≥ c'ξ²`, `0 ≤ cξ² − s ≤ l₁ r_c ξ³/D̃`, so
 `e^{−s} ≤ e^{−cξ²} + (l₁ r_c ξ³/D̃) e^{−c'ξ²}`; and `(r_c − ξ)⁻¹ ≤ r_c⁻¹ + ξ/(a r_c)`. -/
-@[powerlib_foundation] theorem guard_weight_le_gauss (hα : 0 < α) (hl : 0 < l₁) {D a : ℝ}
+@[tmio M, powerlib_foundation] theorem guard_weight_le_gauss (hα : 0 < α) (hl : 0 < l₁) {D a : ℝ}
     (hD : 0 < D) (ha : 0 < a) (har : a < √(α / l₁)) :
     ∫ y in a..√(α / l₁), y⁻¹ * Real.exp (guardPotential α l₁ y / D) ≤
       Real.exp (barrierHeight α l₁ / D) * ((√(α / l₁))⁻¹ * (√(π / (α / D)) / 2) +
@@ -1839,7 +1839,7 @@ In `ξ = r_c − y`: `U = ΔU − D̃ s`, `s ≥ c'ξ²`, `0 ≤ cξ² − s ≤
 
 /-- `D̃ P = (D̃/α) · r_c⁻¹ · √(π/(α/D̃))/2`: the prefactor is the product of the inner Gaussian
 mass `D̃/α`, the weight `1/r_c` at the top and the half Gaussian `√(πD̃/α)/2`. -/
-@[powerlib_foundation] theorem mul_guardPrefactor_eq (hα : 0 < α) (hl : 0 < l₁) {D : ℝ}
+@[tmio M, powerlib_foundation] theorem mul_guardPrefactor_eq (hα : 0 < α) (hl : 0 < l₁) {D : ℝ}
     (hD : 0 < D) :
     D * guardPrefactor α l₁ D = D / α * ((√(α / l₁))⁻¹ * (√(π / (α / D)) / 2)) := by
   have e1 : π / (α / D) = π * D / α := by field_simp
@@ -1852,7 +1852,7 @@ mass `D̃/α`, the weight `1/r_c` at the top and the half Gaussian `√(πD̃/α
   field_simp
 
 /-- Algebra of the upper weight bound in `σ = √(D̃/α)`. -/
-@[powerlib_foundation] private theorem weight_upper_identity {α l₁ D a rc σ p : ℝ}
+@[tmio T, powerlib_foundation] private theorem weight_upper_identity {α l₁ D a rc σ p : ℝ}
     (hα : 0 < α) (hl : 0 < l₁) (hD : 0 < D) (ha : 0 < a) (hrc : 0 < rc)
     (hrc2 : rc ^ 2 = α / l₁) (hσ : 0 < σ) (hσ2 : σ ^ 2 = D / α) (hp : 0 < p) :
     rc⁻¹ * (p * σ / 2) + (a * rc)⁻¹ * (1 / (2 * (α / D))) +
@@ -1868,7 +1868,7 @@ mass `D̃/α`, the weight `1/r_c` at the top and the half Gaussian `√(πD̃/α
 /-- **Explicit lower bound for `T_guard`** (source §1.3): for `0 < a < r_c` and `D̃ > 0`,
 `(1 − e^{−αa²/(2D̃)}) (1 − √(D̃/α)/(√π (r_c − a))) · P e^X ≤ T_guard`, `P = guardPrefactor`,
 `X = ΔU/D̃`. -/
-@[powerlib_foundation] theorem guardMFPT_guard_ge (hα : 0 < α) (hl : 0 < l₁) {D a : ℝ}
+@[tmio M, powerlib_foundation] theorem guardMFPT_guard_ge (hα : 0 < α) (hl : 0 < l₁) {D a : ℝ}
     (ha : 0 < a) (har : a < √(α / l₁)) (hD : 0 < D) :
     (1 - Real.exp (-(α / (2 * D)) * a ^ 2)) * (1 - √(D / α) / (√π * (√(α / l₁) - a))) *
         (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) ≤
@@ -1950,7 +1950,7 @@ mass `D̃/α`, the weight `1/r_c` at the top and the half Gaussian `√(πD̃/α
 /-- **Explicit upper bound for `T_guard`** (source §1.3): for `0 < a < r_c` and `0 < D̃ ≤ a²`,
 `T_guard ≤ (1 + ε)(1 + 16 l₁D̃/α²)(1 + 17√(D̃/α)/(√π a)) · P e^X` with the exponentially small
 `ε = guardEps α l₁ a ψ(a) D̃`. -/
-@[powerlib_foundation] theorem guardMFPT_guard_le (hα : 0 < α) (hl : 0 < l₁) {D a : ℝ}
+@[tmio M, powerlib_foundation] theorem guardMFPT_guard_le (hα : 0 < α) (hl : 0 < l₁) {D a : ℝ}
     (ha : 0 < a) (har : a < √(α / l₁)) (hD : 0 < D) (hDa : D ≤ a ^ 2) :
     guardMFPT α l₁ D (guardRadius α l₁) ≤
       (1 + guardEps α l₁ a √(2 * (α / l₁) - a ^ 2) D) * (1 + 16 * l₁ * D / α ^ 2) *
@@ -2025,7 +2025,7 @@ mass `D̃/α`, the weight `1/r_c` at the top and the half Gaussian `√(πD̃/α
 
 /-- **`T_guard = P e^X (1 + O(√D̃))`** as `D̃ → 0⁺` (source §1.3,
 `T_guard ∼ (√π/2) √(D̃ l₁)/α² e^X (1 + O(X^{−1/2}))`), `P = guardPrefactor`, `X = ΔU/D̃`. -/
-@[powerlib_foundation] theorem guardMFPT_guard_isBigO (hα : 0 < α) (hl : 0 < l₁) :
+@[tmio M, powerlib_foundation] theorem guardMFPT_guard_isBigO (hα : 0 < α) (hl : 0 < l₁) :
     (fun D => guardMFPT α l₁ D (guardRadius α l₁) /
         (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D)) - 1) =O[𝓝[>] 0]
       fun D => √D := by
@@ -2120,7 +2120,7 @@ mass `D̃/α`, the weight `1/r_c` at the top and the half Gaussian `√(πD̃/α
   constructor <;> linarith
 
 /-- `T_guard / (P e^X) → 1` as `D̃ → 0⁺`. -/
-@[powerlib_foundation] theorem tendsto_guardMFPT_guard (hα : 0 < α) (hl : 0 < l₁) :
+@[tmio M, powerlib_foundation] theorem tendsto_guardMFPT_guard (hα : 0 < α) (hl : 0 < l₁) :
     Tendsto (fun D => guardMFPT α l₁ D (guardRadius α l₁) /
         (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D))) (𝓝[>] 0) (𝓝 1) := by
   have hs : Tendsto (fun D : ℝ => √D) (𝓝[>] 0) (𝓝 0) := by
@@ -2133,7 +2133,7 @@ mass `D̃/α`, the weight `1/r_c` at the top and the half Gaussian `√(πD̃/α
 
 /-- **`T_guard = P e^X (1 + O(X^{−1/2}))`** along `X = ΔU/D̃ → ∞` (source §1.3), with
 `P = (√π/2) √(D̃ l₁)/α² = √π/(4α√X)` (`guardPrefactor_eq`). -/
-@[powerlib_foundation] theorem guardMFPT_guard_isBigO_atTop (hα : 0 < α) (hl : 0 < l₁) :
+@[tmio M, powerlib_foundation] theorem guardMFPT_guard_isBigO_atTop (hα : 0 < α) (hl : 0 < l₁) :
     (fun X => guardMFPT α l₁ (barrierHeight α l₁ / X) (guardRadius α l₁) /
         (guardPrefactor α l₁ (barrierHeight α l₁ / X) * Real.exp X) - 1) =O[atTop]
       fun X => (√X)⁻¹ := by
@@ -2158,7 +2158,7 @@ mass `D̃/α`, the weight `1/r_c` at the top and the half Gaussian `√(πD̃/α
 `r_b > r_c` (source §1.5, "`× 2` 承诺逃逸"): the product of `guardMFPT_ratio_sub_two_isBigO` and
 `guardMFPT_guard_isBigO`. Not sharp: the half-order terms cancel and the relative error is `O(D̃)`
 (`guardMFPT_committed_two_term`, `Asymptotics/Guard/MFPTExpansion.lean`). -/
-@[powerlib_foundation] theorem guardMFPT_committed_isBigO (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
+@[tmio M, powerlib_foundation] theorem guardMFPT_committed_isBigO (hα : 0 < α) (hl : 0 < l₁) {rb : ℝ}
     (hrb : guardRadius α l₁ < rb) :
     (fun D => guardMFPT α l₁ D rb /
         (2 * (guardPrefactor α l₁ D * Real.exp (barrierHeight α l₁ / D))) - 1) =O[𝓝[>] 0]
@@ -2188,7 +2188,7 @@ mass `D̃/α`, the weight `1/r_c` at the top and the half Gaussian `√(πD̃/α
 
 /-- Composition with `D̃ = c/X` (`c > 0`): an `O(√D̃)` bound as `D̃ → 0⁺` is an `O(X^{−1/2})` bound
 as `X → ∞`. -/
-@[powerlib_foundation] theorem isBigO_comp_div_atTop {f : ℝ → ℝ} {c : ℝ} (hc : 0 < c)
+@[tmio T, powerlib_foundation] theorem isBigO_comp_div_atTop {f : ℝ → ℝ} {c : ℝ} (hc : 0 < c)
     (hf : f =O[𝓝[>] 0] fun D => √D) : (fun X => f (c / X)) =O[atTop] fun X => (√X)⁻¹ := by
   have hD : Tendsto (fun X : ℝ => c / X) atTop (𝓝[>] 0) := by
     refine tendsto_nhdsWithin_iff.2 ⟨tendsto_const_nhds.div_atTop tendsto_id, ?_⟩
@@ -2203,7 +2203,7 @@ as `X → ∞`. -/
   exact (hf.comp_tendsto hD).trans h2
 
 /-- **`T_committed = 2 P e^X (1 + O(X^{−1/2}))`** along `X = ΔU/D̃ → ∞`. -/
-@[powerlib_foundation] theorem guardMFPT_committed_isBigO_atTop (hα : 0 < α) (hl : 0 < l₁)
+@[tmio M, powerlib_foundation] theorem guardMFPT_committed_isBigO_atTop (hα : 0 < α) (hl : 0 < l₁)
     {rb : ℝ} (hrb : guardRadius α l₁ < rb) :
     (fun X => guardMFPT α l₁ (barrierHeight α l₁ / X) rb /
         (2 * (guardPrefactor α l₁ (barrierHeight α l₁ / X) * Real.exp X)) - 1) =O[atTop]

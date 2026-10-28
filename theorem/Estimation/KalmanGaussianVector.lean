@@ -57,7 +57,7 @@ section Conditioning
 variable {X : Fin n → Ω → ℝ} {Y : Fin p → Ω → ℝ}
 
 /-- `cov[X_i − Σ_l K_il Y_l, W] = cov[X_i, W] − Σ_l K_il cov[Y_l, W]`. -/
-private lemma cov_sub_comb [IsFiniteMeasure P] (hX2 : ∀ i, MemLp (X i) 2 P)
+@[tmio T] private lemma cov_sub_comb [IsFiniteMeasure P] (hX2 : ∀ i, MemLp (X i) 2 P)
     (hY2 : ∀ j, MemLp (Y j) 2 P) (K : Matrix (Fin n) (Fin p) ℝ) (i : Fin n) {W : Ω → ℝ}
     (hW : MemLp W 2 P) :
     cov[fun ω => X i ω - ∑ l, K i l * Y l ω, W; P] =
@@ -98,7 +98,7 @@ is independent of the measurement vector `Y`. -/
 /-- **Gaussian conditioning (vector case): the conditional mean is affine.**  If `(X, Y)` is a
 Gaussian vector in `ℝⁿ × ℝᵖ` and `K Σ_YY = Σ_XY` (e.g. `K = Σ_XY Σ_YY⁻¹`), then
 `E[X_i | Y] = E X_i + Σ_j K_ij (Y_j − E Y_j)` almost surely. -/
-@[powerlib_foundation] theorem gaussian_condExp_eq
+@[tmio T, powerlib_foundation] theorem gaussian_condExp_eq
     (hXY : HasGaussianLaw (fun ω => (fun i => X i ω, fun j => Y j ω)) P)
     (hXm : ∀ i, Measurable (X i)) (hYm : ∀ j, Measurable (Y j))
     {K : Matrix (Fin n) (Fin p) ℝ}
@@ -148,7 +148,7 @@ Gaussian vector in `ℝⁿ × ℝᵖ` and `K Σ_YY = Σ_XY` (e.g. `K = Σ_XY Σ_
   ring
 
 /-- Orthogonality of the error: `cov[X_i − Σ_l K_il Y_l, Y_j] = 0` when `K Σ_YY = Σ_XY`. -/
-private lemma cov_error_meas (hX2 : ∀ i, MemLp (X i) 2 P) (hY2 : ∀ j, MemLp (Y j) 2 P)
+@[tmio T] private lemma cov_error_meas (hX2 : ∀ i, MemLp (X i) 2 P) (hY2 : ∀ j, MemLp (Y j) 2 P)
     [IsFiniteMeasure P] {K : Matrix (Fin n) (Fin p) ℝ}
     (hK : ∀ i j, ∑ l, K i l * cov[Y l, Y j; P] = cov[X i, Y j; P]) (i : Fin n) (j : Fin p) :
     cov[fun ω => X i ω - ∑ l, K i l * Y l ω, Y j; P] = 0 := by
@@ -158,7 +158,7 @@ private lemma cov_error_meas (hX2 : ∀ i, MemLp (X i) 2 P) (hY2 : ∀ j, MemLp 
 conditional mean `x̂_i = E X_i + Σ_j K_ij (Y_j − E Y_j)` of `gaussian_condExp_eq`,
 `E[(X_i − x̂_i)(X_i' − x̂_i') | Y] = Σ_XX,ii' − Σ_j K_ij Σ_XY,i'j` a.s., i.e. the conditional
 covariance is the matrix `Σ_XX − K Σ_YX`. -/
-@[powerlib_foundation] theorem gaussian_condCov_eq
+@[tmio T, powerlib_foundation] theorem gaussian_condCov_eq
     (hXY : HasGaussianLaw (fun ω => (fun i => X i ω, fun j => Y j ω)) P)
     (hXm : ∀ i, Measurable (X i)) (hYm : ∀ j, Measurable (Y j))
     {K : Matrix (Fin n) (Fin p) ℝ}
@@ -237,7 +237,7 @@ variable {X : Fin n → Ω → ℝ} {V : Fin p → Ω → ℝ}
 
 /-- Covariance with a measurement coordinate:
 `cov[W, Σ_l H_jl X_l + V_j] = Σ_l H_jl cov[W, X_l] + cov[W, V_j]`. -/
-private lemma cov_meas_right [IsFiniteMeasure P] (hX2 : ∀ i, MemLp (X i) 2 P)
+@[tmio T] private lemma cov_meas_right [IsFiniteMeasure P] (hX2 : ∀ i, MemLp (X i) 2 P)
     (hV2 : ∀ j, MemLp (V j) 2 P) (H : Matrix (Fin p) (Fin n) ℝ) (j : Fin p) {W : Ω → ℝ}
     (hW : MemLp W 2 P) :
     cov[W, fun ω => ∑ l, H j l * X l ω + V j ω; P] =
@@ -257,7 +257,7 @@ covariance `S` is invertible, `kalmanGain_mul_innov`):
 * `E[X_i | Y] = m_i + Σ_j K_ij (Y_j − (H m)_j)` a.s. — the Kalman update `x̂⁺ = m + K(y − H m)`;
 * `E[(X_i − x̂⁺_i)(X_i' − x̂⁺_i') | Y] = ((I − K H) P⁻)_ii'` a.s. — the Kalman posterior
   covariance is the (deterministic) conditional covariance. -/
-@[powerlib_foundation] theorem kalman_update_condExp_condCov
+@[tmio T, powerlib_foundation] theorem kalman_update_condExp_condCov
     (hX : HasGaussianLaw (fun ω i => X i ω) P) (hV : HasGaussianLaw (fun ω j => V j ω) P)
     (hXV : IndepFun (fun ω i => X i ω) (fun ω j => V j ω) P)
     (hXm : ∀ i, Measurable (X i)) (hVm : ∀ j, Measurable (V j))

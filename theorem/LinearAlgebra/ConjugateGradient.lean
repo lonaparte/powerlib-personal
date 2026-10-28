@@ -87,7 +87,7 @@ def krylov (A : Matrix (Fin k) (Fin k) ℝ) (r : Fin k → ℝ) (m : ℕ) : Subm
 
 /-! ## Polynomial iterates lie in the Krylov space -/
 
-@[powerlib_foundation] theorem aeval_mulVec_mem_krylov {A : Matrix (Fin k) (Fin k) ℝ}
+@[tmio T, powerlib_foundation] theorem aeval_mulVec_mem_krylov {A : Matrix (Fin k) (Fin k) ℝ}
     (r : Fin k → ℝ) {m : ℕ} (q : ℝ[X]) (hq : q.natDegree < m) :
     aeval A q *ᵥ r ∈ krylov A r m := by
   rw [aeval_eq_sum_range, sum_mulVec]
@@ -98,7 +98,7 @@ def krylov (A : Matrix (Fin k) (Fin k) ℝ) (r : Fin k → ℝ) (m : ℕ) : Subm
   omega
 
 /-- `x* + p(A)(x₀ − x*) ∈ x₀ + K_m(A, r₀)` for `p(0) = 1`, `deg p ≤ m`. -/
-@[powerlib_foundation] theorem polyIterate_mem {A : Matrix (Fin k) (Fin k) ℝ} {x₀ xs b : Fin k → ℝ}
+@[tmio T, powerlib_foundation] theorem polyIterate_mem {A : Matrix (Fin k) (Fin k) ℝ} {x₀ xs b : Fin k → ℝ}
     (hxs : A *ᵥ xs = b) {m : ℕ} (p : ℝ[X]) (hp0 : p.eval 0 = 1) (hpm : p.natDegree ≤ m) :
     (xs + aeval A p *ᵥ (x₀ - xs)) - x₀ ∈ krylov A (b - A *ᵥ x₀) m := by
   -- `p = 1 + X q`
@@ -137,7 +137,7 @@ def krylov (A : Matrix (Fin k) (Fin k) ℝ) (r : Fin k → ℝ) (m : ℕ) : Subm
 
 /-! ## Spectral bound -/
 
-@[powerlib_foundation] theorem aeval_diagonal (d : Fin k → ℝ) (p : ℝ[X]) :
+@[tmio T, powerlib_foundation] theorem aeval_diagonal (d : Fin k → ℝ) (p : ℝ[X]) :
     aeval (diagonal d) p = diagonal fun i => p.eval (d i) := by
   induction p using Polynomial.induction_on' with
   | add p q hp hq => simp [hp, hq, diagonal_add]
@@ -147,7 +147,7 @@ def krylov (A : Matrix (Fin k) (Fin k) ℝ) (r : Fin k → ℝ) (m : ℕ) : Subm
     funext i
     simp [eval_monomial]
 
-@[powerlib_foundation] theorem anorm2_conj {A U D : Matrix (Fin k) (Fin k) ℝ} (hU : Uᵀ * U = 1)
+@[tmio T, powerlib_foundation] theorem anorm2_conj {A U D : Matrix (Fin k) (Fin k) ℝ} (hU : Uᵀ * U = 1)
     (hA : A = U * D * Uᵀ) (z : Fin k → ℝ) : anorm2 A (U *ᵥ z) = z ⬝ᵥ (D *ᵥ z) := by
   unfold anorm2
   have h1 : A *ᵥ (U *ᵥ z) = U *ᵥ (D *ᵥ z) := by
@@ -155,7 +155,7 @@ def krylov (A : Matrix (Fin k) (Fin k) ℝ) (r : Fin k → ℝ) (m : ℕ) : Subm
   rw [h1, dotProduct_mulVec, ← mulVec_transpose, mulVec_mulVec, hU, one_mulVec]
 
 /-- `p(A) = U diag(p(λ)) Uᵀ` for an orthogonal diagonalization `A = U diag(λ) Uᵀ`. -/
-@[powerlib_foundation] theorem aeval_conj {A U : Matrix (Fin k) (Fin k) ℝ} {lam : Fin k → ℝ}
+@[tmio T, powerlib_foundation] theorem aeval_conj {A U : Matrix (Fin k) (Fin k) ℝ} {lam : Fin k → ℝ}
     (hU : Uᵀ * U = 1) (hU' : U * Uᵀ = 1) (hA : A = U * diagonal lam * Uᵀ) (p : ℝ[X]) :
     aeval A p = U * diagonal (fun i => p.eval (lam i)) * Uᵀ := by
   have hpow : ∀ j : ℕ, A ^ j = U * diagonal lam ^ j * Uᵀ := by
@@ -175,7 +175,7 @@ def krylov (A : Matrix (Fin k) (Fin k) ℝ) (r : Fin k → ℝ) (m : ℕ) : Subm
     simp only [Matrix.smul_mul, Matrix.mul_smul, Matrix.one_mul]
 
 /-- **Spectral bound** `‖p(A) e‖_A² ≤ M² ‖e‖_A²` with `M ≥ maxᵢ |p(λᵢ)|` (`A ⪰ 0`). -/
-@[powerlib_foundation] theorem anorm_poly_le {A : Matrix (Fin k) (Fin k) ℝ} (hA : A.PosSemidef)
+@[tmio T, powerlib_foundation] theorem anorm_poly_le {A : Matrix (Fin k) (Fin k) ℝ} (hA : A.PosSemidef)
     (p : ℝ[X]) {M : ℝ} (hM : ∀ i, |p.eval (hA.1.eigenvalues i)| ≤ M) (e : Fin k → ℝ) :
     anorm2 A (aeval A p *ᵥ e) ≤ M ^ 2 * anorm2 A e := by
   set U : Matrix (Fin k) (Fin k) ℝ := (hA.1.eigenvectorUnitary : Matrix (Fin k) (Fin k) ℝ)
@@ -208,7 +208,7 @@ def krylov (A : Matrix (Fin k) (Fin k) ℝ) (r : Fin k → ℝ) (m : ℕ) : Subm
 
 /-- **CG min–max bound**: the Galerkin iterate `x_m ∈ x₀ + K_m`, `b − A x_m ⊥ K_m`, satisfies
 `‖x_m − x*‖_A² ≤ M² ‖x₀ − x*‖_A²` for every `p(0) = 1`, `deg p ≤ m` with `|p(λᵢ)| ≤ M`. -/
-@[powerlib_foundation] theorem cg_minmax {A : Matrix (Fin k) (Fin k) ℝ} (hA : A.PosSemidef)
+@[tmio T, powerlib_foundation] theorem cg_minmax {A : Matrix (Fin k) (Fin k) ℝ} (hA : A.PosSemidef)
     {x₀ xm xs b : Fin k → ℝ} (hxs : A *ᵥ xs = b) {m : ℕ}
     (hxm : xm - x₀ ∈ krylov A (b - A *ᵥ x₀) m)
     (horth : ∀ s ∈ krylov A (b - A *ᵥ x₀) m, s ⬝ᵥ (b - A *ᵥ xm) = 0)
@@ -230,7 +230,7 @@ def krylov (A : Matrix (Fin k) (Fin k) ℝ) (r : Fin k → ℝ) (m : ℕ) : Subm
 /-! ## Chebyshev bound (§1.6) -/
 
 /-- `T_m((u + u⁻¹)/2) ≥ uᵐ / 2` for `u > 0`: with `u = e^θ`, `T_m(cosh θ) = cosh(mθ)`. -/
-@[powerlib_foundation] theorem chebyshev_T_ge {u : ℝ} (hu : 0 < u) (m : ℕ) :
+@[tmio T, powerlib_foundation] theorem chebyshev_T_ge {u : ℝ} (hu : 0 < u) (m : ℕ) :
     u ^ m / 2 ≤ (Chebyshev.T ℝ (m : ℤ)).eval ((u + u⁻¹) / 2) := by
   have hcosh : Real.cosh (Real.log u) = (u + u⁻¹) / 2 := by
     rw [Real.cosh_eq, Real.exp_neg, Real.exp_log hu]
@@ -245,7 +245,7 @@ def krylov (A : Matrix (Fin k) (Fin k) ℝ) (r : Fin k → ℝ) (m : ℕ) : Subm
 `deg p ≤ m` and `|p(x)| ≤ 2((√κ − 1)/(√κ + 1))ᵐ` on `[lo, hi]`, `κ = hi / lo`: the shifted,
 normalised Chebyshev polynomial `T_m((hi+lo−2x)/(hi−lo)) / T_m((hi+lo)/(hi−lo))` (for `lo < hi`;
 `1 − x/lo` or `1` in the degenerate cases). -/
-@[powerlib_foundation] theorem exists_chebyshev_poly {lo hi : ℝ} (hlo : 0 < lo) (m : ℕ) :
+@[tmio T, powerlib_foundation] theorem exists_chebyshev_poly {lo hi : ℝ} (hlo : 0 < lo) (m : ℕ) :
     ∃ p : ℝ[X], p.eval 0 = 1 ∧ p.natDegree ≤ m ∧
       ∀ x ∈ Set.Icc lo hi, |p.eval x| ≤ 2 * ((√(hi / lo) - 1) / (√(hi / lo) + 1)) ^ m := by
   rcases lt_trichotomy lo hi with hlt | heq | hgt
@@ -322,7 +322,7 @@ normalised Chebyshev polynomial `T_m((hi+lo−2x)/(hi−lo)) / T_m((hi+lo)/(hi�
 /-- **CG Chebyshev bound** (squared `A`-norm form): if the spectrum of `A ⪰ 0` lies in `[lo, hi]`
 with `0 < lo`, the Galerkin (CG) iterate satisfies
 `‖x_m − x*‖_A² ≤ (2((√κ−1)/(√κ+1))^m)² ‖x₀ − x*‖_A²`, `κ = hi / lo`. -/
-@[powerlib_foundation] theorem cg_chebyshev {A : Matrix (Fin k) (Fin k) ℝ} (hA : A.PosSemidef)
+@[tmio T, powerlib_foundation] theorem cg_chebyshev {A : Matrix (Fin k) (Fin k) ℝ} (hA : A.PosSemidef)
     {x₀ xm xs b : Fin k → ℝ} (hxs : A *ᵥ xs = b) {m : ℕ}
     (hxm : xm - x₀ ∈ krylov A (b - A *ᵥ x₀) m)
     (horth : ∀ s ∈ krylov A (b - A *ᵥ x₀) m, s ⬝ᵥ (b - A *ᵥ xm) = 0)
@@ -334,7 +334,7 @@ with `0 < lo`, the Galerkin (CG) iterate satisfies
 
 /-- **CG Chebyshev bound** `‖x_m − x*‖_A ≤ 2((√κ−1)/(√κ+1))^m ‖x₀ − x*‖_A`, `κ = hi / lo`, for a
 spectrum in `[lo, hi]`, `0 < lo ≤ hi` (`‖u‖_A = √(uᵀAu)`). -/
-@[powerlib_foundation] theorem cg_chebyshev_sqrt {A : Matrix (Fin k) (Fin k) ℝ}
+@[tmio T, powerlib_foundation] theorem cg_chebyshev_sqrt {A : Matrix (Fin k) (Fin k) ℝ}
     (hA : A.PosSemidef) {x₀ xm xs b : Fin k → ℝ} (hxs : A *ᵥ xs = b) {m : ℕ}
     (hxm : xm - x₀ ∈ krylov A (b - A *ᵥ x₀) m)
     (horth : ∀ s ∈ krylov A (b - A *ᵥ x₀) m, s ⬝ᵥ (b - A *ᵥ xm) = 0)
@@ -355,7 +355,7 @@ spectrum in `[lo, hi]`, `0 < lo ≤ hi` (`‖u‖_A = √(uᵀAu)`). -/
 
 /-- **CG Chebyshev bound with the spectral condition number** `κ = λ_max / λ_min` of a positive
 definite `A` (`k > 0`): `‖x_m − x*‖_A ≤ 2((√κ−1)/(√κ+1))^m ‖x₀ − x*‖_A`. -/
-@[powerlib_foundation] theorem cg_chebyshev_cond {A : Matrix (Fin k) (Fin k) ℝ} (hA : A.PosDef)
+@[tmio T, powerlib_foundation] theorem cg_chebyshev_cond {A : Matrix (Fin k) (Fin k) ℝ} (hA : A.PosDef)
     (hk : 0 < k) {x₀ xm xs b : Fin k → ℝ} (hxs : A *ᵥ xs = b) {m : ℕ}
     (hxm : xm - x₀ ∈ krylov A (b - A *ᵥ x₀) m)
     (horth : ∀ s ∈ krylov A (b - A *ᵥ x₀) m, s ⬝ᵥ (b - A *ᵥ xm) = 0) :

@@ -47,7 +47,7 @@ def joseph (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
 def innov (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
     (R : Matrix (Fin p) (Fin p) ℝ) : Matrix (Fin p) (Fin p) ℝ := H * P * Hᵀ + R
 
-@[powerlib_foundation] private lemma psd_congr {m k : ℕ} {A : Matrix (Fin m) (Fin m) ℝ}
+@[tmio T, powerlib_foundation] private lemma psd_congr {m k : ℕ} {A : Matrix (Fin m) (Fin m) ℝ}
     (hA : A.PosSemidef) (B : Matrix (Fin k) (Fin m) ℝ) : (B * A * Bᵀ).PosSemidef := by
   simpa [conjTranspose_eq_transpose_of_trivial] using hA.mul_mul_conjTranspose_same B
 
@@ -59,7 +59,7 @@ def innov (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
   (psd_congr hP _).add (psd_congr hR K)
 
 /-- Expanded Joseph form `P − K H P − P Hᵀ Kᵀ + K S Kᵀ`. -/
-@[powerlib_foundation] theorem joseph_expand (P : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem joseph_expand (P : Matrix (Fin n) (Fin n) ℝ)
     (H : Matrix (Fin p) (Fin n) ℝ) (R : Matrix (Fin p) (Fin p) ℝ) (K : Matrix (Fin n) (Fin p) ℝ) :
     joseph P H R K = P - K * H * P - P * Hᵀ * Kᵀ + K * innov P H R * Kᵀ := by
   simp only [joseph, innov, transpose_sub, transpose_one, transpose_mul, Matrix.sub_mul,
@@ -68,7 +68,7 @@ def innov (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
   abel
 
 /-- **At the exact gain `K S = P Hᵀ` the Joseph form equals `(I − K H) P`** (§1.3). -/
-@[powerlib_foundation] theorem joseph_eq_short {P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem joseph_eq_short {P : Matrix (Fin n) (Fin n) ℝ}
     {H : Matrix (Fin p) (Fin n) ℝ} {R : Matrix (Fin p) (Fin p) ℝ} {K : Matrix (Fin n) (Fin p) ℝ}
     (hK : K * innov P H R = P * Hᵀ) : joseph P H R K = (1 - K * H) * P := by
   rw [joseph_expand, hK]
@@ -76,7 +76,7 @@ def innov (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
   abel
 
 /-- The exact gain `K* = P Hᵀ S⁻¹` satisfies `K* S = P Hᵀ` when `S` is invertible. -/
-@[powerlib_foundation] theorem kalmanGain_mul_innov {P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem kalmanGain_mul_innov {P : Matrix (Fin n) (Fin n) ℝ}
     {H : Matrix (Fin p) (Fin n) ℝ} {R : Matrix (Fin p) (Fin p) ℝ}
     (hS : IsUnit (innov P H R).det) :
     P * Hᵀ * (innov P H R)⁻¹ * innov P H R = P * Hᵀ := by
@@ -84,7 +84,7 @@ def innov (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
 
 /-- **Completion of squares**: for symmetric `P`, `R` and the exact gain `K*`,
 `J(K) = J(K*) + (K − K*) S (K − K*)ᵀ`. -/
-@[powerlib_foundation] theorem joseph_eq_optimal_add {P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem joseph_eq_optimal_add {P : Matrix (Fin n) (Fin n) ℝ}
     {H : Matrix (Fin p) (Fin n) ℝ} {R : Matrix (Fin p) (Fin p) ℝ}
     (hPs : Pᵀ = P) (hRs : Rᵀ = R) {Ks : Matrix (Fin n) (Fin p) ℝ}
     (hK : Ks * innov P H R = P * Hᵀ) (K : Matrix (Fin n) (Fin p) ℝ) :
@@ -111,7 +111,7 @@ def innov (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
   abel
 
 /-- **The Kalman gain is Loewner-optimal**: `J(K*) ⪯ J(K)` for every gain `K` (when `S ⪰ 0`). -/
-@[powerlib_foundation] theorem joseph_optimal_le {P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem joseph_optimal_le {P : Matrix (Fin n) (Fin n) ℝ}
     {H : Matrix (Fin p) (Fin n) ℝ} {R : Matrix (Fin p) (Fin p) ℝ}
     (hPs : Pᵀ = P) (hRs : Rᵀ = R) (hS : (innov P H R).PosSemidef) {Ks : Matrix (Fin n) (Fin p) ℝ}
     (hK : Ks * innov P H R = P * Hᵀ) (K : Matrix (Fin n) (Fin p) ℝ) :
@@ -123,7 +123,7 @@ def innov (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
 
 /-- **Information form (§1.8, Woodbury)**: for invertible `P`, `R` and `S = H P Hᵀ + R`,
 `(P⁻¹ + Hᵀ R⁻¹ H)⁻¹ = P − P Hᵀ S⁻¹ H P = (I − K H) P` with `K = P Hᵀ S⁻¹`. -/
-@[powerlib_foundation] theorem information_form {P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem information_form {P : Matrix (Fin n) (Fin n) ℝ}
     {H : Matrix (Fin p) (Fin n) ℝ} {R : Matrix (Fin p) (Fin p) ℝ}
     (hP : IsUnit P) (hR : IsUnit R) (hS : IsUnit (innov P H R)) :
     (P⁻¹ + Hᵀ * R⁻¹ * H)⁻¹ = (1 - P * Hᵀ * (innov P H R)⁻¹ * H) * P := by
@@ -140,7 +140,7 @@ def innov (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
   simp only [Matrix.sub_mul, Matrix.one_mul, Matrix.mul_assoc]
 
 /-- The gain in information form: `K = P⁺ Hᵀ R⁻¹` with `P⁺ = (P⁻¹ + Hᵀ R⁻¹ H)⁻¹`. -/
-@[powerlib_foundation] theorem gain_information_form {P : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem gain_information_form {P : Matrix (Fin n) (Fin n) ℝ}
     {H : Matrix (Fin p) (Fin n) ℝ} {R : Matrix (Fin p) (Fin p) ℝ}
     (hP : IsUnit P) (hR : IsUnit R) (hS : IsUnit (innov P H R)) :
     (P⁻¹ + Hᵀ * R⁻¹ * H)⁻¹ * Hᵀ * R⁻¹ = P * Hᵀ * (innov P H R)⁻¹ := by
@@ -160,7 +160,7 @@ def innov (P : Matrix (Fin n) (Fin n) ℝ) (H : Matrix (Fin p) (Fin n) ℝ)
 
 /-- **Independent sensors add information**: stacking `H = [H₁; H₂]`, `R = blockdiag(R₁, R₂)`
 gives `Hᵀ R⁻¹ H = H₁ᵀ R₁⁻¹ H₁ + H₂ᵀ R₂⁻¹ H₂`. -/
-@[powerlib_foundation] theorem information_add_two_sensors {p₁ p₂ : ℕ}
+@[tmio T, powerlib_foundation] theorem information_add_two_sensors {p₁ p₂ : ℕ}
     (H₁ : Matrix (Fin p₁) (Fin n) ℝ) (H₂ : Matrix (Fin p₂) (Fin n) ℝ)
     {R₁ : Matrix (Fin p₁) (Fin p₁) ℝ} {R₂ : Matrix (Fin p₂) (Fin p₂) ℝ}
     (h₁ : IsUnit R₁.det) (h₂ : IsUnit R₂.det) :

@@ -88,7 +88,7 @@ def anharmonicWell (k lam θ : ℝ) : ℝ := k * θ ^ 2 / 2 + lam * θ ^ 4 / 4
     exact pow_eq_zero_iff (n := 2) (by norm_num) |>.mp this
   · rintro rfl; simp
 
-@[powerlib_foundation] theorem hasDerivAt_anharmonicWell (k lam θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_anharmonicWell (k lam θ : ℝ) :
     HasDerivAt (anharmonicWell k lam) (k * θ + lam * θ ^ 3) θ := by
   have h := (((hasDerivAt_pow 2 θ).const_mul k).div_const 2).add
     (((hasDerivAt_pow 4 θ).const_mul lam).div_const 4)
@@ -98,7 +98,7 @@ def anharmonicWell (k lam θ : ℝ) : ℝ := k * θ ^ 2 / 2 + lam * θ ^ 4 / 4
 
 /-- The anharmonic single well (`k > 0`, `λ ≥ 0`) has the unique critical point `0`, which is
 its strict global minimum. -/
-@[powerlib_foundation] theorem anharmonicWell_unique_min {k lam : ℝ} (hk : 0 < k) (hl : 0 ≤ lam) :
+@[tmio T, powerlib_foundation] theorem anharmonicWell_unique_min {k lam : ℝ} (hk : 0 < k) (hl : 0 ≤ lam) :
     (∀ θ, k * θ + lam * θ ^ 3 = 0 ↔ θ = 0) ∧
       ∀ θ, θ ≠ 0 → anharmonicWell k lam 0 < anharmonicWell k lam θ := by
   refine ⟨fun θ => ⟨fun h => ?_, fun h => by simp [h]⟩, fun θ hθ => ?_⟩
@@ -111,7 +111,7 @@ its strict global minimum. -/
     nlinarith [sq_nonneg (θ ^ 2)]
 
 /-- Normalization of the Boltzmann weight of the harmonic well: `Z = √(2πD/k)`. -/
-@[powerlib_foundation] theorem singleWell_normalization {k D : ℝ} (hk : 0 < k) (hD : 0 < D) :
+@[tmio T, powerlib_foundation] theorem singleWell_normalization {k D : ℝ} (hk : 0 < k) (hD : 0 < D) :
     ∫ θ, Real.exp (-singleWell k θ / D) = √(2 * π * D / k) := by
   have h := integral_gaussian (k / (2 * D))
   have hfun : (fun θ => Real.exp (-singleWell k θ / D)) =
@@ -126,7 +126,7 @@ its strict global minimum. -/
 /-- Symmetric double well `−aθ²/2 + bθ⁴/4`. -/
 def doubleWell (a b θ : ℝ) : ℝ := -a * θ ^ 2 / 2 + b * θ ^ 4 / 4
 
-@[powerlib_foundation] theorem hasDerivAt_doubleWell (a b θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_doubleWell (a b θ : ℝ) :
     HasDerivAt (doubleWell a b) (-a * θ + b * θ ^ 3) θ := by
   have h := (((hasDerivAt_pow 2 θ).const_mul (-a)).div_const 2).add
     (((hasDerivAt_pow 4 θ).const_mul b).div_const 4)
@@ -135,11 +135,11 @@ def doubleWell (a b θ : ℝ) : ℝ := -a * θ ^ 2 / 2 + b * θ ^ 4 / 4
   push_cast; ring
 
 /-- Correction: `V = (a²/4b)[1 − bθ²/a]² − a²/4b` (positive sign in front of the square). -/
-@[powerlib_foundation] theorem doubleWell_identity {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0) (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem doubleWell_identity {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0) (θ : ℝ) :
     doubleWell a b θ = a ^ 2 / (4 * b) * (1 - b * θ ^ 2 / a) ^ 2 - a ^ 2 / (4 * b) := by
   simp only [doubleWell]; field_simp; ring
 
-@[powerlib_foundation] theorem doubleWell_critical_iff {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem doubleWell_critical_iff {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (θ : ℝ) :
     -a * θ + b * θ ^ 3 = 0 ↔ θ = 0 ∨ θ = √(a / b) ∨ θ = -√(a / b) := by
   have hr : √(a / b) ^ 2 = a / b := Real.sq_sqrt (by positivity)
   constructor
@@ -158,7 +158,7 @@ def doubleWell (a b θ : ℝ) : ℝ := -a * θ ^ 2 / 2 + b * θ ^ 4 / 4
         rw [show (-√(a / b)) ^ 3 = -(√(a / b) ^ 2 * √(a / b)) by ring, hr]
       rw [this]; field_simp; ring
 
-@[powerlib_foundation] theorem doubleWell_curvatures {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+@[tmio T, powerlib_foundation] theorem doubleWell_curvatures {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
     (-a + 3 * b * (0 : ℝ) ^ 2 = -a) ∧ (-a + 3 * b * √(a / b) ^ 2 = 2 * a) ∧
       (-a + 3 * b * (-√(a / b)) ^ 2 = 2 * a) := by
   have hr : √(a / b) ^ 2 = a / b := Real.sq_sqrt (by positivity)
@@ -167,7 +167,7 @@ def doubleWell (a b θ : ℝ) : ℝ := -a * θ ^ 2 / 2 + b * θ ^ 4 / 4
   · rw [neg_sq, hr]; field_simp; ring
 
 /-- Global minimum value `−a²/4b`, attained exactly at `±√(a/b)`. -/
-@[powerlib_foundation] theorem doubleWell_min {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem doubleWell_min {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (θ : ℝ) :
     -a ^ 2 / (4 * b) ≤ doubleWell a b θ ∧
       (doubleWell a b θ = -a ^ 2 / (4 * b) ↔ θ = √(a / b) ∨ θ = -√(a / b)) := by
   have hr : √(a / b) ^ 2 = a / b := Real.sq_sqrt (by positivity)
@@ -189,7 +189,7 @@ def doubleWell (a b θ : ℝ) : ℝ := -a * θ ^ 2 / 2 + b * θ ^ 4 / 4
       simp only [neg_sq, hr] <;> field_simp <;> ring
 
 /-- Barrier of the double well: `V(0) − V(±√(a/b)) = a²/4b`. -/
-@[powerlib_foundation] theorem doubleWell_barrier {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+@[tmio T, powerlib_foundation] theorem doubleWell_barrier {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
     doubleWell a b 0 - doubleWell a b √(a / b) = a ^ 2 / (4 * b) ∧
       doubleWell a b 0 - doubleWell a b (-√(a / b)) = a ^ 2 / (4 * b) := by
   have h1 := ((doubleWell_min ha hb √(a / b)).2).mpr (Or.inl rfl)
@@ -198,12 +198,12 @@ def doubleWell (a b θ : ℝ) : ℝ := -a * θ ^ 2 / 2 + b * θ ^ 4 / 4
   rw [h1, h2, h0]
   constructor <;> ring
 
-@[powerlib_foundation] theorem doubleWell_sub (a b x y : ℝ) :
+@[tmio T, powerlib_foundation] theorem doubleWell_sub (a b x y : ℝ) :
     doubleWell a b x - doubleWell a b y = (x ^ 2 - y ^ 2) * (-a / 2 + b * (x ^ 2 + y ^ 2) / 4) := by
   simp only [doubleWell]; ring
 
 /-- Monotonicity pattern of the double well on the four intervals cut by `−r, 0, r`. -/
-@[powerlib_foundation] theorem doubleWell_monotone {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+@[tmio T, powerlib_foundation] theorem doubleWell_monotone {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
     StrictAntiOn (doubleWell a b) (Iic (-√(a / b))) ∧
       StrictMonoOn (doubleWell a b) (Icc (-√(a / b)) 0) ∧
       StrictAntiOn (doubleWell a b) (Icc 0 √(a / b)) ∧
@@ -251,7 +251,7 @@ def doubleWell (a b θ : ℝ) : ℝ := -a * θ ^ 2 / 2 + b * θ ^ 4 / 4
 /-- Correction: for every temperature `D > 0` the Boltzmann weight `e^{−V/D}` of the double well
 stays bimodal — increasing, decreasing, increasing, decreasing on the four intervals, with
 global maxima exactly at `±√(a/b)` and a strict local minimum at `0`. -/
-@[powerlib_foundation] theorem doubleWell_weight_bimodal {a b D : ℝ} (ha : 0 < a) (hb : 0 < b)
+@[tmio T, powerlib_foundation] theorem doubleWell_weight_bimodal {a b D : ℝ} (ha : 0 < a) (hb : 0 < b)
     (hD : 0 < D) :
     let p := fun θ => Real.exp (-doubleWell a b θ / D)
     StrictMonoOn p (Iic (-√(a / b))) ∧ StrictAntiOn p (Icc (-√(a / b)) 0) ∧
@@ -286,23 +286,23 @@ global maxima exactly at `±√(a/b)` and a strict local minimum at `0`. -/
 `theorem/Potential/Barrier.lean` with tilt `c = V₀α`, amplitude `A = V₀` and phase `φ = 0`. -/
 def washboard (V₀ α θ : ℝ) : ℝ := Barrier.washboard (V₀ * α) V₀ 0 θ
 
-@[powerlib_foundation] theorem washboard_eq (V₀ α θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem washboard_eq (V₀ α θ : ℝ) :
     washboard V₀ α θ = V₀ * (-Real.cos θ - α * θ) := by
   simp only [washboard, Barrier.washboard, add_zero]; ring
 
-@[powerlib_foundation] theorem hasDerivAt_washboard (V₀ α θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_washboard (V₀ α θ : ℝ) :
     HasDerivAt (washboard V₀ α) (V₀ * (Real.sin θ - α)) θ := by
   convert Barrier.hasDerivAt_washboard (c := V₀ * α) (A := V₀) (φ := 0) θ using 1
   · rfl
   · rw [add_zero]; ring
 
-@[powerlib_foundation] theorem hasDerivAt_washboard_deriv (V₀ α θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_washboard_deriv (V₀ α θ : ℝ) :
     HasDerivAt (fun θ => V₀ * (Real.sin θ - α)) (V₀ * Real.cos θ) θ := by
   simpa using ((Real.hasDerivAt_sin θ).sub_const α).const_mul V₀
 
 /-- A critical point of the washboard exists iff `|α| ≤ 1`: the zeros of the sinusoid
 `α − sin θ` (`SpecialFunctions.exists_sinusoid_zero_iff`). -/
-@[powerlib_foundation] theorem washboard_critical_exists_iff {V₀ : ℝ} (hV : 0 < V₀) (α : ℝ) :
+@[tmio T, powerlib_foundation] theorem washboard_critical_exists_iff {V₀ : ℝ} (hV : 0 < V₀) (α : ℝ) :
     (∃ θ, V₀ * (Real.sin θ - α) = 0) ↔ |α| ≤ 1 := by
   rw [← SpecialFunctions.exists_sinusoid_zero_iff (c := α) (φ := 0) one_pos]
   refine exists_congr fun θ => ?_
@@ -310,12 +310,12 @@ def washboard (V₀ α θ : ℝ) : ℝ := Barrier.washboard (V₀ * α) V₀ 0 �
   exact eq_comm
 
 /-- Strong tilt `α > 1`: the washboard is strictly decreasing (`V' < 0` everywhere). -/
-@[powerlib_foundation] theorem washboard_deriv_neg {V₀ α : ℝ} (hV : 0 < V₀) (hα : 1 < α) (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem washboard_deriv_neg {V₀ α : ℝ} (hV : 0 < V₀) (hα : 1 < α) (θ : ℝ) :
     V₀ * (Real.sin θ - α) < 0 :=
   mul_neg_of_pos_of_neg hV (by linarith [Real.sin_le_one θ])
 
 /-- Critical tilt `α = 1`: the critical points are `π/2 + 2πk`, where also `V'' = 0`. -/
-@[powerlib_foundation] theorem washboard_critical_merge {V₀ : ℝ} (hV : 0 < V₀) (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem washboard_critical_merge {V₀ : ℝ} (hV : 0 < V₀) (θ : ℝ) :
     (V₀ * (Real.sin θ - 1) = 0 ↔ ∃ k : ℤ, θ = π / 2 + k * (2 * π)) ∧
       V₀ * Real.cos (π / 2) = 0 := by
   refine ⟨?_, by simp⟩
@@ -323,7 +323,7 @@ def washboard (V₀ α θ : ℝ) : ℝ := Barrier.washboard (V₀ * α) V₀ 0 �
   exact ⟨fun ⟨k, hk⟩ => ⟨k, hk.symm⟩, fun ⟨k, hk⟩ => ⟨k, hk.symm⟩⟩
 
 /-- The well and the barrier locations `arcsin α` and `π − arcsin α` both tend to `π/2`. -/
-@[powerlib_foundation] theorem washboard_extrema_tendsto :
+@[tmio T, powerlib_foundation] theorem washboard_extrema_tendsto :
     Tendsto Real.arcsin (𝓝[<] 1) (𝓝 (π / 2)) ∧
       Tendsto (fun α => π - Real.arcsin α) (𝓝[<] 1) (𝓝 (π / 2)) := by
   have h : Tendsto Real.arcsin (𝓝[<] 1) (𝓝 (π / 2)) := by
@@ -334,28 +334,28 @@ def washboard (V₀ α θ : ℝ) : ℝ := Barrier.washboard (V₀ * α) V₀ 0 �
   convert this using 2; ring
 
 /-- `V(θ + 2π) = V(θ) − 2πV₀α`: the tilted washboard is a periodic potential plus a ramp. -/
-@[powerlib_foundation] theorem washboard_shift (V₀ α θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem washboard_shift (V₀ α θ : ℝ) :
     washboard V₀ α (θ + 2 * π) = washboard V₀ α θ - 2 * π * V₀ * α := by
   simp only [washboard_eq, Real.cos_add_two_pi]; ring
 
-@[powerlib_foundation] theorem washboard_shift_int (V₀ α θ : ℝ) (k : ℤ) :
+@[tmio T, powerlib_foundation] theorem washboard_shift_int (V₀ α θ : ℝ) (k : ℤ) :
     washboard V₀ α (θ + k * (2 * π)) = washboard V₀ α θ - k * (2 * π * V₀ * α) := by
   simp only [washboard_eq, Real.cos_add_int_mul_two_pi]; ring
 
 /-- Correction: all wells are congruent — every barrier height is the same in every well. -/
-@[powerlib_foundation] theorem washboard_barrier_translate (V₀ α x y : ℝ) (k : ℤ) :
+@[tmio T, powerlib_foundation] theorem washboard_barrier_translate (V₀ α x y : ℝ) (k : ℤ) :
     washboard V₀ α (x + k * (2 * π)) - washboard V₀ α (y + k * (2 * π)) =
       washboard V₀ α x - washboard V₀ α y := by
   rw [washboard_shift_int, washboard_shift_int]; ring
 
 /-- Forward barrier `ΔV₊ = V(π − arcsin α) − V(arcsin α)`. -/
-@[powerlib_foundation] theorem washboard_barrier_forward {V₀ α : ℝ} :
+@[tmio T, powerlib_foundation] theorem washboard_barrier_forward {V₀ α : ℝ} :
     washboard V₀ α (π - Real.arcsin α) - washboard V₀ α (Real.arcsin α) =
       V₀ * (2 * √(1 - α ^ 2) + α * (2 * Real.arcsin α - π)) := by
   simp only [washboard_eq, Real.cos_pi_sub, Real.cos_arcsin]; ring
 
 /-- Backward barrier `ΔV₋ = V(π − arcsin α − 2π) − V(arcsin α)`. -/
-@[powerlib_foundation] theorem washboard_barrier_backward {V₀ α : ℝ} :
+@[tmio T, powerlib_foundation] theorem washboard_barrier_backward {V₀ α : ℝ} :
     washboard V₀ α (π - Real.arcsin α - 2 * π) - washboard V₀ α (Real.arcsin α) =
       V₀ * (2 * √(1 - α ^ 2) + α * (π + 2 * Real.arcsin α)) := by
   have h := washboard_shift V₀ α (π - Real.arcsin α - 2 * π)
@@ -367,14 +367,14 @@ def washboard (V₀ α θ : ℝ) : ℝ := Barrier.washboard (V₀ * α) V₀ 0 �
 def barrierForward (V₀ α : ℝ) : ℝ := V₀ * (2 * √(1 - α ^ 2) + α * (2 * Real.arcsin α - π))
 def barrierBackward (V₀ α : ℝ) : ℝ := V₀ * (2 * √(1 - α ^ 2) + α * (π + 2 * Real.arcsin α))
 
-@[powerlib_foundation] theorem barrier_at_zero (V₀ : ℝ) :
+@[tmio T, powerlib_foundation] theorem barrier_at_zero (V₀ : ℝ) :
     barrierForward V₀ 0 = 2 * V₀ ∧ barrierBackward V₀ 0 = 2 * V₀ := by
   refine ⟨?_, ?_⟩ <;>
     simp only [barrierForward, barrierBackward, Real.arcsin_zero, zero_mul, add_zero,
       ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, sub_zero, Real.sqrt_one] <;> ring
 
 /-- As `α → 1⁻` the forward barrier vanishes and the backward barrier tends to `2πV₀`. -/
-@[powerlib_foundation] theorem barrier_tendsto_one (V₀ : ℝ) :
+@[tmio T, powerlib_foundation] theorem barrier_tendsto_one (V₀ : ℝ) :
     Tendsto (barrierForward V₀) (𝓝[<] 1) (𝓝 0) ∧
       Tendsto (barrierBackward V₀) (𝓝[<] 1) (𝓝 (2 * π * V₀)) := by
   have hc : Continuous fun α : ℝ => √(1 - α ^ 2) := by fun_prop
@@ -392,25 +392,25 @@ def barrierBackward (V₀ α : ℝ) : ℝ := V₀ * (2 * √(1 - α ^ 2) + α * 
 
 /-- Curvatures at the well and the barrier: `V''(arcsin α) = V₀√(1−α²)`,
 `V''(π − arcsin α) = −V₀√(1−α²)`. -/
-@[powerlib_foundation] theorem washboard_curvatures (V₀ α : ℝ) :
+@[tmio T, powerlib_foundation] theorem washboard_curvatures (V₀ α : ℝ) :
     V₀ * Real.cos (Real.arcsin α) = V₀ * √(1 - α ^ 2) ∧
       V₀ * Real.cos (π - Real.arcsin α) = -(V₀ * √(1 - α ^ 2)) := by
   rw [Real.cos_pi_sub, Real.cos_arcsin]; constructor <;> ring
 
 /-- Kramers prefactor algebra: `√(V''(θ_min) |V''(θ_max)|) = V₀√(1−α²)`. -/
-@[powerlib_foundation] theorem washboard_prefactor {V₀ : ℝ} (hV : 0 ≤ V₀) (α : ℝ) :
+@[tmio T, powerlib_foundation] theorem washboard_prefactor {V₀ : ℝ} (hV : 0 ≤ V₀) (α : ℝ) :
     √(V₀ * Real.cos (Real.arcsin α) * |V₀ * Real.cos (π - Real.arcsin α)|) =
       V₀ * √(1 - α ^ 2) := by
   obtain ⟨h1, h2⟩ := washboard_curvatures V₀ α
   rw [h1, h2, abs_neg, abs_of_nonneg (by positivity), ← sq, Real.sqrt_sq (by positivity)]
 
-@[powerlib_foundation] theorem washboard_kramers_prefactor {V₀ γ : ℝ} (hV : 0 ≤ V₀) (α : ℝ) :
+@[tmio T, powerlib_foundation] theorem washboard_kramers_prefactor {V₀ γ : ℝ} (hV : 0 ≤ V₀) (α : ℝ) :
     2 * π * γ / √(V₀ * Real.cos (Real.arcsin α) * |V₀ * Real.cos (π - Real.arcsin α)|) =
       2 * π * γ / (V₀ * √(1 - α ^ 2)) := by
   rw [washboard_prefactor hV]
 
 /-- For `α ≠ 0` the Boltzmann weight `e^{−V/D}` of the tilted washboard is not integrable on `ℝ`. -/
-@[powerlib_foundation] theorem washboard_weight_not_integrable {V₀ α D : ℝ} (hV : 0 < V₀)
+@[tmio T, powerlib_foundation] theorem washboard_weight_not_integrable {V₀ α D : ℝ} (hV : 0 < V₀)
     (hα : α ≠ 0) (hD : 0 < D) :
     ¬ Integrable (fun θ => Real.exp (-washboard V₀ α θ / D)) := by
   intro hint

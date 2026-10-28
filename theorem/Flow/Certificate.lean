@@ -71,7 +71,7 @@ ball. -/
 
 /-- A globally Lipschitz field is forward complete (LeanForControl's Picard–Lindelöf on the
 forward ray). -/
-@[powerlib_foundation] theorem forwardComplete_of_lipschitzWith {f : ℝⁿ → ℝⁿ} {K : NNReal}
+@[tmio T, powerlib_foundation] theorem forwardComplete_of_lipschitzWith {f : ℝⁿ → ℝⁿ} {K : NNReal}
     (hf : LipschitzWith K f) : ForwardComplete f := by
   intro a x₀
   obtain ⟨φ, hφ₀, hφ, _⟩ := exists_isIntegralCurveOn_Ici
@@ -80,7 +80,7 @@ forward ray). -/
 
 /-- A C¹ field with a differentiable energy that never increases along the field and has
 compact sublevels is forward complete. -/
-@[powerlib_foundation] theorem forwardComplete_of_compact_sublevel {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
+@[tmio T, powerlib_foundation] theorem forwardComplete_of_compact_sublevel {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
     (hf : ContDiff ℝ 1 f) (hV : Differentiable ℝ V) (hdec : ∀ x, fderiv ℝ V x (f x) ≤ 0)
     (hsub : ∀ c : ℝ, IsCompact {x : ℝⁿ | V x ≤ c}) : ForwardComplete f := by
   intro a x₀
@@ -106,7 +106,7 @@ compact sublevels is forward complete. -/
 
 /-- A continuous, quadratically homogeneous function that is positive away from the origin of a
 finite-dimensional space lies between two positive multiples of the squared norm. -/
-@[powerlib_foundation] theorem quadratic_bounds {E : Type*} [NormedAddCommGroup E]
+@[tmio T, powerlib_foundation] theorem quadratic_bounds {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [FiniteDimensional ℝ E] (V : E → ℝ) (hc : Continuous V)
     (hh : ∀ (a : ℝ) (x : E), V (a • x) = a ^ 2 * V x) (hp : ∀ x ≠ 0, 0 < V x) :
     ∃ α > 0, ∃ β ≥ α, ∀ x, α * ‖x‖ ^ 2 ≤ V x ∧ V x ≤ β * ‖x‖ ^ 2 := by
@@ -143,7 +143,7 @@ finite-dimensional space lies between two positive multiples of the squared norm
 
 /-- A lower bound `-ρ V` on the Lie derivative of a C¹ energy along a solution segment bounds the
 energy's decay on that segment from below. -/
-@[powerlib_foundation] theorem energy_lower_bound {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
+@[tmio T, powerlib_foundation] theorem energy_lower_bound {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
     (hV : ContDiff ℝ 1 V) {ρ : ℝ} {φ : ℝ → ℝⁿ} {a b t : ℝ} (hφ : IsTrajectoryOn φ f a b)
     (hlie : ∀ s ∈ Icc a b, -ρ * V (φ s) ≤ fderiv ℝ V (φ s) (f (φ s))) (ht : t ∈ Icc a b) :
     Real.exp (-(ρ * (t - a))) * V (φ a) ≤ V (φ t) := by
@@ -192,7 +192,7 @@ structure QuadraticDecay (f : ℝⁿ → ℝⁿ) (V : ℝⁿ → ℝ) (e : ℝ�
 
 /-- Integrating an energy inequality needs no positivity assumption on its rate.
 Negative rates give growth bounds, and zero gives a bounded energy. -/
-@[powerlib_foundation] theorem energy_bound_of_dissipation {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
+@[tmio T, powerlib_foundation] theorem energy_bound_of_dissipation {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
     {rate : ℝ} (smooth : ContDiff ℝ 1 V)
     (dissipation : ∀ x, fderiv ℝ V x (f x) ≤ -rate * V x)
     {φ : ℝ → ℝⁿ} {a b t : ℝ} (hφ : IsTrajectoryOn φ f a b) (ht : t ∈ Icc a b) :
@@ -227,7 +227,7 @@ Negative rates give growth bounds, and zero gives a bounded energy. -/
   simpa [W, mul_assoc, ← mul_assoc, hcancel] using hmul
 
 /-- Quadratic bounds convert the arbitrary-rate energy estimate to a state estimate. -/
-@[powerlib_foundation] theorem norm_bound_of_dissipation {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
+@[tmio T, powerlib_foundation] theorem norm_bound_of_dissipation {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
     {e : ℝⁿ} {rate lower upper : ℝ} (smooth : ContDiff ℝ 1 V)
     (hlo : 0 < lower) (hup : 0 < upper)
     (lower_bound : ∀ x, lower * ‖x - e‖ ^ 2 ≤ V x)
@@ -255,14 +255,14 @@ Negative rates give growth bounds, and zero gives a bounded energy. -/
 namespace QuadraticDecay
 
 /-- Integrating the decay inequality along any solution segment. -/
-@[powerlib_foundation] theorem energy_bound {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem energy_bound {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
     (c : QuadraticDecay f V e) {φ : ℝ → ℝⁿ} {a b t : ℝ}
     (hφ : IsTrajectoryOn φ f a b) (ht : t ∈ Icc a b) :
     V (φ t) ≤ Real.exp (-(c.rate * (t - a))) * V (φ a) :=
   energy_bound_of_dissipation c.smooth c.dissipation hφ ht
 
 /-- The energy estimate as an estimate on the state. -/
-@[powerlib_foundation] theorem norm_bound {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem norm_bound {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
     (c : QuadraticDecay f V e) {φ : ℝ → ℝⁿ} {a b t : ℝ}
     (hφ : IsTrajectoryOn φ f a b) (ht : t ∈ Icc a b) :
     ‖φ t - e‖ ≤ Real.sqrt (c.upper / c.lower) * Real.exp (-(c.rate / 2) * (t - a)) * ‖φ a - e‖ :=
@@ -270,7 +270,7 @@ namespace QuadraticDecay
     c.dissipation hφ ht
 
 /-- Quadratic coercivity and continuity make every energy sublevel compact. -/
-@[powerlib_foundation] theorem compact_sublevel {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem compact_sublevel {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
     (c : QuadraticDecay f V e) (level : ℝ) :
     IsCompact {x : ℝⁿ | V x ≤ level} := by
   apply (isCompact_closedBall e (Real.sqrt (level / c.lower))).of_isClosed_subset
@@ -282,7 +282,7 @@ namespace QuadraticDecay
   simpa only [mem_closedBall, dist_eq_norm] using Real.le_sqrt_of_sq_le hsquared
 
 /-- With a C¹ field, the certificate supplies a solution through every state. -/
-@[powerlib_foundation, aesop unsafe 80% apply]
+@[tmio T, powerlib_foundation, aesop unsafe 80% apply]
 theorem forwardComplete {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
     (c : QuadraticDecay f V e) (hf : ContDiff ℝ 1 f) :
     ForwardComplete f := by
@@ -292,7 +292,7 @@ theorem forwardComplete {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ
     ((mul_nonneg c.lower_pos.le (sq_nonneg _)).trans (c.lower_bound x))
 
 /-- The certificate proves global exponential stability. -/
-@[powerlib_foundation, aesop unsafe 80% apply]
+@[tmio T, powerlib_foundation, aesop unsafe 80% apply]
 theorem globallyExponentiallyStable {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
     (c : QuadraticDecay f V e)
     (hf : ContDiff ℝ 1 f) : GloballyExponentiallyStable f e :=
@@ -302,13 +302,13 @@ theorem globallyExponentiallyStable {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ}
         (Real.exp_nonneg _)) (norm_nonneg _))⟩
 
 /-- The certificate proves every attractive sentence. -/
-@[powerlib_foundation] theorem holds {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem holds {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
     (c : QuadraticDecay f V e) (hf : ContDiff ℝ 1 f)
     {P : Property} (hP : P.Attractive) : P.holds f e :=
   (c.globallyExponentiallyStable hf).holds hP
 
 /-- The certificate proves decay at half its energy rate. -/
-@[powerlib_foundation] theorem decay {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem decay {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {e : ℝⁿ}
     (c : QuadraticDecay f V e) : Decay f e (c.rate / 2) :=
   ⟨_, fun _ _ _ hφ _ ht => c.norm_bound hφ ht⟩
 
@@ -318,7 +318,7 @@ end QuadraticDecay
 
 /-- A strict Lyapunov function with compact sublevels proves global asymptotic stability of a
 C¹ field, including a solution through every state. -/
-@[powerlib_foundation] theorem globallyAsymptoticallyStable_of_strictLyapunov {f : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem globallyAsymptoticallyStable_of_strictLyapunov {f : ℝⁿ → ℝⁿ}
     {V : ℝⁿ → ℝ} {e : ℝⁿ} (hn : 0 < n) (hf : ContDiff ℝ 1 f)
     (hV : IsStrictLyapunovFunction f V e) : GloballyAsymptoticallyStable f e := by
   have hdec : ∀ x, fderiv ℝ V x (f x) ≤ 0 := by

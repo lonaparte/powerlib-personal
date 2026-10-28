@@ -65,13 +65,13 @@ section Tilted
 variable {m p : Measure α} [SigmaFinite m] {g : α → ℝ}
 
 omit [SigmaFinite m] in
-@[powerlib_foundation] private theorem aemeasurable_of_integrable_exp
+@[tmio T, powerlib_foundation] private theorem aemeasurable_of_integrable_exp
     (hg : Integrable (fun x => exp (g x)) m) :
     AEMeasurable g m := by
   simpa using hg.1.aemeasurable.log
 
 /-- The log-likelihood ratio of the Gibbs measure against its reference: `g - log Z`. -/
-@[powerlib_foundation] theorem llr_tilted_self_ae (hg : Integrable (fun x => exp (g x)) m) :
+@[tmio T, powerlib_foundation] theorem llr_tilted_self_ae (hg : Integrable (fun x => exp (g x)) m) :
     llr (m.tilted g) m =ᵐ[m.tilted g] fun x => g x - log (∫ z, exp (g z) ∂m) := by
   have h1 := llr_tilted_left (μ := m) (ν := m) Measure.AbsolutelyContinuous.rfl hg
     (aemeasurable_of_integrable_exp hg)
@@ -81,14 +81,14 @@ omit [SigmaFinite m] in
     rw [hx1, hx2, Pi.zero_apply, add_zero]
   exact (tilted_absolutelyContinuous m g).ae_le h
 
-@[powerlib_foundation] theorem relEntropy_tilted_self [NeZero m]
+@[tmio T, powerlib_foundation] theorem relEntropy_tilted_self [NeZero m]
     (hg : Integrable (fun x => exp (g x)) m) (hgq : Integrable g (m.tilted g)) :
     relEntropy (m.tilted g) m = ∫ x, g x ∂(m.tilted g) - log (∫ z, exp (g z) ∂m) := by
   have : IsProbabilityMeasure (m.tilted g) := isProbabilityMeasure_tilted hg
   rw [relEntropy, integral_congr_ae (llr_tilted_self_ae hg), integral_sub hgq (integrable_const _)]
   simp
 
-@[powerlib_foundation] theorem integrable_llr_tilted_self [NeZero m]
+@[tmio T, powerlib_foundation] theorem integrable_llr_tilted_self [NeZero m]
     (hg : Integrable (fun x => exp (g x)) m) (hgq : Integrable g (m.tilted g)) :
     Integrable (llr (m.tilted g) m) (m.tilted g) := by
   have : IsProbabilityMeasure (m.tilted g) := isProbabilityMeasure_tilted hg
@@ -96,7 +96,7 @@ omit [SigmaFinite m] in
 
 /-- **Pythagorean identity of MaxEnt.** If `p` has the same `g`-moment as the Gibbs measure
 `p_λ = m.tilted g`, then `relEntropy p m = KL(p‖p_λ) + relEntropy p_λ m`. -/
-@[powerlib_foundation] theorem relEntropy_eq_klDiv_tilted_add [NeZero m] [IsProbabilityMeasure p]
+@[tmio T, powerlib_foundation] theorem relEntropy_eq_klDiv_tilted_add [NeZero m] [IsProbabilityMeasure p]
     (hg : Integrable (fun x => exp (g x)) m) (hpm : p ≪ m) (hint : Integrable (llr p m) p)
     (hgp : Integrable g p) (hgq : Integrable g (m.tilted g))
     (hmom : ∫ x, g x ∂p = ∫ x, g x ∂(m.tilted g)) :
@@ -110,7 +110,7 @@ omit [SigmaFinite m] in
   ring
 
 /-- The Gibbs measure has the least relative entropy (largest `H[·‖m]`) in its moment class. -/
-@[powerlib_foundation] theorem relEntropy_tilted_le [NeZero m] [IsProbabilityMeasure p]
+@[tmio T, powerlib_foundation] theorem relEntropy_tilted_le [NeZero m] [IsProbabilityMeasure p]
     (hg : Integrable (fun x => exp (g x)) m) (hpm : p ≪ m) (hint : Integrable (llr p m) p)
     (hgp : Integrable g p) (hgq : Integrable g (m.tilted g))
     (hmom : ∫ x, g x ∂p = ∫ x, g x ∂(m.tilted g)) :
@@ -119,7 +119,7 @@ omit [SigmaFinite m] in
   linarith [ENNReal.toReal_nonneg (a := klDiv p (m.tilted g))]
 
 /-- Uniqueness: equality in `relEntropy_tilted_le` holds exactly for the Gibbs measure. -/
-@[powerlib_foundation] theorem relEntropy_eq_relEntropy_tilted_iff [NeZero m]
+@[tmio T, powerlib_foundation] theorem relEntropy_eq_relEntropy_tilted_iff [NeZero m]
     [IsProbabilityMeasure p]
     (hg : Integrable (fun x => exp (g x)) m) (hpm : p ≪ m) (hint : Integrable (llr p m) p)
     (hgp : Integrable g p) (hgq : Integrable g (m.tilted g))
@@ -142,7 +142,7 @@ omit [SigmaFinite m] in
     rw [h]
 
 /-- `klDiv` form of the Pythagorean identity for a probability reference measure. -/
-@[powerlib_foundation] theorem klDiv_eq_klDiv_tilted_add [IsProbabilityMeasure m]
+@[tmio T, powerlib_foundation] theorem klDiv_eq_klDiv_tilted_add [IsProbabilityMeasure m]
     [IsProbabilityMeasure p]
     (hg : Integrable (fun x => exp (g x)) m) (hpm : p ≪ m) (hint : Integrable (llr p m) p)
     (hgp : Integrable g p) (hgq : Integrable g (m.tilted g))
@@ -176,20 +176,20 @@ def momentFamily (m : Measure α) (f : ι → α → ℝ) (F : ι → ℝ) : Set
   {p | IsProbabilityMeasure p ∧ p ≪ m ∧ Integrable (llr p m) p ∧
     ∀ i, Integrable (f i) p ∧ ∫ x, f i x ∂p = F i}
 
-@[powerlib_foundation] private theorem integral_tilt {μ : Measure α} {f : ι → α → ℝ} (lam : ι → ℝ)
+@[tmio T, powerlib_foundation] private theorem integral_tilt {μ : Measure α} {f : ι → α → ℝ} (lam : ι → ℝ)
     (hf : ∀ i, Integrable (f i) μ) :
     ∫ x, -∑ i, lam i * f i x ∂μ = -∑ i, lam i * ∫ x, f i x ∂μ := by
   rw [integral_neg, integral_finsetSum _ (fun i _ => (hf i).const_mul (lam i))]
   simp [integral_const_mul]
 
-@[powerlib_foundation] private theorem integrable_tilt {μ : Measure α} {f : ι → α → ℝ} (lam : ι → ℝ)
+@[tmio T, powerlib_foundation] private theorem integrable_tilt {μ : Measure α} {f : ι → α → ℝ} (lam : ι → ℝ)
     (hf : ∀ i, Integrable (f i) μ) : Integrable (fun x => -∑ i, lam i * f i x) μ :=
   (integrable_finsetSum _ fun i _ => (hf i).const_mul (lam i)).neg
 
 /-- **MaxEnt as I-projection.** If the multipliers `λ` close the constraints
 (`gibbs m f λ` lies in the moment family), then `gibbs m f λ` is the unique minimiser of
 `relEntropy · m` over the moment family. -/
-@[powerlib_foundation] theorem gibbs_isIProjection
+@[tmio T, powerlib_foundation] theorem gibbs_isIProjection
     {m : Measure α} [SigmaFinite m] [NeZero m] {f : ι → α → ℝ} {lam F : ι → ℝ}
     (hZ : Integrable (fun x => exp (-∑ i, lam i * f i x)) m)
     (hfq : ∀ i, Integrable (f i) (gibbs m f lam))
@@ -210,7 +210,7 @@ def momentFamily (m : Measure α) (f : ι → α → ℝ) (F : ι → ℝ) : Set
 
 /-- **Every exponential-family member is a MaxEnt solution** (§1.6): `gibbs m f λ` is the unique
 I-projection of `m` onto the family with its own moments `F_k = E_{p_λ}[f_k]`. -/
-@[powerlib_foundation] theorem gibbs_isIProjection_own_moments
+@[tmio T, powerlib_foundation] theorem gibbs_isIProjection_own_moments
     {m : Measure α} [SigmaFinite m] [NeZero m] {f : ι → α → ℝ} {lam : ι → ℝ}
     (hZ : Integrable (fun x => exp (-∑ i, lam i * f i x)) m)
     (hfq : ∀ i, Integrable (f i) (gibbs m f lam)) :
@@ -232,7 +232,7 @@ def dual (m : Measure α) (f : α → ℝ) (F : ℝ) (lam : ℝ) : ℝ := cgf f 
 
 /-- Dual gradient `D'(λ) = F - E_{p_λ}[f]` with `p_λ = m.tilted (-λ f)`. Wrapper of Mathlib
 `ProbabilityTheory.integral_tilted_mul_self` (and `deriv_cgf`). -/
-@[powerlib_foundation] theorem deriv_dual {F lam : ℝ}
+@[tmio T, powerlib_foundation] theorem deriv_dual {F lam : ℝ}
     (h : -lam ∈ interior (integrableExpSet f m)) :
     deriv (dual m f F) lam = F - (m.tilted ((-lam) * f ·))[f] := by
   have hd : DifferentiableAt ℝ (cgf f m) (-lam) := (analyticAt_cgf h).differentiableAt
@@ -245,14 +245,14 @@ def dual (m : Measure α) (f : α → ℝ) (F : ℝ) (lam : ℝ) : ℝ := cgf f 
   ring
 
 /-- The stationarity condition `D'(λ) = 0` is exactly moment closure `E_{p_λ}[f] = F`. -/
-@[powerlib_foundation] theorem deriv_dual_eq_zero_iff {F lam : ℝ}
+@[tmio T, powerlib_foundation] theorem deriv_dual_eq_zero_iff {F lam : ℝ}
     (h : -lam ∈ interior (integrableExpSet f m)) :
     deriv (dual m f F) lam = 0 ↔ (m.tilted ((-lam) * f ·))[f] = F := by
   rw [deriv_dual h, sub_eq_zero, eq_comm]
 
 /-- Dual Hessian `D''(λ) = Var_{p_λ}[f]`. Wrapper of Mathlib
 `ProbabilityTheory.variance_tilted_mul`. -/
-@[powerlib_foundation] theorem iteratedDeriv_two_dual {F lam : ℝ}
+@[tmio T, powerlib_foundation] theorem iteratedDeriv_two_dual {F lam : ℝ}
     (h : -lam ∈ interior (integrableExpSet f m)) :
     iteratedDeriv 2 (dual m f F) lam = Var[f; m.tilted ((-lam) * f ·)] := by
   have hopen : IsOpen (interior (integrableExpSet f m)) := isOpen_interior
@@ -271,7 +271,7 @@ def dual (m : Measure α) (f : α → ℝ) (F : ℝ) (lam : ℝ) : ℝ := cgf f 
   simp
 
 /-- The dual is convex at every interior point: `D''(λ) ≥ 0`. -/
-@[powerlib_foundation] theorem iteratedDeriv_two_dual_nonneg {F lam : ℝ}
+@[tmio T, powerlib_foundation] theorem iteratedDeriv_two_dual_nonneg {F lam : ℝ}
     (h : -lam ∈ interior (integrableExpSet f m)) :
     0 ≤ iteratedDeriv 2 (dual m f F) lam := by
   rw [iteratedDeriv_two_dual h]

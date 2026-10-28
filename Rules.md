@@ -126,11 +126,12 @@ uses one of the five kinds, and is not assigned twice. The assigned kind records
 review of the complete statement and its hypotheses; the attribute checker does
 not prove that semantic judgment or replace mathematical admission.
 
-The current reviewed coverage is 1,224 theorems: T 297, M 148, T–M 682, M–I 88
-and I–O 9, including three private helpers. This includes all 813 public
-`connection%` theorems (T 0, M 50, T–M 668, M–I 88, I–O 7) and 411 individually
+The current reviewed coverage is 2,798 theorems: T 1,682, M 334, T–M 685, M–I 88
+and I–O 9, including 111 private helpers. This includes all 813 public
+`connection%` theorems (T 0, M 50, T–M 668, M–I 88, I–O 7) and 1,985 individually
 reviewed ordinary theorems. Module-level role suggestions do not assign a kind to
-every declaration in a module. The remaining theorems and definitions have not all been classified.
+every declaration in a module. The remaining 5,086 theorems are unclassified;
+definitions are outside this theorem-attribute inventory.
 The required missing-label check is limited to public typed connection theorems;
 every explicit attribute, including one on an ordinary or private theorem, is checked.
 `Layers.md` gives the Lean environment queries and the source-only queries.

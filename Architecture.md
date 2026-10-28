@@ -123,10 +123,10 @@ Coordinates, per-unit bases and the current direction are then instances, not se
 Each reviewed public connection theorem has exactly one. The attributes are the
 sole classification source; queries rebuild their index without a separate
 catalog or handwritten theorem-to-kind regression list. The current source coverage
-is 1,224 theorems in 405 modules (T 297, M 148, T–M 682, M–I 88, I–O 9), including
-three private helpers. All 813 public connections remain covered; 411 ordinary
-theorems named in earlier audits have now been individually reviewed and annotated.
-This is not a classification of every theorem in each reviewed module.
+is 2,798 theorems in 405 modules (T 1,682, M 334, T–M 685, M–I 88, I–O 9), including
+111 private helpers. All 813 public connections remain covered; 1,985 ordinary
+theorems have been individually reviewed and annotated. The remaining 5,086
+theorems are unclassified. Reviewing a module does not classify every theorem in it.
 
 The attribute implementation rejects non-theorem targets, unknown kinds and
 second assignments. It records a reviewed semantic judgment; it does not infer
@@ -247,9 +247,11 @@ proved separating models rather than an unsupported completeness claim.
 ## Validation
 
 For the source-attribute change, verification consists of targeted attribute-engine
-checks with Lean 4.34.1 and source classification counts covering the 1,224 reviewed
-theorems, including the unchanged 813 public connections. The mathematical library has not been recompiled for this
-change, and Mathlib has not been built from source. This is not a completed run
+checks with Lean 4.34.1 and source classification counts covering the 2,798 reviewed
+theorems, including the unchanged 813 public connections. For the latest batch,
+the source comparison also verifies that only attributes were added: theorem
+statements and proofs are unchanged. The mathematical library has not been
+recompiled for these changes, and Mathlib has not been built from source. This is not a completed run
 of the full-module environment check or the mathematical test suite.
 
 The build figures below describe the previously validated `bb46a37` baseline,

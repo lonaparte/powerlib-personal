@@ -38,7 +38,7 @@ variable {k : ℕ}
   BlockTriangular.mul hA hB
 
 /-- Diagonal of a product of lower triangular matrices. -/
-@[powerlib_foundation] theorem lowerTriangular_mul_diag {A B : Matrix (Fin k) (Fin k) ℝ}
+@[tmio T, powerlib_foundation] theorem lowerTriangular_mul_diag {A B : Matrix (Fin k) (Fin k) ℝ}
     (hA : A.IsLowerTriangular) (hB : B.IsLowerTriangular) (i : Fin k) :
     (A * B) i i = A i i * B i i := by
   rw [mul_apply, Finset.sum_eq_single i]
@@ -49,7 +49,7 @@ variable {k : ℕ}
   · simp
 
 /-- Diagonal of the inverse of an invertible lower triangular matrix: `(L⁻¹)ᵢᵢ = 1/Lᵢᵢ`. -/
-@[powerlib_foundation] theorem lowerTriangular_inv_diag {L : Matrix (Fin k) (Fin k) ℝ}
+@[tmio T, powerlib_foundation] theorem lowerTriangular_inv_diag {L : Matrix (Fin k) (Fin k) ℝ}
     (hL : L.IsLowerTriangular) (hdet : IsUnit L.det) (i : Fin k) : L⁻¹ i i * L i i = 1 := by
   have := invertibleOfIsUnitDet L hdet
   have hinv : L⁻¹.IsLowerTriangular := blockTriangular_inv_of_blockTriangular hL
@@ -59,7 +59,7 @@ variable {k : ℕ}
 /-! ## Existence (wrapper of the LDL decomposition) -/
 
 /-- **Cholesky existence**: `S ≻ 0` ⇒ `S = L Lᵀ`, `L` lower triangular with positive diagonal. -/
-@[powerlib_foundation] theorem cholesky_exists {S : Matrix (Fin k) (Fin k) ℝ} (hS : S.PosDef) :
+@[tmio T, powerlib_foundation] theorem cholesky_exists {S : Matrix (Fin k) (Fin k) ℝ} (hS : S.PosDef) :
     ∃ L : Matrix (Fin k) (Fin k) ℝ, L.IsLowerTriangular ∧ (∀ i, 0 < L i i) ∧ L * Lᵀ = S := by
   set L0 := LDL.lower hS
   set d := LDL.diagEntries hS
@@ -113,7 +113,7 @@ variable {k : ℕ}
 /-! ## Uniqueness -/
 
 /-- **Cholesky uniqueness**: lower triangular factors with positive diagonals are unique. -/
-@[powerlib_foundation] theorem cholesky_unique {L₁ L₂ : Matrix (Fin k) (Fin k) ℝ}
+@[tmio T, powerlib_foundation] theorem cholesky_unique {L₁ L₂ : Matrix (Fin k) (Fin k) ℝ}
     (h₁ : L₁.IsLowerTriangular) (h₂ : L₂.IsLowerTriangular) (hp₁ : ∀ i, 0 < L₁ i i)
     (hp₂ : ∀ i, 0 < L₂ i i) (heq : L₁ * L₁ᵀ = L₂ * L₂ᵀ) : L₁ = L₂ := by
   have hdet₂ : IsUnit L₂.det := by

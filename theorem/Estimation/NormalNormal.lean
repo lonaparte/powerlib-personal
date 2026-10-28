@@ -36,20 +36,20 @@ def nnPostMean (μ₀ : ℝ) (τ v : ℝ≥0) {N : ℕ} (d : Fin N → ℝ) : �
     (nnPostVar τ v N : ℝ) = ((τ : ℝ)⁻¹ + N * (v : ℝ)⁻¹)⁻¹ := by
   simp [nnPostVar]
 
-@[powerlib_foundation] theorem nnPostVar_ne_zero {τ : ℝ≥0} (hτ : τ ≠ 0) (v : ℝ≥0) (N : ℕ) :
+@[tmio T, powerlib_foundation] theorem nnPostVar_ne_zero {τ : ℝ≥0} (hτ : τ ≠ 0) (v : ℝ≥0) (N : ℕ) :
     nnPostVar τ v N ≠ 0 := by
   have : 0 < τ⁻¹ + N * v⁻¹ := add_pos_of_pos_of_nonneg (inv_pos.mpr (pos_iff_ne_zero.mpr hτ))
     (zero_le)
   simpa [nnPostVar] using this.ne'
 
-@[powerlib_foundation] private theorem sum_sq_sub (N : ℕ) (d : Fin N → ℝ) (θ : ℝ) :
+@[tmio T, powerlib_foundation] private theorem sum_sq_sub (N : ℕ) (d : Fin N → ℝ) (θ : ℝ) :
     ∑ i, (d i - θ) ^ 2 = ∑ i, d i ^ 2 - 2 * θ * ∑ i, d i + N * θ ^ 2 := by
   have : ∀ i, (d i - θ) ^ 2 = d i ^ 2 - 2 * θ * d i + θ ^ 2 := fun i => by ring
   simp only [this, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
     Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
 
 /-- Completing the square: prior × likelihood is a θ-independent multiple of `N(μ_N, τ_N)`. -/
-@[powerlib_foundation] theorem gaussianPDF_mul_prod_gaussianPDF {μ₀ : ℝ} {τ v : ℝ≥0} (hτ : τ ≠ 0)
+@[tmio T, powerlib_foundation] theorem gaussianPDF_mul_prod_gaussianPDF {μ₀ : ℝ} {τ v : ℝ≥0} (hτ : τ ≠ 0)
     (hv : v ≠ 0) {N : ℕ} (d : Fin N → ℝ) :
     ∃ c : ℝ, 0 < c ∧ ∀ θ, gaussianPDF μ₀ τ θ * ∏ i, gaussianPDF θ v (d i) =
       ENNReal.ofReal c * gaussianPDF (nnPostMean μ₀ τ v d) (nnPostVar τ v N) θ := by
@@ -86,7 +86,7 @@ def nnPostMean (μ₀ : ℝ) (τ v : ℝ≥0) {N : ℕ} (d : Fin N → ℝ) : �
         field_simp
 
 /-- **Normal–Normal conjugacy** (density level, `N` observations). -/
-@[powerlib_foundation] theorem bayesPosterior_normal_normal {μ₀ : ℝ} {τ v : ℝ≥0} (hτ : τ ≠ 0)
+@[tmio T, powerlib_foundation] theorem bayesPosterior_normal_normal {μ₀ : ℝ} {τ v : ℝ≥0} (hτ : τ ≠ 0)
     (hv : v ≠ 0) {N : ℕ} (d : Fin N → ℝ) :
     bayesPosterior (gaussianReal μ₀ τ) (fun θ => ∏ i, gaussianPDF θ v (d i)) =
       gaussianReal (nnPostMean μ₀ τ v d) (nnPostVar τ v N) := by
@@ -108,7 +108,7 @@ instance (v : ℝ≥0) : IsMarkovKernel (gaussianKernel v) :=
 
 /-- **Normal–Normal conjugacy, Mathlib posterior kernel** (one observation `x`):
 `(gaussianKernel v)†N(μ₀, τ) =ᵐ x ↦ N(μ₁, τ₁)`, `1/τ₁ = 1/τ + 1/v`, `μ₁ = τ₁(μ₀/τ + x/v)`. -/
-@[powerlib_foundation] theorem posterior_gaussianKernel_gaussianReal {μ₀ : ℝ} {τ v : ℝ≥0}
+@[tmio T, powerlib_foundation] theorem posterior_gaussianKernel_gaussianReal {μ₀ : ℝ} {τ v : ℝ≥0}
     (hτ : τ ≠ 0) (hv : v ≠ 0) :
     (gaussianKernel v)†(gaussianReal μ₀ τ) =ᵐ[gaussianKernel v ∘ₘ gaussianReal μ₀ τ]
       fun x => gaussianReal (nnPostMean μ₀ τ v (fun _ : Fin 1 => x)) (nnPostVar τ v 1) := by

@@ -94,7 +94,7 @@ field: a solution through such a state keeps the function below its value at the
 
 /-- Equilibria accumulating at a point rule out its local asymptotic stability: the constant
 solution at a nearby equilibrium does not converge to the point. -/
-@[powerlib_foundation] theorem not_localAsymptoticStable_of_equilibria {f : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem not_localAsymptoticStable_of_equilibria {f : ℝⁿ → ℝⁿ}
     {x_eq : ℝⁿ} (h : ∀ ε > 0, ∃ x, x ≠ x_eq ∧ ‖x - x_eq‖ < ε ∧ f x = 0) :
     ¬ LocalAsymptoticStable f x_eq := by
   rintro ⟨-, c, hc, hconv⟩
@@ -107,7 +107,7 @@ solution at a nearby equilibrium does not converge to the point. -/
 /-- **Chetaev's instability theorem** (classical form). A `C¹` function `W` that is positive at
 states arbitrarily close to the point and strictly increases along the field wherever it is
 positive within distance `r` makes the point of a `C¹` field unstable. -/
-@[powerlib_foundation] theorem unstable_of_chetaev {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} {W : ℝⁿ → ℝ}
+@[tmio T, powerlib_foundation] theorem unstable_of_chetaev {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} {W : ℝⁿ → ℝ}
     {r : ℝ} (hf : ContDiff ℝ 1 f) (hW : ContDiff ℝ 1 W) (hr : 0 < r)
     (hseed : ∀ ε > 0, ∃ x, ‖x - x_eq‖ < ε ∧ 0 < W x)
     (hLie : ∀ x, ‖x - x_eq‖ ≤ r → 0 < W x → 0 < fderiv ℝ W x (f x)) :
@@ -182,7 +182,7 @@ along the field near the point and takes values below `E x*` arbitrarily close t
 a `C¹` function `W` that strictly increases along the field wherever `E < E x*` near the point,
 makes the point of a `C¹` field unstable: a solution started below the level of `x*` stays there,
 and `W` grows at a uniform rate on the compact part of that sublevel near `x*`. -/
-@[powerlib_foundation] theorem unstable_of_lie_nonpos_of_lie_pos {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem unstable_of_lie_nonpos_of_lie_pos {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
     {E W : ℝⁿ → ℝ} {r : ℝ} (hf : ContDiff ℝ 1 f) (hE : ContDiff ℝ 1 E) (hW : ContDiff ℝ 1 W)
     (hr : 0 < r) (hELie : ∀ x, ‖x - x_eq‖ ≤ r → fderiv ℝ E x (f x) ≤ 0)
     (hseed : ∀ ε > 0, ∃ x, ‖x - x_eq‖ < ε ∧ E x < E x_eq)
@@ -246,7 +246,7 @@ local notation "ℝⁿ" => State n
 
 /-- Exponential Chetaev instability criterion.
 Upstream: `NonlinearInstability.unstable_of_exponential_chetaev`. -/
-@[powerlib_foundation] theorem unstable_of_exponential_chetaev
+@[tmio T, powerlib_foundation] theorem unstable_of_exponential_chetaev
     {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {x_eq : ℝⁿ}
     (hf : ContDiff ℝ 1 f) (hV : ContDiff ℝ 1 V)
     {ρ α C : ℝ} (hρ : 0 < ρ) (hα : 0 < α) (hC : 0 ≤ C)
@@ -270,7 +270,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- A function that does not increase along a locally `C¹` field near a point, and takes values
 below its value at the point arbitrarily close to it, rules out local asymptotic stability. -/
-@[powerlib_foundation] theorem not_localAsymptoticStable_of_lie_nonpos_local {f : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem not_localAsymptoticStable_of_lie_nonpos_local {f : ℝⁿ → ℝⁿ}
     {x_eq : ℝⁿ} {U : Set ℝⁿ} {V : ℝⁿ → ℝ} {ρ : ℝ} (hU : IsOpen U) (hx : x_eq ∈ U)
     (hf : ContDiffOn ℝ 1 f U) (hV : Differentiable ℝ V) (hρ : 0 < ρ)
     (hLie : ∀ x ∈ U, ‖x - x_eq‖ < ρ → fderiv ℝ V x (f x) ≤ 0)
@@ -287,7 +287,7 @@ below its value at the point arbitrarily close to it, rules out local asymptotic
 /-- **Chetaev's instability theorem** for a field that is `C¹` on an open neighbourhood `U` of the
 point: a `C¹` function positive at states arbitrarily close to the point and strictly increasing
 along the field wherever it is positive, within `U` and distance `r`. -/
-@[powerlib_foundation] theorem unstable_of_chetaev_local {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem unstable_of_chetaev_local {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
     {U : Set ℝⁿ} {W : ℝⁿ → ℝ} {r : ℝ} (hU : IsOpen U) (hx : x_eq ∈ U)
     (hf : ContDiffOn ℝ 1 f U) (hW : ContDiff ℝ 1 W) (hr : 0 < r)
     (hseed : ∀ ε > 0, ∃ x, ‖x - x_eq‖ < ε ∧ 0 < W x)
@@ -305,7 +305,7 @@ along the field wherever it is positive, within `U` and distance `r`. -/
 neighbourhood `U` of the point: an energy `E` that does not increase along the field near the
 point and takes values below `E x*` arbitrarily close to it, and a function `W` that strictly
 increases wherever `E < E x*` near the point. -/
-@[powerlib_foundation] theorem unstable_of_lie_nonpos_of_lie_pos_local {f : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem unstable_of_lie_nonpos_of_lie_pos_local {f : ℝⁿ → ℝⁿ}
     {x_eq : ℝⁿ} {U : Set ℝⁿ} {E W : ℝⁿ → ℝ} {r : ℝ} (hU : IsOpen U) (hx : x_eq ∈ U)
     (hf : ContDiffOn ℝ 1 f U) (hE : ContDiff ℝ 1 E) (hW : ContDiff ℝ 1 W) (hr : 0 < r)
     (hELie : ∀ x ∈ U, ‖x - x_eq‖ ≤ r → fderiv ℝ E x (f x) ≤ 0)
@@ -338,7 +338,7 @@ local notation "ℝⁿ" => State n
 
 /-- States arbitrarily close to a point of a nontrivial Euclidean space with an eventual
 punctured-neighbourhood property. -/
-private theorem exists_near_of_eventually (hn : 0 < n) {x_eq : ℝⁿ} {P : ℝⁿ → Prop}
+@[tmio T] private theorem exists_near_of_eventually (hn : 0 < n) {x_eq : ℝⁿ} {P : ℝⁿ → Prop}
     (h : ∀ᶠ x in 𝓝[≠] x_eq, P x) (ε : ℝ) (hε : 0 < ε) :
     ∃ x, ‖x - x_eq‖ < ε ∧ x ≠ x_eq ∧ P x := by
   obtain ⟨r, hr, hP⟩ := exists_radius_of_eventually h
@@ -362,7 +362,7 @@ private theorem exists_near_of_eventually (hn : 0 < n) {x_eq : ℝⁿ} {P : ℝ�
 /-- **Chetaev on a punctured neighbourhood.** A `C¹` function vanishing at the point, positive
 with positive derivative along a `C¹` field on a punctured neighbourhood, makes the point
 unstable. -/
-@[powerlib_foundation] theorem unstable_of_eventually_chetaev (hn : 0 < n) {f : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem unstable_of_eventually_chetaev (hn : 0 < n) {f : ℝⁿ → ℝⁿ}
     {x_eq : ℝⁿ} {W : ℝⁿ → ℝ} (hf : ContDiff ℝ 1 f) (hW : ContDiff ℝ 1 W) (hW0 : W x_eq = 0)
     (hpos : ∀ᶠ x in 𝓝[≠] x_eq, 0 < W x) (hLie : ∀ᶠ x in 𝓝[≠] x_eq, 0 < fderiv ℝ W x (f x)) :
     Unstable f x_eq := by
@@ -374,7 +374,7 @@ unstable. -/
     exact hball x (by linarith) hne
 
 /-- **No attraction from a non-increasing function with lower values nearby** (eventual form). -/
-@[powerlib_foundation] theorem not_localAsymptoticStable_of_eventually_lie_nonpos
+@[tmio T, powerlib_foundation] theorem not_localAsymptoticStable_of_eventually_lie_nonpos
     {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} {V : ℝⁿ → ℝ} (hf : ContDiff ℝ 1 f) (hV : Differentiable ℝ V)
     (hLie : ∀ᶠ x in 𝓝 x_eq, fderiv ℝ V x (f x) ≤ 0) (hseed : ∃ᶠ x in 𝓝 x_eq, V x < V x_eq) :
     ¬ LocalAsymptoticStable f x_eq := by
@@ -389,7 +389,7 @@ unstable. -/
 function decreases strictly along a `C¹` field on a punctured neighbourhood of an equilibrium and
 takes values below its value at the equilibrium at states arbitrarily close to it, the equilibrium
 is unstable (`Dynamics.unstable_of_lie_nonpos_of_lie_pos` with `W = −E`). -/
-@[powerlib_foundation] theorem unstable_of_eventually_lie_neg {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem unstable_of_eventually_lie_neg {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
     {E : ℝⁿ → ℝ} (hf : ContDiff ℝ 1 f) (hfx : f x_eq = 0) (hE : ContDiff ℝ 1 E)
     (hLie : ∀ᶠ x in 𝓝[≠] x_eq, fderiv ℝ E x (f x) < 0) (hseed : ∃ᶠ x in 𝓝 x_eq, E x < E x_eq) :
     Unstable f x_eq := by
@@ -417,7 +417,7 @@ open Filter Topology
 
 /-- A field with an equilibrium `y ≠ x` has no globally asymptotically stable point `x`: the
 constant solution at `y` does not converge to `x`. Generic. -/
-@[powerlib_foundation] theorem not_globallyAsymptoticallyStable_of_equilibrium_ne {n : ℕ}
+@[tmio T, powerlib_foundation] theorem not_globallyAsymptoticallyStable_of_equilibrium_ne {n : ℕ}
     {f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)} {x y : EuclideanSpace ℝ (Fin n)}
     (hy : f y = 0) (hne : y ≠ x) : ¬ Flow.GloballyAsymptoticallyStable f x := by
   rintro ⟨-, -, -, hconv⟩

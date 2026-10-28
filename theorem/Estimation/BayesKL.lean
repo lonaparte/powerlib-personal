@@ -53,17 +53,17 @@ variable {p₀ L : ι → ℝ}
     (hL : ∀ i, 0 < L i) : 0 < finEvidence p₀ L :=
   sum_pos (fun i _ => mul_pos (hp₀ i) (hL i)) univ_nonempty
 
-@[powerlib_foundation] theorem finPost_pos [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i) (hL : ∀ i, 0 < L i)
+@[tmio T, powerlib_foundation] theorem finPost_pos [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i) (hL : ∀ i, 0 < L i)
     (i : ι) : 0 < finPost p₀ L i :=
   div_pos (mul_pos (hp₀ i) (hL i)) (finEvidence_pos hp₀ hL)
 
-@[powerlib_foundation] theorem sum_finPost [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i) (hL : ∀ i, 0 < L i) :
+@[tmio T, powerlib_foundation] theorem sum_finPost [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i) (hL : ∀ i, 0 < L i) :
     ∑ i, finPost p₀ L i = 1 := by
   simp only [finPost, ← sum_div]
   exact div_self (finEvidence_pos hp₀ hL).ne'
 
 /-- **Information gain (§1.12)**: `KL(post ‖ prior) = E_post[log L] − log Z`. -/
-@[powerlib_foundation] theorem kl_posterior_prior [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i)
+@[tmio T, powerlib_foundation] theorem kl_posterior_prior [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i)
     (hL : ∀ i, 0 < L i) :
     klSum (finPost p₀ L) p₀ = ∑ i, finPost p₀ L i * log (L i) - log (finEvidence p₀ L) := by
   have hZ := finEvidence_pos hp₀ hL
@@ -81,7 +81,7 @@ def elbo (p₀ L q : ι → ℝ) : ℝ := ∑ i, q i * log (p₀ i * L i) - ∑ 
 
 /-- **ELBO decomposition (§1.14 (b))**: `log Z = ELBO(q) + KL(q ‖ post)` for every probability
 vector `q` (`0 log 0 = 0`). -/
-@[powerlib_foundation] theorem elbo_add_kl [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i) (hL : ∀ i, 0 < L i)
+@[tmio T, powerlib_foundation] theorem elbo_add_kl [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i) (hL : ∀ i, 0 < L i)
     {q : ι → ℝ} (hq1 : ∑ i, q i = 1) :
     elbo p₀ L q + klSum q (finPost p₀ L) = log (finEvidence p₀ L) := by
   have hZ := finEvidence_pos hp₀ hL
@@ -102,7 +102,7 @@ vector `q` (`0 log 0 = 0`). -/
   simp only [h, ← sum_mul, hq1, one_mul]
 
 /-- **`ELBO ≤ log p(D)`**. -/
-@[powerlib_foundation] theorem elbo_le_log_evidence [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i)
+@[tmio T, powerlib_foundation] theorem elbo_le_log_evidence [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i)
     (hL : ∀ i, 0 < L i) {q : ι → ℝ} (hq : ∀ i, 0 ≤ q i) (hq1 : ∑ i, q i = 1) :
     elbo p₀ L q ≤ log (finEvidence p₀ L) := by
   have := klSum_nonneg hq (finPost_pos hp₀ hL) hq1 (sum_finPost hp₀ hL)
@@ -110,7 +110,7 @@ vector `q` (`0 log 0 = 0`). -/
 
 /-- Equality in the ELBO bound exactly at the posterior: maximizing the ELBO is minimizing
 `KL(q ‖ post)`. -/
-@[powerlib_foundation] theorem elbo_eq_log_evidence_iff [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i)
+@[tmio T, powerlib_foundation] theorem elbo_eq_log_evidence_iff [Nonempty ι] (hp₀ : ∀ i, 0 < p₀ i)
     (hL : ∀ i, 0 < L i) {q : ι → ℝ} (hq : ∀ i, 0 ≤ q i) (hq1 : ∑ i, q i = 1) :
     elbo p₀ L q = log (finEvidence p₀ L) ↔ q = finPost p₀ L := by
   rw [← klSum_eq_zero_iff hq (finPost_pos hp₀ hL) hq1 (sum_finPost hp₀ hL)]
@@ -123,7 +123,7 @@ vector `q` (`0 log 0 = 0`). -/
 def DetailedBalance (p₀ : ι → ℝ) (P : ι → ι → ℝ) : Prop := ∀ i j, p₀ i * P i j = p₀ j * P j i
 
 /-- **Detailed balance ⇒ invariance** for a row-stochastic matrix. -/
-@[powerlib_foundation] theorem invariant_of_detailedBalance {P : ι → ι → ℝ}
+@[tmio T, powerlib_foundation] theorem invariant_of_detailedBalance {P : ι → ι → ℝ}
     (hrow : ∀ i, ∑ j, P i j = 1) (hdb : DetailedBalance p₀ P) (j : ι) :
     ∑ i, p₀ i * P i j = p₀ j := by
   simp_rw [hdb _ j, ← mul_sum, hrow, mul_one]
@@ -142,7 +142,7 @@ def mhMatrix (p₀ : ι → ℝ) (Q : ι → ι → ℝ) (i j : ι) : ℝ :=
 omit [Fintype ι] [DecidableEq ι] in
 /-- The probability flux of an accepted move is symmetric:
 `π_i Q_ij α_ij = min(π_i Q_ij, π_j Q_ji)`. -/
-@[powerlib_foundation] theorem mh_flux {Q : ι → ι → ℝ} (hp₀ : ∀ i, 0 < p₀ i)
+@[tmio T, powerlib_foundation] theorem mh_flux {Q : ι → ι → ℝ} (hp₀ : ∀ i, 0 < p₀ i)
     (hQ : ∀ i j, 0 ≤ Q i j) (i j : ι) :
     p₀ i * (Q i j * mhAccept p₀ Q i j) = min (p₀ i * Q i j) (p₀ j * Q j i) := by
   unfold mhAccept
@@ -153,7 +153,7 @@ omit [Fintype ι] [DecidableEq ι] in
     rw [← mul_assoc, mul_min_of_nonneg _ _ hpos.le, mul_one, mul_div_cancel₀ _ hpos.ne']
 
 /-- **MH detailed balance** with respect to any positive target. -/
-@[powerlib_foundation] theorem mh_detailedBalance {Q : ι → ι → ℝ} (hp₀ : ∀ i, 0 < p₀ i)
+@[tmio T, powerlib_foundation] theorem mh_detailedBalance {Q : ι → ι → ℝ} (hp₀ : ∀ i, 0 < p₀ i)
     (hQ : ∀ i j, 0 ≤ Q i j) : DetailedBalance p₀ (mhMatrix p₀ Q) := by
   intro i j
   by_cases hij : i = j
@@ -162,7 +162,7 @@ omit [Fintype ι] [DecidableEq ι] in
     rw [mh_flux hp₀ hQ, mh_flux hp₀ hQ, min_comm]
 
 /-- Rows of the MH matrix sum to one. -/
-@[powerlib_foundation] theorem mh_stochastic (Q : ι → ι → ℝ) (i : ι) :
+@[tmio T, powerlib_foundation] theorem mh_stochastic (Q : ι → ι → ℝ) (i : ι) :
     ∑ j, mhMatrix p₀ Q i j = 1 := by
   rw [← add_sum_erase _ _ (mem_univ i)]
   have h1 : mhMatrix p₀ Q i i = 1 - ∑ k ∈ univ.erase i, Q i k * mhAccept p₀ Q i k := by
@@ -175,14 +175,14 @@ omit [Fintype ι] [DecidableEq ι] in
 
 /-- **The posterior is invariant for the MH chain** (target = any positive vector, e.g. the
 unnormalized posterior `π L`). -/
-@[powerlib_foundation] theorem mh_invariant {Q : ι → ι → ℝ} (hp₀ : ∀ i, 0 < p₀ i)
+@[tmio T, powerlib_foundation] theorem mh_invariant {Q : ι → ι → ℝ} (hp₀ : ∀ i, 0 < p₀ i)
     (hQ : ∀ i j, 0 ≤ Q i j) (j : ι) : ∑ i, p₀ i * mhMatrix p₀ Q i j = p₀ j :=
   invariant_of_detailedBalance (mh_stochastic Q) (mh_detailedBalance hp₀ hQ) j
 
 omit [Fintype ι] [DecidableEq ι] in
 /-- Acceptance probabilities lie in `[0, 1]` for a nonnegative proposal and positive target, so
 the off-diagonal entries are bounded by the proposal. -/
-@[powerlib_foundation] theorem mhAccept_mem {Q : ι → ι → ℝ} (hp₀ : ∀ i, 0 < p₀ i)
+@[tmio T, powerlib_foundation] theorem mhAccept_mem {Q : ι → ι → ℝ} (hp₀ : ∀ i, 0 < p₀ i)
     (hQ : ∀ i j, 0 ≤ Q i j) (i j : ι) : 0 ≤ mhAccept p₀ Q i j ∧ mhAccept p₀ Q i j ≤ 1 := by
   unfold mhAccept
   split_ifs
@@ -192,7 +192,7 @@ the off-diagonal entries are bounded by the proposal. -/
 
 /-- General kernels (Mathlib `ProbabilityTheory.Kernel.IsReversible.invariant`): a reversible
 Markov kernel leaves its reference measure invariant. -/
-@[powerlib_foundation] theorem reversible_invariant {α : Type*} [MeasurableSpace α]
+@[tmio T, powerlib_foundation] theorem reversible_invariant {α : Type*} [MeasurableSpace α]
     {κ : ProbabilityTheory.Kernel α α} [ProbabilityTheory.IsMarkovKernel κ]
     {μ : MeasureTheory.Measure α} (h : κ.IsReversible μ) : κ.Invariant μ :=
   h.invariant

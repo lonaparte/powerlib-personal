@@ -220,7 +220,7 @@ holds with `C = 4` and rate `1`. The field need not be continuous on the plane. 
 field drives `y_k²` up at a uniform rate off the plane (`2 y_k f_k(y) ≥ a`), and on each half
 ball `{y_k ≥ s}` (`s > 0`) it agrees with a `C¹` field, then `x` is unstable: the solution from
 `x + s e_k` exists as long as it stays near `x`, and there `y_k²` grows without bound. -/
-@[powerlib_foundation] theorem unstable_of_repel {f : State n → State n} {x : State n} (k : Fin n)
+@[tmio T, powerlib_foundation] theorem unstable_of_repel {f : State n → State n} {x : State n} (k : Fin n)
     (hxk : x k = 0)
     {ρ a : ℝ} (hρ : 0 < ρ) (ha : 0 < a)
     (hrep : ∀ y : State n, ‖y - x‖ < ρ → y k ≠ 0 → a ≤ 2 * y k * f y k)
@@ -336,7 +336,7 @@ ball `{y_k ≥ s}` (`s > 0`) it agrees with a `C¹` field, then `x` is unstable:
 crosses its boundary `W = 0` inwards, some direction `v` points into the cone at `x`, and the field
 agrees on every half ball `{σ y_k ≥ s}` with a `C¹` field. Then `x` is unstable: the solution from
 a point of the cone close to `x` stays in it and leaves every small ball. -/
-@[powerlib_foundation] theorem unstable_of_cone {f : State n → State n} {x : State n} (k : Fin n)
+@[tmio T, powerlib_foundation] theorem unstable_of_cone {f : State n → State n} {x : State n} (k : Fin n)
     {σ : ℝ}
     (hσ : σ = 1 ∨ σ = -1) {ρ μ : ℝ} (hρ : 0 < ρ) (hμ : 0 < μ) {W : State n → ℝ}
     (hW : ContDiff ℝ 1 W) (hxk : x k = 0) (hW0 : W x = 0)
@@ -473,7 +473,7 @@ a point of the cone close to `x` stays in it and leaves every small ball. -/
 `ε = ω / (2 (1 + K)(1 + ω + |h*|/2))` of `g*, h*`, the combination
 `σ z V' + 2 K z (p' z − p z')` (with `z' = Q/z`, `z p' = (g z + (h − h*/2) Q)/ω`, `V = z² + p²`)
 is at most `−V`. -/
-@[powerlib_foundation] theorem spiral_ineq {z p g h gs hs ω K ε σ s : ℝ} (hω : 0 < ω)
+@[tmio T, powerlib_foundation] theorem spiral_ineq {z p g h gs hs ω K ε σ s : ℝ} (hω : 0 < ω)
     (hω2 : ω ^ 2 = -gs - hs ^ 2 / 4) (hK : 2 * K * ω = |hs| + 2) (hK0 : 0 ≤ K)
     (hε : 2 * ε * (1 + K) * (1 + (ω + |hs| / 2)) = ω)
     (hg : |g - gs| ≤ ε) (hh : |h - hs| ≤ ε) (hσ : σ = 1 ∨ σ = -1)
@@ -541,7 +541,7 @@ def spiralLyap (ω hs K σ z Q : ℝ) : ℝ :=
     Real.exp (σ * K * Real.arctan ((Q - hs / 2 * z) / ω / z))
 
 /-- `exp(σ K arctan a)` lies between `exp(∓Kπ/2)`. -/
-@[powerlib_foundation] theorem exp_spiral_bounds {K σ a : ℝ} (hK0 : 0 ≤ K) (hσ : σ = 1 ∨ σ = -1) :
+@[tmio T, powerlib_foundation] theorem exp_spiral_bounds {K σ a : ℝ} (hK0 : 0 ≤ K) (hσ : σ = 1 ∨ σ = -1) :
     Real.exp (-(K * (Real.pi / 2))) ≤ Real.exp (σ * K * Real.arctan a) ∧
       Real.exp (σ * K * Real.arctan a) ≤ Real.exp (K * (Real.pi / 2)) := by
   have h1 := Real.arctan_lt_pi_div_two a
@@ -549,14 +549,14 @@ def spiralLyap (ω hs K σ z Q : ℝ) : ℝ :=
   constructor <;> apply Real.exp_le_exp.mpr <;> rcases hσ with rfl | rfl <;> nlinarith
 
 /-- Upper bound of the spiral function by the radius. -/
-@[powerlib_foundation] theorem spiralLyap_le {ω hs K σ z Q : ℝ} (hK0 : 0 ≤ K)
+@[tmio T, powerlib_foundation] theorem spiralLyap_le {ω hs K σ z Q : ℝ} (hK0 : 0 ≤ K)
     (hσ : σ = 1 ∨ σ = -1) :
     spiralLyap ω hs K σ z Q ≤
       Real.sqrt (z ^ 2 + ((Q - hs / 2 * z) / ω) ^ 2) * Real.exp (K * (Real.pi / 2)) :=
   mul_le_mul_of_nonneg_left (exp_spiral_bounds hK0 hσ).2 (Real.sqrt_nonneg _)
 
 /-- Lower bound of the spiral function by the radius. -/
-@[powerlib_foundation] theorem le_spiralLyap {ω hs K σ z Q : ℝ} (hK0 : 0 ≤ K)
+@[tmio T, powerlib_foundation] theorem le_spiralLyap {ω hs K σ z Q : ℝ} (hK0 : 0 ≤ K)
     (hσ : σ = 1 ∨ σ = -1) :
     Real.sqrt (z ^ 2 + ((Q - hs / 2 * z) / ω) ^ 2) * Real.exp (-(K * (Real.pi / 2))) ≤
       spiralLyap ω hs K σ z Q :=
@@ -565,7 +565,7 @@ def spiralLyap (ω hs K σ z Q : ℝ) : ℝ :=
 /-- Along a curve with `z' = Q / z` and `Q' = g + h Q / z` (`g, h` near `g*, h*`, discriminant
 `h*² + 4g* < 0`), the spiral function decreases at least at the rate `exp(−Kπ/2) / 2` while
 `σ z > 0`. -/
-@[powerlib_foundation] theorem hasDerivWithinAt_spiralLyap {z Q : ℝ → ℝ} {S : Set ℝ}
+@[tmio T, powerlib_foundation] theorem hasDerivWithinAt_spiralLyap {z Q : ℝ → ℝ} {S : Set ℝ}
     {t g h gs hs ω K ε σ : ℝ}
     (hω : 0 < ω) (hω2 : ω ^ 2 = -gs - hs ^ 2 / 4) (hK : 2 * K * ω = |hs| + 2) (hK0 : 0 ≤ K)
     (hε : 2 * ε * (1 + K) * (1 + (ω + |hs| / 2)) = ω) (hσ : σ = 1 ∨ σ = -1)
@@ -650,7 +650,7 @@ def spiralLyap (ω hs K σ z Q : ℝ) : ℝ :=
 `y_k f_k(y) = q(y)` and on it `f_k ≠ 0`. If a nontrivial solution segment meets the plane at `τ`,
 then `q(φ τ) = 0`: otherwise `y_k²` would be monotone near `τ` with slope bounded away from zero
 (`d(y_k²)/dt = 2 q`), which is incompatible with the transversal crossing `y_k ≈ f_k (t − τ)`. -/
-@[powerlib_foundation] theorem q_eq_zero_of_touch {f : State n → State n} {x : State n} (k : Fin n)
+@[tmio T, powerlib_foundation] theorem q_eq_zero_of_touch {f : State n → State n} {x : State n} (k : Fin n)
     {q : State n → ℝ} {ρ : ℝ} (hqc : Continuous q)
     (hrel : ∀ y : State n, ‖y - x‖ < ρ → y k ≠ 0 → y k * f y k = q y)
     (hplane : ∀ y : State n, ‖y - x‖ < ρ → y k = 0 → f y k ≠ 0)
@@ -831,7 +831,7 @@ then `q(φ τ) = 0`: otherwise `y_k²` would be monotone near `τ` with slope bo
 
 /-- A transversal zero: if `z τ = 0` and `z' (τ) = ι ≠ 0` within `S`, then near `τ`,
 `|z u − ι (u − τ)| ≤ |ι|/2 |u − τ|` on `S`. -/
-@[powerlib_foundation] theorem exists_transversal {z : ℝ → ℝ} {S : Set ℝ} {τ ι : ℝ} (hι : ι ≠ 0)
+@[tmio T, powerlib_foundation] theorem exists_transversal {z : ℝ → ℝ} {S : Set ℝ} {τ ι : ℝ} (hι : ι ≠ 0)
     (hd : HasDerivWithinAt z ι S τ) (hz : z τ = 0) :
     ∃ η > 0, ∀ u ∈ S, |u - τ| < η → |z u - ι * (u - τ)| ≤ |ι| / 2 * |u - τ| := by
   have hιp : 0 < |ι| := abs_pos.mpr hι
@@ -850,7 +850,7 @@ then `q(φ τ) = 0`: otherwise `y_k²` would be monotone near `τ` with slope bo
     exact mul_le_mul_of_nonneg_right h1.le (abs_nonneg _)
 
 /-- The spiral function is nonnegative. -/
-@[powerlib_foundation] theorem spiralLyap_nonneg (ω hs K σ z Q : ℝ) : 0 ≤ spiralLyap ω hs K σ z Q :=
+@[tmio T, powerlib_foundation] theorem spiralLyap_nonneg (ω hs K σ z Q : ℝ) : 0 ≤ spiralLyap ω hs K σ z Q :=
   mul_nonneg (Real.sqrt_nonneg _) (Real.exp_pos _).le
 
 set_option maxHeartbeats 1000000 in
@@ -862,7 +862,7 @@ exponential estimate (whether or not it is an equilibrium). In the time `τ` wit
 the pair `(y_k, q)` follows a linear focus; every solution segment near `x` meets the plane at
 most at its end, after a time `O(‖y(t₀) − x‖)`, and stays within `O(‖y(t₀) − x‖)` of `x`
 (Lyapunov function `spiralLyap`, decreasing at a uniform rate; `q_eq_zero_of_touch`). -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_of_spiral {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_spiral {f : State n → State n}
     {x : State n} (k : Fin n)
     (hxk : x k = 0) {q g h : State n → ℝ} (hq : ContDiff ℝ 1 q) (hq0 : q x = 0)
     (hgc : ContinuousAt g x) (hhc : ContinuousAt h x) {ρ M : ℝ} (hρ : 0 < ρ)
@@ -1243,7 +1243,7 @@ there are seeds `y₀` with `σ y₀_k > 0` and a region `{σ y_k ≥ σ y₀_k 
 (three `C¹` barriers, positive at `y₀`) near `x`
 in which `σ y_k` does not decrease, a `C¹` function `V`, bounded near `x`, grows at a rate
 `μ > 0`, and the field crosses each barrier `W_i = 0` inwards. Then `x` is unstable. -/
-@[powerlib_foundation] theorem unstable_of_barriers {f : State n → State n} {x : State n}
+@[tmio T, powerlib_foundation] theorem unstable_of_barriers {f : State n → State n} {x : State n}
     (k : Fin n) {σ : ℝ} {ρ : ℝ} (hρ : 0 < ρ)
     (hext : ∀ s > 0, ∃ g : State n → State n, ContDiff ℝ 1 g ∧
       ∀ y : State n, ‖y - x‖ < ρ → s ≤ σ * y k → g y = f y)
@@ -1370,7 +1370,7 @@ in which `σ y_k` does not decrease, a `C¹` function `V`, bounded near `x`, gro
 
 
 /-- A `C¹` real function is Lipschitz at a point on a ball. -/
-@[powerlib_foundation] theorem exists_lipschitz_bound {g : State n → ℝ} (hg : ContDiff ℝ 1 g)
+@[tmio T, powerlib_foundation] theorem exists_lipschitz_bound {g : State n → ℝ} (hg : ContDiff ℝ 1 g)
     (x : State n) :
     ∃ L ρ : ℝ, 0 ≤ L ∧ 0 < ρ ∧ ∀ y : State n, ‖y - x‖ < ρ → |g y - g x| ≤ L * ‖y - x‖ := by
   obtain ⟨K, t, ht, hK⟩ := hg.contDiffAt.exists_lipschitzOnWith
@@ -1390,7 +1390,7 @@ quadratic `λ² − h(x) λ − g(x)` has a double root `h(x)/2 ≠ 0` (`h(x)² 
 unstable: on the side `σ = sign h(x)`, with `w = σ y_k` and `λ = |h(x)|/2`, the horn
 `{q ≥ (λ − √w) w, ‖y − x‖² ≤ (K² + 1) y_k²}` is entered by the field (the margin `√w` of the
 shrinking cone dominates the Lipschitz variation `O(w)` of `g, h`), and in it `w' ≥ λ / 2`. -/
-@[powerlib_foundation] theorem unstable_of_degenerate_node {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem unstable_of_degenerate_node {f : State n → State n}
     {x : State n} (k : Fin n)
     (hxk : x k = 0) {q g h : State n → ℝ} (hq : ContDiff ℝ 1 q) (hq0 : q x = 0)
     (hg : ContDiff ℝ 1 g) (hh : ContDiff ℝ 1 h) {ρ : ℝ} (hρ : 0 < ρ)
@@ -1696,7 +1696,7 @@ on every half ball `{y_k ≥ s}` to a `C¹` field. Then the local exponential es
 the estimate with overshoot `C`, the solution from `x + s³ e_k` stays within `C s³` of `x`; there
 `g, h = O(s³)`, so `q` stays `O(s⁵)` and `y_k ≥ s³/2` for a time `4 C s³ / ‖F(x)‖`, during which
 the drift `F ≈ F(x)` carries the solution to distance `2 C s³`. -/
-@[powerlib_foundation] theorem not_locallyExponentiallyStable_of_nilpotent {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem not_locallyExponentiallyStable_of_nilpotent {f : State n → State n}
     {x : State n}
     (k : Fin n) (hxk : x k = 0) {q g h : State n → ℝ} (hq : ContDiff ℝ 1 q) (hq0 : q x = 0)
     (hg : ContDiff ℝ 1 g) (hh : ContDiff ℝ 1 h) (hg0 : g x = 0) (hh0 : h x = 0)

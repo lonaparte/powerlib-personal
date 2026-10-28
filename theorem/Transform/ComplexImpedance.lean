@@ -68,90 +68,90 @@ variable {R : Type*} [CommRing R]
   · intro h
     rw [h]; simp [IsComplexSymm, complexSymm]
 
-@[powerlib_foundation] theorem isComplexSymm_complexSymm (a b : R) :
+@[tmio T, powerlib_foundation] theorem isComplexSymm_complexSymm (a b : R) :
     IsComplexSymm (complexSymm a b) := by
   simp [IsComplexSymm, complexSymm]
 
-@[powerlib_foundation] theorem complexSymm_mul (a b c d : R) :
+@[tmio T, powerlib_foundation] theorem complexSymm_mul (a b c d : R) :
     complexSymm a b * complexSymm c d = complexSymm (a * c - b * d) (a * d + b * c) := by
   simp only [complexSymm, mul_fin_two]
   ext i j; fin_cases i <;> fin_cases j <;> simp <;> ring
 
-@[powerlib_foundation] theorem complexSymm_add (a b c d : R) :
+@[tmio T, powerlib_foundation] theorem complexSymm_add (a b c d : R) :
     complexSymm a b + complexSymm c d = complexSymm (a + c) (b + d) := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [complexSymm]; ring
 
-@[powerlib_foundation] theorem complexSymm_sub (a b c d : R) :
+@[tmio T, powerlib_foundation] theorem complexSymm_sub (a b c d : R) :
     complexSymm a b - complexSymm c d = complexSymm (a - c) (b - d) := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [complexSymm]; ring
 
-@[powerlib_foundation] theorem smul_one_eq_complexSymm (s : R) :
+@[tmio T, powerlib_foundation] theorem smul_one_eq_complexSymm (s : R) :
     s • (1 : Matrix (Fin 2) (Fin 2) R) = complexSymm s 0 := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [complexSymm]
 
-@[powerlib_foundation] theorem det_complexSymm (a b : R) :
+@[tmio T, powerlib_foundation] theorem det_complexSymm (a b : R) :
     (complexSymm a b).det = a ^ 2 + b ^ 2 := by
   rw [complexSymm, det_fin_two_of]; ring
 
-@[powerlib_foundation] theorem complexSymm_map {S : Type*} [CommRing S] (f : R →+* S) (a b : R) :
+@[tmio T, powerlib_foundation] theorem complexSymm_map {S : Type*} [CommRing S] (f : R →+* S) (a b : R) :
     (complexSymm a b).map f = complexSymm (f a) (f b) := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [complexSymm]
 
 /-- C wrapper: the real complex-symmetric matrix is Mathlib's left-multiplication matrix of
 `a + jb` in the basis `(1, j)` (`Algebra.leftMulMatrix_complex`). -/
-@[powerlib_foundation] theorem complexSymm_eq_leftMulMatrix (z : ℂ) :
+@[tmio T, powerlib_foundation] theorem complexSymm_eq_leftMulMatrix (z : ℂ) :
     complexSymm z.re z.im = Algebra.leftMulMatrix Complex.basisOneI z :=
   (Algebra.leftMulMatrix_complex z).symm
 
 /-- Real action: `[[a, −b], [b, a]] x` is `(a + jb) (x_d + j x_q)` in complex form. -/
-@[powerlib_foundation] theorem toComplex_complexSymm_mulVec (a b : ℝ) (x : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] theorem toComplex_complexSymm_mulVec (a b : ℝ) (x : Fin 2 → ℝ) :
     toComplex (complexSymm a b *ᵥ x) = (⟨a, b⟩ : ℂ) * toComplex x := by
   apply Complex.ext <;>
     simp [toComplex, complexSymm, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
 
 /-- Frequency-domain action on complex phasors: the positive-sequence combination
 `Y_d + j Y_q` equals `(α + jβ)(U_d + j U_q)`. -/
-@[powerlib_foundation] theorem complexSymm_mulVec_pos (α β : ℂ) (u : Fin 2 → ℂ) :
+@[tmio T, powerlib_foundation] theorem complexSymm_mulVec_pos (α β : ℂ) (u : Fin 2 → ℂ) :
     (complexSymm α β *ᵥ u) 0 + Complex.I * (complexSymm α β *ᵥ u) 1 =
       (α + Complex.I * β) * (u 0 + Complex.I * u 1) := by
   simp [complexSymm, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
   linear_combination (-(β * u 1)) * Complex.I_sq
 
 /-- The negative-sequence combination `Y_d − j Y_q` sees `α − jβ`. -/
-@[powerlib_foundation] theorem complexSymm_mulVec_neg (α β : ℂ) (u : Fin 2 → ℂ) :
+@[tmio T, powerlib_foundation] theorem complexSymm_mulVec_neg (α β : ℂ) (u : Fin 2 → ℂ) :
     (complexSymm α β *ᵥ u) 0 - Complex.I * (complexSymm α β *ᵥ u) 1 =
       (α - Complex.I * β) * (u 0 - Complex.I * u 1) := by
   simp [complexSymm, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
   linear_combination (-(β * u 1)) * Complex.I_sq
 
-@[simp, powerlib_foundation] theorem toSISO_complexSymm (α β : ℂ) :
+@[tmio T, simp, powerlib_foundation] theorem toSISO_complexSymm (α β : ℂ) :
     toSISO (complexSymm α β) = α + Complex.I * β := by
   simp [toSISO, complexSymm]
 
-@[powerlib_foundation] theorem IsComplexSymm.mul {M N : Matrix (Fin 2) (Fin 2) R}
+@[tmio T, powerlib_foundation] theorem IsComplexSymm.mul {M N : Matrix (Fin 2) (Fin 2) R}
     (hM : IsComplexSymm M) (hN : IsComplexSymm N) : IsComplexSymm (M * N) := by
   rw [isComplexSymm_iff] at hM hN
   rw [hM, hN, complexSymm_mul]; exact isComplexSymm_complexSymm _ _
 
-@[powerlib_foundation] theorem IsComplexSymm.add {M N : Matrix (Fin 2) (Fin 2) R}
+@[tmio T, powerlib_foundation] theorem IsComplexSymm.add {M N : Matrix (Fin 2) (Fin 2) R}
     (hM : IsComplexSymm M) (hN : IsComplexSymm N) : IsComplexSymm (M + N) := by
   rw [isComplexSymm_iff] at hM hN
   rw [hM, hN, complexSymm_add]; exact isComplexSymm_complexSymm _ _
 
 /-- `toSISO` is multiplicative on complex-symmetric matrices. -/
-@[powerlib_foundation] theorem toSISO_mul {M N : Matrix (Fin 2) (Fin 2) ℂ}
+@[tmio T, powerlib_foundation] theorem toSISO_mul {M N : Matrix (Fin 2) (Fin 2) ℂ}
     (hM : IsComplexSymm M) (hN : IsComplexSymm N) : toSISO (M * N) = toSISO M * toSISO N := by
   rw [isComplexSymm_iff] at hM hN
   rw [hM, hN, complexSymm_mul]
   simp only [toSISO_complexSymm]
   linear_combination (-(M 1 0 * N 1 0)) * Complex.I_sq
 
-@[powerlib_foundation] theorem toSISO_add (M N : Matrix (Fin 2) (Fin 2) ℂ) :
+@[tmio T, powerlib_foundation] theorem toSISO_add (M N : Matrix (Fin 2) (Fin 2) ℂ) :
     toSISO (M + N) = toSISO M + toSISO N := by
   simp [toSISO]; ring
 
 /-- Inverse of a nonsingular complex-symmetric matrix. -/
-@[powerlib_foundation] theorem complexSymm_inv {α β : ℂ} (h : α ^ 2 + β ^ 2 ≠ 0) :
+@[tmio T, powerlib_foundation] theorem complexSymm_inv {α β : ℂ} (h : α ^ 2 + β ^ 2 ≠ 0) :
     (complexSymm α β)⁻¹ = complexSymm (α / (α ^ 2 + β ^ 2)) (-β / (α ^ 2 + β ^ 2)) := by
   apply Matrix.inv_eq_right_inv
   rw [complexSymm_mul, show (1 : Matrix (Fin 2) (Fin 2) ℂ) = complexSymm 1 0 by
@@ -160,12 +160,12 @@ variable {R : Type*} [CommRing R]
   · field_simp; ring
   · field_simp; ring
 
-@[powerlib_foundation] theorem sq_add_sq_eq_mul (α β : ℂ) :
+@[tmio T, powerlib_foundation] theorem sq_add_sq_eq_mul (α β : ℂ) :
     α ^ 2 + β ^ 2 = (α + Complex.I * β) * (α - Complex.I * β) := by
   linear_combination (β ^ 2) * Complex.I_sq
 
 /-- `toSISO` of the inverse is the inverse of `toSISO`. -/
-@[powerlib_foundation] theorem toSISO_complexSymm_inv {α β : ℂ} (h : α ^ 2 + β ^ 2 ≠ 0) :
+@[tmio T, powerlib_foundation] theorem toSISO_complexSymm_inv {α β : ℂ} (h : α ^ 2 + β ^ 2 ≠ 0) :
     toSISO (complexSymm α β)⁻¹ = (α + Complex.I * β)⁻¹ := by
   rw [complexSymm_inv h, toSISO_complexSymm]
   rw [sq_add_sq_eq_mul] at h ⊢
@@ -181,11 +181,11 @@ variable {R : Type*} [CommRing R]
 def csModel (a b p q c d e f : ℝ) : Linear.Plant 2 2 :=
   ⟨complexSymm a b, complexSymm p q, complexSymm c d, complexSymm e f⟩
 
-private lemma complexify_complexSymm (a b : ℝ) :
+@[tmio T] private lemma complexify_complexSymm (a b : ℝ) :
     Linear.complexify (complexSymm a b) = complexSymm (a : ℂ) (b : ℂ) :=
   complexSymm_map (algebraMap ℝ ℂ) a b
 
-@[powerlib_foundation] theorem characteristicMatrix_complexSymm (a b : ℝ) (s : ℂ) :
+@[tmio T, powerlib_foundation] theorem characteristicMatrix_complexSymm (a b : ℝ) (s : ℂ) :
     Linear.characteristicMatrix (complexSymm a b) s = complexSymm (s - a) (-b) := by
   rw [Linear.characteristicMatrix, complexify_complexSymm,
     smul_one_eq_complexSymm, complexSymm_sub, zero_sub]
@@ -194,7 +194,7 @@ private lemma complexify_complexSymm (a b : ℝ) :
 complex form is the complex transfer function `(c + jd)(s − (a + jb))⁻¹(p + jq) + (e + jf)`
 (`T-impedance-modeling.md` §1.4: `Z(s) = Z_dd(s) + j Z_qd(s)`), at every `s` that is not an
 eigenvalue of the real state matrix. -/
-@[powerlib_foundation] theorem transfer_csModel (a b p q c d e f : ℝ) {s : ℂ}
+@[tmio M, powerlib_foundation] theorem transfer_csModel (a b p q c d e f : ℝ) {s : ℂ}
     (hs : (Linear.characteristicMatrix (complexSymm a b) s).det ≠ 0) :
     IsComplexSymm (Linear.transfer (csModel a b p q c d e f) s) ∧
       toSISO (Linear.transfer (csModel a b p q c d e f) s) =
@@ -243,7 +243,7 @@ def output (m : CModel ι κ) (z : ι → ℂ) (u : κ → ℂ) : κ → ℂ := 
 
 omit [Fintype κ] in
 /-- Frequency shift: `G_{shift ω₁}(s) = G(s − jω₁)`. -/
-@[powerlib_foundation] theorem transfer_shift (m : CModel ι κ) (ω₁ : ℝ) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem transfer_shift (m : CModel ι κ) (ω₁ : ℝ) (s : ℂ) :
     (m.shift ω₁).transfer s = m.transfer (s - (ω₁ : ℂ) * Complex.I) := by
   simp only [transfer, shift]
   congr 3
@@ -252,7 +252,7 @@ omit [Fintype κ] in
 /-- Rotating phasor `e^{jω₁ t}`. -/
 def rotor (ω₁ t : ℝ) : ℂ := Complex.exp ((t : ℂ) * ((ω₁ : ℂ) * Complex.I))
 
-@[powerlib_foundation] theorem hasDerivAt_rotor (ω₁ t : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_rotor (ω₁ t : ℝ) :
     HasDerivAt (rotor ω₁) (rotor ω₁ t * ((ω₁ : ℂ) * Complex.I)) t := by
   have h := ((hasDerivAt_id t).ofReal_comp.mul_const ((ω₁ : ℂ) * Complex.I)).cexp
   unfold rotor
@@ -274,7 +274,7 @@ the complex dq model). -/
   abel
 
 /-- The output of the shifted solution is the shifted output. -/
-@[powerlib_foundation] theorem output_shift (m : CModel ι κ) (ω₁ : ℝ) (c : ℂ) (z : ι → ℂ)
+@[tmio M, powerlib_foundation] theorem output_shift (m : CModel ι κ) (ω₁ : ℝ) (c : ℂ) (z : ι → ℂ)
     (u : κ → ℂ) : (m.shift ω₁).output (c • z) (c • u) = c • m.output z u := by
   simp [output, shift, Matrix.mulVec_smul, smul_add]
 
@@ -282,7 +282,7 @@ the complex dq model). -/
 def ofReal {n p : ℕ} (m : Linear.Plant n p) : CModel (Fin n) (Fin p) :=
   ⟨Linear.complexify m.A, Linear.complexify m.B, Linear.complexify m.C, Linear.complexify m.D⟩
 
-@[powerlib_foundation] theorem transfer_ofReal {n p : ℕ} (m : Linear.Plant n p) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem transfer_ofReal {n p : ℕ} (m : Linear.Plant n p) (s : ℂ) :
     (ofReal m).transfer s = Linear.transfer m s := rfl
 
 end CModel
@@ -295,13 +295,13 @@ def seqMatrix : Matrix (Fin 2) (Fin 2) ℂ := !![1, Complex.I; 1, -Complex.I]
 /-- `A⁻¹ = ½ [[1, 1], [−j, j]]`. -/
 def seqMatrixInv : Matrix (Fin 2) (Fin 2) ℂ := (1 / 2 : ℂ) • !![1, 1; -Complex.I, Complex.I]
 
-@[powerlib_foundation] theorem seqMatrix_mul_inv : seqMatrix * seqMatrixInv = 1 := by
+@[tmio T, powerlib_foundation] theorem seqMatrix_mul_inv : seqMatrix * seqMatrixInv = 1 := by
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [seqMatrix, seqMatrixInv, Matrix.mul_apply, Fin.sum_univ_two] <;> ring_nf <;>
     simp [Complex.I_sq] <;> norm_num
 
-@[powerlib_foundation] theorem seqMatrixInv_mul : seqMatrixInv * seqMatrix = 1 := by
+@[tmio T, powerlib_foundation] theorem seqMatrixInv_mul : seqMatrixInv * seqMatrix = 1 := by
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [seqMatrix, seqMatrixInv, Matrix.mul_apply, Fin.sum_univ_two] <;> ring_nf
@@ -311,7 +311,7 @@ def seqMatrixInv : Matrix (Fin 2) (Fin 2) ℂ := (1 / 2 : ℂ) • !![1, 1; -Com
 def toSeq (Y : Matrix (Fin 2) (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
   seqMatrix * Y * seqMatrixInv
 
-@[powerlib_foundation] theorem toSeq_eq (Y : Matrix (Fin 2) (Fin 2) ℂ) :
+@[tmio T, powerlib_foundation] theorem toSeq_eq (Y : Matrix (Fin 2) (Fin 2) ℂ) :
     toSeq Y =
       !![((Y 0 0 + Y 1 1) + Complex.I * (Y 1 0 - Y 0 1)) / 2,
           ((Y 0 0 - Y 1 1) + Complex.I * (Y 1 0 + Y 0 1)) / 2;
@@ -323,7 +323,7 @@ def toSeq (Y : Matrix (Fin 2) (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
       Fin.sum_univ_two] <;> ring_nf <;> simp [Complex.I_sq] <;> ring
 
 /-- No coupling between the two complex-vector channels iff `Y_dd = Y_qq ∧ Y_dq = −Y_qd`. -/
-@[powerlib_foundation] theorem toSeq_offDiag_eq_zero_iff (Y : Matrix (Fin 2) (Fin 2) ℂ) :
+@[tmio T, powerlib_foundation] theorem toSeq_offDiag_eq_zero_iff (Y : Matrix (Fin 2) (Fin 2) ℂ) :
     (toSeq Y 0 1 = 0 ∧ toSeq Y 1 0 = 0) ↔ (Y 0 0 = Y 1 1 ∧ Y 0 1 = -Y 1 0) := by
   rw [toSeq_eq]
   simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
@@ -341,7 +341,7 @@ def toSeq (Y : Matrix (Fin 2) (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ :=
 
 /-- The return difference `det(I + Z Y)` is the same in dq and complex-vector form: the sequence
 form is the change of port bases `seqMatrix` on both ports (`Rebase.det_one_add_mul_rebase`). -/
-@[powerlib_foundation] theorem returnDifference_toSeq (Z Y : Matrix (Fin 2) (Fin 2) ℂ) :
+@[tmio T, powerlib_foundation] theorem returnDifference_toSeq (Z Y : Matrix (Fin 2) (Fin 2) ℂ) :
     (1 + toSeq Z * toSeq Y).det = (1 + Z * Y).det :=
   Rebase.det_one_add_mul_rebase seqMatrix_mul_inv seqMatrixInv_mul seqMatrixInv_mul Z Y
 

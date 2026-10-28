@@ -52,14 +52,14 @@ variable {ν : Measure ℝ} [IsProbabilityMeasure ν]
   ring
 
 /-- **Squared loss: the posterior mean is optimal.** -/
-@[powerlib_foundation] theorem integral_sq_sub_mean_le (h1 : Integrable (fun θ : ℝ => θ) ν)
+@[tmio T, powerlib_foundation] theorem integral_sq_sub_mean_le (h1 : Integrable (fun θ : ℝ => θ) ν)
     (h2 : Integrable (fun θ : ℝ => θ ^ 2) ν) (a : ℝ) :
     ∫ θ, (θ - ∫ x, x ∂ν) ^ 2 ∂ν ≤ ∫ θ, (θ - a) ^ 2 ∂ν := by
   rw [integral_sq_sub_eq h1 h2 a]
   nlinarith [sq_nonneg ((∫ x, x ∂ν) - a)]
 
 /-- Uniqueness of the squared-loss optimum. -/
-@[powerlib_foundation] theorem integral_sq_sub_eq_iff (h1 : Integrable (fun θ : ℝ => θ) ν)
+@[tmio T, powerlib_foundation] theorem integral_sq_sub_eq_iff (h1 : Integrable (fun θ : ℝ => θ) ν)
     (h2 : Integrable (fun θ : ℝ => θ ^ 2) ν) (a : ℝ) :
     ∫ θ, (θ - a) ^ 2 ∂ν = ∫ θ, (θ - ∫ x, x ∂ν) ^ 2 ∂ν ↔ a = ∫ x, x ∂ν := by
   rw [integral_sq_sub_eq h1 h2 a]
@@ -70,7 +70,7 @@ variable {ν : Measure ℝ} [IsProbabilityMeasure ν]
     linarith
   · intro h; rw [h]; ring
 
-@[powerlib_foundation] private theorem abs_le_of_median_right
+@[tmio T, powerlib_foundation] private theorem abs_le_of_median_right
     (h1 : Integrable (fun θ : ℝ => θ) ν) {m a : ℝ} (hma : m ≤ a)
     (hmed : 1 / 2 ≤ ν.real (Iic m)) :
     ∫ θ, |θ - m| ∂ν ≤ ∫ θ, |θ - a| ∂ν := by
@@ -114,7 +114,7 @@ variable {ν : Measure ℝ} [IsProbabilityMeasure ν]
   nlinarith
 
 /-- **Absolute loss: a posterior median is optimal.** -/
-@[powerlib_foundation] theorem integral_abs_sub_median_le (h1 : Integrable (fun θ : ℝ => θ) ν)
+@[tmio T, powerlib_foundation] theorem integral_abs_sub_median_le (h1 : Integrable (fun θ : ℝ => θ) ν)
     {m : ℝ} (hmed₁ : 1 / 2 ≤ ν.real (Iic m)) (hmed₂ : 1 / 2 ≤ ν.real (Ici m)) (a : ℝ) :
     ∫ θ, |θ - m| ∂ν ≤ ∫ θ, |θ - a| ∂ν := by
   rcases le_total m a with hma | ham

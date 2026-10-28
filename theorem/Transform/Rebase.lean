@@ -157,7 +157,7 @@ section Matrices
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-@[powerlib_foundation] theorem inv_smul_matrix {c : ℂ} (hc : c ≠ 0) (M : Matrix ι ι ℂ) :
+@[tmio T, powerlib_foundation] theorem inv_smul_matrix {c : ℂ} (hc : c ≠ 0) (M : Matrix ι ι ℂ) :
     (c • M)⁻¹ = c⁻¹ • M⁻¹ := by
   by_cases h : IsUnit M.det
   · have := Matrix.inv_smul' M (Units.mk0 c hc) h
@@ -170,7 +170,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
     rw [Matrix.nonsing_inv_apply_not_isUnit _ h', Matrix.nonsing_inv_apply_not_isUnit _ h,
       smul_zero]
 
-@[powerlib_foundation] theorem characteristicMatrix_smul {c : ℝ} (hc : c ≠ 0)
+@[tmio T, powerlib_foundation] theorem characteristicMatrix_smul {c : ℝ} (hc : c ≠ 0)
     (A : Matrix ι ι ℝ) (s : ℂ) :
     characteristicMatrix (c • A) s = (c : ℂ) • characteristicMatrix A (s / c) := by
   have hc' : (c : ℂ) ≠ 0 := by exact_mod_cast hc
@@ -181,7 +181,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- Scaling the state matrix by a positive constant does not change spectral stability (the
 eigenvalues scale, `Linear.forall_eigen_smul_iff`). -/
-@[powerlib_foundation] theorem spectrallyStable_smul_iff {c : ℝ} (hc : 0 < c) (A : Matrix ι ι ℝ) :
+@[tmio T, powerlib_foundation] theorem spectrallyStable_smul_iff {c : ℝ} (hc : 0 < c) (A : Matrix ι ι ℝ) :
     SpectrallyStable (c • A) ↔ SpectrallyStable A := by
   rw [spectrallyStable_iff_forall_eigen, spectrallyStable_iff_forall_eigen]
   refine (forall_eigen_smul_iff hc.ne' A fun μ => μ.re < 0).trans
@@ -195,7 +195,7 @@ eigenvalues scale, `Linear.forall_eigen_smul_iff`). -/
   · exact mul_neg_of_pos_of_neg hc
 
 /-- A similarity on an arbitrary finite index conjugates the characteristic matrix. -/
-@[powerlib_foundation] theorem characteristicMatrix_conj' {T S : Matrix ι ι ℝ} (hTS : T * S = 1)
+@[tmio T, powerlib_foundation] theorem characteristicMatrix_conj' {T S : Matrix ι ι ℝ} (hTS : T * S = 1)
     (A : Matrix ι ι ℝ) (s : ℂ) :
     characteristicMatrix (T * A * S) s =
       complexify T * characteristicMatrix A s * complexify S := by
@@ -204,21 +204,21 @@ eigenvalues scale, `Linear.forall_eigen_smul_iff`). -/
 
 /-- A similarity on an arbitrary finite index preserves spectral stability (it keeps the
 characteristic polynomial, `Linear.spectrallyStable_conj`). -/
-@[powerlib_foundation] theorem spectrallyStable_conj_iff {T S : Matrix ι ι ℝ} (_hTS : T * S = 1)
+@[tmio T, powerlib_foundation] theorem spectrallyStable_conj_iff {T S : Matrix ι ι ℝ} (_hTS : T * S = 1)
     (hST : S * T = 1) (A : Matrix ι ι ℝ) :
     SpectrallyStable (T * A * S) ↔ SpectrallyStable A :=
   spectrallyStable_conj hST A
 
 omit [DecidableEq ι] in
 /-- The square instance of `Dynamics.hasDerivAt_mulVec`. -/
-@[powerlib_foundation] theorem hasDerivAt_mulVec (M : Matrix ι ι ℝ) {x : ℝ → ι → ℝ} {x' : ι → ℝ}
+@[tmio T, powerlib_foundation] theorem hasDerivAt_mulVec (M : Matrix ι ι ℝ) {x : ℝ → ι → ℝ} {x' : ι → ℝ}
     {t : ℝ} (hx : HasDerivAt x x' t) : HasDerivAt (fun s => M *ᵥ x s) (M *ᵥ x') t :=
   Dynamics.hasDerivAt_mulVec M hx
 
 /-- **The return difference does not see the port bases.** For voltage coordinates `T_v` with
 inverse `S_v` and current coordinates `T_i` with left inverse `S_i`, over any commutative ring
 (complex bases included), `det(1 + (T_v Z S_i)(T_i Y S_v)) = det(1 + Z Y)`. -/
-@[powerlib_foundation] theorem det_one_add_mul_rebase {R : Type*} [CommRing R]
+@[tmio T, powerlib_foundation] theorem det_one_add_mul_rebase {R : Type*} [CommRing R]
     {Tv Sv Ti Si : Matrix ι ι R} (hTv : Tv * Sv = 1) (hSv : Sv * Tv = 1) (hi : Si * Ti = 1)
     (Z Y : Matrix ι ι R) : (1 + Tv * Z * Si * (Ti * Y * Sv)).det = (1 + Z * Y).det := by
   have hconj : 1 + Tv * Z * Si * (Ti * Y * Sv) = Tv * (1 + Z * Y) * Sv := by
@@ -236,7 +236,7 @@ def rebaseMatrix (T S : Matrix ι ι ℝ) (w : ℝ) (A : Matrix ι ι ℝ) : Mat
 variable {T S : Matrix ι ι ℝ} {w : ℝ}
 
 /-- An original solution gives a rebased solution `x̂(τ) = T x(τ / w)`. -/
-@[powerlib_foundation] theorem solves_rebaseMatrix_of (hST : S * T = 1) {A : Matrix ι ι ℝ}
+@[tmio T, powerlib_foundation] theorem solves_rebaseMatrix_of (hST : S * T = 1) {A : Matrix ι ι ℝ}
     {x : ℝ → ι → ℝ} (hx : ∀ t, HasDerivAt x (A *ᵥ x t) t) :
     ∀ τ, HasDerivAt (fun τ => T *ᵥ x (τ / w)) (rebaseMatrix T S w A *ᵥ (T *ᵥ x (τ / w))) τ := by
   intro τ
@@ -250,7 +250,7 @@ variable {T S : Matrix ι ι ℝ} {w : ℝ}
   simp [Matrix.mulVec_smul, Matrix.smul_mulVec, Matrix.mulVec_mulVec]
 
 /-- A rebased solution gives an original solution `x(t) = S x̂(w t)`. -/
-@[powerlib_foundation] theorem solves_of_rebaseMatrix (hST : S * T = 1) (hw : w ≠ 0)
+@[tmio T, powerlib_foundation] theorem solves_of_rebaseMatrix (hST : S * T = 1) (hw : w ≠ 0)
     {A : Matrix ι ι ℝ} {y : ℝ → ι → ℝ}
     (hy : ∀ τ, HasDerivAt y (rebaseMatrix T S w A *ᵥ y τ) τ) :
     ∀ t, HasDerivAt (fun t => S *ᵥ y (w * t)) (A *ᵥ (S *ᵥ y (w * t))) t := by
@@ -263,7 +263,7 @@ variable {T S : Matrix ι ι ℝ} {w : ℝ}
     mul_inv_cancel₀ hw, one_smul, Matrix.mulVec_mulVec, ← Matrix.mul_assoc, hST, Matrix.one_mul]
 
 /-- Exact correspondence of the original and the rebased solutions. -/
-@[powerlib_foundation] theorem solves_rebaseMatrix_iff (hST : S * T = 1) (hw : w ≠ 0)
+@[tmio T, powerlib_foundation] theorem solves_rebaseMatrix_iff (hST : S * T = 1) (hw : w ≠ 0)
     (A : Matrix ι ι ℝ) (x : ℝ → ι → ℝ) :
     (∀ t, HasDerivAt x (A *ᵥ x t) t) ↔
       ∀ τ, HasDerivAt (fun τ => T *ᵥ x (τ / w)) (rebaseMatrix T S w A *ᵥ (T *ᵥ x (τ / w))) τ := by
@@ -272,7 +272,7 @@ variable {T S : Matrix ι ι ℝ} {w : ℝ}
   simp only [Matrix.mulVec_mulVec, hST, Matrix.one_mulVec, mul_div_cancel_left₀ _ hw] at h'
   exact h'
 
-@[powerlib_foundation] theorem spectrallyStable_rebaseMatrix_iff (hTS : T * S = 1)
+@[tmio T, powerlib_foundation] theorem spectrallyStable_rebaseMatrix_iff (hTS : T * S = 1)
     (hST : S * T = 1) (hw : 0 < w) (A : Matrix ι ι ℝ) :
     SpectrallyStable (rebaseMatrix T S w A) ↔ SpectrallyStable A := by
   rw [rebaseMatrix, spectrallyStable_smul_iff (inv_pos.mpr hw)]
@@ -284,7 +284,7 @@ section Plants
 
 variable {n p : ℕ} {T S : Matrix (Fin n) (Fin n) ℝ} {w : ℝ}
 
-@[powerlib_foundation] theorem isHurwitz_rebaseMatrix_iff (hTS : T * S = 1) (hST : S * T = 1)
+@[tmio T, powerlib_foundation] theorem isHurwitz_rebaseMatrix_iff (hTS : T * S = 1) (hST : S * T = 1)
     (hw : 0 < w) (A : Matrix (Fin n) (Fin n) ℝ) :
     IsHurwitz (rebaseMatrix T S w A) ↔ IsHurwitz A := by
   rw [← spectrallyStable_iff_isHurwitz, ← spectrallyStable_iff_isHurwitz]
@@ -318,7 +318,7 @@ for the original. -/
   rw [rebaseMatrix, h]
   exact holds_conj _ hTS hST A
 
-@[powerlib_foundation] theorem characteristicMatrix_rebaseMatrix (hTS : T * S = 1) (hw : w ≠ 0)
+@[tmio T, powerlib_foundation] theorem characteristicMatrix_rebaseMatrix (hTS : T * S = 1) (hw : w ≠ 0)
     (A : Matrix (Fin n) (Fin n) ℝ) (s : ℂ) :
     characteristicMatrix (rebaseMatrix T S w A) s =
       (w⁻¹ : ℂ) • (complexify T * characteristicMatrix A (s * w) * complexify S) := by
@@ -332,19 +332,19 @@ def plant (m : Plant n p) (T S : Matrix (Fin n) (Fin n) ℝ) (w : ℝ)
     (Su Ty : Matrix (Fin p) (Fin p) ℝ) : Plant n p :=
   ⟨rebaseMatrix T S w m.A, w⁻¹ • (T * m.B * Su), Ty * m.C * S, Ty * m.D * Su⟩
 
-private lemma complexify_smul (c : ℝ) {m' n' : Type*} (M : Matrix m' n' ℝ) :
+@[tmio T] private lemma complexify_smul (c : ℝ) {m' n' : Type*} (M : Matrix m' n' ℝ) :
     complexify (c • M) = (c : ℂ) • complexify M := by
   ext i j; simp
 
 /-- Reversing the output sign of a plant (`LTI.negOutput`, read with the output as a port current
 the `Y^IN = −Y^OUT` translation) is the change of output basis `−1` with unit time base; its
 transfer matrix is `transfer_rebase` at this basis. -/
-@[powerlib_foundation] theorem plant_negOutput (m : Plant n p) :
+@[tmio M, powerlib_foundation] theorem plant_negOutput (m : Plant n p) :
     plant m 1 1 1 1 (-1) = LTI.negOutput m := by
   ext : 1 <;> simp [plant, rebaseMatrix, LTI.negOutput]
 
 /-- The transfer matrix in new bases: `Ĝ(ŝ) = T_y G(w ŝ) S_u`. -/
-@[powerlib_foundation] theorem transfer_rebase (hTS : T * S = 1) (hST : S * T = 1) (hw : w ≠ 0)
+@[tmio M, powerlib_foundation] theorem transfer_rebase (hTS : T * S = 1) (hST : S * T = 1) (hw : w ≠ 0)
     (Su Ty : Matrix (Fin p) (Fin p) ℝ) (m : Plant n p) (s : ℂ) :
     transfer (plant m T S w Su Ty) s =
       complexify Ty * transfer m (s * w) * complexify Su := by
@@ -454,12 +454,12 @@ def interconnection (ic : Interconnection n₁ n₂ p) (β : Bases n₁ n₂ p) 
 
 variable (ic : Interconnection n₁ n₂ p) (β : Bases n₁ n₂ p)
 
-private theorem smul_conj {α β' γ δ : Type*} [Fintype β'] [Fintype γ] (c : ℝ)
+@[tmio T] private theorem smul_conj {α β' γ δ : Type*} [Fintype β'] [Fintype γ] (c : ℝ)
     (T : Matrix α β' ℝ) (A : Matrix β' γ ℝ) (S : Matrix γ δ ℝ) :
     c • (T * A * S) = c • T * A * S := by
   rw [Matrix.smul_mul, Matrix.smul_mul]
 
-theorem interp_interconnection :
+@[tmio M] theorem interp_interconnection :
     interp (interconnection ic β) = Construction.rebase (dims n₁ n₂ p) β.T β.S (interp ic) := by
   funext a b x
   cases x
@@ -471,28 +471,28 @@ theorem interp_interconnection :
   · exact smul_conj β.w⁻¹ β.T₂ ic.load.B β.Sv
   · rfl
 
-theorem closedLoopBlocks_eq :
+@[tmio M] theorem closedLoopBlocks_eq :
     ic.closedLoopBlocks = fromBlocks (eval (dims n₁ n₂ p) (interp ic) a₁₁)
       (eval (dims n₁ n₂ p) (interp ic) a₁₂) (eval (dims n₁ n₂ p) (interp ic) a₂₁)
       (eval (dims n₁ n₂ p) (interp ic) a₂₂) := rfl
 
-theorem inputBlocks_eq :
+@[tmio M] theorem inputBlocks_eq :
     ic.inputBlocks = fromRows (eval (dims n₁ n₂ p) (interp ic) b₁)
       (eval (dims n₁ n₂ p) (interp ic) b₂) := rfl
 
-theorem outputBlocks_eq :
+@[tmio M] theorem outputBlocks_eq :
     ic.outputBlocks = fromCols (eval (dims n₁ n₂ p) (interp ic) c₁)
       (eval (dims n₁ n₂ p) (interp ic) c₂) := rfl
 
 /-- Block conjugation of a block matrix, with a scaling of the target bases. -/
-@[powerlib_foundation] theorem fromBlocks_conj {α γ : Type*} [Fintype α] [Fintype γ] (c : ℝ)
+@[tmio T, powerlib_foundation] theorem fromBlocks_conj {α γ : Type*} [Fintype α] [Fintype γ] (c : ℝ)
     (T₁ S₁ : Matrix α α ℝ) (T₂ S₂ : Matrix γ γ ℝ) (a : Matrix α α ℝ) (b : Matrix α γ ℝ)
     (c' : Matrix γ α ℝ) (d : Matrix γ γ ℝ) :
     fromBlocks (c • T₁ * a * S₁) (c • T₁ * b * S₂) (c • T₂ * c' * S₁) (c • T₂ * d * S₂) =
       c • (fromBlocks T₁ 0 0 T₂ * fromBlocks a b c' d * fromBlocks S₁ 0 0 S₂) := by
   simp [fromBlocks_multiply, fromBlocks_smul, Matrix.smul_mul]
 
-@[powerlib_foundation] theorem fromRows_conj {α γ κ : Type*} [Fintype α] [Fintype γ] [Fintype κ]
+@[tmio T, powerlib_foundation] theorem fromRows_conj {α γ κ : Type*} [Fintype α] [Fintype γ] [Fintype κ]
     (c : ℝ) (T₁ : Matrix α α ℝ) (T₂ : Matrix γ γ ℝ) (S : Matrix κ κ ℝ) (b : Matrix α κ ℝ)
     (b' : Matrix γ κ ℝ) :
     fromRows (c • T₁ * b * S) (c • T₂ * b' * S) =
@@ -500,7 +500,7 @@ theorem outputBlocks_eq :
   rw [fromBlocks_mul_fromRows, fromRows_mul]
   ext (i | i) j <;> simp [Matrix.smul_mul]
 
-@[powerlib_foundation] theorem fromCols_conj {α γ κ : Type*} [Fintype α] [Fintype γ] [Fintype κ]
+@[tmio T, powerlib_foundation] theorem fromCols_conj {α γ κ : Type*} [Fintype α] [Fintype γ] [Fintype κ]
     (T : Matrix κ κ ℝ) (S₁ : Matrix α α ℝ) (S₂ : Matrix γ γ ℝ) (b : Matrix κ α ℝ)
     (c : Matrix κ γ ℝ) :
     fromCols (T * b * S₁) (T * c * S₂) = T * fromCols b c * fromBlocks S₁ 0 0 S₂ := by
@@ -510,7 +510,7 @@ variable {ic β}
 
 /-- The closed-loop state blocks of the rebased components are the rebased blocks; only the port
 bases need inverses. -/
-@[powerlib_foundation] theorem closedLoopBlocks_rebase (hv : β.Sv * β.Tv = 1)
+@[tmio M, powerlib_foundation] theorem closedLoopBlocks_rebase (hv : β.Sv * β.Tv = 1)
     (hi : β.Si * β.Ti = 1) :
     (interconnection ic β).closedLoopBlocks =
       β.w⁻¹ • (fromBlocks β.T₁ 0 0 β.T₂ * ic.closedLoopBlocks * fromBlocks β.S₁ 0 0 β.S₂) := by
@@ -527,7 +527,7 @@ bases need inverses. -/
   exact fromBlocks_conj β.w⁻¹ β.T₁ β.S₁ β.T₂ β.S₂ _ _ _ _
 
 /-- The closed-loop input blocks of the rebased components are the rebased blocks. -/
-@[powerlib_foundation] theorem inputBlocks_rebase (hv : β.Sv * β.Tv = 1) :
+@[tmio M, powerlib_foundation] theorem inputBlocks_rebase (hv : β.Sv * β.Tv = 1) :
     (interconnection ic β).inputBlocks =
       β.w⁻¹ • (fromBlocks β.T₁ 0 0 β.T₂ * ic.inputBlocks * β.Si) := by
   rw [inputBlocks_eq, inputBlocks_eq, interp_interconnection,
@@ -537,7 +537,7 @@ bases need inverses. -/
   exact fromRows_conj β.w⁻¹ β.T₁ β.T₂ β.Si _ _
 
 /-- The closed-loop output blocks of the rebased components are the rebased blocks. -/
-@[powerlib_foundation] theorem outputBlocks_rebase (hi : β.Si * β.Ti = 1) :
+@[tmio M, powerlib_foundation] theorem outputBlocks_rebase (hi : β.Si * β.Ti = 1) :
     (interconnection ic β).outputBlocks =
       β.Tv * ic.outputBlocks * fromBlocks β.S₁ 0 0 β.S₂ := by
   rw [outputBlocks_eq, outputBlocks_eq, interp_interconnection,
@@ -547,7 +547,7 @@ bases need inverses. -/
   exact fromCols_conj β.Tv β.S₁ β.S₂ _ _
 
 /-- The closed loop of the rebased components is the rebased closed loop. -/
-@[powerlib_foundation] theorem closedLoop_rebase (hv : β.Sv * β.Tv = 1) (hi : β.Si * β.Ti = 1) :
+@[tmio M, powerlib_foundation] theorem closedLoop_rebase (hv : β.Sv * β.Tv = 1) (hi : β.Si * β.Ti = 1) :
     (interconnection ic β).closedLoop =
       plant ic.closedLoop (blockCoordinates β.T₁ β.T₂) (blockCoordinates β.S₁ β.S₂) β.w β.Si
         β.Tv := by
@@ -576,21 +576,21 @@ bases need inverses. -/
   · rfl
 
 /-- The source impedance in new bases: `Ẑ(ŝ) = T_v Z(w ŝ) S_i`. -/
-@[powerlib_foundation] theorem sourceImpedance_rebase (h₁ : β.S₁ * β.T₁ = 1) (hw : β.w ≠ 0)
+@[tmio M, powerlib_foundation] theorem sourceImpedance_rebase (h₁ : β.S₁ * β.T₁ = 1) (hw : β.w ≠ 0)
     (s : ℂ) :
     (interconnection ic β).sourceImpedance s =
       complexify β.Tv * ic.sourceImpedance (s * β.w) * complexify β.Si :=
   transfer_rebase (mul_eq_one_comm.mp h₁) h₁ hw _ _ ic.source s
 
 /-- The load admittance in new bases: `Ŷ(ŝ) = T_i Y(w ŝ) S_v`. -/
-@[powerlib_foundation] theorem loadAdmittance_rebase (h₂ : β.S₂ * β.T₂ = 1) (hw : β.w ≠ 0)
+@[tmio M, powerlib_foundation] theorem loadAdmittance_rebase (h₂ : β.S₂ * β.T₂ = 1) (hw : β.w ≠ 0)
     (s : ℂ) :
     (interconnection ic β).loadAdmittance s =
       complexify β.Ti * ic.loadAdmittance (s * β.w) * complexify β.Sv :=
   transfer_rebase (mul_eq_one_comm.mp h₂) h₂ hw _ _ ic.load s
 
 /-- The return difference in new bases is the original one at `w ŝ`. -/
-@[powerlib_foundation] theorem returnDifference_rebase (h₁ : β.S₁ * β.T₁ = 1)
+@[tmio M, powerlib_foundation] theorem returnDifference_rebase (h₁ : β.S₁ * β.T₁ = 1)
     (h₂ : β.S₂ * β.T₂ = 1) (hv : β.Sv * β.Tv = 1) (hi : β.Si * β.Ti = 1) (hw : β.w ≠ 0)
     (s : ℂ) :
     (interconnection ic β).returnDifference s = ic.returnDifference (s * β.w) := by
@@ -612,7 +612,7 @@ bases need inverses. -/
   · intro h s hs
     exact h _ (by simp; positivity)
 
-private theorem blockCoordinates_inv {T₁ S₁ : Matrix (Fin n₁) (Fin n₁) ℝ}
+@[tmio T] private theorem blockCoordinates_inv {T₁ S₁ : Matrix (Fin n₁) (Fin n₁) ℝ}
     {T₂ S₂ : Matrix (Fin n₂) (Fin n₂) ℝ} (h₁ : S₁ * T₁ = 1) (h₂ : S₂ * T₂ = 1) :
     blockCoordinates S₁ S₂ * blockCoordinates T₁ T₂ = 1 := by
   rw [blockCoordinates_mul, h₁, h₂, blockCoordinates_one]
@@ -630,14 +630,14 @@ base. -/
 /-! ## Instances: coordinates and the current direction -/
 
 /-- State coordinate changes are changes of bases with unit port bases and time base. -/
-@[powerlib_foundation] theorem changeCoordinates_eq (T₁ S₁ : Matrix (Fin n₁) (Fin n₁) ℝ)
+@[tmio M, powerlib_foundation] theorem changeCoordinates_eq (T₁ S₁ : Matrix (Fin n₁) (Fin n₁) ℝ)
     (T₂ S₂ : Matrix (Fin n₂) (Fin n₂) ℝ) :
     ic.changeCoordinates T₁ S₁ T₂ S₂ = interconnection ic ⟨T₁, S₁, T₂, S₂, 1, 1, 1, 1, 1⟩ := by
   refine Interconnection.ext ?_ ?_ <;> ext : 1 <;>
     simp [Interconnection.changeCoordinates, Plant.changeCoordinates, interconnection, plant,
       rebaseMatrix, ic.load_strictly_proper]
 
-private theorem complexify_neg_one {κ : Type*} [Fintype κ] [DecidableEq κ] :
+@[tmio T] private theorem complexify_neg_one {κ : Type*} [Fintype κ] [DecidableEq κ] :
     complexify (-1 : Matrix κ κ ℝ) = -1 := by
   rw [complexify_neg]
   unfold complexify
@@ -648,23 +648,23 @@ def flipCurrent : Bases n₁ n₂ p := ⟨1, 1, 1, 1, 1, 1, -1, -1, 1⟩
 
 /-- Reversing the current direction reverses the injected current and keeps the closed-loop
 state and output matrices. -/
-@[powerlib_foundation] theorem closedLoop_flipCurrent :
+@[tmio M, powerlib_foundation] theorem closedLoop_flipCurrent :
     (interconnection ic flipCurrent).closedLoop =
       ⟨ic.closedLoop.A, -ic.closedLoop.B, ic.closedLoop.C, -ic.closedLoop.D⟩ := by
   rw [closedLoop_rebase (by simp [flipCurrent]) (by simp [flipCurrent])]
   simp [flipCurrent, plant, rebaseMatrix, blockCoordinates_one]
 
-@[powerlib_foundation] theorem sourceImpedance_flipCurrent (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem sourceImpedance_flipCurrent (s : ℂ) :
     (interconnection ic flipCurrent).sourceImpedance s = -ic.sourceImpedance s := by
   rw [sourceImpedance_rebase (by simp [flipCurrent]) (by simp [flipCurrent])]
   simp [flipCurrent, complexify_neg_one]
 
-@[powerlib_foundation] theorem loadAdmittance_flipCurrent (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem loadAdmittance_flipCurrent (s : ℂ) :
     (interconnection ic flipCurrent).loadAdmittance s = -ic.loadAdmittance s := by
   rw [loadAdmittance_rebase (by simp [flipCurrent]) (by simp [flipCurrent])]
   simp [flipCurrent, complexify_neg_one]
 
-@[powerlib_foundation] theorem returnDifference_flipCurrent (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem returnDifference_flipCurrent (s : ℂ) :
     (interconnection ic flipCurrent).returnDifference s = ic.returnDifference s := by
   rw [returnDifference_rebase (by simp [flipCurrent]) (by simp [flipCurrent])
     (by simp [flipCurrent]) (by simp [flipCurrent]) (by simp [flipCurrent])]

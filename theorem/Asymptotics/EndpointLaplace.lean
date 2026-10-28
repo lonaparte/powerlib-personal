@@ -60,7 +60,7 @@ def endpointCorrection (g₀ g₁ φ₂ φ₃ : ℝ) : ℝ :=
 
 /-- The algebraic core of `endpointTable_eq`, in the square-root variables `x = √X`,
 `p = √φ₂`. -/
-@[powerlib_foundation] private theorem endpointTable_core {g₀ g₁ φ₃ x p : ℝ} (hg : g₀ ≠ 0)
+@[tmio T, powerlib_foundation] private theorem endpointTable_core {g₀ g₁ φ₃ x p : ℝ} (hg : g₀ ≠ 0)
     (hx : 0 < x) (hp : 0 < p) :
     g₀ * (Real.sqrt 2 * Real.sqrt π / (x * p) / 2) + g₁ * (1 / (x ^ 2 * p ^ 2)) -
         g₀ * (x ^ 2 * φ₃ / 6) * (2 / (x ^ 2 * p ^ 2) ^ 2) =
@@ -94,7 +94,7 @@ def endpointCorrection (g₀ g₁ φ₂ φ₃ : ℝ) : ℝ :=
   rw [e1, e2]
   convert h using 2
 
-@[powerlib_foundation] theorem endpointCorrection_ne_zero_iff {g₀ g₁ φ₂ φ₃ : ℝ}
+@[tmio T, powerlib_foundation] theorem endpointCorrection_ne_zero_iff {g₀ g₁ φ₂ φ₃ : ℝ}
     (hφ : 0 < φ₂) :
     endpointCorrection g₀ g₁ φ₂ φ₃ ≠ 0 ↔ g₁ / g₀ ≠ φ₃ / (3 * φ₂) := by
   have h2π : 0 < Real.sqrt (2 / π) := Real.sqrt_pos.mpr (div_pos two_pos Real.pi_pos)
@@ -105,7 +105,7 @@ def endpointCorrection (g₀ g₁ φ₂ φ₃ : ℝ) : ℝ :=
   · exact fun h => ⟨⟨h2π.ne', h⟩, hsφ.ne'⟩
 
 /-- Full line: the odd terms vanish and no half-order correction appears. -/
-@[powerlib_foundation] theorem interiorTable_eq {g₀ g₁ φ₂ φ₃ X : ℝ} (hφ : 0 < φ₂)
+@[tmio T, powerlib_foundation] theorem interiorTable_eq {g₀ g₁ φ₂ φ₃ X : ℝ} (hφ : 0 < φ₂)
     (hX : 0 < X) :
     interiorTable g₀ g₁ φ₂ φ₃ X = g₀ * Real.sqrt (2 * π / (X * φ₂)) := by
   obtain ⟨h1, h3⟩ := integral_odd_moments_vanish (X * φ₂)
@@ -117,7 +117,7 @@ def endpointCorrection (g₀ g₁ φ₂ φ₃ : ℝ) : ℝ :=
   ring
 
 /-- The endpoint main term is exactly half the interior main term. -/
-@[powerlib_foundation] theorem endpoint_main_term_half {b : ℝ} (hb : 0 < b) :
+@[tmio T, powerlib_foundation] theorem endpoint_main_term_half {b : ℝ} (hb : 0 < b) :
     (∫ ξ in Ioi (0 : ℝ), Real.exp (-(b / 2) * ξ ^ 2)) =
       (1 / 2) * ∫ ξ : ℝ, Real.exp (-(b / 2) * ξ ^ 2) := by
   rw [halfMoment0 hb, integral_gaussian]

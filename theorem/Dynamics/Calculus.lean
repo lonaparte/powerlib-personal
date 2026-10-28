@@ -68,7 +68,7 @@ local notation "ℝⁿ" => State n
 
 /-- A curve continuous on `[t₀, t₁]` that is in an open set at `x ∈ [t₀, t₁)` stays in it on
 some `[x, y]` with `x < y ≤ t₁`. -/
-@[powerlib_foundation] theorem exists_Icc_mem_of_isOpen {ψ : ℝ → ℝⁿ} {U : Set ℝⁿ}
+@[tmio T, powerlib_foundation] theorem exists_Icc_mem_of_isOpen {ψ : ℝ → ℝⁿ} {U : Set ℝⁿ}
     {t₀ t₁ x : ℝ} (hψ : ContinuousOn ψ (Icc t₀ t₁)) (hU : IsOpen U) (hx : x ∈ Ico t₀ t₁)
     (hxU : ψ x ∈ U) : ∃ y, x < y ∧ y ≤ t₁ ∧ ∀ t ∈ Icc x y, ψ t ∈ U := by
   have hIcc : Icc t₀ t₁ ∈ 𝓝[>] x :=
@@ -93,7 +93,7 @@ open Set Filter Topology
 
 /-- If `g` is continuous on `[a, b]`, `g a > 0`, and positivity on `[a, t)` always propagates to
 `t`, then `g > 0` on `[a, b]`. -/
-@[powerlib_foundation] theorem pos_on_Icc_of_propagate {g : ℝ → ℝ} {a b : ℝ}
+@[tmio T, powerlib_foundation] theorem pos_on_Icc_of_propagate {g : ℝ → ℝ} {a b : ℝ}
     (hg : ContinuousOn g (Icc a b)) (ha : 0 < g a)
     (h : ∀ t ∈ Ioc a b, (∀ s ∈ Ico a t, 0 < g s) → 0 < g t) :
     ∀ t ∈ Icc a b, 0 < g t := by
@@ -118,7 +118,7 @@ open Set Filter Topology
   linarith
 
 /-- A closed upper bound on `[a, b)` extends to `b`. -/
-@[powerlib_foundation] theorem forall_Icc_of_forall_Ico {F : ℝ → ℝ} {a b B : ℝ} (hab : a < b)
+@[tmio T, powerlib_foundation] theorem forall_Icc_of_forall_Ico {F : ℝ → ℝ} {a b B : ℝ} (hab : a < b)
     (hF : ContinuousOn F (Icc a b)) (h : ∀ t ∈ Ico a b, F t ≤ B) : ∀ t ∈ Icc a b, F t ≤ B := by
   have hcl : IsClosed (Icc a b ∩ F ⁻¹' Iic B) :=
     hF.preimage_isClosed_of_isClosed isClosed_Icc isClosed_Iic
@@ -130,7 +130,7 @@ open Set Filter Topology
 /-! ## Monotonicity and mean-value bounds -/
 
 /-- Monotonicity on `[a, b]` from a nonnegative derivative on `(a, b)`. -/
-@[powerlib_foundation] theorem monotoneOn_Icc_of_hasDerivAt {h h' : ℝ → ℝ} {a b : ℝ}
+@[tmio T, powerlib_foundation] theorem monotoneOn_Icc_of_hasDerivAt {h h' : ℝ → ℝ} {a b : ℝ}
     (hc : ContinuousOn h (Icc a b)) (hd : ∀ x ∈ Ioo a b, HasDerivAt h (h' x) x)
     (hnn : ∀ x ∈ Ioo a b, 0 ≤ h' x) : MonotoneOn h (Icc a b) := by
   apply monotoneOn_of_hasDerivWithinAt_nonneg (convex_Icc a b) hc
@@ -139,7 +139,7 @@ open Set Filter Topology
 
 /-- Mean-value lower bound on a subinterval: a function with derivative at least `m` inside
 `[c, d] ⊆ [a, b]` increases by at least `m (d − c)`. -/
-@[powerlib_foundation] theorem sub_ge_of_deriv_ge {u u' : ℝ → ℝ} {a b c d m : ℝ} (hcd : c ≤ d)
+@[tmio T, powerlib_foundation] theorem sub_ge_of_deriv_ge {u u' : ℝ → ℝ} {a b c d m : ℝ} (hcd : c ≤ d)
     (hca : a ≤ c) (hdb : d ≤ b) (hu : ∀ s ∈ Icc a b, HasDerivWithinAt u (u' s) (Icc a b) s)
     (hm : ∀ s ∈ Ioo c d, m ≤ u' s) : m * (d - c) ≤ u d - u c := by
   have hmono : MonotoneOn (fun s => u s - m * s) (Icc c d) := by
@@ -158,7 +158,7 @@ open Set Filter Topology
   linarith
 
 /-- Mean-value upper bound on a subinterval. -/
-@[powerlib_foundation] theorem sub_le_of_deriv_le {u u' : ℝ → ℝ} {a b c d m : ℝ} (hcd : c ≤ d)
+@[tmio T, powerlib_foundation] theorem sub_le_of_deriv_le {u u' : ℝ → ℝ} {a b c d m : ℝ} (hcd : c ≤ d)
     (hca : a ≤ c) (hdb : d ≤ b) (hu : ∀ s ∈ Icc a b, HasDerivWithinAt u (u' s) (Icc a b) s)
     (hm : ∀ s ∈ Ioo c d, u' s ≤ m) : u d - u c ≤ m * (d - c) := by
   have h := sub_ge_of_deriv_ge (u := fun s => -u s) (u' := fun s => -u' s) (m := -m) hcd hca hdb
@@ -167,7 +167,7 @@ open Set Filter Topology
 
 /-- A function with derivative `d` within `[a, b]` at the right end `b`, where it is minimal on
 `[a, b]`, has `d ≤ 0`. -/
-@[powerlib_foundation] theorem deriv_nonpos_of_isMinOn_right {φ : ℝ → ℝ} {d a b : ℝ} (hab : a < b)
+@[tmio T, powerlib_foundation] theorem deriv_nonpos_of_isMinOn_right {φ : ℝ → ℝ} {d a b : ℝ} (hab : a < b)
     (hd : HasDerivWithinAt φ d (Icc a b) b) (hmin : ∀ u ∈ Icc a b, φ b ≤ φ u) : d ≤ 0 := by
   rw [hasDerivWithinAt_iff_tendsto_slope, Icc_sdiff_right, nhdsWithin_Ico_eq_nhdsLT hab] at hd
   refine le_of_tendsto hd ?_
@@ -177,7 +177,7 @@ open Set Filter Topology
     (by linarith [hu.2])
 
 /-- A function vanishing at `0` with positive derivative there is positive at some `t ∈ (0, ε)`. -/
-@[powerlib_foundation] theorem exists_pos_of_hasDerivAt {ψ : ℝ → ℝ} {d : ℝ} (hd : HasDerivAt ψ d 0)
+@[tmio T, powerlib_foundation] theorem exists_pos_of_hasDerivAt {ψ : ℝ → ℝ} {d : ℝ} (hd : HasDerivAt ψ d 0)
     (h0 : ψ 0 = 0) (hpos : 0 < d) {ε : ℝ} (hε : 0 < ε) : ∃ t ∈ Ioo 0 ε, 0 < ψ t := by
   rw [hasDerivAt_iff_tendsto_slope] at hd
   have h1 : Tendsto (slope ψ 0) (𝓝[>] 0) (𝓝 d) :=
@@ -192,7 +192,7 @@ open Set Filter Topology
   exact (div_pos_iff_of_pos_right ht0).mp this
 
 /-- A function vanishing at `0` with positive derivative there is positive just to the right. -/
-@[powerlib_foundation] theorem eventually_pos_of_hasDerivAt {ψ : ℝ → ℝ} {d : ℝ}
+@[tmio T, powerlib_foundation] theorem eventually_pos_of_hasDerivAt {ψ : ℝ → ℝ} {d : ℝ}
     (hd : HasDerivAt ψ d 0) (h0 : ψ 0 = 0) (hpos : 0 < d) : ∀ᶠ t in 𝓝[>] (0 : ℝ), 0 < ψ t := by
   rw [hasDerivAt_iff_tendsto_slope] at hd
   have h1 : Tendsto (slope ψ 0) (𝓝[>] 0) (𝓝 d) :=
@@ -210,14 +210,14 @@ section Gronwall
 open Set Filter Topology Metric
 
 /-- A function that is constant on a nontrivial interval `[a, b]` has derivative `0` there. -/
-@[powerlib_foundation] theorem HasDerivWithinAt.eq_zero_of_eqOn_Icc {F : ℝ → ℝ} {F' a b t c : ℝ}
+@[tmio T, powerlib_foundation] theorem HasDerivWithinAt.eq_zero_of_eqOn_Icc {F : ℝ → ℝ} {F' a b t c : ℝ}
     (hab : a < b) (ht : t ∈ Icc a b) (hF : HasDerivWithinAt F F' (Icc a b) t)
     (hc : ∀ τ ∈ Icc a b, F τ = c) : F' = 0 := by
   have h0 : HasDerivWithinAt F 0 (Icc a b) t :=
     (hasDerivWithinAt_const t (Icc a b) c).congr (fun τ hτ => hc τ hτ) (hc t ht)
   exact (uniqueDiffOn_Icc hab t ht).eq_deriv _ hF h0
 
-private theorem hasDerivAt_exp_lin (c t₀ t : ℝ) :
+@[tmio T] private theorem hasDerivAt_exp_lin (c t₀ t : ℝ) :
     HasDerivAt (fun τ => Real.exp (c * (τ - t₀))) (c * Real.exp (c * (t - t₀))) t := by
   have h := (Real.hasDerivAt_exp (c * (t - t₀))).comp t
     (((hasDerivAt_id t).sub_const t₀).const_mul c)
@@ -227,7 +227,7 @@ private theorem hasDerivAt_exp_lin (c t₀ t : ℝ) :
 
 /-- **Grönwall's inequality, linear form.** If `g' ≤ −ρ g` on `[t₀, t₁]`, then
 `g t ≤ e^{−ρ (t − t₀)} g t₀` there. -/
-@[powerlib_foundation] theorem le_exp_mul_of_hasDerivWithinAt {g g' : ℝ → ℝ} {ρ t₀ t₁ : ℝ}
+@[tmio T, powerlib_foundation] theorem le_exp_mul_of_hasDerivWithinAt {g g' : ℝ → ℝ} {ρ t₀ t₁ : ℝ}
     (hg : ∀ t ∈ Icc t₀ t₁, HasDerivWithinAt g (g' t) (Icc t₀ t₁) t)
     (hle : ∀ t ∈ Icc t₀ t₁, g' t ≤ -ρ * g t) :
     ∀ t ∈ Icc t₀ t₁, g t ≤ Real.exp (-ρ * (t - t₀)) * g t₀ := by
@@ -255,7 +255,7 @@ private theorem hasDerivAt_exp_lin (c t₀ t : ℝ) :
 
 /-- `|x| ≤ (c/λ + λ)/2 · e^{−β s}` whenever `x² ≤ c e^{−2β s}` and `λ > 0` (arithmetic-geometric
 mean with the weight `λ e^{−β s}`; no square roots). -/
-@[powerlib_foundation] theorem abs_le_of_sq_le_exp {x c l β s : ℝ} (hl : 0 < l)
+@[tmio T, powerlib_foundation] theorem abs_le_of_sq_le_exp {x c l β s : ℝ} (hl : 0 < l)
     (hx : x ^ 2 ≤ c * Real.exp (-(2 * β) * s)) :
     |x| ≤ (c / l + l) / 2 * Real.exp (-β * s) := by
   set e := Real.exp (-β * s) with he
@@ -275,7 +275,7 @@ mean with the weight `λ e^{−β s}`; no square roots). -/
 
 /-- **Bounded drift.** If `|θ'| ≤ A e^{−b (t − t₀)}` on `[t₀, t₁]` with `b > 0`, then
 `|θ t − θ t₀| ≤ A / b` there. -/
-@[powerlib_foundation] theorem abs_sub_le_of_abs_deriv_le_exp {θ θ' : ℝ → ℝ} {A b t₀ t₁ : ℝ}
+@[tmio T, powerlib_foundation] theorem abs_sub_le_of_abs_deriv_le_exp {θ θ' : ℝ → ℝ} {A b t₀ t₁ : ℝ}
     (hb : 0 < b) (hθ : ∀ t ∈ Icc t₀ t₁, HasDerivWithinAt θ (θ' t) (Icc t₀ t₁) t)
     (hle : ∀ t ∈ Icc t₀ t₁, |θ' t| ≤ A * Real.exp (-b * (t - t₀))) :
     ∀ t ∈ Icc t₀ t₁, |θ t - θ t₀| ≤ A / b := by
@@ -318,7 +318,7 @@ mean with the weight `λ e^{−β s}`; no square roots). -/
 
 /-- **Integrable drift converges.** If `|θ'| ≤ A e^{−b (t − t₀)}` on `[t₀, ∞)` with `b > 0`, then
 `θ` converges. -/
-@[powerlib_foundation] theorem exists_tendsto_of_abs_deriv_le_exp {θ θ' : ℝ → ℝ} {A b t₀ : ℝ}
+@[tmio T, powerlib_foundation] theorem exists_tendsto_of_abs_deriv_le_exp {θ θ' : ℝ → ℝ} {A b t₀ : ℝ}
     (hb : 0 < b) (hθ : ∀ t, t₀ ≤ t → HasDerivWithinAt θ (θ' t) (Ici t₀) t)
     (hle : ∀ t, t₀ ≤ t → |θ' t| ≤ A * Real.exp (-b * (t - t₀))) :
     ∃ L : ℝ, Tendsto θ atTop (𝓝 L) := by
@@ -358,7 +358,7 @@ section Asymptotic
 open Set Filter Topology Metric Asymptotics
 
 /-- `g = −q + o(q)` with `q > 0` eventually forces `g < 0` eventually. -/
-@[powerlib_foundation] theorem eventually_neg_of_isLittleO {α : Type*} {l : Filter α}
+@[tmio T, powerlib_foundation] theorem eventually_neg_of_isLittleO {α : Type*} {l : Filter α}
     {g q : α → ℝ} (hq : ∀ᶠ x in l, 0 < q x) (h : (fun x => g x + q x) =o[l] q) :
     ∀ᶠ x in l, g x < 0 := by
   filter_upwards [hq, h.def (by norm_num : (0 : ℝ) < 1 / 2)] with x hqx hx
@@ -367,7 +367,7 @@ open Set Filter Topology Metric Asymptotics
   linarith
 
 /-- `g = q + o(q)` with `q > 0` eventually forces `g > 0` eventually. -/
-@[powerlib_foundation] theorem eventually_pos_of_isLittleO {α : Type*} {l : Filter α}
+@[tmio T, powerlib_foundation] theorem eventually_pos_of_isLittleO {α : Type*} {l : Filter α}
     {g q : α → ℝ} (hq : ∀ᶠ x in l, 0 < q x) (h : (fun x => g x - q x) =o[l] q) :
     ∀ᶠ x in l, 0 < g x := by
   filter_upwards [hq, h.def (by norm_num : (0 : ℝ) < 1 / 2)] with x hqx hx
@@ -376,13 +376,13 @@ open Set Filter Topology Metric Asymptotics
   linarith
 
 /-- Higher powers of a vanishing function are small: `s^k = o(s^m)` for `m < k`. -/
-@[powerlib_foundation] theorem isLittleO_pow_of_tendsto {α : Type*} {l : Filter α}
+@[tmio T, powerlib_foundation] theorem isLittleO_pow_of_tendsto {α : Type*} {l : Filter α}
     {s : α → ℝ} (hs : Tendsto s l (𝓝 0)) {m k : ℕ} (h : m < k) :
     (fun x => s x ^ k) =o[l] fun x => s x ^ m :=
   (isLittleO_pow_pow h).comp_tendsto hs
 
 /-- Higher powers of a vanishing function are bounded by lower ones: `s^k = O(s^m)` for `m ≤ k`. -/
-@[powerlib_foundation] theorem isBigO_pow_of_tendsto {α : Type*} {l : Filter α}
+@[tmio T, powerlib_foundation] theorem isBigO_pow_of_tendsto {α : Type*} {l : Filter α}
     {s : α → ℝ} (hs : Tendsto s l (𝓝 0)) {m k : ℕ} (h : m ≤ k) :
     (fun x => s x ^ k) =O[l] fun x => s x ^ m := by
   rcases h.lt_or_eq with h | h
@@ -390,7 +390,7 @@ open Set Filter Topology Metric Asymptotics
   · rw [h]
 
 /-- A monomial in two functions that are `O(s)` is `O(s^{i+j})`. -/
-@[powerlib_foundation] theorem isBigO_monomial {α : Type*} {l : Filter α} {s u v : α → ℝ}
+@[tmio T, powerlib_foundation] theorem isBigO_monomial {α : Type*} {l : Filter α} {s u v : α → ℝ}
     (hu : u =O[l] s) (hv : v =O[l] s) (i j : ℕ) :
     (fun x => u x ^ i * v x ^ j) =O[l] fun x => s x ^ (i + j) := by
   have := (hu.pow i).mul (hv.pow j)
@@ -398,7 +398,7 @@ open Set Filter Topology Metric Asymptotics
   rw [pow_add]
 
 /-- A sign estimate `g ≤ −q + R` with `R = o(q)` and `q > 0` forces `g < 0` eventually. -/
-@[powerlib_foundation] theorem eventually_neg_of_le_of_isLittleO {α : Type*} {l : Filter α}
+@[tmio T, powerlib_foundation] theorem eventually_neg_of_le_of_isLittleO {α : Type*} {l : Filter α}
     {g q R : α → ℝ} (hq : ∀ᶠ x in l, 0 < q x) (hle : ∀ᶠ x in l, g x ≤ -q x + R x)
     (hR : R =o[l] q) : ∀ᶠ x in l, g x < 0 := by
   filter_upwards [hq, hle, hR.def (by norm_num : (0 : ℝ) < 1 / 2)] with x hqx hgx hRx
@@ -407,7 +407,7 @@ open Set Filter Topology Metric Asymptotics
   linarith
 
 /-- States along a ray `t • d`, `t > 0`, accumulate at the origin. -/
-@[powerlib_foundation] theorem frequently_of_forall_smul {E : Type*} [NormedAddCommGroup E]
+@[tmio T, powerlib_foundation] theorem frequently_of_forall_smul {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (d : E) {P : E → Prop} (h : ∀ t : ℝ, 0 < t → P (t • d)) :
     ∃ᶠ z in 𝓝 (0 : E), P z := by
   rw [Filter.frequently_iff]
@@ -423,7 +423,7 @@ open Set Filter Topology Metric Asymptotics
 /-! ## Taylor remainders of `sin` and `cos` at `0` -/
 
 /-- `1 − cos x = O(x²)`. -/
-@[powerlib_foundation] theorem one_sub_cos_isBigO :
+@[tmio T, powerlib_foundation] theorem one_sub_cos_isBigO :
     (fun x : ℝ => 1 - Real.cos x) =O[𝓝 0] fun x => x ^ 2 := by
   refine IsBigO.of_bound 1 (Eventually.of_forall fun x => ?_)
   have h1 := Real.one_sub_sq_div_two_le_cos (x := x)
@@ -433,7 +433,7 @@ open Set Filter Topology Metric Asymptotics
   nlinarith [sq_nonneg x]
 
 /-- `sin x − x = O(x³)`. -/
-@[powerlib_foundation] theorem sin_sub_self_isBigO :
+@[tmio T, powerlib_foundation] theorem sin_sub_self_isBigO :
     (fun x : ℝ => Real.sin x - x) =O[𝓝 0] fun x => x ^ 3 := by
   refine IsBigO.of_bound 1 ?_
   filter_upwards [Metric.ball_mem_nhds (0 : ℝ) one_pos] with x hx
@@ -449,7 +449,7 @@ open Set Filter Topology Metric Asymptotics
         rw [h3]; linarith
 
 /-- `1 − cos x − x²/2 = O(x⁴)`. -/
-@[powerlib_foundation] theorem one_sub_cos_sub_isBigO :
+@[tmio T, powerlib_foundation] theorem one_sub_cos_sub_isBigO :
     (fun x : ℝ => 1 - Real.cos x - x ^ 2 / 2) =O[𝓝 0] fun x => x ^ 4 := by
   refine IsBigO.of_bound 1 ?_
   filter_upwards [Metric.ball_mem_nhds (0 : ℝ) one_pos] with x hx
@@ -469,7 +469,7 @@ end Asymptotic
 open Matrix in
 /-- A matrix maps a differentiable curve to a differentiable curve: `(M x)' = M x'` (rectangular
 `M`, any finite index types). -/
-@[powerlib_foundation] theorem hasDerivAt_mulVec {ι κ : Type*} [Fintype ι] [Fintype κ]
+@[tmio T, powerlib_foundation] theorem hasDerivAt_mulVec {ι κ : Type*} [Fintype ι] [Fintype κ]
     (M : Matrix ι κ ℝ) {x : ℝ → κ → ℝ} {x' : κ → ℝ} {t : ℝ} (hx : HasDerivAt x x' t) :
     HasDerivAt (fun s => M *ᵥ x s) (M *ᵥ x') t := by
   have h := (LinearMap.toContinuousLinearMap (Matrix.mulVecLin M)).hasFDerivAt.comp_hasDerivAt t hx
@@ -479,7 +479,7 @@ open Matrix in
 
 /-- A differentiable `I` with `∇I · f ≡ 0` is constant along every solution segment of `f`
 (generic: any field, any differentiable `I`). -/
-@[powerlib_foundation] theorem firstIntegral_const {n : ℕ} {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem firstIntegral_const {n : ℕ} {f : State n → State n}
     {I : State n → ℝ} (hI : Differentiable ℝ I) (h0 : ∀ x, fderiv ℝ I x (f x) = 0)
     {φ : ℝ → State n} {a b : ℝ} (hφ : IsTrajectoryOn φ f a b) :
     ∀ t ∈ Set.Icc a b, I (φ t) = I (φ a) := by

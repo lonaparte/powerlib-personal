@@ -49,11 +49,11 @@ instance (N : ℕ) : IsMarkovKernel (poissonIIDKernel N) :=
     Fintype.card_fin, Finset.prod_pow_eq_pow_sum, ← Real.exp_nat_mul]
   ring_nf
 
-@[powerlib_foundation] private theorem measurable_gammaPDF (a r : ℝ) : Measurable (gammaPDF a r) :=
+@[tmio T, powerlib_foundation] private theorem measurable_gammaPDF (a r : ℝ) : Measurable (gammaPDF a r) :=
   ENNReal.measurable_ofReal.comp (measurable_gammaPDFReal a r)
 
 /-- Prior density × Poisson likelihood is a multiple of the updated Gamma density (`θ ≠ 0`). -/
-@[powerlib_foundation] theorem gammaPDF_mul_poissonIID {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
+@[tmio T, powerlib_foundation] theorem gammaPDF_mul_poissonIID {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
     (N : ℕ) (d : Fin N → ℕ) {θ : ℝ} (hθ : θ ≠ 0) :
     gammaPDF a b θ * poissonIIDKernel N θ {d} =
       ENNReal.ofReal (b ^ a * Gamma (a + ∑ i, (d i : ℝ)) /
@@ -81,7 +81,7 @@ instance (N : ℕ) : IsMarkovKernel (poissonIIDKernel N) :=
     field_simp
 
 /-- **Gamma–Poisson conjugacy** (density level). -/
-@[powerlib_foundation] theorem bayesPosterior_gamma_poisson {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
+@[tmio T, powerlib_foundation] theorem bayesPosterior_gamma_poisson {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
     (N : ℕ) (d : Fin N → ℕ) :
     bayesPosterior (gammaMeasure a b) (fun θ => poissonIIDKernel N θ {d}) =
       gammaMeasure (a + ∑ i, (d i : ℝ)) (b + N) := by
@@ -104,7 +104,7 @@ instance (N : ℕ) : IsMarkovKernel (poissonIIDKernel N) :=
 
 /-- **Gamma–Poisson conjugacy, Mathlib posterior kernel**:
 `(poissonIIDKernel N)†Gamma(a, b) =ᵐ d ↦ Gamma(a + ∑ dᵢ, b + N)`. -/
-@[powerlib_foundation] theorem posterior_poissonIIDKernel_gammaMeasure {a b : ℝ} (ha : 0 < a)
+@[tmio T, powerlib_foundation] theorem posterior_poissonIIDKernel_gammaMeasure {a b : ℝ} (ha : 0 < a)
     (hb : 0 < b) (N : ℕ) :
     have := isProbabilityMeasure_gammaMeasure ha hb
     (poissonIIDKernel N)†(gammaMeasure a b) =ᵐ[poissonIIDKernel N ∘ₘ gammaMeasure a b]

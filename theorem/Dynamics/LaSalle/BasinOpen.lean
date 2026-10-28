@@ -46,7 +46,7 @@ invariant. -/
   exact hx.comp (tendsto_atTop_mono (fun _ => le_self_add) tendsto_id)
 
 /-- Local attraction makes the basin of attraction `{x | φ_t x → x*}` open. -/
-@[powerlib_foundation] theorem basin_isOpen (hf : LipschitzWith K f) {xs : E}
+@[tmio T, powerlib_foundation] theorem basin_isOpen (hf : LipschitzWith K f) {xs : E}
     (hattr : ∃ r > 0, ∀ y, dist y xs < r →
       y ∈ {x | Tendsto (fun t : ℝ≥0 => lipschitzFlow hf t x) atTop (𝓝 xs)}) :
     IsOpen {x | Tendsto (fun t : ℝ≥0 => lipschitzFlow hf t x) atTop (𝓝 xs)} := by
@@ -80,7 +80,7 @@ invariant. -/
   rw [← lipschitzFlow_add, tsub_add_cancel_of_le ht]
 
 /-- Coercion `ℝ≥0 → ℝ` tends to `+∞`. -/
-@[powerlib_foundation] theorem tendsto_nnreal_coe_atTop :
+@[tmio T, powerlib_foundation] theorem tendsto_nnreal_coe_atTop :
     Tendsto (fun t : ℝ≥0 => (t : ℝ)) atTop atTop := by
   rw [tendsto_atTop_atTop]
   intro b
@@ -88,7 +88,7 @@ invariant. -/
 
 /-- On `State n`, local asymptotic stability gives local attraction, hence an open basin of
 attraction `{x | φ_t x → x*}`. -/
-@[powerlib_foundation] theorem basin_isOpen_of_localAsymptoticStable {n : ℕ}
+@[tmio T, powerlib_foundation] theorem basin_isOpen_of_localAsymptoticStable {n : ℕ}
     {g : Dynamics.State n → Dynamics.State n} (hg : LipschitzWith K g) {xs : Dynamics.State n}
     (hlas : LocalAsymptoticStable g xs) :
     IsOpen {x | Tendsto (fun t : ℝ≥0 => lipschitzFlow hg t x) atTop (𝓝 xs)} := by

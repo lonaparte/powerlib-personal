@@ -78,14 +78,14 @@ abbrev LieDerivZeroSet := @_root_.LieDerivZeroSet
 /-- Membership in the ω-limit set `_root_.omegaLimitTraj φ` of a forward trajectory `φ`
 (Khalil's positive limit set `L⁺`): `φ` is frequently in every neighbourhood of `y`.
 Upstream: `_root_.mem_omegaLimitTraj_iff`. -/
-@[powerlib_foundation] theorem mem_omegaLimitTraj_iff {φ : ℝ → ℝⁿ} {y : ℝⁿ} :
+@[tmio T, powerlib_foundation] theorem mem_omegaLimitTraj_iff {φ : ℝ → ℝⁿ} {y : ℝⁿ} :
     y ∈ _root_.omegaLimitTraj φ ↔ ∀ U ∈ 𝓝 y, ∃ᶠ t in atTop, φ t ∈ U :=
   _root_.mem_omegaLimitTraj_iff
 
 /-- The ω-limit set `_root_.omegaLimitTraj φ` of a forward trajectory is positively invariant
 (Khalil, Lemma 4.1).
 Upstream: `_root_.isPositivelyInvariant_omegaLimitTraj`. -/
-@[powerlib_foundation] theorem isPositivelyInvariant_omegaLimitTraj
+@[tmio T, powerlib_foundation] theorem isPositivelyInvariant_omegaLimitTraj
     {f : ℝⁿ → ℝⁿ} {K : NNReal} (hf : LipschitzWith K f)
     {φ : ℝ → ℝⁿ} (hφ : IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) :
     IsPositivelyInvariant (_root_.omegaLimitTraj φ) f :=
@@ -93,7 +93,7 @@ Upstream: `_root_.isPositivelyInvariant_omegaLimitTraj`. -/
 
 /-- `V̇` vanishes on the ω-limit set of a trajectory confined to a compact positively
 invariant set where `V̇ ≤ 0`. Upstream: `_root_.lieDeriv_eq_zero_on_omegaLimitTraj`. -/
-@[powerlib_foundation] theorem lieDeriv_eq_zero_on_omegaLimitTraj
+@[tmio T, powerlib_foundation] theorem lieDeriv_eq_zero_on_omegaLimitTraj
     {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {Ω : Set ℝⁿ} {K : NNReal}
     (hf_lip : LipschitzWith K f) (hf_c1 : ContDiff ℝ 1 f) (hV_c1 : ContDiff ℝ 1 V)
     (hΩ_compact : IsCompact Ω) (hΩ_inv : IsPositivelyInvariant Ω f)
@@ -104,7 +104,7 @@ invariant set where `V̇ ≤ 0`. Upstream: `_root_.lieDeriv_eq_zero_on_omegaLimi
 
 /-- LaSalle's invariance principle (Khalil, Theorem 4.4; positively-invariant variant).
 Upstream: `_root_.lasalle_invariance_principle`. -/
-@[powerlib_foundation] theorem lasalle_invariance_principle
+@[tmio T, powerlib_foundation] theorem lasalle_invariance_principle
     {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {Ω M : Set ℝⁿ} {K : NNReal}
     (hΩ_compact : IsCompact Ω) (hΩ_inv : IsPositivelyInvariant Ω f)
     (hf_lip : LipschitzWith K f) (hf_c1 : ContDiff ℝ 1 f) (hV_c1 : ContDiff ℝ 1 V)
@@ -116,7 +116,7 @@ Upstream: `_root_.lasalle_invariance_principle`. -/
 
 /-- Barbashin's theorem: local asymptotic stability via LaSalle (Khalil, Corollary 4.1).
 Upstream: `_root_.lasalle_local_asymptotic_stable`. -/
-@[powerlib_foundation] theorem lasalle_local_asymptotic_stable
+@[tmio T, powerlib_foundation] theorem lasalle_local_asymptotic_stable
     {D : Set ℝⁿ} {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {x_eq : ℝⁿ} (hn : 0 < n)
     (hV_c1 : ContDiff ℝ 1 V) (hV_local : IsLocalLyapunovFunction f V x_eq D)
     {c : ℝ} (hc_pos : 0 < c) (hΩ_sub_D : SublevelSet V c ⊆ D)
@@ -132,7 +132,7 @@ Upstream: `_root_.lasalle_local_asymptotic_stable`. -/
 /-- Krasovskii's theorem: global asymptotic stability via LaSalle (Khalil, Corollary 4.2).
 The conclusion is the upstream trajectory predicate (no solution-existence clause).
 Upstream: `_root_.lasalle_global_asymptotic_stable`. -/
-@[powerlib_foundation] theorem lasalle_global_asymptotic_stable
+@[tmio T, powerlib_foundation] theorem lasalle_global_asymptotic_stable
     {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {x_eq : ℝⁿ} (hn : 0 < n)
     (hV_c1 : ContDiff ℝ 1 V) (hzero : V x_eq = 0) (hpos : ∀ x : ℝⁿ, x ≠ x_eq → 0 < V x)
     (hLie : ∀ x : ℝⁿ, fderiv ℝ V x (f x) ≤ 0)
@@ -147,7 +147,7 @@ Upstream: `_root_.lasalle_global_asymptotic_stable`. -/
 /-- Krasovskii's theorem in the Flow semantics: with an equilibrium at `x_eq`, the LaSalle
 hypotheses give `Flow.GloballyAsymptoticallyStable` (equilibrium, a solution through every state
 from the global Lipschitz bound, and the upstream trajectory predicate). -/
-@[powerlib_foundation] theorem globallyAsymptoticallyStable_of_lasalle
+@[tmio T, powerlib_foundation] theorem globallyAsymptoticallyStable_of_lasalle
     {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {x_eq : ℝⁿ} (hn : 0 < n) (heq : IsEquilibrium f x_eq)
     (hV_c1 : ContDiff ℝ 1 V) (hzero : V x_eq = 0) (hpos : ∀ x : ℝⁿ, x ≠ x_eq → 0 < V x)
     (hLie : ∀ x : ℝⁿ, fderiv ℝ V x (f x) ≤ 0)

@@ -55,7 +55,7 @@ def forwardSolution (hf : LipschitzWith K f) (x : E) : ℝ → E :=
     (hf.continuous.comp continuous_snd) (fun _ => hf) 0 x).choose_spec
 
 /-- Grönwall: `‖φ_t x − φ_t y‖ ≤ e^{Kt} ‖x − y‖`. -/
-@[powerlib_foundation] theorem dist_forwardSolution_le (hf : LipschitzWith K f) (x y : E) {t : ℝ}
+@[tmio T, powerlib_foundation] theorem dist_forwardSolution_le (hf : LipschitzWith K f) (x y : E) {t : ℝ}
     (ht : 0 ≤ t) :
     dist (forwardSolution hf x t) (forwardSolution hf y t) ≤ dist x y * Real.exp (K * t) := by
   obtain ⟨hx0, hx, -⟩ := forwardSolution_spec hf x
@@ -65,7 +65,7 @@ def forwardSolution (hf : LipschitzWith K f) (x : E) : ℝ → E :=
   simpa [hx0, hy0] using h
 
 /-- Shifted solutions: `φ_{r+s} x = φ_r (φ_s x)` for `r, s ≥ 0`. -/
-@[powerlib_foundation] theorem forwardSolution_add (hf : LipschitzWith K f) (x : E) {s : ℝ}
+@[tmio T, powerlib_foundation] theorem forwardSolution_add (hf : LipschitzWith K f) (x : E) {s : ℝ}
     (hs : 0 ≤ s) {r : ℝ} (hr : 0 ≤ r) :
     forwardSolution hf x (r + s) = forwardSolution hf (forwardSolution hf x s) r := by
   obtain ⟨-, hx, -⟩ := forwardSolution_spec hf x
@@ -127,31 +127,31 @@ def lipschitzFlow (hf : LipschitzWith K f) : Flow ℝ≥0 E where
     exact forwardSolution_add hf x t₂.2 t₁.2
   map_zero' x := (forwardSolution_spec hf x).1
 
-@[powerlib_foundation] theorem lipschitzFlow_apply (hf : LipschitzWith K f) (t : ℝ≥0) (x : E) :
+@[tmio T, powerlib_foundation] theorem lipschitzFlow_apply (hf : LipschitzWith K f) (t : ℝ≥0) (x : E) :
     lipschitzFlow hf t x = forwardSolution hf x t := rfl
 
 /-- Semigroup law `φ_{t+s} = φ_t ∘ φ_s`. -/
-@[powerlib_foundation] theorem lipschitzFlow_add (hf : LipschitzWith K f) (t s : ℝ≥0) (x : E) :
+@[tmio T, powerlib_foundation] theorem lipschitzFlow_add (hf : LipschitzWith K f) (t s : ℝ≥0) (x : E) :
     lipschitzFlow hf (t + s) x = lipschitzFlow hf t (lipschitzFlow hf s x) :=
   (lipschitzFlow hf).map_add t s x
 
-@[powerlib_foundation] theorem lipschitzFlow_zero (hf : LipschitzWith K f) (x : E) :
+@[tmio T, powerlib_foundation] theorem lipschitzFlow_zero (hf : LipschitzWith K f) (x : E) :
     lipschitzFlow hf 0 x = x :=
   (lipschitzFlow hf).map_zero_apply x
 
 /-- `t ↦ φ_t x` solves the ODE on `[0, ∞)`. -/
-@[powerlib_foundation] theorem lipschitzFlow_solution (hf : LipschitzWith K f) (x : E) :
+@[tmio T, powerlib_foundation] theorem lipschitzFlow_solution (hf : LipschitzWith K f) (x : E) :
     IsIntegralCurveOn (forwardSolution hf x) (fun _ y => f y) (Ici 0) :=
   (forwardSolution_spec hf x).2.1
 
 /-- Every forward solution from `x` coincides with the flow. -/
-@[powerlib_foundation] theorem lipschitzFlow_unique (hf : LipschitzWith K f) {x : E} {β : ℝ → E}
+@[tmio T, powerlib_foundation] theorem lipschitzFlow_unique (hf : LipschitzWith K f) {x : E} {β : ℝ → E}
     (h0 : β 0 = x) (hβ : IsIntegralCurveOn β (fun _ y => f y) (Ici 0)) (t : ℝ≥0) :
     β t = lipschitzFlow hf t x :=
   (forwardSolution_spec hf x).2.2 β h0 hβ (show (t : ℝ) ∈ Ici 0 from t.2)
 
 /-- ω-limit sets are invariant under the flow (Mathlib `Flow.isInvariant_omegaLimit`). -/
-@[powerlib_foundation] theorem isInvariant_omegaLimit (hf : LipschitzWith K f) (s : Set E) :
+@[tmio T, powerlib_foundation] theorem isInvariant_omegaLimit (hf : LipschitzWith K f) (s : Set E) :
     IsInvariant (lipschitzFlow hf) (omegaLimit atTop (lipschitzFlow hf) s) :=
   Flow.isInvariant_omegaLimit atTop (lipschitzFlow hf) s
     (fun _ => tendsto_atTop_mono (fun _ => le_add_self) tendsto_id)

@@ -38,11 +38,11 @@ namespace powerlib.Criteria
   ring
 
 /-- The second root of a monic quadratic. -/
-@[powerlib_foundation] theorem quadratic_partner {α β s : ℂ} (hs : s ^ 2 + α * s + β = 0) :
+@[tmio T, powerlib_foundation] theorem quadratic_partner {α β s : ℂ} (hs : s ^ 2 + α * s + β = 0) :
     α = -(s + (-α - s)) ∧ β = s * (-α - s) ∧ (-α - s) ^ 2 + α * (-α - s) + β = 0 := by
   refine ⟨by ring, by linear_combination hs, by linear_combination hs⟩
 
-@[powerlib_foundation] private lemma re_neg_of_pair {x₁ x₂ y₁ y₂ : ℝ} (h1 : 0 < -(x₁ + x₂))
+@[tmio T, powerlib_foundation] private lemma re_neg_of_pair {x₁ x₂ y₁ y₂ : ℝ} (h1 : 0 < -(x₁ + x₂))
     (h2 : 0 < x₁ * x₂ * ((x₁ + x₂) ^ 2 + (y₁ - y₂) ^ 2)) : x₁ < 0 := by
   have hb : 0 < (x₁ + x₂) ^ 2 + (y₁ - y₂) ^ 2 := by
     nlinarith [pow_pos h1 2, sq_nonneg (y₁ - y₂)]
@@ -50,7 +50,7 @@ namespace powerlib.Criteria
   nlinarith
 
 /-- Hurwitz criterion for `s² + α s + β`, both directions. -/
-@[powerlib_foundation] theorem complexQuadratic_roots_re_neg_iff (α β : ℂ) :
+@[tmio T, powerlib_foundation] theorem complexQuadratic_roots_re_neg_iff (α β : ℂ) :
     (∀ s : ℂ, s ^ 2 + α * s + β = 0 → s.re < 0) ↔
       0 < α.re ∧ 0 < α.re ^ 2 * β.re + α.re * α.im * β.im - β.im ^ 2 := by
   constructor
@@ -76,7 +76,7 @@ namespace powerlib.Criteria
     exact re_neg_of_pair (y₁ := s.im) (y₂ := (-α - s).im) (by linarith) h2
 
 /-- Real constant term: the criterion reduces to `Re α > 0 ∧ c > 0` for every `Im α`. -/
-@[powerlib_foundation] theorem complexQuadratic_realConst_roots_re_neg_iff (a b c : ℝ) :
+@[tmio T, powerlib_foundation] theorem complexQuadratic_realConst_roots_re_neg_iff (a b c : ℝ) :
     (∀ s : ℂ, s ^ 2 + (⟨a, b⟩ : ℂ) * s + (c : ℂ) = 0 → s.re < 0) ↔ 0 < a ∧ 0 < c := by
   rw [complexQuadratic_roots_re_neg_iff]
   simp only [Complex.ofReal_re, Complex.ofReal_im, mul_zero, sub_zero, add_zero, ne_eq,

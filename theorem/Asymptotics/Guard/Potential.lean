@@ -71,7 +71,7 @@ variable {α l₁ : ℝ}
     guardRadius α l₁ ^ 2 = α / l₁ := by
   rw [guardRadius, Real.sq_sqrt (div_nonneg hα hl.le)]
 
-@[powerlib_foundation] theorem hasDerivAt_guardPotential (α l₁ r : ℝ) :
+@[tmio M, powerlib_foundation] theorem hasDerivAt_guardPotential (α l₁ r : ℝ) :
     HasDerivAt (guardPotential α l₁) (-guardDrift α l₁ r) r := by
   have h := ((hasDerivAt_pow 2 r).const_mul (α / 2)).sub ((hasDerivAt_pow 4 r).const_mul (l₁ / 4))
   convert h using 1
@@ -79,12 +79,12 @@ variable {α l₁ : ℝ}
   · simp [guardDrift]; ring
 
 /-- The potential gradient is the negative drift: `ṙ = -U'(r)`. -/
-@[powerlib_foundation] theorem deriv_guardPotential (α l₁ : ℝ) :
+@[tmio M, powerlib_foundation] theorem deriv_guardPotential (α l₁ : ℝ) :
     deriv (guardPotential α l₁) = fun r => α * r - l₁ * r ^ 3 := by
   funext r
   rw [(hasDerivAt_guardPotential α l₁ r).deriv, guardDrift]; ring
 
-@[powerlib_foundation] theorem deriv2_guardPotential (α l₁ : ℝ) :
+@[tmio M, powerlib_foundation] theorem deriv2_guardPotential (α l₁ : ℝ) :
     deriv (deriv (guardPotential α l₁)) = fun r => α - 3 * l₁ * r ^ 2 := by
   rw [deriv_guardPotential]
   funext r
@@ -94,7 +94,7 @@ variable {α l₁ : ℝ}
     simp; ring
   exact h.deriv
 
-@[powerlib_foundation] theorem deriv3_guardPotential (α l₁ : ℝ) :
+@[tmio M, powerlib_foundation] theorem deriv3_guardPotential (α l₁ : ℝ) :
     deriv (deriv (deriv (guardPotential α l₁))) = fun r => -6 * l₁ * r := by
   rw [deriv2_guardPotential]
   funext r
@@ -105,7 +105,7 @@ variable {α l₁ : ℝ}
   exact h.deriv
 
 /-- The barrier top is a critical point of `U` (equilibrium of the drift). -/
-@[powerlib_foundation] theorem guardDrift_guardRadius (hα : 0 ≤ α) (hl : 0 < l₁) :
+@[tmio M, powerlib_foundation] theorem guardDrift_guardRadius (hα : 0 ≤ α) (hl : 0 < l₁) :
     guardDrift α l₁ (guardRadius α l₁) = 0 := by
   have h2 := guardRadius_sq hα hl
   have : guardRadius α l₁ ^ 3 = guardRadius α l₁ * (α / l₁) := by rw [← h2]; ring
@@ -114,7 +114,7 @@ variable {α l₁ : ℝ}
   ring
 
 /-- `ΔU = U(r_c) - U(0) = α²/(4 l₁)`. -/
-@[powerlib_foundation] theorem guardPotential_barrier (hα : 0 ≤ α) (hl : 0 < l₁) :
+@[tmio M, powerlib_foundation] theorem guardPotential_barrier (hα : 0 ≤ α) (hl : 0 < l₁) :
     guardPotential α l₁ (guardRadius α l₁) - guardPotential α l₁ 0 = barrierHeight α l₁ := by
   have h2 := guardRadius_sq hα hl
   have h4 : guardRadius α l₁ ^ 4 = (α / l₁) ^ 2 := by rw [← h2]; ring
@@ -123,7 +123,7 @@ variable {α l₁ : ℝ}
   ring
 
 /-- Barrier curvature `U''(r_c) = -2α`. -/
-@[powerlib_foundation] theorem deriv2_guardPotential_guardRadius (hα : 0 ≤ α) (hl : 0 < l₁) :
+@[tmio M, powerlib_foundation] theorem deriv2_guardPotential_guardRadius (hα : 0 ≤ α) (hl : 0 < l₁) :
     deriv (deriv (guardPotential α l₁)) (guardRadius α l₁) = -2 * α := by
   rw [deriv2_guardPotential]
   simp only
@@ -133,7 +133,7 @@ variable {α l₁ : ℝ}
 
 /-- `U'''(r_c) = -6 l₁ r_c`, nonzero for `α, l₁ > 0`: the barrier top is a non-degenerate
 endpoint in the sense of the endpoint Laplace expansion. -/
-@[powerlib_foundation] theorem deriv3_guardPotential_guardRadius_ne_zero
+@[tmio M, powerlib_foundation] theorem deriv3_guardPotential_guardRadius_ne_zero
     (hα : 0 < α) (hl : 0 < l₁) :
     deriv (deriv (deriv (guardPotential α l₁))) (guardRadius α l₁) =
         -6 * l₁ * guardRadius α l₁ ∧
@@ -147,7 +147,7 @@ endpoint in the sense of the endpoint Laplace expansion. -/
 
 /-- Leading-order unstable exponent of the truncated normal form at the cycle radius:
 `d(ṙ)/dr |_{r_c} = -α + 3 l₁ r_c² = +2α`; the cubic coefficient `l₁` cancels exactly. -/
-@[powerlib_foundation] theorem deriv_guardDrift_guardRadius (hα : 0 ≤ α) (hl : 0 < l₁) :
+@[tmio M, powerlib_foundation] theorem deriv_guardDrift_guardRadius (hα : 0 ≤ α) (hl : 0 < l₁) :
     deriv (guardDrift α l₁) (guardRadius α l₁) = 2 * α := by
   have h : ∀ r, HasDerivAt (guardDrift α l₁) (-α + 3 * l₁ * r ^ 2) r := by
     intro r
@@ -160,7 +160,7 @@ endpoint in the sense of the endpoint Laplace expansion. -/
   ring
 
 /-- In the scaled coordinate `u = r/r_c`: `U(u r_c) - U(r_c) = -ΔU (u² - 1)²`. -/
-@[powerlib_foundation] theorem guardPotential_scaled (hα : 0 ≤ α) (hl : 0 < l₁) (u : ℝ) :
+@[tmio M, powerlib_foundation] theorem guardPotential_scaled (hα : 0 ≤ α) (hl : 0 < l₁) (u : ℝ) :
     guardPotential α l₁ (u * guardRadius α l₁) - guardPotential α l₁ (guardRadius α l₁) =
       -barrierHeight α l₁ * (u ^ 2 - 1) ^ 2 := by
   have h2 := guardRadius_sq hα hl
@@ -173,7 +173,7 @@ endpoint in the sense of the endpoint Laplace expansion. -/
 
 /-- Past the barrier top the integrand `e^{(U(u r_c) - U(r_c))/D̃}` is cut off as
 `e^{-X (u²-1)²}`; at `u = 2` it equals `e^{-9X}`, `X = ΔU/D̃`. -/
-@[powerlib_foundation] theorem guard_tail_cutoff_at_two (hα : 0 ≤ α) (hl : 0 < l₁) (D : ℝ) :
+@[tmio M, powerlib_foundation] theorem guard_tail_cutoff_at_two (hα : 0 ≤ α) (hl : 0 < l₁) (D : ℝ) :
     Real.exp ((guardPotential α l₁ (2 * guardRadius α l₁) -
         guardPotential α l₁ (guardRadius α l₁)) / D) =
       Real.exp (-9 * (barrierHeight α l₁ / D)) := by
@@ -183,7 +183,7 @@ endpoint in the sense of the endpoint Laplace expansion. -/
 
 /-- The two forms of the first-arrival prefactor agree:
 `(√π/2) √(D̃ l₁)/α² = √π/(4 α √X)` with `X = α²/(4 l₁ D̃)`. -/
-@[powerlib_foundation] theorem guardPrefactor_eq (hα : 0 < α) (hl : 0 < l₁) {D : ℝ}
+@[tmio M, powerlib_foundation] theorem guardPrefactor_eq (hα : 0 < α) (hl : 0 < l₁) {D : ℝ}
     (hD : 0 < D) :
     guardPrefactor α l₁ D =
       Real.sqrt π / (4 * α * Real.sqrt (barrierHeight α l₁ / D)) := by
@@ -197,7 +197,7 @@ endpoint in the sense of the endpoint Laplace expansion. -/
   ring
 
 /-- Representability is decided on `ln T = X + ln P`, not on `X` alone. -/
-@[powerlib_foundation] theorem log_prefactor_mul_exp {P : ℝ} (hP : 0 < P) (X : ℝ) :
+@[tmio T, powerlib_foundation] theorem log_prefactor_mul_exp {P : ℝ} (hP : 0 < P) (X : ℝ) :
     Real.log (P * Real.exp X) = X + Real.log P := by
   rw [Real.log_mul hP.ne' (Real.exp_pos X).ne', Real.log_exp, add_comm]
 
@@ -205,7 +205,7 @@ endpoint in the sense of the endpoint Laplace expansion. -/
 
 /-- **Lifetime ratio (§1.6)**: for `T(α) = c α⁻² e^{α²/(4 l D)}` and `X = α²/(4 l D)`,
 `T(α(1+ε))/T(α) = e^{X[(1+ε)²−1]}/(1+ε)²`. -/
-@[powerlib_foundation] theorem lifetime_ratio {c α l D ε : ℝ} (hc : c ≠ 0) (hα : α ≠ 0)
+@[tmio T, powerlib_foundation] theorem lifetime_ratio {c α l D ε : ℝ} (hc : c ≠ 0) (hα : α ≠ 0)
     (hε : 1 + ε ≠ 0) :
     (c / (α * (1 + ε)) ^ 2 * exp ((α * (1 + ε)) ^ 2 / (4 * l * D))) /
         (c / α ^ 2 * exp (α ^ 2 / (4 * l * D))) =
@@ -218,7 +218,7 @@ endpoint in the sense of the endpoint Laplace expansion. -/
   field_simp
 
 /-- `e^{0.1}` to four decimals (Taylor bound, Mathlib `Real.exp_bound`). -/
-@[powerlib_foundation] theorem exp_tenth_bounds :
+@[tmio T, powerlib_foundation] theorem exp_tenth_bounds :
     1.1047 < exp (0.1 : ℝ) ∧ exp (0.1 : ℝ) < 1.1053 := by
   have h := Real.exp_bound (x := (0.1 : ℝ)) (by norm_num [abs_of_pos]) (n := 3) (by norm_num)
   rw [abs_le] at h
@@ -226,7 +226,7 @@ endpoint in the sense of the endpoint Laplace expansion. -/
   norm_num [abs_of_pos] at h
   constructor <;> linarith [h.1, h.2]
 
-@[powerlib_foundation] theorem exp_two_point_one_bounds :
+@[tmio T, powerlib_foundation] theorem exp_two_point_one_bounds :
     8.16 < exp (2.1 : ℝ) ∧ exp (2.1 : ℝ) < 8.17 := by
   have e : exp (2.1 : ℝ) = exp 1 * exp 1 * exp 0.1 := by
     rw [← exp_add, ← exp_add]; norm_num
@@ -241,7 +241,7 @@ endpoint in the sense of the endpoint Laplace expansion. -/
 /-- **Numeric check (§1.6)**: at `X = 10`, `ε = 0.1` the ratio `e^{10·0.21}/1.21` lies in
 `(6.74, 6.76)` (the note's closed form `6.75`), while the exponential factor alone exceeds
 `8.16`. -/
-@[powerlib_foundation] theorem lifetime_ratio_num :
+@[tmio T, powerlib_foundation] theorem lifetime_ratio_num :
     6.74 < exp ((10 : ℝ) * ((1 + 0.1) ^ 2 - 1)) / (1 + 0.1) ^ 2 ∧
       exp ((10 : ℝ) * ((1 + 0.1) ^ 2 - 1)) / (1 + 0.1) ^ 2 < 6.76 ∧
       8.16 < exp ((10 : ℝ) * ((1 + 0.1) ^ 2 - 1)) := by

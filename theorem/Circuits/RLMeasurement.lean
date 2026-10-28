@@ -65,7 +65,7 @@ def rl (R L : ℝ) (hL : 0 < L) : Impedance := ⟨R, ⟨L, hL⟩⟩
 @[tmio M, simp, powerlib_foundation] theorem rl_resistance (R L : ℝ) (hL : 0 < L) :
     (rl R L hL).resistance = R := rfl
 
-@[simp, powerlib_foundation] theorem rl_inductance (R L : ℝ) (hL : 0 < L) :
+@[tmio M, simp, powerlib_foundation] theorem rl_inductance (R L : ℝ) (hL : 0 < L) :
     (rl R L hL).inductance.val = L := rfl
 
 /-! ## Model compatibility -/
@@ -127,13 +127,13 @@ def window : Sentence → Set ℝ
   | .envelope _ => Set.univ
 
 /-- A requirement on the resistance alone has the resistances satisfying it as its kernel. -/
-@[powerlib_foundation] theorem kernImage_resistance (S : Set ℝ) :
+@[tmio M, powerlib_foundation] theorem kernImage_resistance (S : Set ℝ) :
     Set.kernImage Impedance.resistance {m | m.resistance ∈ S} = S := by
   ext R
   exact ⟨fun h => h (x := rl R 1 one_pos) rfl, fun h m hm => by rw [Set.mem_ofPred_eq, hm]; exact h⟩
 
 /-- The decay rate `R / L` is at least `a` for every inductance exactly when `R ≥ 0` and `a ≤ 0`. -/
-@[powerlib_foundation] theorem kernImage_decayRate (a : ℝ) :
+@[tmio M, powerlib_foundation] theorem kernImage_decayRate (a : ℝ) :
     Set.kernImage Impedance.resistance {m | a ≤ m.resistance / m.inductance.val} =
       {R | 0 ≤ R ∧ a ≤ 0} := by
   ext R
@@ -159,7 +159,7 @@ def window : Sentence → Set ℝ
     exact ha.trans (div_nonneg hR m.inductance.property.le)
 
 /-- The window of every sentence is the resistance kernel of its denotation. -/
-@[powerlib_foundation] theorem kernImage_den (s : Sentence) :
+@[tmio TM, powerlib_foundation] theorem kernImage_den (s : Sentence) :
     Set.kernImage Impedance.resistance (family.den s) = window s := by
   have hexact : realize Meets (translate s) = family.den s :=
     Family.chain_eq_semantics_iff.mp chain_eq_semantics s
@@ -243,7 +243,7 @@ def stateSpaceSeed (ε : ℝ) :
   (seed ε).transport (OrderIso.refl _) (OrderIso.refl _) stateSpaceIso (OrderIso.refl _)
 
 /-- Certified symbolic values do not depend on the model representation. -/
-@[powerlib_foundation] theorem stateSpace_whole (ε : ℝ) :
+@[tmio TM, powerlib_foundation] theorem stateSpace_whole (ε : ℝ) :
     ⇑(generate (stateSpaceSeed ε).uTO) = ⇑(generate (seed ε).uTO) := by
   rw [stateSpaceSeed, Seed.transport_whole]
   rfl

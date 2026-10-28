@@ -53,7 +53,7 @@ normalised density `g`, the posterior is `ν.withDensity g`. -/
 
 /-- A measure-valued map into a countable discrete space is measurable as soon as the masses of
 singletons are measurable. -/
-@[powerlib_foundation] theorem measurable_measure_of_singleton {α β : Type*} [MeasurableSpace α]
+@[tmio T, powerlib_foundation] theorem measurable_measure_of_singleton {α β : Type*} [MeasurableSpace α]
     [MeasurableSpace β] [Countable β] [MeasurableSingletonClass β] {f : α → Measure β}
     (h : ∀ b, Measurable fun a => f a {b}) : Measurable f := by
   refine Measure.measurable_of_measurable_coe _ fun s hs => ?_
@@ -83,17 +83,17 @@ def binomialKernel (N : ℕ) : Kernel ℝ ℕ where
 instance (N : ℕ) : IsMarkovKernel (binomialKernel N) :=
   ⟨fun θ => by simp only [binomialKernel, Kernel.coe_mk]; infer_instance⟩
 
-@[powerlib_foundation] theorem binomialKernel_singleton (N k : ℕ) {θ : ℝ} (h0 : 0 < θ)
+@[tmio T, powerlib_foundation] theorem binomialKernel_singleton (N k : ℕ) {θ : ℝ} (h0 : 0 < θ)
     (h1 : θ < 1) :
     binomialKernel N θ {k} = ENNReal.ofReal (N.choose k * θ ^ k * (1 - θ) ^ (N - k)) := by
   simp only [binomialKernel, Kernel.coe_mk, binomial_singleton]
   rw [Set.projIcc_of_mem _ ⟨h0.le, h1.le⟩]
 
-@[powerlib_foundation] private theorem measurable_betaPDF (α β : ℝ) : Measurable (betaPDF α β) :=
+@[tmio T, powerlib_foundation] private theorem measurable_betaPDF (α β : ℝ) : Measurable (betaPDF α β) :=
   ENNReal.measurable_ofReal.comp (measurable_betaPDFReal α β)
 
 /-- Prior density × binomial likelihood is a multiple of the updated Beta density. -/
-@[powerlib_foundation] theorem betaPDF_mul_binomial {α β : ℝ} (hα : 0 < α) (hβ : 0 < β)
+@[tmio T, powerlib_foundation] theorem betaPDF_mul_binomial {α β : ℝ} (hα : 0 < α) (hβ : 0 < β)
     (N k : ℕ) (θ : ℝ) :
     betaPDF α β θ * binomialKernel N θ {k} =
       ENNReal.ofReal (N.choose k * ProbabilityTheory.beta (α + k) (β + (N - k : ℕ)) /
@@ -123,7 +123,7 @@ instance (N : ℕ) : IsMarkovKernel (binomialKernel N) :=
 
 /-- **Beta–Binomial conjugacy** (density level): after `k` successes in `N` trials,
 `Beta(α, β) ↦ Beta(α + k, β + N - k)`. -/
-@[powerlib_foundation] theorem bayesPosterior_beta_binomial {α β : ℝ} (hα : 0 < α) (hβ : 0 < β)
+@[tmio T, powerlib_foundation] theorem bayesPosterior_beta_binomial {α β : ℝ} (hα : 0 < α) (hβ : 0 < β)
     {N k : ℕ} (hk : k ≤ N) :
     bayesPosterior (betaMeasure α β) (fun θ => binomialKernel N θ {k}) =
       betaMeasure (α + k) (β + (N - k : ℕ)) := by
@@ -139,7 +139,7 @@ instance (N : ℕ) : IsMarkovKernel (binomialKernel N) :=
 
 /-- **Beta–Binomial conjugacy, Mathlib posterior kernel**:
 `(binomialKernel N)†Beta(α, β) =ᵐ k ↦ Beta(α + k, β + N - k)`. -/
-@[powerlib_foundation] theorem posterior_binomialKernel_betaMeasure {α β : ℝ} (hα : 0 < α)
+@[tmio T, powerlib_foundation] theorem posterior_binomialKernel_betaMeasure {α β : ℝ} (hα : 0 < α)
     (hβ : 0 < β) (N : ℕ) :
     have := isProbabilityMeasureBeta hα hβ
     (binomialKernel N)†(betaMeasure α β) =ᵐ[binomialKernel N ∘ₘ betaMeasure α β]

@@ -77,22 +77,22 @@ def trigPoly2ZeroSet (c₀ c₁ s₁ c₂ s₂ a : ℝ) : Set ℝ :=
   simp only [trigPoly2Deriv]
   ring
 
-@[powerlib_foundation] theorem deriv_trigPoly2 (c₀ c₁ s₁ c₂ s₂ : ℝ) :
+@[tmio T, powerlib_foundation] theorem deriv_trigPoly2 (c₀ c₁ s₁ c₂ s₂ : ℝ) :
     deriv (trigPoly2 c₀ c₁ s₁ c₂ s₂) = trigPoly2Deriv c₁ s₁ c₂ s₂ := by
   funext θ
   exact (hasDerivAt_trigPoly2 c₀ c₁ s₁ c₂ s₂ θ).deriv
 
-@[powerlib_foundation] theorem continuous_trigPoly2 (c₀ c₁ s₁ c₂ s₂ : ℝ) :
+@[tmio T, powerlib_foundation] theorem continuous_trigPoly2 (c₀ c₁ s₁ c₂ s₂ : ℝ) :
     Continuous (trigPoly2 c₀ c₁ s₁ c₂ s₂) := by
   unfold trigPoly2
   fun_prop
 
-@[powerlib_foundation] theorem contDiff_trigPoly2 (c₀ c₁ s₁ c₂ s₂ : ℝ) {k : WithTop ℕ∞} :
+@[tmio T, powerlib_foundation] theorem contDiff_trigPoly2 (c₀ c₁ s₁ c₂ s₂ : ℝ) {k : WithTop ℕ∞} :
     ContDiff ℝ k (trigPoly2 c₀ c₁ s₁ c₂ s₂) := by
   unfold trigPoly2
   fun_prop
 
-@[powerlib_foundation] theorem trigPoly2_periodic (c₀ c₁ s₁ c₂ s₂ : ℝ) :
+@[tmio T, powerlib_foundation] theorem trigPoly2_periodic (c₀ c₁ s₁ c₂ s₂ : ℝ) :
     Function.Periodic (trigPoly2 c₀ c₁ s₁ c₂ s₂) (2 * Real.pi) := by
   intro θ
   have e : 2 * (θ + 2 * Real.pi) = 2 * θ + 2 * Real.pi + 2 * Real.pi := by ring
@@ -105,13 +105,13 @@ def trigPoly2Poly (c₀ c₁ s₁ c₂ s₂ : ℝ) : ℂ[X] :=
   C (((c₂ : ℂ) - s₂ * I) / 2) * X ^ 4 + C (((c₁ : ℂ) - s₁ * I) / 2) * X ^ 3 +
     C (c₀ : ℂ) * X ^ 2 + C (((c₁ : ℂ) + s₁ * I) / 2) * X + C (((c₂ : ℂ) + s₂ * I) / 2)
 
-@[powerlib_foundation] theorem trigPoly2Poly_natDegree_le (c₀ c₁ s₁ c₂ s₂ : ℝ) :
+@[tmio T, powerlib_foundation] theorem trigPoly2Poly_natDegree_le (c₀ c₁ s₁ c₂ s₂ : ℝ) :
     (trigPoly2Poly c₀ c₁ s₁ c₂ s₂).natDegree ≤ 4 := by
   unfold trigPoly2Poly
   compute_degree
 
 /-- `P(e^{jθ}) = e^{2jθ} h(θ)`. -/
-@[powerlib_foundation] theorem trigPoly2_eval_cexp (c₀ c₁ s₁ c₂ s₂ θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem trigPoly2_eval_cexp (c₀ c₁ s₁ c₂ s₂ θ : ℝ) :
     (trigPoly2Poly c₀ c₁ s₁ c₂ s₂).eval (exp (θ * I)) =
       exp (θ * I) ^ 2 * (trigPoly2 c₀ c₁ s₁ c₂ s₂ θ : ℂ) := by
   set z := exp ((θ : ℂ) * I) with hz
@@ -139,7 +139,7 @@ def trigPoly2Poly (c₀ c₁ s₁ c₂ s₂ : ℝ) : ℂ[X] :=
   field_simp
   ring
 
-@[powerlib_foundation] theorem trigPoly2Poly_ne_zero {c₀ c₁ s₁ c₂ s₂ : ℝ}
+@[tmio T, powerlib_foundation] theorem trigPoly2Poly_ne_zero {c₀ c₁ s₁ c₂ s₂ : ℝ}
     (hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0 ∧ c₂ = 0 ∧ s₂ = 0)) :
     trigPoly2Poly c₀ c₁ s₁ c₂ s₂ ≠ 0 := by
   intro hP
@@ -156,7 +156,7 @@ def trigPoly2Poly (c₀ c₁ s₁ c₂ s₂ : ℝ) : ℂ[X] :=
   exact ⟨k2, r3, by linarith, r4, by linarith⟩
 
 /-- `θ ↦ e^{jθ}` is injective on every window `[a, a + 2π)`. -/
-@[powerlib_foundation] theorem injOn_cexp_mul_I_Ico (a : ℝ) :
+@[tmio T, powerlib_foundation] theorem injOn_cexp_mul_I_Ico (a : ℝ) :
     InjOn (fun θ : ℝ => exp ((θ : ℂ) * I)) (Ico a (a + 2 * Real.pi)) := by
   intro θ hθ θ' hθ' h
   obtain ⟨n, hn⟩ := exp_eq_exp_iff_exists_int.mp h
@@ -182,13 +182,13 @@ def trigPoly2Poly (c₀ c₁ s₁ c₂ s₂ : ℝ) : ℂ[X] :=
 
 /-! ## At most four zeros per period -/
 
-@[powerlib_foundation] theorem trigPoly2_zeroSet_mapsTo {c₀ c₁ s₁ c₂ s₂ a : ℝ} :
+@[tmio T, powerlib_foundation] theorem trigPoly2_zeroSet_mapsTo {c₀ c₁ s₁ c₂ s₂ a : ℝ} :
     MapsTo (fun θ : ℝ => exp ((θ : ℂ) * I)) (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a)
       {z | (trigPoly2Poly c₀ c₁ s₁ c₂ s₂).IsRoot z} := by
   intro θ hθ
   simp only [mem_ofPred_eq, IsRoot.def, trigPoly2_eval_cexp, hθ.2, ofReal_zero, mul_zero]
 
-@[powerlib_foundation] theorem trigPoly2_zeroSet_finite {c₀ c₁ s₁ c₂ s₂ : ℝ}
+@[tmio T, powerlib_foundation] theorem trigPoly2_zeroSet_finite {c₀ c₁ s₁ c₂ s₂ : ℝ}
     (hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0 ∧ c₂ = 0 ∧ s₂ = 0)) (a : ℝ) :
     (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).Finite := by
   have hP := trigPoly2Poly_ne_zero hne
@@ -198,7 +198,7 @@ def trigPoly2Poly (c₀ c₁ s₁ c₂ s₂ : ℝ) : ℂ[X] :=
     ((injOn_cexp_mul_I_Ico a).mono fun _ h => h.1)
 
 /-- At most four zeros in every period window, unless all coefficients vanish. -/
-@[powerlib_foundation] theorem trigPoly2_ncard_zeroSet_le_four {c₀ c₁ s₁ c₂ s₂ : ℝ}
+@[tmio T, powerlib_foundation] theorem trigPoly2_ncard_zeroSet_le_four {c₀ c₁ s₁ c₂ s₂ : ℝ}
     (hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0 ∧ c₂ = 0 ∧ s₂ = 0)) (a : ℝ) :
     (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).ncard ≤ 4 := by
   have hP := trigPoly2Poly_ne_zero hne
@@ -222,12 +222,12 @@ def trigPoly2Poly (c₀ c₁ s₁ c₂ s₂ : ℝ) : ℂ[X] :=
 def trigPoly1Poly (c₀ c₁ s₁ : ℝ) : ℂ[X] :=
   C (((c₁ : ℂ) - s₁ * I) / 2) * X ^ 2 + C (c₀ : ℂ) * X + C (((c₁ : ℂ) + s₁ * I) / 2)
 
-@[powerlib_foundation] theorem trigPoly1Poly_natDegree_le (c₀ c₁ s₁ : ℝ) :
+@[tmio T, powerlib_foundation] theorem trigPoly1Poly_natDegree_le (c₀ c₁ s₁ : ℝ) :
     (trigPoly1Poly c₀ c₁ s₁).natDegree ≤ 2 := by
   unfold trigPoly1Poly
   compute_degree
 
-@[powerlib_foundation] theorem trigPoly1Poly_ne_zero {c₀ c₁ s₁ : ℝ}
+@[tmio T, powerlib_foundation] theorem trigPoly1Poly_ne_zero {c₀ c₁ s₁ : ℝ}
     (hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0)) : trigPoly1Poly c₀ c₁ s₁ ≠ 0 := by
   intro hP
   have k2 := congrArg (fun p => Polynomial.coeff p 2) hP
@@ -239,7 +239,7 @@ def trigPoly1Poly (c₀ c₁ s₁ : ℝ) : ℂ[X] :=
   simp at r2 i2
   exact ⟨k1, r2, by linarith⟩
 
-@[powerlib_foundation] theorem trigPoly1_eval_cexp (c₀ c₁ s₁ θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem trigPoly1_eval_cexp (c₀ c₁ s₁ θ : ℝ) :
     (trigPoly1Poly c₀ c₁ s₁).eval (exp (θ * I)) =
       exp (θ * I) * (trigPoly2 c₀ c₁ s₁ 0 0 θ : ℂ) := by
   have h2 := trigPoly2_eval_cexp c₀ c₁ s₁ 0 0 θ
@@ -255,7 +255,7 @@ def trigPoly1Poly (c₀ c₁ s₁ : ℝ) : ℂ[X] :=
 
 /-- A first-order trigonometric polynomial `c₀ + c₁ cos θ + s₁ sin θ`, not identically zero, has at
 most two zeros in every window `[a, a + 2π)`. -/
-@[powerlib_foundation] theorem trigPoly1_ncard_zeroSet_le_two {c₀ c₁ s₁ : ℝ}
+@[tmio T, powerlib_foundation] theorem trigPoly1_ncard_zeroSet_le_two {c₀ c₁ s₁ : ℝ}
     (hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0)) (a : ℝ) :
     (trigPoly2ZeroSet c₀ c₁ s₁ 0 0 a).ncard ≤ 2 := by
   have hP := trigPoly1Poly_ne_zero hne
@@ -282,7 +282,7 @@ section Parity
 variable {f : ℝ → ℝ}
 
 /-- Without zeros in `(a, b)`, `f a` and `f b` have the same sign (intermediate value theorem). -/
-@[powerlib_foundation] private lemma mul_pos_of_no_zero (hf : Continuous f) {a b : ℝ}
+@[tmio T, powerlib_foundation] private lemma mul_pos_of_no_zero (hf : Continuous f) {a b : ℝ}
     (hab : a < b) (ha : f a ≠ 0) (hb : f b ≠ 0) (hz : ∀ θ ∈ Ioo a b, f θ ≠ 0) :
     0 < f a * f b := by
   by_contra hneg
@@ -304,7 +304,7 @@ variable {f : ℝ → ℝ}
 
 /-- Near a simple zero `θ₀` (`f' (θ₀) = g ≠ 0`), `f · g` is negative on the left and positive on
 the right. -/
-@[powerlib_foundation] private lemma exists_sign_near_simple_zero {θ₀ g l r : ℝ}
+@[tmio T, powerlib_foundation] private lemma exists_sign_near_simple_zero {θ₀ g l r : ℝ}
     (hzero : f θ₀ = 0) (hd : HasDerivAt f g θ₀) (hg : g ≠ 0) (hl : l < θ₀) (hr : θ₀ < r) :
     (∃ d ∈ Ioo l θ₀, f d * g < 0) ∧ (∃ c ∈ Ioo θ₀ r, 0 < f c * g) := by
   have hslope := hasDerivAt_iff_tendsto_slope.mp hd
@@ -340,7 +340,7 @@ the right. -/
 
 /-- Sign rule on an interval: with `n` zeros in `(a, b)`, all simple,
 `0 < f a · f b · (−1)ⁿ`. -/
-@[powerlib_foundation] private lemma sign_rule (hf : Continuous f)
+@[tmio T, powerlib_foundation] private lemma sign_rule (hf : Continuous f)
     (hsimple : ∀ θ, f θ = 0 → ∃ g, g ≠ 0 ∧ HasDerivAt f g θ) :
     ∀ (n : ℕ) (a b : ℝ), a < b → f a ≠ 0 → f b ≠ 0 →
       {θ | θ ∈ Ioo a b ∧ f θ = 0}.Finite →
@@ -418,7 +418,7 @@ the right. -/
 /-- Consecutive simple zeros have derivatives of opposite sign: if `θ₁ < θ₂` are zeros of a
 continuous `f` with no zero in between and `f'(θ₁) = g₁ ≠ 0`, `f'(θ₂) = g₂ ≠ 0`, then
 `g₁ g₂ < 0`. -/
-@[powerlib_foundation] theorem deriv_mul_neg_of_consecutive_simple_zeros (hf : Continuous f)
+@[tmio T, powerlib_foundation] theorem deriv_mul_neg_of_consecutive_simple_zeros (hf : Continuous f)
     {θ₁ θ₂ g₁ g₂ : ℝ} (h12 : θ₁ < θ₂) (h1 : f θ₁ = 0) (h2 : f θ₂ = 0)
     (hz : ∀ θ ∈ Ioo θ₁ θ₂, f θ ≠ 0) (hd1 : HasDerivAt f g₁ θ₁) (hd2 : HasDerivAt f g₂ θ₂)
     (hg1 : g₁ ≠ 0) (hg2 : g₂ ≠ 0) : g₁ * g₂ < 0 := by
@@ -441,7 +441,7 @@ end Parity
 
 /-- For a `T`-periodic function, the number of zeros in a window `[a, a + T)` does not depend on
 `a`. -/
-@[powerlib_foundation] theorem ncard_zeros_Ico_eq_of_periodic {f : ℝ → ℝ} {T : ℝ} (hT : 0 < T)
+@[tmio T, powerlib_foundation] theorem ncard_zeros_Ico_eq_of_periodic {f : ℝ → ℝ} {T : ℝ} (hT : 0 < T)
     (hper : Function.Periodic f T) (a b : ℝ) :
     {θ | θ ∈ Ico a (a + T) ∧ f θ = 0}.ncard = {θ | θ ∈ Ico b (b + T) ∧ f θ = 0}.ncard := by
   have hval (x c : ℝ) : f (toIcoMod hT c x) = f x := by
@@ -465,7 +465,7 @@ end Parity
 
 /-- A continuous `T`-periodic function with finitely many zeros per window, all of them simple,
 has an even number of zeros in every window `[a, a + T)`. -/
-@[powerlib_foundation] theorem even_ncard_zeroSet_of_simple {f : ℝ → ℝ} {T : ℝ} (hT : 0 < T)
+@[tmio T, powerlib_foundation] theorem even_ncard_zeroSet_of_simple {f : ℝ → ℝ} {T : ℝ} (hT : 0 < T)
     (hf : Continuous f) (hper : Function.Periodic f T)
     (hfin : ∀ a, {θ | θ ∈ Ico a (a + T) ∧ f θ = 0}.Finite)
     (hsimple : ∀ θ, f θ = 0 → ∃ g, g ≠ 0 ∧ HasDerivAt f g θ) (a : ℝ) :
@@ -503,7 +503,7 @@ has an even number of zeros in every window `[a, a + T)`. -/
 
 /-- If every zero of `h` is simple (`h' ≠ 0` there), the number of zeros in every period window
 is even. -/
-@[powerlib_foundation] theorem trigPoly2_even_ncard_zeroSet {c₀ c₁ s₁ c₂ s₂ : ℝ}
+@[tmio T, powerlib_foundation] theorem trigPoly2_even_ncard_zeroSet {c₀ c₁ s₁ c₂ s₂ : ℝ}
     (hsimple : ∀ θ, trigPoly2 c₀ c₁ s₁ c₂ s₂ θ = 0 → trigPoly2Deriv c₁ s₁ c₂ s₂ θ ≠ 0)
     (a : ℝ) : Even (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).ncard := by
   have hne : ¬ (c₀ = 0 ∧ c₁ = 0 ∧ s₁ = 0 ∧ c₂ = 0 ∧ s₂ = 0) := by
@@ -514,7 +514,7 @@ is even. -/
     (fun θ hθ => ⟨_, hsimple θ hθ, hasDerivAt_trigPoly2 _ _ _ _ _ θ⟩) a
 
 /-- If every zero is simple, a period window contains `0`, `2` or `4` zeros. -/
-@[powerlib_foundation] theorem trigPoly2_ncard_zeroSet_mem {c₀ c₁ s₁ c₂ s₂ : ℝ}
+@[tmio T, powerlib_foundation] theorem trigPoly2_ncard_zeroSet_mem {c₀ c₁ s₁ c₂ s₂ : ℝ}
     (hsimple : ∀ θ, trigPoly2 c₀ c₁ s₁ c₂ s₂ θ = 0 → trigPoly2Deriv c₁ s₁ c₂ s₂ θ ≠ 0)
     (a : ℝ) :
     (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).ncard = 0 ∨ (trigPoly2ZeroSet c₀ c₁ s₁ c₂ s₂ a).ncard = 2 ∨

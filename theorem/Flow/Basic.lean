@@ -58,18 +58,18 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
   exact hb t (hφ.mono Icc_subset_Ici_self) t ⟨ht, le_rfl⟩
 
 /-- A global exponential estimate is in particular a local one. -/
-@[powerlib_foundation] theorem GloballyExponentiallyStable.locallyExponentiallyStable
+@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.locallyExponentiallyStable
     {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
     (h : GloballyExponentiallyStable f x) : LocallyExponentiallyStable f x := by
   obtain ⟨-, -, C, a, hC, ha, hb⟩ := h
   exact ⟨1, C, a, one_pos, hC, ha, fun t₀ t₁ φ hφ _ t ht => hb t₀ t₁ φ hφ t ht⟩
 
-@[powerlib_foundation] theorem GloballyExponentiallyStable.lyapunovStable {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.lyapunovStable {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
     (h : GloballyExponentiallyStable f x) : LyapunovStable f x :=
   h.locallyExponentiallyStable.lyapunovStable
 
 /-- Global exponential stability gives global asymptotic stability. -/
-@[powerlib_foundation] theorem GloballyExponentiallyStable.globallyAsymptoticallyStable
+@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.globallyAsymptoticallyStable
     {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
     (h : GloballyExponentiallyStable f x) : GloballyAsymptoticallyStable f x := by
   obtain ⟨heq, hfc, C, a, hC, ha, hb⟩ := h
@@ -87,13 +87,13 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
     tendsto_of_segment_bound ha hφ fun t₁ hseg => hb t₀ t₁ φ hseg h0⟩
 
 /-- Global asymptotic stability gives local asymptotic stability. -/
-@[powerlib_foundation] theorem GloballyAsymptoticallyStable.localAsymptoticStable
+@[tmio T, powerlib_foundation] theorem GloballyAsymptoticallyStable.localAsymptoticStable
     {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
     (h : GloballyAsymptoticallyStable f x) : LocalAsymptoticStable f x :=
   ⟨h.2.2.1, 1, one_pos, fun t₀ φ hφ _ => h.2.2.2 t₀ φ hφ⟩
 
 /-- Every attractive sentence implies local asymptotic stability. -/
-@[powerlib_foundation] theorem Property.localAsymptoticStable {f : ℝⁿ → ℝⁿ} {x : ℝⁿ} {P : Property}
+@[tmio T, powerlib_foundation] theorem Property.localAsymptoticStable {f : ℝⁿ → ℝⁿ} {x : ℝⁿ} {P : Property}
     (hP : P.Attractive)
     (h : P.holds f x) : LocalAsymptoticStable f x := by
   cases P
@@ -105,7 +105,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
   all_goals exact absurd hP id
 
 /-- Global exponential stability gives every attractive sentence. -/
-@[powerlib_foundation] theorem GloballyExponentiallyStable.holds {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.holds {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
     (h : GloballyExponentiallyStable f x) {P : Property} (hP : P.Attractive) : P.holds f x := by
   cases P
   case locallyAsymptoticallyStable =>
@@ -118,7 +118,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 /-! ## Decay rates and sampled contraction -/
 
 /-- A decay rate gives every smaller rate. -/
-@[powerlib_foundation] theorem Decay.mono {f : ℝⁿ → ℝⁿ} {x : ℝⁿ} {a b : ℝ} (h : Decay f x a)
+@[tmio T, powerlib_foundation] theorem Decay.mono {f : ℝⁿ → ℝⁿ} {x : ℝⁿ} {a b : ℝ} (h : Decay f x a)
     (hba : b ≤ a) : Decay f x b := by
   obtain ⟨C, hC⟩ := h
   refine ⟨max C 0, fun t₀ t₁ φ hφ t ht => (hC t₀ t₁ φ hφ t ht).trans ?_⟩
@@ -133,14 +133,14 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
         gcongr
 
 /-- Global exponential stability decays at a positive rate. -/
-@[powerlib_foundation] theorem GloballyExponentiallyStable.exists_decay {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.exists_decay {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
     (h : GloballyExponentiallyStable f x) : ∃ a, 0 < a ∧ Decay f x a := by
   obtain ⟨-, -, C, a, -, ha, hb⟩ := h
   exact ⟨a, ha, C, hb⟩
 
 /-- A decay rate `a ≥ 0` gives Lyapunov stability: the overshoot constant bounds every solution
 segment by a fixed multiple of its initial distance. -/
-@[powerlib_foundation] theorem Decay.lyapunovStable {f : ℝⁿ → ℝⁿ} {x : ℝⁿ} {a : ℝ} (ha : 0 ≤ a)
+@[tmio T, powerlib_foundation] theorem Decay.lyapunovStable {f : ℝⁿ → ℝⁿ} {x : ℝⁿ} {a : ℝ} (ha : 0 ≤ a)
     (h : Flow.Decay f x a) : LyapunovStable f x := by
   obtain ⟨C, hC⟩ := h
   intro ε hε
@@ -159,7 +159,7 @@ segment by a fixed multiple of its initial distance. -/
 
 /-- A positive decay rate gives sampled contraction: the overshoot is eventually beaten by the
 exponential. -/
-@[powerlib_foundation] theorem Decay.sampledContraction {f : ℝⁿ → ℝⁿ} {x : ℝⁿ} {a : ℝ}
+@[tmio T, powerlib_foundation] theorem Decay.sampledContraction {f : ℝⁿ → ℝⁿ} {x : ℝⁿ} {a : ℝ}
     (h : Decay f x a) (ha : 0 < a) : SampledContraction f x := by
   obtain ⟨C, hC⟩ := h
   have hlim : Tendsto (fun k : ℕ => max C 0 * Real.exp (-a * k)) atTop (𝓝 0) := by
@@ -177,7 +177,7 @@ exponential. -/
   exact le_max_left _ _
 
 /-- Global exponential stability gives sampled contraction. -/
-@[powerlib_foundation] theorem GloballyExponentiallyStable.sampledContraction {f : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.sampledContraction {f : ℝⁿ → ℝⁿ}
     {x : ℝⁿ} (h : GloballyExponentiallyStable f x) : SampledContraction f x := by
   obtain ⟨a, ha, hd⟩ := h.exists_decay
   exact hd.sampledContraction ha
@@ -186,7 +186,7 @@ exponential. -/
 
 /-- A conserved energy with a strict minimum gives Lyapunov stability (Lagrange–Dirichlet): a
 solution starting where the energy is below its minimum on a sphere never reaches the sphere. -/
-@[powerlib_foundation] theorem Conservative.lyapunovStable {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem Conservative.lyapunovStable {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
     (h : Conservative f x) : LyapunovStable f x := by
   obtain ⟨V, hV, hmin, hcons⟩ := h
   intro ε hε
@@ -221,7 +221,7 @@ solution starting where the energy is below its minimum on a sphere never reache
 /-- A conserved energy rules out local asymptotic stability once a solution passes through every
 state and the state space is not a point: the energy of a solution through a nearby state stays
 above its minimum, so the solution cannot converge. -/
-@[powerlib_foundation] theorem Conservative.not_localAsymptoticStable (hn : 0 < n)
+@[tmio T, powerlib_foundation] theorem Conservative.not_localAsymptoticStable (hn : 0 < n)
     {f : ℝⁿ → ℝⁿ} {x : ℝⁿ} (h : Conservative f x) (hc : ForwardComplete f) :
     ¬ LocalAsymptoticStable f x := by
   rintro ⟨-, c, hc0, hconv⟩

@@ -136,12 +136,14 @@ target, allowed kind and unique assignment. These checks do not decide whether
 the chosen kind correctly describes the mathematics. Foundation/domain metadata
 and the kernel-checked `connection%` admission contract remain independent.
 
-The current source coverage is 1,224 theorems in 405 modules: T 297, M 148,
-T–M 682, M–I 88 and I–O 9, including three private helpers. All 813 public
+The current source coverage is 2,798 theorems in 405 modules: T 1,682, M 334,
+T–M 685, M–I 88 and I–O 9, including 111 private helpers. All 813 public
 `connection%` theorems remain covered (T 0, M 50, T–M 668, M–I 88, I–O 7).
-The additional 411 ordinary theorems were individually reviewed from the concrete
-representatives in the earlier audits. A module's suggested role does not classify
-all its declarations. Classification of the remaining theorems is unfinished.
+The 1,985 classified ordinary theorems have been individually reviewed, including
+general analysis, stability, matrix and estimation theory, abstract relation laws,
+and model representation identities. A module's suggested role does not classify
+all its declarations. The remaining 5,086 theorems are unclassified; statements
+with unsettled layer boundaries remain unmarked pending further review.
 
 `theorem/TMIO/KnowledgeIndex.lean` queries the attributes in the currently imported
 `theorem.*` modules:

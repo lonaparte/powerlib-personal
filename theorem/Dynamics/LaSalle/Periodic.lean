@@ -96,7 +96,7 @@ open Set Filter Topology Metric
 /-! ## Invariant level sets and LaSalle on them -/
 
 /-- The level sets of a first integral are positively invariant. -/
-@[powerlib_foundation] theorem isPositivelyInvariant_levelSet {m : ℕ} {g : State m → State m}
+@[tmio T, powerlib_foundation] theorem isPositivelyInvariant_levelSet {m : ℕ} {g : State m → State m}
     {h : State m → ℝ} (c : ℝ) (hh : Differentiable ℝ h) (hlie : ∀ y, fderiv ℝ h y (g y) = 0) :
     IsPositivelyInvariant {y | h y = c} g := by
   intro t₀ t₁ ψ hψ hψ0 t ht
@@ -115,7 +115,7 @@ open Set Filter Topology Metric
 
 /-- A sublevel set of `V` inside a positively invariant set on which `V̇ ≤ 0` is positively
 invariant. -/
-@[powerlib_foundation] theorem IsPositivelyInvariant.sep_sublevel {m : ℕ} {g : State m → State m}
+@[tmio T, powerlib_foundation] theorem IsPositivelyInvariant.sep_sublevel {m : ℕ} {g : State m → State m}
     {V : State m → ℝ} {Z : Set (State m)} (c : ℝ) (hZ : IsPositivelyInvariant Z g)
     (hV : Differentiable ℝ V) (hlie : ∀ y ∈ Z, fderiv ℝ V y (g y) ≤ 0) :
     IsPositivelyInvariant {y | y ∈ Z ∧ V y ≤ c} g := by
@@ -128,7 +128,7 @@ invariant. -/
 
 /-- The set `{h = c₀, V ≤ c}` is positively invariant when `h` is a first integral and `V̇ ≤ 0` on
 the level set `{h = c₀}`. -/
-@[powerlib_foundation] theorem isPositivelyInvariant_levelSet_sublevel {m : ℕ}
+@[tmio T, powerlib_foundation] theorem isPositivelyInvariant_levelSet_sublevel {m : ℕ}
     {g : State m → State m} {h V : State m → ℝ} {c₀ c : ℝ} (hh : Differentiable ℝ h)
     (hV : Differentiable ℝ V) (hh_lie : ∀ y, fderiv ℝ h y (g y) = 0)
     (hV_lie : ∀ y, h y = c₀ → fderiv ℝ V y (g y) ≤ 0) :
@@ -139,7 +139,7 @@ the level set `{h = c₀}`. -/
 level set `{h = c₀}` and `Ω = {h = c₀, V ≤ c}` compact. Every forward solution starting in `Ω`
 converges to every set `M` that contains the positively invariant subsets of
 `{y ∈ Ω | V̇ y = 0}`. No global Lipschitz bound and no sign of `V̇` off the level set are needed. -/
-@[powerlib_foundation] theorem lasalle_levelSet {m : ℕ} {g : State m → State m}
+@[tmio T, powerlib_foundation] theorem lasalle_levelSet {m : ℕ} {g : State m → State m}
     {h V : State m → ℝ} {c₀ c : ℝ} {M : Set (State m)} (hg : ContDiff ℝ 1 g)
     (hh : Differentiable ℝ h) (hV : ContDiff ℝ 1 V) (hh_lie : ∀ y, fderiv ℝ h y (g y) = 0)
     (hV_lie : ∀ y, h y = c₀ → fderiv ℝ V y (g y) ≤ 0)
@@ -155,7 +155,7 @@ converges to every set `M` that contains the positively invariant subsets of
 
 /-- A forward solution on `[0, ∞)` from every point of a compact positively invariant set of a
 `C¹` field; it stays in the set. -/
-@[powerlib_foundation] theorem exists_isIntegralCurveOn_of_isCompact {m : ℕ}
+@[tmio T, powerlib_foundation] theorem exists_isIntegralCurveOn_of_isCompact {m : ℕ}
     {g : State m → State m} {Ω : Set (State m)} (hg : ContDiff ℝ 1 g) (hΩ : IsCompact Ω)
     (hinv : IsPositivelyInvariant Ω g) {y₀ : State m} (hy₀ : y₀ ∈ Ω) :
     ∃ ψ : ℝ → State m, ψ 0 = y₀ ∧ IsIntegralCurveOn ψ (fun _ y => g y) (Ici 0) ∧
@@ -169,7 +169,7 @@ converges to every set `M` that contains the positively invariant subsets of
 /-- Set version of `lasalle_condition_of_lieDeriv`: if `E` lies in the zero set of a `C¹`
 function `h`, and at a point of `E` the derivative of `h` along `f` vanishes only in `M`, then
 every positively invariant subset of `E` lies in `M`. -/
-@[powerlib_foundation] theorem lasalle_condition_of_lieDeriv_mem {n : ℕ} {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem lasalle_condition_of_lieDeriv_mem {n : ℕ} {f : State n → State n}
     {E M : Set (State n)} (hf_c1 : ContDiff ℝ 1 f) {h : State n → ℝ} (hh : ContDiff ℝ 1 h)
     (hE : ∀ x ∈ E, h x = 0) (hpt : ∀ x ∈ E, fderiv ℝ h x (f x) = 0 → x ∈ M) :
     ∀ N ⊆ E, IsPositivelyInvariant N f → N ⊆ M := by
@@ -189,7 +189,7 @@ every positively invariant subset of `E` lies in `M`. -/
 /-- Set version of `lasalle_condition_of_trajectories`: if every solution segment of positive
 length that stays in `E` starts in `M`, then every positively invariant subset of `E` lies in
 `M`. -/
-@[powerlib_foundation] theorem lasalle_condition_of_trajectories_mem {n : ℕ}
+@[tmio T, powerlib_foundation] theorem lasalle_condition_of_trajectories_mem {n : ℕ}
     {f : State n → State n} {E M : Set (State n)} (hf_c1 : ContDiff ℝ 1 f)
     (h : ∀ (T : ℝ) (φ : ℝ → State n), 0 < T → IsTrajectoryOn φ f 0 T →
       (∀ t ∈ Icc 0 T, φ t ∈ E) → φ 0 ∈ M) :
@@ -201,7 +201,7 @@ length that stays in `E` starts in `M`, then every positively invariant subset o
   exact h T ψ hT hψ fun t ht => hNE (hstay t ht)
 
 /-- Convergence to a set gives convergence to `0` of every continuous function vanishing on it. -/
-@[powerlib_foundation] theorem tendsto_zero_of_tendsto_nhdsSet {n : ℕ} {α : Type*}
+@[tmio T, powerlib_foundation] theorem tendsto_zero_of_tendsto_nhdsSet {n : ℕ} {α : Type*}
     {l : Filter α} {ψ : α → State n} {M : Set (State n)} (hψ : Tendsto ψ l (𝓝ˢ M))
     {h : State n → ℝ} (hh : Continuous h) (hM : ∀ y ∈ M, h y = 0) :
     Tendsto (fun t => h (ψ t)) l (𝓝 0) :=
@@ -209,12 +209,12 @@ length that stays in `E` starts in `M`, then every positively invariant subset o
 
 /-! ## Angles -/
 
-private theorem abs_sin_sub_int_mul_pi (x : ℝ) (j : ℤ) :
+@[tmio T] private theorem abs_sin_sub_int_mul_pi (x : ℝ) (j : ℤ) :
     |Real.sin (x - j * Real.pi)| = |Real.sin x| := by
   rw [Real.sin_sub_int_mul_pi, abs_mul, abs_neg_one_zpow, one_mul]
 
 /-- Jordan's inequality in absolute value: `|x| ≤ (π/2) |sin x|` for `|x| ≤ π/2`. -/
-@[powerlib_foundation] theorem abs_le_of_abs_le_pi_div_two {x : ℝ} (hx : |x| ≤ Real.pi / 2) :
+@[tmio T, powerlib_foundation] theorem abs_le_of_abs_le_pi_div_two {x : ℝ} (hx : |x| ≤ Real.pi / 2) :
     |x| ≤ Real.pi / 2 * |Real.sin x| := by
   have hπ := Real.pi_pos
   rcases le_total 0 x with h0 | h0
@@ -234,7 +234,7 @@ private theorem abs_sin_sub_int_mul_pi (x : ℝ) (j : ℤ) :
 
 /-- **No drift between the zeros of `sin`.** A continuous angle whose sine tends to `0` converges
 to a single multiple `j π`. -/
-@[powerlib_foundation] theorem exists_int_tendsto_of_tendsto_sin {θ : ℝ → ℝ} {a : ℝ}
+@[tmio T, powerlib_foundation] theorem exists_int_tendsto_of_tendsto_sin {θ : ℝ → ℝ} {a : ℝ}
     (hθ : ContinuousOn θ (Ici a)) (hsin : Tendsto (fun t => Real.sin (θ t)) atTop (𝓝 0)) :
     ∃ j : ℤ, Tendsto θ atTop (𝓝 (j * Real.pi)) := by
   have hπ := Real.pi_pos
@@ -285,7 +285,7 @@ to a single multiple `j π`. -/
   exact abs_le_of_abs_le_pi_div_two (hwin t ht).le
 
 /-- A point of the unit circle has an angle. -/
-@[powerlib_foundation] theorem exists_cos_sin {a b : ℝ} (h : a ^ 2 + b ^ 2 = 1) :
+@[tmio T, powerlib_foundation] theorem exists_cos_sin {a b : ℝ} (h : a ^ 2 + b ^ 2 = 1) :
     ∃ θ : ℝ, Real.cos θ = a ∧ Real.sin θ = b := by
   set z : ℂ := ⟨a, b⟩
   have hz : ‖z‖ = 1 := by
@@ -302,7 +302,7 @@ to a single multiple `j π`. -/
 /-- **Angle lift.** If `(c, s)` solves `c' = −s w`, `s' = c w` on `[0, ∞)` with `w` continuous
 there and starts at `(cos θ₀, sin θ₀)`, then `θ = θ₀ + ∫₀ᵗ w` has derivative `w` and
 `(cos θ, sin θ) = (c, s)` on `[0, ∞)`. -/
-@[powerlib_foundation] theorem exists_angle_lift {c s w : ℝ → ℝ} {θ₀ : ℝ}
+@[tmio T, powerlib_foundation] theorem exists_angle_lift {c s w : ℝ → ℝ} {θ₀ : ℝ}
     (hw : ContinuousOn w (Ici 0))
     (hc : ∀ t, 0 ≤ t → HasDerivWithinAt c (-(s t) * w t) (Ici 0) t)
     (hs : ∀ t, 0 ≤ t → HasDerivWithinAt s (c t * w t) (Ici 0) t)
@@ -351,7 +351,7 @@ there and starts at `(cos θ₀, sin θ₀)`, then `θ = θ₀ + ∫₀ᵗ w` ha
 the reduction `red` maps every solution segment of `F` starting in `L` to a solution segment of
 `f`, and the segment stays in `L`; on `L` the distance to `O` is at most `A ‖red X − x*‖`. Then
 every solution segment of `F` starting in `L` approaches `O` exponentially, with the rate of `f`. -/
-@[powerlib_foundation] theorem infDist_le_of_reduction {N n : ℕ} {F : State N → State N}
+@[tmio T, powerlib_foundation] theorem infDist_le_of_reduction {N n : ℕ} {F : State N → State N}
     {f : State n → State n} {red : State N → State n} {x : State n} {L O : Set (State N)}
     {A : ℝ} (hA : 0 ≤ A) (hf : Flow.GloballyExponentiallyStable f x)
     (hred : ∀ (t₀ t₁ : ℝ) (X : ℝ → State N), IsTrajectoryOn X F t₀ t₁ → X t₀ ∈ L →
@@ -372,7 +372,7 @@ every solution segment of `F` starting in `L` approaches `O` exponentially, with
 
 /-- The same with the initial distance to `O` on the right, when on `L` also
 `‖red X − x*‖ ≤ B · dist(X, O)`: the set `O` is exponentially stable relative to `L`. -/
-@[powerlib_foundation] theorem infDist_le_of_reduction' {N n : ℕ} {F : State N → State N}
+@[tmio T, powerlib_foundation] theorem infDist_le_of_reduction' {N n : ℕ} {F : State N → State N}
     {f : State n → State n} {red : State N → State n} {x : State n} {L O : Set (State N)}
     {A B : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B) (hf : Flow.GloballyExponentiallyStable f x)
     (hred : ∀ (t₀ t₁ : ℝ) (X : ℝ → State N), IsTrajectoryOn X F t₀ t₁ → X t₀ ∈ L →

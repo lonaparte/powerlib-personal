@@ -40,12 +40,12 @@ open scoped Matrix.Norms.Operator
 variable {n : ℕ} {A : ℝ → Matrix (Fin n) (Fin n) ℝ}
 
 /-- A bound for `‖A‖` (operator norm, as in LeanForControl's Peano–Baker theory) on a segment. -/
-private lemma exists_opNorm_bound (hA : Continuous A) (a b : ℝ) :
+@[tmio T] private lemma exists_opNorm_bound (hA : Continuous A) (a b : ℝ) :
     ∃ M, ∀ r ∈ uIcc a b, ‖A r‖ ≤ M :=
   isCompact_uIcc.exists_bound_of_continuousOn hA.continuousOn
 
 /-- `Φ(s, a) Φ(a, s) = I` for LeanForControl's state-transition matrix. -/
-private lemma stm_mul_inv (hA : Continuous A) (s a : ℝ) :
+@[tmio T] private lemma stm_mul_inv (hA : Continuous A) (s a : ℝ) :
     LinearSystems.stateTransitionMatrix A s a * LinearSystems.stateTransitionMatrix A a s = 1 := by
   obtain ⟨M, hM⟩ := exists_opNorm_bound hA a s
   obtain ⟨hunit, hinv⟩ := LinearSystems.stateTransitionMatrix_inv hA hM
@@ -120,7 +120,7 @@ composition laws. -/
   exact hda.mul_const _
 
 /-- `Φ(s, s) = I` (LeanForControl `stateTransitionMatrix_self`). -/
-@[powerlib_foundation] theorem stm_self (s : ℝ) :
+@[tmio T, powerlib_foundation] theorem stm_self (s : ℝ) :
     LinearSystems.stateTransitionMatrix A s s = 1 :=
   LinearSystems.stateTransitionMatrix_self s
 
@@ -129,7 +129,7 @@ composition laws. -/
 `P(t) = Φ(t, t₀) P₀ Φ(t, t₀)ᵀ + ∫_{t₀}^t Φ(t, τ) Q(τ) Φ(t, τ)ᵀ dτ`, with `Φ` the Peano–Baker
 state-transition matrix of `ẋ = A(t) x`, is the unique solution of
 `Ṗ = A(t) P + P A(t)ᵀ + Q(t)`, `P(t₀) = P₀`. -/
-@[powerlib_foundation] theorem ltv_cov_stateTransition (hA : Continuous A)
+@[tmio T, powerlib_foundation] theorem ltv_cov_stateTransition (hA : Continuous A)
     {Q : ℝ → Matrix (Fin n) (Fin n) ℝ} (hQ : Continuous Q) (P₀ : Matrix (Fin n) (Fin n) ℝ)
     (t₀ : ℝ) :
     ltvCov (LinearSystems.stateTransitionMatrix A) Q P₀ t₀ t₀ = P₀ ∧
@@ -146,7 +146,7 @@ variable {p : ℕ} {C : ℝ → Matrix (Fin p) (Fin n) ℝ} {Q : ℝ → Matrix 
   {R : ℝ → Matrix (Fin p) (Fin p) ℝ}
 
 /-- Continuity of the closed-loop matrix `A − P Cᵀ R⁻¹ C`. -/
-private lemma closedLoop_continuous (hA : Continuous A) (hC : Continuous C) (hR : Continuous R)
+@[tmio T] private lemma closedLoop_continuous (hA : Continuous A) (hC : Continuous C) (hR : Continuous R)
     (hRu : ∀ t, IsUnit (R t).det) {P : ℝ → Matrix (Fin n) (Fin n) ℝ} (hPc : Continuous P) :
     Continuous fun t => A t - P t * (C t)ᵀ * (R t)⁻¹ * C t := by
   have hRi : Continuous fun t => (R t)⁻¹ := by
@@ -161,7 +161,7 @@ matrix**: a symmetric solution of `Ṗ = A P + P Aᵀ + Q − P Cᵀ R⁻¹ C P`
 `R` symmetric invertible) equals
 `Φ_K(t, t₀) P(t₀) Φ_K(t, t₀)ᵀ + ∫_{t₀}^t Φ_K(t, τ) (Q + K R Kᵀ)(τ) Φ_K(t, τ)ᵀ dτ`, where
 `K = P Cᵀ R⁻¹` and `Φ_K` is the Peano–Baker state-transition matrix of `A − K C`. -/
-@[powerlib_foundation] theorem riccati_joseph_form_stateTransition (hA : Continuous A)
+@[tmio T, powerlib_foundation] theorem riccati_joseph_form_stateTransition (hA : Continuous A)
     (hC : Continuous C) (hQ : Continuous Q) (hR : Continuous R) (hRs : ∀ t, (R t)ᵀ = R t)
     (hRu : ∀ t, IsUnit (R t).det) {P : ℝ → Matrix (Fin n) (Fin n) ℝ}
     (hP : ∀ t, HasDerivAt P
@@ -177,7 +177,7 @@ matrix**: a symmetric solution of `Ṗ = A P + P Aᵀ + Q − P Cᵀ R⁻¹ C P`
 /-- **The Kalman–Bucy Riccati covariance stays positive semidefinite** (no extra hypothesis):
 for continuous `A, C, Q, R` with `Q(t) ⪰ 0`, `R(t) ≻ 0`, every solution of
 `Ṗ = A P + P Aᵀ + Q − P Cᵀ R⁻¹ C P` with `P(t₀) ⪰ 0` has `P(t) ⪰ 0` for all `t ≥ t₀`. -/
-@[powerlib_foundation] theorem riccati_posSemidef_of_continuous (hA : Continuous A)
+@[tmio T, powerlib_foundation] theorem riccati_posSemidef_of_continuous (hA : Continuous A)
     (hC : Continuous C) (hQ : Continuous Q) (hR : Continuous R) (hQp : ∀ t, (Q t).PosSemidef)
     (hRp : ∀ t, (R t).PosDef) {P : ℝ → Matrix (Fin n) (Fin n) ℝ}
     (hP : ∀ t, HasDerivAt P

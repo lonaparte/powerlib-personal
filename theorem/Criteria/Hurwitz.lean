@@ -64,21 +64,21 @@ variable {p : ℝ[X]}
 /-- The real quadratic factor `X² - 2 Re z X + |z|²` whose roots are `z` and `z̄`. -/
 private def quadFactor (z : ℂ) : ℝ[X] := X ^ 2 - C (2 * z.re) * X + C (z.re ^ 2 + z.im ^ 2)
 
-@[powerlib_foundation] private theorem quadFactor_monic (z : ℂ) : (quadFactor z).Monic := by
+@[tmio T, powerlib_foundation] private theorem quadFactor_monic (z : ℂ) : (quadFactor z).Monic := by
   unfold quadFactor
   monicity!
 
-@[powerlib_foundation] private theorem quadFactor_natDegree (z : ℂ) :
+@[tmio T, powerlib_foundation] private theorem quadFactor_natDegree (z : ℂ) :
     (quadFactor z).natDegree = 2 := by
   unfold quadFactor
   compute_degree!
 
-@[powerlib_foundation] private theorem aeval_quadFactor (z : ℂ) : aeval z (quadFactor z) = 0 := by
+@[tmio T, powerlib_foundation] private theorem aeval_quadFactor (z : ℂ) : aeval z (quadFactor z) = 0 := by
   simp only [quadFactor, map_add, map_sub, map_mul, map_pow, aeval_X, aeval_C,
     Complex.coe_algebraMap]
   apply Complex.ext <;> simp [pow_two] <;> ring
 
-@[powerlib_foundation] private theorem coeff_quadFactor (z : ℂ) (k : ℕ) :
+@[tmio T, powerlib_foundation] private theorem coeff_quadFactor (z : ℂ) (k : ℕ) :
     (quadFactor z).coeff k =
       if k = 0 then z.re ^ 2 + z.im ^ 2 else if k = 1 then -(2 * z.re) else if k = 2 then 1
         else 0 := by
@@ -87,7 +87,7 @@ private def quadFactor (z : ℂ) : ℝ[X] := X ^ 2 - C (2 * z.re) * X + C (z.re 
 
 /-- A complex root of a monic real polynomial of positive degree splits off a monic real factor of
 degree one or two: `X - r` at a real root `r`, `X² - 2 Re z X + |z|²` at a non-real root `z`. -/
-@[powerlib_foundation] private theorem exists_factor (hp : p.Monic) (hd : 0 < p.natDegree) :
+@[tmio T, powerlib_foundation] private theorem exists_factor (hp : p.Monic) (hd : 0 < p.natDegree) :
     ∃ q : ℝ[X], q.Monic ∧
       ((∃ r : ℝ, p = (X - C r) * q) ∨ ∃ z : ℂ, z.im ≠ 0 ∧ p = quadFactor z * q) := by
   obtain ⟨z, hz⟩ := Complex.exists_root (f := p.map (algebraMap ℝ ℂ))
@@ -127,7 +127,7 @@ degree one or two: `X - r` at a real root `r`, `X² - 2 Re z X + |z|²` at a non
     exact ⟨q, (quadFactor_monic z).of_mul_monic_left (hq ▸ hp), Or.inr ⟨z, him, hq⟩⟩
 
 /-- Induction over the real factorization of monic real polynomials. -/
-@[powerlib_foundation] private theorem monic_induction {P : ℝ[X] → Prop} (h1 : P 1)
+@[tmio T, powerlib_foundation] private theorem monic_induction {P : ℝ[X] → Prop} (h1 : P 1)
     (hlin : ∀ (r : ℝ) (q : ℝ[X]), q.Monic → P q → P ((X - C r) * q))
     (hquad : ∀ (z : ℂ) (q : ℝ[X]), z.im ≠ 0 → q.Monic → P q → P (quadFactor z * q))
     (hp : p.Monic) : P p := by
@@ -144,19 +144,19 @@ degree one or two: `X - r` at a real root `r`, `X² - 2 Re z X + |z|²` at a non
       rw [← h, (quadFactor_monic z).natDegree_mul hq, quadFactor_natDegree]
       omega
 
-@[powerlib_foundation] private theorem coeff_nonneg_mul {f q : ℝ[X]} (hf : ∀ k, 0 ≤ f.coeff k)
+@[tmio T, powerlib_foundation] private theorem coeff_nonneg_mul {f q : ℝ[X]} (hf : ∀ k, 0 ≤ f.coeff k)
     (hq : ∀ k, 0 ≤ q.coeff k) (k : ℕ) : 0 ≤ (f * q).coeff k := by
   rw [coeff_mul]
   exact Finset.sum_nonneg fun x _ => mul_nonneg (hf _) (hq _)
 
-@[powerlib_foundation] private theorem coeff_nonneg_of_pos {f : ℝ[X]}
+@[tmio T, powerlib_foundation] private theorem coeff_nonneg_of_pos {f : ℝ[X]}
     (hf : ∀ k ≤ f.natDegree, 0 < f.coeff k) (k : ℕ) : 0 ≤ f.coeff k := by
   by_cases hk : k ≤ f.natDegree
   · exact (hf k hk).le
   · rw [coeff_eq_zero_of_natDegree_lt (not_le.mp hk)]
 
 /-- Positive coefficients up to the degree are preserved by products of monic polynomials. -/
-@[powerlib_foundation] private theorem coeff_pos_mul {f q : ℝ[X]} (hfm : f.Monic) (hqm : q.Monic)
+@[tmio T, powerlib_foundation] private theorem coeff_pos_mul {f q : ℝ[X]} (hfm : f.Monic) (hqm : q.Monic)
     (hf : ∀ k ≤ f.natDegree, 0 < f.coeff k) (hq : ∀ k ≤ q.natDegree, 0 < q.coeff k) :
     ∀ k ≤ (f * q).natDegree, 0 < (f * q).coeff k := by
   intro k hk
@@ -168,13 +168,13 @@ degree one or two: `X - r` at a real root `r`, `X² - 2 Re z X + |z|²` at a non
     omega
   · exact mul_pos (hf _ (min_le_right _ _)) (hq _ (by omega))
 
-@[powerlib_foundation] private theorem coeff_X_sub_C_pos {r : ℝ} (hr : r < 0) :
+@[tmio T, powerlib_foundation] private theorem coeff_X_sub_C_pos {r : ℝ} (hr : r < 0) :
     ∀ k ≤ (X - C r).natDegree, 0 < (X - C r).coeff k := by
   intro k hk
   rw [natDegree_X_sub_C] at hk
   interval_cases k <;> simp [coeff_X, coeff_C, hr]
 
-@[powerlib_foundation] private theorem coeff_quadFactor_pos {z : ℂ} (hz : z.re < 0) :
+@[tmio T, powerlib_foundation] private theorem coeff_quadFactor_pos {z : ℂ} (hz : z.re < 0) :
     ∀ k ≤ (quadFactor z).natDegree, 0 < (quadFactor z).coeff k := by
   intro k hk
   rw [quadFactor_natDegree] at hk
@@ -201,7 +201,7 @@ negative real part is positive, up to the degree. -/
 
 /-- Closed half plane: every coefficient of a monic real polynomial whose complex roots all have
 nonpositive real part is nonnegative. -/
-@[powerlib_foundation] theorem coeff_nonneg_of_roots_re_nonpos (hp : p.Monic)
+@[tmio T, powerlib_foundation] theorem coeff_nonneg_of_roots_re_nonpos (hp : p.Monic)
     (H : ∀ s : ℂ, aeval s p = 0 → s.re ≤ 0) (k : ℕ) : 0 ≤ p.coeff k := by
   refine monic_induction (P := fun p => (∀ s : ℂ, aeval s p = 0 → s.re ≤ 0) →
     ∀ k, 0 ≤ p.coeff k) ?_ ?_ ?_ hp H k
@@ -219,14 +219,14 @@ nonpositive real part is nonnegative. -/
     split_ifs <;> nlinarith [sq_nonneg z.re, sq_nonneg z.im]
 
 /-- A negative coefficient of a monic real polynomial gives a root with positive real part. -/
-@[powerlib_foundation] theorem exists_root_re_pos_of_coeff_neg (hp : p.Monic) {k : ℕ}
+@[tmio T, powerlib_foundation] theorem exists_root_re_pos_of_coeff_neg (hp : p.Monic) {k : ℕ}
     (hk : p.coeff k < 0) : ∃ s : ℂ, aeval s p = 0 ∧ 0 < s.re := by
   by_contra h
   push Not at h
   exact absurd (coeff_nonneg_of_roots_re_nonpos hp h k) (not_le.mpr hk)
 
 /-- A monic real polynomial with a negative constant coefficient has a positive real root. -/
-@[powerlib_foundation] theorem exists_pos_root_of_coeff_zero_neg (hp : p.Monic)
+@[tmio T, powerlib_foundation] theorem exists_pos_root_of_coeff_zero_neg (hp : p.Monic)
     (h0 : p.coeff 0 < 0) : ∃ r : ℝ, 0 < r ∧ p.eval r = 0 := by
   refine monic_induction (P := fun p => p.coeff 0 < 0 → ∃ r : ℝ, 0 < r ∧ p.eval r = 0)
     ?_ ?_ ?_ hp h0
@@ -248,7 +248,7 @@ nonpositive real part is nonnegative. -/
     exact ⟨r', hr', by simp [hroot]⟩
 
 /-- A monic real polynomial of odd degree has a real root. -/
-@[powerlib_foundation] theorem exists_root_of_odd_natDegree (hp : p.Monic)
+@[tmio T, powerlib_foundation] theorem exists_root_of_odd_natDegree (hp : p.Monic)
     (h : Odd p.natDegree) : ∃ r : ℝ, p.eval r = 0 := by
   refine monic_induction (P := fun p => Odd p.natDegree → ∃ r : ℝ, p.eval r = 0) ?_ ?_ ?_ hp h
   · intro h
@@ -270,14 +270,14 @@ variable {n : ℕ}
 
 /-- The characteristic determinant is the complex evaluation of the real characteristic
 polynomial (`Linear.det_characteristicMatrix_eq_eval`). -/
-@[powerlib_foundation] theorem det_characteristicMatrix_eq_aeval (A : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem det_characteristicMatrix_eq_aeval (A : Matrix (Fin n) (Fin n) ℝ)
     (s : ℂ) : (Linear.characteristicMatrix A s).det = aeval s A.charpoly := by
   rw [Linear.det_characteristicMatrix_eq_eval, Linear.complexify, charpoly_map,
     eval_map_algebraMap]
 
 /-- **The Hurwitz interface.** `A` is Hurwitz exactly when every zero of a function with the zeros
 of its characteristic determinant lies in the open left half plane. -/
-@[powerlib_foundation] theorem isHurwitz_iff_of_det_characteristicMatrix
+@[tmio T, powerlib_foundation] theorem isHurwitz_iff_of_det_characteristicMatrix
     (A : Matrix (Fin n) (Fin n) ℝ) {q : ℂ → ℂ}
     (h : ∀ s, (Linear.characteristicMatrix A s).det = 0 ↔ q s = 0) :
     LinearSystems.IsHurwitz A ↔ ∀ s, q s = 0 → s.re < 0 := by
@@ -286,20 +286,20 @@ of its characteristic determinant lies in the open left half plane. -/
 
 /-- `A` is Hurwitz exactly when every complex root of its characteristic polynomial lies in the
 open left half plane. -/
-@[powerlib_foundation] theorem isHurwitz_iff_of_charpoly (A : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem isHurwitz_iff_of_charpoly (A : Matrix (Fin n) (Fin n) ℝ)
     {p : ℝ[X]} (h : A.charpoly = p) :
     LinearSystems.IsHurwitz A ↔ ∀ s : ℂ, aeval s p = 0 → s.re < 0 :=
   isHurwitz_iff_of_det_characteristicMatrix A fun s => by rw [det_characteristicMatrix_eq_aeval, h]
 
 /-- Stodola for matrices: the characteristic polynomial of a Hurwitz matrix has positive
 coefficients. -/
-@[powerlib_foundation] theorem charpoly_coeff_pos_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] theorem charpoly_coeff_pos_of_isHurwitz {A : Matrix (Fin n) (Fin n) ℝ}
     (hA : LinearSystems.IsHurwitz A) {k : ℕ} (hk : k ≤ n) : 0 < A.charpoly.coeff k :=
   coeff_pos_of_roots_re_neg A.charpoly_monic ((isHurwitz_iff_of_charpoly A rfl).mp hA) k
     (by rwa [charpoly_natDegree_eq_dim, Fintype.card_fin])
 
 /-- `0 < tr A`: a characteristic root with positive real part (`tr A = -coeff (n - 1)`). -/
-@[powerlib_foundation] theorem exists_root_re_pos_of_trace_pos
+@[tmio T, powerlib_foundation] theorem exists_root_re_pos_of_trace_pos
     (A : Matrix (Fin n) (Fin n) ℝ) (h : 0 < A.trace) :
     ∃ s : ℂ, (Linear.characteristicMatrix A s).det = 0 ∧ 0 < s.re := by
   have : Nonempty (Fin n) := by
@@ -312,21 +312,21 @@ coefficients. -/
 
 /-- `0 < tr A`: an eigenpair with positive real part, in the shape of LeanForControl's
 `unstable_of_exists_complex_eigenvalue_re_pos`. -/
-@[powerlib_foundation] theorem exists_eigenpair_re_pos_of_trace_pos
+@[tmio T, powerlib_foundation] theorem exists_eigenpair_re_pos_of_trace_pos
     (A : Matrix (Fin n) (Fin n) ℝ) (h : 0 < A.trace) :
     ∃ (μ : ℂ) (v : Fin n → ℂ), v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re := by
   obtain ⟨s, hs, hre⟩ := exists_root_re_pos_of_trace_pos A h
   obtain ⟨v, hv, heig⟩ := Linear.exists_eigenvector_of_root hs
   exact ⟨s, v, hv, heig, hre⟩
 
-@[powerlib_foundation] private theorem charpoly_coeff_zero_neg {A : Matrix (Fin n) (Fin n) ℝ}
+@[tmio T, powerlib_foundation] private theorem charpoly_coeff_zero_neg {A : Matrix (Fin n) (Fin n) ℝ}
     (h : (-1) ^ n * A.det < 0) : A.charpoly.coeff 0 < 0 := by
   rwa [det_eq_sign_charpoly_coeff, Fintype.card_fin, ← mul_assoc, ← pow_add, ← two_mul, pow_mul,
     neg_one_sq, one_pow, one_mul] at h
 
 /-- `(-1)ⁿ det A < 0`: a positive real eigenvalue with a real eigenvector
 (`det A = (-1)ⁿ coeff 0`). -/
-@[powerlib_foundation] theorem exists_pos_real_eigenvector_of_det (A : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem exists_pos_real_eigenvector_of_det (A : Matrix (Fin n) (Fin n) ℝ)
     (h : (-1) ^ n * A.det < 0) : ∃ r : ℝ, 0 < r ∧ ∃ v : Fin n → ℝ, v ≠ 0 ∧ A *ᵥ v = r • v := by
   obtain ⟨r, hr, hroot⟩ := exists_pos_root_of_coeff_zero_neg A.charpoly_monic
     (charpoly_coeff_zero_neg h)
@@ -340,7 +340,7 @@ coefficients. -/
 
 /-- `(-1)ⁿ det A < 0`: a positive real eigenvalue with a complex eigenvector, in the shape of
 LeanForControl's `unstable_of_exists_complex_eigenvalue_re_pos`. -/
-@[powerlib_foundation] theorem exists_pos_real_eigenvalue_of_det (A : Matrix (Fin n) (Fin n) ℝ)
+@[tmio T, powerlib_foundation] theorem exists_pos_real_eigenvalue_of_det (A : Matrix (Fin n) (Fin n) ℝ)
     (h : (-1) ^ n * A.det < 0) :
     ∃ r : ℝ, 0 < r ∧ ∃ v : Fin n → ℂ, v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = (r : ℂ) • v := by
   obtain ⟨r, hr, hroot⟩ := exists_pos_root_of_coeff_zero_neg A.charpoly_monic
@@ -351,7 +351,7 @@ LeanForControl's `unstable_of_exists_complex_eigenvalue_re_pos`. -/
 
 /-- No characteristic root to the right of the spectrum: if every eigenvalue of `A` has real part
 below `Re s`, then `s` is not a root of `det (s • 1 - A)`. -/
-@[powerlib_foundation] theorem det_characteristicMatrix_ne_zero_of_re_lt
+@[tmio T, powerlib_foundation] theorem det_characteristicMatrix_ne_zero_of_re_lt
     (A : Matrix (Fin n) (Fin n) ℝ) {s : ℂ}
     (h : ∀ (μ : ℂ) (v : Fin n → ℂ), v ≠ 0 → A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v → μ.re < s.re) :
     (Linear.characteristicMatrix A s).det ≠ 0 := fun h0 => by
@@ -359,7 +359,7 @@ below `Re s`, then `s` is not a root of `det (s • 1 - A)`. -/
   exact lt_irrefl _ (h s v hv heig)
 
 /-- A Hurwitz matrix has no characteristic root in the closed right half plane. -/
-@[powerlib_foundation] theorem det_characteristicMatrix_ne_zero_of_isHurwitz
+@[tmio T, powerlib_foundation] theorem det_characteristicMatrix_ne_zero_of_isHurwitz
     {A : Matrix (Fin n) (Fin n) ℝ} (hA : LinearSystems.IsHurwitz A) {s : ℂ} (hs : 0 ≤ s.re) :
     (Linear.characteristicMatrix A s).det ≠ 0 :=
   det_characteristicMatrix_ne_zero_of_re_lt A fun μ v hv heig => by
@@ -368,7 +368,7 @@ below `Re s`, then `s` is not a root of `det (s • 1 - A)`. -/
     linarith
 
 /-- A Hurwitz matrix has no real characteristic root `r ≥ 0`: `r • 1 - A` is invertible. -/
-@[powerlib_foundation] theorem det_smul_sub_ne_zero_of_isHurwitz
+@[tmio T, powerlib_foundation] theorem det_smul_sub_ne_zero_of_isHurwitz
     {A : Matrix (Fin n) (Fin n) ℝ} (hA : LinearSystems.IsHurwitz A) {r : ℝ} (hr : 0 ≤ r) :
     (r • (1 : Matrix (Fin n) (Fin n) ℝ) - A).det ≠ 0 := by
   intro h0

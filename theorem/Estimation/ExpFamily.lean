@@ -55,7 +55,7 @@ def expFamLik (h : 𝓧 → ℝ) (T : 𝓧 → Fin k → ℝ) (η : Θ → Fin k
   fun_prop
 
 /-- Exponential-family likelihoods factorise through the sufficient statistic `∑ T(dᵢ)`. -/
-@[powerlib_foundation] theorem expFamLik_eq (h : 𝓧 → ℝ) (hh : ∀ x, 0 < h x)
+@[tmio T, powerlib_foundation] theorem expFamLik_eq (h : 𝓧 → ℝ) (hh : ∀ x, 0 < h x)
     (T : 𝓧 → Fin k → ℝ) (η : Θ → Fin k → ℝ) (A : Θ → ℝ) {N : ℕ} (d : Fin N → 𝓧) (θ : Θ) :
     expFamLik h T η A d θ =
       ENNReal.ofReal (∏ i, h (d i)) * conjDensity η A (∑ i, T (d i)) N θ := by
@@ -67,7 +67,7 @@ def expFamLik (h : 𝓧 → ℝ) (T : 𝓧 → Fin k → ℝ) (η : Θ → Fin k
     Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
 
 /-- The likelihood family `d ↦ expFamLik … d` factorises through `d ↦ ∑ T(dᵢ)` (Fisher–Neyman). -/
-@[powerlib_foundation] theorem expFamLik_factorizesThrough (h : 𝓧 → ℝ) (hh : ∀ x, 0 < h x)
+@[tmio T, powerlib_foundation] theorem expFamLik_factorizesThrough (h : 𝓧 → ℝ) (hh : ∀ x, 0 < h x)
     (T : 𝓧 → Fin k → ℝ) (η : Θ → Fin k → ℝ) (A : Θ → ℝ) (N : ℕ) :
     FactorizesThrough (fun d : Fin N → 𝓧 => expFamLik h T η A d) (fun d => ∑ i, T (d i)) :=
   ⟨fun t => conjDensity η A t N, fun d => ENNReal.ofReal (∏ i, h (d i)),
@@ -75,7 +75,7 @@ def expFamLik (h : 𝓧 → ℝ) (T : 𝓧 → Fin k → ℝ) (η : Θ → Fin k
     fun _ => ENNReal.ofReal_ne_top, fun d θ => expFamLik_eq h hh T η A d θ⟩
 
 /-- **Conjugate update of an exponential family**: `(χ, n) ↦ (χ + ∑ T(dᵢ), n + N)`. -/
-@[powerlib_foundation] theorem bayesPosterior_conjPrior {ν : Measure Θ} {η : Θ → Fin k → ℝ}
+@[tmio T, powerlib_foundation] theorem bayesPosterior_conjPrior {ν : Measure Θ} {η : Θ → Fin k → ℝ}
     {A : Θ → ℝ} (hη : Measurable η) (hA : Measurable A) (h : 𝓧 → ℝ) (hh : ∀ x, 0 < h x)
     (T : 𝓧 → Fin k → ℝ) {χ : Fin k → ℝ} {n : ℝ}
     (hZ0 : evidence ν (conjDensity η A χ n) ≠ 0) (hZt : evidence ν (conjDensity η A χ n) ≠ ∞)

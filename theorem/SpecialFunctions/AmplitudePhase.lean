@@ -48,7 +48,7 @@ open Real
   field_simp
 
 /-- An angle and its arcsine-of-sine representative have cosines of the same magnitude. -/
-@[powerlib_foundation] theorem cos_arcsin_sin (x : ℝ) : cos (arcsin (sin x)) = |cos x| := by
+@[tmio T, powerlib_foundation] theorem cos_arcsin_sin (x : ℝ) : cos (arcsin (sin x)) = |cos x| := by
   have h := sqrt_mul_cos_arcsin (cos x) (sin x)
   rwa [cos_sq_add_sin_sq, sqrt_one, div_one, one_mul] at h
 

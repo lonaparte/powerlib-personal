@@ -75,18 +75,18 @@ def Z : ℝ := b.V ^ 2 / b.S
 
 @[tmio T, powerlib_foundation] theorem I_pos : 0 < b.I := div_pos b.S_pos b.V_pos
 
-@[powerlib_foundation] theorem Z_pos : 0 < b.Z := div_pos (pow_pos b.V_pos 2) b.S_pos
+@[tmio T, powerlib_foundation] theorem Z_pos : 0 < b.Z := div_pos (pow_pos b.V_pos 2) b.S_pos
 
-@[powerlib_foundation] theorem Z_eq_V_div_I : b.Z = b.V / b.I := by
+@[tmio T, powerlib_foundation] theorem Z_eq_V_div_I : b.Z = b.V / b.I := by
   have := b.S_pos.ne'; have := b.V_pos.ne'
   simp only [Z, I]; field_simp
 
-@[powerlib_foundation] theorem S_eq_V_mul_I : b.S = b.V * b.I := by
+@[tmio T, powerlib_foundation] theorem S_eq_V_mul_I : b.S = b.V * b.I := by
   have := b.V_pos.ne'
   simp only [I]; field_simp
 
 /-- Ohm's law keeps its form in per unit: `V = Z I ⇔ V̂ = Ẑ Î`. -/
-@[powerlib_foundation] theorem ohm_pu_iff (v z i : ℂ) :
+@[tmio T, powerlib_foundation] theorem ohm_pu_iff (v z i : ℂ) :
     v = z * i ↔ v / b.V = (z / b.Z) * (i / b.I) := by
   have hV : (b.V : ℂ) ≠ 0 := by exact_mod_cast b.V_pos.ne'
   have hZ : (b.Z : ℂ) ≠ 0 := by exact_mod_cast b.Z_pos.ne'
@@ -100,7 +100,7 @@ def Z : ℝ := b.V ^ 2 / b.S
   · intro h; field_simp at h; linear_combination h
 
 /-- Complex power keeps its form in per unit: `S = V I* ⇔ Ŝ = V̂ Î*`. -/
-@[powerlib_foundation] theorem power_pu_iff (s v i : ℂ) :
+@[tmio T, powerlib_foundation] theorem power_pu_iff (s v i : ℂ) :
     s = v * star i ↔ s / b.S = (v / b.V) * star (i / b.I) := by
   have hV : (b.V : ℂ) ≠ 0 := by exact_mod_cast b.V_pos.ne'
   have hS : (b.S : ℂ) ≠ 0 := by exact_mod_cast b.S_pos.ne'
@@ -137,23 +137,23 @@ def I : ℝ := b.S / (Real.sqrt 3 * b.VLL)
 /-- Per-phase (Y-equivalent) impedance base `V_LL² / S_B`. -/
 def Z : ℝ := b.VLL ^ 2 / b.S
 
-@[powerlib_foundation] private lemma sqrt3_pos : 0 < Real.sqrt 3 := by positivity
+@[tmio T, powerlib_foundation] private lemma sqrt3_pos : 0 < Real.sqrt 3 := by positivity
 
 /-- `Z_B = V_LL² / S_B = V_LN² / (S_B / 3)`: line and phase pairings give the same base. -/
-@[powerlib_foundation] theorem Z_eq_phase : b.Z = b.VLN ^ 2 / (b.S / 3) := by
+@[tmio T, powerlib_foundation] theorem Z_eq_phase : b.Z = b.VLN ^ 2 / (b.S / 3) := by
   have := b.S_pos.ne'; have := sqrt3_pos.ne'
   simp only [Z, VLN]
   field_simp
   rw [sqrt3_sq]
 
 /-- `S_B = 3 V_LN I_B` and `S_B = √3 V_LL I_B`. -/
-@[powerlib_foundation] theorem S_eq_three_VLN_I : b.S = 3 * b.VLN * b.I := by
+@[tmio T, powerlib_foundation] theorem S_eq_three_VLN_I : b.S = 3 * b.VLN * b.I := by
   have := b.VLL_pos.ne'; have := sqrt3_pos.ne'
   simp only [VLN, I]
   field_simp
   rw [sqrt3_sq]
 
-@[powerlib_foundation] theorem Z_eq_VLN_div_I : b.Z = b.VLN / b.I := by
+@[tmio T, powerlib_foundation] theorem Z_eq_VLN_div_I : b.Z = b.VLN / b.I := by
   have := b.VLL_pos.ne'; have := b.S_pos.ne'; have := sqrt3_pos.ne'
   simp only [Z, VLN, I]
   field_simp
@@ -165,7 +165,7 @@ end ThreePhaseBase
 /-- An ideal transformer of ratio `a = N₁/N₂` disappears in per unit when the two voltage bases
 follow the ratio and the power base is common: per-unit voltages and currents agree, and an
 impedance referred through the transformer (`Z₁ = a² Z₂`) has the same per-unit value. -/
-@[powerlib_foundation] theorem transformer_pu {a S V₂ v₂ i₂ z₂ : ℝ} (ha : a ≠ 0) (hS : S ≠ 0)
+@[tmio T, powerlib_foundation] theorem transformer_pu {a S V₂ v₂ i₂ z₂ : ℝ} (ha : a ≠ 0) (hS : S ≠ 0)
     (hV : V₂ ≠ 0) :
     let V₁ := a * V₂
     let I₁ := S / V₁
@@ -180,33 +180,33 @@ impedance referred through the transformer (`Z₁ = a² Z₂`) has the same per-
 /-! ## Change of base (§1.5) -/
 
 /-- `Ẑ_new = Ẑ_old (S_new / S_old) (V_old / V_new)²`. -/
-@[powerlib_foundation] theorem impedance_change_base {z So Vo Sn Vn : ℝ} (hSo : So ≠ 0)
+@[tmio T, powerlib_foundation] theorem impedance_change_base {z So Vo Sn Vn : ℝ} (hSo : So ≠ 0)
     (hVo : Vo ≠ 0) (hSn : Sn ≠ 0) (hVn : Vn ≠ 0) :
     z / (Vn ^ 2 / Sn) = (z / (Vo ^ 2 / So)) * (Sn / So) * (Vo / Vn) ^ 2 := by
   field_simp
 
-@[powerlib_foundation] theorem voltage_change_base {v Vo Vn : ℝ} (hVo : Vo ≠ 0) (hVn : Vn ≠ 0) :
+@[tmio T, powerlib_foundation] theorem voltage_change_base {v Vo Vn : ℝ} (hVo : Vo ≠ 0) (hVn : Vn ≠ 0) :
     v / Vn = (v / Vo) * (Vo / Vn) := by
   field_simp
 
-@[powerlib_foundation] theorem current_change_base {i So Vo Sn Vn : ℝ} (hSo : So ≠ 0)
+@[tmio T, powerlib_foundation] theorem current_change_base {i So Vo Sn Vn : ℝ} (hSo : So ≠ 0)
     (hVo : Vo ≠ 0) (hSn : Sn ≠ 0) (hVn : Vn ≠ 0) :
     i / (Sn / Vn) = (i / (So / Vo)) * (So / Sn) * (Vn / Vo) := by
   field_simp
 
 /-- Power on a new base: the rule of `voltage_change_base` (one base quantity in the
 denominator). -/
-@[powerlib_foundation] theorem power_change_base {p So Sn : ℝ} (hSo : So ≠ 0) (hSn : Sn ≠ 0) :
+@[tmio T, powerlib_foundation] theorem power_change_base {p So Sn : ℝ} (hSo : So ≠ 0) (hSn : Sn ≠ 0) :
     p / Sn = (p / So) * (So / Sn) :=
   voltage_change_base hSo hSn
 
 /-- Inertia constant `H = W_kin / S_B` on a new power base: `H_new = H_old S_old / S_new`. -/
-@[powerlib_foundation] theorem inertia_change_base {W So Sn : ℝ} (hSo : So ≠ 0) (hSn : Sn ≠ 0) :
+@[tmio T, powerlib_foundation] theorem inertia_change_base {W So Sn : ℝ} (hSo : So ≠ 0) (hSn : Sn ≠ 0) :
     W / Sn = (W / So) * (So / Sn) :=
   voltage_change_base hSo hSn
 
 /-- The §1.5 example: `8 s` on a 600 MVA machine base is `48 s` on a 100 MVA system base. -/
-@[powerlib_foundation] theorem inertia_change_example {W : ℝ} (h : W / 600 = 8) : W / 100 = 48 := by
+@[tmio T, powerlib_foundation] theorem inertia_change_example {W : ℝ} (h : W / 600 = 8) : W / 100 = 48 := by
   have hW : W = 4800 := by linarith [(div_eq_iff (by norm_num : (600 : ℝ) ≠ 0)).1 h]
   rw [hW]; norm_num
 
@@ -218,7 +218,7 @@ def puInductance (ωB Zb L : ℝ) : ℝ := ωB * L / Zb
 /-- Per-unit capacitance `Ĉ = ω_B C Z_B` (inverse per-unit capacitive reactance at `ω_B`). -/
 def puCapacitance (ωB Zb C : ℝ) : ℝ := ωB * C * Zb
 
-@[powerlib_foundation] theorem puCapacitance_eq_inv_reactance {ωB Zb C : ℝ} (hω : ωB ≠ 0)
+@[tmio T, powerlib_foundation] theorem puCapacitance_eq_inv_reactance {ωB Zb C : ℝ} (hω : ωB ≠ 0)
     (hZ : Zb ≠ 0) (hC : C ≠ 0) : puCapacitance ωB Zb C = 1 / ((1 / (ωB * C)) / Zb) := by
   unfold puCapacitance; field_simp
 
@@ -260,7 +260,7 @@ def puCapacitance (ωB Zb C : ℝ) : ℝ := ωB * C * Zb
     linear_combination h
 
 /-- Flux base `Ψ_B = V_B / ω_B`; `Ψ = L i ⇔ Ψ̂ = L̂ î`. -/
-@[powerlib_foundation] theorem flux_pu_iff {ωB Vb Ib L ψ i : ℝ} (hω : ωB ≠ 0) (hV : Vb ≠ 0)
+@[tmio T, powerlib_foundation] theorem flux_pu_iff {ωB Vb Ib L ψ i : ℝ} (hω : ωB ≠ 0) (hV : Vb ≠ 0)
     (hI : Ib ≠ 0) : ψ = L * i ↔ ψ / (Vb / ωB) = puInductance ωB (Vb / Ib) L * (i / Ib) := by
   unfold puInductance
   constructor
@@ -397,19 +397,19 @@ def dcInertia (Cdc VBdc SB : ℝ) : ℝ := Cdc * VBdc ^ 2 / (2 * SB)
 
 /-- DC energy on the base `S_B / ω_B`: `Ŵ_dc = ω_B H_dc V̂_dc²` (corrected; the note omits
 `ω_B`). -/
-@[powerlib_foundation] theorem dcEnergy_pu {Cdc VBdc SB ωB Vdc : ℝ} (hV : VBdc ≠ 0) (hS : SB ≠ 0)
+@[tmio T, powerlib_foundation] theorem dcEnergy_pu {Cdc VBdc SB ωB Vdc : ℝ} (hV : VBdc ≠ 0) (hS : SB ≠ 0)
     (hω : ωB ≠ 0) :
     (1 / 2 * Cdc * Vdc ^ 2) / (SB / ωB) = ωB * dcInertia Cdc VBdc SB * (Vdc / VBdc) ^ 2 := by
   unfold dcInertia; field_simp
 
 /-- DC energy normalised by `S_B` (seconds): `W_dc / S_B = H_dc V̂_dc²`. -/
-@[powerlib_foundation] theorem dcEnergy_div_S {Cdc VBdc SB Vdc : ℝ} (hV : VBdc ≠ 0) (hS : SB ≠ 0) :
+@[tmio T, powerlib_foundation] theorem dcEnergy_div_S {Cdc VBdc SB Vdc : ℝ} (hV : VBdc ≠ 0) (hS : SB ≠ 0) :
     (1 / 2 * Cdc * Vdc ^ 2) / SB = dcInertia Cdc VBdc SB * (Vdc / VBdc) ^ 2 := by
   unfold dcInertia; field_simp
 
 /-- Half-bridge modulation `v_conv = m V_dc / 2` in per unit:
 `v̂_conv = m (V̂_dc / 2)(V_B^dc / V_B^ac)`. -/
-@[powerlib_foundation] theorem modulation_pu {m Vdc VBdc VBac : ℝ} (hdc : VBdc ≠ 0)
+@[tmio T, powerlib_foundation] theorem modulation_pu {m Vdc VBdc VBac : ℝ} (hdc : VBdc ≠ 0)
     (hac : VBac ≠ 0) : (m * Vdc / 2) / VBac = m * ((Vdc / VBdc) / 2) * (VBdc / VBac) := by
   field_simp
 
@@ -419,7 +419,7 @@ def dcInertia (Cdc VBdc SB : ℝ) : ℝ := Cdc * VBdc ^ 2 / (2 * SB)
 time factor `W` (`1` in convention (A), `ω_B` in (B), `ŝ = s / W`):
 `y = (k_p + k_i/s) u ⇔ ŷ = (k̂_p + k̂_i/ŝ) û` with `k̂_p = (U_B/Y_B) k_p`,
 `k̂_i = U_B k_i / (Y_B W)`. -/
-@[powerlib_foundation] theorem pi_pu_iff {UB YB W kp ki : ℝ} (hU : UB ≠ 0) (hY : YB ≠ 0)
+@[tmio T, powerlib_foundation] theorem pi_pu_iff {UB YB W kp ki : ℝ} (hU : UB ≠ 0) (hY : YB ≠ 0)
     (hW : W ≠ 0) {s : ℂ} (hs : s ≠ 0) (u y : ℂ) :
     y = (kp + ki / s) * u ↔
       y / YB = (((UB / YB * kp : ℝ) : ℂ) + ((UB * ki / (YB * W) : ℝ) : ℂ) / (s / W)) *
@@ -434,7 +434,7 @@ time factor `W` (`1` in convention (A), `ω_B` in (B), `ŝ = s / W`):
 
 /-- The rule is forced: a per-unit PI reproduces the SI PI for every `s ≠ 0` only with these
 gains. -/
-@[powerlib_foundation] theorem pi_gains_unique {UB YB W kp ki kp' ki' : ℝ} (hU : UB ≠ 0)
+@[tmio T, powerlib_foundation] theorem pi_gains_unique {UB YB W kp ki kp' ki' : ℝ} (hU : UB ≠ 0)
     (hY : YB ≠ 0) (hW : W ≠ 0)
     (h : ∀ s : ℂ, s ≠ 0 → (kp + ki / s : ℂ) = YB / UB * ((kp' : ℂ) + ki' / (s / W))) :
     kp' = UB / YB * kp ∧ ki' = UB * ki / (YB * W) := by
@@ -454,14 +454,14 @@ gains. -/
 
 /-- PLL in convention (B): `U_B = V_B`, `Y_B = ω_B`, `W = ω_B` gives
 `k̂_p = V_B k_p / ω_B`, `k̂_i = V_B k_i / ω_B²` (the §1.13.2 table). -/
-@[powerlib_foundation] theorem pll_conventionB_gains (VB ωB kp ki : ℝ) :
+@[tmio T, powerlib_foundation] theorem pll_conventionB_gains (VB ωB kp ki : ℝ) :
     VB / ωB * kp = VB * kp / ωB ∧ VB * ki / (ωB * ωB) = VB * ki / ωB ^ 2 := by
   constructor <;> ring
 
 /-- The two convention-(A) statements for the power loop (`U_B = S_B`): the boxed formula
 (`Y_B = 1`) and the table row (`Y_B = I_B`) give the same proportional gain only if
 `I_B = 1` (for a nonzero SI gain). -/
-@[powerlib_foundation] theorem pc_conventionA_rows_agree_iff {SB IB kp : ℝ} (hS : SB ≠ 0)
+@[tmio T, powerlib_foundation] theorem pc_conventionA_rows_agree_iff {SB IB kp : ℝ} (hS : SB ≠ 0)
     (hI : IB ≠ 0) (hk : kp ≠ 0) : SB / 1 * kp = SB / IB * kp ↔ IB = 1 := by
   constructor
   · intro h

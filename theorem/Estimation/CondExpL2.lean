@@ -60,7 +60,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsFiniteMeas
 
 /-- **Pythagoras in `L²`**: `E(f − g)² = E(f − E[f | m])² + E(E[f | m] − g)²` for every
 square-integrable `m`-measurable `g`. -/
-@[powerlib_foundation] theorem condExp_pythagoras (hm : m ≤ mΩ) (hf : MemLp f 2 μ)
+@[tmio T, powerlib_foundation] theorem condExp_pythagoras (hm : m ≤ mΩ) (hf : MemLp f 2 μ)
     (hg : AEStronglyMeasurable[m] g μ) (hg2 : MemLp g 2 μ) :
     ∫ ω, (f ω - g ω) ^ 2 ∂μ =
       ∫ ω, (f ω - μ[f | m] ω) ^ 2 ∂μ + ∫ ω, (μ[f | m] ω - g ω) ^ 2 ∂μ := by
@@ -84,7 +84,7 @@ square-integrable `m`-measurable `g`. -/
 
 /-- **The conditional expectation (posterior mean) minimises the squared-loss risk** among all
 square-integrable `m`-measurable estimators. -/
-@[powerlib_foundation] theorem condExp_L2_optimal (hm : m ≤ mΩ) (hf : MemLp f 2 μ)
+@[tmio T, powerlib_foundation] theorem condExp_L2_optimal (hm : m ≤ mΩ) (hf : MemLp f 2 μ)
     (hg : AEStronglyMeasurable[m] g μ) (hg2 : MemLp g 2 μ) :
     ∫ ω, (f ω - μ[f | m] ω) ^ 2 ∂μ ≤ ∫ ω, (f ω - g ω) ^ 2 ∂μ := by
   rw [condExp_pythagoras hm hf hg hg2]
@@ -92,7 +92,7 @@ square-integrable `m`-measurable estimators. -/
   linarith
 
 /-- Equality in `condExp_L2_optimal` holds iff `g = E[f | m]` a.e. -/
-@[powerlib_foundation] theorem condExp_L2_optimal_eq_iff (hm : m ≤ mΩ) (hf : MemLp f 2 μ)
+@[tmio T, powerlib_foundation] theorem condExp_L2_optimal_eq_iff (hm : m ≤ mΩ) (hf : MemLp f 2 μ)
     (hg : AEStronglyMeasurable[m] g μ) (hg2 : MemLp g 2 μ) :
     ∫ ω, (f ω - g ω) ^ 2 ∂μ = ∫ ω, (f ω - μ[f | m] ω) ^ 2 ∂μ ↔ g =ᵐ[μ] μ[f | m] := by
   rw [condExp_pythagoras hm hf hg hg2, add_eq_left]

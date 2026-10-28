@@ -59,7 +59,7 @@ variable {m k : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k]
   linarith
 
 /-- **Loewner antitonicity of the inverse**: `S ⪯ A`, `S, A ≻ 0` ⇒ `A⁻¹ ⪯ S⁻¹`. -/
-@[powerlib_foundation] theorem inv_sub_inv_posSemidef {S A : Matrix m m ℝ} (hS : S.PosDef)
+@[tmio T, powerlib_foundation] theorem inv_sub_inv_posSemidef {S A : Matrix m m ℝ} (hS : S.PosDef)
     (hA : A.PosDef) (hle : (A - S).PosSemidef) : (S⁻¹ - A⁻¹).PosSemidef := by
   have hdetA : IsUnit A.det :=
     hA.isUnit.map Matrix.detMonoidHom |>.ne_zero |> isUnit_iff_ne_zero.mpr
@@ -82,7 +82,7 @@ variable {m k : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k]
   linarith
 
 /-- The `(θ, θ)` block of the inverse of a block matrix is the inverse Schur complement. -/
-@[powerlib_foundation] theorem nuisance_block_inv {A : Matrix m m ℝ} {B : Matrix m k ℝ}
+@[tmio T, powerlib_foundation] theorem nuisance_block_inv {A : Matrix m m ℝ} {B : Matrix m k ℝ}
     {C : Matrix k k ℝ} (hC : IsUnit C.det) (hS : IsUnit (A - B * C⁻¹ * Bᵀ).det) :
     (fromBlocks A B Bᵀ C)⁻¹.toBlocks₁₁ = (A - B * C⁻¹ * Bᵀ)⁻¹ := by
   let := invertibleOfIsUnitDet C hC
@@ -95,7 +95,7 @@ variable {m k : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k]
 /-- **Nuisance bound (§1.5)**: for a positive definite Fisher matrix
 `I = [[I_θθ, I_θφ], [I_θφᵀ, I_φφ]]`, the honest bound `(I⁻¹)_θθ` dominates the conditional bound
 `I_θθ⁻¹` in the Loewner order. -/
-@[powerlib_foundation] theorem nuisance_bound {A : Matrix m m ℝ} {B : Matrix m k ℝ}
+@[tmio T, powerlib_foundation] theorem nuisance_bound {A : Matrix m m ℝ} {B : Matrix m k ℝ}
     {C : Matrix k k ℝ} (hI : (fromBlocks A B Bᵀ C).PosDef) :
     ((fromBlocks A B Bᵀ C)⁻¹.toBlocks₁₁ - A⁻¹).PosSemidef := by
   -- diagonal blocks are positive definite
@@ -133,7 +133,7 @@ variable {m k : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k]
 /-- **Bandwidth cancellation (§1.3)**: with fixed one-sided noise density `S_n`, the per-sample
 variance is `σ_n² = S_n² f_s/2` and the CRB prefactor `σ_n²/(f_s g_s²) = S_n²/(2 g_s²)` does not
 depend on the sampling rate. -/
-@[powerlib_foundation] theorem bandwidth_cancel {Sn fs gs : ℝ} (hfs : fs ≠ 0) :
+@[tmio T, powerlib_foundation] theorem bandwidth_cancel {Sn fs gs : ℝ} (hfs : fs ≠ 0) :
     (Sn ^ 2 * fs / 2) / (fs * gs ^ 2) = Sn ^ 2 / (2 * gs ^ 2) := by
   by_cases hg : gs = 0
   · simp [hg]

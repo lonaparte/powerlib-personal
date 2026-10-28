@@ -49,7 +49,7 @@ open Real MeasureTheory Set
 
 /-- Half-line first moment: `∫_0^∞ ξ e^{-b ξ²/2} dξ = 1/b`
 (wraps `integral_rpow_mul_exp_neg_mul_rpow` with `p = 2`, `q = 1`). -/
-@[powerlib_foundation] theorem halfMoment1 {b : ℝ} (hb : 0 < b) :
+@[tmio T, powerlib_foundation] theorem halfMoment1 {b : ℝ} (hb : 0 < b) :
     ∫ ξ in Ioi (0 : ℝ), ξ * Real.exp (-(b / 2) * ξ ^ 2) = 1 / b := by
   have h := integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := 1) (b := b / 2)
     two_pos (by norm_num) (by positivity)
@@ -61,7 +61,7 @@ open Real MeasureTheory Set
 
 /-- Half-line third moment: `∫_0^∞ ξ³ e^{-b ξ²/2} dξ = 2/b²`
 (wraps `integral_rpow_mul_exp_neg_mul_rpow` with `p = 2`, `q = 3`). -/
-@[powerlib_foundation] theorem halfMoment3 {b : ℝ} (hb : 0 < b) :
+@[tmio T, powerlib_foundation] theorem halfMoment3 {b : ℝ} (hb : 0 < b) :
     ∫ ξ in Ioi (0 : ℝ), ξ ^ 3 * Real.exp (-(b / 2) * ξ ^ 2) = 2 / b ^ 2 := by
   have h := integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := 3) (b := b / 2)
     two_pos (by norm_num) (by positivity)
@@ -74,7 +74,7 @@ open Real MeasureTheory Set
 
 /-- Full-line Gaussian weight of the solvability condition: `∫ e^{-τ²} = √π`
 (wraps `integral_gaussian`). -/
-@[powerlib_foundation] theorem integral_exp_neg_sq :
+@[tmio T, powerlib_foundation] theorem integral_exp_neg_sq :
     ∫ τ : ℝ, Real.exp (-τ ^ 2) = Real.sqrt π := by
   have h := integral_gaussian 1
   simp only [neg_mul, one_mul, div_one] at h
@@ -82,7 +82,7 @@ open Real MeasureTheory Set
 
 /-- Second moment of the solvability weight: `∫ τ² e^{-τ²} = √π/2`
 (wraps `integral_comp_abs` and `integral_rpow_mul_exp_neg_mul_rpow`). -/
-@[powerlib_foundation] theorem integral_sq_mul_exp_neg_sq :
+@[tmio T, powerlib_foundation] theorem integral_sq_mul_exp_neg_sq :
     ∫ τ : ℝ, τ ^ 2 * Real.exp (-τ ^ 2) = Real.sqrt π / 2 := by
   have habs := integral_comp_abs (f := fun x : ℝ => x ^ 2 * Real.exp (-x ^ 2))
   simp only [sq_abs] at habs
@@ -99,7 +99,7 @@ open Real MeasureTheory Set
 
 /-- Odd perturbations are annihilated by the even weight `e^{-τ²}` (wraps `integral_neg_eq_self`).
 No integrability hypothesis is needed: a non-integrable integrand has integral `0` too. -/
-@[powerlib_foundation] theorem integral_exp_neg_sq_mul_odd {φ : ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem integral_exp_neg_sq_mul_odd {φ : ℝ → ℝ}
     (hφ : ∀ τ, φ (-τ) = -φ τ) :
     ∫ τ : ℝ, Real.exp (-τ ^ 2) * φ τ = 0 := by
   have h := integral_neg_eq_self (fun τ : ℝ => Real.exp (-τ ^ 2) * φ τ) volume
@@ -108,7 +108,7 @@ No integrability hypothesis is needed: a non-integrable integrand has integral `
 
 /-- Odd moments vanish on the full line: the interior Laplace expansion has no `X^{-1/2}`
 term. -/
-@[powerlib_foundation] theorem integral_odd_moments_vanish (b : ℝ) :
+@[tmio T, powerlib_foundation] theorem integral_odd_moments_vanish (b : ℝ) :
     (∫ ξ : ℝ, ξ * Real.exp (-(b / 2) * ξ ^ 2)) = 0 ∧
       (∫ ξ : ℝ, ξ ^ 3 * Real.exp (-(b / 2) * ξ ^ 2)) = 0 := by
   constructor
@@ -128,14 +128,14 @@ open Filter Topology intervalIntegral
 variable {α : ℝ}
 
 /-- `∫_0^∞ ξ e^{−cξ²} dξ = 1/(2c)` (`halfMoment1` with `b = 2c`). -/
-@[powerlib_foundation] theorem gaussMoment1 {c : ℝ} (hc : 0 < c) :
+@[tmio T, powerlib_foundation] theorem gaussMoment1 {c : ℝ} (hc : 0 < c) :
     ∫ ξ in Ioi (0 : ℝ), ξ * Real.exp (-c * ξ ^ 2) = 1 / (2 * c) := by
   have h := halfMoment1 (b := 2 * c) (by positivity)
   rw [show 2 * c / 2 = c by ring] at h
   rw [← h]
 
 /-- `∫_0^∞ ξ³ e^{−cξ²} dξ = 1/(2c²)` (`halfMoment3` with `b = 2c`). -/
-@[powerlib_foundation] theorem gaussMoment3 {c : ℝ} (hc : 0 < c) :
+@[tmio T, powerlib_foundation] theorem gaussMoment3 {c : ℝ} (hc : 0 < c) :
     ∫ ξ in Ioi (0 : ℝ), ξ ^ 3 * Real.exp (-c * ξ ^ 2) = 1 / (2 * c ^ 2) := by
   have h := halfMoment3 (b := 2 * c) (by positivity)
   rw [show 2 * c / 2 = c by ring] at h
@@ -143,7 +143,7 @@ variable {α : ℝ}
   rw [← e, ← h]
 
 /-- `∫_0^∞ ξ⁵ e^{−cξ²} dξ = 1/c³` (wraps `integral_rpow_mul_exp_neg_mul_rpow`, `Γ(3) = 2`). -/
-@[powerlib_foundation] theorem gaussMoment5 {c : ℝ} (hc : 0 < c) :
+@[tmio T, powerlib_foundation] theorem gaussMoment5 {c : ℝ} (hc : 0 < c) :
     ∫ ξ in Ioi (0 : ℝ), ξ ^ 5 * Real.exp (-c * ξ ^ 2) = 1 / c ^ 3 := by
   have h := integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := 5) (b := c)
     two_pos (by norm_num) hc
@@ -160,7 +160,7 @@ variable {α : ℝ}
 
 /-- A finite integral of a function that is nonnegative and integrable on `(0, ∞)` is at most the
 half-line integral. -/
-@[powerlib_foundation] theorem intervalIntegral_le_integral_Ioi {f : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
+@[tmio T, powerlib_foundation] theorem intervalIntegral_le_integral_Ioi {f : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
     (hf : IntegrableOn f (Ioi 0)) (h0 : ∀ x, 0 < x → 0 ≤ f x) :
     ∫ x in (0 : ℝ)..L, f x ≤ ∫ x in Ioi (0 : ℝ), f x := by
   rw [intervalIntegral.integral_of_le hL]
@@ -170,7 +170,7 @@ half-line integral. -/
 
 /-- Gaussian lower bound on a finite interval:
 `∫_0^L e^{−cξ²} dξ ≥ √(π/c)/2 − 1/(2cL)` (the tail beyond `L` is at most `(1/L) ∫ ξ e^{−cξ²}`). -/
-@[powerlib_foundation] theorem integral_exp_neg_mul_sq_ge {c L : ℝ} (hc : 0 < c) (hL : 0 < L) :
+@[tmio T, powerlib_foundation] theorem integral_exp_neg_mul_sq_ge {c L : ℝ} (hc : 0 < c) (hL : 0 < L) :
     √(π / c) / 2 - 1 / (2 * c * L) ≤ ∫ ξ in (0 : ℝ)..L, Real.exp (-c * ξ ^ 2) := by
   have hg : Integrable fun ξ : ℝ => Real.exp (-c * ξ ^ 2) := integrable_exp_neg_mul_sq hc
   have hg1 : Integrable fun ξ : ℝ => ξ * Real.exp (-c * ξ ^ 2) := integrable_mul_exp_neg_mul_sq hc
@@ -201,7 +201,7 @@ half-line integral. -/
   linarith
 
 /-- `∫_0^y z e^{−αz²/(2D̃)} dz = (D̃/α)(1 − e^{−αy²/(2D̃)})`. -/
-@[powerlib_foundation] theorem integral_mul_exp_neg_sq_div (hα : 0 < α) {D : ℝ} (hD : 0 < D)
+@[tmio T, powerlib_foundation] theorem integral_mul_exp_neg_sq_div (hα : 0 < α) {D : ℝ} (hD : 0 < D)
     (y : ℝ) :
     ∫ z in (0 : ℝ)..y, z * Real.exp (-(α / (2 * D)) * z ^ 2) =
       D / α * (1 - Real.exp (-(α / (2 * D)) * y ^ 2)) := by

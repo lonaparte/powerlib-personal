@@ -90,14 +90,14 @@ def dpoly3 : List (ℝ × ℕ × ℕ × ℕ) → ℝ → ℝ → ℝ → ℝ →
 
 @[tmio T, simp, powerlib_foundation] theorem poly3_nil (a b c : ℝ) : poly3 [] a b c = 0 := rfl
 
-@[simp, powerlib_foundation] theorem poly3_cons (t : ℝ × ℕ × ℕ × ℕ) (l : List (ℝ × ℕ × ℕ × ℕ))
+@[tmio T, simp, powerlib_foundation] theorem poly3_cons (t : ℝ × ℕ × ℕ × ℕ) (l : List (ℝ × ℕ × ℕ × ℕ))
     (a b c : ℝ) :
     poly3 (t :: l) a b c = t.1 * (a ^ t.2.1 * b ^ t.2.2.1 * c ^ t.2.2.2) + poly3 l a b c := rfl
 
-@[simp, powerlib_foundation] theorem dpoly3_nil (a b c da db dc : ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem dpoly3_nil (a b c da db dc : ℝ) :
     dpoly3 [] a b c da db dc = 0 := rfl
 
-@[simp, powerlib_foundation] theorem dpoly3_cons (t : ℝ × ℕ × ℕ × ℕ) (l : List (ℝ × ℕ × ℕ × ℕ))
+@[tmio T, simp, powerlib_foundation] theorem dpoly3_cons (t : ℝ × ℕ × ℕ × ℕ) (l : List (ℝ × ℕ × ℕ × ℕ))
     (a b c da db dc : ℝ) :
     dpoly3 (t :: l) a b c da db dc =
       t.1 * ((t.2.1 : ℝ) * a ^ (t.2.1 - 1) * b ^ t.2.2.1 * c ^ t.2.2.2 * da +
@@ -106,7 +106,7 @@ def dpoly3 : List (ℝ × ℕ × ℕ × ℕ) → ℝ → ℝ → ℝ → ℝ →
       dpoly3 l a b c da db dc := rfl
 
 /-- The derivative is linear in the direction. -/
-@[powerlib_foundation] theorem dpoly3_add_smul (l : List (ℝ × ℕ × ℕ × ℕ))
+@[tmio T, powerlib_foundation] theorem dpoly3_add_smul (l : List (ℝ × ℕ × ℕ × ℕ))
     (a b c da db dc s ea eb ec : ℝ) :
     dpoly3 l a b c (da + s * ea) (db + s * eb) (dc + s * ec) =
       dpoly3 l a b c da db dc + s * dpoly3 l a b c ea eb ec := by
@@ -119,7 +119,7 @@ section Deriv
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- `z ↦ poly3 l (ℓa z) (ℓb z) (ℓc z)` has the derivative `dpoly3`. -/
-@[powerlib_foundation] theorem hasFDerivAt_poly3 (l : List (ℝ × ℕ × ℕ × ℕ))
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_poly3 (l : List (ℝ × ℕ × ℕ × ℕ))
     (ℓa ℓb ℓc : E →L[ℝ] ℝ) (z : E) :
     ∃ L : E →L[ℝ] ℝ, HasFDerivAt (fun z => poly3 l (ℓa z) (ℓb z) (ℓc z)) L z ∧
       ∀ v, L v = dpoly3 l (ℓa z) (ℓb z) (ℓc z) (ℓa v) (ℓb v) (ℓc v) := by
@@ -135,14 +135,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
       dpoly3_cons]
     ring
 
-@[powerlib_foundation] theorem fderiv_poly3_apply (l : List (ℝ × ℕ × ℕ × ℕ))
+@[tmio T, powerlib_foundation] theorem fderiv_poly3_apply (l : List (ℝ × ℕ × ℕ × ℕ))
     (ℓa ℓb ℓc : E →L[ℝ] ℝ) (z v : E) :
     fderiv ℝ (fun z => poly3 l (ℓa z) (ℓb z) (ℓc z)) z v =
       dpoly3 l (ℓa z) (ℓb z) (ℓc z) (ℓa v) (ℓb v) (ℓc v) := by
   obtain ⟨L, hL, hLv⟩ := hasFDerivAt_poly3 l ℓa ℓb ℓc z
   rw [hL.fderiv, hLv]
 
-@[powerlib_foundation] theorem contDiff_poly3 (l : List (ℝ × ℕ × ℕ × ℕ))
+@[tmio T, powerlib_foundation] theorem contDiff_poly3 (l : List (ℝ × ℕ × ℕ × ℕ))
     (ℓa ℓb ℓc : E →L[ℝ] ℝ) {k : WithTop ℕ∞} :
     ContDiff ℝ k (fun z => poly3 l (ℓa z) (ℓb z) (ℓc z)) := by
   induction l with
@@ -155,14 +155,14 @@ end Deriv
 
 /-! ### Bounds of homogeneous polynomials -/
 
-private theorem abs_mono_le {a b c N : ℝ} (ha : |a| ≤ N) (hb : |b| ≤ N) (hc : |c| ≤ N)
+@[tmio T] private theorem abs_mono_le {a b c N : ℝ} (ha : |a| ≤ N) (hb : |b| ≤ N) (hc : |c| ≤ N)
     (i j k : ℕ) : |a ^ i * b ^ j * c ^ k| ≤ N ^ (i + j + k) := by
   have hN : 0 ≤ N := (abs_nonneg a).trans ha
   rw [pow_add, pow_add, abs_mul, abs_mul, abs_pow, abs_pow, abs_pow]
   gcongr
 
 /-- A homogeneous polynomial of degree `d` is at most `(Σ |κ|) N^d` on `|a|, |b|, |c| ≤ N`. -/
-@[powerlib_foundation] theorem abs_poly3_le (l : List (ℝ × ℕ × ℕ × ℕ)) (d : ℕ)
+@[tmio T, powerlib_foundation] theorem abs_poly3_le (l : List (ℝ × ℕ × ℕ × ℕ)) (d : ℕ)
     (hl : ∀ t ∈ l, t.2.1 + t.2.2.1 + t.2.2.2 = d) {a b c N : ℝ}
     (ha : |a| ≤ N) (hb : |b| ≤ N) (hc : |c| ≤ N) :
     |poly3 l a b c| ≤ (l.map fun t => |t.1|).sum * N ^ d := by
@@ -181,7 +181,7 @@ private theorem abs_mono_le {a b c N : ℝ} (ha : |a| ≤ N) (hb : |b| ≤ N) (h
           gcongr
       _ = (|t.1| + (l.map fun t => |t.1|).sum) * N ^ d := by ring
 
-private theorem abs_dterm_le {x y w dv N : ℝ} (hx : |x| ≤ N) (hy : |y| ≤ N) (hw : |w| ≤ N)
+@[tmio T] private theorem abs_dterm_le {x y w dv N : ℝ} (hx : |x| ≤ N) (hy : |y| ≤ N) (hw : |w| ≤ N)
     (hdv : |dv| ≤ 1) {m p q d : ℕ} (hd : m + p + q = d + 1) :
     |(m : ℝ) * x ^ (m - 1) * y ^ p * w ^ q * dv| ≤ (m : ℝ) * N ^ d := by
   have hN : 0 ≤ N := (abs_nonneg x).trans hx
@@ -201,7 +201,7 @@ private theorem abs_dterm_le {x y w dv N : ℝ} (hx : |x| ≤ N) (hy : |y| ≤ N
 
 /-- The derivative of a homogeneous polynomial of degree `d + 1` in a direction with
 `|da|, |db|, |dc| ≤ 1` is at most `(Σ |κ| (d + 1)) N^d` on `|a|, |b|, |c| ≤ N`. -/
-@[powerlib_foundation] theorem abs_dpoly3_le (l : List (ℝ × ℕ × ℕ × ℕ)) (d : ℕ)
+@[tmio T, powerlib_foundation] theorem abs_dpoly3_le (l : List (ℝ × ℕ × ℕ × ℕ)) (d : ℕ)
     (hl : ∀ t ∈ l, t.2.1 + t.2.2.1 + t.2.2.2 = d + 1) {a b c N da db dc : ℝ}
     (ha : |a| ≤ N) (hb : |b| ≤ N) (hc : |c| ≤ N) (hda : |da| ≤ 1) (hdb : |db| ≤ 1)
     (hdc : |dc| ≤ 1) :
@@ -239,7 +239,7 @@ private theorem abs_dterm_le {x y w dv N : ℝ} (hx : |x| ≤ N) (hy : |y| ≤ N
           (l.map fun t => |t.1| * ((t.2.1 : ℝ) + t.2.2.1 + t.2.2.2)).sum) * N ^ d := by ring
 
 /-- `|η₀ a² + η₁ a b + η₂ b²| ≤ (|η₀| + |η₁| + |η₂|)(a² + b²)`. -/
-@[powerlib_foundation] theorem abs_quadratic_le (η₀ η₁ η₂ a b : ℝ) :
+@[tmio T, powerlib_foundation] theorem abs_quadratic_le (η₀ η₁ η₂ a b : ℝ) :
     |η₀ * a ^ 2 + η₁ * (a * b) + η₂ * b ^ 2| ≤ (|η₀| + |η₁| + |η₂|) * (a ^ 2 + b ^ 2) := by
   have hab : |a * b| ≤ a ^ 2 + b ^ 2 := by
     rw [abs_mul]
@@ -264,7 +264,7 @@ open Asymptotics
 
 /-- A polynomial whose monomials `a^i b^j c^k` all have weight `i + j + 2k ≥ k₀` is `O(s^{k₀})`
 when `a, b = O(s)`, `c = O(s²)` and `s → 0` (the weights of a centre-manifold expansion). -/
-@[powerlib_foundation] theorem isBigO_poly3_weight {α : Type*} {l : Filter α} {s a b c : α → ℝ}
+@[tmio T, powerlib_foundation] theorem isBigO_poly3_weight {α : Type*} {l : Filter α} {s a b c : α → ℝ}
     (hs : Tendsto s l (𝓝 0)) (ha : a =O[l] s) (hb : b =O[l] s)
     (hc : c =O[l] fun x => s x ^ 2) (L : List (ℝ × ℕ × ℕ × ℕ)) {k : ℕ}
     (hL : ∀ t ∈ L, k ≤ t.2.1 + t.2.2.1 + 2 * t.2.2.2) :
@@ -359,37 +359,37 @@ def hopfW4 (H lam g2 g3 : ℝ) : List (ℝ × ℕ × ℕ × ℕ) := [
 def hopfCoeff (H lam g2 g3 : ℝ) : ℝ :=
   2 * g2 ^ 2 * (8 * H + lam ^ 2) - 3 * H * lam * g3 * (4 * H + lam ^ 2)
 
-@[powerlib_foundation] theorem hopfQ_degree (H : ℝ) :
+@[tmio T, powerlib_foundation] theorem hopfQ_degree (H : ℝ) :
     ∀ t ∈ hopfQ H, t.2.1 + t.2.2.1 + t.2.2.2 = 2 := by
   intro t ht
   simp only [hopfQ, List.mem_cons, List.not_mem_nil, or_false] at ht
   rcases ht with rfl | rfl | rfl <;> rfl
 
-@[powerlib_foundation] theorem hopfW3_degree (H lam g2 : ℝ) :
+@[tmio T, powerlib_foundation] theorem hopfW3_degree (H lam g2 : ℝ) :
     ∀ t ∈ hopfW3 H lam g2, t.2.1 + t.2.2.1 + t.2.2.2 = 2 + 1 := by
   intro t ht
   simp only [hopfW3, List.mem_cons, List.not_mem_nil, or_false] at ht
   rcases ht with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
-@[powerlib_foundation] theorem hopfW4_degree (H lam g2 g3 : ℝ) :
+@[tmio T, powerlib_foundation] theorem hopfW4_degree (H lam g2 g3 : ℝ) :
     ∀ t ∈ hopfW4 H lam g2 g3, t.2.1 + t.2.2.1 + t.2.2.2 = 3 + 1 := by
   intro t ht
   simp only [hopfW4, List.mem_cons, List.not_mem_nil, or_false] at ht
   rcases ht with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl <;> rfl
 
-@[powerlib_foundation] theorem poly3_hopfQ (H a b c : ℝ) :
+@[tmio T, powerlib_foundation] theorem poly3_hopfQ (H a b c : ℝ) :
     poly3 (hopfQ H) a b c = H * a ^ 2 + b ^ 2 + c ^ 2 := by
   simp only [hopfQ, poly3_cons, poly3_nil]
   ring
 
-@[powerlib_foundation] theorem dpoly3_hopfQ_lie (H lam a b c : ℝ) :
+@[tmio T, powerlib_foundation] theorem dpoly3_hopfQ_lie (H lam a b c : ℝ) :
     dpoly3 (hopfQ H) a b c b (-H * a) (-lam * c) = -2 * lam * c ^ 2 := by
   simp only [hopfQ, dpoly3_cons, dpoly3_nil]
   norm_num
   ring
 
-@[powerlib_foundation] theorem dpoly3_hopfQ_force (H a b c : ℝ) :
+@[tmio T, powerlib_foundation] theorem dpoly3_hopfQ_force (H a b c : ℝ) :
     dpoly3 (hopfQ H) a b c 0 1 1 = 2 * b + 2 * c := by
   simp only [hopfQ, dpoly3_cons, dpoly3_nil]
   norm_num
@@ -397,7 +397,7 @@ def hopfCoeff (H lam g2 g3 : ℝ) : ℝ :=
 set_option maxHeartbeats 4000000 in
 /-- **Cubic homological equation.** Along the linear part, `W₃` cancels the quadratic forcing
 `−g₂ ξ² (∂_b + ∂_c)(H a² + b² + c²)` up to `4 λ c h₂(a, b)`. -/
-@[powerlib_foundation] theorem hopfW3_homological {H lam : ℝ} (hH : 0 < H) (hl : 0 < lam)
+@[tmio T, powerlib_foundation] theorem hopfW3_homological {H lam : ℝ} (hH : 0 < H) (hl : 0 < lam)
     (g2 a b c : ℝ) :
     dpoly3 (hopfW3 H lam g2) a b c b (-H * a) (-lam * c) -
       g2 * ((lam * a - b + c) / (H + lam ^ 2)) ^ 2 * (2 * b + 2 * c) =
@@ -414,7 +414,7 @@ set_option maxHeartbeats 4000000 in
 set_option maxHeartbeats 40000000 in
 /-- **Quartic homological equation.** Along the linear part, `W₄` cancels the quartic terms up
 to `−2 λ h₂² − κ / (4 H² λ (H + λ²)² (4H + λ²)) (H a² + b²)²`. -/
-@[powerlib_foundation] theorem hopfW4_homological {H lam : ℝ} (hH : 0 < H) (hl : 0 < lam)
+@[tmio T, powerlib_foundation] theorem hopfW4_homological {H lam : ℝ} (hH : 0 < H) (hl : 0 < lam)
     (g2 g3 a b c : ℝ) :
     dpoly3 (hopfW4 H lam g2 g3) a b c b (-H * a) (-lam * c) -
       g3 * ((lam * a - b + c) / (H + lam ^ 2)) ^ 3 * (2 * b + 2 * c) -
@@ -435,7 +435,7 @@ to `−2 λ h₂² − κ / (4 H² λ (H + λ²)² (4H + λ²)) (H a² + b²)²`
 
 /-- `2λ (c − h)² + k r₂²` dominates `(a² + b² + c²)²` near the origin when
 `r₂ ≥ H_m (a² + b²)` and `|h| ≤ C_h (a² + b²)`. -/
-@[powerlib_foundation] theorem exists_quartic_lower {lam k Hm Ch : ℝ} (hlam : 0 < lam)
+@[tmio T, powerlib_foundation] theorem exists_quartic_lower {lam k Hm Ch : ℝ} (hlam : 0 < lam)
     (hk : 0 < k) (hHm : 0 < Hm) (hCh : 0 ≤ Ch) :
     ∃ m > 0, ∀ a b c h r2 : ℝ, Hm * (a ^ 2 + b ^ 2) ≤ r2 → |h| ≤ Ch * (a ^ 2 + b ^ 2) →
       a ^ 2 + b ^ 2 + c ^ 2 ≤ 1 →
@@ -483,7 +483,7 @@ to `−2 λ h₂² − κ / (4 H² λ (H + λ²)² (4H + λ²)) (H a² + b²)²`
   have q4 := mul_le_mul_of_nonneg_right hμ2 (sq_nonneg u)
   linarith
 
-private theorem poly3_zero {l : List (ℝ × ℕ × ℕ × ℕ)} {d : ℕ} (hd : 0 < d)
+@[tmio T] private theorem poly3_zero {l : List (ℝ × ℕ × ℕ × ℕ)} {d : ℕ} (hd : 0 < d)
     (hl : ∀ t ∈ l, t.2.1 + t.2.2.1 + t.2.2.2 = d) : poly3 l 0 0 0 = 0 := by
   have h := abs_poly3_le l d hl (a := 0) (b := 0) (c := 0) (N := 0) (by simp) (by simp) (by simp)
   rw [zero_pow hd.ne', mul_zero] at h
@@ -496,7 +496,7 @@ set_option maxHeartbeats 1000000 in
 `κ = 2 g₂² (8H + λ²) − 3 H λ g₃ (4H + λ²) > 0`, the origin of the `C¹` field `f` is locally
 asymptotically stable: `W(T z)` with `W = H a² + b² + c² + W₃ + W₄` is a strict Lyapunov function on
 a punctured ball. -/
-@[powerlib_foundation] theorem localAsymptoticStable_of_hopf_weakFocus {f : State 3 → State 3}
+@[tmio T, powerlib_foundation] theorem localAsymptoticStable_of_hopf_weakFocus {f : State 3 → State 3}
     {T : State 3 →L[ℝ] State 3} {G : State 3 → ℝ} {H lam g2 g3 : ℝ} (hf : ContDiff ℝ 1 f)
     (hT : Function.Injective T) (hH : 0 < H) (hl : 0 < lam)
     (hf0 : ∀ z, T (f z) 0 = T z 1) (hf1 : ∀ z, T (f z) 1 = -H * T z 0 - G z)
@@ -850,7 +850,7 @@ def hopfWw (A B α β φ w : ℝ) : ℝ :=
 
 /-- The normal-form identity: along the cubic truncation `φ̇ = αw + βN₃`, `ẇ = −Aφ + N₃` the
 derivative of `hopfW` is `−κ (φ² + (α/A) w²)²` up to eight monomials of degree five and six. -/
-@[powerlib_foundation] theorem hopf_lie_poly {A B α β : ℝ} (hA : A ≠ 0) (hα : α ≠ 0) (φ w : ℝ) :
+@[tmio T, powerlib_foundation] theorem hopf_lie_poly {A B α β : ℝ} (hA : A ≠ 0) (hα : α ≠ 0) (φ w : ℝ) :
     hopfWφ A B α β φ w * (α * w + β * hopfN3 A B φ) +
         hopfWw A B α β φ w * (-A * φ + hopfN3 A B φ) +
         hopfκ A B β * (φ ^ 2 + α / A * w ^ 2) ^ 2 =
@@ -868,7 +868,7 @@ derivative of `hopfW` is `−κ (φ² + (α/A) w²)²` up to eight monomials of 
   ring
 
 /-- The Taylor remainder of `N` is of fourth order. -/
-@[powerlib_foundation] theorem hopfN_sub_hopfN3_isBigO (A B : ℝ) :
+@[tmio T, powerlib_foundation] theorem hopfN_sub_hopfN3_isBigO (A B : ℝ) :
     (fun φ => hopfN A B φ - hopfN3 A B φ) =O[𝓝 0] fun φ => φ ^ 4 := by
   refine IsBigO.of_bound (|A| + |B|) ?_
   filter_upwards [Metric.ball_mem_nhds (0 : ℝ) one_pos] with φ hφ
@@ -893,7 +893,7 @@ derivative of `hopfW` is `−κ (φ² + (α/A) w²)²` up to eight monomials of 
         nlinarith
 
 /-- Derivative of `lyapPoly` in the coordinates `φ = z₀`, `w = z₁ − b z₀`. -/
-@[powerlib_foundation] theorem hasFDerivAt_lyapPoly (q c₀ c₂ c₃ c₄ c₅ c₆ b : ℝ)
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_lyapPoly (q c₀ c₂ c₃ c₄ c₅ c₆ b : ℝ)
     (z : Dynamics.State 2) :
     HasFDerivAt (fun z : Dynamics.State 2 => lyapPoly q c₀ c₂ c₃ c₄ c₅ c₆ (z 0) (z 1 - b * z 0))
       (lyapPolyφ c₂ c₃ c₄ c₅ c₆ (z 0) (z 1 - b * z 0) •
@@ -916,7 +916,7 @@ derivative of `hopfW` is `−κ (φ² + (α/A) w²)²` up to eight monomials of 
   simp [lyapPolyφ, lyapPolyw]
   ring
 
-@[powerlib_foundation] theorem contDiff_lyapPoly (q c₀ c₂ c₃ c₄ c₅ c₆ b : ℝ) :
+@[tmio T, powerlib_foundation] theorem contDiff_lyapPoly (q c₀ c₂ c₃ c₄ c₅ c₆ b : ℝ) :
     ContDiff ℝ 1
       (fun z : Dynamics.State 2 => lyapPoly q c₀ c₂ c₃ c₄ c₅ c₆ (z 0) (z 1 - b * z 0)) := by
   unfold lyapPoly

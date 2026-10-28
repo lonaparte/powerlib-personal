@@ -48,14 +48,14 @@ abbrev act (A : Matrix n n 𝕜) : EuclideanSpace 𝕜 n →L[𝕜] EuclideanSpa
   have := (act A).le_opNorm x
   rwa [act, Matrix.l2_opNorm_toEuclideanCLM] at this
 
-@[powerlib_foundation] theorem act_inv_act {A : Matrix n n 𝕜} (hA : IsUnit A.det)
+@[tmio T, powerlib_foundation] theorem act_inv_act {A : Matrix n n 𝕜} (hA : IsUnit A.det)
     (x : EuclideanSpace 𝕜 n) : act A⁻¹ (act A x) = x := by
   have h : act (A⁻¹ * A) x = x := by
     rw [Matrix.nonsing_inv_mul _ hA, act, map_one]; rfl
   rw [act, map_mul] at h
   exact h
 
-@[powerlib_foundation] theorem one_le_cond [Nonempty n] {A : Matrix n n 𝕜} (hA : IsUnit A.det) :
+@[tmio T, powerlib_foundation] theorem one_le_cond [Nonempty n] {A : Matrix n n 𝕜} (hA : IsUnit A.det) :
     1 ≤ cond A := by
   have h1 : ‖(1 : Matrix n n 𝕜)‖ = 1 := by
     rw [← Matrix.diagonal_one, Matrix.l2_opNorm_diagonal]
@@ -65,7 +65,7 @@ abbrev act (A : Matrix n n 𝕜) : EuclideanSpace 𝕜 n →L[𝕜] EuclideanSpa
     _ ≤ ‖A‖ * ‖A⁻¹‖ := Matrix.l2_opNorm_mul A A⁻¹
 
 /-- **Right-hand-side perturbation bound** `‖Δx‖/‖x‖ ≤ κ(A) ‖Δb‖/‖b‖`. -/
-@[powerlib_foundation] theorem rhs_perturbation {A : Matrix n n 𝕜} (hA : IsUnit A.det)
+@[tmio T, powerlib_foundation] theorem rhs_perturbation {A : Matrix n n 𝕜} (hA : IsUnit A.det)
     {x dx b db : EuclideanSpace 𝕜 n} (hx : act A x = b) (hdx : act A (x + dx) = b + db)
     (hb : b ≠ 0) : ‖dx‖ / ‖x‖ ≤ cond A * (‖db‖ / ‖b‖) := by
   have hAdx : act A dx = db := by
@@ -83,7 +83,7 @@ abbrev act (A : Matrix n n 𝕜) : EuclideanSpace 𝕜 n →L[𝕜] EuclideanSpa
     _ = ‖A‖ * ‖A⁻¹‖ * (‖db‖ / ‖b‖) * ‖x‖ := by ring
 
 /-- **Neumann series**: a perturbation with `‖A⁻¹‖ ‖ΔA‖ < 1` keeps `A` invertible. -/
-@[powerlib_foundation] theorem isUnit_add_of_norm_lt {A dA : Matrix n n 𝕜} (hA : IsUnit A.det)
+@[tmio T, powerlib_foundation] theorem isUnit_add_of_norm_lt {A dA : Matrix n n 𝕜} (hA : IsUnit A.det)
     (h : ‖A⁻¹‖ * ‖dA‖ < 1) : IsUnit (A + dA) := by
   have hU : IsUnit A := (Matrix.isUnit_iff_isUnit_det A).mpr hA
   obtain ⟨u, rfl⟩ := hU
@@ -104,7 +104,7 @@ abbrev act (A : Matrix n n 𝕜) : EuclideanSpace 𝕜 n →L[𝕜] EuclideanSpa
 
 /-- **Perturbation bound with a perturbed matrix**:
 `‖Δx‖/‖x‖ ≤ κ/(1 − κ‖ΔA‖/‖A‖) · (‖ΔA‖/‖A‖ + ‖Δb‖/‖b‖)` whenever `κ‖ΔA‖/‖A‖ < 1`. -/
-@[powerlib_foundation] theorem matrix_perturbation {A dA : Matrix n n 𝕜} (hA : IsUnit A.det)
+@[tmio T, powerlib_foundation] theorem matrix_perturbation {A dA : Matrix n n 𝕜} (hA : IsUnit A.det)
     {x dx b db : EuclideanSpace 𝕜 n} (hx : act A x = b)
     (hdx : act (A + dA) (x + dx) = b + db) (hb : b ≠ 0)
     (hsmall : cond A * (‖dA‖ / ‖A‖) < 1) :

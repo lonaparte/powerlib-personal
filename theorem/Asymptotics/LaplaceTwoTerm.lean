@@ -63,7 +63,7 @@ open Real Set Filter Topology MeasureTheory intervalIntegral
   ring
 
 /-- `∫_0^L u e^{−βu²} du = (1 − e^{−βL²})/(2β)` (fundamental theorem of calculus). -/
-@[powerlib_foundation] theorem integral_mul_exp_neg_mul_sq_interval {β : ℝ} (hβ : 0 < β) (L : ℝ) :
+@[tmio T, powerlib_foundation] theorem integral_mul_exp_neg_mul_sq_interval {β : ℝ} (hβ : 0 < β) (L : ℝ) :
     ∫ u in (0 : ℝ)..L, u * Real.exp (-β * u ^ 2) = (1 - Real.exp (-β * L ^ 2)) / (2 * β) := by
   have hderiv : ∀ u ∈ uIcc 0 L, HasDerivAt (fun u => -(1 / (2 * β)) * Real.exp (-β * u ^ 2))
       (u * Real.exp (-β * u ^ 2)) u := by
@@ -80,14 +80,14 @@ open Real Set Filter Topology MeasureTheory intervalIntegral
   ring
 
 /-- `e^{−x} ≤ 1/x` for `x > 0`. -/
-@[powerlib_foundation] theorem exp_neg_le_inv {x : ℝ} (hx : 0 < x) : Real.exp (-x) ≤ 1 / x := by
+@[tmio T, powerlib_foundation] theorem exp_neg_le_inv {x : ℝ} (hx : 0 < x) : Real.exp (-x) ≤ 1 / x := by
   have h := Real.add_one_le_exp x
   rw [Real.exp_neg, one_div]
   exact inv_anti₀ hx (by linarith)
 
 /-- Gaussian mass on a finite interval:
 `√(π/β)/2 − e^{−βL²}/(2βL) ≤ ∫_0^L e^{−βu²} du ≤ √(π/β)/2`. -/
-@[powerlib_foundation] theorem integral_exp_neg_mul_sq_interval_bounds {β L : ℝ} (hβ : 0 < β)
+@[tmio T, powerlib_foundation] theorem integral_exp_neg_mul_sq_interval_bounds {β L : ℝ} (hβ : 0 < β)
     (hL : 0 < L) :
     √(π / β) / 2 - Real.exp (-β * L ^ 2) / (2 * β * L) ≤
         ∫ u in (0 : ℝ)..L, Real.exp (-β * u ^ 2) ∧
@@ -132,7 +132,7 @@ open Real Set Filter Topology MeasureTheory intervalIntegral
 /-- **Two-term endpoint Laplace bound** for an exact Gaussian phase: if `h` is continuous on
 `[0, L]` (`L > 0`) and `|h(u) − h₀ − h₁u| ≤ M u²` there, then for every `β > 0`
 `|∫_0^L h e^{−βu²} − h₀ √(π/β)/2 − h₁/(2β)| ≤ M √(π/β)/(4β) + (|h₀|/L + |h₁|)/(2β²L²)`. -/
-@[powerlib_foundation] theorem laplace_two_term_bound {h : ℝ → ℝ} {β L h₀ h₁ M : ℝ} (hβ : 0 < β)
+@[tmio T, powerlib_foundation] theorem laplace_two_term_bound {h : ℝ → ℝ} {β L h₀ h₁ M : ℝ} (hβ : 0 < β)
     (hL : 0 < L) (hcont : ContinuousOn h (Icc 0 L))
     (hrem : ∀ u ∈ Icc (0 : ℝ) L, |h u - h₀ - h₁ * u| ≤ M * u ^ 2) :
     |(∫ u in (0 : ℝ)..L, h u * Real.exp (-β * u ^ 2)) -
@@ -231,7 +231,7 @@ open Real Set Filter Topology MeasureTheory intervalIntegral
 /-- **Two-term endpoint Laplace expansion** (`β → ∞`): for `h₀ ≠ 0`,
 `J(β)/(h₀ √(π/β)/2) − 1 − (h₁/h₀)/√(πβ) = O(1/β)`, `J(β) = ∫_0^L h e^{−βu²}`. Explicitly the bound
 `M/(2|h₀|β) + (|h₀|/L + |h₁|)/(|h₀| L² √π β)` holds for `β ≥ 1` (`laplace_two_term_bound`). -/
-@[powerlib_foundation] theorem laplace_two_term_isBigO {h : ℝ → ℝ} {L h₀ h₁ M : ℝ} (hL : 0 < L)
+@[tmio T, powerlib_foundation] theorem laplace_two_term_isBigO {h : ℝ → ℝ} {L h₀ h₁ M : ℝ} (hL : 0 < L)
     (hh₀ : h₀ ≠ 0) (hcont : ContinuousOn h (Icc 0 L))
     (hrem : ∀ u ∈ Icc (0 : ℝ) L, |h u - h₀ - h₁ * u| ≤ M * u ^ 2) :
     (fun β => (∫ u in (0 : ℝ)..L, h u * Real.exp (-β * u ^ 2)) / (h₀ * (√(π / β) / 2)) - 1 -
@@ -276,7 +276,7 @@ open Real Set Filter Topology MeasureTheory intervalIntegral
 
 /-- The half-order coefficient of the two-term expansion:
 `√β (J(β)/(h₀ √(π/β)/2) − 1) → (h₁/h₀)/√π` as `β → ∞` (`h₀ ≠ 0`). -/
-@[powerlib_foundation] theorem laplace_two_term_tendsto {h : ℝ → ℝ} {L h₀ h₁ M : ℝ} (hL : 0 < L)
+@[tmio T, powerlib_foundation] theorem laplace_two_term_tendsto {h : ℝ → ℝ} {L h₀ h₁ M : ℝ} (hL : 0 < L)
     (hh₀ : h₀ ≠ 0) (hcont : ContinuousOn h (Icc 0 L))
     (hrem : ∀ u ∈ Icc (0 : ℝ) L, |h u - h₀ - h₁ * u| ≤ M * u ^ 2) :
     Tendsto (fun β => √β * ((∫ u in (0 : ℝ)..L, h u * Real.exp (-β * u ^ 2)) /
@@ -302,7 +302,7 @@ open Real Set Filter Topology MeasureTheory intervalIntegral
   ring
 
 /-- The half-order term of the two-term expansion is present exactly when `h₁ ≠ 0`. -/
-@[powerlib_foundation] theorem laplace_two_term_coeff_ne_zero_iff {h₀ h₁ : ℝ} (hh₀ : h₀ ≠ 0) :
+@[tmio T, powerlib_foundation] theorem laplace_two_term_coeff_ne_zero_iff {h₀ h₁ : ℝ} (hh₀ : h₀ ≠ 0) :
     h₁ / h₀ / √π ≠ 0 ↔ h₁ ≠ 0 := by
   have hsπ : √π ≠ 0 := (Real.sqrt_pos.mpr Real.pi_pos).ne'
   simp [hh₀, hsπ]

@@ -51,7 +51,7 @@ variable {ι : Type*} [Fintype ι] {M P : Matrix ι ι ℝ}
 
 /-- Real and imaginary parts of a complex eigenpair `(μ, a + i b)` of a real matrix:
 `M a = Re μ • a - Im μ • b` and `M b = Im μ • a + Re μ • b`. -/
-@[powerlib_foundation] theorem mulVec_re_im_of_eigenpair {μ : ℂ} {v : ι → ℂ}
+@[tmio T, powerlib_foundation] theorem mulVec_re_im_of_eigenpair {μ : ℂ} {v : ι → ℂ}
     (heig : M.map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
     M *ᵥ (fun i => (v i).re) = μ.re • (fun i => (v i).re) - μ.im • (fun i => (v i).im) ∧
       M *ᵥ (fun i => (v i).im) = μ.im • (fun i => (v i).re) + μ.re • (fun i => (v i).im) := by
@@ -70,7 +70,7 @@ variable {ι : Type*} [Fintype ι] {M P : Matrix ι ι ℝ}
 
 /-- **The Lyapunov form at a complex eigenvector.** For symmetric `P` and a complex eigenpair
 `(μ, a + i b)` of the real matrix `M`: `aᵀ P M a + bᵀ P M b = Re μ · (aᵀ P a + bᵀ P b)`. -/
-@[powerlib_foundation] theorem lyapunov_form_eigenpair (hP : Pᵀ = P) {μ : ℂ} {v : ι → ℂ}
+@[tmio T, powerlib_foundation] theorem lyapunov_form_eigenpair (hP : Pᵀ = P) {μ : ℂ} {v : ι → ℂ}
     (heig : M.map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
     (fun i => (v i).re) ⬝ᵥ (P *ᵥ (M *ᵥ fun i => (v i).re)) +
         (fun i => (v i).im) ⬝ᵥ (P *ᵥ (M *ᵥ fun i => (v i).im)) =
@@ -84,14 +84,14 @@ variable {ι : Type*} [Fintype ι] {M P : Matrix ι ι ℝ}
   ring
 
 /-- A nonzero complex vector has a nonzero real or imaginary part. -/
-@[powerlib_foundation] private theorem re_ne_zero_or_im_ne_zero {v : ι → ℂ} (hv : v ≠ 0) :
+@[tmio T, powerlib_foundation] private theorem re_ne_zero_or_im_ne_zero {v : ι → ℂ} (hv : v ≠ 0) :
     (fun i => (v i).re) ≠ 0 ∨ (fun i => (v i).im) ≠ 0 := by
   by_contra h
   push Not at h
   exact hv (funext fun i => Complex.ext (congrFun h.1 i) (congrFun h.2 i))
 
 /-- The energy `aᵀ P a + bᵀ P b` of a nonzero complex vector under a positive definite `P`. -/
-@[powerlib_foundation] private theorem form_re_im_pos
+@[tmio T, powerlib_foundation] private theorem form_re_im_pos
     (hPpos : ∀ w : ι → ℝ, w ≠ 0 → 0 < w ⬝ᵥ (P *ᵥ w)) {v : ι → ℂ} (hv : v ≠ 0) :
     0 < (fun i => (v i).re) ⬝ᵥ (P *ᵥ fun i => (v i).re) +
       (fun i => (v i).im) ⬝ᵥ (P *ᵥ fun i => (v i).im) := by
@@ -105,7 +105,7 @@ variable {ι : Type*} [Fintype ι] {M P : Matrix ι ι ℝ}
 
 /-- If `P = Pᵀ` is positive definite and `wᵀ P (M w) < 0` for all `w ≠ 0`, every complex
 eigenvalue of `M` has negative real part. -/
-@[powerlib_foundation] theorem re_neg_of_lyapunov
+@[tmio T, powerlib_foundation] theorem re_neg_of_lyapunov
     (hPsymm : Pᵀ = P) (hPpos : ∀ w : ι → ℝ, w ≠ 0 → 0 < w ⬝ᵥ (P *ᵥ w))
     (hdiss : ∀ w : ι → ℝ, w ≠ 0 → w ⬝ᵥ (P *ᵥ (M *ᵥ w)) < 0)
     {μ : ℂ} {v : ι → ℂ} (hv : v ≠ 0) (heig : M.map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
@@ -128,7 +128,7 @@ eigenvalue of `M` has negative real part. -/
 
 /-- Closed half plane: if `P = Pᵀ` is positive definite and `wᵀ P (M w) ≤ 0` for all `w`, every
 complex eigenvalue of `M` has nonpositive real part. -/
-@[powerlib_foundation] theorem re_nonpos_of_lyapunov
+@[tmio T, powerlib_foundation] theorem re_nonpos_of_lyapunov
     (hPsymm : Pᵀ = P) (hPpos : ∀ w : ι → ℝ, w ≠ 0 → 0 < w ⬝ᵥ (P *ᵥ w))
     (hdiss : ∀ w : ι → ℝ, w ⬝ᵥ (P *ᵥ (M *ᵥ w)) ≤ 0)
     {μ : ℂ} {v : ι → ℂ} (hv : v ≠ 0) (heig : M.map (algebraMap ℝ ℂ) *ᵥ v = μ • v) :
@@ -146,7 +146,7 @@ complex eigenvalue of `M` has nonpositive real part. -/
 end Eigen
 
 /-- Lyapunov-inequality criterion for `LinearSystems.IsHurwitz`. -/
-@[powerlib_foundation] theorem isHurwitz_of_lyapunov {N : ℕ} {M P : Matrix (Fin N) (Fin N) ℝ}
+@[tmio T, powerlib_foundation] theorem isHurwitz_of_lyapunov {N : ℕ} {M P : Matrix (Fin N) (Fin N) ℝ}
     (hPsymm : Pᵀ = P) (hPpos : ∀ w : Fin N → ℝ, w ≠ 0 → 0 < w ⬝ᵥ (P *ᵥ w))
     (hdiss : ∀ w : Fin N → ℝ, w ≠ 0 → w ⬝ᵥ (P *ᵥ (M *ᵥ w)) < 0) :
     LinearSystems.IsHurwitz M := by

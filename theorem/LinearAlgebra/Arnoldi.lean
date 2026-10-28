@@ -51,7 +51,7 @@ def arnoldiResidual {k : ℕ} (T : E →ₗ[𝕜] E) (q : Fin (k + 1) → E) : E
 
 /-- **Arnoldi step**: if the residual `w` is nonzero, `q_{k+1} = w/‖w‖` extends the orthonormal
 family and `T q_k = Σᵢ ⟨qᵢ, T q_k⟩ qᵢ + ‖w‖ q_{k+1}`. -/
-@[powerlib_foundation] theorem arnoldi_step {k : ℕ} (T : E →ₗ[𝕜] E) {q : Fin (k + 1) → E}
+@[tmio T, powerlib_foundation] theorem arnoldi_step {k : ℕ} (T : E →ₗ[𝕜] E) {q : Fin (k + 1) → E}
     (hq : Orthonormal 𝕜 q) (hw : arnoldiResidual T q ≠ 0) :
     Orthonormal 𝕜 (Fin.snoc q (((‖arnoldiResidual T q‖ : ℝ) : 𝕜)⁻¹ • arnoldiResidual T q) :
       Fin (k + 2) → E) ∧
@@ -88,14 +88,14 @@ family and `T q_k = Σᵢ ⟨qᵢ, T q_k⟩ qᵢ + ‖w‖ q_{k+1}`. -/
 /-! ## The Arnoldi relation -/
 
 /-- In a relation `T q_j = Σᵢ H_{ij} qᵢ` with orthonormal `qᵢ`, `H_{ij} = ⟨qᵢ, T q_j⟩`. -/
-@[powerlib_foundation] theorem arnoldi_coeff_eq {m : ℕ} (T : E →ₗ[𝕜] E) {q : Fin (m + 1) → E}
+@[tmio T, powerlib_foundation] theorem arnoldi_coeff_eq {m : ℕ} (T : E →ₗ[𝕜] E) {q : Fin (m + 1) → E}
     (hq : Orthonormal 𝕜 q) {H : Matrix (Fin (m + 1)) (Fin m) 𝕜}
     (hrel : ∀ j : Fin m, T (q (Fin.castSucc j)) = ∑ i, H i j • q i) (i : Fin (m + 1))
     (j : Fin m) : H i j = ⟪q i, T (q (Fin.castSucc j))⟫ := by
   rw [hrel j, hq.inner_right_fintype]
 
 /-- Coordinate form `A V_m = V_{m+1} H̃_m` (columns of `V` are the Arnoldi vectors). -/
-@[powerlib_foundation] theorem matrix_relation {n : Type*} [Fintype n] {m : ℕ}
+@[tmio T, powerlib_foundation] theorem matrix_relation {n : Type*} [Fintype n] {m : ℕ}
     (A : Matrix n n 𝕜) (V : Matrix n (Fin (m + 1)) 𝕜) (H : Matrix (Fin (m + 1)) (Fin m) 𝕜)
     (hrel : ∀ j : Fin m, A *ᵥ (fun r => V r (Fin.castSucc j)) = ∑ i, H i j • fun r => V r i) :
     A * V.submatrix id Fin.castSucc = V * H := by
@@ -111,7 +111,7 @@ family and `T q_k = Σᵢ ⟨qᵢ, T q_k⟩ qᵢ + ‖w‖ q_{k+1}`. -/
 
 /-- **Ritz residual**: if `H_m y = θ y` and `u = Σⱼ yⱼ qⱼ`, then
 `T u − θ u = (Σⱼ H_{m+1,j} yⱼ) q_{m+1}`. -/
-@[powerlib_foundation] theorem ritz_residual {m : ℕ} (T : E →ₗ[𝕜] E) (q : Fin (m + 1) → E)
+@[tmio T, powerlib_foundation] theorem ritz_residual {m : ℕ} (T : E →ₗ[𝕜] E) (q : Fin (m + 1) → E)
     (H : Matrix (Fin (m + 1)) (Fin m) 𝕜)
     (hrel : ∀ j : Fin m, T (q (Fin.castSucc j)) = ∑ i, H i j • q i) {θ : 𝕜} {y : Fin m → 𝕜}
     (hritz : ∀ i : Fin m, ∑ j, H (Fin.castSucc i) j * y j = θ * y i) :
@@ -131,7 +131,7 @@ family and `T q_k = Σᵢ ⟨qᵢ, T q_k⟩ qᵢ + ‖w‖ q_{k+1}`. -/
   congr 1
   exact Finset.sum_congr rfl fun j _ => mul_comm _ _
 
-@[powerlib_foundation] theorem norm_ritz_residual {m : ℕ} (T : E →ₗ[𝕜] E) {q : Fin (m + 1) → E}
+@[tmio T, powerlib_foundation] theorem norm_ritz_residual {m : ℕ} (T : E →ₗ[𝕜] E) {q : Fin (m + 1) → E}
     (hq : Orthonormal 𝕜 q) (H : Matrix (Fin (m + 1)) (Fin m) 𝕜)
     (hrel : ∀ j : Fin m, T (q (Fin.castSucc j)) = ∑ i, H i j • q i) {θ : 𝕜} {y : Fin m → 𝕜}
     (hritz : ∀ i : Fin m, ∑ j, H (Fin.castSucc i) j * y j = θ * y i) :
@@ -141,7 +141,7 @@ family and `T q_k = Σᵢ ⟨qᵢ, T q_k⟩ qᵢ + ‖w‖ q_{k+1}`. -/
 
 /-- With an upper Hessenberg `H̃_m` (`H_{m+1,j} = 0` for `j < m`), the residual norm is the closed
 form `|h_{m+1,m}| |y_m|`: only the last Ritz-vector coordinate matters. -/
-@[powerlib_foundation] theorem norm_ritz_residual_hessenberg {m : ℕ} (T : E →ₗ[𝕜] E)
+@[tmio T, powerlib_foundation] theorem norm_ritz_residual_hessenberg {m : ℕ} (T : E →ₗ[𝕜] E)
     {q : Fin (m + 2) → E} (hq : Orthonormal 𝕜 q) (H : Matrix (Fin (m + 2)) (Fin (m + 1)) 𝕜)
     (hhess : ∀ j : Fin (m + 1), j ≠ Fin.last m → H (Fin.last (m + 1)) j = 0)
     (hrel : ∀ j : Fin (m + 1), T (q (Fin.castSucc j)) = ∑ i, H i j • q i) {θ : 𝕜}

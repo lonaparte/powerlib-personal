@@ -93,14 +93,14 @@ def toStateSpace (m : Impedance) : StateSpace :=
     (m.resistance, m.inductance)
   ⟨y.1, y.2⟩
 
-@[simp, powerlib_foundation] theorem state_roundtrip (m : StateSpace) :
+@[tmio M, simp, powerlib_foundation] theorem state_roundtrip (m : StateSpace) :
     toStateSpace (toImpedance m) = m := by
   apply StateSpace.ext
   · exact (by simpa [toStateSpace, toImpedance, generated.convert, reciprocal] using
       scale_cancel m.decay m.inputGain)
   · exact reciprocal_involutive m.inputGain
 
-@[simp, powerlib_foundation] theorem impedance_roundtrip (m : Impedance) :
+@[tmio M, simp, powerlib_foundation] theorem impedance_roundtrip (m : Impedance) :
     toImpedance (toStateSpace m) = m := by
   apply Impedance.ext
   · exact (by simpa [toStateSpace, toImpedance, generated.convert, reciprocal] using
@@ -114,11 +114,11 @@ def modelEquiv : StateSpace ≃ Impedance where
   left_inv := state_roundtrip
   right_inv := impedance_roundtrip
 
-@[simp, powerlib_foundation] theorem toStateSpace_decay (m : Impedance) :
+@[tmio M, simp, powerlib_foundation] theorem toStateSpace_decay (m : Impedance) :
     (toStateSpace m).decay = m.resistance / m.inductance.val := by
   simp [toStateSpace, generated.convert, reciprocal, div_eq_mul_inv]
 
-@[simp, powerlib_foundation] theorem toStateSpace_inputGain (m : Impedance) :
+@[tmio M, simp, powerlib_foundation] theorem toStateSpace_inputGain (m : Impedance) :
     (toStateSpace m).inputGain.val = (m.inductance.val)⁻¹ := by
   simp [toStateSpace, generated.convert, reciprocal]
 
@@ -132,7 +132,7 @@ def StateSpace.plant (m : StateSpace) : Linear.Plant 1 1 :=
 def Impedance.plant (m : Impedance) : Linear.Plant 1 1 := (toStateSpace m).plant
 
 /-- Both representations have the same plant. -/
-@[simp, powerlib_foundation] theorem plant_toImpedance (m : StateSpace) :
+@[tmio M, simp, powerlib_foundation] theorem plant_toImpedance (m : StateSpace) :
     (toImpedance m).plant = m.plant := by
   simp [Impedance.plant]
 
@@ -205,7 +205,7 @@ def kyp (m : Impedance) (hR : 0 ≤ m.resistance) : Linear.KYP m.plant where
 
 /-- The transfer function from terminal voltage to branch current is the admittance
 `1 / (R + L s)`, at every complex frequency (both sides vanish at the pole). -/
-@[powerlib_foundation] theorem transfer_eq (m : Impedance) (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem transfer_eq (m : Impedance) (s : ℂ) :
     Linear.transfer m.plant s = !![((m.resistance : ℂ) + m.inductance.val * s)⁻¹] := by
   have hL : (m.inductance.val : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr m.inductance.property.ne'
   ext i j
@@ -218,7 +218,7 @@ def kyp (m : Impedance) (hR : 0 ≤ m.resistance) : Linear.KYP m.plant where
   ring
 
 /-- The branch has no hidden mode. -/
-@[powerlib_foundation] theorem minimal (m : Impedance) : m.plant.Minimal := by
+@[tmio M, powerlib_foundation] theorem minimal (m : Impedance) : m.plant.Minimal := by
   have hL : (m.inductance.val : ℝ) ≠ 0 := m.inductance.property.ne'
   refine ⟨fun x => ⟨fun _ _ => x 0 / (toStateSpace m).inputGain.val, ?_⟩, fun x hx => ?_⟩
   · funext i
@@ -270,14 +270,14 @@ def translate : Sentence → Set Requirement
 and the translation table. -/
 def family : Family Impedance Requirement 1 1 := ⟨fun m => m.plant.system, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isLinear : family.IsLinear Impedance.plant := fun _ => rfl
+@[tmio M, powerlib_foundation] theorem family_isLinear : family.IsLinear Impedance.plant := fun _ => rfl
 
-@[powerlib_foundation] theorem plant_A (m : Impedance) :
+@[tmio M, powerlib_foundation] theorem plant_A (m : Impedance) :
     m.plant.A = !![-(m.resistance / m.inductance.val)] := by
   simp [Impedance.plant, StateSpace.plant, toStateSpace_decay]
 
 /-- The physical energy `L i² / 2` is positive on every nonzero current. -/
-@[powerlib_foundation] theorem energy_pos (m : Impedance) (hR : 0 ≤ m.resistance)
+@[tmio M, powerlib_foundation] theorem energy_pos (m : Impedance) (hR : 0 ≤ m.resistance)
     (x : Fin 1 → ℝ) (hx : x ≠ 0) : 0 < x ⬝ᵥ ((kyp m hR).P *ᵥ x) := by
   have h0 : x 0 ≠ 0 := by
     intro h
@@ -289,7 +289,7 @@ def family : Family Impedance Requirement 1 1 := ⟨fun m => m.plant.system, Mee
   nlinarith [mul_pos m.inductance.property (mul_self_pos.mpr h0)]
 
 /-- A constant current `c` held by the terminal voltage `R c` draws the power `R c²`. -/
-@[powerlib_foundation] theorem field_hold (m : Impedance) (c : ℝ) :
+@[tmio M, powerlib_foundation] theorem field_hold (m : Impedance) (c : ℝ) :
     m.plant.system.field (WithLp.toLp 2 ![c]) ![m.resistance * c] = 0 := by
   have hL := m.inductance.property.ne'
   ext i
@@ -298,7 +298,7 @@ def family : Family Impedance Requirement 1 1 := ⟨fun m => m.plant.system, Mee
   field_simp
   ring
 
-@[powerlib_foundation] theorem supply_hold (m : Impedance) (c : ℝ) :
+@[tmio M, powerlib_foundation] theorem supply_hold (m : Impedance) (c : ℝ) :
     m.plant.system.supply (WithLp.toLp 2 ![c]) ![m.resistance * c] = m.resistance * c ^ 2 := by
   simp [Port.System.supply, Impedance.plant, StateSpace.plant, Linear.Plant.system, dotProduct]
   ring

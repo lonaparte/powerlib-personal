@@ -51,7 +51,7 @@ def transport (u : sInfHom B A) (eA : A ≃o A') (eB : B ≃o B') : sInfHom B' A
   rw [← OrderIso.le_symm_apply, gc_generate u, OrderIso.symm_apply_le]
 
 /-- The generated closure operator transports by Mathlib's conjugation of closure operators. -/
-@[powerlib_foundation] theorem closure_transport (u : sInfHom B A) (eA : A ≃o A')
+@[tmio T, powerlib_foundation] theorem closure_transport (u : sInfHom B A) (eA : A ≃o A')
     (eB : B ≃o B') : closure (transport u eA eB) = (closure u).conjBy eA := by
   ext a
   rw [closure_apply, congrFun (generate_transport u eA eB) a]
@@ -59,7 +59,7 @@ def transport (u : sInfHom B A) (eA : A ≃o A') (eB : B ≃o B') : sInfHom B' A
   rfl
 
 /-- Transporting along identities changes nothing. -/
-@[powerlib_foundation] theorem transport_refl (u : sInfHom B A) :
+@[tmio T, powerlib_foundation] theorem transport_refl (u : sInfHom B A) :
     transport u (OrderIso.refl A) (OrderIso.refl B) = u := by
   ext b
   rfl
@@ -95,7 +95,7 @@ def interiorTransport (u : sInfHom B A) (eA : A ≃o A') (eB : B ≃o B') :
   map_rel_iff' := eB.le_iff_le
 
 /-- Representation change preserves the generated fixed-point correspondence itself. -/
-@[powerlib_foundation] theorem fixedPointsIso_transport (u : sInfHom B A)
+@[tmio T, powerlib_foundation] theorem fixedPointsIso_transport (u : sInfHom B A)
     (eA : A ≃o A') (eB : B ≃o B') (a : {a : A // u (generate u a) = a}) :
     fixedPointsIso (transport u eA eB) (closedTransport u eA eB a) =
       interiorTransport u eA eB (fixedPointsIso u a) := by
@@ -120,7 +120,7 @@ def transport (S : Seed T M I O) (eT : T ≃o T') (eM : M ≃o M') (eI : I ≃o 
   u₃ := TMIO.transport S.u₃ eI eO
 
 /-- The whole generated chain transports with the four representation changes. -/
-@[powerlib_foundation] theorem transport_whole (S : Seed T M I O) (eT : T ≃o T') (eM : M ≃o M')
+@[tmio T, powerlib_foundation] theorem transport_whole (S : Seed T M I O) (eT : T ≃o T') (eM : M ≃o M')
     (eI : I ≃o I') (eO : O ≃o O') :
     ⇑(generate (S.transport eT eM eI eO).uTO) = eO ∘ generate S.uTO ∘ eT.symm := by
   rw [generate_uTO, generate_uTO]

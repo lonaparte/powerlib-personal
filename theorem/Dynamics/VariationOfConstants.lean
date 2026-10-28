@@ -70,14 +70,14 @@ variable {X U : Type*} [Fintype X] [DecidableEq X] [Fintype U]
     (⟨A, B, 0, 0⟩ : LinearSystems.ContinuousLinearSystem X U X ℝ) hA hB hu t₀ x₀ t
 
 /-- The forced response starts at `x₀`. -/
-@[powerlib_foundation] theorem forcedResponse_self (A : ℝ → Matrix X X ℝ)
+@[tmio T, powerlib_foundation] theorem forcedResponse_self (A : ℝ → Matrix X X ℝ)
     (B : ℝ → Matrix X U ℝ) (u : ℝ → U → ℝ) (t₀ : ℝ) (x₀ : X → ℝ) :
     LinearSystems.forcedResponse A B u t₀ x₀ t₀ = x₀ :=
   LinearSystems.variationOfConstants_self t₀ x₀
 
 /-- Every solution of `ẋ = A(t) x + B(t) u(t)` on the segment between `t₀` and `t₁` with
 `x(t₀) = x₀` is the forced response there. -/
-@[powerlib_foundation] theorem eq_forcedResponse_of_isIntegralCurveOn {A : ℝ → Matrix X X ℝ}
+@[tmio T, powerlib_foundation] theorem eq_forcedResponse_of_isIntegralCurveOn {A : ℝ → Matrix X X ℝ}
     {B : ℝ → Matrix X U ℝ} {u : ℝ → U → ℝ} (hA : Continuous A) (hB : Continuous B)
     (hu : Continuous u) {t₀ t₁ : ℝ} {x₀ : X → ℝ} {x : ℝ → X → ℝ}
     (hx : IsIntegralCurveOn x (fun s v => A s *ᵥ v + B s *ᵥ u s) (uIcc t₀ t₁))
@@ -97,7 +97,7 @@ variable {X U : Type*} [Fintype X] [DecidableEq X] [Fintype U]
 
 /-- **Variation of constants.** Every global solution of `ẋ = A(t) x + B(t) u(t)` satisfies
 `x(t) = Φ(t, t₀) x(t₀) + ∫_{t₀}^{t} Φ(t, τ) B(τ) u(τ) dτ` for all `t`. -/
-@[powerlib_foundation] theorem eq_variationOfConstants_of_hasDerivAt {A : ℝ → Matrix X X ℝ}
+@[tmio T, powerlib_foundation] theorem eq_variationOfConstants_of_hasDerivAt {A : ℝ → Matrix X X ℝ}
     {B : ℝ → Matrix X U ℝ} {u : ℝ → U → ℝ} (hA : Continuous A) (hB : Continuous B)
     (hu : Continuous u) {x : ℝ → X → ℝ} (hx : ∀ t, HasDerivAt x (A t *ᵥ x t + B t *ᵥ u t) t)
     (t₀ t : ℝ) :
@@ -114,7 +114,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
 
 /-- **Exact ZOH discretization.** If `ẋ = A x + c` with `c` constant on `[0, T]` (input held by
 a zero-order hold), then `x(T) = e^{TA} x(0) + ∫₀ᵀ e^{σA} c dσ`. -/
-@[powerlib_foundation] theorem zoh_exact (A : E →L[ℝ] E) (c : E) (x : ℝ → E) (T : ℝ)
+@[tmio T, powerlib_foundation] theorem zoh_exact (A : E →L[ℝ] E) (c : E) (x : ℝ → E) (T : ℝ)
     (hx : ∀ t ∈ Set.uIcc 0 T, HasDerivAt x (A (x t) + c) t) :
     x T = NormedSpace.exp (T • A) (x 0) +
       ∫ σ in (0 : ℝ)..T, NormedSpace.exp (σ • A) c := by

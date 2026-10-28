@@ -71,38 +71,38 @@ def satisfaction (sat : X → Q → Prop) : sInfHom (Set X)ᵒᵈ (Set Q) where
     (q : Q) : q ∈ satisfaction sat P ↔ ∀ x ∈ ofDual P, sat x q := Iff.rfl
 
 /-- The generated forward map is Mathlib's `leftDual`. -/
-@[powerlib_foundation] theorem generate_satisfaction (sat : X → Q → Prop) :
+@[tmio T, powerlib_foundation] theorem generate_satisfaction (sat : X → Q → Prop) :
     ⇑(generate (satisfaction sat)) = toDual ∘ (satRel sat).leftDual :=
   (generate_unique _ (satRel sat).gc_leftDual_rightDual).symm
 
 /-- The generated maximal legal implementation space of the requirements `Γ`. -/
 def realize (sat : X → Q → Prop) (Γ : Set Q) : Set X := ofDual (generate (satisfaction sat) Γ)
 
-@[simp, powerlib_foundation] theorem mem_realize (sat : X → Q → Prop) (Γ : Set Q) (x : X) :
+@[tmio T, simp, powerlib_foundation] theorem mem_realize (sat : X → Q → Prop) (Γ : Set Q) (x : X) :
     x ∈ realize sat Γ ↔ ∀ q ∈ Γ, sat x q := by
   rw [realize, congrFun (generate_satisfaction sat) Γ]
   exact Iff.rfl
 
 /-- Maximality (v0.3 §4): a family is legal exactly when it guarantees every requirement. -/
-@[powerlib_foundation] theorem realize_max (sat : X → Q → Prop) (Γ : Set Q) (P : Set X) :
+@[tmio T, powerlib_foundation] theorem realize_max (sat : X → Q → Prop) (Γ : Set Q) (P : Set X) :
     P ⊆ realize sat Γ ↔ Γ ⊆ satisfaction sat (toDual P) :=
   gc_generate (satisfaction sat) Γ (toDual P)
 
 /-- Joining requirements intersects their spaces. -/
-@[powerlib_foundation] theorem realize_union (sat : X → Q → Prop) (Γ Δ : Set Q) :
+@[tmio T, powerlib_foundation] theorem realize_union (sat : X → Q → Prop) (Γ Δ : Set Q) :
     realize sat (Γ ∪ Δ) = realize sat Γ ∩ realize sat Δ := by
   show ofDual (generate (satisfaction sat) (Γ ⊔ Δ)) = _
   rw [generate_sup, ofDual_sup]
   rfl
 
 /-- More requirements never enlarge the space. -/
-@[powerlib_foundation] theorem realize_antitone (sat : X → Q → Prop) {Γ Δ : Set Q}
+@[tmio T, powerlib_foundation] theorem realize_antitone (sat : X → Q → Prop) {Γ Δ : Set Q}
     (h : Γ ⊆ Δ) : realize sat Δ ⊆ realize sat Γ :=
   generate_monotone (satisfaction sat) h
 
 /-- A family of systems is the space of some requirement set exactly when it equals the space of
 the requirements it guarantees. -/
-@[powerlib_foundation] theorem exists_realize_iff (sat : X → Q → Prop) (P : Set X) :
+@[tmio T, powerlib_foundation] theorem exists_realize_iff (sat : X → Q → Prop) (P : Set X) :
     (∃ Γ, realize sat Γ = P) ↔ realize sat (satisfaction sat (toDual P)) = P := by
   constructor
   · rintro ⟨Γ, rfl⟩
@@ -127,16 +127,16 @@ variable {D Y Z : Type*}
 /-- A deterministic map, such as a data analysis, as the edge `B ↦ f⁻¹ B`. -/
 def preimage (f : D → Y) : sInfHom (Set Y) (Set D) := (CompleteLatticeHom.setPreimage f).tosInfHom
 
-@[simp, powerlib_foundation] theorem preimage_apply (f : D → Y) (B : Set Y) :
+@[tmio T, simp, powerlib_foundation] theorem preimage_apply (f : D → Y) (B : Set Y) :
     preimage f B = f ⁻¹' B := rfl
 
 /-- The generated forward map of a deterministic map is its direct image (v0.3 §7). -/
-@[powerlib_foundation] theorem generate_preimage (f : D → Y) :
+@[tmio T, powerlib_foundation] theorem generate_preimage (f : D → Y) :
     ⇑(generate (preimage f)) = Set.image f :=
   (generate_unique _ Set.image_preimage).symm
 
 /-- Executing two analyses in sequence is the composite edge. -/
-@[powerlib_foundation] theorem generate_preimage_comp (f : D → Y) (g : Y → Z) :
+@[tmio T, powerlib_foundation] theorem generate_preimage_comp (f : D → Y) (g : Y → Z) :
     ⇑(generate ((preimage f).comp (preimage g))) = Set.image (g ∘ f) := by
   rw [generate_comp, generate_preimage, generate_preimage]
   funext s
@@ -149,11 +149,11 @@ def kern (f : D → Y) : sInfHom (Set D) (Set Y) where
     rw [sInf_image]
     exact Set.preimage_kernImage.u_sInf
 
-@[simp, powerlib_foundation] theorem kern_apply (f : D → Y) (B : Set D) :
+@[tmio T, simp, powerlib_foundation] theorem kern_apply (f : D → Y) (B : Set D) :
     kern f B = Set.kernImage f B := rfl
 
 /-- The generated forward map of the fibre-universal image is the preimage. -/
-@[powerlib_foundation] theorem generate_kern (f : D → Y) :
+@[tmio T, powerlib_foundation] theorem generate_kern (f : D → Y) :
     ⇑(generate (kern f)) = Set.preimage f :=
   (generate_unique _ Set.preimage_kernImage).symm
 
@@ -166,19 +166,19 @@ section Relation
 variable {S Q X V : Type*}
 
 /-- Relational image and core form a Galois connection (Mathlib `SetRel.image_subset_iff`). -/
-@[powerlib_foundation] theorem gc_image_core (R : SetRel S Q) :
+@[tmio T, powerlib_foundation] theorem gc_image_core (R : SetRel S Q) :
     GaloisConnection R.image R.core :=
   fun _ _ => SetRel.image_subset_iff
 
 /-- A translation table, each sentence listing its requirements, as a relation. -/
 def table (t : S → Set Q) : SetRel S Q := {p | p.2 ∈ t p.1}
 
-@[simp, powerlib_foundation] theorem image_table_singleton (t : S → Set Q) (φ : S) :
+@[tmio T, simp, powerlib_foundation] theorem image_table_singleton (t : S → Set Q) (φ : S) :
     (table t).image {φ} = t φ := by
   ext q
   simp [table]
 
-@[powerlib_foundation] theorem image_table (t : S → Set Q) (Φ : Set S) :
+@[tmio T, powerlib_foundation] theorem image_table (t : S → Set Q) (Φ : Set S) :
     (table t).image Φ = ⋃ φ ∈ Φ, t φ := by
   ext q
   simp [table]
@@ -193,19 +193,19 @@ def cover (R : SetRel S Q) : sInfHom (Set Q) (Set S) where
 
 /-- The generated forward map translates a set of sentences into the union of their
 translations. -/
-@[powerlib_foundation] theorem generate_cover (R : SetRel S Q) :
+@[tmio T, powerlib_foundation] theorem generate_cover (R : SetRel S Q) :
     ⇑(generate (cover R)) = R.image :=
   (generate_unique _ (gc_image_core R)).symm
 
 /-- Certification: the readings all of whose possible sources lie in `P`. -/
 def certify (R : SetRel X V) (P : Set X) : Set V := R.inv.core P
 
-@[simp, powerlib_foundation] theorem mem_certify (R : SetRel X V) (P : Set X) (v : V) :
+@[tmio T, simp, powerlib_foundation] theorem mem_certify (R : SetRel X V) (P : Set X) (v : V) :
     v ∈ certify R P ↔ ∀ x, (x, v) ∈ R → x ∈ P :=
   ⟨fun h _ hx => h hx, fun h _ hx => h _ hx⟩
 
 /-- Certification is the lower adjoint of possible-source preimage in reverse-inclusion orders. -/
-@[powerlib_foundation] theorem gc_certify (R : SetRel X V) :
+@[tmio T, powerlib_foundation] theorem gc_certify (R : SetRel X V) :
     GaloisConnection (toDual ∘ certify R ∘ ofDual) (toDual ∘ R.preimage ∘ ofDual) :=
   (gc_image_core R.inv).dual
 
@@ -217,11 +217,11 @@ def possibly (R : SetRel X V) : sInfHom (Set V)ᵒᵈ (Set X)ᵒᵈ where
     rw [sInf_image]
     exact (gc_certify R).u_sInf
 
-@[simp, powerlib_foundation] theorem mem_possibly (R : SetRel X V) (B : (Set V)ᵒᵈ) (x : X) :
+@[tmio T, simp, powerlib_foundation] theorem mem_possibly (R : SetRel X V) (B : (Set V)ᵒᵈ) (x : X) :
     x ∈ ofDual (possibly R B) ↔ ∃ v ∈ ofDual B, (x, v) ∈ R := Iff.rfl
 
 /-- The generated forward map of a relational observation is certification. -/
-@[powerlib_foundation] theorem generate_possibly (R : SetRel X V) :
+@[tmio T, powerlib_foundation] theorem generate_possibly (R : SetRel X V) :
     ⇑(generate (possibly R)) = toDual ∘ certify R ∘ ofDual :=
   (generate_unique _ (gc_certify R)).symm
 
@@ -232,20 +232,20 @@ def predict (R : SetRel X V) (P : Set X) : Set V := (certify R Pᶜ)ᶜ
 def allPre (R : SetRel X V) (B : Set V) : Set X := (R.preimage Bᶜ)ᶜ
 
 /-- The derived prediction is exactly the possible-observation image. -/
-@[powerlib_foundation] theorem predict_eq_image (R : SetRel X V) (P : Set X) :
+@[tmio T, powerlib_foundation] theorem predict_eq_image (R : SetRel X V) (P : Set X) :
     predict R P = R.image P := by
   ext v
   simp only [predict, Set.mem_compl_iff, mem_certify, not_forall, not_not, SetRel.mem_image]
   exact ⟨fun ⟨x, hx, hP⟩ => ⟨x, hP, hx⟩, fun ⟨x, hP, hx⟩ => ⟨x, hx, hP⟩⟩
 
-@[simp, powerlib_foundation] theorem mem_allPre (R : SetRel X V) (B : Set V) (x : X) :
+@[tmio T, simp, powerlib_foundation] theorem mem_allPre (R : SetRel X V) (B : Set V) (x : X) :
     x ∈ allPre R B ↔ ∀ v, (x, v) ∈ R → v ∈ B := by
   simp only [allPre, Set.mem_compl_iff, SetRel.mem_preimage, not_exists, not_and]
   exact ⟨fun h v hx => by_contra fun hv => h v hv hx, fun h v hv hx => hv (h v hx)⟩
 
 /-- Prediction is again adjoint, obtained from the generated certification edge by Mathlib's
 complement transport `GaloisConnection.compl`; nothing new is postulated. -/
-@[powerlib_foundation] theorem gc_predict (R : SetRel X V) :
+@[tmio T, powerlib_foundation] theorem gc_predict (R : SetRel X V) :
     GaloisConnection (fun B : (Set V)ᵒᵈ => toDual (allPre R (ofDual B)))
       (fun P : (Set X)ᵒᵈ => toDual (predict R (ofDual P))) :=
   (gc_certify R).compl
@@ -268,7 +268,7 @@ def relationalSeed (tr : SetRel S Q) (sat : X → Q → Prop) (obs : SetRel X V)
 
 /-- The generated whole chain of the standard relational seed: translate the sentences, take the
 maximal legal space, and certify observations against it. -/
-@[powerlib_foundation] theorem relationalSeed_whole (tr : SetRel S Q) (sat : X → Q → Prop)
+@[tmio T, powerlib_foundation] theorem relationalSeed_whole (tr : SetRel S Q) (sat : X → Q → Prop)
     (obs : SetRel X V) (Φ : Set S) :
     ofDual (generate (relationalSeed tr sat obs).uTO Φ) =
       certify obs (realize sat (tr.image Φ)) := by
@@ -280,7 +280,7 @@ maximal legal space, and certify observations against it. -/
 /-- Soundness propagates along the generated chain: if the translation of each sentence of `Φ`
 is sound for its denotation, every system that may produce an observation certified for `Φ`
 satisfies every sentence of `Φ`. -/
-@[powerlib_foundation] theorem relationalSeed_sound (tr : SetRel S Q) (sat : X → Q → Prop)
+@[tmio T, powerlib_foundation] theorem relationalSeed_sound (tr : SetRel S Q) (sat : X → Q → Prop)
     (obs : SetRel X V) {den : S → Set X} {Φ : Set S}
     (hsound : ∀ φ ∈ Φ, realize sat (tr.image {φ}) ⊆ den φ) {v : V}
     (hv : v ∈ ofDual (generate (relationalSeed tr sat obs).uTO Φ)) {x : X}
@@ -294,26 +294,26 @@ end Seed
 
 /-! ## Applied forms of the generated maps -/
 
-@[simp, powerlib_foundation] theorem generate_preimage_apply {D Y : Type*} (f : D → Y)
+@[tmio T, simp, powerlib_foundation] theorem generate_preimage_apply {D Y : Type*} (f : D → Y)
     (A : Set D) : generate (preimage f) A = f '' A :=
   congrFun (generate_preimage f) A
 
-@[simp, powerlib_foundation] theorem generate_kern_apply {D Y : Type*} (f : D → Y) (B : Set Y) :
+@[tmio T, simp, powerlib_foundation] theorem generate_kern_apply {D Y : Type*} (f : D → Y) (B : Set Y) :
     generate (kern f) B = f ⁻¹' B :=
   congrFun (generate_kern f) B
 
-@[simp, powerlib_foundation] theorem generate_cover_apply {S Q : Type*} (R : SetRel S Q)
+@[tmio T, simp, powerlib_foundation] theorem generate_cover_apply {S Q : Type*} (R : SetRel S Q)
     (Φ : Set S) : generate (cover R) Φ = R.image Φ :=
   congrFun (generate_cover R) Φ
 
-@[simp, powerlib_foundation] theorem generate_possibly_apply {X V : Type*} (R : SetRel X V)
+@[tmio T, simp, powerlib_foundation] theorem generate_possibly_apply {X V : Type*} (R : SetRel X V)
     (P : (Set X)ᵒᵈ) : ofDual (generate (possibly R) P) = certify R (ofDual P) :=
   congrArg ofDual (congrFun (generate_possibly R) P)
 
 /-! ## Satisfaction along maps and products -/
 
 /-- Satisfaction read through a map of complete systems pulls the space back. -/
-@[simp, powerlib_foundation] theorem realize_comap {X Y Q : Type*} (sat : Y → Q → Prop)
+@[tmio T, simp, powerlib_foundation] theorem realize_comap {X Y Q : Type*} (sat : Y → Q → Prop)
     (e : X → Y) (Γ : Set Q) : realize (fun x q => sat (e x) q) Γ = e ⁻¹' realize sat Γ := by
   ext x
   simp
@@ -323,7 +323,7 @@ it carves out exactly `S`. With an empty context this is plain exactness. -/
 def ExactUnder {X Q : Type*} (sat : X → Q → Prop) (Δ Γ : Set Q) (S : Set X) : Prop :=
   realize sat (Γ ∪ Δ) = S ∩ realize sat Δ
 
-@[powerlib_foundation] theorem exactUnder_empty_iff {X Q : Type*} (sat : X → Q → Prop)
+@[tmio T, powerlib_foundation] theorem exactUnder_empty_iff {X Q : Type*} (sat : X → Q → Prop)
     (Γ : Set Q) (S : Set X) : ExactUnder sat ∅ Γ S ↔ realize sat Γ = S := by
   have h : realize sat (∅ : Set Q) = Set.univ := by
     ext x
@@ -337,7 +337,7 @@ def satSum {X₁ X₂ Q₁ Q₂ : Type*} (sat₁ : X₁ → Q₁ → Prop) (sat�
   | x, .inr q => sat₂ x.2 q
 
 /-- Requirements that each speak about one component carve out a product space. -/
-@[powerlib_foundation] theorem realize_sum {X₁ X₂ Q₁ Q₂ : Type*} (sat₁ : X₁ → Q₁ → Prop)
+@[tmio T, powerlib_foundation] theorem realize_sum {X₁ X₂ Q₁ Q₂ : Type*} (sat₁ : X₁ → Q₁ → Prop)
     (sat₂ : X₂ → Q₂ → Prop) (Γ₁ : Set Q₁) (Γ₂ : Set Q₂) :
     realize (satSum sat₁ sat₂) (Sum.inl '' Γ₁ ∪ Sum.inr '' Γ₂) =
       realize sat₁ Γ₁ ×ˢ realize sat₂ Γ₂ := by

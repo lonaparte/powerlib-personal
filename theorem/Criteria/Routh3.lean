@@ -69,12 +69,12 @@ def cubicEval (a2 a1 a0 x : ℝ) : ℝ := x ^ 3 + a2 * x ^ 2 + a1 * x + a0
 `theorem/Criteria/Hurwitz.lean`. -/
 private def cubicPoly (a2 a1 a0 : ℝ) : ℝ[X] := X ^ 3 + C a2 * X ^ 2 + C a1 * X + C a0
 
-@[powerlib_foundation] private theorem cubicPoly_monic (a2 a1 a0 : ℝ) :
+@[tmio T, powerlib_foundation] private theorem cubicPoly_monic (a2 a1 a0 : ℝ) :
     (cubicPoly a2 a1 a0).Monic := by
   unfold cubicPoly
   monicity!
 
-@[powerlib_foundation] private theorem aeval_cubicPoly (a2 a1 a0 : ℝ) (s : ℂ) :
+@[tmio T, powerlib_foundation] private theorem aeval_cubicPoly (a2 a1 a0 : ℝ) (s : ℂ) :
     aeval s (cubicPoly a2 a1 a0) = s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) := by
   simp [cubicPoly]
 
@@ -86,19 +86,19 @@ private def cubicPoly (a2 a1 a0 : ℝ) : ℝ[X] := X ^ 3 + C a2 * X ^ 2 + C a1 *
   exact ⟨r, by simpa [cubicPoly] using hr⟩
 
 /-- `a0 < 0`: a positive real root (`Criteria.exists_pos_root_of_coeff_zero_neg`). -/
-@[powerlib_foundation] theorem exists_cubic_root_pos_of_const_neg {a2 a1 a0 : ℝ} (h0 : a0 < 0) :
+@[tmio T, powerlib_foundation] theorem exists_cubic_root_pos_of_const_neg {a2 a1 a0 : ℝ} (h0 : a0 < 0) :
     ∃ r : ℝ, 0 < r ∧ r ^ 3 + a2 * r ^ 2 + a1 * r + a0 = 0 := by
   obtain ⟨r, hr, hroot⟩ := exists_pos_root_of_coeff_zero_neg (cubicPoly_monic a2 a1 a0)
     (by simpa [cubicPoly] using h0)
   exact ⟨r, hr, by simpa [cubicPoly] using hroot⟩
 
-@[powerlib_foundation] theorem cubic_real_root_complex {a2 a1 a0 r : ℝ}
+@[tmio T, powerlib_foundation] theorem cubic_real_root_complex {a2 a1 a0 r : ℝ}
     (h : r ^ 3 + a2 * r ^ 2 + a1 * r + a0 = 0) :
     (r : ℂ) ^ 3 + (a2 : ℂ) * (r : ℂ) ^ 2 + (a1 : ℂ) * (r : ℂ) + (a0 : ℂ) = 0 := by
   exact_mod_cast h
 
 /-- Factor a monic real cubic through one of its real roots. -/
-@[powerlib_foundation] theorem cubic_factor_of_root {a2 a1 a0 r : ℝ}
+@[tmio T, powerlib_foundation] theorem cubic_factor_of_root {a2 a1 a0 r : ℝ}
     (h : r ^ 3 + a2 * r ^ 2 + a1 * r + a0 = 0) (s : ℂ) :
     s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) =
       (s - r) * (s ^ 2 + ((a2 + r : ℝ) : ℂ) * s + ((a1 + r * a2 + r ^ 2 : ℝ) : ℂ)) := by
@@ -108,14 +108,14 @@ private def cubicPoly (a2 a1 a0 : ℝ) : ℝ[X] := X ^ 3 + C a2 * X ^ 2 + C a1 *
 
 /-- `a2 < 0`: a root with positive real part (`Criteria.exists_root_re_pos_of_coeff_neg`; the
 roots sum to `-a2`). -/
-@[powerlib_foundation] theorem exists_cubic_root_re_pos_of_quadratic_coeff_neg {a2 a1 a0 : ℝ}
+@[tmio T, powerlib_foundation] theorem exists_cubic_root_re_pos_of_quadratic_coeff_neg {a2 a1 a0 : ℝ}
     (h2 : a2 < 0) :
     ∃ s : ℂ, s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 ∧ 0 < s.re := by
   obtain ⟨s, hs, hre⟩ := exists_root_re_pos_of_coeff_neg (cubicPoly_monic a2 a1 a0) (k := 2)
     (by simpa [cubicPoly, coeff_X, coeff_X_pow] using h2)
   exact ⟨s, by rwa [aeval_cubicPoly] at hs, hre⟩
 
-@[powerlib_foundation] theorem cubic_linear_coeff_pos {a2 a1 a0 : ℝ}
+@[tmio T, powerlib_foundation] theorem cubic_linear_coeff_pos {a2 a1 a0 : ℝ}
     (h2 : 0 < a2) (h0 : 0 < a0) (hg : a0 < a2 * a1) : 0 < a1 := by
   by_contra h1
   push Not at h1
@@ -123,7 +123,7 @@ roots sum to `-a2`). -/
 
 /-- The strict cubic Routh–Hurwitz condition (any leading coefficient `a3 > 0`) places every root
 in the open left half plane. -/
-@[powerlib_foundation] theorem cubic_hurwitz (a3 a2 a1 a0 : ℝ) (h3 : 0 < a3) (h2 : 0 < a2)
+@[tmio T, powerlib_foundation] theorem cubic_hurwitz (a3 a2 a1 a0 : ℝ) (h3 : 0 < a3) (h2 : 0 < a2)
     (h1 : 0 < a1) (h0 : 0 < a0) (hg : 0 < a2 * a1 - a3 * a0)
     (s : ℂ) (hs : (a3 : ℂ) * s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0) :
     s.re < 0 := by
@@ -152,14 +152,14 @@ in the open left half plane. -/
     linarith
 
 /-- Sufficient direction (strict Routh–Hurwitz conditions): `cubic_hurwitz` with `a3 = 1`. -/
-@[powerlib_foundation] theorem cubic_roots_re_neg_of {a2 a1 a0 : ℝ}
+@[tmio T, powerlib_foundation] theorem cubic_roots_re_neg_of {a2 a1 a0 : ℝ}
     (h2 : 0 < a2) (h0 : 0 < a0) (hg : a0 < a2 * a1) (s : ℂ)
     (hs : s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0) : s.re < 0 :=
   cubic_hurwitz 1 a2 a1 a0 one_pos h2 (cubic_linear_coeff_pos h2 h0 hg) h0
     (by linarith) s (by push_cast; linear_combination hs)
 
 /-- Routh–Hurwitz for a monic real cubic, both directions. -/
-@[powerlib_foundation] theorem cubic_roots_re_neg_iff (a2 a1 a0 : ℝ) :
+@[tmio T, powerlib_foundation] theorem cubic_roots_re_neg_iff (a2 a1 a0 : ℝ) :
     (∀ s : ℂ, s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 → s.re < 0) ↔
       0 < a2 ∧ 0 < a0 ∧ a0 < a2 * a1 := by
   constructor
@@ -188,7 +188,7 @@ in the open left half plane. -/
     exact cubic_roots_re_neg_of h2 h0 hg s hs
 
 /-- If the strict Routh–Hurwitz conditions fail, some root has nonnegative real part. -/
-@[powerlib_foundation] theorem exists_cubic_root_re_nonneg {a2 a1 a0 : ℝ}
+@[tmio T, powerlib_foundation] theorem exists_cubic_root_re_nonneg {a2 a1 a0 : ℝ}
     (h : ¬ (0 < a2 ∧ 0 < a0 ∧ a0 < a2 * a1)) :
     ∃ s : ℂ, s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 ∧ 0 ≤ s.re := by
   rw [← cubic_roots_re_neg_iff] at h
@@ -197,7 +197,7 @@ in the open left half plane. -/
 
 /-- If `a₂ a₁ < a₀`, the monic cubic `s³ + a₂ s² + a₁ s + a₀` has a root with positive real
 part (strict violation of the Routh gap condition). -/
-@[powerlib_foundation] theorem exists_cubic_root_re_pos_of_gap {a2 a1 a0 : ℝ}
+@[tmio T, powerlib_foundation] theorem exists_cubic_root_re_pos_of_gap {a2 a1 a0 : ℝ}
     (h : a2 * a1 < a0) :
     ∃ s : ℂ, s ^ 3 + (a2 : ℂ) * s ^ 2 + (a1 : ℂ) * s + (a0 : ℂ) = 0 ∧ 0 < s.re := by
   obtain ⟨r, hr⟩ := Criteria.exists_cubic_real_root a2 a1 a0
@@ -233,7 +233,7 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
   (A 0 0 * A 1 1 - A 0 1 * A 1 0) + (A 0 0 * A 2 2 - A 0 2 * A 2 0) +
     (A 1 1 * A 2 2 - A 1 2 * A 2 1)
 
-@[powerlib_foundation] theorem det_characteristicMatrix_fin_three
+@[tmio T, powerlib_foundation] theorem det_characteristicMatrix_fin_three
     (A : Matrix (Fin 3) (Fin 3) ℝ) (s : ℂ) :
     (Linear.characteristicMatrix A s).det =
       s ^ 3 - (A.trace : ℂ) * s ^ 2 + (principalMinorSum A : ℂ) * s - (A.det : ℂ) := by
@@ -250,7 +250,7 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
   ring
 
 /-- Monic-cubic form: `a2 = -tr A`, `a1 = principalMinorSum A`, `a0 = -det A`. -/
-@[powerlib_foundation] theorem det_characteristicMatrix_fin_three'
+@[tmio T, powerlib_foundation] theorem det_characteristicMatrix_fin_three'
     (A : Matrix (Fin 3) (Fin 3) ℝ) (s : ℂ) :
     (Linear.characteristicMatrix A s).det =
       s ^ 3 + ((-A.trace : ℝ) : ℂ) * s ^ 2 + (principalMinorSum A : ℂ) * s +
@@ -259,7 +259,7 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
   push_cast
   ring
 
-@[powerlib_foundation] theorem charpoly_fin_three (A : Matrix (Fin 3) (Fin 3) ℝ) :
+@[tmio T, powerlib_foundation] theorem charpoly_fin_three (A : Matrix (Fin 3) (Fin 3) ℝ) :
     A.charpoly = X ^ 3 - C A.trace * X ^ 2 + C (principalMinorSum A) * X - C A.det := by
   rw [Matrix.charpoly, Matrix.det_fin_three, Matrix.trace_fin_three, principalMinorSum,
     Matrix.det_fin_three]
@@ -273,22 +273,22 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
     map_add, map_sub, map_mul]
   ring
 
-@[powerlib_foundation] theorem charpoly_coeff_two_fin_three (A : Matrix (Fin 3) (Fin 3) ℝ) :
+@[tmio T, powerlib_foundation] theorem charpoly_coeff_two_fin_three (A : Matrix (Fin 3) (Fin 3) ℝ) :
     A.charpoly.coeff 2 = -A.trace := by
   rw [charpoly_fin_three]
   simp [coeff_X_pow]
 
-@[powerlib_foundation] theorem charpoly_coeff_one_fin_three (A : Matrix (Fin 3) (Fin 3) ℝ) :
+@[tmio T, powerlib_foundation] theorem charpoly_coeff_one_fin_three (A : Matrix (Fin 3) (Fin 3) ℝ) :
     A.charpoly.coeff 1 = principalMinorSum A := by
   rw [charpoly_fin_three]
   simp [coeff_C, coeff_X_pow]
 
-@[powerlib_foundation] theorem charpoly_coeff_zero_fin_three (A : Matrix (Fin 3) (Fin 3) ℝ) :
+@[tmio T, powerlib_foundation] theorem charpoly_coeff_zero_fin_three (A : Matrix (Fin 3) (Fin 3) ℝ) :
     A.charpoly.coeff 0 = -A.det := by
   rw [charpoly_fin_three]
   simp [coeff_X, coeff_C, coeff_X_pow]
 
-@[powerlib_foundation] theorem spectrallyStable_fin_three_iff (A : Matrix (Fin 3) (Fin 3) ℝ) :
+@[tmio T, powerlib_foundation] theorem spectrallyStable_fin_three_iff (A : Matrix (Fin 3) (Fin 3) ℝ) :
     Linear.SpectrallyStable A ↔
       A.trace < 0 ∧ A.det < 0 ∧ A.trace * principalMinorSum A < A.det := by
   unfold Linear.SpectrallyStable
@@ -301,14 +301,14 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
     exact ⟨h2, h0, by linarith⟩
 
 /-- Routh–Hurwitz for real 3×3 matrices. -/
-@[powerlib_foundation] theorem isHurwitz_fin_three_iff (A : Matrix (Fin 3) (Fin 3) ℝ) :
+@[tmio T, powerlib_foundation] theorem isHurwitz_fin_three_iff (A : Matrix (Fin 3) (Fin 3) ℝ) :
     LinearSystems.IsHurwitz A ↔
       A.trace < 0 ∧ A.det < 0 ∧ A.trace * principalMinorSum A < A.det :=
   (Linear.spectrallyStable_iff_isHurwitz A).symm.trans (spectrallyStable_fin_three_iff A)
 
 /-- Routh–Hurwitz for real 3×3 matrices, in terms of `A.charpoly` coefficients
 (`a2 = coeff 2`, `a1 = coeff 1`, `a0 = coeff 0`). -/
-@[powerlib_foundation] theorem isHurwitz_fin_three_iff_charpoly_coeff
+@[tmio T, powerlib_foundation] theorem isHurwitz_fin_three_iff_charpoly_coeff
     (A : Matrix (Fin 3) (Fin 3) ℝ) :
     LinearSystems.IsHurwitz A ↔
       0 < A.charpoly.coeff 2 ∧ 0 < A.charpoly.coeff 0 ∧
@@ -321,13 +321,13 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
   · rintro ⟨h2, h0, hg⟩
     exact ⟨h2, h0, by linarith⟩
 
-@[powerlib_foundation] theorem isHurwitz_fin_three_of {A : Matrix (Fin 3) (Fin 3) ℝ}
+@[tmio T, powerlib_foundation] theorem isHurwitz_fin_three_of {A : Matrix (Fin 3) (Fin 3) ℝ}
     (htr : A.trace < 0) (hdet : A.det < 0) (hg : A.trace * principalMinorSum A < A.det) :
     LinearSystems.IsHurwitz A :=
   (isHurwitz_fin_three_iff A).2 ⟨htr, hdet, hg⟩
 
 /-- Companion form of `s ^ 3 + a2 s ^ 2 + a1 s + a0`. -/
-@[powerlib_foundation] theorem isHurwitz_companion_three_iff (a0 a1 a2 : ℝ) :
+@[tmio T, powerlib_foundation] theorem isHurwitz_companion_three_iff (a0 a1 a2 : ℝ) :
     LinearSystems.IsHurwitz !![0, 1, 0; 0, 0, 1; -a0, -a1, -a2] ↔
       0 < a2 ∧ 0 < a0 ∧ a0 < a2 * a1 := by
   rw [isHurwitz_fin_three_iff, Matrix.trace_fin_three_of, Matrix.det_fin_three]
@@ -342,7 +342,7 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
 
 /-! ### Instability witnesses -/
 
-@[powerlib_foundation] theorem det_real_characteristic_fin_three
+@[tmio T, powerlib_foundation] theorem det_real_characteristic_fin_three
     (A : Matrix (Fin 3) (Fin 3) ℝ) (r : ℝ) :
     (r • (1 : Matrix (Fin 3) (Fin 3) ℝ) - A).det =
       r ^ 3 - A.trace * r ^ 2 + principalMinorSum A * r - A.det := by
@@ -358,13 +358,13 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
 
 /-- `0 < det A`: a positive real eigenvalue with a real eigenvector; the case `n = 3` of
 `Criteria.exists_pos_real_eigenvector_of_det`. -/
-@[powerlib_foundation] theorem exists_pos_real_eigenvector_of_det_pos_fin_three
+@[tmio T, powerlib_foundation] theorem exists_pos_real_eigenvector_of_det_pos_fin_three
     (A : Matrix (Fin 3) (Fin 3) ℝ) (h : 0 < A.det) :
     ∃ r : ℝ, 0 < r ∧ ∃ v : Fin 3 → ℝ, v ≠ 0 ∧ A *ᵥ v = r • v :=
   exists_pos_real_eigenvector_of_det A (by norm_num; exact h)
 
 /-- `0 < det A`: eigenpair shaped for `Dynamics.unstable_of_jacobian_eigenvalue_re_pos`. -/
-@[powerlib_foundation] theorem exists_eigenvalue_re_pos_of_det_pos_fin_three
+@[tmio T, powerlib_foundation] theorem exists_eigenvalue_re_pos_of_det_pos_fin_three
     (A : Matrix (Fin 3) (Fin 3) ℝ) (h : 0 < A.det) :
     ∃ (μ : ℂ) (v : Fin 3 → ℂ),
       v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re := by
@@ -373,7 +373,7 @@ def principalMinorSum (A : Matrix (Fin 3) (Fin 3) ℝ) : ℝ :=
 
 /-- `0 < tr A`: eigenpair shaped for `Dynamics.unstable_of_jacobian_eigenvalue_re_pos`
 (`Criteria.exists_eigenpair_re_pos_of_trace_pos`). -/
-@[powerlib_foundation] theorem exists_eigenvalue_re_pos_of_trace_pos_fin_three
+@[tmio T, powerlib_foundation] theorem exists_eigenvalue_re_pos_of_trace_pos_fin_three
     (A : Matrix (Fin 3) (Fin 3) ℝ) (h : 0 < A.trace) :
     ∃ (μ : ℂ) (v : Fin 3 → ℂ),
       v ≠ 0 ∧ A.map (algebraMap ℝ ℂ) *ᵥ v = μ • v ∧ 0 < μ.re :=
@@ -393,7 +393,7 @@ local notation "ℝ³" => EuclideanSpace ℝ (Fin 3)
 
 /-- Linearization at an equilibrium of a `C¹` field on `ℝ³`: a Jacobian satisfying the strict
 3×3 Routh–Hurwitz conditions gives local exponential stability. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_of_jacobian_fin_three
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_jacobian_fin_three
     {f : ℝ³ → ℝ³} {x_eq : ℝ³}
     (A : Matrix (Fin 3) (Fin 3) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) A)
@@ -404,7 +404,7 @@ local notation "ℝ³" => EuclideanSpace ℝ (Fin 3)
 
 /-- Linearization at an equilibrium of a `C¹` field on `ℝ³`: a Jacobian with `0 < det`
 (a positive real eigenvalue) gives instability. -/
-@[powerlib_foundation] theorem unstable_of_jacobian_det_pos_fin_three
+@[tmio T, powerlib_foundation] theorem unstable_of_jacobian_det_pos_fin_three
     {f : ℝ³ → ℝ³} {x_eq : ℝ³}
     (A : Matrix (Fin 3) (Fin 3) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) A)
@@ -414,7 +414,7 @@ local notation "ℝ³" => EuclideanSpace ℝ (Fin 3)
 
 /-- Linearization at an equilibrium of a `C¹` field on `ℝ³`: a Jacobian with `0 < tr` gives
 instability. -/
-@[powerlib_foundation] theorem unstable_of_jacobian_trace_pos_fin_three
+@[tmio T, powerlib_foundation] theorem unstable_of_jacobian_trace_pos_fin_three
     {f : ℝ³ → ℝ³} {x_eq : ℝ³}
     (A : Matrix (Fin 3) (Fin 3) ℝ) (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) A)
@@ -425,7 +425,7 @@ instability. -/
 /-- Three-state continuous-time linear field `x' = A (x - e)`: every attractive sentence of the
 Flow semantics (in particular global exponential stability) holds at `e` iff the strict 3×3
 Routh–Hurwitz conditions hold (the linear hub `Linear.holds_iff_isHurwitz`). -/
-@[powerlib_foundation] theorem holds_affine_fin_three_iff (A : Matrix (Fin 3) (Fin 3) ℝ)
+@[tmio T, powerlib_foundation] theorem holds_affine_fin_three_iff (A : Matrix (Fin 3) (Fin 3) ℝ)
     (e : ℝ³) {P : Flow.Property} (hP : P.Attractive) :
     P.holds (LinearSystems.affineLinearVectorField A e) e ↔
       A.trace < 0 ∧ A.det < 0 ∧ A.trace * principalMinorSum A < A.det :=

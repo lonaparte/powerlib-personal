@@ -46,7 +46,7 @@ def a : ℂ := ⟨-1 / 2, Real.sqrt 3 / 2⟩
 @[tmio T, powerlib_foundation] theorem a_sq : a ^ 2 = ⟨-1 / 2, -(Real.sqrt 3 / 2)⟩ := by
   apply Complex.ext <;> simp [a, pow_two] <;> nlinarith [sqrt3_sq]
 
-@[powerlib_foundation] theorem one_add_a_add_a_sq : 1 + a + a ^ 2 = 0 := by
+@[tmio T, powerlib_foundation] theorem one_add_a_add_a_sq : 1 + a + a ^ 2 = 0 := by
   rw [a_sq]
   apply Complex.ext <;> simp [a]
   ring
@@ -54,13 +54,13 @@ def a : ℂ := ⟨-1 / 2, Real.sqrt 3 / 2⟩
 /-- Amplitude-invariant Clarke transform `(2/3)(x_a + a x_b + a² x_c)`. -/
 def clarke (xa xb xc : ℝ) : ℂ := (2 / 3 : ℂ) * ((xa : ℂ) + a * xb + a ^ 2 * xc)
 
-@[simp, powerlib_foundation] theorem clarke_re (xa xb xc : ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem clarke_re (xa xb xc : ℝ) :
     (clarke xa xb xc).re = (2 / 3) * (xa - xb / 2 - xc / 2) := by
   rw [clarke, a_sq]
   simp [a]
   ring
 
-@[simp, powerlib_foundation] theorem clarke_im (xa xb xc : ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem clarke_im (xa xb xc : ℝ) :
     (clarke xa xb xc).im = Real.sqrt 3 / 3 * (xb - xc) := by
   rw [clarke, a_sq]
   simp [a]
@@ -68,14 +68,14 @@ def clarke (xa xb xc : ℝ) : ℂ := (2 / 3 : ℂ) * ((xa : ℂ) + a * xb + a ^ 
 
 /-- Common-mode invariance: adding the same voltage to all three legs leaves the space
 vector unchanged. -/
-@[powerlib_foundation] theorem clarke_add_const (xa xb xc c : ℝ) :
+@[tmio T, powerlib_foundation] theorem clarke_add_const (xa xb xc c : ℝ) :
     clarke (xa + c) (xb + c) (xc + c) = clarke xa xb xc := by
   apply Complex.ext <;> simp
   ring
 
 /-- Amplitude invariance: a balanced positive-sequence set of peak `X` and angle `θ` has the
 space vector `X e^{jθ}`. -/
-@[powerlib_foundation] theorem clarke_balanced (X θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem clarke_balanced (X θ : ℝ) :
     clarke (X * Real.cos θ) (X * Real.cos (θ - 2 * Real.pi / 3))
       (X * Real.cos (θ + 2 * Real.pi / 3)) =
       ⟨X * Real.cos θ, X * Real.sin θ⟩ := by
@@ -105,7 +105,7 @@ def activeVector (Vdc : ℝ) (k : ℕ) : ℂ :=
   ⟨2 / 3 * Vdc * Real.cos ((k - 1 : ℝ) * Real.pi / 3),
     2 / 3 * Vdc * Real.sin ((k - 1 : ℝ) * Real.pi / 3)⟩
 
-@[powerlib_foundation] theorem inverterVector_zero (Vdc : ℝ) :
+@[tmio M, powerlib_foundation] theorem inverterVector_zero (Vdc : ℝ) :
     inverterVector Vdc false false false = 0 ∧ inverterVector Vdc true true true = 0 := by
   refine ⟨?_, ?_⟩
   · apply Complex.ext <;> simp [inverterVector]
@@ -114,7 +114,7 @@ def activeVector (Vdc : ℝ) (k : ℕ) : ℂ :=
 
 /-- The six active switching states produce the regular hexagon of vectors
 `(2/3) V_dc e^{j(k-1)π/3}` (Takahashi–Noguchi numbering). -/
-@[powerlib_foundation] theorem inverterVector_active (Vdc : ℝ) :
+@[tmio M, powerlib_foundation] theorem inverterVector_active (Vdc : ℝ) :
     inverterVector Vdc true false false = activeVector Vdc 1 ∧
     inverterVector Vdc true true false = activeVector Vdc 2 ∧
     inverterVector Vdc false true false = activeVector Vdc 3 ∧
@@ -155,7 +155,7 @@ def activeVector (Vdc : ℝ) (k : ℕ) : ℂ :=
 /-! ## Rotation, power and torque -/
 
 /-- `Im(conj ψ · i)` is invariant under a common frame rotation `e^{jθ}`. -/
-@[powerlib_foundation] theorem cross_rotate (θ : ℝ) (ψ i : ℂ) :
+@[tmio T, powerlib_foundation] theorem cross_rotate (θ : ℝ) (ψ i : ℂ) :
     (conj (exp (θ * I) * ψ) * (exp (θ * I) * i)).im = (conj ψ * i).im := by
   have h : conj (exp (θ * I) * ψ) * (exp (θ * I) * i) =
       (conj (exp (θ * I)) * exp (θ * I)) * (conj ψ * i) := by
@@ -165,7 +165,7 @@ def activeVector (Vdc : ℝ) (k : ℕ) : ℂ :=
   simp
 
 /-- `Im(conj ψ · i) = ψ_α i_β − ψ_β i_α` (also with `d, q` in place of `α, β`). -/
-@[simp, powerlib_foundation] theorem cross_eq (ψ i : ℂ) :
+@[tmio T, simp, powerlib_foundation] theorem cross_eq (ψ i : ℂ) :
     (conj ψ * i).im = ψ.re * i.im - ψ.im * i.re := by
   simp [Complex.mul_im]
   ring
@@ -174,7 +174,7 @@ def activeVector (Vdc : ℝ) (k : ℕ) : ℂ :=
 (motor convention `v = r i + ψ̇ + jωψ`): input power = copper loss + magnetic-field term +
 speed-voltage term `ω Im(conj ψ · i)`. Multiply by `3/2` for the amplitude-invariant
 three-phase power. -/
-@[powerlib_foundation] theorem power_balance (r ω : ℝ) (v i ψ dψ : ℂ)
+@[tmio T, powerlib_foundation] theorem power_balance (r ω : ℝ) (v i ψ dψ : ℂ)
     (h : v = r * i + dψ + I * ω * ψ) :
     (v * conj i).re = r * Complex.normSq i + (dψ * conj i).re + ω * (conj ψ * i).im := by
   subst h
@@ -186,7 +186,7 @@ def torque (np : ℝ) (ψ i : ℂ) : ℝ := 3 / 2 * np * (conj ψ * i).im
 
 /-- `T_e · Ω_m` equals the amplitude-invariant speed-voltage power `(3/2) ω Im(conj ψ · i)`,
 where `Ω_m = ω / np` is the mechanical speed. -/
-@[powerlib_foundation] theorem torque_mul_mechanicalSpeed (np ω : ℝ) (hnp : np ≠ 0) (ψ i : ℂ) :
+@[tmio T, powerlib_foundation] theorem torque_mul_mechanicalSpeed (np ω : ℝ) (hnp : np ≠ 0) (ψ i : ℂ) :
     torque np ψ i * (ω / np) = 3 / 2 * ω * (conj ψ * i).im := by
   unfold torque
   field_simp
@@ -195,7 +195,7 @@ where `Ω_m = ω / np` is the mechanical speed. -/
 equals the speed-voltage power for some operating point with nonzero speed and torque
 current, then `c = (3/2) np`. In particular `(3/2)(np/2)` (the note's coefficient with `p`
 read as pole pairs) is wrong. -/
-@[powerlib_foundation] theorem torque_coefficient_unique (np ω c : ℝ) (hnp : np ≠ 0)
+@[tmio T, powerlib_foundation] theorem torque_coefficient_unique (np ω c : ℝ) (hnp : np ≠ 0)
     (ψ i : ℂ) (hω : ω ≠ 0) (hx : (conj ψ * i).im ≠ 0)
     (h : c * (conj ψ * i).im * (ω / np) = 3 / 2 * ω * (conj ψ * i).im) :
     c = 3 / 2 * np := by
@@ -203,7 +203,7 @@ read as pole pairs) is wrong. -/
   linarith
 
 /-- The half-coefficient `(3/2)(np/2)` does not satisfy the power balance. -/
-@[powerlib_foundation] theorem torque_halfCoefficient_ne (np ω : ℝ) (hnp : np ≠ 0)
+@[tmio T, powerlib_foundation] theorem torque_halfCoefficient_ne (np ω : ℝ) (hnp : np ≠ 0)
     (ψ i : ℂ) (hω : ω ≠ 0) (hx : (conj ψ * i).im ≠ 0) :
     3 / 2 * (np / 2) * (conj ψ * i).im * (ω / np) ≠ 3 / 2 * ω * (conj ψ * i).im := by
   intro h

@@ -97,7 +97,7 @@ step do not (the multiplier `1 − h` leaves the unit disk). -/
     fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 /-- The port current at the unit state is `1`, whatever the port voltage. -/
-private theorem output_unit (m : Impedance) (u : Fin 1 → ℝ) :
+@[tmio M] private theorem output_unit (m : Impedance) (u : Fin 1 → ℝ) :
     m.plant.system.output (WithLp.toLp 2 ![1]) u = ![1] := by
   funext i
   fin_cases i
@@ -148,7 +148,7 @@ def euler : Implementation Circuit Requirement Euler Requirement 3 2 3 2 :=
 /-- The circuit with all parameters `1`: passive and damped. -/
 private def unitCircuit : Circuit := ⟨⟨1, ⟨1, one_pos⟩⟩, ⟨1, ⟨1, one_pos⟩⟩, ⟨1, one_pos⟩⟩
 
-private theorem unitCircuit_passive : unitCircuit.Passive := ⟨zero_le_one, zero_le_one⟩
+@[tmio M] private theorem unitCircuit_passive : unitCircuit.Passive := ⟨zero_le_one, zero_le_one⟩
 
 /-- **Without a step constraint the Euler realization of the LCL filter is not sound.** The
 circuit with all parameters `1` is passive and damped, hence pole stable, and its discretizations
@@ -165,7 +165,7 @@ with a large step are not stable. -/
     fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 /-- The port currents at the unit converter current are `(1, 0)`, whatever the port voltages. -/
-private theorem output_unit (m : Circuit) (u : Fin 2 → ℝ) :
+@[tmio M] private theorem output_unit (m : Circuit) (u : Fin 2 → ℝ) :
     m.plant.system.output (WithLp.toLp 2 ![1, 0, 0]) u = ![1, 0] := by
   funext i
   fin_cases i <;>

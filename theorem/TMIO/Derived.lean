@@ -55,8 +55,8 @@ def l₂ : LowerAdjoint S.u₂ := generate S.u₂
 def l₃ : LowerAdjoint S.u₃ := generate S.u₃
 
 @[tmio T, powerlib_foundation] theorem gc₁ : GaloisConnection S.l₁ S.u₁ := gc_generate S.u₁
-@[powerlib_foundation] theorem gc₂ : GaloisConnection S.l₂ S.u₂ := gc_generate S.u₂
-@[powerlib_foundation] theorem gc₃ : GaloisConnection S.l₃ S.u₃ := gc_generate S.u₃
+@[tmio T, powerlib_foundation] theorem gc₂ : GaloisConnection S.l₂ S.u₂ := gc_generate S.u₂
+@[tmio T, powerlib_foundation] theorem gc₃ : GaloisConnection S.l₃ S.u₃ := gc_generate S.u₃
 
 /-- Composite semantic map from implementations back to theories. -/
 def uTI : sInfHom I T := S.u₁.comp S.u₂
@@ -67,10 +67,10 @@ def uMO : sInfHom O M := S.u₂.comp S.u₃
 /-- Whole-chain semantic map from observations back to theories. -/
 def uTO : sInfHom O T := S.u₁.comp (S.u₂.comp S.u₃)
 
-@[powerlib_foundation] theorem generate_uTI : ⇑(generate S.uTI) = S.l₂ ∘ S.l₁ :=
+@[tmio T, powerlib_foundation] theorem generate_uTI : ⇑(generate S.uTI) = S.l₂ ∘ S.l₁ :=
   generate_comp S.u₁ S.u₂
 
-@[powerlib_foundation] theorem generate_uMO : ⇑(generate S.uMO) = S.l₃ ∘ S.l₂ :=
+@[tmio T, powerlib_foundation] theorem generate_uMO : ⇑(generate S.uMO) = S.l₃ ∘ S.l₂ :=
   generate_comp S.u₂ S.u₃
 
 /-- Whole equals parts for the full chain (v0.3 §5). -/
@@ -79,16 +79,16 @@ def uTO : sInfHom O T := S.u₁.comp (S.u₂.comp S.u₃)
   rfl
 
 /-- The whole-chain Galois connection. -/
-@[powerlib_foundation] theorem gc_whole :
+@[tmio T, powerlib_foundation] theorem gc_whole :
     GaloisConnection (S.l₃ ∘ S.l₂ ∘ S.l₁) (S.u₁ ∘ S.u₂ ∘ S.u₃) :=
   (S.gc₁.compose S.gc₂).compose S.gc₃
 
 /-- Monotone propagation: stronger theory data never yields weaker observation data. -/
-@[powerlib_foundation] theorem whole_monotone : Monotone (S.l₃ ∘ S.l₂ ∘ S.l₁) :=
+@[tmio T, powerlib_foundation] theorem whole_monotone : Monotone (S.l₃ ∘ S.l₂ ∘ S.l₁) :=
   S.gc_whole.monotone_l
 
 /-- The whole chain preserves arbitrary joins of theory data. -/
-@[powerlib_foundation] theorem whole_sSup (s : Set T) :
+@[tmio T, powerlib_foundation] theorem whole_sSup (s : Set T) :
     (S.l₃ ∘ S.l₂ ∘ S.l₁) (sSup s) = sSup ((S.l₃ ∘ S.l₂ ∘ S.l₁) '' s) :=
   S.gc_whole.l_sSup_eq_sSup_image
 

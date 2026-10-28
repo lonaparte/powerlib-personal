@@ -46,16 +46,16 @@ def svec (θ : ℝ) : Fin 3 → ℝ := fun x => Real.sin (θ - phase x)
 
 @[tmio T, powerlib_foundation] theorem sqrt3_sq : Real.sqrt 3 ^ 2 = 3 := Real.sq_sqrt (by norm_num)
 
-@[powerlib_foundation] theorem cos_two_pi_div_three : Real.cos (2 * Real.pi / 3) = -1 / 2 := by
+@[tmio T, powerlib_foundation] theorem cos_two_pi_div_three : Real.cos (2 * Real.pi / 3) = -1 / 2 := by
   have : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring
   rw [this, Real.cos_pi_sub, Real.cos_pi_div_three]; ring
 
-@[powerlib_foundation] theorem sin_two_pi_div_three :
+@[tmio T, powerlib_foundation] theorem sin_two_pi_div_three :
     Real.sin (2 * Real.pi / 3) = Real.sqrt 3 / 2 := by
   have : 2 * Real.pi / 3 = Real.pi - Real.pi / 3 := by ring
   rw [this, Real.sin_pi_sub, Real.sin_pi_div_three]
 
-@[powerlib_foundation] theorem cvec_explicit (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem cvec_explicit (θ : ℝ) :
     cvec θ = ![Real.cos θ, -Real.cos θ / 2 + Real.sqrt 3 / 2 * Real.sin θ,
       -Real.cos θ / 2 - Real.sqrt 3 / 2 * Real.sin θ] := by
   ext x
@@ -63,7 +63,7 @@ def svec (θ : ℝ) : Fin 3 → ℝ := fun x => Real.sin (θ - phase x)
     simp [cvec, phase, Real.cos_sub, Real.cos_add, cos_two_pi_div_three, sin_two_pi_div_three,
 ] <;> ring
 
-@[powerlib_foundation] theorem svec_explicit (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem svec_explicit (θ : ℝ) :
     svec θ = ![Real.sin θ, -Real.sin θ / 2 - Real.sqrt 3 / 2 * Real.cos θ,
       -Real.sin θ / 2 + Real.sqrt 3 / 2 * Real.cos θ] := by
   ext x
@@ -75,28 +75,28 @@ section Dots
 
 variable (θ : ℝ)
 
-@[powerlib_foundation] theorem cvec_dot_cvec : cvec θ ⬝ᵥ cvec θ = 3 / 2 := by
+@[tmio T, powerlib_foundation] theorem cvec_dot_cvec : cvec θ ⬝ᵥ cvec θ = 3 / 2 := by
   rw [cvec_explicit]
   simp [dotProduct, Fin.sum_univ_three]
   linear_combination (Real.sin θ ^ 2 / 2) * sqrt3_sq + (3 / 2) * Real.sin_sq_add_cos_sq θ
 
-@[powerlib_foundation] theorem svec_dot_svec : svec θ ⬝ᵥ svec θ = 3 / 2 := by
+@[tmio T, powerlib_foundation] theorem svec_dot_svec : svec θ ⬝ᵥ svec θ = 3 / 2 := by
   rw [svec_explicit]
   simp [dotProduct, Fin.sum_univ_three]
   linear_combination (Real.cos θ ^ 2 / 2) * sqrt3_sq + (3 / 2) * Real.sin_sq_add_cos_sq θ
 
-@[powerlib_foundation] theorem cvec_dot_svec : cvec θ ⬝ᵥ svec θ = 0 := by
+@[tmio T, powerlib_foundation] theorem cvec_dot_svec : cvec θ ⬝ᵥ svec θ = 0 := by
   rw [cvec_explicit, svec_explicit]
   simp [dotProduct, Fin.sum_univ_three]
   linear_combination (-(Real.sin θ * Real.cos θ) / 2) * sqrt3_sq
 
-@[powerlib_foundation] theorem svec_dot_cvec : svec θ ⬝ᵥ cvec θ = 0 := by
+@[tmio T, powerlib_foundation] theorem svec_dot_cvec : svec θ ⬝ᵥ cvec θ = 0 := by
   rw [dotProduct_comm, cvec_dot_svec]
 
-@[powerlib_foundation] theorem cvec_sum : ∑ x, cvec θ x = 0 := by
+@[tmio T, powerlib_foundation] theorem cvec_sum : ∑ x, cvec θ x = 0 := by
   rw [cvec_explicit]; simp [Fin.sum_univ_three]; ring
 
-@[powerlib_foundation] theorem svec_sum : ∑ x, svec θ x = 0 := by
+@[tmio T, powerlib_foundation] theorem svec_sum : ∑ x, svec θ x = 0 := by
   rw [svec_explicit]; simp [Fin.sum_univ_three]; ring
 
 end Dots
@@ -104,9 +104,9 @@ end Dots
 /-- `k = √(2/3)`, the Park row scale. -/
 def k : ℝ := Real.sqrt (2 / 3)
 
-@[powerlib_foundation] theorem k_sq : k ^ 2 = 2 / 3 := Real.sq_sqrt (by norm_num)
+@[tmio T, powerlib_foundation] theorem k_sq : k ^ 2 = 2 / 3 := Real.sq_sqrt (by norm_num)
 
-@[powerlib_foundation] theorem inv_sqrt3_sq : (1 / Real.sqrt 3) ^ 2 = 1 / 3 := by
+@[tmio T, powerlib_foundation] theorem inv_sqrt3_sq : (1 / Real.sqrt 3) ^ 2 = 1 / 3 := by
   rw [div_pow, sqrt3_sq]; norm_num
 
 /-- Rows of the power-invariant Park matrix. -/
@@ -121,19 +121,19 @@ def parkDerivRow (θ : ℝ) : Fin 3 → Fin 3 → ℝ := ![-k • svec θ, -k �
 /-- `dT_P/dθ`. -/
 def parkDeriv (θ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ := Matrix.of (parkDerivRow θ)
 
-@[powerlib_foundation] theorem const_dotProduct (a : ℝ) (v : Fin 3 → ℝ) :
+@[tmio T, powerlib_foundation] theorem const_dotProduct (a : ℝ) (v : Fin 3 → ℝ) :
     (fun _ => a) ⬝ᵥ v = a * ∑ x, v x := by
   simp [dotProduct, Finset.mul_sum]
 
-@[powerlib_foundation] theorem dotProduct_const (a : ℝ) (v : Fin 3 → ℝ) :
+@[tmio T, powerlib_foundation] theorem dotProduct_const (a : ℝ) (v : Fin 3 → ℝ) :
     v ⬝ᵥ (fun _ => a) = a * ∑ x, v x := by
   rw [dotProduct_comm, const_dotProduct]
 
-@[powerlib_foundation] theorem of_mul_transpose_apply (A B : Fin 3 → Fin 3 → ℝ) (i j : Fin 3) :
+@[tmio T, powerlib_foundation] theorem of_mul_transpose_apply (A B : Fin 3 → Fin 3 → ℝ) (i j : Fin 3) :
     (Matrix.of A * (Matrix.of B)ᵀ) i j = A i ⬝ᵥ B j := by
   simp [Matrix.mul_apply, dotProduct]
 
-@[powerlib_foundation] theorem parkMatrix_hasDerivAt (θ : ℝ) (i x : Fin 3) :
+@[tmio T, powerlib_foundation] theorem parkMatrix_hasDerivAt (θ : ℝ) (i x : Fin 3) :
     HasDerivAt (fun φ => parkMatrix φ i x) (parkDeriv θ i x) θ := by
   fin_cases i
   · simpa [parkMatrix, parkDeriv, parkRow, parkDerivRow, cvec, svec] using
@@ -145,7 +145,7 @@ def parkDeriv (θ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ := Matrix.of (parkDerivRow
   · simpa [parkMatrix, parkDeriv, parkRow, parkDerivRow] using
       hasDerivAt_const θ (1 / Real.sqrt 3)
 
-@[powerlib_foundation] theorem parkMatrix_mulVec (θ : ℝ) (v : Fin 3 → ℝ) :
+@[tmio T, powerlib_foundation] theorem parkMatrix_mulVec (θ : ℝ) (v : Fin 3 → ℝ) :
     parkMatrix θ *ᵥ v =
       ![k * (cvec θ ⬝ᵥ v), -k * (svec θ ⬝ᵥ v), 1 / Real.sqrt 3 * ∑ x, v x] := by
   ext i
@@ -153,7 +153,7 @@ def parkDeriv (θ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ := Matrix.of (parkDerivRow
     simp [parkMatrix, parkRow, mulVec, dotProduct, Finset.mul_sum, mul_assoc]
 
 /-- Orthogonality `T_P T_Pᵀ = I`. -/
-@[powerlib_foundation] theorem parkMatrix_mul_transpose (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem parkMatrix_mul_transpose (θ : ℝ) :
     parkMatrix θ * (parkMatrix θ)ᵀ = 1 := by
   have hk := k_sq
   have h3 := sqrt3_sq
@@ -168,7 +168,7 @@ def parkDeriv (θ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ := Matrix.of (parkDerivRow
     | linear_combination (3 / 2) * hk
     | (field_simp; linarith)
 
-@[powerlib_foundation] theorem parkMatrix_transpose_mul (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem parkMatrix_transpose_mul (θ : ℝ) :
     (parkMatrix θ)ᵀ * parkMatrix θ = 1 :=
   mul_eq_one_comm.mp (parkMatrix_mul_transpose θ)
 
@@ -176,7 +176,7 @@ def parkDeriv (θ : ℝ) : Matrix (Fin 3) (Fin 3) ℝ := Matrix.of (parkDerivRow
 def J0 : Matrix (Fin 3) (Fin 3) ℝ := !![0, -1, 0; 1, 0, 0; 0, 0, 0]
 
 /-- `T_P (dT_P/dθ)ᵀ = J₀`. -/
-@[powerlib_foundation] theorem parkMatrix_mul_deriv_transpose (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem parkMatrix_mul_deriv_transpose (θ : ℝ) :
     parkMatrix θ * (parkDeriv θ)ᵀ = J0 := by
   have hk := k_sq
   ext i j
@@ -188,7 +188,7 @@ def J0 : Matrix (Fin 3) (Fin 3) ℝ := !![0, -1, 0; 1, 0, 0; 0, 0, 0]
     linear_combination (3 / 2) * hk
 
 /-- The reversed product `(dT_P/dθ)ᵀ T_P` is not `J₀` (entry `(a, b)` at `θ = 0` is `−1/√3`). -/
-@[powerlib_foundation] theorem deriv_transpose_mul_parkMatrix_ne :
+@[tmio T, powerlib_foundation] theorem deriv_transpose_mul_parkMatrix_ne :
     (parkDeriv 0)ᵀ * parkMatrix 0 ≠ J0 := by
   intro h
   have h01 := congrFun (congrFun h 0) 1
@@ -204,7 +204,7 @@ def J0 : Matrix (Fin 3) (Fin 3) ℝ := !![0, -1, 0; 1, 0, 0; 0, 0, 0]
   norm_num at h3
 
 /-- Power invariance of `T_P`: `(T_P v)·(T_P i) = v·i`. -/
-@[powerlib_foundation] theorem park_power_invariant (θ : ℝ) (v i : Fin 3 → ℝ) :
+@[tmio T, powerlib_foundation] theorem park_power_invariant (θ : ℝ) (v i : Fin 3 → ℝ) :
     (parkMatrix θ *ᵥ v) ⬝ᵥ (parkMatrix θ *ᵥ i) = v ⬝ᵥ i := by
   rw [← Matrix.vecMul_transpose, ← Matrix.dotProduct_mulVec, Matrix.mulVec_mulVec,
     parkMatrix_transpose_mul, Matrix.one_mulVec]

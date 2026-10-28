@@ -51,7 +51,7 @@ open Finset Polynomial ComplexConjugate
 
 /-- Multiset form of the Schur–Cohn bound: `‖Π (w - ζ)‖ ≤ ‖w‖^#s ‖Π (1/w̄ - ζ)‖` when all
 `ζ ∈ s` lie in the closed unit disk and `0 < ‖w‖ ≤ 1`. -/
-@[powerlib_foundation] theorem norm_prod_sub_le (s : Multiset ℂ) (hs : ∀ ζ ∈ s, ‖ζ‖ ≤ 1) {w : ℂ}
+@[tmio T, powerlib_foundation] theorem norm_prod_sub_le (s : Multiset ℂ) (hs : ∀ ζ ∈ s, ‖ζ‖ ≤ 1) {w : ℂ}
     (hw0 : w ≠ 0) (hw : ‖w‖ ≤ 1) :
     ‖(s.map fun ζ => w - ζ).prod‖ ≤
       ‖w‖ ^ Multiset.card s * ‖(s.map fun ζ => (conj w)⁻¹ - ζ).prod‖ := by
@@ -75,7 +75,7 @@ open Finset Polynomial ComplexConjugate
 
 /-- **Schur–Cohn necessary condition.** If every root of a complex polynomial `p` lies in the
 closed unit disk, then `‖p(w)‖ ≤ ‖w‖ⁿ ‖p(1 / w̄)‖` for every `0 < ‖w‖ ≤ 1` (`n = deg p`). -/
-@[powerlib_foundation] theorem norm_eval_le_of_roots_norm_le_one (p : ℂ[X])
+@[tmio T, powerlib_foundation] theorem norm_eval_le_of_roots_norm_le_one (p : ℂ[X])
     (hroots : ∀ ζ ∈ p.roots, ‖ζ‖ ≤ 1) {w : ℂ} (hw0 : w ≠ 0) (hw : ‖w‖ ≤ 1) :
     ‖p.eval w‖ ≤ ‖w‖ ^ p.natDegree * ‖p.eval (conj w)⁻¹‖ := by
   have hcard := IsAlgClosed.card_roots_eq_natDegree (p := p)
@@ -93,19 +93,19 @@ closed unit disk, then `‖p(w)‖ ≤ ‖w‖ⁿ ‖p(1 / w̄)‖` for every `0
 
 /-- Recursion of the elementary symmetric functions of a multiset:
 `e_{n+1}(a :: s) = e_{n+1}(s) + a e_n(s)`. -/
-@[powerlib_foundation] theorem multiset_esymm_cons_succ {R : Type*} [CommSemiring R]
+@[tmio T, powerlib_foundation] theorem multiset_esymm_cons_succ {R : Type*} [CommSemiring R]
     (s : Multiset R) (a : R) (n : ℕ) :
     (a ::ₘ s).esymm (n + 1) = s.esymm (n + 1) + a * s.esymm n := by
   simp [Multiset.esymm, Multiset.powersetCard_cons, Multiset.map_map, Multiset.prod_cons,
     Multiset.sum_map_mul_left]
 
 /-- `e₁(s) = Σ s`. -/
-@[powerlib_foundation] theorem multiset_esymm_one {R : Type*} [CommSemiring R]
+@[tmio T, powerlib_foundation] theorem multiset_esymm_one {R : Type*} [CommSemiring R]
     (s : Multiset R) : s.esymm 1 = s.sum := by
   simp [Multiset.esymm, Multiset.powersetCard_one, Multiset.map_map]
 
 /-- Newton's identity for the second power sum: `(Σ x)² = Σ x² + 2 e₂`. -/
-@[powerlib_foundation] theorem multiset_sum_sq {R : Type*} [CommRing R] (s : Multiset R) :
+@[tmio T, powerlib_foundation] theorem multiset_sum_sq {R : Type*} [CommRing R] (s : Multiset R) :
     s.sum ^ 2 = (s.map fun x => x ^ 2).sum + 2 * s.esymm 2 := by
   induction s using Multiset.induction_on with
   | empty => rw [Multiset.esymm_of_card_lt (by simp)]; simp
@@ -117,7 +117,7 @@ closed unit disk, then `‖p(w)‖ ≤ ‖w‖ⁿ ‖p(1 / w̄)‖` for every `0
 /-- **Second power-sum bound.** If every root of `p : ℂ[X]` (degree `n ≥ 2`) lies in the closed
 unit disk, then `‖c_{n-1}² - 2 c_{n-2} c_n‖ ≤ n ‖c_n‖²`: by Vieta the left side is
 `‖c_n‖² ‖Σ ζᵢ²‖ ≤ ‖c_n‖² Σ ‖ζᵢ‖²`. -/
-@[powerlib_foundation] theorem norm_coeff_sq_sub_le_of_roots_norm_le_one (p : ℂ[X])
+@[tmio T, powerlib_foundation] theorem norm_coeff_sq_sub_le_of_roots_norm_le_one (p : ℂ[X])
     (hn : 2 ≤ p.natDegree) (hroots : ∀ ζ ∈ p.roots, ‖ζ‖ ≤ 1) :
     ‖p.coeff (p.natDegree - 1) ^ 2 - 2 * p.coeff (p.natDegree - 2) * p.leadingCoeff‖ ≤
       p.natDegree * ‖p.leadingCoeff‖ ^ 2 := by
@@ -144,7 +144,7 @@ unit disk, then `‖c_{n-1}² - 2 c_{n-2} c_n‖ ≤ n ‖c_n‖²`: by Vieta th
 
 /-- **A root outside the unit disk from three coefficients.** If `n ≥ 2` and
 `n ‖c_n‖² < ‖c_{n-1}² - 2 c_{n-2} c_n‖`, then `p` has a root `ζ` with `1 < ‖ζ‖`. -/
-@[powerlib_foundation] theorem exists_root_norm_gt_one_of_coeff (p : ℂ[X])
+@[tmio T, powerlib_foundation] theorem exists_root_norm_gt_one_of_coeff (p : ℂ[X])
     (hn : 2 ≤ p.natDegree)
     (hlt : p.natDegree * ‖p.leadingCoeff‖ ^ 2 <
       ‖p.coeff (p.natDegree - 1) ^ 2 - 2 * p.coeff (p.natDegree - 2) * p.leadingCoeff‖) :

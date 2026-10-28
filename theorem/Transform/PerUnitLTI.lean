@@ -61,16 +61,16 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
   rw [diagonal_mul_diagonal, ← diagonal_one]
   congr 1; funext i; simp [hb i]
 
-@[powerlib_foundation] theorem diagonal_mul_inv {b : ι → ℝ} (hb : ∀ i, b i ≠ 0) :
+@[tmio T, powerlib_foundation] theorem diagonal_mul_inv {b : ι → ℝ} (hb : ∀ i, b i ≠ 0) :
     diagonal b * diagonal b⁻¹ = 1 := by
   rw [diagonal_mul_diagonal, ← diagonal_one]
   congr 1; funext i; simp [hb i]
 
-@[powerlib_foundation] theorem mulVec_cancel {b : ι → ℝ} (hb : ∀ i, b i ≠ 0) (v : ι → ℝ) :
+@[tmio T, powerlib_foundation] theorem mulVec_cancel {b : ι → ℝ} (hb : ∀ i, b i ≠ 0) (v : ι → ℝ) :
     diagonal b *ᵥ (diagonal b⁻¹ *ᵥ v) = v := by
   rw [Matrix.mulVec_mulVec, diagonal_mul_inv hb, Matrix.one_mulVec]
 
-@[powerlib_foundation] theorem mulVec_cancel' {b : ι → ℝ} (hb : ∀ i, b i ≠ 0) (v : ι → ℝ) :
+@[tmio T, powerlib_foundation] theorem mulVec_cancel' {b : ι → ℝ} (hb : ∀ i, b i ≠ 0) (v : ι → ℝ) :
     diagonal b⁻¹ *ᵥ (diagonal b *ᵥ v) = v := by
   rw [Matrix.mulVec_mulVec, diagonal_inv_mul hb, Matrix.one_mulVec]
 
@@ -81,35 +81,35 @@ def puMatrix (b : ι → ℝ) (ωB : ℝ) (A : Matrix ι ι ℝ) : Matrix ι ι 
   rebaseMatrix (diagonal b⁻¹) (diagonal b) ωB A
 
 /-- SI solution ⇒ per-unit solution `x̂(τ) = D⁻¹ x(τ / ω_B)`. -/
-@[powerlib_foundation] theorem solves_puMatrix_of {b : ι → ℝ} (hb : ∀ i, b i ≠ 0)
+@[tmio T, powerlib_foundation] theorem solves_puMatrix_of {b : ι → ℝ} (hb : ∀ i, b i ≠ 0)
     {ωB : ℝ} {A : Matrix ι ι ℝ} {x : ℝ → ι → ℝ} (hx : ∀ t, HasDerivAt x (A *ᵥ x t) t) :
     ∀ τ, HasDerivAt (fun τ => diagonal b⁻¹ *ᵥ x (τ / ωB))
       (puMatrix b ωB A *ᵥ (diagonal b⁻¹ *ᵥ x (τ / ωB))) τ :=
   solves_rebaseMatrix_of (diagonal_mul_inv hb) hx
 
 /-- Per-unit solution ⇒ SI solution `x(t) = D x̂(ω_B t)`. -/
-@[powerlib_foundation] theorem solves_of_puMatrix {b : ι → ℝ} (hb : ∀ i, b i ≠ 0)
+@[tmio T, powerlib_foundation] theorem solves_of_puMatrix {b : ι → ℝ} (hb : ∀ i, b i ≠ 0)
     {ωB : ℝ} (hω : ωB ≠ 0) {A : Matrix ι ι ℝ} {y : ℝ → ι → ℝ}
     (hy : ∀ τ, HasDerivAt y (puMatrix b ωB A *ᵥ y τ) τ) :
     ∀ t, HasDerivAt (fun t => diagonal b *ᵥ y (ωB * t)) (A *ᵥ (diagonal b *ᵥ y (ωB * t))) t :=
   solves_of_rebaseMatrix (diagonal_mul_inv hb) hω hy
 
 /-- Exact solution correspondence between the SI and per-unit linear fields. -/
-@[powerlib_foundation] theorem solves_puMatrix_iff {b : ι → ℝ} (hb : ∀ i, b i ≠ 0)
+@[tmio T, powerlib_foundation] theorem solves_puMatrix_iff {b : ι → ℝ} (hb : ∀ i, b i ≠ 0)
     {ωB : ℝ} (hω : ωB ≠ 0) (A : Matrix ι ι ℝ) (x : ℝ → ι → ℝ) :
     (∀ t, HasDerivAt x (A *ᵥ x t) t) ↔
       ∀ τ, HasDerivAt (fun τ => diagonal b⁻¹ *ᵥ x (τ / ωB))
         (puMatrix b ωB A *ᵥ (diagonal b⁻¹ *ᵥ x (τ / ωB))) τ :=
   solves_rebaseMatrix_iff (diagonal_mul_inv hb) hω A x
 
-@[powerlib_foundation] theorem spectrallyStable_puMatrix_iff {b : ι → ℝ} (hb : ∀ i, b i ≠ 0)
+@[tmio T, powerlib_foundation] theorem spectrallyStable_puMatrix_iff {b : ι → ℝ} (hb : ∀ i, b i ≠ 0)
     {ωB : ℝ} (hω : 0 < ωB) (A : Matrix ι ι ℝ) :
     SpectrallyStable (puMatrix b ωB A) ↔ SpectrallyStable A :=
   spectrallyStable_rebaseMatrix_iff (diagonal_inv_mul hb) (diagonal_mul_inv hb) hω A
 
 variable {n : ℕ}
 
-@[powerlib_foundation] theorem isHurwitz_puMatrix_iff {b : Fin n → ℝ} (hb : ∀ i, b i ≠ 0)
+@[tmio T, powerlib_foundation] theorem isHurwitz_puMatrix_iff {b : Fin n → ℝ} (hb : ∀ i, b i ≠ 0)
     {ωB : ℝ} (hω : 0 < ωB) (A : Matrix (Fin n) (Fin n) ℝ) :
     IsHurwitz (puMatrix b ωB A) ↔ IsHurwitz A :=
   isHurwitz_rebaseMatrix_iff (diagonal_inv_mul hb) (diagonal_mul_inv hb) hω A
@@ -131,7 +131,7 @@ variable {p : ℕ}
 def puIO (bx : Fin n → ℝ) (bu by' : Fin p → ℝ) (ωB : ℝ) (m : Plant n p) : Plant n p :=
   plant m (diagonal bx⁻¹) (diagonal bx) ωB (diagonal bu) (diagonal by'⁻¹)
 
-@[powerlib_foundation] theorem characteristicMatrix_puMatrix {bx : Fin n → ℝ}
+@[tmio T, powerlib_foundation] theorem characteristicMatrix_puMatrix {bx : Fin n → ℝ}
     (hb : ∀ i, bx i ≠ 0) {ωB : ℝ} (hω : ωB ≠ 0) (A : Matrix (Fin n) (Fin n) ℝ) (s : ℂ) :
     characteristicMatrix (puMatrix bx ωB A) s =
       (ωB⁻¹ : ℂ) • (complexify (diagonal bx⁻¹) * characteristicMatrix A (s * ωB) *
@@ -139,7 +139,7 @@ def puIO (bx : Fin n → ℝ) (bu by' : Fin p → ℝ) (ωB : ℝ) (m : Plant n 
   characteristicMatrix_rebaseMatrix (diagonal_inv_mul hb) hω A s
 
 /-- Per-unit transfer matrix: `Ĝ(ŝ) = D_y⁻¹ G(ω_B ŝ) D_u`. -/
-@[powerlib_foundation] theorem transfer_puIO {bx : Fin n → ℝ} (hb : ∀ i, bx i ≠ 0)
+@[tmio M, powerlib_foundation] theorem transfer_puIO {bx : Fin n → ℝ} (hb : ∀ i, bx i ≠ 0)
     (bu by' : Fin p → ℝ) {ωB : ℝ} (hω : ωB ≠ 0) (m : Plant n p) (s : ℂ) :
     transfer (puIO bx bu by' ωB m) s =
       complexify (diagonal by'⁻¹) * transfer m (s * ωB) * complexify (diagonal bu) :=
@@ -171,14 +171,14 @@ variable (ic : Interconnection n₁ n₂ p) {b₁ : Fin n₁ → ℝ} {b₂ : Fi
   {ωB : ℝ}
 
 /-- The per-unit source and load are the per-unit transforms of the SI ones. -/
-@[powerlib_foundation] theorem source_perUnit :
+@[tmio M, powerlib_foundation] theorem source_perUnit :
     (perUnit ic b₁ b₂ vb ib ωB).source = puIO b₁ ib vb ωB ic.source := rfl
 
-@[powerlib_foundation] theorem load_perUnit :
+@[tmio M, powerlib_foundation] theorem load_perUnit :
     (perUnit ic b₁ b₂ vb ib ωB).load = puIO b₂ vb ib ωB ic.load := rfl
 
 /-- The per-unit return difference is the SI return difference at `ω_B ŝ`. -/
-@[powerlib_foundation] theorem returnDifference_perUnit (hb₁ : ∀ i, b₁ i ≠ 0)
+@[tmio M, powerlib_foundation] theorem returnDifference_perUnit (hb₁ : ∀ i, b₁ i ≠ 0)
     (hb₂ : ∀ i, b₂ i ≠ 0) (hv : ∀ k, vb k ≠ 0) (hi : ∀ k, ib k ≠ 0) (hω : ωB ≠ 0) (s : ℂ) :
     (perUnit ic b₁ b₂ vb ib ωB).returnDifference s = ic.returnDifference (s * ωB) :=
   returnDifference_rebase (diagonal_mul_inv hb₁) (diagonal_mul_inv hb₂) (diagonal_mul_inv hv)
@@ -193,7 +193,7 @@ variable (ic : Interconnection n₁ n₂ p) {b₁ : Fin n₁ → ℝ} {b₂ : Fi
 
 /-- The per-unit closed loop is the per-unit transformation of the SI closed loop, with the
 stacked state bases. -/
-@[powerlib_foundation] theorem closedLoopBlocks_perUnit (hv : ∀ k, vb k ≠ 0)
+@[tmio M, powerlib_foundation] theorem closedLoopBlocks_perUnit (hv : ∀ k, vb k ≠ 0)
     (hi : ∀ k, ib k ≠ 0) :
     (perUnit ic b₁ b₂ vb ib ωB).closedLoopBlocks =
       puMatrix (Sum.elim b₁ b₂) ωB ic.closedLoopBlocks := by

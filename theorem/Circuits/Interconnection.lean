@@ -140,7 +140,7 @@ def closedLoop : Plant (n₁ + n₂) p :=
 
 @[tmio M, simp, powerlib_foundation] theorem closedLoop_A : ic.closedLoop.A = ic.closedLoopA := rfl
 
-@[powerlib_foundation] theorem characteristicMatrix_closedLoop (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem characteristicMatrix_closedLoop (s : ℂ) :
     characteristicMatrix ic.closedLoopBlocks s =
       fromBlocks (characteristicMatrix ic.source.A s)
         (-(complexify ic.source.B * complexify ic.load.C))
@@ -158,7 +158,7 @@ def closedLoop : Plant (n₁ + n₂) p :=
   congr 1 <;> abel
 
 /-- The closed-loop characteristic polynomial factors through the return difference. -/
-@[powerlib_foundation] theorem det_characteristicMatrix_closedLoop (s : ℂ)
+@[tmio M, powerlib_foundation] theorem det_characteristicMatrix_closedLoop (s : ℂ)
     (h₁ : (characteristicMatrix ic.source.A s).det ≠ 0)
     (h₂ : (characteristicMatrix ic.load.A s).det ≠ 0) :
     (characteristicMatrix ic.closedLoopBlocks s).det =
@@ -187,18 +187,18 @@ def closedLoop : Plant (n₁ + n₂) p :=
   simp only [Matrix.mul_assoc]
   ring
 
-@[powerlib_foundation] theorem det_ne_zero_of_rhp {A : Matrix (Fin n₁) (Fin n₁) ℝ}
+@[tmio T, powerlib_foundation] theorem det_ne_zero_of_rhp {A : Matrix (Fin n₁) (Fin n₁) ℝ}
     (h : SpectrallyStable A) {s : ℂ} (hs : 0 ≤ s.re) : (characteristicMatrix A s).det ≠ 0 :=
   fun h0 => (not_lt.mpr hs) (h s h0)
 
-@[powerlib_foundation] theorem det_characteristicMatrix_closedLoopA (s : ℂ) :
+@[tmio M, powerlib_foundation] theorem det_characteristicMatrix_closedLoopA (s : ℂ) :
     (characteristicMatrix ic.closedLoopA s).det =
       (characteristicMatrix ic.closedLoopBlocks s).det := by
   rw [closedLoopA, characteristicMatrix_reindex, Matrix.det_reindex_self]
 
 /-- Away from the component poles and the zeros of the return difference, the closed loop has no
 pole. -/
-@[powerlib_foundation] theorem det_closedLoop_ne_zero (s : ℂ)
+@[tmio M, powerlib_foundation] theorem det_closedLoop_ne_zero (s : ℂ)
     (h₁ : (characteristicMatrix ic.source.A s).det ≠ 0)
     (h₂ : (characteristicMatrix ic.load.A s).det ≠ 0) (h : ic.returnDifference s ≠ 0) :
     (characteristicMatrix ic.closedLoop.A s).det ≠ 0 := by
@@ -207,7 +207,7 @@ pole. -/
   exact mul_ne_zero (mul_ne_zero h₁ h₂) h
 
 /-- The transfer function of the closed loop is the port impedance. -/
-@[powerlib_foundation] theorem transfer_closedLoop (s : ℂ)
+@[tmio M, powerlib_foundation] theorem transfer_closedLoop (s : ℂ)
     (h₁ : (characteristicMatrix ic.source.A s).det ≠ 0)
     (h₂ : (characteristicMatrix ic.load.A s).det ≠ 0) (h : ic.returnDifference s ≠ 0) :
     transfer ic.closedLoop s = ic.portImpedance s := by
@@ -317,7 +317,7 @@ end Interconnection
 
 /-! ## Coordinate changes of the components -/
 
-@[powerlib_foundation] theorem reindex_mul {l m k l' m' k' : Type*} [Fintype m] [Fintype m']
+@[tmio T, powerlib_foundation] theorem reindex_mul {l m k l' m' k' : Type*} [Fintype m] [Fintype m']
     (el : l ≃ l') (em : m ≃ m') (ek : k ≃ k') (X : Matrix l m ℝ) (Y : Matrix m k ℝ) :
     (X * Y).reindex el ek = X.reindex el em * Y.reindex em ek := by
   simp only [Matrix.reindex_apply, Matrix.submatrix_mul_equiv]
@@ -327,14 +327,14 @@ def blockCoordinates (T₁ : Matrix (Fin n₁') (Fin n₁) ℝ) (T₂ : Matrix (
     Matrix (Fin (n₁' + n₂')) (Fin (n₁ + n₂)) ℝ :=
   (fromBlocks T₁ 0 0 T₂).reindex finSumFinEquiv finSumFinEquiv
 
-@[powerlib_foundation] theorem blockCoordinates_mul {n₁'' n₂'' : ℕ}
+@[tmio T, powerlib_foundation] theorem blockCoordinates_mul {n₁'' n₂'' : ℕ}
     (T₁ : Matrix (Fin n₁') (Fin n₁) ℝ) (T₂ : Matrix (Fin n₂') (Fin n₂) ℝ)
     (S₁ : Matrix (Fin n₁) (Fin n₁'') ℝ) (S₂ : Matrix (Fin n₂) (Fin n₂'') ℝ) :
     blockCoordinates T₁ T₂ * blockCoordinates S₁ S₂ = blockCoordinates (T₁ * S₁) (T₂ * S₂) := by
   rw [blockCoordinates, blockCoordinates, blockCoordinates, ← reindex_mul, fromBlocks_multiply]
   simp
 
-@[powerlib_foundation] theorem blockCoordinates_one :
+@[tmio T, powerlib_foundation] theorem blockCoordinates_one :
     blockCoordinates (1 : Matrix (Fin n₁) (Fin n₁) ℝ) (1 : Matrix (Fin n₂) (Fin n₂) ℝ) = 1 := by
   rw [blockCoordinates, fromBlocks_one, Matrix.reindex_apply, Matrix.submatrix_one_equiv]
 
@@ -351,7 +351,7 @@ def changeCoordinates (T₁ : Matrix (Fin n₁') (Fin n₁) ℝ) (S₁ : Matrix 
 variable (T₁ : Matrix (Fin n₁') (Fin n₁) ℝ) (S₁ : Matrix (Fin n₁) (Fin n₁') ℝ)
   (T₂ : Matrix (Fin n₂') (Fin n₂) ℝ) (S₂ : Matrix (Fin n₂) (Fin n₂') ℝ)
 
-@[powerlib_foundation] theorem closedLoopBlocks_changeCoordinates :
+@[tmio M, powerlib_foundation] theorem closedLoopBlocks_changeCoordinates :
     (ic.changeCoordinates T₁ S₁ T₂ S₂).closedLoopBlocks =
       fromBlocks T₁ 0 0 T₂ * ic.closedLoopBlocks * fromBlocks S₁ 0 0 S₂ := by
   simp only [closedLoopBlocks, generated.closedLoopBlocks_spec, changeCoordinates,
@@ -359,20 +359,20 @@ variable (T₁ : Matrix (Fin n₁') (Fin n₁) ℝ) (S₁ : Matrix (Fin n₁) (F
   simp only [Matrix.zero_mul, Matrix.mul_zero, neg_zero, sub_self, add_zero, zero_add,
     Matrix.mul_neg, Matrix.neg_mul, Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_assoc]
 
-@[powerlib_foundation] theorem inputBlocks_changeCoordinates :
+@[tmio M, powerlib_foundation] theorem inputBlocks_changeCoordinates :
     (ic.changeCoordinates T₁ S₁ T₂ S₂).inputBlocks = fromBlocks T₁ 0 0 T₂ * ic.inputBlocks := by
   simp only [inputBlocks, generated.closedLoopInput_spec, changeCoordinates,
     Plant.changeCoordinates, fromBlocks_mul_fromRows]
   simp only [Matrix.zero_mul, neg_zero, add_zero, zero_add, Matrix.mul_neg, Matrix.mul_assoc]
 
-@[powerlib_foundation] theorem outputBlocks_changeCoordinates :
+@[tmio M, powerlib_foundation] theorem outputBlocks_changeCoordinates :
     (ic.changeCoordinates T₁ S₁ T₂ S₂).outputBlocks = ic.outputBlocks * fromBlocks S₁ 0 0 S₂ := by
   simp only [outputBlocks, generated.closedLoopOutput_spec, changeCoordinates,
     Plant.changeCoordinates, fromCols_mul_fromBlocks]
   simp only [Matrix.mul_zero, add_zero, zero_add, Matrix.neg_mul, Matrix.mul_assoc]
 
 /-- Coordinate changes of the components change the coordinates of the closed loop. -/
-@[powerlib_foundation] theorem closedLoop_changeCoordinates :
+@[tmio M, powerlib_foundation] theorem closedLoop_changeCoordinates :
     (ic.changeCoordinates T₁ S₁ T₂ S₂).closedLoop =
       ic.closedLoop.changeCoordinates (blockCoordinates T₁ T₂) (blockCoordinates S₁ S₂) := by
   ext : 1
@@ -394,7 +394,7 @@ variable (T₁ : Matrix (Fin n₁') (Fin n₁) ℝ) (S₁ : Matrix (Fin n₁) (F
 variable {T₁ S₁ T₂ S₂}
 
 /-- The closed loops of coordinate-changed components are similar. -/
-@[powerlib_foundation] theorem similar_closedLoop_changeCoordinates (hTS₁ : T₁ * S₁ = 1)
+@[tmio M, powerlib_foundation] theorem similar_closedLoop_changeCoordinates (hTS₁ : T₁ * S₁ = 1)
     (hST₁ : S₁ * T₁ = 1) (hTS₂ : T₂ * S₂ = 1) (hST₂ : S₂ * T₂ = 1) :
     Similar ic.closedLoop (ic.changeCoordinates T₁ S₁ T₂ S₂).closedLoop :=
   ⟨blockCoordinates T₁ T₂, blockCoordinates S₁ S₂,
@@ -402,17 +402,17 @@ variable {T₁ S₁ T₂ S₂}
     by rw [blockCoordinates_mul, hST₁, hST₂, blockCoordinates_one],
     ic.closedLoop_changeCoordinates T₁ S₁ T₂ S₂⟩
 
-@[powerlib_foundation] theorem sourceImpedance_changeCoordinates (hTS₁ : T₁ * S₁ = 1)
+@[tmio M, powerlib_foundation] theorem sourceImpedance_changeCoordinates (hTS₁ : T₁ * S₁ = 1)
     (hST₁ : S₁ * T₁ = 1) (s : ℂ) :
     (ic.changeCoordinates T₁ S₁ T₂ S₂).sourceImpedance s = ic.sourceImpedance s :=
   transfer_changeCoordinates hTS₁ hST₁ ic.source s
 
-@[powerlib_foundation] theorem loadAdmittance_changeCoordinates (hTS₂ : T₂ * S₂ = 1)
+@[tmio M, powerlib_foundation] theorem loadAdmittance_changeCoordinates (hTS₂ : T₂ * S₂ = 1)
     (hST₂ : S₂ * T₂ = 1) (s : ℂ) :
     (ic.changeCoordinates T₁ S₁ T₂ S₂).loadAdmittance s = ic.loadAdmittance s :=
   transfer_changeCoordinates hTS₂ hST₂ ic.load s
 
-@[powerlib_foundation] theorem portImpedance_changeCoordinates (hTS₁ : T₁ * S₁ = 1)
+@[tmio M, powerlib_foundation] theorem portImpedance_changeCoordinates (hTS₁ : T₁ * S₁ = 1)
     (hST₁ : S₁ * T₁ = 1) (hTS₂ : T₂ * S₂ = 1) (hST₂ : S₂ * T₂ = 1) (s : ℂ) :
     (ic.changeCoordinates T₁ S₁ T₂ S₂).portImpedance s = ic.portImpedance s := by
   simp only [portImpedance, ic.sourceImpedance_changeCoordinates hTS₁ hST₁,
@@ -439,7 +439,7 @@ namespace Interconnection
 variable (ic : Interconnection n₁ n₂ p)
 
 /-- For large real `s` the components have no pole and the return difference does not vanish. -/
-@[powerlib_foundation] theorem eventually_regular :
+@[tmio M, powerlib_foundation] theorem eventually_regular :
     ∃ s₀ : ℝ, ∀ x : ℝ, s₀ ≤ x → (characteristicMatrix ic.source.A x).det ≠ 0 ∧
       (characteristicMatrix ic.load.A x).det ≠ 0 ∧ ic.returnDifference x ≠ 0 := by
   obtain ⟨a₁, ha₁⟩ := exists_det_characteristicMatrix_ne_zero ic.source
@@ -454,7 +454,7 @@ variable (ic : Interconnection n₁ n₂ p)
 
 /-- On a minimal closed loop, a minimal plant realizes the port impedance exactly when it is
 similar to the closed loop. -/
-@[powerlib_foundation] theorem similar_closedLoop_iff {n' : ℕ} {m' : Plant n' p}
+@[tmio M, powerlib_foundation] theorem similar_closedLoop_iff {n' : ℕ} {m' : Plant n' p}
     (hcl : ic.closedLoop.Minimal) (hm' : m'.Minimal) :
     Similar ic.closedLoop m' ↔ ∀ s : ℂ, (characteristicMatrix ic.source.A s).det ≠ 0 →
       (characteristicMatrix ic.load.A s).det ≠ 0 → ic.returnDifference s ≠ 0 →
@@ -471,7 +471,7 @@ similar to the closed loop. -/
   exact similar_of_markov_eq hcl.1 hcl.2 hm'.1 hm'.2 hD hM
 
 /-- The port impedance has a minimal realization with no more states than the closed loop. -/
-@[powerlib_foundation] theorem exists_minimal_realization_portImpedance :
+@[tmio M, powerlib_foundation] theorem exists_minimal_realization_portImpedance :
     ∃ (n' : ℕ) (m' : Plant n' p), n' ≤ n₁ + n₂ ∧ m'.Minimal ∧
       ∀ s : ℂ, (characteristicMatrix ic.source.A s).det ≠ 0 →
         (characteristicMatrix ic.load.A s).det ≠ 0 → ic.returnDifference s ≠ 0 →
@@ -517,7 +517,7 @@ requirement language and the translation table. -/
 def family : Family (Interconnection n₁ n₂ p) Requirement (n₁ + n₂) p :=
   ⟨fun ic => ic.closedLoop.system, Meets, translate⟩
 
-@[powerlib_foundation] theorem family_isLinear :
+@[tmio M, powerlib_foundation] theorem family_isLinear :
     (family (n₁ := n₁) (n₂ := n₂) (p := p)).IsLinear closedLoop := fun _ => rfl
 
 /-- The context in which the criterion speaks: internally stable source and load. -/
@@ -634,7 +634,7 @@ def hiddenLoop : Interconnection 1 1 1 := ⟨hiddenMode, testLoad, rfl⟩
 /-- The same load behind a stable source with the same (zero) impedance. -/
 def quietLoop : Interconnection 1 1 1 := ⟨quietMode, testLoad, rfl⟩
 
-@[powerlib_foundation] theorem portData_hidden_quiet : hiddenLoop.portData = quietLoop.portData :=
+@[tmio M, powerlib_foundation] theorem portData_hidden_quiet : hiddenLoop.portData = quietLoop.portData :=
   Prod.ext transfer_not_determines_stability.1 rfl
 
 @[powerlib_foundation] theorem testLoad_isHurwitz : IsHurwitz testLoad.A := by
@@ -679,13 +679,13 @@ def MinimalComponents (ic : Interconnection n₁ n₂ p) : Prop :=
   ic.source.Minimal ∧ ic.load.Minimal
 
 /-- The hidden-mode interconnection has a hidden component mode. -/
-@[powerlib_foundation] theorem hiddenLoop_not_minimalComponents :
+@[tmio M, powerlib_foundation] theorem hiddenLoop_not_minimalComponents :
     ¬ hiddenLoop.MinimalComponents :=
   fun h => hiddenMode_not_minimal h.1
 
 /-- With minimal components, port data determine the interconnection up to coordinate changes of
 the components. -/
-@[powerlib_foundation] theorem exists_changeCoordinates_of_portData
+@[tmio M, powerlib_foundation] theorem exists_changeCoordinates_of_portData
     {ic ic' : Interconnection n₁ n₂ p} (hm : ic.MinimalComponents)
     (hm' : ic'.MinimalComponents) (h : ic.portData = ic'.portData) :
     ∃ (T₁ S₁ : Matrix (Fin n₁) (Fin n₁) ℝ) (T₂ S₂ : Matrix (Fin n₂) (Fin n₂) ℝ),
@@ -702,7 +702,7 @@ the components. -/
   exact ⟨T₁, S₁, T₂, S₂, hTS₁, hST₁, hTS₂, hST₂, Interconnection.ext h₁ h₂⟩
 
 /-- With minimal components, port data determine the closed loop up to similarity. -/
-@[powerlib_foundation] theorem similar_closedLoop_of_portData {ic ic' : Interconnection n₁ n₂ p}
+@[tmio M, powerlib_foundation] theorem similar_closedLoop_of_portData {ic ic' : Interconnection n₁ n₂ p}
     (hm : ic.MinimalComponents) (hm' : ic'.MinimalComponents) (h : ic.portData = ic'.portData) :
     Similar ic.closedLoop ic'.closedLoop := by
   obtain ⟨T₁, S₁, T₂, S₂, hTS₁, hST₁, hTS₂, hST₂, rfl⟩ :=
@@ -739,7 +739,7 @@ def firstOrderLoad (c : ℝ) : Plant 1 1 := ⟨!![-1], !![1], !![c], 0⟩
 /-- The interconnection of the two. -/
 def staticLoop (d c : ℝ) : Interconnection 0 1 1 := ⟨staticSource d, firstOrderLoad c, rfl⟩
 
-@[powerlib_foundation] theorem staticLoop_entry (d c : ℝ) :
+@[tmio M, powerlib_foundation] theorem staticLoop_entry (d c : ℝ) :
     ((staticLoop d c).closedLoopA : Matrix (Fin 1) (Fin 1) ℝ) 0 0 = -1 - d * c := by
   have h0 : (0 : Fin (0 + 1)) = Fin.natAdd 0 (0 : Fin 1) := rfl
   change (staticLoop d c).closedLoopBlocks.reindex finSumFinEquiv finSumFinEquiv 0 0 = _

@@ -102,7 +102,7 @@ every forward solution starting in a compact positively invariant set converges 
   rwa [nhdsSet_singleton] at h
 
 /-- Passivity with a storage minimized at `0` forces the output to vanish at `0`. -/
-@[powerlib_foundation] theorem output_eq_zero_of_passive
+@[tmio T, powerlib_foundation] theorem output_eq_zero_of_passive
     {F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin n)}
     {H : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m)}
     {V : EuclideanSpace ℝ (Fin n) → ℝ}
@@ -122,7 +122,7 @@ every forward solution starting in a compact positively invariant set converges 
 
 /-- Output feedback `u = −ψ(y)` with `⟪ψ(y), y⟫ > 0` (`y ≠ 0`), `ψ(0) = 0` on a passive system:
 `V̇ ≤ −⟪ψ(y), y⟫ ≤ 0`, and `V̇ = 0` only where `y = 0`. -/
-@[powerlib_foundation] theorem lieDeriv_feedback_le
+@[tmio T, powerlib_foundation] theorem lieDeriv_feedback_le
     {F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin n)}
     {H : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m)}
     {ψ : EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin m)}
@@ -143,7 +143,7 @@ every forward solution starting in a compact positively invariant set converges 
 
 /-- Zero-state detectability transported to the closed loop: a closed-loop solution along which
 `V̇` vanishes stays in `{y = 0}`, where the closed loop is the unforced system. -/
-private theorem closedLoop_detectable
+@[tmio T] private theorem closedLoop_detectable
     {F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin n)}
     {H : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m)}
     {ψ : EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin m)}
@@ -169,7 +169,7 @@ unbounded (`V̇ ≤ ⟪u, y⟫`), with `F(0, 0) = 0`, and zero-state detectable 
 solution with `y ≡ 0` converges to `0`), the output feedback `u = −ψ(y)` with `ψ(0) = 0`,
 `⟪ψ(y), y⟫ > 0` (`y ≠ 0`; e.g. `ψ(y) = k y`, `k > 0`) makes `0` globally asymptotically stable,
 provided the closed-loop field is `C¹`. -/
-@[powerlib_foundation] theorem globallyAsymptoticallyStable_of_passive_detectable
+@[tmio T, powerlib_foundation] theorem globallyAsymptoticallyStable_of_passive_detectable
     {F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin n)}
     {H : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m)}
     {ψ : EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin m)}
@@ -215,7 +215,7 @@ provided the closed-loop field is `C¹`. -/
 /-- **Passivity + zero-state detectability ⇒ local asymptotic stability** (Khalil, Lemma 6.7,
 local part). As `globallyAsymptoticallyStable_of_passive_detectable`, with radial unboundedness
 replaced by one compact sublevel set `{V ≤ c₀}`, `c₀ > 0`. -/
-@[powerlib_foundation] theorem localAsymptoticStable_of_passive_detectable
+@[tmio T, powerlib_foundation] theorem localAsymptoticStable_of_passive_detectable
     {F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin n)}
     {H : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m)}
     {ψ : EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin m)}
@@ -263,7 +263,7 @@ replaced by one compact sublevel set `{V ≤ c₀}`, `c₀ > 0`. -/
 
 /-- Zero-state observability (the only unforced forward solution with `y ≡ 0` is `x ≡ 0`)
 implies zero-state detectability. -/
-@[powerlib_foundation] theorem detectable_of_observable
+@[tmio T, powerlib_foundation] theorem detectable_of_observable
     {F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin n)}
     {H : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m)}
     (hzso : ∀ φ : ℝ → EuclideanSpace ℝ (Fin n), IsIntegralCurveOn φ (fun _ x => F x 0) (Ici 0) →
@@ -278,7 +278,7 @@ implies zero-state detectability. -/
 /-- **Passivity + zero-state observability ⇒ global asymptotic stability under output feedback**
 (Khalil, Lemma 6.7): the zero-state-observable special case of
 `globallyAsymptoticallyStable_of_passive_detectable`. -/
-@[powerlib_foundation] theorem globallyAsymptoticallyStable_of_passive_observable
+@[tmio T, powerlib_foundation] theorem globallyAsymptoticallyStable_of_passive_observable
     {F : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin n)}
     {H : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin m)}
     {ψ : EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin m)}

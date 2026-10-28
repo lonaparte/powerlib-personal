@@ -44,7 +44,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
   hurwitz_linearization_locally_exponentially_stable A hf heq hJac hA
 
 /-- A spectrally stable Jacobian at an equilibrium gives local exponential stability. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_of_spectrallyStable_jacobian
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_spectrallyStable_jacobian
     {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} (A : Matrix (Fin n) (Fin n) ℝ)
     (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
@@ -54,7 +54,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- A Jacobian eigenvalue in the open right half plane gives instability (LeanForControl's
 `unstable_of_exists_complex_eigenvalue_re_pos`). -/
-@[powerlib_foundation] theorem unstable_of_jacobian_eigenvalue_re_pos
+@[tmio T, powerlib_foundation] theorem unstable_of_jacobian_eigenvalue_re_pos
     {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} (A : Matrix (Fin n) (Fin n) ℝ)
     (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)
@@ -65,7 +65,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- A root of the Jacobian's characteristic polynomial in the open right half plane gives
 instability. -/
-@[powerlib_foundation] theorem unstable_of_characteristic_root_re_pos
+@[tmio T, powerlib_foundation] theorem unstable_of_characteristic_root_re_pos
     {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} (A : Matrix (Fin n) (Fin n) ℝ)
     (hf : ContDiff ℝ 1 f) (heq : f x_eq = 0)
     (hJac : fderiv ℝ f x_eq = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A)

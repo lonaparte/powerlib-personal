@@ -50,7 +50,7 @@ variable {K : Type*} [Field K] {n : Type*} [Fintype n] [DecidableEq n]
   rwa [Matrix.charpoly_toLin'] at this
 
 /-- `1 ≤ m_g(λ)` for an eigenvalue `λ`. -/
-@[powerlib_foundation] theorem one_le_geom {A : Matrix n n K} {lam : K} {v : n → K} (hv : v ≠ 0)
+@[tmio T, powerlib_foundation] theorem one_le_geom {A : Matrix n n K} {lam : K} {v : n → K} (hv : v ≠ 0)
     (heig : A *ᵥ v = lam • v) : 1 ≤ finrank K (Module.End.eigenspace (Matrix.toLin' A) lam) := by
   have hmem : v ∈ Module.End.eigenspace (Matrix.toLin' A) lam := by
     rw [Module.End.mem_eigenspace_iff, Matrix.toLin'_apply, heig]
@@ -59,7 +59,7 @@ variable {K : Type*} [Field K] {n : Type*} [Fintype n] [DecidableEq n]
   exact Nat.one_le_iff_ne_zero.mpr fun h => hne (Submodule.finrank_eq_zero.mp h)
 
 /-- `m_a(λ) ≤ n`. -/
-@[powerlib_foundation] theorem alg_le_card (A : Matrix n n K) (lam : K) :
+@[tmio T, powerlib_foundation] theorem alg_le_card (A : Matrix n n K) (lam : K) :
     A.charpoly.rootMultiplicity lam ≤ Fintype.card n := by
   have hmon := A.charpoly_monic
   classical
@@ -72,7 +72,7 @@ variable {K : Type*} [Field K] {n : Type*} [Fintype n] [DecidableEq n]
 /-! ## Shift-and-invert -/
 
 /-- `A v = λ v` ⇒ `(A − sI)⁻¹ v = (λ − s)⁻¹ v` (`s` not an eigenvalue). -/
-@[powerlib_foundation] theorem shiftInvert_mulVec {A : Matrix n n K} {s lam : K} {v : n → K}
+@[tmio T, powerlib_foundation] theorem shiftInvert_mulVec {A : Matrix n n K} {s lam : K} {v : n → K}
     (hs : IsUnit (A - s • 1).det) (heig : A *ᵥ v = lam • v) :
     (A - s • 1)⁻¹ *ᵥ v = (lam - s)⁻¹ • v := by
   have hshift : (A - s • 1) *ᵥ v = (lam - s) • v := by
@@ -92,7 +92,7 @@ variable {K : Type*} [Field K] {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- An eigenpair `(μ, v)` of `(A − sI)⁻¹` has `μ ≠ 0` and gives the eigenpair
 `(s + μ⁻¹, v)` of `A`: the spectral map `λ ↦ (λ − s)⁻¹` is a bijection. -/
-@[powerlib_foundation] theorem eigen_of_shiftInvert {A : Matrix n n K} {s μ : K} {v : n → K}
+@[tmio T, powerlib_foundation] theorem eigen_of_shiftInvert {A : Matrix n n K} {s μ : K} {v : n → K}
     (hs : IsUnit (A - s • 1).det) (hv : v ≠ 0) (heig : (A - s • 1)⁻¹ *ᵥ v = μ • v) :
     μ ≠ 0 ∧ A *ᵥ v = (s + μ⁻¹) • v := by
   have hback : v = μ • ((A - s • 1) *ᵥ v) := by
@@ -122,7 +122,7 @@ def IsUpperTriangular {k : ℕ} {R : Type*} [Zero R] (U : Matrix (Fin k) (Fin k)
 
 variable {k : ℕ}
 
-@[powerlib_foundation] theorem hessenberg_mul_upper {H U : Matrix (Fin k) (Fin k) ℂ}
+@[tmio T, powerlib_foundation] theorem hessenberg_mul_upper {H U : Matrix (Fin k) (Fin k) ℂ}
     (hH : IsUpperHessenberg H) (hU : IsUpperTriangular U) : IsUpperHessenberg (H * U) := by
   intro i j hij
   rw [mul_apply]
@@ -131,7 +131,7 @@ variable {k : ℕ}
   · rw [hH i l hl, zero_mul]
   · rw [hU l j (by rw [Fin.lt_def]; omega), mul_zero]
 
-@[powerlib_foundation] theorem upper_mul_hessenberg {H U : Matrix (Fin k) (Fin k) ℂ}
+@[tmio T, powerlib_foundation] theorem upper_mul_hessenberg {H U : Matrix (Fin k) (Fin k) ℂ}
     (hH : IsUpperHessenberg H) (hU : IsUpperTriangular U) : IsUpperHessenberg (U * H) := by
   intro i j hij
   rw [mul_apply]
@@ -140,27 +140,27 @@ variable {k : ℕ}
   · rw [hU i l hl, zero_mul]
   · rw [hH l j (by rw [Fin.lt_def] at hl; omega), mul_zero]
 
-@[powerlib_foundation] theorem hessenberg_add_smul_one {H : Matrix (Fin k) (Fin k) ℂ}
+@[tmio T, powerlib_foundation] theorem hessenberg_add_smul_one {H : Matrix (Fin k) (Fin k) ℂ}
     (hH : IsUpperHessenberg H) (c : ℂ) : IsUpperHessenberg (H + c • 1) := by
   intro i j hij
   have hne : i ≠ j := by intro h; rw [h] at hij; omega
   simp [hH i j hij, one_apply_ne hne]
 
-@[powerlib_foundation] theorem upperTriangular_inv {U : Matrix (Fin k) (Fin k) ℂ}
+@[tmio T, powerlib_foundation] theorem upperTriangular_inv {U : Matrix (Fin k) (Fin k) ℂ}
     (hU : IsUpperTriangular U) (hdet : IsUnit U.det) : IsUpperTriangular U⁻¹ := by
   have hb : U.BlockTriangular id := fun i j h => hU i j h
   have := invertibleOfIsUnitDet U hdet
   exact fun i j h => blockTriangular_inv_of_blockTriangular hb h
 
 /-- **QR step is a unitary similarity**: `H − μI = QR`, `QᴴQ = I` ⇒ `RQ + μI = Qᴴ H Q`. -/
-@[powerlib_foundation] theorem qrStep_similar {H Q R : Matrix (Fin k) (Fin k) ℂ} {μ : ℂ}
+@[tmio T, powerlib_foundation] theorem qrStep_similar {H Q R : Matrix (Fin k) (Fin k) ℂ} {μ : ℂ}
     (hQ : Qᴴ * Q = 1) (hqr : H - μ • 1 = Q * R) : R * Q + μ • 1 = Qᴴ * H * Q := by
   have hH : H = Q * R + μ • 1 := by rw [← hqr]; abel
   rw [hH, Matrix.mul_add, Matrix.add_mul, ← Matrix.mul_assoc, hQ, Matrix.one_mul,
     Matrix.mul_smul, Matrix.mul_one, Matrix.smul_mul, hQ]
 
 /-- **QR step preserves the Hessenberg form** (invertible `R`). -/
-@[powerlib_foundation] theorem qrStep_hessenberg {H Q R : Matrix (Fin k) (Fin k) ℂ} {μ : ℂ}
+@[tmio T, powerlib_foundation] theorem qrStep_hessenberg {H Q R : Matrix (Fin k) (Fin k) ℂ} {μ : ℂ}
     (hH : IsUpperHessenberg H) (hR : IsUpperTriangular R) (hdet : IsUnit R.det)
     (hqr : H - μ • 1 = Q * R) : IsUpperHessenberg (R * Q + μ • 1) := by
   have hQ : Q = (H - μ • 1) * R⁻¹ := by

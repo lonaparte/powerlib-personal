@@ -73,7 +73,7 @@ def tiltedTransition (T : S → S → ℝ) (u : S → ℝ) (ρ : ℝ) (i j : S) 
   T i j * u j / (ρ * u i)
 
 /-- `P(λ)` is a stochastic matrix. -/
-@[powerlib_foundation] theorem tiltedTransition_stochastic [Fintype S] {T : S → S → ℝ} {u : S → ℝ}
+@[tmio T, powerlib_foundation] theorem tiltedTransition_stochastic [Fintype S] {T : S → S → ℝ} {u : S → ℝ}
     {ρ : ℝ} (hT : ∀ i j, 0 ≤ T i j) (hu : ∀ i, 0 < u i) (hρ : 0 < ρ)
     (heig : ∀ i, ∑ j, T i j * u j = ρ * u i) :
     (∀ i j, 0 ≤ tiltedTransition T u ρ i j) ∧ ∀ i, ∑ j, tiltedTransition T u ρ i j = 1 := by
@@ -84,7 +84,7 @@ def tiltedTransition (T : S → S → ℝ) (u : S → ℝ) (ρ : ℝ) (i j : S) 
 
 /-- Path probabilities of `P(λ)` are the tilted path weights up to the boundary factor
 `u(s_n) / (ρⁿ u(s_0))`. -/
-@[powerlib_foundation] theorem prod_tiltedTransition {T : S → S → ℝ} {u : S → ℝ} {ρ : ℝ}
+@[tmio T, powerlib_foundation] theorem prod_tiltedTransition {T : S → S → ℝ} {u : S → ℝ} {ρ : ℝ}
     (hu : ∀ i, 0 < u i) (hρ : 0 < ρ) (s : ℕ → S) (n : ℕ) :
     ∏ k ∈ range n, tiltedTransition T u ρ (s k) (s (k + 1)) =
       (∏ k ∈ range n, T (s k) (s (k + 1))) * u (s n) / (ρ ^ n * u (s 0)) := by
@@ -105,11 +105,11 @@ section OU
 /-- Girsanov (path-measure) Onsager–Machlup Lagrangian `(v - μ(x))² / (2σ²)`. -/
 def girsanovLagrangian (μ : ℝ → ℝ) (σ : ℝ) (x v : ℝ) : ℝ := (v - μ x) ^ 2 / (2 * σ ^ 2)
 
-@[powerlib_foundation] theorem girsanovLagrangian_nonneg (μ : ℝ → ℝ) (σ x v : ℝ) :
+@[tmio T, powerlib_foundation] theorem girsanovLagrangian_nonneg (μ : ℝ → ℝ) (σ x v : ℝ) :
     0 ≤ girsanovLagrangian μ σ x v := by
   unfold girsanovLagrangian; positivity
 
-@[powerlib_foundation] theorem girsanovLagrangian_eq_zero_iff (μ : ℝ → ℝ) {σ : ℝ} (hσ : σ ≠ 0)
+@[tmio T, powerlib_foundation] theorem girsanovLagrangian_eq_zero_iff (μ : ℝ → ℝ) {σ : ℝ} (hσ : σ ≠ 0)
     (x v : ℝ) : girsanovLagrangian μ σ x v = 0 ↔ v = μ x := by
   unfold girsanovLagrangian
   rw [div_eq_zero_iff, or_iff_left (by positivity), pow_eq_zero_iff two_ne_zero, sub_eq_zero]
@@ -117,7 +117,7 @@ def girsanovLagrangian (μ : ℝ → ℝ) (σ : ℝ) (x v : ℝ) : ℝ := (v - �
 /-- OU mean path `x(t) = x₀ e^{-θ t}`. -/
 def ouMean (θ x₀ : ℝ) (t : ℝ) : ℝ := x₀ * exp (-θ * t)
 
-@[powerlib_foundation] theorem hasDerivAt_ouMean (θ x₀ t : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_ouMean (θ x₀ t : ℝ) :
     HasDerivAt (ouMean θ x₀) (-θ * ouMean θ x₀ t) t := by
   have h := ((hasDerivAt_id t).const_mul (-θ)).exp.const_mul x₀
   convert h using 1
@@ -125,7 +125,7 @@ def ouMean (θ x₀ : ℝ) (t : ℝ) : ℝ := x₀ * exp (-θ * t)
   · simp [ouMean]; ring
 
 /-- On the OU mean path the Girsanov action vanishes. -/
-@[powerlib_foundation] theorem ou_girsanovAction_mean (θ σ x₀ T : ℝ) :
+@[tmio T, powerlib_foundation] theorem ou_girsanovAction_mean (θ σ x₀ T : ℝ) :
     ∫ t in (0 : ℝ)..T, girsanovLagrangian (fun x => -θ * x) σ (ouMean θ x₀ t)
       (deriv (ouMean θ x₀) t) = 0 := by
   have : ∀ t, girsanovLagrangian (fun x => -θ * x) σ (ouMean θ x₀ t)
@@ -137,7 +137,7 @@ def ouMean (θ x₀ : ℝ) (t : ℝ) : ℝ := x₀ * exp (-θ * t)
 
 /-- **OU tube action** (Jacobian term `μ'(x)/2 = -θ/2` included): `S = -θ T / 2` on the mean
 path. -/
-@[powerlib_foundation] theorem ou_tubeAction_mean (θ σ x₀ T : ℝ) :
+@[tmio T, powerlib_foundation] theorem ou_tubeAction_mean (θ σ x₀ T : ℝ) :
     ∫ t in (0 : ℝ)..T, (girsanovLagrangian (fun x => -θ * x) σ (ouMean θ x₀ t)
       (deriv (ouMean θ x₀) t) + deriv (fun x => -θ * x) (ouMean θ x₀ t) / 2) = -θ * T / 2 := by
   have : ∀ t, girsanovLagrangian (fun x => -θ * x) σ (ouMean θ x₀ t)

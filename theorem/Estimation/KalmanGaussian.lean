@@ -67,13 +67,13 @@ section Model
 variable {X V : Ω → ℝ} {m h : ℝ} {p r : ℝ≥0}
 
 omit [MeasurableSpace Ω] in
-@[powerlib_foundation] theorem kgain_spec (hS : h ^ 2 * (p : ℝ) + r ≠ 0) :
+@[tmio T, powerlib_foundation] theorem kgain_spec (hS : h ^ 2 * (p : ℝ) + r ≠ 0) :
     kgain p h r * (h ^ 2 * p + r) = p * h := by
   unfold kgain; rw [div_mul_cancel₀ _ hS]
 
 /-- The scalar model is the vector model with `n = p = 1`: `(X, Y)` is a Gaussian vector of
 `ℝ¹ × ℝ¹`. -/
-private theorem hasGaussianLaw_fin_one (hX : HasLaw X (gaussianReal m p) P)
+@[tmio T] private theorem hasGaussianLaw_fin_one (hX : HasLaw X (gaussianReal m p) P)
     (hV : HasLaw V (gaussianReal 0 r) P) (hXV : IndepFun X V P) :
     HasGaussianLaw (fun ω => (fun _ : Fin 1 => X ω, fun _ : Fin 1 => h * X ω + V ω)) P := by
   have hJ : HasGaussianLaw (fun ω => (X ω, V ω)) P :=
@@ -86,7 +86,7 @@ private theorem hasGaussianLaw_fin_one (hX : HasLaw X (gaussianReal m p) P)
   ext <;> simp [L]
 
 /-- In the one-dimensional vector model the scalar gain solves `K Σ_YY = Σ_XY`. -/
-private theorem gain_fin_one (hX : HasLaw X (gaussianReal m p) P)
+@[tmio T] private theorem gain_fin_one (hX : HasLaw X (gaussianReal m p) P)
     (hV : HasLaw V (gaussianReal 0 r) P) (hXV : IndepFun X V P)
     (hS : h ^ 2 * (p : ℝ) + r ≠ 0) (i _j : Fin 1) :
     ∑ l, (Matrix.of fun _ _ => kgain p h r : Matrix (Fin 1) (Fin 1) ℝ) i l *
@@ -104,7 +104,7 @@ private theorem gain_fin_one (hX : HasLaw X (gaussianReal m p) P)
   linear_combination kgain_spec (p := p) (r := r) hS
 
 /-- The σ-algebra of the measurement does not depend on reading it as a vector of `ℝ¹`. -/
-private theorem comap_fin_one (Y : Ω → ℝ) :
+@[tmio T] private theorem comap_fin_one (Y : Ω → ℝ) :
     MeasurableSpace.comap (fun ω (_ : Fin 1) => Y ω) inferInstance =
       MeasurableSpace.comap Y inferInstance := by
   apply le_antisymm
@@ -116,7 +116,7 @@ private theorem comap_fin_one (Y : Ω → ℝ) :
     exact MeasurableSpace.comap_mono (measurable_pi_apply 0).comap_le
 
 /-- The means of the state and of the measurement. -/
-private theorem integral_state_meas (hX : HasLaw X (gaussianReal m p) P)
+@[tmio T] private theorem integral_state_meas (hX : HasLaw X (gaussianReal m p) P)
     (hV : HasLaw V (gaussianReal 0 r) P) :
     ∫ ω, X ω ∂P = m ∧ ∫ ω, (h * X ω + V ω) ∂P = h * m := by
   have hP : IsProbabilityMeasure P := hX.isProbabilityMeasure
@@ -129,7 +129,7 @@ private theorem integral_state_meas (hX : HasLaw X (gaussianReal m p) P)
 
 /-- **Gaussian conditioning lemma**: the estimation error `X − m − k (Y − h m)` is independent of
 the measurement `Y = h X + V` (`gaussian_error_indep` for `n = p = 1`). -/
-@[powerlib_foundation] theorem kalman_innovation_indep (hX : HasLaw X (gaussianReal m p) P)
+@[tmio T, powerlib_foundation] theorem kalman_innovation_indep (hX : HasLaw X (gaussianReal m p) P)
     (hV : HasLaw V (gaussianReal 0 r) P) (hXV : IndepFun X V P)
     (hS : h ^ 2 * (p : ℝ) + r ≠ 0) :
     IndepFun (fun ω => X ω - m - kgain p h r * (h * X ω + V ω - h * m))
@@ -145,20 +145,20 @@ the measurement `Y = h X + V` (`gaussian_error_indep` for `n = p = 1`). -/
 
 /-- Decomposition of the estimation error as a linear combination of the centred state and the
 noise. -/
-@[powerlib_foundation] theorem kalman_error_eq :
+@[tmio T, powerlib_foundation] theorem kalman_error_eq :
     (fun ω => X ω - m - kgain p h r * (h * X ω + V ω - h * m)) =
       fun ω => (1 - kgain p h r * h) * (X ω - m) + (-kgain p h r) * V ω := by
   funext ω; ring
 
 /-- The centred state `X − m ~ N(0, p)`. -/
-@[powerlib_foundation] theorem hasLaw_centred (hX : HasLaw X (gaussianReal m p) P) :
+@[tmio T, powerlib_foundation] theorem hasLaw_centred (hX : HasLaw X (gaussianReal m p) P) :
     HasLaw (fun ω => X ω - m) (gaussianReal 0 p) P := by
   have hmap : HasLaw (fun x : ℝ => x - m) (gaussianReal 0 p) (gaussianReal m p) :=
     ⟨by fun_prop, by rw [gaussianReal_map_sub_const, sub_self]⟩
   exact hmap.comp hX
 
 /-- The estimation error has mean `0` and second moment `(1 − k h) p`. -/
-@[powerlib_foundation] theorem kalman_error_moments (hX : HasLaw X (gaussianReal m p) P)
+@[tmio T, powerlib_foundation] theorem kalman_error_moments (hX : HasLaw X (gaussianReal m p) P)
     (hV : HasLaw V (gaussianReal 0 r) P) (hXV : IndepFun X V P)
     (hS : h ^ 2 * (p : ℝ) + r ≠ 0) :
     MemLp (fun ω => X ω - m - kgain p h r * (h * X ω + V ω - h * m)) 2 P ∧
@@ -195,7 +195,7 @@ noise. -/
 
 /-- **The Kalman update is the conditional mean**: `E[X | Y] = m + k (Y − h m)` a.s.
 (`gaussian_condExp_eq` for `n = p = 1`). -/
-@[powerlib_foundation] theorem kalman_condExp_eq (hX : HasLaw X (gaussianReal m p) P)
+@[tmio T, powerlib_foundation] theorem kalman_condExp_eq (hX : HasLaw X (gaussianReal m p) P)
     (hV : HasLaw V (gaussianReal 0 r) P) (hXV : IndepFun X V P)
     (hS : h ^ 2 * (p : ℝ) + r ≠ 0) (hXm : Measurable X) (hVm : Measurable V) :
     P[X | MeasurableSpace.comap (fun ω => h * X ω + V ω) inferInstance] =ᵐ[P]
@@ -208,7 +208,7 @@ noise. -/
 
 /-- **The Kalman posterior variance is the conditional variance**:
 `E[(X − E[X|Y])² | Y] = (1 − k h) p` a.s. (`gaussian_condCov_eq` for `n = p = 1`). -/
-@[powerlib_foundation] theorem kalman_condVar_eq (hX : HasLaw X (gaussianReal m p) P)
+@[tmio T, powerlib_foundation] theorem kalman_condVar_eq (hX : HasLaw X (gaussianReal m p) P)
     (hV : HasLaw V (gaussianReal 0 r) P) (hXV : IndepFun X V P)
     (hS : h ^ 2 * (p : ℝ) + r ≠ 0) (hXm : Measurable X) (hVm : Measurable V) :
     P[fun ω => (X ω - (m + kgain p h r * (h * X ω + V ω - h * m))) ^ 2 |

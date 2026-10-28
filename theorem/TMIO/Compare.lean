@@ -50,7 +50,7 @@ variable {A B : Type*} [CompleteLattice A] [CompleteLattice B]
     exact (gc_generate v _ _).mpr (((gc_generate u).le_u_l a).trans (h _))
 
 /-- Two semantic maps agree exactly when their generated forward maps agree. -/
-@[powerlib_foundation] theorem generate_inj (u v : sInfHom B A) :
+@[tmio T, powerlib_foundation] theorem generate_inj (u v : sInfHom B A) :
     ⇑(generate u) = ⇑(generate v) ↔ u = v := by
   constructor
   · intro h
@@ -68,20 +68,20 @@ section Relational
 variable {S Q X : Type*}
 
 /-- No requirement leaves every implementation. -/
-@[simp, powerlib_foundation] theorem realize_empty (sat : X → Q → Prop) :
+@[tmio T, simp, powerlib_foundation] theorem realize_empty (sat : X → Q → Prop) :
     realize sat (∅ : Set Q) = Set.univ := by
   ext x
   simp
 
 /-- A satisfaction relation sends an implementation family to the sentences whose models contain
 it. -/
-@[powerlib_foundation] theorem mem_satisfaction_iff_subset (holds : X → S → Prop)
+@[tmio T, powerlib_foundation] theorem mem_satisfaction_iff_subset (holds : X → S → Prop)
     (P : (Set X)ᵒᵈ) (s : S) : s ∈ satisfaction holds P ↔ ofDual P ⊆ realize holds {s} := by
   simp only [mem_satisfaction, Set.subset_def, mem_realize, Set.mem_singleton_iff, forall_eq]
 
 /-- The translation chain sends an implementation family to the sentences whose translation it
 realizes. -/
-@[powerlib_foundation] theorem mem_chain_iff_subset (tr : SetRel S Q) (sat : X → Q → Prop)
+@[tmio T, powerlib_foundation] theorem mem_chain_iff_subset (tr : SetRel S Q) (sat : X → Q → Prop)
     (P : (Set X)ᵒᵈ) (s : S) :
     s ∈ (cover tr).comp (satisfaction sat) P ↔ ofDual P ⊆ realize sat (tr.image {s}) := by
   change (∀ q, (s, q) ∈ tr → q ∈ satisfaction sat P) ↔ _
@@ -90,7 +90,7 @@ realizes. -/
   exact ⟨fun h x hx q hq => h q hq x hx, fun h q hq x hx => h x hx q hq⟩
 
 /-- The chain's generated value at one sentence is the space of its translation. -/
-@[powerlib_foundation] theorem generate_chain_singleton (tr : SetRel S Q) (sat : X → Q → Prop)
+@[tmio T, powerlib_foundation] theorem generate_chain_singleton (tr : SetRel S Q) (sat : X → Q → Prop)
     (s : S) :
     ofDual (generate ((cover tr).comp (satisfaction sat)) {s}) = realize sat (tr.image {s}) := by
   rw [generate_comp, Function.comp_apply, congrFun (generate_cover tr)]
@@ -98,7 +98,7 @@ realizes. -/
 
 /-- The chain agrees with the semantics exactly when every translation realizes exactly the
 models of its sentence. -/
-@[powerlib_foundation] theorem chain_eq_satisfaction_iff (tr : SetRel S Q) (sat : X → Q → Prop)
+@[tmio T, powerlib_foundation] theorem chain_eq_satisfaction_iff (tr : SetRel S Q) (sat : X → Q → Prop)
     (holds : X → S → Prop) :
     (cover tr).comp (satisfaction sat) = satisfaction holds ↔
       ∀ s, realize sat (tr.image {s}) = realize holds {s} := by
@@ -115,7 +115,7 @@ models of its sentence. -/
 
 /-- The chain lies below the semantics exactly when every translation realizes only models of its
 sentence. -/
-@[powerlib_foundation] theorem chain_le_satisfaction_iff (tr : SetRel S Q) (sat : X → Q → Prop)
+@[tmio T, powerlib_foundation] theorem chain_le_satisfaction_iff (tr : SetRel S Q) (sat : X → Q → Prop)
     (holds : X → S → Prop) :
     (∀ P, (cover tr).comp (satisfaction sat) P ≤ satisfaction holds P) ↔
       ∀ s, realize sat (tr.image {s}) ⊆ realize holds {s} := by

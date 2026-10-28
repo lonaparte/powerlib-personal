@@ -74,7 +74,7 @@ open Set Filter Topology
 
 variable {n : ℕ}
 
-private lemma mul_div_add_one_lt {K r : ℝ} (hK : 0 ≤ K) (hr : 0 < r) :
+@[tmio T] private lemma mul_div_add_one_lt {K r : ℝ} (hK : 0 ≤ K) (hr : 0 < r) :
     K * (r / (K + 1)) < r := by
   rw [mul_div_assoc', div_lt_iff₀ (by linarith)]
   nlinarith
@@ -98,26 +98,26 @@ variable (T : State n ≃L[ℝ] State n) (c : State n)
     (x : State n) : transportField T c f (affineCoord T c x) = T (f x) := by
   simp [transportField, affineCoord]
 
-@[simp, powerlib_foundation] theorem affineCoord_symm_affineCoord (x : State n) :
+@[tmio T, simp, powerlib_foundation] theorem affineCoord_symm_affineCoord (x : State n) :
     affineCoord T.symm (-(T.symm c)) (affineCoord T c x) = x := by
   simp [affineCoord]
 
-@[simp, powerlib_foundation] theorem affineCoord_affineCoord_symm (y : State n) :
+@[tmio T, simp, powerlib_foundation] theorem affineCoord_affineCoord_symm (y : State n) :
     affineCoord T c (affineCoord T.symm (-(T.symm c)) y) = y := by
   simp [affineCoord]
 
 /-- Transporting back by the inverse coordinate change recovers the original field. -/
-@[simp, powerlib_foundation] theorem transportField_symm_transportField
+@[tmio T, simp, powerlib_foundation] theorem transportField_symm_transportField
     (f : State n → State n) :
     transportField T.symm (-(T.symm c)) (transportField T c f) = f := by
   funext y
   simp [transportField]
 
-@[powerlib_foundation] theorem continuous_affineCoord : Continuous (affineCoord T c) :=
+@[tmio T, powerlib_foundation] theorem continuous_affineCoord : Continuous (affineCoord T c) :=
   T.continuous.add continuous_const
 
 /-- Solutions are mapped to solutions by the affine coordinate change, on any time set. -/
-@[powerlib_foundation] theorem isIntegralCurveOn_transport {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem isIntegralCurveOn_transport {f : State n → State n}
     {φ : ℝ → State n} {s : Set ℝ} (hφ : IsIntegralCurveOn φ (fun _ x => f x) s) :
     IsIntegralCurveOn (fun t => affineCoord T c (φ t))
       (fun _ y => transportField T c f y) s := by
@@ -126,13 +126,13 @@ variable (T : State n ≃L[ℝ] State n) (c : State n)
   rw [transportField_affineCoord]
   exact (T.hasFDerivAt.comp_hasDerivWithinAt t (hφ t ht)).add_const c
 
-@[powerlib_foundation] theorem isTrajectoryOn_transport {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem isTrajectoryOn_transport {f : State n → State n}
     {φ : ℝ → State n} {a b : ℝ} (hφ : IsTrajectoryOn φ f a b) :
     IsTrajectoryOn (fun t => affineCoord T c (φ t)) (transportField T c f) a b :=
   isIntegralCurveOn_transport T c hφ
 
 /-- Forward completeness is invariant under invertible affine coordinate changes. -/
-@[powerlib_foundation] theorem forwardComplete_transport_iff {f : State n → State n} :
+@[tmio T, powerlib_foundation] theorem forwardComplete_transport_iff {f : State n → State n} :
     Flow.ForwardComplete (transportField T c f) ↔ Flow.ForwardComplete f := by
   have key : ∀ (S : State n ≃L[ℝ] State n) (d : State n) (g : State n → State n),
       Flow.ForwardComplete g → Flow.ForwardComplete (transportField S d g) := by
@@ -144,27 +144,27 @@ variable (T : State n ≃L[ℝ] State n) (c : State n)
   rwa [transportField_symm_transportField] at h'
 
 variable {T c} in
-@[powerlib_foundation] theorem ForwardComplete.transport {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem ForwardComplete.transport {f : State n → State n}
     (h : Flow.ForwardComplete f) : Flow.ForwardComplete (transportField T c f) :=
   (forwardComplete_transport_iff T c).mpr h
 
 /-- Equilibria correspond under the affine coordinate change. -/
-@[powerlib_foundation] theorem transportField_affineCoord_eq_zero_iff
+@[tmio T, powerlib_foundation] theorem transportField_affineCoord_eq_zero_iff
     (f : State n → State n) (x : State n) :
     transportField T c f (affineCoord T c x) = 0 ↔ f x = 0 := by
   rw [transportField_affineCoord, map_eq_zero_iff T T.injective]
 
-@[powerlib_foundation] theorem isEquilibrium_transport_iff (f : State n → State n)
+@[tmio T, powerlib_foundation] theorem isEquilibrium_transport_iff (f : State n → State n)
     (x : State n) :
     IsEquilibrium (transportField T c f) (affineCoord T c x) ↔ IsEquilibrium f x :=
   transportField_affineCoord_eq_zero_iff T c f x
 
-@[powerlib_foundation] theorem contDiff_transportField {f : State n → State n} {k : WithTop ℕ∞}
+@[tmio T, powerlib_foundation] theorem contDiff_transportField {f : State n → State n} {k : WithTop ℕ∞}
     (hf : ContDiff ℝ k f) : ContDiff ℝ k (transportField T c f) :=
   T.contDiff.comp (hf.comp (T.symm.contDiff.comp (contDiff_id.sub contDiff_const)))
 
 /-- The Jacobian in the new coordinates is `T ∘ Df(x) ∘ T⁻¹`. -/
-@[powerlib_foundation] theorem hasFDerivAt_transportField {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem hasFDerivAt_transportField {f : State n → State n}
     {f' : State n →L[ℝ] State n} {x : State n} (hf : HasFDerivAt f f' x) :
     HasFDerivAt (transportField T c f)
       ((T : State n →L[ℝ] State n).comp (f'.comp (T.symm : State n →L[ℝ] State n)))
@@ -179,7 +179,7 @@ variable {T c} in
   have hf' : HasFDerivAt f f' (T.symm (affineCoord T c x - c)) := by rwa [hx]
   exact T.hasFDerivAt.comp (affineCoord T c x) (hf'.comp (affineCoord T c x) hin)
 
-@[powerlib_foundation] theorem fderiv_transportField {f : State n → State n} {x : State n}
+@[tmio T, powerlib_foundation] theorem fderiv_transportField {f : State n → State n} {x : State n}
     (hf : DifferentiableAt ℝ f x) :
     fderiv ℝ (transportField T c f) (affineCoord T c x) =
       (T : State n →L[ℝ] State n).comp
@@ -197,75 +197,75 @@ section Conj
 
 variable {T : State n ≃L[ℝ] State n}
 
-@[simp, powerlib_foundation] theorem transportField_zero_apply (g : State n → State n)
+@[tmio T, simp, powerlib_foundation] theorem transportField_zero_apply (g : State n → State n)
     (y : State n) : transportField T 0 g y = T (g (T.symm y)) := by
   simp [transportField]
 
-@[simp, powerlib_foundation] theorem affineCoord_zero_apply (x : State n) :
+@[tmio T, simp, powerlib_foundation] theorem affineCoord_zero_apply (x : State n) :
     affineCoord T 0 x = T x := by
   simp [affineCoord]
 
-@[simp, powerlib_foundation] theorem transportField_symm_zero (g : State n → State n) :
+@[tmio T, simp, powerlib_foundation] theorem transportField_symm_zero (g : State n → State n) :
     transportField T.symm 0 (transportField T 0 g) = g := by
   funext y
   simp
 
-private lemma transportField_zero_eq_conj (g : State n → State n) :
+@[tmio T] private lemma transportField_zero_eq_conj (g : State n → State n) :
     transportField T 0 g =
       fun y => (T : State n →L[ℝ] State n) (g ((T.symm : State n →L[ℝ] State n) y)) := by
   funext y
   simp
 
-private lemma symm_apply_coe (x : State n) :
+@[tmio T] private lemma symm_apply_coe (x : State n) :
     (T.symm : State n →L[ℝ] State n) ((T : State n →L[ℝ] State n) x) = x := by
   simp
 
-private lemma apply_symm_coe (x : State n) :
+@[tmio T] private lemma apply_symm_coe (x : State n) :
     (T : State n →L[ℝ] State n) ((T.symm : State n →L[ℝ] State n) x) = x := by
   simp
 
 /-- A solution of the conjugate field, read back through `T⁻¹`, is a solution of the field. -/
-private lemma isIntegralCurveOn_back {g : State n → State n} {χ : ℝ → State n} {s : Set ℝ}
+@[tmio T] private lemma isIntegralCurveOn_back {g : State n → State n} {χ : ℝ → State n} {s : Set ℝ}
     (hχ : IsIntegralCurveOn χ (fun _ y => transportField T 0 g y) s) :
     IsIntegralCurveOn (fun t => T.symm (χ t)) (fun _ x => g x) s := by
   have h := isIntegralCurveOn_transport T.symm 0 hχ
   rw [transportField_symm_zero] at h
   simpa only [affineCoord_zero_apply] using h
 
-private lemma norm_apply_le (x : State n) :
+@[tmio T] private lemma norm_apply_le (x : State n) :
     ‖T x‖ ≤ ‖(T : State n →L[ℝ] State n)‖ * ‖x‖ := by
   simpa using (T : State n →L[ℝ] State n).le_opNorm x
 
-private lemma tendsto_of_back {χ : ℝ → State n}
+@[tmio T] private lemma tendsto_of_back {χ : ℝ → State n}
     (h : Tendsto (fun t => T.symm (χ t)) atTop (𝓝 0)) : Tendsto χ atTop (𝓝 0) := by
   have h' := ((T.continuous.tendsto 0).comp h)
   simpa [Function.comp_def] using h'
 
-@[powerlib_foundation] theorem isEquilibrium_conjEquiv {g : State n → State n}
+@[tmio T, powerlib_foundation] theorem isEquilibrium_conjEquiv {g : State n → State n}
     (h : IsEquilibrium g 0) : IsEquilibrium (transportField T 0 g) 0 := by
   unfold IsEquilibrium at h ⊢
   simp [h]
 
-@[powerlib_foundation] theorem lyapunovStable_conjEquiv {g : State n → State n}
+@[tmio T, powerlib_foundation] theorem lyapunovStable_conjEquiv {g : State n → State n}
     (h : LyapunovStable g 0) : LyapunovStable (transportField T 0 g) 0 := by
   rw [transportField_zero_eq_conj]
   exact Linear.lyapunovStable_conj _ _ symm_apply_coe apply_symm_coe h
 
-@[powerlib_foundation] theorem decay_conjEquiv {g : State n → State n} {a : ℝ}
+@[tmio T, powerlib_foundation] theorem decay_conjEquiv {g : State n → State n} {a : ℝ}
     (h : Flow.Decay g 0 a) : Flow.Decay (transportField T 0 g) 0 a := by
   rw [transportField_zero_eq_conj]
   exact Linear.decay_conj _ _ symm_apply_coe apply_symm_coe h
 
-@[powerlib_foundation] theorem conservative_conjEquiv {g : State n → State n}
+@[tmio T, powerlib_foundation] theorem conservative_conjEquiv {g : State n → State n}
     (h : Flow.Conservative g 0) : Flow.Conservative (transportField T 0 g) 0 := by
   rw [transportField_zero_eq_conj]
   exact Linear.conservative_conj _ _ symm_apply_coe apply_symm_coe h
 
-@[powerlib_foundation] theorem forwardComplete_conjEquiv {g : State n → State n}
+@[tmio T, powerlib_foundation] theorem forwardComplete_conjEquiv {g : State n → State n}
     (h : Flow.ForwardComplete g) : Flow.ForwardComplete (transportField T 0 g) :=
   ForwardComplete.transport h
 
-@[powerlib_foundation] theorem locallyExponentiallyStable_conjEquiv {g : State n → State n}
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_conjEquiv {g : State n → State n}
     (h : LocallyExponentiallyStable g 0) :
     LocallyExponentiallyStable (transportField T 0 g) 0 := by
   obtain ⟨r, C, a, hr, hC, ha, hdecay⟩ := h
@@ -297,7 +297,7 @@ private lemma tendsto_of_back {χ : ℝ → State n}
         gcongr
         exact le_max_right _ _
 
-@[powerlib_foundation] theorem localAsymptoticStable_conjEquiv {g : State n → State n}
+@[tmio T, powerlib_foundation] theorem localAsymptoticStable_conjEquiv {g : State n → State n}
     (h : LocalAsymptoticStable g 0) : LocalAsymptoticStable (transportField T 0 g) 0 := by
   obtain ⟨hs, ρ, hρ, hattr⟩ := h
   set K' := ‖(T.symm : State n →L[ℝ] State n)‖
@@ -312,18 +312,18 @@ private lemma tendsto_of_back {χ : ℝ → State n}
       _ < ρ := mul_div_add_one_lt hK' hρ
   exact tendsto_of_back (hattr t₀ _ (isIntegralCurveOn_back hχ) h0')
 
-@[powerlib_foundation] theorem globalAsymptoticStable_conjEquiv {g : State n → State n}
+@[tmio T, powerlib_foundation] theorem globalAsymptoticStable_conjEquiv {g : State n → State n}
     (h : GlobalAsymptoticStable g 0) : GlobalAsymptoticStable (transportField T 0 g) 0 :=
   ⟨lyapunovStable_conjEquiv h.1, fun t₀ _ hχ =>
     tendsto_of_back (h.2 t₀ _ (isIntegralCurveOn_back hχ))⟩
 
-@[powerlib_foundation] theorem globallyAsymptoticallyStable_conjEquiv {g : State n → State n}
+@[tmio T, powerlib_foundation] theorem globallyAsymptoticallyStable_conjEquiv {g : State n → State n}
     (h : Flow.GloballyAsymptoticallyStable g 0) :
     Flow.GloballyAsymptoticallyStable (transportField T 0 g) 0 :=
   ⟨isEquilibrium_conjEquiv h.1, forwardComplete_conjEquiv h.2.1,
     globalAsymptoticStable_conjEquiv h.2.2⟩
 
-@[powerlib_foundation] theorem globallyExponentiallyStable_conjEquiv {g : State n → State n}
+@[tmio T, powerlib_foundation] theorem globallyExponentiallyStable_conjEquiv {g : State n → State n}
     (h : Flow.GloballyExponentiallyStable g 0) :
     Flow.GloballyExponentiallyStable (transportField T 0 g) 0 := by
   obtain ⟨heq, hfc, C, a, hC, ha, hdecay⟩ := h
@@ -351,7 +351,7 @@ private lemma tendsto_of_back {χ : ℝ → State n}
 
 /-- A contraction over the horizon `k` iterates to the horizon `j k`, with the factor `cʲ`
 (`c` replaced by `max c 0`). -/
-@[powerlib_foundation] theorem sampledContraction_iterate {g : State n → State n} {x : State n}
+@[tmio T, powerlib_foundation] theorem sampledContraction_iterate {g : State n → State n} {x : State n}
     {k : ℕ} {c : ℝ}
     (h : ∀ (t₀ : ℝ) (φ : ℝ → State n), IsTrajectoryOn φ g t₀ (t₀ + k) →
       ‖φ (t₀ + k) - x‖ ≤ c * ‖φ t₀ - x‖) (j : ℕ) :
@@ -372,7 +372,7 @@ private lemma tendsto_of_back {χ : ℝ → State n}
       _ ≤ max c 0 * (max c 0 ^ j * ‖φ t₀ - x‖) := by gcongr
       _ = max c 0 ^ (j + 1) * ‖φ t₀ - x‖ := by ring
 
-@[powerlib_foundation] theorem sampledContraction_conjEquiv {g : State n → State n}
+@[tmio T, powerlib_foundation] theorem sampledContraction_conjEquiv {g : State n → State n}
     (h : Flow.SampledContraction g 0) :
     Flow.SampledContraction (transportField T 0 g) 0 := by
   obtain ⟨k, hk, c, hc, hcon⟩ := h
@@ -400,14 +400,14 @@ private lemma tendsto_of_back {χ : ℝ → State n}
         exact norm_apply_le (T := T.symm) _
     _ = K * max c 0 ^ m * ‖χ t₀‖ := by ring
 
-@[powerlib_foundation] theorem lyapunovStable_conjEquiv_iff {g : State n → State n} :
+@[tmio T, powerlib_foundation] theorem lyapunovStable_conjEquiv_iff {g : State n → State n} :
     LyapunovStable (transportField T 0 g) 0 ↔ LyapunovStable g 0 := by
   refine ⟨fun h => ?_, lyapunovStable_conjEquiv⟩
   have h' := lyapunovStable_conjEquiv (T := T.symm) h
   rwa [transportField_symm_zero] at h'
 
 /-- Each behavioural sentence of `g` at the origin passes to the conjugate field. -/
-@[powerlib_foundation] theorem holds_conjEquiv (P : Flow.Property) {g : State n → State n}
+@[tmio T, powerlib_foundation] theorem holds_conjEquiv (P : Flow.Property) {g : State n → State n}
     (h : P.holds g 0) : P.holds (transportField T 0 g) 0 := by
   cases P
   case lyapunovStable => exact lyapunovStable_conjEquiv h
@@ -421,7 +421,7 @@ private lemma tendsto_of_back {χ : ℝ → State n}
   case conservative => exact conservative_conjEquiv h
 
 /-- Every behavioural sentence is invariant under conjugation by an invertible linear map. -/
-@[powerlib_foundation] theorem holds_conjEquiv_iff (P : Flow.Property) {g : State n → State n} :
+@[tmio T, powerlib_foundation] theorem holds_conjEquiv_iff (P : Flow.Property) {g : State n → State n} :
     P.holds (transportField T 0 g) 0 ↔ P.holds g 0 := by
   refine ⟨fun h => ?_, holds_conjEquiv P⟩
   have h' := holds_conjEquiv (T := T.symm) P h
@@ -435,7 +435,7 @@ section Transport
 
 variable (T : State n ≃L[ℝ] State n) (c : State n)
 
-private lemma transportField_shift (f : State n → State n) (x : State n) :
+@[tmio T] private lemma transportField_shift (f : State n → State n) (x : State n) :
     (fun z => transportField T c f (z + affineCoord T c x)) =
       transportField T 0 (fun z => f (z + x)) := by
   funext z
@@ -444,7 +444,7 @@ private lemma transportField_shift (f : State n → State n) (x : State n) :
 
 /-- **Transport law.** Every behavioural sentence of the library holds for `f` at `x` exactly
 when it holds for the field in the coordinates `y = T x + c` at the image of `x`. -/
-@[powerlib_foundation] theorem holds_transport_iff (P : Flow.Property) {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem holds_transport_iff (P : Flow.Property) {f : State n → State n}
     {x : State n} :
     P.holds (transportField T c f) (affineCoord T c x) ↔ P.holds f x := by
   rw [← Flow.Property.holds_shift_iff P (f := transportField T c f),
@@ -452,32 +452,32 @@ when it holds for the field in the coordinates `y = T x + c` at the image of `x`
   exact holds_conjEquiv_iff P
 
 /-- Lyapunov stability is invariant under invertible affine coordinate changes. -/
-@[powerlib_foundation] theorem lyapunovStable_transport_iff {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem lyapunovStable_transport_iff {f : State n → State n}
     {x : State n} :
     LyapunovStable (transportField T c f) (affineCoord T c x) ↔ LyapunovStable f x :=
   holds_transport_iff T c .lyapunovStable
 
 /-- Instability is invariant under invertible affine coordinate changes. -/
-@[powerlib_foundation] theorem unstable_transport_iff {f : State n → State n} {x : State n} :
+@[tmio T, powerlib_foundation] theorem unstable_transport_iff {f : State n → State n} {x : State n} :
     Unstable (transportField T c f) (affineCoord T c x) ↔ Unstable f x :=
   holds_transport_iff T c .unstable
 
 /-- Local exponential stability is invariant under invertible affine coordinate changes. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_transport_iff
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_transport_iff
     {f : State n → State n} {x : State n} :
     LocallyExponentiallyStable (transportField T c f) (affineCoord T c x) ↔
       LocallyExponentiallyStable f x :=
   holds_transport_iff T c .locallyExponentiallyStable
 
 /-- Local asymptotic stability is invariant under invertible affine coordinate changes. -/
-@[powerlib_foundation] theorem localAsymptoticStable_transport_iff
+@[tmio T, powerlib_foundation] theorem localAsymptoticStable_transport_iff
     {f : State n → State n} {x : State n} :
     LocalAsymptoticStable (transportField T c f) (affineCoord T c x) ↔
       LocalAsymptoticStable f x :=
   holds_transport_iff T c .locallyAsymptoticallyStable
 
 /-- Global exponential stability is invariant under invertible affine coordinate changes. -/
-@[powerlib_foundation] theorem globallyExponentiallyStable_transport_iff
+@[tmio T, powerlib_foundation] theorem globallyExponentiallyStable_transport_iff
     {f : State n → State n} {x : State n} :
     Flow.GloballyExponentiallyStable (transportField T c f) (affineCoord T c x) ↔
       Flow.GloballyExponentiallyStable f x :=
@@ -485,7 +485,7 @@ when it holds for the field in the coordinates `y = T x + c` at the image of `x`
 
 /-- Global asymptotic stability (with global existence) is invariant under invertible affine
 coordinate changes. -/
-@[powerlib_foundation] theorem globallyAsymptoticallyStable_transport_iff
+@[tmio T, powerlib_foundation] theorem globallyAsymptoticallyStable_transport_iff
     {f : State n → State n} {x : State n} :
     Flow.GloballyAsymptoticallyStable (transportField T c f) (affineCoord T c x) ↔
       Flow.GloballyAsymptoticallyStable f x :=
@@ -493,7 +493,7 @@ coordinate changes. -/
 
 /-- LeanForControl's global asymptotic stability (without global existence) is invariant under
 invertible affine coordinate changes. -/
-@[powerlib_foundation] theorem globalAsymptoticStable_transport_iff
+@[tmio T, powerlib_foundation] theorem globalAsymptoticStable_transport_iff
     {f : State n → State n} {x : State n} :
     GlobalAsymptoticStable (transportField T c f) (affineCoord T c x) ↔
       GlobalAsymptoticStable f x := by
@@ -505,31 +505,31 @@ invertible affine coordinate changes. -/
 
 variable {T c}
 
-@[powerlib_foundation] theorem LyapunovStable.transport {f : State n → State n} {x : State n}
+@[tmio T, powerlib_foundation] theorem LyapunovStable.transport {f : State n → State n} {x : State n}
     (h : LyapunovStable f x) : LyapunovStable (transportField T c f) (affineCoord T c x) :=
   (lyapunovStable_transport_iff T c).mpr h
 
-@[powerlib_foundation] theorem LocallyExponentiallyStable.transport {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem LocallyExponentiallyStable.transport {f : State n → State n}
     {x : State n} (h : LocallyExponentiallyStable f x) :
     LocallyExponentiallyStable (transportField T c f) (affineCoord T c x) :=
   (locallyExponentiallyStable_transport_iff T c).mpr h
 
-@[powerlib_foundation] theorem LocalAsymptoticStable.transport {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem LocalAsymptoticStable.transport {f : State n → State n}
     {x : State n} (h : LocalAsymptoticStable f x) :
     LocalAsymptoticStable (transportField T c f) (affineCoord T c x) :=
   (localAsymptoticStable_transport_iff T c).mpr h
 
-@[powerlib_foundation] theorem GloballyExponentiallyStable.transport {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.transport {f : State n → State n}
     {x : State n} (h : Flow.GloballyExponentiallyStable f x) :
     Flow.GloballyExponentiallyStable (transportField T c f) (affineCoord T c x) :=
   (globallyExponentiallyStable_transport_iff T c).mpr h
 
-@[powerlib_foundation] theorem GlobalAsymptoticStable.transport {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem GlobalAsymptoticStable.transport {f : State n → State n}
     {x : State n} (h : GlobalAsymptoticStable f x) :
     GlobalAsymptoticStable (transportField T c f) (affineCoord T c x) :=
   (globalAsymptoticStable_transport_iff T c).mpr h
 
-@[powerlib_foundation] theorem GloballyAsymptoticallyStable.transport {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem GloballyAsymptoticallyStable.transport {f : State n → State n}
     {x : State n} (h : Flow.GloballyAsymptoticallyStable f x) :
     Flow.GloballyAsymptoticallyStable (transportField T c f) (affineCoord T c x) :=
   (globallyAsymptoticallyStable_transport_iff T c).mpr h
@@ -547,17 +547,17 @@ section MatrixCoord
 
 variable (P : Matrix (Fin n) (Fin n) ℝ) (hP : IsUnit P)
 
-@[simp, powerlib_foundation] theorem matrixCoord_apply (x : State n) :
+@[tmio T, simp, powerlib_foundation] theorem matrixCoord_apply (x : State n) :
     matrixCoord P hP x = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) P x := rfl
 
-@[simp, powerlib_foundation] theorem ofLp_matrixCoord (x : State n) :
+@[tmio T, simp, powerlib_foundation] theorem ofLp_matrixCoord (x : State n) :
     WithLp.ofLp (matrixCoord P hP x) = P.mulVec (WithLp.ofLp x) := rfl
 
-@[powerlib_foundation] theorem coe_matrixCoord :
+@[tmio T, powerlib_foundation] theorem coe_matrixCoord :
     (matrixCoord P hP : State n →L[ℝ] State n) = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) P :=
   rfl
 
-@[powerlib_foundation] theorem coe_matrixCoord_symm :
+@[tmio T, powerlib_foundation] theorem coe_matrixCoord_symm :
     ((matrixCoord P hP).symm : State n →L[ℝ] State n) =
       Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) P⁻¹ := by
   have hdet : IsUnit P.det := (Matrix.isUnit_iff_isUnit_det P).mp hP
@@ -568,12 +568,12 @@ variable (P : Matrix (Fin n) (Fin n) ℝ) (hP : IsUnit P)
   rw [ofLp_matrixCoord, Matrix.ofLp_toEuclideanCLM, Matrix.mulVec_mulVec,
     Matrix.mul_nonsing_inv P hdet, Matrix.one_mulVec]
 
-@[simp, powerlib_foundation] theorem matrixCoord_symm_apply (y : State n) :
+@[tmio T, simp, powerlib_foundation] theorem matrixCoord_symm_apply (y : State n) :
     (matrixCoord P hP).symm y = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) P⁻¹ y := by
   rw [← coe_matrixCoord_symm P hP, ContinuousLinearEquiv.coe_coe]
 
 /-- Matrix form of the Jacobian transport: `Df(x*) = A` becomes `Dg(P x* + c) = P A P⁻¹`. -/
-@[powerlib_foundation] theorem fderiv_transportField_matrix (c : State n)
+@[tmio T, powerlib_foundation] theorem fderiv_transportField_matrix (c : State n)
     {f : State n → State n} {x : State n} (A : Matrix (Fin n) (Fin n) ℝ)
     (hf : DifferentiableAt ℝ f x)
     (hJac : fderiv ℝ f x = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) A) :
@@ -594,12 +594,12 @@ open Matrix
 /-- Scaling matrix `(θ, v) ↦ (θ, η v)`. -/
 def scaleMatrix (η : ℝ) : Matrix (Fin 2) (Fin 2) ℝ := !![1, 0; 0, η]
 
-@[powerlib_foundation] theorem scaleMatrix_isUnit {η : ℝ} (hη : η ≠ 0) :
+@[tmio T, powerlib_foundation] theorem scaleMatrix_isUnit {η : ℝ} (hη : η ≠ 0) :
     IsUnit (scaleMatrix η) := by
   rw [Matrix.isUnit_iff_isUnit_det]
   simpa [scaleMatrix, Matrix.det_fin_two] using hη
 
-private lemma scaleMatrix_inv {η : ℝ} (hη : η ≠ 0) :
+@[tmio T] private lemma scaleMatrix_inv {η : ℝ} (hη : η ≠ 0) :
     (scaleMatrix η)⁻¹ = !![1, 0; 0, η⁻¹] := by
   apply Matrix.inv_eq_left_inv
   ext i j
@@ -609,13 +609,13 @@ private lemma scaleMatrix_inv {η : ℝ} (hη : η ≠ 0) :
 def scaleCoord {η : ℝ} (hη : η ≠ 0) : State 2 ≃L[ℝ] State 2 :=
   matrixCoord (scaleMatrix η) (scaleMatrix_isUnit hη)
 
-@[simp, powerlib_foundation] theorem scaleCoord_apply {η : ℝ} (hη : η ≠ 0) (x : State 2) :
+@[tmio T, simp, powerlib_foundation] theorem scaleCoord_apply {η : ℝ} (hη : η ≠ 0) (x : State 2) :
     scaleCoord hη x = WithLp.toLp 2 ![x 0, η * x 1] := by
   ext i
   fin_cases i <;>
     simp [scaleCoord, scaleMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
 
-@[simp, powerlib_foundation] theorem scaleCoord_symm_apply {η : ℝ} (hη : η ≠ 0) (y : State 2) :
+@[tmio T, simp, powerlib_foundation] theorem scaleCoord_symm_apply {η : ℝ} (hη : η ≠ 0) (y : State 2) :
     (scaleCoord hη).symm y = WithLp.toLp 2 ![y 0, y 1 / η] := by
   ext i
   fin_cases i <;>
@@ -630,7 +630,7 @@ section TimeScale
 
 /-- A solution of `ẋ = c f(x)` on `[s₀, s₁]` read at time `t / c` solves `ẋ = f(x)` on
 `[c s₀, c s₁]`. -/
-@[powerlib_foundation] theorem isTrajectoryOn_timeScale {f : State n → State n} {c : ℝ}
+@[tmio T, powerlib_foundation] theorem isTrajectoryOn_timeScale {f : State n → State n} {c : ℝ}
     (hc : 0 < c) {χ : ℝ → State n} {s₀ s₁ : ℝ} (hχ : IsTrajectoryOn χ (c • f) s₀ s₁) :
     IsTrajectoryOn (fun t => χ (t * c⁻¹)) f (c * s₀) (c * s₁) := by
   have hmaps : MapsTo (fun t => t * c⁻¹) (Icc (c * s₀) (c * s₁)) (Icc s₀ s₁) := by
@@ -644,11 +644,11 @@ section TimeScale
   · rfl
   · simp [smul_smul, inv_mul_cancel₀ hc.ne']
 
-private lemma mul_inv_cancel_time {c : ℝ} (hc : 0 < c) (s : ℝ) :
+@[tmio T] private lemma mul_inv_cancel_time {c : ℝ} (hc : 0 < c) (s : ℝ) :
     c * s * c⁻¹ = s := by
   field_simp
 
-@[powerlib_foundation] theorem LyapunovStable.timeScale {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem LyapunovStable.timeScale {f : State n → State n}
     {x : State n} {c : ℝ} (hc : 0 < c) (h : LyapunovStable f x) :
     LyapunovStable (c • f) x := by
   intro ε hε
@@ -660,7 +660,7 @@ private lemma mul_inv_cancel_time {c : ℝ} (hc : 0 < c) (s : ℝ) :
   have := hstab (c * s₀) (c * s₁) _ hψ (by simpa [mul_inv_cancel_time hc] using h0) (c * s) hs'
   simpa [mul_inv_cancel_time hc] using this
 
-@[powerlib_foundation] theorem LocallyExponentiallyStable.timeScale {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem LocallyExponentiallyStable.timeScale {f : State n → State n}
     {x : State n} {c : ℝ} (hc : 0 < c) (h : LocallyExponentiallyStable f x) :
     LocallyExponentiallyStable (c • f) x := by
   obtain ⟨r, C, a, hr, hC, ha, hdecay⟩ := h
@@ -673,24 +673,24 @@ private lemma mul_inv_cancel_time {c : ℝ} (hc : 0 < c) (s : ℝ) :
   have hexp : -a * (c * s - c * s₀) = -(a * c) * (s - s₀) := by ring
   rwa [hexp] at this
 
-private lemma inv_smul_smul_field {f : State n → State n} {c : ℝ}
+@[tmio T] private lemma inv_smul_smul_field {f : State n → State n} {c : ℝ}
     (hc : 0 < c) : c⁻¹ • (c • f) = f := by
   rw [smul_smul, inv_mul_cancel₀ hc.ne', one_smul]
 
 /-- Time scaling by `c > 0` preserves Lyapunov stability. -/
-@[powerlib_foundation] theorem lyapunovStable_smul_iff {f : State n → State n} {x : State n}
+@[tmio T, powerlib_foundation] theorem lyapunovStable_smul_iff {f : State n → State n} {x : State n}
     {c : ℝ} (hc : 0 < c) : LyapunovStable (c • f) x ↔ LyapunovStable f x := by
   refine ⟨fun h => ?_, fun h => LyapunovStable.timeScale hc h⟩
   have h' := LyapunovStable.timeScale (inv_pos.mpr hc) h
   rwa [inv_smul_smul_field hc] at h'
 
 /-- Time scaling by `c > 0` preserves instability. -/
-@[powerlib_foundation] theorem unstable_smul_iff {f : State n → State n} {x : State n}
+@[tmio T, powerlib_foundation] theorem unstable_smul_iff {f : State n → State n} {x : State n}
     {c : ℝ} (hc : 0 < c) : Unstable (c • f) x ↔ Unstable f x :=
   (lyapunovStable_smul_iff hc).not
 
 /-- Time scaling by `c > 0` preserves local exponential stability (the rate scales by `c`). -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_smul_iff {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_smul_iff {f : State n → State n}
     {x : State n} {c : ℝ} (hc : 0 < c) :
     LocallyExponentiallyStable (c • f) x ↔ LocallyExponentiallyStable f x := by
   refine ⟨fun h => ?_, fun h => LocallyExponentiallyStable.timeScale hc h⟩
@@ -699,7 +699,7 @@ private lemma inv_smul_smul_field {f : State n → State n} {c : ℝ}
 
 /-- A forward-complete solution of `ẋ = c f(x)` from `s₀`, read at time `t / c`, is a
 forward-complete solution of `ẋ = f(x)` from `c s₀`. -/
-@[powerlib_foundation] theorem isIntegralCurveOn_Ici_timeScale {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem isIntegralCurveOn_Ici_timeScale {f : State n → State n}
     {c : ℝ} (hc : 0 < c) {χ : ℝ → State n} {s₀ : ℝ}
     (hχ : IsIntegralCurveOn χ (fun _ y => (c • f) y) (Ici s₀)) :
     IsIntegralCurveOn (fun t => χ (t * c⁻¹)) (fun _ y => f y) (Ici (c * s₀)) := by
@@ -714,7 +714,7 @@ forward-complete solution of `ẋ = f(x)` from `c s₀`. -/
   · rfl
   · simp [smul_smul, inv_mul_cancel₀ hc.ne']
 
-@[powerlib_foundation] theorem LocalAsymptoticStable.timeScale {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem LocalAsymptoticStable.timeScale {f : State n → State n}
     {x : State n} {c : ℝ} (hc : 0 < c) (h : LocalAsymptoticStable f x) :
     LocalAsymptoticStable (c • f) x := by
   obtain ⟨hs, ρ, hρ, hattr⟩ := h
@@ -728,7 +728,7 @@ forward-complete solution of `ẋ = f(x)` from `c s₀`. -/
   exact hlim.comp (tendsto_id.const_mul_atTop hc)
 
 /-- Time scaling by `c > 0` preserves local asymptotic stability. -/
-@[powerlib_foundation] theorem localAsymptoticStable_smul_iff {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem localAsymptoticStable_smul_iff {f : State n → State n}
     {x : State n} {c : ℝ} (hc : 0 < c) :
     LocalAsymptoticStable (c • f) x ↔ LocalAsymptoticStable f x := by
   refine ⟨fun h => ?_, fun h => LocalAsymptoticStable.timeScale hc h⟩
@@ -736,13 +736,13 @@ forward-complete solution of `ẋ = f(x)` from `c s₀`. -/
   rwa [inv_smul_smul_field hc] at h'
 
 /-- Time scaling by `c ≠ 0` keeps the equilibria. -/
-@[powerlib_foundation] theorem isEquilibrium_smul_iff {f : State n → State n} {x : State n}
+@[tmio T, powerlib_foundation] theorem isEquilibrium_smul_iff {f : State n → State n} {x : State n}
     {c : ℝ} (hc : c ≠ 0) : IsEquilibrium (c • f) x ↔ IsEquilibrium f x := by
   simp [IsEquilibrium, hc]
 
 /-- A forward-complete solution of `f` from `c t₀`, read at time `c τ`, is a forward-complete
 solution of `c • f` from `t₀`. -/
-@[powerlib_foundation] theorem ForwardComplete.timeScale {f : State n → State n} {c : ℝ}
+@[tmio T, powerlib_foundation] theorem ForwardComplete.timeScale {f : State n → State n} {c : ℝ}
     (hc : 0 < c) (h : Flow.ForwardComplete f) : Flow.ForwardComplete (c • f) := by
   intro t₀ x₀
   obtain ⟨φ, hφ0, hφ⟩ := h (c * t₀) x₀
@@ -753,13 +753,13 @@ solution of `c • f` from `t₀`. -/
   exact ⟨fun t => φ (t * c), by show φ (t₀ * c) = x₀; rw [mul_comm]; exact hφ0, hψ⟩
 
 /-- Time scaling by `c > 0` preserves forward completeness. -/
-@[powerlib_foundation] theorem forwardComplete_smul_iff {f : State n → State n} {c : ℝ}
+@[tmio T, powerlib_foundation] theorem forwardComplete_smul_iff {f : State n → State n} {c : ℝ}
     (hc : 0 < c) : Flow.ForwardComplete (c • f) ↔ Flow.ForwardComplete f := by
   refine ⟨fun h => ?_, ForwardComplete.timeScale hc⟩
   have h' := ForwardComplete.timeScale (inv_pos.mpr hc) h
   rwa [inv_smul_smul_field hc] at h'
 
-@[powerlib_foundation] theorem GlobalAsymptoticStable.timeScale {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem GlobalAsymptoticStable.timeScale {f : State n → State n}
     {x : State n} {c : ℝ} (hc : 0 < c) (h : GlobalAsymptoticStable f x) :
     GlobalAsymptoticStable (c • f) x := by
   refine ⟨LyapunovStable.timeScale hc h.1, fun s₀ χ hχ => ?_⟩
@@ -771,7 +771,7 @@ solution of `c • f` from `t₀`. -/
   exact hlim.comp (tendsto_id.const_mul_atTop hc)
 
 /-- Time scaling by `c > 0` preserves LeanForControl's global asymptotic stability. -/
-@[powerlib_foundation] theorem globalAsymptoticStable_smul_iff {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem globalAsymptoticStable_smul_iff {f : State n → State n}
     {x : State n} {c : ℝ} (hc : 0 < c) :
     GlobalAsymptoticStable (c • f) x ↔ GlobalAsymptoticStable f x := by
   refine ⟨fun h => ?_, GlobalAsymptoticStable.timeScale hc⟩
@@ -779,7 +779,7 @@ solution of `c • f` from `t₀`. -/
   rwa [inv_smul_smul_field hc] at h'
 
 /-- Time scaling by `c > 0` preserves global asymptotic stability with global existence. -/
-@[powerlib_foundation] theorem globallyAsymptoticallyStable_smul_iff {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem globallyAsymptoticallyStable_smul_iff {f : State n → State n}
     {x : State n} {c : ℝ} (hc : 0 < c) :
     Flow.GloballyAsymptoticallyStable (c • f) x ↔ Flow.GloballyAsymptoticallyStable f x := by
   simp only [Flow.GloballyAsymptoticallyStable]
@@ -788,7 +788,7 @@ solution of `c • f` from `t₀`. -/
 
 /-- An exponential estimate `C e^{-a (t - t₀)}` on every solution segment of `f` is the estimate
 `C e^{-c a (s - s₀)}` on every solution segment of `c • f`. -/
-private lemma bound_timeScale {f : State n → State n} {x : State n} {c C a : ℝ} (hc : 0 < c)
+@[tmio T] private lemma bound_timeScale {f : State n → State n} {x : State n} {c C a : ℝ} (hc : 0 < c)
     (h : ∀ (t₀ t₁ : ℝ) (φ : ℝ → State n), IsTrajectoryOn φ f t₀ t₁ →
       ∀ t ∈ Icc t₀ t₁, ‖φ t - x‖ ≤ C * Real.exp (-a * (t - t₀)) * ‖φ t₀ - x‖) :
     ∀ (s₀ s₁ : ℝ) (χ : ℝ → State n), IsTrajectoryOn χ (c • f) s₀ s₁ →
@@ -801,20 +801,20 @@ private lemma bound_timeScale {f : State n → State n} {x : State n} {c C a : �
   have hexp : -a * (c * s - c * s₀) = -(c * a) * (s - s₀) := by ring
   rwa [hexp] at this
 
-@[powerlib_foundation] theorem Decay.timeScale {f : State n → State n} {x : State n}
+@[tmio T, powerlib_foundation] theorem Decay.timeScale {f : State n → State n} {x : State n}
     {c a : ℝ} (hc : 0 < c) (h : Flow.Decay f x a) : Flow.Decay (c • f) x (c * a) := by
   obtain ⟨C, hC⟩ := h
   exact ⟨C, bound_timeScale hc hC⟩
 
 /-- **Decay rates scale with time.** For `c > 0`, `f` decays at the rate `a` exactly when `c • f`
 decays at the rate `c a`. -/
-@[powerlib_foundation] theorem decay_smul_iff {f : State n → State n} {x : State n} {c a : ℝ}
+@[tmio T, powerlib_foundation] theorem decay_smul_iff {f : State n → State n} {x : State n} {c a : ℝ}
     (hc : 0 < c) : Flow.Decay (c • f) x (c * a) ↔ Flow.Decay f x a := by
   refine ⟨fun h => ?_, Decay.timeScale hc⟩
   have h' := Decay.timeScale (inv_pos.mpr hc) h
   rwa [inv_smul_smul_field hc, inv_mul_cancel_left₀ hc.ne'] at h'
 
-@[powerlib_foundation] theorem GloballyExponentiallyStable.timeScale {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem GloballyExponentiallyStable.timeScale {f : State n → State n}
     {x : State n} {c : ℝ} (hc : 0 < c) (h : Flow.GloballyExponentiallyStable f x) :
     Flow.GloballyExponentiallyStable (c • f) x := by
   obtain ⟨heq, hfc, C, a, hC, ha, hdecay⟩ := h
@@ -822,14 +822,14 @@ decays at the rate `c a`. -/
     mul_pos hc ha, bound_timeScale hc hdecay⟩
 
 /-- Time scaling by `c > 0` preserves global exponential stability (the rate scales by `c`). -/
-@[powerlib_foundation] theorem globallyExponentiallyStable_smul_iff {f : State n → State n}
+@[tmio T, powerlib_foundation] theorem globallyExponentiallyStable_smul_iff {f : State n → State n}
     {x : State n} {c : ℝ} (hc : 0 < c) :
     Flow.GloballyExponentiallyStable (c • f) x ↔ Flow.GloballyExponentiallyStable f x := by
   refine ⟨fun h => ?_, GloballyExponentiallyStable.timeScale hc⟩
   have h' := GloballyExponentiallyStable.timeScale (inv_pos.mpr hc) h
   rwa [inv_smul_smul_field hc] at h'
 
-@[powerlib_foundation] theorem Conservative.timeScale {f : State n → State n} {x : State n}
+@[tmio T, powerlib_foundation] theorem Conservative.timeScale {f : State n → State n} {x : State n}
     {c : ℝ} (hc : 0 < c) (h : Flow.Conservative f x) : Flow.Conservative (c • f) x := by
   obtain ⟨V, hV, hmin, hcons⟩ := h
   refine ⟨V, hV, hmin, fun s₀ s₁ χ hχ s hs => ?_⟩
@@ -839,13 +839,13 @@ decays at the rate `c a`. -/
   simpa [mul_inv_cancel_time hc] using this
 
 /-- Time scaling by `c > 0` preserves conservation, with the same energy. -/
-@[powerlib_foundation] theorem conservative_smul_iff {f : State n → State n} {x : State n}
+@[tmio T, powerlib_foundation] theorem conservative_smul_iff {f : State n → State n} {x : State n}
     {c : ℝ} (hc : 0 < c) : Flow.Conservative (c • f) x ↔ Flow.Conservative f x := by
   refine ⟨fun h => ?_, Conservative.timeScale hc⟩
   have h' := Conservative.timeScale (inv_pos.mpr hc) h
   rwa [inv_smul_smul_field hc] at h'
 
-private lemma contraction_timeScale {f : State n → State n} {x : State n} {c T ρ : ℝ}
+@[tmio T] private lemma contraction_timeScale {f : State n → State n} {x : State n} {c T ρ : ℝ}
     (hc : 0 < c)
     (h : ∀ (t₀ : ℝ) (φ : ℝ → State n), IsTrajectoryOn φ f t₀ (t₀ + c * T) →
       ‖φ (t₀ + c * T) - x‖ ≤ ρ * ‖φ t₀ - x‖) :
@@ -861,7 +861,7 @@ private lemma contraction_timeScale {f : State n → State n} {x : State n} {c T
 /-- **Sampling horizons scale inversely with time.** For `c > 0` the solutions of `c • f` contract
 by the factor `ρ` over the horizon `T` exactly when the solutions of `f` contract by `ρ` over the
 horizon `c T`: a contraction horizon `T` of `f` is the horizon `T / c` of `c • f`. -/
-@[powerlib_foundation] theorem contraction_smul_iff {f : State n → State n} {x : State n} {c : ℝ}
+@[tmio T, powerlib_foundation] theorem contraction_smul_iff {f : State n → State n} {x : State n} {c : ℝ}
     (hc : 0 < c) (T ρ : ℝ) :
     (∀ (s₀ : ℝ) (χ : ℝ → State n), IsTrajectoryOn χ (c • f) s₀ (s₀ + T) →
         ‖χ (s₀ + T) - x‖ ≤ ρ * ‖χ s₀ - x‖) ↔
@@ -874,7 +874,7 @@ horizon `c T`: a contraction horizon `T` of `f` is the horizon `T / c` of `c •
 
 /-- **Sampled contraction under time scaling.** For `c > 0`, sampled contraction of `c • f` is
 contraction of the solutions of `f` over a horizon `c k`, `k` a positive integer. -/
-@[powerlib_foundation] theorem sampledContraction_smul_iff {f : State n → State n} {x : State n}
+@[tmio T, powerlib_foundation] theorem sampledContraction_smul_iff {f : State n → State n} {x : State n}
     {c : ℝ} (hc : 0 < c) :
     Flow.SampledContraction (c • f) x ↔ ∃ k : ℕ, 0 < k ∧ ∃ ρ < 1, ∀ (t₀ : ℝ) (φ : ℝ → State n),
       IsTrajectoryOn φ f t₀ (t₀ + c * k) → ‖φ (t₀ + c * k) - x‖ ≤ ρ * ‖φ t₀ - x‖ :=
@@ -895,18 +895,18 @@ def Property.timeScale (c : ℝ) : Property → Property
   | .decay a => .decay (c * a)
   | P => P
 
-@[simp, powerlib_foundation] theorem Property.timeScale_decay (c a : ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem Property.timeScale_decay (c a : ℝ) :
     (Property.decay a).timeScale c = .decay (c * a) := rfl
 
-@[simp, powerlib_foundation] theorem Property.timeScale_one (P : Property) : P.timeScale 1 = P := by
+@[tmio T, simp, powerlib_foundation] theorem Property.timeScale_one (P : Property) : P.timeScale 1 = P := by
   cases P <;> simp [Property.timeScale]
 
-@[simp, powerlib_foundation] theorem Property.timeScale_timeScale (P : Property) (c d : ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem Property.timeScale_timeScale (P : Property) (c d : ℝ) :
     (P.timeScale c).timeScale d = P.timeScale (d * c) := by
   cases P <;> simp [Property.timeScale, mul_assoc]
 
 /-- Time scaling keeps the attractive sentences. -/
-@[simp, powerlib_foundation] theorem Property.attractive_timeScale (P : Property) (c : ℝ) :
+@[tmio T, simp, powerlib_foundation] theorem Property.attractive_timeScale (P : Property) (c : ℝ) :
     (P.timeScale c).Attractive ↔ P.Attractive := by
   cases P <;> rfl
 
@@ -921,7 +921,7 @@ contraction holds for `f` at `x` exactly when its time-scaled form `P.timeScale 
 `c • f` (the field in the time `τ = t / c`): Lyapunov stability, instability, local and global
 asymptotic and exponential stability and conservation are invariant, and decay at the rate `a`
 is decay at the rate `c a`. Sampled contraction: `sampledContraction_smul_iff`. -/
-@[powerlib_foundation] theorem holds_timeScale_iff {f : State n → State n} {x : State n} {c : ℝ}
+@[tmio T, powerlib_foundation] theorem holds_timeScale_iff {f : State n → State n} {x : State n} {c : ℝ}
     (hc : 0 < c) {P : Flow.Property} (hP : P ≠ .contractive) :
     (P.timeScale c).holds (c • f) x ↔ P.holds f x := by
   cases P with
@@ -938,7 +938,7 @@ is decay at the rate `c a`. Sampled contraction: `sampledContraction_smul_iff`. 
 /-- **Time scaling of linear fields.** For `c > 0` every flow sentence `P` holds for the linear
 field of `A` at its centre exactly when `P.timeScale c` holds for the linear field of `c A`;
 sampled contraction is invariant here, since for linear fields it is the Hurwitz property. -/
-@[powerlib_foundation] theorem holds_timeScale_linear_iff {c : ℝ} (hc : 0 < c)
+@[tmio T, powerlib_foundation] theorem holds_timeScale_linear_iff {c : ℝ} (hc : 0 < c)
     (A : Matrix (Fin n) (Fin n) ℝ) (e : State n) (P : Flow.Property) :
     (P.timeScale c).holds (LinearSystems.affineLinearVectorField (c • A) e) e ↔
       P.holds (LinearSystems.affineLinearVectorField A e) e := by

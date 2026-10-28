@@ -86,7 +86,7 @@ def covFin (pmf : (Fin p → ℝ) → Ω → ℝ) (θ : Fin p → ℝ) (T : Ω �
     ((T ω i - meanFin pmf θ T i) * (T ω j - meanFin pmf θ T j))
 
 /-- Gram form `X diag(q) Yᵀ`. -/
-private lemma mul_diagonal_mul_transpose_apply {a b : Type*} (X : Matrix a Ω ℝ)
+@[tmio T] private lemma mul_diagonal_mul_transpose_apply {a b : Type*} (X : Matrix a Ω ℝ)
     (Y : Matrix b Ω ℝ) (q : Ω → ℝ) (i : a) (j : b) [DecidableEq Ω] :
     (X * diagonal q * Yᵀ) i j = ∑ ω, q ω * (X i ω * Y j ω) := by
   rw [Matrix.mul_apply]
@@ -192,7 +192,7 @@ nonnegative near `θ`: zeros are allowed (their derivative vanishes, a local min
 
 /-- **Cramér–Rao bound, finite sample space, unbiased form**: `Cov_θ(T) ⪰ 𝓘(θ)⁻¹` for every
 statistic that is unbiased for all parameters near `θ`. -/
-@[powerlib_foundation] theorem crb_fin_unbiased {pmf : (Fin p → ℝ) → Ω → ℝ} {θ : Fin p → ℝ}
+@[tmio T, powerlib_foundation] theorem crb_fin_unbiased {pmf : (Fin p → ℝ) → Ω → ℝ} {θ : Fin p → ℝ}
     {T : Ω → Fin p → ℝ}
     (hdiff : ∀ ω, DifferentiableAt ℝ (fun θ' => pmf θ' ω) θ)
     (hnn : ∀ᶠ θ' in 𝓝 θ, ∀ ω, 0 ≤ pmf θ' ω)
@@ -205,7 +205,7 @@ statistic that is unbiased for all parameters near `θ`. -/
 omit [Fintype Ω] in
 /-- Where `p_θ(ω) > 0`, the score is the derivative of the log-likelihood:
 `s_i(θ, ω) = ∂_i log p_θ(ω)`. -/
-@[powerlib_foundation] theorem scoreFin_eq_fderiv_log {pmf : (Fin p → ℝ) → Ω → ℝ}
+@[tmio T, powerlib_foundation] theorem scoreFin_eq_fderiv_log {pmf : (Fin p → ℝ) → Ω → ℝ}
     {θ : Fin p → ℝ} {ω : Ω} (hd : DifferentiableAt ℝ (fun θ' => pmf θ' ω) θ)
     (hpos : 0 < pmf θ ω) (i : Fin p) :
     scoreFin pmf θ ω i = fderiv ℝ (fun θ' => Real.log (pmf θ' ω)) θ (Pi.single i 1) := by
@@ -229,7 +229,7 @@ def gramMatrix {ι : Type*} (P : Measure Ω) (V : ι → Ω → ℝ) : Matrix ι
 
 /-- The Gram matrix of square-integrable random variables is positive semidefinite:
 `cᵀ G c = E[(Σ c_u V_u)²] ≥ 0`. -/
-@[powerlib_foundation] theorem gramMatrix_posSemidef {ι : Type*} [Fintype ι] {V : ι → Ω → ℝ}
+@[tmio T, powerlib_foundation] theorem gramMatrix_posSemidef {ι : Type*} [Fintype ι] {V : ι → Ω → ℝ}
     (hV : ∀ u, MemLp (V u) 2 P) : (gramMatrix P V).PosSemidef := by
   classical
   have hint : ∀ u v, Integrable (fun ω => V u ω * V v ω) P := fun u v =>
@@ -270,7 +270,7 @@ conditions — differentiation under the integral sign, `∂_i ∫ p_θ = ∫ �
 `E[S_i] = 0` and `E[T_j S_i] = J_ji` (`J` = Jacobian of `θ ↦ E_θ[T]`).  If the Fisher matrix
 `𝓘 = E[S Sᵀ]` is positive definite, then `Cov(T) ⪰ J 𝓘⁻¹ Jᵀ`; for an unbiased estimator
 (`J = I`), `Cov(T) ⪰ 𝓘⁻¹`. -/
-@[powerlib_foundation] theorem crb_of_regular [IsProbabilityMeasure P] {T : Ω → Fin k → ℝ}
+@[tmio T, powerlib_foundation] theorem crb_of_regular [IsProbabilityMeasure P] {T : Ω → Fin k → ℝ}
     {S : Ω → Fin p → ℝ} {J : Matrix (Fin k) (Fin p) ℝ}
     (hT : ∀ j, MemLp (fun ω => T ω j) 2 P) (hS : ∀ i, MemLp (fun ω => S ω i) 2 P)
     (hS0 : ∀ i, ∫ ω, S ω i ∂P = 0) (hTS : ∀ j i, ∫ ω, T ω j * S ω i ∂P = J j i)
@@ -326,7 +326,7 @@ statistic `T` have mean `ψ(θ')` near `θ` (`ψ` differentiable, Jacobian `J`).
 `θ' ↦ ∫ p_θ' T_j` have derivatives `∫ D` and `∫ T_j D` at `θ`.  If `T` and the score are square
 integrable under `P_θ` and the Fisher matrix is positive definite, then
 `Cov_θ(T) ⪰ J 𝓘(θ)⁻¹ Jᵀ`. -/
-@[powerlib_foundation] theorem crb_density {μ : Measure Ω} {f : (Fin p → ℝ) → Ω → ℝ}
+@[tmio T, powerlib_foundation] theorem crb_density {μ : Measure Ω} {f : (Fin p → ℝ) → Ω → ℝ}
     {θ : Fin p → ℝ} {D : Ω → (Fin p → ℝ) →L[ℝ] ℝ} {T : Ω → Fin k → ℝ}
     {ψ : (Fin p → ℝ) → Fin k → ℝ} {J : (Fin p → ℝ) →L[ℝ] (Fin k → ℝ)}
     (hf : ∀ ω, HasFDerivAt (fun θ' => f θ' ω) (D ω) θ)

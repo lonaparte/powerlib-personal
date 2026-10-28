@@ -36,7 +36,7 @@ def liftPerm {k : ℕ} (σ : Equiv.Perm (Fin k)) : Equiv.Perm (Fin (k + 1)) wher
 @[tmio T, simp, powerlib_foundation] theorem liftPerm_zero {k : ℕ} (σ : Equiv.Perm (Fin k)) :
     liftPerm σ 0 = 0 := rfl
 
-@[simp, powerlib_foundation] theorem liftPerm_succ {k : ℕ} (σ : Equiv.Perm (Fin k)) (j : Fin k) :
+@[tmio T, simp, powerlib_foundation] theorem liftPerm_succ {k : ℕ} (σ : Equiv.Perm (Fin k)) (j : Fin k) :
     liftPerm σ j.succ = (σ j).succ := rfl
 
 /-- Block matrix `[[a, rᵀ], [c, D]]` on `Fin (k+1)`. -/
@@ -45,26 +45,26 @@ def blockOf {k : ℕ} (a : ℝ) (r c : Fin k → ℝ) (D : Matrix (Fin k) (Fin k
   Matrix.of fun i j => Fin.cases (motive := fun _ => ℝ) (Fin.cases (motive := fun _ => ℝ) a r j)
     (fun i' => Fin.cases (motive := fun _ => ℝ) (c i') (fun j' => D i' j') j) i
 
-@[simp, powerlib_foundation] theorem blockOf_zero_zero {k : ℕ} (a : ℝ) (r c : Fin k → ℝ)
+@[tmio T, simp, powerlib_foundation] theorem blockOf_zero_zero {k : ℕ} (a : ℝ) (r c : Fin k → ℝ)
     (D : Matrix (Fin k) (Fin k) ℝ) : blockOf a r c D 0 0 = a := rfl
 
-@[simp, powerlib_foundation] theorem blockOf_zero_succ {k : ℕ} (a : ℝ) (r c : Fin k → ℝ)
+@[tmio T, simp, powerlib_foundation] theorem blockOf_zero_succ {k : ℕ} (a : ℝ) (r c : Fin k → ℝ)
     (D : Matrix (Fin k) (Fin k) ℝ) (j : Fin k) : blockOf a r c D 0 j.succ = r j := rfl
 
-@[simp, powerlib_foundation] theorem blockOf_succ_zero {k : ℕ} (a : ℝ) (r c : Fin k → ℝ)
+@[tmio T, simp, powerlib_foundation] theorem blockOf_succ_zero {k : ℕ} (a : ℝ) (r c : Fin k → ℝ)
     (D : Matrix (Fin k) (Fin k) ℝ) (i : Fin k) : blockOf a r c D i.succ 0 = c i := rfl
 
-@[simp, powerlib_foundation] theorem blockOf_succ_succ {k : ℕ} (a : ℝ) (r c : Fin k → ℝ)
+@[tmio T, simp, powerlib_foundation] theorem blockOf_succ_succ {k : ℕ} (a : ℝ) (r c : Fin k → ℝ)
     (D : Matrix (Fin k) (Fin k) ℝ) (i j : Fin k) : blockOf a r c D i.succ j.succ = D i j := rfl
 
-@[powerlib_foundation] theorem eq_blockOf {k : ℕ} (B : Matrix (Fin (k + 1)) (Fin (k + 1)) ℝ) :
+@[tmio T, powerlib_foundation] theorem eq_blockOf {k : ℕ} (B : Matrix (Fin (k + 1)) (Fin (k + 1)) ℝ) :
     B = blockOf (B 0 0) (fun j => B 0 j.succ) (fun i => B i.succ 0)
       (fun i j => B i.succ j.succ) := by
   ext i j
   cases i using Fin.cases <;> cases j using Fin.cases <;> rfl
 
 /-- Product of block matrices. -/
-@[powerlib_foundation] theorem blockOf_mul {k : ℕ} (a a' : ℝ) (r c r' c' : Fin k → ℝ)
+@[tmio T, powerlib_foundation] theorem blockOf_mul {k : ℕ} (a a' : ℝ) (r c r' c' : Fin k → ℝ)
     (D D' : Matrix (Fin k) (Fin k) ℝ) :
     blockOf a r c D * blockOf a' r' c' D' =
       blockOf (a * a' + r ⬝ᵥ c') (fun j => a * r' j + ∑ m, r m * D' m j)
@@ -75,7 +75,7 @@ def blockOf {k : ℕ} (a : ℝ) (r c : Fin k → ℝ) (D : Matrix (Fin k) (Fin k
 
 /-- **Partial-pivoting LU factorization**: `PA = LU`, `L` unit lower triangular with
 `|L i j| ≤ 1`, `U` upper triangular. -/
-@[powerlib_foundation] theorem lu_partialPivot :
+@[tmio T, powerlib_foundation] theorem lu_partialPivot :
     ∀ (k : ℕ) (A : Matrix (Fin k) (Fin k) ℝ), IsUnit A.det →
       ∃ (σ : Equiv.Perm (Fin k)) (L U : Matrix (Fin k) (Fin k) ℝ),
         L.IsLowerTriangular ∧ (∀ i, L i i = 1) ∧ (∀ i j, |L i j| ≤ 1) ∧

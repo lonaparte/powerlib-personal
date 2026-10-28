@@ -82,7 +82,7 @@ section Laplace
 variable {φ g : ℝ → ℝ} {a b G : ℝ}
 
 /-- Pointwise limit of the scaled phase: `X φ(u/√X) → a u²`. -/
-@[powerlib_foundation] theorem scaled_phase_tendsto (hφ0 : φ 0 = 0)
+@[tmio T, powerlib_foundation] theorem scaled_phase_tendsto (hφ0 : φ 0 = 0)
     (hquad : Tendsto (fun y => φ y / y ^ 2) (𝓝[≠] 0) (𝓝 a)) (u : ℝ) :
     Tendsto (fun X : ℝ => X * φ (u / √X)) atTop (𝓝 (a * u ^ 2)) := by
   rcases eq_or_ne u 0 with rfl | hu
@@ -105,7 +105,7 @@ variable {φ g : ℝ → ℝ} {a b G : ℝ}
 /-- The scaled integrand `g(u/√X) e^{−Xφ(u/√X)}`. -/
 def scaledIntegrand (φ g : ℝ → ℝ) (X u : ℝ) : ℝ := g (u / √X) * Real.exp (-(X * φ (u / √X)))
 
-@[powerlib_foundation] theorem scaledIntegrand_tendsto (hg : Continuous g) (hφ0 : φ 0 = 0)
+@[tmio T, powerlib_foundation] theorem scaledIntegrand_tendsto (hg : Continuous g) (hφ0 : φ 0 = 0)
     (hquad : Tendsto (fun y => φ y / y ^ 2) (𝓝[≠] 0) (𝓝 a)) (u : ℝ) :
     Tendsto (fun X => scaledIntegrand φ g X u) atTop (𝓝 (g 0 * Real.exp (-a * u ^ 2))) := by
   have h1 : Tendsto (fun X : ℝ => g (u / √X)) atTop (𝓝 (g 0)) := by
@@ -117,7 +117,7 @@ def scaledIntegrand (φ g : ℝ → ℝ) (X u : ℝ) : ℝ := g (u / √X) * Rea
   have := h1.mul h2
   simpa [scaledIntegrand, Function.comp_def, neg_mul] using this
 
-@[powerlib_foundation] theorem norm_scaledIntegrand_le (hgb : ∀ y, |g y| ≤ G)
+@[tmio T, powerlib_foundation] theorem norm_scaledIntegrand_le (hgb : ∀ y, |g y| ≤ G)
     (hlow : ∀ y, b * y ^ 2 ≤ φ y) {X : ℝ} (hX : 0 < X) (u : ℝ) :
     ‖scaledIntegrand φ g X u‖ ≤ G * Real.exp (-b * u ^ 2) := by
   rw [scaledIntegrand, Real.norm_eq_abs, abs_mul, abs_of_pos (Real.exp_pos _)]
@@ -129,13 +129,13 @@ def scaledIntegrand (φ g : ℝ → ℝ) (X u : ℝ) : ℝ := g (u / √X) * Rea
     rw [div_pow, hs]; field_simp
   nlinarith
 
-@[powerlib_foundation] theorem scaledIntegrand_continuous (hg : Continuous g) (hφ : Continuous φ)
+@[tmio T, powerlib_foundation] theorem scaledIntegrand_continuous (hg : Continuous g) (hφ : Continuous φ)
     (X : ℝ) : Continuous (scaledIntegrand φ g X) := by
   unfold scaledIntegrand
   fun_prop
 
 /-- Change of variables `y = u/√X`: `∫ F(u/√X) du = √X ∫ F(y) dy`. -/
-@[powerlib_foundation] theorem integral_scaled {X : ℝ} (hX : 0 < X) :
+@[tmio T, powerlib_foundation] theorem integral_scaled {X : ℝ} (hX : 0 < X) :
     ∫ u, scaledIntegrand φ g X u = √X * ∫ y, g y * Real.exp (-(X * φ y)) := by
   have hs : 0 < √X := Real.sqrt_pos.mpr hX
   have h := Measure.integral_comp_mul_left (fun y => g y * Real.exp (-(X * φ y))) (√X)⁻¹
@@ -146,7 +146,7 @@ def scaledIntegrand (φ g : ℝ → ℝ) (X u : ℝ) : ℝ := g (u / √X) * Rea
   simp [scaledIntegrand, div_eq_inv_mul]
 
 /-- **Laplace's method, interior minimum (leading order).** -/
-@[powerlib_foundation] theorem laplace_interior (hg : Continuous g) (hgb : ∀ y, |g y| ≤ G)
+@[tmio T, powerlib_foundation] theorem laplace_interior (hg : Continuous g) (hgb : ∀ y, |g y| ≤ G)
     (hφ : Continuous φ) (hφ0 : φ 0 = 0) (hb : 0 < b) (hlow : ∀ y, b * y ^ 2 ≤ φ y)
     (hquad : Tendsto (fun y => φ y / y ^ 2) (𝓝[≠] 0) (𝓝 a)) :
     Tendsto (fun X => √X * ∫ y, g y * Real.exp (-(X * φ y))) atTop (𝓝 (g 0 * √(π / a))) := by
@@ -165,7 +165,7 @@ def scaledIntegrand (φ g : ℝ → ℝ) (X u : ℝ) : ℝ := g (u / √X) * Rea
 
 /-- **Laplace's method, endpoint minimum with zero slope (leading order):** the prefactor is one
 half of the interior one. -/
-@[powerlib_foundation] theorem laplace_endpoint (hg : Continuous g) (hgb : ∀ y, |g y| ≤ G)
+@[tmio T, powerlib_foundation] theorem laplace_endpoint (hg : Continuous g) (hgb : ∀ y, |g y| ≤ G)
     (hφ : Continuous φ) (hφ0 : φ 0 = 0) (hb : 0 < b) (hlow : ∀ y, b * y ^ 2 ≤ φ y)
     (hquad : Tendsto (fun y => φ y / y ^ 2) (𝓝[≠] 0) (𝓝 a)) :
     Tendsto (fun X => √X * ∫ y in Ioi 0, g y * Real.exp (-(X * φ y))) atTop
@@ -196,7 +196,7 @@ end Laplace
 section Rates
 
 /-- `|eˣ − 1| ≤ |x| (1 + eˣ)` for every real `x`. -/
-@[powerlib_foundation] theorem abs_exp_sub_one_le_mul (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem abs_exp_sub_one_le_mul (x : ℝ) :
     |Real.exp x - 1| ≤ |x| * (1 + Real.exp x) := by
   have hex := Real.exp_pos x
   rcases le_total 0 x with hx | hx
@@ -210,7 +210,7 @@ section Rates
     nlinarith [Real.add_one_le_exp x]
 
 /-- `|eˣ − 1 − x| ≤ x² (1 + eˣ)` for every real `x`. -/
-@[powerlib_foundation] theorem abs_exp_sub_one_sub_le_mul (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem abs_exp_sub_one_sub_le_mul (x : ℝ) :
     |Real.exp x - 1 - x| ≤ x ^ 2 * (1 + Real.exp x) := by
   have hex := Real.exp_pos x
   have h0 : 0 ≤ Real.exp x - 1 - x := by linarith [Real.add_one_le_exp x]
@@ -236,7 +236,7 @@ section Rates
     nlinarith
 
 /-- `|u|^k ≤ 1 + u⁸` for `k ≤ 8`. -/
-@[powerlib_foundation] theorem abs_pow_le_one_add_pow_eight (u : ℝ) {k : ℕ} (hk : k ≤ 8) :
+@[tmio T, powerlib_foundation] theorem abs_pow_le_one_add_pow_eight (u : ℝ) {k : ℕ} (hk : k ≤ 8) :
     |u| ^ k ≤ 1 + u ^ 8 := by
   have h8 : u ^ 8 = |u| ^ 8 := by rw [pow_abs]; exact (abs_of_nonneg (by positivity)).symm
   rcases le_total |u| 1 with h | h
@@ -247,14 +247,14 @@ section Rates
     linarith
 
 /-- `uⁿ e^{−bu²}` is integrable for `b > 0` (wraps `integrable_rpow_mul_exp_neg_mul_sq`). -/
-@[powerlib_foundation] theorem integrable_pow_mul_exp_neg_mul_sq {b : ℝ} (hb : 0 < b) (n : ℕ) :
+@[tmio T, powerlib_foundation] theorem integrable_pow_mul_exp_neg_mul_sq {b : ℝ} (hb : 0 < b) (n : ℕ) :
     Integrable fun u : ℝ => u ^ n * Real.exp (-b * u ^ 2) := by
   have h := integrable_rpow_mul_exp_neg_mul_sq hb (s := n)
     (by have := (Nat.cast_nonneg n : (0 : ℝ) ≤ n); linarith)
   simpa only [Real.rpow_natCast] using h
 
 /-- The dominating weight `(1 + u⁸) e^{−bu²}` is integrable. -/
-@[powerlib_foundation] theorem integrable_laplaceWeight {b : ℝ} (hb : 0 < b) :
+@[tmio T, powerlib_foundation] theorem integrable_laplaceWeight {b : ℝ} (hb : 0 < b) :
     Integrable fun u : ℝ => (1 + u ^ 8) * Real.exp (-b * u ^ 2) := by
   have h := (integrable_exp_neg_mul_sq hb).add (integrable_pow_mul_exp_neg_mul_sq hb 8)
   refine h.congr (Eventually.of_forall fun u => ?_)
@@ -262,13 +262,13 @@ section Rates
 
 variable {φ g : ℝ → ℝ} {a b G : ℝ}
 
-@[powerlib_foundation] private theorem sq_le_two_mul_add (w v : ℝ) :
+@[tmio T, powerlib_foundation] private theorem sq_le_two_mul_add (w v : ℝ) :
     w ^ 2 ≤ 2 * v ^ 2 + 2 * (w - v) ^ 2 := by
   nlinarith [sq_nonneg (w - 2 * v)]
 
 /-- The local (Taylor-region) estimate behind `scaledIntegrand_interior_bound`, in plain real
 variables: `gy = g(y)`, `φy = φ(y)`, `u = s y`, `X = s²`. -/
-@[powerlib_foundation] private theorem interior_local_estimate {a c g₀ g₁ G G₂ M δ X s u y gy φy
+@[tmio T, powerlib_foundation] private theorem interior_local_estimate {a c g₀ g₁ G G₂ M δ X s u y gy φy
     e0 E eb : ℝ} (hs : 1 ≤ s) (hs2 : s ^ 2 = X) (hus : u = s * y) (hyδ : |y| ≤ δ)
     (hφ : |φy - (a * y ^ 2 + c * y ^ 3)| ≤ M * y ^ 4) (hgy : |gy| ≤ G)
     (hg2 : |gy - g₀ - g₁ * y| ≤ G₂ * y ^ 2) (he0 : e0 = Real.exp (-a * u ^ 2))
@@ -389,7 +389,7 @@ variables: `gy = g(y)`, `φy = φ(y)`, `u = s y`, `X = s²`. -/
           ((1 + u ^ 8) * eb) := by ring
 
 /-- The far-region estimate behind `scaledIntegrand_interior_bound`: for `δ < |y|`, `u = s y`. -/
-@[powerlib_foundation] private theorem interior_far_estimate {c g₀ g₁ G δ X s u y gy e0 E eb : ℝ}
+@[tmio T, powerlib_foundation] private theorem interior_far_estimate {c g₀ g₁ G δ X s u y gy e0 E eb : ℝ}
     (hδ : 0 < δ) (hs : 1 ≤ s) (hs2 : s ^ 2 = X) (hus : u = s * y) (hyδ : δ < |y|)
     (hgy : |gy| ≤ G) (he0p : 0 < e0) (hEp : 0 < E) (he0b : e0 ≤ eb) (hEb : E ≤ eb) (hG : 0 ≤ G) :
     |gy * E - (g₀ + (g₁ * u - g₀ * c * u ^ 3) / s) * e0| ≤
@@ -446,7 +446,7 @@ variables: `gy = g(y)`, `φy = φ(y)`, `u = s y`, `X = s²`. -/
 /-- Pointwise expansion of the scaled interior integrand to second order:
 `|g(u/√X) e^{−Xφ(u/√X)} − (g(0) + (g₁u − g(0)c u³)/√X) e^{−au²}| ≤ K (1 + u⁸) e^{−b'u²}/X`
 (`b' = min a b`) for all `X ≥ 1` and all `u`. -/
-@[powerlib_foundation] theorem scaledIntegrand_interior_bound {g₁ G₂ c M δ : ℝ}
+@[tmio T, powerlib_foundation] theorem scaledIntegrand_interior_bound {g₁ G₂ c M δ : ℝ}
     (hgb : ∀ y, |g y| ≤ G) (hg2 : ∀ y, |g y - g 0 - g₁ * y| ≤ G₂ * y ^ 2)
     (hlow : ∀ y, b * y ^ 2 ≤ φ y) (hδ : 0 < δ)
     (hφ3 : ∀ y, |y| ≤ δ → |φ y - (a * y ^ 2 + c * y ^ 3)| ≤ M * y ^ 4) :
@@ -498,7 +498,7 @@ continuous, bounded, `C²`-like at `0` (`|g(y) − g(0) − g₁y| ≤ G₂y²`)
 `φ ≥ by²` and a local cubic Taylor bound `|φ(y) − ay² − cy³| ≤ My⁴` on `|y| ≤ δ`:
 `|√X ∫ g e^{−Xφ} − g(0)√(π/a)| ≤ C/X` for all `X ≥ 1`. The odd `X^{−1/2}` terms
 (`g₁u`, `cu³`) integrate to zero against the even Gaussian. -/
-@[powerlib_foundation] theorem laplace_interior_rate {g₁ G₂ c M δ : ℝ} (hg : Continuous g)
+@[tmio T, powerlib_foundation] theorem laplace_interior_rate {g₁ G₂ c M δ : ℝ} (hg : Continuous g)
     (hφ : Continuous φ) (hgb : ∀ y, |g y| ≤ G) (hg2 : ∀ y, |g y - g 0 - g₁ * y| ≤ G₂ * y ^ 2)
     (ha : 0 < a) (hb : 0 < b) (hlow : ∀ y, b * y ^ 2 ≤ φ y) (hδ : 0 < δ)
     (hφ3 : ∀ y, |y| ≤ δ → |φ y - (a * y ^ 2 + c * y ^ 3)| ≤ M * y ^ 4) :
@@ -545,7 +545,7 @@ continuous, bounded, `C²`-like at `0` (`|g(y) − g(0) − g₁y| ≤ G₂y²`)
 
 /-- `1 + O(1/X)` form of `laplace_interior_rate` (for `g(0) ≠ 0`):
 `√X ∫ g e^{−Xφ} / (g(0)√(π/a)) − 1 = O(1/X)` as `X → ∞`. -/
-@[powerlib_foundation] theorem laplace_interior_isBigO {g₁ G₂ c M δ : ℝ} (hg : Continuous g)
+@[tmio T, powerlib_foundation] theorem laplace_interior_isBigO {g₁ G₂ c M δ : ℝ} (hg : Continuous g)
     (hφ : Continuous φ) (hgb : ∀ y, |g y| ≤ G) (hg2 : ∀ y, |g y - g 0 - g₁ * y| ≤ G₂ * y ^ 2)
     (ha : 0 < a) (hb : 0 < b) (hlow : ∀ y, b * y ^ 2 ≤ φ y) (hδ : 0 < δ)
     (hφ3 : ∀ y, |y| ≤ δ → |φ y - (a * y ^ 2 + c * y ^ 3)| ≤ M * y ^ 4) (hg0 : g 0 ≠ 0) :
@@ -565,7 +565,7 @@ continuous, bounded, `C²`-like at `0` (`|g(y) − g(0) − g₁y| ≤ G₂y²`)
 
 /-- Pointwise expansion of the scaled endpoint integrand to first order, for `u ≥ 0`:
 `|g(u/√X) e^{−Xφ(u/√X)} − g(0) e^{−au²}| ≤ K (1 + u⁸) e^{−b'u²}/√X` (`b' = min a b`). -/
-@[powerlib_foundation] theorem scaledIntegrand_endpoint_bound {G₁ M δ : ℝ}
+@[tmio T, powerlib_foundation] theorem scaledIntegrand_endpoint_bound {G₁ M δ : ℝ}
     (hgb : ∀ y, 0 ≤ y → |g y| ≤ G) (hg1 : ∀ y, 0 ≤ y → |g y - g 0| ≤ G₁ * y)
     (hlow : ∀ y, 0 ≤ y → b * y ^ 2 ≤ φ y) (hδ : 0 < δ)
     (hφ2 : ∀ y, 0 ≤ y → y ≤ δ → |φ y - a * y ^ 2| ≤ M * y ^ 3) :
@@ -668,7 +668,7 @@ continuous, bounded, `C²`-like at `0` (`|g(y) − g(0) − g₁y| ≤ G₂y²`)
       _ ≤ (KA + KB) / s * ((1 + u ^ 8) * eb) := by gcongr; linarith
 
 /-- Change of variables `y = u/√X` on the half line. -/
-@[powerlib_foundation] theorem integral_scaled_Ioi {X : ℝ} (hX : 0 < X) :
+@[tmio T, powerlib_foundation] theorem integral_scaled_Ioi {X : ℝ} (hX : 0 < X) :
     ∫ u in Ioi 0, scaledIntegrand φ g X u = √X * ∫ y in Ioi 0, g y * Real.exp (-(X * φ y)) := by
   have hs : 0 < √X := Real.sqrt_pos.mpr hX
   have h := integral_comp_mul_left_Ioi (fun y => g y * Real.exp (-(X * φ y))) 0 (inv_pos.mpr hs)
@@ -683,7 +683,7 @@ hypotheses only on the integration side `y ≥ 0` (`g` bounded and Lipschitz at 
 `|√X ∫_{y>0} g e^{−Xφ} − g(0)√(π/a)/2| ≤ C/√X` for all `X ≥ 1`. (That the `X^{−1/2}` term is
 present in general, with coefficient `√(2/π)(g₁/g₀ − φ₃/(3φ₂))/√φ₂` of the truncated table, is
 `endpointTable_eq` in `Asymptotics/EndpointLaplace.lean`.) -/
-@[powerlib_foundation] theorem laplace_endpoint_rate {G₁ M δ : ℝ} (hg : Continuous g)
+@[tmio T, powerlib_foundation] theorem laplace_endpoint_rate {G₁ M δ : ℝ} (hg : Continuous g)
     (hφ : Continuous φ) (hgb : ∀ y, 0 ≤ y → |g y| ≤ G)
     (hg1 : ∀ y, 0 ≤ y → |g y - g 0| ≤ G₁ * y) (ha : 0 < a) (hb : 0 < b)
     (hlow : ∀ y, 0 ≤ y → b * y ^ 2 ≤ φ y) (hδ : 0 < δ)
@@ -729,7 +729,7 @@ present in general, with coefficient `√(2/π)(g₁/g₀ − φ₃/(3φ₂))/�
         rw [integral_const_mul]; ring
 
 /-- `1 + O(X^{−1/2})` form of `laplace_endpoint_rate` (for `g(0) ≠ 0`). -/
-@[powerlib_foundation] theorem laplace_endpoint_isBigO {G₁ M δ : ℝ} (hg : Continuous g)
+@[tmio T, powerlib_foundation] theorem laplace_endpoint_isBigO {G₁ M δ : ℝ} (hg : Continuous g)
     (hφ : Continuous φ) (hgb : ∀ y, 0 ≤ y → |g y| ≤ G)
     (hg1 : ∀ y, 0 ≤ y → |g y - g 0| ≤ G₁ * y) (ha : 0 < a) (hb : 0 < b)
     (hlow : ∀ y, 0 ≤ y → b * y ^ 2 ≤ φ y) (hδ : 0 < δ)

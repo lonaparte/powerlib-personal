@@ -43,13 +43,13 @@ variable {q : ℝ}
   have h := (hasSum_geometric_of_lt_one hq0 hq1).mul_left q
   simpa [pow_succ', div_eq_mul_inv] using h
 
-@[powerlib_foundation] theorem geometric_gibbs_mass (hq0 : 0 < q) (hq1 : q < 1) (n : ℕ) :
+@[tmio T, powerlib_foundation] theorem geometric_gibbs_mass (hq0 : 0 < q) (hq1 : q < 1) (n : ℕ) :
     q ^ (n + 1) / (q / (1 - q)) = (1 - q) * q ^ n := by
   have : 1 - q ≠ 0 := by linarith
   field_simp
   ring
 
-@[powerlib_foundation] theorem geometric_mean (hq0 : 0 ≤ q) (hq1 : q < 1) :
+@[tmio T, powerlib_foundation] theorem geometric_mean (hq0 : 0 ≤ q) (hq1 : q < 1) :
     HasSum (fun n : ℕ => ((n : ℝ) + 1) * ((1 - q) * q ^ n)) (1 / (1 - q)) := by
   have hn : ‖q‖ < 1 := by rwa [Real.norm_eq_abs, abs_of_nonneg hq0]
   have h1 := (hasSum_coe_mul_geometric_of_norm_lt_one hn).mul_left (1 - q)
@@ -61,7 +61,7 @@ variable {q : ℝ}
   · field_simp; ring
 
 /-- Inverting the mean constraint `k̄ = 1/(1-q)`. -/
-@[powerlib_foundation] theorem geometric_q_of_mean {kbar : ℝ} (hq1 : q < 1)
+@[tmio T, powerlib_foundation] theorem geometric_q_of_mean {kbar : ℝ} (hq1 : q < 1)
     (h : kbar = 1 / (1 - q)) : q = 1 - 1 / kbar := by
   have hne : 1 - q ≠ 0 := by linarith
   rw [h]; field_simp; ring
@@ -72,13 +72,13 @@ section Exponential
 
 variable {lam : ℝ}
 
-@[powerlib_foundation] theorem exponential_partition (hlam : 0 < lam) :
+@[tmio T, powerlib_foundation] theorem exponential_partition (hlam : 0 < lam) :
     ∫ x in Ioi (0 : ℝ), exp (-lam * x) = 1 / lam := by
   rw [integral_exp_mul_Ioi (by linarith) 0]
   field_simp
   simp
 
-@[powerlib_foundation] theorem exponential_first_moment (hlam : 0 < lam) :
+@[tmio T, powerlib_foundation] theorem exponential_first_moment (hlam : 0 < lam) :
     ∫ x in Ioi (0 : ℝ), x * exp (-lam * x) = 1 / lam ^ 2 := by
   have h := Real.integral_rpow_mul_exp_neg_mul_Ioi (a := 2) (r := lam) two_pos hlam
   have hc : ∀ x ∈ Ioi (0 : ℝ), x ^ ((2 : ℝ) - 1) * exp (-(lam * x)) = x * exp (-lam * x) := by
@@ -91,13 +91,13 @@ variable {lam : ℝ}
   field_simp
 
 /-- The Gibbs mean of the exponential example is `1/λ` (so `λ = 1/μ`). -/
-@[powerlib_foundation] theorem exponential_gibbs_mean (hlam : 0 < lam) :
+@[tmio T, powerlib_foundation] theorem exponential_gibbs_mean (hlam : 0 < lam) :
     (∫ x in Ioi (0 : ℝ), x * exp (-lam * x)) / (∫ x in Ioi (0 : ℝ), exp (-lam * x)) = 1 / lam := by
   rw [exponential_first_moment hlam, exponential_partition hlam]
   field_simp
 
 /-- The Gibbs density `e^{-λx}/Z` is `(1/μ) e^{-x/μ}` with `μ = 1/λ`. -/
-@[powerlib_foundation] theorem exponential_gibbs_density (hlam : 0 < lam) (x : ℝ) :
+@[tmio T, powerlib_foundation] theorem exponential_gibbs_density (hlam : 0 < lam) (x : ℝ) :
     exp (-lam * x) / (∫ y in Ioi (0 : ℝ), exp (-lam * y)) =
       (1 / (1 / lam)) * exp (-x / (1 / lam)) := by
   rw [exponential_partition hlam]
@@ -112,7 +112,7 @@ variable {μ : ℝ} {v : ℝ≥0}
 /-- The quadratic log-tilt `-(x-μ)²/(2v)`. -/
 def gaussTilt (μ : ℝ) (v : ℝ≥0) (x : ℝ) : ℝ := -(x - μ) ^ 2 / (2 * v)
 
-@[powerlib_foundation] theorem integral_exp_gaussTilt (hv : v ≠ 0) :
+@[tmio T, powerlib_foundation] theorem integral_exp_gaussTilt (hv : v ≠ 0) :
     ∫ x, exp (gaussTilt μ v x) = √(2 * π * v) := by
   have h := integral_gaussianPDFReal_eq_one μ hv
   rw [gaussianPDFReal_def, integral_const_mul] at h
@@ -123,7 +123,7 @@ def gaussTilt (μ : ℝ) (v : ℝ≥0) (x : ℝ) : ℝ := -(x - μ) ^ 2 / (2 * v
   field_simp at h
   simpa [neg_div] using h
 
-@[powerlib_foundation] theorem integrable_exp_gaussTilt (hv : v ≠ 0) :
+@[tmio T, powerlib_foundation] theorem integrable_exp_gaussTilt (hv : v ≠ 0) :
     Integrable (fun x => exp (gaussTilt μ v x)) := by
   have h := (integrable_gaussianPDFReal μ v).const_mul (√(2 * π * v))
   have hpos : 0 < √(2 * π * v) := by
@@ -134,7 +134,7 @@ def gaussTilt (μ : ℝ) (v : ℝ≥0) (x : ℝ) : ℝ := -(x - μ) ^ 2 / (2 * v
   field_simp
 
 /-- **The Gaussian is the Gibbs measure of the quadratic tilt** (Lebesgue reference). -/
-@[powerlib_foundation] theorem tilted_gaussTilt (hv : v ≠ 0) :
+@[tmio T, powerlib_foundation] theorem tilted_gaussTilt (hv : v ≠ 0) :
     (volume : Measure ℝ).tilted (gaussTilt μ v) = gaussianReal μ v := by
   rw [gaussianReal_of_var_ne_zero μ hv, Measure.tilted, integral_exp_gaussTilt hv]
   congr 1
@@ -144,7 +144,7 @@ def gaussTilt (μ : ℝ) (v : ℝ≥0) (x : ℝ) : ℝ := -(x - μ) ^ 2 / (2 * v
   simp only [gaussianPDFReal_def, gaussTilt]
   ring
 
-@[powerlib_foundation] private theorem integral_gaussTilt {p : Measure ℝ} [IsProbabilityMeasure p]
+@[tmio T, powerlib_foundation] private theorem integral_gaussTilt {p : Measure ℝ} [IsProbabilityMeasure p]
     (h1 : Integrable (fun x => x) p) (h2 : Integrable (fun x => x ^ 2) p) :
     ∫ x, gaussTilt μ v x ∂p = -(∫ x, x ^ 2 ∂p - 2 * μ * ∫ x, x ∂p + μ ^ 2) / (2 * v) := by
   have : (fun x => gaussTilt μ v x) =
@@ -156,7 +156,7 @@ def gaussTilt (μ : ℝ) (v : ℝ≥0) (x : ℝ) : ℝ := -(x - μ) ^ 2 / (2 * v
   simp
   ring
 
-@[powerlib_foundation] private theorem integrable_gaussTilt {p : Measure ℝ} [IsProbabilityMeasure p]
+@[tmio T, powerlib_foundation] private theorem integrable_gaussTilt {p : Measure ℝ} [IsProbabilityMeasure p]
     (h1 : Integrable (fun x => x) p) (h2 : Integrable (fun x => x ^ 2) p) :
     Integrable (gaussTilt μ v) p := by
   have : gaussTilt μ v =
@@ -165,7 +165,7 @@ def gaussTilt (μ : ℝ) (v : ℝ≥0) (x : ℝ) : ℝ := -(x - μ) ^ 2 / (2 * v
   rw [this]
   exact ((h2.sub (h1.const_mul _)).add (integrable_const _)).const_mul _
 
-@[powerlib_foundation] private theorem gaussian_moments :
+@[tmio T, powerlib_foundation] private theorem gaussian_moments :
     Integrable (fun x => x) (gaussianReal μ v) ∧ Integrable (fun x => x ^ 2) (gaussianReal μ v) ∧
       ∫ x, x ∂gaussianReal μ v = μ ∧ ∫ x, x ^ 2 ∂gaussianReal μ v = μ ^ 2 + v := by
   have hL2 : MemLp (fun x : ℝ => x) 2 (gaussianReal μ v) := memLp_id_gaussianReal 2
@@ -178,7 +178,7 @@ def gaussTilt (μ : ℝ) (v : ℝ≥0) (x : ℝ) : ℝ := -(x - μ) ^ 2 / (2 * v
 
 /-- Relative entropy of `N(μ, v)` against Lebesgue: `-(1/2) - log √(2πv)`; the differential
 entropy is `(1/2) + log √(2πv) = (1/2) log (2πe v)`. -/
-@[powerlib_foundation] theorem relEntropy_gaussianReal (hv : v ≠ 0) :
+@[tmio T, powerlib_foundation] theorem relEntropy_gaussianReal (hv : v ≠ 0) :
     relEntropy (gaussianReal μ v) volume = -(1 / 2) - log √(2 * π * v) := by
   obtain ⟨h1, h2, hm, hs⟩ := gaussian_moments (μ := μ) (v := v)
   have hvpos : (0 : ℝ) < v := lt_of_le_of_ne v.2 (by simpa [eq_comm] using hv)
@@ -192,7 +192,7 @@ entropy is `(1/2) + log √(2πv) = (1/2) log (2πe v)`. -/
 /-- **Gaussian maximum entropy** (§1.2): among probability laws `p ≪ Lebesgue` with mean `μ` and
 second moment `μ² + v` (and integrable log-density), `N(μ, v)` has the largest differential
 entropy, and it is the unique maximiser. -/
-@[powerlib_foundation] theorem gaussianReal_maxEnt (hv : v ≠ 0) {p : Measure ℝ}
+@[tmio T, powerlib_foundation] theorem gaussianReal_maxEnt (hv : v ≠ 0) {p : Measure ℝ}
     [IsProbabilityMeasure p] (hpm : p ≪ volume) (hint : Integrable (llr p volume) p)
     (h1 : Integrable (fun x => x) p) (h2 : Integrable (fun x => x ^ 2) p)
     (hmean : ∫ x, x ∂p = μ) (hsec : ∫ x, x ^ 2 ∂p = μ ^ 2 + v) :

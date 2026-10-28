@@ -72,7 +72,7 @@ def besselSeries1 (w : ℂ) : ℂ := ∑' k : ℕ, w ^ k / ((k ! : ℂ) * ((k + 
 
 /-- A series dominated termwise by `‖w‖^k/k!` from `k = 2` on: its value minus the first two
 terms is at most `‖w‖²` for `‖w‖ ≤ 1`. -/
-@[powerlib_foundation] theorem norm_tsum_sub_two_le {g : ℕ → ℂ} {w : ℂ} (hw : ‖w‖ ≤ 1)
+@[tmio T, powerlib_foundation] theorem norm_tsum_sub_two_le {g : ℕ → ℂ} {w : ℂ} (hw : ‖w‖ ≤ 1)
     (hg : ∀ k, ‖g k‖ ≤ ‖w‖ ^ k / (k ! : ℝ)) :
     ‖(∑' k, g k) - g 0 - g 1‖ ≤ ‖w‖ ^ 2 := by
   have hsum : Summable g :=
@@ -94,7 +94,7 @@ terms is at most `‖w‖²` for `‖w‖ ≤ 1`. -/
         exact (le_abs_self _).trans this
 
 /-- `‖I₀-series(w) − 1 − w‖ ≤ ‖w‖²` for `‖w‖ ≤ 1`. -/
-@[powerlib_foundation] theorem besselSeries0_sub_le {w : ℂ} (hw : ‖w‖ ≤ 1) :
+@[tmio T, powerlib_foundation] theorem besselSeries0_sub_le {w : ℂ} (hw : ‖w‖ ≤ 1) :
     ‖besselSeries0 w - 1 - w‖ ≤ ‖w‖ ^ 2 := by
   have h := norm_tsum_sub_two_le (g := fun k : ℕ => w ^ k / ((k ! : ℂ) ^ 2)) hw (fun k => by
     rw [norm_div, norm_pow, norm_pow, Complex.norm_natCast]
@@ -107,7 +107,7 @@ terms is at most `‖w‖²` for `‖w‖ ≤ 1`. -/
   simpa [besselSeries0] using h
 
 /-- `‖I₁-series(w) − 1 − w/2‖ ≤ ‖w‖²` for `‖w‖ ≤ 1`. -/
-@[powerlib_foundation] theorem besselSeries1_sub_le {w : ℂ} (hw : ‖w‖ ≤ 1) :
+@[tmio T, powerlib_foundation] theorem besselSeries1_sub_le {w : ℂ} (hw : ‖w‖ ≤ 1) :
     ‖besselSeries1 w - 1 - w / 2‖ ≤ ‖w‖ ^ 2 := by
   have h := norm_tsum_sub_two_le (g := fun k : ℕ => w ^ k / ((k ! : ℂ) * ((k + 1) ! : ℂ))) hw
     (fun k => by
@@ -132,14 +132,14 @@ def besselI0 (z : ℂ) : ℂ := besselSeries0 (z ^ 2 / 4)
 def besselI1 (z : ℂ) : ℂ := z / 2 * besselSeries1 (z ^ 2 / 4)
 
 /-- `I₀` is the standard power series. -/
-@[powerlib_foundation] theorem besselI0_eq (z : ℂ) :
+@[tmio T, powerlib_foundation] theorem besselI0_eq (z : ℂ) :
     besselI0 z = ∑' k : ℕ, (z / 2) ^ (2 * k) / ((k ! : ℂ) ^ 2) := by
   unfold besselI0 besselSeries0
   congr 1; funext k
   rw [pow_mul]; ring
 
 /-- `I₁` is the standard power series. -/
-@[powerlib_foundation] theorem besselI1_eq (z : ℂ) :
+@[tmio T, powerlib_foundation] theorem besselI1_eq (z : ℂ) :
     besselI1 z = ∑' k : ℕ, (z / 2) ^ (2 * k + 1) / ((k ! : ℂ) * ((k + 1) ! : ℂ)) := by
   unfold besselI1 besselSeries1
   rw [← tsum_mul_left]
@@ -147,7 +147,7 @@ def besselI1 (z : ℂ) : ℂ := z / 2 * besselSeries1 (z ^ 2 / 4)
   rw [pow_add, pow_mul]; ring
 
 /-- `I₀/I₁` series ratio: `‖f₀(w)/f₁(w) − 1 − w/2‖ ≤ 6 ‖w‖²` for `‖w‖ ≤ 1/4`. -/
-@[powerlib_foundation] theorem besselRatio_sub_le {w : ℂ} (hw : ‖w‖ ≤ 1 / 4) :
+@[tmio T, powerlib_foundation] theorem besselRatio_sub_le {w : ℂ} (hw : ‖w‖ ≤ 1 / 4) :
     ‖besselSeries0 w / besselSeries1 w - 1 - w / 2‖ ≤ 6 * ‖w‖ ^ 2 := by
   have hw1 : ‖w‖ ≤ 1 := by linarith
   have h0 := besselSeries0_sub_le hw1
@@ -192,13 +192,13 @@ def besselI1 (z : ℂ) : ℂ := z / 2 * besselSeries1 (z ^ 2 / 4)
 open MeasureTheory Set intervalIntegral
 
 /-- `∫₀^π cos^{n+2} = (n+1)/(n+2) ∫₀^π cosⁿ`. -/
-@[powerlib_foundation] theorem integral_cos_pow_add_two (n : ℕ) :
+@[tmio T, powerlib_foundation] theorem integral_cos_pow_add_two (n : ℕ) :
     ∫ θ in (0 : ℝ)..Real.pi, Real.cos θ ^ (n + 2) =
       (n + 1) / (n + 2) * ∫ θ in (0 : ℝ)..Real.pi, Real.cos θ ^ n := by
   rw [integral_cos_pow]; simp
 
 /-- `∫₀^π cos^{2k+1} = 0`. -/
-@[powerlib_foundation] theorem integral_cos_pow_odd (k : ℕ) :
+@[tmio T, powerlib_foundation] theorem integral_cos_pow_odd (k : ℕ) :
     ∫ θ in (0 : ℝ)..Real.pi, Real.cos θ ^ (2 * k + 1) = 0 := by
   induction k with
   | zero => simp [integral_cos]
@@ -206,7 +206,7 @@ open MeasureTheory Set intervalIntegral
     rw [show 2 * (k + 1) + 1 = (2 * k + 1) + 2 by ring, integral_cos_pow_add_two, ih, mul_zero]
 
 /-- Wallis: `∫₀^π cos^{2k} = π (2k)!/(4^k (k!)²)`. -/
-@[powerlib_foundation] theorem integral_cos_pow_even (k : ℕ) :
+@[tmio T, powerlib_foundation] theorem integral_cos_pow_even (k : ℕ) :
     ∫ θ in (0 : ℝ)..Real.pi, Real.cos θ ^ (2 * k) =
       Real.pi * (2 * k)! / (4 ^ k * ((k ! : ℝ)) ^ 2) := by
   induction k with
@@ -221,7 +221,7 @@ open MeasureTheory Set intervalIntegral
 
 /-- Termwise integration of the exponential series: for a continuous real `g` with `|g| ≤ 1`
 on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿθ g(θ) dθ`. -/
-@[powerlib_foundation] theorem hasSum_integral_cexp_mul_cos {g : ℝ → ℝ} (hg : Continuous g)
+@[tmio T, powerlib_foundation] theorem hasSum_integral_cexp_mul_cos {g : ℝ → ℝ} (hg : Continuous g)
     (hg1 : ∀ θ, |g θ| ≤ 1) (z : ℂ) :
     HasSum (fun n : ℕ => z ^ n / (n ! : ℂ) *
         ((∫ θ in (0 : ℝ)..Real.pi, Real.cos θ ^ n * g θ : ℝ) : ℂ))
@@ -254,7 +254,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
   ring
 
 /-- **Integral representation of `I₀`**: `∫₀^π e^{z cos θ} dθ = π I₀(z)`. -/
-@[powerlib_foundation] theorem integral_cexp_cos (z : ℂ) :
+@[tmio T, powerlib_foundation] theorem integral_cexp_cos (z : ℂ) :
     ∫ θ in (0 : ℝ)..Real.pi, Complex.exp (z * Real.cos θ) = Real.pi * besselI0 z := by
   have h := hasSum_integral_cexp_mul_cos (g := fun _ => 1) continuous_const (by simp) z
   simp only [mul_one, Complex.ofReal_one] at h
@@ -280,7 +280,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
   rw [besselI0, besselSeries0, ← h3.tsum_eq, tsum_mul_left]
 
 /-- **Integral representation of `I₁`**: `∫₀^π e^{z cos θ} cos θ dθ = π I₁(z)`. -/
-@[powerlib_foundation] theorem integral_cexp_cos_mul_cos (z : ℂ) :
+@[tmio T, powerlib_foundation] theorem integral_cexp_cos_mul_cos (z : ℂ) :
     ∫ θ in (0 : ℝ)..Real.pi, Complex.exp (z * Real.cos θ) * Real.cos θ =
       Real.pi * besselI1 z := by
   have h := hasSum_integral_cexp_mul_cos (g := Real.cos) Real.continuous_cos Real.abs_cos_le_one z
@@ -313,7 +313,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
 /-! ## Elementary bounds for the Laplace estimate -/
 
 /-- `‖e^w − 1‖ ≤ ‖w‖` when `Re w ≤ 0`. -/
-@[powerlib_foundation] theorem norm_cexp_sub_one_le_of_re_nonpos {w : ℂ} (hw : w.re ≤ 0) :
+@[tmio T, powerlib_foundation] theorem norm_cexp_sub_one_le_of_re_nonpos {w : ℂ} (hw : w.re ≤ 0) :
     ‖Complex.exp w - 1‖ ≤ ‖w‖ := by
   have hd : ∀ s ∈ Icc (0 : ℝ) 1, HasDerivWithinAt (fun s : ℝ => Complex.exp (s * w))
       (w * Complex.exp (s * w)) (Icc 0 1) s := by
@@ -334,7 +334,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
   simpa using this
 
 /-- `‖e^a − e^b‖ ≤ ‖a − b‖ e^{Re a}` when `Re b ≤ Re a`. -/
-@[powerlib_foundation] theorem norm_cexp_sub_cexp_le {a b : ℂ} (h : b.re ≤ a.re) :
+@[tmio T, powerlib_foundation] theorem norm_cexp_sub_cexp_le {a b : ℂ} (h : b.re ≤ a.re) :
     ‖Complex.exp a - Complex.exp b‖ ≤ ‖a - b‖ * Real.exp a.re := by
   have e : Complex.exp a - Complex.exp b = -(Complex.exp a * (Complex.exp (b - a) - 1)) := by
     rw [Complex.exp_sub]; field_simp; ring
@@ -344,7 +344,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
   exact mul_le_mul_of_nonneg_right this (Real.exp_pos _).le
 
 /-- `θ²/2 − (1 − cos θ) ≤ θ⁴/24` for `θ ≥ 0`. -/
-@[powerlib_foundation] theorem sq_div_two_sub_one_sub_cos_le {θ : ℝ} (hθ : 0 ≤ θ) :
+@[tmio T, powerlib_foundation] theorem sq_div_two_sub_one_sub_cos_le {θ : ℝ} (hθ : 0 ≤ θ) :
     θ ^ 2 / 2 - (1 - Real.cos θ) ≤ θ ^ 4 / 24 := by
   have hc : Real.cos θ = 1 - 2 * Real.sin (θ / 2) ^ 2 := by
     conv_lhs => rw [show θ = 2 * (θ / 2) by ring, Real.cos_two_mul, Real.cos_sq']
@@ -363,7 +363,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
   nlinarith [hab]
 
 /-- `θ² e^{−bθ²} ≤ (2/b) e^{−(b/2)θ²}` (`b > 0`). -/
-@[powerlib_foundation] theorem sq_mul_exp_le {b : ℝ} (hb : 0 < b) (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem sq_mul_exp_le {b : ℝ} (hb : 0 < b) (θ : ℝ) :
     θ ^ 2 * Real.exp (-b * θ ^ 2) ≤ 2 / b * Real.exp (-(b / 2) * θ ^ 2) := by
   have hv := Real.add_one_le_exp (b / 2 * θ ^ 2)
   have e : Real.exp (-b * θ ^ 2) = Real.exp (-(b / 2) * θ ^ 2) * Real.exp (-(b / 2 * θ ^ 2)) := by
@@ -378,7 +378,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
     _ ≤ 2 / b * Real.exp (-(b / 2) * θ ^ 2) := mul_le_mul_of_nonneg_right key hE.le
 
 /-- `θ⁴ e^{−bθ²} ≤ (8/b²) e^{−(b/2)θ²}` (`b > 0`). -/
-@[powerlib_foundation] theorem pow_four_mul_exp_le {b : ℝ} (hb : 0 < b) (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem pow_four_mul_exp_le {b : ℝ} (hb : 0 < b) (θ : ℝ) :
     θ ^ 4 * Real.exp (-b * θ ^ 2) ≤ 8 / b ^ 2 * Real.exp (-(b / 2) * θ ^ 2) := by
   have hv := Real.quadratic_le_exp_of_nonneg (show 0 ≤ b / 2 * θ ^ 2 by positivity)
   have e : Real.exp (-b * θ ^ 2) = Real.exp (-(b / 2) * θ ^ 2) * Real.exp (-(b / 2 * θ ^ 2)) := by
@@ -393,7 +393,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
     _ ≤ 8 / b ^ 2 * Real.exp (-(b / 2) * θ ^ 2) := mul_le_mul_of_nonneg_right key hE.le
 
 /-- `∫₀^π e^{−βθ²} ≤ √(π/β)/2` (`β > 0`). -/
-@[powerlib_foundation] theorem integral_exp_neg_mul_sq_le {β : ℝ} (hβ : 0 < β) :
+@[tmio T, powerlib_foundation] theorem integral_exp_neg_mul_sq_le {β : ℝ} (hβ : 0 < β) :
     ∫ θ in (0 : ℝ)..Real.pi, Real.exp (-β * θ ^ 2) ≤ Real.sqrt (Real.pi / β) / 2 := by
   rw [intervalIntegral.integral_of_le Real.pi_pos.le, ← integral_gaussian_Ioi]
   exact setIntegral_mono_set (integrable_exp_neg_mul_sq hβ).integrableOn
@@ -402,7 +402,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
 /-! ## Large argument: `I₀(z)/I₁(z) → 1` in a sector -/
 
 /-- `∫₀^π e^{−z(1−cos θ)} dθ = e^{−z} π I₀(z)`. -/
-@[powerlib_foundation] theorem integral_cexp_neg_mul_one_sub_cos (z : ℂ) :
+@[tmio T, powerlib_foundation] theorem integral_cexp_neg_mul_one_sub_cos (z : ℂ) :
     ∫ θ in (0 : ℝ)..Real.pi, Complex.exp (-z * ((1 - Real.cos θ : ℝ) : ℂ)) =
       Complex.exp (-z) * (Real.pi * besselI0 z) := by
   rw [← integral_cexp_cos, ← intervalIntegral.integral_const_mul]
@@ -410,7 +410,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
   rw [← Complex.exp_add]; push_cast; ring_nf
 
 /-- `∫₀^π e^{−z(1−cos θ)}(1 − cos θ) dθ = e^{−z} π (I₀(z) − I₁(z))`. -/
-@[powerlib_foundation] theorem integral_cexp_neg_mul_one_sub_cos_mul (z : ℂ) :
+@[tmio T, powerlib_foundation] theorem integral_cexp_neg_mul_one_sub_cos_mul (z : ℂ) :
     ∫ θ in (0 : ℝ)..Real.pi, Complex.exp (-z * ((1 - Real.cos θ : ℝ) : ℂ)) *
         ((1 - Real.cos θ : ℝ) : ℂ) =
       Complex.exp (-z) * (Real.pi * besselI0 z - Real.pi * besselI1 z) := by
@@ -424,7 +424,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
 
 /-- Upper bound for the `I₀ − I₁` integral: `x = Re z > 0`,
 `‖∫₀^π e^{−z(1−cos θ)}(1 − cos θ)‖ ≤ (π²/(2x)) · √(π/(x/π²))/2`. -/
-@[powerlib_foundation] theorem norm_integral_cexp_one_sub_cos_mul_le {z : ℂ} (hx : 0 < z.re) :
+@[tmio T, powerlib_foundation] theorem norm_integral_cexp_one_sub_cos_mul_le {z : ℂ} (hx : 0 < z.re) :
     ‖∫ θ in (0 : ℝ)..Real.pi, Complex.exp (-z * ((1 - Real.cos θ : ℝ) : ℂ)) *
         ((1 - Real.cos θ : ℝ) : ℂ)‖ ≤
       Real.pi ^ 2 / (2 * z.re) * (Real.sqrt (Real.pi / (z.re / Real.pi ^ 2)) / 2) := by
@@ -470,7 +470,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
 /-- Comparison with the Gaussian: `x = Re z > 0`,
 `‖∫₀^π e^{−z(1−cos θ)} − ∫₀^∞ e^{−zθ²/2}‖ ≤ ‖z‖π⁴/(12x²) · √(π/(x/π²))/2 + e^{−xπ²/4} √(π/(x/4))/2`.
 -/
-@[powerlib_foundation] theorem norm_integral_cexp_one_sub_cos_sub_gaussian_le {z : ℂ}
+@[tmio T, powerlib_foundation] theorem norm_integral_cexp_one_sub_cos_sub_gaussian_le {z : ℂ}
     (hx : 0 < z.re) :
     ‖(∫ θ in (0 : ℝ)..Real.pi, Complex.exp (-z * ((1 - Real.cos θ : ℝ) : ℂ))) -
         ∫ θ in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (θ : ℂ) ^ 2)‖ ≤
@@ -556,7 +556,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
         (Ioi_subset_Ioi Real.pi_pos.le).eventuallyLE
 
 /-- Modulus of the half-line Gaussian: `‖∫₀^∞ e^{−zθ²/2}‖ = √(π/(‖z‖/2))/2` (`Re z > 0`). -/
-@[powerlib_foundation] theorem norm_integral_gaussian_half {z : ℂ} (hx : 0 < z.re) :
+@[tmio T, powerlib_foundation] theorem norm_integral_gaussian_half {z : ℂ} (hx : 0 < z.re) :
     ‖∫ θ in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (θ : ℂ) ^ 2)‖ =
       Real.sqrt (Real.pi / (‖z‖ / 2)) / 2 := by
   have hz2 : 0 < (z / 2).re := by simp at hx ⊢; linarith
@@ -569,7 +569,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
 `G(z) = ∫₀^∞ e^{−zθ²/2} dθ = √(π/(2z))`: for every `K > 0` there is `C ≥ 0` with
 `‖e^{−z}π I₀(z) − G(z)‖ ≤ (C/x)‖G(z)‖` and `‖e^{−z}π(I₀(z) − I₁(z))‖ ≤ (C/x)‖G(z)‖` whenever
 `x = Re z > 0` and `‖z‖ ≤ K x`. Hence `π e^{−z} I_ν(z)/G(z) = 1 + O(1/x)`, `ν = 0, 1`. -/
-@[powerlib_foundation] theorem besselI_laplace_le {K : ℝ} (hK : 0 < K) :
+@[tmio T, powerlib_foundation] theorem besselI_laplace_le {K : ℝ} (hK : 0 < K) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ z : ℂ, 0 < z.re → ‖z‖ ≤ K * z.re →
       ‖Complex.exp (-z) * (Real.pi * besselI0 z) -
           ∫ θ in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (θ : ℂ) ^ 2)‖ ≤
@@ -646,7 +646,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
 /-- **Large-argument limit of `I₀/I₁` in a sector**, with rate: for every `K > 0` there are
 `C` and `x₀ > 0` such that `I₀(z) ≠ 0`, `I₁(z) ≠ 0` and `‖I₀(z)/I₁(z) − 1‖ ≤ C/Re z` whenever
 `Re z ≥ x₀` and `‖z‖ ≤ K Re z` (the closed sector `|arg z| ≤ arccos(1/K)`). -/
-@[powerlib_foundation] theorem besselI0_div_besselI1_sub_one_le {K : ℝ} (hK : 0 < K) :
+@[tmio T, powerlib_foundation] theorem besselI0_div_besselI1_sub_one_le {K : ℝ} (hK : 0 < K) :
     ∃ C x₀ : ℝ, 0 < x₀ ∧ ∀ z : ℂ, x₀ ≤ z.re → ‖z‖ ≤ K * z.re →
       besselI0 z ≠ 0 ∧ besselI1 z ≠ 0 ∧ ‖besselI0 z / besselI1 z - 1‖ ≤ C / z.re := by
   obtain ⟨C, hC0, hC⟩ := besselI_laplace_le hK
@@ -713,7 +713,7 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
 
 /-- **`I₀(z)/I₁(z) → 1` as `z → ∞` in a sector**: along any `f` with `Re f → +∞` and eventually
 `‖f‖ ≤ K Re f`. -/
-@[powerlib_foundation] theorem tendsto_besselI0_div_besselI1 {α : Type*} {l : Filter α}
+@[tmio T, powerlib_foundation] theorem tendsto_besselI0_div_besselI1 {α : Type*} {l : Filter α}
     {f : α → ℂ} {K : ℝ} (hK : 0 < K) (hre : Tendsto (fun a => (f a).re) l atTop)
     (hsec : ∀ᶠ a in l, ‖f a‖ ≤ K * (f a).re) :
     Tendsto (fun a => besselI0 (f a) / besselI1 (f a)) l (𝓝 1) := by
@@ -725,11 +725,11 @@ on `[0, π]`, `∫₀^π e^{z cos θ} g(θ) dθ = Σ_n zⁿ/n! ∫₀^π cosⁿ�
   exact (hC (f a) hx ha).2.2
 
 /-- `Re((1 + i)s) = s`. -/
-@[powerlib_foundation] theorem one_add_I_mul_re (s : ℝ) : ((1 + Complex.I) * s).re = s := by
+@[tmio T, powerlib_foundation] theorem one_add_I_mul_re (s : ℝ) : ((1 + Complex.I) * s).re = s := by
   simp
 
 /-- `‖(1 + i)s‖ ≤ 2 Re((1 + i)s)` for `s ≥ 0` (the ray `arg = π/4` lies in a sector). -/
-@[powerlib_foundation] theorem norm_one_add_I_mul_le {s : ℝ} (hs : 0 ≤ s) :
+@[tmio T, powerlib_foundation] theorem norm_one_add_I_mul_le {s : ℝ} (hs : 0 ≤ s) :
     ‖(1 + Complex.I) * s‖ ≤ 2 * ((1 + Complex.I) * s).re := by
   rw [one_add_I_mul_re, norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hs]
   have : ‖(1 + Complex.I)‖ ≤ 2 := by

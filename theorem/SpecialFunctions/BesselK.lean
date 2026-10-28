@@ -74,15 +74,15 @@ def besselK1 (z : ℂ) : ℂ := ∫ t in Ioi (0 : ℝ), Complex.exp (-z * Real.c
   rw [Complex.norm_exp]; congr 1; simp [Complex.mul_re]
 
 /-- `cosh t ≥ eᵗ/2`. -/
-@[powerlib_foundation] theorem exp_div_two_le_cosh (t : ℝ) : Real.exp t / 2 ≤ Real.cosh t := by
+@[tmio T, powerlib_foundation] theorem exp_div_two_le_cosh (t : ℝ) : Real.exp t / 2 ≤ Real.cosh t := by
   rw [Real.cosh_eq]; linarith [Real.exp_pos (-t)]
 
 /-- `cosh t → ∞`. -/
-@[powerlib_foundation] theorem tendsto_cosh_atTop : Tendsto Real.cosh atTop atTop :=
+@[tmio T, powerlib_foundation] theorem tendsto_cosh_atTop : Tendsto Real.cosh atTop atTop :=
   tendsto_atTop_mono exp_div_two_le_cosh (Real.tendsto_exp_atTop.atTop_div_const two_pos)
 
 /-- `e^{−x cosh t} sinh t` is integrable on `(0, ∞)` (`x > 0`), with integral `e^{−x}/x`. -/
-@[powerlib_foundation] theorem integrableOn_exp_neg_mul_cosh_mul_sinh {x : ℝ} (hx : 0 < x) :
+@[tmio T, powerlib_foundation] theorem integrableOn_exp_neg_mul_cosh_mul_sinh {x : ℝ} (hx : 0 < x) :
     IntegrableOn (fun t => Real.exp (-(x * Real.cosh t)) * Real.sinh t) (Ioi 0) := by
   have hd : ∀ t, HasDerivAt (fun t => -Real.exp (-(x * Real.cosh t)) / x)
       (Real.exp (-(x * Real.cosh t)) * Real.sinh t) t := by
@@ -99,7 +99,7 @@ def besselK1 (z : ℂ) : ℂ := ∫ t in Ioi (0 : ℝ), Complex.exp (-z * Real.c
     simpa using h2
 
 /-- The `K₁` integrand is integrable on `(0, ∞)` for `Re z > 0`. -/
-@[powerlib_foundation] theorem integrableOn_besselK1 {z : ℂ} (hz : 0 < z.re) :
+@[tmio T, powerlib_foundation] theorem integrableOn_besselK1 {z : ℂ} (hz : 0 < z.re) :
     IntegrableOn (fun t : ℝ => Complex.exp (-z * Real.cosh t) * Real.cosh t) (Ioi 0) := by
   refine Integrable.mono' ((integrableOn_exp_neg_mul_cosh_mul_sinh hz).add
     (integrableOn_exp_neg_Ioi 0)) (by fun_prop) ?_
@@ -118,7 +118,7 @@ def besselK1 (z : ℂ) : ℂ := ∫ t in Ioi (0 : ℝ), Complex.exp (-z * Real.c
     _ = Real.exp (-t) := one_mul _
 
 /-- The `K₀` integrand is integrable on `(0, ∞)` for `Re z > 0`. -/
-@[powerlib_foundation] theorem integrableOn_besselK0 {z : ℂ} (hz : 0 < z.re) :
+@[tmio T, powerlib_foundation] theorem integrableOn_besselK0 {z : ℂ} (hz : 0 < z.re) :
     IntegrableOn (fun t : ℝ => Complex.exp (-z * Real.cosh t)) (Ioi 0) := by
   refine Integrable.mono' (integrableOn_besselK1 hz).norm (by fun_prop)
     (Eventually.of_forall fun t => ?_)
@@ -126,7 +126,7 @@ def besselK1 (z : ℂ) : ℂ := ∫ t in Ioi (0 : ℝ), Complex.exp (-z * Real.c
   exact le_mul_of_one_le_right (norm_nonneg _) (Real.one_le_cosh t)
 
 /-- `∫₀^∞ e^{−z cosh t} sinh t dt = e^{−z}/z` (`Re z > 0`). -/
-@[powerlib_foundation] theorem integral_cexp_neg_mul_cosh_mul_sinh {z : ℂ} (hz : 0 < z.re) :
+@[tmio T, powerlib_foundation] theorem integral_cexp_neg_mul_cosh_mul_sinh {z : ℂ} (hz : 0 < z.re) :
     ∫ t in Ioi (0 : ℝ), Complex.exp (-z * Real.cosh t) * Real.sinh t = Complex.exp (-z) / z := by
   have hz0 : z ≠ 0 := by intro h; rw [h] at hz; simp at hz
   have hd : ∀ t : ℝ, HasDerivAt (fun t : ℝ => -Complex.exp (-z * Real.cosh t) / z)
@@ -154,7 +154,7 @@ def besselK1 (z : ℂ) : ℂ := ∫ t in Ioi (0 : ℝ), Complex.exp (-z * Real.c
   simp [neg_div]
 
 /-- `K₁(z) − e^{−z}/z = ∫₀^∞ e^{−z cosh t} e^{−t} dt` (`Re z > 0`). -/
-@[powerlib_foundation] theorem besselK1_sub_exp_div {z : ℂ} (hz : 0 < z.re) :
+@[tmio T, powerlib_foundation] theorem besselK1_sub_exp_div {z : ℂ} (hz : 0 < z.re) :
     besselK1 z - Complex.exp (-z) / z =
       ∫ t in Ioi (0 : ℝ), Complex.exp (-z * Real.cosh t) * Real.exp (-t) := by
   have hz0 : z ≠ 0 := by intro h; rw [h] at hz; simp at hz
@@ -168,7 +168,7 @@ def besselK1 (z : ℂ) : ℂ := ∫ t in Ioi (0 : ℝ), Complex.exp (-z * Real.c
       abs_of_nonneg (Real.sinh_nonneg_iff.mpr (le_of_lt ht))]
 
 /-- **Small argument of `K₁`**: `‖z K₁(z) − e^{−z}‖ ≤ ‖z‖` (`Re z > 0`). -/
-@[powerlib_foundation] theorem norm_mul_besselK1_sub_exp_le {z : ℂ} (hz : 0 < z.re) :
+@[tmio T, powerlib_foundation] theorem norm_mul_besselK1_sub_exp_le {z : ℂ} (hz : 0 < z.re) :
     ‖z * besselK1 z - Complex.exp (-z)‖ ≤ ‖z‖ := by
   have hz0 : z ≠ 0 := by intro h; rw [h] at hz; simp at hz
   have e : z * besselK1 z - Complex.exp (-z) = z * (besselK1 z - Complex.exp (-z) / z) := by
@@ -188,7 +188,7 @@ def besselK1 (z : ℂ) : ℂ := ∫ t in Ioi (0 : ℝ), Complex.exp (-z * Real.c
 /-! ## The substitution `u = 2 sinh(t/2)` -/
 
 /-- `2 sinh(t/2)` maps `(0, ∞)` onto `(0, ∞)`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem image_two_sinh_half : (fun t : ℝ => 2 * Real.sinh (t / 2)) '' Ioi 0 = Ioi 0 := by
   ext u
   simp only [mem_image, mem_Ioi]
@@ -203,7 +203,7 @@ theorem image_two_sinh_half : (fun t : ℝ => 2 * Real.sinh (t / 2)) '' Ioi 0 = 
 
 /-- Change of variables `u = 2 sinh(t/2)` on `(0, ∞)`:
 `∫₀^∞ g(u) du = ∫₀^∞ cosh(t/2) g(2 sinh(t/2)) dt`. -/
-@[powerlib_foundation] theorem integral_Ioi_comp_two_sinh_half (g : ℝ → ℂ) :
+@[tmio T, powerlib_foundation] theorem integral_Ioi_comp_two_sinh_half (g : ℝ → ℂ) :
     ∫ u in Ioi (0 : ℝ), g u =
       ∫ t in Ioi (0 : ℝ), (Real.cosh (t / 2) : ℂ) * g (2 * Real.sinh (t / 2)) := by
   have h := integral_image_eq_integral_abs_deriv_smul (s := Ioi (0 : ℝ))
@@ -222,19 +222,19 @@ theorem image_two_sinh_half : (fun t : ℝ => 2 * Real.sinh (t / 2)) '' Ioi 0 = 
   rw [abs_of_pos (Real.cosh_pos _), Complex.real_smul]
 
 /-- `√(1 + (2 sinh y)²/4) = cosh y`. -/
-@[powerlib_foundation] theorem sqrt_one_add_two_sinh_sq (y : ℝ) :
+@[tmio T, powerlib_foundation] theorem sqrt_one_add_two_sinh_sq (y : ℝ) :
     Real.sqrt (1 + (2 * Real.sinh y) ^ 2 / 4) = Real.cosh y := by
   rw [show 1 + (2 * Real.sinh y) ^ 2 / 4 = Real.cosh y ^ 2 by rw [Real.cosh_sq']; ring,
     Real.sqrt_sq (Real.cosh_pos y).le]
 
 /-- `(2 sinh(t/2))²/2 = cosh t − 1`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem two_sinh_half_sq (t : ℝ) : (2 * Real.sinh (t / 2)) ^ 2 / 2 = Real.cosh t - 1 := by
   conv_rhs => rw [show t = 2 * (t / 2) by ring, Real.cosh_two_mul, Real.cosh_sq']
   ring
 
 /-- **Gaussian form of `K₀`**: `e^z K₀(z) = ∫₀^∞ e^{−z u²/2} (1 + u²/4)^{−1/2} du`. -/
-@[powerlib_foundation] theorem exp_mul_besselK0_eq (z : ℂ) :
+@[tmio T, powerlib_foundation] theorem exp_mul_besselK0_eq (z : ℂ) :
     Complex.exp z * besselK0 z = ∫ u in Ioi (0 : ℝ),
       Complex.exp (-(z / 2) * (u : ℂ) ^ 2) * ((1 / Real.sqrt (1 + u ^ 2 / 4) : ℝ) : ℂ) := by
   rw [integral_Ioi_comp_two_sinh_half, besselK0, ← integral_const_mul]
@@ -250,7 +250,7 @@ theorem two_sinh_half_sq (t : ℝ) : (2 * Real.sinh (t / 2)) ^ 2 / 2 = Real.cosh
   field_simp
 
 /-- **Gaussian form of `K₁`**: `e^z K₁(z) = ∫₀^∞ e^{−z u²/2} (1 + u²/2)(1 + u²/4)^{−1/2} du`. -/
-@[powerlib_foundation] theorem exp_mul_besselK1_eq (z : ℂ) :
+@[tmio T, powerlib_foundation] theorem exp_mul_besselK1_eq (z : ℂ) :
     Complex.exp z * besselK1 z = ∫ u in Ioi (0 : ℝ),
       Complex.exp (-(z / 2) * (u : ℂ) ^ 2) *
         (((1 + u ^ 2 / 2) / Real.sqrt (1 + u ^ 2 / 4) : ℝ) : ℂ) := by
@@ -275,18 +275,18 @@ theorem two_sinh_half_sq (t : ℝ) : (2 * Real.sinh (t / 2)) ^ 2 / 2 = Real.cosh
 def gaussHalf (z : ℂ) : ℂ := ∫ u in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (u : ℂ) ^ 2)
 
 /-- `‖G(z)‖ = √(π/(‖z‖/2))/2` (`Re z > 0`). -/
-@[powerlib_foundation] theorem norm_gaussHalf {z : ℂ} (hz : 0 < z.re) :
+@[tmio T, powerlib_foundation] theorem norm_gaussHalf {z : ℂ} (hz : 0 < z.re) :
     ‖gaussHalf z‖ = Real.sqrt (Real.pi / (‖z‖ / 2)) / 2 :=
   norm_integral_gaussian_half hz
 
 /-- `G(z) ≠ 0` (`Re z > 0`). -/
-@[powerlib_foundation] theorem gaussHalf_ne_zero {z : ℂ} (hz : 0 < z.re) : gaussHalf z ≠ 0 := by
+@[tmio T, powerlib_foundation] theorem gaussHalf_ne_zero {z : ℂ} (hz : 0 < z.re) : gaussHalf z ≠ 0 := by
   have hz0 : 0 < ‖z‖ := lt_of_lt_of_le hz (Complex.re_le_norm z)
   rw [← norm_pos_iff, norm_gaussHalf hz]
   positivity
 
 /-- `G(z)² = π/(2z)` (`Re z > 0`). -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem gaussHalf_sq {z : ℂ} (hz : 0 < z.re) : gaussHalf z ^ 2 = Real.pi / (2 * z) := by
   have hz2 : 0 < (z / 2).re := by simp; linarith
   have hz0 : z ≠ 0 := by intro h; rw [h] at hz; simp at hz
@@ -295,7 +295,7 @@ theorem gaussHalf_sq {z : ℂ} (hz : 0 < z.re) : gaussHalf z ^ 2 = Real.pi / (2 
   field_simp
 
 /-- Scaling: `G(r z) = G(z)/√r` for real `r > 0`. -/
-@[powerlib_foundation] theorem gaussHalf_ofReal_mul {r : ℝ} (hr : 0 < r) (z : ℂ) :
+@[tmio T, powerlib_foundation] theorem gaussHalf_ofReal_mul {r : ℝ} (hr : 0 < r) (z : ℂ) :
     gaussHalf (r * z) = gaussHalf z / Real.sqrt r := by
   have hs : 0 < Real.sqrt r := Real.sqrt_pos.mpr hr
   have h := integral_comp_mul_left_Ioi (fun v : ℝ => Complex.exp (-(z / 2) * (v : ℂ) ^ 2)) 0 hs
@@ -311,14 +311,14 @@ theorem gaussHalf_sq {z : ℂ} (hz : 0 < z.re) : gaussHalf z ^ 2 = Real.pi / (2 
   ring
 
 /-- `‖e^{−z u²/2}‖ = e^{−(Re z/2) u²}`. -/
-@[powerlib_foundation] theorem norm_cexp_gauss (z : ℂ) (u : ℝ) :
+@[tmio T, powerlib_foundation] theorem norm_cexp_gauss (z : ℂ) (u : ℝ) :
     ‖Complex.exp (-(z / 2) * (u : ℂ) ^ 2)‖ = Real.exp (-(z.re / 2) * u ^ 2) := by
   rw [Complex.norm_exp, ← Complex.ofReal_pow, Complex.re_mul_ofReal]
   simp
 
 /-- A Gaussian with a weight `w`, `|w(u) − 1| ≤ c u²`, differs from the plain half-line Gaussian by
 `O(x^{−3/2})`: `‖∫₀^∞ e^{−zu²/2} w(u) du − G(z)‖ ≤ c (4/x) √(π/(x/4))/2`, `x = Re z > 0`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem norm_integral_gauss_mul_sub_le {w : ℝ → ℝ} (hw : Continuous w) {c : ℝ} (hc : 0 ≤ c)
     (hwc : ∀ u, |w u - 1| ≤ c * u ^ 2) {z : ℂ} (hz : 0 < z.re) :
     ‖(∫ u in Ioi (0 : ℝ), Complex.exp (-(z / 2) * (u : ℂ) ^ 2) * (w u : ℂ)) - gaussHalf z‖ ≤
@@ -353,7 +353,7 @@ theorem norm_integral_gauss_mul_sub_le {w : ℝ → ℝ} (hw : Continuous w) {c 
   rw [integral_const_mul, integral_gaussian_Ioi]
 
 /-- Integrability of a weighted Gaussian with `|w(u) − 1| ≤ c u²`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem integrableOn_gauss_mul {w : ℝ → ℝ} (hw : Continuous w) {c : ℝ} (hc : 0 ≤ c)
     (hwc : ∀ u, |w u - 1| ≤ c * u ^ 2) {z : ℂ} (hz : 0 < z.re) :
     IntegrableOn (fun u : ℝ => Complex.exp (-(z / 2) * (u : ℂ) ^ 2) * (w u : ℂ)) (Ioi 0) := by
@@ -379,23 +379,23 @@ theorem integrableOn_gauss_mul {w : ℝ → ℝ} (hw : Continuous w) {c : ℝ} (
     _ = _ := by ring
 
 /-- `√(1 + u²/4) > 0`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem sqrt_one_add_sq_div_four_pos (u : ℝ) : 0 < Real.sqrt (1 + u ^ 2 / 4) :=
   Real.sqrt_pos.mpr (by positivity)
 
 /-- The `K₀` weight is continuous. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem continuous_K0_weight : Continuous fun u : ℝ => 1 / Real.sqrt (1 + u ^ 2 / 4) :=
   continuous_const.div (by fun_prop) fun u => (sqrt_one_add_sq_div_four_pos u).ne'
 
 /-- The `K₁` weight is continuous. -/
-@[powerlib_foundation] theorem continuous_K1_weight :
+@[tmio T, powerlib_foundation] theorem continuous_K1_weight :
     Continuous fun u : ℝ => (1 + u ^ 2 / 2) / Real.sqrt (1 + u ^ 2 / 4) :=
   (by fun_prop : Continuous fun u : ℝ => 1 + u ^ 2 / 2).div (by fun_prop)
     fun u => (sqrt_one_add_sq_div_four_pos u).ne'
 
 /-- `|(1 + u²/4)^{−1/2} − 1| ≤ u²/8`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem abs_K0_weight_sub_one_le (u : ℝ) : |1 / Real.sqrt (1 + u ^ 2 / 4) - 1| ≤ 1 / 8 * u ^ 2 := by
   set v := u ^ 2 / 4 with hv
   have hv0 : 0 ≤ v := by positivity
@@ -413,7 +413,7 @@ theorem abs_K0_weight_sub_one_le (u : ℝ) : |1 / Real.sqrt (1 + u ^ 2 / 4) - 1|
     nlinarith [sq_nonneg u]
 
 /-- `|(1 + u²/2)(1 + u²/4)^{−1/2} − 1| ≤ u²/2`. -/
-@[powerlib_foundation] theorem abs_K1_weight_sub_one_le (u : ℝ) :
+@[tmio T, powerlib_foundation] theorem abs_K1_weight_sub_one_le (u : ℝ) :
     |(1 + u ^ 2 / 2) / Real.sqrt (1 + u ^ 2 / 4) - 1| ≤ 1 / 2 * u ^ 2 := by
   set v := u ^ 2 / 4 with hv
   have hv0 : 0 ≤ v := by positivity
@@ -430,7 +430,7 @@ theorem abs_K0_weight_sub_one_le (u : ℝ) : |1 / Real.sqrt (1 + u ^ 2 / 4) - 1|
   constructor <;> linarith
 
 /-- **Large argument of `K₀`**: `‖e^z K₀(z) − G(z)‖ ≤ (1/8)(4/x) √(π/(x/4))/2`, `x = Re z > 0`. -/
-@[powerlib_foundation] theorem norm_exp_mul_besselK0_sub_le {z : ℂ} (hz : 0 < z.re) :
+@[tmio T, powerlib_foundation] theorem norm_exp_mul_besselK0_sub_le {z : ℂ} (hz : 0 < z.re) :
     ‖Complex.exp z * besselK0 z - gaussHalf z‖ ≤
       1 / 8 * (4 / z.re) * (Real.sqrt (Real.pi / (z.re / 4)) / 2) := by
   rw [exp_mul_besselK0_eq]
@@ -438,7 +438,7 @@ theorem abs_K0_weight_sub_one_le (u : ℝ) : |1 / Real.sqrt (1 + u ^ 2 / 4) - 1|
     abs_K0_weight_sub_one_le hz
 
 /-- **Large argument of `K₁`**: `‖e^z K₁(z) − G(z)‖ ≤ (1/2)(4/x) √(π/(x/4))/2`, `x = Re z > 0`. -/
-@[powerlib_foundation] theorem norm_exp_mul_besselK1_sub_le {z : ℂ} (hz : 0 < z.re) :
+@[tmio T, powerlib_foundation] theorem norm_exp_mul_besselK1_sub_le {z : ℂ} (hz : 0 < z.re) :
     ‖Complex.exp z * besselK1 z - gaussHalf z‖ ≤
       1 / 2 * (4 / z.re) * (Real.sqrt (Real.pi / (z.re / 4)) / 2) := by
   rw [exp_mul_besselK1_eq]
@@ -447,7 +447,7 @@ theorem abs_K0_weight_sub_one_le (u : ℝ) : |1 / Real.sqrt (1 + u ^ 2 / 4) - 1|
 
 /-- `‖e^z K₀(z)‖ ≤ √(π/(x/2))/2` (`x = Re z > 0`): the logarithmic growth of `K₀` at `0` is
 `O(x^{−1/2})`. -/
-@[powerlib_foundation] theorem norm_exp_mul_besselK0_le {z : ℂ} (hz : 0 < z.re) :
+@[tmio T, powerlib_foundation] theorem norm_exp_mul_besselK0_le {z : ℂ} (hz : 0 < z.re) :
     ‖Complex.exp z * besselK0 z‖ ≤ Real.sqrt (Real.pi / (z.re / 2)) / 2 := by
   rw [exp_mul_besselK0_eq, ← integral_gaussian_Ioi]
   refine norm_integral_le_of_norm_le (integrable_exp_neg_mul_sq (by linarith)).integrableOn
@@ -462,7 +462,7 @@ theorem abs_K0_weight_sub_one_le (u : ℝ) : |1 / Real.sqrt (1 + u ^ 2 / 4) - 1|
     _ = _ := mul_one _
 
 /-- `√(π/(x/4))/2 ≤ √(2K) ‖G(z)‖` when `‖z‖ ≤ K x`, `x = Re z > 0`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem sqrt_div_four_le_mul_norm_gaussHalf {K : ℝ} {z : ℂ} (hz : 0 < z.re) (hzK : ‖z‖ ≤ K * z.re) :
     Real.sqrt (Real.pi / (z.re / 4)) / 2 ≤ Real.sqrt (2 * K) * ‖gaussHalf z‖ := by
   have hz0 : 0 < ‖z‖ := lt_of_lt_of_le hz (Complex.re_le_norm z)
@@ -479,7 +479,7 @@ theorem sqrt_div_four_le_mul_norm_gaussHalf {K : ℝ} {z : ℂ} (hz : 0 < z.re) 
 
 /-- **Laplace bounds for `K₀`, `K₁` in a sector**: `‖e^z K_ν(z) − G(z)‖ ≤ (C/x)‖G(z)‖`,
 `C = 2√(2K)`, whenever `x = Re z > 0`, `‖z‖ ≤ K x` (`ν = 0, 1`). -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem besselK_laplace_le {K : ℝ} {z : ℂ} (hz : 0 < z.re) (hzK : ‖z‖ ≤ K * z.re) :
     ‖Complex.exp z * besselK0 z - gaussHalf z‖ ≤ 2 * Real.sqrt (2 * K) / z.re * ‖gaussHalf z‖ ∧
     ‖Complex.exp z * besselK1 z - gaussHalf z‖ ≤ 2 * Real.sqrt (2 * K) / z.re * ‖gaussHalf z‖ := by
@@ -499,7 +499,7 @@ theorem besselK_laplace_le {K : ℝ} {z : ℂ} (hz : 0 < z.re) (hzK : ‖z‖ �
 
 /-- **Laplace bounds for `I₀`, `I₁` in a sector** (from `besselI_laplace_le`), in terms of
 `G`: `‖π e^{−z} I_ν(z) − G(z)‖ ≤ (C/x)‖G(z)‖`, `ν = 0, 1`. -/
-@[powerlib_foundation] theorem besselI_laplace_le' {K : ℝ} (hK : 0 < K) :
+@[tmio T, powerlib_foundation] theorem besselI_laplace_le' {K : ℝ} (hK : 0 < K) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ z : ℂ, 0 < z.re → ‖z‖ ≤ K * z.re →
       ‖Real.pi * Complex.exp (-z) * besselI0 z - gaussHalf z‖ ≤ C / z.re * ‖gaussHalf z‖ ∧
       ‖Real.pi * Complex.exp (-z) * besselI1 z - gaussHalf z‖ ≤ C / z.re * ‖gaussHalf z‖ := by
@@ -524,7 +524,7 @@ theorem besselK_laplace_le {K : ℝ} {z : ℂ} (hz : 0 < z.re) (hzK : ‖z‖ �
       _ = 2 * C / z.re * ‖gaussHalf z‖ := by ring
 
 /-- A relative bound `‖X − G‖ ≤ (C/Re f)‖G‖`, `G ≠ 0`, along `Re f → ∞` gives `X/G → 1`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem tendsto_div_of_rel_bound {α : Type*} {l : Filter α} {f X G : α → ℂ} {C : ℝ}
     (hre : Tendsto (fun i => (f i).re) l atTop) (hG : ∀ᶠ i in l, G i ≠ 0)
     (hb : ∀ᶠ i in l, ‖X i - G i‖ ≤ C / (f i).re * ‖G i‖) :
@@ -541,7 +541,7 @@ theorem tendsto_div_of_rel_bound {α : Type*} {l : Filter α} {f X G : α → �
 
 /-- In a sector, `Re f → ∞`, the four normalized Bessel functions tend to `1`:
 `π e^{−f} I₀(f)/G(f)`, `π e^{−f} I₁(f)/G(f)`, `e^f K₀(f)/G(f)`, `e^f K₁(f)/G(f)`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem tendsto_bessel_div_gaussHalf {α : Type*} {l : Filter α} {f : α → ℂ} {K : ℝ} (hK : 0 < K)
     (hre : Tendsto (fun i => (f i).re) l atTop) (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => Real.pi * Complex.exp (-f i) * besselI0 (f i) / gaussHalf (f i)) l (𝓝 1) ∧
@@ -572,7 +572,7 @@ def besselK0Norm (z : ℂ) : ℂ := Complex.exp z * besselK0 z / gaussHalf z
 def besselK1Norm (z : ℂ) : ℂ := Complex.exp z * besselK1 z / gaussHalf z
 
 /-- `I₀(z) = e^z G(z) Î₀(z)/π` (`G(z) ≠ 0`). -/
-@[powerlib_foundation] theorem besselI0_eq_norm {z : ℂ} (hG : gaussHalf z ≠ 0) :
+@[tmio T, powerlib_foundation] theorem besselI0_eq_norm {z : ℂ} (hG : gaussHalf z ≠ 0) :
     besselI0 z = Complex.exp z * gaussHalf z * besselI0Norm z / Real.pi := by
   have hπ : (Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
   unfold besselI0Norm
@@ -580,7 +580,7 @@ def besselK1Norm (z : ℂ) : ℂ := Complex.exp z * besselK1 z / gaussHalf z
   field_simp
 
 /-- `I₁(z) = e^z G(z) Î₁(z)/π` (`G(z) ≠ 0`). -/
-@[powerlib_foundation] theorem besselI1_eq_norm {z : ℂ} (hG : gaussHalf z ≠ 0) :
+@[tmio T, powerlib_foundation] theorem besselI1_eq_norm {z : ℂ} (hG : gaussHalf z ≠ 0) :
     besselI1 z = Complex.exp z * gaussHalf z * besselI1Norm z / Real.pi := by
   have hπ : (Real.pi : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
   unfold besselI1Norm
@@ -588,20 +588,20 @@ def besselK1Norm (z : ℂ) : ℂ := Complex.exp z * besselK1 z / gaussHalf z
   field_simp
 
 /-- `K₀(z) = G(z) K̂₀(z)/e^z` (`G(z) ≠ 0`). -/
-@[powerlib_foundation] theorem besselK0_eq_norm {z : ℂ} (hG : gaussHalf z ≠ 0) :
+@[tmio T, powerlib_foundation] theorem besselK0_eq_norm {z : ℂ} (hG : gaussHalf z ≠ 0) :
     besselK0 z = gaussHalf z * besselK0Norm z / Complex.exp z := by
   unfold besselK0Norm
   field_simp [Complex.exp_ne_zero]
 
 /-- `K₁(z) = G(z) K̂₁(z)/e^z` (`G(z) ≠ 0`). -/
-@[powerlib_foundation] theorem besselK1_eq_norm {z : ℂ} (hG : gaussHalf z ≠ 0) :
+@[tmio T, powerlib_foundation] theorem besselK1_eq_norm {z : ℂ} (hG : gaussHalf z ≠ 0) :
     besselK1 z = gaussHalf z * besselK1Norm z / Complex.exp z := by
   unfold besselK1Norm
   field_simp [Complex.exp_ne_zero]
 
 /-- **Large-argument asymptotics in a sector**: as `Re f → ∞` with `‖f‖ ≤ K Re f`, the four
 normalized functions tend to `1`, i.e. `I_ν(z) ∼ e^z/√(2πz)`, `K_ν(z) ∼ √(π/(2z)) e^{−z}`. -/
-@[powerlib_foundation] theorem tendsto_besselNorm {α : Type*} {l : Filter α} {f : α → ℂ} {K : ℝ}
+@[tmio T, powerlib_foundation] theorem tendsto_besselNorm {α : Type*} {l : Filter α} {f : α → ℂ} {K : ℝ}
     (hK : 0 < K) (hre : Tendsto (fun i => (f i).re) l atTop)
     (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
     Tendsto (fun i => besselI0Norm (f i)) l (𝓝 1) ∧ Tendsto (fun i => besselI1Norm (f i)) l (𝓝 1) ∧
@@ -611,7 +611,7 @@ normalized functions tend to `1`, i.e. `I_ν(z) ∼ e^z/√(2πz)`, `K_ν(z) ∼
 /-! ## Small argument -/
 
 /-- **`z K₁(z) → 1` as `z → 0`** in the open right half-plane. -/
-@[powerlib_foundation] theorem tendsto_mul_besselK1_zero {α : Type*} {l : Filter α} {f : α → ℂ}
+@[tmio T, powerlib_foundation] theorem tendsto_mul_besselK1_zero {α : Type*} {l : Filter α} {f : α → ℂ}
     (hf : Tendsto f l (𝓝 0)) (hre : ∀ᶠ i in l, 0 < (f i).re) :
     Tendsto (fun i => f i * besselK1 (f i)) l (𝓝 1) := by
   rw [tendsto_iff_norm_sub_tendsto_zero]
@@ -631,7 +631,7 @@ normalized functions tend to `1`, i.e. `I_ν(z) ∼ e^z/√(2πz)`, `K_ν(z) ∼
     _ ≤ ‖f i‖ + ‖Complex.exp (-f i) - 1‖ := by gcongr; exact norm_mul_besselK1_sub_exp_le hi
 
 /-- `‖z K₀(z)‖ ≤ √(K π ‖z‖/2)` in the sector `‖z‖ ≤ K Re z`, `Re z > 0`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem norm_mul_besselK0_le {K : ℝ} {z : ℂ} (hz : 0 < z.re) (hzK : ‖z‖ ≤ K * z.re) :
     ‖z * besselK0 z‖ ≤ Real.sqrt (K * Real.pi * ‖z‖ / 2) := by
   have hb := norm_exp_mul_besselK0_le hz
@@ -659,7 +659,7 @@ theorem norm_mul_besselK0_le {K : ℝ} {z : ℂ} (hz : 0 < z.re) (hzK : ‖z‖ 
     _ = K * Real.pi * ‖z‖ / 2 := by ring
 
 /-- **`z K₀(z) → 0` as `z → 0`** in a sector `‖z‖ ≤ K Re z`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem tendsto_mul_besselK0_zero {α : Type*} {l : Filter α} {f : α → ℂ} {K : ℝ}
     (hf : Tendsto f l (𝓝 0)) (hre : ∀ᶠ i in l, 0 < (f i).re)
     (hsec : ∀ᶠ i in l, ‖f i‖ ≤ K * (f i).re) :
@@ -676,7 +676,7 @@ theorem tendsto_mul_besselK0_zero {α : Type*} {l : Filter α} {f : α → ℂ} 
   exact norm_mul_besselK0_le hi hs
 
 /-- `I₀`-series: `f₀(w) → 1` as `w → 0`. -/
-@[powerlib_foundation] theorem tendsto_besselSeries0_zero : Tendsto besselSeries0 (𝓝 0) (𝓝 1) := by
+@[tmio T, powerlib_foundation] theorem tendsto_besselSeries0_zero : Tendsto besselSeries0 (𝓝 0) (𝓝 1) := by
   rw [tendsto_iff_norm_sub_tendsto_zero]
   have h : Tendsto (fun w : ℂ => ‖w‖ + ‖w‖ ^ 2) (𝓝 0) (𝓝 0) := by
     have hc : Continuous fun w : ℂ => ‖w‖ + ‖w‖ ^ 2 := by fun_prop
@@ -690,7 +690,7 @@ theorem tendsto_mul_besselK0_zero {α : Type*} {l : Filter α} {f : α → ℂ} 
     _ = ‖w‖ + ‖w‖ ^ 2 := by ring
 
 /-- `I₁`-series: `f₁(w) → 1` as `w → 0` (so `I₁(z)/z → 1/2`). -/
-@[powerlib_foundation] theorem tendsto_besselSeries1_zero : Tendsto besselSeries1 (𝓝 0) (𝓝 1) := by
+@[tmio T, powerlib_foundation] theorem tendsto_besselSeries1_zero : Tendsto besselSeries1 (𝓝 0) (𝓝 1) := by
   rw [tendsto_iff_norm_sub_tendsto_zero]
   have h : Tendsto (fun w : ℂ => ‖w‖ / 2 + ‖w‖ ^ 2) (𝓝 0) (𝓝 0) := by
     have hc : Continuous fun w : ℂ => ‖w‖ / 2 + ‖w‖ ^ 2 := by fun_prop
@@ -707,14 +707,14 @@ theorem tendsto_mul_besselK0_zero {α : Type*} {l : Filter α} {f : α → ℂ} 
     _ = ‖w‖ / 2 + ‖w‖ ^ 2 := by ring
 
 /-- `I₀(f) → 1` along any `f → 0`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem tendsto_besselI0_zero {α : Type*} {l : Filter α} {f : α → ℂ} (hf : Tendsto f l (𝓝 0)) :
     Tendsto (fun i => besselI0 (f i)) l (𝓝 1) := by
   have h : Tendsto (fun i => f i ^ 2 / 4) l (𝓝 0) := by simpa using (hf.pow 2).div_const 4
   exact tendsto_besselSeries0_zero.comp h
 
 /-- `I₁(f)/f → 1/2`, in the form `besselSeries1 (f²/4) → 1`, along any `f → 0`. -/
-@[powerlib_foundation] theorem tendsto_besselSeries1_sq_zero {α : Type*} {l : Filter α} {f : α → ℂ}
+@[tmio T, powerlib_foundation] theorem tendsto_besselSeries1_sq_zero {α : Type*} {l : Filter α} {f : α → ℂ}
     (hf : Tendsto f l (𝓝 0)) :
     Tendsto (fun i => besselSeries1 (f i ^ 2 / 4)) l (𝓝 1) := by
   have h : Tendsto (fun i => f i ^ 2 / 4) l (𝓝 0) := by simpa using (hf.pow 2).div_const 4
@@ -723,7 +723,7 @@ theorem tendsto_besselI0_zero {α : Type*} {l : Filter α} {f : α → ℂ} (hf 
 /-! ## Derivatives of `I₀`, `I₁` -/
 
 /-- `‖e^{w c}‖ ≤ e^{‖w‖}` for `|c| ≤ 1`. -/
-@[powerlib_foundation] theorem norm_cexp_mul_le {w : ℂ} {c : ℝ} (hc : |c| ≤ 1) :
+@[tmio T, powerlib_foundation] theorem norm_cexp_mul_le {w : ℂ} {c : ℝ} (hc : |c| ≤ 1) :
     ‖Complex.exp (w * c)‖ ≤ Real.exp ‖w‖ := by
   rw [Complex.norm_exp, Complex.re_mul_ofReal]
   apply Real.exp_le_exp.mpr
@@ -733,7 +733,7 @@ theorem tendsto_besselI0_zero {α : Type*} {l : Filter α} {f : α → ℂ} (hf 
     _ = ‖w‖ := mul_one _
 
 /-- **`I₀' = I₁`** (differentiation of `π I₀(z) = ∫₀^π e^{z cos θ} dθ` under the integral sign). -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem hasDerivAt_besselI0 (z : ℂ) : HasDerivAt besselI0 (besselI1 z) z := by
   have h := intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le (μ := volume)
     (a := 0) (b := Real.pi) (x₀ := z)
@@ -767,7 +767,7 @@ theorem hasDerivAt_besselI0 (z : ℂ) : HasDerivAt besselI0 (besselI1 z) z := by
   exact h3
 
 /-- Integration by parts on `[0, π]`: `z ∫₀^π e^{z cos θ} sin²θ dθ = π I₁(z)`. -/
-@[powerlib_foundation] theorem mul_integral_cexp_cos_mul_sin_sq (z : ℂ) :
+@[tmio T, powerlib_foundation] theorem mul_integral_cexp_cos_mul_sin_sq (z : ℂ) :
     z * ∫ θ in (0 : ℝ)..Real.pi, Complex.exp (z * Real.cos θ) * (Real.sin θ ^ 2 : ℝ) =
       Real.pi * besselI1 z := by
   rw [← integral_cexp_cos_mul_cos]
@@ -792,7 +792,7 @@ theorem hasDerivAt_besselI0 (z : ℂ) : HasDerivAt besselI0 (besselI1 z) z := by
   exact hint.symm
 
 /-- **`I₁' = I₀ − I₁/z`** (`z ≠ 0`). -/
-@[powerlib_foundation] theorem hasDerivAt_besselI1 {z : ℂ} (hz : z ≠ 0) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_besselI1 {z : ℂ} (hz : z ≠ 0) :
     HasDerivAt besselI1 (besselI0 z - besselI1 z / z) z := by
   have h := intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le (μ := volume)
     (a := 0) (b := Real.pi) (x₀ := z)
@@ -842,7 +842,7 @@ theorem hasDerivAt_besselI0 (z : ℂ) : HasDerivAt besselI0 (besselI1 z) z := by
 /-! ## Derivatives of `K₀`, `K₁` -/
 
 /-- `c² e^{−xc} ≤ (8/x²) e^{−(x/2)c}` (`x > 0`, `c ≥ 0`). -/
-@[powerlib_foundation] theorem sq_mul_exp_neg_le {x c : ℝ} (hx : 0 < x) (hc : 0 ≤ c) :
+@[tmio T, powerlib_foundation] theorem sq_mul_exp_neg_le {x c : ℝ} (hx : 0 < x) (hc : 0 ≤ c) :
     c ^ 2 * Real.exp (-(x * c)) ≤ 8 / x ^ 2 * Real.exp (-(x / 2 * c)) := by
   have hq := Real.quadratic_le_exp_of_nonneg (show 0 ≤ x / 2 * c by positivity)
   have h1 : c ^ 2 ≤ 8 / x ^ 2 * Real.exp (x / 2 * c) := by
@@ -854,7 +854,7 @@ theorem hasDerivAt_besselI0 (z : ℂ) : HasDerivAt besselI0 (besselI1 z) z := by
   exact mul_le_mul_of_nonneg_right h1 (Real.exp_pos _).le
 
 /-- `e^{−z cosh t} cosh²t` is integrable on `(0, ∞)` (`Re z > 0`). -/
-@[powerlib_foundation] theorem integrableOn_cexp_neg_mul_cosh_mul_cosh_sq {z : ℂ} (hz : 0 < z.re) :
+@[tmio T, powerlib_foundation] theorem integrableOn_cexp_neg_mul_cosh_mul_cosh_sq {z : ℂ} (hz : 0 < z.re) :
     IntegrableOn (fun t : ℝ => Complex.exp (-z * Real.cosh t) * (Real.cosh t ^ 2 : ℝ)) (Ioi 0) := by
   have hx2 : 0 < ((z.re / 2 : ℝ) : ℂ).re := by simp; linarith
   refine Integrable.mono' ((integrableOn_besselK0 hx2).norm.const_mul (8 / z.re ^ 2))
@@ -866,7 +866,7 @@ theorem hasDerivAt_besselI0 (z : ℂ) : HasDerivAt besselI0 (besselI1 z) z := by
   linarith
 
 /-- Integration by parts on `(0, ∞)`: `z ∫₀^∞ e^{−z cosh t} sinh²t dt = K₁(z)` (`Re z > 0`). -/
-@[powerlib_foundation] theorem mul_integral_cexp_neg_mul_cosh_mul_sinh_sq {z : ℂ} (hz : 0 < z.re) :
+@[tmio T, powerlib_foundation] theorem mul_integral_cexp_neg_mul_cosh_mul_sinh_sq {z : ℂ} (hz : 0 < z.re) :
     z * ∫ t in Ioi (0 : ℝ), Complex.exp (-z * Real.cosh t) * (Real.sinh t ^ 2 : ℝ) =
       besselK1 z := by
   have hint2 : IntegrableOn (fun t : ℝ => Complex.exp (-z * Real.cosh t) * (Real.sinh t ^ 2 : ℝ))
@@ -915,7 +915,7 @@ theorem hasDerivAt_besselI0 (z : ℂ) : HasDerivAt besselI0 (besselI1 z) z := by
   exact hF
 
 /-- `∫₀^∞ e^{−z cosh t} cosh²t dt = K₀(z) + K₁(z)/z` (`Re z > 0`). -/
-@[powerlib_foundation] theorem integral_cexp_neg_mul_cosh_mul_cosh_sq {z : ℂ} (hz : 0 < z.re) :
+@[tmio T, powerlib_foundation] theorem integral_cexp_neg_mul_cosh_mul_cosh_sq {z : ℂ} (hz : 0 < z.re) :
     ∫ t in Ioi (0 : ℝ), Complex.exp (-z * Real.cosh t) * Real.cosh t * Real.cosh t =
       besselK0 z + besselK1 z / z := by
   have hz0 : z ≠ 0 := by intro h; rw [h] at hz; simp at hz
@@ -935,7 +935,7 @@ theorem hasDerivAt_besselI0 (z : ℂ) : HasDerivAt besselI0 (besselI1 z) z := by
   rw [mul_assoc, hc]; ring
 
 /-- **`K₀' = −K₁`** (`Re z > 0`; differentiation under the integral sign). -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem hasDerivAt_besselK0 {z : ℂ} (hz : 0 < z.re) : HasDerivAt besselK0 (-besselK1 z) z := by
   set x := z.re with hxdef
   have hx2 : 0 < ((x / 2 : ℝ) : ℂ).re := by simp; linarith
@@ -972,7 +972,7 @@ theorem hasDerivAt_besselK0 {z : ℂ} (hz : 0 < z.re) : HasDerivAt besselK0 (-be
   exact h.2
 
 /-- **`K₁' = −K₀ − K₁/z`** (`Re z > 0`). -/
-@[powerlib_foundation] theorem hasDerivAt_besselK1 {z : ℂ} (hz : 0 < z.re) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_besselK1 {z : ℂ} (hz : 0 < z.re) :
     HasDerivAt besselK1 (-besselK0 z - besselK1 z / z) z := by
   set x := z.re with hxdef
   have hx2 : 0 < ((x / 2 : ℝ) : ℂ).re := by simp; linarith
@@ -1016,7 +1016,7 @@ theorem hasDerivAt_besselK0 {z : ℂ} (hz : 0 < z.re) : HasDerivAt besselK0 (-be
 /-! ## Wronskian -/
 
 /-- `W(z) = z (I₀(z)K₁(z) + I₁(z)K₀(z))` has zero derivative on `Re z > 0`. -/
-@[powerlib_foundation] theorem hasDerivAt_wronskian {z : ℂ} (hz : 0 < z.re) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_wronskian {z : ℂ} (hz : 0 < z.re) :
     HasDerivAt (fun w => w * (besselI0 w * besselK1 w + besselI1 w * besselK0 w)) 0 z := by
   have hz0 : z ≠ 0 := by intro h; rw [h] at hz; simp at hz
   have h := (hasDerivAt_id' z).mul (((hasDerivAt_besselI0 z).mul (hasDerivAt_besselK1 hz)).add
@@ -1029,7 +1029,7 @@ theorem hasDerivAt_besselK0 {z : ℂ} (hz : 0 < z.re) : HasDerivAt besselK0 (-be
 /-- **Wronskian of `I₀`, `K₀`**: `I₀(z)K₁(z) + I₁(z)K₀(z) = 1/z` for `Re z > 0`
 (`W = z(I₀K₁ + I₁K₀)` is constant on the half-plane, and `→ 1` as `z → 0⁺`). It fixes the
 normalization of `K₀`, `K₁` against `I₀`, `I₁`. -/
-@[powerlib_foundation]
+@[tmio T, powerlib_foundation]
 theorem besselI0_mul_besselK1_add_besselI1_mul_besselK0 {z : ℂ} (hz : 0 < z.re) :
     besselI0 z * besselK1 z + besselI1 z * besselK0 z = 1 / z := by
   have hz0 : z ≠ 0 := by intro h; rw [h] at hz; simp at hz

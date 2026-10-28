@@ -76,7 +76,7 @@ def SymmetricMatrix.toMatrix (p : SymmetricMatrix) : Matrix (Fin 3) (Fin 3) ℝ 
   !![p.p11, p.p12, p.p13; p.p12, p.p22, p.p23; p.p13, p.p23, p.p33]
 
 /-- Positive leading minors make the quadratic form positive. -/
-@[powerlib_foundation] theorem SymmetricMatrix.form_pos (p : SymmetricMatrix) (h1 : 0 < p.p11)
+@[tmio T, powerlib_foundation] theorem SymmetricMatrix.form_pos (p : SymmetricMatrix) (h1 : 0 < p.p11)
     (h2 : 0 < p.minor2) (h3 : 0 < p.det) (x : Fin 3 → ℝ) (hx : x ≠ 0) :
     0 < x ⬝ᵥ (p.toMatrix *ᵥ x) := by
   have hform : x ⬝ᵥ (p.toMatrix *ᵥ x) =
@@ -198,29 +198,29 @@ def matrix (a d b e k : ℝ) : SymmetricMatrix :=
     0 < coupling a d b e := by
   rcases had with ha' | hd' <;> dsimp [coupling] <;> positivity
 
-@[powerlib_foundation] theorem gap_pos {a d b e k : ℝ}
+@[tmio T, powerlib_foundation] theorem gap_pos {a d b e k : ℝ}
     (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (hk : 0 < k)
     (had : 0 < a ∨ 0 < d) : 0 < gap a d b e k := by
   rcases had with ha' | hd' <;> dsimp [gap] <;> positivity
 
-@[powerlib_foundation] theorem n11_pos {a d b e k : ℝ}
+@[tmio T, powerlib_foundation] theorem n11_pos {a d b e k : ℝ}
     (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (hk : 0 < k)
     (had : 0 < a ∨ 0 < d) : 0 < n11 a d b e k := by
   rcases had with ha' | hd' <;> dsimp [n11] <;> positivity
 
-@[powerlib_foundation] theorem minorNumerator_pos {a d b e k : ℝ}
+@[tmio T, powerlib_foundation] theorem minorNumerator_pos {a d b e k : ℝ}
     (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (hk : 0 < k)
     (had : 0 < a ∨ 0 < d) : 0 < minorNumerator a d b e k := by
   rcases had with ha' | hd' <;> dsimp [minorNumerator] <;> positivity
 
-@[powerlib_foundation] theorem detNumerator_pos {a d b e k : ℝ}
+@[tmio T, powerlib_foundation] theorem detNumerator_pos {a d b e k : ℝ}
     (ha : 0 ≤ a) (hd : 0 ≤ d) (hb : 0 < b) (he : 0 < e) (hk : 0 < k) :
     0 < detNumerator a d b e k := by
   dsimp [detNumerator]
   positivity
 
 set_option maxHeartbeats 4000000 in
-@[powerlib_foundation] theorem minor_identity (a d b e k : ℝ)
+@[tmio T, powerlib_foundation] theorem minor_identity (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     (matrix a d b e k).minor2 =
       k * coupling a d b e * minorNumerator a d b e k / (denominator a d b e k)^2 := by
@@ -230,7 +230,7 @@ set_option maxHeartbeats 4000000 in
   ring
 
 set_option maxHeartbeats 4000000 in
-@[powerlib_foundation] theorem det_identity (a d b e k : ℝ)
+@[tmio T, powerlib_foundation] theorem det_identity (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     (matrix a d b e k).det =
       k^2 * (coupling a d b e)^2 * gap a d b e k * detNumerator a d b e k /
@@ -240,7 +240,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, coupling, gap, detNumerator]
   ring
 
-@[powerlib_foundation] theorem eq11 (a d b e k : ℝ)
+@[tmio T, powerlib_foundation] theorem eq11 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -2 * a * (matrix a d b e k).p11 + 2 * k * (matrix a d b e k).p12 = -1 := by
   dsimp [matrix]
@@ -248,7 +248,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
-@[powerlib_foundation] theorem eq12 (a d b e k : ℝ)
+@[tmio T, powerlib_foundation] theorem eq12 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -b * (matrix a d b e k).p11 - a * (matrix a d b e k).p12 + k * (matrix a d b e k).p22 +
       e * (matrix a d b e k).p13 = 0 := by
@@ -257,7 +257,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
-@[powerlib_foundation] theorem eq13 (a d b e k : ℝ)
+@[tmio T, powerlib_foundation] theorem eq13 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -(a + d) * (matrix a d b e k).p13 - k * (matrix a d b e k).p12 +
       k * (matrix a d b e k).p23 = 0 := by
@@ -266,7 +266,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
-@[powerlib_foundation] theorem eq22 (a d b e k : ℝ)
+@[tmio T, powerlib_foundation] theorem eq22 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -2 * b * (matrix a d b e k).p12 + 2 * e * (matrix a d b e k).p23 = -1 := by
   dsimp [matrix]
@@ -274,7 +274,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
-@[powerlib_foundation] theorem eq23 (a d b e k : ℝ)
+@[tmio T, powerlib_foundation] theorem eq23 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -b * (matrix a d b e k).p13 - k * (matrix a d b e k).p22 - d * (matrix a d b e k).p23 +
       e * (matrix a d b e k).p33 = 0 := by
@@ -283,7 +283,7 @@ set_option maxHeartbeats 4000000 in
   dsimp [n11, n12, n13, n22, n23, n33, denominator, coupling, gap]
   ring
 
-@[powerlib_foundation] theorem eq33 (a d b e k : ℝ)
+@[tmio T, powerlib_foundation] theorem eq33 (a d b e k : ℝ)
     (hq : denominator a d b e k ≠ 0) :
     -2 * k * (matrix a d b e k).p23 - 2 * d * (matrix a d b e k).p33 = -1 := by
   dsimp [matrix]
@@ -379,7 +379,7 @@ def RationalCircuit.matrix (r : RationalCircuit) : Matrix (Fin 3) (Fin 3) ℚ :=
      0, 1 / r.secondInductance, -(r.secondResistance / r.secondInductance)]
 
 /-- The exact rational matrix is the circuit's plant matrix. -/
-@[powerlib_foundation] theorem RationalCircuit.real_matrix (r : RationalCircuit) :
+@[tmio M, powerlib_foundation] theorem RationalCircuit.real_matrix (r : RationalCircuit) :
     Linear.Synthesis.real r.matrix = r.circuit.plant.A := by
   ext i j
   fin_cases i <;> fin_cases j <;>
@@ -400,7 +400,7 @@ generic synthesizer run on the exact rational plant matrix. -/
 def rationalFamily : Family RationalCircuit (Requirement ⊕ Synthesis) 3 2 :=
   family.extend RationalCircuit.circuit fun r _ => Linear.Synthesis.accepts r.matrix = true
 
-@[powerlib_foundation] theorem rationalFamily_isLinear :
+@[tmio M, powerlib_foundation] theorem rationalFamily_isLinear :
     rationalFamily.IsLinear (Circuit.plant ∘ RationalCircuit.circuit) :=
   family_isLinear.extend _ _
 

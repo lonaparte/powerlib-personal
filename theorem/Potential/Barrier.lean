@@ -67,7 +67,7 @@ variable {c A φ : ℝ}
   · ring
 
 /-- `V(θ₂) − V(θ₁) = −∫_{θ₁}^{θ₂} (c − A sin(t + φ)) dt`. -/
-@[powerlib_foundation] theorem potential_sub_eq_neg_integral (θ₁ θ₂ : ℝ) :
+@[tmio T, powerlib_foundation] theorem potential_sub_eq_neg_integral (θ₁ θ₂ : ℝ) :
     washboard c A φ θ₂ - washboard c A φ θ₁ =
       -∫ t in θ₁..θ₂, (c - A * sin (t + φ)) := by
   have hint : IntervalIntegrable (fun t => -(c - A * sin (t + φ))) MeasureTheory.volume θ₁ θ₂ :=
@@ -88,30 +88,30 @@ def barrierUp (c A φ : ℝ) : ℝ := washboard c A φ (thetaUp c A φ) - washbo
 def barrierDown (c A φ : ℝ) : ℝ :=
   washboard c A φ (thetaDown c A φ) - washboard c A φ (thetaS c A φ)
 
-@[powerlib_foundation] private lemma abs_div_le (hA : 0 < A) (hc : |c| ≤ A) : |c / A| ≤ 1 := by
+@[tmio T, powerlib_foundation] private lemma abs_div_le (hA : 0 < A) (hc : |c| ≤ A) : |c / A| ≤ 1 := by
   rw [abs_div, abs_of_pos hA, div_le_one hA]; exact hc
 
-@[powerlib_foundation] theorem thetaS_zero (hA : 0 < A) (hc : |c| ≤ A) :
+@[tmio T, powerlib_foundation] theorem thetaS_zero (hA : 0 < A) (hc : |c| ≤ A) :
     c - A * sin (thetaS c A φ + φ) = 0 := by
   rw [thetaS, sub_add_cancel, SpecialFunctions.mul_sin_arcsin_div hc hA, sub_self]
 
-@[powerlib_foundation] theorem thetaUp_zero (hA : 0 < A) (hc : |c| ≤ A) :
+@[tmio T, powerlib_foundation] theorem thetaUp_zero (hA : 0 < A) (hc : |c| ≤ A) :
     c - A * sin (thetaUp c A φ + φ) = 0 := by
   rw [thetaUp, sub_add_cancel, SpecialFunctions.mul_sin_pi_sub_arcsin_div hc hA, sub_self]
 
-@[powerlib_foundation] theorem thetaDown_zero (hA : 0 < A) (hc : |c| ≤ A) :
+@[tmio T, powerlib_foundation] theorem thetaDown_zero (hA : 0 < A) (hc : |c| ≤ A) :
     c - A * sin (thetaDown c A φ + φ) = 0 := by
   rw [thetaDown, sub_add_cancel, show -π - arcsin (c / A) = π - arcsin (c / A) - 2 * π by ring,
     sin_sub_two_pi, SpecialFunctions.mul_sin_pi_sub_arcsin_div hc hA, sub_self]
 
-@[powerlib_foundation] private lemma A_sqrt (hA : 0 < A) :
+@[tmio T, powerlib_foundation] private lemma A_sqrt (hA : 0 < A) :
     A * √(1 - (c / A) ^ 2) = √(A ^ 2 - c ^ 2) := by
   rw [← Real.sqrt_sq hA.le, ← Real.sqrt_mul (sq_nonneg A), Real.sqrt_sq hA.le]
   congr 1
   field_simp
 
 /-- `V(θ_u⁺) − V(θ_s) = 2√(A² − c²) − 2c arccos(c/A)`. -/
-@[powerlib_foundation] theorem barrierUp_eq (hA : 0 < A) :
+@[tmio T, powerlib_foundation] theorem barrierUp_eq (hA : 0 < A) :
     barrierUp c A φ = 2 * √(A ^ 2 - c ^ 2) - 2 * c * arccos (c / A) := by
   have h := A_sqrt (c := c) hA
   rw [barrierUp, washboard, washboard, thetaUp, thetaS, sub_add_cancel, sub_add_cancel,
@@ -119,7 +119,7 @@ def barrierDown (c A φ : ℝ) : ℝ :=
   linear_combination 2 * h
 
 /-- `V(θ_u⁻) − V(θ_s) = 2√(A² − c²) + 2c arccos(−c/A)`. -/
-@[powerlib_foundation] theorem barrierDown_eq (hA : 0 < A) :
+@[tmio T, powerlib_foundation] theorem barrierDown_eq (hA : 0 < A) :
     barrierDown c A φ = 2 * √(A ^ 2 - c ^ 2) + 2 * c * arccos (-c / A) := by
   have h := A_sqrt (c := c) hA
   rw [barrierDown, washboard, washboard, thetaDown, thetaS, sub_add_cancel, sub_add_cancel,
@@ -128,13 +128,13 @@ def barrierDown (c A φ : ℝ) : ℝ :=
   linear_combination 2 * h
 
 /-- The two barriers differ by the tilt over one period: `ΔV⁻ − ΔV⁺ = 2πc`. -/
-@[powerlib_foundation] theorem barrierDown_sub_barrierUp (hA : 0 < A) :
+@[tmio T, powerlib_foundation] theorem barrierDown_sub_barrierUp (hA : 0 < A) :
     barrierDown c A φ - barrierUp c A φ = 2 * π * c := by
   rw [barrierUp_eq hA, barrierDown_eq hA, neg_div, arccos_neg]; ring
 
 /-- The proposed closed form is the lower of the two barriers:
 `min(ΔV⁺, ΔV⁻) = 2√(A² − c²) − 2|c| arccos(|c|/A)`. -/
-@[powerlib_foundation] theorem min_barrier_eq (hA : 0 < A) :
+@[tmio T, powerlib_foundation] theorem min_barrier_eq (hA : 0 < A) :
     min (barrierUp c A φ) (barrierDown c A φ) =
       2 * √(A ^ 2 - c ^ 2) - 2 * |c| * arccos (|c| / A) := by
   have hd := barrierDown_sub_barrierUp (c := c) (φ := φ) hA
@@ -146,7 +146,7 @@ def barrierDown (c A φ : ℝ) : ℝ :=
 /-- `θ_s` is the only zero strictly between the two neighbouring saddles: the period window
 `[θ_u⁻, θ_u⁻ + 2π) = [θ_u⁻, θ_u⁺)` holds the two zeros of the sinusoid
 (`SpecialFunctions.sinusoidZeros_subset`), the stable zero `θ_s` and the left end `θ_u⁻`. -/
-@[powerlib_foundation] theorem zero_mem_Ioo_iff (hA : 0 < A) (hc : |c| < A) {θ : ℝ}
+@[tmio T, powerlib_foundation] theorem zero_mem_Ioo_iff (hA : 0 < A) (hc : |c| < A) {θ : ℝ}
     (hθ : θ ∈ Ioo (thetaDown c A φ) (thetaUp c A φ)) :
     c - A * sin (θ + φ) = 0 ↔ θ = thetaS c A φ := by
   refine ⟨fun hz => ?_, by rintro rfl; exact thetaS_zero hA hc.le⟩
@@ -166,7 +166,7 @@ def barrierDown (c A φ : ℝ) : ℝ :=
 
 /-! ### Positivity and fold asymptotics -/
 
-@[powerlib_foundation] theorem hasDerivAt_barrierShape (u : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_barrierShape (u : ℝ) :
     HasDerivAt barrierShape (2 * u * sin u) u := by
   have h := (((hasDerivAt_sin u).const_mul 2).sub
     (((hasDerivAt_id u).const_mul 2).mul (hasDerivAt_cos u)))
@@ -174,7 +174,7 @@ def barrierDown (c A φ : ℝ) : ℝ :=
   · funext x; simp [barrierShape]
   · simp
 
-@[powerlib_foundation] theorem barrierShape_pos {u : ℝ} (hu0 : 0 < u) (hu : u ≤ π) :
+@[tmio T, powerlib_foundation] theorem barrierShape_pos {u : ℝ} (hu0 : 0 < u) (hu : u ≤ π) :
     0 < barrierShape u := by
   have hmono : StrictMonoOn barrierShape (Icc 0 π) := by
     apply strictMonoOn_of_deriv_pos (convex_Icc 0 π)
@@ -188,14 +188,14 @@ def barrierDown (c A φ : ℝ) : ℝ :=
   have := hmono ⟨le_refl 0, pi_pos.le⟩ ⟨hu0.le, hu⟩ hu0
   rwa [h0] at this
 
-@[powerlib_foundation] theorem barrierUp_eq_shape (hA : 0 < A) (hc : |c| ≤ A) :
+@[tmio T, powerlib_foundation] theorem barrierUp_eq_shape (hA : 0 < A) (hc : |c| ≤ A) :
     barrierUp c A φ = A * barrierShape (arccos (c / A)) := by
   have hs := abs_div_le hA hc
   rw [barrierUp_eq hA, barrierShape, sin_arccos, cos_arccos (abs_le.mp hs).1 (abs_le.mp hs).2,
     ← A_sqrt hA]
   field_simp
 
-@[powerlib_foundation] theorem barrierDown_eq_shape (hA : 0 < A) (hc : |c| ≤ A) :
+@[tmio T, powerlib_foundation] theorem barrierDown_eq_shape (hA : 0 < A) (hc : |c| ≤ A) :
     barrierDown c A φ = A * barrierShape (arccos (-c / A)) := by
   have hs : |-c / A| ≤ 1 := by rw [neg_div, abs_neg]; exact abs_div_le hA hc
   rw [barrierDown_eq hA, barrierShape, sin_arccos, cos_arccos (abs_le.mp hs).1 (abs_le.mp hs).2,
@@ -204,12 +204,12 @@ def barrierDown (c A φ : ℝ) : ℝ :=
   ring
 
 /-- Both barriers are positive inside the existence region. -/
-@[powerlib_foundation] theorem barrierUp_pos (hA : 0 < A) (hc : |c| < A) : 0 < barrierUp c A φ := by
+@[tmio T, powerlib_foundation] theorem barrierUp_pos (hA : 0 < A) (hc : |c| < A) : 0 < barrierUp c A φ := by
   have hs : |c / A| < 1 := by rw [abs_div, abs_of_pos hA, div_lt_one hA]; exact hc
   rw [barrierUp_eq_shape hA hc.le]
   exact mul_pos hA (barrierShape_pos (arccos_pos.mpr (abs_lt.mp hs).2) (arccos_le_pi _))
 
-@[powerlib_foundation] theorem barrierDown_pos (hA : 0 < A) (hc : |c| < A) :
+@[tmio T, powerlib_foundation] theorem barrierDown_pos (hA : 0 < A) (hc : |c| < A) :
     0 < barrierDown c A φ := by
   have hs : |-c / A| < 1 := by
     rw [neg_div, abs_neg, abs_div, abs_of_pos hA, div_lt_one hA]; exact hc
@@ -217,7 +217,7 @@ def barrierDown (c A φ : ℝ) : ℝ :=
   exact mul_pos hA (barrierShape_pos (arccos_pos.mpr (abs_lt.mp hs).2) (arccos_le_pi _))
 
 /-- The minimal barrier in terms of `u = arccos(|c|/A)`: `ΔV = A · (2 sin u − 2u cos u)`. -/
-@[powerlib_foundation] theorem min_barrier_eq_shape (hA : 0 < A) (hc : |c| ≤ A) :
+@[tmio T, powerlib_foundation] theorem min_barrier_eq_shape (hA : 0 < A) (hc : |c| ≤ A) :
     min (barrierUp c A φ) (barrierDown c A φ) = A * barrierShape (arccos (|c| / A)) := by
   have hs : |(|c|) / A| ≤ 1 := by rw [abs_div, abs_abs, abs_of_pos hA, div_le_one hA]; exact hc
   have e : √(A ^ 2 - c ^ 2) = A * √(1 - (|c| / A) ^ 2) := by rw [A_sqrt (c := |c|) hA, sq_abs]
@@ -227,7 +227,7 @@ def barrierDown (c A φ : ℝ) : ℝ :=
 
 /-- Two-sided bounds of the barrier shape near the fold:
 `(2/3)u³ − u⁵/15 ≤ 2 sin u − 2u cos u ≤ (2/3)u³` for `u ≥ 0`. -/
-@[powerlib_foundation] theorem washboard_bounds {u : ℝ} (hu : 0 ≤ u) :
+@[tmio T, powerlib_foundation] theorem washboard_bounds {u : ℝ} (hu : 0 ≤ u) :
     2 / 3 * u ^ 3 - u ^ 5 / 15 ≤ barrierShape u ∧ barrierShape u ≤ 2 / 3 * u ^ 3 := by
   have h0 : barrierShape 0 = 0 := by simp [barrierShape]
   constructor
@@ -271,14 +271,14 @@ def barrierDown (c A φ : ℝ) : ℝ :=
 
 /-- Restoring slope at the stable point versus the fold distance `δ = A − |c|`:
 `g = √(A² − c²)` satisfies `g² = δ (2A − δ)`. -/
-@[powerlib_foundation] theorem slope_sq_eq (hc : |c| ≤ A) :
+@[tmio T, powerlib_foundation] theorem slope_sq_eq (hc : |c| ≤ A) :
     √(A ^ 2 - c ^ 2) ^ 2 = (A - |c|) * (2 * A - (A - |c|)) := by
   have h : 0 ≤ A ^ 2 - c ^ 2 := by
     rw [← sq_abs c]; nlinarith [abs_nonneg c]
   rw [Real.sq_sqrt h, ← sq_abs c]; ring
 
 /-- Fold distance versus `u = arccos(|c|/A)`: `(u²/2)(1 − u²/24)² ≤ δ/A ≤ u²/2`. -/
-@[powerlib_foundation] theorem foldDistance_bounds (hA : 0 < A) (hc : |c| ≤ A) :
+@[tmio T, powerlib_foundation] theorem foldDistance_bounds (hA : 0 < A) (hc : |c| ≤ A) :
     let u := arccos (|c| / A)
     u ^ 2 / 2 * (1 - u ^ 2 / 24) ^ 2 ≤ (A - |c|) / A ∧ (A - |c|) / A ≤ u ^ 2 / 2 := by
   intro u

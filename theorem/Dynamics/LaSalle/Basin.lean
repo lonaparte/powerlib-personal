@@ -93,7 +93,7 @@ satisfying the condition). -/
     exact h hx x (mem_singleton x)
 
 /-- Monotonicity: a subset of a set in the region of attraction is in the region of attraction. -/
-@[powerlib_foundation] theorem RegionOfAttraction.mono {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem RegionOfAttraction.mono {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
     {S T : Set ℝⁿ}
     (h : ∀ x₀ ∈ S,
       (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
@@ -106,7 +106,7 @@ satisfying the condition). -/
   fun x hx => h x (hTS hx)
 
 /-- The empty set lies in the region of attraction. -/
-@[powerlib_foundation] theorem regionOfAttraction_empty (f : ℝⁿ → ℝⁿ) (x_eq : ℝⁿ) :
+@[tmio T, powerlib_foundation] theorem regionOfAttraction_empty (f : ℝⁿ → ℝⁿ) (x_eq : ℝⁿ) :
     ∀ x₀ ∈ (∅ : Set ℝⁿ),
       (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
       ∀ φ : ℝ → ℝⁿ, φ 0 = x₀ → IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
@@ -115,7 +115,7 @@ satisfying the condition). -/
 
 /-- The region of attraction `{x₀ | the condition holds on {x₀}}` lies in the region of
 attraction. -/
-@[powerlib_foundation] theorem regionOfAttraction_regionOfAttraction (f : ℝⁿ → ℝⁿ) (x_eq : ℝⁿ) :
+@[tmio T, powerlib_foundation] theorem regionOfAttraction_regionOfAttraction (f : ℝⁿ → ℝⁿ) (x_eq : ℝⁿ) :
     ∀ x₀ ∈ {x₀ | ∀ x ∈ ({x₀} : Set ℝⁿ),
         (∃ φ : ℝ → ℝⁿ, φ 0 = x ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
         ∀ φ : ℝ → ℝⁿ, φ 0 = x → IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) →
@@ -126,7 +126,7 @@ attraction. -/
   regionOfAttraction_iff_subset.2 subset_rfl
 
 /-- The union of two sets in the region of attraction is in the region of attraction. -/
-@[powerlib_foundation] theorem RegionOfAttraction.union {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem RegionOfAttraction.union {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
     {S T : Set ℝⁿ}
     (hS : ∀ x₀ ∈ S,
       (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
@@ -144,7 +144,7 @@ attraction. -/
 
 /-- Time invariance: if `S` lies in the region of attraction, a forward solution on `[t₀, ∞)`
 that starts in `S` converges. -/
-@[powerlib_foundation] theorem RegionOfAttraction.tendsto {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem RegionOfAttraction.tendsto {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
     {S : Set ℝⁿ}
     (h : ∀ x₀ ∈ S,
       (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧
@@ -168,7 +168,7 @@ that starts in `S` converges. -/
 
 /-- Positive invariance transfers to any field that agrees with `f` on an open neighbourhood
 `U` of the closed set `Ω`. -/
-@[powerlib_foundation] theorem IsPositivelyInvariant.of_eqOn_isOpen {f g : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem IsPositivelyInvariant.of_eqOn_isOpen {f g : ℝⁿ → ℝⁿ}
     {Ω U : Set ℝⁿ} (hΩ : IsClosed Ω) (hU : IsOpen U) (hΩU : Ω ⊆ U)
     (hfg : ∀ x ∈ U, g x = f x) (hinv : IsPositivelyInvariant Ω f) :
     IsPositivelyInvariant Ω g := by
@@ -183,7 +183,7 @@ that starts in `S` converges. -/
 
 /-- **Potential-well invariance.** If `V̇ ≤ 0` on an open set `W` and
 `{x ∈ W | V x ≤ c}` is closed, then this set is positively invariant. -/
-@[powerlib_foundation] theorem isPositivelyInvariant_sublevel_of_isOpen {f : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem isPositivelyInvariant_sublevel_of_isOpen {f : ℝⁿ → ℝⁿ}
     {V : ℝⁿ → ℝ} {W : Set ℝⁿ} {c : ℝ} (hW : IsOpen W) (hV : Differentiable ℝ V)
     (hLie : ∀ x ∈ W, fderiv ℝ V x (f x) ≤ 0) (hclosed : IsClosed {x ∈ W | V x ≤ c}) :
     IsPositivelyInvariant {x ∈ W | V x ≤ c} f := by
@@ -201,7 +201,7 @@ that starts in `S` converges. -/
   exact (show V (ψ t) ≤ V (ψ x) from this).trans hxV
 
 /-- Globalization of a `C¹` field around a compact positively invariant set. -/
-@[powerlib_foundation] theorem exists_globalization {f : ℝⁿ → ℝⁿ} {Ω : Set ℝⁿ}
+@[tmio T, powerlib_foundation] theorem exists_globalization {f : ℝⁿ → ℝⁿ} {Ω : Set ℝⁿ}
     (hf : ContDiff ℝ 1 f) (hΩ_compact : IsCompact Ω) (hΩ_inv : IsPositivelyInvariant Ω f) :
     ∃ g : ℝⁿ → ℝⁿ, ContDiff ℝ 1 g ∧ (∃ K, LipschitzWith K g) ∧ (∀ x ∈ Ω, g x = f x) ∧
       IsPositivelyInvariant Ω g ∧
@@ -235,7 +235,7 @@ that starts in `S` converges. -/
 
 /-- LaSalle's invariance principle for a `C¹` field; the global Lipschitz hypothesis of the
 upstream `_root_.lasalle_invariance_principle` is removed by a cutoff. -/
-@[powerlib_foundation] theorem lasalle_invariance_principle_of_contDiff
+@[tmio T, powerlib_foundation] theorem lasalle_invariance_principle_of_contDiff
     {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {Ω M : Set ℝⁿ}
     (hΩ_compact : IsCompact Ω) (hΩ_inv : IsPositivelyInvariant Ω f)
     (hf_c1 : ContDiff ℝ 1 f) (hV_c1 : ContDiff ℝ 1 V)
@@ -264,7 +264,7 @@ upstream `_root_.lasalle_invariance_principle` is removed by a cutoff. -/
 /-- **LaSalle region-of-attraction estimate.** `Ω` compact and positively invariant,
 `V̇ ≤ 0` on `Ω`, and every positively invariant subset of `{x ∈ Ω | V̇ x = 0}` contained in
 `{x_eq}` ⇒ `Ω` lies in the region of attraction of `x_eq`. -/
-@[powerlib_foundation] theorem regionOfAttraction_of_lasalle
+@[tmio T, powerlib_foundation] theorem regionOfAttraction_of_lasalle
     {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {Ω : Set ℝⁿ} {x_eq : ℝⁿ}
     (hΩ_compact : IsCompact Ω) (hΩ_inv : IsPositivelyInvariant Ω f)
     (hf_c1 : ContDiff ℝ 1 f) (hV_c1 : ContDiff ℝ 1 V)
@@ -285,7 +285,7 @@ upstream `_root_.lasalle_invariance_principle` is removed by a cutoff. -/
 
 /-- Same estimate with a globally Lipschitz field (the Lipschitz hypothesis is not needed:
 `regionOfAttraction_of_lasalle`). -/
-@[powerlib_foundation] theorem regionOfAttraction_of_lasalle_lipschitz
+@[tmio T, powerlib_foundation] theorem regionOfAttraction_of_lasalle_lipschitz
     {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {Ω : Set ℝⁿ} {x_eq : ℝⁿ} {K : NNReal}
     (hΩ_compact : IsCompact Ω) (hΩ_inv : IsPositivelyInvariant Ω f)
     (_hf_lip : LipschitzWith K f) (hf_c1 : ContDiff ℝ 1 f) (hV_c1 : ContDiff ℝ 1 V)
@@ -300,7 +300,7 @@ upstream `_root_.lasalle_invariance_principle` is removed by a cutoff. -/
 /-- **Potential-well estimate.** `W` open, `V̇ ≤ 0` on `W`, `Ω = {x ∈ W | V x ≤ c}` compact,
 and the LaSalle condition on `Ω` ⇒ `Ω` lies in the region of attraction of `x_eq`.
 Positive invariance of `Ω` is derived, not assumed. -/
-@[powerlib_foundation] theorem regionOfAttraction_of_lasalle_sublevel
+@[tmio T, powerlib_foundation] theorem regionOfAttraction_of_lasalle_sublevel
     {f : ℝⁿ → ℝⁿ} {V : ℝⁿ → ℝ} {W : Set ℝⁿ} {c : ℝ} {x_eq : ℝⁿ}
     (hW : IsOpen W) (hf_c1 : ContDiff ℝ 1 f) (hV_c1 : ContDiff ℝ 1 V)
     (hLie : ∀ x ∈ W, fderiv ℝ V x (f x) ≤ 0)
@@ -320,7 +320,7 @@ Positive invariance of `Ω` is derived, not assumed. -/
 
 /-- If no solution segment of positive length can stay in `E` unless it starts at `x_eq`, then
 every positively invariant subset of `E` is contained in `{x_eq}`. -/
-@[powerlib_foundation] theorem lasalle_condition_of_trajectories {f : ℝⁿ → ℝⁿ} {E : Set ℝⁿ}
+@[tmio T, powerlib_foundation] theorem lasalle_condition_of_trajectories {f : ℝⁿ → ℝⁿ} {E : Set ℝⁿ}
     {x_eq : ℝⁿ} (hf_c1 : ContDiff ℝ 1 f)
     (h : ∀ (T : ℝ) (φ : ℝ → ℝⁿ), 0 < T → IsTrajectoryOn φ f 0 T →
       (∀ t ∈ Icc 0 T, φ t ∈ E) → φ 0 = x_eq) :
@@ -334,7 +334,7 @@ every positively invariant subset of `E` is contained in `{x_eq}`. -/
 /-- If `E` lies in the zero set of a `C¹` function `h`, and the derivative of `h` along `f`
 vanishes at a point of `E` only at `x_eq`, then every positively invariant subset of `E` is
 contained in `{x_eq}`. (Typical use: `E = {ω = 0} ∩ Ω` and `h = ω`.) -/
-@[powerlib_foundation] theorem lasalle_condition_of_lieDeriv {f : ℝⁿ → ℝⁿ} {E : Set ℝⁿ}
+@[tmio T, powerlib_foundation] theorem lasalle_condition_of_lieDeriv {f : ℝⁿ → ℝⁿ} {E : Set ℝⁿ}
     {x_eq : ℝⁿ} (hf_c1 : ContDiff ℝ 1 f) {h : ℝⁿ → ℝ} (hh : ContDiff ℝ 1 h)
     (hE : ∀ x ∈ E, h x = 0) (hpt : ∀ x ∈ E, fderiv ℝ h x (f x) = 0 → x = x_eq) :
     ∀ N ⊆ E, IsPositivelyInvariant N f → N ⊆ {x_eq} := by
@@ -352,7 +352,7 @@ contained in `{x_eq}`. (Typical use: `E = {ω = 0} ∩ Ω` and `h = ω`.) -/
 
 /-- Local asymptotic stability plus forward completeness: some ball around `x_eq` lies in the
 region of attraction. -/
-@[powerlib_foundation] theorem exists_ball_regionOfAttraction_of_localAsymptoticStable
+@[tmio T, powerlib_foundation] theorem exists_ball_regionOfAttraction_of_localAsymptoticStable
     {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} (h : LocalAsymptoticStable f x_eq) (hc : Flow.ForwardComplete f) :
     ∃ r > 0,
       ∀ x₀ ∈ ball x_eq r,
@@ -366,7 +366,7 @@ region of attraction. -/
 
 /-- Global asymptotic stability (with forward completeness): the whole state space lies in the
 region of attraction. -/
-@[powerlib_foundation] theorem regionOfAttraction_univ_of_globallyAsymptoticallyStable
+@[tmio T, powerlib_foundation] theorem regionOfAttraction_univ_of_globallyAsymptoticallyStable
     {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} (h : Flow.GloballyAsymptoticallyStable f x_eq) :
     ∀ x₀ ∈ (univ : Set ℝⁿ),
       (∃ φ : ℝ → ℝⁿ, φ 0 = x₀ ∧ IsIntegralCurveOn φ (fun _ x => f x) (Ici 0)) ∧

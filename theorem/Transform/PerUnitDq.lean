@@ -38,7 +38,7 @@ open powerlib.Transform
 /-- Power-invariant three-phase Park `T^P(θ) = √(3/2) T^A(θ)` (dq rows). -/
 def parkABCPI (θ : ℝ) : Matrix (Fin 2) (Fin 3) ℝ := Real.sqrt (3 / 2) • parkABC θ
 
-@[powerlib_foundation] private lemma park_mul_transpose (θ : ℝ) : park θ * (park θ)ᵀ = 1 := by
+@[tmio T, powerlib_foundation] private lemma park_mul_transpose (θ : ℝ) : park θ * (park θ)ᵀ = 1 := by
   rw [show (park θ)ᵀ = rot θ by rw [park_eq_transpose_rot, transpose_transpose]]
   exact park_mul_rot θ
 
@@ -49,7 +49,7 @@ def parkABCPI (θ : ℝ) : Matrix (Fin 2) (Fin 3) ℝ := Real.sqrt (3 / 2) • p
     Matrix.smul_mul, Matrix.one_mul, Matrix.mul_smul, park_mul_transpose]
 
 /-- The power-invariant Park has orthonormal rows. -/
-@[powerlib_foundation] theorem parkABCPI_mul_transpose (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem parkABCPI_mul_transpose (θ : ℝ) :
     parkABCPI θ * (parkABCPI θ)ᵀ = 1 := by
   rw [parkABCPI, transpose_smul, Matrix.smul_mul, Matrix.mul_smul, smul_smul,
     parkABC_mul_transpose, smul_smul, ← Real.sqrt_mul (by norm_num),
@@ -57,7 +57,7 @@ def parkABCPI (θ : ℝ) : Matrix (Fin 2) (Fin 3) ℝ := Real.sqrt (3 / 2) • p
       rw [Real.sqrt_mul_self (by norm_num)]]
   norm_num
 
-@[powerlib_foundation] private lemma park_dotProduct (θ : ℝ) (x y : Fin 2 → ℝ) :
+@[tmio T, powerlib_foundation] private lemma park_dotProduct (θ : ℝ) (x y : Fin 2 → ℝ) :
     (park θ *ᵥ x) ⬝ᵥ (park θ *ᵥ y) = x ⬝ᵥ y := by
   simp only [park_apply_mulVec, dotProduct, Fin.sum_univ_two, Matrix.cons_val_zero,
     Matrix.cons_val_one]
@@ -65,14 +65,14 @@ def parkABCPI (θ : ℝ) : Matrix (Fin 2) (Fin 3) ℝ := Real.sqrt (3 / 2) • p
 
 /-- Amplitude-invariant dq power: `v_abc · i_abc = (3/2)(v_d i_d + v_q i_q)` for
 zero-sequence-free current. -/
-@[powerlib_foundation] theorem power_parkABC (θ : ℝ) (v i : Fin 3 → ℝ)
+@[tmio T, powerlib_foundation] theorem power_parkABC (θ : ℝ) (v i : Fin 3 → ℝ)
     (hi : i 0 + i 1 + i 2 = 0) :
     v ⬝ᵥ i = (3 / 2 : ℝ) * ((parkABC θ *ᵥ v) ⬝ᵥ (parkABC θ *ᵥ i)) := by
   rw [parkABC, ← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec, park_dotProduct,
     dotProduct_eq_three_halves_clarke v i hi]
 
 /-- Power-invariant dq power: `v_abc · i_abc = v_d i_d + v_q i_q`. -/
-@[powerlib_foundation] theorem power_parkABCPI (θ : ℝ) (v i : Fin 3 → ℝ)
+@[tmio T, powerlib_foundation] theorem power_parkABCPI (θ : ℝ) (v i : Fin 3 → ℝ)
     (hi : i 0 + i 1 + i 2 = 0) :
     v ⬝ᵥ i = (parkABCPI θ *ᵥ v) ⬝ᵥ (parkABCPI θ *ᵥ i) := by
   rw [parkABCPI, Matrix.smul_mulVec, Matrix.smul_mulVec, smul_dotProduct, dotProduct_smul,
@@ -80,7 +80,7 @@ zero-sequence-free current. -/
 
 /-- Per-unit dq power with dq bases `V_dq`, `I_dq` and power base `S_B`:
 `p / S_B = ((3/2) V_dq I_dq / S_B) (v̂ · î)`. -/
-@[powerlib_foundation] theorem power_pu_dq (θ : ℝ) {Vdq Idq SB : ℝ} (hV : Vdq ≠ 0) (hI : Idq ≠ 0)
+@[tmio T, powerlib_foundation] theorem power_pu_dq (θ : ℝ) {Vdq Idq SB : ℝ} (hV : Vdq ≠ 0) (hI : Idq ≠ 0)
     (hS : SB ≠ 0) (v i : Fin 3 → ℝ) (hi : i 0 + i 1 + i 2 = 0) :
     (v ⬝ᵥ i) / SB = (3 / 2 * Vdq * Idq / SB) *
       ((Vdq⁻¹ • (parkABC θ *ᵥ v)) ⬝ᵥ (Idq⁻¹ • (parkABC θ *ᵥ i))) := by
@@ -88,7 +88,7 @@ zero-sequence-free current. -/
   field_simp
 
 /-- RMS dq bases (`V_dq = V_LN`, `I_dq = I_B`) give the factor `1/2`, not `1`. -/
-@[powerlib_foundation] theorem power_factor_rms_bases (b : ThreePhaseBase) :
+@[tmio T, powerlib_foundation] theorem power_factor_rms_bases (b : ThreePhaseBase) :
     3 / 2 * b.VLN * b.I / b.S = 1 / 2 := by
   have h := b.S_eq_three_VLN_I
   have hS := b.S_pos.ne'
@@ -96,7 +96,7 @@ zero-sequence-free current. -/
   linear_combination (-1 / 2) * h
 
 /-- Peak dq bases (`V_dq = √2 V_LN`, `I_dq = √2 I_B`) give the factor `1`. -/
-@[powerlib_foundation] theorem power_factor_peak_bases (b : ThreePhaseBase) :
+@[tmio T, powerlib_foundation] theorem power_factor_peak_bases (b : ThreePhaseBase) :
     3 / 2 * (Real.sqrt 2 * b.VLN) * (Real.sqrt 2 * b.I) / b.S = 1 := by
   have h := b.S_eq_three_VLN_I
   have hS := b.S_pos.ne'
@@ -106,7 +106,7 @@ zero-sequence-free current. -/
 
 /-- With the peak voltage base `√2 V_LN`, a balanced signal of RMS value `V_rms` (amplitude
 `√2 V_rms`) has per-unit dq value `(V_rms / V_LN)(cos φ, sin φ)`. -/
-@[powerlib_foundation] theorem balanced_pu_peak_base (b : ThreePhaseBase) (Vrms φ θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem balanced_pu_peak_base (b : ThreePhaseBase) (Vrms φ θ : ℝ) :
     (Real.sqrt 2 * b.VLN)⁻¹ • (parkABC θ *ᵥ balanced (Real.sqrt 2 * Vrms) φ θ) =
       ![Vrms / b.VLN * Real.cos φ, Vrms / b.VLN * Real.sin φ] := by
   have h2 : Real.sqrt 2 ≠ 0 := by positivity
@@ -116,7 +116,7 @@ zero-sequence-free current. -/
   ext k; fin_cases k <;> simp <;> field_simp
 
 /-- `T^A` with base `√2 V` and `T^P` with base `√3 V` give the same per-unit dq values. -/
-@[powerlib_foundation] theorem parkABC_pu_eq_parkABCPI_pu (θ V : ℝ) (v : Fin 3 → ℝ) :
+@[tmio T, powerlib_foundation] theorem parkABC_pu_eq_parkABCPI_pu (θ V : ℝ) (v : Fin 3 → ℝ) :
     (Real.sqrt 3 * V)⁻¹ • (parkABCPI θ *ᵥ v) = (Real.sqrt 2 * V)⁻¹ • (parkABC θ *ᵥ v) := by
   rw [parkABCPI, Matrix.smul_mulVec, smul_smul]
   congr 1

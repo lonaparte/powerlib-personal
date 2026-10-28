@@ -47,27 +47,27 @@ section Shift
       IsIntegralCurveOn φ (fun _ x => f x) s := by
   simp only [IsIntegralCurveOn, sub_add_cancel, hasDerivWithinAt_sub_const_iff]
 
-private theorem forall_curve_shift {e : ℝⁿ} {Q : (ℝ → ℝⁿ) → Prop} :
+@[tmio T] private theorem forall_curve_shift {e : ℝⁿ} {Q : (ℝ → ℝⁿ) → Prop} :
     (∀ ψ : ℝ → ℝⁿ, Q ψ) ↔ ∀ φ : ℝ → ℝⁿ, Q (fun t => φ t - e) :=
   ⟨fun h φ => h _, fun h ψ => by simpa using h (fun t => ψ t + e)⟩
 
-private theorem tendsto_shift_iff {e : ℝⁿ} {φ : ℝ → ℝⁿ} :
+@[tmio T] private theorem tendsto_shift_iff {e : ℝⁿ} {φ : ℝ → ℝⁿ} :
     Tendsto (fun t => φ t - e) atTop (𝓝 0) ↔ Tendsto φ atTop (𝓝 e) := by
   have h := tendsto_sub_const_iff (f := φ) (l := atTop) e (c := e)
   rwa [sub_self] at h
 
-@[powerlib_foundation] theorem isEquilibrium_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
+@[tmio T, powerlib_foundation] theorem isEquilibrium_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
     IsEquilibrium (fun z => f (z + e)) 0 ↔ IsEquilibrium f e := by
   simp [IsEquilibrium]
 
-@[powerlib_foundation] theorem lyapunovStable_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
+@[tmio T, powerlib_foundation] theorem lyapunovStable_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
     LyapunovStable (fun z => f (z + e)) 0 ↔ LyapunovStable f e := by
   unfold LyapunovStable
   refine forall₂_congr fun ε _ => exists_congr fun δ => and_congr_right fun _ =>
     forall₂_congr fun t₀ t₁ => (forall_curve_shift (e := e)).trans (forall_congr' fun φ => ?_)
   simp only [IsTrajectoryOn, isIntegralCurveOn_shift_iff, sub_zero]
 
-@[powerlib_foundation] theorem locallyExponentiallyStable_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
     LocallyExponentiallyStable (fun z => f (z + e)) 0 ↔ LocallyExponentiallyStable f e := by
   unfold LocallyExponentiallyStable
   refine exists_congr fun r => exists_congr fun C => exists_congr fun a =>
@@ -75,25 +75,25 @@ private theorem tendsto_shift_iff {e : ℝⁿ} {φ : ℝ → ℝⁿ} :
     forall₂_congr fun t₀ t₁ => (forall_curve_shift (e := e)).trans (forall_congr' fun φ => ?_)
   simp only [IsTrajectoryOn, isIntegralCurveOn_shift_iff, sub_zero]
 
-@[powerlib_foundation] theorem unstable_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
+@[tmio T, powerlib_foundation] theorem unstable_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
     Unstable (fun z => f (z + e)) 0 ↔ Unstable f e :=
   not_congr lyapunovStable_shift_iff
 
-@[powerlib_foundation] theorem localAsymptoticStable_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
+@[tmio T, powerlib_foundation] theorem localAsymptoticStable_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
     LocalAsymptoticStable (fun z => f (z + e)) 0 ↔ LocalAsymptoticStable f e := by
   unfold LocalAsymptoticStable
   refine and_congr lyapunovStable_shift_iff (exists_congr fun c => and_congr_right fun _ =>
     forall_congr' fun t₀ => (forall_curve_shift (e := e)).trans (forall_congr' fun φ => ?_))
   simp only [isIntegralCurveOn_shift_iff, sub_zero, tendsto_shift_iff]
 
-@[powerlib_foundation] theorem globalAsymptoticStable_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
+@[tmio T, powerlib_foundation] theorem globalAsymptoticStable_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
     GlobalAsymptoticStable (fun z => f (z + e)) 0 ↔ GlobalAsymptoticStable f e := by
   unfold GlobalAsymptoticStable
   refine and_congr lyapunovStable_shift_iff (forall_congr' fun t₀ =>
     (forall_curve_shift (e := e)).trans (forall_congr' fun φ => ?_))
   simp only [isIntegralCurveOn_shift_iff, tendsto_shift_iff]
 
-@[powerlib_foundation] theorem forwardComplete_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
+@[tmio T, powerlib_foundation] theorem forwardComplete_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
     ForwardComplete (fun z => f (z + e)) ↔ ForwardComplete f := by
   constructor
   · intro h t₀ x₀
@@ -105,14 +105,14 @@ private theorem tendsto_shift_iff {e : ℝⁿ} {φ : ℝ → ℝⁿ} :
     obtain ⟨φ, hφ0, hφ⟩ := h t₀ (z₀ + e)
     exact ⟨fun t => φ t - e, by simp [hφ0], isIntegralCurveOn_shift_iff.mpr hφ⟩
 
-@[powerlib_foundation] theorem decay_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} {a : ℝ} :
+@[tmio T, powerlib_foundation] theorem decay_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} {a : ℝ} :
     Decay (fun z => f (z + e)) 0 a ↔ Decay f e a := by
   unfold Decay
   refine exists_congr fun C => forall₂_congr fun t₀ t₁ =>
     (forall_curve_shift (e := e)).trans (forall_congr' fun φ => ?_)
   simp only [IsTrajectoryOn, isIntegralCurveOn_shift_iff, sub_zero]
 
-@[powerlib_foundation] theorem sampledContraction_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
+@[tmio T, powerlib_foundation] theorem sampledContraction_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
     SampledContraction (fun z => f (z + e)) 0 ↔ SampledContraction f e := by
   unfold SampledContraction
   refine exists_congr fun k => and_congr_right fun _ => exists_congr fun c =>
@@ -120,7 +120,7 @@ private theorem tendsto_shift_iff {e : ℝⁿ} {φ : ℝ → ℝⁿ} :
     (forall_curve_shift (e := e)).trans (forall_congr' fun φ => ?_)
   simp only [IsTrajectoryOn, isIntegralCurveOn_shift_iff, sub_zero]
 
-@[powerlib_foundation] theorem globallyExponentiallyStable_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
+@[tmio T, powerlib_foundation] theorem globallyExponentiallyStable_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
     GloballyExponentiallyStable (fun z => f (z + e)) 0 ↔ GloballyExponentiallyStable f e := by
   unfold GloballyExponentiallyStable
   refine and_congr isEquilibrium_shift_iff (and_congr forwardComplete_shift_iff
@@ -128,12 +128,12 @@ private theorem tendsto_shift_iff {e : ℝⁿ} {φ : ℝ → ℝⁿ} :
       forall₂_congr fun t₀ t₁ => (forall_curve_shift (e := e)).trans (forall_congr' fun φ => ?_)))
   simp only [IsTrajectoryOn, isIntegralCurveOn_shift_iff, sub_zero]
 
-@[powerlib_foundation] theorem globallyAsymptoticallyStable_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
+@[tmio T, powerlib_foundation] theorem globallyAsymptoticallyStable_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
     GloballyAsymptoticallyStable (fun z => f (z + e)) 0 ↔ GloballyAsymptoticallyStable f e :=
   and_congr isEquilibrium_shift_iff (and_congr forwardComplete_shift_iff
     globalAsymptoticStable_shift_iff)
 
-@[powerlib_foundation] theorem conservative_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
+@[tmio T, powerlib_foundation] theorem conservative_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} :
     Conservative (fun z => f (z + e)) 0 ↔ Conservative f e := by
   constructor
   · rintro ⟨V, hV, hmin, hcons⟩
@@ -162,7 +162,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- Every behavioural sentence of the Flow semantics is invariant under moving the equilibrium to
 the origin: the sentence holds for `f` at `e` exactly when it holds for `z ↦ f (z + e)` at `0`. -/
-@[powerlib_foundation] theorem Property.holds_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} (P : Property) :
+@[tmio T, powerlib_foundation] theorem Property.holds_shift_iff {f : ℝⁿ → ℝⁿ} {e : ℝⁿ} (P : Property) :
     P.holds (fun z => f (z + e)) 0 ↔ P.holds f e := by
   cases P
   case lyapunovStable => exact Dynamics.lyapunovStable_shift_iff

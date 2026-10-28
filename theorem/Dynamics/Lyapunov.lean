@@ -74,7 +74,7 @@ local notation "ℝⁿ" => State n
 a punctured ball around it and strictly decreases along a field continuous on that ball makes the
 point locally asymptotically stable. No hypothesis is made on the field outside the ball, and no
 global sublevel set needs to be compact. -/
-@[powerlib_foundation] theorem localAsymptoticStable_of_lie_neg (hn : 0 < n)
+@[tmio T, powerlib_foundation] theorem localAsymptoticStable_of_lie_neg (hn : 0 < n)
     {f : State n → State n} {x : State n}
     {V : State n → ℝ} {R : ℝ} (hR : 0 < R) (hV : ContDiff ℝ 1 V)
     (hf : ContinuousOn f (Metric.ball x R)) (hV0 : V x = 0)
@@ -157,7 +157,7 @@ global sublevel set needs to be compact. -/
 vanishes at an equilibrium of a `C¹` field and is positive with negative derivative along the
 field on a punctured neighbourhood makes the equilibrium locally asymptotically stable. No
 global compactness of sublevel sets is needed. -/
-@[powerlib_foundation] theorem localAsymptoticStable_of_eventually_lyapunov (hn : 0 < n)
+@[tmio T, powerlib_foundation] theorem localAsymptoticStable_of_eventually_lyapunov (hn : 0 < n)
     {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ} {W : ℝⁿ → ℝ} (hf : ContDiff ℝ 1 f) (_hfx : f x_eq = 0)
     (hW : ContDiff ℝ 1 W) (hW0 : W x_eq = 0) (hpos : ∀ᶠ x in 𝓝[≠] x_eq, 0 < W x)
     (hLie : ∀ᶠ x in 𝓝[≠] x_eq, fderiv ℝ W x (f x) < 0) :
@@ -179,7 +179,7 @@ variable {n : ℕ}
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- A Lyapunov stable point of a field that is `C¹` on an open neighbourhood is an equilibrium. -/
-@[powerlib_foundation] theorem isEquilibrium_of_lyapunovStable_local {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem isEquilibrium_of_lyapunovStable_local {f : ℝⁿ → ℝⁿ} {x : ℝⁿ}
     {U : Set ℝⁿ} (hU : IsOpen U) (hx : x ∈ U) (hf : ContDiffOn ℝ 1 f U)
     (h : LyapunovStable f x) : f x = 0 := by
   obtain ⟨g, hg, hgf⟩ := exists_contDiff_eventuallyEq hU hx hf
@@ -189,7 +189,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- Near a Lyapunov stable point of a `C¹` field every state has a solution on the whole forward
 ray, which stays within distance `1/2` of the point. -/
-@[powerlib_foundation] theorem exists_forward_of_lyapunovStable {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem exists_forward_of_lyapunovStable {f : ℝⁿ → ℝⁿ} {x_eq : ℝⁿ}
     (hf : ContDiff ℝ 1 f) (h : LyapunovStable f x_eq) :
     ∃ δ > 0, ∀ y : ℝⁿ, ‖y - x_eq‖ < δ → ∃ φ : ℝ → ℝⁿ, φ 0 = y ∧
       IsIntegralCurveOn φ (fun _ x => f x) (Ici 0) ∧ ∀ t, 0 ≤ t → ‖φ t - x_eq‖ < 1 / 2 := by
@@ -219,7 +219,7 @@ ray, which stays within distance `1/2` of the point. -/
 
 /-- A quadratic energy `‖T x‖²` of an injective linear map `T` that does not increase along the
 field makes the origin Lyapunov stable. -/
-@[powerlib_foundation] theorem lyapunovStable_of_inner_nonpos {E : Type*}
+@[tmio T, powerlib_foundation] theorem lyapunovStable_of_inner_nonpos {E : Type*}
     [NormedAddCommGroup E] [InnerProductSpace ℝ E] (hn : 0 < n) {f : ℝⁿ → ℝⁿ} (T : ℝⁿ →L[ℝ] E)
     (hT : Function.Injective T) (h : ∀ x, inner ℝ (T x) (T (f x)) ≤ 0) :
     LyapunovStable f 0 := by
@@ -238,7 +238,7 @@ field makes the origin Lyapunov stable. -/
 /-! ## Composite energies -/
 
 /-- `t ↦ (max t 0)²` has derivative `2 max t 0` everywhere. -/
-@[powerlib_foundation] theorem hasDerivAt_sq_max_zero (t : ℝ) :
+@[tmio T, powerlib_foundation] theorem hasDerivAt_sq_max_zero (t : ℝ) :
     HasDerivAt (fun s : ℝ => max s 0 ^ 2) (2 * max t 0) t := by
   rcases lt_trichotomy t 0 with ht | ht | ht
   · have hev : (fun s : ℝ => max s 0 ^ 2) =ᶠ[𝓝 t] fun _ => (0 : ℝ) := by
@@ -269,7 +269,7 @@ field makes the origin Lyapunov stable. -/
     exact h.congr_of_eventuallyEq hev
 
 /-- `t ↦ (max t 0)²` is `C¹`. -/
-@[powerlib_foundation] theorem contDiff_one_sq_max_zero :
+@[tmio T, powerlib_foundation] theorem contDiff_one_sq_max_zero :
     ContDiff ℝ 1 (fun s : ℝ => max s 0 ^ 2) := by
   rw [contDiff_one_iff_deriv]
   have hd : deriv (fun s : ℝ => max s 0 ^ 2) = fun t => 2 * max t 0 :=
@@ -279,7 +279,7 @@ field makes the origin Lyapunov stable. -/
   fun_prop
 
 /-- The derivative of `(V − c)² + E` in the direction `v`. -/
-@[powerlib_foundation] theorem fderiv_sq_sub_add_apply {V E : ℝⁿ → ℝ} {x : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem fderiv_sq_sub_add_apply {V E : ℝⁿ → ℝ} {x : ℝⁿ}
     (hV : DifferentiableAt ℝ V x) (hE : DifferentiableAt ℝ E x) (c : ℝ) (v : ℝⁿ) :
     fderiv ℝ (fun y => (V y - c) ^ 2 + E y) x v =
       2 * (V x - c) * fderiv ℝ V x v + fderiv ℝ E x v := by
@@ -289,7 +289,7 @@ field makes the origin Lyapunov stable. -/
   ring
 
 /-- The derivative of `(max g 0)² + E` in the direction `v`. -/
-@[powerlib_foundation] theorem fderiv_sq_max_add_apply {g E : ℝⁿ → ℝ} {x : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem fderiv_sq_max_add_apply {g E : ℝⁿ → ℝ} {x : ℝⁿ}
     (hg : DifferentiableAt ℝ g x) (hE : DifferentiableAt ℝ E x) (v : ℝⁿ) :
     fderiv ℝ (fun y => max (g y) 0 ^ 2 + E y) x v =
       2 * max (g x) 0 * fderiv ℝ g x v + fderiv ℝ E x v := by

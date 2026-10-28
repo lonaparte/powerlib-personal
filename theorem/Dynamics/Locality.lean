@@ -69,13 +69,13 @@ local notation "ℝⁿ" => State n
   exact hψ t ht
 
 /-- A solution segment of `f` along which `f` and `g` coincide is a solution segment of `g`. -/
-@[powerlib_foundation] theorem isTrajectoryOn_of_eqOn {f g : Dynamics.State n → Dynamics.State n}
+@[tmio T, powerlib_foundation] theorem isTrajectoryOn_of_eqOn {f g : Dynamics.State n → Dynamics.State n}
     {φ : ℝ → Dynamics.State n} {a b : ℝ} (hφ : IsTrajectoryOn φ f a b)
     (h : ∀ t ∈ Icc a b, f (φ t) = g (φ t)) : IsTrajectoryOn φ g a b :=
   isIntegralCurveOn_of_eq_on_curve hφ h
 
 /-- Agreement on the ball `‖y − x‖ < ρ` is agreement near `x`. -/
-@[powerlib_foundation] theorem eventuallyEq_of_eqOn_ball {E F : Type*} [SeminormedAddCommGroup E]
+@[tmio T, powerlib_foundation] theorem eventuallyEq_of_eqOn_ball {E F : Type*} [SeminormedAddCommGroup E]
     {f g : E → F} {x : E} {ρ : ℝ} (hρ : 0 < ρ) (hfg : ∀ y, ‖y - x‖ < ρ → f y = g y) :
     f =ᶠ[𝓝 x] g :=
   Filter.eventually_of_mem (Metric.ball_mem_nhds x hρ) fun y hy =>
@@ -94,7 +94,7 @@ variable {n : ℕ}
 local notation "Sₙ" => Dynamics.State n
 
 /-- Local exponential stability depends only on the field near the equilibrium. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_congr_nhds {f g : Sₙ → Sₙ}
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_congr_nhds {f g : Sₙ → Sₙ}
     {x : Sₙ} (hfg : f =ᶠ[𝓝 x] g) (hg : LocallyExponentiallyStable g x) :
     LocallyExponentiallyStable f x := by
   obtain ⟨ρ, hρ, hball⟩ := Metric.eventually_nhds_iff.mp hfg
@@ -134,7 +134,7 @@ local notation "Sₙ" => Dynamics.State n
   exact hb t₀ t₁ φ hg' h0r t ht
 
 /-- Lyapunov stability depends only on the field near the equilibrium. -/
-@[powerlib_foundation] theorem lyapunovStable_congr_nhds {f g : Sₙ → Sₙ}
+@[tmio T, powerlib_foundation] theorem lyapunovStable_congr_nhds {f g : Sₙ → Sₙ}
     {x : Sₙ} (hfg : f =ᶠ[𝓝 x] g) (hg : LyapunovStable g x) : LyapunovStable f x := by
   obtain ⟨ρ, hρ, hball⟩ := Metric.eventually_nhds_iff.mp hfg
   have hfg' : ∀ y, ‖y - x‖ < ρ → f y = g y := fun y hy => hball (by simpa [dist_eq_norm] using hy)
@@ -160,14 +160,14 @@ local notation "Sₙ" => Dynamics.State n
   exact (hstay t ht).trans_le (min_le_left _ _)
 
 /-- Instability depends only on the field near the equilibrium. -/
-@[powerlib_foundation] theorem unstable_congr_nhds {f g : Sₙ → Sₙ} {x : Sₙ}
+@[tmio T, powerlib_foundation] theorem unstable_congr_nhds {f g : Sₙ → Sₙ} {x : Sₙ}
     (hfg : f =ᶠ[𝓝 x] g) : Unstable f x ↔ Unstable g x :=
   ⟨fun hf hg => hf (lyapunovStable_congr_nhds hfg hg),
     fun hg hf => hg (lyapunovStable_congr_nhds hfg.symm hf)⟩
 
 /-- A field that is `C¹` on an open neighbourhood of `x` agrees near `x` with a global `C¹`
 field. -/
-@[powerlib_foundation] theorem exists_contDiff_eventuallyEq {f : Sₙ → Sₙ}
+@[tmio T, powerlib_foundation] theorem exists_contDiff_eventuallyEq {f : Sₙ → Sₙ}
     {U : Set (Sₙ)} (hU : IsOpen U) {x : Sₙ} (hx : x ∈ U)
     (hf : ContDiffOn ℝ 1 f U) :
     ∃ g : Sₙ → Sₙ, ContDiff ℝ 1 g ∧ g =ᶠ[𝓝 x] f := by
@@ -193,7 +193,7 @@ field. -/
     rw [b.one_of_mem_closedBall (Metric.ball_subset_closedBall hy), one_smul]
 
 /-- Lyapunov indirect method for a field that is `C¹` only on an open neighbourhood. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_of_isHurwitz_jacobian_local
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_isHurwitz_jacobian_local
     {f : Sₙ → Sₙ} {x_eq : Sₙ} {U : Set (Sₙ)} (hU : IsOpen U)
     (hx : x_eq ∈ U) (A : Matrix (Fin n) (Fin n) ℝ) (hf : ContDiffOn ℝ 1 f U)
     (heq : f x_eq = 0)
@@ -205,7 +205,7 @@ field. -/
     (by rw [hgf.eq_of_nhds, heq]) (by rw [hgf.fderiv_eq, hJac]) hA
 
 /-- Instability from a Jacobian eigenvalue with positive real part, local `C¹` version. -/
-@[powerlib_foundation] theorem unstable_of_jacobian_eigenvalue_re_pos_local
+@[tmio T, powerlib_foundation] theorem unstable_of_jacobian_eigenvalue_re_pos_local
     {f : Sₙ → Sₙ} {x_eq : Sₙ} {U : Set (Sₙ)} (hU : IsOpen U)
     (hx : x_eq ∈ U) (A : Matrix (Fin n) (Fin n) ℝ) (hf : ContDiffOn ℝ 1 f U)
     (heq : f x_eq = 0)
@@ -229,7 +229,7 @@ variable {n : ℕ}
 local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- Local asymptotic stability depends only on the field near the point. -/
-@[powerlib_foundation] theorem localAsymptoticStable_congr_nhds {f g : ℝⁿ → ℝⁿ} {x : ℝⁿ}
+@[tmio T, powerlib_foundation] theorem localAsymptoticStable_congr_nhds {f g : ℝⁿ → ℝⁿ} {x : ℝⁿ}
     (hfg : f =ᶠ[𝓝 x] g) (hg : LocalAsymptoticStable g x) : LocalAsymptoticStable f x := by
   obtain ⟨hgLS, c, hc, hconv⟩ := hg
   have hfLS : LyapunovStable f x := lyapunovStable_congr_nhds hfg hgLS
@@ -243,7 +243,7 @@ local notation "ℝⁿ" => EuclideanSpace ℝ (Fin n)
 
 /-- A field that is `C¹` on an open neighbourhood `U` of `x` agrees near `x` with a globally `C¹`
 field, on a ball contained in `U`. -/
-@[powerlib_foundation] theorem exists_contDiff_ball {f : ℝⁿ → ℝⁿ} {U : Set ℝⁿ} (hU : IsOpen U)
+@[tmio T, powerlib_foundation] theorem exists_contDiff_ball {f : ℝⁿ → ℝⁿ} {U : Set ℝⁿ} (hU : IsOpen U)
     {x : ℝⁿ} (hx : x ∈ U) (hf : ContDiffOn ℝ 1 f U) :
     ∃ g : ℝⁿ → ℝⁿ, ContDiff ℝ 1 g ∧ g =ᶠ[𝓝 x] f ∧
       ∃ σ > 0, ∀ y, ‖y - x‖ < σ → g y = f y ∧ y ∈ U := by
@@ -264,7 +264,7 @@ variable {n : ℕ}
 local notation "ℝⁿ" => State n
 
 /-- A `C¹` field agrees on `‖x‖ ≤ R` with a `C¹`, globally Lipschitz field. -/
-@[powerlib_foundation] theorem exists_contDiff_lipschitz_extension {f : ℝⁿ → ℝⁿ}
+@[tmio T, powerlib_foundation] theorem exists_contDiff_lipschitz_extension {f : ℝⁿ → ℝⁿ}
     (hf : ContDiff ℝ 1 f) (R : ℝ) :
     ∃ g : ℝⁿ → ℝⁿ, ContDiff ℝ 1 g ∧ (∃ K, LipschitzWith K g) ∧
       ∀ x, ‖x‖ ≤ R → g x = f x := by
@@ -293,7 +293,7 @@ variable {n : ℕ}
 
 /-- First-exit argument for a continuous function of a curve: if `Φ ∘ φ` starts below `c` and is
 below `c` at every `s` up to which it has stayed at most `c`, it stays below `c`. -/
-@[powerlib_foundation] theorem forall_lt_of_first_exit {E : Type*} [TopologicalSpace E]
+@[tmio T, powerlib_foundation] theorem forall_lt_of_first_exit {E : Type*} [TopologicalSpace E]
     {φ : ℝ → E} {Φ : E → ℝ} {t₀ t₁ c : ℝ} (hΦ : Continuous Φ) (hφ : ContinuousOn φ (Icc t₀ t₁))
     (h0 : Φ (φ t₀) < c)
     (hstep : ∀ s ∈ Icc t₀ t₁, (∀ u ∈ Icc t₀ s, Φ (φ u) ≤ c) → Φ (φ s) < c) :
@@ -333,7 +333,7 @@ below `c` at every `s` up to which it has stayed at most `c`, it stays below `c`
 /-- First-exit (bootstrap) argument: a continuous curve that starts inside the open ball of
 radius `R`, and that stays in the half-radius ball as long as it has stayed in the full ball,
 never leaves the full ball. -/
-@[powerlib_foundation] theorem forall_norm_sub_lt_of_bootstrap {E : Type*}
+@[tmio T, powerlib_foundation] theorem forall_norm_sub_lt_of_bootstrap {E : Type*}
     [NormedAddCommGroup E] {φ : ℝ → E} {x : E} {t₀ t₁ R : ℝ}
     (hc : ContinuousOn φ (Icc t₀ t₁)) (h0 : ‖φ t₀ - x‖ < R)
     (hboot : ∀ s ∈ Icc t₀ t₁, (∀ u ∈ Icc t₀ s, ‖φ u - x‖ < R) → ‖φ s - x‖ ≤ R / 2) :
@@ -373,21 +373,21 @@ never leaves the full ball. -/
   linarith
 
 /-- Local exponential stability depends only on the field on a ball around the equilibrium. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_of_eqOn_ball
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_eqOn_ball
     {f g : Dynamics.State n → Dynamics.State n} {x : Dynamics.State n} {ρ : ℝ} (hρ : 0 < ρ)
     (hfg : ∀ y, ‖y - x‖ < ρ → f y = g y) (hg : LocallyExponentiallyStable g x) :
     LocallyExponentiallyStable f x :=
   locallyExponentiallyStable_congr_nhds (eventuallyEq_of_eqOn_ball hρ hfg) hg
 
 /-- Lyapunov stability depends only on the field on a ball around the equilibrium. -/
-@[powerlib_foundation] theorem lyapunovStable_of_eqOn_ball
+@[tmio T, powerlib_foundation] theorem lyapunovStable_of_eqOn_ball
     {f g : Dynamics.State n → Dynamics.State n} {x : Dynamics.State n} {ρ : ℝ} (hρ : 0 < ρ)
     (hfg : ∀ y, ‖y - x‖ < ρ → f y = g y) (hg : LyapunovStable g x) :
     LyapunovStable f x :=
   lyapunovStable_congr_nhds (eventuallyEq_of_eqOn_ball hρ hfg) hg
 
 /-- Instability depends only on the field on a ball around the equilibrium. -/
-@[powerlib_foundation] theorem unstable_of_eqOn_ball
+@[tmio T, powerlib_foundation] theorem unstable_of_eqOn_ball
     {f g : Dynamics.State n → Dynamics.State n} {x : Dynamics.State n} {ρ : ℝ} (hρ : 0 < ρ)
     (hfg : ∀ y, ‖y - x‖ < ρ → f y = g y) (hg : Unstable g x) :
     Unstable f x :=
@@ -395,7 +395,7 @@ never leaves the full ball. -/
 
 /-- Linearization through a local `C¹` extension: if `f` agrees near `x_eq` with a globally
 `C¹` field `g` whose Jacobian at `x_eq` is Hurwitz, then `f` is locally exponentially stable. -/
-@[powerlib_foundation] theorem locallyExponentiallyStable_of_isHurwitz_jacobian_of_eqOn_ball
+@[tmio T, powerlib_foundation] theorem locallyExponentiallyStable_of_isHurwitz_jacobian_of_eqOn_ball
     {f g : Dynamics.State n → Dynamics.State n} {x_eq : Dynamics.State n} {ρ : ℝ}
     (A : Matrix (Fin n) (Fin n) ℝ) (hρ : 0 < ρ) (hfg : ∀ y, ‖y - x_eq‖ < ρ → f y = g y)
     (hg : ContDiff ℝ 1 g) (heq : g x_eq = 0)
@@ -405,7 +405,7 @@ never leaves the full ball. -/
     (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian A hg heq hJac hA)
 
 /-- Instability through a local `C¹` extension (eigenvalue with positive real part). -/
-@[powerlib_foundation] theorem unstable_of_jacobian_eigenvalue_re_pos_of_eqOn_ball
+@[tmio T, powerlib_foundation] theorem unstable_of_jacobian_eigenvalue_re_pos_of_eqOn_ball
     {f g : Dynamics.State n → Dynamics.State n} {x_eq : Dynamics.State n} {ρ : ℝ}
     (A : Matrix (Fin n) (Fin n) ℝ) (hρ : 0 < ρ) (hfg : ∀ y, ‖y - x_eq‖ < ρ → f y = g y)
     (hg : ContDiff ℝ 1 g) (heq : g x_eq = 0)
@@ -418,7 +418,7 @@ never leaves the full ball. -/
 
 /-- Bootstrap: an exponential estimate for `G` transfers to every curve that solves
 `ẋ = G x` while it stays in the ball of radius `R`. -/
-@[powerlib_foundation] theorem exp_bound_of_local {G : State n → State n} {x₀ : State n}
+@[tmio T, powerlib_foundation] theorem exp_bound_of_local {G : State n → State n} {x₀ : State n}
     {r C a R : ℝ} (hC : 1 ≤ C) (ha : 0 < a)
     (hG : ∀ (t₀ t₁ : ℝ) (φ : ℝ → State n), IsTrajectoryOn φ G t₀ t₁ →
       ‖φ t₀ - x₀‖ < r → ∀ t ∈ Icc t₀ t₁,
@@ -487,7 +487,7 @@ never leaves the full ball. -/
   exact hG t₀ t₁ φ (hsub t₁ le_rfl hstay) h0r
 
 /-- Local asymptotic stability only depends on the field on a ball around the point. -/
-@[powerlib_foundation] theorem localAsymptoticStable_of_eqOn_ball {f g : State n → State n}
+@[tmio T, powerlib_foundation] theorem localAsymptoticStable_of_eqOn_ball {f g : State n → State n}
     {x : State n} {R : ℝ} (hR : 0 < R) (hfg : ∀ y, ‖y - x‖ < R → f y = g y)
     (hg : LocalAsymptoticStable g x) : LocalAsymptoticStable f x :=
   localAsymptoticStable_congr_nhds (eventuallyEq_of_eqOn_ball hR hfg) hg
@@ -506,7 +506,7 @@ def invDen (V : ℝ) : ℝ := 1 / 4 + (V - 1 / 4) * Real.smoothTransition (4 * V
 /-- A globally smooth function equal to `V⁻¹` for `V ≥ 1/2`. -/
 def invExt (V : ℝ) : ℝ := (invDen V)⁻¹
 
-@[powerlib_foundation] theorem invDen_ge (V : ℝ) : 1 / 4 ≤ invDen V := by
+@[tmio T, powerlib_foundation] theorem invDen_ge (V : ℝ) : 1 / 4 ≤ invDen V := by
   unfold invDen
   rcases le_or_gt V (1 / 4) with h | h
   · rw [Real.smoothTransition.zero_of_nonpos (by linarith)]
@@ -516,24 +516,24 @@ def invExt (V : ℝ) : ℝ := (invDen V)⁻¹
       mul_nonneg (by linarith) this
     linarith
 
-@[powerlib_foundation] theorem invDen_pos (V : ℝ) : 0 < invDen V :=
+@[tmio T, powerlib_foundation] theorem invDen_pos (V : ℝ) : 0 < invDen V :=
   lt_of_lt_of_le (by norm_num) (invDen_ge V)
 
-@[powerlib_foundation] theorem invDen_eq {V : ℝ} (h : 1 / 2 ≤ V) : invDen V = V := by
+@[tmio T, powerlib_foundation] theorem invDen_eq {V : ℝ} (h : 1 / 2 ≤ V) : invDen V = V := by
   unfold invDen
   rw [Real.smoothTransition.one_of_one_le (by linarith)]
   ring
 
-@[powerlib_foundation] theorem invExt_eq {V : ℝ} (h : 1 / 2 ≤ V) : invExt V = V⁻¹ := by
+@[tmio T, powerlib_foundation] theorem invExt_eq {V : ℝ} (h : 1 / 2 ≤ V) : invExt V = V⁻¹ := by
   rw [invExt, invDen_eq h]
 
-@[powerlib_foundation] theorem contDiff_invDen {k : ℕ∞} : ContDiff ℝ k invDen := by
+@[tmio T, powerlib_foundation] theorem contDiff_invDen {k : ℕ∞} : ContDiff ℝ k invDen := by
   unfold invDen
   have hs : ContDiff ℝ k (fun V : ℝ => Real.smoothTransition (4 * V - 1)) :=
     Real.smoothTransition.contDiff.comp (by fun_prop)
   fun_prop
 
-@[powerlib_foundation] theorem contDiff_invExt {k : ℕ∞} : ContDiff ℝ k invExt := by
+@[tmio T, powerlib_foundation] theorem contDiff_invExt {k : ℕ∞} : ContDiff ℝ k invExt := by
   unfold invExt
   exact contDiff_invDen.inv fun V => (invDen_pos V).ne'
 
@@ -542,14 +542,14 @@ def regDen (V v : ℝ) : ℝ :=
   Real.smoothTransition (4 * v / V - 2) * v +
     (1 - Real.smoothTransition (4 * v / V - 2)) * (V / 2)
 
-@[powerlib_foundation] theorem regDen_eq {V v : ℝ} (hV : 0 < V) (hv : 3 * V / 4 ≤ v) :
+@[tmio T, powerlib_foundation] theorem regDen_eq {V v : ℝ} (hV : 0 < V) (hv : 3 * V / 4 ≤ v) :
     regDen V v = v := by
   have h : 1 ≤ 4 * v / V - 2 := by
     rw [le_sub_iff_add_le, le_div_iff₀ hV]
     linarith
   simp [regDen, Real.smoothTransition.one_of_one_le h]
 
-@[powerlib_foundation] theorem half_le_regDen {V : ℝ} (hV : 0 < V) (v : ℝ) :
+@[tmio T, powerlib_foundation] theorem half_le_regDen {V : ℝ} (hV : 0 < V) (v : ℝ) :
     V / 2 ≤ regDen V v := by
   unfold regDen
   have hs0 := Real.smoothTransition.nonneg (4 * v / V - 2)
@@ -562,7 +562,7 @@ def regDen (V v : ℝ) : ℝ :=
     rw [Real.smoothTransition.zero_of_nonpos h]
     simp
 
-@[powerlib_foundation] theorem contDiff_regDen (V : ℝ) : ContDiff ℝ 1 (regDen V) := by
+@[tmio T, powerlib_foundation] theorem contDiff_regDen (V : ℝ) : ContDiff ℝ 1 (regDen V) := by
   have h : ContDiff ℝ 1 (fun v : ℝ => Real.smoothTransition (4 * v / V - 2)) :=
     (Real.smoothTransition.contDiff (n := 1)).comp (by fun_prop)
   unfold regDen

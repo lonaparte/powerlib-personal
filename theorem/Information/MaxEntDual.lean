@@ -58,7 +58,7 @@ variable {m : Measure α} [NeZero m] {f : ι → α → ℝ} {lam u F : ι → �
 
 omit [NeZero m] in
 /-- Moment generating function of the direction statistic under the Gibbs measure. -/
-@[powerlib_foundation] theorem mgf_dirFun_gibbs (s : ℝ) :
+@[tmio T, powerlib_foundation] theorem mgf_dirFun_gibbs (s : ℝ) :
     mgf (dirFun f u) (gibbs m f lam) (-s) =
       (∫ x, exp (-∑ i, (lam + s • u) i * f i x) ∂m) / ∫ x, exp (-∑ i, lam i * f i x) ∂m := by
   rw [mgf, gibbs, integral_tilted]
@@ -67,7 +67,7 @@ omit [NeZero m] in
 
 /-- Along the line `λ + s u`, the dual is a constant plus the one-constraint dual of `g_u` under
 `p_λ` (wherever `Z(λ + s u) < ∞`). -/
-@[powerlib_foundation] theorem dualVec_line
+@[tmio T, powerlib_foundation] theorem dualVec_line
     (hZ : Integrable (fun x => exp (-∑ i, lam i * f i x)) m) {s : ℝ}
     (hs : Integrable (fun x => exp (-∑ i, (lam + s • u) i * f i x)) m) :
     dualVec m f F (lam + s • u) =
@@ -82,7 +82,7 @@ omit [NeZero m] in
 
 omit [NeZero m] in
 /-- `0` is an interior point of the exponential-integrability set of `g_u` under `p_λ`. -/
-@[powerlib_foundation] theorem zero_mem_interior_dirFun
+@[tmio T, powerlib_foundation] theorem zero_mem_interior_dirFun
     (hZ : Integrable (fun x => exp (-∑ i, lam i * f i x)) m)
     (hU : ∀ᶠ s in 𝓝 (0 : ℝ), Integrable (fun x => exp (-∑ i, (lam + s • u) i * f i x)) m) :
     (0 : ℝ) ∈ interior (integrableExpSet (dirFun f u) (gibbs m f lam)) := by
@@ -96,14 +96,14 @@ omit [NeZero m] in
   simp only [smul_eq_mul]
   rw [← exp_add, ← tilt_line f lam u (-t) x, neg_neg]
 
-@[powerlib_foundation] theorem gibbs_tilted_zero
+@[tmio T, powerlib_foundation] theorem gibbs_tilted_zero
     (hZ : Integrable (fun x => exp (-∑ i, lam i * f i x)) m) :
     (gibbs m f lam).tilted (fun x => (-0 : ℝ) * dirFun f u x) = gibbs m f lam := by
   have : IsProbabilityMeasure (gibbs m f lam) := isProbabilityMeasure_tilted hZ
   simp only [neg_zero, zero_mul]
   exact tilted_const _ 0
 
-@[powerlib_foundation] theorem dualVec_line_eventuallyEq
+@[tmio T, powerlib_foundation] theorem dualVec_line_eventuallyEq
     (hZ : Integrable (fun x => exp (-∑ i, lam i * f i x)) m)
     (hU : ∀ᶠ s in 𝓝 (0 : ℝ), Integrable (fun x => exp (-∑ i, (lam + s • u) i * f i x)) m) :
     (fun s : ℝ => dualVec m f F (lam + s • u)) =ᶠ[𝓝 0]
@@ -111,7 +111,7 @@ omit [NeZero m] in
   filter_upwards [hU] with s hs using dualVec_line hZ hs
 
 /-- **Directional derivative of the dual**: `⟨∇D(λ), u⟩ = u · F − E_{p_λ}[∑ u_k f_k]`. -/
-@[powerlib_foundation] theorem deriv_dualVec_line
+@[tmio T, powerlib_foundation] theorem deriv_dualVec_line
     (hZ : Integrable (fun x => exp (-∑ i, lam i * f i x)) m)
     (hU : ∀ᶠ s in 𝓝 (0 : ℝ), Integrable (fun x => exp (-∑ i, (lam + s • u) i * f i x)) m) :
     deriv (fun s : ℝ => dualVec m f F (lam + s • u)) 0 =
@@ -120,7 +120,7 @@ omit [NeZero m] in
     deriv_dual (by rw [neg_zero]; exact zero_mem_interior_dirFun hZ hU), gibbs_tilted_zero hZ]
 
 /-- **Gradient formula** `∂_k D(λ) = F_k − E_{p_λ}[f_k]`, in directional form. -/
-@[powerlib_foundation] theorem deriv_dualVec_line_eq_sum
+@[tmio T, powerlib_foundation] theorem deriv_dualVec_line_eq_sum
     (hZ : Integrable (fun x => exp (-∑ i, lam i * f i x)) m)
     (hU : ∀ᶠ s in 𝓝 (0 : ℝ), Integrable (fun x => exp (-∑ i, (lam + s • u) i * f i x)) m)
     (hf : ∀ i, Integrable (f i) (gibbs m f lam)) :
@@ -132,7 +132,7 @@ omit [NeZero m] in
   simp only [integral_const_mul, mul_sub, Finset.sum_sub_distrib]
 
 /-- **Second directional derivative of the dual**: `uᵀ ∇²D(λ) u = Var_{p_λ}[∑ u_k f_k]`. -/
-@[powerlib_foundation] theorem iteratedDeriv_two_dualVec_line
+@[tmio T, powerlib_foundation] theorem iteratedDeriv_two_dualVec_line
     (hZ : Integrable (fun x => exp (-∑ i, lam i * f i x)) m)
     (hU : ∀ᶠ s in 𝓝 (0 : ℝ), Integrable (fun x => exp (-∑ i, (lam + s • u) i * f i x)) m) :
     iteratedDeriv 2 (fun s : ℝ => dualVec m f F (lam + s • u)) 0 =
@@ -143,7 +143,7 @@ omit [NeZero m] in
     gibbs_tilted_zero hZ]
 
 /-- **Convexity of the dual** along every direction. -/
-@[powerlib_foundation] theorem iteratedDeriv_two_dualVec_line_nonneg
+@[tmio T, powerlib_foundation] theorem iteratedDeriv_two_dualVec_line_nonneg
     (hZ : Integrable (fun x => exp (-∑ i, lam i * f i x)) m)
     (hU : ∀ᶠ s in 𝓝 (0 : ℝ), Integrable (fun x => exp (-∑ i, (lam + s • u) i * f i x)) m) :
     0 ≤ iteratedDeriv 2 (fun s : ℝ => dualVec m f F (lam + s • u)) 0 := by
@@ -151,7 +151,7 @@ omit [NeZero m] in
   exact variance_nonneg _ _
 
 /-- **Hessian = covariance matrix**: `uᵀ ∇²D(λ) u = ∑_{k,l} u_k u_l Cov_{p_λ}(f_k, f_l)`. -/
-@[powerlib_foundation] theorem iteratedDeriv_two_dualVec_line_eq_sum
+@[tmio T, powerlib_foundation] theorem iteratedDeriv_two_dualVec_line_eq_sum
     (hZ : Integrable (fun x => exp (-∑ i, lam i * f i x)) m)
     (hU : ∀ᶠ s in 𝓝 (0 : ℝ), Integrable (fun x => exp (-∑ i, (lam + s • u) i * f i x)) m)
     (hf : ∀ i, MemLp (f i) 2 (gibbs m f lam)) :

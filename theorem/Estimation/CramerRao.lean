@@ -61,7 +61,7 @@ variable {v : ℝ≥0}
 /-- Likelihood ratio `p_{θ+h}(y)/p_θ(y) = exp((h(y − θ) − h²/2)/v)`. -/
 def lr (θ h : ℝ) (v : ℝ≥0) (y : ℝ) : ℝ := exp ((h * (y - θ) - h ^ 2 / 2) / v)
 
-@[powerlib_foundation] theorem pdf_mul_lr (hv : v ≠ 0) (θ h y : ℝ) :
+@[tmio T, powerlib_foundation] theorem pdf_mul_lr (hv : v ≠ 0) (θ h y : ℝ) :
     gaussianPDFReal θ v y * lr θ h v y = gaussianPDFReal (θ + h) v y := by
   have hv' : (v : ℝ) ≠ 0 := by exact_mod_cast hv
   unfold gaussianPDFReal lr
@@ -70,7 +70,7 @@ def lr (θ h : ℝ) (v : ℝ≥0) (y : ℝ) : ℝ := exp ((h * (y - θ) - h ^ 2 
   field_simp
   ring
 
-@[powerlib_foundation] theorem pdf_mul_lr_sq (hv : v ≠ 0) (θ h y : ℝ) :
+@[tmio T, powerlib_foundation] theorem pdf_mul_lr_sq (hv : v ≠ 0) (θ h y : ℝ) :
     gaussianPDFReal θ v y * lr θ h v y ^ 2 = exp (h ^ 2 / v) * gaussianPDFReal (θ + 2 * h) v y := by
   have hv' : (v : ℝ) ≠ 0 := by exact_mod_cast hv
   unfold gaussianPDFReal lr
@@ -80,41 +80,41 @@ def lr (θ h : ℝ) (v : ℝ≥0) (y : ℝ) : ℝ := exp ((h * (y - θ) - h ^ 2 
   field_simp
   ring
 
-@[powerlib_foundation] theorem measurable_lr (θ h : ℝ) (v : ℝ≥0) : Measurable (lr θ h v) := by
+@[tmio T, powerlib_foundation] theorem measurable_lr (θ h : ℝ) (v : ℝ≥0) : Measurable (lr θ h v) := by
   unfold lr; fun_prop
 
-@[powerlib_foundation] theorem integral_lr (hv : v ≠ 0) (θ h : ℝ) :
+@[tmio T, powerlib_foundation] theorem integral_lr (hv : v ≠ 0) (θ h : ℝ) :
     ∫ y, lr θ h v y ∂(gaussianReal θ v) = 1 := by
   rw [integral_gaussianReal_eq_integral_smul hv]
   simp_rw [smul_eq_mul, pdf_mul_lr hv]
   exact integral_gaussianPDFReal_eq_one _ hv
 
-@[powerlib_foundation] theorem integral_lr_sq (hv : v ≠ 0) (θ h : ℝ) :
+@[tmio T, powerlib_foundation] theorem integral_lr_sq (hv : v ≠ 0) (θ h : ℝ) :
     ∫ y, lr θ h v y ^ 2 ∂(gaussianReal θ v) = exp (h ^ 2 / v) := by
   rw [integral_gaussianReal_eq_integral_smul hv]
   simp_rw [smul_eq_mul, pdf_mul_lr_sq hv]
   rw [integral_const_mul, integral_gaussianPDFReal_eq_one _ hv, mul_one]
 
-@[powerlib_foundation] theorem integrable_lr (hv : v ≠ 0) (θ h : ℝ) :
+@[tmio T, powerlib_foundation] theorem integrable_lr (hv : v ≠ 0) (θ h : ℝ) :
     Integrable (lr θ h v) (gaussianReal θ v) := by
   rw [integrable_gaussianReal_iff hv]
   simp_rw [pdf_mul_lr hv]
   exact integrable_gaussianPDFReal _ _
 
-@[powerlib_foundation] theorem integrable_lr_sq (hv : v ≠ 0) (θ h : ℝ) :
+@[tmio T, powerlib_foundation] theorem integrable_lr_sq (hv : v ≠ 0) (θ h : ℝ) :
     Integrable (fun y => lr θ h v y ^ 2) (gaussianReal θ v) := by
   rw [integrable_gaussianReal_iff hv]
   simp_rw [pdf_mul_lr_sq hv]
   exact (integrable_gaussianPDFReal _ _).const_mul _
 
 /-- Change of measure: `E_θ[T · p_{θ+h}/p_θ] = E_{θ+h}[T]`. -/
-@[powerlib_foundation] theorem integral_mul_lr (hv : v ≠ 0) (θ h : ℝ) (T : ℝ → ℝ) :
+@[tmio T, powerlib_foundation] theorem integral_mul_lr (hv : v ≠ 0) (θ h : ℝ) (T : ℝ → ℝ) :
     ∫ y, T y * lr θ h v y ∂(gaussianReal θ v) = ∫ y, T y ∂(gaussianReal (θ + h) v) := by
   rw [integral_gaussianReal_eq_integral_smul hv, integral_gaussianReal_eq_integral_smul hv]
   congr 1; funext y
   rw [smul_eq_mul, smul_eq_mul, ← pdf_mul_lr hv]; ring
 
-@[powerlib_foundation] theorem integrable_mul_lr (hv : v ≠ 0) (θ h : ℝ) {T : ℝ → ℝ}
+@[tmio T, powerlib_foundation] theorem integrable_mul_lr (hv : v ≠ 0) (θ h : ℝ) {T : ℝ → ℝ}
     (hT : Integrable T (gaussianReal (θ + h) v)) :
     Integrable (fun y => T y * lr θ h v y) (gaussianReal θ v) := by
   rw [integrable_gaussianReal_iff hv]
@@ -124,7 +124,7 @@ def lr (θ h : ℝ) (v : ℝ≥0) (y : ℝ) : ℝ := exp ((h * (y - θ) - h ^ 2 
   rw [← pdf_mul_lr hv]; ring
 
 /-- Hammersley–Chapman–Robbins step: `h² ≤ E_θ[(T − θ)²] (e^{h²/v} − 1)`. -/
-@[powerlib_foundation] theorem hcr_step (hv : v ≠ 0) {T : ℝ → ℝ} {θ : ℝ}
+@[tmio T, powerlib_foundation] theorem hcr_step (hv : v ≠ 0) {T : ℝ → ℝ} {θ : ℝ}
     (hT2 : MemLp T 2 (gaussianReal θ v))
     (hunb : ∀ θ', Integrable T (gaussianReal θ' v) ∧ ∫ y, T y ∂(gaussianReal θ' v) = θ')
     (h : ℝ) (hh : h ≠ 0) :
@@ -192,7 +192,7 @@ def lr (θ h : ℝ) (v : ℝ≥0) (y : ℝ) : ℝ := exp ((h * (y - θ) - h ^ 2 
 
 /-- **Cramér–Rao bound, scalar Gaussian location family**: an estimator that is unbiased for every
 `θ` and square integrable at `θ` has `E_θ[(T − θ)²] ≥ v`. -/
-@[powerlib_foundation] theorem gaussian_location_crb (hv : v ≠ 0) {T : ℝ → ℝ} {θ : ℝ}
+@[tmio T, powerlib_foundation] theorem gaussian_location_crb (hv : v ≠ 0) {T : ℝ → ℝ} {θ : ℝ}
     (hT2 : MemLp T 2 (gaussianReal θ v))
     (hunb : ∀ θ', Integrable T (gaussianReal θ' v) ∧ ∫ y, T y ∂(gaussianReal θ' v) = θ') :
     (v : ℝ) ≤ ∫ y, (T y - θ) ^ 2 ∂(gaussianReal θ v) := by
@@ -230,7 +230,7 @@ def lr (θ h : ℝ) (v : ℝ≥0) (y : ℝ) : ℝ := exp ((h * (y - θ) - h ^ 2 
   linarith
 
 /-- Score of the location family, `∂_θ log p_θ(y) = (y − θ)/v`. -/
-@[powerlib_foundation] theorem gaussian_location_score (hv : v ≠ 0) (θ y : ℝ) :
+@[tmio T, powerlib_foundation] theorem gaussian_location_score (hv : v ≠ 0) (θ y : ℝ) :
     HasDerivAt (fun θ => log (gaussianPDFReal θ v y)) ((y - θ) / v) θ := by
   have hv' : (v : ℝ) ≠ 0 := by exact_mod_cast hv
   have e : (fun θ => log (gaussianPDFReal θ v y)) =
@@ -246,7 +246,7 @@ def lr (θ h : ℝ) (v : ℝ≥0) (y : ℝ) : ℝ := exp ((h * (y - θ) - h ^ 2 
 
 /-- **Fisher information of the location family**: `E_θ[((y − θ)/v)²] = 1/v`, so the bound of
 `gaussian_location_crb` is `1/𝓘(θ)`. -/
-@[powerlib_foundation] theorem gaussian_location_fisher (hv : v ≠ 0) (θ : ℝ) :
+@[tmio T, powerlib_foundation] theorem gaussian_location_fisher (hv : v ≠ 0) (θ : ℝ) :
     ∫ y, ((y - θ) / v) ^ 2 ∂(gaussianReal θ v) = 1 / v := by
   have hv' : (v : ℝ) ≠ 0 := by exact_mod_cast hv
   have hvar : ∫ y, (y - θ) ^ 2 ∂(gaussianReal θ v) = v := by
@@ -276,7 +276,7 @@ def score (g : ℝ) (v : ℝ≥0) (D : Matrix (Fin p) (Fin N) ℝ) (i : Fin p) (
 /-- The score is the derivative of the log-likelihood
 `ℓ(θ) = −Σ (y_k − g ρ_k(θ))²/(2v)` along a parameter direction, evaluated at data
 `y = g ρ(θ₀) + n` (here `d k` is the directional derivative of `ρ_k`). -/
-@[powerlib_foundation] theorem score_hasDerivAt {ρ : Fin N → ℝ → ℝ} {d : Fin N → ℝ}
+@[tmio T, powerlib_foundation] theorem score_hasDerivAt {ρ : Fin N → ℝ → ℝ} {d : Fin N → ℝ}
     (hρ : ∀ k, HasDerivAt (ρ k) (d k) 0) (g : ℝ) (n : Fin N → ℝ) :
     HasDerivAt (fun t => -∑ k, (g * ρ k 0 + n k - g * ρ k t) ^ 2 / (2 * (v : ℝ)))
       (g / v * ∑ k, n k * d k) 0 := by
@@ -296,14 +296,14 @@ def score (g : ℝ) (v : ℝ≥0) (D : Matrix (Fin p) (Fin N) ℝ) (i : Fin p) (
     field_simp
     ring
 
-@[powerlib_foundation] theorem memLp_noise_coord (k : Fin N) :
+@[tmio T, powerlib_foundation] theorem memLp_noise_coord (k : Fin N) :
     MemLp (fun n : Fin N → ℝ => n k) 2 (noiseLaw N v) := by
   have := (memLp_id_gaussianReal (μ := (0 : ℝ)) (v := v) 2).comp_measurePreserving
     (measurePreserving_eval (fun _ : Fin N => gaussianReal 0 v) k)
   simpa using this
 
 /-- Second moments of the noise: `E[n_k n_l] = v δ_kl`. -/
-@[powerlib_foundation] theorem noise_second_moment (k l : Fin N) :
+@[tmio T, powerlib_foundation] theorem noise_second_moment (k l : Fin N) :
     ∫ n, n k * n l ∂(noiseLaw N v) = if k = l then (v : ℝ) else 0 := by
   by_cases hkl : k = l
   · subst hkl
@@ -331,7 +331,7 @@ def score (g : ℝ) (v : ℝ≥0) (D : Matrix (Fin p) (Fin N) ℝ) (i : Fin p) (
 
 /-- **Discrete Fisher matrix from its definition (§1.1)**: under `N` independent `N(0, v)` noise
 samples, `E[s_i s_j] = (g²/v) Σ_k ∂_iρ_k ∂_jρ_k` (real samples: prefactor `1`, no factor `2`). -/
-@[powerlib_foundation] theorem fisherDiscrete_eq (g : ℝ) (D : Matrix (Fin p) (Fin N) ℝ)
+@[tmio T, powerlib_foundation] theorem fisherDiscrete_eq (g : ℝ) (D : Matrix (Fin p) (Fin N) ℝ)
     (i j : Fin p) :
     ∫ n, score g v D i n * score g v D j n ∂(noiseLaw N v) = g ^ 2 / v * ∑ k, D i k * D j k := by
   have hint : ∀ k l, Integrable (fun n : Fin N → ℝ => n k * n l) (noiseLaw N v) :=
