@@ -533,7 +533,10 @@ private theorem unstable_of_V_eq_zero {m : Model} (heq : IsEq m.params m.θ m.Id
 other equilibrium is unstable (`V = 0`; `V cos θ* < 0`, `tr J > 0`; `cos θ* = 0` or
 `cos 2θ* < 0`, `det J > 0`; the fold `cos 2θ* = 0`). -/
 private theorem jacobianStable_of_lyapunovStable {m : Model} (hpos : Meets m .positiveGains)
-    (heq : IsEq m.params m.θ m.Id) (h : LyapunovStable m.field 0) : Meets m .jacobianStable := by
+    (heq : IsEq m.params m.θ m.Id) (h : LyapunovStable m.field 0) :
+    connection% (m ∈ TMIO.realize Meets {.jacobianStable}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
   obtain ⟨hkp, hki, hkP⟩ := hpos
   have hunst : Meets m .jacobianUnstable → False := fun hu => by
     have hd := mem_den_of_meets (m := m) (s := .flow .unstable) (by
@@ -542,6 +545,7 @@ private theorem jacobianStable_of_lyapunovStable {m : Model} (hpos : Meets m .po
       rcases hq with rfl | rfl
       · exact heq
       · exact hu)
+    unfold TMIO.Statement at hd
     rw [(connection_proof% family_isAutonomous.mem_den_flow)] at hd
     exact hd h
   have htr := trace_jac m.params m.θ m.Id
@@ -618,7 +622,7 @@ private theorem exactUnder_of_routh {P : Flow.Property}
       rcases hP with rfl | rfl
       · exact h
       · exact h.1
-    exact jacobianStable_of_lyapunovStable hpos
+    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using jacobianStable_of_lyapunovStable hpos
       (isEq_of_field_eq_zero hpos.2.2.ne' (by simpa [Model.field] using heq)) hls
   · have hpos : Meets m .positiveGains := (TMIO.mem_realize _ _ _).mp hm .positiveGains rfl
     rw [ht, (connection_proof% TMIO.mem_realize)]

@@ -103,10 +103,12 @@ open powerlib LinearSystems
   powerlib_search
 
 @[powerlib_foundation] theorem rl_sign (m : Circuits.RL.Impedance) :
-    IsHurwitz m.plant.A ↔ 0 < m.resistance := by powerlib_search
+    connection% (m ∈ Circuits.RL.family.den (.flow .globallyExponentiallyStable) ↔
+      0 < m.resistance) := by powerlib_search
 
 @[powerlib_foundation] theorem lcl_poles (m : Circuits.LCL.Circuit) :
-    IsHurwitz m.plant.A ↔ m.Stable := by powerlib_search
+    connection% (m ∈ Circuits.LCL.family.den (.flow .globallyExponentiallyStable) ↔
+      m ∈ TMIO.realize Circuits.LCL.Meets {.poleStable}) := by powerlib_search
 
 @[powerlib_foundation] theorem decay_global {n : ℕ}
     {f : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)} {V : EuclideanSpace ℝ (Fin n) → ℝ}
@@ -187,16 +189,12 @@ open powerlib LinearSystems
 @[powerlib_domain] theorem rl_resistance (m : Circuits.RL.Impedance) (h : 0 < m.resistance) :
     connection% (m ∈ Circuits.RL.family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [(connection_proof% Circuits.RL.family_isLinear.mem_den_flow)]
-  change Flow.GloballyExponentiallyStable (affineLinearVectorField m.plant.A 0) 0
   aesop
 
 @[powerlib_domain] theorem lcl_passive_damped (m : Circuits.LCL.Circuit) (hp : m.Passive)
     (hd : m.Damped) :
-    connection% (m ∈ Circuits.LCL.family.den (.flow .globallyAsymptoticallyStable)) := by
+    connection% (m ∈ Circuits.LCL.family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [(connection_proof% Circuits.LCL.family_isLinear.mem_den_flow)]
-  change Flow.GloballyAsymptoticallyStable (affineLinearVectorField m.plant.A 0) 0
   aesop
 
 @[powerlib_domain] theorem interconnection_criterion {n₁ n₂ p : ℕ}
@@ -226,8 +224,7 @@ run_cmd do
         #[`powerlib.Linear.Certificate.isHurwitz,
           `powerlib.Linear.localAsymptoticStable_of_isHurwitz]),
       (`AutomaticChaining.rl_resistance,
-        #[`powerlib.Circuits.RL.isHurwitz_iff,
-          `powerlib.Linear.globallyExponentiallyStable_of_isHurwitz]),
+        #[`powerlib.Circuits.RL.isHurwitz_iff]),
       (`AutomaticChaining.lcl_passive_damped,
         #[`powerlib.Circuits.LCL.routhHurwitz_of_passive,
           `powerlib.Circuits.LCL.stable_of_routhHurwitz, `powerlib.Circuits.LCL.isHurwitz_iff_stable]),

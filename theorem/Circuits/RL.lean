@@ -136,9 +136,51 @@ def Impedance.plant (m : Impedance) : Linear.Plant 1 1 := (toStateSpace m).plant
     (toImpedance m).plant = m.plant := by
   simp [Impedance.plant]
 
+/-- Engineering requirements on the RL parameters. -/
+inductive Requirement
+  | positiveResistance
+  | nonnegativeResistance
+  | negativeResistance
+  | lossless
+  | decayRateAtLeast (a : ℝ)
+  | resistanceAtLeast (r : ℝ)
+  | resistanceAtMost (r : ℝ)
+  | inductanceAtLeast (l : ℝ)
+  | inductanceAtMost (l : ℝ)
+
+/-- Satisfaction of a requirement by a complete RL model. -/
+def Meets (m : Impedance) : Requirement → Prop
+  | .positiveResistance => 0 < m.resistance
+  | .nonnegativeResistance => 0 ≤ m.resistance
+  | .negativeResistance => m.resistance < 0
+  | .lossless => m.resistance = 0
+  | .decayRateAtLeast a => a ≤ m.resistance / m.inductance.val
+  | .resistanceAtLeast r => r ≤ m.resistance
+  | .resistanceAtMost r => m.resistance ≤ r
+  | .inductanceAtLeast l => l ≤ m.inductance.val
+  | .inductanceAtMost l => m.inductance.val ≤ l
+
+/-- The translation of the sentences into requirements. -/
+def translate : Sentence → Set Requirement
+  | .flow .lyapunovStable => {.nonnegativeResistance}
+  | .flow .unstable => {.negativeResistance}
+  | .flow (.decay a) => {.decayRateAtLeast a}
+  | .flow .conservative => {.lossless}
+  | .flow _ => {.positiveResistance}
+  | .passive => {.nonnegativeResistance}
+  | .envelope _ => ∅
+
+/-- The RL family: every branch read as the port system of its plant, the requirement language
+and the translation table. -/
+def family : Family Impedance Requirement 1 1 := ⟨fun m => m.plant.system, Meets, translate⟩
+
+@[tmio M, powerlib_foundation] theorem family_isLinear : family.IsLinear Impedance.plant := fun _ => rfl
+
 /-- The RL plant is Hurwitz exactly when the resistance is positive. -/
-@[simp, powerlib_foundation] theorem isHurwitz_iff (m : Impedance) :
-    IsHurwitz m.plant.A ↔ 0 < m.resistance := by
+@[tmio TM, simp high, powerlib_foundation] theorem isHurwitz_iff (m : Impedance) :
+    connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < m.resistance) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
   simp only [Impedance.plant, StateSpace.plant, toStateSpace_decay]
   rw [Linear.isHurwitz_one_iff, neg_lt_zero, div_pos_iff_of_pos_right m.inductance.property]
 
@@ -232,46 +274,6 @@ def kyp (m : Impedance) (hR : 0 ≤ m.resistance) : Linear.KYP m.plant where
 
 /-! ## Requirements and the faithful family -/
 
-/-- Engineering requirements on the RL parameters. -/
-inductive Requirement
-  | positiveResistance
-  | nonnegativeResistance
-  | negativeResistance
-  | lossless
-  | decayRateAtLeast (a : ℝ)
-  | resistanceAtLeast (r : ℝ)
-  | resistanceAtMost (r : ℝ)
-  | inductanceAtLeast (l : ℝ)
-  | inductanceAtMost (l : ℝ)
-
-/-- Satisfaction of a requirement by a complete RL model. -/
-def Meets (m : Impedance) : Requirement → Prop
-  | .positiveResistance => 0 < m.resistance
-  | .nonnegativeResistance => 0 ≤ m.resistance
-  | .negativeResistance => m.resistance < 0
-  | .lossless => m.resistance = 0
-  | .decayRateAtLeast a => a ≤ m.resistance / m.inductance.val
-  | .resistanceAtLeast r => r ≤ m.resistance
-  | .resistanceAtMost r => m.resistance ≤ r
-  | .inductanceAtLeast l => l ≤ m.inductance.val
-  | .inductanceAtMost l => m.inductance.val ≤ l
-
-/-- The translation of the sentences into requirements. -/
-def translate : Sentence → Set Requirement
-  | .flow .lyapunovStable => {.nonnegativeResistance}
-  | .flow .unstable => {.negativeResistance}
-  | .flow (.decay a) => {.decayRateAtLeast a}
-  | .flow .conservative => {.lossless}
-  | .flow _ => {.positiveResistance}
-  | .passive => {.nonnegativeResistance}
-  | .envelope _ => ∅
-
-/-- The RL family: every branch read as the port system of its plant, the requirement language
-and the translation table. -/
-def family : Family Impedance Requirement 1 1 := ⟨fun m => m.plant.system, Meets, translate⟩
-
-@[tmio M, powerlib_foundation] theorem family_isLinear : family.IsLinear Impedance.plant := fun _ => rfl
-
 @[tmio M, powerlib_foundation] theorem plant_A (m : Impedance) :
     m.plant.A = !![-(m.resistance / m.inductance.val)] := by
   simp [Impedance.plant, StateSpace.plant, toStateSpace_decay]
@@ -327,7 +329,8 @@ negative one, conservation by a lossless branch, and decay at the rate `a` by a 
       P.holds (affineLinearVectorField m.plant.A 0) 0 ↔ 0 < m.resistance := by
     intro P hP m
     rw [← (connection_proof% family_isLinear.mem_den_flow), family_isLinear.den_hurwitz hP, Set.mem_ofPred_eq,
-      isHurwitz_iff]
+      ← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)),
+      (connection_proof% isHurwitz_iff)]
   refine Family.chain_eq_semantics_iff.mpr fun s => ?_
   ext m
   rw [(connection_proof% Family.mem_den), (connection_proof% mem_realize)]
@@ -366,7 +369,8 @@ negative one, conservation by a lossless branch, and decay at the rate `a` by a 
           (family_isLinear.mem_den_flow.mpr h)
         change m ∉ family.den (.flow .globallyExponentiallyStable) at hnh
         rw [family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial),
-          Set.mem_setOf_eq, isHurwitz_iff] at hnh
+          Set.mem_setOf_eq, ← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)),
+      (connection_proof% isHurwitz_iff)] at hnh
         exact le_antisymm (not_lt.mp hnh) hnn
     case locallyAsymptoticallyStable =>
       simpa [translate, Meets] using

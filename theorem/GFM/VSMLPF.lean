@@ -1175,14 +1175,16 @@ private theorem swing_meets_iff (m : Model) :
     Synchronous.SwingParams.syncCoeff]
 
 private theorem physical_of {m : Model} {A : Set Requirement} (hA : .physical ∈ A)
-    (hm : m ∈ TMIO.realize Meets A) : Meets m .physical :=
-  (TMIO.mem_realize _ _ _).mp hm _ hA
+    (hm : m ∈ TMIO.realize Meets A) :
+    connection% (m ∈ TMIO.realize Meets {.physical}) :=
+  TMIO.realize_antitone Meets (Set.singleton_subset_iff.mpr hA) hm
 
 /-- Positive droop gain and bandwidth give the swing reading positive inertia. -/
 private theorem toSwing_mem_inertia {m : Model} (hm : m ∈ TMIO.realize Meets {.physical}) :
     connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.inertia}) := by
   change m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.inertia}
-  have hp := physical_of (Set.mem_singleton _) hm
+  have hp : Meets m .physical := by
+    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using physical_of (Set.mem_singleton _) hm
   rw [(connection_proof% TMIO.mem_realize)]
   intro r hr
   rw [Set.mem_singleton_iff] at hr
@@ -1237,14 +1239,14 @@ are those of its swing reading (`mem_den_iff_swing`, `Synchronous.Swing.chain_le
   have hS : TMIO.realize family.meets {.balanced, .physical, .synchronizing} ⊆
       family.den (.flow .locallyExponentiallyStable) :=
     Spectral.realize_subset_den_of_hub (F := family) (G := Synchronous.Swing.family) Model.toSwing
-      (fun _ hm => (realize_local_iff (physical_of (by simp) hm)).mp hm)
-      (fun _ hm => (den_iff_swing (physical_of (by simp) hm) _).mpr)
+      (fun _ hm => (realize_local_iff (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using physical_of (by simp) hm)).mp hm)
+      (fun _ hm => (den_iff_swing (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using physical_of (by simp) hm) _).mpr)
       (hsound (.flow .locallyExponentiallyStable))
   have hU : TMIO.realize family.meets {.balanced, .physical, .antiSynchronizing} ⊆
       family.den (.flow .unstable) :=
     Spectral.realize_subset_den_of_hub (F := family) (G := Synchronous.Swing.family) Model.toSwing
       (fun _ hm => realize_unstable_toSwing hm)
-      (fun _ hm => (den_iff_swing (physical_of (by simp) hm) _).mpr) (hsound (.flow .unstable))
+      (fun _ hm => (den_iff_swing (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using physical_of (by simp) hm) _).mpr) (hsound (.flow .unstable))
   refine Spectral.chain_le_semantics_of_localTable_same (fun s => ?_) realize_univ hS hU
     family_isAutonomous.den_passive
   rcases s with P | _ | _
@@ -1270,8 +1272,8 @@ stability of the `C¹` field forces an equilibrium with a Hurwitz Jacobian
   unfold powerlib.TMIO.Statement at hsw
   exact Spectral.exactUnder_of_hub (F := family) (G := Synchronous.Swing.family) Model.toSwing
     (fun _ hm => toSwing_mem_inertia hm)
-    (fun _ hm => den_iff_swing (physical_of (Set.mem_singleton _) hm) _)
-    (fun _ hm => realize_local_iff (physical_of (Set.mem_singleton _) hm)) hsw
+    (fun _ hm => den_iff_swing (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using physical_of (Set.mem_singleton _) hm) _)
+    (fun _ hm => realize_local_iff (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using physical_of (Set.mem_singleton _) hm)) hsw
 
 /-- The model read about its loading angle `arcsin(P₀/K₀)`. -/
 def atLoading : Model := ⟨q, Real.arcsin (q.P0 / q.K0)⟩
@@ -1442,8 +1444,8 @@ one side. Proved once on the swing reading
   unfold powerlib.TMIO.Statement at hsw
   exact Spectral.exactUnder_of_hub (F := family) (G := Synchronous.Swing.family) Model.toSwing
     (fun _ hm => toSwing_mem_inertia hm)
-    (fun _ hm => den_iff_swing (physical_of (Set.mem_singleton _) hm) _)
-    (fun _ hm => realize_local_iff (physical_of (Set.mem_singleton _) hm)) hsw
+    (fun _ hm => den_iff_swing (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using physical_of (Set.mem_singleton _) hm) _)
+    (fun _ hm => realize_local_iff (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using physical_of (Set.mem_singleton _) hm)) hsw
 
 /-- Within positive droop damping and bandwidth, Lyapunov stability of `(δ*, P₀)` holds exactly
 at a balanced angle that is synchronizing (`K₀ cos δ* > 0`) or has a vanishing power curve

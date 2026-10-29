@@ -679,16 +679,22 @@ private theorem balanced_of {m : Model} (hM : m.p.M ≠ 0) (heq : m.p.field m.po
 
 private theorem les_of {m : Model} (hM : 0 < m.p.M) (hD : 0 < m.p.D)
     (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
-    LocallyExponentiallyStable m.p.field m.point :=
-  m.p.locallyExponentiallyStable_of_syncCoeff_pos hM hD (point_eq_zero hM hb) (by simpa using hK)
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff]
+  exact m.p.locallyExponentiallyStable_of_syncCoeff_pos hM hD (point_eq_zero hM hb) (by simpa using hK)
 
 private theorem ls_of {m : Model} (hM : 0 < m.p.M) (hD : 0 ≤ m.p.D)
     (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
-    LyapunovStable m.p.field m.point :=
-  m.p.lyapunovStable_of_syncCoeff_pos hM hD (point_eq_zero hM hb) (by simpa using hK)
+    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff]
+  exact m.p.lyapunovStable_of_syncCoeff_pos hM hD (point_eq_zero hM hb) (by simpa using hK)
 
 private theorem unstable_of {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm)
-    (hs : m.p.syncCoeff m.δ < 0 ∨ m.p.D < 0) : Unstable m.p.field m.point := by
+    (hs : m.p.syncCoeff m.δ < 0 ∨ m.p.D < 0) : connection% (m ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff]
   rcases hs with hK | hD
   · exact m.p.unstable_of_syncCoeff_neg hM (point_eq_zero hM hb) (by simpa using hK)
   · exact m.p.unstable_of_damping_neg hM (point_eq_zero hM hb) hD
@@ -723,14 +729,14 @@ proves instability; passivity holds without requirement. -/
     · rfl
     · rfl
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact mem_den_flow_iff.mpr (ls_of (hm .inertia (by simp)) (hm .dampingNonneg (by simp))
-      (hm .balanced (by simp)) (hm .synchronizing (by simp)))
+    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (ls_of (hm .inertia (by simp)) (hm .dampingNonneg (by simp))
+      (hm .balanced (by simp)) (hm .synchronizing (by simp)))))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact mem_den_flow_iff.mpr (les_of (hm .inertia (by simp)) (hm .damped (by simp))
-      (hm .balanced (by simp)) (hm .synchronizing (by simp)))
+    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (les_of (hm .inertia (by simp)) (hm .damped (by simp))
+      (hm .balanced (by simp)) (hm .synchronizing (by simp)))))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact mem_den_flow_iff.mpr (unstable_of (hm .inertia (by simp)) (hm .balanced (by simp))
-      (hm .destabilizing (by simp)))
+    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (unstable_of (hm .inertia (by simp)) (hm .balanced (by simp))
+      (hm .destabilizing (by simp)))))
   · rw [family_isAutonomous.den_passive]
     trivial
 
@@ -747,7 +753,7 @@ model in local exponential stability. -/
     (hD : 0 < m.p.D) (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr (les_of hM hD hb hK)
+  exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (les_of hM hD hb hK)))
 
 /-- The same conditions place a swing model in local asymptotic stability. -/
 @[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable (m : Model) (hM : 0 < m.p.M)
@@ -755,7 +761,7 @@ model in local exponential stability. -/
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact mem_den_flow_iff.mpr (Flow.locallyExponentiallyStable_localAsymptoticStable
-    (les_of hM hD hb hK))
+    ((mem_den_flow_iff.mp (les_of hM hD hb hK))))
 
 /-- With nonnegative damping — in particular the undamped swing equation — positive inertia and
 synchronizing coefficient at a balanced angle place a swing model in Lyapunov stability (energy
@@ -764,7 +770,7 @@ function). -/
     (hD : 0 ≤ m.p.D) (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr (ls_of hM hD hb hK)
+  exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (ls_of hM hD hb hK)))
 
 /-- A balanced angle with negative synchronizing coefficient (saddle) places a swing model with
 positive inertia in instability, for every damping. -/
@@ -772,7 +778,7 @@ positive inertia in instability, for every damping. -/
     (hb : m.p.Pe m.δ = m.p.Pm) (hK : m.p.syncCoeff m.δ < 0) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr (unstable_of hM hb (Or.inl hK))
+  exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (unstable_of hM hb (Or.inl hK))))
 
 /-- Negative damping places a balanced swing model with positive inertia in instability, for
 every synchronizing coefficient. -/
@@ -780,7 +786,7 @@ every synchronizing coefficient. -/
     (hb : m.p.Pe m.δ = m.p.Pm) (hD : m.p.D < 0) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr (unstable_of hM hb (Or.inr hD))
+  exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (unstable_of hM hb (Or.inr hD))))
 
 /-- A swing model with nonzero inertia whose selected angle is not balanced, `P_e(δ*) ≠ P_m`, is
 unstable: `(δ*, 0)` is not an equilibrium of the `C¹` swing field, so the solution through it
@@ -825,9 +831,9 @@ an equilibrium whose Jacobian `[[0, 1], [−K/M, −D/M]]` is Hurwitz. -/
     (fun m => m.p.jacobian m.δ) (fun m _ hm => ?_) (fun m _ => m.p.contDiff_field)
     (fun m _ => m.fderiv_point) fun m hI heq hH => ?_
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact mem_den_flow_iff.mpr (les_of (hm .inertia (by simp [family, translate]))
+    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (les_of (hm .inertia (by simp [family, translate]))
       (hm .damped (by simp [family, translate])) (hm .balanced (by simp [family, translate]))
-      (hm .synchronizing (by simp [family, translate])))
+      (hm .synchronizing (by simp [family, translate])))))
   have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
   rw [m.p.isHurwitz_jacobian_iff hM] at hH
   rw [(connection_proof% TMIO.mem_realize)]
@@ -893,7 +899,7 @@ private theorem las_guard {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.P
   have hE0 : m.p.energy m.δ m.point = 0 := by simp [SwingParams.energy, Model.point]
   have hD : 0 < m.p.D := by
     rcases lt_trichotomy m.p.D 0 with hD | hD | hD
-    · exact absurd hlas.1 (unstable_of hM hb (Or.inr hD))
+    · exact absurd hlas.1 ((mem_den_flow_iff.mp (unstable_of hM hb (Or.inr hD))))
     · exfalso
       refine Dynamics.not_localAsymptoticStable_of_lie_nonpos
         (V := fun x => -m.p.energy m.δ x) (ρ := 1) hC hEd.neg one_pos (fun x _ => ?_)
@@ -911,7 +917,7 @@ private theorem las_guard {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.P
     · exact hD
   refine ⟨hD, ?_⟩
   rcases lt_trichotomy (m.p.syncCoeff m.δ) 0 with hK | hK | hK
-  · exact absurd hlas.1 (unstable_of hM hb (Or.inl hK))
+  · exact absurd hlas.1 ((mem_den_flow_iff.mp (unstable_of hM hb (Or.inl hK))))
   · exfalso
     by_cases ha : m.p.Pm - m.p.k₁ = 0
     · have hk2 := k₂_eq_zero_of_flat m.p hb hK ha
@@ -968,9 +974,9 @@ an equilibrium, so the guard `D > 0`, `K > 0` decides (`Spectral.exactUnder_of_e
     (fun m _ => m.p.contDiff_field) (fun m hI heq hG hd => ?_) fun m hI heq hG => ?_
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact Spectral.den_locallyExponentiallyStable_subset_las (mem_den_flow_iff.mpr
-      (les_of (hm .inertia (by simp [family, translate])) (hm .damped (by simp [family, translate]))
+      ((mem_den_flow_iff.mp (les_of (hm .inertia (by simp [family, translate])) (hm .damped (by simp [family, translate]))
         (hm .balanced (by simp [family, translate]))
-        (hm .synchronizing (by simp [family, translate]))))
+        (hm .synchronizing (by simp [family, translate]))))))
   · have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
     exact hG (las_guard hM (balanced_of hM.ne' heq) (mem_den_flow_iff.mp hd))
   · have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
@@ -1093,9 +1099,9 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
     refine ⟨hb, ?_⟩
     have hD : 0 ≤ m.p.D := by
       by_contra hD
-      exact (unstable_of hM hb (Or.inr (not_le.mp hD))) hls
+      exact ((mem_den_flow_iff.mp (unstable_of hM hb (Or.inr (not_le.mp hD))))) hls
     rcases lt_trichotomy (m.p.syncCoeff m.δ) 0 with hK | hK | hK
-    · exact absurd hls (unstable_of hM hb (Or.inl hK))
+    · exact absurd hls ((mem_den_flow_iff.mp (unstable_of hM hb (Or.inl hK))))
     · by_cases ha : m.p.Pm - m.p.k₁ = 0
       · have hk2 := k₂_eq_zero_of_flat m.p hb hK ha
         rcases eq_or_lt_of_le hD with hD0 | hDpos
@@ -1171,7 +1177,7 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
           nlinarith
     · exact Or.inl ⟨hD, hK⟩
   · rintro ⟨hb, (⟨hD, hK⟩ | ⟨hk2, hD⟩)⟩
-    · exact mem_den_flow_iff.mpr (ls_of hM hD hb hK)
+    · exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (ls_of hM hD hb hK)))
     · -- a damped flat curve: `(δ + (M/D) ω)² + ω²` does not increase
       rw [(connection_proof% family_isAutonomous.mem_den_flow)]
       have hDne := hD.ne'
@@ -1245,7 +1251,9 @@ is Hurwitz. -/
   · rw [SwingParams.trace_jacobian]; norm_num [negativeInertia]
   · rw [SwingParams.det_jacobian]; norm_num [negativeInertia, SwingParams.syncCoeff]
 
-private theorem negativeInertia_not_meets : ¬ Meets negativeInertia .inertia := by
+private theorem negativeInertia_not_meets : connection% (negativeInertia ∉ TMIO.realize Meets {.inertia}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
   norm_num [Meets, negativeInertia]
 
 /-- The local exponential translation is sound but not exact: the negative-inertia model is
@@ -1254,21 +1262,21 @@ locally exponentially stable without positive inertia. -/
     connection% (¬ family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_exact_of_witness negativeInertia_mem_den_locallyExponentiallyStable
-    (q := .inertia) (by simp [family, translate]) negativeInertia_not_meets
+    (q := .inertia) (by simp [family, translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family] using negativeInertia_not_meets)
 
 /-- The local asymptotic translation is sound but not exact (the same witness). -/
 @[tmio TM, powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :
     connection% (¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_exact_of_les_witness negativeInertia_mem_den_locallyExponentiallyStable
-    (Or.inr rfl) (q := Requirement.inertia) (by simp [family, translate]) negativeInertia_not_meets
+    (Or.inr rfl) (q := Requirement.inertia) (by simp [family, translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family] using negativeInertia_not_meets)
 
 /-- The Lyapunov translation is sound but not exact (the same witness). -/
 @[tmio TM, powerlib_domain] theorem not_exact_lyapunovStable :
     connection% (¬ family.Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_exact_of_les_witness negativeInertia_mem_den_locallyExponentiallyStable
-    (Or.inl rfl) (q := Requirement.inertia) (by simp [family, translate]) negativeInertia_not_meets
+    (Or.inl rfl) (q := Requirement.inertia) (by simp [family, translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family] using negativeInertia_not_meets)
 
 /-! ## The linearized swing family
 
@@ -1313,8 +1321,12 @@ private theorem translate_eq (s : Sentence) :
   · rfl
 
 private theorem isHurwitz_iff {m : Model} (hM : 0 < m.p.M) :
-    LinearSystems.IsHurwitz (plant m).A ↔ 0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ :=
-  m.p.isHurwitz_jacobian_iff hM m.δ
+    connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔
+      0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
+    (Or.inl trivial))]
+  exact m.p.isHurwitz_jacobian_iff hM m.δ
 
 private theorem mem_realize_stable {m : Model} :
     connection% (m ∈ TMIO.realize Meets {.inertia, .damped, .synchronizing} ↔
@@ -1368,7 +1380,8 @@ passive; decay rates go to the inconsistent whole language. -/
     (fun _ => Spectral.realize_univ_subset_of_eq_empty realize_univ _) (fun m hm => ?_)
     fun m _ => family.mem_den.mpr (Port.System.passive_of_noPorts _)
   · obtain ⟨hM, hD, hK⟩ := mem_realize_stable.mp hm
-    exact (isHurwitz_iff hM).mpr ⟨hD, hK⟩
+    exact (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp
+      ((isHurwitz_iff hM).mpr ⟨hD, hK⟩)
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact exists_root (hm .inertia (by simp)) (hm .destabilizing (by simp))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
@@ -1400,7 +1413,8 @@ swing equation are translated exactly: `M s² + D s + K` is Hurwitz iff `D > 0` 
   refine Spectral.exactUnder_of_linearTable family_isLinear translate_eq {.inertia}
     (fun m hI => mem_realize_stable.trans ?_) hP
   have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
-  rw [isHurwitz_iff hM]
+  rw [← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
+    (Or.inl trivial)), (connection_proof% isHurwitz_iff hM)]
   exact ⟨fun h => h.2, fun h => ⟨hM, h⟩⟩
 
 /-- The linearization is exponentially stable iff `D > 0` and `K > 0` (`M > 0`). -/
@@ -1409,7 +1423,9 @@ swing equation are translated exactly: `M s² + D s + K` is Hurwitz iff `D > 0` 
       m ∈ {m : Model | 0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ}) := by
   unfold powerlib.TMIO.Statement
   rw [family_isLinear.den_hurwitz (Or.inl Flow.Property.attractive_globallyExponentiallyStable),
-    Set.mem_ofPred_eq, isHurwitz_iff hM]
+    Set.mem_ofPred_eq,
+    ← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
+      (Or.inl trivial)), (connection_proof% isHurwitz_iff hM)]
   rfl
 
 /-- Passivity is translated exactly for the linearization. -/

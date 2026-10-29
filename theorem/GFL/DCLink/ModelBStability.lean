@@ -383,6 +383,74 @@ def jacobian (x : State 4) : Matrix (Fin 4) (Fin 4) ℝ :=
     Filter.eventually_of_mem (Metric.ball_mem_nhds x hR) fun y hy => (hball y hy).symm
   exact ((p.hasFDerivAt_field (by rw [hx2]; exact hV.ne')).congr_of_eventuallyEq hev).fderiv
 
+end ModelBParams
+
+namespace ModelB
+
+/-- A model-B system read about a selected state `x*`. -/
+structure Model where
+  /-- The model-B parameters. -/
+  p : ModelBParams
+  /-- The selected state `x* = (Δθ*, x_pll*, V_dc*, ξ_v*)`. -/
+  x : State 4
+
+/-- Model B translated so that the selected state is the origin. -/
+def Model.field (m : Model) (z : State 4) : State 4 := m.p.field (z + m.x)
+
+/-- Requirements on model B, all static. -/
+inductive Requirement
+  /-- The selected state is a zero of the field. -/
+  | equilibrium
+  /-- Positive DC-voltage reference. -/
+  | positiveReference
+  /-- The 4×4 Routh conditions on the Jacobian at the selected state. -/
+  | routh
+  /-- Negative Jacobian determinant at the selected state. -/
+  | detNeg
+  /-- The Jacobian at the selected state is off the 4×4 Routh boundary: it meets the Routh
+  conditions or violates them strictly. -/
+  | offBoundary
+
+/-- Satisfaction of a requirement by a model. -/
+def Meets (m : Model) : Requirement → Prop
+  | .equilibrium => m.p.field m.x = 0
+  | .positiveReference => 0 < m.p.VdcRef
+  | .routh => RouthFin4 (m.p.jacobian m.x)
+  | .detNeg => (m.p.jacobian m.x).det < 0
+  | .offBoundary => RouthFin4 (m.p.jacobian m.x) ∨ RouthViolationFin4 (m.p.jacobian m.x)
+
+/-- The translation of the sentences: the local sentences into an equilibrium with positive
+reference satisfying the Routh conditions, instability into one with a negative Jacobian
+determinant, passivity into nothing. The global sentences, decay rates, sampled contraction and
+conservation are not decided by the linearization and are translated into the whole language,
+which no model meets (unavailable translation coverage). -/
+def translate : Sentence → Set Requirement
+  | .flow .lyapunovStable | .flow .locallyAsymptoticallyStable
+  | .flow .locallyExponentiallyStable => {.equilibrium, .positiveReference, .routh}
+  | .flow .unstable => {.equilibrium, .positiveReference, .detNeg}
+  | .flow _ => Set.univ
+  | .passive => ∅
+  | .envelope _ => Set.univ
+
+/-- The model-B family: every model read as its field translated to the selected state. -/
+def family : Family Model Requirement 4 0 :=
+  ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
+
+@[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+  fun _ => rfl
+
+/-- A flow sentence of a model is the sentence of the untranslated field at the selected state. -/
+private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
+    m ∈ family.den (.flow P) ↔ P.holds m.p.field m.x :=
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.x)
+    family_isAutonomous
+
+end ModelB
+
+namespace ModelBParams
+
+variable (p : ModelBParams)
+
 /-- **Model B, local exponential stability.** At an equilibrium of model B (`V_dc* > 0`), if the
 Jacobian `J = jacobian x` satisfies the 4×4 Routh conditions (`tr J < 0`, `m₃(J) < 0`,
 `det J > 0`, `m₃² + tr² det < tr m₂ m₃`, i.e. `a3, a1, a0 > 0` and `a1² + a3² a0 < a3 a2 a1` for
@@ -396,7 +464,9 @@ private theorem modelB_locallyExponentiallyStable (hV : 0 < p.VdcRef) {x : State
         (p.jacobian x).trace ^ 2 * (p.jacobian x).det <
       (p.jacobian x).trace * Criteria.principalMinorSum2Fin4 (p.jacobian x) *
         Criteria.principalMinorSum3Fin4 (p.jacobian x)) :
-    LocallyExponentiallyStable p.field x := by
+    connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .locallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [ModelB.mem_den_flow_iff]
   obtain ⟨hreg0, hJ⟩ := p.regField_equilibrium_jacobian hV hx
   have hreg := Criteria.locallyExponentiallyStable_of_jacobian_fin_four (p.jacobian x)
     (p.contDiff_regField hV) hreg0 hJ htr hm3 hdet hg
@@ -409,7 +479,9 @@ Jacobian has a positive real eigenvalue and the equilibrium is unstable. Impleme
 for `ModelB.mem_den_unstable_of_det_neg`. -/
 private theorem modelB_unstable_of_det_neg (hV : 0 < p.VdcRef) {x : State 4}
     (hx : p.field x = 0) (hdet : (p.jacobian x).det < 0) :
-    Unstable p.field x := by
+    connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [ModelB.mem_den_flow_iff]
   obtain ⟨hreg0, hJ⟩ := p.regField_equilibrium_jacobian hV hx
   have hreg := Criteria.unstable_of_jacobian_det_neg_fin_four (p.jacobian x)
     (p.contDiff_regField hV) hreg0 hJ hdet
@@ -428,8 +500,9 @@ for `ModelB.noLoad_mem_den_locallyExponentiallyStable`. -/
 private theorem modelB_noLoad_locallyExponentiallyStable (hV : 0 < p.VdcRef)
     (hVg : 0 < p.Vg) (hkp : 0 < p.kp) (hki : 0 < p.ki) (hkpv : 0 < p.kpv) (hkiv : 0 < p.kiv)
     (hC : 0 < p.Cdc) (hI : p.I0 = 0) (hR : p.Rg = 0) (hq : p.iq0 = 0) :
-    LocallyExponentiallyStable p.field
-      (WithLp.toLp 2 ![0, (p.ωg - p.ωs) / p.ki, p.VdcRef, 0]) := by
+    connection% ((⟨p, (WithLp.toLp 2 ![0, (p.ωg - p.ωs) / p.ki, p.VdcRef, 0])⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .locallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [ModelB.mem_den_flow_iff]
   have hx : p.field (WithLp.toLp 2 ![0, (p.ωg - p.ωs) / p.ki, p.VdcRef, 0]) = 0 := by
     rw [field_eq_zero_iff]
     simp [idRef, vgq, vgd, hI, hR, hq]
@@ -478,7 +551,7 @@ private theorem modelB_noLoad_locallyExponentiallyStable (hV : 0 < p.VdcRef)
     rw [hb]
     ring
   have hD : 0 < a * c * ((b - d) ^ 2 + (a + c) * (a * d + b * c)) := by positivity
-  refine p.modelB_locallyExponentiallyStable hV hx ?_ ?_ ?_ ?_
+  refine (ModelB.mem_den_flow_iff.mp (p.modelB_locallyExponentiallyStable hV hx ?_ ?_ ?_ ?_))
   · rw [← hJ, htr]; linarith
   · rw [← hJ, hm3]; nlinarith [mul_pos ha0 hd0, mul_pos hb0 hc0]
   · rw [← hJ, hdet]; positivity
@@ -599,7 +672,9 @@ its end, after a time at most `V_dc(t₀)² / a`. Implementation evidence for
 `ModelB.mem_den_locallyExponentiallyStable_of_collapse`. -/
 private theorem modelB_locallyExponentiallyStable_of_collapse {x : State 4} (hx : x 2 = 0)
     (hP : p.pccP x / p.Cdc < 0) (hI : p.I0 / p.Cdc ≠ 0) :
-    LocallyExponentiallyStable p.field x := by
+    connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .locallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [ModelB.mem_den_flow_iff]
   set g : State 4 → ℝ := fun y => (2 * p.I0 * y 2 + 3 * p.pccP y) / p.Cdc with hg
   have hgc : Continuous g :=
     ((continuous_const.mul (Dynamics.contDiff_coord (n := 4) (k := 1) 2).continuous).add
@@ -639,7 +714,10 @@ is unstable: near `x`, `d(V_dc²)/dt = (2 I₀ V_dc + 3 P) / C_dc` is bounded be
 rate, and on each half ball `{V_dc ≥ s}` model B is the smooth field with denominator
 `regDen s V_dc`. Implementation evidence for `ModelB.mem_den_unstable_of_repel`. -/
 private theorem modelB_unstable_of_repel {x : State 4} (hx : x 2 = 0)
-    (hP : 0 < p.pccP x / p.Cdc) : Unstable p.field x := by
+    (hP : 0 < p.pccP x / p.Cdc) :
+    connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [ModelB.mem_den_flow_iff]
   set g : State 4 → ℝ := fun y => (2 * p.I0 * y 2 + 3 * p.pccP y) / p.Cdc with hg
   have hgc : Continuous g :=
     ((continuous_const.mul (Dynamics.contDiff_coord (n := 4) (k := 1) 2).continuous).add
@@ -700,63 +778,6 @@ end ModelBParams
 
 namespace ModelB
 
-/-- A model-B system read about a selected state `x*`. -/
-structure Model where
-  /-- The model-B parameters. -/
-  p : ModelBParams
-  /-- The selected state `x* = (Δθ*, x_pll*, V_dc*, ξ_v*)`. -/
-  x : State 4
-
-/-- Model B translated so that the selected state is the origin. -/
-def Model.field (m : Model) (z : State 4) : State 4 := m.p.field (z + m.x)
-
-/-- Requirements on model B, all static. -/
-inductive Requirement
-  /-- The selected state is a zero of the field. -/
-  | equilibrium
-  /-- Positive DC-voltage reference. -/
-  | positiveReference
-  /-- The 4×4 Routh conditions on the Jacobian at the selected state. -/
-  | routh
-  /-- Negative Jacobian determinant at the selected state. -/
-  | detNeg
-  /-- The Jacobian at the selected state is off the 4×4 Routh boundary: it meets the Routh
-  conditions or violates them strictly. -/
-  | offBoundary
-
-/-- Satisfaction of a requirement by a model. -/
-def Meets (m : Model) : Requirement → Prop
-  | .equilibrium => m.p.field m.x = 0
-  | .positiveReference => 0 < m.p.VdcRef
-  | .routh => RouthFin4 (m.p.jacobian m.x)
-  | .detNeg => (m.p.jacobian m.x).det < 0
-  | .offBoundary => RouthFin4 (m.p.jacobian m.x) ∨ RouthViolationFin4 (m.p.jacobian m.x)
-
-/-- The translation of the sentences: the local sentences into an equilibrium with positive
-reference satisfying the Routh conditions, instability into one with a negative Jacobian
-determinant, passivity into nothing. The global sentences, decay rates, sampled contraction and
-conservation are not decided by the linearization and are translated into the whole language,
-which no model meets (unavailable translation coverage). -/
-def translate : Sentence → Set Requirement
-  | .flow .lyapunovStable | .flow .locallyAsymptoticallyStable
-  | .flow .locallyExponentiallyStable => {.equilibrium, .positiveReference, .routh}
-  | .flow .unstable => {.equilibrium, .positiveReference, .detNeg}
-  | .flow _ => Set.univ
-  | .passive => ∅
-  | .envelope _ => Set.univ
-
-/-- The model-B family: every model read as its field translated to the selected state. -/
-def family : Family Model Requirement 4 0 :=
-  ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
-
-@[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
-  fun _ => rfl
-
-/-- A flow sentence of a model is the sentence of the untranslated field at the selected state. -/
-private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
-    m ∈ family.den (.flow P) ↔ P.holds m.p.field m.x :=
-  Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.x)
-    family_isAutonomous
 
 /-- No model meets the Routh conditions and a negative determinant: the whole requirement
 language is inconsistent. -/
@@ -771,7 +792,7 @@ language is inconsistent. -/
 private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
     (hV : Meets m .positiveReference) (hr : Meets m .routh) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
-  mem_den_flow_iff.mpr (m.p.modelB_locallyExponentiallyStable hV he hr.1 hr.2.1 hr.2.2.1 hr.2.2.2)
+  mem_den_flow_iff.mpr ((ModelB.mem_den_flow_iff.mp (m.p.modelB_locallyExponentiallyStable hV he hr.1 hr.2.1 hr.2.2.1 hr.2.2.2)))
 
 /-- Every translation of the model-B family is sound: the Routh conditions at an equilibrium
 prove the local sentences, a negative Jacobian determinant proves instability (LeanForControl's
@@ -792,8 +813,8 @@ which it agrees with model B), and passivity holds without requirement. -/
     exact les_of_meets (hm .equilibrium (by simp)) (hm .positiveReference (by simp))
       (hm .routh (by simp))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact mem_den_flow_iff.mpr (m.p.modelB_unstable_of_det_neg (hm .positiveReference (by simp))
-      (hm .equilibrium (by simp)) (hm .detNeg (by simp)))
+    exact mem_den_flow_iff.mpr ((ModelB.mem_den_flow_iff.mp (m.p.modelB_unstable_of_det_neg (hm .positiveReference (by simp))
+      (hm .equilibrium (by simp)) (hm .detNeg (by simp)))))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
 @[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
@@ -823,7 +844,7 @@ Jacobian has a positive real eigenvalue and the equilibrium is unstable. -/
     (hx : m.p.field m.x = 0) (hdet : (m.p.jacobian m.x).det < 0) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr (m.p.modelB_unstable_of_det_neg hV hx hdet)
+  exact mem_den_flow_iff.mpr ((ModelB.mem_den_flow_iff.mp (m.p.modelB_unstable_of_det_neg hV hx hdet)))
 
 /-- Concrete non-vacuous instance: the no-load operating point. With `I₀ = 0`, `R_g = 0`,
 `i_q0 = 0`, `V_dc* > 0`, `V_g > 0` and positive gains `k_p, k_i, k_pv, k_iv` and `C_dc > 0`
@@ -836,7 +857,7 @@ exponentially stable. -/
       family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact mem_den_flow_iff.mpr
-    (p.modelB_noLoad_locallyExponentiallyStable hV hVg hkp hki hkpv hkiv hC hI hR hq)
+    ((ModelB.mem_den_flow_iff.mp (p.modelB_noLoad_locallyExponentiallyStable hV hVg hkp hki hkpv hkiv hC hI hR hq)))
 
 /-! ### Exactness of the local exponential translation at equilibria -/
 
@@ -897,7 +918,9 @@ def negativeReference : Model :=
   ⟨⟨0, 0, 1, 1, 1, 0, -1, -1, -1, 1, 0, 0, 0⟩, WithLp.toLp 2 ![0, 0, -1, 0]⟩
 
 private theorem negativeReference_equilibrium :
-    negativeReference.p.field negativeReference.x = 0 := by
+    connection% (negativeReference ∈ TMIO.realize Meets {.equilibrium}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   rw [ModelBParams.field_eq_zero_iff]
   simp [negativeReference, ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
 
@@ -907,7 +930,7 @@ diagonal, `[[−1, 1], [−1, 0]]` (PLL) and `[[−3/2, 3/2], [−1, 0]]` (DC lo
     connection% (negativeReference ∈ family.den (.flow .locallyExponentiallyStable)) := by
   have h := mem_den_locallyExponentiallyStable_iff negativeReference (by simp [negativeReference])
   unfold powerlib.TMIO.Statement at h ⊢
-  refine h.mpr ⟨negativeReference_equilibrium, ?_⟩
+  refine h.mpr ⟨(by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Meets] using negativeReference_equilibrium), ?_⟩
   set J := negativeReference.p.jacobian negativeReference.x with hJ
   have e00 : J 0 0 = -1 := by simp [J, ModelBParams.jacobian, negativeReference]
   have e01 : J 0 1 = 1 := by simp [J, ModelBParams.jacobian, negativeReference]
@@ -973,7 +996,7 @@ the negative-reference converter is an equilibrium. -/
     intro q hq
     rw [Set.mem_singleton_iff] at hq
     subst hq
-    exact negativeReference_equilibrium
+    exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Meets] using negativeReference_equilibrium)
   · have : (0 : ℝ) < -1 := hV
     norm_num at this
 
@@ -1091,7 +1114,7 @@ estimate is met because the solutions cease to exist, not because they converge.
     (hx : m.x 2 = 0) (hP : m.p.pccP m.x / m.p.Cdc < 0) (hI : m.p.I0 / m.p.Cdc ≠ 0) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr (m.p.modelB_locallyExponentiallyStable_of_collapse hx hP hI)
+  exact mem_den_flow_iff.mpr ((ModelB.mem_den_flow_iff.mp (m.p.modelB_locallyExponentiallyStable_of_collapse hx hP hI)))
 
 /-- When the injection does not cross the singular plane (`I₀ / C_dc = 0`, in particular when
 `C_dc = 0`), no selected state on the plane is locally exponentially stable. The field agrees on
@@ -1150,7 +1173,7 @@ while it stays near `x*` (`Dynamics.Degenerate.unstable_of_repel`). -/
     (hP : 0 < m.p.pccP m.x / m.p.Cdc) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr (m.p.modelB_unstable_of_repel hx hP)
+  exact mem_den_flow_iff.mpr ((ModelB.mem_den_flow_iff.mp (m.p.modelB_unstable_of_repel hx hP)))
 
 /-- **Local exponential stability on the singular plane.** For a selected state with `V_dc* = 0`
 and nonzero power term `P(x*) / C_dc ≠ 0` (so `C_dc ≠ 0`), the segment-based local exponential
@@ -1171,7 +1194,7 @@ power-balance case `P(x*) = 0` is not decided here. -/
     rcases lt_or_gt_of_ne hP with h | h
     · exact h
     · exact absurd (mem_den_flow_iff.mp hm).lyapunovStable
-        (m.p.modelB_unstable_of_repel hx h)
+        ((ModelB.mem_den_flow_iff.mp (m.p.modelB_unstable_of_repel hx h)))
   · rintro ⟨h1, h2⟩
     exact hcol h1 h2
 
@@ -1182,7 +1205,9 @@ def collapsePoint : Model :=
   ⟨⟨0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0⟩, WithLp.toLp 2 ![0, 0, 0, -1]⟩
 
 private theorem collapsePoint_field_ne_zero :
-    collapsePoint.p.field collapsePoint.x ≠ 0 := by
+    connection% (collapsePoint ∉ TMIO.realize Meets {.equilibrium}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   intro h
   have := congrArg (fun y : State 4 => y 3) h
   simp [collapsePoint, ModelBParams.field] at this
@@ -1208,7 +1233,7 @@ is that of an equilibrium with positive reference (`exactUnder_locallyExponentia
   exact Spectral.not_exactUnder_of_witness
     (by simp [TMIO.mem_realize, family, Meets, collapsePoint])
     collapsePoint_mem_den_locallyExponentiallyStable (q := Requirement.equilibrium)
-    (by simp [family, translate]) collapsePoint_field_ne_zero
+    (by simp [family, translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Meets] using collapsePoint_field_ne_zero)
 
 /-- Within the context of a positive DC-voltage reference the local asymptotic translation is not
 exact (the collapse point). -/
@@ -1219,7 +1244,7 @@ exact (the collapse point). -/
   exact Spectral.not_exactUnder_of_les_witness
     (by simp [TMIO.mem_realize, family, Meets, collapsePoint])
     collapsePoint_mem_den_locallyExponentiallyStable (Or.inr rfl) (q := Requirement.equilibrium)
-    (by simp [family, translate]) collapsePoint_field_ne_zero
+    (by simp [family, translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Meets] using collapsePoint_field_ne_zero)
 
 /-- Within the context of a positive DC-voltage reference the Lyapunov translation is not exact
 (the collapse point). -/
@@ -1229,7 +1254,7 @@ exact (the collapse point). -/
   exact Spectral.not_exactUnder_of_les_witness
     (by simp [TMIO.mem_realize, family, Meets, collapsePoint])
     collapsePoint_mem_den_locallyExponentiallyStable (Or.inl rfl) (q := Requirement.equilibrium)
-    (by simp [family, translate]) collapsePoint_field_ne_zero
+    (by simp [family, translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Meets] using collapsePoint_field_ne_zero)
 
 /-- The local asymptotic translation is not exact (the negative-reference converter). -/
 @[tmio TM, powerlib_domain] theorem not_exact_locallyAsymptoticallyStable :

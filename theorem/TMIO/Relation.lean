@@ -174,7 +174,7 @@ variable {S Q X V : Type*}
 /-- Relational image and core form a Galois connection (Mathlib `SetRel.image_subset_iff`). -/
 @[tmio T, powerlib_foundation] theorem gc_image_core (R : SetRel S Q) :
     connection% (GaloisConnection (generate (cover R)) (cover R)) :=
-  (generate (cover R)).gc
+  gc_generate (cover R)
 
 /-- A translation table, each sentence listing its requirements, as a relation. -/
 def table (t : S → Set Q) : SetRel S Q := {p | p.2 ∈ t p.1}

@@ -99,11 +99,14 @@ def rlMatrix (m : RL.Impedance) : Matrix (Fin 1) (Fin 1) ℝ := m.plant.A
   simp only [rlInputField, linearField, rlMatrix, mulVec_sub]
   abel
 
-/-- The state matrix of the RL field is Hurwitz exactly when the resistance is positive.
-Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem rlMatrix_isHurwitz_iff (m : RL.Impedance) :
-    IsHurwitz (rlMatrix m) ↔ 0 < m.resistance :=
-  RL.isHurwitz_iff m
+/-- The forward semantics of a single RL branch contains global exponential stability exactly
+when its resistance is positive. -/
+@[tmio TM, powerlib_foundation] theorem rlMatrix_isHurwitz_iff (m : RL.Impedance) :
+    connection% ((Sentence.flow .globallyExponentiallyStable) ∈
+      RL.family.semantics (OrderDual.toDual {m}) ↔ 0 < m.resistance) := by
+  simpa only [TMIO.Statement, Family.semantics, Family.den, TMIO.mem_satisfaction,
+    TMIO.mem_realize, OrderDual.ofDual_toDual, Set.mem_singleton_iff, forall_eq] using
+    RL.isHurwitz_iff m
 
 /-- Discretized RL model, trapezoidal rule: for `R > 0` and every `h > 0` the implicit step
 is uniquely solvable and every discrete trajectory decays geometrically.
@@ -113,7 +116,12 @@ private theorem rlPlant_trapezoidalDiscretization_exponentiallyStable
     (∀ initial, ∃! x, IsTrapezoidalTrajectory (rlField m) h x ∧ x 0 = initial) ∧
     ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x, IsTrapezoidalTrajectory (rlField m) h x →
       ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖ := by
-  have hA := (rlMatrix_isHurwitz_iff m).mpr hR
+  have hden : m ∈ RL.family.den (.flow .globallyExponentiallyStable) := by
+    simpa only [TMIO.Statement, Family.semantics, Family.den, TMIO.mem_satisfaction,
+      TMIO.mem_realize, OrderDual.ofDual_toDual, Set.mem_singleton_iff, forall_eq] using
+      (rlMatrix_isHurwitz_iff m).mpr hR
+  have hA := (RL.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
+    (Or.inl trivial)).mp hden
   rw [rlField_eq_linearField]
   exact ⟨trapezoidal_existsUnique (isUnit_det_one_sub_smul_of_isHurwitz hA (half_pos hh)),
     trapezoidal_exponentiallyStable_of_isHurwitz hA hh⟩
@@ -126,7 +134,12 @@ private theorem rlPlant_backwardEulerDiscretization_exponentiallyStable
     (∀ initial, ∃! x, IsBackwardEulerTrajectory (rlField m) h x ∧ x 0 = initial) ∧
     ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x, IsBackwardEulerTrajectory (rlField m) h x →
       ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖ := by
-  have hA := (rlMatrix_isHurwitz_iff m).mpr hR
+  have hden : m ∈ RL.family.den (.flow .globallyExponentiallyStable) := by
+    simpa only [TMIO.Statement, Family.semantics, Family.den, TMIO.mem_satisfaction,
+      TMIO.mem_realize, OrderDual.ofDual_toDual, Set.mem_singleton_iff, forall_eq] using
+      (rlMatrix_isHurwitz_iff m).mpr hR
+  have hA := (RL.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
+    (Or.inl trivial)).mp hden
   rw [rlField_eq_linearField]
   exact ⟨backwardEuler_existsUnique (isUnit_det_one_sub_smul_of_isHurwitz hA hh),
     backwardEuler_exponentiallyStable_of_isHurwitz hA hh⟩
@@ -143,8 +156,14 @@ private theorem rlPlant_trapezoidalDiscretization_exponentiallyStable_iff
       ∀ x : ℕ → LTI.State 1,
         (∀ k, x (k + 1) = LTI.Model.step ⟨trapezoidalMatrix h (rlMatrix m)⟩ (x k)) →
         ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔ 0 < m.resistance := by
-  rw [LTI.exponentiallyStable_iff_schurStable, trapezoidal_schurStable_iff_isHurwitz hh hP,
-    rlMatrix_isHurwitz_iff]
+  rw [LTI.exponentiallyStable_iff_schurStable, trapezoidal_schurStable_iff_isHurwitz hh hP]
+  have hden : (m ∈ RL.family.den (.flow .globallyExponentiallyStable)) ↔
+      0 < m.resistance := by
+    simpa only [TMIO.Statement, Family.semantics, Family.den, TMIO.mem_satisfaction,
+      TMIO.mem_realize, OrderDual.ofDual_toDual, Set.mem_singleton_iff, forall_eq] using
+      rlMatrix_isHurwitz_iff m
+  exact (RL.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
+    (Or.inl trivial)).symm.trans hden
 
 /-- The trapezoidal recursion of `rlMatrix` is exactly the trajectory predicate of the
 discretized RL field.
@@ -187,7 +206,12 @@ def lclField (m : LCL.Circuit) : (Fin 3 → ℝ) → (Fin 3 → ℝ) := lclInput
 Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem lclMatrix_isHurwitz (m : LCL.Circuit) (hp : m.Passive)
     (hd : m.Damped) : IsHurwitz m.plant.A :=
-  (LCL.isHurwitz_iff_stable m).mpr ((LCL.passive_stable_iff m hp).mpr hd)
+  ((show ∀ m : LCL.Circuit, IsHurwitz m.plant.A ↔ m.Stable from fun m => by
+      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, LCL.Meets] using
+        (LCL.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans
+          (LCL.isHurwitz_iff_stable m)) m).mpr ((show m.Stable ↔ m.Damped from by
+      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, LCL.Meets] using
+        LCL.passive_stable_iff m hp).mpr hd)
 
 /-- Discretized ideal LCL model, trapezoidal rule: for a passive damped plant and every
 `h > 0` the implicit step is uniquely solvable and every discrete trajectory (zero terminal
@@ -231,7 +255,12 @@ private theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable_iff
         ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖) ↔
       m.first.resistance ≠ 0 ∨ m.second.resistance ≠ 0 := by
   rw [LTI.exponentiallyStable_iff_schurStable, trapezoidal_schurStable_iff_isHurwitz hh hP,
-    LCL.isHurwitz_iff_stable, LCL.passive_stable_iff m hp]
+    (show ∀ m : LCL.Circuit, IsHurwitz m.plant.A ↔ m.Stable from fun m => by
+      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, LCL.Meets] using
+        (LCL.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans
+          (LCL.isHurwitz_iff_stable m)), (show m.Stable ↔ m.Damped from by
+      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, LCL.Meets] using
+        LCL.passive_stable_iff m hp)]
   rfl
 
 /-- Constant terminal voltages: every trapezoidal trajectory of the discretized LCL model

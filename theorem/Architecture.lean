@@ -629,18 +629,29 @@ private def dependsOnModel (ctx : Ctx) (models : Array (Nat × Expr)) (e : Expr)
   let seen ← IO.mkRef {}
   modelDependency ctx models cache seen e
 
-/-- Generic semantic support is recognized from the mathematical parameters, not a metadata
-label. The complete-system type must be arbitrary, and the Family must occur in the conclusion;
-an unused Family or one that appears only in a premise is not an interface for that conclusion. -/
+/-- Recognize an arbitrary-system Family actually used in the conclusion, including a generic
+family constructor such as a spectral template. Inspect values, not unused parameter types or
+let-bound values; model-dependency checks still reject constructors that hide an owned model. -/
+private partial def hasGenericFamilyValue (parameters : Array Expr) (e : Expr) : MetaM Bool := do
+  let ty ← whnf (← inferType e)
+  if ty.getAppFn.isConstOf ``Family then
+    let model ← whnf ty.getAppArgs[0]!
+    if model.isFVar && parameters.contains model then return true
+  match e with
+  | .app f a => hasGenericFamilyValue parameters f <||> hasGenericFamilyValue parameters a
+  | .forallE name d b bi | .lam name d b bi =>
+    withLocalDecl name bi d fun x => hasGenericFamilyValue parameters (b.instantiate1 x)
+  | .letE _ _ value body _ => hasGenericFamilyValue parameters (body.instantiate1 value)
+  | .mdata _ b => hasGenericFamilyValue parameters b
+  | .proj _ _ b => hasGenericFamilyValue parameters b
+  | _ => return false
+
+/-- Generic semantic support is recognized from mathematical parameters, not metadata. The
+complete-system type must be arbitrary and a Family value must occur in the conclusion. -/
 private def hasGenericFamilyConclusion (type : Expr) : MetaM Bool :=
   forallTelescope type fun xs body => do
     let body := (← statement? body).getD body
-    xs.anyM fun x => do
-      let ty ← whnf (← inferType x)
-      unless ty.getAppFn.isConstOf ``Family do return false
-      let model ← whnf ty.getAppArgs[0]!
-      unless model.isFVar do return false
-      return (body.find? (· == x)).isSome
+    hasGenericFamilyValue xs body
 
 /-- Generic Family laws may describe the library's semantic interface. They still reject
 signals, discrete evolution and behavioural predicates imported from outside the library. -/

@@ -1,9 +1,11 @@
 import theorem.Circuits.RL
 import theorem.Architecture
+import theorem.Spectral.Family
 import dependencies.tests.lean.Architecture.ConnectionFamilyFixture
 import dependencies.tests.lean.Architecture.GenericModelValueFixture
 
 open powerlib powerlib.TMIO
+open scoped ENNReal
 
 namespace ConnectionAdmission
 
@@ -108,6 +110,28 @@ private theorem hiddenGenericModelInterface {X Q : Type} (F : Family X Q 1 0) (x
     (h : x ∈ F.den .passive ↔ (GenericModelValueFixture.systemAlias r).Passive) :
     connection% (x ∈ F.den .passive ↔ (GenericModelValueFixture.systemAlias r).Passive) := h
 
+-- Constructed generic families get the same semantic-interface boundary as formal Family
+-- parameters. Concrete models, signals and direct ambient behaviour remain rejected.
+private theorem genericConstructedModelInput {X : Type}
+    (field : X → Dynamics.State 1 → Dynamics.State 1) (S U : X → Prop) (x : X)
+    (m : Circuits.RL.Impedance) (_h : m.plant.system.Passive)
+    (hx : x ∈ (Spectral.localFamily field S U).den .passive) :
+    connection% (x ∈ (Spectral.localFamily field S U).den .passive) := hx
+
+private theorem genericConstructedSignalInput {X : Type}
+    (field : X → Dynamics.State 1 → Dynamics.State 1) (S U : X → Prop) (x : X)
+    (_signal : ℝ → Dynamics.State 1)
+    (hx : x ∈ (Spectral.localFamily field S U).den .passive) :
+    connection% (x ∈ (Spectral.localFamily field S U).den .passive) := hx
+
+private theorem genericConstructedAmbientInput {X : Type}
+    (field : X → Dynamics.State 1 → Dynamics.State 1) (S U : X → Prop)
+    (hS : ∀ x, S x → LocallyExponentiallyStable (field x) 0)
+    (hU : ∀ x, U x → Unstable (field x) 0) :
+    connection% (∀ P, (Spectral.localFamily field S U).chain P ≤
+      (Spectral.localFamily field S U).semantics P) :=
+  Spectral.local_chain_le_semantics hS hU
+
 -- The module linter must discover this model before it becomes an imported declaration.
 structure CurrentModel where
   field : Dynamics.State 1 → Dynamics.State 1
@@ -145,12 +169,15 @@ run_cmd do
     for name in #[``raw, ``aliased, ``aliasedModel, ``proofDefinition, ``hiddenRelation,
         ``rawHypothesis, ``hiddenInput, ``freshRaw, ``packed, ``genericModelInput,
         ``phantomFamilyInput, ``genericSignalInput, ``hiddenGenericModelInterface,
-        ``genericCurrentModelInput] do
+        ``genericCurrentModelInput, ``genericConstructedModelInput, ``genericConstructedSignalInput,
+        ``genericConstructedAmbientInput] do
       if (← Architecture.publicTypeRejection ctx models (← getConstInfo name).type).isNone then
         throwError "Public admission accepted its rejection fixture: {name}"
     for name in #[``passive, ``foundation_connection, ``domain_connection, ``genericPassive,
         ``genericFlowInterface, ``genericReachInterface, ``allTypeClaim, ``conditionIff,
-        ``guardedExists] do
+        ``guardedExists, ``Spectral.local_chain_le_semantics,
+        ``Spectral.local_exact_locallyExponentiallyStable,
+        ``Spectral.local_not_exact_of_not_exact_les] do
       if let some reason ← Architecture.declarationRejection ctx models name then
         throwError "Public admission rejected its positive fixture: {name}: {reason}"
   let classified := Registry.theoremNames env
@@ -170,7 +197,7 @@ run_cmd do
       !foundations.contains ``domain_connection do
     throwError "An explicitly classified domain connection was lost"
   logInfo m!"POWERLIB_TYPED_ADMISSION_OK: unclassified, foundation and domain connections; \
-    14 rejection controls"
+    17 rejection controls"
 
 -- The grammar extension admits side conditions only as the characterizing side of an iff and as
 -- the guard of an existential, and comparisons of numbers only. Binder universes are inferred;

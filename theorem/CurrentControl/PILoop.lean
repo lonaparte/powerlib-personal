@@ -143,11 +143,27 @@ the model, not a connection conclusion. -/
   field_simp
   ring
 
+/-- Stability condition of the PI loop: both monic characteristic coefficients positive. -/
+def Stable (p : PIParams) : Prop := 0 < (p.R + p.Kp) / p.L ∧ 0 < p.Ki / p.L
+
+/-- Instability condition of the PI loop: a monic characteristic coefficient negative. -/
+def Unstable (p : PIParams) : Prop := (p.R + p.Kp) / p.L < 0 ∨ p.Ki / p.L < 0
+
+/-- The PI current-loop family: every parameter set read as the port system of its closed-loop
+plant (input `i*`, output `i`). -/
+def family : Family PIParams Spectral.Requirement 2 1 :=
+  Spectral.linearFamily model Stable Unstable
+
+@[powerlib_foundation] theorem family_isLinear : family.IsLinear model :=
+  Spectral.linearFamily_isLinear _ _ _
+
 /-- Routh–Hurwitz for the PI loop, for every inductance: the monic characteristic coefficients
-`(R + Kp)/L` and `Ki/L` are positive. Static evidence on the model, not a connection
-conclusion. -/
-@[powerlib_foundation] theorem isHurwitz_iff_div :
-    IsHurwitz p.model.A ↔ 0 < (p.R + p.Kp) / p.L ∧ 0 < p.Ki / p.L := by
+`(R + Kp)/L` and `Ki/L` are positive, read through the stable denotation. -/
+@[tmio TM, powerlib_foundation] theorem isHurwitz_iff_div :
+    connection% (p ∈ family.den (.flow .globallyExponentiallyStable) ↔
+      0 < (p.R + p.Kp) / p.L ∧ 0 < p.Ki / p.L) := by
+  unfold TMIO.Statement
+  rw [connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
   change IsHurwitz !![-(p.R + p.Kp) / p.L, p.Ki / p.L; -1, 0] ↔ _
   rw [Criteria.isHurwitz_fin_two_of_iff]
   have h1 : -(p.R + p.Kp) / p.L + 0 < 0 ↔ 0 < (p.R + p.Kp) / p.L := by
@@ -156,11 +172,12 @@ conclusion. -/
     rw [mul_zero, zero_sub, mul_neg_one, neg_neg]
   rw [h1, h2]
 
-/-- Routh–Hurwitz for the PI loop with `L > 0`. Static evidence on the model, not a connection
-conclusion. -/
-@[powerlib_foundation] theorem isHurwitz_iff (hL : 0 < p.L) :
-    IsHurwitz p.model.A ↔ 0 < p.R + p.Kp ∧ 0 < p.Ki := by
-  rw [isHurwitz_iff_div, div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
+/-- With `L > 0`, the stable denotation is characterized by the unscaled coefficients. -/
+@[tmio TM, powerlib_foundation] theorem isHurwitz_iff (hL : 0 < p.L) :
+    connection% (p ∈ family.den (.flow .globallyExponentiallyStable) ↔
+      0 < p.R + p.Kp ∧ 0 < p.Ki) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% isHurwitz_iff_div), div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
 
 /-- A negative monic coefficient gives a characteristic root in the open right half plane. -/
 @[powerlib_foundation] theorem exists_root_of_unstable
@@ -240,11 +257,29 @@ def refFeedbackModel (κ : ℝ) : Plant 2 1 :=
   · ring
   · ring
 
-/-- Routh–Hurwitz with reference feedback, for every inductance. Static evidence on the model,
-not a connection conclusion. -/
-@[powerlib_foundation] theorem refFeedback_isHurwitz_iff_div (κ : ℝ) :
-    IsHurwitz (p.refFeedbackModel κ).A ↔
-      0 < (p.R + p.Kp * (1 - κ)) / p.L ∧ 0 < p.Ki * (1 - κ) / p.L := by
+/-- Stability condition with reference feedback `κ`. -/
+def RefStable (q : PIParams × ℝ) : Prop :=
+  0 < (q.1.R + q.1.Kp * (1 - q.2)) / q.1.L ∧ 0 < q.1.Ki * (1 - q.2) / q.1.L
+
+/-- Instability condition with reference feedback `κ`. -/
+def RefUnstable (q : PIParams × ℝ) : Prop :=
+  (q.1.R + q.1.Kp * (1 - q.2)) / q.1.L < 0 ∨ q.1.Ki * (1 - q.2) / q.1.L < 0
+
+/-- The PI current loop with proportional reference feedback `i* = r + κ i`: every pair
+`(p, κ)` read as the port system of its plant (input `r`, output `i`). -/
+def refFamily : Family (PIParams × ℝ) Spectral.Requirement 2 1 :=
+  Spectral.linearFamily (fun q => q.1.refFeedbackModel q.2) RefStable RefUnstable
+
+@[powerlib_foundation] theorem refFamily_isLinear :
+    refFamily.IsLinear fun q => q.1.refFeedbackModel q.2 :=
+  Spectral.linearFamily_isLinear _ _ _
+
+/-- The reference-feedback stable denotation is characterized by its monic coefficients. -/
+@[tmio TM, powerlib_foundation] theorem refFeedback_isHurwitz_iff_div (κ : ℝ) :
+    connection% ((p, κ) ∈ refFamily.den (.flow .globallyExponentiallyStable) ↔
+      0 < (p.R + p.Kp * (1 - κ)) / p.L ∧ 0 < p.Ki * (1 - κ) / p.L) := by
+  unfold TMIO.Statement
+  rw [connection_proof% refFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
   change IsHurwitz !![-(p.R + p.Kp * (1 - κ)) / p.L, p.Ki / p.L; -(1 - κ), 0] ↔ _
   rw [Criteria.isHurwitz_fin_two_of_iff]
   have h1 : -(p.R + p.Kp * (1 - κ)) / p.L + 0 < 0 ↔ 0 < (p.R + p.Kp * (1 - κ)) / p.L := by
@@ -254,12 +289,12 @@ not a connection conclusion. -/
     rw [mul_zero, zero_sub, mul_neg, neg_neg, div_mul_eq_mul_div]
   rw [h1, h2]
 
-/-- Routh–Hurwitz with reference feedback and `L > 0`. Static evidence on the model, not a
-connection conclusion. -/
-@[powerlib_foundation] theorem refFeedback_isHurwitz_iff (hL : 0 < p.L) (κ : ℝ) :
-    IsHurwitz (p.refFeedbackModel κ).A ↔
-      0 < p.R + p.Kp * (1 - κ) ∧ 0 < p.Ki * (1 - κ) := by
-  rw [refFeedback_isHurwitz_iff_div, div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
+/-- With `L > 0`, the reference-feedback denotation uses the unscaled coefficients. -/
+@[tmio TM, powerlib_foundation] theorem refFeedback_isHurwitz_iff (hL : 0 < p.L) (κ : ℝ) :
+    connection% ((p, κ) ∈ refFamily.den (.flow .globallyExponentiallyStable) ↔
+      0 < p.R + p.Kp * (1 - κ) ∧ 0 < p.Ki * (1 - κ)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% refFeedback_isHurwitz_iff_div), div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
 
 @[powerlib_foundation] theorem refFeedback_exists_root_of_unstable {κ : ℝ}
     (h : (p.R + p.Kp * (1 - κ)) / p.L < 0 ∨ p.Ki * (1 - κ) / p.L < 0) :
@@ -289,44 +324,13 @@ end PIParams
 
 namespace PIParams
 
-/-- Stability condition of the PI loop: both monic characteristic coefficients positive. -/
-def Stable (p : PIParams) : Prop := 0 < (p.R + p.Kp) / p.L ∧ 0 < p.Ki / p.L
-
-/-- Instability condition of the PI loop: a monic characteristic coefficient negative. -/
-def Unstable (p : PIParams) : Prop := (p.R + p.Kp) / p.L < 0 ∨ p.Ki / p.L < 0
-
-/-- The PI current-loop family: every parameter set read as the port system of its closed-loop
-plant (input `i*`, output `i`). -/
-def family : Family PIParams Spectral.Requirement 2 1 :=
-  Spectral.linearFamily model Stable Unstable
-
-@[powerlib_foundation] theorem family_isLinear : family.IsLinear model :=
-  Spectral.linearFamily_isLinear _ _ _
-
-/-- Stability condition with reference feedback `κ`. -/
-def RefStable (q : PIParams × ℝ) : Prop :=
-  0 < (q.1.R + q.1.Kp * (1 - q.2)) / q.1.L ∧ 0 < q.1.Ki * (1 - q.2) / q.1.L
-
-/-- Instability condition with reference feedback `κ`. -/
-def RefUnstable (q : PIParams × ℝ) : Prop :=
-  (q.1.R + q.1.Kp * (1 - q.2)) / q.1.L < 0 ∨ q.1.Ki * (1 - q.2) / q.1.L < 0
-
-/-- The PI current loop with proportional reference feedback `i* = r + κ i`: every pair
-`(p, κ)` read as the port system of its plant (input `r`, output `i`). -/
-def refFamily : Family (PIParams × ℝ) Spectral.Requirement 2 1 :=
-  Spectral.linearFamily (fun q => q.1.refFeedbackModel q.2) RefStable RefUnstable
-
-@[powerlib_foundation] theorem refFamily_isLinear :
-    refFamily.IsLinear fun q => q.1.refFeedbackModel q.2 :=
-  Spectral.linearFamily_isLinear _ _ _
-
 private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.den (.flow P) = {p | Stable p}) := show family.den (.flow P) = {p | Stable p} from
-  Spectral.linear_den (U := Unstable) (fun p => (isHurwitz_iff_div p).symm) hP
+  Spectral.linear_den (U := Unstable) (fun p => ((isHurwitz_iff_div p).symm.trans (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)))) hP
 
 private theorem refDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (refFamily.den (.flow P) = {q | RefStable q}) := show refFamily.den (.flow P) = {q | RefStable q} from
-  Spectral.linear_den (U := RefUnstable) (fun q => (q.1.refFeedback_isHurwitz_iff_div q.2).symm)
+  Spectral.linear_den (U := RefUnstable) (fun q => ((q.1.refFeedback_isHurwitz_iff_div q.2).symm.trans (refFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))))
     hP
 
 /-- Every translation of the PI-loop family is sound: positive monic coefficients give a Hurwitz
@@ -334,7 +338,7 @@ loop, a negative one a right-half-plane characteristic root. -/
 @[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.linear_chain_le_semantics (fun p h => (isHurwitz_iff_div p).mpr h)
+  exact Spectral.linear_chain_le_semantics (fun p h => (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp ((isHurwitz_iff_div p).mpr h))
     (fun p h => exists_root_of_unstable p h)
 
 /-- The attractive sentences and sampled contraction of the PI loop are carved out exactly by
@@ -342,7 +346,7 @@ positive monic coefficients `(R + Kp)/L > 0 ∧ Ki/L > 0`. -/
 @[tmio TM, powerlib_domain] theorem exact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.linear_exact (fun p => (isHurwitz_iff_div p).symm) hP
+  exact Spectral.linear_exact (fun p => ((isHurwitz_iff_div p).symm.trans (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)))) hP
 
 /-- The PI current loop with `L > 0` satisfies an attractive sentence (in particular global
 exponential stability) iff `R + Kp > 0 ∧ Ki > 0`. -/
@@ -369,7 +373,7 @@ exponential stability) iff `R + Kp > 0 ∧ Ki > 0`. -/
     connection% (∀ P, refFamily.chain P ≤ refFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.linear_chain_le_semantics
-    (fun q h => (q.1.refFeedback_isHurwitz_iff_div q.2).mpr h)
+    (fun q h => (refFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp ((q.1.refFeedback_isHurwitz_iff_div q.2).mpr h))
     (fun q h => q.1.refFeedback_exists_root_of_unstable h)
 
 /-- With reference feedback the attractive sentences and sampled contraction are carved out
@@ -377,7 +381,7 @@ exactly by `(R + Kp (1 − κ))/L > 0 ∧ Ki (1 − κ)/L > 0`. -/
 @[tmio TM, powerlib_domain] theorem refExact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (refFamily.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.linear_exact (fun q => (q.1.refFeedback_isHurwitz_iff_div q.2).symm) hP
+  exact Spectral.linear_exact (fun q => ((q.1.refFeedback_isHurwitz_iff_div q.2).symm.trans (refFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)))) hP
 
 /-- With `L > 0` the loop with reference feedback `κ` satisfies an attractive sentence iff
 `R + Kp (1 − κ) > 0 ∧ Ki (1 − κ) > 0`. -/
@@ -410,7 +414,7 @@ private theorem tracks_reference (p : PIParams) (hL : 0 < p.L) (hR : 0 < p.R + p
     (hKi : 0 < p.Ki) {iref : ℝ} {x : ℝ → ℝ²} (hx : ∀ t, HasDerivAt x (p.field iref (x t)) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 iref) ∧
       Tendsto (fun t => x t 1) atTop (𝓝 (p.R * iref / p.Ki)) := by
-  have hA := (p.isHurwitz_iff hL).2 ⟨hR, hKi⟩
+  have hA := (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp ((p.isHurwitz_iff hL).2 ⟨hR, hKi⟩)
   have he := p.isEquilibrium hKi.ne' iref
   have hx' : ∀ t, HasDerivAt x (p.model.inputField (fun _ => iref) (x t)) t := by
     intro t

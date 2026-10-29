@@ -757,7 +757,9 @@ decoupled (`X_g = 0`) and conserves the pendulum energy `1 − cos θ + x²/2`. 
 /-- `undampedPLL` and `frozenPLL` meet the same requirements: both are equilibria with `C ≠ 0`,
 and neither meets the strict Routh conditions nor `a₀ < 0`. -/
 private theorem meets_undamped_iff_frozen (q : Requirement) :
-    Meets undampedPLL q ↔ Meets frozenPLL q := by
+    connection% (undampedPLL ∈ TMIO.realize Meets {q} ↔ frozenPLL ∈ TMIO.realize Meets {q}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
   cases q
   · simp [Meets, IsEq, undampedPLL, frozenPLL]
   · constructor
@@ -770,7 +772,9 @@ private theorem meets_undamped_iff_frozen (q : Requirement) :
 
 /-- `weakFocus` and `undampedPLL` meet the same requirements. -/
 private theorem meets_weakFocus_iff_undamped (q : Requirement) :
-    Meets weakFocus q ↔ Meets undampedPLL q := by
+    connection% (weakFocus ∈ TMIO.realize Meets {q} ↔ undampedPLL ∈ TMIO.realize Meets {q}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
   cases q
   · simp [Meets, IsEq, undampedPLL, weakFocus]
   · constructor
@@ -795,7 +799,10 @@ of the family is exact for Lyapunov stability: `undampedPLL` (Lyapunov stable) a
   rw [← hT, (connection_proof% TMIO.mem_realize)] at h1
   have h3 : frozenPLL ∈ family.den (.flow .lyapunovStable) := by
     rw [← hT, (connection_proof% TMIO.mem_realize)]
-    exact fun q hq => (meets_undamped_iff_frozen q).mp (h1 q hq)
+    exact fun q hq => by
+      have heq : Meets undampedPLL q ↔ Meets frozenPLL q := by
+        simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using meets_undamped_iff_frozen q
+      exact heq.mp (h1 q hq)
   rw [(connection_proof% family_isAutonomous.mem_den_flow)] at h2 h3
   exact h2 h3
 
@@ -812,7 +819,10 @@ the same requirements. -/
   rw [← hT, (connection_proof% TMIO.mem_realize)] at h2
   have h3 : undampedPLL ∈ family.den (.flow .unstable) := by
     rw [← hT, (connection_proof% TMIO.mem_realize)]
-    exact fun q hq => (meets_undamped_iff_frozen q).mpr (h2 q hq)
+    exact fun q hq => by
+      have heq : Meets undampedPLL q ↔ Meets frozenPLL q := by
+        simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using meets_undamped_iff_frozen q
+      exact heq.mpr (h2 q hq)
   rw [(connection_proof% family_isAutonomous.mem_den_flow)] at h1 h3
   exact h3 h1
 
@@ -829,6 +839,9 @@ asymptotically stable) and `undampedPLL` (not) meet the same requirements. -/
   unfold powerlib.TMIO.Statement at h1 h2
   apply h2
   rw [← hT, (connection_proof% TMIO.mem_realize)] at h1 ⊢
-  exact fun q hq => (meets_weakFocus_iff_undamped q).mp (h1 q hq)
+  exact fun q hq => by
+    have heq : Meets weakFocus q ↔ Meets undampedPLL q := by
+      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using meets_weakFocus_iff_undamped q
+    exact heq.mp (h1 q hq)
 
 end powerlib.GFL.DCLink.FourStateBoundary

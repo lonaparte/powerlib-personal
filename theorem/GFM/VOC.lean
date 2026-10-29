@@ -733,7 +733,9 @@ private theorem critical_strictLyapunov : IsStrictLyapunovFunction critical.real
     (Flow.globallyAsymptoticallyStable_of_strictLyapunov two_pos critical.contDiff_realField
       critical_strictLyapunov)
 
-private theorem critical_not_decaying : ¬ Meets critical .decaying := by
+private theorem critical_not_decaying : connection% (critical ∉ TMIO.realize Meets {.decaying}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
   change ¬ critical.c < 0
   rw [critical_c]
   exact lt_irrefl 0
@@ -744,7 +746,7 @@ asymptotically stable without decay at the origin (`c = 0`). -/
     connection% (¬ family.Exact (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_exact_of_witness critical_mem_den_globallyAsymptoticallyStable
-    (q := .decaying) (by simp [family, translate]) critical_not_decaying
+    (q := .decaying) (by simp [family, translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family] using critical_not_decaying)
 
 /-- The local asymptotic translation is sound but not exact (the same witness): local asymptotic
 stability is not decided by the linearization. -/
@@ -756,7 +758,7 @@ stability is not decided by the linearization. -/
   exact Spectral.not_exact_of_witness (family_isAutonomous.mem_den_flow.mpr
     (Flow.GloballyAsymptoticallyStable.localAsymptoticStable
       (family_isAutonomous.mem_den_flow.mp hmem))) (q := .decaying)
-    (by simp [family, translate]) critical_not_decaying
+    (by simp [family, translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family] using critical_not_decaying)
 
 /-- The Lyapunov translation is sound but not exact (the same witness). -/
 @[tmio TM, powerlib_domain] theorem not_exact_lyapunovStable :
@@ -766,7 +768,7 @@ stability is not decided by the linearization. -/
   unfold powerlib.TMIO.Statement at hmem
   exact Spectral.not_exact_of_witness (family_isAutonomous.mem_den_flow.mpr
     (family_isAutonomous.mem_den_flow.mp hmem).2.2.1) (q := .decaying)
-    (by simp [family, translate]) critical_not_decaying
+    (by simp [family, translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family] using critical_not_decaying)
 
 /-! ### The local asymptotic and Lyapunov denotations -/
 

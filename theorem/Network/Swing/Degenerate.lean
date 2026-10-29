@@ -508,7 +508,9 @@ private theorem reducedSwing_not_localAsymptoticStable_of_potential_lt {p : Para
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hseed : ∀ ε > 0, ∃ v : Fin n → ℝ, ‖angleState v‖ < ε ∧
       potential p (θ + ground v) < potential p θ) :
-    ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
+    connection% (¬ ((⟨p, θ⟩ : Model n) ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff']
   have hP := sum_P_of_balance hbal
   rw [reducedField_eq_mechanical hP, equilibrium_eq_point]
   refine Dynamics.Mechanical.not_localAsymptoticStable_of_potential_lt
@@ -525,7 +527,9 @@ reduced field. If the network stays power balanced along the relative-angle disp
 private theorem reducedSwing_not_localAsymptoticStable_of_balance_line {p : Params n}
     {θ : Fin (n + 1) → ℝ} {v : Fin n → ℝ} (hv : v ≠ 0)
     (hline : ∀ t : ℝ, ∀ k, p.P k = powerInjection p.B (θ + ground (t • v)) k) :
-    ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
+    connection% (¬ ((⟨p, θ⟩ : Model n) ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff']
   have hP : ∑ k, p.P k = 0 := sum_P_of_balance (hline 0)
   rw [reducedField_eq_mechanical hP, equilibrium_eq_point]
   exact Dynamics.Mechanical.not_localAsymptoticStable_of_critical_line hv fun t =>
@@ -922,7 +926,10 @@ private theorem reducedSwing_not_localAsymptoticStable_of_forms {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k) (v : Fin n → ℝ)
     (h : hessForm p θ (ground v) < 0 ∨
       (hessForm p θ (ground v) = 0 ∧ cubicForm p θ (ground v) ≠ 0)) :
-    ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
+    connection% (¬ ((⟨p, θ⟩ : Model n) ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff']
+  apply (not_congr (mem_den_flow_iff' (m := ⟨p, θ⟩))).mp
   refine reducedSwing_not_localAsymptoticStable_of_potential_lt hbal fun ε hε => ?_
   have hN : 0 < ‖angleState v‖ + 1 := by positivity
   obtain ⟨t, -, ht, hlt⟩ := exists_potential_lt hbal (ground v) h (div_pos hε hN)
@@ -944,7 +951,7 @@ the model is not in the denotation of the local asymptotic sentence. -/
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [mem_den_flow_iff']
-  exact reducedSwing_not_localAsymptoticStable_of_forms hbal v h
+  exact (not_congr mem_den_flow_iff').mp (reducedSwing_not_localAsymptoticStable_of_forms hbal v h)
 
 /-- A non-Hurwitz reduced Jacobian leaves a nonzero grounded direction with a nonpositive
 Hessian form. -/
@@ -1033,7 +1040,9 @@ untranslated field. -/
 private theorem reducedSwing_not_localAsymptoticStable_two (p : Params 1) (θ : Fin (1 + 1) → ℝ)
     (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
-    ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
+    connection% (¬ ((⟨p, θ⟩ : Model 1) ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff']
   obtain ⟨u, hu0, hu, hle⟩ := exists_hessForm_nonpos hH
   have hu1 : u 1 ≠ 0 := by
     intro h1
@@ -1051,11 +1060,13 @@ private theorem reducedSwing_not_localAsymptoticStable_two (p : Params 1) (θ : 
     have : 0 < 2 * (p.B 0 1 * Real.cos (θ 0 - θ 1)) * u 1 ^ 2 := by positivity
     linarith
   rcases hW.lt_or_eq with hW | hW
-  · refine reducedSwing_not_localAsymptoticStable_of_forms hbal v (Or.inl ?_)
+  · apply (not_congr (mem_den_flow_iff' (m := ⟨p, θ⟩))).mp
+    refine reducedSwing_not_localAsymptoticStable_of_forms hbal v (Or.inl ?_)
     rw [hessForm_two p θ _ hg0, hg1]
     linarith
   · by_cases hB : p.B 0 1 = 0
-    · refine reducedSwing_not_localAsymptoticStable_of_balance_line (v := v) (fun h => ?_)
+    · apply (not_congr (mem_den_flow_iff' (m := ⟨p, θ⟩))).mp
+      refine reducedSwing_not_localAsymptoticStable_of_balance_line (v := v) (fun h => ?_)
         fun t k => ?_
       · have := congrFun h 0
         simp [hv] at this
@@ -1069,6 +1080,7 @@ private theorem reducedSwing_not_localAsymptoticStable_two (p : Params 1) (θ : 
         have := Real.sin_sq_add_cos_sq (θ 0 - θ 1)
         rw [hs, hc] at this
         norm_num at this
+      apply (not_congr (mem_den_flow_iff' (m := ⟨p, θ⟩))).mp
       refine reducedSwing_not_localAsymptoticStable_of_forms hbal v (Or.inr ⟨?_, ?_⟩)
       · rw [hessForm_two p θ _ hg0, hW]; ring
       · rw [cubicForm_two p θ _ hg0, hg1]
@@ -1085,7 +1097,7 @@ machines are uncoupled (a continuum of equilibria). -/
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [mem_den_flow_iff']
-  exact reducedSwing_not_localAsymptoticStable_two m.params m.θ hbal hH
+  exact (not_congr mem_den_flow_iff').mp (reducedSwing_not_localAsymptoticStable_two m.params m.θ hbal hH)
 
 /-- **For two machines the local asymptotic translation is exact.** -/
 @[tmio TM, powerlib_domain] theorem exact_locallyAsymptoticallyStable_two :
@@ -1311,7 +1323,9 @@ untranslated field. -/
 private theorem reducedSwing_not_localAsymptoticStable_three (p : Params 2)
     (θ : Fin (2 + 1) → ℝ) (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
-    ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
+    connection% (¬ ((⟨p, θ⟩ : Model 2) ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff']
   intro hLAS
   have hF : ∀ s t, 0 ≤ p.B 0 1 * Real.cos (θ 0 - θ 1) * s ^ 2 +
       p.B 0 2 * Real.cos (θ 0 - θ 2) * t ^ 2 + p.B 1 2 * Real.cos (θ 1 - θ 2) * (s - t) ^ 2 := by
@@ -1319,20 +1333,20 @@ private theorem reducedSwing_not_localAsymptoticStable_three (p : Params 2)
     by_contra hneg
     push Not at hneg
     exact reducedSwing_not_localAsymptoticStable_of_forms hbal ![s, t]
-      (Or.inl (by rw [hessForm_three]; linarith)) hLAS
+      (Or.inl (by rw [hessForm_three]; linarith)) (mem_den_flow_iff'.mpr hLAS)
   have hK : ∀ s t, p.B 0 1 * Real.cos (θ 0 - θ 1) * s ^ 2 +
       p.B 0 2 * Real.cos (θ 0 - θ 2) * t ^ 2 + p.B 1 2 * Real.cos (θ 1 - θ 2) * (s - t) ^ 2 = 0 →
       -(p.B 0 1 * Real.sin (θ 0 - θ 1)) * s ^ 3 - p.B 0 2 * Real.sin (θ 0 - θ 2) * t ^ 3 +
         p.B 1 2 * Real.sin (θ 1 - θ 2) * (s - t) ^ 3 = 0 := by
     intro s t h0
     by_contra hne
-    refine reducedSwing_not_localAsymptoticStable_of_forms hbal ![s, t] (Or.inr ⟨?_, ?_⟩) hLAS
+    refine reducedSwing_not_localAsymptoticStable_of_forms hbal ![s, t] (Or.inr ⟨?_, ?_⟩) (mem_den_flow_iff'.mpr hLAS)
     · rw [hessForm_three, h0, mul_zero]
     · rw [cubicForm_three]
       exact mul_ne_zero two_ne_zero hne
   have hline : ∀ v : Fin 2 → ℝ, v ≠ 0 → ¬ ∀ k j, p.B k j = 0 ∨ ground v k = ground v j :=
     fun v hv h => reducedSwing_not_localAsymptoticStable_of_balance_line hv
-      (balance_line_of_edges hbal v h) hLAS
+      (balance_line_of_edges hbal v h) (mem_den_flow_iff'.mpr hLAS)
   obtain ⟨u, hu0, hu, hle⟩ := exists_hessForm_nonpos hH
   have hug := eq_ground_three u hu0
   have hst : ¬ (u 1 = 0 ∧ u 2 = 0) := by
@@ -1522,7 +1536,7 @@ which contradicts the positive Hessian along it. -/
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [mem_den_flow_iff']
-  exact reducedSwing_not_localAsymptoticStable_three m.params m.θ hbal hH
+  exact (not_congr mem_den_flow_iff').mp (reducedSwing_not_localAsymptoticStable_three m.params m.θ hbal hH)
 
 /-- **For three machines the local asymptotic translation is exact.** -/
 @[tmio TM, powerlib_domain] theorem exact_locallyAsymptoticallyStable_three :
@@ -1577,7 +1591,9 @@ private theorem reducedSwing_localAsymptoticStable_of_strictMin {p : Params n}
     (hmin : ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r → potential p θ < potential p (θ + ground v))
     (hcrit : ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r →
       ¬ ∀ k, p.P k = powerInjection p.B (θ + ground v) k) :
-    LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
+    connection% (((⟨p, θ⟩ : Model n) ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff']
   have hP := sum_P_of_balance hbal
   rw [reducedField_eq_mechanical hP, equilibrium_eq_point]
   refine Dynamics.Mechanical.localAsymptoticStable_of_strictMin (by omega)
@@ -1663,7 +1679,8 @@ and the energy, `Dynamics.Mechanical.strictMin_of_localAsymptoticStable`, throug
   · intro h
     exact ⟨powerFlow_of_lyapunovStable h.1, reducedSwing_strictMin_of_localAsymptoticStable h⟩
   · rintro ⟨hp, r, hr, hv⟩
-    exact reducedSwing_localAsymptoticStable_of_strictMin hp hr (fun v h0 h1 => (hv v h0 h1).1)
-      (fun v h0 h1 => (hv v h0 h1).2)
+    exact mem_den_flow_iff'.mp
+      (reducedSwing_localAsymptoticStable_of_strictMin hp hr (fun v h0 h1 => (hv v h0 h1).1)
+        (fun v h0 h1 => (hv v h0 h1).2))
 
 end powerlib.Network.Swing

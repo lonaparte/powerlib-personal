@@ -443,7 +443,10 @@ private theorem sin_eq_zero_of_cos_sq {θ : ℝ} (h : Real.cos θ ^ 2 = 1) : Rea
 /-- With `V K_i > 0` at a well bottom or an anti-phase point (`cos² θ* = 1`) the SRF member is
 phase-locked. -/
 private theorem toSRF_phaseLocked {m : Model} (hVKi : 0 < m.V * m.Ki)
-    (hθ : Real.cos m.θ ^ 2 = 1) : PIPLL.Meets (toSRF m) .phaseLocked := by
+    (hθ : Real.cos m.θ ^ 2 = 1) :
+    connection% (toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
   refine ⟨show -m.V * Real.sin m.θ = 0 by rw [sin_eq_zero_of_cos_sq hθ, mul_zero], Or.inl ?_⟩
   show m.Ki ≠ 0
   rintro h0
@@ -459,7 +462,8 @@ private theorem toSRF_of_slopeStable {m : Model} (h : m ∈ TMIO.realize Meets {
   obtain ⟨hVKp, hVKi, hθ⟩ : Meets m .slopeStable := (TMIO.mem_realize _ _ _).mp h _ rfl
   rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
-  · exact toSRF_phaseLocked hVKi (by rw [hθ]; norm_num)
+  · simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+      toSRF_phaseLocked hVKi (by rw [hθ]; norm_num)
   · show m.Kp * deriv (toSRF m).h (toSRF m).θ < 0 ∧ m.Ki * deriv (toSRF m).h (toSRF m).θ < 0
     rw [toSRF_deriv, hθ]
     constructor <;> linarith [mul_comm m.V m.Kp, mul_comm m.V m.Ki]
@@ -500,7 +504,8 @@ private theorem toSRF_of_saddle {m : Model} (h : m ∈ TMIO.realize Meets {.sadd
   obtain ⟨hVKi, hθ⟩ : Meets m .saddle := (TMIO.mem_realize _ _ _).mp h _ rfl
   rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
-  · exact toSRF_phaseLocked hVKi (by rw [hθ]; norm_num)
+  · simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+      toSRF_phaseLocked hVKi (by rw [hθ]; norm_num)
   · show 0 < m.Ki * deriv (toSRF m).h (toSRF m).θ ∨ 0 < m.Kp * deriv (toSRF m).h (toSRF m).θ
     rw [toSRF_deriv, hθ]
     exact Or.inl (by linarith [mul_comm m.V m.Ki])

@@ -100,6 +100,15 @@ field of its plant. -/
   · exact holds_iff_isHurwitz 0 hP
   · exact sampledContraction_iff_isHurwitz 0
 
+/-- Membership in an attractive or contractive denotation is exactly the plant's Hurwitz
+condition. This pointwise view lets spectral proofs consume certified denotation results. -/
+@[tmio TM, powerlib_foundation] theorem IsLinear.mem_den_hurwitz (hF : F.IsLinear plant)
+    {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) {x : X} :
+    connection% (x ∈ F.den (.flow P) ↔ IsHurwitz (plant x).A) := by
+  unfold TMIO.Statement
+  rw [hF.den_hurwitz hP]
+  rfl
+
 /-- A conserving member of a nontrivial linear family lies outside the globally exponentially
 stable denotation, equivalently its plant is not Hurwitz. -/
 @[tmio TM, powerlib_foundation] theorem IsLinear.not_isHurwitz_of_mem_den_conservative

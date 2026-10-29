@@ -93,7 +93,9 @@ step do not (the multiplier `1 − h` leaves the unit disk). -/
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow P)) := by
   unfold powerlib.TMIO.Statement
   exact Numerics.not_eulerPorts_realizationSoundUnder_of_large_step_linear family_isLinear
-    one_pos hP (x := unitBranch) ((isHurwitz_iff _).mpr one_pos)
+    one_pos hP (x := unitBranch)
+    ((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp
+      ((isHurwitz_iff _).mpr one_pos))
     fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩
 
 /-- The port current at the unit state is `1`, whatever the port voltage. -/
@@ -158,8 +160,11 @@ with a large step are not stable. -/
     connection% (¬ euler.RealizationSoundUnder ∅ (.flow P)) := by
   unfold powerlib.TMIO.Statement
   have hA : IsHurwitz unitCircuit.plant.A := by
-    rw [isHurwitz_iff_stable, passive_stable_iff _ unitCircuit_passive]
-    exact Or.inl one_ne_zero
+    apply (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp
+    apply (isHurwitz_iff_stable _).mpr
+    apply (passive_stable_iff _ unitCircuit_passive).mpr
+    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using
+      (show unitCircuit.Damped from Or.inl one_ne_zero)
   exact Numerics.not_eulerPorts_realizationSoundUnder_of_large_step_linear family_isLinear
     (by norm_num) hP (x := unitCircuit) hA
     fun h₁ => ⟨⟨_, max h₁ 1, by positivity⟩, rfl, le_max_left _ _⟩

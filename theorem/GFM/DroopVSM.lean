@@ -352,7 +352,8 @@ private theorem vsm_point_eq_zero {m : VSMModel} (hM : 0 < m.M) (hb : vsmMeets m
 
 private theorem vsm_les {m : VSMModel} (hs : vsmMeets m .smooth) (hb : vsmMeets m .balanced)
     (hM : vsmMeets m .inertia) (hD : vsmMeets m .damped) (hK : vsmMeets m .synchronizing) :
-    LocallyExponentiallyStable m.vector m.point := by
+    connection% (m ∈ vsmFamily.den (.flow .locallyExponentiallyStable)) := by
+  apply vsm_mem_den_flow_iff.mpr
   have hM' : 0 < m.M := hM
   have hD' : 0 < m.D := hD
   have hK' : 0 < deriv m.P (m.point 0) := hK
@@ -367,7 +368,8 @@ private theorem vsm_les {m : VSMModel} (hs : vsmMeets m .smooth) (hb : vsmMeets 
 
 private theorem vsm_unstable {m : VSMModel} (hsm : vsmMeets m .smooth)
     (hb : vsmMeets m .balanced) (hM : vsmMeets m .inertia) (hs : vsmMeets m .destabilizing) :
-    Unstable m.vector m.point := by
+    connection% (m ∈ vsmFamily.den (.flow .unstable)) := by
+  apply vsm_mem_den_flow_iff.mpr
   have hM' : 0 < m.M := hM
   have hsm' : ContDiff ℝ 1 m.P := hsm
   rcases (hs : deriv m.P (m.point 0) < 0 ∨ m.D < 0) with hK | hD
@@ -405,11 +407,11 @@ private theorem vsm_unstable {m : VSMModel} (hsm : vsmMeets m .smooth)
     · rfl
     · rfl
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact vsm_mem_den_flow_iff.mpr (vsm_les (hm .smooth (by simp)) (hm .balanced (by simp))
-      (hm .inertia (by simp)) (hm .damped (by simp)) (hm .synchronizing (by simp)))
+    exact vsm_les (hm .smooth (by simp)) (hm .balanced (by simp))
+      (hm .inertia (by simp)) (hm .damped (by simp)) (hm .synchronizing (by simp))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact vsm_mem_den_flow_iff.mpr (vsm_unstable (hm .smooth (by simp)) (hm .balanced (by simp))
-      (hm .inertia (by simp)) (hm .destabilizing (by simp)))
+    exact vsm_unstable (hm .smooth (by simp)) (hm .balanced (by simp))
+      (hm .inertia (by simp)) (hm .destabilizing (by simp))
 
 private theorem vsm_sound (s : Sentence) :
     connection% (vsmFamily.Sound s) := show vsmFamily.Sound s from
@@ -427,7 +429,7 @@ place a VSM model in local exponential stability. -/
     (hM : 0 < m.M) (hD : 0 < m.D) (hK : 0 < deriv m.P (m.point 0)) :
     connection% (m ∈ vsmFamily.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact vsm_mem_den_flow_iff.mpr (vsm_les hs ⟨hω, hb⟩ hM hD hK)
+  exact vsm_les hs ⟨hω, hb⟩ hM hD hK
 
 /-- On a sinusoidal power curve `P(θ) = k₁ + k₂ sin(θ − k₃)`, in any rotating frame, a VSM model
 at a state with `ω* = 0` is the swing model `⟨M, D, P_ref + D ω_s, k₁, k₂, k₃⟩` read about `θ*`
@@ -508,7 +510,10 @@ def droopFamily : Family DroopModel VSMRequirement 2 0 :=
 
 /-- Every flow sentence of a droop + LPF model is the same sentence of its VSM image. -/
 private theorem holds_iff (m : DroopModel) (P : Flow.Property) :
-    P.holds m.field 0 ↔ P.holds m.toVSM.field 0 := by
+    connection% (m ∈ droopFamily.den (.flow P) ↔ m.toVSM ∈ vsmFamily.den (.flow P)) := by
+  unfold TMIO.Statement
+  rw [connection_proof% droopFamily_isAutonomous.mem_den_flow,
+    connection_proof% vsmFamily_isAutonomous.mem_den_flow]
   have h1 : P.holds m.field 0 ↔ P.holds m.d.droopField m.point := Flow.Property.holds_shift_iff P
   have h2 : P.holds m.toVSM.field 0 ↔
       P.holds (m.d.vsmField (m.d.τp * m.d.KR) m.d.KR)
@@ -516,31 +521,32 @@ private theorem holds_iff (m : DroopModel) (P : Flow.Property) :
     Flow.Property.holds_shift_iff P
   rw [h1, h2, m.d.vsmField_eq_transport m.KR_ne m.τp_ne, Dynamics.holds_transport_iff]
 
-private theorem holds_eq : droopFamily.Holds = (vsmFamily.comap DroopModel.toVSM).Holds := by
-  funext m s
-  apply propext
-  rcases s with P | _ | E
-  · exact holds_iff m P
-  · exact ⟨fun _ => Port.System.autonomous_passive _, fun _ => Port.System.autonomous_passive _⟩
-  · exact iff_of_true trivial trivial
+private theorem holds_eq :
+    connection% (droopFamily.semantics = (vsmFamily.comap DroopModel.toVSM).semantics) := by
+  have hh : droopFamily.Holds = (vsmFamily.comap DroopModel.toVSM).Holds := by
+    funext m s
+    apply propext
+    rcases s with P | _ | E
+    · exact droopFamily_isAutonomous.mem_den_flow.symm.trans
+        ((holds_iff m P).trans vsmFamily_isAutonomous.mem_den_flow)
+    · exact ⟨fun _ => Port.System.autonomous_passive _, fun _ => Port.System.autonomous_passive _⟩
+    · exact iff_of_true trivial trivial
+  exact congrArg TMIO.satisfaction hh
 
 /-- **Large-signal equivalence as a comparison of connections.** The semantics connection of the
 droop + LPF family is the semantics connection of the VSM family read through `toVSM`
 (`M = τ_p K_R`, `D = K_R`): the two closed loops satisfy the same sentences. -/
 @[tmio TM, powerlib_domain] theorem semantics_eq_comap :
     connection% (droopFamily.semantics = (vsmFamily.comap DroopModel.toVSM).semantics) := by
-  unfold powerlib.TMIO.Statement
-  unfold Family.semantics
-  rw [holds_eq]
+  exact holds_eq
 
 /-- Every sentence of a droop + LPF model denotes the preimage of its VSM denotation. -/
 @[tmio TM, powerlib_domain] theorem den_eq_preimage :
     connection% (∀ s, droopFamily.den s = DroopModel.toVSM ⁻¹' vsmFamily.den s) := by
   unfold powerlib.TMIO.Statement
   intro s
-  ext m
-  simp only [Set.mem_preimage, Family.mem_den]
-  exact (congrFun (congrFun holds_eq m) s).to_iff
+  rw [droopFamily.den_eq_generate, holds_eq,
+    ← (vsmFamily.comap DroopModel.toVSM).den_eq_generate, Family.den_comap]
 
 /-- The droop + LPF translation is sound: its requirements are its VSM image's. -/
 @[tmio TM, powerlib_domain] theorem droopFamily_chain_le_semantics :

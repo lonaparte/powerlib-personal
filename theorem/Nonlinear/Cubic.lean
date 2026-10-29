@@ -96,10 +96,34 @@ def certificate (α : Gain) : Flow.QuadraticDecay (field (n := n) α.1) energy 0
     dsimp [energy]
     nlinarith [sq_nonneg (‖x‖ ^ 2)]
 
+/-- A requirement on the cubic models: a lower bound on the decay rate. -/
+inductive Requirement
+  | decayRateAtLeast (a : ℝ)
+
+/-- Satisfaction of a requirement by a model. -/
+def Meets (α : Gain) : Requirement → Prop
+  | .decayRateAtLeast a => a ≤ α.1
+
+/-- The translation of the sentences: a decay rate bounds the gain from below; instability and
+conservation are translated into the whole language, which no model meets; every other sentence
+needs no requirement. -/
+def translate : Sentence → Set Requirement
+  | .flow (.decay a) => {.decayRateAtLeast a}
+  | .flow .unstable | .flow .conservative => Set.univ
+  | _ => ∅
+
+/-- The cubic family: every gain read as its autonomous field. -/
+def family : Family Gain Requirement n 0 :=
+  ⟨fun α => .continuous (Port.System.autonomous (field α.1)), Meets, translate⟩
+
+@[powerlib_foundation] theorem family_isAutonomous :
+    (family (n := n)).IsAutonomous fun α => field α.1 := fun _ => rfl
+
 /-- Every model is globally exponentially stable, with a solution through every state. -/
 @[powerlib_foundation] private theorem globallyExponentiallyStable (α : Gain) :
-    Flow.GloballyExponentiallyStable (field (n := n) α.1) 0 :=
-  (certificate α).globallyExponentiallyStable (field_smooth _)
+    connection% (α ∈ (family (n := n)).den (.flow .globallyExponentiallyStable)) :=
+  family_isAutonomous.mem_den_flow.mpr
+    ((certificate α).globallyExponentiallyStable (field_smooth _))
 
 /-- The energy never increases, so along a solution segment it decays no faster than at the rate
 `2 (α + r₀)`, with `r₀` the initial energy. -/
@@ -126,34 +150,11 @@ def certificate (α : Gain) : Flow.QuadraticDecay (field (n := n) α.1) energy 0
 
 /-! ## The family -/
 
-/-- A requirement on the cubic models: a lower bound on the decay rate. -/
-inductive Requirement
-  | decayRateAtLeast (a : ℝ)
-
-/-- Satisfaction of a requirement by a model. -/
-def Meets (α : Gain) : Requirement → Prop
-  | .decayRateAtLeast a => a ≤ α.1
-
-/-- The translation of the sentences: a decay rate bounds the gain from below; instability and
-conservation are translated into the whole language, which no model meets; every other sentence
-needs no requirement. -/
-def translate : Sentence → Set Requirement
-  | .flow (.decay a) => {.decayRateAtLeast a}
-  | .flow .unstable | .flow .conservative => Set.univ
-  | _ => ∅
-
-/-- The cubic family: every gain read as its autonomous field. -/
-def family : Family Gain Requirement n 0 :=
-  ⟨fun α => .continuous (Port.System.autonomous (field α.1)), Meets, translate⟩
-
-@[powerlib_foundation] theorem family_isAutonomous :
-    (family (n := n)).IsAutonomous fun α => field α.1 := fun _ => rfl
-
 @[tmio TM]
 theorem mem_den_globallyExponentiallyStable (α : Gain) :
     connection% (α ∈ (family (n := n)).den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact family_isAutonomous.mem_den_flow.mpr (globallyExponentiallyStable α)
+  exact globallyExponentiallyStable α
 
 /-- No gain bounds every decay rate. -/
 @[tmio M, powerlib_foundation] theorem realize_univ :
@@ -170,7 +171,8 @@ passivity; none is unstable or conservative; and a model decays at the rate `a` 
 @[tmio TM, powerlib_domain] theorem chain_eq_semantics (hn : 0 < n) :
     connection% ((family (n := n)).chain = (family (n := n)).semantics) := by
   unfold powerlib.TMIO.Statement
-  have hges := globallyExponentiallyStable (n := n)
+  have hges : ∀ α : Gain, Flow.GloballyExponentiallyStable (field (n := n) α.1) 0 :=
+    fun α => family_isAutonomous.mem_den_flow.mp (globallyExponentiallyStable α)
   have hall : ∀ {P : Flow.Property}, (∀ α : Gain, P.holds (field (n := n) α.1) 0) →
       (family (n := n)).den (.flow P) = univ := fun h => by
     ext α

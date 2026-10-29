@@ -82,7 +82,6 @@ open powerlib LinearSystems
 @[powerlib_domain] theorem lcl_automatic (m : Circuits.LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
     connection% (m ∈ Circuits.LCL.family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [(connection_proof% Circuits.LCL.family_isLinear.mem_den_flow)]
   aesop
 
 -- Passivity from stored energy, for every port-Hamiltonian plant.

@@ -293,7 +293,7 @@ variable {X Y Q : Type}
     connection% ((zeroInputFamily F sys).den (.flow P) = F.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   ext x
-  rw [(zeroInputFamily_isAutonomous F sys).mem_den_flow, (connection_proof% Family.mem_den), hF x]
+  rw [(connection_proof% (zeroInputFamily_isAutonomous F sys).mem_den_flow), (connection_proof% Family.mem_den), hF x]
   rfl
 
 /-- The flow denotations of the Euler implementations of a family of port systems are those of
@@ -305,7 +305,7 @@ the autonomous Euler implementations of its zero-input family. -/
         (.flow P)) := by
   unfold powerlib.TMIO.Statement
   ext y
-  rw [(eulerFamily_isAutonomousMap _ _ design step).mem_den_flow, (connection_proof% Family.mem_den)]
+  rw [(connection_proof% (eulerFamily_isAutonomousMap _ _ design step).mem_den_flow), (connection_proof% Family.mem_den)]
   rfl
 
 variable {F : Family X Q n p} {sys : X → Port.System n p} {design : Y → X} {step : Y → ℝ}

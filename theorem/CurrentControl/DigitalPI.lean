@@ -654,7 +654,8 @@ inductance. The delay never stabilizes a design. -/
   rw [implementation_impl, family_isLinear.den_hurwitz hP] at hd
   rw [Implementation.certify_realizes_of_design (I := implementation) rfl, Set.mem_preimage,
     implementation_model, PIParams.family_isLinear.den_hurwitz hP]
-  exact (PIParams.isHurwitz_iff_div y.design).mpr (design_stable_of_isHurwitz hT hd)
+  exact (PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp
+    ((PIParams.isHurwitz_iff_div y.design).mpr (design_stable_of_isHurwitz hT hd))
 
 /-- Implementation exactness: within a positive inductance, a positive period and fast sampling,
 a platform satisfies an attractive sentence (or sampled contraction) exactly when its design

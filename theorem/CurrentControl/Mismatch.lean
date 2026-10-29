@@ -337,7 +337,8 @@ mismatched family is the PI family's, pulled back along `base`. -/
   rw [den_flow hP, PIParams.family_isLinear.den_hurwitz hP]
   ext p
   simp only [Set.mem_ofPred_eq, Set.mem_preimage]
-  rw [PIParams.isHurwitz_iff_div]
+  rw [← (connection_proof% PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)),
+    (connection_proof% PIParams.isHurwitz_iff_div)]
   rfl
 
 /-- With `L > 0` the mismatched decoupled loop satisfies an attractive sentence iff

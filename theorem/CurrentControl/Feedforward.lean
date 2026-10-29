@@ -246,7 +246,8 @@ def lpfFamily : Family LPFLoop Spectral.Requirement 3 2 :=
 
 @[powerlib_foundation] theorem isHurwitz_iff_stable (q : LPFLoop) :
     IsHurwitz q.plant.A ↔ q.Stable := by
-  rw [plant, PIParams.lpf_isHurwitz_iff, PIParams.isHurwitz_iff_div]
+  rw [plant, PIParams.lpf_isHurwitz_iff, ← (connection_proof% PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)),
+    (connection_proof% PIParams.isHurwitz_iff_div)]
   rfl
 
 private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
@@ -277,7 +278,8 @@ the attractive denotation of the feedforward family is the PI family's, pulled b
   rw [den_flow hP, PIParams.family_isLinear.den_hurwitz hP]
   ext q
   simp only [Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_preimage]
-  rw [PIParams.isHurwitz_iff_div]
+  rw [← (connection_proof% PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)),
+    (connection_proof% PIParams.isHurwitz_iff_div)]
   rfl
 
 /-- With `L > 0` the feedforward loop is stable iff `R + Kp > 0 ∧ Ki > 0 ∧ τ > 0`. -/
@@ -298,7 +300,8 @@ private theorem lpf_tracks_reference (p : PIParams) (hL : 0 < p.L) (hR : 0 < p.R
     (hx : ∀ t, HasDerivAt x (p.lpfField τ iref v (x t)) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 iref) ∧ Tendsto (fun t => x t 2) atTop (𝓝 v) := by
   have hA : IsHurwitz (p.lpfModel τ).A :=
-    (p.lpf_isHurwitz_iff τ).2 ⟨(p.isHurwitz_iff hL).2 ⟨hR, hKi⟩, hτ⟩
+    (p.lpf_isHurwitz_iff τ).2 ⟨(PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
+      (Or.inl trivial)).mp ((p.isHurwitz_iff hL).2 ⟨hR, hKi⟩), hτ⟩
   have he := p.lpf_isEquilibrium hKi.ne' τ iref v
   have hx' : ∀ t, HasDerivAt x ((p.lpfModel τ).inputField ![iref, v] (x t)) t := by
     intro t

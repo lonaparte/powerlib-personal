@@ -607,7 +607,9 @@ private theorem H_neg_of_slow {y : Rig} (hp : Meets y.design .physical) (hτ : 0
 
 /-- The worst-corner delay check places every producer in the fast-delay constraint. -/
 private theorem fastLag_of_lagCheck {y : Rig} {v : Record} (hv : v.ModelCheck) (hl : v.LagCheck)
-    (hp : Produces y v) : RigMeets y .fastLag := by
+    (hp : Produces y v) : connection% (y ∈ TMIO.realize RigMeets {.fastLag}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
   obtain ⟨hMlo, hDlo, hωlo, hKlo, -⟩ := hv
   obtain ⟨-, hM1, hM2, hD1, hD2, hω1, hω2, hK1, hK2, hτ, hτ2⟩ := hp
   set M := y.design.g.M
@@ -818,7 +820,9 @@ every platform that may produce the record (`Stack.infer_subset_truth` with
   rcases hq with rfl | rfl | rfl
   · exact ⟨lt_of_lt_of_le hMlo hM1, lt_of_lt_of_le hDlo hD1, lt_of_lt_of_le hωlo hω1⟩
   · exact hτ
-  · exact fastLag_of_lagCheck h₁ h₂ hp
+  · change RigMeets y .fastLag
+    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using
+      fastLag_of_lagCheck h₁ h₂ hp
 
 /-- A record passing the model check supports local exponential stability of every realized model.
 If an unstable platform may produce that record, this inference is not true of every producer. -/
@@ -864,6 +868,7 @@ whatever its delay (`realizationSoundUnder_unstable`). -/
   subst hw
   have hp := mem_produces.mp hy
   have hd := design_slow_of_slowCheck h hp
+  unfold TMIO.Statement at hd
   rw [(connection_proof% TMIO.mem_realize)] at hd ⊢
   intro q hq
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq

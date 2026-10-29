@@ -205,8 +205,8 @@ def localFamily (field : X → ℝⁿ → ℝⁿ) (S U : X → Prop) : Family X 
 /-- Soundness of every translation of a local spectral family: the stability condition gives
 local exponential stability of the field at the origin, the instability condition instability. -/
 @[tmio TM, powerlib_foundation] theorem local_chain_le_semantics {field : X → ℝⁿ → ℝⁿ}
-    (hS : ∀ x, S x → LocallyExponentiallyStable (field x) 0)
-    (hU : ∀ x, U x → Unstable (field x) 0) :
+    (hS : ∀ x, S x → Flow.Property.holds .locallyExponentiallyStable (field x) 0)
+    (hU : ∀ x, U x → Flow.Property.holds .unstable (field x) 0) :
     connection% (∀ P, (localFamily field S U).chain P ≤ (localFamily field S U).semantics P) := by
   change ∀ P, (localFamily field S U).chain P ≤ (localFamily field S U).semantics P
   have hF := localFamily_isAutonomous field S U
@@ -229,14 +229,14 @@ passive. -/
 /-- With a stability condition equivalent to local exponential stability of the field at the
 origin, the local exponential translation of a local spectral family is exact. -/
 @[tmio TM, powerlib_foundation] theorem local_exact_locallyExponentiallyStable {field : X → ℝⁿ → ℝⁿ}
-    {S U : X → Prop} (hS : ∀ x, S x ↔ LocallyExponentiallyStable (field x) 0) :
+    {S U : X → Prop} (hS : ∀ x, S x ↔ Flow.Property.holds .locallyExponentiallyStable (field x) 0) :
     connection% ((localFamily field S U).Exact (.flow .locallyExponentiallyStable)) := by
   change (localFamily field S U).Exact (.flow .locallyExponentiallyStable)
   unfold Family.Exact
   ext x
-  rw [(connection_proof% mem_realize), (localFamily_isAutonomous field S U).mem_den_flow]
+  rw [(connection_proof% mem_realize), (connection_proof% (localFamily_isAutonomous field S U).mem_den_flow)]
   change (∀ q ∈ ({.stable} : Set Requirement), Meets S U x q) ↔
-    LocallyExponentiallyStable (field x) 0
+    Flow.Property.holds .locallyExponentiallyStable (field x) 0
   simp [hS x]
 
 /-- With a stability condition equivalent to an equilibrium at the origin with a Hurwitz
@@ -271,7 +271,7 @@ exactly either (a member of `den s` outside the translated space lies in `den s'
 boundary witness of the local exponential translation is one of the local asymptotic and Lyapunov
 translations. -/
 @[tmio TM, powerlib_foundation] theorem local_not_exact_of_not_exact_les {field : X → ℝⁿ → ℝⁿ}
-    {S U : X → Prop} (hS : ∀ x, S x → LocallyExponentiallyStable (field x) 0)
+    {S U : X → Prop} (hS : ∀ x, S x → Flow.Property.holds .locallyExponentiallyStable (field x) 0)
     (h : ¬ (localFamily field S U).Exact (.flow .locallyExponentiallyStable))
     {P : Flow.Property} (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
     connection% (¬ (localFamily field S U).Exact (.flow P)) := by

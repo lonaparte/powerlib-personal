@@ -2528,7 +2528,7 @@ private theorem lyapunovStable_of_no_sync_of_mu_ne_zero (m : Model) (hC : 0 < m.
     (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ = 0) (hη : m.η = 0) (hδ : 0 ≤ m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [(show family.IsAutonomous Model.translated from fun _ => rfl).mem_den_flow]
+  rw [(connection_proof% (show family.IsAutonomous Model.translated from fun _ => rfl).mem_den_flow)]
   exact lyapunovStable_of_frozen m hC hL hR hμ hη hδ
 
 /-- **Lyapunov stability without synchronizing torque, with modulation**: with

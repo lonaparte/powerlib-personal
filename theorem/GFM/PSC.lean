@@ -176,7 +176,9 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     family_isAutonomous
 
 private theorem les_of {m : Model} (hb : Meets m .balanced) (hs : Meets m .stableSlope) :
-    LocallyExponentiallyStable m.c.field (embed m.δ) := by
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff]
   have hb' : m.c.Pmax * Real.sin m.δ = m.c.Pstar := hb
   have hs' : 0 < m.c.Kp * m.c.Pmax * Real.cos m.δ := hs
   apply NormalForm.lift_locallyExponentiallyStable m.c.rhs_contDiff
@@ -185,7 +187,9 @@ private theorem les_of {m : Model} (hb : Meets m .balanced) (hs : Meets m .stabl
     linarith
 
 private theorem unstable_of {m : Model} (hb : Meets m .balanced) (hs : Meets m .unstableSlope) :
-    Unstable m.c.field (embed m.δ) := by
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff]
   have hb' : m.c.Pmax * Real.sin m.δ = m.c.Pstar := hb
   have hs' : m.c.Kp * m.c.Pmax * Real.cos m.δ < 0 := hs
   apply NormalForm.lift_unstable m.c.rhs_contDiff
@@ -217,9 +221,9 @@ without requirement. -/
     · rfl
     · rfl
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact mem_den_flow_iff.mpr (les_of (hm .balanced (by simp)) (hm .stableSlope (by simp)))
+    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (les_of (hm .balanced (by simp)) (hm .stableSlope (by simp)))))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact mem_den_flow_iff.mpr (unstable_of (hm .balanced (by simp)) (hm .unstableSlope (by simp)))
+    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (unstable_of (hm .balanced (by simp)) (hm .unstableSlope (by simp)))))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
 @[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
@@ -239,8 +243,8 @@ without requirement. -/
     (fun m _ => (NormalForm.hasFDerivAt_lift (by simpa using m.c.hasDerivAt_rhs m.δ)).fderiv)
     fun m _ heq hH => ?_)
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact mem_den_flow_iff.mpr (les_of (hm .balanced (by simp [family, translate]))
-      (hm .stableSlope (by simp [family, translate])))
+    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (les_of (hm .balanced (by simp [family, translate]))
+      (hm .stableSlope (by simp [family, translate])))))
   rw [field, NormalForm.lift_eq_zero_iff, rhs] at heq
   rw [Linear.isHurwitz_one_iff, neg_lt_zero] at hH
   have hK : m.c.Kp ≠ 0 := by
@@ -260,17 +264,17 @@ without requirement. -/
     {δ₀ : ℝ} (heq : c.Pmax * Real.sin δ₀ = c.Pstar) (hcos : 0 < Real.cos δ₀) :
     connection% (Model.mk c δ₀ ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr (les_of (m := ⟨c, δ₀⟩) heq (by
+  exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (les_of (m := ⟨c, δ₀⟩) heq (by
     show 0 < c.Kp * c.Pmax * Real.cos δ₀
-    positivity))
+    positivity))))
 
 /-- An equilibrium with `cos δ₀ < 0` is unstable (`K_p, P_max > 0`). -/
 @[tmio TM, powerlib_domain] theorem unstable (hK : 0 < c.Kp) (hP : 0 < c.Pmax) {δ₀ : ℝ}
     (heq : c.Pmax * Real.sin δ₀ = c.Pstar) (hcos : Real.cos δ₀ < 0) :
     connection% (Model.mk c δ₀ ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr (unstable_of (m := ⟨c, δ₀⟩) heq
-    (mul_neg_of_pos_of_neg (mul_pos hK hP) hcos))
+  exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (unstable_of (m := ⟨c, δ₀⟩) heq
+    (mul_neg_of_pos_of_neg (mul_pos hK hP) hcos))))
 
 /-- The loading angle `arcsin(P*/P_max)` is locally exponentially stable when
 `|P*| < P_max`. -/
@@ -339,7 +343,9 @@ private theorem norm_embed_add_sub (δ₀ s : ℝ) : ‖embed (δ₀ + s) - embe
 /-- With a vanishing scalar field every state is an equilibrium: no point is locally
 asymptotically stable. -/
 private theorem not_las_of_rhs_zero {c : PSC} (h : ∀ z, c.rhs z = 0) (δ₀ : ℝ) :
-    ¬ LocalAsymptoticStable c.field (embed δ₀) := by
+    connection% ((⟨c, δ₀⟩ : Model) ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff]
   refine Dynamics.not_localAsymptoticStable_of_equilibria fun ε hε =>
     ⟨embed (δ₀ + ε / 2), ?_, ?_, ?_⟩
   · rw [Ne, NormalForm.embed_eq_iff]
@@ -352,7 +358,9 @@ private theorem not_las_of_rhs_zero {c : PSC} (h : ∀ z, c.rhs z = 0) (δ₀ : 
 coordinate `−k δ` never increases along the field and is below its value at `δ₀` on one side. -/
 private theorem not_las_fold {c : PSC} {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
     (hcos : Real.cos δ₀ = 0) (hk : c.Kp * c.Pmax ≠ 0) :
-    ¬ LocalAsymptoticStable c.field (embed δ₀) := by
+    connection% ((⟨c, δ₀⟩ : Model) ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff]
   set k := c.Kp * c.Pmax * Real.sin δ₀ with hkdef
   have hk0 : k ≠ 0 := mul_ne_zero hk (SpecialFunctions.sin_ne_zero_of_cos hcos)
   refine Dynamics.not_localAsymptoticStable_of_lie_nonpos (V := fun z : State 1 => -k * z 0)
@@ -379,7 +387,9 @@ coordinate `k (δ − δ₀)`, which grows at the rate `k² (1 − cos(δ − δ
 positive). -/
 private theorem unstable_fold {c : PSC} {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
     (hcos : Real.cos δ₀ = 0) (hk : c.Kp * c.Pmax ≠ 0) :
-    Unstable c.field (embed δ₀) := by
+    connection% ((⟨c, δ₀⟩ : Model) ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [mem_den_flow_iff]
   set k := c.Kp * c.Pmax * Real.sin δ₀ with hkdef
   have hk0 : k ≠ 0 := mul_ne_zero hk (SpecialFunctions.sin_ne_zero_of_cos hcos)
   have hW : ContDiff ℝ 1 fun z : State 1 => k * z 0 - k * δ₀ :=
@@ -442,16 +452,16 @@ not decide the fold, the model's structure does (`Spectral.exact_of_equilibrium`
     fun m heq hs => ?_
   · have hlas : LocalAsymptoticStable m.c.field (embed m.δ) := mem_den_flow_iff.mp hm
     have hK : m.c.Kp ≠ 0 := fun hK =>
-      not_las_of_rhs_zero (fun z => by simp [rhs, hK]) m.δ hlas
+      (fun h => (not_las_of_rhs_zero (fun z => by simp [rhs, hK]) m.δ) (mem_den_flow_iff.mpr h)) hlas
     have hb := (m.c.field_eq_zero_iff hK m.δ).mp heq
     have hzero : m.c.Pmax ≠ 0 := fun hP => by
       have hP' : m.c.Pstar = 0 := by rw [← hb, hP, zero_mul]
-      exact not_las_of_rhs_zero (fun z => by simp [rhs, hP, hP']) m.δ hlas
+      exact (fun h => (not_las_of_rhs_zero (fun z => by simp [rhs, hP, hP']) m.δ) (mem_den_flow_iff.mpr h)) hlas
     rcases lt_trichotomy (m.c.Kp * m.c.Pmax * Real.cos m.δ) 0 with h | h | h
-    · exact absurd hlas.1 (unstable_of (m := m) hb h)
+    · exact absurd hlas.1 ((mem_den_flow_iff.mp (unstable_of (m := m) hb h)))
     · rcases mul_eq_zero.mp h with h' | h'
       · exact hzero ((mul_eq_zero.mp h').resolve_left hK)
-      · exact not_las_fold hb h' (mul_ne_zero hK hzero) hlas
+      · exact (fun h => (not_las_fold hb h' (mul_ne_zero hK hzero)) (mem_den_flow_iff.mpr h)) hlas
     · exact hs h
   · have hK : m.c.Kp ≠ 0 := fun hK => by
       rw [hK, zero_mul, zero_mul] at hs
@@ -487,13 +497,13 @@ Chetaev's theorem (`Dynamics.unstable_of_chetaev`). -/
     by_cases hP : m.c.Pmax = 0
     · exact Or.inr (Or.inr ⟨hP, by rw [← hb, hP, zero_mul]⟩)
     rcases lt_trichotomy (m.c.Kp * m.c.Pmax * Real.cos m.δ) 0 with h | h | h
-    · exact absurd hls (unstable_of (m := m) hb h)
+    · exact absurd hls ((mem_den_flow_iff.mp (unstable_of (m := m) hb h)))
     · rcases mul_eq_zero.mp h with h' | h'
       · exact absurd ((mul_eq_zero.mp h').resolve_left hK) hP
-      · exact absurd hls (unstable_fold hb h' (mul_ne_zero hK hP))
+      · exact absurd hls ((mem_den_flow_iff.mp (unstable_fold hb h' (mul_ne_zero hK hP))))
     · exact Or.inl ⟨hb, h⟩
   · rintro (⟨hb, hs⟩ | hK | ⟨hP, hP'⟩)
-    · exact mem_den_flow_iff.mpr (les_of (m := m) hb hs).lyapunovStable
+    · exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (les_of (m := m) hb hs))).lyapunovStable
     all_goals
       rw [(connection_proof% family_isAutonomous.mem_den_flow)]
       refine Dynamics.lyapunovStable_of_inner_nonpos one_pos

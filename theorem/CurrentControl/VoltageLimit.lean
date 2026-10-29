@@ -415,7 +415,7 @@ private theorem les_of_stable {y : LimitedPI} (hs : PIParams.Stable y.design)
   Dynamics.locallyExponentiallyStable_congr_nhds
     (y.field_eventuallyEq_linear (ki_ne_of_stable hs) hh)
     (holds_of_isHurwitz 0 (P := .locallyExponentiallyStable) trivial
-      ((PIParams.isHurwitz_iff_div y.design).mpr hs))
+      ((PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp ((PIParams.isHurwitz_iff_div y.design).mpr hs)))
 
 /-- Within headroom an unstable design makes the platform unstable: near the operating point the
 platform is the affine design field, unstable at a root in the right half plane or because the
@@ -442,7 +442,8 @@ private theorem mem_den_attractive_iff {y : LimitedPI} (hh : |y.design.R * y.ire
       fun z => y.design.model.inputField (fun _ => y.iref) (z + y.point) := by
     simpa only [PIParams.model_field] using y.field_eventuallyEq_design hh
   rw [(connection_proof% family_isAutonomous.mem_den_flow), Dynamics.holds_iff_of_eventuallyEq_inputField _ _ hd hP,
-    PIParams.isHurwitz_iff_div]
+    ← (connection_proof% PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)),
+    (connection_proof% PIParams.isHurwitz_iff_div)]
   exact ⟨And.right, fun hs => ⟨y.design.isEquilibrium (ki_ne_of_stable hs) y.iref, hs⟩⟩
 
 /-- With overload and integral action, near the operating point the saturation is constant. -/

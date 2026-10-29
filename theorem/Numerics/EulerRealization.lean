@@ -303,7 +303,7 @@ locally exponentially stable. The smoothness is asked of this model only. -/
   obtain ⟨J, hJ, h0, hA⟩ := exists_isHurwitz_jacobian hC (hF.mem_den_flow.mp hx)
   obtain ⟨h₀, hh₀, hS⟩ := exists_forwardEuler_schurStable hA
   refine ⟨h₀, hh₀, fun y hy hstep => ?_⟩
-  rw [(eulerFamily_isAutonomousMap F f design step).mem_den_flow, hy]
+  rw [(connection_proof% (eulerFamily_isAutonomousMap F f design step).mem_den_flow), hy]
   exact Map.locallyExponentiallyStable_of_schurStable
     (hasFDerivAt_eulerMap (hasFDerivAt_of_fderiv_eq hC hJ) _) (by simp [eulerMap, h0]) (hS _ hstep)
 
@@ -367,7 +367,7 @@ not locally exponentially stable. -/
     exact Set.mem_univ _
   · intro hy
     change y ∈ (eulerFamily F f design step).den _ at hy
-    rw [(eulerFamily_isAutonomousMap F f design step).mem_den_flow] at hy
+    rw [(connection_proof% (eulerFamily_isAutonomousMap F f design step).mem_den_flow)] at hy
     have hu := Map.unstable_of_inverse_schurStable
       (hasFDerivAt_eulerMap (hasFDerivAt_of_fderiv_eq hC hJ) (step y))
       (by simp [eulerMap, h0]) hB hS hn
