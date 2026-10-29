@@ -71,7 +71,7 @@ variable {F : Family X Q n p} {plant : X → Plant n p} {Rs Ru Rc Rp : Set Q} {R
 
 /-- A requirement set giving a Hurwitz state matrix and one giving a right-half-plane root are
 mutually exclusive, so the whole language is inconsistent. -/
-@[tmio TM, powerlib_foundation] theorem realize_univ_of_linearTable
+@[tmio M, powerlib_foundation] theorem realize_univ_of_linearTable
     (hS : ∀ x ∈ realize F.meets Rs, IsHurwitz (plant x).A)
     (hU : ∀ x ∈ realize F.meets Ru,
       ∃ s : ℂ, (characteristicMatrix (plant x).A s).det = 0 ∧ 0 < s.re) :

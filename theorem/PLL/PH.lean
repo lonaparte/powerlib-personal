@@ -442,7 +442,7 @@ private theorem sin_eq_zero_of_cos_sq {θ : ℝ} (h : Real.cos θ ^ 2 = 1) : Rea
 
 /-- With `V K_i > 0` at a well bottom or an anti-phase point (`cos² θ* = 1`) the SRF member is
 phase-locked. -/
-private theorem toSRF_phaseLocked {m : Model} (hVKi : 0 < m.V * m.Ki)
+@[tmio M] private theorem toSRF_phaseLocked {m : Model} (hVKi : 0 < m.V * m.Ki)
     (hθ : Real.cos m.θ ^ 2 = 1) :
     connection% (toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked}) := by
   unfold TMIO.Statement
@@ -456,7 +456,7 @@ private theorem toSRF_phaseLocked {m : Model} (hVKi : 0 < m.V * m.Ki)
 /-- Positive loop gains at a well bottom give the PI-PLL's requirements of local exponential
 stability for the SRF member: phase-locked, with both slope-gain products `K_p (−V cos θ*)` and
 `K_i (−V cos θ*)` negative. -/
-private theorem toSRF_of_slopeStable {m : Model} (h : m ∈ TMIO.realize Meets {.slopeStable}) :
+@[tmio M] private theorem toSRF_of_slopeStable {m : Model} (h : m ∈ TMIO.realize Meets {.slopeStable}) :
     connection% (toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked, .slopeStable}) := by
   change toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked, .slopeStable}
   obtain ⟨hVKp, hVKi, hθ⟩ : Meets m .slopeStable := (TMIO.mem_realize _ _ _).mp h _ rfl
@@ -470,7 +470,7 @@ private theorem toSRF_of_slopeStable {m : Model} (h : m ∈ TMIO.realize Meets {
 
 /-- Within nonnegative energy the converse holds: `K_i (−V cos θ*) < 0` with `V, K_i ≥ 0` gives
 `V > 0` and `cos θ* > 0`, so the phase-locked point is a well bottom with positive loop gains. -/
-private theorem slopeStable_of_toSRF {m : Model} (hn : Meets m .nonnegativeEnergy)
+@[tmio M] private theorem slopeStable_of_toSRF {m : Model} (hn : Meets m .nonnegativeEnergy)
     (h : toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked, .slopeStable}) :
     connection% (m ∈ TMIO.realize Meets {.slopeStable}) := by
   change m ∈ TMIO.realize Meets {.slopeStable}
@@ -498,7 +498,7 @@ private theorem slopeStable_of_toSRF {m : Model} (hn : Meets m .nonnegativeEnerg
 
 /-- A saddle gives the PI-PLL's requirements of instability for the SRF member: phase-locked,
 with the slope-gain product `K_i (−V cos θ*) = V K_i` positive. -/
-private theorem toSRF_of_saddle {m : Model} (h : m ∈ TMIO.realize Meets {.saddle}) :
+@[tmio M] private theorem toSRF_of_saddle {m : Model} (h : m ∈ TMIO.realize Meets {.saddle}) :
     connection% (toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked, .slopeUnstable}) := by
   change toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked, .slopeUnstable}
   obtain ⟨hVKi, hθ⟩ : Meets m .saddle := (TMIO.mem_realize _ _ _).mp h _ rfl

@@ -922,7 +922,7 @@ lossless line `R_g = X_g = 0`, `i_q0 = 0`, `ω_s = ω_g = 0`, at `x* = (0, 0, �
 def negativeReference : Model :=
   ⟨⟨0, 0, 1, 1, 1, 0, -1, -1, -1, 1, 0, 0, 0⟩, WithLp.toLp 2 ![0, 0, -1, 0]⟩
 
-private theorem negativeReference_equilibrium :
+@[tmio M] private theorem negativeReference_equilibrium :
     connection% (negativeReference ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -1213,7 +1213,7 @@ power-balance case `P(x*) = 0` is not decided here. -/
 def collapsePoint : Model :=
   ⟨⟨0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0⟩, WithLp.toLp 2 ![0, 0, 0, -1]⟩
 
-private theorem collapsePoint_field_ne_zero :
+@[tmio M] private theorem collapsePoint_field_ne_zero :
     connection% (collapsePoint ∉ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]

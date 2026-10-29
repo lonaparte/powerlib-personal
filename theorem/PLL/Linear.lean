@@ -498,7 +498,7 @@ private theorem translate_eq (s : Sentence) :
   · rfl
 
 /-- Both positive loop gains are the Hurwitz property of the state matrix. -/
-@[tmio TM] private theorem mem_realize_iff_isHurwitz (m : Model) :
+@[tmio M] private theorem mem_realize_iff_isHurwitz (m : Model) :
     connection% (m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A) := by
   change m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A
   simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,

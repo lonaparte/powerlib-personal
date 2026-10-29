@@ -611,7 +611,7 @@ translation is exact on the image of `toSwing`. -/
 
 /-- Every swing reading has positive inertia and a curved power-angle curve (`k₂ = b > 0`): it
 lies in the swing family's context `{inertia, curved}`. -/
-private theorem toSwing_mem_context (m : Model) :
+@[tmio M] private theorem toSwing_mem_context (m : Model) :
     connection% (m.toSwing ∈ TMIO.realize Swing.family.meets {.inertia, .curved}) := show m.toSwing ∈ TMIO.realize Swing.family.meets {.inertia, .curved} from
   (TMIO.mem_realize _ _ _).mpr fun q hq => by
     rcases hq with rfl | rfl

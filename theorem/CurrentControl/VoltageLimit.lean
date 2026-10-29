@@ -939,7 +939,7 @@ an equilibrium (the steady voltage `R i* = 1` is never commanded). -/
   have h0 := congrArg (fun z : ℝ² => z 0) h
   simp [drifting, PIParams.field, PIParams.control, point, PIParams.equilibrium] at h0
 
-private theorem drifting_mem_context :
+@[tmio M] private theorem drifting_mem_context :
     connection% (drifting ∈ TMIO.realize implementation.impl.meets {.inductance, .dcLink, .headroom}) := by
   change drifting ∈ TMIO.realize implementation.impl.meets {.inductance, .dcLink, .headroom}
   rw [implementation_impl, (connection_proof% TMIO.mem_realize)]

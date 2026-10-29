@@ -344,7 +344,7 @@ private theorem block_invariants {J : Matrix (Fin 4) (Fin 4) ℝ} {a b c d e : �
     simp only [e00, e01, e02, e03, e10, e11, e12, e13, e20, e21, e22, e23, e30, e31, e32, e33]
     ring
 
-private theorem hopfCenter_equilibrium :
+@[tmio M] private theorem hopfCenter_equilibrium :
     connection% (hopfCenter ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -376,7 +376,7 @@ private theorem hopfCenter_invariants :
 /-- The Jacobian of the undamped loop, `diag([[−1, 1], [−1, 0]], [[0, 1], [−1, 0]])`, has
 characteristic polynomial `(s² + s + 1)(s² + 1)`: the Hurwitz determinant vanishes, so it is not
 Routh (`m₃² + tr² det = tr m₂ m₃ = 2`)... -/
-private theorem hopfCenter_not_routh :
+@[tmio M] private theorem hopfCenter_not_routh :
     connection% (hopfCenter ∉ TMIO.realize Meets {.routh}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -417,7 +417,7 @@ component of the field vanishes (`x / 0 = 0`) and `V_dc` is a first integral; ot
 def cdcZero : Model :=
   ⟨⟨0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0⟩, WithLp.toLp 2 ![0, 0, 1, 0]⟩
 
-private theorem cdcZero_equilibrium :
+@[tmio M] private theorem cdcZero_equilibrium :
     connection% (cdcZero ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -443,7 +443,7 @@ private theorem cdcZero_invariants :
   obtain ⟨h1, h2, h3, h4⟩ := h
   refine ⟨by rw [h1]; norm_num, by rw [h2]; norm_num, by rw [h3]; norm_num, by rw [h4]; norm_num⟩
 
-private theorem cdcZero_not_routh :
+@[tmio M] private theorem cdcZero_not_routh :
     connection% (cdcZero ∉ TMIO.realize Meets {.routh}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -708,7 +708,7 @@ private theorem damped_pll_nonneg {s c : ℝ} (hsc : s ^ 2 + c ^ 2 = 1) (hc : 1 
   have hc1 : c ≤ 1 := by nlinarith [sq_nonneg s]
   nlinarith
 
-private theorem hopfDamped_equilibrium :
+@[tmio M] private theorem hopfDamped_equilibrium :
     connection% (hopfDamped ∈ TMIO.realize Meets {.equilibrium}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
@@ -741,7 +741,7 @@ private theorem hopfDamped_invariants :
 /-- The Jacobian of the weakly damped loop, `diag([[−3, 1], [−3, 0]], [[0, 1], [−1, 0]])`, with
 characteristic polynomial `(s² + 3s + 3)(s² + 1)`, is not Routh (`m₃² + tr² det = tr m₂ m₃ = 36`)
 ... -/
-private theorem hopfDamped_not_routh :
+@[tmio M] private theorem hopfDamped_not_routh :
     connection% (hopfDamped ∉ TMIO.realize Meets {.routh}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]

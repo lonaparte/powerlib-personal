@@ -246,7 +246,7 @@ def family : Family Circuit Requirement 3 2 := ⟨fun m => m.plant.system, Meets
   dsimp [Circuit.a3, Circuit.a2, Circuit.a1, Circuit.a0]
   ring
 
-@[tmio TM, powerlib_foundation, aesop unsafe 70% forward (immediate := [h])]
+@[tmio M, powerlib_foundation, aesop unsafe 70% forward (immediate := [h])]
 theorem stable_of_routhHurwitz (m : Circuit) (h : m.RouthHurwitz) :
     connection% (m ∈ TMIO.realize Meets {.poleStable}) := by
   unfold TMIO.Statement
@@ -279,7 +279,7 @@ theorem routhHurwitz_of_passive (m : Circuit) (hp : m.Passive)
   exact ⟨h2, h1, h0, hg⟩
 
 /-- With passive resistances, pole stability is exactly damping. -/
-@[tmio TM, powerlib_foundation] theorem passive_stable_iff (m : Circuit) (hp : m.Passive) :
+@[tmio M, powerlib_foundation] theorem passive_stable_iff (m : Circuit) (hp : m.Passive) :
     connection% (m ∈ TMIO.realize Meets {.poleStable} ↔ m ∈ TMIO.realize Meets {.damped}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]

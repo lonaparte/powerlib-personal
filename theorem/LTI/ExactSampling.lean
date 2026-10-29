@@ -182,7 +182,7 @@ and so does the sampled system (`sampled_reading`). -/
 is exact exactly when the continuous family's is: both its requirement spaces and its denotations
 are the model family's pulled back along the design map, which is onto. With `continuous_exact`
 the attractive and contractive translations are exact. -/
-@[tmio TM, powerlib_domain] theorem sampled_exact_iff (s : Sentence) :
+@[tmio MI, powerlib_domain] theorem sampled_exact_iff (s : Sentence) :
     connection% ((sampledFamily (n := n)).Exact s ↔ (continuousFamily (n := n)).Exact s) := by
   unfold powerlib.TMIO.Statement
   have hr := sampled_reading (n := n) s

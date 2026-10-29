@@ -748,7 +748,7 @@ def atAntiLoading (g : VSMLPF) : Model := ⟨g, Real.pi - g.δ0⟩
 
 @[simp, powerlib_foundation] theorem atLoading_K (g : VSMLPF) : (atLoading g).K = g.K := rfl
 
-private theorem fast_iff (hp : g.Pos) :
+@[tmio M] private theorem fast_iff (hp : g.Pos) :
     connection% (atLoading g ∈ TMIO.realize Meets {.fastFilter} ↔ g.K / g.D - g.D / g.M < g.ωc) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.atLoading, VSMLPF.K]
   apply Iff.symm
@@ -1179,7 +1179,7 @@ of the two semantics connections at the two members. -/
   exact h
 
 /-- The requirements of the swing reading in the loop's terms. -/
-private theorem swing_meets_iff (m : Model) :
+@[tmio M] private theorem swing_meets_iff (m : Model) :
     connection% ((m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced} ↔ m.q.K0 * Real.sin m.δ = m.q.P0) ∧
       (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.inertia} ↔ 0 < m.q.D / m.q.ωc) ∧
       (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.damped} ↔ 0 < m.q.D) ∧
@@ -1196,13 +1196,13 @@ private theorem swing_meets_iff (m : Model) :
   simp [Synchronous.Swing.Meets, Model.toSwing, swingParams, Synchronous.SwingParams.Pe,
     Synchronous.SwingParams.syncCoeff]
 
-private theorem physical_of {m : Model} {A : Set Requirement} (hA : .physical ∈ A)
+@[tmio M] private theorem physical_of {m : Model} {A : Set Requirement} (hA : .physical ∈ A)
     (hm : m ∈ TMIO.realize Meets A) :
     connection% (m ∈ TMIO.realize Meets {.physical}) :=
   TMIO.realize_antitone Meets (Set.singleton_subset_iff.mpr hA) hm
 
 /-- Positive droop gain and bandwidth give the swing reading positive inertia. -/
-private theorem toSwing_mem_inertia {m : Model} (hm : m ∈ TMIO.realize Meets {.physical}) :
+@[tmio M] private theorem toSwing_mem_inertia {m : Model} (hm : m ∈ TMIO.realize Meets {.physical}) :
     connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.inertia}) := by
   change m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.inertia}
   have hp : Meets m .physical := by
@@ -1220,7 +1220,7 @@ private theorem toSwing_mem_inertia {m : Model} (hm : m ∈ TMIO.realize Meets {
 
 /-- Within positive droop gain and bandwidth the local requirements are those of the swing
 reading. -/
-private theorem realize_local_iff {m : Model} (hp : Meets m .physical) :
+@[tmio M] private theorem realize_local_iff {m : Model} (hp : Meets m .physical) :
     connection% (m ∈ TMIO.realize Meets {.balanced, .physical, .synchronizing} ↔
       m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets
         {.balanced, .inertia, .damped, .synchronizing}) := by
@@ -1239,7 +1239,7 @@ private theorem realize_local_iff {m : Model} (hp : Meets m .physical) :
 
 /-- Within positive droop gain and bandwidth the instability requirements give the swing
 reading's. -/
-private theorem realize_unstable_toSwing {m : Model}
+@[tmio M] private theorem realize_unstable_toSwing {m : Model}
     (hm : m ∈ TMIO.realize Meets {.balanced, .physical, .antiSynchronizing}) :
     connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced, .inertia, .destabilizing}) := by
   change m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced, .inertia, .destabilizing}

@@ -1303,7 +1303,7 @@ is Hurwitz. -/
   · rw [SwingParams.trace_jacobian]; norm_num [negativeInertia]
   · rw [SwingParams.det_jacobian]; norm_num [negativeInertia, SwingParams.syncCoeff]
 
-private theorem negativeInertia_not_meets : connection% (negativeInertia ∉ TMIO.realize Meets {.inertia}) := by
+@[tmio M] private theorem negativeInertia_not_meets : connection% (negativeInertia ∉ TMIO.realize Meets {.inertia}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
   norm_num [Meets, negativeInertia]
@@ -1380,7 +1380,7 @@ private theorem translate_eq (s : Sentence) :
     (Or.inl trivial))]
   exact m.p.isHurwitz_jacobian_iff hM m.δ
 
-private theorem mem_realize_stable {m : Model} :
+@[tmio M] private theorem mem_realize_stable {m : Model} :
     connection% (m ∈ TMIO.realize Meets {.inertia, .damped, .synchronizing} ↔
       0 < m.p.M ∧ 0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ) := by
   change m ∈ TMIO.realize Meets {.inertia, .damped, .synchronizing} ↔

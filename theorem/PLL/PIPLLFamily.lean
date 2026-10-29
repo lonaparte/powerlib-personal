@@ -613,7 +613,7 @@ loses lock. -/
 
 /-- The ramp model meets the local requirements exactly at a locked phase with both slope-gain
 products negative. -/
-private theorem ramp_mem_realize_iff (m : Model) (ρ : ℝ) :
+@[tmio M] private theorem ramp_mem_realize_iff (m : Model) (ρ : ℝ) :
     connection% (m.ramp ρ ∈ TMIO.realize Meets {.phaseLocked, .slopeStable} ↔
       m.h m.θ = ρ / m.Ki ∧ m.Kp * deriv m.h m.θ < 0 ∧ m.Ki * deriv m.h m.θ < 0) := by
   change m.ramp ρ ∈ TMIO.realize Meets {.phaseLocked, .slopeStable} ↔

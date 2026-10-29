@@ -747,7 +747,7 @@ private theorem critical_strictLyapunov : IsStrictLyapunovFunction critical.real
     (Flow.globallyAsymptoticallyStable_of_strictLyapunov two_pos critical.contDiff_realField
       critical_strictLyapunov)
 
-private theorem critical_not_decaying : connection% (critical ∉ TMIO.realize Meets {.decaying}) := by
+@[tmio M] private theorem critical_not_decaying : connection% (critical ∉ TMIO.realize Meets {.decaying}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
   change ¬ critical.c < 0

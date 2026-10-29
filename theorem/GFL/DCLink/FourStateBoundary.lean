@@ -756,7 +756,7 @@ decoupled (`X_g = 0`) and conserves the pendulum energy `1 − cos θ + x²/2`. 
 
 /-- `undampedPLL` and `frozenPLL` meet the same requirements: both are equilibria with `C ≠ 0`,
 and neither meets the strict Routh conditions nor `a₀ < 0`. -/
-private theorem meets_undamped_iff_frozen (q : Requirement) :
+@[tmio M] private theorem meets_undamped_iff_frozen (q : Requirement) :
     connection% (undampedPLL ∈ TMIO.realize Meets {q} ↔ frozenPLL ∈ TMIO.realize Meets {q}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
@@ -771,7 +771,7 @@ private theorem meets_undamped_iff_frozen (q : Requirement) :
     norm_num [a0, omegaClSq, Γc, vd0, undampedPLL, frozenPLL, Params.γ]
 
 /-- `weakFocus` and `undampedPLL` meet the same requirements. -/
-private theorem meets_weakFocus_iff_undamped (q : Requirement) :
+@[tmio M] private theorem meets_weakFocus_iff_undamped (q : Requirement) :
     connection% (weakFocus ∈ TMIO.realize Meets {q} ↔ undampedPLL ∈ TMIO.realize Meets {q}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]

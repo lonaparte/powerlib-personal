@@ -335,7 +335,7 @@ def negativeInertia : SatModel := ⟨-1, -1, 0, 1, 0, Real.pi / 2⟩
   · simp [satJacobian, negativeInertia, Matrix.trace_fin_two_of]
   · simp [satJacobian, negativeInertia, Matrix.det_fin_two_of]
 
-private theorem negativeInertia_not_stable :
+@[tmio M] private theorem negativeInertia_not_stable :
     connection% (negativeInertia ∉ TMIO.realize family.meets {.stable}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Spectral.localFamily, Spectral.Meets]
@@ -401,7 +401,7 @@ private theorem toSwing_syncCoeff (m : SatModel) :
   ring
 
 /-- With positive inertia the swing reading lies in the swing family's context `{inertia}`. -/
-private theorem toSwing_mem_inertia {m : SatModel} (hM : 0 < m.M) :
+@[tmio M] private theorem toSwing_mem_inertia {m : SatModel} (hM : 0 < m.M) :
     connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.family.meets {.inertia}) := show m.toSwing ∈ TMIO.realize Synchronous.Swing.family.meets {.inertia} from
   (TMIO.mem_realize _ _ _).mpr fun q hq => by
     rw [Set.mem_singleton_iff] at hq

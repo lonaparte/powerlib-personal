@@ -581,7 +581,7 @@ integrator and the reference of `x_p`. -/
 /-- The requirements of a local translation, `I_q* = 0`, the four-state point and the image of
 four-state requirements `B`: a model meets them exactly when it has `I_q* = 0`, `V_dc* = 1`,
 `K_i^pll x_p* = 0` and its four-state reading meets `B`. -/
-private theorem mem_realize_reading {m : Model} {B : Set FourState.Requirement} :
+@[tmio M] private theorem mem_realize_reading {m : Model} {B : Set FourState.Requirement} :
     connection% (m ∈ TMIO.realize Meets ({.iqZero, .fourStatePoint} ∪ Requirement.fourState '' B) ↔
       m.params.Iq = 0 ∧ (m.point 2 = 1 ∧ m.params.Kip * m.point 1 = 0) ∧
         m.toFourState ∈ TMIO.realize FourState.Meets B) := by
