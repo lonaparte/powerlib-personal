@@ -480,7 +480,10 @@ inconsistent. -/
   rcases (h .negativeGain : m.V * m.Kp < 0 ∨ m.V * m.Ki < 0) with h3 | h3 <;> linarith
 
 private theorem isHurwitz_plant_iff (m : Model) :
-    LinearSystems.IsHurwitz m.plant.A ↔ 0 < m.V * m.Kp ∧ 0 < m.V * m.Ki := by
+    connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < m.V * m.Kp ∧ 0 < m.V * m.Ki) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
+  change LinearSystems.IsHurwitz m.plant.A ↔ 0 < m.V * m.Kp ∧ 0 < m.V * m.Ki
   rw [Model.plant_A, isHurwitz_linA_iff]
 
 /-- The translation is the linear table: both positive loop gains for Lyapunov stability, the
@@ -499,7 +502,7 @@ private theorem mem_realize_iff_isHurwitz (m : Model) :
     connection% (m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A) := by
   change m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A
   simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
-    forall_eq, isHurwitz_plant_iff]
+    forall_eq, ← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), (connection_proof% isHurwitz_plant_iff)]
   rfl
 
 /-- A negative loop gain gives a characteristic root in the open right half plane. -/
@@ -542,7 +545,7 @@ the locked point iff `V K_p > 0 ∧ V K_i > 0`. -/
   unfold powerlib.TMIO.Statement
   rw [family_isLinear.den_hurwitz
     (Or.inl Flow.Property.attractive_globallyExponentiallyStable), Set.mem_ofPred_eq,
-    Set.mem_ofPred_eq, isHurwitz_plant_iff]
+    Set.mem_ofPred_eq, ← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), (connection_proof% isHurwitz_plant_iff)]
 
 /-- The phase channel without loop gains (`V = 0`, `K_i = 0`): the state matrix is zero. -/
 def frozen : Model := ⟨0, 0, 0, .phase⟩

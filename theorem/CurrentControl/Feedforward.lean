@@ -28,7 +28,7 @@ Results.
 * `lpf_det_characteristicMatrix`: the closed loop is block triangular; its characteristic
   polynomial is the PI-loop polynomial times `(s + 1/τ)`, so the spectrum is the PI spectrum
   together with `−1/τ` (`characteristic_root_iff`).
-* `lpf_isHurwitz_iff` (static): the state matrix is Hurwitz iff the PI loop's is and `τ > 0`.
+* `lpf_isHurwitz_iff` (connection): the state matrix is Hurwitz iff the PI loop's is and `τ > 0`.
 
 Family and connection conclusions.
 `lpfFamily : Family LPFLoop Spectral.Requirement 3 2` reads a PI loop with filter time constant
@@ -177,23 +177,6 @@ def lpfModel (τ : ℝ) : Plant 3 2 :=
   push_cast
   ring_nf
 
-/-- The low-pass feedforward loop is Hurwitz iff the PI loop is and `τ > 0`. Static evidence on
-the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem lpf_isHurwitz_iff (τ : ℝ) :
-    IsHurwitz (p.lpfModel τ).A ↔ IsHurwitz p.model.A ∧ 0 < τ := by
-  simp only [Criteria.isHurwitz_iff_characteristic_roots, p.characteristic_root_iff]
-  constructor
-  · intro h
-    refine ⟨fun s hs => h s (Or.inl hs), ?_⟩
-    have := h _ (Or.inr rfl)
-    simp only [Complex.ofReal_re] at this
-    have h1 : 0 < 1 / τ := by linarith [neg_div τ 1]
-    exact one_div_pos.mp h1
-  · rintro ⟨h, hτ⟩ s (hs | hs)
-    · exact h s hs
-    · rw [hs, Complex.ofReal_re, neg_div]
-      exact neg_neg_of_pos (one_div_pos.mpr hτ)
-
 /-- A right-half-plane root of the PI loop or a negative time constant gives a right-half-plane
 root of the feedforward loop. -/
 @[powerlib_foundation] theorem lpf_exists_root_of_unstable {τ : ℝ}
@@ -244,21 +227,56 @@ def lpfFamily : Family LPFLoop Spectral.Requirement 3 2 :=
 @[powerlib_foundation] theorem lpfFamily_isLinear : lpfFamily.IsLinear plant :=
   Spectral.linearFamily_isLinear _ _ _
 
-@[powerlib_foundation] theorem isHurwitz_iff_stable (q : LPFLoop) :
-    IsHurwitz q.plant.A ↔ q.Stable := by
-  rw [plant, PIParams.lpf_isHurwitz_iff, ← (connection_proof% PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)),
+end LPFLoop
+
+namespace PIParams
+
+/-- The low-pass feedforward loop is Hurwitz iff the PI loop is and `τ > 0`. A comparison of the two family denotations. -/
+@[tmio TM, powerlib_foundation] theorem lpf_isHurwitz_iff (p : PIParams) (τ : ℝ) :
+    connection% ((⟨p, τ⟩ : LPFLoop) ∈ LPFLoop.lpfFamily.den (.flow .globallyExponentiallyStable) ↔
+      p ∈ PIParams.family.den (.flow .globallyExponentiallyStable) ∧
+        (⟨p, τ⟩ : LPFLoop) ∈ {q : LPFLoop | 0 < q.τ}) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% LPFLoop.lpfFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), (connection_proof% PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
+  change IsHurwitz (p.lpfModel τ).A ↔ IsHurwitz p.model.A ∧ 0 < τ
+  simp only [Criteria.isHurwitz_iff_characteristic_roots, p.characteristic_root_iff]
+  constructor
+  · intro h
+    refine ⟨fun s hs => h s (Or.inl hs), ?_⟩
+    have := h _ (Or.inr rfl)
+    simp only [Complex.ofReal_re] at this
+    have h1 : 0 < 1 / τ := by linarith [neg_div τ 1]
+    exact one_div_pos.mp h1
+  · rintro ⟨h, hτ⟩ s (hs | hs)
+    · exact h s hs
+    · rw [hs, Complex.ofReal_re, neg_div]
+      exact neg_neg_of_pos (one_div_pos.mpr hτ)
+
+end PIParams
+
+namespace LPFLoop
+
+@[tmio TM, powerlib_foundation] theorem isHurwitz_iff_stable (q : LPFLoop) :
+    connection% (q ∈ lpfFamily.den (.flow .globallyExponentiallyStable) ↔ q ∈ TMIO.realize lpfFamily.meets {.stable}) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% lpfFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, lpfFamily, Spectral.linearFamily, Spectral.Meets]
+  change IsHurwitz q.plant.A ↔ q.Stable
+  have h : IsHurwitz q.plant.A ↔ IsHurwitz q.pi.model.A ∧ 0 < q.τ := by
+    simpa only [TMIO.Statement, (connection_proof% LPFLoop.lpfFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), (connection_proof% PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), Set.mem_ofPred_eq] using PIParams.lpf_isHurwitz_iff q.pi q.τ
+  rw [h, ← (connection_proof% PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)),
     (connection_proof% PIParams.isHurwitz_iff_div)]
   rfl
 
 private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (lpfFamily.den (.flow P) = {q | q.Stable}) := show lpfFamily.den (.flow P) = {q | q.Stable} from
-  Spectral.linear_den (U := Unstable) (fun q => (isHurwitz_iff_stable q).symm) hP
+  Spectral.linear_den (U := Unstable) (fun q => ((connection_proof% lpfFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, lpfFamily, Spectral.linearFamily, Spectral.Meets] using isHurwitz_iff_stable q)).symm) hP
 
 /-- Every translation of the feedforward family is sound. -/
 @[tmio TM, powerlib_domain] theorem lpfChain_le_semantics :
     connection% (∀ P, lpfFamily.chain P ≤ lpfFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.linear_chain_le_semantics (fun q h => (isHurwitz_iff_stable q).mpr h)
+  exact Spectral.linear_chain_le_semantics (fun q h => ((connection_proof% lpfFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, lpfFamily, Spectral.linearFamily, Spectral.Meets] using isHurwitz_iff_stable q)).mpr h)
     (fun q h => q.pi.lpf_exists_root_of_unstable h)
 
 /-- The attractive sentences and sampled contraction of the feedforward loop are carved out
@@ -266,7 +284,7 @@ exactly by the PI loop's positive monic coefficients and `τ > 0`. -/
 @[tmio TM, powerlib_domain] theorem lpfExact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (lpfFamily.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.linear_exact (fun q => (isHurwitz_iff_stable q).symm) hP
+  exact Spectral.linear_exact (fun q => ((connection_proof% lpfFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, lpfFamily, Spectral.linearFamily, Spectral.Meets] using isHurwitz_iff_stable q)).symm) hP
 
 /-- Adding the low-pass PCC-voltage feedforward preserves the stability of the PI loop exactly:
 the attractive denotation of the feedforward family is the PI family's, pulled back along
@@ -300,7 +318,7 @@ private theorem lpf_tracks_reference (p : PIParams) (hL : 0 < p.L) (hR : 0 < p.R
     (hx : ∀ t, HasDerivAt x (p.lpfField τ iref v (x t)) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 iref) ∧ Tendsto (fun t => x t 2) atTop (𝓝 v) := by
   have hA : IsHurwitz (p.lpfModel τ).A :=
-    (p.lpf_isHurwitz_iff τ).2 ⟨(PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
+    (show IsHurwitz (p.lpfModel τ).A ↔ IsHurwitz p.model.A ∧ 0 < τ from by simpa only [TMIO.Statement, (connection_proof% LPFLoop.lpfFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), (connection_proof% PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), Set.mem_ofPred_eq, LPFLoop.plant] using p.lpf_isHurwitz_iff τ).2 ⟨(PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)
       (Or.inl trivial)).mp ((p.isHurwitz_iff hL).2 ⟨hR, hKi⟩), hτ⟩
   have he := p.lpf_isEquilibrium hKi.ne' τ iref v
   have hx' : ∀ t, HasDerivAt x ((p.lpfModel τ).inputField ![iref, v] (x t)) t := by

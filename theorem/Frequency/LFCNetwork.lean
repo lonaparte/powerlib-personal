@@ -33,7 +33,7 @@ Results.
   `signedIncidence_isEquilibrium_iff` instantiates this for the signed incidence matrix of a
   connected graph (`TieConnected`); `isEquilibrium_iff_of_ker` gives the unique equilibrium
   `(0, 0, ΔP_L)` when `𝓑` has trivial kernel (radial tie-line graph).
-* `netModel_not_spectrallyStable` (foundation, static), `triangle_not_spectrallyStable`: if `𝓑`
+* `netModel_not_spectrallyStable` (foundation), `triangle_not_spectrallyStable`: if `𝓑`
   has a nonzero kernel vector (a loop in the tie-line graph, e.g. three areas in a ring) the
   line-flow state matrix is singular (a circulating flow is a zero mode), so the model is
   **never** asymptotically stable, for any gains.
@@ -135,6 +135,38 @@ omit [DecidableEq α] in
     Fintype.card (α ⊕ (β ⊕ α)) = 2 * Fintype.card α + Fintype.card β := by
   simp only [Fintype.card_sum]
   ring
+
+variable (α β) in
+/-- An `N`-area LFC model on the tie-line graph with coupling matrix `𝓑`. -/
+structure NetModel where
+  area : α → Area
+  ωs : ℝ
+  T : β → ℝ
+  𝓑 : Matrix α β ℝ
+
+/-- The plant of an `N`-area model: the line-flow realization transported to `Fin` indices. -/
+def NetModel.plant (m : NetModel α β) :
+    Linear.Plant (Fintype.card (α ⊕ (β ⊕ α))) (Fintype.card α) where
+  A := (netA m.area m.ωs m.T m.𝓑).reindex (Fintype.equivFin _) (Fintype.equivFin _)
+  B := (netB m.area).reindex (Fintype.equivFin _) (Fintype.equivFin α)
+  C := (netC : Matrix α (α ⊕ (β ⊕ α)) ℝ).reindex (Fintype.equivFin α) (Fintype.equivFin _)
+  D := 0
+
+variable (α β) in
+/-- The `N`-area LFC family: every model read as the port system of its transported plant, with
+the matrix requirement language of `Frequency.LFC`. -/
+def netFamily :
+    Family (NetModel α β) Requirement (Fintype.card (α ⊕ (β ⊕ α))) (Fintype.card α) :=
+  ⟨fun m => m.plant.system, fun m => MeetsMatrix m.plant.A, translate⟩
+
+@[powerlib_foundation] theorem netFamily_isLinear :
+    (netFamily α β).IsLinear NetModel.plant := fun _ => rfl
+
+/-- The transported state matrix is Hurwitz exactly when `netA` is spectrally stable. -/
+@[powerlib_foundation] theorem netModel_isHurwitz_iff [DecidableEq β] (m : NetModel α β) :
+    IsHurwitz m.plant.A ↔ Linear.SpectrallyStable (netA m.area m.ωs m.T m.𝓑) :=
+  (Linear.spectrallyStable_iff_isHurwitz _).symm.trans (Linear.spectrallyStable_reindex _ _)
+
 
 variable {area : α → Area} {ωs : ℝ} {T : β → ℝ} {𝓑 : Matrix α β ℝ}
 
@@ -325,10 +357,14 @@ evidence on the model, not a connection conclusion. -/
     rw [this, hp' a]; simp
 
 /-- Correction: if the tie-line graph has a loop (a nonzero `p` with `𝓑 p = 0`), the
-line-flow realization is never spectrally stable, whatever the gains. Static evidence on the
-model, not a connection conclusion. -/
-@[powerlib_foundation] theorem netModel_not_spectrallyStable [DecidableEq β] {p : β → ℝ}
-    (hp0 : p ≠ 0) (hp : 𝓑 *ᵥ p = 0) : ¬ Linear.SpectrallyStable (netA area ωs T 𝓑) := by
+line-flow realization never belongs to the family denotation of global exponential
+stability, whatever the gains. -/
+@[tmio TM, powerlib_foundation] theorem netModel_not_spectrallyStable [DecidableEq β] {p : β → ℝ}
+    (hp0 : p ≠ 0) (hp : 𝓑 *ᵥ p = 0) :
+    connection% ((⟨area, ωs, T, 𝓑⟩ : NetModel α β) ∉ (netFamily α β).den (.flow .globallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% netFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial) (x := (⟨area, ωs, T, 𝓑⟩ : NetModel α β))).trans (netModel_isHurwitz_iff (⟨area, ωs, T, 𝓑⟩ : NetModel α β))]
+  change ¬ Linear.SpectrallyStable (netA area ωs T 𝓑)
   intro hs
   have hv : (Sum.elim 0 (Sum.elim p 0) : α ⊕ (β ⊕ α) → ℝ) ≠ 0 := by
     intro h
@@ -358,11 +394,10 @@ incidence matrix. -/
       Matrix.tail_cons, Pi.zero_apply] <;> norm_num
 
 /-- Three areas in a ring (`1 → 2 → 3 → 1`): the line-flow LFC model is not spectrally stable
-for any parameters. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem triangle_not_spectrallyStable (area : Fin 3 → Area) (ωs : ℝ)
+for any parameters. A negative membership in the family denotation. -/
+@[tmio TM, powerlib_foundation] theorem triangle_not_spectrallyStable (area : Fin 3 → Area) (ωs : ℝ)
     (T : Fin 3 → ℝ) :
-    ¬ Linear.SpectrallyStable
-      (netA area ωs T (Network.signedIncidence (![0, 1, 2] : Fin 3 → Fin 3) ![1, 2, 0])) :=
+    connection% ((⟨area, ωs, T, Network.signedIncidence (![0, 1, 2] : Fin 3 → Fin 3) ![1, 2, 0]⟩ : NetModel (Fin 3) (Fin 3)) ∉ (netFamily (Fin 3) (Fin 3)).den (.flow .globallyExponentiallyStable)) :=
   netModel_not_spectrallyStable (p := fun _ => 1) (fun h => by simpa using congrFun h 0)
     triangle_circulation
 
@@ -549,11 +584,14 @@ omit [DecidableEq α] [Fintype β] in
 B_a > 0` and `K_I,a M_a ≤ D_a + K_R,a`, every line has `ω_s T_ℓ > 0`, and `𝓑` has trivial
 kernel (radial graph), the line-flow state matrix is spectrally stable — for every tie-line
 strength and every radial topology. -/
-@[powerlib_foundation] theorem netA_spectrallyStable_of_gain [DecidableEq β]
+@[tmio TM, powerlib_foundation] theorem netA_spectrallyStable_of_gain [DecidableEq β]
     (hM : ∀ a, 0 < (area a).M) (hK : ∀ a, 0 < (area a).KI) (hB : ∀ a, 0 < (area a).B)
     (hgain : ∀ a, (area a).KI * (area a).M ≤ (area a).D + (area a).K)
     (hw : ∀ ℓ, 0 < ωs * T ℓ) (hker : ∀ p : β → ℝ, 𝓑 *ᵥ p = 0 → p = 0) :
-    Linear.SpectrallyStable (netA area ωs T 𝓑) := by
+    connection% ((⟨area, ωs, T, 𝓑⟩ : NetModel α β) ∈ (netFamily α β).den (.flow .globallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% netFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial) (x := (⟨area, ωs, T, 𝓑⟩ : NetModel α β))).trans (netModel_isHurwitz_iff (⟨area, ωs, T, 𝓑⟩ : NetModel α β))]
+  change Linear.SpectrallyStable (netA area ωs T 𝓑)
   classical
   have hg : ∀ a, 0 ≤ netGap area a := fun a => by unfold netGap; linarith [hgain a]
   have hgB : ∀ a, 0 < netGap area a + (area a).B := fun a => add_pos_of_nonneg_of_pos (hg a) (hB a)
@@ -662,14 +700,19 @@ a connection conclusion. -/
 
 /-- **Gain condition, two areas.** With `M, K_I, B > 0` in both areas, `ω_s T > 0` and
 `K_I M ≤ D + K_R` in both areas, the five-state LFC matrix is Hurwitz. -/
-@[powerlib_foundation] theorem plant_isHurwitz_of_gain {a b : Area} {ωs T : ℝ}
+@[tmio TM, powerlib_foundation] theorem plant_isHurwitz_of_gain {a b : Area} {ωs T : ℝ}
     (hMa : 0 < a.M) (hMb : 0 < b.M) (hKa : 0 < a.KI) (hKb : 0 < b.KI) (hBa : 0 < a.B)
     (hBb : 0 < b.B) (hga : a.KI * a.M ≤ a.D + a.K) (hgb : b.KI * b.M ≤ b.D + b.K)
-    (hw : 0 < ωs * T) : IsHurwitz (plant a b ωs T).A := by
+    (hw : 0 < ωs * T) :
+    connection% ((⟨a, b, ωs, T⟩ : Model) ∈ family.den (.flow .globallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
+  change IsHurwitz (plant a b ωs T).A
   rw [← Linear.spectrallyStable_iff_isHurwitz, plant_A_eq_reindex,
     Linear.spectrallyStable_reindex]
-  refine netA_spectrallyStable_of_gain (fun i => ?_) (fun i => ?_) (fun i => ?_) (fun i => ?_)
-    (fun _ => hw) ?_
+  refine ((connection_proof% netFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial) (x := (⟨![a, b], ωs, (fun _ : Fin 1 => T), !![1; -1]⟩ : NetModel (Fin 2) (Fin 1)))).trans (netModel_isHurwitz_iff (⟨![a, b], ωs, (fun _ : Fin 1 => T), !![1; -1]⟩ : NetModel (Fin 2) (Fin 1)))).mp
+    (netA_spectrallyStable_of_gain (fun i => ?_) (fun i => ?_) (fun i => ?_) (fun i => ?_)
+      (fun _ => hw) ?_)
   · fin_cases i <;> simpa
   · fin_cases i <;> simpa
   · fin_cases i <;> simpa
@@ -683,37 +726,6 @@ a connection conclusion. -/
 
 
 /-! ## The `N`-area family -/
-
-variable (α β) in
-/-- An `N`-area LFC model on the tie-line graph with coupling matrix `𝓑`. -/
-structure NetModel where
-  area : α → Area
-  ωs : ℝ
-  T : β → ℝ
-  𝓑 : Matrix α β ℝ
-
-/-- The plant of an `N`-area model: the line-flow realization transported to `Fin` indices. -/
-def NetModel.plant (m : NetModel α β) :
-    Linear.Plant (Fintype.card (α ⊕ (β ⊕ α))) (Fintype.card α) where
-  A := (netA m.area m.ωs m.T m.𝓑).reindex (Fintype.equivFin _) (Fintype.equivFin _)
-  B := (netB m.area).reindex (Fintype.equivFin _) (Fintype.equivFin α)
-  C := (netC : Matrix α (α ⊕ (β ⊕ α)) ℝ).reindex (Fintype.equivFin α) (Fintype.equivFin _)
-  D := 0
-
-variable (α β) in
-/-- The `N`-area LFC family: every model read as the port system of its transported plant, with
-the matrix requirement language of `Frequency.LFC`. -/
-def netFamily :
-    Family (NetModel α β) Requirement (Fintype.card (α ⊕ (β ⊕ α))) (Fintype.card α) :=
-  ⟨fun m => m.plant.system, fun m => MeetsMatrix m.plant.A, translate⟩
-
-@[powerlib_foundation] theorem netFamily_isLinear :
-    (netFamily α β).IsLinear NetModel.plant := fun _ => rfl
-
-/-- The transported state matrix is Hurwitz exactly when `netA` is spectrally stable. -/
-@[powerlib_foundation] theorem netModel_isHurwitz_iff [DecidableEq β] (m : NetModel α β) :
-    IsHurwitz m.plant.A ↔ Linear.SpectrallyStable (netA m.area m.ωs m.T m.𝓑) :=
-  (Linear.spectrallyStable_iff_isHurwitz _).symm.trans (Linear.spectrallyStable_reindex _ _)
 
 /-! The connection statements quantify over the numbers of areas and lines (`Fin N_a` areas,
 `Fin N_t` lines): the closed claim grammar quantifies over data, not over types. -/
@@ -753,7 +765,8 @@ constant loads to its steady state (on a radial graph, `(0, 0, ΔP_L)`). -/
   unfold powerlib.TMIO.Statement
   rw [netFamily_isLinear.den_hurwitz (Or.inl hP)]
   intro h
-  exact netModel_not_spectrallyStable hp0 hp ((netModel_isHurwitz_iff m).1 h)
+  exact netModel_not_spectrallyStable hp0 hp
+    (netFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial) |>.mpr h)
 
 /-- Three areas in a ring: the line-flow LFC model satisfies no attractive sentence for any
 parameters. -/
@@ -776,7 +789,8 @@ whatever the tie-line strengths and the radial topology. -/
     connection% (m ∈ (netFamily (Fin Na) (Fin Nt)).den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   rw [netFamily_isLinear.den_hurwitz hP]
-  exact (netModel_isHurwitz_iff m).2 (netA_spectrallyStable_of_gain hM hK hB hgain hw hker)
+  exact (netFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial) (x := m)).mp
+    (netA_spectrallyStable_of_gain (area := m.area) (ωs := m.ωs) (T := m.T) (𝓑 := m.𝓑) hM hK hB hgain hw hker)
 
 /-- **Gain condition (connection), two areas** (`Frequency.LFC.family`, five states): with
 `M, K_I, B > 0`, `K_I M ≤ D + K_R` in both areas and `ω_s T > 0`, the two-area model satisfies
@@ -789,7 +803,8 @@ every attractive sentence and sampled contraction; this replaces the explicit Hu
     connection% (m ∈ family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   rw [family_isLinear.den_hurwitz hP]
-  exact plant_isHurwitz_of_gain hMa hMb hKa hKb hBa hBb hga hgb hw
+  exact (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial) (x := m)).mp
+    (plant_isHurwitz_of_gain hMa hMb hKa hKb hBa hBb hga hgb hw)
 
 /-! ## Implementation evidence (private, trajectory level) -/
 

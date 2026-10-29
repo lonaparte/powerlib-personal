@@ -306,8 +306,7 @@ private theorem sos_aux {R N B G u e1 e2 z1 z2 : ℝ} (hR : 0 < R) (hN : 0 < N)
         B / N * u * (e1 * z1 + e2 * z2) + B ^ 2 * u ^ 2 / (4 * R * N)) := by ring
   linarith
 
-/-- With `R_s > 0`, `dH/dt ≤ −margin ũ²`. Static evidence on the model, not a connection
-conclusion. -/
+/-- With `R_s > 0`, `dH/dt ≤ −margin ũ²`. An equivalent form of the damping requirement. -/
 @[powerlib_foundation] theorem energy_lie_le (m : Model) (hR : 0 < m.Rs) (hL : m.Ls ≠ 0)
     (hC : m.Cdc ≠ 0) (x : State 4) :
     fderiv ℝ m.energy x (m.field x) ≤ -m.margin * (x 1 - m.ustar) ^ 2 := by
@@ -352,13 +351,11 @@ model, not a connection conclusion. -/
     simp only [Model.N]
     ring
 
-/-- The operating point is an equilibrium. Static evidence on the model, not a connection
-conclusion. -/
+/-- The operating point is an equilibrium. An equivalent form of the damping requirement. -/
 @[powerlib_foundation] theorem field_point (m : Model) (hN : m.N ≠ 0) : m.field m.point = 0 := by
   simpa [Model.point] using field_eq_zero_of_sin_eq_zero m hN (θ := 0) Real.sin_zero
 
-/-- The closed loop is `2π`-periodic in `θ_dq`. Static evidence on the model, not a connection
-conclusion. -/
+/-- The closed loop is `2π`-periodic in `θ_dq`. An equivalent form of the damping requirement. -/
 @[powerlib_foundation] theorem field_add_two_pi (m : Model) (θ u id iq : ℝ) :
     m.field (WithLp.toLp 2 ![θ + 2 * Real.pi, u, id, iq]) =
       m.field (WithLp.toLp 2 ![θ, u, id, iq]) := by
@@ -431,16 +428,6 @@ potential. Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem eta_mul_k (m : Model) : m.η * m.k = m.κ := by
   simp only [Model.k, Model.κ, Model.ω0]
   ring
-
-/-- For `η ≠ 0`, `margin > 0` is the source's (and the note's) condition
-`(G_dc+K_p)/η² > L_s²μ²u*²/(4R_s‖Z_s‖²)`. Static evidence on the model, not a connection
-conclusion. -/
-@[powerlib_foundation] theorem margin_pos_iff (m : Model) (hη : m.η ≠ 0) :
-    0 < m.margin ↔ m.Ls ^ 2 * m.μ ^ 2 * m.ustar ^ 2 / (4 * m.Rs * m.N) <
-      (m.Gdc + m.Kp) / m.η ^ 2 := by
-  have hη2 : 0 < m.η ^ 2 := by positivity
-  rw [lt_div_iff₀ hη2, Model.margin, Model.ω0, sub_pos]
-  constructor <;> intro h <;> convert h using 1 <;> ring
 
 /-! ## Linearization at the operating point -/
 
@@ -679,8 +666,7 @@ boundary `Re λ = 0` the dissipation forces `δu = 0`, `δĩ = 0`, and the DC ro
   intro i
   fin_cases i <;> simp [Model.field, Model.idc, Model.ixHat] <;> fun_prop
 
-/-- Entries of the Jacobian applied to a vector. Static evidence on the model, not a connection
-conclusion. -/
+/-- Entries of the Jacobian applied to a vector. An equivalent form of the damping requirement. -/
 @[powerlib_foundation] theorem jac_apply (m : Model) (v : State 4) :
     (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) m.jac v) 0 = m.η * v 1 ∧
     (Matrix.toEuclideanCLM (n := Fin 4) (𝕜 := ℝ) m.jac v) 1 =
@@ -791,6 +777,18 @@ def Meets (m : Model) : Requirement → Prop
   | .antiSynchronizing => m.μ * m.ustar * m.v0 < 0
   | .damped => 0 < m.margin
   | .matching => m.η ≠ 0
+
+/-- For `η ≠ 0`, `margin > 0` is the source's (and the note's) condition
+`(G_dc+K_p)/η² > L_s²μ²u*²/(4R_s‖Z_s‖²)`. An equivalent form of the damping requirement. -/
+@[tmio M, powerlib_foundation] theorem margin_pos_iff (m : Model) (hη : m.η ≠ 0) :
+    connection% (m ∈ TMIO.realize Meets {.damped} ↔ m.Ls ^ 2 * m.μ ^ 2 * m.ustar ^ 2 / (4 * m.Rs * m.N) <
+      (m.Gdc + m.Kp) / m.η ^ 2) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  change 0 < m.margin ↔ m.Ls ^ 2 * m.μ ^ 2 * m.ustar ^ 2 / (4 * m.Rs * m.N) <
+      (m.Gdc + m.Kp) / m.η ^ 2
+  have hη2 : 0 < m.η ^ 2 := by positivity
+  rw [lt_div_iff₀ hη2, Model.margin, Model.ω0, sub_pos]
+  constructor <;> intro h <;> convert h using 1 <;> ring
 
 /-- The translation: Lyapunov stability into the physical, synchronizing and dissipative
 requirements; local asymptotic and exponential stability into the physical, synchronizing,

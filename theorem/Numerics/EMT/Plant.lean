@@ -203,7 +203,7 @@ def lclField (m : LCL.Circuit) : (Fin 3 → ℝ) → (Fin 3 → ℝ) := lclInput
   abel
 
 /-- A passive, damped LCL plant has a Hurwitz state matrix.
-Static evidence on the model, not a connection conclusion. -/
+Read through the existing family endpoint. -/
 @[tmio TM, powerlib_foundation] theorem lclMatrix_isHurwitz (m : LCL.Circuit) (hp : m.Passive)
     (hd : m.Damped) :
     connection% (m ∈ LCL.family.den (.flow .globallyExponentiallyStable)) := by

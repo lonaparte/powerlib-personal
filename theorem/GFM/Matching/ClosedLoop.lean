@@ -601,9 +601,12 @@ absorbed into the damping). -/
 /-- For `η ≠ 0` the damping requirement is the source's inequality
 `C²‖v*‖²/(4(G+G_l)) + L²‖i*‖²/(4R) < (G_dc+K_p)/η²`. Static evidence on the model, not a
 connection conclusion. -/
-@[powerlib_foundation] theorem margin_pos_iff (m : Model) (hη : m.η ≠ 0) :
-    0 < m.margin ↔ m.C ^ 2 * (m.vdStar ^ 2 + m.vqStar ^ 2) / (4 * (m.G + m.Gl)) +
-      m.L ^ 2 * (m.idStar ^ 2 + m.iqStar ^ 2) / (4 * m.R) < (m.Gdc + m.Kp) / m.η ^ 2 := by
+@[tmio M, powerlib_foundation] theorem margin_pos_iff (m : Model) (hη : m.η ≠ 0) :
+    connection% (m ∈ TMIO.realize Meets {.damping} ↔ m.C ^ 2 * (m.vdStar ^ 2 + m.vqStar ^ 2) / (4 * (m.G + m.Gl)) +
+      m.L ^ 2 * (m.idStar ^ 2 + m.iqStar ^ 2) / (4 * m.R) < (m.Gdc + m.Kp) / m.η ^ 2) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  change 0 < m.margin ↔ m.C ^ 2 * (m.vdStar ^ 2 + m.vqStar ^ 2) / (4 * (m.G + m.Gl)) +
+      m.L ^ 2 * (m.idStar ^ 2 + m.iqStar ^ 2) / (4 * m.R) < (m.Gdc + m.Kp) / m.η ^ 2
   have hη2 : 0 < m.η ^ 2 := by positivity
   rw [lt_div_iff₀ hη2, Model.margin, sub_pos]
   constructor <;> intro h <;> linarith
@@ -634,8 +637,11 @@ def example1 : Model :=
     C := 1, G := 1, Gl := 0, Bl := 0, sd := 0, sq := -1 / 4, vStar := 1, idStar := 0,
     iqStar := 1 / 4, vdStar := 1 / 4, vqStar := 1 / 4 }
 
-/-- Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem example1_equilibrium : example1.field example1.point 0 = 0 := by
+/-- The example meets the equilibrium requirement. -/
+@[tmio M, powerlib_foundation] theorem example1_equilibrium :
+    connection% (example1 ∈ TMIO.realize Meets {.equilibrium}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  change example1.field example1.point 0 = 0
   ext i
   fin_cases i <;> simp [Model.field, Model.point, example1] <;> norm_num
 
@@ -649,7 +655,7 @@ def example1 : Model :=
     connection% (example1 ∈ family.den (.flow .globallyExponentiallyStable)) :=
   mem_den_globallyExponentiallyStable example1 (by norm_num [example1]) (by norm_num [example1])
     (by norm_num [example1]) (by norm_num [example1]) (by norm_num [example1])
-    example1_equilibrium (by rw [example1_margin]; norm_num)
+    (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using (example1_equilibrium)) (by rw [example1_margin]; norm_num)
 
 /-! ## Stationary frame -/
 

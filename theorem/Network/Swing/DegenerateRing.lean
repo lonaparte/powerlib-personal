@@ -315,7 +315,10 @@ theorem line_trig' (k : Fin 5) :
   rw [show θr k - θr (k - 1) = -(θr (k - 1) - θr k) by ring, Real.cos_neg, Real.sin_neg]
   exact ⟨h.1, by rw [mul_neg, h.2]⟩
 
-theorem balance : ∀ k, params.P k = powerInjection params.B θr k := by
+@[tmio M] theorem balance :
+    connection% ((⟨params, θr⟩ : Model 4) ∈ TMIO.realize Meets {.powerFlow}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
+  change ∀ k, params.P k = powerInjection params.B θr k
   intro k
   show fr k - fr (k - 1) = ∑ j, Br k j * Real.sin (θr k - θr j)
   rw [sum_Br (fun j => Real.sin (θr k - θr j)) k, (line_trig k).2, (line_trig' k).2]
@@ -324,7 +327,7 @@ theorem balance : ∀ k, params.P k = powerInjection params.B θr k := by
 theorem potential_ring (u : Fin (4 + 1) → ℝ) :
     potential params (θr + u) - potential params θr =
       ∑ e : Fin 5, edgeG (Wr e) (fr e) (u e - u (e + 1)) := by
-  rw [potential_add_sub balance u]
+  rw [potential_add_sub (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets] using (balance)) u]
   have hk : ∀ k : Fin 5, ∑ j, params.B k j * edgeIncrement (θr k - θr j) (u k - u j) =
       edgeG (Wr k) (fr k) (u k - u (k + 1)) +
         edgeG (Wr (k - 1)) (fr (k - 1)) (u (k - 1) - u k) := by
@@ -670,10 +673,12 @@ theorem degenerate_addLeaf {p : Params n} {θ : Fin (n + 1) → ℝ}
 
 /-- A null vector of the linearization weights (a grounded direction `v ≠ 0` with
 `∑ⱼ Wₖⱼ (vₖ − vⱼ) = 0` at every machine) is a zero eigenvector of the reduced Jacobian. -/
-@[powerlib_foundation] theorem not_isHurwitz_of_kernel {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio M, powerlib_foundation] theorem not_isHurwitz_of_kernel {p : Params n} {θ : Fin (n + 1) → ℝ}
     {v : Fin n → ℝ} (hv : v ≠ 0)
     (hker : ∀ k, ∑ j, flowWeights p.B θ k j * (ground v k - ground v j) = 0) :
-    ¬ LinearSystems.IsHurwitz (jacobian p θ) := by
+    connection% ((⟨p, θ⟩ : Model n) ∉ TMIO.realize Meets {.jacobianStable}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
+  change ¬ LinearSystems.IsHurwitz (jacobian p θ)
   intro hH
   apply Dynamics.mulVec_ne_zero_of_isHurwitz hH (v := fun r => angleState v r)
   · intro h
@@ -710,7 +715,7 @@ minimum of the potential, and a null vector of the linearization weights. -/
         ∀ k, ∑ j, flowWeights p.B θ k j * (ground v k - ground v j) = 0) := by
   induction n with
   | zero =>
-    refine ⟨Ring5.params, Ring5.θr, Ring5.balance, Ring5.ring_strictMin,
+    refine ⟨Ring5.params, Ring5.θr, (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets] using (Ring5.balance)), Ring5.ring_strictMin,
       ![9, 6, 4, 2], fun h => ?_, Ring5.kernel_ring⟩
     have := congrFun h 0
     norm_num at this
@@ -728,14 +733,16 @@ isolated minimum of the network potential (LaSalle), although the linearization 
   unfold powerlib.TMIO.Statement
   have h := mem_den_locallyAsymptoticallyStable_iff ring5
   unfold powerlib.TMIO.Statement at h
-  exact h.mpr ⟨Ring5.balance, Ring5.ring_strictMin⟩
+  exact h.mpr ⟨(by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets, ring5] using (Ring5.balance)), Ring5.ring_strictMin⟩
 
 /-- The reduced Jacobian of the five-machine ring is not Hurwitz (zero eigenvalue along the null
 direction `(9, 6, 4, 2)` of the Hessian). Static evidence on the model. -/
-@[powerlib_foundation] theorem ring5_not_isHurwitz :
-    ¬ LinearSystems.IsHurwitz (jacobian ring5.params ring5.θ) :=
-  not_isHurwitz_of_kernel (v := ![9, 6, 4, 2]) (fun h => by
-    have := congrFun h 0; norm_num at this) Ring5.kernel_ring
+@[tmio M, powerlib_foundation] theorem ring5_not_isHurwitz :
+    connection% (ring5 ∉ TMIO.realize Meets {.jacobianStable}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets, ring5]
+  change ¬ LinearSystems.IsHurwitz (jacobian ring5.params ring5.θ)
+  exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets, ring5] using (not_isHurwitz_of_kernel (v := ![9, 6, 4, 2]) (fun h => by
+    have := congrFun h 0; norm_num at this) Ring5.kernel_ring))
 
 /-- **The local asymptotic translation is not exact for five or more machines** (`n + 5` machines,
 every `n`): a ring of five machines, with unit leaves attached for more machines, is locally
@@ -751,6 +758,6 @@ asymptotically stable at a power-balance point whose reduced Jacobian has a zero
   rw [← h, (connection_proof% TMIO.mem_realize)] at hin
   have hj : Meets (⟨p, θ⟩ : Model (n + 4)) .jacobianStable :=
     hin .jacobianStable (by simp [family, translate])
-  exact not_isHurwitz_of_kernel hv hker hj
+  exact (show ¬ LinearSystems.IsHurwitz (jacobian p θ) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets, ring5] using not_isHurwitz_of_kernel hv hker) hj
 
 end powerlib.Network.Swing

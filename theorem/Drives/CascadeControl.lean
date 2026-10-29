@@ -155,13 +155,6 @@ that is not a closed-loop eigenvalue. -/
 @[powerlib_foundation] theorem imcModel_A (L R α : ℝ) :
     (imcModel L R α).A = !![-(α + R / L), R * α / L; -1, 0] := rfl
 
-/-- Hurwitz criterion of the IMC loop: the monic characteristic coefficients `α + R/L` and
-`Rα/L` are positive. Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem imcModel_isHurwitz_iff (L R α : ℝ) :
-    IsHurwitz (imcModel L R α).A ↔ 0 < α + R / L ∧ 0 < R * α / L := by
-  rw [imcModel_A, Criteria.isHurwitz_fin_two_of_iff]
-  constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith
-
 /-- A negative monic coefficient gives a characteristic root in the open right half plane. -/
 @[powerlib_foundation] theorem imcModel_exists_root (L R α : ℝ)
     (h : α + R / L < 0 ∨ R * α / L < 0) :
@@ -214,6 +207,16 @@ def family : Family IMCLoop Spectral.Requirement 2 1 :=
 @[powerlib_foundation] theorem family_isLinear : family.IsLinear IMCLoop.plant :=
   Spectral.linearFamily_isLinear _ _ _
 
+/-- Hurwitz criterion of the IMC loop: the monic characteristic coefficients `α + R/L` and
+`Rα/L` are positive. An exact condition on the family denotation. -/
+@[tmio TM, powerlib_foundation] theorem imcModel_isHurwitz_iff (L R α : ℝ) :
+    connection% ((⟨L, R, α⟩ : IMCLoop) ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < α + R / L ∧ 0 < R * α / L) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
+  change IsHurwitz (imcModel L R α).A ↔ 0 < α + R / L ∧ 0 < R * α / L
+  rw [imcModel_A, Criteria.isHurwitz_fin_two_of_iff]
+  constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith
+
 /-! ### The converter PI-loop reading -/
 
 /-- The IMC loop is the converter PI loop with IMC tuning: for `L ≠ 0` its plant is the plant of
@@ -239,7 +242,7 @@ comparison of the two semantics connections at the two members. -/
 @[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.linear_chain_le_semantics (fun m h => (imcModel_isHurwitz_iff _ _ _).mpr h)
+  exact Spectral.linear_chain_le_semantics (fun m h => ((connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (imcModel_isHurwitz_iff _ _ _)).mpr h)
     (fun m h => imcModel_exists_root _ _ _ h)
 
 /-- The attractive sentences and sampled contraction of the IMC loop are carved out exactly by
@@ -247,7 +250,7 @@ positive monic coefficients. -/
 @[tmio TM, powerlib_domain] theorem exact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.linear_exact (fun m => (imcModel_isHurwitz_iff _ _ _).symm) hP
+  exact Spectral.linear_exact (fun m => ((connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (imcModel_isHurwitz_iff _ _ _)).symm) hP
 
 /-- For `L, R, α > 0` the IMC current loop satisfies every attractive sentence (closed-loop
 eigenvalues `−α`, `−R/L`), in particular global exponential stability; read from the converter
@@ -273,7 +276,8 @@ private theorem imcLoop_exponentiallyStable_tracking (L R α iref : ℝ) (hL : 0
             K * Real.exp (-(rate * t)) * ‖x 0 - imcEquilibrium α iref‖ ∧
           |x t 0 - iref| ≤ K * Real.exp (-(rate * t)) * ‖x 0 - imcEquilibrium α iref‖ := by
   have hA : IsHurwitz (imcModel L R α).A := by
-    rw [imcModel_isHurwitz_iff]
+    change IsHurwitz (IMCLoop.plant ⟨L, R, α⟩).A
+    rw [← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), (connection_proof% imcModel_isHurwitz_iff)]
     have : 0 < R / L := div_pos hR hL
     exact ⟨by linarith, by positivity⟩
   set e := imcEquilibrium α iref

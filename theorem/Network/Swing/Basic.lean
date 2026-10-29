@@ -267,6 +267,69 @@ def jacobian (p : Params n) (θ : Fin (n + 1) → ℝ) :
     Matrix (Fin (n + (n + 1))) (Fin (n + (n + 1))) ℝ :=
   Matrix.reindex finSumFinEquiv finSumFinEquiv (jacobianBlocks p θ)
 
+/-! ## The family -/
+
+/-- A swing-network model read about a selected angle profile `θ*`. -/
+structure Model (n : ℕ) where
+  /-- The swing data. -/
+  params : Params n
+  /-- The selected angle profile `θ*`. -/
+  θ : Fin (n + 1) → ℝ
+
+/-- The reduced swing field translated so that the selected point is the origin. -/
+def Model.field (m : Model n) (z : State (n + (n + 1))) : State (n + (n + 1)) :=
+  reducedField m.params (z + equilibrium m.θ)
+
+/-- Requirements on the swing-network models, all static. -/
+inductive Requirement
+  /-- Power balance at `θ*`: `Pₖ = ∑ⱼ Bₖⱼ sin(θ*ₖ − θ*ⱼ)`. -/
+  | powerFlow
+  /-- Every coupled edge has `|θ*ᵢ − θ*ⱼ| < π/2`. -/
+  | angle
+  /-- The graph of `B` is connected. -/
+  | connected
+  /-- The reduced Jacobian at `θ*` is Hurwitz. -/
+  | jacobianStable
+  /-- The reduced Jacobian at `θ*` has a characteristic root in the open right half plane. -/
+  | jacobianUnstable
+
+/-- Satisfaction of a requirement by a model. -/
+def Meets (m : Model n) : Requirement → Prop
+  | .powerFlow => ∀ k, m.params.P k = powerInjection m.params.B m.θ k
+  | .angle => ∀ i j, 0 < m.params.B i j → |m.θ i - m.θ j| < Real.pi / 2
+  | .connected => ∀ i j, Reach m.params.B i j
+  | .jacobianStable => LinearSystems.IsHurwitz (jacobian m.params m.θ)
+  | .jacobianUnstable =>
+    ∃ s : ℂ, (Linear.characteristicMatrix (jacobian m.params m.θ) s).det = 0 ∧ 0 < s.re
+
+/-- The translation of the sentences: the local ones into power balance with a Hurwitz reduced
+Jacobian, instability into power balance with an unstable Jacobian, passivity into nothing. The
+global sentences, decay rates, sampled contraction and conservation are translated into the
+whole language, which no model meets (unavailable translation coverage, not a usable
+translation). -/
+def translate : Sentence → Set Requirement
+  | .flow .lyapunovStable | .flow .locallyAsymptoticallyStable
+  | .flow .locallyExponentiallyStable => {.powerFlow, .jacobianStable}
+  | .flow .unstable => {.powerFlow, .jacobianUnstable}
+  | .flow _ => Set.univ
+  | .passive => ∅
+  | .envelope _ => Set.univ
+
+/-- The swing-network family: every model read as its autonomous field translated to the
+selected point. -/
+def family : Family (Model n) Requirement (n + (n + 1)) 0 :=
+  ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
+
+@[powerlib_foundation] theorem family_isAutonomous :
+    (family (n := n)).IsAutonomous Model.field := fun _ => rfl
+
+/-- A flow sentence of a model is the sentence of the untranslated reduced field at the
+selected point. -/
+private theorem mem_den_flow_iff {m : Model n} {P : Flow.Property} :
+    m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
+  Spectral.mem_den_flow_iff_shift (f := fun m : Model n => reducedField m.params)
+    (pt := fun m => equilibrium m.θ) family_isAutonomous
+
 @[simp, powerlib_foundation] theorem jacobian_dd (p : Params n) (θ : Fin (n + 1) → ℝ)
     (i i' : Fin n) : jacobian p θ (dIdx i) (dIdx i') = 0 := by
   simp [jacobian, jacobianBlocks]
@@ -380,9 +443,11 @@ def jacobian (p : Params n) (θ : Fin (n + 1) → ℝ) :
 
 /-- The reduced swing Jacobian is Hurwitz when the linearization weights are
 nonnegative and their positive edges connect all machines. -/
-@[powerlib_foundation] theorem jacobian_isHurwitz (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[tmio M, powerlib_foundation] theorem jacobian_isHurwitz (p : Params n) (θ : Fin (n + 1) → ℝ)
     (hWnn : ∀ i j, 0 ≤ flowWeights p.B θ i j) (hconn : ∀ i j, Reach (flowWeights p.B θ) i j) :
-    LinearSystems.IsHurwitz (jacobian p θ) := by
+    connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.jacobianStable}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
+  change LinearSystems.IsHurwitz (jacobian p θ)
   intro μ v hv heig
   simp only [neg_zero]
   have hWs := flowWeights_symm p θ
@@ -552,9 +617,12 @@ nonnegative and their positive edges connect all machines. -/
         ((contDiff_apply ℝ ℝ j).comp angleMap.contDiff)
 
 /-- The angle condition on a connected coupling graph makes the reduced Jacobian Hurwitz. -/
-@[powerlib_foundation] theorem jacobian_isHurwitz_of_angle (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[tmio M, powerlib_foundation] theorem jacobian_isHurwitz_of_angle (p : Params n) (θ : Fin (n + 1) → ℝ)
     (hangle : ∀ i j, 0 < p.B i j → |θ i - θ j| < Real.pi / 2)
-    (hconn : ∀ i j, Reach p.B i j) : LinearSystems.IsHurwitz (jacobian p θ) := by
+    (hconn : ∀ i j, Reach p.B i j) :
+    connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.jacobianStable}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
+  change LinearSystems.IsHurwitz (jacobian p θ)
   have hpos : ∀ i j, 0 < p.B i j → 0 < flowWeights p.B θ i j := by
     intro i j hij
     have hc : 0 < Real.cos (θ i - θ j) := by
@@ -568,70 +636,7 @@ nonnegative and their positive edges connect all machines. -/
     · simp [flowWeights, ← h]
   have hconnW : ∀ i j, Reach (flowWeights p.B θ) i j := fun i j =>
     Relation.ReflTransGen.mono (fun a b h => hpos a b h) i j (hconn i j)
-  exact jacobian_isHurwitz p θ hWnn hconnW
-
-/-! ## The family -/
-
-/-- A swing-network model read about a selected angle profile `θ*`. -/
-structure Model (n : ℕ) where
-  /-- The swing data. -/
-  params : Params n
-  /-- The selected angle profile `θ*`. -/
-  θ : Fin (n + 1) → ℝ
-
-/-- The reduced swing field translated so that the selected point is the origin. -/
-def Model.field (m : Model n) (z : State (n + (n + 1))) : State (n + (n + 1)) :=
-  reducedField m.params (z + equilibrium m.θ)
-
-/-- Requirements on the swing-network models, all static. -/
-inductive Requirement
-  /-- Power balance at `θ*`: `Pₖ = ∑ⱼ Bₖⱼ sin(θ*ₖ − θ*ⱼ)`. -/
-  | powerFlow
-  /-- Every coupled edge has `|θ*ᵢ − θ*ⱼ| < π/2`. -/
-  | angle
-  /-- The graph of `B` is connected. -/
-  | connected
-  /-- The reduced Jacobian at `θ*` is Hurwitz. -/
-  | jacobianStable
-  /-- The reduced Jacobian at `θ*` has a characteristic root in the open right half plane. -/
-  | jacobianUnstable
-
-/-- Satisfaction of a requirement by a model. -/
-def Meets (m : Model n) : Requirement → Prop
-  | .powerFlow => ∀ k, m.params.P k = powerInjection m.params.B m.θ k
-  | .angle => ∀ i j, 0 < m.params.B i j → |m.θ i - m.θ j| < Real.pi / 2
-  | .connected => ∀ i j, Reach m.params.B i j
-  | .jacobianStable => LinearSystems.IsHurwitz (jacobian m.params m.θ)
-  | .jacobianUnstable =>
-    ∃ s : ℂ, (Linear.characteristicMatrix (jacobian m.params m.θ) s).det = 0 ∧ 0 < s.re
-
-/-- The translation of the sentences: the local ones into power balance with a Hurwitz reduced
-Jacobian, instability into power balance with an unstable Jacobian, passivity into nothing. The
-global sentences, decay rates, sampled contraction and conservation are translated into the
-whole language, which no model meets (unavailable translation coverage, not a usable
-translation). -/
-def translate : Sentence → Set Requirement
-  | .flow .lyapunovStable | .flow .locallyAsymptoticallyStable
-  | .flow .locallyExponentiallyStable => {.powerFlow, .jacobianStable}
-  | .flow .unstable => {.powerFlow, .jacobianUnstable}
-  | .flow _ => Set.univ
-  | .passive => ∅
-  | .envelope _ => Set.univ
-
-/-- The swing-network family: every model read as its autonomous field translated to the
-selected point. -/
-def family : Family (Model n) Requirement (n + (n + 1)) 0 :=
-  ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
-
-@[powerlib_foundation] theorem family_isAutonomous :
-    (family (n := n)).IsAutonomous Model.field := fun _ => rfl
-
-/-- A flow sentence of a model is the sentence of the untranslated reduced field at the
-selected point. -/
-private theorem mem_den_flow_iff {m : Model n} {P : Flow.Property} :
-    m ∈ family.den (.flow P) ↔ P.holds (reducedField m.params) (equilibrium m.θ) :=
-  Spectral.mem_den_flow_iff_shift (f := fun m : Model n => reducedField m.params)
-    (pt := fun m => equilibrium m.θ) family_isAutonomous
+  exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets] using (jacobian_isHurwitz p θ hWnn hconnW))
 
 /-- Implementation evidence for `mem_den_locallyExponentiallyStable`, at the selected point of
 the untranslated field. -/
@@ -645,7 +650,7 @@ private theorem reducedSwing_locallyExponentiallyStable (p : Params n)
   change LocallyExponentiallyStable (reducedField p) (equilibrium θ)
   exact Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian p θ)
     (reducedField_contDiff p) (reducedField_equilibrium p θ heq)
-    (hasFDerivAt_reducedField p θ).fderiv (jacobian_isHurwitz_of_angle p θ hangle hconn)
+    (hasFDerivAt_reducedField p θ).fderiv ((by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets] using (jacobian_isHurwitz_of_angle p θ hangle hconn)))
 
 private theorem les_of_meets {m : Model n} (hp : Meets m .powerFlow)
     (hH : Meets m .jacobianStable) :
@@ -670,7 +675,7 @@ unstable one: the whole requirement language is inconsistent. -/
     connection% (TMIO.realize (Meets (n := n)) Set.univ = ∅) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.realize_univ_eq_empty_of_forall fun m h => ?_
-  have hH := jacobian_isHurwitz_of_angle m.params m.θ (h .angle) (h .connected)
+  have hH := (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets] using (jacobian_isHurwitz_of_angle m.params m.θ (h .angle) (h .connected)))
   obtain ⟨s, hs, hre⟩ : Meets m .jacobianUnstable := h .jacobianUnstable
   have := (Linear.spectrallyStable_iff_isHurwitz _).2 hH s hs
   linarith
@@ -700,10 +705,13 @@ holds without requirement. -/
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
 /-- An equilibrium of the reduced field at the selected point is a power-balance point (the
-converse of `reducedField_equilibrium`). Static evidence on the model, not a connection
-conclusion. -/
-@[powerlib_foundation] theorem powerFlow_of_equilibrium {p : Params n} {θ : Fin (n + 1) → ℝ}
-    (h : reducedField p (equilibrium θ) = 0) : ∀ k, p.P k = powerInjection p.B θ k := by
+converse of `reducedField_equilibrium`). Read through the existing family endpoint.
+ -/
+@[tmio M, powerlib_foundation] theorem powerFlow_of_equilibrium {p : Params n} {θ : Fin (n + 1) → ℝ}
+    (h : reducedField p (equilibrium θ) = 0) :
+    connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.powerFlow}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
+  change ∀ k, p.P k = powerInjection p.B θ k
   intro k
   have hk := congrArg (fun z : State (n + (n + 1)) => z (wIdx k)) h
   simp only [reducedField_wIdx, equilibrium, reduce_wIdx, angleMap_reduce,
@@ -728,7 +736,7 @@ reduced field forces an equilibrium with a Hurwitz Jacobian. -/
       (hm .jacobianStable (by simp [family, translate]))
   rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
-  · exact powerFlow_of_equilibrium heq
+  · exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets] using (powerFlow_of_equilibrium heq))
   · exact hH
 
 /-- **Swing network, relative-angle coordinates.** At a synchronous equilibrium with
@@ -766,7 +774,7 @@ def offEquilibrium : Model n :=
   unfold powerlib.TMIO.Statement
   refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff)
     (reducedField_contDiff _) fun h => ?_
-  have := powerFlow_of_equilibrium h 0
+  have := ((TMIO.mem_realize _ _ _).mp (powerFlow_of_equilibrium h) .powerFlow (by simp)) 0
   simp [offEquilibrium, powerInjection] at this
 
 /-- The instability translation is sound but not exact: every non-equilibrium point is unstable,
@@ -837,9 +845,11 @@ force (the reduced Jacobian has a zero column). -/
     nlinarith [sq_nonneg (z 1), sq_nonneg (z 2)]
 
 /-- The reduced Jacobian of two uncoupled machines is not Hurwitz: the relative angle is not
-restored (zero column). Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem uncoupled_not_isHurwitz :
-    ¬ LinearSystems.IsHurwitz (jacobian uncoupled.params uncoupled.θ) := by
+restored (zero column). Read through the existing family endpoint. -/
+@[tmio M, powerlib_foundation] theorem uncoupled_not_isHurwitz :
+    connection% (uncoupled ∉ TMIO.realize Meets {.jacobianStable}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
+  change ¬ LinearSystems.IsHurwitz (jacobian uncoupled.params uncoupled.θ)
   intro hH
   apply Dynamics.mulVec_ne_zero_of_isHurwitz hH (v := Pi.single (dIdx 0) 1)
   · intro h
@@ -862,7 +872,7 @@ machines are Lyapunov stable at a power-balance point whose reduced Jacobian is 
     connection% (¬ (family (n := 1)).Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_exact_of_witness uncoupled_mem_den_lyapunovStable (q := .jacobianStable)
-    (by simp [family, translate]) uncoupled_not_isHurwitz
+    (by simp [family, translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets] using (uncoupled_not_isHurwitz))
 
 /-! ### The Lyapunov translation for every number of machines -/
 
@@ -941,9 +951,11 @@ energy `∑ᵢ (δᵢ + ω_{i+1} − ω₀)² + ∑ₖ ωₖ²` does not increas
   exact Finset.sum_nonpos fun k _ => by nlinarith [sq_nonneg (z (wIdx k))]
 
 /-- The reduced Jacobian of `n + 2` uncoupled machines is not Hurwitz (the column of `δ₀` is zero).
-Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem uncoupledN_not_isHurwitz :
-    ¬ LinearSystems.IsHurwitz (jacobian (uncoupledN n).params (uncoupledN n).θ) := by
+Read through the existing family endpoint. -/
+@[tmio M, powerlib_foundation] theorem uncoupledN_not_isHurwitz :
+    connection% (uncoupledN n ∉ TMIO.realize Meets {.jacobianStable}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
+  change ¬ LinearSystems.IsHurwitz (jacobian (uncoupledN n).params (uncoupledN n).θ)
   intro hH
   apply Dynamics.mulVec_ne_zero_of_isHurwitz hH (v := Pi.single (dIdx 0) 1)
   · intro h
@@ -967,16 +979,18 @@ point whose reduced Jacobian is not Hurwitz. -/
     connection% (¬ (family (n := n + 1)).Exact (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.not_exact_of_witness (uncoupledN_mem_den_lyapunovStable (n := n))
-    (q := .jacobianStable) (by simp [family, translate]) uncoupledN_not_isHurwitz
+    (q := .jacobianStable) (by simp [family, translate]) (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets] using (uncoupledN_not_isHurwitz))
 
 /-! ### A single machine -/
 
-/-- The reduced Jacobian of a single machine (`n = 0`, the frequency alone) is Hurwitz. Static
-evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem jacobian_isHurwitz_zero (p : Params 0) (θ : Fin 1 → ℝ) :
-    LinearSystems.IsHurwitz (jacobian p θ) := by
+/-- The reduced Jacobian of a single machine (`n = 0`, the frequency alone) is Hurwitz. Read through the existing family endpoint.
+ -/
+@[tmio M, powerlib_foundation] theorem jacobian_isHurwitz_zero (p : Params 0) (θ : Fin 1 → ℝ) :
+    connection% ((⟨p, θ⟩ : Model 0) ∈ TMIO.realize Meets {.jacobianStable}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets]
+  change LinearSystems.IsHurwitz (jacobian p θ)
   have hij : ∀ i j : Fin (0 + 1), i = j := fun i j => Fin.ext (by omega)
-  refine jacobian_isHurwitz p θ (fun i j => ?_) (fun i j => ?_)
+  refine (TMIO.mem_realize _ _ _).mp (jacobian_isHurwitz p θ (fun i j => ?_) (fun i j => ?_)) .jacobianStable (by simp)
   · rw [hij i j]
     simp [flowWeights, p.B_nonneg]
   · rw [hij i j]
@@ -1000,8 +1014,8 @@ private theorem exact_zero {P : Flow.Property}
     (fun _ _ h => absurd trivial h) fun m heq _ => ?_
   rw [ht, (connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
-  · exact powerFlow_of_equilibrium heq
-  · exact jacobian_isHurwitz_zero _ _
+  · exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets] using (powerFlow_of_equilibrium heq))
+  · exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets] using (jacobian_isHurwitz_zero _ _))
 
 /-- For a single machine (`n = 0`) the Lyapunov translation is exact. -/
 @[tmio TM, powerlib_domain] theorem exact_lyapunovStable_zero :

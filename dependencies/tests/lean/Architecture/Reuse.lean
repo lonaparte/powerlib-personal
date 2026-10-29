@@ -202,8 +202,6 @@ open powerlib LinearSystems
     (h₂ : IsHurwitz ic.load.A) (h : ic.ImpedanceStable) :
     connection% (ic ∈ Circuits.Interconnection.family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [(connection_proof% Circuits.Interconnection.family_isLinear.mem_den_flow)]
-  change Flow.GloballyExponentiallyStable (affineLinearVectorField ic.closedLoopA 0) 0
   aesop
 
 @[powerlib_domain] theorem polynomial_certificate {model : Nonlinear.Polynomial2.Model}
@@ -229,8 +227,7 @@ run_cmd do
         #[`powerlib.Circuits.LCL.routhHurwitz_of_passive,
           `powerlib.Circuits.LCL.stable_of_routhHurwitz, `powerlib.Circuits.LCL.isHurwitz_iff_stable]),
       (`AutomaticChaining.interconnection_criterion,
-        #[`powerlib.Circuits.Interconnection.isHurwitz_closedLoop_of_impedanceStable,
-          `powerlib.Linear.globallyExponentiallyStable_of_isHurwitz]),
+        #[`powerlib.Circuits.Interconnection.isHurwitz_closedLoop_of_impedanceStable]),
       (`AutomaticChaining.polynomial_certificate,
         #[`powerlib.Nonlinear.Polynomial2.Certificate.mem_den])] do
     let names := powerlib.Registry.theoremNames env

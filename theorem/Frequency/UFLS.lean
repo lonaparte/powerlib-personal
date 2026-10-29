@@ -88,7 +88,7 @@ private theorem postShed_necessary {ΔP' : ℝ} (hM : 0 < M) (hTg : 0 < Tg)
     (hev : ∀ᶠ t in atTop, -(th / f₀) ≤ x t 0) : ΔP' ≤ (K + D) * th / f₀ := by
   have hlim := LTI.tendsto_apply_of_isHurwitz (plant M D K Tg)
     (SwingGovernor.steadyState_isEquilibrium hM.ne' hTg.ne' hKD.ne')
-    ((SwingGovernor.isHurwitz_iff_of_nonneg hM hTg hD).2 hKD) hx 0
+    (SwingGovernor.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial) (x := (⟨M, D, K, Tg, hM, hTg⟩ : SwingGovernor.Model)) |>.mp ((SwingGovernor.isHurwitz_iff_of_nonneg hM hTg hD).2 hKD)) hx 0
   rw [SwingGovernor.steadyState_zero] at hlim
   have h := ge_of_tendsto hlim hev
   rw [neg_div, neg_le_neg_iff, div_le_div_iff₀ hKD hf] at h

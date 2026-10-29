@@ -600,9 +600,11 @@ bases need inverses. -/
     (complexify_mul_eq_one hv) (complexify_mul_eq_one hi) _ _
 
 /-- The impedance criterion is invariant under every change of bases with positive time base. -/
-@[powerlib_foundation] theorem impedanceStable_rebase_iff (h₁ : β.S₁ * β.T₁ = 1)
+@[tmio M, powerlib_foundation] theorem impedanceStable_rebase_iff (h₁ : β.S₁ * β.T₁ = 1)
     (h₂ : β.S₂ * β.T₂ = 1) (hv : β.Sv * β.Tv = 1) (hi : β.Si * β.Ti = 1) (hw : 0 < β.w) :
-    (interconnection ic β).ImpedanceStable ↔ ic.ImpedanceStable := by
+    connection% ((interconnection ic β) ∈ TMIO.realize powerlib.Circuits.Interconnection.Meets {.impedanceStable} ↔ ic ∈ TMIO.realize powerlib.Circuits.Interconnection.Meets {.impedanceStable}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Circuits.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Circuits.Interconnection.closedLoop_A, powerlib.Circuits.Interconnection.Meets]
+  change (interconnection ic β).ImpedanceStable ↔ ic.ImpedanceStable
   have hw' : (β.w : ℂ) ≠ 0 := by exact_mod_cast hw.ne'
   simp only [Interconnection.ImpedanceStable, returnDifference_rebase h₁ h₂ hv hi hw.ne']
   constructor
@@ -619,9 +621,11 @@ bases need inverses. -/
 
 /-- Closed-loop pole stability is invariant under every change of bases with positive time
 base. -/
-@[powerlib_foundation] theorem isHurwitz_closedLoop_rebase_iff (h₁ : β.S₁ * β.T₁ = 1)
+@[tmio TM, powerlib_foundation] theorem isHurwitz_closedLoop_rebase_iff (h₁ : β.S₁ * β.T₁ = 1)
     (h₂ : β.S₂ * β.T₂ = 1) (hv : β.Sv * β.Tv = 1) (hi : β.Si * β.Ti = 1) (hw : 0 < β.w) :
-    IsHurwitz (interconnection ic β).closedLoop.A ↔ IsHurwitz ic.closedLoop.A := by
+    connection% ((interconnection ic β) ∈ powerlib.Circuits.Interconnection.family.den (.flow .globallyExponentiallyStable) ↔ ic ∈ powerlib.Circuits.Interconnection.family.den (.flow .globallyExponentiallyStable)) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Circuits.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Circuits.Interconnection.closedLoop_A, powerlib.Circuits.Interconnection.Meets]
+  change IsHurwitz (interconnection ic β).closedLoop.A ↔ IsHurwitz ic.closedLoop.A
   rw [closedLoop_rebase hv hi]
   exact isHurwitz_rebaseMatrix_iff
     (blockCoordinates_inv (mul_eq_one_comm.mp h₁) (mul_eq_one_comm.mp h₂))
@@ -688,7 +692,7 @@ invertible bases and positive time base. -/
   rw [Interconnection.family_isLinear.den_hurwitz hP]
   ext ic
   simp only [Set.mem_ofPred_eq, Set.mem_preimage]
-  exact (isHurwitz_closedLoop_rebase_iff h₁ h₂ hv hi hw).symm
+  exact ((show IsHurwitz (interconnection ic β).closedLoop.A ↔ IsHurwitz ic.closedLoop.A from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, (connection_proof% powerlib.Circuits.Interconnection.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)), powerlib.Circuits.Interconnection.closedLoop_A, powerlib.Circuits.Interconnection.Meets] using (isHurwitz_closedLoop_rebase_iff h₁ h₂ hv hi hw))).symm
 
 /-- With the time base `1`, every flow sentence is pulled back along any change of bases with
 invertible bases. -/

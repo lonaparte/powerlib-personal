@@ -271,8 +271,19 @@ namespace DqBranch
 /-- The plant of the branch: input the branch voltage, output the current. -/
 def plant (m : DqBranch) : Plant 2 2 := dqRLPlant m.R m.L m.ω
 
-@[powerlib_foundation] theorem isHurwitz_plant_iff (m : DqBranch) :
-    IsHurwitz m.plant.A ↔ 0 < m.R / m.L := by
+end DqBranch
+
+/-- The dq RL-branch family: every branch read as the port system of its plant. -/
+def family : Family DqBranch Spectral.Requirement 2 2 :=
+  Spectral.linearFamily DqBranch.plant (fun m => 0 < m.R / m.L) (fun m => m.R / m.L < 0)
+
+namespace DqBranch
+
+@[tmio TM, powerlib_foundation] theorem isHurwitz_plant_iff (m : DqBranch) :
+    connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < m.R / m.L) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% (show family.IsLinear DqBranch.plant from Spectral.linearFamily_isLinear _ _ _).mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
+  change IsHurwitz m.plant.A ↔ 0 < m.R / m.L
   change IsHurwitz (dqRLMatrix m.R m.L m.ω) ↔ _
   exact isHurwitz_dqRLMatrix_iff m.R m.L m.ω
 
@@ -288,20 +299,16 @@ def alphaBeta (m : DqBranch) : DqBranch := ⟨m.R, m.L, 0⟩
 
 end DqBranch
 
-/-- The dq RL-branch family: every branch read as the port system of its plant. -/
-def family : Family DqBranch Spectral.Requirement 2 2 :=
-  Spectral.linearFamily DqBranch.plant (fun m => 0 < m.R / m.L) (fun m => m.R / m.L < 0)
-
 private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.den (.flow P) = {m | 0 < m.R / m.L}) := show family.den (.flow P) = {m | 0 < m.R / m.L} from
   Spectral.linear_den (U := fun m : DqBranch => m.R / m.L < 0)
-    (fun m => m.isHurwitz_plant_iff.symm) hP
+    (fun m => ((connection_proof% (show family.IsLinear DqBranch.plant from Spectral.linearFamily_isLinear _ _ _).mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans m.isHurwitz_plant_iff).symm) hP
 
 /-- Every translation of the dq RL-branch family is sound. -/
 @[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.linear_chain_le_semantics (fun m h => m.isHurwitz_plant_iff.mpr h)
+  exact Spectral.linear_chain_le_semantics (fun m h => ((connection_proof% (show family.IsLinear DqBranch.plant from Spectral.linearFamily_isLinear _ _ _).mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans m.isHurwitz_plant_iff).mpr h)
     (fun m h => m.exists_root_of_neg h)
 
 /-- The attractive sentences and sampled contraction of the dq branch are carved out exactly by
@@ -309,7 +316,7 @@ private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contrac
 @[tmio TM, powerlib_domain] theorem exact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.linear_exact (fun m => m.isHurwitz_plant_iff.symm) hP
+  exact Spectral.linear_exact (fun m => ((connection_proof% (show family.IsLinear DqBranch.plant from Spectral.linearFamily_isLinear _ _ _).mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans m.isHurwitz_plant_iff).symm) hP
 
 /-- Zero-input dq-frame RL branch at constant frame speed `ω`: an attractive sentence (in
 particular exponential stability) holds iff `R/L > 0`. -/

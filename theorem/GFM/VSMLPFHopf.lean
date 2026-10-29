@@ -381,7 +381,7 @@ asymptotically stable iff `K ≤ D ω_c + D²/M`: the Hopf boundary is included.
   rw [hiff, Set.mem_ofPred_eq, Set.mem_ofPred_eq]
   constructor
   · exact fun h' => h'.2.2
-  · exact fun hK => ⟨g.sin_δ0 hp.K0 h.le, g.K_pos hp.K0 h, hK⟩
+  · exact fun hK => ⟨(by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.K, VSMLPF.atLoading] using (g.sin_δ0 hp.K0 h.le)), (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.K, VSMLPF.atLoading] using (g.K_pos hp.K0 h)), hK⟩
 
 end VSMLPF
 end powerlib.GFM

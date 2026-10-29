@@ -594,11 +594,16 @@ def nonzeroVdc : Set (State 4) := {x | x 2 ≠ 0}
 
 /-- At `V_dc = 0` the field is read with Lean's `x / 0 = 0`: the power term `3 P / (2 V_dc)`
 vanishes, so the DC-link and DC-loop components are `I₀ / C_dc` and `V_dc*`.
-Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem field_eq_zero_iff_of_Vdc_eq_zero {x : State 4} (hx : x 2 = 0) :
-    p.field x = 0 ↔
+Read through the existing family endpoint. -/
+@[tmio M, powerlib_foundation] theorem field_eq_zero_iff_of_Vdc_eq_zero {x : State 4} (hx : x 2 = 0) :
+    connection% ((⟨p, x⟩ : ModelB.Model) ∈ TMIO.realize ModelB.Meets {.equilibrium} ↔
       p.ωs - p.ωg + p.kp * p.vgq (x 0) (p.kiv * x 3) + p.ki * x 1 = 0 ∧
-        p.vgq (x 0) (p.kiv * x 3) = 0 ∧ p.I0 / p.Cdc = 0 ∧ p.VdcRef = 0 := by
+        p.vgq (x 0) (p.kiv * x 3) = 0 ∧ p.I0 / p.Cdc = 0 ∧ p.VdcRef = 0) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, ModelB.Meets]
+  change p.field x = 0 ↔
+      p.ωs - p.ωg + p.kp * p.vgq (x 0) (p.kiv * x 3) + p.ki * x 1 = 0 ∧
+        p.vgq (x 0) (p.kiv * x 3) = 0 ∧ p.I0 / p.Cdc = 0 ∧ p.VdcRef = 0
   rw [field_eq_zero_iff, hx]
   simp only [mul_zero, div_zero, add_zero, sub_zero]
   constructor
@@ -1010,11 +1015,15 @@ equilibria of the plane form a curve through the point (along `Δθ` with
   unfold powerlib.TMIO.Statement
   intro hm
   have hlas : LocalAsymptoticStable m.p.field m.x := mem_den_flow_iff.mp hm
-  obtain ⟨h0, h1, h2, h3⟩ := (m.p.field_eq_zero_iff_of_Vdc_eq_zero hx).mp heq
+  obtain ⟨h0, h1, h2, h3⟩ := (m.p.field_eq_zero_iff_of_Vdc_eq_zero hx).mp
+    ((TMIO.mem_realize _ _ _).mpr (by simpa only [Set.mem_singleton_iff, forall_eq, ModelB.Meets] using heq))
   have hpt : ∀ a c : ℝ, m.p.vgq a (m.p.kiv * c) = 0 →
       m.p.field (WithLp.toLp 2 ![a, m.x 1, 0, c]) = 0 := by
     intro a c hq
-    rw [m.p.field_eq_zero_iff_of_Vdc_eq_zero (by simp)]
+    change ModelB.Meets (⟨m.p, WithLp.toLp 2 ![a, m.x 1, 0, c]⟩ : ModelB.Model) .equilibrium
+    refine (TMIO.mem_realize ModelB.Meets {.equilibrium}
+      (⟨m.p, WithLp.toLp 2 ![a, m.x 1, 0, c]⟩ : ModelB.Model)).mp ?_ .equilibrium (by simp)
+    apply (m.p.field_eq_zero_iff_of_Vdc_eq_zero (by simp)).mpr
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_three,
       Matrix.head_cons, Matrix.tail_cons]
     refine ⟨?_, hq, h2, h3⟩

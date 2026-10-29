@@ -497,8 +497,10 @@ private theorem mem_den_flow_iff' {m : Model n} {P : Flow.Property} :
 power-balance point. -/
 private theorem powerFlow_of_lyapunovStable {p : Params n} {θ : Fin (n + 1) → ℝ}
     (h : LyapunovStable (reducedField p) (equilibrium θ)) :
-    ∀ k, p.P k = powerInjection p.B θ k :=
-  powerFlow_of_equilibrium (Dynamics.isEquilibrium_of_lyapunovStable (reducedField_contDiff p) h)
+    connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.powerFlow}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
+  change ∀ k, p.P k = powerInjection p.B θ k
+  exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets] using (powerFlow_of_equilibrium (Dynamics.isEquilibrium_of_lyapunovStable (reducedField_contDiff p) h)))
 
 /-- Implementation evidence: `Dynamics.Mechanical.not_localAsymptoticStable_of_potential_lt` on the
 reduced field (`reducedField_eq_mechanical`). At a power-balance point, relative-angle
@@ -757,9 +759,11 @@ nonzero cubic coefficient, makes `t² a/2 − t³ b/6 + t⁴ C` negative at arbi
 /-- **Hurwitz test by the Hessian form.** The reduced swing Jacobian is Hurwitz whenever the form
 `A₂(u) = ∑ₖ ∑ⱼ Bₖⱼ cos(θₖ − θⱼ)(uₖ − uⱼ)²` is positive on every nonzero `u` with `u₀ = 0`
 (positive inertia and damping; signed linearization weights are allowed). -/
-@[powerlib_foundation] theorem jacobian_isHurwitz_of_hessForm (p : Params n) (θ : Fin (n + 1) → ℝ)
+@[tmio M, powerlib_foundation] theorem jacobian_isHurwitz_of_hessForm (p : Params n) (θ : Fin (n + 1) → ℝ)
     (hpos : ∀ u : Fin (n + 1) → ℝ, u 0 = 0 → u ≠ 0 → 0 < hessForm p θ u) :
-    LinearSystems.IsHurwitz (jacobian p θ) := by
+    connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.jacobianStable}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
+  change LinearSystems.IsHurwitz (jacobian p θ)
   intro μ v hv heig
   simp only [neg_zero]
   have hWs := flowWeights_symm p θ
@@ -960,7 +964,8 @@ Hessian form. -/
     ∃ u : Fin (n + 1) → ℝ, u 0 = 0 ∧ u ≠ 0 ∧ hessForm p θ u ≤ 0 := by
   by_contra hne
   push Not at hne
-  exact h (jacobian_isHurwitz_of_hessForm p θ fun u h0 hu => hne u h0 hu)
+  exact h ((TMIO.mem_realize _ _ _).mp
+    (jacobian_isHurwitz_of_hessForm p θ fun u h0 hu => hne u h0 hu) .jacobianStable (by simp))
 
 /-! ## The family: exactness of the local asymptotic translation for small networks -/
 
@@ -982,7 +987,7 @@ hence a power-balance point (`powerFlow_of_equilibrium`), and the translation
   · intro hm
     have hLAS : LocalAsymptoticStable (reducedField m.params) (equilibrium m.θ) :=
       mem_den_flow_iff'.mp hm
-    have hp := powerFlow_of_lyapunovStable hLAS.1
+    have hp := (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets] using (powerFlow_of_lyapunovStable hLAS.1))
     exact ⟨hp, by_contra fun hH => h hp hH hm⟩
   · rintro ⟨hp, hH⟩
     have hsound := chain_le_semantics (n := n)
@@ -1194,10 +1199,12 @@ side of the triangle is in antiphase (`cos = −1`). -/
 
 /-- Power balance is kept along a relative-angle line whenever every coupled pair moves
 together. -/
-@[powerlib_foundation] theorem balance_line_of_edges {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio M, powerlib_foundation] theorem balance_line_of_edges {p : Params n} {θ : Fin (n + 1) → ℝ}
     (hbal : ∀ k, p.P k = powerInjection p.B θ k) (v : Fin n → ℝ)
     (h : ∀ k j, p.B k j = 0 ∨ ground v k = ground v j) :
-    ∀ t : ℝ, ∀ k, p.P k = powerInjection p.B (θ + ground (t • v)) k := by
+    connection% (∀ t : ℝ, (⟨p, θ + ground (t • v)⟩ : Model n) ∈ TMIO.realize Meets {.powerFlow}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
+  change ∀ t : ℝ, ∀ k, p.P k = powerInjection p.B (θ + ground (t • v)) k
   intro t k
   rw [hbal k]
   unfold powerInjection
@@ -1346,7 +1353,7 @@ private theorem reducedSwing_not_localAsymptoticStable_three (p : Params 2)
       exact mul_ne_zero two_ne_zero hne
   have hline : ∀ v : Fin 2 → ℝ, v ≠ 0 → ¬ ∀ k j, p.B k j = 0 ∨ ground v k = ground v j :=
     fun v hv h => reducedSwing_not_localAsymptoticStable_of_balance_line hv
-      (balance_line_of_edges hbal v h) (mem_den_flow_iff'.mpr hLAS)
+      ((by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets] using (balance_line_of_edges hbal v h))) (mem_den_flow_iff'.mpr hLAS)
   obtain ⟨u, hu0, hu, hle⟩ := exists_hessForm_nonpos hH
   have hug := eq_ground_three u hu0
   have hst : ¬ (u 1 = 0 ∧ u 2 = 0) := by
@@ -1622,10 +1629,12 @@ def angleStateCLM : (Fin n → ℝ) →L[ℝ] State (n + (n + 1)) :=
 
 /-- A local minimum of the potential in relative angles keeps power balance (its gradient
 vanishes). -/
-@[powerlib_foundation] theorem balance_of_isLocalMin {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio M, powerlib_foundation] theorem balance_of_isLocalMin {p : Params n} {θ : Fin (n + 1) → ℝ}
     (hbal : ∀ k, p.P k = powerInjection p.B θ k) {v : Fin n → ℝ}
     (h : IsLocalMin (fun v => potential p (θ + ground v)) v) :
-    ∀ k, p.P k = powerInjection p.B (θ + ground v) k := by
+    connection% ((⟨p, θ + ground v⟩ : Model n) ∈ TMIO.realize Meets {.powerFlow}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
+  change ∀ k, p.P k = powerInjection p.B (θ + ground v) k
   have h0 := h.hasFDerivAt_eq_zero (hasFDerivAt_potential_ground p θ v)
   have hi : ∀ i : Fin n, powerInjection p.B (θ + ground v) i.succ - p.P i.succ = 0 := by
     intro i
@@ -1650,7 +1659,7 @@ private theorem reducedSwing_strictMin_of_localAsymptoticStable {p : Params n}
     ∃ r > 0, ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r →
       potential p θ < potential p (θ + ground v) ∧
         ¬ ∀ k, p.P k = powerInjection p.B (θ + ground v) k := by
-  have hP := sum_P_of_balance (powerFlow_of_lyapunovStable hLAS.1)
+  have hP := sum_P_of_balance ((by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets] using (powerFlow_of_lyapunovStable hLAS.1)))
   rw [reducedField_eq_mechanical hP, equilibrium_eq_point] at hLAS
   obtain ⟨r, hr, h⟩ := Dynamics.Mechanical.strictMin_of_localAsymptoticStable
     (potential_comp_ground_contDiff p) (fun j => (p.M_pos j).ne') (fun j => (p.D_pos j).le) hLAS
@@ -1677,7 +1686,7 @@ and the energy, `Dynamics.Mechanical.strictMin_of_localAsymptoticStable`, throug
   change LocalAsymptoticStable _ _ ↔ _
   constructor
   · intro h
-    exact ⟨powerFlow_of_lyapunovStable h.1, reducedSwing_strictMin_of_localAsymptoticStable h⟩
+    exact ⟨(by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets] using (powerFlow_of_lyapunovStable h.1)), reducedSwing_strictMin_of_localAsymptoticStable h⟩
   · rintro ⟨hp, r, hr, hv⟩
     exact mem_den_flow_iff'.mp
       (reducedSwing_localAsymptoticStable_of_strictMin hp hr (fun v h0 h1 => (hv v h0 h1).1)

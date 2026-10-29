@@ -630,11 +630,11 @@ private theorem exactUnder_of_routh {P : Flow.Property}
       · exact h
       · exact h.1
     simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using jacobianStable_of_lyapunovStable hpos
-      (isEq_of_field_eq_zero hpos.2.2.ne' (by simpa [Model.field] using heq)) hls
+      (((TMIO.mem_realize _ _ _).mp (isEq_of_field_eq_zero hpos.2.2.ne' (by simpa [Model.field] using heq)) .equilibrium (by simp))) hls
   · have hpos : Meets m .positiveGains := (TMIO.mem_realize _ _ _).mp hm .positiveGains rfl
     rw [ht, (connection_proof% TMIO.mem_realize)]
     rintro q (rfl | rfl)
-    · exact isEq_of_field_eq_zero hpos.2.2.ne' (by simpa [Model.field] using heq)
+    · exact ((TMIO.mem_realize _ _ _).mp (isEq_of_field_eq_zero hpos.2.2.ne' (by simpa [Model.field] using heq)) .equilibrium (by simp))
     · exact hG
 
 end Members

@@ -377,7 +377,10 @@ private theorem swingGovernor_latched_trip {M D K Tg : ℝ} (hM : 0 < M) (hTg : 
   have he₁ := SwingGovernor.steadyState_isEquilibrium (ΔPL := ΔPL) hM.ne' hTg.ne' hKD.ne'
   have he₂ := SwingGovernor.steadyState_isEquilibrium (ΔPL := ΔPL - shed) hM.ne' hTg.ne'
     hKD.ne'
-  have hA := (SwingGovernor.isHurwitz_iff_of_nonneg hM hTg hD).2 hKD
+  have hA := (SwingGovernor.family_isLinear.mem_den_hurwitz
+    (P := .globallyExponentiallyStable) (Or.inl trivial)
+    (x := (⟨M, D, K, Tg, hM, hTg⟩ : SwingGovernor.Model))).mp
+    ((SwingGovernor.isHurwitz_iff_of_nonneg hM hTg hD).2 hKD)
   have htrip : ∃ t ≥ 0, x t 0 ≤ -θ := by
     by_contra hno
     push Not at hno
@@ -420,7 +423,10 @@ private theorem sfr_latched_tendsto {M D K F Tg TR : ℝ} (hM : 0 < M) (hTg : 0 
   have he₁ := SFR.steadyState_isEquilibrium (F := F) (ΔPL := ΔPL) hM.ne' hTg.ne' hTR.ne' hKD.ne'
   have he₂ := SFR.steadyState_isEquilibrium (F := F) (ΔPL := ΔPL - shed) hM.ne' hTg.ne'
     hTR.ne' hKD.ne'
-  have hA := SFR.isHurwitz_of_hp_fraction hM hTg hTR hD hK hKD hF
+  have hA := (SFR.family_isLinear.mem_den_hurwitz
+    (P := .globallyExponentiallyStable) (Or.inl trivial)
+    (x := (⟨M, D, K, F, Tg, TR, hM, hTg, hTR⟩ : SFR.Model))).mp
+    (SFR.isHurwitz_of_hp_fraction hM hTg hTR hD hK hKD hF)
   have h := latched_tendsto_of_trip he₁ he₂ hA hx htrip
   have := ((coord_continuous 0).tendsto _).comp h
   simpa [Function.comp_def] using this

@@ -498,8 +498,12 @@ private theorem det_jac_of_kP_eq_zero {p : Params} (h : p.kP = 0) (θ Id : ℝ) 
 
 /-- An equilibrium of the field at `(θ*, 0, i_d*)` with a nonzero dispatch gain is an `IsEq`
 point. -/
-@[powerlib_foundation] theorem isEq_of_field_eq_zero {p : Params} {θ Id : ℝ} (hkP : p.kP ≠ 0)
-    (h : field p (point θ Id) = 0) : IsEq p θ Id := by
+@[tmio M, powerlib_foundation] theorem isEq_of_field_eq_zero {p : Params} {θ Id : ℝ} (hkP : p.kP ≠ 0)
+    (h : field p (point θ Id) = 0) :
+    connection% ((⟨p, θ, Id⟩ : Model) ∈ TMIO.realize Meets {.equilibrium}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  change IsEq p θ Id
   have h1 := congrArg (fun y : Dynamics.State 3 => y 1) h
   have h2 := congrArg (fun y : Dynamics.State 3 => y 2) h
   simp [field, point, Dynamics.lift, coordField] at h1 h2
@@ -528,7 +532,7 @@ stability of the `C¹` field forces an equilibrium with a Hurwitz Jacobian. -/
     exact lt_irrefl 0 this
   rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
-  · exact isEq_of_field_eq_zero hkP he
+  · exact (TMIO.mem_realize _ _ _).mp (isEq_of_field_eq_zero hkP he) .equilibrium (by simp)
   · exact hH
 
 /-- Passivity is translated exactly: a system without ports is passive. -/

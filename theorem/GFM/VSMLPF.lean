@@ -256,23 +256,85 @@ Static evidence on the model, not a connection conclusion. -/
     rw [mk3_zero]
     linarith
 
+/-- A VSM + power-filter model read about a selected angle `δ*`: the operating point is
+`(δ*, 0, P₀)`. -/
+structure Model where
+  /-- The parameters. -/
+  g : VSMLPF
+  /-- The selected angle `δ*`. -/
+  δ : ℝ
+
+/-- The selected point `(δ*, 0, P₀)`. -/
+def Model.point (m : Model) : State 3 := mk3 m.δ 0 m.g.P0
+
+/-- The closed-loop field translated so that the selected point is the origin. -/
+def Model.field (m : Model) (z : State 3) : State 3 := m.g.field (z + m.point)
+
+/-- The synchronizing coefficient `K = K₀ cos δ*` at the selected angle. -/
+def Model.K (m : Model) : ℝ := m.g.K0 * Real.cos m.δ
+
+/-- Static requirements on VSM + power-filter models. -/
+inductive Requirement
+  /-- Power balance at the selected angle: `K₀ sin δ* = P₀`. -/
+  | balanced
+  /-- Positive inertia, damping and filter bandwidth. -/
+  | physical
+  /-- Positive synchronizing coefficient `K > 0`. -/
+  | synchronizing
+  /-- The fast-filter Routh condition `K < D ω_c + D²/M` (`ω_c > K/D − D/M`). -/
+  | fastFilter
+  /-- A destabilizing sign: `D ω_c + D²/M < K` (slow filter) or `K < 0` (saddle). -/
+  | destabilizing
+
+/-- Satisfaction of a requirement by a model. -/
+def Meets (m : Model) : Requirement → Prop
+  | .balanced => m.g.K0 * Real.sin m.δ = m.g.P0
+  | .physical => 0 < m.g.M ∧ 0 < m.g.D ∧ 0 < m.g.ωc
+  | .synchronizing => 0 < m.K
+  | .fastFilter => m.K < m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M
+  | .destabilizing => m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M < m.K ∨ m.K < 0
+
+/-- The translation of the sentences: the local ones into balance, positivity, synchronization and
+the fast-filter condition; instability into balance, positivity and a destabilizing sign;
+passivity into nothing; the global sentences, decay rates, sampled contraction and conservation
+into the whole language, which no model meets (unavailable translation coverage). -/
+def translate : Sentence → Set Requirement
+  | .flow .lyapunovStable | .flow .locallyAsymptoticallyStable
+  | .flow .locallyExponentiallyStable => {.balanced, .physical, .synchronizing, .fastFilter}
+  | .flow .unstable => {.balanced, .physical, .destabilizing}
+  | .flow _ => Set.univ
+  | .passive => ∅
+  | .envelope _ => Set.univ
+
+/-- The VSM + power-filter family. -/
+def family : Family Model Requirement 3 0 :=
+  ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
+
+@[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
+  fun _ => rfl
+
 /-- The loading angle balances the power: `K₀ sin δ₀ = P₀` (`|P₀| ≤ K₀`).
-Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem sin_δ0 (hK0 : 0 < g.K0) (h : |g.P0| ≤ g.K0) :
-    g.K0 * Real.sin g.δ0 = g.P0 :=
-  SpecialFunctions.mul_sin_arcsin_div h hK0
+Satisfaction of the power-balance requirement. -/
+@[tmio M, powerlib_foundation] theorem sin_δ0 (hK0 : 0 < g.K0) (h : |g.P0| ≤ g.K0) :
+    connection% ((⟨g, g.δ0⟩ : Model) ∈ TMIO.realize Meets {.balanced}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.K]
+  change g.K0 * Real.sin g.δ0 = g.P0
+  exact SpecialFunctions.mul_sin_arcsin_div h hK0
 
 /-- The loading point `(δ₀, 0, P₀)` is an equilibrium when `|P₀| ≤ K₀`.
 Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem field_equilibrium (hM : g.M ≠ 0) (hω : g.ωc ≠ 0) (hK0 : 0 < g.K0)
     (h : |g.P0| ≤ g.K0) : g.field g.equilibrium = 0 :=
   (g.field_eq_zero_iff hM hω _).mpr ⟨by simp [equilibrium], by simp [equilibrium], by
-    rw [equilibrium, mk3_zero]; exact g.sin_δ0 hK0 h⟩
+    rw [equilibrium, mk3_zero]; exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.K] using (g.sin_δ0 hK0 h))⟩
 
 /-- Strictly inside the loadability limit the synchronizing coefficient is positive
 (`cos δ₀ = √(1 − (P₀/K₀)²) > 0`, `SpecialFunctions.cos_arcsin_div_pos`). -/
-@[powerlib_foundation] theorem K_pos (hK0 : 0 < g.K0) (h : |g.P0| < g.K0) : 0 < g.K :=
-  mul_pos hK0 (SpecialFunctions.cos_arcsin_div_pos h hK0)
+@[tmio M, powerlib_foundation] theorem K_pos (hK0 : 0 < g.K0) (h : |g.P0| < g.K0) :
+    connection% ((⟨g, g.δ0⟩ : Model) ∈ TMIO.realize Meets {.synchronizing}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.K]
+  change 0 < g.K
+  exact mul_pos hK0 (SpecialFunctions.cos_arcsin_div_pos h hK0)
 
 /-! ## Physical parameters -/
 
@@ -416,7 +478,7 @@ def A1 : Matrix (Fin 3) (Fin 3) ℝ := !![0, 0, 0; 0, 0, 0; g.ωc * g.P0, 0, 0]
 @[powerlib_foundation] theorem hasDerivAt_jacobian_u (hK0 : 0 < g.K0) (h : |g.P0| ≤ g.K0)
     (i j : Fin 3) :
     HasDerivAt (fun u => g.jacobian (g.δ0 - u) i j) (g.A1 i j) 0 := by
-  have hsin : g.K0 * Real.sin g.δ0 = g.P0 := g.sin_δ0 hK0 h
+  have hsin : g.K0 * Real.sin g.δ0 = g.P0 := (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.K] using (g.sin_δ0 hK0 h))
   have h1 : HasDerivAt (fun u : ℝ => g.δ0 - u) (-1) 0 := by
     simpa using (hasDerivAt_id (0 : ℝ)).const_sub g.δ0
   have key : HasDerivAt (fun u => g.ωc * (g.K0 * Real.cos (g.δ0 - u))) (g.ωc * g.P0) 0 := by
@@ -495,63 +557,6 @@ end VSMLPF
 /-! ## The VSM + power-filter family -/
 
 namespace VSMLPF
-
-/-- A VSM + power-filter model read about a selected angle `δ*`: the operating point is
-`(δ*, 0, P₀)`. -/
-structure Model where
-  /-- The parameters. -/
-  g : VSMLPF
-  /-- The selected angle `δ*`. -/
-  δ : ℝ
-
-/-- The selected point `(δ*, 0, P₀)`. -/
-def Model.point (m : Model) : State 3 := mk3 m.δ 0 m.g.P0
-
-/-- The closed-loop field translated so that the selected point is the origin. -/
-def Model.field (m : Model) (z : State 3) : State 3 := m.g.field (z + m.point)
-
-/-- The synchronizing coefficient `K = K₀ cos δ*` at the selected angle. -/
-def Model.K (m : Model) : ℝ := m.g.K0 * Real.cos m.δ
-
-/-- Static requirements on VSM + power-filter models. -/
-inductive Requirement
-  /-- Power balance at the selected angle: `K₀ sin δ* = P₀`. -/
-  | balanced
-  /-- Positive inertia, damping and filter bandwidth. -/
-  | physical
-  /-- Positive synchronizing coefficient `K > 0`. -/
-  | synchronizing
-  /-- The fast-filter Routh condition `K < D ω_c + D²/M` (`ω_c > K/D − D/M`). -/
-  | fastFilter
-  /-- A destabilizing sign: `D ω_c + D²/M < K` (slow filter) or `K < 0` (saddle). -/
-  | destabilizing
-
-/-- Satisfaction of a requirement by a model. -/
-def Meets (m : Model) : Requirement → Prop
-  | .balanced => m.g.K0 * Real.sin m.δ = m.g.P0
-  | .physical => 0 < m.g.M ∧ 0 < m.g.D ∧ 0 < m.g.ωc
-  | .synchronizing => 0 < m.K
-  | .fastFilter => m.K < m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M
-  | .destabilizing => m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M < m.K ∨ m.K < 0
-
-/-- The translation of the sentences: the local ones into balance, positivity, synchronization and
-the fast-filter condition; instability into balance, positivity and a destabilizing sign;
-passivity into nothing; the global sentences, decay rates, sampled contraction and conservation
-into the whole language, which no model meets (unavailable translation coverage). -/
-def translate : Sentence → Set Requirement
-  | .flow .lyapunovStable | .flow .locallyAsymptoticallyStable
-  | .flow .locallyExponentiallyStable => {.balanced, .physical, .synchronizing, .fastFilter}
-  | .flow .unstable => {.balanced, .physical, .destabilizing}
-  | .flow _ => Set.univ
-  | .passive => ∅
-  | .envelope _ => Set.univ
-
-/-- The VSM + power-filter family. -/
-def family : Family Model Requirement 3 0 :=
-  ⟨fun m => Port.System.autonomous m.field, Meets, translate⟩
-
-@[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
-  fun _ => rfl
 
 /-! ### Implementation evidence (private) -/
 
@@ -744,7 +749,10 @@ def atAntiLoading (g : VSMLPF) : Model := ⟨g, Real.pi - g.δ0⟩
 @[simp, powerlib_foundation] theorem atLoading_K (g : VSMLPF) : (atLoading g).K = g.K := rfl
 
 private theorem fast_iff (hp : g.Pos) :
-    g.K / g.D - g.D / g.M < g.ωc ↔ g.K < g.D * g.ωc + g.D ^ 2 / g.M := by
+    connection% (atLoading g ∈ TMIO.realize Meets {.fastFilter} ↔ g.K / g.D - g.D / g.M < g.ωc) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.atLoading, VSMLPF.K]
+  apply Iff.symm
+  change g.K / g.D - g.D / g.M < g.ωc ↔ g.K < g.D * g.ωc + g.D ^ 2 / g.M
   have hM := hp.M; have hD := hp.D
   rw [sub_lt_iff_lt_add, div_lt_iff₀ hD]
   constructor <;> intro h' <;> nlinarith [div_mul_cancel₀ (g.D ^ 2) hM.ne',
@@ -761,15 +769,15 @@ private theorem slow_iff (hp : g.Pos) :
 @[tmio TM, powerlib_domain] theorem locallyExponentiallyStable (hp : g.Pos) (h : |g.P0| < g.K0)
     (hω : g.K / g.D - g.D / g.M < g.ωc) :
     connection% (atLoading g ∈ family.den (.flow .locallyExponentiallyStable)) :=
-  mem_den_locallyExponentiallyStable _ hp.M hp.D hp.ωc (g.sin_δ0 hp.K0 h.le) (g.K_pos hp.K0 h)
-    ((fast_iff hp).mp hω)
+  mem_den_locallyExponentiallyStable _ hp.M hp.D hp.ωc ((by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.K, VSMLPF.atLoading] using (g.sin_δ0 hp.K0 h.le))) ((by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.K, VSMLPF.atLoading] using (g.K_pos hp.K0 h)))
+    (((show g.K / g.D - g.D / g.M < g.ωc ↔ g.K < g.D * g.ωc + g.D ^ 2 / g.M from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.atLoading, VSMLPF.K] using (fast_iff hp).symm)).mp hω)
 
 /-- `ω_c < K/D − D/M` ⇒ the loading equilibrium is unstable (a characteristic root crosses
 into the open right half-plane). -/
 @[tmio TM, powerlib_domain] theorem unstable (hp : g.Pos) (h : |g.P0| < g.K0)
     (hω : g.ωc < g.K / g.D - g.D / g.M) :
     connection% (atLoading g ∈ family.den (.flow .unstable)) :=
-  mem_den_unstable _ hp.M hp.D hp.ωc (g.sin_δ0 hp.K0 h.le) ((slow_iff hp).mp hω)
+  mem_den_unstable _ hp.M hp.D hp.ωc ((by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.K, VSMLPF.atLoading] using (g.sin_δ0 hp.K0 h.le))) ((slow_iff hp).mp hω)
 
 /-- Exact stability boundary (boundary `K = D ω_c + D²/M` excluded): the loading equilibrium
 is locally exponentially stable iff `K < D ω_c + D²/M`.  Since `K = K₀ cos δ₀` decreases with
@@ -789,7 +797,7 @@ load, light load is the dangerous side. -/
     rw [mem_den_flow_iff] at hs hu
     exact hu (LocallyExponentiallyStable.lyapunovStable hs)
   · intro hK
-    exact locallyExponentiallyStable hp h ((fast_iff hp).mpr hK)
+    exact locallyExponentiallyStable hp h (((show g.K / g.D - g.D / g.M < g.ωc ↔ g.K < g.D * g.ωc + g.D ^ 2 / g.M from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.atLoading, VSMLPF.K] using (fast_iff hp).symm)).mpr hK)
 
 /-- The second equilibrium `(π − δ₀, 0, P₀)` is unstable (a positive real eigenvalue) for every
 positive `M, D, ω_c` and `|P₀| < K₀`. -/
@@ -1172,12 +1180,19 @@ private theorem den_iff_swing {m : Model} (hp : Meets m .physical) (s : Sentence
 
 /-- The requirements of the swing reading in the loop's terms. -/
 private theorem swing_meets_iff (m : Model) :
-    (Synchronous.Swing.Meets m.toSwing .balanced ↔ m.q.K0 * Real.sin m.δ = m.q.P0) ∧
+    connection% ((m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced} ↔ m.q.K0 * Real.sin m.δ = m.q.P0) ∧
+      (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.inertia} ↔ 0 < m.q.D / m.q.ωc) ∧
+      (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.damped} ↔ 0 < m.q.D) ∧
+      (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.synchronizing} ↔ 0 < m.q.K0 * Real.cos m.δ) ∧
+      (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.destabilizing} ↔
+        m.q.K0 * Real.cos m.δ < 0 ∨ m.q.D < 0)) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
+  change (Synchronous.Swing.Meets m.toSwing .balanced ↔ m.q.K0 * Real.sin m.δ = m.q.P0) ∧
       (Synchronous.Swing.Meets m.toSwing .inertia ↔ 0 < m.q.D / m.q.ωc) ∧
       (Synchronous.Swing.Meets m.toSwing .damped ↔ 0 < m.q.D) ∧
       (Synchronous.Swing.Meets m.toSwing .synchronizing ↔ 0 < m.q.K0 * Real.cos m.δ) ∧
       (Synchronous.Swing.Meets m.toSwing .destabilizing ↔
-        m.q.K0 * Real.cos m.δ < 0 ∨ m.q.D < 0) := by
+        m.q.K0 * Real.cos m.δ < 0 ∨ m.q.D < 0)
   simp [Synchronous.Swing.Meets, Model.toSwing, swingParams, Synchronous.SwingParams.Pe,
     Synchronous.SwingParams.syncCoeff]
 
@@ -1196,7 +1211,12 @@ private theorem toSwing_mem_inertia {m : Model} (hm : m ∈ TMIO.realize Meets {
   intro r hr
   rw [Set.mem_singleton_iff] at hr
   subst hr
-  exact (swing_meets_iff m).2.1.mpr (div_pos hp.1 hp.2)
+  exact ((show (Synchronous.Swing.Meets (m).toSwing .balanced ↔ (m).q.K0 * Real.sin (m).δ = (m).q.P0) ∧
+      (Synchronous.Swing.Meets (m).toSwing .inertia ↔ 0 < (m).q.D / (m).q.ωc) ∧
+      (Synchronous.Swing.Meets (m).toSwing .damped ↔ 0 < (m).q.D) ∧
+      (Synchronous.Swing.Meets (m).toSwing .synchronizing ↔ 0 < (m).q.K0 * Real.cos (m).δ) ∧
+      (Synchronous.Swing.Meets (m).toSwing .destabilizing ↔
+        (m).q.K0 * Real.cos (m).δ < 0 ∨ (m).q.D < 0) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using (swing_meets_iff m))).2.1.mpr (div_pos hp.1 hp.2)
 
 /-- Within positive droop gain and bandwidth the local requirements are those of the swing
 reading. -/
@@ -1207,7 +1227,12 @@ private theorem realize_local_iff {m : Model} (hp : Meets m .physical) :
   change m ∈ TMIO.realize Meets {.balanced, .physical, .synchronizing} ↔
         m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets
           {.balanced, .inertia, .damped, .synchronizing}
-  obtain ⟨hb, hI, hd, hs, -⟩ := swing_meets_iff m
+  obtain ⟨hb, hI, hd, hs, -⟩ := (show (Synchronous.Swing.Meets (m).toSwing .balanced ↔ (m).q.K0 * Real.sin (m).δ = (m).q.P0) ∧
+      (Synchronous.Swing.Meets (m).toSwing .inertia ↔ 0 < (m).q.D / (m).q.ωc) ∧
+      (Synchronous.Swing.Meets (m).toSwing .damped ↔ 0 < (m).q.D) ∧
+      (Synchronous.Swing.Meets (m).toSwing .synchronizing ↔ 0 < (m).q.K0 * Real.cos (m).δ) ∧
+      (Synchronous.Swing.Meets (m).toSwing .destabilizing ↔
+        (m).q.K0 * Real.cos (m).δ < 0 ∨ (m).q.D < 0) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using (swing_meets_iff m))
   simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
     forall_eq, hb, hI, hd, hs]
   exact ⟨fun h => ⟨h.1, div_pos hp.1 hp.2, hp.1, h.2.2⟩, fun h => ⟨h.1, hp, h.2.2.2⟩⟩
@@ -1218,7 +1243,12 @@ private theorem realize_unstable_toSwing {m : Model}
     (hm : m ∈ TMIO.realize Meets {.balanced, .physical, .antiSynchronizing}) :
     connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced, .inertia, .destabilizing}) := by
   change m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced, .inertia, .destabilizing}
-  obtain ⟨hb, hI, -, -, hs⟩ := swing_meets_iff m
+  obtain ⟨hb, hI, -, -, hs⟩ := (show (Synchronous.Swing.Meets (m).toSwing .balanced ↔ (m).q.K0 * Real.sin (m).δ = (m).q.P0) ∧
+      (Synchronous.Swing.Meets (m).toSwing .inertia ↔ 0 < (m).q.D / (m).q.ωc) ∧
+      (Synchronous.Swing.Meets (m).toSwing .damped ↔ 0 < (m).q.D) ∧
+      (Synchronous.Swing.Meets (m).toSwing .synchronizing ↔ 0 < (m).q.K0 * Real.cos (m).δ) ∧
+      (Synchronous.Swing.Meets (m).toSwing .destabilizing ↔
+        (m).q.K0 * Real.cos (m).δ < 0 ∨ (m).q.D < 0) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using (swing_meets_iff m))
   simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
     forall_eq, hb, hI, hs] at hm ⊢
   obtain ⟨h1, hp, h3⟩ := hm
@@ -1298,8 +1328,18 @@ locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): n
   unfold powerlib.TMIO.Statement
   have hm := Synchronous.Swing.mem_den_locallyExponentiallyStable q.atLoading.toSwing
     (div_pos hD hω) hD
-    ((swing_meets_iff q.atLoading).1.mpr (SpecialFunctions.mul_sin_arcsin_div h.le hK0))
-    ((swing_meets_iff q.atLoading).2.2.2.1.mpr
+    (((show (Synchronous.Swing.Meets (q.atLoading).toSwing .balanced ↔ (q.atLoading).q.K0 * Real.sin (q.atLoading).δ = (q.atLoading).q.P0) ∧
+      (Synchronous.Swing.Meets (q.atLoading).toSwing .inertia ↔ 0 < (q.atLoading).q.D / (q.atLoading).q.ωc) ∧
+      (Synchronous.Swing.Meets (q.atLoading).toSwing .damped ↔ 0 < (q.atLoading).q.D) ∧
+      (Synchronous.Swing.Meets (q.atLoading).toSwing .synchronizing ↔ 0 < (q.atLoading).q.K0 * Real.cos (q.atLoading).δ) ∧
+      (Synchronous.Swing.Meets (q.atLoading).toSwing .destabilizing ↔
+        (q.atLoading).q.K0 * Real.cos (q.atLoading).δ < 0 ∨ (q.atLoading).q.D < 0) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using (swing_meets_iff q.atLoading))).1.mpr (SpecialFunctions.mul_sin_arcsin_div h.le hK0))
+    (((show (Synchronous.Swing.Meets (q.atLoading).toSwing .balanced ↔ (q.atLoading).q.K0 * Real.sin (q.atLoading).δ = (q.atLoading).q.P0) ∧
+      (Synchronous.Swing.Meets (q.atLoading).toSwing .inertia ↔ 0 < (q.atLoading).q.D / (q.atLoading).q.ωc) ∧
+      (Synchronous.Swing.Meets (q.atLoading).toSwing .damped ↔ 0 < (q.atLoading).q.D) ∧
+      (Synchronous.Swing.Meets (q.atLoading).toSwing .synchronizing ↔ 0 < (q.atLoading).q.K0 * Real.cos (q.atLoading).δ) ∧
+      (Synchronous.Swing.Meets (q.atLoading).toSwing .destabilizing ↔
+        (q.atLoading).q.K0 * Real.cos (q.atLoading).δ < 0 ∨ (q.atLoading).q.D < 0) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using (swing_meets_iff q.atLoading))).2.2.2.1.mpr
       (mul_pos hK0 (SpecialFunctions.cos_arcsin_div_pos h hK0)))
   unfold powerlib.TMIO.Statement at hm
   exact (den_iff_swing ⟨hD, hω⟩ _).mpr hm
@@ -1311,7 +1351,12 @@ locally exponentially stable (`tr J = −ω_c < 0`, `det J = ω_c K / D > 0`): n
     connection% (q.atAntiLoading ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   have hm := Synchronous.Swing.mem_den_unstable q.atAntiLoading.toSwing (div_pos hD hω)
-    ((swing_meets_iff q.atAntiLoading).1.mpr
+    (((show (Synchronous.Swing.Meets (q.atAntiLoading).toSwing .balanced ↔ (q.atAntiLoading).q.K0 * Real.sin (q.atAntiLoading).δ = (q.atAntiLoading).q.P0) ∧
+      (Synchronous.Swing.Meets (q.atAntiLoading).toSwing .inertia ↔ 0 < (q.atAntiLoading).q.D / (q.atAntiLoading).q.ωc) ∧
+      (Synchronous.Swing.Meets (q.atAntiLoading).toSwing .damped ↔ 0 < (q.atAntiLoading).q.D) ∧
+      (Synchronous.Swing.Meets (q.atAntiLoading).toSwing .synchronizing ↔ 0 < (q.atAntiLoading).q.K0 * Real.cos (q.atAntiLoading).δ) ∧
+      (Synchronous.Swing.Meets (q.atAntiLoading).toSwing .destabilizing ↔
+        (q.atAntiLoading).q.K0 * Real.cos (q.atAntiLoading).δ < 0 ∨ (q.atAntiLoading).q.D < 0) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq] using (swing_meets_iff q.atAntiLoading))).1.mpr
       (SpecialFunctions.mul_sin_pi_sub_arcsin_div h.le hK0))
     (by simpa [Model.toSwing, swingParams, Synchronous.SwingParams.syncCoeff, atAntiLoading]
       using mul_neg_of_pos_of_neg hK0 (SpecialFunctions.cos_pi_sub_arcsin_div_neg h hK0))

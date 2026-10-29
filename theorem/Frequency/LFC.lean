@@ -1,3 +1,4 @@
+import theorem.Spectral.Local
 import theorem.Frequency.Basic
 import theorem.Linear.Rate
 import theorem.TMIO.ClaimElab
@@ -50,6 +51,8 @@ Results.
   the five-state matrix as the two-area case of the radial `N`-area matrix.
 
 Family and connection conclusions.
+* Constant-input families below preserve the symbolic input and the selected steady state;
+  their autonomous system is the translated forced field.
 * System maps: a two-area model (`Model`: areas `a`, `b`, `ω_s`, `T`) is read as the port
   system of its five-state plant, and `Model7` as that of its seven-state plant
   (`Family.IsLinear`): port input the area loads, port output the area frequencies. The steady
@@ -524,21 +527,41 @@ private theorem tendsto_of_isHurwitz (m : Model) (hA : IsHurwitz m.plant.A) (u :
   rw [family_isLinear.den_hurwitz (Or.inl (by simp))] at hmem
   exact LTI.tendsto_equilibrium m.plant hmem (steadyState_isEquilibrium u) hx
 
-/-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
+/-- The same models under the symbolic constant input, translated about its selected
+steady state. Its system map reads the forced field with the symbolic input held constant. -/
+def constantInputFamily (u : Fin 2 → ℝ) : Family Model Requirement 5 0 :=
+  ⟨fun m => Port.System.autonomous (fun z => m.plant.inputField (u) (z + (steadyState u))),
+    family.meets, family.translate⟩
+
+/-- Connection for the forced field at its selected steady state.
 With a Hurwitz state matrix every solution under constant loads converges exponentially to the
 non-interactive steady state. -/
 private theorem exponentiallyConvergesTo_of_isHurwitz (m : Model) (hA : IsHurwitz m.plant.A)
     (u : Fin 2 → ℝ) :
-    Flow.GloballyExponentiallyStable (m.plant.inputField u) (steadyState u) :=
-  (Linear.holds_input_iff m.plant (steadyState_isEquilibrium u)
+    connection% (m ∈ (constantInputFamily u).den (.flow .globallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.plant.inputField (u)) (pt := fun m : Model => steadyState u)
+    (show (constantInputFamily u).IsAutonomous (fun m z => m.plant.inputField (u) (z + (steadyState u))) from fun _ => rfl))]
+  change Flow.GloballyExponentiallyStable (m.plant.inputField u) (steadyState u)
+  exact (Linear.holds_input_iff m.plant (steadyState_isEquilibrium u)
     (P := .globallyExponentiallyStable) (by simp)).2 hA
 
-/-- Implementation evidence: trajectory-level result outside the sentence language (Rules §3a).
+/-- The same models under the symbolic constant input, translated about its selected
+steady state. Its system map reads the forced field with the symbolic input held constant. -/
+def constantInputFamily7 (u : Fin 2 → ℝ) : Family Model7 Requirement 7 0 :=
+  ⟨fun m => Port.System.autonomous (fun z => m.plant.inputField (u) (z + (steadyState7 u))),
+    family7.meets, family7.translate⟩
+
+/-- Connection for the forced field at its selected steady state.
 The seven-state version of `exponentiallyConvergesTo_of_isHurwitz`. -/
 private theorem plant7_exponentiallyConvergesTo_of_isHurwitz (m : Model7)
     (hA : IsHurwitz m.plant.A) (u : Fin 2 → ℝ) :
-    Flow.GloballyExponentiallyStable (m.plant.inputField u) (steadyState7 u) :=
-  (Linear.holds_input_iff m.plant (plant7_steadyState_isEquilibrium u)
+    connection% (m ∈ (constantInputFamily7 u).den (.flow .globallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% Spectral.mem_den_flow_iff_shift (f := fun m : Model7 => m.plant.inputField (u)) (pt := fun m : Model7 => steadyState7 u)
+    (show (constantInputFamily7 u).IsAutonomous (fun m z => m.plant.inputField (u) (z + (steadyState7 u))) from fun _ => rfl))]
+  change Flow.GloballyExponentiallyStable (m.plant.inputField u) (steadyState7 u)
+  exact (Linear.holds_input_iff m.plant (plant7_steadyState_isEquilibrium u)
     (P := .globallyExponentiallyStable) (by simp)).2 hA
 
 end powerlib.Frequency.LFC
