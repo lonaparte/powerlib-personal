@@ -671,7 +671,7 @@ hidden-mode interconnection produces the same data. -/
   unfold powerlib.TMIO.Statement
   rw [family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
   refine ⟨quietLoop_stable, fun h => ?_⟩
-  rw [mem_certify] at h
+  rw [(connection_proof% mem_certify)] at h
   exact hiddenLoop_unstable (h hiddenLoop portData_hidden_quiet)
 
 /-- Neither component has a hidden mode. -/
@@ -721,11 +721,11 @@ mode. -/
     connection% (ic.portData ∈ certify (Function.graph fun ic : Observable n₁ n₂ p => ic.1.portData)
       {ic | ic.1 ∈ family.den (.flow P)}) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_certify]
+  rw [(connection_proof% mem_certify)]
   rintro ⟨ic', hm'⟩ hic
   have hdata : ic'.portData = ic.portData := hic
-  rw [Set.mem_ofPred_eq, family_isLinear.mem_den_flow]
-  rw [family_isLinear.mem_den_flow] at hP
+  rw [Set.mem_ofPred_eq, (connection_proof% family_isLinear.mem_den_flow)]
+  rw [(connection_proof% family_isLinear.mem_den_flow)] at hP
   exact ((similar_closedLoop_of_portData hm hm' hdata.symm).holds_iff P).mpr hP
 
 /-! ## Closed-loop stability does not split over the components -/

@@ -463,7 +463,7 @@ def family : Family SMIB11Params Requirement 11 4 :=
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s p hp => ?_
-  rw [TMIO.mem_realize] at hp
+  rw [(connection_proof% TMIO.mem_realize)] at hp
   change ∀ q ∈ translate s, Meets p q at hp
   rcases s with P | _ | E
   · exact (hp .impossible trivial).elim
@@ -479,7 +479,7 @@ injective Jacobian (converse linearization,
 @[tmio TM, powerlib_domain] theorem not_mem_den_locallyExponentiallyStable (p : SMIB11Params) :
     connection% (p ∉ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isNonlinearPH.mem_den_flow]
+  rw [(connection_proof% family_isNonlinearPH.mem_den_flow)]
   intro h
   change LocallyExponentiallyStable (smib11 p).zeroInputField 0 at h
   exact smib11_angleAxis_one_ne_zero (Dynamics.fderiv_injective_of_locallyExponentiallyStable
@@ -522,7 +522,7 @@ private theorem passiveWith (p : SMIB11Params) :
 @[tmio TM, powerlib_domain] theorem mem_den_passive (p : SMIB11Params) :
     connection% (p ∈ family.den .passive) := by
   unfold powerlib.TMIO.Statement
-  rw [Family.mem_den]
+  rw [(connection_proof% Family.mem_den)]
   exact ⟨_, passiveWith p⟩
 
 /-- Passivity is translated exactly. -/
@@ -536,7 +536,7 @@ private theorem passiveWith (p : SMIB11Params) :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s p hp => ?_
-  rw [TMIO.mem_realize] at hp
+  rw [(connection_proof% TMIO.mem_realize)] at hp
   change ∀ q ∈ SMIB11.translate s, SMIB11.Meets p q at hp
   rcases s with P | _ | E
   · exact (hp .impossible trivial).elim
@@ -551,7 +551,7 @@ rotor-angle axis; a locally exponentially stable point of a `C¹` field has an i
 @[tmio TM, powerlib_domain] theorem not_mem_den_locallyExponentiallyStable (p : SMIB11Params) :
     connection% (p ∉ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [Family.mem_den]
+  rw [(connection_proof% Family.mem_den)]
   intro h
   change LocallyExponentiallyStable (smib11Rel_system p).zeroInput 0 at h
   rw [smib11Rel_zeroInput] at h

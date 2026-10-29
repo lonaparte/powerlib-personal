@@ -404,14 +404,15 @@ private theorem vsm_unstable {m : VSMModel} (hsm : vsmMeets m .smooth)
     · cases P <;> rfl
     · rfl
     · rfl
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact vsm_mem_den_flow_iff.mpr (vsm_les (hm .smooth (by simp)) (hm .balanced (by simp))
       (hm .inertia (by simp)) (hm .damped (by simp)) (hm .synchronizing (by simp)))
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact vsm_mem_den_flow_iff.mpr (vsm_unstable (hm .smooth (by simp)) (hm .balanced (by simp))
       (hm .inertia (by simp)) (hm .destabilizing (by simp)))
 
-private theorem vsm_sound (s : Sentence) : vsmFamily.Sound s :=
+private theorem vsm_sound (s : Sentence) :
+    connection% (vsmFamily.Sound s) := show vsmFamily.Sound s from
   Family.chain_le_semantics_iff.mp vsmFamily_chain_le_semantics s
 
 /-- Passivity is translated exactly for the VSM family. -/
@@ -450,7 +451,7 @@ agree on every sentence, because the two translated fields are equal. -/
     · simp only [VSMModel.vector, Synchronous.SwingParams.field_apply_one,
         Synchronous.SwingParams.accel, Synchronous.SwingParams.Pe, PhasePlane.mk_apply_one, hP]
       ring
-  rw [Family.mem_den, Family.mem_den]
+  rw [(connection_proof% Family.mem_den), (connection_proof% Family.mem_den)]
   change s.holds (.continuous (Port.System.autonomous m.field)) ↔
     s.holds (.continuous (Port.System.autonomous _))
   rw [hfield]

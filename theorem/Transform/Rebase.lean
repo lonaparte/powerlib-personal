@@ -699,8 +699,8 @@ invertible bases. -/
       (fun ic => interconnection ic β) ⁻¹' Interconnection.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   ext ic
-  rw [Set.mem_preimage, Interconnection.family_isLinear.mem_den_flow,
-    Interconnection.family_isLinear.mem_den_flow, closedLoop_rebase hv hi]
+  rw [Set.mem_preimage, (connection_proof% Interconnection.family_isLinear.mem_den_flow),
+    (connection_proof% Interconnection.family_isLinear.mem_den_flow), closedLoop_rebase hv hi]
   change _ ↔ P.holds (affineLinearVectorField (rebaseMatrix _ _ β.w ic.closedLoop.A) 0) 0
   rw [hw]
   exact (holds_rebaseMatrix_one_iff
@@ -720,8 +720,8 @@ sentence is unchanged). -/
       (fun ic => interconnection ic β) ⁻¹' Interconnection.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   ext ic
-  rw [Set.mem_preimage, Interconnection.family_isLinear.mem_den_flow,
-    Interconnection.family_isLinear.mem_den_flow, closedLoop_rebase hv hi]
+  rw [Set.mem_preimage, (connection_proof% Interconnection.family_isLinear.mem_den_flow),
+    (connection_proof% Interconnection.family_isLinear.mem_den_flow), closedLoop_rebase hv hi]
   exact (holds_rebaseMatrix_timeScale_iff
     (blockCoordinates_inv (mul_eq_one_comm.mp h₁) (mul_eq_one_comm.mp h₂))
     (blockCoordinates_inv h₁ h₂) hw _ P).symm
@@ -733,7 +733,7 @@ sentence. -/
       (fun ic => interconnection ic flipCurrent) ⁻¹' Interconnection.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   ext ic
-  rw [Set.mem_preimage, Interconnection.family_isLinear.mem_den_flow,
-    Interconnection.family_isLinear.mem_den_flow, closedLoop_flipCurrent]
+  rw [Set.mem_preimage, (connection_proof% Interconnection.family_isLinear.mem_den_flow),
+    (connection_proof% Interconnection.family_isLinear.mem_den_flow), closedLoop_flipCurrent]
 
 end powerlib.Transform.Rebase

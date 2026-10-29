@@ -613,7 +613,7 @@ contraction and decay rates, and passivity without requirement (the global table
     · cases P <;> rfl
     · rfl
     · rfl
-  all_goals rw [TMIO.mem_realize] at ha; rw [family_isAutonomous.mem_den_flow]
+  all_goals rw [(connection_proof% TMIO.mem_realize)] at ha; rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   · exact les (ha .decaying rfl)
   · exact ges (ha .decaying (by simp)) (ha .stiff (by simp))
   · exact decay_of (ha .stiff (by simp)) (ha (.decayRate r) (by simp))
@@ -631,7 +631,7 @@ exponential stability forces a Hurwitz Jacobian `[[c, −ω_s], [ω_s, c]]` (tra
     connection% (family.Exact (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   ext a
-  rw [TMIO.mem_realize, family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% TMIO.mem_realize), (connection_proof% family_isAutonomous.mem_den_flow)]
   change _ ↔ LocallyExponentiallyStable _ _
   rw [Dynamics.locallyExponentiallyStable_iff_isHurwitz_of_eq _ a.contDiff_realField
     a.realField_zero (a.hasFDerivAt_realField 0).fderiv, realJacobian_zero,
@@ -821,7 +821,7 @@ converges, `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
     connection% (a ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
       a ∈ {a : AHO | a.c < 0 ∨ (a.c = 0 ∧ 0 < a.κv)}) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow, Set.mem_ofPred_eq]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow), Set.mem_ofPred_eq]
   change LocalAsymptoticStable _ _ ↔ _
   constructor
   · intro h
@@ -850,7 +850,7 @@ converges, `Dynamics.not_localAsymptoticStable_of_lie_nonpos`). -/
     connection% (a ∈ family.den (.flow .lyapunovStable) ↔
       a ∈ {a : AHO | a.c < 0 ∨ (a.c = 0 ∧ 0 ≤ a.κv)}) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow, Set.mem_ofPred_eq]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow), Set.mem_ofPred_eq]
   change LyapunovStable _ _ ↔ _
   constructor
   · intro h

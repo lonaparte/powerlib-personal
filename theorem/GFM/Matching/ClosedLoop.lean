@@ -521,9 +521,9 @@ def family : Family Model Requirement 5 3 := ⟨fun m => .continuous m.system, M
   unfold powerlib.TMIO.Statement
   have hG : TMIO.realize family.meets {.physical, .equilibrium, .damping} ⊆
       family.den (.flow .globallyExponentiallyStable) := fun m hm => by
-    rw [TMIO.mem_realize] at hm
+    rw [(connection_proof% TMIO.mem_realize)] at hm
     obtain ⟨hCdc, hL, hC, hR, hG⟩ : Meets m .physical := hm .physical (by simp)
-    rw [Family.mem_den]
+    rw [(connection_proof% Family.mem_den)]
     exact ges m hCdc hL hC hR hG (hm .equilibrium (by simp)) (hm .damping (by simp))
   refine Spectral.chain_le_semantics_of_globalTable (F := family)
     (Rs := {.physical, .equilibrium, .damping}) (Rg := {.physical, .equilibrium, .damping})
@@ -537,17 +537,17 @@ def family : Family Model Requirement 5 3 := ⟨fun m => .continuous m.system, M
     · cases P <;> rfl
     · rfl
     · rfl
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     have hk := hG ((TMIO.mem_realize _ _ _).mpr fun q hq => hm q (by
       simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq ⊢
       tauto))
     have hr : r ≤ 0 := hm (.slowRate r) (by simp)
-    rw [Family.mem_den] at hk ⊢
+    rw [(connection_proof% Family.mem_den)] at hk ⊢
     obtain ⟨a, ha, hd⟩ := Flow.GloballyExponentiallyStable.exists_decay hk
     exact hd.mono (by linarith)
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     obtain ⟨hCdc, hL, hC, hR, hG⟩ : Meets m .physical := hm .physical (by simp)
-    rw [Family.mem_den]
+    rw [(connection_proof% Family.mem_den)]
     exact ⟨_, passive m hCdc hL hC hR hG (hm .equilibrium (by simp)) (hm .damping (by simp))⟩
 
 /-- **Global exponential stability of the matching closed loop in the rotating frame**: with
@@ -559,7 +559,7 @@ asymptotic stability). -/
     (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [Family.mem_den]
+  rw [(connection_proof% Family.mem_den)]
   exact ges m hCdc hL hC hR hG he hδ
 
 /-- The source's corollary "Closed-loop stability with DC-side P-control": global asymptotic
@@ -569,7 +569,7 @@ stability of the steady state of the reduced model. -/
     (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
     connection% (m ∈ family.den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [Family.mem_den]
+  rw [(connection_proof% Family.mem_den)]
   exact (ges m hCdc hL hC hR hG he hδ).globallyAsymptoticallyStable
 
 /-- Every attractive sentence and sampled contraction. -/
@@ -579,7 +579,7 @@ stability of the steady state of the reduced model. -/
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (m ∈ family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  rw [Family.mem_den]
+  rw [(connection_proof% Family.mem_den)]
   rcases hP with hP | rfl
   · exact (ges m hCdc hL hC hR hG he hδ).holds hP
   · exact (ges m hCdc hL hC hR hG he hδ).sampledContraction
@@ -592,7 +592,7 @@ absorbed into the damping). -/
     (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
     connection% (m ∈ family.den .passive) := by
   unfold powerlib.TMIO.Statement
-  rw [Family.mem_den]
+  rw [(connection_proof% Family.mem_den)]
   exact ⟨_, passive m hCdc hL hC hR hG he hδ⟩
 
 /-- For `η ≠ 0` the damping requirement is the source's inequality

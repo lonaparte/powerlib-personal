@@ -230,7 +230,7 @@ as a composite, certifies a record exactly when it certifies the record's estima
   unfold powerlib.TMIO.Statement
   rw [generate_comp, Function.comp_apply, recordEdge, generate_possibly_apply]
   ext d
-  rw [mem_certify]
+  rw [(connection_proof% mem_certify)]
   exact ⟨fun h => h _ rfl, fun h r hr => (show estimate d = r from hr) ▸ h⟩
 
 /-! ## The state-space representation -/

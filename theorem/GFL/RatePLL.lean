@@ -515,14 +515,17 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
 
 /-- Linearization at `(θ*, 0)`: a stable Jacobian gives local exponential stability. -/
 private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
-    (hs : Meets m .jacobianStable) : m ∈ family.den (.flow .locallyExponentiallyStable) :=
+    (hs : Meets m .jacobianStable) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
   mem_den_flow_iff.mpr (Criteria.locallyExponentiallyStable_of_jacobian_fin_two
     (jac m.params m.θ) (contDiff_field m.params) (field_equilibrium m.params he.1)
     (fderiv_field m.params he.2 m.θ 0) hs.1 hs.2)
 
 /-- Linearization at `(θ*, 0)`: an unstable Jacobian gives instability. -/
 private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
-    (hs : Meets m .jacobianUnstable) : m ∈ family.den (.flow .unstable) := by
+    (hs : Meets m .jacobianUnstable) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  change m ∈ family.den (.flow .unstable)
   refine mem_den_flow_iff.mpr ?_
   rcases hs with htr | hdet
   · exact Criteria.unstable_of_jacobian_trace_pos_fin_two (jac m.params m.θ)
@@ -557,9 +560,9 @@ the origin), and passivity holds without requirement. -/
     · cases P <;> rfl
     · rfl
     · rfl
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact les_of_meets (hm .equilibrium (by simp)) (hm .jacobianStable (by simp))
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact unstable_of_meets (hm .equilibrium (by simp)) (hm .jacobianUnstable (by simp))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
@@ -604,12 +607,12 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
     (fun m P => mem_den_flow_iff) ∅ (fun m => m.params.D0 ≠ 0) (fun m => jac m.params m.θ)
     (fun m _ hm => ?_) (fun m _ hD0 h => ?_) (fun m _ _ => contDiff_field m.params)
     (fun m _ hD0 => fderiv_field m.params hD0 m.θ 0) fun m _ hD0 he hH => ?_)
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact les_of_meets (hm .equilibrium (by simp [family, translate]))
       (hm .jacobianStable (by simp [family, translate]))
   · exact not_les_of_D0_eq_zero (not_not.mp hD0) _ (mem_den_flow_iff.mp h)
   · rw [Criteria.isHurwitz_fin_two_iff] at hH
-    rw [TMIO.mem_realize]
+    rw [(connection_proof% TMIO.mem_realize)]
     rintro q (rfl | rfl)
     · exact ⟨balance_of_field_eq_zero hD0 he, hD0⟩
     · exact hH

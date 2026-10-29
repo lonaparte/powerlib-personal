@@ -1,4 +1,4 @@
-import theorem.TMIO.Generate
+import theorem.TMIO.ConnectionBase
 import Mathlib.Algebra.Order.Ring.Defs
 
 /-! # Connection claims (foundation)
@@ -15,7 +15,8 @@ Scope.
   statements are written with `connection%` (`theorem/TMIO/ClaimElab.lean`), which builds the
   certificate.
 
-Source: the generation theorem (`theorem/TMIO/Generate.lean`: `generate`, `closure`); the
+Source: the generated primitives (`theorem/TMIO/ConnectionBase.lean`: `generate`, `closure`)
+and their public laws (`theorem/TMIO/Generate.lean`); the
 admission rules of `Rules.md` §3a (a published connection result carries a `ConnectionClaim`
 certificate in its proposition type).
 
@@ -99,12 +100,25 @@ inductive ConnectionClaim : Prop → Prop where
       Endpoint.{v,u} s → ConnectionClaim (x ∈ s ↔ x ∈ t)
   | mapsEqSwap {A : Type v} {B : Type u} [CompleteLattice A] [CompleteLattice B]
       (back₁ back₂ : sInfHom B A) : ConnectionClaim (back₁ = back₂)
+  /-- Extensional equality is admitted only when every evaluation is a connection claim. -/
+  | functionEq {ι : Sort w} {A : ι → Type u} {f g : (i : ι) → A i} :
+      (∀ i, ConnectionClaim (f i = g i)) → ConnectionClaim (f = g)
+  | lowerAdjointEq {A : Type u} {B : Type v} [CompleteLattice A] [CompleteLattice B]
+      {back : B → A} {f g : LowerAdjoint back} :
+      (∀ a, ConnectionClaim (f a = g a)) → ConnectionClaim (f = g)
+  | lowerAdjointEqSwap {A : Type v} {B : Type u} [CompleteLattice A] [CompleteLattice B]
+      {back : B → A} {f g : LowerAdjoint back} :
+      (∀ a, ConnectionClaim (f a = g a)) → ConnectionClaim (f = g)
+  | closureEq {A : Type u} [CompleteLattice A] {f g : ClosureOperator A} :
+      (∀ a, ConnectionClaim (f a = g a)) → ConnectionClaim (f = g)
   | not {P : Prop} : ConnectionClaim P → ConnectionClaim (¬ P)
   | and {P Q : Prop} : ConnectionClaim P → ConnectionClaim Q → ConnectionClaim (P ∧ Q)
   | or {P Q : Prop} : ConnectionClaim P → ConnectionClaim Q → ConnectionClaim (P ∨ Q)
   | iff {P Q : Prop} : ConnectionClaim P → ConnectionClaim Q → ConnectionClaim (P ↔ Q)
   | assuming {P : Prop} {Q : P → Prop} : (∀ h, ConnectionClaim (Q h)) → ConnectionClaim (∀ h, Q h)
   | all {ι : Sort w} {P : ι → Prop} : (∀ i, ConnectionClaim (P i)) → ConnectionClaim (∀ i, P i)
+  | allLeft {ι : Type u} {P : ι → Prop} : (∀ i, ConnectionClaim (P i)) → ConnectionClaim (∀ i, P i)
+  | allRight {ι : Type v} {P : ι → Prop} : (∀ i, ConnectionClaim (P i)) → ConnectionClaim (∀ i, P i)
   | exists {ι : Sort w} {P : ι → Prop} : (∀ i, ConnectionClaim (P i)) → ConnectionClaim (∃ i, P i)
   /-- A binder over the types of the endpoints' universe (`Type u`): a claim about arbitrary
   families. -/

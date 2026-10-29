@@ -147,9 +147,9 @@ flow of the design and its sampled map satisfy the same flow sentences
   ext y
   rw [Set.mem_preimage]
   rcases s with P | _ | E
-  · rw [sampledFamily_isAutonomousMap.mem_den_flow, continuousFamily_isLinear.mem_den_flow]
+  · rw [(connection_proof% sampledFamily_isAutonomousMap.mem_den_flow), (connection_proof% continuousFamily_isLinear.mem_den_flow)]
     exact (holds_iff_holdsMap_exp y.design.A y.pos P).symm
-  · rw [Family.mem_den, Family.mem_den]
+  · rw [(connection_proof% Family.mem_den), (connection_proof% Family.mem_den)]
     exact iff_of_true (Map.System.autonomous_passive _ _) (Port.System.passive_of_noPorts _)
   · rw [sampledFamily_isAutonomousMap.den_envelope, continuousFamily_isLinear.den_envelope]
     exact iff_of_true trivial trivial
@@ -157,8 +157,9 @@ flow of the design and its sampled map satisfy the same flow sentences
 /-- The requirement spaces of the sampled family are those of the continuous family pulled back
 along the design map. -/
 private theorem sampled_realize (Γ : Set Spectral.Requirement) :
-    TMIO.realize (sampledFamily (n := n)).meets Γ =
-      Sampled.design ⁻¹' TMIO.realize continuousFamily.meets Γ :=
+    connection% (TMIO.realize (sampledFamily (n := n)).meets Γ =
+      Sampled.design ⁻¹' TMIO.realize continuousFamily.meets Γ) := show TMIO.realize (sampledFamily (n := n)).meets Γ =
+      Sampled.design ⁻¹' TMIO.realize continuousFamily.meets Γ from
   TMIO.realize_comap continuousFamily.meets Sampled.design Γ
 
 /-- Every translation of the sampled family is sound: a sampled system meeting the translation of

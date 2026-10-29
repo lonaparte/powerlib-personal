@@ -305,7 +305,7 @@ def droopFamily : Family DroopNode Spectral.Requirement 1 1 :=
     (fun m => m.G / m.C < 0)
 
 private theorem droopDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    droopFamily.den (.flow P) = {m | 0 < m.G / m.C} :=
+    connection% (droopFamily.den (.flow P) = {m | 0 < m.G / m.C}) := show droopFamily.den (.flow P) = {m | 0 < m.G / m.C} from
   Spectral.linear_den (U := fun m : DroopNode => m.G / m.C < 0)
     (fun _ => (droop_isHurwitz_iff _ _ _ _).symm) hP
 
@@ -460,7 +460,7 @@ two translated fields are equal. -/
         Synchronous.SwingParams.field_apply_one, Synchronous.SwingParams.accel,
         Synchronous.SwingParams.Pe, hP]
       simp [SwingModel.point, hω, Synchronous.Swing.Model.point]
-  rw [Family.mem_den, Family.mem_den]
+  rw [(connection_proof% Family.mem_den), (connection_proof% Family.mem_den)]
   change s.holds (.continuous (Port.System.autonomous m.field)) ↔
     s.holds (.continuous (Port.System.autonomous _))
   rw [hfield]
@@ -478,7 +478,7 @@ damping and synchronizing coefficient `k₂ cos(θ* − k₃) > 0`. -/
   have hr := swing_mem_den_iff_hub_of_sinusoid m k₁ k₂ k₃ hP hω (.flow .locallyExponentiallyStable)
   have hx := Synchronous.Swing.exactUnder_locallyExponentiallyStable
   unfold powerlib.TMIO.Statement at hr hx ⊢
-  rw [Spectral.exactUnder_iff_forall] at hx
+  rw [(connection_proof% Spectral.exactUnder_iff_forall)] at hx
   rw [hr, ← hx _ ((TMIO.mem_realize _ _ _).mpr fun q hq => by
     rw [Set.mem_singleton_iff] at hq
     subst hq

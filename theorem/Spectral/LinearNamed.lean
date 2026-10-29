@@ -58,7 +58,9 @@ def linearTable (Rs Ru Rc Rp : Set Q) (Rd : ℝ → Set Q) : Sentence → Set Q 
 /-- The attractive sentences and sampled contraction are translated into `Rs`. -/
 @[tmio T, powerlib_foundation] theorem linearTable_flow {Rs Ru Rc Rp : Set Q} {Rd : ℝ → Set Q}
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    linearTable Rs Ru Rc Rp Rd (.flow P) = Rs := by
+    connection% (generate (cover (table (linearTable Rs Ru Rc Rp Rd))) {Sentence.flow P} = Rs) := by
+  unfold TMIO.Statement
+  rw [image_table_singleton]
   rcases hP with hP | rfl
   · cases P <;> first | rfl | exact hP.elim
   · rfl
@@ -69,11 +71,11 @@ variable {F : Family X Q n p} {plant : X → Plant n p} {Rs Ru Rc Rp : Set Q} {R
 
 /-- A requirement set giving a Hurwitz state matrix and one giving a right-half-plane root are
 mutually exclusive, so the whole language is inconsistent. -/
-@[powerlib_foundation] theorem realize_univ_of_linearTable
+@[tmio TM, powerlib_foundation] theorem realize_univ_of_linearTable
     (hS : ∀ x ∈ realize F.meets Rs, IsHurwitz (plant x).A)
     (hU : ∀ x ∈ realize F.meets Ru,
       ∃ s : ℂ, (characteristicMatrix (plant x).A s).det = 0 ∧ 0 < s.re) :
-    realize F.meets univ = ∅ :=
+    connection% (realize F.meets univ = ∅) := show realize F.meets univ = ∅ from
   realize_univ_eq_empty_of_forall fun x h => by
     have hx : x ∈ realize F.meets univ := (mem_realize _ _ _).mpr fun q _ => h q
     obtain ⟨s, hs, hre⟩ := hU x (realize_antitone _ (subset_univ _) hx)
@@ -103,35 +105,37 @@ the rate `a`, `Rc` conservation and `Rp` passivity. -/
 
 /-- The common table: conservation and passivity are translated into the whole language, which
 `Rs` and `Ru` make inconsistent. -/
-@[powerlib_foundation] theorem chain_le_semantics_of_linearTable_univ (hF : F.IsLinear plant)
+@[tmio TM, powerlib_foundation] theorem chain_le_semantics_of_linearTable_univ (hF : F.IsLinear plant)
     (ht : ∀ s, F.translate s = linearTable Rs Ru univ univ Rd s)
     (hS : ∀ x ∈ realize F.meets Rs, IsHurwitz (plant x).A)
     (hU : ∀ x ∈ realize F.meets Ru,
       ∃ s : ℂ, (characteristicMatrix (plant x).A s).det = 0 ∧ 0 < s.re)
     (hD : ∀ a, realize F.meets (Rd a) ⊆ F.den (.flow (.decay a))) :
-    ∀ P, F.chain P ≤ F.semantics P :=
+    connection% (∀ P, F.chain P ≤ F.semantics P) := show ∀ P, F.chain P ≤ F.semantics P from
   chain_le_semantics_of_linearTable hF ht hS hU hD
     (realize_univ_subset_of_eq_empty (realize_univ_of_linearTable hS hU) _)
     (realize_univ_subset_of_eq_empty (realize_univ_of_linearTable hS hU) _)
 
 /-- Exactness within a context: where `Rs` is equivalent to the Hurwitz property of the state
 matrix, the attractive and contractive translations are exact. -/
-@[powerlib_foundation] theorem exactUnder_of_linearTable (hF : F.IsLinear plant)
+@[tmio TM, powerlib_foundation] theorem exactUnder_of_linearTable (hF : F.IsLinear plant)
     (ht : ∀ s, F.translate s = linearTable Rs Ru Rc Rp Rd s) (Δ : Set Q)
     (hS : ∀ x ∈ realize F.meets Δ, (x ∈ realize F.meets Rs ↔ IsHurwitz (plant x).A))
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    F.ExactUnder Δ (.flow P) := by
+    connection% (F.ExactUnder Δ (.flow P)) := by
+  change F.ExactUnder Δ (.flow P)
   refine exactUnder_iff_forall.mpr fun x hΔ => ?_
-  rw [ht, linearTable_flow hP, hF.den_hurwitz hP, mem_ofPred_eq]
+  rw [ht, ← image_table_singleton (linearTable Rs Ru Rc Rp Rd) (.flow P),
+    linearTable_flow hP, hF.den_hurwitz hP, mem_ofPred_eq]
   exact hS x hΔ
 
 /-- Exactness: with `Rs` equivalent to the Hurwitz property of the state matrix, the attractive
 and contractive translations are exact. -/
-@[powerlib_foundation] theorem exact_of_linearTable (hF : F.IsLinear plant)
+@[tmio TM, powerlib_foundation] theorem exact_of_linearTable (hF : F.IsLinear plant)
     (ht : ∀ s, F.translate s = linearTable Rs Ru Rc Rp Rd s)
     (hS : ∀ x, x ∈ realize F.meets Rs ↔ IsHurwitz (plant x).A)
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    F.Exact (.flow P) :=
+    connection% (F.Exact (.flow P)) := show F.Exact (.flow P) from
   exact_of_exactUnder_empty (exactUnder_of_linearTable hF ht ∅ (fun x _ => hS x) hP)
 
 end Linear

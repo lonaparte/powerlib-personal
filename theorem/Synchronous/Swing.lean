@@ -722,13 +722,13 @@ proves instability; passivity holds without requirement. -/
     · cases P <;> rfl
     · rfl
     · rfl
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_flow_iff.mpr (ls_of (hm .inertia (by simp)) (hm .dampingNonneg (by simp))
       (hm .balanced (by simp)) (hm .synchronizing (by simp)))
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_flow_iff.mpr (les_of (hm .inertia (by simp)) (hm .damped (by simp))
       (hm .balanced (by simp)) (hm .synchronizing (by simp)))
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_flow_iff.mpr (unstable_of (hm .inertia (by simp)) (hm .balanced (by simp))
       (hm .destabilizing (by simp)))
   · rw [family_isAutonomous.den_passive]
@@ -824,13 +824,13 @@ an equilibrium whose Jacobian `[[0, 1], [−K/M, −D/M]]` is Hurwitz. -/
   refine Spectral.exactUnder_les_of_jacobian (fun m P => mem_den_flow_iff) {.inertia}
     (fun m => m.p.jacobian m.δ) (fun m _ hm => ?_) (fun m _ => m.p.contDiff_field)
     (fun m _ => m.fderiv_point) fun m hI heq hH => ?_
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_flow_iff.mpr (les_of (hm .inertia (by simp [family, translate]))
       (hm .damped (by simp [family, translate])) (hm .balanced (by simp [family, translate]))
       (hm .synchronizing (by simp [family, translate])))
   have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
   rw [m.p.isHurwitz_jacobian_iff hM] at hH
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl | rfl | rfl)
   · exact balanced_of hM.ne' heq
   · exact hM
@@ -966,7 +966,7 @@ an equilibrium, so the guard `D > 0`, `K > 0` decides (`Spectral.exactUnder_of_e
   refine Spectral.exactUnder_of_equilibrium (fun m P => mem_den_flow_iff) (Or.inr (Or.inl rfl))
     {.inertia} (fun m => 0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ) (fun m _ hm => ?_)
     (fun m _ => m.p.contDiff_field) (fun m hI heq hG hd => ?_) fun m hI heq hG => ?_
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact Spectral.den_locallyExponentiallyStable_subset_las (mem_den_flow_iff.mpr
       (les_of (hm .inertia (by simp [family, translate])) (hm .damped (by simp [family, translate]))
         (hm .balanced (by simp [family, translate]))
@@ -974,7 +974,7 @@ an equilibrium, so the guard `D > 0`, `K > 0` decides (`Spectral.exactUnder_of_e
   · have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
     exact hG (las_guard hM (balanced_of hM.ne' heq) (mem_den_flow_iff.mp hd))
   · have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
-    rw [TMIO.mem_realize]
+    rw [(connection_proof% TMIO.mem_realize)]
     rintro q (rfl | rfl | rfl | rfl)
     · exact balanced_of hM.ne' heq
     · exact hM
@@ -991,7 +991,7 @@ conserved, `ω` decays), although its synchronizing coefficient is zero (the Jac
 @[tmio TM, powerlib_domain] theorem flatCurve_mem_den_lyapunovStable :
     connection% (flatCurve ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   refine Dynamics.lyapunovStable_of_inner_nonpos two_pos
     (Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![1, 1; 0, 1]) (fun z w hzw => ?_)
     fun z => ?_
@@ -1017,7 +1017,7 @@ positive inertia and is Lyapunov stable, but its synchronizing coefficient is ze
   refine Spectral.not_exactUnder_of_witness ?_ flatCurve_mem_den_lyapunovStable
     (q := .synchronizing) (by simp [family, translate])
     (by simp [family, Meets, flatCurve, SwingParams.syncCoeff])
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   intro q hq
   rw [Set.mem_singleton_iff] at hq
   subst hq
@@ -1173,7 +1173,7 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
   · rintro ⟨hb, (⟨hD, hK⟩ | ⟨hk2, hD⟩)⟩
     · exact mem_den_flow_iff.mpr (ls_of hM hD hb hK)
     · -- a damped flat curve: `(δ + (M/D) ω)² + ω²` does not increase
-      rw [family_isAutonomous.mem_den_flow]
+      rw [(connection_proof% family_isAutonomous.mem_den_flow)]
       have hDne := hD.ne'
       have hMne := hM.ne'
       have hk1 : m.p.Pm = m.p.k₁ := by
@@ -1317,8 +1317,10 @@ private theorem isHurwitz_iff {m : Model} (hM : 0 < m.p.M) :
   m.p.isHurwitz_jacobian_iff hM m.δ
 
 private theorem mem_realize_stable {m : Model} :
-    m ∈ TMIO.realize Meets {.inertia, .damped, .synchronizing} ↔
-      0 < m.p.M ∧ 0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ := by
+    connection% (m ∈ TMIO.realize Meets {.inertia, .damped, .synchronizing} ↔
+      0 < m.p.M ∧ 0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ) := by
+  change m ∈ TMIO.realize Meets {.inertia, .damped, .synchronizing} ↔
+        0 < m.p.M ∧ 0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ
   simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
     forall_eq]
   rfl
@@ -1367,9 +1369,9 @@ passive; decay rates go to the inconsistent whole language. -/
     fun m _ => family.mem_den.mpr (Port.System.passive_of_noPorts _)
   · obtain ⟨hM, hD, hK⟩ := mem_realize_stable.mp hm
     exact (isHurwitz_iff hM).mpr ⟨hD, hK⟩
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact exists_root (hm .inertia (by simp)) (hm .destabilizing (by simp))
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     have hM : 0 < m.p.M := hm .inertia (by simp)
     have hD : m.p.D = 0 := hm .undamped (by simp)
     refine family_isLinear.mem_den_conservative (by ext i j; fin_cases i <;> fin_cases j <;> simp)

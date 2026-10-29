@@ -672,7 +672,7 @@ plant with the same transfer function is similar, hence satisfies the same sente
     {P : Flow.Property} (h : P.holds (affineLinearVectorField m.A 0) 0) :
     transfer m ∈ TMIO.certify (Function.graph fun m : {m : Plant n p // m.Minimal} => transfer m.1)
       {m | P.holds (affineLinearVectorField m.1.A 0) 0} := by
-  rw [TMIO.mem_certify]
+  rw [(connection_proof% TMIO.mem_certify)]
   rintro ⟨m', hm'⟩ heq
   have heq' : transfer m' = transfer m := heq
   have hs : Similar m m' :=

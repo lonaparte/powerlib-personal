@@ -438,11 +438,11 @@ private theorem translate_eq_linearTable (s : Sentence) :
 /-- Soundness of the matrix requirements for any linear family read through `MeetsMatrix`
 (generic: an arbitrary family with an arbitrary plant map); the instance of
 `Spectral.chain_le_semantics_of_linearTable_univ`. -/
-@[powerlib_foundation] theorem sound_of_meetsMatrix {X : Type*} {n p : ℕ}
+@[tmio TM, powerlib_foundation] theorem sound_of_meetsMatrix {X : Type*} {n p : ℕ}
     {F : Family X Requirement n p}
     {plant : X → Linear.Plant n p} (hF : F.IsLinear plant)
     (hmeets : ∀ x q, F.meets x q ↔ MeetsMatrix (plant x).A q) (htr : F.translate = translate) :
-    ∀ P, F.chain P ≤ F.semantics P :=
+    connection% (∀ P, F.chain P ≤ F.semantics P) := show ∀ P, F.chain P ≤ F.semantics P from
   Spectral.chain_le_semantics_of_linearTable_univ (Rs := {.hurwitz}) (Ru := {.rhpRoot})
     (Rd := fun a => {.rate a}) hF (fun s => htr ▸ translate_eq_linearTable s)
     (fun x hx => (hmeets x .hurwitz).1 ((mem_realize _ _ _).mp hx _ rfl))
@@ -453,11 +453,12 @@ private theorem translate_eq_linearTable (s : Sentence) :
 /-- Exactness of the Hurwitz requirement for the attractive sentences and sampled contraction,
 for any linear family read through `MeetsMatrix` (generic); the instance of
 `Spectral.exact_of_linearTable`. -/
-@[powerlib_foundation] theorem exact_of_meetsMatrix {X : Type*} {n p : ℕ}
+@[tmio TM, powerlib_foundation] theorem exact_of_meetsMatrix {X : Type*} {n p : ℕ}
     {F : Family X Requirement n p}
     {plant : X → Linear.Plant n p} (hF : F.IsLinear plant)
     (hmeets : ∀ x q, F.meets x q ↔ MeetsMatrix (plant x).A q) (htr : F.translate = translate)
-    {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) : F.Exact (.flow P) :=
+    {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+    connection% (F.Exact (.flow P)) := show F.Exact (.flow P) from
   Spectral.exact_of_linearTable (Rs := {.hurwitz}) (Ru := {.rhpRoot}) (Rd := fun a => {.rate a})
     hF (fun s => htr ▸ translate_eq_linearTable s)
     (fun x => by simp [mem_realize, hmeets, MeetsMatrix]) hP

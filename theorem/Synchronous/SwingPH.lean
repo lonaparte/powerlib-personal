@@ -149,8 +149,8 @@ stable for every `D ≥ 0` (including `D = 0`). -/
   have hST : !![1, 0; 0, 1 / p.M] * p.momentumCoord = 1 := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp [momentumCoord, Matrix.mul_apply, Fin.sum_univ_two, hM']
-  rw [Port.PortHamiltonian.family_isLinear.mem_den_flow,
-    Swing.Linearized.family_isLinear.mem_den_flow, p.stateMatrix_eq_conj δ₀ hM hD hK]
+  rw [(connection_proof% Port.PortHamiltonian.family_isLinear.mem_den_flow),
+    (connection_proof% Swing.Linearized.family_isLinear.mem_den_flow), p.stateMatrix_eq_conj δ₀ hM hD hK]
   exact Linear.holds_conj P hTS hST _
 
 end SwingParams

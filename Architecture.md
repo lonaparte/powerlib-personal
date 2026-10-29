@@ -123,9 +123,9 @@ Coordinates, per-unit bases and the current direction are then instances, not se
 Each reviewed public connection theorem has exactly one. The attributes are the
 sole classification source; queries rebuild their index without a separate
 catalog or handwritten theorem-to-kind regression list. The current source coverage
-is 2,798 theorems in 405 modules (T 1,682, M 334, T–M 685, M–I 88, I–O 9), including
-111 private helpers. All 832 public connections remain covered; 1,966 ordinary
-theorems have been individually reviewed and annotated. The remaining 5,086
+is 2,925 theorems in 405 modules (T 1,701, M 335, T–M 760, M–I 102, I–O 27), including
+111 private helpers. All 1,043 public connections remain covered; 1,882 ordinary
+theorems have been individually reviewed and annotated. The remaining 4,959
 theorems are unclassified. Reviewing a module does not classify every theorem in it.
 
 The attribute implementation rejects non-theorem targets, unknown kinds and
@@ -162,6 +162,19 @@ certificate and the proof of P are checked by the kernel; the elaborator is
 untrusted. Statements unfold definitionally to P, preserving mathematical use.
 Admission keeps the stored certificate, so every restriction on the shape of a
 claim is a constructor of the kernel grammar, not an elaborator check.
+
+`ConnectionBase` defines the primitive generated maps before the grammar; `ClaimSyntax`
+implements the elaborator below the public laws in `Generate` and `Relation`. `ClaimElab`
+remains the public import for the notation and semantic constructors. This breaks the
+bootstrap import cycle without keeping duplicate public theorem declarations.
+
+Extensional equality of functions, bundled lower adjoints and closure operators is admitted
+only when every evaluation has a connection certificate. Binders can use either endpoint
+universe. These constructors do not admit unrelated function equalities or arbitrary
+propositional transport. The notation `connection_proof% theoremTerm` exposes the theorem's
+definitionally equal proposition to tactics such as `rw`, which otherwise fail to recognize
+an iff behind `Statement`. It builds an identity application checked by the kernel; the
+original declaration keeps its complete certificate.
 
 The constructors `allType`, `iffCondition` and `existsGuard` carry the binders and
 side conditions of Rules §3a. Certificate universes are inferred from the actual
@@ -257,17 +270,25 @@ proved separating models rather than an unsupported completeness claim.
 
 ## Validation
 
-The source-attribute checks cover 2,798 reviewed theorems. The subsequent connection
-migration wraps 19 more declarations, bringing public connections to 832 without
-changing their TMIO attributes. Sixteen retain their original propositions and
-generic parameters; three circuit declarations use equivalent endpoint formulations.
-Targeted Lean 4.34.1 checks compile the connection grammar, elaborator and
-`ClaimUniverses` regression tests against real TMIO definitions. Only 18 missing
-Mathlib dependencies were built on demand. The admission metaprogram was also
-typechecked and exercised against isolated lightweight interface fixtures; that
-does not validate the real engineering modules. Their complete dependency caches
-were unavailable, so this is not a completed run of the full-module environment
-check or mathematical test suite.
+The source preflight covers 2,925 classified declarations, including all 1,043 public
+connection statements. A further migration has rewritten 274 of the 526 source-review
+candidates; 252 remain unchanged. These are source counts, not a completed library build.
+The 86 migrated declarations in the TMIO and data-analysis modules have passed Lean 4.34.1
+compilation against their real definitions. `ConnectionRewrites` checks reuse and the original
+mathematical interfaces; `ClaimUniverses` checks universe polymorphism, with six negative
+controls between them. The Python preflight suite has 19 passing tests.
+
+This migration required only nine additional Mathlib modules and one Batteries module to be
+built on demand, beyond the 18 Mathlib modules built for the earlier migration. The semantic
+admission metaprogram is also checked with lightweight interface fixtures. That fixture does
+not validate the engineering definitions or proofs. Full engineering dependencies remain
+unavailable because cache downloads return HTTP CONNECT 403; no unrestricted Mathlib source
+build was started. The 188 other edited declarations still need full dependency validation.
+Four proposed generic realization equalities also require certificates spanning mixed-universe
+intersections; their `Type*` parameters were preserved and the rewrites deferred. The remaining
+candidates require semantic interface work or further admission review; in
+particular, a certified endpoint containing a raw behavioural input is not publishable merely
+because its outer syntax is a connection.
 
 The build figures below describe the previously validated `bb46a37` baseline,
 before the concrete-record cleanup and source-attribute classification. They

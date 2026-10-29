@@ -45,6 +45,16 @@ variable {X : Type u} {Q : Type v}
     connection% (semantics = semantics ↔ ofDual (generate requirements q) =
       ofDual (generate semantics {s})) := h
 
+-- The first clause has an available endpoint in (u, v), but only its other endpoint
+-- shares (u, 0) with the later clause. The whole certificate must retry that earlier choice.
+@[powerlib_foundation] theorem earlier_endpoint_fallback
+    (semantics : sInfHom (Set X)ᵒᵈ (Set Nat))
+    (requirements : sInfHom (Set X)ᵒᵈ (Set Q)) (Φ : Set Nat) (Γ : Set Q)
+    (h : ofDual (generate requirements Γ) = ofDual (generate semantics Φ) ↔
+      generate semantics Φ = generate semantics Φ) :
+    connection% (ofDual (generate requirements Γ) = ofDual (generate semantics Φ) ↔
+      generate semantics Φ = generate semantics Φ) := h
+
 @[powerlib_foundation] theorem reverse_membership
     (back : sInfHom (Set X)ᵒᵈ (Set Nat)) (Φ : Set Nat) (x : X) :
     connection% (back = back ∧

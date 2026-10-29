@@ -674,7 +674,7 @@ weak focus, its Jacobian has the eigenvalues `±3i` and `−7/2`. -/
 @[tmio TM, powerlib_domain] theorem supercriticalQS_mem_den_locallyAsymptoticallyStable :
     connection% (supercriticalQS ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   exact supercriticalQS_las
 
 /-- The witness Jacobian is on the Hopf boundary: `a₂ = 7/2`, `a₁ = 9`, `a₀ = 63/2 = a₂a₁`, so
@@ -725,7 +725,7 @@ Routh–Hurwitz requirement. -/
   intro h
   have hmem := supercriticalQS_mem_den_locallyAsymptoticallyStable
   unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
+  rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
   have hs : Meets supercriticalQS .jacobianStable :=
     hmem .jacobianStable (by simp [family, translate])
   have := hs.2.2

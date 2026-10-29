@@ -54,9 +54,12 @@ def l₂ : LowerAdjoint S.u₂ := generate S.u₂
 /-- Generated forward map from implementations to observations. -/
 def l₃ : LowerAdjoint S.u₃ := generate S.u₃
 
-@[tmio T, powerlib_foundation] theorem gc₁ : GaloisConnection S.l₁ S.u₁ := gc_generate S.u₁
-@[tmio T, powerlib_foundation] theorem gc₂ : GaloisConnection S.l₂ S.u₂ := gc_generate S.u₂
-@[tmio T, powerlib_foundation] theorem gc₃ : GaloisConnection S.l₃ S.u₃ := gc_generate S.u₃
+@[tmio T, powerlib_foundation] theorem gc₁ :
+    connection% (GaloisConnection S.l₁ S.u₁) := show GaloisConnection S.l₁ S.u₁ from gc_generate S.u₁
+@[tmio T, powerlib_foundation] theorem gc₂ :
+    connection% (GaloisConnection S.l₂ S.u₂) := show GaloisConnection S.l₂ S.u₂ from gc_generate S.u₂
+@[tmio T, powerlib_foundation] theorem gc₃ :
+    connection% (GaloisConnection S.l₃ S.u₃) := show GaloisConnection S.l₃ S.u₃ from gc_generate S.u₃
 
 /-- Composite semantic map from implementations back to theories. -/
 def uTI : sInfHom I T := S.u₁.comp S.u₂
@@ -67,30 +70,35 @@ def uMO : sInfHom O M := S.u₂.comp S.u₃
 /-- Whole-chain semantic map from observations back to theories. -/
 def uTO : sInfHom O T := S.u₁.comp (S.u₂.comp S.u₃)
 
-@[tmio T, powerlib_foundation] theorem generate_uTI : ⇑(generate S.uTI) = S.l₂ ∘ S.l₁ :=
+@[tmio T, powerlib_foundation] theorem generate_uTI :
+    connection% (⇑(generate S.uTI) = S.l₂ ∘ S.l₁) := show ⇑(generate S.uTI) = S.l₂ ∘ S.l₁ from
   generate_comp S.u₁ S.u₂
 
-@[tmio T, powerlib_foundation] theorem generate_uMO : ⇑(generate S.uMO) = S.l₃ ∘ S.l₂ :=
+@[tmio T, powerlib_foundation] theorem generate_uMO :
+    connection% (⇑(generate S.uMO) = S.l₃ ∘ S.l₂) := show ⇑(generate S.uMO) = S.l₃ ∘ S.l₂ from
   generate_comp S.u₂ S.u₃
 
 /-- Whole equals parts for the full chain (v0.3 §5). -/
-@[tmio T, powerlib_foundation] theorem generate_uTO : ⇑(generate S.uTO) = S.l₃ ∘ S.l₂ ∘ S.l₁ := by
+@[tmio T, powerlib_foundation] theorem generate_uTO :
+    connection% (⇑(generate S.uTO) = S.l₃ ∘ S.l₂ ∘ S.l₁) := by
+  change ⇑(generate S.uTO) = S.l₃ ∘ S.l₂ ∘ S.l₁
   rw [uTO, generate_comp, generate_comp]
   rfl
 
 /-- The whole-chain Galois connection. -/
 @[tmio T, powerlib_foundation] theorem gc_whole :
-    GaloisConnection (S.l₃ ∘ S.l₂ ∘ S.l₁) (S.u₁ ∘ S.u₂ ∘ S.u₃) :=
-  (S.gc₁.compose S.gc₂).compose S.gc₃
+    connection% (GaloisConnection (generate S.uTO) S.uTO) :=
+  gc_generate S.uTO
 
 /-- Monotone propagation: stronger theory data never yields weaker observation data. -/
-@[tmio T, powerlib_foundation] theorem whole_monotone : Monotone (S.l₃ ∘ S.l₂ ∘ S.l₁) :=
-  S.gc_whole.monotone_l
+@[tmio T, powerlib_foundation] theorem whole_monotone :
+    connection% (Monotone (S.l₃ ∘ S.l₂ ∘ S.l₁)) := show Monotone (S.l₃ ∘ S.l₂ ∘ S.l₁) from
+  ((S.gc₁.compose S.gc₂).compose S.gc₃).monotone_l
 
 /-- The whole chain preserves arbitrary joins of theory data. -/
 @[tmio T, powerlib_foundation] theorem whole_sSup (s : Set T) :
-    (S.l₃ ∘ S.l₂ ∘ S.l₁) (sSup s) = sSup ((S.l₃ ∘ S.l₂ ∘ S.l₁) '' s) :=
-  S.gc_whole.l_sSup_eq_sSup_image
+    connection% ((S.l₃ ∘ S.l₂ ∘ S.l₁) (sSup s) = sSup ((S.l₃ ∘ S.l₂ ∘ S.l₁) '' s)) := show (S.l₃ ∘ S.l₂ ∘ S.l₁) (sSup s) = sSup ((S.l₃ ∘ S.l₂ ∘ S.l₁) '' s) from
+  ((S.gc₁.compose S.gc₂).compose S.gc₃).l_sSup_eq_sSup_image
 
 end Seed
 

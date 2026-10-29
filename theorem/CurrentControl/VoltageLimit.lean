@@ -436,11 +436,12 @@ sentences are decided by that affine piece (`Dynamics.holds_iff_of_eventuallyEq_
 private theorem mem_den_attractive_iff {y : LimitedPI} (hh : |y.design.R * y.iref| < y.Vmax)
     {P : Flow.Property}
     (hP : P = .locallyAsymptoticallyStable ∨ P = .locallyExponentiallyStable) :
-    y ∈ family.den (.flow P) ↔ PIParams.Stable y.design := by
+    connection% (y ∈ family.den (.flow P) ↔ PIParams.Stable y.design) := by
+  change y ∈ family.den (.flow P) ↔ PIParams.Stable y.design
   have hd : y.field =ᶠ[𝓝 0]
       fun z => y.design.model.inputField (fun _ => y.iref) (z + y.point) := by
     simpa only [PIParams.model_field] using y.field_eventuallyEq_design hh
-  rw [family_isAutonomous.mem_den_flow, Dynamics.holds_iff_of_eventuallyEq_inputField _ _ hd hP,
+  rw [(connection_proof% family_isAutonomous.mem_den_flow), Dynamics.holds_iff_of_eventuallyEq_inputField _ _ hd hP,
     PIParams.isHurwitz_iff_div]
   exact ⟨And.right, fun hs => ⟨y.design.isEquilibrium (ki_ne_of_stable hs) y.iref, hs⟩⟩
 
@@ -576,10 +577,10 @@ passivity holds without requirement. -/
     · cases P <;> rfl
     · rfl
     · rfl
-  · rw [TMIO.mem_realize] at hy
+  · rw [(connection_proof% TMIO.mem_realize)] at hy
     exact family_isAutonomous.mem_den_flow.mpr (les_of_stable (hy (.design .stable) (by simp))
       (hy .headroom (by simp)))
-  · rw [TMIO.mem_realize] at hy
+  · rw [(connection_proof% TMIO.mem_realize)] at hy
     exact family_isAutonomous.mem_den_flow.mpr
       (unstable_of_unstable (hy (.design .unstable) (by simp)) (hy .headroom (by simp)))
 
@@ -601,7 +602,7 @@ the design's affine loop, which decides these sentences
     rcases hP with rfl | rfl <;> rfl
   refine Spectral.exactUnder_iff_forall.mpr fun y hΔ => ?_
   have hh : |y.design.R * y.iref| < y.Vmax := (TMIO.mem_realize _ _ _).mp hΔ .headroom rfl
-  rw [ht, mem_den_attractive_iff hh hP, TMIO.mem_realize]
+  rw [ht, (connection_proof% mem_den_attractive_iff hh hP), (connection_proof% TMIO.mem_realize)]
   refine ⟨fun h => h (.design .stable) (by simp), fun hs => ?_⟩
   rintro q (rfl | rfl)
   · exact hs
@@ -615,7 +616,7 @@ the design's affine loop, which decides these sentences
     connection% (y ∈ family.den (.flow P) ↔
       y ∈ {y : LimitedPI | 0 < y.design.R + y.design.Kp ∧ 0 < y.design.Ki}) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den_attractive_iff hh hP]
+  rw [(connection_proof% mem_den_attractive_iff hh hP)]
   change PIParams.Stable y.design ↔ 0 < y.design.R + y.design.Kp ∧ 0 < y.design.Ki
   rw [PIParams.Stable, div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
 
@@ -626,22 +627,22 @@ the platform. -/
     connection% (family.ExactUnder {.inductance, .integral, .headroom} (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.exactUnder_iff_forall.mpr fun y hΔ => ⟨fun h => ?_, fun hd => ?_⟩
-  · rw [TMIO.mem_realize] at h
+  · rw [(connection_proof% TMIO.mem_realize)] at h
     exact family_isAutonomous.mem_den_flow.mpr (unstable_of_unstable
       (h (.design .unstable) (by simp [family, translate]))
       (h .headroom (by simp [family, translate])))
-  rw [TMIO.mem_realize] at hΔ
+  rw [(connection_proof% TMIO.mem_realize)] at hΔ
   have hL : 0 < y.design.L := hΔ .inductance (by simp)
   have hKi : y.design.Ki ≠ 0 := hΔ .integral (by simp)
   have hh : |y.design.R * y.iref| < y.Vmax := hΔ .headroom (by simp)
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
   · show PIParams.Unstable y.design
     by_contra hn
     simp only [PIParams.Unstable, not_or, not_lt] at hn
     have hb : 0 < y.design.Ki / y.design.L :=
       lt_of_le_of_ne hn.2 (Ne.symm (div_ne_zero hKi hL.ne'))
-    rw [family_isAutonomous.mem_den_flow] at hd
+    rw [(connection_proof% family_isAutonomous.mem_den_flow)] at hd
     exact hd (Dynamics.lyapunovStable_congr_nhds (y.field_eventuallyEq_linear hKi hh)
       (lyapunovStable_of_nonneg y.design hn.1 hb))
   · exact hh
@@ -655,7 +656,7 @@ the operating point. -/
 @[tmio TM, powerlib_domain] theorem center_mem_den_lyapunovStable :
     connection% (center ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   have hh : |center.design.R * center.iref| < center.Vmax := by
     simp only [Vmax, center, mul_zero, abs_zero]
     positivity
@@ -671,7 +672,7 @@ the lossless platform is Lyapunov stable while its design is not stable (`R + Kp
   unfold powerlib.TMIO.Statement
   refine Spectral.not_exactUnder_of_witness ?_ center_mem_den_lyapunovStable
     (q := .design .stable) (by simp [family, translate]) fun hs => ?_
-  · rw [TMIO.mem_realize]
+  · rw [(connection_proof% TMIO.mem_realize)]
     intro q hq
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
     rcases hq with rfl | rfl | rfl | rfl
@@ -689,7 +690,7 @@ large integrator state unwinds. -/
 @[tmio TM, powerlib_domain] theorem not_mem_den_globallyExponentiallyStable (y : LimitedPI) :
     connection% (y ∉ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   exact not_globallyExponentiallyStable y
 
 /-- Global exponential stability is translated exactly into the whole, inconsistent, language:
@@ -734,10 +735,10 @@ operating point the limit is inactive and the platform is the design's linear lo
   ext y
   simp only [Set.mem_inter_iff, Set.mem_preimage]
   refine and_congr_left fun hΔ => ?_
-  rw [TMIO.mem_realize] at hΔ
+  rw [(connection_proof% TMIO.mem_realize)] at hΔ
   have hKi : y.design.Ki ≠ 0 := hΔ .integral (by simp)
   have hh : |y.design.R * y.iref| < y.Vmax := hΔ .headroom (by simp)
-  rw [PIParams.family_isLinear.mem_den_flow, family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% PIParams.family_isLinear.mem_den_flow), (connection_proof% family_isAutonomous.mem_den_flow)]
   exact Dynamics.holds_congr_nhds (y.field_eventuallyEq_linear hKi hh) hP
 
 /-- Within headroom alone, local asymptotic and local exponential stability are realized soundly,
@@ -759,8 +760,8 @@ stable design with headroom meeting the platform translation. -/
   refine Implementation.realizationSoundUnder_of_design (I := implementation) rfl (ΔM := ∅)
     (Family.exactUnder_empty_iff.mpr hM) (Family.chain_le_semantics_iff.mp hI _)
     (fun y _ => by rw [TMIO.realize_empty]; trivial) fun y hΔ hd => ?_
-  rw [Set.union_empty, implementation_model, hMt, TMIO.mem_realize] at hd
-  rw [implementation_impl, TMIO.mem_realize] at hΔ ⊢
+  rw [Set.union_empty, implementation_model, hMt, (connection_proof% TMIO.mem_realize)] at hd
+  rw [implementation_impl, (connection_proof% TMIO.mem_realize)] at hΔ ⊢
   rw [hIt]
   intro q hq
   rcases hq with rfl | rfl
@@ -800,7 +801,7 @@ instability is realized soundly: every such platform is unstable. -/
       (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement Implementation.RealizationSoundUnder
   rintro y ⟨-, hΔ⟩
-  rw [implementation_impl, TMIO.mem_realize] at hΔ
+  rw [implementation_impl, (connection_proof% TMIO.mem_realize)] at hΔ
   have h := mem_den_unstable_of_overload y (hΔ .inductance (by simp)) (hΔ .integral (by simp))
     (hΔ .dcLink (by simp)) (hΔ .overload (by simp))
   unfold powerlib.TMIO.Statement at h
@@ -817,7 +818,7 @@ has a locally exponentially stable design and is unstable. -/
   unfold powerlib.TMIO.Statement at hd hu
   refine Implementation.not_realizationSoundUnder_of_design (I := implementation) (y := overloaded)
     rfl hd ?_ fun hmem => ?_
-  · rw [implementation_impl, TMIO.mem_realize]
+  · rw [implementation_impl, (connection_proof% TMIO.mem_realize)]
     intro q hq
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
     rcases hq with rfl | rfl | rfl | rfl
@@ -825,8 +826,8 @@ has a locally exponentially stable design and is unstable. -/
     · show (1 : ℝ) ≠ 0; norm_num
     · show (0 : ℝ) < 1; norm_num
     · exact overloaded_overload
-  rw [implementation_impl, family_isAutonomous.mem_den_flow] at hmem
-  rw [family_isAutonomous.mem_den_flow] at hu
+  rw [implementation_impl, (connection_proof% family_isAutonomous.mem_den_flow)] at hmem
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)] at hu
   exact hu hmem.lyapunovStable
 
 /-- An unloaded platform: the nominal design at `i* = 0` with `V_dc = 1`. -/
@@ -843,7 +844,7 @@ headroom: the nominal design is globally exponentially stable, the unloaded plat
   unfold powerlib.TMIO.Statement at hd hn
   refine Implementation.not_realizationSoundUnder_of_design (I := implementation) (y := unloaded)
     rfl hd ?_ hn
-  rw [implementation_impl, TMIO.mem_realize]
+  rw [implementation_impl, (connection_proof% TMIO.mem_realize)]
   intro q hq
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
   rcases hq with rfl | rfl | rfl | rfl
@@ -879,7 +880,7 @@ integrator only drifts by a bounded amount (`i² + (ξ − i)²` does not increa
 @[tmio TM, powerlib_domain] theorem drifting_design_mem_den_lyapunovStable :
     connection% (drifting.design ∈ PIParams.family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [PIParams.family_isLinear.mem_den_flow]
+  rw [(connection_proof% PIParams.family_isLinear.mem_den_flow)]
   let T : ℝ² →L[ℝ] ℝ² := Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) !![1, 0; -1, 1]
   have hT : ∀ x : ℝ², T x = WithLp.toLp 2 ![x 0, -x 0 + x 1] := by
     intro x
@@ -912,7 +913,7 @@ an equilibrium (the steady voltage `R i* = 1` is never commanded). -/
 @[tmio TM, powerlib_domain] theorem drifting_mem_den_unstable :
     connection% (drifting ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   refine (Dynamics.unstable_congr_nhds (drifting.field_eventuallyEq_design drifting_headroom)).mpr
     (Dynamics.unstable_of_ne_zero drifting.contDiff_designField ?_)
   intro h
@@ -920,8 +921,9 @@ an equilibrium (the steady voltage `R i* = 1` is never commanded). -/
   simp [drifting, PIParams.field, PIParams.control, point, PIParams.equilibrium] at h0
 
 private theorem drifting_mem_context :
-    drifting ∈ TMIO.realize implementation.impl.meets {.inductance, .dcLink, .headroom} := by
-  rw [implementation_impl, TMIO.mem_realize]
+    connection% (drifting ∈ TMIO.realize implementation.impl.meets {.inductance, .dcLink, .headroom}) := by
+  change drifting ∈ TMIO.realize implementation.impl.meets {.inductance, .dcLink, .headroom}
+  rw [implementation_impl, (connection_proof% TMIO.mem_realize)]
   intro q hq
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
   rcases hq with rfl | rfl | rfl
@@ -940,8 +942,8 @@ drifting platform has a Lyapunov stable design and is unstable. -/
   unfold powerlib.TMIO.Statement at hd hu
   refine Implementation.not_realizationSoundUnder_of_design (I := implementation) rfl hd
     drifting_mem_context fun hmem => ?_
-  rw [implementation_impl, family_isAutonomous.mem_den_flow] at hmem
-  rw [family_isAutonomous.mem_den_flow] at hu
+  rw [implementation_impl, (connection_proof% family_isAutonomous.mem_den_flow)] at hmem
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)] at hu
   exact hu hmem
 
 /-- Without integral action instability is not realized completely, even with headroom: the
@@ -955,8 +957,8 @@ drifting platform is unstable while its design is Lyapunov stable. -/
   unfold powerlib.TMIO.Statement at hd hu
   refine Implementation.not_realizationCompleteUnder_of_design (I := implementation) rfl hu
     drifting_mem_context fun hmem => ?_
-  rw [implementation_model, PIParams.family_isLinear.mem_den_flow] at hmem
-  rw [PIParams.family_isLinear.mem_den_flow] at hd
+  rw [implementation_model, (connection_proof% PIParams.family_isLinear.mem_den_flow)] at hmem
+  rw [(connection_proof% PIParams.family_isLinear.mem_den_flow)] at hd
   exact hmem hd
 
 end LimitedPI

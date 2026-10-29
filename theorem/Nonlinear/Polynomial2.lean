@@ -705,7 +705,7 @@ semantics connection. -/
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s model hm => ?_
-  rw [TMIO.mem_realize] at hm
+  rw [(connection_proof% TMIO.mem_realize)] at hm
   change ∀ q ∈ translate s, Meets model q at hm
   have hlocal : ∀ (Γ : Set Requirement), Γ = {.equilibrium, .linearizationHurwitz} →
       (∀ q ∈ Γ, Meets model q) → LocallyExponentiallyStable model.field 0 := by
@@ -713,7 +713,7 @@ semantics connection. -/
     exact locallyExponentiallyStable_of_linearization model (h .equilibrium (by simp))
       (h .linearizationHurwitz (by simp))
   rcases s with P | _ | E
-  · rw [family_isAutonomous.mem_den_flow]
+  · rw [(connection_proof% family_isAutonomous.mem_den_flow)]
     cases P
     case lyapunovStable => exact (hlocal _ rfl hm).lyapunovStable
     case locallyAsymptoticallyStable =>
@@ -825,13 +825,13 @@ is not Hurwitz. -/
   · intro h
     have hmem : cubicModel ∈ family.den (.flow .globallyAsymptoticallyStable) :=
       family_isAutonomous.mem_den_flow.mpr hgas
-    rw [← h, TMIO.mem_realize] at hmem
+    rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
     obtain ⟨c⟩ : Nonempty (Certificate cubicModel) := hmem .certified rfl
     exact cubicModel_not_certified.false c
   · intro h
     have hmem : cubicModel ∈ family.den (.flow .locallyAsymptoticallyStable) :=
       family_isAutonomous.mem_den_flow.mpr hgas.localAsymptoticStable
-    rw [← h, TMIO.mem_realize] at hmem
+    rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
     have hH : IsHurwitz cubicModel.linearization := hmem .linearizationHurwitz
       (show _ ∈ ({.equilibrium, .linearizationHurwitz} : Set Requirement) from Or.inr rfl)
     rw [cubicModel_linearization] at hH
@@ -867,7 +867,7 @@ noncomputable def cascadeEnergy (x : ℝ²) : ℝ := ‖x‖ ^ 2 + (x 1) ^ 4
 @[tmio TM, powerlib_domain] theorem cascade_asymptotic :
     connection% (cascadeModel ∈ family.den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   refine Flow.globallyAsymptoticallyStable_of_strictLyapunov (V := cascadeEnergy)
     two_pos cascadeModel.field_smooth ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact (continuous_norm.pow 2).add ((coord 1).continuous.pow 4)
@@ -909,7 +909,7 @@ exponential bound cannot cover every initial state. -/
 @[tmio TM, powerlib_domain] theorem cascade_not_exponential :
     connection% (cascadeModel ∉ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   rintro ⟨_, _, C, a, hC, ha, hb⟩
   let N := C * Real.exp (-a) * Real.exp 2 + 1
   have hN : 0 < N := by dsimp [N]; positivity
@@ -1030,7 +1030,7 @@ def quarticEnergy (x : ℝ²) : ℝ := (x 0) ^ 4 + (x 1) ^ 4
 @[tmio TM, powerlib_domain] theorem quartic_exponential :
     connection% (quarticModel ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   have hd : ∀ x, fderiv ℝ quarticEnergy x (quarticModel.field x) ≤ -4 * quarticEnergy x :=
     fun x => (quarticEnergy_lie x).le
   have hfc := Flow.forwardComplete_of_compact_sublevel quarticModel.field_smooth

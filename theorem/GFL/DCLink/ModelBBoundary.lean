@@ -110,7 +110,8 @@ strictly, model B is unstable. -/
 the Routh conditions give local exponential stability, a strict violation instability. -/
 private theorem exactUnder_offBoundary_of {P : Flow.Property}
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
-    family.ExactUnder {.equilibrium, .positiveReference, .offBoundary} (.flow P) := by
+    connection% (family.ExactUnder {.equilibrium, .positiveReference, .offBoundary} (.flow P)) := by
+  change family.ExactUnder {.equilibrium, .positiveReference, .offBoundary} (.flow P)
   have hsound := chain_le_semantics
   unfold powerlib.TMIO.Statement at hsound
   have htr : family.translate (.flow P) = {.equilibrium, .positiveReference, .routh} := by
@@ -123,7 +124,7 @@ private theorem exactUnder_offBoundary_of {P : Flow.Property}
     · exact hm.1
   have hS : family.Sound (.flow P) := Family.chain_le_semantics_iff.mp hsound _
   refine Spectral.exactUnder_iff_forall.mpr fun m hI => ⟨fun h => hS h, fun hd => ?_⟩
-  rw [TMIO.mem_realize] at hI
+  rw [(connection_proof% TMIO.mem_realize)] at hI
   have hx : Meets m .equilibrium := hI .equilibrium (by simp)
   have hV : Meets m .positiveReference := hI .positiveReference (by simp)
   have hob : Meets m .offBoundary := hI .offBoundary (by simp)
@@ -131,7 +132,7 @@ private theorem exactUnder_offBoundary_of {P : Flow.Property}
     rcases hob with hr | hviol
     · exact hr
     · exact absurd (hLS m hd) (unstable_of_violation hV hx hviol)
-  rw [TMIO.mem_realize, htr]
+  rw [(connection_proof% TMIO.mem_realize), htr]
   rintro q (rfl | rfl | rfl)
   · exact hx
   · exact hV
@@ -391,7 +392,7 @@ translation is exact (`exactUnder_offBoundary_lyapunovStable`). -/
   unfold powerlib.TMIO.Statement
   refine Spectral.not_exactUnder_of_witness ?_ hopfCenter_mem_den_lyapunovStable
     (q := Requirement.routh) (by simp [family, translate]) hopfCenter_not_routh
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
   · exact hopfCenter_equilibrium
   · show (0 : ℝ) < hopfCenter.p.VdcRef
@@ -850,7 +851,7 @@ boundary. Off the boundary the translation is exact
   unfold powerlib.TMIO.Statement
   refine Spectral.not_exactUnder_of_witness ?_ hopfDamped_mem_den_locallyAsymptoticallyStable
     (q := Requirement.routh) (by simp [family, translate]) hopfDamped_not_routh
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
   · exact hopfDamped_equilibrium
   · show (0 : ℝ) < hopfDamped.p.VdcRef
@@ -864,7 +865,7 @@ boundary. Off the boundary the translation is exact
       TMIO.realize Meets {.equilibrium, .positiveReference}) := by
   unfold powerlib.TMIO.Statement
   intro m hm
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   intro q hq
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hm hq
   rcases hm with rfl | rfl | rfl <;> rcases hq with rfl | rfl
@@ -882,7 +883,7 @@ meet the Routh conditions nor violate them strictly. -/
       (TMIO.realize Meets {.offBoundary})ᶜ) := by
   unfold powerlib.TMIO.Statement
   intro m hm hob
-  rw [TMIO.mem_realize] at hob
+  rw [(connection_proof% TMIO.mem_realize)] at hob
   have h : Meets m .offBoundary := hob .offBoundary rfl
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hm
   rcases hm with rfl | rfl | rfl

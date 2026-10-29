@@ -180,8 +180,10 @@ constraint. -/
 private theorem eulerPorts_realizationSoundUnder_of_not_mem {X Y Q : Type} {n p : ℕ}
     {F : Family X Q n p} {sys : X → Port.System n p} {design : Y → X} {step : Y → ℝ}
     (h : ∀ x, x ∉ F.den (.flow .locallyExponentiallyStable)) :
-    (Numerics.eulerPorts F sys design step).RealizationSoundUnder ∅
-      (.flow .locallyExponentiallyStable) := by
+    connection% ((Numerics.eulerPorts F sys design step).RealizationSoundUnder ∅
+      (.flow .locallyExponentiallyStable)) := by
+  change (Numerics.eulerPorts F sys design step).RealizationSoundUnder ∅
+        (.flow .locallyExponentiallyStable)
   rintro y ⟨hy, -⟩
   rw [Implementation.certify_realizes_of_design (I := Numerics.eulerPorts F sys design step) rfl]
     at hy

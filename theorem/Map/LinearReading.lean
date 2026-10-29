@@ -232,7 +232,7 @@ members with a Schur matrix, whatever their step lengths (the discrete counterpa
     connection% (F.den (.flow P) = {x | LTI.SchurStable (Φ x)}) := by
   unfold powerlib.TMIO.Statement
   ext x
-  rw [hF.mem_den_flow, Set.mem_ofPred_eq]
+  rw [(connection_proof% hF.mem_den_flow), Set.mem_ofPred_eq]
   exact Map.holdsMap_op_iff_schurStable hP _
 
 end Family

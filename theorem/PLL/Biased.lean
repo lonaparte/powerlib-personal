@@ -141,7 +141,7 @@ PLL meets the phase-locking requirement of the PI-PLL family. -/
     connection% (biasedModel V μ Kp Ki δω θ ∉
       TMIO.realize PIPLL.Meets {.phaseLocked}) := by
   unfold powerlib.TMIO.Statement
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   intro h
   have hp : PIPLL.Meets (biasedModel V μ Kp Ki δω θ) .phaseLocked := h _ rfl
   exact biased_no_equilibrium hV hμ Kp Ki δω _

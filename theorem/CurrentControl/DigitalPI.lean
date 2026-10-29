@@ -564,10 +564,10 @@ a strict violation a characteristic root in the open right half plane (the linea
   refine Spectral.chain_le_semantics_of_linearTable_univ (F := family) family_isLinear
     translate_eq_linearTable (fun y hy => ?_) (fun y hy => ?_)
     fun _ => Spectral.realize_univ_subset_of_eq_empty realize_univ _
-  · rw [TMIO.mem_realize] at hy
+  · rw [(connection_proof% TMIO.mem_realize)] at hy
     exact (isHurwitz_iff y (hy .physical (by simp)) (hy .sampling (by simp))).mpr
       (hy .routh (by simp))
-  · rw [TMIO.mem_realize] at hy
+  · rw [(connection_proof% TMIO.mem_realize)] at hy
     exact exists_root_of_lagged (hy .physical (by simp)) (hy .sampling (by simp))
       (hy .lagged (by simp))
 
@@ -579,10 +579,10 @@ platform Routh conditions hold. -/
   unfold powerlib.TMIO.Statement
   refine Spectral.exactUnder_of_linearTable (F := family) family_isLinear
     translate_eq_linearTable _ (fun y hΔ => ?_) hP
-  rw [TMIO.mem_realize] at hΔ
+  rw [(connection_proof% TMIO.mem_realize)] at hΔ
   have hL : 0 < y.design.L := hΔ .physical (by simp)
   have hT : 0 < y.Ts := hΔ .sampling (by simp)
-  rw [isHurwitz_iff y hL hT, TMIO.mem_realize]
+  rw [isHurwitz_iff y hL hT, (connection_proof% TMIO.mem_realize)]
   refine ⟨fun h => h .routh (by simp), fun h q hq => ?_⟩
   rcases hq with rfl | rfl | rfl
   exacts [hL, hT, h]
@@ -625,8 +625,8 @@ exact design translation (`PIParams.exact`), the sound platform translation
   refine Implementation.realizationSoundUnder_of_design (I := implementation) rfl (ΔM := ∅)
     (Family.exactUnder_empty_iff.mpr hex) (Family.chain_le_semantics_iff.mp hch _)
     (fun y _ => by rw [TMIO.realize_empty]; trivial) fun y hΔ hd => ?_
-  rw [Set.union_empty, TMIO.mem_realize] at hd
-  rw [TMIO.mem_realize] at hΔ ⊢
+  rw [Set.union_empty, (connection_proof% TMIO.mem_realize)] at hd
+  rw [(connection_proof% TMIO.mem_realize)] at hΔ ⊢
   have hL : 0 < y.design.L := hΔ .physical (by simp)
   have hT : 0 < y.Ts := hΔ .sampling (by simp)
   have hf : 3 * y.design.Kp * y.Ts ≤ y.design.L ∧
@@ -649,7 +649,7 @@ inductance. The delay never stabilizes a design. -/
     connection% (implementation.RealizationCompleteUnder {.sampling} (.flow P)) := by
   unfold powerlib.TMIO.Statement Implementation.RealizationCompleteUnder
   rintro y ⟨hd, hΔ⟩
-  rw [TMIO.mem_realize] at hΔ
+  rw [(connection_proof% TMIO.mem_realize)] at hΔ
   have hT : 0 < y.Ts := hΔ .sampling (by simp)
   rw [implementation_impl, family_isLinear.den_hurwitz hP] at hd
   rw [Implementation.certify_realizes_of_design (I := implementation) rfl, Set.mem_preimage,
@@ -676,11 +676,11 @@ does. -/
       (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement Implementation.RealizationSoundUnder
   rintro y ⟨-, hΔ⟩
-  rw [TMIO.mem_realize] at hΔ
+  rw [(connection_proof% TMIO.mem_realize)] at hΔ
   have hL : 0 < y.design.L := hΔ .physical (by simp)
   have hT : 0 < y.Ts := hΔ .sampling (by simp)
   have hu : PIParams.Unstable y.design := hΔ (.design .unstable) (by simp)
-  rw [implementation_impl, family_isLinear.mem_den_flow]
+  rw [implementation_impl, (connection_proof% family_isLinear.mem_den_flow)]
   obtain ⟨s, hs, hre⟩ := exists_root_of_lagged hL hT (lagged_of_unstable hL hT hu)
   exact unstable_of_root 0 hs hre
 
@@ -755,7 +755,7 @@ def slowIMC : DigitalPI := imcTuned 1 1 1 2
 @[tmio TM, powerlib_domain] theorem slowIMC_mem_den_unstable :
     connection% (slowIMC ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isLinear.mem_den_flow]
+  rw [(connection_proof% family_isLinear.mem_den_flow)]
   obtain ⟨s, hs, hre⟩ := exists_root_of_lagged (y := slowIMC)
     (by norm_num [slowIMC, imcTuned, imc]) (by norm_num [slowIMC, imcTuned])
     (Or.inr (Or.inr (Or.inr (by norm_num [slowIMC, imcTuned, imc, a1, a2, a3, a0, τ]))))
@@ -772,7 +772,7 @@ has a positive inductance and period and a stable design, and is unstable. -/
   unfold powerlib.TMIO.Statement at hd hu
   refine Implementation.not_realizationSoundUnder_of_design (I := implementation) rfl hd ?_
     fun hmem => ?_
-  · rw [TMIO.mem_realize]
+  · rw [(connection_proof% TMIO.mem_realize)]
     intro q hq
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
     rcases hq with rfl | rfl
@@ -781,7 +781,7 @@ has a positive inductance and period and a stable design, and is unstable. -/
     · show 0 < slowIMC.Ts
       norm_num [slowIMC, imcTuned]
   rw [implementation_impl, family_isLinear.den_hurwitz hP] at hmem
-  rw [family_isLinear.mem_den_flow] at hu
+  rw [(connection_proof% family_isLinear.mem_den_flow)] at hu
   exact hu (holds_of_isHurwitz 0 (P := .locallyExponentiallyStable) trivial hmem).lyapunovStable
 
 end DigitalPI

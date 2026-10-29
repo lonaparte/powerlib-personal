@@ -1054,7 +1054,7 @@ violates `damped` and is locally asymptotically stable. -/
   intro h
   have hmem := boundaryModel_mem_den_locallyAsymptoticallyStable
   unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
+  rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
   have hd : Meets boundaryModel .damped := hmem .damped (by
     show Requirement.damped ∈ translate (.flow .locallyAsymptoticallyStable)
     simp [translate])
@@ -1610,7 +1610,7 @@ def noSyncModel : Model :=
   intro h
   have hmem := noSyncModel_mem_den_lyapunovStable
   unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
+  rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
   have hd : Meets noSyncModel .synchronizing := hmem .synchronizing (by
     show Requirement.synchronizing ∈ translate (.flow .lyapunovStable)
     simp [translate])

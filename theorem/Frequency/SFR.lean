@@ -417,13 +417,16 @@ def family : Family Model Requirement 3 1 := ⟨fun m => m.plant.system, Meets, 
   rcases (h .unstable : Meets m .unstable) with h3 | h3 <;> linarith
 
 private theorem den_hurwitz {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    family.den (.flow P) = {m | Meets m .stable} := by
+    connection% (family.den (.flow P) = {m | Meets m .stable}) := by
+  change family.den (.flow P) = {m | Meets m .stable}
   rw [family_isLinear.den_hurwitz hP]
   ext m
   exact isHurwitz_iff m.M_pos m.Tg_pos m.TR_pos
 
 private theorem stable_mem_den {m : Model} (h : Meets m .stable) {P : Flow.Property}
-    (hP : P.Attractive ∨ P = .contractive) : m ∈ family.den (.flow P) := by
+    (hP : P.Attractive ∨ P = .contractive) :
+    connection% (m ∈ family.den (.flow P)) := by
+  change m ∈ family.den (.flow P)
   rw [den_hurwitz hP]
   exact h
 
@@ -494,7 +497,7 @@ load `ΔP_L = 1` the steady state is an equilibrium at which the port supplies
 @[tmio TM, powerlib_domain] theorem not_mem_den_passive (m : Model) (hKD : 0 < m.K + m.D) :
     connection% (m ∉ family.den .passive) := by
   unfold powerlib.TMIO.Statement
-  rw [Family.mem_den, family_isLinear m, Sentence.holds_passive]
+  rw [(connection_proof% Family.mem_den), family_isLinear m, Sentence.holds_passive]
   refine Port.System.not_passive_of_equilibrium _ (x₀ := steadyState m.D m.K 1) (u₀ := load 1)
     (steadyState_isEquilibrium m.M_pos.ne' m.Tg_pos.ne' m.TR_pos.ne' hKD.ne') ?_
   have hsupply : m.plant.system.supply (steadyState m.D m.K 1) (load 1) =

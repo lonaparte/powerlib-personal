@@ -531,7 +531,8 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
 
 /-- The quartic Routh conditions give local exponential stability of the physical field. -/
 private theorem les_of_meets {m : Model} (he : Meets m .equilibrium) (hr : Meets m .routh) :
-    m ∈ family.den (.flow .locallyExponentiallyStable) := by
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  change m ∈ family.den (.flow .locallyExponentiallyStable)
   obtain ⟨heq, hC⟩ := he
   obtain ⟨h3, h1, h0, hg⟩ := hr
   exact mem_den_flow_iff.mpr (Dynamics.locallyExponentiallyStable_of_eqOn_ball
@@ -543,7 +544,9 @@ private theorem les_of_meets {m : Model} (he : Meets m .equilibrium) (hr : Meets
 
 /-- `a₀ < 0` gives a positive real eigenvalue and instability of the physical field. -/
 private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
-    (hn : Meets m .constNeg) : m ∈ family.den (.flow .unstable) := by
+    (hn : Meets m .constNeg) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  change m ∈ family.den (.flow .unstable)
   obtain ⟨heq, hC⟩ := he
   exact mem_den_flow_iff.mpr (Dynamics.unstable_of_eqOn_ball (by norm_num : (0 : ℝ) < 1 / 2)
     (fun y hy => field_eq_regField_of_near m.params hy)
@@ -577,9 +580,9 @@ without requirement. -/
     · cases P <;> rfl
     · rfl
     · rfl
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact les_of_meets (hm .equilibrium (by simp)) (hm .routh (by simp))
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact unstable_of_meets (hm .equilibrium (by simp)) (hm .constNeg (by simp))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
@@ -684,10 +687,10 @@ criterion; with `C = 0` the frozen dc-bus voltage excludes local exponential sta
     (fun m _ => (contDiff_regField m.params).contDiffOn.congr fun y hy =>
       field_eq_regField_of_near m.params (mem_ball_iff_norm.mp hy))
     (fun m _ => fderiv_field_opPoint m.params m.θ) fun m _ he hH => ?_)
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact les_of_meets (hm .equilibrium (by simp [family, translate]))
       (hm .routh (by simp [family, translate]))
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   by_cases hC : m.params.C = 0
   · -- the regularized field would be locally exponentially stable, but `V` is frozen
     have hreg : regField m.params (opPoint m.θ) = 0 := by

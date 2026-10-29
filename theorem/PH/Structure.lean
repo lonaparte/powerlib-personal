@@ -457,7 +457,7 @@ Static evidence on the model, not a connection conclusion. -/
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [TMIO.mem_realize] at hm
+  rw [(connection_proof% TMIO.mem_realize)] at hm
   change ∀ q ∈ translate s, Meets m q at hm
   rcases s with P | _ | E
   · cases P
@@ -474,8 +474,8 @@ globally asymptotically stable: the second critical point `(1, 0)` is an equilib
       family.den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   intro h
-  rw [family_isNonlinearPH.mem_den_flow_shift (base := fun _ => phLaSalle_counterexample)
-    (point := Model.point)] at h
+  rw [(connection_proof% family_isNonlinearPH.mem_den_flow_shift (base := fun _ => phLaSalle_counterexample)
+    (point := Model.point))] at h
   obtain ⟨-, -, -, hattr⟩ := h
   have hcurve : IsIntegralCurveOn (fun _ : ℝ => phLaSalle_xo)
       (fun _ y => phLaSalle_counterexample.zeroInputField y) (Ici 0) := by
@@ -496,7 +496,7 @@ globally asymptotically stable: the second critical point `(1, 0)` is an equilib
   unfold powerlib.TMIO.Statement
   intro H
   have hm : (⟨phLaSalle_xs⟩ : Model) ∈ TMIO.realize Meets {.uniqueMin} := by
-    rw [TMIO.mem_realize]
+    rw [(connection_proof% TMIO.mem_realize)]
     intro q hq
     rw [Set.mem_singleton_iff] at hq
     subst hq

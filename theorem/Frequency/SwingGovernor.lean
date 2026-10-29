@@ -415,13 +415,16 @@ def family : Family Model Requirement 2 1 := ⟨fun m => m.plant.system, Meets, 
 
 /-- The attractive sentences and sampled contraction denote the members satisfying `stable`. -/
 private theorem den_hurwitz {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    family.den (.flow P) = {m | Meets m .stable} := by
+    connection% (family.den (.flow P) = {m | Meets m .stable}) := by
+  change family.den (.flow P) = {m | Meets m .stable}
   rw [family_isLinear.den_hurwitz hP]
   ext m
   exact isHurwitz_iff m.M_pos m.Tg_pos
 
 private theorem stable_mem_den {m : Model} (h : Meets m .stable) {P : Flow.Property}
-    (hP : P.Attractive ∨ P = .contractive) : m ∈ family.den (.flow P) := by
+    (hP : P.Attractive ∨ P = .contractive) :
+    connection% (m ∈ family.den (.flow P)) := by
+  change m ∈ family.den (.flow P)
   rw [den_hurwitz hP]
   exact h
 
@@ -490,7 +493,7 @@ load `ΔP_L = 1` the quasi-steady state is an equilibrium at which the port supp
 @[tmio TM, powerlib_domain] theorem not_mem_den_passive (m : Model) (hKD : 0 < m.K + m.D) :
     connection% (m ∉ family.den .passive) := by
   unfold powerlib.TMIO.Statement
-  rw [Family.mem_den, family_isLinear m, Sentence.holds_passive]
+  rw [(connection_proof% Family.mem_den), family_isLinear m, Sentence.holds_passive]
   refine Port.System.not_passive_of_equilibrium _ (x₀ := steadyState m.D m.K 1) (u₀ := load 1)
     (steadyState_isEquilibrium m.M_pos.ne' m.Tg_pos.ne' hKD.ne') ?_
   have hsupply : m.plant.system.supply (steadyState m.D m.K 1) (load 1) = -1 / (m.K + m.D) := by
@@ -1041,8 +1044,9 @@ def reducedFamily : Family ReducedModel ReducedRequirement 1 1 :=
     (h2 : r.K + r.D < 0) => absurd (lt_trans h1 h2) (lt_irrefl _)
 
 private theorem reduced_mem_den_decay_iff (r : ReducedModel) (a : ℝ) :
-    r ∈ reducedFamily.den (.flow (.decay a)) ↔ a * r.M ≤ r.K + r.D := by
-  rw [reducedFamily_isLinear.mem_den_flow]
+    connection% (r ∈ reducedFamily.den (.flow (.decay a)) ↔ a * r.M ≤ r.K + r.D) := by
+  change r ∈ reducedFamily.den (.flow (.decay a)) ↔ a * r.M ≤ r.K + r.D
+  rw [(connection_proof% reducedFamily_isLinear.mem_den_flow)]
   have hA : r.plant.A = !![-((r.K + r.D) / r.M)] := by
     change !![-(r.K + r.D) / r.M] = _
     rw [neg_div]
@@ -1092,7 +1096,7 @@ exactly when `a M ≤ K_R + D` (its solutions are `e^{−(K_R + D) t/M}`). -/
   unfold Family.Exact
   ext r
   change r ∈ realize ReducedMeets {.rate a} ↔ _
-  rw [reduced_mem_den_decay_iff]
+  rw [(connection_proof% reduced_mem_den_decay_iff)]
   simp [mem_realize, ReducedMeets]
 
 /-- **Stability is preserved by the reduction `T_g → 0`**: whenever `0 < M + D T_g`, a swing +
@@ -1131,7 +1135,7 @@ the model does not decay at the rate `a` (its slow eigenmode decays like `e^{λ_
     (h : -a < slowEig m.M m.D m.K m.Tg) :
     connection% (m ∉ family.den (.flow (.decay a))) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isLinear.mem_den_flow]
+  rw [(connection_proof% family_isLinear.mem_den_flow)]
   refine LTI.not_decay_of_eigenvector (A := m.plant.A)
     (v := WithLp.toLp 2 ![1, m.M * slowEig m.M m.D m.K m.Tg + m.D]) ?_ ?_ h
   · intro h0
@@ -1174,7 +1178,7 @@ reduction does (i.e. exactly when `a M ≤ K_R + D`). -/
   refine ⟨τ, hτ, fun m hMm hDm hKm hTm => ?_⟩
   obtain ⟨hrate, hΔ, hS, hslow⟩ := hτP ⟨m.Tg_pos, hTm⟩
   subst hMm hDm hKm
-  rw [reduced_mem_den_decay_iff]
+  rw [(connection_proof% reduced_mem_den_decay_iff)]
   rcases lt_or_gt_of_ne ha with hlt | hgt
   · refine iff_of_true ?_ hlt.le
     refine family_isLinear.mem_den_decay_of_rateMargin ?_

@@ -62,7 +62,7 @@ variable {F : Family X Q n p}
       F.den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   intro x hx
-  rw [Family.mem_den] at hx ⊢
+  rw [(connection_proof% Family.mem_den)] at hx ⊢
   cases h : F.system x with
   | continuous s =>
     rw [h, Sentence.holds_flow] at hx
@@ -78,11 +78,13 @@ variable {F : Family X Q n p}
     exact fun ω => Flow.GloballyExponentiallyStable.globallyAsymptoticallyStable (hx ω)
 
 /-- Global exponential stability gives local exponential stability, for every family. -/
-@[powerlib_foundation] theorem den_globallyExponentiallyStable_subset_les :
-    F.den (.flow .globallyExponentiallyStable) ⊆
-      F.den (.flow .locallyExponentiallyStable) := by
+@[tmio TM, powerlib_foundation] theorem den_globallyExponentiallyStable_subset_les :
+    connection% (F.den (.flow .globallyExponentiallyStable) ⊆
+      F.den (.flow .locallyExponentiallyStable)) := by
+  change F.den (.flow .globallyExponentiallyStable) ⊆
+        F.den (.flow .locallyExponentiallyStable)
   intro x hx
-  rw [Family.mem_den] at hx ⊢
+  rw [(connection_proof% Family.mem_den)] at hx ⊢
   cases h : F.system x with
   | continuous s =>
     rw [h, Sentence.holds_flow] at hx
@@ -98,10 +100,11 @@ variable {F : Family X Q n p}
     exact fun ω => Flow.GloballyExponentiallyStable.locallyExponentiallyStable (hx ω)
 
 /-- Global exponential stability gives sampled contraction, for every family. -/
-@[powerlib_foundation] theorem den_globallyExponentiallyStable_subset_contractive :
-    F.den (.flow .globallyExponentiallyStable) ⊆ F.den (.flow .contractive) := by
+@[tmio TM, powerlib_foundation] theorem den_globallyExponentiallyStable_subset_contractive :
+    connection% (F.den (.flow .globallyExponentiallyStable) ⊆ F.den (.flow .contractive)) := by
+  change F.den (.flow .globallyExponentiallyStable) ⊆ F.den (.flow .contractive)
   intro x hx
-  rw [Family.mem_den] at hx ⊢
+  rw [(connection_proof% Family.mem_den)] at hx ⊢
   cases h : F.system x with
   | continuous s =>
     rw [h, Sentence.holds_flow] at hx
@@ -119,13 +122,16 @@ variable {F : Family X Q n p}
 end Denotation
 
 /-- The space of one requirement. -/
-@[powerlib_foundation] theorem mem_realize_singleton {meets : X → Q → Prop} {q : Q} {x : X} :
-    x ∈ realize meets {q} ↔ meets x q := by
+@[tmio T, powerlib_foundation] theorem mem_realize_singleton {meets : X → Q → Prop} {q : Q} {x : X} :
+    connection% (x ∈ realize meets {q} ↔ meets x q) := by
+  change x ∈ realize meets {q} ↔ meets x q
   simp [mem_realize]
 
 /-- The whole language, when no system meets it, realizes into every set. -/
-@[powerlib_foundation] theorem realize_univ_subset_of_eq_empty {meets : X → Q → Prop}
-    (h : realize meets univ = ∅) (S : Set X) : realize meets univ ⊆ S := by
+@[tmio T, powerlib_foundation] theorem realize_univ_subset_of_eq_empty {meets : X → Q → Prop}
+    (h : realize meets univ = ∅) (S : Set X) :
+    connection% (realize meets univ ⊆ S) := by
+  change realize meets univ ⊆ S
   rw [h]
   exact empty_subset S
 
@@ -153,7 +159,7 @@ variable {F : Family X Q n p} {Rs Rg Ru Rc Rp : Set Q} {Rd : ℝ → Set Q}
 local exponential stability (`Rs`), global exponential stability (`Rg`), decay at the rate `a`
 (`Rd a`), instability (`Ru`), conservation (`Rc`) and passivity (`Rp`), and every member satisfies
 the envelope sentences (a family read without an envelope, `Family.IsAutonomous.den_envelope`). -/
-@[powerlib_foundation] theorem chain_le_semantics_of_globalTable
+@[tmio TM, powerlib_foundation] theorem chain_le_semantics_of_globalTable
     (ht : ∀ s, F.translate s = globalTable Rs Rg Ru Rc Rp Rd s)
     (hS : realize F.meets Rs ⊆ F.den (.flow .locallyExponentiallyStable))
     (hG : realize F.meets Rg ⊆ F.den (.flow .globallyExponentiallyStable))
@@ -161,7 +167,8 @@ the envelope sentences (a family read without an envelope, `Family.IsAutonomous.
     (hU : realize F.meets Ru ⊆ F.den (.flow .unstable))
     (hC : realize F.meets Rc ⊆ F.den (.flow .conservative))
     (hP : realize F.meets Rp ⊆ F.den .passive) (hE : ∀ E, F.den (.envelope E) = univ) :
-    ∀ P, F.chain P ≤ F.semantics P := by
+    connection% (∀ P, F.chain P ≤ F.semantics P) := by
+  change ∀ P, F.chain P ≤ F.semantics P
   refine Family.chain_le_semantics_iff.mpr fun s x hx => ?_
   change x ∈ realize F.meets (F.translate s) at hx
   rw [ht s] at hx

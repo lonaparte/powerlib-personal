@@ -79,7 +79,7 @@ variable {F : Family X Q n p}
       F.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   intro x hx
-  rw [Family.mem_den] at hx ⊢
+  rw [(connection_proof% Family.mem_den)] at hx ⊢
   cases h : F.system x with
   | continuous s =>
     rw [h, Sentence.holds_flow] at hx
@@ -95,10 +95,11 @@ variable {F : Family X Q n p}
     exact fun ω => Flow.locallyExponentiallyStable_localAsymptoticStable (hx ω)
 
 /-- Local asymptotic stability gives Lyapunov stability, for every family. -/
-@[powerlib_foundation] theorem den_las_subset_lyapunovStable :
-    F.den (.flow .locallyAsymptoticallyStable) ⊆ F.den (.flow .lyapunovStable) := by
+@[tmio TM, powerlib_foundation] theorem den_las_subset_lyapunovStable :
+    connection% (F.den (.flow .locallyAsymptoticallyStable) ⊆ F.den (.flow .lyapunovStable)) := by
+  change F.den (.flow .locallyAsymptoticallyStable) ⊆ F.den (.flow .lyapunovStable)
   intro x hx
-  rw [Family.mem_den] at hx ⊢
+  rw [(connection_proof% Family.mem_den)] at hx ⊢
   cases h : F.system x with
   | continuous s =>
     rw [h, Sentence.holds_flow] at hx
@@ -113,16 +114,17 @@ variable {F : Family X Q n p}
     rw [Sentence.holds_flow_disturbed]
     exact fun ω => (hx ω).1
 
-@[powerlib_foundation] theorem den_locallyExponentiallyStable_subset_lyapunovStable :
-    F.den (.flow .locallyExponentiallyStable) ⊆ F.den (.flow .lyapunovStable) :=
+@[tmio TM, powerlib_foundation] theorem den_locallyExponentiallyStable_subset_lyapunovStable :
+    connection% (F.den (.flow .locallyExponentiallyStable) ⊆ F.den (.flow .lyapunovStable)) := show F.den (.flow .locallyExponentiallyStable) ⊆ F.den (.flow .lyapunovStable) from
   fun _ hx => den_las_subset_lyapunovStable (den_locallyExponentiallyStable_subset_las hx)
 
 /-- A family read on fields translated to selected points: its flow sentences are those of the
 untranslated fields at the points (`Flow.Property.holds_shift_iff`). -/
-@[powerlib_foundation] theorem mem_den_flow_iff_shift {F : Family X Q n 0}
+@[tmio TM, powerlib_foundation] theorem mem_den_flow_iff_shift {F : Family X Q n 0}
     {f : X → EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)}
     {pt : X → EuclideanSpace ℝ (Fin n)} (hF : F.IsAutonomous fun x z => f x (z + pt x))
-    {x : X} {P : Flow.Property} : x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x) :=
+    {x : X} {P : Flow.Property} :
+    connection% (x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x)) := show x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x) from
   hF.mem_den_flow.trans (Flow.Property.holds_shift_iff P)
 
 end Denotation
@@ -130,15 +132,18 @@ end Denotation
 /-! ## Inconsistency of the whole language -/
 
 /-- The whole language is inconsistent when no system meets every requirement. -/
-@[powerlib_foundation] theorem realize_univ_eq_empty_of_forall {meets : X → Q → Prop}
-    (h : ∀ x, (∀ q, meets x q) → False) : realize meets univ = ∅ := by
+@[tmio T, powerlib_foundation] theorem realize_univ_eq_empty_of_forall {meets : X → Q → Prop}
+    (h : ∀ x, (∀ q, meets x q) → False) :
+    connection% (realize meets univ = ∅) := by
+  change realize meets univ = ∅
   ext x
   simp only [mem_realize, mem_univ, true_implies, mem_empty_iff_false, iff_false]
   exact h x
 
 /-- Two mutually exclusive requirements make the whole language inconsistent. -/
-@[powerlib_foundation] theorem realize_univ_eq_empty_of {meets : X → Q → Prop} (q₁ q₂ : Q)
-    (h : ∀ x, meets x q₁ → meets x q₂ → False) : realize meets univ = ∅ :=
+@[tmio T, powerlib_foundation] theorem realize_univ_eq_empty_of {meets : X → Q → Prop} (q₁ q₂ : Q)
+    (h : ∀ x, meets x q₁ → meets x q₂ → False) :
+    connection% (realize meets univ = ∅) := show realize meets univ = ∅ from
   realize_univ_eq_empty_of_forall fun x hx => h x (hx q₁) (hx q₂)
 
 /-! ## The local table and soundness -/
@@ -161,14 +166,15 @@ variable {F : Family X Q n p} {Rl Rs Ru Rp : Set Q}
 /-- Soundness of every translation of a family with the local table: the whole language is
 inconsistent, and the requirement sets give Lyapunov stability, local exponential stability,
 instability and passivity. -/
-@[powerlib_foundation] theorem chain_le_semantics_of_localTable
+@[tmio TM, powerlib_foundation] theorem chain_le_semantics_of_localTable
     (ht : ∀ s, F.translate s = localTable Rl Rs Ru Rp s)
     (hinc : realize F.meets univ = ∅)
     (hL : realize F.meets Rl ⊆ F.den (.flow .lyapunovStable))
     (hS : realize F.meets Rs ⊆ F.den (.flow .locallyExponentiallyStable))
     (hU : realize F.meets Ru ⊆ F.den (.flow .unstable))
     (hP : realize F.meets Rp ⊆ F.den .passive) :
-    ∀ P, F.chain P ≤ F.semantics P := by
+    connection% (∀ P, F.chain P ≤ F.semantics P) := by
+  change ∀ P, F.chain P ≤ F.semantics P
   refine Family.chain_le_semantics_iff.mpr fun s x hx => ?_
   change x ∈ realize F.meets (F.translate s) at hx
   rw [ht s] at hx
@@ -187,13 +193,13 @@ instability and passivity. -/
 
 /-- The common case: Lyapunov stability shares the requirements of the attractive local
 sentences, passivity has none, and every member is passive (a system without ports). -/
-@[powerlib_foundation] theorem chain_le_semantics_of_localTable_same
+@[tmio TM, powerlib_foundation] theorem chain_le_semantics_of_localTable_same
     (ht : ∀ s, F.translate s = localTable Rs Rs Ru ∅ s)
     (hinc : realize F.meets univ = ∅)
     (hS : realize F.meets Rs ⊆ F.den (.flow .locallyExponentiallyStable))
     (hU : realize F.meets Ru ⊆ F.den (.flow .unstable))
     (hpas : F.den .passive = univ) :
-    ∀ P, F.chain P ≤ F.semantics P :=
+    connection% (∀ P, F.chain P ≤ F.semantics P) := show ∀ P, F.chain P ≤ F.semantics P from
   chain_le_semantics_of_localTable ht hinc
     (fun _ hx => den_locallyExponentiallyStable_subset_lyapunovStable (hS hx)) hS hU
     (fun x _ => by rw [hpas]; trivial)
@@ -207,9 +213,11 @@ section Exactness
 variable {F : Family X Q n p}
 
 /-- Exactness within a context, member by member. -/
-@[powerlib_foundation] theorem exactUnder_iff_forall {Δ : Set Q} {s : Sentence} :
-    F.ExactUnder Δ s ↔
-      ∀ x ∈ realize F.meets Δ, (x ∈ realize F.meets (F.translate s) ↔ x ∈ F.den s) := by
+@[tmio TM, powerlib_foundation] theorem exactUnder_iff_forall {Δ : Set Q} {s : Sentence} :
+    connection% (F.ExactUnder Δ s ↔
+      ∀ x ∈ realize F.meets Δ, (x ∈ realize F.meets (F.translate s) ↔ x ∈ F.den s)) := by
+  change F.ExactUnder Δ s ↔
+        ∀ x ∈ realize F.meets Δ, (x ∈ realize F.meets (F.translate s) ↔ x ∈ F.den s)
   unfold Family.ExactUnder TMIO.ExactUnder
   rw [realize_union]
   constructor
@@ -227,8 +235,10 @@ variable {F : Family X Q n p}
       exact ⟨(h x h2).mpr h1, h2⟩
 
 /-- Exactness within the empty context is exactness. -/
-@[powerlib_foundation] theorem exact_of_exactUnder_empty {s : Sentence}
-    (h : F.ExactUnder ∅ s) : F.Exact s := by
+@[tmio TM, powerlib_foundation] theorem exact_of_exactUnder_empty {s : Sentence}
+    (h : F.ExactUnder ∅ s) :
+    connection% (F.Exact s) := by
+  change F.Exact s
   unfold Family.ExactUnder TMIO.ExactUnder at h
   unfold Family.Exact
   simpa [realize_empty] using h
@@ -242,7 +252,7 @@ give it (soundness); members outside the guard `G` are not locally exponentially
 guard the fields are `C¹` with Jacobian `jac x` at the point, and an equilibrium with a Hurwitz
 Jacobian meets the translated requirements (the converse algebra). Then the translation is exact
 within `Δ`. -/
-@[powerlib_foundation] theorem exactUnder_les_of_jacobian_on
+@[tmio TM, powerlib_foundation] theorem exactUnder_les_of_jacobian_on
     (hden : ∀ x (P : Flow.Property), x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x))
     (Δ : Set Q) (G : X → Prop) (jac : X → Matrix (Fin n) (Fin n) ℝ)
     (hsound : ∀ x ∈ realize F.meets Δ,
@@ -255,7 +265,7 @@ within `Δ`. -/
     (hcomplete : ∀ x ∈ realize F.meets Δ, G x → f x (pt x) = 0 →
       LinearSystems.IsHurwitz (jac x) →
         x ∈ realize F.meets (F.translate (.flow .locallyExponentiallyStable))) :
-    F.ExactUnder Δ (.flow .locallyExponentiallyStable) :=
+    connection% (F.ExactUnder Δ (.flow .locallyExponentiallyStable)) := show F.ExactUnder Δ (.flow .locallyExponentiallyStable) from
   exactUnder_iff_forall.mpr fun x hΔ => ⟨hsound x hΔ, fun hx => by
     by_cases hG : G x
     · have h := (Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ (hC x hΔ hG)
@@ -268,7 +278,7 @@ within `Δ` the translated requirements of local exponential stability give it (
 fields are `C¹` with Jacobian `jac x` at the point, and an equilibrium with a Hurwitz Jacobian
 meets the translated requirements (the converse algebra). Then the translation is exact within
 `Δ`. -/
-@[powerlib_foundation] theorem exactUnder_les_of_jacobian
+@[tmio TM, powerlib_foundation] theorem exactUnder_les_of_jacobian
     (hden : ∀ x (P : Flow.Property), x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x))
     (Δ : Set Q) (jac : X → Matrix (Fin n) (Fin n) ℝ)
     (hsound : ∀ x ∈ realize F.meets Δ,
@@ -280,12 +290,12 @@ meets the translated requirements (the converse algebra). Then the translation i
     (hcomplete : ∀ x ∈ realize F.meets Δ, f x (pt x) = 0 →
       LinearSystems.IsHurwitz (jac x) →
         x ∈ realize F.meets (F.translate (.flow .locallyExponentiallyStable))) :
-    F.ExactUnder Δ (.flow .locallyExponentiallyStable) :=
+    connection% (F.ExactUnder Δ (.flow .locallyExponentiallyStable)) := show F.ExactUnder Δ (.flow .locallyExponentiallyStable) from
   exactUnder_les_of_jacobian_on hden Δ (fun _ => True) jac hsound (fun _ _ h => absurd trivial h)
     (fun x hΔ _ => hC x hΔ) (fun x hΔ _ => hJ x hΔ) (fun x hΔ _ => hcomplete x hΔ)
 
 /-- The same with fields that are `C¹` only on an open neighbourhood of the point. -/
-@[powerlib_foundation] theorem exactUnder_les_of_jacobian_local
+@[tmio TM, powerlib_foundation] theorem exactUnder_les_of_jacobian_local
     (hden : ∀ x (P : Flow.Property), x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x))
     (Δ : Set Q) (jac : X → Matrix (Fin n) (Fin n) ℝ)
     (hsound : ∀ x ∈ realize F.meets Δ,
@@ -299,7 +309,7 @@ meets the translated requirements (the converse algebra). Then the translation i
     (hcomplete : ∀ x ∈ realize F.meets Δ, f x (pt x) = 0 →
       LinearSystems.IsHurwitz (jac x) →
         x ∈ realize F.meets (F.translate (.flow .locallyExponentiallyStable))) :
-    F.ExactUnder Δ (.flow .locallyExponentiallyStable) :=
+    connection% (F.ExactUnder Δ (.flow .locallyExponentiallyStable)) := show F.ExactUnder Δ (.flow .locallyExponentiallyStable) from
   exactUnder_iff_forall.mpr fun x hΔ => ⟨hsound x hΔ, fun hx => by
     have h := (Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian_local (hU x hΔ)
       (hpt x hΔ) _ (hC x hΔ) (hJ x hΔ)).mp ((hden x .locallyExponentiallyStable).mp hx)
@@ -314,8 +324,10 @@ section Witness
 variable {F : Family X Q n p} {s : Sentence} {x : X} {q : Q}
 
 /-- A member of the denotation that misses a translated requirement refutes exactness. -/
-@[powerlib_foundation] theorem not_exact_of_witness (hx : x ∈ F.den s) (hq : q ∈ F.translate s)
-    (hn : ¬ F.meets x q) : ¬ F.Exact s := by
+@[tmio TM, powerlib_foundation] theorem not_exact_of_witness (hx : x ∈ F.den s) (hq : q ∈ F.translate s)
+    (hn : ¬ F.meets x q) :
+    connection% (¬ F.Exact s) := by
+  change ¬ F.Exact s
   intro h
   unfold Family.Exact at h
   rw [← h] at hx
@@ -323,9 +335,11 @@ variable {F : Family X Q n p} {s : Sentence} {x : X} {q : Q}
 
 /-- Within a context: a member of the context and of the denotation that misses a translated
 requirement refutes exactness within the context. -/
-@[powerlib_foundation] theorem not_exactUnder_of_witness {Δ : Set Q}
+@[tmio TM, powerlib_foundation] theorem not_exactUnder_of_witness {Δ : Set Q}
     (hΔ : x ∈ realize F.meets Δ) (hx : x ∈ F.den s) (hq : q ∈ F.translate s)
-    (hn : ¬ F.meets x q) : ¬ F.ExactUnder Δ s := by
+    (hn : ¬ F.meets x q) :
+    connection% (¬ F.ExactUnder Δ s) := by
+  change ¬ F.ExactUnder Δ s
   intro h
   have hx' := ((exactUnder_iff_forall.mp h) x hΔ).mpr hx
   exact hn ((mem_realize _ _ _).mp hx' q hq)
@@ -334,17 +348,20 @@ variable {f : X → EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)}
   {pt : X → EuclideanSpace ℝ (Fin n)}
 
 /-- A point that is not an equilibrium of a `C¹` field is unstable. -/
-@[powerlib_foundation] theorem mem_den_unstable_of_ne_zero
+@[tmio TM, powerlib_foundation] theorem mem_den_unstable_of_ne_zero
     (hden : ∀ x (P : Flow.Property), x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x))
-    (hC : ContDiff ℝ 1 (f x)) (h0 : f x (pt x) ≠ 0) : x ∈ F.den (.flow .unstable) :=
+    (hC : ContDiff ℝ 1 (f x)) (h0 : f x (pt x) ≠ 0) :
+    connection% (x ∈ F.den (.flow .unstable)) := show x ∈ F.den (.flow .unstable) from
   (hden x .unstable).mpr (Dynamics.unstable_of_ne_zero hC h0)
 
 /-- A point that is not an equilibrium of a field `C¹` on an open neighbourhood of it is
 unstable. -/
-@[powerlib_foundation] theorem mem_den_unstable_of_ne_zero_local
+@[tmio TM, powerlib_foundation] theorem mem_den_unstable_of_ne_zero_local
     (hden : ∀ x (P : Flow.Property), x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x))
     {U : Set (EuclideanSpace ℝ (Fin n))} (hU : IsOpen U) (hpt : pt x ∈ U)
-    (hC : ContDiffOn ℝ 1 (f x) U) (h0 : f x (pt x) ≠ 0) : x ∈ F.den (.flow .unstable) := by
+    (hC : ContDiffOn ℝ 1 (f x) U) (h0 : f x (pt x) ≠ 0) :
+    connection% (x ∈ F.den (.flow .unstable)) := by
+  change x ∈ F.den (.flow .unstable)
   obtain ⟨g, hg, hgf⟩ := Dynamics.exists_contDiff_eventuallyEq hU hpt hC
   refine (hden x .unstable).mpr ((Dynamics.unstable_congr_nhds hgf).mp
     (Dynamics.unstable_of_ne_zero hg ?_))
@@ -353,38 +370,45 @@ unstable. -/
 
 /-- An off-equilibrium member that misses a translated requirement of instability refutes the
 exactness of the instability translation. -/
-@[powerlib_foundation] theorem not_exact_unstable_of_ne_zero
+@[tmio TM, powerlib_foundation] theorem not_exact_unstable_of_ne_zero
     (hden : ∀ x (P : Flow.Property), x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x))
     (hC : ContDiff ℝ 1 (f x)) (h0 : f x (pt x) ≠ 0) (hq : q ∈ F.translate (.flow .unstable))
-    (hn : ¬ F.meets x q) : ¬ F.Exact (.flow .unstable) :=
+    (hn : ¬ F.meets x q) :
+    connection% (¬ F.Exact (.flow .unstable)) := show ¬ F.Exact (.flow .unstable) from
   not_exact_of_witness (mem_den_unstable_of_ne_zero hden hC h0) hq hn
 
 /-- A locally exponentially stable member that misses a translated requirement of Lyapunov or
 local asymptotic stability refutes the exactness of that translation. -/
-@[powerlib_foundation] theorem not_exact_of_les_witness
+@[tmio TM, powerlib_foundation] theorem not_exact_of_les_witness
     (hx : x ∈ F.den (.flow .locallyExponentiallyStable)) {P : Flow.Property}
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable)
-    (hq : q ∈ F.translate (.flow P)) (hn : ¬ F.meets x q) : ¬ F.Exact (.flow P) := by
+    (hq : q ∈ F.translate (.flow P)) (hn : ¬ F.meets x q) :
+    connection% (¬ F.Exact (.flow P)) := by
+  change ¬ F.Exact (.flow P)
   refine not_exact_of_witness ?_ hq hn
   rcases hP with rfl | rfl
   · exact den_locallyExponentiallyStable_subset_lyapunovStable hx
   · exact den_locallyExponentiallyStable_subset_las hx
 
 /-- The same within a context. -/
-@[powerlib_foundation] theorem not_exactUnder_of_les_witness {Δ : Set Q}
+@[tmio TM, powerlib_foundation] theorem not_exactUnder_of_les_witness {Δ : Set Q}
     (hΔ : x ∈ realize F.meets Δ) (hx : x ∈ F.den (.flow .locallyExponentiallyStable))
     {P : Flow.Property} (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable)
-    (hq : q ∈ F.translate (.flow P)) (hn : ¬ F.meets x q) : ¬ F.ExactUnder Δ (.flow P) := by
+    (hq : q ∈ F.translate (.flow P)) (hn : ¬ F.meets x q) :
+    connection% (¬ F.ExactUnder Δ (.flow P)) := by
+  change ¬ F.ExactUnder Δ (.flow P)
   refine not_exactUnder_of_witness hΔ ?_ hq hn
   rcases hP with rfl | rfl
   · exact den_locallyExponentiallyStable_subset_lyapunovStable hx
   · exact den_locallyExponentiallyStable_subset_las hx
 
 /-- An unstable member is not Lyapunov stable, for every family. -/
-@[powerlib_foundation] theorem not_mem_den_lyapunovStable_of_unstable
-    (hx : x ∈ F.den (.flow .unstable)) : x ∉ F.den (.flow .lyapunovStable) := by
+@[tmio TM, powerlib_foundation] theorem not_mem_den_lyapunovStable_of_unstable
+    (hx : x ∈ F.den (.flow .unstable)) :
+    connection% (x ∉ F.den (.flow .lyapunovStable)) := by
+  change x ∉ F.den (.flow .lyapunovStable)
   intro hl
-  rw [Family.mem_den] at hx hl
+  rw [(connection_proof% Family.mem_den)] at hx hl
   cases h : F.system x with
   | continuous s' =>
     rw [h, Sentence.holds_flow] at hx hl

@@ -321,11 +321,11 @@ def refFamily : Family (PIParams × ℝ) Spectral.Requirement 2 1 :=
   Spectral.linearFamily_isLinear _ _ _
 
 private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    family.den (.flow P) = {p | Stable p} :=
+    connection% (family.den (.flow P) = {p | Stable p}) := show family.den (.flow P) = {p | Stable p} from
   Spectral.linear_den (U := Unstable) (fun p => (isHurwitz_iff_div p).symm) hP
 
 private theorem refDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    refFamily.den (.flow P) = {q | RefStable q} :=
+    connection% (refFamily.den (.flow P) = {q | RefStable q}) := show refFamily.den (.flow P) = {q | RefStable q} from
   Spectral.linear_den (U := RefUnstable) (fun q => (q.1.refFeedback_isHurwitz_iff_div q.2).symm)
     hP
 

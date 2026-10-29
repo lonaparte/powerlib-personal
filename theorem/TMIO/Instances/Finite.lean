@@ -49,24 +49,31 @@ def witness : Seed (Set Bool) (Set (Bool × Bool)) (Set (Bool × Bool × Bool)) 
   u₂ := kern dropImplementation
   u₃ := preimage observe
 
-@[tmio T, powerlib_foundation] theorem witness_l₁ : ⇑witness.l₁ = Set.preimage dropModel :=
+@[tmio T, powerlib_foundation] theorem witness_l₁ :
+    connection% (⇑witness.l₁ = Set.preimage dropModel) := show ⇑witness.l₁ = Set.preimage dropModel from
   generate_kern dropModel
 
-@[tmio T, powerlib_foundation] theorem witness_l₂ : ⇑witness.l₂ = Set.preimage dropImplementation :=
+@[tmio T, powerlib_foundation] theorem witness_l₂ :
+    connection% (⇑witness.l₂ = Set.preimage dropImplementation) := show ⇑witness.l₂ = Set.preimage dropImplementation from
   generate_kern dropImplementation
 
-@[tmio T, powerlib_foundation] theorem witness_l₃ : ⇑witness.l₃ = Set.image observe :=
+@[tmio T, powerlib_foundation] theorem witness_l₃ :
+    connection% (⇑witness.l₃ = Set.image observe) := show ⇑witness.l₃ = Set.image observe from
   generate_preimage observe
 
 /-- The extension edges lose nothing: their closure is the identity. -/
-@[tmio T, powerlib_foundation] theorem witness_closure₁ (A : Set Bool) : witness.u₁ (witness.l₁ A) = A := by
+@[tmio T, powerlib_foundation] theorem witness_closure₁ (A : Set Bool) :
+    connection% (witness.u₁ (witness.l₁ A) = A) := by
+  change witness.u₁ (witness.l₁ A) = A
   rw [witness_l₁]
   ext b
   show (∀ ⦃x : Bool × Bool⦄, dropModel x = b → dropModel x ∈ A) ↔ b ∈ A
   exact ⟨fun h => @h (b, false) rfl, fun h _ hx => hx ▸ h⟩
 
 /-- The generated whole chain from the theory `{true}` allows both readings. -/
-@[tmio T, powerlib_foundation] theorem witness_whole_true : generate witness.uTO {true} = Set.univ := by
+@[tmio T, powerlib_foundation] theorem witness_whole_true :
+    connection% (generate witness.uTO {true} = Set.univ) := by
+  change generate witness.uTO {true} = Set.univ
   rw [witness.generate_uTO]
   ext b
   simp only [Function.comp_apply, witness_l₁, witness_l₂, witness_l₃, Set.mem_image,
@@ -74,7 +81,9 @@ def witness : Seed (Set Bool) (Set (Bool × Bool)) (Set (Bool × Bool × Bool)) 
   exact ⟨(true, b, false), rfl, rfl⟩
 
 /-- The generated whole chain sends the empty theory to no readings. -/
-@[tmio T, powerlib_foundation] theorem witness_whole_empty : generate witness.uTO ∅ = ∅ := by
+@[tmio T, powerlib_foundation] theorem witness_whole_empty :
+    connection% (generate witness.uTO ∅ = ∅) := by
+  change generate witness.uTO ∅ = ∅
   rw [witness.generate_uTO]
   ext b
   simp [witness_l₁, witness_l₂, witness_l₃]
@@ -82,7 +91,8 @@ def witness : Seed (Set Bool) (Set (Bool × Bool)) (Set (Bool × Bool × Bool)) 
 /-- The observation edge compresses information: its round trip strictly enlarges a singleton, so
 the generated adjoints are not inverse functions. -/
 @[tmio T, powerlib_foundation] theorem witness_roundtrip_strict :
-    witness.u₃ (witness.l₃ {(true, true, true)}) ≠ {(true, true, true)} := by
+    connection% (witness.u₃ (witness.l₃ {(true, true, true)}) ≠ {(true, true, true)}) := by
+  change witness.u₃ (witness.l₃ {(true, true, true)}) ≠ {(true, true, true)}
   rw [witness_l₃]
   intro h
   have hmem : ((false, true, false) : Bool × Bool × Bool) ∈
@@ -106,19 +116,23 @@ def requirementsTwo : Set (Set (Bool × Bool)) :=
   {{(false, false), (true, true), (false, true)}, {(false, false), (true, true), (true, false)}}
 
 @[tmio T, powerlib_foundation] theorem requirementsOne_space :
-    realize member requirementsOne = coupled := by
+    connection% (realize member requirementsOne = coupled) := by
+  change realize member requirementsOne = coupled
   ext ⟨a, b⟩
   cases a <;> cases b <;> simp [requirementsOne, coupled, member]
 
 @[tmio T, powerlib_foundation] theorem requirementsTwo_space :
-    realize member requirementsTwo = coupled := by
+    connection% (realize member requirementsTwo = coupled) := by
+  change realize member requirementsTwo = coupled
   ext ⟨a, b⟩
   cases a <;> cases b <;> simp [requirementsTwo, coupled, member]
 
 /-- A narrower family is legal for the requirements but is not their complete space. -/
 @[tmio T, powerlib_foundation] theorem narrow_legal_not_space :
-    ({(false, false)} : Set (Bool × Bool)) ⊆ realize member requirementsOne ∧
-      ({(false, false)} : Set (Bool × Bool)) ≠ realize member requirementsOne := by
+    connection% (({(false, false)} : Set (Bool × Bool)) ⊆ realize member requirementsOne ∧
+      ({(false, false)} : Set (Bool × Bool)) ≠ realize member requirementsOne) := by
+  change ({(false, false)} : Set (Bool × Bool)) ⊆ realize member requirementsOne ∧
+        ({(false, false)} : Set (Bool × Bool)) ≠ realize member requirementsOne
   rw [requirementsOne_space]
   refine ⟨by simp [coupled], fun h => ?_⟩
   have hmem : ((true, true) : Bool × Bool) ∈ ({(false, false)} : Set (Bool × Bool)) :=
@@ -130,9 +144,12 @@ def requirementsTwo : Set (Set (Bool × Bool)) :=
 /-- With implementations ordered by reverse inclusion, the possible-observation image of
 `Prod.fst` is not a lower adjoint into readings ordered by inclusion. -/
 @[tmio T, powerlib_foundation] theorem image_not_lowerAdjoint_inclusion :
-    ¬ ∃ u : Set Bool → (Set (Bool × Bool))ᵒᵈ,
-      GaloisConnection (fun P : (Set (Bool × Bool))ᵒᵈ => Prod.fst '' ofDual P) u := by
-  rintro ⟨u, gc⟩
+    connection% (¬ ∃ u : sInfHom (Set Bool) (Set (Bool × Bool))ᵒᵈ,
+      ⇑(generate u) = (fun P : (Set (Bool × Bool))ᵒᵈ => Prod.fst '' ofDual P)) := by
+  rintro ⟨u, h⟩
+  have gc : GaloisConnection (fun P : (Set (Bool × Bool))ᵒᵈ => Prod.fst '' ofDual P) u := by
+    rw [← h]
+    exact (generate u).gc
   have h := gc.l_sup (a₁ := toDual ({(false, false)} : Set (Bool × Bool)))
     (a₂ := toDual ({(false, true)} : Set (Bool × Bool)))
   have h' := congrArg (fun s : Set Bool => false ∈ s) h
@@ -140,9 +157,12 @@ def requirementsTwo : Set (Set (Bool × Bool)) :=
 
 /-- The same holds with readings ordered by reverse inclusion. -/
 @[tmio T, powerlib_foundation] theorem image_not_lowerAdjoint_reverse :
-    ¬ ∃ u : (Set Bool)ᵒᵈ → (Set (Bool × Bool))ᵒᵈ,
-      GaloisConnection (fun P : (Set (Bool × Bool))ᵒᵈ => toDual (Prod.fst '' ofDual P)) u := by
-  rintro ⟨u, gc⟩
+    connection% (¬ ∃ u : sInfHom (Set Bool)ᵒᵈ (Set (Bool × Bool))ᵒᵈ,
+      ⇑(generate u) = (fun P : (Set (Bool × Bool))ᵒᵈ => toDual (Prod.fst '' ofDual P))) := by
+  rintro ⟨u, h⟩
+  have gc : GaloisConnection (fun P : (Set (Bool × Bool))ᵒᵈ => toDual (Prod.fst '' ofDual P)) u := by
+    rw [← h]
+    exact (generate u).gc
   have h := gc.l_sup (a₁ := toDual ({(false, false)} : Set (Bool × Bool)))
     (a₂ := toDual ({(false, true)} : Set (Bool × Bool)))
   have h' := congrArg (fun s => false ∈ ofDual s) h

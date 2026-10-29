@@ -293,7 +293,7 @@ def family : Family DqBranch Spectral.Requirement 2 2 :=
   Spectral.linearFamily DqBranch.plant (fun m => 0 < m.R / m.L) (fun m => m.R / m.L < 0)
 
 private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    family.den (.flow P) = {m | 0 < m.R / m.L} :=
+    connection% (family.den (.flow P) = {m | 0 < m.R / m.L}) := show family.den (.flow P) = {m | 0 < m.R / m.L} from
   Spectral.linear_den (U := fun m : DqBranch => m.R / m.L < 0)
     (fun m => m.isHurwitz_plant_iff.symm) hP
 

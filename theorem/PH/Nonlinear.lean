@@ -549,45 +549,49 @@ variable {F : Family X Q n m} {model : X → NonlinearModel n m}
 
 /-- A flow sentence holds for a member exactly when it holds for the zero-input field of its pH
 system at the origin. -/
-@[powerlib_foundation] theorem IsNonlinearPH.mem_den_flow (hF : F.IsNonlinearPH model)
+@[tmio TM, powerlib_foundation] theorem IsNonlinearPH.mem_den_flow (hF : F.IsNonlinearPH model)
     {P : Flow.Property} {x : X} :
-    x ∈ F.den (.flow P) ↔ P.holds (model x).zeroInputField 0 := by
-  rw [mem_den, hF x, Sentence.holds_flow, NonlinearModel.system_zeroInput]
+    connection% (x ∈ F.den (.flow P) ↔ P.holds (model x).zeroInputField 0) := by
+  change x ∈ F.den (.flow P) ↔ P.holds (model x).zeroInputField 0
+  rw [(connection_proof% mem_den), hF x, Sentence.holds_flow, NonlinearModel.system_zeroInput]
 
 /-- A lower bound on the Hamiltonian places a member in the passivity denotation. -/
 @[tmio TM, powerlib_foundation] theorem IsNonlinearPH.mem_den_passive (hF : F.IsNonlinearPH model) {x : X}
     (hH : BddBelow (range (model x).H)) : connection% (x ∈ F.den .passive) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den, hF x]
+  rw [(connection_proof% mem_den), hF x]
   exact (model x).holds_passive hH
 
 /-- An explicit lower bound `c ≤ H` places a member in the passivity denotation. -/
-@[powerlib_foundation] theorem IsNonlinearPH.mem_den_passive_of_lowerBound
+@[tmio TM, powerlib_foundation] theorem IsNonlinearPH.mem_den_passive_of_lowerBound
     (hF : F.IsNonlinearPH model) {x : X} (c : ℝ) (hc : ∀ z, c ≤ (model x).H z) :
-    x ∈ F.den .passive :=
+    connection% (x ∈ F.den .passive) := show x ∈ F.den .passive from
   hF.mem_den_passive ⟨c, by rintro _ ⟨z, rfl⟩; exact hc z⟩
 
 /-- A strict local minimum of the Hamiltonian at the origin places a member in Lyapunov
 stability. -/
-@[powerlib_foundation] theorem IsNonlinearPH.mem_den_lyapunovStable (hF : F.IsNonlinearPH model)
-    {x : X} (h : (model x).IsStrictLocalMin 0) : x ∈ F.den (.flow .lyapunovStable) :=
+@[tmio TM, powerlib_foundation] theorem IsNonlinearPH.mem_den_lyapunovStable (hF : F.IsNonlinearPH model)
+    {x : X} (h : (model x).IsStrictLocalMin 0) :
+    connection% (x ∈ F.den (.flow .lyapunovStable)) := show x ∈ F.den (.flow .lyapunovStable) from
   hF.mem_den_flow.mpr h.lyapunovStable
 
 /-- For pH systems centred at operating points, a flow sentence holds for a member exactly when
 it holds for the zero-input field of the uncentred system at the operating point. -/
-@[powerlib_foundation] theorem IsNonlinearPH.mem_den_flow_shift {base : X → NonlinearModel n m}
+@[tmio TM, powerlib_foundation] theorem IsNonlinearPH.mem_den_flow_shift {base : X → NonlinearModel n m}
     {point : X → EuclideanSpace ℝ (Fin n)}
     (hF : F.IsNonlinearPH fun x => (base x).shift (point x)) {P : Flow.Property} {x : X} :
-    x ∈ F.den (.flow P) ↔ P.holds (base x).zeroInputField (point x) := by
-  rw [mem_den, hF x]
+    connection% (x ∈ F.den (.flow P) ↔ P.holds (base x).zeroInputField (point x)) := by
+  change x ∈ F.den (.flow P) ↔ P.holds (base x).zeroInputField (point x)
+  rw [(connection_proof% mem_den), hF x]
   exact (base x).holds_flow_shift_iff P (point x)
 
 /-- A strict local minimum of the Hamiltonian at the operating point places a member of a centred
 pH family in Lyapunov stability. -/
-@[powerlib_foundation] theorem IsNonlinearPH.mem_den_lyapunovStable_shift
+@[tmio TM, powerlib_foundation] theorem IsNonlinearPH.mem_den_lyapunovStable_shift
     {base : X → NonlinearModel n m} {point : X → EuclideanSpace ℝ (Fin n)}
     (hF : F.IsNonlinearPH fun x => (base x).shift (point x)) {x : X}
-    (h : (base x).IsStrictLocalMin (point x)) : x ∈ F.den (.flow .lyapunovStable) :=
+    (h : (base x).IsStrictLocalMin (point x)) :
+    connection% (x ∈ F.den (.flow .lyapunovStable)) := show x ∈ F.den (.flow .lyapunovStable) from
   hF.mem_den_flow_shift.mpr h.lyapunovStable
 
 /-- A family read in another representation stays port-Hamiltonian. -/

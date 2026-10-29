@@ -612,7 +612,7 @@ translation is exact on the image of `toSwing`. -/
 /-- Every swing reading has positive inertia and a curved power-angle curve (`k₂ = b > 0`): it
 lies in the swing family's context `{inertia, curved}`. -/
 private theorem toSwing_mem_context (m : Model) :
-    m.toSwing ∈ TMIO.realize Swing.family.meets {.inertia, .curved} :=
+    connection% (m.toSwing ∈ TMIO.realize Swing.family.meets {.inertia, .curved}) := show m.toSwing ∈ TMIO.realize Swing.family.meets {.inertia, .curved} from
   (TMIO.mem_realize _ _ _).mpr fun q hq => by
     rcases hq with rfl | rfl
     · exact m.p.M_pos
@@ -624,7 +624,8 @@ context, and on every flow sentence the reading (`mem_den_flow_iff_swing`) and t
 correspondence (`realize_translate_flow_eq_preimage`) hold. -/
 private theorem exact_of_exactUnder {Δ : Set Swing.Requirement} {P : Flow.Property}
     (hΔ : Δ ⊆ {.inertia, .curved}) (h : Swing.family.ExactUnder Δ (.flow P)) :
-    family.Exact (.flow P) := by
+    connection% (family.Exact (.flow P)) := by
+  change family.Exact (.flow P)
   have hr := realize_translate_flow_eq_preimage
   unfold powerlib.TMIO.Statement at hr
   exact Spectral.exact_of_hub Model.toSwing
@@ -700,7 +701,7 @@ swing translations read through `toSwing` (`Spectral.sound_of_hub` from
   · exact Spectral.sound_of_hub Model.toSwing (fun m hm => (Set.ext_iff.mp (hr P) m).mp hm)
       (fun m _ => (mem_den_flow_iff_swing m P).mpr) (Family.chain_le_semantics_iff.mp hs (.flow P))
   · intro m hm
-    rw [TMIO.mem_realize] at hm
+    rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_passive_of_Pm_zero m (hm .noPower rfl)
   · exact fun m _ => (Family.mem_den _).mpr trivial
 
@@ -776,7 +777,7 @@ stable without meeting it, so that translation would be sound but not exact). -/
   have h := exact_lyapunovStable
   unfold powerlib.TMIO.Statement at h ⊢
   unfold Family.Exact at h
-  rw [← h, TMIO.mem_realize]
+  rw [← h, (connection_proof% TMIO.mem_realize)]
   simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
     forall_eq, Set.mem_ofPred_eq]
   rfl
@@ -831,7 +832,7 @@ solution segment from a fixed state the supplied energy falls below minus every 
 @[tmio TM, powerlib_domain] theorem not_mem_den_passive (m : Model) (hPm : m.p.Pm ≠ 0) :
     connection% (m ∉ family.den .passive) := by
   unfold powerlib.TMIO.Statement
-  rw [Family.mem_den]
+  rw [(connection_proof% Family.mem_den)]
   rintro ⟨V, hV0, hV⟩
   have hD := m.p.D_nonneg
   have hb := m.p.b_pos
@@ -895,7 +896,7 @@ mechanical power, `P_m = 0`. -/
 @[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   ext m
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   change (∀ q ∈ ({.noPower} : Set Requirement), Meets m q) ↔ _
   simp only [Set.mem_singleton_iff, forall_eq]
   constructor
@@ -1247,7 +1248,7 @@ input `(v_d, v_q, v_f, T_m^ext)` and solution segment,
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s p hp => ?_
-  rw [TMIO.mem_realize] at hp
+  rw [(connection_proof% TMIO.mem_realize)] at hp
   change ∀ q ∈ translate s, Meets p q at hp
   rcases s with P | _ | E
   · exact (hp .impossible trivial).elim
@@ -1262,7 +1263,7 @@ not depend on `δ` and `∇H(0) = 0`. -/
 @[tmio TM, powerlib_domain] theorem not_mem_den_locallyExponentiallyStable (p : SyncMachine7Params) :
     connection% (p ∉ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isNonlinearPH.mem_den_flow]
+  rw [(connection_proof% family_isNonlinearPH.mem_den_flow)]
   intro h
   change LocallyExponentiallyStable (syncMachine7 p).zeroInputField 0 at h
   have hv : (EuclideanSpace.single 6 1 : State 7) ≠ 0 := fun h0 => by

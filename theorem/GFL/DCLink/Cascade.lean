@@ -484,7 +484,7 @@ def linearizedFamily : Family CascadeParams Spectral.Requirement 3 1 :=
   Spectral.linearFamily_isLinear _ _ _
 
 private theorem linearizedDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    linearizedFamily.den (.flow P) = {p | p.LinStable} :=
+    connection% (linearizedFamily.den (.flow P) = {p | p.LinStable}) := show linearizedFamily.den (.flow P) = {p | p.LinStable} from
   Spectral.linear_den (U := CascadeParams.LinUnstable)
     (fun p => (CascadeParams.isHurwitz_iff_linStable p).symm) hP
 
@@ -609,7 +609,7 @@ rectifies (`I_dc0 > 0`). -/
     connection% (p ∈ family.den (.flow .locallyExponentiallyStable) ↔
       p ∈ {p : CascadeParams | (0 < p.pi.R + p.pi.Kp ∧ 0 < p.pi.Ki) ∧ 0 < p.Idc0}) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den_flow, Set.mem_ofPred_eq]
+  rw [(connection_proof% mem_den_flow), Set.mem_ofPred_eq]
   have hx : p.eqState ∈ CascadeParams.posV := by
     simpa [CascadeParams.posV, CascadeParams.eqState] using hV
   constructor
@@ -652,7 +652,7 @@ negative-inductance cascade is locally exponentially stable without `L > 0`. -/
   intro h
   have hmem := negativeInductance_mem_den_locallyExponentiallyStable
   unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
+  rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
   have hs : CascadeParams.Stable negativeInductance := hmem .stable rfl
   have := hs.1
   norm_num [negativeInductance] at this
@@ -1002,15 +1002,17 @@ point exactly when it is locally exponentially stable: `R + Kp > 0`, `Ki > 0`, `
     connection% (p ∈ family.den (.flow .locallyAsymptoticallyStable) ↔
       p ∈ {p : CascadeParams | (0 < p.pi.R + p.pi.Kp ∧ 0 < p.pi.Ki) ∧ 0 < p.Idc0}) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den_flow, Set.mem_ofPred_eq]
+  rw [(connection_proof% mem_den_flow), Set.mem_ofPred_eq]
   exact las_iff p hL hC hV
 
 private theorem realize_stable (P : Flow.Property)
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
-    TMIO.realize family.meets (family.translate (.flow P)) =
-      {p : CascadeParams | CascadeParams.Stable p} := by
+    connection% (TMIO.realize family.meets (family.translate (.flow P)) =
+      {p : CascadeParams | CascadeParams.Stable p}) := by
+  change TMIO.realize family.meets (family.translate (.flow P)) =
+        {p : CascadeParams | CascadeParams.Stable p}
   ext p
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rcases hP with rfl | rfl <;>
   · change (∀ q ∈ ({.stable} : Set Spectral.Requirement), Spectral.Meets _ _ p q) ↔ _
     simp
@@ -1025,7 +1027,7 @@ translation (`stable`) is the local asymptotic denotation cut by the physical ra
   rw [realize_stable _ (Or.inr rfl)]
   ext p
   simp only [Set.mem_ofPred_eq, Set.mem_inter_iff]
-  rw [mem_den_flow]
+  rw [(connection_proof% mem_den_flow)]
   constructor
   · rintro ⟨hL, hC, hV, hR, hKi, hI⟩
     exact ⟨(las_iff p hL hC hV).mpr ⟨⟨hR, hKi⟩, hI⟩, hL, hC, hV⟩
@@ -1050,7 +1052,7 @@ voltage). -/
 @[tmio TM, powerlib_domain] theorem idle_not_mem_den_locallyAsymptoticallyStable :
     connection% (idle ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den_flow]
+  rw [(connection_proof% mem_den_flow)]
   exact idle.not_las_idc_zero (by norm_num [idle]) (by norm_num [idle])
     (by norm_num [idle, CascadeParams.Idc0])
 
@@ -1739,7 +1741,7 @@ stable on a rectifying DC node but unstable on an idle one when `R ≠ 0`. -/
         (p.pi.R + p.pi.Kp = 0 ∧ (0 < p.Idc0 ∨ (p.pi.R = 0 ∧ p.Idc0 = 0))))) ∨
         (p.pi.Ki = 0 ∧ p.pi.R * p.Id0 = 0 ∧ 0 < p.pi.R + p.pi.Kp ∧ 0 ≤ p.Idc0)}) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den_flow, Set.mem_ofPred_eq]
+  rw [(connection_proof% mem_den_flow), Set.mem_ofPred_eq]
   exact ls_iff p hL hC hV
 
 end powerlib.GFL.DCLink

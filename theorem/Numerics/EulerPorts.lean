@@ -293,7 +293,7 @@ variable {X Y Q : Type}
     connection% ((zeroInputFamily F sys).den (.flow P) = F.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   ext x
-  rw [(zeroInputFamily_isAutonomous F sys).mem_den_flow, Family.mem_den, hF x]
+  rw [(zeroInputFamily_isAutonomous F sys).mem_den_flow, (connection_proof% Family.mem_den), hF x]
   rfl
 
 /-- The flow denotations of the Euler implementations of a family of port systems are those of
@@ -305,7 +305,7 @@ the autonomous Euler implementations of its zero-input family. -/
         (.flow P)) := by
   unfold powerlib.TMIO.Statement
   ext y
-  rw [(eulerFamily_isAutonomousMap _ _ design step).mem_den_flow, Family.mem_den]
+  rw [(eulerFamily_isAutonomousMap _ _ design step).mem_den_flow, (connection_proof% Family.mem_den)]
   rfl
 
 variable {F : Family X Q n p} {sys : X → Port.System n p} {design : Y → X} {step : Y → ℝ}
@@ -368,7 +368,7 @@ not passive (`not_passive_eulerSystem`). -/
     {x₀ : ℝⁿ} {v : Fin p → ℝ} (hv : ∀ u, (sys (design y)).output x₀ u = v) (hv0 : v ≠ 0) :
     connection% (y ∉ (eulerPortFamily F sys design step).den .passive) := by
   unfold powerlib.TMIO.Statement
-  rw [Family.mem_den]
+  rw [(connection_proof% Family.mem_den)]
   exact not_passive_eulerSystem _ hh hv hv0
 
 /-- **The passivity realization of explicit Euler is not sound, at any step.** An Euler
@@ -397,12 +397,12 @@ refutes realization soundness of passivity (`not_passive_eulerSystem_integrator`
   refine Implementation.not_realizationSoundUnder_of_design (I := eulerPorts F sys design step)
     (y := y) rfl ?_ ?_ ?_
   · change design y ∈ F.den .passive
-    rw [Family.mem_den, hF, hx]
+    rw [(connection_proof% Family.mem_den), hF, hx]
     exact ⟨_, integrator_passiveWith⟩
   · rw [TMIO.realize_empty]
     exact Set.mem_univ _
   · change y ∉ (eulerPortFamily F sys design step).den .passive
-    rw [Family.mem_den]
+    rw [(connection_proof% Family.mem_den)]
     change ¬ (eulerSystem (sys (design y)) (step y)).Passive
     rw [hx]
     exact not_passive_eulerSystem_integrator hy
@@ -447,7 +447,7 @@ matrix `I + h A`. -/
       {y | LTI.SchurStable (forwardEulerMatrix (step y) (plant (design y)).A)}) := by
   unfold powerlib.TMIO.Statement
   ext y
-  rw [Family.mem_den, Set.mem_ofPred_eq]
+  rw [(connection_proof% Family.mem_den), Set.mem_ofPred_eq]
   change P.holdsMap (step y) (eulerSystem (plant (design y)).system (step y)).zeroInput 0 ↔ _
   rw [eulerSystem_zeroInput, Linear.Plant.system_zeroInput, eulerMap_linear]
   exact Map.holdsMap_op_iff_schurStable hP _

@@ -119,7 +119,7 @@ def family : Family (PortHamiltonian n p) Requirement n p :=
     connection% (∀ P, (family (n := n) (p := p)).chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s h hh => ?_
-  rw [TMIO.mem_realize] at hh
+  rw [(connection_proof% TMIO.mem_realize)] at hh
   change ∀ q ∈ translate s, Meets h q at hh
   rcases s with P | _ | E
   · cases P

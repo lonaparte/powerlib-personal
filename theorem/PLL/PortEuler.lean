@@ -125,7 +125,7 @@ vanishes and the zero storage proves passivity. -/
     intro h0
     exact hV (by simpa using congrFun h0 0)
   · intro hV
-    rw [Family.mem_den]
+    rw [(connection_proof% Family.mem_den)]
     change (Numerics.eulerSystem (m.toPH.shift m.point).system h).Passive
     refine ⟨fun _ => 0, fun _ => le_rfl, fun x u => ?_⟩
     change (0 : ℝ) - 0 ≤ h * (u ⬝ᵥ (m.toPH.shift m.point).output x)

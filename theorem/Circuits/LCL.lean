@@ -406,7 +406,7 @@ conservation of that energy, and a right-half-plane pole proves instability. -/
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s m hm => ?_
-  rw [mem_realize] at hm
+  rw [(connection_proof% mem_realize)] at hm
   change ∀ q ∈ translate s, Meets m q at hm
   rcases s with P | _ | E
   · cases P
@@ -507,7 +507,7 @@ to its start while the ports deliver the net energy `-R C² π`. -/
     connection% (family.Exact .passive) := by
   unfold powerlib.TMIO.Statement
   ext m
-  rw [Family.mem_den, mem_realize]
+  rw [(connection_proof% Family.mem_den), (connection_proof% mem_realize)]
   change (∀ q ∈ translate .passive, Meets m q) ↔ m.plant.system.Passive
   simp only [translate, Set.mem_singleton_iff, forall_eq, Meets]
   refine ⟨fun hp => ⟨_, (kyp m hp).passiveWith⟩, fun h => ?_⟩
@@ -649,7 +649,7 @@ circuit is pole-stable, hence Lyapunov stable, without being passive. -/
   have hmem : negativeCircuit ∈ family.den (.flow .lyapunovStable) :=
     family_isLinear.mem_den_flow.mpr
       (Linear.lyapunovStable_of_isHurwitz 0 ((isHurwitz_iff_stable _).mpr hs))
-  rw [← h, mem_realize] at hmem
+  rw [← h, (connection_proof% mem_realize)] at hmem
   have hp : negativeCircuit.Passive := hmem .passive rfl
   have := hp.1
   norm_num [negativeCircuit] at this
@@ -665,7 +665,7 @@ which the translation is exact (`exactUnder_conservative`). -/
     family_isLinear.mem_den_conservative (P := balancedEnergy)
       (by ext i j; fin_cases i <;> fin_cases j <;> rfl) balancedEnergy_pos
       balancedEnergy_conserved
-  rw [← h, mem_realize] at hmem
+  rw [← h, (connection_proof% mem_realize)] at hmem
   have hl := (hmem .lossless rfl).1
   norm_num [balancedCircuit] at hl
 
@@ -697,7 +697,7 @@ This is a proved failure of exactness, not an unfinished equivalence. -/
       jordanCircuit, RL.toStateSpace_decay, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
   have hmem : jordanCircuit ∈ family.den (.flow .unstable) :=
     family_isLinear.mem_den_flow.mpr (Linear.unstable_of_zero_jordan_chain hv hAv hAw)
-  rw [← hexact, mem_realize] at hmem
+  rw [← hexact, (connection_proof% mem_realize)] at hmem
   obtain ⟨s, hs, hre⟩ := hmem .rightHalfPlanePole rfl
   rw [jordanCircuit_frequency] at hs
   have hz : s = 0 := by

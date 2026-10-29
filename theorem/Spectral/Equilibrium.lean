@@ -74,7 +74,7 @@ the translation of `P` is exact within `Δ`. -/
     · exact absurd hx (hdeg x hΔ heq hG)⟩
 
 /-- Exactness from equilibria, without a context. -/
-@[powerlib_foundation] theorem exact_of_equilibrium
+@[tmio TM, powerlib_foundation] theorem exact_of_equilibrium
     (hden : ∀ x (P : Flow.Property), x ∈ F.den (.flow P) ↔ P.holds (f x) (pt x))
     {P : Flow.Property}
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable ∨
@@ -84,7 +84,7 @@ the translation of `P` is exact within `Δ`. -/
     (hC : ∀ x, ContDiff ℝ 1 (f x))
     (hdeg : ∀ x, f x (pt x) = 0 → ¬ G x → x ∉ F.den (.flow P))
     (hcomplete : ∀ x, f x (pt x) = 0 → G x → x ∈ realize F.meets (F.translate (.flow P))) :
-    F.Exact (.flow P) :=
+    connection% (F.Exact (.flow P)) := show F.Exact (.flow P) from
   exact_of_exactUnder_empty (exactUnder_of_equilibrium hden hP ∅ G (fun _ _ hx => hsound hx)
     (fun x _ => hC x) (fun x _ => hdeg x) (fun x _ => hcomplete x))
 

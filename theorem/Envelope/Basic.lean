@@ -146,10 +146,10 @@ supremum of a set of horizons is the intersection of the denotations, for every 
   exact holds_safe_sSup _ H ε
 
 /-- Safety over a longer horizon is safety over a shorter one. -/
-@[powerlib_foundation] theorem den_safe_antitone {X Q : Type*} (F : Family X Q n p) (ε : ℝ≥0∞)
+@[tmio TM, powerlib_foundation] theorem den_safe_antitone {X Q : Type*} (F : Family X Q n p) (ε : ℝ≥0∞)
     {T T' : ℝ≥0∞} (h : T ≤ T') :
-    F.den (.envelope (.safe T' ε)) ⊆ F.den (.envelope (.safe T ε)) := fun x hx => by
-  rw [Family.mem_den, Sentence.holds_safe_iff_exceedance] at hx ⊢
+    connection% (F.den (.envelope (.safe T' ε)) ⊆ F.den (.envelope (.safe T ε))) := show F.den (.envelope (.safe T' ε)) ⊆ F.den (.envelope (.safe T ε)) from fun x hx => by
+  rw [(connection_proof% Family.mem_den), Sentence.holds_safe_iff_exceedance] at hx ⊢
   exact (exceedance_mono _ h).trans hx
 
 /-- The mean-square sentence at the supremum of a set of horizons is the conjunction of the
@@ -181,9 +181,10 @@ the levels. -/
   simp only [Sentence.holds_safe_iff_exceedance, le_iInf_iff]
 
 /-- The denotation of safety at the infimum of levels is the intersection of the denotations. -/
-@[powerlib_foundation] theorem den_safe_iInf {X Q : Type*} {ι : Sort*} (F : Family X Q n p)
+@[tmio TM, powerlib_foundation] theorem den_safe_iInf {X Q : Type*} {ι : Sort*} (F : Family X Q n p)
     (T : ℝ≥0∞) (ε : ι → ℝ≥0∞) :
-    F.den (.envelope (.safe T (⨅ i, ε i))) = ⋂ i, F.den (.envelope (.safe T (ε i))) := by
+    connection% (F.den (.envelope (.safe T (⨅ i, ε i))) = ⋂ i, F.den (.envelope (.safe T (ε i)))) := by
+  change F.den (.envelope (.safe T (⨅ i, ε i))) = ⋂ i, F.den (.envelope (.safe T (ε i)))
   ext x
   simp only [Family.mem_den, mem_iInter]
   exact holds_safe_iInf _ T ε
@@ -226,22 +227,22 @@ def certifiedHorizon {X Q : Type*} (F : Family X Q n p) (ε : ℝ≥0∞) :
     exact ⟨fun h D hD => (le_sSup_certified_iff F ε (ofDual D) T).mpr (h (ofDual D) hD),
       fun h D hD => (le_sSup_certified_iff F ε D T).mp (h hD)⟩
 
-@[powerlib_foundation] theorem le_certifiedHorizon_iff {X Q : Type*} (F : Family X Q n p)
+@[tmio TM, powerlib_foundation] theorem le_certifiedHorizon_iff {X Q : Type*} (F : Family X Q n p)
     (ε : ℝ≥0∞) (D : (Set X)ᵒᵈ) (T : ℝ≥0∞) :
-    T ≤ certifiedHorizon F ε D ↔ ofDual D ⊆ F.den (.envelope (.safe T ε)) :=
+    connection% (T ≤ certifiedHorizon F ε D ↔ ofDual D ⊆ F.den (.envelope (.safe T ε))) := show T ≤ certifiedHorizon F ε D ↔ ofDual D ⊆ F.den (.envelope (.safe T ε)) from
   le_sSup_certified_iff F ε (ofDual D) T
 
 /-- The certified horizon is the upper adjoint of the safety denotation along the horizon. -/
-@[powerlib_foundation] theorem gc_certifiedHorizon {X Q : Type*} (F : Family X Q n p)
+@[tmio TM, powerlib_foundation] theorem gc_certifiedHorizon {X Q : Type*} (F : Family X Q n p)
     (ε : ℝ≥0∞) :
-    GaloisConnection (fun T => toDual (F.den (.envelope (.safe T ε)))) (certifiedHorizon F ε) :=
+    connection% (GaloisConnection (fun T => toDual (F.den (.envelope (.safe T ε)))) (certifiedHorizon F ε)) := show GaloisConnection (fun T => toDual (F.den (.envelope (.safe T ε)))) (certifiedHorizon F ε) from
   fun T D => by
-    rw [toDual_le, le_certifiedHorizon_iff]
+    rw [toDual_le, (connection_proof% le_certifiedHorizon_iff)]
 
 /-- The adjoint generated from the certified horizon is the safety denotation. -/
-@[powerlib_foundation] theorem generate_certifiedHorizon {X Q : Type*} (F : Family X Q n p)
+@[tmio TM, powerlib_foundation] theorem generate_certifiedHorizon {X Q : Type*} (F : Family X Q n p)
     (ε : ℝ≥0∞) :
-    ⇑(generate (certifiedHorizon F ε)) = fun T => toDual (F.den (.envelope (.safe T ε))) :=
+    connection% (⇑(generate (certifiedHorizon F ε)) = fun T => toDual (F.den (.envelope (.safe T ε)))) := show ⇑(generate (certifiedHorizon F ε)) = fun T => toDual (F.den (.envelope (.safe T ε))) from
   (generate_unique _ (gc_certifiedHorizon F ε)).symm
 
 /-- The worst exceedance: a set of models is sent to the largest exceedance probability over the
@@ -260,20 +261,22 @@ def worstExceedance {X Q : Type*} (F : Family X Q n p) (T : ℝ≥0∞) :
       exact iSup₂_le_iff.mp (le_toDual.mp (h hD)) x hx
 
 /-- The worst exceedance is the upper adjoint of the safety denotation along the level. -/
-@[powerlib_foundation] theorem gc_worstExceedance {X Q : Type*} (F : Family X Q n p)
+@[tmio TM, powerlib_foundation] theorem gc_worstExceedance {X Q : Type*} (F : Family X Q n p)
     (T : ℝ≥0∞) :
-    GaloisConnection (fun ε : ℝ≥0∞ᵒᵈ => toDual (F.den (.envelope (.safe T (ofDual ε)))))
-      (worstExceedance F T) := fun ε D => by
+    connection% (GaloisConnection (fun ε : ℝ≥0∞ᵒᵈ => toDual (F.den (.envelope (.safe T (ofDual ε)))))
+      (worstExceedance F T)) := show GaloisConnection (fun ε : ℝ≥0∞ᵒᵈ => toDual (F.den (.envelope (.safe T (ofDual ε)))))
+      (worstExceedance F T) from fun ε D => by
   change toDual _ ≤ D ↔ ε ≤ toDual (⨆ x ∈ ofDual D, (F.system x).exceedance T)
   rw [toDual_le, le_toDual, iSup₂_le_iff]
   exact ⟨fun h x hx => (Sentence.holds_safe_iff_exceedance _ _ _).mp ((Family.mem_den _).mp (h hx)),
     fun h x hx => (Family.mem_den _).mpr ((Sentence.holds_safe_iff_exceedance _ _ _).mpr (h x hx))⟩
 
 /-- The adjoint generated from the worst exceedance is the safety denotation. -/
-@[powerlib_foundation] theorem generate_worstExceedance {X Q : Type*} (F : Family X Q n p)
+@[tmio TM, powerlib_foundation] theorem generate_worstExceedance {X Q : Type*} (F : Family X Q n p)
     (T : ℝ≥0∞) :
-    ⇑(generate (worstExceedance F T)) =
-      fun ε : ℝ≥0∞ᵒᵈ => toDual (F.den (.envelope (.safe T (ofDual ε)))) :=
+    connection% (⇑(generate (worstExceedance F T)) =
+      fun ε : ℝ≥0∞ᵒᵈ => toDual (F.den (.envelope (.safe T (ofDual ε))))) := show ⇑(generate (worstExceedance F T)) =
+      fun ε : ℝ≥0∞ᵒᵈ => toDual (F.den (.envelope (.safe T (ofDual ε)))) from
   (generate_unique _ (gc_worstExceedance F T)).symm
 
 /-! ## Safe sets -/

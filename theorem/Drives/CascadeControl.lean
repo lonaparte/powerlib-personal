@@ -232,7 +232,7 @@ comparison of the two semantics connections at the two members. -/
     connection% (m ∈ family.den s ↔
       CurrentControl.imc m.L m.R m.α ∈ CurrentControl.PIParams.family.den s) := by
   unfold powerlib.TMIO.Statement
-  rw [Family.mem_den, Family.mem_den, family_isLinear m, CurrentControl.PIParams.family_isLinear _]
+  rw [(connection_proof% Family.mem_den), (connection_proof% Family.mem_den), family_isLinear m, CurrentControl.PIParams.family_isLinear _]
   simp only [IMCLoop.plant, imcModel_eq _ _ _ hL]
 
 /-- Every translation of the IMC family is sound. -/

@@ -497,7 +497,9 @@ private theorem model_kappa_sign {m : Model} (hD0 : m.params.D0 ≠ 0)
 
 /-- Membership through the sound translation. -/
 private theorem mem_den_of_meets {m : Model} {s : Sentence}
-    (h : ∀ q ∈ translate s, Meets m q) : m ∈ family.den s := by
+    (h : ∀ q ∈ translate s, Meets m q) :
+    connection% (m ∈ family.den s) := by
+  change m ∈ family.den s
   have hs := chain_le_semantics
   unfold powerlib.TMIO.Statement at hs
   exact (Family.chain_le_semantics_iff.mp hs s) ((TMIO.mem_realize _ _ _).mpr h)
@@ -674,7 +676,7 @@ normal-form polynomial `hopfW` has derivative `−κ (φ² + (α/A) w²)² + O(s
     (hk : m.params.kp * m.params.ki < 0) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   exact las_of_hopf heq hD0 htr hdet hk
 
 /-- Rate-coupled GFL PLL on the boundary `tr J = 0` with gains of equal signs, `k_p k_i > 0`: a
@@ -685,7 +687,7 @@ subcritical Hopf point, unstable (Chetaev with the normal-form polynomial, `κ <
     (hk : 0 < m.params.kp * m.params.ki) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   exact unstable_of_hopf heq hD0 htr hdet hk
 
 /-- Rate-coupled GFL PLL with physical gains (`V, k_p, k_i, ω_s > 0`, `D₀ > 0`, `cos θ > 0`)
@@ -721,12 +723,12 @@ boundary angle: `tan θ < ω_s k_p / k_i` (`V, k_p, k_i, ω_s > 0`, `D₀ > 0`, 
       · have := mem_den_unstable_of_tan_eq p hD0 hV hkp hki hωs hcos heq hc.symm
         unfold powerlib.TMIO.Statement at this
         exact this
-    rw [family_isAutonomous.mem_den_flow] at h hu
+    rw [(connection_proof% family_isAutonomous.mem_den_flow)] at h hu
     exact hu h.1
   · intro h
     have := mem_den_locallyExponentiallyStable_of_tan_lt p hD0 hV hki hωs hcos heq h
     unfold powerlib.TMIO.Statement at this
-    rw [family_isAutonomous.mem_den_flow] at this ⊢
+    rw [(connection_proof% family_isAutonomous.mem_den_flow)] at this ⊢
     exact Flow.locallyExponentiallyStable_localAsymptoticStable this
 
 /-- **Complete membership of the local asymptotic sentence.** A rate-coupled PLL model is locally
@@ -748,7 +750,7 @@ non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear 
     mem_den_of_meets h
   constructor
   · intro hLAS
-    rw [family_isAutonomous.mem_den_flow] at hLAS
+    rw [(connection_proof% family_isAutonomous.mem_den_flow)] at hLAS
     change LocalAsymptoticStable m.field 0 at hLAS
     have hunst : Meets m .equilibrium → Meets m .jacobianUnstable → False := by
       intro he hu
@@ -758,7 +760,7 @@ non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear 
         rcases hq with rfl | rfl
         · exact he
         · exact hu)
-      rw [family_isAutonomous.mem_den_flow] at h
+      rw [(connection_proof% family_isAutonomous.mem_den_flow)] at h
       exact h hLAS.1
     have hf0 : m.field 0 = 0 := by
       by_contra h
@@ -790,7 +792,7 @@ non-equilibrium or `D₀ = 0` (frozen angle); `det J < 0` or `tr J > 0` (linear 
         rcases hq with rfl | rfl
         · exact he
         · exact ⟨htr, hdet⟩)
-    · rw [family_isAutonomous.mem_den_flow]
+    · rw [(connection_proof% family_isAutonomous.mem_den_flow)]
       exact las_of_hopf he.1 he.2 htr hdet hk
 
 /-! ### The local asymptotic translation is not exact -/
@@ -834,7 +836,7 @@ requirement. -/
   intro h
   have hmem := supercriticalPLL_mem_den_locallyAsymptoticallyStable
   unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
+  rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
   have hs : Meets supercriticalPLL .jacobianStable :=
     hmem .jacobianStable (by simp [family, translate])
   have := hs.1

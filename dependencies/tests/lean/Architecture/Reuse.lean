@@ -187,7 +187,7 @@ open powerlib LinearSystems
 @[powerlib_domain] theorem rl_resistance (m : Circuits.RL.Impedance) (h : 0 < m.resistance) :
     connection% (m ∈ Circuits.RL.family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [Circuits.RL.family_isLinear.mem_den_flow]
+  rw [(connection_proof% Circuits.RL.family_isLinear.mem_den_flow)]
   change Flow.GloballyExponentiallyStable (affineLinearVectorField m.plant.A 0) 0
   aesop
 
@@ -195,7 +195,7 @@ open powerlib LinearSystems
     (hd : m.Damped) :
     connection% (m ∈ Circuits.LCL.family.den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [Circuits.LCL.family_isLinear.mem_den_flow]
+  rw [(connection_proof% Circuits.LCL.family_isLinear.mem_den_flow)]
   change Flow.GloballyAsymptoticallyStable (affineLinearVectorField m.plant.A 0) 0
   aesop
 
@@ -204,7 +204,7 @@ open powerlib LinearSystems
     (h₂ : IsHurwitz ic.load.A) (h : ic.ImpedanceStable) :
     connection% (ic ∈ Circuits.Interconnection.family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [Circuits.Interconnection.family_isLinear.mem_den_flow]
+  rw [(connection_proof% Circuits.Interconnection.family_isLinear.mem_den_flow)]
   change Flow.GloballyExponentiallyStable (affineLinearVectorField ic.closedLoopA 0) 0
   aesop
 

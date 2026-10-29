@@ -537,7 +537,7 @@ sentence (in particular local exponential stability and instability at `s = 1`).
     connection% (m.flip ∈ family.den s ↔ m ∈ family.den s) := by
   unfold powerlib.TMIO.Statement
   rcases s with P | _ | E
-  · rw [family_isAutonomous.mem_den_flow, family_isAutonomous.mem_den_flow]
+  · rw [(connection_proof% family_isAutonomous.mem_den_flow), (connection_proof% family_isAutonomous.mem_den_flow)]
     exact flip_holds_iff hIq P
   · rw [family_isAutonomous.den_passive]
     simp
@@ -580,9 +580,12 @@ integrator and the reference of `x_p`. -/
 four-state requirements `B`: a model meets them exactly when it has `I_q* = 0`, `V_dc* = 1`,
 `K_i^pll x_p* = 0` and its four-state reading meets `B`. -/
 private theorem mem_realize_reading {m : Model} {B : Set FourState.Requirement} :
-    m ∈ TMIO.realize Meets ({.iqZero, .fourStatePoint} ∪ Requirement.fourState '' B) ↔
+    connection% (m ∈ TMIO.realize Meets ({.iqZero, .fourStatePoint} ∪ Requirement.fourState '' B) ↔
       m.params.Iq = 0 ∧ (m.point 2 = 1 ∧ m.params.Kip * m.point 1 = 0) ∧
-        m.toFourState ∈ TMIO.realize FourState.Meets B := by
+        m.toFourState ∈ TMIO.realize FourState.Meets B) := by
+  change m ∈ TMIO.realize Meets ({.iqZero, .fourStatePoint} ∪ Requirement.fourState '' B) ↔
+        m.params.Iq = 0 ∧ (m.point 2 = 1 ∧ m.params.Kip * m.point 1 = 0) ∧
+          m.toFourState ∈ TMIO.realize FourState.Meets B
   simp only [TMIO.mem_realize]
   constructor
   · intro h
@@ -596,8 +599,9 @@ the four-state family: its models read as four-state models meeting them
 (`mem_den_iff_fourState`, `Spectral.realize_subset_den_of_hub`). -/
 private theorem realize_subset_den_of_fourState {s : Sentence} {B : Set FourState.Requirement}
     (hB : TMIO.realize FourState.Meets B ⊆ FourState.family.den s) :
-    TMIO.realize Meets ({.iqZero, .fourStatePoint} ∪ Requirement.fourState '' B) ⊆
-      family.den s :=
+    connection% (TMIO.realize Meets ({.iqZero, .fourStatePoint} ∪ Requirement.fourState '' B) ⊆
+      family.den s) := show TMIO.realize Meets ({.iqZero, .fourStatePoint} ∪ Requirement.fourState '' B) ⊆
+      family.den s from
   Spectral.realize_subset_den_of_hub (F := family) (G := FourState.family) Model.toFourState
     (fun _ hm => (mem_realize_reading.mp hm).2.2) (fun m hm => by
       obtain ⟨hIq, ⟨hV, hx⟩, -⟩ := mem_realize_reading.mp hm
@@ -655,7 +659,7 @@ linearization). -/
     intro hV1 hx
     have h := mem_den_iff_fourState m hIq hV1 hx (.flow .locallyExponentiallyStable)
     unfold powerlib.TMIO.Statement at h
-    rw [h, ← hex, TMIO.mem_realize]
+    rw [h, ← hex, (connection_proof% TMIO.mem_realize)]
     constructor
     · intro hr
       exact ⟨hr .equilibrium (by simp [FourState.family, FourState.translate]),
@@ -684,13 +688,13 @@ requirements exactly when it is locally exponentially stable
       (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.exactUnder_iff_forall.mpr fun m hm => ?_
-  rw [TMIO.mem_realize] at hm
+  rw [(connection_proof% TMIO.mem_realize)] at hm
   have hIq : m.params.Iq = 0 := hm .iqZero (by simp)
   have h := mem_den_locallyExponentiallyStable_iff m hIq (hm .vdcNonzero (by simp))
   unfold powerlib.TMIO.Statement at h
   change m ∈ TMIO.realize Meets ({.iqZero, .fourStatePoint} ∪
     Requirement.fourState '' {.equilibrium, .routh}) ↔ _
-  rw [h, mem_realize_reading, TMIO.mem_realize]
+  rw [h, (connection_proof% mem_realize_reading), (connection_proof% TMIO.mem_realize)]
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq]
   exact ⟨fun ⟨_, hp, he⟩ => ⟨hp.1, hp.2, he⟩, fun ⟨hV1, hx, he⟩ => ⟨hIq, ⟨hV1, hx⟩, he⟩⟩
 
@@ -701,11 +705,12 @@ private theorem not_exactUnder_of_fourState {m : Model} {s : Sentence}
     {r : FourState.Requirement} (hIq : m.params.Iq = 0) (hV : m.point 2 = 1)
     (hx : m.params.Kip * m.point 1 = 0) (hden : m.toFourState ∈ FourState.family.den s)
     (hq : Requirement.fourState r ∈ translate s) (hn : ¬ FourState.Meets m.toFourState r) :
-    ¬ family.ExactUnder {.iqZero, .vdcNonzero} s := by
+    connection% (¬ family.ExactUnder {.iqZero, .vdcNonzero} s) := by
+  change ¬ family.ExactUnder {.iqZero, .vdcNonzero} s
   have h := mem_den_iff_fourState m hIq hV hx s
   unfold powerlib.TMIO.Statement at h
   refine Spectral.not_exactUnder_of_witness (q := Requirement.fourState r) ?_ (h.mpr hden) hq hn
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
   · exact hIq
   · show m.point 2 ≠ 0

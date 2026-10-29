@@ -216,9 +216,9 @@ without requirement. -/
     · cases P <;> rfl
     · rfl
     · rfl
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_flow_iff.mpr (les_of (hm .balanced (by simp)) (hm .stableSlope (by simp)))
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_flow_iff.mpr (unstable_of (hm .balanced (by simp)) (hm .unstableSlope (by simp)))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
@@ -238,7 +238,7 @@ without requirement. -/
     (fun m _ hm => ?_) (fun m _ => NormalForm.lift_contDiff m.c.rhs_contDiff)
     (fun m _ => (NormalForm.hasFDerivAt_lift (by simpa using m.c.hasDerivAt_rhs m.δ)).fderiv)
     fun m _ heq hH => ?_)
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_flow_iff.mpr (les_of (hm .balanced (by simp [family, translate]))
       (hm .stableSlope (by simp [family, translate])))
   rw [field, NormalForm.lift_eq_zero_iff, rhs] at heq
@@ -250,7 +250,7 @@ without requirement. -/
   have hb : m.c.Pmax * Real.sin m.δ = m.c.Pstar := by
     have := (mul_eq_zero.mp heq).resolve_left hK
     linarith
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
   · exact hb
   · exact hH
@@ -456,7 +456,7 @@ not decide the fold, the model's structure does (`Spectral.exact_of_equilibrium`
   · have hK : m.c.Kp ≠ 0 := fun hK => by
       rw [hK, zero_mul, zero_mul] at hs
       exact lt_irrefl 0 hs
-    rw [TMIO.mem_realize]
+    rw [(connection_proof% TMIO.mem_realize)]
     rintro q (rfl | rfl)
     · exact (m.c.field_eq_zero_iff hK m.δ).mp heq
     · exact hs
@@ -495,7 +495,7 @@ Chetaev's theorem (`Dynamics.unstable_of_chetaev`). -/
   · rintro (⟨hb, hs⟩ | hK | ⟨hP, hP'⟩)
     · exact mem_den_flow_iff.mpr (les_of (m := m) hb hs).lyapunovStable
     all_goals
-      rw [family_isAutonomous.mem_den_flow]
+      rw [(connection_proof% family_isAutonomous.mem_den_flow)]
       refine Dynamics.lyapunovStable_of_inner_nonpos one_pos
         (ContinuousLinearMap.id ℝ (State 1)) Function.injective_id fun z => ?_
       simp [Model.field, field, rhs, NormalForm.lift, *]

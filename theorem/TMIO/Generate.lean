@@ -1,5 +1,4 @@
-import Mathlib.Order.Closure
-import Mathlib.Order.Hom.CompleteLattice
+import theorem.TMIO.ClaimSyntax
 import theorem.Attributes
 
 /-! # TMIO generation theorem (v0.3 §3)
@@ -35,82 +34,79 @@ namespace powerlib.TMIO
 variable {A B C : Type*} [CompleteLattice A] [CompleteLattice B] [CompleteLattice C]
 
 /-- An arbitrary-infimum preserving map is monotone. -/
-@[tmio T, powerlib_foundation] theorem sInfHom_monotone (u : sInfHom B A) : Monotone u :=
+@[tmio T, powerlib_foundation] theorem sInfHom_monotone (u : sInfHom B A) :
+    connection% (Monotone u) := show Monotone u from
   OrderHomClass.mono u
 
 @[tmio T, powerlib_foundation] theorem le_map_sInf_setOf (u : sInfHom B A) (a : A) :
-    a ≤ u (sInf {b | a ≤ u b}) := by
+    connection% (a ≤ u (sInf {b | a ≤ u b})) := by
+  change a ≤ u (sInf {b | a ≤ u b})
   rw [map_sInf]
   exact le_sInf (by rintro _ ⟨b, hb, rfl⟩; exact hb)
 
-/-- The generated lower adjoint of `u`: `a ↦ ⨅ {b | a ≤ u b}`. -/
-def generate (u : sInfHom B A) : LowerAdjoint u where
-  toFun a := sInf {b | a ≤ u b}
-  gc' a _ := ⟨fun h => (le_map_sInf_setOf u a).trans (sInfHom_monotone u h),
-    fun h => sInf_le h⟩
-
 @[tmio T, simp, powerlib_foundation] theorem generate_apply (u : sInfHom B A) (a : A) :
-    generate u a = sInf {b | a ≤ u b} := rfl
+    connection% (generate u a = sInf {b | a ≤ u b}) := show generate u a = sInf {b | a ≤ u b} from rfl
 
 /-- Generation theorem: `generate u ⊣ u`. -/
-@[tmio T, powerlib_foundation] theorem gc_generate (u : sInfHom B A) : GaloisConnection (generate u) u :=
+@[tmio T, powerlib_foundation] theorem gc_generate (u : sInfHom B A) :
+    connection% (GaloisConnection (generate u) u) := show GaloisConnection (generate u) u from
   (generate u).gc
 
 /-- Uniqueness: every lower adjoint of `u` is the generated one. -/
 @[tmio T, powerlib_foundation] theorem generate_unique (u : sInfHom B A) {l : A → B}
-    (h : GaloisConnection l u) : l = ⇑(generate u) :=
+    (h : GaloisConnection l u) :
+    connection% (l = ⇑(generate u)) := show l = ⇑(generate u) from
   funext fun _ => h.l_unique (gc_generate u) fun _ => rfl
 
 /-- Every bundled lower adjoint of `u` equals the generated one. -/
 @[tmio T, powerlib_foundation] theorem lowerAdjoint_eq_generate (u : sInfHom B A) (l : LowerAdjoint u) :
-    l = generate u :=
+    connection% (l = generate u) := show l = generate u from
   LowerAdjoint.ext _ _ (generate_unique u l.gc)
 
 /-- Canonical optimality: `generate u a` is the least `b` with `a ≤ u b`. -/
 @[tmio T, powerlib_foundation] theorem generate_isLeast (u : sInfHom B A) (a : A) :
-    IsLeast {b | a ≤ u b} (generate u a) :=
+    connection% (a ≤ u (generate u a) ∧ ∀ b, a ≤ u b → generate u a ≤ b) := show IsLeast {b | a ≤ u b} (generate u a) from
   (gc_generate u).isLeast_l
 
 /-- The generated map preserves arbitrary suprema. -/
 @[tmio T, powerlib_foundation] theorem generate_sSup (u : sInfHom B A) (s : Set A) :
-    generate u (sSup s) = sSup (generate u '' s) :=
+    connection% (generate u (sSup s) = sSup (generate u '' s)) := show generate u (sSup s) = sSup (generate u '' s) from
   (gc_generate u).l_sSup_eq_sSup_image
 
 @[tmio T, powerlib_foundation] theorem generate_sup (u : sInfHom B A) (a₁ a₂ : A) :
-    generate u (a₁ ⊔ a₂) = generate u a₁ ⊔ generate u a₂ :=
+    connection% (generate u (a₁ ⊔ a₂) = generate u a₁ ⊔ generate u a₂) := show generate u (a₁ ⊔ a₂) = generate u a₁ ⊔ generate u a₂ from
   (gc_generate u).l_sup
 
-@[tmio T, powerlib_foundation] theorem generate_monotone (u : sInfHom B A) : Monotone (generate u) :=
+@[tmio T, powerlib_foundation] theorem generate_monotone (u : sInfHom B A) :
+    connection% (Monotone (generate u)) := show Monotone (generate u) from
   (gc_generate u).monotone_l
 
 /-- Whole equals parts: the generated adjoint of a composite is the composite of the generated
 adjoints, in reverse order. -/
 @[tmio T, powerlib_foundation] theorem generate_comp (u : sInfHom B A) (v : sInfHom C B) :
-    ⇑(generate (u.comp v)) = generate v ∘ generate u :=
+    connection% (⇑(generate (u.comp v)) = generate v ∘ generate u) := show ⇑(generate (u.comp v)) = generate v ∘ generate u from
   (generate_unique (u.comp v) ((gc_generate u).compose (gc_generate v))).symm
 
-/-- The closure operator `u ∘ generate u` on the source side (Mathlib's
-`LowerAdjoint.closureOperator`). -/
-def closure (u : sInfHom B A) : ClosureOperator A := (generate u).closureOperator
-
 @[tmio T, simp, powerlib_foundation] theorem closure_apply (u : sInfHom B A) (a : A) :
-    closure u a = u (generate u a) := rfl
+    connection% (closure u a = u (generate u a)) := show closure u a = u (generate u a) from rfl
 
 /-- The interior operator `generate u ∘ u` on the target side is deflationary. -/
-@[tmio T, powerlib_foundation] theorem generate_u_le (u : sInfHom B A) (b : B) : generate u (u b) ≤ b :=
+@[tmio T, powerlib_foundation] theorem generate_u_le (u : sInfHom B A) (b : B) :
+    connection% (generate u (u b) ≤ b) := show generate u (u b) ≤ b from
   (gc_generate u).l_u_le b
 
 /-- The interior operator `generate u ∘ u` is idempotent. -/
 @[tmio T, powerlib_foundation] theorem generate_u_idempotent (u : sInfHom B A) (b : B) :
-    generate u (u (generate u (u b))) = generate u (u b) := by
-  rw [(gc_generate u).u_l_u_eq_u]
+    connection% (generate u (u (generate u (u b))) = generate u (u b)) := by
+  change generate u (u (generate u (u b))) = generate u (u b)
+  rw [(connection_proof% (gc_generate u).u_l_u_eq_u)]
 
 /-- Fixed-point correspondence: closed source elements and interior-stable target elements are
 order isomorphic through `generate u` and `u`. -/
 def fixedPointsIso (u : sInfHom B A) :
     {a : A // u (generate u a) = a} ≃o {b : B // generate u (u b) = b} where
-  toFun a := ⟨generate u a, by rw [(gc_generate u).l_u_l_eq_l]⟩
-  invFun b := ⟨u b, by rw [(gc_generate u).u_l_u_eq_u]⟩
+  toFun a := ⟨generate u a, by rw [(connection_proof% (gc_generate u).l_u_l_eq_l)]⟩
+  invFun b := ⟨u b, by rw [(connection_proof% (gc_generate u).u_l_u_eq_u)]⟩
   left_inv a := Subtype.ext a.2
   right_inv b := Subtype.ext b.2
   map_rel_iff' {a a'} := by

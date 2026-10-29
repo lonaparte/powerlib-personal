@@ -184,7 +184,7 @@ with the switching period, read through its design at every sentence (`LTI.sampl
     rw [hs]
     rfl
   change y ∈ switchedFamily.den s ↔ y.average ∈ LTI.continuousFamily.den s
-  rw [← h, Family.mem_den, Family.mem_den, system_eq_sampled hc]
+  rw [← h, (connection_proof% Family.mem_den), (connection_proof% Family.mem_den), system_eq_sampled hc]
 
 /-- Square matrices of size at most one commute. -/
 private theorem commute_of_le_one (hn : n ≤ 1) (A B : Matrix (Fin n) (Fin n) ℝ) :
@@ -207,7 +207,7 @@ sentence exactly when its averaged model does (`switching_realizationExactUnder_
       TMIO.realize (switching (n := n)).impl.meets ∅ := by
     rw [TMIO.realize_empty, Set.eq_univ_iff_forall]
     intro y
-    rw [TMIO.mem_realize]
+    rw [(connection_proof% TMIO.mem_realize)]
     rintro q rfl
     exact commute_of_le_one hn y.A₁ y.A₂
   rwa [← hΔ]

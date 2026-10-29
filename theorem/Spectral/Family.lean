@@ -76,19 +76,23 @@ inductive Requirement
 variable {X : Type*} {n p : ℕ}
 
 /-- Satisfaction of the two requirements through the static conditions `S` and `U`. -/
-def Meets (S U : X → Prop) (x : X) : Requirement → Prop
+@[simp] def Meets (S U : X → Prop) (x : X) : Requirement → Prop
   | .stable => S x
   | .unstable => U x
 
 @[tmio M, simp, powerlib_foundation] theorem meets_stable {S U : X → Prop} {x : X} :
-    Meets S U x .stable ↔ S x := Iff.rfl
+    connection% (x ∈ realize (Meets S U) {.stable} ↔ S x) := by
+  unfold TMIO.Statement
+  simp only [mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
 
-@[simp, powerlib_foundation] theorem meets_unstable {S U : X → Prop} {x : X} :
-    Meets S U x .unstable ↔ U x := Iff.rfl
+@[tmio M, simp, powerlib_foundation] theorem meets_unstable {S U : X → Prop} {x : X} :
+    connection% (x ∈ realize (Meets S U) {.unstable} ↔ U x) := by
+  unfold TMIO.Statement
+  simp only [mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
 
 /-- No member meets both requirements when they are mutually exclusive. -/
-@[powerlib_foundation] theorem realize_univ_of {S U : X → Prop} (h : ∀ x, S x → U x → False) :
-    realize (Meets S U) Set.univ = ∅ :=
+@[tmio T, powerlib_foundation] theorem realize_univ_of {S U : X → Prop} (h : ∀ x, S x → U x → False) :
+    connection% (realize (Meets S U) Set.univ = ∅) := show realize (Meets S U) Set.univ = ∅ from
   realize_univ_eq_empty_of .stable .unstable h
 
 /-! ### Linear families -/
@@ -116,16 +120,17 @@ variable {plant : X → Plant n p} {S U : X → Prop}
 /-- Soundness of every translation of a linear spectral family: the stability condition gives a
 Hurwitz state matrix, the instability condition a characteristic root in the open right half
 plane. -/
-@[powerlib_foundation] theorem linear_chain_le_semantics
+@[tmio TM, powerlib_foundation] theorem linear_chain_le_semantics
     (hS : ∀ x, S x → IsHurwitz (plant x).A)
     (hU : ∀ x, U x → ∃ s : ℂ, (characteristicMatrix (plant x).A s).det = 0 ∧ 0 < s.re) :
-    ∀ P, (linearFamily plant S U).chain P ≤ (linearFamily plant S U).semantics P := by
+    connection% (∀ P, (linearFamily plant S U).chain P ≤ (linearFamily plant S U).semantics P) := by
+  change ∀ P, (linearFamily plant S U).chain P ≤ (linearFamily plant S U).semantics P
   have hF := linearFamily_isLinear plant S U
   have hnone : realize (Meets S U) Set.univ = ∅ := realize_univ_of fun x h1 h2 => by
     obtain ⟨s, hs, hre⟩ := hU x h2
     exact absurd (not_root_of_isHurwitz (hS x h1) hs) (not_lt.mpr hre.le)
   refine Family.chain_le_semantics_iff.mpr fun s x hx => ?_
-  rw [mem_realize] at hx
+  rw [(connection_proof% mem_realize)] at hx
   change ∀ q ∈ linearTranslate s, Meets S U x q at hx
   have huniv : (∀ q, Meets S U x q) → False := fun h => by
     have hx' : x ∈ realize (Meets S U) Set.univ := (mem_realize _ _ _).mpr fun q _ => h q
@@ -134,7 +139,7 @@ plane. -/
   have hstab : linearTranslate s = {.stable} → IsHurwitz (plant x).A := fun h =>
     hS x (hx .stable (by rw [h]; rfl))
   rcases s with P | _ | _
-  · rw [hF.mem_den_flow]
+  · rw [(connection_proof% hF.mem_den_flow)]
     cases P
     case unstable =>
       obtain ⟨r, hr, hre⟩ := hU x (hx .unstable rfl)
@@ -152,18 +157,20 @@ plane. -/
 
 /-- With a stability condition equivalent to the Hurwitz property, the attractive sentences and
 sampled contraction denote exactly the members meeting it. -/
-@[powerlib_foundation] theorem linear_den (hS : ∀ x, S x ↔ IsHurwitz (plant x).A)
+@[tmio TM, powerlib_foundation] theorem linear_den (hS : ∀ x, S x ↔ IsHurwitz (plant x).A)
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    (linearFamily plant S U).den (.flow P) = {x | S x} := by
+    connection% ((linearFamily plant S U).den (.flow P) = {x | S x}) := by
+  change (linearFamily plant S U).den (.flow P) = {x | S x}
   rw [(linearFamily_isLinear plant S U).den_hurwitz hP]
   ext x
   exact (hS x).symm
 
 /-- With a stability condition equivalent to the Hurwitz property, the attractive and
 contractive translations are exact. -/
-@[powerlib_foundation] theorem linear_exact (hS : ∀ x, S x ↔ IsHurwitz (plant x).A)
+@[tmio TM, powerlib_foundation] theorem linear_exact (hS : ∀ x, S x ↔ IsHurwitz (plant x).A)
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    (linearFamily plant S U).Exact (.flow P) := by
+    connection% ((linearFamily plant S U).Exact (.flow P)) := by
+  change (linearFamily plant S U).Exact (.flow P)
   unfold Family.Exact
   rw [linear_den hS hP]
   have ht : (linearFamily plant S U).translate (.flow P) = {.stable} := by
@@ -197,10 +204,11 @@ def localFamily (field : X → ℝⁿ → ℝⁿ) (S U : X → Prop) : Family X 
 
 /-- Soundness of every translation of a local spectral family: the stability condition gives
 local exponential stability of the field at the origin, the instability condition instability. -/
-@[powerlib_foundation] theorem local_chain_le_semantics {field : X → ℝⁿ → ℝⁿ}
+@[tmio TM, powerlib_foundation] theorem local_chain_le_semantics {field : X → ℝⁿ → ℝⁿ}
     (hS : ∀ x, S x → LocallyExponentiallyStable (field x) 0)
     (hU : ∀ x, U x → Unstable (field x) 0) :
-    ∀ P, (localFamily field S U).chain P ≤ (localFamily field S U).semantics P := by
+    connection% (∀ P, (localFamily field S U).chain P ≤ (localFamily field S U).semantics P) := by
+  change ∀ P, (localFamily field S U).chain P ≤ (localFamily field S U).semantics P
   have hF := localFamily_isAutonomous field S U
   refine chain_le_semantics_of_localTable_same (Rs := {.stable}) (Ru := {.unstable})
     (fun s => ?_) (realize_univ_of fun x h1 h2 => hU x h2 (hS x h1).lyapunovStable)
@@ -214,18 +222,19 @@ local exponential stability of the field at the origin, the instability conditio
 
 /-- Passivity is translated exactly in a local spectral family: a system without ports is
 passive. -/
-@[powerlib_foundation] theorem local_exact_passive (field : X → ℝⁿ → ℝⁿ) (S U : X → Prop) :
-    (localFamily field S U).Exact .passive :=
+@[tmio TM, powerlib_foundation] theorem local_exact_passive (field : X → ℝⁿ → ℝⁿ) (S U : X → Prop) :
+    connection% ((localFamily field S U).Exact .passive) := show (localFamily field S U).Exact .passive from
   Family.exact_of_translate_eq_empty rfl (localFamily_isAutonomous field S U).den_passive
 
 /-- With a stability condition equivalent to local exponential stability of the field at the
 origin, the local exponential translation of a local spectral family is exact. -/
-@[powerlib_foundation] theorem local_exact_locallyExponentiallyStable {field : X → ℝⁿ → ℝⁿ}
+@[tmio TM, powerlib_foundation] theorem local_exact_locallyExponentiallyStable {field : X → ℝⁿ → ℝⁿ}
     {S U : X → Prop} (hS : ∀ x, S x ↔ LocallyExponentiallyStable (field x) 0) :
-    (localFamily field S U).Exact (.flow .locallyExponentiallyStable) := by
+    connection% ((localFamily field S U).Exact (.flow .locallyExponentiallyStable)) := by
+  change (localFamily field S U).Exact (.flow .locallyExponentiallyStable)
   unfold Family.Exact
   ext x
-  rw [mem_realize, (localFamily_isAutonomous field S U).mem_den_flow]
+  rw [(connection_proof% mem_realize), (localFamily_isAutonomous field S U).mem_den_flow]
   change (∀ q ∈ ({.stable} : Set Requirement), Meets S U x q) ↔
     LocallyExponentiallyStable (field x) 0
   simp [hS x]
@@ -233,11 +242,11 @@ origin, the local exponential translation of a local spectral family is exact. -
 /-- With a stability condition equivalent to an equilibrium at the origin with a Hurwitz
 Jacobian, for `C¹` fields, the local exponential translation of a local spectral family is exact
 (converse linearization, `Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian`). -/
-@[powerlib_foundation] theorem local_exact_of_jacobian {field : X → ℝⁿ → ℝⁿ} {S U : X → Prop}
+@[tmio TM, powerlib_foundation] theorem local_exact_of_jacobian {field : X → ℝⁿ → ℝⁿ} {S U : X → Prop}
     (jac : X → Matrix (Fin n) (Fin n) ℝ) (hC : ∀ x, ContDiff ℝ 1 (field x))
     (hJ : ∀ x, fderiv ℝ (field x) 0 = Matrix.toEuclideanCLM (n := Fin n) (𝕜 := ℝ) (jac x))
     (hS : ∀ x, S x ↔ field x 0 = 0 ∧ IsHurwitz (jac x)) :
-    (localFamily field S U).Exact (.flow .locallyExponentiallyStable) :=
+    connection% ((localFamily field S U).Exact (.flow .locallyExponentiallyStable)) := show (localFamily field S U).Exact (.flow .locallyExponentiallyStable) from
   local_exact_locallyExponentiallyStable fun x =>
     (hS x).trans (Dynamics.locallyExponentiallyStable_iff_isHurwitz_jacobian _ (hC x) (hJ x)).symm
 
@@ -246,9 +255,11 @@ Jacobian, for `C¹` fields, the local exponential translation of a local spectra
 /-- Inexactness passes along translations: if the translation of `s` is sound but not exact, a
 sentence `s'` with the same translation whose denotation contains that of `s` is not translated
 exactly either (a member of `den s` outside the translated space lies in `den s'`). -/
-@[powerlib_foundation] theorem not_exact_of_den_subset {Y Q : Type*} {m q : ℕ}
+@[tmio TM, powerlib_foundation] theorem not_exact_of_den_subset {Y Q : Type*} {m q : ℕ}
     {F : Family Y Q m q} {s s' : Sentence} (ht : F.translate s' = F.translate s)
-    (hsound : F.Sound s) (hden : F.den s ⊆ F.den s') (h : ¬ F.Exact s) : ¬ F.Exact s' := by
+    (hsound : F.Sound s) (hden : F.den s ⊆ F.den s') (h : ¬ F.Exact s) :
+    connection% (¬ F.Exact s') := by
+  change ¬ F.Exact s'
   intro h'
   refine h (Set.Subset.antisymm hsound fun x hx => ?_)
   have hx' := hden hx
@@ -259,19 +270,20 @@ exactly either (a member of `den s` outside the translated space lies in `den s'
 /-- In a local spectral family whose stability condition gives local exponential stability, a
 boundary witness of the local exponential translation is one of the local asymptotic and Lyapunov
 translations. -/
-@[powerlib_foundation] theorem local_not_exact_of_not_exact_les {field : X → ℝⁿ → ℝⁿ}
+@[tmio TM, powerlib_foundation] theorem local_not_exact_of_not_exact_les {field : X → ℝⁿ → ℝⁿ}
     {S U : X → Prop} (hS : ∀ x, S x → LocallyExponentiallyStable (field x) 0)
     (h : ¬ (localFamily field S U).Exact (.flow .locallyExponentiallyStable))
     {P : Flow.Property} (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
-    ¬ (localFamily field S U).Exact (.flow P) := by
+    connection% (¬ (localFamily field S U).Exact (.flow P)) := by
+  change ¬ (localFamily field S U).Exact (.flow P)
   have hF := localFamily_isAutonomous field S U
   refine not_exact_of_den_subset (by rcases hP with rfl | rfl <;> rfl) ?_ ?_ h
   · intro x hx
-    rw [mem_realize] at hx
-    rw [hF.mem_den_flow]
+    rw [(connection_proof% mem_realize)] at hx
+    rw [(connection_proof% hF.mem_den_flow)]
     exact hS x (hx .stable rfl)
   · intro x hx
-    rw [hF.mem_den_flow] at hx ⊢
+    rw [(connection_proof% hF.mem_den_flow)] at hx ⊢
     rcases hP with rfl | rfl
     · exact hx.lyapunovStable
     · exact Flow.locallyExponentiallyStable_localAsymptoticStable hx

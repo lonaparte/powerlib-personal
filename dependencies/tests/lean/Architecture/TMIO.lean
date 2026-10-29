@@ -32,7 +32,7 @@ def seed : Seed (Set Sentence) (Set Requirement) (Set ℕ)ᵒᵈ (Set ℕ)ᵒᵈ
     (hr : r ∈ ofDual (generate seed.uTO {Sentence.safe})) (hn : (n, r) ∈ sensor) : n ≤ 10 :=
   relationalSeed_sound translation Meets sensor (den := fun _ => {n | n ≤ 10})
     (fun φ _ x hx => by
-      rw [mem_realize] at hx
+      rw [(connection_proof% mem_realize)] at hx
       exact hx (.atMost 10) ⟨φ, rfl, rfl⟩) hr hn .safe rfl
 
 -- A separately written forward map is the generated one once it is a lower adjoint.

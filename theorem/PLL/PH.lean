@@ -392,7 +392,7 @@ inconsistent. -/
 /-- A flow sentence of a model is the sentence of the SRF-PLL with offset `K_i η*` at `(θ*, η*)`. -/
 private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds (srfField m.V m.Kp m.Ki (m.Ki * m.ηs)) m.point := by
-  rw [family_isNonlinearPH.mem_den_flow_shift]
+  rw [(connection_proof% family_isNonlinearPH.mem_den_flow_shift)]
   change P.holds (pllPH m.V m.Kp m.Ki m.ηs m.damping).zeroInputField m.point ↔ _
   rw [pllPH_zeroInputField]
 
@@ -404,7 +404,7 @@ same phase does. A comparison of the two semantics connections at the two member
     connection% (m ∈ family.den (.flow P) ↔
       srf m.V m.Kp m.Ki (m.Ki * m.ηs) m.θ ∈ PIPLL.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den_flow_iff, PIPLL.family_isAutonomous.mem_den_flow]
+  rw [mem_den_flow_iff, (connection_proof% PIPLL.family_isAutonomous.mem_den_flow)]
   change _ ↔ P.holds (fun z => piPLLField (srf m.V m.Kp m.Ki (m.Ki * m.ηs) m.θ).h m.Kp m.Ki
     (m.Ki * m.ηs) (z + PhasePlane.mk m.θ (m.Ki * m.ηs / m.Ki))) 0
   rw [Flow.Property.holds_shift_iff, srf_piPLLField, mul_div_cancel_left₀ _ hKi]
@@ -420,10 +420,11 @@ private def toSRF (m : Model) : PIPLL.Model := srf m.V m.Kp m.Ki (m.Ki * m.ηs) 
 for `K_i = 0` both fields ignore the integrator state, so the selected points `(θ*, η*)` and
 `(θ*, 0)` satisfy the same flow sentences. -/
 private theorem mem_den_flow_iff_toSRF (m : Model) (P : Flow.Property) :
-    m ∈ family.den (.flow P) ↔ toSRF m ∈ PIPLL.family.den (.flow P) := by
+    connection% (m ∈ family.den (.flow P) ↔ toSRF m ∈ PIPLL.family.den (.flow P)) := by
+  change m ∈ family.den (.flow P) ↔ toSRF m ∈ PIPLL.family.den (.flow P)
   rcases ne_or_eq m.Ki 0 with hKi | hKi
   · exact mem_den_flow_iff_srf m hKi P
-  rw [mem_den_flow_iff, PIPLL.family_isAutonomous.mem_den_flow, ← Flow.Property.holds_shift_iff]
+  rw [mem_den_flow_iff, (connection_proof% PIPLL.family_isAutonomous.mem_den_flow), ← Flow.Property.holds_shift_iff]
   congr! 1
   funext z
   ext i
@@ -453,9 +454,10 @@ private theorem toSRF_phaseLocked {m : Model} (hVKi : 0 < m.V * m.Ki)
 stability for the SRF member: phase-locked, with both slope-gain products `K_p (−V cos θ*)` and
 `K_i (−V cos θ*)` negative. -/
 private theorem toSRF_of_slopeStable {m : Model} (h : m ∈ TMIO.realize Meets {.slopeStable}) :
-    toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked, .slopeStable} := by
+    connection% (toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked, .slopeStable}) := by
+  change toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked, .slopeStable}
   obtain ⟨hVKp, hVKi, hθ⟩ : Meets m .slopeStable := (TMIO.mem_realize _ _ _).mp h _ rfl
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
   · exact toSRF_phaseLocked hVKi (by rw [hθ]; norm_num)
   · show m.Kp * deriv (toSRF m).h (toSRF m).θ < 0 ∧ m.Ki * deriv (toSRF m).h (toSRF m).θ < 0
@@ -466,9 +468,10 @@ private theorem toSRF_of_slopeStable {m : Model} (h : m ∈ TMIO.realize Meets {
 `V > 0` and `cos θ* > 0`, so the phase-locked point is a well bottom with positive loop gains. -/
 private theorem slopeStable_of_toSRF {m : Model} (hn : Meets m .nonnegativeEnergy)
     (h : toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked, .slopeStable}) :
-    m ∈ TMIO.realize Meets {.slopeStable} := by
+    connection% (m ∈ TMIO.realize Meets {.slopeStable}) := by
+  change m ∈ TMIO.realize Meets {.slopeStable}
   obtain ⟨hV, hKi⟩ := hn
-  rw [TMIO.mem_realize] at h
+  rw [(connection_proof% TMIO.mem_realize)] at h
   have h0 : -m.V * Real.sin m.θ = 0 := (h .phaseLocked (by simp)).1
   obtain ⟨h1, h2⟩ : m.Kp * deriv (toSRF m).h (toSRF m).θ < 0 ∧
       m.Ki * deriv (toSRF m).h (toSRF m).θ < 0 := h .slopeStable (by simp)
@@ -485,16 +488,17 @@ private theorem slopeStable_of_toSRF {m : Model} (hn : Meets m .nonnegativeEnerg
     rw [hs] at this
     nlinarith
   rw [hc1] at h1 h2
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rintro q rfl
   exact ⟨by linarith [mul_comm m.V m.Kp], by linarith [mul_comm m.V m.Ki], hc1⟩
 
 /-- A saddle gives the PI-PLL's requirements of instability for the SRF member: phase-locked,
 with the slope-gain product `K_i (−V cos θ*) = V K_i` positive. -/
 private theorem toSRF_of_saddle {m : Model} (h : m ∈ TMIO.realize Meets {.saddle}) :
-    toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked, .slopeUnstable} := by
+    connection% (toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked, .slopeUnstable}) := by
+  change toSRF m ∈ TMIO.realize PIPLL.Meets {.phaseLocked, .slopeUnstable}
   obtain ⟨hVKi, hθ⟩ : Meets m .saddle := (TMIO.mem_realize _ _ _).mp h _ rfl
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
   · exact toSRF_phaseLocked hVKi (by rw [hθ]; norm_num)
   · show 0 < m.Ki * deriv (toSRF m).h (toSRF m).θ ∨ 0 < m.Kp * deriv (toSRF m).h (toSRF m).θ
@@ -505,27 +509,28 @@ private theorem toSRF_of_saddle {m : Model} (h : m ∈ TMIO.realize Meets {.sadd
 SRF member meets the PI-PLL's translated requirements, which are sound
 (`PIPLL.chain_le_semantics`). -/
 private theorem les_sound :
-    TMIO.realize Meets {.slopeStable} ⊆ family.den (.flow .locallyExponentiallyStable) :=
+    connection% (TMIO.realize Meets {.slopeStable} ⊆ family.den (.flow .locallyExponentiallyStable)) := show TMIO.realize Meets {.slopeStable} ⊆ family.den (.flow .locallyExponentiallyStable) from
   Spectral.realize_subset_den_of_hub (F := family) (G := PIPLL.family) toSRF
     (fun _ => toSRF_of_slopeStable) (fun m _ => (mem_den_flow_iff_toSRF m _).mpr)
     (Family.chain_le_semantics_iff.mp PIPLL.chain_le_semantics (.flow .locallyExponentiallyStable))
 
 /-- A saddle gives instability through the hub. -/
-private theorem unstable_sound : TMIO.realize Meets {.saddle} ⊆ family.den (.flow .unstable) :=
+private theorem unstable_sound :
+    connection% (TMIO.realize Meets {.saddle} ⊆ family.den (.flow .unstable)) := show TMIO.realize Meets {.saddle} ⊆ family.den (.flow .unstable) from
   Spectral.realize_subset_den_of_hub (F := family) (G := PIPLL.family) toSRF
     (fun _ => toSRF_of_saddle) (fun m _ => (mem_den_flow_iff_toSRF m _).mpr)
     (Family.chain_le_semantics_iff.mp PIPLL.chain_le_semantics (.flow .unstable))
 
 private theorem les_of_meets {m : Model} (h : Meets m .slopeStable) :
-    m ∈ family.den (.flow .locallyExponentiallyStable) :=
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
   les_sound (by simpa using h)
 
 private theorem unstable_of_meets {m : Model} (h : Meets m .saddle) :
-    m ∈ family.den (.flow .unstable) :=
+    connection% (m ∈ family.den (.flow .unstable)) := show m ∈ family.den (.flow .unstable) from
   unstable_sound (by simpa using h)
 
 private theorem passive_of_meets {m : Model} (h : Meets m .nonnegativeEnergy) :
-    m ∈ family.den .passive :=
+    connection% (m ∈ family.den .passive) := show m ∈ family.den .passive from
   family_isNonlinearPH.mem_den_passive_of_lowerBound 0 fun _ =>
     pllHamiltonian_nonneg h.1 h.2 _ _
 
@@ -533,7 +538,8 @@ private theorem passive_of_meets {m : Model} (h : Meets m .nonnegativeEnergy) :
 `θ*` with slope `−V < 0`, `K_p ≥ 0` and `K_i > 0` (`PIPLL.mem_den_lyapunovStable_of_slope`, whose
 PLL energy `−∫_{θ*} h + ½ K_i (η − η*)²` is the Hamiltonian with set point `η*`). -/
 private theorem lyapunovStable_of_meets {m : Model} (h : Meets m .wellBottom) :
-    m ∈ family.den (.flow .lyapunovStable) := by
+    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
+  change m ∈ family.den (.flow .lyapunovStable)
   obtain ⟨hV, hKi, hθ⟩ := h
   refine (mem_den_flow_iff_toSRF m _).mpr
     (PIPLL.mem_den_lyapunovStable_of_slope (toSRF m) ?_ m.damping hKi ?_)
@@ -732,7 +738,7 @@ with positive gains an anti-phase equilibrium is a saddle (`mem_den_unstable_ant
     fun m _ _ ⟨hV, hKi, hKp, hθ⟩ => ?_
   · exact hG (las_guard ((TMIO.mem_realize _ _ _).mp hm .nonnegativeEnergy rfl) heq
       (mem_den_flow_iff.mp hd))
-  · rw [TMIO.mem_realize]
+  · rw [(connection_proof% TMIO.mem_realize)]
     rintro q rfl
     exact ⟨mul_pos hV hKp, mul_pos hV hKi, hθ⟩
 
@@ -783,7 +789,7 @@ nonnegative energy and is Lyapunov stable, but is not at a well bottom (`V = 0`)
   refine Spectral.not_exactUnder_of_witness ?_ deadGrid_mem_den_lyapunovStable
     (q := Requirement.wellBottom) (by simp [family, translate])
     fun hw => lt_irrefl 0 (show Meets deadGrid .wellBottom from hw).1
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   intro q hq
   rw [Set.mem_singleton_iff] at hq
   subst hq

@@ -748,7 +748,7 @@ asymptotically stable at a power-balance point whose reduced Jacobian has a zero
   have hmem := mem_den_locallyAsymptoticallyStable_iff (⟨p, θ⟩ : Model (n + 4))
   unfold powerlib.TMIO.Statement at hmem
   have hin := hmem.mpr ⟨hbal, hmin⟩
-  rw [← h, TMIO.mem_realize] at hin
+  rw [← h, (connection_proof% TMIO.mem_realize)] at hin
   have hj : Meets (⟨p, θ⟩ : Model (n + 4)) .jacobianStable :=
     hin .jacobianStable (by simp [family, translate])
   exact not_isHurwitz_of_kernel hv hker hj

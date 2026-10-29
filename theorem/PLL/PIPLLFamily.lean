@@ -211,12 +211,14 @@ private theorem piPLL_unstable_of_slope {h : ℝ → ℝ} {Kp Ki δω θ g : ℝ
     exact htr
 
 private theorem les_of_meets {m : Model} (hp : Meets m .phaseLocked)
-    (hs : Meets m .slopeStable) : m ∈ family.den (.flow .locallyExponentiallyStable) :=
+    (hs : Meets m .slopeStable) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
   mem_den_flow_iff.mpr (piPLL_locallyExponentiallyStable_of_mul_neg m.smooth hp.1
     (m.hasDerivAt m.θ) hs.1 hs.2)
 
 private theorem unstable_of_meets {m : Model} (hp : Meets m .phaseLocked)
-    (hs : Meets m .slopeUnstable) : m ∈ family.den (.flow .unstable) :=
+    (hs : Meets m .slopeUnstable) :
+    connection% (m ∈ family.den (.flow .unstable)) := show m ∈ family.den (.flow .unstable) from
   mem_den_flow_iff.mpr (piPLL_unstable_of_slope m.smooth (piPLLField_point_eq_zero_iff.mpr hp)
     (m.hasDerivAt m.θ) hs)
 
@@ -245,9 +247,9 @@ selected point, moved to the origin), and passivity holds without requirement. -
     · cases P <;> rfl
     · rfl
     · rfl
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact les_of_meets (hm .phaseLocked (by simp)) (hm .slopeStable (by simp))
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact unstable_of_meets (hm .phaseLocked (by simp)) (hm .slopeUnstable (by simp))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
@@ -267,12 +269,12 @@ Jacobian `[[K_p g, K_i], [g, 0]]`. -/
     (fun m P => mem_den_flow_iff) ∅ (fun m => piPLLJacobian m.Kp m.Ki (deriv m.h (m.point 0)))
     (fun m _ hm => ?_) (fun m _ => contDiff_piPLLField m.smooth)
     (fun m _ => fderiv_piPLLField (m.hasDerivAt (m.point 0))) fun m _ heq hH => ?_)
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact les_of_meets (hm .phaseLocked (by simp [family, translate]))
       (hm .slopeStable (by simp [family, translate]))
   rw [Model.point, piPLLField_point_eq_zero_iff] at heq
   rw [piPLLJacobian_isHurwitz_iff, Model.point, PhasePlane.mk_apply_zero] at hH
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
   · exact heq
   · exact hH
@@ -297,13 +299,13 @@ determinant-side product (`K_i g > 0`, a saddle) or a positive trace (`K_p g > 0
     have hneg : ∀ {c : ℝ}, c ≠ 0 → (0 < c → Unstable (piPLLField m.h m.Kp m.Ki m.δω) m.point) →
         c < 0 := fun hc hu =>
       (lt_or_gt_of_ne hc).resolve_right fun hpos => hu hpos hlas.1
-    rw [TMIO.mem_realize]
+    rw [(connection_proof% TMIO.mem_realize)]
     rintro q (rfl | rfl)
     · exact piPLLField_point_eq_zero_iff.mp heq
     · exact ⟨hneg hKp fun h => piPLL_unstable_of_slope m.smooth heq (m.hasDerivAt m.θ) (Or.inr h),
         hneg hKi fun h => piPLL_unstable_of_slope m.smooth heq (m.hasDerivAt m.θ) (Or.inl h)⟩
   · intro hm
-    rw [TMIO.mem_realize] at hm
+    rw [(connection_proof% TMIO.mem_realize)] at hm
     exact Spectral.den_locallyExponentiallyStable_subset_las
       (les_of_meets (hm .phaseLocked (by simp)) (hm .slopeStable (by simp)))
 
@@ -365,7 +367,7 @@ the solution through it leaves it (`Spectral.mem_den_unstable_of_ne_zero`). -/
   unfold powerlib.TMIO.Statement
   refine Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff)
     (contDiff_piPLLField m.smooth) fun h => hm ?_
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rintro q rfl
   exact piPLLField_point_eq_zero_iff.mp h
 
@@ -514,7 +516,7 @@ meets the phase-locking requirement although `|δω| = 2 > K_p sup |h| = 1`. -/
   intro H
   refine H (srf 1 1 1 2 0) 1 one_pos one_pos (fun θ => ?_) (by norm_num [srf]) ?_
   · simpa [srf] using Real.abs_sin_le_one θ
-  · rw [TMIO.mem_realize]
+  · rw [(connection_proof% TMIO.mem_realize)]
     simp [Meets, srf]
 
 /-- On the semantics connection the drift boundary fails as well: beyond it the phase-locked
@@ -603,8 +605,10 @@ loses lock. -/
 /-- The ramp model meets the local requirements exactly at a locked phase with both slope-gain
 products negative. -/
 private theorem ramp_mem_realize_iff (m : Model) (ρ : ℝ) :
-    m.ramp ρ ∈ TMIO.realize Meets {.phaseLocked, .slopeStable} ↔
-      m.h m.θ = ρ / m.Ki ∧ m.Kp * deriv m.h m.θ < 0 ∧ m.Ki * deriv m.h m.θ < 0 := by
+    connection% (m.ramp ρ ∈ TMIO.realize Meets {.phaseLocked, .slopeStable} ↔
+      m.h m.θ = ρ / m.Ki ∧ m.Kp * deriv m.h m.θ < 0 ∧ m.Ki * deriv m.h m.θ < 0) := by
+  change m.ramp ρ ∈ TMIO.realize Meets {.phaseLocked, .slopeStable} ↔
+        m.h m.θ = ρ / m.Ki ∧ m.Kp * deriv m.h m.θ < 0 ∧ m.Ki * deriv m.h m.θ < 0
   simp [Meets, Model.ramp, sub_eq_zero]
 
 /-- Local exponential stability of a ramp model is decided by the slope as for any model
@@ -650,7 +654,7 @@ translating the global sentence. -/
 @[tmio TM, powerlib_domain] theorem linearModel_mem_den_globallyExponentiallyStable :
     connection% (linearModel ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow, linearModel_field]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow), linearModel_field]
   exact Linear.globallyExponentiallyStable_of_isHurwitz 0
     ((Criteria.isHurwitz_fin_two_of_iff _ _ _ _).mpr ⟨by norm_num, by norm_num⟩)
 
@@ -702,7 +706,7 @@ although its linearization is not Hurwitz. -/
 @[tmio TM, powerlib_domain] theorem cubicDetector_mem_den_lyapunovStable :
     connection% (cubicDetector ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   refine lyapunov_stable (V := cubicEnergy) (D := Set.univ) two_pos
     ⟨isOpen_univ, Set.mem_univ _, ?_, fun z => (cubicEnergy_hasFDerivAt z).differentiableAt,
       by simp [cubicEnergy], fun z _ hz => ?_, fun z _ => ?_⟩
@@ -777,7 +781,7 @@ nothing. -/
     connection% (cubicDetector ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   have hls := cubicDetector_mem_den_lyapunovStable
   unfold powerlib.TMIO.Statement at hls ⊢
-  rw [family_isAutonomous.mem_den_flow] at hls ⊢
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)] at hls ⊢
   set f := cubicDetector.field with hfdef
   have hf : ContDiff ℝ 1 f :=
     (contDiff_piPLLField cubicDetector.smooth).comp (contDiff_id.add contDiff_const)

@@ -198,7 +198,7 @@ passivity; none is unstable or conservative; and a model decays at the rate `a` 
         ((hges α).holds (P := .locallyAsymptoticallyStable) trivial)
     case decay a =>
       ext α
-      rw [Family.mem_den, mem_realize]
+      rw [(connection_proof% Family.mem_den), (connection_proof% mem_realize)]
       change (∀ q ∈ ({.decayRateAtLeast a} : Set Requirement), Meets α q) ↔
         Flow.Decay (field α.1) 0 a
       simp only [mem_singleton_iff, forall_eq, Meets]

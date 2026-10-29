@@ -439,14 +439,17 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
 /-- Linearization at the selected point: a Routh–Hurwitz Jacobian gives local exponential
 stability. -/
 private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
-    (hs : Meets m .jacobianStable) : m ∈ family.den (.flow .locallyExponentiallyStable) :=
+    (hs : Meets m .jacobianStable) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
   mem_den_flow_iff.mpr (Criteria.locallyExponentiallyStable_of_jacobian_fin_three
     (jac m.params m.θ m.Id) (contDiff_field m.params) (field_point_eq_zero m.params he)
     (fderiv_field m.params m.θ 0 m.Id) hs.1 hs.2.1 hs.2.2)
 
 /-- Linearization at the selected point: `det > 0` or `tr > 0` gives instability. -/
 private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
-    (hs : Meets m .jacobianUnstable) : m ∈ family.den (.flow .unstable) := by
+    (hs : Meets m .jacobianUnstable) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  change m ∈ family.den (.flow .unstable)
   refine mem_den_flow_iff.mpr ?_
   rcases hs with hdet | htr
   · exact Criteria.unstable_of_jacobian_det_pos_fin_three (jac m.params m.θ m.Id)
@@ -481,9 +484,9 @@ point, moved to the origin), and passivity holds without requirement. -/
     · cases P <;> rfl
     · rfl
     · rfl
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact les_of_meets (hm .equilibrium (by simp)) (hm .jacobianStable (by simp))
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact unstable_of_meets (hm .equilibrium (by simp)) (hm .jacobianUnstable (by simp))
 
 /-! ### Exactness of the local exponential translation -/
@@ -515,7 +518,7 @@ stability of the `C¹` field forces an equilibrium with a Hurwitz Jacobian. -/
     (fun m P => mem_den_flow_iff) ∅ (fun m => jac m.params m.θ m.Id) (fun m _ hm => ?_)
     (fun m _ => contDiff_field m.params) (fun m _ => fderiv_field m.params m.θ 0 m.Id)
     fun m _ he hH => ?_)
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact les_of_meets (hm .equilibrium (by simp [family, translate]))
       (hm .jacobianStable (by simp [family, translate]))
   rw [Criteria.isHurwitz_fin_three_iff] at hH
@@ -523,7 +526,7 @@ stability of the `C¹` field forces an equilibrium with a Hurwitz Jacobian. -/
     have := hH.2.1
     rw [det_jac_of_kP_eq_zero hkP] at this
     exact lt_irrefl 0 this
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
   · exact isEq_of_field_eq_zero hkP he
   · exact hH

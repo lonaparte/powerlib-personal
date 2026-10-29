@@ -155,7 +155,7 @@ def IsDesign {X Q : Type*} (F : Family X Q n p) (sys : X → Port.System n p) (S
     (hε : ε < 1) :
     connection% (x ∈ F.den (.envelope (.safe T ε)) ↔ (sys x).reach (S x) T ⊆ A x) := by
   unfold powerlib.TMIO.Statement
-  rw [Family.mem_den, hF x]
+  rw [(connection_proof% Family.mem_den), hF x]
   exact holds_safe_undisturbed_iff _ _ _ _ _ hε
 
 /-- A disturbed implementation of a design: the design model, the implementation's safe set and
@@ -230,14 +230,14 @@ implementation whose design is safe before `T₀` is safe before `T₀` at the l
   unfold powerlib.TMIO.Statement
   rintro y ⟨hd, hΔ⟩
   rw [Implementation.certify_realizes_of_design (I := noisy F sys S A) rfl, mem_preimage] at hd
-  rw [TMIO.mem_realize] at hΔ
+  rw [(connection_proof% TMIO.mem_realize)] at hΔ
   have hK : LipschitzWith K (sys y.design).zeroInput := hΔ (.lipschitz K) (by simp)
   have hsol : (sys y.design).Solvable (S y.design) T₀ := hΔ (.solvable T₀) (by simp)
   have hm : A y.design ⊆ erode y.safe y.margin := hΔ .margin (by simp)
   have hs : 0 ≤ W ∧ gronwallBound 0 K (|y.intensity| * W) T₀ ≤ y.margin :=
     hΔ (.small K W T₀) (by simp)
   have hb : y.law {ω | ∃ x, W < ‖y.perturbation ω x‖} ≤ ε := hΔ (.bounded W ε) (by simp)
-  rw [Family.mem_den]
+  rw [(connection_proof% Family.mem_den)]
   exact holds_safe_of_margin hK hs.1 hsol ((hF.mem_den_safe_iff hε).mp hd |>.trans hm) hs.2 hb
 
 /-! ## The drift: no intensity bound realizes the infinite horizon -/
@@ -285,7 +285,7 @@ def driftImpl : Implementation Unit Unit (Noisy Unit 1) NoiseRequirement 1 1 1 1
 @[tmio TM, powerlib_domain] theorem mem_den_driftDesign (T ε : ℝ≥0∞) :
     connection% (() ∈ driftDesign.den (.envelope (.safe T ε))) := by
   unfold powerlib.TMIO.Statement
-  rw [Family.mem_den]
+  rw [(connection_proof% Family.mem_den)]
   change Measure.dirac (constSample 0) {_ω | (drift 0).Exceeds {0} (ball 0 (1 / 2)) T} ≤ ε
   have hE : {_ω : Sample | (drift 0).Exceeds {0} (ball 0 (1 / 2)) T} = ∅ := by
     refine eq_empty_of_forall_notMem fun _ h => ?_
@@ -321,7 +321,7 @@ leaves the unit ball with probability one, so it is not safe at any level `ε < 
     connection% (noisyDrift σ ∉ driftImpl.impl.den (.envelope (.safe ⊤ ε))) := by
   unfold powerlib.TMIO.Statement
   intro hmem
-  rw [Family.mem_den] at hmem
+  rw [(connection_proof% Family.mem_den)] at hmem
   change gaussianSample {ω | ((drift 0).perturb (σ • fun _ => ω 0 • e₁)).Exceeds {0}
     (ball 0 1) ⊤} ≤ ε at hmem
   have hsub : {ω : Sample | ω 0 = 0}ᶜ ⊆
@@ -371,7 +371,7 @@ commute: `σ₀` depends on `T₀` and no positive threshold serves every horizo
   · change noisyDrift σ ∈ certify (Implementation.ofDesign Noisy.design) (driftDesign.den _)
     rw [Implementation.certify_ofDesign, mem_preimage]
     exact mem_den_driftDesign _ _
-  · rw [TMIO.mem_realize]
+  · rw [(connection_proof% TMIO.mem_realize)]
     intro q hq
     simp only [mem_insert_iff, mem_singleton_iff] at hq
     rcases hq with rfl | rfl | rfl | rfl | rfl
@@ -408,7 +408,7 @@ witness (`noisyDrift_not_mem_den_top`). -/
   unfold powerlib.TMIO.Statement at hy hd
   refine Implementation.not_realizationSoundUnder_of_design (I := driftImpl) (y := noisyDrift σ₀)
     rfl hd ?_ hy
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   intro q hq
   simp only [mem_insert_iff, mem_singleton_iff] at hq
   rcases hq with rfl | rfl | rfl

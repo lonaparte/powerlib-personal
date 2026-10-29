@@ -497,7 +497,7 @@ first Lyapunov coefficient, certified by a composite Lyapunov function whose der
 @[tmio TM, powerlib_domain] theorem weakFocus_mem_den_locallyAsymptoticallyStable :
     connection% (weakFocus ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change LocalAsymptoticStable weakFocus.field 0
   have hg : ContDiff ℝ 1
       (fun z : Dynamics.State 4 => regField weakFocus.params (z + opPoint weakFocus.θ)) :=
@@ -557,7 +557,7 @@ locally asymptotically stable, but its quartic `(λ² + 1)(λ² + λ + 2)` has t
   intro h
   have hmem := weakFocus_mem_den_locallyAsymptoticallyStable
   unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
+  rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
   obtain ⟨-, -, -, hg⟩ : Meets weakFocus .routh := hmem .routh (by simp [family, translate])
   norm_num [a1, a2, a3, a0, twoAlphaCl, omegaClSq, Γc, vd0, weakFocus, Params.γ] at hg
 
@@ -667,7 +667,7 @@ same holds for local asymptotic and local exponential stability. -/
   have hLS := closedRouth_of_mem_den_lyapunovStable
   unfold powerlib.TMIO.Statement at hLS
   refine hLS ?_
-  rw [family_isAutonomous.mem_den_flow] at h ⊢
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)] at h ⊢
   exact h.1
 
 /-! ### The Routh boundary is not decided by the requirement language -/
@@ -792,11 +792,11 @@ of the family is exact for Lyapunov stability: `undampedPLL` (Lyapunov stable) a
   have h1 := undampedPLL_mem_den_lyapunovStable
   have h2 := frozenPLL_mem_den_unstable
   unfold powerlib.TMIO.Statement at h1 h2
-  rw [← hT, TMIO.mem_realize] at h1
+  rw [← hT, (connection_proof% TMIO.mem_realize)] at h1
   have h3 : frozenPLL ∈ family.den (.flow .lyapunovStable) := by
-    rw [← hT, TMIO.mem_realize]
+    rw [← hT, (connection_proof% TMIO.mem_realize)]
     exact fun q hq => (meets_undamped_iff_frozen q).mp (h1 q hq)
-  rw [family_isAutonomous.mem_den_flow] at h2 h3
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)] at h2 h3
   exact h2 h3
 
 /-- **Inexpressibility of instability.** No translation into the requirement language of the
@@ -809,11 +809,11 @@ the same requirements. -/
   have h1 := undampedPLL_mem_den_lyapunovStable
   have h2 := frozenPLL_mem_den_unstable
   unfold powerlib.TMIO.Statement at h1 h2
-  rw [← hT, TMIO.mem_realize] at h2
+  rw [← hT, (connection_proof% TMIO.mem_realize)] at h2
   have h3 : undampedPLL ∈ family.den (.flow .unstable) := by
-    rw [← hT, TMIO.mem_realize]
+    rw [← hT, (connection_proof% TMIO.mem_realize)]
     exact fun q hq => (meets_undamped_iff_frozen q).mpr (h2 q hq)
-  rw [family_isAutonomous.mem_den_flow] at h1 h3
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)] at h1 h3
   exact h3 h1
 
 /-- **Inexpressibility of local asymptotic stability.** No translation into the requirement
@@ -828,7 +828,7 @@ asymptotically stable) and `undampedPLL` (not) meet the same requirements. -/
   have h2 := undampedPLL_not_mem_den_locallyAsymptoticallyStable
   unfold powerlib.TMIO.Statement at h1 h2
   apply h2
-  rw [← hT, TMIO.mem_realize] at h1 ⊢
+  rw [← hT, (connection_proof% TMIO.mem_realize)] at h1 ⊢
   exact fun q hq => (meets_weakFocus_iff_undamped q).mp (h1 q hq)
 
 end powerlib.GFL.DCLink.FourStateBoundary

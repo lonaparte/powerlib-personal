@@ -76,15 +76,18 @@ def IsLinear (F : Family X Q n p) (plant : X → Plant n p) : Prop :=
 variable {F : Family X Q n p} {plant : X → Plant n p}
 
 /-- A linear family is read without an envelope: it satisfies every envelope sentence. -/
-@[powerlib_foundation] theorem IsLinear.den_envelope (hF : F.IsLinear plant)
-    (E : Envelope.Property) : F.den (.envelope E) = Set.univ :=
+@[tmio TM, powerlib_foundation] theorem IsLinear.den_envelope (hF : F.IsLinear plant)
+    (E : Envelope.Property) :
+    connection% (F.den (.envelope E) = Set.univ) := show F.den (.envelope E) = Set.univ from
   Family.den_envelope_of_continuous hF E
 
 /-- A flow sentence holds for a member of a linear family exactly when it holds for the zero-input
 field of its plant. -/
-@[powerlib_foundation] theorem IsLinear.mem_den_flow (hF : F.IsLinear plant) {P : Flow.Property}
-    {x : X} : x ∈ F.den (.flow P) ↔ P.holds (affineLinearVectorField (plant x).A 0) 0 := by
-  rw [mem_den, hF x, Sentence.holds_flow, Plant.system_zeroInput]
+@[tmio TM, powerlib_foundation] theorem IsLinear.mem_den_flow (hF : F.IsLinear plant) {P : Flow.Property}
+    {x : X} :
+    connection% (x ∈ F.den (.flow P) ↔ P.holds (affineLinearVectorField (plant x).A 0) 0) := by
+  change x ∈ F.den (.flow P) ↔ P.holds (affineLinearVectorField (plant x).A 0) 0
+  rw [(connection_proof% mem_den), hF x, Sentence.holds_flow, Plant.system_zeroInput]
 
 /-- The attractive sentences and sampled contraction denote the Hurwitz members. -/
 @[tmio TM, powerlib_foundation] theorem IsLinear.den_hurwitz (hF : F.IsLinear plant) {P : Flow.Property}
@@ -92,7 +95,7 @@ field of its plant. -/
     connection% (F.den (.flow P) = {x | IsHurwitz (plant x).A}) := by
   unfold powerlib.TMIO.Statement
   ext x
-  rw [hF.mem_den_flow, Set.mem_ofPred_eq]
+  rw [(connection_proof% hF.mem_den_flow), Set.mem_ofPred_eq]
   rcases hP with hP | rfl
   · exact holds_iff_isHurwitz 0 hP
   · exact sampledContraction_iff_isHurwitz 0
@@ -104,15 +107,18 @@ field of its plant. -/
   not_isHurwitz_of_conservative hn (hF.mem_den_flow.mp h)
 
 /-- A positive definite quadratic energy conserved by the plant places a member in conservation. -/
-@[powerlib_foundation] theorem IsLinear.mem_den_conservative (hF : F.IsLinear plant) {x : X}
+@[tmio TM, powerlib_foundation] theorem IsLinear.mem_den_conservative (hF : F.IsLinear plant) {x : X}
     {P : Matrix (Fin n) (Fin n) ℝ} (hP : Pᵀ = P) (hpos : ∀ v : Fin n → ℝ, v ≠ 0 → 0 < v ⬝ᵥ (P *ᵥ v))
-    (hl : (plant x).Aᵀ * P + P * (plant x).A = 0) : x ∈ F.den (.flow .conservative) :=
+    (hl : (plant x).Aᵀ * P + P * (plant x).A = 0) :
+    connection% (x ∈ F.den (.flow .conservative)) := show x ∈ F.den (.flow .conservative) from
   hF.mem_den_flow.mpr (conservative_of_quadratic hP hpos hl)
 
 /-- A KYP certificate places a member in passivity. -/
-@[powerlib_foundation] theorem IsLinear.mem_den_passive (hF : F.IsLinear plant) {x : X}
-    (c : KYP (plant x)) : x ∈ F.den .passive := by
-  rw [mem_den, hF x]
+@[tmio TM, powerlib_foundation] theorem IsLinear.mem_den_passive (hF : F.IsLinear plant) {x : X}
+    (c : KYP (plant x)) :
+    connection% (x ∈ F.den .passive) := by
+  change x ∈ F.den .passive
+  rw [(connection_proof% mem_den), hF x]
   exact ⟨_, c.passiveWith⟩
 
 /-- A family read in another representation stays linear. -/

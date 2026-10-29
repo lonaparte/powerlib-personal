@@ -116,8 +116,10 @@ field is the smooth `regField`. The smoothness hypothesis of the local generic E
 is locally exponentially stable: quartic `λ⁴ + (5/2) λ³ + 4 λ² + 3 λ + 3/2`, Routh conditions met
 (`mem_den_locallyExponentiallyStable_of_routh`). -/
 private theorem unitModel_mem_den :
-    (⟨⟨1, 0, 0, 1, 1, 1, 1, 1, 0⟩, 0⟩ : Model) ∈
-      family.den (.flow .locallyExponentiallyStable) := by
+    connection% ((⟨⟨1, 0, 0, 1, 1, 1, 1, 1, 0⟩, 0⟩ : Model) ∈
+      family.den (.flow .locallyExponentiallyStable)) := by
+  change (⟨⟨1, 0, 0, 1, 1, 1, 1, 1, 0⟩, 0⟩ : Model) ∈
+        family.den (.flow .locallyExponentiallyStable)
   have hm := mem_den_locallyExponentiallyStable_of_routh ⟨1, 0, 0, 1, 1, 1, 1, 1, 0⟩ one_ne_zero
     (θ0 := 0) ⟨by simp, by simp⟩
     (by norm_num [a3, vd0, twoAlphaCl, Params.γ])

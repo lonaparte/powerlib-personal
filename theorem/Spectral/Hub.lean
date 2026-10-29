@@ -82,7 +82,7 @@ correspond. -/
       (x ∈ realize F.meets (F.translate s) ↔ g x ∈ realize G.meets (G.translate s)))
     (hG : G.ExactUnder ΔG s) : connection% (F.ExactUnder ΔF s) := by
   unfold powerlib.TMIO.Statement
-  rw [exactUnder_iff_forall] at hG ⊢
+  rw [(connection_proof% exactUnder_iff_forall)] at hG ⊢
   intro x hx
   rw [hreq x hx, hden x hx]
   exact hG (g x) (hΔ x hx)

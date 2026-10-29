@@ -126,11 +126,11 @@ uses one of the five kinds, and is not assigned twice. The assigned kind records
 review of the complete statement and its hypotheses; the attribute checker does
 not prove that semantic judgment or replace mathematical admission.
 
-The current reviewed coverage is 2,798 theorems: T 1,682, M 334, T–M 685, M–I 88
-and I–O 9, including 111 private helpers. This includes all 832 public
-`connection%` theorems (T 0, M 50, T–M 685, M–I 88, I–O 9) and 1,966 individually
+The current reviewed coverage is 2,925 theorems: T 1,701, M 335, T–M 760, M–I 102
+and I–O 27, including 111 private helpers. This includes all 1,043 public
+`connection%` theorems (T 102, M 52, T–M 760, M–I 102, I–O 27) and 1,882 individually
 reviewed ordinary theorems. Module-level role suggestions do not assign a kind to
-every declaration in a module. The remaining 5,086 theorems are unclassified;
+every declaration in a module. The remaining 4,959 theorems are unclassified;
 definitions are outside this theorem-attribute inventory.
 The required missing-label check is limited to public typed connection theorems;
 every explicit attribute, including one on an ordinary or private theorem, is checked.
@@ -200,7 +200,9 @@ There are two admission rules:
    witness (`∃ h₀, 0 < h₀ ∧ C`). A claim may bind types (`∀ X : Type, …`, or type
    parameters of the theorem). Certificate universes are inferred from the actual
    endpoints; one claim can combine both directions of the same pair of endpoint
-   universes. Generic declarations retain their `Type*` parameters. The external
+   universes. Extensional equality of functions, bundled lower adjoints and closure
+   operators requires a connection certificate at every argument. Quantifiers can use
+   either endpoint universe. Generic declarations retain their `Type*` parameters. The external
    theorem telescope is checked separately, rather than re-encoded as part of the
    conclusion's certificate.
 

@@ -311,7 +311,7 @@ def family : Family MismatchParams Spectral.Requirement 4 2 :=
   rfl
 
 private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    family.den (.flow P) = {p | p.Stable} :=
+    connection% (family.den (.flow P) = {p | p.Stable}) := show family.den (.flow P) = {p | p.Stable} from
   Spectral.linear_den (U := Unstable) (fun p => (isHurwitz_iff_stable p).symm) hP
 
 /-- Every translation of the mismatched family is sound. -/

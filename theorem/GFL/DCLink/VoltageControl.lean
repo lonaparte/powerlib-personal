@@ -594,7 +594,7 @@ negative-capacitance node is locally exponentially stable without `C > 0`. -/
   intro h
   have hmem := negativeCapacitance_mem_den_locallyExponentiallyStable
   unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
+  rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
   have hs : OpenLoop.Stable negativeCapacitance := hmem .stable rfl
   have := hs.2.1
   norm_num [negativeCapacitance] at this
@@ -674,7 +674,7 @@ negative-capacitance loop is locally exponentially stable without `C > 0`. -/
   intro h
   have hmem := negativeCapacitanceLoop_mem_den_locallyExponentiallyStable
   unfold powerlib.TMIO.Statement at hmem
-  rw [← h, TMIO.mem_realize] at hmem
+  rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
   have hs : DCParams.Stable negativeCapacitanceLoop := hmem .stable rfl
   have := hs.2.2.1
   norm_num [negativeCapacitanceLoop] at this
@@ -1245,10 +1245,12 @@ private theorem centerLoop_boundary :
     (by norm_num [centerLoop]) (by norm_num [centerLoop]) centerLoop_boundary
 
 private theorem closed_realize_stable :
-    TMIO.realize closedFamily.meets (closedFamily.translate (.flow .locallyAsymptoticallyStable)) =
-      {p : DCParams | DCParams.Stable p} := by
+    connection% (TMIO.realize closedFamily.meets (closedFamily.translate (.flow .locallyAsymptoticallyStable)) =
+      {p : DCParams | DCParams.Stable p}) := by
+  change TMIO.realize closedFamily.meets (closedFamily.translate (.flow .locallyAsymptoticallyStable)) =
+        {p : DCParams | DCParams.Stable p}
   ext p
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   change (∀ q ∈ ({.stable} : Set Spectral.Requirement), Spectral.Meets _ _ p q) ↔ _
   simp
 
@@ -1286,7 +1288,7 @@ range. -/
   have hin : centerLoop ∈ closedFamily.den (.flow .lyapunovStable) ∩
       {p : DCParams | 0 < p.Vd ∧ 0 < p.Vref ∧ 0 < p.C} :=
     ⟨hmem, by norm_num [centerLoop]⟩
-  rw [← h, TMIO.mem_realize] at hin
+  rw [← h, (connection_proof% TMIO.mem_realize)] at hin
   have hs : DCParams.Stable centerLoop := hin .stable rfl
   have := hs.2.2.2.1
   norm_num [centerLoop, DCParams.Idc0] at this

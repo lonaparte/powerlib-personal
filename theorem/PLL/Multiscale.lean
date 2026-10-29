@@ -157,8 +157,9 @@ def family : Family Model Requirement 1 0 :=
 
 private theorem mem_den_hurwitz {m : Model} {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
-    m ∈ family.den (.flow P) ↔ 0 < m.b / m.a := by
-  rw [family_isAutonomous.mem_den_flow, ← isHurwitz_reducedA_iff]
+    connection% (m ∈ family.den (.flow P) ↔ 0 < m.b / m.a) := by
+  change m ∈ family.den (.flow P) ↔ 0 < m.b / m.a
+  rw [(connection_proof% family_isAutonomous.mem_den_flow), ← isHurwitz_reducedA_iff]
   rcases hP with hP | rfl
   · exact Linear.holds_iff_isHurwitz 0 hP
   · exact Linear.sampledContraction_iff_isHurwitz 0
@@ -202,7 +203,7 @@ private theorem mem_den_hurwitz {m : Model} {P : Flow.Property}
   change TMIO.realize Meets (translate (.flow P)) = _
   rw [ht]
   ext m
-  rw [mem_den_hurwitz hP]
+  rw [(connection_proof% mem_den_hurwitz hP)]
   simp [Meets]
 
 /-- The reduced slow model is globally exponentially stable iff `b/a > 0`. -/
@@ -210,7 +211,7 @@ private theorem mem_den_hurwitz {m : Model} {P : Flow.Property}
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔
       m ∈ {m : Model | 0 < m.b / m.a}) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den_hurwitz (Or.inl Flow.Property.attractive_globallyExponentiallyStable)]
+  rw [(connection_proof% mem_den_hurwitz (Or.inl Flow.Property.attractive_globallyExponentiallyStable))]
   rfl
 
 /-- Passivity is translated exactly: a system without ports is passive. -/

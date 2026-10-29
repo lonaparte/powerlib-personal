@@ -326,7 +326,7 @@ def hopfBoundary : Model := ⟨⟨1, 1, 1, 0, 2⟩, 0⟩
   unfold Family.ExactUnder TMIO.ExactUnder at hex
   intro h
   have hI : hopfBoundary ∈ TMIO.realize family.meets {.physical} := by
-    rw [TMIO.mem_realize]
+    rw [(connection_proof% TMIO.mem_realize)]
     intro q hq
     rw [Set.mem_singleton_iff] at hq
     subst hq
@@ -336,7 +336,7 @@ def hopfBoundary : Model := ⟨⟨1, 1, 1, 0, 2⟩, 0⟩
       (family.translate (.flow .locallyExponentiallyStable) ∪ {.physical}) := by
     rw [hex]
     exact ⟨h, hI⟩
-  rw [TMIO.mem_realize] at h'
+  rw [(connection_proof% TMIO.mem_realize)] at h'
   have hf : Meets hopfBoundary .fastFilter := h' .fastFilter (by simp [family, translate])
   norm_num [Meets, hopfBoundary, Model.K] at hf
 
@@ -350,7 +350,7 @@ locally asymptotically stable. -/
   unfold Family.ExactUnder TMIO.ExactUnder
   intro h
   have hI : hopfBoundary ∈ TMIO.realize family.meets {.physical} := by
-    rw [TMIO.mem_realize]
+    rw [(connection_proof% TMIO.mem_realize)]
     intro q hq
     rw [Set.mem_singleton_iff] at hq
     subst hq
@@ -360,7 +360,7 @@ locally asymptotically stable. -/
       (family.translate (.flow .locallyAsymptoticallyStable) ∪ {.physical}) := by
     rw [h]
     exact ⟨hmem, hI⟩
-  rw [TMIO.mem_realize] at h'
+  rw [(connection_proof% TMIO.mem_realize)] at h'
   have hf : Meets hopfBoundary .fastFilter := h' .fastFilter (by simp [family, translate])
   norm_num [Meets, hopfBoundary, Model.K] at hf
 

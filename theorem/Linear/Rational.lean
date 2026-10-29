@@ -115,7 +115,7 @@ ports is passive. -/
     connection% (∀ P, (family (n := n)).chain P ≤ (family (n := n)).semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Family.chain_le_semantics_iff.mpr fun s A hA => ?_
-  rw [mem_realize] at hA
+  rw [(connection_proof% mem_realize)] at hA
   change ∀ q ∈ translate s, Meets A q at hA
   have huniv : translate s = Set.univ → A ∈ family.den s := fun hs => by
     have : A ∈ realize Meets Set.univ :=

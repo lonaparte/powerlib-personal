@@ -166,7 +166,7 @@ stable for the reduced 2-state PLL model. -/
   unfold powerlib.TMIO.Statement
   have h := p.reduced_mem_den_unstable hwC hΔ hKi hθ hslope
   unfold powerlib.TMIO.Statement at h
-  rw [PLL.PIPLL.family_isAutonomous.mem_den_flow] at h ⊢
+  rw [(connection_proof% PLL.PIPLL.family_isAutonomous.mem_den_flow)] at h ⊢
   exact h
 
 /-- A1: at an equilibrium with `h′(θ*) = 0` (fold), the Jacobian of the reduced field is the
@@ -437,7 +437,7 @@ sentence. -/
   ext m
   rw [Set.mem_preimage]
   rcases s with P | _ | E
-  · rw [codeFamily_isAutonomous.mem_den_flow, PLL.PIPLL.family_isAutonomous.mem_den_flow]
+  · rw [(connection_proof% codeFamily_isAutonomous.mem_den_flow), (connection_proof% PLL.PIPLL.family_isAutonomous.mem_den_flow)]
     have h1 : CodeModel.field m = fun z => m.params.codeField (z + PhasePlane.mk m.θ 0) := rfl
     have h2 : (CodeModel.toText m).field =
         fun z => m.params.reducedField (z + PhasePlane.mk (-m.θ) 0) :=

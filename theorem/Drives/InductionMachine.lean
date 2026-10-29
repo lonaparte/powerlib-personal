@@ -687,7 +687,7 @@ Lyapunov stability: its field is that of the unit-rotor drive, globally exponent
   have h := ifocFlux_globallyExponentiallyStable unitRotor (by norm_num [unitRotor])
     (by norm_num [unitRotor])
   unfold powerlib.TMIO.Statement at h
-  rw [family_isAutonomous.mem_den_flow] at h ⊢
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)] at h ⊢
   rw [negativeRotor_field]
   rcases hP with hP | rfl | rfl
   · exact h.holds hP
@@ -775,7 +775,7 @@ strictly stronger (`not_exact`). -/
     (hP : P.Attractive) :
     connection% (d ∈ family.den (.flow P) ↔ d ∈ {d : Drive | 0 < d.p.rr / d.p.Lr}) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow, Set.mem_ofPred_eq]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow), Set.mem_ofPred_eq]
   constructor
   · intro h
     have hlas := Flow.Property.localAsymptoticStable hP h
@@ -805,7 +805,7 @@ strictly stronger (`not_exact`). -/
         exact one_div_pos.mpr hk
     have h := ifocFlux_globallyExponentiallyStable d' (abs_pos.mpr hrr) (abs_pos.mpr hLr)
     unfold powerlib.TMIO.Statement at h
-    rw [family_isAutonomous.mem_den_flow, hfield] at h
+    rw [(connection_proof% family_isAutonomous.mem_den_flow), hfield] at h
     exact Flow.GloballyExponentiallyStable.holds h hP
 
 /-! ## The Lyapunov sentence -/
@@ -882,10 +882,10 @@ So the translation `positiveRotor` is not exact for Lyapunov stability even with
     · have h := mem_den_attractive_iff d (P := .locallyExponentiallyStable) trivial
       unfold powerlib.TMIO.Statement at h
       have hles := h.mpr hk
-      rw [family_isAutonomous.mem_den_flow] at hles ⊢
+      rw [(connection_proof% family_isAutonomous.mem_den_flow)] at hles ⊢
       exact hles.lyapunovStable
     · have h0 := (field_zero_iff_of_ratio_zero hk).mpr ⟨hd, hq⟩
-      rw [family_isAutonomous.mem_den_flow]
+      rw [(connection_proof% family_isAutonomous.mem_den_flow)]
       change LyapunovStable d.field 0
       rw [field_eq_linear d h0]
       refine Dynamics.lyapunovStable_of_inner_nonpos two_pos (ContinuousLinearMap.id ℝ State2)

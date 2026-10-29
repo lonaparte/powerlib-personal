@@ -457,7 +457,9 @@ private theorem model_fold_unstable {m : Model} (heq : IsEq m.params m.θ m.Id)
 
 /-- Membership through the sound translation. -/
 private theorem mem_den_of_meets {m : Model} {s : Sentence}
-    (h : ∀ q ∈ translate s, Meets m q) : m ∈ family.den s := by
+    (h : ∀ q ∈ translate s, Meets m q) :
+    connection% (m ∈ family.den s) := by
+  change m ∈ family.den s
   have hs := chain_le_semantics
   unfold powerlib.TMIO.Statement at hs
   exact (Family.chain_le_semantics_iff.mp hs s) ((TMIO.mem_realize _ _ _).mpr h)
@@ -540,7 +542,7 @@ private theorem jacobianStable_of_lyapunovStable {m : Model} (hpos : Meets m .po
       rcases hq with rfl | rfl
       · exact heq
       · exact hu)
-    rw [family_isAutonomous.mem_den_flow] at hd
+    rw [(connection_proof% family_isAutonomous.mem_den_flow)] at hd
     exact hd h
   have htr := trace_jac m.params m.θ m.Id
   have hm2 := principalMinorSum_jac m.params heq.1
@@ -602,7 +604,8 @@ private theorem jacobianStable_of_lyapunovStable {m : Model} (hpos : Meets m .po
 equilibrium, and the strict Routh–Hurwitz guard decides (`Spectral.exactUnder_of_equilibrium`). -/
 private theorem exactUnder_of_routh {P : Flow.Property}
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
-    family.ExactUnder {.positiveGains} (.flow P) := by
+    connection% (family.ExactUnder {.positiveGains} (.flow P)) := by
+  change family.ExactUnder {.positiveGains} (.flow P)
   have ht : family.translate (.flow P) = {.equilibrium, .jacobianStable} := by
     rcases hP with rfl | rfl <;> rfl
   refine Spectral.exactUnder_of_equilibrium (fun m P => family_isAutonomous.mem_den_flow)
@@ -618,7 +621,7 @@ private theorem exactUnder_of_routh {P : Flow.Property}
     exact jacobianStable_of_lyapunovStable hpos
       (isEq_of_field_eq_zero hpos.2.2.ne' (by simpa [Model.field] using heq)) hls
   · have hpos : Meets m .positiveGains := (TMIO.mem_realize _ _ _).mp hm .positiveGains rfl
-    rw [ht, TMIO.mem_realize]
+    rw [ht, (connection_proof% TMIO.mem_realize)]
     rintro q (rfl | rfl)
     · exact isEq_of_field_eq_zero hpos.2.2.ne' (by simpa [Model.field] using heq)
     · exact hG
@@ -635,7 +638,7 @@ saddle-node, whose Jacobian has a simple zero eigenvalue (`det J = 0`) and two s
     (hA : 0 < p.V * Real.cos θ) (hc2 : Real.cos (2 * θ) = 0) :
     connection% (Model.mk p θ Id ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   exact model_fold_unstable (m := Model.mk p θ Id) heq hkp hki hkP hA hc2
 
 /-- Same, at the fold angle `θ* = π/4` (`V > 0`): the transmission limit is unstable. -/

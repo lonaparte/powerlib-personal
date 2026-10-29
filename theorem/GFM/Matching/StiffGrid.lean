@@ -879,11 +879,11 @@ Static evidence on the model, not a connection conclusion. -/
     · cases P <;> rfl
     · rfl
     · rfl
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     obtain ⟨hC, hL, hR⟩ : Meets m .physical := hm .physical (by simp)
     exact mem_den_flow.mpr (lyapunovStable m hC hL hR (k_pos m hL hR (hm .synchronizing (by simp)))
       (hm .dissipative (by simp)))
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     obtain ⟨hC, hL, hR⟩ : Meets m .physical := hm .physical (by simp)
     exact mem_den_flow.mpr (les m hC hL hR (hm .synchronizing (by simp)) (hm .matching (by simp))
       (hm .damped (by simp)))
@@ -901,7 +901,7 @@ Static evidence on the model, not a connection conclusion. -/
 @[tmio TM, powerlib_domain] theorem not_mem_den_globallyAsymptoticallyStable (m : Model) :
     connection% (m ∉ family.den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den_flow]
+  rw [(connection_proof% mem_den_flow)]
   intro h
   change Flow.GloballyAsymptoticallyStable _ _ at h
   refine Dynamics.not_globallyAsymptoticallyStable_of_equilibrium_ne
@@ -940,7 +940,7 @@ Lyapunov function on `|θ_dq| < 2π`. -/
     (hR : 0 < m.Rs) (hs : 0 < m.μ * m.ustar * m.v0) (hδ : 0 ≤ m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den_flow]
+  rw [(connection_proof% mem_den_flow)]
   exact lyapunovStable m hC hL hR (k_pos m hL hR hs) hδ
 
 
@@ -952,7 +952,7 @@ linearization is Hurwitz (`jac_isHurwitz`). -/
     (hδ : 0 < m.margin) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [mem_den_flow]
+  rw [(connection_proof% mem_den_flow)]
   exact les m hC hL hR hs hη hδ
 
 /-- Local asymptotic stability of the operating point under the same requirements. -/

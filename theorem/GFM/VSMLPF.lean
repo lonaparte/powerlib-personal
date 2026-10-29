@@ -644,10 +644,10 @@ and passivity holds without requirement. -/
     · cases P <;> rfl
     · rfl
     · rfl
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_flow_iff.mpr (les_of (hm .physical (by simp)) (hm .balanced (by simp))
       (hm .synchronizing (by simp)) (hm .fastFilter (by simp)))
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_flow_iff.mpr (unstable_of (hm .physical (by simp)) (hm .balanced (by simp))
       (hm .destabilizing (by simp)))
 
@@ -667,7 +667,7 @@ satisfies the strict 3×3 Routh–Hurwitz conditions. -/
   refine Spectral.exactUnder_les_of_jacobian (fun m P => mem_den_flow_iff) {.physical}
     (fun m => m.g.jacobian m.δ) (fun m _ hm => ?_) (fun m _ => m.g.contDiff_field)
     (fun m _ => fderiv_point m) fun m hI heq hH => ?_
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_flow_iff.mpr (les_of (hm .physical (by simp [family, translate]))
       (hm .balanced (by simp [family, translate])) (hm .synchronizing (by simp [family, translate]))
       (hm .fastFilter (by simp [family, translate])))
@@ -690,7 +690,7 @@ satisfies the strict 3×3 Routh–Hurwitz conditions. -/
       unfold Model.K; ring
     rw [e1, e2] at hg
     exact lt_of_mul_lt_mul_left (by linarith) hwM.le
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl | rfl | rfl)
   · show m.g.K0 * Real.sin m.δ = m.g.P0
     simpa [Model.point] using heq.2.2
@@ -875,7 +875,7 @@ def flatCurve : Model := ⟨⟨1, 1, 1, 0, 0⟩, 0⟩
 @[tmio TM, powerlib_domain] theorem flatCurve_mem_den_lyapunovStable :
     connection% (flatCurve ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   refine Dynamics.lyapunovStable_of_inner_nonpos (by norm_num)
     (Matrix.toEuclideanCLM (n := Fin 3) (𝕜 := ℝ) !![1, 1, -1; 0, 1, 0; 0, 0, 1])
     (fun z w hzw => ?_) fun z => ?_
@@ -904,7 +904,7 @@ flat-curve VSM is physical and Lyapunov stable with a zero synchronizing coeffic
   refine Spectral.not_exactUnder_of_witness ?_ flatCurve_mem_den_lyapunovStable
     (q := .synchronizing) (by simp [family, translate])
     (by simp [family, Meets, flatCurve, Model.K])
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   intro q hq
   rw [Set.mem_singleton_iff] at hq
   subst hq
@@ -1157,7 +1157,8 @@ of the two semantics connections at the two members. -/
     (point_eq_affineCoord m hD) P
 
 private theorem den_iff_swing {m : Model} (hp : Meets m .physical) (s : Sentence) :
-    m ∈ family.den s ↔ m.toSwing ∈ Synchronous.Swing.family.den s := by
+    connection% (m ∈ family.den s ↔ m.toSwing ∈ Synchronous.Swing.family.den s) := by
+  change m ∈ family.den s ↔ m.toSwing ∈ Synchronous.Swing.family.den s
   have h := mem_den_iff_swing m hp.1.ne' hp.2.ne' s
   unfold powerlib.TMIO.Statement at h
   exact h
@@ -1179,9 +1180,10 @@ private theorem physical_of {m : Model} {A : Set Requirement} (hA : .physical �
 
 /-- Positive droop gain and bandwidth give the swing reading positive inertia. -/
 private theorem toSwing_mem_inertia {m : Model} (hm : m ∈ TMIO.realize Meets {.physical}) :
-    m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.inertia} := by
+    connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.inertia}) := by
+  change m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.inertia}
   have hp := physical_of (Set.mem_singleton _) hm
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   intro r hr
   rw [Set.mem_singleton_iff] at hr
   subst hr
@@ -1190,9 +1192,12 @@ private theorem toSwing_mem_inertia {m : Model} (hm : m ∈ TMIO.realize Meets {
 /-- Within positive droop gain and bandwidth the local requirements are those of the swing
 reading. -/
 private theorem realize_local_iff {m : Model} (hp : Meets m .physical) :
-    m ∈ TMIO.realize Meets {.balanced, .physical, .synchronizing} ↔
+    connection% (m ∈ TMIO.realize Meets {.balanced, .physical, .synchronizing} ↔
       m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets
-        {.balanced, .inertia, .damped, .synchronizing} := by
+        {.balanced, .inertia, .damped, .synchronizing}) := by
+  change m ∈ TMIO.realize Meets {.balanced, .physical, .synchronizing} ↔
+        m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets
+          {.balanced, .inertia, .damped, .synchronizing}
   obtain ⟨hb, hI, hd, hs, -⟩ := swing_meets_iff m
   simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
     forall_eq, hb, hI, hd, hs]
@@ -1202,7 +1207,8 @@ private theorem realize_local_iff {m : Model} (hp : Meets m .physical) :
 reading's. -/
 private theorem realize_unstable_toSwing {m : Model}
     (hm : m ∈ TMIO.realize Meets {.balanced, .physical, .antiSynchronizing}) :
-    m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced, .inertia, .destabilizing} := by
+    connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced, .inertia, .destabilizing}) := by
+  change m.toSwing ∈ TMIO.realize Synchronous.Swing.Meets {.balanced, .inertia, .destabilizing}
   obtain ⟨hb, hI, -, -, hs⟩ := swing_meets_iff m
   simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
     forall_eq, hb, hI, hs] at hm ⊢
@@ -1454,7 +1460,7 @@ dissipated energy keeps the solution, and there `P₀ ((P₀ − P_f)/ω_c + D �
   unfold powerlib.TMIO.Statement
   have hiff := Synchronous.Swing.mem_den_lyapunovStable_iff_of_inertia m.toSwing (div_pos hD hω)
   unfold powerlib.TMIO.Statement at hiff
-  rw [den_iff_swing ⟨hD, hω⟩, hiff, Set.mem_ofPred_eq, Set.mem_ofPred_eq]
+  rw [(connection_proof% den_iff_swing ⟨hD, hω⟩), hiff, Set.mem_ofPred_eq, Set.mem_ofPred_eq]
   simp only [Model.toSwing, swingParams, Synchronous.SwingParams.Pe,
     Synchronous.SwingParams.syncCoeff, zero_add, sub_zero]
   constructor

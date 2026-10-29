@@ -326,11 +326,11 @@ negative one, conservation by a lossless branch, and decay at the rate `a` by a 
   have hhur : ∀ {P : Flow.Property}, P.Attractive ∨ P = .contractive → ∀ m : Impedance,
       P.holds (affineLinearVectorField m.plant.A 0) 0 ↔ 0 < m.resistance := by
     intro P hP m
-    rw [← family_isLinear.mem_den_flow, family_isLinear.den_hurwitz hP, Set.mem_ofPred_eq,
+    rw [← (connection_proof% family_isLinear.mem_den_flow), family_isLinear.den_hurwitz hP, Set.mem_ofPred_eq,
       isHurwitz_iff]
   refine Family.chain_eq_semantics_iff.mpr fun s => ?_
   ext m
-  rw [Family.mem_den, mem_realize]
+  rw [(connection_proof% Family.mem_den), (connection_proof% mem_realize)]
   change (∀ q ∈ translate s, Meets m q) ↔ s.holds (.continuous m.plant.system)
   rcases s with P | _ | E
   · rw [Sentence.holds_flow, Linear.Plant.system_zeroInput]

@@ -250,7 +250,7 @@ def lpfFamily : Family LPFLoop Spectral.Requirement 3 2 :=
   rfl
 
 private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    lpfFamily.den (.flow P) = {q | q.Stable} :=
+    connection% (lpfFamily.den (.flow P) = {q | q.Stable}) := show lpfFamily.den (.flow P) = {q | q.Stable} from
   Spectral.linear_den (U := Unstable) (fun q => (isHurwitz_iff_stable q).symm) hP
 
 /-- Every translation of the feedforward family is sound. -/

@@ -496,7 +496,8 @@ private theorem translate_eq (s : Sentence) :
 
 /-- Both positive loop gains are the Hurwitz property of the state matrix. -/
 private theorem mem_realize_iff_isHurwitz (m : Model) :
-    m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A := by
+    connection% (m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A) := by
+  change m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A
   simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
     forall_eq, isHurwitz_plant_iff]
   rfl
@@ -580,7 +581,7 @@ frozen loop is Lyapunov stable (conserved energy) with zero loop gains. -/
   have hmem : frozen ∈ family.den (.flow .lyapunovStable) := by
     have hc := frozen_mem_den_conservative
     unfold powerlib.TMIO.Statement at hc
-    rw [family_isLinear.mem_den_flow] at hc ⊢
+    rw [(connection_proof% family_isLinear.mem_den_flow)] at hc ⊢
     exact Flow.Conservative.lyapunovStable hc
   refine Spectral.not_exact_of_witness hmem (q := .proportional) (by simp [family, translate])
     fun h' => ?_

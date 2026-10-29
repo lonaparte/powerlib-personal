@@ -770,7 +770,7 @@ language is inconsistent. -/
 
 private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
     (hV : Meets m .positiveReference) (hr : Meets m .routh) :
-    m ∈ family.den (.flow .locallyExponentiallyStable) :=
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
   mem_den_flow_iff.mpr (m.p.modelB_locallyExponentiallyStable hV he hr.1 hr.2.1 hr.2.2.1 hr.2.2.2)
 
 /-- Every translation of the model-B family is sound: the Routh conditions at an equilibrium
@@ -788,10 +788,10 @@ which it agrees with model B), and passivity holds without requirement. -/
     · cases P <;> rfl
     · rfl
     · rfl
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact les_of_meets (hm .equilibrium (by simp)) (hm .positiveReference (by simp))
       (hm .routh (by simp))
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact mem_den_flow_iff.mpr (m.p.modelB_unstable_of_det_neg (hm .positiveReference (by simp))
       (hm .equilibrium (by simp)) (hm .detNeg (by simp)))
 
@@ -860,12 +860,12 @@ model B on a ball around the equilibrium, and the quartic Routh–Hurwitz criter
       m.p.field_eq_regField_of_mem_ball (hΔ m hm).2 (m.p.equilibrium_Vdc (hΔ m hm).1) hy)
     (fun m hm => m.p.fderiv_field (by rw [m.p.equilibrium_Vdc (hΔ m hm).1]; exact (hΔ m hm).2.ne'))
     fun m hm _ hH => ?_
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact les_of_meets (hm .equilibrium (by simp [family, translate]))
       (hm .positiveReference (by simp [family, translate]))
       (hm .routh (by simp [family, translate]))
   obtain ⟨hx, hV⟩ := hΔ m hm
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl | rfl)
   · exact hx
   · exact hV
@@ -969,7 +969,7 @@ the negative-reference converter is an equilibrium. -/
   unfold powerlib.TMIO.Statement
   refine Spectral.not_exactUnder_of_witness ?_ negativeReference_mem_den_locallyExponentiallyStable
     (q := .positiveReference) (by simp [family, translate]) fun hV => ?_
-  · rw [TMIO.mem_realize]
+  · rw [(connection_proof% TMIO.mem_realize)]
     intro q hq
     rw [Set.mem_singleton_iff] at hq
     subst hq

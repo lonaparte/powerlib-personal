@@ -372,9 +372,9 @@ connections at the two members. -/
   have hpt : angleState m.δ = m.toSwing.point := by
     ext i
     fin_cases i <;> simp [angleState, Synchronous.Swing.Model.point, SatModel.toSwing]
-  rw [mem_den_flow, Spectral.mem_den_flow_iff_shift
+  rw [(connection_proof% mem_den_flow), (connection_proof% Spectral.mem_den_flow_iff_shift
     (f := fun y : Synchronous.Swing.Model => y.p.field) (pt := Synchronous.Swing.Model.point)
-    Synchronous.Swing.family_isAutonomous, satField_eq_swing, hpt]
+    Synchronous.Swing.family_isAutonomous), satField_eq_swing, hpt]
 
 private theorem toSwing_Pe (m : SatModel) :
     m.toSwing.p.Pe m.toSwing.δ = m.Psat * Real.cos (m.δ - m.φ) := by
@@ -391,7 +391,7 @@ private theorem toSwing_syncCoeff (m : SatModel) :
 
 /-- With positive inertia the swing reading lies in the swing family's context `{inertia}`. -/
 private theorem toSwing_mem_inertia {m : SatModel} (hM : 0 < m.M) :
-    m.toSwing ∈ TMIO.realize Synchronous.Swing.family.meets {.inertia} :=
+    connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.family.meets {.inertia}) := show m.toSwing ∈ TMIO.realize Synchronous.Swing.family.meets {.inertia} from
   (TMIO.mem_realize _ _ _).mpr fun q hq => by
     rw [Set.mem_singleton_iff] at hq
     subst hq
@@ -401,9 +401,12 @@ private theorem toSwing_mem_inertia {m : SatModel} (hM : 0 < m.M) :
 sentences (balance, inertia, damping, synchronization) exactly under the saturated stability
 condition: the synchronizing coefficient is `−P_sat sin(δ* − φ)`. -/
 private theorem toSwing_mem_realize_iff {m : SatModel} (hM : 0 < m.M) :
-    m.toSwing ∈ TMIO.realize Synchronous.Swing.family.meets
+    connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.family.meets
         (Synchronous.Swing.family.translate (.flow .locallyExponentiallyStable)) ↔
-      m.Psat * Real.cos (m.δ - m.φ) = m.Pref ∧ 0 < m.D ∧ m.Psat * Real.sin (m.δ - m.φ) < 0 := by
+      m.Psat * Real.cos (m.δ - m.φ) = m.Pref ∧ 0 < m.D ∧ m.Psat * Real.sin (m.δ - m.φ) < 0) := by
+  change m.toSwing ∈ TMIO.realize Synchronous.Swing.family.meets
+          (Synchronous.Swing.family.translate (.flow .locallyExponentiallyStable)) ↔
+        m.Psat * Real.cos (m.δ - m.φ) = m.Pref ∧ 0 < m.D ∧ m.Psat * Real.sin (m.δ - m.φ) < 0
   simp only [TMIO.mem_realize, Synchronous.Swing.family, Synchronous.Swing.translate,
     Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq,
     Synchronous.Swing.Meets, toSwing_Pe, toSwing_syncCoeff]

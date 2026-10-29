@@ -39,20 +39,25 @@ def transport (u : sInfHom B A) (eA : A ≃o A') (eB : B ≃o B') : sInfHom B' A
     rw [map_sInf eB.symm, map_sInf u, map_sInf eA, Set.image_image, Set.image_image]
 
 @[tmio T, simp, powerlib_foundation] theorem transport_apply (u : sInfHom B A) (eA : A ≃o A')
-    (eB : B ≃o B') (b : B') : transport u eA eB b = eA (u (eB.symm b)) := rfl
+    (eB : B ≃o B') (b : B') :
+    connection% (transport u eA eB b = eA (u (eB.symm b))) := show transport u eA eB b = eA (u (eB.symm b)) from rfl
 
 /-- The generated forward map transports with the structure. -/
 @[tmio T, powerlib_foundation] theorem generate_transport (u : sInfHom B A) (eA : A ≃o A')
-    (eB : B ≃o B') : ⇑(generate (transport u eA eB)) = eB ∘ generate u ∘ eA.symm := by
+    (eB : B ≃o B') :
+    connection% (⇑(generate (transport u eA eB)) = eB ∘ generate u ∘ eA.symm) := by
+  change ⇑(generate (transport u eA eB)) = eB ∘ generate u ∘ eA.symm
   symm
   apply generate_unique
   intro a b
   change eB (generate u (eA.symm a)) ≤ b ↔ a ≤ eA (u (eB.symm b))
-  rw [← OrderIso.le_symm_apply, gc_generate u, OrderIso.symm_apply_le]
+  rw [← OrderIso.le_symm_apply, (connection_proof% gc_generate u), OrderIso.symm_apply_le]
 
 /-- The generated closure operator transports by Mathlib's conjugation of closure operators. -/
 @[tmio T, powerlib_foundation] theorem closure_transport (u : sInfHom B A) (eA : A ≃o A')
-    (eB : B ≃o B') : closure (transport u eA eB) = (closure u).conjBy eA := by
+    (eB : B ≃o B') :
+    connection% (closure (transport u eA eB) = (closure u).conjBy eA) := by
+  change closure (transport u eA eB) = (closure u).conjBy eA
   ext a
   rw [closure_apply, congrFun (generate_transport u eA eB) a]
   simp only [Function.comp_apply, transport_apply, OrderIso.symm_apply_apply]
@@ -60,7 +65,8 @@ def transport (u : sInfHom B A) (eA : A ≃o A') (eB : B ≃o B') : sInfHom B' A
 
 /-- Transporting along identities changes nothing. -/
 @[tmio T, powerlib_foundation] theorem transport_refl (u : sInfHom B A) :
-    transport u (OrderIso.refl A) (OrderIso.refl B) = u := by
+    connection% (transport u (OrderIso.refl A) (OrderIso.refl B) = u) := by
+  change transport u (OrderIso.refl A) (OrderIso.refl B) = u
   ext b
   rfl
 
@@ -97,9 +103,7 @@ def interiorTransport (u : sInfHom B A) (eA : A ≃o A') (eB : B ≃o B') :
 /-- Representation change preserves the generated fixed-point correspondence itself. -/
 @[tmio T, powerlib_foundation] theorem fixedPointsIso_transport (u : sInfHom B A)
     (eA : A ≃o A') (eB : B ≃o B') (a : {a : A // u (generate u a) = a}) :
-    fixedPointsIso (transport u eA eB) (closedTransport u eA eB a) =
-      interiorTransport u eA eB (fixedPointsIso u a) := by
-  apply Subtype.ext
+    connection% (generate (transport u eA eB) (eA a.val) = eB (generate u a.val)) := by
   change generate (transport u eA eB) (eA a.val) = eB (generate u a.val)
   rw [congrFun (generate_transport u eA eB) (eA a.val)]
   simp
@@ -122,7 +126,8 @@ def transport (S : Seed T M I O) (eT : T ≃o T') (eM : M ≃o M') (eI : I ≃o 
 /-- The whole generated chain transports with the four representation changes. -/
 @[tmio T, powerlib_foundation] theorem transport_whole (S : Seed T M I O) (eT : T ≃o T') (eM : M ≃o M')
     (eI : I ≃o I') (eO : O ≃o O') :
-    ⇑(generate (S.transport eT eM eI eO).uTO) = eO ∘ generate S.uTO ∘ eT.symm := by
+    connection% (⇑(generate (S.transport eT eM eI eO).uTO) = eO ∘ generate S.uTO ∘ eT.symm) := by
+  change ⇑(generate (S.transport eT eM eI eO).uTO) = eO ∘ generate S.uTO ∘ eT.symm
   rw [generate_uTO, generate_uTO]
   funext t
   simp only [Function.comp_apply, l₁, l₂, l₃, transport]

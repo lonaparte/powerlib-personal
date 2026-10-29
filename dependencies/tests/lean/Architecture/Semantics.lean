@@ -293,7 +293,7 @@ def boundaryFamily : Family Unit Unit 1 0 :=
 @[powerlib_domain] theorem locallyExponentiallyStable :
     connection% (() ∈ boundaryFamily.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [boundaryFamily_isAutonomous.mem_den_flow]
+  rw [(connection_proof% boundaryFamily_isAutonomous.mem_den_flow)]
   exact hurwitz_linearization_locally_exponentially_stable !![-1] field_contDiff (by simp [field])
     fderiv_field_zero ((Linear.isHurwitz_one_iff (-1)).mpr (by norm_num))
 
@@ -301,7 +301,7 @@ def boundaryFamily : Family Unit Unit 1 0 :=
 @[powerlib_domain] theorem not_globallyExponentiallyStable :
     connection% (() ∉ boundaryFamily.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [boundaryFamily_isAutonomous.mem_den_flow]
+  rw [(connection_proof% boundaryFamily_isAutonomous.mem_den_flow)]
   rintro ⟨-, -, C, a, hC, ha, hb⟩
   have hC1 : 0 < C + 1 := by linarith
   set T := Real.log (C + 1) / a with hT
@@ -337,7 +337,7 @@ def boundaryFamily : Family Unit Unit 1 0 :=
 @[powerlib_domain] theorem cubic_global (n : ℕ) (α : Nonlinear.Cubic.Gain) :
     connection% (α ∈ (Nonlinear.Cubic.family (n := n)).den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [Nonlinear.Cubic.family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% Nonlinear.Cubic.family_isAutonomous.mem_den_flow)]
   exact (Nonlinear.Cubic.family_isAutonomous.mem_den_flow.mp
     (Nonlinear.Cubic.mem_den_globallyExponentiallyStable α)).globallyAsymptoticallyStable
 
@@ -356,7 +356,7 @@ def mapFamily : Family ScalarMap Unit 1 0 :=
 @[powerlib_domain] theorem contracting_mem_den (g : ScalarMap) (h : |g.a| < 1) :
     connection% (g ∈ mapFamily.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [mapFamily_isAutonomousMap.mem_den_flow]
+  rw [(connection_proof% mapFamily_isAutonomousMap.mem_den_flow)]
   refine ⟨by simp, 1, |g.a|, le_rfl, abs_nonneg _, h, fun y k => ?_⟩
   simp [smul_iterate, norm_smul]
 

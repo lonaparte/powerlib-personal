@@ -211,7 +211,7 @@ constant for all segments. -/
   unfold powerlib.TMIO.Statement
   have h := seriesRLCPH_mem_den_globallyExponentiallyStable p hr
   unfold powerlib.TMIO.Statement at h
-  rw [Port.PortHamiltonian.family_isLinear.mem_den_flow] at h
+  rw [(connection_proof% Port.PortHamiltonian.family_isLinear.mem_den_flow)] at h
   obtain ⟨a, ha, hd⟩ := Flow.GloballyExponentiallyStable.exists_decay h
   exact ⟨a, ha, Port.PortHamiltonian.family_isLinear.mem_den_flow.mpr hd⟩
 

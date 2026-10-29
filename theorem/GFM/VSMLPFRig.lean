@@ -368,11 +368,11 @@ instability, and passivity holds without requirement. -/
     · cases P <;> rfl
     · rfl
     · rfl
-  · rw [TMIO.mem_realize] at hy
+  · rw [(connection_proof% TMIO.mem_realize)] at hy
     exact rig_mem_den_flow_iff.mpr (rig_les_of (hy (.design .physical) (by simp))
       (hy .lag (by simp)) (hy (.design .balanced) (by simp))
       (hy (.design .synchronizing) (by simp)) (hy .routh (by simp)))
-  · rw [TMIO.mem_realize] at hy
+  · rw [(connection_proof% TMIO.mem_realize)] at hy
     exact rig_mem_den_flow_iff.mpr (rig_unstable_of (hy (.design .physical) (by simp))
       (hy .lag (by simp)) (hy (.design .balanced) (by simp)) (hy .lagged (by simp)))
 
@@ -392,14 +392,14 @@ the four-state Routh–Hurwitz criterion, both directions). -/
   refine Spectral.exactUnder_les_of_jacobian (fun y P => rig_mem_den_flow_iff)
     {.design .physical, .lag} Rig.jacobian (fun y _ hy => ?_) (fun y _ => contDiff_rigField y)
     (fun y _ => (hasFDerivAt_rigField y).fderiv) fun y hI heq hHur => ?_
-  · rw [TMIO.mem_realize] at hy
+  · rw [(connection_proof% TMIO.mem_realize)] at hy
     exact rig_mem_den_flow_iff.mpr (rig_les_of
       (hy (.design .physical) (by simp [rigFamily, rigTranslate]))
       (hy .lag (by simp [rigFamily, rigTranslate]))
       (hy (.design .balanced) (by simp [rigFamily, rigTranslate]))
       (hy (.design .synchronizing) (by simp [rigFamily, rigTranslate]))
       (hy .routh (by simp [rigFamily, rigTranslate])))
-  rw [TMIO.mem_realize] at hI
+  rw [(connection_proof% TMIO.mem_realize)] at hI
   have hp : Meets y.design .physical := hI (.design .physical) (by simp)
   have hτ : 0 < y.τ := hI .lag (by simp)
   obtain ⟨hM, hD, hω⟩ := hp
@@ -412,7 +412,7 @@ the four-state Routh–Hurwitz criterion, both directions). -/
   have hH : 0 < y.H := by
     rw [← gap_eq y hM.ne' hτ.ne']
     exact mul_pos (by linarith) (by positivity)
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl | rfl | rfl | rfl)
   · exact heq
   · exact ⟨hM, hD, hω⟩
@@ -494,13 +494,14 @@ private theorem mem_realizes {x : Model} {y : Rig} : (x, y) ∈ stack.realizes �
 local exponential stability. -/
 private theorem design_fast_of_modelCheck {y : Rig} {v : Record} (hv : v.ModelCheck)
     (hp : Produces y v) :
-    y.design ∈ TMIO.realize Meets (translate (.flow .locallyExponentiallyStable)) := by
+    connection% (y.design ∈ TMIO.realize Meets (translate (.flow .locallyExponentiallyStable))) := by
+  change y.design ∈ TMIO.realize Meets (translate (.flow .locallyExponentiallyStable))
   obtain ⟨hMlo, hDlo, hωlo, hKlo, hchk⟩ := hv
   obtain ⟨hb, hM1, hM2, hD1, -, hω1, -, hK1, hK2, -, -⟩ := hp
   have hM : 0 < y.design.g.M := lt_of_lt_of_le hMlo hM1
   have hD : 0 < y.design.g.D := lt_of_lt_of_le hDlo hD1
   have hω : 0 < y.design.g.ωc := lt_of_lt_of_le hωlo hω1
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   intro q hq
   simp only [translate, Set.mem_insert_iff, Set.mem_singleton_iff] at hq
   rcases hq with rfl | rfl | rfl | rfl
@@ -518,13 +519,14 @@ private theorem design_fast_of_modelCheck {y : Rig} {v : Record} (hv : v.ModelCh
 instability. -/
 private theorem design_slow_of_slowCheck {y : Rig} {v : Record} (hv : v.SlowCheck)
     (hp : Produces y v) :
-    y.design ∈ TMIO.realize Meets (translate (.flow .unstable)) := by
+    connection% (y.design ∈ TMIO.realize Meets (translate (.flow .unstable))) := by
+  change y.design ∈ TMIO.realize Meets (translate (.flow .unstable))
   obtain ⟨hMlo, hDlo, hωlo, hchk⟩ := hv
   obtain ⟨hb, hM1, -, hD1, hD2, hω1, hω2, hK1, -, -, -⟩ := hp
   have hM : 0 < y.design.g.M := lt_of_lt_of_le hMlo hM1
   have hD : 0 < y.design.g.D := lt_of_lt_of_le hDlo hD1
   have hω : 0 < y.design.g.ωc := lt_of_lt_of_le hωlo hω1
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   intro q hq
   simp only [translate, Set.mem_insert_iff, Set.mem_singleton_iff] at hq
   rcases hq with rfl | rfl | rfl
@@ -680,13 +682,13 @@ obligation, fast filter and fast delay give the platform Routh condition `H > 0`
     (ΔM := {Requirement.physical}) (by rw [stack_model]; exact hex)
     (by rw [stack_impl]; exact Family.chain_le_semantics_iff.mp hrig _) (fun y hy => ?_)
     fun y hΔ hd => ?_
-  · rw [stack_impl, TMIO.mem_realize] at hy
-    rw [stack_model, TMIO.mem_realize]
+  · rw [stack_impl, (connection_proof% TMIO.mem_realize)] at hy
+    rw [stack_model, (connection_proof% TMIO.mem_realize)]
     intro q hq
     rw [Set.mem_singleton_iff.mp hq]
     exact hy (.design .physical) (by simp)
-  · rw [stack_model, TMIO.mem_realize] at hd
-    rw [stack_impl, TMIO.mem_realize] at hΔ ⊢
+  · rw [stack_model, (connection_proof% TMIO.mem_realize)] at hd
+    rw [stack_impl, (connection_proof% TMIO.mem_realize)] at hΔ ⊢
     have hp : Meets y.design .physical := hΔ (.design .physical) (by simp)
     have hτ : 0 < y.τ := hΔ .lag (by simp)
     have hK : 0 < y.design.K := hd .synchronizing (by simp [family, translate])
@@ -732,7 +734,7 @@ unstable. -/
   unfold powerlib.TMIO.Statement at hd hu
   refine Implementation.not_realizationSoundUnder_of_design (I := stack.toImplementation) rfl hd
     ?_ fun hmem => ?_
-  · rw [TMIO.mem_realize]
+  · rw [(connection_proof% TMIO.mem_realize)]
     intro q hq
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
     rcases hq with rfl | rfl
@@ -752,7 +754,7 @@ operating point off equilibrium; a slow filter gives `H < 0`; `K < 0` gives `det
       (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement Implementation.RealizationSoundUnder
   rintro y ⟨-, hΔ⟩
-  rw [TMIO.mem_realize] at hΔ
+  rw [(connection_proof% TMIO.mem_realize)] at hΔ
   have hp : Meets y.design .physical := hΔ (.design .physical) (by simp)
   have hs : Meets y.design .destabilizing := hΔ (.design .destabilizing) (by simp)
   have hτ : 0 < y.τ := hΔ .lag (by simp)
@@ -776,7 +778,7 @@ M-layer translation is sound (`chain_le_semantics`). -/
   have hsound := chain_le_semantics
   unfold powerlib.TMIO.Statement at hsound
   refine stack.mem_infer_of_organized (Family.chain_le_semantics_iff.mp hsound _) ?_
-  rw [Stack.mem_inferOrganized]
+  rw [(connection_proof% Stack.mem_inferOrganized)]
   intro w hw y hy x hx
   rw [Set.mem_singleton_iff] at hw
   subst hw
@@ -808,7 +810,7 @@ every platform that may produce the record (`Stack.infer_subset_truth` with
   rw [Set.mem_singleton_iff] at hw
   subst hw
   have hp := mem_produces.mp hy
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   intro q hq
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
   obtain ⟨hMlo, hDlo, hωlo, -, -⟩ := id h₁
@@ -841,7 +843,7 @@ model. -/
   have hsound := chain_le_semantics
   unfold powerlib.TMIO.Statement at hsound
   refine stack.mem_infer_of_organized (Family.chain_le_semantics_iff.mp hsound _) ?_
-  rw [Stack.mem_inferOrganized]
+  rw [(connection_proof% Stack.mem_inferOrganized)]
   intro w hw y hy x hx
   rw [Set.mem_singleton_iff] at hw
   subst hw
@@ -862,7 +864,7 @@ whatever its delay (`realizationSoundUnder_unstable`). -/
   subst hw
   have hp := mem_produces.mp hy
   have hd := design_slow_of_slowCheck h hp
-  rw [TMIO.mem_realize] at hd ⊢
+  rw [(connection_proof% TMIO.mem_realize)] at hd ⊢
   intro q hq
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
   rcases hq with rfl | rfl | rfl
@@ -917,7 +919,7 @@ and `H > 0` forces the fast-filter margin of the design. A delay never stabilize
   rintro y ⟨hd, hΔ⟩
   rw [Implementation.certify_realizes_of_design (I := stack.toImplementation) rfl]
   have hΔ' := hΔ
-  rw [TMIO.mem_realize] at hΔ'
+  rw [(connection_proof% TMIO.mem_realize)] at hΔ'
   have hp : Meets y.design .physical := hΔ' (.design .physical) (by simp)
   have hτ : 0 < y.τ := hΔ' .lag (by simp)
   have hex := rig_exactUnder_locallyExponentiallyStable
@@ -926,7 +928,7 @@ and `H > 0` forces the fast-filter margin of the design. A delay never stabilize
       (rigFamily.translate (.flow .locallyExponentiallyStable) ∪ {.design .physical, .lag}) := by
     rw [hex]
     exact ⟨hd, hΔ⟩
-  rw [TMIO.mem_realize] at hm
+  rw [(connection_proof% TMIO.mem_realize)] at hm
   have hb : Meets y.design .balanced := hm (.design .balanced) (by simp [rigFamily, rigTranslate])
   have hK : 0 < y.design.K := hm (.design .synchronizing) (by simp [rigFamily, rigTranslate])
   have hH : 0 < y.H := hm .routh (by simp [rigFamily, rigTranslate])

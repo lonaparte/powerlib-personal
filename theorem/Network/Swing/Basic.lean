@@ -645,13 +645,16 @@ private theorem reducedSwing_locallyExponentiallyStable (p : Params n)
     (hasFDerivAt_reducedField p θ).fderiv (jacobian_isHurwitz_of_angle p θ hangle hconn)
 
 private theorem les_of_meets {m : Model n} (hp : Meets m .powerFlow)
-    (hH : Meets m .jacobianStable) : m ∈ family.den (.flow .locallyExponentiallyStable) :=
+    (hH : Meets m .jacobianStable) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
   mem_den_flow_iff.mpr (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian
     (jacobian m.params m.θ) (reducedField_contDiff m.params)
     (reducedField_equilibrium m.params m.θ hp) (hasFDerivAt_reducedField m.params m.θ).fderiv hH)
 
 private theorem unstable_of_meets {m : Model n} (hp : Meets m .powerFlow)
-    (hu : Meets m .jacobianUnstable) : m ∈ family.den (.flow .unstable) := by
+    (hu : Meets m .jacobianUnstable) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  change m ∈ family.den (.flow .unstable)
   obtain ⟨s, hs, hre⟩ := hu
   exact mem_den_flow_iff.mpr (Dynamics.unstable_of_characteristic_root_re_pos
     (jacobian m.params m.θ) (reducedField_contDiff m.params)
@@ -683,9 +686,9 @@ holds without requirement. -/
     · cases P <;> rfl
     · rfl
     · rfl
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact les_of_meets (hm .powerFlow (by simp)) (hm .jacobianStable (by simp))
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact unstable_of_meets (hm .powerFlow (by simp)) (hm .jacobianUnstable (by simp))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
@@ -717,10 +720,10 @@ reduced field forces an equilibrium with a Hurwitz Jacobian. -/
     (fun m P => mem_den_flow_iff) ∅ (fun m => jacobian m.params m.θ) (fun m _ hm => ?_)
     (fun m _ => reducedField_contDiff m.params)
     (fun m _ => (hasFDerivAt_reducedField m.params m.θ).fderiv) fun m _ heq hH => ?_)
-  · rw [TMIO.mem_realize] at hm
+  · rw [(connection_proof% TMIO.mem_realize)] at hm
     exact les_of_meets (hm .powerFlow (by simp [family, translate]))
       (hm .jacobianStable (by simp [family, translate]))
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
   · exact powerFlow_of_equilibrium heq
   · exact hH
@@ -811,7 +814,7 @@ force (the reduced Jacobian has a zero column). -/
 @[tmio TM, powerlib_domain] theorem uncoupled_mem_den_lyapunovStable :
     connection% (uncoupled ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   refine Dynamics.lyapunovStable_of_inner_nonpos (by norm_num)
     (Matrix.toEuclideanCLM (n := Fin (1 + (1 + 1))) (𝕜 := ℝ) !![1, -1, 1; 0, 1, 0; 0, 0, 1])
     (fun z w hzw => ?_) fun z => ?_
@@ -920,7 +923,7 @@ energy `∑ᵢ (δᵢ + ω_{i+1} − ω₀)² + ∑ₖ ωₖ²` does not increas
 @[tmio TM, powerlib_domain] theorem uncoupledN_mem_den_lyapunovStable :
     connection% (uncoupledN n ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [family_isAutonomous.mem_den_flow]
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   refine Dynamics.lyapunovStable_of_inner_nonpos (by omega)
     (LinearMap.toContinuousLinearMap (conservedLin (n + 1))) (conservedLin_injective _)
     fun z => ?_
@@ -982,7 +985,8 @@ Jacobian is always Hurwitz (`jacobian_isHurwitz_zero`), so every equilibrium mee
 (`Spectral.exact_of_equilibrium`, with no degenerate equilibria). -/
 private theorem exact_zero {P : Flow.Property}
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
-    (family (n := 0)).Exact (.flow P) := by
+    connection% ((family (n := 0)).Exact (.flow P)) := by
+  change (family (n := 0)).Exact (.flow P)
   have hsound := chain_le_semantics (n := 0)
   unfold powerlib.TMIO.Statement at hsound
   have ht : (family (n := 0)).translate (.flow P) = {.powerFlow, .jacobianStable} := by
@@ -991,7 +995,7 @@ private theorem exact_zero {P : Flow.Property}
     (by rcases hP with rfl | rfl <;> simp) (fun _ => True)
     (Family.chain_le_semantics_iff.mp hsound _) (fun m => reducedField_contDiff m.params)
     (fun _ _ h => absurd trivial h) fun m heq _ => ?_
-  rw [ht, TMIO.mem_realize]
+  rw [ht, (connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
   · exact powerFlow_of_equilibrium heq
   · exact jacobian_isHurwitz_zero _ _

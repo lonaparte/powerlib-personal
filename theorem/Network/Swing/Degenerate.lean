@@ -981,7 +981,7 @@ hence a power-balance point (`powerFlow_of_equilibrium`), and the translation
     have hsound := chain_le_semantics (n := n)
     unfold powerlib.TMIO.Statement at hsound
     refine Family.chain_le_semantics_iff.mp hsound _ ?_
-    rw [TMIO.mem_realize]
+    rw [(connection_proof% TMIO.mem_realize)]
     rintro q (rfl | rfl)
     exacts [hp, hH]
 
@@ -998,7 +998,7 @@ local asymptotic translation `{powerFlow, jacobianStable}` of `family (n := n)` 
   ext m
   have hm := mem_den_locallyAsymptoticallyStable_iff_of_guard m (h m)
   unfold powerlib.TMIO.Statement at hm
-  rw [hm, TMIO.mem_realize]
+  rw [hm, (connection_proof% TMIO.mem_realize)]
   simp only [family, translate, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,
     forall_eq]
   rfl

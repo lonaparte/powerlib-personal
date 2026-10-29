@@ -71,7 +71,7 @@ open powerlib LinearSystems
   unfold powerlib.TMIO.Statement
   rw [← Linear.Rational.exact_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
   refine Linear.Rational.realize_accepted ?_
-  rw [TMIO.mem_realize]
+  rw [(connection_proof% TMIO.mem_realize)]
   intro q hq
   rw [Set.mem_singleton_iff] at hq
   subst hq
@@ -82,7 +82,7 @@ open powerlib LinearSystems
 @[powerlib_domain] theorem lcl_automatic (m : Circuits.LCL.Circuit) (hp : m.Passive) (hd : m.Damped) :
     connection% (m ∈ Circuits.LCL.family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  rw [Circuits.LCL.family_isLinear.mem_den_flow]
+  rw [(connection_proof% Circuits.LCL.family_isLinear.mem_den_flow)]
   aesop
 
 -- Passivity from stored energy, for every port-Hamiltonian plant.
