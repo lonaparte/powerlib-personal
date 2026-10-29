@@ -256,8 +256,13 @@ instance : IsProbabilityMeasure gaussianSample := by
   rw [measure_singleton] at h
   exact h
 
+/-- The fixed zero-drift design has its own model type, so the family inventory does not
+identify unrelated uses of `Unit` as models. -/
+inductive DriftDesign where
+  | zero
+
 /-- The drift design `ẋ = 0` from the origin with the safe set of radius `1/2`. -/
-def driftDesign : Family Unit Unit 1 1 :=
+def driftDesign : Family DriftDesign Unit 1 1 :=
   ⟨fun _ => .disturbed (fun _ => drift 0) {0} (ball 0 (1 / 2)) (Measure.dirac (constSample 0)),
     fun _ _ => False, fun _ => Set.univ⟩
 
@@ -267,11 +272,11 @@ def driftDesign : Family Unit Unit 1 1 :=
 
 /-- The disturbed drift `ẋ = σ ω₀`, `ω₀` standard Gaussian, on the unit ball with the margin
 `1/2`. -/
-def noisyDrift (σ : ℝ) : Noisy Unit 1 :=
-  ⟨(), ball 0 1, 1 / 2, σ, gaussianSample, fun ω _ => ω 0 • e₁⟩
+def noisyDrift (σ : ℝ) : Noisy DriftDesign 1 :=
+  ⟨.zero, ball 0 1, 1 / 2, σ, gaussianSample, fun ω _ => ω 0 • e₁⟩
 
 /-- The disturbed realization of the drift design. -/
-def driftImpl : Implementation Unit Unit (Noisy Unit 1) NoiseRequirement 1 1 1 1 :=
+def driftImpl : Implementation DriftDesign Unit (Noisy DriftDesign 1) NoiseRequirement 1 1 1 1 :=
   noisy driftDesign (fun _ => drift 0) (fun _ => {0}) (fun _ => ball 0 (1 / 2))
 
 @[powerlib_foundation] theorem norm_smul_e₁ (a : ℝ) : ‖a • e₁‖ = |a| := by
@@ -283,7 +288,7 @@ def driftImpl : Implementation Unit Unit (Noisy Unit 1) NoiseRequirement 1 1 1 1
 
 /-- The drift design is safe over every horizon at every level. -/
 @[tmio TM, powerlib_domain] theorem mem_den_driftDesign (T ε : ℝ≥0∞) :
-    connection% (() ∈ driftDesign.den (.envelope (.safe T ε))) := by
+    connection% (DriftDesign.zero ∈ driftDesign.den (.envelope (.safe T ε))) := by
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% Family.mem_den)]
   change Measure.dirac (constSample 0) {_ω | (drift 0).Exceeds {0} (ball 0 (1 / 2)) T} ≤ ε

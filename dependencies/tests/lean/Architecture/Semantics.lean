@@ -385,3 +385,15 @@ run_cmd do
       unless powerlib.Search.allowedAxiom ax do
         throwError "Unexpected semantic boundary axiom {ax} in {root}"
   logInfo m!"POWERLIB_SEMANTIC_BOUNDARY_OK: {roots.size}"
+
+-- A fixed counterexample must own a dedicated model type. Registering Unit as a model
+-- also captures Unit-valued implementation details in unrelated generic semantic laws.
+set_option maxHeartbeats 0 in
+run_cmd liftTermElabM do
+  let models ← powerlib.Architecture.modelTypes
+  if models.any (fun (_, e) => e.getForallBody.getAppFn.isConstOf ``Unit) then
+    throwError "A fixed family registered the shared Unit type as a model"
+  for name in #[``powerlib.Envelope.DriftDesign, ``SemanticsCases.BoundaryModel] do
+    unless models.any (fun (_, e) => e.getForallBody.getAppFn.isConstOf name) do
+      throwError "Counterexample model was omitted from ownership: {name}"
+  logInfo "POWERLIB_COUNTEREXAMPLE_MODEL_OWNERSHIP_OK"
