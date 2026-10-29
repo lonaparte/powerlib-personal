@@ -90,7 +90,10 @@ instability (a characteristic root in the open right half plane; LeanForControl'
 theorem for the regularized field, transferred through the ball on which it is model B). -/
 private theorem unstable_of_violation {m : Model} (hV : 0 < m.p.VdcRef)
     (hx : m.p.field m.x = 0) (hviol : RouthViolationFin4 (m.p.jacobian m.x)) :
-    Unstable m.p.field m.x := by
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow_iff')]
+  change Unstable m.p.field m.x
   obtain ⟨hreg0, hJ⟩ := m.p.regField_equilibrium_jacobian hV hx
   have hreg := Criteria.unstable_of_jacobian_violation_fin_four (m.p.jacobian m.x)
     (m.p.contDiff_regField hV) hreg0 hJ hviol
@@ -104,7 +107,7 @@ strictly, model B is unstable. -/
     (hx : m.p.field m.x = 0) (hviol : RouthViolationFin4 (m.p.jacobian m.x)) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff'.mpr (unstable_of_violation hV hx hviol)
+  exact mem_den_flow_iff'.mpr ((mem_den_flow_iff'.mp (unstable_of_violation hV hx hviol)))
 
 /-- Off the boundary the local Lyapunov and asymptotic sentences are decided by the linearization:
 the Routh conditions give local exponential stability, a strict violation instability. -/
@@ -131,7 +134,7 @@ private theorem exactUnder_offBoundary_of {P : Flow.Property}
   have hr : Meets m .routh := by
     rcases hob with hr | hviol
     · exact hr
-    · exact absurd (hLS m hd) (unstable_of_violation hV hx hviol)
+    · exact absurd (hLS m hd) ((mem_den_flow_iff'.mp (unstable_of_violation hV hx hviol)))
   rw [(connection_proof% TMIO.mem_realize), htr]
   rintro q (rfl | rfl | rfl)
   · exact hx
@@ -341,7 +344,11 @@ private theorem block_invariants {J : Matrix (Fin 4) (Fin 4) ℝ} {a b c d e : �
     simp only [e00, e01, e02, e03, e10, e11, e12, e13, e20, e21, e22, e23, e30, e31, e32, e33]
     ring
 
-private theorem hopfCenter_equilibrium : hopfCenter.p.field hopfCenter.x = 0 := by
+private theorem hopfCenter_equilibrium :
+    connection% (hopfCenter ∈ TMIO.realize Meets {.equilibrium}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  change hopfCenter.p.field hopfCenter.x = 0
   rw [ModelBParams.field_eq_zero_iff]
   simp [hopfCenter, ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
 
@@ -369,7 +376,11 @@ private theorem hopfCenter_invariants :
 /-- The Jacobian of the undamped loop, `diag([[−1, 1], [−1, 0]], [[0, 1], [−1, 0]])`, has
 characteristic polynomial `(s² + s + 1)(s² + 1)`: the Hurwitz determinant vanishes, so it is not
 Routh (`m₃² + tr² det = tr m₂ m₃ = 2`)... -/
-private theorem hopfCenter_not_routh : ¬ RouthFin4 (hopfCenter.p.jacobian hopfCenter.x) := by
+private theorem hopfCenter_not_routh :
+    connection% (hopfCenter ∉ TMIO.realize Meets {.routh}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  change ¬ RouthFin4 (hopfCenter.p.jacobian hopfCenter.x)
   obtain ⟨h1, h2, h3, h4⟩ := hopfCenter_invariants
   rintro ⟨-, -, -, h⟩
   rw [h1, h2, h3, h4] at h
@@ -391,10 +402,10 @@ translation is exact (`exactUnder_offBoundary_lyapunovStable`). -/
       (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.not_exactUnder_of_witness ?_ hopfCenter_mem_den_lyapunovStable
-    (q := Requirement.routh) (by simp [family, translate]) hopfCenter_not_routh
+    (q := Requirement.routh) (by simp [family, translate]) (show ¬ RouthFin4 (hopfCenter.p.jacobian hopfCenter.x) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfCenter_not_routh)
   rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
-  · exact hopfCenter_equilibrium
+  · exact (show hopfCenter.p.field hopfCenter.x = 0 from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfCenter_equilibrium)
   · show (0 : ℝ) < hopfCenter.p.VdcRef
     norm_num [hopfCenter]
 
@@ -406,7 +417,11 @@ component of the field vanishes (`x / 0 = 0`) and `V_dc` is a first integral; ot
 def cdcZero : Model :=
   ⟨⟨0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0⟩, WithLp.toLp 2 ![0, 0, 1, 0]⟩
 
-private theorem cdcZero_equilibrium : cdcZero.p.field cdcZero.x = 0 := by
+private theorem cdcZero_equilibrium :
+    connection% (cdcZero ∈ TMIO.realize Meets {.equilibrium}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  change cdcZero.p.field cdcZero.x = 0
   rw [ModelBParams.field_eq_zero_iff]
   simp [cdcZero, ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
 
@@ -428,7 +443,11 @@ private theorem cdcZero_invariants :
   obtain ⟨h1, h2, h3, h4⟩ := h
   refine ⟨by rw [h1]; norm_num, by rw [h2]; norm_num, by rw [h3]; norm_num, by rw [h4]; norm_num⟩
 
-private theorem cdcZero_not_routh : ¬ RouthFin4 (cdcZero.p.jacobian cdcZero.x) := by
+private theorem cdcZero_not_routh :
+    connection% (cdcZero ∉ TMIO.realize Meets {.routh}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  change ¬ RouthFin4 (cdcZero.p.jacobian cdcZero.x)
   obtain ⟨-, -, -, h4⟩ := cdcZero_invariants
   rintro ⟨-, -, h, -⟩
   rw [h4] at h
@@ -689,7 +708,11 @@ private theorem damped_pll_nonneg {s c : ℝ} (hsc : s ^ 2 + c ^ 2 = 1) (hc : 1 
   have hc1 : c ≤ 1 := by nlinarith [sq_nonneg s]
   nlinarith
 
-private theorem hopfDamped_equilibrium : hopfDamped.p.field hopfDamped.x = 0 := by
+private theorem hopfDamped_equilibrium :
+    connection% (hopfDamped ∈ TMIO.realize Meets {.equilibrium}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  change hopfDamped.p.field hopfDamped.x = 0
   rw [ModelBParams.field_eq_zero_iff]
   simp [hopfDamped, ModelBParams.idRef, ModelBParams.vgq, ModelBParams.vgd]
   norm_num
@@ -718,7 +741,11 @@ private theorem hopfDamped_invariants :
 /-- The Jacobian of the weakly damped loop, `diag([[−3, 1], [−3, 0]], [[0, 1], [−1, 0]])`, with
 characteristic polynomial `(s² + 3s + 3)(s² + 1)`, is not Routh (`m₃² + tr² det = tr m₂ m₃ = 36`)
 ... -/
-private theorem hopfDamped_not_routh : ¬ RouthFin4 (hopfDamped.p.jacobian hopfDamped.x) := by
+private theorem hopfDamped_not_routh :
+    connection% (hopfDamped ∉ TMIO.realize Meets {.routh}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  change ¬ RouthFin4 (hopfDamped.p.jacobian hopfDamped.x)
   obtain ⟨h1, h2, h3, h4⟩ := hopfDamped_invariants
   rintro ⟨-, -, -, h⟩
   rw [h1, h2, h3, h4] at h
@@ -850,10 +877,10 @@ boundary. Off the boundary the translation is exact
       (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.not_exactUnder_of_witness ?_ hopfDamped_mem_den_locallyAsymptoticallyStable
-    (q := Requirement.routh) (by simp [family, translate]) hopfDamped_not_routh
+    (q := Requirement.routh) (by simp [family, translate]) (show ¬ RouthFin4 (hopfDamped.p.jacobian hopfDamped.x) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfDamped_not_routh)
   rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl)
-  · exact hopfDamped_equilibrium
+  · exact (show hopfDamped.p.field hopfDamped.x = 0 from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfDamped_equilibrium)
   · show (0 : ℝ) < hopfDamped.p.VdcRef
     norm_num [hopfDamped]
 
@@ -869,11 +896,11 @@ boundary. Off the boundary the translation is exact
   intro q hq
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hm hq
   rcases hm with rfl | rfl | rfl <;> rcases hq with rfl | rfl
-  · exact hopfCenter_equilibrium
+  · exact (show hopfCenter.p.field hopfCenter.x = 0 from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfCenter_equilibrium)
   · show (0 : ℝ) < hopfCenter.p.VdcRef; norm_num [hopfCenter]
-  · exact hopfDamped_equilibrium
+  · exact (show hopfDamped.p.field hopfDamped.x = 0 from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfDamped_equilibrium)
   · show (0 : ℝ) < hopfDamped.p.VdcRef; norm_num [hopfDamped]
-  · exact cdcZero_equilibrium
+  · exact (show cdcZero.p.field cdcZero.x = 0 from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using cdcZero_equilibrium)
   · show (0 : ℝ) < cdcZero.p.VdcRef; norm_num [cdcZero]
 
 /-- None of the three boundary witnesses is off the 4×4 Routh boundary: their Jacobians neither
@@ -888,13 +915,13 @@ meet the Routh conditions nor violate them strictly. -/
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hm
   rcases hm with rfl | rfl | rfl
   · rcases h with h | h
-    · exact hopfCenter_not_routh h
+    · exact (show ¬ RouthFin4 (hopfCenter.p.jacobian hopfCenter.x) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfCenter_not_routh) h
     · exact hopfCenter_not_violation h
   · rcases h with h | h
-    · exact hopfDamped_not_routh h
+    · exact (show ¬ RouthFin4 (hopfDamped.p.jacobian hopfDamped.x) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using hopfDamped_not_routh) h
     · exact hopfDamped_not_violation h
   · rcases h with h | h
-    · exact cdcZero_not_routh h
+    · exact (show ¬ RouthFin4 (cdcZero.p.jacobian cdcZero.x) from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using cdcZero_not_routh) h
     · exact cdcZero_not_violation h
 
 end ModelB

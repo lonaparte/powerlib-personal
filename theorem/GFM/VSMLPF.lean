@@ -574,7 +574,10 @@ private theorem fderiv_point (m : Model) :
 
 private theorem les_of {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced)
     (hK : 0 < m.K) (hf : m.K < m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) :
-    LocallyExponentiallyStable m.g.field m.point := by
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow_iff)]
+  change LocallyExponentiallyStable m.g.field m.point
   obtain ⟨hM, hD, hwc⟩ := hp
   refine Criteria.locallyExponentiallyStable_of_jacobian_fin_three (m.g.jacobian m.δ)
     m.g.contDiff_field (point_eq_zero ⟨hM, hD, hwc⟩ hb) (fderiv_point m) ?_ ?_ ?_
@@ -593,7 +596,11 @@ private theorem les_of {m : Model} (hp : Meets m .physical) (hb : Meets m .balan
     linarith
 
 private theorem unstable_of {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced)
-    (hs : Meets m .destabilizing) : Unstable m.g.field m.point := by
+    (hs : Meets m .destabilizing) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow_iff)]
+  change Unstable m.g.field m.point
   obtain ⟨hM, hD, hwc⟩ := hp
   have heq := point_eq_zero ⟨hM, hD, hwc⟩ hb
   rcases hs with hs | hK
@@ -645,11 +652,11 @@ and passivity holds without requirement. -/
     · rfl
     · rfl
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact mem_den_flow_iff.mpr (les_of (hm .physical (by simp)) (hm .balanced (by simp))
-      (hm .synchronizing (by simp)) (hm .fastFilter (by simp)))
+    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (les_of (hm .physical (by simp)) (hm .balanced (by simp))
+      (hm .synchronizing (by simp)) (hm .fastFilter (by simp)))))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact mem_den_flow_iff.mpr (unstable_of (hm .physical (by simp)) (hm .balanced (by simp))
-      (hm .destabilizing (by simp)))
+    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (unstable_of (hm .physical (by simp)) (hm .balanced (by simp))
+      (hm .destabilizing (by simp)))))
 
 /-- Passivity is translated exactly: a system without ports is passive. -/
 @[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
@@ -668,9 +675,9 @@ satisfies the strict 3×3 Routh–Hurwitz conditions. -/
     (fun m => m.g.jacobian m.δ) (fun m _ hm => ?_) (fun m _ => m.g.contDiff_field)
     (fun m _ => fderiv_point m) fun m hI heq hH => ?_
   · rw [(connection_proof% TMIO.mem_realize)] at hm
-    exact mem_den_flow_iff.mpr (les_of (hm .physical (by simp [family, translate]))
+    exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (les_of (hm .physical (by simp [family, translate]))
       (hm .balanced (by simp [family, translate])) (hm .synchronizing (by simp [family, translate]))
-      (hm .fastFilter (by simp [family, translate])))
+      (hm .fastFilter (by simp [family, translate])))))
   have hp : Meets m .physical := (TMIO.mem_realize _ _ _).mp hI .physical rfl
   obtain ⟨hM, hD, hω⟩ := hp
   rw [m.g.field_eq_zero_iff hM.ne' hω.ne'] at heq
@@ -707,7 +714,7 @@ fast-filter Routh condition place a model in local exponential stability. -/
     (hf : m.K < m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr (les_of ⟨hM, hD, hω⟩ hb hK hf)
+  exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (les_of ⟨hM, hD, hω⟩ hb hK hf)))
 
 /-- A slow filter, `D ω_c + D²/M < K`, places a balanced model with positive `M, D, ω_c` in
 instability (a characteristic root crosses into the open right half plane). -/
@@ -716,7 +723,7 @@ instability (a characteristic root crosses into the open right half plane). -/
     (hs : m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M < m.K) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr (unstable_of ⟨hM, hD, hω⟩ hb (Or.inl hs))
+  exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (unstable_of ⟨hM, hD, hω⟩ hb (Or.inl hs))))
 
 /-- A negative synchronizing coefficient places a balanced model with positive `M, D, ω_c` in
 instability (a positive real eigenvalue). -/
@@ -724,7 +731,7 @@ instability (a positive real eigenvalue). -/
     (hD : 0 < m.g.D) (hω : 0 < m.g.ωc) (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (hK : m.K < 0) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr (unstable_of ⟨hM, hD, hω⟩ hb (Or.inr hK))
+  exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (unstable_of ⟨hM, hD, hω⟩ hb (Or.inr hK))))
 
 variable {g : VSMLPF}
 

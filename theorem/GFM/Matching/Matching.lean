@@ -172,24 +172,6 @@ private theorem matching_trajectory_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη :
   rw [← matching_eq_swing hC hη, ← affineCoord_zero_apply (T := scaleCoord hη)]
   exact transportField_affineCoord_eq_zero_iff _ _ _ _
 
-/-- Local exponential stability transfers between the matching and swing models.
-Implementation evidence, subsumed by the connection comparison `matching_den_eq`. -/
-private theorem matching_locallyExponentiallyStable_iff {C G η idc : ℝ}
-    (hC : C ≠ 0) (hη : η ≠ 0) (ix : ℝ → ℝ → ℝ) (x : State 2) :
-    LocallyExponentiallyStable (matchedSwing C G η idc ix) (scaleCoord hη x) ↔
-      LocallyExponentiallyStable (matchingField C G η idc ix) x := by
-  rw [← matching_eq_swing hC hη, ← affineCoord_zero_apply (T := scaleCoord hη)]
-  exact locallyExponentiallyStable_transport_iff _ _
-
-/-- Instability transfers between the matching and swing models.
-Implementation evidence, subsumed by the connection comparison `matching_den_eq`. -/
-private theorem matching_unstable_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
-    (ix : ℝ → ℝ → ℝ) (x : State 2) :
-    Unstable (matchedSwing C G η idc ix) (scaleCoord hη x) ↔
-      Unstable (matchingField C G η idc ix) x := by
-  rw [← matching_eq_swing hC hη, ← affineCoord_zero_apply (T := scaleCoord hη)]
-  exact unstable_transport_iff _ _
-
 /-- Matching control: `θ̇ = η u_dc`, `C u̇_dc = i_dc − G u_dc − i_x` makes the converter
 frequency `ω = η u_dc` obey `(C/η²) ω̇ = i_dc/η − (G/η²) ω − i_x/η`. -/
 @[powerlib_foundation] theorem matching_swing {η C G idc : ℝ} {u : ℝ → ℝ} {ix : ℝ → ℝ} {t : ℝ}
@@ -438,6 +420,24 @@ point `(θ*, η v*)`. -/
     rw [matching_eq_swing m.C_ne m.η_ne]
     rfl
   rw [hpt, hfield, holds_transport_iff]
+
+/-- Local exponential stability transfers between the matching and swing models.
+Implementation evidence, subsumed by the connection comparison `matching_den_eq`. -/
+private theorem matching_locallyExponentiallyStable_iff {C G η idc : ℝ}
+    (hC : C ≠ 0) (hη : η ≠ 0) (ix : ℝ → ℝ → ℝ) (x : State 2) :
+    connection% ((⟨C, G, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel).toSwing ∈ swingFamily.den (.flow .locallyExponentiallyStable) ↔
+      (⟨C, G, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel) ∈ matchingFamily.den (.flow .locallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  exact (Set.ext_iff.mp (matching_den_eq .locallyExponentiallyStable) (⟨C, G, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel)).symm
+
+/-- Instability transfers between the matching and swing models.
+Implementation evidence, subsumed by the connection comparison `matching_den_eq`. -/
+private theorem matching_unstable_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
+    (ix : ℝ → ℝ → ℝ) (x : State 2) :
+    connection% ((⟨C, G, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel).toSwing ∈ swingFamily.den (.flow .unstable) ↔
+      (⟨C, G, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel) ∈ matchingFamily.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  exact (Set.ext_iff.mp (matching_den_eq .unstable) (⟨C, G, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel)).symm
 
 /-! ## The swing family read through the swing hub -/
 

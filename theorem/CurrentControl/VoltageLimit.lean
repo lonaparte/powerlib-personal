@@ -316,7 +316,11 @@ private theorem field_eventuallyEq_linear (hKi : y.design.Ki ≠ 0)
 /-- A design loop with `(R + Kp)/L ≥ 0` and `Ki/L > 0` is Lyapunov stable: the energy
 `i² + (Ki/L) ξ²` does not increase (`d/dt = −2 (R + Kp)/L · i²`). -/
 private theorem lyapunovStable_of_nonneg (p : PIParams) (ha : 0 ≤ (p.R + p.Kp) / p.L)
-    (hb : 0 < p.Ki / p.L) : LyapunovStable (affineLinearVectorField p.model.A 0) 0 := by
+    (hb : 0 < p.Ki / p.L) :
+    connection% (p ∈ PIParams.family.den (.flow .lyapunovStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% PIParams.family_isLinear.mem_den_flow)]
+  change LyapunovStable (affineLinearVectorField p.model.A 0) 0
   set s := Real.sqrt (p.Ki / p.L) with hs
   have hs0 : 0 < s := Real.sqrt_pos.mpr hb
   have hss : s * s = p.Ki / p.L := Real.mul_self_sqrt hb.le
@@ -411,8 +415,12 @@ private theorem ki_ne_of_stable {p : PIParams} (h : PIParams.Stable p) : p.Ki �
 
 /-- Within headroom a stable design makes the platform locally exponentially stable. -/
 private theorem les_of_stable {y : LimitedPI} (hs : PIParams.Stable y.design)
-    (hh : |y.design.R * y.iref| < y.Vmax) : LocallyExponentiallyStable y.field 0 :=
-  Dynamics.locallyExponentiallyStable_congr_nhds
+    (hh : |y.design.R * y.iref| < y.Vmax) :
+    connection% (y ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change LocallyExponentiallyStable y.field 0
+  exact Dynamics.locallyExponentiallyStable_congr_nhds
     (y.field_eventuallyEq_linear (ki_ne_of_stable hs) hh)
     (holds_of_isHurwitz 0 (P := .locallyExponentiallyStable) trivial
       ((PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp ((PIParams.isHurwitz_iff_div y.design).mpr hs)))
@@ -421,7 +429,11 @@ private theorem les_of_stable {y : LimitedPI} (hs : PIParams.Stable y.design)
 platform is the affine design field, unstable at a root in the right half plane or because the
 point is not an equilibrium. -/
 private theorem unstable_of_unstable {y : LimitedPI} (hu : PIParams.Unstable y.design)
-    (hh : |y.design.R * y.iref| < y.Vmax) : Unstable y.field 0 := by
+    (hh : |y.design.R * y.iref| < y.Vmax) :
+    connection% (y ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change Unstable y.field 0
   refine (Dynamics.unstable_congr_nhds (y.field_eventuallyEq_design hh)).mpr ?_
   by_cases h0 : y.design.field y.iref (0 + y.point) = 0
   · rw [zero_add] at h0
@@ -460,7 +472,10 @@ private theorem field_eventuallyEq_overload (y : LimitedPI) (hKi : y.design.Ki �
 /-- With overload the operating point is not an equilibrium: the platform is unstable. -/
 private theorem unstable_of_overload (y : LimitedPI) (hL : y.design.L ≠ 0)
     (hKi : y.design.Ki ≠ 0) (hV : 0 < y.Vdc) (ho : y.Vmax < |y.design.R * y.iref|) :
-    Unstable y.field 0 := by
+    connection% (y ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change Unstable y.field 0
   refine (Dynamics.unstable_congr_nhds (y.field_eventuallyEq_overload hKi ho)).mpr
     (Dynamics.unstable_of_ne_zero ?_ ?_)
   · rw [contDiff_euclidean]
@@ -477,7 +492,10 @@ private theorem unstable_of_overload (y : LimitedPI) (hL : y.design.L ≠ 0)
 (Grönwall), so the integrator moves by at most `B T`; an exponential estimate with constants
 `C, a` halves the distance by `T = log (2C)/a`, which fails for `ξ₀ = 2 B T + 1`. -/
 private theorem not_globallyExponentiallyStable (y : LimitedPI) :
-    ¬ Flow.GloballyExponentiallyStable y.field 0 := by
+    connection% (y ∉ family.den (.flow .globallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change ¬ Flow.GloballyExponentiallyStable y.field 0
   rintro ⟨-, hfc, C, a, hC, ha, hest⟩
   have hT : 0 ≤ Real.log (2 * C) / a := div_nonneg (Real.log_nonneg (by linarith)) ha.le
   set T := Real.log (2 * C) / a with hTdef
@@ -579,11 +597,11 @@ passivity holds without requirement. -/
     · rfl
     · rfl
   · rw [(connection_proof% TMIO.mem_realize)] at hy
-    exact family_isAutonomous.mem_den_flow.mpr (les_of_stable (hy (.design .stable) (by simp))
-      (hy .headroom (by simp)))
+    exact family_isAutonomous.mem_den_flow.mpr ((family_isAutonomous.mem_den_flow.mp (les_of_stable (hy (.design .stable) (by simp))
+      (hy .headroom (by simp)))))
   · rw [(connection_proof% TMIO.mem_realize)] at hy
     exact family_isAutonomous.mem_den_flow.mpr
-      (unstable_of_unstable (hy (.design .unstable) (by simp)) (hy .headroom (by simp)))
+      ((family_isAutonomous.mem_den_flow.mp (unstable_of_unstable (hy (.design .unstable) (by simp)) (hy .headroom (by simp)))))
 
 /-- Passivity is translated exactly: a platform without ports is passive. -/
 @[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
@@ -629,9 +647,9 @@ the platform. -/
   unfold powerlib.TMIO.Statement
   refine Spectral.exactUnder_iff_forall.mpr fun y hΔ => ⟨fun h => ?_, fun hd => ?_⟩
   · rw [(connection_proof% TMIO.mem_realize)] at h
-    exact family_isAutonomous.mem_den_flow.mpr (unstable_of_unstable
+    exact family_isAutonomous.mem_den_flow.mpr ((family_isAutonomous.mem_den_flow.mp (unstable_of_unstable
       (h (.design .unstable) (by simp [family, translate]))
-      (h .headroom (by simp [family, translate])))
+      (h .headroom (by simp [family, translate])))))
   rw [(connection_proof% TMIO.mem_realize)] at hΔ
   have hL : 0 < y.design.L := hΔ .inductance (by simp)
   have hKi : y.design.Ki ≠ 0 := hΔ .integral (by simp)
@@ -645,7 +663,7 @@ the platform. -/
       lt_of_le_of_ne hn.2 (Ne.symm (div_ne_zero hKi hL.ne'))
     rw [(connection_proof% family_isAutonomous.mem_den_flow)] at hd
     exact hd (Dynamics.lyapunovStable_congr_nhds (y.field_eventuallyEq_linear hKi hh)
-      (lyapunovStable_of_nonneg y.design hn.1 hb))
+      ((PIParams.family_isLinear.mem_den_flow.mp (lyapunovStable_of_nonneg y.design hn.1 hb))))
   · exact hh
 
 /-- A lossless platform: the design `L = R = Ki = 1`, `Kp = −1` (`R + Kp = 0`), at `i* = 0`,
@@ -663,7 +681,7 @@ the operating point. -/
     positivity
   exact Dynamics.lyapunovStable_congr_nhds
     (center.field_eventuallyEq_linear (by norm_num [center]) hh)
-    (lyapunovStable_of_nonneg center.design (by norm_num [center]) (by norm_num [center]))
+    ((PIParams.family_isLinear.mem_den_flow.mp (lyapunovStable_of_nonneg center.design (by norm_num [center]) (by norm_num [center]))))
 
 /-- Lyapunov stability is not translated exactly within all realistic constraints with headroom:
 the lossless platform is Lyapunov stable while its design is not stable (`R + Kp = 0`). -/
@@ -692,7 +710,7 @@ large integrator state unwinds. -/
     connection% (y ∉ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  exact not_globallyExponentiallyStable y
+  exact (fun hFlowConnection => (not_globallyExponentiallyStable y) (family_isAutonomous.mem_den_flow.mpr hFlowConnection))
 
 /-- Global exponential stability is translated exactly into the whole, inconsistent, language:
 no platform satisfies it. -/
@@ -708,7 +726,7 @@ unstable whatever the design: the operating point is not an equilibrium. -/
     (hKi : y.design.Ki ≠ 0) (hV : 0 < y.Vdc) (ho : y.Vmax < |y.design.R * y.iref|) :
     connection% (y ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  exact family_isAutonomous.mem_den_flow.mpr (y.unstable_of_overload hL.ne' hKi hV ho)
+  exact family_isAutonomous.mem_den_flow.mpr ((family_isAutonomous.mem_den_flow.mp (y.unstable_of_overload hL.ne' hKi hV ho)))
 
 /-! ## The implementation over the PI design (M–I) -/
 

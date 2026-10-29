@@ -115,7 +115,10 @@ private theorem restoring (m : Model) (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (x 
 /-- The boundary loop in Hopf coordinates (local asymptotic stability). -/
 private theorem las_of_hopf {m : Model} (hM : 0 < m.g.M) (hD : 0 < m.g.D) (hω : 0 < m.g.ωc)
     (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (hK : m.K = m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) :
-    LocalAsymptoticStable m.field 0 := by
+    connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change LocalAsymptoticStable m.field 0
   have hMne : m.g.M ≠ 0 := hM.ne'
   have hC : ContDiff ℝ 1 m.field := by
     show ContDiff ℝ 1 fun z => m.g.field (z + m.point)
@@ -210,7 +213,10 @@ private theorem norm_mk3_zero_zero (t : ℝ) : ‖mk3 0 0 t‖ = |t| := by
 rate `ω_c P₀ (1 − cos(δ − δ*))`, of one sign: the operating point is not attractive. -/
 private theorem not_las_of_K_zero {m : Model} (hM : 0 < m.g.M) (hω : 0 < m.g.ωc)
     (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (hK : m.K = 0) :
-    ¬ LocalAsymptoticStable m.field 0 := by
+    connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change ¬ LocalAsymptoticStable m.field 0
   have hC : ContDiff ℝ 1 m.field := by
     show ContDiff ℝ 1 fun z => m.g.field (z + m.point)
     exact m.g.contDiff_field.comp (contDiff_id.add contDiff_const)
@@ -267,7 +273,7 @@ every load. -/
     (hK : m.K = m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact family_isAutonomous.mem_den_flow.mpr (las_of_hopf hM hD hω hb hK)
+  exact family_isAutonomous.mem_den_flow.mpr ((family_isAutonomous.mem_den_flow.mp (las_of_hopf hM hD hω hb hK)))
 
 /-- **Local asymptotic stability within positive `M, D, ω_c`.** The operating point `(δ*, 0, P₀)`
 is locally asymptotically stable exactly when the angle is balanced and
@@ -293,7 +299,7 @@ is locally asymptotically stable exactly when the angle is balanced and
       · have hu := mem_den_unstable_of_K_neg m hM hD hω hb hK
         unfold powerlib.TMIO.Statement at hu
         exact absurd hls (mem_den_flow_iff'.mp hu)
-      · exact absurd hlas (not_las_of_K_zero hM hω hb hK)
+      · exact absurd hlas ((fun hFlowConnection => (not_las_of_K_zero hM hω hb hK) (family_isAutonomous.mem_den_flow.mpr hFlowConnection)))
       · exact hK
     · by_contra hn
       have hu := mem_den_unstable m hM hD hω hb (lt_of_not_ge hn)
@@ -306,7 +312,7 @@ is locally asymptotically stable exactly when the angle is balanced and
       exact family_isAutonomous.mem_den_flow.mpr
         (Flow.locallyExponentiallyStable_localAsymptoticStable
           (family_isAutonomous.mem_den_flow.mp hl))
-    · exact family_isAutonomous.mem_den_flow.mpr (las_of_hopf hM hD hω hb heq)
+    · exact family_isAutonomous.mem_den_flow.mpr ((family_isAutonomous.mem_den_flow.mp (las_of_hopf hM hD hω hb heq)))
 
 /-- The Hopf boundary model `M = D = ω_c = 1`, `P₀ = 0`, `K₀ = 2`, `δ* = 0`:
 `K = 2 = D ω_c + D²/M`. -/

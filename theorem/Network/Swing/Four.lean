@@ -185,7 +185,10 @@ private theorem reducedSwing_not_localAsymptoticStable_of_cut {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (X : Finset (Fin (n + 1))) (hW : ∑ i ∈ X, ∑ j ∈ Xᶜ, p.B i j * Real.cos (θ i - θ j) ≤ 0)
     {i₀ j₀ : Fin (n + 1)} (hi₀ : i₀ ∈ X) (hj₀ : j₀ ∉ X) :
-    ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
+    connection% ((⟨p, θ⟩ : Model n) ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow_iff_four)]
+  change ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ)
   set K := ∑ i ∈ X, ∑ j ∈ Xᶜ, p.B i j * Real.sin (θ i - θ j) with hKdef
   set v : Fin n → ℝ := fun i => groupIndicator X i.succ - groupIndicator X 0 with hv
   rcases hW.lt_or_eq with hneg | hzero
@@ -278,16 +281,19 @@ linearization weight `W = ∑ Bᵢⱼ cos(θᵢ − θⱼ) ≤ 0`, turning `X` r
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [mem_den_flow_iff_four]
-  exact reducedSwing_not_localAsymptoticStable_of_cut hbal X hW hi₀ hj₀
+  exact (fun hFlowConnection => (reducedSwing_not_localAsymptoticStable_of_cut hbal X hW hi₀ hj₀) (mem_den_flow_iff_four.mpr hFlowConnection))
 
 /-- Implementation evidence for `not_localAsymptoticStable_of_zero_cut`. -/
 private theorem reducedSwing_not_localAsymptoticStable_of_zero_cut {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (X : Finset (Fin (n + 1))) (hX : ∀ i ∈ X, ∀ j ∉ X, p.B i j * Real.cos (θ i - θ j) = 0)
     {i₀ j₀ : Fin (n + 1)} (hi₀ : i₀ ∈ X) (hj₀ : j₀ ∉ X) :
-    ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) :=
-  reducedSwing_not_localAsymptoticStable_of_cut hbal X (le_of_eq (Finset.sum_eq_zero fun i hi =>
-    Finset.sum_eq_zero fun j hj => hX i hi j (Finset.mem_compl.mp hj))) hi₀ hj₀
+    connection% ((⟨p, θ⟩ : Model n) ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow_iff_four)]
+  change ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ)
+  exact (fun hFlowConnection => (reducedSwing_not_localAsymptoticStable_of_cut hbal X (le_of_eq (Finset.sum_eq_zero fun i hi =>
+    Finset.sum_eq_zero fun j hj => hX i hi j (Finset.mem_compl.mp hj))) hi₀ hj₀) (mem_den_flow_iff_four.mpr hFlowConnection))
 
 /-- **A cut of zero-weight lines** (each line between `X` and the rest open or at `±π/2`) rules
 out local asymptotic stability. -/
@@ -298,22 +304,25 @@ out local asymptotic stability. -/
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [mem_den_flow_iff_four]
-  exact reducedSwing_not_localAsymptoticStable_of_zero_cut hbal X hX hi₀ hj₀
+  exact (fun hFlowConnection => (reducedSwing_not_localAsymptoticStable_of_zero_cut hbal X hX hi₀ hj₀) (mem_den_flow_iff_four.mpr hFlowConnection))
 
 /-- Implementation evidence for `not_localAsymptoticStable_of_flat`. -/
 private theorem reducedSwing_not_localAsymptoticStable_of_flat {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k) (u : Fin (n + 1) → ℝ)
     {k₁ k₂ : Fin (n + 1)} (hne : u k₁ ≠ u k₂)
     (h : ∀ k j, p.B k j * Real.cos (θ k - θ j) * (u k - u j) = 0) :
-    ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
+    connection% ((⟨p, θ⟩ : Model n) ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow_iff_four)]
+  change ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ)
   obtain ⟨i₀, -, -⟩ := Finset.exists_max_image Finset.univ u Finset.univ_nonempty
   obtain ⟨j₀, hj₀⟩ : ∃ j, u j ≠ u i₀ := by
     by_cases h1 : u k₁ = u i₀
     · exact ⟨k₂, fun h2 => hne (h1.trans h2.symm)⟩
     · exact ⟨k₁, h1⟩
-  refine reducedSwing_not_localAsymptoticStable_of_zero_cut hbal
+  refine (fun hFlowConnection => (reducedSwing_not_localAsymptoticStable_of_zero_cut hbal
     (Finset.univ.filter fun k => u k = u i₀)
-    ?_ (i₀ := i₀) (j₀ := j₀) (by simp) (by simp [hj₀])
+    ?_ (i₀ := i₀) (j₀ := j₀) (by simp) (by simp [hj₀])) (mem_den_flow_iff_four.mpr hFlowConnection))
   intro i hi j hj
   simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi hj
   rcases mul_eq_zero.mp (h i j) with h' | h'
@@ -330,7 +339,7 @@ off by zero-weight lines, so the model is not locally asymptotically stable. -/
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [mem_den_flow_iff_four]
-  exact reducedSwing_not_localAsymptoticStable_of_flat hbal u hne h
+  exact (fun hFlowConnection => (reducedSwing_not_localAsymptoticStable_of_flat hbal u hne h) (mem_den_flow_iff_four.mpr hFlowConnection))
 
 @[powerlib_foundation] theorem cubicForm_add_const (p : Params n) (θ u : Fin (n + 1) → ℝ)
     (c : ℝ) : cubicForm p θ (fun k => u k + c) = cubicForm p θ u := by
@@ -785,7 +794,10 @@ private theorem reducedSwing_not_localAsymptoticStable_four (p : Params 3)
     (hsp : p.B (σ 0) (σ 2) = 0 ∨ p.B (σ 0) (σ 3) = 0)
     (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
-    ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
+    connection% ((⟨p, θ⟩ : Model 3) ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow_iff_four)]
+  change ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ)
   intro hLAS
   have hF := reducedSwing_hessForm_nonneg_of_localAsymptoticStable hbal hLAS
   have hK := reducedSwing_cubicForm_eq_zero_of_localAsymptoticStable hbal hLAS
@@ -805,8 +817,8 @@ private theorem reducedSwing_not_localAsymptoticStable_four (p : Params 3)
       weightOf p θ σ 1 2 * (u (σ 1) - u (σ 2)) = 0 →
       weightOf p θ σ 1 3 * (u (σ 1) - u (σ 3)) = 0 →
       weightOf p θ σ 2 3 * (u (σ 2) - u (σ 3)) = 0 → False :=
-    fun h01 h02 h03 h12 h13 h23 => reducedSwing_not_localAsymptoticStable_of_flat hbal u hk₁
-      (flat_of_labelled h01 h02 h03 h12 h13 h23) hLAS
+    fun h01 h02 h03 h12 h13 h23 => (fun hFlowConnection => (reducedSwing_not_localAsymptoticStable_of_flat hbal u hk₁
+      (flat_of_labelled h01 h02 h03 h12 h13 h23)) (mem_den_flow_iff_four.mpr hFlowConnection)) hLAS
   -- the forms in labelled coordinates
   have hQ : ∀ g₀ g₁ g₂ g₃ : ℝ, 0 ≤ weightOf p θ σ 0 1 * (g₀ - g₁) ^ 2 +
       weightOf p θ σ 0 2 * (g₀ - g₂) ^ 2 + weightOf p θ σ 0 3 * (g₀ - g₃) ^ 2 +
@@ -882,9 +894,9 @@ private theorem reducedSwing_not_localAsymptoticStable_four (p : Params 3)
     simp only [zero_mul, add_zero, zero_add] at N0 N3 hQ hC0 hflat hQ0
     by_cases hw23 : weightOf p θ σ 2 3 = 0
     · -- the pendant machine is cut off by zero-weight lines
-      refine reducedSwing_not_localAsymptoticStable_of_zero_cut hbal {σ 3} ?_ (i₀ := σ 3)
+      refine (fun hFlowConnection => (reducedSwing_not_localAsymptoticStable_of_zero_cut hbal {σ 3} ?_ (i₀ := σ 3)
         (j₀ := σ 0)
-        (Finset.mem_singleton_self _) (by simp) hLAS
+        (Finset.mem_singleton_self _) (by simp)) (mem_den_flow_iff_four.mpr hFlowConnection)) hLAS
       intro i hi j hj
       rw [Finset.mem_singleton] at hi hj
       subst hi
@@ -958,7 +970,7 @@ zero-weight cut (`not_localAsymptoticStable_of_zero_cut`). -/
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [mem_den_flow_iff_four]
-  exact reducedSwing_not_localAsymptoticStable_four m.params m.θ σ h13 hsp hbal hH
+  exact (fun hFlowConnection => (reducedSwing_not_localAsymptoticStable_four m.params m.θ σ h13 hsp hbal hH) (mem_den_flow_iff_four.mpr hFlowConnection))
 
 /-! ## The family: four machines with at most four lines -/
 

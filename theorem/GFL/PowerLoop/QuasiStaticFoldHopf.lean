@@ -331,8 +331,11 @@ def supercriticalQS : Model :=
   simp only [supercriticalQS, Real.cos_arctan, Real.sin_arctan, hs]
   constructor <;> field_simp
 
-@[powerlib_foundation] theorem supercriticalQS_isEq :
-    IsEq supercriticalQS.params supercriticalQS.θ supercriticalQS.Id := by
+@[tmio M, powerlib_foundation] theorem supercriticalQS_isEq :
+    connection% (supercriticalQS ∈ TMIO.realize Meets {.equilibrium}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  change IsEq supercriticalQS.params supercriticalQS.θ supercriticalQS.Id
   obtain ⟨hc, hs⟩ := supercriticalQS_trig
   refine ⟨?_, ?_⟩
   · rw [hs]; simp [supercriticalQS]
@@ -345,7 +348,7 @@ def supercriticalQS : Model :=
       supercriticalQS.field z 1 = -2 * Real.sin (z 0) + (1 - Real.cos (z 0)) - z 2 ∧
       supercriticalQS.field z 2 =
         -(2 * (2 - (2 * Real.cos (z 0) - Real.sin (z 0)) * (-z 2 + 1))) := by
-  obtain ⟨h0, h1, h2⟩ := model_fold_form supercriticalQS_isEq z
+  obtain ⟨h0, h1, h2⟩ := model_fold_form (show IsEq supercriticalQS.params supercriticalQS.θ supercriticalQS.Id from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using supercriticalQS_isEq) z
   obtain ⟨hc, hs⟩ := supercriticalQS_trig
   rw [hc, hs] at h0 h1 h2
   simp only [supercriticalQS] at h0 h1 h2 ⊢
@@ -657,9 +660,13 @@ private theorem hopfQS_lie_neg : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3),
   linarith
 
 /-- **The supercritical quasi-static witness is locally asymptotically stable** (a weak focus). -/
-private theorem supercriticalQS_las : LocalAsymptoticStable supercriticalQS.field 0 := by
+private theorem supercriticalQS_las :
+    connection% (supercriticalQS ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change LocalAsymptoticStable supercriticalQS.field 0
   have hfz : supercriticalQS.field 0 = 0 := by
-    have := field_point_eq_zero supercriticalQS.params supercriticalQS_isEq
+    have := field_point_eq_zero supercriticalQS.params (show IsEq supercriticalQS.params supercriticalQS.θ supercriticalQS.Id from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using supercriticalQS_isEq)
     simpa [Model.field] using this
   exact Dynamics.localAsymptoticStable_of_eventually_lyapunov
     (W := fun z => poly3 hopfQS_W (hopfQS_c1 z) (hopfQS_c2 z) (hopfQS_c3 z)) (by norm_num)
@@ -675,7 +682,7 @@ weak focus, its Jacobian has the eigenvalues `±3i` and `−7/2`. -/
     connection% (supercriticalQS ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  exact supercriticalQS_las
+  exact (family_isAutonomous.mem_den_flow.mp (supercriticalQS_las))
 
 /-- The witness Jacobian is on the Hopf boundary: `a₂ = 7/2`, `a₁ = 9`, `a₀ = 63/2 = a₂a₁`, so
 `tr J · m₂(J) = det J` and the strict Routh–Hurwitz condition fails. -/
@@ -685,7 +692,7 @@ weak focus, its Jacobian has the eigenvalues `±3i` and `−7/2`. -/
           (jac supercriticalQS.params supercriticalQS.θ supercriticalQS.Id) =
       (jac supercriticalQS.params supercriticalQS.θ supercriticalQS.Id).det := by
   obtain ⟨hc, hs⟩ := supercriticalQS_trig
-  have heq := supercriticalQS_isEq
+  have heq := (show IsEq supercriticalQS.params supercriticalQS.θ supercriticalQS.Id from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using supercriticalQS_isEq)
   rw [trace_jac, principalMinorSum_jac _ heq.1, det_jac _ heq.1]
   unfold a2 a1 a0
   have hcos2 : supercriticalQS.params.V ^ 2 * Real.cos (2 * supercriticalQS.θ) = 3 := by

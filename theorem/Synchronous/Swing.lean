@@ -366,30 +366,6 @@ period of the power-angle curve). Static evidence on the model, not a connection
 Behavioural theorems at an equilibrium of the untranslated field. They are private: the public
 conclusions are the connection statements of `Swing.family` below. -/
 
-/-- An equilibrium with positive synchronizing coefficient (`k₂ cos(δ₀ − k₃) > 0`) is locally
-exponentially stable when `M > 0` and `D > 0`. -/
-private theorem locallyExponentiallyStable_of_syncCoeff_pos (hM : 0 < p.M)
-    (hD : 0 < p.D) {x : State 2} (heq : p.field x = 0) (hK : 0 < p.syncCoeff (x 0)) :
-    LocallyExponentiallyStable p.field x :=
-  Criteria.locallyExponentiallyStable_of_jacobian_fin_two (p.jacobian (x 0)) p.contDiff_field
-    heq (p.fderiv_field x) (by rw [trace_jacobian, neg_div]; exact neg_neg_of_pos (div_pos hD hM))
-    (by rw [det_jacobian]; exact div_pos hK hM)
-
-/-- An equilibrium with negative synchronizing coefficient is unstable (saddle), for every
-damping `D` (`M > 0`). -/
-private theorem unstable_of_syncCoeff_neg (hM : 0 < p.M) {x : State 2}
-    (heq : p.field x = 0) (hK : p.syncCoeff (x 0) < 0) : Unstable p.field x :=
-  Criteria.unstable_of_jacobian_det_neg_fin_two (p.jacobian (x 0)) p.contDiff_field heq
-    (p.fderiv_field x) (by rw [det_jacobian]; exact div_neg_of_neg_of_pos hK hM)
-
-/-- An equilibrium with negative damping is unstable (positive trace), for every synchronizing
-coefficient (`M > 0`). -/
-private theorem unstable_of_damping_neg (hM : 0 < p.M) {x : State 2}
-    (heq : p.field x = 0) (hD : p.D < 0) : Unstable p.field x :=
-  Criteria.unstable_of_jacobian_trace_pos_fin_two (p.jacobian (x 0)) p.contDiff_field heq
-    (p.fderiv_field x)
-    (by rw [trace_jacobian, neg_div]; exact neg_pos.mpr (div_neg_of_neg_of_pos hD hM))
-
 /-! ## Energy function -/
 
 /-- Potential energy relative to `δ₀`: `U(δ) = ∫_{δ₀}^{δ} (P_e − P_m)`. -/
@@ -486,38 +462,6 @@ synchronizing coefficient stays positive. -/
         simpa [hg, hbal] using this
     have := hmono ⟨le_rfl, hgt.le⟩ ⟨hgt.le, le_rfl⟩ hgt
     simpa using this
-
-/-- With nonnegative damping (in particular `D = 0`, the conservative swing equation), every
-equilibrium with positive synchronizing coefficient is Lyapunov stable: the energy
-`½ M ω² + U(δ)` is a local Lyapunov function (`M > 0`). Implementation evidence. -/
-private theorem lyapunovStable_of_syncCoeff_pos (hM : 0 < p.M) (hD : 0 ≤ p.D)
-    {x₀ : State 2} (heq : p.field x₀ = 0) (hK : 0 < p.syncCoeff (x₀ 0)) :
-    LyapunovStable p.field x₀ := by
-  obtain ⟨h1, hbal⟩ := (p.field_eq_zero_iff hM.ne' x₀).mp heq
-  have hcont : Continuous p.syncCoeff := by unfold syncCoeff; fun_prop
-  obtain ⟨r, hr0, hr⟩ := Metric.isOpen_iff.mp (isOpen_lt continuous_const hcont) (x₀ 0) hK
-  have hr' : ∀ θ, |θ - x₀ 0| < r → 0 < p.syncCoeff θ := fun θ hθ =>
-    hr (by simpa [Real.dist_eq] using hθ)
-  apply lyapunov_stable (D := {x : State 2 | |x 0 - x₀ 0| < r}) (V := p.energy (x₀ 0))
-    (by norm_num)
-  refine ⟨?_, ?_, (p.contDiff_energy (k := 1) _).continuous,
-    (p.contDiff_energy (k := 1) _).differentiable (by norm_num), ?_, ?_, ?_⟩
-  · exact isOpen_lt (by fun_prop) continuous_const
-  · simpa using hr0
-  · simp [energy, h1]
-  · intro x hx hne
-    have hx' : |x 0 - x₀ 0| < r := hx
-    by_cases h0 : x 0 = x₀ 0
-    · have h1' : x 1 ≠ 0 := by
-        intro h1'; apply hne; exact PhasePlane.ext_iff'.2 ⟨h0, by rw [h1', h1]⟩
-      have : 0 < p.M / 2 * x 1 ^ 2 := by positivity
-      simpa [energy, h0] using this
-    · have hU := p.potential_pos hbal hr' hx' h0
-      have : 0 ≤ p.M / 2 * x 1 ^ 2 := by positivity
-      simp only [energy]; linarith
-  · intro x _
-    rw [p.energy_lie hM.ne']
-    nlinarith [sq_nonneg (x 1)]
 
 /-! ## Global existence of solutions -/
 
@@ -668,6 +612,114 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.p.field) (pt := Model.point)
     family_isAutonomous
 
+end Swing
+
+namespace SwingParams
+
+variable (p : SwingParams)
+
+/-- An equilibrium with positive synchronizing coefficient (`k₂ cos(δ₀ − k₃) > 0`) is locally
+exponentially stable when `M > 0` and `D > 0`. -/
+private theorem locallyExponentiallyStable_of_syncCoeff_pos (hM : 0 < p.M)
+    (hD : 0 < p.D) {x : State 2} (heq : p.field x = 0) (hK : 0 < p.syncCoeff (x 0)) :
+    connection% ((⟨p, x 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .locallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [Swing.mem_den_flow_iff]
+  have hzero : x 1 = 0 := by
+    have he := congrArg (fun y : State 2 => y 0) heq
+    simpa only [field_apply_zero, PiLp.zero_apply] using he
+  have hpoint : (⟨p, x 0⟩ : Swing.Model).point = x := by
+    apply PhasePlane.ext_iff'.mpr
+    simp only [Swing.Model.point, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
+    exact ⟨trivial, hzero.symm⟩
+  rw [hpoint]
+  exact Criteria.locallyExponentiallyStable_of_jacobian_fin_two (p.jacobian (x 0)) p.contDiff_field
+    heq (p.fderiv_field x) (by rw [trace_jacobian, neg_div]; exact neg_neg_of_pos (div_pos hD hM))
+    (by rw [det_jacobian]; exact div_pos hK hM)
+
+/-- An equilibrium with negative synchronizing coefficient is unstable (saddle), for every
+damping `D` (`M > 0`). -/
+private theorem unstable_of_syncCoeff_neg (hM : 0 < p.M) {x : State 2}
+    (heq : p.field x = 0) (hK : p.syncCoeff (x 0) < 0) :
+    connection% ((⟨p, x 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [Swing.mem_den_flow_iff]
+  have hzero : x 1 = 0 := by
+    have he := congrArg (fun y : State 2 => y 0) heq
+    simpa only [field_apply_zero, PiLp.zero_apply] using he
+  have hpoint : (⟨p, x 0⟩ : Swing.Model).point = x := by
+    apply PhasePlane.ext_iff'.mpr
+    simp only [Swing.Model.point, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
+    exact ⟨trivial, hzero.symm⟩
+  rw [hpoint]
+  exact Criteria.unstable_of_jacobian_det_neg_fin_two (p.jacobian (x 0)) p.contDiff_field heq
+    (p.fderiv_field x) (by rw [det_jacobian]; exact div_neg_of_neg_of_pos hK hM)
+
+/-- An equilibrium with negative damping is unstable (positive trace), for every synchronizing
+coefficient (`M > 0`). -/
+private theorem unstable_of_damping_neg (hM : 0 < p.M) {x : State 2}
+    (heq : p.field x = 0) (hD : p.D < 0) :
+    connection% ((⟨p, x 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [Swing.mem_den_flow_iff]
+  have hzero : x 1 = 0 := by
+    have he := congrArg (fun y : State 2 => y 0) heq
+    simpa only [field_apply_zero, PiLp.zero_apply] using he
+  have hpoint : (⟨p, x 0⟩ : Swing.Model).point = x := by
+    apply PhasePlane.ext_iff'.mpr
+    simp only [Swing.Model.point, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
+    exact ⟨trivial, hzero.symm⟩
+  rw [hpoint]
+  exact Criteria.unstable_of_jacobian_trace_pos_fin_two (p.jacobian (x 0)) p.contDiff_field heq
+    (p.fderiv_field x)
+    (by rw [trace_jacobian, neg_div]; exact neg_pos.mpr (div_neg_of_neg_of_pos hD hM))
+
+/-- With nonnegative damping (in particular `D = 0`, the conservative swing equation), every
+equilibrium with positive synchronizing coefficient is Lyapunov stable: the energy
+`½ M ω² + U(δ)` is a local Lyapunov function (`M > 0`). Implementation evidence. -/
+private theorem lyapunovStable_of_syncCoeff_pos (hM : 0 < p.M) (hD : 0 ≤ p.D)
+    {x₀ : State 2} (heq : p.field x₀ = 0) (hK : 0 < p.syncCoeff (x₀ 0)) :
+    connection% ((⟨p, x₀ 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .lyapunovStable)) := by
+  unfold TMIO.Statement
+  rw [Swing.mem_den_flow_iff]
+  have hzero : x₀ 1 = 0 := by
+    have he := congrArg (fun y : State 2 => y 0) heq
+    simpa only [field_apply_zero, PiLp.zero_apply] using he
+  have hpoint : (⟨p, x₀ 0⟩ : Swing.Model).point = x₀ := by
+    apply PhasePlane.ext_iff'.mpr
+    simp only [Swing.Model.point, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one]
+    exact ⟨trivial, hzero.symm⟩
+  rw [hpoint]
+  obtain ⟨h1, hbal⟩ := (p.field_eq_zero_iff hM.ne' x₀).mp heq
+  have hcont : Continuous p.syncCoeff := by unfold syncCoeff; fun_prop
+  obtain ⟨r, hr0, hr⟩ := Metric.isOpen_iff.mp (isOpen_lt continuous_const hcont) (x₀ 0) hK
+  have hr' : ∀ θ, |θ - x₀ 0| < r → 0 < p.syncCoeff θ := fun θ hθ =>
+    hr (by simpa [Real.dist_eq] using hθ)
+  apply lyapunov_stable (D := {x : State 2 | |x 0 - x₀ 0| < r}) (V := p.energy (x₀ 0))
+    (by norm_num)
+  refine ⟨?_, ?_, (p.contDiff_energy (k := 1) _).continuous,
+    (p.contDiff_energy (k := 1) _).differentiable (by norm_num), ?_, ?_, ?_⟩
+  · exact isOpen_lt (by fun_prop) continuous_const
+  · simpa using hr0
+  · simp [energy, h1]
+  · intro x hx hne
+    have hx' : |x 0 - x₀ 0| < r := hx
+    by_cases h0 : x 0 = x₀ 0
+    · have h1' : x 1 ≠ 0 := by
+        intro h1'; apply hne; exact PhasePlane.ext_iff'.2 ⟨h0, by rw [h1', h1]⟩
+      have : 0 < p.M / 2 * x 1 ^ 2 := by positivity
+      simpa [energy, h0] using this
+    · have hU := p.potential_pos hbal hr' hx' h0
+      have : 0 ≤ p.M / 2 * x 1 ^ 2 := by positivity
+      simp only [energy]; linarith
+  · intro x _
+    rw [p.energy_lie hM.ne']
+    nlinarith [sq_nonneg (x 1)]
+
+end SwingParams
+
+namespace Swing
+
 private theorem point_eq_zero {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm) :
     m.p.field m.point = 0 :=
   (m.p.field_eq_zero_iff hM.ne' _).mpr ⟨by simp, by simpa using hb⟩
@@ -682,22 +734,22 @@ private theorem les_of {m : Model} (hM : 0 < m.p.M) (hD : 0 < m.p.D)
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
-  exact m.p.locallyExponentiallyStable_of_syncCoeff_pos hM hD (point_eq_zero hM hb) (by simpa using hK)
+  exact (mem_den_flow_iff.mp (m.p.locallyExponentiallyStable_of_syncCoeff_pos hM hD (point_eq_zero hM hb) (by simpa using hK)))
 
 private theorem ls_of {m : Model} (hM : 0 < m.p.M) (hD : 0 ≤ m.p.D)
     (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
-  exact m.p.lyapunovStable_of_syncCoeff_pos hM hD (point_eq_zero hM hb) (by simpa using hK)
+  exact (mem_den_flow_iff.mp (m.p.lyapunovStable_of_syncCoeff_pos hM hD (point_eq_zero hM hb) (by simpa using hK)))
 
 private theorem unstable_of {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm)
     (hs : m.p.syncCoeff m.δ < 0 ∨ m.p.D < 0) : connection% (m ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
   rcases hs with hK | hD
-  · exact m.p.unstable_of_syncCoeff_neg hM (point_eq_zero hM hb) (by simpa using hK)
-  · exact m.p.unstable_of_damping_neg hM (point_eq_zero hM hb) hD
+  · exact (mem_den_flow_iff.mp (m.p.unstable_of_syncCoeff_neg hM (point_eq_zero hM hb) (by simpa using hK)))
+  · exact (mem_den_flow_iff.mp (m.p.unstable_of_damping_neg hM (point_eq_zero hM hb) hD))
 
 /-! ### Soundness of the translation -/
 

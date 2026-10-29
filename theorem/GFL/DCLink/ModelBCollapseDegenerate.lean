@@ -107,8 +107,11 @@ plane (`Dynamics.Degenerate.unstable_of_degenerate_node`). Implementation eviden
 `ModelB.mem_den_unstable_of_disc_eq_zero`. -/
 private theorem modelB_unstable_of_degenerate_node {x : State 4} (hx : x 2 = 0)
     (hP : p.pccP x = 0) (hD : p.planeDisc x = 0) (hH : p.planeH x ≠ 0) :
-    Unstable p.field x :=
-  Dynamics.Degenerate.unstable_of_degenerate_node 2 hx p.contDiff_planeQ (p.planeQ_eq_zero hx hP)
+    connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% (Spectral.mem_den_flow_iff_shift (f := fun m : ModelB.Model => m.p.field) (pt := ModelB.Model.x) ModelB.family_isAutonomous))]
+  change Unstable p.field x
+  exact Dynamics.Degenerate.unstable_of_degenerate_node 2 hx p.contDiff_planeQ (p.planeQ_eq_zero hx hP)
     p.contDiff_planeG p.contDiff_planeH one_pos (fun y _ hy => p.field_rel hy)
     (fun y _ hy => p.planeQ_lie hy) (p.fderiv_planeQ_single x) hD hH
     (p.continuousAt_field_sub_single x)
@@ -123,7 +126,10 @@ Implementation evidence for `ModelB.not_mem_den_locallyExponentiallyStable_of_ni
 private theorem modelB_not_locallyExponentiallyStable_of_nilpotent {x : State 4} (hx : x 2 = 0)
     (hP : p.pccP x = 0) (hH : p.planeH x = 0) (hG : p.planeG x = 0)
     (hF : p.field x 0 ≠ 0 ∨ p.field x 1 ≠ 0 ∨ p.field x 3 ≠ 0) :
-    ¬ LocallyExponentiallyStable p.field x := by
+    connection% ((⟨p, x⟩ : ModelB.Model) ∉ ModelB.family.den (.flow .locallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% (Spectral.mem_den_flow_iff_shift (f := fun m : ModelB.Model => m.p.field) (pt := ModelB.Model.x) ModelB.family_isAutonomous))]
+  change ¬ LocallyExponentiallyStable p.field x
   refine Dynamics.Degenerate.not_locallyExponentiallyStable_of_nilpotent 2 hx p.contDiff_planeQ
     (p.planeQ_eq_zero hx hP) p.contDiff_planeG p.contDiff_planeH hG hH one_pos
     (fun y _ hy => p.field_rel hy) (fun y _ hy => p.planeQ_lie hy) p.fderiv_planeQ_single
@@ -158,7 +164,7 @@ private theorem mem_den_flow_iff'' {m : Model} {P : Flow.Property} :
     (hP : m.p.pccP m.x = 0) (hD : m.p.planeDisc m.x = 0) (hH : m.p.planeH m.x ≠ 0) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff''.mpr (m.p.modelB_unstable_of_degenerate_node hx hP hD hH)
+  exact mem_den_flow_iff''.mpr (((Spectral.mem_den_flow_iff_shift (f := fun m : ModelB.Model => m.p.field) (pt := ModelB.Model.x) ModelB.family_isAutonomous).mp (m.p.modelB_unstable_of_degenerate_node hx hP hD hH)))
 
 /-- **Nilpotent plane point with drift: no local exponential estimate.** A selected state on the
 singular plane with `P(x*) = 0`, `H = G = 0` and `(f_Δθ, f_pll, f_ξ)(x*) ≠ 0` is not locally
@@ -170,7 +176,7 @@ exponentially stable. -/
     connection% (m ∉ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   intro hm
-  exact m.p.modelB_not_locallyExponentiallyStable_of_nilpotent hx hP hH hG hF
+  exact (fun hFlowConnection => (m.p.modelB_not_locallyExponentiallyStable_of_nilpotent hx hP hH hG hF) ((Spectral.mem_den_flow_iff_shift (f := fun m : ModelB.Model => m.p.field) (pt := ModelB.Model.x) ModelB.family_isAutonomous).mpr hFlowConnection))
     (mem_den_flow_iff''.mp hm)
 
 /-- A converter at rest on the singular plane with zero power and a degenerate node:

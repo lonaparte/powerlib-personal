@@ -308,7 +308,10 @@ private theorem rig_mem_den_flow_iff {y : Rig} {P : Flow.Property} :
 
 private theorem rig_les_of {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
     (hb : Meets y.design .balanced) (hK : 0 < y.design.K) (hH : 0 < y.H) :
-    LocallyExponentiallyStable (rigField y) y.point := by
+    connection% (y ∈ rigFamily.den (.flow .locallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% rig_mem_den_flow_iff)]
+  change LocallyExponentiallyStable (rigField y) y.point
   obtain ⟨hM, hD, hω⟩ := hp
   refine Criteria.locallyExponentiallyStable_of_jacobian_fin_four y.jacobian (contDiff_rigField y)
     ((rigField_point_eq_zero_iff y hω.ne').mpr hb) (hasFDerivAt_rigField y).fderiv ?_ ?_ ?_ ?_
@@ -327,7 +330,10 @@ private theorem rig_les_of {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < 
 
 private theorem rig_unstable_of {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
     (hb : Meets y.design .balanced) (hl : y.H < 0 ∨ y.design.K < 0) :
-    Unstable (rigField y) y.point := by
+    connection% (y ∈ rigFamily.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% rig_mem_den_flow_iff)]
+  change Unstable (rigField y) y.point
   obtain ⟨hM, hD, hω⟩ := hp
   have heq := (rigField_point_eq_zero_iff y hω.ne').mpr hb
   rcases hl with hH | hK
@@ -369,12 +375,12 @@ instability, and passivity holds without requirement. -/
     · rfl
     · rfl
   · rw [(connection_proof% TMIO.mem_realize)] at hy
-    exact rig_mem_den_flow_iff.mpr (rig_les_of (hy (.design .physical) (by simp))
+    exact rig_mem_den_flow_iff.mpr ((rig_mem_den_flow_iff.mp (rig_les_of (hy (.design .physical) (by simp))
       (hy .lag (by simp)) (hy (.design .balanced) (by simp))
-      (hy (.design .synchronizing) (by simp)) (hy .routh (by simp)))
+      (hy (.design .synchronizing) (by simp)) (hy .routh (by simp)))))
   · rw [(connection_proof% TMIO.mem_realize)] at hy
-    exact rig_mem_den_flow_iff.mpr (rig_unstable_of (hy (.design .physical) (by simp))
-      (hy .lag (by simp)) (hy (.design .balanced) (by simp)) (hy .lagged (by simp)))
+    exact rig_mem_den_flow_iff.mpr ((rig_mem_den_flow_iff.mp (rig_unstable_of (hy (.design .physical) (by simp))
+      (hy .lag (by simp)) (hy (.design .balanced) (by simp)) (hy .lagged (by simp)))))
 
 /-- Passivity is translated exactly: a platform without ports is passive. -/
 @[tmio TM, powerlib_domain] theorem rig_exact_passive : connection% (rigFamily.Exact .passive) := by
@@ -393,12 +399,12 @@ the four-state Routh–Hurwitz criterion, both directions). -/
     {.design .physical, .lag} Rig.jacobian (fun y _ hy => ?_) (fun y _ => contDiff_rigField y)
     (fun y _ => (hasFDerivAt_rigField y).fderiv) fun y hI heq hHur => ?_
   · rw [(connection_proof% TMIO.mem_realize)] at hy
-    exact rig_mem_den_flow_iff.mpr (rig_les_of
+    exact rig_mem_den_flow_iff.mpr ((rig_mem_den_flow_iff.mp (rig_les_of
       (hy (.design .physical) (by simp [rigFamily, rigTranslate]))
       (hy .lag (by simp [rigFamily, rigTranslate]))
       (hy (.design .balanced) (by simp [rigFamily, rigTranslate]))
       (hy (.design .synchronizing) (by simp [rigFamily, rigTranslate]))
-      (hy .routh (by simp [rigFamily, rigTranslate])))
+      (hy .routh (by simp [rigFamily, rigTranslate])))))
   rw [(connection_proof% TMIO.mem_realize)] at hI
   have hp : Meets y.design .physical := hI (.design .physical) (by simp)
   have hτ : 0 < y.τ := hI .lag (by simp)
@@ -484,11 +490,15 @@ def Record.SlowCheck (v : Record) : Prop :=
 
 /-! ### Implementation evidence (private) -/
 
-private theorem mem_produces {y : Rig} {v : Record} : (y, v) ∈ stack.produces ↔ Produces y v :=
-  Iff.rfl
+private theorem mem_produces {y : Rig} {v : Record} :
+    connection% (v ∈ TMIO.predict stack.produces {y} ↔ v ∈ {v | Produces y v}) := by
+  simp only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq]
+  rfl
 
-private theorem mem_realizes {x : Model} {y : Rig} : (x, y) ∈ stack.realizes ↔ y.design = x :=
-  Iff.rfl
+private theorem mem_realizes {x : Model} {y : Rig} :
+    connection% (y ∈ TMIO.predict stack.realizes {x} ↔ y ∈ {y | y.design = x}) := by
+  simp only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq]
+  rfl
 
 /-- The worst-corner fast-filter check places every producer's design in the translation of
 local exponential stability. -/
@@ -542,7 +552,11 @@ private theorem design_slow_of_slowCheck {y : Rig} {v : Record} (hv : v.SlowChec
 /-- Fast filter and fast delay give the platform Routh condition:
 `H = ω_c ((M e − τ b (K M + τ (D M ω_c² + K D))) + τ b e (1 + τ ω_c))`, `e = D b − K M`. -/
 private theorem H_pos_of_fastLag {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
-    (hK : 0 < y.design.K) (hl : RigMeets y .fastLag) : 0 < y.H := by
+    (hK : 0 < y.design.K) (hl : RigMeets y .fastLag) :
+    connection% (y ∈ TMIO.realize RigMeets {.routh}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, RigMeets]
+  change 0 < y.H
   obtain ⟨hM, hD, hω⟩ := hp
   have hl' : y.τ * y.b * (y.design.K * y.design.g.M +
       y.τ * (y.design.g.D * y.design.g.M * y.design.g.ωc ^ 2 + y.design.K * y.design.g.D)) <
@@ -701,7 +715,9 @@ obligation, fast filter and fast delay give the platform Routh condition `H > 0`
     · exact hp
     · exact hK
     · exact hτ
-    · exact H_pos_of_fastLag hp hτ hK (hΔ .fastLag (by simp))
+    · change RigMeets y .routh
+      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, RigMeets] using
+        H_pos_of_fastLag hp hτ hK (hΔ .fastLag (by simp))
 
 /-- A slow platform: the design `M = D = ω_c = K₀ = 1`, `P₀ = 0`, `δ* = 0` (`K = 1 < 2`, locally
 exponentially stable) with the delay `τ = 1` (`H = −1`). -/
@@ -719,8 +735,8 @@ Hurwitz determinant is negative (`H = −1`). -/
 @[tmio TM, powerlib_domain] theorem slowRig_mem_den_unstable :
     connection% (slowRig ∈ rigFamily.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  refine rig_mem_den_flow_iff.mpr (rig_unstable_of (by norm_num [slowRig, Meets])
-    (by norm_num [slowRig]) (by simp [slowRig, Meets]) (Or.inl ?_))
+  refine rig_mem_den_flow_iff.mpr ((rig_mem_den_flow_iff.mp (rig_unstable_of (by norm_num [slowRig, Meets])
+    (by norm_num [slowRig]) (by simp [slowRig, Meets]) (Or.inl ?_))))
   simp [Rig.H, Rig.b, Rig.c, slowRig, Model.K]
   norm_num
 
@@ -763,8 +779,8 @@ operating point off equilibrium; a slow filter gives `H < 0`; `K < 0` gives `det
   refine rig_mem_den_flow_iff.mpr ?_
   by_cases hb : Meets y.design .balanced
   · rcases hs with hs | hK
-    · exact rig_unstable_of hp hτ hb (Or.inl (H_neg_of_slow hp hτ hs))
-    · exact rig_unstable_of hp hτ hb (Or.inr hK)
+    · exact (rig_mem_den_flow_iff.mp (rig_unstable_of hp hτ hb (Or.inl (H_neg_of_slow hp hτ hs))))
+    · exact (rig_mem_den_flow_iff.mp (rig_unstable_of hp hτ hb (Or.inr hK)))
   · exact Dynamics.unstable_of_ne_zero (contDiff_rigField y)
       fun h => hb ((rigField_point_eq_zero_iff y hp.2.2.ne').mp h)
 
@@ -784,9 +800,9 @@ M-layer translation is sound (`chain_le_semantics`). -/
   intro w hw y hy x hx
   rw [Set.mem_singleton_iff] at hw
   subst hw
-  rw [mem_realizes] at hx
+  rw [(show (x, y) ∈ stack.realizes ↔ y.design = x from by simpa only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq] using mem_realizes (x := x) (y := y))] at hx
   subst hx
-  exact design_fast_of_modelCheck h (mem_produces.mp hy)
+  exact design_fast_of_modelCheck h ((show (y, w) ∈ stack.produces ↔ Produces y w from by simpa only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq] using mem_produces (y := y) (v := w)).mp hy)
 
 /-- Theory-driven certification: a record passing the worst-corner fast-filter check is certified
 for local exponential stability (the whole-chain Galois connection). -/
@@ -811,7 +827,7 @@ every platform that may produce the record (`Stack.infer_subset_truth` with
   refine stack.infer_subset_truth (fun w hw => (TMIO.mem_certify _ _ _).mpr fun y hy => ?_) hS hi
   rw [Set.mem_singleton_iff] at hw
   subst hw
-  have hp := mem_produces.mp hy
+  have hp := (show (y, w) ∈ stack.produces ↔ Produces y w from by simpa only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq] using mem_produces (y := y) (v := w)).mp hy
   rw [(connection_proof% TMIO.mem_realize)]
   intro q hq
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
@@ -835,7 +851,7 @@ If an unstable platform may produce that record, this inference is not true of e
   unfold powerlib.TMIO.Statement at hi
   refine ⟨hi, fun ht => ?_⟩
   have hmem : y ∈ rigFamily.den (.flow .locallyExponentiallyStable) :=
-    (stack.mem_truth).mp ht v rfl y (mem_produces.mpr hp)
+    (stack.mem_truth).mp ht v rfl y ((show (y, v) ∈ stack.produces ↔ Produces y v from by simpa only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq] using mem_produces (y := y) (v := v)).mpr hp)
   rw [rig_mem_den_flow_iff] at hmem hu
   exact hu (LocallyExponentiallyStable.lyapunovStable hmem)
 
@@ -851,9 +867,9 @@ model. -/
   intro w hw y hy x hx
   rw [Set.mem_singleton_iff] at hw
   subst hw
-  rw [mem_realizes] at hx
+  rw [(show (x, y) ∈ stack.realizes ↔ y.design = x from by simpa only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq] using mem_realizes (x := x) (y := y))] at hx
   subst hx
-  exact design_slow_of_slowCheck h (mem_produces.mp hy)
+  exact design_slow_of_slowCheck h ((show (y, w) ∈ stack.produces ↔ Produces y w from by simpa only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq] using mem_produces (y := y) (v := w)).mp hy)
 
 /-- The inferred instability is true of every platform that may produce a slow-filter record,
 whatever its delay (`realizationSoundUnder_unstable`). -/
@@ -866,7 +882,7 @@ whatever its delay (`realizationSoundUnder_unstable`). -/
   refine stack.infer_subset_truth (fun w hw => (TMIO.mem_certify _ _ _).mpr fun y hy => ?_) hS hi
   rw [Set.mem_singleton_iff] at hw
   subst hw
-  have hp := mem_produces.mp hy
+  have hp := (show (y, w) ∈ stack.produces ↔ Produces y w from by simpa only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq] using mem_produces (y := y) (v := w)).mp hy
   have hd := design_slow_of_slowCheck h hp
   unfold TMIO.Statement at hd
   rw [(connection_proof% TMIO.mem_realize)] at hd ⊢

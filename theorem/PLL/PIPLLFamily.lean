@@ -182,7 +182,10 @@ untranslated field is locally exponentially stable. -/
 private theorem piPLL_locallyExponentiallyStable_of_mul_neg {h : ℝ → ℝ}
     {Kp Ki δω θ g : ℝ} (hh : ContDiff ℝ 1 h) (hzero : h θ = 0) (hderiv : HasDerivAt h g θ)
     (hKpg : Kp * g < 0) (hKig : Ki * g < 0) :
-    LocallyExponentiallyStable (piPLLField h Kp Ki δω) (PhasePlane.mk θ (δω / Ki)) := by
+    connection% ((⟨h, Kp, Ki, δω, θ, hh⟩ : Model) ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow_iff)]
+  change LocallyExponentiallyStable (piPLLField h Kp Ki δω) (PhasePlane.mk θ (δω / Ki))
   have hKi : Ki ≠ 0 := by
     rintro rfl
     simp at hKig
@@ -199,7 +202,10 @@ trace of the Jacobian gives instability. -/
 private theorem piPLL_unstable_of_slope {h : ℝ → ℝ} {Kp Ki δω θ g : ℝ}
     (hh : ContDiff ℝ 1 h) (heq : piPLLField h Kp Ki δω (PhasePlane.mk θ (δω / Ki)) = 0)
     (hderiv : HasDerivAt h g θ) (hg : 0 < Ki * g ∨ 0 < Kp * g) :
-    Unstable (piPLLField h Kp Ki δω) (PhasePlane.mk θ (δω / Ki)) := by
+    connection% ((⟨h, Kp, Ki, δω, θ, hh⟩ : Model) ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow_iff)]
+  change Unstable (piPLLField h Kp Ki δω) (PhasePlane.mk θ (δω / Ki))
   rcases hg with hdet | htr
   · refine Criteria.unstable_of_jacobian_det_neg_fin_two (piPLLJacobian Kp Ki g)
       (contDiff_piPLLField hh) heq (fderiv_piPLLField hderiv) ?_
@@ -213,14 +219,14 @@ private theorem piPLL_unstable_of_slope {h : ℝ → ℝ} {Kp Ki δω θ g : ℝ
 private theorem les_of_meets {m : Model} (hp : Meets m .phaseLocked)
     (hs : Meets m .slopeStable) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
-  mem_den_flow_iff.mpr (piPLL_locallyExponentiallyStable_of_mul_neg m.smooth hp.1
-    (m.hasDerivAt m.θ) hs.1 hs.2)
+  mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (piPLL_locallyExponentiallyStable_of_mul_neg m.smooth hp.1
+    (m.hasDerivAt m.θ) hs.1 hs.2)))
 
 private theorem unstable_of_meets {m : Model} (hp : Meets m .phaseLocked)
     (hs : Meets m .slopeUnstable) :
     connection% (m ∈ family.den (.flow .unstable)) := show m ∈ family.den (.flow .unstable) from
-  mem_den_flow_iff.mpr (piPLL_unstable_of_slope m.smooth (piPLLField_point_eq_zero_iff.mpr hp)
-    (m.hasDerivAt m.θ) hs)
+  mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (piPLL_unstable_of_slope m.smooth (piPLLField_point_eq_zero_iff.mpr hp)
+    (m.hasDerivAt m.θ) hs)))
 
 /-! ### Soundness of the translation -/
 
@@ -302,8 +308,8 @@ determinant-side product (`K_i g > 0`, a saddle) or a positive trace (`K_p g > 0
     rw [(connection_proof% TMIO.mem_realize)]
     rintro q (rfl | rfl)
     · exact piPLLField_point_eq_zero_iff.mp heq
-    · exact ⟨hneg hKp fun h => piPLL_unstable_of_slope m.smooth heq (m.hasDerivAt m.θ) (Or.inr h),
-        hneg hKi fun h => piPLL_unstable_of_slope m.smooth heq (m.hasDerivAt m.θ) (Or.inl h)⟩
+    · exact ⟨hneg hKp fun h => (mem_den_flow_iff.mp (piPLL_unstable_of_slope m.smooth heq (m.hasDerivAt m.θ) (Or.inr h))),
+        hneg hKi fun h => (mem_den_flow_iff.mp (piPLL_unstable_of_slope m.smooth heq (m.hasDerivAt m.θ) (Or.inl h)))⟩
   · intro hm
     rw [(connection_proof% TMIO.mem_realize)] at hm
     exact Spectral.den_locallyExponentiallyStable_subset_las
@@ -442,7 +448,10 @@ private theorem potential_pos (m : Model) (hzero : m.h m.θ = 0) {r : ℝ}
 Lyapunov stable at the selected point (the PLL energy, LeanForControl's `lyapunov_stable`). -/
 private theorem lyapunovStable_of_slope {m : Model} (hzero : m.h m.θ = 0) (hKp : 0 ≤ m.Kp)
     (hKi : 0 < m.Ki) (hg : deriv m.h m.θ < 0) :
-    LyapunovStable (piPLLField m.h m.Kp m.Ki m.δω) m.point := by
+    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow_iff)]
+  change LyapunovStable (piPLLField m.h m.Kp m.Ki m.δω) m.point
   obtain ⟨r, hr0, hr⟩ := Metric.isOpen_iff.mp
     (isOpen_lt (m.smooth.continuous_deriv le_rfl) continuous_const) m.θ hg
   have hr' : ∀ θ, |θ - m.θ| < r → deriv m.h θ < 0 := fun θ hθ =>
@@ -477,7 +486,7 @@ energy `U(θ) + ½ K_i (η − δω/K_i)²`, `U = −∫_{θ*} h`, decreases at 
     (hKp : 0 ≤ m.Kp) (hKi : 0 < m.Ki) (hg : deriv m.h m.θ < 0) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff.mpr (lyapunovStable_of_slope hzero hKp hKi hg)
+  exact mem_den_flow_iff.mpr ((mem_den_flow_iff.mp (lyapunovStable_of_slope hzero hKp hKi hg)))
 
 /-! ### The synchronous-reference-frame detector -/
 

@@ -333,27 +333,12 @@ times the real factor `Tₛ sinc (ω Tₛ / 2)`. -/
 
 /-! ### Routh–Hurwitz for the platform -/
 
-/-- Routh–Hurwitz for the platform with `L > 0`, `Tₛ > 0`. Static evidence on the
-implementation, not a connection conclusion. -/
-@[powerlib_foundation] theorem isHurwitz_iff (hL : 0 < y.design.L) (hT : 0 < y.Ts) :
-    IsHurwitz y.model.A ↔ 0 < y.a2 ∧ 0 < y.a0 ∧ y.a3 * y.a0 < y.a2 * y.a1 := by
-  have ha3 := a3_pos hL hT
-  have htr : y.model.A.trace = -(y.a2 / y.a3) := by
-    rw [← neg_trace_A y hL.ne' hT.ne', neg_neg]
-  have hdet : y.model.A.det = -(y.a0 / y.a3) := by
-    rw [← neg_det_A y hL.ne' hT.ne', neg_neg]
-  rw [Criteria.isHurwitz_fin_three_iff, htr, hdet, principalMinorSum_A_eq y hL.ne' hT.ne',
-    neg_lt_zero, neg_lt_zero, div_pos_iff_of_pos_right ha3, div_pos_iff_of_pos_right ha3]
-  have key : -(y.a2 / y.a3) * (y.a1 / y.a3) < -(y.a0 / y.a3) ↔ y.a3 * y.a0 < y.a2 * y.a1 := by
-    rw [neg_mul, neg_lt_neg_iff, div_mul_div_comm, div_lt_div_iff₀ ha3 (mul_pos ha3 ha3)]
-    constructor <;> intro h <;> nlinarith
-  rw [key]
-
 /-- For every positive period and every inductance, a Hurwitz platform has a stable design: the
-constant and linear coefficients give `Ki/L > 0` and `(R + Kp)/L > (τ/2) Ki/L`. Static evidence,
-not a connection conclusion. -/
-@[powerlib_foundation] theorem design_stable_of_isHurwitz {y : DigitalPI} (hT : 0 < y.Ts)
-    (h : IsHurwitz y.model.A) : PIParams.Stable y.design := by
+constant and linear coefficients give `Ki/L > 0` and `(R + Kp)/L > (τ/2) Ki/L`. Read through the existing requirement satisfaction. -/
+@[tmio MI, powerlib_foundation] theorem design_stable_of_isHurwitz {y : DigitalPI} (hT : 0 < y.Ts)
+    (h : IsHurwitz y.model.A) :
+    connection% (y.design ∈ TMIO.realize PIParams.family.meets {.stable}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, PIParams.family, Spectral.linearFamily, Spectral.Meets]
   rw [Criteria.isHurwitz_fin_three_iff, principalMinorSum_A, det_A] at h
   obtain ⟨htr, hdet, hg⟩ := h
   have hτ : 0 < y.τ := by unfold τ; positivity
@@ -416,55 +401,6 @@ right half plane. Static evidence on the implementation, not a connection conclu
         nlinarith)
   exact ⟨s, by rw [Criteria.det_characteristicMatrix_fin_three']; exact hs, hre⟩
 
-/-- Fast sampling against a stable design gives the platform Routh conditions:
-`a₂ > L/2`, `a₁ ≥ 3 (R + Kp)/4` and `a₃ a₀ ≤ L (R + Kp)/4 < (L/2)(3 (R + Kp)/4)`. Static evidence,
-not a connection conclusion. -/
-@[powerlib_foundation] theorem routh_of_fastSampling {y : DigitalPI} (hL : 0 < y.design.L)
-    (hT : 0 < y.Ts) (hs : PIParams.Stable y.design)
-    (hf : 3 * y.design.Kp * y.Ts ≤ y.design.L ∧
-      3 * y.design.Ki * y.Ts ≤ y.design.R + y.design.Kp) :
-    0 < y.a2 ∧ 0 < y.a0 ∧ y.a3 * y.a0 < y.a2 * y.a1 := by
-  obtain ⟨h1, h2⟩ := hs
-  rw [div_pos_iff_of_pos_right hL] at h1 h2
-  obtain ⟨f1, f2⟩ := hf
-  have ha2 : y.design.L / 2 < y.a2 := by
-    unfold a2 τ
-    nlinarith [mul_pos h1 hT]
-  have ha1 : 3 * (y.design.R + y.design.Kp) / 4 ≤ y.a1 := by
-    unfold a1 τ
-    linarith
-  have ha30 : y.a3 * y.a0 ≤ y.design.L * (y.design.R + y.design.Kp) / 4 := by
-    unfold a3 a0 τ
-    nlinarith [mul_le_mul_of_nonneg_left f2 hL.le]
-  refine ⟨by linarith, h2, ?_⟩
-  have hlow : y.design.L / 2 * (3 * (y.design.R + y.design.Kp) / 4) < y.a2 * y.a1 :=
-    calc y.design.L / 2 * (3 * (y.design.R + y.design.Kp) / 4)
-        < y.a2 * (3 * (y.design.R + y.design.Kp) / 4) :=
-          mul_lt_mul_of_pos_right ha2 (by positivity)
-      _ ≤ y.a2 * y.a1 := mul_le_mul_of_nonneg_left ha1 (by linarith)
-  nlinarith [mul_pos hL h1]
-
-/-- A statically unstable design gives a strict violation of the platform Routh conditions, for
-every positive period: `Ki < 0` gives `a₀ < 0`, otherwise `R + Kp < 0` gives `a₁ < 0`. Static
-evidence, not a connection conclusion. -/
-@[powerlib_foundation] theorem lagged_of_unstable {y : DigitalPI} (hL : 0 < y.design.L)
-    (hT : 0 < y.Ts) (hu : PIParams.Unstable y.design) :
-    y.a2 < 0 ∨ y.a1 < 0 ∨ y.a0 < 0 ∨ y.a2 * y.a1 < y.a3 * y.a0 := by
-  have hτ : 0 < y.τ := by unfold τ; positivity
-  rcases hu with h | h
-  · rw [div_neg_iff] at h
-    rcases lt_or_ge y.design.Ki 0 with hK | hK
-    · exact Or.inr (Or.inr (Or.inl hK))
-    · refine Or.inr (Or.inl ?_)
-      unfold a1
-      rcases h with ⟨-, h⟩ | ⟨h, -⟩
-      · exact absurd h (not_lt.mpr hL.le)
-      · nlinarith
-  · rw [div_neg_iff] at h
-    rcases h with ⟨-, h⟩ | ⟨h, -⟩
-    · exact absurd h (not_lt.mpr hL.le)
-    · exact Or.inr (Or.inr (Or.inl h))
-
 end DigitalPI
 
 /-! ## The implementation family -/
@@ -514,6 +450,73 @@ def family : Family DigitalPI DigitalRequirement 3 1 :=
   ⟨fun y => y.model.system, Meets, translate⟩
 
 @[powerlib_foundation] theorem family_isLinear : family.IsLinear model := fun _ => rfl
+
+/-- Routh–Hurwitz for the platform with `L > 0`, `Tₛ > 0`. Read through the platform family denotation. -/
+@[tmio TM, powerlib_foundation] theorem isHurwitz_iff (y : DigitalPI) (hL : 0 < y.design.L) (hT : 0 < y.Ts) :
+    connection% (y ∈ family.den (.flow .globallyExponentiallyStable) ↔
+      0 < y.a2 ∧ 0 < y.a0 ∧ y.a3 * y.a0 < y.a2 * y.a1) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)))]
+  have ha3 := a3_pos hL hT
+  have htr : y.model.A.trace = -(y.a2 / y.a3) := by
+    rw [← neg_trace_A y hL.ne' hT.ne', neg_neg]
+  have hdet : y.model.A.det = -(y.a0 / y.a3) := by
+    rw [← neg_det_A y hL.ne' hT.ne', neg_neg]
+  rw [Criteria.isHurwitz_fin_three_iff, htr, hdet, principalMinorSum_A_eq y hL.ne' hT.ne',
+    neg_lt_zero, neg_lt_zero, div_pos_iff_of_pos_right ha3, div_pos_iff_of_pos_right ha3]
+  have key : -(y.a2 / y.a3) * (y.a1 / y.a3) < -(y.a0 / y.a3) ↔ y.a3 * y.a0 < y.a2 * y.a1 := by
+    rw [neg_mul, neg_lt_neg_iff, div_mul_div_comm, div_lt_div_iff₀ ha3 (mul_pos ha3 ha3)]
+    constructor <;> intro h <;> nlinarith
+  rw [key]
+
+/-- Fast sampling against a stable design gives the platform Routh conditions:
+`a₂ > L/2`, `a₁ ≥ 3 (R + Kp)/4` and `a₃ a₀ ≤ L (R + Kp)/4 < (L/2)(3 (R + Kp)/4)`. Read through the existing requirement satisfaction. -/
+@[tmio M, powerlib_foundation] theorem routh_of_fastSampling {y : DigitalPI} (hL : 0 < y.design.L)
+    (hT : 0 < y.Ts) (hs : PIParams.Stable y.design)
+    (hf : 3 * y.design.Kp * y.Ts ≤ y.design.L ∧
+      3 * y.design.Ki * y.Ts ≤ y.design.R + y.design.Kp) :
+    connection% (y ∈ TMIO.realize Meets {.routh}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  obtain ⟨h1, h2⟩ := hs
+  rw [div_pos_iff_of_pos_right hL] at h1 h2
+  obtain ⟨f1, f2⟩ := hf
+  have ha2 : y.design.L / 2 < y.a2 := by
+    unfold a2 τ
+    nlinarith [mul_pos h1 hT]
+  have ha1 : 3 * (y.design.R + y.design.Kp) / 4 ≤ y.a1 := by
+    unfold a1 τ
+    linarith
+  have ha30 : y.a3 * y.a0 ≤ y.design.L * (y.design.R + y.design.Kp) / 4 := by
+    unfold a3 a0 τ
+    nlinarith [mul_le_mul_of_nonneg_left f2 hL.le]
+  refine ⟨by linarith, h2, ?_⟩
+  have hlow : y.design.L / 2 * (3 * (y.design.R + y.design.Kp) / 4) < y.a2 * y.a1 :=
+    calc y.design.L / 2 * (3 * (y.design.R + y.design.Kp) / 4)
+        < y.a2 * (3 * (y.design.R + y.design.Kp) / 4) :=
+          mul_lt_mul_of_pos_right ha2 (by positivity)
+      _ ≤ y.a2 * y.a1 := mul_le_mul_of_nonneg_left ha1 (by linarith)
+  nlinarith [mul_pos hL h1]
+
+/-- A statically unstable design gives a strict violation of the platform Routh conditions, for
+every positive period: `Ki < 0` gives `a₀ < 0`, otherwise `R + Kp < 0` gives `a₁ < 0`. Read through the existing requirement satisfaction. -/
+@[tmio M, powerlib_foundation] theorem lagged_of_unstable {y : DigitalPI} (hL : 0 < y.design.L)
+    (hT : 0 < y.Ts) (hu : PIParams.Unstable y.design) :
+    connection% (y ∈ TMIO.realize Meets {.lagged}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  have hτ : 0 < y.τ := by unfold τ; positivity
+  rcases hu with h | h
+  · rw [div_neg_iff] at h
+    rcases lt_or_ge y.design.Ki 0 with hK | hK
+    · exact Or.inr (Or.inr (Or.inl hK))
+    · refine Or.inr (Or.inl ?_)
+      unfold a1
+      rcases h with ⟨-, h⟩ | ⟨h, -⟩
+      · exact absurd h (not_lt.mpr hL.le)
+      · nlinarith
+  · rw [div_neg_iff] at h
+    rcases h with ⟨-, h⟩ | ⟨h, -⟩
+    · exact absurd h (not_lt.mpr hL.le)
+    · exact Or.inr (Or.inr (Or.inl h))
 
 private theorem translate_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     family.translate (.flow P) = {.physical, .sampling, .routh} := by
@@ -565,7 +568,7 @@ a strict violation a characteristic root in the open right half plane (the linea
     translate_eq_linearTable (fun y hy => ?_) (fun y hy => ?_)
     fun _ => Spectral.realize_univ_subset_of_eq_empty realize_univ _
   · rw [(connection_proof% TMIO.mem_realize)] at hy
-    exact (isHurwitz_iff y (hy .physical (by simp)) (hy .sampling (by simp))).mpr
+    exact (((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff y (hy .physical (by simp)) (hy .sampling (by simp))))).mpr
       (hy .routh (by simp))
   · rw [(connection_proof% TMIO.mem_realize)] at hy
     exact exists_root_of_lagged (hy .physical (by simp)) (hy .sampling (by simp))
@@ -582,7 +585,7 @@ platform Routh conditions hold. -/
   rw [(connection_proof% TMIO.mem_realize)] at hΔ
   have hL : 0 < y.design.L := hΔ .physical (by simp)
   have hT : 0 < y.Ts := hΔ .sampling (by simp)
-  rw [isHurwitz_iff y hL hT, (connection_proof% TMIO.mem_realize)]
+  rw [((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff y hL hT)), (connection_proof% TMIO.mem_realize)]
   refine ⟨fun h => h .routh (by simp), fun h q hq => ?_⟩
   rcases hq with rfl | rfl | rfl
   exacts [hL, hT, h]
@@ -595,7 +598,7 @@ exponential stability) iff `0 < a₂ ∧ 0 < a₀ ∧ a₃ a₀ < a₂ a₁`. -/
       y ∈ {y : DigitalPI | 0 < y.a2 ∧ 0 < y.a0 ∧ y.a3 * y.a0 < y.a2 * y.a1}) := by
   unfold powerlib.TMIO.Statement
   rw [family_isLinear.den_hurwitz hP]
-  exact isHurwitz_iff y hL hT
+  exact ((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff y hL hT))
 
 /-! ## The digital loop as an implementation of the PI design (M–I) -/
 
@@ -639,7 +642,7 @@ exact design translation (`PIParams.exact`), the sound platform translation
   rcases hq with rfl | rfl | rfl
   · exact hL
   · exact hT
-  · exact routh_of_fastSampling hL hT hs hf
+  · exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Meets] using (routh_of_fastSampling hL hT hs hf))
 
 /-- Implementation completeness for every period: a platform with a positive period satisfying
 an attractive sentence (or sampled contraction) realizes a design satisfying it, whatever the
@@ -655,7 +658,7 @@ inductance. The delay never stabilizes a design. -/
   rw [Implementation.certify_realizes_of_design (I := implementation) rfl, Set.mem_preimage,
     implementation_model, PIParams.family_isLinear.den_hurwitz hP]
   exact (PIParams.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp
-    ((PIParams.isHurwitz_iff_div y.design).mpr (design_stable_of_isHurwitz hT hd))
+    ((PIParams.isHurwitz_iff_div y.design).mpr ((by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, PIParams.family, Spectral.linearFamily, Spectral.Meets, PIParams.Stable] using (design_stable_of_isHurwitz hT hd))))
 
 /-- Implementation exactness: within a positive inductance, a positive period and fast sampling,
 a platform satisfies an attractive sentence (or sampled contraction) exactly when its design
@@ -682,7 +685,7 @@ does. -/
   have hT : 0 < y.Ts := hΔ .sampling (by simp)
   have hu : PIParams.Unstable y.design := hΔ (.design .unstable) (by simp)
   rw [implementation_impl, (connection_proof% family_isLinear.mem_den_flow)]
-  obtain ⟨s, hs, hre⟩ := exists_root_of_lagged hL hT (lagged_of_unstable hL hT hu)
+  obtain ⟨s, hs, hre⟩ := exists_root_of_lagged hL hT ((by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using (lagged_of_unstable hL hT hu)))
   exact unstable_of_root 0 hs hre
 
 /-! ## IMC tuning -/
@@ -691,13 +694,11 @@ does. -/
 def imcTuned (L R ωb Ts : ℝ) : DigitalPI := ⟨imc L R ωb, Ts⟩
 
 /-- The platform Routh conditions of the IMC-tuned loop, with `L, R, Tₛ > 0`: `0 < ω_b` and
-`3 ω_b Tₛ < 4`, via `a₂ a₁ − a₃ a₀ = β (L² ω_b + R a₂)` with `β = 1 − ω_b τ/2`. Static evidence,
-not a connection conclusion. -/
-@[powerlib_foundation] theorem imcTuned_routh_iff {L R ωb Ts : ℝ} (hL : 0 < L) (hR : 0 < R)
+`3 ω_b Tₛ < 4`, via `a₂ a₁ − a₃ a₀ = β (L² ω_b + R a₂)` with `β = 1 − ω_b τ/2`. Read through the existing requirement satisfaction. -/
+@[tmio M, powerlib_foundation] theorem imcTuned_routh_iff {L R ωb Ts : ℝ} (hL : 0 < L) (hR : 0 < R)
     (hT : 0 < Ts) :
-    (0 < (imcTuned L R ωb Ts).a2 ∧ 0 < (imcTuned L R ωb Ts).a0 ∧
-      (imcTuned L R ωb Ts).a3 * (imcTuned L R ωb Ts).a0 <
-        (imcTuned L R ωb Ts).a2 * (imcTuned L R ωb Ts).a1) ↔ 0 < ωb ∧ 3 * ωb * Ts < 4 := by
+    connection% (imcTuned L R ωb Ts ∈ TMIO.realize Meets {.routh} ↔ 0 < ωb ∧ 3 * ωb * Ts < 4) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   set α : ℝ := 3 * Ts / 4 with hα
   set β : ℝ := 1 - ωb * α with hβ
   have hαpos : 0 < α := by rw [hα]; positivity
@@ -736,7 +737,7 @@ not a connection conclusion. -/
   have h := mem_den_iff (imcTuned L R ωb Ts) hL hT hP
   unfold powerlib.TMIO.Statement at h ⊢
   rw [h]
-  exact imcTuned_routh_iff hL hR hT
+  exact (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets, Set.mem_setOf_eq] using (imcTuned_routh_iff hL hR hT))
 
 /-- A slowly sampled IMC loop: `L = R = ω_b = 1`, `Tₛ = 2` (`ω_b Tₛ = 2 > 4/3`). -/
 def slowIMC : DigitalPI := imcTuned 1 1 1 2

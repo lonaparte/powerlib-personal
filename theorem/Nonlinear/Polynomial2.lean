@@ -552,12 +552,6 @@ def Certificate.quadraticDecay {model : Model} (c : Certificate model) :
       simp only [Witness.energy]
       linarith }
 
-/-- An accepted certificate proves global exponential stability of the full polynomial field. -/
-@[powerlib_foundation, aesop unsafe 80% apply]
-private theorem Certificate.globallyExponentiallyStable {model : Model}
-    (c : Certificate model) : Flow.GloballyExponentiallyStable model.field 0 :=
-  c.quadraticDecay.globallyExponentiallyStable model.field_smooth
-
 /-! ## The linearization at the origin -/
 
 /-- A coordinate functional. -/
@@ -664,11 +658,21 @@ def family : Family Model Requirement 2 0 :=
 @[powerlib_foundation] theorem family_isAutonomous : family.IsAutonomous Model.field :=
   fun _ => rfl
 
+/-- An accepted certificate proves global exponential stability of the full polynomial field. -/
+@[powerlib_foundation, aesop unsafe 80% apply]
+private theorem Certificate.globallyExponentiallyStable {model : Model}
+    (c : Certificate model) :
+    connection% (model ∈ family.den (.flow .globallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change Flow.GloballyExponentiallyStable model.field 0
+  exact c.quadraticDecay.globallyExponentiallyStable model.field_smooth
+
 @[tmio TM, aesop norm -1 apply (index := [unindexed])] theorem Certificate.mem_den {model : Model}
     (c : Certificate model) :
     connection% (model ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact family_isAutonomous.mem_den_flow.mpr c.globallyExponentiallyStable
+  exact family_isAutonomous.mem_den_flow.mpr (family_isAutonomous.mem_den_flow.mp (c.globallyExponentiallyStable))
 
 /-- No model has a Hurwitz linearization with a right-half-plane root. -/
 @[tmio M, powerlib_foundation] theorem realize_univ :
@@ -685,8 +689,12 @@ def family : Family Model Requirement 2 0 :=
 linearization theorem). -/
 @[powerlib_foundation] private theorem locallyExponentiallyStable_of_linearization (model : Model)
     (h : coeff model.field0 (0, 0) = 0 ∧ coeff model.field1 (0, 0) = 0)
-    (hH : IsHurwitz model.linearization) : LocallyExponentiallyStable model.field 0 :=
-  hurwitz_linearization_locally_exponentially_stable model.linearization model.field_smooth
+    (hH : IsHurwitz model.linearization) :
+    connection% (model ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change LocallyExponentiallyStable model.field 0
+  exact hurwitz_linearization_locally_exponentially_stable model.linearization model.field_smooth
     (model.field_eq_zero h) (hasFDerivAt_field_zero model).fderiv hH
 
 /-- An equilibrium whose linearization has a right-half-plane root is unstable (LeanForControl's
@@ -694,7 +702,10 @@ indirect method). -/
 @[powerlib_foundation] private theorem unstable_of_linearization (model : Model)
     (h : coeff model.field0 (0, 0) = 0 ∧ coeff model.field1 (0, 0) = 0) {s : ℂ}
     (hs : (Linear.characteristicMatrix model.linearization s).det = 0) (hre : 0 < s.re) :
-    Unstable model.field 0 := by
+    connection% (model ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change Unstable model.field 0
   obtain ⟨v, hv, heig⟩ := Linear.exists_eigenvector_of_root hs
   exact unstable_of_exists_complex_eigenvalue_re_pos model.linearization model.field_smooth
     (model.field_eq_zero h) (hasFDerivAt_field_zero model).fderiv ⟨s, v, hv, heig, hre⟩
@@ -710,8 +721,8 @@ semantics connection. -/
   have hlocal : ∀ (Γ : Set Requirement), Γ = {.equilibrium, .linearizationHurwitz} →
       (∀ q ∈ Γ, Meets model q) → LocallyExponentiallyStable model.field 0 := by
     rintro Γ rfl h
-    exact locallyExponentiallyStable_of_linearization model (h .equilibrium (by simp))
-      (h .linearizationHurwitz (by simp))
+    exact (family_isAutonomous.mem_den_flow.mp (locallyExponentiallyStable_of_linearization model (h .equilibrium (by simp))
+      (h .linearizationHurwitz (by simp))))
   rcases s with P | _ | E
   · rw [(connection_proof% family_isAutonomous.mem_den_flow)]
     cases P
@@ -721,7 +732,7 @@ semantics connection. -/
     case locallyExponentiallyStable => exact hlocal _ rfl hm
     case unstable =>
       obtain ⟨s, hs, hre⟩ := hm .linearizationUnstable (by simp [translate])
-      exact unstable_of_linearization model (hm .equilibrium (by simp [translate])) hs hre
+      exact (family_isAutonomous.mem_den_flow.mp (unstable_of_linearization model (hm .equilibrium (by simp [translate])) hs hre))
     case decay a =>
       obtain ⟨c, hc⟩ := hm (.decayRateAtLeast a) rfl
       exact c.quadraticDecay.decay.mono hc
@@ -732,13 +743,13 @@ semantics connection. -/
       exact this.elim
     case globallyAsymptoticallyStable =>
       obtain ⟨c⟩ := hm .certified rfl
-      exact c.globallyExponentiallyStable.globallyAsymptoticallyStable
+      exact (family_isAutonomous.mem_den_flow.mp (c.globallyExponentiallyStable)).globallyAsymptoticallyStable
     case globallyExponentiallyStable =>
       obtain ⟨c⟩ := hm .certified rfl
-      exact c.globallyExponentiallyStable
+      exact (family_isAutonomous.mem_den_flow.mp (c.globallyExponentiallyStable))
     case contractive =>
       obtain ⟨c⟩ := hm .certified rfl
-      exact c.globallyExponentiallyStable.sampledContraction
+      exact (family_isAutonomous.mem_den_flow.mp (c.globallyExponentiallyStable)).sampledContraction
   · rw [family_isAutonomous.den_passive]
     trivial
   · rw [family_isAutonomous.den_envelope]
@@ -757,7 +768,10 @@ def cubicModel : Model := ⟨[⟨-1, (3, 0)⟩], [⟨-1, (0, 3)⟩]⟩
 /-- Cubic damping is globally asymptotically stable: `‖x‖²` is a strict Lyapunov function with
 compact sublevels. -/
 @[powerlib_foundation] private theorem cubicModel_globallyAsymptoticallyStable :
-    Flow.GloballyAsymptoticallyStable cubicModel.field 0 := by
+    connection% (cubicModel ∈ family.den (.flow .globallyAsymptoticallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change Flow.GloballyAsymptoticallyStable cubicModel.field 0
   refine Flow.globallyAsymptoticallyStable_of_strictLyapunov (V := fun x : ℝ² => ‖x‖ ^ 2)
     two_pos cubicModel.field_smooth ⟨by fun_prop, contDiff_norm_sq ℝ, by simp,
       fun x hx => by positivity, by simp [cubicModel_field], fun x hx => ?_, fun c => ?_⟩
@@ -820,7 +834,7 @@ is not Hurwitz. -/
     connection% (¬ family.Exact (.flow .globallyAsymptoticallyStable) ∧
       ¬ family.Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
-  have hgas := cubicModel_globallyAsymptoticallyStable
+  have hgas := (family_isAutonomous.mem_den_flow.mp (cubicModel_globallyAsymptoticallyStable))
   constructor
   · intro h
     have hmem : cubicModel ∈ family.den (.flow .globallyAsymptoticallyStable) :=
@@ -973,7 +987,7 @@ semantics. It is a proved limitation of the certificate language, not just of it
   intro h
   have hc : Nonempty (Certificate cascadeModel) := (TMIO.mem_realize _ _ _).mp h .certified rfl
   obtain ⟨c⟩ := hc
-  exact cascade_not_exponential (family_isAutonomous.mem_den_flow.mpr c.globallyExponentiallyStable)
+  exact cascade_not_exponential (family_isAutonomous.mem_den_flow.mpr (family_isAutonomous.mem_den_flow.mp (c.globallyExponentiallyStable)))
 
 @[powerlib_foundation] theorem cascade_rejected : accepts cascadeModel = false := by decide +kernel
 

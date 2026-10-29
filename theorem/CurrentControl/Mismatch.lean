@@ -256,13 +256,6 @@ private lemma det_four (a b c s : ℂ) :
   push_cast
   field_simp
 
-/-- The mismatched loop is Hurwitz iff `R + Kp > 0 ∧ Ki > 0`, for every `ω` and `ΔL`. Static
-evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem isHurwitz_iff (hL : 0 < p.base.L) :
-    IsHurwitz p.model.A ↔ 0 < p.base.R + p.base.Kp ∧ 0 < p.base.Ki := by
-  change IsHurwitz (stateMatrix _ _ _) ↔ _
-  rw [stateMatrix_isHurwitz_iff, div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
-
 /-- The equilibrium for constant references: `i = i*`, and the integrators carry the
 mismatch bias: `Ki ξ_d = R i_d* − ω ΔL i_q*`, `Ki ξ_q = R i_q* + ω ΔL i_d*`. -/
 def equilibrium (iref : Fin 2 → ℝ) : ℝ⁴ :=
@@ -305,20 +298,31 @@ def family : Family MismatchParams Spectral.Requirement 4 2 :=
 @[powerlib_foundation] theorem family_isLinear : family.IsLinear model :=
   Spectral.linearFamily_isLinear _ _ _
 
-@[powerlib_foundation] theorem isHurwitz_iff_stable : IsHurwitz p.model.A ↔ p.Stable := by
+/-- The mismatched loop is Hurwitz iff `R + Kp > 0 ∧ Ki > 0`, for every `ω` and `ΔL`. Read through the family denotation. -/
+@[tmio TM, powerlib_foundation] theorem isHurwitz_iff (hL : 0 < p.base.L) :
+    connection% (p ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < p.base.R + p.base.Kp ∧ 0 < p.base.Ki) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)))]
+  change IsHurwitz (stateMatrix _ _ _) ↔ _
+  rw [stateMatrix_isHurwitz_iff, div_pos_iff_of_pos_right hL, div_pos_iff_of_pos_right hL]
+
+@[tmio TM, powerlib_foundation] theorem isHurwitz_iff_stable :
+    connection% (p ∈ family.den (.flow .globallyExponentiallyStable) ↔ p.Stable) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)))]
   change IsHurwitz (stateMatrix _ _ _) ↔ _
   rw [stateMatrix_isHurwitz_iff]
   rfl
 
 private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.den (.flow P) = {p | p.Stable}) := show family.den (.flow P) = {p | p.Stable} from
-  Spectral.linear_den (U := Unstable) (fun p => (isHurwitz_iff_stable p).symm) hP
+  Spectral.linear_den (U := Unstable) (fun p => (((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff_stable p))).symm) hP
 
 /-- Every translation of the mismatched family is sound. -/
 @[tmio TM, powerlib_domain] theorem chain_le_semantics :
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.linear_chain_le_semantics (fun p h => (isHurwitz_iff_stable p).mpr h)
+  exact Spectral.linear_chain_le_semantics (fun p h => (((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff_stable p))).mpr h)
     (fun _ h => stateMatrix_exists_root_of_neg h)
 
 /-- The attractive sentences and sampled contraction of the mismatched loop are carved out
@@ -326,7 +330,7 @@ exactly by positive monic coefficients. -/
 @[tmio TM, powerlib_domain] theorem exact {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.linear_exact (fun p => (isHurwitz_iff_stable p).symm) hP
+  exact Spectral.linear_exact (fun p => (((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff_stable p))).symm) hP
 
 /-- The inductance mismatch never changes the stability region: the attractive denotation of the
 mismatched family is the PI family's, pulled back along `base`. -/
@@ -360,7 +364,7 @@ private theorem tracks_reference (hL : 0 < p.base.L)
     {x : ℝ → ℝ⁴} (hx : ∀ t, HasDerivAt x (p.field v iref (x t)) t) :
     Tendsto (fun t => x t 0) atTop (𝓝 (iref 0)) ∧
       Tendsto (fun t => x t 1) atTop (𝓝 (iref 1)) := by
-  have hA := (p.isHurwitz_iff hL).2 ⟨hR, hKi⟩
+  have hA := (((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (p.isHurwitz_iff hL))).2 ⟨hR, hKi⟩
   have he := p.isEquilibrium hL.ne' hKi.ne' iref
   have hx' : ∀ t, HasDerivAt x (p.model.inputField iref (x t)) t := by
     intro t

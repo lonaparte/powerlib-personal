@@ -421,7 +421,16 @@ def codeFamily : Family CodeModel PLL.PIPLL.Requirement 2 0 :=
 
 /-- The code-frame field at a point is the text-frame field at the reflected point. -/
 private theorem codeField_holds_iff (p : Params) (P : Flow.Property) (θ : ℝ) :
-    P.holds p.codeField (PhasePlane.mk θ 0) ↔ P.holds p.reducedField (PhasePlane.mk (-θ) 0) := by
+    connection% ((⟨p, θ⟩ : CodeModel) ∈ codeFamily.den (.flow P) ↔
+      p.pllModel (-θ) ∈ PLL.PIPLL.family.den (.flow P)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% codeFamily_isAutonomous.mem_den_flow),
+    (connection_proof% PLL.PIPLL.family_isAutonomous.mem_den_flow)]
+  change P.holds (fun z => p.codeField (z + PhasePlane.mk θ 0)) 0 ↔
+    P.holds (p.pllModel (-θ)).field 0
+  rw [show (p.pllModel (-θ)).field =
+      (fun z => p.reducedField (z + PhasePlane.mk (-θ) 0)) from funext (p.pllModel_field (-θ)),
+    Flow.Property.holds_shift_iff, Flow.Property.holds_shift_iff]
   have hpt : PhasePlane.mk θ 0 = Dynamics.affineCoord reflect 0 (PhasePlane.mk (-θ) 0) := by
     rw [Dynamics.affineCoord, add_zero, reflect_apply]
     simp
@@ -437,13 +446,7 @@ sentence. -/
   ext m
   rw [Set.mem_preimage]
   rcases s with P | _ | E
-  · rw [(connection_proof% codeFamily_isAutonomous.mem_den_flow), (connection_proof% PLL.PIPLL.family_isAutonomous.mem_den_flow)]
-    have h1 : CodeModel.field m = fun z => m.params.codeField (z + PhasePlane.mk m.θ 0) := rfl
-    have h2 : (CodeModel.toText m).field =
-        fun z => m.params.reducedField (z + PhasePlane.mk (-m.θ) 0) :=
-      funext (m.params.pllModel_field (-m.θ))
-    rw [h1, h2, Flow.Property.holds_shift_iff, Flow.Property.holds_shift_iff]
-    exact codeField_holds_iff m.params P m.θ
+  · exact codeField_holds_iff m.params P m.θ
   · rw [codeFamily_isAutonomous.den_passive, PLL.PIPLL.family_isAutonomous.den_passive]
     simp
   · rw [codeFamily_isAutonomous.den_envelope, PLL.PIPLL.family_isAutonomous.den_envelope]

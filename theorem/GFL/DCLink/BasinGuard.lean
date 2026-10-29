@@ -520,7 +520,10 @@ def family : Family Model Requirement 4 0 :=
 
 /-- The flipped field about the mirror point is the transported field about the origin. -/
 private theorem flip_holds_iff {m : Model} (hIq : m.params.Iq = 0) (P : Flow.Property) :
-    P.holds m.flip.field 0 ↔ P.holds m.field 0 := by
+    connection% (m.flip ∈ family.den (.flow P) ↔ m ∈ family.den (.flow P)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow),
+    (connection_proof% family_isAutonomous.mem_den_flow)]
   have h1 : m.flip.field = fun z => m.params.carrierField (-m.s) (z + carrierReflect m.point) :=
     rfl
   have h2 : m.field = fun z => m.params.carrierField m.s (z + m.point) := rfl
@@ -537,8 +540,7 @@ sentence (in particular local exponential stability and instability at `s = 1`).
     connection% (m.flip ∈ family.den s ↔ m ∈ family.den s) := by
   unfold powerlib.TMIO.Statement
   rcases s with P | _ | E
-  · rw [(connection_proof% family_isAutonomous.mem_den_flow), (connection_proof% family_isAutonomous.mem_den_flow)]
-    exact flip_holds_iff hIq P
+  · exact flip_holds_iff hIq P
   · rw [family_isAutonomous.den_passive]
     simp
   · rw [family_isAutonomous.den_envelope]

@@ -400,20 +400,6 @@ private theorem energy_pos (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hk : 0 
   ext i
   fin_cases i <;> simp [Model.point, t0, u1, i2, i3]
 
-private theorem lyapunovStable (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
-    (hk : 0 < m.k) (hδ : 0 ≤ m.margin) : LyapunovStable m.field m.point := by
-  apply lyapunov_stable (D := {x : State 4 | |x 0| < 2 * Real.pi}) (by norm_num)
-  exact
-    { hD_open := isOpen_lt (continuous_abs.comp ((PiLp.proj 2 (fun _ : Fin 4 => ℝ) 0 :
-          State 4 →L[ℝ] ℝ).continuous)) continuous_const
-      hD_mem := by simp [Model.point, Real.pi_pos]
-      hcont := (energy_differentiable m).continuous
-      hV_diff := energy_differentiable m
-      hzero := energy_point m
-      hpos := fun x hx hne => energy_pos m hC hL hk hx hne
-      hLie_nonpos := fun x _ => (energy_lie_le m hR hL.ne' hC.ne' x).trans
-        (by nlinarith [sq_nonneg (x 1 - m.ustar)]) }
-
 /-- The source's potential (16): `S(θ) = L_s (μ²u*² − 2μu*v₀ cos θ + v₀²)/(2N)`. Static evidence
 on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem potential_eq (m : Model) (hN : m.N ≠ 0) (θ : ℝ) :
@@ -786,18 +772,6 @@ model, not a connection conclusion. -/
       ring
 
 
-private theorem les (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
-    (hs : 0 < m.μ * m.ustar * m.v0) (hη : m.η ≠ 0) (hδ : 0 < m.margin) :
-    LocallyExponentiallyStable m.field m.point := by
-  have hN : 0 < m.N := by
-    unfold Model.N
-    have := sq_nonneg m.ω0
-    positivity
-  exact Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian m.jac (field_contDiff m)
-    (field_point m hN.ne') (hasFDerivAt_field_point m hL.ne').fderiv
-    (jac_isHurwitz m hC hL hR hs hη hδ)
-
-
 /-! ## Family -/
 
 /-- Static requirements on stiff-grid matching models. -/
@@ -846,6 +820,39 @@ private theorem mem_den_flow {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.field m.point :=
   Spectral.mem_den_flow_iff_shift (f := Model.field) (pt := Model.point) family_isAutonomous
 
+private theorem lyapunovStable (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+    (hk : 0 < m.k) (hδ : 0 ≤ m.margin) :
+    connection% (m ∈ family.den (.flow .lyapunovStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow)]
+  change LyapunovStable m.field m.point
+  apply lyapunov_stable (D := {x : State 4 | |x 0| < 2 * Real.pi}) (by norm_num)
+  exact
+    { hD_open := isOpen_lt (continuous_abs.comp ((PiLp.proj 2 (fun _ : Fin 4 => ℝ) 0 :
+          State 4 →L[ℝ] ℝ).continuous)) continuous_const
+      hD_mem := by simp [Model.point, Real.pi_pos]
+      hcont := (energy_differentiable m).continuous
+      hV_diff := energy_differentiable m
+      hzero := energy_point m
+      hpos := fun x hx hne => energy_pos m hC hL hk hx hne
+      hLie_nonpos := fun x _ => (energy_lie_le m hR hL.ne' hC.ne' x).trans
+        (by nlinarith [sq_nonneg (x 1 - m.ustar)]) }
+
+private theorem les (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+    (hs : 0 < m.μ * m.ustar * m.v0) (hη : m.η ≠ 0) (hδ : 0 < m.margin) :
+    connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow)]
+  change LocallyExponentiallyStable m.field m.point
+  have hN : 0 < m.N := by
+    unfold Model.N
+    have := sq_nonneg m.ω0
+    positivity
+  exact Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian m.jac (field_contDiff m)
+    (field_point m hN.ne') (hasFDerivAt_field_point m hL.ne').fderiv
+    (jac_isHurwitz m hC hL hR hs hη hδ)
+
+
 /-- The whole requirement language is inconsistent. -/
 @[tmio M, powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
@@ -881,12 +888,12 @@ Static evidence on the model, not a connection conclusion. -/
     · rfl
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     obtain ⟨hC, hL, hR⟩ : Meets m .physical := hm .physical (by simp)
-    exact mem_den_flow.mpr (lyapunovStable m hC hL hR (k_pos m hL hR (hm .synchronizing (by simp)))
-      (hm .dissipative (by simp)))
+    exact mem_den_flow.mpr ((mem_den_flow.mp (lyapunovStable m hC hL hR (k_pos m hL hR (hm .synchronizing (by simp)))
+      (hm .dissipative (by simp)))))
   · rw [(connection_proof% TMIO.mem_realize)] at hm
     obtain ⟨hC, hL, hR⟩ : Meets m .physical := hm .physical (by simp)
-    exact mem_den_flow.mpr (les m hC hL hR (hm .synchronizing (by simp)) (hm .matching (by simp))
-      (hm .damped (by simp)))
+    exact mem_den_flow.mpr ((mem_den_flow.mp (les m hC hL hR (hm .synchronizing (by simp)) (hm .matching (by simp))
+      (hm .damped (by simp)))))
   · exact Spectral.realize_univ_subset_of_eq_empty realize_univ _ hm
   · rw [family_isAutonomous.den_passive]
     trivial
@@ -941,7 +948,7 @@ Lyapunov function on `|θ_dq| < 2π`. -/
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% mem_den_flow)]
-  exact lyapunovStable m hC hL hR (k_pos m hL hR hs) hδ
+  exact (mem_den_flow.mp (lyapunovStable m hC hL hR (k_pos m hL hR hs) hδ))
 
 
 /-- **Local exponential stability of the operating point** under the source's (and the note's)
@@ -953,7 +960,7 @@ linearization is Hurwitz (`jac_isHurwitz`). -/
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% mem_den_flow)]
-  exact les m hC hL hR hs hη hδ
+  exact (mem_den_flow.mp (les m hC hL hR hs hη hδ))
 
 /-- Local asymptotic stability of the operating point under the same requirements. -/
 @[tmio TM, powerlib_domain] theorem mem_den_locallyAsymptoticallyStable (m : Model) (hC : 0 < m.Cdc)

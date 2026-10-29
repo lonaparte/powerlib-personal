@@ -1,5 +1,6 @@
 import theorem.Linear.Transfer
 import theorem.TMIO.Relation
+import theorem.Spectral.Family
 
 /-! # Realization theory
 
@@ -35,6 +36,12 @@ Results.
 * What the observation decides: `isHurwitz_iff_of_transfer_eq`, `transfer_certified` (on minimal
   plants the transfer function certifies every behavioural sentence), `hiddenMode_not_minimal`
   (the observation misses exactly such modes).
+Family and connection conclusions.
+* `minimalFamily` reads each minimal plant as its port system, using the generic spectral
+  requirement language and translation.
+* `transfer_certified` certifies the family's denotation through the transfer observation.
+  Both its hypothesis and the certified set use that semantic interface.
+
 -/
 
 noncomputable section
@@ -666,17 +673,28 @@ mode. -/
       transfer m s = transfer m' s) : IsHurwitz m.A ↔ IsHurwitz m'.A :=
   ((similar_iff_transfer_eq hm.1 hm.2 hm'.1 hm'.2).mpr h).isHurwitz_iff.symm
 
-/-- On minimal plants, the transfer function certifies every behavioural sentence: every minimal
-plant with the same transfer function is similar, hence satisfies the same sentences. -/
-@[powerlib_foundation] theorem transfer_certified {m : Plant n p} (hm : m.Minimal)
-    {P : Flow.Property} (h : P.holds (affineLinearVectorField m.A 0) 0) :
-    transfer m ∈ TMIO.certify (Function.graph fun m : {m : Plant n p // m.Minimal} => transfer m.1)
-      {m | P.holds (affineLinearVectorField m.1.A 0) 0} := by
+/-- The spectral family of minimal plants. Its complete systems retain the full state-space
+realization; its static requirements are Hurwitz stability and a right-half-plane pole. -/
+def minimalFamily {n p : ℕ} :
+    Family {m : Plant n p // m.Minimal} Spectral.Requirement n p :=
+  Spectral.linearFamily Subtype.val (fun m => IsHurwitz m.1.A)
+    (fun m => ∃ s : ℂ, (characteristicMatrix m.1.A s).det = 0 ∧ 0 < s.re)
+
+/-- On minimal plants, the transfer function certifies every flow sentence in the family's
+semantics: every minimal producer of the same transfer function is similar. -/
+@[tmio TM, powerlib_foundation] theorem transfer_certified {m : Plant n p} (hm : m.Minimal)
+    {P : Flow.Property} (h : (⟨m, hm⟩ : {m : Plant n p // m.Minimal}) ∈ minimalFamily.den (.flow P)) :
+    connection% (transfer m ∈ TMIO.certify
+      (Function.graph fun m : {m : Plant n p // m.Minimal} => transfer m.1)
+      (minimalFamily.den (.flow P))) := by
+  unfold TMIO.Statement
   rw [(connection_proof% TMIO.mem_certify)]
   rintro ⟨m', hm'⟩ heq
   have heq' : transfer m' = transfer m := heq
   have hs : Similar m m' :=
     (similar_iff_transfer_eq hm.1 hm.2 hm'.1 hm'.2).mpr fun s _ _ => congrFun heq'.symm s
+  have hF : minimalFamily.IsLinear (fun x : {m : Plant n p // m.Minimal} => x.1) := fun _ => rfl
+  rw [(connection_proof% hF.mem_den_flow)] at h ⊢
   exact (hs.holds_iff P).mpr h
 
 /-- The hidden mode is not minimal: the observation misses exactly such modes. -/

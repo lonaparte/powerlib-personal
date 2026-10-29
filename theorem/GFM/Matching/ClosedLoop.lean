@@ -428,40 +428,6 @@ private theorem dissipation_homogeneous (m : Model) (a : ℝ) (z : State 5) :
 private theorem zeroInput_smooth (m : Model) : ContDiff ℝ 1 m.system.zeroInput :=
   (field_smooth m 0).comp (contDiff_id.add contDiff_const)
 
-private theorem ges (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L) (hC : 0 < m.C)
-    (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
-    Flow.GloballyExponentiallyStable m.system.zeroInput 0 := by
-  obtain ⟨aW, haW, bW, -, hW⟩ := Flow.quadratic_bounds m.dissipation (dissipation_continuous m)
-    (dissipation_homogeneous m) (fun z hz => dissipation_pos m hR hG hδ z hz)
-  obtain ⟨aV, haV, bV, hbV, hV⟩ := Flow.quadratic_bounds m.energy (energy_smooth m).continuous
-    (energy_homogeneous m) (fun z hz => energy_pos m hCdc hL hC z hz)
-  have hbVpos : 0 < bV := lt_of_lt_of_le haV hbV
-  let c : Flow.QuadraticDecay m.system.zeroInput m.energy 0 :=
-    { lower := aV
-      upper := bV
-      rate := aW / bV
-      lower_pos := haV
-      upper_pos := hbVpos
-      rate_pos := div_pos haW hbVpos
-      smooth := energy_smooth m
-      equilibrium := by
-        show m.field (0 + m.point) 0 = 0
-        rw [zero_add]
-        exact he
-      lower_bound := fun x => by rw [sub_zero]; exact (hV x).1
-      upper_bound := fun x => by rw [sub_zero]; exact (hV x).2
-      dissipation := fun x => by
-        show fderiv ℝ m.energy x (m.system.field x 0) ≤ _
-        rw [energy_lie m hCdc.ne' hL.ne' hC.ne' he x 0]
-        simp only [Pi.zero_apply, zero_mul, add_zero]
-        have h1 := (hW x).1
-        have h2 : aW / bV * m.energy x ≤ aW * ‖x‖ ^ 2 :=
-          calc aW / bV * m.energy x ≤ aW / bV * (bV * ‖x‖ ^ 2) :=
-                mul_le_mul_of_nonneg_left (hV x).2 (div_nonneg haW.le hbVpos.le)
-            _ = aW * ‖x‖ ^ 2 := by field_simp
-        linarith }
-  exact c.globallyExponentiallyStable (zeroInput_smooth m)
-
 private theorem passive (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L) (hC : 0 < m.C)
     (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
     m.system.PassiveWith m.energy := by
@@ -506,6 +472,43 @@ def translate : Sentence → Set Requirement
 /-- The reduced matching closed-loop family. -/
 def family : Family Model Requirement 5 3 := ⟨fun m => .continuous m.system, Meets, translate⟩
 
+private theorem ges (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L) (hC : 0 < m.C)
+    (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
+    connection% (m ∈ family.den (.flow .globallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% (Family.mem_den (F := family)))]
+  change Flow.GloballyExponentiallyStable m.system.zeroInput 0
+  obtain ⟨aW, haW, bW, -, hW⟩ := Flow.quadratic_bounds m.dissipation (dissipation_continuous m)
+    (dissipation_homogeneous m) (fun z hz => dissipation_pos m hR hG hδ z hz)
+  obtain ⟨aV, haV, bV, hbV, hV⟩ := Flow.quadratic_bounds m.energy (energy_smooth m).continuous
+    (energy_homogeneous m) (fun z hz => energy_pos m hCdc hL hC z hz)
+  have hbVpos : 0 < bV := lt_of_lt_of_le haV hbV
+  let c : Flow.QuadraticDecay m.system.zeroInput m.energy 0 :=
+    { lower := aV
+      upper := bV
+      rate := aW / bV
+      lower_pos := haV
+      upper_pos := hbVpos
+      rate_pos := div_pos haW hbVpos
+      smooth := energy_smooth m
+      equilibrium := by
+        show m.field (0 + m.point) 0 = 0
+        rw [zero_add]
+        exact he
+      lower_bound := fun x => by rw [sub_zero]; exact (hV x).1
+      upper_bound := fun x => by rw [sub_zero]; exact (hV x).2
+      dissipation := fun x => by
+        show fderiv ℝ m.energy x (m.system.field x 0) ≤ _
+        rw [energy_lie m hCdc.ne' hL.ne' hC.ne' he x 0]
+        simp only [Pi.zero_apply, zero_mul, add_zero]
+        have h1 := (hW x).1
+        have h2 : aW / bV * m.energy x ≤ aW * ‖x‖ ^ 2 :=
+          calc aW / bV * m.energy x ≤ aW / bV * (bV * ‖x‖ ^ 2) :=
+                mul_le_mul_of_nonneg_left (hV x).2 (div_nonneg haW.le hbVpos.le)
+            _ = aW * ‖x‖ ^ 2 := by field_simp
+        linarith }
+  exact c.globallyExponentiallyStable (zeroInput_smooth m)
+
 /-- The whole requirement language is inconsistent (`r ≤ 0` fails at `r = 1`). -/
 @[tmio M, powerlib_foundation] theorem realize_univ :
     connection% (TMIO.realize Meets Set.univ = ∅) := by
@@ -524,7 +527,7 @@ def family : Family Model Requirement 5 3 := ⟨fun m => .continuous m.system, M
     rw [(connection_proof% TMIO.mem_realize)] at hm
     obtain ⟨hCdc, hL, hC, hR, hG⟩ : Meets m .physical := hm .physical (by simp)
     rw [(connection_proof% Family.mem_den)]
-    exact ges m hCdc hL hC hR hG (hm .equilibrium (by simp)) (hm .damping (by simp))
+    exact ((Family.mem_den (F := family)).mp (ges m hCdc hL hC hR hG (hm .equilibrium (by simp)) (hm .damping (by simp))))
   refine Spectral.chain_le_semantics_of_globalTable (F := family)
     (Rs := {.physical, .equilibrium, .damping}) (Rg := {.physical, .equilibrium, .damping})
     (Ru := Set.univ) (Rc := Set.univ) (Rp := {.physical, .equilibrium, .damping})
@@ -560,7 +563,7 @@ asymptotic stability). -/
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% Family.mem_den)]
-  exact ges m hCdc hL hC hR hG he hδ
+  exact ((Family.mem_den (F := family)).mp (ges m hCdc hL hC hR hG he hδ))
 
 /-- The source's corollary "Closed-loop stability with DC-side P-control": global asymptotic
 stability of the steady state of the reduced model. -/
@@ -570,7 +573,7 @@ stability of the steady state of the reduced model. -/
     connection% (m ∈ family.den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% Family.mem_den)]
-  exact (ges m hCdc hL hC hR hG he hδ).globallyAsymptoticallyStable
+  exact (((Family.mem_den (F := family)).mp (ges m hCdc hL hC hR hG he hδ))).globallyAsymptoticallyStable
 
 /-- Every attractive sentence and sampled contraction. -/
 @[tmio TM, powerlib_domain] theorem mem_den_attractive (m : Model) (hCdc : 0 < m.Cdc)
@@ -581,8 +584,8 @@ stability of the steady state of the reduced model. -/
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% Family.mem_den)]
   rcases hP with hP | rfl
-  · exact (ges m hCdc hL hC hR hG he hδ).holds hP
-  · exact (ges m hCdc hL hC hR hG he hδ).sampledContraction
+  · exact (((Family.mem_den (F := family)).mp (ges m hCdc hL hC hR hG he hδ))).holds hP
+  · exact (((Family.mem_den (F := family)).mp (ges m hCdc hL hC hR hG he hδ))).sampledContraction
 
 /-- Passivity relative to the steady state, from the port perturbations `(ĩ_dc, −ĩ_l,dq)` to
 `(ṽ_dc, ṽ_dq)` (the source's passivity theorem, with the P-control and load admittance
@@ -1123,7 +1126,7 @@ private theorem orbit_exponentiallyAttractive (m : Model) (hCdc : 0 < m.Cdc) (hL
       ∀ t ∈ Set.Icc t₀ t₁, Metric.infDist (X t) (Set.range m.orbitPoint) ≤
         K * Real.exp (-a * (t - t₀)) * Metric.infDist (X t₀) (Set.range m.orbitPoint) := by
   have hges : Flow.GloballyExponentiallyStable (fun y => m.field y 0) m.point :=
-    Dynamics.globallyExponentiallyStable_shift_iff.mp (ges m hCdc hL hC hR hG he hδ)
+    Dynamics.globallyExponentiallyStable_shift_iff.mp (((Family.mem_den (F := family)).mp (ges m hCdc hL hC hR hG he hδ)))
   have hwl : m.withLoad m.sd m.sq = m := by cases m; rfl
   have hB : 0 ≤ 1 + Real.sqrt (1 + (m.idStar ^ 2 + m.iqStar ^ 2) +
       (m.vdStar ^ 2 + m.vqStar ^ 2) + (m.sd ^ 2 + m.sq ^ 2)) := by

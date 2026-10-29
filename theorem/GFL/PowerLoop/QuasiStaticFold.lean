@@ -439,7 +439,10 @@ private theorem vq_shift (p : Params) {θ Id : ℝ} (heq : -(p.Xg * Id) = p.V * 
 private theorem model_fold_unstable {m : Model} (heq : IsEq m.params m.θ m.Id)
     (hkp : 0 < m.params.kp) (hki : 0 < m.params.ki) (hkP : 0 < m.params.kP)
     (hA : 0 < m.params.V * Real.cos m.θ) (hc2 : Real.cos (2 * m.θ) = 0) :
-    Unstable m.field 0 := by
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change Unstable m.field 0
   have hAB : (m.params.V * Real.sin m.θ) ^ 2 = (m.params.V * Real.cos m.θ) ^ 2 := by
     rw [Real.cos_two_mul] at hc2
     have := Real.sin_sq_add_cos_sq m.θ
@@ -472,7 +475,11 @@ private theorem seed_of_frequently {P : Dynamics.State 3 → Prop}
 
 /-- A dead grid (`V = 0`) with `k_i > 0`: the integrator or the current drifts linearly. -/
 private theorem unstable_of_V_eq_zero {m : Model} (heq : IsEq m.params m.θ m.Id)
-    (hki : 0 < m.params.ki) (hV : m.params.V = 0) : Unstable m.field 0 := by
+    (hki : 0 < m.params.ki) (hV : m.params.V = 0) :
+    connection% (m ∈ family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% family_isAutonomous.mem_den_flow)]
+  change Unstable m.field 0
   have h1 : m.params.Xg * m.Id = 0 := by
     have := heq.1; rw [hV, zero_mul] at this; linarith
   have hf0 : ∀ z, m.field z 0 = m.params.kp * (-m.params.Xg * z 2) + m.params.ki * z 1 :=
@@ -556,7 +563,7 @@ private theorem jacobianStable_of_lyapunovStable {m : Model} (hpos : Meets m .po
       (jac m.params m.θ m.Id).det
   rw [htr, hm2, hdet]
   by_cases hV : m.params.V = 0
-  · exact (unstable_of_V_eq_zero heq hki hV h).elim
+  · exact ((family_isAutonomous.mem_den_flow.mp (unstable_of_V_eq_zero heq hki hV)) h).elim
   have hV2 : 0 < m.params.V ^ 2 := by positivity
   rcases lt_trichotomy (m.params.V * Real.cos m.θ) 0 with hA | hA | hA
   · refine (hunst (Or.inr ?_)).elim
@@ -575,7 +582,7 @@ private theorem jacobianStable_of_lyapunovStable {m : Model} (hpos : Meets m .po
       rw [hdet]; unfold a0
       have : 0 < m.params.V ^ 2 * m.params.kP * m.params.ki := by positivity
       nlinarith
-    · exact (model_fold_unstable heq hkp hki hkP hA hc2 h).elim
+    · exact ((family_isAutonomous.mem_den_flow.mp (model_fold_unstable heq hkp hki hkP hA hc2)) h).elim
     · have ha2 : 0 < a2 m.params m.θ := by
         unfold a2
         have : 0 < 3 * m.params.kP + 2 * m.params.kp := by positivity
@@ -643,7 +650,7 @@ saddle-node, whose Jacobian has a simple zero eigenvalue (`det J = 0`) and two s
     connection% (Model.mk p θ Id ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
-  exact model_fold_unstable (m := Model.mk p θ Id) heq hkp hki hkP hA hc2
+  exact (family_isAutonomous.mem_den_flow.mp (model_fold_unstable (m := Model.mk p θ Id) heq hkp hki hkP hA hc2))
 
 /-- Same, at the fold angle `θ* = π/4` (`V > 0`): the transmission limit is unstable. -/
 @[tmio TM, powerlib_domain] theorem mem_den_unstable_of_pi_div_four (p : Params) (hV : 0 < p.V)

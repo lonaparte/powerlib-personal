@@ -193,7 +193,11 @@ quadratic `λ² − Hλ − G` has a root `λ₊ > 0` on the side `σ = sign H` 
 `G > 0`), and the cone `{σ V_dc > 0, q ≥ μ σ V_dc}` for `μ` slightly above `σH/2` is entered by
 the field and carries `σ V_dc' ≥ μ > 0` (`Dynamics.Degenerate.unstable_of_cone`). -/
 private theorem modelB_unstable_of_disc_pos {x : State 4} (hx : x 2 = 0) (hP : p.pccP x = 0)
-    (hD : 0 < p.planeDisc x) : Unstable p.field x := by
+    (hD : 0 < p.planeDisc x) :
+    connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .unstable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% (Spectral.mem_den_flow_iff_shift (f := fun m : ModelB.Model => m.p.field) (pt := ModelB.Model.x) ModelB.family_isAutonomous))]
+  change Unstable p.field x
   obtain ⟨σ, hσ, hσH⟩ : ∃ σ : ℝ, (σ = 1 ∨ σ = -1) ∧ σ * p.planeH x = |p.planeH x| := by
     by_cases h : 0 ≤ p.planeH x
     · exact ⟨1, Or.inl rfl, by rw [one_mul, abs_of_nonneg h]⟩
@@ -300,7 +304,10 @@ exponential estimate holds although `x` is not an equilibrium
 `ModelB.mem_den_locallyExponentiallyStable_of_disc_neg`. -/
 private theorem modelB_locallyExponentiallyStable_of_disc_neg {x : State 4} (hx : x 2 = 0)
     (hP : p.pccP x = 0) (hI : p.I0 / p.Cdc ≠ 0) (hD : p.planeDisc x < 0) :
-    LocallyExponentiallyStable p.field x := by
+    connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .locallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% (Spectral.mem_den_flow_iff_shift (f := fun m : ModelB.Model => m.p.field) (pt := ModelB.Model.x) ModelB.family_isAutonomous))]
+  change LocallyExponentiallyStable p.field x
   obtain ⟨M, hM⟩ := (isCompact_closedBall x 1).exists_bound_of_continuousOn
     p.contDiff_field_offDC.continuous.continuousOn
   refine Dynamics.Degenerate.locallyExponentiallyStable_of_spiral 2 hx p.contDiff_planeQ
@@ -338,7 +345,7 @@ singular plane (`V_dc* = 0`) with `P(x*) = 0` and `H² + 4G > 0` (`planeDisc`) i
     (hP : m.p.pccP m.x = 0) (hD : 0 < m.p.planeDisc m.x) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff'.mpr (m.p.modelB_unstable_of_disc_pos hx hP hD)
+  exact mem_den_flow_iff'.mpr (((Spectral.mem_den_flow_iff_shift (f := fun m : ModelB.Model => m.p.field) (pt := ModelB.Model.x) ModelB.family_isAutonomous).mp (m.p.modelB_unstable_of_disc_pos hx hP hD)))
 
 /-- **Degenerate power balance, negative discriminant: local exponential estimate.** A selected
 state on the singular plane with `P(x*) = 0`, `I₀ / C_dc ≠ 0` and `H² + 4G < 0` is locally
@@ -349,7 +356,7 @@ segments spiral into the plane within a time `O(‖x(t₀) − x*‖)`. -/
     (hD : m.p.planeDisc m.x < 0) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow_iff'.mpr (m.p.modelB_locallyExponentiallyStable_of_disc_neg hx hP hI hD)
+  exact mem_den_flow_iff'.mpr (((Spectral.mem_den_flow_iff_shift (f := fun m : ModelB.Model => m.p.field) (pt := ModelB.Model.x) ModelB.family_isAutonomous).mp (m.p.modelB_locallyExponentiallyStable_of_disc_neg hx hP hI hD)))
 
 /-- A converter at rest on the singular plane with zero power: `x* = 0`, so `i_d* = 0` and
 `P = 0`; `I₀ = C_dc = 3/2`, `V_dc,ref = −1`, `V_g = k_p = k_i = k_iv = 1`,

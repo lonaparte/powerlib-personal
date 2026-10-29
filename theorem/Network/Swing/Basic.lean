@@ -639,8 +639,11 @@ private theorem reducedSwing_locallyExponentiallyStable (p : Params n)
     (θ : Fin (n + 1) → ℝ) (heq : ∀ k, p.P k = powerInjection p.B θ k)
     (hangle : ∀ i j, 0 < p.B i j → |θ i - θ j| < Real.pi / 2)
     (hconn : ∀ i j, Reach p.B i j) :
-    LocallyExponentiallyStable (reducedField p) (equilibrium θ) :=
-  Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian p θ)
+    connection% ((⟨p, θ⟩ : Model n) ∈ family.den (.flow .locallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow_iff)]
+  change LocallyExponentiallyStable (reducedField p) (equilibrium θ)
+  exact Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian (jacobian p θ)
     (reducedField_contDiff p) (reducedField_equilibrium p θ heq)
     (hasFDerivAt_reducedField p θ).fderiv (jacobian_isHurwitz_of_angle p θ hangle hconn)
 
@@ -738,7 +741,7 @@ frequencies, positive inertia and damping) is locally exponentially stable. -/
     (hconn : ∀ i j, Reach m.params.B i j) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact les_of_meets heq (jacobian_isHurwitz_of_angle m.params m.θ hangle hconn)
+  exact reducedSwing_locallyExponentiallyStable m.params m.θ heq hangle hconn
 
 /-- At a power-balance point, a reduced Jacobian with a characteristic root in the open right
 half plane places the model in instability. -/

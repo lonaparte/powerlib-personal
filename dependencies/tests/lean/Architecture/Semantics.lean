@@ -282,8 +282,13 @@ def unit : ℝ¹ := EuclideanSpace.single 0 1
   fin_cases i
   simp [Matrix.mulVec, dotProduct]
 
+-- Give the fixed boundary model its own domain: using Unit here would declare every
+-- Unit-valued implementation detail a model in the complete-package inventory.
+inductive BoundaryModel where
+  | cubic
+
 -- A semantic family makes this boundary a public connection conclusion.
-def boundaryFamily : Family Unit Unit 1 0 :=
+def boundaryFamily : Family BoundaryModel Unit 1 0 :=
   ⟨fun _ => Port.System.autonomous field, fun _ _ => False, fun _ => Set.univ⟩
 
 @[powerlib_foundation] theorem boundaryFamily_isAutonomous :
@@ -291,7 +296,7 @@ def boundaryFamily : Family Unit Unit 1 0 :=
 
 -- The linearization is Hurwitz: the origin is locally exponentially stable.
 @[powerlib_domain] theorem locallyExponentiallyStable :
-    connection% (() ∈ boundaryFamily.den (.flow .locallyExponentiallyStable)) := by
+    connection% (BoundaryModel.cubic ∈ boundaryFamily.den (.flow .locallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% boundaryFamily_isAutonomous.mem_den_flow)]
   exact hurwitz_linearization_locally_exponentially_stable !![-1] field_contDiff (by simp [field])
@@ -299,7 +304,7 @@ def boundaryFamily : Family Unit Unit 1 0 :=
 
 -- The complete field has a nonzero constant solution, so global exponential stability is false.
 @[powerlib_domain] theorem not_globallyExponentiallyStable :
-    connection% (() ∉ boundaryFamily.den (.flow .globallyExponentiallyStable)) := by
+    connection% (BoundaryModel.cubic ∉ boundaryFamily.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
   rw [(connection_proof% boundaryFamily_isAutonomous.mem_den_flow)]
   rintro ⟨-, -, C, a, hC, ha, hb⟩

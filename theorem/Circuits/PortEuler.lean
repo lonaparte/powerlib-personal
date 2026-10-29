@@ -150,7 +150,11 @@ def euler : Implementation Circuit Requirement Euler Requirement 3 2 3 2 :=
 /-- The circuit with all parameters `1`: passive and damped. -/
 private def unitCircuit : Circuit := ⟨⟨1, ⟨1, one_pos⟩⟩, ⟨1, ⟨1, one_pos⟩⟩, ⟨1, one_pos⟩⟩
 
-@[tmio M] private theorem unitCircuit_passive : unitCircuit.Passive := ⟨zero_le_one, zero_le_one⟩
+@[tmio M] private theorem unitCircuit_passive :
+    connection% (unitCircuit ∈ TMIO.realize Meets {.passive}) := by
+  unfold TMIO.Statement
+  simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  exact ⟨zero_le_one, zero_le_one⟩
 
 /-- **Without a step constraint the Euler realization of the LCL filter is not sound.** The
 circuit with all parameters `1` is passive and damped, hence pole stable, and its discretizations
@@ -162,7 +166,7 @@ with a large step are not stable. -/
   have hA : IsHurwitz unitCircuit.plant.A := by
     apply (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp
     apply (isHurwitz_iff_stable _).mpr
-    apply (passive_stable_iff _ unitCircuit_passive).mpr
+    apply (passive_stable_iff _ (show unitCircuit.Passive from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using unitCircuit_passive)).mpr
     simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using
       (show unitCircuit.Damped from Or.inl one_ne_zero)
   exact Numerics.not_eulerPorts_realizationSoundUnder_of_large_step_linear family_isLinear
@@ -194,7 +198,7 @@ with all parameters `1` is passive (its physical energy), and its discretization
     connection% (¬ euler.RealizationSoundUnder ∅ .passive) := by
   unfold powerlib.TMIO.Statement
   exact Numerics.not_eulerPorts_realizationSoundUnder_passive (y := ⟨unitCircuit, 1, one_pos⟩)
-    (family_isLinear.mem_den_passive (kyp _ unitCircuit_passive))
+    (family_isLinear.mem_den_passive (kyp _ (show unitCircuit.Passive from by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using unitCircuit_passive)))
     (by rw [TMIO.realize_empty]; trivial) one_pos (output_unit _) (by simp)
 
 end powerlib.Circuits.LCL

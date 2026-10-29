@@ -575,9 +575,12 @@ private theorem mem_den_flow {d : Drive} {P : Flow.Property} :
     (pt := fun d => fluxEquilibrium d.p d.isd d.isq d.ωsl) family_isAutonomous
 
 private theorem ges_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
-    Flow.GloballyExponentiallyStable (fluxField d.p d.isd d.isq d.ωsl)
-      (fluxEquilibrium d.p d.isd d.isq d.ωsl) :=
-  (fluxCertificate d.p hrr hLr d.isd d.isq d.ωsl).globallyExponentiallyStable
+    connection% (d ∈ family.den (.flow .globallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow)]
+  change Flow.GloballyExponentiallyStable (fluxField d.p d.isd d.isq d.ωsl)
+      (fluxEquilibrium d.p d.isd d.isq d.ωsl)
+  exact (fluxCertificate d.p hrr hLr d.isd d.isq d.ωsl).globallyExponentiallyStable
     (fluxField_smooth d.p d.isd d.isq d.ωsl)
 
 private theorem decay_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
@@ -607,7 +610,7 @@ every rate up to `1/T_r` (the global table, `Spectral.chain_le_semantics_of_glob
   have hG : TMIO.realize family.meets {.positiveRotor} ⊆
       family.den (.flow .globallyExponentiallyStable) := fun d hd => by
     have hm : Meets d .positiveRotor := (TMIO.mem_realize _ _ _).mp hd _ rfl
-    exact mem_den_flow.mpr (ges_of hm.1 hm.2)
+    exact mem_den_flow.mpr ((mem_den_flow.mp (ges_of hm.1 hm.2)))
   refine Spectral.chain_le_semantics_of_globalTable (F := family) (Rs := {.positiveRotor})
     (Rg := {.positiveRotor}) (Ru := Set.univ) (Rc := Set.univ) (Rp := ∅)
     (Rd := fun a => {.decayRateAtMost a}) (fun s => ?_)
@@ -635,7 +638,7 @@ solution exists for all forward time and converges exponentially. -/
     (hLr : 0 < d.p.Lr) :
     connection% (d ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow.mpr (ges_of hrr hLr)
+  exact mem_den_flow.mpr ((mem_den_flow.mp (ges_of hrr hLr)))
 
 /-- Decay at the exact rate `1/T_r`, for every initial flux and every slip command (the slip
 term rotates the flux error and does no work). -/

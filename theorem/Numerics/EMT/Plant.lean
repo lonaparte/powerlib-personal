@@ -204,9 +204,12 @@ def lclField (m : LCL.Circuit) : (Fin 3 → ℝ) → (Fin 3 → ℝ) := lclInput
 
 /-- A passive, damped LCL plant has a Hurwitz state matrix.
 Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem lclMatrix_isHurwitz (m : LCL.Circuit) (hp : m.Passive)
-    (hd : m.Damped) : IsHurwitz m.plant.A :=
-  ((show ∀ m : LCL.Circuit, IsHurwitz m.plant.A ↔ m.Stable from fun m => by
+@[tmio TM, powerlib_foundation] theorem lclMatrix_isHurwitz (m : LCL.Circuit) (hp : m.Passive)
+    (hd : m.Damped) :
+    connection% (m ∈ LCL.family.den (.flow .globallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% (LCL.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)))]
+  exact ((show ∀ m : LCL.Circuit, IsHurwitz m.plant.A ↔ m.Stable from fun m => by
       simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, LCL.Meets] using
         (LCL.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans
           (LCL.isHurwitz_iff_stable m)) m).mpr ((show m.Stable ↔ m.Damped from by
@@ -222,7 +225,7 @@ private theorem idealLCLPlant_trapezoidalDiscretization_exponentiallyStable
     (∀ initial, ∃! x, IsTrapezoidalTrajectory (lclField m) h x ∧ x 0 = initial) ∧
     ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x, IsTrapezoidalTrajectory (lclField m) h x →
       ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖ := by
-  have hA := lclMatrix_isHurwitz m hp hd
+  have hA := (LCL.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp (lclMatrix_isHurwitz m hp hd)
   rw [lclField_eq_linearField]
   exact ⟨trapezoidal_existsUnique (isUnit_det_one_sub_smul_of_isHurwitz hA (half_pos hh)),
     trapezoidal_exponentiallyStable_of_isHurwitz hA hh⟩
@@ -236,7 +239,7 @@ private theorem idealLCLPlant_backwardEulerDiscretization_exponentiallyStable
     (∀ initial, ∃! x, IsBackwardEulerTrajectory (lclField m) h x ∧ x 0 = initial) ∧
     ∃ C > 0, ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ x, IsBackwardEulerTrajectory (lclField m) h x →
       ∀ k, ‖x k‖ ≤ C * ρ ^ k * ‖x 0‖ := by
-  have hA := lclMatrix_isHurwitz m hp hd
+  have hA := (LCL.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).mp (lclMatrix_isHurwitz m hp hd)
   rw [lclField_eq_linearField]
   exact ⟨backwardEuler_existsUnique (isUnit_det_one_sub_smul_of_isHurwitz hA hh),
     backwardEuler_exponentiallyStable_of_isHurwitz hA hh⟩

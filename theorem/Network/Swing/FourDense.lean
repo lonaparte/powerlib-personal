@@ -1228,7 +1228,10 @@ private theorem not_localAsymptoticStable_diamond (p : Params 3) (θ : Fin (3 + 
     (σ : Equiv.Perm (Fin 4)) (h03 : p.B (σ 0) (σ 3) = 0) (h12 : 0 < p.B (σ 1) (σ 2))
     (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
-    ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
+    connection% ((⟨p, θ⟩ : Model 3) ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow_iff_dense)]
+  change ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ)
   intro hLAS
   obtain ⟨u, ⟨k₁, hk₁⟩, hQ0, hC0⟩ := exists_null_of_localAsymptoticStable hbal hLAS hH
   have hQ := labelled_nonneg_of_localAsymptoticStable hbal hLAS σ
@@ -1277,7 +1280,10 @@ form is nonzero (`sorted_cubic_ne_zero`): a fold. -/
 private theorem not_localAsymptoticStable_complete (p : Params 3) (θ : Fin (3 + 1) → ℝ)
     (hB : ∀ i j : Fin 4, i ≠ j → 0 < p.B i j) (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
-    ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
+    connection% ((⟨p, θ⟩ : Model 3) ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow_iff_dense)]
+  change ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ)
   intro hLAS
   obtain ⟨u, ⟨k₁, hk₁⟩, hQ0, hC0⟩ := exists_null_of_localAsymptoticStable hbal hLAS hH
   obtain ⟨σ, t, t01, t12, t23, tsp, ht⟩ := exists_sorted_lift θ
@@ -1351,15 +1357,18 @@ four-cycle, `not_localAsymptoticStable_four`). -/
 private theorem not_localAsymptoticStable_four_machines (p : Params 3) (θ : Fin (3 + 1) → ℝ)
     (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
-    ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ) := by
+    connection% ((⟨p, θ⟩ : Model 3) ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold TMIO.Statement
+  rw [(connection_proof% mem_den_flow_iff_dense)]
+  change ¬ LocalAsymptoticStable (reducedField p) (equilibrium θ)
   by_cases hall : ∀ i j : Fin 4, i ≠ j → 0 < p.B i j
-  · exact not_localAsymptoticStable_complete p θ hall hbal hH
+  · exact (fun hFlowConnection => (not_localAsymptoticStable_complete p θ hall hbal hH) (mem_den_flow_iff_dense.mpr hFlowConnection))
   push Not at hall
   obtain ⟨i, j, hij, hle⟩ := hall
   have h0 : p.B i j = 0 := le_antisymm hle (p.B_nonneg i j)
   obtain ⟨σ, hσ0, hσ3⟩ := exists_perm_zero_three hij
   by_cases h12 : 0 < p.B (σ 1) (σ 2)
-  · exact not_localAsymptoticStable_diamond p θ σ (by rw [hσ0, hσ3]; exact h0) h12 hbal hH
+  · exact (fun hFlowConnection => (not_localAsymptoticStable_diamond p θ σ (by rw [hσ0, hσ3]; exact h0) h12 hbal hH) (mem_den_flow_iff_dense.mpr hFlowConnection))
   have h12' : p.B (σ 1) (σ 2) = 0 := le_antisymm (not_lt.mp h12) (p.B_nonneg _ _)
   intro hLAS
   refine not_localAsymptoticStable_four ⟨p, θ⟩ ((Equiv.swap (2 : Fin 4) 3).trans σ) ?_ (Or.inl ?_)
@@ -1382,7 +1391,7 @@ power-balance point with a Hurwitz reduced Jacobian. -/
     connection% ((family (n := 3)).Exact (.flow .locallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   exact exact_locallyAsymptoticallyStable_of_guard fun m hp hH hm =>
-    not_localAsymptoticStable_four_machines m.params m.θ hp hH (mem_den_flow_iff_dense.mp hm)
+    (fun hFlowConnection => (not_localAsymptoticStable_four_machines m.params m.θ hp hH) (mem_den_flow_iff_dense.mpr hFlowConnection)) (mem_den_flow_iff_dense.mp hm)
 
 /-- **Membership in local asymptotic stability for every four-machine network**: power balance
 with a Hurwitz reduced Jacobian (no restriction on the lines). -/
@@ -1392,6 +1401,6 @@ with a Hurwitz reduced Jacobian (no restriction on the lines). -/
       LinearSystems.IsHurwitz (jacobian m.params m.θ)) := by
   unfold powerlib.TMIO.Statement
   exact mem_den_locallyAsymptoticallyStable_iff_of_guard m fun hp hH hm =>
-    not_localAsymptoticStable_four_machines m.params m.θ hp hH (mem_den_flow_iff_dense.mp hm)
+    (fun hFlowConnection => (not_localAsymptoticStable_four_machines m.params m.θ hp hH) (mem_den_flow_iff_dense.mpr hFlowConnection)) (mem_den_flow_iff_dense.mp hm)
 
 end powerlib.Network.Swing
