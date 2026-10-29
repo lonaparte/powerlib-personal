@@ -818,7 +818,7 @@ private theorem mem_den_flow {m : Model} {P : Flow.Property} :
     m ∈ family.den (.flow P) ↔ P.holds m.field m.point :=
   Spectral.mem_den_flow_iff_shift (f := Model.field) (pt := Model.point) family_isAutonomous
 
-private theorem lyapunovStable (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+@[tmio TM] private theorem lyapunovStable (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hk : 0 < m.k) (hδ : 0 ≤ m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
@@ -836,7 +836,7 @@ private theorem lyapunovStable (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR 
       hLie_nonpos := fun x _ => (energy_lie_le m hR hL.ne' hC.ne' x).trans
         (by nlinarith [sq_nonneg (x 1 - m.ustar)]) }
 
-private theorem les (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
+@[tmio TM] private theorem les (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls) (hR : 0 < m.Rs)
     (hs : 0 < m.μ * m.ustar * m.v0) (hη : m.η ≠ 0) (hδ : 0 < m.margin) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement

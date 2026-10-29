@@ -387,7 +387,7 @@ variable (p : CascadeParams)
 /-- Rectifier mode with a stable current loop: the nonlinear plant is locally exponentially
 stable at the operating point (`i_d* = I_d0` held constant). Implementation evidence for
 `mem_den_locallyExponentiallyStable`. -/
-private theorem locallyExponentiallyStable (hL : 0 < p.pi.L) (hC : 0 < p.C)
+@[tmio TM] private theorem locallyExponentiallyStable (hL : 0 < p.pi.L) (hC : 0 < p.C)
     (hV : 0 < p.V0) (hR : 0 < p.pi.R + p.pi.Kp) (hKi : 0 < p.pi.Ki) (hI : 0 < p.Idc0) :
     connection% (p ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -406,7 +406,7 @@ private lemma stateMatrix_eigen :
 /-- Inverter mode (`I_dc0 < 0`): the nonlinear plant is unstable for every current-loop
 tuning — the inner loop does not move the DC-node pole. Implementation evidence for
 `mem_den_unstable_of_inverter`. -/
-private theorem unstable_of_inverter (hC : 0 < p.C) (hV : 0 < p.V0)
+@[tmio TM] private theorem unstable_of_inverter (hC : 0 < p.C) (hV : 0 < p.V0)
     (hKi : p.pi.Ki ≠ 0) (hI : p.Idc0 < 0) :
     connection% ((p ∈ family.den (.flow .unstable))) := by
   unfold TMIO.Statement
@@ -508,7 +508,7 @@ def linearizedFamily : Family CascadeParams Spectral.Requirement 3 1 :=
     linearizedFamily.IsLinear CascadeParams.model :=
   Spectral.linearFamily_isLinear _ _ _
 
-private theorem linearizedDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM] private theorem linearizedDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (linearizedFamily.den (.flow P) = {p | p.LinStable}) := show linearizedFamily.den (.flow P) = {p | p.LinStable} from
   Spectral.linear_den (U := CascadeParams.LinUnstable)
     (fun p => (CascadeParams.isHurwitz_iff_linStable p).symm) hP
@@ -677,7 +677,7 @@ negative-inductance cascade is locally exponentially stable without `L > 0`. -/
 
 /-! ## The local asymptotic and Lyapunov sentences -/
 
-private theorem cascade_les_of {p : CascadeParams} (h : CascadeParams.Stable p) :
+@[tmio TM] private theorem cascade_les_of {p : CascadeParams} (h : CascadeParams.Stable p) :
     connection% (p ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
   apply (Spectral.localFamily_isAutonomous _ _ _).mem_den_flow.mpr
@@ -753,7 +753,7 @@ private theorem eqState_mem (hV : 0 < p.V0) : p.eqState ∈ posV := by
   simpa [posV, eqState] using hV
 
 /-- A Hurwitz-violating current loop (`Ki ≠ 0`) makes the cascade unstable. -/
-private theorem unstable_of_pi_unstable (hV : 0 < p.V0) (hKi : p.pi.Ki ≠ 0)
+@[tmio TM] private theorem unstable_of_pi_unstable (hV : 0 < p.V0) (hKi : p.pi.Ki ≠ 0)
     (h : p.pi.Unstable) :
     connection% ((p ∈ family.den (.flow .unstable))) := by
   unfold TMIO.Statement
@@ -771,7 +771,7 @@ private theorem field_ki_zero_shift (hKi : p.pi.Ki = 0) (x : State 3) (t : ℝ) 
   fin_cases i <;> simp [field, vconv, hKi]
 
 /-- With no integral gain the cascade is not locally asymptotically stable. -/
-private theorem not_las_ki_zero (hV : 0 < p.V0) (hKi : p.pi.Ki = 0) :
+@[tmio TM] private theorem not_las_ki_zero (hV : 0 < p.V0) (hKi : p.pi.Ki = 0) :
     connection% (¬ (p ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
   unfold TMIO.Statement
   rw [mem_den_flow]
@@ -811,7 +811,7 @@ private theorem field_idc_zero (hKi : p.pi.Ki ≠ 0) (hV : p.V0 ≠ 0) (hI : p.I
     rcases mul_eq_zero.mp hP with h | h <;> simp [h]
 
 /-- With `I_dc0 = 0` the cascade is not locally asymptotically stable (a line of equilibria). -/
-private theorem not_las_idc_zero (hKi : p.pi.Ki ≠ 0) (hV : p.V0 ≠ 0) (hI : p.Idc0 = 0) :
+@[tmio TM] private theorem not_las_idc_zero (hKi : p.pi.Ki ≠ 0) (hV : p.V0 ≠ 0) (hI : p.Idc0 = 0) :
     connection% (¬ (p ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
   unfold TMIO.Statement
   rw [mem_den_flow]
@@ -826,7 +826,7 @@ private theorem not_las_idc_zero (hKi : p.pi.Ki ≠ 0) (hV : p.V0 ≠ 0) (hI : p
 
 /-- On `R + Kp = 0` (undamped current loop) the cascade is not locally asymptotically stable:
 the current-loop energy is conserved. -/
-private theorem not_las_center (hL : 0 < p.pi.L) (hV : 0 < p.V0) (hKi : 0 < p.pi.Ki)
+@[tmio TM] private theorem not_las_center (hL : 0 < p.pi.L) (hV : 0 < p.V0) (hKi : 0 < p.pi.Ki)
     (hR : p.pi.R + p.pi.Kp = 0) :
     connection% (¬ (p ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
   unfold TMIO.Statement
@@ -955,7 +955,7 @@ private theorem sq_add_loopEnergy_pos (hL : 0 < p.pi.L) (hKi : 0 < p.pi.Ki) (hC 
     linarith
 
 /-- A Lyapunov function `(S − S(x*))² + L e²/2 + Ki η²/2` on `V_dc > 0`. -/
-private theorem lyapunovStable_of_storage (hL : 0 < p.pi.L) (hKi : 0 < p.pi.Ki) (hC : 0 < p.C)
+@[tmio TM] private theorem lyapunovStable_of_storage (hL : 0 < p.pi.L) (hKi : 0 < p.pi.Ki) (hC : 0 < p.C)
     (hV : 0 < p.V0) {S : State 3 → ℝ} (hSd : ContDiff ℝ 1 S)
     (hS : ∀ x : State 3, x 0 = p.Id0 → x 1 = p.pi.R * p.Id0 / p.pi.Ki →
       S x - S p.eqState = p.C / 2 * (x 2 ^ 2 - p.V0 ^ 2))
@@ -978,7 +978,7 @@ private theorem lyapunovStable_of_storage (hL : 0 < p.pi.L) (hKi : 0 < p.pi.Ki) 
 
 /-- `R + Kp > 0`, `Ki > 0`, `I_dc0 = 0`: Lyapunov stable (the corrected storage `storage` is
 conserved and the current-loop energy does not increase). -/
-private theorem lyapunovStable_idc_zero (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0)
+@[tmio TM] private theorem lyapunovStable_idc_zero (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0)
     (hKi : 0 < p.pi.Ki) (hR : 0 < p.pi.R + p.pi.Kp) (hI : p.Idc0 = 0) :
     connection% ((p ∈ family.den (.flow .lyapunovStable))) := by
   unfold TMIO.Statement
@@ -993,7 +993,7 @@ private theorem lyapunovStable_idc_zero (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0
 
 /-- `R = Kp = 0`, `Ki > 0`, `I_dc0 = 0`: Lyapunov stable (`centerStorage` and the current-loop
 energy are both conserved). -/
-private theorem lyapunovStable_center_idc_zero (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0)
+@[tmio TM] private theorem lyapunovStable_center_idc_zero (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0)
     (hKi : 0 < p.pi.Ki) (hR0 : p.pi.R = 0) (hKp : p.pi.Kp = 0) (hI : p.Idc0 = 0) :
     connection% ((p ∈ family.den (.flow .lyapunovStable))) := by
   unfold TMIO.Statement
@@ -1009,7 +1009,7 @@ private theorem lyapunovStable_center_idc_zero (hL : 0 < p.pi.L) (hC : 0 < p.C) 
 
 end CascadeParams
 
-private theorem las_iff (p : CascadeParams) (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0) :
+@[tmio TM] private theorem las_iff (p : CascadeParams) (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0) :
     connection% ((p ∈ family.den (.flow .locallyAsymptoticallyStable)) ↔
       (0 < p.pi.R + p.pi.Kp ∧ 0 < p.pi.Ki) ∧ 0 < p.Idc0) := by
   unfold TMIO.Statement
@@ -1043,7 +1043,7 @@ point exactly when it is locally exponentially stable: `R + Kp > 0`, `Ki > 0`, `
   rw [(connection_proof% mem_den_flow), Set.mem_ofPred_eq]
   exact (mem_den_flow.symm.trans (las_iff p hL hC hV))
 
-private theorem realize_stable (P : Flow.Property)
+@[tmio TM] private theorem realize_stable (P : Flow.Property)
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
     connection% (TMIO.realize family.meets (family.translate (.flow P)) =
       {p : CascadeParams | CascadeParams.Stable p}) := by
@@ -1131,7 +1131,7 @@ variable (p : CascadeParams)
 /-- With an undamped current loop (`R + Kp = 0`, `R ≠ 0`, `Ki > 0`) and `I_dc0 = 0` the cascade is
 unstable: the current-loop energy is conserved and `Kp · centerStorage` grows at the rate
 `(Kp²/L) loopEnergy` (Chetaev's theorem on the conserved level). -/
-private theorem unstable_center_idc_zero (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0)
+@[tmio TM] private theorem unstable_center_idc_zero (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0)
     (hKi : 0 < p.pi.Ki) (hR : p.pi.R + p.pi.Kp = 0) (hR0 : p.pi.R ≠ 0) (hI : p.Idc0 = 0) :
     connection% ((p ∈ family.den (.flow .unstable))) := by
   unfold TMIO.Statement
@@ -1208,7 +1208,7 @@ private theorem field_one (x : State 3) : p.field p.Id0 x 1 = -(x 0 - p.Id0) := 
   simp [field]
 
 /-- `Ki = 0`, `R I_d0 = 0`, `R + Kp < 0`: the current error grows (Chetaev's function `e²`). -/
-private theorem unstable_ki_zero_lt (hL : 0 < p.pi.L) (hV : 0 < p.V0) (hKi : p.pi.Ki = 0)
+@[tmio TM] private theorem unstable_ki_zero_lt (hL : 0 < p.pi.L) (hV : 0 < p.V0) (hKi : p.pi.Ki = 0)
     (h : p.pi.R * p.Id0 = 0) (hR : p.pi.R + p.pi.Kp < 0) :
     connection% ((p ∈ family.den (.flow .unstable))) := by
   unfold TMIO.Statement
@@ -1242,7 +1242,7 @@ private theorem unstable_ki_zero_lt (hL : 0 < p.pi.L) (hV : 0 < p.V0) (hKi : p.p
 
 /-- `Ki = 0`, `R I_d0 = 0`, `R + Kp = 0`: the current error is frozen and the integrator drifts
 (Chetaev's function `−e ξ`). -/
-private theorem unstable_ki_zero_eq (hL : 0 < p.pi.L) (hV : 0 < p.V0) (hKi : p.pi.Ki = 0)
+@[tmio TM] private theorem unstable_ki_zero_eq (hL : 0 < p.pi.L) (hV : 0 < p.V0) (hKi : p.pi.Ki = 0)
     (h : p.pi.R * p.Id0 = 0) (hR : p.pi.R + p.pi.Kp = 0) :
     connection% ((p ∈ family.den (.flow .unstable))) := by
   unfold TMIO.Statement
@@ -1280,7 +1280,7 @@ private theorem unstable_ki_zero_eq (hL : 0 < p.pi.L) (hV : 0 < p.V0) (hKi : p.p
 
 /-- `Ki = 0`, `R I_d0 = 0`, `R + Kp > 0`, `I_dc0 < 0`: the DC node is unstable (Jacobian
 eigenvalue `−I_dc0/(C V0) > 0`). -/
-private theorem unstable_ki_zero_inverter (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0)
+@[tmio TM] private theorem unstable_ki_zero_inverter (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0)
     (hKi : p.pi.Ki = 0) (h : p.pi.R * p.Id0 = 0) (hI : p.Idc0 < 0) :
     connection% ((p ∈ family.den (.flow .unstable))) := by
   unfold TMIO.Statement
@@ -1374,7 +1374,7 @@ private theorem drift_ineq {I C V0 x2 w e a1 a2 k L : ℝ} (hI : 0 ≤ I) (hC : 
 /-- `Ki = 0`, `R I_d0 = 0`, `R + Kp > 0`, `I_dc0 ≥ 0`: Lyapunov stable. The current error decays,
 `ξ − L e/(R + Kp)` is conserved, and `(driftStorage − driftStorage(x*))² + M e² +
 (ξ − L e/(R + Kp))²` does not increase near the operating point for `M` large. -/
-private theorem lyapunovStable_ki_zero (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0)
+@[tmio TM] private theorem lyapunovStable_ki_zero (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0)
     (hKi : p.pi.Ki = 0) (h : p.pi.R * p.Id0 = 0) (hR : 0 < p.pi.R + p.pi.Kp)
     (hI : 0 ≤ p.Idc0) :
     connection% ((p ∈ family.den (.flow .lyapunovStable))) := by
@@ -1598,7 +1598,7 @@ private theorem center_ineq {I C V0 x2 w u ψ E K k : ℝ} (hI : 0 < I) (hC : 0 
 `loopEnergy` is conserved) and the DC node contracts; with `u = centerStorage − centerStorage(x*)`
 the practical Lyapunov function `(max (u² − λ loopEnergy) 0)² + loopEnergy` does not increase near
 the operating point (`u u̇ ≤ 0` wherever `u² > λ loopEnergy`). -/
-private theorem lyapunovStable_center (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0)
+@[tmio TM] private theorem lyapunovStable_center (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0)
     (hKi : 0 < p.pi.Ki) (hR : p.pi.R + p.pi.Kp = 0) (hI : 0 < p.Idc0) :
     connection% ((p ∈ family.den (.flow .lyapunovStable))) := by
   unfold TMIO.Statement
@@ -1742,7 +1742,7 @@ private theorem lyapunovStable_center (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 <
 
 end CascadeParams
 
-private theorem ls_iff (p : CascadeParams) (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0) :
+@[tmio TM] private theorem ls_iff (p : CascadeParams) (hL : 0 < p.pi.L) (hC : 0 < p.C) (hV : 0 < p.V0) :
     connection% ((p ∈ family.den (.flow .lyapunovStable)) ↔
       (0 < p.pi.Ki ∧ ((0 < p.pi.R + p.pi.Kp ∧ 0 ≤ p.Idc0) ∨
         (p.pi.R + p.pi.Kp = 0 ∧ (0 < p.Idc0 ∨ (p.pi.R = 0 ∧ p.Idc0 = 0))))) ∨

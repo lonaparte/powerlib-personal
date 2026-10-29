@@ -479,7 +479,7 @@ inconsistent. -/
   have h2 : 0 < m.V * m.Ki := h .integral
   rcases (h .negativeGain : m.V * m.Kp < 0 ∨ m.V * m.Ki < 0) with h3 | h3 <;> linarith
 
-private theorem isHurwitz_plant_iff (m : Model) :
+@[tmio TM] private theorem isHurwitz_plant_iff (m : Model) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔ 0 < m.V * m.Kp ∧ 0 < m.V * m.Ki) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))]
@@ -498,7 +498,7 @@ private theorem translate_eq (s : Sentence) :
   · rfl
 
 /-- Both positive loop gains are the Hurwitz property of the state matrix. -/
-private theorem mem_realize_iff_isHurwitz (m : Model) :
+@[tmio TM] private theorem mem_realize_iff_isHurwitz (m : Model) :
     connection% (m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A) := by
   change m ∈ TMIO.realize Meets {.proportional, .integral} ↔ LinearSystems.IsHurwitz m.plant.A
   simp only [TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp,

@@ -496,7 +496,7 @@ private theorem model_kappa_sign {m : Model} (hD0 : m.params.D0 ≠ 0)
     nlinarith
 
 /-- Membership through the sound translation. -/
-private theorem mem_den_of_meets {m : Model} {s : Sentence}
+@[tmio TM] private theorem mem_den_of_meets {m : Model} {s : Sentence}
     (h : ∀ q ∈ translate s, Meets m q) :
     connection% (m ∈ family.den s) := by
   change m ∈ family.den s
@@ -536,7 +536,7 @@ private theorem balance_of_model_field_zero {m : Model} (h : m.field 0 = 0) :
   linarith
 
 /-- With a degenerate loop `D₀ = 0` the angle is frozen. -/
-private theorem not_las_of_D0_eq_zero {m : Model} (hD0 : m.params.D0 = 0) :
+@[tmio TM] private theorem not_las_of_D0_eq_zero {m : Model} (hD0 : m.params.D0 = 0) :
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
@@ -555,7 +555,7 @@ private theorem not_las_of_D0_eq_zero {m : Model} (hD0 : m.params.D0 = 0) :
 
 /-- A singular Jacobian (`det J = 0`) at a balanced point with `D₀ ≠ 0`: no local asymptotic
 stability (a line of equilibria for `k_i = 0` or `V = 0`, the fold `cos θ* = 0` otherwise). -/
-private theorem not_las_of_det_eq_zero {m : Model}
+@[tmio TM] private theorem not_las_of_det_eq_zero {m : Model}
     (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
     (hdet : (jac m.params m.θ).det = 0) :
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
@@ -642,7 +642,7 @@ private theorem not_las_of_det_eq_zero {m : Model}
     nlinarith [sq_pos_of_ne_zero hBne]
 
 /-- A supercritical boundary point (`k_p k_i < 0`) is locally asymptotically stable. -/
-private theorem las_of_hopf {m : Model}
+@[tmio TM] private theorem las_of_hopf {m : Model}
     (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hk : m.params.kp * m.params.ki < 0) :
@@ -655,7 +655,7 @@ private theorem las_of_hopf {m : Model}
     (model_hg0 heq hD0 htr) (model_hg1 heq)
 
 /-- A subcritical boundary point (`k_p k_i > 0`) is unstable. -/
-private theorem unstable_of_hopf {m : Model}
+@[tmio TM] private theorem unstable_of_hopf {m : Model}
     (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hk : 0 < m.params.kp * m.params.ki) :
@@ -668,7 +668,7 @@ private theorem unstable_of_hopf {m : Model}
     (model_hg0 heq hD0 htr) (model_hg1 heq)
 
 /-- A boundary point without proportional gain (`k_p = 0`) conserves an energy. -/
-private theorem not_las_of_hopf_kp_eq_zero {m : Model}
+@[tmio TM] private theorem not_las_of_hopf_kp_eq_zero {m : Model}
     (heq : m.params.V * Real.sin m.θ = -(m.params.Xg * m.params.Id)) (hD0 : m.params.D0 ≠ 0)
     (htr : (jac m.params m.θ).trace = 0) (hdet : 0 < (jac m.params m.θ).det)
     (hkp : m.params.kp = 0) :

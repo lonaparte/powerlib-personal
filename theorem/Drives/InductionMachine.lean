@@ -574,7 +574,7 @@ private theorem mem_den_flow {d : Drive} {P : Flow.Property} :
   Spectral.mem_den_flow_iff_shift (f := fun d : Drive => fluxField d.p d.isd d.isq d.ωsl)
     (pt := fun d => fluxEquilibrium d.p d.isd d.isq d.ωsl) family_isAutonomous
 
-private theorem ges_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
+@[tmio TM] private theorem ges_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
     connection% (d ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% mem_den_flow)]

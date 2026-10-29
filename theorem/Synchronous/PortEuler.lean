@@ -177,7 +177,7 @@ namespace powerlib.Synchronous
 /-- Vacuous soundness: when no model of a family of port systems is locally exponentially stable,
 no Euler implementation is certified for it, so the realization is sound without a step
 constraint. -/
-private theorem eulerPorts_realizationSoundUnder_of_not_mem {X Y Q : Type} {n p : ℕ}
+@[tmio MI] private theorem eulerPorts_realizationSoundUnder_of_not_mem {X Y Q : Type} {n p : ℕ}
     {F : Family X Q n p} {sys : X → Port.System n p} {design : Y → X} {step : Y → ℝ}
     (h : ∀ x, x ∉ F.den (.flow .locallyExponentiallyStable)) :
     connection% ((Numerics.eulerPorts F sys design step).RealizationSoundUnder ∅

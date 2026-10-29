@@ -436,7 +436,7 @@ private theorem vq_shift (p : Params) {θ Id : ℝ} (heq : -(p.Xg * Id) = p.V * 
 
 /-- **Saddle-node.** With positive gains, at a balanced point on the fold `cos 2θ* = 0` with
 `V cos θ* > 0` the translated field is unstable. -/
-private theorem model_fold_unstable {m : Model} (heq : IsEq m.params m.θ m.Id)
+@[tmio TM] private theorem model_fold_unstable {m : Model} (heq : IsEq m.params m.θ m.Id)
     (hkp : 0 < m.params.kp) (hki : 0 < m.params.ki) (hkP : 0 < m.params.kP)
     (hA : 0 < m.params.V * Real.cos m.θ) (hc2 : Real.cos (2 * m.θ) = 0) :
     connection% (m ∈ family.den (.flow .unstable)) := by
@@ -459,7 +459,7 @@ private theorem model_fold_unstable {m : Model} (heq : IsEq m.params m.θ m.Id)
     (fun z => (model_fold_form heq z).2.2)
 
 /-- Membership through the sound translation. -/
-private theorem mem_den_of_meets {m : Model} {s : Sentence}
+@[tmio TM] private theorem mem_den_of_meets {m : Model} {s : Sentence}
     (h : ∀ q ∈ translate s, Meets m q) :
     connection% (m ∈ family.den s) := by
   change m ∈ family.den s
@@ -474,7 +474,7 @@ private theorem seed_of_frequently {P : Dynamics.State 3 → Prop}
   exact ⟨x, by rw [← dist_eq_norm]; exact hx, hP⟩
 
 /-- A dead grid (`V = 0`) with `k_i > 0`: the integrator or the current drifts linearly. -/
-private theorem unstable_of_V_eq_zero {m : Model} (heq : IsEq m.params m.θ m.Id)
+@[tmio TM] private theorem unstable_of_V_eq_zero {m : Model} (heq : IsEq m.params m.θ m.Id)
     (hki : 0 < m.params.ki) (hV : m.params.V = 0) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -539,7 +539,7 @@ private theorem unstable_of_V_eq_zero {m : Model} (heq : IsEq m.params m.θ m.Id
 /-- With positive gains a Lyapunov stable equilibrium has a strict Routh–Hurwitz Jacobian: every
 other equilibrium is unstable (`V = 0`; `V cos θ* < 0`, `tr J > 0`; `cos θ* = 0` or
 `cos 2θ* < 0`, `det J > 0`; the fold `cos 2θ* = 0`). -/
-private theorem jacobianStable_of_lyapunovStable {m : Model} (hpos : Meets m .positiveGains)
+@[tmio TM] private theorem jacobianStable_of_lyapunovStable {m : Model} (hpos : Meets m .positiveGains)
     (heq : IsEq m.params m.θ m.Id) (h : LyapunovStable m.field 0) :
     connection% (m ∈ TMIO.realize Meets {.jacobianStable}) := by
   unfold TMIO.Statement
@@ -613,7 +613,7 @@ private theorem jacobianStable_of_lyapunovStable {m : Model} (hpos : Meets m .po
 /-- Within positive gains the translations of Lyapunov and local asymptotic stability,
 `{equilibrium, jacobianStable}`, are exact: a Lyapunov stable point of the `C¹` field is an
 equilibrium, and the strict Routh–Hurwitz guard decides (`Spectral.exactUnder_of_equilibrium`). -/
-private theorem exactUnder_of_routh {P : Flow.Property}
+@[tmio TM] private theorem exactUnder_of_routh {P : Flow.Property}
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
     connection% (family.ExactUnder {.positiveGains} (.flow P)) := by
   change family.ExactUnder {.positiveGains} (.flow P)

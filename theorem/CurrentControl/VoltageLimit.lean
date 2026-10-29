@@ -315,7 +315,7 @@ private theorem field_eventuallyEq_linear (hKi : y.design.Ki ≠ 0)
 
 /-- A design loop with `(R + Kp)/L ≥ 0` and `Ki/L > 0` is Lyapunov stable: the energy
 `i² + (Ki/L) ξ²` does not increase (`d/dt = −2 (R + Kp)/L · i²`). -/
-private theorem lyapunovStable_of_nonneg (p : PIParams) (ha : 0 ≤ (p.R + p.Kp) / p.L)
+@[tmio TM] private theorem lyapunovStable_of_nonneg (p : PIParams) (ha : 0 ≤ (p.R + p.Kp) / p.L)
     (hb : 0 < p.Ki / p.L) :
     connection% (p ∈ PIParams.family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
@@ -414,7 +414,7 @@ private theorem ki_ne_of_stable {p : PIParams} (h : PIParams.Stable p) : p.Ki �
   exact lt_irrefl _ this
 
 /-- Within headroom a stable design makes the platform locally exponentially stable. -/
-private theorem les_of_stable {y : LimitedPI} (hs : PIParams.Stable y.design)
+@[tmio MI] private theorem les_of_stable {y : LimitedPI} (hs : PIParams.Stable y.design)
     (hh : |y.design.R * y.iref| < y.Vmax) :
     connection% (y ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -428,7 +428,7 @@ private theorem les_of_stable {y : LimitedPI} (hs : PIParams.Stable y.design)
 /-- Within headroom an unstable design makes the platform unstable: near the operating point the
 platform is the affine design field, unstable at a root in the right half plane or because the
 point is not an equilibrium. -/
-private theorem unstable_of_unstable {y : LimitedPI} (hu : PIParams.Unstable y.design)
+@[tmio MI] private theorem unstable_of_unstable {y : LimitedPI} (hu : PIParams.Unstable y.design)
     (hh : |y.design.R * y.iref| < y.Vmax) :
     connection% (y ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -445,7 +445,7 @@ private theorem unstable_of_unstable {y : LimitedPI} (hu : PIParams.Unstable y.d
 /-- Within headroom local asymptotic and local exponential stability of the platform hold exactly
 for a stable design: near the operating point the platform is the design's affine loop, so these
 sentences are decided by that affine piece (`Dynamics.holds_iff_of_eventuallyEq_inputField`). -/
-private theorem mem_den_attractive_iff {y : LimitedPI} (hh : |y.design.R * y.iref| < y.Vmax)
+@[tmio MI] private theorem mem_den_attractive_iff {y : LimitedPI} (hh : |y.design.R * y.iref| < y.Vmax)
     {P : Flow.Property}
     (hP : P = .locallyAsymptoticallyStable ∨ P = .locallyExponentiallyStable) :
     connection% (y ∈ family.den (.flow P) ↔ PIParams.Stable y.design) := by
@@ -470,7 +470,7 @@ private theorem field_eventuallyEq_overload (y : LimitedPI) (hKi : y.design.Ki �
   simp only [field, limitedField, applied, hz]
 
 /-- With overload the operating point is not an equilibrium: the platform is unstable. -/
-private theorem unstable_of_overload (y : LimitedPI) (hL : y.design.L ≠ 0)
+@[tmio TM] private theorem unstable_of_overload (y : LimitedPI) (hL : y.design.L ≠ 0)
     (hKi : y.design.Ki ≠ 0) (hV : 0 < y.Vdc) (ho : y.Vmax < |y.design.R * y.iref|) :
     connection% (y ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -491,7 +491,7 @@ private theorem unstable_of_overload (y : LimitedPI) (hL : y.design.L ≠ 0)
 `|di/dt| ≤ (|R|/|L|) |i − i*| + (|R i*| + |V_max|)/|L|` and stays below a bound `B` on `[0, T]`
 (Grönwall), so the integrator moves by at most `B T`; an exponential estimate with constants
 `C, a` halves the distance by `T = log (2C)/a`, which fails for `ξ₀ = 2 B T + 1`. -/
-private theorem not_globallyExponentiallyStable (y : LimitedPI) :
+@[tmio TM] private theorem not_globallyExponentiallyStable (y : LimitedPI) :
     connection% (y ∉ family.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]

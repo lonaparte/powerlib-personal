@@ -306,7 +306,7 @@ private theorem rig_mem_den_flow_iff {y : Rig} {P : Flow.Property} :
     y ∈ rigFamily.den (.flow P) ↔ P.holds (rigField y) y.point :=
   Spectral.mem_den_flow_iff_shift (f := rigField) (pt := Rig.point) rigFamily_isAutonomous
 
-private theorem rig_les_of {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
+@[tmio TM] private theorem rig_les_of {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
     (hb : Meets y.design .balanced) (hK : 0 < y.design.K) (hH : 0 < y.H) :
     connection% (y ∈ rigFamily.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -328,7 +328,7 @@ private theorem rig_les_of {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < 
     have hMτ : 0 < (y.design.g.M * y.τ) ^ 3 := by positivity
     nlinarith
 
-private theorem rig_unstable_of {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
+@[tmio TM] private theorem rig_unstable_of {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
     (hb : Meets y.design .balanced) (hl : y.H < 0 ∨ y.design.K < 0) :
     connection% (y ∈ rigFamily.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -490,19 +490,19 @@ def Record.SlowCheck (v : Record) : Prop :=
 
 /-! ### Implementation evidence (private) -/
 
-private theorem mem_produces {y : Rig} {v : Record} :
+@[tmio IO] private theorem mem_produces {y : Rig} {v : Record} :
     connection% (v ∈ TMIO.predict stack.produces {y} ↔ v ∈ {v | Produces y v}) := by
   simp only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq]
   rfl
 
-private theorem mem_realizes {x : Model} {y : Rig} :
+@[tmio MI] private theorem mem_realizes {x : Model} {y : Rig} :
     connection% (y ∈ TMIO.predict stack.realizes {x} ↔ y ∈ {y | y.design = x}) := by
   simp only [TMIO.Statement, TMIO.predict_eq_image, SetRel.mem_image, Set.mem_singleton_iff, exists_eq_left, Set.mem_ofPred_eq]
   rfl
 
 /-- The worst-corner fast-filter check places every producer's design in the translation of
 local exponential stability. -/
-private theorem design_fast_of_modelCheck {y : Rig} {v : Record} (hv : v.ModelCheck)
+@[tmio IO] private theorem design_fast_of_modelCheck {y : Rig} {v : Record} (hv : v.ModelCheck)
     (hp : Produces y v) :
     connection% (y.design ∈ TMIO.realize Meets (translate (.flow .locallyExponentiallyStable))) := by
   change y.design ∈ TMIO.realize Meets (translate (.flow .locallyExponentiallyStable))
@@ -527,7 +527,7 @@ private theorem design_fast_of_modelCheck {y : Rig} {v : Record} (hv : v.ModelCh
 
 /-- The worst-corner slow-filter check places every producer's design in the translation of
 instability. -/
-private theorem design_slow_of_slowCheck {y : Rig} {v : Record} (hv : v.SlowCheck)
+@[tmio IO] private theorem design_slow_of_slowCheck {y : Rig} {v : Record} (hv : v.SlowCheck)
     (hp : Produces y v) :
     connection% (y.design ∈ TMIO.realize Meets (translate (.flow .unstable))) := by
   change y.design ∈ TMIO.realize Meets (translate (.flow .unstable))
@@ -551,7 +551,7 @@ private theorem design_slow_of_slowCheck {y : Rig} {v : Record} (hv : v.SlowChec
 
 /-- Fast filter and fast delay give the platform Routh condition:
 `H = ω_c ((M e − τ b (K M + τ (D M ω_c² + K D))) + τ b e (1 + τ ω_c))`, `e = D b − K M`. -/
-private theorem H_pos_of_fastLag {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
+@[tmio MI] private theorem H_pos_of_fastLag {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
     (hK : 0 < y.design.K) (hl : RigMeets y .fastLag) :
     connection% (y ∈ TMIO.realize RigMeets {.routh}) := by
   unfold TMIO.Statement
@@ -620,7 +620,7 @@ private theorem H_neg_of_slow {y : Rig} (hp : Meets y.design .physical) (hτ : 0
   exact mul_neg_of_pos_of_neg hω (by linarith)
 
 /-- The worst-corner delay check places every producer in the fast-delay constraint. -/
-private theorem fastLag_of_lagCheck {y : Rig} {v : Record} (hv : v.ModelCheck) (hl : v.LagCheck)
+@[tmio IO] private theorem fastLag_of_lagCheck {y : Rig} {v : Record} (hv : v.ModelCheck) (hl : v.LagCheck)
     (hp : Produces y v) : connection% (y ∈ TMIO.realize RigMeets {.fastLag}) := by
   unfold TMIO.Statement
   simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]

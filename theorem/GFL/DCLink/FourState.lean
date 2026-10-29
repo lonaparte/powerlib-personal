@@ -530,7 +530,7 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     (pt := fun m => opPoint m.θ) family_isAutonomous
 
 /-- The quartic Routh conditions give local exponential stability of the physical field. -/
-private theorem les_of_meets {m : Model} (he : Meets m .equilibrium) (hr : Meets m .routh) :
+@[tmio TM] private theorem les_of_meets {m : Model} (he : Meets m .equilibrium) (hr : Meets m .routh) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   change m ∈ family.den (.flow .locallyExponentiallyStable)
   obtain ⟨heq, hC⟩ := he
@@ -543,7 +543,7 @@ private theorem les_of_meets {m : Model} (he : Meets m .equilibrium) (hr : Meets
       h3 h1 h0 hg))
 
 /-- `a₀ < 0` gives a positive real eigenvalue and instability of the physical field. -/
-private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
+@[tmio TM] private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
     (hn : Meets m .constNeg) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   change m ∈ family.den (.flow .unstable)

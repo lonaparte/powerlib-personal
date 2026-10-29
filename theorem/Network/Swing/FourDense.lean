@@ -1224,7 +1224,7 @@ non-Hurwitz reduced Jacobian the selected point is not locally asymptotically st
 direction normalized by `d = u(σ1) − u(σ2)` and with `Φ = θ(σ1) − θ(σ2)`,
 `sin Φ · A₃ = d³ (B_hub + E₀ + E₃)` with nonnegative branch terms (`diamond_cubic_ne_zero`), a
 fold. -/
-private theorem not_localAsymptoticStable_diamond (p : Params 3) (θ : Fin (3 + 1) → ℝ)
+@[tmio TM] private theorem not_localAsymptoticStable_diamond (p : Params 3) (θ : Fin (3 + 1) → ℝ)
     (σ : Equiv.Perm (Fin 4)) (h03 : p.B (σ 0) (σ 3) = 0) (h12 : 0 < p.B (σ 1) (σ 2))
     (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
@@ -1277,7 +1277,7 @@ non-Hurwitz reduced Jacobian the selected point is not locally asymptotically st
 are relabelled by increasing lifted angles (`exists_sorted_lift`); every cut has positive weight
 (else `not_localAsymptoticStable_of_cut`), and along every non-constant null direction the cubic
 form is nonzero (`sorted_cubic_ne_zero`): a fold. -/
-private theorem not_localAsymptoticStable_complete (p : Params 3) (θ : Fin (3 + 1) → ℝ)
+@[tmio TM] private theorem not_localAsymptoticStable_complete (p : Params 3) (θ : Fin (3 + 1) → ℝ)
     (hB : ∀ i j : Fin 4, i ≠ j → 0 < p.B i j) (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
     connection% ((⟨p, θ⟩ : Model 3) ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
@@ -1354,7 +1354,7 @@ the selected point is not locally asymptotically stable: all six pairs coupled
 (`not_localAsymptoticStable_complete`), exactly the pair `σ0 σ3` uncoupled with the hub `σ1 σ2`
 coupled (`not_localAsymptoticStable_diamond`), or two disjoint uncoupled pairs (the lines lie on a
 four-cycle, `not_localAsymptoticStable_four`). -/
-private theorem not_localAsymptoticStable_four_machines (p : Params 3) (θ : Fin (3 + 1) → ℝ)
+@[tmio TM] private theorem not_localAsymptoticStable_four_machines (p : Params 3) (θ : Fin (3 + 1) → ℝ)
     (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
     connection% ((⟨p, θ⟩ : Model 3) ∉ family.den (.flow .locallyAsymptoticallyStable)) := by

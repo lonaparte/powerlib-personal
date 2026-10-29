@@ -120,7 +120,7 @@ def family : Family Gain Requirement n 0 :=
     (family (n := n)).IsAutonomous fun α => field α.1 := fun _ => rfl
 
 /-- Every model is globally exponentially stable, with a solution through every state. -/
-@[powerlib_foundation] private theorem globallyExponentiallyStable (α : Gain) :
+@[tmio TM, powerlib_foundation] private theorem globallyExponentiallyStable (α : Gain) :
     connection% (α ∈ (family (n := n)).den (.flow .globallyExponentiallyStable)) :=
   family_isAutonomous.mem_den_flow.mpr
     ((certificate α).globallyExponentiallyStable (field_smooth _))

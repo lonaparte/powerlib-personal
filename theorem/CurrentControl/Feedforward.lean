@@ -268,7 +268,7 @@ namespace LPFLoop
     (connection_proof% PIParams.isHurwitz_iff_div)]
   rfl
 
-private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM] private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (lpfFamily.den (.flow P) = {q | q.Stable}) := show lpfFamily.den (.flow P) = {q | q.Stable} from
   Spectral.linear_den (U := Unstable) (fun q => ((connection_proof% lpfFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, lpfFamily, Spectral.linearFamily, Spectral.Meets] using isHurwitz_iff_stable q)).symm) hP
 

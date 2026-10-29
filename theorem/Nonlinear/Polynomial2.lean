@@ -659,7 +659,7 @@ def family : Family Model Requirement 2 0 :=
   fun _ => rfl
 
 /-- An accepted certificate proves global exponential stability of the full polynomial field. -/
-@[powerlib_foundation, aesop unsafe 80% apply]
+@[tmio TM, powerlib_foundation, aesop unsafe 80% apply]
 private theorem Certificate.globallyExponentiallyStable {model : Model}
     (c : Certificate model) :
     connection% (model ∈ family.den (.flow .globallyExponentiallyStable)) := by
@@ -687,7 +687,7 @@ private theorem Certificate.globallyExponentiallyStable {model : Model}
 
 /-- An equilibrium with a Hurwitz linearization is locally exponentially stable (LeanForControl's
 linearization theorem). -/
-@[powerlib_foundation] private theorem locallyExponentiallyStable_of_linearization (model : Model)
+@[tmio TM, powerlib_foundation] private theorem locallyExponentiallyStable_of_linearization (model : Model)
     (h : coeff model.field0 (0, 0) = 0 ∧ coeff model.field1 (0, 0) = 0)
     (hH : IsHurwitz model.linearization) :
     connection% (model ∈ family.den (.flow .locallyExponentiallyStable)) := by
@@ -699,7 +699,7 @@ linearization theorem). -/
 
 /-- An equilibrium whose linearization has a right-half-plane root is unstable (LeanForControl's
 indirect method). -/
-@[powerlib_foundation] private theorem unstable_of_linearization (model : Model)
+@[tmio TM, powerlib_foundation] private theorem unstable_of_linearization (model : Model)
     (h : coeff model.field0 (0, 0) = 0 ∧ coeff model.field1 (0, 0) = 0) {s : ℂ}
     (hs : (Linear.characteristicMatrix model.linearization s).det = 0) (hre : 0 < s.re) :
     connection% (model ∈ family.den (.flow .unstable)) := by
@@ -767,7 +767,7 @@ def cubicModel : Model := ⟨[⟨-1, (3, 0)⟩], [⟨-1, (0, 3)⟩]⟩
 
 /-- Cubic damping is globally asymptotically stable: `‖x‖²` is a strict Lyapunov function with
 compact sublevels. -/
-@[powerlib_foundation] private theorem cubicModel_globallyAsymptoticallyStable :
+@[tmio TM, powerlib_foundation] private theorem cubicModel_globallyAsymptoticallyStable :
     connection% (cubicModel ∈ family.den (.flow .globallyAsymptoticallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]

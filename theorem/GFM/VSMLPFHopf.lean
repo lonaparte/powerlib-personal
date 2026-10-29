@@ -113,7 +113,7 @@ private theorem restoring (m : Model) (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (x 
   ring
 
 /-- The boundary loop in Hopf coordinates (local asymptotic stability). -/
-private theorem las_of_hopf {m : Model} (hM : 0 < m.g.M) (hD : 0 < m.g.D) (hω : 0 < m.g.ωc)
+@[tmio TM] private theorem las_of_hopf {m : Model} (hM : 0 < m.g.M) (hD : 0 < m.g.D) (hω : 0 < m.g.ωc)
     (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (hK : m.K = m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) :
     connection% (m ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold TMIO.Statement
@@ -211,7 +211,7 @@ private theorem norm_mk3_zero_zero (t : ℝ) : ‖mk3 0 0 t‖ = |t| := by
 
 /-- With `K = 0` at a balanced angle, `S = D ω_c (δ − δ*) + M ω_c ω − (P_f − P₀)` changes at the
 rate `ω_c P₀ (1 − cos(δ − δ*))`, of one sign: the operating point is not attractive. -/
-private theorem not_las_of_K_zero {m : Model} (hM : 0 < m.g.M) (hω : 0 < m.g.ωc)
+@[tmio TM] private theorem not_las_of_K_zero {m : Model} (hM : 0 < m.g.M) (hω : 0 < m.g.ωc)
     (hb : m.g.K0 * Real.sin m.δ = m.g.P0) (hK : m.K = 0) :
     connection% (m ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold TMIO.Statement

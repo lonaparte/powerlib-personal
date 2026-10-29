@@ -299,7 +299,7 @@ def alphaBeta (m : DqBranch) : DqBranch := ⟨m.R, m.L, 0⟩
 
 end DqBranch
 
-private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM] private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.den (.flow P) = {m | 0 < m.R / m.L}) := show family.den (.flow P) = {m | 0 < m.R / m.L} from
   Spectral.linear_den (U := fun m : DqBranch => m.R / m.L < 0)
     (fun m => ((connection_proof% (show family.IsLinear DqBranch.plant from Spectral.linearFamily_isLinear _ _ _).mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans m.isHurwitz_plant_iff).symm) hP

@@ -620,7 +620,7 @@ variable (p : SwingParams)
 
 /-- An equilibrium with positive synchronizing coefficient (`k₂ cos(δ₀ − k₃) > 0`) is locally
 exponentially stable when `M > 0` and `D > 0`. -/
-private theorem locallyExponentiallyStable_of_syncCoeff_pos (hM : 0 < p.M)
+@[tmio TM] private theorem locallyExponentiallyStable_of_syncCoeff_pos (hM : 0 < p.M)
     (hD : 0 < p.D) {x : State 2} (heq : p.field x = 0) (hK : 0 < p.syncCoeff (x 0)) :
     connection% ((⟨p, x 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -639,7 +639,7 @@ private theorem locallyExponentiallyStable_of_syncCoeff_pos (hM : 0 < p.M)
 
 /-- An equilibrium with negative synchronizing coefficient is unstable (saddle), for every
 damping `D` (`M > 0`). -/
-private theorem unstable_of_syncCoeff_neg (hM : 0 < p.M) {x : State 2}
+@[tmio TM] private theorem unstable_of_syncCoeff_neg (hM : 0 < p.M) {x : State 2}
     (heq : p.field x = 0) (hK : p.syncCoeff (x 0) < 0) :
     connection% ((⟨p, x 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -657,7 +657,7 @@ private theorem unstable_of_syncCoeff_neg (hM : 0 < p.M) {x : State 2}
 
 /-- An equilibrium with negative damping is unstable (positive trace), for every synchronizing
 coefficient (`M > 0`). -/
-private theorem unstable_of_damping_neg (hM : 0 < p.M) {x : State 2}
+@[tmio TM] private theorem unstable_of_damping_neg (hM : 0 < p.M) {x : State 2}
     (heq : p.field x = 0) (hD : p.D < 0) :
     connection% ((⟨p, x 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -677,7 +677,7 @@ private theorem unstable_of_damping_neg (hM : 0 < p.M) {x : State 2}
 /-- With nonnegative damping (in particular `D = 0`, the conservative swing equation), every
 equilibrium with positive synchronizing coefficient is Lyapunov stable: the energy
 `½ M ω² + U(δ)` is a local Lyapunov function (`M > 0`). Implementation evidence. -/
-private theorem lyapunovStable_of_syncCoeff_pos (hM : 0 < p.M) (hD : 0 ≤ p.D)
+@[tmio TM] private theorem lyapunovStable_of_syncCoeff_pos (hM : 0 < p.M) (hD : 0 ≤ p.D)
     {x₀ : State 2} (heq : p.field x₀ = 0) (hK : 0 < p.syncCoeff (x₀ 0)) :
     connection% ((⟨p, x₀ 0⟩ : Swing.Model) ∈ Swing.family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
@@ -729,21 +729,21 @@ private theorem balanced_of {m : Model} (hM : m.p.M ≠ 0) (heq : m.p.field m.po
     m.p.Pe m.δ = m.p.Pm := by
   simpa using ((m.p.field_eq_zero_iff hM _).mp heq).2
 
-private theorem les_of {m : Model} (hM : 0 < m.p.M) (hD : 0 < m.p.D)
+@[tmio TM] private theorem les_of {m : Model} (hM : 0 < m.p.M) (hD : 0 < m.p.D)
     (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
   exact (mem_den_flow_iff.mp (m.p.locallyExponentiallyStable_of_syncCoeff_pos hM hD (point_eq_zero hM hb) (by simpa using hK)))
 
-private theorem ls_of {m : Model} (hM : 0 < m.p.M) (hD : 0 ≤ m.p.D)
+@[tmio TM] private theorem ls_of {m : Model} (hM : 0 < m.p.M) (hD : 0 ≤ m.p.D)
     (hb : m.p.Pe m.δ = m.p.Pm) (hK : 0 < m.p.syncCoeff m.δ) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
   exact (mem_den_flow_iff.mp (m.p.lyapunovStable_of_syncCoeff_pos hM hD (point_eq_zero hM hb) (by simpa using hK)))
 
-private theorem unstable_of {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm)
+@[tmio TM] private theorem unstable_of {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm)
     (hs : m.p.syncCoeff m.δ < 0 ∨ m.p.D < 0) : connection% (m ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
@@ -1372,7 +1372,7 @@ private theorem translate_eq (s : Sentence) :
   · rfl
   · rfl
 
-private theorem isHurwitz_iff {m : Model} (hM : 0 < m.p.M) :
+@[tmio TM] private theorem isHurwitz_iff {m : Model} (hM : 0 < m.p.M) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable) ↔
       0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ) := by
   unfold TMIO.Statement

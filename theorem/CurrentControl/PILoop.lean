@@ -324,11 +324,11 @@ end PIParams
 
 namespace PIParams
 
-private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM] private theorem den_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.den (.flow P) = {p | Stable p}) := show family.den (.flow P) = {p | Stable p} from
   Spectral.linear_den (U := Unstable) (fun p => ((isHurwitz_iff_div p).symm.trans (family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)))) hP
 
-private theorem refDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM] private theorem refDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (refFamily.den (.flow P) = {q | RefStable q}) := show refFamily.den (.flow P) = {q | RefStable q} from
   Spectral.linear_den (U := RefUnstable) (fun q => ((q.1.refFeedback_isHurwitz_iff_div q.2).symm.trans (refFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial))))
     hP

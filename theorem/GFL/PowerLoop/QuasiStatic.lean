@@ -438,7 +438,7 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
 
 /-- Linearization at the selected point: a Routh–Hurwitz Jacobian gives local exponential
 stability. -/
-private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
+@[tmio TM] private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
     (hs : Meets m .jacobianStable) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
   mem_den_flow_iff.mpr (Criteria.locallyExponentiallyStable_of_jacobian_fin_three
@@ -446,7 +446,7 @@ private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
     (fderiv_field m.params m.θ 0 m.Id) hs.1 hs.2.1 hs.2.2)
 
 /-- Linearization at the selected point: `det > 0` or `tr > 0` gives instability. -/
-private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
+@[tmio TM] private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
     (hs : Meets m .jacobianUnstable) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   change m ∈ family.den (.flow .unstable)

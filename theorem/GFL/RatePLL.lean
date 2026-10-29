@@ -514,7 +514,7 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
     (pt := fun m => equilibrium m.θ) family_isAutonomous
 
 /-- Linearization at `(θ*, 0)`: a stable Jacobian gives local exponential stability. -/
-private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
+@[tmio TM] private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
     (hs : Meets m .jacobianStable) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
   mem_den_flow_iff.mpr (Criteria.locallyExponentiallyStable_of_jacobian_fin_two
@@ -522,7 +522,7 @@ private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
     (fderiv_field m.params he.2 m.θ 0) hs.1 hs.2)
 
 /-- Linearization at `(θ*, 0)`: an unstable Jacobian gives instability. -/
-private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
+@[tmio TM] private theorem unstable_of_meets {m : Model} (he : Meets m .equilibrium)
     (hs : Meets m .jacobianUnstable) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   change m ∈ family.den (.flow .unstable)

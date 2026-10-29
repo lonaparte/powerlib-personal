@@ -429,14 +429,14 @@ connection conclusion. -/
   obtain ⟨h1, h2, -⟩ : Meets m .stable := h .stable
   rcases (h .unstable : Meets m .unstable) with h3 | h3 <;> linarith
 
-private theorem den_hurwitz {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM] private theorem den_hurwitz {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.den (.flow P) = {m | Meets m .stable}) := by
   change family.den (.flow P) = {m | Meets m .stable}
   rw [family_isLinear.den_hurwitz hP]
   ext m
   exact ((connection_proof% SFR.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff m.M_pos m.Tg_pos m.TR_pos))
 
-private theorem stable_mem_den {m : Model} (h : Meets m .stable) {P : Flow.Property}
+@[tmio TM] private theorem stable_mem_den {m : Model} (h : Meets m .stable) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (m ∈ family.den (.flow P)) := by
   change m ∈ family.den (.flow P)
@@ -806,7 +806,7 @@ def loadStepFamily (ΔPL : ℝ) : Family Model Requirement 3 0 :=
 Under the Routh–Hurwitz conditions every solution under the load step converges exponentially to
 the steady state (the connection theorem `mem_den_attractive_iff` and linearity,
 `Linear.holds_input_iff`). -/
-private theorem exponentiallyConvergesTo_steadyState (m : Model)
+@[tmio TM] private theorem exponentiallyConvergesTo_steadyState (m : Model)
     (h2 : 0 < coeff2 m.M m.D m.Tg m.TR) (hKD : 0 < m.K + m.D)
     (hR : 0 < routhQuantity m.M m.D m.K m.F m.Tg m.TR) (ΔPL : ℝ) :
     connection% (m ∈ (loadStepFamily ΔPL).den (.flow .globallyExponentiallyStable)) := by

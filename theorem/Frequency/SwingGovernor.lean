@@ -425,14 +425,14 @@ right half plane. -/
   rcases (h .unstable : Meets m .unstable) with h3 | h3 <;> linarith
 
 /-- The attractive sentences and sampled contraction denote the members satisfying `stable`. -/
-private theorem den_hurwitz {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM] private theorem den_hurwitz {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.den (.flow P) = {m | Meets m .stable}) := by
   change family.den (.flow P) = {m | Meets m .stable}
   rw [family_isLinear.den_hurwitz hP]
   ext m
   exact ((connection_proof% SwingGovernor.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff m.M_pos m.Tg_pos))
 
-private theorem stable_mem_den {m : Model} (h : Meets m .stable) {P : Flow.Property}
+@[tmio TM] private theorem stable_mem_den {m : Model} (h : Meets m .stable) {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (m ∈ family.den (.flow P)) := by
   change m ∈ family.den (.flow P)
@@ -566,7 +566,7 @@ def loadStepFamily (ΔPL : ℝ) : Family Model Requirement 2 0 :=
 §1.6 at the trajectory level: every solution under the load step converges exponentially to the
 quasi-steady state, read from the connection theorem `mem_den_globallyExponentiallyStable` and
 linearity (`Linear.holds_input_iff`). -/
-private theorem exponentiallyConvergesTo_steadyState (m : Model) (hD : 0 ≤ m.D)
+@[tmio TM] private theorem exponentiallyConvergesTo_steadyState (m : Model) (hD : 0 ≤ m.D)
     (hKD : 0 < m.K + m.D) (ΔPL : ℝ) :
     connection% (m ∈ (loadStepFamily ΔPL).den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -1080,7 +1080,7 @@ swing + governor model has the rate margin `a` exactly when the first-order mode
   exact Spectral.realize_univ_eq_empty_of .stable .unstable fun r (h1 : 0 < r.K + r.D)
     (h2 : r.K + r.D < 0) => absurd (lt_trans h1 h2) (lt_irrefl _)
 
-private theorem reduced_mem_den_decay_iff (r : ReducedModel) (a : ℝ) :
+@[tmio TM] private theorem reduced_mem_den_decay_iff (r : ReducedModel) (a : ℝ) :
     connection% (r ∈ reducedFamily.den (.flow (.decay a)) ↔ a * r.M ≤ r.K + r.D) := by
   change r ∈ reducedFamily.den (.flow (.decay a)) ↔ a * r.M ≤ r.K + r.D
   rw [(connection_proof% reducedFamily_isLinear.mem_den_flow)]

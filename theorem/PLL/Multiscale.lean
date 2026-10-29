@@ -155,7 +155,7 @@ def family : Family Model Requirement 1 0 :=
   have h2 : m.b / m.a < 0 := h .negativeRatio
   linarith
 
-private theorem mem_den_hurwitz {m : Model} {P : Flow.Property}
+@[tmio TM] private theorem mem_den_hurwitz {m : Model} {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (m ∈ family.den (.flow P) ↔ 0 < m.b / m.a) := by
   change m ∈ family.den (.flow P) ↔ 0 < m.b / m.a

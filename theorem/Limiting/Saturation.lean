@@ -236,7 +236,7 @@ private theorem mem_den_flow {m : SatModel} {P : Flow.Property} :
 /-- At an equilibrium `(δ, 0)` with `M, D > 0` and `P_sat sin(δ − φ) < 0` the saturated field is
 locally exponentially stable (Jacobian trace `−D/M < 0`, determinant `−P_sat sin(δ − φ)/M > 0`).
 Implementation evidence for the family's soundness. -/
-private theorem satField_les_of {M D Pref Psat φ δ : ℝ} (hM : 0 < M) (hD : 0 < D)
+@[tmio TM] private theorem satField_les_of {M D Pref Psat φ δ : ℝ} (hM : 0 < M) (hD : 0 < D)
     (heq : Psat * Real.cos (δ - φ) = Pref) (hsin : Psat * Real.sin (δ - φ) < 0) :
     connection% ((⟨M, D, Pref, Psat, φ, δ⟩ : SatModel) ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -253,7 +253,7 @@ private theorem satField_les_of {M D Pref Psat φ δ : ℝ} (hM : 0 < M) (hD : 0
 
 /-- At an equilibrium `(δ, 0)` with `M > 0` and `P_sat sin(δ − φ) > 0` the saturated field is
 unstable (saddle). Implementation evidence for the family's soundness. -/
-private theorem satField_unstable_of {M D Pref Psat φ δ : ℝ} (hM : 0 < M)
+@[tmio TM] private theorem satField_unstable_of {M D Pref Psat φ δ : ℝ} (hM : 0 < M)
     (heq : Psat * Real.cos (δ - φ) = Pref) (hsin : 0 < Psat * Real.sin (δ - φ)) :
     connection% ((⟨M, D, Pref, Psat, φ, δ⟩ : SatModel) ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -411,7 +411,7 @@ private theorem toSwing_mem_inertia {m : SatModel} (hM : 0 < m.M) :
 /-- With positive inertia the swing reading meets the swing translation of the local attractive
 sentences (balance, inertia, damping, synchronization) exactly under the saturated stability
 condition: the synchronizing coefficient is `−P_sat sin(δ* − φ)`. -/
-private theorem toSwing_mem_realize_iff {m : SatModel} (hM : 0 < m.M) :
+@[tmio TM] private theorem toSwing_mem_realize_iff {m : SatModel} (hM : 0 < m.M) :
     connection% (m.toSwing ∈ TMIO.realize Synchronous.Swing.family.meets
         (Synchronous.Swing.family.translate (.flow .locallyExponentiallyStable)) ↔
       m.Psat * Real.cos (m.δ - m.φ) = m.Pref ∧ 0 < m.D ∧ m.Psat * Real.sin (m.δ - m.φ) < 0) := by

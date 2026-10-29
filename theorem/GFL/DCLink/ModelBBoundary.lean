@@ -88,7 +88,7 @@ private theorem mem_den_flow_iff' {m : Model} {P : Flow.Property} :
 /-- At an equilibrium with positive reference, a strict violation of the 4×4 Routh conditions gives
 instability (a characteristic root in the open right half plane; LeanForControl's linearization
 theorem for the regularized field, transferred through the ball on which it is model B). -/
-private theorem unstable_of_violation {m : Model} (hV : 0 < m.p.VdcRef)
+@[tmio TM] private theorem unstable_of_violation {m : Model} (hV : 0 < m.p.VdcRef)
     (hx : m.p.field m.x = 0) (hviol : RouthViolationFin4 (m.p.jacobian m.x)) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -111,7 +111,7 @@ strictly, model B is unstable. -/
 
 /-- Off the boundary the local Lyapunov and asymptotic sentences are decided by the linearization:
 the Routh conditions give local exponential stability, a strict violation instability. -/
-private theorem exactUnder_offBoundary_of {P : Flow.Property}
+@[tmio TM] private theorem exactUnder_offBoundary_of {P : Flow.Property}
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
     connection% (family.ExactUnder {.equilibrium, .positiveReference, .offBoundary} (.flow P)) := by
   change family.ExactUnder {.equilibrium, .positiveReference, .offBoundary} (.flow P)

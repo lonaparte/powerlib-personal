@@ -105,7 +105,7 @@ private theorem field_rel {y : State 4} (hy : y 2 ≠ 0) : y 2 * p.field y 2 = p
 double root `H/2`; on the side `σ = sign H` a shrinking cone traps solutions moving away from the
 plane (`Dynamics.Degenerate.unstable_of_degenerate_node`). Implementation evidence for
 `ModelB.mem_den_unstable_of_disc_eq_zero`. -/
-private theorem modelB_unstable_of_degenerate_node {x : State 4} (hx : x 2 = 0)
+@[tmio TM] private theorem modelB_unstable_of_degenerate_node {x : State 4} (hx : x 2 = 0)
     (hP : p.pccP x = 0) (hD : p.planeDisc x = 0) (hH : p.planeH x ≠ 0) :
     connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -123,7 +123,7 @@ private theorem modelB_unstable_of_degenerate_node {x : State 4} (hx : x 2 = 0)
 `x` with `V_dc = 0`, `P(x) = 0`, `H(x) = G(x) = 0` and `(f₀, f₁, f₃)(x) ≠ 0`, the local
 exponential estimate fails (`Dynamics.Degenerate.not_locallyExponentiallyStable_of_nilpotent`).
 Implementation evidence for `ModelB.not_mem_den_locallyExponentiallyStable_of_nilpotent`. -/
-private theorem modelB_not_locallyExponentiallyStable_of_nilpotent {x : State 4} (hx : x 2 = 0)
+@[tmio TM] private theorem modelB_not_locallyExponentiallyStable_of_nilpotent {x : State 4} (hx : x 2 = 0)
     (hP : p.pccP x = 0) (hH : p.planeH x = 0) (hG : p.planeG x = 0)
     (hF : p.field x 0 ≠ 0 ∨ p.field x 1 ≠ 0 ∨ p.field x 3 ≠ 0) :
     connection% ((⟨p, x⟩ : ModelB.Model) ∉ ModelB.family.den (.flow .locallyExponentiallyStable)) := by

@@ -519,7 +519,7 @@ def family : Family Model Requirement 4 0 :=
   exact Family.exact_of_translate_eq_empty rfl family_isAutonomous.den_passive
 
 /-- The flipped field about the mirror point is the transported field about the origin. -/
-private theorem flip_holds_iff {m : Model} (hIq : m.params.Iq = 0) (P : Flow.Property) :
+@[tmio TM] private theorem flip_holds_iff {m : Model} (hIq : m.params.Iq = 0) (P : Flow.Property) :
     connection% (m.flip ∈ family.den (.flow P) ↔ m ∈ family.den (.flow P)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow),
@@ -599,7 +599,7 @@ private theorem mem_realize_reading {m : Model} {B : Set FourState.Requirement} 
 /-- A local translation is sound when the four-state requirements it reads give the sentence for
 the four-state family: its models read as four-state models meeting them
 (`mem_den_iff_fourState`, `Spectral.realize_subset_den_of_hub`). -/
-private theorem realize_subset_den_of_fourState {s : Sentence} {B : Set FourState.Requirement}
+@[tmio TM] private theorem realize_subset_den_of_fourState {s : Sentence} {B : Set FourState.Requirement}
     (hB : TMIO.realize FourState.Meets B ⊆ FourState.family.den s) :
     connection% (TMIO.realize Meets ({.iqZero, .fourStatePoint} ∪ Requirement.fourState '' B) ⊆
       family.den s) := show TMIO.realize Meets ({.iqZero, .fourStatePoint} ∪ Requirement.fourState '' B) ⊆
@@ -703,7 +703,7 @@ requirements exactly when it is locally exponentially stable
 /-- A carrier with `I_q* = 0` at a four-state point whose reading satisfies `s` but misses a
 requirement `r` of the four-state translation of `s` refutes exactness within `I_q* = 0`,
 `V_dc* ≠ 0` (`mem_den_iff_fourState`, `Spectral.not_exactUnder_of_witness`). -/
-private theorem not_exactUnder_of_fourState {m : Model} {s : Sentence}
+@[tmio TM] private theorem not_exactUnder_of_fourState {m : Model} {s : Sentence}
     {r : FourState.Requirement} (hIq : m.params.Iq = 0) (hV : m.point 2 = 1)
     (hx : m.params.Kip * m.point 1 = 0) (hden : m.toFourState ∈ FourState.family.den s)
     (hq : Requirement.fourState r ∈ translate s) (hn : ¬ FourState.Meets m.toFourState r) :

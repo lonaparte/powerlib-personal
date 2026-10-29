@@ -495,7 +495,7 @@ private theorem mem_den_flow_iff' {m : Model n} {P : Flow.Property} :
 
 /-- A Lyapunov stable selected point of the `C¹` reduced field is an equilibrium, hence a
 power-balance point. -/
-private theorem powerFlow_of_lyapunovStable {p : Params n} {θ : Fin (n + 1) → ℝ}
+@[tmio TM] private theorem powerFlow_of_lyapunovStable {p : Params n} {θ : Fin (n + 1) → ℝ}
     (h : LyapunovStable (reducedField p) (equilibrium θ)) :
     connection% ((⟨p, θ⟩ : Model n) ∈ TMIO.realize Meets {.powerFlow}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.Meets]
@@ -506,7 +506,7 @@ private theorem powerFlow_of_lyapunovStable {p : Params n} {θ : Fin (n + 1) →
 reduced field (`reducedField_eq_mechanical`). At a power-balance point, relative-angle
 displacements arbitrarily close to it with a lower potential rule out local asymptotic
 stability. -/
-private theorem reducedSwing_not_localAsymptoticStable_of_potential_lt {p : Params n}
+@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_of_potential_lt {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hseed : ∀ ε > 0, ∃ v : Fin n → ℝ, ‖angleState v‖ < ε ∧
       potential p (θ + ground v) < potential p θ) :
@@ -526,7 +526,7 @@ private theorem reducedSwing_not_localAsymptoticStable_of_potential_lt {p : Para
 /-- Implementation evidence: `Dynamics.Mechanical.not_localAsymptoticStable_of_critical_line` on the
 reduced field. If the network stays power balanced along the relative-angle displacements `t • v`
 (`v ≠ 0`), every point of that line is an equilibrium. -/
-private theorem reducedSwing_not_localAsymptoticStable_of_balance_line {p : Params n}
+@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_of_balance_line {p : Params n}
     {θ : Fin (n + 1) → ℝ} {v : Fin n → ℝ} (hv : v ≠ 0)
     (hline : ∀ t : ℝ, ∀ k, p.P k = powerInjection p.B (θ + ground (t • v)) k) :
     connection% (¬ ((⟨p, θ⟩ : Model n) ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
@@ -926,7 +926,7 @@ nonzero cubic coefficient, makes `t² a/2 − t³ b/6 + t⁴ C` negative at arbi
 
 /-- Implementation evidence for `not_localAsymptoticStable_of_forms`, at the selected point of the
 untranslated field. -/
-private theorem reducedSwing_not_localAsymptoticStable_of_forms {p : Params n}
+@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_of_forms {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k) (v : Fin n → ℝ)
     (h : hessForm p θ (ground v) < 0 ∨
       (hessForm p θ (ground v) = 0 ∧ cubicForm p θ (ground v) ≠ 0)) :
@@ -1042,7 +1042,7 @@ private theorem powerInjection_two_of_B (p : Params 1) (hB : p.B 0 1 = 0)
 
 /-- Implementation evidence for `not_localAsymptoticStable_two`, at the selected point of the
 untranslated field. -/
-private theorem reducedSwing_not_localAsymptoticStable_two (p : Params 1) (θ : Fin (1 + 1) → ℝ)
+@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_two (p : Params 1) (θ : Fin (1 + 1) → ℝ)
     (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
     connection% (¬ ((⟨p, θ⟩ : Model 1) ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
@@ -1327,7 +1327,7 @@ private theorem eq_ground_three (u : Fin (2 + 1) → ℝ) (hu0 : u 0 = 0) :
 
 /-- Implementation evidence for `not_localAsymptoticStable_three`, at the selected point of the
 untranslated field. -/
-private theorem reducedSwing_not_localAsymptoticStable_three (p : Params 2)
+@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_three (p : Params 2)
     (θ : Fin (2 + 1) → ℝ) (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (hH : ¬ LinearSystems.IsHurwitz (jacobian p θ)) :
     connection% (¬ ((⟨p, θ⟩ : Model 2) ∈ family.den (.flow .locallyAsymptoticallyStable))) := by
@@ -1593,7 +1593,7 @@ field. -/
 the reduced field (`reducedField_eq_mechanical`). At a power-balance point whose relative angles
 are a strict local minimum of the potential and an isolated power-balance point, the reduced swing
 field is locally asymptotically stable, whatever its linearization. -/
-private theorem reducedSwing_localAsymptoticStable_of_strictMin {p : Params n}
+@[tmio TM] private theorem reducedSwing_localAsymptoticStable_of_strictMin {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k) {r : ℝ} (hr : 0 < r)
     (hmin : ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r → potential p θ < potential p (θ + ground v))
     (hcrit : ∀ v : Fin n → ℝ, v ≠ 0 → ‖v‖ < r →

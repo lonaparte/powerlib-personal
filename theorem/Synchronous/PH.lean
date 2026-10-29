@@ -622,7 +622,7 @@ private theorem toSwing_mem_context (m : Model) :
 is exact for the classical machine (`Spectral.exact_of_hub`): every swing reading lies in that
 context, and on every flow sentence the reading (`mem_den_flow_iff_swing`) and the requirement
 correspondence (`realize_translate_flow_eq_preimage`) hold. -/
-private theorem exact_of_exactUnder {Δ : Set Swing.Requirement} {P : Flow.Property}
+@[tmio TM] private theorem exact_of_exactUnder {Δ : Set Swing.Requirement} {P : Flow.Property}
     (hΔ : Δ ⊆ {.inertia, .curved}) (h : Swing.family.ExactUnder Δ (.flow P)) :
     connection% (family.Exact (.flow P)) := by
   change family.Exact (.flow P)

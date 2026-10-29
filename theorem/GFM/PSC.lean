@@ -175,7 +175,7 @@ private theorem mem_den_flow_iff {m : Model} {P : Flow.Property} :
   Spectral.mem_den_flow_iff_shift (f := fun m : Model => m.c.field) (pt := fun m => embed m.δ)
     family_isAutonomous
 
-private theorem les_of {m : Model} (hb : Meets m .balanced) (hs : Meets m .stableSlope) :
+@[tmio TM] private theorem les_of {m : Model} (hb : Meets m .balanced) (hs : Meets m .stableSlope) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
@@ -186,7 +186,7 @@ private theorem les_of {m : Model} (hb : Meets m .balanced) (hs : Meets m .stabl
   · rw [(m.c.hasDerivAt_rhs m.δ).deriv]
     linarith
 
-private theorem unstable_of {m : Model} (hb : Meets m .balanced) (hs : Meets m .unstableSlope) :
+@[tmio TM] private theorem unstable_of {m : Model} (hb : Meets m .balanced) (hs : Meets m .unstableSlope) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
@@ -342,7 +342,7 @@ private theorem norm_embed_add_sub (δ₀ s : ℝ) : ‖embed (δ₀ + s) - embe
 
 /-- With a vanishing scalar field every state is an equilibrium: no point is locally
 asymptotically stable. -/
-private theorem not_las_of_rhs_zero {c : PSC} (h : ∀ z, c.rhs z = 0) (δ₀ : ℝ) :
+@[tmio TM] private theorem not_las_of_rhs_zero {c : PSC} (h : ∀ z, c.rhs z = 0) (δ₀ : ℝ) :
     connection% ((⟨c, δ₀⟩ : Model) ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold TMIO.Statement
   rw [mem_den_flow_iff]
@@ -356,7 +356,7 @@ private theorem not_las_of_rhs_zero {c : PSC} (h : ∀ z, c.rhs z = 0) (δ₀ : 
 
 /-- A balanced fold angle with `K_p P_max ≠ 0` is not locally asymptotically stable: the
 coordinate `−k δ` never increases along the field and is below its value at `δ₀` on one side. -/
-private theorem not_las_fold {c : PSC} {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
+@[tmio TM] private theorem not_las_fold {c : PSC} {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
     (hcos : Real.cos δ₀ = 0) (hk : c.Kp * c.Pmax ≠ 0) :
     connection% ((⟨c, δ₀⟩ : Model) ∉ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold TMIO.Statement
@@ -385,7 +385,7 @@ private theorem not_las_fold {c : PSC} {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ�
 /-- A balanced fold angle with `K_p P_max ≠ 0` is unstable (Chetaev's theorem with the
 coordinate `k (δ − δ₀)`, which grows at the rate `k² (1 − cos(δ − δ₀)) > 0` where it is
 positive). -/
-private theorem unstable_fold {c : PSC} {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
+@[tmio TM] private theorem unstable_fold {c : PSC} {δ₀ : ℝ} (hb : c.Pmax * Real.sin δ₀ = c.Pstar)
     (hcos : Real.cos δ₀ = 0) (hk : c.Kp * c.Pmax ≠ 0) :
     connection% ((⟨c, δ₀⟩ : Model) ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement

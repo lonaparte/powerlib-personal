@@ -420,7 +420,7 @@ def codeFamily : Family CodeModel PLL.PIPLL.Requirement 2 0 :=
   fun _ => rfl
 
 /-- The code-frame field at a point is the text-frame field at the reflected point. -/
-private theorem codeField_holds_iff (p : Params) (P : Flow.Property) (θ : ℝ) :
+@[tmio TM] private theorem codeField_holds_iff (p : Params) (P : Flow.Property) (θ : ℝ) :
     connection% ((⟨p, θ⟩ : CodeModel) ∈ codeFamily.den (.flow P) ↔
       p.pllModel (-θ) ∈ PLL.PIPLL.family.den (.flow P)) := by
   unfold TMIO.Statement

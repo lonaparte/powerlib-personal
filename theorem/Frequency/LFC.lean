@@ -536,7 +536,7 @@ def constantInputFamily (u : Fin 2 → ℝ) : Family Model Requirement 5 0 :=
 /-- Connection for the forced field at its selected steady state.
 With a Hurwitz state matrix every solution under constant loads converges exponentially to the
 non-interactive steady state. -/
-private theorem exponentiallyConvergesTo_of_isHurwitz (m : Model) (hA : IsHurwitz m.plant.A)
+@[tmio TM] private theorem exponentiallyConvergesTo_of_isHurwitz (m : Model) (hA : IsHurwitz m.plant.A)
     (u : Fin 2 → ℝ) :
     connection% (m ∈ (constantInputFamily u).den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -554,7 +554,7 @@ def constantInputFamily7 (u : Fin 2 → ℝ) : Family Model7 Requirement 7 0 :=
 
 /-- Connection for the forced field at its selected steady state.
 The seven-state version of `exponentiallyConvergesTo_of_isHurwitz`. -/
-private theorem plant7_exponentiallyConvergesTo_of_isHurwitz (m : Model7)
+@[tmio TM] private theorem plant7_exponentiallyConvergesTo_of_isHurwitz (m : Model7)
     (hA : IsHurwitz m.plant.A) (u : Fin 2 → ℝ) :
     connection% (m ∈ (constantInputFamily7 u).den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement

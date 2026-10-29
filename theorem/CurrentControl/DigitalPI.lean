@@ -471,7 +471,7 @@ def family : Family DigitalPI DigitalRequirement 3 1 :=
 
 /-- Fast sampling against a stable design gives the platform Routh conditions:
 `a₂ > L/2`, `a₁ ≥ 3 (R + Kp)/4` and `a₃ a₀ ≤ L (R + Kp)/4 < (L/2)(3 (R + Kp)/4)`. Read through the existing requirement satisfaction. -/
-@[tmio M, powerlib_foundation] theorem routh_of_fastSampling {y : DigitalPI} (hL : 0 < y.design.L)
+@[tmio MI, powerlib_foundation] theorem routh_of_fastSampling {y : DigitalPI} (hL : 0 < y.design.L)
     (hT : 0 < y.Ts) (hs : PIParams.Stable y.design)
     (hf : 3 * y.design.Kp * y.Ts ≤ y.design.L ∧
       3 * y.design.Ki * y.Ts ≤ y.design.R + y.design.Kp) :
@@ -499,7 +499,7 @@ def family : Family DigitalPI DigitalRequirement 3 1 :=
 
 /-- A statically unstable design gives a strict violation of the platform Routh conditions, for
 every positive period: `Ki < 0` gives `a₀ < 0`, otherwise `R + Kp < 0` gives `a₁ < 0`. Read through the existing requirement satisfaction. -/
-@[tmio M, powerlib_foundation] theorem lagged_of_unstable {y : DigitalPI} (hL : 0 < y.design.L)
+@[tmio MI, powerlib_foundation] theorem lagged_of_unstable {y : DigitalPI} (hL : 0 < y.design.L)
     (hT : 0 < y.Ts) (hu : PIParams.Unstable y.design) :
     connection% (y ∈ TMIO.realize Meets {.lagged}) := by
   simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]

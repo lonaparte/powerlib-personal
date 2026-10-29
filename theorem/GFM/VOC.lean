@@ -563,14 +563,14 @@ private def quadraticDecay (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
   upper_bound x := by rw [energy_eq, one_mul]
   dissipation := dissipation hκ
 
-private theorem ges (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
+@[tmio TM] private theorem ges (hc : a.c < 0) (hκ : 0 ≤ a.κv) :
     connection% (a ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
   change Flow.GloballyExponentiallyStable a.realField 0
   exact (quadraticDecay hc hκ).globallyExponentiallyStable a.contDiff_realField
 
-private theorem les (hc : a.c < 0) :
+@[tmio TM] private theorem les (hc : a.c < 0) :
     connection% (a ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
@@ -580,7 +580,7 @@ private theorem les (hc : a.c < 0) :
     (by rw [realJacobian_zero, Matrix.trace_fin_two_of]; linarith)
     (by rw [realJacobian_zero, Matrix.det_fin_two_of]; nlinarith [sq_nonneg a.ωs, sq_pos_of_neg hc])
 
-private theorem unstable_of (hc : 0 < a.c) :
+@[tmio TM] private theorem unstable_of (hc : 0 < a.c) :
     connection% (a ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
@@ -589,7 +589,7 @@ private theorem unstable_of (hc : 0 < a.c) :
     (a.hasFDerivAt_realField 0).fderiv
     (by rw [realJacobian_zero, Matrix.trace_fin_two_of]; linarith)
 
-private theorem decay_of (hκ : 0 ≤ a.κv) {r : ℝ} (hr : r + a.c ≤ 0) :
+@[tmio TM] private theorem decay_of (hκ : 0 ≤ a.κv) {r : ℝ} (hr : r + a.c ≤ 0) :
     connection% (a ∈ family.den (.flow (.decay r))) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]

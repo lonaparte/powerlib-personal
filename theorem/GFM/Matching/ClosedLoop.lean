@@ -472,7 +472,7 @@ def translate : Sentence → Set Requirement
 /-- The reduced matching closed-loop family. -/
 def family : Family Model Requirement 5 3 := ⟨fun m => .continuous m.system, Meets, translate⟩
 
-private theorem ges (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L) (hC : 0 < m.C)
+@[tmio TM] private theorem ges (m : Model) (hCdc : 0 < m.Cdc) (hL : 0 < m.L) (hC : 0 < m.C)
     (hR : 0 < m.R) (hG : 0 < m.G + m.Gl) (he : m.field m.point 0 = 0) (hδ : 0 < m.margin) :
     connection% (m ∈ family.den (.flow .globallyExponentiallyStable)) := by
   unfold TMIO.Statement

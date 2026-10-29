@@ -115,7 +115,7 @@ field is the smooth `regField`. The smoothness hypothesis of the local generic E
 /-- The unit model `V₀ = k_p = k_i = k_pv = k_iv = C = 1`, `X_g = i_d0 = I_dc0 = 0` at `θ₀ = 0`
 is locally exponentially stable: quartic `λ⁴ + (5/2) λ³ + 4 λ² + 3 λ + 3/2`, Routh conditions met
 (`mem_den_locallyExponentiallyStable_of_routh`). -/
-private theorem unitModel_mem_den :
+@[tmio TM] private theorem unitModel_mem_den :
     connection% ((⟨⟨1, 0, 0, 1, 1, 1, 1, 1, 0⟩, 0⟩ : Model) ∈
       family.den (.flow .locallyExponentiallyStable)) := by
   change (⟨⟨1, 0, 0, 1, 1, 1, 1, 1, 0⟩, 0⟩ : Model) ∈

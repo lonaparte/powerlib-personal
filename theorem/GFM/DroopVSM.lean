@@ -350,7 +350,7 @@ private theorem vsm_point_eq_zero {m : VSMModel} (hM : 0 < m.M) (hb : vsmMeets m
     m.vector m.point = 0 :=
   (m.vector_eq_zero_iff hM.ne' _).mpr hb
 
-private theorem vsm_les {m : VSMModel} (hs : vsmMeets m .smooth) (hb : vsmMeets m .balanced)
+@[tmio TM] private theorem vsm_les {m : VSMModel} (hs : vsmMeets m .smooth) (hb : vsmMeets m .balanced)
     (hM : vsmMeets m .inertia) (hD : vsmMeets m .damped) (hK : vsmMeets m .synchronizing) :
     connection% (m ∈ vsmFamily.den (.flow .locallyExponentiallyStable)) := by
   apply vsm_mem_den_flow_iff.mpr
@@ -366,7 +366,7 @@ private theorem vsm_les {m : VSMModel} (hs : vsmMeets m .smooth) (hb : vsmMeets 
     have : 0 < deriv m.P (m.point 0) / m.M := div_pos hK' hM'
     linarith
 
-private theorem vsm_unstable {m : VSMModel} (hsm : vsmMeets m .smooth)
+@[tmio TM] private theorem vsm_unstable {m : VSMModel} (hsm : vsmMeets m .smooth)
     (hb : vsmMeets m .balanced) (hM : vsmMeets m .inertia) (hs : vsmMeets m .destabilizing) :
     connection% (m ∈ vsmFamily.den (.flow .unstable)) := by
   apply vsm_mem_den_flow_iff.mpr
@@ -413,7 +413,7 @@ private theorem vsm_unstable {m : VSMModel} (hsm : vsmMeets m .smooth)
     exact vsm_unstable (hm .smooth (by simp)) (hm .balanced (by simp))
       (hm .inertia (by simp)) (hm .destabilizing (by simp))
 
-private theorem vsm_sound (s : Sentence) :
+@[tmio TM] private theorem vsm_sound (s : Sentence) :
     connection% (vsmFamily.Sound s) := show vsmFamily.Sound s from
   Family.chain_le_semantics_iff.mp vsmFamily_chain_le_semantics s
 
@@ -509,7 +509,7 @@ def droopFamily : Family DroopModel VSMRequirement 2 0 :=
     droopFamily.IsAutonomous DroopModel.field := fun _ => rfl
 
 /-- Every flow sentence of a droop + LPF model is the same sentence of its VSM image. -/
-private theorem holds_iff (m : DroopModel) (P : Flow.Property) :
+@[tmio TM] private theorem holds_iff (m : DroopModel) (P : Flow.Property) :
     connection% (m ∈ droopFamily.den (.flow P) ↔ m.toVSM ∈ vsmFamily.den (.flow P)) := by
   unfold TMIO.Statement
   rw [connection_proof% droopFamily_isAutonomous.mem_den_flow,
@@ -521,7 +521,7 @@ private theorem holds_iff (m : DroopModel) (P : Flow.Property) :
     Flow.Property.holds_shift_iff P
   rw [h1, h2, m.d.vsmField_eq_transport m.KR_ne m.τp_ne, Dynamics.holds_transport_iff]
 
-private theorem holds_eq :
+@[tmio TM] private theorem holds_eq :
     connection% (droopFamily.semantics = (vsmFamily.comap DroopModel.toVSM).semantics) := by
   have hh : droopFamily.Holds = (vsmFamily.comap DroopModel.toVSM).Holds := by
     funext m s

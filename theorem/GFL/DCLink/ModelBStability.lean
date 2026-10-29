@@ -456,7 +456,7 @@ Jacobian `J = jacobian x` satisfies the 4×4 Routh conditions (`tr J < 0`, `m₃
 `det J > 0`, `m₃² + tr² det < tr m₂ m₃`, i.e. `a3, a1, a0 > 0` and `a1² + a3² a0 < a3 a2 a1` for
 `det(sI − J) = s⁴ + a3 s³ + a2 s² + a1 s + a0`), the equilibrium is locally exponentially
 stable. Implementation evidence for `ModelB.mem_den_locallyExponentiallyStable`. -/
-private theorem modelB_locallyExponentiallyStable (hV : 0 < p.VdcRef) {x : State 4}
+@[tmio TM] private theorem modelB_locallyExponentiallyStable (hV : 0 < p.VdcRef) {x : State 4}
     (hx : p.field x = 0) (htr : (p.jacobian x).trace < 0)
     (hm3 : Criteria.principalMinorSum3Fin4 (p.jacobian x) < 0)
     (hdet : 0 < (p.jacobian x).det)
@@ -477,7 +477,7 @@ private theorem modelB_locallyExponentiallyStable (hV : 0 < p.VdcRef) {x : State
 /-- **Model B, instability.** At an equilibrium of model B (`V_dc* > 0`) with `det J < 0` the
 Jacobian has a positive real eigenvalue and the equilibrium is unstable. Implementation evidence
 for `ModelB.mem_den_unstable_of_det_neg`. -/
-private theorem modelB_unstable_of_det_neg (hV : 0 < p.VdcRef) {x : State 4}
+@[tmio TM] private theorem modelB_unstable_of_det_neg (hV : 0 < p.VdcRef) {x : State 4}
     (hx : p.field x = 0) (hdet : (p.jacobian x).det < 0) :
     connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -497,7 +497,7 @@ exponentially stable. Its Jacobian is block upper-triangular with characteristic
 `d = 3 k_iv V_g/(2 V_dc* C_dc)`; the Routh determinant is
 `a3 a2 a1 − a1² − a3² a0 = a c ((b − d)² + (a + c)(a d + b c)) > 0`. Implementation evidence
 for `ModelB.noLoad_mem_den_locallyExponentiallyStable`. -/
-private theorem modelB_noLoad_locallyExponentiallyStable (hV : 0 < p.VdcRef)
+@[tmio TM] private theorem modelB_noLoad_locallyExponentiallyStable (hV : 0 < p.VdcRef)
     (hVg : 0 < p.Vg) (hkp : 0 < p.kp) (hki : 0 < p.ki) (hkpv : 0 < p.kpv) (hkiv : 0 < p.kiv)
     (hC : 0 < p.Cdc) (hI : p.I0 = 0) (hR : p.Rg = 0) (hq : p.iq0 = 0) :
     connection% ((⟨p, (WithLp.toLp 2 ![0, (p.ωg - p.ωs) / p.ki, p.VdcRef, 0])⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .locallyExponentiallyStable)) := by
@@ -675,7 +675,7 @@ although `x` is not an equilibrium (`field x 2 = I₀ / C_dc ≠ 0`): near `x`,
 `d(V_dc²)/dt = (2 I₀ V_dc + 3 P) / C_dc ≤ −a`, so every solution segment reaches the plane only at
 its end, after a time at most `V_dc(t₀)² / a`. Implementation evidence for
 `ModelB.mem_den_locallyExponentiallyStable_of_collapse`. -/
-private theorem modelB_locallyExponentiallyStable_of_collapse {x : State 4} (hx : x 2 = 0)
+@[tmio TM] private theorem modelB_locallyExponentiallyStable_of_collapse {x : State 4} (hx : x 2 = 0)
     (hP : p.pccP x / p.Cdc < 0) (hI : p.I0 / p.Cdc ≠ 0) :
     connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -718,7 +718,7 @@ term pushes the DC-link voltage away from the plane on both sides (`P(x) / C_dc 
 is unstable: near `x`, `d(V_dc²)/dt = (2 I₀ V_dc + 3 P) / C_dc` is bounded below by a positive
 rate, and on each half ball `{V_dc ≥ s}` model B is the smooth field with denominator
 `regDen s V_dc`. Implementation evidence for `ModelB.mem_den_unstable_of_repel`. -/
-private theorem modelB_unstable_of_repel {x : State 4} (hx : x 2 = 0)
+@[tmio TM] private theorem modelB_unstable_of_repel {x : State 4} (hx : x 2 = 0)
     (hP : 0 < p.pccP x / p.Cdc) :
     connection% ((⟨p, x⟩ : ModelB.Model) ∈ ModelB.family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -794,7 +794,7 @@ language is inconsistent. -/
   have h2 : (m.p.jacobian m.x).det < 0 := hd
   linarith [h1.2.2.1]
 
-private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
+@[tmio TM] private theorem les_of_meets {m : Model} (he : Meets m .equilibrium)
     (hV : Meets m .positiveReference) (hr : Meets m .routh) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
   mem_den_flow_iff.mpr ((ModelB.mem_den_flow_iff.mp (m.p.modelB_locallyExponentiallyStable hV he hr.1 hr.2.1 hr.2.2.1 hr.2.2.2)))

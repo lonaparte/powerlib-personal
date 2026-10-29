@@ -577,7 +577,7 @@ private theorem fderiv_point (m : Model) :
   rw [m.g.fderiv_field]
   simp [Model.point]
 
-private theorem les_of {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced)
+@[tmio TM] private theorem les_of {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced)
     (hK : 0 < m.K) (hf : m.K < m.g.D * m.g.ωc + m.g.D ^ 2 / m.g.M) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := by
   unfold TMIO.Statement
@@ -600,7 +600,7 @@ private theorem les_of {m : Model} (hp : Meets m .physical) (hb : Meets m .balan
     rw [e1, e2]
     linarith
 
-private theorem unstable_of {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced)
+@[tmio TM] private theorem unstable_of {m : Model} (hp : Meets m .physical) (hb : Meets m .balanced)
     (hs : Meets m .destabilizing) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   unfold TMIO.Statement
@@ -1171,7 +1171,7 @@ of the two semantics connections at the two members. -/
     _ _ (m.q.field_eq_transport hD hω)
     (point_eq_affineCoord m hD) P
 
-private theorem den_iff_swing {m : Model} (hp : Meets m .physical) (s : Sentence) :
+@[tmio TM] private theorem den_iff_swing {m : Model} (hp : Meets m .physical) (s : Sentence) :
     connection% (m ∈ family.den s ↔ m.toSwing ∈ Synchronous.Swing.family.den s) := by
   change m ∈ family.den s ↔ m.toSwing ∈ Synchronous.Swing.family.den s
   have h := mem_den_iff_swing m hp.1.ne' hp.2.ne' s

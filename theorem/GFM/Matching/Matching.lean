@@ -286,7 +286,7 @@ def droopFamily : Family DroopNode Spectral.Requirement 1 1 :=
   Spectral.linearFamily (fun m => droopModel m.C m.G m.K m.vref) (fun m => 0 < m.G / m.C)
     (fun m => m.G / m.C < 0)
 
-private theorem droopDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+@[tmio TM] private theorem droopDen_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (droopFamily.den (.flow P) = {m | 0 < m.G / m.C}) := show droopFamily.den (.flow P) = {m | 0 < m.G / m.C} from
   Spectral.linear_den (U := fun m : DroopNode => m.G / m.C < 0)
     (fun _ => (droop_isHurwitz_iff _ _ _ _).symm) hP
@@ -423,7 +423,7 @@ point `(θ*, η v*)`. -/
 
 /-- Local exponential stability transfers between the matching and swing models.
 Implementation evidence, subsumed by the connection comparison `matching_den_eq`. -/
-private theorem matching_locallyExponentiallyStable_iff {C G η idc : ℝ}
+@[tmio TM] private theorem matching_locallyExponentiallyStable_iff {C G η idc : ℝ}
     (hC : C ≠ 0) (hη : η ≠ 0) (ix : ℝ → ℝ → ℝ) (x : State 2) :
     connection% ((⟨C, G, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel).toSwing ∈ swingFamily.den (.flow .locallyExponentiallyStable) ↔
       (⟨C, G, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel) ∈ matchingFamily.den (.flow .locallyExponentiallyStable)) := by
@@ -432,7 +432,7 @@ private theorem matching_locallyExponentiallyStable_iff {C G η idc : ℝ}
 
 /-- Instability transfers between the matching and swing models.
 Implementation evidence, subsumed by the connection comparison `matching_den_eq`. -/
-private theorem matching_unstable_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
+@[tmio TM] private theorem matching_unstable_iff {C G η idc : ℝ} (hC : C ≠ 0) (hη : η ≠ 0)
     (ix : ℝ → ℝ → ℝ) (x : State 2) :
     connection% ((⟨C, G, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel).toSwing ∈ swingFamily.den (.flow .unstable) ↔
       (⟨C, G, η, idc, ix, x 0, x 1, hC, hη⟩ : MatchingModel) ∈ matchingFamily.den (.flow .unstable)) := by

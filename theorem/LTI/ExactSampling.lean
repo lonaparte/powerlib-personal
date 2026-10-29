@@ -156,7 +156,7 @@ flow of the design and its sampled map satisfy the same flow sentences
 
 /-- The requirement spaces of the sampled family are those of the continuous family pulled back
 along the design map. -/
-private theorem sampled_realize (Γ : Set Spectral.Requirement) :
+@[tmio MI] private theorem sampled_realize (Γ : Set Spectral.Requirement) :
     connection% (TMIO.realize (sampledFamily (n := n)).meets Γ =
       Sampled.design ⁻¹' TMIO.realize continuousFamily.meets Γ) := show TMIO.realize (sampledFamily (n := n)).meets Γ =
       Sampled.design ⁻¹' TMIO.realize continuousFamily.meets Γ from

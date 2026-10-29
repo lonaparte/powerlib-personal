@@ -640,7 +640,7 @@ nonnegative and their positive edges connect all machines. -/
 
 /-- Implementation evidence for `mem_den_locallyExponentiallyStable`, at the selected point of
 the untranslated field. -/
-private theorem reducedSwing_locallyExponentiallyStable (p : Params n)
+@[tmio TM] private theorem reducedSwing_locallyExponentiallyStable (p : Params n)
     (θ : Fin (n + 1) → ℝ) (heq : ∀ k, p.P k = powerInjection p.B θ k)
     (hangle : ∀ i j, 0 < p.B i j → |θ i - θ j| < Real.pi / 2)
     (hconn : ∀ i j, Reach p.B i j) :
@@ -652,14 +652,14 @@ private theorem reducedSwing_locallyExponentiallyStable (p : Params n)
     (reducedField_contDiff p) (reducedField_equilibrium p θ heq)
     (hasFDerivAt_reducedField p θ).fderiv ((by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, powerlib.Network.Swing.family, powerlib.Network.Swing.Meets] using (jacobian_isHurwitz_of_angle p θ hangle hconn)))
 
-private theorem les_of_meets {m : Model n} (hp : Meets m .powerFlow)
+@[tmio TM] private theorem les_of_meets {m : Model n} (hp : Meets m .powerFlow)
     (hH : Meets m .jacobianStable) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
   mem_den_flow_iff.mpr (Dynamics.locallyExponentiallyStable_of_isHurwitz_jacobian
     (jacobian m.params m.θ) (reducedField_contDiff m.params)
     (reducedField_equilibrium m.params m.θ hp) (hasFDerivAt_reducedField m.params m.θ).fderiv hH)
 
-private theorem unstable_of_meets {m : Model n} (hp : Meets m .powerFlow)
+@[tmio TM] private theorem unstable_of_meets {m : Model n} (hp : Meets m .powerFlow)
     (hu : Meets m .jacobianUnstable) :
     connection% (m ∈ family.den (.flow .unstable)) := by
   change m ∈ family.den (.flow .unstable)
@@ -1000,7 +1000,7 @@ point whose reduced Jacobian is not Hurwitz. -/
 stable point of the `C¹` field is an equilibrium, hence a power-balance point, and the reduced
 Jacobian is always Hurwitz (`jacobian_isHurwitz_zero`), so every equilibrium meets the translation
 (`Spectral.exact_of_equilibrium`, with no degenerate equilibria). -/
-private theorem exact_zero {P : Flow.Property}
+@[tmio TM] private theorem exact_zero {P : Flow.Property}
     (hP : P = .lyapunovStable ∨ P = .locallyAsymptoticallyStable) :
     connection% ((family (n := 0)).Exact (.flow P)) := by
   change (family (n := 0)).Exact (.flow P)

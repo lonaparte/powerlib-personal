@@ -1388,7 +1388,7 @@ private theorem tendsto_equilibrium_of_no_sync (m : Model) (hC : 0 < m.Cdc) (hL 
 
 /-- Lyapunov stability without synchronizing torque (`margin > 0`): the angle moves by at most a
 multiple of the initial deviation. -/
-private theorem lyapunovStable_of_no_sync (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
+@[tmio TM] private theorem lyapunovStable_of_no_sync (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
     (hR : 0 < m.Rs) (hs : m.μ * m.ustar * m.v0 = 0) (hδ : 0 < m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
@@ -2320,7 +2320,7 @@ the closed loop is `z' = (0, −margin z₁/C_dc, −R_s z₂/L_s, −R_s z₃/L
 `margin = 0`, the DC error are conserved, the current error decays), so `⟨z, z'⟩ ≤ 0` and the
 operating point is Lyapunov stable (`Dynamics.lyapunovStable_of_inner_nonpos`). Implementation
 evidence. -/
-private theorem lyapunovStable_of_frozen (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
+@[tmio TM] private theorem lyapunovStable_of_frozen (m : Model) (hC : 0 < m.Cdc) (hL : 0 < m.Ls)
     (hR : 0 < m.Rs) (hμ : m.μ = 0) (hη : m.η = 0) (hδ : 0 ≤ m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   unfold TMIO.Statement
@@ -2412,7 +2412,7 @@ private theorem red_bounds (m : Model) (x : State 4) :
 /-- **Lyapunov stability without synchronizing torque, with modulation** (`μ ≠ 0`, `margin ≥ 0`):
 the rotation-reduced error is locally exponentially stable and the angle moves by at most a
 multiple of the initial error. Implementation evidence. -/
-private theorem lyapunovStable_of_no_sync_of_mu_ne_zero (m : Model) (hC : 0 < m.Cdc)
+@[tmio TM] private theorem lyapunovStable_of_no_sync_of_mu_ne_zero (m : Model) (hC : 0 < m.Cdc)
     (hL : 0 < m.Ls) (hR : 0 < m.Rs) (hμ : m.μ ≠ 0) (hs : m.μ * m.ustar * m.v0 = 0)
     (hδ : 0 ≤ m.margin) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by

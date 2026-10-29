@@ -262,7 +262,7 @@ produce it. -/
 /-- Refutation runs back through the realization edge: under realization soundness, a record
 refuting `s` for an implementation within the constraints exhibits a realized model violating
 `s`. -/
-@[tmio MI, powerlib_foundation] theorem refutes_realized {Δ : Set R} {s : Sentence}
+@[tmio IO, powerlib_foundation] theorem refutes_realized {Δ : Set R} {s : Sentence}
     (hS : S.RealizationSoundUnder Δ s) {y : Y} {v : V} (hy : (y, v) ∈ S.produces)
     (hΔ : y ∈ realize S.impl.meets Δ) (hv : v ∉ S.predicted s) :
     connection% (∃ x : {x // (x, y) ∈ S.realizes}, x.val ∉ S.model.den s) := by

@@ -419,7 +419,7 @@ private def toSRF (m : Model) : PIPLL.Model := srf m.V m.Kp m.Ki (m.Ki * m.ηs) 
 /-- The reading through the hub holds for every model: for `K_i ≠ 0` it is `mem_den_flow_iff_srf`;
 for `K_i = 0` both fields ignore the integrator state, so the selected points `(θ*, η*)` and
 `(θ*, 0)` satisfy the same flow sentences. -/
-private theorem mem_den_flow_iff_toSRF (m : Model) (P : Flow.Property) :
+@[tmio TM] private theorem mem_den_flow_iff_toSRF (m : Model) (P : Flow.Property) :
     connection% (m ∈ family.den (.flow P) ↔ toSRF m ∈ PIPLL.family.den (.flow P)) := by
   change m ∈ family.den (.flow P) ↔ toSRF m ∈ PIPLL.family.den (.flow P)
   rcases ne_or_eq m.Ki 0 with hKi | hKi
@@ -513,28 +513,28 @@ private theorem toSRF_of_saddle {m : Model} (h : m ∈ TMIO.realize Meets {.sadd
 /-- Positive loop gains at a well bottom give local exponential stability through the hub: the
 SRF member meets the PI-PLL's translated requirements, which are sound
 (`PIPLL.chain_le_semantics`). -/
-private theorem les_sound :
+@[tmio TM] private theorem les_sound :
     connection% (TMIO.realize Meets {.slopeStable} ⊆ family.den (.flow .locallyExponentiallyStable)) := show TMIO.realize Meets {.slopeStable} ⊆ family.den (.flow .locallyExponentiallyStable) from
   Spectral.realize_subset_den_of_hub (F := family) (G := PIPLL.family) toSRF
     (fun _ => toSRF_of_slopeStable) (fun m _ => (mem_den_flow_iff_toSRF m _).mpr)
     (Family.chain_le_semantics_iff.mp PIPLL.chain_le_semantics (.flow .locallyExponentiallyStable))
 
 /-- A saddle gives instability through the hub. -/
-private theorem unstable_sound :
+@[tmio TM] private theorem unstable_sound :
     connection% (TMIO.realize Meets {.saddle} ⊆ family.den (.flow .unstable)) := show TMIO.realize Meets {.saddle} ⊆ family.den (.flow .unstable) from
   Spectral.realize_subset_den_of_hub (F := family) (G := PIPLL.family) toSRF
     (fun _ => toSRF_of_saddle) (fun m _ => (mem_den_flow_iff_toSRF m _).mpr)
     (Family.chain_le_semantics_iff.mp PIPLL.chain_le_semantics (.flow .unstable))
 
-private theorem les_of_meets {m : Model} (h : Meets m .slopeStable) :
+@[tmio TM] private theorem les_of_meets {m : Model} (h : Meets m .slopeStable) :
     connection% (m ∈ family.den (.flow .locallyExponentiallyStable)) := show m ∈ family.den (.flow .locallyExponentiallyStable) from
   les_sound (by simpa using h)
 
-private theorem unstable_of_meets {m : Model} (h : Meets m .saddle) :
+@[tmio TM] private theorem unstable_of_meets {m : Model} (h : Meets m .saddle) :
     connection% (m ∈ family.den (.flow .unstable)) := show m ∈ family.den (.flow .unstable) from
   unstable_sound (by simpa using h)
 
-private theorem passive_of_meets {m : Model} (h : Meets m .nonnegativeEnergy) :
+@[tmio TM] private theorem passive_of_meets {m : Model} (h : Meets m .nonnegativeEnergy) :
     connection% (m ∈ family.den .passive) := show m ∈ family.den .passive from
   family_isNonlinearPH.mem_den_passive_of_lowerBound 0 fun _ =>
     pllHamiltonian_nonneg h.1 h.2 _ _
@@ -542,7 +542,7 @@ private theorem passive_of_meets {m : Model} (h : Meets m .nonnegativeEnergy) :
 /-- A well bottom is Lyapunov stable through the hub: the SRF member has a zero of `h = −V sin` at
 `θ*` with slope `−V < 0`, `K_p ≥ 0` and `K_i > 0` (`PIPLL.mem_den_lyapunovStable_of_slope`, whose
 PLL energy `−∫_{θ*} h + ½ K_i (η − η*)²` is the Hamiltonian with set point `η*`). -/
-private theorem lyapunovStable_of_meets {m : Model} (h : Meets m .wellBottom) :
+@[tmio TM] private theorem lyapunovStable_of_meets {m : Model} (h : Meets m .wellBottom) :
     connection% (m ∈ family.den (.flow .lyapunovStable)) := by
   change m ∈ family.den (.flow .lyapunovStable)
   obtain ⟨hV, hKi, hθ⟩ := h

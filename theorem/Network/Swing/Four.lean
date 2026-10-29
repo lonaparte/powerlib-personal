@@ -181,7 +181,7 @@ the lines leaving `X`. -/
 
 /-- Implementation evidence for `not_localAsymptoticStable_of_cut`, at the selected point of the
 untranslated field. -/
-private theorem reducedSwing_not_localAsymptoticStable_of_cut {p : Params n}
+@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_of_cut {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (X : Finset (Fin (n + 1))) (hW : ∑ i ∈ X, ∑ j ∈ Xᶜ, p.B i j * Real.cos (θ i - θ j) ≤ 0)
     {i₀ j₀ : Fin (n + 1)} (hi₀ : i₀ ∈ X) (hj₀ : j₀ ∉ X) :
@@ -284,7 +284,7 @@ linearization weight `W = ∑ Bᵢⱼ cos(θᵢ − θⱼ) ≤ 0`, turning `X` r
   exact (fun hFlowConnection => (reducedSwing_not_localAsymptoticStable_of_cut hbal X hW hi₀ hj₀) (mem_den_flow_iff_four.mpr hFlowConnection))
 
 /-- Implementation evidence for `not_localAsymptoticStable_of_zero_cut`. -/
-private theorem reducedSwing_not_localAsymptoticStable_of_zero_cut {p : Params n}
+@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_of_zero_cut {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k)
     (X : Finset (Fin (n + 1))) (hX : ∀ i ∈ X, ∀ j ∉ X, p.B i j * Real.cos (θ i - θ j) = 0)
     {i₀ j₀ : Fin (n + 1)} (hi₀ : i₀ ∈ X) (hj₀ : j₀ ∉ X) :
@@ -307,7 +307,7 @@ out local asymptotic stability. -/
   exact (fun hFlowConnection => (reducedSwing_not_localAsymptoticStable_of_zero_cut hbal X hX hi₀ hj₀) (mem_den_flow_iff_four.mpr hFlowConnection))
 
 /-- Implementation evidence for `not_localAsymptoticStable_of_flat`. -/
-private theorem reducedSwing_not_localAsymptoticStable_of_flat {p : Params n}
+@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_of_flat {p : Params n}
     {θ : Fin (n + 1) → ℝ} (hbal : ∀ k, p.P k = powerInjection p.B θ k) (u : Fin (n + 1) → ℝ)
     {k₁ k₂ : Fin (n + 1)} (hne : u k₁ ≠ u k₂)
     (h : ∀ k j, p.B k j * Real.cos (θ k - θ j) * (u k - u j) = 0) :
@@ -789,7 +789,7 @@ def flowOf (p : Params 3) (θ : Fin (3 + 1) → ℝ) (σ : Equiv.Perm (Fin 4)) (
 
 /-- Implementation evidence for `not_localAsymptoticStable_four`, at the selected point of the
 untranslated field. -/
-private theorem reducedSwing_not_localAsymptoticStable_four (p : Params 3)
+@[tmio TM] private theorem reducedSwing_not_localAsymptoticStable_four (p : Params 3)
     (θ : Fin (3 + 1) → ℝ) (σ : Equiv.Perm (Fin 4)) (h13 : p.B (σ 1) (σ 3) = 0)
     (hsp : p.B (σ 0) (σ 2) = 0 ∨ p.B (σ 0) (σ 3) = 0)
     (hbal : ∀ k, p.P k = powerInjection p.B θ k)

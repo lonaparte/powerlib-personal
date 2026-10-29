@@ -660,7 +660,7 @@ private theorem hopfQS_lie_neg : ∀ᶠ z in 𝓝[≠] (0 : Dynamics.State 3),
   linarith
 
 /-- **The supercritical quasi-static witness is locally asymptotically stable** (a weak focus). -/
-private theorem supercriticalQS_las :
+@[tmio TM] private theorem supercriticalQS_las :
     connection% (supercriticalQS ∈ family.den (.flow .locallyAsymptoticallyStable)) := by
   unfold TMIO.Statement
   rw [(connection_proof% family_isAutonomous.mem_den_flow)]
