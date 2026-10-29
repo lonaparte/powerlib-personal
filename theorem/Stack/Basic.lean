@@ -314,8 +314,9 @@ refuting `s` for an implementation within the constraints exhibits a realized mo
   exact Set.subset_biUnion_of_mem (u := S.model.translate) hs
 
 /-- With exact translations the organized seed is the semantic seed. -/
-@[powerlib_foundation] theorem organized_eq_seed_of_exact (h : ∀ s, S.model.Exact s) :
-    S.organized = S.seed := by
+@[tmio T, powerlib_foundation] theorem organized_eq_seed_of_exact (h : ∀ s, S.model.Exact s) :
+    connection% (S.organized = S.seed) := by
+  change S.organized = S.seed
   unfold organized seed
   rw [Family.chain_eq_semantics_iff.mpr h]
 

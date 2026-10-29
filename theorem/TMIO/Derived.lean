@@ -28,18 +28,6 @@ Results.
 
 namespace powerlib.TMIO
 
-/-- Generation data (v0.3 §2): four complete lattices and one arbitrary-infimum preserving
-semantic map per adjacent edge, from the later layer back to the earlier one. The order of each
-lattice is part of its type. -/
-structure Seed (T M I O : Type*) [CompleteLattice T] [CompleteLattice M] [CompleteLattice I]
-    [CompleteLattice O] where
-  /-- Semantic map from the model layer back to the theory layer. -/
-  u₁ : sInfHom M T
-  /-- Semantic map from the implementation layer back to the model layer. -/
-  u₂ : sInfHom I M
-  /-- Semantic map from the observation layer back to the implementation layer. -/
-  u₃ : sInfHom O I
-
 namespace Seed
 
 variable {T M I O : Type*} [CompleteLattice T] [CompleteLattice M] [CompleteLattice I]

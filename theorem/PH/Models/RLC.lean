@@ -158,9 +158,14 @@ Static evidence on the model, not a connection conclusion. -/
     simp [DiagonalPH.stateMatrix, seriesRLC, Matrix.diagonal_vec2]
   all_goals ring
 
-/-- The loop is Hurwitz **iff** it is resistive. -/
-@[powerlib_foundation] theorem seriesRLCPH_isHurwitz_iff (p : SeriesRLCParams) :
-    IsHurwitz (seriesRLCPH p).plant.A ↔ 0 < p.r := by
+/-- The loop belongs to the globally exponentially stable denotation **iff** it is resistive;
+for this linear family that is equivalent to its state matrix being Hurwitz. -/
+@[tmio TM, powerlib_foundation] theorem seriesRLCPH_isHurwitz_iff (p : SeriesRLCParams) :
+    connection% (seriesRLCPH p ∈
+      Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable) ↔ 0 < p.r) := by
+  unfold TMIO.Statement
+  rw [Port.PortHamiltonian.family_isLinear.den_hurwitz
+    (P := .globallyExponentiallyStable) (Or.inl trivial), Set.mem_setOf_eq]
   rw [seriesRLCPH_stateMatrix, Criteria.isHurwitz_fin_two_of_iff]
   have hL := p.L_pos
   have hC := p.C_pos
@@ -194,7 +199,12 @@ centre). -/
     connection% (seriesRLCPH p ∈ Port.PortHamiltonian.family.den (.flow P) ↔ 0 < p.r) := by
   unfold powerlib.TMIO.Statement
   rw [Port.PortHamiltonian.family_isLinear.den_hurwitz hP]
-  exact seriesRLCPH_isHurwitz_iff p
+  have hh := seriesRLCPH_isHurwitz_iff p
+  change (seriesRLCPH p ∈
+    Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable) ↔ 0 < p.r) at hh
+  rw [Port.PortHamiltonian.family_isLinear.den_hurwitz
+    (P := .globallyExponentiallyStable) (Or.inl trivial), Set.mem_setOf_eq] at hh
+  exact hh
 
 /-- `r > 0`: the zero-input loop is globally exponentially stable. -/
 @[tmio TM, powerlib_domain] theorem seriesRLCPH_mem_den_globallyExponentiallyStable (p : SeriesRLCParams)

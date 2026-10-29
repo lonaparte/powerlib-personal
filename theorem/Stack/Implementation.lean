@@ -119,9 +119,11 @@ values. -/
   rfl
 
 /-- Exactness is soundness and completeness. -/
-@[powerlib_foundation] theorem realizationExactUnder_iff {Δ : Set R} {s : Sentence} :
-    I.RealizationExactUnder Δ s ↔
-      I.RealizationSoundUnder Δ s ∧ I.RealizationCompleteUnder Δ s := by
+@[tmio MI, powerlib_foundation] theorem realizationExactUnder_iff {Δ : Set R} {s : Sentence} :
+    connection% (I.RealizationExactUnder Δ s ↔
+      I.RealizationSoundUnder Δ s ∧ I.RealizationCompleteUnder Δ s) := by
+  change I.RealizationExactUnder Δ s ↔
+    I.RealizationSoundUnder Δ s ∧ I.RealizationCompleteUnder Δ s
   constructor
   · intro h
     refine ⟨fun y hy => (h ▸ hy).1, fun y hy => (h.symm ▸ hy).1⟩
@@ -156,9 +158,9 @@ variable {I} in
 
 variable {I} in
 /-- Exactness survives more constraints. -/
-@[powerlib_foundation] theorem RealizationExactUnder.mono {Δ Δ' : Set R} {s : Sentence}
+@[tmio MI, powerlib_foundation] theorem RealizationExactUnder.mono {Δ Δ' : Set R} {s : Sentence}
     (h : I.RealizationExactUnder Δ s) (hΔ : Δ ⊆ Δ') :
-    I.RealizationExactUnder Δ' s :=
+    connection% (I.RealizationExactUnder Δ' s) := show I.RealizationExactUnder Δ' s from
   I.realizationExactUnder_iff.mpr ⟨h.soundUnder.mono hΔ, h.completeUnder.mono hΔ⟩
 
 /-- Realization soundness reduces to static obligations on requirements. If the model translation
@@ -244,21 +246,23 @@ def ofDesign (design : Y → X) : SetRel X Y := {p | design p.2 = p.1}
 
 /-- A realization by a design map is exact at `s` within `Δ` when, within `Δ`, the implementation
 family's denotation of `s` is the model family's pulled back along the design map. -/
-@[powerlib_foundation] theorem realizationExactUnder_of_design
+@[tmio MI, powerlib_foundation] theorem realizationExactUnder_of_design
     {I : Implementation X Q Y R n p m q} {design : Y → X} (h : I.realizes = ofDesign design)
     {Δ : Set R} {s : Sentence}
     (hden : I.impl.den s ∩ realize I.impl.meets Δ =
       design ⁻¹' I.model.den s ∩ realize I.impl.meets Δ) :
-    I.RealizationExactUnder Δ s := by
+    connection% (I.RealizationExactUnder Δ s) := by
+  change I.RealizationExactUnder Δ s
   unfold RealizationExactUnder
   rw [certify_realizes_of_design h, hden]
 
 /-- A realization by a design map is exact at `s`, without constraints, when the implementation
 family's denotation of `s` is the model family's pulled back along the design map. -/
-@[powerlib_foundation] theorem realizationExactUnder_of_den_eq_preimage
+@[tmio MI, powerlib_foundation] theorem realizationExactUnder_of_den_eq_preimage
     {I : Implementation X Q Y R n p m q} {design : Y → X} (h : I.realizes = ofDesign design)
     {s : Sentence} (hden : I.impl.den s = design ⁻¹' I.model.den s) :
-    I.RealizationExactUnder ∅ s := by
+    connection% (I.RealizationExactUnder ∅ s) := by
+  change I.RealizationExactUnder ∅ s
   unfold RealizationExactUnder
   rw [certify_realizes_of_design h, hden]
 

@@ -9,7 +9,8 @@ proposition constructor. Metadata cannot construct an endpoint or admit a conclu
 Scope.
 * Generic: values in arbitrary complete lattices obtained from arbitrary-infimum preserving maps,
   and propositions built from them; comparisons of numbers as side conditions; no model and no
-  semantics. A claim has two inferred endpoint universes and an inferred binder universe. Atoms
+  semantics. A claim has two inferred endpoint universes and two further inferred universes for
+  binders and four-carrier seeds. Atoms
   may use the endpoint universes in either order, so an adjunction and its generated map can
   occur in the same claim without restricting their carrier types to `Type`. Connection
   statements are written with `connection%` (`theorem/TMIO/ClaimElab.lean`), which builds the
@@ -29,7 +30,9 @@ Results.
   by `¬`, `∧`, `∨`.
 * `ConnectionClaim`: the closed grammar of admitted connection conclusions, indexed by their
   meaning — equalities, orders and memberships with an endpoint side, equality of two
-  infimum-preserving maps, and their logical combinations (`not`, `and`, `or`, `iff`, `assuming`,
+  infimum-preserving maps or complete connection seeds, equality of endpoint spaces restricted
+  by a common context and its two-inclusion characterization, and logical combinations
+  (`not`, `and`, `or`, `iff`, `assuming`,
   `all`, `exists`), which cannot add an unrelated proposition; binders over the types of the
   endpoints' universe (`allType`: a claim about arbitrary families); and side conditions
   in two places only: the characterizing side of an iff (`iffCondition`) and the guard of an
@@ -40,7 +43,7 @@ Results.
 
 namespace powerlib.TMIO
 
-universe u v w
+universe u v w z
 
 /-- A value obtained from an actual upper adjoint, its uniquely generated lower adjoint,
 or a structural operation on such values. -/
@@ -73,7 +76,8 @@ inductive Condition : Prop → Prop where
 
 /-- The closed grammar of admitted connection conclusions, indexed by their meaning.
 The kernel checks that each atom really is an endpoint evaluation or a comparison of
-infimum-preserving maps. Logical combinations cannot add an unrelated proposition; a side
+infimum-preserving maps or seeds, including equality under a shared set constraint. Logical
+combinations cannot add an unrelated proposition; a side
 condition (`Condition`) enters only as the characterizing side of an iff or as the guard of an
 existential witness. -/
 inductive ConnectionClaim : Prop → Prop where
@@ -100,6 +104,28 @@ inductive ConnectionClaim : Prop → Prop where
       Endpoint.{v,u} s → ConnectionClaim (x ∈ s ↔ x ∈ t)
   | mapsEqSwap {A : Type v} {B : Type u} [CompleteLattice A] [CompleteLattice B]
       (back₁ back₂ : sInfHom B A) : ConnectionClaim (back₁ = back₂)
+  /-- Equality of complete connection seeds compares their three supplied upper maps. -/
+  | seedsEq {T : Type u} {M : Type v} {I : Type w} {O : Type z}
+      [CompleteLattice T] [CompleteLattice M] [CompleteLattice I] [CompleteLattice O]
+      (S R : Seed T M I O) : ConnectionClaim (S = R)
+  /-- A common constraint restricts the comparison domain; it is not a new conclusion. -/
+  | interEqLeft {X : Type u} {s t d : Set X} : Endpoint.{u,v} s →
+      ConnectionClaim (s ∩ d = t ∩ d)
+  | interEqRight {X : Type u} {s t d : Set X} : Endpoint.{u,v} t →
+      ConnectionClaim (s ∩ d = t ∩ d)
+  | interEqLeftSwap {X : Type v} {s t d : Set X} : Endpoint.{v,u} s →
+      ConnectionClaim (s ∩ d = t ∩ d)
+  | interEqRightSwap {X : Type v} {s t d : Set X} : Endpoint.{v,u} t →
+      ConnectionClaim (s ∩ d = t ∩ d)
+  /-- The two inclusions characterize exactly the same constrained endpoint comparison. -/
+  | interEqIffSubsetsLeft {X : Type u} {s t d : Set X} : Endpoint.{u,v} s →
+      ConnectionClaim (s ∩ d = t ∩ d ↔ s ∩ d ⊆ t ∧ t ∩ d ⊆ s)
+  | interEqIffSubsetsRight {X : Type u} {s t d : Set X} : Endpoint.{u,v} t →
+      ConnectionClaim (s ∩ d = t ∩ d ↔ s ∩ d ⊆ t ∧ t ∩ d ⊆ s)
+  | interEqIffSubsetsLeftSwap {X : Type v} {s t d : Set X} : Endpoint.{v,u} s →
+      ConnectionClaim (s ∩ d = t ∩ d ↔ s ∩ d ⊆ t ∧ t ∩ d ⊆ s)
+  | interEqIffSubsetsRightSwap {X : Type v} {s t d : Set X} : Endpoint.{v,u} t →
+      ConnectionClaim (s ∩ d = t ∩ d ↔ s ∩ d ⊆ t ∧ t ∩ d ⊆ s)
   /-- Extensional equality is admitted only when every evaluation is a connection claim. -/
   | functionEq {ι : Sort w} {A : ι → Type u} {f g : (i : ι) → A i} :
       (∀ i, ConnectionClaim (f i = g i)) → ConnectionClaim (f = g)
@@ -131,6 +157,6 @@ inductive ConnectionClaim : Prop → Prop where
 
 /-- A public statement carries its kernel-checked connection syntax. Its meaning is
 definitionally the original proposition, so existing mathematical proofs and reuse still work. -/
-@[reducible] def Statement {P : Prop} (_shape : ConnectionClaim.{u,v,w} P) : Prop := P
+@[reducible] def Statement {P : Prop} (_shape : ConnectionClaim.{u,v,w,z} P) : Prop := P
 
 end powerlib.TMIO

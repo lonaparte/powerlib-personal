@@ -12,7 +12,9 @@ Scope.
   or tags of model families are trusted: aliases are unfolded until a typed map application or a
   structural powerset operation is reached, and there is no arbitrary-proposition fallback.
 * Claims infer their endpoint and binder universes. Atomic certificates may use the two endpoint
-  universes in either order; universal type parameters use `allType`, and existential binders
+  universes in either order; complete seeds retain four independent carriers. Comparisons
+  restricted by a common set context must match the complete constrained-comparison constructor.
+  Universal type parameters use `allType`, and existential binders
   may range over type universes when their bodies are genuine claims. A side condition is
   accepted only where the grammar
   has one: the right side of an iff whose left side is a claim, and the guard `A i` of an
@@ -236,6 +238,36 @@ partial def condition (e : Expr) (fuel : Nat := 32) : MetaM Expr := do
     if unfolded != e then return ← check (← condition unfolded (fuel - 1))
   throwError "The side condition is not a comparison of numbers"
 
+/-- Extract an equality of two sets restricted by the same right-hand context. The kernel
+checks the complete proposition against the constructor, including the shared context. -/
+private def interEquality? (e : Expr) : MetaM (Option (Expr × Expr)) := do
+  let e ← whnf e
+  unless e.getAppFn.isConstOf ``Eq do return none
+  let args := e.getAppArgs
+  let a := args[args.size - 2]!
+  let b := args.back!
+  unless a.getAppArgs.size >= 2 && b.getAppArgs.size >= 2 do return none
+  unless #[``Inter.inter, ``Min.min].any a.getAppFn.isConstOf &&
+      #[``Inter.inter, ``Min.min].any b.getAppFn.isConstOf do return none
+  let aa := a.getAppArgs
+  let bb := b.getAppArgs
+  unless ← isDefEq aa.back! bb.back! do return none
+  return some (aa[aa.size - 2]!, bb[bb.size - 2]!)
+
+private def constrained? (levels : List Level) (prop comparison : Expr)
+    (isCharacterization : Bool) : MetaM (Option Expr) := do
+  let some (s, t) ← interEquality? comparison | return none
+  for (value, ctors) in #[
+      (s, if isCharacterization then
+        #[``ConnectionClaim.interEqIffSubsetsLeft, ``ConnectionClaim.interEqIffSubsetsLeftSwap]
+        else #[``ConnectionClaim.interEqLeft, ``ConnectionClaim.interEqLeftSwap]),
+      (t, if isCharacterization then
+        #[``ConnectionClaim.interEqIffSubsetsRight, ``ConnectionClaim.interEqIffSubsetsRightSwap]
+        else #[``ConnectionClaim.interEqRight, ``ConnectionClaim.interEqRightSwap])] do
+    if let some p ← endpoint? value then
+      if let some result ← atomic? levels prop ctors #[p] then return some result
+  return none
+
 /-- Build a certificate of the closed claim grammar; no arbitrary-Prop fallback exists. -/
 private partial def encodeWith (levels : List Level) (e : Expr) (fuel : Nat) : MetaM Expr := do
   if fuel == 0 then throwError "Connection conclusion unfolding exceeded its limit"
@@ -262,6 +294,7 @@ private partial def encodeWith (levels : List Level) (e : Expr) (fuel : Nat) : M
       (``Iff, ``ConnectionClaim.iff)] do
     if head.isConstOf logical then
       if head.isConstOf ``Iff then
+        if let some result ← constrained? levels e args[0]! true then return result
         let left := args[0]!
         if left.getAppFn.isConstOf ``Membership.mem then
           let xs := left.getAppArgs
@@ -306,6 +339,11 @@ private partial def encodeWith (levels : List Level) (e : Expr) (fuel : Nat) : M
           #[``ConnectionClaim.mapsEq, ``ConnectionClaim.mapsEqSwap] #[a, b] then
         return proof
     let eq := head.isConstOf ``Eq
+    if eq then
+      if (← whnf (← inferType a)).getAppFn.isConstOf ``Seed then
+        if let some result ← atomic? levels e #[``ConnectionClaim.seedsEq] #[a, b] then
+          return result
+      if let some result ← constrained? levels e e false then return result
     if let some p ← endpoint? a then
       if let some proof ← atomic? levels e
           (if eq then #[``ConnectionClaim.eqLeft, ``ConnectionClaim.eqLeftSwap]
@@ -381,7 +419,7 @@ def encode (e : Expr) (fuel : Nat := 32) : MetaM Expr := do
         for v in levels do
           let retry ← saveState
           try
-            return ← finish [u, v, ← mkFreshLevelMVar]
+            return ← finish [u, v, ← mkFreshLevelMVar, ← mkFreshLevelMVar]
           catch _ => retry.restore
       throw original
 

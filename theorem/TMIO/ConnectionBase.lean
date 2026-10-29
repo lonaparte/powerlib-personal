@@ -4,7 +4,8 @@ import Mathlib.Order.Rel.GaloisConnection
 
 /-! # Connection primitives
 
-The generated adjoint, its closure, and the relational upper map are defined before the
+The generated adjoint, its closure, the relational upper map, and the seed of three upper maps
+are defined before the
 connection grammar. Their public laws live in `Generate` and `Relation`, which can therefore
 use `connection%` without importing themselves through the elaborator. Construction obligations
 are proved here directly from Mathlib; no theorem registry or duplicate public law is introduced.
@@ -16,6 +17,8 @@ Source: Mathlib's `LowerAdjoint`, arbitrary-infimum homomorphisms and relational
 
 Results.
 * `generate`, `closure` and `cover`: primitive maps used by the connection certificate grammar.
+* `Seed`: the four carrier lattices and their three supplied upper maps; derived laws live in
+  `Derived`.
 -/
 
 namespace powerlib.TMIO
@@ -40,5 +43,17 @@ def cover {S Q : Type*} (R : SetRel S Q) : sInfHom (Set Q) (Set S) where
   map_sInf' s := by
     rw [sInf_image]
     exact (show GaloisConnection R.image R.core from fun _ _ => SetRel.image_subset_iff).u_sInf
+
+/-- Generation data (v0.3 §2): four complete lattices and one arbitrary-infimum preserving
+semantic map per adjacent edge, from the later layer back to the earlier one. The order of each
+lattice is part of its type. -/
+structure Seed (T M I O : Type*) [CompleteLattice T] [CompleteLattice M] [CompleteLattice I]
+    [CompleteLattice O] where
+  /-- Semantic map from the model layer back to the theory layer. -/
+  u₁ : sInfHom M T
+  /-- Semantic map from the implementation layer back to the model layer. -/
+  u₂ : sInfHom I M
+  /-- Semantic map from the observation layer back to the implementation layer. -/
+  u₃ : sInfHom O I
 
 end powerlib.TMIO

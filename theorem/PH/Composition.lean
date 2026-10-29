@@ -308,10 +308,14 @@ dissipation: `xᵀ Q A x = −(Q x)ᵀ R (Q x)`. -/
   change x ⬝ᵥ (h.Q *ᵥ (((h.J - h.R) * h.Q) *ᵥ x)) = _
   rw [hsym, sub_mulVec, dotProduct_sub, hJ, zero_sub]
 
-/-- Strictly positive dissipation makes the state matrix of a linear port-Hamiltonian plant
-Hurwitz. -/
-@[powerlib_foundation] theorem isHurwitz_of_dissipation_pos (h : Port.PortHamiltonian n p)
-    (hR : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (h.R *ᵥ x)) : IsHurwitz h.plant.A := by
+/-- Strictly positive dissipation places a linear port-Hamiltonian plant in the globally
+exponentially stable denotation, equivalently its state matrix is Hurwitz. -/
+@[tmio TM, powerlib_foundation] theorem isHurwitz_of_dissipation_pos (h : Port.PortHamiltonian n p)
+    (hR : ∀ x : Fin n → ℝ, x ≠ 0 → 0 < x ⬝ᵥ (h.R *ᵥ x)) :
+    connection% (h ∈ Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [Port.PortHamiltonian.family_isLinear.den_hurwitz
+    (P := .globallyExponentiallyStable) (Or.inl trivial)]
   refine Criteria.isHurwitz_of_lyapunov h.energy_symmetric h.energy_pos fun x hx => ?_
   rw [energy_rate]
   have hQx : h.Q *ᵥ x ≠ 0 := by
@@ -445,7 +449,11 @@ contraction. -/
     connection% (h ∈ Port.PortHamiltonian.family.den (.flow P)) := by
   unfold powerlib.TMIO.Statement
   rw [Port.PortHamiltonian.family_isLinear.den_hurwitz hP]
-  exact isHurwitz_of_dissipation_pos h hR
+  have hh := isHurwitz_of_dissipation_pos h hR
+  change h ∈ Port.PortHamiltonian.family.den (.flow .globallyExponentiallyStable) at hh
+  rw [Port.PortHamiltonian.family_isLinear.den_hurwitz
+    (P := .globallyExponentiallyStable) (Or.inl trivial)] at hh
+  exact hh
 
 /-- Strict damping: the zero-input plant is globally exponentially stable. -/
 @[tmio TM, powerlib_domain] theorem mem_den_globallyExponentiallyStable_of_dissipation_pos

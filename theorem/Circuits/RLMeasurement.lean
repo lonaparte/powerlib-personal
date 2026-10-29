@@ -128,14 +128,17 @@ def window : Sentence → Set ℝ
 
 /-- A requirement on the resistance alone has the resistances satisfying it as its kernel. -/
 @[tmio M, powerlib_foundation] theorem kernImage_resistance (S : Set ℝ) :
-    Set.kernImage Impedance.resistance {m | m.resistance ∈ S} = S := by
+    connection% (TMIO.kern Impedance.resistance {m | m.resistance ∈ S} = S) := by
+  change Set.kernImage Impedance.resistance {m | m.resistance ∈ S} = S
   ext R
   exact ⟨fun h => h (x := rl R 1 one_pos) rfl, fun h m hm => by rw [Set.mem_ofPred_eq, hm]; exact h⟩
 
 /-- The decay rate `R / L` is at least `a` for every inductance exactly when `R ≥ 0` and `a ≤ 0`. -/
 @[tmio M, powerlib_foundation] theorem kernImage_decayRate (a : ℝ) :
-    Set.kernImage Impedance.resistance {m | a ≤ m.resistance / m.inductance.val} =
-      {R | 0 ≤ R ∧ a ≤ 0} := by
+    connection% (TMIO.kern Impedance.resistance {m | a ≤ m.resistance / m.inductance.val} =
+      {R | 0 ≤ R ∧ a ≤ 0}) := by
+  change Set.kernImage Impedance.resistance {m | a ≤ m.resistance / m.inductance.val} =
+    {R | 0 ≤ R ∧ a ≤ 0}
   ext R
   constructor
   · intro h
@@ -162,7 +165,6 @@ def window : Sentence → Set ℝ
 @[tmio TM, powerlib_domain] theorem kernImage_den (s : Sentence) :
     connection% (TMIO.kern Impedance.resistance (family.den s) = window s) := by
   unfold powerlib.TMIO.Statement
-  change Set.kernImage Impedance.resistance (family.den s) = window s
   have hexact : realize Meets (translate s) = family.den s :=
     Family.chain_eq_semantics_iff.mp chain_eq_semantics s
   rw [← hexact]

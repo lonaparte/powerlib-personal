@@ -364,7 +364,9 @@ negative one, conservation by a lossless branch, and decay at the rate `a` by a 
         have hnn := (hLS m).mp h.lyapunovStable
         have hnh := family_isLinear.not_isHurwitz_of_mem_den_conservative one_pos
           (family_isLinear.mem_den_flow.mpr h)
-        rw [isHurwitz_iff] at hnh
+        change m ∉ family.den (.flow .globallyExponentiallyStable) at hnh
+        rw [family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial),
+          Set.mem_setOf_eq, isHurwitz_iff] at hnh
         exact le_antisymm (not_lt.mp hnh) hnn
     case locallyAsymptoticallyStable =>
       simpa [translate, Meets] using

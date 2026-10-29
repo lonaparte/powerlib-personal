@@ -393,8 +393,9 @@ plane: the whole requirement language is inconsistent. -/
   unfold powerlib.TMIO.Statement
   intro hm
   have hs : m.Stable := (mem_realize Meets {.poleStable} m).mp hm .poleStable rfl
-  exact family_isLinear.not_isHurwitz_of_mem_den_conservative (by norm_num) h
-    ((isHurwitz_iff_stable m).mpr hs)
+  apply family_isLinear.not_isHurwitz_of_mem_den_conservative (by norm_num) h
+  rw [family_isLinear.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
+  exact (isHurwitz_iff_stable m).mpr hs
 
 /-! ## Faithfulness -/
 

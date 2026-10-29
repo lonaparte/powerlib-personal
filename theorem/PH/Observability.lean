@@ -178,10 +178,15 @@ Static evidence on the model, not a connection conclusion. -/
     Pi.zero_apply] at h2
   norm_num at h2
 
-/-- The lossless loop's state matrix is not Hurwitz (trace zero).
-Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem losslessLC_not_isHurwitz :
-    ¬ LinearSystems.IsHurwitz (linearLTIModel losslessJ 0 losslessG 1).A := by
+/-- The lossless loop lies outside the locally asymptotically stable denotation,
+equivalently its state matrix is not Hurwitz (trace zero). -/
+@[tmio TM, powerlib_foundation] theorem losslessLC_not_isHurwitz :
+    connection% (losslessLC ∉
+      Port.PortHamiltonian.family.den (.flow .locallyAsymptoticallyStable)) := by
+  unfold TMIO.Statement
+  rw [Port.PortHamiltonian.family_isLinear.den_hurwitz (P := .locallyAsymptoticallyStable)
+    (Or.inl trivial)]
+  change ¬ LinearSystems.IsHurwitz (linearLTIModel losslessJ 0 losslessG 1).A
   intro h
   rw [show (linearLTIModel losslessJ 0 losslessG 1).A = !![0, -1; 1, 0] from
     losslessLC_stateMatrix, Criteria.isHurwitz_fin_two_of_iff] at h
@@ -190,11 +195,8 @@ Static evidence on the model, not a connection conclusion. -/
 /-- The lossless loop is not locally asymptotically stable. -/
 @[tmio TM, powerlib_domain] theorem losslessLC_not_mem_den_locallyAsymptoticallyStable :
     connection% (losslessLC ∉
-      Port.PortHamiltonian.family.den (.flow .locallyAsymptoticallyStable)) := by
-  unfold powerlib.TMIO.Statement
-  rw [Port.PortHamiltonian.family_isLinear.den_hurwitz (P := .locallyAsymptoticallyStable)
-    (Or.inl trivial)]
-  exact losslessLC_not_isHurwitz
+      Port.PortHamiltonian.family.den (.flow .locallyAsymptoticallyStable)) :=
+  losslessLC_not_isHurwitz
 
 /-- Correction of T-ph Part 2: passivity together with zero-state observability does **not**
 give asymptotic stability, on the semantics connection of the linear port-Hamiltonian family. -/

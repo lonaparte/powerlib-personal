@@ -204,28 +204,36 @@ sentences at the bounds. -/
 
 /-! ## The connections of the horizon and of the level -/
 
-/-- A horizon is certified for a set of models exactly when it is at most the supremum of the
-horizons certified for it. -/
-@[powerlib_foundation] theorem le_sSup_certified_iff {X Q : Type*} (F : Family X Q n p)
-    (ε : ℝ≥0∞) (D : Set X) (T : ℝ≥0∞) :
-    T ≤ sSup {T | D ⊆ F.den (.envelope (.safe T ε))} ↔ D ⊆ F.den (.envelope (.safe T ε)) := by
-  refine ⟨fun h => ?_, fun h => le_sSup h⟩
-  have hsup : D ⊆ F.den (.envelope (.safe (sSup {T | D ⊆ F.den (.envelope (.safe T ε))}) ε)) := by
-    rw [den_safe_sSup]
-    exact subset_iInter₂ fun T hT => hT
-  exact hsup.trans (den_safe_antitone F ε h)
+/-- Construction evidence for the horizon upper map. The forward candidate proves the
+Galois law here and is therefore the adjoint generated from that map. -/
+private def horizonAdjunction {X Q : Type*} (F : Family X Q n p) (ε : ℝ≥0∞) :
+    LowerAdjoint (fun D : (Set X)ᵒᵈ => sSup {T | ofDual D ⊆ F.den (.envelope (.safe T ε))}) where
+  toFun T := toDual (F.den (.envelope (.safe T ε)))
+  gc' T D := by
+    change ofDual D ⊆ F.den (.envelope (.safe T ε)) ↔
+      T ≤ sSup {T | ofDual D ⊆ F.den (.envelope (.safe T ε))}
+    refine ⟨fun h => le_sSup h, fun h => ?_⟩
+    have hsup : ofDual D ⊆
+        F.den (.envelope (.safe (sSup {T | ofDual D ⊆ F.den (.envelope (.safe T ε))}) ε)) := by
+      rw [den_safe_sSup]
+      exact subset_iInter₂ fun T hT => hT
+    exact hsup.trans (den_safe_antitone F ε h)
 
 /-- The certified horizon: a set of models is sent to the longest horizon over which every model
 of the set is safe at the level `ε`. It preserves arbitrary infima (unions of sets of models). -/
 def certifiedHorizon {X Q : Type*} (F : Family X Q n p) (ε : ℝ≥0∞) :
     sInfHom (Set X)ᵒᵈ ℝ≥0∞ where
   toFun D := sSup {T | ofDual D ⊆ F.den (.envelope (.safe T ε))}
-  map_sInf' 𝒟 := by
-    refine eq_of_forall_le_iff fun T => ?_
-    rw [le_sSup_certified_iff, le_sInf_iff, ofDual_sInf, sSup_eq_sUnion, sUnion_subset_iff,
-      forall_mem_image]
-    exact ⟨fun h D hD => (le_sSup_certified_iff F ε (ofDual D) T).mpr (h (ofDual D) hD),
-      fun h D hD => (le_sSup_certified_iff F ε D T).mp (h hD)⟩
+  map_sInf' _ := by
+    rw [sInf_image]
+    exact (horizonAdjunction F ε).gc.u_sInf
+
+/-- A horizon is certified for a set of models exactly when it is at most the supremum of the
+horizons certified for it, evaluated through the certified-horizon connection. -/
+@[tmio TM, powerlib_foundation] theorem le_sSup_certified_iff {X Q : Type*} (F : Family X Q n p)
+    (ε : ℝ≥0∞) (D : Set X) (T : ℝ≥0∞) :
+    connection% (T ≤ certifiedHorizon F ε (toDual D) ↔ D ⊆ F.den (.envelope (.safe T ε))) :=
+  ((horizonAdjunction F ε).gc T (toDual D)).symm
 
 @[tmio TM, powerlib_foundation] theorem le_certifiedHorizon_iff {X Q : Type*} (F : Family X Q n p)
     (ε : ℝ≥0∞) (D : (Set X)ᵒᵈ) (T : ℝ≥0∞) :

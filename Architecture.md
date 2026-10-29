@@ -176,13 +176,21 @@ definitionally equal proposition to tactics such as `rw`, which otherwise fail t
 an iff behind `Statement`. It builds an identity application checked by the kernel; the
 original declaration keeps its complete certificate.
 
+Comparisons under a common constraint, `s ∩ d = t ∩ d`, require a certified endpoint
+on at least one side before restriction. Their two-inclusion characterization is
+also a closed constructor. The common context is still checked for behavioural
+bypass; it does not make arbitrary intersections endpoints or admit an unrelated
+conjunct. Equality of complete `Seed`s compares their three upper maps and supports
+four independent carrier universes. The seed structure lives with the primitive maps
+in `TMIO/ConnectionBase`; its generated maps and laws remain in `TMIO/Derived`.
+
 The constructors `allType`, `iffCondition` and `existsGuard` carry the binders and
 side conditions of Rules §3a. Certificate universes are inferred from the actual
 maps and endpoints. Symmetric atomic constructors let the same certificate mix
 both directions of one pair of endpoint universes, for example sentence sets and
 model sets. External theorem parameters are checked separately, preserving the
-original `Type*` scope of generic laws. This does not require a separate universe
-for every node or an arbitrary-proposition constructor. Side
+original `Type*` scope of generic laws. Seed comparisons use two further inferred
+universes within the same closed grammar. Side
 conditions are `TMIO.Condition` values. A tautological claim can still carry its
 condition, as `memberIff` can carry any right side; neither adds a kind of
 conclusion, and the bypass audit still reads every operand.

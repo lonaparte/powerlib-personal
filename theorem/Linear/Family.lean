@@ -100,11 +100,14 @@ field of its plant. -/
   · exact holds_iff_isHurwitz 0 hP
   · exact sampledContraction_iff_isHurwitz 0
 
-/-- A member of a nontrivial linear family that conserves an energy is not Hurwitz. -/
-@[powerlib_foundation] theorem IsLinear.not_isHurwitz_of_mem_den_conservative
+/-- A conserving member of a nontrivial linear family lies outside the globally exponentially
+stable denotation, equivalently its plant is not Hurwitz. -/
+@[tmio TM, powerlib_foundation] theorem IsLinear.not_isHurwitz_of_mem_den_conservative
     (hF : F.IsLinear plant) (hn : 0 < n) {x : X} (h : x ∈ F.den (.flow .conservative)) :
-    ¬ IsHurwitz (plant x).A :=
-  not_isHurwitz_of_conservative hn (hF.mem_den_flow.mp h)
+    connection% (x ∉ F.den (.flow .globallyExponentiallyStable)) := by
+  unfold TMIO.Statement
+  rw [hF.den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)]
+  exact not_isHurwitz_of_conservative hn (hF.mem_den_flow.mp h)
 
 /-- A positive definite quadratic energy conserved by the plant places a member in conservation. -/
 @[tmio TM, powerlib_foundation] theorem IsLinear.mem_den_conservative (hF : F.IsLinear plant) {x : X}

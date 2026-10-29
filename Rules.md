@@ -205,6 +205,12 @@ There are two admission rules:
    either endpoint universe. Generic declarations retain their `Type*` parameters. The external
    theorem telescope is checked separately, rather than re-encoded as part of the
    conclusion's certificate.
+   Equality of two `Seed`s compares their three supplied upper maps, retaining four independent
+   carrier universes. Equality under a common constraint, `s ∩ d = t ∩ d`, requires an endpoint
+   certificate for `s` or `t`; its equivalent pair of inclusions
+   `s ∩ d ⊆ t ∧ t ∩ d ⊆ s` may characterize that same equality. The context `d` restricts the
+   comparison domain. It does not make arbitrary intersections endpoints, admit differing
+   contexts, or permit unrelated conjuncts. The behavioural bypass check still inspects it.
 
 `TMIO.Endpoint` certificates are built from typed `sInfHom` applications,
 `generate`, generated closure, and structural powerset operations. Endpoint
