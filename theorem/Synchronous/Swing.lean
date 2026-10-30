@@ -172,6 +172,56 @@ def field (x : State 2) : State 2 := PhasePlane.mk (x 1) (p.accel (x 0) (x 1))
 /-- Synchronizing coefficient `K(δ) = P_e'(δ) = k₂ cos(δ − k₃)`. -/
 def syncCoeff (δ : ℝ) : ℝ := p.k₂ * Real.cos (δ - p.k₃)
 
+end SwingParams
+
+/-! ## Models and their static requirements -/
+
+namespace Swing
+
+/-- A swing model read about a selected operating point `(δ*, 0)`: the parameters and the
+selected angle `δ*`. -/
+structure Model where
+  /-- The swing parameters. -/
+  p : SwingParams
+  /-- The selected angle `δ*`. -/
+  δ : ℝ
+
+/-- Static requirements on swing models. -/
+inductive Requirement
+  /-- Power balance at the selected angle: `P_e(δ*) = P_m`. -/
+  | balanced
+  /-- Positive inertia `M > 0`. -/
+  | inertia
+  /-- Positive damping `D > 0`. -/
+  | damped
+  /-- Nonnegative damping `D ≥ 0` (includes the undamped machine). -/
+  | dampingNonneg
+  /-- No damping, `D = 0`. -/
+  | undamped
+  /-- Positive synchronizing coefficient `K = k₂ cos(δ* − k₃) > 0`. -/
+  | synchronizing
+  /-- A destabilizing sign: `K < 0` (saddle) or `D < 0` (negative damping). -/
+  | destabilizing
+  /-- A curved power-angle curve: amplitude `k₂ ≠ 0` (the curve is not flat). -/
+  | curved
+
+/-- Satisfaction of a requirement by a model. -/
+def Meets (m : Model) : Requirement → Prop
+  | .balanced => m.p.Pe m.δ = m.p.Pm
+  | .inertia => 0 < m.p.M
+  | .damped => 0 < m.p.D
+  | .dampingNonneg => 0 ≤ m.p.D
+  | .undamped => m.p.D = 0
+  | .synchronizing => 0 < m.p.syncCoeff m.δ
+  | .destabilizing => m.p.syncCoeff m.δ < 0 ∨ m.p.D < 0
+  | .curved => m.p.k₂ ≠ 0
+
+end Swing
+
+namespace SwingParams
+
+variable (p : SwingParams)
+
 /-- Jacobian of the swing field at angle `δ` (it does not depend on `ω`). -/
 def jacobian (δ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![0, 1; -p.syncCoeff δ / p.M, -p.D / p.M]
@@ -281,19 +331,22 @@ def deltaU : ℝ := Real.pi - Real.arcsin p.loadRatio + p.k₃
     p.k₂ * Real.sin (Real.arcsin p.loadRatio) = p.Pm - p.k₁ :=
   SpecialFunctions.mul_sin_arcsin_div h hk
 
-@[powerlib_foundation] theorem Pe_deltaS (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| ≤ p.k₂) :
-    p.Pe p.deltaS = p.Pm := by
+@[tmio M, powerlib_foundation] theorem Pe_deltaS (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| ≤ p.k₂) :
+    connection% ((⟨p, p.deltaS⟩ : Swing.Model) ∈ TMIO.realize Swing.Meets {.balanced}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Swing.Meets]
   have := p.sin_loadRatio hk h
   simp only [Pe, deltaS, add_sub_cancel_right]; linarith
 
-@[powerlib_foundation] theorem Pe_deltaU (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| ≤ p.k₂) :
-    p.Pe p.deltaU = p.Pm := by
+@[tmio M, powerlib_foundation] theorem Pe_deltaU (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| ≤ p.k₂) :
+    connection% ((⟨p, p.deltaU⟩ : Swing.Model) ∈ TMIO.realize Swing.Meets {.balanced}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Swing.Meets]
   have := p.sin_loadRatio hk h
   simp only [Pe, deltaU, add_sub_cancel_right, Real.sin_pi_sub]; linarith
 
 /-- `cos(δ_s − k₃) = √(1 − a²) > 0` strictly inside the loadability limit. -/
-@[powerlib_foundation] theorem syncCoeff_deltaS_pos (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
-    0 < p.syncCoeff p.deltaS := by
+@[tmio M, powerlib_foundation] theorem syncCoeff_deltaS_pos (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
+    connection% ((⟨p, p.deltaS⟩ : Swing.Model) ∈ TMIO.realize Swing.Meets {.synchronizing}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Swing.Meets]
   simp only [syncCoeff, deltaS, add_sub_cancel_right]
   exact mul_pos hk (SpecialFunctions.cos_arcsin_div_pos h hk)
 
@@ -335,12 +388,14 @@ period of the power-angle curve). Static evidence on the model, not a connection
 /-- `(δ_s, 0)` is an equilibrium. Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem field_mkState_deltaS (hM : p.M ≠ 0) (hk : 0 < p.k₂)
     (h : |p.Pm - p.k₁| ≤ p.k₂) : p.field (PhasePlane.mk p.deltaS 0) = 0 :=
-  (p.field_eq_zero_iff hM _).mpr ⟨by simp, by simpa using p.Pe_deltaS hk h⟩
+  (p.field_eq_zero_iff hM _).mpr ⟨by simp, by simpa only [TMIO.Statement, TMIO.mem_realize,
+      Set.mem_singleton_iff, forall_eq, Swing.Meets, PhasePlane.mk_apply_zero] using p.Pe_deltaS hk h⟩
 
 /-- `(δ_u, 0)` is an equilibrium. Static evidence on the model, not a connection conclusion. -/
 @[powerlib_foundation] theorem field_mkState_deltaU (hM : p.M ≠ 0) (hk : 0 < p.k₂)
     (h : |p.Pm - p.k₁| ≤ p.k₂) : p.field (PhasePlane.mk p.deltaU 0) = 0 :=
-  (p.field_eq_zero_iff hM _).mpr ⟨by simp, by simpa using p.Pe_deltaU hk h⟩
+  (p.field_eq_zero_iff hM _).mpr ⟨by simp, by simpa only [TMIO.Statement, TMIO.mem_realize,
+      Set.mem_singleton_iff, forall_eq, Swing.Meets, PhasePlane.mk_apply_zero] using p.Pe_deltaU hk h⟩
 
 /-! ## Linearization (static) -/
 
@@ -526,14 +581,6 @@ end SwingParams
 
 namespace Swing
 
-/-- A swing model read about a selected operating point `(δ*, 0)`: the parameters and the
-selected angle `δ*`. -/
-structure Model where
-  /-- The swing parameters. -/
-  p : SwingParams
-  /-- The selected angle `δ*`. -/
-  δ : ℝ
-
 /-- The selected point `(δ*, 0)`. -/
 def Model.point (m : Model) : State 2 := PhasePlane.mk m.δ 0
 
@@ -551,36 +598,6 @@ def Model.field (m : Model) (z : State 2) : State 2 := m.p.field (z + m.point)
     fderiv ℝ m.p.field m.point =
       Matrix.toEuclideanCLM (n := Fin 2) (𝕜 := ℝ) (m.p.jacobian m.δ) := by
   rw [m.p.fderiv_field, Model.point_zero]
-
-/-- Static requirements on swing models. -/
-inductive Requirement
-  /-- Power balance at the selected angle: `P_e(δ*) = P_m`. -/
-  | balanced
-  /-- Positive inertia `M > 0`. -/
-  | inertia
-  /-- Positive damping `D > 0`. -/
-  | damped
-  /-- Nonnegative damping `D ≥ 0` (includes the undamped machine). -/
-  | dampingNonneg
-  /-- No damping, `D = 0`. -/
-  | undamped
-  /-- Positive synchronizing coefficient `K = k₂ cos(δ* − k₃) > 0`. -/
-  | synchronizing
-  /-- A destabilizing sign: `K < 0` (saddle) or `D < 0` (negative damping). -/
-  | destabilizing
-  /-- A curved power-angle curve: amplitude `k₂ ≠ 0` (the curve is not flat). -/
-  | curved
-
-/-- Satisfaction of a requirement by a model. -/
-def Meets (m : Model) : Requirement → Prop
-  | .balanced => m.p.Pe m.δ = m.p.Pm
-  | .inertia => 0 < m.p.M
-  | .damped => 0 < m.p.D
-  | .dampingNonneg => 0 ≤ m.p.D
-  | .undamped => m.p.D = 0
-  | .synchronizing => 0 < m.p.syncCoeff m.δ
-  | .destabilizing => m.p.syncCoeff m.δ < 0 ∨ m.p.D < 0
-  | .curved => m.p.k₂ ≠ 0
 
 /-- The translation of the sentences for the nonlinear swing field: local exponential and local
 asymptotic stability into balance, inertia, damping and synchronization; Lyapunov stability into
@@ -725,8 +742,9 @@ private theorem point_eq_zero {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m
   (m.p.field_eq_zero_iff hM.ne' _).mpr ⟨by simp, by simpa using hb⟩
 
 /-- An equilibrium at the selected point is a balanced angle. -/
-private theorem balanced_of {m : Model} (hM : m.p.M ≠ 0) (heq : m.p.field m.point = 0) :
-    m.p.Pe m.δ = m.p.Pm := by
+@[tmio M] private theorem balanced_of {m : Model} (hM : m.p.M ≠ 0) (heq : m.p.field m.point = 0) :
+    connection% (m ∈ TMIO.realize Meets {.balanced}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   simpa using ((m.p.field_eq_zero_iff hM _).mp heq).2
 
 @[tmio TM] private theorem les_of {m : Model} (hM : 0 < m.p.M) (hD : 0 < m.p.D)
@@ -847,28 +865,38 @@ leaves it (`Spectral.mem_den_unstable_of_ne_zero`). -/
     (hb : m.p.Pe m.δ ≠ m.p.Pm) : connection% (m ∈ family.den (.flow .unstable)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.mem_den_unstable_of_ne_zero (fun m P => mem_den_flow_iff) m.p.contDiff_field
-    fun h => hb (balanced_of hM h)
+    fun h => hb ((TMIO.mem_realize _ _ _).mp (balanced_of hM h) .balanced rfl)
 
 /-- The closed-form stable equilibrium `(δ_s, 0)` is locally exponentially stable
 (`M, D, k₂ > 0`, `|P_m − k₁| < k₂`). -/
 @[tmio TM, powerlib_domain] theorem deltaS_mem_den_locallyExponentiallyStable (p : SwingParams)
     (hM : 0 < p.M) (hD : 0 < p.D) (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
     connection% (Model.mk p p.deltaS ∈ family.den (.flow .locallyExponentiallyStable)) :=
-  mem_den_locallyExponentiallyStable _ hM hD (p.Pe_deltaS hk h.le) (p.syncCoeff_deltaS_pos hk h)
+  mem_den_locallyExponentiallyStable _ hM hD
+    (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+        using p.Pe_deltaS hk h.le)
+    (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+        using p.syncCoeff_deltaS_pos hk h)
 
 /-- The closed-form equilibrium `(δ_u, 0)` is unstable for every damping
 (`M, k₂ > 0`, `|P_m − k₁| < k₂`). -/
 @[tmio TM, powerlib_domain] theorem deltaU_mem_den_unstable (p : SwingParams) (hM : 0 < p.M)
     (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
     connection% (Model.mk p p.deltaU ∈ family.den (.flow .unstable)) :=
-  mem_den_unstable _ hM (p.Pe_deltaU hk h.le) (p.syncCoeff_deltaU_neg hk h)
+  mem_den_unstable _ hM
+    (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+        using p.Pe_deltaU hk h.le) (p.syncCoeff_deltaU_neg hk h)
 
 /-- The closed-form stable equilibrium `(δ_s, 0)` is Lyapunov stable for every `D ≥ 0`,
 in particular for the undamped swing equation. -/
 @[tmio TM, powerlib_domain] theorem deltaS_mem_den_lyapunovStable (p : SwingParams) (hM : 0 < p.M)
     (hD : 0 ≤ p.D) (hk : 0 < p.k₂) (h : |p.Pm - p.k₁| < p.k₂) :
     connection% (Model.mk p p.deltaS ∈ family.den (.flow .lyapunovStable)) :=
-  mem_den_lyapunovStable _ hM hD (p.Pe_deltaS hk h.le) (p.syncCoeff_deltaS_pos hk h)
+  mem_den_lyapunovStable _ hM hD
+    (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+        using p.Pe_deltaS hk h.le)
+    (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+        using p.syncCoeff_deltaS_pos hk h)
 
 /-! ### Exactness within positive inertia -/
 
@@ -890,7 +918,7 @@ an equilibrium whose Jacobian `[[0, 1], [−K/M, −D/M]]` is Hurwitz. -/
   rw [m.p.isHurwitz_jacobian_iff hM] at hH
   rw [(connection_proof% TMIO.mem_realize)]
   rintro q (rfl | rfl | rfl | rfl)
-  · exact balanced_of hM.ne' heq
+  · exact (TMIO.mem_realize _ _ _).mp (balanced_of hM.ne' heq) .balanced rfl
   · exact hM
   · exact hH.1
   · exact hH.2
@@ -942,9 +970,12 @@ damping and a positive synchronizing coefficient. Negative damping or synchroniz
 an undamped machine conserves its energy; a flat power-angle curve has a continuum of
 equilibria; and at a fold of the curve the dissipated energy takes negative values next to
 `(δ*, 0)`. -/
-private theorem las_guard {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm)
-    (hlas : LocalAsymptoticStable m.p.field m.point) :
-    0 < m.p.D ∧ 0 < m.p.syncCoeff m.δ := by
+@[tmio TM] private theorem las_guard {m : Model} (hM : 0 < m.p.M) (hb : m.p.Pe m.δ = m.p.Pm)
+    (hlas : m ∈ family.den (.flow .locallyAsymptoticallyStable)) :
+    connection% (m ∈ TMIO.realize Meets {.damped, .synchronizing}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff,
+    forall_eq_or_imp, forall_eq, Meets]
+  have hlas : LocalAsymptoticStable m.p.field m.point := mem_den_flow_iff.mp hlas
   have hC : ContDiff ℝ 1 m.p.field := m.p.contDiff_field
   have hEd : Differentiable ℝ (m.p.energy m.δ) :=
     (m.p.contDiff_energy (k := 1) _).differentiable one_ne_zero
@@ -1030,11 +1061,14 @@ an equilibrium, so the guard `D > 0`, `K > 0` decides (`Spectral.exactUnder_of_e
         (hm .balanced (by simp [family, translate]))
         (hm .synchronizing (by simp [family, translate]))))))
   · have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
-    exact hG (las_guard hM (balanced_of hM.ne' heq) (mem_den_flow_iff.mp hd))
+    exact hG (by
+      simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_insert_iff, Set.mem_singleton_iff,
+        forall_eq_or_imp, forall_eq, Meets] using
+        las_guard hM ((TMIO.mem_realize _ _ _).mp (balanced_of hM.ne' heq) .balanced rfl) hd)
   · have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
     rw [(connection_proof% TMIO.mem_realize)]
     rintro q (rfl | rfl | rfl | rfl)
-    · exact balanced_of hM.ne' heq
+    · exact (TMIO.mem_realize _ _ _).mp (balanced_of hM.ne' heq) .balanced rfl
     · exact hM
     · exact hG.1
     · exact hG.2
@@ -1147,7 +1181,8 @@ curve drifts (`(δ − δ*) ω` grows at the rate `ω²`, Chetaev's theorem). -/
   · intro hm
     have hls : LyapunovStable m.p.field m.point := mem_den_flow_iff.mp hm
     have hb : m.p.Pe m.δ = m.p.Pm :=
-      balanced_of hM.ne' (Dynamics.isEquilibrium_of_lyapunovStable hC hls)
+      (TMIO.mem_realize _ _ _).mp
+        (balanced_of hM.ne' (Dynamics.isEquilibrium_of_lyapunovStable hC hls)) .balanced rfl
     refine ⟨hb, ?_⟩
     have hD : 0 ≤ m.p.D := by
       by_contra hD
@@ -1364,9 +1399,12 @@ def family : Family Model Requirement 2 0 := ⟨fun m => (plant m).system, Meets
 @[powerlib_foundation] theorem family_isLinear : family.IsLinear plant := fun _ => rfl
 
 /-- The translation is the linear table (`Spectral.linearTable`). -/
-private theorem translate_eq (s : Sentence) :
-    family.translate s = Spectral.linearTable {.inertia, .damped, .synchronizing}
-      {.inertia, .destabilizing} {.inertia, .synchronizing, .undamped} ∅ (fun _ => Set.univ) s := by
+@[tmio TM] private theorem translate_eq (s : Sentence) :
+    connection% (TMIO.generate (TMIO.cover (TMIO.table family.translate)) {s} =
+      Spectral.linearTable {.inertia, .damped, .synchronizing}
+        {.inertia, .destabilizing} {.inertia, .synchronizing, .undamped} ∅ (fun _ => Set.univ) s) := by
+  unfold TMIO.Statement
+  rw [TMIO.image_table_singleton]
   rcases s with P | _ | _
   · cases P <;> rfl
   · rfl
@@ -1428,7 +1466,9 @@ passive; decay rates go to the inconsistent whole language. -/
   refine Spectral.chain_le_semantics_of_linearTable (F := family)
     (Rs := {.inertia, .damped, .synchronizing}) (Ru := {.inertia, .destabilizing})
     (Rc := {.inertia, .synchronizing, .undamped}) (Rp := ∅) (Rd := fun _ => Set.univ)
-    family_isLinear translate_eq (fun m hm => ?_) (fun m hm => ?_)
+    family_isLinear
+    (fun s => by simpa only [TMIO.Statement, TMIO.image_table_singleton] using translate_eq s)
+    (fun m hm => ?_) (fun m hm => ?_)
     (fun _ => Spectral.realize_univ_subset_of_eq_empty realize_univ _) (fun m hm => ?_)
     fun m _ => family.mem_den.mpr (Port.System.passive_of_noPorts _)
   · obtain ⟨hM, hD, hK⟩ := mem_realize_stable.mp hm
@@ -1462,7 +1502,8 @@ swing equation are translated exactly: `M s² + D s + K` is Hurwitz iff `D > 0` 
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.ExactUnder {.inertia} (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  refine Spectral.exactUnder_of_linearTable family_isLinear translate_eq {.inertia}
+  refine Spectral.exactUnder_of_linearTable family_isLinear
+    (fun s => by simpa only [TMIO.Statement, TMIO.image_table_singleton] using translate_eq s) {.inertia}
     (fun m hI => mem_realize_stable.trans ?_) hP
   have hM : 0 < m.p.M := (TMIO.mem_realize _ _ _).mp hI .inertia rfl
   rw [← (connection_proof% family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable)

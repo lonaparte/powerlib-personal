@@ -758,8 +758,19 @@ def atAntiLoading (g : VSMLPF) : Model := ⟨g, Real.pi - g.δ0⟩
   constructor <;> intro h' <;> nlinarith [div_mul_cancel₀ (g.D ^ 2) hM.ne',
     show g.D / g.M * g.D = g.D ^ 2 / g.M by ring]
 
-private theorem slow_iff (hp : g.Pos) :
-    g.ωc < g.K / g.D - g.D / g.M ↔ g.D * g.ωc + g.D ^ 2 / g.M < g.K := by
+/-- At the principal loading angle, the destabilizing requirement is exactly the slow-filter
+threshold: `cos (arcsin _) ≥ 0` excludes the negative-synchronization branch. -/
+@[tmio M] private theorem slow_iff (hp : g.Pos) :
+    connection% (atLoading g ∈ TMIO.realize Meets {.destabilizing} ↔
+      g.ωc < g.K / g.D - g.D / g.M) := by
+  have hK : 0 ≤ g.K := by
+    simpa only [K, δ0] using mul_nonneg hp.K0.le (Real.cos_arcsin_nonneg (g.P0 / g.K0))
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq,
+    Meets, atLoading, Model.K]
+  change (g.D * g.ωc + g.D ^ 2 / g.M < g.K ∨ g.K < 0) ↔
+    g.ωc < g.K / g.D - g.D / g.M
+  rw [or_iff_left (not_lt.mpr hK)]
+  apply Iff.symm
   have hM := hp.M; have hD := hp.D
   rw [lt_sub_iff_add_lt, lt_div_iff₀ hD]
   constructor <;> intro h' <;> nlinarith [div_mul_cancel₀ (g.D ^ 2) hM.ne',
@@ -776,8 +787,12 @@ private theorem slow_iff (hp : g.Pos) :
 into the open right half-plane). -/
 @[tmio TM, powerlib_domain] theorem unstable (hp : g.Pos) (h : |g.P0| < g.K0)
     (hω : g.ωc < g.K / g.D - g.D / g.M) :
-    connection% (atLoading g ∈ family.den (.flow .unstable)) :=
-  mem_den_unstable _ hp.M hp.D hp.ωc ((by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, VSMLPF.Meets, VSMLPF.Model.K, VSMLPF.K, VSMLPF.atLoading] using (g.sin_δ0 hp.K0 h.le))) ((slow_iff hp).mp hω)
+    connection% (atLoading g ∈ family.den (.flow .unstable)) := by
+  refine unstable_of ⟨hp.M, hp.D, hp.ωc⟩ ?_ ?_
+  · simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq,
+      Meets, Model.K, K, atLoading] using g.sin_δ0 hp.K0 h.le
+  · simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq]
+      using (slow_iff hp).mpr hω
 
 /-- Exact stability boundary (boundary `K = D ω_c + D²/M` excluded): the loading equilibrium
 is locally exponentially stable iff `K < D ω_c + D²/M`.  Since `K = K₀ cos δ₀` decreases with
@@ -792,7 +807,9 @@ load, light load is the dangerous side. -/
     by_contra hn
     have hlt : g.D * g.ωc + g.D ^ 2 / g.M < g.K :=
       lt_of_le_of_ne (not_lt.mp hn) (Ne.symm hne)
-    have hu := unstable hp h ((slow_iff hp).mpr hlt)
+    have hu := unstable hp h ((slow_iff hp).mp (by
+      simp only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets, atLoading, Model.K]
+      exact Or.inl hlt))
     unfold powerlib.TMIO.Statement at hu
     rw [mem_den_flow_iff] at hs hu
     exact hu (LocallyExponentiallyStable.lyapunovStable hs)

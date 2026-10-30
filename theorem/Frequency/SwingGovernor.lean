@@ -440,8 +440,11 @@ right half plane. -/
   exact h
 
 /-- The swing + governor translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
-private theorem translate_eq_linearTable (s : Sentence) :
-    translate s = Spectral.linearTable {.stable} {.unstable} univ univ (fun a => {.rate a}) s := by
+@[tmio TM] private theorem translate_eq_linearTable (s : Sentence) :
+    connection% (generate (cover (table translate)) {s} =
+      Spectral.linearTable {.stable} {.unstable} univ univ (fun a => {.rate a}) s) := by
+  unfold TMIO.Statement
+  rw [TMIO.image_table_singleton]
   rcases s with P | _ | _
   · cases P <;> rfl
   · rfl
@@ -455,7 +458,8 @@ gives instability, a spectral margin gives the decay rate (the linear table,
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.chain_le_semantics_of_linearTable_univ (F := family) family_isLinear
-    translate_eq_linearTable
+    (fun s => (connection_proof% TMIO.image_table_singleton translate s).symm.trans
+      (connection_proof% translate_eq_linearTable s))
     (fun m hm => (((connection_proof% SwingGovernor.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff m.M_pos m.Tg_pos))).mpr ((mem_realize _ _ _).mp hm .stable rfl))
     (fun m hm => exists_root_of_unstable m.M_pos m.Tg_pos
       ((mem_realize _ _ _).mp hm .unstable rfl))
@@ -468,7 +472,9 @@ gives instability, a spectral margin gives the decay rate (the linear table,
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.exact_of_linearTable (F := family) family_isLinear translate_eq_linearTable
+  exact Spectral.exact_of_linearTable (F := family) family_isLinear
+    (fun s => (connection_proof% TMIO.image_table_singleton translate s).symm.trans
+      (connection_proof% translate_eq_linearTable s))
     (fun m => Spectral.mem_realize_singleton.trans (((connection_proof% SwingGovernor.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff m.M_pos m.Tg_pos))).symm) hP
 
 /-- The member characterization: a model satisfies an attractive sentence exactly when
@@ -1091,9 +1097,11 @@ swing + governor model has the rate margin `a` exactly when the first-order mode
   rw [hA, Linear.decay_scalar_iff, le_div_iff₀ r.M_pos]
 
 /-- The first-order translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
-private theorem reducedTranslate_eq_linearTable (s : Sentence) :
-    reducedTranslate s =
-      Spectral.linearTable {.stable} {.unstable} univ univ (fun a => {.rate a}) s := by
+@[tmio TM] private theorem reducedTranslate_eq_linearTable (s : Sentence) :
+    connection% (generate (cover (table reducedTranslate)) {s} =
+      Spectral.linearTable {.stable} {.unstable} univ univ (fun a => {.rate a}) s) := by
+  unfold TMIO.Statement
+  rw [TMIO.image_table_singleton]
   rcases s with P | _ | _
   · cases P <;> rfl
   · rfl
@@ -1105,7 +1113,9 @@ private theorem reducedTranslate_eq_linearTable (s : Sentence) :
     connection% (∀ P, reducedFamily.chain P ≤ reducedFamily.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.chain_le_semantics_of_linearTable_univ (F := reducedFamily)
-    reducedFamily_isLinear reducedTranslate_eq_linearTable
+    reducedFamily_isLinear
+    (fun s => (connection_proof% TMIO.image_table_singleton reducedTranslate s).symm.trans
+      (connection_proof% reducedTranslate_eq_linearTable s))
     (fun r hm => (((connection_proof% SwingGovernor.reducedFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (reduced_isHurwitz_iff r.M_pos))).mpr ((mem_realize _ _ _).mp hm .stable rfl))
     (fun r hm => ?_) fun a r hm => (reduced_mem_den_decay_iff r a).2
       ((mem_realize _ _ _).mp hm (.rate a) rfl)
@@ -1122,7 +1132,8 @@ private theorem reducedTranslate_eq_linearTable (s : Sentence) :
     connection% (reducedFamily.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.exact_of_linearTable (F := reducedFamily) reducedFamily_isLinear
-    reducedTranslate_eq_linearTable
+    (fun s => (connection_proof% TMIO.image_table_singleton reducedTranslate s).symm.trans
+      (connection_proof% reducedTranslate_eq_linearTable s))
     (fun r => Spectral.mem_realize_singleton.trans (((connection_proof% SwingGovernor.reducedFamily_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (reduced_isHurwitz_iff r.M_pos))).symm) hP
 
 /-- The first-order decay translation is exact at every rate: the model decays at the rate `a`

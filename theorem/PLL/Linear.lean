@@ -489,9 +489,12 @@ inconsistent. -/
 /-- The translation is the linear table: both positive loop gains for Lyapunov stability, the
 attractive sentences and sampled contraction, a negative loop gain for instability, the whole
 language for decay rates, conservation and passivity. -/
-private theorem translate_eq (s : Sentence) :
-    family.translate s = Spectral.linearTable {.proportional, .integral} {.negativeGain}
-      Set.univ Set.univ (fun _ => Set.univ) s := by
+@[tmio TM] private theorem translate_eq (s : Sentence) :
+    connection% (TMIO.generate (TMIO.cover (TMIO.table family.translate)) {s} =
+      Spectral.linearTable {.proportional, .integral} {.negativeGain}
+      Set.univ Set.univ (fun _ => Set.univ) s) := by
+  unfold TMIO.Statement
+  rw [TMIO.image_table_singleton]
   rcases s with P | _ | _
   · cases P <;> rfl
   · rfl
@@ -523,7 +526,9 @@ remaining sentences is inconsistent. -/
   unfold powerlib.TMIO.Statement
   have hU := realize_univ
   unfold powerlib.TMIO.Statement at hU
-  exact Spectral.chain_le_semantics_of_linearTable_univ family_isLinear translate_eq
+  exact Spectral.chain_le_semantics_of_linearTable_univ family_isLinear
+    (fun s => (connection_proof% TMIO.image_table_singleton family.translate s).symm.trans
+      (connection_proof% translate_eq s))
     (fun m hm => (mem_realize_iff_isHurwitz m).mp hm)
     (fun m hm => root_of_negativeGain ((TMIO.mem_realize _ _ _).mp hm .negativeGain rfl))
     (fun _ => Spectral.realize_univ_subset_of_eq_empty hU _)
@@ -535,7 +540,9 @@ positive loop gains are their exact translation, for every channel
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.exact_of_linearTable family_isLinear translate_eq mem_realize_iff_isHurwitz hP
+  exact Spectral.exact_of_linearTable family_isLinear
+    (fun s => (connection_proof% TMIO.image_table_singleton family.translate s).symm.trans
+      (connection_proof% translate_eq s)) mem_realize_iff_isHurwitz hP
 
 /-- Linear SRF-PLL (every channel; they share the state matrix): global exponential stability of
 the locked point iff `V K_p > 0 ∧ V K_i > 0`. -/

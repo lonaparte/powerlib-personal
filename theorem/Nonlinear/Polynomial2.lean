@@ -802,8 +802,10 @@ compact sublevels. -/
     exact Real.le_sqrt_of_sq_le (le_max_of_le_left hx)
 
 /-- Cubic damping has no certificate: near the origin it decays slower than any exponential. -/
-@[powerlib_foundation] theorem cubicModel_not_certified : IsEmpty (Certificate cubicModel) := by
-  refine ⟨fun c => ?_⟩
+@[tmio M, powerlib_foundation] theorem cubicModel_not_certified :
+    connection% (cubicModel ∉ TMIO.realize Meets {.certified}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  rintro ⟨c⟩
   have hrate : (0 : ℝ) < c.witness.rate := c.quadraticDecay.rate_pos
   have hlower : (0 : ℝ) < c.witness.lower := c.quadraticDecay.lower_pos
   set t := Real.sqrt ((c.witness.rate : ℝ) / 4) with ht_def
@@ -841,7 +843,9 @@ is not Hurwitz. -/
       family_isAutonomous.mem_den_flow.mpr hgas
     rw [← h, (connection_proof% TMIO.mem_realize)] at hmem
     obtain ⟨c⟩ : Nonempty (Certificate cubicModel) := hmem .certified rfl
-    exact cubicModel_not_certified.false c
+    apply cubicModel_not_certified
+    simpa only [TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets] using
+      (show Nonempty (Certificate cubicModel) from ⟨c⟩)
   · intro h
     have hmem : cubicModel ∈ family.den (.flow .locallyAsymptoticallyStable) :=
       family_isAutonomous.mem_den_flow.mpr hgas.localAsymptoticStable

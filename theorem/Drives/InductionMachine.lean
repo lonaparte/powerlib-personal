@@ -583,9 +583,10 @@ private theorem mem_den_flow {d : Drive} {P : Flow.Property} :
   exact (fluxCertificate d.p hrr hLr d.isd d.isq d.ωsl).globallyExponentiallyStable
     (fluxField_smooth d.p d.isd d.isq d.ωsl)
 
-private theorem decay_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
-    Flow.Decay (fluxField d.p d.isd d.isq d.ωsl) (fluxEquilibrium d.p d.isd d.isq d.ωsl)
-      (1 / d.p.Tr) := by
+@[tmio TM] private theorem decay_of {d : Drive} (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
+    connection% (d ∈ family.den (.flow (.decay (1 / d.p.Tr)))) := by
+  unfold TMIO.Statement
+  apply mem_den_flow.mpr
   have h := (fluxCertificate d.p hrr hLr d.isd d.isq d.ωsl).decay
   have hr : (fluxCertificate d.p hrr hLr d.isd d.isq d.ωsl).rate / 2 = 1 / d.p.Tr := by
     simp only [fluxCertificate]
@@ -623,7 +624,7 @@ every rate up to `1/T_r` (the global table, `Spectral.chain_le_semantics_of_glob
     · rfl
     · rfl
   · have hm : Meets d (.decayRateAtMost a) := (TMIO.mem_realize _ _ _).mp hd _ rfl
-    exact mem_den_flow.mpr ((decay_of hm.1 hm.2.1).mono hm.2.2)
+    exact mem_den_flow.mpr (Flow.Decay.mono (mem_den_flow.mp (decay_of hm.1 hm.2.1)) hm.2.2)
 
 /-- Passivity is translated exactly: the autonomous rotor-flux model has no ports. -/
 @[tmio TM, powerlib_domain] theorem exact_passive : connection% (family.Exact .passive) := by
@@ -645,7 +646,7 @@ term rotates the flux error and does no work). -/
 @[tmio TM, powerlib_domain] theorem ifocFlux_decay (d : Drive) (hrr : 0 < d.p.rr) (hLr : 0 < d.p.Lr) :
     connection% (d ∈ family.den (.flow (.decay (1 / d.p.Tr)))) := by
   unfold powerlib.TMIO.Statement
-  exact mem_den_flow.mpr (decay_of hrr hLr)
+  exact decay_of hrr hLr
 
 /-- The detuned IFOC drive, whose slip command uses an estimate `T̂_r`, is still globally
 exponentially stable; its equilibrium is oriented only when `T̂_r = T_r`

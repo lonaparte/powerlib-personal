@@ -431,8 +431,11 @@ def family7 : Family Model7 Requirement 7 2 :=
   exact Spectral.realize_univ_eq_empty_of_forall fun _ h => meetsMatrix_univ _ h
 
 /-- The LFC translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
-private theorem translate_eq_linearTable (s : Sentence) :
-    translate s = Spectral.linearTable {.hurwitz} {.rhpRoot} univ univ (fun a => {.rate a}) s := by
+@[tmio TM] private theorem translate_eq_linearTable (s : Sentence) :
+    connection% (generate (cover (table translate)) {s} =
+      Spectral.linearTable {.hurwitz} {.rhpRoot} univ univ (fun a => {.rate a}) s) := by
+  unfold TMIO.Statement
+  rw [TMIO.image_table_singleton]
   rcases s with P | _ | _
   · cases P <;> rfl
   · rfl
@@ -447,7 +450,9 @@ private theorem translate_eq_linearTable (s : Sentence) :
     (hmeets : ∀ x q, F.meets x q ↔ MeetsMatrix (plant x).A q) (htr : F.translate = translate) :
     connection% (∀ P, F.chain P ≤ F.semantics P) := show ∀ P, F.chain P ≤ F.semantics P from
   Spectral.chain_le_semantics_of_linearTable_univ (Rs := {.hurwitz}) (Ru := {.rhpRoot})
-    (Rd := fun a => {.rate a}) hF (fun s => htr ▸ translate_eq_linearTable s)
+    (Rd := fun a => {.rate a}) hF (fun s => by
+      rw [htr]
+      simpa only [TMIO.Statement, TMIO.image_table_singleton] using translate_eq_linearTable s)
     (fun x hx => (hmeets x .hurwitz).1 ((mem_realize _ _ _).mp hx _ rfl))
     (fun x hx => (hmeets x .rhpRoot).1 ((mem_realize _ _ _).mp hx _ rfl))
     fun a x hx => hF.mem_den_decay_of_rateMargin
@@ -463,7 +468,9 @@ for any linear family read through `MeetsMatrix` (generic); the instance of
     {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
     connection% (F.Exact (.flow P)) := show F.Exact (.flow P) from
   Spectral.exact_of_linearTable (Rs := {.hurwitz}) (Ru := {.rhpRoot}) (Rd := fun a => {.rate a})
-    hF (fun s => htr ▸ translate_eq_linearTable s)
+    hF (fun s => by
+      rw [htr]
+      simpa only [TMIO.Statement, TMIO.image_table_singleton] using translate_eq_linearTable s)
     (fun x => by simp [mem_realize, hmeets, MeetsMatrix]) hP
 
 /-- Every translation of the five-state LFC family is sound. -/

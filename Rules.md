@@ -126,12 +126,11 @@ uses one of the five kinds, and is not assigned twice. The assigned kind records
 review of the complete statement and its hypotheses; the attribute checker does
 not prove that semantic judgment or replace mathematical admission.
 
-The current reviewed coverage is 2,925 theorems: T 1,701, M 335, T–M 760, M–I 102
-and I–O 27, including 111 private helpers. This includes all 1,043 public
-`connection%` theorems (T 102, M 52, T–M 760, M–I 102, I–O 27) and 1,882 individually
-reviewed ordinary theorems. Module-level role suggestions do not assign a kind to
-every declaration in a module. The remaining 4,959 theorems are unclassified;
-definitions are outside this theorem-attribute inventory.
+Coverage and category counts are computed from source attributes by
+`python3 tools/tmio_classification.py check` and from imported declarations by
+`#tmio_check`; they are not maintained as a separate inventory. Module-level role
+suggestions do not assign a kind to every declaration in a module. Unreviewed
+ordinary theorems may remain unclassified; definitions are outside this inventory.
 The required missing-label check is limited to public typed connection theorems;
 every explicit attribute, including one on an ordinary or private theorem, is checked.
 `Layers.md` gives the Lean environment queries and the source-only queries.

@@ -425,10 +425,11 @@ def family : Family Model Requirement 2 0 :=
   unfold powerlib.TMIO.Statement
   exact Spectral.realize_univ_eq_empty_of_forall fun _ h => h .impossible
 
-/-- The minimizer `x* = (−2, 0)` meets the note's hypothesis.
-Static evidence on the model, not a connection conclusion. -/
-@[powerlib_foundation] theorem meets_uniqueMin : Meets ⟨phLaSalle_xs⟩ .uniqueMin :=
-  fun x hx => phLaSalle_counterexample_unique_min x hx
+/-- The minimizer `x* = (−2, 0)` belongs to the unique-minimizer requirement space. -/
+@[tmio M, powerlib_foundation] theorem meets_uniqueMin :
+    connection% ((⟨phLaSalle_xs⟩ : Model) ∈ TMIO.realize Meets {.uniqueMin}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  exact fun x hx => phLaSalle_counterexample_unique_min x hx
 
 /-- A unique global minimizer of `H` is Lyapunov stable. -/
 @[tmio TM, powerlib_domain] theorem mem_den_lyapunovStable (m : Model) (h : Meets m .uniqueMin) :
@@ -495,12 +496,7 @@ globally asymptotically stable: the second critical point `(1, 0)` is an equilib
       m ∈ family.den (.flow .globallyAsymptoticallyStable)) := by
   unfold powerlib.TMIO.Statement
   intro H
-  have hm : (⟨phLaSalle_xs⟩ : Model) ∈ TMIO.realize Meets {.uniqueMin} := by
-    rw [(connection_proof% TMIO.mem_realize)]
-    intro q hq
-    rw [Set.mem_singleton_iff] at hq
-    subst hq
-    exact meets_uniqueMin
+  have hm : (⟨phLaSalle_xs⟩ : Model) ∈ TMIO.realize Meets {.uniqueMin} := meets_uniqueMin
   exact not_mem_den_globallyAsymptoticallyStable (H _ hm)
 
 end LaSalle

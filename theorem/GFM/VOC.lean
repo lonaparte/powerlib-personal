@@ -119,10 +119,30 @@ structure Admissible : Prop where
   κv : 0 < a.κv
   gap : a.σ < a.κv * a.vstar ^ 2
 
+/-- Static requirements on AHO parameter sets. -/
+inductive Requirement
+  /-- Growth at the origin: `c = κ_v v*² − σ > 0`. -/
+  | growing
+  /-- Decay at the origin: `c < 0`. -/
+  | decaying
+  /-- Nonnegative amplitude gain: `κ_v ≥ 0`. -/
+  | stiff
+  /-- The decay rate `r` does not exceed `−c`. -/
+  | decayRate (r : ℝ)
+
+/-- Satisfaction of a requirement by an AHO parameter set. -/
+def Meets (a : AHO) : Requirement → Prop
+  | .growing => 0 < a.c
+  | .decaying => a.c < 0
+  | .stiff => 0 ≤ a.κv
+  | .decayRate r => r + a.c ≤ 0
+
 variable {a}
 
-@[powerlib_foundation] theorem Admissible.c_pos (h : a.Admissible) : 0 < a.c := by
-  simp only [c]; linarith [h.gap]
+@[tmio M, powerlib_foundation] theorem Admissible.c_pos (h : a.Admissible) :
+    connection% (a ∈ TMIO.realize Meets {.growing}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets, c]
+  linarith [h.gap]
 
 @[powerlib_foundation] theorem Admissible.rstar_sq (h : a.Admissible) :
     a.rstar ^ 2 = a.c / a.κv := by
@@ -179,7 +199,9 @@ private theorem inv_normSq_eq (h : a.Admissible) {φ : ℝ → ℂ}
     (hpos : ∀ t ∈ Icc 0 T, 0 < normSq (φ t)) :
     ∀ t ∈ Icc 0 T, 1 / normSq (φ t) =
       a.κv / a.c + (1 / normSq (φ 0) - a.κv / a.c) * Real.exp (-(2 * a.c * t)) := by
-  have hc := h.c_pos
+  have hc : 0 < a.c := by
+    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+      using h.c_pos
   set w : ℝ → ℝ := fun t => (1 / normSq (φ t) - a.κv / a.c) * Real.exp (2 * a.c * t) with hw
   have hcont : ContinuousOn (fun t => normSq (φ t)) (Icc 0 T) :=
     (Complex.continuous_normSq.comp_continuousOn hφ.continuousOn).mono Icc_subset_Ici_self
@@ -221,7 +243,9 @@ private theorem normSq_formula (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
     ∀ t ∈ Ici (0 : ℝ), 0 < normSq (φ t) ∧ 1 / normSq (φ t) =
       a.κv / a.c + (1 / normSq (φ 0) - a.κv / a.c) * Real.exp (-(2 * a.c * t)) := by
-  have hc := h.c_pos
+  have hc : 0 < a.c := by
+    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+      using h.c_pos
   have hk := h.κv
   have hy0 : 0 < normSq (φ 0) := normSq_pos.mpr h0
   set Z := max (a.κv / a.c) (1 / normSq (φ 0)) with hZ
@@ -276,7 +300,9 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem norm_tendsto_rstar (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0)) (h0 : φ 0 ≠ 0) :
     Tendsto (fun t => ‖φ t‖) atTop (𝓝 a.rstar) := by
-  have hc := h.c_pos
+  have hc : 0 < a.c := by
+    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+      using h.c_pos
   have hk := h.κv
   have hform := a.normSq_formula h hφ h0
   have hexp : Tendsto (fun t : ℝ => Real.exp (-(2 * a.c * t))) atTop (𝓝 0) := by
@@ -378,7 +404,9 @@ Implementation evidence: trajectory-level result outside the sentence language (
 private theorem norm_eq_rstar_of_start (h : a.Admissible) {φ : ℝ → ℂ}
     (hφ : IsIntegralCurveOn φ (fun _ v => a.field v) (Ici 0))
     (h0 : ‖φ 0‖ = a.rstar) : ∀ t ∈ Ici (0 : ℝ), ‖φ t‖ = a.rstar := by
-  have hc := h.c_pos
+  have hc : 0 < a.c := by
+    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+      using h.c_pos
   have hk := h.κv
   have hne : φ 0 ≠ 0 := by
     intro hz; rw [hz, norm_zero] at h0; exact h.rstar_pos.ne' h0.symm
@@ -479,24 +507,6 @@ def realJacobian (x : State 2) : Matrix (Fin 2) (Fin 2) ℝ :=
     a.realJacobian 0 = !![a.c, -a.ωs; a.ωs, a.c] := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [realJacobian]
-
-/-- Static requirements on AHO parameter sets. -/
-inductive Requirement
-  /-- Growth at the origin: `c = κ_v v*² − σ > 0`. -/
-  | growing
-  /-- Decay at the origin: `c < 0`. -/
-  | decaying
-  /-- Nonnegative amplitude gain: `κ_v ≥ 0`. -/
-  | stiff
-  /-- The decay rate `r` does not exceed `−c`. -/
-  | decayRate (r : ℝ)
-
-/-- Satisfaction of a requirement by an AHO parameter set. -/
-def Meets (a : AHO) : Requirement → Prop
-  | .growing => 0 < a.c
-  | .decaying => a.c < 0
-  | .stiff => 0 ≤ a.κv
-  | .decayRate r => r + a.c ≤ 0
 
 /-- The translation of the sentences about the origin: instability into growth; the local
 sentences into decay; the global sentences and sampled contraction into decay and stiffness; a
@@ -669,7 +679,9 @@ exponential stability forces a Hurwitz Jacobian `[[c, −ω_s], [ω_s, c]]` (tra
 origin of the no-load AHO is unstable. -/
 @[tmio TM, powerlib_domain] theorem Admissible.mem_den_unstable (h : a.Admissible) :
     connection% (a ∈ family.den (.flow .unstable)) :=
-  AHO.mem_den_unstable a h.c_pos
+  AHO.mem_den_unstable a (by
+    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+      using h.c_pos)
 
 /-- Decay at the origin (`κ_v v*² < σ`) makes the origin locally exponentially stable, for every
 sign of `κ_v`. -/

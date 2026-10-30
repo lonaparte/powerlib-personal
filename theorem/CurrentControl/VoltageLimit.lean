@@ -801,8 +801,9 @@ def nominal : PIParams := ⟨1, 1, 1, 1⟩
 `V_max = 1/√3`. -/
 def overloaded : LimitedPI := ⟨nominal, 1, 1⟩
 
-private theorem overloaded_overload :
-    overloaded.Vmax < |overloaded.design.R * overloaded.iref| := by
+@[tmio M] private theorem overloaded_overload :
+    connection% (overloaded ∈ TMIO.realize Meets {.overload}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
   simp only [Vmax, overloaded, nominal, one_mul, abs_one]
   rw [div_lt_one (by positivity), Real.lt_sqrt (by norm_num)]
   norm_num
@@ -811,7 +812,9 @@ private theorem overloaded_overload :
 @[tmio TM, powerlib_domain] theorem overloaded_mem_den_unstable :
     connection% (overloaded ∈ family.den (.flow .unstable)) :=
   mem_den_unstable_of_overload overloaded (by norm_num [overloaded, nominal])
-    (by norm_num [overloaded, nominal]) (by norm_num [overloaded]) overloaded_overload
+    (by norm_num [overloaded, nominal]) (by norm_num [overloaded])
+    (by simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+      using overloaded_overload)
 
 /-- Within overload (with a positive inductance, integral action and a positive DC link)
 instability is realized soundly: every such platform is unstable. -/
@@ -844,7 +847,8 @@ has a locally exponentially stable design and is unstable. -/
     · show (0 : ℝ) < 1; norm_num
     · show (1 : ℝ) ≠ 0; norm_num
     · show (0 : ℝ) < 1; norm_num
-    · exact overloaded_overload
+    · simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Meets]
+        using overloaded_overload
   rw [implementation_impl, (connection_proof% family_isAutonomous.mem_den_flow)] at hmem
   rw [(connection_proof% family_isAutonomous.mem_den_flow)] at hu
   exact hu hmem.lyapunovStable

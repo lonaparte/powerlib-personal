@@ -662,67 +662,76 @@ positive gains at a well bottom. The degenerate gains are decided by the model's
 grid (`V = 0`) or a missing integrator (`K_i = 0`) has a continuum of equilibria through
 `(θ*, η*)`, and a lossless loop (`K_p = 0`) conserves its Hamiltonian. With `V, K_p, K_i > 0` the
 equilibrium has `sin θ* = 0`, and an anti-phase point (`cos θ* = −1`) is a saddle. -/
-private theorem las_guard {m : Model} (hn : Meets m .nonnegativeEnergy)
+@[tmio TM] private theorem las_guard {m : Model} (hn : Meets m .nonnegativeEnergy)
     (heq : srfField m.V m.Kp m.Ki (m.Ki * m.ηs) m.point = 0)
-    (hlas : LocalAsymptoticStable (srfField m.V m.Kp m.Ki (m.Ki * m.ηs)) m.point) :
-    0 < m.V ∧ 0 < m.Ki ∧ 0 < m.Kp ∧ Real.cos m.θ = 1 := by
-  obtain ⟨hV, hKi⟩ := hn
-  have hC := contDiff_srfField m.V m.Kp m.Ki (m.Ki * m.ηs)
-  have hp0 : m.point 0 = m.θ := by simp [Model.point, PhasePlane.mk]
-  have hVs : m.V * Real.sin m.θ = 0 := by
-    have h1 := congrArg (fun y : State 2 => y 1) heq
-    simpa [hp0] using h1
-  rcases eq_or_lt_of_le hV with hV0 | hVpos
-  · exfalso
-    refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
-      ⟨PhasePlane.mk (m.θ + ε / 2) (m.ηs + 0), fun h => ?_, ?_, ?_⟩) hlas
-    · have := congrArg (fun y : State 2 => y 0) h
-      simp [Model.point, PhasePlane.mk] at this
-      linarith
-    · refine (norm_point_sub _ _ _ _).trans_lt ?_
-      rw [abs_zero, add_zero, abs_of_pos (by linarith)]
-      linarith
-    · ext i
-      fin_cases i <;> simp [PhasePlane.mk, ← hV0]
-  have hs : Real.sin m.θ = 0 := (mul_eq_zero.mp hVs).resolve_left hVpos.ne'
-  rcases eq_or_lt_of_le hKi with hKi0 | hKipos
-  · exfalso
-    refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
-      ⟨PhasePlane.mk (m.θ + 0) (m.ηs + ε / 2), fun h => ?_, ?_, ?_⟩) hlas
-    · have := congrArg (fun y : State 2 => y 1) h
-      simp [Model.point, PhasePlane.mk] at this
-      linarith
-    · refine (norm_point_sub _ _ _ _).trans_lt ?_
-      rw [abs_zero, zero_add, abs_of_pos (by linarith)]
-      linarith
-    · ext i
-      fin_cases i <;> simp [PhasePlane.mk, ← hKi0, hs]
-  rcases eq_or_lt_of_le m.damping with hKp0 | hKppos
-  · exfalso
-    have hHd : Differentiable ℝ (pllHamiltonian m.V m.Ki m.ηs) := fun x =>
-      (hasGradientAt_pllHamiltonian m.V m.Ki m.ηs x).hasFDerivAt.differentiableAt
-    refine Dynamics.not_localAsymptoticStable_of_lie_nonpos
-      (V := fun x => -pllHamiltonian m.V m.Ki m.ηs x) (ρ := 1) hC hHd.neg one_pos
-      (fun x _ => ?_) (fun ε hε => ⟨PhasePlane.mk (m.θ + 0) (m.ηs + ε / 2), ?_, ?_⟩) hlas
-    · rw [fderiv_fun_neg, _root_.neg_apply, hamiltonian_lie, ← hKp0]
-      simp
-    · refine (norm_point_sub _ _ _ _).trans_lt ?_
-      rw [abs_zero, zero_add, abs_of_pos (by linarith)]
-      linarith
-    · show -pllHamiltonian m.V m.Ki m.ηs (PhasePlane.mk (m.θ + 0) (m.ηs + ε / 2)) <
-        -pllHamiltonian m.V m.Ki m.ηs m.point
-      simp only [pllHamiltonian, Model.point, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one,
-        add_zero, add_sub_cancel_left, sub_self]
-      have : 0 < m.Ki / 2 * (ε / 2) ^ 2 := by positivity
+    (hlas : m ∈ family.den (.flow .locallyAsymptoticallyStable)) :
+    connection% (m ∈ TMIO.realize Meets {.wellBottom, .slopeStable}) := by
+  unfold TMIO.Statement
+  have hlas : LocalAsymptoticStable (srfField m.V m.Kp m.Ki (m.Ki * m.ηs)) m.point :=
+    mem_den_flow_iff.mp hlas
+  have hguard : 0 < m.V ∧ 0 < m.Ki ∧ 0 < m.Kp ∧ Real.cos m.θ = 1 := by
+    obtain ⟨hV, hKi⟩ := hn
+    have hC := contDiff_srfField m.V m.Kp m.Ki (m.Ki * m.ηs)
+    have hp0 : m.point 0 = m.θ := by simp [Model.point, PhasePlane.mk]
+    have hVs : m.V * Real.sin m.θ = 0 := by
+      have h1 := congrArg (fun y : State 2 => y 1) heq
+      simpa [hp0] using h1
+    rcases eq_or_lt_of_le hV with hV0 | hVpos
+    · exfalso
+      refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
+        ⟨PhasePlane.mk (m.θ + ε / 2) (m.ηs + 0), fun h => ?_, ?_, ?_⟩) hlas
+      · have := congrArg (fun y : State 2 => y 0) h
+        simp [Model.point, PhasePlane.mk] at this
+        linarith
+      · refine (norm_point_sub _ _ _ _).trans_lt ?_
+        rw [abs_zero, add_zero, abs_of_pos (by linarith)]
+        linarith
+      · ext i
+        fin_cases i <;> simp [PhasePlane.mk, ← hV0]
+    have hs : Real.sin m.θ = 0 := (mul_eq_zero.mp hVs).resolve_left hVpos.ne'
+    rcases eq_or_lt_of_le hKi with hKi0 | hKipos
+    · exfalso
+      refine Dynamics.not_localAsymptoticStable_of_equilibria (fun ε hε =>
+        ⟨PhasePlane.mk (m.θ + 0) (m.ηs + ε / 2), fun h => ?_, ?_, ?_⟩) hlas
+      · have := congrArg (fun y : State 2 => y 1) h
+        simp [Model.point, PhasePlane.mk] at this
+        linarith
+      · refine (norm_point_sub _ _ _ _).trans_lt ?_
+        rw [abs_zero, zero_add, abs_of_pos (by linarith)]
+        linarith
+      · ext i
+        fin_cases i <;> simp [PhasePlane.mk, ← hKi0, hs]
+    rcases eq_or_lt_of_le m.damping with hKp0 | hKppos
+    · exfalso
+      have hHd : Differentiable ℝ (pllHamiltonian m.V m.Ki m.ηs) := fun x =>
+        (hasGradientAt_pllHamiltonian m.V m.Ki m.ηs x).hasFDerivAt.differentiableAt
+      refine Dynamics.not_localAsymptoticStable_of_lie_nonpos
+        (V := fun x => -pllHamiltonian m.V m.Ki m.ηs x) (ρ := 1) hC hHd.neg one_pos
+        (fun x _ => ?_) (fun ε hε => ⟨PhasePlane.mk (m.θ + 0) (m.ηs + ε / 2), ?_, ?_⟩) hlas
+      · rw [fderiv_fun_neg, _root_.neg_apply, hamiltonian_lie, ← hKp0]
+        simp
+      · refine (norm_point_sub _ _ _ _).trans_lt ?_
+        rw [abs_zero, zero_add, abs_of_pos (by linarith)]
+        linarith
+      · show -pllHamiltonian m.V m.Ki m.ηs (PhasePlane.mk (m.θ + 0) (m.ηs + ε / 2)) <
+          -pllHamiltonian m.V m.Ki m.ηs m.point
+        simp only [pllHamiltonian, Model.point, PhasePlane.mk_apply_zero, PhasePlane.mk_apply_one,
+          add_zero, add_sub_cancel_left, sub_self]
+        have : 0 < m.Ki / 2 * (ε / 2) ^ 2 := by positivity
+        nlinarith
+    refine ⟨hVpos, hKipos, hKppos, ?_⟩
+    have hc : Real.cos m.θ * Real.cos m.θ = 1 := by
+      have := Real.sin_sq_add_cos_sq m.θ
+      rw [hs] at this
       nlinarith
-  refine ⟨hVpos, hKipos, hKppos, ?_⟩
-  have hc : Real.cos m.θ * Real.cos m.θ = 1 := by
-    have := Real.sin_sq_add_cos_sq m.θ
-    rw [hs] at this
-    nlinarith
-  rcases mul_self_eq_one_iff.mp hc with hc1 | hc1
-  · exact hc1
-  · exact absurd hlas.1 (mem_den_flow_iff.mp (unstable_of_meets ⟨mul_pos hVpos hKipos, hc1⟩))
+    rcases mul_self_eq_one_iff.mp hc with hc1 | hc1
+    · exact hc1
+    · exact absurd hlas.1 (mem_den_flow_iff.mp (unstable_of_meets ⟨mul_pos hVpos hKipos, hc1⟩))
+  obtain ⟨hV, hKi, hKp, hθ⟩ := hguard
+  rw [(connection_proof% TMIO.mem_realize)]
+  rintro q (rfl | rfl)
+  · exact ⟨hV, hKi, hθ⟩
+  · exact ⟨mul_pos hV hKp, mul_pos hV hKi, hθ⟩
 
 /-- Within nonnegative energy (`V, K_i ≥ 0`) the local asymptotic translation is exact: a model
 is locally asymptotically stable at `(θ*, η*)` exactly when `V K_p > 0`, `V K_i > 0` and
@@ -741,8 +750,12 @@ with positive gains an anti-phase equilibrium is a saddle (`mem_den_unstable_ant
     (fun m _ h => Spectral.den_locallyExponentiallyStable_subset_las (les_sound h))
     (fun m _ => contDiff_srfField _ _ _ _) (fun m hm heq hG hd => ?_)
     fun m _ _ ⟨hV, hKi, hKp, hθ⟩ => ?_
-  · exact hG (las_guard ((TMIO.mem_realize _ _ _).mp hm .nonnegativeEnergy rfl) heq
-      (mem_den_flow_iff.mp hd))
+  · have hg := las_guard ((TMIO.mem_realize _ _ _).mp hm .nonnegativeEnergy rfl) heq hd
+    unfold TMIO.Statement at hg
+    rw [(connection_proof% TMIO.mem_realize)] at hg
+    have hw : Meets m .wellBottom := hg .wellBottom (by simp)
+    have hs : Meets m .slopeStable := hg .slopeStable (by simp)
+    exact hG ⟨hw.1, hw.2.1, (mul_pos_iff_of_pos_left hw.1).mp hs.1, hw.2.2⟩
   · rw [(connection_proof% TMIO.mem_realize)]
     rintro q rfl
     exact ⟨mul_pos hV hKp, mul_pos hV hKi, hθ⟩

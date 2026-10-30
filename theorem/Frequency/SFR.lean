@@ -444,8 +444,11 @@ connection conclusion. -/
   exact h
 
 /-- The SFR translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
-private theorem translate_eq_linearTable (s : Sentence) :
-    translate s = Spectral.linearTable {.stable} {.unstable} univ univ (fun a => {.rate a}) s := by
+@[tmio TM] private theorem translate_eq_linearTable (s : Sentence) :
+    connection% (generate (cover (table translate)) {s} =
+      Spectral.linearTable {.stable} {.unstable} univ univ (fun a => {.rate a}) s) := by
+  unfold TMIO.Statement
+  rw [TMIO.image_table_singleton]
   rcases s with P | _ | _
   · cases P <;> rfl
   · rfl
@@ -458,7 +461,8 @@ margins, `Spectral.chain_le_semantics_of_linearTable_univ`). -/
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   exact Spectral.chain_le_semantics_of_linearTable_univ (F := family) family_isLinear
-    translate_eq_linearTable
+    (fun s => (connection_proof% TMIO.image_table_singleton translate s).symm.trans
+      (connection_proof% translate_eq_linearTable s))
     (fun m hm => (((connection_proof% SFR.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff m.M_pos m.Tg_pos m.TR_pos))).mpr
       ((mem_realize _ _ _).mp hm .stable rfl))
     (fun m hm => exists_root_of_unstable m.M_pos m.Tg_pos m.TR_pos
@@ -472,7 +476,9 @@ Routh–Hurwitz conditions are their exact translation. -/
     (hP : P.Attractive ∨ P = .contractive) :
     connection% (family.Exact (.flow P)) := by
   unfold powerlib.TMIO.Statement
-  exact Spectral.exact_of_linearTable (F := family) family_isLinear translate_eq_linearTable
+  exact Spectral.exact_of_linearTable (F := family) family_isLinear
+    (fun s => (connection_proof% TMIO.image_table_singleton translate s).symm.trans
+      (connection_proof% translate_eq_linearTable s))
     (fun m => Spectral.mem_realize_singleton.trans (((connection_proof% SFR.family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff m.M_pos m.Tg_pos m.TR_pos))).symm)
     hP
 

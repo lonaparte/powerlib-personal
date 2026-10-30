@@ -584,8 +584,11 @@ private theorem not_les_of_D0_eq_zero {p : Params} (hD0 : p.D0 = 0) (x : Dynamic
   · simp [RatePLL.field, Dynamics.lift, coordField, pllOut, hD0]
 
 /-- An equilibrium of the field at `(θ*, 0)` with `D₀ ≠ 0` is balanced, `V sin θ* = −X_g i_d`. -/
-private theorem balance_of_field_eq_zero {p : Params} (hD0 : p.D0 ≠ 0) {θ : ℝ}
-    (h : RatePLL.field p (equilibrium θ) = 0) : p.V * Real.sin θ = -(p.Xg * p.Id) := by
+@[tmio M] private theorem balance_of_field_eq_zero {p : Params} (hD0 : p.D0 ≠ 0) {θ : ℝ}
+    (h : RatePLL.field p (equilibrium θ) = 0) :
+    connection% ((⟨p, θ⟩ : Model) ∈ TMIO.realize Meets {.equilibrium}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  refine ⟨?_, hD0⟩
   have h0 := congrArg (fun y : Dynamics.State 2 => y 0) h
   have h1 := congrArg (fun y : Dynamics.State 2 => y 1) h
   simp [RatePLL.field, Dynamics.lift, coordField, equilibrium, pllOut, vq, hD0] at h0 h1
@@ -614,7 +617,8 @@ Jacobian; with `D₀ = 0` the frozen angle excludes it. -/
   · rw [Criteria.isHurwitz_fin_two_iff] at hH
     rw [(connection_proof% TMIO.mem_realize)]
     rintro q (rfl | rfl)
-    · exact ⟨balance_of_field_eq_zero hD0 he, hD0⟩
+    · simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, family, Meets]
+        using balance_of_field_eq_zero hD0 he
     · exact hH
 
 /-! ### Members of the local denotations: the boundary angle `tan θ_H = ω_s k_p / k_i` -/

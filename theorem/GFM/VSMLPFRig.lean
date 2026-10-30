@@ -582,10 +582,13 @@ instability. -/
       (1 + y.τ * y.design.g.ωc) := by positivity
   exact mul_pos hω (by linarith)
 
-/-- A slow filter keeps the platform unstable for every delay: `H < 0`. -/
-private theorem H_neg_of_slow {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
+/-- A slow design filter puts the platform in the lagged requirement at every positive delay.
+The physical slow-filter hypotheses force `K > 0`, so this requirement is exactly `H < 0`. -/
+@[tmio MI] private theorem H_neg_of_slow {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
     (hs : y.design.g.D * y.design.g.ωc + y.design.g.D ^ 2 / y.design.g.M < y.design.K) :
-    y.H < 0 := by
+    connection% (y ∈ TMIO.realize RigMeets {.lagged}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, RigMeets]
+  apply Or.inl
   obtain ⟨hM, hD, hω⟩ := hp
   have hb : 0 < y.b := by unfold Rig.b; positivity
   have hs' : y.design.g.D * y.b < y.design.K * y.design.g.M := by
@@ -779,7 +782,9 @@ operating point off equilibrium; a slow filter gives `H < 0`; `K < 0` gives `det
   refine rig_mem_den_flow_iff.mpr ?_
   by_cases hb : Meets y.design .balanced
   · rcases hs with hs | hK
-    · exact (rig_mem_den_flow_iff.mp (rig_unstable_of hp hτ hb (Or.inl (H_neg_of_slow hp hτ hs))))
+    · exact (rig_mem_den_flow_iff.mp (rig_unstable_of hp hτ hb (by
+        simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, RigMeets]
+          using H_neg_of_slow hp hτ hs)))
     · exact (rig_mem_den_flow_iff.mp (rig_unstable_of hp hτ hb (Or.inr hK)))
   · exact Dynamics.unstable_of_ne_zero (contDiff_rigField y)
       fun h => hb ((rigField_point_eq_zero_iff y hp.2.2.ne').mp h)
@@ -897,9 +902,18 @@ whatever its delay (`realizationSoundUnder_unstable`). -/
 
 /-- The platform Routh condition forces the design margin `e = D b − K M > 0`: with `e ≤ 0` every
 term of `H / ω_c = M e + τ b (e − K M) + τ² b (D² ω_c − K M ω_c − K D)` is nonpositive and the
-second is negative. -/
-private theorem margin_pos_of_H_pos {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
-    (hH : 0 < y.H) : 0 < y.design.g.D * y.b - y.design.K * y.design.g.M := by
+second is negative. Within positive inertia this is exactly the design fast-filter requirement. -/
+@[tmio MI] private theorem margin_pos_of_H_pos {y : Rig} (hp : Meets y.design .physical) (hτ : 0 < y.τ)
+    (hH : 0 < y.H) : connection% (y.design ∈ TMIO.realize Meets {.fastFilter}) := by
+  simp only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+  suffices he : 0 < y.design.g.D * y.b - y.design.K * y.design.g.M by
+    have hM := hp.1
+    have e : (y.design.g.D * y.design.g.ωc + y.design.g.D ^ 2 / y.design.g.M) * y.design.g.M =
+        y.design.g.D * y.b := by unfold Rig.b; field_simp
+    have : y.design.K * y.design.g.M <
+        (y.design.g.D * y.design.g.ωc + y.design.g.D ^ 2 / y.design.g.M) * y.design.g.M := by
+      rw [e]; linarith
+    exact lt_of_mul_lt_mul_right this hM.le
   obtain ⟨hM, hD, hω⟩ := hp
   by_contra hn
   push Not at hn
@@ -953,15 +967,9 @@ and `H > 0` forces the fast-filter margin of the design. A delay never stabilize
   have hb : Meets y.design .balanced := hm (.design .balanced) (by simp [rigFamily, rigTranslate])
   have hK : 0 < y.design.K := hm (.design .synchronizing) (by simp [rigFamily, rigTranslate])
   have hH : 0 < y.H := hm .routh (by simp [rigFamily, rigTranslate])
-  have he := margin_pos_of_H_pos hp hτ hH
   have hf : y.design.K < y.design.g.D * y.design.g.ωc + y.design.g.D ^ 2 / y.design.g.M := by
-    have hM := hp.1
-    have e : (y.design.g.D * y.design.g.ωc + y.design.g.D ^ 2 / y.design.g.M) * y.design.g.M =
-        y.design.g.D * y.b := by unfold Rig.b; field_simp
-    have : y.design.K * y.design.g.M <
-        (y.design.g.D * y.design.g.ωc + y.design.g.D ^ 2 / y.design.g.M) * y.design.g.M := by
-      rw [e]; linarith
-    exact lt_of_mul_lt_mul_right this hM.le
+    simpa only [TMIO.Statement, TMIO.mem_realize, Set.mem_singleton_iff, forall_eq, Meets]
+      using margin_pos_of_H_pos hp hτ hH
   have hmem := mem_den_locallyExponentiallyStable y.design hp.1 hp.2.1 hp.2.2 hb hK hf
   unfold powerlib.TMIO.Statement at hmem
   exact hmem

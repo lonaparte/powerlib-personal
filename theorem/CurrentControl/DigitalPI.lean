@@ -518,15 +518,20 @@ every positive period: `Ki < 0` gives `a₀ < 0`, otherwise `R + Kp < 0` gives `
     · exact absurd h (not_lt.mpr hL.le)
     · exact Or.inr (Or.inr (Or.inl h))
 
-private theorem translate_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
-    family.translate (.flow P) = {.physical, .sampling, .routh} := by
+@[tmio TM] private theorem translate_flow {P : Flow.Property} (hP : P.Attractive ∨ P = .contractive) :
+    connection% (generate (cover (table family.translate)) {Sentence.flow P} =
+      {.physical, .sampling, .routh}) := by
+  unfold TMIO.Statement
+  rw [TMIO.image_table_singleton]
   rcases hP with hP | rfl
   · cases P <;> first | rfl | exact hP.elim
   · rfl
 
-private theorem design_translate_flow {P : Flow.Property}
+@[tmio TM] private theorem design_translate_flow {P : Flow.Property}
     (hP : P.Attractive ∨ P = .contractive) :
-    PIParams.family.translate (.flow P) = {.stable} := by
+    connection% (generate (cover (table PIParams.family.translate)) {Sentence.flow P} = {.stable}) := by
+  unfold TMIO.Statement
+  rw [TMIO.image_table_singleton]
   rcases hP with hP | rfl
   · cases P <;> first | rfl | exact hP.elim
   · rfl
@@ -550,9 +555,12 @@ Routh conditions exclude every strict violation. -/
   · linarith
 
 /-- The platform translation is the linear table of `theorem/Spectral/LinearNamed.lean`. -/
-private theorem translate_eq_linearTable (s : Sentence) :
-    translate s = Spectral.linearTable {.physical, .sampling, .routh}
-      {.physical, .sampling, .lagged} Set.univ Set.univ (fun _ => Set.univ) s := by
+@[tmio TM] private theorem translate_eq_linearTable (s : Sentence) :
+    connection% (generate (cover (table translate)) {s} =
+      Spectral.linearTable {.physical, .sampling, .routh}
+      {.physical, .sampling, .lagged} Set.univ Set.univ (fun _ => Set.univ) s) := by
+  unfold TMIO.Statement
+  rw [TMIO.image_table_singleton]
   rcases s with P | _ | _
   · cases P <;> rfl
   · rfl
@@ -565,7 +573,8 @@ a strict violation a characteristic root in the open right half plane (the linea
     connection% (∀ P, family.chain P ≤ family.semantics P) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.chain_le_semantics_of_linearTable_univ (F := family) family_isLinear
-    translate_eq_linearTable (fun y hy => ?_) (fun y hy => ?_)
+    (fun s => (connection_proof% TMIO.image_table_singleton translate s).symm.trans
+      (connection_proof% translate_eq_linearTable s)) (fun y hy => ?_) (fun y hy => ?_)
     fun _ => Spectral.realize_univ_subset_of_eq_empty realize_univ _
   · rw [(connection_proof% TMIO.mem_realize)] at hy
     exact (((family_isLinear.mem_den_hurwitz (P := .globallyExponentiallyStable) (Or.inl trivial)).symm.trans (isHurwitz_iff y (hy .physical (by simp)) (hy .sampling (by simp))))).mpr
@@ -581,7 +590,8 @@ platform Routh conditions hold. -/
     connection% (family.ExactUnder {.physical, .sampling} (.flow P)) := by
   unfold powerlib.TMIO.Statement
   refine Spectral.exactUnder_of_linearTable (F := family) family_isLinear
-    translate_eq_linearTable _ (fun y hΔ => ?_) hP
+    (fun s => (connection_proof% TMIO.image_table_singleton translate s).symm.trans
+      (connection_proof% translate_eq_linearTable s)) _ (fun y hΔ => ?_) hP
   rw [(connection_proof% TMIO.mem_realize)] at hΔ
   have hL : 0 < y.design.L := hΔ .physical (by simp)
   have hT : 0 < y.Ts := hΔ .sampling (by simp)
@@ -634,9 +644,13 @@ exact design translation (`PIParams.exact`), the sound platform translation
   have hT : 0 < y.Ts := hΔ .sampling (by simp)
   have hf : 3 * y.design.Kp * y.Ts ≤ y.design.L ∧
       3 * y.design.Ki * y.Ts ≤ y.design.R + y.design.Kp := hΔ .fastSampling (by simp)
+  have hdtr : PIParams.family.translate (.flow P) = {.stable} := by
+    simpa only [TMIO.Statement, TMIO.image_table_singleton] using design_translate_flow hP
+  have htr : family.translate (.flow P) = {.physical, .sampling, .routh} := by
+    simpa only [TMIO.Statement, TMIO.image_table_singleton] using translate_flow hP
   have hs : PIParams.Stable y.design :=
-    hd .stable (by rw [implementation_model, design_translate_flow hP]; rfl)
-  rw [implementation_impl, translate_flow hP]
+    hd .stable (by rw [implementation_model, hdtr]; rfl)
+  rw [implementation_impl, htr]
   intro q hq
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hq
   rcases hq with rfl | rfl | rfl
